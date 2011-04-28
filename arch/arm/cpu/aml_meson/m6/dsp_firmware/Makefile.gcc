@@ -1,0 +1,104 @@
+# ------------------------------------------------------------
+# Makefile for ROM BOOT CODE
+# ------------------------------------------------------------
+include $(TOPDIR)/config.mk
+ARCCC = arc-elf32-gcc
+ARCASM = arc-elf32-as
+ARCLD = arc-elf32-ld
+ifeq ($(OS),Windows_NT)
+MKDIR=if not exist $(subst /,\,$(1)) mkdir $(subst /,\,$(1))
+else
+MKDIR=mkdir -p $(1)
+endif
+
+ARCOBJCOPY = arc-elf32-objcopy
+ARCDUMPELF = arc-elf32-elfdump
+
+ARCOBJDUMP = arc-elf32-objdump
+ARCDUMP_FLAGS = -z
+ARCCPP=arc-elf32-cpp
+
+#AARCC_FLAGS += -D__MW__  -D__ARC600__ 
+#mcc 
+#CC_FLAGS += -D__MW__  -D__ARC600__ 
+
+#gcc
+CC_FLAGS +=  -D__ARC600__ 
+
+ARCCC_FLAGS = -mA7 -mno-volatile-cache -O2 -D__ARC__ -DCONFIG_ARC -I. -Iinclude -Wall
+ARCCC_FLAGS += -g -MD -mno-sdata -fno-builtin -ffreestanding -nostdinc -isystem -pipe -fomit-frame-pointer
+AARCC_FLAGS += -Wstrict-prototypes -fno-stack-protector -D__KERNEL__ -mno-cond-exec
+
+ARCCC_FLAGS += $(CC_FLAGS)
+
+ARCASM_FLAGS = -D__ASSEMBLY__ $(CC_FLAGS) $(ARCCC_FLAGS)
+
+ARCGCCLIBPATH=$(dir $(shell $(ARCCC) -print-libgcc-file-name))
+
+ARCCOPY_FLAGS= -I elf32-little -O binary
+
+obj =$(SRCTREE)/build/dsp_firmware/
+
+ARCLD_FLAGS   =  -Bstatic -T $(obj)romboot.lds -L$(ARCGCCLIBPATH) -lgcc 
+ARCLD_FLAGS += -marcelf 
+define MAP_OUT_OPTION
+	  -Map $(obj)code_elf.map
+endef
+
+CSRCS = $(wildcard *.c lib/*.c)
+OBJS = $(CSRCS:%.c=$(obj)%.o)
+
+DUMP_FLAGS:= -D -x
+
+all : clean $(obj)code_elf.out 
+
+
+#$(obj)code_elf.out: $(obj)romboot.lds Makefile  $(OBJS) $(obj)boot_gcc.o
+$(obj)code_elf.out: $(obj)romboot.lds $(OBJS) $(obj)boot_gcc.o
+	$(ARCLD) $(ARCLD_FLAGS) $(filter %.o,$^)  $(MAP_OUT_OPTION) --cref -o $@
+	$(ARCOBJDUMP) $(DUMP_FLAGS) $@ > $(obj)dsp_firmware.map
+ifneq ($(OS),Windows_NT)	
+	$(ARCOBJCOPY) -I elf32-little --gap-fill=0xff -O binary $@ $(@:%.out=%.bin)
+endif	
+	./bin2code dsp_firmware_code $(obj)code_elf.bin $(SRCTREE)/build/include2/dsp_firmware.dat
+	cp $(SRCTREE)/build/include2/dsp_firmware.dat $(SRCTREE)/arch/$(ARCH)/cpu/$(CPU)/$(SOC)/
+
+down: $(obj)code_elf.out	
+	mdb -jtag -OKN $<
+	
+$(obj)%.o:	%.s
+	@$(call MKDIR, $(@D))
+	$(ARCCC)  $(ARCASM_FLAGS)  -o $@ $< -c
+		
+$(obj)%.o:	%.S
+	@$(call MKDIR, $(@D))
+	$(ARCCC)   $(ASM_FLAGS)  -o $@ $< -c		
+		
+$(obj)%.S:	%.s
+	@$(call MKDIR, $(@D))
+	$(ARCCPP) -I. -ansi -D__ASSEMBLY__ -MD -MT $@ -E $< -o $@	
+	
+#$(obj)%.o: $(TOPDIR)/board/$(BOARDDIR)/firmware/%.c
+#	@$(call MKDIR, $(@D))
+#	$(ARCCC)  $(ARCCC_FLAGS) -o $@ $< -c
+	
+$(obj)%.o:	%.c
+	@$(call MKDIR, $(@D))
+	$(ARCCC)  $(ARCCC_FLAGS) -o $@ $< -c
+	
+clean:
+	rm -r -f $(obj)
+	rm -f $(SRCTREE)/build/include2/dsp_firmware.dat
+	
+$(obj)romboot.lds: romboot.lds
+	@$(call MKDIR, $(@D))	
+	$(ARCCPP) $(ARCCPPFLAGS) $(ARCLDPPFLAGS) -std=c99 -D__ASSEMBLY__ -P - <$^ >$@
+-include $(wildcard $(OBJS:%.o=%.d))
+
+
+.PHONY: help
+help:
+	@echo ARCCC=$(ARCCC)
+	@echo ARCLD=$(ARCLD)
+	@echo ARCASM_FLAGS=$(ARCASM_FLAGS)
+	@echo obj=$(obj)

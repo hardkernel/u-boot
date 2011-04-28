@@ -1,0 +1,10 @@
+meson port missing features:
+* Media CPU initialize
+	a.start
+	b.stop
+	c.communication
+	d.load code
+
+* Control for register
+	use writel readl...
+	

@@ -1,0 +1,23 @@
+	#define VPP_VD2_ALPHA_WID           9
+    #define VPP_VD2_ALPHA_MASK          0x1ff
+    #define VPP_VD2_ALPHA_BIT           18
+    #define VPP_OSD2_PREBLEND           (1 << 17)
+    #define VPP_OSD1_PREBLEND           (1 << 16)
+    #define VPP_VD2_PREBLEND            (1 << 15)
+    #define VPP_VD1_PREBLEND            (1 << 14)
+    #define VPP_OSD2_POSTBLEND          (1 << 13)
+    #define VPP_OSD1_POSTBLEND          (1 << 12)
+    #define VPP_VD2_POSTBLEND           (1 << 11)
+    #define VPP_VD1_POSTBLEND           (1 << 10)
+    #define VPP_OSD1_ALPHA              (1 << 9)
+    #define VPP_OSD2_ALPHA              (1 << 8)
+    #define VPP_POSTBLEND_EN            (1 << 7)
+    #define VPP_PREBLEND_EN             (1 << 6)
+    #define VPP_PRE_FG_SEL_MASK         (1 << 5)
+    #define VPP_PRE_FG_OSD2             (1 << 5)
+    #define VPP_PRE_FG_OSD1             (0 << 5)
+    #define VPP_POST_FG_SEL_MASK        (1 << 4)
+    #define VPP_POST_FG_OSD2            (1 << 4)
+    #define VPP_POST_FG_OSD1            (0 << 4)
+    #define VPP_FIFO_RESET_DE           (1 << 2)
+    #define VPP_OUT_SATURATE            (1 << 0)

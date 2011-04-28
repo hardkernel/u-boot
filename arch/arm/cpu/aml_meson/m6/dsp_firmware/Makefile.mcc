@@ -1,0 +1,119 @@
+# ------------------------------------------------------------
+# Makefile for ROM BOOT CODE
+# ------------------------------------------------------------
+include $(TOPDIR)/config.mk
+CC = mcc
+ASM = asac
+LD = ldac
+ifeq ($(OS),Windows_NT)
+MKDIR=if not exist $(subst /,\,$(1)) mkdir $(subst /,\,$(1))
+else
+MKDIR=mkdir -p $(1)
+endif
+
+OBJCOPY = objcopy
+DUMPELF = elfdumpa
+DUMP_FLAGS = -z
+CPP=cpp
+#CC_FLAGS = -g -a6  -Hnosdata -Xtimer0 -Xtimer1 -Hoff=translate_bmsk -Hnocopyr \
+#			-Xswap -Xmin_max -Xnorm -Xbarrel_shifter -Xmul32x16  -Xxy -Xxmac_d16    \
+#			-Xxmac_16 -I. -Iinclude
+#CC_FLAGS = -g -a6  -Hnosdata -Xtimer0 -Xtimer1 -Hoff=translate_bmsk -Hnocopyr \
+#			-Xswap -Xmin_max -Xnorm -Xbarrel_shifter -Xmul32x16  -Xxy -Xxmac_d16    \
+#			 -I. -Iinclude
+CC_FLAGS = -g -a7  -Hnosdata -Hnothread -Hoff=translate_bmsk -Hnocopyr \
+			-I. -Iinclude -O2 
+#CC_FLAGS += -core4 
+
+#CC_FLAGS += -D__MW__ -D__ARC600__  -D__KERNEL__
+CC_FLAGS += -D__MW__ -D__ARC600__ 
+
+ASM_FLAGS = -D__ASSEMBLY__  $(CC_FLAGS)
+#ASM_FLAGS =   $(CC_FLAGS)
+COPY_FLAGS= -I elf32-little -O binary
+# mcc
+#-Hmakeof=/media/LinuxWork/gitdsp/Linux_Dev/trunk/audiodsp/out/codecs/codec_raac/aac_decoder/noiseless.d 
+#-g -a6 -core4 -Hnosdata -Xtimer0 -Xtimer1 -Hoff=translate_bmsk -Hnocopyr
+#-Xswap -Xmin_max -Xnorm -Xbarrel_shifter -Xmul32x16  -Xxy -Xxmac_d16
+#-Xxmac_16 -D__MW__ -D__KERNEL__ -D__linux__ -D__ARC600__ -D__Xmpy
+#-I/media/LinuxWork/gitdsp/Linux_Dev/trunk/audiodsp/include
+#-DAC3_DTS_LICENSE_ENABLE_MODE=1 -c aac_decoder/noiseless.c -o
+#/media/LinuxWork/gitdsp/Linux_Dev/trunk/audiodsp/out/codecs/codec_raac/aac_decoder/noiseless.o
+
+obj =$(SRCTREE)/build/dsp_firmware/
+
+#LD_FLAGS   =  $(obj)romboot.cmd  -Xnocompress  -L$(LD_LIB_PATH) -lmw -Bgrouplib  -q
+LD_FLAGS   =    -Xnocompress  -L$(LD_LIB_PATH) -lmw -Bgrouplib  -q
+#LD_FLAGS   =  $(obj)romboot.cmd  -Xnocompress  -L$(LD_LIB_PATH)  -Bgrouplib  -q
+define MAP_OUT_OPTION
+	 -Ccrossref -Cglobals -Csections -Csymbols -Ctables -Coutput=$(obj)code_elf.map
+endef
+
+
+LD_FLAGS += $(CURDIR)/romboot.cmd
+
+CSRCS = $(wildcard *.c lib/*.c)
+OBJS = $(CSRCS:%.c=$(obj)%.o)
+
+all : clean $(obj)code_elf.out 
+
+#$(obj)code_elf.out:  $(obj)romboot.cmd Makefile  $(OBJS) $(obj)start_arc.o
+$(obj)code_elf.out:  $(OBJS) $(obj)boot.o
+	$(LD) $(filter %.o,$^) -o $@ $(LD_FLAGS) $(MAP_OUT_OPTION)
+ifneq ($(OS),Windows_NT)	
+	objcopy -I elf32-little -O binary $@ $(@:%.out=%.bin)
+endif	
+#	./bin2code dsp_firmware_code $(obj)code_elf.bin $(SRCTREE)/build/include2/dsp_firmware.dat
+	./bin2code dsp_firmware_code $(obj)code_elf.bin $(SRCTREE)/build/include2/dsp_firmware.h
+	cp $(SRCTREE)/build/include2/dsp_firmware.h $(SRCTREE)/arch/$(ARCH)/cpu/$(CPU)/$(SOC)/
+
+down: $(obj)code_elf.out	
+	mdb -jtag -OKN $<
+$(obj)%.o:	%.s
+	@$(call MKDIR, $(@D))
+	$(CC)  $(ASM_FLAGS)  \
+		-o $@ $< -c
+$(obj)%.o:	%.S
+	@$(call MKDIR, $(@D))
+	$(CC)   $(ASM_FLAGS)  \
+		-o $@ $< -c		
+$(obj)%.S:	%.s
+	@$(call MKDIR, $(@D))
+	$(CPP) -I. -ansi -D__ASSEMBLY__ -MD -MT $@ -E $< -o $@	
+#	$(CPP) -I. -ansi  -MD -MT $@ -E $< -o $@	
+$(obj)%.o:	%.c
+	@$(call MKDIR, $(@D))
+	$(CC)  -Hrel -Hmakeof=$(@:%.o=%.d) $(CC_FLAGS)  \
+		-o $@ $< -c
+$(obj)%.cmd: %.cmd config.h
+	@$(call MKDIR, $(@D))
+	$(CPP) -I. -ansi -D__ASSEMBLY__ -MD -MT $(@:%=%.d)  -E  $< -o $@
+#	$(CPP) -I. -ansi  -MD -MT $(@:%=%.d)  -E  $< -o $@
+clean:
+	rm -r -f $(obj)
+	rm -f $(SRCTREE)/build/include2/dsp_firmware.dat
+
+	
+#$(obj)romboot.lds : romboot.lds
+#	mkdir -p $(@D)
+#	$(CPP) $(CC_FLAGS)  -D__ASSEMBLY__ -P - <$< >$@
+
+#$(obj)romboot.cmd: romboot.cmd
+#	mkdir -p $(@D)
+#	$(CPP) $(CC_FLAGS)  -D__ASSEMBLY__ -P - <$< >$@
+#	$(CC) $(CC_FLAGS)  -D__ASSEMBLY__ -P - <$< >$@
+#	$(CC)  -c -P -o <$< >$@
+#	$(CC)  -c -P main_test.c -o main
+#	$(CC) -p <$< >$@
+
+-include $(wildcard $(OBJS:%.o=%.d))
+
+
+
+help:
+	@echo "test "
+	@echo "obj="$(obj)
+	@echo "CURDIR"=$(CURDIR)
+	@echo "test end"
+
+

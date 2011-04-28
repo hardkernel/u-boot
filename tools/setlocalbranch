@@ -1,0 +1,17 @@
+#!/bin/sh
+# Print additional version information for non-release trees.
+
+#head="`cat ./.git/HEAD`"
+#printf '%s' "${head#*/*/}"
+
+headfile="./.git/HEAD"
+if [ -f $headfile ]; then
+	head="`cat ./.git/HEAD`"
+	if grep -q "ref: refs/heads/*" $headfile; then
+		printf '%s' "${head#*/*/}"
+	elif [ $head != '' ]; then
+		printf '%s' "`expr substr "${head}" 1 8`"
+	else
+		printf '%s' "(unknown)"
+	fi
+fi

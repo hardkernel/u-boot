@@ -1,0 +1,193 @@
+;=============================================
+; board m1_8726m_mid  & M3_SKT_V1
+;=============================================
+1. Build process:
+	a) make help
+	b) make distclean
+	c) make xxxx_config
+	d) make all
+	** make help infomation is in board/amlogic/Readme.mk.
+
+2. Cache config macro
+	a) CONFIG_L2_OFF:  to disable l2 cache
+	b) CONFGI_ICACHE_OFF: to disable icache
+	c) CONFIG_DCACHE_OFF: to disabel dcache
+
+3. Soft link "amlogic" to "board/amlogic/configs" in "include/configs".
+
+4. SPI flash support
+    a) CONFIG_AML_MESON_1: to use M1 SPI control
+    b) CONFIG_CMD_SF: to open UBoot command "sf probe/erase/read/write"
+    c) CONFIG_CMD_MEMORY: to open memory dump for verify SPI operation
+
+5. NAND flash support
+    a) CONFIG_CMD_NAND: support nand flash command
+    b) CONFIG_NAND_AML: use amlogic nand flash driver
+    c) Since "nand_info_t* nand_info[CONFIG_SYS_NAND_MAX_DEVICE];" 
+       replaced with "nand_info_t nand_info[CONFIG_SYS_NAND_MAX_DEVICE];" in base driver.
+       1. Modified struct aml_nand_chip member 'mtd' from struct to pointer in aml_nand.h.
+       2. Modified function mtd_to_nand_chip in aml_nand.h. Use member chip to get aml_nand_chip pointer.
+       
+6. M1 support Ethernet (Rev2172 2011-07-25 16:30:11)
+	6.1. board/amlogic/configs/arm_8726m.h
+	     add CONFIG_CMD_NET and net related macro
+	6.2. arch/arm/cpu/aml_meson/m1/firmware/pll.c
+		   set PLL for amlogic Ethernet controller
+	6.3. arch/arm/cpu/aml_meson/u-boot.lds
+		   add label for Ethernet DMA data transfer (__net_dma_start & __net_dma_end)
+	6.4. board/amlogic/Mesonboard_AML8726-M_V1.1/mesonboard_aml8726m_v1_1.c
+		   add code for LAN8720 net IC control
+	     6.4.1 add new file: board/amlogic/Mesonboard_AML8726-M_V1.1/m1_hardi2c.c
+		       Note: m1_hardi2c.c is a temp solution and will be removed when I2C solution is ready.
+	6.5. arch/arm/cpu/aml_meson/m1/Makefile
+		   add two files for Ethernet clock & pinmux setting
+		   6.5.1 add source: arch/arm/cpu/aml_meson/m1/aml_eth_pinmux.c
+		   6.5.2 add source: arch/arm/cpu/aml_meson/m1/aml_eth_clk_set.c
+		   6.5.3 add header file: arch/arm/include/asm/arch-m1/aml_eth_pinmux.h
+		   6.5.4 add header file: arch/arm/include/asm/arch-m1/aml_eth_clk_set.h
+		   6.5.5 add herder file: arch/arm/include/asm/arch-m1/aml_emac_lan8700.h
+	6.6. drivers/net/Makefile
+		   update for Amlogic Ethernet controller
+		   6.1 add source: drivers/net/aml_ethernet.c
+		   
+7. Add new configuration
+   7.1. Add help information in "board/amlogic/Readme.mk"
+   7.2. Add board configs in "board/amlogic/boards.cfg"
+   7.3. Add new "soc" like "m1,m3" in "tools/convert.c"
+   7.4. Add config head file in "board/amlogic/configs" like "m3_socket.h"
+   7.5. Add board dependent file in "boare/amlogic/xxxx/" like "/m3_skt_v1/m3_skt_v1.c"
+   
+8. M1 support I2C driver.
+   8.1 arch/arm/include/asm/arch-m1/clock.h & arch/arm/cpu/aml_meson/m1/clock.c
+	   change function get_clk81() type from static to global
+   8.2 board/amlogic/Mesonboard_AML8726-M_V1.1/mesonboard_aml8726m_v1_1.c
+	   board level implement for CONFIG_AML_I2C(pinmax setting, external I2C chip reset, etc)
+	   update Ethernet controller part with new I2C driver API
+   8.3 board/amlogic/configs/arm_8726m.h
+	   add macro CONFIG_AML_I2C for I2C support
+	   add macro AML_MESON_BOARD_8726M_2010_11_18_V11 for check board depend I2C feature
+	   8.3.1 common/cmd_net.c
+	         add code to test I2C driver workable with TCA6424 
+	        (red & blue LED will light on/off when use net cmd "ping")
+	   8.3.2 drivers/net/aml_ethernet.c
+	         just change name to remove the warning message when compiling
+   8.4 drivers/i2c/Makefile
+	   update for new I2C driver source
+	   8.4.1 add source: drivers/i2c/aml_i2c.c
+	   8.4.2 add header: arch/arm/include/asm/arch-m1/i2c.h
+	   8.4.3 add header: include/aml_i2c.h
+       
+9. M1 support SAR ADC
+	9.1 Add new folder/files
+		9.1.1 add new header file: arch/arm/include/asm/arch-m1/saradc.h
+	  	9.1.2 add new file: driver/adc/Makefile
+	  	9.1.3 add new source: drivers/adc/saradc.c
+	9.2 modify following files
+		9.2.1 board/amlogic/configs/arm_8726m.h
+		      add SARADC support macro CONFIG_SARADC  
+		9.2.2 modify make file Makefile
+		      LIBS += drivers/adc/libadc.o	     
+		9.2.3 board/amlogic/Mesonboard_AML8726-M_V1.1/mesonboard_aml8726m_v1_1.c
+	   		  add commom code for sys-test feature, add demo code for ADC test
+	   		  
+10. Add new command "arc"
+	 10.1. run program on "arc"
+   10.2. using macro "CONFIG_CMD_RUNARC" to enable/disable this command.
+   10.3. command code file is "arch/arm/cpu/aml_meson/m3/cmd_arc.c"
+   10.4. command format "arc <address>" address: memory address for arc code.
+   10.5. limitation: address cannot be in 0x49000000 ~ 0x4900c000 and size must be less than 16K Bytes.
+   10.6. arc program example:
+        int main(void)
+				{
+	        unsigned armrunning;
+	        char c;
+	        int i = 0,j;
+	        timer_init();
+	        serial_puts("arc >");
+	        while(1){
+		      		if(serial_tstc()==0){
+			           if((get_tick(0)&0x7FFFFFFF) < 100)
+				             serial_puts("enter\n");
+			           continue;
+		          }	
+		          i++;
+		          c=serial_getc();
+		          serial_putc(c);
+		          if(c == 'q') //exit arc program
+			            break;
+		          switch(c){
+	 			      case 't': //test ARM running
+                  writel(0x80000000|((i&0xffff)<<16)|1,P_AO_RTI_STATUS_REG0);
+			            armrunning = readl(P_AO_RTI_STATUS_REG1);
+				          serial_puts(" - ARM power on test: ");
+                  writel(((i&0xffff)<<16)|1,P_AO_RTI_STATUS_REG0);
+							    break;
+				       default:
+					         serial_puts(" - ! unsupported command\n");
+					         break;
+		           }
+		           serial_puts("arc >");
+	         }
+	
+	         serial_puts("exit arc loop\n");
+	         //must set this flag to let arm exit "arc" command.
+	         writel(0,P_AO_RTI_STATUS_REG0);
+	
+		       while(1){
+			        asm("SLEEP");
+		       }
+	        return 0;
+	      }
+	      
+11. Add new command "testpd"
+   11.1. test power down/up ARM cpu
+   11.2. using macro "CONFIG_CMD_RUNARC" to enable/disable this command.
+   11.3. command code file is "arch/arm/cpu/aml_meson/m3/cmd_arc.c"
+   11.4. command format "testpd <address>" address: memory address for arc code.
+   11.5. limitation: address cannot be in 0x49000000 ~ 0x4900c000 and size must be less than 16K Bytes.
+   11.6. arm reboot code file is "arch/arm/cpu/aml_meson/m3/firmware/reboot.S".
+   11.7. make file is "arch/arm/cpu/aml_meson/common/firmware/Makefile.rbt"
+   11.8. load file is "arch/arm/cpu/aml_meson/common/firmware/reboot.lds"
+   11.9. fixed address at 0
+   11.10. recovery environment address is at 0x4900EF00.
+   11.11. need ARC program to do power down and power up.
+   11.12. ARC code run at 0x49008000 and reboot code is at 0x4900B000
+   11.13. reboot binary file is "build/aml-reboot.bin"
+   11.14. ARC program example:
+         int main(void)
+         {
+	           unsigned cmd;
+	           char c;
+	           int i = 0,j;
+	           timer_init();
+	           serial_puts("ARC application running .......\n");
+	           while(1){
+		             cmd = readl(P_AO_RTI_STATUS_REG0);
+		             if(cmd == 0){
+			              t_delay();
+			              continue;
+		              }
+		              c = (char)cmd;
+		             if(c == 't'){
+		             	   /* copy reboot arm code to sdram */
+			               copy_reboot_code();
+			               /* power down and power up ARM cpu then reboot it */
+		                 test_pd();
+			               break; //exit the loop.
+		              }
+              		else if(c == 'q'){
+				              serial_puts(" - quit command loop\n");
+				              writel(0,P_AO_RTI_STATUS_REG0); //set command done flag
+			                break;
+		              }
+		              else
+				              serial_puts(" - cmd no support (ARC)\n");
+				         writel(0,P_AO_RTI_STATUS_REG0); //set command done flag
+	             }
+	             
+			        serial_puts("ARC enter sleep...\n");
+	            while(1){
+		              asm("SLEEP");
+	            }
+	            return 0;
+           }
