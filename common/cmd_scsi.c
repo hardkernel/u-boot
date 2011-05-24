@@ -193,11 +193,12 @@ void scsi_init(void)
 	scsi_scan(1);
 }
 
+#ifdef CONFIG_PARTITIONS
 block_dev_desc_t * scsi_get_dev(int dev)
 {
 	return (dev < CONFIG_SYS_SCSI_MAX_DEVICE) ? &scsi_dev_desc[dev] : NULL;
 }
-
+#endif
 
 /******************************************************************************
  * scsi boot command intepreter. Derived from diskboot

@@ -1264,12 +1264,14 @@ int mmc_register(struct mmc *mmc)
 	return 0;
 }
 
+#ifdef CONFIG_PARTITIONS
 block_dev_desc_t *mmc_get_dev(int dev)
 {
 	struct mmc *mmc = find_mmc_device(dev);
 
 	return mmc ? &mmc->block_dev : NULL;
 }
+#endif
 
 #define SD_CARD_DEV     0
 #define EMMC_INAND_DEV  1
