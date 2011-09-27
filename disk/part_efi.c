@@ -34,6 +34,7 @@
 #include <command.h>
 #include <ide.h>
 #include <malloc.h>
+#include <linux/ctype.h>
 #include "part_efi.h"
 
 #if defined(CONFIG_CMD_IDE) || \
@@ -103,11 +104,23 @@ static int is_pte_valid(gpt_entry * pte);
  * Public Functions (include/part.h)
  */
 
+static void unicode2asc(efi_char16_t *uni, unsigned char *s, size_t max_len)
+{
+	if (!max_len)
+		return;
+	while (*uni && --max_len) {	/* predecrement to leave room for \0 */
+		unsigned char *cp = (unsigned char *)(uni++);
+		*(s++) = (cp[1] || !isprint(cp[0])) ? '?' : cp[0];
+	}
+	*s = '\0';
+}
+
 void print_part_efi(block_dev_desc_t * dev_desc)
 {
 	gpt_header gpt_head;
-	gpt_entry **pgpt_pte = NULL;
+	gpt_entry *pgpt_pte;
 	int i = 0;
+	unsigned char name[ARRAY_SIZE(pgpt_pte->partition_name) + 1];
 
 	if (!dev_desc) {
 		printf("%s: Invalid Argument(s)\n", __FUNCTION__);
@@ -115,30 +128,34 @@ void print_part_efi(block_dev_desc_t * dev_desc)
 	}
 	/* This function validates AND fills in the GPT header and PTE */
 	if (is_gpt_valid(dev_desc, GPT_PRIMARY_PARTITION_TABLE_LBA,
-			 &(gpt_head), pgpt_pte) != 1) {
+			 &(gpt_head), &pgpt_pte) != 1) {
 		printf("%s: *** ERROR: Invalid GPT ***\n", __FUNCTION__);
 		return;
 	}
 
-	debug("%s: gpt-entry at 0x%08X\n", __FUNCTION__, (unsigned int)*pgpt_pte);
+	debug("%s: gpt-entry at 0x%p\n", __func__, pgpt_pte);
 
-	printf("Part  Start LBA  End LBA\n");
+	printf("Part  Start LBA     End LBA       Name\n");
 	for (i = 0; i < le32_to_int(gpt_head.num_partition_entries); i++) {
 
-		if (is_pte_valid(&(*pgpt_pte)[i])) {
-			printf("%s%d  0x%llX    0x%llX\n", GPT_ENTRY_NAME,
+		if (is_pte_valid(&pgpt_pte[i])) {
+			unicode2asc(pgpt_pte[i].partition_name, name,
+					sizeof(name));
+			printf("%s%d  0x%08llX    0x%08llX    %s\n",
+				GPT_ENTRY_NAME,
 				(i + 1),
-				le64_to_int((*pgpt_pte)[i].starting_lba),
-				le64_to_int((*pgpt_pte)[i].ending_lba));
+				le64_to_int(pgpt_pte[i].starting_lba),
+				le64_to_int(pgpt_pte[i].ending_lba),
+				name);
 		} else {
 			break;	/* Stop at the first non valid PTE */
 		}
 	}
 
 	/* Remember to free pte */
-	if (*pgpt_pte != NULL) {
+	if (pgpt_pte != NULL) {
 		debug("%s: Freeing pgpt_pte\n", __FUNCTION__);
-		free(*pgpt_pte);
+		free(pgpt_pte);
 	}
 	return;
 }
@@ -147,7 +164,7 @@ int get_partition_info_efi(block_dev_desc_t * dev_desc, int part,
 				disk_partition_t * info)
 {
 	gpt_header gpt_head;
-	gpt_entry **pgpt_pte = NULL;
+	gpt_entry *pgpt_pte;
 
 	/* "part" argument must be at least 1 */
 	if (!dev_desc || !info || part < 1) {
@@ -157,28 +174,36 @@ int get_partition_info_efi(block_dev_desc_t * dev_desc, int part,
 
 	/* This function validates AND fills in the GPT header and PTE */
 	if (is_gpt_valid(dev_desc, GPT_PRIMARY_PARTITION_TABLE_LBA,
-			&(gpt_head), pgpt_pte) != 1) {
+			&(gpt_head), &pgpt_pte) != 1) {
 		printf("%s: *** ERROR: Invalid GPT ***\n", __FUNCTION__);
 		return -1;
 	}
 
+	/* "part" argument must be less than the number of partition entries */
+	if (part > le32_to_int(gpt_head.num_partition_entries))
+		return -1;
+
 	/* The ulong casting limits the maximum disk size to 2 TB */
-	info->start = (ulong) le64_to_int((*pgpt_pte)[part - 1].starting_lba);
+	info->start = (ulong) le64_to_int(pgpt_pte[part - 1].starting_lba);
 	/* The ending LBA is inclusive, to calculate size, add 1 to it */
-	info->size = ((ulong)le64_to_int((*pgpt_pte)[part - 1].ending_lba) + 1)
+	info->size = ((ulong)le64_to_int(pgpt_pte[part - 1].ending_lba) + 1)
 		     - info->start;
 	info->blksz = GPT_BLOCK_SIZE;
 
-	sprintf((char *)info->name, "%s%d", GPT_ENTRY_NAME, part);
-	sprintf((char *)info->type, "U-Boot");
+	unicode2asc(pgpt_pte[part - 1].partition_name,
+			info->name, sizeof(info->name));
+	memcpy(info->type,
+		&pgpt_pte[part - 1].partition_type_guid, sizeof(efi_guid_t));
+	memcpy(info->type + sizeof(efi_guid_t),
+		&pgpt_pte[part - 1].unique_partition_guid, sizeof(efi_guid_t));
 
 	debug("%s: start 0x%lX, size 0x%lX, name %s", __FUNCTION__,
 		info->start, info->size, info->name);
 
 	/* Remember to free pte */
-	if (*pgpt_pte != NULL) {
+	if (pgpt_pte != NULL) {
 		debug("%s: Freeing pgpt_pte\n", __FUNCTION__);
-		free(*pgpt_pte);
+		free(pgpt_pte);
 	}
 	return 0;
 }
