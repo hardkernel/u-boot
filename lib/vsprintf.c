@@ -238,7 +238,8 @@ static noinline char* put_dec(char *buf, unsigned NUM_TYPE num)
 #define SMALL	32		/* Must be 32 == 0x20 */
 #define SPECIAL	64		/* 0x */
 
-static char *number(char *buf, unsigned NUM_TYPE num, int base, int size, int precision, int type)
+#define APPEND_CHAR(a) do { if (!(buf_sz--)) goto size_overflow; else *buf++ = (a); } while(0)
+static char *number(char *buf, size_t buf_sz, unsigned NUM_TYPE num, int base, int size, int precision, int type)
 {
 	/* we are called with base 8, 10 or 16, only, thus don't need "G..."  */
 	static const char digits[16] = "0123456789ABCDEF"; /* "GHIJKLMNOPQRSTUVWXYZ"; */
@@ -302,35 +303,38 @@ static char *number(char *buf, unsigned NUM_TYPE num, int base, int size, int pr
 	size -= precision;
 	if (!(type & (ZEROPAD+LEFT)))
 		while(--size >= 0)
-			*buf++ = ' ';
+			APPEND_CHAR(' ');
 	/* sign */
 	if (sign)
-		*buf++ = sign;
+		APPEND_CHAR(sign);
 	/* "0x" / "0" prefix */
 	if (need_pfx) {
-		*buf++ = '0';
+		APPEND_CHAR('0');
 		if (base == 16)
-			*buf++ = ('X' | locase);
+			APPEND_CHAR('X' | locase);
 	}
 	/* zero or space padding */
 	if (!(type & LEFT)) {
 		char c = (type & ZEROPAD) ? '0' : ' ';
 		while (--size >= 0)
-			*buf++ = c;
+			APPEND_CHAR(c);
 	}
 	/* hmm even more zero padding? */
 	while (i <= --precision)
-		*buf++ = '0';
+		APPEND_CHAR('0');
 	/* actual digits of result */
 	while (--i >= 0)
-		*buf++ = tmp[i];
+		APPEND_CHAR(tmp[i]);
 	/* trailing space padding */
 	while (--size >= 0)
-		*buf++ = ' ';
+		APPEND_CHAR(' ');
+
+size_overflow:
 	return buf;
 }
+#undef APPEND_CHAR
 
-static char *string(char *buf, char *s, int field_width, int precision, int flags)
+static char *string(char *buf, size_t size, char *s, int field_width, int precision, int flags)
 {
 	int len, i;
 
@@ -340,17 +344,23 @@ static char *string(char *buf, char *s, int field_width, int precision, int flag
 	len = strnlen(s, precision);
 
 	if (!(flags & LEFT))
-		while (len < field_width--)
+		while ((len < field_width--) && size) {
 			*buf++ = ' ';
-	for (i = 0; i < len; ++i)
+			size--;
+		}
+	for (i = 0; (i < len) && size; ++i) {
 		*buf++ = *s++;
-	while (len < field_width--)
+		size--;
+	}
+	while ((len < field_width--) && size) {
 		*buf++ = ' ';
+		size--;
+	}
 	return buf;
 }
 
 #ifdef CONFIG_CMD_NET
-static char *mac_address_string(char *buf, u8 *addr, int field_width,
+static char *mac_address_string(char *buf, size_t size, u8 *addr, int field_width,
 				int precision, int flags)
 {
 	char mac_addr[6 * 3]; /* (6 * 2 hex digits), 5 colons and trailing zero */
@@ -364,10 +374,10 @@ static char *mac_address_string(char *buf, u8 *addr, int field_width,
 	}
 	*p = '\0';
 
-	return string(buf, mac_addr, field_width, precision, flags & ~SPECIAL);
+	return string(buf, size, mac_addr, field_width, precision, flags & ~SPECIAL);
 }
 
-static char *ip6_addr_string(char *buf, u8 *addr, int field_width,
+static char *ip6_addr_string(char *buf, size_t size, u8 *addr, int field_width,
 			 int precision, int flags)
 {
 	char ip6_addr[8 * 5]; /* (8 * 4 hex digits), 7 colons and trailing zero */
@@ -382,10 +392,10 @@ static char *ip6_addr_string(char *buf, u8 *addr, int field_width,
 	}
 	*p = '\0';
 
-	return string(buf, ip6_addr, field_width, precision, flags & ~SPECIAL);
+	return string(buf, size, ip6_addr, field_width, precision, flags & ~SPECIAL);
 }
 
-static char *ip4_addr_string(char *buf, u8 *addr, int field_width,
+static char *ip4_addr_string(char *buf, size_t size, u8 *addr, int field_width,
 			 int precision, int flags)
 {
 	char ip4_addr[4 * 4]; /* (4 * 3 decimal digits), 3 dots and trailing zero */
@@ -403,7 +413,7 @@ static char *ip4_addr_string(char *buf, u8 *addr, int field_width,
 	}
 	*p = '\0';
 
-	return string(buf, ip4_addr, field_width, precision, flags & ~SPECIAL);
+	return string(buf, size, ip4_addr, field_width, precision, flags & ~SPECIAL);
 }
 #endif
 
@@ -425,10 +435,10 @@ static char *ip4_addr_string(char *buf, u8 *addr, int field_width,
  * function pointers are really function descriptors, which contain a
  * pointer to the real address.
  */
-static char *pointer(const char *fmt, char *buf, void *ptr, int field_width, int precision, int flags)
+static char *pointer(const char *fmt, char *buf, size_t size, void *ptr, int field_width, int precision, int flags)
 {
 	if (!ptr)
-		return string(buf, "(null)", field_width, precision, flags);
+		return string(buf, size, "(null)", field_width, precision, flags);
 
 #ifdef CONFIG_CMD_NET
 	switch (*fmt) {
@@ -436,15 +446,15 @@ static char *pointer(const char *fmt, char *buf, void *ptr, int field_width, int
 		flags |= SPECIAL;
 		/* Fallthrough */
 	case 'M':
-		return mac_address_string(buf, ptr, field_width, precision, flags);
+		return mac_address_string(buf, size, ptr, field_width, precision, flags);
 	case 'i':
 		flags |= SPECIAL;
 		/* Fallthrough */
 	case 'I':
 		if (fmt[1] == '6')
-			return ip6_addr_string(buf, ptr, field_width, precision, flags);
+			return ip6_addr_string(buf, size, ptr, field_width, precision, flags);
 		if (fmt[1] == '4')
-			return ip4_addr_string(buf, ptr, field_width, precision, flags);
+			return ip4_addr_string(buf, size, ptr, field_width, precision, flags);
 		flags &= ~SPECIAL;
 		break;
 	}
@@ -454,12 +464,13 @@ static char *pointer(const char *fmt, char *buf, void *ptr, int field_width, int
 		field_width = 2*sizeof(void *);
 		flags |= ZEROPAD;
 	}
-	return number(buf, (unsigned long) ptr, 16, field_width, precision, flags);
+	return number(buf, size, (unsigned long) ptr, 16, field_width, precision, flags);
 }
 
 /**
- * vsprintf - Format a string and place it in a buffer
+ * __vsnprintf - Format a string and place it in a buffer
  * @buf: The buffer to place the result into
+ * @size: The maximum number of characters to print into the buffer.
  * @fmt: The format string to use
  * @args: Arguments for the format string
  *
@@ -474,11 +485,12 @@ static char *pointer(const char *fmt, char *buf, void *ptr, int field_width, int
  * Call this function if you are already dealing with a va_list.
  * You probably want sprintf() instead.
  */
-int vsprintf(char *buf, const char *fmt, va_list args)
+#define APPEND_CHAR(a) do { if (!(size--)) goto size_overflow; else *str++ = (a); } while(0)
+static int __vsnprintf(char *buf, size_t size, const char *fmt, va_list args)
 {
 	unsigned NUM_TYPE num;
 	int base;
-	char *str;
+	char *str, *tmp;
 
 	int flags;		/* flags to number() */
 
@@ -494,7 +506,7 @@ int vsprintf(char *buf, const char *fmt, va_list args)
 
 	for (; *fmt ; ++fmt) {
 		if (*fmt != '%') {
-			*str++ = *fmt;
+			APPEND_CHAR(*fmt);
 			continue;
 		}
 
@@ -558,20 +570,24 @@ int vsprintf(char *buf, const char *fmt, va_list args)
 		case 'c':
 			if (!(flags & LEFT))
 				while (--field_width > 0)
-					*str++ = ' ';
-			*str++ = (unsigned char) va_arg(args, int);
+					APPEND_CHAR(' ');
+			APPEND_CHAR((unsigned char) va_arg(args, int));
 			while (--field_width > 0)
-				*str++ = ' ';
+				APPEND_CHAR(' ');
 			continue;
 
 		case 's':
-			str = string(str, va_arg(args, char *), field_width, precision, flags);
+			tmp = string(str, size, va_arg(args, char *), field_width, precision, flags);
+			size -= (tmp - str);
+			str = tmp;
 			continue;
 
 		case 'p':
-			str = pointer(fmt+1, str,
+			tmp = pointer(fmt+1, str, size,
 					va_arg(args, void *),
 					field_width, precision, flags);
+			size -= (tmp - str);
+			str = tmp;
 			/* Skip all alphanumeric pointer suffixes */
 			while (isalnum(fmt[1]))
 				fmt++;
@@ -588,7 +604,7 @@ int vsprintf(char *buf, const char *fmt, va_list args)
 			continue;
 
 		case '%':
-			*str++ = '%';
+			APPEND_CHAR('%');
 			continue;
 
 		/* integer number formats - set up the flags and "break" */
@@ -609,9 +625,9 @@ int vsprintf(char *buf, const char *fmt, va_list args)
 			break;
 
 		default:
-			*str++ = '%';
+			APPEND_CHAR('%');
 			if (*fmt)
-				*str++ = *fmt;
+				APPEND_CHAR(*fmt);
 			else
 				--fmt;
 			continue;
@@ -635,10 +651,38 @@ int vsprintf(char *buf, const char *fmt, va_list args)
 			if (flags & SIGN)
 				num = (signed int) num;
 		}
-		str = number(str, num, base, field_width, precision, flags);
+
+		tmp = number(str, size, num, base, field_width, precision, flags);
+		size -= (tmp - str);
+		str = tmp;
 	}
-	*str = '\0';
+
+	if (size)
+		*str = '\0';
+size_overflow:
 	return str-buf;
+}
+#undef APPEND_CHAR
+
+/**
+ * vsprintf - Format a string and place it in a buffer
+ * @buf: The buffer to place the result into
+ * @fmt: The format string to use
+ * @args: Arguments for the format string
+ *
+ * This function follows C99 vsprintf, but has some extensions:
+ * %pS output the name of a text symbol
+ * %pF output the name of a function pointer
+ * %pR output the address range in a struct resource
+ *
+ * The function returns the number of characters written
+ * into @buf.
+ *
+ * Call this function if you are already dealing with a va_list.
+ * You probably want sprintf() instead.
+ */
+int vsprintf(char *buf, const char *fmt, va_list args) {
+	return __vsnprintf(buf, ~((size_t)0), fmt, args);
 }
 
 /**
@@ -659,6 +703,29 @@ int sprintf(char * buf, const char *fmt, ...)
 
 	va_start(args, fmt);
 	i=vsprintf(buf,fmt,args);
+	va_end(args);
+	return i;
+}
+
+/**
+ * sprintf - Format a string and place it in a buffer
+ * @buf: The buffer to place the result into
+ * @size: The maximum number of characters to print into the buffer.
+ * @fmt: The format string to use
+ * @...: Arguments for the format string
+ *
+ * The function returns the number of characters written
+ * into @buf.
+ *
+ * See the vsprintf() documentation for format string extensions over C99.
+ */
+int snprintf(char * buf, size_t size, const char *fmt, ...)
+{
+	va_list args;
+	int i;
+
+	va_start(args, fmt);
+	i=__vsnprintf(buf,size,fmt,args);
 	va_end(args);
 	return i;
 }

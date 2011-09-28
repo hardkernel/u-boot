@@ -646,6 +646,8 @@ void	panic(const char *fmt, ...)
 		__attribute__ ((format (__printf__, 1, 2)));
 int	sprintf(char * buf, const char *fmt, ...)
 		__attribute__ ((format (__printf__, 2, 3)));
+int	snprintf(char * buf, size_t size, const char *fmt, ...)
+		__attribute__ ((format (__printf__, 3, 4)));
 int	vsprintf(char *buf, const char *fmt, va_list args);
 
 /* lib/strmhz.c */
