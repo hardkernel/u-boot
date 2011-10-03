@@ -1,0 +1,14 @@
+This Directory contains the following files:
+
+build.sh: 	Utility to build and flash the boar specific u-boot images
+
+export.sh: 	Utility to export the build environment. Please update the 
+		correct tool-chain path in this file.
+
+FWL1:		First 8K firmware for the needed for the emdkv310 EVT1 boards.
+
+NOTE******
+Please keep this directory in the TOPDIR(U-Boot-source).
+e.g. 	if u-boot source lies in a/u-boot-samsung
+	place this directory at a/u-boot-samsung
+
