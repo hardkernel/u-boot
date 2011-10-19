@@ -916,8 +916,8 @@ static dir_entry *get_dentfromdir (fsdata *mydata, int startsect,
 			}
 			if ((dentptr->attr & ATTR_VOLUME)) {
 #ifdef CONFIG_SUPPORT_VFAT
-				if ((dentptr->attr & ATTR_VFAT) &&
-				    (dentptr-> name[0] & LAST_LONG_ENTRY_MASK)) {
+				if ((dentptr->attr & ATTR_VFAT) == ATTR_VFAT &&
+				    (dentptr->name[0] & LAST_LONG_ENTRY_MASK)) {
 					prevcksum = ((dir_slot *)dentptr)->alias_checksum;
 					get_vfatname(mydata, curclust,
 						     get_dentfromdir_block,
