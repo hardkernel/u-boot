@@ -1,0 +1,82 @@
+It is useful to be able to access partitions on block devices in a general
+purpose fashion, however to do so can require device specific knowledge.  For
+example, some devices require erases before writes and some partitions need to
+have the hardware in a different configuration (e.g. different forms of ECC
+for different partitions stored in NAND).  To allow such things to be handled
+in a generic fashion, the following functions are provided:
+
+int get_partition_by_name(block_dev_desc_t *dev, const char *partition_name,
+				disk_partition_t *partition);
+
+enum erase_option { ERASE_BEFORE_WRITE, ERASE_ALWAYS };
+int partition_erase_blks(block_dev_desc_t *dev, disk_partition_t *partition,
+				lbaint_t *blkcnt, enum erase_option opt);
+int partition_erase_bytes(block_dev_desc_t *dev, disk_partition_t *partition,
+				loff_t *bytecnt, enum erase_option opt);
+
+int partition_read_blks(block_dev_desc_t *dev, disk_partition_t *partition,
+				lbaint_t *blkcnt, void *buffer);
+int partition_read_bytes(block_dev_desc_t *dev, disk_partition_t *partition,
+				loff_t *bytecnt, void *buffer);
+
+int partition_write_blks(block_dev_desc_t *dev, disk_partition_t *partition,
+				lbaint_t *blkcnt, const void *buffer);
+int partition_write_bytes(block_dev_desc_t *dev, disk_partition_t *partition,
+				loff_t *bytecnt, const void *buffer);
+
+To accomplish the partition dependent configuration, these functions will use
+environment variables to specify what commands need to be executed before and
+after the operation is performed.  The names of the environment variables that
+will be used are of the form:
+
+    <when>_<operation>.<partition_name>
+
+where:
+
+    <when> is "pre" or "post"
+    <operation> is "erase", "read" or "write"
+    <partition_name> is the name of the partition that the commands apply to.
+
+As an example of using these, some boards use NAND memory but require
+different ECC methods for different MTD partitions.  Historically, these
+partitions were written using something like the following sequence of
+commands:
+
+    nandecc hw
+    nand erase.part x-loader
+    nand write 0x80000000 x-loader  # Write x-loader from memory at 0x80000000
+    nandecc sw
+
+To use the partition functions for doing this, your board configuration should
+include:
+
+    "pre_write.xloader=nandecc hw\0post_write.xloader=nandecc sw\0"
+
+in the CONFIG_EXTRA_ENV_SETTINGS or else have executed the commands:
+
+    setenv pre_write.x-loader nandecc hw
+    setenv post_write.x-loader nandecc sw
+
+With those environment variables set and using the blk command, you can simply
+do:
+
+    blk write 0x80000000 x-loader
+
+The blk write command will call partition_write_blks() which in turn takes
+care of fetching the values of the environment variables, and if they are set,
+executing them as U-Boot commands.  In this case, that means that the NAND's
+ECC will be set to use hardware ECC before the partition is written and then
+set back to software ECC after the partition is written.
+
+It should be noted that whether or not an erase is done before a write is
+controlled by the C preprocessor define CONFIG_ERASE_PARTITION_ALWAYS.  If it
+is defined in the board configuration file, the following sequence will be
+followed when a write is done:
+
+    pre_write.<partition_name> commands
+      erase
+      write
+    post_write.<partition_name> commands
+
+Note that this means that if you need to set pre_erase and/or post_erase,
+you'll probably need pre_write and post_write to contain those same commands.

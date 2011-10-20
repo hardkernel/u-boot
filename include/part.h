@@ -107,12 +107,36 @@ block_dev_desc_t* systemace_get_dev(int dev);
 block_dev_desc_t* mg_disk_get_dev(int dev);
 
 /* disk/part.c */
+/* Refer to doc/README.partition_funcs for information about these functions. */
+int get_partition_by_name(block_dev_desc_t *dev, const char *partition_name,
+				disk_partition_t *partition);
+int partition_erase_blks(block_dev_desc_t *dev, disk_partition_t *partition,
+				lbaint_t *blkcnt);
+int partition_erase_bytes(block_dev_desc_t *dev, disk_partition_t *partition,
+				loff_t *bytecnt);
+int partition_read_blks(block_dev_desc_t *dev, disk_partition_t *partition,
+				lbaint_t *blkcnt, void *buffer);
+int partition_read_bytes(block_dev_desc_t *dev, disk_partition_t *partition,
+				loff_t *bytecnt, void *buffer);
+int partition_write_blks(block_dev_desc_t *dev, disk_partition_t *partition,
+				lbaint_t *blkcnt, const void *buffer);
+int partition_write_bytes(block_dev_desc_t *dev, disk_partition_t *partition,
+				loff_t *bytecnt, const void *buffer);
 int get_partition_info (block_dev_desc_t * dev_desc, int part, disk_partition_t *info);
 void print_part (block_dev_desc_t *dev_desc);
 void  init_part (block_dev_desc_t *dev_desc);
 void dev_print(block_dev_desc_t *dev_desc);
+
+#ifndef CONFIG_MIN_PARTITION_NUM
+#define CONFIG_MIN_PARTITION_NUM 0
+#endif
+#ifndef CONFIG_MAX_PARTITION_NUM
+#define CONFIG_MAX_PARTITION_NUM 10
+#endif
 #else
 static inline block_dev_desc_t* get_dev(char* ifname, int dev) { return NULL; }
+static inline block_dev_desc_t *get_dev_by_name(char* ifname,
+				int dev) { return NULL; }
 static inline block_dev_desc_t* ide_get_dev(int dev) { return NULL; }
 static inline block_dev_desc_t* sata_get_dev(int dev) { return NULL; }
 static inline block_dev_desc_t* scsi_get_dev(int dev) { return NULL; }
@@ -120,12 +144,39 @@ static inline block_dev_desc_t* usb_stor_get_dev(int dev) { return NULL; }
 static inline block_dev_desc_t* mmc_get_dev(int dev) { return NULL; }
 static inline block_dev_desc_t* systemace_get_dev(int dev) { return NULL; }
 static inline block_dev_desc_t* mg_disk_get_dev(int dev) { return NULL; }
-
+static inline block_dev_desc_t *nand_get_dev(int dev) { return NULL; }
+static inline int get_partition_by_name(block_dev_desc_t *dev,
+				const char *partition_name,
+				disk_partition_t *partition) { return -ENODEV; }
+static inline int partition_erase_blks(block_dev_desc_t *dev,
+				disk_partition_t *partition,
+				lbaint_t *blkcnt) { return -ENODEV; }
+static inline int partition_erase_bytes(block_dev_desc_t *dev,
+				disk_partition_t *partition,
+				loff_t *bytecnt) { return -ENODEV; }
+static inline int partition_read_blks(block_dev_desc_t *dev,
+				disk_partition_t *partition, lbaint_t *blkcnt,
+				void *buffer) { return -ENODEV; }
+static inline int partition_read_bytes(block_dev_desc_t *dev,
+				disk_partition_t *partition, loff_t *bytecnt,
+				void *buffer) { return -ENODEV; }
+static inline int partition_write_blks(block_dev_desc_t *dev,
+				disk_partition_t *partition, lbaint_t *blkcnt,
+				const void *buffer) { return -ENODEV; }
+static inline int partition_write_bytes(block_dev_desc_t *dev,
+				disk_partition_t *partition, loff_t *bytecnt,
+				const void *buffer) { return -ENODEV; }
 static inline int get_partition_info (block_dev_desc_t * dev_desc, int part,
 	disk_partition_t *info) { return -1; }
 static inline void print_part (block_dev_desc_t *dev_desc) {}
 static inline void  init_part (block_dev_desc_t *dev_desc) {}
 static inline void dev_print(block_dev_desc_t *dev_desc) {}
+#ifndef CONFIG_MIN_PARTITION_NUM
+#define CONFIG_MIN_PARTITION_NUM 0
+#endif
+#ifndef CONFIG_MAX_PARTITION_NUM
+#define CONFIG_MAX_PARTITION_NUM 0
+#endif
 #endif
 
 #ifdef CONFIG_MAC_PARTITION

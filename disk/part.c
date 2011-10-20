@@ -23,6 +23,7 @@
 
 #include <common.h>
 #include <command.h>
+#include <errno.h>
 #include <ide.h>
 #include <part.h>
 
@@ -97,10 +98,347 @@ block_dev_desc_t *get_dev(char* ifname, int dev)
 	}
 	return NULL;
 }
+/*
+ * Given a devname with a concatenated ifname and an id (e.g. "mmc0"), return
+ * a pointer to the associated block device structure.
+ */
+block_dev_desc_t *get_dev_by_name(char *devname)
+{
+	char *digit_pointer, *ep, c;
+	int devid;
+	for (digit_pointer = devname; (c = *digit_pointer); ) {
+		if ('0' <= c && c <= '9') {
+			/*
+			 * Due to the ambiguity of determining if characters in
+			 * the range of 'a' to 'f' are hex digits or part of
+			 * the device interface, we use base 10.
+			 */
+			devid = (int)simple_strtoul(digit_pointer, &ep, 10);
+			if (*ep != '\0') {
+				/*
+				 * There's non-digits after our digits, keep
+				 * scanning for digits at the end.
+				 */
+				digit_pointer = ep;
+				continue;
+			}
+			/*
+			 * Normally, you would think we would put a '\0' at
+			 * digit_pointer, but we don't want to modify the
+			 * passed devname, and get_dev() uses strncmp() so it
+			 * will match even if there is "junk" after the match.
+			 * In our case, the "junk" is the id that we just
+			 * parsed.  Go ahead and call get_dev().
+			 */
+			return get_dev(devname, devid);
+		}
+		digit_pointer++;
+	}
+	return NULL;
+}
+
+int get_partition_by_name(block_dev_desc_t *dev, const char *partition_name,
+					disk_partition_t *partition_info)
+{
+	int i;
+	if (!dev)
+		return -ENODEV;
+	if (!partition_name || !partition_info)
+		return -EINVAL;
+	if (dev->part_type == PART_TYPE_UNKNOWN)
+		return -ENOENT;
+	for (i = CONFIG_MIN_PARTITION_NUM; i <= CONFIG_MAX_PARTITION_NUM; i++) {
+		if (get_partition_info(dev, i, partition_info))
+			continue;
+		if (!strcmp((char *)partition_info->name, partition_name))
+			return 0;
+	}
+	return -ENOENT;
+}
+
+/*
+ * Note that the partition functions use environment variables for storing
+ * commands that need to be executed before and after the operations.
+ * Refer to doc/README.partition_funcs for information about this.
+ */
+
+/*
+ * Provide a helper function that will get the value of an environment
+ * variable and interpret the value as commands to be run.  This is used to
+ * allow users to have commands executed before and after partition
+ * operations.  The environment variable that will be used is based upon the
+ * three passed arguments.  Assuming that you want commands to be executed
+ * before and after writing to a partition named "bob", you could do something
+ * like:
+ *	setenv pre_write.bob echo before
+ *	setenv post_write.bob echo after
+ */
+enum when_t {BEFORE, AFTER};
+static int run_env(enum when_t when, const char *op_str, const uchar *ptn_name)
+{
+	char var_name[sizeof("post_write.")
+				+ sizeof(((disk_partition_t *)0)->name)
+				+ 8 /* Extra future-proofing insurance */];
+	char *var_val;
+	int len;
+
+	len = snprintf(var_name, sizeof(var_name), "%s_%s.%s",
+		       (when == BEFORE) ? "pre" : "post", op_str, ptn_name);
+	if (len >= sizeof(var_name))
+		return -EOVERFLOW;
+
+	var_val = getenv(var_name);
+	if (var_val && run_command(var_val, 0) < 0)
+		return -ENOEXEC;
+	return 0;
+}
+
+/* Simple helper for partition_* functions to validate arguments. */
+static int _partition_validate(block_dev_desc_t *dev, disk_partition_t *ptn,
+			loff_t *bytecnt, lbaint_t *blkcnt, const void *buffer)
+{
+	if (!dev)
+		return -ENODEV;
+	if (!ptn || !buffer || (blkcnt && bytecnt) /* One or the other */)
+		return -EINVAL;
+	if (blkcnt && *blkcnt > ptn->size)
+		return -EFBIG;
+	/*
+	 * Don't validate bytecnt yet because the pre_ commands
+	 * (e.g. nandoob enable) may change the block size.
+	 */
+	return 0;
+}
+
+static loff_t get_and_zero_loff_t(loff_t *p)
+{
+	loff_t n;
+	if (p) {
+		n = *p;
+		*p = 0;
+		return n;
+	}
+	return 0;
+}
+static lbaint_t get_and_zero_lbaint_t(lbaint_t *p)
+{
+	lbaint_t n;
+	if (p) {
+		n = *p;
+		*p = 0;
+		return n;
+	}
+	return 0;
+}
+/*
+ * Define the guts of the partition_ functions.  The _blks and _bytes
+ * permutations will call these to do the actual work.
+ */
+static int _partition_erase(block_dev_desc_t *dev, disk_partition_t *ptn,
+				loff_t *bytecnt_p, lbaint_t *blkcnt_p)
+{
+	/*
+	 * Fetch the number of bytes or blocks and then zero them right away
+	 * to make the error handling easier.
+	 */
+	loff_t bytes_to_do = get_and_zero_loff_t(bytecnt_p);
+	lbaint_t blks_to_do = get_and_zero_lbaint_t(blkcnt_p), blks_done;
+	int err = _partition_validate(dev, ptn, bytecnt_p, blkcnt_p,
+							(void *)-1/*fake*/);
+	if (err)
+		return err;
+
+	err = run_env(BEFORE, "erase", ptn->name);
+	if (err)
+		return err;
+
+	if (bytes_to_do) {
+		blks_to_do = DIV_ROUND_UP(bytes_to_do, dev->blksz);
+		if (blks_to_do > ptn->size)
+			return -EFBIG;
+	} else if (!blks_to_do)
+		blks_to_do = ptn->size;
+
+	blks_done = dev->block_erase(dev->dev, ptn->start, blks_to_do);
+	if (blkcnt_p)
+		*blkcnt_p = blks_done;
+	if (bytecnt_p)
+		*bytecnt_p = (loff_t)blks_done * dev->blksz;
+
+	err = run_env(AFTER, "erase", ptn->name);
+
+	if (blks_done != blks_to_do)
+		return -EIO;
+	if (err)
+		return err;
+	return 0;
+}
+int partition_erase_blks(block_dev_desc_t *dev, disk_partition_t *ptn,
+							lbaint_t *blkcnt)
+{
+	return _partition_erase(dev, ptn, NULL, blkcnt);
+}
+int partition_erase_bytes(block_dev_desc_t *dev, disk_partition_t *ptn,
+							loff_t *bytecnt)
+{
+	return _partition_erase(dev, ptn, bytecnt, NULL);
+}
+
+static int _partition_read(block_dev_desc_t *dev, disk_partition_t *ptn,
+				loff_t *bytecnt_p, lbaint_t *blkcnt_p,
+				void *buffer)
+{
+	/*
+	 * Fetch the number of bytes or blocks and then zero them right away
+	 * to make the error handling easier.
+	 */
+	loff_t bytes_to_do = get_and_zero_loff_t(bytecnt_p);
+	lbaint_t blks_to_do = get_and_zero_lbaint_t(blkcnt_p), blks_done;
+	int err = _partition_validate(dev, ptn, bytecnt_p, blkcnt_p, buffer);
+	if (err)
+		return err;
+
+	err = run_env(BEFORE, "read", ptn->name);
+	if (err)
+		return err;
+
+	if (bytes_to_do) {
+		blks_to_do = DIV_ROUND_UP(bytes_to_do, dev->blksz);
+		if (blks_to_do > ptn->size)
+			return -EFBIG;
+	} else if (!blks_to_do)
+		blks_to_do = ptn->size;
+
+	blks_done = dev->block_read(dev->dev, ptn->start, blks_to_do, buffer);
+	if (blkcnt_p)
+		*blkcnt_p = blks_done;
+	if (bytecnt_p)
+		*bytecnt_p = (loff_t)blks_done * dev->blksz;
+
+	err = run_env(AFTER, "read", ptn->name);
+
+	if (blks_done != blks_to_do)
+		return -EIO;
+	if (err)
+		return err;
+	return 0;
+}
+int partition_read_blks(block_dev_desc_t *dev, disk_partition_t *ptn,
+					lbaint_t *blkcnt, void *buffer)
+{
+	return _partition_read(dev, ptn, NULL, blkcnt, buffer);
+}
+int partition_read_bytes(block_dev_desc_t *dev, disk_partition_t *ptn,
+					loff_t *bytecnt, void *buffer)
+{
+	return _partition_read(dev, ptn, bytecnt, NULL, buffer);
+}
+
+static int _partition_write(block_dev_desc_t *dev, disk_partition_t *ptn,
+				loff_t *bytecnt_p, lbaint_t *blkcnt_p,
+				const void *buffer)
+{
+#if defined(CONFIG_ERASE_PARTITION_ALWAYS)
+	int do_erase = 1;
+#else
+	int do_erase = 0;
+#endif
+	/*
+	 * Fetch the number of bytes or blocks and then zero them right away
+	 * to make the error handling easier.
+	 */
+	loff_t bytes_to_do = get_and_zero_loff_t(bytecnt_p);
+	lbaint_t blks_done,  blks_to_do = get_and_zero_lbaint_t(blkcnt_p);
+	int err = _partition_validate(dev, ptn, bytecnt_p, blkcnt_p, buffer);
+	if (err)
+		return err;
+
+	err = run_env(BEFORE, "write", ptn->name);
+	if (!err) {
+		if (bytes_to_do) {
+			blks_to_do = DIV_ROUND_UP(bytes_to_do, dev->blksz);
+			if (blks_to_do > ptn->size)
+				err = -EFBIG;
+		} else if (!blks_to_do)
+			blks_to_do = ptn->size;
+	}
+	blks_done = blks_to_do;
+	if (!err) {
+		if (do_erase)
+			blks_done = dev->block_erase(dev->dev, ptn->start,
+								blks_to_do);
+		if (!do_erase || (blks_done == blks_to_do)) {
+			blks_done = dev->block_write(dev->dev, ptn->start,
+							blks_to_do, buffer);
+			if (blkcnt_p)
+				*blkcnt_p = blks_done;
+			if (bytecnt_p)
+				*bytecnt_p = (loff_t)blks_done * dev->blksz;
+		}
+
+		err = run_env(AFTER, "write", ptn->name);
+	}
+
+	if (blks_done != blks_to_do)
+		return -EIO;
+	if (err)
+		return err;
+	return 0;
+}
+
+int partition_write_blks(block_dev_desc_t *dev, disk_partition_t *ptn,
+					lbaint_t *blkcnt, const void *buffer)
+{
+	return _partition_write(dev, ptn, NULL, blkcnt, buffer);
+}
+int partition_write_bytes(block_dev_desc_t *dev, disk_partition_t *ptn,
+					loff_t *bytecnt, const void *buffer)
+{
+	return _partition_write(dev, ptn, bytecnt, NULL, buffer);
+}
 #else
 block_dev_desc_t *get_dev(char* ifname, int dev)
 {
 	return NULL;
+}
+block_dev_desc_t *get_dev_by_name(char *devname)
+{
+	return NULL;
+}
+int get_partition_by_name(block_dev_desc_t *dev, const char *partition_name,
+					disk_partition_t *partition_info)
+{
+	return -ENODEV;
+}
+int partition_erase_blks(block_dev_desc_t *dev, disk_partition_t *ptn,
+							lbaint_t *blkcnt)
+{
+	return -ENODEV;
+}
+int partition_erase_bytes(block_dev_desc_t *dev, disk_partition_t *partition,
+							loff_t *bytecnt)
+{
+	return -ENODEV;
+}
+int partition_read_blks(block_dev_desc_t *dev, disk_partition_t *ptn,
+					lbaint_t *blkcnt, void *buffer)
+{
+	return -ENODEV;
+}
+int partition_read_bytes(block_dev_desc_t *dev, disk_partition_t *partition,
+					loff_t *bytecnt, void *buffer)
+{
+	return -ENODEV;
+}
+int partition_write_blks(block_dev_desc_t *dev, disk_partition_t *ptn,
+					lbaint_t *blkcnt, const void *buffer)
+{
+	return -ENODEV;
+}
+int partition_write_bytes(block_dev_desc_t *dev, disk_partition_t *partition,
+					loff_t *bytecnt, const void *buffer)
+{
+	return -ENODEV;
 }
 #endif
 
