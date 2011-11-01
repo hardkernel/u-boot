@@ -110,6 +110,12 @@ block_dev_desc_t* mg_disk_get_dev(int dev);
 /* Refer to doc/README.partition_funcs for information about these functions. */
 int get_partition_by_name(block_dev_desc_t *dev, const char *partition_name,
 				disk_partition_t *partition);
+int partition_erase_pre(disk_partition_t *ptn);
+int partition_erase_post(disk_partition_t *ptn);
+int partition_read_pre(disk_partition_t *ptn);
+int partition_read_post(disk_partition_t *ptn);
+int partition_write_pre(disk_partition_t *ptn);
+int partition_write_post(disk_partition_t *ptn);
 int partition_erase_blks(block_dev_desc_t *dev, disk_partition_t *partition,
 				lbaint_t *blkcnt);
 int partition_erase_bytes(block_dev_desc_t *dev, disk_partition_t *partition,
@@ -148,6 +154,18 @@ static inline block_dev_desc_t *nand_get_dev(int dev) { return NULL; }
 static inline int get_partition_by_name(block_dev_desc_t *dev,
 				const char *partition_name,
 				disk_partition_t *partition) { return -ENODEV; }
+static inline int partition_erase_pre(disk_partition_t *ptn)
+							{ return -ENODEV; }
+static inline int partition_erase_post(disk_partition_t *ptn)
+							{ return -ENODEV; }
+static inline int partition_read_pre(disk_partition_t *ptn)
+							{ return -ENODEV; }
+static inline int partition_read_post(disk_partition_t *ptn)
+							{ return -ENODEV; }
+static inline int partition_write_pre(disk_partition_t *ptn)
+							{ return -ENODEV; }
+static inline int partition_write_post(disk_partition_t *ptn)
+							{ return -ENODEV; }
 static inline int partition_erase_blks(block_dev_desc_t *dev,
 				disk_partition_t *partition,
 				lbaint_t *blkcnt) { return -ENODEV; }

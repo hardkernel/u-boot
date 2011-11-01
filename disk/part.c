@@ -192,6 +192,30 @@ static int run_env(enum when_t when, const char *op_str, const uchar *ptn_name)
 		return -ENOEXEC;
 	return 0;
 }
+int partition_erase_pre(disk_partition_t *ptn)
+{
+	return run_env(BEFORE, "erase", ptn->name);
+}
+int partition_erase_post(disk_partition_t *ptn)
+{
+	return run_env(AFTER, "erase", ptn->name);
+}
+int partition_read_pre(disk_partition_t *ptn)
+{
+	return run_env(BEFORE, "read", ptn->name);
+}
+int partition_read_post(disk_partition_t *ptn)
+{
+	return run_env(AFTER, "read", ptn->name);
+}
+int partition_write_pre(disk_partition_t *ptn)
+{
+	return run_env(BEFORE, "write", ptn->name);
+}
+int partition_write_post(disk_partition_t *ptn)
+{
+	return run_env(AFTER, "write", ptn->name);
+}
 
 /* Simple helper for partition_* functions to validate arguments. */
 static int _partition_validate(block_dev_desc_t *dev, disk_partition_t *ptn,
@@ -248,7 +272,7 @@ static int _partition_erase(block_dev_desc_t *dev, disk_partition_t *ptn,
 	if (err)
 		return err;
 
-	err = run_env(BEFORE, "erase", ptn->name);
+	err = partition_erase_pre(ptn);
 	if (err)
 		return err;
 
@@ -265,13 +289,11 @@ static int _partition_erase(block_dev_desc_t *dev, disk_partition_t *ptn,
 	if (bytecnt_p)
 		*bytecnt_p = (loff_t)blks_done * dev->blksz;
 
-	err = run_env(AFTER, "erase", ptn->name);
+	err = partition_erase_post(ptn);
 
 	if (blks_done != blks_to_do)
 		return -EIO;
-	if (err)
-		return err;
-	return 0;
+	return err;
 }
 int partition_erase_blks(block_dev_desc_t *dev, disk_partition_t *ptn,
 							lbaint_t *blkcnt)
@@ -298,7 +320,7 @@ static int _partition_read(block_dev_desc_t *dev, disk_partition_t *ptn,
 	if (err)
 		return err;
 
-	err = run_env(BEFORE, "read", ptn->name);
+	err = partition_read_pre(ptn);
 	if (err)
 		return err;
 
@@ -315,13 +337,11 @@ static int _partition_read(block_dev_desc_t *dev, disk_partition_t *ptn,
 	if (bytecnt_p)
 		*bytecnt_p = (loff_t)blks_done * dev->blksz;
 
-	err = run_env(AFTER, "read", ptn->name);
+	err = partition_read_post(ptn);
 
 	if (blks_done != blks_to_do)
 		return -EIO;
-	if (err)
-		return err;
-	return 0;
+	return err;
 }
 int partition_read_blks(block_dev_desc_t *dev, disk_partition_t *ptn,
 					lbaint_t *blkcnt, void *buffer)
@@ -353,7 +373,7 @@ static int _partition_write(block_dev_desc_t *dev, disk_partition_t *ptn,
 	if (err)
 		return err;
 
-	err = run_env(BEFORE, "write", ptn->name);
+	err = partition_write_pre(ptn);
 	if (!err) {
 		if (bytes_to_do) {
 			blks_to_do = DIV_ROUND_UP(bytes_to_do, dev->blksz);
@@ -376,14 +396,12 @@ static int _partition_write(block_dev_desc_t *dev, disk_partition_t *ptn,
 				*bytecnt_p = (loff_t)blks_done * dev->blksz;
 		}
 
-		err = run_env(AFTER, "write", ptn->name);
+		err = partition_write_post(ptn);
 	}
 
 	if (blks_done != blks_to_do)
 		return -EIO;
-	if (err)
-		return err;
-	return 0;
+	return err;
 }
 
 int partition_write_blks(block_dev_desc_t *dev, disk_partition_t *ptn,
@@ -407,6 +425,30 @@ block_dev_desc_t *get_dev_by_name(char *devname)
 }
 int get_partition_by_name(block_dev_desc_t *dev, const char *partition_name,
 					disk_partition_t *partition_info)
+{
+	return -ENODEV;
+}
+int partition_erase_pre(disk_partition_t *ptn)
+{
+	return -ENODEV;
+}
+int partition_erase_post(disk_partition_t *ptn)
+{
+	return -ENODEV;
+}
+int partition_read_pre(disk_partition_t *ptn)
+{
+	return -ENODEV;
+}
+int partition_read_post(disk_partition_t *ptn)
+{
+	return -ENODEV;
+}
+int partition_write_pre(disk_partition_t *ptn)
+{
+	return -ENODEV;
+}
+int partition_write_post(disk_partition_t *ptn)
 {
 	return -ENODEV;
 }
