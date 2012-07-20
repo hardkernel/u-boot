@@ -1453,11 +1453,11 @@ rootdir_done:
 			goto exit;
 		}
 
-		if (idx >= 0) {
-			if (!(dentptr->attr & ATTR_DIR))
-				goto exit;
+		if (isdir && !(dentptr->attr & ATTR_DIR))
+			goto exit;
+
+		if (idx >= 0)
 			subname = nextname;
-		}
 	}
 	if(buffer) {
 		ret = get_contents(mydata, dentptr, buffer, maxsize);
