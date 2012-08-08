@@ -293,6 +293,8 @@ static unsigned long exynos4_get_uart_clk(int dev_index)
 		sclk = get_pll_clk(EPLL);
 	else if (sel == 0x8)
 		sclk = get_pll_clk(VPLL);
+    else if (sel == 0x1)
+		sclk = CONFIG_SYS_CLK_FREQ; 
 	else
 		return 0;
 
@@ -427,7 +429,11 @@ static unsigned long exynos4_get_lcd_clk(void)
 	 * CLK_SRC_LCD0
 	 * FIMD0_SEL [3:0]
 	 */
+#if defined(CONFIG_EXYNOS4412)
+	sel = readl(&clk->src_lcd);
+#else
 	sel = readl(&clk->src_lcd0);
+#endif
 	sel = sel & 0xf;
 
 	/*
@@ -448,7 +454,11 @@ static unsigned long exynos4_get_lcd_clk(void)
 	 * CLK_DIV_LCD0
 	 * FIMD0_RATIO [3:0]
 	 */
+#if defined(CONFIG_EXYNOS4412)
+	ratio = readl(&clk->div_lcd);
+#else
 	ratio = readl(&clk->div_lcd0);
+#endif
 	ratio = ratio & 0xf;
 
 	pclk = sclk / (ratio + 1);
@@ -484,10 +494,18 @@ void exynos4_set_lcd_clk(void)
 	 * MIPI0_SEL		[12:15]
 	 * set lcd0 src clock 0x6: SCLK_MPLL
 	 */
+#if defined(CONFIG_EXYNOS4412)
+	cfg = readl(&clk->src_lcd);
+#else
 	cfg = readl(&clk->src_lcd0);
+#endif
 	cfg &= ~(0xf);
 	cfg |= 0x6;
+#if defined(CONFIG_EXYNOS4412)
+	writel(cfg, &clk->src_lcd);
+#else
 	writel(cfg, &clk->src_lcd0);
+#endif
 
 	/*
 	 * CLK_GATE_IP_LCD0
@@ -499,9 +517,17 @@ void exynos4_set_lcd_clk(void)
 	 * CLK_PPMULCD0		[5]
 	 * Gating all clocks for FIMD0
 	 */
+#if defined(CONFIG_EXYNOS4412)
+	cfg = readl(&clk->gate_ip_lcd);
+#else
 	cfg = readl(&clk->gate_ip_lcd0);
+#endif
 	cfg |= 1 << 0;
+#if defined(CONFIG_EXYNOS4412)
+	writel(cfg, &clk->gate_ip_lcd);
+#else
 	writel(cfg, &clk->gate_ip_lcd0);
+#endif
 
 	/*
 	 * CLK_DIV_LCD0
@@ -515,7 +541,11 @@ void exynos4_set_lcd_clk(void)
 	 */
 	cfg &= ~(0xf);
 	cfg |= 0x1;
+#if defined(CONFIG_EXYNOS4412)
+	writel(cfg, &clk->div_lcd);
+#else
 	writel(cfg, &clk->div_lcd0);
+#endif
 }
 
 void exynos4_set_mipi_clk(void)
@@ -532,10 +562,18 @@ void exynos4_set_mipi_clk(void)
 	 * MIPI0_SEL		[12:15]
 	 * set mipi0 src clock 0x6: SCLK_MPLL
 	 */
+#if defined(CONFIG_EXYNOS4412)
+	cfg = readl(&clk->src_lcd);
+#else
 	cfg = readl(&clk->src_lcd0);
+#endif
 	cfg &= ~(0xf << 12);
 	cfg |= (0x6 << 12);
+#if defined(CONFIG_EXYNOS4412)
+	writel(cfg, &clk->src_lcd);
+#else
 	writel(cfg, &clk->src_lcd0);
+#endif
 
 	/*
 	 * CLK_SRC_MASK_LCD0
@@ -545,9 +583,17 @@ void exynos4_set_mipi_clk(void)
 	 * MIPI0_MASK		[12]
 	 * set src mask mipi0 0x1: Unmask
 	 */
+#if defined(CONFIG_EXYNOS4412)
+	cfg = readl(&clk->src_mask_lcd);
+#else
 	cfg = readl(&clk->src_mask_lcd0);
+#endif
 	cfg |= (0x1 << 12);
+#if defined(CONFIG_EXYNOS4412)
+	writel(cfg, &clk->src_mask_lcd);
+#else
 	writel(cfg, &clk->src_mask_lcd0);
+#endif
 
 	/*
 	 * CLK_GATE_IP_LCD0
@@ -559,9 +605,17 @@ void exynos4_set_mipi_clk(void)
 	 * CLK_PPMULCD0		[5]
 	 * Gating all clocks for MIPI0
 	 */
+#if defined(CONFIG_EXYNOS4412)
+	cfg = readl(&clk->gate_ip_lcd);
+#else
 	cfg = readl(&clk->gate_ip_lcd0);
+#endif
 	cfg |= 1 << 3;
+#if defined(CONFIG_EXYNOS4412)
+	writel(cfg, &clk->gate_ip_lcd);
+#else
 	writel(cfg, &clk->gate_ip_lcd0);
+#endif
 
 	/*
 	 * CLK_DIV_LCD0
@@ -575,7 +629,11 @@ void exynos4_set_mipi_clk(void)
 	 */
 	cfg &= ~(0xf << 16);
 	cfg |= (0x1 << 16);
+#if defined(CONFIG_EXYNOS4412)
+	writel(cfg, &clk->div_lcd);
+#else
 	writel(cfg, &clk->div_lcd0);
+#endif
 }
 
 /*
@@ -601,6 +659,31 @@ static unsigned long exynos5_get_i2c_clk(void)
 	return aclk_66;
 }
 
+/*
+ * I2C
+ *
+ * exynos5: obtaining the I2C clock
+ */
+static unsigned long exynos4_get_i2c_clk(void)
+{
+#if 0
+	struct exynos4_clock *clk =
+		(struct exynos4_clock *)samsung_get_base_clock();
+	unsigned long aclk_66, aclk_66_pre, sclk;
+	unsigned int ratio;
+
+	sclk = get_pll_clk(MPLL);
+
+	ratio = (readl(&clk->div_top1)) >> 24;
+	ratio &= 0x7;
+	aclk_66_pre = sclk / (ratio + 1);
+	ratio = readl(&clk->div_top0);
+	ratio &= 0x7;
+	aclk_66 = aclk_66_pre / (ratio + 1);
+	return aclk_66;
+#endif
+}
+
 unsigned long get_pll_clk(int pllreg)
 {
 	if (cpu_is_exynos5())
@@ -619,9 +702,11 @@ unsigned long get_arm_clk(void)
 
 unsigned long get_i2c_clk(void)
 {
-	if (cpu_is_exynos5()) {
+	if (cpu_is_exynos5()) 
 		return exynos5_get_i2c_clk();
-	} else {
+    else if (cpu_is_exynos4())
+		return exynos4_get_i2c_clk();
+    else {
 		debug("I2C clock is not set for this CPU\n");
 		return 0;
 	}

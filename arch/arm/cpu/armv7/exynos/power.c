@@ -25,6 +25,14 @@
 #include <asm/io.h>
 #include <asm/arch/power.h>
 
+static void exynos4_ps_hold_setup(void)
+{
+    struct exynos4_power *power=
+            (struct exynos4_power *)samsung_get_base_power();
+
+    setbits_le32(&power->ps_hold_control, POWER_PS_HOLD_CONTROL_DATA_HIGH);
+}
+
 static void exynos4_mipi_phy_control(unsigned int dev_index,
 					unsigned int enable)
 {
@@ -73,4 +81,10 @@ void set_usbhost_phy_ctrl(unsigned int enable)
 {
 	if (cpu_is_exynos5())
 		exynos5_set_usbhost_phy_ctrl(enable);
+}
+
+void ps_hold_setup(void)
+{
+	if (cpu_is_exynos4())
+        exynos4_ps_hold_setup();
 }

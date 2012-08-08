@@ -719,6 +719,10 @@ Heungjun Kim <riverful.kim@samsung.com>
 
 	trats			ARM ARMV7 (EXYNOS4210 SoC)
 
+Hakjoo Kim <ruppi.kim@hardkernel.com>
+
+	odroidx			ARM ARMV7 (EXYNOS4412 SoC)
+
 Torsten Koschorrek <koschorrek@synertronixx.de>
 	scb9328		ARM920T (i.MXL)
 

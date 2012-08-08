@@ -1,6 +1,6 @@
 #
-# (C) Copyright 2000-2007
-# Wolfgang Denk, DENX Software Engineering, wd@denx.de.
+# Copyright (C) 2012 Hardkernel Co.,LTD.
+# Hakjoo Kim <ruppi.kim@hardkernel.com>
 #
 # See file CREDITS for list of people who contributed to this
 # project.
@@ -12,7 +12,7 @@
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
@@ -23,34 +23,37 @@
 
 include $(TOPDIR)/config.mk
 
-LIB	:= $(obj)libmisc.o
+LIB	= $(obj)lib$(BOARD).o
 
-COBJS-$(CONFIG_ALI152X) += ali512x.o
-COBJS-$(CONFIG_DS4510)  += ds4510.o
-COBJS-$(CONFIG_FSL_LAW) += fsl_law.o
-COBJS-$(CONFIG_GPIO_LED) += gpio_led.o
-COBJS-$(CONFIG_FSL_MC9SDZ60) += mc9sdz60.o
-COBJS-$(CONFIG_NS87308) += ns87308.o
-COBJS-$(CONFIG_PDSP188x) += pdsp188x.o
-COBJS-$(CONFIG_STATUS_LED) += status_led.o
-COBJS-$(CONFIG_TWL4030_LED) += twl4030_led.o
-COBJS-$(CONFIG_PMIC) += pmic_core.o
-COBJS-$(CONFIG_DIALOG_PMIC) += pmic_dialog.o
-COBJS-$(CONFIG_PMIC_FSL) += pmic_fsl.o
-COBJS-$(CONFIG_PMIC_I2C) += pmic_i2c.o
-COBJS-$(CONFIG_PMIC_SPI) += pmic_spi.o
-COBJS-$(CONFIG_PMIC_MAX77686) += pmic_max77686.o
-COBJS-$(CONFIG_PMIC_MAX8998) += pmic_max8998.o
-COBJS-$(CONFIG_PMIC_MAX8997) += pmic_max8997.o
+SOBJS	:= mem_setup.o
+SOBJS	+= lowlevel_init.o
 
-COBJS	:= $(COBJS-y)
-SRCS	:= $(COBJS:.o=.c)
-OBJS	:= $(addprefix $(obj),$(COBJS))
+ifndef CONFIG_SPL_BUILD
+COBJS	+= odroidx.o
+endif
 
-all:	$(LIB)
+ifdef CONFIG_SPL_BUILD
+COBJS	+= spl_boot.o
+endif
 
-$(LIB):	$(obj).depend $(OBJS)
+SRCS	:= $(SOBJS:.o=.S) $(COBJS:.o=.c)
+OBJS	:= $(addprefix $(obj),$(COBJS) $(SOBJS))
+
+ifdef CONFIG_SPL_BUILD
+ALL	+= $(OBJTREE)/tools/mk$(BOARD)spl
+endif
+
+ALL	+=$(obj).depend $(LIB)
+
+all:	$(ALL)
+
+$(LIB):	$(OBJS)
 	$(call cmd_link_o_target, $(OBJS))
+
+ifdef CONFIG_SPL_BUILD
+$(OBJTREE)/tools/mk$(BOARD)spl:	tools/mk$(BOARD)_image.c
+	$(HOSTCC) tools/mk$(BOARD)_image.c -o $(OBJTREE)/tools/mk$(BOARD)spl
+endif
 
 #########################################################################
 

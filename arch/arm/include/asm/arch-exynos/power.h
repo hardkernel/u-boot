@@ -859,4 +859,8 @@ void set_usbhost_phy_ctrl(unsigned int enable);
 
 #define POWER_USB_HOST_PHY_CTRL_EN		(1 << 0)
 #define POWER_USB_HOST_PHY_CTRL_DISABLE		(0 << 0)
+
+void ps_hold_setup(void);
+
+#define POWER_PS_HOLD_CONTROL_DATA_HIGH (1 << 8)
 #endif

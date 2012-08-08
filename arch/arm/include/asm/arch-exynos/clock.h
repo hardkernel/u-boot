@@ -34,7 +34,15 @@ struct exynos4_clock {
 	unsigned int	div_stat_leftbus;
 	unsigned char	res6[0x1fc];
 	unsigned int	gate_ip_leftbus;
+#if defined(CONFIG_EXYNOS4412)
+	unsigned char	exynos4412res1[0x12c];
+	unsigned int	gate_ip_image;
+#endif 
+#if defined(CONFIG_EXYNOS4412)
+	unsigned char	res7[0xcc];
+#else
 	unsigned char	res7[0x1fc];
+#endif 
 	unsigned int	clkout_leftbus;
 	unsigned int	clkout_leftbus_div_stat;
 	unsigned char	res8[0x37f8];
@@ -47,7 +55,13 @@ struct exynos4_clock {
 	unsigned int	div_stat_rightbus;
 	unsigned char	res12[0x1fc];
 	unsigned int	gate_ip_rightbus;
+#if defined(CONFIG_EXYNOS4412)
+	unsigned char	exynos4412res2[0x15c];
+	unsigned int	gate_ip_perir;
+	unsigned char	res13[0x9c];
+#else
 	unsigned char	res13[0x1fc];
+#endif 
 	unsigned int	clkout_rightbus;
 	unsigned int	clkout_rightbus_div_stat;
 	unsigned char	res14[0x3608];
@@ -57,54 +71,107 @@ struct exynos4_clock {
 	unsigned char	res16[0xec];
 	unsigned int	epll_con0;
 	unsigned int	epll_con1;
+#if defined(CONFIG_EXYNOS4412)
+	unsigned int	epll_con2;
+	unsigned char	res17[0x4];
+#else
 	unsigned char	res17[0x8];
+#endif
 	unsigned int	vpll_con0;
 	unsigned int	vpll_con1;
+#if defined(CONFIG_EXYNOS4412)
+	unsigned int	vpll_con2;
+	unsigned char	res18[0xe4];
+#else
 	unsigned char	res18[0xe8];
+#endif
 	unsigned int	src_top0;
 	unsigned int	src_top1;
 	unsigned char	res19[0x8];
+#if defined(CONFIG_EXYNOS4412)
+	unsigned int	src_cam0;
+#else
 	unsigned int	src_cam;
+#endif
 	unsigned int	src_tv;
 	unsigned int	src_mfc;
 	unsigned int	src_g3d;
+#if defined(CONFIG_EXYNOS4412)
+	unsigned char	exynos4412res3[0x4];
+	unsigned int	src_lcd;
+	unsigned int	src_isp;
+#else
 	unsigned int	src_image;
 	unsigned int	src_lcd0;
 	unsigned int	src_lcd1;
+#endif
 	unsigned int	src_maudio;
 	unsigned int	src_fsys;
 	unsigned char	res20[0xc];
 	unsigned int	src_peril0;
 	unsigned int	src_peril1;
+#if defined(CONFIG_EXYNOS4412)
+	unsigned int	src_cam1;
+	unsigned char	res21[0xc4];
+	unsigned int	src_mask_cam0;
+#else
 	unsigned char	res21[0xb8];
 	unsigned int	src_mask_top;
 	unsigned char	res22[0xc];
 	unsigned int	src_mask_cam;
+#endif
 	unsigned int	src_mask_tv;
 	unsigned char	res23[0xc];
+#if defined(CONFIG_EXYNOS4412)
+	unsigned int	src_mask_lcd;
+	unsigned int	src_mask_isp;
+#else
 	unsigned int	src_mask_lcd0;
 	unsigned int	src_mask_lcd1;
+#endif
 	unsigned int	src_mask_maudio;
 	unsigned int	src_mask_fsys;
 	unsigned char	res24[0xc];
 	unsigned int	src_mask_peril0;
 	unsigned int	src_mask_peril1;
 	unsigned char	res25[0xb8];
+#if defined(CONFIG_EXYNOS4412)
+	unsigned int	mux_stat_top0;
+	unsigned int	mux_stat_top1;
+	unsigned char	res26[0x10];
+#else
 	unsigned int	mux_stat_top;
 	unsigned char	res26[0x14];
+#endif
 	unsigned int	mux_stat_mfc;
 	unsigned int	mux_stat_g3d;
+#if defined(CONFIG_EXYNOS4412)
+	unsigned char	exynos4412res4[0x28];
+	unsigned int	mux_stat_cam1;
+	unsigned char	res27[0xb4];
+#else
 	unsigned int	mux_stat_image;
 	unsigned char	res27[0xdc];
+#endif
 	unsigned int	div_top;
 	unsigned char	res28[0xc];
+#if defined(CONFIG_EXYNOS4412)
+	unsigned int	div_cam0;
+#else
 	unsigned int	div_cam;
+#endif
 	unsigned int	div_tv;
 	unsigned int	div_mfc;
 	unsigned int	div_g3d;
+#if defined(CONFIG_EXYNOS4412)
+	unsigned char	exynos4412res5[0x4];
+	unsigned int	div_lcd;
+	unsigned int	div_isp;
+#else
 	unsigned int	div_image;
 	unsigned int	div_lcd0;
 	unsigned int	div_lcd1;
+#endif
 	unsigned int	div_maudio;
 	unsigned int	div_fsys0;
 	unsigned int	div_fsys1;
@@ -116,18 +183,34 @@ struct exynos4_clock {
 	unsigned int	div_peril3;
 	unsigned int	div_peril4;
 	unsigned int	div_peril5;
+#if defined(CONFIG_EXYNOS4412)
+	unsigned int	div_cam1;
+	unsigned char	res29[0x14];
+#else
 	unsigned char	res29[0x18];
+#endif
 	unsigned int	div2_ratio;
 	unsigned char	res30[0x8c];
 	unsigned int	div_stat_top;
 	unsigned char	res31[0xc];
+
+#if defined(CONFIG_EXYNOS4412)
+	unsigned int	div_stat_cam0;
+#else
 	unsigned int	div_stat_cam;
+#endif
 	unsigned int	div_stat_tv;
 	unsigned int	div_stat_mfc;
 	unsigned int	div_stat_g3d;
+#if defined(CONFIG_EXYNOS4412)
+	unsigned char	exynos4412res6[0x4];
+	unsigned int	div_stat_lcd;
+	unsigned int	div_stat_isp;
+#else
 	unsigned int	div_stat_image;
 	unsigned int	div_stat_lcd0;
 	unsigned int	div_stat_lcd1;
+#endif
 	unsigned int	div_stat_maudio;
 	unsigned int	div_stat_fsys0;
 	unsigned int	div_stat_fsys1;
@@ -139,29 +222,61 @@ struct exynos4_clock {
 	unsigned int	div_stat_peril3;
 	unsigned int	div_stat_peril4;
 	unsigned int	div_stat_peril5;
+#if defined(CONFIG_EXYNOS4412)
+	unsigned int	div_stat_cam1;
+	unsigned char	res32[0x14];
+#else
 	unsigned char	res32[0x18];
+#endif
 	unsigned int	div2_stat;
+#if defined(CONFIG_EXYNOS4412)
+	unsigned char	exynos4412res7[0xc0];
+	unsigned int	gate_bus_fsys1;
+	unsigned char	res33[0x1d8];
+#else
 	unsigned char	res33[0x29c];
+#endif
 	unsigned int	gate_ip_cam;
 	unsigned int	gate_ip_tv;
 	unsigned int	gate_ip_mfc;
 	unsigned int	gate_ip_g3d;
+#if defined(CONFIG_EXYNOS4412)
+	unsigned char	res34[0x4];
+	unsigned int	gate_ip_lcd;
+	unsigned int	gate_ip_isp;
+#else
 	unsigned int	gate_ip_image;
 	unsigned int	gate_ip_lcd0;
 	unsigned int	gate_ip_lcd1;
 	unsigned char	res34[0x4];
+#endif
 	unsigned int	gate_ip_fsys;
-	unsigned char	res35[0x8];
+	unsigned char	res35[0xC];
 	unsigned int	gate_ip_gps;
 	unsigned int	gate_ip_peril;
+#if defined(CONFIG_EXYNOS4412)
+	unsigned char	res36[0x1c];
+#else
 	unsigned char	res36[0xc];
 	unsigned int	gate_ip_perir;
-	unsigned char	res37[0xc];
+	unsigned char	res37[0x0c];
+#endif
 	unsigned int	gate_block;
 	unsigned char	res38[0x8c];
 	unsigned int	clkout_cmu_top;
 	unsigned int	clkout_cmu_top_div_stat;
+#if defined(CONFIG_EXYNOS4412)
+	unsigned char	res39[0x3600];
+#else
 	unsigned char	res39[0x37f8];
+#endif
+#if defined(CONFIG_EXYNOS4412)
+	unsigned int	mpll_lock;
+	unsigned char	exynos4412res8[0xfc];
+	unsigned int	mpll_con0;
+	unsigned int	mpll_con1;
+	unsigned char	exynos4412res9[0xf0];
+#endif
 	unsigned int	src_dmc;
 	unsigned char	res40[0xfc];
 	unsigned int	src_mask_dmc;
@@ -173,9 +288,19 @@ struct exynos4_clock {
 	unsigned char	res43[0xf8];
 	unsigned int	div_stat_dmc0;
 	unsigned int	div_stat_dmc1;
+#if defined(CONFIG_EXYNOS4412)
+	unsigned char	res44[0xf8];
+	unsigned int	div_gate_bus_dmc0;
+	unsigned int	div_gate_bus_dmc1;
+	unsigned char	res45[0x1f8];
+	unsigned int	gate_ip_dmc0;
+	unsigned int	gate_ip_dmc1;
+	unsigned char	exynos4412res10[0xf8];
+#else
 	unsigned char	res44[0x2f8];
 	unsigned int	gate_ip_dmc;
 	unsigned char	res45[0xfc];
+#endif
 	unsigned int	clkout_cmu_dmc;
 	unsigned int	clkout_cmu_dmc_div_stat;
 	unsigned char	res46[0x5f8];
@@ -193,16 +318,33 @@ struct exynos4_clock {
 	unsigned char	res50[0x18];
 	unsigned int	dvsemclk_en;
 	unsigned int	maxperf;
+#if defined(CONFIG_EXYNOS4412)
+	unsigned char	exynos4412res11[0xc];
+	unsigned int	dmc_pause_ctrl;
+	unsigned int	ddrphy_lock_ctrl;
+	unsigned int	c2c_state;
+	unsigned char	res51[0x2f60];
+#else
 	unsigned char	res51[0x2f78];
+#endif
 	unsigned int	apll_lock;
+
+#if defined(CONFIG_EXYNOS4412)
+	unsigned char	res52[0xfc];
+#else
 	unsigned char	res52[0x4];
 	unsigned int	mpll_lock;
 	unsigned char	res53[0xf4];
+#endif
 	unsigned int	apll_con0;
 	unsigned int	apll_con1;
+#if defined(CONFIG_EXYNOS4412)
+	unsigned char	res54[0xf8];
+#else
 	unsigned int	mpll_con0;
 	unsigned int	mpll_con1;
 	unsigned char	res54[0xf0];
+#endif
 	unsigned int	src_cpu;
 	unsigned char	res55[0x1fc];
 	unsigned int	mux_stat_cpu;
@@ -212,12 +354,43 @@ struct exynos4_clock {
 	unsigned char	res57[0xf8];
 	unsigned int	div_stat_cpu0;
 	unsigned int	div_stat_cpu1;
+#if defined(CONFIG_EXYNOS4412)
+	unsigned char	res58[0x2f8];
+	unsigned int	gate_ip_cpu;
+	unsigned char	exynos4412res12[0xfc];
+#else
 	unsigned char	res58[0x3f8];
+#endif
 	unsigned int	clkout_cmu_cpu;
 	unsigned int	clkout_cmu_cpu_div_stat;
 	unsigned char	res59[0x5f8];
 	unsigned int	armclk_stopctrl;
 	unsigned int	atclk_stopctrl;
+#if defined(CONFIG_EXYNOS4412)
+	unsigned char	res60[0x1c];
+    unsigned int    pwr_ctrl;
+    unsigned int    pwr_ctrl2;
+	unsigned char	res61[0x3d8];
+    unsigned int    l2_satus;
+	unsigned char	res62[0xc];
+    unsigned int    cpu_satus;
+	unsigned char	res63[0xc];
+    unsigned int    ptm_satus;
+    unsigned int    div_isp0;
+    unsigned int    div_isp1;
+    unsigned int    div_stat_isp0;
+    unsigned int    div_stat_isp1;
+	unsigned char	res64[0x8];
+    unsigned int    gate_ip_isp0;
+    unsigned int    gate_ip_isp1;
+	unsigned char	res65[0x8];
+    unsigned int    clkout_cmp_isp;
+    unsigned int    clkout_cmp_isp_divstat;
+    unsigned int    cmu_isp_spare0;
+    unsigned int    cmu_isp_spare1;
+    unsigned int    cmu_isp_spare2;
+    unsigned int    cmu_isp_spare3;
+#else
 	unsigned char	res60[0x8];
 	unsigned int	parityfail_status;
 	unsigned int	parityfail_clear;
@@ -249,6 +422,7 @@ struct exynos4_clock {
 	unsigned int	div_iem_l3;
 	unsigned int	div_iem_l2;
 	unsigned int	div_iem_l1;
+#endif
 };
 
 struct exynos5_clock {

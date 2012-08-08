@@ -191,7 +191,11 @@
 
 #define SDHCI_ADMA_ADDRESS	0x58
 
-/* 60-FB reserved */
+/* 60-FB reserved, 80 used to Exynos4412*/
+
+#if defined(EXYNOS4412)
+#define SDHCI_SDHCI_CONTROL2 0x80
+#endif
 
 #define SDHCI_SLOT_INT_STATUS	0xFC
 
