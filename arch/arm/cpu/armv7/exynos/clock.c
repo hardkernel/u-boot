@@ -246,7 +246,9 @@ static unsigned long exynos4_get_pwm_clk(void)
 		sel = readl(&clk->src_peril0);
 		sel = (sel >> 24) & 0xf;
 
-		if (sel == 0x6)
+		if (sel == 0x0 || sel == 0x1)
+			sclk = CONFIG_SYS_CLK_FREQ;
+		else if (sel == 0x6)
 			sclk = get_pll_clk(MPLL);
 		else if (sel == 0x7)
 			sclk = get_pll_clk(EPLL);
@@ -314,7 +316,9 @@ static unsigned long exynos4_get_uart_clk(int dev_index)
 	sel = readl(&clk->src_peril0);
 	sel = (sel >> (dev_index << 2)) & 0xf;
 
-	if (sel == 0x6)
+	if (sel == 0x0 || sel == 0x1)
+		sclk = CONFIG_SYS_CLK_FREQ;
+	else if (sel == 0x6)
 		sclk = get_pll_clk(MPLL);
 	else if (sel == 0x7)
 		sclk = get_pll_clk(EPLL);
@@ -363,7 +367,9 @@ static unsigned long exynos5_get_uart_clk(int dev_index)
 	sel = readl(&clk->src_peric0);
 	sel = (sel >> (dev_index << 2)) & 0xf;
 
-	if (sel == 0x6)
+	if (sel == 0x0 || sel == 0x1)
+		sclk = CONFIG_SYS_CLK_FREQ;
+	else if (sel == 0x6)
 		sclk = get_pll_clk(MPLL);
 	else if (sel == 0x7)
 		sclk = get_pll_clk(EPLL);
@@ -468,7 +474,9 @@ static unsigned long exynos4_get_lcd_clk(void)
 	 * 0x7: SCLK_EPLL
 	 * 0x8: SCLK_VPLL
 	 */
-	if (sel == 0x6)
+	if (sel == 0x0 || sel == 0x1)
+		sclk = CONFIG_SYS_CLK_FREQ;
+	else if (sel == 0x6)
 		sclk = get_pll_clk(MPLL);
 	else if (sel == 0x7)
 		sclk = get_pll_clk(EPLL);
