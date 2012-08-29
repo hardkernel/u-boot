@@ -23,6 +23,7 @@
 
 #include<common.h>
 #include<config.h>
+#include "setup.h"
 
 enum boot_mode {
     BOOT_MODE_MMCSD = 4,
@@ -32,22 +33,26 @@ enum boot_mode {
     BOOT_MODE_USB,
 };
 
+#define IRAM_ADDRESS			0x02020000
+#define EXTERNAL_FUNC_ADDRESS		(IRAM_ADDRESS + 0x0030)
+#define	IROM_READ_SDMMC			EXTERNAL_FUNC_ADDRESS
+
+void inline irom_read_sdmmc(u32 start, u32 count, u32 addr)
+{
+	void (*read_sdmmc)(u32, u32, u32) = (void *) *(u32 *)IROM_READ_SDMMC;
+	read_sdmmc(start, count, addr);
+}
+
 /*
 * Copy U-boot from mmc to RAM:
 * COPY_BL2_FNPTR_ADDR: Address in iRAM, which Contains
 * Pointer to API (Data transfer from mmc to ram)
 */
-void copy_uboot_to_ram(void)
-{
-	u32 (*copy_bl2)(u32, u32, u32)  = (void *) *(u32 *)COPY_BL2_FNPTR_ADDR;
-
-	copy_bl2(BL2_START_OFFSET, BL2_SIZE_BLOC_COUNT, CONFIG_SYS_TEXT_BASE);
-}
-
 void board_init_f(unsigned long bootflag)
 {
 	__attribute__((noreturn)) void (*uboot)(void);
-	copy_uboot_to_ram();
+
+	irom_read_sdmmc(BL2_BLK_OFFSET, BL2_BLK_COUNT, CONFIG_SYS_TEXT_BASE);
 
 	/* Jump to U-Boot image */
 	uboot = (void *)CONFIG_SYS_TEXT_BASE;
@@ -60,8 +65,7 @@ void board_init_r(gd_t *id, ulong dest_addr)
 {
 	/* Function attribute is no-return */
 	/* This Function never executes */
-	while (1)
-		;
+	while (1);
 }
 
 void save_boot_params(u32 r0, u32 r1, u32 r2, u32 r3) { }

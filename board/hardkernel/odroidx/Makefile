@@ -30,9 +30,7 @@ SOBJS	+= lowlevel_init.o
 
 ifndef CONFIG_SPL_BUILD
 COBJS	+= odroidx.o
-endif
-
-ifdef CONFIG_SPL_BUILD
+else
 COBJS	+= spl_boot.o
 endif
 

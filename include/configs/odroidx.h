@@ -27,13 +27,21 @@
 #define __CONFIG_H
 
 /* High Level Configuration Options */
+#define CONFIG_CMD_BOOTZ
 #define CONFIG_SAMSUNG			/* in a SAMSUNG core */
 #define CONFIG_S5P			/* S5P Family */
 #define CONFIG_EXYNOS4			/* which is in a Exynos4 Family */
 #define CONFIG_EXYNOS4412		/* which is in a Exynos4412 */
+#define CONFIG_BOARDNAME	"Odroid-x"
 #define CONFIG_ODROIDX			/* which is in a ODROID-X */
 
 #include <asm/arch/cpu.h>		/* get chip and board defs */
+
+/* input clock of PLL: ODROID-X has 24MHz input clock */
+#define CONFIG_SYS_CLK_FREQ		24000000
+#define CONFIG_CLK_APLL			1400
+#define CONFIG_CLK_MPLL			400
+#define CONFIG_SYS_HZ			1000
 
 #define CONFIG_ARCH_CPU_INIT
 #define CONFIG_DISPLAY_CPUINFO
@@ -45,8 +53,6 @@
 #define CONFIG_SYS_SDRAM_BASE		0x40000000
 #define CONFIG_SYS_TEXT_BASE		0x43E00000
 
-/* input clock of PLL: ODROID-X has 24MHz input clock */
-#define CONFIG_SYS_CLK_FREQ		24000000
 
 #define CONFIG_SETUP_MEMORY_TAGS
 #define CONFIG_CMDLINE_TAG
@@ -63,7 +69,7 @@
 #define S5P_CHECK_LPA			0xABAD0000
 
 /* Size of malloc() pool */
-#define CONFIG_SYS_MALLOC_LEN		(CONFIG_ENV_SIZE + (1 << 20))
+#define CONFIG_SYS_MALLOC_LEN		(CONFIG_ENV_SIZE + (1 << 20UL))
 
 /* select serial console configuration */
 #define CONFIG_SERIAL_MULTI
@@ -78,14 +84,12 @@
 #define CONFIG_MMC
 #define CONFIG_SDHCI
 #define CONFIG_S5P_SDHCI
+#define CONFIG_CMD_MMC
 
-#define CONFIG_BOARD_EARLY_INIT_F
+#define CONFIG_BOARD_EARLY_INIT_F	1
 
 /* PWM */
 #define CONFIG_PWM
-
-/* allow to overwrite serial and ethaddr */
-#define CONFIG_ENV_OVERWRITE
 
 /* Command definition*/
 #include <config_cmd_default.h>
@@ -93,8 +97,6 @@
 #define CONFIG_CMD_PING
 #define CONFIG_CMD_ELF
 #define CONFIG_CMD_MMC
-#define CONFIG_CMD_EXT2
-#define CONFIG_CMD_FAT
 #define CONFIG_CMD_NET
 
 #define CONFIG_BOOTDELAY		3
@@ -106,28 +108,20 @@
 #define CONFIG_USB_EHCI_EXYNOS
 #define CONFIG_USB_STORAGE
 
-/* MMC SPL */
-#define CONFIG_SPL
-#define COPY_BL2_FNPTR_ADDR	0x02020030
-
-#define CONFIG_BOOTCOMMAND	"mmc read 40007000 451 2000; bootm 40007000"
+#define CONFIG_BOOTCOMMAND	"fatload mmc 0:2 40007000 uImage; bootm 40007000"
 
 /* Miscellaneous configurable options */
 #define CONFIG_SYS_LONGHELP		/* undef to save memory */
 #define CONFIG_SYS_HUSH_PARSER		/* use "hush" command parser	*/
-#define CONFIG_SYS_PROMPT		"ODROIDX # "
+#define CONFIG_SYS_PROMPT		CONFIG_BOARDNAME " # "
 #define CONFIG_SYS_CBSIZE		256	/* Console I/O Buffer Size */
 #define CONFIG_SYS_PBSIZE		384	/* Print Buffer Size */
 #define CONFIG_SYS_MAXARGS		16	/* max number of command args */
 #define CONFIG_DEFAULT_CONSOLE		"console=ttySAC1,115200n8\0"
 /* Boot Argument Buffer Size */
 #define CONFIG_SYS_BARGSIZE		CONFIG_SYS_CBSIZE
-/* memtest works on */
-#define CONFIG_SYS_MEMTEST_START	CONFIG_SYS_SDRAM_BASE
-#define CONFIG_SYS_MEMTEST_END		(CONFIG_SYS_SDRAM_BASE + 0x5E00000)
 #define CONFIG_SYS_LOAD_ADDR		(CONFIG_SYS_SDRAM_BASE + 0x3E00000)
 
-#define CONFIG_SYS_HZ			1000
 
 #define CONFIG_RD_LVL
 
@@ -146,6 +140,11 @@
 #define PHYS_SDRAM_4_SIZE	SDRAM_BANK_SIZE
 
 #define CONFIG_SYS_MONITOR_BASE	0x00000000
+
+/* Memory test */ 
+#define CONFIG_CMD_MEMORY
+#define CONFIG_SYS_MEMTEST_START	CONFIG_SYS_SDRAM_BASE
+#define CONFIG_SYS_MEMTEST_END	(PHYS_SDRAM_4 + PHYS_SDRAM_4_SIZE - (8UL << 20UL))
 
 /* FLASH and environment organization */
 #define CONFIG_SYS_NO_FLASH
@@ -166,18 +165,23 @@
 
 /* Configuration of BL1, BL2, ENV Blocks on mmc */
 #define CONFIG_RES_BLOCK_SIZE	(512)
-#define CONFIG_BL1_SIZE		(16 << 10) /*16 K reserved for BL1*/
-#define	CONFIG_BL2_SIZE		(512UL << 10UL)	/* 512 KB */
-#define CONFIG_ENV_SIZE		(16 << 10)	/* 16 KB */
+#define CONFIG_SPL
+#define CONFIG_MBR_SIZE	(512)
+#define CONFIG_SBL_SIZE		(8UL << 10)		/* 8KB */
+#define CONFIG_BL1_SIZE		(16UL << 10) /*16 K reserved for BL1*/
+#define	CONFIG_BL2_SIZE		(512UL << 10)	/* 512 KB */
+#define CONFIG_ENV_SIZE		(16UL << 10)	/* 16 KB */
+/* allow to overwrite serial and ethaddr */
+#define CONFIG_ENV_OVERWRITE
 
 #define CONFIG_BL1_OFFSET	(CONFIG_RES_BLOCK_SIZE + CONFIG_SEC_FW_SIZE)
 #define CONFIG_BL2_OFFSET	(CONFIG_BL1_OFFSET + CONFIG_BL1_SIZE)
 #define CONFIG_ENV_OFFSET	(CONFIG_BL2_OFFSET + CONFIG_BL2_SIZE)
 
-/* U-boot copy size from boot Media to DRAM.*/
-#define BL2_START_OFFSET	(CONFIG_BL2_OFFSET/512)
-#define BL2_SIZE_BLOC_COUNT	(CONFIG_BL2_SIZE/512)
+/* File System */
 #define CONFIG_DOS_PARTITION
+#define CONFIG_CMD_FAT
+#define CONFIG_CMD_EXT2
 
 #define OM_STAT	(0x1f << 1)
 #define CONFIG_IRAM_STACK	0x02060000
@@ -220,5 +224,4 @@
 #endif
 
 #define CONFIG_PHY_UBOOT_BASE		CONFIG_SYS_SDRAM_BASE + 0x3e00000
-#define DEBUG
 #endif	/* __CONFIG_H */

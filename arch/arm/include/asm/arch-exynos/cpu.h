@@ -58,6 +58,10 @@
 #define EXYNOS4_GPIO_PART4_BASE		DEVICE_NOT_AVAILABLE
 #define EXYNOS4_DP_BASE			DEVICE_NOT_AVAILABLE
 
+#define EXYNOS4412_DMC0_BASE		0x10600000
+#define EXYNOS4412_DMC1_BASE		0x10610000
+#define EXYNOS4412_GPIO_PART4_BASE	0x106E0000
+
 /* EXYNOS5 */
 #define EXYNOS5_I2C_SPACING		0x10000
 
@@ -130,14 +134,16 @@ static inline char *s5p_get_cpu_name(void)
 	return EXYNOS_CPU_NAME;
 }
 
-#define IS_SAMSUNG_TYPE(type, id)			\
+#define IS_SAMSUNG_TYPE(type, id, shift)		\
 static inline int cpu_is_##type(void)			\
 {							\
-	return (s5p_cpu_id >> 12) == id;		\
+	return (s5p_cpu_id >> shift) == id;		\
 }
 
-IS_SAMSUNG_TYPE(exynos4, 0x4)
-IS_SAMSUNG_TYPE(exynos5, 0x5)
+IS_SAMSUNG_TYPE(exynos4, 0x4, 12)
+IS_SAMSUNG_TYPE(exynos4210, 0x4210, 0)
+IS_SAMSUNG_TYPE(exynos4412, 0x4412, 0)
+IS_SAMSUNG_TYPE(exynos5, 0x5, 12)
 
 #define SAMSUNG_BASE(device, base)				\
 static inline unsigned int samsung_get_base_##device(void)	\

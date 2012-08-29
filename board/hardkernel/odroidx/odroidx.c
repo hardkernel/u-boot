@@ -1,4 +1,5 @@
 /*
+    
  * Copyright (C) 2013  Hardkernel Co.,LTD.
  * Hakjoo Kim <ruppi.kim@hardkernel.com>
  *
@@ -31,6 +32,7 @@
 #include <asm/arch/pinmux.h>
 #include <asm/arch/sromc.h>
 #include <asm/arch/power.h>
+#include "setup.h"
 
 DECLARE_GLOBAL_DATA_PTR;
 struct exynos4_gpio_part1 *gpio1;
@@ -52,6 +54,9 @@ int dram_init(void)
 			+ get_ram_size((long *)PHYS_SDRAM_2, PHYS_SDRAM_2_SIZE)
 			+ get_ram_size((long *)PHYS_SDRAM_3, PHYS_SDRAM_3_SIZE)
 			+ get_ram_size((long *)PHYS_SDRAM_4, PHYS_SDRAM_4_SIZE);
+#ifdef CONFIG_RESERVED_DRAM
+	gd->ram_size -= COnFIG_RESERVED_DRAM;
+#endif
     return 0;
 }
 
@@ -100,31 +105,46 @@ int checkboard(void)
 #endif
 
 #ifdef CONFIG_GENERIC_MMC
-int board_mmc_init(bd_t *bis)
+int board_emmc_init(void)
 {
 	int err;
-#if 0
-	err = exynos_pinmux_config(PERIPH_ID_SDMMC0, PINMUX_FLAG_8BIT_MODE);
+
+	err = exynos_pinmux_config(PERIPH_ID_SDMMC0, PINMUX_FLAG_NONE);
 	if (err) {
-		debug("SDMMC0 not configured\n");
+		debug("eMMC0 not configured\n");
 		return err;
 	}
-
-	/*
-	 * MMC device init
-	 * mmc0	 : eMMC (8-bit buswidth)
-	 * mmc2	 : SD card (4-bit buswidth)
-	 */
 	err = s5p_mmc_init(0, 8);
-#endif 
+	return err;
+}
+
+int board_sdmmc_init(void)
+{
+	int err;
+
 	err = exynos_pinmux_config(PERIPH_ID_SDMMC2, PINMUX_FLAG_NONE);
 	if (err) {
 		debug("SDMMC2 not configured\n");
 		return err;
 	}
-
 	err = s5p_mmc_init(2, 4);
 	return err;
+}
+int board_mmc_init(bd_t *bis)
+{
+	int err;
+
+	struct exynos4_power *power = (struct exynos4_power *)samsung_get_base_power();
+
+	if ((power->om_stat & 0x1E) == 0x8) {
+		err = board_emmc_init();
+		err = board_sdmmc_init();
+	} else {
+		err = board_sdmmc_init();
+		err = board_emmc_init();
+	}
+
+	return 0;
 }
 #endif
 
@@ -134,29 +154,11 @@ static int board_uart_init(void)
 
 	err = exynos_pinmux_config(PERIPH_ID_UART0, PINMUX_FLAG_NONE);
 	if (err) {
-		debug("UART0 not configured\n");
-		return err;
+		debug("UART%d not configured\n",
+			   PERIPH_ID_UART - PERIPH_ID_UART0);
 	}
 
-	err = exynos_pinmux_config(PERIPH_ID_UART1, PINMUX_FLAG_NONE);
-	if (err) {
-		debug("UART1 not configured\n");
-		return err;
-	}
-
-	err = exynos_pinmux_config(PERIPH_ID_UART2, PINMUX_FLAG_NONE);
-	if (err) {
-		debug("UART2 not configured\n");
-		return err;
-	}
-
-	err = exynos_pinmux_config(PERIPH_ID_UART3, PINMUX_FLAG_NONE);
-	if (err) {
-		debug("UART3 not configured\n");
-		return err;
-	}
-
-	return 0;
+	return err;
 }
 
 #ifdef CONFIG_SYS_I2C_INIT_BOARD
@@ -181,12 +183,14 @@ static int board_i2c_init(void)
 int board_early_init_f(void)
 {
 	int err;
+
+    board_power_init();
 	err = board_uart_init();
 	if (err) {
-		debug("UART init failed\n");
+		debug("UART%d init failed\n",
+			   PERIPH_ID_UART - PERIPH_ID_UART0);
 		return err;
 	}
-    board_power_init();
 #ifdef CONFIG_SYS_I2C_INIT_BOARD
 	err = board_i2c_init();
 #endif

@@ -25,7 +25,7 @@
 #include <config.h>
 #include <version.h>
 #include <asm/arch/cpu.h>
-#include "odroidx_setup.h"
+#include "setup.h"
 #define MEM_DLLl_ON
 /*
  * Register usages:
@@ -82,10 +82,11 @@ lowlevel_init:
 	cmp	r1, r2			/* compare r1, r2 */
 	beq	1f			/* r0 == r1 then skip sdram init */
 
-	/* Memory initialize */
+
+	/* DMC initialize */
 	bl mem_ctrl_asm_init
 
-	/* init system clock */
+	/* CMU system clock */
 	bl	system_clock_init
 
 1:
@@ -103,10 +104,10 @@ exit_wakeup:
 	/* Load return address and jump to kernel */
 	ldr	r0, =(EXYNOS4_POWER_BASE + INFORM0_OFFSET)
 
-	/* r1 = physical address of exynos4_cpu_resume function */
+	/* r1 = physical address of exynos4_cpu_resume function*/
 	ldr	r1, [r0]
 
-	/* Jump to kernel*/
+	/* Jump to kernel */
 	mov	pc, r1
 	nop
 	nop
@@ -200,26 +201,6 @@ system_clock_init:
 6:	subs	r1, r1, #1
 	bne	6b
 
-	/* MMC[0:1] */
-	ldr	r1, =CLK_DIV_FSYS1_VAL		/* 800(MPLL) / (15 + 1) */
-	ldr	r2, =CLK_DIV_FSYS1_OFFSET
-	str	r1, [r0, r2]
-
-	/* MMC[2:3] */
-	ldr	r1, =CLK_DIV_FSYS2_VAL		/* 800(MPLL) / (15 + 1) */
-	ldr	r2, =CLK_DIV_FSYS2_OFFSET
-	str	r1, [r0, r2]
-
-	/* MMC4 */
-	ldr	r1, =CLK_DIV_FSYS3_VAL		/* 800(MPLL) / (15 + 1) */
-	ldr	r2, =CLK_DIV_FSYS3_OFFSET
-	str	r1, [r0, r2]
-
-	/* _DIV_PERIL0: UART Clock Divisors */
-	ldr	r1, =CLK_DIV_PERIL0_VAL
-	ldr	r2, =CLK_DIV_PERIL0_OFFSET
-	str	r1, [r0, r2]
-
 	/* Set PLL locktime */
 	ldr	r1, =APLL_LOCK_VAL
 	ldr	r2, =APLL_LOCK_OFFSET
@@ -254,13 +235,6 @@ system_clock_init:
 	ldr	r2, =APLL_CON0_OFFSET
 	str	r1, [r0, r2]
 
-    /* check MPLL and if MPLL is not 400 Mhz skip MPLL resetting for C2C operation */
-	ldr	r2, =MPLL_CON0_OFFSET
-	ldr	r1, [r0, r2]
-	ldr	r3, =0xa0640301
-    cmp r1, r3
-    bne skip_mpll 
-
 	/* MPLL_CON1 */
 	ldr	r1, =MPLL_CON1_VAL
 	ldr	r2, =MPLL_CON1_OFFSET
@@ -270,7 +244,6 @@ system_clock_init:
 	ldr	r1, =MPLL_CON0_VAL
 	ldr	r2, =MPLL_CON0_OFFSET
 	str	r1, [r0, r2]
-skip_mpll:
 
 	/* EPLL_CON2 */
 	ldr	r1, =EPLL_CON2_VAL
@@ -324,6 +297,26 @@ skip_mpll:
 	mov	r1, #0x10000
 8:	subs	r1, r1, #1
 	bne	8b
+
+	/* _DIV_PERIL0: UART Clock Divisors */
+	ldr	r1, =CLK_DIV_PERIL0_VAL
+	ldr	r2, =CLK_DIV_PERIL0_OFFSET
+	str	r1, [r0, r2]
+
+	/* MMC[0:1] */
+	ldr	r1, =CLK_DIV_FSYS1_VAL		/* 800(MPLL) / (15 + 1) */
+	ldr	r2, =CLK_DIV_FSYS1_OFFSET
+	str	r1, [r0, r2]
+
+	/* MMC[2:3] */
+	ldr	r1, =CLK_DIV_FSYS2_VAL		/* 800(MPLL) / (15 + 1) */
+	ldr	r2, =CLK_DIV_FSYS2_OFFSET
+	str	r1, [r0, r2]
+
+	/* MMC4 */
+	ldr	r1, =CLK_DIV_FSYS3_VAL		/* 800(MPLL) / (15 + 1) */
+	ldr	r2, =CLK_DIV_FSYS3_OFFSET
+	str	r1, [r0, r2]
 
 /* check C2C_CTRL enable bit */
 	ldr r3, =EXYNOS4_POWER_BASE

@@ -92,6 +92,70 @@ static unsigned long exynos4_get_pll_clk(int pllreg)
 	return fout;
 }
 
+/* exynos4: return pll clock frequency */
+static unsigned long exynos4412_get_pll_clk(int pllreg)
+{
+	struct exynos4412_clock *clk =
+		(struct exynos4412_clock *)samsung_get_base_clock();
+	unsigned long r, m, p, s, k = 0, mask, fout;
+	unsigned int freq;
+
+	switch (pllreg) {
+	case APLL:
+		r = readl(&clk->apll_con0);
+		break;
+	case MPLL:
+		r = readl(&clk->mpll_con0);
+		break;
+	case EPLL:
+		r = readl(&clk->epll_con0);
+		k = readl(&clk->epll_con1);
+		break;
+	case VPLL:
+		r = readl(&clk->vpll_con0);
+		k = readl(&clk->vpll_con1);
+		break;
+	default:
+		printf("Unsupported PLL (%d)\n", pllreg);
+		return 0;
+	}
+
+	/*
+	 * APLL_CON: MIDV [25:16]
+	 * MPLL_CON: MIDV [25:16]
+	 * EPLL_CON: MIDV [24:16]
+	 * VPLL_CON: MIDV [24:16]
+	 */
+	if (pllreg == APLL || pllreg == MPLL)
+		mask = 0x3ff;
+	else
+		mask = 0x1ff;
+
+	m = (r >> 16) & mask;
+
+	/* PDIV [13:8] */
+	p = (r >> 8) & 0x3f;
+	/* SDIV [2:0] */
+	s = r & 0x7;
+
+	freq = CONFIG_SYS_CLK_FREQ;
+
+	if (pllreg == EPLL) {
+		k = k & 0xffff;
+		/* FOUT = (MDIV + K / 65536) * FIN / (PDIV * 2^SDIV) */
+		fout = (m + k / 65536) * (freq / (p * (1 << s)));
+	} else if (pllreg == VPLL) {
+		k = k & 0xffff;
+		/* FOUT = (MDIV + K / 65536) * FIN / (PDIV * 2^SDIV) */
+		fout = (m + k / 65536) * (freq / (p * (1 << s)));
+	} else {
+		/* FOUT = MDIV * FIN / (PDIV * 2^SDIV) */
+		fout = m * (freq / (p * (1 << s)));
+	}
+
+	return fout;
+}
+
 /* exynos5: return pll clock frequency */
 static unsigned long exynos5_get_pll_clk(int pllreg)
 {
@@ -827,6 +891,9 @@ unsigned long get_pll_clk(int pllreg)
 {
 	if (cpu_is_exynos5())
 		return exynos5_get_pll_clk(pllreg);
+	else
+	if (cpu_is_exynos4412())
+		return exynos4412_get_pll_clk(pllreg);
 	else
 		return exynos4_get_pll_clk(pllreg);
 }

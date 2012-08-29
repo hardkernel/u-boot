@@ -24,7 +24,7 @@
  */
 
 #include <config.h>
-#include "odroidx_setup.h"
+#include "setup.h"
 #define SET_MIU
 
 	.globl mem_ctrl_asm_init
