@@ -21,6 +21,8 @@
 #ifndef __ASM_ARCH_MMC_H_
 #define __ASM_ARCH_MMC_H_
 
+#include <exports.h>
+
 #define SDHCI_CONTROL2		0x80
 #define SDHCI_CONTROL3		0x84
 #define SDHCI_CONTROL4		0x8C
@@ -69,6 +71,10 @@ int s5p_sdhci_init(u32 regbase, u32 max_clk, u32 min_clk, u32 quirks);
 static inline unsigned int s5p_mmc_init(int index, int bus_width)
 {
 	unsigned int base = samsung_get_base_mmc() + (0x10000 * index);
+
+	printf("%s: index = %d, bus_width = %d\n", __func__, index, bus_width);
+
 	return s5p_sdhci_init(base, 52000000, 400000, index);
+	//return s5p_sdhci_init(base, index, bus_width);
 }
 #endif
