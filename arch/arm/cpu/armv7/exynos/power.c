@@ -82,9 +82,3 @@ void set_usbhost_phy_ctrl(unsigned int enable)
 	if (cpu_is_exynos5())
 		exynos5_set_usbhost_phy_ctrl(enable);
 }
-
-void ps_hold_setup(void)
-{
-	if (cpu_is_exynos4())
-        exynos4_ps_hold_setup();
-}
