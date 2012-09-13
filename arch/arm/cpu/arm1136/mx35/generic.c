@@ -30,6 +30,9 @@
 #include <asm/arch/crm_regs.h>
 #include <asm/arch/clock.h>
 #include <asm/arch/sys_proto.h>
+#ifdef CONFIG_FSL_ESDHC
+#include <fsl_esdhc.h>
+#endif
 #include <netdev.h>
 
 #define CLK_CODE(arm, ahb, sel) (((arm) << 16) + ((ahb) << 8) + (sel))
@@ -205,7 +208,7 @@ u32 imx_get_uartclk(void)
 	return freq;
 }
 
-unsigned int mxc_get_main_clock(enum mxc_main_clocks clk)
+unsigned int mxc_get_main_clock(enum mxc_main_clock clk)
 {
 	u32 nfc_pdf, hsp_podf;
 	u32 pll, ret_val = 0, usb_prdf, usb_podf;
@@ -270,7 +273,7 @@ unsigned int mxc_get_main_clock(enum mxc_main_clocks clk)
 
 	return ret_val;
 }
-unsigned int mxc_get_peri_clock(enum mxc_peri_clocks clk)
+unsigned int mxc_get_peri_clock(enum mxc_peri_clock clk)
 {
 	u32 ret_val = 0, pdf, pre_pdf, clk_sel;
 	struct ccm_regs *ccm =
@@ -463,7 +466,6 @@ int print_cpuinfo(void)
  * Initializes on-chip ethernet controllers.
  * to override, implement board_eth_init()
  */
-
 int cpu_eth_init(bd_t *bis)
 {
 	int rc = -ENODEV;
@@ -474,6 +476,17 @@ int cpu_eth_init(bd_t *bis)
 
 	return rc;
 }
+
+#ifdef CONFIG_FSL_ESDHC
+/*
+ * Initializes on-chip MMC controllers.
+ * to override, implement board_mmc_init()
+ */
+int cpu_mmc_init(bd_t *bis)
+{
+	return fsl_esdhc_mmc_init(bis);
+}
+#endif
 
 int get_clocks(void)
 {

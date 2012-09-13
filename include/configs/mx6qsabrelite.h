@@ -31,6 +31,7 @@
 #define CONFIG_MACH_TYPE	3769
 
 #include <asm/arch/imx-regs.h>
+#include <asm/imx-common/gpio.h>
 
 #define CONFIG_CMDLINE_TAG
 #define CONFIG_SETUP_MEMORY_TAGS
@@ -53,7 +54,7 @@
 #define CONFIG_SPI_FLASH_SST
 #define CONFIG_MXC_SPI
 #define CONFIG_SF_DEFAULT_BUS  0
-#define CONFIG_SF_DEFAULT_CS   (0|(GPIO_NUMBER(3, 19)<<8))
+#define CONFIG_SF_DEFAULT_CS   (0|(IMX_GPIO_NR(3, 19)<<8))
 #define CONFIG_SF_DEFAULT_SPEED 25000000
 #define CONFIG_SF_DEFAULT_MODE (SPI_MODE_0)
 #endif
@@ -116,6 +117,9 @@
 #define CONFIG_MXC_USB_PORT	1
 #define CONFIG_MXC_USB_PORTSC	(PORT_PTS_UTMI | PORT_PTS_PTW)
 #define CONFIG_MXC_USB_FLAGS	0
+
+/* Miscellaneous commands */
+#define CONFIG_CMD_BMODE
 
 /* allow to overwrite serial and ethaddr */
 #define CONFIG_ENV_OVERWRITE
@@ -194,7 +198,6 @@
 #define CONFIG_SYS_HZ		       1000
 
 #define CONFIG_CMDLINE_EDITING
-#define CONFIG_STACKSIZE	       (128 * 1024)
 
 /* Physical Memory Map */
 #define CONFIG_NR_DRAM_BANKS	       1

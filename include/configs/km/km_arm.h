@@ -158,7 +158,6 @@
 #define CONFIG_ARCH_MISC_INIT		/* call arch_misc_init() */
 #define CONFIG_DISPLAY_CPUINFO		/* Display cpu info */
 #define CONFIG_NR_DRAM_BANKS	4
-#define CONFIG_STACKSIZE	0x00100000	/* regular stack- 1M */
 #define CONFIG_SYS_RESET_ADDRESS 0xffff0000	/* Rst Vector Adr */
 
 /*
@@ -307,6 +306,8 @@ int get_scl(void);
 #define CONFIG_KM_RESERVED_PRAM 0x801000
 /* address for the bootcount (taken from end of RAM) */
 #define BOOTCOUNT_ADDR          (CONFIG_KM_RESERVED_PRAM)
+/* Use generic bootcount RAM driver */
+#define CONFIG_BOOTCOUNT_RAM
 
 /* enable POST tests */
 #define CONFIG_POST	(CONFIG_SYS_POST_MEM_REGIONS)

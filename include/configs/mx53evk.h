@@ -88,6 +88,9 @@
 #define CONFIG_CMD_NET
 #define CONFIG_CMD_DATE
 
+/* Miscellaneous commands */
+#define CONFIG_CMD_BMODE
+
 /* allow to overwrite serial and ethaddr */
 #define CONFIG_ENV_OVERWRITE
 #define CONFIG_CONS_INDEX		1
@@ -163,9 +166,6 @@
 
 #define CONFIG_SYS_HZ		1000
 #define CONFIG_CMDLINE_EDITING
-
-/* Stack sizes */
-#define CONFIG_STACKSIZE	(128 * 1024)	/* regular stack */
 
 /* Physical Memory Map */
 #define CONFIG_NR_DRAM_BANKS	1

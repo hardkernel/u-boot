@@ -225,7 +225,7 @@ endif
 
 OBJS := $(addprefix $(obj),$(OBJS))
 
-HAVE_VENDOR_COMMON_LIB = $(if $(wildcard board/$(VENDOR)/common/Makefile), y, n)
+HAVE_VENDOR_COMMON_LIB = $(if $(wildcard board/$(VENDOR)/common/Makefile),y,n)
 
 LIBS-y += lib/libgeneric.o
 LIBS-y += lib/lzma/liblzma.o
@@ -249,6 +249,7 @@ LIBS-y += net/libnet.o
 LIBS-y += disk/libdisk.o
 LIBS-y += drivers/bios_emulator/libatibiosemu.o
 LIBS-y += drivers/block/libblock.o
+LIBS-$(CONFIG_BOOTCOUNT_LIMIT) += drivers/bootcount/libbootcount.o
 LIBS-y += drivers/dma/libdma.o
 LIBS-y += drivers/fpga/libfpga.o
 LIBS-y += drivers/gpio/libgpio.o
@@ -268,6 +269,7 @@ LIBS-y += drivers/pci/libpci.o
 LIBS-y += drivers/pcmcia/libpcmcia.o
 LIBS-y += drivers/power/libpower.o
 LIBS-y += drivers/spi/libspi.o
+LIBS-y += drivers/dfu/libdfu.o
 ifeq ($(CPU),mpc83xx)
 LIBS-y += drivers/qe/libqe.o
 LIBS-y += arch/powerpc/cpu/mpc8xxx/ddr/libddr.o
@@ -317,6 +319,9 @@ LIBS-y += $(CPUDIR)/s5p-common/libs5p-common.o
 endif
 ifeq ($(SOC),exynos)
 LIBS-y += $(CPUDIR)/s5p-common/libs5p-common.o
+endif
+ifeq ($(SOC),tegra20)
+LIBS-y += arch/$(ARCH)/cpu/$(SOC)-common/lib$(SOC)-common.o
 endif
 
 LIBS := $(addprefix $(obj),$(sort $(LIBS-y)))
@@ -376,6 +381,15 @@ ALL-$(CONFIG_ONENAND_U_BOOT) += $(obj)u-boot-onenand.bin
 ONENAND_BIN ?= $(obj)onenand_ipl/onenand-ipl-2k.bin
 ALL-$(CONFIG_SPL) += $(obj)spl/u-boot-spl.bin
 ALL-$(CONFIG_OF_SEPARATE) += $(obj)u-boot.dtb $(obj)u-boot-dtb.bin
+
+# enable combined SPL/u-boot/dtb rules for tegra
+ifeq ($(SOC),tegra20)
+ifeq ($(CONFIG_OF_SEPARATE),y)
+ALL-y += $(obj)u-boot-dtb-tegra.bin
+else
+ALL-y += $(obj)u-boot-nodtb-tegra.bin
+endif
+endif
 
 all:		$(ALL-y) $(SUBDIR_EXAMPLES)
 
@@ -437,7 +451,8 @@ $(obj)u-boot.ubl:       $(obj)spl/u-boot-spl.bin $(obj)u-boot.bin
 		rm $(obj)spl/u-boot-spl-pad.bin
 
 $(obj)u-boot.ais:       $(obj)spl/u-boot-spl.bin $(obj)u-boot.bin
-		$(obj)tools/mkimage -s -n /dev/null -T aisimage \
+		$(obj)tools/mkimage -s -n $(if $(CONFIG_AIS_CONFIG_FILE),$(CONFIG_AIS_CONFIG_FILE),"/dev/null") \
+			-T aisimage \
 			-e $(CONFIG_SPL_TEXT_BASE) \
 			-d $(obj)spl/u-boot-spl.bin \
 			$(obj)spl/u-boot-spl.ais
@@ -446,10 +461,12 @@ $(obj)u-boot.ais:       $(obj)spl/u-boot-spl.bin $(obj)u-boot.bin
 			$(obj)spl/u-boot-spl.ais $(obj)spl/u-boot-spl-pad.ais
 		cat $(obj)spl/u-boot-spl-pad.ais $(obj)u-boot.bin > \
 			$(obj)u-boot.ais
-		rm $(obj)spl/u-boot-spl{,-pad}.ais
+
+# Specify the target for use in elftosb call
+ELFTOSB_TARGET-$(CONFIG_MX28) = imx28
 
 $(obj)u-boot.sb:       $(obj)u-boot.bin $(obj)spl/u-boot-spl.bin
-		elftosb -zdf imx28 -c $(TOPDIR)/board/$(BOARDDIR)/u-boot.bd \
+		elftosb -zdf $(ELFTOSB_TARGET-y) -c $(TOPDIR)/$(CPUDIR)/$(SOC)/u-boot-$(ELFTOSB_TARGET-y).bd \
 			-o $(obj)u-boot.sb
 
 # On x600 (SPEAr600) U-Boot is appended to U-Boot SPL.
@@ -467,6 +484,20 @@ $(obj)u-boot.spr:	$(obj)u-boot.img $(obj)spl/u-boot-spl.bin
 		dd if=$(obj)spl/u-boot-spl.img of=$(obj)spl/u-boot-spl-pad.img \
 			conv=notrunc 2>/dev/null
 		cat $(obj)spl/u-boot-spl-pad.img $(obj)u-boot.img > $@
+
+ifeq ($(SOC),tegra20)
+ifeq ($(CONFIG_OF_SEPARATE),y)
+$(obj)u-boot-dtb-tegra.bin:	$(obj)spl/u-boot-spl.bin $(obj)u-boot.bin $(obj)u-boot.dtb
+		$(OBJCOPY) ${OBJCFLAGS} --pad-to=$(CONFIG_SYS_TEXT_BASE) -O binary $(obj)spl/u-boot-spl $(obj)spl/u-boot-spl-pad.bin
+		cat $(obj)spl/u-boot-spl-pad.bin $(obj)u-boot.bin $(obj)u-boot.dtb > $@
+		rm $(obj)spl/u-boot-spl-pad.bin
+else
+$(obj)u-boot-nodtb-tegra.bin:	$(obj)spl/u-boot-spl.bin $(obj)u-boot.bin
+		$(OBJCOPY) ${OBJCFLAGS} --pad-to=$(CONFIG_SYS_TEXT_BASE) -O binary $(obj)spl/u-boot-spl $(obj)spl/u-boot-spl-pad.bin
+		cat $(obj)spl/u-boot-spl-pad.bin $(obj)u-boot.bin > $@
+		rm $(obj)spl/u-boot-spl-pad.bin
+endif
+endif
 
 ifeq ($(CONFIG_SANDBOX),y)
 GEN_UBOOT = \
@@ -486,7 +517,7 @@ $(obj)u-boot:	depend \
 		$(SUBDIR_TOOLS) $(OBJS) $(LIBBOARD) $(LIBS) $(LDSCRIPT) $(obj)u-boot.lds
 		$(GEN_UBOOT)
 ifeq ($(CONFIG_KALLSYMS),y)
-		smap=`$(call SYSTEM_MAP,u-boot) | \
+		smap=`$(call SYSTEM_MAP,$(obj)u-boot) | \
 			awk '$$2 ~ /[tTwW]/ {printf $$1 $$3 "\\\\000"}'` ; \
 		$(CC) $(CFLAGS) -DSYSTEM_MAP="\"$${smap}\"" \
 			-c common/system_map.c -o $(obj)common/system_map.o
@@ -796,6 +827,7 @@ clobber:	tidy
 	@[ ! -d $(obj)nand_spl ] || find $(obj)nand_spl -name "*" -type l -print | xargs rm -f
 	@[ ! -d $(obj)onenand_ipl ] || find $(obj)onenand_ipl -name "*" -type l -print | xargs rm -f
 	@rm -f $(obj)dts/*.tmp
+	@rm -f $(obj)spl/u-boot-spl{,-pad}.ais
 
 mrproper \
 distclean:	clobber unconfig

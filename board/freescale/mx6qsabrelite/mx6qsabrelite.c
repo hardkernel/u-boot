@@ -24,11 +24,13 @@
 #include <asm/io.h>
 #include <asm/arch/clock.h>
 #include <asm/arch/imx-regs.h>
+#include <asm/arch/iomux.h>
 #include <asm/arch/mx6x_pins.h>
 #include <asm/errno.h>
 #include <asm/gpio.h>
 #include <asm/imx-common/iomux-v3.h>
 #include <asm/imx-common/mxc_i2c.h>
+#include <asm/imx-common/boot_mode.h>
 #include <mmc.h>
 #include <fsl_esdhc.h>
 #include <micrel.h>
@@ -85,12 +87,12 @@ struct i2c_pads_info i2c_pad_info0 = {
 	.scl = {
 		.i2c_mode = MX6Q_PAD_EIM_D21__I2C1_SCL | PC,
 		.gpio_mode = MX6Q_PAD_EIM_D21__GPIO_3_21 | PC,
-		.gp = GPIO_NUMBER(3, 21)
+		.gp = IMX_GPIO_NR(3, 21)
 	},
 	.sda = {
 		.i2c_mode = MX6Q_PAD_EIM_D28__I2C1_SDA | PC,
 		.gpio_mode = MX6Q_PAD_EIM_D28__GPIO_3_28 | PC,
-		.gp = GPIO_NUMBER(3, 28)
+		.gp = IMX_GPIO_NR(3, 28)
 	}
 };
 
@@ -99,12 +101,12 @@ struct i2c_pads_info i2c_pad_info1 = {
 	.scl = {
 		.i2c_mode = MX6Q_PAD_KEY_COL3__I2C2_SCL | PC,
 		.gpio_mode = MX6Q_PAD_KEY_COL3__GPIO_4_12 | PC,
-		.gp = GPIO_NUMBER(4, 12)
+		.gp = IMX_GPIO_NR(4, 12)
 	},
 	.sda = {
 		.i2c_mode = MX6Q_PAD_KEY_ROW3__I2C2_SDA | PC,
 		.gpio_mode = MX6Q_PAD_KEY_ROW3__GPIO_4_13 | PC,
-		.gp = GPIO_NUMBER(4, 13)
+		.gp = IMX_GPIO_NR(4, 13)
 	}
 };
 
@@ -113,12 +115,12 @@ struct i2c_pads_info i2c_pad_info2 = {
 	.scl = {
 		.i2c_mode = MX6Q_PAD_GPIO_5__I2C3_SCL | PC,
 		.gpio_mode = MX6Q_PAD_GPIO_5__GPIO_1_5 | PC,
-		.gp = GPIO_NUMBER(1, 5)
+		.gp = IMX_GPIO_NR(1, 5)
 	},
 	.sda = {
 		.i2c_mode = MX6Q_PAD_GPIO_16__I2C3_SDA | PC,
 		.gpio_mode = MX6Q_PAD_GPIO_16__GPIO_7_11 | PC,
-		.gp = GPIO_NUMBER(7, 11)
+		.gp = IMX_GPIO_NR(7, 11)
 	}
 };
 
@@ -227,9 +229,9 @@ int board_ehci_hcd_init(int port)
 	imx_iomux_v3_setup_multiple_pads(usb_pads, ARRAY_SIZE(usb_pads));
 
 	/* Reset USB hub */
-	gpio_direction_output(GPIO_NUMBER(7, 12), 0);
+	gpio_direction_output(IMX_GPIO_NR(7, 12), 0);
 	mdelay(2);
-	gpio_set_value(GPIO_NUMBER(7, 12), 1);
+	gpio_set_value(IMX_GPIO_NR(7, 12), 1);
 
 	return 0;
 }
@@ -237,8 +239,8 @@ int board_ehci_hcd_init(int port)
 
 #ifdef CONFIG_FSL_ESDHC
 struct fsl_esdhc_cfg usdhc_cfg[2] = {
-       {USDHC3_BASE_ADDR, 1},
-       {USDHC4_BASE_ADDR, 1},
+       {USDHC3_BASE_ADDR},
+       {USDHC4_BASE_ADDR},
 };
 
 int board_mmc_getcd(struct mmc *mmc)
@@ -411,12 +413,12 @@ struct button_key {
 };
 
 static struct button_key const buttons[] = {
-	{"back",	GPIO_NUMBER(2, 2),	'B'},
-	{"home",	GPIO_NUMBER(2, 4),	'H'},
-	{"menu",	GPIO_NUMBER(2, 1),	'M'},
-	{"search",	GPIO_NUMBER(2, 3),	'S'},
-	{"volup",	GPIO_NUMBER(7, 13),	'V'},
-	{"voldown",	GPIO_NUMBER(4, 5),	'v'},
+	{"back",	IMX_GPIO_NR(2, 2),	'B'},
+	{"home",	IMX_GPIO_NR(2, 4),	'H'},
+	{"menu",	IMX_GPIO_NR(2, 1),	'M'},
+	{"search",	IMX_GPIO_NR(2, 3),	'S'},
+	{"volup",	IMX_GPIO_NR(7, 13),	'V'},
+	{"voldown",	IMX_GPIO_NR(4, 5),	'v'},
 };
 
 /*
@@ -487,10 +489,23 @@ static void preboot_keys(void)
 }
 #endif
 
+#ifdef CONFIG_CMD_BMODE
+static const struct boot_mode board_boot_modes[] = {
+	/* 4 bit bus width */
+	{"mmc0",	MAKE_CFGVAL(0x40, 0x30, 0x00, 0x00)},
+	{"mmc1",	MAKE_CFGVAL(0x40, 0x38, 0x00, 0x00)},
+	{NULL,		0},
+};
+#endif
+
 int misc_init_r(void)
 {
 #ifdef CONFIG_PREBOOT
 	preboot_keys();
+#endif
+
+#ifdef CONFIG_CMD_BMODE
+	add_board_boot_modes(board_boot_modes);
 #endif
 	return 0;
 }

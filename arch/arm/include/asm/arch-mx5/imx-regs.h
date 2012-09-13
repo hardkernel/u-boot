@@ -23,6 +23,8 @@
 #ifndef __ASM_ARCH_MX5_IMX_REGS_H__
 #define __ASM_ARCH_MX5_IMX_REGS_H__
 
+#define ARCH_MXC
+
 #if defined(CONFIG_MX51)
 #define IRAM_BASE_ADDR		0x1FFE0000	/* internal ram */
 #define IPU_SOC_BASE_ADDR	0x40000000
@@ -457,6 +459,24 @@ struct src {
 	u32	reserved1[2];
 	u32	sisr;
 	u32	simr;
+};
+
+struct srtc_regs {
+	u32	lpscmr;		/* 0x00 */
+	u32	lpsclr;		/* 0x04 */
+	u32	lpsar;		/* 0x08 */
+	u32	lpsmcr;		/* 0x0c */
+	u32	lpcr;		/* 0x10 */
+	u32	lpsr;		/* 0x14 */
+	u32	lppdr;		/* 0x18 */
+	u32	lpgr;		/* 0x1c */
+	u32	hpcmr;		/* 0x20 */
+	u32	hpclr;		/* 0x24 */
+	u32	hpamr;		/* 0x28 */
+	u32	hpalr;		/* 0x2c */
+	u32	hpcr;		/* 0x30 */
+	u32	hpisr;		/* 0x34 */
+	u32	hpienr;		/* 0x38 */
 };
 
 /* CSPI registers */

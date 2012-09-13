@@ -42,8 +42,10 @@
 #define CONFIG_DISPLAY_CPUINFO
 #define CONFIG_DISPLAY_BOARDINFO
 
-/* Keep L2 Cache Disabled */
-#define CONFIG_SYS_L2CACHE_OFF
+#ifndef CONFIG_SYS_L2CACHE_OFF
+#define CONFIG_SYS_L2_PL310
+#define CONFIG_SYS_PL310_BASE	0x10502000
+#endif
 
 #define CONFIG_SYS_SDRAM_BASE		0x40000000
 #define CONFIG_SYS_TEXT_BASE		0x63300000
@@ -95,6 +97,21 @@
 #undef CONFIG_CMD_ONENAND
 #undef CONFIG_CMD_MTDPARTS
 #define CONFIG_CMD_MMC
+#define CONFIG_CMD_DFU
+
+/* FAT */
+#define CONFIG_CMD_FAT
+#define CONFIG_FAT_WRITE
+
+/* USB Composite download gadget - g_dnl */
+#define CONFIG_USBDOWNLOAD_GADGET
+#define CONFIG_DFU_FUNCTION
+#define CONFIG_DFU_MMC
+
+/* USB Samsung's IDs */
+#define CONFIG_G_DNL_VENDOR_NUM 0x04E8
+#define CONFIG_G_DNL_PRODUCT_NUM 0x6601
+#define CONFIG_G_DNL_MANUFACTURER "Samsung"
 
 #define CONFIG_BOOTDELAY		1
 #define CONFIG_ZERO_BOOTDELAY_CHECK
@@ -104,6 +121,11 @@
 #define CONFIG_DEFAULT_CONSOLE		"console=ttySAC2,115200n8\0"
 #define CONFIG_BOOTBLOCK		"10"
 #define CONFIG_ENV_COMMON_BOOT		"${console} ${meminfo}"
+
+#define CONFIG_DFU_ALT \
+	"dfu_alt_info=" \
+	"u-boot mmc 80 400;" \
+	"uImage fat 0 2\0" \
 
 #define CONFIG_ENV_OVERWRITE
 #define CONFIG_SYS_CONSOLE_INFO_QUIET
@@ -144,10 +166,12 @@
 	"meminfo=crashkernel=32M@0x50000000\0" \
 	"nfsroot=/nfsroot/arm\0" \
 	"bootblock=" CONFIG_BOOTBLOCK "\0" \
+	"loaduimage=fatload mmc ${mmcdev}:${mmcbootpart} 0x40007FC0 uImage\0" \
 	"mmcdev=0\0" \
 	"mmcbootpart=2\0" \
 	"mmcrootpart=3\0" \
-	"opts=always_resume=1"
+	"opts=always_resume=1\0" \
+	CONFIG_DFU_ALT
 
 /* Miscellaneous configurable options */
 #define CONFIG_SYS_LONGHELP		/* undef to save memory */
@@ -164,9 +188,6 @@
 #define CONFIG_SYS_LOAD_ADDR		(CONFIG_SYS_SDRAM_BASE + 0x4800000)
 
 #define CONFIG_SYS_HZ			1000
-
-/* Stack sizes */
-#define CONFIG_STACKSIZE		(256 << 10) /* regular stack 256KB */
 
 /* TRATS has 2 banks of DRAM */
 #define CONFIG_NR_DRAM_BANKS	2
@@ -210,6 +231,7 @@
 #define CONFIG_USB_GADGET
 #define CONFIG_USB_GADGET_S3C_UDC_OTG
 #define CONFIG_USB_GADGET_DUALSPEED
+#define CONFIG_USB_GADGET_VBUS_DRAW	2
 
 /* LCD */
 #define CONFIG_EXYNOS_FB

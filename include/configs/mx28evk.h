@@ -19,20 +19,19 @@
 #ifndef __MX28EVK_CONFIG_H__
 #define __MX28EVK_CONFIG_H__
 
-#include <asm/arch/regs-base.h>
-
 /*
  * SoC configurations
  */
 #define CONFIG_MX28				/* i.MX28 SoC */
+
 #define CONFIG_MXS_GPIO			/* GPIO control */
 #define CONFIG_SYS_HZ		1000		/* Ticks per second */
 
 #define CONFIG_MACH_TYPE	MACH_TYPE_MX28EVK
 
+#include <asm/arch/regs-base.h>
+
 #define CONFIG_SYS_NO_FLASH
-#define CONFIG_SYS_ICACHE_OFF
-#define CONFIG_SYS_DCACHE_OFF
 #define CONFIG_BOARD_EARLY_INIT_F
 #define CONFIG_ARCH_MISC_INIT
 
@@ -41,8 +40,8 @@
  */
 #define CONFIG_SPL
 #define CONFIG_SPL_NO_CPU_SUPPORT_CODE
-#define CONFIG_SPL_START_S_PATH	"arch/arm/cpu/arm926ejs/mx28"
-#define CONFIG_SPL_LDSCRIPT	"arch/arm/cpu/arm926ejs/mx28/u-boot-spl.lds"
+#define CONFIG_SPL_START_S_PATH	"arch/arm/cpu/arm926ejs/mxs"
+#define CONFIG_SPL_LDSCRIPT	"arch/arm/cpu/arm926ejs/mxs/u-boot-spl.lds"
 #define CONFIG_SPL_LIBCOMMON_SUPPORT
 #define CONFIG_SPL_LIBGENERIC_SUPPORT
 #define CONFIG_SPL_GPIO_SUPPORT
@@ -76,7 +75,6 @@
 #define CONFIG_NR_DRAM_BANKS		1		/* 1 bank of DRAM */
 #define PHYS_SDRAM_1			0x40000000	/* Base address */
 #define PHYS_SDRAM_1_SIZE		0x40000000	/* Max 1 GB RAM */
-#define CONFIG_STACKSIZE		(128 * 1024)	/* 128 KB stack */
 #define CONFIG_SYS_MALLOC_LEN		0x00400000	/* 4 MB for malloc */
 #define CONFIG_SYS_MEMTEST_START	0x40000000	/* Memtest start adr */
 #define CONFIG_SYS_MEMTEST_END		0x40400000	/* 4 MB RAM test */
@@ -216,7 +214,6 @@
 #define CONFIG_SF_DEFAULT_SPEED		24000000
 
 /* (redundant) environemnt in SPI flash */
-#undef CONFIG_ENV_IS_IN_SPI_FLASH
 #ifdef CONFIG_ENV_IS_IN_SPI_FLASH
 #define CONFIG_SYS_REDUNDAND_ENVIRONMENT
 #define CONFIG_ENV_SIZE			0x1000		/* 4KB */
