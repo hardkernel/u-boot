@@ -50,6 +50,7 @@ COBJS-$(CONFIG_CPU_PXA27X) += pxa27x_udc.o
 endif
 endif
 
+COBJS-y += usbd-otg-hs.o
 COBJS	:= $(COBJS-y)
 SRCS	:= $(COBJS:.o=.c)
 OBJS	:= $(addprefix $(obj),$(COBJS))

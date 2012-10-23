@@ -1,5 +1,5 @@
 /*
- * Machine Specific Values for ODROIDX board based on Exynos4412
+ * Machine Specific Values for ODROID-X,U Series board based on Exynos4412
  *
  * Copyright (C) 2013  Hardkernel Co.,LTD.
  * Hakjoo Kim <ruppi.kim@hardkernel.com>
@@ -270,7 +270,6 @@
 #define MFC_0_SEL		MFC_SEL_MPLL
 #define CLK_SRC_MFC_VAL		((MFC_SEL << 8) | (MFC_0_SEL))
 
-
 /* CLK_DIV_MFC */
 #define MFC_RATIO		3
 #define CLK_DIV_MFC_VAL		(MFC_RATIO)
@@ -307,11 +306,6 @@
 #define S5P_CHECK_SLEEP			0x00000BAD
 #define S5P_CHECK_DIDLE			0xBAD00000
 #define S5P_CHECK_LPA			0xABAD0000
-
-
-
-
-
 
 
 /* Offsets of clock registers (sources and dividers) */
@@ -415,7 +409,7 @@
 #define TZPC_DECPROT2SET_OFFSET	0x81C
 #define TZPC_DECPROT3SET_OFFSET	0x828
  
-/* CLK_SRS_FSYS: 6 = SCLKMPLL */
+/* CLK_SRC_FSYS: 6 = SCLKMPLL */
 #define SATA_SEL_SCLKMPLL	0
 #define SATA_SEL_SCLKAPLL	1
 
@@ -431,9 +425,10 @@
 
 /* SCLK_MMC[0-4] = MOUTMMC[0-4]/(MMC[0-4]_RATIO + 1)/(MMC[0-4]_PRE_RATIO +1) */
 /* CLK_DIV_FSYS1 */
-#define MMC0_RATIO		0xF
+
+#define MMC0_RATIO		0x7
 #define MMC0_PRE_RATIO		0x0
-#define MMC1_RATIO		0xF
+#define MMC1_RATIO		0x0
 #define MMC1_PRE_RATIO		0x0
 #define CLK_DIV_FSYS1_VAL	((MMC1_PRE_RATIO << 24) \
 				| (MMC1_RATIO << 16) \
@@ -441,9 +436,9 @@
 				| (MMC0_RATIO << 0))
 
 /* CLK_DIV_FSYS2 */
-#define MMC2_RATIO		0xF
+#define MMC2_RATIO		0x7
 #define MMC2_PRE_RATIO		0x0
-#define MMC3_RATIO		0xF
+#define MMC3_RATIO		0x0
 #define MMC3_PRE_RATIO		0x0
 #define CLK_DIV_FSYS2_VAL	((MMC3_PRE_RATIO << 24) \
 				| (MMC3_RATIO << 16) \
@@ -451,71 +446,14 @@
 				| (MMC2_RATIO << 0))
 
 /* CLK_DIV_FSYS3 */
-#define MMC4_RATIO		0xF
-#define MMC4_PRE_RATIO		0x0
+#define MMC4_RATIO		0x0
+#define MMC4_PRE_RATIO		0x1
 #define CLK_DIV_FSYS3_VAL	((MMC4_PRE_RATIO << 8) \
 				| (MMC4_RATIO << 0))
-
-/* CLK_SRC_PERIL0 */
-#define UART_SEL_XXTI		0
-#define UART_SEL_XUSBXTI	1
-#define UART_SEL_SCLK_HDMI24M	2
-#define UART_SEL_SCLK_USBPHY0	3
-#define UART_SEL_SCLK_USBPHY1	4
-#define UART_SEL_SCLK_HDMIPHY	5
-#define UART_SEL_SCLKMPLL	6
-#define UART_SEL_SCLKEPLL	7
-#define UART_SEL_SCLKVPLL	8
-
-#define UART0_SEL		UART_SEL_SCLKMPLL
-#define UART1_SEL		UART_SEL_SCLKMPLL
-#define UART2_SEL		UART_SEL_SCLKMPLL
-#define UART3_SEL		UART_SEL_SCLKMPLL
-#define UART4_SEL		UART_SEL_SCLKMPLL
-#define CLK_SRC_PERIL0_VAL	((UART4_SEL << 16) \
-				| (UART3_SEL << 12) \
-				| (UART2_SEL << 8) \
-				| (UART1_SEL << 4) \
-				| (UART0_SEL << 0))
-
-/* SCLK_UART[0-4] = MOUTUART[0-4]/(UART[0-4]_RATIO + 1) */
-/* CLK_DIV_PERIL0 */
-#define UART0_RATIO		7
-#define UART1_RATIO		7
-#define UART2_RATIO		7
-#define UART3_RATIO		7
-#define UART4_RATIO		7
-#define CLK_DIV_PERIL0_VAL	((UART4_RATIO << 16) \
-				| (UART3_RATIO << 12) \
-				| (UART2_RATIO << 8) \
-				| (UART1_RATIO << 4) \
-				| (UART0_RATIO << 0))
-
-/* CLK_SRC_LCD0 */
-#define FIMD_SEL_SCLKMPLL	6
-#define MDNIE0_SEL_XUSBXTI	1
-#define MDNIE_PWM0_SEL_XUSBXTI	1
-#define MIPI0_SEL_XUSBXTI	1
-#define CLK_SRC_LCD0_VAL	((MIPI0_SEL_XUSBXTI << 12) \
-				| (MDNIE_PWM0_SEL_XUSBXTI << 8) \
-				| (MDNIE0_SEL_XUSBXTI << 4) \
-				| (FIMD_SEL_SCLKMPLL << 0))
-
-/* Required period to generate a stable clock output */
-/* PLL_LOCK_TIME */
-#define APLL_LOCK_VAL		0x3E8
-#define MPLL_LOCK_VAL		0x2F1
-#define EPLL_LOCK_VAL		0x2321
-#define VPLL_LOCK_VAL		0x2321
-#define PLL_LOCKTIME		0x1C20
 
 /* PLL Values */
 #define DISABLE			0
 #define ENABLE			1
-#define SET_PLL(mdiv, pdiv, sdiv)	((ENABLE << 31)\
-					| (mdiv << 16) \
-					| (pdiv << 8) \
-					| (sdiv << 0))
 
 /*
  * UART GPIO_A0/GPIO_A1 Control Register Value

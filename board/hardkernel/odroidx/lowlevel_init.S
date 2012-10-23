@@ -96,8 +96,8 @@ lowlevel_init:
     ldmia   r13!, {ip,pc}
 
 wakeup_reset:
-	bl mem_ctrl_asm_init
 	bl system_clock_init
+	bl mem_ctrl_asm_init
 	bl tzpc_init
 
 exit_wakeup:

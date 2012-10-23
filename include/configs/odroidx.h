@@ -30,6 +30,7 @@
 #define CONFIG_CMD_BOOTZ
 #define CONFIG_SAMSUNG			/* in a SAMSUNG core */
 #define CONFIG_S5P			/* S5P Family */
+#define CONFIG_ARCH_EXYNOS		/* which is in a Exynos Family */
 #define CONFIG_EXYNOS4			/* which is in a Exynos4 Family */
 #define CONFIG_EXYNOS4412		/* which is in a Exynos4412 */
 #define CONFIG_BOARDNAME	"Odroid-x"
@@ -52,7 +53,6 @@
 
 #define CONFIG_SYS_SDRAM_BASE		0x40000000
 #define CONFIG_SYS_TEXT_BASE		0x43E00000
-
 
 #define CONFIG_SETUP_MEMORY_TAGS
 #define CONFIG_CMDLINE_TAG
@@ -85,6 +85,8 @@
 #define CONFIG_SDHCI
 #define CONFIG_S5P_SDHCI
 #define CONFIG_CMD_MMC
+/* #define CONFIG_DWMMC */
+/* #define CONFIG_EXYNOS_DWMMC */
 
 #define CONFIG_BOARD_EARLY_INIT_F	1
 
@@ -94,23 +96,54 @@
 /* Command definition*/
 #include <config_cmd_default.h>
 
-#define CONFIG_CMD_PING
 #define CONFIG_CMD_ELF
 #define CONFIG_CMD_MMC
 #define CONFIG_CMD_NET
 
-#define CONFIG_BOOTDELAY		3
+#define CONFIG_BOOTDELAY		1
 #define CONFIG_ZERO_BOOTDELAY_CHECK
+
+#define CONFIG_EXTRA_ENV_SETTINGS \
+        "usbtty=cdc_acm\0" \
+        "hostname=odroid\0" \
+        "usbethaddr=00:02:03:04:05:06\0" \
+        "loadaddr=0x42000000\0" \
+        "console=ttySAC1,115200n8\0" \
+        "mmcdev=0:2\0" \
+        "mmcroot=/dev/mmcblk0p2 rw\0" \
+        "rootwait\0" \
+        "mmcargs=setenv bootargs console=${console} " \
+	"root=${mmcroot}\0" \
+        "loadbootscript=fatload mmc ${mmcdev} ${loadaddr} boot.scr\0" \
+        "bootscript=echo Running bootscript from mmc${mmcdev} ...; " \
+	"source ${loadaddr}\0" \
+        "loaduimage=fatload mmc ${mmcdev} ${loadaddr} uImage\0" \
+        "mmcboot=echo Booting from mmc${mmcdev} ...; " \
+	"run mmcargs; " \
+	"bootm ${loadaddr}\0" \
+
+#define CONFIG_BOOTCOMMAND \
+        "if mmc rescan ${mmcdev}; then " \
+	"if run loadbootscript; then " \
+	"run bootscript; " \
+                "else " \
+	"if run loaduimage; then " \
+	"run mmcboot; " \
+	"fi; " \
+	"fi; " \
+        "fi"
 
 /* USB */
 #define CONFIG_CMD_USB
 #define CONFIG_USB_EHCI
 #define CONFIG_USB_EHCI_EXYNOS
+#define CONFIG_USB_HOST
+#define CONFIG_USB_HOST_ETHER
+#define CONFIG_USB_ETHER_SMSC95XX
 #define CONFIG_USB_STORAGE
 
-#define CONFIG_BOOTCOMMAND	"fatload mmc 0:2 40007000 uImage; bootm 40007000"
-
 /* Miscellaneous configurable options */
+#define CONFIG_CMDLINE_EDITING
 #define CONFIG_SYS_LONGHELP		/* undef to save memory */
 #define CONFIG_SYS_HUSH_PARSER		/* use "hush" command parser	*/
 #define CONFIG_SYS_PROMPT		CONFIG_BOARDNAME " # "
@@ -180,6 +213,7 @@
 
 /* File System */
 #define CONFIG_DOS_PARTITION
+#define CONFIG_EFI_PARTITION
 #define CONFIG_CMD_FAT
 #define CONFIG_CMD_EXT2
 
@@ -199,21 +233,16 @@
 #define CONFIG_SYS_I2C_SLAVE    0x0
 
 /* PMIC */
-
 #define CONFIG_PMIC
 #define CONFIG_PMIC_I2C
 #define CONFIG_PMIC_MAX77686
 
-/* Ethernet Controllor Driver */
+/* Ethernet Controllor */
 #ifdef CONFIG_CMD_NET
-#define CONFIG_SMC911X
-#define CONFIG_SMC911X_BASE		0x5000000
-#define CONFIG_SMC911X_16_BIT
-#define CONFIG_ENV_SROM_BANK		1
-#endif /*CONFIG_CMD_NET*/
-
-/* Enable devicetree support */
-#define CONFIG_OF_LIBFDT
+#define CONFIG_NET_MULTI
+#define CONFIG_CMD_PING
+#define CONFIG_CMD_DHCP
+#endif
 
 #ifdef CONFIG_ENABLE_MMU
 #define CONFIG_SYS_MAPPED_RAM_BASE	0xc0000000
@@ -224,4 +253,15 @@
 #endif
 
 #define CONFIG_PHY_UBOOT_BASE		CONFIG_SYS_SDRAM_BASE + 0x3e00000
+
+/* USB Options */
+#ifdef CONFIG_CMD_USB
+#define CONFIG_USB_OHCI
+#define CONFIG_S3C_USBD
+#define USBD_DOWN_ADDR                 0xC0000000
+#endif
+
+/* Enable devicetree support */
+#define CONFIG_OF_LIBFDT
+
 #endif	/* __CONFIG_H */

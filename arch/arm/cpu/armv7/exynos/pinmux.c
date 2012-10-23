@@ -66,14 +66,18 @@ static int exynos4_mmc_config(int peripheral, int flags)
 	struct exynos4_gpio_part2 *gpio2 =
 		(struct exynos4_gpio_part2 *) samsung_get_base_gpio_part2();
 	struct s5p_gpio_bank *bank, *bank_ext;
-	int i, start = 0, gpio_func = 0;
+	int i, start = 0, gpio_func = 0, gpio_func_0 = GPIO_FUNC(0x2);
 
 	switch (peripheral) {
 	case PERIPH_ID_SDMMC0:
 		bank = &gpio2->k0;
 		bank_ext = &gpio2->k1;
 		start = 3;
+#ifdef CONFIG_EXYNOS4412
+		gpio_func = GPIO_FUNC(0x3);
+#else 
 		gpio_func = GPIO_FUNC(0x2);
+#endif
 		break;
 	case PERIPH_ID_SDMMC1:
 		bank = &gpio2->k1;
@@ -89,6 +93,15 @@ static int exynos4_mmc_config(int peripheral, int flags)
 		bank = &gpio2->k3;
 		bank_ext = NULL;
 		break;
+#ifdef CONFIG_EXYNOS4412
+	case PERIPH_ID_SDMMC4:
+		bank = &gpio2->k0;
+		bank_ext = &gpio2->k1;
+		start = 3;
+		gpio_func_0 = GPIO_FUNC(0x3);
+		gpio_func = GPIO_FUNC(0x4);
+		break;
+#endif
 	}
 	if ((flags & PINMUX_FLAG_8BIT_MODE) && !bank_ext) {
 		debug("SDMMC device %d does not support 8bit mode",
@@ -103,12 +116,12 @@ static int exynos4_mmc_config(int peripheral, int flags)
 		}
 	}
 	for (i = 0; i < 2; i++) {
-		s5p_gpio_cfg_pin(bank, i, GPIO_FUNC(0x2));
-		s5p_gpio_set_pull(bank, i, GPIO_PULL_NONE);
+		s5p_gpio_cfg_pin(bank, i, gpio_func_0);
+		s5p_gpio_set_pull(bank, i,GPIO_PULL_NONE);
 		s5p_gpio_set_drv(bank, i, GPIO_DRV_4X);
 	}
 	for (i = 3; i <= 6; i++) {
-		s5p_gpio_cfg_pin(bank, i, GPIO_FUNC(0x2));
+		s5p_gpio_cfg_pin(bank, i, gpio_func_0);
 		s5p_gpio_set_pull(bank, i, GPIO_PULL_UP);
 		s5p_gpio_set_drv(bank, i, GPIO_DRV_4X);
 	}
@@ -243,6 +256,7 @@ static int exynos4_pinmux_config(int peripheral, int flags)
 	case PERIPH_ID_SDMMC1:
 	case PERIPH_ID_SDMMC2:
 	case PERIPH_ID_SDMMC3:
+	case PERIPH_ID_SDMMC4:
 		return exynos4_mmc_config(peripheral, flags);
 	case PERIPH_ID_SROMC:
 		exynos4_sromc_config(flags);

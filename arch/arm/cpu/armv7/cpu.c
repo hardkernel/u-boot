@@ -38,6 +38,11 @@
 #include <asm/armv7.h>
 #include <linux/compiler.h>
 
+#ifdef CONFIG_ODROIDX
+#include <asm/arch/mmc.h>
+#include <asm/arch/pinmux.h>
+#endif
+
 void __weak cpu_cache_initialization(void){}
 
 int cleanup_before_linux(void)
@@ -82,5 +87,9 @@ int cleanup_before_linux(void)
 	 */
 	cpu_cache_initialization();
 
+#ifdef CONFIG_ODROIDX
+	exynos_pinmux_config(PERIPH_ID_SDMMC4, PINMUX_FLAG_8BIT_MODE);
+	s5p_mmc_init(4, 8);
+#endif
 	return 0;
 }

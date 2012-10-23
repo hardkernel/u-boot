@@ -29,6 +29,7 @@
 #include <asm/arch/cpu.h>
 #include <asm/arch/gpio.h>
 #include <asm/arch/mmc.h>
+#include <asm/arch/dwmmc.h>
 #include <asm/arch/pinmux.h>
 #include <asm/arch/sromc.h>
 #include <asm/arch/power.h>
@@ -108,13 +109,21 @@ int checkboard(void)
 int board_emmc_init(void)
 {
 	int err;
-
-	err = exynos_pinmux_config(PERIPH_ID_SDMMC0, PINMUX_FLAG_NONE);
+#ifndef CONFIG_EXYNOS_DWMMC 
+	err = exynos_pinmux_config(PERIPH_ID_SDMMC0, PINMUX_FLAG_8BIT_MODE);
 	if (err) {
-		debug("eMMC0 not configured\n");
+		debug("eMMC ch0 not configured\n");
 		return err;
 	}
 	err = s5p_mmc_init(0, 8);
+#else
+	err = exynos_pinmux_config(PERIPH_ID_SDMMC4, PINMUX_FLAG_8BIT_MODE);
+	if (err) {
+		debug("eMMC ch4 not configured\n");
+		return err;
+	}
+	err = exynos_dwmmc_init(4, 8);
+#endif
 	return err;
 }
 
@@ -152,7 +161,7 @@ static int board_uart_init(void)
 {
 	int err;
 
-	err = exynos_pinmux_config(PERIPH_ID_UART0, PINMUX_FLAG_NONE);
+	err = exynos_pinmux_config(PERIPH_ID_UART, PINMUX_FLAG_NONE);
 	if (err) {
 		debug("UART%d not configured\n",
 			   PERIPH_ID_UART - PERIPH_ID_UART0);

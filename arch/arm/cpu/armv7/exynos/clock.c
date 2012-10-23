@@ -475,11 +475,20 @@ static void exynos4_set_mmc_clk(int dev_index, unsigned int div)
 	 */
 	if (dev_index < 2) {
 		addr = (unsigned int)&clk->div_fsys1;
+#ifdef CONFIG_EXYNOS4412
+	} else if (dev_index <4) {
+		addr = (unsigned int)&clk->div_fsys2;
+		dev_index -= 2;
+	} else {
+		addr = (unsigned int)&clk->div_fsys3;
+		dev_index -= 4;
+	}
+#else 
 	} else {
 		addr = (unsigned int)&clk->div_fsys2;
 		dev_index -= 2;
 	}
-
+#endif
 	val = readl(addr);
 	val &= ~(0xff << ((dev_index << 4) + 8));
 	val |= (div & 0xff) << ((dev_index << 4) + 8);

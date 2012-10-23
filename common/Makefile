@@ -28,6 +28,7 @@ LIB	= $(obj)libcommon.o
 # core
 ifndef CONFIG_SPL_BUILD
 COBJS-y += main.o
+COBJS-$(CONFIG_S3C_USBD) += cmd_usbd.o
 COBJS-y += command.o
 COBJS-y += exports.o
 COBJS-$(CONFIG_SYS_HUSH_PARSER) += hush.o
