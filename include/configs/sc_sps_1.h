@@ -39,8 +39,6 @@
 #include <asm/arch/regs-base.h>
 
 #define CONFIG_SYS_NO_FLASH
-#define CONFIG_SYS_ICACHE_OFF
-#define CONFIG_SYS_DCACHE_OFF
 #define CONFIG_BOARD_EARLY_INIT_F
 #define CONFIG_ARCH_CPU_INIT
 #define CONFIG_ARCH_MISC_INIT
@@ -142,7 +140,7 @@
 #ifdef CONFIG_CMD_MMC
 #define CONFIG_APBH_DMA
 #define CONFIG_MMC
-#define CONFIG_MMC_BOUNCE_BUFFER
+#define CONFIG_BOUNCE_BUFFER
 #define CONFIG_GENERIC_MMC
 #define CONFIG_MXS_MMC
 #endif

@@ -24,7 +24,7 @@
 #include <common.h>
 #include <command.h>
 
-int do_test(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+static int do_test(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	char * const *ap;
 	int left, adv, expr, last_expr, neg, last_cmp;
@@ -33,12 +33,12 @@ int do_test(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	if (argc < 3)
 		return 1;
 
-#if 0
+#ifdef DEBUG
 	{
-		printf("test:");
+		debug("test(%d):", argc);
 		left = 1;
 		while (argv[left])
-			printf(" %s", argv[left++]);
+			debug(" '%s'", argv[left++]);
 	}
 #endif
 
@@ -150,7 +150,7 @@ U_BOOT_CMD(
 	"[args..]"
 );
 
-int do_false(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+static int do_false(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	return 1;
 }
@@ -161,7 +161,7 @@ U_BOOT_CMD(
 	NULL
 );
 
-int do_true(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+static int do_true(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	return 0;
 }

@@ -38,8 +38,21 @@ endif
 
 LIB	= $(obj)lib$(ARCH).o
 
-SOBJS-y	+= ppccache.o
+MINIMAL=
+
+ifdef CONFIG_SPL_BUILD
+ifdef CONFIG_SPL_INIT_MINIMAL
+MINIMAL=y
+endif
+endif
+
+ifdef MINIMAL
+COBJS-y += cache.o
+else
+
 SOBJS-y	+= ppcstring.o
+
+SOBJS-y	+= ppccache.o
 SOBJS-y	+= ticks.o
 SOBJS-y	+= reloc.o
 
@@ -50,6 +63,7 @@ COBJS-y	+= cache.o
 COBJS-y	+= extable.o
 COBJS-y	+= interrupts.o
 COBJS-$(CONFIG_CMD_KGDB) += kgdb.o
+COBJS-${CONFIG_CMD_IDE} += ide.o
 COBJS-y	+= time.o
 
 # Workaround for local bus unaligned access problems
@@ -63,6 +77,8 @@ $(obj)ppcstring.o: AFLAGS += -Dmemcpy=__memcpy
 COBJS-y += memcpy_mpc5200.o
 endif
 
+endif # not minimal
+
 COBJS	+= $(sort $(COBJS-y))
 
 SRCS	:= $(GLSOBJS:.o=.S) $(GLCOBJS:.o=.c) \
@@ -74,12 +90,6 @@ TARGETS += $(LIB)
 all: $(TARGETS)
 
 $(LIB):	$(obj).depend $(OBJS)
-	@if ! $(CROSS_COMPILE)readelf -S $(OBJS) | grep -q '\.fixup.*PROGBITS';\
-	then \
-		echo "ERROR: Your compiler doesn't generate .fixup sections!";\
-		echo "       Upgrade to a recent toolchain."; \
-		exit 1; \
-	fi;
 	$(call cmd_link_o_target, $(OBJS))
 
 $(LIBGCC): $(obj).depend $(LGOBJS)

@@ -42,6 +42,8 @@
 #define CONFIG_BOARD_EARLY_INIT_F
 #define CONFIG_DISPLAY_CPUINFO
 
+#define CONFIG_OF_LIBFDT
+
 /* general purpose I/O */
 #define CONFIG_ATMEL_LEGACY		/* required until (g)pio is fixed */
 #define CONFIG_AT91_GPIO
@@ -87,6 +89,7 @@
 #define CONFIG_CMD_DHCP
 #define CONFIG_CMD_NAND
 #define CONFIG_CMD_SF
+#define CONFIG_CMD_MMC
 
 /* SDRAM */
 #define CONFIG_NR_DRAM_BANKS		1
@@ -136,6 +139,15 @@
 #define CONFIG_CMD_UBIFS
 #endif
 
+/* MMC */
+#ifdef CONFIG_CMD_MMC
+#define CONFIG_MMC
+#define CONFIG_CMD_FAT
+#define CONFIG_GENERIC_MMC
+#define CONFIG_GENERIC_ATMEL_MCI
+#define CONFIG_DOS_PARTITION
+#endif
+
 /* Ethernet */
 #define CONFIG_MACB
 #define CONFIG_RMII
@@ -156,8 +168,7 @@
 #define CONFIG_BOOTCOMMAND	"nand read " \
 				"0x22000000 0x200000 0x300000; " \
 				"bootm 0x22000000"
-#else
-#ifdef CONFIG_SYS_USE_SPIFLASH
+#elif defined(CONFIG_SYS_USE_SPIFLASH)
 /* bootstrap + u-boot + env + linux in spi flash */
 #define CONFIG_ENV_IS_IN_SPI_FLASH
 #define CONFIG_ENV_OFFSET	0x5000
@@ -167,14 +178,28 @@
 #define CONFIG_BOOTCOMMAND	"sf probe 0; " \
 				"sf read 0x22000000 0x100000 0x300000; " \
 				"bootm 0x22000000"
-#endif
+#else /* CONFIG_SYS_USE_MMC */
+/* bootstrap + u-boot + env + linux in mmc */
+#define CONFIG_ENV_IS_IN_MMC
+/* For FAT system, most cases it should be in the reserved sector */
+#define CONFIG_ENV_OFFSET	0x2000
+#define CONFIG_ENV_SIZE		0x1000
+#define CONFIG_SYS_MMC_ENV_DEV	0
 #endif
 
+#ifdef CONFIG_SYS_USE_MMC
+#define CONFIG_BOOTARGS		"mem=128M console=ttyS0,115200 " \
+				"mtdparts=atmel_nand:" \
+				"8M(bootstrap/uboot/kernel)ro,-(rootfs) " \
+				"root=/dev/mmcblk0p2 " \
+				"rw rootfstype=ext4 rootwait"
+#else
 #define CONFIG_BOOTARGS		"mem=128M console=ttyS0,115200 " \
 				"mtdparts=atmel_nand:" \
 				"8M(bootstrap/uboot/kernel)ro,-(rootfs) " \
 				"root=/dev/mtdblock1 rw " \
 				"rootfstype=ubifs ubi.mtd=1 root=ubi0:rootfs"
+#endif
 
 #define CONFIG_BAUDRATE		115200
 

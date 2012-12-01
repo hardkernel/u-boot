@@ -198,6 +198,7 @@
 		"run commonargs; " \
 		"setenv bootargs ${bootargs} " \
 		"root=/dev/mmcblk0p2 " \
+		"rootwait " \
 		"${kernelopts}\0" \
 	"nandargs=" \
 		"run commonargs; " \
@@ -232,7 +233,7 @@
 		"dhcp ${loadaddr}; " \
 		"run netargs; " \
 		"bootm ${loadaddr}\0" \
-	"autoboot=if mmc rescan ${mmcdev}; then " \
+	"autoboot=mmc dev ${mmcdev}; if mmc rescan; then " \
 			"if run loadbootscript; then " \
 				"run bootscript; " \
 			"else " \
@@ -303,6 +304,7 @@
 
 /* Defines for SPL */
 #define CONFIG_SPL
+#define CONFIG_SPL_FRAMEWORK
 #define CONFIG_SPL_NAND_SIMPLE
 
 #define CONFIG_SPL_LIBCOMMON_SUPPORT
@@ -314,6 +316,9 @@
 #define CONFIG_SPL_GPIO_SUPPORT
 #define CONFIG_SPL_POWER_SUPPORT
 #define CONFIG_SPL_NAND_SUPPORT
+#define CONFIG_SPL_NAND_BASE
+#define CONFIG_SPL_NAND_DRIVERS
+#define CONFIG_SPL_NAND_ECC
 #define CONFIG_SPL_MMC_SUPPORT
 #define CONFIG_SPL_FAT_SUPPORT
 #define CONFIG_SPL_LDSCRIPT		"$(CPUDIR)/omap-common/u-boot-spl.lds"

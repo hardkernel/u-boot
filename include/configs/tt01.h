@@ -31,8 +31,6 @@
 /* High Level Configuration Options */
 #define CONFIG_ARM1136
 #define CONFIG_MX31
-#define CONFIG_MX31_HCLK_FREQ	26000000
-#define CONFIG_MX31_CLK32	32768
 
 #define CONFIG_DISPLAY_CPUINFO
 #define CONFIG_DISPLAY_BOARDINFO
@@ -151,9 +149,9 @@
 #define CONFIG_MXC_GPIO
 
 /* MC13783 connected to CSPI3 and SS0 */
-#define CONFIG_PMIC
-#define CONFIG_PMIC_SPI
-#define CONFIG_PMIC_FSL
+#define CONFIG_POWER
+#define CONFIG_POWER_SPI
+#define CONFIG_POWER_FSL
 
 #define CONFIG_FSL_PMIC_BUS		2
 #define CONFIG_FSL_PMIC_CS		0

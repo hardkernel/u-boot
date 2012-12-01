@@ -107,7 +107,6 @@
 
 /* NAND */
 #define CONFIG_NAND_MXC
-#define CONFIG_NAND_MXC_V1_1
 #define CONFIG_MXC_NAND_REGS_BASE	(0xBB000000)
 #define CONFIG_SYS_MAX_NAND_DEVICE	1
 #define CONFIG_SYS_NAND_BASE		(0xBB000000)
@@ -147,9 +146,6 @@
 #define CONFIG_LOADADDR		0x81000000	/* loadaddr env var */
 #define CONFIG_SYS_LOAD_ADDR	CONFIG_LOADADDR
 
-#define xstr(s)	str(s)
-#define str(s)	#s
-
 #define	CONFIG_EXTRA_ENV_SETTINGS					\
 	"netdev=eth0\0"							\
 	"nfsargs=setenv bootargs root=/dev/nfs rw "			\
@@ -163,7 +159,7 @@
 	"addmtd=setenv bootargs ${bootargs} ${mtdparts}\0"		\
 	"addmisc=setenv bootargs ${bootargs}\0"				\
 	"u-boot=tx25/u-boot.bin\0"					\
-	"kernel_addr_r=" xstr(CONFIG_LOADADDR) "\0"			\
+	"kernel_addr_r=" __stringify(CONFIG_LOADADDR) "\0"		\
 	"hostname=tx25\0"						\
 	"bootfile=tx25/uImage\0"					\
 	"rootpath=/opt/eldk/arm\0"					\

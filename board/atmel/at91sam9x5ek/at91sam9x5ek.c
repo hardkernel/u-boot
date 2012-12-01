@@ -31,6 +31,7 @@
 #include <asm/arch/clk.h>
 #include <lcd.h>
 #include <atmel_hlcdc.h>
+#include <atmel_mci.h>
 #ifdef CONFIG_MACB
 #include <net.h>
 #endif
@@ -62,6 +63,10 @@ static void at91sam9x5ek_nand_hw_init(void)
 	csa |= AT91_MATRIX_EBI_CS3A_SMC_SMARTMEDIA;
 	/* NAND flash on D16 */
 	csa |= AT91_MATRIX_NFD0_ON_D16;
+
+	/* Configure IO drive */
+	csa &= ~AT91_MATRIX_EBI_EBI_IOSR_NORMAL;
+
 	writel(csa, &matrix->ebicsa);
 
 	/* Configure SMC CS3 for NAND/SmartMedia */
@@ -253,6 +258,15 @@ void spi_cs_deactivate(struct spi_slave *slave)
 	}
 }
 #endif /* CONFIG_ATMEL_SPI */
+
+#ifdef CONFIG_GENERIC_ATMEL_MCI
+int board_mmc_init(bd_t *bd)
+{
+	at91_mci_hw_init();
+
+	return atmel_mci_init((void *)ATMEL_BASE_HSMCI0);
+}
+#endif
 
 int board_early_init_f(void)
 {

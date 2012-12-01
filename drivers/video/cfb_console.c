@@ -66,7 +66,11 @@
  * CONFIG_CONSOLE_TIME	      - display time/date in upper right
  *				corner, needs CONFIG_CMD_DATE and
  *				CONFIG_CONSOLE_CURSOR
- * CONFIG_VIDEO_LOGO	      - display Linux Logo in upper left corner
+ * CONFIG_VIDEO_LOGO	      - display Linux Logo in upper left corner.
+ *				Use CONFIG_SPLASH_SCREEN_ALIGN with
+ *				environment variable "splashpos" to place
+ *				the logo on other position. In this case
+ *				no CONSOLE_EXTRA_INFO is possible.
  * CONFIG_VIDEO_BMP_LOGO      - use bmp_logo instead of linux_logo
  * CONFIG_CONSOLE_EXTRA_INFO  - display additional board information
  *				strings that normaly goes to serial
@@ -380,6 +384,13 @@ static int console_row;		/* cursor row */
 static u32 eorx, fgx, bgx;	/* color pats */
 
 static int cfb_do_flush_cache;
+
+#ifdef CONFIG_CFB_CONSOLE_ANSI
+static char ansi_buf[10];
+static int ansi_buf_size;
+static int ansi_colors_need_revert;
+static int ansi_cursor_hidden;
+#endif
 
 static const int video_font_draw_table8[] = {
 	0x00000000, 0x000000ff, 0x0000ff00, 0x0000ffff,
@@ -764,9 +775,97 @@ static void console_back(void)
 	}
 }
 
-static void console_newline(void)
+#ifdef CONFIG_CFB_CONSOLE_ANSI
+
+static void console_clear(void)
 {
-	console_row++;
+#ifdef VIDEO_HW_RECTFILL
+	video_hw_rectfill(VIDEO_PIXEL_SIZE,	/* bytes per pixel */
+			  0,			/* dest pos x */
+			  video_logo_height,	/* dest pos y */
+			  VIDEO_VISIBLE_COLS,	/* frame width */
+			  VIDEO_VISIBLE_ROWS,	/* frame height */
+			  bgx			/* fill color */
+	);
+#else
+	memsetl(CONSOLE_ROW_FIRST, CONSOLE_SIZE, bgx);
+#endif
+}
+
+static void console_cursor_fix(void)
+{
+	if (console_row < 0)
+		console_row = 0;
+	if (console_row >= CONSOLE_ROWS)
+		console_row = CONSOLE_ROWS - 1;
+	if (console_col < 0)
+		console_col = 0;
+	if (console_col >= CONSOLE_COLS)
+		console_col = CONSOLE_COLS - 1;
+}
+
+static void console_cursor_up(int n)
+{
+	console_row -= n;
+	console_cursor_fix();
+}
+
+static void console_cursor_down(int n)
+{
+	console_row += n;
+	console_cursor_fix();
+}
+
+static void console_cursor_left(int n)
+{
+	console_col -= n;
+	console_cursor_fix();
+}
+
+static void console_cursor_right(int n)
+{
+	console_col += n;
+	console_cursor_fix();
+}
+
+static void console_cursor_set_position(int row, int col)
+{
+	if (console_row != -1)
+		console_row = row;
+	if (console_col != -1)
+		console_col = col;
+	console_cursor_fix();
+}
+
+static void console_previousline(int n)
+{
+	/* FIXME: also scroll terminal ? */
+	console_row -= n;
+	console_cursor_fix();
+}
+
+static void console_swap_colors(void)
+{
+	eorx = fgx;
+	fgx = bgx;
+	bgx = eorx;
+	eorx = fgx ^ bgx;
+}
+
+static inline int console_cursor_is_visible(void)
+{
+	return !ansi_cursor_hidden;
+}
+#else
+static inline int console_cursor_is_visible(void)
+{
+	return 1;
+}
+#endif
+
+static void console_newline(int n)
+{
+	console_row += n;
 	console_col = 0;
 
 	/* Check if we need to scroll the terminal */
@@ -775,7 +874,7 @@ static void console_newline(void)
 		console_scrollup();
 
 		/* Decrement row number */
-		console_row--;
+		console_row = CONSOLE_ROWS - 1;
 	}
 }
 
@@ -784,11 +883,12 @@ static void console_cr(void)
 	console_col = 0;
 }
 
-void video_putc(const char c)
+static void parse_putc(const char c)
 {
 	static int nl = 1;
 
-	CURSOR_OFF;
+	if (console_cursor_is_visible())
+		CURSOR_OFF;
 
 	switch (c) {
 	case 13:		/* back to first column */
@@ -797,7 +897,7 @@ void video_putc(const char c)
 
 	case '\n':		/* next line */
 		if (console_col || (!console_col && nl))
-			console_newline();
+			console_newline(1);
 		nl = 1;
 		break;
 
@@ -806,7 +906,7 @@ void video_putc(const char c)
 		console_col &= ~0x0007;
 
 		if (console_col >= CONSOLE_COLS)
-			console_newline();
+			console_newline(1);
 		break;
 
 	case 8:		/* backspace */
@@ -823,11 +923,225 @@ void video_putc(const char c)
 
 		/* check for newline */
 		if (console_col >= CONSOLE_COLS) {
-			console_newline();
+			console_newline(1);
 			nl = 0;
 		}
 	}
-	CURSOR_SET;
+
+	if (console_cursor_is_visible())
+		CURSOR_SET;
+}
+
+void video_putc(const char c)
+{
+#ifdef CONFIG_CFB_CONSOLE_ANSI
+	int i;
+
+	if (c == 27) {
+		for (i = 0; i < ansi_buf_size; ++i)
+			parse_putc(ansi_buf[i]);
+		ansi_buf[0] = 27;
+		ansi_buf_size = 1;
+		return;
+	}
+
+	if (ansi_buf_size > 0) {
+		/*
+		 * 0 - ESC
+		 * 1 - [
+		 * 2 - num1
+		 * 3 - ..
+		 * 4 - ;
+		 * 5 - num2
+		 * 6 - ..
+		 * - cchar
+		 */
+		int next = 0;
+
+		int flush = 0;
+		int fail = 0;
+
+		int num1 = 0;
+		int num2 = 0;
+		int cchar = 0;
+
+		ansi_buf[ansi_buf_size++] = c;
+
+		if (ansi_buf_size >= sizeof(ansi_buf))
+			fail = 1;
+
+		for (i = 0; i < ansi_buf_size; ++i) {
+			if (fail)
+				break;
+
+			switch (next) {
+			case 0:
+				if (ansi_buf[i] == 27)
+					next = 1;
+				else
+					fail = 1;
+				break;
+
+			case 1:
+				if (ansi_buf[i] == '[')
+					next = 2;
+				else
+					fail = 1;
+				break;
+
+			case 2:
+				if (ansi_buf[i] >= '0' && ansi_buf[i] <= '9') {
+					num1 = ansi_buf[i]-'0';
+					next = 3;
+				} else if (ansi_buf[i] != '?') {
+					--i;
+					num1 = 1;
+					next = 4;
+				}
+				break;
+
+			case 3:
+				if (ansi_buf[i] >= '0' && ansi_buf[i] <= '9') {
+					num1 *= 10;
+					num1 += ansi_buf[i]-'0';
+				} else {
+					--i;
+					next = 4;
+				}
+				break;
+
+			case 4:
+				if (ansi_buf[i] != ';') {
+					--i;
+					next = 7;
+				} else
+					next = 5;
+				break;
+
+			case 5:
+				if (ansi_buf[i] >= '0' && ansi_buf[i] <= '9') {
+					num2 = ansi_buf[i]-'0';
+					next = 6;
+				} else
+					fail = 1;
+				break;
+
+			case 6:
+				if (ansi_buf[i] >= '0' && ansi_buf[i] <= '9') {
+					num2 *= 10;
+					num2 += ansi_buf[i]-'0';
+				} else {
+					--i;
+					next = 7;
+				}
+				break;
+
+			case 7:
+				if ((ansi_buf[i] >= 'A' && ansi_buf[i] <= 'H')
+					|| ansi_buf[i] == 'J'
+					|| ansi_buf[i] == 'K'
+					|| ansi_buf[i] == 'h'
+					|| ansi_buf[i] == 'l'
+					|| ansi_buf[i] == 'm') {
+					cchar = ansi_buf[i];
+					flush = 1;
+				} else
+					fail = 1;
+				break;
+			}
+		}
+
+		if (fail) {
+			for (i = 0; i < ansi_buf_size; ++i)
+				parse_putc(ansi_buf[i]);
+			ansi_buf_size = 0;
+			return;
+		}
+
+		if (flush) {
+			if (!ansi_cursor_hidden)
+				CURSOR_OFF;
+			ansi_buf_size = 0;
+			switch (cchar) {
+			case 'A':
+				/* move cursor num1 rows up */
+				console_cursor_up(num1);
+				break;
+			case 'B':
+				/* move cursor num1 rows down */
+				console_cursor_down(num1);
+				break;
+			case 'C':
+				/* move cursor num1 columns forward */
+				console_cursor_right(num1);
+				break;
+			case 'D':
+				/* move cursor num1 columns back */
+				console_cursor_left(num1);
+				break;
+			case 'E':
+				/* move cursor num1 rows up at begin of row */
+				console_previousline(num1);
+				break;
+			case 'F':
+				/* move cursor num1 rows down at begin of row */
+				console_newline(num1);
+				break;
+			case 'G':
+				/* move cursor to column num1 */
+				console_cursor_set_position(-1, num1-1);
+				break;
+			case 'H':
+				/* move cursor to row num1, column num2 */
+				console_cursor_set_position(num1-1, num2-1);
+				break;
+			case 'J':
+				/* clear console and move cursor to 0, 0 */
+				console_clear();
+				console_cursor_set_position(0, 0);
+				break;
+			case 'K':
+				/* clear line */
+				if (num1 == 0)
+					console_clear_line(console_row,
+							console_col,
+							CONSOLE_COLS-1);
+				else if (num1 == 1)
+					console_clear_line(console_row,
+							0, console_col);
+				else
+					console_clear_line(console_row,
+							0, CONSOLE_COLS-1);
+				break;
+			case 'h':
+				ansi_cursor_hidden = 0;
+				break;
+			case 'l':
+				ansi_cursor_hidden = 1;
+				break;
+			case 'm':
+				if (num1 == 0) { /* reset swapped colors */
+					if (ansi_colors_need_revert) {
+						console_swap_colors();
+						ansi_colors_need_revert = 0;
+					}
+				} else if (num1 == 7) { /* once swap colors */
+					if (!ansi_colors_need_revert) {
+						console_swap_colors();
+						ansi_colors_need_revert = 1;
+					}
+				}
+				break;
+			}
+			if (!ansi_cursor_hidden)
+				CURSOR_SET;
+		}
+	} else {
+		parse_putc(c);
+	}
+#else
+	parse_putc(c);
+#endif
 }
 
 void video_puts(const char *s)
@@ -1201,6 +1515,13 @@ int video_display_bitmap(ulong bmp_image, int x, int y)
 
 	padded_line = (((width * bpp + 7) / 8) + 3) & ~0x3;
 
+	/*
+	 * Just ignore elements which are completely beyond screen
+	 * dimensions.
+	 */
+	if ((x >= VIDEO_VISIBLE_COLS) || (y >= VIDEO_VISIBLE_ROWS))
+		return 0;
+
 #ifdef CONFIG_SPLASH_SCREEN_ALIGN
 	if (x == BMP_ALIGN_CENTER)
 		x = max(0, (VIDEO_VISIBLE_COLS - width) / 2);
@@ -1480,7 +1801,42 @@ int video_display_bitmap(ulong bmp_image, int x, int y)
 
 
 #ifdef CONFIG_VIDEO_LOGO
-void logo_plot(void *screen, int width, int x, int y)
+static int video_logo_xpos;
+static int video_logo_ypos;
+
+static void plot_logo_or_black(void *screen, int width, int x, int y,	\
+			int black);
+
+static void logo_plot(void *screen, int width, int x, int y)
+{
+	plot_logo_or_black(screen, width, x, y, 0);
+}
+
+static void logo_black(void)
+{
+	plot_logo_or_black(video_fb_address, \
+			VIDEO_COLS, \
+			video_logo_xpos, \
+			video_logo_ypos, \
+			1);
+}
+
+static int do_clrlogo(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+	if (argc != 1)
+		return cmd_usage(cmdtp);
+
+	logo_black();
+	return 0;
+}
+
+U_BOOT_CMD(
+	   clrlogo, 1, 0, do_clrlogo,
+	   "fill the boot logo area with black",
+	   " "
+	   );
+
+static void plot_logo_or_black(void *screen, int width, int x, int y, int black)
 {
 
 	int xcount, i;
@@ -1488,8 +1844,21 @@ void logo_plot(void *screen, int width, int x, int y)
 	int ycount = video_logo_height;
 	unsigned char r, g, b, *logo_red, *logo_blue, *logo_green;
 	unsigned char *source;
-	unsigned char *dest = (unsigned char *) screen +
-		((y * width * VIDEO_PIXEL_SIZE) + x * VIDEO_PIXEL_SIZE);
+	unsigned char *dest;
+
+#ifdef CONFIG_SPLASH_SCREEN_ALIGN
+	if (x == BMP_ALIGN_CENTER)
+		x = max(0, (VIDEO_VISIBLE_COLS - VIDEO_LOGO_WIDTH) / 2);
+	else if (x < 0)
+		x = max(0, VIDEO_VISIBLE_COLS - VIDEO_LOGO_WIDTH + x + 1);
+
+	if (y == BMP_ALIGN_CENTER)
+		y = max(0, (VIDEO_VISIBLE_ROWS - VIDEO_LOGO_HEIGHT) / 2);
+	else if (y < 0)
+		y = max(0, VIDEO_VISIBLE_ROWS - VIDEO_LOGO_HEIGHT + y + 1);
+#endif /* CONFIG_SPLASH_SCREEN_ALIGN */
+
+	dest = (unsigned char *)screen + (y * width  + x) * VIDEO_PIXEL_SIZE;
 
 #ifdef CONFIG_VIDEO_BMP_LOGO
 	source = bmp_logo_bitmap;
@@ -1525,9 +1894,15 @@ void logo_plot(void *screen, int width, int x, int y)
 #endif
 		xcount = VIDEO_LOGO_WIDTH;
 		while (xcount--) {
-			r = logo_red[*source - VIDEO_LOGO_LUT_OFFSET];
-			g = logo_green[*source - VIDEO_LOGO_LUT_OFFSET];
-			b = logo_blue[*source - VIDEO_LOGO_LUT_OFFSET];
+			if (black) {
+				r = 0x00;
+				g = 0x00;
+				b = 0x00;
+			} else {
+				r = logo_red[*source - VIDEO_LOGO_LUT_OFFSET];
+				g = logo_green[*source - VIDEO_LOGO_LUT_OFFSET];
+				b = logo_blue[*source - VIDEO_LOGO_LUT_OFFSET];
+			}
 
 			switch (VIDEO_DATA_FORMAT) {
 			case GDF__8BIT_INDEX:
@@ -1592,42 +1967,66 @@ static void *video_logo(void)
 	char info[128];
 	int space, len;
 	__maybe_unused int y_off = 0;
+	__maybe_unused ulong addr;
+	__maybe_unused char *s;
 
-#ifdef CONFIG_SPLASH_SCREEN
-	char *s;
-	ulong addr;
-
-	s = getenv("splashimage");
-	if (s != NULL) {
-		int x = 0, y = 0;
-
-		addr = simple_strtoul(s, NULL, 16);
 #ifdef CONFIG_SPLASH_SCREEN_ALIGN
-		s = getenv("splashpos");
-		if (s != NULL) {
-			if (s[0] == 'm')
-				x = BMP_ALIGN_CENTER;
-			else
-				x = simple_strtol(s, NULL, 0);
+	s = getenv("splashpos");
+	if (s != NULL) {
+		if (s[0] == 'm')
+			video_logo_xpos = BMP_ALIGN_CENTER;
+		else
+			video_logo_xpos = simple_strtol(s, NULL, 0);
 
-			s = strchr(s + 1, ',');
-			if (s != NULL) {
-				if (s[1] == 'm')
-					y = BMP_ALIGN_CENTER;
-				else
-					y = simple_strtol(s + 1, NULL, 0);
-			}
+		s = strchr(s + 1, ',');
+		if (s != NULL) {
+			if (s[1] == 'm')
+				video_logo_ypos = BMP_ALIGN_CENTER;
+			else
+				video_logo_ypos = simple_strtol(s + 1, NULL, 0);
 		}
+	}
 #endif /* CONFIG_SPLASH_SCREEN_ALIGN */
 
-		if (video_display_bitmap(addr, x, y) == 0) {
+#ifdef CONFIG_SPLASH_SCREEN
+	s = getenv("splashimage");
+	if (s != NULL) {
+
+		addr = simple_strtoul(s, NULL, 16);
+
+
+		if (video_display_bitmap(addr,
+					video_logo_xpos,
+					video_logo_ypos) == 0) {
 			video_logo_height = 0;
 			return ((void *) (video_fb_address));
 		}
 	}
 #endif /* CONFIG_SPLASH_SCREEN */
 
-	logo_plot(video_fb_address, VIDEO_COLS, 0, 0);
+	logo_plot(video_fb_address, VIDEO_COLS,
+		  video_logo_xpos, video_logo_ypos);
+
+#ifdef CONFIG_SPLASH_SCREEN_ALIGN
+	/*
+	 * when using splashpos for video_logo, skip any info
+	 * output on video console if the logo is not at 0,0
+	 */
+	if (video_logo_xpos || video_logo_ypos) {
+		/*
+		 * video_logo_height is used in text and cursor offset
+		 * calculations. Since the console is below the logo,
+		 * we need to adjust the logo height
+		 */
+		if (video_logo_ypos == BMP_ALIGN_CENTER)
+			video_logo_height += max(0, (VIDEO_VISIBLE_ROWS - \
+						     VIDEO_LOGO_HEIGHT) / 2);
+		else if (video_logo_ypos > 0)
+			video_logo_height += video_logo_ypos;
+
+		return video_fb_address + video_logo_height * VIDEO_LINE_LEN;
+	}
+#endif
 
 	sprintf(info, " %s", version_string);
 
@@ -1864,4 +2263,46 @@ int drv_video_init(void)
 
 	/* Return success */
 	return 1;
+}
+
+void video_position_cursor(unsigned col, unsigned row)
+{
+	console_col = min(col, CONSOLE_COLS - 1);
+	console_row = min(row, CONSOLE_ROWS - 1);
+}
+
+int video_get_pixel_width(void)
+{
+	return VIDEO_VISIBLE_COLS;
+}
+
+int video_get_pixel_height(void)
+{
+	return VIDEO_VISIBLE_ROWS;
+}
+
+int video_get_screen_rows(void)
+{
+	return CONSOLE_ROWS;
+}
+
+int video_get_screen_columns(void)
+{
+	return CONSOLE_COLS;
+}
+
+void video_clear(void)
+{
+#ifdef VIDEO_HW_RECTFILL
+	video_hw_rectfill(VIDEO_PIXEL_SIZE,	/* bytes per pixel */
+			  0,			/* dest pos x */
+			  0,			/* dest pos y */
+			  VIDEO_VISIBLE_COLS,	/* frame width */
+			  VIDEO_VISIBLE_ROWS,	/* frame height */
+			  bgx			/* fill color */
+	);
+#else
+	memsetl(video_fb_address,
+		(VIDEO_VISIBLE_ROWS * VIDEO_LINE_LEN) / sizeof(int), bgx);
+#endif
 }

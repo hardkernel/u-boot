@@ -30,14 +30,14 @@
 #include <common.h>
 #include <asm/io.h>
 #include <asm/bitops.h>
-#include <asm/arch/tegra20.h>
+#include <asm/arch/tegra.h>
 #include <asm/gpio.h>
 
 enum {
-	TEGRA20_CMD_INFO,
-	TEGRA20_CMD_PORT,
-	TEGRA20_CMD_OUTPUT,
-	TEGRA20_CMD_INPUT,
+	TEGRA_CMD_INFO,
+	TEGRA_CMD_PORT,
+	TEGRA_CMD_OUTPUT,
+	TEGRA_CMD_INPUT,
 };
 
 static struct gpio_names {

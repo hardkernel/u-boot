@@ -78,10 +78,6 @@ Holger Brunck <holger.brunck@keymile.com>
 	tuge1		MPC8321
 	tuxx1		MPC8321
 
-Cyril Chemparathy <cyril@ti.com>
-
-	tnetv107x_evm	tnetv107x
-
 Conn Clark <clark@esteem.com>
 
 	ESTEEM192E	MPC8xx
@@ -108,8 +104,6 @@ Wolfgang Denk <wd@denx.de>
 
 	ARIA		MPC5121e
 
-	AMX860		MPC860
-	ETX094		MPC850
 	FPS850L		MPC850
 	FPS860L		MPC860
 	ICU862		MPC862
@@ -120,7 +114,6 @@ Wolfgang Denk <wd@denx.de>
 	IVMS8		MPC860
 	IVMS8_128	MPC860
 	IVMS8_256	MPC860
-	LANTEC		MPC850
 	LWMON		MPC823
 	R360MPI		MPC823
 	RRvision	MPC823
@@ -132,7 +125,6 @@ Wolfgang Denk <wd@denx.de>
 	TQM855L		MPC855
 	TQM860L		MPC860
 	TQM860L_FEC	MPC860
-	c2mon		MPC855
 	hermes		MPC860
 	lwmon		MPC823
 
@@ -183,7 +175,6 @@ Thomas Frieden <ThomasF@hyperion-entertainment.com>
 
 Matthias Fuchs <matthias.fuchs@esd-electronics.com>
 
-	ADCIOP		IOP480 (PPC401)
 	APC405		PPC405GP
 	AR405		PPC405GP
 	ASH405		PPC405EP
@@ -194,7 +185,6 @@ Matthias Fuchs <matthias.fuchs@esd-electronics.com>
 	CPCI405AB	PPC405GP
 	CPCI405DT	PPC405GP
 	CPCIISER4	PPC405GP
-	DASA_SIM	IOP480 (PPC401)
 	DP405		PPC405EP
 	DU405		PPC405GP
 	DU440		PPC440EPx
@@ -220,9 +210,7 @@ Siddarth Gore <gores@marvell.com>
 Paul Gortmaker <paul.gortmaker@windriver.com>
 
 	sbc8349		MPC8349
-	sbc8540		MPC8540
 	sbc8548		MPC8548
-	sbc8560		MPC8560
 	sbc8641d	MPC8641D
 
 Frank Gottschling <fgottschling@eltec.de>
@@ -235,7 +223,6 @@ Wolfgang Grandegger <wg@denx.de>
 
 	PN62		MPC8240
 	IPHASE4539	MPC8260
-	SCM		MPC8260
 
 Anatolij Gustschin <agust@denx.de>
 
@@ -254,6 +241,10 @@ Klaus Heydeck <heydeck@kieback-peter.de>
 
 	KUP4K		MPC855
 	KUP4X		MPC859
+
+Gabriel Huau <contact@huau-gabriel.fr>
+
+	mini2440	s3c2440
 
 Gary Jennejohn <garyj@denx.de>
 
@@ -363,6 +354,10 @@ Frank Panno <fpanno@delphintech.com>
 
 	ep8260		MPC8260
 
+Chan-Taek Park <c-park@ti.com>
+
+	tnetv107x_evm	tnetv107x
+
 Denis Peter <d.peter@mpl.ch>
 
 	MIP405		PPC4xx
@@ -396,8 +391,6 @@ Stefan Roese <sr@denx.de>
 	P3M7448		MPC7448
 
 	uc100		MPC857
-
-	TQM85xx		MPC8540/8541/8555/8560
 
 	acadia		PPC405EZ
 	alpr		PPC440GX
@@ -453,10 +446,6 @@ Heiko Schocher <hs@denx.de>
 	sc3		PPC405GP
 	uc101		MPC5200
 	ve8313		MPC8313
-
-Peter De Schrijver <p2@mind.be>
-
-	ML2		PPC4xx
 
 Andre Schwarz <andre.schwarz@matrix-vision.de>
 
@@ -549,7 +538,6 @@ Unknown / orphaned boards:
 	FADS850SAR	MPC8xx
 	FADS860T	MPC8xx
 	GENIETV		MPC8xx
-	IAD210		MPC8xx
 	MBX		MPC8xx
 	MBX860T		MPC8xx
 	NX823		MPC8xx
@@ -577,6 +565,10 @@ Albert ARIBAUD <albert.u.boot@aribaud.net>
 
 	edminiv2	ARM926EJS (Orion5x SoC)
 
+Raphael Assenat <raph@8d.com>
+
+	eco5pk		ARM ARMV7 (AM35x SoC)
+
 Stefano Babic <sbabic@denx.de>
 
 	ea20		davinci
@@ -588,6 +580,10 @@ Stefano Babic <sbabic@denx.de>
 	trizepsiv	xscale/pxa
 	twister		omap3
  	vision2		i.MX51
+
+Lukasz Dalek <luk0104@gmail.com>
+
+	h2200		xscale/pxa
 
 Jason Liu <r64343@freescale.com>
 
@@ -654,6 +650,8 @@ Fabio Estevam <fabio.estevam@freescale.com>
 	mx31pdk		i.MX31
 	mx53ard		i.MX53
 	mx53smd		i.MX53
+	mx6qsabresd	i.MX6Q
+	mx6qsabreauto	i.MX6Q
 
 Daniel Gorsulowski <daniel.gorsulowski@esd.eu>
 
@@ -727,7 +725,7 @@ Chander Kashyap <k.chander@samsung.com>
 	SMDKV310		ARM ARMV7 (EXYNOS4210 SoC)
 	SMDK5250		ARM ARMV7 (EXYNOS5250 SoC)
 
-Heungjun Kim <riverful.kim@samsung.com>
+Lukasz Majewski <l.majewski@samsung.com>
 
 	trats			ARM ARMV7 (EXYNOS4210 SoC)
 
@@ -781,9 +779,10 @@ Nagendra T S  <nagendra@mistralsolutions.com>
 
    am3517_crane    ARM ARMV7 (AM35x SoC)
 
-Kyungmin Park <kyungmin.park@samsung.com>
+Dinh Nguyen <dinguyen@altera.com>
+Chin Liang See <clsee@altera.com>
 
-	apollon		ARM1136EJS
+	socfpga		socfpga_cyclone5
 
 Sandeep Paulraj <s-paulraj@ti.com>
 
@@ -807,6 +806,7 @@ Veli-Pekka Peltola <veli-pekka.peltola@bluegiga.com>
 Luka Perkov <uboot@lukaperkov.net>
 
 	ib62x0		ARM926EJS
+	iconnect	ARM926EJS
 
 Dave Peverley <dpeverley@mpc-data.co.uk>
 
@@ -836,7 +836,7 @@ Sricharan R <r.sricharan@ti.com>
 Thierry Reding <thierry.reding@avionic-design.de>
 
 	plutux		Tegra20 (ARM7 & A9 Dual Core)
-	medcom		Tegra20 (ARM7 & A9 Dual Core)
+	medcom-wide	Tegra20 (ARM7 & A9 Dual Core)
 	tec		Tegra20 (ARM7 & A9 Dual Core)
 
 Christian Riesch <christian.riesch@omicron.at>
@@ -859,6 +859,8 @@ John Rigby <jcrigby@gmail.com>
 	tx25		i.MX25
 
 Stefan Roese <sr@denx.de>
+
+	x600		ARM926EJS (spear600 Soc)
 
 	pdnb3		xscale/ixp
 	scpu		xscale/ixp
@@ -897,6 +899,14 @@ Matt Sealey <matt@genesi-usa.com>
 
 Bo Shen <voice.shen@atmel.com>
 	at91sam9x5ek		ARM926EJS (AT91SAM9G15,G25,G35,X25,X35 SoC)
+
+Michal Simek <monstr@monstr.eu>
+
+	zynq		ARM ARMV7 (Zynq SoC)
+
+Lucas Stach <dev@lynxeye.de>
+
+	colibri_t20_iris	Tegra20 (ARM7 & A9 Dual Core)
 
 Nick Thompson <nick.thompson@gefanuc.com>
 
@@ -998,10 +1008,23 @@ Zhong Hongbo <bocui107@gmail.com>
 
 	SMDK6400	ARM1176 (S3C6400 SoC)
 
+Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Tetsuyuki Kobayashi <koba@kmckk.co.jp>
+
+	kzm9g	SH73A0 (RMOBILE SoC)
+
+Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+
+	armadillo-800eva	R8A7740 (RMOBILE SoC)
+
+Pali Rohár <pali.rohar@gmail.com>
+
+	nokia_rx51	ARM ARMV7 (OMAP34xx SoC)
+
 -------------------------------------------------------------------------
 
 Unknown / orphaned boards:
- 	Board		CPU	Last known maintainer / Comment
+	Board		CPU	Last known maintainer / Comment
 .........................................................................
 
 	omap1510inn	ARM925T         Kshitij Gupta <kshitij@ti.com>
@@ -1033,10 +1056,6 @@ Wolfgang Denk <wd@denx.de>
 
 	incaip		MIPS32 4Kc
 
-Thomas Lange <thomas@corelatus.se>
-	dbau1x00	MIPS32 Au1000
-	gth2		MIPS32 Au1000
-
 Vlad Lungu <vlad.lungu@windriver.com>
 	qemu_mips	MIPS32
 
@@ -1047,6 +1066,14 @@ Stefan Roese <sr@denx.de>
 Xiangfu Liu <xiangfu@openmobilefree.net>
 
 	qi_lb60		MIPS32 (XBurst Jz4740 SoC)
+
+-------------------------------------------------------------------------
+
+Unknown / orphaned boards:
+ 	Board		CPU		Last known maintainer / Comment
+.........................................................................
+
+	dbau1x00	MIPS32 Au1000	Thomas Lange <thomas@corelatus.se>
 
 #########################################################################
 # Nios-II Systems:							#
@@ -1116,6 +1143,7 @@ Wolfgang Wegner <w.wegner@astro-kom.de>
 
 Andreas Bießmann <andreas.devel@googlemail.com>
 	grasshopper		AT32AP7000
+	atngw100mkii		AT32AP7000
 
 Hans-Christian Egtvedt <hans-christian.egtvedt@atmel.com>
 

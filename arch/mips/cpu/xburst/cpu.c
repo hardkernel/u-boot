@@ -62,7 +62,7 @@ void __attribute__((weak)) _machine_restart(void)
 
 	writew(100, &wdt->tdr); /* wdt_set_data(100) */
 	writew(0, &wdt->tcnt); /* wdt_set_count(0); */
-	writew(TCU_TSSR_WDTSC, &tcu->tscr); /* tcu_start_wdt_clock */
+	writel(TCU_TSSR_WDTSC, &tcu->tscr); /* tcu_start_wdt_clock */
 	writeb(readb(&wdt->tcer) | WDT_TCER_TCEN, &wdt->tcer); /* wdt start */
 
 	while (1)
@@ -84,8 +84,8 @@ void flush_cache(ulong start_addr, ulong size)
 	unsigned long aend = (start_addr + size - 1) & ~(lsize - 1);
 
 	for (; addr <= aend; addr += lsize) {
-		cache_op(Hit_Writeback_Inv_D, addr);
-		cache_op(Hit_Invalidate_I, addr);
+		cache_op(HIT_WRITEBACK_INV_D, addr);
+		cache_op(HIT_INVALIDATE_I, addr);
 	}
 }
 
@@ -96,7 +96,7 @@ void flush_dcache_range(ulong start_addr, ulong stop)
 	unsigned long aend = (stop - 1) & ~(lsize - 1);
 
 	for (; addr <= aend; addr += lsize)
-		cache_op(Hit_Writeback_Inv_D, addr);
+		cache_op(HIT_WRITEBACK_INV_D, addr);
 }
 
 void invalidate_dcache_range(ulong start_addr, ulong stop)
@@ -106,7 +106,7 @@ void invalidate_dcache_range(ulong start_addr, ulong stop)
 	unsigned long aend = (stop - 1) & ~(lsize - 1);
 
 	for (; addr <= aend; addr += lsize)
-		cache_op(Hit_Invalidate_D, addr);
+		cache_op(HIT_INVALIDATE_D, addr);
 }
 
 void flush_icache_all(void)
@@ -118,7 +118,7 @@ void flush_icache_all(void)
 
 	for (addr = CKSEG0; addr < CKSEG0 + CONFIG_SYS_ICACHE_SIZE;
 	     addr += CONFIG_SYS_CACHELINE_SIZE) {
-		cache_op(Index_Store_Tag_I, addr);
+		cache_op(INDEX_STORE_TAG_I, addr);
 	}
 
 	/* invalidate btb */
@@ -139,7 +139,7 @@ void flush_dcache_all(void)
 
 	for (addr = CKSEG0; addr < CKSEG0 + CONFIG_SYS_DCACHE_SIZE;
 	     addr += CONFIG_SYS_CACHELINE_SIZE) {
-		cache_op(Index_Writeback_Inv_D, addr);
+		cache_op(INDEX_WRITEBACK_INV_D, addr);
 	}
 
 	__asm__ __volatile__("sync");

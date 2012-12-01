@@ -250,7 +250,6 @@ void board_init_f(ulong board_type)
 
 void board_init_r(gd_t *new_gd, ulong dest_addr)
 {
-	extern void malloc_bin_reloc (void);
 #ifndef CONFIG_ENV_IS_NOWHERE
 	extern char * env_name_spec;
 #endif
@@ -273,8 +272,8 @@ void board_init_r(gd_t *new_gd, ulong dest_addr)
 	/*
 	 * We have to relocate the command table manually
 	 */
-	fixup_cmdtable(&__u_boot_cmd_start,
-		(ulong)(&__u_boot_cmd_end - &__u_boot_cmd_start));
+	fixup_cmdtable(ll_entry_start(cmd_tbl_t, cmd),
+			ll_entry_count(cmd_tbl_t, cmd));
 #endif /* defined(CONFIG_NEEDS_MANUAL_RELOC) */
 
 	/* there are some other pointer constants we must deal with */

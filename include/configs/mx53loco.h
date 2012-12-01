@@ -25,8 +25,6 @@
 
 #define CONFIG_MX53
 
-#define CONFIG_SYS_MX5_HCLK	24000000
-#define CONFIG_SYS_MX5_CLK32		32768
 #define CONFIG_DISPLAY_BOARDINFO
 
 #define CONFIG_MACH_TYPE	MACH_TYPE_MX53_LOCO
@@ -60,7 +58,6 @@
 #define CONFIG_DOS_PARTITION
 
 /* Eth Configs */
-#define CONFIG_HAS_ETH1
 #define CONFIG_MII
 
 #define CONFIG_FEC_MXC
@@ -92,10 +89,10 @@
 #define CONFIG_SYS_I2C_SPEED		100000
 
 /* PMIC Controller */
-#define CONFIG_PMIC
-#define CONFIG_PMIC_I2C
-#define CONFIG_DIALOG_PMIC
-#define CONFIG_PMIC_FSL
+#define CONFIG_POWER
+#define CONFIG_POWER_I2C
+#define CONFIG_DIALOG_POWER
+#define CONFIG_POWER_FSL
 #define CONFIG_SYS_DIALOG_PMIC_I2C_ADDR	0x48
 #define CONFIG_SYS_FSL_PMIC_I2C_ADDR	0x8
 
@@ -142,7 +139,7 @@
 		"dhcp ${uimage}; bootm\0" \
 
 #define CONFIG_BOOTCOMMAND \
-	"if mmc rescan ${mmcdev}; then " \
+	"mmc dev ${mmcdev}; if mmc rescan; then " \
 		"if run loadbootscript; then " \
 			"run bootscript; " \
 		"else " \
@@ -224,6 +221,6 @@
 #define CONFIG_SPLASH_SCREEN
 #define CONFIG_BMP_16BPP
 #define CONFIG_VIDEO_LOGO
-#define CONFIG_IPUV3_CLK	133000000
+#define CONFIG_IPUV3_CLK	200000000
 
 #endif				/* __CONFIG_H */

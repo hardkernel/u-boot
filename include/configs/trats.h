@@ -69,7 +69,6 @@
 #define CONFIG_SYS_MALLOC_LEN		(CONFIG_ENV_SIZE + (1 << 20))
 
 /* select serial console configuration */
-#define CONFIG_SERIAL_MULTI
 #define CONFIG_SERIAL2			/* use SERIAL 2 */
 #define CONFIG_BAUDRATE			115200
 
@@ -212,23 +211,39 @@
 #define CONFIG_SYS_INIT_SP_ADDR	(CONFIG_SYS_LOAD_ADDR - GENERATED_GBL_DATA_SIZE)
 #define CONFIG_SYS_CACHELINE_SIZE       32
 
-#include <asm/arch/gpio.h>
-/*
- * I2C Settings
- */
-#define CONFIG_SOFT_I2C_GPIO_SCL exynos4_gpio_part1_get_nr(b, 7)
-#define CONFIG_SOFT_I2C_GPIO_SDA exynos4_gpio_part1_get_nr(b, 6)
 
 #define CONFIG_SOFT_I2C
 #define CONFIG_SOFT_I2C_READ_REPEATED_START
+#define CONFIG_SYS_I2C_INIT_BOARD
 #define CONFIG_SYS_I2C_SPEED	50000
 #define CONFIG_I2C_MULTI_BUS
-#define CONFIG_SYS_MAX_I2C_BUS	7
+#define CONFIG_SOFT_I2C_MULTI_BUS
+#define CONFIG_SYS_MAX_I2C_BUS	15
 
-#define CONFIG_PMIC
-#define CONFIG_PMIC_I2C
-#define CONFIG_PMIC_MAX8997
+#include <asm/arch/gpio.h>
 
+/* I2C PMIC */
+#define CONFIG_SOFT_I2C_I2C5_SCL exynos4_gpio_part1_get_nr(b, 7)
+#define CONFIG_SOFT_I2C_I2C5_SDA exynos4_gpio_part1_get_nr(b, 6)
+
+/* I2C FG */
+#define CONFIG_SOFT_I2C_I2C9_SCL exynos4_gpio_part2_get_nr(y4, 1)
+#define CONFIG_SOFT_I2C_I2C9_SDA exynos4_gpio_part2_get_nr(y4, 0)
+
+#define CONFIG_SOFT_I2C_GPIO_SCL get_multi_scl_pin()
+#define CONFIG_SOFT_I2C_GPIO_SDA get_multi_sda_pin()
+#define I2C_INIT multi_i2c_init()
+
+#define CONFIG_POWER
+#define CONFIG_POWER_I2C
+#define CONFIG_POWER_MAX8997
+
+#define CONFIG_POWER_FG
+#define CONFIG_POWER_FG_MAX17042
+#define CONFIG_POWER_MUIC
+#define CONFIG_POWER_MUIC_MAX8997
+#define CONFIG_POWER_BATTERY
+#define CONFIG_POWER_BATTERY_TRATS
 #define CONFIG_USB_GADGET
 #define CONFIG_USB_GADGET_S3C_UDC_OTG
 #define CONFIG_USB_GADGET_DUALSPEED

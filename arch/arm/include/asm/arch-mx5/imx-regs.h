@@ -308,6 +308,10 @@
 #define DP_MFD_400	(3 - 1)
 #define DP_MFN_400	1
 
+#define DP_OP_455	((9 << 4) + ((2 - 1)  << 0))
+#define DP_MFD_455	(48 - 1)
+#define DP_MFN_455	23
+
 #define DP_OP_216	((6 << 4) + ((3 - 1)  << 0))
 #define DP_MFD_216	(4 - 1)
 #define DP_MFN_216	3
@@ -320,6 +324,8 @@
 
 #define BOARD_REV_1_0           0x0
 #define BOARD_REV_2_0           0x1
+
+#define BOARD_VER_OFFSET	0x8
 
 #define IMX_IIM_BASE            (IIM_BASE_ADDR)
 

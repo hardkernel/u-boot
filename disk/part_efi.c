@@ -113,6 +113,35 @@ static char *print_efiname(gpt_entry *pte)
 	return name;
 }
 
+static void uuid_string(unsigned char *uuid, char *str)
+{
+	static const u8 le[16] = {3, 2, 1, 0, 5, 4, 7, 6, 8, 9, 10, 11,
+				  12, 13, 14, 15};
+	int i;
+
+	for (i = 0; i < 16; i++) {
+		sprintf(str, "%02x", uuid[le[i]]);
+		str += 2;
+		switch (i) {
+		case 3:
+		case 5:
+		case 7:
+		case 9:
+			*str++ = '-';
+			break;
+		}
+	}
+}
+
+static efi_guid_t system_guid = PARTITION_SYSTEM_GUID;
+
+static inline int is_bootable(gpt_entry *p)
+{
+	return p->attributes.fields.legacy_bios_bootable ||
+		!memcmp(&(p->partition_type_guid), &system_guid,
+			sizeof(efi_guid_t));
+}
+
 /*
  * Public Functions (include/part.h)
  */
@@ -122,6 +151,7 @@ void print_part_efi(block_dev_desc_t * dev_desc)
 	ALLOC_CACHE_ALIGN_BUFFER(gpt_header, gpt_head, 1);
 	gpt_entry *gpt_pte = NULL;
 	int i = 0;
+	char uuid[37];
 
 	if (!dev_desc) {
 		printf("%s: Invalid Argument(s)\n", __func__);
@@ -136,17 +166,25 @@ void print_part_efi(block_dev_desc_t * dev_desc)
 
 	debug("%s: gpt-entry at %p\n", __func__, gpt_pte);
 
-	printf("Part\tName\t\t\tStart LBA\tEnd LBA\n");
-	for (i = 0; i < le32_to_int(gpt_head->num_partition_entries); i++) {
+	printf("Part\tStart LBA\tEnd LBA\t\tName\n");
+	printf("\tAttributes\n");
+	printf("\tType UUID\n");
+	printf("\tPartition UUID\n");
 
-		if (is_pte_valid(&gpt_pte[i])) {
-			printf("%3d\t%-18s\t0x%08llX\t0x%08llX\n", (i + 1),
-				print_efiname(&gpt_pte[i]),
-				le64_to_int(gpt_pte[i].starting_lba),
-				le64_to_int(gpt_pte[i].ending_lba));
-		} else {
-			break;	/* Stop at the first non valid PTE */
-		}
+	for (i = 0; i < le32_to_int(gpt_head->num_partition_entries); i++) {
+		/* Stop at the first non valid PTE */
+		if (!is_pte_valid(&gpt_pte[i]))
+			break;
+
+		printf("%3d\t0x%08llx\t0x%08llx\t\"%s\"\n", (i + 1),
+			le64_to_int(gpt_pte[i].starting_lba),
+			le64_to_int(gpt_pte[i].ending_lba),
+			print_efiname(&gpt_pte[i]));
+		printf("\tattrs:\t0x%016llx\n", gpt_pte[i].attributes.raw);
+		uuid_string(gpt_pte[i].partition_type_guid.b, uuid);
+		printf("\ttype:\t%s\n", uuid);
+		uuid_string(gpt_pte[i].unique_partition_guid.b, uuid);
+		printf("\tuuid:\t%s\n", uuid);
 	}
 
 	/* Remember to free pte */
@@ -173,6 +211,13 @@ int get_partition_info_efi(block_dev_desc_t * dev_desc, int part,
 		return -1;
 	}
 
+	if (part > le32_to_int(gpt_head->num_partition_entries) ||
+	    !is_pte_valid(&gpt_pte[part - 1])) {
+		printf("%s: *** ERROR: Invalid partition number %d ***\n",
+			__func__, part);
+		return -1;
+	}
+
 	/* The ulong casting limits the maximum disk size to 2 TB */
 	info->start = (ulong) le64_to_int(gpt_pte[part - 1].starting_lba);
 	/* The ending LBA is inclusive, to calculate size, add 1 to it */
@@ -183,6 +228,10 @@ int get_partition_info_efi(block_dev_desc_t * dev_desc, int part,
 	sprintf((char *)info->name, "%s",
 			print_efiname(&gpt_pte[part - 1]));
 	sprintf((char *)info->type, "U-Boot");
+	info->bootable = is_bootable(&gpt_pte[part - 1]);
+#ifdef CONFIG_PARTITION_UUIDS
+	uuid_string(gpt_pte[part - 1].unique_partition_guid.b, info->uuid);
+#endif
 
 	debug("%s: start 0x%lX, size 0x%lX, name %s", __func__,
 		info->start, info->size, info->name);
@@ -373,7 +422,7 @@ static gpt_entry *alloc_read_gpt_entries(block_dev_desc_t * dev_desc,
 	count = le32_to_int(pgpt_head->num_partition_entries) *
 		le32_to_int(pgpt_head->sizeof_partition_entry);
 
-	debug("%s: count = %lu * %lu = %u\n", __func__,
+	debug("%s: count = %lu * %lu = %zu\n", __func__,
 		le32_to_int(pgpt_head->num_partition_entries),
 		le32_to_int(pgpt_head->sizeof_partition_entry), count);
 
@@ -383,7 +432,8 @@ static gpt_entry *alloc_read_gpt_entries(block_dev_desc_t * dev_desc,
 	}
 
 	if (count == 0 || pte == NULL) {
-		printf("%s: ERROR: Can't allocate 0x%X bytes for GPT Entries\n",
+		printf("%s: ERROR: Can't allocate 0x%zX "
+		       "bytes for GPT Entries\n",
 			__func__, count);
 		return NULL;
 	}
@@ -425,7 +475,7 @@ static int is_pte_valid(gpt_entry * pte)
 		sizeof(unused_guid.b)) == 0) {
 
 		debug("%s: Found an unused PTE GUID at 0x%08X\n", __func__,
-		(unsigned int)pte);
+		      (unsigned int)(uintptr_t)pte);
 
 		return 0;
 	} else {

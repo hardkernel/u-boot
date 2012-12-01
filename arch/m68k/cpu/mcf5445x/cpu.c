@@ -3,7 +3,7 @@
  * (C) Copyright 2000-2003
  * Wolfgang Denk, DENX Software Engineering, wd@denx.de.
  *
- * Copyright (C) 2004-2007 Freescale Semiconductor, Inc.
+ * Copyright (C) 2004-2007, 2012 Freescale Semiconductor, Inc.
  * TsiChung Liew (Tsi-Chung.Liew@freescale.com)
  *
  * See file CREDITS for list of people who contributed to this
@@ -31,14 +31,17 @@
 #include <netdev.h>
 
 #include <asm/immap.h>
+#include <asm/io.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
 int do_reset(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
-	volatile rcm_t *rcm = (rcm_t *) (MMAP_RCM);
+	rcm_t *rcm = (rcm_t *) (MMAP_RCM);
 	udelay(1000);
-	rcm->rcr |= RCM_RCR_SOFTRST;
+	out_8(&rcm->rcr, RCM_RCR_FRCRSTOUT);
+	udelay(10000);
+	setbits_8(&rcm->rcr, RCM_RCR_SOFTRST);
 
 	/* we don't return! */
 	return 0;
@@ -46,14 +49,14 @@ int do_reset(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 
 int checkcpu(void)
 {
-	volatile ccm_t *ccm = (ccm_t *) MMAP_CCM;
+	ccm_t *ccm = (ccm_t *) MMAP_CCM;
 	u16 msk;
 	u16 id = 0;
 	u8 ver;
 
 	puts("CPU:   ");
-	msk = (ccm->cir >> 6);
-	ver = (ccm->cir & 0x003f);
+	msk = (in_be16(&ccm->cir) >> 6);
+	ver = (in_be16(&ccm->cir) & 0x003f);
 	switch (msk) {
 	case 0x48:
 		id = 54455;
@@ -72,6 +75,21 @@ int checkcpu(void)
 		break;
 	case 0x4f:
 		id = 54450;
+		break;
+	case 0x9F:
+		id = 54410;
+		break;
+	case 0xA0:
+		id = 54415;
+		break;
+	case 0xA1:
+		id = 54416;
+		break;
+	case 0xA2:
+		id = 54417;
+		break;
+	case 0xA3:
+		id = 54418;
 		break;
 	}
 

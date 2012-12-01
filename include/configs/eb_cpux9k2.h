@@ -43,14 +43,22 @@
 
 #define MACH_TYPE_EB_CPUX9K2		1977
 #define CONFIG_MACH_TYPE		MACH_TYPE_EB_CPUX9K2
+
+#define CONFIG_SYS_CACHELINE_SIZE	32
+#define CONFIG_SYS_DCACHE_OFF
+
 /*--------------------------------------------------------------------------*/
-#define CONFIG_SYS_TEXT_BASE 		0x00000000
+#ifndef CONFIG_RAMBOOT
+#define CONFIG_SYS_TEXT_BASE		0x00000000
+#else
+#define CONFIG_SKIP_LOWLEVEL_INIT
+#define CONFIG_SYS_TEXT_BASE		0x21f00000
+#endif
 #define CONFIG_SYS_LOAD_ADDR		0x21000000  /* default load address */
 
 #define CONFIG_SYS_BOOT_SIZE		0x00 /* 0 KBytes */
 #define CONFIG_SYS_U_BOOT_BASE		PHYS_FLASH_1
 #define CONFIG_SYS_U_BOOT_SIZE		0x60000 /* 384 KBytes */
-
 
 #define CONFIG_BOOT_RETRY_TIME		30
 #define CONFIG_CMDLINE_EDITING

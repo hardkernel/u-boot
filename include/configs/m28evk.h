@@ -135,7 +135,7 @@
  */
 #ifdef	CONFIG_CMD_MMC
 #define	CONFIG_MMC
-#define	CONFIG_MMC_BOUNCE_BUFFER
+#define	CONFIG_BOUNCE_BUFFER
 #define	CONFIG_GENERIC_MMC
 #define	CONFIG_MXS_MMC
 #endif
@@ -171,9 +171,9 @@
 #define	CONFIG_LZO
 #define	CONFIG_MTD_DEVICE
 #define	CONFIG_MTD_PARTITIONS
-#define	MTDIDS_DEFAULT			"nand0=gpmi-nand.0"
+#define	MTDIDS_DEFAULT			"nand0=gpmi-nand"
 #define	MTDPARTS_DEFAULT			\
-	"mtdparts=gpmi-nand.0:"			\
+	"mtdparts=gpmi-nand:"			\
 		"3m(bootloader)ro,"		\
 		"512k(environment),"		\
 		"512k(redundant-environment),"	\
@@ -246,18 +246,20 @@
 #define	CONFIG_MXS_SPI_DMA_ENABLE
 #define	CONFIG_SPI_HALF_DUPLEX
 #define	CONFIG_DEFAULT_SPI_BUS		2
+#define	CONFIG_DEFAULT_SPI_CS		0
 #define	CONFIG_DEFAULT_SPI_MODE		SPI_MODE_0
 
 /* SPI FLASH */
 #ifdef	CONFIG_CMD_SF
 #define	CONFIG_SPI_FLASH
 #define	CONFIG_SPI_FLASH_STMICRO
-#define	CONFIG_SF_DEFAULT_CS		2
-#define	CONFIG_SF_DEFAULT_MODE		SPI_MODE_0
+#define	CONFIG_SF_DEFAULT_BUS		2
+#define	CONFIG_SF_DEFAULT_CS		0
 #define	CONFIG_SF_DEFAULT_SPEED		40000000
+#define	CONFIG_SF_DEFAULT_MODE		SPI_MODE_0
 
-#define	CONFIG_ENV_SPI_CS		0
 #define	CONFIG_ENV_SPI_BUS		2
+#define	CONFIG_ENV_SPI_CS		0
 #define	CONFIG_ENV_SPI_MAX_HZ		40000000
 #define	CONFIG_ENV_SPI_MODE		SPI_MODE_0
 #endif

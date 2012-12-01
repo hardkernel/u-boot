@@ -22,7 +22,7 @@
 
 /*
  * P2041 RDB board configuration file
- *
+ * Also supports P2040 RDB
  */
 #ifndef __CONFIG_H
 #define __CONFIG_H
@@ -34,6 +34,15 @@
 #ifdef CONFIG_RAMBOOT_PBL
 #define CONFIG_RAMBOOT_TEXT_BASE	CONFIG_SYS_TEXT_BASE
 #define CONFIG_RESET_VECTOR_ADDRESS	0xfffffffc
+#endif
+
+#ifdef CONFIG_SRIO_PCIE_BOOT_SLAVE
+/* Set 1M boot space */
+#define CONFIG_SYS_SRIO_PCIE_BOOT_SLAVE_ADDR (CONFIG_SYS_TEXT_BASE & 0xfff00000)
+#define CONFIG_SYS_SRIO_PCIE_BOOT_SLAVE_ADDR_PHYS \
+		(0x300000000ull | CONFIG_SYS_SRIO_PCIE_BOOT_SLAVE_ADDR)
+#define CONFIG_RESET_VECTOR_ADDRESS 0xfffffffc
+#define CONFIG_SYS_NO_FLASH
 #endif
 
 /* High Level Configuration Options */
@@ -73,7 +82,7 @@
 #define CONFIG_ENV_OVERWRITE
 
 #ifdef CONFIG_SYS_NO_FLASH
-#ifndef CONFIG_RAMBOOT_PBL
+#if !defined(CONFIG_RAMBOOT_PBL) && !defined(CONFIG_SRIO_PCIE_BOOT_SLAVE)
 #define CONFIG_ENV_IS_NOWHERE
 #endif
 #else
@@ -104,8 +113,12 @@
 #define CONFIG_ENV_IS_IN_NAND
 #define CONFIG_ENV_SIZE			CONFIG_SYS_NAND_BLOCK_SIZE
 #define CONFIG_ENV_OFFSET		(5 * CONFIG_SYS_NAND_BLOCK_SIZE)
+#elif defined(CONFIG_SRIO_PCIE_BOOT_SLAVE)
+#define CONFIG_ENV_IS_IN_REMOTE
+#define CONFIG_ENV_ADDR		0xffe20000
+#define CONFIG_ENV_SIZE		0x2000
 #elif defined(CONFIG_ENV_IS_NOWHERE)
-	#define CONFIG_ENV_SIZE		0x2000
+#define CONFIG_ENV_SIZE		0x2000
 #else
 	#define CONFIG_ENV_IS_IN_FLASH
 	#define CONFIG_ENV_ADDR		(CONFIG_SYS_MONITOR_BASE \
@@ -189,15 +202,21 @@ unsigned long get_board_sys_clk(unsigned long dummy);
 /* Set the local bus clock 1/8 of platform clock */
 #define CONFIG_SYS_LBC_LCRR		LCRR_CLKDIV_8
 
-#define CONFIG_SYS_FLASH_BASE		0xe8000000	/* Start of PromJet */
+/*
+ * This board doesn't have a promjet connector.
+ * However, it uses commone corenet board LAW and TLB.
+ * It is necessary to use the same start address with proper offset.
+ */
+#define CONFIG_SYS_FLASH_BASE		0xe0000000
 #ifdef CONFIG_PHYS_64BIT
-#define CONFIG_SYS_FLASH_BASE_PHYS	0xfe8000000ull
+#define CONFIG_SYS_FLASH_BASE_PHYS	0xfe0000000ull
 #else
 #define CONFIG_SYS_FLASH_BASE_PHYS	CONFIG_SYS_FLASH_BASE
 #endif
 
 #define CONFIG_SYS_FLASH_BR_PRELIM \
-		(BR_PHYS_ADDR(CONFIG_SYS_FLASH_BASE_PHYS) | BR_PS_16 | BR_V)
+		(BR_PHYS_ADDR((CONFIG_SYS_FLASH_BASE_PHYS + 0x8000000)) | \
+		BR_PS_16 | BR_V)
 #define CONFIG_SYS_FLASH_OR_PRELIM \
 		((0xf8000ff7 & ~OR_GPCM_SCY & ~OR_GPCM_EHTR) \
 		 | OR_GPCM_SCY_8 | OR_GPCM_EHTR_CLEAR)
@@ -281,7 +300,7 @@ unsigned long get_board_sys_clk(unsigned long dummy);
 
 #define CONFIG_SYS_FLASH_EMPTY_INFO
 #define CONFIG_SYS_FLASH_AMD_CHECK_DQ7
-#define CONFIG_SYS_FLASH_BANKS_LIST	{CONFIG_SYS_FLASH_BASE_PHYS}
+#define CONFIG_SYS_FLASH_BANKS_LIST	{CONFIG_SYS_FLASH_BASE_PHYS + 0x8000000}
 
 #define CONFIG_BOARD_EARLY_INIT_F
 #define CONFIG_BOARD_EARLY_INIT_R	/* call board_early_init_r function */
@@ -372,6 +391,35 @@ unsigned long get_board_sys_clk(unsigned long dummy);
 #define CONFIG_SYS_SRIO2_MEM_PHYS	0xb0000000
 #endif
 #define CONFIG_SYS_SRIO2_MEM_SIZE	0x10000000	/* 256M */
+
+/*
+ * for slave u-boot IMAGE instored in master memory space,
+ * PHYS must be aligned based on the SIZE
+ */
+#define CONFIG_SRIO_PCIE_BOOT_IMAGE_MEM_PHYS 0xfef080000ull
+#define CONFIG_SRIO_PCIE_BOOT_IMAGE_MEM_BUS1 0xfff80000ull
+#define CONFIG_SRIO_PCIE_BOOT_IMAGE_SIZE 0x80000	/* 512K */
+#define CONFIG_SRIO_PCIE_BOOT_IMAGE_MEM_BUS2 0x3fff80000ull
+/*
+ * for slave UCODE and ENV instored in master memory space,
+ * PHYS must be aligned based on the SIZE
+ */
+#define CONFIG_SRIO_PCIE_BOOT_UCODE_ENV_MEM_PHYS 0xfef040000ull
+#define CONFIG_SRIO_PCIE_BOOT_UCODE_ENV_MEM_BUS 0x3ffe00000ull
+#define CONFIG_SRIO_PCIE_BOOT_UCODE_ENV_SIZE 0x40000	/* 256K */
+
+/* slave core release by master*/
+#define CONFIG_SRIO_PCIE_BOOT_BRR_OFFSET 0xe00e4
+#define CONFIG_SRIO_PCIE_BOOT_RELEASE_MASK 0x00000001 /* release core 0 */
+
+/*
+ * SRIO_PCIE_BOOT - SLAVE
+ */
+#ifdef CONFIG_SRIO_PCIE_BOOT_SLAVE
+#define CONFIG_SYS_SRIO_PCIE_BOOT_UCODE_ENV_ADDR 0xFFE00000
+#define CONFIG_SYS_SRIO_PCIE_BOOT_UCODE_ENV_ADDR_PHYS \
+		(0x300000000ull | CONFIG_SYS_SRIO_PCIE_BOOT_UCODE_ENV_ADDR)
+#endif
 
 /*
  * eSPI - Enhanced SPI
@@ -485,9 +533,19 @@ unsigned long get_board_sys_clk(unsigned long dummy);
 #elif defined(CONFIG_NAND)
 #define CONFIG_SYS_QE_FMAN_FW_IN_NAND
 #define CONFIG_SYS_QE_FMAN_FW_ADDR	(6 * CONFIG_SYS_NAND_BLOCK_SIZE)
+#elif defined(CONFIG_SRIO_PCIE_BOOT_SLAVE)
+/*
+ * Slave has no ucode locally, it can fetch this from remote. When implementing
+ * in two corenet boards, slave's ucode could be stored in master's memory
+ * space, the address can be mapped from slave TLB->slave LAW->
+ * slave SRIO or PCIE outbound window->master inbound window->
+ * master LAW->the ucode address in master's memory space.
+ */
+#define CONFIG_SYS_QE_FMAN_FW_IN_REMOTE
+#define CONFIG_SYS_QE_FMAN_FW_ADDR	0xFFE00000
 #else
 #define CONFIG_SYS_QE_FMAN_FW_IN_NOR
-#define CONFIG_SYS_QE_FMAN_FW_ADDR	0xEF000000
+#define CONFIG_SYS_QE_FMAN_FW_ADDR	0xEFF40000
 #endif
 #define CONFIG_SYS_QE_FMAN_FW_LENGTH	0x10000
 #define CONFIG_SYS_FDT_PAD		(0x3000 + CONFIG_SYS_QE_FMAN_FW_LENGTH)
@@ -508,8 +566,10 @@ unsigned long get_board_sys_clk(unsigned long dummy);
 #endif	/* CONFIG_PCI */
 
 /* SATA */
+#define CONFIG_FSL_SATA_V2
+
+#ifdef CONFIG_FSL_SATA_V2
 #define CONFIG_FSL_SATA
-#ifdef CONFIG_FSL_SATA
 #define CONFIG_LIBATA
 
 #define CONFIG_SYS_SATA_MAX_DEVICE	2
@@ -655,8 +715,8 @@ unsigned long get_board_sys_clk(unsigned long dummy);
 	"hwconfig=fsl_ddr:ctlr_intlv=cacheline,"		\
 	"bank_intlv=cs0_cs1\0"					\
 	"netdev=eth0\0"						\
-	"uboot=" MK_STR(CONFIG_UBOOTPATH) "\0"			\
-	"ubootaddr=" MK_STR(CONFIG_SYS_TEXT_BASE) "\0"		\
+	"uboot=" __stringify(CONFIG_UBOOTPATH) "\0"			\
+	"ubootaddr=" __stringify(CONFIG_SYS_TEXT_BASE) "\0"		\
 	"tftpflash=tftpboot $loadaddr $uboot && "		\
 	"protect off $ubootaddr +$filesize && "			\
 	"erase $ubootaddr +$filesize && "			\
@@ -664,7 +724,7 @@ unsigned long get_board_sys_clk(unsigned long dummy);
 	"protect on $ubootaddr +$filesize && "			\
 	"cmp.b $loadaddr $ubootaddr $filesize\0"		\
 	"consoledev=ttyS0\0"					\
-	"usb_phy_type=" MK_STR(__USB_PHY_TYPE) "\0"		\
+	"usb_phy_type=" __stringify(__USB_PHY_TYPE) "\0"		\
 	"usb_dr_mode=host\0"					\
 	"ramdiskaddr=2000000\0"					\
 	"ramdiskfile=p2041rdb/ramdisk.uboot\0"			\

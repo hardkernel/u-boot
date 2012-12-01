@@ -87,10 +87,10 @@ local_bus_init(void)
 	lbc_hz = sysinfo.freqSystemBus / 1000000 / clkdiv;
 
 	if (lbc_hz < 66) {
-		lbc->lcrr = CONFIG_SYS_LBC_LCRR | 0x80000000;	/* DLL Bypass */
+		lbc->lcrr = CONFIG_SYS_LBC_LCRR | LCRR_DBYP;	/* DLL Bypass */
 
 	} else if (lbc_hz >= 133) {
-		lbc->lcrr = CONFIG_SYS_LBC_LCRR & (~0x80000000); /* DLL Enabled */
+		lbc->lcrr = CONFIG_SYS_LBC_LCRR & (~LCRR_DBYP); /* DLL Enabled */
 
 	} else {
 		/*
@@ -105,7 +105,7 @@ local_bus_init(void)
 			lbc->lcrr = 0x10000004;
 		}
 
-		lbc->lcrr = CONFIG_SYS_LBC_LCRR & (~0x80000000); /* DLL Enabled */
+		lbc->lcrr = CONFIG_SYS_LBC_LCRR & (~LCRR_DBYP); /* DLL Enabled */
 		udelay(200);
 
 		/*
@@ -184,7 +184,7 @@ void lbc_sdram_init(void)
 phys_size_t fixed_sdram(void)
 {
   #ifndef CONFIG_SYS_RAMBOOT
-	volatile ccsr_ddr_t *ddr= (void *)(CONFIG_SYS_MPC85xx_DDR_ADDR);
+	volatile ccsr_ddr_t *ddr= (void *)(CONFIG_SYS_MPC8xxx_DDR_ADDR);
 
 	ddr->cs0_bnds = CONFIG_SYS_DDR_CS0_BNDS;
 	ddr->cs0_config = CONFIG_SYS_DDR_CS0_CONFIG;

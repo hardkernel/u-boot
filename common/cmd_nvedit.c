@@ -71,9 +71,6 @@ DECLARE_GLOBAL_DATA_PTR;
 SPI_FLASH|NVRAM|MMC|FAT|REMOTE} or CONFIG_ENV_IS_NOWHERE
 #endif
 
-#define XMK_STR(x)	#x
-#define MK_STR(x)	XMK_STR(x)
-
 /*
  * Maximum expected input data size for import command
  */
@@ -103,6 +100,7 @@ int get_env_id(void)
 	return env_id;
 }
 
+#ifndef CONFIG_SPL_BUILD
 /*
  * Command interface: print one or all environment variables
  *
@@ -138,7 +136,8 @@ static int env_print(char *name)
 	return 0;
 }
 
-int do_env_print (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+static int do_env_print(cmd_tbl_t *cmdtp, int flag, int argc,
+			char * const argv[])
 {
 	int i;
 	int rcode = 0;
@@ -196,33 +195,26 @@ static int do_env_grep(cmd_tbl_t *cmdtp, int flag,
 	return rcode;
 }
 #endif
+#endif /* CONFIG_SPL_BUILD */
 
 /*
- * Set a new environment variable,
- * or replace or delete an existing one.
+ * Perform consistency checking before setting, replacing, or deleting an
+ * environment variable, then (if successful) apply the changes to internals so
+ * to make them effective.  Code for this function was taken out of
+ * _do_env_set(), which now calls it instead.
+ * Also called as a callback function by himport_r().
+ * Returns 0 in case of success, 1 in case of failure.
+ * When (flag & H_FORCE) is set, do not print out any error message and force
+ * overwriting of write-once variables.
  */
-int _do_env_set(int flag, int argc, char * const argv[])
+
+int env_check_apply(const char *name, const char *oldval,
+			const char *newval, int flag)
 {
-	int   i, len;
 	int   console = -1;
-	char  *name, *value, *s;
-	ENTRY e, *ep;
 
-	name = argv[1];
-
-	if (strchr(name, '=')) {
-		printf("## Error: illegal character '=' in variable name"
-		       "\"%s\"\n", name);
-		return 1;
-	}
-
-	env_id++;
-	/*
-	 * search if variable with this name already exists
-	 */
-	e.key = name;
-	e.data = NULL;
-	hsearch_r(e, FIND, &ep, &env_htab);
+	/* Default value for NULL to protect string-manipulating functions */
+	newval = newval ? : "";
 
 	/* Check for console redirection */
 	if (strcmp(name, "stdin") == 0)
@@ -233,60 +225,70 @@ int _do_env_set(int flag, int argc, char * const argv[])
 		console = stderr;
 
 	if (console != -1) {
-		if (argc < 3) {		/* Cannot delete it! */
-			printf("Can't delete \"%s\"\n", name);
+		if ((newval == NULL) || (*newval == '\0')) {
+			/* We cannot delete stdin/stdout/stderr */
+			if ((flag & H_FORCE) == 0)
+				printf("Can't delete \"%s\"\n", name);
 			return 1;
 		}
 
 #ifdef CONFIG_CONSOLE_MUX
-		i = iomux_doenv(console, argv[2]);
-		if (i)
-			return i;
+		if (iomux_doenv(console, newval))
+			return 1;
 #else
 		/* Try assigning specified device */
-		if (console_assign(console, argv[2]) < 0)
+		if (console_assign(console, newval) < 0)
 			return 1;
-
-#ifdef CONFIG_SERIAL_MULTI
-		if (serial_assign(argv[2]) < 0)
-			return 1;
-#endif
 #endif /* CONFIG_CONSOLE_MUX */
 	}
 
 	/*
-	 * Some variables like "ethaddr" and "serial#" can be set only
-	 * once and cannot be deleted; also, "ver" is readonly.
+	 * Some variables like "ethaddr" and "serial#" can be set only once and
+	 * cannot be deleted, unless CONFIG_ENV_OVERWRITE is defined.
 	 */
-	if (ep) {		/* variable exists */
 #ifndef CONFIG_ENV_OVERWRITE
+	if (oldval != NULL &&			/* variable exists */
+		(flag & H_FORCE) == 0) {	/* and we are not forced */
 		if (strcmp(name, "serial#") == 0 ||
 		    (strcmp(name, "ethaddr") == 0
 #if defined(CONFIG_OVERWRITE_ETHADDR_ONCE) && defined(CONFIG_ETHADDR)
-		     && strcmp(ep->data, MK_STR(CONFIG_ETHADDR)) != 0
+		     && strcmp(oldval, __stringify(CONFIG_ETHADDR)) != 0
 #endif	/* CONFIG_OVERWRITE_ETHADDR_ONCE && CONFIG_ETHADDR */
 			)) {
 			printf("Can't overwrite \"%s\"\n", name);
 			return 1;
 		}
+	}
 #endif
+	/*
+	 * When we change baudrate, or we are doing an env default -a
+	 * (which will erase all variables prior to calling this),
+	 * we want the baudrate to actually change - for real.
+	 */
+	if (oldval != NULL ||			/* variable exists */
+		(flag & H_NOCLEAR) == 0) {	/* or env is clear */
 		/*
 		 * Switch to new baudrate if new baudrate is supported
 		 */
 		if (strcmp(name, "baudrate") == 0) {
-			int baudrate = simple_strtoul(argv[2], NULL, 10);
+			int baudrate = simple_strtoul(newval, NULL, 10);
 			int i;
 			for (i = 0; i < N_BAUDRATES; ++i) {
 				if (baudrate == baudrate_table[i])
 					break;
 			}
 			if (i == N_BAUDRATES) {
-				printf("## Baudrate %d bps not supported\n",
-					baudrate);
+				if ((flag & H_FORCE) == 0)
+					printf("## Baudrate %d bps not "
+						"supported\n", baudrate);
 				return 1;
 			}
+			if (gd->baudrate == baudrate) {
+				/* If unchanged, we just say it's OK */
+				return 0;
+			}
 			printf("## Switch baudrate to %d bps and"
-			       "press ENTER ...\n", baudrate);
+				"press ENTER ...\n", baudrate);
 			udelay(50000);
 			gd->baudrate = baudrate;
 #if defined(CONFIG_PPC) || defined(CONFIG_MCF52x2)
@@ -300,9 +302,62 @@ int _do_env_set(int flag, int argc, char * const argv[])
 		}
 	}
 
+	/*
+	 * Some variables should be updated when the corresponding
+	 * entry in the environment is changed
+	 */
+	if (strcmp(name, "loadaddr") == 0) {
+		load_addr = simple_strtoul(newval, NULL, 16);
+		return 0;
+	}
+#if defined(CONFIG_CMD_NET)
+	else if (strcmp(name, "bootfile") == 0) {
+		copy_filename(BootFile, newval, sizeof(BootFile));
+		return 0;
+	}
+#endif
+	return 0;
+}
+
+/*
+ * Set a new environment variable,
+ * or replace or delete an existing one.
+*/
+static int _do_env_set(int flag, int argc, char * const argv[])
+{
+	int   i, len;
+	char  *name, *value, *s;
+	ENTRY e, *ep;
+
+	name = argv[1];
+	value = argv[2];
+
+	if (strchr(name, '=')) {
+		printf("## Error: illegal character '='"
+		       "in variable name \"%s\"\n", name);
+		return 1;
+	}
+
+	env_id++;
+	/*
+	 * search if variable with this name already exists
+	 */
+	e.key = name;
+	e.data = NULL;
+	hsearch_r(e, FIND, &ep, &env_htab);
+
+	/*
+	 * Perform requested checks. Notice how since we are overwriting
+	 * a single variable, we need to set H_NOCLEAR
+	 */
+	if (env_check_apply(name, ep ? ep->data : NULL, value, H_NOCLEAR)) {
+		debug("check function did not approve, refusing\n");
+		return 1;
+	}
+
 	/* Delete only ? */
 	if (argc < 3 || argv[2] == NULL) {
-		int rc = hdelete_r(name, &env_htab);
+		int rc = hdelete_r(name, &env_htab, 0);
 		return !rc;
 	}
 
@@ -337,20 +392,6 @@ int _do_env_set(int flag, int argc, char * const argv[])
 		return 1;
 	}
 
-	/*
-	 * Some variables should be updated when the corresponding
-	 * entry in the environment is changed
-	 */
-	if (strcmp(argv[1], "loadaddr") == 0) {
-		load_addr = simple_strtoul(argv[2], NULL, 16);
-		return 0;
-	}
-#if defined(CONFIG_CMD_NET)
-	else if (strcmp(argv[1], "bootfile") == 0) {
-		copy_filename(BootFile, argv[2], sizeof(BootFile));
-		return 0;
-	}
-#endif
 	return 0;
 }
 
@@ -394,7 +435,8 @@ int setenv_addr(const char *varname, const void *addr)
 	return setenv(varname, str);
 }
 
-int do_env_set(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+#ifndef CONFIG_SPL_BUILD
+static int do_env_set(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	if (argc < 2)
 		return CMD_RET_USAGE;
@@ -473,7 +515,8 @@ int do_env_ask(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
  * Interactively edit an environment variable
  */
 #if defined(CONFIG_CMD_EDITENV)
-int do_env_edit(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+static int do_env_edit(cmd_tbl_t *cmdtp, int flag, int argc,
+		       char * const argv[])
 {
 	char buffer[CONFIG_SYS_CBSIZE];
 	char *init_val;
@@ -493,6 +536,7 @@ int do_env_edit(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	return setenv(argv[1], buffer);
 }
 #endif /* CONFIG_CMD_EDITENV */
+#endif /* CONFIG_SPL_BUILD */
 
 /*
  * Look up variable from environment,
@@ -578,8 +622,10 @@ ulong getenv_ulong(const char *name, int base, ulong default_val)
 	return str ? simple_strtoul(str, NULL, base) : default_val;
 }
 
+#ifndef CONFIG_SPL_BUILD
 #if defined(CONFIG_CMD_SAVEENV) && !defined(CONFIG_ENV_IS_NOWHERE)
-int do_env_save(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+static int do_env_save(cmd_tbl_t *cmdtp, int flag, int argc,
+		       char * const argv[])
 {
 	printf("Saving Environment to %s...\n", env_name_spec);
 
@@ -592,6 +638,7 @@ U_BOOT_CMD(
 	""
 );
 #endif
+#endif /* CONFIG_SPL_BUILD */
 
 
 /*
@@ -603,6 +650,9 @@ U_BOOT_CMD(
  */
 int envmatch(uchar *s1, int i2)
 {
+	if (s1 == NULL)
+		return -1;
+
 	while (*s1 == env_get_char(i2++))
 		if (*s1++ == '=')
 			return i2;
@@ -613,14 +663,42 @@ int envmatch(uchar *s1, int i2)
 	return -1;
 }
 
-static int do_env_default(cmd_tbl_t *cmdtp, int flag,
+#ifndef CONFIG_SPL_BUILD
+static int do_env_default(cmd_tbl_t *cmdtp, int __flag,
 			  int argc, char * const argv[])
 {
-	if (argc != 2 || strcmp(argv[1], "-f") != 0)
-		return CMD_RET_USAGE;
+	int all = 0, flag = 0;
 
-	set_default_env("## Resetting to default environment\n");
-	return 0;
+	debug("Initial value for argc=%d\n", argc);
+	while (--argc > 0 && **++argv == '-') {
+		char *arg = *argv;
+
+		while (*++arg) {
+			switch (*arg) {
+			case 'a':		/* default all */
+				all = 1;
+				break;
+			case 'f':		/* force */
+				flag |= H_FORCE;
+				break;
+			default:
+				return cmd_usage(cmdtp);
+			}
+		}
+	}
+	debug("Final value for argc=%d\n", argc);
+	if (all && (argc == 0)) {
+		/* Reset the whole environment */
+		set_default_env("## Resetting to default environment\n");
+		return 0;
+	}
+	if (!all && (argc > 0)) {
+		/* Reset individual variables */
+		set_default_vars(argc, argv);
+		return 0;
+	}
+
+	return cmd_usage(cmdtp);
 }
 
 static int do_env_delete(cmd_tbl_t *cmdtp, int flag,
@@ -872,7 +950,8 @@ static int do_env_import(cmd_tbl_t *cmdtp, int flag,
 		addr = (char *)ep->data;
 	}
 
-	if (himport_r(&env_htab, addr, size, sep, del ? 0 : H_NOCLEAR) == 0) {
+	if (himport_r(&env_htab, addr, size, sep, del ? 0 : H_NOCLEAR,
+			0, NULL, 0 /* do_apply */) == 0) {
 		error("Environment import failed: errno = %d\n", errno);
 		return 1;
 	}
@@ -944,21 +1023,25 @@ static int do_env(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	return CMD_RET_USAGE;
 }
 
-U_BOOT_CMD(
-	env, CONFIG_SYS_MAXARGS, 1, do_env,
-	"environment handling commands",
+#ifdef CONFIG_SYS_LONGHELP
+static char env_help_text[] =
 #if defined(CONFIG_CMD_ASKENV)
 	"ask name [message] [size] - ask for environment variable\nenv "
 #endif
-	"default -f - reset default environment\n"
+	"default [-f] -a - [forcibly] reset default environment\n"
+	"env default [-f] var [...] - [forcibly] reset variable(s) to their default values\n"
 #if defined(CONFIG_CMD_EDITENV)
 	"env edit name - edit environment variable\n"
 #endif
+#if defined(CONFIG_CMD_EXPORTENV)
 	"env export [-t | -b | -c] [-s size] addr [var ...] - export environment\n"
+#endif
 #if defined(CONFIG_CMD_GREPENV)
 	"env grep string [...] - search environment\n"
 #endif
+#if defined(CONFIG_CMD_IMPORTENV)
 	"env import [-d] [-t | -b | -c] addr [size] - import environment\n"
+#endif
 	"env print [name ...] - print environment\n"
 #if defined(CONFIG_CMD_RUN)
 	"env run var [...] - run commands in an environment variable\n"
@@ -966,7 +1049,12 @@ U_BOOT_CMD(
 #if defined(CONFIG_CMD_SAVEENV) && !defined(CONFIG_ENV_IS_NOWHERE)
 	"env save - save environment\n"
 #endif
-	"env set [-f] name [arg ...]\n"
+	"env set [-f] name [arg ...]\n";
+#endif
+
+U_BOOT_CMD(
+	env, CONFIG_SYS_MAXARGS, 1, do_env,
+	"environment handling commands", env_help_text
 );
 
 /*
@@ -1038,3 +1126,4 @@ U_BOOT_CMD_COMPLETE(
 	var_complete
 );
 #endif
+#endif /* CONFIG_SPL_BUILD */

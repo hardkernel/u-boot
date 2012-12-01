@@ -59,7 +59,6 @@ COBJS-$(CONFIG_MVGBE) += mvgbe.o
 COBJS-$(CONFIG_NATSEMI) += natsemi.o
 COBJS-$(CONFIG_DRIVER_NE2000) += ne2000.o ne2000_base.o
 COBJS-$(CONFIG_DRIVER_AX88796L) += ax88796.o ne2000_base.o
-COBJS-$(CONFIG_DRIVER_NETARMETH) += netarm_eth.o
 COBJS-$(CONFIG_NETCONSOLE) += netconsole.o
 COBJS-$(CONFIG_NS8382X) += ns8382x.o
 COBJS-$(CONFIG_PCNET) += pcnet.o
@@ -80,6 +79,7 @@ COBJS-$(CONFIG_XILINX_AXIEMAC) += xilinx_axi_emac.o
 COBJS-$(CONFIG_XILINX_EMACLITE) += xilinx_emaclite.o
 COBJS-$(CONFIG_XILINX_LL_TEMAC) += xilinx_ll_temac.o xilinx_ll_temac_mdio.o \
 		xilinx_ll_temac_fifo.o xilinx_ll_temac_sdma.o
+COBJS-$(CONFIG_ZYNQ_GEM) += zynq_gem.o
 
 COBJS	:= $(sort $(COBJS-y))
 SRCS	:= $(COBJS:.o=.c)

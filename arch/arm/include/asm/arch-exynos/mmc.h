@@ -71,9 +71,6 @@ int s5p_sdhci_init(u32 regbase, int index, int bus_width);
 static inline unsigned int s5p_mmc_init(int index, int bus_width)
 {
 	unsigned int base = samsung_get_base_mmc() + (0x10000 * index);
-
-	printf("%s: index = %d, bus_width = %d\n", __func__, index, bus_width);
-
 	return s5p_sdhci_init(base, index, bus_width);
 }
 #endif

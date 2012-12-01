@@ -62,7 +62,6 @@ DECLARE_GLOBAL_DATA_PTR;
 */
 
 extern void timer_interrupt_init(void);
-extern void malloc_bin_reloc(void);
 extern int do_ambapp_print(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[]);
 extern int prom_init(void);
 
@@ -166,7 +165,6 @@ char *str_init_seq_done = "\n\rInit sequence done...\r\n\r\n";
 void board_init_f(ulong bootflag)
 {
 	bd_t *bd;
-	unsigned char *s;
 	init_fnc_t **init_fnc_ptr;
 	int j;
 
@@ -248,8 +246,8 @@ void board_init_f(ulong bootflag)
 	/*
 	 * We have to relocate the command table manually
 	 */
-	fixup_cmdtable(&__u_boot_cmd_start,
-		(ulong)(&__u_boot_cmd_end - &__u_boot_cmd_start));
+	fixup_cmdtable(ll_entry_start(cmd_tbl_t, cmd),
+			ll_entry_count(cmd_tbl_t, cmd));
 #endif /* defined(CONFIG_NEEDS_MANUAL_RELOC) */
 
 #if defined(CONFIG_CMD_AMBAPP) && defined(CONFIG_SYS_AMBAPP_PRINT_ON_STARTUP)

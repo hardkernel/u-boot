@@ -27,8 +27,6 @@
  /* High Level Configuration Options */
 #define CONFIG_ARM1136		1		/* This is an arm1136 CPU core */
 #define CONFIG_MX31		1		/* in a mx31 */
-#define CONFIG_MX31_HCLK_FREQ	26000000	/* RedBoot says 26MHz */
-#define CONFIG_MX31_CLK32	32768
 
 #define CONFIG_DISPLAY_CPUINFO
 #define CONFIG_DISPLAY_BOARDINFO
@@ -70,9 +68,9 @@
 #define CONFIG_MXC_GPIO
 
 /* PMIC Controller */
-#define CONFIG_PMIC
-#define CONFIG_PMIC_SPI
-#define CONFIG_PMIC_FSL
+#define CONFIG_POWER
+#define CONFIG_POWER_SPI
+#define CONFIG_POWER_FSL
 #define CONFIG_FSL_PMIC_BUS	1
 #define CONFIG_FSL_PMIC_CS	0
 #define CONFIG_FSL_PMIC_CLK	1000000

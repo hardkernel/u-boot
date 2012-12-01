@@ -194,8 +194,8 @@ u32 orion5x_device_rev(void)
  */
 int print_cpuinfo(void)
 {
-	char dev_str[] = "0x0000";
-	char rev_str[] = "0x00";
+	char dev_str[7]; /* room enough for 0x0000 plus null byte */
+	char rev_str[5]; /* room enough for 0x00 plus null byte */
 	char *dev_name = NULL;
 	char *rev_name = NULL;
 
@@ -292,7 +292,9 @@ int arch_misc_init(void)
 	writel(ORION5X_MPP0_7, ORION5X_MPP_BASE+0x00);
 	writel(ORION5X_MPP8_15, ORION5X_MPP_BASE+0x04);
 	writel(ORION5X_MPP16_23, ORION5X_MPP_BASE+0x50);
+	writel(ORION5X_GPIO_OUT_VALUE, ORION5X_GPIO_BASE+0x00);
 	writel(ORION5X_GPIO_OUT_ENABLE, ORION5X_GPIO_BASE+0x04);
+	writel(ORION5X_GPIO_IN_POLARITY, ORION5X_GPIO_BASE+0x0c);
 
 	/* initialize timer */
 	timer_init_r();

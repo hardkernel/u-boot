@@ -38,12 +38,14 @@
  * takes a few seconds to roll. The boot doesn't take that long, so to keep the
  * code simple, it doesn't take rolling into consideration.
  */
-#define	HW_DIGCTRL_MICROSECONDS	0x8001c0c0
 void early_delay(int delay)
 {
-	uint32_t st = readl(HW_DIGCTRL_MICROSECONDS);
+	struct mxs_digctl_regs *digctl_regs =
+		(struct mxs_digctl_regs *)MXS_DIGCTL_BASE;
+
+	uint32_t st = readl(&digctl_regs->hw_digctl_microseconds);
 	st += delay;
-	while (st > readl(HW_DIGCTRL_MICROSECONDS))
+	while (st > readl(&digctl_regs->hw_digctl_microseconds))
 		;
 }
 
@@ -122,10 +124,6 @@ inline void board_init_r(gd_t *id, ulong dest_addr)
 		;
 }
 
-#ifndef CONFIG_SPL_SERIAL_SUPPORT
-void serial_putc(const char c) {}
-void serial_puts(const char *s) {}
-#endif
 void hang(void) __attribute__ ((noreturn));
 void hang(void)
 {

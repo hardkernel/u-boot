@@ -37,8 +37,6 @@
 
 #include <asm/arch/imx-regs.h>
 
-#define CONFIG_SYS_MX5_HCLK		24000000
-#define CONFIG_SYS_MX5_CLK32		32768
 #define CONFIG_DISPLAY_CPUINFO
 #define CONFIG_DISPLAY_BOARDINFO
 
@@ -129,9 +127,9 @@
 #endif
 
 /* SPI PMIC */
-#define CONFIG_PMIC
-#define CONFIG_PMIC_SPI
-#define CONFIG_PMIC_FSL
+#define CONFIG_POWER
+#define CONFIG_POWER_SPI
+#define CONFIG_POWER_FSL
 #define CONFIG_FSL_PMIC_BUS		0
 #define CONFIG_FSL_PMIC_CS		(0 | 120 << 8)
 #define CONFIG_FSL_PMIC_CLK		25000000

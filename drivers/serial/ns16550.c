@@ -36,6 +36,9 @@
 
 void NS16550_init(NS16550_t com_port, int baud_divisor)
 {
+	while (!(serial_in(&com_port->lsr) & UART_LSR_TEMT))
+		;
+
 	serial_out(CONFIG_SYS_NS16550_IER, &com_port->ier);
 #if (defined(CONFIG_OMAP) && !defined(CONFIG_OMAP3_ZOOM2)) || \
 					defined(CONFIG_AM33XX)
@@ -101,7 +104,7 @@ void NS16550_putc(NS16550_t com_port, char c)
 char NS16550_getc(NS16550_t com_port)
 {
 	while ((serial_in(&com_port->lsr) & UART_LSR_DR) == 0) {
-#ifdef CONFIG_USB_TTY
+#if !defined(CONFIG_SPL_BUILD) && defined(CONFIG_USB_TTY)
 		extern void usbtty_poll(void);
 		usbtty_poll();
 #endif

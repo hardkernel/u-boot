@@ -102,7 +102,15 @@ extern int eth_register(struct eth_device* dev);/* Register network device */
 extern int eth_unregister(struct eth_device *dev);/* Remove network device */
 extern void eth_try_another(int first_restart);	/* Change the device */
 extern void eth_set_current(void);		/* set nterface to ethcur var */
-extern struct eth_device *eth_get_dev(void);	/* get the current device MAC */
+
+/* get the current device MAC */
+extern struct eth_device *eth_current;
+
+static inline __attribute__((always_inline))
+struct eth_device *eth_get_dev(void)
+{
+	return eth_current;
+}
 extern struct eth_device *eth_get_dev_by_name(const char *devname);
 extern struct eth_device *eth_get_dev_by_index(int index); /* get dev @ index */
 extern int eth_get_dev_index(void);		/* get the device index */
@@ -150,6 +158,19 @@ extern void (*push_packet)(void *packet, int length);
 extern int eth_rx(void);			/* Check for received packets */
 extern void eth_halt(void);			/* stop SCC */
 extern char *eth_get_name(void);		/* get name of current device */
+
+/* Set active state */
+static inline __attribute__((always_inline)) int eth_init_state_only(bd_t *bis)
+{
+	eth_get_dev()->state = ETH_STATE_ACTIVE;
+
+	return 0;
+}
+/* Set passive state */
+static inline __attribute__((always_inline)) void eth_halt_state_only(void)
+{
+	eth_get_dev()->state = ETH_STATE_PASSIVE;
+}
 
 /*
  * Set the hardware address for an ethernet interface based on 'eth%daddr'
@@ -497,10 +518,10 @@ enum net_loop_state {
 	NETLOOP_SUCCESS,
 	NETLOOP_FAIL
 };
+extern enum net_loop_state net_state;
+
 static inline void net_set_state(enum net_loop_state state)
 {
-	extern enum net_loop_state net_state;
-
 	debug_cond(DEBUG_INT_STATE, "--- NetState set to %d\n", state);
 	net_state = state;
 }
@@ -529,8 +550,29 @@ extern void NetReceive(uchar *, int);
 
 #ifdef CONFIG_NETCONSOLE
 void NcStart(void);
-int nc_input_packet(uchar *pkt, unsigned dest, unsigned src, unsigned len);
+int nc_input_packet(uchar *pkt, IPaddr_t src_ip, unsigned dest_port,
+	unsigned src_port, unsigned len);
 #endif
+
+static inline __attribute__((always_inline)) int eth_is_on_demand_init(void)
+{
+#ifdef CONFIG_NETCONSOLE
+	extern enum proto_t net_loop_last_protocol;
+
+	return net_loop_last_protocol != NETCONS;
+#else
+	return 1;
+#endif
+}
+
+static inline void eth_set_last_protocol(int protocol)
+{
+#ifdef CONFIG_NETCONSOLE
+	extern enum proto_t net_loop_last_protocol;
+
+	net_loop_last_protocol = protocol;
+#endif
+}
 
 /*
  * Check if autoload is enabled. If so, use either NFS or TFTP to download

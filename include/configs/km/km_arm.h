@@ -57,10 +57,14 @@
 #define CONFIG_CMD_SF
 #define CONFIG_SOFT_I2C		/* I2C bit-banged	*/
 
+/* SPI NOR Flash default params, used by sf commands */
+#define CONFIG_SF_DEFAULT_SPEED		8100000
+#define CONFIG_SF_DEFAULT_MODE		SPI_MODE_3
+
 #if defined CONFIG_KM_ENV_IS_IN_SPI_NOR
 #define CONFIG_ENV_SPI_BUS		0
 #define CONFIG_ENV_SPI_CS		0
-#define CONFIG_ENV_SPI_MAX_HZ		5000000
+#define CONFIG_ENV_SPI_MAX_HZ		8100000
 #define CONFIG_ENV_SPI_MODE		SPI_MODE_3
 #endif
 
@@ -87,7 +91,7 @@
 #define CONFIG_KM_DEF_ENV_CPU						\
 	"boot=bootm ${load_addr_r} - -\0"				\
 	"cramfsloadfdt=true\0"						\
-	"u-boot="xstr(CONFIG_HOSTNAME) "/u-boot.kwb\0"			\
+	"u-boot="__stringify(CONFIG_HOSTNAME) "/u-boot.kwb\0"		\
 	CONFIG_KM_UPDATE_UBOOT						\
 	""
 
@@ -267,16 +271,16 @@ int get_scl(void);
 #if defined CONFIG_KM_ENV_IS_IN_SPI_NOR
 #define CONFIG_KM_NEW_ENV						\
 	"newenv=sf probe 0;"						\
-		"sf erase " xstr(CONFIG_ENV_OFFSET) " "			\
-		xstr(CONFIG_ENV_TOTAL_SIZE)"\0"
+		"sf erase " __stringify(CONFIG_ENV_OFFSET) " "		\
+		__stringify(CONFIG_ENV_TOTAL_SIZE)"\0"
 #else
 #define CONFIG_KM_NEW_ENV						\
 	"newenv=setenv addr 0x100000 && "				\
 		"i2c dev 1; mw.b ${addr} 0 4 && "			\
-		"eeprom write " xstr(CONFIG_SYS_DEF_EEPROM_ADDR)	\
-		" ${addr} " xstr(CONFIG_ENV_OFFSET) " 4 && "		\
-		"eeprom write " xstr(CONFIG_SYS_DEF_EEPROM_ADDR)	\
-		" ${addr} " xstr(CONFIG_ENV_OFFSET_REDUND) " 4\0"
+		"eeprom write " __stringify(CONFIG_SYS_DEF_EEPROM_ADDR)	\
+		" ${addr} " __stringify(CONFIG_ENV_OFFSET) " 4 && "	\
+		"eeprom write " __stringify(CONFIG_SYS_DEF_EEPROM_ADDR)	\
+		" ${addr} " __stringify(CONFIG_ENV_OFFSET_REDUND) " 4\0"
 #endif
 
 /*

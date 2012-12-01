@@ -27,11 +27,14 @@
 #include <asm/errno.h>
 #include <asm/arch/imx-regs.h>
 #include <asm/arch/crm_regs.h>
+#include <asm/arch/clock.h>
 #include <asm/arch/mx35_pins.h>
 #include <asm/arch/iomux.h>
 #include <i2c.h>
-#include <pmic.h>
+#include <power/pmic.h>
 #include <fsl_pmic.h>
+#include <mmc.h>
+#include <fsl_esdhc.h>
 #include <mc9sdz60.h>
 #include <mc13892.h>
 #include <linux/types.h>
@@ -204,7 +207,9 @@ int board_init(void)
 static inline int pmic_detect(void)
 {
 	unsigned int id;
-	struct pmic *p = get_pmic();
+	struct pmic *p = pmic_get("FSL_PMIC");
+	if (!p)
+		return -ENODEV;
 
 	pmic_reg_read(p, REG_IDENTIFICATION, &id);
 
@@ -228,10 +233,14 @@ int board_late_init(void)
 	u8 val;
 	u32 pmic_val;
 	struct pmic *p;
+	int ret;
 
-	pmic_init();
+	ret = pmic_init(I2C_PMIC);
+	if (ret)
+		return ret;
+
 	if (pmic_detect()) {
-		p = get_pmic();
+		p = pmic_get("FSL_PMIC");
 		mxc_request_iomux(MX35_PIN_WATCHDOG_RST, MUX_CONFIG_SION |
 					MUX_CONFIG_ALT1);
 
@@ -275,3 +284,27 @@ int board_eth_init(bd_t *bis)
 
 	return rc;
 }
+
+#if defined(CONFIG_FSL_ESDHC)
+
+struct fsl_esdhc_cfg esdhc_cfg = {MMC_SDHC1_BASE_ADDR};
+
+int board_mmc_init(bd_t *bis)
+{
+	/* configure pins for SDHC1 only */
+	mxc_request_iomux(MX35_PIN_SD1_CMD, MUX_CONFIG_FUNC);
+	mxc_request_iomux(MX35_PIN_SD1_CLK, MUX_CONFIG_FUNC);
+	mxc_request_iomux(MX35_PIN_SD1_DATA0, MUX_CONFIG_FUNC);
+	mxc_request_iomux(MX35_PIN_SD1_DATA1, MUX_CONFIG_FUNC);
+	mxc_request_iomux(MX35_PIN_SD1_DATA2, MUX_CONFIG_FUNC);
+	mxc_request_iomux(MX35_PIN_SD1_DATA3, MUX_CONFIG_FUNC);
+
+	esdhc_cfg.sdhc_clk = mxc_get_clock(MXC_ESDHC1_CLK);
+	return fsl_esdhc_initialize(bis, &esdhc_cfg);
+}
+
+int board_mmc_getcd(struct mmc *mmc)
+{
+	return !(mc9sdz60_reg_read(MC9SDZ60_REG_DES_FLAG) & 0x4);
+}
+#endif

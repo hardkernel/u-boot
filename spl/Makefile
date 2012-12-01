@@ -32,15 +32,37 @@ START_PATH := $(CPUDIR)
 endif
 
 START := $(START_PATH)/start.o
+ifeq ($(CPU),x86)
+START += $(START_PATH)/start16.o
+START += $(START_PATH)/resetvec.o
+endif
+ifeq ($(CPU),ppc4xx)
+START += $(START_PATH)/resetvec.o
+endif
+ifeq ($(CPU),mpc85xx)
+START += $(START_PATH)/resetvec.o
+endif
 
 LIBS-y += arch/$(ARCH)/lib/lib$(ARCH).o
+
 LIBS-y += $(CPUDIR)/lib$(CPU).o
+ifeq ($(CPU),mpc83xx)
+LIBS-y += arch/powerpc/cpu/mpc8xxx/lib8xxx.o
+endif
+ifeq ($(CPU),mpc85xx)
+LIBS-y += arch/powerpc/cpu/mpc8xxx/lib8xxx.o
+endif
+ifeq ($(CPU),mpc86xx)
+LIBS-y += arch/powerpc/cpu/mpc8xxx/lib8xxx.o
+endif
+
 ifdef SOC
 LIBS-y += $(CPUDIR)/$(SOC)/lib$(SOC).o
 endif
 LIBS-y += board/$(BOARDDIR)/lib$(BOARD).o
 LIBS-$(HAVE_VENDOR_COMMON_LIB) += board/$(VENDOR)/common/lib$(VENDOR).o
 
+LIBS-$(CONFIG_SPL_FRAMEWORK) += common/spl/libspl.o
 LIBS-$(CONFIG_SPL_LIBCOMMON_SUPPORT) += common/libcommon.o
 LIBS-$(CONFIG_SPL_LIBDISK_SUPPORT) += disk/libdisk.o
 LIBS-$(CONFIG_SPL_I2C_SUPPORT) += drivers/i2c/libi2c.o
@@ -56,6 +78,9 @@ LIBS-$(CONFIG_SPL_NAND_SUPPORT) += drivers/mtd/nand/libnand.o
 LIBS-$(CONFIG_SPL_ONENAND_SUPPORT) += drivers/mtd/onenand/libonenand.o
 LIBS-$(CONFIG_SPL_DMA_SUPPORT) += drivers/dma/libdma.o
 LIBS-$(CONFIG_SPL_POST_MEM_SUPPORT) += post/drivers/memory.o
+LIBS-$(CONFIG_SPL_NET_SUPPORT) += net/libnet.o
+LIBS-$(CONFIG_SPL_ETH_SUPPORT) += drivers/net/libnet.o
+LIBS-$(CONFIG_SPL_ETH_SUPPORT) += drivers/net/phy/libphy.o
 
 ifneq ($(CONFIG_AM33XX)$(CONFIG_OMAP34XX)$(CONFIG_OMAP44XX)$(CONFIG_OMAP54XX),)
 LIBS-y += $(CPUDIR)/omap-common/libomap-common.o
@@ -63,6 +88,8 @@ endif
 
 ifeq ($(SOC),tegra20)
 LIBS-y += arch/$(ARCH)/cpu/$(SOC)-common/lib$(SOC)-common.o
+LIBS-y += arch/$(ARCH)/cpu/tegra-common/libcputegra-common.o
+LIBS-y += $(CPUDIR)/tegra-common/libtegra-common.o
 endif
 
 # Add GCC lib
@@ -106,16 +133,13 @@ LDPPFLAGS += \
 	$(shell $(LD) --version | \
 	  sed -ne 's/GNU ld version \([0-9][0-9]*\)\.\([0-9][0-9]*\).*/-DLD_MAJOR=\1 -DLD_MINOR=\2/p')
 
-ifdef CONFIG_OMAP
 $(OBJTREE)/MLO:	$(obj)u-boot-spl.bin
 	$(OBJTREE)/tools/mkimage -T omapimage \
 		-a $(CONFIG_SPL_TEXT_BASE) -d $< $@
-endif
-ifdef CONFIG_AM33XX
-$(OBJTREE)/MLO:	$(obj)u-boot-spl.bin
-	$(OBJTREE)/tools/mkimage -T omapimage \
+
+$(OBJTREE)/MLO.byteswap: $(obj)u-boot-spl.bin
+	$(OBJTREE)/tools/mkimage -T omapimage -n byteswap \
 		-a $(CONFIG_SPL_TEXT_BASE) -d $< $@
-endif
 
 ALL-y	+= $(obj)u-boot-spl.bin
 
@@ -135,9 +159,7 @@ $(obj)u-boot-spl.bin:	$(obj)u-boot-spl
 	$(OBJCOPY) $(OBJCFLAGS) -O binary $< $@
 
 GEN_UBOOT = \
-	UNDEF_SYM=`$(OBJDUMP) -x $(LIBS) | \
-	sed  -n -e 's/.*\($(SYM_PREFIX)__u_boot_cmd_.*\)/-u\1/p'|sort|uniq`;\
-	cd $(obj) && $(LD) $(LDFLAGS) $(LDFLAGS_$(@F)) $$UNDEF_SYM $(__START) \
+	cd $(obj) && $(LD) $(LDFLAGS) $(LDFLAGS_$(@F)) $(__START) \
 		--start-group $(__LIBS) --end-group $(PLATFORM_LIBS) \
 		-Map u-boot-spl.map -o u-boot-spl
 
@@ -150,8 +172,12 @@ $(START):	depend
 $(LIBS):	depend
 	$(MAKE) -C $(SRCTREE)$(dir $(subst $(SPLTREE),,$@))
 
-$(obj)u-boot-spl.lds: $(LDSCRIPT) depend
-	$(CPP) $(CPPFLAGS) $(LDPPFLAGS) -ansi -D__ASSEMBLY__ -P - < $< > $@
+# The following line expands into whole rule which generates u-boot.lst,
+# the file containing u-boots LG-array linker section. This is included into
+# $(LDSCRIPT). The function make_u_boot_list is defined in helper.mk file.
+$(eval $(call make_u_boot_list, $(obj)u-boot.lst, $(LIBS)))
+$(obj)u-boot-spl.lds: $(LDSCRIPT) $(obj)u-boot.lst depend
+	$(CPP) $(CPPFLAGS) $(LDPPFLAGS) -I$(obj). -ansi -D__ASSEMBLY__ -P - < $< > $@
 
 depend:	$(obj).depend
 .PHONY: depend

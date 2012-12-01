@@ -24,16 +24,33 @@
 #ifndef __ASM_ARCH_CLOCK_H
 #define __ASM_ARCH_CLOCK_H
 
+#include <common.h>
+
+#ifdef CONFIG_MX35_HCLK_FREQ
+#define MXC_HCLK	CONFIG_MX35_HCLK_FREQ
+#else
+#define MXC_HCLK	24000000
+#endif
+
+#ifdef CONFIG_MX35_CLK32
+#define MXC_CLK32	CONFIG_MX35_CLK32
+#else
+#define MXC_CLK32	32768
+#endif
+
 enum mxc_clock {
 	MXC_ARM_CLK,
 	MXC_AHB_CLK,
 	MXC_IPG_CLK,
 	MXC_IPG_PERCLK,
 	MXC_UART_CLK,
-	MXC_ESDHC_CLK,
+	MXC_ESDHC1_CLK,
+	MXC_ESDHC2_CLK,
+	MXC_ESDHC3_CLK,
 	MXC_USB_CLK,
 	MXC_CSPI_CLK,
 	MXC_FEC_CLK,
+	MXC_I2C_CLK,
 };
 
 enum mxc_main_clock {

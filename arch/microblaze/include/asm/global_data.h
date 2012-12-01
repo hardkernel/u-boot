@@ -35,12 +35,13 @@
 typedef	struct	global_data {
 	bd_t		*bd;
 	unsigned long	flags;
-	unsigned long	baudrate;
+	unsigned int	baudrate;
 	unsigned long	have_console;	/* serial_init() was called */
 #ifdef CONFIG_PRE_CONSOLE_BUFFER
 	unsigned long	precon_buf_idx;	/* Pre-Console buffer index */
 #endif
 	unsigned long	env_addr;	/* Address  of Environment struct */
+	const void	*fdt_blob;	/* Our device tree, NULL if none */
 	unsigned long	env_valid;	/* Checksum of Environment valid? */
 	unsigned long	fb_base;	/* base address of frame buffer */
 	void		**jt;		/* jump table */

@@ -21,15 +21,15 @@
 * MA 02111-1307 USA
 */
 
-#include <asm/io.h>
-#include <asm/arch/tegra20.h>
-#include <asm/arch/clk_rst.h>
-#include <asm/arch/clock.h>
-#include <asm/arch/pmc.h>
-#include <asm/arch/pinmux.h>
-#include <asm/arch/scu.h>
 #include <common.h>
-#include "cpu.h"
+#include <asm/io.h>
+#include <asm/arch/clock.h>
+#include <asm/arch/pinmux.h>
+#include <asm/arch/tegra.h>
+#include <asm/arch-tegra/clk_rst.h>
+#include <asm/arch-tegra/pmc.h>
+#include <asm/arch-tegra/scu.h>
+#include "../tegra-common/cpu.h"
 
 /* Returns 1 if the current CPU executing is a Cortex-A9, else 0 */
 int ap20_cpu_is_cortexa9(void)
@@ -105,14 +105,14 @@ static void enable_cpu_clock(int enable)
 
 static int is_cpu_powered(void)
 {
-	struct pmc_ctlr *pmc = (struct pmc_ctlr *)TEGRA20_PMC_BASE;
+	struct pmc_ctlr *pmc = (struct pmc_ctlr *)NV_PA_PMC_BASE;
 
 	return (readl(&pmc->pmc_pwrgate_status) & CPU_PWRED) ? 1 : 0;
 }
 
 static void remove_cpu_io_clamps(void)
 {
-	struct pmc_ctlr *pmc = (struct pmc_ctlr *)TEGRA20_PMC_BASE;
+	struct pmc_ctlr *pmc = (struct pmc_ctlr *)NV_PA_PMC_BASE;
 	u32 reg;
 
 	/* Remove the clamps on the CPU I/O signals */
@@ -126,7 +126,7 @@ static void remove_cpu_io_clamps(void)
 
 static void powerup_cpu(void)
 {
-	struct pmc_ctlr *pmc = (struct pmc_ctlr *)TEGRA20_PMC_BASE;
+	struct pmc_ctlr *pmc = (struct pmc_ctlr *)NV_PA_PMC_BASE;
 	u32 reg;
 	int timeout = IO_STABILIZATION_DELAY;
 
@@ -157,7 +157,7 @@ static void powerup_cpu(void)
 
 static void enable_cpu_power_rail(void)
 {
-	struct pmc_ctlr *pmc = (struct pmc_ctlr *)TEGRA20_PMC_BASE;
+	struct pmc_ctlr *pmc = (struct pmc_ctlr *)NV_PA_PMC_BASE;
 	u32 reg;
 
 	reg = readl(&pmc->pmc_cntrl);

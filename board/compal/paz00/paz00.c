@@ -16,21 +16,14 @@
 
 #include <common.h>
 #include <asm/io.h>
-#include <asm/arch/tegra20.h>
+#include <asm/arch/tegra.h>
 #include <asm/arch/pinmux.h>
-#include <asm/arch/mmc.h>
+#include <asm/arch-tegra/mmc.h>
 #include <asm/gpio.h>
 #ifdef CONFIG_TEGRA_MMC
 #include <mmc.h>
 #endif
 
-/*
- * Routine: gpio_config_uart
- * Description: Does nothing on Paz00 - no conflict w/SPI.
- */
-void gpio_config_uart(void)
-{
-}
 
 #ifdef CONFIG_TEGRA_MMC
 /*
@@ -70,11 +63,11 @@ int board_mmc_init(bd_t *bd)
 	debug("board_mmc_init: init eMMC\n");
 	/* init dev 0, eMMC chip, with 4-bit bus */
 	/* The board has an 8-bit bus, but 8-bit doesn't work yet */
-	tegra20_mmc_init(0, 4, -1, -1);
+	tegra_mmc_init(0, 4, -1, -1);
 
 	debug("board_mmc_init: init SD slot\n");
 	/* init dev 3, SD slot, with 4-bit bus */
-	tegra20_mmc_init(3, 4, GPIO_PV1, GPIO_PV5);
+	tegra_mmc_init(3, 4, GPIO_PV1, GPIO_PV5);
 
 	return 0;
 }

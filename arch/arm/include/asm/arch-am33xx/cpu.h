@@ -82,7 +82,8 @@ struct cm_wkuppll {
 	unsigned int clkseldpllcore;	/* offset 0x68 */
 	unsigned int resv9[1];
 	unsigned int idlestdpllper;	/* offset 0x70 */
-	unsigned int resv10[3];
+	unsigned int resv10[2];
+	unsigned int clkdcoldodpllper;	/* offset 0x7c */
 	unsigned int divm4dpllcore;	/* offset 0x80 */
 	unsigned int divm5dpllcore;	/* offset 0x84 */
 	unsigned int clkmoddpllmpu;	/* offset 0x88 */
@@ -169,6 +170,12 @@ struct cm_dpll {
 	unsigned int clktimer2clk;	/* offset 0x08 */
 };
 
+/* Control Module RTC registers */
+struct cm_rtc {
+	unsigned int rtcclkctrl;	/* offset 0x0 */
+	unsigned int clkstctrl;		/* offset 0x4 */
+};
+
 /* Watchdog timer registers */
 struct wd_timer {
 	unsigned int resv1[4];
@@ -218,6 +225,15 @@ struct gptimer {
 	unsigned int tcar2;		/* offset 0x58 */
 };
 
+/* RTC Registers */
+struct rtc_regs {
+	unsigned int res[21];
+	unsigned int osc;		/* offset 0x54 */
+	unsigned int res2[5];
+	unsigned int kick0r;		/* offset 0x6c */
+	unsigned int kick1r;		/* offset 0x70 */
+};
+
 /* UART Registers */
 struct uart_sys {
 	unsigned int resv1[21];
@@ -260,12 +276,16 @@ struct ctrl_stat {
 /* Control Device Register */
 struct ctrl_dev {
 	unsigned int deviceid;		/* offset 0x00 */
-	unsigned int resv1[11];
+	unsigned int resv1[7];
+	unsigned int usb_ctrl0;		/* offset 0x20 */
+	unsigned int resv2;
+	unsigned int usb_ctrl1;		/* offset 0x28 */
+	unsigned int resv3;
 	unsigned int macid0l;		/* offset 0x30 */
 	unsigned int macid0h;		/* offset 0x34 */
 	unsigned int macid1l;		/* offset 0x38 */
 	unsigned int macid1h;		/* offset 0x3c */
-	unsigned int resv2[4];
+	unsigned int resv4[4];
 	unsigned int miisel;		/* offset 0x50 */
 };
 #endif /* __ASSEMBLY__ */

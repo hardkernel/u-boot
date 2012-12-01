@@ -44,6 +44,15 @@
 #undef	MSR_KERNEL
 #define MSR_KERNEL ( MSR_ME )	/* Machine Check */
 
+#if defined(CONFIG_NAND_SPL) || \
+	(defined(CONFIG_SPL_BUILD) && defined(CONFIG_SPL_INIT_MINIMAL))
+#define MINIMAL_SPL
+#endif
+
+#if !defined(CONFIG_SPL) && !defined(CONFIG_SYS_RAMBOOT) && !defined(CONFIG_SECURE_BOOT)
+#define NOR_BOOT
+#endif
+
 /*
  * Set up GOT: Global Offset Table
  *
@@ -53,7 +62,7 @@
 	GOT_ENTRY(_GOT2_TABLE_)
 	GOT_ENTRY(_FIXUP_TABLE_)
 
-#ifndef CONFIG_NAND_SPL
+#ifndef MINIMAL_SPL
 	GOT_ENTRY(_start)
 	GOT_ENTRY(_start_of_vectors)
 	GOT_ENTRY(_end_of_vectors)
@@ -85,6 +94,35 @@ _start_e500:
 /* Enable debug exception */
 	li	r1,MSR_DE
 	mtmsr 	r1
+
+#ifdef CONFIG_SYS_FSL_ERRATUM_A004510
+	mfspr	r3,SPRN_SVR
+	rlwinm	r3,r3,0,0xff
+	li	r4,CONFIG_SYS_FSL_ERRATUM_A004510_SVR_REV
+	cmpw	r3,r4
+	beq	1f
+
+#ifdef CONFIG_SYS_FSL_ERRATUM_A004510_SVR_REV2
+	li	r4,CONFIG_SYS_FSL_ERRATUM_A004510_SVR_REV2
+	cmpw	r3,r4
+	beq	1f
+#endif
+
+	/* Not a supported revision affected by erratum */
+	li	r27,0
+	b	2f
+
+1:	li	r27,1	/* Remember for later that we have the erratum */
+	/* Erratum says set bits 55:60 to 001001 */
+	msync
+	isync
+	mfspr	r3,976
+	li	r4,0x48
+	rlwimi	r3,r4,0,0x1f8
+	mtspr	976,r3
+	isync
+2:
+#endif
 
 #if defined(CONFIG_SECURE_BOOT) && defined(CONFIG_E500MC)
 	/* ISBC uses L2 as stack.
@@ -140,7 +178,7 @@ l2_disabled:
 	 *
 	 */
 
-#if defined(CONFIG_E500MC) && defined(CONFIG_SYS_CACHE_STASHING)
+#ifdef CONFIG_SYS_CACHE_STASHING
 	/* set stash id to (coreID) * 2 + 32 + L1 CT (0) */
 	li	r2,(32 + 0)
 	mtspr	L1CSR2,r2
@@ -182,77 +220,79 @@ l2_disabled:
 	andi.	r1,r3,L1CSR0_DCE@l
 	beq	2b
 
-#if defined(CONFIG_SYS_PPC_E500_DEBUG_TLB) && !defined(CONFIG_NAND_SPL)
-/*
- * TLB entry for debuggging in AS1
- * Create temporary TLB entry in AS0 to handle debug exception
- * As on debug exception MSR is cleared i.e. Address space is changed
- * to 0. A TLB entry (in AS0) is required to handle debug exception generated
- * in AS1.
- */
-
-	lis     r6,FSL_BOOKE_MAS0(1,
-			CONFIG_SYS_PPC_E500_DEBUG_TLB, 0)@h
-	ori     r6,r6,FSL_BOOKE_MAS0(1,
-			CONFIG_SYS_PPC_E500_DEBUG_TLB, 0)@l
-
-#if !defined(CONFIG_SYS_RAMBOOT) && !defined(CONFIG_SECURE_BOOT)
-/*
- * TLB entry is created for IVPR + IVOR15 to map on valid OP code address
- * bacause flash's virtual address maps to 0xff800000 - 0xffffffff.
- * and this window is outside of 4K boot window.
- */
-	lis     r7,FSL_BOOKE_MAS1(1, 1, 0, 0, BOOKE_PAGESZ_4M)@h
-	ori     r7,r7,FSL_BOOKE_MAS1(1, 1, 0, 0, BOOKE_PAGESZ_4M)@l
-
-	lis     r8,FSL_BOOKE_MAS2(CONFIG_SYS_MONITOR_BASE & 0xffc00000,
-							(MAS2_I|MAS2_G))@h
-	ori     r8,r8,FSL_BOOKE_MAS2(CONFIG_SYS_MONITOR_BASE & 0xffc00000,
-							(MAS2_I|MAS2_G))@l
-
-	/* The 85xx has the default boot window 0xff800000 - 0xffffffff */
-	lis     r9,FSL_BOOKE_MAS3(0xffc00000, 0, (MAS3_SX|MAS3_SW|MAS3_SR))@h
-	ori     r9,r9,FSL_BOOKE_MAS3(0xffc00000, 0, (MAS3_SX|MAS3_SW|MAS3_SR))@l
-#elif !defined(CONFIG_SYS_RAMBOOT) && defined(CONFIG_SECURE_BOOT)
-	lis     r7,FSL_BOOKE_MAS1(1, 1, 0, 0, BOOKE_PAGESZ_1M)@h
-	ori     r7,r7,FSL_BOOKE_MAS1(1, 1, 0, 0, BOOKE_PAGESZ_1M)@l
-
-	lis     r8,FSL_BOOKE_MAS2(CONFIG_SYS_MONITOR_BASE,(MAS2_I|MAS2_G))@h
-	ori     r8,r8,FSL_BOOKE_MAS2(CONFIG_SYS_MONITOR_BASE,(MAS2_I|MAS2_G))@l
-
-	lis     r9,FSL_BOOKE_MAS3(CONFIG_SYS_PBI_FLASH_WINDOW, 0,
-						(MAS3_SX|MAS3_SW|MAS3_SR))@h
-	ori     r9,r9,FSL_BOOKE_MAS3(CONFIG_SYS_PBI_FLASH_WINDOW, 0,
-						(MAS3_SX|MAS3_SW|MAS3_SR))@l
-#else
-/*
- * TLB entry is created for IVPR + IVOR15 to map on valid OP code address
- * because "nexti" will resize TLB to 4K
- */
-	lis     r7,FSL_BOOKE_MAS1(1, 1, 0, 0, BOOKE_PAGESZ_256K)@h
-	ori     r7,r7,FSL_BOOKE_MAS1(1, 1, 0, 0, BOOKE_PAGESZ_256K)@l
-
-	lis     r8,FSL_BOOKE_MAS2(CONFIG_SYS_MONITOR_BASE, (MAS2_I))@h
-	ori     r8,r8,FSL_BOOKE_MAS2(CONFIG_SYS_MONITOR_BASE,
-							(MAS2_I))@l
-	lis     r9,FSL_BOOKE_MAS3(CONFIG_SYS_MONITOR_BASE, 0,
-						(MAS3_SX|MAS3_SW|MAS3_SR))@h
-	ori     r9,r9,FSL_BOOKE_MAS3(CONFIG_SYS_MONITOR_BASE, 0,
-						(MAS3_SX|MAS3_SW|MAS3_SR))@l
-#endif
-	mtspr   MAS0,r6
-	mtspr   MAS1,r7
-	mtspr   MAS2,r8
-	mtspr   MAS3,r9
+	.macro	create_tlb1_entry esel ts tsize epn wimg rpn perm phy_high scratch
+	lis	\scratch, FSL_BOOKE_MAS0(1, \esel, 0)@h
+	ori	\scratch, \scratch, FSL_BOOKE_MAS0(1, \esel, 0)@l
+	mtspr	MAS0, \scratch
+	lis	\scratch, FSL_BOOKE_MAS1(1, 1, 0, \ts, \tsize)@h
+	ori	\scratch, \scratch, FSL_BOOKE_MAS1(1, 1, 0, \ts, \tsize)@l
+	mtspr	MAS1, \scratch
+	lis	\scratch, FSL_BOOKE_MAS2(\epn, \wimg)@h
+	ori	\scratch, \scratch, FSL_BOOKE_MAS2(\epn, \wimg)@l
+	mtspr	MAS2, \scratch
+	lis	\scratch, FSL_BOOKE_MAS3(\rpn, 0, \perm)@h
+	ori	\scratch, \scratch, FSL_BOOKE_MAS3(\rpn, 0, \perm)@l
+	mtspr	MAS3, \scratch
+	lis	\scratch, \phy_high@h
+	ori	\scratch, \scratch, \phy_high@l
+	mtspr	MAS7, \scratch
+	isync
+	msync
 	tlbwe
 	isync
-#endif
+	.endm
 
-/*
- * Ne need to setup interrupt vector for NAND SPL
- * because NAND SPL never compiles it.
- */
-#if !defined(CONFIG_NAND_SPL)
+	.macro	create_tlb0_entry esel ts tsize epn wimg rpn perm phy_high scratch
+	lis	\scratch, FSL_BOOKE_MAS0(0, \esel, 0)@h
+	ori	\scratch, \scratch, FSL_BOOKE_MAS0(0, \esel, 0)@l
+	mtspr	MAS0, \scratch
+	lis	\scratch, FSL_BOOKE_MAS1(1, 0, 0, \ts, \tsize)@h
+	ori	\scratch, \scratch, FSL_BOOKE_MAS1(1, 0, 0, \ts, \tsize)@l
+	mtspr	MAS1, \scratch
+	lis	\scratch, FSL_BOOKE_MAS2(\epn, \wimg)@h
+	ori	\scratch, \scratch, FSL_BOOKE_MAS2(\epn, \wimg)@l
+	mtspr	MAS2, \scratch
+	lis	\scratch, FSL_BOOKE_MAS3(\rpn, 0, \perm)@h
+	ori	\scratch, \scratch, FSL_BOOKE_MAS3(\rpn, 0, \perm)@l
+	mtspr	MAS3, \scratch
+	lis	\scratch, \phy_high@h
+	ori	\scratch, \scratch, \phy_high@l
+	mtspr	MAS7, \scratch
+	isync
+	msync
+	tlbwe
+	isync
+	.endm
+
+	.macro	delete_tlb1_entry esel scratch
+	lis	\scratch, FSL_BOOKE_MAS0(1, \esel, 0)@h
+	ori	\scratch, \scratch, FSL_BOOKE_MAS0(1, \esel, 0)@l
+	mtspr	MAS0, \scratch
+	li	\scratch, 0
+	mtspr	MAS1, \scratch
+	isync
+	msync
+	tlbwe
+	isync
+	.endm
+
+	.macro	delete_tlb0_entry esel epn wimg scratch
+	lis	\scratch, FSL_BOOKE_MAS0(0, \esel, 0)@h
+	ori	\scratch, \scratch, FSL_BOOKE_MAS0(0, \esel, 0)@l
+	mtspr	MAS0, \scratch
+	li	\scratch, 0
+	mtspr	MAS1, \scratch
+	lis	\scratch, FSL_BOOKE_MAS2(\epn, \wimg)@h
+	ori	\scratch, \scratch, FSL_BOOKE_MAS2(\epn, \wimg)@l
+	mtspr	MAS2, \scratch
+	isync
+	msync
+	tlbwe
+	isync
+	.endm
+
+/* Interrupt vectors do not fit in minimal SPL. */
+#if !defined(MINIMAL_SPL)
 	/* Setup interrupt vectors */
 	lis	r1,CONFIG_SYS_MONITOR_BASE@h
 	mtspr	IVPR,r1
@@ -363,27 +403,11 @@ l2_disabled:
 	 */
 
 	/* create a temp mapping TLB0[0] for LBCR  */
-	lis     r6,FSL_BOOKE_MAS0(0, 0, 0)@h
-	ori     r6,r6,FSL_BOOKE_MAS0(0, 0, 0)@l
-
-	lis     r7,FSL_BOOKE_MAS1(1, 0, 0, 0, BOOKE_PAGESZ_4K)@h
-	ori     r7,r7,FSL_BOOKE_MAS1(1, 0, 0, 0, BOOKE_PAGESZ_4K)@l
-
-	lis     r8,FSL_BOOKE_MAS2(CONFIG_SYS_LBC_ADDR, MAS2_I|MAS2_G)@h
-	ori     r8,r8,FSL_BOOKE_MAS2(CONFIG_SYS_LBC_ADDR, MAS2_I|MAS2_G)@l
-
-	lis     r9,FSL_BOOKE_MAS3(CONFIG_SYS_LBC_ADDR, 0,
-						(MAS3_SX|MAS3_SW|MAS3_SR))@h
-	ori     r9,r9,FSL_BOOKE_MAS3(CONFIG_SYS_LBC_ADDR, 0,
-						(MAS3_SX|MAS3_SW|MAS3_SR))@l
-
-	mtspr   MAS0,r6
-	mtspr   MAS1,r7
-	mtspr   MAS2,r8
-	mtspr   MAS3,r9
-	isync
-	msync
-	tlbwe
+	create_tlb0_entry 0, \
+		0, BOOKE_PAGESZ_4K, \
+		CONFIG_SYS_LBC_ADDR, MAS2_I|MAS2_G, \
+		CONFIG_SYS_LBC_ADDR, MAS3_SW|MAS3_SR, \
+		0, r6
 
 	/* Set LBCR register */
 	lis     r4,CONFIG_SYS_LBCR_ADDR@h
@@ -406,12 +430,11 @@ l2_disabled:
  * Search for the TLB that covers the code we're executing, and shrink it
  * so that it covers only this 4K page.  That will ensure that any other
  * TLB we create won't interfere with it.  We assume that the TLB exists,
- * which is why we don't check the Valid bit of MAS1.
+ * which is why we don't check the Valid bit of MAS1.  We also assume
+ * it is in TLB1.
  *
  * This is necessary, for example, when booting from the on-chip ROM,
  * which (oddly) creates a single 4GB TLB that covers CCSR and DDR.
- * If we don't shrink this TLB now, then we'll accidentally delete it
- * in "purge_old_ccsr_tlb" below.
  */
 	bl	nexti		/* Find our address */
 nexti:	mflr	r1		/* R1 = our PC */
@@ -421,11 +444,15 @@ nexti:	mflr	r1		/* R1 = our PC */
 	msync
 	tlbsx	0, r1		/* This must succeed */
 
+	mfspr	r14, MAS0	/* Save ESEL for later */
+	rlwinm	r14, r14, 16, 0xfff
+
 	/* Set the size of the TLB to 4KB */
 	mfspr	r3, MAS1
 	li	r2, 0xF00
 	andc	r3, r3, r2	/* Clear the TSIZE bits */
 	ori	r3, r3, MAS1_TSIZE(BOOKE_PAGESZ_4K)@l
+	oris	r3, r3, MAS1_IPROT@h
 	mtspr	MAS1, r3
 
 	/*
@@ -440,6 +467,14 @@ nexti:	mflr	r1		/* R1 = our PC */
 	mfspr	r2, MAS2
 	andc	r2, r2, r3
 	or	r2, r2, r1
+#ifdef CONFIG_SYS_FSL_ERRATUM_A004510
+	cmpwi	r27,0
+	beq	1f
+	andi.	r15, r2, MAS2_I|MAS2_G /* save the old I/G for later */
+	rlwinm	r2, r2, 0, ~MAS2_I
+	ori	r2, r2, MAS2_G
+1:
+#endif
 	mtspr	MAS2, r2	/* Set the EPN to our PC base address */
 
 	mfspr	r2, MAS3
@@ -450,6 +485,75 @@ nexti:	mflr	r1		/* R1 = our PC */
 	isync
 	msync
 	tlbwe
+
+/*
+ * Clear out any other TLB entries that may exist, to avoid conflicts.
+ * Our TLB entry is in r14.
+ */
+	li	r0, TLBIVAX_ALL | TLBIVAX_TLB0
+	tlbivax 0, r0
+	tlbsync
+
+	mfspr	r4, SPRN_TLB1CFG
+	rlwinm	r4, r4, 0, TLBnCFG_NENTRY_MASK
+
+	li	r3, 0
+	mtspr	MAS1, r3
+1:	cmpw	r3, r14
+	rlwinm	r5, r3, 16, MAS0_ESEL_MSK
+	addi	r3, r3, 1
+	beq	2f		/* skip the entry we're executing from */
+
+	oris	r5, r5, MAS0_TLBSEL(1)@h
+	mtspr	MAS0, r5
+
+	isync
+	tlbwe
+	isync
+	msync
+
+2:	cmpw	r3, r4
+	blt	1b
+
+#if defined(CONFIG_SYS_PPC_E500_DEBUG_TLB) && !defined(MINIMAL_SPL)
+/*
+ * TLB entry for debuggging in AS1
+ * Create temporary TLB entry in AS0 to handle debug exception
+ * As on debug exception MSR is cleared i.e. Address space is changed
+ * to 0. A TLB entry (in AS0) is required to handle debug exception generated
+ * in AS1.
+ */
+
+#ifdef NOR_BOOT
+/*
+ * TLB entry is created for IVPR + IVOR15 to map on valid OP code address
+ * bacause flash's virtual address maps to 0xff800000 - 0xffffffff.
+ * and this window is outside of 4K boot window.
+ */
+	create_tlb1_entry CONFIG_SYS_PPC_E500_DEBUG_TLB, \
+		0, BOOKE_PAGESZ_4M, \
+		CONFIG_SYS_MONITOR_BASE & 0xffc00000,  MAS2_I|MAS2_G, \
+		0xffc00000, MAS3_SX|MAS3_SW|MAS3_SR, \
+		0, r6
+
+#elif !defined(CONFIG_SYS_RAMBOOT) && defined(CONFIG_SECURE_BOOT)
+	create_tlb1_entry CONFIG_SYS_PPC_E500_DEBUG_TLB, \
+		0, BOOKE_PAGESZ_1M, \
+		CONFIG_SYS_MONITOR_BASE, MAS2_I|MAS2_G, \
+		CONFIG_SYS_PBI_FLASH_WINDOW, MAS3_SX|MAS3_SW|MAS3_SR, \
+		0, r6
+#else
+/*
+ * TLB entry is created for IVPR + IVOR15 to map on valid OP code address
+ * because "nexti" will resize TLB to 4K
+ */
+	create_tlb1_entry CONFIG_SYS_PPC_E500_DEBUG_TLB, \
+		0, BOOKE_PAGESZ_256K, \
+		CONFIG_SYS_MONITOR_BASE & 0xfffc0000, MAS2_I, \
+		CONFIG_SYS_MONITOR_BASE & 0xfffc0000, MAS3_SX|MAS3_SW|MAS3_SR, \
+		0, r6
+#endif
+#endif
 
 /*
  * Relocate CCSR, if necessary.  We relocate CCSR if (obviously) the default
@@ -469,84 +573,31 @@ nexti:	mflr	r1		/* R1 = our PC */
 #error "CONFIG_SYS_CCSRBAR_PHYS_HIGH and CONFIG_SYS_CCSRBAR_PHYS_LOW) must be defined."
 #endif
 
-purge_old_ccsr_tlb:
-	lis	r8, CONFIG_SYS_CCSRBAR@h
-	ori	r8, r8, CONFIG_SYS_CCSRBAR@l
-	lis	r9, (CONFIG_SYS_CCSRBAR + 0x1000)@h
-	ori	r9, r9, (CONFIG_SYS_CCSRBAR + 0x1000)@l
-
-	/*
-	 * In a multi-stage boot (e.g. NAND boot), a previous stage may have
-	 * created a TLB for CCSR, which will interfere with our relocation
-	 * code.  Since we're going to create a new TLB for CCSR anyway,
-	 * it should be safe to delete this old TLB here.  We have to search
-	 * for it, though.
-	 */
-
-	li	r1, 0
-	mtspr	MAS6, r1	/* Search the current address space and PID */
-	isync
-	msync
-	tlbsx	0, r8
-	mfspr	r1, MAS1
-	andis.  r2, r1, MAS1_VALID@h	/* Check for the Valid bit */
-	beq     1f			/* Skip if no TLB found */
-
-	rlwinm	r1, r1, 0, 1, 31	/* Clear Valid bit */
-	mtspr	MAS1, r1
-	isync
-	msync
-	tlbwe
-1:
-
 create_ccsr_new_tlb:
 	/*
 	 * Create a TLB for the new location of CCSR.  Register R8 is reserved
 	 * for the virtual address of this TLB (CONFIG_SYS_CCSRBAR).
 	 */
-	lis     r0, FSL_BOOKE_MAS0(0, 0, 0)@h
-	ori     r0, r0, FSL_BOOKE_MAS0(0, 0, 0)@l
-	lis     r1, FSL_BOOKE_MAS1(1, 0, 0, 0, BOOKE_PAGESZ_4K)@h
-	ori     r1, r1, FSL_BOOKE_MAS1(1, 0, 0, 0, BOOKE_PAGESZ_4K)@l
-	lis     r2, FSL_BOOKE_MAS2(CONFIG_SYS_CCSRBAR, (MAS2_I|MAS2_G))@h
-	ori     r2, r2, FSL_BOOKE_MAS2(CONFIG_SYS_CCSRBAR, (MAS2_I|MAS2_G))@l
-	lis     r3, FSL_BOOKE_MAS3(CONFIG_SYS_CCSRBAR_PHYS_LOW, 0, (MAS3_SW|MAS3_SR))@h
-	ori     r3, r3, FSL_BOOKE_MAS3(CONFIG_SYS_CCSRBAR_PHYS_LOW, 0, (MAS3_SW|MAS3_SR))@l
-#ifdef CONFIG_ENABLE_36BIT_PHYS
-	lis	r7, CONFIG_SYS_CCSRBAR_PHYS_HIGH@h
-	ori	r7, r7, CONFIG_SYS_CCSRBAR_PHYS_HIGH@l
-	mtspr   MAS7, r7
-#endif
-	mtspr   MAS0, r0
-	mtspr   MAS1, r1
-	mtspr   MAS2, r2
-	mtspr   MAS3, r3
-	isync
-	msync
-	tlbwe
-
+	lis	r8, CONFIG_SYS_CCSRBAR@h
+	ori	r8, r8, CONFIG_SYS_CCSRBAR@l
+	lis	r9, (CONFIG_SYS_CCSRBAR + 0x1000)@h
+	ori	r9, r9, (CONFIG_SYS_CCSRBAR + 0x1000)@l
+	create_tlb0_entry 0, \
+		0, BOOKE_PAGESZ_4K, \
+		CONFIG_SYS_CCSRBAR, MAS2_I|MAS2_G, \
+		CONFIG_SYS_CCSRBAR_PHYS_LOW, MAS3_SW|MAS3_SR, \
+		CONFIG_SYS_CCSRBAR_PHYS_HIGH, r3
 	/*
 	 * Create a TLB for the current location of CCSR.  Register R9 is reserved
 	 * for the virtual address of this TLB (CONFIG_SYS_CCSRBAR + 0x1000).
 	 */
 create_ccsr_old_tlb:
-	lis     r0, FSL_BOOKE_MAS0(0, 1, 0)@h
-	ori     r0, r0, FSL_BOOKE_MAS0(0, 1, 0)@l
-	lis     r2, FSL_BOOKE_MAS2(CONFIG_SYS_CCSRBAR + 0x1000, (MAS2_I|MAS2_G))@h
-	ori     r2, r2, FSL_BOOKE_MAS2(CONFIG_SYS_CCSRBAR + 0x1000, (MAS2_I|MAS2_G))@l
-	lis     r3, FSL_BOOKE_MAS3(CONFIG_SYS_CCSRBAR_DEFAULT, 0, (MAS3_SW|MAS3_SR))@h
-	ori     r3, r3, FSL_BOOKE_MAS3(CONFIG_SYS_CCSRBAR_DEFAULT, 0, (MAS3_SW|MAS3_SR))@l
-#ifdef CONFIG_ENABLE_36BIT_PHYS
-	li	r7, 0	/* The default CCSR address is always a 32-bit number */
-	mtspr   MAS7, r7
-#endif
-	mtspr   MAS0, r0
-	/* MAS1 is the same as above */
-	mtspr   MAS2, r2
-	mtspr   MAS3, r3
-	isync
-	msync
-	tlbwe
+	create_tlb0_entry 1, \
+		0, BOOKE_PAGESZ_4K, \
+		CONFIG_SYS_CCSRBAR + 0x1000, MAS2_I|MAS2_G, \
+		CONFIG_SYS_CCSRBAR_DEFAULT, MAS3_SW|MAS3_SR, \
+		0, r3 /* The default CCSR address is always a 32-bit number */
+
 
 	/*
 	 * We have a TLB for what we think is the current (old) CCSR.  Let's
@@ -696,111 +747,342 @@ write_new_ccsrbar:
 
 	/* Delete the temporary TLBs */
 delete_temp_tlbs:
-	lis     r0, FSL_BOOKE_MAS0(0, 0, 0)@h
-	ori     r0, r0, FSL_BOOKE_MAS0(0, 0, 0)@l
-	li	r1, 0
-	lis     r2, FSL_BOOKE_MAS2(CONFIG_SYS_CCSRBAR, (MAS2_I|MAS2_G))@h
-	ori     r2, r2, FSL_BOOKE_MAS2(CONFIG_SYS_CCSRBAR, (MAS2_I|MAS2_G))@l
-	mtspr   MAS0, r0
-	mtspr   MAS1, r1
-	mtspr   MAS2, r2
-	isync
-	msync
-	tlbwe
+	delete_tlb0_entry 0, CONFIG_SYS_CCSRBAR, MAS2_I|MAS2_G, r3
+	delete_tlb0_entry 1, CONFIG_SYS_CCSRBAR + 0x1000, MAS2_I|MAS2_G, r3
 
-	lis     r0, FSL_BOOKE_MAS0(0, 1, 0)@h
-	ori     r0, r0, FSL_BOOKE_MAS0(0, 1, 0)@l
-	lis     r2, FSL_BOOKE_MAS2(CONFIG_SYS_CCSRBAR + 0x1000, (MAS2_I|MAS2_G))@h
-	ori     r2, r2, FSL_BOOKE_MAS2(CONFIG_SYS_CCSRBAR + 0x1000, (MAS2_I|MAS2_G))@l
-	mtspr   MAS0, r0
-	mtspr   MAS2, r2
+#endif /* #if (CONFIG_SYS_CCSRBAR_DEFAULT != CONFIG_SYS_CCSRBAR_PHYS) */
+
+#ifdef CONFIG_SYS_FSL_QORIQ_CHASSIS2
+create_ccsr_l2_tlb:
+	/*
+	 * Create a TLB for the MMR location of CCSR
+	 * to access L2CSR0 register
+	 */
+	create_tlb0_entry 0, \
+		0, BOOKE_PAGESZ_4K, \
+		CONFIG_SYS_CCSRBAR + 0xC20000, MAS2_I|MAS2_G, \
+		CONFIG_SYS_CCSRBAR_PHYS_LOW + 0xC20000, MAS3_SW|MAS3_SR, \
+		CONFIG_SYS_CCSRBAR_PHYS_HIGH, r3
+
+enable_l2_cluster_l2:
+	/* enable L2 cache */
+	lis	r3, (CONFIG_SYS_CCSRBAR + 0xC20000)@h
+	ori	r3, r3, (CONFIG_SYS_CCSRBAR + 0xC20000)@l
+	li	r4, 33	/* stash id */
+	stw	r4, 4(r3)
+	lis	r4, (L2CSR0_L2FI|L2CSR0_L2LFC)@h
+	ori	r4, r4, (L2CSR0_L2FI|L2CSR0_L2LFC)@l
+	sync
+	stw	r4, 0(r3)	/* invalidate L2 */
+1:	sync
+	lwz	r0, 0(r3)
+	twi	0, r0, 0
+	isync
+	and.	r1, r0, r4
+	bne	1b
+	lis	r4, L2CSR0_L2E@h
+	sync
+	stw	r4, 0(r3)	/* eanble L2 */
+delete_ccsr_l2_tlb:
+	delete_tlb0_entry 0, CONFIG_SYS_CCSRBAR + 0xC20000, MAS2_I|MAS2_G, r3
+#endif
+
+#ifdef CONFIG_SYS_FSL_ERRATUM_A004510
+#define DCSR_LAWBARH0	(CONFIG_SYS_CCSRBAR + 0x1000)
+#define LAW_SIZE_1M	0x13
+#define DCSRBAR_LAWAR	(LAW_EN | (0x1d << 20) | LAW_SIZE_1M)
+
+	cmpwi	r27,0
+	beq	9f
+
+	/*
+	 * Create a TLB entry for CCSR
+	 *
+	 * We're executing out of TLB1 entry in r14, and that's the only
+	 * TLB entry that exists.  To allocate some TLB entries for our
+	 * own use, flip a bit high enough that we won't flip it again
+	 * via incrementing.
+	 */
+
+	xori	r8, r14, 32
+	lis	r0, MAS0_TLBSEL(1)@h
+	rlwimi	r0, r8, 16, MAS0_ESEL_MSK
+	lis	r1, FSL_BOOKE_MAS1(1, 1, 0, 0, BOOKE_PAGESZ_16M)@h
+	ori	r1, r1, FSL_BOOKE_MAS1(1, 1, 0, 0, BOOKE_PAGESZ_16M)@l
+	lis	r7, CONFIG_SYS_CCSRBAR@h
+	ori	r7, r7, CONFIG_SYS_CCSRBAR@l
+	ori	r2, r7, MAS2_I|MAS2_G
+	lis	r3, FSL_BOOKE_MAS3(CONFIG_SYS_CCSRBAR_PHYS_LOW, 0, (MAS3_SW|MAS3_SR))@h
+	ori	r3, r3, FSL_BOOKE_MAS3(CONFIG_SYS_CCSRBAR_PHYS_LOW, 0, (MAS3_SW|MAS3_SR))@l
+	lis	r4, CONFIG_SYS_CCSRBAR_PHYS_HIGH@h
+	ori	r4, r4, CONFIG_SYS_CCSRBAR_PHYS_HIGH@l
+	mtspr	MAS0, r0
+	mtspr	MAS1, r1
+	mtspr	MAS2, r2
+	mtspr	MAS3, r3
+	mtspr	MAS7, r4
+	isync
+	tlbwe
 	isync
 	msync
+
+	/* Map DCSR temporarily to physical address zero */
+	li	r0, 0
+	lis	r3, DCSRBAR_LAWAR@h
+	ori	r3, r3, DCSRBAR_LAWAR@l
+
+	stw	r0, 0xc00(r7)	/* LAWBARH0 */
+	stw	r0, 0xc04(r7)	/* LAWBARL0 */
+	sync
+	stw	r3, 0xc08(r7)	/* LAWAR0 */
+
+	/* Read back from LAWAR to ensure the update is complete. */
+	lwz	r3, 0xc08(r7)	/* LAWAR0 */
+	isync
+
+	/* Create a TLB entry for DCSR at zero */
+
+	addi	r9, r8, 1
+	lis	r0, MAS0_TLBSEL(1)@h
+	rlwimi	r0, r9, 16, MAS0_ESEL_MSK
+	lis	r1, FSL_BOOKE_MAS1(1, 1, 0, 0, BOOKE_PAGESZ_1M)@h
+	ori	r1, r1, FSL_BOOKE_MAS1(1, 1, 0, 0, BOOKE_PAGESZ_1M)@l
+	li	r6, 0	/* DCSR effective address */
+	ori	r2, r6, MAS2_I|MAS2_G
+	li	r3, MAS3_SW|MAS3_SR
+	li	r4, 0
+	mtspr	MAS0, r0
+	mtspr	MAS1, r1
+	mtspr	MAS2, r2
+	mtspr	MAS3, r3
+	mtspr	MAS7, r4
+	isync
 	tlbwe
-#endif /* #if (CONFIG_SYS_CCSRBAR_DEFAULT != CONFIG_SYS_CCSRBAR_PHYS) */
+	isync
+	msync
+
+	/* enable the timebase */
+#define CTBENR	0xe2084
+	li	r3, 1
+	addis	r4, r7, CTBENR@ha
+	stw	r3, CTBENR@l(r4)
+	lwz	r3, CTBENR@l(r4)
+	twi	0,r3,0
+	isync
+
+	.macro	erratum_set_ccsr offset value
+	addis	r3, r7, \offset@ha
+	lis	r4, \value@h
+	addi	r3, r3, \offset@l
+	ori	r4, r4, \value@l
+	bl	erratum_set_value
+	.endm
+
+	.macro	erratum_set_dcsr offset value
+	addis	r3, r6, \offset@ha
+	lis	r4, \value@h
+	addi	r3, r3, \offset@l
+	ori	r4, r4, \value@l
+	bl	erratum_set_value
+	.endm
+
+	erratum_set_dcsr 0xb0e08 0xe0201800
+	erratum_set_dcsr 0xb0e18 0xe0201800
+	erratum_set_dcsr 0xb0e38 0xe0400000
+	erratum_set_dcsr 0xb0008 0x00900000
+	erratum_set_dcsr 0xb0e40 0xe00a0000
+	erratum_set_ccsr 0x18600 CONFIG_SYS_FSL_CORENET_SNOOPVEC_COREONLY
+	erratum_set_ccsr 0x10f00 0x415e5000
+	erratum_set_ccsr 0x11f00 0x415e5000
+
+	/* Make temp mapping uncacheable again, if it was initially */
+	bl	2f
+2:	mflr	r3
+	tlbsx	0, r3
+	mfspr	r4, MAS2
+	rlwimi	r4, r15, 0, MAS2_I
+	rlwimi	r4, r15, 0, MAS2_G
+	mtspr	MAS2, r4
+	isync
+	tlbwe
+	isync
+	msync
+
+	/* Clear the cache */
+	lis	r3,(L1CSR1_ICFI|L1CSR1_ICLFR)@h
+	ori	r3,r3,(L1CSR1_ICFI|L1CSR1_ICLFR)@l
+	sync
+	isync
+	mtspr	SPRN_L1CSR1,r3
+	isync
+2:	sync
+	mfspr	r4,SPRN_L1CSR1
+	and.	r4,r4,r3
+	bne	2b
+
+	lis	r3,(L1CSR1_CPE|L1CSR1_ICE)@h
+	ori	r3,r3,(L1CSR1_CPE|L1CSR1_ICE)@l
+	sync
+	isync
+	mtspr	SPRN_L1CSR1,r3
+	isync
+2:	sync
+	mfspr	r4,SPRN_L1CSR1
+	and.	r4,r4,r3
+	beq	2b
+
+	/* Remove temporary mappings */
+	lis	r0, MAS0_TLBSEL(1)@h
+	rlwimi	r0, r9, 16, MAS0_ESEL_MSK
+	li	r3, 0
+	mtspr	MAS0, r0
+	mtspr	MAS1, r3
+	isync
+	tlbwe
+	isync
+	msync
+
+	li	r3, 0
+	stw	r3, 0xc08(r7)	/* LAWAR0 */
+	lwz	r3, 0xc08(r7)
+	isync
+
+	lis	r0, MAS0_TLBSEL(1)@h
+	rlwimi	r0, r8, 16, MAS0_ESEL_MSK
+	li	r3, 0
+	mtspr	MAS0, r0
+	mtspr	MAS1, r3
+	isync
+	tlbwe
+	isync
+	msync
+
+	b	9f
+
+	/* r3 = addr, r4 = value, clobbers r5, r11, r12 */
+erratum_set_value:
+	/* Lock two cache lines into I-Cache */
+	sync
+	mfspr	r11, SPRN_L1CSR1
+	rlwinm	r11, r11, 0, ~L1CSR1_ICUL
+	sync
+	isync
+	mtspr	SPRN_L1CSR1, r11
+	isync
+
+	mflr	r12
+	bl	5f
+5:	mflr	r5
+	addi	r5, r5, 2f - 5b
+	icbtls	0, 0, r5
+	addi	r5, r5, 64
+
+	sync
+	mfspr	r11, SPRN_L1CSR1
+3:	andi.	r11, r11, L1CSR1_ICUL
+	bne	3b
+
+	icbtls	0, 0, r5
+	addi	r5, r5, 64
+
+	sync
+	mfspr	r11, SPRN_L1CSR1
+3:	andi.	r11, r11, L1CSR1_ICUL
+	bne	3b
+
+	b	2f
+	.align	6
+	/* Inside a locked cacheline, wait a while, write, then wait a while */
+2:	sync
+
+	mfspr	r5, SPRN_TBRL
+	addis	r11, r5, 0x10000@h /* wait 65536 timebase ticks */
+4:	mfspr	r5, SPRN_TBRL
+	subf.	r5, r5, r11
+	bgt	4b
+
+	stw	r4, 0(r3)
+
+	mfspr	r5, SPRN_TBRL
+	addis	r11, r5, 0x10000@h /* wait 65536 timebase ticks */
+4:	mfspr	r5, SPRN_TBRL
+	subf.	r5, r5, r11
+	bgt	4b
+
+	sync
+
+	/*
+	 * Fill out the rest of this cache line and the next with nops,
+	 * to ensure that nothing outside the locked area will be
+	 * fetched due to a branch.
+	 */
+	.rept 19
+	nop
+	.endr
+
+	sync
+	mfspr	r11, SPRN_L1CSR1
+	rlwinm	r11, r11, 0, ~L1CSR1_ICUL
+	sync
+	isync
+	mtspr	SPRN_L1CSR1, r11
+	isync
+
+	mtlr	r12
+	blr
+
+9:
+#endif
 
 create_init_ram_area:
 	lis     r6,FSL_BOOKE_MAS0(1, 15, 0)@h
 	ori     r6,r6,FSL_BOOKE_MAS0(1, 15, 0)@l
 
-#if !defined(CONFIG_SYS_RAMBOOT) && !defined(CONFIG_SECURE_BOOT)
+#ifdef NOR_BOOT
 	/* create a temp mapping in AS=1 to the 4M boot window */
-	lis     r7,FSL_BOOKE_MAS1(1, 1, 0, 1, BOOKE_PAGESZ_4M)@h
-	ori     r7,r7,FSL_BOOKE_MAS1(1, 1, 0, 1, BOOKE_PAGESZ_4M)@l
+	create_tlb1_entry 15, \
+		1, BOOKE_PAGESZ_4M, \
+		CONFIG_SYS_MONITOR_BASE & 0xffc00000, MAS2_I|MAS2_G, \
+		0xffc00000, MAS3_SX|MAS3_SW|MAS3_SR, \
+		0, r6
 
-	lis     r8,FSL_BOOKE_MAS2(CONFIG_SYS_MONITOR_BASE & 0xffc00000, (MAS2_I|MAS2_G))@h
-	ori     r8,r8,FSL_BOOKE_MAS2(CONFIG_SYS_MONITOR_BASE & 0xffc00000, (MAS2_I|MAS2_G))@l
-
-	/* The 85xx has the default boot window 0xff800000 - 0xffffffff */
-	lis     r9,FSL_BOOKE_MAS3(0xffc00000, 0, (MAS3_SX|MAS3_SW|MAS3_SR))@h
-	ori     r9,r9,FSL_BOOKE_MAS3(0xffc00000, 0, (MAS3_SX|MAS3_SW|MAS3_SR))@l
 #elif !defined(CONFIG_SYS_RAMBOOT) && defined(CONFIG_SECURE_BOOT)
 	/* create a temp mapping in AS = 1 for Flash mapping
 	 * created by PBL for ISBC code
 	*/
-	lis     r7,FSL_BOOKE_MAS1(1, 1, 0, 1, BOOKE_PAGESZ_1M)@h
-	ori     r7,r7,FSL_BOOKE_MAS1(1, 1, 0, 1, BOOKE_PAGESZ_1M)@l
-
-	lis     r8,FSL_BOOKE_MAS2(CONFIG_SYS_MONITOR_BASE, (MAS2_I|MAS2_G))@h
-	ori     r8,r8,FSL_BOOKE_MAS2(CONFIG_SYS_MONITOR_BASE, (MAS2_I|MAS2_G))@l
-
-	lis     r9,FSL_BOOKE_MAS3(CONFIG_SYS_PBI_FLASH_WINDOW, 0,
-						(MAS3_SX|MAS3_SW|MAS3_SR))@h
-	ori     r9,r9,FSL_BOOKE_MAS3(CONFIG_SYS_PBI_FLASH_WINDOW, 0,
-						(MAS3_SX|MAS3_SW|MAS3_SR))@l
+	create_tlb1_entry 15, \
+		1, BOOKE_PAGESZ_1M, \
+		CONFIG_SYS_MONITOR_BASE & 0xfff00000, MAS2_I|MAS2_G, \
+		CONFIG_SYS_PBI_FLASH_WINDOW & 0xfff00000, MAS3_SX|MAS3_SW|MAS3_SR, \
+		0, r6
 #else
 	/*
 	 * create a temp mapping in AS=1 to the 1M CONFIG_SYS_MONITOR_BASE space, the main
 	 * image has been relocated to CONFIG_SYS_MONITOR_BASE on the second stage.
 	 */
-	lis     r7,FSL_BOOKE_MAS1(1, 1, 0, 1, BOOKE_PAGESZ_1M)@h
-	ori     r7,r7,FSL_BOOKE_MAS1(1, 1, 0, 1, BOOKE_PAGESZ_1M)@l
-
-	lis     r8,FSL_BOOKE_MAS2(CONFIG_SYS_MONITOR_BASE, (MAS2_I|MAS2_G))@h
-	ori     r8,r8,FSL_BOOKE_MAS2(CONFIG_SYS_MONITOR_BASE, (MAS2_I|MAS2_G))@l
-
-	lis     r9,FSL_BOOKE_MAS3(CONFIG_SYS_MONITOR_BASE, 0, (MAS3_SX|MAS3_SW|MAS3_SR))@h
-	ori     r9,r9,FSL_BOOKE_MAS3(CONFIG_SYS_MONITOR_BASE, 0, (MAS3_SX|MAS3_SW|MAS3_SR))@l
+	create_tlb1_entry 15, \
+		1, BOOKE_PAGESZ_1M, \
+		CONFIG_SYS_MONITOR_BASE & 0xfff00000, MAS2_I|MAS2_G, \
+		CONFIG_SYS_MONITOR_BASE & 0xfff00000, MAS3_SX|MAS3_SW|MAS3_SR, \
+		0, r6
 #endif
-
-	mtspr   MAS0,r6
-	mtspr   MAS1,r7
-	mtspr   MAS2,r8
-	mtspr   MAS3,r9
-	isync
-	msync
-	tlbwe
 
 	/* create a temp mapping in AS=1 to the stack */
-	lis     r6,FSL_BOOKE_MAS0(1, 14, 0)@h
-	ori     r6,r6,FSL_BOOKE_MAS0(1, 14, 0)@l
-
-	lis     r7,FSL_BOOKE_MAS1(1, 1, 0, 1, BOOKE_PAGESZ_16K)@h
-	ori     r7,r7,FSL_BOOKE_MAS1(1, 1, 0, 1, BOOKE_PAGESZ_16K)@l
-
-	lis     r8,FSL_BOOKE_MAS2(CONFIG_SYS_INIT_RAM_ADDR, 0)@h
-	ori     r8,r8,FSL_BOOKE_MAS2(CONFIG_SYS_INIT_RAM_ADDR, 0)@l
-
 #if defined(CONFIG_SYS_INIT_RAM_ADDR_PHYS_LOW) && \
     defined(CONFIG_SYS_INIT_RAM_ADDR_PHYS_HIGH)
-	lis     r9,FSL_BOOKE_MAS3(CONFIG_SYS_INIT_RAM_ADDR_PHYS_LOW, 0,
-				(MAS3_SX|MAS3_SW|MAS3_SR))@h
-	ori     r9,r9,FSL_BOOKE_MAS3(CONFIG_SYS_INIT_RAM_ADDR_PHYS_LOW, 0,
-				(MAS3_SX|MAS3_SW|MAS3_SR))@l
-	li      r10,CONFIG_SYS_INIT_RAM_ADDR_PHYS_HIGH
-	mtspr	MAS7,r10
-#else
-	lis     r9,FSL_BOOKE_MAS3(CONFIG_SYS_INIT_RAM_ADDR, 0, (MAS3_SX|MAS3_SW|MAS3_SR))@h
-	ori     r9,r9,FSL_BOOKE_MAS3(CONFIG_SYS_INIT_RAM_ADDR, 0, (MAS3_SX|MAS3_SW|MAS3_SR))@l
-#endif
+	create_tlb1_entry 14, \
+		1, BOOKE_PAGESZ_16K, \
+		CONFIG_SYS_INIT_RAM_ADDR, 0, \
+		CONFIG_SYS_INIT_RAM_ADDR_PHYS_LOW, MAS3_SX|MAS3_SW|MAS3_SR, \
+		CONFIG_SYS_INIT_RAM_ADDR_PHYS_HIGH, r6
 
-	mtspr   MAS0,r6
-	mtspr   MAS1,r7
-	mtspr   MAS2,r8
-	mtspr   MAS3,r9
-	isync
-	msync
-	tlbwe
+#else
+	create_tlb1_entry 14, \
+		1, BOOKE_PAGESZ_16K, \
+		CONFIG_SYS_INIT_RAM_ADDR, 0, \
+		CONFIG_SYS_INIT_RAM_ADDR, MAS3_SX|MAS3_SW|MAS3_SR, \
+		0, r6
+#endif
 
 	lis	r6,MSR_IS|MSR_DS|MSR_DE@h
 	ori	r6,r6,MSR_IS|MSR_DS|MSR_DE@l
@@ -831,7 +1113,8 @@ switch_as:
 	bdnz	1b
 
 	/* Jump out the last 4K page and continue to 'normal' start */
-#ifdef CONFIG_SYS_RAMBOOT
+#if defined(CONFIG_SYS_RAMBOOT) || defined(CONFIG_SPL)
+	/* We assume that we're already running at the address we're linked at */
 	b	_start_cont
 #else
 	/* Calculate absolute address in FLASH and jump there		*/
@@ -855,18 +1138,12 @@ version_string:
 	.globl	_start_cont
 _start_cont:
 	/* Setup the stack in initial RAM,could be L2-as-SRAM or L1 dcache*/
-	lis	r1,CONFIG_SYS_INIT_RAM_ADDR@h
-	ori	r1,r1,CONFIG_SYS_INIT_SP_OFFSET@l
-
+	lis	r3,(CONFIG_SYS_INIT_RAM_ADDR)@h
+	ori	r3,r3,((CONFIG_SYS_INIT_SP_OFFSET-16)&~0xf)@l /* Align to 16 */
 	li	r0,0
-	stwu	r0,-4(r1)
-	stwu	r0,-4(r1)		/* Terminate call chain */
-
-	stwu	r1,-8(r1)		/* Save back chain and move SP */
-	lis	r0,RESET_VECTOR@h	/* Address of reset vector */
-	ori	r0,r0,RESET_VECTOR@l
-	stwu	r1,-8(r1)		/* Save back chain and move SP */
-	stw	r0,+12(r1)		/* Save return addr (underflow vect) */
+	stw	r0,0(r3)	/* Terminate Back Chain */
+	stw	r0,+4(r3)	/* NULL return address. */
+	mr	r1,r3		/* Transfer to SP(r1) */
 
 	GET_GOT
 	bl	cpu_init_early_f
@@ -883,7 +1160,7 @@ _start_cont:
 
 	/* NOTREACHED - board_init_f() does not return */
 
-#ifndef CONFIG_NAND_SPL
+#ifndef MINIMAL_SPL
 	. = EXC_OFF_SYS_RESET
 	.globl	_start_of_vectors
 _start_of_vectors:
@@ -1327,7 +1604,7 @@ in32:
 in32r:
 	lwbrx	r3,r0,r3
 	blr
-#endif  /* !CONFIG_NAND_SPL */
+#endif  /* !MINIMAL_SPL */
 
 /*------------------------------------------------------------------------------*/
 
@@ -1524,7 +1801,7 @@ clear_bss:
 	mr	r4,r10		/* Destination Address		*/
 	bl	board_init_r
 
-#ifndef CONFIG_NAND_SPL
+#ifndef MINIMAL_SPL
 	/*
 	 * Copy exception vector code to low memory
 	 *
@@ -1697,4 +1974,4 @@ setup_ivors:
 
 #include "fixed_ivor.S"
 	blr
-#endif /* !CONFIG_NAND_SPL */
+#endif /* !MINIMAL_SPL */

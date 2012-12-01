@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2011 Freescale Semiconductor, Inc.
+ * Copyright 2010-2012 Freescale Semiconductor, Inc.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -452,6 +452,8 @@ static void fsl_ddr_options_edit(fsl_ddr_info_t *pinfo,
 		CTRL_OPTIONS(rcw_override),
 		CTRL_OPTIONS(rcw_1),
 		CTRL_OPTIONS(rcw_2),
+		CTRL_OPTIONS(ddr_cdr1),
+		CTRL_OPTIONS(ddr_cdr2),
 		CTRL_OPTIONS(tCKE_clock_pulse_width_ps),
 		CTRL_OPTIONS(tFAW_window_four_activates_ps),
 		CTRL_OPTIONS(trwt_override),
@@ -518,6 +520,8 @@ static void print_fsl_memctl_config_regs(const fsl_ddr_cfg_regs_t *ddr)
 		CFG_REGS(timing_cfg_5),
 		CFG_REGS(ddr_zq_cntl),
 		CFG_REGS(ddr_wrlvl_cntl),
+		CFG_REGS(ddr_wrlvl_cntl_2),
+		CFG_REGS(ddr_wrlvl_cntl_3),
 		CFG_REGS(ddr_sr_cntr),
 		CFG_REGS(ddr_sdram_rcw_1),
 		CFG_REGS(ddr_sdram_rcw_2),
@@ -525,6 +529,7 @@ static void print_fsl_memctl_config_regs(const fsl_ddr_cfg_regs_t *ddr)
 		CFG_REGS(ddr_cdr2),
 		CFG_REGS(err_disable),
 		CFG_REGS(err_int_en),
+		CFG_REGS(ddr_eor),
 	};
 	static const unsigned int n_opts = ARRAY_SIZE(options);
 
@@ -584,6 +589,8 @@ static void fsl_ddr_regs_edit(fsl_ddr_info_t *pinfo,
 		CFG_REGS(timing_cfg_5),
 		CFG_REGS(ddr_zq_cntl),
 		CFG_REGS(ddr_wrlvl_cntl),
+		CFG_REGS(ddr_wrlvl_cntl_2),
+		CFG_REGS(ddr_wrlvl_cntl_3),
 		CFG_REGS(ddr_sr_cntr),
 		CFG_REGS(ddr_sdram_rcw_1),
 		CFG_REGS(ddr_sdram_rcw_2),
@@ -593,7 +600,7 @@ static void fsl_ddr_regs_edit(fsl_ddr_info_t *pinfo,
 		CFG_REGS(err_int_en),
 		CFG_REGS(ddr_sdram_rcw_2),
 		CFG_REGS(ddr_sdram_rcw_2),
-
+		CFG_REGS(ddr_eor),
 	};
 	static const unsigned int n_opts = ARRAY_SIZE(options);
 
@@ -689,6 +696,8 @@ static void print_memctl_options(const memctl_options_t *popts)
 		CTRL_OPTIONS(rcw_override),
 		CTRL_OPTIONS(rcw_1),
 		CTRL_OPTIONS(rcw_2),
+		CTRL_OPTIONS_HEX(ddr_cdr1),
+		CTRL_OPTIONS_HEX(ddr_cdr2),
 		CTRL_OPTIONS(tCKE_clock_pulse_width_ps),
 		CTRL_OPTIONS(tFAW_window_four_activates_ps),
 		CTRL_OPTIONS(trwt_override),
@@ -1047,7 +1056,7 @@ void ddr3_spd_dump(const ddr3_spd_eeprom_t *spd)
 
 	/* General Section: Bytes 0-59 */
 
-#define PRINT_NXS(x, y, z...) printf("%-3d    : %02x " z "\n", x, y);
+#define PRINT_NXS(x, y, z...) printf("%-3d    : %02x " z "\n", x, (u8)y);
 #define PRINT_NNXXS(n0, n1, x0, x1, s) \
 	printf("%-3d-%3d: %02x %02x " s "\n", n0, n1, x0, x1);
 
@@ -1121,11 +1130,21 @@ void ddr3_spd_dump(const ddr3_spd_eeprom_t *spd)
 		"therm_sensor  SDRAM Thermal Sensor");
 	PRINT_NXS(33, spd->device_type,
 		"device_type  SDRAM Device Type");
+	PRINT_NXS(34, spd->fine_tCK_min,
+		"fine_tCK_min  Fine offset for tCKmin");
+	PRINT_NXS(35, spd->fine_tAA_min,
+		"fine_tAA_min  Fine offset for tAAmin");
+	PRINT_NXS(36, spd->fine_tRCD_min,
+		"fine_tRCD_min Fine offset for tRCDmin");
+	PRINT_NXS(37, spd->fine_tRP_min,
+		"fine_tRP_min  Fine offset for tRPmin");
+	PRINT_NXS(38, spd->fine_tRC_min,
+		"fine_tRC_min  Fine offset for tRCmin");
 
-	printf("%-3d-%3d: ",  34, 59);  /* Reserved, General Section */
+	printf("%-3d-%3d: ",  39, 59);  /* Reserved, General Section */
 
-	for (i = 34; i <= 59; i++)
-		printf("%02x ", spd->res_34_59[i - 34]);
+	for (i = 39; i <= 59; i++)
+		printf("%02x ", spd->res_39_59[i - 39]);
 
 	puts("\n");
 
@@ -1388,7 +1407,7 @@ unsigned long long fsl_ddr_interactive(fsl_ddr_info_t *pinfo)
 		 * No need to worry for buffer overflow here in
 		 * this function;  readline() maxes out at CFG_CBSIZE
 		 */
-		readline_into_buffer(prompt,  buffer);
+		readline_into_buffer(prompt, buffer, 0);
 		argc = parse_line(buffer, argv);
 		if (argc == 0)
 			continue;
@@ -1587,6 +1606,7 @@ unsigned long long fsl_ddr_interactive(fsl_ddr_info_t *pinfo)
 			 * doesn't return
 			 */
 			do_reset(NULL, 0, 0, NULL);
+			printf("Reset didn't work\n");
 		}
 
 		if (strcmp(argv[0], "recompute") == 0) {

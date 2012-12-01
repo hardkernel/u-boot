@@ -34,6 +34,7 @@
 #include <libfdt.h>
 #include <fdt_support.h>
 #include <asm/bootm.h>
+#include <linux/compiler.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -69,8 +70,8 @@ void arch_lmb_reserve(struct lmb *lmb)
 	sp = get_sp();
 	debug("## Current stack ends at 0x%08lx ", sp);
 
-	/* adjust sp by 1K to be safe */
-	sp -= 1024;
+	/* adjust sp by 4K to be safe */
+	sp -= 4096;
 	lmb_reserve(lmb, sp,
 		    gd->bd->bi_dram[0].start + gd->bd->bi_dram[0].size - sp);
 }
@@ -96,6 +97,9 @@ static void announce_and_cleanup(void)
 {
 	printf("\nStarting kernel ...\n\n");
 	bootstage_mark_name(BOOTSTAGE_ID_BOOTM_HANDOFF, "start_kernel");
+#ifdef CONFIG_BOOTSTAGE_FDT
+	bootstage_fdt_add_report();
+#endif
 #ifdef CONFIG_BOOTSTAGE_REPORT
 	bootstage_report();
 #endif
@@ -258,10 +262,15 @@ static int create_fdt(bootm_headers_t *images)
 	fixup_memory_node(*of_flat_tree);
 	fdt_fixup_ethernet(*of_flat_tree);
 	fdt_initrd(*of_flat_tree, *initrd_start, *initrd_end, 1);
+#ifdef CONFIG_OF_BOARD_SETUP
+	ft_board_setup(*of_flat_tree, gd->bd);
+#endif
 
 	return 0;
 }
 #endif
+
+__weak void setup_board_tags(struct tag **in_params) {}
 
 /* Subcommand: PREP */
 static void boot_prep_linux(bootm_headers_t *images)
@@ -304,6 +313,7 @@ static void boot_prep_linux(bootm_headers_t *images)
 			setup_initrd_tag(gd->bd, images->rd_start,
 			images->rd_end);
 #endif
+		setup_board_tags(&params);
 		setup_end_tag(gd->bd);
 #else /* all tags */
 		printf("FDT and ATAGS support not compiled in - hanging\n");
