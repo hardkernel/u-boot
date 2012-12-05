@@ -1217,6 +1217,12 @@ The following options need to be configured:
 		Normally display is black on white background; define
 		CONFIG_SYS_WHITE_ON_BLACK to get it inverted.
 
+		CONFIG_I2C_EDID
+
+		Enables an 'i2c edid' command which can read EDID
+		information over I2C from an attached LCD display.
+
+
 - Splash Screen Support: CONFIG_SPLASH_SCREEN
 
 		If this option is set, the environment is checked for
