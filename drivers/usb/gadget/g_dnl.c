@@ -106,6 +106,10 @@ static int g_dnl_do_config(struct usb_configuration *c)
         if (!strcmp(s, "usb_dnl_fastboot"))
                 ret = fastboot_add(c);
 #endif
+#if defined(CONFIG_USB_GADGET_MASS_STORAGE)
+	if (!strcmp(s, "usb_dnl_ums"))
+		ret = fsg_add(c);
+#endif
 
 	return ret;
 }
@@ -188,6 +192,11 @@ int g_dnl_register(const char *type)
 		strcat(name, type);
 #if defined(CONFIG_CMD_FASTBOOT)
         } else if (!strcmp(type, "fastboot")) {
+		strcpy(name, shortname);
+		strcat(name, type);
+#endif
+#if defined(CONFIG_USB_GADGET_MASS_STORAGE)
+	} else if (!strcmp(type, "ums")) {
 		strcpy(name, shortname);
 		strcat(name, type);
 #endif
