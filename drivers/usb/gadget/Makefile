@@ -30,6 +30,7 @@ ifdef CONFIG_USB_GADGET
 COBJS-y += epautoconf.o config.o usbstring.o
 COBJS-$(CONFIG_USB_GADGET_S3C_UDC_OTG) += s3c_udc_otg.o
 COBJS-$(CONFIG_USBDOWNLOAD_GADGET) += g_dnl.o
+COBJS-$(CONFIG_USB_GADGET_MASS_STORAGE) += f_mass_storage.o
 COBJS-$(CONFIG_CMD_FASTBOOT) += f_fastboot.o
 endif
 ifdef CONFIG_USB_ETHER
