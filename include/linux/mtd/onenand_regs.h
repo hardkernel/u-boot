@@ -80,6 +80,8 @@
 #define ONENAND_DEVICE_DENSITY_1Gb	(0x003)
 #define ONENAND_DEVICE_DENSITY_2Gb	(0x004)
 #define ONENAND_DEVICE_DENSITY_4Gb	(0x005)
+#define ONENAND_DEVICE_DENSITY_8Gb	(0x006)
+#define ONENAND_DEVICE_DENSITY_16Gb	(0x007)
 
 /*
  * Version ID Register F002h (R)
@@ -87,8 +89,8 @@
 #define ONENAND_VERSION_PROCESS_SHIFT	(8)
 
 /*
- * Technology Register F006h (R)
- */
+ *  * Technology Register F006h (R)
+ *   */
 #define ONENAND_TECHNOLOGY_IS_MLC	(1 << 0)
 
 /*
@@ -132,11 +134,13 @@
 #define ONENAND_CMD_MULTIBLOCK_ERASE	(0x95)
 #define ONENAND_CMD_ERASE_VERIFY	(0x71)
 #define ONENAND_CMD_RESET		(0xF0)
+#define ONENAND_CMD_OTP_ACCESS		(0x65)
 #define ONENAND_CMD_READID		(0x90)
 #define FLEXONENAND_CMD_RESET		(0xF3)
 #define FLEXONENAND_CMD_PI_UPDATE	(0x05)
 #define FLEXONENAND_CMD_PI_ACCESS	(0x66)
 #define FLEXONENAND_CMD_RECOVER_LSB	(0x05)
+#define ONENAND_CMD_SUPERLOAD	(0x03)			// 4KB page
 
 /* NOTE: Those are not *REAL* commands */
 #define ONENAND_CMD_BUFFERRAM		(0x1978)
@@ -166,6 +170,8 @@
 #define ONENAND_SYS_CFG1_INT		(1 << 6)
 #define ONENAND_SYS_CFG1_IOBE		(1 << 5)
 #define ONENAND_SYS_CFG1_RDY_CONF	(1 << 4)
+#define ONENAND_SYS_CFG1_HF			(1 << 2)
+#define ONENAND_SYS_CFG1_SYNC_WRITE	(1 << 1)
 
 /*
  * Controller Status Register F240h (R)
@@ -177,6 +183,8 @@
 #define ONENAND_CTRL_ERASE		(1 << 11)
 #define ONENAND_CTRL_ERROR		(1 << 10)
 #define ONENAND_CTRL_RSTB		(1 << 7)
+#define ONENAND_CTRL_OTP_L		(1 << 6)
+#define ONENAND_CTRL_OTP_BL		(1 << 5)
 
 /*
  * Interrupt Status Register F241h (R)
@@ -202,7 +210,18 @@
 #define ONENAND_ECC_1BIT_ALL		(0x5555)
 #define ONENAND_ECC_2BIT		(1 << 1)
 #define ONENAND_ECC_2BIT_ALL		(0xAAAA)
+#define ONENAND_ECC_5BIT_ALL		(0x1010)
+
+#define ONENAND_CORRECTABLE_ERROR	(1 << 0)
+#define ONENAND_UNCORRECTABLE_ERROR	(1 << 1)
 #define ONENAND_ECC_4BIT_UNCORRECTABLE	(0x1010)
 #define FLEXONENAND_UNCORRECTABLE_ERROR (0x1010)
+
+
+/*
+ * One-Time Programmable (OTP)
+ */
+#define ONENAND_OTP_LOCK_OFFSET		(14)
+#define FLEXONENAND_OTP_LOCK_OFFSET	(2048)
 
 #endif				/* __ONENAND_REG_H */

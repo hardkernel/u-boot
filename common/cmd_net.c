@@ -28,6 +28,10 @@
 #include <command.h>
 #include <net.h>
 
+#if defined(CONFIG_S5P6450)
+DECLARE_GLOBAL_DATA_PTR;
+#endif
+
 extern int do_bootm (cmd_tbl_t *, int, int, char * const []);
 
 static int netboot_common (proto_t, cmd_tbl_t *, int , char * const []);

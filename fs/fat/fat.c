@@ -1,4 +1,10 @@
 /*
+ * Copyright (c) 2010 Samsung Electronics Co., Ltd.
+ *              http://www.samsung.com/
+ *
+ * Added fat format.
+ * Original license code is as follows:
+ *
  * fat.c
  *
  * R/O (V)FAT 12/16/32 filesystem implementation by Marcus Sundberg
@@ -31,6 +37,12 @@
 #include <asm/byteorder.h>
 #include <part.h>
 
+#if defined(CONFIG_CMD_FAT)
+
+#if defined(CONFIG_S5P6450)
+DECLARE_GLOBAL_DATA_PTR;
+#endif
+
 /*
  * Convert a string to lowercase.
  */
@@ -48,6 +60,8 @@ static unsigned long part_offset = 0;
 
 static int cur_part = 1;
 
+#define BYTE_PER_SEC	512
+#define RESERVED_CNT	32
 #define DOS_PART_TBL_OFFSET	0x1be
 #define DOS_PART_MAGIC_OFFSET	0x1fe
 #define DOS_FS_TYPE_OFFSET	0x36
@@ -89,8 +103,6 @@ int fat_register_device (block_dev_desc_t * dev_desc, int part_no)
 		return -1;
 	}
 #if (defined(CONFIG_CMD_IDE) || \
-     defined(CONFIG_CMD_MG_DISK) || \
-     defined(CONFIG_CMD_SATA) || \
      defined(CONFIG_CMD_SCSI) || \
      defined(CONFIG_CMD_USB) || \
      defined(CONFIG_MMC) || \
@@ -127,6 +139,328 @@ int fat_register_device (block_dev_desc_t * dev_desc, int part_no)
 		cur_part = 1;
 	}
 #endif
+	printf("Partition%d: Start Address(0x%x), Size(0x%x)\n", part_no, info.start, info.size);
+	return 0;
+}
+
+/*
+ * Copy string, padding with spaces.
+ */
+static void
+setstr(u_int8_t *dest, const char *src, size_t len)
+{
+    while (len--)
+	*dest++ = *src ? *src++ : ' ';
+}
+
+static int write_pbr(block_dev_desc_t *dev_desc, disk_partition_t *info)
+{
+	struct bs *bs;
+	struct bsbpb *bsbpb;
+	struct bsxbpb *bsxbpb;
+	struct bsx *bsx;
+	__u8 *img;
+	int img_offset = 0;
+	int reserved_cnt= 0;
+	int i;
+	int fat_size = 0;
+
+	img = malloc(sizeof(__u8)*512);
+	if(img == NULL) {
+		printf("Can't make img buffer~~!!\n");
+		return -1;
+	}
+	memset(img, 0x0, sizeof(__u8)*512);
+
+
+	/* Erase Reserved Sector(PBR) */
+	for (i = 0;i < RESERVED_CNT; i++) {
+		if (dev_desc->block_write(dev_desc->dev, info->start + i, 1, (ulong *)img) != 1) {
+			printf ("Can't erase reserved sector~~~!!!\n");
+			return -1;
+		}
+	}
+
+	/* Set bs */
+	bs = (struct bs *)img;
+	img_offset += sizeof(struct bs) - 1;
+
+	mk1(bs->jmp[0], 0xeb);
+	mk1(bs->jmp[1], 0x58);
+	mk1(bs->jmp[2], 0x90); /* Jump Boot Code */
+	setstr(bs->oem, "SAMSUNG", sizeof(bs->oem)); /* OEM Name */
+
+	uint spc;
+	/* Set bsbpb */
+	bsbpb = (struct bsbpb *)(img + img_offset);
+	img_offset += sizeof(struct bsbpb) - 2;
+
+	mk2(bsbpb->bps, 512); /* Byte Per Sector */
+
+	printf("size checking ...\n");
+	/* Sector Per Cluster */
+	if (info->size < 0x10000) { /* partition size >= 32Mb */
+		printf("Can't format less than 32Mb partition!!\n");
+		return -1;
+	}
+	if (info->size <= 0x20000) { /* under 64M -> 512 bytes */
+		printf("Under 64M\n");
+		mk1(bsbpb->spc, 1);
+		spc = 1;
+	}
+	else if (info->size <= 0x40000) { /* under 128M -> 1K */
+		printf("Under 128M\n");
+		mk1(bsbpb->spc, 2);
+		spc = 2;
+	}
+	else if (info->size <= 0x80000) { /* under 256M -> 2K */
+		printf("Under 256M\n");
+		mk1(bsbpb->spc, 4);
+		spc = 4;
+	}
+	else if (info->size <= 0xFA0000) { /* under 8G -> 4K */
+		printf("Under 8G\n");
+		mk1(bsbpb->spc, 8);
+		spc = 8;
+	}
+	else if (info->size <= 0x1F40000) { /* under 16G -> 8K */
+		printf("Under 16G\n");
+		mk1(bsbpb->spc, 16);
+		spc = 16;
+	}
+	else {
+		printf("16G~\n");
+		mk1(bsbpb->spc, 32);
+		spc = 32;
+	}
+
+	printf("write FAT info: %d\n",RESERVED_CNT);
+	mk2(bsbpb->res, RESERVED_CNT); /* Reserved Sector Count */
+	mk1(bsbpb->nft, 2); /* Number of FATs */
+	mk2(bsbpb->rde, 0); /* Root Directory Entry Count : It's no use in FAT32 */
+	mk2(bsbpb->sec, 0); /* Total Sector : It's no use in FAT32 */
+	mk1(bsbpb->mid, 0xF8); /* Media */
+	mk2(bsbpb->spf, 0); /* FAT Size 16 : It's no use in FAT32 */
+	mk2(bsbpb->spt, 0); /* Sector Per Track */
+	mk2(bsbpb->hds, 0); /* Number Of Heads */
+	mk4(bsbpb->hid, 0); /* Hidden Sector */
+	mk4(bsbpb->bsec, info->size); /* Total Sector For FAT32 */
+
+	/* Set bsxbpb */
+	bsxbpb = (struct bsxbpb *)(img + img_offset);
+	img_offset += sizeof(struct bsxbpb);
+
+	mk4(bsxbpb->bspf, (info->size / (spc * 128))); /* FAT Size 32 */
+	fat_size = info->size / (spc * 128);
+	printf("Fat size : 0x%x\n", info->size / (spc * 128));
+	mk2(bsxbpb->xflg, 0); /* Ext Flags */
+	mk2(bsxbpb->vers, 0); /* File System Version */
+	mk4(bsxbpb->rdcl, 2); /* Root Directory Cluster */
+	mk2(bsxbpb->infs, 1); /* File System Information */
+	mk2(bsxbpb->bkbs, 0); /* Boot Record Backup Sector */
+
+	/* Set bsx */
+	bsx = (struct bsx *)(img + img_offset);
+	mk1(bsx->drv, 0); /* Drive Number */
+	mk1(bsx->sig, 0x29); /* Boot Signature */
+	mk4(bsx->volid, 0x3333); /* Volume ID : 0x3333 means nothing */
+	setstr(bsx->label, "NO NAME ", sizeof(bsx->label)); /* Volume Label */
+	setstr(bsx->type, "FAT32", sizeof(bsx->type)); /* File System Type */
+
+	/* Set Magic Number */
+	mk2(img + BYTE_PER_SEC - 2, 0xaa55); /* Signature */
+
+/*	
+	printf("Print Boot Recode\n");
+	for(i = 0;i<512;i++) {
+		if(img[i] == 0)
+			printf("00 ");
+		else
+			printf("%2x ", img[i]);
+		if (!((i+1) % 16))
+			printf("\n");
+	}
+*/	
+
+	if (dev_desc->block_write(dev_desc->dev, info->start, 1, (ulong *)img) != 1) {
+		printf ("Can't write PBR~~~!!!\n");
+		return -1;
+	}
+
+	return fat_size;
+}
+static int write_reserved(block_dev_desc_t *dev_desc, disk_partition_t *info)
+{
+	/* Set Reserved Region */
+	__u8 *img;
+	int i;
+	img = malloc(sizeof(__u8)*512);
+	if(img == NULL) {
+		printf("Can't make img buffer~~(reserved)!!\n");
+		return -1;
+	}
+
+	memset(img, 0x0, sizeof(__u8)*512);
+
+	mk4(img, 0x41615252); /* Lead Signature */
+	mk4(img + BYTE_PER_SEC - 28, 0x61417272); /* Struct Signature */
+	mk4(img + BYTE_PER_SEC - 24, 0xffffffff); /* Free Cluster Count */
+	mk4(img + BYTE_PER_SEC - 20, 0x3); /* Next Free Cluster */
+	mk2(img + BYTE_PER_SEC - 2, 0xaa55); /* Trail Signature */
+
+	/*
+	printf("Print Reserved Region\n");
+	for(i = 0;i<512;i++) {
+		if(img[i] == 0)
+			printf("00 ");
+		else
+			printf("%2x ", img[i]);
+		if (!((i+1) % 16))
+			printf("\n");
+	}
+	*/
+
+	/* Write Reserved region */
+	if (dev_desc->block_write(dev_desc->dev, info->start+1, 1, (ulong *)img) != 1) {
+		printf ("Can't write reserved region~~~!!!\n");
+		return -1;
+	}
+
+	return 1;
+}
+static int write_fat(block_dev_desc_t *dev_desc, disk_partition_t *info, int
+fat_size)
+{
+	__u8 *dummy;
+	__u8 *img;
+	int i;
+
+	/* Create buffer for FAT */
+	img = malloc(sizeof(__u8)*512);
+	if(img == NULL) {
+		printf("Can't make img buffer~~!!\n");
+		return -1;
+	}
+	memset(img, 0x0, sizeof(__u8) * 512);
+
+	/* Create buffer for erase */
+	dummy = malloc(sizeof(__u8) * 8192);
+	if(dummy == NULL) {
+		printf("Can't make dummy buffer~~!!\n");
+		return -1;
+	}
+	memset(dummy, 0x0, sizeof(__u8) * 8192);
+
+	/* Erase FAT Region */
+	int erase_block_cnt = (fat_size * 2);
+	int temp = 0;
+	printf("Erase FAT region");
+	for (i = 0;i < erase_block_cnt + 10; i+=16) {
+		if (dev_desc->block_write(dev_desc->dev, info->start +
+			RESERVED_CNT + i, 16, (ulong *)dummy) != 16) {
+			printf ("Can't erase FAT region~~!!!\n");
+		}
+		if((i % 160) == 0)
+			printf(".");
+
+	}
+	printf("\n");
+
+	mk4(img, 0x0ffffff8);
+	mk4(img+4, 0x0fffffff);
+	mk4(img+8, 0x0fffffff); /* Root Directory */
+
+	/*
+	printf("Print FAT Region\n");
+	for(i = 0;i<512;i++) {
+		if(img[i] == 0)
+			printf("00 ");
+		else
+			printf("%2x ", img[i]);
+		if (!((i+1) % 16))
+			printf("\n");
+	}
+	*/
+	/* Write FAT Region */
+	if (dev_desc->block_write(dev_desc->dev, info->start + RESERVED_CNT, 1, (ulong *)img) != 1) {
+		printf ("Can't write FAT~~~!!!\n");
+		return -1;
+	}
+
+	return 1;
+}
+
+/*
+ * Make a volume label.
+ */
+
+static void
+mklabel(u_int8_t *dest, const char *src)
+{
+    int c, i;
+
+    for (i = 0; i < 11; i++) {
+	c = *src ? __toupper(*src++) : ' ';
+	*dest++ = !i && c == '\xe5' ? 5 : c;
+    }
+}
+
+/*
+ * Format device
+ */
+int
+fat_format_device(block_dev_desc_t *dev_desc, int part_no)
+{
+	unsigned char buffer[SECTOR_SIZE];
+	disk_partition_t info;
+
+	if (!dev_desc->block_read)
+		return -1;
+	cur_dev = dev_desc;
+	/* check if we have a MBR (on floppies we have only a PBR) */
+	if (dev_desc->block_read (dev_desc->dev, 0, 1, (ulong *) buffer) != 1) {
+		printf ("** Can't read from device %d **\n", dev_desc->dev);
+		return -1;
+	}
+	if (buffer[DOS_PART_MAGIC_OFFSET] != 0x55 ||
+		buffer[DOS_PART_MAGIC_OFFSET + 1] != 0xaa) {
+		printf("** MBR is broken **\n");
+		/* no signature found */
+		return -1;
+	}
+	
+#if (defined(CONFIG_CMD_IDE) || \
+     defined(CONFIG_CMD_SCSI) || \
+     defined(CONFIG_CMD_USB) || \
+     defined(CONFIG_MMC) || \
+     defined(CONFIG_SYSTEMACE) )
+	/* First we assume, there is a MBR */
+	if (!get_partition_info (dev_desc, part_no, &info)) {
+		part_offset = info.start;
+		cur_part = part_no;
+	} else if (!strncmp((char *)&buffer[DOS_FS_TYPE_OFFSET], "FAT", 3)) {
+		/* ok, we assume we are on a PBR only */
+		cur_part = 1;
+		part_offset = 0;
+	} else {
+		printf ("** Partition %d not valid on device %d **\n",
+				part_no, dev_desc->dev);
+		return -1;
+	}
+#endif
+
+	printf("Partition%d: Start Address(0x%x), Size(0x%x)\n", part_no, info.start, info.size);
+
+	int fat_size;
+	fat_size = write_pbr(dev_desc, &info);
+	if(fat_size < 0)
+		return -1;
+	if(write_reserved(dev_desc, &info) < 0)
+		return -1;
+	if(write_fat(dev_desc, &info, fat_size) < 0)
+		return -1;
+	printf("Partition%d format complete.\n", part_no);
+
 	return 0;
 }
 
@@ -145,6 +479,28 @@ static int dirdelim (char *str)
 	}
 	return -1;
 }
+
+
+/*
+ * Match volume_info fs_type strings.
+ * Return 0 on match, -1 otherwise.
+ */
+static int
+compare_sign(char *str1, char *str2)
+{
+	char *end = str1+SIGNLEN;
+
+	while (str1 != end) {
+		if (*str1 != *str2) {
+			return -1;
+		}
+		str1++;
+		str2++;
+	}
+
+	return 0;
+}
+
 
 /*
  * Extract zero terminated short name from a directory entry.
@@ -170,7 +526,7 @@ static void get_name (dir_entry *dirent, char *s_name)
 	if (*s_name == DELETED_FLAG)
 		*s_name = '\0';
 	else if (*s_name == aRING)
-		*s_name = DELETED_FLAG;
+		*s_name = '?';
 	downcase(s_name);
 }
 
@@ -337,6 +693,11 @@ get_contents (fsdata *mydata, dir_entry *dentptr, __u8 *buffer,
 	actsize = bytesperclust;
 	endclust = curclust;
 
+    if(filesize < actsize)  {
+        printf("Warning : Reads a file that is smaller than the cluster size.\n");
+        goto    clustread;
+    }
+
 	do {
 		/* search for consecutive clusters */
 		while (actsize < filesize) {
@@ -356,21 +717,32 @@ get_contents (fsdata *mydata, dir_entry *dentptr, __u8 *buffer,
 		actsize -= bytesperclust;
 
 		/* get remaining clusters */
-		if (get_cluster(mydata, curclust, buffer, (int)actsize) != 0) {
-			printf("Error reading cluster\n");
-			return -1;
-		}
+        if(actsize != 0)    {
+    		if (get_cluster(mydata, curclust, buffer, (int)actsize) != 0) {
+    			printf("Error! reading remaining clusters.\n");
+                printf("actsize = %d, bytesperclust = %d\n", actsize, bytesperclust);
+    			return -1;
+    		}
+        }		
 
 		/* get remaining bytes */
 		gotsize += (int)actsize;
 		filesize -= actsize;
 		buffer += actsize;
 		actsize = filesize;
-		if (get_cluster(mydata, endclust, buffer, (int)actsize) != 0) {
-			printf("Error reading cluster\n");
+		if (get_cluster(mydata, endclust, buffer, (int)bytesperclust) != 0) {
+			printf("Error! reading remaining bytes.\n");
 			return -1;
 		}
 		gotsize += actsize;
+		return gotsize;
+clustread:
+        /* get 1 cluster */
+		if (get_cluster(mydata, endclust, buffer, (int)actsize) != 0) {
+			printf("Error! reading cluster\n");
+			return -1;
+		}
+		gotsize = filesize;
 		return gotsize;
 getit:
 		if (get_cluster(mydata, curclust, buffer, (int)actsize) != 0) {
@@ -430,7 +802,6 @@ static int slot2str (dir_slot *slotptr, char *l_name, int *idx)
  * into 'retdent'
  * Return 0 on success, -1 otherwise.
  */
-__attribute__ ((__aligned__ (__alignof__ (dir_entry))))
 __u8 get_vfatname_block[MAX_CLUSTSIZE];
 
 static int
@@ -508,7 +879,7 @@ get_vfatname (fsdata *mydata, int curclust, __u8 *cluster,
 	if (*l_name == DELETED_FLAG)
 		*l_name = '\0';
 	else if (*l_name == aRING)
-		*l_name = DELETED_FLAG;
+		*l_name = '?';
 	downcase(l_name);
 
 	/* Return the real directory entry */
@@ -536,7 +907,6 @@ static __u8 mkcksum (const char *str)
  * Get the directory entry associated with 'filename' from the directory
  * starting at 'startsect'
  */
-__attribute__ ((__aligned__ (__alignof__ (dir_entry))))
 __u8 get_dentfromdir_block[MAX_CLUSTSIZE];
 
 static dir_entry *get_dentfromdir (fsdata *mydata, int startsect,
@@ -734,15 +1104,20 @@ read_bootsectandvi (boot_sector *bs, volume_info *volinfo, int *fatsize)
 	}
 	memcpy(volinfo, vistart, sizeof(volume_info));
 
+	/* Terminate fs_type string. Writing past the end of vistart
+	   is ok - it's just the buffer. */
+	vistart->fs_type[8] = '\0';
+
 	if (*fatsize == 32) {
-		if (strncmp(FAT32_SIGN, vistart->fs_type, SIGNLEN) == 0)
+		if (compare_sign(FAT32_SIGN, vistart->fs_type) == 0) {
 			return 0;
+		}
 	} else {
-		if (strncmp(FAT12_SIGN, vistart->fs_type, SIGNLEN) == 0) {
+		if (compare_sign(FAT12_SIGN, vistart->fs_type) == 0) {
 			*fatsize = 12;
 			return 0;
 		}
-		if (strncmp(FAT16_SIGN, vistart->fs_type, SIGNLEN) == 0) {
+		if (compare_sign(FAT16_SIGN, vistart->fs_type) == 0) {
 			*fatsize = 16;
 			return 0;
 		}
@@ -752,8 +1127,7 @@ read_bootsectandvi (boot_sector *bs, volume_info *volinfo, int *fatsize)
 	return -1;
 }
 
-__attribute__ ((__aligned__ (__alignof__ (dir_entry))))
-__u8 do_fat_read_block[MAX_CLUSTSIZE];
+__u8 do_fat_read_block[MAX_CLUSTSIZE];  /* Block buffer */
 
 long
 do_fat_read (const char *filename, void *buffer, unsigned long maxsize,
@@ -1079,7 +1453,7 @@ rootdir_done:
 	return ret;
 }
 
-int file_fat_detectfs (void)
+int file_fat_detectfs ()
 {
 	boot_sector bs;
 	volume_info volinfo;
@@ -1092,8 +1466,6 @@ int file_fat_detectfs (void)
 	}
 
 #if defined(CONFIG_CMD_IDE) || \
-    defined(CONFIG_CMD_MG_DISK) || \
-    defined(CONFIG_CMD_SATA) || \
     defined(CONFIG_CMD_SCSI) || \
     defined(CONFIG_CMD_USB) || \
     defined(CONFIG_MMC)
@@ -1101,9 +1473,6 @@ int file_fat_detectfs (void)
 	switch (cur_dev->if_type) {
 	case IF_TYPE_IDE:
 		printf("IDE");
-		break;
-	case IF_TYPE_SATA:
-		printf("SATA");
 		break;
 	case IF_TYPE_SCSI:
 		printf("SCSI");
@@ -1118,7 +1487,7 @@ int file_fat_detectfs (void)
 		printf("DOC");
 		break;
 	case IF_TYPE_MMC:
-		printf("MMC");
+		printf("SD/MMC");
 		break;
 	default:
 		printf("Unknown");
@@ -1153,3 +1522,5 @@ long file_fat_read (const char *filename, void *buffer, unsigned long maxsize)
 	printf("reading %s\n", filename);
 	return do_fat_read(filename, buffer, maxsize, LS_NO);
 }
+
+#endif

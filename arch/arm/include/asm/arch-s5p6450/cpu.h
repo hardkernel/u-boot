@@ -1,0 +1,1135 @@
+/*
+ * (C) Copyright 2011 Samsung Electronics Co. Ltd
+ *
+ * See file CREDITS for list of people who contributed to this
+ * project.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ *
+ */
+
+
+#ifndef __S5P6450_CPU_H_
+#define __S5P6450_CPU_H_
+
+/* S5P6450 */
+#define S5P6450_SYS_ID          0xE0100000
+#define S5P6450_GPIO_BASE       0xE0308000
+#define S5P6450_WATCHDOG_BASE   0xEA200000
+#define S5P6450_SROMC_BASE      0xE7000000
+#define S5P6450_CLK_PWR_BASE    0xE0100000
+#define S5P6450_TIMER_BASE	0xEA000000
+
+#define BIT0 			0x00000001
+#define BIT1 			0x00000002
+#define BIT2 			0x00000004
+#define BIT3 			0x00000008
+#define BIT4 			0x00000010
+#define BIT5 			0x00000020
+#define BIT6			0x00000040
+#define BIT7			0x00000080
+#define BIT8			0x00000100
+#define BIT9			0x00000200
+#define BIT10			0x00000400
+#define BIT11			0x00000800
+#define BIT12			0x00001000
+#define BIT13			0x00002000
+#define BIT14			0x00004000
+#define BIT15			0x00008000
+#define BIT16			0x00010000
+#define BIT17			0x00020000
+#define BIT18			0x00040000
+#define BIT19			0x00080000
+#define BIT20			0x00100000
+#define BIT21			0x00200000
+#define BIT22			0x00400000
+#define BIT23			0x00800000
+#define BIT24			0x01000000
+#define BIT25			0x02000000
+#define BIT26			0x04000000
+#define BIT27			0x08000000
+#define BIT28			0x10000000
+#define BIT29			0x20000000
+#define BIT30			0x40000000
+#define BIT31			0x80000000
+
+#define __REG(x)        (*(unsigned int *)(x))
+
+/*
+ * CHIP ID
+ */
+#define CHIP_ID_BASE		        0xE0000000
+
+#define PRO_ID_OFFSET	0x0
+#define PRO_ID		__REG(CHIP_ID_BASE+PRO_ID_OFFSET)
+
+/* Clock & Power Controller for mDirac3*/
+
+/*
+ * Clock & Power
+ */
+#define ELFIN_CLOCK_BASE     S5P6450_CLK_PWR_BASE
+#define ELFIN_POWER_BASE     S5P6450_CLK_PWR_BASE
+
+#define APLL_LOCK_OFFSET	0x00
+#define MPLL_LOCK_OFFSET	0x04
+#define EPLL_LOCK_OFFSET	0x08
+#define APLL_CON_OFFSET		0x0C
+#define MPLL_CON_OFFSET		0x10
+#define EPLL_CON_OFFSET		0x14
+#define EPLL_CON_K_OFFSET	0x18
+#define DPLL_CON_OFFSET		0x50
+#define DPLL_CON_K_OFFSET	0x54
+#define CLK_SRC0_OFFSET		0x1C
+#define CLK_SRC1_OFFSET		0x10C
+#define CLK_DIV0_OFFSET		0x20
+#define CLK_DIV1_OFFSET		0x24
+#define CLK_DIV2_OFFSET		0x28
+#define CLK_DIV3_OFFSET		0x40
+#define CLK_OUT0_OFFSET		0x2C
+#define CLK_OUT1_OFFSET		0x4C
+#define HCLK_0_GATE_OFFSET	0x30
+#define PCLK_GATE_OFFSET	0x34
+#define SCLK_0_GATE_OFFSET	0x38
+#define MEM_0_GATE_OFFSET 	0x3C
+#define HCLK_1_GATE_OFFSET	0x44
+#define SCLK_1_GATE_OFFSET	0x48
+
+#define AHB_CON0_OFFSET		0x100
+
+#define SW_RST_OFFSET		0x114
+#define SYS_ID_OFFSET		0x118
+#define SYS_OTHERS_OFFSET		0x11C
+
+#define MEM_CFG_STAT_OFFSET	0x12C
+#define EMA_ACCESS_CON_OFFSET 0x130
+#define EMA_CONFIG0_OFFSET  0x200
+#define EMA_CONFIG1_OFFSET  0x204
+#define EMA_CONFIG2_OFFSET  0x208
+#define EMA_CONFIG3_OFFSET  0x20C
+#define EMA_CONFIG4_OFFSET  0x210
+#define EMA_CONFIG5_OFFSET  0x214
+#define EMA_CONFIG6_OFFSET  0x218
+#define EMA_CONFIG7_OFFSET  0x21C
+#define EMA_CONFIG8_OFFSET  0x220
+#define EMA_CONFIG9_OFFSET  0x224
+#define EMA_CONFIG10_OFFSET  0x228
+#define EMA_CONFIG11_OFFSET  0x22C
+#define EMA_CONFIG12_OFFSET  0x230
+
+#define PWR_CFG_OFFSET		0x804
+#define EINT_MASK_OFFSET	0x808
+
+#define STOP_CFG_OFFSET		0x814
+#define SLEEP_CFG_OFFSET	0x818
+#define OSC_FREQ_OFFSET		0x820
+#define OSC_STABLE_OFFSET	0x824
+#define PWR_STABLE_OFFSET	0x828
+
+#define MTC_STABLE_OFFSET	0x830
+#define OTHERS_OFFSET		0x900
+#define RST_STAT_OFFSET		0x904
+#define WAKEUP_STAT_OFFSET	0x908
+
+#define INF_REG0_OFFSET		0xA00
+#define INF_REG1_OFFSET		0xA04
+#define INF_REG2_OFFSET		0xA08
+#define INF_REG3_OFFSET		0xA0C
+#define INF_REG4_OFFSET		0xA10
+#define INF_REG7_OFFSET		0xA1C
+/* System Clock register setting value */
+
+/* For Clock source 0 */
+
+#define APLL_SEL_ENABLE		(1 << 0)
+#define MPLL_SEL_ENABLE		(1 << 1)
+#define EPLL_SEL_ENABLE		(1 << 2)
+#define VSEL_E_ENABLE		(1 << 3)
+#define VSEL_M_ENABLE		(1 << 4)
+#define MMC0_SEL_MOUT_ENABLE	(0 << 18)
+#define MMC0_SEL_DOUT_ENABLE	(1 << 18)
+#define MMC0_SEL_FOUT_ENABLE	(2 << 18)
+#define MMC1_SEL_MOUT_ENABLE	(0 << 20)
+#define MMC1_SEL_DOUT_ENABLE	(1 << 20)
+#define MMC1_SEL_FOUT_ENABLE	(2 << 20)
+
+#define APLL_LOCK_REG		__REG(ELFIN_CLOCK_BASE+APLL_LOCK_OFFSET)
+#define MPLL_LOCK_REG		__REG(ELFIN_CLOCK_BASE+MPLL_LOCK_OFFSET)
+#define EPLL_LOCK_REG		__REG(ELFIN_CLOCK_BASE+EPLL_LOCK_OFFSET)
+#define APLL_CON_REG		__REG(ELFIN_CLOCK_BASE+APLL_CON_OFFSET)
+#define MPLL_CON_REG		__REG(ELFIN_CLOCK_BASE+MPLL_CON_OFFSET)
+#define EPLL_CON0_REG		__REG(ELFIN_CLOCK_BASE+EPLL_CON_OFFSET)
+#define EPLL_CON1_REG		__REG(ELFIN_CLOCK_BASE+EPLL_CON_K_OFFSET)
+#define CLK_SRC0_REG		__REG(ELFIN_CLOCK_BASE+CLK_SRC0_OFFSET)
+#define CLK_SRC1_REG		__REG(ELFIN_CLOCK_BASE+CLK_SRC1_OFFSET)
+#define CLK_DIV0_REG		__REG(ELFIN_CLOCK_BASE+CLK_DIV0_OFFSET)
+#define CLK_DIV1_REG		__REG(ELFIN_CLOCK_BASE+CLK_DIV1_OFFSET)
+#define CLK_DIV2_REG		__REG(ELFIN_CLOCK_BASE+CLK_DIV2_OFFSET)
+#define CLK_DIV3_REG		__REG(ELFIN_CLOCK_BASE+CLK_DIV3_OFFSET)
+#define CLK_OUT_REG		__REG(ELFIN_CLOCK_BASE+CLK_OUT_OFFSET)
+#define HCLK_0_GATE_REG		__REG(ELFIN_CLOCK_BASE+HCLK_0_GATE_OFFSET)
+#define PCLK_GATE_REG		__REG(ELFIN_CLOCK_BASE+PCLK_GATE_OFFSET)
+#define SCLK_0_GATE_REG		__REG(ELFIN_CLOCK_BASE+SCLK_0_GATE_OFFSET)
+#define MEM_0_GATE_REG		__REG(ELFIN_CLOCK_BASE+MEM_0_GATE_OFFSET)
+#define HCLK_1_GATE_REG		__REG(ELFIN_CLOCK_BASE+HCLK_1_GATE_OFFSET)
+#define SCLK_1_GATE_REG		__REG(ELFIN_CLOCK_BASE+SCLK_1_GATE_OFFSET)
+#define AHB_CON0_REG		__REG(ELFIN_CLOCK_BASE+AHB_CON0_OFFSET)
+#define SW_RST_REG		__REG(ELFIN_CLOCK_BASE+SW_RST_OFFSET)
+#define SYS_ID_REG		__REG(ELFIN_CLOCK_BASE+SYS_ID_OFFSET)
+#define MEM_CFG_STAT_REG	__REG(ELFIN_CLOCK_BASE+MEM_CFG_STAT_OFFSET)
+#define EMA_ACCESS_CON_REG  __REG(ELFIN_CLOCK_BASE+EMA_ACCESS_CON_OFFSET)
+#define EMA_CONFIG0_REG  __REG(ELFIN_CLOCK_BASE+EMA_CONFIG0_OFFSET)
+#define EMA_CONFIG1_REG  __REG(ELFIN_CLOCK_BASE+EMA_CONFIG1_OFFSET)
+#define EMA_CONFIG2_REG  __REG(ELFIN_CLOCK_BASE+EMA_CONFIG2_OFFSET)
+#define EMA_CONFIG3_REG  __REG(ELFIN_CLOCK_BASE+EMA_CONFIG3_OFFSET)
+#define EMA_CONFIG4_REG  __REG(ELFIN_CLOCK_BASE+EMA_CONFIG4_OFFSET)
+#define EMA_CONFIG5_REG  __REG(ELFIN_CLOCK_BASE+EMA_CONFIG5_OFFSET)
+#define EMA_CONFIG6_REG  __REG(ELFIN_CLOCK_BASE+EMA_CONFIG6_OFFSET)
+#define EMA_CONFIG7_REG  __REG(ELFIN_CLOCK_BASE+EMA_CONFIG7_OFFSET)
+#define EMA_CONFIG8_REG  __REG(ELFIN_CLOCK_BASE+EMA_CONFIG8_OFFSET)
+#define EMA_CONFIG9_REG  __REG(ELFIN_CLOCK_BASE+EMA_CONFIG9_OFFSET)
+#define EMA_CONFIG10_REG  __REG(ELFIN_CLOCK_BASE+EMA_CONFIG10_OFFSET)
+#define EMA_CONFIG11_REG  __REG(ELFIN_CLOCK_BASE+EMA_CONFIG11_OFFSET)
+#define EMA_CONFIG12_REG  __REG(ELFIN_CLOCK_BASE+EMA_CONFIG12_OFFSET)
+#define PWR_CFG_REG		__REG(ELFIN_POWER_BASE+PWR_CFG_OFFSET)
+#define EINT_MASK_REG		__REG(ELFIN_POWER_BASE+EINT_MASK_OFFSET)
+#define STOP_CFG_REG		__REG(ELFIN_POWER_BASE+STOP_CFG_OFFSET)
+#define SLEEP_CFG_REG		__REG(ELFIN_POWER_BASE+SLEEP_CFG_OFFSET)
+#define OSC_FREQ_REG		__REG(ELFIN_POWER_BASE+OSC_FREQ_OFFSET)
+#define OSC_STABLE_REG		__REG(ELFIN_POWER_BASE+OSC_STABLE_OFFSET)
+#define PWR_STABLE_REG		__REG(ELFIN_POWER_BASE+PWR_STABLE_OFFSET)
+#define OTHERS_REG		__REG(ELFIN_POWER_BASE+OTHERS_OFFSET)
+#define RST_STAT_REG		__REG(ELFIN_POWER_BASE+RST_STAT_OFFSET)
+#define WAKEUP_STAT_REG		__REG(ELFIN_POWER_BASE+WAKEUP_STAT_OFFSET)
+#define INF_REG0_REG		__REG(ELFIN_POWER_BASE+INF_REG0_OFFSET)
+#define INF_REG1_REG		__REG(ELFIN_POWER_BASE+INF_REG1_OFFSET)
+#define INF_REG2_REG		__REG(ELFIN_POWER_BASE+INF_REG2_OFFSET)
+#define INF_REG3_REG		__REG(ELFIN_POWER_BASE+INF_REG3_OFFSET)
+
+#define APLL_LOCK		(ELFIN_CLOCK_BASE+APLL_LOCK_OFFSET)
+#define MPLL_LOCK		(ELFIN_CLOCK_BASE+MPLL_LOCK_OFFSET)
+#define EPLL_LOCK		(ELFIN_CLOCK_BASE+EPLL_LOCK_OFFSET)
+#define APLL_CON		(ELFIN_CLOCK_BASE+APLL_CON_OFFSET)
+#define MPLL_CON		(ELFIN_CLOCK_BASE+MPLL_CON_OFFSET)
+#define EPLL_CON0		(ELFIN_CLOCK_BASE+EPLL_CON0_OFFSET)
+#define EPLL_CON1		(ELFIN_CLOCK_BASE+EPLL_CON1_OFFSET)
+#define CLK_SRC0		(ELFIN_CLOCK_BASE+CLK_SRC0_OFFSET)
+#define CLK_SRC1		(ELFIN_CLOCK_BASE+CLK_SRC1_OFFSET)
+#define CLK_DIV0		(ELFIN_CLOCK_BASE+CLK_DIV0_OFFSET)
+#define CLK_DIV1		(ELFIN_CLOCK_BASE+CLK_DIV1_OFFSET)
+#define CLK_DIV2		(ELFIN_CLOCK_BASE+CLK_DIV2_OFFSET)
+#define CLK_DIV3		(ELFIN_CLOCK_BASE+CLK_DIV3_OFFSET)
+#define CLK_OUT 		(ELFIN_CLOCK_BASE+CLK_OUT_OFFSET)
+#define HCLK_0_GATE		(ELFIN_CLOCK_BASE+HCLK_0_GATE_OFFSET)
+#define PCLK_GATE		(ELFIN_CLOCK_BASE+PCLK_GATE_OFFSET)
+#define SCLK_0_GATE		(ELFIN_CLOCK_BASE+SCLK_0_GATE_OFFSET)
+#define MEM_0_GATE		(ELFIN_CLOCK_BASE+MEM_0_GATE_OFFSET)
+#define HCLK_1_GATE		(ELFIN_CLOCK_BASE+HCLK_1_GATE_OFFSET)
+#define SCLK_1_GATE		(ELFIN_CLOCK_BASE+SCLK_1_GATE_OFFSET)
+#define AHB_CON0		(ELFIN_CLOCK_BASE+AHB_CON0_OFFSET)
+#define SW_RST  		(ELFIN_CLOCK_BASE+SW_RST_OFFSET)
+#define SYS_ID		        (ELFIN_CLOCK_BASE+SYS_ID_OFFSET)
+#define MEM_CFG_STAT	        (ELFIN_CLOCK_BASE+MEM_CFG_STAT_OFFSET)
+#define EMA_ACCESS_CON          (ELFIN_CLOCK_BASE+EMA_ACCESS_CON_OFFSET)
+#define EMA_CONFIG0             (ELFIN_CLOCK_BASE+EMA_CONFIG0_OFFSET)
+#define EMA_CONFIG1             (ELFIN_CLOCK_BASE+EMA_CONFIG1_OFFSET)
+#define EMA_CONFIG2             (ELFIN_CLOCK_BASE+EMA_CONFIG2_OFFSET)
+#define EMA_CONFIG3             (ELFIN_CLOCK_BASE+EMA_CONFIG3_OFFSET)
+#define EMA_CONFIG4             (ELFIN_CLOCK_BASE+EMA_CONFIG4_OFFSET)
+#define EMA_CONFIG5             (ELFIN_CLOCK_BASE+EMA_CONFIG5_OFFSET)
+#define EMA_CONFIG6             (ELFIN_CLOCK_BASE+EMA_CONFIG6_OFFSET)
+#define EMA_CONFIG7             (ELFIN_CLOCK_BASE+EMA_CONFIG7_OFFSET)
+#define EMA_CONFIG8             (ELFIN_CLOCK_BASE+EMA_CONFIG8_OFFSET)
+#define EMA_CONFIG9             (ELFIN_CLOCK_BASE+EMA_CONFIG9_OFFSET)
+#define EMA_CONFIG10            (ELFIN_CLOCK_BASE+EMA_CONFIG10_OFFSET)
+#define EMA_CONFIG11            (ELFIN_CLOCK_BASE+EMA_CONFIG11_OFFSET)
+#define EMA_CONFIG12            (ELFIN_CLOCK_BASE+EMA_CONFIG12_OFFSET)
+#define PWR_CFG 		(ELFIN_POWER_BASE+PWR_CFG_OFFSET)
+#define EINT_MASK		(ELFIN_POWER_BASE+EINT_MASK_OFFSET)
+#define STOP_CFG		(ELFIN_POWER_BASE+STOP_CFG_OFFSET)
+#define SLEEP_CFG		(ELFIN_POWER_BASE+SLEEP_CFG_OFFSET)
+#define OSC_FREQ		(ELFIN_POWER_BASE+OSC_FREQ_OFFSET)
+#define OSC_STABLE		(ELFIN_POWER_BASE+OSC_STABLE_OFFSET)
+#define PWR_STABLE		(ELFIN_POWER_BASE+PWR_STABLE_OFFSET)
+#define OTHERS		        (ELFIN_POWER_BASE+OTHERS_OFFSET)
+#define RST_STAT		(ELFIN_POWER_BASE+RST_STAT_OFFSET)
+#define WAKEUP_STAT		(ELFIN_POWER_BASE+WAKEUP_STAT_OFFSET)
+#define INF_REG0		(ELFIN_POWER_BASE+INF_REG0_OFFSET)
+#define INF_REG1		(ELFIN_POWER_BASE+INF_REG1_OFFSET)
+#define INF_REG2		(ELFIN_POWER_BASE+INF_REG2_OFFSET)
+#define INF_REG3		(ELFIN_POWER_BASE+INF_REG3_OFFSET)
+
+
+/*
+ * Watchdog timer
+ */
+#define ELFIN_WATCHDOG_BASE     S5P6450_WATCHDOG_BASE
+
+#define WTCON_OFFSET            0x0000
+#define WTDAT_OFFSET            0x0004
+#define WTCNT_OFFSET            0x0008
+#define WTCLRINT_OFFSET         0x000C
+
+/*
+ *PMIC
+ */
+#define PSHOLD_CON_OFFSET       0x0934
+
+/*
+ * SROM Controller
+ */
+#define ELFIN_SROMC_BASE        S5P6450_SROMC_BASE
+
+#define SROM_BW_OFFSET          0x0000
+#define SROM_BC0_OFFSET         0x0004
+
+/*
+ * GPIO
+ */
+#define ELFIN_GPIO_BASE         S5P6450_GPIO_BASE
+
+#define GPACON_OFFSET		0x00
+#define GPADAT_OFFSET		0x04
+#define GPAPUD_OFFSET		0x08
+#define GPACONSLP_OFFSET	0x0C
+#define GPAPUDSLP_OFFSET	0x10
+
+#define GPBCON_OFFSET		0x20
+#define GPBDAT_OFFSET		0x04
+#define GPBPUD_OFFSET		0x08
+#define GPBCONSLP_OFFSET	0x0C
+#define GPBPUDSLP_OFFSET	0x30
+
+#define GPCCON_OFFSET		0x40
+#define GPCDAT_OFFSET		0x44
+#define GPCPUD_OFFSET		0x48
+#define GPCCONSLP_OFFSET	0x4C
+#define GPCPUDSLP_OFFSET	0x50
+
+#define GPFCON_OFFSET		0xA0
+#define GPFDAT_OFFSET		0xA4
+#define GPFPUD_OFFSET		0xA8
+#define GPFCONSLP_OFFSET	0xAC
+#define GPFPUDSLP_OFFSET	0xB0
+
+#define GPGCON0_OFFSET		0xC0
+#define GPGCON1_OFFSET		0xC4
+#define GPGPUD_OFFSET		0xC8
+#define GPGCONSLP_OFFSET	0xCC
+#define GPGPUDSLP_OFFSET	0xD0
+
+#define GPHCON0_OFFSET		0xE0
+#define GPHCON1_OFFSET		0xE4
+#define GPHDAT_OFFSET		0xE8
+#define GPHPUD_OFFSET		0xEC
+#define GPHCONSLP_OFFSET	0xF0
+#define GPHPUDSLP_OFFSET	0xF4
+
+#define GPICON_OFFSET		0x100
+#define GPIDAT_OFFSET		0x104
+#define GPIPUD_OFFSET		0x108
+#define GPICONSLP_OFFSET	0x10C
+#define GPIPUDSLP_OFFSET	0x110
+
+#define GPJCON_OFFSET		0x120
+#define GPJDAT_OFFSET		0x124
+#define GPJPUD_OFFSET		0x128
+#define GPJCONSLP_OFFSET	0x12C
+#define GPJPUDSLP_OFFSET	0x130
+
+#define SPCON_OFFSET		0x1A0
+#define MEM0DRVCON_OFFSET	0x1D0
+#define MEM1DRVCON_OFFSET	0x1D4
+
+#define GPNCON_OFFSET		0x830
+#define GPNDAT_OFFSET		0x834
+#define GPNPUD_OFFSET		0x838
+
+#define GPPCON_OFFSET		0x160
+#define GPPDAT_OFFSET		0x164
+#define GPPPUD_OFFSET		0x168
+#define GPPCONSLP_OFFSET	0x16C
+#define GPPPUDSLP_OFFSET	0x170
+#define GPPCON_GPS_OFFSET	0x174
+
+#define GPRCON0_OFFSET		0x290
+#define GPRCON1_OFFSET		0x294
+#define GPRDAT_OFFSET		0x298
+#define GPRPUD_OFFSET		0x29C
+#define GPRCONSLP_OFFSET	0x2A0
+#define GPRPUDSLP_OFFSET	0x2A4
+
+#define EINTPEND_OFFSET		0x924
+
+#define GPACON_REG		__REG(ELFIN_GPIO_BASE+GPACON_OFFSET)
+#define GPADAT_REG		__REG(ELFIN_GPIO_BASE+GPADAT_OFFSET)
+#define GPAPUD_REG		__REG(ELFIN_GPIO_BASE+GPAPUD_OFFSET)
+#define GPACONSLP_REG		__REG(ELFIN_GPIO_BASE+GPACONSLP_OFFSET)
+#define GPAPUDSLP_REG		__REG(ELFIN_GPIO_BASE+GPAPUDSLP_OFFSET)
+
+#define GPBCON_REG		__REG(ELFIN_GPIO_BASE+GPBCON_OFFSET)
+#define GPBDAT_REG		__REG(ELFIN_GPIO_BASE+GPBDAT_OFFSET)
+#define GPBPUD_REG		__REG(ELFIN_GPIO_BASE+GPBPUD_OFFSET)
+#define GPBCONSLP_REG		__REG(ELFIN_GPIO_BASE+GPBCONSLP_OFFSET)
+#define GPBPUDSLP_REG		__REG(ELFIN_GPIO_BASE+GPBPUDSLP_OFFSET)
+
+#define GPCCON_REG		__REG(ELFIN_GPIO_BASE+GPCCON_OFFSET)
+#define GPCDAT_REG		__REG(ELFIN_GPIO_BASE+GPCDAT_OFFSET)
+#define GPCPUD_REG		__REG(ELFIN_GPIO_BASE+GPCPUD_OFFSET)
+#define GPCCONSLP_REG		__REG(ELFIN_GPIO_BASE+GPCCONSLP_OFFSET)
+#define GPCPUDSLP_REG		__REG(ELFIN_GPIO_BASE+GPCPUDSLP_OFFSET)
+
+#define GPFCON_REG		__REG(ELFIN_GPIO_BASE+GPFCON_OFFSET)
+#define GPFDAT_REG		__REG(ELFIN_GPIO_BASE+GPFDAT_OFFSET)
+#define GPFPUD_REG		__REG(ELFIN_GPIO_BASE+GPFPUD_OFFSET)
+#define GPFCONSLP_REG		__REG(ELFIN_GPIO_BASE+GPFCONSLP_OFFSET)
+#define GPFPUDSLP_REG		__REG(ELFIN_GPIO_BASE+GPFPUDSLP_OFFSET)
+
+#define GPGCON0_REG		__REG(ELFIN_GPIO_BASE+GPGCON0_OFFSET)
+#define GPGCON1_REG		__REG(ELFIN_GPIO_BASE+GPGCON1_OFFSET)
+#define GPGPUD_REG		__REG(ELFIN_GPIO_BASE+GPGPUD_OFFSET)
+
+#define GPHCON0_REG		__REG(ELFIN_GPIO_BASE+GPHCON0_OFFSET)
+#define GPHCON1_REG		__REG(ELFIN_GPIO_BASE+GPHCON1_OFFSET)
+#define GPHDAT_REG		__REG(ELFIN_GPIO_BASE+GPHDAT_OFFSET)
+#define GPHPUD_REG		__REG(ELFIN_GPIO_BASE+GPHPUD_OFFSET)
+#define GPHCONSLP_REG		__REG(ELFIN_GPIO_BASE+GPHCONSLP_OFFSET)
+#define GPHPUDSLP_REG		__REG(ELFIN_GPIO_BASE+GPHPUDSLP_OFFSET)
+
+#define GPICON_REG		__REG(ELFIN_GPIO_BASE+GPICON_OFFSET)
+#define GPIDAT_REG		__REG(ELFIN_GPIO_BASE+GPIDAT_OFFSET)
+#define GPIPUD_REG		__REG(ELFIN_GPIO_BASE+GPIPUD_OFFSET)
+#define GPICONSLP_REG		__REG(ELFIN_GPIO_BASE+GPICONSLP_OFFSET)
+#define GPIPUDSLP_REG		__REG(ELFIN_GPIO_BASE+GPIPUDSLP_OFFSET)
+
+#define GPJCON_REG		__REG(ELFIN_GPIO_BASE+GPJCON_OFFSET)
+#define GPJDAT_REG		__REG(ELFIN_GPIO_BASE+GPJDAT_OFFSET)
+#define GPJPUD_REG		__REG(ELFIN_GPIO_BASE+GPJPUD_OFFSET)
+#define GPJCONSLP_REG		__REG(ELFIN_GPIO_BASE+GPJCONSLP_OFFSET)
+#define GPJPUDSLP_REG		__REG(ELFIN_GPIO_BASE+GPJPUDSLP_OFFSET)
+
+#define GPNCON_REG		__REG(ELFIN_GPIO_BASE+GPNCON_OFFSET)
+#define GPNDAT_REG		__REG(ELFIN_GPIO_BASE+GPNDAT_OFFSET)
+#define GPNPUD_REG		__REG(ELFIN_GPIO_BASE+GPNPUD_OFFSET)
+
+#define GPPCON_REG		__REG(ELFIN_GPIO_BASE+GPPCON_OFFSET)
+#define GPPDAT_REG		__REG(ELFIN_GPIO_BASE+GPPDAT_OFFSET)
+#define GPPPUD_REG		__REG(ELFIN_GPIO_BASE+GPPPUD_OFFSET)
+#define GPPCONSLP_REG		__REG(ELFIN_GPIO_BASE+GPPCONSLP_OFFSET)
+#define GPPPUDSLP_REG		__REG(ELFIN_GPIO_BASE+GPPPUDSLP_OFFSET)
+#define GPPCON_GPS_REG		__REG(ELFIN_GPIO_BASE+GPPCON_GPS_OFFSET)
+
+#define GPRCON0_REG		__REG(ELFIN_GPIO_BASE+GPRCON0_OFFSET)
+#define GPRCON1_REG		__REG(ELFIN_GPIO_BASE+GPRCON1_OFFSET)
+#define GPRDAT_REG		__REG(ELFIN_GPIO_BASE+GPRDAT_OFFSET)
+#define GPRPUD_REG		__REG(ELFIN_GPIO_BASE+GPRPUD_OFFSET)
+#define GPRCONSLP_REG		__REG(ELFIN_GPIO_BASE+GPRCONSLP_OFFSET)
+#define GPRPUDSLP_REG		__REG(ELFIN_GPIO_BASE+GPRPUDSLP_OFFSET)
+
+#define GPACON		(ELFIN_GPIO_BASE+GPACON_OFFSET)
+#define GPADAT		(ELFIN_GPIO_BASE+GPADAT_OFFSET)
+#define GPAPUD		(ELFIN_GPIO_BASE+GPAPUD_OFFSET)
+#define GPACONSLP	(ELFIN_GPIO_BASE+GPACONSLP_OFFSET)
+#define GPAPUDSLP	(ELFIN_GPIO_BASE+GPAPUDSLP_OFFSET)
+
+#define GPBCON		(ELFIN_GPIO_BASE+GPBCON_OFFSET)
+#define GPBDAT		(ELFIN_GPIO_BASE+GPBDAT_OFFSET)
+#define GPBPUD		(ELFIN_GPIO_BASE+GPBPUD_OFFSET)
+#define GPBCONSLP	(ELFIN_GPIO_BASE+GPBCONSLP_OFFSET)
+#define GPBPUDSLP	(ELFIN_GPIO_BASE+GPBPUDSLP_OFFSET)
+
+#define GPCCON		(ELFIN_GPIO_BASE+GPCCON_OFFSET)
+#define GPCDAT		(ELFIN_GPIO_BASE+GPCDAT_OFFSET)
+#define GPCPUD		(ELFIN_GPIO_BASE+GPCPUD_OFFSET)
+#define GPCCONSLP	(ELFIN_GPIO_BASE+GPCCONSLP_OFFSET)
+#define GPCPUDSLP	(ELFIN_GPIO_BASE+GPCPUDSLP_OFFSET)
+
+#define GPFCON		(ELFIN_GPIO_BASE+GPFCON_OFFSET)
+#define GPFDAT		(ELFIN_GPIO_BASE+GPFDAT_OFFSET)
+#define GPFPUD		(ELFIN_GPIO_BASE+GPFPUD_OFFSET)
+#define GPFCONSLP	(ELFIN_GPIO_BASE+GPFCONSLP_OFFSET)
+#define GPFPUDSLP	(ELFIN_GPIO_BASE+GPFPUDSLP_OFFSET)
+
+#define GPGCON0		(ELFIN_GPIO_BASE+GPGCON0_OFFSET)
+#define GPGCON1		(ELFIN_GPIO_BASE+GPGCON1_OFFSET)
+#define GPGPUD		(ELFIN_GPIO_BASE+GPGPUD_OFFSET)
+#define GPGCONSLP	(ELFIN_GPIO_BASE+GPGCONSLP_OFFSET)
+#define GPGPUDSLP	(ELFIN_GPIO_BASE+GPGPUDSLP_OFFSET)
+
+#define GPHCON0		(ELFIN_GPIO_BASE+GPHCON0_OFFSET)
+#define GPHCON1		(ELFIN_GPIO_BASE+GPHCON1_OFFSET)
+#define GPHDAT		(ELFIN_GPIO_BASE+GPHDAT_OFFSET)
+#define GPHPUD		(ELFIN_GPIO_BASE+GPHPUD_OFFSET)
+#define GPHCONSLP	(ELFIN_GPIO_BASE+GPHCONSLP_OFFSET)
+#define GPHPUDSLP	(ELFIN_GPIO_BASE+GPHPUDSLP_OFFSET)
+
+#define GPICON		(ELFIN_GPIO_BASE+GPICON_OFFSET)
+#define GPIDAT		(ELFIN_GPIO_BASE+GPIDAT_OFFSET)
+#define GPIPUD		(ELFIN_GPIO_BASE+GPIPUD_OFFSET)
+#define GPICONSLP	(ELFIN_GPIO_BASE+GPICONSLP_OFFSET)
+#define GPIPUDSLP	(ELFIN_GPIO_BASE+GPIPUDSLP_OFFSET)
+
+#define GPJCON		(ELFIN_GPIO_BASE+GPJCON_OFFSET)
+#define GPJDAT		(ELFIN_GPIO_BASE+GPJDAT_OFFSET)
+#define GPJPUD		(ELFIN_GPIO_BASE+GPJPUD_OFFSET)
+#define GPJCONSLP	(ELFIN_GPIO_BASE+GPJCONSLP_OFFSET)
+#define GPJPUDSLP	(ELFIN_GPIO_BASE+GPJPUDSLP_OFFSET)
+
+#define GPNCON		(ELFIN_GPIO_BASE+GPNCON_OFFSET)
+#define GPNDAT		(ELFIN_GPIO_BASE+GPNDAT_OFFSET)
+#define GPNPUD		(ELFIN_GPIO_BASE+GPNPUD_OFFSET)
+
+#define GPPCON		(ELFIN_GPIO_BASE+GPPCON_OFFSET)
+#define GPPDAT		(ELFIN_GPIO_BASE+GPPDAT_OFFSET)
+#define GPPPUD		(ELFIN_GPIO_BASE+GPPPUD_OFFSET)
+#define GPPCONSLP	(ELFIN_GPIO_BASE+GPPCONSLP_OFFSET)
+#define GPPPUDSLP	(ELFIN_GPIO_BASE+GPPPUDSLP_OFFSET)
+#define GPPCON_GPS		(ELFIN_GPIO_BASE+GPPCON_GPS_OFFSET)
+
+#define GPRCON0		(ELFIN_GPIO_BASE+GPRCON0_OFFSET)
+#define GPRCON1		(ELFIN_GPIO_BASE+GPRCON1_OFFSET)
+#define GPRDAT		(ELFIN_GPIO_BASE+GPRDAT_OFFSET)
+#define GPRPUD		(ELFIN_GPIO_BASE+GPRPUD_OFFSET)
+#define GPRCONSLP	(ELFIN_GPIO_BASE+GPRCONSLP_OFFSET)
+#define GPRPUDSLP	(ELFIN_GPIO_BASE+GPRPUDSLP_OFFSET)
+
+/*
+ * UART
+ */
+#define ELFIN_UART_BASE		0xEC800000
+
+#define ELFIN_UART0_OFFSET	0x0000
+#define ELFIN_UART1_OFFSET	0x0400
+#define ELFIN_UART2_OFFSET	0x0800
+#define ELFIN_UART3_OFFSET	0x0c00
+
+#ifdef CONFIG_SERIAL1
+#define ELFIN_UART_CONSOLE_BASE (ELFIN_UART_BASE + ELFIN_UART0_OFFSET)
+#elif defined(CONFIG_SERIAL2)
+#define ELFIN_UART_CONSOLE_BASE (ELFIN_UART_BASE + ELFIN_UART1_OFFSET)
+#elif defined(CONFIG_SERIAL3)
+#define ELFIN_UART_CONSOLE_BASE (ELFIN_UART_BASE + ELFIN_UART2_OFFSET)
+#elif defined(CONFIG_SERIAL4)
+#define ELFIN_UART_CONSOLE_BASE (ELFIN_UART_BASE + ELFIN_UART3_OFFSET)
+#else
+#define ELFIN_UART_CONSOLE_BASE (ELFIN_UART_BASE + ELFIN_UART0_OFFSET)
+#endif
+
+#define ULCON_OFFSET		0x00
+#define UCON_OFFSET		0x04
+#define UFCON_OFFSET		0x08
+#define UMCON_OFFSET		0x0C
+#define UTRSTAT_OFFSET		0x10
+#define UERSTAT_OFFSET		0x14
+#define UFSTAT_OFFSET		0x18
+#define UMSTAT_OFFSET		0x1C
+#define UTXH_OFFSET		0x20
+#define URXH_OFFSET		0x24
+#define UBRDIV_OFFSET		0x28
+#define UDIVSLOT_OFFSET		0x2C
+#define UINTP_OFFSET		0x30
+#define UINTSP_OFFSET		0x34
+#define UINTM_OFFSET		0x38
+
+#define ULCON0_REG		__REG(0xEC005000)
+#define UCON0_REG		__REG(0xEC005004)
+#define UFCON0_REG		__REG(0xEC005008)
+#define UMCON0_REG		__REG(0xEC00500C)
+#define UTRSTAT0_REG		__REG(0xEC005010)
+#define UERSTAT0_REG		__REG(0xEC005014)
+#define UFSTAT0_REG		__REG(0xEC005018)
+#define UMSTAT0_REG		__REG(0xEC00501c)
+#define UTXH0_REG		__REG(0xEC005020)
+#define URXH0_REG		__REG(0xEC005024)
+#define UBRDIV0_REG		__REG(0xEC005028)
+#define UDIVSLOT0_REG		__REG(0xEC00502c)
+#define UINTP0_REG		__REG(0xEC005030)
+#define UINTSP0_REG		__REG(0xEC005034)
+#define UINTM0_REG		__REG(0xEC005038)
+
+#define ULCON1_REG		__REG(0xEC005400)
+#define UCON1_REG		__REG(0xEC005404)
+#define UFCON1_REG		__REG(0xEC005408)
+#define UMCON1_REG		__REG(0xEC00540C)
+#define UTRSTAT1_REG		__REG(0xEC005410)
+#define UERSTAT1_REG		__REG(0xEC005414)
+#define UFSTAT1_REG		__REG(0xEC005418)
+#define UMSTAT1_REG		__REG(0xEC00541c)
+#define UTXH1_REG		__REG(0xEC005420)
+#define URXH1_REG		__REG(0xEC005424)
+#define UBRDIV1_REG		__REG(0xEC005428)
+#define UDIVSLOT1_REG		__REG(0xEC00542c)
+#define UINTP1_REG		__REG(0xEC005430)
+#define UINTSP1_REG		__REG(0xEC005434)
+#define UINTM1_REG		__REG(0xEC005438)
+
+#define UTRSTAT_TX_EMPTY	BIT2
+#define UTRSTAT_RX_READY	BIT0
+#define UART_ERR_MASK		0xF
+
+/*
+ * PWM timer
+ */
+#define ELFIN_TIMER_BASE	S5P6450_TIMER_BASE
+
+#define TCFG0_REG		__REG(0xEA000000)
+#define TCFG1_REG		__REG(0xEA000004)
+#define TCON_REG			__REG(0xEA000008)
+#define TCNTB0_REG		__REG(0xEA00000c)
+#define TCMPB0_REG		__REG(0xEA000010)
+#define TCNTO0_REG		__REG(0xEA000014)
+#define TCNTB1_REG		__REG(0xEA000018)
+#define TCMPB1_REG		__REG(0xEA00001c)
+#define TCNTO1_REG		__REG(0xEA000020)
+#define TCNTB2_REG		__REG(0xEA000024)
+#define TCMPB2_REG		__REG(0xEA000028)
+#define TCNTO2_REG		__REG(0xEA00002c)
+#define TCNTB3_REG		__REG(0xEA000030)
+#define TCMPB3_REG		__REG(0xEA000034)
+#define TCNTO3_REG		__REG(0xEA000038)
+#define TCNTB4_REG		__REG(0xEA00003c)
+#define TCNTO4_REG		__REG(0xEA000040)
+
+/* Fields */
+#define fTCFG0_DZONE		Fld(8,16)       /* the dead zone length (= timer 0) */
+#define fTCFG0_PRE1		Fld(8,8)        /* prescaler value for time 2,3,4 */
+#define fTCFG0_PRE0		Fld(8,0)        /* prescaler value for time 0,1 */
+#define fTCFG1_MUX4		Fld(4,16)
+/* bits */
+#define TCFG0_DZONE(x)		FInsrt((x), fTCFG0_DZONE)
+#define TCFG0_PRE1(x)		FInsrt((x), fTCFG0_PRE1)
+#define TCFG0_PRE0(x)		FInsrt((x), fTCFG0_PRE0)
+#define TCON_4_AUTO		(1 << 22)       /* auto reload on/off for Timer 4 */
+#define TCON_4_UPDATE		(1 << 21)       /* manual Update TCNTB4 */
+#define TCON_4_ONOFF		(1 << 20)       /* 0: Stop, 1: start Timer 4 */
+#define COUNT_4_ON		(TCON_4_ONOFF*1)
+#define COUNT_4_OFF		(TCON_4_ONOFF*0)
+#define TCON_3_AUTO		(1 << 19)       /* auto reload on/off for Timer 3 */
+#define TIMER3_ATLOAD_ON	(TCON_3_AUTO*1)
+#define TIMER3_ATLAOD_OFF	FClrBit(TCON, TCON_3_AUTO)
+#define TCON_3_INVERT		(1 << 18)       /* 1: Inverter on for TOUT3 */
+#define TIMER3_IVT_ON		(TCON_3_INVERT*1)
+#define TIMER3_IVT_OFF		(FClrBit(TCON, TCON_3_INVERT))
+#define TCON_3_MAN		(1 << 17)       /* manual Update TCNTB3,TCMPB3 */
+#define TIMER3_MANUP		(TCON_3_MAN*1)
+#define TIMER3_NOP		(FClrBit(TCON, TCON_3_MAN))
+#define TCON_3_ONOFF		(1 << 16)       /* 0: Stop, 1: start Timer 3 */
+#define TIMER3_ON		(TCON_3_ONOFF*1)
+#define TIMER3_OFF		(FClrBit(TCON, TCON_3_ONOFF))
+/* macros */
+#define GET_PRESCALE_TIMER4(x)	FExtr((x), fTCFG0_PRE1)
+#define GET_DIVIDER_TIMER4(x)	FExtr((x), fTCFG1_MUX4)
+
+/*
+ * HS MMC Interface
+ */
+#define ELFIN_HSMMC_BASE		0xEB000000
+
+#define HM_SYSAD			(0x00)
+#define HM_BLKSIZE			(0x04)
+#define HM_BLKCNT			(0x06)
+#define HM_ARGUMENT			(0x08)
+#define HM_TRNMOD			(0x0c)
+#define HM_CMDREG			(0x0e)
+#define HM_RSPREG0			(0x10)
+#define HM_RSPREG1			(0x14)
+#define HM_RSPREG2			(0x18)
+#define HM_RSPREG3			(0x1c)
+#define HM_BDATA			(0x20)
+#define HM_PRNSTS			(0x24)
+#define HM_HOSTCTL			(0x28)
+#define HM_PWRCON			(0x29)
+#define HM_BLKGAP			(0x2a)
+#define HM_WAKCON			(0x2b)
+#define HM_CLKCON			(0x2c)
+#define HM_TIMEOUTCON			(0x2e)
+#define HM_SWRST			(0x2f)
+#define HM_NORINTSTS			(0x30)
+#define HM_ERRINTSTS			(0x32)
+#define HM_NORINTSTSEN			(0x34)
+#define HM_ERRINTSTSEN			(0x36)
+#define HM_NORINTSIGEN			(0x38)
+#define HM_ERRINTSIGEN			(0x3a)
+#define HM_ACMD12ERRSTS			(0x3c)
+#define HM_CAPAREG			(0x40)
+#define HM_MAXCURR			(0x48)
+#define HM_CONTROL2			(0x80)
+#define HM_CONTROL3			(0x84)
+#define HM_CONTROL4			(0x8c)
+#define HM_HCVER			(0xfe)
+
+/*
+ * Mobile Storage Host Interface
+ */
+#define ELFIN_MSH_BASE		0xED500000
+
+#define MSH_CTRL		0x0000	/* SControl register for eMMC4.4 host controller. */
+#define MSH_PWREN		0x0004	/* SSpecifies the power enable register. */
+#define MSH_CLKDIV		0x0008	/* SSpecifies the clock divider register. */
+#define MSH_CLKSRC		0x000C	/* SSpecifies the SD clock source register. */
+#define MSH_CLKENA		0x0010	/* SSpecifies the clock enable register. */
+#define MSH_TMOUT		0x0014	/* SSpecifies the timeout register. */
+#define MSH_CTYPE		0x0018	/* SSpecifies the card type register. */
+#define MSH_BLKSIZ		0x001C	/* SSpecifies the block size register. */
+#define MSH_BYTCNT		0x0020	/* SSpecifies the byte count register. */
+#define MSH_INTMASK		0x0024	/* SSpecifies the interrupt mask register. */
+#define MSH_CMDARG		0x0028	/* SSpecifies the command argument register. */
+#define MSH_CMD			0x002C	/* SSpecifies the command register. */
+#define MSH_RESP0		0x0030	/* SSpecifies the response register 0. */
+#define MSH_RESP1		0x0034	/* SSpecifies the response register 1. */
+#define MSH_RESP2		0x0038	/* SSpecifies the response register 2. */
+#define MSH_RESP3		0x003C	/* SSpecifies the response register 3. */
+#define MSH_MINTSTS		0x0040	/* SSpecifies the masked interrupt status register. */
+#define MSH_RINTSTS		0x0044	/* SSpecifies the raw interrupt status register. */
+#define MSH_STATUS		0x0048	/* SSpecifies the status register. */
+#define MSH_FIFOTH		0x004C	/* SSpecifies the FIFO threshold watermark register. */
+#define MSH_CDETECT		0x0050	/* SSpecifies the card detect register. */
+#define MSH_WRTPRT		0x0054	/* SSpecifies the write protect register. */
+#define MSH_TCBCNT		0x005C	/* SSpecifies the transferred CIU card byte count register. */
+#define MSH_TBBCNT		0x0060	/* SSpecifies the transferred host to BIU-FIFO byte count register. */
+#define MSH_DEBNCE		0x0064	/* SSpecifies the debounce count register. */
+#define MSH_USRID		0x0068	/* SSpecifies the user ID register. */
+#define MSH_VERID		0x006C	/* SSpecifies the version ID register. */
+#define MSH_UHS_REG		0x0074	/* SSpecifies the UHS-1 register. */
+#define MSH_BMOD		0x0080	/* SSpecifies the bus mode register. */
+#define MSH_PLDDMND		0x0084	/* SSpecifies the poll demand register. */
+#define MSH_DBADDR		0x0088	/* SSpecifies the descriptor list base address register. */
+#define MSH_IDSTS		0x008C	/* SSpecifies the internal DMAC status register. */
+#define MSH_IDINTEN		0x0090	/* SSpecifies the internal DMAC interrupt enable register. */
+#define MSH_DSCADDR		0x0094	/* SSpecifies the current host descriptor address register. */
+#define MSH_BUFADDR		0x0098	/* SSpecifies the current buffer descriptor address register. */
+#define MSH_WAKEUPCON		0x00A0	/* SSpecifies the wake-up control register. */
+#define MSH_CLOCKCON		0x00A4	/* SSpecifies the clock control register. */
+#define MSH_DATA		0x0100	/* SFIFO data register. */
+
+#define ELFIN_HSMMC_0_BASE	0xED800000
+#define ELFIN_HSMMC_1_BASE	0xED900000
+#define ELFIN_HSMMC_2_BASE	0xEDA00000
+#define ELFIN_HSMMC_3_BASE	0xED500000
+
+/*
+ * Memory controller
+ */
+#define ELFIN_SROM_BASE		0xE7000000
+
+#define SROM_BW_REG		__REG(ELFIN_SROM_BASE+0x0)
+#define SROM_BC0_REG		__REG(ELFIN_SROM_BASE+0x4)
+#define SROM_BC1_REG		__REG(ELFIN_SROM_BASE+0x8)
+#define SROM_BC2_REG		__REG(ELFIN_SROM_BASE+0xC)
+#define SROM_BC3_REG		__REG(ELFIN_SROM_BASE+0x10)
+#define SROM_BC4_REG		__REG(ELFIN_SROM_BASE+0x14)
+#define SROM_BC5_REG		__REG(ELFIN_SROM_BASE+0x18)
+
+/*
+ * SDRAM Controller
+ */
+#define ELFIN_DMC0_BASE		0xE6000000
+
+#define CONCONTROL_OFFSET 	0x00
+#define MEMCONTROL_OFFSET 	0x04
+#define MEMCONFIG0_OFFSET 	0x08
+#define MEMCONFIG1_OFFSET 	0x0C
+#define DIRECTCMD_OFFSET 	0x10
+#define PRECHCONFIG_OFFSET 	0x14
+#define PHYCONTROL0_OFFSET 	0x18
+#define PHYCONTROL1_OFFSET 	0x1C
+#define PHYCONTROL2_OFFSET 	0x20
+#define PWRDNCONFIG_OFFSET 	0x28
+#define TIMINGAREF_OFFSET 	0x30
+#define TIMINGROW_OFFSET 	0x34
+#define TIMINGDATA_OFFSET 	0x38
+#define TIMINGPOWER_OFFSET 	0x3C
+#define PHYSTATUS_OFFSET 	0x40
+#define CHIP0STATUS_OFFSET 	0x48
+#define CHIP1STATUS_OFFSET 	0x4C
+#define AREFSTATUS_OFFSET 	0x50
+#define MRSTATUS_OFFSET 	0x54
+#define PHYTEST0_OFFSET 	0x58
+#define PHYTEST1_OFFSET 	0x5C
+#define QOSCONTROL0_OFFSET 	0x60
+#define QOSCONFIG0_OFFSET 	0x64
+#define QOSCONTROL1_OFFSET 	0x68
+#define QOSCONFIG1_OFFSET 	0x6C
+#define QOSCONTROL2_OFFSET 	0x70
+#define QOSCONFIG2_OFFSET 	0x74
+#define QOSCONTROL3_OFFSET 	0x78
+#define QOSCONFIG3_OFFSET 	0x7C
+#define QOSCONTROL4_OFFSET 	0x80
+#define QOSCONFIG4_OFFSET 	0x84
+#define QOSCONTROL5_OFFSET 	0x88
+
+#define ELFIN_TZPC0_BASE	0xF0100000
+#define ELFIN_TZPC1_BASE	0xF2500000
+
+/* Access Controller (TZPC) */
+#define TZPC_DECPROT0SET_OFFSET         0x804
+#define TZPC_DECPROT1SET_OFFSET         0x810
+#define TZPC_DECPROT2SET_OFFSET         0x81C
+#define TZPC_DECPROT3SET_OFFSET         0x828
+
+/*
+ * USB2.0 HS OTG (Chapter 26)
+ */
+#define USBOTG_LINK_BASE		(0xED100000)
+#define USBOTG_PHY_BASE			(0xED200000)
+
+#define S5P_OTG_PHYPWR	 		(USBOTG_PHY_BASE + 0x000) /* R/W OTG PHY Power Control Register */
+#define S5P_OTG_PHYCLK 			(USBOTG_PHY_BASE + 0x004) /* R/W OTG PHY Clock Control Register */
+#define S5P_OTG_RSTCON 			(USBOTG_PHY_BASE + 0x008) /* R/W OTG Reset Control Register */
+#define S5P_OTG_PHYTUNE0 		(USBOTG_PHY_BASE + 0x020) /* R/W OTG PHY0 Tuning Register */
+#define S5P_OTG_PHYTUNE1 		(USBOTG_PHY_BASE + 0x024) /* R/W OTG PHY1 Tuning Register */
+
+/* Core Global Register */
+#define S5P_OTG_GOTGCTL 		(USBOTG_LINK_BASE + 0x000) /* R/W OTG Control and Status Register */
+#define S5P_OTG_GOTGINT 		(USBOTG_LINK_BASE + 0x004) /* R/W OTG Interrupt Register */
+#define S5P_OTG_GAHBCFG 		(USBOTG_LINK_BASE + 0x008) /* R/W Core AHB Configuration Register */
+#define S5P_OTG_GUSBCFG 		(USBOTG_LINK_BASE + 0x00C) /* R/W Core USB Configuration Register */
+#define S5P_OTG_GRSTCTL 		(USBOTG_LINK_BASE + 0x010) /* R/W Core Reset Register */
+#define S5P_OTG_GINTSTS 		(USBOTG_LINK_BASE + 0x014) /* R/W Core Interrupt Register */
+#define S5P_OTG_GINTMSK 		(USBOTG_LINK_BASE + 0x018) /* R/W Core Interrupt Mask Register */
+#define S5P_OTG_GRXSTSR 		(USBOTG_LINK_BASE + 0x01C) /* R Receive Status Debug Read Register */
+#define S5P_OTG_GRXSTSP 		(USBOTG_LINK_BASE + 0x020) /* R Receive Status Read/Pop Register */
+#define S5P_OTG_GRXFSIZ 		(USBOTG_LINK_BASE + 0x024) /* R/W Receive FIFO Size Register */
+#define S5P_OTG_GNPTXFSIZ 		(USBOTG_LINK_BASE + 0x028) /* R/W Non-Periodic Transmit FIFO Size Register */
+#define S5P_OTG_GNPTXSTS 		(USBOTG_LINK_BASE + 0x02C) /* R Non-Periodic Transmit FIFO/Queue Status Register */
+#define S5P_OTG_HPTXFSIZ 		(USBOTG_LINK_BASE + 0x100) /* R/W Host Periodic Transmit FIFO Size Register */
+#define S5P_OTG_DPTXFSIZ1 		(USBOTG_LINK_BASE + 0x104) /* R/W Device Periodic Transmit FIFO-1 Size Register */
+#define S5P_OTG_DPTXFSIZ2 		(USBOTG_LINK_BASE + 0x108) /* R/W Device Periodic Transmit FIFO-2 Size Register */
+#define S5P_OTG_DPTXFSIZ3 		(USBOTG_LINK_BASE + 0x10C) /* R/W Device Periodic Transmit FIFO-3 Size Register */
+#define S5P_OTG_DPTXFSIZ4 		(USBOTG_LINK_BASE + 0x110) /* R/W Device Periodic Transmit FIFO-4 Size Register */
+#define S5P_OTG_DPTXFSIZ5 		(USBOTG_LINK_BASE + 0x114) /* R/W Device Periodic Transmit FIFO-5 Size Register */
+#define S5P_OTG_DPTXFSIZ6 		(USBOTG_LINK_BASE + 0x118) /* R/W Device Periodic Transmit FIFO-6 Size Register */
+#define S5P_OTG_DPTXFSIZ7 		(USBOTG_LINK_BASE + 0x11C) /* R/W Device Periodic Transmit FIFO-7 Size Register */
+#define S5P_OTG_DPTXFSIZ8 		(USBOTG_LINK_BASE + 0x120) /* R/W Device Periodic Transmit FIFO-8 Size Register */
+#define S5P_OTG_DPTXFSIZ9 		(USBOTG_LINK_BASE + 0x124) /* R/W Device Periodic Transmit FIFO-9 Size Register */
+#define S5P_OTG_DPTXFSIZ10 		(USBOTG_LINK_BASE + 0x128) /* R/W Device Periodic Transmit FIFO-10 Size Register */
+#define S5P_OTG_DPTXFSIZ11 		(USBOTG_LINK_BASE + 0x12C) /* R/W Device Periodic Transmit FIFO-11 Size Register */
+#define S5P_OTG_DPTXFSIZ12 		(USBOTG_LINK_BASE + 0x130) /* R/W Device Periodic Transmit FIFO-12 Size Register */
+#define S5P_OTG_DPTXFSIZ13 		(USBOTG_LINK_BASE + 0x134) /* R/W Device Periodic Transmit FIFO-13 Size Register */
+#define S5P_OTG_DPTXFSIZ14 		(USBOTG_LINK_BASE + 0x138) /* R/W Device Periodic Transmit FIFO-14 Size Register */
+#define S5P_OTG_DPTXFSIZ15 		(USBOTG_LINK_BASE + 0x13C) /* R/W Device Periodic Transmit FIFO-15 Size Register */
+/* Host Mode Register */
+/* Host Global Register */
+#define S5P_OTG_HCFG 			(USBOTG_LINK_BASE + 0x400) /* R/W Host Configuration Register */
+#define S5P_OTG_HFIR 			(USBOTG_LINK_BASE + 0x404) /* R/W Host Frame Interval Register */
+#define S5P_OTG_HFNUM 			(USBOTG_LINK_BASE + 0x408) /* R Host Frame Number/Frame Time Remaining Register */
+
+#define S5P_OTG_HPTXSTS 		(USBOTG_LINK_BASE + 0x410) /* R Host Periodic Transmit FIFO/Queue Status Register */
+#define S5P_OTG_HAINT 			(USBOTG_LINK_BASE + 0x414) /* R Host All Channels Interrupt Register */
+#define S5P_OTG_HAINTMSK 		(USBOTG_LINK_BASE + 0x418) /* R/W Host All Channels Interrupt Mask Register */
+
+/*Host Port Control and Status Register */
+#define S5P_OTG_HPRT 			(USBOTG_LINK_BASE + 0x440) /* R/W Host Port Control and Status Register */
+
+/*Host Channel-Specific Register */
+#define S5P_OTG_HCCHAR0 		(USBOTG_LINK_BASE + 0x500) /* R/W Host Channel 0 Characteristics Register */
+#define S5P_OTG_HCSPLT0 		(USBOTG_LINK_BASE + 0x504) /* R/W Host Channel 0 Spilt Control Register */
+#define S5P_OTG_HCINT0 			(USBOTG_LINK_BASE + 0x508) /* R/W Host Channel 0 Interrupt Register */
+#define S5P_OTG_HCINTMSK0 		(USBOTG_LINK_BASE + 0x50C) /* R/W Host Channel 0 Interrupt Mask Register */
+#define S5P_OTG_HCTSIZ0 		(USBOTG_LINK_BASE + 0x510) /* R/W Host Channel 0 Transfer Size Register */
+#define S5P_OTG_HCDMA0 			(USBOTG_LINK_BASE + 0x514) /* R/W Host Channel 0 DMA Address Register */
+#define S5P_OTG_HCCHAR1 		(USBOTG_LINK_BASE + 0x520) /* R/W Host Channel 1 Characteristics Register */
+#define S5P_OTG_HCSPLT1 		(USBOTG_LINK_BASE + 0x524) /* R/W Host Channel 1 Spilt Control Register */
+#define S5P_OTG_HCINT1 			(USBOTG_LINK_BASE + 0x528) /* R/W Host Channel 1 Interrupt Register */
+#define S5P_OTG_HCINTMSK1 		(USBOTG_LINK_BASE + 0x52C) /* R/W Host Channel 1 Interrupt Mask Register */
+#define S5P_OTG_HCTSIZ1 		(USBOTG_LINK_BASE + 0x530) /* R/W Host Channel 1 Transfer Size Register */
+#define S5P_OTG_HCDMA1 			(USBOTG_LINK_BASE + 0x534) /* R/W Host Channel 1 DMA Address Register */
+#define S5P_OTG_HCCHAR2 		(USBOTG_LINK_BASE + 0x540) /* R/W Host Channel 2 Characteristics Register */
+#define S5P_OTG_HCSPLT2 		(USBOTG_LINK_BASE + 0x544) /* R/W Host Channel 2 Spilt Control Register */
+#define S5P_OTG_HCINT2 			(USBOTG_LINK_BASE + 0x548) /* R/W Host Channel 2 Interrupt Register */
+#define S5P_OTG_HCINTMSK2 		(USBOTG_LINK_BASE + 0x54C) /* R/W Host Channel 2 Interrupt Mask Register */
+#define S5P_OTG_HCTSIZ2 		(USBOTG_LINK_BASE + 0x550) /* R/W Host Channel 2 Transfer Size Register */
+#define S5P_OTG_HCDMA2 			(USBOTG_LINK_BASE + 0x554) /* R/W Host Channel 2 DMA Address Register */
+#define S5P_OTG_HCCHAR3 		(USBOTG_LINK_BASE + 0x560) /* R/W Host Channel 3 Characteristics Register */
+#define S5P_OTG_HCSPLT3 		(USBOTG_LINK_BASE + 0x564) /* R/W Host Channel 3 Spilt Control Register */
+#define S5P_OTG_HCINT3 			(USBOTG_LINK_BASE + 0x568) /* R/W Host Channel 3 Interrupt Register */
+#define S5P_OTG_HCINTMSK3 		(USBOTG_LINK_BASE + 0x56C) /* R/W Host Channel 3 Interrupt Mask Register */
+#define S5P_OTG_HCTSIZ3 		(USBOTG_LINK_BASE + 0x570) /* R/W Host Channel 3 Transfer Size Register */
+#define S5P_OTG_HCDMA3 			(USBOTG_LINK_BASE + 0x574) /* R/W Host Channel 3 DMA Address Register */
+#define S5P_OTG_HCCHAR4 		(USBOTG_LINK_BASE + 0x580) /* R/W Host Channel 4 Characteristics Register */
+#define S5P_OTG_HCSPLT4 		(USBOTG_LINK_BASE + 0x584) /* R/W Host Channel 4 Spilt Control Register */
+#define S5P_OTG_HCINT4 			(USBOTG_LINK_BASE + 0x588) /* R/W Host Channel 4 Interrupt Register */
+#define S5P_OTG_HCINTMSK4 		(USBOTG_LINK_BASE + 0x58C) /* R/W Host Channel 4 Interrupt Mask Register */
+#define S5P_OTG_HCTSIZ4 		(USBOTG_LINK_BASE + 0x580) /* R/W Host Channel 4 Transfer Size Register */
+#define S5P_OTG_HCDMA4 			(USBOTG_LINK_BASE + 0x584) /* R/W Host Channel 4 DMA Address Register */
+#define S5P_OTG_HCCHAR5 		(USBOTG_LINK_BASE + 0x5A0) /* R/W Host Channel 5 Characteristics Register */
+#define S5P_OTG_HCSPLT5 		(USBOTG_LINK_BASE + 0x5A4) /* R/W Host Channel 5 Spilt Control Register */
+#define S5P_OTG_HCINT5 			(USBOTG_LINK_BASE + 0x5A8) /* R/W Host Channel 5 Interrupt Register */
+#define S5P_OTG_HCINTMSK5 		(USBOTG_LINK_BASE + 0x5AC) /* R/W Host Channel 5 Interrupt Mask Register */
+#define S5P_OTG_HCTSIZ5 		(USBOTG_LINK_BASE + 0x5B0) /* R/W Host Channel 5 Transfer Size Register */
+#define S5P_OTG_HCDMA5 			(USBOTG_LINK_BASE + 0x5B4) /* R/W Host Channel 5 DMA Address Register */
+#define S5P_OTG_HCCHAR6 		(USBOTG_LINK_BASE + 0x5C0) /* R/W Host Channel 6 Characteristics Register */
+#define S5P_OTG_HCSPLT6 		(USBOTG_LINK_BASE + 0x5C4) /* R/W Host Channel 6 Spilt Control Register */
+#define S5P_OTG_HCINT6 			(USBOTG_LINK_BASE + 0x5C8) /* R/W Host Channel 6 Interrupt Register */
+#define S5P_OTG_HCINTMSK6 		(USBOTG_LINK_BASE + 0x5CC) /* R/W Host Channel 6 Interrupt Mask Register */
+#define S5P_OTG_HCTSIZ6 		(USBOTG_LINK_BASE + 0x5D0) /* R/W Host Channel 6 Transfer Size Register */
+#define S5P_OTG_HCDMA6 			(USBOTG_LINK_BASE + 0x5D4) /* R/W Host Channel 6 DMA Address Register */
+#define S5P_OTG_HCCHAR7 		(USBOTG_LINK_BASE + 0x5E0) /* R/W Host Channel 7 Characteristics Register */
+#define S5P_OTG_HCSPLT7 		(USBOTG_LINK_BASE + 0x5E4) /* R/W Host Channel 7 Spilt Control Register */
+#define S5P_OTG_HCINT7 			(USBOTG_LINK_BASE + 0x5E8) /* R/W Host Channel 7 Interrupt Register */
+#define S5P_OTG_HCINTMSK7 		(USBOTG_LINK_BASE + 0x5EC) /* R/W Host Channel 7 Interrupt Mask Register */
+#define S5P_OTG_HCTSIZ7 		(USBOTG_LINK_BASE + 0x5F0) /* R/W Host Channel 7 Transfer Size Register */
+#define S5P_OTG_HCDMA7 			(USBOTG_LINK_BASE + 0x5F4) /* R/W Host Channel 7 DMA Address Register */
+#define S5P_OTG_HCCHAR8 		(USBOTG_LINK_BASE + 0x600) /* R/W Host Channel 8 Characteristics Register */
+#define S5P_OTG_HCSPLT8 		(USBOTG_LINK_BASE + 0x604) /* R/W Host Channel 8 Spilt Control Register */
+#define S5P_OTG_HCINT8 			(USBOTG_LINK_BASE + 0x608) /* R/W Host Channel 8 Interrupt Register */
+#define S5P_OTG_HCINTMSK8 		(USBOTG_LINK_BASE + 0x60C) /* R/W Host Channel 8 Interrupt Mask Register */
+#define S5P_OTG_HCTSIZ8 		(USBOTG_LINK_BASE + 0x610) /* R/W Host Channel 8 Transfer Size Register */
+#define S5P_OTG_HCDMA8 			(USBOTG_LINK_BASE + 0x614) /* R/W Host Channel 8 DMA Address Register */
+#define S5P_OTG_HCCHAR9 		(USBOTG_LINK_BASE + 0x620) /* R/W Host Channel 9 Characteristics Register */
+#define S5P_OTG_HCSPLT9 		(USBOTG_LINK_BASE + 0x624) /* R/W Host Channel 9 Spilt Control Register */
+#define S5P_OTG_HCINT9 			(USBOTG_LINK_BASE + 0x628) /* R/W Host Channel 9 Interrupt Register */
+#define S5P_OTG_HCINTMSK9 		(USBOTG_LINK_BASE + 0x62C) /* R/W Host Channel 9 Interrupt Mask Register */
+#define S5P_OTG_HCTSIZ9 		(USBOTG_LINK_BASE + 0x630) /* R/W Host Channel 9 Transfer Size Register */
+#define S5P_OTG_HCDMA9 			(USBOTG_LINK_BASE + 0x634) /* R/W Host Channel 9 DMA Address Register */
+#define S5P_OTG_HCCHAR10 		(USBOTG_LINK_BASE + 0x640) /* R/W Host Channel 10 Characteristics Register */
+#define S5P_OTG_HCSPLT10 		(USBOTG_LINK_BASE + 0x644) /* R/W Host Channel 10 Spilt Control Register */
+#define S5P_OTG_HCINT10 		(USBOTG_LINK_BASE + 0x648) /* R/W Host Channel 10 Interrupt Register */
+#define S5P_OTG_HCINTMSK10 		(USBOTG_LINK_BASE + 0x64C) /* R/W Host Channel 10 Interrupt Mask Register */
+#define S5P_OTG_HCTSIZ10 		(USBOTG_LINK_BASE + 0x650) /* R/W Host Channel 10 Transfer Size Register */
+#define S5P_OTG_HCDMA10 		(USBOTG_LINK_BASE + 0x654) /* R/W Host Channel 10 DMA Address Register */
+#define S5P_OTG_HCCHAR11 		(USBOTG_LINK_BASE + 0x660) /* R/W Host Channel 11 Characteristics Register */
+#define S5P_OTG_HCSPLT11 		(USBOTG_LINK_BASE + 0x664) /* R/W Host Channel 11 Spilt Control Register */
+#define S5P_OTG_HCINT11 		(USBOTG_LINK_BASE + 0x668) /* R/W Host Channel 11 Interrupt Register */
+#define S5P_OTG_HCINTMSK11 		(USBOTG_LINK_BASE + 0x66C) /* R/W Host Channel 11 Interrupt Mask Register */
+#define S5P_OTG_HCTSIZ11 		(USBOTG_LINK_BASE + 0x670) /* R/W Host Channel 11 Transfer Size Register */
+#define S5P_OTG_HCDMA11 		(USBOTG_LINK_BASE + 0x674) /* R/W Host Channel 11 DMA Address Register */
+#define S5P_OTG_HCCHAR12 		(USBOTG_LINK_BASE + 0x680) /* R/W Host Channel 12 Characteristics Register */
+#define S5P_OTG_HCSPLT12 		(USBOTG_LINK_BASE + 0x684) /* R/W Host Channel 12 Spilt Control Register */
+#define S5P_OTG_HCINT12 		(USBOTG_LINK_BASE + 0x688) /* R/W Host Channel 12 Interrupt Register */
+#define S5P_OTG_HCINTMSK12 		(USBOTG_LINK_BASE + 0x68C) /* R/W Host Channel 12 Interrupt Mask Register */
+#define S5P_OTG_HCTSIZ12 		(USBOTG_LINK_BASE + 0x690) /* R/W Host Channel 12 Transfer Size Register */
+#define S5P_OTG_HCDMA12 		(USBOTG_LINK_BASE + 0x694) /* R/W Host Channel 12 DMA Address Register */
+#define S5P_OTG_HCCHAR13 		(USBOTG_LINK_BASE + 0x6A0) /* R/W Host Channel 13 Characteristics Register */
+#define S5P_OTG_HCSPLT13 		(USBOTG_LINK_BASE + 0x6A4) /* R/W Host Channel 13 Spilt Control Register */
+#define S5P_OTG_HCINT13 		(USBOTG_LINK_BASE + 0x6A8) /* R/W Host Channel 13 Interrupt Register */
+#define S5P_OTG_HCINTMSK13 		(USBOTG_LINK_BASE + 0x6AC) /* R/W Host Channel 13 Interrupt Mask Register */
+#define S5P_OTG_HCTSIZ13 		(USBOTG_LINK_BASE + 0x6B0) /* R/W Host Channel 13 Transfer Size Register */
+#define S5P_OTG_HCDMA13 		(USBOTG_LINK_BASE + 0x6B4) /* R/W Host Channel 13 DMA Address Register */
+#define S5P_OTG_HCCHAR14 		(USBOTG_LINK_BASE + 0x6C0) /* R/W Host Channel 14 Characteristics Register */
+#define S5P_OTG_HCSPLT14 		(USBOTG_LINK_BASE + 0x6C4) /* R/W Host Channel 14 Spilt Control Register */
+#define S5P_OTG_HCINT14 		(USBOTG_LINK_BASE + 0x6C8) /* R/W Host Channel 14 Interrupt Register */
+#define S5P_OTG_HCINTMSK14 		(USBOTG_LINK_BASE + 0x6CC) /* R/W Host Channel 14 Interrupt Mask Register */
+#define S5P_OTG_HCTSIZ14	 	(USBOTG_LINK_BASE + 0x6D0) /* R/W Host Channel 14 Transfer Size Register */
+#define S5P_OTG_HCDMA14 		(USBOTG_LINK_BASE + 0x6D4) /* R/W Host Channel 14 DMA Address Register */
+#define S5P_OTG_HCCHAR15 		(USBOTG_LINK_BASE + 0x6E0) /* R/W Host Channel 15 Characteristics Register */
+#define S5P_OTG_HCSPLT15 		(USBOTG_LINK_BASE + 0x6E4) /* R/W Host Channel 15 Spilt Control Register */
+#define S5P_OTG_HCINT15 		(USBOTG_LINK_BASE + 0x6E8) /* R/W Host Channel 15 Interrupt Register */
+#define S5P_OTG_HCINTMSK15 		(USBOTG_LINK_BASE + 0x6EC) /* R/W Host Channel 15 Interrupt Mask Register */
+#define S5P_OTG_HCTSIZ15 		(USBOTG_LINK_BASE + 0x6F0) /* R/W Host Channel 15 Transfer Size Register */
+#define S5P_OTG_HCDMA15 		(USBOTG_LINK_BASE + 0x6F4) /* R/W Host Channel 15 DMA Address Register */
+
+/* Device Global Register */
+#define S5P_OTG_DCFG 			(USBOTG_LINK_BASE + 0x800) /* R/W Device Configuration Register */
+#define S5P_OTG_DCTL 			(USBOTG_LINK_BASE + 0x804) /* R/W Device Control Register */
+#define S5P_OTG_DSTS 			(USBOTG_LINK_BASE + 0x808) /* R Device Status Register */
+#define S5P_OTG_DIEPMSK 		(USBOTG_LINK_BASE + 0x810) /* R/W Device IN Endpoint Common Interrupt Mask Register */
+#define S5P_OTG_DOEPMSK 		(USBOTG_LINK_BASE + 0x814) /* R/W Device OUT Endpoint Common Interrupt Mask Register */
+#define S5P_OTG_DAINT 			(USBOTG_LINK_BASE + 0x818) /* R Device ALL Endpoints Interrupt Register */
+#define S5P_OTG_DAINTMSK 		(USBOTG_LINK_BASE + 0x81C) /* R/W Device ALL Endpoints Interrupt Mask Register */
+#define S5P_OTG_DTKNQR1 		(USBOTG_LINK_BASE + 0x820) /* R Device IN Token Sequence Learning Queue Read Register */
+#define S5P_OTG_DTKNQR2 		(USBOTG_LINK_BASE + 0x824) /* R Device IN Token Sequence Learning Queue Read Register */
+#define S5P_OTG_DVBUSDIS 		(USBOTG_LINK_BASE + 0x828) /* R/W Device VBUS Discharge Time Register */
+#define S5P_OTG_DVBUSPULSE 		(USBOTG_LINK_BASE + 0x82C) /* R/W Device VBUS Pulsing Time Register */
+#define S5P_OTG_DTKNQR3 		(USBOTG_LINK_BASE + 0x830) /* R Device IN Token Sequence Learning Queue Read Register */
+#define S5P_OTG_DTKNQR4 		(USBOTG_LINK_BASE + 0x834) /* R Device IN Token Sequence Learning Queue Read Register */
+
+/* Device Logical IN Endpo int-Specific Registers */
+#define S5P_OTG_DIEPCTL0 		(USBOTG_LINK_BASE + 0x900) /* R/W Device Control IN Endpoint 0 Control Register */
+#define S5P_OTG_DIEPINT0 		(USBOTG_LINK_BASE + 0x908) /* R/W Device IN Endpoint 0 Interrupt Register */
+#define S5P_OTG_DIEPTSIZ0 		(USBOTG_LINK_BASE + 0x910) /* R/W Device IN Endpoint 0 Transfer Size Register */
+#define S5P_OTG_DIEPDMA0 		(USBOTG_LINK_BASE + 0x914) /* R/W Device IN Endpoint 0 DMA Address Register */
+#define S5P_OTG_DIEPCTL1 		(USBOTG_LINK_BASE + 0x920) /* R/W Device Control IN Endpoint 1 Control Register */
+#define S5P_OTG_DIEPINT1 		(USBOTG_LINK_BASE + 0x928) /* R/W Device IN Endpoint 1 Interrupt Register */
+#define S5P_OTG_DIEPTSIZ1 		(USBOTG_LINK_BASE + 0x930) /* R/W Device IN Endpoint 1 Transfer Size Register */
+#define S5P_OTG_DIEPDMA1 		(USBOTG_LINK_BASE + 0x934) /* R/W Device IN Endpoint 1 DMA Address Register */
+#define S5P_OTG_DIEPCTL2 		(USBOTG_LINK_BASE + 0x940) /* R/W Device Control IN Endpoint 2 Control Register */
+#define S5P_OTG_DIEPINT2 		(USBOTG_LINK_BASE + 0x948) /* R/W Device IN Endpoint 2 Interrupt Register */
+#define S5P_OTG_DIEPTSIZ2 		(USBOTG_LINK_BASE + 0x950) /* R/W Device IN Endpoint 2 Transfer Size Register */
+#define S5P_OTG_DIEPDMA2 		(USBOTG_LINK_BASE + 0x954) /* R/W Device IN Endpoint 2 DMA Address Register */
+#define S5P_OTG_DIEPCTL3 		(USBOTG_LINK_BASE + 0x960) /* R/W Device Control IN Endpoint 3 Control Register */
+#define S5P_OTG_DIEPINT3 		(USBOTG_LINK_BASE + 0x968) /* R/W Device IN Endpoint 3 Interrupt Register */
+#define S5P_OTG_DIEPTSIZ3 		(USBOTG_LINK_BASE + 0x970) /* R/W Device IN Endpoint 3 Transfer Size Register */
+#define S5P_OTG_DIEPDMA3 		(USBOTG_LINK_BASE + 0x974) /* R/W Device IN Endpoint 3 DMA Address Register */
+#define S5P_OTG_DIEPCTL4 		(USBOTG_LINK_BASE + 0x980) /* R/W Device Control IN Endpoint 0 Control Register */
+#define S5P_OTG_DIEPINT4 		(USBOTG_LINK_BASE + 0x988) /* R/W Device IN Endpoint 4 Interrupt Register */
+#define S5P_OTG_DIEPTSIZ4 		(USBOTG_LINK_BASE + 0x990) /* R/W Device IN Endpoint 4 Transfer Size Register */
+#define S5P_OTG_DIEPDMA4 		(USBOTG_LINK_BASE + 0x994) /* R/W Device IN Endpoint 4 DMA Address Register */
+#define S5P_OTG_DIEPCTL5 		(USBOTG_LINK_BASE + 0x9A0) /* R/W Device Control IN Endpoint 5 Control Register */
+#define S5P_OTG_DIEPINT5 		(USBOTG_LINK_BASE + 0x9A8) /* R/W Device IN Endpoint 5 Interrupt Register */
+#define S5P_OTG_DIEPTSIZ5 		(USBOTG_LINK_BASE + 0x9B0) /* R/W Device IN Endpoint 5 Transfer Size Register */
+#define S5P_OTG_DIEPDMA5 		(USBOTG_LINK_BASE + 0x9B4) /* R/W Device IN Endpoint 5 DMA Address Register */
+#define S5P_OTG_DIEPCTL6 		(USBOTG_LINK_BASE + 0x9C0) /* R/W Device Control IN Endpoint 6 Control Register */
+#define S5P_OTG_DIEPINT6		(USBOTG_LINK_BASE + 0x9C8) /* R/W Device IN Endpoint 6 Interrupt Register */
+#define S5P_OTG_DIEPTSIZ6		(USBOTG_LINK_BASE + 0x9D0) /* R/W Device IN Endpoint 6 Transfer Size Register */
+#define S5P_OTG_DIEPDMA6		(USBOTG_LINK_BASE + 0x9D4) /* R/W Device IN Endpoint 6 DMA Address Register */
+#define S5P_OTG_DIEPCTL7		(USBOTG_LINK_BASE + 0x9E0) /* R/W Device Control IN Endpoint 7 Control Register */
+#define S5P_OTG_DIEPINT7		(USBOTG_LINK_BASE + 0x9E8) /* R/W Device IN Endpoint 7 Interrupt Register */
+#define S5P_OTG_DIEPTSIZ7		(USBOTG_LINK_BASE + 0x9F0) /* R/W Device IN Endpoint 7 Transfer Size Register */
+#define S5P_OTG_DIEPDMA7		(USBOTG_LINK_BASE + 0x9F4) /* R/W Device IN Endpoint 7 DMA Address Register */
+#define S5P_OTG_DIEPCTL8		(USBOTG_LINK_BASE + 0xA00) /* R/W Device Control IN Endpoint 8 Control Register */
+#define S5P_OTG_DIEPINT8		(USBOTG_LINK_BASE + 0xA08) /* R/W Device IN Endpoint 8 Interrupt Register */
+#define S5P_OTG_DIEPTSIZ8		(USBOTG_LINK_BASE + 0xA10) /* R/W Device IN Endpoint 8 Transfer Size Register */
+#define S5P_OTG_DIEPDMA8		(USBOTG_LINK_BASE + 0xA14) /* R/W Device IN Endpoint 8 DMA Address Register */
+#define S5P_OTG_DIEPCTL9		(USBOTG_LINK_BASE + 0xA20) /* R/W Device Control IN Endpoint 9 Control Register */
+#define S5P_OTG_DIEPINT9		(USBOTG_LINK_BASE + 0xA28) /* R/W Device IN Endpoint 9 Interrupt Register */
+#define S5P_OTG_DIEPTSIZ9		(USBOTG_LINK_BASE + 0xA30) /* R/W Device IN Endpoint 9 Transfer Size Register */
+#define S5P_OTG_DIEPDMA9		(USBOTG_LINK_BASE + 0xA34) /* R/W Device IN Endpoint 9 DMA Address Register */
+#define S5P_OTG_DIEPCTL10		(USBOTG_LINK_BASE + 0xA40) /* R/W Device Control IN Endpoint 10 Control Register */
+#define S5P_OTG_DIEPINT10		(USBOTG_LINK_BASE + 0xA48) /* R/W Device IN Endpoint 10 Interrupt Register */
+#define S5P_OTG_DIEPTSIZ10		(USBOTG_LINK_BASE + 0xA50) /* R/W Device IN Endpoint 10 Transfer Size Register */
+#define S5P_OTG_DIEPDMA10		(USBOTG_LINK_BASE + 0xA54) /* R/W Device IN Endpoint 10 DMA Address Register */
+#define S5P_OTG_DIEPCTL11		(USBOTG_LINK_BASE + 0xA60) /* R/W Device Control IN Endpoint 11 Control Register */
+#define S5P_OTG_DIEPINT11		(USBOTG_LINK_BASE + 0xA68) /* R/W Device IN Endpoint 11 Interrupt Register */
+#define S5P_OTG_DIEPTSIZ11		(USBOTG_LINK_BASE + 0xA70) /* R/W Device IN Endpoint 11 Transfer Size Register */
+#define S5P_OTG_DIEPDMA11		(USBOTG_LINK_BASE + 0xA74) /* R/W Device IN Endpoint 11 DMA Address Register */
+#define S5P_OTG_DIEPCTL12		(USBOTG_LINK_BASE + 0xA80) /* R/W Device Control IN Endpoint 12 Control Register */
+#define S5P_OTG_DIEPINT12		(USBOTG_LINK_BASE + 0xA88) /* R/W Device IN Endpoint 12 Interrupt Register */
+#define S5P_OTG_DIEPTSIZ12		(USBOTG_LINK_BASE + 0xA90) /* R/W Device IN Endpoint 12 Transfer Size Register */
+#define S5P_OTG_DIEPDMA12		(USBOTG_LINK_BASE + 0xA94) /* R/W Device IN Endpoint 12 DMA Address Register */
+#define S5P_OTG_DIEPCTL13		(USBOTG_LINK_BASE + 0xAA0) /* R/W Device Control IN Endpoint 13 Control Register */
+#define S5P_OTG_DIEPINT13		(USBOTG_LINK_BASE + 0xAA8) /* R/W Device IN Endpoint 13 Interrupt Register */
+#define S5P_OTG_DIEPTSIZ13		(USBOTG_LINK_BASE + 0xAB0) /* R/W Device IN Endpoint 13 Transfer Size Register */
+#define S5P_OTG_DIEPDMA13		(USBOTG_LINK_BASE + 0xAB4) /* R/W Device IN Endpoint 13 DMA Address Register */
+#define S5P_OTG_DIEPCTL14		(USBOTG_LINK_BASE + 0xAC0) /* R/W Device Control IN Endpoint 14 Control Register */
+#define S5P_OTG_DIEPINT14		(USBOTG_LINK_BASE + 0xAC8) /* R/W Device IN Endpoint 14 Interrupt Register */
+#define S5P_OTG_DIEPTSIZ14		(USBOTG_LINK_BASE + 0xAD0) /* R/W Device IN Endpoint 14 Transfer Size Register */
+#define S5P_OTG_DIEPDMA14		(USBOTG_LINK_BASE + 0xAD4) /* R/W Device IN Endpoint 14 DMA Address Register */
+#define S5P_OTG_DIEPCTL15		(USBOTG_LINK_BASE + 0xAE0) /* R/W Device Control IN Endpoint 15 Control Register */
+#define S5P_OTG_DIEPINT15		(USBOTG_LINK_BASE + 0xAE8) /* R/W Device IN Endpoint 15 Interrupt Register */
+#define S5P_OTG_DIEPTSIZ15		(USBOTG_LINK_BASE + 0xAF0) /* R/W Device IN Endpoint 15 Transfer Size Register */
+#define S5P_OTG_DIEPDMA15		(USBOTG_LINK_BASE + 0xAF4) /* R/W Device IN Endpoint 15 DMA Address Register */
+
+/* Device Logical OUT Endpoint-Specific Register */
+#define S5P_OTG_DOEPCTL0		(USBOTG_LINK_BASE + 0xB00) /* R/W Device Control OUT Endpoint 0 Control Register */
+#define S5P_OTG_DOEPINT0		(USBOTG_LINK_BASE + 0xB08) /* R/W Device OUT Endpoint 0 Interrupt Register */
+#define S5P_OTG_DOEPTSIZ0		(USBOTG_LINK_BASE + 0xB10) /* R/W Device OUT Endpoint 0 Transfer Size Register */
+#define S5P_OTG_DOEPDMA0		(USBOTG_LINK_BASE + 0xB14) /* R/W Device OUT Endpoint 0 DMA Address Register */
+#define S5P_OTG_DOEPCTL1		(USBOTG_LINK_BASE + 0xB20) /* R/W Device Control OUT Endpoint 1 Control Register */
+#define S5P_OTG_DOEPINT1		(USBOTG_LINK_BASE + 0xB28) /* R/W Device OUT Endpoint 1 Interrupt Register */
+#define S5P_OTG_DOEPTSIZ1		(USBOTG_LINK_BASE + 0xB30) /* R/W Device OUT Endpoint 1 Transfer Size Register */
+#define S5P_OTG_DOEPDMA1		(USBOTG_LINK_BASE + 0xB34) /* R/W Device OUT Endpoint 1 DMA Address Register */
+#define S5P_OTG_DOEPCTL2		(USBOTG_LINK_BASE + 0xB40) /* R/W Device Control OUT Endpoint 2 Control Register */
+#define S5P_OTG_DOEPINT2		(USBOTG_LINK_BASE + 0xB48) /* R/W Device OUT Endpoint 2 Interrupt Register */
+#define S5P_OTG_DOEPTSIZ2		(USBOTG_LINK_BASE + 0xB50) /* R/W Device OUT Endpoint 2 Transfer Size Register */
+#define S5P_OTG_DOEPDMA2		(USBOTG_LINK_BASE + 0xB54) /* R/W Device OUT Endpoint 2 DMA Address Register */
+#define S5P_OTG_DOEPCTL3		(USBOTG_LINK_BASE + 0xB60) /* R/W Device Control OUT Endpoint 3 Control Register */
+#define S5P_OTG_DOEPINT3		(USBOTG_LINK_BASE + 0xB68) /* R/W Device OUT Endpoint 3 Interrupt Register */
+#define S5P_OTG_DOEPTSIZ3		(USBOTG_LINK_BASE + 0xB70) /* R/W Device OUT Endpoint 3 Transfer Size Register */
+#define S5P_OTG_DOEPDMA3		(USBOTG_LINK_BASE + 0xB74) /* R/W Device OUT Endpoint 3 DMA Address Register */
+#define S5P_OTG_DOEPCTL4		(USBOTG_LINK_BASE + 0xB80) /* R/W Device Control OUT Endpoint 4 Control Register */
+#define S5P_OTG_DOEPINT4		(USBOTG_LINK_BASE + 0xB88) /* R/W Device OUT Endpoint 4 Interrupt Register */
+#define S5P_OTG_DOEPTSIZ4		(USBOTG_LINK_BASE + 0xB90) /* R/W Device OUT Endpoint 4 Transfer Size Register */
+#define S5P_OTG_DOEPDMA4		(USBOTG_LINK_BASE + 0xB94) /* R/W Device OUT Endpoint 4 DMA Address Register */
+#define S5P_OTG_DOEPCTL5		(USBOTG_LINK_BASE + 0xBA0) /* R/W Device Control OUT Endpoint 5 Control Register */
+#define S5P_OTG_DOEPINT5		(USBOTG_LINK_BASE + 0xBA8) /* R/W Device OUT Endpoint 5 Interrupt Register */
+#define S5P_OTG_DOEPTSIZ5		(USBOTG_LINK_BASE + 0xBB0) /* R/W Device OUT Endpoint 5 Transfer Size Register */
+#define S5P_OTG_DOEPDMA5		(USBOTG_LINK_BASE + 0xBB4) /* R/W Device OUT Endpoint 5 DMA Address Register */
+#define S5P_OTG_DOEPCTL6		(USBOTG_LINK_BASE + 0xBC0) /* R/W Device Control OUT Endpoint 6 Control Register */
+#define S5P_OTG_DOEPINT6		(USBOTG_LINK_BASE + 0xBC8) /* R/W Device OUT Endpoint 6 Interrupt Register */
+#define S5P_OTG_DOEPTSIZ6		(USBOTG_LINK_BASE + 0xBD0) /* R/W Device OUT Endpoint 6 Transfer Size Register */
+#define S5P_OTG_DOEPDMA6		(USBOTG_LINK_BASE + 0xBD4) /* R/W Device OUT Endpoint 6 DMA Address Register */
+#define S5P_OTG_DOEPCTL7		(USBOTG_LINK_BASE + 0xBE0) /* R/W Device Control OUT Endpoint 7 Control Register */
+#define S5P_OTG_DOEPINT7		(USBOTG_LINK_BASE + 0xBE8) /* R/W Device OUT Endpoint 7 Interrupt Register */
+#define S5P_OTG_DOEPTSIZ7		(USBOTG_LINK_BASE + 0xBF0) /* R/W Device OUT Endpoint 7 Transfer Size Register */
+#define S5P_OTG_DOEPDMA7		(USBOTG_LINK_BASE + 0xBF4) /* R/W Device OUT Endpoint 7 DMA Address Register */
+#define S5P_OTG_DOEPCTL8		(USBOTG_LINK_BASE + 0xC00) /* R/W Device Control OUT Endpoint 8 Control Register */
+#define S5P_OTG_DOEPINT8		(USBOTG_LINK_BASE + 0xC08) /* R/W Device OUT Endpoint 8 Interrupt Register */
+#define S5P_OTG_DOEPTSIZ8		(USBOTG_LINK_BASE + 0xC10) /* R/W Device OUT Endpoint 8 Transfer Size Register */
+#define S5P_OTG_DOEPDMA8		(USBOTG_LINK_BASE + 0xC14) /* R/W Device OUT Endpoint 8 DMA Address Register */
+#define S5P_OTG_DOEPCTL9		(USBOTG_LINK_BASE + 0xC20) /* R/W Device Control OUT Endpoint 9 Control Register */
+#define S5P_OTG_DOEPINT9		(USBOTG_LINK_BASE + 0xC28) /* R/W Device OUT Endpoint 9 Interrupt Register */
+#define S5P_OTG_DOEPTSIZ9		(USBOTG_LINK_BASE + 0xC30) /* R/W Device OUT Endpoint 9 Transfer Size Register */
+#define S5P_OTG_DOEPDMA9		(USBOTG_LINK_BASE + 0xC34) /* R/W Device OUT Endpoint 9 DMA Address Register */
+#define S5P_OTG_DOEPCTL10		(USBOTG_LINK_BASE + 0xC40) /* R/W Device Control OUT Endpoint 10 Control Register */
+#define S5P_OTG_DOEPINT10		(USBOTG_LINK_BASE + 0xC48) /* R/W Device OUT Endpoint 10 Interrupt Register */
+#define S5P_OTG_DOEPTSIZ10		(USBOTG_LINK_BASE + 0xC50) /* R/W Device OUT Endpoint 10 Transfer Size Register */
+#define S5P_OTG_DOEPDMA10		(USBOTG_LINK_BASE + 0xC54) /* R/W Device OUT Endpoint 10 DMA Address Register */
+#define S5P_OTG_DOEPCTL11		(USBOTG_LINK_BASE + 0xC60) /* R/W Device Control OUT Endpoint 11 Control Register */
+#define S5P_OTG_DOEPINT11		(USBOTG_LINK_BASE + 0xC68) /* R/W Device OUT Endpoint 11 Interrupt Register */
+#define S5P_OTG_DOEPTSIZ11		(USBOTG_LINK_BASE + 0xC70) /* R/W Device OUT Endpoint 11 Transfer Size Register */
+#define S5P_OTG_DOEPDMA11		(USBOTG_LINK_BASE + 0xC74) /* R/W Device OUT Endpoint 11 DMA Address Register */
+#define S5P_OTG_DOEPCTL12		(USBOTG_LINK_BASE + 0xC80) /* R/W Device Control OUT Endpoint 12 Control Register */
+#define S5P_OTG_DOEPINT12		(USBOTG_LINK_BASE + 0xC88) /* R/W Device OUT Endpoint 12 Interrupt Register */
+#define S5P_OTG_DOEPTSIZ12		(USBOTG_LINK_BASE + 0xC90) /* R/W Device OUT Endpoint 12 Transfer Size Register */
+#define S5P_OTG_DOEPDMA12		(USBOTG_LINK_BASE + 0xC94) /* R/W Device OUT Endpoint 12 DMA Address Register */
+#define S5P_OTG_DOEPCTL13		(USBOTG_LINK_BASE + 0xCA0) /* R/W Device Control OUT Endpoint 13 Control Register */
+#define S5P_OTG_DOEPINT13		(USBOTG_LINK_BASE + 0xCA8) /* R/W Device OUT Endpoint 13 Interrupt Register */
+#define S5P_OTG_DOEPTSIZ13		(USBOTG_LINK_BASE + 0xCB0) /* R/W Device OUT Endpoint 13 Transfer Size Register */
+#define S5P_OTG_DOEPDMA13		(USBOTG_LINK_BASE + 0xCB4) /* R/W Device OUT Endpoint 13 DMA Address Register */
+#define S5P_OTG_DOEPCTL14		(USBOTG_LINK_BASE + 0xCC0) /* R/W Device Control OUT Endpoint 14 Control Register */
+#define S5P_OTG_DOEPINT14		(USBOTG_LINK_BASE + 0xCC8) /* R/W Device OUT Endpoint 14 Interrupt Register */
+#define S5P_OTG_DOEPTSIZ14		(USBOTG_LINK_BASE + 0xCD0) /* R/W Device OUT Endpoint 14 Transfer Size Register */
+#define S5P_OTG_DOEPDMA14		(USBOTG_LINK_BASE + 0xCD4) /* R/W Device OUT Endpoint 14 DMA Address Register */
+#define S5P_OTG_DOEPCTL15		(USBOTG_LINK_BASE + 0xCE0) /* R/W Device Control OUT Endpoint 15 Control Register */
+#define S5P_OTG_OTG_DOEPINT15		(USBOTG_LINK_BASE + 0xCE8) /* R/W Device OUT Endpoint 15 Interrupt Register */
+#define S5P_OTG_DOEPTSIZ15		(USBOTG_LINK_BASE + 0xCF0) /* R/W Device OUT Endpoint 15 Transfer Size Register */
+#define S5P_OTG_DOEPDMA15		(USBOTG_LINK_BASE + 0xCF4) /* R/W Device OUT Endpoint 15 DMA Address Register */
+
+/* Power and Clock Gating Register */
+#define S5P_OTG_PCGCCTL 		(USBOTG_LINK_BASE + 0xE00) /* R/W Power and Clock Gating Control Register */
+
+/* Endpoint FIFO address */
+#define S5P_OTG_EP0_FIFO		(USBOTG_LINK_BASE + 0x1000)
+
+/* USB Global Interrupt Status register(GINTSTS) setting value */
+#define GINTSTS_WkUpInt		(1<<31)
+#define GINTSTS_OEPInt		(1<<19)
+#define GINTSTS_IEPInt		(1<<18)
+#define GINTSTS_EnumDone	(1<<13)
+#define GINTSTS_USBRst		(1<<12)
+#define GINTSTS_USBSusp		(1<<11)
+#define GINTSTS_RXFLvl		(1<<4)
+
+/* PENDING BIT */
+#define BIT_EINT0		(0x1)
+#define BIT_EINT1		(0x1<<1)
+#define BIT_EINT2		(0x1<<2)
+#define BIT_EINT3		(0x1<<3)
+#define BIT_EINT4_7		(0x1<<4)
+#define BIT_EINT8_23		(0x1<<5)
+#define BIT_BAT_FLT		(0x1<<7)
+#define BIT_TICK		(0x1<<8)
+#define BIT_WDT			(0x1<<9)
+#define BIT_TIMER0		(0x1<<10)
+#define BIT_TIMER1		(0x1<<11)
+#define BIT_TIMER2		(0x1<<12)
+#define BIT_TIMER3		(0x1<<13)
+#define BIT_TIMER4		(0x1<<14)
+#define BIT_UART2		(0x1<<15)
+#define BIT_LCD			(0x1<<16)
+#define BIT_DMA0		(0x1<<17)
+#define BIT_DMA1		(0x1<<18)
+#define BIT_DMA2		(0x1<<19)
+#define BIT_DMA3		(0x1<<20)
+#define BIT_SDI			(0x1<<21)
+#define BIT_SPI0		(0x1<<22)
+#define BIT_UART1		(0x1<<23)
+#define BIT_USBH		(0x1<<26)
+#define BIT_IIC			(0x1<<27)
+#define BIT_UART0		(0x1<<28)
+#define BIT_SPI1		(0x1<<29)
+#define BIT_RTC			(0x1<<30)
+#define BIT_ADC			(0x1<<31)
+#define BIT_ALLMSK		(0xFFFFFFFF)
+
+#ifndef __ASSEMBLY__
+#include <asm/io.h>
+#define SAMSUNG_BASE(device, base)				\
+static inline unsigned int samsung_get_base_##device(void)	\
+{								\
+		return ELFIN_##base; 	                	\
+}
+
+SAMSUNG_BASE(clock, CLOCK_BASE)
+//SAMSUNG_BASE(gpio, GPIO_BASE)
+//SAMSUNG_BASE(pro_id, PRO_ID)
+//SAMSUNG_BASE(mmc, MMC_BASE)
+//SAMSUNG_BASE(sromc, SROMC_BASE)
+SAMSUNG_BASE(timers, TIMER_BASE)
+SAMSUNG_BASE(uart, UART_CONSOLE_BASE)
+#endif
+
+#endif /*__S5P6450_CPU_H__*/

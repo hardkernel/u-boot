@@ -43,6 +43,10 @@
     defined(CONFIG_MMC) || \
     defined(CONFIG_SYSTEMACE)
 
+#if defined(CONFIG_S5P6450)
+DECLARE_GLOBAL_DATA_PTR;
+#endif
+
 /* Convert char[4] in little endian format to the host format integer
  */
 static inline int le32_to_int(unsigned char *le32)

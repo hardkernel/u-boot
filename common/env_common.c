@@ -48,6 +48,13 @@ static uchar env_get_char_init (int index);
 #define MK_STR(x)	XMK_STR(x)
 
 uchar default_environment[] = {
+#if defined(CONFIG_HKDK4412) && defined(CONFIG_EXYNOS_PRIME)
+    "bootscript=source 40008000\0"
+    "default_bootcmd=echo >>> Run Default Bootcmd <<<;movi read kernel 0 40008000;movi read rootfs 0 41000000 100000;bootm 40008000 41000000\0"
+    "loadbootscript_1=echo >>> Load Boot Script from mmc 0:1 <<<;fatload mmc 0:1 40008000 boot.scr\0"
+    "loadbootscript_2=echo >>> Load Boot Script from mmc 0:2 <<<;fatload mmc 0:2 40008000 boot.scr\0"
+#endif    
+    
 #ifdef	CONFIG_BOOTARGS
 	"bootargs="	CONFIG_BOOTARGS			"\0"
 #endif
@@ -128,6 +135,8 @@ uchar default_environment[] = {
 #endif
 	"\0"
 };
+
+int default_environment_size = sizeof(default_environment);
 
 static uchar env_get_char_init (int index)
 {

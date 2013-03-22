@@ -38,6 +38,9 @@ COBJS-$(CONFIG_OMAP1610) += omap1510_udc.o
 COBJS-$(CONFIG_MPC885_FAMILY) += mpc8xx_udc.o
 COBJS-$(CONFIG_PXA27X) += pxa27x_udc.o
 COBJS-$(CONFIG_SPEARUDC) += spr_udc.o
+else
+COBJS-$(CONFIG_S3C_USBD) += usbd-otg-hs.o
+COBJS-$(CONFIG_EXYNOS_USBD3) += usbd3-ss.o
 endif
 endif
 

@@ -137,7 +137,8 @@ static boot_os_fn *boot_os[] = {
 	[IH_OS_LINUX] = do_bootm_linux,
 #endif
 #ifdef CONFIG_BOOTM_NETBSD
-	[IH_OS_NETBSD] = do_bootm_netbsd,
+//	[IH_OS_NETBSD] = do_bootm_netbsd,
+	[IH_OS_NETBSD] = do_bootm_linux,
 #endif
 #ifdef CONFIG_LYNXKDI
 	[IH_OS_LYNXOS] = do_bootm_lynxkdi,
@@ -590,6 +591,47 @@ int do_bootm (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	ulong		load_end = 0;
 	int		ret;
 	boot_os_fn	*boot_fn;
+
+#ifdef CONFIG_SECURE_BOOT
+#ifndef CONFIG_SECURE_BL1_ONLY
+	security_check();
+#endif
+#endif
+
+#ifdef CONFIG_ZIMAGE_BOOT
+#define LINUX_ZIMAGE_MAGIC	0x016f2818
+	image_header_t	*hdr;
+	ulong		addr;
+
+	/* find out kernel image address */
+	if (argc < 2) {
+		addr = load_addr;
+		debug ("*  kernel: default image load address = 0x%08lx\n",
+				load_addr);
+	} else {
+		addr = simple_strtoul(argv[1], NULL, 16);
+	}
+
+	if (*(ulong *)(addr + 9*4) == LINUX_ZIMAGE_MAGIC) {
+		u32 val;
+		printf("Boot with zImage\n");
+
+		//addr = virt_to_phys(addr);
+		hdr = (image_header_t *)addr;
+		hdr->ih_os = IH_OS_LINUX;
+		hdr->ih_ep = ntohl(addr);
+		
+		memmove (&images.legacy_hdr_os_copy, hdr, sizeof(image_header_t));
+
+		/* save pointer to image header */
+		images.legacy_hdr_os = hdr;
+
+		images.legacy_hdr_valid = 1;
+
+		goto after_header_check;
+	}
+#endif
+
 #ifdef CONFIG_NEEDS_MANUAL_RELOC
 	static int relocated = 0;
 
@@ -679,6 +721,12 @@ int do_bootm (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	}
 
 	show_boot_progress (8);
+
+#if defined(CONFIG_ZIMAGE_BOOT)
+after_header_check:
+	images.os.os = hdr->ih_os;
+	images.ep = image_get_ep (&images.legacy_hdr_os_copy);
+#endif
 
 #ifdef CONFIG_SILENT_CONSOLE
 	if (images.os.os == IH_OS_LINUX)

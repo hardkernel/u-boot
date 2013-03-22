@@ -26,6 +26,7 @@
 
 extern void nand_init(void);
 
+#ifndef CFG_NAND_LEGACY
 #include <linux/mtd/compat.h>
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/nand.h>
@@ -141,4 +142,6 @@ __attribute__((noreturn)) void nand_boot(void);
 					stored as byte number */
 #define ENV_OFFSET_SIZE 8
 int get_nand_env_oob(nand_info_t *nand, unsigned long *result);
+#endif /* !CFG_NAND_LEGACY */
+
 #endif

@@ -40,6 +40,9 @@
 #endif
 
 static void cache_flush(void);
+#if defined(CONFIG_S5PC210) || defined(CONFIG_ARCH_EXYNOS)
+void clear_hsmmc_clock_div(void);
+#endif
 
 int cleanup_before_linux(void)
 {
@@ -74,6 +77,9 @@ int cleanup_before_linux(void)
 	l2_cache_enable();
 #endif
 
+#if defined(CONFIG_S5PC210) || defined(CONFIG_ARCH_EXYNOS)
+	clear_hsmmc_clock_div();
+#endif
 	return 0;
 }
 

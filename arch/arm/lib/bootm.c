@@ -99,6 +99,7 @@ int do_bootm_linux(int flag, int argc, char *argv[], bootm_headers_t *images)
 	char	*s;
 	int	machid = bd->bi_arch_number;
 	void	(*kernel_entry)(int zero, int arch, uint params);
+	int	ret;
 
 #ifdef CONFIG_CMDLINE_TAG
 	char *commandline = getenv ("bootargs");
@@ -112,6 +113,11 @@ int do_bootm_linux(int flag, int argc, char *argv[], bootm_headers_t *images)
 		machid = simple_strtoul (s, NULL, 16);
 		printf ("Using machid 0x%x from environment\n", machid);
 	}
+
+	ret = boot_get_ramdisk(argc, argv, images, IH_ARCH_ARM, 
+			&(images->rd_start), &(images->rd_end));
+	if(ret)
+		printf("[err] boot_get_ramdisk\n");
 
 	show_boot_progress (15);
 
@@ -152,9 +158,12 @@ int do_bootm_linux(int flag, int argc, char *argv[], bootm_headers_t *images)
 
 	announce_and_cleanup();
 
+#ifdef CONFIG_ENABLE_MMU
+	theLastJump((void *)virt_to_phys(kernel_entry), machid, bd->bi_boot_params);
+#else
 	kernel_entry(0, machid, bd->bi_boot_params);
 	/* does not return */
-
+#endif
 	return 1;
 }
 
@@ -237,11 +246,12 @@ static void setup_start_tag (bd_t *bd)
 
 
 #ifdef CONFIG_SETUP_MEMORY_TAGS
+int nr_dram_banks = -1;
 static void setup_memory_tags (bd_t *bd)
 {
 	int i;
 
-	for (i = 0; i < CONFIG_NR_DRAM_BANKS; i++) {
+	for (i = 0; i < nr_dram_banks; i++) {
 		params->hdr.tag = ATAG_MEM;
 		params->hdr.size = tag_size (tag_mem32);
 

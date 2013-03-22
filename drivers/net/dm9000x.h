@@ -4,6 +4,8 @@
 
 #ifdef CONFIG_DRIVER_DM9000
 
+void dm9000_set_mac_addr(const unsigned char *addr);
+
 #define DM9000_ID		0x90000A46
 #define DM9000_PKT_MAX		1536	/* Received packet max size */
 #define DM9000_PKT_RDY		0x01	/* Packet ready to receive */

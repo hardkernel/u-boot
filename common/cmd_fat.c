@@ -43,6 +43,7 @@ int do_fat_fsload (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	int dev=0;
 	int part=1;
 	char *ep;
+	struct mmc *mmc;
 
 	if (argc < 5) {
 		printf( "usage: fatload <interface> <dev[:part]> "
@@ -51,6 +52,13 @@ int do_fat_fsload (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	}
 
 	dev = (int)simple_strtoul(argv[2], &ep, 16);
+
+	mmc = find_mmc_device(dev);
+	if (mmc_init(mmc)) {
+		printf("MMC init is failed.\n");
+		return 1;
+	}
+
 	dev_desc = get_dev(argv[1],dev);
 	if (dev_desc == NULL) {
 		puts("\n** Invalid boot device **\n");
@@ -92,7 +100,7 @@ int do_fat_fsload (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 
 U_BOOT_CMD(
 	fatload,	6,	0,	do_fat_fsload,
-	"load binary file from a dos filesystem",
+	"fatload - load binary file from a dos filesystem\n",
 	"<interface> <dev[:part]>  <addr> <filename> [bytes]\n"
 	"    - load binary file 'filename' from 'dev' on 'interface'\n"
 	"      to address 'addr' from dos filesystem"
@@ -170,17 +178,206 @@ int do_fat_fsinfo (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		}
 		part = (int)simple_strtoul(++ep, NULL, 16);
 	}
-	if (fat_register_device(dev_desc,part)!=0) {
-		printf("\n** Unable to use %s %d:%d for fatinfo **\n",
-			argv[1], dev, part);
-		return 1;
+
+	int i;
+	for (i = 1; i <= 4; i++) {
+		printf("-----Partition %d-----\n", i);
+		if (fat_register_device(dev_desc,part)!=0) {
+			printf ("\n** Unable to use %s %d:%d for fatinfo **\n",argv[1],dev,i);
+		}
+		printf("------------------------\n");
 	}
 	return file_fat_detectfs();
 }
 
 U_BOOT_CMD(
 	fatinfo,	3,	1,	do_fat_fsinfo,
-	"print information about filesystem",
+	"fatinfo - print information about filesystem",
 	"<interface> <dev[:part]>\n"
-	"    - print information about filesystem from 'dev' on 'interface'"
+	"    - print information about filesystem from 'dev' on 'interface'\n"
 );
+
+int do_fat_format(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+{
+	int dev = 0;
+	int part = 1;
+	char *ep;
+	block_dev_desc_t *dev_desc = NULL;
+
+	if (argc < 2) {
+		printf ("usage : fatformat <interface> <dev[:part]>\n");
+		return(0);
+	}
+
+	dev = (int)simple_strtoul (argv[2], &ep, 16);
+	dev_desc = get_dev(argv[1], dev);
+
+	if (dev_desc == NULL) {
+		puts ("\n ** Invalid boot device **\n");
+		return 1;
+	}
+
+	if (*ep) {
+		if (*ep != ':') {
+			puts ("\n ** Invald boot device, use 'dev[:part]' **\n");
+			return 1;
+		}
+		part = (int)simple_strtoul(++ep, NULL, 16);
+		if (part > 4 || part <1) {
+			puts ("** Partition Number should be 1 ~ 4 **\n");
+		}
+	}
+	printf("Start format MMC&d partition&d ...\n", dev, part);
+	if (fat_format_device(dev_desc, part) != 0) {
+		printf("Format failure!!!\n");
+	}
+
+	return 0;
+}
+
+U_BOOT_CMD(
+	fatformat, 3, 0, do_fat_format,
+	"fatformat - disk format by FAT32\n",
+	"<interface(only support mmc)> <dev:partition num>\n"
+	"	- format by FAT32 on 'interface'\n"
+);
+
+#ifdef NOT_IMPLEMENTED_YET
+/* find first device whose first partition is a DOS filesystem */
+int find_fat_partition (void)
+{
+	int i, j;
+	block_dev_desc_t *dev_desc;
+	unsigned char *part_table;
+	unsigned char buffer[ATA_BLOCKSIZE];
+
+	for (i = 0; i < CONFIG_SYS_IDE_MAXDEVICE; i++) {
+		dev_desc = ide_get_dev (i);
+		if (!dev_desc) {
+			debug ("couldn't get ide device!\n");
+			return (-1);
+		}
+		if (dev_desc->part_type == PART_TYPE_DOS) {
+			if (dev_desc->
+				block_read (dev_desc->dev, 0, 1, (ulong *) buffer) != 1) {
+				debug ("can't perform block_read!\n");
+				return (-1);
+			}
+			part_table = &buffer[0x1be];	/* start with partition #4 */
+			for (j = 0; j < 4; j++) {
+				if ((part_table[4] == 1 ||	/* 12-bit FAT */
+				     part_table[4] == 4 ||	/* 16-bit FAT */
+				     part_table[4] == 6) &&	/* > 32Meg part */
+				    part_table[0] == 0x80) {	/* bootable? */
+					curr_dev = i;
+					part_offset = part_table[11];
+					part_offset <<= 8;
+					part_offset |= part_table[10];
+					part_offset <<= 8;
+					part_offset |= part_table[9];
+					part_offset <<= 8;
+					part_offset |= part_table[8];
+					debug ("found partition start at %ld\n", part_offset);
+					return (0);
+				}
+				part_table += 16;
+			}
+		}
+	}
+
+	debug ("no valid devices found!\n");
+	return (-1);
+}
+
+int
+do_fat_dump (cmd_tbl_t *cmdtp, bd_t *bd, int flag, int argc, char *argv[])
+{
+	__u8 block[1024];
+	int ret;
+	int bknum;
+
+	ret = 0;
+
+	if (argc != 2) {
+		printf ("needs an argument!\n");
+		return (0);
+	}
+
+	bknum = simple_strtoul (argv[1], NULL, 10);
+
+	if (disk_read (0, bknum, block) != 0) {
+		printf ("Error: reading block\n");
+		return -1;
+	}
+	printf ("FAT dump: %d\n", bknum);
+	hexdump (512, block);
+
+	return (ret);
+}
+
+int disk_read (__u32 startblock, __u32 getsize, __u8 *bufptr)
+{
+	ulong tot;
+	block_dev_desc_t *dev_desc;
+
+	if (curr_dev < 0) {
+		if (find_fat_partition () != 0)
+			return (-1);
+	}
+
+	dev_desc = ide_get_dev (curr_dev);
+	if (!dev_desc) {
+		debug ("couldn't get ide device\n");
+		return (-1);
+	}
+
+	tot = dev_desc->block_read (0, startblock + part_offset,
+				    getsize, (ulong *) bufptr);
+
+	/* should we do this here?
+	   flush_cache ((ulong)buf, cnt*ide_dev_desc[device].blksz);
+	 */
+
+	if (tot == getsize)
+		return (0);
+
+	debug ("unable to read from device!\n");
+
+	return (-1);
+}
+
+
+static int isprint (unsigned char ch)
+{
+	if (ch >= 32 && ch < 127)
+		return (1);
+
+	return (0);
+}
+
+
+void hexdump (int cnt, unsigned char *data)
+{
+	int i;
+	int run;
+	int offset;
+
+	offset = 0;
+	while (cnt) {
+		printf ("%04X : ", offset);
+		if (cnt >= 16)
+			run = 16;
+		else
+			run = cnt;
+		cnt -= run;
+		for (i = 0; i < run; i++)
+			printf ("%02X ", (unsigned int) data[i]);
+		printf (": ");
+		for (i = 0; i < run; i++)
+			printf ("%c", isprint (data[i]) ? data[i] : '.');
+		printf ("\n");
+		data = &data[16];
+		offset += run;
+	}
+}
+#endif	/* NOT_IMPLEMENTED_YET */

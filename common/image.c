@@ -946,8 +946,21 @@ int boot_get_ramdisk (int argc, char * const argv[], bootm_headers_t *images,
 #endif
 		default:
 			puts ("Wrong Ramdisk Image Format\n");
+#ifdef CONFIG_ROOTFS_ATAGS
+			char *rootfs_len = getenv("rootfslen");
+			if(rootfs_len == NULL) {
+				rd_data = rd_len = rd_load = 0;
+				return 1;
+			}
+			else {
+				rd_data = simple_strtoul(argv[2], NULL, 16);
+				rd_len = simple_strtoul(rootfs_len, NULL, 16);
+			}
+#else
 			rd_data = rd_len = rd_load = 0;
 			return 1;
+
+#endif
 		}
 
 #if defined(CONFIG_B2) || defined(CONFIG_EVB4510) || defined(CONFIG_ARMADILLO)

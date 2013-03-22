@@ -24,10 +24,16 @@
 #include <common.h>
 #include <command.h>
 
+extern cmd_tbl_t  __u_boot_cmd_bdinfo;
+extern cmd_tbl_t  __u_boot_cmd_showvar;
+
 int do_help(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 {
-	return _do_help(&__u_boot_cmd_start,
-			&__u_boot_cmd_end - &__u_boot_cmd_start,
+//	return _do_help(&__u_boot_cmd_start,
+//			&__u_boot_cmd_end - &__u_boot_cmd_start,
+//			cmdtp, flag, argc, argv);
+	return _do_help(&__u_boot_cmd_bdinfo,
+			&__u_boot_cmd_showvar - &__u_boot_cmd_bdinfo + 1,
 			cmdtp, flag, argc, argv);
 }
 

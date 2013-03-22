@@ -28,6 +28,30 @@
 #include <asm/errno.h>
 #include <malloc.h>
 
+
+#define ONENAND_PHYS_BASE			CFG_ONENAND_BASE
+
+// To Do: The below definitions should be moved to a header file defining platform SFRs.
+#define ONENAND_CTRL_OFFSET			(0x00600000)
+#define ONENAND_CTRL_PHYS_BASE			(ONENAND_PHYS_BASE + ONENAND_CTRL_OFFSET)
+
+/* AUDI OneNAND Controller Special Function Registers */
+#define CTRL_DMA_SRC_ADDR_OFFSET		0x400
+#define CTRL_DMA_SRC_CFG_OFFSET			0x404
+#define CTRL_DMA_DST_ADDR_OFFSET		0x408
+#define CTRL_DMA_DST_CFG_OFFSET			0x40C
+#define CTRL_DMA_TRANS_SIZE_OFFSET		0x414
+#define CTRL_DMA_TRANS_CMD_OFFSET		0x418
+#define CTRL_DMA_TRANS_STATUS_OFFSET		0x41C
+#define CTRL_DMA_TRANS_DIR_OFFSET		0x420
+
+#define DMA_TRANSFER_DONE			(1<<18)
+#define DMA_TRANSFER_BUSY			(1<<17)
+#define DMA_TRANSFER_ERROR			(1<<16)
+
+#define DMA_IN2OUT				0
+#define DMA_OUT2IN				1
+#define CONFIG_EVT1
 /* It should access 16-bit instead of 8-bit */
 static void *memcpy_16(void *dst, const void *src, unsigned int len)
 {
@@ -73,10 +97,20 @@ static struct nand_ecclayout onenand_oob_64 = {
 		40, 41, 42, 43, 44,
 		56, 57, 58, 59, 60,
 		},
+
+#if 1 /* FPGA_SMDKV310	*/
+	/* For YAFFS2 tag information */
+	.oobfree	= {
+		{2, 6}, {13, 3}, {18, 6}, {29, 3},
+		{34, 6}, {45, 3}, {50, 6}, {61, 3}
+		}
+#else
 	.oobfree	= {
 		{2, 3}, {14, 2}, {18, 3}, {30, 2},
 		{34, 3}, {46, 2}, {50, 3}, {62, 2}
 	}
+		}
+#endif
 };
 
 /**
@@ -320,6 +354,7 @@ static int onenand_command(struct mtd_info *mtd, int cmd, loff_t addr,
 	struct onenand_chip *this = mtd->priv;
 	int value;
 	int block, page;
+//printk("%s\n",__func__);
 
 	/* Now we use page size operation */
 	int sectors = 0, count = 0;
@@ -342,6 +377,7 @@ static int onenand_command(struct mtd_info *mtd, int cmd, loff_t addr,
 
 	case ONENAND_CMD_ERASE:
 	case ONENAND_CMD_BUFFERRAM:
+//printk("erase\n");
 		block = onenand_block(this, addr);
 		page = -1;
 		break;
@@ -516,6 +552,64 @@ static inline int onenand_bufferram_offset(struct mtd_info *mtd, int area)
 }
 
 /**
+ * onenand_dma_transfer - [Internal] DMA transfer
+ * @param mtd		MTD data structure
+ * @param src		Source address
+ * @param dest		Destination address
+ * @param length	Length in bytes
+ * @param direction	Transfer direction (0: In2Out, 1: Out2In)
+ *
+ * Transfer data through DMA
+ * Assumption:
+ */
+static int onenand_dma_transfer(struct mtd_info *mtd, void __iomem *src, void __iomem *dest, u32 length, u32 direction)
+{
+	struct onenand_chip *this = mtd->priv;
+	void __iomem *CTRL_DMA_BASE = this->base + ONENAND_CTRL_OFFSET;
+	u32 status;
+
+	writel(src, CTRL_DMA_BASE + CTRL_DMA_SRC_ADDR_OFFSET);
+	writel(dest, CTRL_DMA_BASE + CTRL_DMA_DST_ADDR_OFFSET);
+
+	if (direction == DMA_IN2OUT)
+	{
+		writel((4 << 16) | (0 << 8) | (1 << 0),	/* 16-Burst, Inc, 16-bit */
+			CTRL_DMA_BASE + CTRL_DMA_SRC_CFG_OFFSET);
+		writel((4 << 16) | (0 << 8) | (2 << 0),	/* 16-Burst, Inc, 32-bit */
+			CTRL_DMA_BASE + CTRL_DMA_DST_CFG_OFFSET);
+	}
+	else
+	{
+		writel((4 << 16) | (0 << 8) | (2 << 0),	/* 16-Burst, Inc, 32-bit */
+			CTRL_DMA_BASE + CTRL_DMA_SRC_CFG_OFFSET);
+		writel((4 << 16) | (0 << 8) | (1 << 0),	/* 16-Burst, Inc, 16-bit */
+			CTRL_DMA_BASE + CTRL_DMA_DST_CFG_OFFSET);
+	}
+
+	writel(length, CTRL_DMA_BASE + CTRL_DMA_TRANS_SIZE_OFFSET);
+	writel(direction, CTRL_DMA_BASE + CTRL_DMA_TRANS_DIR_OFFSET);
+
+	writel(0x1, CTRL_DMA_BASE + CTRL_DMA_TRANS_CMD_OFFSET);
+
+	do
+	{
+		status = readl(CTRL_DMA_BASE + CTRL_DMA_TRANS_STATUS_OFFSET);
+	} while (!(status & DMA_TRANSFER_DONE));
+
+	if (status & DMA_TRANSFER_ERROR)
+	{
+		printk("onenand_dma_transfer: DMA error!\n");
+		writel(DMA_TRANSFER_ERROR, CTRL_DMA_BASE + CTRL_DMA_TRANS_CMD_OFFSET);
+		writel(DMA_TRANSFER_DONE, CTRL_DMA_BASE + CTRL_DMA_TRANS_CMD_OFFSET);
+		return -2;
+	}
+
+	writel(DMA_TRANSFER_DONE, CTRL_DMA_BASE + CTRL_DMA_TRANS_CMD_OFFSET);
+
+	return 0;
+}
+
+/**
  * onenand_read_bufferram - [OneNAND Interface] Read the bufferram area
  * @param mtd		MTD data structure
  * @param area		BufferRAM area
@@ -532,10 +626,35 @@ static int onenand_read_bufferram(struct mtd_info *mtd, loff_t addr, int area,
 	struct onenand_chip *this = mtd->priv;
 	void __iomem *bufferram;
 
+#if 0
 	bufferram = this->base + area;
 	bufferram += onenand_bufferram_offset(mtd, area);
 
 	memcpy_16(buffer, bufferram + offset, count);
+#else
+	if ((area == ONENAND_SPARERAM) || (count < mtd->writesize))
+	{
+	bufferram = this->base + area;
+	bufferram += onenand_bufferram_offset(mtd, area);
+
+	memcpy_16(buffer, bufferram + offset, count);
+	}
+	else
+	{
+		void __iomem *src_addr;
+		void __iomem *dest_addr;
+
+#if defined(CONFIG_EVT1)	
+		src_addr = (void __iomem *) (ONENAND_PHYS_BASE + area);
+#else /* S/W workaround code for S5PC210 EVT0 */
+		src_addr = (void __iomem *)area;
+#endif
+		src_addr += onenand_bufferram_offset(mtd, area) + offset;
+		dest_addr = (void __iomem *)virt_to_phys((void *)buffer);
+
+		return onenand_dma_transfer(mtd, src_addr, dest_addr, count, DMA_IN2OUT);
+	}
+#endif
 
 	return 0;
 }
@@ -1164,8 +1283,10 @@ static int onenand_bbt_wait(struct mtd_info *mtd, int state)
 	if (interrupt & ONENAND_INT_READ) {
 		int ecc = onenand_read_ecc(this);
 		if (ecc & ONENAND_ECC_2BIT_ALL) {
+#ifndef CONFIG_SYS_ONENAND_QUIET_TEST 
 			printk(KERN_INFO "onenand_bbt_wait: ecc error = 0x%04x"
 				", controller = 0x%04x\n", ecc, ctrl);
+#endif
 			return ONENAND_BBT_READ_ERROR;
 		}
 	} else {
@@ -2175,12 +2296,14 @@ static void onenand_check_features(struct mtd_info *mtd)
 		this->options |= ONENAND_HAS_UNLOCK_ALL;
 	}
 
+#ifndef CONFIG_SYS_ONENAND_QUIET_TEST
 	if (this->options & ONENAND_HAS_CONT_LOCK)
 		printk(KERN_DEBUG "Lock scheme is Continuous Lock\n");
 	if (this->options & ONENAND_HAS_UNLOCK_ALL)
 		printk(KERN_DEBUG "Chip support all block unlock\n");
 	if (this->options & ONENAND_HAS_2PLANE)
 		printk(KERN_DEBUG "Chip has 2 plane\n");
+#endif
 }
 
 /**
@@ -2207,8 +2330,9 @@ char *onenand_print_device_info(int device, int version)
 	       (16 << density), vcc ? "2.65/3.3" : "1.8", device);
 
 	sprintf(p, "\nOneNAND version = 0x%04x", version);
+#ifndef CONFIG_SYS_ONENAND_QUIET_TEST
 	printk("%s\n", dev_info);
-
+#endif
 	return dev_info;
 }
 
@@ -2518,6 +2642,7 @@ static int onenand_probe(struct mtd_info *mtd)
 	int density;
 	int syscfg;
 
+#if 0	// for supporting sync. mode
 	/* Save system configuration 1 */
 	syscfg = this->read_word(this->base + ONENAND_REG_SYS_CFG1);
 	/* Clear Sync. Burst Read mode to read BootRAM */
@@ -2538,6 +2663,10 @@ static int onenand_probe(struct mtd_info *mtd)
 
 	/* Restore system configuration 1 */
 	this->write_word(syscfg, this->base + ONENAND_REG_SYS_CFG1);
+#else
+	bram_maf_id = this->read_word(this->base + ONENAND_REG_MANUFACTURER_ID);
+	bram_dev_id = this->read_word(this->base + ONENAND_REG_DEVICE_ID);
+#endif
 
 	/* Check manufacturer ID */
 	if (onenand_check_maf(bram_maf_id))

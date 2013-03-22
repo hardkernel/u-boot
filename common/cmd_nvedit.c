@@ -63,6 +63,7 @@ DECLARE_GLOBAL_DATA_PTR;
     !defined(CONFIG_ENV_IS_IN_NVRAM)	&& \
     !defined(CONFIG_ENV_IS_IN_ONENAND)	&& \
     !defined(CONFIG_ENV_IS_IN_SPI_FLASH)	&& \
+    !defined(CONFIG_ENV_IS_IN_AUTO)    && \
     !defined(CONFIG_ENV_IS_NOWHERE)
 # error Define one of CONFIG_ENV_IS_IN_{EEPROM|FLASH|DATAFLASH|ONENAND|\
 SPI_FLASH|MG_DISK|NVRAM|MMC|NOWHERE}
@@ -504,7 +505,6 @@ int getenv_f (char *name, char *buf, unsigned len)
 }
 
 #if defined(CONFIG_CMD_SAVEENV) && !defined(CONFIG_ENV_IS_NOWHERE)
-
 int do_env_save (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	extern char * env_name_spec;

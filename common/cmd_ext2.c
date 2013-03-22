@@ -48,6 +48,15 @@
 #error DOS or EFI partition support must be selected
 #endif
 
+#if defined(CONFIG_S5P6450)
+DECLARE_GLOBAL_DATA_PTR;
+#endif
+
+enum _FS_TYPE{
+	FS_TYPE_EXT2,
+	FS_TYPE_EXT3
+};
+
 /* #define	EXT2_DEBUG */
 
 #ifdef	EXT2_DEBUG
@@ -65,9 +74,10 @@ int do_ext2ls (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	block_dev_desc_t *dev_desc=NULL;
 	int part_length;
 
-	if (argc < 3)
-		return cmd_usage(cmdtp);
-
+	if (argc < 3) {
+		cmd_usage(cmdtp);
+		return 1;
+	}
 	dev = (int)simple_strtoul (argv[2], &ep, 16);
 	dev_desc = get_dev(argv[1],dev);
 
@@ -163,7 +173,8 @@ int do_ext2load (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		break;
 
 	default:
-		return cmd_usage(cmdtp);
+		cmd_usage(cmdtp);
+		return 1;
 	}
 
 	if (!filename) {
@@ -258,3 +269,72 @@ U_BOOT_CMD(
 	"    - load binary file 'filename' from 'dev' on 'interface'\n"
 	"      to address 'addr' from ext2 filesystem"
 );
+
+int ext_format (int argc, char *argv[], char filesystem_type)
+{
+	int dev=0;
+	int part=1;
+	char *ep;
+	block_dev_desc_t *dev_desc=NULL;
+
+	if (argc < 2) {
+		printf("usage : ext2format <interface> <dev[:part]>\n");
+		return (0);
+	}
+	dev = (int)simple_strtoul (argv[2], &ep, 16);
+	dev_desc=get_dev(argv[1],dev);
+	if (dev_desc==NULL) {
+		puts ("\n** Invalid boot device **\n");
+		return 1;
+	}
+	if (*ep) {
+		if (*ep != ':') {
+			puts ("\n** Invalid boot device, use 'dev[:part]' **\n");
+			return 1;
+		}
+		part = (int)simple_strtoul(++ep, NULL, 16);
+		if (part > 4 || part < 1) {
+			puts ("** Partition Number shuld be 1 ~ 4 **\n");
+			return 1;
+		}
+	}
+	printf("Start format MMC%d partition%d ....\n", dev, part);
+	
+	switch (filesystem_type) {
+	case FS_TYPE_EXT3:
+	case FS_TYPE_EXT2:
+		if (ext2fs_format(dev_desc, part, filesystem_type) != 0)
+		printf("Format failure!!!\n");
+		break;
+
+	default:
+		printf("FileSystem Type Value is not invalidate=%d \n", filesystem_type);
+		break;
+	}
+	return 0;
+}
+
+int do_ext2_format (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+{
+	return ext_format(argc, argv, FS_TYPE_EXT2);
+}
+
+U_BOOT_CMD(
+	ext2format,	3,	0,	do_ext2_format,
+	"ext2format - disk format by ext2\n",
+	"<interface(only support mmc)> <dev:partition num>\n"
+	"    - format by ext2 on 'interface'\n"
+);
+
+int do_ext3_format (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+{
+	return ext_format(argc, argv, FS_TYPE_EXT3);
+}
+
+U_BOOT_CMD(
+	ext3format,	3,	0,	do_ext3_format,
+	"ext3format - disk format by ext3\n",
+	"<interface(only support mmc)> <dev:partition num>\n"
+	"    - format by ext3 on 'interface'\n"
+);
+

@@ -26,6 +26,10 @@
 #include <net.h>
 #include <miiphy.h>
 
+#if defined(CONFIG_S5P6450)
+DECLARE_GLOBAL_DATA_PTR;
+#endif
+
 void eth_parse_enetaddr(const char *addr, uchar *enetaddr)
 {
 	char *end;

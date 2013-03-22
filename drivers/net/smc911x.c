@@ -37,6 +37,10 @@ void pkt_data_push(struct eth_device *dev, u32 addr, u32 val) \
 
 #define mdelay(n)       udelay((n)*1000)
 
+#if defined(CONFIG_S5P6450)
+DECLARE_GLOBAL_DATA_PTR;
+#endif
+
 static void smc911x_handle_mac_address(struct eth_device *dev)
 {
 	unsigned long addrh, addrl;
@@ -212,7 +216,19 @@ static int smc911x_rx(struct eth_device *dev)
 {
 	u32 *data = (u32 *)NetRxPackets[0];
 	u32 pktlen, tmplen;
-	u32 status;
+	u32 status, tmp, i;
+
+	/* workaround: delay for rx packet should be added here.
+	 * because NetLoop does not guarantee the RX packet delay.
+	 */
+	for (i=0; i<0x100000; i++) {
+		if ((smc911x_reg_read(dev, RX_FIFO_INF) & RX_FIFO_INF_RXSUSED) >> 16)
+			break;
+	}
+	if (i > (0x100000-1)) {
+		printf("%s: timeout in RX\n", DRIVERNAME);
+		return -1;
+	}
 
 	if ((smc911x_reg_read(dev, RX_FIFO_INF) & RX_FIFO_INF_RXSUSED) >> 16) {
 		status = smc911x_reg_read(dev, RX_STATUS_FIFO);

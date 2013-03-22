@@ -633,3 +633,15 @@ int dm9000_initialize(bd_t *bis)
 
 	return 0;
 }
+
+/* temporarily added */
+void dm9000_set_mac_addr(const unsigned char *addr)
+{
+	int i, oft;
+
+	printf("MAC: %pM\n", addr);
+
+	/* fill device MAC address registers */
+	for (i = 0, oft = DM9000_PAR; i < 6; i++, oft++)
+		DM9000_iow(oft, addr[i]);
+}

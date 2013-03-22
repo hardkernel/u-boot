@@ -23,6 +23,7 @@
 
 #include <common.h>
 #include <asm/io.h>
+#include <asm/arch/cpu.h>
 #include <asm/arch/uart.h>
 #include <asm/arch/clk.h>
 #include <serial.h>
@@ -32,7 +33,12 @@ DECLARE_GLOBAL_DATA_PTR;
 static inline struct s5p_uart *s5p_get_base_uart(int dev_index)
 {
 	u32 offset = dev_index * sizeof(struct s5p_uart);
-	return (struct s5p_uart *)(samsung_get_base_uart() + offset);
+//	return (struct s5p_uart *)(samsung_get_base_uart() + offset);
+#if defined(CONFIG_S5PC210) || defined(CONFIG_S5P6450) || defined(CONFIG_ARCH_EXYNOS)
+	return (struct s5p_uart *)samsung_get_base_uart();
+#elif defined(CONFIG_S5PC110)
+	return (struct s5p_uart *)(0XE2900800);
+#endif
 }
 
 /*

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008,2010 Freescale Semiconductor, Inc
+ * Copyright 2008, Freescale Semiconductor, Inc
  * Andy Fleming
  *
  * Based (loosely) on the Linux code
@@ -40,12 +40,8 @@
 #define MMC_VERSION_3		(MMC_VERSION_MMC | 0x30)
 #define MMC_VERSION_4		(MMC_VERSION_MMC | 0x40)
 
-#define MMC_MODE_HS		0x001
-#define MMC_MODE_HS_52MHz	0x010
-#define MMC_MODE_4BIT		0x100
-#define MMC_MODE_8BIT		0x200
 
-#define SD_DATA_4BIT	0x00040000
+#define SD_DATA_4BIT	(0x1<<18)
 
 #define IS_SD(x) (x->version & SD_VERSION_SD)
 
@@ -89,7 +85,9 @@
 #define SD_HIGHSPEED_SUPPORTED	0x00020000
 
 #define MMC_HS_TIMING		0x00000100
-#define MMC_HS_52MHZ		0x2
+#define MMC_HS_52MHZ		(0x1<<1)
+#define MMC_HS_52MHZ_1_8V_3V_IO	(0x1<<2)
+#define MMC_HS_52MHZ_1_2V_IO	(0x1<<3)
 
 #define OCR_BUSY	0x80000000
 #define OCR_HCS		0x40000000
@@ -131,23 +129,50 @@
 #define EXT_CSD_BUS_WIDTH	183	/* R/W */
 #define EXT_CSD_HS_TIMING	185	/* R/W */
 #define EXT_CSD_CARD_TYPE	196	/* RO */
+#define EXT_CSD_RST_N_FUNCTION		162	/* R/W */
 #define EXT_CSD_REV		192	/* RO */
 #define EXT_CSD_SEC_CNT		212	/* RO, 4 bytes */
+#define BOOT_SIZE_MULTI		226	/* RO */
 
 /*
  * EXT_CSD field definitions
  */
 
+/* Card */
 #define EXT_CSD_CMD_SET_NORMAL		(1<<0)
 #define EXT_CSD_CMD_SET_SECURE		(1<<1)
 #define EXT_CSD_CMD_SET_CPSECURE	(1<<2)
 
-#define EXT_CSD_CARD_TYPE_26	(1<<0)	/* Card can run at 26MHz */
-#define EXT_CSD_CARD_TYPE_52	(1<<1)	/* Card can run at 52MHz */
+#define EXT_CSD_CARD_TYPE_26		(1<<0)	/* Card can run at 26MHz */
+#define EXT_CSD_CARD_TYPE_52		(1<<1)	/* Card can run at 52MHz */
+#define EXT_CSD_CARD_TYPE_52_DDR_18_30	(1<<2)	/* Card can run at 52MHz DDR 1.8V or 3V */
+#define EXT_CSD_CARD_TYPE_52_DDR_12	(1<<3)	/* Card can run at 52MHz DDR 1.2V */
 
 #define EXT_CSD_BUS_WIDTH_1	0	/* Card is in 1 bit mode */
 #define EXT_CSD_BUS_WIDTH_4	1	/* Card is in 4 bit mode */
 #define EXT_CSD_BUS_WIDTH_8	2	/* Card is in 8 bit mode */
+#define EXT_CSD_BUS_WIDTH_4_DDR	5	/* Card is in 4 bit DDR mode */
+#define EXT_CSD_BUS_WIDTH_8_DDR	6	/* Card is in 8 bit DDR mode */
+
+#define EXT_CSD_RST_N_EN_MASK	0x3
+#define EXT_CSD_RST_N_ENABLED	0x1	/* RST_n is enabled on card */
+
+/* Controller */
+#define MMC_BUS_WIDTH_1		   0
+#define MMC_BUS_WIDTH_4		   1
+#define MMC_BUS_WIDTH_8		   2
+#define MMC_BUS_WIDTH_4_DDR	   5
+#define MMC_BUS_WIDTH_8_DDR	   6
+
+#define MMC_MODE_HS			0x001
+#define MMC_MODE_HS_52MHz		0x010
+#define MMC_MODE_HS_52MHz_DDR_18_3V	0x020
+#define MMC_MODE_HS_52MHz_DDR_12V	0x040
+
+#define MMC_MODE_4BIT		0x100
+#define MMC_MODE_8BIT		0x200
+#define MMC_MODE_4BIT_DDR	0x400
+#define MMC_MODE_8BIT_DDR	0x800
 
 #define R1_ILLEGAL_COMMAND		(1 << 22)
 #define R1_APP_CMD			(1 << 5)
@@ -169,7 +194,41 @@
 #define MMC_RSP_R6      (MMC_RSP_PRESENT|MMC_RSP_CRC|MMC_RSP_OPCODE)
 #define MMC_RSP_R7      (MMC_RSP_PRESENT|MMC_RSP_CRC|MMC_RSP_OPCODE)
 
+struct mmc_cid {
+	unsigned int		manfid;
+	char			prod_name[8];
+	unsigned int		serial;
+	unsigned short		oemid;
+	unsigned short		year;
+	unsigned char		hwrev;
+	unsigned char		fwrev;
+	unsigned char		month;
+};
 
+struct mmc_csd {
+	unsigned char		mmca_vsn;
+	unsigned short		cmdclass;
+	unsigned short		tacc_clks;
+	unsigned int		tacc_ns;
+	unsigned int		r2w_factor;
+	unsigned int		max_dtr;
+	unsigned int		read_blkbits;
+	unsigned int		write_blkbits;
+	unsigned int		capacity;
+	unsigned int		read_partial:1,
+				read_misalign:1,
+				write_partial:1,
+				write_misalign:1;
+};
+
+struct mmc_ext_csd {
+	unsigned int		hs_max_dtr;
+	unsigned int		sectors;
+	unsigned int		boot_size_multi;
+};
+
+/* The below code is CID Structure of u-boot-samsung */
+#if 0 
 struct mmc_cid {
 	unsigned long psn;
 	unsigned short oid;
@@ -179,16 +238,6 @@ struct mmc_cid {
 	char pnm[7];
 };
 
-/*
- * WARNING!
- *
- * This structure is used by atmel_mci.c only.
- * It works for the AVR32 architecture but NOT
- * for ARM/AT91 architectures.
- * Its use is highly depreciated.
- * After the atmel_mci.c driver for AVR32 has
- * been replaced this structure will be removed.
- */
 struct mmc_csd
 {
 	u8	csd_structure:2,
@@ -228,6 +277,7 @@ struct mmc_csd
 	u8	crc:7;
 	u8	one:1;
 };
+#endif
 
 struct mmc_cmd {
 	ushort cmdidx;
@@ -246,6 +296,10 @@ struct mmc_data {
 	uint blocks;
 	uint blocksize;
 };
+
+#ifndef __iomem
+#define __iomem
+#endif
 
 struct mmc {
 	struct list_head link;
@@ -268,7 +322,9 @@ struct mmc {
 	uint tran_speed;
 	uint read_bl_len;
 	uint write_bl_len;
-	u64 capacity;
+	u32 capacity;
+	void __iomem *		ioaddr;		/* Mapped address */
+	struct mmc_ext_csd	ext_csd;	/* mmc v4 extended card specific */
 	block_dev_desc_t block_dev;
 	int (*send_cmd)(struct mmc *mmc,
 			struct mmc_cmd *cmd, struct mmc_data *data);
@@ -280,16 +336,16 @@ int mmc_register(struct mmc *mmc);
 int mmc_initialize(bd_t *bis);
 int mmc_init(struct mmc *mmc);
 int mmc_read(struct mmc *mmc, u64 src, uchar *dst, int size);
-void mmc_set_clock(struct mmc *mmc, uint clock);
 struct mmc *find_mmc_device(int dev_num);
-int mmc_set_dev(int dev_num);
 void print_mmc_devices(char separator);
 int board_mmc_getcd(u8 *cd, struct mmc *mmc);
+int mmc_erase(struct mmc *mmc, int part, u32 start, u32 block);
 
-#ifdef CONFIG_GENERIC_MMC
-int atmel_mci_init(void *regs);
-#else
+int emmc_boot_open(struct mmc *host);
+int emmc_boot_close(struct mmc *host);
+int emmc_boot_partition_size_change(struct mmc *mmc, u32 bootsize, u32 rpmbsize);
+
+#ifndef CONFIG_GENERIC_MMC
 int mmc_legacy_init(int verbose);
 #endif
-
 #endif /* _MMC_H_ */

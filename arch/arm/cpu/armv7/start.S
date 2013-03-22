@@ -33,6 +33,13 @@
 #include <config.h>
 #include <version.h>
 
+#if defined(CONFIG_S5PC110) && defined(CONFIG_EVT1) && !defined(CONFIG_FUSED)
+	.word 0x2000
+	.word 0x0
+	.word 0x0
+	.word 0x0
+#endif
+
 .globl _start
 _start: b	reset
 	ldr	pc, _undefined_instruction
@@ -166,6 +173,9 @@ stack_setup:
 	mov	sp, r4
 
 	adr	r0, _start
+#if defined(CONFIG_S5PC110) && defined(CONFIG_EVT1) && !defined(CONFIG_FUSED)
+	sub	r0, r0, #16
+#endif
 #ifndef CONFIG_PRELOADER
 	cmp	r0, r6
 	beq	clear_bss		/* skip relocation */
@@ -244,7 +254,7 @@ jump_2_ram:
 	ldr	r0, _board_init_r_ofs
 	adr	r1, _start
 	add	lr, r0, r1
-	add	lr, lr, r9
+@	add	lr, lr, r9
 	/* setup parameters for board_init_r */
 	mov	r0, r5		/* gd_t */
 	mov	r1, r6		/* dest_addr */
@@ -270,6 +280,9 @@ _dynsym_start_ofs:
  *
  *************************************************************************/
 cpu_init_crit:
+
+	bl cache_init
+	
 	/*
 	 * Invalidate L1 I/D
 	 */
@@ -283,8 +296,9 @@ cpu_init_crit:
 	mrc	p15, 0, r0, c1, c0, 0
 	bic	r0, r0, #0x00002000	@ clear bits 13 (--V-)
 	bic	r0, r0, #0x00000007	@ clear bits 2:0 (-CAM)
-	orr	r0, r0, #0x00000002	@ set bit 1 (--A-) Align
-	orr	r0, r0, #0x00000800	@ set bit 12 (Z---) BTB
+	orr	r0, r0, #0x00001000	@ set bit 12 (---I) Icache
+	orr	r0, r0, #0x00000002	@ set bit 1  (--A-) Align
+	orr	r0, r0, #0x00000800	@ set bit 11 (Z---) BTB
 	mcr	p15, 0, r0, c1, c0, 0
 
 	/*

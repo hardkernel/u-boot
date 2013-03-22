@@ -27,6 +27,9 @@ LIB	= $(obj)libcommon.o
 
 # core
 COBJS-y += main.o
+COBJS-$(CONFIG_S3C_USBD) += cmd_usbd.o
+COBJS-$(CONFIG_FASTBOOT) += cmd_fastboot.o
+COBJS-$(CONFIG_EXYNOS_USBD3) += cmd_usbd3.o
 COBJS-y += console.o
 COBJS-y += command.o
 COBJS-y += dlmalloc.o
@@ -61,6 +64,7 @@ COBJS-$(CONFIG_ENV_IS_IN_NAND) += env_nand.o
 COBJS-$(CONFIG_ENV_IS_IN_NVRAM) += env_nvram.o
 COBJS-$(CONFIG_ENV_IS_IN_ONENAND) += env_onenand.o
 COBJS-$(CONFIG_ENV_IS_IN_SPI_FLASH) += env_sf.o
+COBJS-$(CONFIG_ENV_IS_IN_AUTO) += env_auto.o
 COBJS-$(CONFIG_ENV_IS_NOWHERE) += env_nowhere.o
 
 # command
@@ -90,6 +94,7 @@ COBJS-$(CONFIG_CMD_EEPROM) += cmd_eeprom.o
 COBJS-$(CONFIG_CMD_ELF) += cmd_elf.o
 COBJS-$(CONFIG_SYS_HUSH_PARSER) += cmd_exit.o
 COBJS-$(CONFIG_CMD_EXT2) += cmd_ext2.o
+COBJS-y += decompress_ext4.o
 COBJS-$(CONFIG_CMD_FAT) += cmd_fat.o
 COBJS-$(CONFIG_CMD_FDC)$(CONFIG_CMD_FDOS) += cmd_fdc.o
 COBJS-$(CONFIG_OF_LIBFDT) += cmd_fdt.o fdt_support.o
@@ -116,7 +121,8 @@ COBJS-$(CONFIG_MII) += miiphyutil.o
 COBJS-$(CONFIG_CMD_MII) += miiphyutil.o
 COBJS-$(CONFIG_CMD_MII) += cmd_mii.o
 COBJS-$(CONFIG_CMD_MISC) += cmd_misc.o
-COBJS-$(CONFIG_CMD_MMC) += cmd_mmc.o
+COBJS-$(CONFIG_CMD_MMC) += cmd_mmc.o cmd_mmc_fdisk.o
+COBJS-$(CONFIG_CMD_MOVI) += cmd_movi.o
 COBJS-$(CONFIG_MP) += cmd_mp.o
 COBJS-$(CONFIG_CMD_MTDPARTS) += cmd_mtdparts.o
 COBJS-$(CONFIG_CMD_NAND) += cmd_nand.o
@@ -164,7 +170,6 @@ COBJS-$(CONFIG_LYNXKDI) += lynxkdi.o
 COBJS-$(CONFIG_MODEM_SUPPORT) += modem.o
 COBJS-$(CONFIG_UPDATE_TFTP) += update.o
 COBJS-$(CONFIG_USB_KEYBOARD) += usb_kbd.o
-
 
 COBJS	:= $(sort $(COBJS-y))
 XCOBJS	:= $(sort $(XCOBJS-y))

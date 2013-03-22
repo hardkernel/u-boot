@@ -63,7 +63,8 @@ ifeq (,$(findstring arch/arm/lib/eabi_compat.o,$(PLATFORM_LIBS)))
 PLATFORM_LIBS += $(OBJTREE)/arch/arm/lib/eabi_compat.o
 endif
 endif
-LDSCRIPT := $(SRCTREE)/$(CPUDIR)/u-boot.lds
+#LDSCRIPT := $(SRCTREE)/$(CPUDIR)/u-boot.lds
+LDSCRIPT := $(TOPDIR)/board/samsung/$(BOARD)/u-boot.lds
 
 # needed for relocation
 ifndef CONFIG_NAND_SPL

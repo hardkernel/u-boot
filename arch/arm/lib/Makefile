@@ -44,7 +44,6 @@ COBJS-y	+= cache-cp15.o
 endif
 COBJS-y	+= interrupts.o
 COBJS-y	+= reset.o
-
 SRCS	:= $(GLSOBJS:.o=.S) $(GLCOBJS:.o=.c) \
 	   $(SOBJS-y:.o=.S) $(COBJS-y:.o=.c)
 OBJS	:= $(addprefix $(obj),$(SOBJS-y) $(COBJS-y))
@@ -60,9 +59,9 @@ TARGETS	+= $(LIBGCC)
 endif
 
 # For EABI conformant tool chains, provide eabi_compat()
-ifneq (,$(findstring -mabi=aapcs-linux,$(PLATFORM_CPPFLAGS)))
+#ifneq (,$(findstring -mabi=aapcs-linux,$(PLATFORM_CPPFLAGS)))
 TARGETS	+= $(obj)eabi_compat.o
-endif
+#endif
 
 all:	$(TARGETS)
 

@@ -25,7 +25,6 @@ include $(TOPDIR)/config.mk
 
 LIB	= $(obj)libs5p-common.o
 
-COBJS-y		+= cpu_info.o
 COBJS-y		+= timer.o
 
 SRCS	:= $(SOBJS:.o=.S) $(COBJS:.o=.c)

@@ -28,6 +28,10 @@
 #include <common.h>
 #include <command.h>
 
+#if defined(CONFIG_S5P6450)
+DECLARE_GLOBAL_DATA_PTR;
+#endif
+
 /*
  * Use puts() instead of printf() to avoid printf buffer overflow
  * for long help messages
@@ -134,10 +138,15 @@ cmd_tbl_t *find_cmd_tbl (const char *cmd, cmd_tbl_t *table, int table_len)
 	return NULL;	/* not found or ambiguous command */
 }
 
+extern cmd_tbl_t  __u_boot_cmd_bdinfo;
+extern cmd_tbl_t  __u_boot_cmd_showvar;
+
 cmd_tbl_t *find_cmd (const char *cmd)
 {
-	int len = &__u_boot_cmd_end - &__u_boot_cmd_start;
-	return find_cmd_tbl(cmd, &__u_boot_cmd_start, len);
+	//int len = &__u_boot_cmd_end - &__u_boot_cmd_start;
+	int len = &__u_boot_cmd_showvar - &__u_boot_cmd_bdinfo + 1;
+	//return find_cmd_tbl(cmd, &__u_boot_cmd_start, len);
+	return find_cmd_tbl(cmd, &__u_boot_cmd_bdinfo, len);
 }
 
 int cmd_usage(cmd_tbl_t *cmdtp)

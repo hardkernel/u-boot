@@ -62,6 +62,7 @@
 #endif
 
 DECLARE_GLOBAL_DATA_PTR;
+extern int nr_dram_banks;
 
 ulong monitor_flash_len;
 
@@ -85,7 +86,6 @@ extern void rtl8019_get_enetaddr (uchar * addr);
     defined(CONFIG_SOFT_I2C)
 #include <i2c.h>
 #endif
-
 
 /************************************************************************
  * Coloured LED functionality
@@ -165,14 +165,14 @@ static int display_dram_config (void)
 #ifdef DEBUG
 	puts ("RAM Configuration:\n");
 
-	for(i=0; i<CONFIG_NR_DRAM_BANKS; i++) {
+	for(i=0; i<nr_dram_banks; i++) {
 		printf ("Bank #%d: %08lx ", i, gd->bd->bi_dram[i].start);
 		print_size (gd->bd->bi_dram[i].size, "\n");
 	}
 #else
 	ulong size = 0;
 
-	for (i=0; i<CONFIG_NR_DRAM_BANKS; i++) {
+	for (i=0; i<nr_dram_banks; i++) {
 		size += gd->bd->bi_dram[i].size;
 	}
 	puts("DRAM:  ");
@@ -248,8 +248,10 @@ init_fnc_t *init_sequence[] = {
 	get_clocks,
 #endif
 	env_init,		/* initialize environment */
+#if defined(CONFIG_S5P6450) && !defined(CONFIG_S5P6460_IP_TEST)
 	init_baudrate,		/* initialze baudrate settings */
 	serial_init,		/* serial communications setup */
+#endif
 	console_init_f,		/* stage 1 init of console */
 	display_banner,		/* say that we are here */
 #if defined(CONFIG_DISPLAY_CPUINFO)
@@ -368,6 +370,10 @@ void board_init_f (ulong bootflag)
 	addr -= gd->mon_len;
 	addr &= ~(4096 - 1);
 
+#if defined(CONFIG_S5P) || defined(CONFIG_S5P6450)
+	addr = CONFIG_SYS_LOAD_ADDR;
+#endif
+
 	debug ("Reserving %ldk for U-Boot at: %08lx\n", gd->mon_len >> 10, addr);
 
 #ifndef CONFIG_PRELOADER
@@ -427,14 +433,12 @@ void board_init_f (ulong bootflag)
 	memcpy (id, (void *)gd, sizeof (gd_t));
 
 	relocate_code (addr_sp, id, addr);
-
 	/* NOTREACHED - relocate_code() does not return */
 }
 
 #if !defined(CONFIG_SYS_NO_FLASH)
 static char *failed = "*** failed ***\n";
 #endif
-
 /************************************************************************
  *
  * This is the next part if the initialization sequence: we are now
@@ -464,7 +468,7 @@ void board_init_r (gd_t *id, ulong dest_addr)
 	board_init();	/* Setup chipselects */
 
 #ifdef CONFIG_SERIAL_MULTI
-	serial_initialize();
+	//serial_initialize();
 #endif
 
 	debug ("Now running in RAM - U-Boot at: %08lx\n", dest_addr);
@@ -517,8 +521,7 @@ void board_init_r (gd_t *id, ulong dest_addr)
 #endif
 
 #ifdef CONFIG_GENERIC_MMC
-       puts("MMC:   ");
-       mmc_initialize(bd);
+	mmc_initialize(bd);
 #endif
 
 #ifdef CONFIG_HAS_DATAFLASH
@@ -546,7 +549,7 @@ void board_init_r (gd_t *id, ulong dest_addr)
 	api_init ();
 #endif
 
-	console_init_r ();	/* fully init console as a device */
+	//console_init_r ();	/* fully init console as a device */
 
 #if defined(CONFIG_ARCH_MISC_INIT)
 	/* miscellaneous arch dependent initialisations */
@@ -571,6 +574,15 @@ void board_init_r (gd_t *id, ulong dest_addr)
 		smc_set_mac_addr(enetaddr);
 	}
 #endif /* CONFIG_DRIVER_SMC91111 || CONFIG_DRIVER_LAN91C96 */
+
+#if defined(CONFIG_DRIVER_DM9000)
+	/* XXX: this needs to be moved to board init */
+	if (getenv ("ethaddr")) {
+		uchar enetaddr[6];
+		eth_getenv_enetaddr("ethaddr", enetaddr);
+		dm9000_set_mac_addr(enetaddr);
+	}
+#endif
 
 	/* Initialize from environment */
 	if ((s = getenv ("loadaddr")) != NULL) {

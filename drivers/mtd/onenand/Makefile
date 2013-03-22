@@ -25,7 +25,9 @@ include $(TOPDIR)/config.mk
 
 LIB	:= $(obj)libonenand.o
 
-COBJS-$(CONFIG_CMD_ONENAND)	:= onenand_uboot.o onenand_base.o onenand_bbt.o
+COBJS-$(CONFIG_CMD_ONENAND)	:= onenand_uboot.o onenand_bbt.o
+COBJS-$(CONFIG_C210_ONENAND)	+= onenand_base.o
+COBJS-$(CONFIG_C110_ONENAND)	+= onenand_base_c110.o
 COBJS-$(CONFIG_SAMSUNG_ONENAND)	+= samsung.o
 
 COBJS	:= $(COBJS-y)

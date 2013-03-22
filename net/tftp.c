@@ -10,8 +10,17 @@
 #include "tftp.h"
 #include "bootp.h"
 
+#if defined(CONFIG_S5P6450)
+DECLARE_GLOBAL_DATA_PTR;
+#endif
+
 #define WELL_KNOWN_PORT	69		/* Well known TFTP port #		*/
-#define TIMEOUT		5000UL		/* Millisecs to timeout for lost pkt */
+#ifndef CONFIG_TFTP_TIMEOUT
+#define TIMEOUT		5000UL          /* Millisecs to timeout for lost pkt */
+#else
+#define TIMEOUT		CONFIG_TFTP_TIMEOUT
+#endif
+
 #ifndef	CONFIG_NET_RETRY_COUNT
 # define TIMEOUT_COUNT	10		/* # of timeouts before giving up  */
 #else

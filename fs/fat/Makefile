@@ -24,10 +24,10 @@ include $(TOPDIR)/config.mk
 LIB	= $(obj)libfat.o
 
 AOBJS	=
-COBJS-$(CONFIG_CMD_FAT)	:= fat.o file.o
+COBJS-$(CONFIG_CMD_FAT)        := fat.o file.o
 
-SRCS	:= $(AOBJS:.o=.S) $(COBJS-y:.o=.c)
-OBJS	:= $(addprefix $(obj),$(AOBJS) $(COBJS-y))
+SRCS   := $(AOBJS:.o=.S) $(COBJS-y:.o=.c)
+OBJS   := $(addprefix $(obj),$(AOBJS) $(COBJS-y))
 
 all:	$(LIB) $(AOBJS)
 

@@ -12,12 +12,9 @@
 #ifndef __LINUX_MTD_ONENAND_H
 #define __LINUX_MTD_ONENAND_H
 
-#include <linux/mtd/onenand_regs.h>
-
-/* Note: The header order is impoertant */
 #include <onenand_uboot.h>
-
-#include <linux/mtd/compat.h>
+//#include <linux/mtd/mtd.h>
+#include <linux/mtd/onenand_regs.h>
 #include <linux/mtd/bbm.h>
 
 #define MAX_DIES		2
@@ -94,16 +91,28 @@ struct onenand_chip {
 	int (*wait) (struct mtd_info *mtd, int state);
 	int (*bbt_wait) (struct mtd_info *mtd, int state);
 	void (*unlock_all)(struct mtd_info *mtd);
+
+#ifdef CONFIG_S5PC110
+//C110
+	int (*read_bufferram)(struct mtd_info *mtd, int area,
+			unsigned char *buffer, int offset, size_t count);
+	int (*write_bufferram)(struct mtd_info *mtd, int area,
+			const unsigned char *buffer, int offset, 
+                        size_t count);
+#else
+//V310
 	int (*read_bufferram) (struct mtd_info *mtd, loff_t addr, int area,
 			       unsigned char *buffer, int offset, size_t count);
 	int (*write_bufferram) (struct mtd_info *mtd, loff_t addr, int area,
 				const unsigned char *buffer, int offset,
 				size_t count);
+#endif
 	unsigned short (*read_word) (void __iomem *addr);
 	void (*write_word) (unsigned short value, void __iomem *addr);
 	void (*mmcontrol) (struct mtd_info *mtd, int sync_read);
 	int (*block_markbad)(struct mtd_info *mtd, loff_t ofs);
 	int (*scan_bbt)(struct mtd_info *mtd);
+	int			irq;
 
 	unsigned char		*main_buf;
 	unsigned char		*spare_buf;
@@ -115,7 +124,6 @@ struct onenand_chip {
 	unsigned char		*page_buf;
 	unsigned char		*oob_buf;
 
-	struct nand_oobinfo *autooob;
 	int			subpagesize;
 	struct nand_ecclayout	*ecclayout;
 
@@ -134,12 +142,39 @@ struct onenand_chip {
 #define ONENAND_SET_BUFFERRAM0(this)		(this->bufferram_index = 0)
 #define ONENAND_SET_BUFFERRAM1(this)		(this->bufferram_index = 1)
 
+#define ONENAND_GET_SYS_CFG1(this)					\
+	(this->read_word(this->base + ONENAND_REG_SYS_CFG1))
+#define ONENAND_SET_SYS_CFG1(v, this)					\
+	(this->write_word(v, this->base + ONENAND_REG_SYS_CFG1))
+
 #define FLEXONENAND(this)	(this->device_id & DEVICE_IS_FLEXONENAND)
 #define ONENAND_IS_MLC(this)	(this->technology & ONENAND_TECHNOLOGY_IS_MLC)
+#define ONENAND_GET_SYS_CFG1(this)					\
+	(this->read_word(this->base + ONENAND_REG_SYS_CFG1))
+#define ONENAND_SET_SYS_CFG1(v, this)					\
+	(this->write_word(v, this->base + ONENAND_REG_SYS_CFG1))
+
 #define ONENAND_IS_DDP(this)						\
 	(this->device_id & ONENAND_DEVICE_IS_DDP)
 
+
+#define ONENAND_IS_SINGLE_DATARAM(this)				\
+	(this->options & ONENAND_PAGE_EQUALS_DATARAM)
+
+#define ONENAND_NO_OOB_CMD			ONENAND_IS_SINGLE_DATARAM
+
+#define OTP_LOCK_IN_MAIN(this)						\
+	(this->options & ONENAND_OTP_LOCK_OFFSET_IN_MAIN)
+
+#ifdef CONFIG_MTD_ONENAND_2X_PROGRAM
+#define ONENAND_IS_2PLANE(this)	\
+	(this->options & ONENAND_HAS_2PLANE)
+#else
 #define ONENAND_IS_2PLANE(this)			(0)
+#endif
+
+/* Check byte access in OneNAND */
+#define ONENAND_CHECK_BYTE_ACCESS(addr)		(addr & 0x1)
 
 /*
  * Options bits
@@ -147,6 +182,9 @@ struct onenand_chip {
 #define ONENAND_HAS_CONT_LOCK		(0x0001)
 #define ONENAND_HAS_UNLOCK_ALL		(0x0002)
 #define ONENAND_HAS_2PLANE		(0x0004)
+#define ONENAND_PAGE_EQUALS_DATARAM		(0x0008)
+#define ONENAND_OTP_LOCK_OFFSET_IN_MAIN	(0x0010)
+#define ONENAND_SKIP_UNLOCK_CHECK	(0x0100)
 #define ONENAND_RUNTIME_BADBLOCK_CHECK	(0x0200)
 #define ONENAND_PAGEBUF_ALLOC		(0x1000)
 #define ONENAND_OOBBUF_ALLOC		(0x2000)

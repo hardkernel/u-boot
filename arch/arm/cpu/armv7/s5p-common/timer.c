@@ -25,6 +25,7 @@
 
 #include <common.h>
 #include <asm/io.h>
+#include <asm/arch/cpu.h>
 #include <asm/arch/pwm.h>
 #include <asm/arch/clk.h>
 
@@ -44,9 +45,17 @@ static unsigned long long timestamp;	/* Monotonic incrementing timer */
 static unsigned long lastdec;		/* Last decremneter snapshot */
 
 /* macro to read the 16 bit timer */
+
 static inline struct s5p_timer *s5p_get_base_timer(void)
 {
+	//return (struct s5p_timer *)samsung_get_base_timer();
+#if defined(CONFIG_ARCH_EXYNOS)
 	return (struct s5p_timer *)samsung_get_base_timer();
+#elif defined(CONFIG_S5PC210)
+	return (struct s5p_timer *)0x139D0000;
+#elif defined(CONFIG_S5PC110)
+	return (struct s5p_timer *)0xE2500000;
+#endif
 }
 
 int timer_init(void)
@@ -64,10 +73,10 @@ int timer_init(void)
 	/* set divider : 2 */
 	writel((PRESCALER_1 & 0xff) << 8, &timer->tcfg0);
 	writel((MUX_DIV_2 & 0xf) << MUX4_DIV_SHIFT, &timer->tcfg1);
-
 	/* count_value = 2085937.5(HZ) (per 1 sec)*/
-	count_value = get_pwm_clk() / ((PRESCALER_1 + 1) *
-			(MUX_DIV_2 + 1));
+	//count_value = get_pwm_clk() / ((PRESCALER_1 + 1) *
+	//		(MUX_DIV_2 + 1));
+	count_value = 2500000;
 
 	/* count_value / 100 = 20859.375(HZ) (per 10 msec) */
 	count_value = count_value / 100;

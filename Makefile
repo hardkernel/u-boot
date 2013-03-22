@@ -183,6 +183,7 @@ OBJS := $(addprefix $(obj),$(OBJS))
 LIBS  = lib/libgeneric.o
 LIBS += lib/lzma/liblzma.o
 LIBS += lib/lzo/liblzo.o
+
 LIBS += $(shell if [ -f board/$(VENDOR)/common/Makefile ]; then echo \
 	"board/$(VENDOR)/common/lib$(VENDOR).o"; fi)
 LIBS += $(CPUDIR)/lib$(CPU).o
@@ -202,7 +203,9 @@ LIBS += drivers/bios_emulator/libatibiosemu.o
 LIBS += drivers/block/libblock.o
 LIBS += drivers/dma/libdma.o
 LIBS += drivers/fpga/libfpga.o
+ifndef CONFIG_S5P6450
 LIBS += drivers/gpio/libgpio.o
+endif
 LIBS += drivers/hwmon/libhwmon.o
 LIBS += drivers/i2c/libi2c.o
 LIBS += drivers/input/libinput.o
@@ -256,10 +259,18 @@ endif
 ifeq ($(SOC),s5pc1xx)
 LIBS += $(CPUDIR)/s5p-common/libs5p-common.o
 endif
+ifeq ($(SOC),s5pv210)
+LIBS += $(CPUDIR)/s5p-common/libs5p-common.o
+endif
 ifeq ($(SOC),s5pc2xx)
 LIBS += $(CPUDIR)/s5p-common/libs5p-common.o
 endif
-
+ifeq ($(SOC),s5pv310)
+LIBS += $(CPUDIR)/s5p-common/libs5p-common.o
+endif
+ifeq ($(SOC),exynos)
+LIBS += $(CPUDIR)/s5p-common/libs5p-common.o
+endif
 LIBS := $(addprefix $(obj),$(sort $(LIBS)))
 .PHONY : $(LIBS) $(TIMESTAMP_FILE) $(VERSION_FILE)
 
@@ -277,6 +288,9 @@ else
 PLATFORM_LIBGCC = -L $(shell dirname `$(CC) $(CFLAGS) -print-libgcc-file-name`) -lgcc
 endif
 PLATFORM_LIBS += $(PLATFORM_LIBGCC)
+ifeq ($(CONFIG_SECURE_BOOT),y)
+PLATFORM_LIBS += -L ./secure_boot/ -lsecureboot_u-boot_v21
+endif
 export PLATFORM_LIBS
 
 # Special flags for CPP when processing the linker script.
@@ -333,6 +347,13 @@ $(obj)u-boot.srec:	$(obj)u-boot
 $(obj)u-boot.bin:	$(obj)u-boot
 		$(OBJCOPY) ${OBJCFLAGS} -O binary $< $@
 		$(BOARD_SIZE_CHECK)
+ifeq ($(CONFIG_S5PC210),y)
+		./mkbl2 u-boot.bin bl2.bin 14336
+endif
+
+ifeq ($(CONFIG_CPU_EXYNOS5250),y)
+		./mkbl2 u-boot.bin bl2.bin 14336
+endif
 
 $(obj)u-boot.ldr:	$(obj)u-boot
 		$(CREATE_LDR_ENV)
@@ -374,7 +395,11 @@ GEN_UBOOT = \
 			-Map u-boot.map -o u-boot
 $(obj)u-boot:	depend \
 		$(SUBDIRS) $(OBJS) $(LIBBOARD) $(LIBS) $(LDSCRIPT) $(obj)u-boot.lds
+ifeq ($(CONFIG_SECURE_BOOT),y)
+		cp ./secure_boot/libsecureboot_u-boot_v21.txt ./secure_boot/libsecureboot_u-boot_v21.a
+endif
 		$(GEN_UBOOT)
+
 ifeq ($(CONFIG_KALLSYMS),y)
 		smap=`$(call SYSTEM_MAP,u-boot) | \
 			awk '$$2 ~ /[tTwW]/ {printf $$1 $$3 "\\\\000"}'` ; \
@@ -1226,6 +1251,7 @@ clean:
 	@rm -f $(ONENAND_BIN)
 	@rm -f $(obj)onenand_ipl/u-boot.lds
 	@rm -f $(TIMESTAMP_FILE) $(VERSION_FILE)
+	@rm -f bl2.bin
 	@find $(OBJTREE) -type f \
 		\( -name 'core' -o -name '*.bak' -o -name '*~' \
 		-o -name '*.o'	-o -name '*.a' -o -name '*.exe'	\) -print \

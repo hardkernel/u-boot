@@ -26,6 +26,7 @@ include $(TOPDIR)/config.mk
 LIB	:= $(obj)libusb_host.o
 
 # ohci
+COBJS-$(CONFIG_CMD_USB) += usb_ohci.o
 COBJS-$(CONFIG_USB_OHCI_NEW) += ohci-hcd.o
 COBJS-$(CONFIG_USB_ATMEL) += ohci-at91.o
 COBJS-$(CONFIG_USB_ISP116X_HCD) += isp116x-hcd.o

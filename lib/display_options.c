@@ -26,6 +26,9 @@
 #include <linux/ctype.h>
 #include <asm/io.h>
 
+#ifdef CONFIG_S5P6450
+DECLARE_GLOBAL_DATA_PTR;
+#endif
 int display_options (void)
 {
 	extern char version_string[];
@@ -64,23 +67,17 @@ void print_size(unsigned long long size, const char *s)
 		return;
 	}
 
-	n = size >> d;
 	f = size & ((1ULL << d) - 1);
 
 	/* If there's a remainder, deal with it */
 	if (f) {
-		m = (10ULL * f + (1ULL << (d - 1))) >> d;
-
-		if (m >= 10) {
-			m -= 10;
-			n += 1;
-		}
+		d -= 10;
+		c = names[i+1];
 	}
+
+	n = size >> d;
 
 	printf ("%lu", n);
-	if (m) {
-		printf (".%ld", m);
-	}
 	printf (" %ciB%s", c, s);
 }
 

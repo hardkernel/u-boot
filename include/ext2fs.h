@@ -79,3 +79,4 @@ extern int ext2fs_open (char *filename);
 extern int ext2fs_read (char *buf, unsigned len);
 extern int ext2fs_mount (unsigned part_length);
 extern int ext2fs_close(void);
+extern int ext2fs_format(block_dev_desc_t *dev_desc, int part_no, char set_journaling);
