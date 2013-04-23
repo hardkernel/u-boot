@@ -724,8 +724,10 @@ int do_bootm (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 
 #if defined(CONFIG_ZIMAGE_BOOT)
 after_header_check:
-	images.os.os = hdr->ih_os;
-	images.ep = image_get_ep (&images.legacy_hdr_os_copy);
+	if (hdr != NULL) {
+		images.os.os = hdr->ih_os;
+		images.ep = image_get_ep (&images.legacy_hdr_os_copy);
+	}
 #endif
 
 #ifdef CONFIG_SILENT_CONSOLE
