@@ -232,6 +232,8 @@
 #define CONFIG_SERVERIP		192.168.0.10
 #define CONFIG_GATEWAYIP	192.168.0.1
 
+#define CONFIG_OF_LIBFDT	1
+
 #define CONFIG_BOOTDELAY	1
 /* Default boot commands for Android booting. */
 #if defined(CONFIG_HKDK4412) && defined(CONFIG_EXYNOS_PRIME)
