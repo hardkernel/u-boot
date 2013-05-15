@@ -205,8 +205,23 @@ int board_init(void)
 	} else if (OmPin == BOOT_EMMC_4_4) {
 		printf(" EMMC4.41\n");
 	}
-    // denis added
-    writel(0x6666, S5PV310_CLOCK_BASE + 0xC234); // CLK_SRC_LCD0
+
+	/* CLK_SRC_LCD0: Clock source for LCD_BLK
+	 * Select source clock of each device (MIPI0_SEL, MDNIE_PWM0_SEL,
+	 * MDNIE0_SEL, FIMD0_SEL) to SCLKMPLL_USER_T
+	 */
+	writel(0x6666, S5PV310_CLOCK_BASE + 0xC234); // CLK_SRC_LCD0
+
+	/* LCDBLK_CFG : Display control register
+	 * set FIMD to bypass, MIE or MDNIE is the as default in reset
+	 * +---+-----------------+--------------------------------+
+	 * | 1 | FIMDBYPASS_LBK0 | 0 = MIE/MDNIE, 1 = FIMD Bypass |
+	 * | 0 | MIE_LBL0        | 0 = MIE, 1 = MDNIE             |
+	 * +---+-----------------+--------------------------------+
+	 */
+	u32 val;
+	val = readl(S5PV310_SYSREG_BASE + 0x210);	// LCDBLK_CFG
+	writel(val | (1 << 1), S5PV310_SYSREG_BASE + 0x210);
 
 	return 0;
 }
