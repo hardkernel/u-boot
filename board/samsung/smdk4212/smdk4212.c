@@ -208,6 +208,17 @@ int board_init(void)
     // denis added
     writel(0x6666, S5PV310_CLOCK_BASE + 0xC234); // CLK_SRC_LCD0
 
+	/* LCDBLK_CFG : Display control register
+	 * set FIMD to bypass, MIE or MDNIE is the as default in reset
+	 * +---+-----------------+--------------------------------+
+	 * | 1 | FIMDBYPASS_LBK0 | 0 = MIE/MDNIE, 1 = FIMD Bypass |
+	 * | 0 | MIE_LBL0        | 0 = MIE, 1 = MDNIE             |
+	 * +---+-----------------+--------------------------------+
+	 */
+	u32 val;
+	val = readl(S5PV310_SYSREG_BASE + 0x210);	// LCDBLK_CFG
+	writel(val | (1 << 1), S5PV310_SYSREG_BASE + 0x210);
+
 	return 0;
 }
 
