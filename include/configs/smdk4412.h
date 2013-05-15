@@ -72,7 +72,7 @@
 #endif
 
 #define CONFIG_OF_LIBFDT		1
-#define CONFIG_SYS_BOOTMAPSZ    1
+#define CONFIG_SYS_BOOTMAPSZ		(8 << 20)	/* Initial Memory map for Linux */
 //#define CONFIG_UPDATE_SOLUTION	1
 
 //#include <asm/arch/cpu.h>		/* get chip and board defs */
