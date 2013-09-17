@@ -54,7 +54,7 @@ static void s5p_sdhci_set_control_reg(struct sdhci_host *host)
 	 *	00 = Delay3 (inverter delay)
 	 *	10 = Delay4 (inverter delay + 2ns)
 	 */
-	val = SDHCI_CTRL3_FCSEL3 | SDHCI_CTRL3_FCSEL1;
+	val = SDHCI_CTRL3_FCSEL1 | SDHCI_CTRL3_FCSEL0;
 	sdhci_writel(host, val, SDHCI_CONTROL3);
 
 	/*

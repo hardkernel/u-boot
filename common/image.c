@@ -1004,9 +1004,21 @@ int boot_get_ramdisk(int argc, char * const argv[], bootm_headers_t *images,
 			} else
 #endif
 			{
-				puts("Wrong Ramdisk Image Format\n");
-				rd_data = rd_len = rd_load = 0;
-				return 1;
+
+#ifdef CONFIG_ROOTFS_ATAGS
+				char *rootfs_len = getenv("rootfslen");
+				if(rootfs_len != NULL) {
+					rd_data = simple_strtoul(argv[2],
+							NULL, 16);
+					rd_len = simple_strtoul(rootfs_len,
+							NULL, 16);
+				} else
+#endif
+				{
+					puts("Wrong Ramdisk Image Format\n");
+					rd_data = rd_len = rd_load = 0;
+					return 1;
+				}
 			}
 		}
 	} else if (images->legacy_hdr_valid &&

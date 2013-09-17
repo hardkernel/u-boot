@@ -22,7 +22,12 @@ include $(TOPDIR)/config.mk
 
 LIB	= $(obj)lib$(SOC).o
 
-COBJS	+= clock.o power.o soc.o system.o pinmux.o
+COBJS	+= clock.o power.o soc.o system.o pinmux.o movi_partition.o
+
+ifdef CONFIG_SECURE_BOOT
+COBJS   += security_check.o
+COBJS   += ace_sha.o
+endif
 
 SRCS	:= $(SOBJS:.o=.S) $(COBJS:.o=.c)
 OBJS	:= $(addprefix $(obj),$(COBJS) $(SOBJS))

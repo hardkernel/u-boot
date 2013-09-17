@@ -46,7 +46,7 @@ long get_ram_size(long *base, long maxsize)
 	long           size;
 	int            i = 0;
 
-	for (cnt = (maxsize / sizeof (long)) >> 1; cnt > 0; cnt >>= 1) {
+	for (cnt = 1; cnt < maxsize / sizeof(long); cnt <<= 1) {
 		addr = base + cnt;	/* pointer arith! */
 		sync ();
 		save[i++] = *addr;
@@ -59,25 +59,31 @@ long get_ram_size(long *base, long maxsize)
 	save[i] = *addr;
 	sync ();
 	*addr = 0;
+	i = 0;
 
 	sync ();
 	if ((val = *addr) != 0) {
 		/* Restore the original data before leaving the function.
 		 */
 		sync ();
-		*addr = save[i];
 		for (cnt = 1; cnt < maxsize / sizeof(long); cnt <<= 1) {
 			addr  = base + cnt;
 			sync ();
-			*addr = save[--i];
+			*addr = save[i++];
 		}
+
+		addr = base;
+		sync ();
+		*addr = save[i];
+		sync ();
+
 		return (0);
 	}
 
 	for (cnt = 1; cnt < maxsize / sizeof (long); cnt <<= 1) {
 		addr = base + cnt;	/* pointer arith! */
 		val = *addr;
-		*addr = save[--i];
+		*addr = save[i++];
 		if (val != ~cnt) {
 			size = cnt * sizeof (long);
 			/* Restore the original data before leaving the function.
@@ -89,6 +95,11 @@ long get_ram_size(long *base, long maxsize)
 			return (size);
 		}
 	}
+
+	addr = base;
+	sync ();
+	*addr = save[i];
+	sync ();
 
 	return (maxsize);
 }

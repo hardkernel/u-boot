@@ -167,8 +167,12 @@ int pwm_init(int pwm_id, int div, int invert)
 	val |= (div & 0xf) << MUX_DIV_SHIFT(pwm_id);
 	writel(val, &pwm->tcfg1);
 
+#ifdef CONFIG_CPU_EXYNOS5410
+	timer_rate_hz = 2500000;
+#else
 	timer_rate_hz = get_pwm_clk() / ((prescaler + 1) *
 			(div + 1));
+#endif
 
 	timer_rate_hz = timer_rate_hz / 100;
 

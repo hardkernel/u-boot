@@ -64,11 +64,20 @@
 #define SDHCI_CTRL4_DRIVE_MASK(_x)	((_x) << 16)
 #define SDHCI_CTRL4_DRIVE_SHIFT		(16)
 
+#define MSHC_VERSION_MAIN_ID            0x5342
+#define MSHC_VERID                      0x6C
+
 int s5p_sdhci_init(u32 regbase, u32 max_clk, u32 min_clk, u32 quirks);
 
 static inline unsigned int s5p_mmc_init(int index, int bus_width)
 {
 	unsigned int base = samsung_get_base_mmc() + (0x10000 * index);
-	return s5p_sdhci_init(base, 52000000, 400000, index);
+        unsigned int mshc_ver_main_id = readl(base + MSHC_VERID) >> 16;
+
+        if(mshc_ver_main_id == MSHC_VERSION_MAIN_ID)
+                return s5p_mshc_init(base, index);
+        else
+	        return s5p_sdhci_init(base, 52000000, 400000, index);
+
 }
 #endif
