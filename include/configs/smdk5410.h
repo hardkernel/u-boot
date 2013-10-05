@@ -389,7 +389,7 @@
 #define CONFIG_SYS_LONGHELP		/* undef to save memory */
 #define CONFIG_SYS_HUSH_PARSER		/* use "hush" command parser	*/
 #if defined(CONFIG_BOARD_HARDKERNEL)
-    #define CONFIG_SYS_PROMPT		"Exynos5410 # "
+    #define CONFIG_SYS_PROMPT		"ODROID-XU # "
 #else
     #define CONFIG_SYS_PROMPT		"SMDK5410 # "
 #endif    
