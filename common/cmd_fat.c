@@ -294,8 +294,15 @@ int do_fat_cfgload(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
     unsigned int    wpos = 0;
     
     // file check & update
-	setenv("filesize", "0");
-    run_command("fatload mmc 0:1 5FFF0000 boot.ini", 0);
+    setenv("msgload", "Loading boot.ini from ");
+    setenv("filesize", "0");
+    run_command("if fatload mmc 0:1 5FFF0000 boot.ini;" \
+                "   then echo $msgload FAT;" \
+                "   else if ext4load mmc 0:1 5FFF0000 /boot/boot.ini;" \
+                "   then echo $msgload ext4 0:1;" \
+                "   else if ext4load mmc 0:2 5FFF0000 /boot/boot.ini;" \
+                "   then echo $msgload ext4 0:2;" \
+                "   fi;fi;fi", 0);
     
     if((filesize = getenv_ulong("filesize", 16, 0)))    {
         
@@ -323,7 +330,7 @@ int do_fat_cfgload(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
                 if(wpos < sizeof(cmd)) {
                     if(first)   {
                         if(!strncmp(cmd, "ODROIDXU-UBOOT-CONFIG", sizeof("ODROIDXU-UBOOT-CONFIG"))) {
-                            printf("Find boot.ini file from FAT Area!!\n");     first = 0;
+                            printf("Find boot.ini file from FAT/Ext4 Area!!\n");     first = 0;
                         }
                         else    {
                             printf("Find boot.ini file. But This file is not odroidxu config file!\n");
@@ -348,7 +355,12 @@ int do_fat_cfgload(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 
 U_BOOT_CMD(
 	cfgload, 1, 0, do_fat_cfgload,
-	"cfgload - boot.ini textfile load from FAT32\n",
-	"<interface(only support mmc 0:1)>\n"
-	"	- boot.ini file load from FAT32 on 'interface'\n"
+	"cfgload - boot.ini textfile load from FAT32/ext4\n",
+	"<interface(only support mmc 0:1/0:2)>\n"
+	"	- boot.ini file load from FAT32/ext4 on 'interface'\n"
+	"Will attempt boot from: \n"
+	"	fat mmc 0:1 /boot.ini\n" 
+        "	ext4 0:1 /boot/boot.ini\n"
+        "	ext4 0:2 /boot/boot.ini\n"
+        "on the above sequence\n"
 );
