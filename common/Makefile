@@ -41,6 +41,10 @@ COBJS-y += s_record.o
 COBJS-$(CONFIG_SERIAL_MULTI) += serial.o
 COBJS-y += stdio.o
 COBJS-y += xyzModem.o
+COBJS-y += cmd_disk.o
+
+COBJS-$(CONFIG_BOOTSTAGE) += bootstage.o
+
 
 # core command
 COBJS-y += cmd_boot.o
@@ -152,6 +156,7 @@ COBJS-$(CONFIG_CMD_UNIVERSE) += cmd_universe.o
 ifdef CONFIG_CMD_USB
 COBJS-y += cmd_usb.o
 COBJS-y += usb.o
+COBJS-y += usb_hub.o
 COBJS-$(CONFIG_USB_STORAGE) += usb_storage.o
 endif
 COBJS-$(CONFIG_CMD_XIMG) += cmd_ximg.o

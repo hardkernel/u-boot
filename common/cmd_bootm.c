@@ -724,6 +724,14 @@ int do_bootm (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 
 #if defined(CONFIG_ZIMAGE_BOOT)
 after_header_check:
+/*
+ *  Suriyan - I know this seems repeated, but in the case of ZIMAGE too we
+ *  have to stop the usb. No harm in stopping it twice!
+ */
+#if defined(CONFIG_CMD_USB)
+        usb_stop();
+#endif
+
 	if (hdr != NULL) {
 		images.os.os = hdr->ih_os;
 		images.ep = image_get_ep (&images.legacy_hdr_os_copy);
@@ -757,6 +765,21 @@ after_header_check:
 	do_reset (cmdtp, flag, argc, argv);
 
 	return 1;
+}
+
+int bootm_maybe_autostart(cmd_tbl_t *cmdtp, const char *cmd)
+{
+        const char *ep = getenv("autostart");
+
+        if (ep && !strcmp(ep, "yes")) {
+                char *local_args[2];
+                local_args[0] = (char *)cmd;
+                local_args[1] = NULL;
+                printf("Automatic boot of image at addr 0x%08lX ...\n", load_addr);
+                return do_bootm(cmdtp, 0, 1, local_args);
+        }
+
+        return 0;
 }
 
 /**

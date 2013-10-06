@@ -64,6 +64,11 @@ typedef struct cmd_tbl_s	cmd_tbl_t;
 extern cmd_tbl_t  __u_boot_cmd_start;
 extern cmd_tbl_t  __u_boot_cmd_end;
 
+enum command_ret_t {
+        CMD_RET_SUCCESS,        /* 0 = Success */
+        CMD_RET_FAILURE,        /* 1 = Failure */
+        CMD_RET_USAGE = -1,     /* Failure, please report 'usage' error */
+};
 
 /* common/command.c */
 int _do_help (cmd_tbl_t *cmd_start, int cmd_items, cmd_tbl_t * cmdtp, int

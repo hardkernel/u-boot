@@ -411,6 +411,7 @@ struct usb_gadget_ops {
 
 struct device {
 	void		*driver_data;	/* data private to the driver */
+	void            *device_data;   /* data private to the device */
 };
 
 /**
@@ -420,11 +421,11 @@ struct device {
  *	driver setup() requests
  * @ep_list: List of other endpoints supported by the device.
  * @speed: Speed of current connection to USB host.
- * @is_dualspeed: True if the controller supports both high and full speed
+ * @is_dualspeed: true if the controller supports both high and full speed
  *	operation.  If it does, the gadget driver must also support both.
- * @is_otg: True if the USB device port uses a Mini-AB jack, so that the
+ * @is_otg: true if the USB device port uses a Mini-AB jack, so that the
  *	gadget driver must provide a USB OTG descriptor.
- * @is_a_peripheral: False unless is_otg, the "A" end of a USB cable
+ * @is_a_peripheral: false unless is_otg, the "A" end of a USB cable
  *	is in the Mini-AB jack, and HNP has been used to switch roles
  *	so that the "A" device currently acts as A-Peripheral, not A-Host.
  * @a_hnp_support: OTG device feature flag, indicating that the A-Host
@@ -479,6 +480,11 @@ static inline void set_gadget_data(struct usb_gadget *gadget, void *data)
 static inline void *get_gadget_data(struct usb_gadget *gadget)
 {
 	return gadget->dev.driver_data;
+}
+
+static inline struct usb_gadget *dev_to_usb_gadget(struct device *dev)
+{
+	return container_of(dev, struct usb_gadget, dev);
 }
 
 /* iterates the non-control endpoints; 'tmp' is a struct usb_ep pointer */

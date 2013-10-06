@@ -2,36 +2,14 @@
  * (C) Copyright 2001
  * Denis Peter, MPL AG Switzerland, d.peter@mpl.ch.
  *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
+ * SPDX-License-Identifier:	GPL-2.0+ 
  */
 
 #include <common.h>
 #include <command.h>
 #include "part_iso.h"
 
-#if defined(CONFIG_CMD_IDE) || \
-    defined(CONFIG_CMD_MG_DISK) || \
-    defined(CONFIG_CMD_SCSI) || \
-    defined(CONFIG_CMD_SATA) || \
-    defined(CONFIG_CMD_USB) || \
-    defined(CONFIG_MMC) || \
-    defined(CONFIG_SYSTEMACE)
+#ifdef HAVE_BLOCK_DEVICE
 
 /* #define	ISO_PART_DEBUG */
 
@@ -78,6 +56,9 @@ int get_partition_info_iso_verb(block_dev_desc_t * dev_desc, int part_num, disk_
 	iso_pri_rec_t *ppr = (iso_pri_rec_t	*)tmpbuf;	/* primary desc */
 	iso_val_entry_t *pve = (iso_val_entry_t *)tmpbuf;
 	iso_init_def_entry_t *pide;
+
+	if (dev_desc->blksz != CD_SECTSIZE)
+		return -1;
 
 	/* the first sector (sector 0x10) must be a primary volume desc */
 	blkaddr=PVD_OFFSET;
@@ -252,8 +233,8 @@ void print_part_iso(block_dev_desc_t * dev_desc)
 	printf("Part   Start     Sect x Size Type\n");
 	i=0;
 	do {
-		printf (" %2d %8ld %8ld %6ld %.32s\n",
-			i, info.start, info.size, info.blksz, info.type);
+		printf(" %2d " LBAFU " " LBAFU " %6ld %.32s\n",
+		       i, info.start, info.size, info.blksz, info.type);
 		i++;
 	} while (get_partition_info_iso_verb(dev_desc,i,&info,0)!=-1);
 }

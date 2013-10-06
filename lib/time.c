@@ -41,3 +41,10 @@ void udelay(unsigned long usec)
 		usec -= kv;
 	} while(usec);
 }
+
+void mdelay(unsigned long msec)
+{
+        while (msec--)
+                udelay(1000);
+}
+
