@@ -351,6 +351,21 @@ int do_env_set (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 }
 
 /*
+ * Set an environment variable to an value in hex
+ *
+ * @param varname       Environment variable to set
+ * @param value         Value to set it to
+ * @return 0 if ok, 1 on error
+ */
+int setenv_hex(const char *varname, ulong value)
+{
+        char str[17];
+
+        sprintf(str, "%lx", value);
+        return setenv(varname, str);
+}
+
+/*
  * Prompt for environment variable
  */
 #if defined(CONFIG_CMD_ASKENV)

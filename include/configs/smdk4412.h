@@ -468,12 +468,16 @@
 /*
  * Ethernet Contoller driver
  */
-#ifdef CONFIG_CMD_NET
-#define CONFIG_NET_MULTI
-#define CONFIG_SMC911X
-#define CONFIG_SMC911X_BASE	0x5000000
-#define CONFIG_SMC911X_16_BIT
-#endif /* CONFIG_CMD_NET */
+//#ifdef CONFIG_CMD_NET
+//#define CONFIG_NET_MULTI
+//#define CONFIG_SMC911X
+//#define CONFIG_SMC911X_BASE	0x5000000
+//#define CONFIG_SMC911X_16_BIT
+//#endif /* CONFIG_CMD_NET */
+
+#define CONFIG_CMD_NET
+#define CONFIG_USB_HOST_ETHER
+#define CONFIG_USB_ETHER_SMSC95XX
 
 /* GPIO */
 #define GPIO_BASE	0x11000000

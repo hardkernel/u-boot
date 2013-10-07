@@ -42,8 +42,12 @@
 
 #ifdef CONFIG_SYS_64BIT_LBA
 typedef uint64_t lbaint_t;
+#define LBAF "%llx"
+#define LBAFU "%llu"
 #else
 typedef ulong lbaint_t;
+#define LBAF "%lx"
+#define LBAFU "%lu"
 #endif
 
 /*

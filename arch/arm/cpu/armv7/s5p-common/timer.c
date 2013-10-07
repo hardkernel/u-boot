@@ -107,9 +107,21 @@ void reset_timer(void)
 	reset_timer_masked();
 }
 
-unsigned long get_timer(unsigned long base)
+unsigned long get_timer_org(unsigned long base)
 {
 	return get_timer_masked() - base;
+}
+
+/*
+ * Suriyan - we are trying to make this function more like a milli second 
+ * timer - this is required as most, if not all functions call get_timer
+ * assuming it increments every milli second. If not it create issues with
+ * USB code - EHCI timed out on TD.
+ */
+unsigned long get_timer(unsigned long base)
+{
+	base *= 1000;
+	return (get_timer_masked() - base)/1000;
 }
 
 void set_timer(unsigned long t)
@@ -143,7 +155,7 @@ void __udelay(unsigned long usec)
 	}
 
 	/* get current timestamp */
-	tmp = get_timer(0);
+	tmp = get_timer_org(0);
 
 	/* if setting this fordward will roll time stamp */
 	/* reset "advancing" timestamp to 0, set lastdec value */
@@ -188,7 +200,7 @@ unsigned long get_timer_masked(void)
  */
 unsigned long long get_ticks(void)
 {
-	return get_timer(0);
+	return get_timer_org(0);
 }
 
 /*
