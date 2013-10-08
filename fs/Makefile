@@ -20,10 +20,24 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston,
 # MA 02111-1307 USA
 #
-#
+
+include $(TOPDIR)/config.mk
+
+LIB	= $(obj)libfs.o
+
+COBJS-y	+= fs.o
+
+COBJS	:= $(COBJS-y)
+SRCS	:= $(COBJS:.o=.c)
+OBJS	:= $(addprefix $(obj),$(COBJS))
+
+all:	$(LIB)
+
+$(LIB):	$(obj).depend $(OBJS)
+	$(call cmd_link_o_target, $(OBJS))
 
 subdirs-$(CONFIG_CMD_CRAMFS) := cramfs
-subdirs-$(CONFIG_CMD_EXT2) += ext2
+subdirs-$(CONFIG_CMD_EXT4) += ext4
 subdirs-$(CONFIG_CMD_FAT) += fat
 subdirs-$(CONFIG_CMD_FDOS) += fdos
 subdirs-$(CONFIG_CMD_JFFS2) += jffs2
