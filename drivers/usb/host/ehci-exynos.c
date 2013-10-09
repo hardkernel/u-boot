@@ -28,11 +28,25 @@
 #include <malloc.h>
 #include <watchdog.h>
 #include <linux/compiler.h>
+#include <asm/arch/usb3503_hkdk4212.h>
 
 #include "ehci.h"
 
 /* Declare global data pointer */
 DECLARE_GLOBAL_DATA_PTR;
+
+/*
+ * In 3.8 kernel the usb3503 is configured using i2c as follows:
+ * SP_ILOCK: set connect_n, config_n for config
+ * err = usb3503_write_register(i2c, USB3503_SP_ILOCK,
+ *                              (USB3503_SPILOCK_CONNECT
+ *                               | USB3503_SPILOCK_CONFIG));
+ * usb3503_set_bits(i2c, USB3503_CFG1, USB3503_SELF_BUS_PWR);
+ * usb3503_clear_bits(i2c, USB3503_SP_ILOCK,
+ *                              (USB3503_SPILOCK_CONNECT
+ *                               | USB3503_SPILOCK_CONFIG));
+ * We could try the same and see if storage enumerates consistently.
+ */
 
 void max77686_update_reg(u8 reg, u8 val, u8 mask) {
         u8 old_val, new_val;
@@ -202,6 +216,7 @@ u32     phypwr, phyclk, rstcon, a;
 }
 
 void usb_hub_init () {
+	u32	a, val, i2c_dat;
 
 #define GPX3BASE ((void *) (0x11000C60))
 
@@ -224,6 +239,17 @@ void usb_hub_init () {
 
 	// Hub Wait RefClk stage
 	mdelay(10);
+
+	/* Configure the hub with i2c */
+	a = usb3503_read(USB3503_SP_ILOCK, &i2c_dat, (unsigned char) 1);
+	val = i2c_dat;
+	i2c_dat = i2c_dat | USB3503_SPILOCK_CONNECT | USB3503_SPILOCK_CONFIG;
+	a = usb3503_write(USB3503_SP_ILOCK, &i2c_dat, (unsigned char) 1);
+	i2c_dat = 0x80;
+	a = usb3503_write(USB3503_CFG1, &i2c_dat, (unsigned char) 1);
+	
+	i2c_dat = i2c_dat & ~(USB3503_SPILOCK_CONNECT | USB3503_SPILOCK_CONFIG);
+	a = usb3503_write(USB3503_SP_ILOCK, &i2c_dat, (unsigned char) 1);
 
 	// Set CONNECT to 1 to move to hub configure phase.
 	gpio_set_value(GPX3BASE, 4, 1);

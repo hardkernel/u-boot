@@ -41,6 +41,7 @@ COBJS	+= onenand_cp.o
 
 ifdef CONFIG_HKDK4212
 COBJS	+= pmic_hkdk4212.o
+COBJS	+= usb3503_hkdk4212.o
 else
 ifndef CONFIG_CPU_EXYNOS4X12
 ifndef CONFIG_CPU_EXYNOS5250
