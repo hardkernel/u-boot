@@ -34,6 +34,20 @@
 /* Declare global data pointer */
 DECLARE_GLOBAL_DATA_PTR;
 
+void max77686_update_reg(u8 reg, u8 val, u8 mask) {
+        u8 old_val, new_val;
+
+	val = val & 0xFF;
+	mask = mask & 0xFF;
+	reg = reg & 0xFF;
+        if (pmic_read(reg, &old_val, 1)) printf("pmic_read error\n");
+        if (old_val >= 0) {
+                old_val = old_val & 0xff;
+                new_val = (val & mask) | (old_val & (~mask));
+                pmic_write(reg, &new_val, 1);
+        }
+}
+
 /*
  * Contains pointers to register base addresses
  * for the usb controller.
@@ -239,5 +253,14 @@ u32 phypwr;
 	writel(a, S5P_USB_PHY_CONTROL);
         writel(a, S5P_HSIC_1_PHY_CONTROL);
         writel(a, S5P_HSIC_2_PHY_CONTROL);
+
+	/* Power off and on BUCK8 for LAN9730 */
+	mdelay(10);
+	max77686_update_reg(0x37, 0x0, 0x3F); /* 0V */
+	mdelay(10);
+	max77686_update_reg(0x37, 0x33, 0x3F); /* 3.3V */
+	mdelay(10);
+	max77686_update_reg(0x36, 0x3, 0x3); /*ON val=3, mask=4*/
+	mdelay(10);
         return 0;
 }
