@@ -2,23 +2,7 @@
  * (C) Copyright 2000
  * Paolo Scaffardi, AIRVENT SAM s.p.a - RIMINI(ITALY), arsenio@tin.it
  *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
+ * SPDX-License-Identifier:	GPL-2.0+
  */
 
 #ifndef _STDIO_DEV_H_
@@ -93,20 +77,14 @@ int	stdio_register (struct stdio_dev * dev);
 int	stdio_init (void);
 void	stdio_print_current_devices(void);
 #ifdef CONFIG_SYS_STDIO_DEREGISTER
-int	stdio_deregister(char *devname);
+int	stdio_deregister(const char *devname);
 #endif
 struct list_head* stdio_get_list(void);
-struct stdio_dev* stdio_get_by_name(char* name);
+struct stdio_dev* stdio_get_by_name(const char* name);
 struct stdio_dev* stdio_clone(struct stdio_dev *dev);
 
-#ifdef CONFIG_ARM_DCC_MULTI
-int drv_arm_dcc_init(void);
-#endif
 #ifdef CONFIG_LCD
 int	drv_lcd_init (void);
-#endif
-#ifdef CONFIG_VFD
-int	drv_vfd_init (void);
 #endif
 #if defined(CONFIG_VIDEO) || defined(CONFIG_CFB_CONSOLE)
 int	drv_video_init (void);
@@ -122,6 +100,9 @@ int	drv_nc_init (void);
 #endif
 #ifdef CONFIG_JTAG_CONSOLE
 int drv_jtag_console_init (void);
+#endif
+#ifdef CONFIG_CBMEM_CONSOLE
+int cbmemc_init(void);
 #endif
 
 #endif

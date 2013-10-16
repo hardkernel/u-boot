@@ -409,11 +409,11 @@ static const image_header_t *image_get_ramdisk (ulong rd_addr, uint8_t arch,
 /* Shared dual-format routines */
 /*****************************************************************************/
 #ifndef USE_HOSTCC
-int getenv_yesno (char *var)
-{
-	char *s = getenv (var);
-	return (s && (*s == 'n')) ? 0 : 1;
-}
+//int getenv_yesno (char *var)
+//{
+//	char *s = getenv (var);
+//	return (s && (*s == 'n')) ? 0 : 1;
+//}
 
 ulong getenv_bootm_low(void)
 {

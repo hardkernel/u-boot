@@ -88,14 +88,14 @@ extern unsigned int OmPin;
 #if defined(CONFIG_FASTBOOT)
 
 /* Use do_reset for fastboot's 'reboot' command */
-extern int do_reset (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);
+extern int do_reset(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]);
 /* Use do_fat_fsload for direct image fusing from sd card */
 extern int do_fat_fsload (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);
 /* Use do_setenv and do_saveenv to permenantly save data */
 int do_saveenv (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);
 int do_setenv ( cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);
 /* Use do_bootm and do_go for fastboot's 'boot' command */
-int do_bootm (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);
+int do_bootm(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]);
 int do_go (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);
 
 #if defined(CFG_FASTBOOT_ONENANDBSP)

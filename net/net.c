@@ -211,12 +211,6 @@ int __maybe_unused net_busy_flag;
 
 /**********************************************************************/
 
-enum env_op {
-        env_op_create,
-        env_op_delete,
-        env_op_overwrite,
-};
-
 static int on_bootfile(const char *name, const char *value, enum env_op op,
 	int flags)
 {

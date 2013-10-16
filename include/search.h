@@ -3,26 +3,13 @@
  * Copyright (C) 1995-1999, 2000 Free Software Foundation, Inc.
  * This file is part of the GNU C Library.
  *
- * The GNU C Library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * The GNU C Library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with the GNU C Library; if not, write to the Free
- * Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
- * 02111-1307 USA.
+ * SPDX-License-Identifier:	LGPL-2.1+
  */
 
 /*
  * Based on code from uClibc-0.9.30.3
  * Extensions for use within U-Boot
- * Copyright (C) 2010 Wolfgang Denk <wd@denx.de>
+ * Copyright (C) 2010-2013 Wolfgang Denk <wd@denx.de>
  */
 
 #ifndef _SEARCH_H
@@ -32,14 +19,11 @@
 
 #define __set_errno(val) do { errno = val; } while (0)
 
-/*
- * Prototype structure for a linked-list data structure.
- * This is the type used by the `insque' and `remque' functions.
- */
-
-/* For use with hsearch(3).  */
-typedef int (*__compar_fn_t) (__const void *, __const void *);
-typedef __compar_fn_t comparison_fn_t;
+enum env_op {
+	env_op_create,
+	env_op_delete,
+	env_op_overwrite,
+};
 
 /* Action which shall be performed in the call the hsearch.  */
 typedef enum {
@@ -48,8 +32,11 @@ typedef enum {
 } ACTION;
 
 typedef struct entry {
-	char *key;
+	const char *key;
 	char *data;
+	int (*callback)(const char *name, const char *value, enum env_op op,
+		int flags);
+	int flags;
 } ENTRY;
 
 /* Opaque type for internal use.  */
@@ -66,14 +53,21 @@ struct hsearch_data {
 	struct _ENTRY *table;
 	unsigned int size;
 	unsigned int filled;
+/*
+ * Callback function which will check whether the given change for variable
+ * "item" to "newval" may be applied or not, and possibly apply such change.
+ * When (flag & H_FORCE) is set, it shall not print out any error message and
+ * shall force overwriting of write-once variables.
+.* Must return 0 for approval, 1 for denial.
+ */
+	int (*change_ok)(const ENTRY *__item, const char *newval, enum env_op,
+		int flag);
 };
 
 /* Create a new hashing table which will at most contain NEL elements.  */
-extern int hcreate(size_t __nel);
 extern int hcreate_r(size_t __nel, struct hsearch_data *__htab);
 
 /* Destroy current internal hashing table.  */
-extern void hdestroy(void);
 extern void hdestroy_r(struct hsearch_data *__htab);
 
 /*
@@ -82,25 +76,48 @@ extern void hdestroy_r(struct hsearch_data *__htab);
  * NULL.  If ACTION is `ENTER' replace existing data (if any) with
  * ITEM.data.
  * */
-extern ENTRY *hsearch(ENTRY __item, ACTION __action);
 extern int hsearch_r(ENTRY __item, ACTION __action, ENTRY ** __retval,
-		     struct hsearch_data *__htab);
+		     struct hsearch_data *__htab, int __flag);
+
+/*
+ * Search for an entry matching `MATCH'.  Otherwise, Same semantics
+ * as hsearch_r().
+ */
+extern int hmatch_r(const char *__match, int __last_idx, ENTRY ** __retval,
+		    struct hsearch_data *__htab);
 
 /* Search and delete entry matching ITEM.key in internal hash table. */
-extern int hdelete(const char *__key);
-extern int hdelete_r(const char *__key, struct hsearch_data *__htab);
-
-extern ssize_t hexport(const char __sep, char **__resp, size_t __size);
-extern ssize_t hexport_r(struct hsearch_data *__htab,
-		     const char __sep, char **__resp, size_t __size);
-
-extern int himport(const char *__env, size_t __size, const char __sep,
-		   int __flag);
-extern int himport_r(struct hsearch_data *__htab,
-		     const char *__env, size_t __size, const char __sep,
+extern int hdelete_r(const char *__key, struct hsearch_data *__htab,
 		     int __flag);
 
-/* Flags for himport() / himport_r() */
-#define	H_NOCLEAR	1	/* do not clear hash table before importing */
+extern ssize_t hexport_r(struct hsearch_data *__htab,
+		     const char __sep, int __flag, char **__resp, size_t __size,
+		     int argc, char * const argv[]);
+
+/*
+ * nvars: length of vars array
+ * vars: array of strings (variable names) to import (nvars == 0 means all)
+ * do_apply: whether to call callback function to check the new argument,
+ * and possibly apply changes (false means accept everything)
+ */
+extern int himport_r(struct hsearch_data *__htab,
+		     const char *__env, size_t __size, const char __sep,
+		     int __flag, int nvars, char * const vars[]);
+
+/* Walk the whole table calling the callback on each element */
+extern int hwalk_r(struct hsearch_data *__htab, int (*callback)(ENTRY *));
+
+/* Flags for himport_r(), hexport_r(), hdelete_r(), and hsearch_r() */
+#define H_NOCLEAR	(1 << 0) /* do not clear hash table before importing */
+#define H_FORCE		(1 << 1) /* overwrite read-only/write-once variables */
+#define H_INTERACTIVE	(1 << 2) /* indicate that an import is user directed */
+#define H_HIDE_DOT	(1 << 3) /* don't print env vars that begin with '.' */
+#define H_MATCH_KEY	(1 << 4) /* search/grep key  = variable names	     */
+#define H_MATCH_DATA	(1 << 5) /* search/grep data = variable values	     */
+#define H_MATCH_BOTH	(H_MATCH_KEY | H_MATCH_DATA) /* search/grep both     */
+#define H_MATCH_IDENT	(1 << 6) /* search for indentical strings	     */
+#define H_MATCH_SUBSTR	(1 << 7) /* search for substring matches	     */
+#define H_MATCH_REGEX	(1 << 8) /* search for regular expression matches    */
+#define H_MATCH_METHOD	(H_MATCH_IDENT | H_MATCH_SUBSTR | H_MATCH_REGEX)
 
 #endif /* search.h */

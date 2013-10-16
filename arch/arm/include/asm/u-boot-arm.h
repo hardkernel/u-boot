@@ -62,7 +62,7 @@ void	setup_revision_tag (struct tag **params);
 /* To be fixed!							*/
 /* ------------------------------------------------------------ */
 /* common/cmd_nvedit.c */
-int	setenv		(char *, char *);
+int	setenv		(const char *, const char *);
 
 /* cpu/.../interrupt.c */
 int	arch_interrupt_init	(void);

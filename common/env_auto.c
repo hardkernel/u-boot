@@ -59,7 +59,7 @@ extern nand_info_t nand_info[];
 //extern flash_info_t flash_info[];
 
 /* references to names in env_common.c */
-extern uchar default_environment[];
+extern const unsigned char default_environment[];
 extern int default_environment_size;
 extern unsigned int OmPin;
 
@@ -280,7 +280,7 @@ int saveenv_movinand(void)
 	char	*res;
 
 	res = (char *)&env_ptr->data;
-	len = hexport('\0', &res, ENV_SIZE);
+	len = hexport_r(&env_htab, '\0', 0, &res, ENV_SIZE, 0, NULL);
 	if (len < 0) {
 		printf("Cannot export environment");
 		return 1;
@@ -307,7 +307,7 @@ int saveenv_onenand(void)
         char *res;
 
         res = (char *)&env_ptr->data;
-	len = hexport('\0', &res, ENV_SIZE);
+	len = hexport_r(&env_htab, '\0', 0, &res, ENV_SIZE, 0, NULL);
 	if (len < 0) {
 		printf("Cannot export environment");
 		return 1;

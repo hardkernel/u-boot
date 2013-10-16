@@ -549,7 +549,7 @@ void board_init_r (gd_t *id, ulong dest_addr)
 	api_init ();
 #endif
 
-	//console_init_r ();	/* fully init console as a device */
+	console_init_r ();	/* fully init console as a device */
 
 #if defined(CONFIG_ARCH_MISC_INIT)
 	/* miscellaneous arch dependent initialisations */

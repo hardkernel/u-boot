@@ -1,24 +1,12 @@
 /*
+ * Copyright (C) 2009 Sergey Kubushyn <ksi@koi8.net>
+ *
+ * Changes for multibus/multiadapter I2C support.
+ *
  * (C) Copyright 2000
  * Paolo Scaffardi, AIRVENT SAM s.p.a - RIMINI(ITALY), arsenio@tin.it
  *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
+ * SPDX-License-Identifier:	GPL-2.0+
  */
 
 #include <config.h>
@@ -30,7 +18,8 @@
 #ifdef CONFIG_LOGBUFFER
 #include <logbuff.h>
 #endif
-#if defined(CONFIG_HARD_I2C) || defined(CONFIG_SOFT_I2C)
+
+#if defined(CONFIG_HARD_I2C) || defined(CONFIG_SYS_I2C)
 #include <i2c.h>
 #endif
 
@@ -105,7 +94,7 @@ struct list_head* stdio_get_list(void)
 	return &(devs.list);
 }
 
-struct stdio_dev* stdio_get_by_name(char* name)
+struct stdio_dev* stdio_get_by_name(const char *name)
 {
 	struct list_head *pos;
 	struct stdio_dev *dev;
@@ -135,7 +124,6 @@ struct stdio_dev* stdio_clone(struct stdio_dev *dev)
 		return NULL;
 
 	memcpy(_dev, dev, sizeof(struct stdio_dev));
-	strncpy(_dev->name, dev->name, 16);
 
 	return _dev;
 }
@@ -155,12 +143,12 @@ int stdio_register (struct stdio_dev * dev)
  * returns 0 if success, -1 if device is assigned and 1 if devname not found
  */
 #ifdef	CONFIG_SYS_STDIO_DEREGISTER
-int stdio_deregister(char *devname)
+int stdio_deregister(const char *devname)
 {
 	int l;
 	struct list_head *pos;
 	struct stdio_dev *dev;
-	char temp_names[3][8];
+	char temp_names[3][16];
 
 	dev = stdio_get_by_name(devname);
 
@@ -174,7 +162,7 @@ int stdio_deregister(char *devname)
 		}
 		memcpy (&temp_names[l][0],
 			stdio_devices[l]->name,
-			sizeof(stdio_devices[l]->name));
+			sizeof(temp_names[l]));
 	}
 
 	list_del(&(dev->list));
@@ -208,11 +196,12 @@ int stdio_init (void)
 	/* Initialize the list */
 	INIT_LIST_HEAD(&(devs.list));
 
-#ifdef CONFIG_ARM_DCC_MULTI
-	drv_arm_dcc_init ();
-#endif
-#if defined(CONFIG_HARD_I2C) || defined(CONFIG_SOFT_I2C)
+#ifdef CONFIG_SYS_I2C
+	i2c_init_all();
+#else
+#if defined(CONFIG_HARD_I2C)
 	i2c_init (CONFIG_SYS_I2C_SPEED, CONFIG_SYS_I2C_SLAVE);
+#endif
 #endif
 #ifdef CONFIG_LCD
 	drv_lcd_init ();
@@ -227,9 +216,7 @@ int stdio_init (void)
 	drv_logbuff_init ();
 #endif
 	drv_system_init ();
-#ifdef CONFIG_SERIAL_MULTI
 	serial_stdio_init ();
-#endif
 #ifdef CONFIG_USB_TTY
 	drv_usbtty_init ();
 #endif
@@ -239,6 +226,8 @@ int stdio_init (void)
 #ifdef CONFIG_JTAG_CONSOLE
 	drv_jtag_console_init ();
 #endif
-
+#ifdef CONFIG_CBMEM_CONSOLE
+	cbmemc_init();
+#endif
 	return (0);
 }

@@ -39,6 +39,7 @@ typedef volatile unsigned char	vu_char;
 #include <linux/bitops.h>
 #include <linux/types.h>
 #include <linux/string.h>
+#include <linux/stringify.h>
 #include <asm/ptrace.h>
 #include <stdarg.h>
 #if defined(CONFIG_PCI) && (defined(CONFIG_4xx) && !defined(CONFIG_AP1000))
@@ -270,13 +271,28 @@ void	print_size(unsigned long long, const char *);
 int	print_buffer (ulong addr, void* data, uint width, uint count, uint linelen);
 
 /* common/main.c */
-void	main_loop	(void);
-int	run_command	(const char *cmd, int flag);
-int	readline	(const char *const prompt);
-int	readline_into_buffer	(const char *const prompt, char * buffer);
-int	parse_line (char *, char *[]);
-void	init_cmd_timeout(void);
-void	reset_cmd_timeout(void);
+void    main_loop       (void);
+int run_command(const char *cmd, int flag);
+
+/*
+ * Run a list of commands separated by ; or even \0
+ *
+ * Note that if 'len' is not -1, then the command does not need to be nul
+ * terminated, Memory will be allocated for the command in that case.
+ *
+ * @param cmd   List of commands to run, each separated bu semicolon
+ * @param len   Length of commands excluding terminator if known (-1 if not)
+ * @param flag  Execution flags (CMD_FLAG_...)
+ * @return 0 on success, or != 0 on error.
+ */
+int run_command_list(const char *cmd, int len, int flag);
+int     readline        (const char *const prompt);
+int     readline_into_buffer(const char *const prompt, char *buffer,
+                        int timeout);
+int     parse_line (char *, char *[]);
+void    init_cmd_timeout(void);
+void    reset_cmd_timeout(void);
+extern char console_buffer[];
 
 /* arch/$(ARCH)/lib/board.c */
 void	board_init_f  (ulong) __attribute__ ((noreturn));
@@ -300,17 +316,46 @@ extern ulong load_addr;		/* Default Load Address */
 void	doc_probe(unsigned long physadr);
 
 /* common/cmd_nvedit.c */
-int	env_init     (void);
-void	env_relocate (void);
-int	envmatch     (uchar *, int);
-char	*getenv	     (char *);
-int	getenv_f     (char *name, char *buf, unsigned len);
-int	saveenv	     (void);
-#ifdef CONFIG_PPC		/* ARM version to be fixed! */
-int inline setenv   (char *, char *);
-#else
-int	setenv	     (char *, char *);
-#endif /* CONFIG_PPC */
+int     env_init     (void);
+void    env_relocate (void);
+int     envmatch     (uchar *, int);
+char    *getenv      (const char *);
+int     getenv_f     (const char *name, char *buf, unsigned len);
+ulong getenv_ulong(const char *name, int base, ulong default_val);
+
+/*
+ * getenv_hex() - Return an environment variable as a hex value
+ *
+ * Decode an environment as a hex number (it may or may not have a 0x
+ * prefix). If the environment variable cannot be found, or does not start
+ * with hex digits, the default value is returned.
+ *
+ * @varname:            Variable to decode
+ * @default_val:        Value to return on error
+ */
+ulong getenv_hex(const char *varname, ulong default_val);
+
+/*
+ * Read an environment variable as a boolean
+ * Return -1 if variable does not exist (default to true)
+ */
+int getenv_yesno(const char *var);
+int     saveenv      (void);
+int     setenv       (const char *, const char *);
+int setenv_ulong(const char *varname, ulong value);
+int setenv_hex(const char *varname, ulong value);
+/*
+ * setenv_addr - Set an environment variable to an address in hex
+ *
+ * @varname:    Environment variable to set
+ * @addr:       Value to set it to
+ * @return 0 if ok, 1 on error
+ */
+static inline int setenv_addr(const char *varname, const void *addr)
+{
+        return setenv_hex(varname, (ulong)addr);
+}
+
 #ifdef CONFIG_ARM
 # include <asm/mach-types.h>
 # include <asm/setup.h>
@@ -684,14 +729,7 @@ void	udelay        (unsigned long);
 void    mdelay  (unsigned long msec);
 
 /* lib/vsprintf.c */
-ulong	simple_strtoul(const char *cp,char **endp,unsigned int base);
-unsigned long long	simple_strtoull(const char *cp,char **endp,unsigned int base);
-long	simple_strtol(const char *cp,char **endp,unsigned int base);
-void	panic(const char *fmt, ...)
-		__attribute__ ((format (__printf__, 1, 2)));
-int	sprintf(char * buf, const char *fmt, ...)
-		__attribute__ ((format (__printf__, 2, 3)));
-int	vsprintf(char *buf, const char *fmt, va_list args);
+#include <vsprintf.h>
 
 /* lib/strmhz.c */
 char *	strmhz(char *buf, long hz);
@@ -702,7 +740,7 @@ char *	strmhz(char *buf, long hz);
 /* common/console.c */
 int	console_init_f(void);	/* Before relocation; uses the serial  stuff	*/
 int	console_init_r(void);	/* After  relocation; uses the console stuff	*/
-int	console_assign (int file, char *devname);	/* Assign the console	*/
+int     console_assign(int file, const char *devname);  /* Assign the console   */
 int	ctrlc (void);
 int	had_ctrlc (void);	/* have we had a Control-C since last clear? */
 void	clear_ctrlc (void);	/* clear the Control-C condition */

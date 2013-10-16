@@ -189,6 +189,19 @@
 #define CONFIG_ENV_OVERWRITE
 #define CONFIG_BAUDRATE			115200
 
+/* USB KEYBOARD */
+#define CONFIG_USB_KEYBOARD
+#define CONFIG_SYS_USB_EVENT_POLL
+
+/* NETCONSOLE */
+#define CONFIG_NETCONSOLE
+
+/* CONSOLE MUX */
+#define CONFIG_CONSOLE_MUX
+#define CONFIG_SYS_CONSOLE_IS_IN_ENV
+
+#define CONFIG_CMD_BOOTM
+
 /***********************************************************
  * Command definition
  ***********************************************************/

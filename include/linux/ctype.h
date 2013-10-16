@@ -15,7 +15,7 @@
 #define _X	0x40	/* hex digit */
 #define _SP	0x80	/* hard space (0x20) */
 
-extern unsigned char _ctype[];
+extern const unsigned char _ctype[];
 
 #define __ismask(x) (_ctype[(int)(unsigned char)(x)])
 
@@ -30,6 +30,12 @@ extern unsigned char _ctype[];
 #define isspace(c)	((__ismask(c)&(_S)) != 0)
 #define isupper(c)	((__ismask(c)&(_U)) != 0)
 #define isxdigit(c)	((__ismask(c)&(_D|_X)) != 0)
+
+/*
+ * Rather than doubling the size of the _ctype lookup table to hold a 'blank'
+ * flag, just check for space or tab.
+ */
+#define isblank(c)	(c == ' ' || c == '\t')
 
 #define isascii(c) (((unsigned char)(c))<=0x7f)
 #define toascii(c) (((unsigned char)(c))&0x7f)
