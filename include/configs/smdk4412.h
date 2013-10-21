@@ -192,6 +192,7 @@
 /* USB KEYBOARD */
 #define CONFIG_USB_KEYBOARD
 #define CONFIG_SYS_USB_EVENT_POLL
+#define CONFIG_SYS_STDIO_DEREGISTER
 
 /* NETCONSOLE */
 #define CONFIG_NETCONSOLE
@@ -234,6 +235,10 @@
 #define CONFIG_CMD_FAT
 #define CONFIG_CMD_FS_GENERIC
 
+#define CONFIG_CMD_BOOTSCAN
+#define CONFIG_MENU
+#define CONFIG_MENU_SHOW
+
 #define CONFIG_SYS_NAND_QUIET_TEST
 #define CONFIG_SYS_ONENAND_QUIET_TEST
 
@@ -255,11 +260,11 @@
 #define CONFIG_BOOTP_HOSTNAME
 #define CONFIG_BOOTP_BOOTPATH
 
-#define CONFIG_ETHADDR		00:40:5c:26:0a:5b
-#define CONFIG_NETMASK          255.255.255.0
-#define CONFIG_IPADDR		192.168.0.20
-#define CONFIG_SERVERIP		192.168.0.10
-#define CONFIG_GATEWAYIP	192.168.0.1
+#define CONFIG_USB_ETHADDR	00:10:75:2a:ae:e0
+#define CONFIG_NETMASK		255.255.255.0
+#define CONFIG_IPADDR		10.0.0.31
+#define CONFIG_SERVERIP		10.0.0.204
+#define CONFIG_GATEWAYIP	10.0.0.2
 
 #define CONFIG_OF_LIBFDT	1
 
@@ -274,7 +279,7 @@
         "    if run loadbootscript_2; "         \
         "        then run bootscript; "         \
         "    else "                             \
-        "        run default_bootcmd; "         \
+	"        run default_bootcmd; "         \
         "    fi ;"                              \
         " fi ; "                                
         
@@ -386,6 +391,8 @@
 #endif
 
 #define CONFIG_SYS_LOAD_ADDR		CONFIG_SYS_MAPPED_RAM_BASE + 0x3e00000
+#define CONFIG_BOOTSCAN_SYS_LOAD_ADDR	(0x40008000)
+#define CONFIG_BOOTSCAN_INITRD_LOAD_ADDR	(0x42000000)
 #define CONFIG_PHY_UBOOT_BASE		CONFIG_SYS_SDRAM_BASE + 0x3e00000
 
 /*
@@ -477,6 +484,8 @@
 #define CONFIG_ENV_SIZE			0x4000
 
 #define CONFIG_DOS_PARTITION		1
+#define CONFIG_EFI_PARTITION
+#define CONFIG_PARTITION_UUIDS
 
 //#define CONFIG_SYS_INIT_SP_ADDR	(CONFIG_SYS_LOAD_ADDR - 0x1000000)
 #define CONFIG_SYS_INIT_SP_ADDR	(0x43e00000 - 0x1000000)

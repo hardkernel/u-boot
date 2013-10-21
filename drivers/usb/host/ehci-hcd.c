@@ -36,6 +36,9 @@
 #define CONFIG_USB_MAX_CONTROLLER_COUNT 1
 #endif
 
+extern int input_recursion;
+#define USB_INTERACTIVE_RECV_TIMEOUT_MS 50
+
 /*
  * EHCI spec page 20 says that the HC may take up to 16 uFrames (= 4ms) to halt.
  * Let's time out after 8 to have a little safety margin on top of that.
@@ -233,7 +236,7 @@ static int ehci_td_buffer(struct qTD *td, void *buf, size_t sz)
 	int idx;
 
 	if (addr != ALIGN(addr, ARCH_DMA_MINALIGN))
-		debug("EHCI-HCD: Misaligned buffer address (%p)\n", buf);
+		printf("EHCI-HCD: Misaligned buffer address (%p)\n", buf);
 
 	flush_dcache_range(addr, ALIGN(addr + sz, ARCH_DMA_MINALIGN));
 
@@ -541,7 +544,10 @@ ehci_submit_async(struct usb_device *dev, unsigned long pipe, void *buffer,
 	/* Wait for TDs to be processed. */
 	ts = get_timer(0);
 	vtd = &qtd[qtd_counter - 1];
-	timeout = USB_TIMEOUT_MS(pipe);
+	if (input_recursion)
+		timeout = USB_INTERACTIVE_RECV_TIMEOUT_MS;
+	else
+		timeout = USB_TIMEOUT_MS(pipe);
 	do {
 		/* Invalidate dcache */
 		invalidate_dcache_range((uint32_t)&ctrl->qh_list,
@@ -571,7 +577,7 @@ ehci_submit_async(struct usb_device *dev, unsigned long pipe, void *buffer,
 
 	/* Check that the TD processing happened */
 	if (QT_TOKEN_GET_STATUS(token) & QT_TOKEN_STATUS_ACTIVE)
-		printf("EHCI timed out on TD - token=%#x\n", token);
+		debug("EHCI timed out on TD - token=%#x\n", token);
 
 	/* Disable async schedule. */
 	cmd = ehci_readl(&ctrl->hcor->or_usbcmd);

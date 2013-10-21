@@ -754,6 +754,10 @@ after_header_check:
 		return 1;
 	}
 
+	/* Netconsole causing freeze ups? - Suriyan */
+	eth_halt();
+	eth_unregister(eth_get_dev());
+
 	arch_preboot_os();
 
 	boot_fn(0, argc, argv, &images);
@@ -1146,6 +1150,30 @@ int do_iminfo (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	return rcode;
 }
 
+struct zimage_header {
+        uint32_t        code[9];
+        uint32_t        zi_magic;
+        uint32_t        zi_start;
+        uint32_t        zi_end;
+};
+
+/* Return 1 if its a valid zImage */
+/* Also print stuff about this image */
+static int image_check_zImage(void * hdr)
+{
+	struct zimage_header *zi;
+
+	zi = (struct zimage_header *)map_sysmem(hdr, 0);
+	if (zi->zi_magic == LINUX_ZIMAGE_MAGIC) {
+		puts("   Legacy zImage found\n");
+		printf("Kernel image @ %#08lx [ %#08lx - %#08lx ]\n",
+			hdr, zi->zi_start, zi->zi_end);
+		return 1;
+	}
+	else
+		return 0;
+}
+
 static int image_info (ulong addr)
 {
 	void *hdr = (void *)addr;
@@ -1193,6 +1221,9 @@ static int image_info (ulong addr)
 		return 0;
 #endif
 	default:
+		/* Lets check if its a zImage */
+		if (image_check_zImage(hdr))
+			return 0;
 		puts ("Unknown image format!\n");
 		break;
 	}

@@ -19,7 +19,7 @@ DECLARE_GLOBAL_DATA_PTR;
 static char input_buffer[CONFIG_NETCONSOLE_BUFFER_SIZE];
 static int input_size; /* char count in input buffer */
 static int input_offset; /* offset to valid chars in input buffer */
-static int input_recursion;
+int input_recursion;
 static int output_recursion;
 static int net_timeout;
 static uchar nc_ether[6]; /* server enet address */
@@ -184,7 +184,9 @@ static void nc_send_packet(const char *buf, int len)
 			return;	/* inside net loop */
 		output_packet = buf;
 		output_packet_len = len;
+		input_recursion = 1;
 		NetLoop(NETCONS); /* wait for arp reply and send packet */
+		input_recursion = 0;
 		output_packet_len = 0;
 		return;
 	}
@@ -327,3 +329,14 @@ int drv_nc_init(void)
 
 	return (rc == 0) ? 1 : rc;
 }
+
+/* Deregister nc - helpful when its thru USB */
+int usb_nc_deregister(void)
+{
+#ifdef CONFIG_SYS_STDIO_DEREGISTER
+        return stdio_deregister("nc");
+#else
+        return 1;
+#endif
+}
+

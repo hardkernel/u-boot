@@ -59,6 +59,9 @@ const unsigned char default_environment[] = {
 #ifdef	CONFIG_ETHADDR
 	"ethaddr="	__stringify(CONFIG_ETHADDR)	"\0"
 #endif
+#ifdef	CONFIG_USB_ETHADDR
+	"usbethaddr="	__stringify(CONFIG_USB_ETHADDR)	"\0"
+#endif
 #ifdef	CONFIG_ETH1ADDR
 	"eth1addr="	__stringify(CONFIG_ETH1ADDR)	"\0"
 #endif

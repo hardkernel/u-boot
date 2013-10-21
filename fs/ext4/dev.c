@@ -32,7 +32,7 @@
 lbaint_t part_offset;
 
 static block_dev_desc_t *ext4fs_block_dev_desc;
-static disk_partition_t *part_info;
+disk_partition_t *part_info;
 
 void ext4fs_set_blk_dev(block_dev_desc_t *rbdd, disk_partition_t *info)
 {

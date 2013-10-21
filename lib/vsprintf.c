@@ -886,3 +886,31 @@ void print_grouped_ull(unsigned long long int_val, int digits)
 		grab = 3;
 	}
 }
+
+void uuid_string(unsigned char *uuid, char *str)
+{
+/* Don't know how the endianness should be taken care of */
+#if 0
+	static const u8 e[16] = {3, 2, 1, 0, 5, 4, 7, 6, 8, 9, 10, 11,
+				 12, 13, 14, 15};
+#else
+	static const u8 e[16] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
+				 12, 13, 14, 15};
+#endif
+
+	int i;
+
+        for (i = 0; i < 16; i++) {
+                sprintf(str, "%02x", uuid[e[i]]);
+                str += 2;
+                switch (i) {
+                case 3:
+                case 5:
+                case 7:
+                case 9:
+                        *str++ = '-';
+                        break;
+                }
+        }
+}
+

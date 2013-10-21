@@ -63,6 +63,7 @@ static char *print_efiname(gpt_entry *pte)
 	return name;
 }
 
+#if 0
 static void uuid_string(unsigned char *uuid, char *str)
 {
 	static const u8 le[16] = {3, 2, 1, 0, 5, 4, 7, 6, 8, 9, 10, 11,
@@ -82,6 +83,7 @@ static void uuid_string(unsigned char *uuid, char *str)
 		}
 	}
 }
+#endif
 
 static efi_guid_t system_guid = PARTITION_SYSTEM_GUID;
 

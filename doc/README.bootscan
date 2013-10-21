@@ -1,0 +1,43 @@
+/*
+ * (C) Copyright 2013 Suriyan Ramasami <suriyan.r@gmail.com>
+ *
+ * SPDX-License-Identifier:	GPL-2.0+
+ */
+
+bootscan command
+
+The "bootscan" command uses U-Boot menu interfaces and provides
+a simple mechanism for presenting the user with a list of different
+boot items, which are gleaned by searching for files in various IDE/USB
+bootable media/partitions.
+
+The menu interface is used to enable the user to make a choice.
+selection. Navigation is achieved with the help of selecting the
+numbered menu items. The time to choose is defaulted to bootdelay
+seconds after which the default choice is activated. In the absence
+of a default choice, the first bootable option is attempted.
+
+bootscan remembers previous user choices by the environment variables
+which are prefixed bootscan_. The variables are bootscan_bootargs,
+bootscan_bootcmd, bootscan_root and bootscan_choice. Their usage is
+self explanatory. For example, bootscan_bootcmd is the bootcmd that
+was used during the last bootup.
+
+The menu items are further categorized by two characters:
+* -> Implies that is the default choice, if the user does not choose.
++ -> Allows the user to select the U-Boot prompt.
+
+Example Menu:
+
+
+To enable the "bootscan" command add following definitions to the
+board config file:
+
+  #define CONFIG_CMD_BOOTSCAN
+  #define CONFIG_MENU
+
+To run bootscan at startup, so that it presents a menu, add this
+additional definition:
+
+  #define CONFIG_MENU_SHOW
+

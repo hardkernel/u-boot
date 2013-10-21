@@ -29,6 +29,8 @@
 #include <asm/byteorder.h>
 #include "ext4_common.h"
 
+extern disk_partition_t *part_info;
+
 struct ext2_data *ext4fs_root;
 struct ext2fs_node *ext4fs_file;
 uint32_t *ext4fs_indir1_block;
@@ -2205,6 +2207,12 @@ int ext4fs_mount(unsigned part_length)
 	/* Make sure this is an ext2 filesystem. */
 	if (__le16_to_cpu(data->sblock.magic) != EXT2_MAGIC)
 		goto fail;
+
+	/* Update the label and uuid in the part_info structure */
+	strcpy(part_info->name, data->sblock.volume_name);
+	debug("volume name: %s\n", part_info->name);
+	uuid_string(data->sblock.unique_id, part_info->uuid);
+	debug("UUID: %s\n", part_info->uuid);
 
 	if (__le32_to_cpu(data->sblock.revision_level == 0))
 		fs->inodesz = 128;

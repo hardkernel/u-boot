@@ -173,4 +173,6 @@ int vscnprintf(char *buf, size_t size, const char *fmt, va_list args);
  */
 void print_grouped_ull(unsigned long long int_val, int digits);
 
+void uuid_string(unsigned char *uuid, char *str);
+
 #endif

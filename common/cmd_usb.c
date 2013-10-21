@@ -450,6 +450,17 @@ static int do_usb(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	if ((strncmp(argv[1], "reset", 5) == 0) ||
 		 (strncmp(argv[1], "start", 5) == 0)) {
 		bootstage_mark_name(BOOTSTAGE_ID_USB_START, "usb_start");
+#if defined(CONFIG_USB_KEYBOARD) || defined (CONFIG_USB_HOST_ETHER)
+		iomux_doenv(stdin, "serial");
+		iomux_doenv(stdout, "serial");
+		iomux_doenv(stderr, "serial");
+# if defined(CONFIG_USB_HOST_ETHER)
+		usb_nc_deregister();
+# endif
+# if defined(CONFIG_USB_KEYBOARD)
+		usb_kbd_deregister();
+# endif
+#endif
 		usb_stop();
 		printf("(Re)start USB...\n");
 		if (usb_init() >= 0) {
@@ -460,25 +471,49 @@ static int do_usb(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 #ifdef CONFIG_USB_HOST_ETHER
 			/* try to recognize ethernet devices immediately */
 			usb_ether_curr_dev = usb_host_eth_scan(1);
+			if (usb_ether_curr_dev != -1) {
+				/* Lets enable nc again */
+				drv_nc_init();
+			}
 #endif
 #ifdef CONFIG_USB_KEYBOARD
-			drv_usb_kbd_init();
+			puts("\tscanning usb for keyboard ... ");
+			if (drv_usb_kbd_init() == 1) {
+				/* Found a keyboard */
+				puts("1 Keyboard Device found\n");
+			}
 #endif
 		}
 		return 0;
 	}
 	if (strncmp(argv[1], "stop", 4) == 0) {
-#ifdef CONFIG_USB_KEYBOARD
+#if defined(CONFIG_USB_KEYBOARD) || defined (CONFIG_USB_HOST_ETHER)
+		iomux_doenv(stdin, "serial");
+		iomux_doenv(stdout, "serial");
+		iomux_doenv(stderr, "serial");
 		if (argc == 2) {
+# if defined(CONFIG_USB_HOST_ETHER)
+			if (usb_nc_deregister() != 0) {
+				printf("USB not stopped: nc still"
+					" using USB\n");
+				return 1;
+			}
+# endif
+# if defined(CONFIG_USB_KEYBOARD)
 			if (usb_kbd_deregister() != 0) {
 				printf("USB not stopped: usbkbd still"
 					" using USB\n");
 				return 1;
 			}
+# endif
 		} else {
 			/* forced stop, switch console in to serial */
-			console_assign(stdin, "serial");
+# if defined(CONFIG_USB_HOST_ETHER)
+			usb_nc_deregister();
+# endif
+# if defined(CONFIG_USB_KEYBOARD)
 			usb_kbd_deregister();
+# endif
 		}
 #endif
 		printf("stopping USB..\n");
