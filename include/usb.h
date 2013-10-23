@@ -153,6 +153,16 @@ void usb_event_poll(void);
 #error USB Lowlevel not defined
 #endif
 
+/*
+ * If CONFIG_USB_CABLE_CHECK is set then this function
+ * should be defined in board file.
+ *
+ * @return 1 if cable is connected and 0 otherwise.
+ */
+#ifdef CONFIG_USB_CABLE_CHECK
+int usb_cable_connected(void);
+#endif
+
 #ifdef CONFIG_USB_STORAGE
 
 #define USB_MAX_STOR_DEV 5

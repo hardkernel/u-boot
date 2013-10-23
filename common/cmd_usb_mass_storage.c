@@ -67,9 +67,19 @@ int do_usb_mass_storage(cmd_tbl_t *cmdtp, int flag,
 			goto exit;
 		}
 		usb_gadget_handle_interrupts();
-		/* Check if USB cable has been detached */
-		if (fsg_main_thread(NULL) == EIO)
+
+		rc = fsg_main_thread(NULL);
+		if (rc) {
+			/* Check I/O error */
+			if (rc == -EIO)
+				printf("\rCheck USB cable connection\n");
+
+			/* Check CTRL+C */
+			if (rc == -EPIPE)
+				printf("\rCTRL+C - Operation aborted\n");
+
 			goto exit;
+		}
 	}
 exit:
 	g_dnl_unregister();

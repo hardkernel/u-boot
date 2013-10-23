@@ -995,6 +995,12 @@ The following options need to be configured:
 			for your device
 			- CONFIG_USBD_PRODUCTID 0xFFFF
 
+		Some USB device drivers may need to check USB cable attachment.
+		In this case you can enable following config in BoardName.h:
+			CONFIG_USB_CABLE_CHECK
+			This enables function definition:
+			- usb_cable_connected() in include/usb.h
+			Implementation of this function is board-specific.
 
 - MMC Support:
 		The MMC controller on the Intel PXA is supported. To
