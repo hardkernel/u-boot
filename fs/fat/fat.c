@@ -735,7 +735,7 @@ static dir_entry *get_dentfromdir(fsdata *mydata, int startsect,
 /*
  * Read boot sector and volume info from a FAT filesystem
  */
-static int
+int
 read_bootsectandvi(boot_sector *bs, volume_info *volinfo, int *fatsize)
 {
 	__u8 *block;
