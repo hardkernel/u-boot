@@ -77,6 +77,9 @@ const uchar default_environment[] = {
 #ifdef	CONFIG_LOADS_ECHO
 	"loads_echo="	MK_STR(CONFIG_LOADS_ECHO)	"\0"
 #endif
+#ifdef	CONFIG_USB_ETHADDR
+	"usbethaddr="	MK_STR(CONFIG_USB_ETHADDR)	"\0"
+#endif
 #ifdef	CONFIG_ETHADDR
 	"ethaddr="	MK_STR(CONFIG_ETHADDR)		"\0"
 #endif

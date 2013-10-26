@@ -2,23 +2,7 @@
  * (C) Copyright 2001-2010
  * Wolfgang Denk, DENX Software Engineering, wd@denx.de.
  *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
+ * SPDX-License-Identifier:	GPL-2.0+
  */
 
 #include <common.h>
@@ -61,6 +45,15 @@ int eth_getenv_enetaddr_by_index(const char *base_name, int index,
 	sprintf(enetvar, index ? "%s%daddr" : "%saddr", base_name, index);
 	return eth_getenv_enetaddr(enetvar, enetaddr);
 }
+
+static inline int eth_setenv_enetaddr_by_index(const char *base_name, int index,
+				 uchar *enetaddr)
+{
+	char enetvar[32];
+	sprintf(enetvar, index ? "%s%daddr" : "%saddr", base_name, index);
+	return eth_setenv_enetaddr(enetvar, enetaddr);
+}
+
 
 static int eth_mac_skip(int index)
 {
@@ -112,12 +105,8 @@ static struct {
 static unsigned int eth_rcv_current, eth_rcv_last;
 #endif
 
-static struct eth_device *eth_devices, *eth_current;
-
-struct eth_device *eth_get_dev(void)
-{
-	return eth_current;
-}
+static struct eth_device *eth_devices;
+struct eth_device *eth_current;
 
 struct eth_device *eth_get_dev_by_name(const char *devname)
 {
@@ -205,12 +194,20 @@ int eth_write_hwaddr(struct eth_device *dev, const char *base_name,
 		}
 
 		memcpy(dev->enetaddr, env_enetaddr, 6);
+	} else if (is_valid_ether_addr(dev->enetaddr)) {
+		eth_setenv_enetaddr_by_index(base_name, eth_number,
+					     dev->enetaddr);
+		printf("\nWarning: %s using MAC address from net device\n",
+			dev->name);
 	}
 
 	if (dev->write_hwaddr &&
-			!eth_mac_skip(eth_number) &&
-			is_valid_ether_addr(dev->enetaddr))
+			!eth_mac_skip(eth_number)) {
+		if (!is_valid_ether_addr(dev->enetaddr))
+			return -1;
+
 		ret = dev->write_hwaddr(dev);
+	}
 
 	return ret;
 }
@@ -486,10 +483,7 @@ int eth_receive(void *packet, int length)
 			return -1;
 	}
 
-	if (length < eth_rcv_bufs[eth_rcv_current].length)
-		return -1;
-
-	length = eth_rcv_bufs[eth_rcv_current].length;
+	length = min(eth_rcv_bufs[eth_rcv_current].length, length);
 
 	for (i = 0; i < length; i++)
 		p[i] = eth_rcv_bufs[eth_rcv_current].data[i];

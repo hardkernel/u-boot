@@ -296,6 +296,8 @@ u32 hsic_ctrl;
 /* Reset the EHCI host controller. */
 static void reset_usb_phy(struct exynos_usb_phy *usb)
 {
+	u32 hsic_ctrl;
+
 	/* HOST_PHY reset */
 	setbits_le32(&usb->usbphyctrl0,
 			HOST_CTRL0_PHYSWRST |
@@ -304,7 +306,28 @@ static void reset_usb_phy(struct exynos_usb_phy *usb)
 			HOST_CTRL0_FORCESUSPEND |
 			HOST_CTRL0_FORCESLEEP);
 
+	/* HSIC Phy reset */
+	hsic_ctrl = (HSIC_CTRL_FORCESUSPEND |
+	HSIC_CTRL_FORCESLEEP |
+	HSIC_CTRL_SIDDQ |
+	HSIC_CTRL_PHYSWRST);
+
+	setbits_le32(&usb->hsicphyctrl1, hsic_ctrl);
+	setbits_le32(&usb->hsicphyctrl2, hsic_ctrl);
+
 	set_usbhost_phy_ctrl(POWER_USB_HOST_PHY_CTRL_DISABLE);
+}
+
+void usb_eth_init() {
+	/* Turn off and turn on the power to LAN9730 - LDO 25 */
+	unsigned char rdata;
+
+	IIC0_ERead (0x09, 0x78, &rdata);
+	IIC0_EWrite(0x09, 0x78, rdata & ~0xC0);
+	udelay(10);
+
+	IIC0_EWrite(0x09, 0x78, &rdata);
+	IIC0_EWrite(0x09, 0x78, rdata | 0xC0);
 }
 
 void usb_hub_init () {
@@ -379,6 +402,7 @@ int ehci_hcd_init(int index, enum usb_init_type init,
 		(uint32_t)*hccr, (uint32_t)*hcor,
 		(uint32_t)HC_LENGTH(ehci_readl(&(*hccr)->cr_capbase)));
 
+	usb_eth_init();
 	usb_hub_init();
 	return 0;
 }
@@ -392,6 +416,8 @@ int ehci_hcd_stop(int index)
 	struct exynos_ehci *ctx = &exynos;
 
 	reset_usb_phy(ctx->usb);
+	usb_eth_init();
+	usb_hub_init();
 
 	return 0;
 }
