@@ -34,6 +34,7 @@ typedef volatile unsigned long	vu_long;
 typedef volatile unsigned short vu_short;
 typedef volatile unsigned char	vu_char;
 
+#include <linux/compiler.h>
 #include <config.h>
 #include <asm-offsets.h>
 #include <linux/bitops.h>
@@ -221,6 +222,23 @@ typedef void (interrupt_handler_t)(void *);
 
 #define MIN(x, y)  min(x, y)
 #define MAX(x, y)  max(x, y)
+
+#define min3(X, Y, Z)                           \
+        ({ typeof(X) __x = (X);                 \
+                typeof(Y) __y = (Y);            \
+                typeof(Z) __z = (Z);            \
+                __x < __y ? (__x < __z ? __x : __z) :   \
+                (__y < __z ? __y : __z); })
+
+#define max3(X, Y, Z)                           \
+        ({ typeof(X) __x = (X);                 \
+                typeof(Y) __y = (Y);            \
+                typeof(Z) __z = (Z);            \
+                __x > __y ? (__x > __z ? __x : __z) :   \
+                (__y > __z ? __y : __z); })
+
+#define MIN3(x, y, z)  min3(x, y, z)
+#define MAX3(x, y, z)  max3(x, y, z)
 
 /*
  * Return the absolute value of a number.
