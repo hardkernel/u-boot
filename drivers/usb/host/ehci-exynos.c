@@ -326,7 +326,7 @@ void usb_eth_init() {
 	IIC0_EWrite(0x09, 0x78, rdata & ~0xC0);
 	udelay(10);
 
-	IIC0_EWrite(0x09, 0x78, &rdata);
+	IIC0_ERead(0x09, 0x78, &rdata);
 	IIC0_EWrite(0x09, 0x78, rdata | 0xC0);
 }
 
