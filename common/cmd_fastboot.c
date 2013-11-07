@@ -701,7 +701,7 @@ static int rx_handler (const unsigned char *buffer, unsigned int buffer_size)
 	/* Use 65 instead of 64
 	   null gets dropped
 	   strcpy's need the extra byte */
-	char response[65];
+	ALLOC_CACHE_ALIGN_BUFFER(char, response, 65);
 
 	if (download_size)
 	{

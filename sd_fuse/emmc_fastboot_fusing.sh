@@ -8,11 +8,11 @@
 #
 ####################################
 echo "BL1 fusing"
-fastboot flash fwbl1 bl1.HardKernel
+sudo fastboot flash fwbl1 bl1.HardKernel
 echo "BL2 fusing"
-fastboot flash bl2 bl2.HardKernel
+sudo fastboot flash bl2 bl2.HardKernel
 echo "u-boot fusing"
-fastboot flash bootloader ../u-boot.bin
+sudo fastboot flash bootloader ../u-boot.bin
 echo "TrustZone S/W fusing"
-fastboot flash tzsw tzsw.HardKernel
+sudo fastboot flash tzsw tzsw.HardKernel
 echo "U-boot image is fused successfully."
