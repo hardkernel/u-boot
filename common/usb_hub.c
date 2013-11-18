@@ -429,10 +429,10 @@ static int usb_hub_configure(struct usb_device *dev)
 	 * the power.  This is a __weak function.  Resetting of the devices
 	 * should occur in the board file of the device.
 	 */
-	for (i = 0; i < dev->maxchild; i++)
+	for (i = dev->maxchild - 1; i >= 0; i--)
 		usb_hub_reset_devices(i + 1);
 
-	for (i = 0; i < dev->maxchild; i++) {
+	for (i = dev->maxchild - 1; i >= 0; i--) {
 		ALLOC_CACHE_ALIGN_BUFFER(struct usb_port_status, portsts, 1);
 		unsigned short portstatus, portchange;
 		int ret;
