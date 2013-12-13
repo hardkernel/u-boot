@@ -102,7 +102,10 @@ struct bootscan_bootables {
  * The first index is for the boot image
  * The second index is for the root device.
  */
-static int choice_pairs[BOOTSCAN_MAX_BOOTABLES][2];
+#define BOOTSCAN_MAX_BOOTPAIRS \
+	(BOOTSCAN_MAX_BOOTABLES * BOOTSCAN_MAX_BOOTABLES)
+
+static int choice_pairs[BOOTSCAN_MAX_BOOTPAIRS][2];
 
 #ifdef DEBUG
 static void debug_print_bootlist(struct bootscan_bootables b[])
@@ -430,6 +433,7 @@ static int handle_choice(struct bootscan_bootables bootlist[], char *choice)
 
 	/* Steps to set the env variables to the chosen values */
 	index = simple_strtoul(choice, NULL, 10);
+	debug("handle_choice: index: %d\n", index);
 
 	/*
 	 * Convert this index into a pair of indices.
@@ -457,6 +461,7 @@ static int handle_choice(struct bootscan_bootables bootlist[], char *choice)
 		}
 
 	}
+	debug("handle_choice: booti: %d rooti: %d\n", booti, rooti);
 
 	/* Check if its Android.
  	 */
@@ -664,8 +669,8 @@ static int bootscan_menu(struct bootscan_bootables bootlist[], int bootdelay)
 {
 	int index, i, j;
 	struct menu *m;
-	char menu_key[BOOTSCAN_MAX_BOOTABLES][5];
-	char menu_entry[BOOTSCAN_MAX_BOOTABLES][128];
+	char menu_key[BOOTSCAN_MAX_BOOTPAIRS][5];
+	char menu_entry[BOOTSCAN_MAX_BOOTPAIRS][128];
 	char *menu_choice;
 	char *last_menu_choice;
 	char choice_menu_entry[64];
@@ -715,6 +720,7 @@ static int bootscan_menu(struct bootscan_bootables bootlist[], int bootdelay)
 			}
 			choice_pairs[index][0] = i;
 			choice_pairs[index][1] = i;
+			debug("index: %d choice_pairs[%d][0]: %d choice_pairs[%d][1]: %d\n", index, index, choice_pairs[index][0], index, choice_pairs[index][1]);
 			index++;
 			continue;
 		}
@@ -749,6 +755,7 @@ static int bootscan_menu(struct bootscan_bootables bootlist[], int bootdelay)
 			}
 			choice_pairs[index][0] = i;
 			choice_pairs[index][1] = j;
+			debug("index: %d choice_pairs[%d][0]: %d choice_pairs[%d][1]: %d\n", index, index, choice_pairs[index][0], index, choice_pairs[index][1]);
 			index++;
 		}
 	}
