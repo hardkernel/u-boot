@@ -27,6 +27,7 @@ const unsigned char default_environment[] = {
     "default_bootcmd=echo >>> Run Default Bootcmd <<<;movi read kernel 0 40008000;movi read rootfs 0 41000000 100000;bootm 40008000 41000000\0"
     "loadbootscript_1=echo >>> Load Boot Script from mmc 0:1 <<<;fatload mmc 0:1 40008000 boot.scr\0"
     "loadbootscript_2=echo >>> Load Boot Script from mmc 0:2 <<<;fatload mmc 0:2 40008000 boot.scr\0"
+    "usb_invert_clken=0\0"
 #endif
 
 #ifdef	CONFIG_ENV_CALLBACK_LIST_DEFAULT
