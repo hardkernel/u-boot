@@ -75,6 +75,7 @@ COBJS-$(CONFIG_ENV_IS_IN_AUTO) += env_auto.o
 COBJS-$(CONFIG_ENV_IS_NOWHERE) += env_nowhere.o
 
 # command
+COBJS-$(CONFIG_CMD_USB_MASS_STORAGE) += cmd_usb_mass_storage.o
 COBJS-$(CONFIG_CMD_AMBAPP) += cmd_ambapp.o
 COBJS-$(CONFIG_SOURCE) += cmd_source.o
 COBJS-$(CONFIG_CMD_SOURCE) += cmd_source.o

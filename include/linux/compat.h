@@ -1,11 +1,16 @@
 #ifndef _LINUX_COMPAT_H_
 #define _LINUX_COMPAT_H_
 
-#define __user
-#define __iomem
-
 #define ndelay(x)	udelay(1)
 
+#define dev_dbg(dev, fmt, args...)		\
+	debug(fmt, ##args)
+#define dev_vdbg(dev, fmt, args...)		\
+	debug(fmt, ##args)
+#define dev_info(dev, fmt, args...)		\
+	printf(fmt, ##args)
+#define dev_err(dev, fmt, args...)		\
+	printf(fmt, ##args)
 #define printk	printf
 
 #define KERN_EMERG
@@ -49,7 +54,7 @@
 #endif /* BUG */
 
 #define WARN_ON(x) if (x) {printf("WARNING in %s line %d\n" \
-                                  , __FILE__, __LINE__); }
+				  , __FILE__, __LINE__); }
 
 #define PAGE_SIZE	4096
 #endif

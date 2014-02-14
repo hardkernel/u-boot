@@ -3,19 +3,9 @@
  *
  * Copyright (C) 2004 David Brownell
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * SPDX-License-Identifier:	GPL-2.0+
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ * SPDX-License-Identifier:	GPL-2.0+
  *
  * Ported to U-boot by: Thomas Smits <ts.smits@gmail.com> and
  *                      Remy Bohmer <linux@bohmer.net>
@@ -25,6 +15,7 @@
 #include <linux/usb/ch9.h>
 #include <asm/errno.h>
 #include <linux/usb/gadget.h>
+#include <asm/unaligned.h>
 #include "gadget_chips.h"
 
 #define isdigit(c)      ('0' <= (c) && (c) <= '9')
@@ -127,7 +118,7 @@ static int ep_matches(
 	 * where it's an output parameter representing the full speed limit.
 	 * the usb spec fixes high speed bulk maxpacket at 512 bytes.
 	 */
-	max = 0x7ff & le16_to_cpu(desc->wMaxPacketSize);
+	max = 0x7ff & le16_to_cpu(get_unaligned(&desc->wMaxPacketSize));
 	switch (type) {
 	case USB_ENDPOINT_XFER_INT:
 		/* INT:  limit 64 bytes full speed, 1024 high speed */
@@ -143,7 +134,8 @@ static int ep_matches(
 			return 0;
 
 		/* BOTH:  "high bandwidth" works only at high speed */
-		if ((desc->wMaxPacketSize & __constant_cpu_to_le16(3<<11))) {
+		if ((get_unaligned(&desc->wMaxPacketSize) &
+					__constant_cpu_to_le16(3<<11))) {
 			if (!gadget->is_dualspeed)
 				return 0;
 			/* configure your hardware with enough buffering!! */
@@ -176,7 +168,7 @@ static int ep_matches(
 		/* min() doesn't work on bitfields with gcc-3.5 */
 		if (size > 64)
 			size = 64;
-		desc->wMaxPacketSize = cpu_to_le16(size);
+		put_unaligned(cpu_to_le16(size), &desc->wMaxPacketSize);
 	}
 	return 1;
 }

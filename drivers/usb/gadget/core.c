@@ -13,20 +13,7 @@
  *	Tom Rushworth <tbr@lineo.com>,
  *	Bruce Balden <balden@lineo.com>
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
+ * SPDX-License-Identifier:	GPL-2.0+
  */
 
 #include <malloc.h>
@@ -211,7 +198,6 @@ struct usb_device_descriptor *usbd_device_device_descriptor (struct usb_device_i
 {
 	return (device->device_descriptor);
 }
-
 
 /**
  * usbd_device_configuration_descriptor
@@ -671,9 +657,9 @@ void usbd_device_event_irq (struct usb_device_instance *device, usb_device_event
 		usbdbg("event %d - not handled",event);
 		break;
 	}
-	/*usbdbg("%s event: %d oldstate: %d newstate: %d status: %d address: %d",
+	debug("%s event: %d oldstate: %d newstate: %d status: %d address: %d",
 		device->name, event, state,
-		device->device_state, device->status, device->address); */
+		device->device_state, device->status, device->address);
 
 	/* tell the bus interface driver */
 	if( device->event ) {

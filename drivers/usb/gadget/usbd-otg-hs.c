@@ -354,6 +354,8 @@ void s3c_usb_read_out_fifo(u8 *buf, int num);
 
 #include "fastboot.c"
 
+#include "otg-helper.c"
+
 void s3c_usb_init_phy(void)
 {
 #if defined(CONFIG_ARCH_EXYNOS5)
