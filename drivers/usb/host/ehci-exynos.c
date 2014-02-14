@@ -217,17 +217,22 @@ u32     phypwr, phyclk, rstcon, a;
 
 void usb_hub_init () {
 	u32	a, val, i2c_dat;
-
+	int clk_inv;
+	
 #define GPX3BASE ((void *) (0x11000C60))
 
 	/* Start */
 	gpio_direction_output(GPX3BASE, 5, 0);
 	gpio_set_value(GPX3BASE, 5, 0);
 	mdelay(10);
+	
+	clk_inv = getenv_yesno("usb_invert_clken");
+	printf("usb: usb_refclk_enable is active low: %s\n", clk_inv ? "NO" : "YES");
+	printf("ProTIP: If usb doesn't work - try playing with 'usb_invert_clken' environment\n");
 
 	/* RefCLK 24MHz */
 	gpio_direction_output(GPX3BASE, 0, 0);
-	gpio_set_value(GPX3BASE, 0, 0);
+	gpio_set_value(GPX3BASE, 0, clk_inv);
 	mdelay(10);
 
 	gpio_direction_output(GPX3BASE, 4, 0);
