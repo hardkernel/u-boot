@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Suriyan Ramasami <suriyan.r@gmail.com>
+ * Copyright (C) 2014 Suriyan Ramasami <suriyan.r@gmail.com>
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
@@ -59,13 +59,14 @@
 #define BOOTSCAN_CHOICE		"bootscan_choice"
 #define BOOTSCAN_ROOT		"bootscan_root"
 
-#define BOOTSCAN_BANNER \
+#define BOOTSCAN_BANNER1 \
 "                       ___    _           _     _\n" \
 "                      /___\\__| |_ __ ___ (_) __| |\n" \
 "                     //  // _` | '__/ _ \\| |/ _` |\n" \
 "                    / \\_// (_| | | | (_) | | (_| |\n" \
 "                    \\___/ \\__,_|_|  \\___/|_|\\__,_|\n" \
-"\n" \
+"\n"
+#define BOOTSCAN_BANNER2 \
 "                       _  _   _  _   _ ____\n" \
 "                      | || | | || | / |___ \\\n" \
 "                      | || |_| || |_| | __) |\n" \
@@ -138,7 +139,8 @@ static void debug_print_bootlist(struct bootscan_bootables b[])
 
 static void display_banner(void)
 {
-	puts(BOOTSCAN_BANNER);
+	puts(BOOTSCAN_BANNER1);
+	puts(BOOTSCAN_BANNER2);
 }
 
 static void bootscan_menuprint(void *print_buffer)
@@ -1100,6 +1102,56 @@ static void populate_devices(struct bootscan_bootables bootlist[],
 	}
 }
 
+static void gen_set_ncip(char ncip[20])
+{
+	int i, len;
+
+	len = strlen(ncip) - 1;
+	while (len) {
+		if (ncip[len] == '.') {
+			/* Make that .227 as long as its not .227 */
+			if (strcmp(&ncip[len], ".227") == 0)
+				strcpy(&ncip[len], ".228");
+			else
+				strcpy(&ncip[len], ".227");
+			setenv("ncip", ncip);
+			break;
+		}
+		len--;
+	}
+}
+
+static void bootscan_netconsole()
+{
+	char *tmp, ncip[20];
+
+	/* Lets initialize stuff for netconsole */
+	if (!is_eth_dev_on_usb_host())
+		return
+
+	/* Issue a dhcp first */
+	setenv("abcdtest", "no");
+	setenv("autoload", "no");
+	run_command("dhcp", 0);
+
+	/* Check if ipaddr is set - either thru dhcp or static */
+	tmp = getenv("ipaddr");
+	if (tmp == NULL)
+		return;
+
+	tmp = getenv("ncip");
+	if (tmp == NULL) {
+		/* Generate an ncip based on ipaddress */
+		tmp = getenv("ipaddr");
+		strcpy(ncip, tmp);
+		gen_set_ncip(ncip);
+	}
+
+	setenv("nc_test", "ping ${ncip}");
+	setenv("nc_start", "setenv stdin serial,nc; setenv stdout serial,nc; setenv stderr serial,nc; version");
+	run_command("run nc_test nc_start", 0);
+}
+
 /* bootlist[] can hold a max of BOOTSCAN_MAX_BOOTABLES entries */
 static void populate_bootlist(struct bootscan_bootables bootlist[])
 {
@@ -1122,6 +1174,8 @@ static void populate_bootlist(struct bootscan_bootables bootlist[])
 	run_command("setenv stdin usbkbd", 0);
 # endif
 #endif
+
+	bootscan_netconsole();
 
 	/* This scans the partitions in the IDE storage */
 #if defined(CONFIG_CMD_IDE)

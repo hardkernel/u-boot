@@ -7,7 +7,6 @@
  *	Copyright 2000 Paolo Scaffardi
  *	Copyright 2000-2004 Wolfgang Denk, wd@denx.de
  */
-
 #include <common.h>
 #include <command.h>
 #include <net.h>
@@ -23,7 +22,7 @@
 
 #define BOOTP_VENDOR_MAGIC	0x63825363	/* RFC1048 Magic Cookie */
 
-#define TIMEOUT		5000UL	/* Milliseconds before trying BOOTP again */
+#define TIMEOUT		10000UL	/* Milliseconds before trying BOOTP again */
 #ifndef CONFIG_NET_RETRY_COUNT
 # define TIMEOUT_COUNT	5		/* # of timeouts before giving up */
 #else
@@ -38,6 +37,7 @@
 #endif
 
 ulong		BootpID;
+ulong		BootpIDlist[TIMEOUT_COUNT];
 int		BootpTry;
 
 #if defined(CONFIG_CMD_DHCP)
@@ -65,6 +65,22 @@ static char *dhcpmsg2str(int type)
 #endif
 #endif
 
+static int BootpIDCheck(ulong ID)
+{
+	int i;
+
+	for (i = 0; i < BootpTry; i++)
+	{
+		if (BootpIDlist[i] == ID)
+		{
+			BootpID = ID;
+			debug("ID match: %x\n", ID);
+			return 0;
+		}
+	}
+	return 1;
+}
+
 static int BootpCheckPkt(uchar *pkt, unsigned dest, unsigned src, unsigned len)
 {
 	struct Bootp_t *bp = (struct Bootp_t *) pkt;
@@ -84,7 +100,7 @@ static int BootpCheckPkt(uchar *pkt, unsigned dest, unsigned src, unsigned len)
 		retval = -4;
 	else if (bp->bp_hlen != HWL_ETHER)
 		retval = -5;
-	else if (NetReadLong((ulong *)&bp->bp_id) != BootpID)
+	else if (BootpIDCheck(NetReadLong((ulong *) &bp->bp_id)) == 1)
 		retval = -6;
 
 	debug("Filtering pkt = %d\n", retval);
@@ -677,6 +693,7 @@ BootpRequest(void)
 		| (ulong)NetOurEther[5];
 	BootpID += get_timer(0);
 	BootpID	 = htonl(BootpID);
+	BootpIDlist[BootpTry - 1] = BootpID;
 	NetCopyLong(&bp->bp_id, &BootpID);
 
 	/*
