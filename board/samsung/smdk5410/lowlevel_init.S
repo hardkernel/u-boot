@@ -334,13 +334,6 @@ _gic_state:
 	mrs	r4, cpsr
 	msr     spsr_cxsf, r4
 
-	bic	r6, r4, #0x1f
-	orr	r6, r6, #0x13
-	msr     spsr_cxsf, r6		/* Setup SPSR to jump to NS SVC mode */
-	add     r4, pc, #4
-	.word	0xe12ef304	/* msr    elr_hyp, r4 */
-	.word	0xe160006e	/* ERET */
-ns_svc_entry:
 	tst	r10, #SWITCH
 	adrne	r0, _switch_addr
 	bne	wait_for_addr
