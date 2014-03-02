@@ -131,3 +131,48 @@ U_BOOT_CMD(
 	"      to 'dev' on 'interface'"
 );
 #endif
+
+int do_fat_format(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+{
+	int dev = 0;
+	int part = 1;
+	char *ep;
+	block_dev_desc_t *dev_desc = NULL;
+
+	if (argc < 2) {
+		printf ("usage : fatformat <interface> <dev[:part]>\n");
+		return(0);
+	}
+
+	dev = (int)simple_strtoul (argv[2], &ep, 16);
+	dev_desc = get_dev(argv[1], dev);
+
+	if (dev_desc == NULL) {
+		puts ("\n ** Invalid boot device **\n");
+		return 1;
+	}
+
+	if (*ep) {
+		if (*ep != ':') {
+			puts ("\n **Invald boot device,use 'dev[:part]'**\n");
+			return 1;
+		}
+		part = (int)simple_strtoul(++ep, NULL, 16);
+		if (part > 4 || part <1) {
+			puts ("** Partition Number should be 1 ~ 4 **\n");
+		}
+	}
+	printf("Start format MMC&d partition&d ...\n", dev, part);
+	if (fat_format_device(dev_desc, part) != 0) {
+		printf("Format failure!!!\n");
+	}
+
+	return 0;
+}
+
+U_BOOT_CMD(
+	fatformat, 3, 0, do_fat_format,
+	"fatformat - disk format by FAT32\n",
+	"<interface(only support mmc)> <dev:partition num>\n"
+	"	- format by FAT32 on 'interface'\n"
+);

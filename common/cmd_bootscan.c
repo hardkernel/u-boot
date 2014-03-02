@@ -30,6 +30,8 @@
 #define BOOTSCAN_DFLT_BOOTCMD	CONFIG_BOOTCOMMAND
 #define BOOTSCAN_ANDROID_BOOTCMD	CONFIG_BOOTCOMMAND
 #define BOOTSCAN_ANDROID_LABEL	"Android"
+#define BOOTSCAN_ANDROID_SYSTEM	"Android-Sys"
+#define BOOTSCAN_ANDROID_SYS_IMAGES	"system_aa", ""
 #define BOOTSCAN_ANDROID_BOOTSCR	"boot.scr"
 #define BOOTSCAN_BOOTBASEDIRS	"/boot/", "/", ""
 #define BOOTSCAN_BOOTIMAGES	"zImage", "uImage", ""
@@ -60,6 +62,7 @@
 #define BOOTSCAN_ROOT		"bootscan_root"
 
 #define BOOTSCAN_BANNER1 \
+"\n" \
 "                       ___    _           _     _\n" \
 "                      /___\\__| |_ __ ___ (_) __| |\n" \
 "                     //  // _` | '__/ _ \\| |/ _` |\n" \
@@ -72,6 +75,8 @@
 "                      | || |_| || |_| | __) |\n" \
 "                      |__   _|__   _| |/ __/\n" \
 "                         |_|    |_| |_|_____|\n"
+
+typedef enum { UNKNOWN, LINUX_ROOTFS, ANDROID_INSTALLER } rootfs_t;
 /*
  * 
  * bootimage is null string if no boot image found, or
@@ -81,8 +86,10 @@
  * 	form. Example: mmcblk0p1 for mmc interface, 0 device, 1 partition.
  * 	Another example would be sda1 for a usb or ide interface, first
  * 	device and the first partition.
- * isrootfs specifies if this bootable is also contains the root filesystem
- * 	wrt linux. true implies yes it hosts a root file system.
+ * rootfs specifies if this bootable is also contains the root filesystem
+ * 	wrt linux. LINUX_ROOTFS implies it hosts a linux root file system.
+ * 	ANDROID_INSTALLER implies it hosts an Android installer image.
+ * 	In this case we also mark bootimage as BOOTSCAB_ANDROI_SYSTEM.
  */ 
 struct bootscan_bootables {
 	char interface[5];
@@ -95,7 +102,7 @@ struct bootscan_bootables {
 	char bootini[64];
 	char fstype; /* 'e' => extXfs, 'f' => fat, '0' => invalid */
 	char chardev[16];
-	int isrootfs;
+	rootfs_t rootfs;
 };
 
 /*
@@ -119,7 +126,7 @@ static void debug_print_bootlist(struct bootscan_bootables b[])
 			break;
 		printf("%d interface: %s device: %d partition: %d label: %s "
 		       "uuid: %s bootimage: %s bootinitrd: %s bootini: %s "
-		       "fstype: %c chardev: %s isrootfs: %d\n",
+		       "fstype: %c chardev: %s rootfs: %d\n",
 			i,
 			b[i].interface,
 			b[i].device,
@@ -131,7 +138,7 @@ static void debug_print_bootlist(struct bootscan_bootables b[])
 			b[i].bootini,
 			b[i].fstype,
 			b[i].chardev,
-			b[i].isrootfs);
+			b[i].rootfs);
 	}
 
 }
@@ -168,6 +175,7 @@ char savechar;
 		debug("line: %s\n", line);
 		/* and remove leading white spaces */
 		line = skip_spaces(line);
+		if (strlen(line) < 4) break;
 		/* Check if the character after "boot" is some white noice */
 		if ((line[4] < 33) || (line[4] > 126)) {
 			savechar = line[4];
@@ -336,7 +344,8 @@ static int is_android_partition(struct bootscan_bootables b)
 	debug("%s - b.fstype: %c b.bootimage: %s b.bootini: %s b.label: %s\n",
 	       __func__, b.fstype, b.bootimage, b.bootini, b.label);
 
-	if (strcmp(b.bootimage, BOOTSCAN_ANDROID_LABEL) == 0) {
+	if ( (strcmp(b.bootimage, BOOTSCAN_ANDROID_LABEL) == 0) ||
+	     (strcmp(b.bootimage, BOOTSCAN_ANDROID_SYSTEM) == 0) ) {
 		debug("%s - its an Android partition\n", __func__);
 		return 1;
 	}
@@ -352,25 +361,30 @@ static int is_android_partition(struct bootscan_bootables b)
  * In the new format, we just run the default bootcmd which we have as
  * BOOTSCAN_ANDROID_BOOTCMD which is the default bootcmd of the system
  * set as CONFIG_BOOTCOMMAND
+ * We do handle a new case when its an Android System installer.
+ * This is identified as .rootfs == ANDROID_INSTALLER
  */
 static void run_android(struct bootscan_bootables b)
 {
-#if 0
 	char command[128];
 
-	sprintf(command, "fatload %s %d:%d %x %s",
-		b.interface, b.device, b.partition,
-		CONFIG_BOOTSCAN_SYS_LOAD_ADDR, b.bootini);
-	debug("Issuing command: %s\n", command);
-	if (run_command(command, 0) != 0) {
-		/* Could not load boot.scr */
-		printf("Error reading %s\n", b.bootini);
+	if (b.rootfs == ANDROID_INSTALLER) {
+		sprintf(command, "fatload %s %d:%d %x %s",
+			b.interface, b.device, b.partition,
+			CONFIG_BOOTSCAN_SYS_LOAD_ADDR, b.bootini);
+		debug("Issuing command: %s\n", command);
+		if (run_command(command, 0) != 0) {
+			/* Could not load boot.scr */
+			printf("Error reading %s\n", b.bootini);
+			return;
+		}
+		sprintf(command, "source %x", CONFIG_BOOTSCAN_SYS_LOAD_ADDR);
+		debug("Issuing command: %s\n", command);
+		run_command(command, 0);
+		/* This should not return */
 		return;
 	}
-	sprintf(command, "source %x", CONFIG_BOOTSCAN_SYS_LOAD_ADDR);
-	debug("Issuing command: %s\n", command);
-	run_command(command, 0);
-#endif
+
 	run_command(BOOTSCAN_ANDROID_BOOTCMD, 0);
 
 	/* If we return here something wrong has happened and we 
@@ -408,8 +422,14 @@ static int handle_choice(struct bootscan_bootables bootlist[], char *choice)
 		if (last_choice != NULL)
 			choice = last_choice;
 		else {
-			/* Nothing here -> choose option 0 */
-			choice = "0";
+			/* If nothing chosen and last choice is NULL */
+			/* But in the case there are no options we should */
+			/* choose '+' -> U-boot prompt */
+			if ( (bootlist[0].fstype == '\0') ||
+			     (bootlist[0].fstype == '0') )
+				choice = "+";
+			else
+				choice = "0";
 		}
 	}
 	printf("\nYou chose:\n%s\n", choice);
@@ -730,13 +750,13 @@ static int bootscan_menu(struct bootscan_bootables bootlist[], int bootdelay)
 		for (j = 0; j < BOOTSCAN_MAX_BOOTABLES; j++) {
 			if (bootlist[j].fstype == '0')
 				break;
-			if (bootlist[j].isrootfs == 0)
+			if (bootlist[j].rootfs == UNKNOWN)
 				continue;
 			/* We are here, we have a valid rootfs */
 			snprintf(menu_key[index], sizeof(menu_key[index]),
 				 "%d", index);
 			generate_bid(bootlist[i], bid);
-			if (bootlist[j].isrootfs) {
+			if (bootlist[j].rootfs != UNKNOWN) {
 				snprintf(menu_entry[index],
 					 sizeof(menu_entry[index]),
 					 "%d  %-10.10s %-12.12s %-12.12s|"
@@ -846,20 +866,61 @@ static int check_for_file(struct bootscan_bootables bootlist[],
  * So the new logic would be:
  * 1. If fat partition and no kernel image assume its Android.
  * returns 1 if Android is detected, 0 otherwise.
+ * Above does not work for an Android system image installer.
+ * They have a zImage, a boot.scr file and Android system installer files
+ * like system_aa etc.
+ * Hence newer logic:
+ * 1. Is a FAT partition
+ * 2. Has a Android system image like system_aa
+ * If 2. is true then its Android system installer. Special case.
+ * 	Here we also mark it as an installer image with rootfs
+ * 	set to ANDROIDSYSTEM.
+ * If 2 is not true but there exists a linux boot image (zImage) then
+ * its not an Android partition.
+ * If fall through here => Android partition.
+ *
  */
 static int populate_android(struct bootscan_bootables bootlist[],
 			    int *bootindex)
 {
 	char *images[] = { BOOTSCAN_BOOTIMAGES };
-	int findex = 0;
+	char *aimages[] = { BOOTSCAN_ANDROID_SYS_IMAGES };
+	char *inis[] = { BOOTSCAN_BOOTINIS };
+	int findex, bindex;
+	int isandroid = 0;
 
 	if (bootlist[*bootindex].fstype != 'f')
 		return 0;
 
 	/* It is a fat partition */
+	/* Lets check if there is an android system image */
+	findex = 0;
+	while (aimages[findex][0] != '\0') {
+		if (check_for_file(bootlist, bootindex, aimages[findex]) == 1) {
+			/* We hit on an Android system image install */
+			/* This should have a boot.ini or a boot.scr */
+			bindex = 0;
+			while (inis[bindex][0] != '\0') {
+				if (check_for_file(bootlist, bootindex, 
+					inis[bindex]) == 1) {
+					/* We got the ini */
+					isandroid = 1;
+					bootlist[*bootindex].rootfs = ANDROID_INSTALLER;
+					strcpy(bootlist[*bootindex].bootini,
+					       inis[bindex]);
+					break;
+				}
+				bindex++;
+			}
+		}
+		if (isandroid == 1)
+			break;
+		findex++;
+	}
 
 	/* Lets check if there is a linux image */
-	while (images[findex][0] != '\0') {
+	findex = 0;
+	while ( (isandroid != 1) && (images[findex][0] != '\0') ) {
 		if (check_for_file(bootlist, bootindex, images[findex]) == 1) {
 			/* We hit on a linux image. Cant be Android! */
 			return 0;
@@ -867,11 +928,16 @@ static int populate_android(struct bootscan_bootables bootlist[],
 		findex++;
 	}
 
-	/* We are here cause no linux images were found */
+	/* We are here cause no linux images were found or we found an */
+	/* Android system installer image */
 	/* Mark this as Android and return 1 */
 	/* Lets dummy mark the image file as Android */
-	strcpy(bootlist[*bootindex].bootimage,
-	       BOOTSCAN_ANDROID_LABEL);
+	if (isandroid)
+		strcpy(bootlist[*bootindex].bootimage,
+			BOOTSCAN_ANDROID_SYSTEM);
+	else
+		strcpy(bootlist[*bootindex].bootimage,
+		       BOOTSCAN_ANDROID_LABEL);
 	(*bootindex)++;
 
 	return 1;
@@ -897,7 +963,7 @@ static int populate_linux(struct bootscan_bootables bootlist[],
 
 	/* Lets check for a linux rootfs */
 	findex = 0;
-	bootlist[*bootindex].isrootfs = 0;
+	bootlist[*bootindex].rootfs = UNKNOWN;
 	while (rootfs[findex][0] != '\0') {
 		/* rootfs[] already contains full path */
 		if (check_for_file(bootlist, bootindex,
@@ -906,7 +972,7 @@ static int populate_linux(struct bootscan_bootables bootlist[],
 			continue;
 		}
 		/* This contains the linux rootfs */
-		bootlist[*bootindex].isrootfs = 1;
+		bootlist[*bootindex].rootfs = LINUX_ROOTFS;
 		break;
 	}
 
@@ -994,7 +1060,7 @@ static int populate_linux(struct bootscan_bootables bootlist[],
 	/*
 	 * Handle the case when its only a rootfs. updated == 0.
 	 */
-	if ((updated == 0) && (bootlist[*bootindex].isrootfs == 1)) {
+	if ((updated == 0) && (bootlist[*bootindex].rootfs == LINUX_ROOTFS)) {
 		(*bootindex)++;
 		if (*bootindex < BOOTSCAN_MAX_BOOTABLES) {
 			/* Prep next bootlist structure */
