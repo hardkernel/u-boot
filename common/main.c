@@ -349,9 +349,6 @@ static void process_boot_delay(void)
 
 	debug ("### main_loop entered: bootdelay=%d\n\n", bootdelay);
 
-#if defined(CONFIG_MENU_SHOW)
-	bootdelay = menu_show(bootdelay);
-#endif
 # ifdef CONFIG_BOOT_RETRY_TIME
 	init_cmd_timeout ();
 # endif	/* CONFIG_BOOT_RETRY_TIME */
@@ -396,7 +393,11 @@ static void process_boot_delay(void)
 		int prev = disable_ctrlc(1);	/* disable Control C checking */
 #endif
 
+#if defined(CONFIG_MENU_SHOW)
+		bootdelay = menu_show(bootdelay);
+#else
 		run_command_list(s, -1, 0);
+#endif
 
 #ifdef CONFIG_AUTOBOOT_KEYED
 		disable_ctrlc(prev);	/* restore Control C checking */

@@ -333,7 +333,8 @@ int NetLoop(enum proto_t protocol)
 
 	bootstage_mark_name(BOOTSTAGE_ID_ETH_START, "eth_start");
 	net_init();
-	if (eth_is_on_demand_init() || protocol != NETCONS) {
+	if (eth_is_on_demand_init() || ((protocol != NETCONS) &&
+				        (protocol != DHCPSERVER)) ) {
 		eth_halt();
 		eth_set_current();
 		if (eth_init(bd) < 0) {
@@ -388,6 +389,10 @@ restart:
 			BootpTry = 0;
 			NetOurIP = 0;
 			DhcpRequest();		/* Basically same as BOOTP */
+			break;
+
+		case DHCPSERVER:
+			debug("NetLoop: DHCPSERVER case\n");
 			break;
 #endif
 
@@ -543,7 +548,7 @@ restart:
 				setenv_hex("filesize", NetBootFileXferSize);
 				setenv_hex("fileaddr", load_addr);
 			}
-			if (protocol != NETCONS)
+			if ( (protocol != NETCONS) && (protocol != DHCPSERVER) )
 				eth_halt();
 			else
 				eth_halt_state_only();

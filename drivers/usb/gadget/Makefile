@@ -9,7 +9,7 @@ include $(TOPDIR)/config.mk
 LIB	:= $(obj)libusb_gadget.o
 
 COBJS-$(CONFIG_USB_GADGET) += epautoconf.o config.o usbstring.o
-COBJS-$(CONFIG_USB_ETHER) += epautoconf.o config.o usbstring.o
+#COBJS-$(CONFIG_USB_ETHER) += epautoconf.o config.o usbstring.o
 COBJS-$(CONFIG_S3C_USBD) += usbd-otg-hs.o
 
 # new USB gadget layer dependencies

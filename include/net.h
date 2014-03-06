@@ -436,7 +436,7 @@ extern ushort		NetOurNativeVLAN;	/* Our Native VLAN */
 extern int		NetRestartWrap;		/* Tried all network devices */
 
 enum proto_t {
-	BOOTP, RARP, ARP, TFTPGET, DHCP, PING, DNS, NFS, CDP, NETCONS, SNTP,
+	BOOTP, RARP, ARP, TFTPGET, DHCP, DHCPSERVER, PING, DNS, NFS, CDP, NETCONS, SNTP,
 	TFTPSRV, TFTPPUT, LINKLOCAL
 };
 
@@ -559,7 +559,8 @@ static inline __attribute__((always_inline)) int eth_is_on_demand_init(void)
 #ifdef CONFIG_NETCONSOLE
 	extern enum proto_t net_loop_last_protocol;
 
-	return net_loop_last_protocol != NETCONS;
+	return ( (net_loop_last_protocol != NETCONS) &&
+		 (net_loop_last_protocol != DHCPSERVER) );
 #else
 	return 1;
 #endif
@@ -699,5 +700,7 @@ extern unsigned int random_port(void);
 extern int update_tftp(ulong addr);
 
 /**********************************************************************/
+extern IPaddr_t NetUSBdevIP;
+extern IPaddr_t NetUSBhostIP;
 
 #endif /* __NET_H__ */

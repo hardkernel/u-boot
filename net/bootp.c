@@ -39,6 +39,10 @@
 ulong		BootpID;
 ulong		BootpIDlist[TIMEOUT_COUNT];
 int		BootpTry;
+extern unsigned dhcpserver;
+IPaddr_t	NetUSBdevIP;
+IPaddr_t	NetUSBhostIP;
+IPaddr_t	NetUSBnetmaskIP;
 
 #if defined(CONFIG_CMD_DHCP)
 static dhcp_state_t dhcp_state = INIT;
@@ -74,7 +78,7 @@ static int BootpIDCheck(ulong ID)
 		if (BootpIDlist[i] == ID)
 		{
 			BootpID = ID;
-			debug("ID match: %x\n", ID);
+			debug("ID match: %lx\n", ID);
 			return 0;
 		}
 	}
@@ -86,13 +90,18 @@ static int BootpCheckPkt(uchar *pkt, unsigned dest, unsigned src, unsigned len)
 	struct Bootp_t *bp = (struct Bootp_t *) pkt;
 	int retval = 0;
 
-	if (dest != PORT_BOOTPC || src != PORT_BOOTPS)
+	if (dhcpserver) {
+		if (dest != PORT_BOOTPS || src != PORT_BOOTPC)
+			retval = -1;
+	}
+	else if (dest != PORT_BOOTPC || src != PORT_BOOTPS)
 		retval = -1;
 	else if (len < sizeof(struct Bootp_t) - OPT_FIELD_SIZE)
 		retval = -2;
 	else if (bp->bp_op != OP_BOOTREQUEST &&
 			bp->bp_op != OP_BOOTREPLY &&
 			bp->bp_op != DHCP_OFFER &&
+			bp->bp_op != DHCP_DISCOVER &&
 			bp->bp_op != DHCP_ACK &&
 			bp->bp_op != DHCP_NAK)
 		retval = -3;
@@ -834,6 +843,154 @@ static int DhcpMessageType(unsigned char *popt)
 	return -1;
 }
 
+static void DhcpPrintPkt(struct Bootp_t *bp, int len)
+{
+#ifdef DEBUG
+	int i;
+	char *ptr = bp;
+
+	for (i = 0; i < len; i++) {
+		if ((i % 25) == 0)
+			printf("\n");
+		printf("%02X ", ptr[i]);
+	}
+	printf("\n");
+#endif
+}
+
+static void DhcpRecvDiscoverPkt(struct Bootp_t *bp_discover, int len)
+{
+	uchar *pkt, *iphdr;
+	struct Bootp_t *bp;
+	int i, iplen, pktlen, eth_hdr_size;
+	uchar *ptr = (uchar *) bp_discover;
+
+	debug("DhcpRecvDiscoverPkt\n");
+
+	DhcpPrintPkt(bp_discover, len);
+
+/* Lets send out our DHCP OFFER
+ * We really dont have to look at the options that were passed in
+ * discover. We just return back 4 messages  (below in decimal)
+ * 1. 53 = 0x35 (DHCP Message type) 1 (1 byte) X (DHCP Offer(2) or DHCP Ack(5))
+ * 2. 54 = 0x36 (Server identifier) 4 (4 bytes) Server IP addresss
+ * 3. 51 = 0x33 (IP address lease time) 4 (4 bytes) 85536 (24 hours)
+ * 4. 1 (Subnet mask) 4 (4 bytes) 255.255.255.0
+ */
+	pkt = NetTxPacket;
+	memset((void *)pkt, 0, PKTSIZE);
+
+	eth_hdr_size = NetSetEther(pkt, NetBcastAddr, PROT_IP);
+	pkt += eth_hdr_size;
+
+	iphdr = pkt;	/* We'll need this later to set proper pkt size */
+	pkt += IP_UDP_HDR_SIZE;
+
+	bp = (struct Bootp_t *)pkt;
+	bp->bp_op = OP_BOOTREPLY;
+	bp->bp_htype = HWT_ETHER;
+	bp->bp_hlen = HWL_ETHER;
+	bp->bp_hops = 0;
+	bp->bp_secs = bp_discover->bp_secs;
+
+	memcpy(&bp->bp_chaddr, &bp_discover->bp_chaddr, 6);
+
+	memcpy(&bp->bp_id, &bp_discover->bp_id, 4);
+
+	NetCopyIP(&bp->bp_siaddr, &NetUSBdevIP); 
+	NetCopyIP(&bp->bp_yiaddr, &NetUSBhostIP); 
+
+	/* Copy the magic */
+	memcpy(&bp->bp_vend, &bp_discover->bp_vend, 4);
+
+	bp->bp_vend[4] = 0x35;
+	bp->bp_vend[5] = 0x01;
+	bp->bp_vend[6] = DHCP_OFFER;
+	bp->bp_vend[7] = 0x36; /* DHCP Server IP */
+	bp->bp_vend[8] = 0x04;
+	NetCopyIP(&bp->bp_vend[9], &NetUSBdevIP);
+	bp->bp_vend[13] = 0x33; /* Lease time */
+	bp->bp_vend[14] = 0x04; 
+	bp->bp_vend[15] = 0x00; /* 00 01 51 89 */
+	bp->bp_vend[16] = 0x01;
+	bp->bp_vend[17] = 0x51;
+	bp->bp_vend[18] = 0x89;
+	bp->bp_vend[19] = 0x01; /* subnet mask */
+	bp->bp_vend[20] = 0x04;
+	NetCopyIP(&bp->bp_vend[21], &NetUSBnetmaskIP);
+	bp->bp_vend[25] = 0xFF; /* End option marker */
+
+	iplen = BOOTP_HDR_SIZE - OPT_FIELD_SIZE + 26;
+	debug("Sending DHCP Offer packet\n");
+	DhcpPrintPkt(bp, iplen);
+	pktlen = eth_hdr_size + IP_UDP_HDR_SIZE + iplen;
+	net_set_udp_header(iphdr, 0xFFFFFFFFL, PORT_BOOTPC, PORT_BOOTPS, iplen);
+	NetSendPacket(NetTxPacket, pktlen);
+}
+
+static void DhcpRecvRequestPkt(struct Bootp_t *bp_request, int len)
+{
+	uchar *pkt, *iphdr;
+	struct Bootp_t *bp;
+	int i, iplen, pktlen, eth_hdr_size;
+	uchar *ptr = (uchar *) bp_request;
+
+	debug("DhcpRecvRequestPkt\n");
+
+	DhcpPrintPkt(bp_request, len);
+
+	/* Lets send out our DHCP ACK */
+	pkt = NetTxPacket;
+	memset((void *)pkt, 0, PKTSIZE);
+
+	eth_hdr_size = NetSetEther(pkt, NetBcastAddr, PROT_IP);
+	pkt += eth_hdr_size;
+
+	iphdr = pkt;	/* We'll need this later to set proper pkt size */
+	pkt += IP_UDP_HDR_SIZE;
+
+	bp = (struct Bootp_t *)pkt;
+	bp->bp_op = OP_BOOTREPLY;
+	bp->bp_htype = HWT_ETHER;
+	bp->bp_hlen = HWL_ETHER;
+	bp->bp_hops = 0;
+	bp->bp_secs = bp_request->bp_secs;
+
+	memcpy(&bp->bp_chaddr, &bp_request->bp_chaddr, 6);
+
+	memcpy(&bp->bp_id, &bp_request->bp_id, 4);
+
+	NetCopyIP(&bp->bp_siaddr, &NetUSBdevIP);
+	NetCopyIP(&bp->bp_yiaddr, &NetUSBhostIP);
+
+	/* Copy the magic */
+	memcpy(&bp->bp_vend, &bp_request->bp_vend, 4);
+
+	bp->bp_vend[4] = 0x35;
+	bp->bp_vend[5] = 0x01;
+	bp->bp_vend[6] = DHCP_ACK; 
+	bp->bp_vend[7] = 0x36; /* DHCP Server IP */
+	bp->bp_vend[8] = 0x04;
+	NetCopyIP(&bp->bp_vend[9], &NetUSBdevIP);
+	bp->bp_vend[13] = 0x33; /* Lease time */
+	bp->bp_vend[14] = 0x04; 
+	bp->bp_vend[15] = 0x00; /* 00 01 51 89 */
+	bp->bp_vend[16] = 0x01;
+	bp->bp_vend[17] = 0x51;
+	bp->bp_vend[18] = 0x89;
+	bp->bp_vend[19] = 0x01; /* subnet mask */
+	bp->bp_vend[20] = 0x04;
+	NetCopyIP(&bp->bp_vend[21], &NetUSBnetmaskIP);
+	bp->bp_vend[25] = 0xFF; /* End option marker */
+
+	iplen = BOOTP_HDR_SIZE - OPT_FIELD_SIZE + 26;
+	debug("Sending DHCP Ack packet\n");
+	DhcpPrintPkt(bp, iplen);
+	pktlen = eth_hdr_size + IP_UDP_HDR_SIZE + iplen;
+	net_set_udp_header(iphdr, 0xFFFFFFFFL, PORT_BOOTPC, PORT_BOOTPS, iplen);
+	NetSendPacket(NetTxPacket, pktlen);
+}
+
 static void DhcpSendRequestPkt(struct Bootp_t *bp_offer)
 {
 	uchar *pkt, *iphdr;
@@ -904,9 +1061,6 @@ DhcpHandler(uchar *pkt, unsigned dest, IPaddr_t sip, unsigned src,
 {
 	struct Bootp_t *bp = (struct Bootp_t *)pkt;
 
-	debug("DHCPHandler: got packet: (src=%d, dst=%d, len=%d) state: %d\n",
-		src, dest, len, dhcp_state);
-
 	/* Filter out pkts we don't want */
 	if (BootpCheckPkt(pkt, dest, src, len))
 		return;
@@ -966,6 +1120,35 @@ DhcpHandler(uchar *pkt, unsigned dest, IPaddr_t sip, unsigned src,
 	case BOUND:
 		/* DHCP client bound to address */
 		break;
+	case WAITFORDISCOVER:
+		/* Got a DISCOVER packet - send response and set */
+		/* state to WAITFORREQUEST */
+		/* We can also get a direct REQUEST packet */
+		if (DhcpMessageType((u8 *)bp->bp_vend) == DHCP_REQUEST)
+		{
+			debug("REQUEST packet received\n");
+			DhcpRecvRequestPkt(bp, len);
+			dhcpserver = 2;
+			net_set_state(NETLOOP_SUCCESS);
+			break;
+		}
+		if (DhcpMessageType((u8 *)bp->bp_vend) != DHCP_DISCOVER)
+			break;
+		debug("DISCOVER packet received\n");
+		DhcpRecvDiscoverPkt(bp, len);
+		dhcp_state = WAITFORREQUEST;
+		break;
+
+	case WAITFORREQUEST:
+		/* Got a Request. Send an ACK packet */
+		if (DhcpMessageType((u8 *)bp->bp_vend) != DHCP_REQUEST)
+			break;
+		debug("REQUEST packet received\n");
+		DhcpRecvRequestPkt(bp, len);
+		dhcpserver = 2;
+		net_set_state(NETLOOP_SUCCESS);
+		break;
+
 	default:
 		puts("DHCP: INVALID STATE\n");
 		break;
@@ -976,5 +1159,47 @@ DhcpHandler(uchar *pkt, unsigned dest, IPaddr_t sip, unsigned src,
 void DhcpRequest(void)
 {
 	BootpRequest();
+}
+
+/* Called from netconsole.c when dhcpserver is 1.
+ * We set dhcpserver to 3 as we have timed out.
+ */
+static void dhcpserver_to_handler(void)
+{
+	debug("\n%s: DHCP Server time out\n", __func__);
+	/* We set it to success so that it doesnt reinit the eth device */
+	net_set_state(NETLOOP_SUCCESS);
+	/* We set this to 3 to imply that a DHCP server failed. */
+	dhcpserver = 3;
+}
+
+int DhcpServer(void)
+{
+	int retval = -1;
+
+	net_init();
+
+	NetUSBdevIP = string_to_ip(CONFIG_USBNET_DEV_IP);
+	NetUSBhostIP = string_to_ip(CONFIG_USBNET_HOST_IP);
+	NetUSBnetmaskIP = string_to_ip(CONFIG_USBNET_DEV_NETMASK);
+
+	eth_set_last_protocol(DHCPSERVER);
+
+	dhcp_state = WAITFORDISCOVER;
+	net_set_udp_handler(DhcpHandler);
+
+/*
+ * Here we loop for some timeout to see if we do get a
+ * DISCOVER packet. If we don't we just return -1.
+ * We need to set timeout to about 10 seconds.
+ */
+	NetSetTimeout(10000, dhcpserver_to_handler);
+	NetLoop(DHCPSERVER);
+	if (dhcpserver == 3) {
+		debug("No DHCP Request received\n");
+		return -1;
+	}
+
+	return 0;
 }
 #endif	/* CONFIG_CMD_DHCP */

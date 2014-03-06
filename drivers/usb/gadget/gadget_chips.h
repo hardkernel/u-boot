@@ -97,6 +97,12 @@
 #define gadget_is_s3c2410(g)    0
 #endif
 
+#ifdef CONFIG_USB_GADGET_S3C_UDC_OTG
+#define gadget_is_s3c_udc_otg(g)    (!strcmp("s3c-udc", (g)->name))
+#else
+#define gadget_is_s3c_udc_otg(g)    0
+#endif
+
 #ifdef CONFIG_USB_GADGET_AT91
 #define gadget_is_at91(g)	(!strcmp("at91_udc", (g)->name))
 #else
@@ -223,5 +229,7 @@ static inline int usb_gadget_controller_number(struct usb_gadget *gadget)
 		return 0x21;
 	else if (gadget_is_fotg210(gadget))
 		return 0x22;
+	else if (gadget_is_s3c_udc_otg(gadget))
+		return 0x23;
 	return -ENOENT;
 }

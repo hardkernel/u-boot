@@ -30,6 +30,7 @@ extern struct platform_data brd;
 
 
 unsigned packet_received, packet_sent;
+unsigned dhcpserver;
 
 #define GFP_ATOMIC ((gfp_t) 0)
 #define GFP_KERNEL ((gfp_t) 0)
@@ -1110,7 +1111,7 @@ static int eth_set_config(struct eth_dev *dev, unsigned number,
 		}
 
 		dev->config = number;
-		printf("%s speed config #%d: %d mA, %s, using %s\n",
+		debug("%s speed config #%d: %d mA, %s, using %s\n",
 				speed, number, power, driver_desc,
 				rndis_active(dev)
 					? "RNDIS"
@@ -1163,7 +1164,7 @@ static void eth_status_complete(struct usb_ep *ep, struct usb_request *req)
 		if (event->bNotificationType ==
 				USB_CDC_NOTIFY_SPEED_CHANGE) {
 			l_ethdev.network_started = 1;
-			printf("USB network up!\n");
+			debug("USB network up!\n");
 		}
 	}
 	req->context = NULL;
@@ -2277,18 +2278,18 @@ autoconf_fail:
 	 *  - tx queueing enabled if open *and* carrier is "on"
 	 */
 
-	printf("using %s, OUT %s IN %s%s%s\n", gadget->name,
+	debug("using %s, OUT %s IN %s%s%s\n", gadget->name,
 		out_ep->name, in_ep->name,
 		status_ep ? " STATUS " : "",
 		status_ep ? status_ep->name : ""
 		);
-	printf("MAC %02x:%02x:%02x:%02x:%02x:%02x\n",
+	debug("MAC %02x:%02x:%02x:%02x:%02x:%02x\n",
 		dev->net->enetaddr[0], dev->net->enetaddr[1],
 		dev->net->enetaddr[2], dev->net->enetaddr[3],
 		dev->net->enetaddr[4], dev->net->enetaddr[5]);
 
 	if (cdc || rndis)
-		printf("HOST MAC %02x:%02x:%02x:%02x:%02x:%02x\n",
+		debug("HOST MAC %02x:%02x:%02x:%02x:%02x:%02x\n",
 			dev->host_mac[0], dev->host_mac[1],
 			dev->host_mac[2], dev->host_mac[3],
 			dev->host_mac[4], dev->host_mac[5]);
@@ -2336,6 +2337,11 @@ static int usb_eth_init(struct eth_device *netdev, bd_t *bd)
 	struct usb_gadget *gadget;
 	unsigned long ts;
 	unsigned long timeout = USB_CONNECT_TIMEOUT;
+	char *tmpstr;
+	char saveipaddr[20], savenetmask[20];
+
+	saveipaddr[0] = '\0'; 
+	savenetmask[0] = '\0';
 
 	if (!netdev) {
 		error("received NULL ptr");
@@ -2370,6 +2376,9 @@ static int usb_eth_init(struct eth_device *netdev, bd_t *bd)
 	if (usb_gadget_register_driver(&eth_driver) < 0)
 		goto fail;
 
+	if (!usb_cable_connected())
+		goto fail;
+
 	dev->network_started = 0;
 
 	packet_received = 0;
@@ -2377,10 +2386,8 @@ static int usb_eth_init(struct eth_device *netdev, bd_t *bd)
 
 	gadget = dev->gadget;
 	usb_gadget_connect(gadget);
-
-	if (getenv("cdc_connect_timeout"))
-		timeout = simple_strtoul(getenv("cdc_connect_timeout"),
-						NULL, 10) * CONFIG_SYS_HZ;
+#define CDC_CONNECT_TIMEOUT	100
+	timeout = CDC_CONNECT_TIMEOUT * CONFIG_SYS_HZ;
 	ts = get_timer(0);
 	while (!l_ethdev.network_started) {
 		/* Handle control-c and timeouts */
@@ -2393,8 +2400,64 @@ static int usb_eth_init(struct eth_device *netdev, bd_t *bd)
 
 	packet_received = 0;
 	rx_submit(dev, dev->rx_req, 0);
+
+	dhcpserver = 1;
+/*
+ * We are here implies cable is connected, CDC ETH OTG initialized
+ * We now can bravely set ipaddr to CONFIG_USBNET_DEV_IP
+ * For now lets not set ncip to CONFIG_USBNET_HOST_IP
+ * We call DHCPServer() and relinquish control.
+ * This function and other supporting functions are in net/bootp.c
+ * DHCPServer() shall return 0 if all is OK.
+ * It returns -1 on failure.
+*/
+
+	/* Save the original ipaddr and netmask values */
+	tmpstr = getenv("ipaddr");
+	if (tmpstr)
+		strncpy(saveipaddr, tmpstr, sizeof(saveipaddr));
+	tmpstr = getenv("netmask");
+	if (tmpstr)
+		strncpy(savenetmask, tmpstr, sizeof(savenetmask));
+	setenv("ipaddr", CONFIG_USBNET_DEV_IP);
+	setenv("netmask", CONFIG_USBNET_DEV_NETMASK);
+
+	if (DhcpServer() < 0) {
+		/* No DHCP packet found */
+		/* Note that on a timeout dhcpserver is set to 3 */
+		debug("No DHCP packet received.\n");
+		goto fail;
+	}
+	else {
+		/* Note dhcpserver is set to 2 in NetLoop() */
+		debug("DHCP server success.\n");
+		setenv("ncip", CONFIG_USBNET_HOST_IP);
+		setenv("stdout", "serial,nc");
+		setenv("stderr", "serial,nc");
+		tstc();
+	}
+
+	/* we are here - cable connected, DHCP set. Lets give the user */
+	/* some kind of output */
+        int netconsole_ready_timeout = 10;
+	puts("\n\nWelcome to Netconsole over CDC ETH OTG.\n");
+	printf("After the countdown press Enter to get to U-Boot prompt\n");
+	printf("For BootMenu choice wait for the boot menu to show up\n\n");
+	while (netconsole_ready_timeout) {
+		printf("\rNetconsole over CDC ETH OTG - (%.2d s)",
+			netconsole_ready_timeout);
+		mdelay(1000);
+		netconsole_ready_timeout--;
+	}
+	puts("\n");
+
 	return 0;
 fail:
+	/* We fail, lets correct stdout and remove nc */
+	setenv("stdin", "serial");
+	setenv("ipaddr", saveipaddr);
+	setenv("netmask", savenetmask);
+
 	return -1;
 }
 

@@ -78,7 +78,9 @@ typedef enum { INIT,
 	       REQUESTING,
 	       REBINDING,
 	       BOUND,
-	       RENEWING } dhcp_state_t;
+	       RENEWING,
+	       WAITFORDISCOVER,
+	       WAITFORREQUEST } dhcp_state_t;
 
 #define DHCP_DISCOVER 1
 #define DHCP_OFFER    2

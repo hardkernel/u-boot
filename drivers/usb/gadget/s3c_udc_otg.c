@@ -155,7 +155,7 @@ void otg_phy_init(struct s3c_udc *dev)
 	dev->pdata->phy_control(1);
 
 	/*USB PHY0 Enable */
-	printf("USB PHY0 Enable\n");
+	debug("USB PHY0 Enable\n");
 
 	/* Enable PHY */
 	writel(readl(usb_phy_ctrl) | USB_PHY_CTRL_EN0, usb_phy_ctrl);
@@ -294,6 +294,13 @@ int usb_gadget_register_driver(struct usb_gadget_driver *driver)
 		&& driver->speed != USB_SPEED_HIGH)
 	    || !driver->bind || !driver->disconnect || !driver->setup)
 		return -EINVAL;
+	if (!dev) {
+		extern s5pc210_otg_data;
+
+		s3c_udc_probe(&s5pc210_otg_data);
+		dev = the_controller;
+	}
+
 	if (!dev)
 		return -ENODEV;
 	if (dev->driver)

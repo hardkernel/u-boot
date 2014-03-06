@@ -16,6 +16,8 @@ DECLARE_GLOBAL_DATA_PTR;
 #define CONFIG_NETCONSOLE_BUFFER_SIZE 512
 #endif
 
+extern unsigned dhcpserver;
+
 static char input_buffer[CONFIG_NETCONSOLE_BUFFER_SIZE];
 static int input_size; /* char count in input buffer */
 static int input_offset; /* offset to valid chars in input buffer */
@@ -103,9 +105,16 @@ static int refresh_settings_from_env(void)
 		if (is_broadcast(nc_ip))
 			/* broadcast MAC address */
 			memset(nc_ether, 0xff, sizeof(nc_ether));
-		else
-			/* force arp request */
-			memset(nc_ether, 0, sizeof(nc_ether));
+		else {
+			debug("%s dhcpserver: %d\n", __func__, dhcpserver);
+			if (dhcpserver) {
+				eth_parse_enetaddr(nc_ether, CONFIG_USBNET_HOST_ADDR);
+			}
+			else {
+				/* force arp request */
+				memset(nc_ether, 0, sizeof(nc_ether));
+			}
+		}
 	}
 	return 0;
 }
@@ -333,6 +342,14 @@ int drv_nc_init(void)
 /* Deregister nc - helpful when its thru USB */
 int usb_nc_deregister(void)
 {
+#ifdef CONFIG_USB_ETHER
+	struct eth_device *ethd;
+
+	ethd = eth_get_dev();
+	debug("Calling usb_eth_halt\n");
+	usb_eth_halt(ethd);
+#endif
+
 #ifdef CONFIG_SYS_STDIO_DEREGISTER
         return stdio_deregister("nc");
 #else

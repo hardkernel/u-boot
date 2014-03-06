@@ -701,7 +701,9 @@ static int bootscan_menu(struct bootscan_bootables bootlist[], int bootdelay)
 
 	display_banner();
 	puts(BOOTSCAN_OPTIONS_DIVIDER "\n");
-	m = menu_create(BOOTSCAN_OPTIONS_HEADER, 60, 1, bootscan_menuprint,
+	/* 15000 is roughly 1 second when using get_ticks() */
+	/* so for a 5 second wait time its 75000 */
+	m = menu_create(BOOTSCAN_OPTIONS_HEADER, 75000, 1, bootscan_menuprint,
 			NULL, NULL);
 
 	/*
@@ -1187,13 +1189,52 @@ static void gen_set_ncip(char ncip[20])
 	}
 }
 
-static void bootscan_netconsole()
+/* Return 1 if netconsole is set on the OTG port */
+static int bootscan_otg_netconsole() {
+	char *ip;
+	int issues = 0;
+
+ /*
+ * Its true we are using this form of netconsole if the following
+ * is true:
+ * 1. usb_cable_connected() is true.
+ * 2. Check if ipaddr is CONFIG_USBNET_DEV_IP and ncip is
+ *    CONFIG_USBNET_HOST_IP
+ */
+	if (!usb_cable_connected()) {
+		printf("Cable not connected or failed to initialize.\n");
+		issues++;
+	}
+	ip = getenv("ipaddr");
+	if (ip && strcmp(ip, CONFIG_USBNET_DEV_IP)) {
+		printf("ipaddr %s is not %s\n", ip, CONFIG_USBNET_DEV_IP);
+		issues++;
+	}
+	ip = getenv("ncip");
+	if (ip && strcmp(ip, CONFIG_USBNET_HOST_IP)) {
+		printf("ncip %s is not %s\n", ip, CONFIG_USBNET_HOST_IP);
+		issues++;
+	}
+	if (issues)
+		return 0;
+	else
+		return 1;
+}
+
+/* Return 1 if netconsole is being used for in/out/err */
+static int bootscan_netconsole()
 {
 	char *tmp, ncip[20];
 
 	/* Lets initialize stuff for netconsole */
-	if (!is_eth_dev_on_usb_host())
-		return
+
+	/* Lets first check the OTG netconsole */
+	if (bootscan_otg_netconsole())
+		return 1;
+
+	if (!is_eth_dev_on_usb_host()) {
+		return 0;
+	}
 
 	/* Issue a dhcp first */
 	setenv("abcdtest", "no");
@@ -1203,7 +1244,7 @@ static void bootscan_netconsole()
 	/* Check if ipaddr is set - either thru dhcp or static */
 	tmp = getenv("ipaddr");
 	if (tmp == NULL)
-		return;
+		return 0;
 
 	tmp = getenv("ncip");
 	if (tmp == NULL) {
@@ -1213,9 +1254,21 @@ static void bootscan_netconsole()
 		gen_set_ncip(ncip);
 	}
 
-	setenv("nc_test", "ping ${ncip}");
-	setenv("nc_start", "setenv stdin serial,nc; setenv stdout serial,nc; setenv stderr serial,nc; version");
-	run_command("run nc_test nc_start", 0);
+	tmp = getenv("ncip");
+	NetPingIP = string_to_ip(tmp);
+	if (NetLoop(PING) < 0)
+		return 0;
+
+	/* Destination IP ncip pings! */
+	setenv("stdin", "serial,nc");
+	setenv("stdout", "serial,nc");
+	setenv("stderr", "serial,nc");
+	printf("Welcome to netconsole over USB Ethernet\n");
+
+	extern char version_string[];
+	printf("\n%s\n", version_string);
+
+	return 1;
 }
 
 /* bootlist[] can hold a max of BOOTSCAN_MAX_BOOTABLES entries */
@@ -1230,18 +1283,13 @@ static void populate_bootlist(struct bootscan_bootables bootlist[])
 	bootindex = 0;
 	i = 0;
 
-	/* Lets initialize the usb subsystem */
-	run_command("usb start", 0);
+	if (!bootscan_netconsole()) {
+		/* If it returns 0 netconsole is not set */
+		setenv("stdin", "serial,usbkbd");
+	}
 
-#if defined(CONFIG_USB_KEYBOARD)
-# if defined(CONFIG_CONSOLE_MUX)
-	run_command("setenv stdin serial,usbkbd", 0);
-# else
-	run_command("setenv stdin usbkbd", 0);
-# endif
-#endif
-
-	bootscan_netconsole();
+	/* Lets initialize the usb HOST system subsystem */
+	//run_command("usb start", 0);
 
 	/* This scans the partitions in the IDE storage */
 #if defined(CONFIG_CMD_IDE)

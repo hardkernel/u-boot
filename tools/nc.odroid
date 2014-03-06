@@ -1,0 +1,31 @@
+#!/bin/sh
+
+boardip=10.10.10.11
+hostip=10.10.10.10
+interface=usb0
+port=6666
+
+echo "Please connect the the OTG port of the Odroid to your host PC"
+echo "Power on the Odroid"
+echo ""
+while [ 1 ];
+do
+	good=`ifconfig $interface 2> /dev/null | grep $hostip | wc -l`
+	if [ "$good" = "1" ];
+	then
+		echo "Board Connectivity established - Enjoy netconsole over CDC ETH"
+		echo "--------------------------------------------------------------"
+		break;
+	fi
+	sleep 1
+done
+
+trap "stty icanon echo intr ^C" 0 2 3 5 10 13 15
+echo "NOTE: the interrupt signal (normally ^C) has been remapped to ^T"
+
+stty -icanon -echo intr ^T
+(
+	nc -u -p $port $boardip $port
+)
+pid=$!
+kill ${pid} 2>/dev/null
