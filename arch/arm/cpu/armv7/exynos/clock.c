@@ -131,6 +131,12 @@ static unsigned long exynos5_get_pll_clk(int pllreg)
 	case CPLL:
 		r = readl(&clk->cpll_con0);
 		break;
+	case DPLL:
+		r = readl(&clk->dpll_con0);
+		break;
+	case IPLL:
+		r = readl(&clk->ipll_con0);
+		break;
 #endif
 	default:
 		printf("Unsupported PLL (%d)\n", pllreg);
@@ -145,7 +151,8 @@ static unsigned long exynos5_get_pll_clk(int pllreg)
 	 */
 	if (pllreg == APLL || pllreg == MPLL ||
 			pllreg == KPLL || pllreg == BPLL ||
-			pllreg == CPLL)
+			pllreg == CPLL || pllreg  == DPLL ||
+			pllreg == IPLL)
 		mask = 0x3ff;
 	else
 		mask = 0x1ff;

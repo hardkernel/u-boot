@@ -73,6 +73,10 @@ system_clock_init:
 	ldr	r2, =BPLL_LOCK_OFFSET		@0x20010
 	str	r1, [r0, r2]
 
+	ldr	r1, =VPLL_LOCK_VAL		@0x258
+	ldr	r2, =VPLL_LOCK_OFFSET		@0x20010
+	str	r1, [r0, r2]
+
 	ldr r1, =CPLL_LOCK_VAL
 	ldr r2, =CPLL_LOCK_OFFSET
 	str r1, [r0, r2]
@@ -183,6 +187,17 @@ system_clock_init:
 
 	bl	wait_pll_lock
 
+@ Set VPLL
+	ldr	r1, =VPLL_CON1_VAL		@0x0020F300
+	ldr	r2, =VPLL_CON1_OFFSET		@0x20114
+	str	r1, [r0, r2]
+
+	ldr	r1, =VPLL_CON0_VAL		@0x80AF0302
+	ldr	r2, =VPLL_CON0_OFFSET		@0x20110
+	str	r1, [r0, r2]
+
+	bl	wait_pll_lock
+
 @ Set CPLL
 	ldr r1, =CPLL_CON1_VAL
 	ldr r2, =CPLL_CON1_OFFSET
@@ -190,6 +205,39 @@ system_clock_init:
 
 	ldr r1, =CPLL_CON0_VAL
 	ldr r2, =CPLL_CON0_OFFSET
+	str r1, [r0, r2]
+
+	bl	wait_pll_lock
+
+@ Set DPLL
+	ldr r1, =DPLL_CON1_VAL
+	ldr r2, =DPLL_CON1_OFFSET
+	str r1, [r0, r2]
+
+	ldr r1, =DPLL_CON0_VAL
+	ldr r2, =DPLL_CON0_OFFSET
+	str r1, [r0, r2]
+
+	bl	wait_pll_lock
+
+@ Set EPLL
+	ldr r1, =EPLL_CON1_VAL
+	ldr r2, =EPLL_CON1_OFFSET
+	str r1, [r0, r2]
+
+	ldr r1, =EPLL_CON0_VAL
+	ldr r2, =EPLL_CON0_OFFSET
+	str r1, [r0, r2]
+
+	bl	wait_pll_lock
+
+@ Set IPLL
+	ldr r1, =IPLL_CON1_VAL
+	ldr r2, =IPLL_CON1_OFFSET
+	str r1, [r0, r2]
+
+	ldr r1, =IPLL_CON0_VAL
+	ldr r2, =IPLL_CON0_OFFSET
 	str r1, [r0, r2]
 
 	bl	wait_pll_lock

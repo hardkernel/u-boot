@@ -24,14 +24,22 @@
 #define KPLL_LOCK_OFFSET		0x28000
 #define BPLL_LOCK_OFFSET		0x20010
 #define CPLL_LOCK_OFFSET		0x10020
+#define DPLL_LOCK_OFFSET		0x10030
+#define EPLL_LOCK_OFFSET		0x10040
 #define MPLL_LOCK_OFFSET		0x04000
+#define VPLL_LOCK_OFFSET		0x10050
+#define IPLL_LOCK_OFFSET		0x10060
 
 #define APLL_LOCK_VAL			(0x320)
 #define MPLL_LOCK_VAL			(0x258)
 #define BPLL_LOCK_VAL			(0x258)
 #define CPLL_LOCK_VAL			(0x258)
+#define DPLL_LOCK_VAL			(0x258)
+#define EPLL_LOCK_VAL			(0x258)
+#define MPLL_LOCK_VAL			(0x258)
 #define KPLL_LOCK_VAL			(0x258)
-
+#define VPLL_LOCK_VAL			(0x258)
+#define IPLL_LOCK_VAL			(0x258)
 
 /*******************************************************************************
  * SRC
@@ -42,6 +50,7 @@
 #define CLK_SRC_TOP0_OFFSET		0x10210
 #define CLK_SRC_TOP1_OFFSET		0x10214
 #define CLK_SRC_TOP2_OFFSET		0x10218
+#define CLK_SRC_TOP3_OFFSET		0x1021c
 #define CLK_SRC_FSYS_OFFSET		0x10244
 #define CLK_SRC_CDREX_OFFSET		0x20200
 #define CLK_SRC_KFC_OFFSET		0x28200
@@ -51,6 +60,7 @@
 #define CLK_SRC_TOP0_VAL		(0x00000000)
 #define CLK_SRC_TOP1_VAL		(0x1 << 20)
 #define CLK_SRC_TOP2_VAL		(0x01100000)
+#define CLK_SRC_TOP3_VAL		(0xc0a00010)
 #define CLK_SRC_FSYS_VAL		(0x30000666)
 #ifndef CONFIG_CPU_EXYNOS5410_EVT0
 #define CLKDIV4_RATIO_VAL		(0x00000303)
@@ -58,7 +68,7 @@
 #define CLKDIV4_RATIO_VAL		(0x00000313)
 #endif
 #define CLK_SRC_CDREX_VAL		(0x00001000)
-
+#define CLK_DIV_DISP10          (0xf0700000)
 
 /*******************************************************************************
  * DIV
@@ -253,7 +263,7 @@
 /* DIV values */
 #define CLK_DIV_CORE1_VAL		(0x00000F00)
 #if defined(CONFIG_CPU_EXYNOS5410_EVT2)
-#define CLK_DIV_TOP0_VAL		(0x02112303)
+#define CLK_DIV_TOP0_VAL		(0x01113303)
 #define CLK_DIV_TOP1_VAL		(0x71700000)
 #elif defined(CONFIG_CPU_EXYNOS5410_EVT1)
 #define CLK_DIV_TOP0_VAL		(0x03123303)
@@ -379,6 +389,20 @@
 #define CPLL_CON0_VAL			(0x80A00301)
 #define CPLL_CON1_VAL			(0x0020F300)
 
+/* DPLL */
+#define DPLL_CON0_OFFSET		0x10128
+#define DPLL_CON1_OFFSET		0x1012C
+
+#define DPLL_CON0_VAL			(0x80C80401)
+#define DPLL_CON1_VAL			(0x0020F300)
+
+/* EPLL */
+#define EPLL_CON0_OFFSET		0x10130
+#define EPLL_CON1_OFFSET		0x10134
+
+#define EPLL_CON0_VAL			(0x80C80302)
+#define EPLL_CON1_VAL			(0x0020F300)
+
 /* MPLL */
 #define MPLL_CON0_OFFSET		0x04100
 #define MPLL_CON1_OFFSET		0x04104
@@ -386,6 +410,19 @@
 #define MPLL_CON0_VAL			(0x810A0302)
 #define MPLL_CON1_VAL			(0x0020F300)
 
+/* VPLL */
+#define VPLL_CON0_OFFSET		0x10140
+#define VPLL_CON1_OFFSET		0x10144
+
+#define VPLL_CON0_VAL			(0x80AF0302)
+#define VPLL_CON1_VAL			(0x0020F300)
+
+/* IPLL */
+#define IPLL_CON0_OFFSET		0x10150
+#define IPLL_CON1_OFFSET		0x10154
+
+#define IPLL_CON0_VAL			(0x81200402)
+#define IPLL_CON1_VAL			(0x0020F300)
 
 /*******************************************************************************
  * UART
