@@ -315,10 +315,31 @@ void update_raw_image   (const unsigned char *partition)
 #define OPTION_ERASE_FAT        0x02
 #define OPTION_ERASE_ENV        0x04
 #define OPTION_UPDATE_UBOOT     0x08
+#define CLK_DIV_TOP0 0x10020510
+#define CLK_SRC_TOP0 0x10020210
+#define CLK_SRC_TOP2 0x10020218
+#define CLK_SRC_TOP3 0x1002021C
+#define CLK_DIV_DISP10 0x1002052C
 
 int board_late_init(void)
 {
+        unsigned int    reg;
 	struct exynos5_power *pmu = (struct exynos5_power *)EXYNOS5_POWER_BASE;
+
+	reg = readl(CLK_SRC_TOP0);
+	reg |= (0x1 << 12 | 0x1 <<20);
+	reg &= ~((0x1 << 16) | (0x1 <<8));
+	writel(reg, CLK_SRC_TOP0);
+	reg = readl(CLK_SRC_TOP2);
+	reg |= 0x1 << 16;
+	reg |= 0x1 << 10;
+	writel(reg, CLK_SRC_TOP2);
+	reg = readl(CLK_SRC_TOP3);
+	reg |= 0x1 << 4 | 0x1 <<5 | 0x1 | 0x1 << 17 | 0x1 << 18 | 0x1 << 19 | 0x1 <<24 | 0x1 << 26  | 0x1 << 8;
+	writel(reg, CLK_SRC_TOP3);
+	reg = readl(CLK_DIV_DISP10);
+	reg |= 0xf << 28;
+	writel(reg, CLK_DIV_DISP10);
 
 #ifdef CONFIG_RAMDUMP_MODE
 	struct exynos5_gpio_part1 *gpio1 =
