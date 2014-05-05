@@ -1004,6 +1004,82 @@ The following options need to be configured:
 		enabled with CONFIG_CMD_MMC. The MMC driver also works with
 		the FAT fs. This is enabled with CONFIG_CMD_FAT.
 
+		CONFIG_SH_MMCIF
+		Support for Renesas on-chip MMCIF controller
+
+			CONFIG_SH_MMCIF_ADDR
+			Define the base address of MMCIF registers
+
+			CONFIG_SH_MMCIF_CLK
+			Define the clock frequency for MMCIF
+
+- USB Device Firmware Update (DFU) class support:
+		CONFIG_DFU_FUNCTION
+		This enables the USB portion of the DFU USB class
+
+		CONFIG_CMD_DFU
+		This enables the command "dfu" which is used to have
+		U-Boot create a DFU class device via USB.  This command
+		requires that the "dfu_alt_info" environment variable be
+		set and define the alt settings to expose to the host.
+
+		CONFIG_DFU_MMC
+		This enables support for exposing (e)MMC devices via DFU.
+
+		CONFIG_DFU_NAND
+		This enables support for exposing NAND devices via DFU.
+
+		CONFIG_DFU_RAM
+		This enables support for exposing RAM via DFU.
+		Note: DFU spec refer to non-volatile memory usage, but
+		allow usages beyond the scope of spec - here RAM usage,
+		one that would help mostly the developer.
+
+		CONFIG_SYS_DFU_DATA_BUF_SIZE
+		Dfu transfer uses a buffer before writing data to the
+		raw storage device. Make the size (in bytes) of this buffer
+		configurable. The size of this buffer is also configurable
+		through the "dfu_bufsiz" environment variable.
+
+		CONFIG_SYS_DFU_MAX_FILE_SIZE
+		When updating files rather than the raw storage device,
+		we use a static buffer to copy the file into and then write
+		the buffer once we've been given the whole file.  Define
+		this to the maximum filesize (in bytes) for the buffer.
+		Default is 4 MiB if undefined.
+
+		DFU_DEFAULT_POLL_TIMEOUT
+		Poll timeout [ms], is the timeout a device can send to the
+		host. The host must wait for this timeout before sending
+		a subsequent DFU_GET_STATUS request to the device.
+
+		DFU_MANIFEST_POLL_TIMEOUT
+		Poll timeout [ms], which the device sends to the host when
+		entering dfuMANIFEST state. Host waits this timeout, before
+		sending again an USB request to the device.
+
+- USB Device Android Fastboot support:
+		CONFIG_CMD_FASTBOOT
+		This enables the command "fastboot" which enables the Android
+		fastboot mode for the platform's USB device. Fastboot is a USB
+		protocol for downloading images, flashing and device control
+		used on Android devices.
+		See doc/README.android-fastboot for more information.
+
+		CONFIG_ANDROID_BOOT_IMAGE
+		This enables support for booting images which use the Android
+		image format header.
+
+		CONFIG_USB_FASTBOOT_BUF_ADDR
+		The fastboot protocol requires a large memory buffer for
+		downloads. Define this to the starting RAM address to use for
+		downloaded images.
+
+		CONFIG_USB_FASTBOOT_BUF_SIZE
+		The fastboot protocol requires a large memory buffer for
+		downloads. This buffer should be as large as possible for a
+		platform. Define this to the size available RAM for fastboot.
+
 - Journaling Flash filesystem support:
 		CONFIG_JFFS2_NAND, CONFIG_JFFS2_NAND_OFF, CONFIG_JFFS2_NAND_SIZE,
 		CONFIG_JFFS2_NAND_DEV
