@@ -305,6 +305,15 @@ int board_late_init (void)
 	GPIO_SetFunctionEach(eGPIO_X2, eGPIO_2, eGPI);
 	GPIO_SetPullUpDownEach(eGPIO_X2, eGPIO_2, 1); 	// pull-down
 
+	// u3+ otg_host vbus output disable (2014.05.12)
+	GPIO_SetFunctionEach(eGPIO_L2, eGPIO_0, eGPO);
+	GPIO_SetPullUpDownEach(eGPIO_L2, eGPIO_0, eGPUDdis); 	// pull-none
+	GPIO_SetDataEach(eGPIO_L2, eGPIO_0, 0);
+
+	// u3+ otg_host otg_ID detect Input config (2014.05.12)
+	GPIO_SetFunctionEach(eGPIO_X3, eGPIO_1, eGPI);
+	GPIO_SetPullUpDownEach(eGPIO_X3, eGPIO_1, eGPUen); 	// pull-up
+
 	udelay(10);
 	if (GPIO_GetDataEach(eGPIO_X2, eGPIO_2) == 0){
 		printf("ModeKey Check... run normal_boot \n");
