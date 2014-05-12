@@ -565,26 +565,11 @@ int mmc_change_freq(struct mmc *mmc)
 			char man_ID= (mmc->cid[0] >> 24);
 			unsigned long size = (mmc->capacity/(1024*1024/mmc->read_bl_len));
 
-			if(man_ID == 0x15) { //samsung
-				printf("Manufacturer SAMSUNG [ %dMB ]\n",size);
-			}
-			else if(man_ID == 0x90) {
-				printf("Manufacturer HYNIX [ %dMB ] \n", size);
-				if(size < 16000) {
-					err = mmc_switch(mmc, EXT_CSD_CMD_SET_NORMAL, EXT_CSD_RST_N_FUNCTION, EXT_CSD_RST_N_ENABLED);
-					if (err) {
-						printf("\n%s[%d] : EXT_CSD_RST_N_FUNCTION Set error....... \n\n",__func__,__LINE__);
-						return err;
-					}
-				}
-			}
-			else if(man_ID == 0x11) {
-				printf("Manufacturer TOSHIBA [ %dMB ]\n",size);
-				err = mmc_switch(mmc, EXT_CSD_CMD_SET_NORMAL, EXT_CSD_RST_N_FUNCTION, EXT_CSD_RST_N_ENABLED);
-				if(err) {
-					printf("\n%s[%d] : EXT_CSD_RST_N_FUNCTION Set error....... \n\n",__func__,__LINE__);
-					return err;
-				}
+			printf("Manufacture ID 0x%x [ %dMB ] \n",man_ID, size);
+			err = mmc_switch(mmc, EXT_CSD_CMD_SET_NORMAL, EXT_CSD_RST_N_FUNCTION, EXT_CSD_RST_N_ENABLED);
+			if (err) {
+				printf("\n%s[%d] : EXT_CSD_RST_N_FUNCTION Set error....... \n\n",__func__,__LINE__);
+				return err;
 			}
 			once = 0;
 		}
