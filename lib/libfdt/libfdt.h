@@ -2165,6 +2165,7 @@ int fdt_next_region(const void *fdt,
  */
 int fdt_add_alias_regions(const void *fdt, struct fdt_region *region, int count,
 			  int max_regions, struct fdt_region_state *info);
+int fdt_device_is_available(const void *blob, int node);
 #endif /* SWIG */
 
 #endif /* _LIBFDT_H */
