@@ -340,7 +340,19 @@ else
 PLATFORM_LIBGCC := -L $(shell dirname `$(CC) $(CFLAGS) -print-libgcc-file-name`) -lgcc
 endif
 PLATFORM_LIBS += $(PLATFORM_LIBGCC)
-export PLATFORM_LIBS
+PLATFORM_SPL_LIBS += $(PLATFORM_LIBGCC)
+ifeq ($(SOC),exynos)
+ifdef CONFIG_SECURE_BOOT
+ifneq ($(CONFIG_CPU_EXYNOS5420)$(CONFIG_CPU_EXYNOS5422),)
+PLATFORM_LIBS += -L $(CPUDIR)/$(SOC)/ -lsecureboot_u-boot_v24
+else ifeq ($(CONFIG_SMDK5410), y)
+PLATFORM_LIBS += -L $(CPUDIR)/$(SOC)/ -lsecureboot_u-boot_v23
+else
+PLATFORM_LIBS += -L $(CPUDIR)/$(SOC)/ -lsecureboot_u-boot_v21
+endif
+endif
+endif
+export PLATFORM_SPL_LIBS
 
 # Special flags for CPP when processing the linker script.
 # Pass the version down so we can handle backwards compatibility
@@ -488,6 +500,17 @@ endif
 
 $(obj)u-boot:	depend \
 		$(SUBDIR_TOOLS) $(OBJS) $(LIBBOARD) $(LIBS) $(LDSCRIPT) $(obj)u-boot.lds
+ifeq ($(SOC),exynos)
+ifeq ($(CONFIG_SECURE_BOOT),y)
+ifneq ($(CONFIG_CPU_EXYNOS5420)$(CONFIG_CPU_EXYNOS5422),)
+		cp $(CPUDIR)/$(SOC)/libsecureboot_u-boot_v24_sss_v5.txt $(CPUDIR)/$(SOC)/libsecureboot_u-boot_v24.a
+else ifeq ($(CONFIG_SMDK5410), y)
+		cp $(CPUDIR)/$(SOC)/libsecureboot_u-boot_v23.txt $(CPUDIR)/$(SOC)/libsecureboot_u-boot_v23.a
+else
+		cp $(CPUDIR)/$(SOC)/libsecureboot_u-boot_v21.txt $(CPUDIR)/$(SOC)/libsecureboot_u-boot_v21.a
+endif
+endif
+endif
 		$(GEN_UBOOT)
 ifeq ($(CONFIG_KALLSYMS),y)
 		smap=`$(call SYSTEM_MAP,u-boot) | \
@@ -749,7 +772,9 @@ clean:
 	       $(obj)tools/gdb/{astest,gdbcont,gdbsend}			  \
 	       $(obj)tools/gen_eth_addr    $(obj)tools/img2srec		  \
 	       $(obj)tools/mk{env,}image   $(obj)tools/mpc86x_clk	  \
-	       $(obj)tools/mk{smdk5250,}spl				  \
+	       $(obj)tools/mk{smdk5250,smdk5410,smdk4x12,}spl		  \
+	       $(obj)tools/mk{smdk5420}spl				  \
+	       $(obj)tools/mk{smdk5422}spl				  \
 	       $(obj)tools/ncb		   $(obj)tools/ubsha1
 	@rm -f $(obj)board/cray/L1/{bootscript.c,bootscript.image}	  \
 	       $(obj)board/matrix_vision/*/bootscript.img		  \

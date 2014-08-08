@@ -24,12 +24,18 @@
 #include <asm/io.h>
 #include <netdev.h>
 #include <asm/arch/cpu.h>
+#include <asm/arch/clock.h>
+#include <asm/arch/power.h>
 #include <asm/arch/gpio.h>
 #include <asm/arch/mmc.h>
 #include <asm/arch/pinmux.h>
 #include <asm/arch/sromc.h>
+#include <asm/arch/pmic.h>
+#include <asm/arch/sysreg.h>
+#include "board_rev.h"
 
 DECLARE_GLOBAL_DATA_PTR;
+unsigned int pmic;
 
 #ifdef CONFIG_SMC911X
 static int smc9115_pre_init(void)
@@ -59,9 +65,110 @@ static int smc9115_pre_init(void)
 }
 #endif
 
+static void i2c_interrupt_src_init(void)
+{
+	struct exynos5_sysreg *sysreg =
+		(struct exynos5_sysreg *)samsung_get_base_sysreg();
+
+	/* I2C interrupt source is for i2c, not for USI */
+	writel(0x0, (unsigned int)&sysreg->i2c_cfg);
+
+}
+
+static void display_bl1_version(void)
+{
+	char bl1_version[9] = {0};
+
+	/* display BL1 version */
+	printf("\nTrustZone Enabled BSP");
+	strncpy(&bl1_version[0], (char *)0x0204f810, 8);
+	printf("\nBL1 version: %s\n", &bl1_version[0]);
+}
+
+static void display_pmic_info(void)
+{
+	unsigned char read_vol_arm;
+	unsigned char read_vol_int;
+	unsigned char read_vol_g3d;
+	unsigned char read_vol_mif;
+	unsigned char read_vol_mem;
+	unsigned char read_vol_apll;
+	unsigned char pmic_id;
+
+	/* read ID */
+	IIC0_ERead(MAX8997_ADDR, MAX8997_ID, &pmic_id);
+
+	if (pmic_id == 0x77) {
+		/* MAX8997 */
+		printf("PMIC: MAX8997\n");
+		pmic = SMDK5250_REGULATOR_MAX8997;
+		IIC0_ERead(MAX8997_ADDR, MAX8997_BUCK1TV_DVS, &read_vol_arm);
+		IIC0_ERead(MAX8997_ADDR, MAX8997_BUCK2TV_DVS, &read_vol_int);
+		IIC0_ERead(MAX8997_ADDR, MAX8997_BUCK3TV_DVS, &read_vol_g3d);
+		IIC0_ERead(MAX8997_ADDR, MAX8997_BUCK4TV_DVS, &read_vol_mif);
+		IIC0_ERead(MAX8997_ADDR, MAX8997_LDO10CTRL, &read_vol_apll);
+
+		printf("ARM: %dmV\t", ((unsigned int)read_vol_arm * 25) + 650);
+		printf("INT: %dmV\t", ((unsigned int)read_vol_int * 25) + 650);
+		printf("G3D: %dmV\n", ((unsigned int)read_vol_g3d * 50) + 750);
+		printf("MIF: %dmV\t", ((unsigned int)read_vol_mif * 25) + 650);
+		printf("APLL: %dmV\n",	((unsigned int)(read_vol_apll & 0x3F)
+					* 50) + 800);
+	} else if (pmic_id >= 0x0 && pmic_id <= 0x5) {
+		/* S5M8767 */
+		printf("PMIC: S5M8767\n");
+		pmic = SMDK5250_REGULATOR_S5M8767;
+	} else {
+		/* MAX77686 */
+		printf("PMIC: MAX77686\n");
+		pmic = SMDK5250_REGULATOR_MAX77686;
+		IIC0_ERead(MAX77686_ADDR, MAX77686_BUCK2TV_DVS1, &read_vol_arm);
+		IIC0_ERead(MAX77686_ADDR, MAX77686_BUCK3TV_DVS1, &read_vol_int);
+		IIC0_ERead(MAX77686_ADDR, MAX77686_BUCK4TV_DVS1, &read_vol_g3d);
+		IIC0_ERead(MAX77686_ADDR, MAX77686_BUCK1OUT, &read_vol_mif);
+		IIC0_ERead(MAX77686_ADDR, MAX77686_BUCK5OUT, &read_vol_mem);
+
+		printf("ARM: %dmV\t", ((unsigned int)(read_vol_arm >> 1) * 25) + 600);
+		printf("INT: %dmV\t", ((unsigned int)(read_vol_int >> 1) * 25) + 600);
+		printf("G3D: %dmV\n", ((unsigned int)(read_vol_g3d >> 1)* 25) + 600);
+		printf("MIF: %dmV\t", ((unsigned int)(read_vol_mif & 0x3F) * 50) + 750);
+		printf("MEM: %dmV\n", ((unsigned int)(read_vol_mem & 0x3F) * 50) + 750);
+
+	}
+}
+
+static void display_boot_device_info(void)
+{
+	struct exynos5_power *pmu = (struct exynos5_power *)EXYNOS5_POWER_BASE;
+	int OmPin;
+
+	OmPin = readl(&pmu->inform3);
+
+	printf("\nChecking Boot Mode ...");
+
+	if (OmPin == BOOT_MMCSD) {
+		printf(" SDMMC\n");
+	} else if (OmPin == BOOT_EMMC) {
+		printf(" EMMC\n");
+	} else if (OmPin == BOOT_EMMC_4_4) {
+		printf(" EMMC\n");
+	} else {
+		printf(" Please check OM_pin\n");
+	}
+}
+
 int board_init(void)
 {
+	display_bl1_version();
+
+	display_pmic_info();
+
+	display_boot_device_info();
+
 	gd->bd->bi_boot_params = (PHYS_SDRAM_1 + 0x100UL);
+
+	i2c_interrupt_src_init();
+
 	return 0;
 }
 
@@ -128,7 +235,10 @@ int checkboard(void)
 #ifdef CONFIG_GENERIC_MMC
 int board_mmc_init(bd_t *bis)
 {
-	int err;
+	struct exynos5_power *pmu = (struct exynos5_power *)EXYNOS5_POWER_BASE;
+	int err, OmPin;
+
+	OmPin = readl(&pmu->inform3);
 
 	err = exynos_pinmux_config(PERIPH_ID_SDMMC2, PINMUX_FLAG_NONE);
 	if (err) {
@@ -136,7 +246,39 @@ int board_mmc_init(bd_t *bis)
 		return err;
 	}
 
-	err = s5p_mmc_init(2, 4);
+	err = exynos_pinmux_config(PERIPH_ID_SDMMC0, PINMUX_FLAG_8BIT_MODE);
+	if (err) {
+		debug("MSHC0 not configured\n");
+		return err;
+	}
+
+	switch (OmPin) {
+	case BOOT_EMMC_4_4:
+#if defined(USE_MMC0)
+		set_mmc_clk(PERIPH_ID_SDMMC0, 1);
+
+		err = s5p_mmc_init(PERIPH_ID_SDMMC0, 8);
+#endif
+#if defined(USE_MMC2)
+		set_mmc_clk(PERIPH_ID_SDMMC2, 1);
+
+		err = s5p_mmc_init(PERIPH_ID_SDMMC2, 4);
+#endif
+		break;
+	default:
+#if defined(USE_MMC2)
+		set_mmc_clk(PERIPH_ID_SDMMC2, 1);
+
+		err = s5p_mmc_init(PERIPH_ID_SDMMC2, 4);
+#endif
+#if defined(USE_MMC0)
+		set_mmc_clk(PERIPH_ID_SDMMC0, 1);
+
+		err = s5p_mmc_init(PERIPH_ID_SDMMC0, 8);
+#endif
+		break;
+	}
+
 	return err;
 }
 #endif
@@ -178,3 +320,88 @@ int board_early_init_f(void)
 	return board_uart_init();
 }
 #endif
+
+int board_late_init(void)
+{
+	struct exynos5_power *pmu = (struct exynos5_power *)EXYNOS5_POWER_BASE;
+	struct exynos5_gpio_part1 *gpio1 =
+		(struct exynos5_gpio_part1 *) samsung_get_base_gpio_part1();
+	int err;
+	u32 second_boot_info = readl(CONFIG_SECONDARY_BOOT_INFORM_BASE);
+
+	err = exynos_pinmux_config(PERIPH_ID_INPUT_X0_0, PINMUX_FLAG_NONE);
+	if (err) {
+		debug("GPX0_0 INPUT not configured\n");
+		return err;
+	}
+
+	udelay(10);
+	if ((s5p_gpio_get_value(&gpio1->x0, 0) == 0) || second_boot_info == 1)
+		setenv("bootcmd", CONFIG_BOOTCOMMAND2);
+
+	if (second_boot_info == 1)
+		printf("###Secondary Boot###\n");
+
+	if((readl(&pmu->sysip_dat0)) == CONFIG_FACTORY_RESET_MODE) {
+		writel(0x0, &pmu->sysip_dat0);
+		setenv ("bootcmd", CONFIG_FACTORY_RESET_BOOTCOMMAND);
+	}
+
+	return 0;
+}
+
+unsigned int get_board_rev(void)
+{
+	struct exynos5_clock *clk = (struct exynos5_clock *)EXYNOS5_CLOCK_BASE;
+	struct exynos5_power *pmu = (struct exynos5_power *)EXYNOS5_POWER_BASE;
+	unsigned int rev = 0;
+	int adc_val = 0;
+	unsigned int timeout, con;
+
+	writel(0x7, &pmu->isp_configuration);
+	timeout = 1000;
+	while ((readl(&pmu->isp_status) & 0x7) != 0x7) {
+		if (timeout == 0)
+			printf("A5 power on failed1\n");
+		timeout--;
+		udelay(1);
+		goto err_power;
+	}
+	writel(0x1, MTCADC_PHY_CONTROL);
+
+	writel(0x00000031, &clk->div_isp0);
+	writel(0x00000031, &clk->div_isp1);
+	writel(0x00000001, &clk->div_isp2);
+
+	writel(0xDFF000FF, &clk->gate_ip_isp0);
+	writel(0x00003007, &clk->gate_ip_isp1);
+
+	/* SELMUX Channel 3 */
+	writel(ADCCON_SELMUX(3), FIMC_IS_ADC_BASE + ADCMUX);
+
+	con = readl(FIMC_IS_ADC_BASE + ADCCON);
+	con &= ~ADCCON_MUXMASK;
+	con &= ~ADCCON_STDBM;
+	con &= ~ADCCON_STARTMASK;
+	con |=  ADCCON_PRSCEN;
+
+	/* ENABLE START */
+	con |= ADCCON_ENABLE_START;
+	writel(con, FIMC_IS_ADC_BASE + ADCCON);
+
+	udelay (50);
+
+	/* Read Data*/
+	adc_val = readl(FIMC_IS_ADC_BASE + ADCDAT0) & 0xFFF;
+	/* CLRINT */
+	writel(0, FIMC_IS_ADC_BASE + ADCCLRINT);
+
+	rev = (adc_val < SMDK5250_REV_0_2_ADC_VALUE/2) ?
+			SMDK5250_REV_0_0 : SMDK5250_REV_0_2;
+
+err_power:
+	rev &= SMDK5250_REV_MASK;
+	pmic = (pmic & SMDK5250_REGULATOR_MASK) << SMDK5250_REGULATOR_SHIFT;
+
+	return (rev | pmic);
+}

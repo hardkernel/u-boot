@@ -36,6 +36,14 @@ lowlevel_init:
 	ldr	sp, =CONFIG_IRAM_STACK
 	stmdb	r13!, {ip,lr}
 
+	/* PS-Hold high */
+	ldr	r0, =0x1004330c
+	ldr	r1, [r0]
+	orr	r1, r1, #0x100
+	str	r1, [r0]
+
+	bl	relocate_code
+
 	/* check reset status */
 	ldr	r0, =(EXYNOS5_POWER_BASE + INFORM1_OFFSET)
 	ldr	r1, [r0]
@@ -54,6 +62,10 @@ lowlevel_init:
 	ldr	r2, =S5P_CHECK_SLEEP
 	cmp	r1, r2
 	beq	wakeup_reset
+
+	bl	pmic_init
+
+	bl	read_om
 
 	/*
 	 * If U-boot is already running in RAM, no need to relocate U-Boot.
@@ -75,22 +87,106 @@ lowlevel_init:
 	bl	mem_ctrl_init
 
 1:
-	bl	tzpc_init
 	ldmia	r13!, {ip,pc}
 
 wakeup_reset:
+	/* clear INFORM1 for security reason  */
+	ldr	r0, =(EXYNOS5_POWER_BASE + INFORM1_OFFSET)
+	mov	r1, #0x0
+	str     r1, [r0]
+
+	bl	read_om
+
+	/* If eMMC booting */
+	ldr	r0, =(EXYNOS5_POWER_BASE + INFORM3_OFFSET)
+	ldr	r1, [r0]
+	cmp	r1, #BOOT_EMMC_4_4
+	bleq	emmc_endbootop
+
+	/* init system clock */
 	bl	system_clock_init
+
+	/* Memory initialize */
 	bl	mem_ctrl_init
-	bl	tzpc_init
 
 exit_wakeup:
-	/* Load return address and jump to kernel */
-	ldr	r0, =(EXYNOS5_POWER_BASE + INFORM0_OFFSET)
+	b       warmboot
 
-	/* r1 = physical address of exynos5_cpu_resume function*/
+read_om:
+	/* Read booting information */
+	ldr	r0, =(EXYNOS5_POWER_BASE + OM_STATUS_OFFSET)
 	ldr	r1, [r0]
+	bic	r2, r1, #0xffffffc1
 
-	/* Jump to kernel */
-	mov	pc, r1
+	/* SD/MMC BOOT */
+	cmp     r2, #0x4
+	moveq   r3, #BOOT_MMCSD
+
+	/* eMMC BOOT */
+	cmp	r2, #0x6
+	moveq	r3, #BOOT_EMMC
+
+	/* eMMC 4.4 BOOT */
+	cmp	r2, #0x8
+	moveq	r3, #BOOT_EMMC_4_4
+	cmp	r2, #0x28
+	moveq	r3, #BOOT_EMMC_4_4
+
+	ldr	r0, =(EXYNOS5_POWER_BASE + INFORM3_OFFSET)
+	str	r3, [r0]
+
+	mov	pc, lr
+
+/*
+ * Relocate code
+ */
+relocate_code:
+	adr	r0, nscode_base			@ r0: source address (start)
+	adr	r1, nscode_end			@ r1: source address (end)
+	ldr	r2, =CONFIG_PHY_IRAM_NS_BASE	@ r2: target address
+
+1:
+	ldmia	r0!, {r3-r6}
+	stmia	r2!, {r3-r6}
+	cmp	r0, r1
+	blt	1b
+
+	.word	0xF57FF04F			@dsb	sy
+	.word	0xF57FF06F			@isb	sy
+
+	mov	pc, lr
+
+/******************************************************************************/
+
+/*
+ * CPU1 waits here until CPU0 wake it up.
+ * - below code is copied to CONFIG_PHY_IRAM_NS_BASE, which is non-secure memory.
+ */
+nscode_base:
+	adr	r0, _ns_reg5
+	b	1f
+
+	.word	0x0			@ REG0: RESUME_ADDR
+	.word	0x0			@ REG1: RESUME_FLAG
+	.word	0x0			@ REG2
+	.word	0x0			@ REG3
+	.word	0x0			@ REG4
+_ns_reg5:
+	.word	0x0			@ REG5: CPU1_BOOT_REG
+	.word	0x0			@ REG6: REG_DIRECTGO_FLAG
+	.word	0x0			@ REG7: REG_DIRECTGO_ADDR
+	.word	0x0			@ REG8
+	.word	0x0			@ REG9
+
 	nop
 	nop
+
+1:
+cpu1_wait:
+	.word	0xE320F002			@ wfe instruction
+	ldr	r1, [r0]
+	cmp	r1, #0x0
+	bxne	r1
+	b	cpu1_wait
+	nop
+nscode_end:

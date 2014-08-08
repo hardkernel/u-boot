@@ -29,6 +29,29 @@
 #define SECTOR_SIZE		0x200
 #define SECTOR_BITS		9
 
+#define COMMON_BLOCK_SIZE	4096
+
+/*
+ * Current group descriptor table size allows until size of 256GB.
+ * If you want to format more size than 256GB,
+ * please change GRP_DESC_TABLE_SIZE below.
+ *
+ * Unit for size : MB
+ */
+#define BLOCK_GROUP_SIZE	(128)		/* 128MB */
+
+#define STORAGE_SIZE_16G	(1024 * 16)
+#define STORAGE_SIZE_32G	(1024 * 32)
+#define STORAGE_SIZE_64G	(1024 * 64)
+#define STORAGE_SIZE_128G	(1024 * 128)
+#define STORAGE_SIZE_256G	(1024 * 256)
+
+#define GRP_DESC_SIZE		32		/* 32Byte */
+#define GRP_DESC_TABLE_SIZE	\
+	((STORAGE_SIZE_256G / BLOCK_GROUP_SIZE) * GRP_DESC_SIZE)
+
+#define INODE_DATA_SIZE		GRP_DESC_TABLE_SIZE
+
 /* Error codes */
 typedef enum
 {

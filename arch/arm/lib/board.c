@@ -146,6 +146,7 @@ static int display_banner(void)
  * gives a simple yet clear indication which part of the
  * initialization if failing.
  */
+extern unsigned int nr_dram_banks;
 static int display_dram_config(void)
 {
 	int i;
@@ -153,14 +154,14 @@ static int display_dram_config(void)
 #ifdef DEBUG
 	puts("RAM Configuration:\n");
 
-	for (i = 0; i < CONFIG_NR_DRAM_BANKS; i++) {
+	for (i = 0; i < nr_dram_banks; i++) {
 		printf("Bank #%d: %08lx ", i, gd->bd->bi_dram[i].start);
 		print_size(gd->bd->bi_dram[i].size, "\n");
 	}
 #else
 	ulong size = 0;
 
-	for (i = 0; i < CONFIG_NR_DRAM_BANKS; i++)
+	for (i = 0; i < nr_dram_banks; i++)
 		size += gd->bd->bi_dram[i].size;
 
 	puts("DRAM:  ");
@@ -245,8 +246,10 @@ init_fnc_t *init_sequence[] = {
 	get_clocks,
 #endif
 	env_init,		/* initialize environment */
+#ifndef CONFIG_CPU_EXYNOS5410
 	init_baudrate,		/* initialze baudrate settings */
 	serial_init,		/* serial communications setup */
+#endif
 	console_init_f,		/* stage 1 init of console */
 	display_banner,		/* say that we are here */
 #if defined(CONFIG_DISPLAY_CPUINFO)
@@ -490,7 +493,9 @@ void board_init_r(gd_t *id, ulong dest_addr)
 	set_cpu_clk_info(); /* Setup clock information */
 #endif
 #ifdef CONFIG_SERIAL_MULTI
+#ifndef CONFIG_CPU_EXYNOS5410
 	serial_initialize();
+#endif
 #endif
 
 	debug("Now running in RAM - U-Boot at: %08lx\n", dest_addr);

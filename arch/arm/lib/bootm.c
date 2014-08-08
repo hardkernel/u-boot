@@ -36,6 +36,7 @@
 #include <asm/bootm.h>
 
 DECLARE_GLOBAL_DATA_PTR;
+extern unsigned int nr_dram_banks;
 
 #if defined(CONFIG_SETUP_MEMORY_TAGS) || \
 	defined(CONFIG_CMDLINE_TAG) || \
@@ -131,7 +132,7 @@ static void setup_memory_tags(bd_t *bd)
 {
 	int i;
 
-	for (i = 0; i < CONFIG_NR_DRAM_BANKS; i++) {
+	for (i = 0; i < nr_dram_banks; i++) {
 		params->hdr.tag = ATAG_MEM;
 		params->hdr.size = tag_size (tag_mem32);
 

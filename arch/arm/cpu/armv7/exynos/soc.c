@@ -26,5 +26,8 @@
 
 void reset_cpu(ulong addr)
 {
+#if defined(CONFIG_RAMDUMP_MODE)
+	writel(0x0, CONFIG_RAMDUMP_SCRATCH);
+#endif
 	writel(0x1, samsung_get_base_swreset());
 }

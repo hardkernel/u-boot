@@ -582,6 +582,13 @@ int do_bootm(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	ulong		load_end = 0;
 	int		ret;
 	boot_os_fn	*boot_fn;
+
+#ifdef CONFIG_SECURE_BOOT
+#ifndef CONFIG_SPL_BUILD
+	security_check();
+#endif
+#endif
+
 #ifdef CONFIG_NEEDS_MANUAL_RELOC
 	static int relocated = 0;
 
@@ -1585,10 +1592,15 @@ static int bootz_start(cmd_tbl_t *cmdtp, int flag, int argc,
 	return 0;
 }
 
-static int do_bootz(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+int do_bootz(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	bootm_headers_t	images;
 
+#ifdef CONFIG_SECURE_BOOT
+#ifndef CONFIG_SPL_BUILD
+	security_check();
+#endif
+#endif
 	if (bootz_start(cmdtp, flag, argc, argv, &images))
 		return 1;
 

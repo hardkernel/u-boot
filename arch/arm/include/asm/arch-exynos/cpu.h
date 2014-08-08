@@ -27,6 +27,13 @@
 #define EXYNOS_CPU_NAME			"Exynos"
 #define EXYNOS4_ADDR_BASE		0x10000000
 
+/* RAMDUMP */
+#define CONFIG_RAMDUMP_BASE		(CONFIG_SYS_SDRAM_BASE + 0x6000000)
+#define CONFIG_RAMDUMP_LOGBUF		(CONFIG_RAMDUMP_BASE + 0x400000)
+#define CONFIG_RAMDUMP_LOGSZ		0x200000
+#define CONFIG_RAMDUMP_SCRATCH		(CONFIG_RAMDUMP_BASE + 0x10)
+#define CONFIG_RAMDUMP_LASTBUF		(CONFIG_RAMDUMP_BASE + 0x14)
+
 /* EXYNOS4 */
 #define EXYNOS4_GPIO_PART3_BASE		0x03860000
 #define EXYNOS4_PRO_ID			0x10000000
@@ -57,18 +64,33 @@
 #define EXYNOS4_GPIO_PART4_BASE		DEVICE_NOT_AVAILABLE
 
 /* EXYNOS5 */
+#if defined(CONFIG_CPU_EXYNOS5420)
+#define EXYNOS5_GPIO_PART4_BASE		0x14010000
+#else
 #define EXYNOS5_GPIO_PART4_BASE		0x03860000
+#endif
 #define EXYNOS5_PRO_ID			0x10000000
 #define EXYNOS5_CLOCK_BASE		0x10010000
 #define EXYNOS5_POWER_BASE		0x10040000
 #define EXYNOS5_SWRESET			0x10040400
 #define EXYNOS5_SYSREG_BASE		0x10050000
+#if defined(CONFIG_CPU_EXYNOS5420)
+#define EXYNOS5_MCT_BASE		0x101C0000
+#endif
 #define EXYNOS5_WATCHDOG_BASE		0x101D0000
 #define EXYNOS5_DMC_PHY0_BASE		0x10C00000
 #define EXYNOS5_DMC_PHY1_BASE		0x10C10000
+#if defined(CONFIG_CPU_EXYNOS5420)
+#define EXYNOS5_GPIO_PART3_BASE		0x14000000
+#else
 #define EXYNOS5_GPIO_PART3_BASE		0x10D10000
+#endif
 #define EXYNOS5_DMC_CTRL_BASE		0x10DD0000
+#if defined(CONFIG_CPU_EXYNOS5410) || defined(CONFIG_CPU_EXYNOS5420)
+#define EXYNOS5_GPIO_PART1_BASE		0x13400000
+#else
 #define EXYNOS5_GPIO_PART1_BASE		0x11400000
+#endif
 #define EXYNOS5_MIPI_DSIM_BASE		0x11D00000
 #define EXYNOS5_USB_HOST_EHCI_BASE	0x12110000
 #define EXYNOS5_USBPHY_BASE		0x12130000
@@ -77,11 +99,17 @@
 #define EXYNOS5_SROMC_BASE		0x12250000
 #define EXYNOS5_UART_BASE		0x12C00000
 #define EXYNOS5_PWMTIMER_BASE		0x12DD0000
+#if defined(CONFIG_CPU_EXYNOS5420)
+#define EXYNOS5_GPIO_PART2_BASE		0x13410000
+#else
 #define EXYNOS5_GPIO_PART2_BASE		0x13400000
+#endif
 #define EXYNOS5_FIMD_BASE		0x14400000
 
 #define EXYNOS5_ADC_BASE		DEVICE_NOT_AVAILABLE
 #define EXYNOS5_MODEM_BASE		DEVICE_NOT_AVAILABLE
+
+#define __REG(x)			(*(unsigned int *)(x))
 
 #ifndef __ASSEMBLY__
 #include <asm/io.h>
@@ -94,29 +122,48 @@ static inline int s5p_get_cpu_rev(void)
 	return s5p_cpu_rev;
 }
 
-static inline void s5p_set_cpu_id(void)
+static inline unsigned int s5p_get_cpu_id(void)
 {
 	unsigned int pro_id = (readl(EXYNOS4_PRO_ID) & 0x00FFF000) >> 12;
 
 	switch (pro_id) {
 	case 0x200:
 		/* Exynos4210 EVT0 */
-		s5p_cpu_id = 0x4210;
-		s5p_cpu_rev = 0;
-		break;
+		return 0x4210;
 	case 0x210:
 		/* Exynos4210 EVT1 */
-		s5p_cpu_id = 0x4210;
-		break;
+		return 0x4210;
+	case 0x220:
+		/* Exynos4212 */
+		return 0x4212;
 	case 0x412:
 		/* Exynos4412 */
-		s5p_cpu_id = 0x4412;
-		break;
+		return 0x4412;
 	case 0x520:
 		/* Exynos5250 */
-		s5p_cpu_id = 0x5250;
-		break;
+		return 0x5250;
+	case 0x410:
+		/* Exynos5410 */
+		return 0x5410;
+	case 0x420:
+		/* Exynos5420 */
+		return 0x5420;
+	case 0x422:
+		/* Exynos5422 */
+		return 0x5422;
 	}
+}
+
+static inline void s5p_set_cpu_id(void)
+{
+	unsigned int rev_num = (readl(EXYNOS4_PRO_ID) & 0x000000F0) >> 4;
+
+	s5p_cpu_id = s5p_get_cpu_id();
+
+	if(s5p_cpu_id == 0x4210)
+		s5p_cpu_rev = 0;
+	else
+		s5p_cpu_rev = rev_num;
 }
 
 static inline char *s5p_get_cpu_name(void)
@@ -124,14 +171,30 @@ static inline char *s5p_get_cpu_name(void)
 	return EXYNOS_CPU_NAME;
 }
 
+#ifndef CONFIG_SPL_BUILD
 #define IS_SAMSUNG_TYPE(type, id)			\
 static inline int cpu_is_##type(void)			\
 {							\
 	return (s5p_cpu_id >> 12) == id;		\
 }
+#else
+#define IS_SAMSUNG_TYPE(type, id)			\
+static inline int cpu_is_##type(void)			\
+{							\
+	return (s5p_get_cpu_id() >> 12) == id;		\
+}
+#endif
 
 IS_SAMSUNG_TYPE(exynos4, 0x4)
 IS_SAMSUNG_TYPE(exynos5, 0x5)
+
+#define IS_SAMSUNG_PKG_TYPE(type, inform)			\
+static inline int exynos_pkg_is_##type(void)			\
+{							        \
+	return ((readl(EXYNOS4_PRO_ID) & 0x00000F00) >> 8)  == inform; \
+}
+
+IS_SAMSUNG_PKG_TYPE(pop, 0x2)
 
 #define SAMSUNG_BASE(device, base)				\
 static inline unsigned int samsung_get_base_##device(void)	\

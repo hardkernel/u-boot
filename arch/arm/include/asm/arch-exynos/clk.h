@@ -27,11 +27,17 @@
 #define EPLL	2
 #define HPLL	3
 #define VPLL	4
+#define KPLL	5
+#define BPLL	6
+#define CPLL	7
+#define SPLL	8
 
 unsigned long get_pll_clk(int pllreg);
 unsigned long get_arm_clk(void);
 unsigned long get_pwm_clk(void);
 unsigned long get_uart_clk(int dev_index);
+unsigned long get_mmc_clk(int dev_index);
+unsigned long get_usbdrd_clk(void);
 void set_mmc_clk(int dev_index, unsigned int div);
 unsigned long get_lcd_clk(void);
 void set_lcd_clk(void);

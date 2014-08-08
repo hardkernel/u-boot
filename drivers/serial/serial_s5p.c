@@ -87,13 +87,13 @@ int serial_init_dev(const int dev_index)
 {
 	struct s5p_uart *const uart = s5p_get_base_uart(dev_index);
 
-	/* reset and enable FIFOs, set triggers to the maximum */
-	writel(0, &uart->ufcon);
+	/* reset and enable FIFOs */
+	writel(0x117, &uart->ufcon);
 	writel(0, &uart->umcon);
 	/* 8N1 */
 	writel(0x3, &uart->ulcon);
 	/* No interrupts, no DMA, pure polling */
-	writel(0x245, &uart->ucon);
+	writel(0x3c5, &uart->ucon);
 
 	serial_setbrg_dev(dev_index);
 

@@ -112,38 +112,51 @@ static void print_mmcinfo(struct mmc *mmc)
 	puts("Capacity: ");
 	print_size(mmc->capacity, "\n");
 
-	printf("Bus Width: %d-bit\n", mmc->bus_width);
+	printf("Bus Width: %d-bit %s\n", mmc->bus_width,
+				mmc->ddr ? "DDR" : "SDR");
 }
 
 int do_mmcinfo (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	struct mmc *mmc;
+	int dev_num, err;
 
-	if (curr_device < 0) {
-		if (get_mmc_num() > 0)
+	if (argc == 2)
+		dev_num = simple_strtoul(argv[1], NULL, 10);
+	else if (curr_device < 0) {
+		if (get_mmc_num() > 0) {
 			curr_device = 0;
+			dev_num = curr_device;
+		}
 		else {
 			puts("No MMC device available\n");
 			return 1;
 		}
 	}
 
-	mmc = find_mmc_device(curr_device);
+	mmc = find_mmc_device(dev_num);
 
 	if (mmc) {
-		mmc_init(mmc);
+		mmc->has_init = 0;
+
+		err = mmc_init(mmc);
+		if (err) {
+			printf("no mmc device at slot %x\n", dev_num);
+			return err;
+		}
 
 		print_mmcinfo(mmc);
 		return 0;
 	} else {
-		printf("no mmc device at slot %x\n", curr_device);
+		printf("no mmc device at slot %x\n", dev_num);
 		return 1;
 	}
 }
 
 U_BOOT_CMD(
-	mmcinfo, 1, 0, do_mmcinfo,
+	mmcinfo, 2, 0, do_mmcinfo,
 	"display MMC info",
+	"mmcinfo [dev_num]\n"
 	"    - device number of the device to dislay info of\n"
 	""
 );
@@ -261,10 +274,16 @@ int do_mmcops(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		state = MMC_INVALID;
 
 	if (state != MMC_INVALID) {
-		struct mmc *mmc = find_mmc_device(curr_device);
-		int idx = 2;
-		u32 blk, cnt, n;
+		int idx = 3;
+		if (state == MMC_ERASE)
+			idx = 4;
+		int dev = simple_strtoul(argv[idx - 1], NULL, 10);
+		struct mmc *mmc = find_mmc_device(dev);
+		u32 blk, cnt, count, n;
 		void *addr;
+		int part, err;
+
+		curr_device = dev;
 
 		if (state != MMC_ERASE) {
 			addr = (void *)simple_strtoul(argv[idx], NULL, 16);
@@ -296,7 +315,47 @@ int do_mmcops(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 						      cnt, addr);
 			break;
 		case MMC_ERASE:
+
+			/* Select erase partition */
+			if (strcmp(argv[2], "boot") == 0) {
+				part = 0;
+				/* Read Boot partition size. */
+				count = mmc->boot_size_multi / mmc->read_bl_len;
+			} else if (strcmp(argv[2], "user") == 0) {
+				part = 1;
+				/* Read User partition size. */
+				count = mmc->capacity / mmc->read_bl_len;
+			} else {
+				part = 1;
+				count = mmc->capacity / mmc->read_bl_len;
+				printf("Default erase user partition\n");
+			}
+
+			/* If input counter is larger than max counter */
+			if ((blk + cnt) > count) {
+				cnt = (count - blk) - 1;
+				printf("Block count is Too BIG!!\n");
+			}
+
+			/* If input counter is 0 */
+			if (!cnt ) {
+				cnt = (count - blk) - 1;
+				printf("Erase all from %d block\n", blk);
+			}
+
+			if (part == 0) {
+				err = emmc_boot_open(mmc);
+				if (err)
+					printf("eMMC OPEN Failed.!!\n");
+			}
+
 			n = mmc->block_dev.block_erase(curr_device, blk, cnt);
+
+			if (part == 0) {
+				err = emmc_boot_close(mmc);
+				if (err)
+					printf("eMMC CLOSE Failed.!!\n");
+			}
 			break;
 		default:
 			BUG();
@@ -313,11 +372,99 @@ int do_mmcops(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 U_BOOT_CMD(
 	mmc, 6, 1, do_mmcops,
 	"MMC sub system",
-	"read addr blk# cnt\n"
-	"mmc write addr blk# cnt\n"
-	"mmc erase blk# cnt\n"
+	"mmc read [dev] addr blk# cnt\n"
+	"mmc write [dev] addr blk# cnt\n"
+	"mmc erase [boot | user] [dev] blk# cnt\n"
 	"mmc rescan\n"
 	"mmc part - lists available partition on current mmc device\n"
 	"mmc dev [dev] [part] - show or set current mmc device [partition]\n"
 	"mmc list - lists available devices");
+
+int do_emmc(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+{
+	int rc = 0;
+	u32 dev;
+
+	switch (argc) {
+	case 5:
+		if (strcmp(argv[1], "partition") == 0) {
+			dev = simple_strtoul(argv[2], NULL, 10);
+			struct mmc *mmc = find_mmc_device(dev);
+			u32 bootsize = simple_strtoul(argv[3], NULL, 10);
+			u32 rpmbsize = simple_strtoul(argv[4], NULL, 10);
+
+			if (!mmc)
+				rc = 1;
+
+			rc = emmc_boot_partition_size_change(mmc, bootsize, rpmbsize);
+			if (rc == 0) {
+				printf("eMMC boot partition Size is %d MB.!!\n", bootsize);
+				printf("eMMC RPMB partition Size is %d MB.!!\n", rpmbsize);
+			} else {
+				printf("eMMC boot partition Size change Failed.!!\n");
+			}
+		} else {
+			printf("Usage:\n%s\n", cmdtp->usage);
+			rc =1;
+		}
+		break;
+
+	case 3:
+		if (strcmp(argv[1], "open") == 0) {
+			int dev = simple_strtoul(argv[2], NULL, 10);
+			struct mmc *mmc = find_mmc_device(dev);
+
+			if (!mmc)
+				rc = 1;
+
+			rc = emmc_boot_open(mmc);
+
+			if (rc == 0) {
+			printf("eMMC OPEN Success.!!\n");
+			printf("\t\t\t!!!Notice!!!\n");
+			printf("!You must close eMMC boot Partition after all image writing!\n");
+			printf("!eMMC boot partition has continuity at image writing time.!\n");
+			printf("!So, Do not close boot partition, Before, all images is written.!\n");
+			} else {
+				printf("eMMC OPEN Failed.!!\n");
+			}
+		} else if (strcmp(argv[1], "close") == 0) {
+			int dev = simple_strtoul(argv[2], NULL, 10);
+			struct mmc *mmc = find_mmc_device(dev);
+
+			if (!mmc)
+				rc = 1;
+
+			rc = emmc_boot_close(mmc);
+
+			if (rc == 0) {
+				printf("eMMC CLOSE Success.!!\n");
+			} else {
+				printf("eMMC CLOSE Failed.!!\n");
+			}
+		} else {
+			printf("Usage:\n%s\n", cmdtp->usage);
+			rc =1;
+		}
+		break;
+	case 0:
+	case 1:
+	case 2:
+	case 4:
+	default:
+		printf("Usage:\n%s\n", cmdtp->usage);
+		rc = 1;
+		break;
+	}
+
+	return rc;
+}
+
+
+U_BOOT_CMD(
+	emmc,	5,	0,	do_emmc,
+	"Open/Close eMMC boot Partition",
+	"emmc open <device num> \n"
+	"emmc close <device num> \n"
+	"emmc partition <device num> <boot partiton size MB> <RPMB partition size MB>\n");
 #endif

@@ -241,3 +241,114 @@ U_BOOT_CMD(
 	"      to 'dev' on 'interface'"
 );
 #endif
+
+int do_fat_format(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+{
+	int dev = 0;
+	int part = 1;
+	char *ep;
+	block_dev_desc_t *dev_desc = NULL;
+
+	if (argc < 2) {
+		printf ("usage : fatformat <interface> <dev[:part]>\n");
+		return(0);
+	}
+
+	dev = (int)simple_strtoul (argv[2], &ep, 16);
+	dev_desc = get_dev(argv[1], dev);
+
+	if (dev_desc == NULL) {
+		puts ("\n ** Invalid boot device **\n");
+		return 1;
+	}
+
+	if (*ep) {
+		if (*ep != ':') {
+			puts ("\n **Invald boot device,use 'dev[:part]'**\n");
+			return 1;
+		}
+		part = (int)simple_strtoul(++ep, NULL, 16);
+		if (part > 4 || part <1) {
+			puts ("** Partition Number should be 1 ~ 4 **\n");
+		}
+	}
+	printf("Start format MMC&d partition&d ...\n", dev, part);
+	if (fat_format_device(dev_desc, part) != 0) {
+		printf("Format failure!!!\n");
+	}
+
+	return 0;
+}
+
+U_BOOT_CMD(
+	fatformat, 3, 0, do_fat_format,
+	"fatformat - disk format by FAT32\n",
+	"<interface(only support mmc)> <dev:partition num>\n"
+	"	- format by FAT32 on 'interface'\n"
+);
+
+int do_fat_cfgload(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+{
+    unsigned long   filesize = 0;
+    unsigned char   *fp = (unsigned char *)0x5FFF0000, cmd[512], skip = 0, first = 1;
+    unsigned int    wpos = 0;
+    
+    // file check & update
+	setenv("filesize", "0");
+    run_command("fatload mmc 0:1 5FFF0000 boot.ini", 0);
+    
+    if((filesize = getenv_ulong("filesize", 16, 0)))    {
+        
+        if(filesize > 64 * 1024)    {
+            printf("File Size Error! Max file size 64Kbytes. filesize = %d\n", filesize);
+            return  0;
+        }
+        
+        while(1)    {
+            if(*fp == '#')  skip = 1;
+            else    {
+                skip = 0;   wpos = 0;
+                memset(cmd, 0x00, sizeof(cmd));
+            }                
+
+            while(*fp != 0x0A)  {
+                if((*fp != 0x0D) && (!skip))     cmd[wpos++] = *fp;
+
+                fp++;
+                if(filesize)    filesize--;
+                else            break;
+            }
+            
+            if(wpos)    {
+                if(wpos < sizeof(cmd)) {
+                    if(first)   {
+                        if(!strncmp(cmd, "ODROIDXU-UBOOT-CONFIG", sizeof("ODROIDXU-UBOOT-CONFIG"))) {
+                            printf("Find boot.ini file from FAT Area!!\n");     first = 0;
+                        }
+                        else    {
+                            printf("Find boot.ini file. But This file is not odroidxu config file!\n");
+                            return  0;
+                        }
+                    }
+                    else    {
+                        printf("boot.ini command = %s\n", cmd);
+                        run_command(cmd, 0);
+                    }
+                }
+                wpos = 0;
+            }
+            fp++;
+            if(filesize)    filesize--;
+            else            break;
+        }
+        return  1;
+    }
+	return  0;
+}
+
+U_BOOT_CMD(
+	cfgload, 1, 0, do_fat_cfgload,
+	"cfgload - boot.ini textfile load from FAT32\n",
+	"<interface(only support mmc 0:1)>\n"
+	"	- boot.ini file load from FAT32 on 'interface'\n"
+);

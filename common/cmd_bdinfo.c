@@ -351,6 +351,7 @@ int do_bdinfo(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 
 #elif defined(CONFIG_ARM)
 
+extern unsigned int nr_dram_banks;
 int do_bdinfo(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	int i;
@@ -359,7 +360,7 @@ int do_bdinfo(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	print_num("arch_number",	bd->bi_arch_number);
 	print_num("boot_params",	(ulong)bd->bi_boot_params);
 
-	for (i = 0; i < CONFIG_NR_DRAM_BANKS; ++i) {
+	for (i = 0; i < nr_dram_banks; ++i) {
 		print_num("DRAM bank",	i);
 		print_num("-> start",	bd->bi_dram[i].start);
 		print_num("-> size",	bd->bi_dram[i].size);

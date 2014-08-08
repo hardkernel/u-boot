@@ -41,6 +41,24 @@ DECLARE_GLOBAL_DATA_PTR;
 #define MK_STR(x)	XMK_STR(x)
 
 const uchar default_environment[] = {
+#if defined(CONFIG_BOARD_HARDKERNEL)
+    "default_bootcmd=echo >>> Run Default Bootcmd <<<;movi read kernel 0 40008000;movi read rootfs 0 41000000 100000;bootz 40008000 41000000\0"
+    "bootscript=source 40008000\0"
+    "loadbootscript_1=echo >>> Load Boot Script from mmc 0:1 <<<;fatload mmc 0:1 40008000 boot.scr\0"
+    "loadbootscript_2=echo >>> Load Boot Script from mmc 0:2 <<<;fatload mmc 0:2 40008000 boot.scr\0"
+    "loadbootscript_3=echo >>> Load Boot Script from mmc 1:1 <<<;fatload mmc 1:1 40008000 boot.scr\0"
+    "loadbootscript_4=echo >>> Load Boot Script from mmc 1:2 <<<;fatload mmc 1:2 40008000 boot.scr\0"
+    #if defined(CONFIG_UBOOT_COPY_SD2EMMC)
+        "copy_uboot_sd2emmc=" CONFIG_UBOOT_COPY_SD2EMMC "\0"
+    #endif
+    #if defined(CONFIG_UBOOT_COPY_EMMC2SD)
+        "copy_uboot_emmc2sd=" CONFIG_UBOOT_COPY_EMMC2SD "\0"
+    #endif
+    #if defined(CONFIG_ERASE_UBOOT_ENV_CMD)
+        "env_erase=" CONFIG_ERASE_UBOOT_ENV_CMD "\0"
+    #endif
+#endif    
+
 #ifdef	CONFIG_BOOTARGS
 	"bootargs="	CONFIG_BOOTARGS			"\0"
 #endif

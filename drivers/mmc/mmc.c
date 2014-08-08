@@ -346,8 +346,12 @@ mmc_berase(int dev_num, unsigned long start, lbaint_t blkcnt)
 		       & ~(mmc->erase_grp_size - 1)) - 1);
 
 	while (blk < blkcnt) {
+#if defined(CONFIG_BOARD_HARDKERNEL)
+        blk_r = blkcnt;
+#else        
 		blk_r = ((blkcnt - blk) > mmc->erase_grp_size) ?
 			mmc->erase_grp_size : (blkcnt - blk);
+#endif
 		err = mmc_erase_t(mmc, start + blk, blk_r);
 		if (err)
 			break;
@@ -361,6 +365,149 @@ mmc_berase(int dev_num, unsigned long start, lbaint_t blkcnt)
 
 	return blk;
 }
+#if defined(CONFIG_S5P_MSHC)
+static unsigned long
+mmc_erase(int dev_num, unsigned long start, lbaint_t block)
+{
+	int err;
+	lbaint_t count, erase_time, dis, blk_hc;
+	lbaint_t return_blk = block;
+	struct mmc_cmd cmd;
+	struct mmc *mmc = find_mmc_device(dev_num);
+
+	printf("START: %d BLOCK: %d\n", start, block);
+	printf("high_capacity: %d\n", mmc->high_capacity);
+	printf("Capacity: %d\n", mmc->capacity);
+
+	/* Byte addressing */
+	if (mmc->high_capacity == 0) {
+		start = start * 512;
+		block = block * 512;
+	} else {
+		if (!IS_SD(mmc)) {
+			blk_hc = block;
+		/* MMC High Capacity erase minimum size is 512KB */
+			if (block < 1024) {
+				if (block < 512)
+					block = 1;
+				else
+					block = 2;
+			} else {
+				if (0 == (block%1024)) {
+					block = (block / 1024);
+				} else {
+					block = (block / 1024) + 1;
+				}
+			}
+		}
+	}
+	printf("byte_addressing\n");
+	/* Set ERASE start group */
+	if (IS_SD(mmc)) {
+		cmd.cmdidx = 32;
+	} else {
+		cmd.cmdidx = 35;
+	}
+	cmd.resp_type = MMC_RSP_R1;
+	cmd.cmdarg = start;
+	cmd.flags = 0;
+	printf("before_send_cmd\n");
+
+	err = mmc_send_cmd(mmc, &cmd, NULL);
+	if (err)
+		return err;
+
+	printf("start_addr\n");
+	/* Set ERASE start group */
+	if (IS_SD(mmc)) {
+		cmd.cmdidx = 33;
+	} else {
+		cmd.cmdidx = 36;
+	}
+	cmd.resp_type = MMC_RSP_R1;
+	cmd.cmdarg = (start + block);
+	cmd.flags = 0;
+
+	err = mmc_send_cmd(mmc, &cmd, NULL);
+	if (err)
+		return err;
+
+	printf("end_addr\n");
+	/* ERASE */
+	cmd.cmdidx = 38;
+	cmd.resp_type = MMC_RSP_R1b;
+	cmd.cmdarg = 0x0;
+	cmd.flags = 0;
+
+	err = mmc_send_cmd(mmc, &cmd, NULL);
+	if (err)
+		return err;
+
+	printf("erase_addr\n");
+	/* Byte addressing */
+	if (mmc->high_capacity == 0) {
+		start = start / 512;
+		block = block / 512;
+		erase_time = block;
+	} else {
+		if (!IS_SD(mmc)) {
+			erase_time = blk_hc;
+		} else {
+			erase_time = block;
+		}
+	}
+	if (erase_time < 2048*1024) {
+		dis = 1;
+	} else {
+		dis = 100;
+	}
+	printf("\nErase\n");
+	for (count = 1; count < erase_time ; count++) {
+
+		if (!(count%(100*dis))) {
+			printf(".");
+		}
+		if (!(count%(4000*dis))) {
+			printf("\n");
+		}
+	}
+
+	if (mmc->high_capacity && !IS_SD(mmc)) {
+		printf("\n\t\t\t*** NOTICE ***\n");
+		printf("*** High Capacity(higher than 2GB) MMC's erase "
+		"minimum size is 512KB ***\n");
+		if (block < 2) {
+			printf("\n %d KB erase Done\n", block*512);
+		} else if ((block >= 2)&&(block < 2048)){
+			printf("\n %d.%d MB erase Done\n", (block/2),
+			(block%2)*5);
+		} else {
+			printf("\n %d.%d GB erase Done\n",
+			(block/2048),
+			((block*1000)/2048) -
+			((block/2048)*1000));
+		}
+	} else {
+		if (block < 2) {
+			printf("\n %d B erase Done\n", block*512);
+		} else if ((block >= 2)&&(block < 2048)){
+			printf("\n %d KB erase Done\n", (block/2));
+		} else if ((block >= 2048)&&(block < (2048 * 1024))){
+			printf("\n %d.%d MB erase Done\n",
+			(block/2048),
+			((block*1000)/2048) -
+			((block/2048)*1000));
+		} else {
+			printf("\n %d.%d GB erase Done\n",
+			(block/(2048*1024)),
+			((block*10)/(2048*1024)) -
+			((block/(2048*1024))*10));
+		}
+	}
+
+	return return_blk;
+}
+#endif
 
 static ulong
 mmc_write_blocks(struct mmc *mmc, ulong start, lbaint_t blkcnt, const void*src)
@@ -398,6 +545,7 @@ mmc_write_blocks(struct mmc *mmc, ulong start, lbaint_t blkcnt, const void*src)
 		return 0;
 	}
 
+#if !defined(CONFIG_SKIP_MMC_STOP_CMD)
 	/* SPI multiblock writes terminate using a special
 	 * token, not a STOP_TRANSMISSION request.
 	 */
@@ -411,7 +559,7 @@ mmc_write_blocks(struct mmc *mmc, ulong start, lbaint_t blkcnt, const void*src)
 			return 0;
 		}
 	}
-
+#endif
 	/* Waiting for the ready status */
 	if (mmc_send_status(mmc, timeout))
 		return 0;
@@ -428,8 +576,12 @@ mmc_bwrite(int dev_num, ulong start, lbaint_t blkcnt, const void*src)
 	if (!mmc)
 		return 0;
 
-	if (mmc_set_blocklen(mmc, mmc->write_bl_len))
+#if defined(CONFIG_MMC_64BIT_BUS) || defined(CONFIG_CPU_EXYNOS5410_EVT2)
+	if (((unsigned int)src % 8) != 0) {
+		printf("\n MMC WRITE : Align error !!! \n");
 		return 0;
+	}
+#endif
 
 	do {
 		cur = (blocks_todo > mmc->b_max) ?  mmc->b_max : blocks_todo;
@@ -447,6 +599,10 @@ int mmc_read_blocks(struct mmc *mmc, void *dst, ulong start, lbaint_t blkcnt)
 {
 	struct mmc_cmd cmd;
 	struct mmc_data data;
+#if defined(CONFIG_MMC_64BIT_BUS) || defined(CONFIG_CPU_EXYNOS5410_EVT2)
+	unsigned char *tmp_align = (unsigned char *)CFG_FASTBOOT_MMC_BUFFER;
+	unsigned char tmp_flag = 0;
+#endif
 
 	if (blkcnt > 1)
 		cmd.cmdidx = MMC_CMD_READ_MULTIPLE_BLOCK;
@@ -461,7 +617,16 @@ int mmc_read_blocks(struct mmc *mmc, void *dst, ulong start, lbaint_t blkcnt)
 	cmd.resp_type = MMC_RSP_R1;
 	cmd.flags = 0;
 
+#if defined(CONFIG_MMC_64BIT_BUS) || defined(CONFIG_CPU_EXYNOS5410_EVT2)
+	if (((unsigned int)dst % 8) != 0) {
+		data.dest = tmp_align;
+		tmp_flag = 1;
+	}
+	else
+		data.dest = dst;
+#else
 	data.dest = dst;
+#endif
 	data.blocks = blkcnt;
 	data.blocksize = mmc->read_bl_len;
 	data.flags = MMC_DATA_READ;
@@ -469,6 +634,7 @@ int mmc_read_blocks(struct mmc *mmc, void *dst, ulong start, lbaint_t blkcnt)
 	if (mmc_send_cmd(mmc, &cmd, &data))
 		return 0;
 
+#if !defined(CONFIG_SKIP_MMC_STOP_CMD)
 	if (blkcnt > 1) {
 		cmd.cmdidx = MMC_CMD_STOP_TRANSMISSION;
 		cmd.cmdarg = 0;
@@ -479,7 +645,11 @@ int mmc_read_blocks(struct mmc *mmc, void *dst, ulong start, lbaint_t blkcnt)
 			return 0;
 		}
 	}
-
+#endif
+#if defined(CONFIG_MMC_64BIT_BUS) || defined(CONFIG_CPU_EXYNOS5410_EVT2)
+	if (tmp_flag)
+		memcpy(dst, tmp_align, blkcnt * 512);
+#endif
 	return blkcnt;
 }
 
@@ -499,9 +669,6 @@ static ulong mmc_bread(int dev_num, ulong start, lbaint_t blkcnt, void *dst)
 			start + blkcnt, mmc->block_dev.lba);
 		return 0;
 	}
-
-	if (mmc_set_blocklen(mmc, mmc->read_bl_len))
-		return 0;
 
 	do {
 		cur = (blocks_todo > mmc->b_max) ?  mmc->b_max : blocks_todo;
@@ -757,10 +924,20 @@ int mmc_change_freq(struct mmc *mmc)
 		return 0;
 
 	/* High Speed is set, there are two types: 52MHz and 26MHz */
-	if (cardtype & MMC_HS_52MHZ)
+	if ((cardtype & MMC_HS_52MHZ_1_8V_3V_IO) || (cardtype & MMC_HS_52MHZ_1_2V_IO))
+		mmc->card_caps |= MMC_MODE_HS_52MHz | MMC_MODE_HS | MMC_MODE_DDR;
+	else if (cardtype & MMC_HS_52MHZ)
 		mmc->card_caps |= MMC_MODE_HS_52MHz | MMC_MODE_HS;
 	else
 		mmc->card_caps |= MMC_MODE_HS;
+
+    #if defined(CONFIG_BOARD_HARDKERNEL) && defined(CONFIG_TOSHIBA_EMMC441)
+    	err = mmc_switch(mmc, EXT_CSD_CMD_SET_NORMAL, EXT_CSD_RST_N_FUNCTION, EXT_CSD_RST_N_ENABLED);
+    	if (err) {
+    		printf("\n%s[%d] : EXT_CSD_RST_N_FUNCTION Set error....... \n\n",__func__,__LINE__);
+    		return err;
+    	}
+	#endif
 
 	return 0;
 }
@@ -1161,6 +1338,10 @@ int mmc_startup(struct mmc *mmc)
 				* (erase_gmul + 1);
 		}
 
+		/* store the partition size info of emmc */
+	        mmc->boot_size_multi = ext_csd[EXT_CSD_BOOT_SIZE_MULTI] * 128
+									* 1024;
+
 		/* store the partition info of emmc */
 		if (ext_csd[EXT_CSD_PARTITIONING_SUPPORT] & PART_SUPPORT)
 			mmc->part_config = ext_csd[EXT_CSD_PART_CONF];
@@ -1176,6 +1357,9 @@ int mmc_startup(struct mmc *mmc)
 
 	/* Restrict card's capabilities by what the host can do */
 	mmc->card_caps &= mmc->host_caps;
+
+	if (mmc_set_blocklen(mmc, mmc->write_bl_len))
+		return 0;
 
 	if (IS_SD(mmc)) {
 		if (mmc->card_caps & MMC_MODE_4BIT) {
@@ -1204,38 +1388,29 @@ int mmc_startup(struct mmc *mmc)
 		else
 			mmc->tran_speed = 25000000;
 	} else {
-		width = ((mmc->host_caps & MMC_MODE_MASK_WIDTH_BITS) >>
-			 MMC_MODE_WIDTH_BITS_SHIFT);
-		for (; width >= 0; width--) {
-			/* Set the card to use 4 bit*/
-			err = mmc_switch(mmc, EXT_CSD_CMD_SET_NORMAL,
-					EXT_CSD_BUS_WIDTH, width);
+		/* check mmc bus width */
+		if ((mmc->host_caps & MMC_MODE_MASK_WIDTH_BITS) ==
+				MMC_MODE_MASK_WIDTH_BITS)
+			width = MMC_MODE_8BIT >> MMC_MODE_WIDTH_BITS_SHIFT;
+		else
+			width = ((mmc->host_caps & MMC_MODE_MASK_WIDTH_BITS) >>
+					MMC_MODE_WIDTH_BITS_SHIFT);
 
-			if (err)
-				continue;
+		if (mmc->card_caps & MMC_MODE_DDR)
+			mmc->ddr = 4;
+		else
+			mmc->ddr = 0;
 
-			if (!width) {
-				mmc_set_bus_width(mmc, 1);
-				break;
-			} else
-				mmc_set_bus_width(mmc, 4 * width);
+		err = mmc_switch(mmc, EXT_CSD_CMD_SET_NORMAL,
+			EXT_CSD_BUS_WIDTH, (width + mmc->ddr));
 
-			err = mmc_send_ext_csd(mmc, test_csd);
-			if (!err && ext_csd[EXT_CSD_PARTITIONING_SUPPORT] \
-				    == test_csd[EXT_CSD_PARTITIONING_SUPPORT]
-				 && ext_csd[EXT_CSD_ERASE_GROUP_DEF] \
-				    == test_csd[EXT_CSD_ERASE_GROUP_DEF] \
-				 && ext_csd[EXT_CSD_REV] \
-				    == test_csd[EXT_CSD_REV]
-				 && ext_csd[EXT_CSD_HC_ERASE_GRP_SIZE] \
-				    == test_csd[EXT_CSD_HC_ERASE_GRP_SIZE]
-				 && memcmp(&ext_csd[EXT_CSD_SEC_CNT], \
-					&test_csd[EXT_CSD_SEC_CNT], 4) == 0) {
+		if (err)
+			printf("ERROR: Switch error!!!\n");
 
-				mmc->card_caps |= width;
-				break;
-			}
-		}
+		if (!width)
+			mmc_set_bus_width(mmc, 1);
+		else
+			mmc_set_bus_width(mmc, 4 * width);
 
 		if (mmc->card_caps & MMC_MODE_HS) {
 			if (mmc->card_caps & MMC_MODE_HS_52MHz)
@@ -1296,7 +1471,11 @@ int mmc_register(struct mmc *mmc)
 	mmc->block_dev.removable = 1;
 	mmc->block_dev.block_read = mmc_bread;
 	mmc->block_dev.block_write = mmc_bwrite;
+#if defined(CONFIG_S5P_MSHC)
+	mmc->block_dev.block_erase = mmc_erase;
+#else
 	mmc->block_dev.block_erase = mmc_berase;
+#endif
 	if (!mmc->b_max)
 		mmc->b_max = CONFIG_SYS_MMC_MAX_BLK_COUNT;
 
@@ -1416,6 +1595,122 @@ int mmc_initialize(bd_t *bis)
 		cpu_mmc_init(bis);
 
 	print_mmc_devices(',');
+
+#if defined(CONFIG_MMC_EARLY_INIT)
+	struct mmc *mmc;
+	int err, dev;
+
+	for (dev = 0; dev < MMC_MAX_CHANNEL; dev++) {
+		printf("MMC Device %d: ", dev);
+		mmc = find_mmc_device(dev);
+		if (mmc) {
+			err = mmc_init(mmc);
+		} else {
+			/* Can not find no more channels */
+			break;
+		}
+		if (err)
+			return err;
+		print_size(mmc->capacity, "\n");
+	}
+#endif
+	return 0;
+}
+
+int emmc_boot_partition_size_change(struct mmc *mmc, u32 bootsize, u32 rpmbsize)
+{
+	int err;
+	struct mmc_cmd cmd;
+
+	/* Only use this command for raw eMMC moviNAND */
+	/* Enter backdoor mode */
+	cmd.cmdidx = 62;
+	cmd.resp_type = MMC_RSP_R1b;
+	cmd.cmdarg = 0xefac62ec;
+	cmd.flags = 0;
+
+	err = mmc_send_cmd(mmc, &cmd, NULL);
+	if (err)
+		return err;
+
+	/* Boot partition changing mode */
+	cmd.cmdidx = 62;
+	cmd.resp_type = MMC_RSP_R1b;
+	cmd.cmdarg = 0xcbaea7;
+	cmd.flags = 0;
+
+	err = mmc_send_cmd(mmc, &cmd, NULL);
+	if (err)
+		return err;
+
+	bootsize = ((bootsize*1024)/128);
+
+	/* Arg: boot partition size */
+	cmd.cmdidx = 62;
+	cmd.resp_type = MMC_RSP_R1b;
+	cmd.cmdarg = bootsize;
+	cmd.flags = 0;
+
+	err = mmc_send_cmd(mmc, &cmd, NULL);
+	if (err)
+		return err;
+
+	rpmbsize = ((rpmbsize*1024)/128);
+
+	/* Arg: RPMB partition size */
+	cmd.cmdidx = 62;
+	cmd.resp_type = MMC_RSP_R1b;
+	cmd.cmdarg = rpmbsize;
+	cmd.flags = 0;
+
+	err = mmc_send_cmd(mmc, &cmd, NULL);
+	if (err)
+		return err;
+
+	return 0;
+}
+int emmc_boot_open(struct mmc *mmc)
+{
+	int err;
+	struct mmc_cmd cmd;
+
+	/* Boot ack enable, boot partition enable , boot partition access */
+	cmd.cmdidx = MMC_CMD_SWITCH;
+	cmd.resp_type = MMC_RSP_R1b;
+	cmd.cmdarg = ((3<<24)|(179<<16)|(((1<<6)|(1<<3)|(1<<0))<<8));
+	cmd.flags = 0;
+
+	err = mmc_send_cmd(mmc, &cmd, NULL);
+	if (err)
+		return err;
+
+	/* 4bit transfer mode at booting time. */
+	cmd.cmdidx = MMC_CMD_SWITCH;
+	cmd.resp_type = MMC_RSP_R1b;
+	cmd.cmdarg = ((3<<24)|(177<<16)|((1<<0)<<8));
+	cmd.flags = 0;
+
+	err = mmc_send_cmd(mmc, &cmd, NULL);
+	if (err)
+		return err;
+
+	return 0;
+}
+
+int emmc_boot_close(struct mmc *mmc)
+{
+	int err;
+	struct mmc_cmd cmd;
+
+	/* Boot ack enable, boot partition enable , boot partition access */
+	cmd.cmdidx = MMC_CMD_SWITCH;
+	cmd.resp_type = MMC_RSP_R1b;
+	cmd.cmdarg = ((3<<24)|(179<<16)|(((1<<6)|(1<<3)|(0<<0))<<8));
+	cmd.flags = 0;
+
+	err = mmc_send_cmd(mmc, &cmd, NULL);
+	if (err)
+		return err;
 
 	return 0;
 }

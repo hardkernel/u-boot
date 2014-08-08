@@ -121,7 +121,9 @@ ifdef CONFIG_PHYLIB
 COBJS-$(CONFIG_CMD_MII) += cmd_mdio.o
 endif
 COBJS-$(CONFIG_CMD_MISC) += cmd_misc.o
+COBJS-$(CONFIG_CMD_MMC) += cmd_movi.o
 COBJS-$(CONFIG_CMD_MMC) += cmd_mmc.o
+COBJS-$(CONFIG_CMD_MMC) += cmd_mmc_fdisk.o
 COBJS-$(CONFIG_CMD_MMC_SPI) += cmd_mmc_spi.o
 COBJS-$(CONFIG_MP) += cmd_mp.o
 COBJS-$(CONFIG_CMD_MTDPARTS) += cmd_mtdparts.o
@@ -159,6 +161,10 @@ COBJS-y += cmd_usb.o
 COBJS-y += usb.o usb_hub.o
 COBJS-$(CONFIG_USB_STORAGE) += usb_storage.o
 endif
+COBJS-$(CONFIG_S3C_USBD) += cmd_usbd.o
+COBJS-$(CONFIG_EXYNOS_USBD3) += cmd_usbd3.o
+COBJS-$(CONFIG_FASTBOOT) += cmd_fastboot.o
+COBJS-$(CONFIG_FASTBOOT) += decompress_ext4.o
 COBJS-$(CONFIG_CMD_XIMG) += cmd_ximg.o
 COBJS-$(CONFIG_YAFFS2) += cmd_yaffs2.o
 COBJS-$(CONFIG_CMD_SPL) += cmd_spl.o

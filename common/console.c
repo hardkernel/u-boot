@@ -415,6 +415,9 @@ int printf(const char *fmt, ...)
 	va_list args;
 	uint i;
 	char printbuffer[CONFIG_SYS_PBSIZE];
+#ifdef CONFIG_RAMDUMP_MODE
+	uint last_buf;
+#endif
 
 #ifndef CONFIG_PRE_CONSOLE_BUFFER
 	if (!gd->have_console)
@@ -430,6 +433,15 @@ int printf(const char *fmt, ...)
 	va_end(args);
 
 	/* Print the string */
+#ifdef CONFIG_RAMDUMP_MODE
+	last_buf = readl(CONFIG_RAMDUMP_LASTBUF);
+	if (((last_buf >> 24) != (CONFIG_RAMDUMP_BASE >> 24)) ||
+		((CONFIG_RAMDUMP_LOGBUF + CONFIG_RAMDUMP_LOGSZ) < (last_buf + i)))
+		last_buf = CONFIG_RAMDUMP_LOGBUF;
+	strncpy((char *)last_buf, printbuffer, i);
+	last_buf += i;
+	writel(last_buf, CONFIG_RAMDUMP_LASTBUF);
+#endif
 	puts(printbuffer);
 	return i;
 }

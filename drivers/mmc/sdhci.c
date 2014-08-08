@@ -31,6 +31,60 @@
 
 void *aligned_buffer;
 
+static void sdhci_dumpregs_err(struct sdhci_host *host)
+{
+	printf("sdhci: ============== REGISTER DUMP ==============\n");
+	printf("sdhci: SDHCI_DMA_ADDRESS:\t0x%08x\n",
+		sdhci_readl(host, SDHCI_DMA_ADDRESS));
+	printf("sdhci: SDHCI_BLOCK_SIZE:\t0x%08x\n",
+		sdhci_readl(host, SDHCI_BLOCK_SIZE));
+	printf("sdhci: SDHCI_ARGUMENT:\t\t0x%08x\n",
+		sdhci_readl(host, SDHCI_ARGUMENT));
+	printf("sdhci: SDHCI_TRANSFER_MODE:\t0x%08x\n",
+		sdhci_readl(host, SDHCI_TRANSFER_MODE));
+	printf("sdhci: SDHCI_COMMAND:\t\t0x%08x\n",
+		sdhci_readw(host, SDHCI_COMMAND));
+	printf("sdhci: SDHCI_RESPONSE0:\t\t0x%08x\n",
+		sdhci_readl(host, SDHCI_RESPONSE));
+	printf("sdhci: SDHCI_RESPONSE1:\t\t0x%08x\n",
+		sdhci_readl(host, SDHCI_RESPONSE + 0x4));
+	printf("sdhci: SDHCI_RESPONSE2:\t\t0x%08x\n",
+		sdhci_readl(host, SDHCI_RESPONSE + 0x8));
+	printf("sdhci: SDHCI_RESPONSE3:\t\t0x%08x\n",
+		sdhci_readl(host, SDHCI_RESPONSE + 0xC));
+	printf("sdhci: SDHCI_BUFFER:\t\t0x%08x\n",
+		sdhci_readl(host, SDHCI_BUFFER));
+	printf("sdhci: SDHCI_PRESENT_STATE:\t0x%08x\n",
+		sdhci_readl(host, SDHCI_PRESENT_STATE));
+	printf("sdhci: SDHCI_HOST_CONTROL:\t0x%08x\n",
+		sdhci_readl(host, SDHCI_HOST_CONTROL));
+	printf("sdhci: SDHCI_CLOCK_CONTROL:\t0x%08x\n",
+		sdhci_readl(host, SDHCI_CLOCK_CONTROL));
+	printf("sdhci: SDHCI_INT_STATUS:\t0x%08x\n",
+		sdhci_readl(host, SDHCI_INT_STATUS));
+	printf("sdhci: SDHCI_INT_ENABLE:\t0x%08x\n",
+		sdhci_readl(host, SDHCI_INT_ENABLE));
+	printf("sdhci: SDHCI_SIGNAL_ENABLE:\t0x%08x\n",
+		sdhci_readl(host, SDHCI_SIGNAL_ENABLE));
+	printf("sdhci: SDHCI_ACMD12_ERR:\t0x%08x\n",
+		sdhci_readl(host, SDHCI_ACMD12_ERR));
+	printf("sdhci: SDHCI_CAPABILITIES:\t0x%08x\n",
+		sdhci_readl(host, SDHCI_CAPABILITIES));
+	printf("sdhci: SDHCI_CAPABILITIES_1:\t0x%08x\n",
+		sdhci_readl(host, SDHCI_CAPABILITIES_1));
+	printf("sdhci: SDHCI_MAX_CURRENT:\t0x%08x\n",
+		sdhci_readl(host, SDHCI_MAX_CURRENT));
+	printf("sdhci: SDHCI_SET_ACMD12_ERROR:\t0x%08x\n",
+		sdhci_readl(host, SDHCI_SET_ACMD12_ERROR));
+	printf("sdhci: SDHCI_ADMA_ERROR:\t0x%08x\n",
+		sdhci_readl(host, SDHCI_ADMA_ERROR));
+	printf("sdhci: SDHCI_ADMA_ADDRESS:\t0x%08x\n",
+		sdhci_readl(host, SDHCI_ADMA_ADDRESS));
+	printf("sdhci: SDHCI_SLOT_INT_STATUS:\t0x%08x\n",
+		sdhci_readl(host, SDHCI_SLOT_INT_STATUS));
+	printf("sdhci: ===========================================\n");
+}
+
 static void sdhci_reset(struct sdhci_host *host, u8 mask)
 {
 	unsigned long timeout;
@@ -110,7 +164,7 @@ static int sdhci_transfer_data(struct sdhci_host *host, struct mmc_data *data,
 		}
 #endif
 		if (timeout-- > 0)
-			udelay(10);
+			mdelay(1);
 		else {
 			printf("Transfer data timeout\n");
 			return -1;
@@ -174,7 +228,7 @@ int sdhci_send_command(struct mmc *mmc, struct mmc_cmd *cmd,
 		mode = SDHCI_TRNS_BLK_CNT_EN;
 		trans_bytes = data->blocks * data->blocksize;
 		if (data->blocks > 1)
-			mode |= SDHCI_TRNS_MULTI;
+			mode |= (SDHCI_TRNS_MULTI | SDHCI_TRNS_ACMD12);
 
 		if (data->flags == MMC_DATA_READ)
 			mode |= SDHCI_TRNS_READ;

@@ -129,7 +129,7 @@ GEN_UBOOT = \
 	UNDEF_SYM=`$(OBJDUMP) -x $(LIBS) | \
 	sed  -n -e 's/.*\($(SYM_PREFIX)__u_boot_cmd_.*\)/-u\1/p'|sort|uniq`;\
 	cd $(obj) && $(LD) $(LDFLAGS) $(LDFLAGS_$(@F)) $$UNDEF_SYM $(__START) \
-		--start-group $(__LIBS) --end-group $(PLATFORM_LIBS) \
+		--start-group $(__LIBS) --end-group $(PLATFORM_SPL_LIBS) \
 		-Map u-boot-spl.map -o u-boot-spl
 
 $(obj)u-boot-spl:	depend $(START) $(LIBS) $(obj)u-boot-spl.lds

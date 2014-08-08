@@ -39,8 +39,25 @@
 
 #include <common.h>
 
+#if defined(CONFIG_BOARD_HARDKERNEL) && defined(CONFIG_TOSHIBA_EMMC441)
+    //-------------------------------------------------------------------------------------------
+    // TOSHIBA eMMC H/W Reset Control(GPD1.0)
+    //-------------------------------------------------------------------------------------------
+    #define GPD1CON		*(volatile unsigned long *)(0x134100A0)
+    #define GPD1DAT		*(volatile unsigned long *)(0x134100A4)
+    #define GPD1PUD		*(volatile unsigned long *)(0x134100A8)
+#endif
+
 int do_reset(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
+    #if defined(CONFIG_BOARD_HARDKERNEL) && defined(CONFIG_TOSHIBA_EMMC441)
+        puts("emmc resetting ...\n");
+        GPD1CON &= 0xFFFFFFF0;      GPD1CON |= 0x00000001;
+        GPD1PUD &= 0xFFFFFFFC;      GPD1DAT &= 0xFE;
+        udelay(50000);
+        GPD1DAT |= 0x01;
+    #endif
+
 	puts ("resetting ...\n");
 
 	udelay (50000);				/* wait 50 ms */

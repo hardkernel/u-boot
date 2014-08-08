@@ -212,11 +212,12 @@ static inline
 int abortboot(int bootdelay)
 {
 	int abort = 0;
+	char input=0;
 
 #ifdef CONFIG_MENUPROMPT
 	printf(CONFIG_MENUPROMPT);
 #else
-	printf("Hit any key to stop autoboot: %2d ", bootdelay);
+	printf("Press 'Enter' or 'Space' to stop autoboot: %2d ", bootdelay);
 #endif
 
 #if defined CONFIG_ZERO_BOOTDELAY_CHECK
@@ -226,9 +227,11 @@ int abortboot(int bootdelay)
 	 */
 	if (bootdelay >= 0) {
 		if (tstc()) {	/* we got a key press	*/
-			(void) getc();  /* consume input	*/
-			puts ("\b\b\b 0");
-			abort = 1;	/* don't auto boot	*/
+			input = getc();  /* consume input	*/
+			if((input==0x20)||(input==0x0d)) {
+				puts ("\b\b\b 0");
+				abort = 1;	/* don't auto boot	*/
+			}
 		}
 	}
 #endif
@@ -240,14 +243,16 @@ int abortboot(int bootdelay)
 		/* delay 100 * 10ms */
 		for (i=0; !abort && i<100; ++i) {
 			if (tstc()) {	/* we got a key press	*/
-				abort  = 1;	/* don't auto boot	*/
-				bootdelay = 0;	/* no more delay	*/
 # ifdef CONFIG_MENUKEY
 				menukey = getc();
 # else
-				(void) getc();  /* consume input	*/
+				input=getc();  /* consume input	*/
 # endif
-				break;
+				if((input==0x20)||(input==0x0d)) {
+					abort  = 1;	/* don't auto boot	*/
+					bootdelay = 0;	/* no more delay	*/
+					break;
+				}
 			}
 			udelay(10000);
 		}
@@ -372,7 +377,7 @@ void main_loop (void)
 	}
 	else
 #endif /* CONFIG_BOOTCOUNT_LIMIT */
-		s = getenv ("bootcmd");
+	s = getenv ("bootcmd");
 
 	debug ("### main_loop: bootcmd=\"%s\"\n", s ? s : "<UNDEFINED>");
 

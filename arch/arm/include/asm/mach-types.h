@@ -1104,6 +1104,12 @@ extern unsigned int __machine_arch_type;
 #define MACH_TYPE_THALES_ADC           3492
 #define MACH_TYPE_UBISYS_P9D_EVP       3493
 #define MACH_TYPE_ATDGP318             3494
+#define MACH_TYPE_SMDK4212             3698
+#define MACH_TYPE_SMDK4412             3765
+#define MACH_TYPE_SMDK5250             3825
+#define MACH_TYPE_SMDK5410             4151
+#define MACH_TYPE_SMDK5420             8002
+#define MACH_TYPE_SMDK5422             8003
 #define MACH_TYPE_OMAP5_SEVM           3777
 
 #ifdef CONFIG_ARCH_EBSA110

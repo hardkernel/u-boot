@@ -44,8 +44,9 @@
 #define MMC_MODE_HS_52MHz	0x010
 #define MMC_MODE_4BIT		0x100
 #define MMC_MODE_8BIT		0x200
-#define MMC_MODE_SPI		0x400
+#define MMC_MODE_DDR    	0x400
 #define MMC_MODE_HC		0x800
+#define MMC_MODE_SPI		0x1000
 
 #define MMC_MODE_MASK_WIDTH_BITS (MMC_MODE_4BIT | MMC_MODE_8BIT)
 #define MMC_MODE_WIDTH_BITS_SHIFT 8
@@ -101,13 +102,16 @@
 #define SD_HIGHSPEED_SUPPORTED	0x00020000
 
 #define MMC_HS_TIMING		0x00000100
-#define MMC_HS_52MHZ		0x2
+#define MMC_HS_52MHZ		(1 << 1)
+#define MMC_HS_52MHZ_1_8V_3V_IO	(1 << 2)
+#define MMC_HS_52MHZ_1_2V_IO	(1 << 3)
 
 #define OCR_BUSY		0x80000000
 #define OCR_HCS			0x40000000
 #define OCR_VOLTAGE_MASK	0x007FFF80
 #define OCR_ACCESS_MODE		0x60000000
 
+#define NORMAL_ERASE		0x00000000
 #define SECURE_ERASE		0x80000000
 
 #define MMC_STATUS_MASK		(~0x0206BF7F)
@@ -151,6 +155,7 @@
  * EXT_CSD fields
  */
 #define EXT_CSD_PARTITIONING_SUPPORT	160	/* RO */
+#define EXT_CSD_SANITIZE_START		165     /* W */
 #define EXT_CSD_ERASE_GROUP_DEF		175	/* R/W */
 #define EXT_CSD_PART_CONF		179	/* R/W */
 #define EXT_CSD_BUS_WIDTH		183	/* R/W */
@@ -159,17 +164,33 @@
 #define EXT_CSD_CARD_TYPE		196	/* RO */
 #define EXT_CSD_SEC_CNT			212	/* RO, 4 bytes */
 #define EXT_CSD_HC_ERASE_GRP_SIZE	224	/* RO */
+#define EXT_CSD_BOOT_SIZE_MULTI         226	/* RO */
+#define EXT_CSD_SEC_FEATURE_SUPPORT	231	/* RO */
+
+#if defined(CONFIG_BOARD_HARDKERNEL) && defined(CONFIG_TOSHIBA_EMMC441)
+    // EXT_CDS Fields
+    #define EXT_CSD_RST_N_FUNCTION  162     /* R/W */
+    // EXT_CDS Field definitions
+    #define EXT_CSD_RST_N_EN_MASK   0x3
+    #define EXT_CSD_RST_N_ENABLED   0x01    /* RST_n is enabled on card */
+#endif
 
 /*
  * EXT_CSD field definitions
  */
+#define EXT_CSD_SEC_ER_EN		(1 << 0)
+#define EXT_CSD_SEC_BD_BLK_EN		(1 << 2)
+#define EXT_CSD_SEC_GB_CL_EN		(1 << 4)
+#define EXT_CSD_SEC_SANITIZE		(1 << 6)  /* v4.5 only */
 
 #define EXT_CSD_CMD_SET_NORMAL		(1 << 0)
 #define EXT_CSD_CMD_SET_SECURE		(1 << 1)
 #define EXT_CSD_CMD_SET_CPSECURE	(1 << 2)
 
-#define EXT_CSD_CARD_TYPE_26	(1 << 0)	/* Card can run at 26MHz */
-#define EXT_CSD_CARD_TYPE_52	(1 << 1)	/* Card can run at 52MHz */
+#define EXT_CSD_CARD_TYPE_26		(1 << 0)/* Card can run at 26MHz */
+#define EXT_CSD_CARD_TYPE_52		(1 << 1)/* Card can run at 52MHz */
+#define EXT_CSD_CARD_TYPE_52_DDR_18_30	(1 << 2)/* Card can run at 52MHz DDR 1.8V or 3V */
+#define EXT_CSD_CARD_TYPE_52_DDR_12	(1 << 3)/* Card can run at 52MHz DDR 1.2V */
 
 #define EXT_CSD_BUS_WIDTH_1	0	/* Card is in 1 bit mode */
 #define EXT_CSD_BUS_WIDTH_4	1	/* Card is in 4 bit mode */
@@ -237,6 +258,7 @@ struct mmc {
 	uint f_max;
 	int high_capacity;
 	uint bus_width;
+	uint ddr;
 	uint clock;
 	uint card_caps;
 	uint host_caps;
@@ -245,6 +267,7 @@ struct mmc {
 	uint csd[4];
 	uint cid[4];
 	ushort rca;
+        uint boot_size_multi;
 	char part_config;
 	char part_num;
 	uint tran_speed;
