@@ -300,6 +300,9 @@ void pmic_init(void)
 	IIC0_EWrite(S2MPS11_ADDR, 0x49, 0xF2);
 	IIC0_EWrite(S2MPS11_ADDR, 0x4F, 0xF2);
 
+	// vdd_Eth(LDO17) set to 3.3V
+	IIC0_EWrite(S2MPS11_ADDR, 0x4D, 0xF2);
+
 	// VDDF_2V85(BUCK10), set to 2.85V
 	IIC0_EWrite(S2MPS11_ADDR, 0x3C, 0xA8);
 
