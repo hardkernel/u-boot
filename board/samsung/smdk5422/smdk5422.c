@@ -300,7 +300,11 @@ int checkboard(void)
 #if defined(CONFIG_MACH_UNIVERSAL5422)
 	printf("\nBoard: UNIVERSAL5422\n");
 #elif defined(CONFIG_MACH_XYREF5422)
+#if defined(CONFIG_BOARD_HARDKERNEL)
+	printf("\nBoard: HardKernel ODROID\n");
+#else
 	printf("\nBoard: XYREF5422\n");
+#endif
 #else
 	printf("\nBoard: SMDK5422\n");
 #endif
@@ -503,7 +507,8 @@ int board_late_init(void)
                     if(filecheck("userdata.img"))   update_image("userdata");
                 }                    
                 
-                if(filecheck("zImage"))         update_raw_image("kernel");
+                if      (filecheck("zImage"))       update_raw_image("kernel");
+                else if (filecheck("zImage-dtb"))   update_raw_image("kernel");
 
                 if(option & OPTION_UPDATE_UBOOT)    {
                     if(filecheck("u-boot.bin")) update_raw_image("bootloader");
