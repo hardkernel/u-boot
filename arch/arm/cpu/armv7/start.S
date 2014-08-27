@@ -126,12 +126,16 @@ IRQ_STACK_START_IN:
 reset:
 	bl	save_boot_params
 	/*
-	 * set the cpu to SVC32 mode
+	 * disable interrupts (FIQ and IRQ), also set the cpu to SVC32 mode,
+	 * except if in HYP mode already
 	 */
 	mrs	r0, cpsr
-	bic	r0, r0, #0x1f
-	orr	r0, r0, #0xd3
-	msr	cpsr,r0
+	and	r1, r0, #0x1f		@ mask mode bits
+	teq	r1, #0x1a		@ test for HYP mode
+	bicne	r0, r0, #0x1f		@ clear all mode bits
+	orrne	r0, r0, #0x13		@ set SVC mode
+	orr	r0, r0, #0xc0		@ disable FIQ and IRQ
+	msr	cpsr_c, r0
 
 #if !defined(CONFIG_TEGRA2)
 /*
@@ -148,6 +152,12 @@ reset:
 	/* Set vector address in CP15 VBAR register */
 	ldr	r0, =_start
 	mcr	p15, 0, r0, c12, c0, 0	@Set VBAR
+
+	/*
+	 * Set vector address in HVBAR register if we booted in HYP mode.
+	 * We reuse the condition flags from the HYP check above.
+	 */
+	mcreq	p15, 4, r0, c12, c0, 0  @Set HVBAR
 #endif
 #endif	/* !Tegra2 */
 
@@ -288,6 +298,12 @@ jump_2_ram:
 	ldr     r0, =_start
 	add     r0, r0, r9
 	mcr     p15, 0, r0, c12, c0, 0  @Set VBAR
+	
+	/* Set vector address in HVBAR register if we're in HYP mode. */
+	mrs	r1, cpsr
+	and	r1, r1, #0x1f		@ mask mode bits
+	teq	r1, #0x1a		@ test for HYP mode
+	mcreq	p15, 4, r0, c12, c0, 0  @Set HVBAR
 #endif
 #endif /* !Tegra2 */
 
@@ -449,20 +465,22 @@ ENDPROC(cpu_init_crit)
 	.macro get_bad_stack
 	ldr	r13, IRQ_STACK_START_IN		@ setup our mode stack (enter
 						@ in banked mode)
-
 	str	lr, [r13]			@ save caller lr in position 0
 						@ of saved stack
 	mrs	lr, spsr			@ get the spsr
 	str	lr, [r13, #4]			@ save spsr in position 1 of
 						@ saved stack
-
+	mrs	lr, cpsr			@ get the cpsr
+	and	lr, lr, #0x1f			@ mask mode bits
+	teq	lr, #0x1a			@ test for HYP mode
+	beq	1f				@ if in HYP skip SVC switch
 	mov	r13, #MODE_SVC			@ prepare SVC-Mode
-	@ msr	spsr_c, r13
 	msr	spsr, r13			@ switch modes, make sure
 						@ moves will execute
 	mov	lr, pc				@ capture return pc
 	movs	pc, lr				@ jump to next instruction &
 						@ switch modes.
+1:
 	.endm
 
 	.macro get_bad_stack_swi
@@ -473,9 +491,10 @@ ENDPROC(cpu_init_crit)
 						@ spots for abort stack
 	str	lr, [r0]			@ save caller lr in position 0
 						@ of saved stack
-	mrs	r0, spsr			@ get the spsr
+	mrs	lr, spsr			@ get the spsr
 	str	lr, [r0, #4]			@ save spsr in position 1 of
 						@ saved stack
+	ldr	lr, [r0]			@ restore lr
 	ldr	r0, [r13]			@ restore r0
 	add	r13, r13, #4			@ pop stack entry
 	.endm

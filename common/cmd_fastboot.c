@@ -73,6 +73,7 @@
 #include <common.h>
 #include <command.h>
 #include <asm/arch/movi_partition.h>
+#include <malloc.h>
 #include <fastboot.h>
 #if defined(CFG_FASTBOOT_SDMMCBSP)
 #include <mmc.h>
@@ -97,7 +98,7 @@ DECLARE_GLOBAL_DATA_PTR;
 //extern int do_fat_fsload (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);
 /* Use do_setenv and do_saveenv to permenantly save data */
 int do_saveenv (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);
-int do_setenv ( cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);
+int do_env_set (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);
 /* Use do_bootm and do_go for fastboot's 'boot' command */
 //int do_bootm (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);
 int do_go (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);
@@ -533,8 +534,8 @@ static int write_to_ptn_sdmmc(struct fastboot_ptentry *ptn, unsigned int addr, u
 
 			sprintf(device, "mmc %d", DEV_NUM);
 			sprintf(buffer, "0x%x", addr);
-			sprintf(start, "0x%x", (ptn->start / CFG_FASTBOOT_SDMMC_BLOCKSIZE));
-			sprintf(length, "0x%x", (ptn->length / CFG_FASTBOOT_SDMMC_BLOCKSIZE));
+			sprintf(start, "0x%llx", (ptn->start / CFG_FASTBOOT_SDMMC_BLOCKSIZE));
+			sprintf(length, "0x%llx", (ptn->length / CFG_FASTBOOT_SDMMC_BLOCKSIZE));
 
 			ret = do_mmcops(NULL, 0, 6, argv);
 		} else {
@@ -726,8 +727,8 @@ static int write_to_ptn_sdmmc(struct fastboot_ptentry *ptn, unsigned int addr, u
 #if defined(CONFIG_BOARD_HARDKERNEL) && defined(CONFIG_ERASE_UBOOT_ENV)
 		if(!strcmp(ptn->name, "bootloader"))    {	// env reset...!!
 		    printf("\nInitialize ENV Area!\n");
-		    sprintf(run_cmd,"mmc write %d 0x40008000 0x%lx 0x%lx", DEV_NUM, MOVI_ENV_POS, MOVI_ENV_BLKCNT);
-			run_command(run_cmd, 0);
+		    sprintf(run_cmd,"mmc write %d 0x40008000 0x%x 0x%x", DEV_NUM, (unsigned)MOVI_ENV_POS, (unsigned)MOVI_ENV_BLKCNT);
+                    run_command(run_cmd, 0);
     	}
 #endif    	
 
@@ -758,7 +759,7 @@ static void start_ramdump(void *buf)
 static int rx_handler (const unsigned char *buffer, unsigned int buffer_size)
 {
 	int ret = 1;
-
+        int status = 0;
 	/* Use 65 instead of 64
 	   null gets dropped
 	   strcpy's need the extra byte */
@@ -925,11 +926,11 @@ static int rx_handler (const unsigned char *buffer, unsigned int buffer_size)
 			
 #if defined(CONFIG_BOARD_HARDKERNEL)
             if((!ptn) && (!strncmp(cmdbuf + 6, "env", sizeof("env"))))  {
-                unsigned char run_cmd[128];
+                char run_cmd[128];
                 
                 memset(run_cmd, 0x00, sizeof(run_cmd));
-    		    sprintf(run_cmd,"mmc write %d 0x40008000 0x%lx 0x%lx", DEV_NUM, MOVI_ENV_POS, MOVI_ENV_BLKCNT);
-    			run_command(run_cmd, 0);
+                sprintf(run_cmd, "mmc write %d 0x40008000 0x%x 0x%x", DEV_NUM, (unsigned)MOVI_ENV_POS, (unsigned)MOVI_ENV_BLKCNT);
+                run_command(run_cmd, 0);
             	printf("partition 'env' erased\n"); sprintf(response, "OKAY");
                 ret = 0;
                 goto send_tx_status;
@@ -942,8 +943,6 @@ static int rx_handler (const unsigned char *buffer, unsigned int buffer_size)
 				goto send_tx_status;
 			}
 
-			char start[32], length[32];
-			int status;
 
 			if (OmPin == BOOT_MMCSD) {
 			printf("erasing(formatting) '%s'\n", ptn->name);
@@ -1095,7 +1094,7 @@ static int rx_handler (const unsigned char *buffer, unsigned int buffer_size)
 				char addr_ramdisk[32];
 				int pageoffset_ramdisk;
 
-				char *bootz[3] = { "bootz", NULL, NULL, };
+				char *bootm[3] = { "bootm", NULL, NULL, };
 				//char *go[3]    = { "go",    NULL, NULL, };
 
 				/*
@@ -1115,12 +1114,12 @@ static int rx_handler (const unsigned char *buffer, unsigned int buffer_size)
 
 				pageoffset_ramdisk = 1 + (fb_hdr->kernel_size + CFG_FASTBOOT_MKBOOTIMAGE_PAGE_SIZE - 1) / CFG_FASTBOOT_MKBOOTIMAGE_PAGE_SIZE;
 
-				bootz[1] = addr_kernel;
+				bootm[1] = addr_kernel;
 				sprintf(addr_kernel, "0x%x", CFG_FASTBOOT_ADDR_KERNEL);
 				memcpy((void *)CFG_FASTBOOT_ADDR_KERNEL,
 					interface.transfer_buffer + CFG_FASTBOOT_MKBOOTIMAGE_PAGE_SIZE,
 					fb_hdr->kernel_size);
-				bootz[2] = addr_ramdisk;
+				bootm[2] = addr_ramdisk;
 				sprintf(addr_ramdisk, "0x%x", CFG_FASTBOOT_ADDR_RAMDISK);
 				memcpy((void *)CFG_FASTBOOT_ADDR_RAMDISK, interface.transfer_buffer +
 					(pageoffset_ramdisk * CFG_FASTBOOT_MKBOOTIMAGE_PAGE_SIZE),
@@ -1148,13 +1147,13 @@ static int rx_handler (const unsigned char *buffer, unsigned int buffer_size)
 					if (strlen ((char *) &fb_hdr->cmdline[0]))
 						set_env ("bootargs", (char *) &fb_hdr->cmdline[0]);
 
-					do_bootz (NULL, 0, 2, bootz);
+					do_bootm (NULL, 0, 2, bootm);
 				} else {
 					/* Raw image, maybe another uboot */
 					printf("Booting raw image..\n");
 
 					//do_go (NULL, 0, 2, go);
-					do_bootz (NULL, 0, 3, bootz);
+					do_bootm (NULL, 0, 3, bootm);
 				}
 				printf("ERROR : bootting failed\n");
 				printf("You should reset the board\n");
@@ -1217,8 +1216,7 @@ static int rx_handler (const unsigned char *buffer, unsigned int buffer_size)
 				}
 
 				pageoffset_ramdisk =
-					1 + (fb_hdr->kernel_size + CFG_FASTBOOT_MKBOOTIMAGE_PAGE_SIZE - 1)
-						/ CFG_FASTBOOT_MKBOOTIMAGE_PAGE_SIZE;
+                                    1 + (fb_hdr->kernel_size + CFG_FASTBOOT_MKBOOTIMAGE_PAGE_SIZE - 1);
 				ptn = fastboot_flash_find_ptn("ramdisk");
 				if (ptn->length && fb_hdr->ramdisk_size > ptn->length)
 				{
@@ -1462,7 +1460,7 @@ static int add_partition_from_environment(char *s, char **retptr)
 
 	size = memparse(s, &s);
 	if (0 == size) {
-		printf("Error:FASTBOOT size of parition is 0\n");
+		printf("Error:FASTBOOT size of partition is 0\n");
 		return 1;
 	}
 
@@ -1474,7 +1472,7 @@ static int add_partition_from_environment(char *s, char **retptr)
 		s++;
 		offset = memparse(s, &s);
 	} else {
-		printf("Error:FASTBOOT offset of parition is not given\n");
+		printf("Error:FASTBOOT offset of partition is not given\n");
 		return 1;
 	}
 
@@ -1543,7 +1541,7 @@ static int add_partition_from_environment(char *s, char **retptr)
 
 	/* Check if this overlaps a static partition */
 	if (check_against_static_partition(&part)) {
-		printf("Adding: %s, offset 0x%8.8x, size 0x%8.8x, flags 0x%8.8x\n",
+		printf("Adding: %s, offset 0x%8.8llx, size 0x%8.8llx, flags 0x%8.8x\n",
 		       part.name, part.start, part.length, part.flags);
 		fastboot_flash_add_ptn(&part);
 	}
@@ -1639,9 +1637,9 @@ static int set_partition_table()
 #endif
 
 #if defined(CFG_FASTBOOT_SDMMCBSP)
-static int set_partition_table_sdmmc()
+static int set_partition_table_sdmmc(void)
 {
-	unsigned long long start, count;
+	unsigned long start, count;
 	unsigned char pid;
 	char dev_num[2];
 
@@ -1693,49 +1691,49 @@ static int set_partition_table_sdmmc()
 
 	/* System */
 	get_mmc_part_info(dev_num, 2, &start, &count, &pid);
-	if (pid != 0x83)
-		goto part_type_error;
-	strcpy(ptable[pcount].name, "system");
-	ptable[pcount].start = start * CFG_FASTBOOT_SDMMC_BLOCKSIZE;
-	ptable[pcount].length = count * CFG_FASTBOOT_SDMMC_BLOCKSIZE;
-	ptable[pcount].flags = FASTBOOT_PTENTRY_FLAGS_USE_MMC_CMD;
-	pcount++;
+	if (pid == 0x83) {
+            strcpy(ptable[pcount].name, "system");
+            ptable[pcount].start = start * CFG_FASTBOOT_SDMMC_BLOCKSIZE;
+            ptable[pcount].length = count * CFG_FASTBOOT_SDMMC_BLOCKSIZE;
+            ptable[pcount].flags = FASTBOOT_PTENTRY_FLAGS_USE_MMC_CMD;
+            pcount++;
+        }
 
 	/* Data */
 	get_mmc_part_info(dev_num, 3, &start, &count, &pid);
-	if (pid != 0x83)
-		goto part_type_error;
-	strcpy(ptable[pcount].name, "userdata");
-	ptable[pcount].start = start * CFG_FASTBOOT_SDMMC_BLOCKSIZE;
-	ptable[pcount].length = count * CFG_FASTBOOT_SDMMC_BLOCKSIZE;
-	ptable[pcount].flags = FASTBOOT_PTENTRY_FLAGS_USE_MMC_CMD;
-	pcount++;
+	if (pid == 0x83) {
+            strcpy(ptable[pcount].name, "userdata");
+            ptable[pcount].start = start * CFG_FASTBOOT_SDMMC_BLOCKSIZE;
+            ptable[pcount].length = count * CFG_FASTBOOT_SDMMC_BLOCKSIZE;
+            ptable[pcount].flags = FASTBOOT_PTENTRY_FLAGS_USE_MMC_CMD;
+            pcount++;
+        }
 
 	/* Cache */
 	get_mmc_part_info(dev_num, 4, &start, &count, &pid);
-	if (pid != 0x83)
-		goto part_type_error;
-	strcpy(ptable[pcount].name, "cache");
-	ptable[pcount].start = start * CFG_FASTBOOT_SDMMC_BLOCKSIZE;
-	ptable[pcount].length = count * CFG_FASTBOOT_SDMMC_BLOCKSIZE;
-	ptable[pcount].flags = FASTBOOT_PTENTRY_FLAGS_USE_MMC_CMD;
-	pcount++;
+	if (pid == 0x83) {
+            strcpy(ptable[pcount].name, "cache");
+            ptable[pcount].start = start * CFG_FASTBOOT_SDMMC_BLOCKSIZE;
+            ptable[pcount].length = count * CFG_FASTBOOT_SDMMC_BLOCKSIZE;
+            ptable[pcount].flags = FASTBOOT_PTENTRY_FLAGS_USE_MMC_CMD;
+            pcount++;
+        }
 
 	/* fat */
 	get_mmc_part_info(dev_num, 1, &start, &count, &pid);
-	if (pid != 0xc)
-		goto part_type_error;
-	strcpy(ptable[pcount].name, "fat");
-	ptable[pcount].start = start * CFG_FASTBOOT_SDMMC_BLOCKSIZE;
-	ptable[pcount].length = count * CFG_FASTBOOT_SDMMC_BLOCKSIZE;
-	ptable[pcount].flags = FASTBOOT_PTENTRY_FLAGS_USE_MMC_CMD;
-	pcount++;
-    if(pcount < 10) printf( "\n***************************" \
-                            "\n*****    Warning!!    *****" \
-                            "\n***************************" \
-                            "\nThis partition is not Android Partition." \
-                            "\nMaybe this partition is a ubuntu partition!" \
-                            "\nif you wanted android partition, use fdisk command before fastboot command.\n\n" );
+	if (pid == 0xc) {
+            strcpy(ptable[pcount].name, "fat");
+            ptable[pcount].start = start * CFG_FASTBOOT_SDMMC_BLOCKSIZE;
+            ptable[pcount].length = count * CFG_FASTBOOT_SDMMC_BLOCKSIZE;
+            ptable[pcount].flags = FASTBOOT_PTENTRY_FLAGS_USE_MMC_CMD;
+            pcount++;
+        }
+    if (pcount < 10) 
+        printf( "\n***************************"             \
+                "\n*****    Warning!!    *****" \
+               "\n***************************" \
+               "\n Boot device is not for Android." \
+               "\nif you want Android partitioning, use fdisk command before fastboot command.\n\n" );
 
 #if 1 // Debug
 	fastboot_flash_dump_ptn();
@@ -1745,11 +1743,6 @@ static int set_partition_table_sdmmc()
 
 	return 0;
 
-part_type_error:
-	printf("Error: No MBR is found at SD/MMC.\n");
-	printf("Hint: use fdisk command to make partitions.\n");
-
-	return -1;
 }
 #endif
 
@@ -1770,6 +1763,11 @@ int do_fastboot (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 	unsigned int addr, size;
 	gflag_reboot = 0;
 
+/*
+ * This doesn't make sense -- the fastboot command is entered 
+ * from the serial port.  You need to put this in the part 
+ * that handles the fastboot protocol, not here.
+ */
 #if defined(CONFIG_BOARD_HARDKERNEL)
 	if ( argc == 2 )    {
 		if (strcmp(argv[1], "poweroff") == 0 ) {
@@ -1821,6 +1819,7 @@ int do_fastboot (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 		return 1;
 #endif
 
+        /* You're in trouble if this ever gets executed: addr and size areuninitiailised */
 	if ((argc > 1) && (0 == strcmp(argv[1], "flash"))){
 		ptn = fastboot_flash_find_ptn(argv[2]);
 		if(ptn == NULL) {
@@ -2199,11 +2198,11 @@ void fastboot_flash_dump_ptn(void)
 #else
 		printf("ptn %d name='%s' ", n, ptn->name);
 		if (n == 0 || ptn->start)
-			printf("start=0x%X ", ptn->start);
+			printf("start=0x%llX ", ptn->start);
 		else
 			printf("start=N/A ");
 		if (ptn->length)
-			printf("len=0x%X(~%dKB) ", ptn->length, ptn->length>>10);
+			printf("len=0x%llX(~%dKB) ", ptn->length, ptn->length>>10);
 		else
 			printf("len=N/A ");
 
