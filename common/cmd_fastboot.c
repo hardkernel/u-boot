@@ -101,7 +101,6 @@ int do_saveenv (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);
 int do_env_set ( cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);
 /* Use do_bootm and do_go for fastboot's 'boot' command */
 //int do_bootm (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);
-int do_bootz(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]);
 int do_go (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);
 
 #if defined(CFG_FASTBOOT_ONENANDBSP)
@@ -1096,7 +1095,7 @@ static int rx_handler (const unsigned char *buffer, unsigned int buffer_size)
 				char addr_ramdisk[32];
 				int pageoffset_ramdisk;
 
-				char *bootz[3] = { "bootz", NULL, NULL, };
+				char *bootm[3] = { "bootm", NULL, NULL, };
 				//char *go[3]    = { "go",    NULL, NULL, };
 
 				/*
@@ -1116,12 +1115,12 @@ static int rx_handler (const unsigned char *buffer, unsigned int buffer_size)
 
 				pageoffset_ramdisk = 1 + (fb_hdr->kernel_size + CFG_FASTBOOT_MKBOOTIMAGE_PAGE_SIZE - 1) / CFG_FASTBOOT_MKBOOTIMAGE_PAGE_SIZE;
 
-				bootz[1] = addr_kernel;
+				bootm[1] = addr_kernel;
 				sprintf(addr_kernel, "0x%x", CFG_FASTBOOT_ADDR_KERNEL);
 				memcpy((void *)CFG_FASTBOOT_ADDR_KERNEL,
 					interface.transfer_buffer + CFG_FASTBOOT_MKBOOTIMAGE_PAGE_SIZE,
 					fb_hdr->kernel_size);
-				bootz[2] = addr_ramdisk;
+				bootm[2] = addr_ramdisk;
 				sprintf(addr_ramdisk, "0x%x", CFG_FASTBOOT_ADDR_RAMDISK);
 				memcpy((void *)CFG_FASTBOOT_ADDR_RAMDISK, interface.transfer_buffer +
 					(pageoffset_ramdisk * CFG_FASTBOOT_MKBOOTIMAGE_PAGE_SIZE),
@@ -1149,13 +1148,13 @@ static int rx_handler (const unsigned char *buffer, unsigned int buffer_size)
 					if (strlen ((char *) &fb_hdr->cmdline[0]))
 						set_env ("bootargs", (char *) &fb_hdr->cmdline[0]);
 
-					do_bootz (NULL, 0, 2, bootz);
+					do_bootm (NULL, 0, 2, bootm);
 				} else {
 					/* Raw image, maybe another uboot */
 					printf("Booting raw image..\n");
 
 					//do_go (NULL, 0, 2, go);
-					do_bootz (NULL, 0, 3, bootz);
+					do_bootm (NULL, 0, 3, bootm);
 				}
 				printf("ERROR : bootting failed\n");
 				printf("You should reset the board\n");
@@ -1799,7 +1798,7 @@ int do_fastboot (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 				return 1;
 			}
 			break;
-		case BOOT_MMCSD:
+	 	case BOOT_MMCSD:
 		case BOOT_EMMC_4_4:
 		case BOOT_EMMC:
 			if (set_partition_table_sdmmc()) {
