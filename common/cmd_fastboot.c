@@ -1700,49 +1700,48 @@ static int set_partition_table_sdmmc(void)
 
 	/* System */
 	get_mmc_part_info(dev_num, 2, &start, &count, &pid);
-	if (pid != 0x83)
-		goto part_type_error;
-	strcpy(ptable[pcount].name, "system");
-	ptable[pcount].start = start * CFG_FASTBOOT_SDMMC_BLOCKSIZE;
-	ptable[pcount].length = count * CFG_FASTBOOT_SDMMC_BLOCKSIZE;
-	ptable[pcount].flags = FASTBOOT_PTENTRY_FLAGS_USE_MMC_CMD;
-	pcount++;
+	if (pid == 0x83) {
+            strcpy(ptable[pcount].name, "system");
+            ptable[pcount].start = start * CFG_FASTBOOT_SDMMC_BLOCKSIZE;
+            ptable[pcount].length = count * CFG_FASTBOOT_SDMMC_BLOCKSIZE;
+            ptable[pcount].flags = FASTBOOT_PTENTRY_FLAGS_USE_MMC_CMD;
+            pcount++;
+        }
 
 	/* Data */
 	get_mmc_part_info(dev_num, 3, &start, &count, &pid);
-	if (pid != 0x83)
-		goto part_type_error;
-	strcpy(ptable[pcount].name, "userdata");
-	ptable[pcount].start = start * CFG_FASTBOOT_SDMMC_BLOCKSIZE;
-	ptable[pcount].length = count * CFG_FASTBOOT_SDMMC_BLOCKSIZE;
-	ptable[pcount].flags = FASTBOOT_PTENTRY_FLAGS_USE_MMC_CMD;
-	pcount++;
+	if (pid == 0x83) {
+            strcpy(ptable[pcount].name, "userdata");
+            ptable[pcount].start = start * CFG_FASTBOOT_SDMMC_BLOCKSIZE;
+            ptable[pcount].length = count * CFG_FASTBOOT_SDMMC_BLOCKSIZE;
+            ptable[pcount].flags = FASTBOOT_PTENTRY_FLAGS_USE_MMC_CMD;
+            pcount++;
+        }
 
 	/* Cache */
 	get_mmc_part_info(dev_num, 4, &start, &count, &pid);
-	if (pid != 0x83)
-		goto part_type_error;
-	strcpy(ptable[pcount].name, "cache");
-	ptable[pcount].start = start * CFG_FASTBOOT_SDMMC_BLOCKSIZE;
-	ptable[pcount].length = count * CFG_FASTBOOT_SDMMC_BLOCKSIZE;
-	ptable[pcount].flags = FASTBOOT_PTENTRY_FLAGS_USE_MMC_CMD;
-	pcount++;
+	if (pid == 0x83) {
+            strcpy(ptable[pcount].name, "cache");
+            ptable[pcount].start = start * CFG_FASTBOOT_SDMMC_BLOCKSIZE;
+            ptable[pcount].length = count * CFG_FASTBOOT_SDMMC_BLOCKSIZE;
+            ptable[pcount].flags = FASTBOOT_PTENTRY_FLAGS_USE_MMC_CMD;
+            pcount++;
+        }
 
 	/* fat */
 	get_mmc_part_info(dev_num, 1, &start, &count, &pid);
-	if (pid != 0xc)
-		goto part_type_error;
-	strcpy(ptable[pcount].name, "fat");
-	ptable[pcount].start = start * CFG_FASTBOOT_SDMMC_BLOCKSIZE;
-	ptable[pcount].length = count * CFG_FASTBOOT_SDMMC_BLOCKSIZE;
-	ptable[pcount].flags = FASTBOOT_PTENTRY_FLAGS_USE_MMC_CMD;
-	pcount++;
-    if(pcount < 10) printf( "\n***************************" \
+	if (pid == 0xc) {
+            strcpy(ptable[pcount].name, "fat");
+            ptable[pcount].start = start * CFG_FASTBOOT_SDMMC_BLOCKSIZE;
+            ptable[pcount].length = count * CFG_FASTBOOT_SDMMC_BLOCKSIZE;
+            ptable[pcount].flags = FASTBOOT_PTENTRY_FLAGS_USE_MMC_CMD;
+            pcount++;
+        }
+    if (pcount < 10) printf("\n***************************" \
                             "\n*****    Warning!!    *****" \
                             "\n***************************" \
-                            "\nThis partition is not Android Partition." \
-                            "\nMaybe this partition is a ubuntu partition!" \
-                            "\nif you wanted android partition, use fdisk command before fastboot command.\n\n" );
+                            "\nThis is not an Android Partitioned device." \
+                            "\nif you want Android partitioning, use fdisk command before fastboot command.\n\n" );
 
 #if 1 // Debug
 	fastboot_flash_dump_ptn();
@@ -1751,12 +1750,6 @@ static int set_partition_table_sdmmc(void)
 	LCD_setleftcolor(0x8a2be2);
 
 	return 0;
-
-part_type_error:
-	printf("Error: No MBR is found at SD/MMC.\n");
-	printf("Hint: use fdisk command to make partitions.\n");
-
-	return -1;
 }
 #endif
 
