@@ -99,8 +99,8 @@ DECLARE_GLOBAL_DATA_PTR;
 /* Use do_setenv and do_saveenv to permenantly save data */
 int do_saveenv (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);
 int do_env_set ( cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);
-/* Use do_bootm and do_go for fastboot's 'boot' command */
-//int do_bootm (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);
+/* Use do_bootm, do_bootz and do_go for fastboot's 'boot' command */
+int do_bootz (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);
 int do_go (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);
 
 #if defined(CFG_FASTBOOT_ONENANDBSP)
@@ -1096,7 +1096,6 @@ static int rx_handler (const unsigned char *buffer, unsigned int buffer_size)
 				int pageoffset_ramdisk;
 
 				char *bootm[3] = { "bootm", NULL, NULL, };
-				//char *go[3]    = { "go",    NULL, NULL, };
 
 				/*
 				 * Use this later to determine if a command line was passed
@@ -1110,14 +1109,16 @@ static int rx_handler (const unsigned char *buffer, unsigned int buffer_size)
 					(image_header_t *)
 					&interface.transfer_buffer[CFG_FASTBOOT_MKBOOTIMAGE_PAGE_SIZE];
 
-				printf("Kernel size: %08x\n", fb_hdr->kernel_size);
+				printf("Kernel size: %08x, @0x%08x\n", fb_hdr->kernel_size, fb_hdr->kernel_addr);
 				printf("Ramdisk size: %08x\n", fb_hdr->ramdisk_size);
 
 				pageoffset_ramdisk = 1 + (fb_hdr->kernel_size + CFG_FASTBOOT_MKBOOTIMAGE_PAGE_SIZE - 1) / CFG_FASTBOOT_MKBOOTIMAGE_PAGE_SIZE;
 
 				bootm[1] = addr_kernel;
-				sprintf(addr_kernel, "0x%x", CFG_FASTBOOT_ADDR_KERNEL);
-				memcpy((void *)CFG_FASTBOOT_ADDR_KERNEL,
+                                if (fb_hdr->kernel_addr < CONFIG_SYS_SDRAM_BASE)
+                                    fb_hdr->kernel_addr =  CFG_FASTBOOT_ADDR_KERNEL;
+				sprintf(addr_kernel, "0x%x", fb_hdr->kernel_addr);
+				memcpy((void *)fb_hdr->kernel_addr,
 					interface.transfer_buffer + CFG_FASTBOOT_MKBOOTIMAGE_PAGE_SIZE,
 					fb_hdr->kernel_size);
 				bootm[2] = addr_ramdisk;
@@ -1150,13 +1151,23 @@ static int rx_handler (const unsigned char *buffer, unsigned int buffer_size)
 
 					do_bootm (NULL, 0, 2, bootm);
 				} else {
+                                        /* Not a uImage, try a zImage */
+                                        bootm[0] = "bootz";
+                                        printf("trying to boot as zImage\n");
+                                        do_bootz(NULL, 0, 2, bootm);
+                                        /* If we got here, the bootz
+                                           attempt failed, probably
+                                           because there was no zImage
+                                           magic number */
+
 					/* Raw image, maybe another uboot */
 					printf("Booting raw image..\n");
-
-					//do_go (NULL, 0, 2, go);
-					do_bootm (NULL, 0, 3, bootm);
+                                        
+                                        bootm[0] = "go";
+					do_go (NULL, 0, 2, bootm);
+					//do_bootz (NULL, 0, 3, bootz);
 				}
-				printf("ERROR : bootting failed\n");
+				printf("ERROR : booting failed\n");
 				printf("You should reset the board\n");
 			}
 			sprintf(response, "FAILinvalid boot image");
