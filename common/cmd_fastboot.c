@@ -72,6 +72,7 @@
 #include <asm/byteorder.h>
 #include <common.h>
 #include <command.h>
+#include <malloc.h>
 #include <asm/arch/movi_partition.h>
 #include <fastboot.h>
 #if defined(CFG_FASTBOOT_SDMMCBSP)
@@ -97,9 +98,10 @@ DECLARE_GLOBAL_DATA_PTR;
 //extern int do_fat_fsload (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);
 /* Use do_setenv and do_saveenv to permenantly save data */
 int do_saveenv (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);
-int do_setenv ( cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);
+int do_env_set ( cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);
 /* Use do_bootm and do_go for fastboot's 'boot' command */
 //int do_bootm (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);
+int do_bootz(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]);
 int do_go (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[]);
 
 #if defined(CFG_FASTBOOT_ONENANDBSP)
@@ -116,7 +118,7 @@ extern int do_nand(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[]);
 int do_movi(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[]);
 int do_mmcops(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[]);
 int do_mmcops_secure(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[]);
-int get_mmc_part_info(char *device_name, int part_num, int *start, int *count, unsigned char *pid);
+int get_mmc_part_info(char *device_name, int part_num, unsigned long long *start, unsigned long long *count, unsigned char *pid);
 struct mmc *find_mmc_device(int dev_num);
 #endif
 
@@ -533,8 +535,8 @@ static int write_to_ptn_sdmmc(struct fastboot_ptentry *ptn, unsigned int addr, u
 
 			sprintf(device, "mmc %d", DEV_NUM);
 			sprintf(buffer, "0x%x", addr);
-			sprintf(start, "0x%x", (ptn->start / CFG_FASTBOOT_SDMMC_BLOCKSIZE));
-			sprintf(length, "0x%x", (ptn->length / CFG_FASTBOOT_SDMMC_BLOCKSIZE));
+			sprintf(start, "0x%llx", (ptn->start / CFG_FASTBOOT_SDMMC_BLOCKSIZE));
+			sprintf(length, "0x%llx", (ptn->length / CFG_FASTBOOT_SDMMC_BLOCKSIZE));
 
 			ret = do_mmcops(NULL, 0, 6, argv);
 		} else {
@@ -726,7 +728,7 @@ static int write_to_ptn_sdmmc(struct fastboot_ptentry *ptn, unsigned int addr, u
 #if defined(CONFIG_BOARD_HARDKERNEL) && defined(CONFIG_ERASE_UBOOT_ENV)
 		if(!strcmp(ptn->name, "bootloader"))    {	// env reset...!!
 		    printf("\nInitialize ENV Area!\n");
-		    sprintf(run_cmd,"mmc write %d 0x40008000 0x%lx 0x%lx", DEV_NUM, MOVI_ENV_POS, MOVI_ENV_BLKCNT);
+		    sprintf(run_cmd,"mmc write %d 0x40008000 0x%lx 0x%lx", DEV_NUM, (unsigned long)MOVI_ENV_POS, (unsigned long)MOVI_ENV_BLKCNT);
 			run_command(run_cmd, 0);
     	}
 #endif    	
@@ -925,10 +927,10 @@ static int rx_handler (const unsigned char *buffer, unsigned int buffer_size)
 			
 #if defined(CONFIG_BOARD_HARDKERNEL)
             if((!ptn) && (!strncmp(cmdbuf + 6, "env", sizeof("env"))))  {
-                unsigned char run_cmd[128];
+                char run_cmd[128];
                 
                 memset(run_cmd, 0x00, sizeof(run_cmd));
-    		    sprintf(run_cmd,"mmc write %d 0x40008000 0x%lx 0x%lx", DEV_NUM, MOVI_ENV_POS, MOVI_ENV_BLKCNT);
+                sprintf(run_cmd,"mmc write %d 0x40008000 0x%lx 0x%lx", DEV_NUM, (unsigned long)MOVI_ENV_POS, (unsigned long)MOVI_ENV_BLKCNT);
     			run_command(run_cmd, 0);
             	printf("partition 'env' erased\n"); sprintf(response, "OKAY");
                 ret = 0;
@@ -942,8 +944,7 @@ static int rx_handler (const unsigned char *buffer, unsigned int buffer_size)
 				goto send_tx_status;
 			}
 
-			char start[32], length[32];
-			int status;
+			int status = 0;
 
 			if (OmPin == BOOT_MMCSD) {
 			printf("erasing(formatting) '%s'\n", ptn->name);
@@ -1186,10 +1187,6 @@ static int rx_handler (const unsigned char *buffer, unsigned int buffer_size)
 
 				struct fastboot_boot_img_hdr *fb_hdr =
 					(struct fastboot_boot_img_hdr *) interface.transfer_buffer;
-				image_header_t *hdr =
-					(image_header_t *)
-					&interface.transfer_buffer[CFG_FASTBOOT_MKBOOTIMAGE_PAGE_SIZE];
-
 				printf("Kernel size: %08x\n", fb_hdr->kernel_size);
 				printf("Ramdisk size: %08x\n", fb_hdr->ramdisk_size);
 
@@ -1543,7 +1540,7 @@ static int add_partition_from_environment(char *s, char **retptr)
 
 	/* Check if this overlaps a static partition */
 	if (check_against_static_partition(&part)) {
-		printf("Adding: %s, offset 0x%8.8x, size 0x%8.8x, flags 0x%8.8x\n",
+		printf("Adding: %s, offset 0x%8.8llx, size 0x%8.8llx, flags 0x%8.8x\n",
 		       part.name, part.start, part.length, part.flags);
 		fastboot_flash_add_ptn(&part);
 	}
@@ -1556,7 +1553,7 @@ static int add_partition_from_environment(char *s, char **retptr)
 }
 
 #if defined(CONFIG_FASTBOOT)
-static int set_partition_table()
+static int set_partition_table(void)
 {
 	char fbparts[4096], *env;
 
@@ -1639,7 +1636,7 @@ static int set_partition_table()
 #endif
 
 #if defined(CFG_FASTBOOT_SDMMCBSP)
-static int set_partition_table_sdmmc()
+static int set_partition_table_sdmmc(void)
 {
 	unsigned long long start, count;
 	unsigned char pid;
@@ -1758,7 +1755,7 @@ part_type_error:
     unsigned char GLOBAL_SYSTEM_PART = 0;		
 #endif
 
-int do_fastboot (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+int do_fastboot (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	int ret = 1;
 	int check_timeout = 0;
@@ -2199,11 +2196,11 @@ void fastboot_flash_dump_ptn(void)
 #else
 		printf("ptn %d name='%s' ", n, ptn->name);
 		if (n == 0 || ptn->start)
-			printf("start=0x%X ", ptn->start);
+			printf("start=0x%llX ", ptn->start);
 		else
 			printf("start=N/A ");
 		if (ptn->length)
-			printf("len=0x%X(~%dKB) ", ptn->length, ptn->length>>10);
+			printf("len=0x%llX(~%lldKB) ", ptn->length, ptn->length>>10);
 		else
 			printf("len=N/A ");
 
