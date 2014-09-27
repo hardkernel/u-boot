@@ -455,6 +455,7 @@ else	 # start aml compress
 ##################################################
 $(obj)u-boot-comp.bin:$(obj)u-boot-orig.bin
 	$(obj)tools/uclpack $< $@
+	@cp $@ sd_fuse/u-boot.bin
 endif   # end CONFIG_UCL
 
 $(obj)u-boot-orig.bin:	$(obj)u-boot

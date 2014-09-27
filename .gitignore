@@ -13,6 +13,8 @@
 *~
 *.swp
 
+sd_fuse/u-boot.bin
+
 #
 # Top-level generic files
 #

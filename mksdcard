@@ -1,9 +1,0 @@
-#!/bin/sh
-BUILD_DIR=$2
-SDCARD=$1
-BINFILE=u-boot-comp.bin
- 
-sudo dd if=${BUILD_DIR}/${BINFILE} of=$1 bs=512 seek=64
-sync
-sudo eject $1
-echo FINISH
