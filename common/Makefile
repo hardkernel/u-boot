@@ -151,7 +151,11 @@ COBJS-$(CONFIG_CMD_MMC) += cmd_mmc_m8.o
 endif
 ifndef CONFIG_STORE_COMPATIBLE
 COBJS-$(CONFIG_CMD_MMC) += cmd_mmc.o
+ifdef CONFIG_MACH_MESON8_ODROIDC
+COBJS-y += cmd_movi.o
 endif
+endif
+
 ifneq ($(CONFIG_NEXT_NAND),y)
 COBJS-$(CONFIG_CMD_MTDPARTS) += cmd_mtdparts.o
 COBJS-$(CONFIG_CMD_NAND) += cmd_nand.o
