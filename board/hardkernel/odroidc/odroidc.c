@@ -922,3 +922,145 @@ struct s3c_plat_otg_data s3c_otg_data = {
         .regs_otg       = DWC_REG_BASE,
 };
 #endif
+
+#if defined(BOARD_LATE_INIT)
+int board_late_init(void)
+{
+        /*
+         * We need to be able to run fastboot even if there isn't a partition
+         * table (so we can use "oem format") and fbt_load_partition_table
+         * already printed an error, so just ignore the error return.
+         */
+	(void)fbt_load_partition_table();
+}
+#endif
+
+/*
+ * Partition table and management
+ */
+struct fbt_partition {
+        const char *name;
+        const char *type;
+        unsigned size_kb;
+};
+
+struct fbt_partition fbt_partitions[] = {
+        {
+                .name = "bootloader",
+                .type = "raw",
+                .size_kb = 512
+        }, {
+                .name = "--ptable",
+                .type = NULL,
+                .size_kb = 16
+        }, {
+                .name = CONFIG_ENV_BLK_PARTITION,       /* "environment" */
+                .type = "raw",
+                .size_kb = 128          /* MUST match with CONFIG_ENV_SIZE */
+        }, {
+                .name = CONFIG_INFO_PARTITION,          /* "device_info" */
+                .type= "raw",
+                .size_kb = 32
+        }, {
+                .name = "logo",
+                .type = "raw",
+                .size_kb = 32 * 1024
+        }, {
+                .name = "misc",
+                .type = "raw",
+                .size_kb = 2 * 1024
+        }, {
+                .name = "recovery",
+                .type = "boot",
+                .size_kb = 8 * 1024
+        }, {
+                .name = "boot",
+                .type = "boot",
+                .size_kb = 8 * 1024
+        }, {
+                .name = "efs",
+                .type = "ext4",
+                .size_kb = 8 * 1024
+        }, {
+                .name = "system",               /* 2nd primary partition */
+                .type = "ext4",
+                .size_kb = 1024 * 1024
+        }, {
+                .name = "cache",                /* 3rd parimary partition */
+                .type = "ext4",
+                .size_kb = 512 * 1024
+        }, {
+                .name = "userdata",             /* 4rd primary partition */
+                .type = "ext4",
+                .size_kb = 1024 * 1024,
+        }, {
+                .name = "fat",                  /* 1st primary partition */
+                .type = "vfat",
+                /* FIXME: MUST fit in remaind blocks after followed by this */
+                .size_kb = 1024 * 1024,
+        }, {
+                .name = 0,
+                .type = 0,
+                .size_kb = 0
+        },
+};
+
+int board_fbt_load_ptbl()
+{
+        u64 length;
+        disk_partition_t ptn;
+        int n;
+        int res = -1;
+        block_dev_desc_t *blkdev;
+        unsigned long blksz = blkdev->blksz;
+
+        blkdev = get_dev_by_name(FASTBOOT_BLKDEV);
+        if (!blkdev) {
+                printf("error getting device %s\n", FASTBOOT_BLKDEV);
+                return -1;
+        }
+
+        if (!blkdev->lba) {
+                printf("device %s has no space\n", FASTBOOT_BLKDEV);
+                return -1;
+        }
+
+        blksz = blkdev->blksz;
+
+        init_part(blkdev);
+        if (blkdev->part_type == PART_TYPE_UNKNOWN) {
+                printf("unknown partition table on %s\n", FASTBOOT_BLKDEV);
+                return -1;
+        }
+
+        printf("lba size = %lu\n", blksz);
+        printf("lba_start      partition_size          name\n");
+        printf("=========  ======================  ==============\n");
+        for (n = CONFIG_MIN_PARTITION_NUM; n <= CONFIG_MAX_PARTITION_NUM; n++) {
+                if (get_partition_info(blkdev, n, &ptn))
+                        continue;       /* No partition <n> */
+                if (!ptn.size || !ptn.blksz || !ptn.name[0])
+                        continue;       /* Partition <n> is empty (or sick) */
+                fbt_add_ptn(&ptn);
+
+                length = (u64)blksz * ptn.size;
+                if (length > (1024 * 1024))
+                        printf(" %8lu  %12llu(%7lluM)  %s\n",
+                                                ptn.start,
+                                                length, length / (1024*1024),
+                                                ptn.name);
+                else
+                        printf(" %8lu  %12llu(%7lluK)  %s\n",
+                                                ptn.start,
+                                                length, length / 1024,
+                                                ptn.name);
+                res = 0;
+        }
+        printf("=========  ======================  ==============\n");
+        return res;
+}
+
+int board_fbt_handle_flash(disk_partition_t *ptn, char *response)
+{
+        return 0;
+}

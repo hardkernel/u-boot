@@ -478,4 +478,49 @@
 
 #endif //CONFIG_MESON_TRUSTZONE
 
+#define BOARD_LATE_INIT
+
+#define CONFIG_CMD_FASTBOOT             /* Support 'fastboot' command */
+
+/* FASTBOOT */
+#ifdef CONFIG_CMD_FASTBOOT
+#define CONFIG_FASTBOOT
+#define CONFIG_USB_GADGET
+#define CONFIG_USBDOWNLOAD_GADGET
+
+#define FASTBOOT_BLKDEV                 "mmc0"
+
+/* Required partition types
+ * DOS partition for regular disk management on MBR
+ * EFI partition for board specific partition management apart from DOS
+ * since AMLogic S805 overlaps generic MBR partition sectors with u-boot.
+ */
+#define CONFIG_DOS_PARTITION
+#define CONFIG_EFI_PARTITION
+
+#define CONFIG_MIN_PARTITION_NUM        1       // Ignore the 1st EFI entry
+#define CONFIG_MAX_PARTITION_NUM        30      // Maximun entries
+
+#define CONFIG_CUSTOM_MBR_LBA           (512 * 1024 / 512)
+
+#define CONFIG_ENV_BLK_PARTITION        "environment"
+#define CONFIG_INFO_PARTITION           "device_info"
+
+#define CONFIG_FASTBOOT_TRANSFER_BUFFER         0x12000000
+#define CONFIG_FASTBOOT_TRANSFER_BUFFER_SIZE    SZ_512M
+#define FASTBOOT_REBOOT_PARAMETER_ADDR  \
+        (CONFIG_FASTBOOT_TRANSFER_BUFFER +CONFIG_FASTBOOT_TRANSFER_BUFFER_SIZE)
+#endif /* CONFIG_CMD_FASTBOOT */
+
+/* USB Gadget */
+#ifdef CONFIG_USB_GADGET
+#define CONFIG_USB_GADGET_DUALSPEED
+#define CONFIG_USB_GADGET_S3C_UDC_OTG
+#define CONFIG_USB_GADGET_VBUS_DRAW     0
+
+#define CONFIG_G_DNL_VENDOR_NUM         0x18d1
+#define CONFIG_G_DNL_PRODUCT_NUM        0x2c10
+#define CONFIG_G_DNL_MANUFACTURER       "Hardkernel Co., Ltd"
+#endif /* CONFIG_USB_GADGET */
+
 #endif //__CONFIG_ODROIDC_H__
