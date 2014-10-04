@@ -65,7 +65,9 @@
 #define EP0_CON		0
 #define EP_MASK		0xF
 
-
+#if defined(CONFIG_MACH_MESON8_ODROIDC)
+extern struct s3c_plat_otg_data s3c_otg_data;
+#else
 #include <asm/arch/usb.h>
 static struct amlogic_usb_config usb_config={
 	0,//        USB_PHY_CLOCK_SEL_XTAL_DIV2,
@@ -95,8 +97,7 @@ struct s3c_plat_otg_data s3c_otg_data = {
         .phy_control	= dwc_otg_start_clk,
         .regs_otg	= IO_USB_A_BASE,
 };
-
-
+#endif
 
 static char *state_names[] = {
 	"WAIT_FOR_SETUP",
