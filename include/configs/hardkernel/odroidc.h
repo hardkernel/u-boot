@@ -122,93 +122,41 @@
 #define CONFIG_BOOTFILE                 boot.img
 
 #define CONFIG_EXTRA_ENV_SETTINGS \
-        "loadaddr=0x12000000\0" \
-        "loadaddr_logo=0x13000000\0" \
-        "testaddr=0x12400000\0" \
-        "console=ttyS0,115200n8\0" \
+        "boardname=ODROIDC\0" \
         "bootm_low=0x00000000\0" \
         "bootm_size=0x80000000\0" \
-        "mmcargs=setenv bootargs console=${console} " \
-        "boardname=ODROIDC\0" \
-        "chipname=8726m8\0" \
-        "initrd_high=60000000\0" \
-        "hdmimode=1080p\0" \
-        "cvbsmode=576cvbs\0" \
-        "outputmode=1080p\0" \
-        "vdac_config=0x10\0" \
-        "initargs=init=/init console=ttyS0,115200n8 no_console_suspend\0" \
-        "video_dev=tvout\0" \
-        "display_width=1920\0" \
-        "display_height=1080\0" \
-        "display_bpp=16\0" \
-        "display_color_format_index=16\0" \
-        "display_layer=osd2\0" \
-        "display_color_fg=0xffff\0" \
-        "display_color_bg=0\0" \
-        "fb_addr=0x7900000\0" \
-        "fb_width=1280\0"\
-        "fb_height=720\0"\
-        "partnum=2\0" \
-        "p0start=1000000\0" \
-        "p0size=400000\0" \
-        "p0path=uImage\0" \
-        "p1start=1400000\0" \
-        "p1size=8000000\0" \
-        "p1path=android.rootfs\0" \
-        "bootstart=0\0" \
-        "bootsize=100000\0" \
         "bootpath=u-boot.bin\0" \
-        "sdcburncfg=aml_sdc_burn.ini\0"\
-        "normalstart=1000000\0" \
-        "normalsize=400000\0" \
+        "bootsize=100000\0" \
+        "bootstart=0\0" \
+        "chipname=8726m8\0" \
+        "console=ttyS0,115200n8\0" \
+        "cvbsmode=480cvbs\0" \
+        "display_bpp=16\0" \
+        "display_color_bg=0\0" \
+        "display_color_fg=0xffff\0" \
+        "display_color_format_index=16\0" \
+        "display_height=1080\0" \
+        "display_layer=osd2\0" \
+        "display_width=1920\0" \
+        "fb_addr=0x7900000\0" \
+        "fb_height=720\0"\
+        "fb_width=1280\0"\
         "firstboot=1\0" \
-        "store=0\0"\
-        "wipe_data=success\0"\
-        "preloaddtb=imgread dtb boot ${loadaddr}\0" \
-        "preboot="\
-                "run prepare;"\
-                "run storeargs;"\
-                "get_rebootmode; clear_rebootmode;"\
-                "echo reboot_mode=${reboot_mode};" \
-                "run switch_bootmode\0" \
-        \
-        "storeargs="\
-                "setenv bootargs ${initargs} vdaccfg=${vdac_config} logo=osd1,loaded,${fb_addr},${outputmode},full hdmimode=${hdmimode} cvbsmode=${cvbsmode} androidboot.firstboot=${firstboot} hdmitx=${cecconfig}\0"\
-\
-        "switch_bootmode="\
-                "if test ${reboot_mode} = factory_reset; then "\
-                        "run recovery;"\
-                "else if test ${wipe_data} = failed; then "\
-                        "echo wipe_data=${wipe_data}; run recovery;"\
-                "else " \
-                "  "\
-                "fi;fi;fi;fi\0" \
-        \
-        "prepare="\
-                "logo size ${outputmode};"\
-                "video open; video clear; video dev open ${outputmode};"\
-                "imgread pic logo bootup ${loadaddr_logo}; "\
-                "bmp display ${bootup_offset}; bmp scale;"\
-                "\0"\
-        \
-        "storeboot="\
-                "echo Booting...; "\
-                "imgread kernel boot ${loadaddr};"\
-                "bootm;"\
-                "\0"\
-        \
-        "recovery="\
-                "echo enter recovery;"\
-                "if mmcinfo; then "\
-                        "if fatload mmc 0 ${loadaddr} recovery.img; then bootm;fi;"\
-                "fi; "\
-                "if imgread kernel recovery ${loadaddr}; then "\
-                        "bootm; "\
-                "else "\
-                        "echo no recovery in flash; "\
-                "fi;\0" \
+        "hdmimode=1080p\0" \
+        "initrd_high=60000000\0" \
+        "loadaddr=0x12000000\0" \
+        "loadaddr_logo=0x14000000\0" \
+        "preboot=setenv bootargs console=${console} no_console_suspend;" \
+                "run showlogo\0" \
+        "preloaddtb=movi read boot 0 ${loadaddr}\0" \
+        "showlogo=logo size ${hdmimode}; video open;" \
+                "video clear; video dev open ${hdmimode};" \
+                "movi read logo 0 ${loadaddr_logo} 600000;" \
+                "bmp display ${loadaddr_logo} 320 180; bmp scale\0" \
+        "vdac_config=0x10\0" \
+        "video_dev=tvout\0"
 
-#define CONFIG_BOOTCOMMAND              "mmcinfo 0; fastboot"
+#define CONFIG_BOOTCOMMAND              "bootm"
 
 #define CONFIG_AUTO_COMPLETE            1
 #define CONFIG_ENV_SIZE                 (32 * 1024)		// unit: bytes
