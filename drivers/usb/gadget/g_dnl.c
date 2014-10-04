@@ -102,6 +102,10 @@ static int g_dnl_do_config(struct usb_configuration *c)
 	if (!strcmp(s, "usb_dnl_dfu"))
 		ret = dfu_add(c);
 #endif
+#if defined(CONFIG_CMD_FASTBOOT)
+        if (!strcmp(s, "usb_dnl_fastboot"))
+                ret = fastboot_add(c);
+#endif
 
 	return ret;
 }
@@ -182,6 +186,11 @@ int g_dnl_register(const char *type)
 	if (!strcmp(type, "dfu")) {
 		strcpy(name, shortname);
 		strcat(name, type);
+#if defined(CONFIG_CMD_FASTBOOT)
+        } else if (!strcmp(type, "fastboot")) {
+		strcpy(name, shortname);
+		strcat(name, type);
+#endif
 	} else {
 		printf("%s: unknown command: %s\n", __func__, type);
 		return -EINVAL;
