@@ -399,6 +399,9 @@
 #endif
 #endif
 
+/* Cache line size */
+#define CONFIG_SYS_CACHELINE_SIZE	64
+
 /* Pass open firmware flat tree*/
 #define CONFIG_OF_LIBFDT                1
 #define CONFIG_DT_PRELOAD               1
