@@ -166,7 +166,7 @@ static int add_ptn(struct ptable *ptbl, u64 first, u64 last, const char *name)
 	struct efi_header *hdr = &ptbl->header;
 	struct efi_entry *entry = ptbl->entry;
 	unsigned n;
-
+#if 0
 	if (first < 34) {
 		printf("partition '%s' overlaps partition table\n", name);
 		return -1;
@@ -176,6 +176,7 @@ static int add_ptn(struct ptable *ptbl, u64 first, u64 last, const char *name)
 		printf("partition '%s' does not fit\n", name);
 		return -1;
 	}
+#endif
 	for (n = 0; n < EFI_ENTRIES; n++, entry++) {
 		if (entry->last_lba)
 			continue;
@@ -228,9 +229,20 @@ static int do_format(void)
 	end_ptbl(ptbl);
 
 	blocks_to_write = DIV_ROUND_UP(sizeof(struct ptable), dev_desc->blksz);
+#if defined(CONFIG_MACH_MESON8_ODROIDC)
+	/* Since the bootloader is located on MBR, the board partition must be
+	 * stored in other sector. In ODROIDC, it is just after bootloader.
+	 * <start sector> = <bootloader size (kB) / 512
+	 */
+	result = dev_desc->block_write(dev_desc->dev,
+                        CONFIG_CUSTOM_MBR_LBA, blocks_to_write, ptbl);
+#else
 	result = dev_desc->block_write(dev_desc->dev, 0, blocks_to_write, ptbl);
+#endif
 	if (result != blocks_to_write) {
-		printf("\nFormat failed, block_write() returned %lu instead of %lu\n", result, blocks_to_write);
+		printf("\nFormat failed, block_write()"
+                                " returned %lu instead of %lu\n",
+                                result, blocks_to_write);
 		return -1;
 	}
 
@@ -241,11 +253,16 @@ static int do_format(void)
 	return 0;
 }
 
-int board_fbt_oem(const char *cmdbuf)
+int board_fbt_oem(const char *cmdbuf, char *response)
 {
-	if (!strcmp(cmdbuf,"format"))
-		return do_format();
-	return -1;
+	if (!strncmp("format", cmdbuf, 6)) {
+                if (do_format() < 0) {
+                        strcpy(response, "FAILFailed to format the partition");
+                }
+                return 0;
+        }
+
+        return -1;
 }
 #endif /* !CONFIG_FASTBOOT_NO_FORMAT */
 
@@ -300,4 +317,3 @@ const char *board_fbt_get_partition_type(const char *partition_name)
 	}
 	return NULL;
 }
-

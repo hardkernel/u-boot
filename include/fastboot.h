@@ -266,7 +266,7 @@ extern void fbt_reset_ptn(void);
 extern void fbt_add_ptn(disk_partition_t *ptn);
 extern int fbt_send_info(const char *info);
 
-int board_fbt_oem(const char *cmdbuf);
+int board_fbt_oem(const char *cmdbuf, char *response);
 void board_fbt_set_reboot_type(enum fbt_reboot_type frt);
 /* gets the reboot type, automatically clearing it for next boot */
 enum fbt_reboot_type board_fbt_get_reboot_type(void);
