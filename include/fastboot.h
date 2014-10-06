@@ -281,4 +281,33 @@ int board_fbt_handle_flash(disk_partition_t *ptn,
 const char *board_fbt_get_partition_type(const char *partition_name);
 
 #endif /* CONFIG_FASTBOOT */
+
+#ifdef DEBUG
+#define FBTDBG(fmt, args...)\
+	printf("DEBUG: [%s]: %d:\n"fmt, __func__, __LINE__, ##args)
+#else
+#define FBTDBG(fmt, args...) do {} while (0)
+#endif
+
+#ifdef INFO
+#define FBTINFO(fmt, args...)\
+	printf("INFO: [%s]: "fmt, __func__, ##args)
+#else
+#define FBTINFO(fmt, args...) do {} while (0)
+#endif
+
+#ifdef WARN
+#define FBTWARN(fmt, args...)\
+	printf("WARNING: [%s]: "fmt, __func__, ##args)
+#else
+#define FBTWARN(fmt, args...) do {} while (0)
+#endif
+
+#ifdef ERR
+#define FBTERR(fmt, args...)\
+	printf("ERROR: [%s]: "fmt, __func__, ##args)
+#else
+#define FBTERR(fmt, args...) do {} while (0)
+#endif
+
 #endif /* FASTBOOT_H */
