@@ -147,20 +147,20 @@ struct cmd_fastboot_interface {
 	   CONFIG_FASTBOOT_TRANSFER_BUFFER_SIZE
 
 	   Set by board	*/
-	u64 transfer_buffer_size;
+	u32 transfer_buffer_size;
 
 	/* Download size, if download has to be done. This can be checked to find
 		whether next packet is a command or a data */
-	u64 d_size;
+	u32 d_size;
 
 	/* Data downloaded so far */
-	u64 d_bytes;
+	u32 d_bytes;
 
 	/* Upload size, if download has to be done */
-	u64 u_size;
+	u32 u_size;
 
 	/* Data uploaded so far */
-	u64 u_bytes;
+	u32 u_bytes;
 
 	/* response with a NULL following to stop strlen() */
 	char response[FASTBOOT_RESPONSE_SIZE];
@@ -266,7 +266,7 @@ extern void fbt_reset_ptn(void);
 extern void fbt_add_ptn(disk_partition_t *ptn);
 extern int fbt_send_info(const char *info);
 
-int board_fbt_oem(const char *cmdbuf, char *response);
+int board_fbt_oem(const char *cmdbuf);
 void board_fbt_set_reboot_type(enum fbt_reboot_type frt);
 /* gets the reboot type, automatically clearing it for next boot */
 enum fbt_reboot_type board_fbt_get_reboot_type(void);
