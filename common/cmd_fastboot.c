@@ -16,6 +16,8 @@ static int do_fastboot(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 {
 	int ret;
 
+        fbt_fastboot_init();
+
 	ret = g_dnl_register("fastboot");
 	if (ret)
 		return ret;

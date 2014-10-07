@@ -253,11 +253,14 @@ static int do_format(void)
 	return 0;
 }
 
-int board_fbt_oem(const char *cmdbuf, char *response)
+int board_fbt_oem(const char *cmdbuf)
 {
 	if (!strncmp("format", cmdbuf, 6)) {
                 if (do_format() < 0) {
-                        strcpy(response, "FAILFailed to format the partition");
+#if 0
+                        strcpy(priv->response,
+                                        "FAILFailed to format the partition");
+#endif
                 }
                 return 0;
         }

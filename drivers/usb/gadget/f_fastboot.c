@@ -39,9 +39,6 @@
 #define TX_ENDPOINT_MAXIMUM_PACKET_SIZE      (0x0040)
 #endif
 
-/* The 64 defined bytes plus \0 */
-#define RESPONSE_LEN	(64 + 1)
-
 #define EP_BUFFER_SIZE			4096
 
 #ifndef CONFIG_ENV_BLK_PARTITION
@@ -50,6 +47,15 @@
 #ifndef CONFIG_INFO_PARTITION
 #define CONFIG_INFO_PARTITION "device_info"
 #endif
+
+#ifndef FASTBOOT_UNLOCKED_ENV_NAME
+#define FASTBOOT_UNLOCKED_ENV_NAME "fastboot_unlocked"
+#endif
+
+static struct cmd_fastboot_interface priv = {
+        .transfer_buffer        = (u8 *)CONFIG_FASTBOOT_TRANSFER_BUFFER,
+        .transfer_buffer_size   = CONFIG_FASTBOOT_TRANSFER_BUFFER_SIZE,
+};
 
 struct f_fastboot {
 	struct usb_function usb_function;
@@ -65,8 +71,6 @@ static inline struct f_fastboot *func_to_fastboot(struct usb_function *f)
 }
 
 static struct f_fastboot *fastboot_func;
-static unsigned int download_size;
-static unsigned int download_bytes;
 static char serial_number[33];	/* what should be the length ?, 33 ? */
 
 static struct usb_endpoint_descriptor fs_ep_in = {
@@ -142,8 +146,6 @@ static void rx_handler_command(struct usb_ep *ep, struct usb_request *req);
 
 static disk_partition_t ptable[MAX_PTN];
 static unsigned int pcount;
-static struct ptable the_ptable;
-static unsigned int dev_info_uninitialized;
 
 static void fastboot_complete(struct usb_ep *ep, struct usb_request *req)
 {
@@ -357,10 +359,9 @@ static disk_partition_t *fastboot_flash_find_ptn(const char *name);
 static void cb_getvar(struct usb_ep *ep, struct usb_request *req)
 {
 	char *cmd = req->buf;
-	char response[RESPONSE_LEN];
 	const char *s;
 
-	strcpy(response, "OKAY");
+	strcpy(priv.response, "OKAY");
 	strsep(&cmd, ":");
 	if (!cmd) {
 		fastboot_tx_write_str("FAILmissing var");
@@ -368,33 +369,35 @@ static void cb_getvar(struct usb_ep *ep, struct usb_request *req)
 	}
 
 	if (!strcmp_l1("version", cmd)) {
-		strncat(response, FASTBOOT_VERSION, sizeof(response));
+		strncat(priv.response, FASTBOOT_VERSION, sizeof(priv.response));
 	} else if (!strcmp_l1("bootloader-version", cmd)) {
-		strncat(response, U_BOOT_VERSION, sizeof(response));
+		strncat(priv.response, U_BOOT_VERSION, sizeof(priv.response));
 	} else if (!strcmp_l1("downloadsize", cmd)) {
 		char str_num[12];
 
-		sprintf(str_num, "%08x", CONFIG_USB_FASTBOOT_BUF_SIZE);
-		strncat(response, str_num, sizeof(response));
+		sprintf(str_num, "%08x", CONFIG_FASTBOOT_TRANSFER_BUFFER_SIZE);
+		strncat(priv.response, str_num, sizeof(priv.response));
 	} else if (!strcmp_l1("serialno", cmd)) {
 		s = getenv("serial#");
 		if (s)
-			strncat(response, s, sizeof(response));
+			strncat(priv.response, s, sizeof(priv.response));
 		else
-			strcpy(response, "FAILValue not set");
+			strcpy(priv.response, "FAILValue not set");
         } else if (!strncmp("partition-type:", cmd, 15)) {
                 const char *partition_name = cmd + 15;
                 const char *type;
 
                 if (!strcmp(partition_name, "all")) {
                         // TODO: List up all partitions on the board
-                        sprintf(response, "OKAY");
+                        sprintf(priv.response, "OKAY");
                 } else {
                         type = board_fbt_get_partition_type(partition_name);
                         if (type) {
-                                strncat(response, type, sizeof(response));
+                                strncat(priv.response, type,
+                                                sizeof(priv.response));
                         } else {
-                                sprintf(response, "FAILunknown partition %s",
+                                sprintf(priv.response,
+                                                "FAILunknown partition %s",
                                                 partition_name);
                         }
                 }
@@ -404,21 +407,21 @@ static void cb_getvar(struct usb_ep *ep, struct usb_request *req)
 
                 ptn = fastboot_flash_find_ptn(partition_name);
                 if (ptn) {
-                        sprintf(response, "OKAY0x%016llx",
+                        sprintf(priv.response, "OKAY0x%016llx",
                                         (uint64_t)ptn->size * ptn->blksz);
                 } else {
-                        sprintf(response, "FAILunknown partition %s",
+                        sprintf(priv.response, "FAILunknown partition %s",
                                         partition_name);
                 }
 	} else {
-		strcpy(response, "FAILVariable not implemented");
+		strcpy(priv.response, "FAILVariable not implemented");
 	}
-	fastboot_tx_write_str(response);
+	fastboot_tx_write_str(priv.response);
 }
 
 static unsigned int rx_bytes_expected(void)
 {
-	int rx_remain = download_size - download_bytes;
+	int rx_remain = priv.d_size - priv.d_bytes;
 	if (rx_remain < 0)
 		return 0;
 	if (rx_remain > EP_BUFFER_SIZE)
@@ -429,8 +432,7 @@ static unsigned int rx_bytes_expected(void)
 #define BYTES_PER_DOT	0x20000
 static void rx_handler_dl_image(struct usb_ep *ep, struct usb_request *req)
 {
-	char response[RESPONSE_LEN];
-	unsigned int transfer_size = download_size - download_bytes;
+	unsigned int transfer_size = priv.d_size - priv.d_bytes;
 	const unsigned char *buffer = req->buf;
 	unsigned int buffer_size = req->actual;
 
@@ -442,34 +444,34 @@ static void rx_handler_dl_image(struct usb_ep *ep, struct usb_request *req)
 	if (buffer_size < transfer_size)
 		transfer_size = buffer_size;
 
-	memcpy((void *)CONFIG_USB_FASTBOOT_BUF_ADDR + download_bytes,
-	       buffer, transfer_size);
+	memcpy((void *)priv.transfer_buffer + priv.d_bytes, buffer,
+                        transfer_size);
 
-	download_bytes += transfer_size;
+	priv.d_bytes += transfer_size;
 
 	/* Check if transfer is done */
-	if (download_bytes >= download_size) {
+	if (priv.d_bytes >= priv.d_size) {
 		/*
-		 * Reset global transfer variable, keep download_bytes because
+		 * Reset global transfer variable, keep priv.d_bytes because
 		 * it will be used in the next possible flashing command
 		 */
-		download_size = 0;
+		priv.d_size = 0;
 		req->complete = rx_handler_command;
 		req->length = EP_BUFFER_SIZE;
 
-		sprintf(response, "OKAY");
-		fastboot_tx_write_str(response);
+		sprintf(priv.response, "OKAY");
+		fastboot_tx_write_str(priv.response);
 
-		printf("\ndownloading of %d bytes finished\n", download_bytes);
+		printf("\ndownloading of %d bytes finished\n", priv.d_bytes);
 	} else {
 		req->length = rx_bytes_expected();
 		if (req->length < ep->maxpacket)
 			req->length = ep->maxpacket;
 	}
 
-	if (download_bytes && !(download_bytes % BYTES_PER_DOT)) {
+	if (priv.d_bytes && !(priv.d_bytes % BYTES_PER_DOT)) {
 		putc('.');
-		if (!(download_bytes % (74 * BYTES_PER_DOT)))
+		if (!(priv.d_bytes % (74 * BYTES_PER_DOT)))
 			putc('\n');
 	}
 	req->actual = 0;
@@ -479,27 +481,27 @@ static void rx_handler_dl_image(struct usb_ep *ep, struct usb_request *req)
 static void cb_download(struct usb_ep *ep, struct usb_request *req)
 {
 	char *cmd = req->buf;
-	char response[RESPONSE_LEN];
 
 	strsep(&cmd, ":");
-	download_size = simple_strtoul(cmd, NULL, 16);
-	download_bytes = 0;
+printf("dennis -- %s,%d -- cmd=[%s]\n", __func__, __LINE__, cmd);
+	priv.d_size = simple_strtoul(cmd, NULL, 16);
+	priv.d_bytes = 0;
 
-	printf("Starting download of %d bytes\n", download_size);
+	printf("Starting download of %d bytes\n", priv.d_size);
 
-	if (0 == download_size) {
-		sprintf(response, "FAILdata invalid size");
-	} else if (download_size > CONFIG_USB_FASTBOOT_BUF_SIZE) {
-		download_size = 0;
-		sprintf(response, "FAILdata too large");
+	if (0 == priv.d_size) {
+		sprintf(priv.response, "FAILdata invalid size");
+	} else if (priv.d_size > CONFIG_FASTBOOT_TRANSFER_BUFFER_SIZE) {
+		priv.d_size = 0;
+		sprintf(priv.response, "FAILdata too large");
 	} else {
-		sprintf(response, "DATA%08x", download_size);
+		sprintf(priv.response, "DATA%08x", priv.d_size);
 		req->complete = rx_handler_dl_image;
 		req->length = rx_bytes_expected();
 		if (req->length < ep->maxpacket)
 			req->length = ep->maxpacket;
 	}
-	fastboot_tx_write_str(response);
+	fastboot_tx_write_str(priv.response);
 }
 
 static void do_bootm_on_complete(struct usb_ep *ep, struct usb_request *req)
@@ -513,7 +515,7 @@ static void do_bootm_on_complete(struct usb_ep *ep, struct usb_request *req)
 	do_bootm(NULL, 0, 2, bootm_args);
 
 	/* This only happens if image is somehow faulty so we start over */
-	do_reset(NULL, 0, 0, NULL);
+//	do_reset(NULL, 0, 0, NULL);
 }
 
 static void cb_boot(struct usb_ep *ep, struct usb_request *req)
@@ -529,7 +531,7 @@ static void set_serial_number(const char *serial_no)
 {
 	strncpy(serial_number, serial_no, sizeof(serial_number));
 	serial_number[sizeof(serial_number) - 1] = '\0';
-	/* priv.serial_no = serial_number; */	// FIXME:
+	priv.serial_no = serial_number;
 	printf("fastboot serial_number = %s\n", serial_number);
 }
 
@@ -562,11 +564,9 @@ static int is_info_partition(disk_partition_t *ptn)
 static void cb_erase(struct usb_ep *ep, struct usb_request *req)
 {
 	// TODO: Implement to erase particular partition requested
-	char response[RESPONSE_LEN];
+	sprintf(priv.response, "OKAY");
 
-	sprintf(response, "OKAY");
-
-	fastboot_tx_write_str(response);
+	fastboot_tx_write_str(priv.response);
 }
 
 void fbt_add_ptn(disk_partition_t *ptn)
@@ -580,23 +580,7 @@ void fbt_add_ptn(disk_partition_t *ptn)
 int fbt_load_partition_table(void)      // FIXME: should static member?
 {
 	disk_partition_t *info_ptn;
-	void *transfer_buffer = (void *)CONFIG_USB_FASTBOOT_BUF_SIZE;
-	unsigned int num_device_info;
-	struct device_info dev_info[FASTBOOT_MAX_NUM_DEVICE_INFO];
 	unsigned int i;
-
-	block_dev_desc_t *dev_desc;
-
-	dev_desc= get_dev_by_name(FASTBOOT_BLKDEV);
-	if (!dev_desc) {
-		printf("error getting device %s\n", FASTBOOT_BLKDEV);
-                return -1;
-	}
-
-	if (!dev_desc->lba) {
-		printf("device %s has no space\n", FASTBOOT_BLKDEV);
-                return -1;
-	}
 
 	if (board_fbt_load_ptbl()) {
 		printf("board_fbt_load_ptbl() failed\n");
@@ -611,8 +595,8 @@ int fbt_load_partition_table(void)      // FIXME: should static member?
 		char *value;
 
 		lbaint_t num_blks = 1;
-		i = partition_read_blks(dev_desc, info_ptn,
-					&num_blks, transfer_buffer);
+		i = partition_read_blks(priv.dev_desc, info_ptn,
+					&num_blks, priv.transfer_buffer);
 		if (i) {
 			printf("failed to read info partition. error=%d\n", i);
 			goto no_existing_info;
@@ -620,7 +604,7 @@ int fbt_load_partition_table(void)      // FIXME: should static member?
 
 		/* parse the info partition read from the device */
 		info_header =
-			(struct info_partition_header *)transfer_buffer;
+			(struct info_partition_header *)priv.transfer_buffer;
 		name = (char *)(info_header + 1);
 		value = name;
 
@@ -636,7 +620,7 @@ int fbt_load_partition_table(void)      // FIXME: should static member?
 			       FASTBOOT_MAX_NUM_DEVICE_INFO);
 			goto no_existing_info;
 		}
-		num_device_info = info_header->num_values;
+		priv.num_device_info = info_header->num_values;
 		/* the name/value pairs are in the format:
 		 *    name1=value1\n
 		 *    name2=value2\n
@@ -644,8 +628,8 @@ int fbt_load_partition_table(void)      // FIXME: should static member?
 		 * to a file
 		 */
 		printf("%d device info entries read from %s partition:\n",
-		       num_device_info, info_ptn->name);
-		for (i = 0; i < num_device_info; i++) {
+		       priv.num_device_info, info_ptn->name);
+		for (i = 0; i < priv.num_device_info; i++) {
 			while (*value != '=')
 				value++;
 			*value++ = '\0';
@@ -653,26 +637,25 @@ int fbt_load_partition_table(void)      // FIXME: should static member?
 			while (*next_name != '\n')
 				next_name++;
 			*next_name++ = '\0';
-			dev_info[i].name = strdup(name);
-			dev_info[i].value = strdup(value);
-			printf("\t%s=%s\n", dev_info[i].name,
-			       dev_info[i].value);
+			priv.dev_info[i].name = strdup(name);
+			priv.dev_info[i].value = strdup(value);
+			printf("\t%s=%s\n", priv.dev_info[i].name,
+			       priv.dev_info[i].value);
 			/* initialize serial number from device info */
 			if (!strcmp(name, FASTBOOT_SERIALNO_BOOTARG))
 				set_serial_number(value);
 			name = next_name;
 		}
-		dev_info_uninitialized = 0;
+		priv.dev_info_uninitialized = 0;
 	} else {
 no_existing_info:
-		dev_info_uninitialized = 1;
+		priv.dev_info_uninitialized = 1;
 		printf("No existing device info found.\n");
 	}
 
-#if 0	// FIXME: Setting the serial number!!
 	if (priv.serial_no == NULL)
 		create_serial_number();
-#endif
+
 	return 0;
 }
 
@@ -702,7 +685,79 @@ void fbt_reset_ptn(void)
 		printf("Unable to load partition table\n");
 }
 
-static int fbt_handle_erase(char *cmdbuf, char* response)
+static void fbt_set_unlocked(int unlocked)
+{
+	char *unlocked_string;
+
+	printf("Setting device to %s\n",
+	       unlocked ? "unlocked" : "locked");
+	priv.unlocked = unlocked;
+	if (unlocked)
+		unlocked_string = "1";
+	else
+		unlocked_string = "0";
+	setenv(FASTBOOT_UNLOCKED_ENV_NAME, unlocked_string);
+#if defined(CONFIG_CMD_SAVEENV)
+	saveenv();
+#endif
+}
+
+void fbt_fastboot_init(void)
+{
+	char *fastboot_unlocked_env;
+
+	priv.flag = 0;
+	priv.d_size = 0;
+	priv.d_bytes = 0;
+	priv.u_size = 0;
+	priv.u_bytes = 0;
+	priv.exit = 0;
+	priv.unlock_pending_start_time = 0;
+
+	priv.unlocked = 1;
+
+	fastboot_unlocked_env = getenv(FASTBOOT_UNLOCKED_ENV_NAME);
+	if (fastboot_unlocked_env) {
+		unsigned long unlocked;
+		if (!strict_strtoul(fastboot_unlocked_env, 10, &unlocked)) {
+			if (unlocked)
+				priv.unlocked = 1;
+			else
+				priv.unlocked = 0;
+		} else {
+			printf("bad env setting %s of %s,"
+			       " initializing to locked\n",
+			       fastboot_unlocked_env,
+			       FASTBOOT_UNLOCKED_ENV_NAME);
+			fbt_set_unlocked(0);
+		}
+	} else {
+		printf("no existing env setting for %s\n",
+		       FASTBOOT_UNLOCKED_ENV_NAME);
+		printf("creating one set to false\n");
+		fbt_set_unlocked(0);
+	}
+	if (priv.unlocked)
+		printf("Device is unlocked\n");
+	else
+		printf("Device is locked\n");
+
+	priv.dev_desc = get_dev_by_name(FASTBOOT_BLKDEV);
+	if (!priv.dev_desc) {
+		FBTERR("%s: fastboot device %s not found\n",
+						__func__, FASTBOOT_BLKDEV);
+		return;
+	}
+
+	/*
+	 * We need to be able to run fastboot even if there isn't a partition
+	 * table (so we can use "oem format") and fbt_load_partition_table
+	 * already printed an error, so just ignore the error return.
+	 */
+	(void)fbt_load_partition_table();
+}
+
+static int fbt_handle_erase(char *cmdbuf)
 {
 	disk_partition_t *ptn;
 	int err;
@@ -710,7 +765,6 @@ static int fbt_handle_erase(char *cmdbuf, char* response)
 	char *num_blocks_str;
 	lbaint_t num_blocks;
 	lbaint_t *num_blocks_p = NULL;
-	block_dev_desc_t *dev_desc;
 
 	/* see if there is an optional num_blocks after the partition name */
 	num_blocks_str = strchr(partition_name, ' ');
@@ -725,17 +779,18 @@ static int fbt_handle_erase(char *cmdbuf, char* response)
 	ptn = fastboot_flash_find_ptn(partition_name);
 	if (ptn == 0) {
 		printf("Partition %s does not exist\n", partition_name);
-		sprintf(response, "FAILpartition does not exist");
+		sprintf(priv.response, "FAILpartition does not exist");
 		return -1;
 	}
 
 #ifndef CONFIG_MFG
 	/* don't allow erasing environment partition or a valid
 	 * device info partition in a production u-boot */
-	if (is_env_partition(ptn) ||
-			(is_info_partition(ptn) && (!dev_info_uninitialized))) {
+        if (is_env_partition(ptn) ||
+                        (is_info_partition(ptn)
+                         && (!priv.dev_info_uninitialized))) {
 		printf("Not allowed to erase %s partition\n", ptn->name);
-		strcpy(response, "FAILnot allowed to erase partition");
+		strcpy(priv.response, "FAILnot allowed to erase partition");
 		return -1;
 	}
 #endif
@@ -745,16 +800,14 @@ static int fbt_handle_erase(char *cmdbuf, char* response)
 	printf("\tstart blk %lu, blk_cnt %lu of %lu\n", ptn->start,
 			num_blocks_p ? num_blocks : ptn->size, ptn->size);
 
-	dev_desc = get_dev_by_name(FASTBOOT_BLKDEV);
-
-	err = partition_erase_blks(dev_desc, ptn, num_blocks_p);
+	err = partition_erase_blks(priv.dev_desc, ptn, num_blocks_p);
 	if (err) {
 		printf("Erasing '%s' FAILED! error=%d\n", ptn->name, err);
-		sprintf(response,
+		sprintf(priv.response,
 				"FAILfailed to erase partition (%d)", err);
 	} else {
 		printf("partition '%s' erased\n", ptn->name);
-		sprintf(response, "OKAY");
+		sprintf(priv.response, "OKAY");
 	}
 
 	return 0;
@@ -905,9 +958,7 @@ static int do_unsparse(disk_partition_t *ptn, unsigned char *source,
 static void cb_flash(struct usb_ep *ep, struct usb_request *req)
 {
 	char *cmd = req->buf;
-	char response[RESPONSE_LEN];
 	disk_partition_t *ptn;
-        u8 *image_start_ptr;
 	block_dev_desc_t *dev_desc;
 
 	dev_desc = get_dev_by_name(FASTBOOT_BLKDEV);
@@ -921,9 +972,9 @@ static void cb_flash(struct usb_ep *ep, struct usb_request *req)
                 return -1;
 	}
 
-        if (0 == download_bytes) {
+        if (0 == priv.d_bytes) {
 		printf("%s: failed, no image downloaded\n", __func__);
-		sprintf(response, "FAILno image downloaded");
+		sprintf(priv.response, "FAILno image downloaded");
                 goto done;
 	}
 
@@ -933,7 +984,7 @@ static void cb_flash(struct usb_ep *ep, struct usb_request *req)
 	if (ptn == 0) {
 		printf("%s: failed, partition %s does not exist\n",
                                 __func__, cmd);
-		sprintf(response, "FAILpartition does not exist");
+		sprintf(priv.response, "FAILpartition does not exist");
                 goto done;
 	}
 
@@ -941,15 +992,15 @@ static void cb_flash(struct usb_ep *ep, struct usb_request *req)
 	 * can include modifying priv.image_start_ptr to flash from
 	 * an address other than the start of the transfer buffer.
 	 */
-	image_start_ptr = CONFIG_USB_FASTBOOT_BUF_ADDR;
+	priv.image_start_ptr = priv.transfer_buffer;
 
-	if (board_fbt_handle_flash(ptn, response)) {
+	if (board_fbt_handle_flash(ptn, &priv)) {
 		/* error case, return.  expect priv.response to be
 		 * set by the board specific handler.
 		 */
 		printf("%s: failed, board_fbt_handle_flash() error\n",
 		       __func__);
-                strcpy(response, "FAILboard_fbt_handle_flash() error");
+                strcpy(priv.response, "FAILboard_fbt_handle_flash() error");
                 goto done;
 	}
 
@@ -958,7 +1009,7 @@ static void cb_flash(struct usb_ep *ep, struct usb_request *req)
 		printf("%s: failed, partition not writable"
 		       " using flash command\n",
 		       __func__);
-		sprintf(response,
+		sprintf(priv.response,
 			"FAILpartition not writable using flash command");
                 goto done;
 	}
@@ -966,68 +1017,67 @@ static void cb_flash(struct usb_ep *ep, struct usb_request *req)
 	/* Check if this is not really a flash write but rather a saveenv */
 	if (is_env_partition(ptn)) {
 		if (!himport_r(&env_htab,
-			       (const char *)image_start_ptr,
-			       download_bytes, '\n', H_NOCLEAR)) {
+			       (const char *)priv.image_start_ptr,
+			       priv.d_bytes, '\n', H_NOCLEAR)) {
 			FBTINFO("Import '%s' FAILED!\n", ptn->name);
-			sprintf(response, "FAIL: Import environment");
+			sprintf(priv.response, "FAIL: Import environment");
                         goto done;
 		}
 
 #if defined(CONFIG_CMD_SAVEENV)
 		if (saveenv()) {
 			printf("Writing '%s' FAILED!\n", ptn->name);
-			sprintf(response, "FAIL: Write partition");
+			sprintf(priv.response, "FAIL: Write partition");
 			return;
 		}
 		printf("saveenv to '%s' DONE!\n", ptn->name);
 #endif
-		sprintf(response, "OKAY");
+		sprintf(priv.response, "OKAY");
 	} else {
 		/* Normal case */
 		printf("writing to partition '%s'\n", ptn->name);
 
 		/* Check if we have sparse compressed image */
-		if (((sparse_header_t *)image_start_ptr)->magic
+		if (((sparse_header_t *)priv.image_start_ptr)->magic
 		    == SPARSE_HEADER_MAGIC) {
 			printf("fastboot: %s is in sparse format\n", ptn->name);
-			if (!do_unsparse(ptn, image_start_ptr,
+			if (!do_unsparse(ptn, priv.image_start_ptr,
 					 ptn->start, ptn->size)) {
 				printf("Writing sparsed: '%s' DONE!\n",
 				       ptn->name);
-				sprintf(response, "OKAY");
+				sprintf(priv.response, "OKAY");
 			} else {
 				printf("Writing sparsed '%s' FAILED!\n",
 				       ptn->name);
-				sprintf(response, "FAIL: Sparsed Write");
+				sprintf(priv.response, "FAIL: Sparsed Write");
 			}
 		} else {
 			/* Normal image: no sparse */
 			int err;
-			loff_t num_bytes = (loff_t)download_bytes;
+			loff_t num_bytes = (loff_t)priv.d_bytes;
 
 			printf("Writing %llu bytes to '%s'\n",
 						num_bytes, ptn->name);
 			err = partition_write_bytes(dev_desc, ptn,
-				&num_bytes, image_start_ptr);
+				&num_bytes, priv.image_start_ptr);
 			if (err) {
 				printf("Writing '%s' FAILED! error=%d\n",
 							ptn->name, err);
-				sprintf(response,
+				sprintf(priv.response,
 					"FAILWrite partition, error=%d", err);
 			} else {
 				printf("Writing '%s' DONE!\n", ptn->name);
-				sprintf(response, "OKAY");
+				sprintf(priv.response, "OKAY");
 			}
 		}
 	} /* Normal Case */
 done:
-	fastboot_tx_write_str(response);
+	fastboot_tx_write_str(priv.response);
 }
 
 static void cb_oem(struct usb_ep *ep, struct usb_request *req)
 {
 	const char *cmd = req->buf + 4;
-	char response[RESPONSE_LEN];
         int i;
 
 	if (!cmd) {
@@ -1043,21 +1093,21 @@ static void cb_oem(struct usb_ep *ep, struct usb_request *req)
         if (strncmp(cmd, "erase ", 6) == 0) {
                 // TODO: Implement to erase specific partiton
                 FBTDBG("oem %s\n", cmd);
-                fbt_handle_erase(cmd, response);
+                fbt_handle_erase(cmd);
                 goto done;
 	} else {
                 /* %fastboot oem [xxx] */
-                if (board_fbt_oem(cmd, response) >= 0) {
-			strcpy(response, "OKAY");
+                if (board_fbt_oem(cmd) >= 0) {
+			strcpy(priv.response, "OKAY");
                         goto done;
                 }
         }
 
         printf("\nfastboot: unsupported oem command %s\n", cmd);
-        strcpy(response, "FAILinvalid command");
+        strcpy(priv.response, "FAILinvalid command");
 
 done:
-	fastboot_tx_write_str(response);
+	fastboot_tx_write_str(priv.response);
 }
 
 struct cmd_dispatch_info {
@@ -1095,6 +1145,7 @@ static void rx_handler_command(struct usb_ep *ep, struct usb_request *req)
 	char *cmdbuf = req->buf;
 	void (*func_cb)(struct usb_ep *ep, struct usb_request *req) = NULL;
 	int i;
+        *(char *)(cmdbuf + req->actual) = 0;
 
 	for (i = 0; i < ARRAY_SIZE(cmd_dispatch_info); i++) {
 		if (!strcmp_l1(cmd_dispatch_info[i].cmd, cmdbuf)) {
