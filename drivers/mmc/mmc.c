@@ -493,7 +493,7 @@ static ulong mmc_berase(int dev_num, ulong start, lbaint_t blkcnt)
 
 	printf("erase %#lx --> %#lx %s\n",start, start + blkcnt - 1, (ret == 0) ? "OK" : "ERROR");
 
-    return ret;
+        return (ret == 0) ? blkcnt : ret;
 }
 
 #include <asm/arch/io.h>
