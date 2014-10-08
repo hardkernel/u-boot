@@ -89,55 +89,6 @@
 #define CONFIG_SYS_I2C_SPEED            400000
 #endif /* CONFIG_AML_I2C */
 
-#define CONFIG_CMD_AML
-/*
- * PMU definitions, all PMU devices must be include involved
- * in CONFIG_PLATFORM_HAS_PMU
- */
-#define CONFIG_PLATFORM_HAS_PMU
-#ifdef CONFIG_PLATFORM_HAS_PMU
-
-#define CONFIG_AML1218
-
-#ifdef CONFIG_AML1218
-#define CONFIG_UBOOT_BATTERY_PARAMETER_TEST         // uboot can do battery curve test
-#define CONFIG_UBOOT_BATTERY_PARAMETERS             // uboot can get battery parameters from dts 
-
-#define CONFIG_ENABLE_PMU_WATCHDOG
-//#define CONFIG_RESET_TO_SYSTEM
-
-/* under some cases default voltage of PMU output is
- * not suitable for application, so you should take care
- * of the following macros which defined initial voltage
- * of each power domain when in SPL stage of uboot.
- */
-#define CONFIG_POWER_SPL        // init power for all domians, must have
-#define CONFIG_VCCK_VOLTAGE             1050        // CPU core
-#define CONFIG_VDDAO_VOLTAGE            1050        // VDDAO (running)
-#define CONFIG_DDR_VOLTAGE              1500        // DDR
-
-#define CONFIG_IOREF_1V8                1800        // IOREV_1.8v
-#define CONFIG_VCC2V8                   2850        // VCC2.8v
-#define CONFIG_DVDD_1V8                 1800        // DVDD18
-#define CONFIG_VCC2V5                   2500        // VCC2.5v
-#define CONFIG_VCC_CAM                  1500        // voltage
-#define CONFIG_VDDIO_AO28               3150        // VDDIO_AO28
-#define CONFIG_VCC3V3                   3150        // VCC3.3v
-
-/* set to 1 if you want decrease voltage of VDDAO when suspend */
-#define CONFIG_VDDAO_VOLTAGE_CHANGE     1
-
-#ifdef CONFIG_VDDAO_VOLTAGE_CHANGE
-#define CONFIG_VDDAO_SUSPEND_VOLTAGE    825         // VDDAO (suspend)
-#define INCREASE_HDMI_POWER
-#endif /* CONFIG_VDDAO_VOLTAGE_CHANGE */
-
-/* DCDC mode switch when suspend */
-#define CONFIG_DCDC_PFM_PMW_SWITCH      1
-#endif /* CONFIG_AML1218 */
-
-#endif /* CONFIG_PLATFORM_HAS_PMU */
-
 #define CONFIG_SDIO_B1                  1
 #define CONFIG_SDIO_A                   1
 #define CONFIG_SDIO_B                   1
