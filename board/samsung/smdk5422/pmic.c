@@ -296,6 +296,9 @@ void pmic_init(void)
 	
 #if defined(CONFIG_BOARD_HARDKERNEL)
 
+	// VDD33_USB3_0,VDD33_USB3_1,VDD33_UHOST (LDO9) set to 3.3V
+	IIC0_EWrite(S2MPS11_ADDR, 0x45, 0xF2);
+
 	// ETH_3V3 (LDO15, LDO17) set to 3.3V
 	IIC0_EWrite(S2MPS11_ADDR, 0x4B, 0xF2);
 	IIC0_EWrite(S2MPS11_ADDR, 0x4D, 0xF2);
