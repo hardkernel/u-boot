@@ -15,8 +15,6 @@
 //UART Sectoion
 #define CONFIG_CONS_INDEX               2
 #define CONFIG_IR_REMOTE_WAKEUP         1
-#define CONFIG_NEXT_NAND
-//#define CONFIG_SECURE_NAND            1
 //support "boot,bootd"
 //#define CONFIG_CMD_BOOTD              1
 //#define CONFIG_AML_I2C                1
@@ -32,16 +30,9 @@
 #define CONFIG_DDR_SIZE_IND_ADDR        0xd9000000      /* pass memory size, spl->uboot */
 #endif
 
-#ifdef CONFIG_NEXT_NAND
-/* read the actual size of boot.img/recovery.img/logo.img use cmd 'imgread' */
-#define CONFIG_CMD_IMGREAD              1
-#define CONFIG_SHA1
-#endif//#ifdef CONFIG_NEXT_NAND
-
 #define CONFIG_CMD_PWM                  1
 
 // Enable storage devices
-#define CONFIG_CMD_NAND                 1
 #define CONFIG_VIDEO_AML                1
 #define CONFIG_CMD_BMP                  1
 #define CONFIG_VIDEO_AMLTVOUT           1
@@ -222,30 +213,8 @@
 #define CONFIG_AUTO_COMPLETE            1
 #define CONFIG_ENV_SIZE                 (64 * 1024)
 
-#define CONFIG_STORE_COMPATIBLE
-
-#ifdef  CONFIG_STORE_COMPATIBLE
-//spi
-#define CONFIG_ENV_OVERWRITE
-#define CONFIG_CMD_SAVEENV
-#define CONFIG_ENV_SECT_SIZE            0x1000
-#define CONFIG_ENV_IN_SPI_OFFSET        0x100000
-//nand
-#define CONFIG_ENV_IN_NAND_OFFSET       0x400000
-#define CONFIG_ENV_BLOCK_NUM            2
-//emmc
-#define CONFIG_SYS_MMC_ENV_DEV          1
-#define CONFIG_ENV_IN_EMMC_OFFSET       0x80000
-
-#else
-
 //#define CONFIG_SPI_BOOT 1
 #define CONFIG_MMC_BOOT
-//#define CONFIG_NAND_BOOT 1
-
-#ifdef CONFIG_NAND_BOOT
-#define CONFIG_AMLROM_NANDBOOT          1
-#endif
 
 #ifdef CONFIG_SPI_BOOT
 #define CONFIG_ENV_OVERWRITE
@@ -253,12 +222,6 @@
 #define CONFIG_CMD_SAVEENV
 #define CONFIG_ENV_SECT_SIZE            0x10000
 #define CONFIG_ENV_OFFSET               0x1f0000
-#elif defined CONFIG_NAND_BOOT
-#define CONFIG_ENV_IS_IN_AML_NAND
-#define CONFIG_CMD_SAVEENV
-#define CONFIG_ENV_OVERWRITE
-#define CONFIG_ENV_OFFSET               0x400000
-#define CONFIG_ENV_BLOCK_NUM            2
 #elif defined CONFIG_MMC_BOOT
 #define CONFIG_ENV_IS_IN_MMC
 #define CONFIG_CMD_SAVEENV
@@ -267,9 +230,6 @@
 #else
 #define CONFIG_ENV_IS_NOWHERE           1
 #endif
-
-#endif
-
 
 //----------------------------------------------------------------------
 //Please set the M8 CPU clock(unit: MHz)
