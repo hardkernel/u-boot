@@ -1258,7 +1258,7 @@ int mmc_register(struct mmc *mmc)
 
 	list_add_tail (&mmc->link, &mmc_devices);
 
-	printf("[%s] add mmc dev_num=%d, port=%d, if_type=%d\n",
+	debug("[%s] add mmc dev_num=%d, port=%d, if_type=%d\n",
             __FUNCTION__, mmc->block_dev.dev, sdio->sdio_port, mmc->block_dev.if_type);
 
 	return 0;
@@ -1337,7 +1337,7 @@ int mmc_init(struct mmc *mmc)
 	}
 
 	err = mmc_startup(mmc);
-	printf("[%s] %s:%d, if_type=%d, initialized %s!\n", __FUNCTION__,
+	debug("[%s] %s:%d, if_type=%d, initialized %s!\n", __FUNCTION__,
             mmc->name, mmc->block_dev.dev, mmc->block_dev.if_type, (err==0)? "OK": "ERROR");
 	if(err){
 		return err;
