@@ -18,6 +18,11 @@
 #include <amlogic/aml_pmu_common.h>
 #endif
 
+#if CONFIG_CMD_MMC
+#include <mmc.h>
+#include <asm/arch/sdio.h>
+#endif
+
 DECLARE_GLOBAL_DATA_PTR;
 
 #ifdef CONFIG_UBOOT_BATTERY_PARAMETERS
@@ -143,190 +148,114 @@ u32 get_board_rev(void)
 }
 
 #if CONFIG_CMD_MMC
-#include <mmc.h>
-#include <asm/arch/sdio.h>
 static int  sdio_init(unsigned port)
 {
-	switch(port)
-	{
-	case SDIO_PORT_A:
-		break;
-	case SDIO_PORT_B:
-		//todo add card detect
-		setbits_le32(P_PREG_PAD_GPIO5_EN_N,1<<29);//CARD_6
-		break;
-	case SDIO_PORT_C:
-		//enable pull up
-		clrbits_le32(P_PAD_PULL_UP_REG3, 0xff<<0);
-		break;
-	case SDIO_PORT_XC_A:
-		break;
-	case SDIO_PORT_XC_B:
-		break;
-	case SDIO_PORT_XC_C:
-		break;
-	default:
-		break;
-	}
+        switch (port) {
+        case SDIO_PORT_B:
+                setbits_le32(P_PREG_PAD_GPIO5_EN_N, 1 << 29);
+                break;
+        case SDIO_PORT_C:
+                clrbits_le32(P_PAD_PULL_UP_REG3, 0xff << 0);
+                break;
+        }
 
-	return cpu_sdio_init(port);
+        return cpu_sdio_init(port);
 }
 
 extern unsigned sdio_debug_1bit_flag;
+
 static int  sdio_detect(unsigned port)
 {
-	int ret;
-	switch(port)
-	{
-	case SDIO_PORT_A:
-		break;
-	case SDIO_PORT_B:
-		setbits_le32(P_PREG_PAD_GPIO5_EN_N,1<<29);//CARD_6
-		ret=readl(P_PREG_PAD_GPIO5_I)&(1<<29)?0:1;
+        switch (port) {
+        case SDIO_PORT_B:
+#if 0   // FIXME: Card detect?
+                int ret;
+                setbits_le32(P_PREG_PAD_GPIO5_EN_N, 1 << 29);
+                ret = readl(P_PREG_PAD_GPIO5_I) & (1 << 29) ? 0 : 1;
+#endif
+                // If UART pinmux is set, debug board inserted
+                if ((readl(P_PERIPHS_PIN_MUX_8) & (3<<9))) {
+                        if (!(readl(P_PREG_PAD_GPIO0_I) & (1 << 22))) {
+                                printf("sdio debug board detected, sd card with 1bit mode\n");
+                                sdio_debug_1bit_flag = 1;
+                        }
+                        else {
+                                printf("sdio debug board detected, no sd card in\n");
+                                sdio_debug_1bit_flag = 0;
+                                return 1;
+                        }
+                }
 
-		if((readl(P_PERIPHS_PIN_MUX_8)&(3<<9))){ //if uart pinmux set, debug board in
-			if(!(readl(P_PREG_PAD_GPIO0_I)&(1<<22))){
-				printf("sdio debug board detected, sd card with 1bit mode\n");
-				sdio_debug_1bit_flag = 1;
-			}
-			else{
-				printf("sdio debug board detected, no sd card in\n");
-				sdio_debug_1bit_flag = 0;
-				return 1;
-			}
-		}
+                break;
+        case SDIO_PORT_C:
+                break;
+        }
 
-		break;
-	case SDIO_PORT_C:
-		break;
-	case SDIO_PORT_XC_A:
-		break;
-	case SDIO_PORT_XC_B:
-		break;
-	case SDIO_PORT_XC_C:
-		break;
-	default:
-		break;
-	}
-
-	return 0;
+        return 0;
 }
 
 static void sdio_pwr_prepare(unsigned port)
 {
-	/// @todo NOT FINISH
-	///do nothing here
-	cpu_sdio_pwr_prepare(port);
+        cpu_sdio_pwr_prepare(port);
 }
 
 static void sdio_pwr_on(unsigned port)
 {
-	switch(port)
-	{
-	case SDIO_PORT_A:
-		break;
-	case SDIO_PORT_B:
-		clrbits_le32(P_PREG_PAD_GPIO5_O,(1<<31)); //CARD_8
-		clrbits_le32(P_PREG_PAD_GPIO5_EN_N,(1<<31));
-		/// @todo NOT FINISH
-		break;
-	case SDIO_PORT_C:
-		break;
-	case SDIO_PORT_XC_A:
-		break;
-	case SDIO_PORT_XC_B:
-		break;
-	case SDIO_PORT_XC_C:
-		break;
-	default:
-		break;
-	}
-	return;
+        switch (port) {
+        case SDIO_PORT_B:
+                clrbits_le32(P_PREG_PAD_GPIO5_O, 1 << 31);      // CARD_8
+                clrbits_le32(P_PREG_PAD_GPIO5_EN_N, 1 << 31);
+                break;
+        case SDIO_PORT_C:
+                break;
+        }
 }
 static void sdio_pwr_off(unsigned port)
 {
-	/// @todo NOT FINISH
-	switch(port)
-	{
-	case SDIO_PORT_A:
-		break;
-	case SDIO_PORT_B:
-		setbits_le32(P_PREG_PAD_GPIO5_O,(1<<31)); //CARD_8
-		clrbits_le32(P_PREG_PAD_GPIO5_EN_N,(1<<31));
-		break;
-	case SDIO_PORT_C:
-		break;
-	case SDIO_PORT_XC_A:
-		break;
-	case SDIO_PORT_XC_B:
-		break;
-	case SDIO_PORT_XC_C:
-		break;
-	default:
-		break;
-	}
-	return;
+        switch (port) {
+        case SDIO_PORT_B:
+                setbits_le32(P_PREG_PAD_GPIO5_O, (1 << 31));    // CARD_8
+                clrbits_le32(P_PREG_PAD_GPIO5_EN_N, (1 << 31));
+                break;
+        case SDIO_PORT_C:
+                break;
+        }
 }
 
-// #define CONFIG_TSD      1
-static void board_mmc_register(unsigned port)
+#define NR_STORAGE      2
+
+struct mmc mmc[NR_STORAGE];
+
+struct aml_card_sd_info sdio_dev[NR_STORAGE] = {
+        {
+                .sdio_port = SDIO_PORT_B,
+                .name = "eMMC",
+                .sdio_init = sdio_init,
+                .sdio_detect = sdio_detect,
+                .sdio_pwr_on = sdio_pwr_on,
+                .sdio_pwr_off = sdio_pwr_off,
+                .sdio_pwr_prepare = sdio_pwr_prepare,
+        }, {
+                .sdio_port = SDIO_PORT_C,
+                .name = "SDCARD",
+                .sdio_init = sdio_init,
+                .sdio_detect = sdio_detect,
+                .sdio_pwr_on = sdio_pwr_on,
+                .sdio_pwr_off = sdio_pwr_off,
+                .sdio_pwr_prepare = sdio_pwr_prepare,
+        },
+};
+
+int board_mmc_init(bd_t *bis)
 {
-	struct aml_card_sd_info *aml_priv=cpu_sdio_get(port);
+        int i;
 
-	struct mmc *mmc = (struct mmc *)malloc(sizeof(struct mmc));
-	if(aml_priv==NULL||mmc==NULL)
-		return;
-	memset(mmc,0,sizeof(*mmc));
-	aml_priv->sdio_init=sdio_init;
-	aml_priv->sdio_detect=sdio_detect;
-	aml_priv->sdio_pwr_off=sdio_pwr_off;
-	aml_priv->sdio_pwr_on=sdio_pwr_on;
-	aml_priv->sdio_pwr_prepare=sdio_pwr_prepare;
+        mmc[0].block_dev.if_type = IF_TYPE_SD;
+        mmc[1].block_dev.if_type = IF_TYPE_MMC;
 
-	// #ifdef CONFIG_TSD
-	// // if(mmc->block_dev.dev > 0)//tsd
-	// mmc->block_dev.if_type = IF_TYPE_SD;
-	// #else
-	// // if(mmc->block_dev.dev > 0)//emmc
-	// mmc->block_dev.if_type = IF_TYPE_MMC;
-	// #endif
-
-	sdio_register(mmc, aml_priv);
-
-#if 0
-	strncpy(mmc->name,aml_priv->name,31);
-	mmc->priv = aml_priv;
-	aml_priv->removed_flag = 1;
-	aml_priv->inited_flag = 0;
-	aml_priv->sdio_init=sdio_init;
-	aml_priv->sdio_detect=sdio_detect;
-	aml_priv->sdio_pwr_off=sdio_pwr_off;
-	aml_priv->sdio_pwr_on=sdio_pwr_on;
-	aml_priv->sdio_pwr_prepare=sdio_pwr_prepare;
-	mmc->send_cmd = aml_sd_send_cmd;
-	mmc->set_ios = aml_sd_cfg_swth;
-	mmc->init = aml_sd_init;
-	mmc->rca = 1;
-	mmc->voltages = MMC_VDD_33_34;
-	mmc->host_caps = MMC_MODE_4BIT | MMC_MODE_HS;
-	//mmc->host_caps = MMC_MODE_4BIT;
-	mmc->bus_width = 1;
-	mmc->clock = 300000;
-	mmc->f_min = 200000;
-	mmc->f_max = 50000000;
-	mmc_register(mmc);
-#endif
-}
-int board_mmc_init(bd_t	*bis)
-{
-#ifdef CONFIG_VLSI_EMULATOR
-	board_mmc_register(SDIO_PORT_A);
-#else
-	board_mmc_register(SDIO_PORT_B);
-#endif
-	board_mmc_register(SDIO_PORT_C);
-	//	board_mmc_register(SDIO_PORT_B1);
-	return 0;
+        for (i = 0; i < NR_STORAGE; i++) {
+                sdio_register(&mmc[i], &sdio_dev[i]);
+        }
 }
 #endif
 
