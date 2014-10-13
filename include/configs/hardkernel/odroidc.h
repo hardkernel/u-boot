@@ -373,10 +373,10 @@
  * since AMLogic S805 overlaps generic MBR partition sectors with u-boot.
  */
 #define CONFIG_DOS_PARTITION
-#define CONFIG_EFI_PARTITION
+//#define CONFIG_EFI_PARTITION
 
-#define CONFIG_MIN_PARTITION_NUM        1       // Ignore the 1st EFI entry
-#define CONFIG_MAX_PARTITION_NUM        30      // Maximun entries
+//#define CONFIG_MIN_PARTITION_NUM        1       // Ignore the 1st EFI entry
+//#define CONFIG_MAX_PARTITION_NUM        30      // Maximun entries
 
 #define CONFIG_CUSTOM_MBR_LBA           (512 * 1024 / 512)
 

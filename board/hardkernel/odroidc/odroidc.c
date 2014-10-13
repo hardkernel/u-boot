@@ -873,15 +873,11 @@ struct fbt_partition {
         unsigned size_kb;
 };
 
-struct fbt_partition fbt_partitions[] = {
+struct fbt_partition sys_partitions[] = {
         {
                 .name = "bootloader",
                 .type = "raw",
                 .size_kb = 512
-        }, {
-                .name = "--ptable",
-                .type = NULL,
-                .size_kb = 32
         }, {
                 .name = CONFIG_ENV_BLK_PARTITION,       /* "environment" */
                 .type = "raw",
@@ -911,6 +907,14 @@ struct fbt_partition fbt_partitions[] = {
                 .type = "ext4",
                 .size_kb = 6 * 1024
         }, {
+                .name = 0,
+                .type = 0,
+                .size_kb = 0
+        },
+};
+
+struct fbt_partition fbt_partitions[] = {
+        {
                 .name = "system",               /* 2nd primary partition */
                 .type = "ext4",
                 .size_kb = 1024 * 1024
@@ -934,14 +938,29 @@ struct fbt_partition fbt_partitions[] = {
         },
 };
 
+void board_print_partition(block_dev_desc_t *blkdev, disk_partition_t *ptn)
+{
+        u64 length = (u64)blkdev->blksz * ptn->size;
+
+        if (length > (1024 * 1024))
+                printf(" %8lu  %12llu(%7lluM)  %s\n",
+                                ptn->start,
+                                length, length / (1024*1024),
+                                ptn->name);
+        else
+                printf(" %8lu  %12llu(%7lluK)  %s\n",
+                                ptn->start,
+                                length, length / 1024,
+                                ptn->name);
+}
+
 int board_fbt_load_ptbl()
 {
-        u64 length;
         disk_partition_t ptn;
         int n;
         int res = -1;
         block_dev_desc_t *blkdev;
-        unsigned long blksz = blkdev->blksz;
+        unsigned next;
 
         blkdev = get_dev_by_name(FASTBOOT_BLKDEV);
         if (!blkdev) {
@@ -954,17 +973,35 @@ int board_fbt_load_ptbl()
                 return -1;
         }
 
-        blksz = blkdev->blksz;
-
         init_part(blkdev);
         if (blkdev->part_type == PART_TYPE_UNKNOWN) {
                 printf("unknown partition table on %s\n", FASTBOOT_BLKDEV);
                 return -1;
         }
 
-        printf("lba size = %lu\n", blksz);
+        printf("lba size = %lu\n", blkdev->blksz);
         printf("lba_start      partition_size          name\n");
         printf("=========  ======================  ==============\n");
+
+        next = 0;
+        for (n = 0; sizeof(sys_partitions) / sizeof(sys_partitions[0]); n++) {
+                struct fbt_partition *fbt = &sys_partitions[n];
+
+                if (!fbt->name || !fbt->size_kb || !fbt->type)
+                        break;
+
+                ptn.start = next;
+                ptn.size = fbt->size_kb * 2;
+                ptn.blksz = blkdev->blksz;
+                strncpy(ptn.name, fbt->name, sizeof(ptn.name));
+                strncpy(ptn.type, fbt->type, sizeof(ptn.type));
+
+                fbt_add_ptn(&ptn);
+                board_print_partition(blkdev, &ptn);
+
+                next += ptn.size;
+        }
+
         for (n = CONFIG_MIN_PARTITION_NUM; n <= CONFIG_MAX_PARTITION_NUM; n++) {
                 if (get_partition_info(blkdev, n, &ptn))
                         continue;       /* No partition <n> */
@@ -972,20 +1009,13 @@ int board_fbt_load_ptbl()
                         continue;       /* Partition <n> is empty (or sick) */
                 fbt_add_ptn(&ptn);
 
-                length = (u64)blksz * ptn.size;
-                if (length > (1024 * 1024))
-                        printf(" %8lu  %12llu(%7lluM)  %s\n",
-                                                ptn.start,
-                                                length, length / (1024*1024),
-                                                ptn.name);
-                else
-                        printf(" %8lu  %12llu(%7lluK)  %s\n",
-                                                ptn.start,
-                                                length, length / 1024,
-                                                ptn.name);
+                board_print_partition(blkdev, &ptn);
+
                 res = 0;
         }
+
         printf("=========  ======================  ==============\n");
+
         return res;
 }
 
