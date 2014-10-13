@@ -881,7 +881,7 @@ struct fbt_partition fbt_partitions[] = {
         }, {
                 .name = "--ptable",
                 .type = NULL,
-                .size_kb = 16
+                .size_kb = 32
         }, {
                 .name = CONFIG_ENV_BLK_PARTITION,       /* "environment" */
                 .type = "raw",
