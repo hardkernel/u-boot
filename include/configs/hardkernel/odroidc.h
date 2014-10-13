@@ -211,7 +211,8 @@
 #define CONFIG_BOOTCOMMAND              "mmcinfo 0; fastboot"
 
 #define CONFIG_AUTO_COMPLETE            1
-#define CONFIG_ENV_SIZE                 (64 * 1024)
+#define CONFIG_ENV_SIZE                 (32 * 1024)		// unit: bytes
+#define CONFIG_ENV_OFFSET               ((512 + 32) * 1024)	// unit: bytes
 
 #define CONFIG_MMC_BOOT
 
@@ -219,7 +220,6 @@
 #define CONFIG_ENV_IS_IN_MMC
 #define CONFIG_CMD_SAVEENV
 #define CONFIG_SYS_MMC_ENV_DEV          0
-#define CONFIG_ENV_OFFSET               0x1000000
 #else
 #define CONFIG_ENV_IS_NOWHERE           1
 #endif

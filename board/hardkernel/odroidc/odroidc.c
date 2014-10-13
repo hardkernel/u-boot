@@ -885,7 +885,7 @@ struct fbt_partition fbt_partitions[] = {
         }, {
                 .name = CONFIG_ENV_BLK_PARTITION,       /* "environment" */
                 .type = "raw",
-                .size_kb = 128          /* MUST match with CONFIG_ENV_SIZE */
+                .size_kb = CONFIG_ENV_SIZE / 1024
         }, {
                 .name = CONFIG_INFO_PARTITION,          /* "device_info" */
                 .type= "raw",
