@@ -905,11 +905,11 @@ struct fbt_partition fbt_partitions[] = {
         }, {
                 .name = "boot",
                 .type = "boot",
-                .size_kb = 8 * 1024
+                .size_kb = 10 * 1024
         }, {
                 .name = "efs",
                 .type = "ext4",
-                .size_kb = 8 * 1024
+                .size_kb = 6 * 1024
         }, {
                 .name = "system",               /* 2nd primary partition */
                 .type = "ext4",
