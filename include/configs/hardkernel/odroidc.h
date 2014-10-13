@@ -208,7 +208,7 @@
                         "echo no recovery in flash; "\
                 "fi;\0" \
 
-#define CONFIG_BOOTCOMMAND              "run storeboot"
+#define CONFIG_BOOTCOMMAND              "mmcinfo 0; fastboot"
 
 #define CONFIG_AUTO_COMPLETE            1
 #define CONFIG_ENV_SIZE                 (64 * 1024)
