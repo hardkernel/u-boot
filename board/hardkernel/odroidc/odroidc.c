@@ -938,6 +938,15 @@ struct fbt_partition fbt_partitions[] = {
         },
 };
 
+static unsigned userptn_start_lba = 0;
+static unsigned userptn_end_lba = 0;
+
+void board_user_partition(unsigned *start, unsigned *end)
+{
+        *start = userptn_start_lba;
+        *end = userptn_end_lba;
+}
+
 void board_print_partition(block_dev_desc_t *blkdev, disk_partition_t *ptn)
 {
         u64 length = (u64)blkdev->blksz * ptn->size;
@@ -1002,6 +1011,9 @@ int board_fbt_load_ptbl()
                 next += ptn.size;
         }
 
+        userptn_start_lba = next;
+        userptn_end_lba = blkdev->lba - 1;
+
         for (n = CONFIG_MIN_PARTITION_NUM; n <= CONFIG_MAX_PARTITION_NUM; n++) {
                 if (get_partition_info(blkdev, n, &ptn))
                         continue;       /* No partition <n> */
@@ -1010,6 +1022,11 @@ int board_fbt_load_ptbl()
                 fbt_add_ptn(&ptn);
 
                 board_print_partition(blkdev, &ptn);
+
+                if ((ptn.start < userptn_start_lba)
+                                || (ptn.start + ptn.size  > userptn_end_lba)) {
+                        printf("  ** Partition is not allocated properly!!! **\n");
+                }
 
                 res = 0;
         }
