@@ -213,16 +213,9 @@
 #define CONFIG_AUTO_COMPLETE            1
 #define CONFIG_ENV_SIZE                 (64 * 1024)
 
-//#define CONFIG_SPI_BOOT 1
 #define CONFIG_MMC_BOOT
 
-#ifdef CONFIG_SPI_BOOT
-#define CONFIG_ENV_OVERWRITE
-#define CONFIG_ENV_IS_IN_SPI_FLASH
-#define CONFIG_CMD_SAVEENV
-#define CONFIG_ENV_SECT_SIZE            0x10000
-#define CONFIG_ENV_OFFSET               0x1f0000
-#elif defined CONFIG_MMC_BOOT
+#if defined CONFIG_MMC_BOOT
 #define CONFIG_ENV_IS_IN_MMC
 #define CONFIG_CMD_SAVEENV
 #define CONFIG_SYS_MMC_ENV_DEV          0
@@ -340,32 +333,6 @@
 #define CONFIG_CMD_LOGO
 
 /*
-* CPU switch test for uboot
-*/
-//#define CONFIG_TEST_CPU_SWITCH 1
-
-
-#if defined(CONFIG_VLSI_EMULATOR)
-   //#undef CFG_DDR3_2GB
-
-   #undef CONFIG_BOOTCOMMAND
-   #define CONFIG_BOOTCOMMAND           "echo Uboot for PXP is run..."
-
-   //#define CFG_DDR3_1GB
-   #define CONFIG_NO_DDR_PUB_VT_CHECK   1
-
-   #undef CONFIG_CMD_AUTOSCRIPT
-
-   #undef CONFIG_CMD_REBOOT
-   #undef CONFIG_PREBOOT
-
-   #undef CONFIG_AML_SUSPEND
-   #undef CONFIG_CMD_SUSPEND
-
-   #define CONFIG_AML_DISABLE_CRYPTO_UBOOT
-#endif
-
-/*
  * Secure OS
  */
 #ifdef CONFIG_MESON_TRUSTZONE
@@ -384,7 +351,6 @@
 #define CONFIG_CMD_RANDOM
 /* secure storage support both spi and emmc */
 #define CONFIG_SECURE_MMC
-#define CONFIG_SPI_NOR_SECURE_STORAGE
 #endif // CONFIG_SECURE_STORAGE_BURNED
 
 #endif //CONFIG_MESON_TRUSTZONE
