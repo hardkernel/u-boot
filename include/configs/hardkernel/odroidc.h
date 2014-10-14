@@ -367,16 +367,11 @@
 
 #define FASTBOOT_BLKDEV                 "mmc0"
 
-/* Required partition types
- * DOS partition for regular disk management on MBR
- * EFI partition for board specific partition management apart from DOS
- * since AMLogic S805 overlaps generic MBR partition sectors with u-boot.
- */
+#ifndef CONFIG_DOS_PARTITION
 #define CONFIG_DOS_PARTITION
-//#define CONFIG_EFI_PARTITION
+#endif
 
-//#define CONFIG_MIN_PARTITION_NUM        1       // Ignore the 1st EFI entry
-//#define CONFIG_MAX_PARTITION_NUM        30      // Maximun entries
+#define CONFIG_MAX_PARTITION_NUM        20      // Max partitions for fastboot
 
 #define CONFIG_CUSTOM_MBR_LBA           (512 * 1024 / 512)
 
