@@ -45,17 +45,6 @@
     defined(CONFIG_MMC) || \
     defined(CONFIG_SYSTEMACE)
 
-#ifndef CONFIG_CUSTOM_MBR_LBA
-#define CONFIG_CUSTOM_MBR_LBA		0
-#endif
-
-static unsigned long efi_block_read(block_dev_desc_t * dev_desc,
-		unsigned long start, lbaint_t blkcnt, void *buffer)
-{
-	return dev_desc->block_read(dev_desc->dev,
-			CONFIG_CUSTOM_MBR_LBA + start, blkcnt, buffer);
-}
-
 /* Convert char[2] in little endian format to the host format integer
  */
 static inline unsigned short le16_to_int(unsigned char *le16)
@@ -224,7 +213,7 @@ int test_part_efi(block_dev_desc_t * dev_desc)
 	legacy_mbr legacymbr;
 
 	/* Read legacy MBR from block 0 and validate it */
-	if ((efi_block_read(dev_desc, 0, 1, (ulong *) & legacymbr) != 1)
+	if ((dev_desc->block_read(dev_desc->dev, 0, 1, (ulong *) & legacymbr) != 1)
 		|| (is_pmbr_valid(&legacymbr) != 1)) {
 		return -1;
 	}
@@ -296,7 +285,7 @@ static int is_gpt_valid(block_dev_desc_t * dev_desc, unsigned long long lba,
 	}
 
 	/* Read GPT Header from device */
-	if (efi_block_read(dev_desc, lba, 1, pgpt_head) != 1) {
+	if (dev_desc->block_read(dev_desc->dev, lba, 1, pgpt_head) != 1) {
 		printf("*** ERROR: Can't read GPT header ***\n");
 		return 0;
 	}
@@ -418,7 +407,7 @@ static gpt_entry *alloc_read_gpt_entries(block_dev_desc_t * dev_desc,
 	}
 
 	/* Read GPT Entries from device */
-	if (efi_block_read (dev_desc,
+	if (dev_desc->block_read (dev_desc->dev,
 		(unsigned long)le64_to_int(pgpt_head->partition_entry_lba),
 		(lbaint_t) (count / GPT_BLOCK_SIZE), pte)
 		!= (count / GPT_BLOCK_SIZE)) {
