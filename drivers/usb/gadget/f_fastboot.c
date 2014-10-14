@@ -483,7 +483,7 @@ static void cb_download(struct usb_ep *ep, struct usb_request *req)
 	char *cmd = req->buf;
 
 	strsep(&cmd, ":");
-printf("dennis -- %s,%d -- cmd=[%s]\n", __func__, __LINE__, cmd);
+
 	priv.d_size = simple_strtoul(cmd, NULL, 16);
 	priv.d_bytes = 0;
 
