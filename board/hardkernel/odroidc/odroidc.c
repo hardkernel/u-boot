@@ -21,6 +21,7 @@
 #if CONFIG_CMD_MMC
 #include <mmc.h>
 #include <asm/arch/sdio.h>
+#include <asm/arch/romboot.h>
 #endif
 
 DECLARE_GLOBAL_DATA_PTR;
@@ -229,7 +230,7 @@ struct mmc mmc[NR_STORAGE];
 struct aml_card_sd_info sdio_dev[NR_STORAGE] = {
         {
                 .sdio_port = SDIO_PORT_B,
-                .name = "eMMC",
+                .name = "SDCARD",
                 .sdio_init = sdio_init,
                 .sdio_detect = sdio_detect,
                 .sdio_pwr_on = sdio_pwr_on,
@@ -237,7 +238,7 @@ struct aml_card_sd_info sdio_dev[NR_STORAGE] = {
                 .sdio_pwr_prepare = sdio_pwr_prepare,
         }, {
                 .sdio_port = SDIO_PORT_C,
-                .name = "SDCARD",
+                .name = "eMMC",
                 .sdio_init = sdio_init,
                 .sdio_detect = sdio_detect,
                 .sdio_pwr_on = sdio_pwr_on,
@@ -248,13 +249,23 @@ struct aml_card_sd_info sdio_dev[NR_STORAGE] = {
 
 int board_mmc_init(bd_t *bis)
 {
-        int i;
+        /* FIXME: 0xd901ff00 is from bootrom code itself. It must be corrected
+         * with specific address of SoC.
+         */
+        T_ROM_BOOT_RETURN_INFO *bootinfo = (T_ROM_BOOT_RETURN_INFO*)0xd901ff00;
 
-        mmc[0].block_dev.if_type = IF_TYPE_SD;
-        mmc[1].block_dev.if_type = IF_TYPE_MMC;
+        if (0 == bootinfo->boot_id) { // Boot from eMMC
+                mmc[0].block_dev.if_type = IF_TYPE_MMC;
+                mmc[1].block_dev.if_type = IF_TYPE_SD;
 
-        for (i = 0; i < NR_STORAGE; i++) {
-                sdio_register(&mmc[i], &sdio_dev[i]);
+                sdio_register(&mmc[0], &sdio_dev[1]);
+                sdio_register(&mmc[1], &sdio_dev[0]);
+        } else { // Boot from SDCARD
+                mmc[0].block_dev.if_type = IF_TYPE_SD;
+                mmc[1].block_dev.if_type = IF_TYPE_MMC;
+
+                sdio_register(&mmc[0], &sdio_dev[0]);
+                sdio_register(&mmc[1], &sdio_dev[1]);
         }
 }
 #endif
