@@ -855,12 +855,16 @@ struct s3c_plat_otg_data s3c_otg_data = {
 #if defined(BOARD_LATE_INIT)
 int board_late_init(void)
 {
-        /*
-         * We need to be able to run fastboot even if there isn't a partition
-         * table (so we can use "oem format") and fbt_load_partition_table
-         * already printed an error, so just ignore the error return.
-         */
-	(void)fbt_load_partition_table();
+        block_dev_desc_t *dev_desc;
+
+        dev_desc = get_dev_by_name("mmc0");
+        if (dev_desc) {
+                printf("============================================================\n");
+                dev_print(dev_desc);
+                printf("------------------------------------------------------------\n");
+                print_part_dos(dev_desc);
+                printf("============================================================\n");
+        }
 }
 #endif
 
