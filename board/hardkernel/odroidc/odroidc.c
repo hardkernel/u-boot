@@ -24,6 +24,10 @@
 #include <asm/arch/romboot.h>
 #endif
 
+#if defined(CONFIG_FASTBOOT)
+#include <fastboot.h>
+#endif
+
 DECLARE_GLOBAL_DATA_PTR;
 
 #ifdef CONFIG_UBOOT_BATTERY_PARAMETERS
@@ -879,6 +883,7 @@ int board_late_init(void)
 }
 #endif
 
+#if defined(CONFIG_FASTBOOT)
 /*
  * Partition table and management
  */
@@ -1068,5 +1073,20 @@ int board_fbt_load_ptbl()
 int board_fbt_handle_flash(disk_partition_t *ptn,
                 struct cmd_fastboot_interface *priv)
 {
+        if (!strcmp("bootloader", ptn->name)) {
+                lbaint_t blkcnt = 1;
+                char sector[512];
+                int err = partition_read_blks(priv->dev_desc, ptn,
+                                &blkcnt, sector);
+                if (err) {
+                        printf("failed to read MBR, error=%d\n", err);
+                        return err;
+                }
+
+                memcpy(priv->transfer_buffer + 442,
+                                &sector[442], sizeof(sector) - 442);
+        }
+
         return 0;
 }
+#endif
