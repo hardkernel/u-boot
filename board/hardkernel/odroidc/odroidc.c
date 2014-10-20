@@ -980,6 +980,13 @@ void board_print_partition(block_dev_desc_t *blkdev, disk_partition_t *ptn)
 
 int board_fbt_load_ptbl()
 {
+        char *android_name[] = {
+                "fat",
+                "system",
+                "cache",
+                "userdata"
+        };
+
         disk_partition_t ptn;
         int n;
         int res = -1;
@@ -1034,6 +1041,13 @@ int board_fbt_load_ptbl()
                         continue;       /* No partition <n> */
                 if (!ptn.size || !ptn.blksz || !ptn.name[0])
                         continue;       /* Partition <n> is empty (or sick) */
+
+                /* Rename the partition names on MBR to Android partition names */
+                if ((n > 0) && (n <= (sizeof(android_name)
+                                                / sizeof(android_name[0])))) {
+                        strcpy(ptn.name, android_name[n - 1]);
+                }
+
                 fbt_add_ptn(&ptn);
 
                 board_print_partition(blkdev, &ptn);
