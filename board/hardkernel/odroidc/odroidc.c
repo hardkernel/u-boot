@@ -1051,7 +1051,8 @@ int board_fbt_load_ptbl()
         return res;
 }
 
-int board_fbt_handle_flash(disk_partition_t *ptn, char *response)
+int board_fbt_handle_flash(disk_partition_t *ptn,
+                struct cmd_fastboot_interface *priv)
 {
         return 0;
 }
