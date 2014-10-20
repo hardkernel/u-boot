@@ -358,6 +358,7 @@
 #define BOARD_LATE_INIT
 
 #define CONFIG_CMD_FASTBOOT             /* Support 'fastboot' command */
+#define CONFIG_CMD_USB_MASS_STORAGE     /* Support 'ums' command */
 
 /* FASTBOOT */
 #ifdef CONFIG_CMD_FASTBOOT
@@ -383,6 +384,12 @@
 #define FASTBOOT_REBOOT_PARAMETER_ADDR  \
         (CONFIG_FASTBOOT_TRANSFER_BUFFER +CONFIG_FASTBOOT_TRANSFER_BUFFER_SIZE)
 #endif /* CONFIG_CMD_FASTBOOT */
+
+/* USB Mass Storage */
+#ifdef CONFIG_CMD_USB_MASS_STORAGE
+#define CONFIG_USB_GADGET_MASS_STORAGE  1
+#define CONFIG_USB_GADGET
+#endif
 
 /* USB Gadget */
 #ifdef CONFIG_USB_GADGET
