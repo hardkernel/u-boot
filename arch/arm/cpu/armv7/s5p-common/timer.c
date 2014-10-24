@@ -37,23 +37,58 @@ static inline struct s5p_timer *s5p_get_base_timer(void)
 	return (struct s5p_timer *)samsung_get_base_timer();
 }
 
+/**
+ * Read the countdown timer.
+ *
+ * This operates at 1MHz and counts downwards. It will wrap about every
+ * hour (2^32 microseconds).
+ *
+ * @return current value of timer
+ */
+static unsigned long timer_get_us_down(void)
+{
+	struct s5p_timer *const timer = s5p_get_base_timer();
+
+	return readl(&timer->tcnto4);
+}
+
 int timer_init(void)
 {
 	/* PWM Timer 4 */
-	pwm_init(4, MUX_DIV_2, 0);
+	pwm_init(4, MUX_DIV_4, 0);
 	pwm_config(4, 0, 0);
 	pwm_enable(4);
+
+	/* Use this as the current monotonic time in us */
+	gd->timer_reset_value = 0;
+
+	/* Use this as the last timer value we saw */
+	gd->lastinc = timer_get_us_down();
+ 	reset_timer_masked();
 
 	return 0;
 }
 
+#if 1
 /*
  * timer without interrupts
  */
-unsigned long get_timer_org(unsigned long base)
+unsigned long get_timer(unsigned long base)
 {
-	return get_timer_masked() - base;
+	ulong now = timer_get_us_down();
+
+	/*
+	 * Increment the time by the amount elapsed since the last read.
+	 * The timer may have wrapped around, but it makes no difference to
+	 * our arithmetic here.
+	 */
+	gd->timer_reset_value += gd->lastinc - now;
+	gd->lastinc = now;
+
+	/* Divide by 1000 to convert from us to ms */
+	return gd->timer_reset_value / 1000 - base;
 }
+#else
 
 /*
  * Suriyan - we are trying to make this function more like a milli second
@@ -66,10 +101,12 @@ unsigned long get_timer(unsigned long base)
         base *= 1000;
         return (get_timer_masked() - base)/1000;
 }
+#endif
 
 /* delay x useconds */
 void __udelay(unsigned long usec)
 {
+#if 0
 	struct s5p_timer *const timer = s5p_get_base_timer();
 	unsigned long tmo, tmp, count_value;
 
@@ -106,6 +143,13 @@ void __udelay(unsigned long usec)
 	/* loop till event */
 	while (get_timer_masked() < tmo)
 		;	/* nop */
+#else
+	unsigned long count_value;
+
+	count_value = timer_get_us_down();
+	while ((int)(count_value - timer_get_us_down()) < (int)usec)
+		;
+#endif
 }
 
 void reset_timer_masked(void)
@@ -117,6 +161,7 @@ void reset_timer_masked(void)
 	gd->tbl = 0;
 }
 
+#if 0
 unsigned long get_timer_masked(void)
 {
 	struct s5p_timer *const timer = s5p_get_base_timer();
@@ -132,6 +177,7 @@ unsigned long get_timer_masked(void)
 
 	return gd->tbl;
 }
+#endif
 
 /*
  * This function is derived from PowerPC code (read timebase as long long).
