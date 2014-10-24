@@ -180,6 +180,7 @@ int pwm_init(int pwm_id, int div, int invert)
 
 	/* set count value */
 	offset = pwm_id * 3;
+	timer_rate_hz = -1;
 	writel(timer_rate_hz, &pwm->tcntb0 + offset);
 
 	val = readl(&pwm->tcon) & ~(0xf << TCON_OFFSET(pwm_id));
