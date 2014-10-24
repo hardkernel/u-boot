@@ -986,6 +986,29 @@ void board_print_partition(block_dev_desc_t *blkdev, disk_partition_t *ptn)
                                 ptn->name);
 }
 
+int board_find_partition(const char *name, unsigned *start, unsigned *bytes)
+{
+        int n;
+        unsigned next = 0;
+
+        for (n = 0; sizeof(sys_partitions) / sizeof(sys_partitions[0]); n++) {
+                struct fbt_partition *fbt = &sys_partitions[n];
+
+                if (!fbt->name || !fbt->size_kb || !fbt->type)
+                        break;
+
+                if (!strcmp(name, fbt->name)) {
+                        *start = next;
+                        *bytes = fbt->size_kb * 1024;
+                        return 0;
+                }
+
+                next += fbt->size_kb * 2;
+        }
+
+        return -EEXIST;
+}
+
 int board_fbt_load_ptbl()
 {
         char *android_name[] = {
