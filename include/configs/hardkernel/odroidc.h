@@ -23,7 +23,7 @@
 //#define CONFIG_VIDEO_AMLTVOUT         1
 //Enable LCD output
 //#define CONFIG_VIDEO_AMLLCD
-#define LCD_BPP LCD_COLOR16
+#define LCD_BPP                         LCD_COLOR24
 
 #define CONFIG_ACS
 #ifdef CONFIG_ACS
@@ -131,17 +131,18 @@
         "chipname=8726m8\0" \
         "console=ttyS0,115200n8\0" \
         "cvbsmode=480cvbs\0" \
-        "display_bpp=16\0" \
+        "display_bpp=24\0" \
         "display_color_bg=0\0" \
         "display_color_fg=0xffff\0" \
-        "display_color_format_index=16\0" \
+        "display_color_format_index=24\0" \
+        "display_width=1920\0" \
         "display_height=1080\0" \
         "display_layer=osd2\0" \
-        "display_width=1920\0" \
         "fb_addr=0x7900000\0" \
-        "fb_height=720\0"\
         "fb_width=1280\0"\
+        "fb_height=720\0"\
         "firstboot=1\0" \
+        "outputmode=1080p\0" \
         "hdmimode=1080p\0" \
         "initrd_high=60000000\0" \
         "loadaddr=0x12000000\0" \
