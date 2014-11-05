@@ -282,7 +282,9 @@ static update_func_t hw_func_array[HW_OSD_COUNT][HW_REG_INDEX_MAX]={
 	spin_unlock_irqrestore(&osd_lock, lock_flags);
 #else
 #define add_to_update_list(osd_idx,cmd_idx) \
-	osd_hw.updated[osd_idx]|=(1<<cmd_idx);
+	osd_hw.updated[osd_idx]|=(1<<cmd_idx); \
+	mdelay(16); \
+	vsync_isr();
 #endif
 
 #define remove_from_update_list(osd_idx,cmd_idx) \

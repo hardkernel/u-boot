@@ -124,8 +124,13 @@ static int do_bmp_display(cmd_tbl_t * cmdtp, int flag, int argc, char * const ar
 		break;
 	case 2:		/* use argument */
 		addr = simple_strtoul(argv[1], NULL, 16);
+#ifdef CONFIG_OSD_SCALE_ENABLE
+		x = 0;
+		y = 0;
+#else
 		x = -1;
 		y = -1;
+#endif
 		break;
 
         case 5://Added by Sam, to control whether disable OSD in 'bmp display'

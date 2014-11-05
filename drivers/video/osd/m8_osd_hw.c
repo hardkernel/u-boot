@@ -446,8 +446,6 @@ void  osd_set_gbl_alpha_hw(u32 index,u32 gbl_alpha)
 		
 		osd_hw.gbl_alpha[index]=gbl_alpha;
 		add_to_update_list(index,OSD_GBL_ALPHA);
-		mdelay(16);
-		vsync_isr();
 		osd_wait_vsync_hw();
 	}
 }
@@ -497,8 +495,7 @@ void  osd_set_colorkey_hw(u32 index,u32 color_index,u32 colorkey )
 		 osd_hw.color_key[index]=data32;
 		printf("bpp:%d--r:0x%x g:0x%x b:0x%x ,a:0x%x\r\n",color_index,r,g,b,a);
 		add_to_update_list(index,OSD_COLOR_KEY);
-		mdelay(16);
-		vsync_isr();
+		
 		osd_wait_vsync_hw();
 	}
 
@@ -511,8 +508,7 @@ void  osd_srckey_enable_hw(u32  index,u8 enable)
 	{
 		osd_hw.color_key_enable[index]=enable;
 		add_to_update_list(index,OSD_COLOR_KEY_ENABLE);
-		mdelay(16);
-		vsync_isr();
+		
 		osd_wait_vsync_hw();
 	}
 	
@@ -550,8 +546,6 @@ void  osddev_update_disp_axis_hw(
 	memcpy(&osd_hw.pandata[index],&pan_data,sizeof(pandata_t));
 	memcpy(&osd_hw.dispdata[index],&disp_data,sizeof(dispdata_t));
 	add_to_update_list(index,DISP_GEOMETRY);
-	mdelay(16);
-	vsync_isr();
 	osd_wait_vsync_hw();
 	
 }
@@ -661,8 +655,7 @@ void osd_setup(	u32 xoffset,
 			add_to_update_list(index,DISP_GEOMETRY);
 		}
 	}
-	mdelay(16);
-	vsync_isr();
+
 	osd_wait_vsync_hw();
 #ifdef __DBG__OSD_HW__
 	osd_reg_debug();
@@ -701,8 +694,6 @@ void osd_change_osd_order_hw(u32 index,u32 order)
 	return ;
 	osd_hw.osd_order=order;
 	add_to_update_list(index, OSD_CHANGE_ORDER);
-	mdelay(16);
-	vsync_isr();
 	osd_wait_vsync_hw();
 }
 	
@@ -821,7 +812,6 @@ void osd_free_scale_enable_hw(u32 index,u32 enable)
 	     add_to_update_list(OSD2,DISP_GEOMETRY);  
          add_to_update_list(OSD2,OSD_COLOR_MODE);
 	}
-
 	osd_enable_hw(osd_hw.enable[index],index);
 #ifdef CONFIG_AM_VIDEO  
 #ifdef CONFIG_POST_PROCESS_MANAGER
@@ -975,8 +965,6 @@ void osd_set_block_windows_hw(u32 index, u32 *windows)
 	_debug("\n");
 	memcpy(osd_hw.block_windows[index], windows, sizeof(osd_hw.block_windows[index]));
 	add_to_update_list(index, DISP_GEOMETRY);
-	mdelay(16);
-	vsync_isr();
 	osd_wait_vsync_hw();
 }
 
@@ -991,8 +979,6 @@ void osd_set_block_mode_hw(u32 index, u32 mode)
 	_debug("\n");
 	osd_hw.block_mode[index] = mode;
 	add_to_update_list(index, DISP_GEOMETRY);
-	mdelay(16);
-	vsync_isr();
 	osd_wait_vsync_hw();
 }
 
@@ -1025,8 +1011,7 @@ void osd_enable_hw(int enable ,int index )
 	_debug("\n");
 	osd_hw.enable[index]=enable;
 	add_to_update_list(index,OSD_ENABLE);
-	mdelay(16);
-	vsync_isr();
+		
 	osd_wait_vsync_hw();
 }
 
@@ -1051,8 +1036,7 @@ void osd_set_2x_scale_hw(u32 index,u16 h_scale_enable,u16 v_scale_enable)
 	osd_hw.scale[index].v_enable = v_scale_enable;
 	add_to_update_list(index, DISP_SCALE_ENABLE);
 	add_to_update_list(index, DISP_GEOMETRY);
-	mdelay(16);
-	vsync_isr();
+
 	osd_wait_vsync_hw();
 }
 
@@ -1077,8 +1061,7 @@ void osd_pan_display_hw(unsigned int xoffset, unsigned int yoffset,int index )
 		osd_hw.pandata[index].y_start += diff_y;
 		osd_hw.pandata[index].y_end   += diff_y;
 		add_to_update_list(index,DISP_GEOMETRY);
-		mdelay(16);
-		vsync_isr();
+		
 		osd_wait_vsync_hw();
 		
 		_debug("offset[%d-%d]x[%d-%d]y[%d-%d]\n", \

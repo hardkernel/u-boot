@@ -281,17 +281,3 @@ U_BOOT_CMD(
 	"\n"
 );
 #endif
-
-static int do_gettime (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
-{
-    int time = get_utimer(0);
-    printf("***from powerup: %d us.\n", time);
-	return time;
-}
-
-
-U_BOOT_CMD(
-	time,	1,	0,	do_gettime,
-	"get bootup time",
-	"/N\n"
-);

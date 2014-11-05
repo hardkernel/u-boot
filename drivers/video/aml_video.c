@@ -209,21 +209,6 @@ int video_display_bitmap(ulong bmp_image, int x, int y)
 
 	bpix = NBITS(info->vl_bpix);
 
-#ifdef CONFIG_OSD_SCALE_ENABLE
-	if((x == -1) &&(y == -1))
-	{
-		if((width > pwidth) || (height > pheight))
-		{
-			x = 0;
-			y = 0;
-		}
-		else
-		{
-			x = (pwidth - width) / 2;
-			y = (pheight - height) / 2;
-		}
-	}
-#else
 	if((x == -1) &&(y == -1))
 	{
 		if((width > info->vl_col) || (height > info->vl_row))
@@ -237,7 +222,6 @@ int video_display_bitmap(ulong bmp_image, int x, int y)
 			y = (info->vl_row - height) / 2;
 		}
 	}
-#endif
 
 	if ((bpix != 1) && (bpix != 8) && (bpix != 16) && (bpix != 24) && (bpix != 32)) {
 		printf ("Error: %d bit/pixel mode, but BMP has %d bit/pixel\n",
@@ -281,12 +265,7 @@ int video_display_bitmap(ulong bmp_image, int x, int y)
 		y = max(0, info->vl_row - height + y + 1);
 #endif /* CONFIG_SPLASH_SCREEN_ALIGN */
 
-#ifdef CONFIG_OSD_SCALE_ENABLE
-	if ((x + width)>pwidth)
-		width = pwidth - x;
-	if ((y + height)>pheight)
-		height = pheight - y;
-#else
+#ifndef CONFIG_OSD_SCALE_ENABLE
 	if ((x + width)>pwidth)
 		width = pwidth - x;
 	if ((y + height)>info->vl_row)
@@ -380,6 +359,10 @@ int video_display_bitmap(ulong bmp_image, int x, int y)
 	};
 	flush_cache((unsigned long)info->vd_base, info->vl_col*info->vl_row*info->vl_bpix/8);
 
+#ifdef CONFIG_OSD_SCALE_ENABLE
+	if ((height == pheight) && (width == pwidth))
+	osd_enable_hw(1, osd_index);
+#endif
 	return (0);
 }
 
@@ -403,6 +386,7 @@ int video_scale_bitmap(void)
 	osd_set_free_scale_axis_hw(osd_index, 0,0,aml_gdev.fb_width-1,aml_gdev.fb_height-1);
 	osd_set_window_axis_hw(osd_index, 0,0,aml_gdev.winSizeX-1,aml_gdev.winSizeY-1);
 	osd_free_scale_enable_hw(osd_index, 0x10001);
+	mdelay(500);
 	osd_enable_hw(1, osd_index);
 	return (1);
 }

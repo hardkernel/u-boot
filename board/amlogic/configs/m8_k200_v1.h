@@ -48,7 +48,7 @@
 //#define CONFIG_VIDEO_AMLTVOUT 1
 //Enable LCD output
 //#define CONFIG_VIDEO_AMLLCD
-#define LCD_BPP LCD_COLOR16
+#define LCD_BPP LCD_COLOR24
 
 #define CONFIG_ACS
 #ifdef CONFIG_ACS
@@ -254,8 +254,8 @@
 	"video_dev=tvout\0" \
 	"display_width=1920\0" \
 	"display_height=1080\0" \
-	"display_bpp=16\0" \
-	"display_color_format_index=16\0" \
+	"display_bpp=24\0" \
+	"display_color_format_index=24\0" \
 	"display_layer=osd2\0" \
 	"display_color_fg=0xffff\0" \
 	"display_color_bg=0\0" \
@@ -330,8 +330,9 @@
     \
     "prepare="\
         "logo size ${outputmode}; video open; video clear; video dev open ${outputmode};"\
-        "imgread pic logo bootup ${loadaddr_logo}; "\
-        "bmp display ${bootup_offset}; bmp scale;"\
+        "imgread res logo ${loadaddr_logo}; "\
+        "unpackimg ${loadaddr_logo}; "\
+        "logo source ${outputmode}; bmp display ${bootup_offset}; bmp scale;"\
         "\0"\
 	\
 	"storeboot="\
