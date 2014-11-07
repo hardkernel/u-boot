@@ -351,4 +351,8 @@
 #define CONFIG_G_DNL_MANUFACTURER       "Hardkernel Co., Ltd"
 #endif /* CONFIG_USB_GADGET */
 
+/* FDISK command */
+#define CONFIG_MMC_FDISK
+#define CFG_PARTITION_START             (24 * 1024 * 1024)
+
 #endif //__CONFIG_ODROIDC_H__
