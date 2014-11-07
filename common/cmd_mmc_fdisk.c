@@ -19,9 +19,9 @@
 #define		_100MB				(100*1024*1024)
 #define		_8_4GB				(1023*254*63)
 #define     _MB_                (1024*1024)
-#if defined(CONFIG_BOARD_HARDKERNEL)
+#if defined(CONFIG_MACH_MESON8_ODROIDC)
     #define		SYSTEM_PART_SIZE		(1024)    /* 1G */
-    #define		USER_DATA_PART_SIZE		(2*1024)  /* 2G */
+    #define		USER_DATA_PART_SIZE		(3*1024)  /* 3G */
     #define		CACHE_PART_SIZE			(256)     /* 256MB */
 #else
     #define		SYSTEM_PART_SIZE		(300)
@@ -355,6 +355,7 @@ int put_mmc_mbr(unsigned char *mbr, char *device_name)
 	int rv;
 	struct mmc *mmc;
 	int dev_num, err;
+	char buf[512];
 
 	dev_num = simple_strtoul(device_name, NULL, 0);
 
@@ -365,6 +366,13 @@ int put_mmc_mbr(unsigned char *mbr, char *device_name)
 		return -1;
 	}
 
+#if defined(CONFIG_MACH_MESON8_ODROIDC)
+	/* The first 442 bytes must be kept as is so that bootloader code
+	 * is not corrupted by the fdisk command.
+	 */
+	rv = mmc->block_dev.block_read(dev_num, 0, 1, buf);
+	memcpy(mbr, buf, 442);
+#endif
 	rv = mmc->block_dev.block_write(dev_num, 0, 1, mbr);
 
 	/*
