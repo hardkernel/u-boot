@@ -942,13 +942,13 @@ struct fbt_partition fbt_partitions[] = {
                 .type = "ext4",
                 .size_kb = 1024 * 1024
         }, {
+                .name = "userdata",             /* 2rd primary partition */
+                .type = "ext4",
+                .size_kb = 1024 * 1024,
+        }, {
                 .name = "cache",                /* 3rd parimary partition */
                 .type = "ext4",
                 .size_kb = 512 * 1024
-        }, {
-                .name = "userdata",             /* 4rd primary partition */
-                .type = "ext4",
-                .size_kb = 1024 * 1024,
         }, {
                 .name = "fat",                  /* 1st primary partition */
                 .type = "vfat",
@@ -1014,8 +1014,8 @@ int board_fbt_load_ptbl()
         char *android_name[] = {
                 "fat",
                 "system",
+                "userdata",
                 "cache",
-                "userdata"
         };
 
         disk_partition_t ptn;
