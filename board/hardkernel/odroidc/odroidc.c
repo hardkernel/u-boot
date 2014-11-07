@@ -944,7 +944,7 @@ struct fbt_partition fbt_partitions[] = {
         }, {
                 .name = "userdata",             /* 2rd primary partition */
                 .type = "ext4",
-                .size_kb = 1024 * 1024,
+                .size_kb = 3 * 1024 * 1024,
         }, {
                 .name = "cache",                /* 3rd parimary partition */
                 .type = "ext4",
