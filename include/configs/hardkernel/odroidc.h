@@ -326,7 +326,6 @@
 #define CONFIG_CUSTOM_MBR_LBA           (512 * 1024 / 512)
 
 #define CONFIG_ENV_BLK_PARTITION        "environment"
-#define CONFIG_INFO_PARTITION           "device_info"
 
 #define CONFIG_FASTBOOT_TRANSFER_BUFFER         0x12000000
 #define CONFIG_FASTBOOT_TRANSFER_BUFFER_SIZE    SZ_512M
