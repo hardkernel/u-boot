@@ -911,28 +911,20 @@ struct fbt_partition sys_partitions[] = {
                 .type = "raw",
                 .size_kb = CONFIG_ENV_SIZE / 1024
         }, {
-                .name = CONFIG_INFO_PARTITION,          /* "device_info" */
+                .name = "dtb",          /* Device Tree */
                 .type= "raw",
-                .size_kb = 32
+                .size_kb = 64
         }, {
-                .name = "logo",
-                .type = "raw",
-                .size_kb = 32 * 1024
-        }, {
-                .name = "misc",
-                .type = "raw",
-                .size_kb = 2 * 1024
-        }, {
-                .name = "recovery",
+                .name = "boot",         /* Boot image */
                 .type = "boot",
                 .size_kb = 8 * 1024
         }, {
-                .name = "boot",
+                .name = "recovery",     /* Recovery Image */
                 .type = "boot",
-                .size_kb = 10 * 1024
+                .size_kb = 8 * 1024
         }, {
-                .name = "efs",
-                .type = "ext4",
+                .name = "logo",         /* Logo */
+                .type = "raw",
                 .size_kb = 6 * 1024
         }, {
                 .name = 0,
