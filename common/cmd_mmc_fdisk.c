@@ -120,10 +120,14 @@ void get_SDInfo(int block_count, SDInfo *sdInfo)
         int H_start = 1, S_start = 1;
         int diff_min = 0, diff = 0;
 
+#if defined(CONFIG_MACH_MESON8_ODROIDC)
+        sdInfo->addr_mode = LBA_MODE;
+#else
         if(block_count >= _8_4GB)
                 sdInfo->addr_mode = LBA_MODE;
         else
                 sdInfo->addr_mode = CHS_MODE;
+#endif
 
 //-----------------------------------------------------
         if (sdInfo->addr_mode == CHS_MODE)
