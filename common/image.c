@@ -1302,6 +1302,16 @@ int boot_relocate_fdt (struct lmb *lmb, ulong bootmap_base,
 	*of_size = of_len;
 
 	set_working_fdt_addr(*of_flat_tree);
+
+#if defined(CONFIG_MACH_MESON8_ODROIDC)
+        if (board_boot_from_emmc()) {
+                run_command("fdt rm /sdhc/sd", 0);
+                run_command("fdt rm /sdio/emmc", 0);
+        } else {
+                run_command("fdt rm /sdhc/emmc", 0);
+                run_command("fdt rm /sdio/sd", 0);
+        }
+#endif
 	return 0;
 
 error:
