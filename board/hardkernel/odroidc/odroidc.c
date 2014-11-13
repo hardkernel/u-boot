@@ -254,14 +254,19 @@ struct aml_card_sd_info sdio_dev[NR_STORAGE] = {
         },
 };
 
-int board_mmc_init(bd_t *bis)
+int board_boot_from_emmc()
 {
         /* FIXME: 0xd901ff00 is from bootrom code itself. It must be corrected
          * with specific address of SoC.
          */
         T_ROM_BOOT_RETURN_INFO *bootinfo = (T_ROM_BOOT_RETURN_INFO*)0xd901ff00;
 
-        if (0 == bootinfo->boot_id) { // Boot from eMMC
+        return (0 == bootinfo->boot_id);
+}
+
+int board_mmc_init(bd_t *bis)
+{
+        if (board_boot_from_emmc()) { // Boot from eMMC
                 mmc[0].block_dev.if_type = IF_TYPE_MMC;
                 mmc[1].block_dev.if_type = IF_TYPE_SD;
 
