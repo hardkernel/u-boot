@@ -333,6 +333,8 @@
         (CONFIG_FASTBOOT_TRANSFER_BUFFER +CONFIG_FASTBOOT_TRANSFER_BUFFER_SIZE)
 #endif /* CONFIG_CMD_FASTBOOT */
 
+#define CONFIG_CMD_INI                  1       /* Support 'ini' command */
+
 /* USB Mass Storage */
 #ifdef CONFIG_CMD_USB_MASS_STORAGE
 #define CONFIG_USB_GADGET_MASS_STORAGE  1
