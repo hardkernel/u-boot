@@ -133,7 +133,7 @@
         "fb_height=720\0"\
         "firstboot=1\0" \
         "outputmode=1080p\0" \
-        "hdmimode=1080p\0" \
+        "hdmimode=720p\0" \
         "initrd_high=60000000\0" \
         "loadaddr=0x12000000\0" \
         "loadaddr_logo=0x14000000\0" \
@@ -143,7 +143,7 @@
         "showlogo=logo size ${hdmimode}; video open;" \
                 "video clear; video dev open ${hdmimode};" \
                 "movi read logo 0 ${loadaddr_logo} 600000;" \
-                "bmp display ${loadaddr_logo} 320 180; bmp scale\0" \
+                "bmp display ${loadaddr_logo}; bmp scale\0" \
         "vdac_config=0x10\0" \
         "video_dev=tvout\0"
 
