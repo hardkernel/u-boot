@@ -191,7 +191,6 @@
 
 #ifdef CONFIG_ACS
 //#define CONFIG_DDR_MODE_AUTO_DETECT   //ddr bus-width auto detection
-//#define CONFIG_DDR_SIZE_AUTO_DETECT   //ddr size auto detection
 #endif
 
 //On board DDR capactiy
@@ -234,13 +233,6 @@
 #define CONFIG_SYS_MEMTEST_END          0x18000000      /* 0 ... 128 MB in DRAM */
 #define CONFIG_ENABLE_MEM_DEVICE_TEST   1
 #define CONFIG_NR_DRAM_BANKS            1               /* CS1 may or may not be populated */
-
-#ifdef CONFIG_DDR_SIZE_AUTO_DETECT
-#define CONFIG_AUTO_SET_MULTI_DT_ID     // if wanna pass mem=xx to kernel, pls disable this config
-#ifndef CONFIG_AUTO_SET_MULTI_DT_ID
-#define CONFIG_AUTO_SET_BOOTARGS_MEM
-#endif
-#endif
 
 /* Cache line size */
 #define CONFIG_SYS_CACHELINE_SIZE	64

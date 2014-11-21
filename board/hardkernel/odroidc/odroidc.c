@@ -535,50 +535,6 @@ U_BOOT_CMD(
 		"          - no clock index will measure all clock"
 	  );
 
-#ifdef CONFIG_AUTO_SET_MULTI_DT_ID
-#if 0
-#define debug_print printf
-#else
-#define debug_print
-#endif
-void board_dt_id_process(void)
-{
-	unsigned int mem_size = 0;
-	int i;
-
-	for(i = 0; i < CONFIG_NR_DRAM_BANKS; i++) {
-		mem_size += gd->bd->bi_dram[i].size;
-	}
-
-	mem_size = mem_size >> 20;	// MB
-
-	unsigned char dt_name[64] = {0};
-
-	strcat(dt_name, "m8b_m200_");  //please change this name when you add a new config
-	debug_print("aml_dt: %s\n", getenv("aml_dt"));
-
-	switch(mem_size){
-	case 2048: //2GB
-		strcat(dt_name, "2g");
-		break;
-	case 1024: //1GB
-		strcat(dt_name, "1g");
-		break;
-	case 512: //512MB
-		strcat(dt_name, "512m");
-		break;
-	case 256:
-		strcat(dt_name, "256m");
-		break;
-	default:
-		strcat(dt_name, "v1");
-		break;
-	}
-	setenv("aml_dt", dt_name);
-	debug_print("aml_dt: %s\n", getenv("aml_dt"));
-}
-#endif
-
 #if defined(CONFIG_USB_GADGET_S3C_UDC_OTG)
 #include <usb/s3c_udc.h>
 
