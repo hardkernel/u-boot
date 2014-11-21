@@ -61,6 +61,24 @@ int board_init(void)
 	return 0;
 }
 
+#if defined(CONFIG_BOARD_EARLY_INIT_F)
+
+#define LINUX_REBOOT_CMD_POWER_OFF      0x4321FEDC
+
+int board_early_init_f(void)
+{
+        /* Get into suspend state if LINUX_REBOOT_CMD_POWER_OFF is signed by
+         * O/S, so that system stop here. Otherwise system will restart again
+         */
+        if (LINUX_REBOOT_CMD_POWER_OFF == readl(P_AO_RTI_STATUS_REG1)) {
+                meson_pm_suspend();
+                while (1);
+        }
+
+        return 0;
+}
+#endif
+
 #if defined(BOARD_LATE_INIT)
 int board_late_init(void)
 {
