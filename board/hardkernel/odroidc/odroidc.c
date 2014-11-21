@@ -9,15 +9,6 @@
 #include <asm/arch/io.h>
 #endif /*(CONFIG_CMD_NET)*/
 
-#if defined(CONFIG_AML_I2C)
-#include <aml_i2c.h>
-#include <asm/arch/io.h>
-#endif /*CONFIG_AML_I2C*/
-
-#ifdef CONFIG_PLATFORM_HAS_PMU
-#include <amlogic/aml_pmu_common.h>
-#endif
-
 #if CONFIG_CMD_MMC
 #include <mmc.h>
 #include <asm/arch/sdio.h>
@@ -32,34 +23,6 @@
 #endif
 
 DECLARE_GLOBAL_DATA_PTR;
-
-#ifdef CONFIG_UBOOT_BATTERY_PARAMETERS
-#include <amlogic/battery_parameter.h>
-/*
- * add board battery parameters, this is a backup option if uboot process
- * battery parameters failed, each board shoud use your own battery parameters
- */
-int config_battery_rdc = 135;
-struct battery_curve config_battery_curve[] = {
-	/* ocv, charge, discharge */
-	{3132,     0,      0},
-	{3273,     0,      0},
-	{3414,     0,      0},
-	{3555,     0,      0},
-	{3625,     1,      2},
-	{3660,     2,      3},
-	{3696,     3,     12},
-	{3731,    10,     18},
-	{3766,    15,     31},
-	{3801,    22,     45},
-	{3836,    40,     55},
-	{3872,    55,     62},
-	{3942,    68,     73},
-	{4012,    79,     83},
-	{4083,    88,     90},
-	{4153,   100,    100},
-};
-#endif
 
 #if defined(CONFIG_CMD_NET)
 /*************************************************
@@ -494,61 +457,6 @@ U_BOOT_CMD(irdetect, 1, 1, do_irdetect,
 );
 
 #endif
-#ifdef CONFIG_AML_I2C
-/*I2C module is board depend*/
-static void board_i2c_set_pinmux(void){
-	/*@AML9726-MX-MAINBOARD_V1.0.pdf*/
-	/*@AL5631Q+3G_AUDIO_V1.pdf*/
-	/*********************************************/
-	/*                | I2C_Master_AO        |I2C_Slave            |       */
-	/*********************************************/
-	/*                | I2C_SCK                | I2C_SCK_SLAVE  |      */
-	/* GPIOAO_4  | [AO_PIN_MUX: 6]     | [AO_PIN_MUX: 2]   |     */
-	/*********************************************/
-	/*                | I2C_SDA                 | I2C_SDA_SLAVE  |     */
-	/* GPIOAO_5  | [AO_PIN_MUX: 5]     | [AO_PIN_MUX: 1]   |     */
-	/*********************************************/
-
-	//disable all other pins which share with I2C_SDA_AO & I2C_SCK_AO
-	clrbits_le32(P_AO_RTI_PIN_MUX_REG, ((1<<2)|(1<<24)|(1<<1)|(1<<23)));
-	//enable I2C MASTER AO pins
-	setbits_le32(P_AO_RTI_PIN_MUX_REG,
-			(MESON_I2C_MASTER_AO_GPIOAO_4_BIT | MESON_I2C_MASTER_AO_GPIOAO_5_BIT));
-
-	udelay(10000);
-
-};
-
-struct aml_i2c_platform g_aml_i2c_plat = {
-	.wait_count         = 1000000,
-	.wait_ack_interval  = 5,
-	.wait_read_interval = 5,
-	.wait_xfer_interval = 5,
-	.master_no          = AML_I2C_MASTER_AO,
-	.use_pio            = 0,
-	.master_i2c_speed   = AML_I2C_SPPED_400K,
-	.master_ao_pinmux = {
-		.scl_reg    = MESON_I2C_MASTER_AO_GPIOAO_4_REG,
-		.scl_bit    = MESON_I2C_MASTER_AO_GPIOAO_4_BIT,
-		.sda_reg    = MESON_I2C_MASTER_AO_GPIOAO_5_REG,
-		.sda_bit    = MESON_I2C_MASTER_AO_GPIOAO_5_BIT,
-	}
-};
-#endif
-
-#ifdef CONFIG_PLATFORM_HAS_PMU
-static void board_pmu_init(void)
-{
-	struct aml_pmu_driver *driver = aml_pmu_get_driver();
-	if (driver && driver->pmu_reg_write) {
-		printf("%s, increase DCIN_OV_ADJ\n", __func__);
-		driver->pmu_reg_write(0x0030, 0x18);
-	}
-	if (driver && driver->pmu_init) {
-		driver->pmu_init();
-	}
-}
-#endif
 
 inline void key_init(void)
 {
@@ -563,37 +471,6 @@ inline int get_key(void)
 	return (readl(P_AO_GPIO_I) & (1 << 3)) ? 0 : 1;
 }
 
-
-
-static void board_i2c_init(void)
-{
-	//set I2C pinmux with PCB board layout
-	/*@AML9726-MX-MAINBOARD_V1.0.pdf*/
-	/*@AL5631Q+3G_AUDIO_V1.pdf*/
-	board_i2c_set_pinmux();
-
-	//Amlogic I2C controller initialized
-	//note: it must be call before any I2C operation
-	aml_i2c_init();
-
-	//must call aml_i2c_init(); before any I2C operation
-	/*M6 board*/
-	//udelay(10000);
-
-	udelay(10000);
-#ifdef TEST_UBOOT_BOOT_SPEND_TIME
-	unsigned int before_pmu_init =  get_utimer(0);
-#endif
-
-#ifdef CONFIG_PLATFORM_HAS_PMU
-	board_pmu_init();
-#endif
-#ifdef TEST_UBOOT_BOOT_SPEND_TIME
-	unsigned int after_pmu_init =  get_utimer(0);
-	printf("\nPMU init time %d\n", after_pmu_init-before_pmu_init);
-#endif
-}
-
 int serial_set_pin_port(unsigned port_base)
 {
 	// GPIOAO_0 : tx, GPIOAO_1 : rx
@@ -605,14 +482,7 @@ int board_init(void)
 {
 	gd->bd->bi_arch_number=MACH_TYPE_MESON6_SKT;
 	gd->bd->bi_boot_params=BOOT_PARAMS_OFFSET;
-#if CONFIG_JERRY_NAND_TEST //temp test
-	nand_init();
 
-#endif
-
-#ifdef CONFIG_AML_I2C
-	board_i2c_init();
-#endif /*CONFIG_AML_I2C*/
 #ifdef CONFIG_IR_REMOTE
 	board_ir_init();
 #endif
@@ -624,56 +494,6 @@ int board_init(void)
 	key_init();
 	return 0;
 }
-
-#ifdef CONFIG_NAND_AML_M3 //temp test
-//#include <amlogic/nand/platform.h>
-#include <asm/arch/nand.h>
-#include <linux/mtd/partitions.h>
-
-
-static struct aml_nand_platform aml_nand_mid_platform[] = {
-#if defined CONFIG_SPI_NAND_COMPATIBLE || defined CONFIG_SPI_NAND_EMMC_COMPATIBLE
-	{
-		.name = NAND_BOOT_NAME,
-		.chip_enable_pad = AML_NAND_CE0,
-		.ready_busy_pad = AML_NAND_CE0,
-		.platform_nand_data = {
-			.chip =  {
-				.nr_chips = 1,
-				.options = (NAND_TIMING_MODE5 | NAND_ECC_BCH60_1K_MODE),
-			},
-		},
-		.rbpin_mode=1,
-		.short_pgsz=384,
-		.ran_mode=0,
-		.T_REA = 20,
-		.T_RHOH = 15,
-	},
-#endif
-	{
-		.name = NAND_NORMAL_NAME,
-		.chip_enable_pad = (AML_NAND_CE0) | (AML_NAND_CE1 << 4),// | (AML_NAND_CE2 << 8) | (AML_NAND_CE3 << 12)),
-		.ready_busy_pad = (AML_NAND_CE0) | (AML_NAND_CE1 << 4),// | (AML_NAND_CE1 << 8) | (AML_NAND_CE1 << 12)),
-		.platform_nand_data = {
-			.chip =  {
-				.nr_chips = 2,
-				.options = (NAND_TIMING_MODE5 | NAND_ECC_BCH60_1K_MODE | NAND_TWO_PLANE_MODE),
-			},
-		},
-		.rbpin_mode = 1,
-		.short_pgsz = 0,
-		.ran_mode = 0,
-		.T_REA = 20,
-		.T_RHOH = 15,
-	}
-
-};
-
-struct aml_nand_device aml_nand_mid_device = {
-	.aml_nand_platform = aml_nand_mid_platform,
-	.dev_num = ARRAY_SIZE(aml_nand_mid_platform),
-};
-#endif
 
 static int do_msr(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
@@ -714,59 +534,6 @@ U_BOOT_CMD(
 		" [0...63] - measure clock frequency\n"
 		"          - no clock index will measure all clock"
 	  );
-
-#ifdef CONFIG_SARADC
-#include <asm/saradc.h>
-/*following key value are test with board
-  [M6_SKT_V_1.0 20120112]
-  ref doc:
-  1. M6_SKT_V1.pdf
- */
-/* adc_init(&g_adc_info, ARRAY_SIZE(g_adc_info)); */
-/*following is test code to test ADC & key pad*/
-static int do_adc(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]) {
-	if(argc > 2)
-		goto usage;
-
-	u32 nDelay = 0xffff;
-	int nKeyVal = 0;
-	int nCnt = 0;
-	char *endp;
-	int nMaxCnt;
-	int adc_chan = 0; //m8 adc channel 0;m6 adc channel 4
-	if(2 == argc)
-		nMaxCnt	= simple_strtoul(argv[1], &endp, 10);
-	else
-		nMaxCnt = 10;
-
-	saradc_enable();
-	while(nCnt < nMaxCnt)
-	{
-		udelay(nDelay);
-		nKeyVal = get_adc_sample(adc_chan);
-		if(nKeyVal > 1021)
-			continue;
-
-		printf("SARADC CH-4 Get key : %d [%d]\n", nKeyVal,(100*nKeyVal)/1024);
-		nCnt++;
-	}
-	saradc_disable();
-
-	return 0;
-
-usage:
-	return cmd_usage(cmdtp);
-}
-
-U_BOOT_CMD(
-		adc,	2,	1,	do_adc,
-		"M6 ADC test",
-		"[times] -  read `times' adc key through channel-4, default to read 10 times\n"
-		"		10bit ADC. key value: min=0; max=1024\n"
-		"		SKT BOARD #20: Key1=13 Key2=149 key3=274 key4=393 key5=514\n"
-	  );
-
-#endif //CONFIG_SARADC
 
 #ifdef CONFIG_AUTO_SET_MULTI_DT_ID
 #if 0

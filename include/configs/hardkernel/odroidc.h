@@ -17,7 +17,6 @@
 #define CONFIG_IR_REMOTE_WAKEUP         1
 //support "boot,bootd"
 //#define CONFIG_CMD_BOOTD              1
-//#define CONFIG_AML_I2C                1
 
 //Enable HDMI Tx
 //#define CONFIG_VIDEO_AMLTVOUT         1
@@ -70,15 +69,6 @@
         #define CONFIG_SERVERIP         10.18.9.113             /* Tftp server ip address */
         #define CONFIG_NETMASK          255.255.255.0
 #endif /* (CONFIG_CMD_NET) */
-
-//I2C definitions
-#define CONFIG_AML_I2C                  1
-
-#ifdef CONFIG_AML_I2C
-#define CONFIG_CMD_I2C                  1
-#define HAS_AO_MODULE
-#define CONFIG_SYS_I2C_SPEED            400000
-#endif /* CONFIG_AML_I2C */
 
 #define CONFIG_SDIO_B1                  1
 #define CONFIG_SDIO_A                   1
