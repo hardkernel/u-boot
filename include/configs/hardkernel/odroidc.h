@@ -163,13 +163,6 @@
 #define CONFIG_ENV_IS_NOWHERE           1
 #endif
 
-//----------------------------------------------------------------------
-//Please set the M8 CPU clock(unit: MHz)
-//legal value: 600, 792, 996, 1200
-#define M8_CPU_CLK                      792
-#define CONFIG_SYS_CPU_CLK              M8_CPU_CLK
-//----------------------------------------------------------------------
-
 //-----------------------------------------------------------------------
 // DDR setting
 // For DDR PUB training not check the VT done flag
