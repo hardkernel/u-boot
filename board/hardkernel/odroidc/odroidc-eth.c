@@ -20,6 +20,7 @@
 * MA 02111-1307 USA
 */
 
+#include <common.h>
 #include <asm/arch/aml_eth_reg.h>
 #include <asm/arch/aml_eth_pinmux.h>
 #include <asm/arch/io.h>
@@ -31,7 +32,6 @@ static void setup_net_chip(void)
 
         /* Supporting RTL8211F Gigabit Phy and use RGMII interface
         */
-#ifdef RGMII_PHY_INTERFACE
         SET_CBUS_REG_MASK(PERIPHS_PIN_MUX_6, 0x3f4f);
         SET_CBUS_REG_MASK(PERIPHS_PIN_MUX_7, 0xf00000);
         eth_reg0.d32 = 0;
@@ -62,7 +62,7 @@ static void setup_net_chip(void)
                         | (0 << 14) | (1 << 15) | (1 << 14)
                         | (5 << 16)
                         | (0 << 25) | (0 << 26) | (0 << 30) | (0 << 31));
-#endif
+
         /* setup ethernet mode */
         CLEAR_CBUS_REG_MASK(HHI_MEM_PD_REG0, (1 << 3) | (1 << 2));
         /* hardware reset ethernet phy : gpioh_4 connect phyreset pin*/
