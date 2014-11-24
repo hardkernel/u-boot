@@ -733,6 +733,11 @@ unsigned int before_nand_init =  get_utimer(0);
 
 	AML_LOG_TE("board");
 
+#ifdef CONFIG_LOGO_PRELOAD
+        if ((s = getenv ("preloadlogo")) != NULL) {
+                run_command(s, 0);
+        }
+#endif
 
 #if defined(CONFIG_API)
 	/* Initialize API */
