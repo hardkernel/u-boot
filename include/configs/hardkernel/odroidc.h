@@ -190,13 +190,10 @@
         || defined(CONFIG_DDR3_2GB))
         #error "Please set DDR capacity first!\n"
 #endif
-//above setting will affect following:
-//board/amlogic/m8_m200_v1/firmware/timming.c
-//arch/arm/cpu/aml_meson/m8/mmutable.s
 
-//#define CONFIG_DDR_BYPASS_PHY_PLL
-#define CONFIG_DUMP_DDR_INFO            1
 #define CONFIG_ENABLE_WRITE_LEVELING    1
+
+#define CONFIG_AML_EXT_PGM_SILENT	1
 
 //DDR row/col size
 //row size.  2'b01 : A0~A12.   2'b10 : A0~A13.  2'b11 : A0~A14.  2'b00 : A0~A15.
@@ -256,29 +253,7 @@
 #define CONFIG_CMD_LOGO
 #define CONFIG_LOGO_PRELOAD             1
 
-/*
- * Secure OS
- */
-#ifdef CONFIG_MESON_TRUSTZONE
-
-//#define CONFIG_MESON_SECUREARGS       1
-#define CONFIG_JOIN_UBOOT_SECUREOS      1
-#define SECUREOS_KEY_BASE_ADDR          0x06100000
-#define SECURE_OS_DECOMPRESS_ADDR       0x06200000
-#define CONFIG_SECURE_STORAGE_BURNED
-#ifdef CONFIG_SECURE_STORAGE_BURNED
-#define CONFIG_MESON_STORAGE_BURN       1
-#define CONFIG_MESON_STORAGE_DEBUG
-#define CONFIG_SECURESTORAGEKEY
-#define CONFIG_RANDOM_GENERATE
-#define CONFIG_CMD_SECURESTORE
-#define CONFIG_CMD_RANDOM
-/* secure storage support both spi and emmc */
-#define CONFIG_SECURE_MMC
-#endif // CONFIG_SECURE_STORAGE_BURNED
-
-#endif //CONFIG_MESON_TRUSTZONE
-
+#define CONFIG_BOARD_EARLY_INIT_F       1
 #define BOARD_LATE_INIT
 
 #define CONFIG_CMD_FASTBOOT             /* Support 'fastboot' command */
