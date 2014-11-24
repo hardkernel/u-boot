@@ -712,13 +712,17 @@ int gpio_amlogic_direction_output(struct gpio_chip *chip,unsigned offset, int va
 		reg=GPIO_REG(amlogic_pins[offset].out_value_reg_bit);
 		bit=GPIO_BIT(amlogic_pins[offset].out_value_reg_bit);
 		aml_set_reg32_mask(p_gpio_output_addr[reg],1<<bit);
-		gpio_print("out reg=%x,value=%x\n",p_gpio_output_addr[reg],aml_read_reg32(p_gpio_output_addr[reg]));
+		if(gpio_debug){
+			gpio_print("out reg=%x,value=%x\n",p_gpio_output_addr[reg],aml_read_reg32(p_gpio_output_addr[reg]));
+		}
 	}
 	else{
 		reg=GPIO_REG(amlogic_pins[offset].out_value_reg_bit);
 		bit=GPIO_BIT(amlogic_pins[offset].out_value_reg_bit);
 		aml_clr_reg32_mask(p_gpio_output_addr[reg],1<<bit);
-		gpio_print("out reg=%x,value=%x\n",p_gpio_output_addr[reg],aml_read_reg32(p_gpio_output_addr[reg]));
+		if(gpio_debug){
+			gpio_print("out reg=%x,value=%x\n",p_gpio_output_addr[reg],aml_read_reg32(p_gpio_output_addr[reg]));
+		}
 	}
 	reg=GPIO_REG(amlogic_pins[offset].out_en_reg_bit);
 	bit=GPIO_BIT(amlogic_pins[offset].out_en_reg_bit);

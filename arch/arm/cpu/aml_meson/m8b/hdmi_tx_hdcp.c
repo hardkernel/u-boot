@@ -104,7 +104,9 @@ int hdmi_hdcp_clear_ksv_ram(void)
     for(i = 0; i < TX_HDCP_KSV_SIZE; i++) {
         hdmi_hdcp_wr_reg(TX_HDCP_KSV_OFFSET + i, 0x00);
     }
+#if !defined(CONFIG_MACH_MESON8_ODROIDC)
     printf("clr h-ram\n");
+#endif
     return 0;
 }
 

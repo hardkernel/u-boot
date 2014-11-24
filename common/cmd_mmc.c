@@ -248,7 +248,7 @@ int do_mmcops(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 			if (!mmc)
 				return 1;
 
-			printf("\nMMC read: dev # %d, block # %d, count %d ... ",
+			printf("MMC read: dev # %d, block # %d, count %d ... ",
 				dev, blk, cnt);
 
 			mmc_init(mmc);

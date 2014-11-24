@@ -270,6 +270,8 @@ void board_usb_init(amlogic_usb_config_t * usb_cfg,int mode)
 		usb_index++;
 	}else
 		g_usb_cfg[mode][0] = usb_cfg;
+#if !defined(CONFIG_MACH_MESON8_ODROIDC)
 	printf("register usb cfg[%d][%d] = %p\n",mode,(mode==BOARD_USB_MODE_HOST)?usb_index:0,usb_cfg);
+#endif
 }
 #endif //CONFIG_USB_DWC_OTG_HCD
