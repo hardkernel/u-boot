@@ -137,12 +137,11 @@
         "initrd_high=60000000\0" \
         "loadaddr=0x12000000\0" \
         "loadaddr_logo=0x14000000\0" \
-        "preboot=setenv bootargs console=${console} no_console_suspend;" \
-                "run showlogo\0" \
+        "preboot=setenv bootargs console=${console} no_console_suspend\0" \
         "preloaddtb=movi read boot 0 ${loadaddr}\0" \
-        "showlogo=logo size ${hdmimode}; video open;" \
+        "preloadlogo=logo size ${hdmimode}; video open;" \
                 "video clear; video dev open ${hdmimode};" \
-                "movi read logo 0 ${loadaddr_logo} 600000;" \
+                "movi read logo 0 ${loadaddr_logo};" \
                 "bmp display ${loadaddr_logo}; bmp scale\0" \
         "vdac_config=0x10\0" \
         "video_dev=tvout\0"
@@ -255,6 +254,7 @@
 #define CONFIG_AML_SUSPEND              1
 
 #define CONFIG_CMD_LOGO
+#define CONFIG_LOGO_PRELOAD             1
 
 /*
  * Secure OS
