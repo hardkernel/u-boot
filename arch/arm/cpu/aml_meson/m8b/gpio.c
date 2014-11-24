@@ -641,7 +641,7 @@ struct amlogic_gpio_desc amlogic_pins[]=
 	PIN_AOMAP(GPIO_BSD_EN,0,30,0,31,0,0x1f),
 	PIN_AOMAP(GPIO_TEST_N,0,0,4,31,0,0),
 };
-int gpio_amlogic_requst(struct gpio_chip *chip,unsigned offset)
+int gpio_amlogic_request(struct gpio_chip *chip,unsigned offset)
 {
 	int ret=0;
 	unsigned int i,reg,bit;
@@ -842,7 +842,7 @@ static int m8b_set_highz(unsigned int pin)
 }
 
 struct gpio_chip amlogic_gpio_chip={
-	.request=gpio_amlogic_requst,
+	.request=gpio_amlogic_request,
 	.free=gpio_amlogic_free,
 	.direction_input=gpio_amlogic_direction_input,
 	.get=gpio_amlogic_get,

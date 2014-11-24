@@ -507,7 +507,7 @@ void borad_power_init(void)
 {
 	printf("power init\n");
 	//power on VCC5V
-	gpio_amlogic_requst(NULL, GPIODV_29);
+	gpio_amlogic_request(NULL, GPIODV_29);
 	gpio_amlogic_direction_output(NULL, GPIODV_29, 0);
 	
 }
