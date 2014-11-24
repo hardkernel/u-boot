@@ -22,6 +22,7 @@
 
 #include <common.h>
 #include <malloc.h>
+#include <asm/arch/gpio.h>
 #include <asm/arch/memory.h>
 #include <asm/arch/usb.h>
 #include <asm/mach-types.h>
@@ -57,6 +58,10 @@ int board_init(void)
 	board_usb_init(&g_usb_config_m6_skt_b,BOARD_USB_MODE_HOST);
 	board_usb_init(&g_usb_config_m6_skt_h,BOARD_USB_MODE_CHARGER);
 #endif
+
+	amlogic_gpio_direction_output(GPIOAO_4, 0);	// USB HOST : Off
+	amlogic_gpio_direction_output(GPIOAO_5, 0);	// USB OTG : Off
+	amlogic_gpio_direction_output(GPIOAO_13, 1);	// BLUELED : Off
 
 	return 0;
 }
