@@ -306,4 +306,11 @@
 #define CONFIG_MMC_FDISK
 #define CFG_PARTITION_START             (24 * 1024 * 1024)
 
+/* Linux reboot command - include/uapi/linux/reboot.h */
+#define LINUX_REBOOT_CMD_POWER_OFF      0x4321FEDC
+#define LINUX_REBOOT_CMD_RESTART2       0xA1B2C3D4
+#define LINUX_REBOOT_CMD_KEXEC          0x45584543
+#define LINUX_REBOOT_CMD_RECOVERY       LINUX_REBOOT_CMD_KEXEC
+#define LINUX_REBOOT_CMD_FASTBOOT       LINUX_REBOOT_CMD_RESTART2
+
 #endif //__CONFIG_ODROIDC_H__

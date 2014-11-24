@@ -66,16 +66,30 @@ int board_init(void)
 	return 0;
 }
 
+/* Returns the reboot command bypassed by Linux kernel.
+ * The register, P_AO_RTI_STATUS_REG1, must be changed since the register value
+ * will be kept until power off or updated. Otherwise same reboot command will
+ * be invoked.
+ */
+static u32 board_reboot_command()
+{
+        static u32 command = -1;
+
+        if (command == -1) {
+                command = readl(P_AO_RTI_STATUS_REG1);
+                writel(0, P_AO_RTI_STATUS_REG1);
+        }
+
+        return command;
+}
+
 #if defined(CONFIG_BOARD_EARLY_INIT_F)
-
-#define LINUX_REBOOT_CMD_POWER_OFF      0x4321FEDC
-
 int board_early_init_f(void)
 {
         /* Get into suspend state if LINUX_REBOOT_CMD_POWER_OFF is signed by
          * O/S, so that system stop here. Otherwise system will restart again
          */
-        if (LINUX_REBOOT_CMD_POWER_OFF == readl(P_AO_RTI_STATUS_REG1)) {
+        if (LINUX_REBOOT_CMD_POWER_OFF == board_reboot_command()) {
                 meson_pm_suspend();
                 while (1);
         }
@@ -96,6 +110,12 @@ int board_late_init(void)
                 printf("------------------------------------------------------------\n");
                 print_part_dos(dev_desc);
                 printf("============================================================\n");
+        }
+
+        if (LINUX_REBOOT_CMD_FASTBOOT == board_reboot_command()) {
+                run_command("fastboot", 0);
+        } else if (LINUX_REBOOT_CMD_RECOVERY == board_reboot_command()) {
+                run_command("movi read recovery 0 12000000; bootm", 0);
         }
 }
 #endif
