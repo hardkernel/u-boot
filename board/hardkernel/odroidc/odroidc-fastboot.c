@@ -36,9 +36,13 @@ struct fbt_partition {
 
 struct fbt_partition sys_partitions[] = {
         {
+                .name = "-SPL",         /* SPL */
+                .type = "raw",
+                .size_kb = 32
+        }, {
                 .name = "bootloader",
                 .type = "raw",
-                .size_kb = 512
+                .size_kb = 512 - 32
         }, {
                 .name = CONFIG_ENV_BLK_PARTITION,       /* "environment" */
                 .type = "raw",
@@ -181,6 +185,12 @@ int board_fbt_load_ptbl()
 
                 if (!fbt->name || !fbt->size_kb || !fbt->type)
                         break;
+
+                /* The partition start with '-' will be hidden */
+                if (fbt->name[0] == '-') {
+                        next += fbt->size_kb * 2;
+                        continue;
+                }
 
                 ptn.start = next;
                 ptn.size = fbt->size_kb * 2;
