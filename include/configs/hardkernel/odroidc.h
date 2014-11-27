@@ -3,6 +3,8 @@
 
 #define CONFIG_MACH_MESON8_ODROIDC      // generate M8 ODROID-C machid number
 
+#define CONFIG_SYS_LOAD_ADDR		0x12000000
+
 //#define CONFIG_SECURITYKEY            /* Disabled for ODROID_C */
 
 //#define TEST_UBOOT_BOOT_SPEND_TIME
@@ -111,6 +113,9 @@
 #define CONFIG_BOOTDELAY                3
 #define CONFIG_BOOTFILE                 boot.img
 
+#define XMK_STR(x)      #x
+#define MK_STR(x)       XMK_STR(x)
+
 #define CONFIG_EXTRA_ENV_SETTINGS \
         "boardname=ODROIDC\0" \
         "bootm_low=0x00000000\0" \
@@ -135,7 +140,7 @@
         "outputmode=1080p\0" \
         "hdmimode=720p\0" \
         "initrd_high=60000000\0" \
-        "loadaddr=0x12000000\0" \
+        "loadaddr=" MK_STR(CONFIG_SYS_LOAD_ADDR) "\0" \
         "loadaddr_logo=0x14000000\0" \
         "preboot=setenv bootargs console=${console} no_console_suspend\0" \
         "preloaddtb=movi read boot 0 ${loadaddr}\0" \
@@ -277,7 +282,7 @@
 
 #define CONFIG_ENV_BLK_PARTITION        "environment"
 
-#define CONFIG_FASTBOOT_TRANSFER_BUFFER         0x12000000
+#define CONFIG_FASTBOOT_TRANSFER_BUFFER         CONFIG_SYS_LOAD_ADDR
 #define CONFIG_FASTBOOT_TRANSFER_BUFFER_SIZE    SZ_512M
 #define FASTBOOT_REBOOT_PARAMETER_ADDR  \
         (CONFIG_FASTBOOT_TRANSFER_BUFFER +CONFIG_FASTBOOT_TRANSFER_BUFFER_SIZE)
