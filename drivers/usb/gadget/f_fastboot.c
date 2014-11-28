@@ -372,10 +372,9 @@ static void cb_getvar(struct usb_ep *ep, struct usb_request *req)
 		strncat(priv.response, FASTBOOT_VERSION, sizeof(priv.response));
 	} else if (!strcmp_l1("bootloader-version", cmd)) {
 		strncat(priv.response, U_BOOT_VERSION, sizeof(priv.response));
-	} else if (!strcmp_l1("downloadsize", cmd)) {
+	} else if (!strcmp_l1("max-download-size", cmd)) {
 		char str_num[12];
-
-		sprintf(str_num, "%08x", CONFIG_FASTBOOT_TRANSFER_BUFFER_SIZE);
+		sprintf(str_num, "0x%08x", CONFIG_FASTBOOT_TRANSFER_BUFFER_SIZE);
 		strncat(priv.response, str_num, sizeof(priv.response));
 	} else if (!strcmp_l1("serialno", cmd)) {
 		s = getenv("serial#");
