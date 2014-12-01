@@ -112,9 +112,14 @@ int board_late_init(void)
                 printf("============================================================\n");
         }
 
-        if (LINUX_REBOOT_CMD_FASTBOOT == board_reboot_command()) {
+        u32 boot_mode = board_get_recovery_message();
+        if (0 == boot_mode) {
+                boot_mode = board_reboot_command();
+        }
+
+        if (boot_mode == LINUX_REBOOT_CMD_FASTBOOT) {
                 run_command("fastboot", 0);
-        } else if (LINUX_REBOOT_CMD_RECOVERY == board_reboot_command()) {
+        } else if (boot_mode == LINUX_REBOOT_CMD_RECOVERY) {
                 run_command("movi read recovery 0 12000000; bootm", 0);
         }
 }

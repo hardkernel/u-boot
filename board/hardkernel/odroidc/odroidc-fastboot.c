@@ -42,7 +42,11 @@ struct fbt_partition sys_partitions[] = {
         }, {
                 .name = "bootloader",
                 .type = "raw",
-                .size_kb = 512 - 32
+                .size_kb = 512 - (32 + 4)       /* SPL + BCB */
+        }, {
+                .name = "bcb",          /* Bootloader control block */
+                .type = "raw",
+                .size_kb = 4
         }, {
                 .name = CONFIG_ENV_BLK_PARTITION,       /* "environment" */
                 .type = "raw",
