@@ -243,7 +243,8 @@ int board_fbt_load_ptbl()
 int board_fbt_handle_flash(disk_partition_t *ptn,
                 struct cmd_fastboot_interface *priv)
 {
-        if (!strcmp("bootloader", ptn->name)) {
+        if (!strcmp("bootloader", ptn->name)
+                        && (0 == ptn->start)) {
                 lbaint_t blkcnt = 1;
                 char sector[512];
                 int err = partition_read_blks(priv->dev_desc, ptn,
