@@ -62,6 +62,10 @@ int board_get_recovery_message(void)
         dev_desc->block_read(dev_desc->dev, offset, 3, &bcb);
 
         if (0 == strncmp(bcb.recovery, "recovery", strlen("recovery"))) {
+                if (0 > test_part_dos(dev_desc)) {
+                        printf("Creating default partition...\n");
+                        run_command("fdisk -c 0", 0);
+                }
                 return LINUX_REBOOT_CMD_RECOVERY;
         }
 
