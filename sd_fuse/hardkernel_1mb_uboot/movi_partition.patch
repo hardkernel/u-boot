@@ -1,0 +1,14 @@
+diff --git a/arch/arm/include/asm/arch-exynos/movi_partition.h b/arch/arm/include/asm/arch-exynos/movi_partition.h
+index 08cff51..8721061 100644
+--- a/arch/arm/include/asm/arch-exynos/movi_partition.h
++++ b/arch/arm/include/asm/arch-exynos/movi_partition.h
+@@ -25,7 +25,8 @@
+ #endif
+ 
+ #define PART_SIZE_BL2		(16 * 1024)
+-#define PART_SIZE_UBOOT		(328 * 1024)
++#define PART_SIZE_UBOOT		(1024 * 1024)
++
+ #if defined(CONFIG_BOARD_HARDKERNEL)
+     #define PART_SIZE_KERNEL	(8 * 1024 * 1024)
+     #define PART_SIZE_ROOTFS	(8 * 1024 * 1024)
