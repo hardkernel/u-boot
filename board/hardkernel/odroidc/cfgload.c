@@ -104,7 +104,12 @@ int do_fat_cfgload(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
                 }
                 else {
                     printf("%s\n", cmd);
+#ifndef CONFIG_SYS_HUSH_PARSER
                     run_command(cmd, 0);
+#else
+                    parse_string_outer(cmd, FLAG_PARSE_SEMICOLON
+                            | FLAG_EXIT_FROM_LOOP);
+#endif
                 }
             }
             wpos = 0;
