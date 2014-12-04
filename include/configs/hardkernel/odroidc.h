@@ -282,6 +282,10 @@
 
 #define CONFIG_CUSTOM_MBR_LBA           (512 * 1024 / 512)
 
+#define BOARD_SYSTEMIMAGE_PARTITION_SIZE        1024            // 1GB
+#define BOARD_USERDATAIMAGE_PARTITION_SIZE      (3 * 1024)      // 3GB
+#define BOARD_CACHEIMAGE_PARTITION_SIZE         256             // 256MB
+
 #define CONFIG_ENV_BLK_PARTITION        "environment"
 
 #define CONFIG_FASTBOOT_TRANSFER_BUFFER         CONFIG_SYS_LOAD_ADDR
