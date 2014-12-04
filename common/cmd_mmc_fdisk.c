@@ -19,15 +19,6 @@
 #define		_100MB				(100*1024*1024)
 #define		_8_4GB				(1023*254*63)
 #define     _MB_                (1024*1024)
-#if defined(CONFIG_MACH_MESON8_ODROIDC)
-    #define		SYSTEM_PART_SIZE		(1024)    /* 1G */
-    #define		USER_DATA_PART_SIZE		(3*1024)  /* 3G */
-    #define		CACHE_PART_SIZE			(256)     /* 256MB */
-#else
-    #define		SYSTEM_PART_SIZE		(300)
-    #define		USER_DATA_PART_SIZE		(300)
-    #define		CACHE_PART_SIZE			(300)
-#endif
 
 #define		CHS_MODE			0
 #define		LBA_MODE			!(CHS_MODE)
@@ -254,7 +245,7 @@ int make_mmc_partition(int total_block_count, unsigned char *mbr, int flag, char
 	if (flag)
 		block_offset = calc_unit((unsigned long long)simple_strtoul(argv[3], NULL, 0)*1024*1024, sdInfo);
 	else
-		block_offset = calc_unit((unsigned long long)SYSTEM_PART_SIZE * _MB_, sdInfo);
+		block_offset = calc_unit((unsigned long long)BOARD_SYSTEMIMAGE_PARTITION_SIZE * _MB_, sdInfo);
 
 	partInfo[0].bootable	= 0x00;
 	partInfo[0].partitionId	= 0x83;
@@ -266,7 +257,7 @@ int make_mmc_partition(int total_block_count, unsigned char *mbr, int flag, char
 	if (flag)
 		block_offset = calc_unit((unsigned long long)simple_strtoul(argv[4], NULL, 0)*1024*1024, sdInfo);
 	else
-		block_offset = calc_unit((unsigned long long)USER_DATA_PART_SIZE * _MB_, sdInfo);
+		block_offset = calc_unit((unsigned long long)BOARD_USERDATAIMAGE_PARTITION_SIZE * _MB_, sdInfo);
 
 	partInfo[1].bootable	= 0x00;
 	partInfo[1].partitionId	= 0x83;
@@ -278,7 +269,7 @@ int make_mmc_partition(int total_block_count, unsigned char *mbr, int flag, char
 	if (flag)
 		block_offset = calc_unit((unsigned long long)simple_strtoul(argv[5], NULL, 0)*1024*1024, sdInfo);
 	else
-		block_offset = calc_unit((unsigned long long)CACHE_PART_SIZE * _MB_, sdInfo);
+		block_offset = calc_unit((unsigned long long)BOARD_CACHEIMAGE_PARTITION_SIZE * _MB_, sdInfo);
 
 	partInfo[2].bootable	= 0x00;
 	partInfo[2].partitionId	= 0x83;

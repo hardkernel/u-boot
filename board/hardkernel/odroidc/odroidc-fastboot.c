@@ -78,15 +78,15 @@ struct fbt_partition fbt_partitions[] = {
         {
                 .name = "system",               /* 2nd primary partition */
                 .type = "ext4",
-                .size_kb = 1024 * 1024
+                .size_kb = BOARD_SYSTEMIMAGE_PARTITION_SIZE * 1024
         }, {
                 .name = "userdata",             /* 2rd primary partition */
                 .type = "ext4",
-                .size_kb = 3 * 1024 * 1024,
+                .size_kb = BOARD_USERDATAIMAGE_PARTITION_SIZE * 1024
         }, {
                 .name = "cache",                /* 3rd parimary partition */
                 .type = "ext4",
-                .size_kb = 256 * 1024
+                .size_kb = BOARD_CACHEIMAGE_PARTITION_SIZE * 1024
         }, {
                 .name = "fat",                  /* 1st primary partition */
                 .type = "vfat",
