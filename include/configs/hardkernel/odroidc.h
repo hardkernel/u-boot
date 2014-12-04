@@ -284,7 +284,7 @@
 
 #define BOARD_SYSTEMIMAGE_PARTITION_SIZE        1024            // 1GB
 #define BOARD_USERDATAIMAGE_PARTITION_SIZE      (3 * 1024)      // 3GB
-#define BOARD_CACHEIMAGE_PARTITION_SIZE         256             // 256MB
+#define BOARD_CACHEIMAGE_PARTITION_SIZE         512             // 512MB
 
 #define CONFIG_ENV_BLK_PARTITION        "environment"
 
