@@ -139,15 +139,15 @@
         "fb_width=1280\0"\
         "fb_height=720\0"\
         "firstboot=1\0" \
-        "outputmode=1080p\0" \
-        "hdmimode=720p\0" \
+        "outputmode=720p\0" \
+        "hdmimode=1080p\0" \
         "initrd_high=60000000\0" \
         "loadaddr=" MK_STR(CONFIG_SYS_LOAD_ADDR) "\0" \
         "loadaddr_logo=0x14000000\0" \
         "preboot=setenv bootargs console=${console} no_console_suspend\0" \
         "preloaddtb=movi read boot 0 ${loadaddr}\0" \
-        "preloadlogo=logo size ${hdmimode}; video open;" \
-                "video clear; video dev open ${hdmimode};" \
+        "preloadlogo=logo size ${outputmode}; video open;" \
+                "video clear; video dev open ${outputmode};" \
                 "movi read logo 0 ${loadaddr_logo};" \
                 "bmp display ${loadaddr_logo}; bmp scale\0" \
         "vdac_config=0x10\0" \
