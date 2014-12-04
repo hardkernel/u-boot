@@ -111,6 +111,7 @@
 /* Environment information */
 #define CONFIG_BOOTDELAY                1
 #define CONFIG_BOOTFILE                 boot.img
+#define CONFIG_DEFAULT_ROOT             /dev/mmcblk0p2
 #define CONFIG_CONSOLE_PROTOCOL         "ttyS0,115200n8"
 
 #define XMK_STR(x)      #x
@@ -118,7 +119,18 @@
 
 #define CONFIG_EXTRA_ENV_SETTINGS \
         "boardname=ODROIDC\0" \
-        "bootargs=console=" CONFIG_CONSOLE_PROTOCOL " no_console_suspend\0" \
+        "bootcmd="\
+                "cfgload;" \
+                "setenv bootargs root=" MK_STR(CONFIG_DEFAULT_ROOT) " rw " \
+                        "console=" CONFIG_CONSOLE_PROTOCOL " no_console_suspend" \
+                        "vdaccfg=${vdac_config} " \
+                        "logo=osd1,loaded,${fb_addr},${outputmode},full " \
+                        "hdmimode=${hdmimode} " \
+                        "cvbsmode=${cvbsmode} " \
+                        "hdmitx=${cecconfig};" \
+                "movi read boot 0 0x12000000;" \
+                "movi read dtb 0 0x12800000;" \
+                "bootm 0x12000000 - 0x12800000\0" \
         "bootm_low=0x00000000\0" \
         "bootm_size=0x80000000\0" \
         "bootpath=u-boot.bin\0" \
