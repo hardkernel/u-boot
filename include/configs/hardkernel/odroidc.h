@@ -105,7 +105,6 @@
 #define CONFIG_CMD_AUTOSCRIPT
 
 #define CONFIG_CMD_REBOOT               1
-#define CONFIG_PREBOOT
 
 #define CONFIG_AML_GATE_INIT            1
 
@@ -144,8 +143,6 @@
         "initrd_high=60000000\0" \
         "loadaddr=" MK_STR(CONFIG_SYS_LOAD_ADDR) "\0" \
         "loadaddr_logo=0x14000000\0" \
-        "preboot=setenv bootargs console=${console} no_console_suspend\0" \
-        "preloaddtb=movi read boot 0 ${loadaddr}\0" \
         "preloadlogo=logo size ${outputmode}; video open;" \
                 "video clear; video dev open ${outputmode};" \
                 "movi read logo 0 ${loadaddr_logo};" \
@@ -235,7 +232,6 @@
 
 /* Pass open firmware flat tree*/
 #define CONFIG_OF_LIBFDT                1
-#define CONFIG_DT_PRELOAD               1
 #define CONFIG_SYS_BOOTMAPSZ            PHYS_MEMORY_SIZE        /* Initial Memory map for Linux */
 #define CONFIG_ANDROID_IMG              1
 
