@@ -119,14 +119,14 @@
 
 #define CONFIG_EXTRA_ENV_SETTINGS \
         "boardname=ODROIDC\0" \
-        "bootargs=console=" MK_STR(CONFIG_CONSOLE_PROTOCOL) "no_console_suspend\0" \
+        "bootargs=console=" CONFIG_CONSOLE_PROTOCOL " no_console_suspend\0" \
         "bootm_low=0x00000000\0" \
         "bootm_size=0x80000000\0" \
         "bootpath=u-boot.bin\0" \
         "bootsize=100000\0" \
         "bootstart=0\0" \
         "chipname=8726m8\0" \
-        "console=" MK_STR(CONFIG_CONSOLE_PROTOCOL) "\0" \
+        "console=" CONFIG_CONSOLE_PROTOCOL "\0" \
         "cvbsmode=480cvbs\0" \
         "display_bpp=24\0" \
         "display_color_bg=0\0" \
