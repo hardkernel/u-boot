@@ -110,7 +110,7 @@
 #define CONFIG_AML_GATE_INIT            1
 
 /* Environment information */
-#define CONFIG_BOOTDELAY                3
+#define CONFIG_BOOTDELAY                1
 #define CONFIG_BOOTFILE                 boot.img
 #define CONFIG_CONSOLE_PROTOCOL         "ttyS0,115200n8"
 
