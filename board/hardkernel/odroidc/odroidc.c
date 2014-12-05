@@ -90,6 +90,7 @@ int board_early_init_f(void)
          * O/S, so that system stop here. Otherwise system will restart again
          */
         if (LINUX_REBOOT_CMD_POWER_OFF == board_reboot_command()) {
+                amlogic_gpio_direction_output(GPIOAO_13, 1);    // BLUELED : Off
                 meson_pm_suspend();
                 while (1);
         }
