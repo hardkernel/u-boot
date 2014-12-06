@@ -61,7 +61,7 @@ int board_init(void)
 
 	amlogic_gpio_direction_output(GPIOAO_4, 0);	// USB HOST : Off
 	amlogic_gpio_direction_output(GPIOAO_5, 0);	// USB OTG : Off
-	amlogic_gpio_direction_output(GPIOAO_13, 1);	// BLUELED : Off
+	amlogic_gpio_direction_output(GPIOAO_13, 0);	// BLUELED : On
 
 	return 0;
 }
