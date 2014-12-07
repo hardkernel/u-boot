@@ -504,6 +504,38 @@ void board_init_f (ulong bootflag)
 	/* NOTREACHED - relocate_code() does not return */
 }
 
+static char __macaddr[6];
+
+char* board_read_macaddr(void)
+{
+        return (char*)__macaddr;
+}
+
+static void board_identity(void)
+{
+        char dummy[32];
+        char buf[512];
+        block_dev_desc_t *dev_desc;
+        struct mmc *mmc;
+        int i;
+
+        dev_desc = get_dev_by_name("mmc0");
+        mmc = find_mmc_device(dev_desc->dev);
+        if (mmc)
+                mmc_init(mmc);
+
+        memcpy(dummy, 0x12000000, sizeof(dummy));
+        memcpy(__macaddr, &dummy[26], sizeof(__macaddr));
+        dev_desc->block_read(dev_desc->dev, 1019, 1, buf);
+        for (i = 0; i < sizeof(dummy); i++) {
+                if (dummy[i] != buf[i]) {
+                        memcpy(buf, dummy, sizeof(dummy));
+                        dev_desc->block_write(dev_desc->dev, 1019, 1, buf);
+                        break;
+                }
+        }
+}
+
 #if !defined(CONFIG_SYS_NO_FLASH)
 static char *failed = "*** failed ***\n";
 #endif
@@ -583,6 +615,7 @@ void board_init_r (gd_t *id, ulong dest_addr)
 #ifdef CONFIG_AML_I2C
     aml_i2c_init();
 #endif
+    board_identity();
 	board_init();	/* Setup chipselects */
 #if !defined(CONFIG_SYS_NO_FLASH)
 	puts ("Flash: ");
