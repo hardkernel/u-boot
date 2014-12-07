@@ -34,6 +34,8 @@
 #define SECTOR_SIZE FS_BLOCK_SIZE
 
 #define FS_BLOCK_SIZE 512
+#define BYTE_PER_SEC  512
+#define RESERVED_CNT  32
 
 #if FS_BLOCK_SIZE != SECTOR_SIZE
 #error FS_BLOCK_SIZE != SECTOR_SIZE - This code needs to be fixed!
@@ -113,6 +115,59 @@
 			  (FAT2CPU16((dent)->starthi) << 16)))
 #define CHECK_CLUST(x, fatsize) ((x) <= 1 || \
 				(x) >= ((fatsize) != 32 ? 0xfff0 : 0xffffff0))
+
+#define mk1(p, x)                               \
+    (p) = (__u8)(x)
+
+#define mk2(p, x)                               \
+    (p)[0] = (__u8)(x),                 \
+    (p)[1] = (__u8)((x) >> 010)
+
+#define mk4(p, x)                               \
+    (p)[0] = (__u8)(x),                 \
+    (p)[1] = (__u8)((x) >> 010),                \
+    (p)[2] = (__u8)((x) >> 020),                \
+    (p)[3] = (__u8)((x) >> 030)
+
+struct bs {
+    __u8 jmp[3];                /* bootstrap entry point */
+    __u8 oem[9];                /* OEM name and version */
+};
+
+struct bsbpb {
+    __u8 bps[2];                /* bytes per sector */
+    __u8 spc;                   /* sectors per cluster */
+    __u8 res[2];                /* reserved sectors */
+    __u8 nft;                   /* number of FATs */
+    __u8 rde[2];                /* root directory entries */
+    __u8 sec[2];                /* total sectors */
+    __u8 mid;                   /* media descriptor */
+    __u8 spf[2];                /* sectors per FAT */
+    __u8 spt[2];                /* sectors per track */
+    __u8 hds[2];                /* drive heads */
+    __u8 hid[4];                /* hidden sectors */
+    __u8 bsec[6];               /* big total sectors */
+};
+
+/* For FAT32 */
+struct bsxbpb {
+    __u8 bspf[4];               /* big sectors per FAT */
+    __u8 xflg[2];               /* FAT control flags */
+    __u8 vers[2];               /* file system version */
+    __u8 rdcl[4];               /* root directory start cluster */
+    __u8 infs[2];               /* file system info sector */
+    __u8 bkbs[2];               /* backup boot sector */
+    __u8 rsvd[12];              /* reserved */
+};
+
+struct bsx {
+    __u8 drv;           /* drive number */
+    __u8 rsvd;          /* reserved */
+    __u8 sig;           /* extended boot signature */
+    __u8 volid[4];              /* volume ID number */
+    __u8 label[11];     /* volume label */
+    __u8 type[8];               /* file system type */
+};
 
 typedef struct boot_sector {
 	__u8	ignored[3];	/* Bootstrap code */
