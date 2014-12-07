@@ -78,6 +78,8 @@ int board_eth_init(bd_t *bis)
         udelay(1000);
         aml_eth_init(bis);
 
+        eth_setenv_enetaddr("ethaddr", board_read_macaddr());
+
         return 0;
 }
 #endif
