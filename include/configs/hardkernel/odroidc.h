@@ -127,7 +127,8 @@
                         "logo=osd1,loaded,${fb_addr},${outputmode},full " \
                         "hdmimode=${hdmimode} " \
                         "cvbsmode=${cvbsmode} " \
-                        "hdmitx=${cecconfig};" \
+                        "hdmitx=${cecconfig} " \
+                        "androidboot.serialno=${fbt_id#}; " \
                 "movi read boot 0 0x12000000;" \
                 "movi read dtb 0 0x12800000;" \
                 "bootm 0x12000000 - 0x12800000\0" \
