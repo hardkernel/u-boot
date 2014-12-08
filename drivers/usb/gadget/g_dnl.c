@@ -52,6 +52,7 @@
 static const char shortname[] = "usb_dnl_";
 static const char product[] = "USB download gadget";
 static const char manufacturer[] = CONFIG_G_DNL_MANUFACTURER;
+static const char serialno[] = "01234567890ABCDEF";
 
 static struct usb_device_descriptor device_desc = {
 	.bLength = sizeof device_desc,
@@ -71,6 +72,7 @@ static struct usb_device_descriptor device_desc = {
 static struct usb_string g_dnl_string_defs[] = {
 	{ 0, manufacturer, },
 	{ 1, product, },
+        { 2, serialno, },
 };
 
 static struct usb_gadget_strings g_dnl_string_tab = {
@@ -149,6 +151,15 @@ static int g_dnl_bind(struct usb_composite_dev *cdev)
 
 	g_dnl_string_defs[1].id = id;
 	device_desc.iProduct = id;
+
+	id = usb_string_id(cdev);
+	if (id < 0)
+		return id;
+        char *s = getenv("fbt_id#");
+        if (s)
+                g_dnl_string_defs[2].s = s;
+	g_dnl_string_defs[2].id = id;
+	device_desc.iSerialNumber = id;
 
 	ret = g_dnl_config_register(cdev);
 	if (ret)

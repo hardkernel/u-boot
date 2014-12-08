@@ -505,6 +505,7 @@ void board_init_f (ulong bootflag)
 }
 
 static char __macaddr[6];
+static char __serialno[16 + 1];
 
 char* board_read_macaddr(void)
 {
@@ -534,6 +535,9 @@ static void board_identity(void)
                         break;
                 }
         }
+
+        memcpy(__serialno, &dummy[10], 16);
+        __serialno[16] = 0;
 }
 
 #if !defined(CONFIG_SYS_NO_FLASH)
@@ -926,6 +930,7 @@ unsigned int before_lcd_init =  get_utimer(0);
 #endif
 	}
 #endif
+        setenv("fbt_id#", __serialno);
 
 	AML_LOG_TE("board");
 
