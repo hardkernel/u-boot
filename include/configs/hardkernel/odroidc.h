@@ -119,6 +119,8 @@
 
 #define CONFIG_EXTRA_ENV_SETTINGS \
         "boardname=ODROIDC\0" \
+        "bootargs=root=" MK_STR(CONFIG_DEFAULT_ROOT) " rw " \
+                "console=" CONFIG_CONSOLE_PROTOCOL " no_console_suspend\0" \
         "bootcmd="\
                 "cfgload;" \
                 "setenv bootargs root=" MK_STR(CONFIG_DEFAULT_ROOT) " rw " \
