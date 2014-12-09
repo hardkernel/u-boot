@@ -318,7 +318,7 @@
 #define CONFIG_USB_GADGET_VBUS_DRAW     0
 
 #define CONFIG_G_DNL_VENDOR_NUM         0x18d1
-#define CONFIG_G_DNL_PRODUCT_NUM        0x2c10
+#define CONFIG_G_DNL_PRODUCT_NUM        0x0002
 #define CONFIG_G_DNL_MANUFACTURER       "Hardkernel Co., Ltd"
 #endif /* CONFIG_USB_GADGET */
 
