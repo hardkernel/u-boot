@@ -122,7 +122,7 @@
         "bootcmd="\
                 "cfgload;" \
                 "setenv bootargs root=" MK_STR(CONFIG_DEFAULT_ROOT) " rw " \
-                        "console=" CONFIG_CONSOLE_PROTOCOL " no_console_suspend" \
+                        "console=" CONFIG_CONSOLE_PROTOCOL " no_console_suspend " \
                         "vdaccfg=${vdac_config} " \
                         "logo=osd1,loaded,${fb_addr},${outputmode},full " \
                         "hdmimode=${hdmimode} " \
