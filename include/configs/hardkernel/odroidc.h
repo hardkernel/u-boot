@@ -154,7 +154,7 @@
         "fb_height=720\0"\
         "firstboot=1\0" \
         "outputmode=720p\0" \
-        "hdmimode=1080p\0" \
+        "hdmimode=720p\0" \
         "initrd_high=60000000\0" \
         "loadaddr=" MK_STR(CONFIG_SYS_LOAD_ADDR) "\0" \
         "loadaddr_logo=0x14000000\0" \
