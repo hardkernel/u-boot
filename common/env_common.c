@@ -221,6 +221,9 @@ int env_import(const char *buf, int check)
 
 		if (crc32(0, ep->data, ENV_SIZE) != crc) {
 			set_default_env("!bad CRC");
+#if defined(CONFIG_MACH_MESON8_ODROIDC)
+                        saveenv();
+#endif
 			return 0;
         }else if(ep->data[0] == 0xff){
 			printf("check env data = 0xff, set default env\n");
@@ -259,6 +262,9 @@ void env_relocate (void)
 #else
 		show_boot_progress (-60);
 		set_default_env("!bad CRC");
+#if defined(CONFIG_MACH_MESON8_ODROIDC)
+                saveenv();
+#endif
 #endif
 	} else {
 		env_relocate_spec ();
