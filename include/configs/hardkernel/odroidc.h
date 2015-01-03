@@ -337,4 +337,7 @@
 
 #define CONFIG_ENV_OVERWRITE
 
+/* File system support */
+#define CONFIG_CMD_EXT4
+
 #endif //__CONFIG_ODROIDC_H__
