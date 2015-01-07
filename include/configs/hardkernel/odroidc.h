@@ -340,4 +340,50 @@
 /* File system support */
 #define CONFIG_CMD_EXT4
 
+#define CONFIG_CMD_I2C
+
+#ifdef CONFIG_CMD_I2C
+#undef	CONFIG_HARD_I2C			/* I2C with hardware support	*/
+#define CONFIG_SOFT_I2C			/* I2C bit-banged		*/
+#define CONFIG_SYS_I2C_SPEED		50000	/* 50kHz is supported to work */
+#define CONFIG_SYS_I2C_SLAVE		0x50
+
+#ifdef CONFIG_SOFT_I2C
+/*
+ * Software (bit-bang) I2C driver configuration
+ */
+#define HDMI_SDA	GPIOH_1
+#define HDMI_SCL	GPIOH_2
+
+#define I2C_INIT	\
+	do { \
+		amlogic_gpio_direction_output(HDMI_SCL, 1); \
+		amlogic_gpio_direction_output(HDMI_SDA, 1); \
+	} while (0)
+
+#define I2C_ACTIVE \
+	do { \
+	} while (0)
+
+#define I2C_TRISTATE \
+	do { \
+		amlogic_gpio_direction_input(HDMI_SDA); \
+	} while (0)
+
+#define I2C_READ	amlogic_get_value(HDMI_SDA)
+#define I2C_SDA(bit) \
+	do { \
+		if (bit) \
+			amlogic_gpio_direction_input(HDMI_SDA); \
+		else \
+			amlogic_gpio_direction_output(HDMI_SDA, 0); \
+	} while (0)
+#define I2C_SCL(bit) \
+	do { \
+		amlogic_gpio_direction_output(HDMI_SCL, bit); \
+	} while (0)
+#define I2C_DELAY	udelay(5)
+#endif
+#endif
+
 #endif //__CONFIG_ODROIDC_H__

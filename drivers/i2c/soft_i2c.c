@@ -48,6 +48,9 @@
 #include <asm/io.h>
 #endif
 #include <i2c.h>
+#if defined(CONFIG_MACH_MESON8_ODROIDC)
+#include <asm/arch/gpio.h>
+#endif
 
 #if defined(CONFIG_SOFT_I2C_GPIO_SCL)
 # include <asm/gpio.h>
