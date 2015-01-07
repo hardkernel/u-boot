@@ -386,4 +386,6 @@
 #endif
 #endif
 
+#define CONFIG_I2C_EDID
+
 #endif //__CONFIG_ODROIDC_H__
