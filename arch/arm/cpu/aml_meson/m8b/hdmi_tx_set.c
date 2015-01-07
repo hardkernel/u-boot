@@ -369,7 +369,9 @@ static void hdmi_tx_gate(HDMI_Video_Codes_t vic)
         aml_set_reg32_bits_op(P_HHI_GCLK_OTHER, 1, 9, 1); //enable VCLK2_ENC
     }
     
+#if !defined(CONFIG_MACH_MESON8_ODROIDC)
     aml_set_reg32_bits_op(P_PERIPHS_PIN_MUX_1, 0x7, 24, 3);  //HPD SCL pinmux
+#endif
 }
 
 static void hdmi_tx_clk(HDMI_Video_Codes_t vic)
