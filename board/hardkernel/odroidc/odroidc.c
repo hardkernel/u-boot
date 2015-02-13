@@ -43,6 +43,10 @@ int serial_set_pin_port(unsigned port_base)
 {
 	// GPIOAO_0 : tx, GPIOAO_1 : rx
 	setbits_le32(P_AO_RTI_PIN_MUX_REG, 3 << 11);
+
+        amlogic_set_pull_up(GPIOAO_0, 1, 1);
+        amlogic_set_pull_up(GPIOAO_1, 1, 1);
+
 	return 0;
 }
 
