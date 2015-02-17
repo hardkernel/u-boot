@@ -1024,6 +1024,8 @@ int ext4_write_file(const char *filename, void *buf, loff_t offset,
 	ext4fs_close();
 	*actwrite = len;
 
+	*actwrite = len;
+
 	return 0;
 
 fail:
