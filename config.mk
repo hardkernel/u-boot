@@ -76,6 +76,12 @@ PLATFORM_CPPFLAGS += -pipe
 LDFLAGS += $(PLATFORM_LDFLAGS)
 LDFLAGS_FINAL += -Bstatic
 
+FIRMWARE_CPPFLAGS += -I$(buildtree)/include2 -I$(buildtree)/include
+FIRMWARE_CPPFLAGS += -I$(buildtree)/include
+FIRMWARE_CPPFLAGS += -fno-builtin -ffreestanding -nostdinc	\
+	-isystem $(gccincdir) -pipe $(PLATFORM_CPPFLAGS)
+
+export FIRMWARE_CPPFLAGS
 export PLATFORM_CPPFLAGS
 export RELFLAGS
 export LDFLAGS_FINAL

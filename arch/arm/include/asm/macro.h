@@ -79,6 +79,9 @@ lr	.req	x30
  */
 .macro	branch_if_slave, xreg, slave_label
 	mrs	\xreg, mpidr_el1
+	#if defined(MPIDR_CLUSTER_MASTER_CORE)
+	eor \xreg1, \xreg1, #MPIDR_CLUSTER_MASTER_CORE
+	#endif
 	tst	\xreg, #0xff		/* Test Affinity 0 */
 	b.ne	\slave_label
 	lsr	\xreg, \xreg, #8
@@ -101,6 +104,9 @@ lr	.req	x30
 	lsr	\xreg2, \xreg1, #32
 	lsl	\xreg1, \xreg1, #40
 	lsr	\xreg1, \xreg1, #40
+	#if defined(MPIDR_CLUSTER_MASTER_CORE)
+	eor \xreg1, \xreg1, #MPIDR_CLUSTER_MASTER_CORE
+	#endif
 	orr	\xreg1, \xreg1, \xreg2
 	cbz	\xreg1, \master_label
 .endm

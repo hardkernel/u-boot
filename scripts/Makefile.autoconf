@@ -78,7 +78,8 @@ define filechk_config_h
 	echo \#include \<configs/$(CONFIG_SYS_CONFIG_NAME).h\>;		\
 	echo \#include \<asm/config.h\>;				\
 	echo \#include \<config_fallbacks.h\>;				\
-	echo \#include \<config_uncmd_spl.h\>; )
+	echo \#include \<config_uncmd_spl.h\>; \
+	echo \#define SYS_PROMPT \"$(BOARD)\#\"; )
 endef
 
 include/config.h: scripts/Makefile.autoconf create_symlink FORCE

@@ -732,6 +732,10 @@ config TARGET_LS2085A_SIMU
 	bool "Support ls2085a_simu"
 	select ARM64
 
+config TARGET_MESON_GX
+	bool "Support meson gx 64bit"
+	select ARM64
+
 config TARGET_LS1021AQDS
 	bool "Support ls1021aqds"
 	select CPU_V7
@@ -983,6 +987,8 @@ source "board/wandboard/Kconfig"
 source "board/woodburn/Kconfig"
 source "board/xaeniax/Kconfig"
 source "board/zipitz2/Kconfig"
+
+source "board/amlogic/Kconfig"
 
 source "arch/arm/Kconfig.debug"
 

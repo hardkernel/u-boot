@@ -12,7 +12,7 @@ NAME =
 
 # Do not use make's built-in rules and variables
 # (this increases performance and avoids hard-to-debug behaviour);
-MAKEFLAGS += -rR
+MAKEFLAGS += -rR --no-print-directory
 
 # Avoid funny character set dependencies
 unexport LC_ALL
@@ -118,6 +118,8 @@ ifeq ($(KBUILD_SRC),)
 # Do we want to locate output files in a separate directory?
 ifeq ("$(origin O)", "command line")
   KBUILD_OUTPUT := $(O)
+else
+  KBUILD_OUTPUT := build
 endif
 
 # That's our default target when none is given on the command line
@@ -156,7 +158,7 @@ ifeq ($(skip-makefile),)
 # Do not print "Entering directory ...",
 # but we want to display it when entering to the output directory
 # so that IDEs/editors are able to understand relative filenames.
-MAKEFLAGS += --no-print-directory
+#MAKEFLAGS += --no-print-directory
 
 # Call a source code checker (by default, "sparse") as part of the
 # C compilation.
@@ -210,9 +212,12 @@ objtree		:= .
 src		:= $(srctree)
 obj		:= $(objtree)
 
+buildsrc	:= $(abspath $(srctree))
+buildtree	:= $(abspath $(CURDIR)/$(KBUILD_OUTPUT))
+
 VPATH		:= $(srctree)$(if $(KBUILD_EXTMOD),:$(KBUILD_EXTMOD))
 
-export srctree objtree VPATH
+export srctree objtree VPATH KBUILD_OUTPUT buildtree buildsrc
 
 # Make sure CDPATH settings don't interfere
 unexport CDPATH
@@ -240,6 +245,8 @@ export	HOSTARCH HOSTOS
 ifeq ($(HOSTARCH),$(ARCH))
 CROSS_COMPILE ?=
 endif
+
+export CROSS_COMPILE=/opt/gcc-linaro-aarch64-none-elf-4.8-2013.11_linux/bin/aarch64-none-elf-
 
 KCONFIG_CONFIG	?= .config
 export KCONFIG_CONFIG
@@ -709,7 +716,7 @@ endif
 
 # Always append ALL so that arch config.mk's can add custom ones
 ALL-y += u-boot.srec u-boot.bin System.map binary_size_check
-
+ALL-y += u-boot.hex bl2.bin fip.bin boot.bin
 ALL-$(CONFIG_ONENAND_U_BOOT) += u-boot-onenand.bin
 ifeq ($(CONFIG_SPL_FSL_PBL),y)
 ALL-$(CONFIG_RAMBOOT_PBL) += u-boot-with-spl-pbl.bin
@@ -819,7 +826,7 @@ binary_size_check: u-boot.bin FORCE
 
 u-boot.bin: u-boot FORCE
 	$(call if_changed,objcopy)
-	$(call DO_STATIC_RELA,$<,$@,$(CONFIG_SYS_TEXT_BASE))
+	@$(call DO_STATIC_RELA,$<,$@,$(CONFIG_SYS_TEXT_BASE))
 	$(BOARD_SIZE_CHECK)
 
 u-boot.ldr:	u-boot
@@ -833,6 +840,34 @@ OBJCOPYFLAGS_u-boot.ldr.srec := -I binary -O srec
 
 u-boot.ldr.hex u-boot.ldr.srec: u-boot.ldr FORCE
 	$(call if_changed,objcopy)
+
+.PHONY: u-boot-comp.bin
+u-boot-comp.bin:u-boot.bin
+	#tools/uclpack $< $@
+	cp $< $@
+#	$(objtree)/tools/uclpack $< $@
+
+fip_folder := $(srctree)/fip
+.PHONY: fip.bin
+fip.bin: u-boot.bin u-boot.hex
+	@cp u-boot.bin $(srctree)/fip/bl33.bin
+	$(fip_folder)/fip_create --dump          \
+         --bl30 $(fip_folder)/bl30.bin \
+         --bl31 $(fip_folder)/bl31.bin \
+         --bl32 $(fip_folder)/bl32.bin \
+         --bl33 $(fip_folder)/bl33.bin \
+         $(fip_folder)/fip.bin
+
+.PHONY : bl2.bin
+bl2.bin: tools prepare
+	$(Q)$(MAKE) -C $(srctree)/$(CPUDIR)/common/firmware all FIRMWARE=$@
+	@cp $(buildtree)/firmware/${SOC}/debug/bl2.bin bl2.bin
+	@cp bl2.bin $(srctree)/fip/bl2.bin
+
+.PHONY : boot.bin
+boot.bin: bl2.bin fip.bin
+	$(fip_folder)/bl2_fix.sh $(fip_folder)/bl2.bin $(fip_folder)/zero_tmp $(fip_folder)/bl2_fix.bin
+	cat $(fip_folder)/bl2_fix.bin $(fip_folder)/fip.bin > $(fip_folder)/boot.bin
 
 #
 # U-Boot entry point, needed for booting of full-blown U-Boot
@@ -1335,9 +1370,15 @@ distclean: mrproper
 		\( -name '*.orig' -o -name '*.rej' -o -name '*~' \
 		-o -name '*.bak' -o -name '#*#' -o -name '.*.orig' \
 		-o -name '.*.rej' -o -name '*%' -o -name 'core' \
-		-o -name '*.pyc' \) \
+		-o -name '*.pyc' -o -name '*.o' \) \
 		-type f -print | xargs rm -f
 	@rm -f boards.cfg
+	@rm -rf $(buildtree)/*
+	@rm -f $(srctree)/fip/bl2.bin
+	@rm -f $(srctree)/fip/bl33.bin
+	@rm -f $(srctree)/fip/fip.bin
+	@rm -f $(srctree)/fip/bl2_fix.bin
+	@rm -f $(srctree)/fip/boot.bin
 
 backup:
 	F=`basename $(srctree)` ; cd .. ; \

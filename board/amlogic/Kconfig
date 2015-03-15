@@ -1,0 +1,10 @@
+
+config GX_SKT_V1
+	bool "Support meson gx skt v1 board"
+	default n
+
+if GX_SKT_V1
+source "board/amlogic/gx_skt_v1/Kconfig"
+endif
+
+
