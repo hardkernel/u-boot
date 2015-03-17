@@ -2166,6 +2166,27 @@ int fdt_next_region(const void *fdt,
 int fdt_add_alias_regions(const void *fdt, struct fdt_region *region, int count,
 			  int max_regions, struct fdt_region_state *info);
 int fdt_device_is_available(const void *blob, int node);
+/**
+ * fdt_node_offset_by_phandle_node - find the node with a given phandle and node
+ * @fdt: pointer to the device tree blob
+ * @phandle: phandle value
+ * @node: start node value
+ *
+ * fdt_node_offset_by_phandle_node() returns the offset of the node
+ * which has the given phandle value.  If there is more than one node
+ * in the tree with the given phandle (an invalid tree), results are
+ * undefined.
+ *
+ * returns:
+ *	structure block offset of the located node (>= 0), on success
+ *	-FDT_ERR_NOTFOUND, no node with that phandle exists
+ *	-FDT_ERR_BADPHANDLE, given phandle value was invalid (0 or -1)
+ *	-FDT_ERR_BADMAGIC,
+ *	-FDT_ERR_BADVERSION,
+ *	-FDT_ERR_BADSTATE,
+ *	-FDT_ERR_BADSTRUCTURE, standard meanings
+ */
+int fdt_node_offset_by_phandle_node(const void *fdt, int node, uint32_t phandle);
 #endif /* SWIG */
 
 #endif /* _LIBFDT_H */
