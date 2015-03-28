@@ -15,6 +15,7 @@
 #include <asm/arch/io.h>
 #include <asm/arch/sdio.h>
 #include <mmc.h>
+#include <div64.h>
 
 #ifdef CONFIG_STORE_COMPATIBLE
 #include <asm/arch/storage.h>
@@ -449,7 +450,7 @@ int aml_sd_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd, struct	mmc_data *data)
 	case MMC_CMD_WRITE_SINGLE_BLOCK:
 	case MMC_CMD_WRITE_MULTIPLE_BLOCK:
 		if(mmc->high_capacity)
-			ret = mmc->capacity/mmc->read_bl_len <= cmd->cmdarg;
+			ret = lldiv(mmc->capacity,mmc->read_bl_len) <= cmd->cmdarg;
 		else
 			ret = mmc->capacity <= cmd->cmdarg;
 		if(ret)
