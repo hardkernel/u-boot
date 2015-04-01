@@ -1,3 +1,3 @@
 
-obj-y	:= clock.o
+obj-y	:= clock.o sdio.o
 

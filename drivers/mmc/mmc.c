@@ -385,6 +385,9 @@ static int mmc_send_op_cond(struct mmc *mmc)
 
  	/* Asking to the card its capabilities */
 	mmc->op_cond_pending = 1;
+
+	return IN_PROGRESS;
+
 	for (i = 0; i < 2; i++) {
 		err = mmc_send_op_cond_iter(mmc, &cmd, i != 0);
 		if (err)
@@ -1216,7 +1219,7 @@ static int mmc_startup(struct mmc *mmc)
 	mmc->block_dev.revision[0] = 0;
 #endif
 #if !defined(CONFIG_SPL_BUILD) || defined(CONFIG_SPL_LIBDISK_SUPPORT)
-	init_part(&mmc->block_dev);
+	//init_part(&mmc->block_dev);
 #endif
 
 	return 0;
