@@ -866,7 +866,9 @@ bl2.bin: tools prepare
 
 .PHONY : boot.bin
 boot.bin: bl2.bin fip.bin
-	$(fip_folder)/bl2_fix.sh $(fip_folder)/bl2.bin $(fip_folder)/zero_tmp $(fip_folder)/bl2_fix.bin
+	#$(fip_folder)/bl2_fix.sh $(fip_folder)/bl2.bin $(fip_folder)/zero_tmp $(fip_folder)/bl2_fix.bin
+	$(srctree)/tools/gx_boot pkg $(fip_folder)/bl2.bin
+	$(srctree)/tools/gx_boot spl $(fip_folder)/bl2_fix.bin $(fip_folder)/bl2.bin.pkg
 	cat $(fip_folder)/bl2_fix.bin $(fip_folder)/fip.bin > $(fip_folder)/boot.bin
 
 #
