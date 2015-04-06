@@ -95,6 +95,11 @@ int board_early_init_f(void)
          */
         if (LINUX_REBOOT_CMD_POWER_OFF == board_reboot_command()) {
                 amlogic_gpio_direction_output(GPIOAO_13, 1);    // BLUELED : Off
+                amlogic_gpio_direction_output(GPIOAO_3, 0);  // TF_3V3N_1V8
+                amlogic_gpio_direction_output(GPIOAO_4, 1);  // USB Host
+                amlogic_gpio_direction_output(GPIOAO_5, 0);  // USB OTG
+                amlogic_gpio_direction_output(GPIOY_12, 1);  // TFLASH_VDD_EN
+                amlogic_gpio_direction_output(GPIOH_4, 0);   // ETHERNET
                 meson_pm_suspend();
                 while (1);
         }
