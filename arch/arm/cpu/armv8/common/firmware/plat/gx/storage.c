@@ -52,9 +52,9 @@ uint32_t storage_load(uint32_t src, uint32_t des, uint32_t size){
 uint32_t get_boot_device(void){
 	printf("P_ASSIST_POR_CONFIG addr: 0x%8x\n", P_ASSIST_POR_CONFIG);
 	printf("P_ASSIST_POR_CONFIG cont: 0x%8x\n", readl(P_ASSIST_POR_CONFIG));
-	printf("SEC_AO_SEC_SD_CFG1 addr: 0x%8x\n", SEC_AO_SEC_SD_CFG1);
-	printf("SEC_AO_SEC_SD_CFG1 cont: 0x%8x\n", readl(SEC_AO_SEC_SD_CFG1));
-	return (readl(SEC_AO_SEC_SD_CFG1) & 0xf);
+	printf("SEC_AO_SEC_GP_CFG0 addr: 0x%8x\n", SEC_AO_SEC_GP_CFG0);
+	printf("SEC_AO_SEC_GP_CFG0 cont: 0x%8x\n", readl(SEC_AO_SEC_GP_CFG0));
+	return (readl(SEC_AO_SEC_GP_CFG0) & 0xf);
 }
 
 uint32_t spi_read(uint32_t src, uint32_t des, uint32_t size){
