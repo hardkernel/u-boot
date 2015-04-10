@@ -10,6 +10,9 @@
 #include <platform_def.h>
 #include <storage.h>
 #include <asm/arch/secure_apb.h>
+#include <asm/arch/cpu_sdio.h>
+
+
 
 uint32_t storage_load(uint32_t src, uint32_t des, uint32_t size){
 	printf("storage_load src: 0x%8x, des: 0x%8x, size: 0x%8x\n", src, des, size);
@@ -23,7 +26,7 @@ uint32_t storage_load(uint32_t src, uint32_t des, uint32_t size){
 			break;
 		case BOOT_DEVICE_EMMC:
 			printf("Boot device: eMMC\n");
-			/*to do list*/
+			sdio_read_data(boot_device,src, des, size);
 			break;
 		case BOOT_DEVICE_NAND:
 			printf("Boot device: NAND\n");
@@ -36,7 +39,7 @@ uint32_t storage_load(uint32_t src, uint32_t des, uint32_t size){
 			break;
 		case BOOT_DEVICE_SD:
 			printf("Boot device: SD\n");
-			/*to do list*/
+			//sdio_read_data(boot_device,src, des, size);
 			break;
 		case BOOT_DEVICE_USB:
 			printf("Boot device: USB\n");
@@ -77,3 +80,142 @@ uint32_t spi_read(uint32_t src, uint32_t des, uint32_t size){
 	memcpy((void *)des64, (void *)(src64 | (uint64_t)P_SPI_START_ADDR), size);
 	return 0;
 }
+
+#define MAX_DESC_NUM	8
+#define MAX_BLOCK_COUNTS 512
+unsigned sdio_read_blocks(struct sd_emmc_global_regs *sd_emmc_regs, uint32_t src, uint32_t des, uint32_t size,uint32_t mode)
+{
+	unsigned ret = 0;
+	unsigned read_start;
+	unsigned vstart = 0;
+	unsigned status_irq = 0;
+	unsigned response[4];
+	struct cmd_cfg *des_cmd_cur = NULL;
+	struct sd_emmc_desc_info desc[MAX_DESC_NUM];
+	struct sd_emmc_desc_info *desc_cur;
+	struct sd_emmc_start *desc_start = (struct sd_emmc_start*)&vstart;
+	struct sd_emmc_status *status_irq_reg = (void *)&status_irq;
+
+	memset(desc,0,MAX_DESC_NUM*sizeof(struct sd_emmc_desc_info));
+	desc_cur = desc;
+
+	if (mode)
+		read_start = src>>9;
+	else
+		read_start = src;
+
+	des_cmd_cur = (struct cmd_cfg *)&(desc_cur->cmd_info);
+	//starting reading......
+	des_cmd_cur->cmd_index = 18;  //read data command
+    if (mode) {
+		des_cmd_cur->block_mode = 1;
+		des_cmd_cur->length = size;
+	}else{
+		des_cmd_cur->block_mode = 0;
+		des_cmd_cur->length = size;
+	}
+
+	des_cmd_cur->data_io = 1;
+	des_cmd_cur->data_wr = 0;
+	des_cmd_cur->data_num = 0;
+	des_cmd_cur->no_resp = 0;
+	des_cmd_cur->resp_num = 0;
+	des_cmd_cur->timeout = 7;
+	des_cmd_cur->owner = 1;
+	des_cmd_cur->end_of_chain = 1;
+
+	desc_cur->cmd_arg = read_start;
+	desc_cur->data_addr = des;
+	desc_cur->data_addr &= ~(1<<0);   //DDR
+	desc_cur->resp_addr = (unsigned long)response;
+
+	desc_start->init = 0;
+	desc_start->busy = 1;
+	desc_start->addr = (unsigned long)desc >> 2;
+	sd_emmc_regs->gstatus = 0x3fff;
+	//sd_emmc_regs->gstart = vstart;
+	sd_emmc_regs->gcmd_cfg = desc_cur->cmd_info;
+	sd_emmc_regs->gcmd_dat = desc_cur->data_addr;
+	sd_emmc_regs->gcmd_arg = desc_cur->cmd_arg;
+
+
+	while (1) {
+		status_irq = sd_emmc_regs->gstatus;
+		if (status_irq_reg->end_of_chain)
+			break;
+	}
+	//send stop cmd
+	desc_cur = &desc[1];
+	des_cmd_cur = (struct cmd_cfg *)&(desc_cur->cmd_info);
+	des_cmd_cur->cmd_index = 12;
+	des_cmd_cur->data_io = 0;
+	des_cmd_cur->no_resp = 0;
+	des_cmd_cur->r1b = 1;
+	des_cmd_cur->owner = 1;
+	des_cmd_cur->end_of_chain = 1;
+
+	desc_start->init = 0;
+	desc_start->busy = 1;
+	desc_start->addr = (unsigned long)desc_cur >> 2;
+	sd_emmc_regs->gstatus = 0x3fff;
+	//sd_emmc_regs->gstart = vstart;
+	sd_emmc_regs->gcmd_cfg = desc_cur->cmd_info;
+	sd_emmc_regs->gcmd_dat = desc_cur->data_addr;
+	sd_emmc_regs->gcmd_arg = desc_cur->cmd_arg;
+
+	while (1) {
+		status_irq = sd_emmc_regs->gstatus;
+		//printf("status_irq=0x%x\n",status_irq);
+		if (status_irq_reg->end_of_chain)
+			break;
+	}
+
+	if (status_irq_reg->rxd_err)
+		ret |= SD_EMMC_RXD_ERROR;
+	if (status_irq_reg->txd_err)
+		ret |= SD_EMMC_TXD_ERROR;
+	if (status_irq_reg->desc_err)
+		ret |= SD_EMMC_DESC_ERROR;
+	if (status_irq_reg->resp_err)
+		ret |= SD_EMMC_RESP_CRC_ERROR;
+	if (status_irq_reg->resp_timeout)
+		ret |= SD_EMMC_RESP_TIMEOUT_ERROR;
+	if (status_irq_reg->desc_timeout)
+		ret |= SD_EMMC_DESC_TIMEOUT_ERROR;
+	if (ret)
+		printf("sd/emmc read data error: %d\n",ret);
+	printf("read data success!\n");
+	return ret;
+
+}
+
+
+unsigned sdio_read_data(unsigned boot_device, uint32_t src, uint32_t des, uint32_t size)
+{
+
+	unsigned mode = 1,blk_cnt,ret;
+	struct sd_emmc_global_regs *sd_emmc_regs=0;
+
+	if (boot_device == BOOT_DEVICE_EMMC)
+		sd_emmc_regs = (struct sd_emmc_global_regs *)SD_EMMC_BASE_C;
+	else if(boot_device == BOOT_DEVICE_SD)
+		sd_emmc_regs = (struct sd_emmc_global_regs *)SD_EMMC_BASE_B;
+	else
+		printf("sd/emmc boot device error\n");
+
+	blk_cnt = ((size+511)&(~(511)))>>9;
+	do {
+		ret = sdio_read_blocks(sd_emmc_regs,src,des,(blk_cnt>MAX_BLOCK_COUNTS)?MAX_BLOCK_COUNTS:blk_cnt,mode);
+		if (ret)
+			return ret;
+		if (blk_cnt>MAX_BLOCK_COUNTS) {
+			src += MAX_BLOCK_COUNTS<<9;
+			des += MAX_BLOCK_COUNTS<<9;
+			blk_cnt -= MAX_BLOCK_COUNTS;
+		}else
+			break;
+	}while(1);
+
+	return ret;
+}
+

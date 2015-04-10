@@ -17,5 +17,5 @@
 uint32_t storage_load(uint32_t src, uint32_t des, uint32_t size);
 uint32_t get_boot_device(void);
 uint32_t spi_read(uint32_t src, uint32_t des, uint32_t size);
-
+unsigned sdio_read_data(unsigned boot_device, uint32_t src, uint32_t des, uint32_t size);
 #endif /*__BL2_STORAGE_*/
