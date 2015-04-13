@@ -1,20 +1,6 @@
 #ifndef __CPU_SDIO_H__
 #define __CPU_SDIO_H__
 
-#define APB4_BASE_ADDR	0xc8834400
-
-#ifndef P_PERIPHS_PIN_MUX_2
-	#define P_PERIPHS_PIN_MUX_2		(APB4_BASE_ADDR+0x2e*4)
-#endif
-
-#ifndef P_PERIPHS_PIN_MUX_4
-	#define P_PERIPHS_PIN_MUX_4		(APB4_BASE_ADDR+0x30*4)
-#endif
-
-#ifndef P_PERIPHS_PIN_MUX_8
-	#define P_PERIPHS_PIN_MUX_8		(APB4_BASE_ADDR+0x34*4)
-#endif
-
 #define SD_EMMC_BASE_A 0xd0070000
 #define SD_EMMC_BASE_B 0xd0072000
 #define SD_EMMC_BASE_C 0xd0074000

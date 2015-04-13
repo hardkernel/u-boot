@@ -57,6 +57,8 @@
 
 /* Trusted Boot Firmware BL2 */
 #define BL2_IMAGE_NAME			"bl2.bin"
+#define BL2_IMAGE_SIZE			0xC000	/*48KB*/
+#define BL2_IMAGE_OFFSET		0x1000	/*4KB, header of bl2*/
 
 /* EL3 Runtime Firmware BL3-1 */
 #define BL31_IMAGE_NAME			"bl31.bin"
@@ -97,8 +99,11 @@
 
 //#define TZRAM_BASE		0x04001000
 //#define TZRAM_SIZE		0x0003F000
-#define TZRAM_BASE			0xD9001000
+#define TZRAM_BASE			0xD9000000
 #define TZRAM_SIZE			0x00020000
+
+#define TZRAM_BL2_FREE_BASE			TZRAM_BASE + BL2_IMAGE_SIZE
+#define TZRAM_BL2_FREE_SIZE			TZRAM_SIZE - BL2_IMAGE_SIZE
 
 /*******************************************************************************
  * BL1 specific defines.
@@ -114,7 +119,7 @@
  * BL2 specific defines.
  ******************************************************************************/
 //#define BL2_BASE			(TZRAM_BASE + TZRAM_SIZE - 0xd000)
-#define BL2_BASE			TZRAM_BASE
+#define BL2_BASE			TZRAM_BASE + BL2_IMAGE_OFFSET
 #define BL2_LIMIT			(TZRAM_BASE + TZRAM_SIZE)
 
 /*******************************************************************************

@@ -10,7 +10,7 @@
 #ifndef __BOOT_ROM_H_
 #define __BOOT_ROM_H_
 #ifndef __ASSEMBLY__
-#include <stdint.h>
+//#include <stdint.h>
 //uint8_t simple_i2c(uint8_t adr);
 //void spi_pin_mux(void);
 //void spi_init(void);

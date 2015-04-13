@@ -1,7 +1,7 @@
 #include <config.h>
-#include <asm/io.h>
+#include <asm/arch/io.h>
 #include <asm/arch/cpu_sdio.h>
-
+#include <asm/arch/secure_apb.h>
 
 void  cpu_sd_emmc_pwr_prepare(unsigned port)
 {

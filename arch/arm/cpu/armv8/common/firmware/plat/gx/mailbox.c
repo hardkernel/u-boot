@@ -2,7 +2,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <io.h>
-#include <romboot.h>
+#include <stdint.h>
+#include <asm/arch/romboot.h>
 #include <mailbox.h>
 #include <asm/arch/secure_apb.h>
 

@@ -37,11 +37,13 @@
 #include <platform.h>
 #include <errno.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <string.h>
-#include <romboot.h>
 #include <storage.h>
 #include <sha2.h>
 #include <mailbox.h>
+#include <asm/arch/romboot.h>
+#include <cache.h>
 
 unsigned long page_align(unsigned long value, unsigned dir)
 {
@@ -527,6 +529,9 @@ void bl2_load_image(void){
 
 	/* Flush the params to be passed to memory */
 	bl2_plat_flush_bl31_params();
+
+	/*disable mmu and dcache, flush dcache, then enter next firmware*/
+	disable_mmu_el1();
 
 	/*
 	 * Run BL31 via an SMC to BL1. Information on how to pass control to

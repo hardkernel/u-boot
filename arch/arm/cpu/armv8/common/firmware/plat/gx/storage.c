@@ -4,15 +4,16 @@
  */
 
 #include <stdio.h>
-#include <romboot.h>
+#include <stdint.h>
+#include <asm/arch/romboot.h>
 #include <string.h>
 #include <io.h>
 #include <platform_def.h>
 #include <storage.h>
+#include <asm/arch/io.h>
 #include <asm/arch/secure_apb.h>
 #include <asm/arch/cpu_sdio.h>
-
-
+#include <usb.h>
 
 uint32_t storage_load(uint32_t src, uint32_t des, uint32_t size){
 	printf("storage_load src: 0x%8x, des: 0x%8x, size: 0x%8x\n", src, des, size);
@@ -39,7 +40,7 @@ uint32_t storage_load(uint32_t src, uint32_t des, uint32_t size){
 			break;
 		case BOOT_DEVICE_SD:
 			printf("Boot device: SD\n");
-			//sdio_read_data(boot_device,src, des, size);
+			sdio_read_data(boot_device, src, des, size);
 			break;
 		case BOOT_DEVICE_USB:
 			printf("Boot device: USB\n");
@@ -81,8 +82,6 @@ uint32_t spi_read(uint32_t src, uint32_t des, uint32_t size){
 	return 0;
 }
 
-#define MAX_DESC_NUM	8
-#define MAX_BLOCK_COUNTS 512
 unsigned sdio_read_blocks(struct sd_emmc_global_regs *sd_emmc_regs, uint32_t src, uint32_t des, uint32_t size,uint32_t mode)
 {
 	unsigned ret = 0;
@@ -188,7 +187,6 @@ unsigned sdio_read_blocks(struct sd_emmc_global_regs *sd_emmc_regs, uint32_t src
 	return ret;
 
 }
-
 
 unsigned sdio_read_data(unsigned boot_device, uint32_t src, uint32_t des, uint32_t size)
 {

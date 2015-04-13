@@ -33,10 +33,7 @@
 #include <bl_common.h>
 #include <platform_def.h>
 
-
 	.globl	bl2_entrypoint
-
-.extern pcpu_dv_mem_stack
 
 func bl2_entrypoint
 	/*---------------------------------------------
@@ -47,18 +44,6 @@ func bl2_entrypoint
 	 */
 	mov	x20, x0
 	mov	x21, x1
-
-	/* --------------------------------------------
-	 * Give ourselves a small coherent stack to
-	 * ease the pain of initializing the MMU
-	 * --------------------------------------------
-	 */
-
-	 
-	mrs	x0, mpidr_el1
-	//bl	platform_set_coherent_stack
-	ldr x0, =(pcpu_dv_mem_stack+PCPU_DV_MEM_STACK_SIZE)
-	mov sp, x0
 
 	/* ---------------------------------------------
 	 * This is BL2 which is expected to be executed
@@ -77,11 +62,6 @@ func bl2_entrypoint
 	adr	x0, early_exceptions
 	msr	vbar_el1, x0
 
-//	mov x2,#0
-//lable:
-//  cbz x2, lable	
-  
-  
 	/* ---------------------------------------------
 	 * Enable the instruction cache.
 	 * ---------------------------------------------
@@ -95,9 +75,9 @@ func bl2_entrypoint
 	 * Check the opcodes out of paranoia.
 	 * ---------------------------------------------
 	 */
-//	mov	x0, #RUN_IMAGE
-//	cmp	x0, x20
-//	b.ne	_panic
+	//	mov	x0, #RUN_IMAGE
+	//	cmp	x0, x20
+	//	b.ne	_panic
 
 
 
@@ -115,15 +95,20 @@ func bl2_entrypoint
 	ldr	x1, =__COHERENT_RAM_UNALIGNED_SIZE__
 	bl	zeromem16
 
+	/* --------------------------------------------
+	 * Give ourselves a small coherent stack to
+	 * ease the pain of initializing the MMU
+	 * --------------------------------------------
+	 */
+	mrs	x0, mpidr_el1
+	bl	platform_set_coherent_stack
+
 	/* ---------------------------------------------
 	 * Perform early platform setup & platform
 	 * specific early arch. setup e.g. mmu setup
 	 * ---------------------------------------------
 	 */
 	mov	x0, x21
-
-
-  	
 	bl	bl2_early_platform_setup
 	bl	bl2_plat_arch_setup
 
@@ -133,8 +118,6 @@ func bl2_entrypoint
 	 * ---------------------------------------------
 	 */
 	mrs	x0, mpidr_el1
-
-	
 	bl	platform_set_stack
 
 	/* ---------------------------------------------

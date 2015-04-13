@@ -31,44 +31,48 @@
 PLAT_INCLUDES		:=	-Iplat/${PLAT}/include/
 
 PLAT_BL_COMMON_SOURCES	:=	drivers/arm/serial/serial.c		\
-				drivers/io/io_fip.c			\
-				drivers/io/io_memmap.c			\
-				lib/mmio.c				\
-				lib/aarch64/xlat_tables.c		\
-				lib/aarch64/sysreg_helpers.S		\
-				plat/common/aarch64/plat_common.c	\
+				drivers/io/io_fip.c               \
+				drivers/io/io_memmap.c            \
+				lib/mmio.c                        \
+				lib/aarch64/xlat_tables.c         \
+				lib/aarch64/sysreg_helpers.S      \
+				plat/common/aarch64/plat_common.c \
 				plat/${PLAT}/plat_io_storage.c
 
-BL1_SOURCES		+=	drivers/arm/cci400/cci400.c		\
-				plat/common/aarch64/platform_up_stack.S	\
-				plat/${PLAT}/bl1_plat_setup.c		\
-				plat/${PLAT}/aarch64/bl1_plat_helpers.S	\
-				plat/${PLAT}/aarch64/plat_helpers.S	\
+BL1_SOURCES		+=	drivers/arm/cci400/cci400.c			\
+				plat/common/aarch64/platform_up_stack.S \
+				plat/${PLAT}/bl1_plat_setup.c           \
+				plat/${PLAT}/aarch64/bl1_plat_helpers.S \
+				plat/${PLAT}/aarch64/plat_helpers.S     \
 				plat/${PLAT}/aarch64/common.c
 
 BL2_SOURCES		+=	lib/locks/bakery/bakery_lock.c		\
-				plat/common/aarch64/platform_up_stack.S	\
-				plat/${PLAT}/bl2_plat_setup.c		\
-				plat/${PLAT}/mhu.c				\
-				plat/${PLAT}/aarch64/plat_helpers.S	\
-				plat/${PLAT}/aarch64/common.c		\
-				plat/${PLAT}/scp_bootloader.c		\
-				plat/${PLAT}/scpi.c			\
-				plat/${PLAT}/storage.c		\
-				plat/${PLAT}/sha2.c			\
-				plat/${PLAT}/mailbox.c
+				plat/common/aarch64/platform_up_stack.S \
+				plat/${PLAT}/bl2_plat_setup.c           \
+				plat/${PLAT}/mhu.c                      \
+				plat/${PLAT}/aarch64/plat_helpers.S     \
+				plat/${PLAT}/aarch64/cache.S            \
+				plat/${PLAT}/aarch64/common.c           \
+				plat/${PLAT}/scp_bootloader.c           \
+				plat/${PLAT}/scpi.c                     \
+				plat/${PLAT}/storage.c                  \
+				plat/${PLAT}/sha2.c                     \
+				plat/${PLAT}/mailbox.c                  \
+				plat/${PLAT}/watchdog.c                 \
+				plat/${PLAT}/usb/usb.c                  \
+				plat/${PLAT}/efuse.c
 
 BL31_SOURCES		+=	drivers/arm/cci400/cci400.c		\
-				drivers/arm/gic/gic_v2.c		\
-				plat/common/aarch64/platform_mp_stack.S	\
-				plat/${PLAT}/bl31_plat_setup.c		\
-				plat/${PLAT}/mhu.c				\
-				plat/${PLAT}/aarch64/plat_helpers.S	\
-				plat/${PLAT}/aarch64/common.c		\
-				plat/${PLAT}/plat_pm.c			\
-				plat/${PLAT}/plat_topology.c		\
-				plat/${PLAT}/plat_gic.c			\
-				plat/${PLAT}/scpi.c			\
+				drivers/arm/gic/gic_v2.c                \
+				plat/common/aarch64/platform_mp_stack.S \
+				plat/${PLAT}/bl31_plat_setup.c          \
+				plat/${PLAT}/mhu.c                      \
+				plat/${PLAT}/aarch64/plat_helpers.S     \
+				plat/${PLAT}/aarch64/common.c           \
+				plat/${PLAT}/plat_pm.c                  \
+				plat/${PLAT}/plat_topology.c            \
+				plat/${PLAT}/plat_gic.c                 \
+				plat/${PLAT}/scpi.c                     \
 				plat/${PLAT}/smc_arm.c
 
 ifneq (${RESET_TO_BL31},0)

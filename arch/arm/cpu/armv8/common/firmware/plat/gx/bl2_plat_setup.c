@@ -174,11 +174,10 @@ void bl2_early_platform_setup(meminfo_t *mem_layout)
 #endif
 	bl2_tzram_layout.total_base = TZRAM_BASE;
 	bl2_tzram_layout.total_size = TZRAM_SIZE;
-	bl2_tzram_layout.free_base = TZRAM_BASE;
-	bl2_tzram_layout.free_size = TZRAM_SIZE;
+	bl2_tzram_layout.free_base = TZRAM_BL2_FREE_BASE;
+	bl2_tzram_layout.free_size = TZRAM_BL2_FREE_SIZE;
 	bl2_tzram_layout.attr = (unsigned long)0x0E939E2E8CF8EFFD;
 	bl2_tzram_layout.next = 0;
-
 }
 
 /*******************************************************************************
@@ -271,74 +270,18 @@ void bl2_plat_flush_bl31_params(void)
 			sizeof(bl2_to_bl31_params_mem_t));
 }
 
-/*
- * Table of regions to map using the MMU.
- * This doesn't include Trusted RAM as the 'mem_layout' argument passed to
- * configure_mmu_elx() will give the available subset of that,
- */
-static const mmap_region_t plat_mmap[] = {
-#if 0
-	{ TZROM_BASE,		TZROM_SIZE,		MT_MEMORY | MT_RO | MT_SECURE },
-	{ MHU_SECURE_BASE,	MHU_SECURE_SIZE,	(MHU_PAYLOAD_CACHED ? MT_MEMORY : MT_DEVICE)
-								  | MT_RW | MT_SECURE },
-//	{ TZRAM_BASE,		TZRAM_SIZE,		MT_MEMORY | MT_RW | MT_SECURE },  /* configure_mmu() meminfo arg sets subset of this */
-	{ FLASH_BASE,		FLASH_SIZE,		MT_MEMORY | MT_RO | MT_SECURE },
-	{ EMMC_BASE,		EMMC_SIZE,		MT_MEMORY | MT_RO | MT_SECURE },
-	{ PSRAM_BASE,		PSRAM_SIZE,		MT_MEMORY | MT_RW | MT_SECURE }, /* Used for 'TZDRAM' */
-	{ IOFPGA_BASE,		IOFPGA_SIZE,		MT_DEVICE | MT_RW | MT_SECURE },
-//	{ NSROM_BASE,		NSROM_SIZE,		MT_MEMORY | MT_RW | MT_NS },	 /* Eats a page table so leave it out for now */
-	{ DEVICE0_BASE,		DEVICE0_SIZE,		MT_DEVICE | MT_RW | MT_SECURE },
-	{ NSRAM_BASE,		NSRAM_SIZE,		MT_MEMORY | MT_RW | MT_NS },
-	{ DEVICE1_BASE,		DEVICE1_SIZE,		MT_DEVICE | MT_RW | MT_SECURE },
-	{ DRAM_BASE,		DRAM_SIZE,		MT_MEMORY | MT_RW | MT_NS },
-#endif
-
-	{ TZROM_BASE,		TZROM_SIZE,		MT_MEMORY | MT_RO | MT_SECURE },
-	{ DRAM_BASE,		DRAM_SIZE,		MT_MEMORY | MT_RW | MT_NS },
-	{ DEVICEG_BASE,		DEVICEG_SIZE,		MT_DEVICE | MT_RW | MT_SECURE },
-
-	{0}
-};
 /*******************************************************************************
  * Perform the very early platform specific architectural setup here. At the
  * moment this is only intializes the mmu in a quick and dirty way.
  ******************************************************************************/
 void bl2_plat_arch_setup(void)
 {
-console_putc('a');
-console_putc('r');
-console_putc('c');
-console_putc('h');
-/*
 	configure_mmu_el1(bl2_tzram_layout.total_base,
 			  bl2_tzram_layout.total_size,
 			  BL2_RO_BASE,
 			  BL2_RO_LIMIT,
 			  BL2_COHERENT_RAM_BASE,
 			  BL2_COHERENT_RAM_LIMIT);
-*/
-
-mmap_add_region(bl2_tzram_layout.total_base,
-   bl2_tzram_layout.total_size,
-   MT_MEMORY | MT_RW | MT_SECURE);
-console_putc('1');
-mmap_add_region(BL2_RO_BASE, BL2_RO_LIMIT - BL2_RO_BASE,
-   MT_MEMORY | MT_RO | MT_SECURE);
-console_putc('2');
-mmap_add_region(BL2_COHERENT_RAM_BASE, BL2_COHERENT_RAM_LIMIT - BL2_COHERENT_RAM_BASE,
-   MT_DEVICE | MT_RW | MT_SECURE);
-console_putc('3');
-mmap_add(plat_mmap);
-console_putc('4');
-init_xlat_tables();
-console_putc('5');
-//enable_mmu_el1();
-
-
-console_putc('o');
-console_putc('v');
-console_putc('e');
-console_putc('r');
 }
 
 /*******************************************************************************

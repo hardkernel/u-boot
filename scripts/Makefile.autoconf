@@ -92,6 +92,9 @@ ifneq ($(KBUILD_SRC),)
 	$(Q)mkdir -p include/asm
 	$(Q)ln -fsn $(KBUILD_SRC)/arch/$(ARCH)/include/asm/arch-$(if $(SOC),$(SOC),$(CPU)) \
 		include/asm/arch
+	$(Q)mkdir -p include2
+	$(Q)ln -fsn $(KBUILD_SRC)/arch/$(ARCH)/include/asm \
+		include2/asm
 else
 	$(Q)ln -fsn arch-$(if $(SOC),$(SOC),$(CPU)) \
 		arch/$(ARCH)/include/asm/arch
