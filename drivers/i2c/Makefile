@@ -32,3 +32,4 @@ obj-$(CONFIG_SYS_I2C_SH) += sh_i2c.o
 obj-$(CONFIG_SYS_I2C_SOFT) += soft_i2c.o
 obj-$(CONFIG_SYS_I2C_TEGRA) += tegra_i2c.o
 obj-$(CONFIG_SYS_I2C_ZYNQ) += zynq_i2c.o
+obj-$(CONFIG_SYS_I2C_AML) += aml_i2c.o
