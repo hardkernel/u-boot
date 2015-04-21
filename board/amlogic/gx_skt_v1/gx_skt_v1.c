@@ -24,10 +24,6 @@ int dram_init(void)
 	gd->ram_size = PHYS_SDRAM_1_SIZE;
 	return 0;
 }
-int board_init(void)
-{
-	return 0;
-}
 
 /* secondary_boot_func
  * this function should be write with asm, here, is is only for compiling pass
@@ -169,6 +165,25 @@ int board_mmc_init(bd_t	*bis)
 	board_mmc_register(SDIO_PORT_B);
 	board_mmc_register(SDIO_PORT_C);
 //	board_mmc_register(SDIO_PORT_B1);
+	return 0;
+}
+#endif
+
+#if defined(CONFIG_BOARD_EARLY_INIT_F)
+int board_early_init_f(void){
+	/*add board early init function here*/
+	return 0;
+}
+#endif
+
+int board_init(void)
+{
+	return 0;
+}
+
+#ifdef CONFIG_BOARD_LATE_INIT
+int board_late_init(void){
+	/*add board late init function here*/
 	return 0;
 }
 #endif
