@@ -7,6 +7,10 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
+//new static eth setup
+struct eth_board_socket*  eth_board_skt;
+
+
 int serial_set_pin_port(unsigned long port_base)
 {
     //UART in "Always On Module"
@@ -32,9 +36,11 @@ void secondary_boot_func(void)
 {
 }
 
+extern struct eth_board_socket* eth_board_setup(char *name);
 int board_eth_init(bd_t *bis)
 {
 	int rc = 0;
+	eth_board_setup("g9bb");
 	return rc;
 }
 

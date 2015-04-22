@@ -80,6 +80,25 @@
 #endif /*CONFIG_PL011_SERIAL*/
 
 
+/* define net relative macro*/
+#define CONFIG_CMD_NET   1
+#if defined(CONFIG_CMD_NET)
+	#define CONFIG_AML_ETHERNET 1
+	#define CONFIG_NET_MULTI 1
+	#define CONFIG_CMD_PING 1
+	#define CONFIG_CMD_DHCP 1
+	#define CONFIG_CMD_RARP 1
+	//#define CONFIG_NET_RGMII
+	//	//#define CONFIG_NET_RMII_CLK_EXTERNAL //use external 50MHz clock source
+	#define CONFIG_AML_ETHERNET    1                   /*to link /driver/net/aml_ethernet.c*/
+	#define IP101PHY    1                   /*to link /driver/net/aml_ethernet.c*/
+	#define CONFIG_HOSTNAME        arm_gxbb
+	#define CONFIG_ETHADDR         00:15:18:01:81:31   /* Ethernet address */
+	#define CONFIG_IPADDR          10.18.9.97          /* Our ip address */
+	#define CONFIG_GATEWAYIP       10.18.9.1           /* Our getway ip address */
+	#define CONFIG_SERVERIP        10.18.9.113         /* Tftp server ip address */
+	#define CONFIG_NETMASK         255.255.255.0
+#endif /* (CONFIG_CMD_NET) */
 
 /* Size of malloc() pool */
 #define CONFIG_SYS_MALLOC_LEN  (8*1024*1024)
