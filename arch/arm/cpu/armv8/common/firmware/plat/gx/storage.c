@@ -1,6 +1,14 @@
 /*
- * Amlogic spl storage module
- * Load data from different storage device by POC setting.
+ * Copyright (c) 2015 Amlogic, Inc. All rights reserved.
+ *
+ * This source code is subject to the terms and conditions defined in the
+ * file 'LICENSE' which is part of this source code package.
+ *
+ *
+ * Amlogic storage load module
+ * Author: larson.jiang@amlogic.com, xiaobo.gu@amlogic.com
+ * Created time: 2015.04.22
+ *
  */
 
 #include <stdio.h>
