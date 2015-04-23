@@ -4,3 +4,9 @@ config DM_GPIO
 	help
 	  If you want to use driver model for GPIO drivers, say Y.
 	  To use legacy GPIO drivers, say N.
+
+config AML_GPIO
+	bool "Enable Amlogic GPIO drivers"
+	depends on DM_GPIO
+	help
+	  If you want to use Amlogic gpio driver say yes
