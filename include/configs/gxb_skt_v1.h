@@ -1,5 +1,5 @@
-#ifndef __GX_SKT_V1_H__
-#define __GX_SKT_V1_H__
+#ifndef __GXB_SKT_V1_H__
+#define __GXB_SKT_V1_H__
 
 #include <asm/arch/cpu.h>
 

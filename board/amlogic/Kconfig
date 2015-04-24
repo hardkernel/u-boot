@@ -1,10 +1,8 @@
 
-config GX_SKT_V1
-	bool "Support meson gx skt v1 board"
+config GXB_SKT_V1
+	bool "Support meson gxbaby skt v1 board"
 	default n
 
-if GX_SKT_V1
-source "board/amlogic/gx_skt_v1/Kconfig"
+if GXB_SKT_V1
+source "board/amlogic/gxb_skt_v1/Kconfig"
 endif
-
-

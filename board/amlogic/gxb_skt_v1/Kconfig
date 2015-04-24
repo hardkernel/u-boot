@@ -6,7 +6,7 @@ config SYS_CPU
 
 config SYS_BOARD
 	string
-	default "gx_skt_v1"
+	default "gxb_skt_v1"
 
 config SYS_VENDOR
 	string
@@ -14,9 +14,9 @@ config SYS_VENDOR
 
 config SYS_SOC
 	string
-	default "gx"
+	default "gxb"
 
 config SYS_CONFIG_NAME
-	default "gx_skt_v1"
+	default "gxb_skt_v1"
 
 endif

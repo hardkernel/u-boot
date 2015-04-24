@@ -1,5 +1,5 @@
 /*************************************************************************
-	> File Name: gx_eth_setup.c
+	> File Name: eth_setup.c
 	> Author: jianfeng
 	> Mail: jianfeng.wang@amlogic.com
 	> Created Time: Tue 21 Apr 2015 05:04:50 PM CST
@@ -24,7 +24,7 @@ struct eth_board_socket* eth_board_setup(char *name){
 		new_board->name=(char*)malloc(strlen(name));
 		strncpy(new_board->name,name,strlen(name));
 	}else{
-		new_board->name="gxbb";
+		new_board->name="gxb";
 	}
 
 	new_board->eth_pinmux_setup=NULL ;

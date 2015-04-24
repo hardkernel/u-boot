@@ -43,6 +43,7 @@
 #define P_WATCHDOG_RESET             (volatile uint32_t *)0xc11098dc
 
 #define P_SPI_FLASH_CTRL             (volatile uint32_t *)0xc1108c88
+#define P_SPI_USER_REG               (volatile uint32_t *)0xc1108c9c
 #define P_SPI_START_ADDR             (volatile uint32_t *)0xCC000000
 
 #endif /* __BOOT_ROM_H_ */

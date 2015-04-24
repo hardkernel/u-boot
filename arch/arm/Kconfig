@@ -733,7 +733,7 @@ config TARGET_LS2085A_SIMU
 	select ARM64
 
 config TARGET_MESON_GX
-	bool "Support meson gx 64bit"
+	bool "Support meson gx-series 64bit"
 	select ARM64
 
 config TARGET_LS1021AQDS
