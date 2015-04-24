@@ -33,11 +33,35 @@
 #define MIIM_RTL8211F_PHYSTAT_LINK     0x0004
 
 #define MIIM_RTL8211F_PAGE_SELECT      0x1f
+#define MIIM_RTL8211F_TX_DELAY		0x100
 
 /* RealTek RTL8211x */
 static int rtl8211x_config(struct phy_device *phydev)
 {
 	phy_write(phydev, MDIO_DEVAD_NONE, MII_BMCR, BMCR_RESET);
+
+	genphy_config_aneg(phydev);
+
+	return 0;
+}
+
+static int rtl8211f_config(struct phy_device *phydev)
+{
+	u16 reg;
+
+	phy_write(phydev, MDIO_DEVAD_NONE, MII_BMCR, BMCR_RESET);
+
+	if (phydev->interface == PHY_INTERFACE_MODE_RGMII) {
+		/* enable TXDLY */
+		phy_write(phydev, MDIO_DEVAD_NONE,
+			  MIIM_RTL8211F_PAGE_SELECT, 0xd08);
+		reg = phy_read(phydev, MDIO_DEVAD_NONE, 0x11);
+		reg |= MIIM_RTL8211F_TX_DELAY;
+		phy_write(phydev, MDIO_DEVAD_NONE, 0x11, reg);
+		/* restore to default page 0 */
+		phy_write(phydev, MDIO_DEVAD_NONE,
+			  MIIM_RTL8211F_PAGE_SELECT, 0x0);
+	}
 
 	genphy_config_aneg(phydev);
 
@@ -143,13 +167,6 @@ static int rtl8211f_parse_status(struct phy_device *phydev)
 		phydev->speed = SPEED_10;
 	}
 
-	if (phydev->interface == PHY_INTERFACE_MODE_RGMII) {
-		/* enable TXDLY */
-		phy_write(phydev, MDIO_DEVAD_NONE,
-			  MIIM_RTL8211F_PAGE_SELECT, 0xd08);
-		phy_write(phydev, MDIO_DEVAD_NONE, 0x11, 0x109);
-	}
-
 	return 0;
 }
 
@@ -210,7 +227,7 @@ static struct phy_driver RTL8211F_driver = {
 	.uid = 0x1cc916,
 	.mask = 0xffffff,
 	.features = PHY_GBIT_FEATURES,
-	.config = &rtl8211x_config,
+	.config = &rtl8211f_config,
 	.startup = &rtl8211f_startup,
 	.shutdown = &genphy_shutdown,
 };
