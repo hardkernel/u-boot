@@ -206,12 +206,23 @@ static int set_vpu_clk(unsigned int vclk)
 
 static void vpu_power_on(void)
 {
+	unsigned int i;
 	set_vpu_clk(vpu_conf.clk_level);
 
 	vpu_ao_setb(AO_RTI_GEN_PWR_SLEEP0, 0, 8, 1); /* [8] power on */
-	vpu_reg_write(HHI_VPU_MEM_PD_REG0, 0x00000000);
-	vpu_reg_write(HHI_VPU_MEM_PD_REG1, 0x00000000);
-	vpu_reg_setb(HHI_MEM_PD_REG0, 0, 8, 8); /* MEM-PD */
+	/* power up memories */
+	for (i = 0; i < 32; i+=2) {
+		vpu_reg_setb(HHI_VPU_MEM_PD_REG0, 0, i, 2);
+		udelay(2);
+	}
+	for (i = 0; i < 32; i+=2) {
+		vpu_reg_setb(HHI_VPU_MEM_PD_REG1, 0, i, 2);
+		udelay(2);
+	}
+	for (i = 8; i < 16; i++) {
+		vpu_reg_setb(HHI_MEM_PD_REG0, 0, i, 1);
+		udelay(2);
+	}
 	udelay(2);
 
 	/* Reset VIU + VENC */
@@ -236,13 +247,25 @@ static void vpu_power_on(void)
 
 static void vpu_power_off(void)
 {
+	unsigned int i;
+
 	/* Power down VPU_HDMI */
 	/* Enable Isolation */
 	vpu_ao_setb(AO_RTI_GEN_PWR_SLEEP0, 1, 9, 1); /* ISO */
-	/* Power off memory */
-	vpu_reg_write(HHI_VPU_MEM_PD_REG0, 0xffffffff);
-	vpu_reg_write(HHI_VPU_MEM_PD_REG1, 0xffffffff);
-	vpu_reg_setb(HHI_MEM_PD_REG0, 0xff, 8, 8); /* HDMI MEM-PD */
+	/* power down memories */
+	for (i = 0; i < 32; i+=2) {
+		vpu_reg_setb(HHI_VPU_MEM_PD_REG0, 0x3, i, 2);
+		udelay(2);
+	}
+	for (i = 0; i < 32; i+=2) {
+		vpu_reg_setb(HHI_VPU_MEM_PD_REG1, 0x3, i, 2);
+		udelay(2);
+	}
+	for (i = 8; i < 16; i++) {
+		vpu_reg_setb(HHI_MEM_PD_REG0, 0x1, i, 1);
+		udelay(2);
+	}
+	udelay(2);
 
 	/* Power down VPU domain */
 	vpu_ao_setb(AO_RTI_GEN_PWR_SLEEP0, 1, 8, 1); /* PDN */
