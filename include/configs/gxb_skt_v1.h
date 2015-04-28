@@ -151,5 +151,22 @@
 #define CONFIG_OF_LIBFDT 1
 #define CONFIG_ANDROID_BOOT_IMAGE 1
 #define CONFIG_SYS_BOOTM_LEN (64<<20) /* Increase max gunzip size*/
+
+/* USB
+ * Enable CONFIG_MUSB_HCD for Host functionalities MSC, keyboard
+ * Enable CONFIG_MUSB_UDD for Device functionalities.
+ */
+/* #define CONFIG_MUSB_UDC		1 */
+#define CONFIG_CMD_USB 1
+#if defined(CONFIG_CMD_USB)
+	#define CONFIG_M8_USBPORT_BASE_A	0xC9000000
+	#define CONFIG_M8_USBPORT_BASE_B	0xC9100000
+	#define CONFIG_USB_STORAGE      1
+	#define CONFIG_USB_DWC_OTG_HCD  1
+	#define CONFIG_USB_DWC_OTG_294	1
+#endif //#if defined(CONFIG_CMD_USB)
+
+#define CONFIG_AML_TINY_USBTOOL 1
+
 #endif
 

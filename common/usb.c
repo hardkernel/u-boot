@@ -51,6 +51,23 @@ char usb_started; /* flag for the started/stopped USB status */
 #define CONFIG_USB_MAX_CONTROLLER_COUNT 1
 #endif
 
+extern int usb_lowlevel_init(int index,enum usb_init_type init, void **controller);
+extern int usb_lowlevel_stop(int index);
+extern int submit_int_msg(struct usb_device *dev, unsigned long pipe, void *buffer, int len, int interval);
+extern int submit_control_msg(struct usb_device *dev, unsigned long pipe, void *buffer,
+                   int len, struct devrequest *setup);
+extern int submit_bulk_msg(struct usb_device *dev, unsigned long pipe, void *buf, int len);
+
+/***********************************************************************
+ * wait_ms
+ */
+void wait_ms(unsigned long ms)
+{
+	while (ms-- > 0)
+		udelay(1000);
+}
+
+
 /***************************************************************************
  * Init USB Device
  */

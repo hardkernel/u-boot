@@ -157,6 +157,7 @@ enum usb_init_type {
 	defined(CONFIG_USB_MUSB_OMAP2PLUS) || defined(CONFIG_USB_XHCI) || \
 	defined(CONFIG_USB_DWC2)
 
+void wait_ms(unsigned long ms);
 int usb_lowlevel_init(int index, enum usb_init_type init, void **controller);
 int usb_lowlevel_stop(int index);
 
@@ -198,7 +199,7 @@ extern void udc_disconnect(void);
  * @param index USB controller number
  * @param init initializes controller as USB host or device
  */
-int board_usb_init(int index, enum usb_init_type init);
+//int board_usb_init(int index, enum usb_init_type init);
 
 /*
  * can be used to clean up after failed USB initialization attempt

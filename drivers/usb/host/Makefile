@@ -41,6 +41,11 @@ obj-$(CONFIG_USB_EHCI_UNIPHIER) += ehci-uniphier.o
 obj-$(CONFIG_USB_EHCI_VCT) += ehci-vct.o
 obj-$(CONFIG_USB_EHCI_RMOBILE) += ehci-rmobile.o
 obj-$(CONFIG_USB_EHCI_ZYNQ) += ehci-zynq.o
+ifdef CONFIG_USB_DWC_OTG_294
+obj-$(CONFIG_USB_DWC_OTG_HCD) += dwc_otg_hcd_294.o
+else
+obj-$(CONFIG_USB_DWC_OTG_HCD) += dwc_otg_hcd.o
+endif
 
 # xhci
 obj-$(CONFIG_USB_XHCI) += xhci.o xhci-mem.o xhci-ring.o

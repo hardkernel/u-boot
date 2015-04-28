@@ -122,7 +122,7 @@ struct us_data {
 	unsigned char	attention_done;		/* force attn on first cmd */
 	unsigned short	ip_data;		/* interrupt data */
 	int		action;			/* what to do */
-	int		ip_wanted;		/* needed */
+	uint32_t ip_wanted;		/* needed */
 	int		*irq_handle;		/* for USB int requests */
 	unsigned int	irqpipe;	 	/* pipe for release_irq */
 	unsigned char	irqmaxp;		/* max packed for irq Pipe */
@@ -149,6 +149,8 @@ static struct us_data usb_stor[USB_MAX_STOR_DEV];
 #define USB_STOR_TRANSPORT_GOOD	   0
 #define USB_STOR_TRANSPORT_FAILED -1
 #define USB_STOR_TRANSPORT_ERROR  -2
+
+extern int submit_int_msg(struct usb_device *dev, unsigned long pipe, void *buffer, int len, int interval);
 
 int usb_stor_get_info(struct usb_device *dev, struct us_data *us,
 		      block_dev_desc_t *dev_desc);
@@ -336,8 +338,8 @@ static int us_one_transfer(struct us_data *us, int pipe, char *buf, int length)
 		/* set up the transfer loop */
 		do {
 			/* transfer the data */
-			debug("Bulk xfer 0x%x(%d) try #%d\n",
-			      (unsigned int)buf, this_xfer, 11 - maxtry);
+			debug("Bulk xfer 0x%llx(%d) try #%d\n",
+			      (uint64_t)buf, this_xfer, 11 - maxtry);
 			result = usb_bulk_msg(us->pusb_dev, pipe, buf,
 					      this_xfer, &partial,
 					      USB_CNTL_TIMEOUT * 5);
@@ -603,7 +605,7 @@ static int usb_stor_CBI_get_status(ccb *srb, struct us_data *us)
 			(void *) &us->ip_data, us->irqmaxp, us->irqinterval);
 	timeout = 1000;
 	while (timeout--) {
-		if ((volatile int *) us->ip_wanted == NULL)
+		if ((volatile int *)(unsigned long long)us->ip_wanted == NULL)
 			break;
 		mdelay(10);
 	}

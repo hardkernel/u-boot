@@ -238,8 +238,63 @@ int board_early_init_f(void){
 }
 #endif
 
+#ifdef CONFIG_USB_DWC_OTG_HCD
+#include <asm/arch/usb.h>
+
+static int usb_charging_detect_call_back(char bc_mode)
+{
+	switch (bc_mode) {
+		case BC_MODE_DCP:
+		case BC_MODE_CDP:
+			//Pull up chargging current > 500mA
+			break;
+
+		case BC_MODE_UNKNOWN:
+		case BC_MODE_SDP:
+		default:
+			//Limit chargging current <= 500mA
+			//Or detet dec-charger
+			break;
+	}
+	return 0;
+}
+//note: try with some M3 pll but only following can work
+//USB_PHY_CLOCK_SEL_M3_XTAL @ 1 (24MHz)
+//USB_PHY_CLOCK_SEL_M3_XTAL_DIV2 @ 0 (12MHz)
+//USB_PHY_CLOCK_SEL_M3_DDR_PLL @ 27(336MHz); @Rev2663 M3 SKT board DDR is 336MHz
+//                                                            43 (528MHz); M3 SKT board DDR not stable for 528MHz
+
+struct amlogic_usb_config g_usb_config_gx_skt_a={
+	USB_PHY_CLK_SEL_XTAL,
+	1, //PLL divider: (clock/12 -1)
+	CONFIG_M8_USBPORT_BASE_A,
+	USB_ID_MODE_SW_HOST,
+	NULL,//gpio_set_vbus_power, //set_vbus_power
+	NULL,
+};
+struct amlogic_usb_config g_usb_config_gx_skt_b={
+	USB_PHY_CLK_SEL_XTAL,
+	1, //PLL divider: (clock/12 -1)
+	CONFIG_M8_USBPORT_BASE_B,
+	USB_ID_MODE_SW_HOST,
+	NULL,//gpio_set_vbus_power, //set_vbus_power
+	NULL,
+};
+struct amlogic_usb_config g_usb_config_m6_skt_h={
+	USB_PHY_CLK_SEL_XTAL,
+	1, //PLL divider: (clock/12 -1)
+	CONFIG_M8_USBPORT_BASE_A,
+	USB_ID_MODE_HARDWARE,
+	NULL,//gpio_set_vbus_power, //set_vbus_power
+	usb_charging_detect_call_back,
+};
+#endif /*CONFIG_USB_DWC_OTG_HCD*/
+
 int board_init(void)
 {
+	#ifdef CONFIG_USB_DWC_OTG_HCD
+	board_usb_init(&g_usb_config_gx_skt_b,BOARD_USB_MODE_HOST);
+	#endif /*CONFIG_USB_DWC_OTG_HCD*/
 	return 0;
 }
 
@@ -249,3 +304,25 @@ int board_late_init(void){
 	return 0;
 }
 #endif
+
+#ifdef CONFIG_AML_TINY_USBTOOL
+int usb_get_update_result(void)
+{
+	unsigned long upgrade_step;
+	upgrade_step = simple_strtoul (getenv ("upgrade_step"), NULL, 16);
+	printf("upgrade_step = %d\n", (int)upgrade_step);
+	if (upgrade_step == 1)
+	{
+		run_command("defenv", 1);
+		run_command("setenv upgrade_step 2", 1);
+		run_command("saveenv", 1);
+		return 0;
+	}
+	else
+	{
+		return -1;
+	}
+}
+#endif
+
+
