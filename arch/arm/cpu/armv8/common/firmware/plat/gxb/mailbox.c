@@ -73,9 +73,11 @@ void mb_clear_data(uint32_t val, uint32_t port)
 void send_bl30(uint32_t addr, uint32_t size, const uint8_t * sha2, uint32_t sha2_length)
 {
 	int i;
-	printf("send_bl30\n");
-	printf("time=0x%x size=0x%x\n", readl(0xc1109988),size);
 	*(unsigned int *)MB_SRAM_BASE = size;
+
+	printf("Sending bl30");
+	//printf("time=0x%x size=0x%x\n", readl(0xc1109988),size);
+
 	mb_send_data(CMD_DATA_LEN, 3);
 	do {} while(mb_read_data(3));
 	memcpy((void *)MB_SRAM_BASE, (const void *)sha2, sha2_length);
@@ -83,6 +85,7 @@ void send_bl30(uint32_t addr, uint32_t size, const uint8_t * sha2, uint32_t sha2
 	do {} while(mb_read_data(3));
 
 	for (i = 0; i < size; i+=1024) {
+		printf(".");
 		if (size >= i + 1024)
 			memcpy((void *)MB_SRAM_BASE,(const void *)(unsigned long)(addr+i),1024);
 		else if(size > i)
@@ -92,7 +95,10 @@ void send_bl30(uint32_t addr, uint32_t size, const uint8_t * sha2, uint32_t sha2
 		do {} while(mb_read_data(3));
 	}
 	mb_send_data(CMD_OP_SHA, 3);
+
 	do {} while(mb_read_data(3));
+	printf("OK. \nRun bl30...\n");
+
+	/* The BL31 will run after this command */
 	mb_send_data(CMD_END,3);//code transfer end.
-	printf("Send OK.\n");
 }

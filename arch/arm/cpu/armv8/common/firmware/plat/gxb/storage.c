@@ -23,53 +23,72 @@
 #include <asm/arch/cpu_sdio.h>
 #include <usb.h>
 
-uint32_t storage_load(uint32_t src, uint32_t des, uint32_t size){
-	printf("storage_load src: 0x%8x, des: 0x%8x, size: 0x%8x\n", src, des, size);
-	/*add code here*/
+uint32_t storage_load(uint32_t src, uint32_t des, uint32_t size, const char * image_name)
+{
+	char * device_name = "UNKNOWN";
 	unsigned int boot_device = 0;
+
 	boot_device = get_boot_device();
 	//boot_device = BOOT_DEVICE_SPI;
 	switch (boot_device) {
 		case BOOT_DEVICE_RESERVED:
-			printf("Boot device: Reserved\n");
+			device_name = "Reserved";
 			break;
 		case BOOT_DEVICE_EMMC:
-			printf("Boot device: eMMC\n");
+			device_name = "eMMC";
+			break;
+		case BOOT_DEVICE_NAND:
+			device_name = "NANE";
+			break;
+		case BOOT_DEVICE_SPI:
+			device_name = "SPI";
+			break;
+		case BOOT_DEVICE_SD:
+			device_name = "SD";
+			break;
+		case BOOT_DEVICE_USB:
+			device_name = "USB";
+			break;
+		default:
+			break;
+	}
+	printf("Load %s from %s, src: 0x%x, dst: 0x%x, size: 0x%x\n",
+		image_name, device_name, src, des, size);
+	switch (boot_device) {
+		case BOOT_DEVICE_RESERVED:
+			break;
+		case BOOT_DEVICE_EMMC:
 			sdio_read_data(boot_device,src, des, size);
 			break;
 		case BOOT_DEVICE_NAND:
-			printf("Boot device: NAND\n");
 			/*to do list*/
 			break;
 		case BOOT_DEVICE_SPI:
-			printf("Boot device: SPI\n");
 			spi_read(src, des, size);
-			printf("Load From SPI: OK!\n");
 			break;
 		case BOOT_DEVICE_SD:
-			printf("Boot device: SD\n");
 			sdio_read_data(boot_device, src, des, size);
 			break;
 		case BOOT_DEVICE_USB:
-			printf("Boot device: USB\n");
 			/*to do list*/
 			break;
 		default:
-			printf("Boot device: %d\n", boot_device);
 			break;
 	}
 	return 0;
 }
 
-uint32_t get_boot_device(void){
-	printf("P_ASSIST_POR_CONFIG addr: 0x%8x\n", P_ASSIST_POR_CONFIG);
-	printf("P_ASSIST_POR_CONFIG cont: 0x%8x\n", readl(P_ASSIST_POR_CONFIG));
-	printf("SEC_AO_SEC_GP_CFG0 addr: 0x%8x\n", SEC_AO_SEC_GP_CFG0);
-	printf("SEC_AO_SEC_GP_CFG0 cont: 0x%8x\n", readl(SEC_AO_SEC_GP_CFG0));
+uint32_t get_boot_device(void)
+{
+	//printf("P_ASSIST_POR_CONFIG addr: 0x%8x\n", P_ASSIST_POR_CONFIG);
+	//printf("P_ASSIST_POR_CONFIG cont: 0x%8x\n", readl(P_ASSIST_POR_CONFIG));
+	//printf("SEC_AO_SEC_GP_CFG0 addr: 0x%8x\n", SEC_AO_SEC_GP_CFG0);
+	//printf("SEC_AO_SEC_GP_CFG0 cont: 0x%8x\n", readl(SEC_AO_SEC_GP_CFG0));
 	return (readl(SEC_AO_SEC_GP_CFG0) & 0xf);
 }
 
-uint32_t spi_read(uint32_t src, uint32_t des, uint32_t size){
+uint32_t spi_read(uint32_t src, uint32_t des, uint32_t size)
+{
 	/*spi pin mux*/
 	*P_PAD_PULL_UP_EN_REG2 = 0xffff87ff;
 	*P_PAD_PULL_UP_REG2 = 0xffff8700;
@@ -85,12 +104,12 @@ uint32_t spi_read(uint32_t src, uint32_t des, uint32_t size){
 	uint64_t des64, src64;
 	des64 = des;
 	src64 = src;
-	printf("load tpl from spi\n");
 	memcpy((void *)des64, (void *)(src64 | (uint64_t)P_SPI_START_ADDR), size);
 	return 0;
 }
 
-unsigned sdio_read_blocks(struct sd_emmc_global_regs *sd_emmc_regs, uint32_t src, uint32_t des, uint32_t size,uint32_t mode)
+unsigned sdio_read_blocks(struct sd_emmc_global_regs *sd_emmc_regs,
+			uint32_t src, uint32_t des, uint32_t size,uint32_t mode)
 {
 	unsigned ret = 0;
 	unsigned read_start;

@@ -28,7 +28,7 @@
 #define MAX_DESC_NUM                    8
 #define MAX_BLOCK_COUNTS                512
 
-uint32_t storage_load(uint32_t src, uint32_t des, uint32_t size);
+uint32_t storage_load(uint32_t src, uint32_t des, uint32_t size, const char * image_name);
 uint32_t get_boot_device(void);
 uint32_t spi_read(uint32_t src, uint32_t des, uint32_t size);
 unsigned sdio_read_blocks(struct sd_emmc_global_regs *sd_emmc_regs, uint32_t src, uint32_t des, uint32_t size,uint32_t mode);
