@@ -30,6 +30,7 @@
 
 #include <arch.h>
 #include <arch_helpers.h>
+#include <pll.h>
 
 /*******************************************************************************
  * Place holder function to perform any S-EL1 specific architectural setup. At
@@ -39,4 +40,7 @@ void bl2_arch_setup(void)
 {
 	/* Give access to FP/SIMD registers */
 	write_cpacr(CPACR_EL1_FPEN(CPACR_EL1_FP_TRAP_NONE));
+
+	/* Init plls */
+	//pll_init();
 }

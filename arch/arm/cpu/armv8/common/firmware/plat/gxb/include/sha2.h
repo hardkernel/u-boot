@@ -7,6 +7,8 @@
  * Hardware SHA2 driver
  */
 
+#include <stdint.h>
+
 #ifndef __PLAT_SHA2_H_
 #define __PLAT_SHA2_H_
 

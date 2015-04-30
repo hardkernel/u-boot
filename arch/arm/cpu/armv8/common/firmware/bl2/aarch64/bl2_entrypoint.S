@@ -110,7 +110,7 @@ func bl2_entrypoint
 	 */
 	mov	x0, x21
 	bl	bl2_early_platform_setup
-	bl	bl2_plat_arch_setup
+	//bl	bl2_plat_arch_setup
 
 	/* ---------------------------------------------
 	 * Give ourselves a stack allocated in Normal

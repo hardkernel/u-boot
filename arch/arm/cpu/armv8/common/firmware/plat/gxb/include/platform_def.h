@@ -140,7 +140,7 @@
  ******************************************************************************/
 #define TSP_SEC_MEM_BASE		TZRAM_BASE
 #define TSP_SEC_MEM_SIZE		TZRAM_SIZE
-//#define BL32_BASE			(TZRAM_BASE + TZRAM_SIZE - 0x1d000)
+#define BL32_BASE			(TZRAM_BASE + TZRAM_SIZE - 0x1d000)
 #define BL32_LIMIT			BL2_BASE
 
 /*******************************************************************************

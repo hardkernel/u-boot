@@ -847,29 +847,32 @@ u-boot-comp.bin:u-boot.bin
 	cp $< $@
 #	$(objtree)/tools/uclpack $< $@
 
-fip_folder := $(srctree)/fip
+FIP_FOLDER := $(srctree)/fip
+FIP_ARGS += --bl30 $(FIP_FOLDER)/bl30.bin
+FIP_ARGS += --bl31 $(FIP_FOLDER)/bl31.bin
+ifeq ($(CONFIG_NEED_BL32), y)
+FIP_ARGS += --bl32 $(FIP_FOLDER)/bl32.bin
+endif
+FIP_ARGS += --bl33 $(FIP_FOLDER)/bl33.bin
+
 .PHONY: fip.bin
 fip.bin: u-boot.bin u-boot.hex
-	@cp u-boot.bin $(srctree)/fip/bl33.bin
-	$(fip_folder)/fip_create --dump          \
-         --bl30 $(fip_folder)/bl30.bin \
-         --bl31 $(fip_folder)/bl31.bin \
-         --bl32 $(fip_folder)/bl32.bin \
-         --bl33 $(fip_folder)/bl33.bin \
-         $(fip_folder)/fip.bin
+	$(Q)cp u-boot.bin $(srctree)/fip/bl33.bin
+	$(Q)$(FIP_FOLDER)/fip_create ${FIP_ARGS} $(FIP_FOLDER)/fip.bin
+	$(Q)$(FIP_FOLDER)/fip_create --dump $(FIP_FOLDER)/fip.bin
 
 .PHONY : bl2.bin
 bl2.bin: tools prepare
 	$(Q)$(MAKE) -C $(srctree)/$(CPUDIR)/common/firmware all FIRMWARE=$@
-	@cp $(buildtree)/firmware/${SOC}/debug/bl2.bin bl2.bin
-	@cp bl2.bin $(srctree)/fip/bl2.bin
+	$(Q)cp $(buildtree)/firmware/${SOC}/debug/bl2.bin bl2.bin
+	$(Q)cp bl2.bin $(srctree)/fip/bl2.bin
 
 .PHONY : boot.bin
 boot.bin: bl2.bin fip.bin
-	#$(fip_folder)/bl2_fix.sh $(fip_folder)/bl2.bin $(fip_folder)/zero_tmp $(fip_folder)/bl2_fix.bin
-	$(srctree)/tools/gx_boot pkg $(fip_folder)/bl2.bin
-	$(srctree)/tools/gx_boot spl $(fip_folder)/bl2_fix.bin $(fip_folder)/bl2.bin.pkg
-	cat $(fip_folder)/bl2_fix.bin $(fip_folder)/fip.bin > $(fip_folder)/boot.bin
+	$(Q)$(srctree)/tools/gx_boot pkg $(FIP_FOLDER)/bl2.bin
+	$(Q)$(srctree)/tools/gx_boot spl $(FIP_FOLDER)/bl2_fix.bin $(FIP_FOLDER)/bl2.bin.pkg
+	$(Q)cat $(FIP_FOLDER)/bl2_fix.bin $(FIP_FOLDER)/fip.bin > $(FIP_FOLDER)/boot.bin
+	@echo '$(FIP_FOLDER)/boot.bin build done!'
 
 #
 # U-Boot entry point, needed for booting of full-blown U-Boot

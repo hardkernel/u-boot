@@ -8,7 +8,6 @@
  */
 
 #include <stdio.h>
-#include <stdint.h>
 #include <asm/arch/romboot.h>
 #include <string.h>
 #include <io.h>

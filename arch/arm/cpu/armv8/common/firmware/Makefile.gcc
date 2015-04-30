@@ -363,7 +363,7 @@ $(BIN) : $(ELF)
 	@echo
 
 .PHONY : bl$(1)
-bl$(1) : $(BUILD_DIR) $(BIN) $(DUMP)
+bl$(1) : $(BUILD_DIR) $(DUMP) $(BIN)
 
 all : bl$(1)
 

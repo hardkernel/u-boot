@@ -23,10 +23,10 @@
 #include <asm/arch/cpu_sdio.h>
 #include <usb.h>
 
-uint32_t storage_load(uint32_t src, uint32_t des, uint32_t size, const char * image_name)
+uint64_t storage_load(uint64_t src, uint64_t des, uint64_t size, const char * image_name)
 {
 	char * device_name = "UNKNOWN";
-	unsigned int boot_device = 0;
+	uint64_t boot_device = 0;
 
 	boot_device = get_boot_device();
 	//boot_device = BOOT_DEVICE_SPI;
@@ -78,7 +78,7 @@ uint32_t storage_load(uint32_t src, uint32_t des, uint32_t size, const char * im
 	return 0;
 }
 
-uint32_t get_boot_device(void)
+uint64_t get_boot_device(void)
 {
 	//printf("P_ASSIST_POR_CONFIG addr: 0x%8x\n", P_ASSIST_POR_CONFIG);
 	//printf("P_ASSIST_POR_CONFIG cont: 0x%8x\n", readl(P_ASSIST_POR_CONFIG));
@@ -87,7 +87,7 @@ uint32_t get_boot_device(void)
 	return (readl(SEC_AO_SEC_GP_CFG0) & 0xf);
 }
 
-uint32_t spi_read(uint32_t src, uint32_t des, uint32_t size)
+uint64_t spi_read(uint64_t src, uint64_t des, uint64_t size)
 {
 	/*spi pin mux*/
 	*P_PAD_PULL_UP_EN_REG2 = 0xffff87ff;
@@ -108,8 +108,8 @@ uint32_t spi_read(uint32_t src, uint32_t des, uint32_t size)
 	return 0;
 }
 
-unsigned sdio_read_blocks(struct sd_emmc_global_regs *sd_emmc_regs,
-			uint32_t src, uint32_t des, uint32_t size,uint32_t mode)
+uint64_t sdio_read_blocks(struct sd_emmc_global_regs *sd_emmc_regs,
+			uint64_t src, uint64_t des, uint64_t size, uint64_t mode)
 {
 	unsigned ret = 0;
 	unsigned read_start;
@@ -212,12 +212,10 @@ unsigned sdio_read_blocks(struct sd_emmc_global_regs *sd_emmc_regs,
 		printf("sd/emmc read data error: %d\n",ret);
 	printf("read data success!\n");
 	return ret;
-
 }
 
-unsigned sdio_read_data(unsigned boot_device, uint32_t src, uint32_t des, uint32_t size)
+uint64_t sdio_read_data(uint64_t boot_device, uint64_t src, uint64_t des, uint64_t size)
 {
-
 	unsigned mode = 1,blk_cnt,ret;
 	struct sd_emmc_global_regs *sd_emmc_regs=0;
 

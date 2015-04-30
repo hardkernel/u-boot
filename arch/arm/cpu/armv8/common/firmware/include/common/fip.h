@@ -13,9 +13,13 @@
 
 #include <bl_common.h>
 #include <stdint.h>
+#include <platform_def.h>
+#include <storage.h>
 
 #ifndef __BL2_FIP_H_
 #define __BL2_FIP_H_
+
+#define NEED_BL32 CONFIG_NEED_BL32
 
 /*amlogic fip structure: bl30+bl31+(bl32)+bl33*/
 typedef struct aml_fip_header {
@@ -33,7 +37,7 @@ typedef struct aml_fip_header {
 	unsigned long bl31_attr1;
 	unsigned long bl31_attr2;
 	unsigned long bl31_attr3;
-#ifdef BL32_BASE
+#if (NEED_BL32)
 	unsigned long bl32_offset;
 	unsigned long bl32_size;
 	unsigned long bl32_attr1;
@@ -52,6 +56,7 @@ typedef struct aml_fip_header {
 #define TPL_LOAD_ADDR				CONFIG_SYS_TEXT_BASE
 #define TPL_GET_BL_ADDR(offset)		(TPL_LOAD_ADDR + (*((volatile unsigned *)(TPL_LOAD_ADDR + (offset)))))
 #define TPL_GET_BL_SIZE(offset)		(*((volatile unsigned *)(TPL_LOAD_ADDR + offset)))
+
 /*aml fip.bin doesn't have bl2.bin*/
 //#define FM_BIN_BL2_OFFSET			0x20
 //#define FM_BIN_BL2_SIZE			0x28
@@ -59,7 +64,7 @@ typedef struct aml_fip_header {
 #define FM_BIN_BL30_SIZE			0x28 //0x50
 #define FM_BIN_BL31_OFFSET			0x48 //0x70
 #define FM_BIN_BL31_SIZE			0x50 //0x78
-#ifdef BL32_BASE
+#if (NEED_BL32)
 #define FM_BIN_BL32_OFFSET			0x70 //0x98
 #define FM_BIN_BL32_SIZE			0x78 //0xA0
 #define FM_BIN_BL33_OFFSET			0x98 //0xC0
@@ -69,9 +74,10 @@ typedef struct aml_fip_header {
 #define FM_BIN_BL33_SIZE			0x78 //0xA0
 #endif
 
+#define FM_FIP_HEADER_LOAD_ADDR		SIZE_32M
 #define FM_BL30_LOAD_ADDR			CONFIG_SYS_TEXT_BASE
 #define FM_BL31_LOAD_ADDR			0x10100000
-#define FM_BL32_LOAD_ADDR			0x0
+#define FM_BL32_LOAD_ADDR			0x10200000
 #define FM_BL33_LOAD_ADDR			CONFIG_SYS_TEXT_BASE
 
 /*fip defines*/
