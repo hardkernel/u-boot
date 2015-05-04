@@ -60,6 +60,9 @@
 #define SPI_BASE 		0xCC000000
 #define SPI_SIZE		0x00400000
 
+#define MAILBOX_START 	0xd9013000
+#define MAILBOX_SIZE 	0x00001000
+
 /* Following covers Columbus Peripherals excluding NSROM and NSRAM  */
 #define DEVICE0_BASE		0x20000000
 #define DEVICE0_SIZE		0x0e000000
