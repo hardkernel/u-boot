@@ -11,6 +11,7 @@
  *
  */
 
+#include <arch_helpers.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <asm/arch/romboot.h>
@@ -97,8 +98,14 @@ uint64_t spi_read(uint64_t src, uint64_t des, uint64_t size)
 	*P_PERIPHS_PIN_MUX_5 |= 0xf;
 
 	/*spi init*/
-	// 24:0x2ab313 pll:0x2aa949
-	writel(0x2aa949,P_SPI_FLASH_CTRL);
+	/* use sys_clock_freq: 0x002ab000 //24:0x002ab313
+	 * use sys_clock_freq/2: 0x002aa101
+	 * use sys_clock_freq/4: 0x002aa313
+	 * use sys_clock_freq/8: 0x002aa737
+	 * use sys_clock_freq/10: 0x002aa949
+	 * use sys_clock_freq/16: 0x002aaf7f
+	 */
+	writel(0x002ab000,P_SPI_FLASH_CTRL);
 
 	/*load data*/
 	uint64_t des64, src64;

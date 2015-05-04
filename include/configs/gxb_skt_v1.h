@@ -44,8 +44,8 @@
 
 
 /* Cache Definitions */
-#define CONFIG_SYS_DCACHE_OFF
-#define CONFIG_SYS_ICACHE_OFF
+//#define CONFIG_SYS_DCACHE_OFF
+//#define CONFIG_SYS_ICACHE_OFF
 
 /* Generic Timer Definitions */
 #define COUNTER_FREQUENCY		(0x1800000)	/* 24MHz,it is juno board value */
