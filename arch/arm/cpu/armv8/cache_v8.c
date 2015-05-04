@@ -126,7 +126,8 @@ void dcache_disable(void)
 
 	set_sctlr(sctlr & ~(CR_C|CR_M));
 
-	flush_dcache_all();
+	__asm_flush_dcache_all();
+	flush_l3_cache();
 	__asm_invalidate_tlb_all();
 }
 

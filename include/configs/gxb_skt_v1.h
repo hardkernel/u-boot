@@ -167,6 +167,7 @@
 #endif //#if defined(CONFIG_CMD_USB)
 
 #define CONFIG_AML_TINY_USBTOOL 1
+#define CONFIG_CMD_CACHE 1
 
 #endif
 
