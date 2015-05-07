@@ -71,9 +71,9 @@ static unsigned int fclk_table[] = { /* unit: MHz */
 #define CLK_LEVEL_MAX_G9BB     3
 #define FCLK_TYPE_G9BB         FCLK_2550M
 /* GXBB */
-/* freq max=200M, default=200M */
-#define CLK_LEVEL_DFT_GXBB     2
-#define CLK_LEVEL_MAX_GXBB     3
+/* freq max=666M, default=666M */
+#define CLK_LEVEL_DFT_GXBB     7
+#define CLK_LEVEL_MAX_GXBB     8
 #define FCLK_TYPE_GXBB         FCLK_2000M
 
 /* vpu clk setting */

@@ -30,6 +30,9 @@
 #define	CONFIG_PARTITIONS 1
 
 #define CONFIG_AML_VPU 1
+#ifdef CONFIG_AML_VPU
+#define CONFIG_VPU_PRESET 1
+#endif
 
 /*cortex-a53 cluster is 1, cortex-a57 cluster is 0,
  *  if it is juno board, MPIDR_CLUSTER_MASTER_CORE need define
