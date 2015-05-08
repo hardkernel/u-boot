@@ -129,10 +129,11 @@ unsigned int ddr_init_dmc(void){
 	__asm__ volatile("ISB");
 
 	//  REMAP THE ADDRESS SPACE BY WRITING TO NIC400 REMAP REGISTER
+/*
 	wr_reg(0xC1300000, 0x00000001);
 	__asm__ volatile("ISB");
 	__asm__ volatile("DMB SY");
-
+*/
 	//change PL310 address filtering to allow DRAM reads to go to M1
 	//writel(0xbff00000, 0xc4200c04);
 	//writel(0x00000001, 0xc4200c00);
