@@ -89,9 +89,9 @@ static inline void vpu_hiu_write(unsigned int _reg, unsigned int _value)
 {
 	//__raw_writel(_value, REG_ADDR_CBUS(_reg));
 	//printf("write reg=%u\n", REG_ADDR_HIU(_reg));
-	 if (vpu_chip_type == VPU_CHIP_GXBB)
+	if (vpu_chip_type == VPU_CHIP_GXBB)
 		*(volatile unsigned int *)REG_ADDR_HIU(_reg) = (_value);
-	 else
+	else
 		*(volatile unsigned int *)REG_ADDR_CBUS(_reg) = (_value);
 };
 

@@ -8,6 +8,9 @@
 #include <aml_i2c.h>
 #include <asm/arch/secure_apb.h>
 #endif
+#ifdef CONFIG_VPU_PRESET
+#include <vpu.h>
+#endif
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -295,6 +298,9 @@ int board_init(void)
 	#ifdef CONFIG_USB_DWC_OTG_HCD
 	board_usb_init(&g_usb_config_gx_skt_b,BOARD_USB_MODE_HOST);
 	#endif /*CONFIG_USB_DWC_OTG_HCD*/
+#ifdef CONFIG_VPU_PRESET
+	vpu_probe();
+#endif
 	return 0;
 }
 
