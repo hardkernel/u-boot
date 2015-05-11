@@ -61,7 +61,8 @@ BL2_SOURCES		+=	lib/locks/bakery/bakery_lock.c		\
 				plat/${PLAT}/watchdog.c                 \
 				plat/${PLAT}/usb/usb.c                  \
 				plat/${PLAT}/efuse.c                    \
-				plat/${PLAT}/pll.c
+				plat/${PLAT}/pll.c                      \
+				plat/${PLAT}/timer.c
 
 BL31_SOURCES		+=	drivers/arm/cci400/cci400.c		\
 				drivers/arm/gic/gic_v2.c                \
