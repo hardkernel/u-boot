@@ -27,12 +27,12 @@ typedef unsigned   long  u64_t;
 typedef signed     long  s64_t;
 #endif
 /* Linux definitions */
-typedef u8_t     __u8;
-typedef s8_t     __s8;
-typedef u16_t    __u16;
-typedef s16_t    __s16;
-typedef u32_t    __u32;
-typedef s32_t    __s32;
+//typedef u8_t     __u8;
+//typedef s8_t     __s8;
+//typedef u16_t    __u16;
+//typedef s16_t    __s16;
+//typedef u32_t    __u32;
+//typedef s32_t    __s32;
 //typedef u64_t    __u64;
 //typedef s64_t    __s64;
 
@@ -80,18 +80,18 @@ typedef __u64    __be64;
 #endif
 
 typedef struct usb_aml_regs {
-    volatile uint32_t config;
-    volatile uint32_t ctrl;
-    volatile uint32_t endp_intr;
-    volatile uint32_t adp_bc;
-    volatile uint32_t dbg_uart;
-    volatile uint32_t test;
-    volatile uint32_t tune;
+    volatile u_int32_t config;
+    volatile u_int32_t ctrl;
+    volatile u_int32_t endp_intr;
+    volatile u_int32_t adp_bc;
+    volatile u_int32_t dbg_uart;
+    volatile u_int32_t test;
+    volatile u_int32_t tune;
 } usb_aml_regs_t;
 
 typedef union usb_config_data {
     /** raw register data */
-    uint32_t d32;
+    u_int32_t d32;
     /** register bits */
     struct {
         unsigned clk_en:1;
@@ -106,7 +106,7 @@ typedef union usb_config_data {
 
 typedef union usb_ctrl_data {
     /** raw register data */
-    uint32_t d32;
+    u_int32_t d32;
     /** register bits */
     struct {
         unsigned soft_prst:1;
@@ -134,7 +134,7 @@ typedef union usb_ctrl_data {
 
 typedef union usb_endp_intr_data {
     /** raw register data */
-    uint32_t d32;
+    u_int32_t d32;
     /** register bits */
     struct {
         unsigned int0:1;
@@ -174,7 +174,7 @@ typedef union usb_endp_intr_data {
 
 typedef union usb_adp_bc_data {
     /** raw register data */
-    uint32_t d32;
+    u_int32_t d32;
     /** register bits */
     struct {
         unsigned vbusvldextsel:1;
@@ -210,7 +210,7 @@ typedef union usb_adp_bc_data {
 
 typedef union usb_dbg_uart_data {
     /** raw register data */
-    uint32_t d32;
+    u_int32_t d32;
     /** register bits */
     struct {
         unsigned bypass_sel:1;
@@ -231,7 +231,7 @@ typedef union usb_dbg_uart_data {
 
 typedef union phy_test_data {
     /** raw register data */
-    uint32_t d32;
+    u_int32_t d32;
     /** register bits */
     struct {
         unsigned data_in:4;
@@ -247,7 +247,7 @@ typedef union phy_test_data {
 
 typedef union phy_tune_data {
     /** raw register data */
-    uint32_t d32;
+    u_int32_t d32;
     /** register bits */
     struct {
         unsigned tx_res_tune:2;
@@ -328,23 +328,23 @@ typedef union phy_tune_data {
 #ifdef HAS_PRINTF
 extern int printk(const char *fmt, ...);
 #endif
-
+/*
 #define NOOP	do{}while(0)
 
 #if defined(USB_DEBUG) && defined(HAS_PRINTF)
 #define PRINTF(x...) printk(x)
 #else
-//#define PRINTF(x...) NOOP
+#define PRINTF(x...) NOOP
 #endif
 
 #define ERR(x...) PRINTF(x)
 #define DWC_PRINT(x...) PRINTF(x)
-//#define DBG(x...) NOOP//PRINTF(x)
+#define DBG(x...) NOOP//PRINTF(x)
 #define INFO(x...) NOOP
 
 #define USB_ERR(x...)	PRINTF(x)
 #define USB_DBG(x...) PRINTF(x)
-
+*/
 void usb_parameter_init(int delay_type);
 void clean_short_timeout(void);
 

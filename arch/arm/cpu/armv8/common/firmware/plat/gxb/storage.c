@@ -72,6 +72,7 @@ uint64_t storage_load(uint64_t src, uint64_t des, uint64_t size, const char * im
 			break;
 		case BOOT_DEVICE_USB:
 			/*to do list*/
+			usb_boot(1, 0);
 			break;
 		default:
 			break;

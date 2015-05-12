@@ -11,5 +11,6 @@
 #define __BL2_USB_H_
 
 /*add usb defines here*/
+int usb_boot(int clk_cfg, int time_out);
 
 #endif /*__BL2_USB_H_*/
