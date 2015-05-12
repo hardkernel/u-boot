@@ -5,9 +5,12 @@
  * file 'LICENSE' which is part of this source code package.
  *
  */
-#ifndef __AP_BROM_EFUSE_H__
-#define __AP_BROM_EFUSE_H__
+#ifndef __BL2_EFUSE_H__
+#define __BL2_EFUSE_H__
 
 #include <stdint.h>
 
-#endif /* __AP_BROM_EFUSE_H__ */
+void efuse_read(uint64_t offset, uint64_t length, const char * buffer);
+void efuse_print(uint64_t offset, uint64_t length, const char * buffer);
+
+#endif /* __BL2_EFUSE_H__ */
