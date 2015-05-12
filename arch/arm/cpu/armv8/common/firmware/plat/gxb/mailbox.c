@@ -70,13 +70,21 @@ void mb_clear_data(uint32_t val, uint32_t port)
 	return;
 }
 
-void send_bl30(uint32_t addr, uint32_t size, const uint8_t * sha2, uint32_t sha2_length)
+void send_bl30x(uint32_t addr, uint32_t size, const uint8_t * sha2, \
+	uint32_t sha2_length, const char * name)
 {
 	int i;
 	*(unsigned int *)MB_SRAM_BASE = size;
 
-	printf("Sending bl30");
+	printf("Sending %s", name);
 	//printf("time=0x%x size=0x%x\n", readl(0xc1109988),size);
+
+	if (0 == strcmp("bl301", name)) {
+		/*bl301 must wait bl30 run*/
+		printf("Wait bl30...");
+		while (0x3 != ((readl(AO_SEC_SD_CFG15) >> 20) & 0x3)) {}
+		printf("Done\n");
+	}
 
 	mb_send_data(CMD_DATA_LEN, 3);
 	do {} while(mb_read_data(3));
@@ -97,7 +105,7 @@ void send_bl30(uint32_t addr, uint32_t size, const uint8_t * sha2, uint32_t sha2
 	mb_send_data(CMD_OP_SHA, 3);
 
 	do {} while(mb_read_data(3));
-	printf("OK. \nRun bl30...\n");
+	printf("OK. \nRun %s...\n", name);
 
 	/* The BL31 will run after this command */
 	mb_send_data(CMD_END,3);//code transfer end.

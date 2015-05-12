@@ -14,7 +14,7 @@ void *memcpy_t(void *dest, const void *src, size_t len);
 void mb_send_data(uint32_t val, uint32_t port);
 uint32_t mb_read_data(uint32_t port);
 void mb_clear_data(uint32_t val, uint32_t port);
-void send_bl30(uint32_t addr, uint32_t size, const uint8_t * sha2, uint32_t sha2_length);
-
+void send_bl30x(uint32_t addr, uint32_t size, const uint8_t * sha2,
+	uint32_t sha2_length, const char * name);
 
 #endif /*__BL2_MAILBOX_H_*/

@@ -849,6 +849,7 @@ u-boot-comp.bin:u-boot.bin
 
 FIP_FOLDER := $(srctree)/fip
 FIP_ARGS += --bl30 $(FIP_FOLDER)/bl30.bin
+FIP_ARGS += --bl301 $(FIP_FOLDER)/bl301.bin
 FIP_ARGS += --bl31 $(FIP_FOLDER)/bl31.bin
 ifeq ($(CONFIG_NEED_BL32), y)
 FIP_ARGS += --bl32 $(FIP_FOLDER)/bl32.bin
