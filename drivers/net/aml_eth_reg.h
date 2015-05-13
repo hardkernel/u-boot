@@ -1,17 +1,24 @@
-/*******************************************************************
+
+/*
+ * drivers/net/aml_eth_reg.h
  *
- *  Copyright C 2011 by Amlogic, Inc. All Rights Reserved.
+ * Copyright (C) 2015 Amlogic, Inc. All rights reserved.
  *
- *  Description: phriphs register definitions for Apollo.
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
  *
- *  Author: zhouzhi
- *  Created: 2008-8-10
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
  *
- *
- *  Remark: 2011.08.02 merge by Hisun bao
- *                from /arch/arm/include/asm/arch-m1
- *
- *******************************************************************/
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+*/
+
 #ifndef __AML_ETH_REG_H__
 #define __AML_ETH_REG_H__
 #include <asm/arch/eth_setup.h>

@@ -1,16 +1,24 @@
+
 /*
- *  Copyright (C) 2010 AMLOGIC, INC.
+ * arch/arm/include/asm/arch-gxb/uart.h
  *
- *  Y:\arch\arm\include\asm\arch-m1\serial.h
+ * Copyright (C) 2015 Amlogic, Inc. All rights reserved.
  *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
  *
- * License terms: GNU General Public License (GPL) version 2
- * Basic register address definitions in physical memory and
- * some block defintions for core devices like the timer.
- * 03/06/10
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
  *
- * author : jerry.yu
- */
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+*/
+
 #ifndef __MESON_FIRM_UART_H_
 #define __MESON_FIRM_UART_H_
 #include <config.h>

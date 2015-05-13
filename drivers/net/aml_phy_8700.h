@@ -1,17 +1,23 @@
-/*******************************************************************
- *
- *  Copyright C 2011 by Amlogic, Inc. All Rights Reserved.
- *
- *  Description: Enthernet driver for LAN8700
- *
- *  Author: Min Chu
- *  Created: 2009-3-18
- *
- *  Remark: 2011.08.02 merge by Hisun bao
- *                from /arch/arm/include/asm/arch-m1
- *
- *******************************************************************/
 
+/*
+ * drivers/net/aml_phy_8700.h
+ *
+ * Copyright (C) 2015 Amlogic, Inc. All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+*/
 
 #ifndef __AML_PHY_LAN8700_H__
 #define __AML_PHY_LAN8700_H__
