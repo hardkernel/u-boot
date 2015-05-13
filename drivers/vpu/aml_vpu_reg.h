@@ -10,7 +10,7 @@
 #define REG_BASE_AOBUS                  (0xc8100000L)
 #define REG_BASE_CBUS                   (0xc1100000L)
 #define REG_BASE_HIU                    (0xc883c000L)
-#define REG_BASE_RST                    (0xc0804400L)
+#define REG_BASE_RST                    (0xc1104400L)
 #define REG_OFFSET_AOBUS(reg)           ((reg))
 #define REG_OFFSET_CBUS(reg)            ((reg << 2))
 #define REG_OFFSET_HIU(reg)             ((reg << 2))
@@ -120,7 +120,7 @@ static inline void vpu_hiu_clr_mask(unsigned int _reg, unsigned int _mask)
 {
 	vpu_hiu_write(_reg, (vpu_hiu_read(_reg) & (~(_mask))));
 }
-
+#if 0
 static inline unsigned int vpu_rst_read(unsigned int _reg)
 {
 	//printf("read reg=0x%x\n", REG_ADDR_RST(_reg));
@@ -164,7 +164,7 @@ static inline void vpu_rst_clr_mask(unsigned int _reg, unsigned int _mask)
 {
 	vpu_rst_write(_reg, (vpu_rst_read(_reg) & (~(_mask))));
 }
-
+#endif
 static inline unsigned int vpu_cbus_read(unsigned int _reg)
 {
 	//return __raw_readl(REG_ADDR_CBUS(_reg));

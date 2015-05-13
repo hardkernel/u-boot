@@ -255,18 +255,18 @@ static void vpu_power_on_m8_g9(void)
 	/* Reset VIU + VENC */
 	/* Reset VENCI + VENCP + VADC + VENCL */
 	/* Reset HDMI-APB + HDMI-SYS + HDMI-TX + HDMI-CEC */
-	vpu_rst_clr_mask(RESET0_MASK, ((1 << 5) | (1<<10)));
-	vpu_rst_clr_mask(RESET4_MASK, ((1 << 6) | (1<<7) | (1<<9) | (1<<13)));
-	vpu_rst_clr_mask(RESET2_MASK, ((1 << 2) | (1<<3) | (1<<11) | (1<<15)));
-	vpu_rst_write(RESET2_REGISTER, ((1 << 2) | (1<<3) | (1<<11) | (1<<15)));
+	vpu_cbus_clr_mask(RESET0_MASK, ((1 << 5) | (1<<10)));
+	vpu_cbus_clr_mask(RESET4_MASK, ((1 << 6) | (1<<7) | (1<<9) | (1<<13)));
+	vpu_cbus_clr_mask(RESET2_MASK, ((1 << 2) | (1<<3) | (1<<11) | (1<<15)));
+	vpu_cbus_write(RESET2_REGISTER, ((1 << 2) | (1<<3) | (1<<11) | (1<<15)));
 	/* reset this will cause VBUS reg to 0 */
-	vpu_rst_write(RESET4_REGISTER, ((1 << 6) | (1<<7) | (1<<9) | (1<<13)));
-	vpu_rst_write(RESET0_REGISTER, ((1 << 5) | (1<<10)));
-	vpu_rst_write(RESET4_REGISTER, ((1 << 6) | (1<<7) | (1<<9) | (1<<13)));
-	vpu_rst_write(RESET2_REGISTER, ((1 << 2) | (1<<3) | (1<<11) | (1<<15)));
-	vpu_rst_set_mask(RESET0_MASK, ((1 << 5) | (1<<10)));
-	vpu_rst_set_mask(RESET4_MASK, ((1 << 6) | (1<<7) | (1<<9) | (1<<13)));
-	vpu_rst_set_mask(RESET2_MASK, ((1 << 2) | (1<<3) | (1<<11) | (1<<15)));
+	vpu_cbus_write(RESET4_REGISTER, ((1 << 6) | (1<<7) | (1<<9) | (1<<13)));
+	vpu_cbus_write(RESET0_REGISTER, ((1 << 5) | (1<<10)));
+	vpu_cbus_write(RESET4_REGISTER, ((1 << 6) | (1<<7) | (1<<9) | (1<<13)));
+	vpu_cbus_write(RESET2_REGISTER, ((1 << 2) | (1<<3) | (1<<11) | (1<<15)));
+	vpu_cbus_set_mask(RESET0_MASK, ((1 << 5) | (1<<10)));
+	vpu_cbus_set_mask(RESET4_MASK, ((1 << 6) | (1<<7) | (1<<9) | (1<<13)));
+	vpu_cbus_set_mask(RESET2_MASK, ((1 << 2) | (1<<3) | (1<<11) | (1<<15)));
 
 	/* Remove VPU_HDMI ISO */
 	vpu_ao_setb(AO_RTI_GEN_PWR_SLEEP0, 0, 9, 1); /* [9] VPU_HDMI */
@@ -295,18 +295,18 @@ static void vpu_power_on_gx(void)
 	/* Reset VIU + VENC */
 	/* Reset VENCI + VENCP + VADC + VENCL */
 	/* Reset HDMI-APB + HDMI-SYS + HDMI-TX + HDMI-CEC */
-	vpu_rst_clr_mask(RESET0_MASK_GX, ((1 << 5) | (1<<10)));
-	vpu_rst_clr_mask(RESET4_MASK_GX, ((1 << 6) | (1<<7) | (1<<9) | (1<<13)));
-	vpu_rst_clr_mask(RESET2_MASK_GX, ((1 << 2) | (1<<3) | (1<<11) | (1<<15)));
-	vpu_rst_write(RESET2_REGISTER_GX, ((1 << 2) | (1<<3) | (1<<11) | (1<<15)));
+	vpu_cbus_clr_mask(RESET0_MASK, ((1 << 5) | (1<<10)));
+	vpu_cbus_clr_mask(RESET4_MASK, ((1 << 6) | (1<<7) | (1<<9) | (1<<13)));
+	vpu_cbus_clr_mask(RESET2_MASK, ((1 << 2) | (1<<3) | (1<<11) | (1<<15)));
+	vpu_cbus_write(RESET2_REGISTER, ((1 << 2) | (1<<3) | (1<<11) | (1<<15)));
 	/* reset this will cause VBUS reg to 0 */
-	vpu_rst_write(RESET4_REGISTER_GX, ((1 << 6) | (1<<7) | (1<<9) | (1<<13)));
-	vpu_rst_write(RESET0_REGISTER_GX, ((1 << 5) | (1<<10)));
-	vpu_rst_write(RESET4_REGISTER_GX, ((1 << 6) | (1<<7) | (1<<9) | (1<<13)));
-	vpu_rst_write(RESET2_REGISTER_GX, ((1 << 2) | (1<<3) | (1<<11) | (1<<15)));
-	vpu_rst_set_mask(RESET0_MASK_GX, ((1 << 5) | (1<<10)));
-	vpu_rst_set_mask(RESET4_MASK_GX, ((1 << 6) | (1<<7) | (1<<9) | (1<<13)));
-	vpu_rst_set_mask(RESET2_MASK_GX, ((1 << 2) | (1<<3) | (1<<11) | (1<<15)));
+	vpu_cbus_write(RESET4_REGISTER, ((1 << 6) | (1<<7) | (1<<9) | (1<<13)));
+	vpu_cbus_write(RESET0_REGISTER, ((1 << 5) | (1<<10)));
+	vpu_cbus_write(RESET4_REGISTER, ((1 << 6) | (1<<7) | (1<<9) | (1<<13)));
+	vpu_cbus_write(RESET2_REGISTER, ((1 << 2) | (1<<3) | (1<<11) | (1<<15)));
+	vpu_cbus_set_mask(RESET0_MASK, ((1 << 5) | (1<<10)));
+	vpu_cbus_set_mask(RESET4_MASK, ((1 << 6) | (1<<7) | (1<<9) | (1<<13)));
+	vpu_cbus_set_mask(RESET2_MASK, ((1 << 2) | (1<<3) | (1<<11) | (1<<15)));
 
 	/* Remove VPU_HDMI ISO */
 	vpu_ao_setb(AO_RTI_GEN_PWR_SLEEP0, 0, 9, 1); /* [9] VPU_HDMI */
