@@ -29,6 +29,8 @@
 //use following switch to enable/disable uboot(TPL) for GXB and Juno
 //#define CONFIG_AML_MESON_GX  1
 
+#define CONFIG_NEED_BL301 	1
+
 #define CONFIG_VLSI_EMULATOR 1
 
 #define CONFIG_SYS_GENERIC_BOARD  1

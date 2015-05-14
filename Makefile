@@ -716,7 +716,11 @@ endif
 
 # Always append ALL so that arch config.mk's can add custom ones
 ALL-y += u-boot.srec u-boot.bin System.map binary_size_check
-ALL-y += u-boot.hex bl2.bin fip.bin boot.bin
+ALL-y += u-boot.hex bl2.bin
+ifeq ($(CONFIG_NEED_BL301), y)
+ALL-y += bl301.bin
+endif
+ALL-y += fip.bin boot.bin
 ALL-$(CONFIG_ONENAND_U_BOOT) += u-boot-onenand.bin
 ifeq ($(CONFIG_SPL_FSL_PBL),y)
 ALL-$(CONFIG_RAMBOOT_PBL) += u-boot-with-spl-pbl.bin
@@ -870,8 +874,19 @@ bl2.bin: tools prepare
 	$(Q)cp $(buildtree)/firmware/${SOC}/debug/bl2.bin bl2.bin
 	$(Q)cp bl2.bin $(srctree)/fip/bl2.bin
 
+ifeq ($(CONFIG_NEED_BL301), y)
+.PHONY : bl301.bin
+bl301.bin: tools prepare
+	$(Q)$(MAKE) -C $(srctree)/$(CPUDIR)/${SOC}/firmware/scp_task
+	$(Q)cp $(buildtree)/scp_task/bl301.bin $(srctree)/fip/bl301.bin -f
+endif
+
 .PHONY : boot.bin
+ifeq ($(CONFIG_NEED_BL301), y)
+boot.bin: bl2.bin bl301.bin fip.bin
+else
 boot.bin: bl2.bin fip.bin
+endif
 	$(Q)$(srctree)/tools/gx_boot pkg $(FIP_FOLDER)/bl2.bin
 	$(Q)$(srctree)/tools/gx_boot spl $(FIP_FOLDER)/bl2_fix.bin $(FIP_FOLDER)/bl2.bin.pkg
 	$(Q)cat $(FIP_FOLDER)/bl2_fix.bin $(FIP_FOLDER)/fip.bin > $(FIP_FOLDER)/boot.bin
@@ -1383,6 +1398,9 @@ distclean: mrproper
 	@rm -f boards.cfg
 	@rm -rf $(buildtree)/*
 	@rm -f $(srctree)/fip/bl2.bin
+ifeq ($(CONFIG_NEED_BL301), y)
+	@rm -f $(srctree)/fip/bl301.bin
+endif
 	@rm -f $(srctree)/fip/bl33.bin
 	@rm -f $(srctree)/fip/fip.bin
 	@rm -f $(srctree)/fip/bl2_fix.bin
