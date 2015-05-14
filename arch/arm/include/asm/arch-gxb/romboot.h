@@ -34,15 +34,14 @@
 #include "config.h"
 
 /* Magic number to "boot" up A53 */
-#define AO_SEC_SD_CFG2_CB			0x80000000
-
-#define AO_SEC_GP_CFG7_W0_BIT			8
-#define AO_SEC_GP_CFG7_W0			0x10
+#define AO_SEC_SD_CFG10_CB			0x80000000
 
 /*BOOT device and ddr size*/
 /*31-28: boot device id, 27-24: boot device para, 23-20: reserved*/
 /*19-8: ddr size, 7-0: board revision*/
-//#define P_AO_SEC_GP_CFG0					0xDA100240 //defined in secure_apb.h
+//#define P_AO_SEC_GP_CFG0                                     0xDA100240 //defined in secure_apb.h
+#define AO_SEC_GP_CFG7_W0_BIT			8
+#define AO_SEC_GP_CFG7_W0			0x100
 
 #define P_ISA_TIMERE                 (volatile uint32_t *)0xc1109988
 #define P_ASSIST_POR_CONFIG          (volatile uint32_t *)0xc1107d54
@@ -57,5 +56,12 @@
 #define P_SPI_FLASH_CTRL             (volatile uint32_t *)0xc1108c88
 #define P_SPI_USER_REG               (volatile uint32_t *)0xc1108c9c
 #define P_SPI_START_ADDR             (volatile uint32_t *)0xCC000000
+
+#define BOOT_ID_RESERVED	0
+#define BOOT_ID_EMMC		1
+#define BOOT_ID_NAND		2
+#define BOOT_ID_SPI		3
+#define BOOT_ID_SDCARD		4
+#define BOOT_ID_USB		5
 
 #endif /* __BOOT_ROM_H_ */
