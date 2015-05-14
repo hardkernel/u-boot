@@ -56,7 +56,7 @@ void bl2_load_image(void){
 	printf("BL30 addr: 0x%8x\n", bl30_image_info.image_base);
 	printf("BL30 size: 0x%8x\n", bl30_image_info.image_size);
 
-#if 0
+#if (NEED_BL301)
 	/*load and process bl301*/
 	image_info_t bl301_image_info;
 	entry_point_info_t bl301_ep_info;

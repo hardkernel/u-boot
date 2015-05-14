@@ -28,6 +28,7 @@
 #define __BL2_FIP_H_
 
 #define NEED_BL32 CONFIG_NEED_BL32
+#define NEED_BL301 CONFIG_NEED_BL301
 
 #define	_UUID_NODE_LEN		6
 
@@ -59,7 +60,7 @@ typedef struct fip_toc_entry {
 typedef struct aml_fip_header {
 	fip_toc_header_t	fip_header; /*16byte*/
 	fip_toc_entry_t		bl30_entry; /*40byte*/
-#if 0
+#if (NEED_BL301)
 	fip_toc_entry_t		bl301_entry; /*40byte*/
 #endif
 	fip_toc_entry_t		bl31_entry; /*40byte*/
