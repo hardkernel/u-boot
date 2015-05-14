@@ -332,8 +332,13 @@ int aml_sd_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd, struct	mmc_data *data)
 	desc_start->init = 0;
 	desc_start->busy = 1;
 	desc_start->addr = (unsigned long)aml_priv->desc_buf >> 2;
+#if 0
 	sd_emmc_reg->gstart = vstart;
-
+#else
+	sd_emmc_reg->gcmd_cfg = desc_cur->cmd_info;
+	sd_emmc_reg->gcmd_dat = desc_cur->data_addr;
+	sd_emmc_reg->gcmd_arg = desc_cur->cmd_arg;
+#endif
 	//waiting end of chain
 	while (1) {
 		status_irq = sd_emmc_reg->gstatus;
@@ -370,7 +375,10 @@ int aml_sd_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd, struct	mmc_data *data)
 		cmd->response[1] = sd_emmc_reg->gcmd_rsp2;
 		cmd->response[2] = sd_emmc_reg->gcmd_rsp1;
 		cmd->response[3] = sd_emmc_reg->gcmd_rsp0;
+	} else {
+		cmd->response[0] = sd_emmc_reg->gcmd_rsp0;
 	}
+
 
 	sd_debug("cmd->cmdidx = %d, cmd->cmdarg=0x%x, ret=0x%x\n",cmd->cmdidx,cmd->cmdarg,ret);
 	sd_debug("cmd->response[0]=0x%x;\n",cmd->response[0]);
