@@ -175,3 +175,19 @@ void bl31_debug_efuse_read_pattern(char *buf)
 
 	memcpy((void *)buf, (const void *)sharemem_output_base, 512);
 }
+
+void aml_set_jtag_state(unsigned state, unsigned select)
+{
+	uint64_t command;
+	if (state == JTAG_STATE_ON)
+		command = JTAG_ON;
+	else
+		command = JTAG_OFF;
+	asm __volatile__("" : : : "memory");
+
+	asm volatile(
+		__asmeq("%0", "x0")
+		__asmeq("%1", "x1")
+		"smc    #0\n"
+		: : "r" (command), "r"(select));
+}

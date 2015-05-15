@@ -35,13 +35,17 @@
 /* SMC Identifiers for non-secure world functions */
 #define CALL_TRUSTZONE_HAL_API                  0x5
 
-// EFUSE
+/* EFUSE */
 #define EFUSE_READ					0x82000030
-#define EFUSE_WRITE 				0x82000031
+#define EFUSE_WRITE				0x82000031
 #define EFUSE_WRITE_PATTERN		0x82000032
 
 #define DEBUG_EFUSE_WRITE_PATTERN	0x820000F0
 #define DEBUG_EFUSE_READ_PATTERN	0x820000F1
+
+/* JTAG*/
+#define JTAG_ON                                0x82000040
+#define JTAG_OFF                               0x82000041
 
 /* Secure HAL APIs */
 #define TRUSTZONE_HAL_API_SRAM                  0x400
@@ -56,5 +60,13 @@ struct sram_hal_api_arg {
 	unsigned long res_phy_addr;
 	unsigned long ret_phy_addr;
 };
+
+#define JTAG_STATE_ON  0
+#define JTAG_STATE_OFF 1
+#define JTAG_M3_AO     0
+#define JTAG_M3_EE     1
+#define JTAG_A53_AO    2
+#define JTAG_A53_EE 3
+void aml_set_jtag_state(unsigned state, unsigned select);
 
 #endif
