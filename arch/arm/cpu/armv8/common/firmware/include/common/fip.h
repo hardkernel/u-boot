@@ -23,6 +23,7 @@
 #include <stdint.h>
 #include <platform_def.h>
 #include <storage.h>
+#include <config.h>
 
 #ifndef __BL2_FIP_H_
 #define __BL2_FIP_H_

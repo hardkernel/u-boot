@@ -91,15 +91,18 @@ unsigned int ddr_init_dmc(void){
 
 	////CONFIG DMC DDR3 ROW ADDRESS 10 = A13~A0. COL ADDRESS 10 = A9~A0. 2 RANK SUPPORT
 	//WR_REG DMC_DDR_CTRL, 0x0002e2e
-	wr_reg(DMC_DDR_CTRL, ( (1 << 21) | (1<<6) | (0x4 << 3)|0x4));
+	wr_reg(DMC_DDR_CTRL, ( (1 << 22 ) | (0 << 21) | (1<<6) | (0x3 << 3)|0x3) );
 
 	//// ENABLE THE DMC AUTO REFRESH FUNCTION
 	wr_reg(DMC_REFR_CTRL2, 0x20109A27);
-	wr_reg(DMC_REFR_CTRL1, 0x80389F);
+	wr_reg(DMC_REFR_CTRL1, 0x8800191);
 
-	wr_reg(DMC_PCTL_LP_CTRL, 0x44062);
+	wr_reg(DMC_PCTL_LP_CTRL, 0x440620);
 	wr_reg(DDR0_APD_CTRL, 0x45);
 	wr_reg(DDR0_CLK_CTRL, 0x5);
+
+	//  disable AXI port0 (CPU) IRQ/FIQ security control.
+	wr_reg(DMC_AXI0_QOS_CTRL1, 0x11);
 
 	//CONFIG DMC security register to enable the all reqeust can access all DDR region.
 	wr_reg(DMC_SEC_RANGE_CTRL, 0x0 );
@@ -168,7 +171,7 @@ console_puts("ddr pctl init start\n");
 	wr_reg(DDR0_PUB_PTR4, (1000 | (80 << 16)));
 
 	// CONFIGURE DDR PHY PUBL REGISTERS.
-	wr_reg(DDR0_PUB_ODTCR, 0xfd0a58da);
+	wr_reg(DDR0_PUB_ODTCR, 0x00210000);
 
 	// PROGRAM PUB MRX REGISTERS.
 	wr_reg(DDR0_PUB_MR0, (0x0 | (0x0 << 2) | (0x0 << 3) | (0x6 << 4) | (0x0 << 7) | (0x0 << 8) | (0x6 << 9) | (1 << 12)));
@@ -178,18 +181,19 @@ console_puts("ddr pctl init start\n");
 
 	// PROGRAM DDR SDRAM TIMING PARAMETER.
 	                     //TRTP  TWTR          TRP          TRAS         TRRD        TRCD
-    wr_reg(DDR0_PUB_DTPR0, (6 | (6 << 4) | ( 10 << 8) | (28 << 16) | (6 << 22) | (10 << 26)) );
-                         //TMOD        TFAW         TRFC         TWLMRD        TWLO     TAOND
-    wr_reg(DDR0_PUB_DTPR1, ( 4 | (0 << 2) | (32 << 5) | (128 << 11) | (40 << 20) | (6 << 26)  | ( 0 << 30) ) );
+	wr_reg(DDR0_PUB_DTPR0, (6 | (6 << 4) | ( 10 << 8) | (28 << 16) | (6 << 22) | (10 << 26)) );
+	                     //TMOD        TFAW         TRFC         TWLMRD        TWLO     TAOND
+	wr_reg(DDR0_PUB_DTPR1, ( 4 | (0 << 2) | (32 << 5) | (128 << 11) | (40 << 20) | (6 << 26)  | ( 0 << 30) ) );
 
-	wr_reg(DDR0_PUB_PGCR2, 0xf05f97);
+	//wr_reg(DDR0_PUB_PGCR2, 0xf05f97);
+	wr_reg(DDR0_PUB_PGCR2, 0x10f05f97);
 	wr_reg(DDR0_PUB_PGCR3, 0xc0aaf860);
 	wr_reg(DDR0_PUB_DXCCR, 0x00181884);
 
-                         //TXS     TXP          TDLLK        TRTODT ADDITIONAL TRTW ADDITIONAL. TCCD ADDITIONAL.
+	                     //TXS     TXP          TDLLK        TRTODT ADDITIONAL TRTW ADDITIONAL. TCCD ADDITIONAL.
 	wr_reg(DDR0_PUB_DTPR2, ( 512 | ( 5 << 10) | ( 512 << 19) | ( 0<<29 ) | ( 0 << 30 )  | ( 0 << 31 )));
-                                           //tRC       //tCKE         //tMRD      //tAOFDx
-	wr_reg(DDR0_PUB_DTPR3, (0 | 0 << 3 | ( 38 << 6) |  ( 4 << 13) | ( 512 << 18) | ( 0<<29 ) ));
+	                                       //tRC       //tCKE         //tMRD      //tAOFDx
+	wr_reg(DDR0_PUB_DTPR3, (0 | 0 << 3 | ( 38 << 6) |  ( 4 << 13) | ( 4 << 18) | ( 0<<29 ) ));
 	wr_reg(DDR0_PUB_DTCR, 0x43003087);
 
 	//DDR0_DLL_LOCK_WAIT
@@ -228,7 +232,7 @@ console_puts("ddr pctl init start\n");
 
 	//// DDR PHY INITIALIZATION
 	wr_reg(DDR0_PUB_PIR, 0X581);
-	wr_reg(DDR0_PUB_DSGCR, 0x020641f);
+	wr_reg(DDR0_PUB_DSGCR, 0x020641a);
 
 	//DDR0_SDRAM_INIT_WAIT :
 	wait_set(DDR0_PUB_PGSR0, 0);
@@ -305,9 +309,9 @@ console_puts("ddr pctl init start\n");
 	wr_reg(DDR0_PCTL_DFITPHYRDLAT, 16);
 	wr_reg(DDR0_PCTL_DFITDRAMCLKDIS, 1);
 	wr_reg(DDR0_PCTL_DFITDRAMCLKEN, 1);
-	wr_reg(DDR0_PCTL_DFITCTRLUPDMIN, 0x4000);
 	wr_reg(DDR0_PCTL_DFILPCFG0, ( 1 | (3 << 4) | (1 << 8) | (3 << 12) | (7 <<16) | (1 <<24) | ( 3 << 28)) );
 	wr_reg(DDR0_PCTL_DFITPHYUPDTYPE1, 0x200);
+	wr_reg(DDR0_PCTL_DFITCTRLUPDMIN, 16);
 
 	wr_reg(DDR0_PCTL_DFIODTCFG, 8 );
 	wr_reg(DDR0_PCTL_DFIODTCFG1, ( 0x0 | (0x6 << 16)) );
@@ -349,7 +353,13 @@ unsigned int ddr_test(void){
 
 void ddr_print_info(void){
 	unsigned int dmc_reg = rd_reg(DMC_DDR_CTRL);
-	unsigned int chl0_size = (dmc_reg & 0x7) << 9;
+	unsigned int chl0_size_reg = (dmc_reg & 0x7);
+	unsigned int chl0_size = 1;
+	unsigned int size_loop = 0;
+	for (size_loop = 0; size_loop < chl0_size_reg; size_loop++) {
+		chl0_size = chl0_size << 1;
+	}
+	chl0_size = chl0_size << 7; //MB
 	console_puts("ddr0 size: ");
 	console_put_dec(chl0_size);
 	console_puts("MB\n");

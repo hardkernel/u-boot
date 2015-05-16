@@ -20,7 +20,7 @@
 */
 
 #include <io.h>
-#include <config.h>
+#include <asm/arch/cpu_config.h>
 #include <stdio.h>
 #include <string.h>
 #include <efuse.h>

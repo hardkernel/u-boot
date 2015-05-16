@@ -23,7 +23,7 @@
 #include <console.h>
 //#include <serial.h>
 //#include "usb_pcd.h"
-#define CONFIG_SYS_MAXARGS		16
+//#define CONFIG_SYS_MAXARGS		16
 int serial_puts(const char *s){
 	while (*s) {
 		console_putc(*s++);

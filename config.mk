@@ -76,6 +76,7 @@ PLATFORM_CPPFLAGS += -pipe
 LDFLAGS += $(PLATFORM_LDFLAGS)
 LDFLAGS_FINAL += -Bstatic
 
+FIRMWARE_CPPFLAGS += -I$(buildsrc)/include
 FIRMWARE_CPPFLAGS += -I$(buildtree)/include2 -I$(buildtree)/include
 FIRMWARE_CPPFLAGS += -I$(buildtree)/include
 FIRMWARE_CPPFLAGS += -fno-builtin -ffreestanding -nostdinc	\

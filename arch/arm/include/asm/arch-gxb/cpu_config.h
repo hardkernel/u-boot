@@ -1,6 +1,6 @@
 
 /*
- * arch/arm/cpu/armv8/common/firmware/plat/gxb/include/config.h
+ * arch/arm/include/asm/arch-gxb/config.h
  *
  * Copyright (C) 2015 Amlogic, Inc. All rights reserved.
  *

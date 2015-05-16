@@ -96,15 +96,15 @@ void send_bl30x(uint32_t addr, uint32_t size, const uint8_t * sha2, \
 	int i;
 	*(unsigned int *)MB_SRAM_BASE = size;
 
-	printf("Sending %s", name);
-	//printf("time=0x%x size=0x%x\n", readl(0xc1109988),size);
-
 	if (0 == strcmp("bl301", name)) {
 		/*bl301 must wait bl30 run*/
 		printf("Wait bl30...");
 		while (0x3 != ((readl(AO_SEC_SD_CFG15) >> 20) & 0x3)) {}
 		printf("Done\n");
 	}
+
+	printf("Sending %s", name);
+	//printf("time=0x%x size=0x%x\n", readl(0xc1109988),size);
 
 	mb_send_data(CMD_DATA_LEN, 3);
 	do {} while(mb_read_data(3));

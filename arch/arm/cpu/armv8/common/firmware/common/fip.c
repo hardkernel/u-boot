@@ -27,7 +27,7 @@
 #include <platform.h>
 #include <platform_def.h>
 #include <stdio.h>
-#include <config.h>
+#include <asm/arch/cpu_config.h>
 #include <storage.h>
 #include <sha2.h>
 #include <mailbox.h>
