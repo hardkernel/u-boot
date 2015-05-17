@@ -128,7 +128,7 @@
 #define CONFIG_CMD_I2C 1
 #define CONFIG_CMD_MEMORY 1
 #define CONFIG_CMD_FAT 1
-
+#define CONFIG_CMD_GPIO 1
 /*file system*/
 #define CONFIG_DOS_PARTITION 1
 #define CONFIG_MMC 1
