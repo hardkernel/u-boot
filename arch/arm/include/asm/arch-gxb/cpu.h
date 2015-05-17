@@ -32,19 +32,13 @@
 #define CONFIG_SYS_MALLOC_LEN		(8*1024*1024)
 
 /* dram */
-#define PHYS_SDRAM_1_BASE			0x00000000UL
-#define PHYS_SDRAM_1_SIZE			(CONFIG_DDR_SIZE << 20)
-#define CONFIG_SYS_SDRAM_BASE		PHYS_SDRAM_1_BASE
-#define CONFIG_SYS_INIT_SP_ADDR		(0x20000000)
+#define PHYS_SDRAM_1_BASE					0x00000000UL
+#define PHYS_SDRAM_1_SIZE					(CONFIG_DDR_SIZE << 20)
+#define CONFIG_SYS_SDRAM_BASE				PHYS_SDRAM_1_BASE
+#define CONFIG_SYS_INIT_SP_ADDR				(0x20000000)
 
-#define CONFIG_SYS_TEXT_BASE		0x01000000 /*16MB*/
+#define CONFIG_SYS_TEXT_BASE		0x01000000 /*16MB rsv*/
 #define CONFIG_SYS_LOAD_ADDR		(PHYS_SDRAM_1_BASE + CONFIG_SYS_TEXT_BASE)
-
-#if (CONFIG_PXP_EMULATOR)
-#warning "pxpxppxpxpppppppppppppppppppppppppppppppppppppppppppppppp"
-#endif
-
-#define PXP_EMULATOR				CONFIG_PXP_EMULATOR
 
 /* ? */
 #define CONFIG_SYS_CBSIZE		512
@@ -53,5 +47,7 @@
 
 /* Generic Timer Definitions */
 #define COUNTER_FREQUENCY		(0x1800000)	/* 24MHz */
+
+#define CONFIG_BOARD_LATE_INIT
 
 #endif /* _CPU_H */

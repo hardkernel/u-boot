@@ -47,10 +47,6 @@ int serial_set_pin_port(unsigned long port_base)
     return 0;
 }
 
-void reset_cpu(ulong addr)
-{
-}
-
 int dram_init(void)
 {
 	gd->ram_size = PHYS_SDRAM_1_SIZE;
@@ -328,6 +324,7 @@ int board_init(void)
 #ifdef CONFIG_BOARD_LATE_INIT
 int board_late_init(void){
 	/*add board late init function here*/
+	run_command("setenv fdt_high 0x20000000", 1);
 	return 0;
 }
 #endif

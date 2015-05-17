@@ -34,7 +34,8 @@
 #include <platform_def.h>
 #include <string.h>
 #include <xlat_tables.h>
-
+#include <stdio.h>
+#include <fip.h>
 
 #ifndef DEBUG_XLAT_TABLE
 #define DEBUG_XLAT_TABLE 0
@@ -54,8 +55,8 @@
 static uint64_t l1_xlation_table[NUM_L1_ENTRIES]
 __aligned(NUM_L1_ENTRIES * sizeof(uint64_t));
 
-static uint64_t xlat_tables[MAX_XLAT_TABLES][XLAT_TABLE_ENTRIES]
-__aligned(XLAT_TABLE_SIZE) __attribute__((section("xlat_table")));
+static uint64_t **xlat_tables;
+//__aligned(XLAT_TABLE_SIZE) __attribute__((section("xlat_table")));
 
 static unsigned next_xlat;
 
@@ -64,7 +65,6 @@ static unsigned next_xlat;
  * The list is terminated by the first entry with size == 0.
  */
 static mmap_region_t mmap[MAX_MMAP_REGIONS + 1];
-
 
 static void print_mmap(void)
 {
@@ -225,6 +225,15 @@ static mmap_region_t *init_xlation_table(mmap_region_t *mm, unsigned long base,
 
 void init_xlat_tables(void)
 {
+	/* move mmu table to ddr*/
+	memset((void *)MMU_TABLE_BASE, 0, MMU_TABLE_SIZE);
+	uint64_t * xlat_tables_x[MAX_XLAT_TABLES] = {0};
+	uint32_t loop = 0;
+	for (loop=0; loop<MAX_XLAT_TABLES; loop++) {
+		xlat_tables_x[loop] = (uint64_t *)(uint64_t)(MMU_TABLE_BASE + loop * MMU_TABLE_SIZE);
+	}
+	xlat_tables = xlat_tables_x;
+
 	print_mmap();
 	init_xlation_table(mmap, 0, l1_xlation_table, 1);
 }

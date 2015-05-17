@@ -15,5 +15,9 @@
 void watchdog_init(uint32_t msec);
 void watchdog_reset(void);
 void reset_system(void);
+void watchdog_disable(void);
+
+/* uboot reset interface */
+void reset_cpu(unsigned long flag);
 
 #endif /* _BOOT_ROM_WATCHDOG_H */

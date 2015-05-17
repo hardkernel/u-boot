@@ -318,24 +318,24 @@
 
 #define DMC_HEVC_SEC_WRITE_CTRL				(DMC_SEC_REG_BASE + (0x1f <<2))
    //bit 31:18. not used.
-   //bit 17. WRITE secure area eable bit for HEVC subID0 CPU with IDbits 3:0 != 4'h0 write access.      1 : enable. 0 : disable.
-   //bit 16. WRITE non secure area eable bit for HEVC subID 0 CPU with IDbits 3:0 != 4'h0 write access.  1 : enable. 0 : disable.
-   //bit 15. WRITE secure area eable bit for HEVC subID 7 mpred write access.      1 : enable. 0 : disable.
+   //bit 17. WRITE secure area eable bit for HEVC subID0 CPU with IDbits[7:4] == 4'h1 write access.      1 : enable. 0 : disable.
+   //bit 16. WRITE non secure area eable bit for HEVC subID 0 CPU IDbits[7:4] == 4'h1 write access.  1 : enable. 0 : disable.
+   //bit 15. WRITE secure area eable bit for HEVC subID  [7:5] ==7 mpred write access.      1 : enable. 0 : disable.
    //bit 14. WRITE non secure area eable bit for HEVC subID 7  mpred write access.  1 : enable. 0 : disable.
-   //bit 13. WRITE secure area eable bit for HEVC subID 6 dblk_d write access.      1 : enable. 0 : disable.
-   //bit 12. WRITE non secure area eable bit for HEVC subID 6  dblk_d write access.  1 : enable. 0 : disable.
-   //bit 11. WRITE secure area eable bit for HEVC subID 5 dblk_p write access.      1 : enable. 0 : disable.
-   //bit 10. WRITE non secure area eable bit for HEVC subID 5  dblk_p write access.  1 : enable. 0 : disable.
-   //bit 9.  WRITE secure area eable bit for HEVC subID 4 ipp write access.      1 : enable. 0 : disable.
-   //bit 8.  WRITE non secure area eable bit for HEVC subID 4  ipp write access.  1 : enable. 0 : disable.
-   //bit 7.  WRITE secure area eable bit for HEVC subID 3 mpp write access.      1 : enable. 0 : disable.
-   //bit 6.  WRITE non secure area eable bit for HEVC subID 3  mpp write access.  1 : enable. 0 : disable.
-   //bit 5.  WRITE secure area eable bit for HEVC subID 2 SAO write access.      1 : enable. 0 : disable.
+   //bit 13. WRITE secure area eable bit for HEVC subID [7:5] == 6 dblk_d write access.      1 : enable. 0 : disable.
+   //bit 12. WRITE non secure area eable bit for HEVC subID [7:5] == 6  dblk_d write access.  1 : enable. 0 : disable.
+   //bit 11. WRITE secure area eable bit for HEVC subID [7:5] == 5 dblk_p write access.      1 : enable. 0 : disable.
+   //bit 10. WRITE non secure area eable bit for HEVC subID [7:5] == 5  dblk_p write access.  1 : enable. 0 : disable.
+   //bit 9.  WRITE secure area eable bit for HEVC subID [7:5] == 4 ipp write access.      1 : enable. 0 : disable.
+   //bit 8.  WRITE non secure area eable bit for HEVC subID [7:5] == 4  ipp write access.  1 : enable. 0 : disable.
+   //bit 7.  WRITE secure area eable bit for HEVC subID [7:5] == 3 mpp write access.      1 : enable. 0 : disable.
+   //bit 6.  WRITE non secure area eable bit for HEVC subID [7:5] == 3  mpp write access.  1 : enable. 0 : disable.
+   //bit 5.  WRITE secure area eable bit for HEVC subID [7:5] == 2 SAO write access.      1 : enable. 0 : disable.
    //bit 4.  WRITE non secure area eable bit for HEVC subID 2  SAO write access.  1 : enable. 0 : disable.
-   //bit 3.  WRITE secure area eable bit for HEVCsubID 1  stream write access.      1 : enable. 0 : disable.
-   //bit 2.  WRITE non secure area eable bit for HEVC subID 1  stream write access.  1 : enable. 0 : disable.
-   //bit 1.  WRITE secure area eable bit for HEVC CPU access with ID bit 3:0 = 4'h0.  1 : enable. 0 : disable.
-   //bit 0.  WRITE non secure area eable bit for HEVC CPU access with ID bit 3:0 = 4'h0.  1 : enable. 0 : disable.
+   //bit 3.  WRITE secure area eable bit for HEVCsubID [7:5] == 1  stream write access.      1 : enable. 0 : disable.
+   //bit 2.  WRITE non secure area eable bit for HEVC subID [7:5] == 1  stream write access.  1 : enable. 0 : disable.
+   //bit 1.  WRITE secure area eable bit for HEVC CPU access with ID bit 7 :4 = 4'h0.  1 : enable. 0 : disable.
+   //bit 0.  WRITE non secure area eable bit for HEVC CPU access with ID bit 7:4 = 4'h0.  1 : enable. 0 : disable.
 
 #define DMC_HEVC_SEC_CFG					(DMC_SEC_REG_BASE + (0x20 <<2))
   //24:16  9 CBUS modfiy enable bit for 9 write secure cotnrol SUBIDs
@@ -526,7 +526,8 @@
   //bit 29 trap0 port ID 1 enable.
   //bit 28 trap0 port ID 0 enable.
   //bit 27 trap0 port ID 2 subid enable.
-  //bit 27 trap0 port ID 2 subid enable.
+  //bit 26 trap0 port ID 1 subid enable.
+  //bit 25 trap0 port ID 0 subid enable.
   //bit 23:20. trap0 port port ID 2  channel ID number.
   //bit 19:16. trap0 port port ID 2  subID ID number.
   //bit 15:12. trap0 port ID 1 ID number.
@@ -543,13 +544,15 @@
   //bit 29 trap1 port ID 1 enable.
   //bit 28 trap1 port ID 0 enable.
   //bit 27 trap1 port ID 2 subid enable.
-  //bit 27 trap1 port ID 2 subid enable.
+  //bit 26 trap1 port ID 1 subid enable.
+  //bit 25 trap1 port ID 0 subid enable.
   //bit 23:20. trap1 port port ID 2  channel ID number.
   //bit 19:16. trap1 port port ID 2  subID ID number.
   //bit 15:12. trap1 port ID 1 ID number.
   //bit 11:8.  trap1 port ID 1 subID ID number.
   //bit 7:4.   trap1 port ID 0 ID number.
   //bit 3:0.   trap1 port ID 0 subID ID number.
+
 
 
 //registers to check the security protection and watch point error information.
@@ -568,10 +571,11 @@
 #define DMC_VIO_ADDR2						(DMC_SEC_REG_BASE + (0xb9 <<2))
   //ddr1 write seure violation address
 #define DMC_VIO_ADDR3						(DMC_SEC_REG_BASE + (0xba <<2))
-  //22     secure check violation.
-  //21     protection 1 vilation.
-  //20     protection 0 vilation.
-   //19:18. not use.d
+  //22     ddr1 write secure check violation.
+  //21     ddr1 write protection 1 vilation.
+  //20     ddr1 write protection 0 vilation.
+  //19     ddr1 watch 1 catch
+  //18.    ddr1 watch 0 catch.
   //17     ddr1 write address overflow. write out of DDR size.
   //16:14. ddr1 write violation AWPROT bits.
   //13:0   ddr1_write violation ID.
@@ -579,11 +583,11 @@
 #define DMC_VIO_ADDR4						(DMC_SEC_REG_BASE + (0xbb <<2))
   //ddr0 read seure violation address
 #define DMC_VIO_ADDR5						(DMC_SEC_REG_BASE + (0xbc <<2))
-  //22     secure check violation.
-  //21     protection 1 violation.
-  //20     protection 0 violation.
-  //19     trap1 violation
-  //18     trap0 violation
+  //22     ddr0 read secure check violation.
+  //21     ddr0 read protection 1 violation.
+  //20     ddr0 read protection 0 violation.
+  //19     ddr0 read trap1 violation
+  //18     ddr0 read trap0 violation
   //17     ddr 0 read address overflow. write out of DDR size.
   //16:14. ddr 0 read violation ARPROT bits.
   //13:0   ddr 0 read violation ID.
@@ -592,14 +596,15 @@
   //ddr1 read seure violation address
 
 #define DMC_VIO_ADDR7						(DMC_SEC_REG_BASE + (0xbe <<2))
-  //22     secure check violation.
-  //21     protection 1 violation.
-  //20     protection 0 violation.
-  //19     trap1 violation
-  //18     trap0 violation
+  //22     ddr1 read secure check violation.
+  //21     ddr1 read protection 1 violation.
+  //20     ddr1 read protection 0 violation.
+  //19     ddr1 read trap1 violation
+  //18     ddr1 read trap0 violation
   //17     ddr 1 read address overflow. write out of DDR size.
   //16:14. ddr 1 read violation ARPROT bits.
   //13:0   ddr 1 read violation ID.
+
 
 //each row bank and rank address can be selected from any address.
 #define DDR0_ADDRMAP_4						(DMC_SEC_REG_BASE + (0xd4 <<2))
@@ -677,30 +682,31 @@
 
 
 #define DMC_DDR_CTRL 						(DMC_SEC_REG_BASE + (0xda <<2))
-   //bit 22.  rank1 is same as rank0.  only in not shared-AC mdoe. and chan0 second rank not selected. that's means still in rank0 32bits mode.
-   //bit 21.  channel0 second rank selection enable. only in not shared-AC mode.
-   //bit 20.  Shared AC mode.
-   //bit 19 :18 must be 0 always. becasue we'll use 32bits PHY data.
-   //bit 19:    DDR channel 1 16bits data interface. 1 : 16bits data inteface. 0 : 32bits data interface
-   //bit 18:    DDR channel 0 16bits data interface.1 : 16bits data inteface. 0 : 32bits data interface
+  //bit 22.  rank1 is same as rank0.  only in not shared-AC mdoe. and chan0 second rank not selected. that's means still in rank0 32bits mode.
+  //bit 21.  channel0 second rank selection enable. only in not shared-AC mode.
+  //bit 20.  Shared AC mode.
+  //bit 19 :18 must be 0 always. becasue we'll use 32bits PHY data.
+  //bit 19:    DDR channel 1 16bits data interface. 1 : 16bits data inteface. 0 : 32bits data interface
+  //bit 18:    DDR channel 0 16bits data interface. 1 : 16bits data inteface. 0 : 32bits data interface
 
   //bit 17:     for DDR channel 1. 1: only use 16bits data in a 32bits phy data interface. 0: normal 32bits data interface.
-  //bit 16.     for DDR channel 0. 1 only use 16bits data in a 32bits phy data interface. 0 : normal data interface.
+  //bit 16.     for DDR channel 0. 1: only use 16bits data in a 32bits phy data interface. 0: normal 32bits data interface.
+  //bit 10:8 channel bit selection in shared range.
   //bit 7.  DDR1_ONLY.  1: DDR channel 1 only. when both channel 0 and 1 in the design. 0 : normal.
-  //bit 7.  DDR0_ONLY.  1: DDR channel 0 only. when both channel 0 and 1 in the design. 0 : normal.
+  //bit 6.  DDR0_ONLY.  1: DDR channel 0 only. when both channel 0 and 1 in the design. 0 : normal.
   //bit 5:3 :  DDR channel 1 size.
-     //3'b000 : DDR channel 1 is 128Mbyte.
-     //3'b001 : DDR channel 1 is 256Mbyte.
-     //3'b010 : DDR channel 1 is 512Mbyte.
-     //3'b011 : DDR channel 1 is 1Gbyte.
-     //3'b100 : DDR channel 1 is 2Gbyte.
-     //3'b101 : DDR channel 1 is 4Gbyte.
+     //3'b000 : DDR channel 1 is 128MB.
+     //3'b001 : DDR channel 1 is 256MB.
+     //3'b010 : DDR channel 1 is 512MB.
+     //3'b011 : DDR channel 1 is 1GB.
+     //3'b100 : DDR channel 1 is 2GB.
+     //3'b101 : DDR channel 1 is 4GB.
      //others :  reserved.
   //bit 2:0  :  DDR channel 0 size.
-     //3'b000 : DDR channel 0 is 128Mbyte.
-     //3'b001 : DDR channel 0 is 256Mbyte.
-     //3'b010 : DDR channel 0 is 512Mbyte.
-     //3'b011 : DDR channel 0 is 1Gbyte.
-     //3'b100 : DDR channel 0 is 2Gbyte.
-     //3'b101 : DDR channel 0 is 4Gbyte.
+     //3'b000 : DDR channel 0 is 128MB.
+     //3'b001 : DDR channel 0 is 256MB.
+     //3'b010 : DDR channel 0 is 512MB.
+     //3'b011 : DDR channel 0 is 1GB.
+     //3'b100 : DDR channel 0 is 2GB.
+     //3'b101 : DDR channel 0 is 4GB.
      //others :  reserved.

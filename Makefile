@@ -890,6 +890,7 @@ endif
 	$(Q)$(srctree)/tools/gx_boot pkg $(FIP_FOLDER)/bl2.bin
 	$(Q)$(srctree)/tools/gx_boot spl $(FIP_FOLDER)/bl2_fix.bin $(FIP_FOLDER)/bl2.bin.pkg
 	$(Q)cat $(FIP_FOLDER)/bl2_fix.bin $(FIP_FOLDER)/fip.bin > $(FIP_FOLDER)/boot.bin
+	$(Q)$(FIP_FOLDER)/boot_sd.sh $(FIP_FOLDER)/blank_512 $(FIP_FOLDER)/boot.bin $(FIP_FOLDER)/boot_sd.bin
 	@echo '$(FIP_FOLDER)/boot.bin build done!'
 
 #
@@ -1405,6 +1406,8 @@ endif
 	@rm -f $(srctree)/fip/fip.bin
 	@rm -f $(srctree)/fip/bl2_fix.bin
 	@rm -f $(srctree)/fip/boot.bin
+	@rm -f $(srctree)/fip/boot_sd.bin
+	@rm -f $(srctree)/fip/bl2.bin.pkg
 
 backup:
 	F=`basename $(srctree)` ; cd .. ; \

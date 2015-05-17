@@ -50,8 +50,12 @@
 #define CONFIG_SYS_BOOTM_LEN (64<<20) /* Increase max gunzip size*/
 
 /* ddr */
-#define CONFIG_DDR_SIZE 1024 //MB
-#define CONFIG_NR_DRAM_BANKS 1
+#define CONFIG_DDR_SIZE					1024 //MB
+#define CONFIG_DDR_CLK					936  //MHz, should be multiple of 24
+#define CONFIG_DDR_TYPE					DDR_TYPE_DDR3
+#define CONFIG_DDR_CHANNEL_SET			CONFIG_DDR0_RANK01_SAME
+#define CONFIG_DDR_FULL_TEST			0
+#define CONFIG_NR_DRAM_BANKS			1
 
 /* storage: emmc/nand/sd */
 #define CONFIG_AML_SD_EMMC 1
@@ -114,6 +118,13 @@
 #define CONFIG_CMD_EFUSE 1
 #define CONFIG_CMD_I2C 1
 #define CONFIG_CMD_MEMORY 1
+#define CONFIG_CMD_FAT 1
+
+/*file system*/
+#define CONFIG_DOS_PARTITION 1
+#define CONFIG_MMC 1
+#define CONFIG_FS_FAT 1
+#define CONFIG_FS_EXT4 1
 
 /* Cache Definitions */
 //#define CONFIG_SYS_DCACHE_OFF

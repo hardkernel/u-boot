@@ -96,65 +96,69 @@
   // at the test period,  the granted data cycles for the selected channel and ports.
 
 #define DMC_CLKG_CTRL0						(DMC_REG_BASE + (0x30 <<2 ))
-  //bit 28.  enalbe auto clock gating for qos monitor control.
-  //bit 27.  enalbe auto clock gating for qos control.
-  //bit 26.  enalbe auto clock gating for ddr1 write rsp generation.
-  //bit 25.  enalbe auto clock gating for ddr0 write rsp generation.
-  //bit 24.  enalbe auto clock gating for read rsp generation.
-  //bit 23.  enalbe auto clock gating for ddr1 read back data buffer.
-  //bit 22.  enalbe auto clock gating for ddr0 read back data buffer.
-  //bit 21.  enalbe auto clock gating for ddr1 command filter.
-  //bit 20.  enalbe auto clock gating for ddr0 command filter.
-  //bit 19.  enalbe auto clock gating for ddr1 write reorder buffer.
-  //bit 18.  enalbe auto clock gating for ddr0 write reorder buffer.
-  //bit 17.  enalbe auto clock gating for ddr1 write data buffer.
-  //bit 16.  enalbe auto clock gating for ddr0 write data buffer.
-  //bit 15.  enalbe auto clock gating for ddr1 read reorder buffer.
-  //bit 14.  enalbe auto clock gating for ddr0 read reorder buffer.
-  //bit 13.  enalbe auto clock gating for read canvas.
-  //bit 12.  enalbe auto clock gating for write canvas.
+  //bit 29.  enalbe auto clock gating for write rsp generation.
+  //bit 28.  enalbe auto clock gating for read rsp generation.
+  //bit 27.  enalbe auto clock gating for ddr1 read back data buffer.
+  //bit 26.  enalbe auto clock gating for ddr0 read back data buffer.
+  //bit 25.  enalbe auto clock gating for ddr1 command filter.
+  //bit 24.  enalbe auto clock gating for ddr0 command filter.
+  //bit 23.  enalbe auto clock gating for ddr1 write reorder buffer.
+  //bit 22.  enalbe auto clock gating for ddr0 write reorder buffer.
+  //bit 21.  enalbe auto clock gating for ddr1 write data buffer.
+  //bit 20.  enalbe auto clock gating for ddr0 write data buffer.
+  //bit 19.  enalbe auto clock gating for ddr1 read reorder buffer.
+  //bit 18.  enalbe auto clock gating for ddr0 read reorder buffer.
+  //bit 17.  enalbe auto clock gating for read canvas.
+  //bit 16.  enalbe auto clock gating for write canvas.
+  //bit 15.  enalbe auto clock gating for chan 15.
+  //bit 14.  enalbe auto clock gating for chan 14.
+  //bit 13.  enalbe auto clock gating for chan 13.
+  //bit 12.  enalbe auto clock gating for chan 12.
   //bit 11.  enalbe auto clock gating for chan 11.
-  //bit 10.  enalbe auto clock gating for chan 11.
-  //bit 9.   enalbe auto clock gating for chan 11.
-  //bit 8.   enalbe auto clock gating for chan 11.
-  //bit 7.   enalbe auto clock gating for chan 11.
-  //bit 6.   enalbe auto clock gating for chan 11.
-  //bit 5.   enalbe auto clock gating for chan 11.
-  //bit 4.   enalbe auto clock gating for chan 11.
-  //bit 3.   enalbe auto clock gating for chan 11.
-  //bit 2.   enalbe auto clock gating for chan 11.
-  //bit 1.   enalbe auto clock gating for chan 11.
-  //bit 0.   enalbe auto clock gating for chan 11.
+  //bit 10.  enalbe auto clock gating for chan 10.
+  //bit 9.   enalbe auto clock gating for chan 9.
+  //bit 8.   enalbe auto clock gating for chan 8.
+  //bit 7.   enalbe auto clock gating for chan 7.
+  //bit 6.   enalbe auto clock gating for chan 6.
+  //bit 5.   enalbe auto clock gating for chan 5.
+  //bit 4.   enalbe auto clock gating for chan 4.
+  //bit 3.   enalbe auto clock gating for chan 3.
+  //bit 2.   enalbe auto clock gating for chan 2.
+  //bit 1.   enalbe auto clock gating for chan 1.
+  //bit 0.   enalbe auto clock gating for chan 0.
+
 #define DMC_CLKG_CTRL1						(DMC_REG_BASE + (0x31 <<2 ))
-  //bit 28.  force to disalbe the clock of qos monitor control.
-  //bit 27.  force to disalbe the clock of qos control.
-  //bit 26.  force to disalbe the clock of ddr1 write rsp generation.
-  //bit 25.  force to disalbe the clock of ddr0 write rsp generation.
-  //bit 24.  force to disalbe the clock of read rsp generation.
-  //bit 23.  force to disalbe the clock of ddr1 read back data buffer.
-  //bit 22.  force to disalbe the clock of ddr0 read back data buffer.
-  //bit 21.  force to disalbe the clock of ddr1 command filter.
-  //bit 20.  force to disalbe the clock of ddr0 command filter.
-  //bit 19.  force to disalbe the clock of ddr1 write reorder buffer.
-  //bit 18.  force to disalbe the clock of ddr0 write reorder buffer.
-  //bit 17.  force to disalbe the clock of ddr1 write data buffer.
-  //bit 16.  force to disalbe the clock of ddr0 write data buffer.
-  //bit 15.  force to disalbe the clock of ddr1 read reorder buffer.
-  //bit 14.  force to disalbe the clock of ddr0 read reorder buffer.
-  //bit 13.  force to disalbe the clock of read canvas.
-  //bit 12.  force to disalbe the clock of write canvas.
+  //bit 29.  force to disalbe the clock of write rsp generation.
+  //bit 28.  force to disalbe the clock of read rsp generation.
+  //bit 27.  force to disalbe the clock of ddr1 read back data buffer.
+  //bit 26.  force to disalbe the clock of ddr0 read back data buffer.
+  //bit 25.  force to disalbe the clock of ddr1 command filter.
+  //bit 24.  force to disalbe the clock of ddr0 command filter.
+  //bit 23.  force to disalbe the clock of ddr1 write reorder buffer.
+  //bit 22.  force to disalbe the clock of ddr0 write reorder buffer.
+  //bit 21.  force to disalbe the clock of ddr1 write data buffer.
+  //bit 20.  force to disalbe the clock of ddr0 write data buffer.
+  //bit 19.  force to disalbe the clock of ddr1 read reorder buffer.
+  //bit 18.  force to disalbe the clock of ddr0 read reorder buffer.
+  //bit 17.  force to disalbe the clock of read canvas.
+  //bit 16.  force to disalbe the clock of write canvas.
+  //bit 15.  force to disalbe the clock of chan 15.
+  //bit 14.  force to disalbe the clock of chan 14.
+  //bit 13.  force to disalbe the clock of chan 13.
+  //bit 12.  force to disalbe the clock of chan 12.
   //bit 11.  force to disalbe the clock of chan 11.
-  //bit 10.  force to disalbe the clock of chan 11.
-  //bit 9.   force to disalbe the clock of chan 11.
-  //bit 8.   force to disalbe the clock of chan 11.
-  //bit 7.   force to disalbe the clock of chan 11.
-  //bit 6.   force to disalbe the clock of chan 11.
-  //bit 5.   force to disalbe the clock of chan 11.
-  //bit 4.   force to disalbe the clock of chan 11.
-  //bit 3.   force to disalbe the clock of chan 11.
-  //bit 2.   force to disalbe the clock of chan 11.
-  //bit 1.   force to disalbe the clock of chan 11.
-  //bit 0.   force to disalbe the clock of chan 11.
+  //bit 10.  force to disalbe the clock of chan 10.
+  //bit 9.   force to disalbe the clock of chan 9.
+  //bit 8.   force to disalbe the clock of chan 8.
+  //bit 7.   force to disalbe the clock of chan 7.
+  //bit 6.   force to disalbe the clock of chan 6.
+  //bit 5.   force to disalbe the clock of chan 5.
+  //bit 4.   force to disalbe the clock of chan 4.
+  //bit 3.   force to disalbe the clock of chan 3.
+  //bit 2.   force to disalbe the clock of chan 2.
+  //bit 1.   force to disalbe the clock of chan 1.
+  //bit 0.   force to disalbe the clock of chan 0.
+
 
 #define DMC_CHAN_STS						(DMC_REG_BASE + (0x32 <<2 ))
 

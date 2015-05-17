@@ -75,6 +75,9 @@ void aml_sd_cfg_swth(struct mmc *mmc)
 
 	sd_debug("mmc->clock=%d; clk_div=%d\n",mmc->clock ,clk_div);
 
+	if (mmc->clock > 12000000)
+		mmc->clock = 12000000;
+
 	if (mmc->clock > 12000000) {
 		clk = SD_EMMC_CLKSRC_DIV2;
 		clk_src = 1;
@@ -301,9 +304,11 @@ int aml_sd_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd, struct	mmc_data *data)
 		if (data->flags == MMC_DATA_READ) {
 			des_cmd_cur->data_wr = 0;  //read data from sd/emmc
 			buffer = (unsigned long)data->dest;//dma_map_single((void*)data->dest,data->blocks*data->blocksize,DMA_FROM_DEVICE);
+			invalidate_dcache_range((unsigned long)data->dest, (unsigned long)(data->dest+data->blocks*data->blocksize));
 		}else{
 			des_cmd_cur->data_wr = 1;
 			buffer = (unsigned long)data->src;//dma_map_single((void*)data->src,data->blocks*data->blocksize,DMA_TO_DEVICE);//(char *)data->src;
+			flush_dcache_range((unsigned long)data->src,(unsigned long)(data->src+data->blocks*data->blocksize));
 		}
 		if (data->blocks > 1) {
 			des_cmd_cur->block_mode = 1;
@@ -317,7 +322,12 @@ int aml_sd_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd, struct	mmc_data *data)
         desc_cur->data_addr &= ~(1<<0);   //DDR
 
 	}
-
+	if (data) {
+		if ((data->blocks*data->blocksize <0x200) && (data->flags == MMC_DATA_READ)) {
+			desc_cur->data_addr = (unsigned long)sd_emmc_reg->gping;
+			desc_cur->data_addr |= 1<<0;
+		}
+	}
 	/*Prepare desc for config register*/
 	des_cmd_cur->owner = 1;
 	des_cmd_cur->end_of_chain = 0;
@@ -328,6 +338,8 @@ int aml_sd_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd, struct	mmc_data *data)
 
 	sd_emmc_reg->gstatus = NEWSD_IRQ_ALL;
 
+	invalidate_dcache_range((unsigned long)aml_priv->desc_buf,
+		(unsigned long)(aml_priv->desc_buf+NEWSD_MAX_DESC_MUN*(sizeof(struct sd_emmc_desc_info))));
 	//start transfer cmd
 	desc_start->init = 0;
 	desc_start->busy = 1;
@@ -358,7 +370,11 @@ int aml_sd_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd, struct	mmc_data *data)
 		ret |= SD_EMMC_RESP_TIMEOUT_ERROR;
 	if (status_irq_reg->desc_timeout)
 		ret |= SD_EMMC_DESC_TIMEOUT_ERROR;
-
+	if (data) {
+		if ((data->blocks*data->blocksize <0x200) && (data->flags == MMC_DATA_READ)) {
+			memcpy(data->dest, (const void *)sd_emmc_reg->gping,data->blocks*data->blocksize);
+		}
+	}
 	/*we get response [0]:bit0~31
 	*        response [1]:bit32~63
 	*        response [2]:bit64~95

@@ -41,7 +41,7 @@ uint64_t storage_load(uint64_t src, uint64_t des, uint64_t size, const char * im
 	//boot_device = BOOT_DEVICE_SPI;
 	switch (boot_device) {
 		case BOOT_DEVICE_RESERVED:
-			device_name = "Reserved";
+			device_name = "Rsv";
 			break;
 		case BOOT_DEVICE_EMMC:
 			device_name = "eMMC";
@@ -76,6 +76,7 @@ uint64_t storage_load(uint64_t src, uint64_t des, uint64_t size, const char * im
 			spi_read(src, des, size);
 			break;
 		case BOOT_DEVICE_SD:
+			src += 512; //sd boot must add 512 offset
 			sdio_read_data(boot_device, src, des, size);
 			break;
 		case BOOT_DEVICE_USB:
@@ -85,6 +86,7 @@ uint64_t storage_load(uint64_t src, uint64_t des, uint64_t size, const char * im
 		default:
 			break;
 	}
+	inv_dcache_range(des, size);
 	return 0;
 }
 
@@ -225,15 +227,17 @@ uint64_t sdio_read_blocks(struct sd_emmc_global_regs *sd_emmc_regs,
 	if (status_irq_reg->desc_timeout)
 		ret |= SD_EMMC_DESC_TIMEOUT_ERROR;
 	if (ret)
-		printf("sd/emmc read data error: %d\n",ret);
-	printf("read data success!\n");
+		printf("sd/emmc read data error: status=0x%x; ret=%d\n",ret);
+	else
+		printf("read data success!\n");
 	return ret;
 }
 
 uint64_t sdio_read_data(uint64_t boot_device, uint64_t src, uint64_t des, uint64_t size)
 {
-	unsigned mode = 1,blk_cnt,ret;
+	unsigned mode,blk_cnt,ret;
 	struct sd_emmc_global_regs *sd_emmc_regs=0;
+	union sd_emmc_setup *s_setup = (union sd_emmc_setup *)SEC_AO_SEC_GP_CFG1;
 
 	if (boot_device == BOOT_DEVICE_EMMC)
 		sd_emmc_regs = (struct sd_emmc_global_regs *)SD_EMMC_BASE_C;
@@ -241,6 +245,12 @@ uint64_t sdio_read_data(uint64_t boot_device, uint64_t src, uint64_t des, uint64
 		sd_emmc_regs = (struct sd_emmc_global_regs *)SD_EMMC_BASE_B;
 	else
 		printf("sd/emmc boot device error\n");
+
+	mode = s_setup->b.sdhc | s_setup->b.hcs ? 1 : 0;
+	if (mode)
+		printf("sd/emmc is lba mode\n");
+	else
+		printf("sd/emmc is byte mode\n");
 
 	blk_cnt = ((size+511)&(~(511)))>>9;
 	do {

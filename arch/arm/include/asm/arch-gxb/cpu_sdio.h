@@ -84,6 +84,20 @@ struct sd_emmc_global_regs {
     volatile uint32_t gpong[128]; // 0x800
 };
 
+union sd_emmc_setup {
+    uint32_t d32;
+    struct {
+        unsigned bw:3;
+        unsigned fast:1;
+        unsigned par:3;
+        unsigned hcs:1;
+        unsigned sd:1;
+        unsigned sdhc:1;
+        unsigned type:6;
+        unsigned rca:16;
+    } b;
+};
+
 struct sd_emmc_desc_info{
     uint32_t cmd_info;
     uint32_t cmd_arg;

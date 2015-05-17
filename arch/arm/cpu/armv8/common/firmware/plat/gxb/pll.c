@@ -22,28 +22,68 @@
 #include <pll.h>
 #include <io.h>
 #include <string.h>
-#include <watchdog.h>
+#include <asm/arch/watchdog.h>
 #include <stdio.h>
 #include <asm/arch/secure_apb.h>
+#include <asm/arch/timer.h>
+#include <stdio.h>
 
 #define Wr(reg, val) writel(val, reg)
 #define Rd(reg) readl(reg)
 
+#define CFG_SYS_PLL_CNTL_2 (0x5ac80000)
+#define CFG_SYS_PLL_CNTL_3 (0x8e452015)
+#define CFG_SYS_PLL_CNTL_4 (0x0401d40c)
+#define CFG_SYS_PLL_CNTL_5 (0x00000870)
+
+#define CFG_MPLL_CNTL_2 (0x59C80000)
+#define CFG_MPLL_CNTL_3 (0xCA45B822)
+#define CFG_MPLL_CNTL_4 (0x00018007)
+#define CFG_MPLL_CNTL_5 (0xB5500E1A)
+#define CFG_MPLL_CNTL_6 (0xFC454545)
+#define CFG_MPLL_CNTL_7 (0)
+#define CFG_MPLL_CNTL_8 (0)
+#define CFG_MPLL_CNTL_9 (0)
+
 unsigned lock_check_loop = 0;
 
 unsigned int pll_init(void){
-	/*sys pll*/
-	clocks_set_sys_cpu_clk( 0, 0, 0, 0); // Switch to oscillator, the SYS CPU might have already been programmed
+	// Switch to oscillator, the SYS CPU might have already been programmed
+	clocks_set_sys_cpu_clk( 0, 0, 0, 0);
+	/*FIX PLL*/
+	Wr( HHI_MPEG_CLK_CNTL, Rd(HHI_MPEG_CLK_CNTL) & ~(1 << 8) ); // Switch clk81 to the oscillator input (boot.s might have already programmed clk81 to a PLL)
+
+	//SYS PLL,FIX PLL bangap
+	Wr(HHI_MPLL_CNTL6, Rd(HHI_MPLL_CNTL6)|(1<<26));
+	udelay(100);
+	//Init SYS pll
 	do {
-		Wr( HHI_SYS_PLL_CNTL, 0x40000230 ); // 960MHz A9 clock
-	}while(pll_lock_check(HHI_SYS_PLL_CNTL, "SYS PLL"));
+		Wr(HHI_SYS_PLL_CNTL, Rd(HHI_SYS_PLL_CNTL)|(1<<29));
+		Wr(HHI_SYS_PLL_CNTL2, CFG_SYS_PLL_CNTL_2);
+		Wr(HHI_SYS_PLL_CNTL3, CFG_SYS_PLL_CNTL_3);
+		Wr(HHI_SYS_PLL_CNTL4, CFG_SYS_PLL_CNTL_4);
+		Wr(HHI_SYS_PLL_CNTL5, CFG_SYS_PLL_CNTL_5);
+		Wr(HHI_SYS_PLL_CNTL, 0x60000240); // 960MHz A9 clock
+		Wr(HHI_SYS_PLL_CNTL, Rd(HHI_SYS_PLL_CNTL)&(~(1<<29)));
+		udelay(20);
+	} while(pll_lock_check(HHI_SYS_PLL_CNTL, "SYS PLL"));
 	clocks_set_sys_cpu_clk( 1, 0, 0, 0); // Connect SYS CPU to the PLL divider output
 
-	/*mpll*/
-	Wr( HHI_MPEG_CLK_CNTL, Rd(HHI_MPEG_CLK_CNTL) & ~(1 << 8) ); // Switch clk81 to the oscillator input (boot.s might have already programmed clk81 to a PLL)
 	do {
-		Wr( HHI_MPLL_CNTL, ((1 << 30) | (4 << 9) | (425 << 0)) );
-	}while(pll_lock_check(HHI_MPLL_CNTL, "MPLL"));
+		Wr(HHI_MPLL_CNTL, (1<<29));
+		Wr(HHI_MPLL_CNTL2, CFG_MPLL_CNTL_2 );
+		Wr(HHI_MPLL_CNTL3, CFG_MPLL_CNTL_3 );
+		Wr(HHI_MPLL_CNTL4, CFG_MPLL_CNTL_4 );
+		Wr(HHI_MPLL_CNTL5, CFG_MPLL_CNTL_5 );
+		Wr(HHI_MPLL_CNTL6, CFG_MPLL_CNTL_6 );
+		Wr(HHI_MPLL_CNTL7, 0 );
+		Wr(HHI_MPLL_CNTL8, 0 );
+		Wr(HHI_MPLL_CNTL9, 0 );
+		Wr( HHI_MPLL_CNTL, ((1 << 30) | (1<<29) | (3 << 9) | (250 << 0)) );
+		udelay(10);
+		Wr(HHI_MPLL_CNTL, Rd(HHI_MPLL_CNTL)&(~(1<<29)));
+		udelay(100);
+	} while(pll_lock_check(HHI_MPLL_CNTL, "FIX PLL"));
 
 	// Enable the separate fclk_div2 and fclk_div3
 	//		.MPLL_CLK_OUT_DIV2_EN		( hi_mpll_cntl10[7:0]		),
@@ -56,9 +96,9 @@ unsigned int pll_init(void){
 	Wr( HHI_MPLL_CNTL7, ((7 << 16) | (1 << 15) | (1 << 14) | (4681 << 0)) );
 
 	// -------------------------
-	// set CLK81 to 182Mhz Fixed
+	// set CLK81 to 166.6Mhz Fixed
 	// -------------------------
-	Wr( HHI_MPEG_CLK_CNTL, ((Rd(HHI_MPEG_CLK_CNTL) & ~((0x7 << 12) | (1 << 7) | (0x7F << 0))) | ((2 << 12) | (1 << 7)	| (1 << 0))) );
+	Wr( HHI_MPEG_CLK_CNTL, ((Rd(HHI_MPEG_CLK_CNTL) & (~((0x7 << 12) | (1 << 7) | (0x7F << 0)))) | ((5 << 12) | (1 << 7)	| (2 << 0))) );
 	// Connect clk81 to the PLL divider output
 	Wr( HHI_MPEG_CLK_CNTL, Rd(HHI_MPEG_CLK_CNTL) | (1 << 8) );
 
@@ -201,6 +241,7 @@ unsigned pll_lock_check(unsigned long pll_reg, const char *pll_name){
 	unsigned lock = ((Rd(pll_reg) >> PLL_LOCK_BIT_OFFSET) & 0x1);
 	if (lock) {
 		lock_check_loop = 0;
+		printf("%s lock ok!\n", pll_name);
 	}
 	else{
 		lock_check_loop++;

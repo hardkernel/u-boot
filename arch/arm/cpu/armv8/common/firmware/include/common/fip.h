@@ -101,6 +101,9 @@ typedef struct aml_fip_header {
 #define FM_BL32_LOAD_ADDR			0x10200000
 #define FM_BL33_LOAD_ADDR			CONFIG_SYS_TEXT_BASE
 
+#define MMU_TABLE_BASE				0x03000000
+#define MMU_TABLE_SIZE				(sizeof(uint64_t) * MAX_XLAT_TABLES * XLAT_TABLE_ENTRIES)
+
 /*fip defines*/
 void bl2_load_image(void);
 

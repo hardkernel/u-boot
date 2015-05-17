@@ -34,6 +34,8 @@
 #include <asm/arch/romboot.h>
 #include <cache.h>
 #include <fip.h>
+#include <asm/arch/watchdog.h>
+#include <asm/arch/timer.h>
 
 void bl2_load_image(void){
 	//meminfo_t *bl2_tzram_layout;
@@ -113,7 +115,7 @@ void bl2_load_image(void){
 
 	/*disable mmu and dcache, flush dcache, then enter next firmware*/
 	disable_mmu_el1();
-
+	watchdog_disable();
 	/*
 	 * Run BL31 via an SMC to BL1. Information on how to pass control to
 	 * the BL32 (if present) and BL33 software images will be passed to
@@ -123,7 +125,7 @@ void bl2_load_image(void){
 	smc(RUN_IMAGE, (unsigned long)bl31_ep_info, 0, 0, 0, 0, 0, 0);
 #else
 	typedef unsigned long (*FUNC_TPL)(void );
-	unsigned long bl33_entry = 0x20000000;//TPL_GET_BL_ADDR(FM_BIN_BL33_OFFSET);
+	unsigned long bl33_entry = FM_BL33_LOAD_ADDR;
 	printf("bl33 entry: 0x%8x\n", bl33_entry);
 	FUNC_TPL func_tpl=(FUNC_TPL)bl33_entry;
 	func_tpl();

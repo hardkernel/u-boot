@@ -89,9 +89,9 @@ SECTIONS
      * Removing them from .bss avoids forcing 4K alignment on
      * the .bss section and eliminates the unecessary zero init
      */
-    xlat_table (NOLOAD) : {
-        *(xlat_table)
-    } >RAM
+    //xlat_table (NOLOAD) : {
+    //    *(xlat_table)
+    //} >RAM
 
     /*
      * The base address of the coherent memory section must be page-aligned (4K)

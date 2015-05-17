@@ -19,10 +19,10 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-#include <stdint.h>
+#include <common.h>
+#include <asm/types.h>
 #include <asm/arch/romboot.h>
 #include <asm/arch/watchdog.h>
-#include <io.h>
 #include <asm/arch/io.h>
 
 void watchdog_init(uint32_t msec)
@@ -68,4 +68,9 @@ void reset_system(void)
                 for (i=0; i<100; i++)
                         readl(P_WATCHDOG_CNTL);/*Deceive gcc for waiting some cycles */
 	}
+}
+
+/* uboot reset interface */
+void reset_cpu(unsigned long flag){
+	reset_system();
 }

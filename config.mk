@@ -81,6 +81,7 @@ FIRMWARE_CPPFLAGS += -I$(buildtree)/include2 -I$(buildtree)/include
 FIRMWARE_CPPFLAGS += -I$(buildtree)/include
 FIRMWARE_CPPFLAGS += -fno-builtin -ffreestanding -nostdinc	\
 	-isystem $(gccincdir) -pipe $(PLATFORM_CPPFLAGS)
+FIRMWARE_CPPFLAGS += -I$(buildsrc)/board/$(BOARDDIR)/firmware
 
 export FIRMWARE_CPPFLAGS
 export PLATFORM_CPPFLAGS

@@ -120,7 +120,8 @@
  ******************************************************************************/
 //#define BL2_BASE			(TZRAM_BASE + TZRAM_SIZE - 0xd000)
 #define BL2_BASE			TZRAM_BASE + BL2_IMAGE_OFFSET
-#define BL2_LIMIT			(TZRAM_BASE + TZRAM_SIZE)
+//#define BL2_LIMIT			(TZRAM_BASE + TZRAM_SIZE)
+#define BL2_LIMIT			(TZRAM_BASE + 0XC000) //48KB
 
 /*******************************************************************************
  * Load address of BL3-0 in the ${PLAT} port

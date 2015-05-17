@@ -158,20 +158,8 @@ struct entry_point_info *bl2_plat_get_bl31_ep_info(void)
  ******************************************************************************/
 void bl2_early_platform_setup(meminfo_t *mem_layout)
 {
-	/* Initialize the console to provide early debug support */
-	//console_init(PL011_UART0_BASE);
-	//char c;
 	console_init(52);   //24M
 
-	/* Setup the BL2 memory layout */
-#if 0
-	bl2_tzram_layout.total_base = mem_layout->total_base;
-	bl2_tzram_layout.total_size = mem_layout->total_size;
-	bl2_tzram_layout.free_base = mem_layout->free_base;
-	bl2_tzram_layout.free_size = mem_layout->free_size;
-	bl2_tzram_layout.attr = mem_layout->attr;
-	bl2_tzram_layout.next = 0;
-#endif
 	bl2_tzram_layout.total_base = TZRAM_BASE;
 	bl2_tzram_layout.total_size = TZRAM_SIZE;
 	bl2_tzram_layout.free_base = TZRAM_BL2_FREE_BASE;
@@ -255,6 +243,14 @@ void bl2_platform_setup(void)
 	/* DDR init*/
 	ddr_init();
 
+	/* setup mmu */
+	configure_mmu_el1(bl2_tzram_layout.total_base,
+			  bl2_tzram_layout.total_size,
+			  BL2_RO_BASE,
+			  BL2_RO_LIMIT,
+			  BL2_COHERENT_RAM_BASE,
+			  BL2_COHERENT_RAM_LIMIT);
+
 	/* Initialise the IO layer and register platform IO devices */
 	//io_setup();
 
@@ -276,12 +272,7 @@ void bl2_plat_flush_bl31_params(void)
  ******************************************************************************/
 void bl2_plat_arch_setup(void)
 {
-	configure_mmu_el1(bl2_tzram_layout.total_base,
-			  bl2_tzram_layout.total_size,
-			  BL2_RO_BASE,
-			  BL2_RO_LIMIT,
-			  BL2_COHERENT_RAM_BASE,
-			  BL2_COHERENT_RAM_LIMIT);
+	return;
 }
 
 /*******************************************************************************
