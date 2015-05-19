@@ -31,11 +31,11 @@
 #define REG_BASE_AOBUS                  (0xc8100000L)
 #define REG_BASE_CBUS                   (0xc1100000L)
 #define REG_BASE_HIU                    (0xc883c000L)
-#define REG_BASE_RST                    (0xc1104400L)
+#define REG_BASE_VCBUS                  (0xd0100000L)
 #define REG_OFFSET_AOBUS(reg)           ((reg))
 #define REG_OFFSET_CBUS(reg)            ((reg << 2))
 #define REG_OFFSET_HIU(reg)             ((reg << 2))
-#define REG_OFFSET_RST(reg)             ((reg << 2))
+#define REG_OFFSET_VCBUS(reg)           ((reg << 2))
 
 /* offset address */
 #define AO_RTI_GEN_PWR_SLEEP0           ((0x00 << 10) | (0x3a << 2))
@@ -83,12 +83,14 @@
 #define RESET2_MASK_GX                  0x12
 #define RESET3_MASK_GX                  0x13
 #define RESET4_MASK_GX                  0x14
+#define VPU_RST_REG_GX(addr)            (addr)//(addr & 0xff)
 
 /* memory mapping */
 #define REG_ADDR_AOBUS(reg)             (REG_BASE_AOBUS + REG_OFFSET_AOBUS(reg))
 #define REG_ADDR_CBUS(reg)              (REG_BASE_CBUS + REG_OFFSET_CBUS(reg))
 #define REG_ADDR_HIU(reg)               (REG_BASE_HIU + REG_OFFSET_HIU(reg))
 #define REG_ADDR_RST(reg)               (REG_BASE_RST + REG_OFFSET_RST(reg))
+#define REG_ADDR_VCBUS(reg)             (REG_BASE_VCBUS + REG_OFFSET_VCBUS(reg))
 
 /* ********************************
  * register access api
@@ -141,51 +143,7 @@ static inline void vpu_hiu_clr_mask(unsigned int _reg, unsigned int _mask)
 {
 	vpu_hiu_write(_reg, (vpu_hiu_read(_reg) & (~(_mask))));
 }
-#if 0
-static inline unsigned int vpu_rst_read(unsigned int _reg)
-{
-	//printf("read reg=0x%x\n", REG_ADDR_RST(_reg));
-	if (vpu_chip_type == VPU_CHIP_GXBB)
-		return *(volatile unsigned int *)(REG_ADDR_RST(_reg));
-	else
-		return *(volatile unsigned int *)(REG_ADDR_CBUS(_reg));
-};
 
-static inline void vpu_rst_write(unsigned int _reg, unsigned int _value)
-{
-	//printf("write reg=%u\n", REG_ADDR_RST(_reg));
-	 if (vpu_chip_type == VPU_CHIP_GXBB)
-		*(volatile unsigned int *)REG_ADDR_RST(_reg) = (_value);
-	 else
-		*(volatile unsigned int *)REG_ADDR_CBUS(_reg) = (_value);
-};
-
-static inline void vpu_rst_setb(unsigned int _reg,
-		unsigned int _value,
-		unsigned int _start,
-		unsigned int _len)
-{
-	vpu_rst_write(_reg, ((vpu_rst_read(_reg) &
-			~(((1L << (_len))-1) << (_start))) |
-			(((_value)&((1L<<(_len))-1)) << (_start))));
-}
-
-static inline unsigned int vpu_rst_getb(unsigned int _reg,
-		unsigned int _start, unsigned int _len)
-{
-	return (vpu_rst_read(_reg) >> (_start)) & ((1L << (_len)) - 1);
-}
-
-static inline void vpu_rst_set_mask(unsigned int _reg, unsigned int _mask)
-{
-	vpu_rst_write(_reg, (vpu_rst_read(_reg) | (_mask)));
-}
-
-static inline void vpu_rst_clr_mask(unsigned int _reg, unsigned int _mask)
-{
-	vpu_rst_write(_reg, (vpu_rst_read(_reg) & (~(_mask))));
-}
-#endif
 static inline unsigned int vpu_cbus_read(unsigned int _reg)
 {
 	//return __raw_readl(REG_ADDR_CBUS(_reg));
@@ -245,5 +203,15 @@ static inline void vpu_ao_setb(unsigned int _reg,
 			~(((1L << (_len))-1) << (_start))) |
 			(((_value)&((1L<<(_len))-1)) << (_start))));
 }
+
+static inline unsigned int vpu_vcbus_read(unsigned int _reg)
+{
+	return (*(volatile unsigned int *)REG_ADDR_VCBUS(_reg));
+};
+
+static inline void vpu_vcbus_write(unsigned int _reg, unsigned int _value)
+{
+	*(volatile unsigned int *)REG_ADDR_VCBUS(_reg) = (_value);
+};
 
 #endif

@@ -93,7 +93,7 @@ static unsigned int fclk_table[] = { /* unit: MHz */
 #define FCLK_TYPE_G9BB         FCLK_2550M
 /* GXBB */
 /* freq max=666M, default=666M */
-#define CLK_LEVEL_DFT_GXBB     3
+#define CLK_LEVEL_DFT_GXBB     7
 #define CLK_LEVEL_MAX_GXBB     8
 #define FCLK_TYPE_GXBB         FCLK_2000M
 

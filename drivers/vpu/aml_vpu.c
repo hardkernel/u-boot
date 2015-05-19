@@ -23,10 +23,12 @@
 #ifdef CONFIG_OF_LIBFDT
 #include <libfdt.h>
 #endif
+#include <vpu.h>
 #include "aml_vpu_reg.h"
 #include "aml_vpu.h"
 
 #define VPU_VERION	"v01"
+/* #define VPU_VCBUS_TEST */
 
 static char * dt_addr;
 static int dts_ready = 0;
@@ -201,26 +203,34 @@ static int adjust_vpu_clk_m8_g9(unsigned int clk_level)
 	return ret;
 }
 
+/* unit: MHz */
+#define VPU_CLKB_MAX    350
 static int adjust_vpu_clk_gx(unsigned int clk_level)
 {
+	unsigned int vpu_clk;
 	unsigned int mux, div;
 	int ret = 0;
 
 	vpu_conf.clk_level = clk_level;
-
+	vpu_clk = vpu_clk_table[vpu_conf.fclk_type][clk_level][0];
 	mux = vpu_clk_table[vpu_conf.fclk_type][clk_level][1];
 	div = vpu_clk_table[vpu_conf.fclk_type][clk_level][2];
-	vpu_hiu_write(HHI_VPU_CLK_CNTL_GX, ((mux << 9) | (div << 0) | (1<<8)));
 
-	vpu_hiu_write(HHI_VPU_CLKB_CNTL_GX, ((1 << 8) | (1 << 0)));
+	vpu_hiu_write(HHI_VPU_CLK_CNTL_GX, ((mux << 9) | (div << 0)));
+	vpu_hiu_setb(HHI_VPU_CLK_CNTL_GX, 1, 8, 1);
+
+	if (vpu_clk >= (VPU_CLKB_MAX * 1000000))
+		vpu_hiu_write(HHI_VPU_CLKB_CNTL_GX, ((1 << 8) | (1 << 0)));
+	else
+		vpu_hiu_write(HHI_VPU_CLKB_CNTL_GX, ((1 << 8) | (0 << 0)));
+
 	vpu_hiu_write(HHI_VAPBCLK_CNTL_GX, (1 << 30) | /* turn on ge2d clock */
 			(0 << 9)    |   /* clk_sel    //250Mhz */
 			(1 << 0));      /* clk_div */
 	vpu_hiu_setb(HHI_VAPBCLK_CNTL_GX, 1, 8, 1);
 
 	printf("set vpu clk: %uHz, readback: %uHz(0x%x)\n",
-		vpu_clk_table[vpu_conf.fclk_type][clk_level][0],
-		get_vpu_clk(), (vpu_hiu_read(HHI_VPU_CLK_CNTL_GX)));
+		vpu_clk, get_vpu_clk(), (vpu_hiu_read(HHI_VPU_CLK_CNTL_GX)));
 	return ret;
 }
 
@@ -462,6 +472,44 @@ static void detect_vpu_chip(void)
 			vpu_chip_name[vpu_chip_type]);
 }
 
+#ifdef VPU_VCBUS_TEST
+#define VCBUS_TEST_NUM    4
+static unsigned int vcbus_reg[] = {
+	0x1d00, /* VPP_DUMMY_DATA */
+	0x1702, /* DI_POST_SIZE */
+	0x1c30, /* ENCP_DVI_HSO_BEGIN */
+	0x1b78, /* VENC_VDAC_DACSEL0 */
+};
+static void vcbus_test(void)
+{
+	unsigned int val;
+	unsigned int temp;
+	int i,j;
+
+	printf("vcbus test\n");
+	for (i = 0; i < VCBUS_TEST_NUM; i++) {
+		for (j = 0; j < 24; j++) {
+			val = vpu_vcbus_read(vcbus_reg[i]);
+			printf("%02d read 0x%04x=0x%08x\n", j, vcbus_reg[i], val);
+		}
+		printf("\n");
+	}
+	temp = 0x5a5a5a5a;
+	for (i = 0; i < VCBUS_TEST_NUM; i++) {
+		vpu_vcbus_write(vcbus_reg[i], temp);
+		val = vpu_vcbus_read(vcbus_reg[i]);
+		printf("write 0x%04x=0x%08x, readback: 0x%08x\n", vcbus_reg[i], temp, val);
+	}
+	for (i = 0; i < VCBUS_TEST_NUM; i++) {
+		for (j = 0; j < 24; j++) {
+			val = vpu_vcbus_read(vcbus_reg[i]);
+			printf("%02d read 0x%04x=0x%08x\n", j, vcbus_reg[i], val);
+		}
+		printf("\n");
+	}
+}
+#endif
+
 static int get_vpu_config(void)
 {
 	int ret = 0;
@@ -516,9 +564,12 @@ int vpu_probe(void)
 
 	detect_vpu_chip();
 	ret = get_vpu_config();
+	vpu_power_on();
 	set_vpu_clk(vpu_conf.clk_level);
 	vpu_power_on();
-
+#ifdef VPU_VCBUS_TEST
+	vcbus_test();
+#endif
 	return ret;
 }
 
@@ -527,4 +578,81 @@ int vpu_remove(void)
 	printf("vpu remove\n");
 	vpu_power_off();
 	return 0;
+}
+
+int vpu_clk_change(int level)
+{
+	unsigned int vpu_clk;
+	unsigned int mux, div;
+	unsigned int reg;
+
+	if (level >= 100) /* regard as vpu_clk */
+		level = get_vpu_clk_level(level);
+
+	if (level >= vpu_conf.clk_level_max) {
+		printf("vpu clk out of supported range\n");
+		printf("vpu clk max level: %u(&uHz)\n",
+			vpu_conf.clk_level_max,
+			vpu_clk_table[vpu_conf.fclk_type][vpu_conf.clk_level_max][0]);
+		return -1;
+	}
+
+	if (vpu_chip_type == VPU_CHIP_GXBB)
+		reg = HHI_VPU_CLK_CNTL_GX;
+	else
+		reg = HHI_VPU_CLK_CNTL;
+
+	vpu_conf.clk_level = level;
+	vpu_clk = vpu_clk_table[vpu_conf.fclk_type][vpu_conf.clk_level][0];
+	if (vpu_chip_type == VPU_CHIP_M8) {
+		mux = vpu_clk_table[vpu_conf.fclk_type][vpu_conf.clk_level][1];
+		div = vpu_clk_table[vpu_conf.fclk_type][vpu_conf.clk_level][2];
+		vpu_hiu_write(reg, ((mux << 9) | (div << 0) | (1<<8)));
+	} else {
+		/* switch to second vpu clk patch */
+		mux = vpu_clk_table[vpu_conf.fclk_type][0][1];
+		vpu_hiu_setb(reg, mux, 25, 3);
+		div = vpu_clk_table[vpu_conf.fclk_type][0][2];
+		vpu_hiu_setb(reg, div, 16, 7);
+		vpu_hiu_setb(reg, 1, 24, 1);
+		vpu_hiu_setb(reg, 1, 31, 1);
+		udelay(10);
+		/* adjust first vpu clk frequency */
+		vpu_hiu_setb(reg, 0, 8, 1);
+		mux = vpu_clk_table[vpu_conf.fclk_type][vpu_conf.clk_level][1];
+		vpu_hiu_setb(reg, mux, 9, 3);
+		div = vpu_clk_table[vpu_conf.fclk_type][vpu_conf.clk_level][2];
+		vpu_hiu_setb(reg, div, 0, 7);
+		vpu_hiu_setb(reg, 1, 8, 1);
+		udelay(20);
+		/* switch back to first vpu clk patch */
+		vpu_hiu_setb(reg, 0, 31, 1);
+		vpu_hiu_setb(reg, 0, 24, 1);
+	}
+	if (vpu_chip_type == VPU_CHIP_GXBB) {
+		if (vpu_clk >= (VPU_CLKB_MAX * 1000000))
+			div = 2;
+		else
+			div = 1;
+		vpu_hiu_setb(HHI_VPU_CLKB_CNTL_GX, (div - 1), 0, 8);
+	}
+
+	printf("set vpu clk: %uHz, readback: %uHz(0x%x)\n",
+		vpu_clk, get_vpu_clk(), (vpu_hiu_read(HHI_VPU_CLK_CNTL_GX)));
+	return 0;
+}
+
+void vpu_clk_get(void)
+{
+	unsigned int reg;
+
+	if (vpu_chip_type == VPU_CHIP_GXBB)
+		reg = HHI_VPU_CLK_CNTL_GX;
+	else
+		reg = HHI_VPU_CLK_CNTL;
+
+	printf("vpu clk_level: %u, clk: %uHz, reg: 0x%x\n",
+		vpu_conf.clk_level,
+		get_vpu_clk(),
+		vpu_hiu_read(reg));
 }
