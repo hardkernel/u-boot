@@ -35,12 +35,13 @@ int android_image_get_kernel(const struct andr_img_hdr *hdr, int verify,
 	 * sha1 (or anything) so we don't check it. It is not obvious that the
 	 * string is null terminated so we take care of this.
 	 */
+	ulong end;
 	strncpy(andr_tmp_str, hdr->name, ANDR_BOOT_NAME_SIZE);
 	andr_tmp_str[ANDR_BOOT_NAME_SIZE] = '\0';
 	if (strlen(andr_tmp_str))
 		printf("Android's image name: %s\n", andr_tmp_str);
 
-	printf("Kernel load addr 0x%08x size %u KiB\n",
+	debug("Kernel load addr 0x%08x size %u KiB\n",
 	       hdr->kernel_addr, DIV_ROUND_UP(hdr->kernel_size, 1024));
 
 	int len = 0;
@@ -75,6 +76,16 @@ int android_image_get_kernel(const struct andr_img_hdr *hdr, int verify,
 	}
 	if (os_len)
 		*os_len = hdr->kernel_size;
+
+#if defined(CONFIG_ANDROID_IMG)
+			images.ft_len = (ulong)(hdr->second_size);
+			end = (ulong)hdr;
+			end += hdr->page_size;
+			end += ALIGN(hdr->kernel_size, hdr->page_size);
+			images.rd_start = end;
+			end += ALIGN(hdr->ramdisk_size, hdr->page_size);
+			images.ft_addr = (char *)end;
+#endif
 	return 0;
 }
 
@@ -110,7 +121,7 @@ int android_image_get_ramdisk(const struct andr_img_hdr *hdr,
 	if (!hdr->ramdisk_size)
 		return -1;
 
-	printf("RAM disk load addr 0x%08x size %u KiB\n",
+	debug("RAM disk load addr 0x%08x size %u KiB\n",
 	       hdr->ramdisk_addr, DIV_ROUND_UP(hdr->ramdisk_size, 1024));
 
 	*rd_data = (unsigned long)hdr;

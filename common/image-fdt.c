@@ -238,12 +238,14 @@ int boot_get_fdt(int flag, int argc, char * const argv[], uint8_t arch,
 #endif
 	const char *select = NULL;
 	int		ok_no_fdt = 0;
-
+#ifndef CONFIG_ANDROID_IMG
 	*of_flat_tree = NULL;
 	*of_size = 0;
+#endif
 
 	if (argc > 2)
 		select = argv[2];
+
 	if (select || genimg_has_config(images)) {
 #if defined(CONFIG_FIT)
 		if (select) {
@@ -417,8 +419,24 @@ int boot_get_fdt(int flag, int argc, char * const argv[], uint8_t arch,
 			goto no_fdt;
 		}
 	} else {
+		#if defined(CONFIG_ANDROID_IMG)
+		if (images->ft_len) {
+			fdt_blob = (char *)images->ft_addr;
+
+			if (fdt_check_header(fdt_blob) != 0) {
+				fdt_error("image is not a fdt");
+				goto error;
+			}
+
+			if (fdt_totalsize(fdt_blob) != images->ft_len) {
+				fdt_error("fdt size != image size");
+				goto error;
+			}
+		}
+		#else
 		debug("## No Flattened Device Tree\n");
 		goto no_fdt;
+		#endif
 	}
 
 	*of_flat_tree = fdt_blob;

@@ -157,7 +157,8 @@ static int bootm_find_os(cmd_tbl_t *cmdtp, int flag, int argc,
 
 		images.os.end = android_image_get_end(os_hdr);
 		images.os.load = android_image_get_kload(os_hdr);
-		images.ep = images.os.load;
+		/*images.ep = images.os.load;*/
+		images.ep = (ulong)os_hdr + 0x800;
 		ep_found = true;
 		break;
 #endif
@@ -287,9 +288,10 @@ static int decomp_image(int comp, ulong load, ulong image_start, int type,
 	*load_end = load;
 	switch (comp) {
 	case IH_COMP_NONE:
-		if (load == image_start) {
+		/*if (load == image_start) {
 			printf("   XIP %s ... ", type_name);
-		} else {
+		} else */
+		{
 			printf("   Loading %s ... ", type_name);
 			memmove_wd(load_buf, image_buf, image_len, CHUNKSZ);
 		}
@@ -379,7 +381,8 @@ static int bootm_load_os(bootm_headers_t *images, unsigned long *load_end,
 			 int boot_progress)
 {
 	image_info_t os = images->os;
-	ulong load = os.load;
+	/*ulong load = os.load;*/
+	ulong load = images->ep;
 	ulong blob_start = os.start;
 	ulong blob_end = os.end;
 	ulong image_start = os.image_start;
@@ -387,8 +390,22 @@ static int bootm_load_os(bootm_headers_t *images, unsigned long *load_end,
 	bool no_overlap;
 	void *load_buf, *image_buf;
 	int err;
+	uint64_t dst;
 
 	load_buf = map_sysmem(load, 0);
+
+	/*
+	 * copy from booti_setup
+	 * If we are not at the correct run-time location, set the new
+	 * correct location and then move the image there.
+	 */
+	dst = gd->bd->bi_dram[0].start + 0x1080000; /*le32_to_cpu(ih->text_offset)*/
+	if (images->ep != dst) {
+		debug("Moving Image from 0x%lx to 0x%llx\n", images->ep, dst);
+		images->ep = dst;
+		load_buf = map_sysmem(images->ep, 0);
+	}
+
 	image_buf = map_sysmem(os.image_start, image_len);
 	err = decomp_image(os.comp, load, os.image_start, os.type, load_buf,
 			   image_buf, image_len, load_end);
@@ -398,7 +415,7 @@ static int bootm_load_os(bootm_headers_t *images, unsigned long *load_end,
 	}
 	flush_cache(load, (*load_end - load) * sizeof(ulong));
 
-	debug("   kernel loaded at 0x%08lx, end = 0x%08lx\n", load, *load_end);
+	printf("   kernel loaded at 0x%08lx, end = 0x%08lx\n", load, *load_end);
 	bootstage_mark(BOOTSTAGE_ID_KERNEL_LOADED);
 
 	no_overlap = (os.comp == IH_COMP_NONE && load == image_start);
@@ -839,7 +856,7 @@ static const void *boot_get_kernel(cmd_tbl_t *cmdtp, int flag, int argc,
 	}
 
 	debug("   kernel data at 0x%08lx, len = 0x%08lx (%ld)\n",
-	      *os_data, *os_len, *os_len);
+	    *os_data, *os_len, *os_len);
 
 	return buf;
 }
