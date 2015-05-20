@@ -18,6 +18,11 @@
 #include <div64.h>
 #include "mmc_private.h"
 
+#ifdef CONFIG_STORE_COMPATIBLE
+#include <emmc_partitions.h>
+#include <partition_table.h>
+#endif
+
 static struct list_head mmc_devices;
 static int cur_dev_num = -1;
 
@@ -1412,6 +1417,18 @@ int mmc_init(struct mmc *mmc)
 	if (!err || err == IN_PROGRESS)
 		err = mmc_complete_init(mmc);
 	debug("%s: %d, time %lu\n", __func__, err, get_timer(start));
+	if (err)
+		return err;
+#ifdef CONFIG_STORE_COMPATIBLE
+	if (aml_is_emmc_tsd(mmc)) { // eMMC OR TSD
+		if (!is_partition_checked) {
+			if (mmc_device_init(mmc) == 0) {
+				is_partition_checked = true;
+				printf("eMMC/TSD partition table have been checked OK!\n");
+			}
+		}
+	}
+#endif
 	return err;
 }
 

@@ -27,7 +27,7 @@
 #include <asm/arch/sd_emmc.h>
 #include <asm/arch/cpu_sdio.h>
 #ifdef CONFIG_STORE_COMPATIBLE
-#include <asm/arch/storage.h>
+#include <storage.h>
 #endif
 //#define SD_DEBUG_ENABLE
 
