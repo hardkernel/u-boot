@@ -55,11 +55,11 @@ BL2_SOURCES		+=	lib/locks/bakery/bakery_lock.c		\
 				plat/${PLAT}/aarch64/common.c           \
 				plat/${PLAT}/scp_bootloader.c           \
 				plat/${PLAT}/scpi.c                     \
+				plat/${PLAT}/nand.c                     \
 				plat/${PLAT}/storage.c                  \
 				plat/${PLAT}/sha2.c                     \
 				plat/${PLAT}/mailbox.c                  \
 				plat/${PLAT}/watchdog.c                 \
-				plat/${PLAT}/usb/usb.c                  \
 				plat/${PLAT}/efuse.c                    \
 				plat/${PLAT}/pll.c                      \
 				plat/${PLAT}/timer.c

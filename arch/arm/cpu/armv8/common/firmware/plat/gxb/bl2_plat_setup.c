@@ -42,6 +42,7 @@
 #include <xlat_tables.h>
 #include <io.h>
 #include "ddr/ddr.c"
+#include "storage.h"
 /*******************************************************************************
  * Declarations of linker defined symbols which will help us find the layout
  * of trusted RAM
@@ -253,7 +254,8 @@ void bl2_platform_setup(void)
 
 	/* Initialise the IO layer and register platform IO devices */
 	//io_setup();
-
+  /* storage init */
+  storage_init();
 	/* Load BL3-0  */
 	//if (load_bl30() != 0)
 	//	panic();

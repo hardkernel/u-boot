@@ -30,8 +30,24 @@
 #include <asm/arch/io.h>
 #include <asm/arch/secure_apb.h>
 #include <asm/arch/cpu_sdio.h>
+#include <asm/arch/nand.h>
 #include <usb.h>
 
+uint64_t storage_init(void)
+{
+	uint64_t boot_device = 0;
+	boot_device = get_boot_device();
+	switch (boot_device) {
+		case BOOT_DEVICE_NAND:
+			printf( "NAND init\n");
+			nfio_init();
+			break;
+		default:
+			printf("do nothing!\n");
+			break;
+	}
+	return 0;
+}
 uint64_t storage_load(uint64_t src, uint64_t des, uint64_t size, const char * image_name)
 {
 	char * device_name = "UNKNOWN";
@@ -47,7 +63,7 @@ uint64_t storage_load(uint64_t src, uint64_t des, uint64_t size, const char * im
 			device_name = "eMMC";
 			break;
 		case BOOT_DEVICE_NAND:
-			device_name = "NANE";
+			device_name = "NAND";
 			break;
 		case BOOT_DEVICE_SPI:
 			device_name = "SPI";
@@ -70,7 +86,7 @@ uint64_t storage_load(uint64_t src, uint64_t des, uint64_t size, const char * im
 			sdio_read_data(boot_device,src, des, size);
 			break;
 		case BOOT_DEVICE_NAND:
-			/*to do list*/
+			nf_read(boot_device, src, des, size);
 			break;
 		case BOOT_DEVICE_SPI:
 			spi_read(src, des, size);
@@ -81,7 +97,7 @@ uint64_t storage_load(uint64_t src, uint64_t des, uint64_t size, const char * im
 			break;
 		case BOOT_DEVICE_USB:
 			/*to do list*/
-			usb_boot(1, 0);
+			//usb_boot(1, 0);
 			break;
 		default:
 			break;
