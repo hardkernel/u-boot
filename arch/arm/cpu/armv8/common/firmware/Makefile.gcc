@@ -37,7 +37,7 @@
 # Build verbosity
 V			:= 0
 # Debug build
-DEBUG			:= 1
+BUILD_TYPE		:= ${BL2_BUILD_TYPE}
 # Build architecture
 ARCH 			:= aarch64
 # Build platform
@@ -66,12 +66,6 @@ else
 	Q=
 endif
 export Q
-
-ifneq (${DEBUG}, 0)
-	BUILD_TYPE	:=	debug
-else
-	BUILD_TYPE	:=	release
-endif
 
 BL_COMMON_SOURCES	:=	common/bl_common.c			\
 				common/debug.c				\

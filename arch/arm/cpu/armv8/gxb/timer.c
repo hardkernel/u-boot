@@ -1,6 +1,5 @@
 
 /*
- * arch/arm/include/asm/arch-gxb/timer.h
  *
  * Copyright (C) 2015 Amlogic, Inc. All rights reserved.
  *
@@ -19,23 +18,20 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-#ifndef __TIMER_H
-#define __TIMER_H
-
-#include <asm/arch/romboot.h>
 #include <asm/arch/timer.h>
-#include <asm/arch/io.h>
+#include <asm/types.h>
 
-/**
- * Get the current timestamp from the system timer.
- */
-uint32_t get_time(void);
+#define P_EE_TIMER_E		P_ISA_TIMERE
 
-/**
- * Busy-wait.
- *
- * @param us            Number of microseconds to delay.
- */
-void udelay(unsigned int us);
+uint32_t get_time(void)
+{
+	return readl(P_EE_TIMER_E);
+}
 
-#endif /* __TIMER_H */
+void _udelay(unsigned int us)
+{
+	unsigned int t0 = get_time();
+
+	while (get_time() - t0 <= us)
+		;
+}

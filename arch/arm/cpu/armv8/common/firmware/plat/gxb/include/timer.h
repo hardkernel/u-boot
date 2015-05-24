@@ -1,6 +1,5 @@
 
 /*
- * arch/arm/include/asm/arch-gxb/timer.h
  *
  * Copyright (C) 2015 Amlogic, Inc. All rights reserved.
  *
@@ -22,9 +21,7 @@
 #ifndef __TIMER_H
 #define __TIMER_H
 
-#include <asm/arch/romboot.h>
-#include <asm/arch/timer.h>
-#include <asm/arch/io.h>
+#include <stdint.h>
 
 /**
  * Get the current timestamp from the system timer.
@@ -36,6 +33,16 @@ uint32_t get_time(void);
  *
  * @param us            Number of microseconds to delay.
  */
-void udelay(unsigned int us);
+void _udelay(unsigned int us);
+
+/**
+ * time counter
+ * usage:
+ *     timer_start();
+ *     func(); //func that you want measure time consumption
+ *     timer_end("func"); //will print "func Time: xxxx us"
+ */
+void timer_start(void);
+void timer_end(const char * name);
 
 #endif /* __TIMER_H */

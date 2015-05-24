@@ -22,7 +22,7 @@
 #include <io.h>
 #include <stdio.h>
 #include <asm/arch/romboot.h>
-#include <asm/arch/timer.h>
+#include <timer.h>
 
 #define P_EE_TIMER_E		P_ISA_TIMERE
 
@@ -34,7 +34,7 @@ uint32_t get_time(void)
 	return readl(P_EE_TIMER_E);
 }
 
-void udelay(unsigned int us)
+void _udelay(unsigned int us)
 {
 	uint32_t t0 = get_time();
 

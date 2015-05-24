@@ -24,76 +24,56 @@
 
 struct ddr_set{
 	/* common and function defines */
-	unsigned       ddr_channel_set;
-	unsigned       ddr_base_addr;
-	unsigned       ddr_start_offset;
-	unsigned       ddr_size; //define in header file
-	unsigned       ddr_pll_ctrl;
-	unsigned       ddr_dmc_ctrl;
-	unsigned       ddr0_addrmap[5];
-	unsigned       ddr1_addrmap[5];
-	unsigned short ddr_2t_mode;
-	unsigned short ddr_full_test;
+	unsigned short ddr_channel_set;
+	unsigned short ddr_type;
+	unsigned int   ddr_clk;
+	unsigned int   ddr_base_addr;
+	unsigned int   ddr_start_offset;
+	unsigned short ddr_timing_ind;
+	unsigned short ddr_size; //define in header file
+	unsigned int   ddr_pll_ctrl;
+	unsigned int   ddr_dmc_ctrl;
+	unsigned int   ddr0_addrmap[5];
+	unsigned int   ddr1_addrmap[5];
+	unsigned char  ddr_2t_mode;
+	unsigned char  ddr_full_test;
+	unsigned char  ddr_drv;
+	unsigned char  ddr_odt;
 
 	/* pub defines */
-	unsigned       t_pub_ptr[5];  //PUB PTR0-3
-	unsigned       t_pub_odtcr;
+	unsigned int   t_pub_ptr[5];  //PUB PTR0-3
+	unsigned int   t_pub_odtcr;
 	unsigned short t_pub_mr[4];   //PUB MR0-3
-	unsigned       t_pub_dtpr[4]; //PUB DTPR0-3
-	unsigned       t_pub_pgcr1;   //PUB PGCR1
-	unsigned       t_pub_pgcr2;   //PUB PGCR2
-	unsigned       t_pub_pgcr3;   //PUB PGCR3
-	unsigned       t_pub_dxccr;   //PUB DXCCR
-	unsigned       t_pub_dtcr;    //PUB DTCR
-	unsigned       t_pub_aciocr[5];  //PUB ACIOCRx
-	unsigned       t_pub_dx0gcr[3];  //PUB DX0GCRx
-	unsigned       t_pub_dx1gcr[3];  //PUB DX1GCRx
-	unsigned       t_pub_dx2gcr[3];  //PUB DX2GCRx
-	unsigned       t_pub_dx3gcr[3];  //PUB DX3GCRx
-	unsigned       t_pub_dcr;     //PUB DCR
-	unsigned       t_pub_dtar;
-	unsigned       t_pub_dsgcr;   //PUB DSGCR
-	unsigned       t_pub_zq0pr;   //PUB ZQ0PR
-	unsigned       t_pub_zq1pr;   //PUB ZQ1PR
-	unsigned       t_pub_zq2pr;   //PUB ZQ2PR
-	unsigned       t_pub_zq3pr;   //PUB ZQ3PR
+	unsigned int   t_pub_dtpr[4]; //PUB DTPR0-3
+	unsigned int   t_pub_pgcr0;   //PUB PGCR0
+	unsigned int   t_pub_pgcr1;   //PUB PGCR1
+	unsigned int   t_pub_pgcr2;   //PUB PGCR2
+	unsigned int   t_pub_pgcr3;   //PUB PGCR3
+	unsigned int   t_pub_dxccr;   //PUB DXCCR
+	unsigned int   t_pub_dtcr;    //PUB DTCR
+	unsigned int   t_pub_aciocr[5];  //PUB ACIOCRx
+	unsigned int   t_pub_dx0gcr[3];  //PUB DX0GCRx
+	unsigned int   t_pub_dx1gcr[3];  //PUB DX1GCRx
+	unsigned int   t_pub_dx2gcr[3];  //PUB DX2GCRx
+	unsigned int   t_pub_dx3gcr[3];  //PUB DX3GCRx
+	unsigned int   t_pub_dcr;     //PUB DCR
+	unsigned int   t_pub_dtar;
+	unsigned int   t_pub_dsgcr;   //PUB DSGCR
+	unsigned int   t_pub_zq0pr;   //PUB ZQ0PR
+	unsigned int   t_pub_zq1pr;   //PUB ZQ1PR
+	unsigned int   t_pub_zq2pr;   //PUB ZQ2PR
+	unsigned int   t_pub_zq3pr;   //PUB ZQ3PR
 
 	/* pctl0 defines */
 	unsigned short t_pctl0_1us_pck;   //PCTL TOGCNT1U
 	unsigned short t_pctl0_100ns_pck; //PCTL TOGCNT100N
 	unsigned short t_pctl0_init_us;   //PCTL TINIT
 	unsigned short t_pctl0_rsth_us;   //PCTL TRSTH
-	unsigned       t_pctl0_mcfg;   //PCTL MCFG
-	unsigned       t_pctl0_mcfg1;  //PCTL MCFG1
-	unsigned short t_pctl0_trfc;   //PCTL TRFC 36..374
-	unsigned short t_pctl0_trefi_mem_ddr3; //PCTL TREFI MEM DDR3
-	unsigned short t_pctl0_tmrd;   //PCTL TMRD 2..4
-	unsigned short t_pctl0_trp;    //PCTL TRP  0
-	unsigned short t_pctl0_tal;    //PCTL TAL 0,CL-1,CL-2
-	unsigned short t_pctl0_tcwl;   //PCTL TCWL
-	unsigned short t_pctl0_tcl;    //PCTL TCL
-	unsigned short t_pctl0_tras;   //PCTL TRAS 15..38
-	unsigned short t_pctl0_trc;    //PCTL TRC   20..52
-	unsigned short t_pctl0_trcd;   //PCTL TRCD 5..14
-	unsigned short t_pctl0_trrd;   //PCTL TRRD 4..8
-	unsigned short t_pctl0_trtp;   //PCTL TRTP 3..8
-	unsigned short t_pctl0_twr;    //PCTL TWR  6..16
-	unsigned short t_pctl0_twtr;   //PCTL TWTR 3..8
-	unsigned short t_pctl0_texsr;  //PCTL TEXSR 512
-	unsigned short t_pctl0_txp;    //PCTL TXP  1..7
-	unsigned short t_pctl0_tdqs;   //PCTL TDQS 1..12
-	unsigned short t_pctl0_trtw;   //PCTL TRTW 2..10
-	unsigned short t_pctl0_tcksre; //PCTL TCKSRE 5..15
-	unsigned short t_pctl0_tcksrx; //PCTL TCKSRX 5..15
-	unsigned short t_pctl0_tmod;   //PCTL TMOD 0..31
-	unsigned short t_pctl0_tcke;   //PCTL TCKE 3..6
-	unsigned short t_pctl0_tzqcs;  //PCTL TZQCS 64
-	unsigned short t_pctl0_tzqcl;  //PCTL TZQCL 0..1023
-	unsigned short t_pctl0_txpdll; //PCTL TXPDLL 3..63
-	unsigned short t_pctl0_tzqcsi; //PCTL TZQCSI 0..4294967295
+	unsigned int   t_pctl0_mcfg;   //PCTL MCFG
+	unsigned int   t_pctl0_mcfg1;  //PCTL MCFG1
 	unsigned short t_pctl0_scfg;   //PCTL SCFG
 	unsigned short t_pctl0_sctl;   //PCTL SCTL
-	unsigned       t_pctl0_ppcfg;
+	unsigned int   t_pctl0_ppcfg;
 	unsigned short t_pctl0_dfistcfg0;
 	unsigned short t_pctl0_dfistcfg1;
 	unsigned short t_pctl0_dfitctrldelay;
@@ -106,100 +86,77 @@ struct ddr_set{
 	unsigned short t_pctl0_dfitphyupdtype1;
 	unsigned short t_pctl0_dfitctrlupdmin;
 	unsigned short t_pctl0_cmdtstaten;
-	unsigned       t_pctl0_dfiodtcfg;
-	unsigned       t_pctl0_dfiodtcfg1;
-	unsigned       t_pctl0_dfilpcfg0;
+	unsigned int   t_pctl0_dfiodtcfg;
+	unsigned int   t_pctl0_dfiodtcfg1;
+	unsigned int   t_pctl0_dfilpcfg0;
+}__attribute__ ((packed));
 
-	/* pctl1 defines */
-	unsigned short t_pctl1_1us_pck;   //PCTL TOGCNT1U
-	unsigned short t_pctl1_100ns_pck; //PCTL TOGCNT100N
-	unsigned short t_pctl1_init_us;   //PCTL TINIT
-	unsigned short t_pctl1_rsth_us;   //PCTL TRSTH
-	unsigned       t_pctl1_mcfg;   //PCTL MCFG
-	unsigned       t_pctl1_mcfg1;  //PCTL MCFG1
-	unsigned short t_pctl1_trfc;   //PCTL TRFC 36..374
-	unsigned short t_pctl1_trefi_mem_ddr3; //PCTL TREFI MEM DDR3
-	unsigned short t_pctl1_tmrd;   //PCTL TMRD 2..4
-	unsigned short t_pctl1_trp;    //PCTL TRP  0
-	unsigned short t_pctl1_tal;    //PCTL TAL 0,CL-1,CL-2
-	unsigned short t_pctl1_tcwl;   //PCTL TCWL
-	unsigned short t_pctl1_tcl;    //PCTL TCL
-	unsigned short t_pctl1_tras;   //PCTL TRAS 15..38
-	unsigned short t_pctl1_trc;    //PCTL TRC   20..52
-	unsigned short t_pctl1_trcd;   //PCTL TRCD 5..14
-	unsigned short t_pctl1_trrd;   //PCTL TRRD 4..8
-	unsigned short t_pctl1_trtp;   //PCTL TRTP 3..8
-	unsigned short t_pctl1_twr;    //PCTL TWR  6..16
-	unsigned short t_pctl1_twtr;   //PCTL TWTR 3..8
-	unsigned short t_pctl1_texsr;  //PCTL TEXSR 512
-	unsigned short t_pctl1_txp;    //PCTL TXP  1..7
-	unsigned short t_pctl1_tdqs;   //PCTL TDQS 1..12
-	unsigned short t_pctl1_trtw;   //PCTL TRTW 2..10
-	unsigned short t_pctl1_tcksre; //PCTL TCKSRE 5..15
-	unsigned short t_pctl1_tcksrx; //PCTL TCKSRX 5..15
-	unsigned short t_pctl1_tmod;   //PCTL TMOD 0..31
-	unsigned short t_pctl1_tcke;   //PCTL TCKE 3..6
-	unsigned short t_pctl1_tzqcs;  //PCTL TZQCS 64
-	unsigned short t_pctl1_tzqcl;  //PCTL TZQCL 0..1023
-	unsigned short t_pctl1_txpdll; //PCTL TXPDLL 3..63
-	unsigned short t_pctl1_tzqcsi; //PCTL TZQCSI 0..4294967295
-	unsigned short t_pctl1_scfg;   //PCTL SCFG
-	unsigned short t_pctl1_sctl;   //PCTL SCTL
-	unsigned       t_pctl1_ppcfg;
-	unsigned short t_pctl1_dfistcfg0;
-	unsigned short t_pctl1_dfistcfg1;
-	unsigned short t_pctl1_dfitctrldelay;
-	unsigned short t_pctl1_dfitphywrdata;
-	unsigned short t_pctl1_dfitphywrlta;
-	unsigned short t_pctl1_dfitrddataen;
-	unsigned short t_pctl1_dfitphyrdlat;
-	unsigned short t_pctl1_dfitdramclkdis;
-	unsigned short t_pctl1_dfitdramclken;
-	unsigned short t_pctl1_dfitphyupdtype1;
-	unsigned short t_pctl1_dfitctrlupdmin;
-	unsigned short t_pctl1_cmdtstaten;
-	unsigned       t_pctl1_dfiodtcfg;
-	unsigned       t_pctl1_dfiodtcfg1;
-	unsigned       t_pctl1_dfilpcfg0;
+struct ddr_timing{
+	//Identifier
+	unsigned char  identifier; //refer ddr.h
 
-#if 0
-	unsigned       t_ddr_apd_ctrl;
-	unsigned       t_ddr_clk_ctrl;
-	unsigned short t_pctl_rstl_us;   //PCTL TRSTL
-	unsigned short t_pad1;        //padding for 4 bytes alignment
-	unsigned       t_pub_acbdlr0; //PUB ACBDLR0
+	//DTPR0
+	unsigned char  cfg_ddr_rtp;
+	unsigned char  cfg_ddr_wtr;
+	unsigned char  cfg_ddr_rp;
+	unsigned char  cfg_ddr_rcd;
+	unsigned char  cfg_ddr_ras;
+	unsigned char  cfg_ddr_rrd;
+	unsigned char  cfg_ddr_rc;
 
-	unsigned short t_pctl_trefi;  //PCTL TREFI
-	unsigned       t_mmc_ddr_ctrl;
-	unsigned       t_ddr_pll_cntl;
-	unsigned       t_ddr_clk;
-	unsigned       t_mmc_ddr_timming0;
-	unsigned       t_mmc_ddr_timming1;
-	unsigned       t_mmc_ddr_timming2;
-	unsigned       t_mmc_arefr_ctrl;
-#endif
+	//DTPR1
+	unsigned char  cfg_ddr_mrd;
+	unsigned char  cfg_ddr_mod;
+	unsigned char  cfg_ddr_faw;
+	unsigned short cfg_ddr_rfc;
+	unsigned char  cfg_ddr_wlmrd;
+	unsigned char  cfg_ddr_wlo;
+
+	//DTPR2
+	unsigned short cfg_ddr_xs;
+	unsigned char  cfg_ddr_xp;
+	unsigned char  cfg_ddr_cke;
+	unsigned short cfg_ddr_dllk;
+	unsigned char  cfg_ddr_rtodt;
+	unsigned char  cfg_ddr_rtw;
+
+	unsigned char  cfg_ddr_refi;
+	unsigned char  cfg_ddr_refi_mddr3;
+	unsigned char  cfg_ddr_cl;
+	unsigned char  cfg_ddr_wr;
+	unsigned char  cfg_ddr_cwl;
+	unsigned char  cfg_ddr_al;
+	unsigned short cfg_ddr_exsr;
+	unsigned char  cfg_ddr_dqs;
+	unsigned char  cfg_ddr_cksre;
+	unsigned char  cfg_ddr_cksrx;
+	unsigned char  cfg_ddr_zqcs;
+	unsigned short cfg_ddr_zqcl;
+	unsigned char  cfg_ddr_xpdll;
+	unsigned short cfg_ddr_zqcsi;
 }__attribute__ ((packed));
 
 typedef struct ddr_set ddr_set_t;
+typedef struct ddr_timing ddr_timing_t;
 
 struct pll_set{
-	unsigned sys_pll_cntl;  //HHI_SYS_PLL_CNTL
-	unsigned sys_clk_cntl;  //HHI_SYS_CPU_CLK_CNTL0
-	unsigned sys_clk_cntl1;  //HHI_SYS_CPU_CLK_CNTL1
-	unsigned sys_clk;
-	unsigned a9_clk;
-	unsigned mpll_cntl;
-	unsigned mpeg_clk_cntl;
-	unsigned vid_pll_cntl;
-	unsigned vid2_pll_cntl;
-	unsigned spi_setting;
-	unsigned nfc_cfg;
-	unsigned sdio_cmd_clk_divide;
-	unsigned sdio_time_short;
-	unsigned uart;
-	unsigned clk81;
-	unsigned gp_pll_cntl;
-	unsigned gp2_pll_cntl;
+	unsigned int sys_pll_cntl;  //HHI_SYS_PLL_CNTL
+	unsigned int sys_clk_cntl;  //HHI_SYS_CPU_CLK_CNTL0
+	unsigned int sys_clk_cntl1;  //HHI_SYS_CPU_CLK_CNTL1
+	unsigned int sys_clk;
+	unsigned int a9_clk;
+	unsigned int mpll_cntl;
+	unsigned int mpeg_clk_cntl;
+	unsigned int vid_pll_cntl;
+	unsigned int vid2_pll_cntl;
+	unsigned int spi_setting;
+	unsigned int nfc_cfg;
+	unsigned int sdio_cmd_clk_divide;
+	unsigned int sdio_time_short;
+	unsigned int uart;
+	unsigned int clk81;
+	unsigned int gp_pll_cntl;
+	unsigned int gp2_pll_cntl;
 }__attribute__ ((packed));
 
 //DDR PLL

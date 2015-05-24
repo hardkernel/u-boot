@@ -231,7 +231,7 @@ void usb_parameter_init(int time_out);
 int chip_utimer_set(int val);
 int chip_watchdog(void);
 
-#define wait_ms(a) udelay(a*1000);
+#define wait_ms(a) _udelay(a*1000);
 int update_utime(void);
 int get_utime(void);
 unsigned long get_timer(unsigned long base);

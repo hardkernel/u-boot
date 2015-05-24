@@ -25,7 +25,7 @@
 #include <asm/arch/watchdog.h>
 #include <stdio.h>
 #include <asm/arch/secure_apb.h>
-#include <asm/arch/timer.h>
+#include <timer.h>
 #include <stdio.h>
 
 #define Wr(reg, val) writel(val, reg)
@@ -55,7 +55,7 @@ unsigned int pll_init(void){
 
 	//SYS PLL,FIX PLL bangap
 	Wr(HHI_MPLL_CNTL6, Rd(HHI_MPLL_CNTL6)|(1<<26));
-	udelay(100);
+	_udelay(100);
 	//Init SYS pll
 	do {
 		Wr(HHI_SYS_PLL_CNTL, Rd(HHI_SYS_PLL_CNTL)|(1<<29));
@@ -65,7 +65,7 @@ unsigned int pll_init(void){
 		Wr(HHI_SYS_PLL_CNTL5, CFG_SYS_PLL_CNTL_5);
 		Wr(HHI_SYS_PLL_CNTL, 0x60000240); // 960MHz A9 clock
 		Wr(HHI_SYS_PLL_CNTL, Rd(HHI_SYS_PLL_CNTL)&(~(1<<29)));
-		udelay(20);
+		_udelay(20);
 	} while(pll_lock_check(HHI_SYS_PLL_CNTL, "SYS PLL"));
 	clocks_set_sys_cpu_clk( 1, 0, 0, 0); // Connect SYS CPU to the PLL divider output
 
@@ -80,9 +80,9 @@ unsigned int pll_init(void){
 		Wr(HHI_MPLL_CNTL8, 0 );
 		Wr(HHI_MPLL_CNTL9, 0 );
 		Wr( HHI_MPLL_CNTL, ((1 << 30) | (1<<29) | (3 << 9) | (250 << 0)) );
-		udelay(10);
+		_udelay(10);
 		Wr(HHI_MPLL_CNTL, Rd(HHI_MPLL_CNTL)&(~(1<<29)));
-		udelay(100);
+		_udelay(100);
 	} while(pll_lock_check(HHI_MPLL_CNTL, "FIX PLL"));
 
 	// Enable the separate fclk_div2 and fclk_div3

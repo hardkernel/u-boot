@@ -53,9 +53,13 @@
 /* ddr */
 #define CONFIG_DDR_SIZE					1024 //MB
 #define CONFIG_DDR_CLK					936  //MHz, should be multiple of 24
-#define CONFIG_DDR_TYPE					DDR_TYPE_DDR3
+#define CONFIG_DDR_TYPE					CONFIG_DDR_TYPE_DDR3
+/* DDR channel setting, please refer hardware design.
+ *    CONFIG_DDR0_RANK0_ONLY   : one channel
+ *    CONFIG_DDR0_RANK01_SAME  : one channel use two rank with same setting
+ *    CONFIG_DDR01_SHARE_AC    : two channels  */
 #define CONFIG_DDR_CHANNEL_SET			CONFIG_DDR0_RANK01_SAME
-#define CONFIG_DDR_FULL_TEST			0
+#define CONFIG_DDR_FULL_TEST			0 //1 for ddr full test
 #define CONFIG_NR_DRAM_BANKS			1
 
 /* storage: emmc/nand/sd */

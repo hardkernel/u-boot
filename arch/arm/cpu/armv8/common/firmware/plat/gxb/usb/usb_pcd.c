@@ -30,7 +30,7 @@
 #include "config.h"
 #include "usb_boot.h"
 #include "burn_func.c"
-#include <asm/arch/timer.h>
+#include <timer.h>
 
 #define DRIVER_VENDOR_ID	0x1B8E  //Amlogic's VerdorID
 #define DRIVER_PRODUCT_ID	0xC003

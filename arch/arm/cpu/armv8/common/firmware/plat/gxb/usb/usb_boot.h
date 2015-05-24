@@ -360,7 +360,7 @@ extern int printk(const char *fmt, ...);
 void usb_parameter_init(int delay_type);
 void clean_short_timeout(void);
 
-#define wait_ms(a) udelay(a*1000);
+#define wait_ms(a) _udelay(a*1000);
 
 //int chip_watchdog(void);
 //#define usb_memcpy(dst,src,len) memcpy((void*)dst,(void*)src,(int)len)

@@ -35,7 +35,7 @@
 #include <cache.h>
 #include <fip.h>
 #include <asm/arch/watchdog.h>
-#include <asm/arch/timer.h>
+#include <timer.h>
 
 void bl2_load_image(void){
 	//meminfo_t *bl2_tzram_layout;

@@ -864,6 +864,9 @@ FIP_ARGS += --bl32 $(FIP_FOLDER)/bl32.bin
 endif
 FIP_ARGS += --bl33 $(FIP_FOLDER)/bl33.bin
 
+BL2_BUILD_TYPE := release
+export BL2_BUILD_TYPE
+
 .PHONY: fip.bin
 fip.bin: u-boot.bin u-boot.hex
 	$(Q)cp u-boot.bin $(srctree)/fip/bl33.bin
@@ -873,7 +876,7 @@ fip.bin: u-boot.bin u-boot.hex
 .PHONY : bl2.bin
 bl2.bin: tools prepare
 	$(Q)$(MAKE) -C $(srctree)/$(CPUDIR)/common/firmware all FIRMWARE=$@
-	$(Q)cp $(buildtree)/firmware/${SOC}/debug/bl2.bin bl2.bin
+	$(Q)cp $(buildtree)/firmware/${SOC}/${BL2_BUILD_TYPE}/bl2.bin bl2.bin
 	$(Q)cp bl2.bin $(srctree)/fip/bl2.bin
 
 ifeq ($(CONFIG_NEED_BL301), y)

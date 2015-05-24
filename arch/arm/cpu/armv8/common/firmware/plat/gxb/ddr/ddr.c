@@ -24,7 +24,7 @@
 #include "dmc_define.h"
 #include "mmc_define.h"
 #include "sec_mmc_define.h"
-#include <asm/arch/timer.h>
+#include <timer.h>
 #include <asm/arch/ddr.h>
 #include <asm/arch/secure_apb.h>
 #include <pll.h>
@@ -32,11 +32,14 @@
 #include <asm/arch/cpu.h>
 #include <asm/arch/timing.h>
 #include <memtest.h>
-#include <watchdog.h>
+#include <asm/arch/watchdog.h>
 #include <cache.h>
 #include "timing.c"
 
 static ddr_set_t * p_ddr_set = &__ddr_setting;
+static ddr_timing_t * p_ddr_timing = NULL;
+static unsigned int ddr0_enabled;
+static unsigned int ddr1_enabled;
 
 unsigned int ddr_init(void){
 	/*detect hot boot or cold boot*/
@@ -45,48 +48,55 @@ unsigned int ddr_init(void){
 	//	return 0;
 	//}
 
-	ddr_pre_init();
 	ddr_init_pll();
+	ddr_pre_init();
 	ddr_init_pctl();
 	ddr_init_dmc();
 	ddr_print_info();
-	mem_test();
+	ddr_test();
 	return 0;
 }
-
-#ifdef CONFIG_CMD_DDR_TEST
-static unsigned zqcr = 0;
-#endif
 
 unsigned int ddr_init_pll(void){
 	wr_reg(P_AM_ANALOG_TOP_REG1, rd_reg(P_AM_ANALOG_TOP_REG1) | (1<<0));
 	wr_reg(P_HHI_MPLL_CNTL5, rd_reg(P_HHI_MPLL_CNTL5) | (1<<0));
 
-	/* DDR PLL BANDGAP*/
+	/* DDR PLL BANDGAP */
 	wr_reg(AM_DDR_PLL_CNTL4, rd_reg(AM_DDR_PLL_CNTL4) & (~(1<<12)));
 	wr_reg(AM_DDR_PLL_CNTL4, rd_reg(AM_DDR_PLL_CNTL4)|(1<<12));
-	udelay(10);
-	//static unsigned short ddr_clk;
-#ifdef CONFIG_CMD_DDR_TEST
-	static unsigned ddr_pll;
-	printf("PREG_STICKY_REG0: 0x%8x\n", rd_reg(PREG_STICKY_REG0));
-	printf("PREG_STICKY_REG1: 0x%8x\n", rd_reg(PREG_STICKY_REG1));
-	if ((rd_reg(PREG_STICKY_REG0)>>20) == 0xf13) {
-		zqcr = rd_reg(PREG_STICKY_REG0) & 0xfffff;
-		ddr_pll = rd_reg(P_PREG_STICKY_REG1);
-		//writel(ddr_pll|(1<<29),AM_DDR_PLL_CNTL);
-		printf("PREG_STICKY_REG0: 0x%8x\n", rd_reg(PREG_STICKY_REG0));
-		printf("PREG_STICKY_REG1: 0x%8x\n", rd_reg(PREG_STICKY_REG1));
-		wr_reg(PREG_STICKY_REG0,0);
-		wr_reg(PREG_STICKY_REG1,0);
+	_udelay(10);
+
+	/* set ddr pll reg */
+	if ((p_ddr_set->ddr_clk >= 375) && (p_ddr_set->ddr_clk < 750)) {
+		//							OD			N					M
+		p_ddr_set->ddr_pll_ctrl = (2 << 16) | (1 << 9) | ((((p_ddr_set->ddr_clk/6)*6)/12) << 0);
 	}
-	else {
-		ddr_pll=0x00010885;
-		printf("PREG_STICKY_REG0: 0x%8x\n", rd_reg(PREG_STICKY_REG0));
+	else if((p_ddr_set->ddr_clk >= 750) && (p_ddr_set->ddr_clk < 1400)) {
+		//							OD			N					M
+		p_ddr_set->ddr_pll_ctrl = (1 << 16) | (1 << 9) | ((((p_ddr_set->ddr_clk/12)*12)/24) << 0);
+	}
+
+	/* if enabled, change ddr pll setting */
+#ifdef CONFIG_CMD_DDR_TEST
+	printf("P_PREG_STICKY_REG0: 0x%8x\n", rd_reg(P_PREG_STICKY_REG0));
+	printf("P_PREG_STICKY_REG1: 0x%8x\n", rd_reg(P_PREG_STICKY_REG1));
+	if ((rd_reg(P_PREG_STICKY_REG0)>>20) == 0xf13) {
+		unsigned zqcr = rd_reg(P_PREG_STICKY_REG0) & 0xfffff;
+		if (0 == zqcr)
+			zqcr = p_ddr_set->t_pub_zq0pr;
+		printf("Change ZQCR: 0x%8x -> 0x%8x\n", p_ddr_set->t_pub_zq0pr, zqcr);
+		p_ddr_set->t_pub_zq0pr = zqcr;
+		p_ddr_set->t_pub_zq1pr = zqcr;
+		p_ddr_set->t_pub_zq2pr = zqcr;
+		p_ddr_set->t_pub_zq3pr = zqcr;
+		printf("Change PLL : 0x%8x -> 0x%8x\n", p_ddr_set->ddr_pll_ctrl, rd_reg(P_PREG_STICKY_REG1));
+		p_ddr_set->ddr_pll_ctrl = rd_reg(P_PREG_STICKY_REG1);
+		wr_reg(P_PREG_STICKY_REG0,0);
+		wr_reg(P_PREG_STICKY_REG1,0);
 	}
 #endif
 
-	/* ddr pll init*/
+	/* ddr pll init */
 	do {
 		//wr_reg(AM_DDR_PLL_CNTL1, 0x1);
 		wr_reg(AM_DDR_PLL_CNTL, (1<<29));
@@ -96,26 +106,42 @@ unsigned int ddr_init_pll(void){
 		wr_reg(AM_DDR_PLL_CNTL4, CFG_DDR_PLL_CNTL_4);
 		wr_reg(AM_DDR_PLL_CNTL, ((1<<29) | (p_ddr_set->ddr_pll_ctrl)));
 		wr_reg(AM_DDR_PLL_CNTL, rd_reg(AM_DDR_PLL_CNTL)&(~(1<<29)));
-		udelay(200);
+		_udelay(200);
 	}while(pll_lock_check(AM_DDR_PLL_CNTL, "DDR PLL"));
 
 	/* Enable the DDR DLL clock input from PLL */
 	wr_reg(DDR_CLK_CNTL, 0xb0000000);
 	wr_reg(DDR_CLK_CNTL, 0xb0000000);
 
-	print_ddr_info();
+	/* update ddr_clk */
+	unsigned int ddr_pll = rd_reg(AM_DDR_PLL_CNTL)&(~(1<<29));
+	unsigned int ddr_clk = 2*(((24 * (ddr_pll&0x1ff))/((ddr_pll>>9)&0x1f))>>((ddr_pll>>16)&0x3));
+	p_ddr_set->ddr_clk = ddr_clk;
+
 	return 0;
 }
 
-void print_ddr_info(void){
-	unsigned int ddr_pll = rd_reg(AM_DDR_PLL_CNTL)&(~(1<<29));
-	unsigned int ddr_clk = 2*(((24 * (ddr_pll&0x1ff))/((ddr_pll>>9)&0x1f))>>((ddr_pll>>16)&0x3));
-	printf("DDR clk: %dMHz\n",ddr_clk);
+void ddr_print_info(void){
+	unsigned int dmc_reg = rd_reg(DMC_DDR_CTRL);
+	unsigned int chl0_size_reg = (dmc_reg & 0x7);
+	unsigned int chl1_size_reg = ((dmc_reg>>3) & 0x7);
+	unsigned int chl0_size = 1 << (chl0_size_reg+7); //MB
+	unsigned int chl1_size = 1 << (chl1_size_reg+7); //MB
+
+	if (ddr0_enabled)
+		printf("DDR0: %4dMB @ %dMHz(%s)-%d\n", \
+			(chl0_size_reg)>5?0:chl0_size, (chl0_size_reg)>5?0:p_ddr_set->ddr_clk, \
+			((rd_reg(DDR0_PCTL_MCFG) >> 3) & 0x1)?"2T":"1T", \
+			p_ddr_set->ddr_timing_ind);
+	if (ddr1_enabled)
+		printf("DDR1: %4dMB @ %dMHz(%s)-%d\n", \
+			(chl1_size_reg)>5?0:chl1_size, (chl1_size_reg)>5?0:p_ddr_set->ddr_clk, \
+			((rd_reg(DDR1_PCTL_MCFG) >> 3) & 0x1)?"2T":"1T", \
+			p_ddr_set->ddr_timing_ind);
 }
 
 unsigned int ddr_init_dmc(void){
 	wr_reg(DMC_DDR_CTRL, p_ddr_set->ddr_dmc_ctrl);
-	printf("DMC_DDR_CTRL: 0x%8x\n", rd_reg(DMC_DDR_CTRL));
 	if (p_ddr_set->ddr_channel_set == CONFIG_DDR01_SHARE_AC) {
 		//CONIFG DDR PHY comamnd address map to 32bits linear address.
 	   //DDR0 ROW 14:0.   DDR1 ROW 13:0.   COL 9:0.
@@ -134,12 +160,9 @@ unsigned int ddr_init_dmc(void){
 		wr_reg( DDR1_ADDRMAP_4, ( 0 | 14 << 5 | 15 << 10 | 28 << 15 | 0 << 20 | 0 << 25 ));
 	}
 
-	//// ENABLE THE DMC AUTO REFRESH FUNCTION
-	wr_reg(DMC_REFR_CTRL2, 0X20109A27);
-	wr_reg(DMC_REFR_CTRL1, 0X8800191);
-
 	wr_reg(DMC_PCTL_LP_CTRL, 0x440620);
-	wr_reg(DDR0_APD_CTRL, 0x45);
+	//wr_reg(DDR0_APD_CTRL, 0x45);
+	wr_reg(DDR0_APD_CTRL, (0x20<<8)|(0x20));
 	wr_reg(DDR0_CLK_CTRL, 0x5);
 
 	//  disable AXI port0 (CPU) IRQ/FIQ security control.
@@ -183,18 +206,15 @@ unsigned int ddr_init_dmc(void){
 	//__asm__ volatile("DMB SY");
 
 	//change PL310 address filtering to allow DRAM reads to go to M1
-	writel(0xbff00000, 0xc4200c04);
-	writel(0x00000001, 0xc4200c00);
+	wr_reg(0xc4200c04, 0xbff00000);
+	wr_reg(0xc4200c00, 0x00000001);
 
 	return 0;
 }
 
 unsigned int ddr_init_pctl(void){
-	unsigned int ddr0_enabled = !(((p_ddr_set->ddr_dmc_ctrl) >> 7) & 0x1); //check if ddr1 only enabled
-	unsigned int ddr1_enabled = !(((p_ddr_set->ddr_dmc_ctrl) >> 6) & 0x1); //check if ddr0 only enabled
-
-	printf("ddr0_enabled: %d\n", ddr0_enabled);
-	printf("ddr1_enabled: %d\n", ddr1_enabled);
+	ddr0_enabled = !(((p_ddr_set->ddr_dmc_ctrl) >> 7) & 0x1); //check if ddr1 only enabled
+	ddr1_enabled = !(((p_ddr_set->ddr_dmc_ctrl) >> 6) & 0x1); //check if ddr0 only enabled
 
 	// RELEASE THE DDR DLL RESET PIN.
 	wr_reg(DMC_SOFT_RST, 0xFFFFFFFF);
@@ -207,10 +227,10 @@ unsigned int ddr_init_pctl(void){
 
 	// INITIALIZATION PHY.
 	// FOR SIMULATION TO REDUCE THE INIT TIME.
-	wr_reg(DDR0_PUB_PTR0, p_ddr_set->t_pub_ptr[0]);
-	wr_reg(DDR0_PUB_PTR1, p_ddr_set->t_pub_ptr[1]);
-	wr_reg(DDR0_PUB_PTR3, p_ddr_set->t_pub_ptr[3]);
-	wr_reg(DDR0_PUB_PTR4, p_ddr_set->t_pub_ptr[4]);
+	//wr_reg(DDR0_PUB_PTR0, p_ddr_set->t_pub_ptr[0]);
+	//wr_reg(DDR0_PUB_PTR1, p_ddr_set->t_pub_ptr[1]);
+	//wr_reg(DDR0_PUB_PTR3, p_ddr_set->t_pub_ptr[3]);
+	//wr_reg(DDR0_PUB_PTR4, p_ddr_set->t_pub_ptr[4]);
 
 	// CONFIGURE DDR PHY PUBL REGISTERS.
 	wr_reg(DDR0_PUB_ODTCR, p_ddr_set->t_pub_odtcr);
@@ -224,7 +244,8 @@ unsigned int ddr_init_pctl(void){
 	// PROGRAM DDR SDRAM TIMING PARAMETER.
 	wr_reg(DDR0_PUB_DTPR0, p_ddr_set->t_pub_dtpr[0]);
 	wr_reg(DDR0_PUB_DTPR1, p_ddr_set->t_pub_dtpr[1]);
-
+	//wr_reg(DDR0_PUB_PGCR0, p_ddr_set->t_pub_pgcr0); //Jiaxing debug low freq issue
+	wr_reg(DDR0_PUB_PGCR1, p_ddr_set->t_pub_pgcr1);
 	wr_reg(DDR0_PUB_PGCR2, p_ddr_set->t_pub_pgcr2);
 	//printf("\nDDR0_PUB_PGCR2: 0x%8x\n", rd_reg(DDR0_PUB_PGCR2));
 	//wr_reg(DDR0_PUB_PGCR2, 0x00f05f97);
@@ -238,7 +259,6 @@ unsigned int ddr_init_pctl(void){
 	//DDR0_DLL_LOCK_WAIT
 	wait_set(DDR0_PUB_PGSR0, 0);
 
-	wr_reg(DDR0_PUB_PGCR1, p_ddr_set->t_pub_pgcr1);
 	//wr_reg(DDR0_PUB_DTCR, 0x430030c7);
 	//wr_reg(DDR0_PUB_DTPR3, 0x2010a902); //tmp disable
 	wr_reg(DDR0_PUB_ACIOCR1, 0);
@@ -288,16 +308,15 @@ unsigned int ddr_init_pctl(void){
 
 	if (ddr1_enabled) {
 		// configure DDR1 IP.
-		wr_reg(DDR1_PCTL_TOGCNT1U, p_ddr_set->t_pctl1_1us_pck);
-		wr_reg(DDR1_PCTL_TOGCNT100N, p_ddr_set->t_pctl1_100ns_pck);
-		wr_reg(DDR1_PCTL_TINIT, p_ddr_set->t_pctl1_init_us); //20
-		wr_reg(DDR1_PCTL_TRSTH, p_ddr_set->t_pctl1_rsth_us); //50
-		wr_reg(DDR1_PCTL_MCFG, (p_ddr_set->t_pctl1_mcfg)|((p_ddr_set->ddr_2t_mode)?(1<<3):(0<<3)));
-		wr_reg(DDR1_PCTL_MCFG1, p_ddr_set->t_pctl1_mcfg1);
+		wr_reg(DDR1_PCTL_TOGCNT1U, p_ddr_set->t_pctl0_1us_pck);
+		wr_reg(DDR1_PCTL_TOGCNT100N, p_ddr_set->t_pctl0_100ns_pck);
+		wr_reg(DDR1_PCTL_TINIT, p_ddr_set->t_pctl0_init_us); //20
+		wr_reg(DDR1_PCTL_TRSTH, p_ddr_set->t_pctl0_rsth_us); //50
+		wr_reg(DDR1_PCTL_MCFG, (p_ddr_set->t_pctl0_mcfg)|((p_ddr_set->ddr_2t_mode)?(1<<3):(0<<3)));
+		wr_reg(DDR1_PCTL_MCFG1, p_ddr_set->t_pctl0_mcfg1);
 	}
 
-	printf("DDR0 2T mode: %d\n", ((rd_reg(DDR0_PCTL_MCFG) >> 3) & 0x1));
-	printf("DDR1 2T mode: %d\n", ((rd_reg(DDR1_PCTL_MCFG) >> 3) & 0x1));
+	_udelay(500);
 
 	// MONITOR DFI INITIALIZATION STATUS.
 	if (ddr0_enabled) {
@@ -314,65 +333,71 @@ unsigned int ddr_init_pctl(void){
 	}
 
 	if (ddr0_enabled) {
-		wr_reg(DDR0_PCTL_TRFC, p_ddr_set->t_pctl0_trfc);
-		wr_reg(DDR0_PCTL_TREFI_MEM_DDR3, p_ddr_set->t_pctl0_trefi_mem_ddr3);
-		wr_reg(DDR0_PCTL_TMRD, p_ddr_set->t_pctl0_tmrd);
-		wr_reg(DDR0_PCTL_TRP, p_ddr_set->t_pctl0_trp);
-		wr_reg(DDR0_PCTL_TAL, p_ddr_set->t_pctl0_tal);
-		wr_reg(DDR0_PCTL_TCWL, p_ddr_set->t_pctl0_tcwl);
-		wr_reg(DDR0_PCTL_TCL, p_ddr_set->t_pctl0_tcl);
-		wr_reg(DDR0_PCTL_TRAS, p_ddr_set->t_pctl0_tras);
-		wr_reg(DDR0_PCTL_TRC, p_ddr_set->t_pctl0_trc);
-		wr_reg(DDR0_PCTL_TRCD, p_ddr_set->t_pctl0_trcd);
-		wr_reg(DDR0_PCTL_TRRD, p_ddr_set->t_pctl0_trrd);
-		wr_reg(DDR0_PCTL_TRTP, p_ddr_set->t_pctl0_trtp);
-		wr_reg(DDR0_PCTL_TWR, p_ddr_set->t_pctl0_twr);
-		wr_reg(DDR0_PCTL_TWTR, p_ddr_set->t_pctl0_twtr);
-		wr_reg(DDR0_PCTL_TEXSR, p_ddr_set->t_pctl0_texsr);
-		wr_reg(DDR0_PCTL_TXP, p_ddr_set->t_pctl0_txp);
-		wr_reg(DDR0_PCTL_TDQS, p_ddr_set->t_pctl0_tdqs);
-		wr_reg(DDR0_PCTL_TRTW, p_ddr_set->t_pctl0_trtw);
-		wr_reg(DDR0_PCTL_TCKSRE, p_ddr_set->t_pctl0_tcksre);
-		wr_reg(DDR0_PCTL_TCKSRX, p_ddr_set->t_pctl0_tcksrx);
-		wr_reg(DDR0_PCTL_TMOD, p_ddr_set->t_pctl0_tmod);
-		wr_reg(DDR0_PCTL_TCKE, p_ddr_set->t_pctl0_tcke);
-		wr_reg(DDR0_PCTL_TZQCS, p_ddr_set->t_pctl0_tzqcs);
-		wr_reg(DDR0_PCTL_TZQCL, p_ddr_set->t_pctl0_tzqcl);
-		wr_reg(DDR0_PCTL_TXPDLL, p_ddr_set->t_pctl0_txpdll);
-		wr_reg(DDR0_PCTL_TZQCSI, p_ddr_set->t_pctl0_tzqcsi);
+		wr_reg(DDR0_PCTL_TRFC, p_ddr_timing->cfg_ddr_rfc);
+		wr_reg(DDR0_PCTL_TREFI_MEM_DDR3, p_ddr_timing->cfg_ddr_refi_mddr3);
+		wr_reg(DDR0_PCTL_TMRD, p_ddr_timing->cfg_ddr_mrd);
+		wr_reg(DDR0_PCTL_TRP, p_ddr_timing->cfg_ddr_rp);
+		wr_reg(DDR0_PCTL_TAL, p_ddr_timing->cfg_ddr_al);
+		wr_reg(DDR0_PCTL_TCWL, p_ddr_timing->cfg_ddr_cwl);
+		wr_reg(DDR0_PCTL_TCL, p_ddr_timing->cfg_ddr_cl);
+		wr_reg(DDR0_PCTL_TRAS, p_ddr_timing->cfg_ddr_ras);
+		wr_reg(DDR0_PCTL_TRC, p_ddr_timing->cfg_ddr_rc);
+		wr_reg(DDR0_PCTL_TRCD, p_ddr_timing->cfg_ddr_rcd);
+		wr_reg(DDR0_PCTL_TRRD, p_ddr_timing->cfg_ddr_rrd);
+		wr_reg(DDR0_PCTL_TRTP, p_ddr_timing->cfg_ddr_rtp);
+		wr_reg(DDR0_PCTL_TWR, p_ddr_timing->cfg_ddr_wr);
+		wr_reg(DDR0_PCTL_TWTR, p_ddr_timing->cfg_ddr_wtr);
+		wr_reg(DDR0_PCTL_TEXSR, p_ddr_timing->cfg_ddr_exsr);
+		wr_reg(DDR0_PCTL_TXP, p_ddr_timing->cfg_ddr_xp);
+		wr_reg(DDR0_PCTL_TDQS, p_ddr_timing->cfg_ddr_dqs);
+		wr_reg(DDR0_PCTL_TRTW, p_ddr_timing->cfg_ddr_rtw);
+		wr_reg(DDR0_PCTL_TCKSRE, p_ddr_timing->cfg_ddr_cksre);
+		wr_reg(DDR0_PCTL_TCKSRX, p_ddr_timing->cfg_ddr_cksrx);
+		wr_reg(DDR0_PCTL_TMOD, p_ddr_timing->cfg_ddr_mod);
+		wr_reg(DDR0_PCTL_TCKE, p_ddr_timing->cfg_ddr_cke);
+		wr_reg(DDR0_PCTL_TZQCS, p_ddr_timing->cfg_ddr_zqcs);
+		wr_reg(DDR0_PCTL_TZQCL, p_ddr_timing->cfg_ddr_zqcl);
+		wr_reg(DDR0_PCTL_TXPDLL, p_ddr_timing->cfg_ddr_xpdll);
+		wr_reg(DDR0_PCTL_TZQCSI, p_ddr_timing->cfg_ddr_zqcsi);
+	}
+
+	if (ddr1_enabled) {
+		wr_reg(DDR1_PCTL_TRFC, p_ddr_timing->cfg_ddr_rfc);
+		wr_reg(DDR1_PCTL_TREFI_MEM_DDR3, p_ddr_timing->cfg_ddr_refi_mddr3);
+		wr_reg(DDR1_PCTL_TMRD, p_ddr_timing->cfg_ddr_mrd);
+		wr_reg(DDR1_PCTL_TRP, p_ddr_timing->cfg_ddr_rp);
+		wr_reg(DDR1_PCTL_TAL, p_ddr_timing->cfg_ddr_al);
+		wr_reg(DDR1_PCTL_TCWL, p_ddr_timing->cfg_ddr_cwl);
+		wr_reg(DDR1_PCTL_TCL, p_ddr_timing->cfg_ddr_cl);
+		wr_reg(DDR1_PCTL_TRAS, p_ddr_timing->cfg_ddr_ras);
+		wr_reg(DDR1_PCTL_TRC, p_ddr_timing->cfg_ddr_rc);
+		wr_reg(DDR1_PCTL_TRCD, p_ddr_timing->cfg_ddr_rcd);
+		wr_reg(DDR1_PCTL_TRRD, p_ddr_timing->cfg_ddr_rrd);
+		wr_reg(DDR1_PCTL_TRTP, p_ddr_timing->cfg_ddr_rtp);
+		wr_reg(DDR1_PCTL_TWR, p_ddr_timing->cfg_ddr_wr);
+		wr_reg(DDR1_PCTL_TWTR, p_ddr_timing->cfg_ddr_wtr);
+		wr_reg(DDR1_PCTL_TEXSR, p_ddr_timing->cfg_ddr_exsr);
+		wr_reg(DDR1_PCTL_TXP, p_ddr_timing->cfg_ddr_xp);
+		wr_reg(DDR1_PCTL_TDQS, p_ddr_timing->cfg_ddr_dqs);
+		wr_reg(DDR1_PCTL_TRTW, p_ddr_timing->cfg_ddr_rtw);
+		wr_reg(DDR1_PCTL_TCKSRE, p_ddr_timing->cfg_ddr_cksre);
+		wr_reg(DDR1_PCTL_TCKSRX, p_ddr_timing->cfg_ddr_cksrx);
+		wr_reg(DDR1_PCTL_TMOD, p_ddr_timing->cfg_ddr_mod);
+		wr_reg(DDR1_PCTL_TCKE, p_ddr_timing->cfg_ddr_cke);
+		wr_reg(DDR1_PCTL_TZQCS, p_ddr_timing->cfg_ddr_zqcs);
+		wr_reg(DDR1_PCTL_TZQCL, p_ddr_timing->cfg_ddr_zqcl);
+		wr_reg(DDR1_PCTL_TXPDLL, p_ddr_timing->cfg_ddr_xpdll);
+		wr_reg(DDR1_PCTL_TZQCSI, p_ddr_timing->cfg_ddr_zqcsi);
+	}
+
+	if (ddr0_enabled) {
 		wr_reg(DDR0_PCTL_SCFG, p_ddr_set->t_pctl0_scfg);
 		wr_reg(DDR0_PCTL_SCTL, p_ddr_set->t_pctl0_sctl);
 	}
 
 	if (ddr1_enabled) {
-		wr_reg(DDR1_PCTL_TRFC, p_ddr_set->t_pctl1_trfc);
-		wr_reg(DDR1_PCTL_TREFI_MEM_DDR3, p_ddr_set->t_pctl1_trefi_mem_ddr3);
-		wr_reg(DDR1_PCTL_TMRD, p_ddr_set->t_pctl1_tmrd);
-		wr_reg(DDR1_PCTL_TRP, p_ddr_set->t_pctl1_trp);
-		wr_reg(DDR1_PCTL_TAL, p_ddr_set->t_pctl1_tal);
-		wr_reg(DDR1_PCTL_TCWL, p_ddr_set->t_pctl1_tcwl);
-		wr_reg(DDR1_PCTL_TCL, p_ddr_set->t_pctl1_tcl);
-		wr_reg(DDR1_PCTL_TRAS, p_ddr_set->t_pctl1_tras);
-		wr_reg(DDR1_PCTL_TRC, p_ddr_set->t_pctl1_trc);
-		wr_reg(DDR1_PCTL_TRCD, p_ddr_set->t_pctl1_trcd);
-		wr_reg(DDR1_PCTL_TRRD, p_ddr_set->t_pctl1_trrd);
-		wr_reg(DDR1_PCTL_TRTP, p_ddr_set->t_pctl1_trtp);
-		wr_reg(DDR1_PCTL_TWR, p_ddr_set->t_pctl1_twr);
-		wr_reg(DDR1_PCTL_TWTR, p_ddr_set->t_pctl1_twtr);
-		wr_reg(DDR1_PCTL_TEXSR, p_ddr_set->t_pctl1_texsr);
-		wr_reg(DDR1_PCTL_TXP, p_ddr_set->t_pctl1_txp);
-		wr_reg(DDR1_PCTL_TDQS, p_ddr_set->t_pctl1_tdqs);
-		wr_reg(DDR1_PCTL_TRTW, p_ddr_set->t_pctl1_trtw);
-		wr_reg(DDR1_PCTL_TCKSRE, p_ddr_set->t_pctl1_tcksre);
-		wr_reg(DDR1_PCTL_TCKSRX, p_ddr_set->t_pctl1_tcksrx);
-		wr_reg(DDR1_PCTL_TMOD, p_ddr_set->t_pctl1_tmod);
-		wr_reg(DDR1_PCTL_TCKE, p_ddr_set->t_pctl1_tcke);
-		wr_reg(DDR1_PCTL_TZQCS, p_ddr_set->t_pctl1_tzqcs);
-		wr_reg(DDR1_PCTL_TZQCL, p_ddr_set->t_pctl1_tzqcl);
-		wr_reg(DDR1_PCTL_TXPDLL, p_ddr_set->t_pctl1_txpdll);
-		wr_reg(DDR1_PCTL_TZQCSI, p_ddr_set->t_pctl1_tzqcsi);
-		wr_reg(DDR1_PCTL_SCFG, p_ddr_set->t_pctl1_scfg);
-		wr_reg(DDR1_PCTL_SCTL, p_ddr_set->t_pctl1_sctl);
+		wr_reg(DDR1_PCTL_SCFG, p_ddr_set->t_pctl0_scfg);
+		wr_reg(DDR1_PCTL_SCTL, p_ddr_set->t_pctl0_sctl);
 	}
 
 	// SCRATCH1
@@ -407,58 +432,40 @@ unsigned int ddr_init_pctl(void){
 	}
 
 	if (ddr1_enabled) {
-		wr_reg(DDR1_PCTL_PPCFG, p_ddr_set->t_pctl1_ppcfg); /* 16bit or 32bit mode */
-		wr_reg(DDR1_PCTL_DFISTCFG0, p_ddr_set->t_pctl1_dfistcfg0);
-		wr_reg(DDR1_PCTL_DFISTCFG1, p_ddr_set->t_pctl1_dfistcfg1);
-		wr_reg(DDR1_PCTL_DFITCTRLDELAY, p_ddr_set->t_pctl1_dfitctrldelay);
-		wr_reg(DDR1_PCTL_DFITPHYWRDATA, p_ddr_set->t_pctl1_dfitphywrdata);
-		wr_reg(DDR1_PCTL_DFITPHYWRLAT, p_ddr_set->t_pctl1_dfitphywrlta);
-		wr_reg(DDR1_PCTL_DFITRDDATAEN, p_ddr_set->t_pctl1_dfitrddataen);
-		wr_reg(DDR1_PCTL_DFITPHYRDLAT, p_ddr_set->t_pctl1_dfitphyrdlat);
-		wr_reg(DDR1_PCTL_DFITDRAMCLKDIS, p_ddr_set->t_pctl1_dfitdramclkdis);
-		wr_reg(DDR1_PCTL_DFITDRAMCLKEN, p_ddr_set->t_pctl1_dfitdramclken);
-		wr_reg(DDR1_PCTL_DFILPCFG0, p_ddr_set->t_pctl1_dfilpcfg0);
-		wr_reg(DDR1_PCTL_DFITPHYUPDTYPE1, p_ddr_set->t_pctl1_dfitphyupdtype1);
-		wr_reg(DDR1_PCTL_DFITCTRLUPDMIN, p_ddr_set->t_pctl1_dfitctrlupdmin);
-		wr_reg(DDR1_PCTL_DFIODTCFG, p_ddr_set->t_pctl1_dfiodtcfg);
-		wr_reg(DDR1_PCTL_DFIODTCFG1, p_ddr_set->t_pctl1_dfiodtcfg1);
-		wr_reg(DDR1_PCTL_CMDTSTATEN, p_ddr_set->t_pctl1_cmdtstaten);
+		wr_reg(DDR1_PCTL_PPCFG, p_ddr_set->t_pctl0_ppcfg); /* 16bit or 32bit mode */
+		wr_reg(DDR1_PCTL_DFISTCFG0, p_ddr_set->t_pctl0_dfistcfg0);
+		wr_reg(DDR1_PCTL_DFISTCFG1, p_ddr_set->t_pctl0_dfistcfg1);
+		wr_reg(DDR1_PCTL_DFITCTRLDELAY, p_ddr_set->t_pctl0_dfitctrldelay);
+		wr_reg(DDR1_PCTL_DFITPHYWRDATA, p_ddr_set->t_pctl0_dfitphywrdata);
+		wr_reg(DDR1_PCTL_DFITPHYWRLAT, p_ddr_set->t_pctl0_dfitphywrlta);
+		wr_reg(DDR1_PCTL_DFITRDDATAEN, p_ddr_set->t_pctl0_dfitrddataen);
+		wr_reg(DDR1_PCTL_DFITPHYRDLAT, p_ddr_set->t_pctl0_dfitphyrdlat);
+		wr_reg(DDR1_PCTL_DFITDRAMCLKDIS, p_ddr_set->t_pctl0_dfitdramclkdis);
+		wr_reg(DDR1_PCTL_DFITDRAMCLKEN, p_ddr_set->t_pctl0_dfitdramclken);
+		wr_reg(DDR1_PCTL_DFILPCFG0, p_ddr_set->t_pctl0_dfilpcfg0);
+		wr_reg(DDR1_PCTL_DFITPHYUPDTYPE1, p_ddr_set->t_pctl0_dfitphyupdtype1);
+		wr_reg(DDR1_PCTL_DFITCTRLUPDMIN, p_ddr_set->t_pctl0_dfitctrlupdmin);
+		wr_reg(DDR1_PCTL_DFIODTCFG, p_ddr_set->t_pctl0_dfiodtcfg);
+		wr_reg(DDR1_PCTL_DFIODTCFG1, p_ddr_set->t_pctl0_dfiodtcfg1);
+		wr_reg(DDR1_PCTL_CMDTSTATEN, p_ddr_set->t_pctl0_cmdtstaten);
 	}
 
-#ifdef CONFIG_CMD_DDR_TEST
-	printf("zqcr: 0x%8x\n", zqcr);
-	if (zqcr) {
-		writel(zqcr, DDR0_PUB_ZQ0PR);
-		writel(zqcr, DDR0_PUB_ZQ1PR);
-		writel(zqcr, DDR0_PUB_ZQ2PR);
-		writel(zqcr, DDR0_PUB_ZQ3PR);
-	}
-	else {
-		writel(p_ddr_set->t_pub_zq0pr, DDR0_PUB_ZQ0PR);
-		writel(p_ddr_set->t_pub_zq1pr, DDR0_PUB_ZQ1PR);
-		writel(p_ddr_set->t_pub_zq2pr, DDR0_PUB_ZQ2PR);
-		writel(p_ddr_set->t_pub_zq3pr, DDR0_PUB_ZQ3PR);
-	}
-#endif
+	wr_reg(DDR0_PUB_ZQ0PR, p_ddr_set->t_pub_zq0pr);
+	wr_reg(DDR0_PUB_ZQ1PR, p_ddr_set->t_pub_zq1pr);
+	wr_reg(DDR0_PUB_ZQ2PR, p_ddr_set->t_pub_zq2pr);
+	wr_reg(DDR0_PUB_ZQ3PR, p_ddr_set->t_pub_zq3pr);
+
 	wr_reg(DDR0_PUB_PIR, 3);
 	wait_set(DDR0_PUB_PGSR0, 0);
-	wr_reg( DDR0_PUB_ZQCR,(rd_reg(DDR0_PUB_ZQCR))|(1<<2)|(1<<27)); //jiaxing debug must force update
-	udelay(10);
-	wr_reg( DDR0_PUB_ZQCR,(rd_reg(DDR0_PUB_ZQCR))&(~((1<<2)|(1<<27))));
-	udelay(10);
-#ifdef CONFIG_CMD_DDR_TEST
-	printf("DDR0_PUB_ZQ0DR: 0x%8x\n", rd_reg(DDR0_PUB_ZQ0DR));
-	printf("DDR0_PUB_ZQ1DR: 0x%8x\n", rd_reg(DDR0_PUB_ZQ1DR));
-	printf("DDR0_PUB_ZQ2DR: 0x%8x\n", rd_reg(DDR0_PUB_ZQ2DR));
-#endif
+	wr_reg(DDR0_PUB_ZQCR,(rd_reg(DDR0_PUB_ZQCR))|(1<<2)|(1<<27)); //jiaxing debug must force update
+	_udelay(10);
+	wr_reg(DDR0_PUB_ZQCR,(rd_reg(DDR0_PUB_ZQCR))&(~((1<<2)|(1<<27))));
+	_udelay(30);
 
-	wr_reg(DDR0_PUB_PIR, DDR_PIR | PUB_PIR_INIT);
+	wr_reg(DDR0_PUB_PIR, (DDR_PIR | PUB_PIR_INIT));
 	do {
-		printf("DDR_PIR: 0X%8X\n", DDR_PIR);
-		udelay(100);
+		_udelay(20);
 	} while(DDR_PGSR0_CHECK());
-
-	printf("DDR0_PUB_PGSR0: 0X%8X\n", rd_reg(DDR0_PUB_PGSR0));
 
 	//DDR0_CMD_TIMER_WAIT
 	if (ddr0_enabled)
@@ -479,30 +486,55 @@ unsigned int ddr_init_pctl(void){
 	if (ddr1_enabled)
 		wait_set(DDR1_PCTL_STAT, 1);
 
-#ifdef CONFIG_CMD_DDR_TEST
-	printf("DDR0_PUB_PIR: 0x%8x\n", rd_reg(DDR0_PUB_PIR));
-	printf("DDR0_PUB_PGSR0: 0x%8x\n", rd_reg(DDR0_PUB_PGSR0));
-	printf("DDR0_PUB_DX0GSR2: 0x%8x\n", rd_reg(DDR0_PUB_DX0GSR2));
-	printf("DDR0_PUB_DX1GSR2: 0x%8x\n", rd_reg(DDR0_PUB_DX1GSR2));
-	printf("DDR0_PUB_DX2GSR2: 0x%8x\n", rd_reg(DDR0_PUB_DX2GSR2));
-	printf("DDR0_PUB_DX3GSR2: 0x%8x\n", rd_reg(DDR0_PUB_DX3GSR2));
-	printf("DDR0_PUB_ZQ0DR: 0x%8x\n", rd_reg(DDR0_PUB_ZQ0DR));
-	printf("DDR0_PUB_ZQ1DR: 0x%8x\n", rd_reg(DDR0_PUB_ZQ1DR));
-	printf("DDR0_PUB_ZQ2DR: 0x%8x\n", rd_reg(DDR0_PUB_ZQ2DR));
-#endif
-
 	wr_reg( DDR0_PUB_ZQCR,(rd_reg(DDR0_PUB_ZQCR))|(1<<2));
 	wr_reg( DDR0_PUB_ZQCR,(rd_reg(DDR0_PUB_ZQCR))&(~(1<<2)));
 
-#ifdef CONFIG_CMD_DDR_TEST
-	printf("DDR0_PUB_ZQ0DR: 0x%8x\n", rd_reg(DDR0_PUB_ZQ0DR));
-	printf("DDR0_PUB_ZQ1DR: 0x%8x\n", rd_reg(DDR0_PUB_ZQ1DR));
-	printf("DDR0_PUB_ZQ2DR: 0x%8x\n", rd_reg(DDR0_PUB_ZQ2DR));
-#endif
+	//// ENABLE THE DMC AUTO REFRESH FUNCTION
+	if (ddr0_enabled) {
+		wr_reg(DMC_REFR_CTRL1, 0X8800191|(0x3<<2)|(0x1<<0));
+		rd_reg(DDR0_PCTL_MCFG);
+	}
+	if (ddr1_enabled) {
+		wr_reg(DMC_REFR_CTRL1, 0X8800191|(0x3<<2)|(0x1<<1));
+		rd_reg(DDR1_PCTL_MCFG);
+	}
+	wr_reg(DMC_REFR_CTRL2, 0X20100000|(p_ddr_set->ddr_clk/20)|(39<<8));
+
 	return 0;
 }
 
 void ddr_pre_init(void){
+	/* find match ddr timing */
+	if ((p_ddr_set->ddr_clk >= CONFIG_DDR_CLK_LOW) && (p_ddr_set->ddr_clk < 533)) {
+		p_ddr_set->ddr_timing_ind = CONFIG_DDR_TIMMING_DDR3_7;
+	}
+	else if ((p_ddr_set->ddr_clk >= 533) && (p_ddr_set->ddr_clk < 667)) {
+		p_ddr_set->ddr_timing_ind = CONFIG_DDR_TIMMING_DDR3_9;
+	}
+	else if ((p_ddr_set->ddr_clk >= 667) && (p_ddr_set->ddr_clk < 933)) {
+		p_ddr_set->ddr_timing_ind = CONFIG_DDR_TIMMING_DDR3_11;
+	}
+	else if ((p_ddr_set->ddr_clk >= 933) && (p_ddr_set->ddr_clk < CONFIG_DDR_CLK_HIGH)) {
+		p_ddr_set->ddr_timing_ind = CONFIG_DDR_TIMMING_DDR3_13;
+	}
+	else {
+		printf("DDR clk setting error! Reset...\n");
+		reset_system();
+	}
+
+	/* get match timing config */
+	unsigned loop;
+	for (loop = 0; loop < (sizeof(__ddr_timming)/sizeof(ddr_timing_t)); loop++) {
+		if (__ddr_timming[loop].identifier == p_ddr_set->ddr_timing_ind) {
+			p_ddr_timing = &__ddr_timming[loop];
+			break;
+		}
+	}
+	if (NULL == p_ddr_timing) {
+		printf("Can't find ddr timing setting! Reset...\n");
+		reset_system();
+	}
+
 	unsigned int ddr_rank_set = 0;
 	unsigned int ddr_chl_interface = 0;
 	unsigned int ddr_chl_select = 0;
@@ -558,9 +590,7 @@ void ddr_pre_init(void){
 			ddr1_size = 1<<(j-1);
 		}
 		p_ddr_set->t_pctl0_ppcfg = (0x1fc | 1 );
-		p_ddr_set->t_pctl1_ppcfg = (0x1fc | 1 );
 		p_ddr_set->t_pctl0_dfiodtcfg = 0x08;
-		p_ddr_set->t_pctl1_dfiodtcfg = 0x08;
 		p_ddr_set->ddr_dmc_ctrl	|= (5 << 8);
 	}
 
@@ -578,30 +608,68 @@ void ddr_pre_init(void){
 							(ddr0_size_reg << 0));
 	/* config t_pub_pgcr2[28] share-ac-dual */
 	p_ddr_set->t_pub_pgcr2 |= (ddr_dual_rank_sel << 28);
+
+	/* update pctl timing */
+	int tmp_val = 0;
+	tmp_val =( p_ddr_timing->cfg_ddr_cwl + p_ddr_timing->cfg_ddr_al);
+	tmp_val = (tmp_val - ((tmp_val%2) ? 3:4))/2;
+	p_ddr_set->t_pctl0_dfitphywrlta=tmp_val;
+
+	tmp_val = p_ddr_timing->cfg_ddr_cl + p_ddr_timing->cfg_ddr_al;
+	tmp_val = (tmp_val - ((tmp_val%2) ? 3:4))/2;
+	p_ddr_set->t_pctl0_dfitrddataen=tmp_val;
+
+	/* update pub mr */
+	p_ddr_set->t_pub_mr[0] = ((((p_ddr_timing->cfg_ddr_cl - 4) & 0x8)>>1)		|
+						(((p_ddr_timing->cfg_ddr_cl - 4) & 0x7) <<  4)		|
+						((((p_ddr_timing->cfg_ddr_wr <= 8)?(p_ddr_timing->cfg_ddr_wr - 4):(p_ddr_timing->cfg_ddr_wr>>1)) & 7) << 9) |
+						(0x0) | (0x0 << 3) | (0x0 << 7) | (0x0 << 8) | (0x6 << 9) | (1 << 12)),
+	p_ddr_set->t_pub_mr[1] = ( ((p_ddr_set->ddr_drv<<1)|((p_ddr_set->ddr_odt&1)<<2) |
+						(((p_ddr_set->ddr_odt&2)>>1)<<6)				|
+						(((p_ddr_set->ddr_odt&4)>>2)<<9)				|
+						(1<<7) 									|
+						((p_ddr_timing->cfg_ddr_al ? ((p_ddr_timing->cfg_ddr_cl - p_ddr_timing->cfg_ddr_al)&3): 0) << 3 ))),
+	p_ddr_set->t_pub_mr[2] = ((1<<6)	|
+					(((p_ddr_timing->cfg_ddr_cwl-5)&0x7)<<3)),
+	p_ddr_set->t_pub_mr[3] = 0x0,
+	/* update pub dtpr */
+	p_ddr_set->t_pub_dtpr[0] = (p_ddr_timing->cfg_ddr_rtp			|
+								(p_ddr_timing->cfg_ddr_wtr << 4)		|
+								(p_ddr_timing->cfg_ddr_rp << 8)		|
+								(p_ddr_timing->cfg_ddr_ras << 16)		|
+								(p_ddr_timing->cfg_ddr_rrd << 22)		|
+								(p_ddr_timing->cfg_ddr_rcd << 26));
+	p_ddr_set->t_pub_dtpr[1] = ((p_ddr_timing->cfg_ddr_mod << 2)	|
+								(p_ddr_timing->cfg_ddr_faw << 5)		|
+								(p_ddr_timing->cfg_ddr_rfc << 11)		|
+								(p_ddr_timing->cfg_ddr_wlmrd << 20)	|
+								(p_ddr_timing->cfg_ddr_wlo << 26)		|
+								(0 << 30) ); //TAOND
+	p_ddr_set->t_pub_dtpr[2] = (p_ddr_timing->cfg_ddr_xs			|
+								(p_ddr_timing->cfg_ddr_xp << 10)		|
+								(p_ddr_timing->cfg_ddr_dllk << 19)	|
+								(0 << 29)				| //TRTODT ADDITIONAL
+								(0 << 30)				| //TRTW ADDITIONAL
+								(0 << 31 )); //TCCD ADDITIONAL
+	p_ddr_set->t_pub_dtpr[3] = (0 | (0 << 3)			|
+								(p_ddr_timing->cfg_ddr_rc << 6)		|
+								(p_ddr_timing->cfg_ddr_cke << 13)		|
+								(p_ddr_timing->cfg_ddr_mrd << 18)		|
+								(0 << 29)); //tAOFDx
 }
 
-void ddr_print_info(void){
-	unsigned int dmc_reg = rd_reg(DMC_DDR_CTRL);
-	unsigned int chl0_size_reg = (dmc_reg & 0x7);
-	unsigned int chl1_size_reg = ((dmc_reg>>3) & 0x7);
-	unsigned int chl0_size = 1 << (chl0_size_reg+7); //MB
-	printf("ddr0 size: %dMB\n", (chl0_size_reg)>5?0:chl0_size);
-	unsigned int chl1_size = 1 << (chl1_size_reg+7); //MB
-	printf("ddr1 size: %dMB\n", (chl1_size_reg)>5?0:chl1_size);
-}
-
-void mem_test(void){
+void ddr_test(void){
 	if (memTestDataBus((volatile unsigned int *)(uint64_t) \
 		(p_ddr_set->ddr_base_addr + p_ddr_set->ddr_start_offset)))
-		printf("memTestDataBus failed!!!\n");
+		printf("DataBus test failed!!!\n");
 	else
-		printf("memTestDataBus pass!\n");
+		printf("DataBus test pass!\n");
 	if (memTestAddressBus((volatile unsigned int *)(uint64_t) \
 		(p_ddr_set->ddr_base_addr + p_ddr_set->ddr_start_offset), \
 		((p_ddr_set->ddr_size << 20) - p_ddr_set->ddr_start_offset)))
-		printf("memTestAddressBus failed!!!\n");
+		printf("AddrBus test failed!!!\n");
 	else
-		printf("memTestAddressBus pass!\n");
+		printf("AddrBus test pass!\n");
 	if (p_ddr_set->ddr_full_test) {
 		extern void watchdog_disable(void);
 		//disable_mmu_el1();
@@ -609,9 +677,9 @@ void mem_test(void){
 		if (memTestDevice((volatile unsigned int *)(uint64_t) \
 			(p_ddr_set->ddr_base_addr + p_ddr_set->ddr_start_offset), \
 			((p_ddr_set->ddr_size << 20) - p_ddr_set->ddr_start_offset)))
-			printf("memTestDevice failed!!!\n");
+			printf("Device test failed!!!\n");
 		else
-			printf("memTestDevice pass!\n");
+			printf("Device test pass!\n");
 	}
 }
 
@@ -623,4 +691,22 @@ unsigned int hot_boot(void){
 	else{
 		return 1;
 	}
+}
+
+void ddr_debug(void){
+	/*debug ddr and print info*/
+	printf("DDR debug information:\n");
+	printf("	ZQ0DR:    0x%8x    ZQ1DR: 0x%8x    ZQ2DR: 0x%8x\n", \
+			rd_reg(DDR0_PUB_ZQ0DR), rd_reg(DDR0_PUB_ZQ1DR), rd_reg(DDR0_PUB_ZQ2DR));
+	printf("	PIR:      0x%8x    PGSR0: 0x%8x\n", rd_reg(DDR0_PUB_PIR), rd_reg(DDR0_PUB_PGSR0));
+	printf("	DX0GSR2:  0x%8x\n", rd_reg(DDR0_PUB_DX0GSR2));
+	printf("	DX1GSR2:  0x%8x\n", rd_reg(DDR0_PUB_DX1GSR2));
+	printf("	DX2GSR2:  0x%8x\n", rd_reg(DDR0_PUB_DX2GSR2));
+	printf("	DX3GSR2:  0x%8x\n", rd_reg(DDR0_PUB_DX3GSR2));
+	printf("	DMC_CTRL: 0x%8x\n", rd_reg(DMC_DDR_CTRL));
+	printf("	MAP_0_0:  0x%8x    MAP_1_0:  0x%8x\n", rd_reg(DDR0_ADDRMAP_0), rd_reg(DDR1_ADDRMAP_0));
+	printf("	MAP_0_1:  0x%8x    MAP_1_1:  0x%8x\n", rd_reg(DDR0_ADDRMAP_1), rd_reg(DDR1_ADDRMAP_1));
+	printf("	MAP_0_2:  0x%8x    MAP_1_2:  0x%8x\n", rd_reg(DDR0_ADDRMAP_2), rd_reg(DDR1_ADDRMAP_2));
+	printf("	MAP_0_3:  0x%8x    MAP_1_3:  0x%8x\n", rd_reg(DDR0_ADDRMAP_3), rd_reg(DDR1_ADDRMAP_3));
+	printf("	MAP_0_4:  0x%8x    MAP_1_4:  0x%8x\n", rd_reg(DDR0_ADDRMAP_4), rd_reg(DDR1_ADDRMAP_4));
 }

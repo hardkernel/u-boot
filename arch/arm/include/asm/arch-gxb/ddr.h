@@ -5,7 +5,7 @@
 
 /* io defines */
 #define wr_reg(addr, data)	(*((volatile uint32_t *)addr))=(uint32_t)(uint64_t)(data)
-#define rd_reg(addr)		(*((volatile uint32_t *)addr))
+#define rd_reg(addr)		(*((volatile uint32_t *)(addr)))
 /*clear [mask] 0 bits in [addr], set these 0 bits with [value] corresponding bits*/
 #define modify_reg(addr, value, mask) wr_reg(addr, ((rd_reg(addr) & (mask)) | (value)))
 #define wait_set(addr, loc) do{}while(0 == (rd_reg(addr) & (1<<loc)));
@@ -17,11 +17,10 @@ unsigned int ddr_init_pll(void);
 unsigned int ddr_init_dmc(void);
 unsigned int ddr_init_pctl(void);
 unsigned int hot_boot(void);
-unsigned int ddr_test(void);
 void ddr_print_info(void);
-void mem_test(void);
-void print_ddr_info(void);
+void ddr_test(void);
 void ddr_pre_init(void);
+void ddr_debug(void);
 
 #define CFG_DDR_BASE_ADDR					0X0
 #define CFG_DDR_START_OFFSET				0X01000000 //SKIP 16MB
@@ -62,32 +61,15 @@ void ddr_pre_init(void);
 #define CONFIG_DDR0_RANK01_SAME				2
 #define CONFIG_DDR01_SHARE_AC				3
 
-#if 0
-/* ddr channel related settings */
-#if (CONFIG_DDR_CHANNEL_SET == CONFIG_DDR0_RANK0_ONLY)
-
-  #define CFG_DDR_RANK_SET					2 //b'010: BIT22, BIT21, BIT20
-  #define CFG_DDR_CHANNEL_INTERFACE			0 //BIT[17:16], DDR0_DDR1 DATA WIDTH, 0:32BIT, 1:16BIT
-  #define CFG_DDR_CHANNEL_SELECT			1 //b'00:DDR0_DDR1, b'01: DDR0_ONLY, b'10:DDR1_ONLY
-  #define CFG_DDR_DUAL_RANK_SEL				0 //SET PGCR2[28], RANK0 AND RANK1 USE SAME RANK SELECT SIGNAL
-  #define CFG_DDR0_SIZE						(CONFIG_DDR_SIZE)
-  #define CFG_DDR1_SIZE						0
-#elif (CONFIG_DDR_CHANNEL_SET == CONFIG_DDR0_RANK01_SAME)
-  #define CFG_DDR_RANK_SET					4 //b'100: BIT22, BIT21, BIT20
-  #define CFG_DDR_CHANNEL_INTERFACE			0
-  #define CFG_DDR_CHANNEL_SELECT			1
-  #define CFG_DDR_DUAL_RANK_SEL				1
-  #define CFG_DDR0_SIZE						(CONFIG_DDR_SIZE)
-  #define CFG_DDR1_SIZE						0
-#elif (CONFIG_DDR_CHANNEL_SET == CONFIG_DDR01_SHARE_AC)
-  #define CFG_DDR_RANK_SET					1 //b'001: BIT22, BIT21, BIT20
-  #define CFG_DDR_CHANNEL_INTERFACE			3
-  #define CFG_DDR_CHANNEL_SELECT			0
-  #define CFG_DDR_DUAL_RANK_SEL				1
-  #define CFG_DDR0_SIZE						(CONFIG_DDR_SIZE >> 1)
-  #define CFG_DDR1_SIZE						(CONFIG_DDR_SIZE >> 1)
-#endif
-#endif
+/* ddr type identifier */
+#define CONFIG_DDR_TIMMING_LPDDR2			0x02
+#define CONFIG_DDR_TIMMING_LPDDR3			0x03
+#define CONFIG_DDR_TIMMING_DDR3_7			0x07
+#define CONFIG_DDR_TIMMING_DDR3_9			0x09
+#define CONFIG_DDR_TIMMING_DDR3_11			0x0B
+#define CONFIG_DDR_TIMMING_DDR3_12			0x0C
+#define CONFIG_DDR_TIMMING_DDR3_13			0x0D
+#define CONFIG_DDR_TIMMING_DDR3_14			0x0E
 
 /* PHY initialize register (PIR) */
 #define DDR_PIR ((PUB_PIR_ZCAL) 		|\
