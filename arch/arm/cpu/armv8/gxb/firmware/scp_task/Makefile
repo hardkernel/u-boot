@@ -47,10 +47,12 @@ vpath %.lds ./
 vpath %.S ./
 vpath %.c ./
 
-OBJS = user_task_entry.o
+#OBJS = user_task_entry.o
+OBJS = task_entry.o
 OBJS += user_task.o
 OBJS += misc.o
 OBJS += uart.o
+OBJS += suspend.o
 
 OBJS := $(OBJS:%=$(obj)/%)
 
@@ -67,16 +69,26 @@ $(obj)/bl301.out: $(obj)/user_task.lds Makefile $(OBJS)
 	@$(OBJDUMP) $(DUMP_FLAGS) $@ > $(obj)/bl301.dis
 
 $(obj)/%.o : %.c
-	 @echo "	CC $(subst $(obj)/,,$@)"
-	 @mkdir -p $(@D)
-	 @$(CC) $(CFLAGS) -MD  -c $< -o $@
+	@echo "	CC $(subst $(obj)/,,$@)"
+	@mkdir -p $(@D)
+	@$(CC) $(CFLAGS) -MD  -c $< -o $@
 
 $(obj)/misc.o:	$(obj)/misc.s
 	@echo "	CC $(subst $(obj)/,,$@)"
 	@mkdir -p $(@D)
 	@$(CC) $(CFLAGS) -MD  -c $< -o $@
 
+$(obj)/task_entry.o:	$(obj)/task_entry.s
+	@echo "	CC $(subst $(obj)/,,$@)"
+	@mkdir -p $(@D)
+	@$(CC) $(CFLAGS) -MD  -c $< -o $@
+
 $(obj)/misc.s:	misc.S
+	@mkdir -p $(@D)
+	@echo "	CPP $(subst $(obj)/,,$@)"
+	@$(CPP) -D__ASSEMBLY__ -E $< -o $@
+
+$(obj)/task_entry.s:  task_entry.S
 	@mkdir -p $(@D)
 	@echo "	CPP $(subst $(obj)/,,$@)"
 	@$(CPP) -D__ASSEMBLY__ -E $< -o $@

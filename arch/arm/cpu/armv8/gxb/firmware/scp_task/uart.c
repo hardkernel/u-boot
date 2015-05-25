@@ -1,14 +1,18 @@
 #include "registers.h"
+#include <stdint.h>
 
-//#define P_AO_UART_WFIFO                 (0xc81004c0)
-//#define P_AO_RTI_PIN_MUX_REG          (0xc8100014)
+/* #define P_AO_UART_WFIFO                 (0xc81004c0) */
+/* #define P_AO_RTI_PIN_MUX_REG          (0xc8100014) */
 
 #define UART_PORT_CONS P_AO_UART_WFIFO
 
 #define UART_STP_BIT UART_MODE_MASK_STP_1BIT
 #define UART_PRTY_BIT 0
 #define UART_CHAR_LEN   UART_MODE_MASK_CHAR_8BIT
-#define UART_MODE_RESET_MASK	(UART_MODE_MASK_RST_TX | UART_MODE_MASK_RST_RX | UART_MODE_MASK_CLR_ERR)
+#define UART_MODE_RESET_MASK	\
+					(UART_MODE_MASK_RST_TX \
+					| UART_MODE_MASK_RST_RX \
+					| UART_MODE_MASK_CLR_ERR)
 
 #define UART_WFIFO      (0<<2)
 #define UART_RFIFO	(1<<2)
@@ -27,32 +31,33 @@
 #define UART_CTRL_USE_XTAL_CLK			(1<<24)
 #define UART_CTRL_USE_NEW_BAUD_RATE		(1<<23)
 
-#define P_UART(uart_base,reg)		(uart_base+reg)
-#define P_UART_WFIFO(uart_base)		P_UART(uart_base,UART_WFIFO)
-#define P_UART_MODE(uart_base)		P_UART(uart_base,UART_MODE)
-#define P_UART_CTRL(uart_base)		P_UART(uart_base,UART_CTRL)
-#define P_UART_STATUS(uart_base)	P_UART(uart_base,UART_STATUS )
+#define P_UART(uart_base, reg)		(uart_base+reg)
+#define P_UART_WFIFO(uart_base)		P_UART(uart_base, UART_WFIFO)
+#define P_UART_MODE(uart_base)		P_UART(uart_base, UART_MODE)
+#define P_UART_CTRL(uart_base)		P_UART(uart_base, UART_CTRL)
+#define P_UART_STATUS(uart_base)	P_UART(uart_base, UART_STATUS)
 
-#define writel(v,addr) (*((volatile unsigned*)addr) = v)
-#define readl(addr) (*((volatile unsigned*)addr))
+#define writel(v, addr) (*((unsigned *)addr) = v)
+#define readl(addr) (*((unsigned *)addr))
 
 static int uart_tx_isfull(void)
 {
-	return (readl(P_UART_STATUS(UART_PORT_CONS)) &
-		UART_STAT_MASK_TFIFO_FULL);
+	return readl(P_UART_STATUS(UART_PORT_CONS)) &
+		UART_STAT_MASK_TFIFO_FULL;
 }
 
 int uart_putc(int c)
 {
-#if 0
-	efuse_features_t *efuse_feat = efuse_features_get();
-
-	if (efuse_feat->bt_prnt_d)
-		c = '~';
-#endif
+	if (c == '\n') {
+		while ((readl(P_UART_STATUS(UART_PORT_CONS)) &
+					UART_STAT_MASK_TFIFO_FULL))
+						;
+		writel('\r', P_UART_WFIFO(UART_PORT_CONS));
+	}
 
 	/* Wait until TX is not full */
-	while (uart_tx_isfull()) ;
+	while (uart_tx_isfull())
+		;
 
 	writel((char)c, P_UART_WFIFO(UART_PORT_CONS));
 	return c;
@@ -60,15 +65,15 @@ int uart_putc(int c)
 
 int uart_puts(const char *s)
 {
-	while (*s) {
+	while (*s)
 		uart_putc(*s++);
-	}
 	return 1;
 }
 
 void wait_uart_empty(void)
 {
-	while (!(readl(P_UART_STATUS(UART_PORT_CONS)) & (1 << 22))) ;
+	while (!(readl(P_UART_STATUS(UART_PORT_CONS)) & (1 << 22)))
+		;
 }
 
 void uart_put_hex(unsigned int data, unsigned bitlen)
