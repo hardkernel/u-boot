@@ -1,8 +1,24 @@
 
 config GXB_SKT_V1
-	bool "Support meson gxbaby skt v1 board"
+	bool "Support amlogic gxbaby skt v1 board"
+	default n
+
+config GXB_P200_V1
+	bool "Support amlogic gxbaby p200(develop) v1 board"
+	default n
+
+config GXB_P201_V1
+	bool "Support amlogic gxbaby p200(reference) v1 board"
 	default n
 
 if GXB_SKT_V1
 source "board/amlogic/gxb_skt_v1/Kconfig"
+endif
+
+if GXB_P200_V1
+source "board/amlogic/gxb_p200_v1/Kconfig"
+endif
+
+if GXB_P201_V1
+source "board/amlogic/gxb_p201_v1/Kconfig"
 endif
