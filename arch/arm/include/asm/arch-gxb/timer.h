@@ -36,6 +36,6 @@ uint32_t get_time(void);
  *
  * @param us            Number of microseconds to delay.
  */
-void udelay(unsigned int us);
+void _udelay(unsigned int us);
 
 #endif /* __TIMER_H */

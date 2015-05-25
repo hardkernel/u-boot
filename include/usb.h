@@ -13,6 +13,7 @@
 #include <linux/usb/ch9.h>
 #include <asm/cache.h>
 #include <part.h>
+#include <asm/arch/timer.h>
 
 /*
  * The EHCI spec says that we must align to at least 32 bytes.  However,
@@ -157,7 +158,9 @@ enum usb_init_type {
 	defined(CONFIG_USB_MUSB_OMAP2PLUS) || defined(CONFIG_USB_XHCI) || \
 	defined(CONFIG_USB_DWC2)
 
-void wait_ms(unsigned long ms);
+//void wait_ms(unsigned long ms);
+void _mdelay(unsigned long ms);
+
 int usb_lowlevel_init(int index, enum usb_init_type init, void **controller);
 int usb_lowlevel_stop(int index);
 

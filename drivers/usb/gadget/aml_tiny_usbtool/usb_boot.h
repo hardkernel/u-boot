@@ -82,8 +82,8 @@ typedef __u64    __be64;
 //#define PERI_BASE_ADDR               0xC1100000
 #define ISABASE                      0x01000000
 
-#define PREI_USB_PHY_A_REG_BASE       0xC1108800
-#define PREI_USB_PHY_B_REG_BASE       0xC1108820
+#define PREI_USB_PHY_A_REG_BASE       0xC0000000
+#define PREI_USB_PHY_B_REG_BASE       0xC0000020
 
 #ifdef __USE_PORT_B
 #define PREI_USB_PHY_REG_BASE   PREI_USB_PHY_B_REG_BASE
@@ -360,7 +360,7 @@ extern int printk(const char *fmt, ...);
 void usb_parameter_init(int delay_type);
 void clean_short_timeout(void);
 
-#define wait_ms(a) udelay(a*1000);
+//#define wait_ms(a) _udelay(a*1000);
 
 //int chip_watchdog(void);
 //#define usb_memcpy(dst,src,len) memcpy((void*)dst,(void*)src,(int)len)

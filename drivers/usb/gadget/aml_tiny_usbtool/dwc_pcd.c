@@ -23,17 +23,22 @@
 #include "usb_ch9.h"
 #include "dwc_pcd.h"
 #include "dwc_pcd_irq.h"
+#include <asm/arch/timer.h>
+
 
 pcd_struct_t this_pcd;
 dwc_ep_t g_dwc_eps[NUM_EP];
+
+extern void _mdelay(unsigned long ms);
+
 int dwc_core_init(void)
 {
 
     int32_t         snpsid;
 
     snpsid = dwc_read_reg32(DWC_REG_GSNPSID);
-
-    if ((snpsid & 0xFFFFF000) != 0x4F542000) {
+    //printf("Value for SNPSID: 0x%08x\n", snpsid);
+    if ((snpsid & 0xFFFFF000) != 0x4F543000) {
         ERR("Bad value for SNPSID: 0x%08x\n", snpsid);
         return -1;
     }
@@ -169,7 +174,7 @@ static void dwc_otg_core_reset(void)		//Elvis Fool, add 'static'
      * Wait for AHB master IDLE state.
      */
     do {
-        udelay(10);
+        _udelay(10);
         greset.d32 = dwc_read_reg32(DWC_REG_GRSTCTL);
         if (++count > 100000) {
             //DBG("%s() HANG! AHB Idle GRSTCTL=%0x\n", dwc_otg_core_reset, greset.d32);
@@ -196,7 +201,7 @@ static void dwc_otg_core_reset(void)		//Elvis Fool, add 'static'
     /*
      * Wait for 3 PHY Clocks
      */
-    wait_ms(10);
+    _mdelay(10);
 }
 
 static void dwc_otg_enable_common_interrupts(void)
@@ -383,7 +388,7 @@ static void dwc_otg_flush_tx_fifo( const int _num ) 	//Elvis Fool, add 'static'
 
         } while (greset.b.txfflsh == 1);
         /* Wait for 3 PHY Clocks*/
-        udelay(1);
+        _udelay(1);
 }
 
 /**
@@ -409,7 +414,7 @@ static void dwc_otg_flush_rx_fifo(void)
                 }
         } while (greset.b.rxfflsh == 1);
         /* Wait for 3 PHY Clocks*/
-        udelay(1);
+        _udelay(1);
 }
 /**
  * This function does the setup for a data transfer for EP0 and starts
@@ -507,7 +512,7 @@ void dwc_otg_ep0_start_transfer(dwc_ep_t *_ep)
 
 		deptsiz.b.xfersize = _ep->maxpacket;
 		deptsiz.b.pktcnt = 1;
-		udelay(1); // This is needed, don't know reason.
+		_udelay(1); // This is needed, don't know reason.
 #endif
 
 

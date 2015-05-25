@@ -32,8 +32,8 @@ static char * g_clock_src_name_m8[]={
     "XTAL input",
 };
 
-extern void udelay(unsigned long usec);
-extern void mdelay(unsigned long usec);
+extern void _udelay(unsigned long usec);
+extern void _mdelay(unsigned long usec);
 //static int reset_count = 0;
 //int set_usb_phy_clk(struct lm_device * plmdev,int is_enable)
 //{
@@ -54,17 +54,16 @@ static int set_usb_phy_clock(amlogic_usb_config_t * usb_cfg)
 
 	if (port == USB_PHY_PORT_A) {
 		port_idx = 0;
-		peri = (usb_peri_reg_t*)CBUS_REG_ADDR(PREI_USB_PHY_REG_A);
+		peri = (usb_peri_reg_t*)PREI_USB_PHY_REG_A;//CBUS_REG_ADDR(PREI_USB_PHY_REG_A);
 	}else if(port == USB_PHY_PORT_B){
 		port_idx = 1;
-		peri = (usb_peri_reg_t*)CBUS_REG_ADDR(PREI_USB_PHY_REG_B);
+		peri = (usb_peri_reg_t*)PREI_USB_PHY_REG_B;//CBUS_REG_ADDR(PREI_USB_PHY_REG_B);
 	}else{
 		printf("usb base address error: %x\n",usb_cfg->base_addr);
 		return -1;
 	}
 	writel((1 << 2),P_RESET1_REGISTER);
 	printf("USB (%d) peri reg base: %x\n",port_idx,(uint32_t)(unsigned long long)peri);
-
 	clk_sel = usb_cfg->clk_selecter;
 	clk_div = usb_cfg->pll_divider;
 
@@ -78,8 +77,7 @@ static int set_usb_phy_clock(amlogic_usb_config_t * usb_cfg)
 	control.b.fsel = 5;	/* PHY default is 24M (5), change to 12M (2) */
 	control.b.por = 1;  /* power off default*/
 	peri->ctrl = control.d32;
-	udelay(time_dly);
-
+	_udelay(time_dly);
 	return 0;
 }
 //call after set clock
@@ -93,8 +91,8 @@ void set_usb_phy_power(amlogic_usb_config_t * usb_cfg,int is_on)
 	usb_ctrl_data_t control;
 	usb_adp_bc_data_t adp_bc;
 
-	peri_a = (usb_peri_reg_t*)CBUS_REG_ADDR(PREI_USB_PHY_REG_A);
-	peri_b = (usb_peri_reg_t*)CBUS_REG_ADDR(PREI_USB_PHY_REG_B);
+	peri_a = (usb_peri_reg_t*)PREI_USB_PHY_REG_A;//CBUS_REG_ADDR(PREI_USB_PHY_REG_A);
+	peri_b = (usb_peri_reg_t*)PREI_USB_PHY_REG_B;//CBUS_REG_ADDR(PREI_USB_PHY_REG_B);
 //	peri_c = (usb_peri_reg_t*)CBUS_REG_ADDR(PREI_USB_PHY_REG_C);
 //	peri_d = (usb_peri_reg_t*)CBUS_REG_ADDR(PREI_USB_PHY_REG_D);
 	peri_c = NULL;
@@ -120,7 +118,7 @@ void set_usb_phy_power(amlogic_usb_config_t * usb_cfg,int is_on)
 		control.b.por = 0;
 		peri->ctrl = control.d32;
 
-		udelay(delay);
+		_udelay(delay);
 		/* read back clock detected flag*/
 		control.d32 = peri->ctrl;
 		if (!control.b.clk_detected) {
@@ -130,7 +128,7 @@ void set_usb_phy_power(amlogic_usb_config_t * usb_cfg,int is_on)
 			adp_bc.d32 = peri->adp_bc;
 			adp_bc.b.aca_enable = 1;
 			peri->adp_bc = adp_bc.d32;
-			udelay(50);
+			_udelay(50);
 			adp_bc.d32 = peri->adp_bc;
 			if (adp_bc.b.aca_pin_float) {
 				printf("USB-B ID detect failed!\n");
@@ -143,7 +141,7 @@ void set_usb_phy_power(amlogic_usb_config_t * usb_cfg,int is_on)
 		control.b.por = 1;
 		peri->ctrl = control.d32;
 	}
-	udelay(delay);
+	_udelay(delay);
 
 }
 const char * bc_name[]={
@@ -167,8 +165,8 @@ static void usb_bc_detect(amlogic_usb_config_t * usb_cfg)
 	usb_adp_bc_data_t adp_bc;
 	int bc_mode = BC_MODE_UNKNOWN;
 
-	peri_a = (usb_peri_reg_t*)CBUS_REG_ADDR(PREI_USB_PHY_REG_A);
-	peri_b = (usb_peri_reg_t*)CBUS_REG_ADDR(PREI_USB_PHY_REG_B);
+	peri_a = (usb_peri_reg_t*)PREI_USB_PHY_REG_A;//CBUS_REG_ADDR(PREI_USB_PHY_REG_A);
+	peri_b = (usb_peri_reg_t*)PREI_USB_PHY_REG_B;//CBUS_REG_ADDR(PREI_USB_PHY_REG_B);
 //	peri_c = (usb_peri_reg_t*)CBUS_REG_ADDR(PREI_USB_PHY_REG_C);
 //	peri_d = (usb_peri_reg_t*)CBUS_REG_ADDR(PREI_USB_PHY_REG_D);
 	peri_c = NULL;
@@ -191,7 +189,7 @@ static void usb_bc_detect(amlogic_usb_config_t * usb_cfg)
 
 	adp_bc.d32 = peri->adp_bc;
 	if (adp_bc.b.device_sess_vld) {
-		mdelay(T_DCD_TIMEOUT);
+		_mdelay(T_DCD_TIMEOUT);
 
 		/* Turn on VDPSRC */
 		adp_bc.b.chrgsel = 0;
@@ -206,7 +204,7 @@ static void usb_bc_detect(amlogic_usb_config_t * usb_cfg)
 			adp_bc.d32 = peri->adp_bc;
 			if (adp_bc.b.chg_det)
 				break;
-			mdelay(1);
+			_mdelay(1);
 		};
 
 		if (adp_bc.b.chg_det) {
@@ -222,7 +220,7 @@ static void usb_bc_detect(amlogic_usb_config_t * usb_cfg)
 				adp_bc.d32 = peri->adp_bc;
 				if (!adp_bc.b.chg_det)
 					break;
-				mdelay(1);
+				_mdelay(1);
 			};
 
 			if (timeout_det <= 0)
@@ -235,7 +233,7 @@ static void usb_bc_detect(amlogic_usb_config_t * usb_cfg)
 			adp_bc.b.vdatsrcenb = 1;
 			peri->adp_bc = adp_bc.d32;
 
-			mdelay(T_VDMSRC_ON);
+			_mdelay(T_VDMSRC_ON);
 			adp_bc.d32 = peri->adp_bc;
 			if (adp_bc.b.chg_det)
 				bc_mode = BC_MODE_DCP;

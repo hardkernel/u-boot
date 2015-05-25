@@ -25,6 +25,8 @@
 #include "dwc_pcd_irq.h"
 #include <timer.h>
 
+#define _mdelay(ms) _udelay(1000*ms)
+
 pcd_struct_t this_pcd;
 dwc_ep_t g_dwc_eps[NUM_EP];
 int dwc_core_init(void)
@@ -34,7 +36,7 @@ int dwc_core_init(void)
 
     snpsid = dwc_read_reg32(DWC_REG_GSNPSID);
 
-    if ((snpsid & 0xFFFFF000) != 0x4F542000) {
+    if ((snpsid & 0xFFFFF000) != 0x4F543000) {
         ERR("Bad value for SNPSID: 0x%08x\n", snpsid);
         return -1;
     }
@@ -197,7 +199,7 @@ static void dwc_otg_core_reset(void)		//Elvis Fool, add 'static'
     /*
      * Wait for 3 PHY Clocks
      */
-    wait_ms(10);
+    _mdelay(10);
 }
 
 static void dwc_otg_enable_common_interrupts(void)

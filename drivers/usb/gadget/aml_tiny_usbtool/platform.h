@@ -91,10 +91,10 @@ typedef __u64    __be64;
 #define PERI_BASE_ADDR               0xc1100000
 #define ISABASE                      0x01000000
 
-#define PREI_USB_PHY_REG              0x2100 //0xC1108400
+#define PREI_USB_PHY_REG              0xc0000000 //0xC1108400
 
-#define PREI_USB_PHY_A_REG3           0x2103
-#define PREI_USB_PHY_B_REG4           0x2104
+#define PREI_USB_PHY_A_REG3           0xc0000000
+#define PREI_USB_PHY_B_REG4           0xc0000020
 
 #define PREI_USB_PHY_A_POR      (1 << 0)
 #define PREI_USB_PHY_B_POR      (1 << 1)
@@ -201,8 +201,8 @@ static void set_usb_phy_config(int cfg);
 void usb_parameter_init(int time_out);
 int chip_utimer_set(int val);
 int chip_watchdog(void);
-#define udelay __udelay
-#define wait_ms(a) udelay(a*1000);
+//#define udelay __udelay
+//#define wait_ms(a) _udelay(a*1000);
 int update_utime(void);
 int get_utime(void);
 //int chip_watchdog(void);

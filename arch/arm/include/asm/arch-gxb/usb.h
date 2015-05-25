@@ -31,6 +31,7 @@
 #define USB_PHY_PORT_C	    (0x100000)
 #define USB_PHY_PORT_D	    (0x140000)
 #define USB_PHY_PORT_MSK	(0x1f0000) */
+
 #define USB_PHY_PORT_A		0x000000
 #define USB_PHY_PORT_B		0x100000
 #define USB_PHY_PORT_C		0x200000
@@ -38,8 +39,8 @@
 #define USB_PHY_PORT_MSK	0x300000
 #define USB_PHY_PORT_MAX	2
 
-#define PREI_USB_PHY_REG_A     0x2200
-#define PREI_USB_PHY_REG_B     0x2208
+#define PREI_USB_PHY_REG_A     0xc0000000
+#define PREI_USB_PHY_REG_B     0xc0000020
 //#define PREI_USB_PHY_REG_C     0x2210
 //#define PREI_USB_PHY_REG_D     0x2218
 typedef struct usb_peri_reg {

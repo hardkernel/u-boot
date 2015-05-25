@@ -60,13 +60,17 @@ extern int submit_bulk_msg(struct usb_device *dev, unsigned long pipe, void *buf
 
 /***********************************************************************
  * wait_ms
- */
+
 void wait_ms(unsigned long ms)
 {
 	while (ms-- > 0)
-		udelay(1000);
+		_udelay(1000);
+}*/
+void _mdelay(unsigned long ms)
+{
+	while (ms-- > 0)
+		_udelay(1000);
 }
-
 
 /***************************************************************************
  * Init USB Device
@@ -229,7 +233,7 @@ int usb_control_msg(struct usb_device *dev, unsigned int pipe,
 	while (timeout--) {
 		if (!((volatile unsigned long)dev->status & USB_ST_NOT_PROC))
 			break;
-		mdelay(1);
+		_mdelay(1);
 	}
 	if (dev->status)
 		return -1;
@@ -254,7 +258,7 @@ int usb_bulk_msg(struct usb_device *dev, unsigned int pipe,
 	while (timeout--) {
 		if (!((volatile unsigned long)dev->status & USB_ST_NOT_PROC))
 			break;
-		mdelay(1);
+		_mdelay(1);
 	}
 	*actual_length = dev->act_len;
 	if (dev->status == 0)
@@ -1015,7 +1019,7 @@ int usb_new_device(struct usb_device *dev)
 		return 1;
 	}
 
-	mdelay(10);	/* Let the SET_ADDRESS settle */
+	_mdelay(10);	/* Let the SET_ADDRESS settle */
 
 	tmp = sizeof(dev->descriptor);
 

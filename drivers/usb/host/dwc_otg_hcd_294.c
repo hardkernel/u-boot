@@ -27,6 +27,8 @@
 #include <malloc.h>
 #include <linux/list.h>
 #include <asm/cache.h>
+#include <asm/arch/timer.h>
+#include <usb.h>
 
 
 #include "dwc_otg_regs_294.h"
@@ -37,7 +39,7 @@
 
 //#define min_t(type,x,y)  ({ type __x = (x); type __y = (y); __x < __y ? __x : __y; })
 
-//#define flush_cpu_cache()  do{ dcache_flush();}while(0)//flush_cache //do{_invalidate_dcache();AV_AHB_bus_invalidate();}while(0)	//for porting
+#define flush_cpu_cache()  do{ flush_dcache_all();}while(0)//flush_cache //do{_invalidate_dcache();AV_AHB_bus_invalidate();}while(0)	//for porting
 
 /* ------------------------------------------------------- */
 #define get_unaligned_16(ptr)				(((__u8 *)ptr)[0] | (((__u8 *)ptr)[1]<<8))
@@ -45,7 +47,7 @@
 //#define get_unaligned(ptr)				(((__u8 *)ptr)[0] | (((__u8 *)ptr)[1]<<8) | (((__u8 *)ptr)[2]<<16) | (((__u8 *)ptr)[3]<<24))
 
 static dwc_otg_device_t dwc_otg_dev;
-extern void wait_ms(unsigned long ms);
+//extern void wait_ms(unsigned long ms);
 static int dwc_otg_port_init(dwc_otg_core_if_t * _core_if);
 static int is_insert = 0;
 /* The bits respond the channel buy_state. */
@@ -57,7 +59,8 @@ void dwc_udelay(int dly)
 	for (i = 0;i<4000;i++) ;
 }
 */
-#define dwc_udelay(dly) udelay(dly)
+#define dwc_udelay(dly) _udelay(dly)
+extern void _mdelay(unsigned long ms);
 /*
  * Host module config
  */
@@ -389,7 +392,7 @@ dwc_otg_core_reset(dwc_otg_core_if_t * _core_if)
     /*
      * Wait for 3 PHY Clocks
      */
-    wait_ms(100);
+    _mdelay(100);
 }
 
 /**
@@ -782,7 +785,7 @@ dwc_otg_hc_cleanup(dwc_otg_core_if_t * _core_if, int hc_num)
     dwc_write_reg32(&hc_regs->hcdma, 0);
     dwc_write_reg32(&hc_regs->hcchar, 0);
 
-    //flush_cpu_cache();
+    flush_cpu_cache();
 
 }
 
@@ -1026,7 +1029,7 @@ dwc_otg_submit_job(struct usb_device *dev, unsigned long pipe, int dir, void *bu
     hc_regs = host_if->hc_regs[hcnum];
   /*
 	if (!is_insert && (!core_if->dma_enable)) {
-		wait_ms(10);
+		_mdelay(10);
 		if (dwc_otg_interrupt(core_if, is_setup,hcnum,buffer) == -2)
 			is_insert = 1;
 		else{
@@ -1080,7 +1083,7 @@ dwc_otg_submit_job(struct usb_device *dev, unsigned long pipe, int dir, void *bu
     hcsplt.d32 = 0;
 
     dwc_write_reg32(&hc_regs->hcsplt, hcsplt.d32);
-    //flush_cpu_cache();
+    flush_cpu_cache();
 
 
     hctsiz.d32 = 0;
@@ -1128,7 +1131,7 @@ dwc_otg_submit_job(struct usb_device *dev, unsigned long pipe, int dir, void *bu
 
 
     dwc_write_reg32(&hc_regs->hcdma, (uint32_t)(unsigned long long) buffer);
-    //flush_cpu_cache();
+    flush_cpu_cache();
 
     hcchar.d32 = dwc_read_reg32(&hc_regs->hcchar);
 
@@ -1158,7 +1161,7 @@ dwc_otg_submit_job(struct usb_device *dev, unsigned long pipe, int dir, void *bu
      * Wait for it to complete
      */
     while (1) {
-        //udelay(20);
+        //_udelay(20);
         /*
          * Check whether the controller is done
          */
@@ -1175,13 +1178,13 @@ dwc_otg_submit_job(struct usb_device *dev, unsigned long pipe, int dir, void *bu
          */
         if (--timeout) {
 		   if (timeout - t8 < 0)
-				udelay(10000);
+				_udelay(10000);
 		   else if(timeout - t4 < 0)
-				udelay(1000);
+				_udelay(1000);
 		   else if(timeout - t2 < 0)
-				udelay(100);
+				_udelay(100);
 		   else
-				udelay(10);
+				_udelay(10);
 		}
         else {
 	    hctsiz.d32 = dwc_read_reg32(&hc_regs->hctsiz);
@@ -1311,7 +1314,6 @@ submit_bulk_msg(struct usb_device *dev, unsigned long pipe, void *buf, int len)
     while (done < len) {
 RETRY:
        dwc_udelay(100);
-
         ret = dwc_otg_submit_job(dev, pipe,
                                  !dir_out,
                                  (__u8 *) buffer + done, max > len - done ? len - done : max, 0);
@@ -1327,7 +1329,6 @@ RETRY:
         }
 
         done += ret;
-
         //usb_dotoggle(dev, epnum, !dir_out);
 
         if (!dir_out && ret < max)      /* short packet */
@@ -1374,7 +1375,7 @@ dwc_otg_flush_tx_fifo(dwc_otg_core_if_t * _core_if, const int _num)
     /*
      * Wait for 3 PHY Clocks
      */
-    wait_ms(1);
+    _mdelay(1);
 }
 
 /**
@@ -1406,7 +1407,7 @@ dwc_otg_flush_rx_fifo(dwc_otg_core_if_t * _core_if)
     /*
      * Wait for 3 PHY Clocks
      */
-    wait_ms(1);
+    _mdelay(1);
 }
 static void
 dwc_otg_set_vbus_power(dwc_otg_core_if_t * _core_if, int is_power_on)
@@ -1629,11 +1630,11 @@ dwc_otg_reset_port(dwc_otg_core_if_t * _core_if)
     hprt0.b.prtrst = 1;
     dwc_write_reg32(_core_if->host_if->hprt0, hprt0.d32);
 
-    wait_ms(60);
+    _mdelay(60);
 
     hprt0.b.prtrst = 0;
     dwc_write_reg32(_core_if->host_if->hprt0, hprt0.d32);
-    wait_ms(20);
+    _mdelay(20);
 
 }
 static int
@@ -1652,7 +1653,7 @@ dwc_otg_port_init(dwc_otg_core_if_t * _core_if)
     hprt0_modify.b.prtenchng = 0;
     hprt0_modify.b.prtovrcurrchng = 0;
 
-    wait_ms(30);
+    _mdelay(30);
 */
 next:
     hprt0.d32 = dwc_read_reg32(_core_if->host_if->hprt0);
@@ -1664,9 +1665,9 @@ next:
         /*
          * clear detect intr
          */
-        wait_ms(30);
+        _mdelay(30);
         dwc_write_reg32(_core_if->host_if->hprt0, hprt0_modify.d32);
-        wait_ms(30);
+        _mdelay(30);
         /*
          * reset port  6.1.1.6
          */
@@ -1674,7 +1675,7 @@ next:
         hprt0_modify.b.prtconndet = 1;
 
     }else{
-		wait_ms(100);
+        _mdelay(100);
 		if (retry--)
 			goto next;
 		INFO("No USB device found !");

@@ -151,6 +151,7 @@ static struct us_data usb_stor[USB_MAX_STOR_DEV];
 #define USB_STOR_TRANSPORT_ERROR  -2
 
 extern int submit_int_msg(struct usb_device *dev, unsigned long pipe, void *buffer, int len, int interval);
+extern void _mdelay(unsigned long ms);
 
 int usb_stor_get_info(struct usb_device *dev, struct us_data *us,
 		      block_dev_desc_t *dev_desc);
@@ -426,19 +427,19 @@ static int usb_stor_BBB_reset(struct us_data *us)
 	}
 
 	/* long wait for reset */
-	mdelay(150);
+	_mdelay(150);
 	debug("BBB_reset result %d: status %lX reset\n",
 	      result, us->pusb_dev->status);
 	pipe = usb_rcvbulkpipe(us->pusb_dev, us->ep_in);
 	result = usb_clear_halt(us->pusb_dev, pipe);
 	/* long wait for reset */
-	mdelay(150);
+	_mdelay(150);
 	debug("BBB_reset result %d: status %lX clearing IN endpoint\n",
 	      result, us->pusb_dev->status);
 	/* long wait for reset */
 	pipe = usb_sndbulkpipe(us->pusb_dev, us->ep_out);
 	result = usb_clear_halt(us->pusb_dev, pipe);
-	mdelay(150);
+	_mdelay(150);
 	debug("BBB_reset result %d: status %lX clearing OUT endpoint\n",
 	      result, us->pusb_dev->status);
 	debug("BBB_reset done\n");
@@ -465,7 +466,7 @@ static int usb_stor_CB_reset(struct us_data *us)
 				 USB_CNTL_TIMEOUT * 5);
 
 	/* long wait for reset */
-	mdelay(1500);
+	_mdelay(1500);
 	debug("CB_reset result %d: status %lX clearing endpoint halt\n",
 	      result, us->pusb_dev->status);
 	usb_clear_halt(us->pusb_dev, usb_rcvbulkpipe(us->pusb_dev, us->ep_in));
@@ -607,7 +608,7 @@ static int usb_stor_CBI_get_status(ccb *srb, struct us_data *us)
 	while (timeout--) {
 		if ((volatile int *)(unsigned long long)us->ip_wanted == NULL)
 			break;
-		mdelay(10);
+		_mdelay(10);
 	}
 	if (us->ip_wanted) {
 		printf("	Did not get interrupt on CBI\n");
@@ -678,7 +679,7 @@ static int usb_stor_BBB_transport(ccb *srb, struct us_data *us)
 		return USB_STOR_TRANSPORT_FAILED;
 	}
 	if (!(us->flags & USB_READY))
-		mdelay(5);
+		_mdelay(5);
 	pipein = usb_rcvbulkpipe(us->pusb_dev, us->ep_in);
 	pipeout = usb_sndbulkpipe(us->pusb_dev, us->ep_out);
 	/* DATA phase + error handling */
@@ -870,7 +871,7 @@ do_retry:
 				srb->sense_buf[12], srb->sense_buf[13]);
 			return USB_STOR_TRANSPORT_FAILED;
 		} else {
-			mdelay(100);
+			_mdelay(100);
 			goto do_retry;
 		}
 		break;
@@ -916,7 +917,6 @@ static int usb_inquiry(ccb *srb, struct us_data *ss)
 static int usb_request_sense(ccb *srb, struct us_data *ss)
 {
 	char *ptr;
-
 	ptr = (char *)srb->pdata;
 	memset(&srb->cmd[0], 0, 12);
 	srb->cmd[0] = SCSI_REQ_SENSE;
@@ -936,7 +936,6 @@ static int usb_request_sense(ccb *srb, struct us_data *ss)
 static int usb_test_unit_ready(ccb *srb, struct us_data *ss)
 {
 	int retries = 10;
-
 	do {
 		memset(&srb->cmd[0], 0, 12);
 		srb->cmd[0] = SCSI_TST_U_RDY;
@@ -958,7 +957,7 @@ static int usb_test_unit_ready(ccb *srb, struct us_data *ss)
 		if ((srb->sense_buf[2] == 0x02) &&
 		    (srb->sense_buf[12] == 0x3a))
 			return -1;
-		mdelay(100);
+		_mdelay(100);
 	} while (retries--);
 
 	return -1;
@@ -1336,9 +1335,9 @@ int usb_stor_get_info(struct usb_device *dev, struct us_data *ss,
 		      block_dev_desc_t *dev_desc)
 {
 	unsigned char perq, modi;
-	ALLOC_CACHE_ALIGN_BUFFER(unsigned long, cap, 2);
+	ALLOC_CACHE_ALIGN_BUFFER(unsigned int, cap, 2);
 	ALLOC_CACHE_ALIGN_BUFFER(unsigned char, usb_stor_buf, 36);
-	unsigned long *capacity, *blksz;
+	unsigned int *capacity, *blksz;
 	ccb *pccb = &usb_ccb;
 
 	pccb->pdata = usb_stor_buf;
@@ -1395,7 +1394,7 @@ int usb_stor_get_info(struct usb_device *dev, struct us_data *ss,
 		cap[1] = 0x200;
 	}
 	ss->flags &= ~USB_READY;
-	debug("Read Capacity returns: 0x%lx, 0x%lx\n", cap[0], cap[1]);
+	debug("Read Capacity returns: 0x%x, 0x%x\n", cap[0], cap[1]);
 #if 0
 	if (cap[0] > (0x200000 * 10)) /* greater than 10 GByte */
 		cap[0] >>= 16;
@@ -1407,7 +1406,7 @@ int usb_stor_get_info(struct usb_device *dev, struct us_data *ss,
 	cap[0] += 1;
 	capacity = &cap[0];
 	blksz = &cap[1];
-	debug("Capacity = 0x%lx, blocksz = 0x%lx\n", *capacity, *blksz);
+	debug("Capacity = 0x%x, blocksz = 0x%x\n", *capacity, *blksz);
 	dev_desc->lba = *capacity;
 	dev_desc->blksz = *blksz;
 	dev_desc->log2blksz = LOG2(dev_desc->blksz);

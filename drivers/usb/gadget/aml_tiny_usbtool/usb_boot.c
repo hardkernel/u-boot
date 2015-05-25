@@ -44,11 +44,11 @@ void set_usb_phy_config(void)
     control.b.por = 1;
     usb_aml_regs->ctrl = control.d32;
 
-    udelay(time_dly);
+    _udelay(time_dly);
     control.b.por = 0;
     usb_aml_regs->ctrl = control.d32;
 
-    udelay(time_dly);
+    _udelay(time_dly);
 }
 
 // static const char __attribute__((aligned(4))) usb_msg[] = "enter usb boot";
