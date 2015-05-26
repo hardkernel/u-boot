@@ -43,7 +43,7 @@ uint64_t storage_init(void)
 			nfio_init();
 			break;
 		default:
-			printf("do nothing!\n");
+			//printf("do nothing!\n");
 			break;
 	}
 	return 0;

@@ -450,6 +450,7 @@ unsigned int ddr_init_pctl(void){
 		wr_reg(DDR1_PCTL_CMDTSTATEN, p_ddr_set->t_pctl0_cmdtstaten);
 	}
 
+#ifndef CONFIG_PXP_EMULATOR
 	wr_reg(DDR0_PUB_ZQ0PR, p_ddr_set->t_pub_zq0pr);
 	wr_reg(DDR0_PUB_ZQ1PR, p_ddr_set->t_pub_zq1pr);
 	wr_reg(DDR0_PUB_ZQ2PR, p_ddr_set->t_pub_zq2pr);
@@ -466,6 +467,7 @@ unsigned int ddr_init_pctl(void){
 	do {
 		_udelay(20);
 	} while(DDR_PGSR0_CHECK());
+#endif
 
 	//DDR0_CMD_TIMER_WAIT
 	if (ddr0_enabled)

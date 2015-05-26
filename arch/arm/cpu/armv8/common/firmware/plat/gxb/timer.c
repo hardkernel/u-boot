@@ -36,10 +36,12 @@ uint32_t get_time(void)
 
 void _udelay(unsigned int us)
 {
+#ifndef CONFIG_PXP_EMULATOR
 	uint32_t t0 = get_time();
 
 	while (get_time() - t0 <= us)
 		;
+#endif
 }
 
 void timer_start(void)

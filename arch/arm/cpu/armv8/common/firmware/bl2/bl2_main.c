@@ -48,15 +48,13 @@
  ******************************************************************************/
 void bl2_main(void)
 {
-	printf("\nEnter bl2_main\n");
+	printf("\n\nBL2 %s. Ver: %s\n\n", build_message, PLAIN_VERSION);
 
 	/* Perform remaining generic architectural setup in S-El1 */
 	bl2_arch_setup();
 
 	/* Perform platform setup in BL1 */
 	bl2_platform_setup();
-
-	printf("BL2 %s\n\r", build_message);
 
 	bl2_load_image();
 

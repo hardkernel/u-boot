@@ -11,6 +11,10 @@ config GXB_P201_V1
 	bool "Support amlogic gxbaby p200(reference) v1 board"
 	default n
 
+config PXP_EMULATOR
+	bool "Support pxp environment"
+	default n
+
 if GXB_SKT_V1
 source "board/amlogic/gxb_skt_v1/Kconfig"
 endif
