@@ -16,6 +16,11 @@
 #include <search.h>
 #include <errno.h>
 
+#ifdef CONFIG_STORE_COMPATIBLE
+	#include <emmc_partitions.h>
+	#include <partition_table.h>
+#endif
+
 #if defined(CONFIG_ENV_SIZE_REDUND) &&  \
 	(CONFIG_ENV_SIZE_REDUND != CONFIG_ENV_SIZE)
 #error CONFIG_ENV_SIZE_REDUND should be the same as CONFIG_ENV_SIZE
@@ -38,13 +43,27 @@ DECLARE_GLOBAL_DATA_PTR;
 __weak int mmc_get_env_addr(struct mmc *mmc, int copy, u32 *env_addr)
 {
 	s64 offset;
+#ifdef  CONFIG_STORE_COMPATIBLE
+	char *name = "env";
+	struct partitions *part_info = NULL;
+#endif
 
+#ifndef CONFIG_STORE_COMPATIBLE
 	offset = CONFIG_ENV_OFFSET;
 #ifdef CONFIG_ENV_OFFSET_REDUND
 	if (copy)
 		offset = CONFIG_ENV_OFFSET_REDUND;
 #endif
 
+#else /* CONFIG_STORE_COMPATIBLE */
+	part_info = find_mmc_partition_by_name(name);
+	if (part_info == NULL) {
+		printf("get partition info failed !!\n");
+		return -1;
+	}
+	offset = part_info->offset;
+	printf("mmc env offset: 0x%llx \n",offset);
+#endif
 	if (offset < 0)
 		offset += mmc->capacity;
 
