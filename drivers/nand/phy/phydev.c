@@ -1108,13 +1108,14 @@ ssize_t show_amlnf_version_info(struct class *class,
 static void show_phydev_info(void)
 {
 	struct amlnand_phydev *phydev = NULL;
-	struct amlnf_partition *partition = NULL;
-	int i = 0;
+	//struct amlnf_partition *partition = NULL;
+	//int i = 0;
 	char *config1, *config2;
 
 	list_for_each_entry(phydev, &nphy_dev_list, list) {
 		if (phydev == NULL)
 			break;
+	#if 0
 		for (i = 0; i < phydev->nr_partitions; i++) {
 			partition = &phydev->partitions[i];
 			aml_nand_msg("%s: name=%s,size=%llx",
@@ -1122,6 +1123,7 @@ static void show_phydev_info(void)
 				partition->name,
 				partition->size);
 		}
+	#endif
 		if (phydev->option & DEV_MULTI_CHIP_MODE)
 			config1 = "multi_chip";
 		else
@@ -1465,8 +1467,8 @@ int amlnand_phydev_init(struct amlnand_chip *aml_chip)
 				tmp_value /= chip_num*plane_num;
 				tmp_value += 1;
 				total_blk = tmp_value * chip_num * plane_num;
-				aml_nand_msg("total_blk =%d", total_blk);
-				aml_nand_msg(" phydev_pre->size =%llx",
+				aml_nand_dbg("total_blk =%d", total_blk);
+				aml_nand_dbg(" phydev_pre->size =%llx",
 					phydev_pre->size);
 				if (phydev_pre == NULL)
 					phydev->offset =
@@ -1475,7 +1477,7 @@ int amlnand_phydev_init(struct amlnand_chip *aml_chip)
 					phydev->offset =
 						total_blk * flash->blocksize +
 						phydev_pre->size;
-				aml_nand_msg("phydev->offset =%llx",
+				aml_nand_dbg("phydev->offset =%llx",
 					phydev->offset);
 			} else {
 				if ((!(phydev->option & DEV_MULTI_PLANE_MODE)
@@ -1567,7 +1569,6 @@ if (!is_phydev_off_adjust()) {
 						offset += phydev->erasesize;
 						continue;
 					}
-					printk(".");
 					start_blk++;
 					offset += phydev->erasesize;
 				} while (start_blk < total_blk);

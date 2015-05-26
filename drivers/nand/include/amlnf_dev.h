@@ -20,7 +20,8 @@
 #define aml_nftl_malloc	aml_nand_malloc
 #define aml_nftl_free	aml_nand_free
 
-#define NAND_LINE	 	do {aml_nand_msg("%s() l-%d", __FUNCTION__, __LINE__);} while(0);
+//#define NAND_LINE	 	do {aml_nand_msg("%s() l-%d", __FUNCTION__, __LINE__);} while(0);
+#define NAND_LINE		do {;} while(0);
 //#define BOOT_LINE	do {aml_nand_msg("%s() l-%d", __FUNCTION__, __LINE__);} while(0);
 #define BOOT_LINE		do {;} while(0);
 //#define PHY_NAND_LINE	do {aml_nand_msg("%s() l-%d", __FUNCTION__, __LINE__);} while(0);

@@ -403,113 +403,26 @@ void pinmux_select_chip(unsigned ce_enable, unsigned rb_enable, unsigned flag)
 
 void set_nand_core_clk(struct hw_controller *controller, int clk_freq)
 {
-#if 0
-	int i, j, unit, best_err, best_freq, best_sel, best_div;
-	int tmp_freq, tmp_div, tmp_err;
-	union nand_core_clk_t clk_cfg;
-	int fclk[7];
-	int div[4] = {4, 3, 5, 7};
-#endif
-	/* NAND uses crystal, 24 or 25 MHz */
-	/* NFC_SET_CORE_PLL(((4<<9) | (1<<8) | 0); */
-
-
-	if (get_cpu_type() == MESON_CPU_MAJOR_ID_GX) {	//dbg code for gx using 24Mhz, fixme.
-		//fixme, dbg code.
-		amlnf_write_reg32(controller->nand_clk_reg, 0x81000201); //24Mhz/1
-		//amlnf_write_reg32(controller->nand_clk_reg, 0x81000245);	//1000Mhz/4 = 200Mhz
+	if (get_cpu_type() == MESON_CPU_MAJOR_ID_GX) {
+		/* basic test code for gxb using 24Mhz, fixme. */
+		//amlnf_write_reg32(controller->nand_clk_reg, 0x81000201); //24Mhz/1
+		if (clk_freq == 200) {
+			/* 1000Mhz/5 = 200Mhz */
+			amlnf_write_reg32(controller->nand_clk_reg, 0x81000245);
+		}
+		else if (clk_freq == 250) {
+			/* 1000Mhz/4 = 250Mhz */
+			amlnf_write_reg32(controller->nand_clk_reg, 0x81000244);
+		} else {
+			/* 1000Mhz/5 = 200Mhz */
+			amlnf_write_reg32(controller->nand_clk_reg, 0x81000245);
+			printk("%s() %d, using default clock setting!\n", __func__, __LINE__);
+		}
 		printk("clk_reg 0x%x\n", AMLNF_READ_REG(controller->nand_clk_reg));
 		return;
+	} else {
+		printk("cpu type can not support!\n");
 	}
-	if (clk_freq  == 160) {
-		/* NAND uses src 0 div by 4, 160 MHz */
-		/* WRITE_CBUS_REG(HHI_NAND_CLK_CNTL, ((0<<9) | (1<<8) | 3)); */
-		/* NFC_SET_CORE_PLL(((0<<9) | (1<<8) | 3)); */
-		/*
-		__raw_writel(controller->nand_clk_reg, ((0<<9) | (1<<8) | 3));
-		*/
-		amlnf_write_reg32(controller->nand_clk_reg,
-			((0<<9) | (1<<8) | 3));
-	}
-
-	if (clk_freq  == 182) {
-		/* NAND uses src 0 div by 4, 160 MHz */
-		/* WRITE_CBUS_REG(HHI_NAND_CLK_CNTL, ((0<<9) | (1<<8) | 3)); */
-		/* NFC_SET_CORE_PLL(((3<<9) | (1<<8) | 1)); */
-		amlnf_write_reg32(controller->nand_clk_reg,
-			((3<<9) | (1<<8) | 1));
-	}
-
-	if (clk_freq  == 212) {
-		/* NAND uses src 0 div by 4, 160 MHz */
-		/* WRITE_CBUS_REG(HHI_NAND_CLK_CNTL, ((0<<9) | (1<<8) | 3)); */
-		/* NFC_SET_CORE_PLL(((1<<9) | (1<<8) | 3)); */
-		amlnf_write_reg32(controller->nand_clk_reg,
-			((1<<9) | (1<<8) | 3));
-	}
-
-	if (clk_freq  == 255) {
-		/* NAND uses src 0 div by 4, 160 MHz */
-		/* WRITE_CBUS_REG(HHI_NAND_CLK_CNTL, ((0<<9) | (1<<8) | 3)); */
-		/* NFC_SET_CORE_PLL(((2<<9) | (1<<8) | 1)); */
-		amlnf_write_reg32(controller->nand_clk_reg,
-			((2<<9) | (1<<8) | 1));
-	}
-
-#if 0
-	unit = 10000; /* 10000 as 1 MHz, 0.1 kHz resolution. */
-	for (i = 0; i < 4; i++)
-		fclk[i] = 2551*unit/div[i];
-
-	fclk[4] = 24*unit;
-	fclk[5] = 0*unit;
-	fclk[6] = 350*unit;
-
-	clk_cfg.d32 = 0;
-
-	if (clk_freq > 0) {
-		clk_cfg.b.clk_en = 1;
-		if (clk_freq <= 1000)
-			clk_freq = clk_freq*unit;
-		else
-			clk_freq = clk_freq*unit/1000;
-
-		best_err = fclk[0];
-		best_freq = 0;
-		best_div = 0;
-		best_sel = 0;
-		for (i = 0; i < 7; i++) {
-			for (j = 1; j < 2; j++) {
-				tmp_div =
-				(fclk[i] + j*(clk_freq - 1))/clk_freq - 1;
-				if (tmp_div < 0)
-					tmp_div = 0;
-				if (tmp_div > 127)
-					continue;
-				tmp_freq = fclk[i] / (tmp_div + 1);
-				tmp_err = abs(clk_freq - tmp_freq);
-				if ((tmp_err < best_err)
-				|| (tmp_err == best_err && tmp_div%2 == 1
-				&& best_div%2 == 0 && best_div > 0)) {
-					best_err = tmp_err;
-					best_freq = tmp_freq;
-					best_div = tmp_div;
-					best_sel = i;
-				}
-			}
-		}
-		clk_cfg.b.clk_div = best_div;
-		clk_cfg.b.clk_sel = best_sel;
-		aml_nand_msg("Set coreclk %3dMHz:sel %d div %2d actual %3dMHz",
-			clk_freq/unit,
-			best_sel,
-			best_div,
-			best_freq/unit);
-	} else
-		clk_cfg.b.clk_en = 0;
-
-	amlnf_write_reg32(controller->nand_clk_reg, clk_cfg.d32);
-#endif
 	return;
 }
 
@@ -522,11 +435,8 @@ void get_sys_clk_rate(struct hw_controller *controller, int *rate)
 
 	cpu_type = get_cpu_type();
 	if (cpu_type >= MESON_CPU_MAJOR_ID_M8) {
-		/* set_nand_core_clk(160); */
-		/* set_nand_core_clk(182); */
-		/* set_nand_core_clk(212); */
+		/* 200-250Mhz */
 		set_nand_core_clk(controller, *rate);
-		/* set_nand_core_clk(255); */
 	}
 	return;
 }

@@ -711,17 +711,17 @@ static int amlnf_get_resource(struct platform_device *pdev)
 		aml_nand_msg("malloc platform data fail\n");
 		return -ENOMEM;
 	}
-	aml_nand_msg("nand io resources:\n");
+	aml_nand_dbg("nand io resources:\n");
 	aml_nand_dev->platform_data->poc_reg = (volatile uint32_t *)POC_CONFIG_REG;
-	aml_nand_msg("poc_reg = %p\n",
+	aml_nand_dbg("poc_reg = %p\n",
 		aml_nand_dev->platform_data->poc_reg);
 
 	aml_nand_dev->platform_data->nf_reg_base = (volatile uint32_t *)NAND_BASE_APB;
-	aml_nand_msg("nf_reg_base = %p\n",
+	aml_nand_dbg("nf_reg_base = %p\n",
 		aml_nand_dev->platform_data->nf_reg_base);
 
 	aml_nand_dev->platform_data->ext_clk_reg = (volatile uint32_t *)NAND_CLK_CNTL;
-	aml_nand_msg("ext_clk_reg = %p\n",
+	aml_nand_dbg("ext_clk_reg = %p\n",
 		aml_nand_dev->platform_data->ext_clk_reg);
 	return 0;
 }

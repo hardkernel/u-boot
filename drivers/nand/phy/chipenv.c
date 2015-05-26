@@ -2171,7 +2171,7 @@ int amlnand_info_init(struct amlnand_chip *aml_chip,
 	struct nand_arg_info *arg_info = (struct nand_arg_info *)info;
 	int ret = 0;
 
-	aml_nand_msg("NAME :  %s", name);
+	aml_nand_dbg("NAME :  %s", name);
 
 	ret = amlnand_check_info_by_name(aml_chip,
 		(u8 *) arg_info ,

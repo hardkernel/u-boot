@@ -520,9 +520,9 @@ static int controller_hw_init(struct hw_controller *controller)
 	int sys_clk_rate, sys_time, bus_cycle, bus_timing;
 	/* int clk_delay; */
 	int ret = 0;
-	nand_cfg_t cfg;
+	//nand_cfg_t cfg;
 
-	sys_clk_rate = 212;
+	sys_clk_rate = 200;
 	get_sys_clk_rate(controller, &sys_clk_rate);
 
 	sys_time = (10000 / sys_clk_rate);
@@ -554,26 +554,14 @@ static int controller_hw_init(struct hw_controller *controller)
 #else
 	bus_cycle  = 6;
 	bus_timing = bus_cycle + 2;
-
-	//fixme, overide for dbg on pxp.
-	bus_cycle = 4;
-	bus_timing = 3;
 #endif
 	//NFC_SET_CFG(controller, 0);
-#if 1
-	cfg.d = 0;
-	p_nand_reg->cfg = cfg.d;
-	cfg.b.bus_cyc = bus_cycle;
-	cfg.b.bus_tim = bus_timing;
-	p_nand_reg->cfg = cfg.d;
-#else
 	NFC_SET_TIMING_ASYC(controller, bus_timing, (bus_cycle - 1));
-#endif //
 	NFC_SEND_CMD(controller, 1<<31);
 
 	aml_nand_msg("init bus_cycle=%d, bus_timing=%d, system=%d.%dns",
 		bus_cycle, bus_timing, sys_time/10, sys_time%10);
-	printk("cfg %x\n", p_nand_reg->cfg);
+	aml_nand_dbg("cfg %x\n", p_nand_reg->cfg);
 
 	return ret;
 }
@@ -589,7 +577,7 @@ static int controller_adjust_timing(struct hw_controller *controller)
 	struct amlnand_chip *aml_chip = controller->aml_chip;
 	struct nand_flash *flash = &(aml_chip->flash);
 	int sys_clk_rate, sys_time, bus_cycle, bus_timing;
-	nand_cfg_t cfg;
+	//nand_cfg_t cfg;
 
 	if (!flash->T_REA || (flash->T_REA < 16))
 		flash->T_REA = 16;
@@ -597,9 +585,9 @@ static int controller_adjust_timing(struct hw_controller *controller)
 		flash->T_RHOH = 15;
 
 	if (flash->T_REA > 16)
-		sys_clk_rate = 212;
+		sys_clk_rate = 200;
 	else
-		sys_clk_rate = 255;
+		sys_clk_rate = 250;
 
 	get_sys_clk_rate(controller, &sys_clk_rate);
 
@@ -634,22 +622,10 @@ static int controller_adjust_timing(struct hw_controller *controller)
 #else /* 0 */
 	bus_cycle  = 6;
 	bus_timing = bus_cycle + 2;
-	//fixme, overide for dbg on pxp.
-	bus_cycle = 4;
-	bus_timing = 3;
-
 #endif /* 0 */
 
-#if 1
-	cfg.d = 0;
-	p_nand_reg->cfg = cfg.d;
-	cfg.b.bus_cyc = bus_cycle;
-	cfg.b.bus_tim = bus_timing;
-	p_nand_reg->cfg = cfg.d;
-#else
 	NFC_SET_CFG(controller , 0);
 	NFC_SET_TIMING_ASYC(controller, bus_timing, (bus_cycle - 1));
-#endif
 
 	if (get_cpu_type() >= MESON_CPU_MAJOR_ID_M8)	{
 #if (AML_CFG_NEWOOB_EN) /* !!!we need modify later. */
@@ -941,7 +917,7 @@ int amlnand_hwcontroller_init(struct amlnand_chip *aml_chip)
 
 	p_nand_reg = (nand_reg_t *) controller->reg_base;
 
-	printk("controller->reg_base %p\n", controller->reg_base);
+	aml_nand_dbg("controller->reg_base %p\n", controller->reg_base);
 	if (!controller->init)
 		controller->init = controller_hw_init;
 	if (!controller->adjust_timing)
