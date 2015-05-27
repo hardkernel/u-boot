@@ -42,7 +42,7 @@
 #define CONFIG_SYS_MAXARGS  64
 #define CONFIG_BOOTARGS "init=/init console=ttyS0,115200 earlyprintk=aml-uart,0xc81004c0 selinux=0"
 
-#define CONFIG_ENV_IS_NOWHERE  1
+//#define CONFIG_ENV_IS_NOWHERE  1
 #define CONFIG_ENV_SIZE   (64*1024)
 #define CONFIG_FIT 1
 #define CONFIG_OF_LIBFDT 1
@@ -64,6 +64,10 @@
 
 /* storage: emmc/nand/sd */
 #define	CONFIG_STORE_COMPATIBLE 1
+#define 	CONFIG_ENV_OVERWRITE
+#define 	CONFIG_CMD_SAVEENV
+#define		CONFIG_ENV_IS_IN_MMC 1
+#define		CONFIG_SYS_MMC_ENV_DEV 1
 #define CONFIG_AML_SD_EMMC 1
 #ifdef	CONFIG_AML_SD_EMMC
 	#define CONFIG_GENERIC_MMC 1
