@@ -18,6 +18,9 @@ MESSAGE_INFO_7 = "possibly incorrect mixed spaces then tabs indentation"
 MESSAGE_INFO_8 = "file should not have carriage returns"
 MESSAGE_INFO_9 = "make sure indent style matches rest of file"
 MESSAGE_INFO_10 = "spacing around &&"
+MESSAGE_INFO_11 = "spacing around ||"
+MESSAGE_INFO_12 = "spacing around >="
+MESSAGE_INFO_13 = "spacing around <="
 
 class fixer(object):
 	def __init__(self, filename):
@@ -97,6 +100,12 @@ class fixer(object):
 			self.message_9()
 		if (self.cur_message.find(MESSAGE_INFO_10) >= 0):
 			self.message_10()
+		if (self.cur_message.find(MESSAGE_INFO_11) >= 0):
+			self.message_11()
+		if (self.cur_message.find(MESSAGE_INFO_12) >= 0):
+			self.message_12()
+		if (self.cur_message.find(MESSAGE_INFO_13) >= 0):
+			self.message_13()
 
 	def message_1(self):
 		# acknowledge bug: can not fix last line with last blank character
@@ -193,13 +202,24 @@ class fixer(object):
 				cur_line_first_noblank_pos = cur_char_pos
 				break
 		no_blank_str = self.cur_line_content[0:cur_line_first_noblank_pos]
-		no_blank_str = no_blank_str.replace("    ", "	")
+		no_blank_str_tmp = no_blank_str.replace("    ", "	")
+		if (no_blank_str_tmp == no_blank_str):
+			no_blank_str = no_blank_str.replace("	", "    ")
 		#print self.cur_line_content
 		self.cur_line_content = no_blank_str + self.cur_line_content[cur_line_first_noblank_pos:cur_line_length]
 		#print self.cur_line_content
 
 	def message_10(self):
 		self.message_space_around("&&")
+
+	def message_11(self):
+		self.message_space_around("||")
+
+	def message_12(self):
+		self.message_space_around(">=")
+
+	def message_13(self):
+		self.message_space_around("<=")
 
 	def message_space_around(self, symbol):
 		replace_symbol = []
