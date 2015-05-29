@@ -28,159 +28,73 @@
 
 #define EFUSE_WRITE 0
 #define EFUSE_READ 1
-#define EFUSE_DUMP 2
-//#define EFUSE_VERSION 3
-#define EFUSE_SECURE_BOOT_SET 6
-#define EFUSE_INFO 7
 
 extern ssize_t efuse_read(char *buf, size_t count, loff_t *ppos );
 extern ssize_t efuse_write(const char *buf, size_t count, loff_t *ppos );
+extern uint32_t efuse_get_max(void);
 extern int32_t meson_trustzone_efuse(struct efuse_hal_api_arg* arg);
 extern uint32_t meson_trustzone_efuse_check(unsigned char *addr);
-
-int __aml_sec_boot_check_efuse(unsigned char *pSRC)
-{
-	return -1;
-}
-
-//Note: each Meson chip should make its own implementation
-//         aml_sec_boot_check_efuse() for EFUSE programming with
-//         secure boot.
-int aml_sec_boot_check_efuse(unsigned char *pSRC)
-	__attribute__((weak, alias("__aml_sec_boot_check_efuse")));
-
-ssize_t __meson_trustzone_efuse_writepattern(const char *buf, size_t count)
-{
-	printf("run weak function\n");
-	return -1;
-}
-ssize_t meson_trustzone_efuse_writepattern(const char *buf, size_t count)
-	__attribute__((weak, alias("__meson_trustzone_efuse_writepattern")));
-
 
 int cmd_efuse(int argc, char * const argv[], char *buf)
 {
 	int i, action = -1;
 	efuseinfo_item_t info;
-	char *title;
-	char *s;
+	uint32_t offset;
+	uint32_t size, max_size;
 	char *end;
 
 	if (strncmp(argv[1], "read", 4) == 0)
 		action=EFUSE_READ;
 	else if(strncmp(argv[1], "write", 5) == 0)
 		action=EFUSE_WRITE;
-	else if(strcmp(argv[1], "secure_boot_set") == 0)
-		action=EFUSE_SECURE_BOOT_SET;
-	/*else if(strcmp(argv[1], "info") == 0)
-		action=EFUSE_INFO;*/
 	else{
 		printf("%s arg error\n", argv[1]);
 		return -1;
 	}
 
+	/*check efuse user data max size*/
+	offset = simple_strtoul(argv[2], &end, 16);
+	size = simple_strtoul(argv[3], &end, 16);
+	printf("%s: offset is %d  size is  %d \n", __func__,offset,size);
+	max_size = efuse_get_max();
+	if (!size) {
+		printf("\n error: size is zero!!!\n");
+		return -1;
+	}
+	if (offset > max_size) {
+		printf("\n error: offset is too large!!!\n");
+		printf("\n offset should be less than %d!\n",max_size);
+		return -1;
+	}
+	if (offset+size > max_size) {
+		printf("\n error: offset + size is too large!!!\n");
+		printf("\n offset + size should be less than %d!\n",max_size);
+		return -1;
+	}
+
 	// efuse read
 	if (action == EFUSE_READ) {
-		title = argv[2];
-		if (efuse_getinfo(title, &info) < 0)
-			return -1;
-
-		memset(buf, 0, EFUSE_BYTES);
-		efuse_read_usr(buf, info.data_len, (loff_t *)&info.offset);
-		printf("%s is: ", title);
-		for (i=0; i<(info.data_len); i++)
+		memset(buf, 0, size);
+		efuse_read_usr(buf, size, (loff_t *)&offset);
+		for (i=0; i<size; i++)
 			printf(":%02x", buf[i]);
 		printf("\n");
 	}
 
 	// efuse write
 	else if(action==EFUSE_WRITE){
-		if (argc<4) {
+		if (argc<5) {
 			printf("arg count error\n");
 			return -1;
 		}
-		title = argv[2];
-		if (efuse_getinfo(title, &info) < 0)
-			return -1;
-		if (!(info.we)) {
-			printf("%s write unsupport now. \n", title);
-			return -1;
-		}
+		memset(buf, 0, size);
 
-		memset(buf, 0, info.data_len);
-		s=argv[3];
-
-#ifdef WRITE_TO_EFUSE_ENABLE
-		//usb_burning
-		if ( !strncmp(title,"user",sizeof("user")) || !strncmp(title,"version",sizeof("version")) ){			 	//efuse write user data(data is data)
-			for (i=0; i<info.data_len; i++) {
-				buf[i] = s ? simple_strtoul(s, &end, 16) : 0;
-				if (s)
-					s = (*end) ? end+1 : end;
-			}
-
-			if (*s) {
-				printf("error: The wriiten data length is too large.\n");
-				return -1;
-			}
-		}
-#else
-		if ( !strncmp(title,"version",sizeof("version"))) {
-			unsigned int ver;
-			ver = simple_strtoul(s, &end, 16);
-			buf[0]=(char)ver;
-		}
-		else{
-			for (i=0; i<info.data_len; i++) {
-				buf[i] = s ? simple_strtoul(s, &end, 16) : 0;
-				if (s)
-					s = (*end) ? end+1 : end;
-			}
-
-			if (*s) {
-				printf("error: The wriiten data length is too large.\n");
-				return -1;
-			}
-		}
-#endif
-
-		if (efuse_write_usr(buf, info.data_len, (loff_t*)&info.offset)<0) {
+		if (efuse_write_usr(buf, size, (loff_t*)&offset)<0) {
 			printf("error: efuse write fail.\n");
 			return -1;
 		}
 		else
 			printf("%s written done.\n", info.title);
-	}
-	else if ((EFUSE_SECURE_BOOT_SET == action))
-	{
-		unsigned long nAddr = 0;
-		if (argc > 2)
-			s = argv[2];
-		else
-			s =getenv("loadaddr");
-
-		if (s)
-			nAddr = simple_strtoul(s, &end, 16);
-		else
-			return -1;
-
-		int nChkVal,nChkAddr;
-		nChkVal = nChkAddr = 0;
-		efuse_read((char *)&nChkVal,sizeof(nChkVal),(loff_t*)&nChkAddr);
-		if (((nChkVal >> 7) & 1) && ((nChkVal >> 6) & 1))
-		{
-			printf("aml log : boot key can not write twice!\n");
-			return -1;
-		}
-
-		if (meson_trustzone_efuse_check((unsigned char *)nAddr)) {
-			printf("aml log : efuse pattern check fail!\n");
-			return -1;
-		}
-		if (meson_trustzone_efuse_writepattern((const char *)nAddr, EFUSE_BYTES)) {
-			printf("aml log : efuse pattern write fail!\n");
-			return -1;
-		}
 	}
 	else{
 		printf("arg error\n");
@@ -204,7 +118,7 @@ int do_efuse(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 
 	return cmd_efuse(argc, argv, buf);
 }
-
+#if 0
 U_BOOT_CMD(
 	efuse,	4,	1,	do_efuse,
 	"efuse version/licence/mac/hdcp/usid read/write or dump raw efuse data commands"
@@ -223,5 +137,18 @@ U_BOOT_CMD(
 	"	   DO NOT TRY THIS FEATURE IF NO CONFIRMATION FROM AMLOGIC IN WRITING\n"
 	"	   OTHERWISE IT WILL CAUSE UNCORRECTABLE DAMAGE TO AMLOGIC CHIPS\n"
 );
+#else
+U_BOOT_CMD(
+	efuse,	5,	1,	do_efuse,
+	"efuse read/write data commands",
+	"[read/write offset size [mem_addr]]\n"
+	"	   [read/wirte] read or write 'size' data from"
+	"				'offset' from efuse user data ;\n"
+	"		 [offset]	the offset byte from the beginning"
+	"        of efuse user data zone;\n"
+	"    [size] data size\n"
+	"	   [mem_addr] the optional argument for 'write'\n"
+);
+#endif
 
 /****************************************************/

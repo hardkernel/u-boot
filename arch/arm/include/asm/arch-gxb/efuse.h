@@ -49,6 +49,7 @@ int efuse_set_versioninfo(efuseinfo_item_t *info);
 int efuse_getinfo(char *title, efuseinfo_item_t *info);
 int efuse_read_usr(char *buf, size_t count, loff_t *ppos);
 int efuse_write_usr(char* buf, size_t count, loff_t* ppos);
+uint32_t efuse_get_max(void);
 
 /*EFUSE_BYTES,EFUSE_DWORDS move to cpu.h in arch/arm/include/asm/arch-mxx/cpu.h */
 // for m6 and after efuse length
@@ -67,6 +68,7 @@ struct efuse_hal_api_arg{
 #define EFUSE_HAL_API_READ	0
 #define EFUSE_HAL_API_WRITE 1
 #define EFUSE_HAL_API_WRITE_PATTERN 2
+#define EFUSE_HAL_API_USER_MAX 3
 
 #define ASSIST_HW_REV                              0x1f53
 

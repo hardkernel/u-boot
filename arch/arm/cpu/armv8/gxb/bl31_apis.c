@@ -92,6 +92,34 @@ int32_t meson_trustzone_efuse(struct efuse_hal_api_arg *arg)
 		return 0;
 }
 
+int32_t meson_trustzone_efuse_get_max(struct efuse_hal_api_arg *arg)
+{
+	int32_t ret;
+	unsigned cmd;
+
+	if (arg->cmd == EFUSE_HAL_API_USER_MAX)
+		cmd = EFUSE_USER_MAX;
+
+	asm __volatile__("" : : : "memory");
+
+	register uint64_t x0 asm("x0") = cmd;
+
+	do {
+		asm volatile(
+		    __asmeq("%0", "x0")
+		    __asmeq("%1", "x0")
+		    "smc    #0\n"
+		    : "=r"(x0)
+		    : "r"(x0));
+	} while (0);
+	ret = x0;
+
+	if (!ret)
+		return -1;
+	else
+		return ret;
+}
+
 ssize_t meson_trustzone_efuse_writepattern(const char *buf, size_t count)
 {
 	struct efuse_hal_api_arg arg;

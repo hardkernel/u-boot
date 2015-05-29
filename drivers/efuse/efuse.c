@@ -39,17 +39,11 @@ extern int printf(const char *fmt, ...);
 
 struct efuse_hal_api_arg;
 extern int32_t meson_trustzone_efuse(struct efuse_hal_api_arg* arg);
+extern int32_t meson_trustzone_efuse_get_max(struct efuse_hal_api_arg *arg);
 
 ssize_t efuse_read(char *buf, size_t count, loff_t *ppos )
 {
 	unsigned pos = *ppos;
-
-	if (pos >= EFUSE_BYTES)
-		return 0;
-	if (count > EFUSE_BYTES - pos)
-		count = EFUSE_BYTES - pos;
-	if (count > EFUSE_BYTES)
-		return -1;
 
 	struct efuse_hal_api_arg arg;
 	unsigned int retcnt;
@@ -277,36 +271,12 @@ int efuse_chk_written(loff_t pos, size_t count)
 int efuse_read_usr(char *buf, size_t count, loff_t *ppos)
 {
 	char data[EFUSE_BYTES];
-	unsigned enc_len;
 	char *pdata = NULL;
-	unsigned pos = (unsigned)*ppos;
-	efuseinfo_item_t info;
 
-	if (pos < 320) {
-		printf("pos is error! pos is less than 320, amlogic part can not read\n");
-		return -1;
-	}
+	memset(data, 0, count);
 
-	if (efuse_getinfo_byPOS(pos, &info) < 0) {
-		printf("not found the position:%d.\n", pos);
-		return -1;
-	}
-	if (count>info.data_len) {
-		printf("data length: %lu is out of EFUSE layout!\n", count);
-		return -1;
-	}
-	if (count == 0) {
-		printf("data length: 0 is error!\n");
-		return -1;
-	}
-
-	enc_len = info.enc_len;
-	memset(efuse_buf, 0, EFUSE_BYTES);
-	memset(data, 0, EFUSE_BYTES);
-
-	//penc = efuse_buf;
 	pdata = data;
-	efuse_read(pdata, enc_len, ppos);
+	efuse_read(pdata, count, ppos);
 
 	memcpy(buf, data, count);
 
@@ -364,6 +334,20 @@ int efuse_write_usr(char* buf, size_t count, loff_t* ppos)
 	efuse_write(efuse_buf, enc_len, ppos);
 
 	return enc_len;
+}
+
+uint32_t efuse_get_max(void)
+{
+	struct efuse_hal_api_arg arg;
+	int ret;
+	arg.cmd=EFUSE_HAL_API_USER_MAX;
+
+	ret = meson_trustzone_efuse_get_max(&arg);
+	if (ret == 0) {
+		printf("ERROR: can not get efuse user max bytes!!!\n");
+		return -1;
+	} else
+		return ret;
 }
 
 int efuse_set_versioninfo(efuseinfo_item_t *info)
