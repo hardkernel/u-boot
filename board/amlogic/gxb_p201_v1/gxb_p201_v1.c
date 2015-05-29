@@ -317,6 +317,11 @@ int board_init(void)
 #ifdef CONFIG_VPU_PRESET
 	vpu_probe();
 #endif
+#ifdef CONFIG_AML_NAND
+	extern int amlnf_init(unsigned char flag);
+	amlnf_init(0);
+
+#endif
 	return 0;
 }
 

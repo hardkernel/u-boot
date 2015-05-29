@@ -2386,7 +2386,7 @@ static void init_dev_para(struct dev_para*dev_para_ptr,struct amlnf_partition *c
 	struct amlnf_partition * partition_ptr =NULL;
 
 	for (j = 0; j < MAX_NAND_PART_NUM; j++) {
-		printf("%s, j = %d\n", __func__, j);
+		//printf("%s, j = %d\n", __func__, j);
 		partition = &(config_init[j]);
 		partition_ptr =& (dev_para_ptr->partitions[partiton_num]);
 		if (partition->mask_flags == dev_flag) {
@@ -2394,9 +2394,9 @@ static void init_dev_para(struct dev_para*dev_para_ptr,struct amlnf_partition *c
 			partition_ptr->size = partition->size;
 			partition_ptr->mask_flags = partition->mask_flags;
 			partiton_num ++;
-			aml_nand_msg("init_dev_para : partition->name %s ", partition->name);
-			aml_nand_msg("init_dev_para : partition->size %llx", partition->size);
-			aml_nand_msg("init_dev_para : partition->mask_flags %d", partition->mask_flags);
+			aml_nand_dbg("init_dev_para : partition->name %s ", partition->name);
+			aml_nand_dbg("init_dev_para : partition->size %llx", partition->size);
+			aml_nand_dbg("init_dev_para : partition->mask_flags %d", partition->mask_flags);
 		}else if(partition == NULL){
 			break;
 		}
@@ -2428,17 +2428,17 @@ static void amlnand_get_dev_num(struct amlnand_chip *aml_chip,struct amlnf_parti
 	for (i=0;tmp_num < device_num;tmp_num++,i++) {
 		dev_para_ptr = &(aml_chip->config_ptr->dev_para[tmp_num]);
 		if (i == 0) {
-			printf("cache!\n");
+			//printf("cache!\n");
 			memcpy((void *)(dev_para_ptr->name), NAND_CACHE_NAME, strlen(NAND_CACHE_NAME));
 			init_dev_para(dev_para_ptr,config_init,STORE_CACHE);
 			dev_para_ptr->option = NAND_DATA_OPTION;
 		}else if(i==1) {
-			printf("code!\n");
+			//printf("code!\n");
 			memcpy((void *)(dev_para_ptr->name), NAND_CODE_NAME, strlen(NAND_CODE_NAME));
 			init_dev_para(dev_para_ptr,config_init,STORE_CODE);
 			dev_para_ptr->option = NAND_CODE_OPTION;
 		}else if(i==2) {
-			printf("data!\n");
+			//printf("data!\n");
 			memcpy((void *)(dev_para_ptr->name), NAND_DATA_NAME, strlen(NAND_DATA_NAME));
 			init_dev_para(dev_para_ptr,config_init,STORE_DATA);
 			dev_para_ptr->option = NAND_DATA_OPTION;

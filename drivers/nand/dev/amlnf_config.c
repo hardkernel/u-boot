@@ -11,7 +11,7 @@ struct amlnf_partition *amlnand_config = NULL;
 static struct partitions * part_table = NULL;
 #define SZ_1M                           0x00100000
 
-struct partitions partition_table[8] = {
+struct partitions partition_table[] = {
 		{
 			.name = "logo",
 			.size = 32*SZ_1M,
@@ -23,23 +23,45 @@ struct partitions partition_table[8] = {
 			.mask_flags = STORE_CODE,
 		},
 		{
+			.name = "dtb",
+			.size = 8*SZ_1M,
+			.mask_flags = STORE_CODE,
+		},
+		{
+			.name = "tee",
+			.size = 8*SZ_1M,
+			.mask_flags = STORE_CODE,
+		},
+		{
+			.name = "crypt",
+			.size = 32*SZ_1M,
+			.mask_flags = STORE_CODE,
+		},
+		{
+			.name = "misc",
+			.size = 32*SZ_1M,
+			.mask_flags = STORE_CODE,
+		},
+#ifdef CONFIG_INSTABOOT
+		{
+			.name = "instaboot",
+			.size = 1024*SZ_1M,
+			.mask_flags = STORE_CODE,
+		},
+#endif
+		{
 			.name = "boot",
 			.size = 32*SZ_1M,
 			.mask_flags = STORE_CODE,
 		},
 		{
-			.name = "dtd",
-			.size = 32*SZ_1M,
-			.mask_flags = STORE_CODE,
-		},
-		{
 			.name = "system",
-			.size = 128*SZ_1M,
+			.size = 1024*SZ_1M,
 			.mask_flags = STORE_CODE,
 		},
 		{
 			.name = "cache",
-			.size = 32*SZ_1M,
+			.size = 512*SZ_1M,
 			.mask_flags = STORE_CACHE,
 		},
 		{
