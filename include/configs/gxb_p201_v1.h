@@ -40,9 +40,12 @@
 
 /* args/envs */
 #define CONFIG_SYS_MAXARGS  64
+#define CONFIG_EXTRA_ENV_SETTINGS \
+		"storeboot=amlnf lread boot 1080000 0 F20000;bootm 1080000\0"
 #define CONFIG_BOOTARGS "init=/init console=ttyS0,115200 earlyprintk=aml-uart,0xc81004c0 selinux=0"
+#define CONFIG_BOOTCOMMAND "run storeboot"
 
-#define CONFIG_ENV_IS_NOWHERE  1
+//#define CONFIG_ENV_IS_NOWHERE  1
 #define CONFIG_ENV_SIZE   (64*1024)
 #define CONFIG_FIT 1
 #define CONFIG_OF_LIBFDT 1
@@ -64,6 +67,9 @@
 
 /* storage: emmc/nand/sd */
 #define	CONFIG_STORE_COMPATIBLE 1
+#define CONFIG_ENV_OVERWRITE
+#define CONFIG_CMD_SAVEENV
+#define CONFIG_ENV_IS_IN_AMLNAND
 #define CONFIG_AML_SD_EMMC 1
 #ifdef	CONFIG_AML_SD_EMMC
 	#define CONFIG_GENERIC_MMC 1
@@ -129,6 +135,8 @@
 #define CONFIG_CMD_MEMORY 1
 #define CONFIG_CMD_FAT 1
 #define CONFIG_CMD_GPIO 1
+#define CONFIG_CMD_RUN
+
 /*file system*/
 #define CONFIG_DOS_PARTITION 1
 #define CONFIG_MMC 1
@@ -140,7 +148,8 @@
 //#define CONFIG_SYS_ICACHE_OFF
 
 /* other functions */
-#define CONFIG_NEED_BL301 	1
+#define CONFIG_NEED_BL301	1
+#define CONFIG_BOOTDELAY	1 //delay 1s
 
 #endif
 

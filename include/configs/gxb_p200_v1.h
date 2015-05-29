@@ -40,7 +40,10 @@
 
 /* args/envs */
 #define CONFIG_SYS_MAXARGS  64
+#define CONFIG_EXTRA_ENV_SETTINGS \
+	"storeboot=\0"
 #define CONFIG_BOOTARGS "init=/init console=ttyS0,115200 earlyprintk=aml-uart,0xc81004c0 selinux=0"
+#define CONFIG_BOOTCOMMAND ""
 
 //#define CONFIG_ENV_IS_NOWHERE  1
 #define CONFIG_ENV_SIZE   (64*1024)
@@ -133,6 +136,8 @@
 #define CONFIG_CMD_MEMORY 1
 #define CONFIG_CMD_FAT 1
 #define CONFIG_CMD_GPIO 1
+#define CONFIG_CMD_RUN
+
 /*file system*/
 #define CONFIG_DOS_PARTITION 1
 #define CONFIG_MMC 1
@@ -144,7 +149,8 @@
 //#define CONFIG_SYS_ICACHE_OFF
 
 /* other functions */
-#define CONFIG_NEED_BL301 	1
+#define CONFIG_NEED_BL301	1
+#define CONFIG_BOOTDELAY	1 //delay 1s
 
 #endif
 
