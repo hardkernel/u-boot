@@ -897,6 +897,8 @@ endif
 	$(Q)cat $(FIP_FOLDER)/bl2_fix.bin $(FIP_FOLDER)/fip.bin > $(FIP_FOLDER)/boot.bin
 	$(Q)$(FIP_FOLDER)/boot_sd.sh $(FIP_FOLDER)/blank_512 $(FIP_FOLDER)/boot.bin $(FIP_FOLDER)/boot_sd.bin
 	@echo '$(FIP_FOLDER)/boot.bin build done!'
+	$(Q)cp $(FIP_FOLDER)/boot.bin $(FIP_FOLDER)/u-boot.bin
+	@echo '$(FIP_FOLDER)/u-boot.bin build done!'
 
 #
 # U-Boot entry point, needed for booting of full-blown U-Boot
@@ -1404,15 +1406,14 @@ distclean: mrproper
 	@rm -f boards.cfg
 	@rm -rf $(buildtree)/*
 	@rm -f $(srctree)/fip/bl2.bin
-ifeq ($(CONFIG_NEED_BL301), y)
 	@rm -f $(srctree)/fip/bl301.bin
-endif
 	@rm -f $(srctree)/fip/bl33.bin
 	@rm -f $(srctree)/fip/fip.bin
 	@rm -f $(srctree)/fip/bl2_fix.bin
 	@rm -f $(srctree)/fip/boot.bin
 	@rm -f $(srctree)/fip/boot_sd.bin
 	@rm -f $(srctree)/fip/bl2.bin.pkg
+	@rm -f $(srctree)/fip/u-boot.bin
 
 backup:
 	F=`basename $(srctree)` ; cd .. ; \
