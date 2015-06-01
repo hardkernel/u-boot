@@ -95,7 +95,7 @@
 static void set_usb_phy_config(int cfg)
 {
 
-	const int time_dly = 5000;
+	const int time_dly = 500;
 	usb_aml_regs_t * usb_aml_regs = (usb_aml_regs_t * )PREI_USB_PHY_REG_BASE;
 	usb_config_data_t config;
 	usb_ctrl_data_t control;

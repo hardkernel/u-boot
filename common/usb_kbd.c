@@ -350,9 +350,9 @@ static int usb_kbd_testc(struct stdio_dev *sdev)
 	 * then we check key-pressed every second (first check may be
 	 * less than 1 second) to improve TFTP booting performance.
 	 */
-	if (net_busy_flag && (get_timer(kbd_testc_tms) < CONFIG_SYS_HZ))
+	if (net_busy_flag && ((get_time()-kbd_testc_tms) < CONFIG_SYS_HZ))
 		return 0;
-	kbd_testc_tms = get_timer(0);
+	kbd_testc_tms = get_time();
 #endif
 	dev = stdio_get_by_name(DEVNAME);
 	usb_kbd_dev = (struct usb_device *)dev->priv;

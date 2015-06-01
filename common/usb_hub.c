@@ -410,7 +410,7 @@ static int usb_hub_configure(struct usb_device *dev)
 		ALLOC_CACHE_ALIGN_BUFFER(struct usb_port_status, portsts, 1);
 		unsigned short portstatus, portchange;
 		int ret;
-		ulong start = get_timer(0);
+		ulong start = get_time();
 
 		/*
 		 * Wait for (whichever finishes first)
@@ -434,7 +434,7 @@ static int usb_hub_configure(struct usb_device *dev)
 				(portstatus & USB_PORT_STAT_CONNECTION))
 				break;
 
-		} while (get_timer(start) < CONFIG_SYS_HZ * 10);
+		} while (get_time()-start < CONFIG_SYS_HZ * 10);
 
 		if (ret < 0)
 			continue;

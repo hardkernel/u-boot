@@ -29,6 +29,8 @@
 #include "usb_pcd.h"
 #include "config.h"
 #include "usb_boot.h"
+#include <asm/arch/timer.h>
+
 
 #define DRIVER_VENDOR_ID	0x1B8E  //Amlogic's VerdorID
 #define DRIVER_PRODUCT_ID	0xC003
@@ -156,13 +158,25 @@ static const char dt_string_vid[DT_STRING_VID_LEN]={
 	'c',
 	0
 };
+#if defined(CONFIG_AML_MESON_8)
+#define _PLATFORM_CHIP_INDEX    '8'
+#elif defined(CONFIG_AML_MESON_6)
+#define _PLATFORM_CHIP_INDEX    '6'
+#elif defined(CONFIG_AML_G9TV)
+#define _PLATFORM_CHIP_INDEX    '9'
+#elif defined(CONFIG_AML_MESON_GX)
+#define _PLATFORM_CHIP_INDEX	'8'
+#else
+#error "chip not supported!"
+#endif// #if defined(CONFIG_AML_MESON_8)
+
 #define DT_STRING_PID_LEN 16
 static const char dt_string_pid[DT_STRING_PID_LEN]={
 	DT_STRING_PID_LEN,
 	USB_DT_STRING,
 	'M',
 	0,
-	'3',
+	_PLATFORM_CHIP_INDEX,
 	0,
 	'-',
 	0,
@@ -185,15 +199,15 @@ static const char dt_string_serial[DT_STRING_SERIAL_LEN]={
 	0,
 	'1',
 	0,
-	'1',
-	0,
-	'0',
-	0,
-	'4',
+	'5',
 	0,
 	'0',
 	0,
 	'6',
+	0,
+	'0',
+	0,
+	'1',
 	0
 };
 int usb_pcd_init(void)
@@ -228,7 +242,7 @@ void usb_parameter_init(int time_out)
 		time_out_val = USB_ROM_LONE_TIMEOUT; // wait PC GetDescriptor command
 	else
 		time_out_val = USB_ROM_SHORT_TIMEOUT; // wait suspend intrrupt
-	time_start = get_timer(0);
+	time_start = get_time();
 	/* clear utimer */
 /*
 	need_check_timeout=get_timer(need_check_timeout)?get_timer(need_check_timeout):1;
@@ -280,7 +294,7 @@ void clean_short_timeout(void)
 int usb_pcd_irq(void)
 {
 	if (need_check_timeout) {
-		if (get_timer(need_check_timeout) > time_out_val) {
+		if (get_time() - time_start > time_out_val) {
 			dwc_otg_power_off_phy();
 			return 2;// return to other device boot
 		}
@@ -360,11 +374,8 @@ void do_gadget_setup( pcd_struct_t *_pcd, struct usb_ctrlrequest * ctrl)
 						usb_memcpy(buff,(void*)dt_string_pid,DT_STRING_PID_LEN);
 						break;
 					case 3://STRING_SERIAL
-						usb_memcpy(buff,(void*)dt_string_serial,DT_STRING_SERIAL_LEN);
-						break;
 					default:
-						USB_ERR("Error string id!\n");
-						buff[0] = 0;
+						usb_memcpy(buff,(void*)dt_string_serial,DT_STRING_SERIAL_LEN);
 						break;
 					}
 				_pcd->buf = buff;
@@ -409,7 +420,7 @@ void do_gadget_setup( pcd_struct_t *_pcd, struct usb_ctrlrequest * ctrl)
  */
 void do_vendor_request( pcd_struct_t *_pcd, struct usb_ctrlrequest * ctrl)
 {
-	u64			value =0;
+	u32			value =0;
 	u16			w_index = ctrl->wIndex;
 	u16			w_value = ctrl->wValue;
 	u16			w_length = ctrl->wLength;
@@ -425,7 +436,7 @@ void do_vendor_request( pcd_struct_t *_pcd, struct usb_ctrlrequest * ctrl)
 		value = (w_value << 16) + w_index;
 		USB_DBG("addr = 0x%08X, size = %d\n\n",value,w_length);
 		if (password_checked()) {
-			_pcd->buf = (char *)value; // copy to dst memory directly
+			_pcd->buf = (char *)(unsigned long long)value; // copy to dst memory directly
 			_pcd->length = w_length;
 		}else{
 			USB_DBG("  password verfiy failed!\n");
@@ -443,7 +454,7 @@ void do_vendor_request( pcd_struct_t *_pcd, struct usb_ctrlrequest * ctrl)
 		USB_DBG("--am req read memory\n");
 				USB_DBG("addr = 0x%08X, size = %d\n\n",value,w_length);
 		if (password_checked()) {
-			usb_memcpy((char *)buff,(char*)value,w_length);
+			usb_memcpy((char *)buff,(char*)(unsigned long long)value,w_length);
 
 			_pcd->buf = buff;
 			_pcd->length = w_length;

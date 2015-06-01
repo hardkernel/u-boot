@@ -365,6 +365,6 @@ void clean_short_timeout(void);
 //int chip_watchdog(void);
 //#define usb_memcpy(dst,src,len) memcpy((void*)dst,(void*)src,(int)len)
 //#define usb_memcpy_32bits(dst,src,len) memcpy((void*)dst,(void*)src,(int)len)
-unsigned int get_time(void);
+//unsigned int get_time(void);
 
 #endif
