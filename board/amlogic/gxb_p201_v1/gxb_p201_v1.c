@@ -299,7 +299,7 @@ struct amlogic_usb_config g_usb_config_gx_skt_b={
 	NULL,//gpio_set_vbus_power, //set_vbus_power
 	NULL,
 };
-struct amlogic_usb_config g_usb_config_m6_skt_h={
+struct amlogic_usb_config g_usb_config_gx_skt_h={
 	USB_PHY_CLK_SEL_XTAL,
 	1, //PLL divider: (clock/12 -1)
 	CONFIG_M8_USBPORT_BASE_A,
@@ -311,8 +311,11 @@ struct amlogic_usb_config g_usb_config_m6_skt_h={
 
 int board_init(void)
 {
+	/*Power on GPIOAO_2 for VCC_5V*/
+	clrbits_le32(P_AO_GPIO_O_EN_N, ((1<<2)|(1<<18)));
 	#ifdef CONFIG_USB_DWC_OTG_HCD
 	board_usb_init(&g_usb_config_gx_skt_b,BOARD_USB_MODE_HOST);
+	board_usb_init(&g_usb_config_gx_skt_h,BOARD_USB_MODE_CHARGER);
 	#endif /*CONFIG_USB_DWC_OTG_HCD*/
 #ifdef CONFIG_VPU_PRESET
 	vpu_probe();
@@ -320,7 +323,6 @@ int board_init(void)
 #ifdef CONFIG_AML_NAND
 	extern int amlnf_init(unsigned char flag);
 	amlnf_init(0);
-
 #endif
 	return 0;
 }
