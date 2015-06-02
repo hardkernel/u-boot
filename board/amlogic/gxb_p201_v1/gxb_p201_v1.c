@@ -259,7 +259,16 @@ int board_early_init_f(void){
 
 #ifdef CONFIG_USB_DWC_OTG_HCD
 #include <asm/arch/usb.h>
-
+/*
+static void gpio_set_vbus_power(char is_power_on)
+{
+	if (is_power_on) {
+		setbits_le32(PREG_PAD_GPIO0_EN_N, 1<<24);
+		setbits_le32(PREG_PAD_GPIO0_O, 1<<24);
+	} else {
+	}
+}
+*/
 static int usb_charging_detect_call_back(char bc_mode)
 {
 	switch (bc_mode) {
@@ -314,6 +323,7 @@ int board_init(void)
 	/*Power on GPIOAO_2 for VCC_5V*/
 	clrbits_le32(P_AO_GPIO_O_EN_N, ((1<<2)|(1<<18)));
 	#ifdef CONFIG_USB_DWC_OTG_HCD
+	board_usb_init(&g_usb_config_gx_skt_a,BOARD_USB_MODE_HOST);
 	board_usb_init(&g_usb_config_gx_skt_b,BOARD_USB_MODE_HOST);
 	board_usb_init(&g_usb_config_gx_skt_h,BOARD_USB_MODE_CHARGER);
 	#endif /*CONFIG_USB_DWC_OTG_HCD*/

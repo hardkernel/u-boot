@@ -261,6 +261,15 @@ int board_early_init_f(void){
 #ifdef CONFIG_USB_DWC_OTG_HCD
 #include <asm/arch/usb.h>
 
+static void gpio_set_vbus_power(char is_power_on)
+{
+	if (is_power_on) {
+		setbits_le32(PREG_PAD_GPIO0_EN_N, 1<<24);
+		setbits_le32(PREG_PAD_GPIO0_O, 1<<24);
+	} else {
+	}
+}
+
 static int usb_charging_detect_call_back(char bc_mode)
 {
 	switch (bc_mode) {
@@ -289,7 +298,7 @@ struct amlogic_usb_config g_usb_config_gx_skt_a={
 	1, //PLL divider: (clock/12 -1)
 	CONFIG_M8_USBPORT_BASE_A,
 	USB_ID_MODE_SW_HOST,
-	NULL,//gpio_set_vbus_power, //set_vbus_power
+	gpio_set_vbus_power, //set_vbus_power
 	NULL,
 };
 struct amlogic_usb_config g_usb_config_gx_skt_b={
@@ -314,8 +323,8 @@ int board_init(void)
 {
 #ifdef CONFIG_USB_DWC_OTG_HCD
 	//setbits_le32(PREG_PAD_GPIO0_EN_N, 1<<24);
-	//setbits_le32(PREG_PAD_GPIO0_O, 1<24);
-	//board_usb_init(&g_usb_config_gx_skt_a,BOARD_USB_MODE_HOST);
+	//setbits_le32(PREG_PAD_GPIO0_O, 1<<24);
+	board_usb_init(&g_usb_config_gx_skt_a,BOARD_USB_MODE_HOST);
 	board_usb_init(&g_usb_config_gx_skt_b,BOARD_USB_MODE_HOST);
 	board_usb_init(&g_usb_config_gx_skt_h,BOARD_USB_MODE_CHARGER);
 #endif /*CONFIG_USB_DWC_OTG_HCD*/
