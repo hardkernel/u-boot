@@ -108,7 +108,9 @@ uint64_t storage_load(uint64_t src, uint64_t des, uint64_t size, const char * im
 		default:
 			break;
 	}
+#ifdef BL2_ENABLE_MMU
 	inv_dcache_range(des, size);
+#endif
 	return 0;
 }
 

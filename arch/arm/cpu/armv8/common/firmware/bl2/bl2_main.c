@@ -48,7 +48,7 @@
  ******************************************************************************/
 void bl2_main(void)
 {
-	printf("\n\nBL2 %s. Ver: %s\n\n", build_message, PLAIN_VERSION);
+	printf("\n\nBL2 %s. Ver: %s @ %s\n\n", build_message, PLAIN_VERSION, CONFIG_SYS_CONFIG_NAME);
 
 	/* Perform remaining generic architectural setup in S-El1 */
 	bl2_arch_setup();

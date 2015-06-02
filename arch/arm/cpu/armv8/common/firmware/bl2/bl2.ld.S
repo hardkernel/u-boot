@@ -57,7 +57,7 @@ SECTIONS
          * read-only, executable.  No RW data from the next section must
          * creep in.  Ensure the rest of the current memory page is unused.
          */
-        . = NEXT(4096);
+        . = NEXT(BL2_ALIGN);
         __RO_END__ = .;
     } >RAM
 
@@ -99,7 +99,7 @@ SECTIONS
      * are not mixed with normal data.  This is required to set up the correct
      * memory attributes for the coherent data page tables.
      */
-    coherent_ram (NOLOAD) : ALIGN(4096) {
+    coherent_ram (NOLOAD) : ALIGN(BL2_ALIGN) {
         __COHERENT_RAM_START__ = .;
         *(tzfw_coherent_mem)
         __COHERENT_RAM_END_UNALIGNED__ = .;
@@ -108,7 +108,7 @@ SECTIONS
          * as device memory.  No other unexpected data must creep in.
          * Ensure the rest of the current memory page is unused.
          */
-        . = NEXT(4096);
+        . = NEXT(BL2_ALIGN);
         __COHERENT_RAM_END__ = .;
     } >RAM
 

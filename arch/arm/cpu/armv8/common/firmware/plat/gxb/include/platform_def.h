@@ -123,6 +123,9 @@
 //#define BL2_LIMIT			(TZRAM_BASE + TZRAM_SIZE)
 #define BL2_LIMIT			(TZRAM_BASE + 0XC000) //48KB
 
+#define BL2_ALIGN			(16) //default 4K
+//#define BL2_ENABLE_MMU
+
 /*******************************************************************************
  * Load address of BL3-0 in the ${PLAT} port
  * BL3-0 is loaded to the same place as BL3-1.  Once BL3-0 is transferred to the

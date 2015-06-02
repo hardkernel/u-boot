@@ -1410,6 +1410,10 @@ distclean: mrproper
 	@rm -f $(srctree)/fip/bl301.bin
 	@rm -f $(srctree)/fip/bl33.bin
 	@rm -f $(srctree)/fip/fip.bin
+	@rm -f $(srctree)/fip/bl2_fix.bin
+	@rm -f $(srctree)/fip/boot.bin
+	@rm -f $(srctree)/fip/boot_sd.bin
+	@rm -f $(srctree)/fip/bl2.bin.pkg
 	@rm -f $(srctree)/fip/u-boot.bin
 	@rm -f $(srctree)/fip/u-boot.bin.*
 

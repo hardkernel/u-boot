@@ -38,31 +38,19 @@
 #include "../plat_def.h"
 #include <runtime_svc.h>
 #include <arch_helpers.h>
+#include <asm/arch/watchdog.h>
+#include <stdio.h>
 
 extern int console_puts(const char *s);
 extern void console_put_hex(unsigned long data,unsigned int bitlen);
 
+#ifdef BL2_ENABLE_MMU
 /*
  * Table of regions to map using the MMU.
  * This doesn't include Trusted RAM as the 'mem_layout' argument passed to
  * configure_mmu_elx() will give the available subset of that,
  */
 static const mmap_region_t plat_mmap[] = {
-#if 0
-	{ TZROM_BASE,		TZROM_SIZE,		MT_MEMORY | MT_RO | MT_SECURE },
-	{ MHU_SECURE_BASE,	MHU_SECURE_SIZE,	(MHU_PAYLOAD_CACHED ? MT_MEMORY : MT_DEVICE)
-								  | MT_RW | MT_SECURE },
-//	{ TZRAM_BASE,		TZRAM_SIZE,		MT_MEMORY | MT_RW | MT_SECURE },  /* configure_mmu() meminfo arg sets subset of this */
-	{ FLASH_BASE,		FLASH_SIZE,		MT_MEMORY | MT_RO | MT_SECURE },
-	{ EMMC_BASE,		EMMC_SIZE,		MT_MEMORY | MT_RO | MT_SECURE },
-	{ PSRAM_BASE,		PSRAM_SIZE,		MT_MEMORY | MT_RW | MT_SECURE }, /* Used for 'TZDRAM' */
-	{ IOFPGA_BASE,		IOFPGA_SIZE,		MT_DEVICE | MT_RW | MT_SECURE },
-//	{ NSROM_BASE,		NSROM_SIZE,		MT_MEMORY | MT_RW | MT_NS },	 /* Eats a page table so leave it out for now */
-	{ DEVICE0_BASE,		DEVICE0_SIZE,		MT_DEVICE | MT_RW | MT_SECURE },
-	{ NSRAM_BASE,		NSRAM_SIZE,		MT_MEMORY | MT_RW | MT_NS },
-	{ DEVICE1_BASE,		DEVICE1_SIZE,		MT_DEVICE | MT_RW | MT_SECURE },
-	{ DRAM_BASE,		DRAM_SIZE,		MT_MEMORY | MT_RW | MT_NS },
-#endif
 	{ MAILBOX_START,		MAILBOX_SIZE,		MT_DEVICE | MT_RW | MT_SECURE },
 	{ TZROM_BASE,		TZROM_SIZE,		MT_MEMORY | MT_RO | MT_SECURE },
 	{ DRAM_BASE,		DRAM_SIZE,		MT_MEMORY | MT_RW | MT_NS },
@@ -101,7 +89,7 @@ static const mmap_region_t plat_mmap[] = {
 /* Define EL1 and EL3 variants of the function initialising the MMU */
 DEFINE_CONFIGURE_MMU_EL(1)
 DEFINE_CONFIGURE_MMU_EL(3)
-
+#endif
 
 unsigned long plat_get_ns_image_entrypoint(void)
 {
@@ -122,14 +110,8 @@ uint64_t plat_get_syscnt_freq(void)
 }
 
 void plat_report_exception(void){
-	console_puts("Enter exception!\n");
-	console_puts("Value: 0x");
-	uint64_t esr_val = read_esr_el1();
-	//__asm__ volatile("msr %0, esr_el1\n" : "=r"(esr_val));
-	//__asm__ volatile("msr %0, esr_el1\n" :"=r"(esr_val));
-	console_put_hex(esr_val, 32);
-	console_puts("\n");
-
+	printf("Enter exception!\nValue: 0x%8x\n", read_esr_el1());
+	reset_system();
 	/*never return*/
 	while (1) ;
 }

@@ -34,7 +34,6 @@ PLAT_BL_COMMON_SOURCES	:=	drivers/arm/serial/serial.c		\
 				drivers/io/io_fip.c               \
 				drivers/io/io_memmap.c            \
 				lib/mmio.c                        \
-				lib/aarch64/xlat_tables.c         \
 				lib/aarch64/sysreg_helpers.S      \
 				plat/common/aarch64/plat_common.c \
 				plat/${PLAT}/plat_io_storage.c
