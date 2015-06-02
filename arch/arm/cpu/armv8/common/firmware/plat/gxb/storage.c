@@ -91,7 +91,7 @@ uint64_t storage_load(uint64_t src, uint64_t des, uint64_t size, const char * im
 			break;
 #if defined(CONFIG_AML_NAND)
 		case BOOT_DEVICE_NAND:
-			//nf_read(boot_device, src, des, size);
+			nf_read(boot_device, src, des, size);
 			break;
 #endif //CONFIG_AML_NAND
 		case BOOT_DEVICE_SPI:

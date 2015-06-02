@@ -892,17 +892,13 @@ boot.bin: bl2.bin bl301.bin fip.bin
 else
 boot.bin: bl2.bin fip.bin
 endif
-	$(Q)$(srctree)/tools/gx_boot pkg $(FIP_FOLDER)/bl2.bin
-	$(Q)$(srctree)/tools/gx_boot spl $(FIP_FOLDER)/bl2_fix.bin $(FIP_FOLDER)/bl2.bin.pkg
-	$(Q)cat $(FIP_FOLDER)/bl2_fix.bin $(FIP_FOLDER)/fip.bin > $(FIP_FOLDER)/boot.bin
-	$(Q)$(FIP_FOLDER)/boot_sd.sh $(FIP_FOLDER)/blank_512 $(FIP_FOLDER)/boot.bin $(FIP_FOLDER)/boot_sd.bin
 	$(Q)$(FIP_FOLDER)/bl2_fix.sh $(FIP_FOLDER)/bl2.bin $(FIP_FOLDER)/zero_tmp $(FIP_FOLDER)/bl2_new.bin
 	$(Q)cat $(FIP_FOLDER)/bl2_new.bin  $(FIP_FOLDER)/fip.bin > $(FIP_FOLDER)/boot_new.bin
 	$(Q)$(FIP_FOLDER)/aml_encrypt_$(SOC) --bootsig --input $(FIP_FOLDER)/boot_new.bin --output $(FIP_FOLDER)/u-boot.bin
 ifeq ($(CONFIG_AML_CRYPTO_UBOOT), y)
 	$(Q)$(FIP_FOLDER)/aml_encrypt_$(SOC) --bootsig --input $(FIP_FOLDER)/boot_new.bin --amluserkey $(srctree)/board/$(BOARDDIR)/aml-user-key.sig --aeskey enable --output $(FIP_FOLDER)/u-boot.bin.encrypt
-	@rm -f $(FIP_FOLDER)/bl2_new.bin $(FIP_FOLDER)/boot_new.bin
 endif
+	@rm -f $(FIP_FOLDER)/bl2_new.bin $(FIP_FOLDER)/boot_new.bin
 	@echo '$(FIP_FOLDER)/u-boot.bin build done!'
 
 #
@@ -1414,11 +1410,8 @@ distclean: mrproper
 	@rm -f $(srctree)/fip/bl301.bin
 	@rm -f $(srctree)/fip/bl33.bin
 	@rm -f $(srctree)/fip/fip.bin
-	@rm -f $(srctree)/fip/bl2_fix.bin
-	@rm -f $(srctree)/fip/boot.bin
-	@rm -f $(srctree)/fip/boot_sd.bin
-	@rm -f $(srctree)/fip/bl2.bin.pkg
 	@rm -f $(srctree)/fip/u-boot.bin
+	@rm -f $(srctree)/fip/u-boot.bin.*
 
 backup:
 	F=`basename $(srctree)` ; cd .. ; \
