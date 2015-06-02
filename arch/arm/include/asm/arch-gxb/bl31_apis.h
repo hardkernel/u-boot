@@ -30,6 +30,7 @@
 
 #define GET_SHARE_MEM_INPUT_BASE		0x82000020
 #define GET_SHARE_MEM_OUTPUT_BASE		0x82000021
+#define GET_REBOOT_REASON		0x82000022
 
 /* SECUREOS DEFINITION*/
 /* SMC Identifiers for non-secure world functions */
@@ -69,5 +70,6 @@ struct sram_hal_api_arg {
 #define JTAG_A53_AO    2
 #define JTAG_A53_EE 3
 void aml_set_jtag_state(unsigned state, unsigned select);
+unsigned aml_get_reboot_reason(void);
 
 #endif

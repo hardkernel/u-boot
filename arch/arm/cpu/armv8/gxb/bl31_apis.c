@@ -219,3 +219,18 @@ void aml_set_jtag_state(unsigned state, unsigned select)
 		"smc    #0\n"
 		: : "r" (command), "r"(select));
 }
+
+unsigned aml_get_reboot_reason(void)
+{
+	unsigned reason;
+	uint64_t ret;
+
+	register uint64_t x0 asm("x0") = GET_REBOOT_REASON;
+	asm volatile(
+		__asmeq("%0", "x0")
+		"smc #0\n"
+		:"+r"(x0));
+		ret = x0;
+		reason = (unsigned)(ret&0xffffffff);
+		return reason;
+}
