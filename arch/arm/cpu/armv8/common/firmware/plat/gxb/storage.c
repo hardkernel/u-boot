@@ -38,10 +38,12 @@ uint64_t storage_init(void)
 	uint64_t boot_device = 0;
 	boot_device = get_boot_device();
 	switch (boot_device) {
+#if defined(CONFIG_AML_NAND)
 		case BOOT_DEVICE_NAND:
 			printf( "NAND init\n");
 			nfio_init();
 			break;
+#endif //CONFIG_AML_NAND
 		default:
 			//printf("do nothing!\n");
 			break;
@@ -62,9 +64,11 @@ uint64_t storage_load(uint64_t src, uint64_t des, uint64_t size, const char * im
 		case BOOT_DEVICE_EMMC:
 			device_name = "eMMC";
 			break;
+#if defined(CONFIG_AML_NAND)
 		case BOOT_DEVICE_NAND:
 			device_name = "NAND";
 			break;
+#endif //CONFIG_AML_NAND
 		case BOOT_DEVICE_SPI:
 			device_name = "SPI";
 			break;
@@ -85,9 +89,11 @@ uint64_t storage_load(uint64_t src, uint64_t des, uint64_t size, const char * im
 		case BOOT_DEVICE_EMMC:
 			sdio_read_data(boot_device,src, des, size);
 			break;
+#if defined(CONFIG_AML_NAND)
 		case BOOT_DEVICE_NAND:
-			nf_read(boot_device, src, des, size);
+			//nf_read(boot_device, src, des, size);
 			break;
+#endif //CONFIG_AML_NAND
 		case BOOT_DEVICE_SPI:
 			spi_read(src, des, size);
 			break;

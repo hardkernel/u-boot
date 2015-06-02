@@ -31,6 +31,9 @@
 #define NEED_BL32 CONFIG_NEED_BL32
 #define NEED_BL301 CONFIG_NEED_BL301
 
+#define TOC_HEADER_NAME             (0xAA640001)
+#define TOC_HEADER_SERIAL_NUMBER    (0x12345678)
+
 #define	_UUID_NODE_LEN		6
 
 struct uuid {
@@ -111,7 +114,8 @@ void bl2_load_image(void);
 void parse_blx(image_info_t *image_data,
 				entry_point_info_t *entry_point_info,
 				unsigned int addr,
-				unsigned int length);
+				unsigned int length,
+				unsigned int);
 
 void process_bl30x(image_info_t *image_data,
 				entry_point_info_t *entry_point_info,

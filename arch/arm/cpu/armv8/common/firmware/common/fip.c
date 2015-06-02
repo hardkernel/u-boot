@@ -37,22 +37,32 @@
 #include <asm/arch/watchdog.h>
 #include <timer.h>
 
+static int aml_check(unsigned long pBuffer,unsigned int nLength,unsigned int nAESFlag);
+
 void bl2_load_image(void){
 	//meminfo_t *bl2_tzram_layout;
 	bl31_params_t *bl2_to_bl31_params;
 	entry_point_info_t *bl31_ep_info;
 	//meminfo_t bl33_mem_info;
+	unsigned int * pCHK = (unsigned int *)FM_FIP_HEADER_LOAD_ADDR;
+	unsigned int nAESFlag = 1;
 
 	/*load fip header*/
 	aml_fip_header_t *fip_header;
 	fip_header = (aml_fip_header_t *)(uint64_t)FM_FIP_HEADER_LOAD_ADDR;
 	storage_load(BL2_SIZE, (uint64_t)fip_header, sizeof(aml_fip_header_t), "fip header");
+	if (TOC_HEADER_NAME == *pCHK && TOC_HEADER_SERIAL_NUMBER == *(pCHK+1))
+	{
+		nAESFlag = 0;
+	}
+
+	aml_check(FM_FIP_HEADER_LOAD_ADDR,sizeof(aml_fip_header_t),nAESFlag);
 
 	/*load and process bl30*/
 	image_info_t bl30_image_info;
 	entry_point_info_t bl30_ep_info;
 	storage_load(BL2_SIZE + (fip_header->bl30_entry.offset), FM_BL30_LOAD_ADDR, (fip_header->bl30_entry.size), "bl30");
-	parse_blx(&bl30_image_info, &bl30_ep_info, FM_BL30_LOAD_ADDR, (fip_header->bl30_entry.size));
+	parse_blx(&bl30_image_info, &bl30_ep_info, FM_BL30_LOAD_ADDR, (fip_header->bl30_entry.size),nAESFlag);
 	/*process bl30*/
 	process_bl30x(&bl30_image_info, &bl30_ep_info, "bl30");
 	printf("BL30 addr: 0x%8x\n", bl30_image_info.image_base);
@@ -63,7 +73,7 @@ void bl2_load_image(void){
 	image_info_t bl301_image_info;
 	entry_point_info_t bl301_ep_info;
 	storage_load(BL2_SIZE + (fip_header->bl301_entry.offset), FM_BL301_LOAD_ADDR, (fip_header->bl301_entry.size), "bl301");
-	parse_blx(&bl301_image_info, &bl301_ep_info, FM_BL301_LOAD_ADDR, (fip_header->bl301_entry.size));
+	parse_blx(&bl301_image_info, &bl301_ep_info, FM_BL301_LOAD_ADDR, (fip_header->bl301_entry.size),nAESFlag);
 	/*process bl301*/
 	process_bl30x(&bl301_image_info, &bl301_ep_info, "bl301");
 	printf("BL301 addr: 0x%8x\n", bl301_image_info.image_base);
@@ -76,7 +86,7 @@ void bl2_load_image(void){
 	/* Set the X0 parameter to bl31 */
 	bl31_ep_info->args.arg0 = (unsigned long)bl2_to_bl31_params;
 	storage_load(BL2_SIZE + (fip_header->bl31_entry.offset), FM_BL31_LOAD_ADDR, (fip_header->bl31_entry.size), "bl31");
-	parse_blx(bl2_to_bl31_params->bl31_image_info, bl31_ep_info, FM_BL31_LOAD_ADDR, (fip_header->bl31_entry.size));
+	parse_blx(bl2_to_bl31_params->bl31_image_info, bl31_ep_info, FM_BL31_LOAD_ADDR, (fip_header->bl31_entry.size),nAESFlag);
 	bl2_plat_set_bl31_ep_info(bl2_to_bl31_params->bl31_image_info, bl31_ep_info);
 	printf("BL31 addr: 0x%8x\n", bl2_to_bl31_params->bl31_image_info->image_base);
 	printf("BL31 size: 0x%8x\n", bl2_to_bl31_params->bl31_image_info->image_size);
@@ -95,7 +105,7 @@ void bl2_load_image(void){
 	bl2_plat_get_bl32_meminfo(&bl32_mem_info);
 	storage_load(BL2_SIZE + fip_header->bl32_entry.offset, FM_BL32_LOAD_ADDR, fip_header->bl32_entry.size, "bl32");
 	parse_blx(bl2_to_bl31_params->bl32_image_info, bl2_to_bl31_params->bl32_ep_info,
-				FM_BL32_LOAD_ADDR, fip_header->bl32_entry.size);
+				FM_BL32_LOAD_ADDR, fip_header->bl32_entry.size,nAESFlag);
 	bl2_plat_set_bl32_ep_info(bl2_to_bl31_params->bl32_image_info, bl2_to_bl31_params->bl32_ep_info);
 	printf("BL32 addr: 0x%8x\n", bl2_to_bl31_params->bl32_image_info->image_base);
 	printf("BL32 size: 0x%8x\n", bl2_to_bl31_params->bl32_image_info->image_size);
@@ -104,7 +114,7 @@ void bl2_load_image(void){
 	/*load and process bl33*/
 	storage_load(BL2_SIZE + fip_header->bl33_entry.offset, FM_BL33_LOAD_ADDR, fip_header->bl33_entry.size, "bl33");
 	parse_blx(bl2_to_bl31_params->bl33_image_info, bl2_to_bl31_params->bl33_ep_info,
-				FM_BL33_LOAD_ADDR, fip_header->bl33_entry.size);
+				FM_BL33_LOAD_ADDR, fip_header->bl33_entry.size,nAESFlag);
 	//bl2_plat_get_bl33_meminfo(&bl33_mem_info);
 	bl2_plat_set_bl33_ep_info(bl2_to_bl31_params->bl33_image_info, bl2_to_bl31_params->bl33_ep_info);
 	printf("BL33 addr: 0x%8x\n", bl2_to_bl31_params->bl33_image_info->image_base);
@@ -121,6 +131,7 @@ void bl2_load_image(void){
 	 * the BL32 (if present) and BL33 software images will be passed to
 	 * BL31 as an argument.
 	 */
+
 #if 1
 	smc(RUN_IMAGE, (unsigned long)bl31_ep_info, 0, 0, 0, 0, 0, 0);
 #else
@@ -132,17 +143,31 @@ void bl2_load_image(void){
 #endif
 }
 
+static int aml_check(unsigned long pBuffer,unsigned int nLength,unsigned int nAESFlag)
+{
+	int nReturn = aml_data_check(pBuffer,nLength,nAESFlag);
+	if (nReturn)
+	{
+		printf("aml log : SIG CHK : %d for address 0x%08X\n",nAESFlag,pBuffer);
+		//while(1);
+	}
+
+	return nReturn;
+}
+
 /*blx header parse function*/
 void parse_blx(image_info_t *image_data,
 				entry_point_info_t *entry_point_info,
 				unsigned int addr,
-				unsigned int length)
+				unsigned int length,
+				unsigned int nAESFlag)
 {
 	image_data->image_base = addr;
 	image_data->image_size = length;
 	if (entry_point_info != NULL)
 		entry_point_info->pc = addr;
-	return;
+
+	aml_check(addr,length,nAESFlag);
 }
 
 /*process bl30x, transfer to m3, etc..*/

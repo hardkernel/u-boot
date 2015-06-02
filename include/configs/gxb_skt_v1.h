@@ -182,5 +182,11 @@
 #define CONFIG_NEED_BL301	1
 #define CONFIG_BOOTDELAY	1
 
+//support secure boot
+//#define CONFIG_AML_SECURE_UBOOT   1
+
+//unify build for generate encrypted bootloader "u-boot.bin.encrypt"
+//#define CONFIG_AML_CRYPTO_UBOOT   1
+
 #endif
 

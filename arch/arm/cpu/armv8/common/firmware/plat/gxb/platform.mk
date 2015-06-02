@@ -55,14 +55,14 @@ BL2_SOURCES		+=	lib/locks/bakery/bakery_lock.c		\
 				plat/${PLAT}/aarch64/common.c           \
 				plat/${PLAT}/scp_bootloader.c           \
 				plat/${PLAT}/scpi.c                     \
-				plat/${PLAT}/nand.c                     \
 				plat/${PLAT}/storage.c                  \
 				plat/${PLAT}/sha2.c                     \
 				plat/${PLAT}/mailbox.c                  \
 				plat/${PLAT}/watchdog.c                 \
 				plat/${PLAT}/efuse.c                    \
 				plat/${PLAT}/pll.c                      \
-				plat/${PLAT}/timer.c
+				plat/${PLAT}/timer.c                    \
+				plat/${PLAT}/crypto/secureboot.c
 
 BL31_SOURCES		+=	drivers/arm/cci400/cci400.c		\
 				drivers/arm/gic/gic_v2.c                \
@@ -76,6 +76,16 @@ BL31_SOURCES		+=	drivers/arm/cci400/cci400.c		\
 				plat/${PLAT}/plat_gic.c                 \
 				plat/${PLAT}/scpi.c                     \
 				plat/${PLAT}/smc_arm.c
+
+ifeq ($(CONFIG_AML_SECURE_UBOOT),y)
+	BL2_SOURCES += plat/${PLAT}/crypto/rsa.c            \
+				plat/${PLAT}/crypto/bignum.c
+endif
+
+ifeq ($(CONFIG_AML_NAND),y)
+	BL2_SOURCES += plat/${PLAT}/nand.c
+endif
+
 
 ifneq (${RESET_TO_BL31},0)
   $(error "Using BL3-1 as the reset vector is not supported on PLAT. \

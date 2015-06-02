@@ -896,8 +896,13 @@ endif
 	$(Q)$(srctree)/tools/gx_boot spl $(FIP_FOLDER)/bl2_fix.bin $(FIP_FOLDER)/bl2.bin.pkg
 	$(Q)cat $(FIP_FOLDER)/bl2_fix.bin $(FIP_FOLDER)/fip.bin > $(FIP_FOLDER)/boot.bin
 	$(Q)$(FIP_FOLDER)/boot_sd.sh $(FIP_FOLDER)/blank_512 $(FIP_FOLDER)/boot.bin $(FIP_FOLDER)/boot_sd.bin
-	@echo '$(FIP_FOLDER)/boot.bin build done!'
-	$(Q)cp $(FIP_FOLDER)/boot.bin $(FIP_FOLDER)/u-boot.bin
+	$(Q)$(FIP_FOLDER)/bl2_fix.sh $(FIP_FOLDER)/bl2.bin $(FIP_FOLDER)/zero_tmp $(FIP_FOLDER)/bl2_new.bin
+	$(Q)cat $(FIP_FOLDER)/bl2_new.bin  $(FIP_FOLDER)/fip.bin > $(FIP_FOLDER)/boot_new.bin
+	$(Q)$(FIP_FOLDER)/aml_encrypt_$(SOC) --bootsig --input $(FIP_FOLDER)/boot_new.bin --output $(FIP_FOLDER)/u-boot.bin
+ifeq ($(CONFIG_AML_CRYPTO_UBOOT), y)
+	$(Q)$(FIP_FOLDER)/aml_encrypt_$(SOC) --bootsig --input $(FIP_FOLDER)/boot_new.bin --amluserkey $(srctree)/board/$(BOARDDIR)/aml-user-key.sig --aeskey enable --output $(FIP_FOLDER)/u-boot.bin.encrypt
+	@rm -f $(FIP_FOLDER)/bl2_new.bin $(FIP_FOLDER)/boot_new.bin
+endif
 	@echo '$(FIP_FOLDER)/u-boot.bin build done!'
 
 #

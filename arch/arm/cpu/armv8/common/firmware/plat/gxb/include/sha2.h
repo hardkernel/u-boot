@@ -24,6 +24,28 @@
 #ifndef __PLAT_SHA2_H_
 #define __PLAT_SHA2_H_
 
+
+#define SHA224_DIGEST_SIZE	28
+
+#define SHA256_DIGEST_SIZE	32
+#define SHA256_BLOCK_SIZE	64
+
+/* SHA2 context */
+struct sha2_ctx {
+	uint32_t h[8];
+	uint32_t tot_len;
+	uint32_t len;
+	uint32_t digest_len;
+	uint8_t block[2 * SHA256_BLOCK_SIZE];
+	uint8_t buf[SHA256_DIGEST_SIZE];  /* Used to store the final digest. */
+};
+
+void SHA2_init(struct sha2_ctx *, uint32_t );
+void SHA2_update(struct sha2_ctx *, const uint8_t *, uint32_t);
+uint8_t *SHA2_final(struct sha2_ctx *);
+
+int aml_data_check(unsigned long ,unsigned int ,unsigned int );
+
 void sha2(const uint8_t *input,
 	  uint32_t ilen,
 	  uint8_t output[32],
