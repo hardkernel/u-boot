@@ -18,11 +18,20 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
+/* DDR freq range */
 #define CONFIG_DDR_CLK_LOW  375
 #define CONFIG_DDR_CLK_HIGH 1400
 /* DON'T OVER THESE RANGE */
 #if (CONFIG_DDR_CLK < CONFIG_DDR_CLK_LOW) || (CONFIG_DDR_CLK > CONFIG_DDR_CLK_HIGH)
 	#error "Over DDR PLL range! Please check CONFIG_DDR_CLK in board header file! \n"
+#endif
+
+/* CPU freq range */
+#define CONFIG_CPU_CLK_LOW  600
+#define CONFIG_CPU_CLK_HIGH 2000
+/* DON'T OVER THESE RANGE */
+#if (CONFIG_CPU_CLK < CONFIG_CPU_CLK_LOW) || (CONFIG_CPU_CLK > CONFIG_CPU_CLK_HIGH)
+	#error "Over CPU PLL range! Please check CONFIG_CPU_CLK in board header file! \n"
 #endif
 
 #define DDR3_DRV_40OHM		0
@@ -275,4 +284,9 @@ static ddr_set_t __ddr_setting = {
 	.t_pctl0_dfiodtcfg		= (1<<3)|(1<<11),
 	.t_pctl0_dfiodtcfg1		= (0x0 | (0x6 << 16)),
 	.t_pctl0_dfilpcfg0		= ( 1 | (3 << 4) | (1 << 8) | (3 << 12) | (7 <<16) | (1 <<24) | ( 3 << 28)),
+};
+
+pll_set_t __pll_setting = {
+	.cpu_clk				= CONFIG_CPU_CLK / 24 * 24,
+	.spi_ctrl				= 0,
 };

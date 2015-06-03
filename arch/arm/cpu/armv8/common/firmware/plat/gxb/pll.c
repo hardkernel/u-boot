@@ -20,32 +20,17 @@
 */
 
 #include <pll.h>
-#include <io.h>
 #include <string.h>
 #include <asm/arch/watchdog.h>
 #include <stdio.h>
 #include <asm/arch/secure_apb.h>
 #include <timer.h>
 #include <stdio.h>
+#include <asm/arch/timing.h>
 
-#define Wr(reg, val) writel(val, reg)
-#define Rd(reg) readl(reg)
-
-#define CFG_SYS_PLL_CNTL_2 (0x5ac80000)
-#define CFG_SYS_PLL_CNTL_3 (0x8e452015)
-#define CFG_SYS_PLL_CNTL_4 (0x0401d40c)
-#define CFG_SYS_PLL_CNTL_5 (0x00000870)
-
-#define CFG_MPLL_CNTL_2 (0x59C80000)
-#define CFG_MPLL_CNTL_3 (0xCA45B822)
-#define CFG_MPLL_CNTL_4 (0x00018007)
-#define CFG_MPLL_CNTL_5 (0xB5500E1A)
-#define CFG_MPLL_CNTL_6 (0xFC454545)
-#define CFG_MPLL_CNTL_7 (0)
-#define CFG_MPLL_CNTL_8 (0)
-#define CFG_MPLL_CNTL_9 (0)
-
+extern pll_set_t __pll_setting;
 unsigned lock_check_loop = 0;
+static pll_set_t * p_pll_set = &__pll_setting;
 
 unsigned int pll_init(void){
 	// Switch to oscillator, the SYS CPU might have already been programmed
@@ -56,6 +41,13 @@ unsigned int pll_init(void){
 	//SYS PLL,FIX PLL bangap
 	Wr(HHI_MPLL_CNTL6, Rd(HHI_MPLL_CNTL6)|(1<<26));
 	_udelay(100);
+	unsigned int sys_pll_cntl = 0;
+	if ((p_pll_set->cpu_clk >= 600) && (p_pll_set->cpu_clk <= 1200)) {
+		sys_pll_cntl = (1<<16/*OD*/) | (1<<9/*N*/) | (p_pll_set->cpu_clk / 12/*M*/);
+	}
+	else if ((p_pll_set->cpu_clk > 1200) && (p_pll_set->cpu_clk <= 2000)) {
+		sys_pll_cntl = (0<<16/*OD*/) | (1<<9/*N*/) | (p_pll_set->cpu_clk / 24/*M*/);
+	}
 	//Init SYS pll
 	do {
 		Wr(HHI_SYS_PLL_CNTL, Rd(HHI_SYS_PLL_CNTL)|(1<<29));
@@ -63,11 +55,19 @@ unsigned int pll_init(void){
 		Wr(HHI_SYS_PLL_CNTL3, CFG_SYS_PLL_CNTL_3);
 		Wr(HHI_SYS_PLL_CNTL4, CFG_SYS_PLL_CNTL_4);
 		Wr(HHI_SYS_PLL_CNTL5, CFG_SYS_PLL_CNTL_5);
-		Wr(HHI_SYS_PLL_CNTL, 0x60000240); // 960MHz A9 clock
+		Wr(HHI_SYS_PLL_CNTL, ((1<<30)|(1<<29)|sys_pll_cntl)); // A9 clock
 		Wr(HHI_SYS_PLL_CNTL, Rd(HHI_SYS_PLL_CNTL)&(~(1<<29)));
 		_udelay(20);
 	} while(pll_lock_check(HHI_SYS_PLL_CNTL, "SYS PLL"));
 	clocks_set_sys_cpu_clk( 1, 0, 0, 0); // Connect SYS CPU to the PLL divider output
+
+	sys_pll_cntl = Rd(HHI_SYS_PLL_CNTL);
+	/* cpu clk = 24/N*M/2^OD */
+	printf("CPU clk: %dMHz\n", \
+		(24/ \
+		((sys_pll_cntl>>9)&0x1F)* \
+		(sys_pll_cntl&0x1FF)/ \
+		(1<<((sys_pll_cntl>>16)&0x3))));
 
 	do {
 		Wr(HHI_MPLL_CNTL, (1<<29));
@@ -241,7 +241,7 @@ unsigned pll_lock_check(unsigned long pll_reg, const char *pll_name){
 	unsigned lock = ((Rd(pll_reg) >> PLL_LOCK_BIT_OFFSET) & 0x1);
 	if (lock) {
 		lock_check_loop = 0;
-		printf("%s lock ok!\n", pll_name);
+		//printf("%s lock ok!\n", pll_name);
 	}
 	else{
 		lock_check_loop++;

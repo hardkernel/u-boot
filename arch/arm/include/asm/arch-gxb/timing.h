@@ -140,29 +140,10 @@ typedef struct ddr_set ddr_set_t;
 typedef struct ddr_timing ddr_timing_t;
 
 struct pll_set{
-	unsigned int sys_pll_cntl;  //HHI_SYS_PLL_CNTL
-	unsigned int sys_clk_cntl;  //HHI_SYS_CPU_CLK_CNTL0
-	unsigned int sys_clk_cntl1;  //HHI_SYS_CPU_CLK_CNTL1
-	unsigned int sys_clk;
-	unsigned int a9_clk;
-	unsigned int mpll_cntl;
-	unsigned int mpeg_clk_cntl;
-	unsigned int vid_pll_cntl;
-	unsigned int vid2_pll_cntl;
-	unsigned int spi_setting;
-	unsigned int nfc_cfg;
-	unsigned int sdio_cmd_clk_divide;
-	unsigned int sdio_time_short;
-	unsigned int uart;
-	unsigned int clk81;
-	unsigned int gp_pll_cntl;
-	unsigned int gp2_pll_cntl;
+	unsigned int cpu_clk;
+	unsigned int spi_ctrl;
 }__attribute__ ((packed));
 
-//DDR PLL
-#define CFG_DDR_PLL_CNTL_1 (0x69c80000)
-#define CFG_DDR_PLL_CNTL_2 (0xca463823)
-#define CFG_DDR_PLL_CNTL_3 (0x00c00023)
-#define CFG_DDR_PLL_CNTL_4 (0x00303500)
+typedef struct pll_set pll_set_t;
 
 #endif //__AML_TIMING_H_

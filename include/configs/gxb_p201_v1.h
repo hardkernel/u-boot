@@ -53,9 +53,12 @@
 #define CONFIG_ANDROID_IMG 1
 #define CONFIG_SYS_BOOTM_LEN (64<<20) /* Increase max gunzip size*/
 
+/* cpu */
+#define CONFIG_CPU_CLK					1200 //MHz. Range: 600-1800, should be multiple of 24
+
 /* ddr */
 #define CONFIG_DDR_SIZE					1024 //MB
-#define CONFIG_DDR_CLK					936  //MHz, should be multiple of 24
+#define CONFIG_DDR_CLK					936  //MHz, Range: 384-1200, should be multiple of 24
 #define CONFIG_DDR_TYPE					CONFIG_DDR_TYPE_DDR3
 /* DDR channel setting, please refer hardware design.
  *    CONFIG_DDR0_RANK0_ONLY   : one channel
