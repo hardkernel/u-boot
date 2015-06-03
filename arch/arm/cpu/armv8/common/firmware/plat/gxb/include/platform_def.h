@@ -44,7 +44,7 @@
  ******************************************************************************/
 
 /* Size of cacheable stacks */
-#define PLATFORM_STACK_SIZE    0x800
+#define PLATFORM_STACK_SIZE    0xE00
 
 /* Size of coherent stacks for debug and release builds */
 #if DEBUG
