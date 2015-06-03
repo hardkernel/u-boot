@@ -420,7 +420,8 @@ static struct serial_device *get_current(void)
 int serial_init(void)
 {
 	gd->flags |= GD_FLG_SERIAL_READY;
-	return get_current()->start();
+	return 0;
+	//return get_current()->start();
 }
 
 /**

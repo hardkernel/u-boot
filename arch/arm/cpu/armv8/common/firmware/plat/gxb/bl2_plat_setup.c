@@ -159,7 +159,7 @@ struct entry_point_info *bl2_plat_get_bl31_ep_info(void)
  ******************************************************************************/
 void bl2_early_platform_setup(meminfo_t *mem_layout)
 {
-	console_init(52);   //24M
+	//console_init(52);   //24M
 
 	bl2_tzram_layout.total_base = TZRAM_BASE;
 	bl2_tzram_layout.total_size = TZRAM_SIZE;
