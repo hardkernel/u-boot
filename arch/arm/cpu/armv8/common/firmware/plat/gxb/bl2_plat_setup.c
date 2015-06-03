@@ -41,7 +41,6 @@
 #include "scp_bootloader.h"
 #include <xlat_tables.h>
 #include <io.h>
-#include "ddr/ddr.c"
 #include "storage.h"
 
 /*******************************************************************************
@@ -177,9 +176,6 @@ void bl2_early_platform_setup(meminfo_t *mem_layout)
  ******************************************************************************/
 void bl2_platform_setup(void)
 {
-	/* DDR init*/
-	ddr_init();
-
 #ifdef BL2_ENABLE_MMU
 	/* setup mmu */
 	configure_mmu_el1(bl2_tzram_layout.total_base,

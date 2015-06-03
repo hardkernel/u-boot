@@ -31,7 +31,7 @@
 #include <asm/arch/secure_apb.h>
 #include <asm/arch/cpu_sdio.h>
 #include <asm/arch/nand.h>
-#include <usb.h>
+#include <fip.h>
 
 uint64_t storage_init(void)
 {
@@ -74,9 +74,11 @@ uint64_t storage_load(uint64_t src, uint64_t des, uint64_t size, const char * im
 			break;
 		case BOOT_DEVICE_SD:
 			device_name = "SD";
+			src += 512; //sd boot must add 512 offset
 			break;
 		case BOOT_DEVICE_USB:
 			device_name = "USB";
+			src += FM_USB_MODE_LOAD_ADDR;
 			break;
 		default:
 			break;
@@ -98,12 +100,10 @@ uint64_t storage_load(uint64_t src, uint64_t des, uint64_t size, const char * im
 			spi_read(src, des, size);
 			break;
 		case BOOT_DEVICE_SD:
-			src += 512; //sd boot must add 512 offset
 			sdio_read_data(boot_device, src, des, size);
 			break;
 		case BOOT_DEVICE_USB:
-			/*to do list*/
-			//usb_boot(1, 0);
+			usb_boot(src, des, size);
 			break;
 		default:
 			break;
@@ -112,15 +112,6 @@ uint64_t storage_load(uint64_t src, uint64_t des, uint64_t size, const char * im
 	inv_dcache_range(des, size);
 #endif
 	return 0;
-}
-
-uint64_t get_boot_device(void)
-{
-	//printf("P_ASSIST_POR_CONFIG addr: 0x%8x\n", P_ASSIST_POR_CONFIG);
-	//printf("P_ASSIST_POR_CONFIG cont: 0x%8x\n", readl(P_ASSIST_POR_CONFIG));
-	//printf("SEC_AO_SEC_GP_CFG0 addr: 0x%8x\n", SEC_AO_SEC_GP_CFG0);
-	//printf("SEC_AO_SEC_GP_CFG0 cont: 0x%8x\n", readl(SEC_AO_SEC_GP_CFG0));
-	return (readl(SEC_AO_SEC_GP_CFG0) & 0xf);
 }
 
 uint64_t spi_read(uint64_t src, uint64_t des, uint64_t size)
@@ -292,3 +283,16 @@ uint64_t sdio_read_data(uint64_t boot_device, uint64_t src, uint64_t des, uint64
 	return ret;
 }
 
+uint64_t usb_boot(uint64_t src, uint64_t des, uint64_t size) {
+	/* data is ready in ddr, just need memcpy */
+	memcpy((void *)des, (void *)(src), size);
+	return 0;
+}
+
+uint64_t get_boot_device(void) {
+	return (readl(SEC_AO_SEC_GP_CFG0) & 0xf);
+}
+
+uint64_t get_ddr_size(void) {
+	return ((readl(SEC_AO_SEC_GP_CFG0) >> 16) & 0xffff);
+}

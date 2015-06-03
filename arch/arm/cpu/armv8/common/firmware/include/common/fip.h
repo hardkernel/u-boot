@@ -104,6 +104,10 @@ typedef struct aml_fip_header {
 #define FM_BL32_LOAD_ADDR			0x10200000
 #define FM_BL33_LOAD_ADDR			CONFIG_SYS_TEXT_BASE
 
+/*usb burning func*/
+#define USB_BL2_RETURN_ROM_ADDR			0xd9044504
+#define FM_USB_MODE_LOAD_ADDR			0x02000000
+
 #define BL2_MMU_TABLE_BASE				0x01500000
 #define BL2_MMU_TABLE_SIZE				(sizeof(uint64_t) * MAX_XLAT_TABLES * XLAT_TABLE_ENTRIES)
 #define BL2_MMAP_BASE					0x01600000
@@ -122,9 +126,10 @@ void parse_blx(image_info_t *image_data,
 				unsigned int addr,
 				unsigned int length,
 				unsigned int);
-
 void process_bl30x(image_info_t *image_data,
 				entry_point_info_t *entry_point_info,
 				const char * name);
+void bl2_to_romcode(uintptr_t entry);
+void check_handler(void);
 
 #endif /*__BL2_FIP_H_*/

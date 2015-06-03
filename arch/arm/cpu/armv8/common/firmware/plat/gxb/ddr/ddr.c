@@ -19,6 +19,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
+#include <stdio.h>
 #include "ddr_pctl_define.h"
 #include "ddr_pub_define.h"
 #include "dmc_define.h"
@@ -138,6 +139,9 @@ void ddr_print_info(void){
 			(chl1_size_reg)>5?0:chl1_size, (chl1_size_reg)>5?0:p_ddr_set->ddr_clk, \
 			((rd_reg(DDR1_PCTL_MCFG) >> 3) & 0x1)?"2T":"1T", \
 			p_ddr_set->ddr_timing_ind);
+
+	/* write ddr size to reg */
+	wr_reg(SEC_AO_SEC_GP_CFG0, ((rd_reg(SEC_AO_SEC_GP_CFG0) & 0x0000ffff) | ((p_ddr_set->ddr_size) << 16)));
 }
 
 unsigned int ddr_init_dmc(void){
