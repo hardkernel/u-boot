@@ -140,6 +140,7 @@
 #define CONFIG_CMD_FAT 1
 #define CONFIG_CMD_GPIO 1
 #define CONFIG_CMD_RUN
+#define CONFIG_CMD_REBOOT 1
 
 /*file system*/
 #define CONFIG_DOS_PARTITION 1
