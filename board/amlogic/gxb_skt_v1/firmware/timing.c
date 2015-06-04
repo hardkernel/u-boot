@@ -20,7 +20,7 @@
 
 /* DDR freq range */
 #define CONFIG_DDR_CLK_LOW  375
-#define CONFIG_DDR_CLK_HIGH 1400
+#define CONFIG_DDR_CLK_HIGH 1500
 /* DON'T OVER THESE RANGE */
 #if (CONFIG_DDR_CLK < CONFIG_DDR_CLK_LOW) || (CONFIG_DDR_CLK > CONFIG_DDR_CLK_HIGH)
 	#error "Over DDR PLL range! Please check CONFIG_DDR_CLK in board header file! \n"
@@ -155,7 +155,7 @@ static ddr_timing_t __ddr_timming[] = {
 		.cfg_ddr_rtw			= (7),
 		.cfg_ddr_refi			= (78),
 		.cfg_ddr_refi_mddr3		= (4),
-		.cfg_ddr_cl				= (10),
+		.cfg_ddr_cl				= (11),
 		.cfg_ddr_wr				= (12),
 		.cfg_ddr_cwl			= (8),
 		.cfg_ddr_al				= (0),
@@ -193,6 +193,42 @@ static ddr_timing_t __ddr_timming[] = {
 		.cfg_ddr_refi			= (78),
 		.cfg_ddr_refi_mddr3		= (4),
 		.cfg_ddr_cl				= (13),
+		.cfg_ddr_wr				= (16),
+		.cfg_ddr_cwl			= (9),
+		.cfg_ddr_al				= (0),
+		.cfg_ddr_exsr			= (512),
+		.cfg_ddr_dqs			= (23),
+		.cfg_ddr_cksre			= (15),
+		.cfg_ddr_cksrx			= (15),
+		.cfg_ddr_zqcs			= (64),
+		.cfg_ddr_zqcl			= (136),
+		.cfg_ddr_xpdll			= (23),
+		.cfg_ddr_zqcsi			= (1000),
+	},
+	{
+		.identifier				= CONFIG_DDR_TIMMING_DDR3_14,
+		.cfg_ddr_rtp			= (7),
+		.cfg_ddr_wtr			= (7),
+		.cfg_ddr_rp				= (14),
+		.cfg_ddr_rcd			= (14),
+		.cfg_ddr_ras			= (37),
+		.cfg_ddr_rrd			= (7),
+		.cfg_ddr_rc				= (52),
+		.cfg_ddr_mrd			= (6),
+		.cfg_ddr_mod			= (4),
+		.cfg_ddr_faw			= (33),
+		.cfg_ddr_rfc			= (280),
+		.cfg_ddr_wlmrd			= (40),
+		.cfg_ddr_wlo			= (7),
+		.cfg_ddr_xs				= (512),
+		.cfg_ddr_xp				= (7),
+		.cfg_ddr_cke			= (5),
+		.cfg_ddr_dllk			= (512),
+		.cfg_ddr_rtodt			= (0),
+		.cfg_ddr_rtw			= (7),
+		.cfg_ddr_refi			= (78),
+		.cfg_ddr_refi_mddr3		= (4),
+		.cfg_ddr_cl				= (14),
 		.cfg_ddr_wr				= (16),
 		.cfg_ddr_cwl			= (10),
 		.cfg_ddr_al				= (0),
@@ -251,10 +287,14 @@ static ddr_set_t __ddr_setting = {
 	.t_pub_dcr				= 0X8B,     //PUB DCR
 	.t_pub_dtar				= (0X0 | (0X0 <<12) | (7 << 28)),
 	.t_pub_dsgcr			= 0x020641a,
-	.t_pub_zq0pr			= 0x7b,   //PUB ZQ0PR
-	.t_pub_zq1pr			= 0x7b,   //PUB ZQ1PR
-	.t_pub_zq2pr			= 0x7b,   //PUB ZQ2PR
-	.t_pub_zq3pr			= 0x7b,   //PUB ZQ3PR
+	//.t_pub_zq0pr			= 0x7b,   //PUB ZQ0PR
+	//.t_pub_zq1pr			= 0x7b,   //PUB ZQ1PR
+	//.t_pub_zq2pr			= 0x7b,   //PUB ZQ2PR
+	//.t_pub_zq3pr			= 0x7b,   //PUB ZQ3PR
+	.t_pub_zq0pr			= 0x69,   //PUB ZQ0PR
+	.t_pub_zq1pr			= 0x69,   //PUB ZQ1PR
+	.t_pub_zq2pr			= 0x69,   //PUB ZQ2PR
+	.t_pub_zq3pr			= 0x69,   //PUB ZQ3PR
 
 	/* pctl0 defines */
 	/* pctl1 use same define as pctl0 */

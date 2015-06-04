@@ -68,11 +68,11 @@ unsigned int ddr_init_pll(void){
 	_udelay(10);
 
 	/* set ddr pll reg */
-	if ((p_ddr_set->ddr_clk >= 375) && (p_ddr_set->ddr_clk < 750)) {
+	if ((p_ddr_set->ddr_clk >= CONFIG_DDR_CLK_LOW) && (p_ddr_set->ddr_clk < 750)) {
 		//							OD			N					M
 		p_ddr_set->ddr_pll_ctrl = (2 << 16) | (1 << 9) | ((((p_ddr_set->ddr_clk/6)*6)/12) << 0);
 	}
-	else if((p_ddr_set->ddr_clk >= 750) && (p_ddr_set->ddr_clk < 1400)) {
+	else if((p_ddr_set->ddr_clk >= 750) && (p_ddr_set->ddr_clk < CONFIG_DDR_CLK_HIGH)) {
 		//							OD			N					M
 		p_ddr_set->ddr_pll_ctrl = (1 << 16) | (1 << 9) | ((((p_ddr_set->ddr_clk/12)*12)/24) << 0);
 	}
@@ -132,12 +132,12 @@ void ddr_print_info(void){
 	if (ddr0_enabled)
 		printf("DDR0: %4dMB @ %dMHz(%s)-%d\n", \
 			(chl0_size_reg)>5?0:chl0_size, (chl0_size_reg)>5?0:p_ddr_set->ddr_clk, \
-			((rd_reg(DDR0_PCTL_MCFG) >> 3) & 0x1)?"2T":"1T", \
+			((p_ddr_set->ddr_channel_set == CONFIG_DDR01_SHARE_AC)?"F1T":(((rd_reg(DDR0_PCTL_MCFG) >> 3) & 0x1)?"2T":"1T")), \
 			p_ddr_set->ddr_timing_ind);
 	if (ddr1_enabled)
 		printf("DDR1: %4dMB @ %dMHz(%s)-%d\n", \
 			(chl1_size_reg)>5?0:chl1_size, (chl1_size_reg)>5?0:p_ddr_set->ddr_clk, \
-			((rd_reg(DDR1_PCTL_MCFG) >> 3) & 0x1)?"2T":"1T", \
+			((p_ddr_set->ddr_channel_set == CONFIG_DDR01_SHARE_AC)?"F1T":(((rd_reg(DDR1_PCTL_MCFG) >> 3) & 0x1)?"2T":"1T")), \
 			p_ddr_set->ddr_timing_ind);
 
 	/* write ddr size to reg */
@@ -235,6 +235,9 @@ unsigned int ddr_init_pctl(void){
 	//wr_reg(DDR0_PUB_PTR1, p_ddr_set->t_pub_ptr[1]);
 	//wr_reg(DDR0_PUB_PTR3, p_ddr_set->t_pub_ptr[3]);
 	//wr_reg(DDR0_PUB_PTR4, p_ddr_set->t_pub_ptr[4]);
+
+	wr_reg(DDR0_PUB_IOVCR0, 0x49494949);
+	wr_reg(DDR0_PUB_IOVCR1, 0x49494949);
 
 	// CONFIGURE DDR PHY PUBL REGISTERS.
 	wr_reg(DDR0_PUB_ODTCR, p_ddr_set->t_pub_odtcr);
@@ -517,16 +520,22 @@ void ddr_pre_init(void){
 	else if ((p_ddr_set->ddr_clk >= 533) && (p_ddr_set->ddr_clk < 667)) {
 		p_ddr_set->ddr_timing_ind = CONFIG_DDR_TIMMING_DDR3_9;
 	}
-	else if ((p_ddr_set->ddr_clk >= 667) && (p_ddr_set->ddr_clk < 933)) {
+	else if ((p_ddr_set->ddr_clk >= 667) && (p_ddr_set->ddr_clk < 800)) {
 		p_ddr_set->ddr_timing_ind = CONFIG_DDR_TIMMING_DDR3_11;
 	}
-	else if ((p_ddr_set->ddr_clk >= 933) && (p_ddr_set->ddr_clk < CONFIG_DDR_CLK_HIGH)) {
+	else if ((p_ddr_set->ddr_clk >= 800) && (p_ddr_set->ddr_clk < 933)) {
 		p_ddr_set->ddr_timing_ind = CONFIG_DDR_TIMMING_DDR3_13;
+	}
+	else if ((p_ddr_set->ddr_clk >= 933) && (p_ddr_set->ddr_clk < CONFIG_DDR_CLK_HIGH)) {
+		p_ddr_set->ddr_timing_ind = CONFIG_DDR_TIMMING_DDR3_14;
 	}
 	else {
 		printf("DDR clk setting error! Reset...\n");
 		reset_system();
 	}
+
+	p_ddr_set->t_pctl0_1us_pck = (p_ddr_set->ddr_clk / 2);
+	p_ddr_set->t_pctl0_100ns_pck = (p_ddr_set->ddr_clk / 20);
 
 	/* get match timing config */
 	unsigned loop;
@@ -598,6 +607,7 @@ void ddr_pre_init(void){
 		p_ddr_set->t_pctl0_ppcfg = (0x1fc | 1 );
 		p_ddr_set->t_pctl0_dfiodtcfg = 0x08;
 		p_ddr_set->ddr_dmc_ctrl	|= (5 << 8);
+		p_ddr_set->ddr_2t_mode = 1;
 	}
 
 	/* config ddr size reg */
@@ -615,6 +625,10 @@ void ddr_pre_init(void){
 	/* config t_pub_pgcr2[28] share-ac-dual */
 	p_ddr_set->t_pub_pgcr2 |= (ddr_dual_rank_sel << 28);
 
+	if ((p_ddr_set->ddr_2t_mode) &&(p_ddr_set->ddr_channel_set != CONFIG_DDR01_SHARE_AC)) {
+		p_ddr_timing->cfg_ddr_cl=p_ddr_timing->cfg_ddr_cl-1;
+	}
+
 	/* update pctl timing */
 	int tmp_val = 0;
 	tmp_val =( p_ddr_timing->cfg_ddr_cwl + p_ddr_timing->cfg_ddr_al);
@@ -624,6 +638,11 @@ void ddr_pre_init(void){
 	tmp_val = p_ddr_timing->cfg_ddr_cl + p_ddr_timing->cfg_ddr_al;
 	tmp_val = (tmp_val - ((tmp_val%2) ? 3:4))/2;
 	p_ddr_set->t_pctl0_dfitrddataen=tmp_val;
+
+	//p_ddr_set->t_pctl0_dfitphyrdlat=16;
+	if ((p_ddr_timing->cfg_ddr_cl+p_ddr_timing->cfg_ddr_al)%2) {
+		p_ddr_set->t_pctl0_dfitphyrdlat=14;
+	}
 
 	/* update pub mr */
 	p_ddr_set->t_pub_mr[0] = ((((p_ddr_timing->cfg_ddr_cl - 4) & 0x8)>>1)		|
