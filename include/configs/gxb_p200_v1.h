@@ -41,7 +41,31 @@
 /* args/envs */
 #define CONFIG_SYS_MAXARGS  64
 #define CONFIG_EXTRA_ENV_SETTINGS \
-	"storeboot=mmc dev 1;mmc read 1080000 17E000 10000;bootm 0x1080000\0"
+		"storeboot="\
+				"get_rebootmode; echo reboot_mode=${reboot_mode};"\
+				"if test ${reboot_mode} = factory_reset; then "\
+								"run recovery;"\
+				"else if test ${reboot_mode} = update; then "\
+								"run recovery;"\
+				"else if test ${reboot_mode} = usb_burning; then "\
+								"run usb_burning;"\
+				"else "\
+								"mmc dev 1;mmc read 1080000 17E000 10000;bootm 0x1080000;"\
+				"fi;fi;fi\0"\
+		"recovery="\
+				"echo enter recovery;"\
+				"if mmcinfo; then "\
+								"if fatload mmc 0 0x1080000 recovery.img; then bootm 0x1080000;fi;"\
+				"fi; "\
+				"if usb start 0; then "\
+								"if fatload usb 0 0x1080000 recovery.img; then bootm 0x1080000; fi;"\
+								"fi;"\
+				"if amlnf lread boot 1080000 0 1000000; then "\
+								"bootm 1080000; "\
+				"else "\
+								"echo no recovery in flash; "\
+				"fi;\0"\
+
 #define CONFIG_BOOTARGS "init=/init console=ttyS0,115200 no_console_suspend earlyprintk=aml-uart,0xc81004c0 selinux=0"
 #define CONFIG_BOOTCOMMAND "run storeboot"
 
@@ -141,6 +165,7 @@
 #define CONFIG_CMD_GPIO 1
 #define CONFIG_CMD_RUN
 #define CONFIG_CMD_REBOOT 1
+#define CONFIG_CMD_ECHO 1
 
 /*file system*/
 #define CONFIG_DOS_PARTITION 1
