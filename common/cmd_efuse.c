@@ -42,6 +42,8 @@ int cmd_efuse(int argc, char * const argv[], char *buf)
 	uint32_t offset;
 	uint32_t size, max_size;
 	char *end;
+	char *s;
+	int ret;
 
 	if (strncmp(argv[1], "read", 4) == 0)
 		action=EFUSE_READ;
@@ -49,9 +51,11 @@ int cmd_efuse(int argc, char * const argv[], char *buf)
 		action=EFUSE_WRITE;
 	else{
 		printf("%s arg error\n", argv[1]);
-		return -1;
+		return CMD_RET_USAGE;
 	}
 
+	if (argc < 4)
+		return CMD_RET_USAGE;
 	/*check efuse user data max size*/
 	offset = simple_strtoul(argv[2], &end, 16);
 	size = simple_strtoul(argv[3], &end, 16);
@@ -75,7 +79,14 @@ int cmd_efuse(int argc, char * const argv[], char *buf)
 	// efuse read
 	if (action == EFUSE_READ) {
 		memset(buf, 0, size);
-		efuse_read_usr(buf, size, (loff_t *)&offset);
+		ret=efuse_read_usr(buf, size, (loff_t *)&offset);
+		if ( ret == -1) {
+			printf("ERROR: efuse read user data fail!\n");
+			return -1;
+		}
+
+		if ( ret != size )
+			printf("ERROR: read %d byte(s) not %d byte(s) data\n",ret,size);
 		for (i=0; i<size; i++)
 			printf(":%02x", buf[i]);
 		printf("\n");
@@ -85,10 +96,12 @@ int cmd_efuse(int argc, char * const argv[], char *buf)
 	else if(action==EFUSE_WRITE){
 		if (argc<5) {
 			printf("arg count error\n");
-			return -1;
+			return CMD_RET_USAGE;
 		}
 		memset(buf, 0, size);
 
+		s=argv[4];
+		memcpy(buf, s, strlen(s));
 		if (efuse_write_usr(buf, size, (loff_t*)&offset)<0) {
 			printf("error: efuse write fail.\n");
 			return -1;
@@ -98,7 +111,7 @@ int cmd_efuse(int argc, char * const argv[], char *buf)
 	}
 	else{
 		printf("arg error\n");
-		return -1;
+		return CMD_RET_USAGE;
 	}
 
 	return 0;
@@ -111,44 +124,27 @@ int do_efuse(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 
 	memset(buf, 0, sizeof(buf));
 
-	if (argc < 2) {
-		cmd_usage(cmdtp);
-		return -1;
-	}
+	if (argc < 2)
+		return CMD_RET_USAGE;
 
 	return cmd_efuse(argc, argv, buf);
 }
-#if 0
-U_BOOT_CMD(
-	efuse,	4,	1,	do_efuse,
-	"efuse version/licence/mac/hdcp/usid read/write or dump raw efuse data commands"
-	" or info(display chip efuse info)",
-	"[read/write] [licence/mac/hdc/usid/machineid] [mem_addr]\n"
-	"	   [read/wirte] para read ; write ;\n"
-	"				read need not mem_addr;write need\n"
-	"				read to get efuse context\n"
-	"				write to write efuse\n"
-	"	   [mem_addr] usr do \n"
-	"efuse [info]\n"
-	"          display the chip efuse info\n"
-	"efuse [secure_boot_set] [mem_addr]\n"
-	"	   decrypt the EFUSE pattern from address mem_addr which contain setting\n"
-	"	   for secure boot, if pass then the setting will be programmed to the chip\n"
-	"	   DO NOT TRY THIS FEATURE IF NO CONFIRMATION FROM AMLOGIC IN WRITING\n"
-	"	   OTHERWISE IT WILL CAUSE UNCORRECTABLE DAMAGE TO AMLOGIC CHIPS\n"
-);
-#else
+
+static char efuse_help_text[] =
+	"[read/write offset size [data]]\n"
+	"  [read/wirte]  - read or write 'size' data from\n"
+	"                  'offset' from efuse user data ;\n"
+	"  [offset]      - the offset byte from the beginning\n"
+	"                  of efuse user data zone;\n"
+	"  [size]        - data size\n"
+	"  [data]        - the optional argument for 'write',\n"
+	"                  data is treated as characters\n"
+	"  examples: efuse write 0xc 0xd abcdABCD1234\n";
+
 U_BOOT_CMD(
 	efuse,	5,	1,	do_efuse,
-	"efuse read/write data commands",
-	"[read/write offset size [mem_addr]]\n"
-	"	   [read/wirte] read or write 'size' data from"
-	"				'offset' from efuse user data ;\n"
-	"		 [offset]	the offset byte from the beginning"
-	"        of efuse user data zone;\n"
-	"    [size] data size\n"
-	"	   [mem_addr] the optional argument for 'write'\n"
+	"efuse read/write data commands", efuse_help_text
 );
-#endif
+
 
 /****************************************************/

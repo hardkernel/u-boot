@@ -184,6 +184,7 @@
 /* other functions */
 #define CONFIG_NEED_BL301	1
 #define CONFIG_BOOTDELAY	1
+#define CONFIG_SYS_LONGHELP 1
 
 //support secure boot
 //#define CONFIG_AML_SECURE_UBOOT   1

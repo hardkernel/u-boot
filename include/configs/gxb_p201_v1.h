@@ -153,6 +153,7 @@
 /* other functions */
 #define CONFIG_NEED_BL301	1
 #define CONFIG_BOOTDELAY	1 //delay 1s
+#define CONFIG_SYS_LONGHELP 1
 
 #endif
 

@@ -89,7 +89,7 @@ ssize_t efuse_write(const char *buf, size_t count, loff_t *ppos )
 	else
 		return ret;
 }
-
+#if 0
 struct efuse_chip_identify_t{
 	unsigned int chiphw_mver;
 	unsigned int chiphw_subver;
@@ -267,20 +267,21 @@ int efuse_chk_written(loff_t pos, size_t count)
 	}
 	return 0;
 }
-
+#endif
 int efuse_read_usr(char *buf, size_t count, loff_t *ppos)
 {
 	char data[EFUSE_BYTES];
 	char *pdata = NULL;
+	int ret;
 
 	memset(data, 0, count);
 
 	pdata = data;
-	efuse_read(pdata, count, ppos);
+	ret = efuse_read(pdata, count, ppos);
 
 	memcpy(buf, data, count);
 
-	return count;
+	return ret;
 }
 
 int efuse_write_usr(char* buf, size_t count, loff_t* ppos)
@@ -288,36 +289,10 @@ int efuse_write_usr(char* buf, size_t count, loff_t* ppos)
 	char data[EFUSE_BYTES];
 	char *pdata = NULL;
 	char *penc = NULL;
-	unsigned enc_len;
-	unsigned pos = (unsigned)*ppos;
-	efuseinfo_item_t info;
+	int ret;
 
-	if (pos < 320) {
-		printf("pos is error! pos is less than 320, amlogic part can not read\n");
-		return -1;
-	}
-
-	if (efuse_getinfo_byPOS(pos, &info) < 0) {
-		printf("not found the position:%d.\n", pos);
-		return -1;
-	}
-	if (count>info.data_len) {
-		printf("data length: %lu is out of EFUSE layout!\n", count);
-		return -1;
-	}
 	if (count == 0) {
 		printf("data length: 0 is error!\n");
-		return -1;
-	}
-	if (strcmp(info.title, "version") == 0) {
-		if (efuse_checkversion(buf) < 0) {
-			printf("efuse version NO. error\n");
-			return -1;
-		}
-	}
-
-	if (efuse_chk_written(pos, info.data_len)) {
-		printf("error: efuse has written.\n");
 		return -1;
 	}
 
@@ -327,13 +302,12 @@ int efuse_write_usr(char* buf, size_t count, loff_t* ppos)
 	memcpy(data, buf, count);
 	pdata = data;
 	penc = efuse_buf;
-	enc_len=info.enc_len;
 
-	memcpy(penc, pdata, enc_len);
+	memcpy(penc, pdata, count);
 
-	efuse_write(efuse_buf, enc_len, ppos);
+	ret = efuse_write(efuse_buf, count, ppos);
 
-	return enc_len;
+	return ret;
 }
 
 uint32_t efuse_get_max(void)
@@ -350,6 +324,7 @@ uint32_t efuse_get_max(void)
 		return ret;
 }
 
+#if 0
 int efuse_set_versioninfo(efuseinfo_item_t *info)
 {
 	efuse_socchip_type_e soc_type;
@@ -450,5 +425,5 @@ int efuse_read_intlItem(char *intl_item,char *buf,int size)
 	}
 	return ret;
 }
-
+#endif
 
