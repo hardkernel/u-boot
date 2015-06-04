@@ -31,6 +31,9 @@
 #ifdef CONFIG_VPU_PRESET
 #include <vpu.h>
 #endif
+#ifdef CONFIG_AML_V2_FACTORY_BURN
+#include <amlogic/aml_v2_burning.h>
+#endif// #ifdef CONFIG_AML_V2_FACTORY_BURN
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -320,6 +323,12 @@ struct amlogic_usb_config g_usb_config_gx_skt_h={
 
 int board_init(void)
 {
+#ifdef CONFIG_AML_V2_FACTORY_BURN
+	aml_try_factory_usb_burning(0, gd->bd);
+#endif// #ifdef CONFIG_AML_V2_FACTORY_BURN
+
+	/*Power on GPIOAO_2 for VCC_5V*/
+	clrbits_le32(P_AO_GPIO_O_EN_N, ((1<<2)|(1<<18)));
 	#ifdef CONFIG_USB_DWC_OTG_HCD
 	board_usb_init(&g_usb_config_gx_skt_a,BOARD_USB_MODE_HOST);
 	board_usb_init(&g_usb_config_gx_skt_b,BOARD_USB_MODE_HOST);
@@ -335,6 +344,11 @@ int board_init(void)
 int board_late_init(void){
 	/*add board late init function here*/
 	run_command("setenv fdt_high 0x20000000", 1);
+
+#ifdef CONFIG_AML_V2_FACTORY_BURN
+	aml_try_factory_sdcard_burning(0, gd->bd);
+#endif// #ifdef CONFIG_AML_V2_FACTORY_BURN
+
 	return 0;
 }
 #endif

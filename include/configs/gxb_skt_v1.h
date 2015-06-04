@@ -134,7 +134,8 @@
 	#define CONFIG_USB_DWC_OTG_HCD  1
 	#define CONFIG_USB_DWC_OTG_294	1
 #endif //#if defined(CONFIG_CMD_USB)
-#define CONFIG_AML_TINY_USBTOOL 1
+//#define CONFIG_AML_TINY_USBTOOL 1
+#define CONFIG_AML_V2_FACTORY_BURN   1
 
 /* net */
 #define CONFIG_CMD_NET   1
@@ -186,6 +187,7 @@
 #define CONFIG_NEED_BL301	1
 #define CONFIG_BOOTDELAY	1
 #define CONFIG_SYS_LONGHELP 1
+#define CONFIG_CMD_MISC         1
 
 //support secure boot
 //#define CONFIG_AML_SECURE_UBOOT   1
