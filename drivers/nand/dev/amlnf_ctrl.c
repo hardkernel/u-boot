@@ -693,7 +693,11 @@ void amlnf_disprotect(char * name)
 		aml_nand_msg("disprotect hynix");
 		info_disprotect |= DISPROTECT_HYNIX;
 	}
-
+	if (strcmp((const char *)name, "dbg") == 0) {
+		aml_nand_msg("disprotect dbg");
+		info_disprotect |= DISPROTECT_DBG;
+	}
+	aml_nand_msg("disprotect 0x%08x", info_disprotect);
 	return ;
 }
 

@@ -5,7 +5,7 @@
 #include "hw_ctrl.h"
 #include "amlnf_ctrl.h"
 #include "amlnf_cfg.h"
-//#include<partition_table.h>	//fixme, yyh
+#include "partition_table.h"
 
 #ifndef AML_NAND_UBOOT
 #include <linux/types.h>
@@ -26,12 +26,16 @@
 #define BOOT_LINE		do {;} while(0);
 //#define PHY_NAND_LINE	do {aml_nand_msg("%s() l-%d", __FUNCTION__, __LINE__);} while(0);
 #define PHY_NAND_LINE	do {;} while(0);
-#define ENV_NAND_LINE   do {;} while(0); //do {aml_nand_msg("%s() l-%d", __FUNCTION__, __LINE__);} while(0);
+//#define ENV_NAND_LINE	do {aml_nand_msg("%s() l-%d", __FUNCTION__, __LINE__);} while(0);
+#define ENV_NAND_LINE   do {;} while(0);
 //#define CMD_LINE		do {aml_nand_msg("%s() l-%d", __FUNCTION__, __LINE__);} while(0);
 #define CMD_LINE		do {;} while(0);
 //#define PHYDEV_LINE		do {aml_nand_msg("%s() l-%d", __FUNCTION__, __LINE__);} while(0);
 #define PHYDEV_LINE		do {;} while(0);
 
+
+#define DISPROTECT_DBG			1<<4
+#if (AML_CFG_INSIDE_PARTTBL)
 /*
  * fixme, moved from <partition_table.h>
  */
@@ -46,7 +50,7 @@
 #define	STORE_CODE	(1<<0)
 #define STORE_CACHE	(1<<1)
 #define STORE_DATA	(1<<2)
-
+#endif //0
 /*
  * cpu version
  **/

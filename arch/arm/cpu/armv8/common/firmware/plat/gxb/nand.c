@@ -19,6 +19,7 @@
 #include <platform_def.h>
 #include <asm/arch/io.h>
 #include <asm/arch/nand.h>
+#include <efuse.h>
 #include <asm/arch/secure_apb.h>
 #include <asm/arch/romboot.h>
 #include <arch_helpers.h>
@@ -467,16 +468,12 @@ uint32_t nfio_page_read(uint32_t src, uint32_t mem)
     uint32_t k, ecc_pages;
     uint32_t info;
     uint64_t mem_addr;
-//    uint64_t src64 = (uint64_t) mem;
+
     uint32_t info_adr = NAND_INFO_BUF;	//use romboot's buffer.
 	uint64_t info_adr64;
 	uint64_t * p_info_buf;
 	volatile uint64_t dma_done;
 
-    // page size, unit: 8 bytes
-    //ecc_mode   = glb_setup.cfg.b.cmd>>14&7;
-    //short_mode = glb_setup.cfg.b.cmd>>13&1;
-    //short_size = glb_setup.cfg.b.cmd>>6&0x7f;
     ecc_pages      = glb_setup.cfg.b.cmd&0x3f;
 
 	NFIO_LINE
@@ -591,7 +588,6 @@ static uint32_t page_2_addr(uint32_t page)
 
 	if (new_type) {
 		uint32_t blk_addr;
-		//fixme , confirm the value of page_per_blk
 		blk_addr = (page / page_per_blk) * page_per_blk;
 		/* hynix */
 		if (new_type < 10) {
@@ -661,15 +657,13 @@ uint32_t nfio_init()
 	nand_page0_t *page0	= (nand_page0_t *)NAND_PAGE0_BUF;
 	nand_setup_t *nand_setup;
 	ext_info_t * p_ext_info;
+	char e_cfg[8];
 
 	nand_setup = &page0->nand_setup;
 	p_ext_info = &page0->ext_info;
-	//fixme, do not read back efuse 1st.
-    //efuse_features_t *efuse;
 
-    //efuse = efuse_features_get();
-
-    // from default
+	efuse_read(0, 8, e_cfg);
+	// from default
     glb_setup.cfg.d32 = DEFAULT_ECC_MODE;
     glb_setup.cfg.b.active = 1;
 
@@ -684,15 +678,6 @@ uint32_t nfio_init()
 
     // set clk to 24MHz
 	(*P_CLK_CNTL) = ( 1<< 31 | 1<<28 | 1 << 21 | 2 << 8 | 1);
-	/*
-    clk.d32 = 0;
-    clk.b.div = 1;
-    clk.b.src = 0; // 24MHz
-    clk.b.core_phase = 2;
-    clk.b.nand = 1;
-    clk.b.always_on = 1;
-    sd_emmc_port->gclock = clk.d32;
-	*/
 
     // nand cfg register:
     // sync[11:10] : 0:aync, 1:micron(started from sync, don't need to set),
@@ -706,20 +691,22 @@ uint32_t nfio_init()
         |(0<<14) // disable apb_mode
         |(1<<31);// disable NAND bus gated clock.
 
+	if (e_cfg[6] & (1 << 5))
+        (*P_NAND_CFG) = (*P_NAND_CFG) |(1<<17); // enable encrypt mode.
+
     // reset
     ret = nfio_reset();
     if (ret) return ret;
     NFIO_LINE
     //read ID
 	glb_setup.id = _read_id();
-	printf("MID, %x\n", glb_setup.id);
+	//printf("MID, %x\n", glb_setup.id);
     // set retry parameter.
 	_set_retry(glb_setup.id);
     NFIO_LINE
 
 	//_dump_mem_u8((uint8_t *)page0, 384);
 	/* fixme, use the memory filled by romboot nfdrv.*/
-#if 1
     ret = nfio_read(0, NAND_PAGE0_BUF, 384);
     if (ret == ERROR_NAND_ECC) {
         if (glb_setup.id == NAND_MFR_SANDISK) {
@@ -735,12 +722,6 @@ uint32_t nfio_init()
             ret = nfio_read(0, NAND_PAGE0_BUF, 384);
         }
     }
-	/*fixme, */
- #if 0
-    if ( efuse->disk_encry_e )
-        boot_des_decrypt ((uint8_t *)NAND_PAGE0_BUF, (uint8_t *)NAND_PAGE0_BUF, 384);
- #endif //0
-#endif
     // override
     glb_setup.cfg.d32 = nand_setup->cfg.d32; //get cfg!
     glb_setup.id      = nand_setup->id;
@@ -751,10 +732,6 @@ uint32_t nfio_init()
 	glb_ext_info.page_per_blk = p_ext_info->page_per_blk;
 
 	printf("cfg %x, new %x, pages %x\n", glb_setup.cfg.d32, glb_ext_info.new_type, glb_ext_info.page_per_blk);
-	//override dbg ...
-	// glb_setup.cfg.d32 = 0xeb8008;
-	// glb_ext_info.new_type = 0x32;
-	// glb_ext_info.page_per_blk = 0x100;
 	NFIO_LINE
 
 	return ret;
@@ -772,7 +749,6 @@ uint32_t nf_read(uint32_t boot_device, uint32_t src, uint32_t des, uint32_t size
 	uint32_t _page_size, _page, _cnt;
 	uint32_t ecc_mode, ecc_pages;
 	uint32_t ret = 0;
-	//uint64_t des64;
 
 	ecc_mode   = glb_setup.cfg.b.cmd>>14&7;
     ecc_pages      = glb_setup.cfg.b.cmd&0x3f;
@@ -786,9 +762,6 @@ uint32_t nf_read(uint32_t boot_device, uint32_t src, uint32_t des, uint32_t size
 	NFIO_LINE
 	_page = src / _page_size;
 	_cnt = size;
-	//_cnt = size / _page_size;
-	//_cnt = (size % _page_size == 0) ? _cnt : (_cnt+1);
-	printf("_page_size %x, _cnt %x\n", _page_size, _cnt);
 	ret = nfio_read(_page + 1, des, _cnt);	/*skip page0 */
 	// des64 = (uint64_t) des;
 	// _dump_mem_u8((uint8_t *)des64, size);

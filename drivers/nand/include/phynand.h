@@ -698,7 +698,7 @@ struct dev_para {
 
 	u32 option;
 };
-
+#if (AML_CFG_INSIDE_PARTTBL)
 #define MAX_PART_NUM	16
 #define PART_NAME_LEN 16
 struct partitions {
@@ -711,8 +711,9 @@ struct partitions {
 	/* master flags to mask out for this partition */
 	u32 mask_flags;
 	/* for memcpy  align */
-	void *priv;
+	//void *priv;
 };
+#endif /* AML_CFG_INSIDE_PARTTBL */
 
 struct nand_config {
 	u32 crc;

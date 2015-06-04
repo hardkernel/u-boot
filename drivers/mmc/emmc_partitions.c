@@ -14,7 +14,7 @@ bool is_partition_checked = false;
 unsigned device_boot_flag = EMMC_BOOT_FLAG;
 extern struct mmc *find_mmc_device_by_port (unsigned sdio_port);
 
-struct partitions part_table[]={
+struct partitions part_table[MAX_PART_NUM]={
 		{
 			.name = "logo",
 			.size = 32*SZ_1M,
@@ -22,6 +22,21 @@ struct partitions part_table[]={
 		},
 		{
 			.name = "recovery",
+			.size = 32*SZ_1M,
+			.mask_flags = STORE_CODE,
+		},
+		{
+			.name = "dtb",
+			.size = 8*SZ_1M,
+			.mask_flags = STORE_CODE,
+		},
+		{
+			.name = "tee",
+			.size = 8*SZ_1M,
+			.mask_flags = STORE_CODE,
+		},
+		{
+			.name = "crypt",
 			.size = 32*SZ_1M,
 			.mask_flags = STORE_CODE,
 		},

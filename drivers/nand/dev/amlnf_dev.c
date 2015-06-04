@@ -5,7 +5,7 @@
  */
 
 #include "../include/amlnf_dev.h"
-
+#include "partition_table.h"
 int boot_device_flag = 0;
 struct aml_nand_device *aml_nand_dev = NULL;
 
@@ -755,6 +755,9 @@ static int _amlnf_init(struct platform_device *pdev, u32 flag)
 		}
 		goto exit_error0;
 	}
+	PHY_NAND_LINE
+	/* store  */
+	device_boot_flag = NAND_BOOT_FLAG;
 	PHY_NAND_LINE
 	//only read id, quit myself.
 	if (flag == NAND_SCAN_ID_INIT)

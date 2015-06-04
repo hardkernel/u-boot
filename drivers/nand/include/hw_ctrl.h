@@ -312,6 +312,11 @@ static inline void amlnf_clr_reg32_mask(volatile uint32_t *_reg,
 #define NFC_DISABLE_IO_IRQ(host) \
 	AMLNF_CLEAR_REG_MASK((host)->reg_base + P_NAND_CFG, 1<<21)
 
+#define NFC_ENABLE_ENCRYPT(host)	\
+	AMLNF_SET_REG_MASK((host)->reg_base + P_NAND_CFG, 1<<17)
+#define NFC_DISABLE_ENCRYPT(host) \
+	AMLNF_CLEAR_REG_MASK((host)->reg_base + P_NAND_CFG, 1<<17)
+
 
 /**
     ADDR operations

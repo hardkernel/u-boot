@@ -11,7 +11,7 @@
 **
 *****************************************************************/
 #include "../include/phynand.h"
-
+#include <asm/arch/secure_apb.h>
 static int controller_select_chip(struct hw_controller *controller,
 	u8 chipnr)
 {
@@ -627,6 +627,9 @@ static int controller_adjust_timing(struct hw_controller *controller)
 	NFC_SET_CFG(controller , 0);
 	NFC_SET_TIMING_ASYC(controller, bus_timing, (bus_cycle - 1));
 
+	/* for encrypt store */
+	if (AMLNF_READ_REG(P_AO_SEC_SD_CFG10) &  (1 << 15))
+		NFC_ENABLE_ENCRYPT(controller);
 	if (get_cpu_type() >= MESON_CPU_MAJOR_ID_M8)	{
 #if (AML_CFG_NEWOOB_EN) /* !!!we need modify later. */
 		/* fixme, debug code....*/

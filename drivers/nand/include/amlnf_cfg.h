@@ -10,7 +10,7 @@
 
 
 #define	AML_NAND_DBG				(0)
-
+#define	AML_CFG_INSIDE_PARTTBL		(0)
 #define AML_CFG_2PLANE_READ_EN		(1)
 #define	AML_CFG_NEW_NAND_SUPPORT	(1)
 #define AML_CFG_NEWOOB_EN			(1)

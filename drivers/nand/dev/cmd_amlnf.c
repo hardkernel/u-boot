@@ -10,7 +10,9 @@
 **
 **
 *****************************************************************/
-
+#include <config.h>
+#include <common.h>
+#include <command.h>
 #include "../include/amlnf_dev.h"
 
 #ifdef AML_NAND_UBOOT
@@ -270,7 +272,7 @@ flush:
 
 extern void dbg_phyop(void);
 
-int do_amlnfphy(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+static int do_amlnfphy(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	struct amlnand_phydev *phydev = NULL;
 	struct phydev_ops  *devops = NULL;
@@ -393,7 +395,7 @@ int do_amlnfphy(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		else
 			ret = amlnand_write(nftl_dev, (u8 *)addr, off, size);
 
-		aml_nand_msg(" 0x%llx bytes %s : %s",
+		aml_nand_dbg(" 0x%llx bytes %s : %s",
 				size,
 				nfread_flag ? "read_byte" : "write_byte",
 				ret ? "ERROR" : "OK");
@@ -946,8 +948,8 @@ usage:
 	return 1;
 }
 
-U_BOOT_CMD(amlnf, CONFIG_SYS_MAXARGS, 1, do_amlnfphy,
-	"AMLPHYNAND sub-system",
+#ifdef CONFIG_SYS_LONGHELP
+static char amlnand_help_text[] =
 	"init - init amlnand_phy here\n"
 	"chipinfo - show aml chip information\n"
 	"device[dev] - show or set current device\n"
@@ -974,6 +976,13 @@ U_BOOT_CMD(amlnf, CONFIG_SYS_MAXARGS, 1, do_amlnfphy,
 	"markbad addr - mark block bad at addr\n"
 	"mark_reserved reserved_blk_NO -mark reserved_blk_NO bad \n"
 	"ldevice[dev] - show/get nftl(logic) device by name\n"
+	"";
+#endif
+
+U_BOOT_CMD(
+	amlnf, CONFIG_SYS_MAXARGS, 0, do_amlnfphy,
+	"aml nand sub-system",
+	amlnand_help_text
 );
 
 
