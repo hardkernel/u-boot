@@ -65,7 +65,7 @@ extern int nand_unlock(struct mtd_info *mtd, loff_t ofs, uint64_t len);
  * adjust this accordingly.
  */
 #define NAND_MAX_OOBSIZE       744
-#define NAND_MAX_PAGESIZE      8192
+//#define NAND_MAX_PAGESIZE      8192
 #endif
 
 /*
@@ -561,10 +561,10 @@ struct nand_buffers {
 	uint8_t *ecccalc;
 	uint8_t *ecccode;
 	uint8_t *databuf;
-#else
-	uint8_t	ecccalc[ALIGN(NAND_MAX_OOBSIZE, ARCH_DMA_MINALIGN)];
-	uint8_t	ecccode[ALIGN(NAND_MAX_OOBSIZE, ARCH_DMA_MINALIGN)];
-	uint8_t databuf[ALIGN(NAND_MAX_PAGESIZE + NAND_MAX_OOBSIZE,
+//#else
+//	uint8_t	ecccalc[ALIGN(NAND_MAX_OOBSIZE, ARCH_DMA_MINALIGN)];
+//	uint8_t	ecccode[ALIGN(NAND_MAX_OOBSIZE, ARCH_DMA_MINALIGN)];
+//	uint8_t databuf[ALIGN(NAND_MAX_PAGESIZE + NAND_MAX_OOBSIZE,
 			      ARCH_DMA_MINALIGN)];
 #endif
 };
@@ -1009,8 +1009,9 @@ static inline int nand_opcode_8bits(unsigned int command)
 /* return the supported JEDEC features. */
 static inline int jedec_feature(struct nand_chip *chip)
 {
-	return chip->jedec_version ? le16_to_cpu(chip->jedec_params.features)
-		: 0;
+	//return chip->jedec_version ? le16_to_cpu(chip->jedec_params.features)
+	//	: 0;
+	return 0;
 }
 
 #ifdef __UBOOT__
