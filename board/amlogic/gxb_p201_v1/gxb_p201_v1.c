@@ -350,7 +350,7 @@ int board_late_init(void){
 	run_command("setenv fdt_high 0x20000000", 1);
 
 #ifdef CONFIG_AML_V2_FACTORY_BURN
-	aml_try_factory_sdcard_burning(0, gd->bd);
+	/*aml_try_factory_sdcard_burning(0, gd->bd);*/
 #endif// #ifdef CONFIG_AML_V2_FACTORY_BURN
 
 	return 0;
