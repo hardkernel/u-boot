@@ -24,7 +24,7 @@ static ulong mmc_erase_t(struct mmc *mmc, ulong start, lbaint_t blkcnt)
 		end = (start + blkcnt - 1) * mmc->write_bl_len;
 		start *= mmc->write_bl_len;
 	}
-	printf("start = %lu,end = %lu\n",start,end);
+
 	if (IS_SD(mmc)) {
 		start_cmd = SD_CMD_ERASE_WR_BLK_START;
 		end_cmd = SD_CMD_ERASE_WR_BLK_END;
@@ -72,10 +72,7 @@ unsigned long mmc_berase(int dev_num, lbaint_t start, lbaint_t blkcnt)
 
 	if (!mmc)
 		return -1;
-	if (blkcnt == 0) {
-		blkcnt = mmc->capacity/512 - (mmc->capacity/512)% mmc->erase_grp_size; // erase whole
-		printf("blkcnt = %lu\n",blkcnt);
-	}
+
 	if ((start % mmc->erase_grp_size) || (blkcnt % mmc->erase_grp_size))
 		printf("\n\nCaution! Your devices Erase group is 0x%x\n"
 		       "The erase range would be change to "
@@ -85,7 +82,7 @@ unsigned long mmc_berase(int dev_num, lbaint_t start, lbaint_t blkcnt)
 		       & ~(mmc->erase_grp_size - 1)) - 1);
 
 	while (blk < blkcnt) {
-		blk_r = ((blkcnt - blk) < mmc->erase_grp_size) ?
+		blk_r = ((blkcnt - blk) > mmc->erase_grp_size) ?
 			mmc->erase_grp_size : (blkcnt - blk);
 		err = mmc_erase_t(mmc, start + blk, blk_r);
 		if (err)
@@ -95,10 +92,10 @@ unsigned long mmc_berase(int dev_num, lbaint_t start, lbaint_t blkcnt)
 
 		/* Waiting for the ready status */
 		if (mmc_send_status(mmc, timeout))
-			return 1;
+			return 0;
 	}
 
-	return 0;
+	return blk;
 }
 
 static ulong mmc_write_blocks(struct mmc *mmc, lbaint_t start,

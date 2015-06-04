@@ -471,32 +471,30 @@ int mmc_device_init (struct mmc *mmc)
 	return ret;
 }
 
-
 int find_dev_num_by_partition_name (char *name)
 {
-	int dev_num=-1;
-	//struct mmc *mmc;
+    int port=-1, dev_num;
+    struct mmc *mmc;
 
     if (!strncmp(name, MMC_CARD_PARTITION_NAME, sizeof(MMC_CARD_PARTITION_NAME))) { // card
-       // port = SDIO_PORT_B;
-        dev_num = 0;
+        port = SDIO_PORT_B;
     } else { // eMMC OR TSD
         if (find_mmc_partition_by_name(name)) { // partition name is valid
-            //port = SDIO_PORT_C;
-            dev_num = 1;
+            port = SDIO_PORT_C;
         } // else port=-1
     }
 
-//    if (port > 0) {
-//        mmc = find_mmc_device_by_port((unsigned)port);
-//        if (!mmc) { // not found
-//            dev_num = -1;
-//        } else {
-//            dev_num = mmc->block_dev.dev;
-//        }
-//    } else { // partition name is invalid
-//        dev_num = -1;
-//    }
+    if (port > 0) {
+        mmc = find_mmc_device_by_port((unsigned)port);
+        if (!mmc) { // not found
+            dev_num = -1;
+        } else {
+            dev_num = mmc->block_dev.dev;
+        }
+    } else { // partition name is invalid
+        dev_num = -1;
+    }
+	// printf("[%s] dev_num = %d\n", __FUNCTION__, dev_num);
 
     return dev_num;
 }

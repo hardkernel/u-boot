@@ -43,7 +43,7 @@ static disk_partition_t cur_part_info;
 #define DOS_FS_TYPE_OFFSET	0x36
 #define DOS_FS32_TYPE_OFFSET	0x52
 
-int disk_read(__u32 block, __u32 nr_blocks, void *buf)
+static int disk_read(__u32 block, __u32 nr_blocks, void *buf)
 {
 	if (!cur_dev || !cur_dev->block_read)
 		return -1;
