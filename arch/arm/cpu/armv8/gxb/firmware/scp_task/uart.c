@@ -37,6 +37,7 @@
 #define P_UART_CTRL(uart_base)		P_UART(uart_base, UART_CTRL)
 #define P_UART_STATUS(uart_base)	P_UART(uart_base, UART_STATUS)
 
+
 #define writel(v, addr) (*((unsigned *)addr) = v)
 #define readl(addr) (*((unsigned *)addr))
 

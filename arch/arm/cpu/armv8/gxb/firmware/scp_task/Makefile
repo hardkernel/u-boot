@@ -54,6 +54,7 @@ OBJS += misc.o
 OBJS += uart.o
 OBJS += suspend.o
 OBJS += dvfs.o
+OBJS += scp_remote.o
 
 OBJS := $(OBJS:%=$(obj)/%)
 
