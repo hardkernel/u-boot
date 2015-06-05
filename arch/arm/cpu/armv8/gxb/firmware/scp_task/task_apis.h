@@ -19,5 +19,8 @@ void uart_put_hex(unsigned int data, unsigned bitlen);
 #define dbg_prints(s)  {uart_puts(s); }
 
 void enter_suspend(void);
+void get_dvfs_info(unsigned int domain,
+		unsigned char *info_out, unsigned int *size_out);
+void set_dvfs(unsigned int domain, unsigned int index);
 
 #endif

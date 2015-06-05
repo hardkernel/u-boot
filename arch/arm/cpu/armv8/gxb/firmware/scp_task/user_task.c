@@ -59,6 +59,17 @@ void secure_task(void)
 	}
 }
 
+void process_high_task(unsigned command)
+{
+	unsigned *pcommand =
+	    (unsigned *)(&(high_task_share_mem[TASK_COMMAND_OFFSET]));
+/*	unsigned *response =
+	    (unsigned *)(&(high_task_share_mem[TASK_RESPONSE_OFFSET]));
+*/
+	if (command == HIGH_TASK_SET_DVFS)
+		set_dvfs(*(pcommand + 1), *(pcommand + 2));
+}
+
 void high_task(void)
 {
 	unsigned *pcommand =
@@ -74,12 +85,27 @@ void high_task(void)
 		/* do high task process */
 		command = *pcommand;
 		if (command) {
-			dbg_print("process command ", command);
-
+			/*dbg_print("process command ", command);*/
+			process_high_task(command);
 			*pcommand = 0;
 			*response = 0;
 		}
 		__switch_back_highmb();
+	}
+}
+
+void process_low_task(unsigned command)
+{
+	unsigned *pcommand =
+	    (unsigned *)(&(low_task_share_mem[TASK_COMMAND_OFFSET]));
+	unsigned *response =
+	    (unsigned *)(&(low_task_share_mem[TASK_RESPONSE_OFFSET]));
+	unsigned para1;
+
+	if (command == LOW_TASK_GET_DVFS_INFO) {
+		para1 = *(pcommand + 1);
+		get_dvfs_info(para1,
+			(unsigned char *)(response+2), (response+1));
 	}
 }
 
@@ -98,7 +124,7 @@ void low_task(void)
 		/* do low task process */
 		command = *pcommand;
 		if (command) {
-			dbg_print("process command ", command);
+			process_low_task(command);
 
 			*pcommand = 0;
 			*response = 0;

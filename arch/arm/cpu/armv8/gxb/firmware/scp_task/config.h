@@ -31,5 +31,10 @@
   * BL30/BL301 share memory command list
 */
 #define COMMAND_SUSPEND_ENTER			0x1
+#define HIGH_TASK_SET_CLOCK	0x2
+#define LOW_TASK_GET_DVFS_INFO 0x3
+#define HIGH_TASK_GET_DVFS 0x4
+#define HIGH_TASK_SET_DVFS 0x5
+
 	/*bl301 resume to BL30*/
 #define RESPONSE_SUSPEND_LEAVE			0x1
