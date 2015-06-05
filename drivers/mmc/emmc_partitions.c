@@ -11,7 +11,7 @@
 
 struct mmc_partition_config * mmc_partition_config_of =NULL;
 bool is_partition_checked = false;
-unsigned device_boot_flag = EMMC_BOOT_FLAG;
+unsigned device_boot_flag = _AML_DEVICE_BOOT_FLAG_DEFAULT;
 extern struct mmc *find_mmc_device_by_port (unsigned sdio_port);
 
 struct partitions part_table[MAX_PART_NUM]={

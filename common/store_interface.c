@@ -4,12 +4,15 @@
 #include <watchdog.h>
 #include <malloc.h>
 #include <nand.h>
+#include <mmc.h>
 #include <asm/arch/nand.h>
 #include <linux/ctype.h>
 #include <asm/byteorder.h>
 #include <div64.h>
 #include <linux/err.h>
 #include<partition_table.h>
+
+extern int amlnf_init(unsigned flag);
 
 #define MsgP(fmt...)   printf("[store]"fmt)
 
@@ -78,6 +81,44 @@ static inline int str2longlong(char *p, unsigned long long *num)
 	}
 
 	return (*p != '\0' && *endptr == '\0') ? 1 : 0;
+}
+
+static int emmc_init(void)
+{
+	int ret = -1;
+	struct mmc *mmc = NULL;
+	mmc = find_mmc_device(1);
+	if (mmc) {
+		ret = mmc_init(mmc); // init eMMC/tSD+
+	}
+	return ret;
+}
+
+int get_device_boot_flag(void)
+{
+	int ret=0;
+    if (1) {//nand and emmc
+		//try eMMC init
+		device_boot_flag = EMMC_BOOT_FLAG;
+		ret = emmc_init();
+        if (!ret) {
+			printf("XXXXXXX======enter EMMC boot======XXXXXX\n");
+			return 0;
+		}
+		printf("EMMC init failed\n");
+
+		//try nand first
+		device_boot_flag = NAND_BOOT_FLAG;
+		ret = amlnf_init(0x5);
+        if (!ret) {
+			printf("XXXXXXX======enter NAND boot======XXXXXX\n");
+			return 0;
+		}
+		printf("NAND init failed\n");
+	}
+
+	printf("device_boot_flag=%d\n",device_boot_flag);
+	return -1;
 }
 
 static int get_off_size(int argc, char *argv[],  loff_t *off, loff_t *size)
@@ -672,8 +713,12 @@ R_SWITCH_BACK:
                 init_flag = (argc > 2) ? (int)simple_strtoul(argv[2], NULL, 16) : 0;
                 store_dbg("init_flag %d",init_flag);
 
-                if (device_boot_flag == -1) {
-                        //get_device_boot_flag();
+                if (device_boot_flag == _AML_DEVICE_BOOT_FLAG_DEFAULT ) {
+                        i = get_device_boot_flag();
+                        if (i) {
+                            MsgP("ERR:FAILED in get_device_boot_flag\n");
+                            return __LINE__;
+                        }
                 }
                 if (device_boot_flag == NAND_BOOT_FLAG)
                 {

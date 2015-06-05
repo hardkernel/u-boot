@@ -1143,20 +1143,15 @@ int optimus_set_burn_complete_flag(void)
 {
     int rc = 0;
     const int IsTplLoadedFromBurningPackage = aml_burn_check_uboot_loaded_for_burn(0);
-    const char* const upgrade_step = IsTplLoadedFromBurningPackage ? "2" : "1";
+    char upgrade_step[8];
 
     if (IsTplLoadedFromBurningPackage)
     {
-        extern int device_boot_flag;
-
-        char str_store[8];
-
-        sprintf(str_store, "%d", device_boot_flag);
-        DWN_MSG("store=%s\n", str_store);
         /*rc = run_command("defenv", 0);//use new env directly if uboot is new !!!*/
         set_default_env("## save_setting ##\n");//use new env directly if uboot is new !!!
-        setenv("store", str_store);
-        setenv("firstboot", "1");
+#if 0
+        const char* def_env_initargs = getenv("initargs");
+        const char* def_env_bootargs = getenv("bootargs");
         if (!strstr(getenv("initargs"), "storage") && getenv("initargs") && 0) {
                 rc = run_command("setenv initargs ${initargs} storage=${store}", 0);
                 DWN_MSG("[initargs=%s]\n", getenv("initargs"));
@@ -1165,10 +1160,15 @@ int optimus_set_burn_complete_flag(void)
                 rc = run_command("setenv bootargs ${bootargs} storage=${store}", 0);
                 DWN_MSG("[bootargs=%s]\n", getenv("bootargs"));
         }
+#endif
     }
 
+    //Enable firstboot when flash empty to wipe_data/wipe_cache
+    setenv("firstboot", "1");
+    upgrade_step[0] = '1' + IsTplLoadedFromBurningPackage;
+    upgrade_step[1] = '\0';
     DWN_MSG("Set upgrade_step to %s\n", upgrade_step);
-    rc = setenv("upgrade_step", (char*)upgrade_step);
+    rc = setenv("upgrade_step", upgrade_step);
     if (rc) {
         DWN_ERR("Fail to set upgraded_step to 1\n");
     }

@@ -42,6 +42,7 @@
 #define SPI_NAND_FLAG			4
 #define SPI_EMMC_FLAG			5
 
+#define _AML_DEVICE_BOOT_FLAG_DEFAULT   (0XFFFFFFFF)
 extern unsigned  device_boot_flag;
 
 #define START_ADDR 			0xd9000200

@@ -41,7 +41,8 @@
 /* args/envs */
 #define CONFIG_SYS_MAXARGS  64
 #define CONFIG_EXTRA_ENV_SETTINGS \
-		"storeboot="\
+        "firstboot=1\0"\
+        "storeboot="\
 				"get_rebootmode; echo reboot_mode=${reboot_mode};"\
 				"if test ${reboot_mode} = factory_reset; then "\
 								"run recovery;"\
@@ -50,6 +51,7 @@
 				"else if test ${reboot_mode} = usb_burning; then "\
 								"run usb_burning;"\
 				"else "\
+                        "setenv bootargs ${bootargs} androidboot.firstboot=${firstboot}; "\
 								"mmc dev 1;mmc read 1080000 17E000 10000;bootm 0x1080000;"\
 				"fi;fi;fi\0"\
 		"recovery="\
