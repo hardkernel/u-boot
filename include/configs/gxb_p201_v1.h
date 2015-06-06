@@ -41,6 +41,8 @@
 /* args/envs */
 #define CONFIG_SYS_MAXARGS  64
 #define CONFIG_EXTRA_ENV_SETTINGS \
+		"loadaddr=0x1080000\0" \
+		"firstboot=1\0"\
 		"storeboot="\
 				"get_rebootmode; echo reboot_mode=${reboot_mode};"\
 				"if test ${reboot_mode} = factory_reset; then "\
@@ -50,7 +52,8 @@
 				"else if test ${reboot_mode} = usb_burning; then "\
 								"run usb_burning;"\
 				"else "\
-								"amlnf lread boot 1080000 0 1000000;bootm 1080000;"\
+								"setenv bootargs ${bootargs} androidboot.firstboot=${firstboot}; "\
+								"store read boot ${loadaddr} 0 0x1400000;bootm 1080000;"\
 				"fi;fi;fi\0"\
 		"recovery="\
 				"echo enter recovery;"\
@@ -60,7 +63,7 @@
 				"if usb start 0; then "\
 								"if fatload usb 0 0x1080000 recovery.img; then bootm 0x1080000; fi;"\
 								"fi;"\
-				"if amlnf lread boot 1080000 0 1000000; then "\
+				"if store read recovery ${loadaddr} 0 0x1400000; then "\
 								"bootm 1080000; "\
 				"else "\
 								"echo no recovery in flash; "\
