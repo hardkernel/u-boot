@@ -808,9 +808,9 @@ int amlnf_init(u32 flag)
 	}
 	PHY_NAND_LINE
 	/*Initializing Nand Flash*/
-	_amlnf_init(pdev, flag);
+	ret = _amlnf_init(pdev, flag);
 	PHY_NAND_LINE
-	return 0;
+	return ret;
 }
 
 #ifdef AML_NAND_UBOOT

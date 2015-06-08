@@ -162,16 +162,16 @@ int do_store(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 		cmd = argv[1];
 
         if (strcmp(cmd, "erase") == 0) {
-
+			if (argc <= 3)
+                goto usage;
 				area = argv[2];
-
                 if (strcmp(area, "boot") == 0) {
                         if (device_boot_flag == NAND_BOOT_FLAG) {
 								off =  simple_strtoul(argv[3], NULL, 16);
 								size =  simple_strtoul(argv[4], NULL, 16);
 								store_dbg("NAND BOOT,erase uboot : %s %d  off =%llx ,size=%llx",__func__,__LINE__, off, size);
 
-								ret = run_command("amlnf  deverase boot 0",0);
+								ret = run_command("amlnf deverase boot 0",0);
                                 if (ret != 0) {
 										store_msg("nand cmd %s failed ",cmd);
 										return -1;

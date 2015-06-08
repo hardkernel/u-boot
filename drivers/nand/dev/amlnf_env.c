@@ -25,6 +25,10 @@ int amlnf_env_save(u8 *buf, int len)
 	int ret = 0;
 
 	aml_nand_msg("uboot env amlnf_env_save : ####");
+	if (aml_chip_env == NULL) {
+		aml_nand_msg("uboot env not init yet!,%s", __func__);
+		return -EFAULT;
+	}
 
 	if (len > CONFIG_ENV_SIZE) {
 		aml_nand_msg("uboot env data len too much,%s", __func__);
@@ -70,6 +74,11 @@ int amlnf_env_read(u8 *buf, int len)
 	if (len > CONFIG_ENV_SIZE) {
 		aml_nand_msg("uboot env data len too much,%s", __func__);
 		return -EFAULT;
+	}
+	if (aml_chip_env == NULL) {
+		memset(buf, 0x0, len);
+		aml_nand_msg("uboot env arg_valid = 0 invalid,%s", __func__);
+		return 0;
 	}
 
 	if (aml_chip_env->uboot_env.arg_valid == 0) {

@@ -331,7 +331,7 @@ static int do_amlnfphy(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]
 		putc('\n');
 		int init_flag = (ulong)strtoul(argv[2], NULL, 16);
 		/* flag = 0, indicate normal boot; */
-		/* flag = 1, indicate update; */
+		/* flag = 1, indicate update, with data; */
 		/* flag = 2, indicate need erase */
 		ret = amlnf_init(init_flag);
 		if (ret) {
