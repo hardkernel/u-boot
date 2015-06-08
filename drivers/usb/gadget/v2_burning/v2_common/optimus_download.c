@@ -11,6 +11,9 @@
  */
 #include "../v2_burning_i.h"
 #include <libfdt.h>
+#include <asm/arch/reboot.h>
+#include <asm/arch/secure_apb.h>
+#include <asm/io.h>
 
 #if defined(CONFIG_ACS)
 #include <asm/arch/cpu.h>
@@ -1183,10 +1186,11 @@ int optimus_set_burn_complete_flag(void)
 
 static int _optimus_set_reboot_mode(const int cfgFlag)
 {
+    unsigned _reboot_mode = 0;
     switch (cfgFlag)
     {
     case OPTIMUS_BURN_COMPLETE__REBOOT_UPDATE:
-            /*reboot_mode = AMLOGIC_UPDATE_REBOOT;  */
+            _reboot_mode = AMLOGIC_UPDATE_REBOOT;
             break;
 
     case OPTIMUS_BURN_COMPLETE__REBOOT_SDC_BURN:
@@ -1195,9 +1199,13 @@ static int _optimus_set_reboot_mode(const int cfgFlag)
 
     case OPTIMUS_BURN_COMPLETE__REBOOT_NORMAL:
     default:
-            /*reboot_mode = AMLOGIC_NORMAL_BOOT;  */
+            _reboot_mode = AMLOGIC_NORMAL_BOOT;
             break;
     }
+
+    _reboot_mode <<= 12;
+    _reboot_mode |= readl(AO_SEC_SD_CFG15) & 0xfffU;
+    /*writel(_reboot_mode, AO_SEC_SD_CFG15);*/
 
     return 0;
 }
@@ -1236,8 +1244,7 @@ void optimus_reset(const int cfgFlag)
 
 void optimus_poweroff(void)
 {
-    //writel(0, CONFIG_TPL_BOOT_ID_ADDR);//clear boot_id
-	/*reboot_mode_clear();*/
+    run_command("clear_rebootmode", 0);
 
 #if CONFIG_POWER_KEY_NOT_SUPPORTED_FOR_BURN
     DWN_MSG("stop here as poweroff and powerkey not supported in platform!\n");

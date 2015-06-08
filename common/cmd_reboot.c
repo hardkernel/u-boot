@@ -94,3 +94,18 @@ U_BOOT_CMD(
 	"/N\n"
 	"This command will set 'reboot_mode'\n"
 );
+
+int do_clear_rebootmode (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+	/*uint32_t reboot_mode_val =  readl(AO_SEC_SD_CFG15)  & 0xfffU ;*/
+	/*writel(reboot_mode_val, AO_SEC_SD_CFG15);*/
+	return 0;
+}
+
+U_BOOT_CMD(
+	clear_rebootmode,	1,	0,	do_clear_rebootmode,
+	"clear rebootmode",
+	"This command will clear reboot_mode\n"
+);
+
+

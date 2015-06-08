@@ -323,6 +323,7 @@ struct amlogic_usb_config g_usb_config_gx_skt_h={
 
 int board_init(void)
 {
+    //Please keep CONFIG_AML_V2_FACTORY_BURN at first place of board_init
 #ifdef CONFIG_AML_V2_FACTORY_BURN
 	aml_try_factory_usb_burning(0, gd->bd);
 #endif// #ifdef CONFIG_AML_V2_FACTORY_BURN
@@ -343,33 +344,12 @@ int board_init(void)
 #ifdef CONFIG_BOARD_LATE_INIT
 int board_late_init(void){
 	/*add board late init function here*/
-	run_command("setenv fdt_high 0x20000000", 1);
 
 #ifdef CONFIG_AML_V2_FACTORY_BURN
 	/*aml_try_factory_sdcard_burning(0, gd->bd);*/
 #endif// #ifdef CONFIG_AML_V2_FACTORY_BURN
 
 	return 0;
-}
-#endif
-
-#ifdef CONFIG_AML_TINY_USBTOOL
-int usb_get_update_result(void)
-{
-	unsigned long upgrade_step;
-	upgrade_step = simple_strtoul (getenv ("upgrade_step"), NULL, 16);
-	printf("upgrade_step = %d\n", (int)upgrade_step);
-	if (upgrade_step == 1)
-	{
-		run_command("defenv", 1);
-		run_command("setenv upgrade_step 2", 1);
-		run_command("saveenv", 1);
-		return 0;
-	}
-	else
-	{
-		return -1;
-	}
 }
 #endif
 

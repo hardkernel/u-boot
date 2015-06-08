@@ -42,32 +42,73 @@
 #define CONFIG_SYS_MAXARGS  64
 #define CONFIG_EXTRA_ENV_SETTINGS \
         "firstboot=1\0"\
+        "upgrade_step=0\0"\
+        "loadaddr=1080000\0"\
+        "usb_burning=update 1000\0" \
+        "fdt_high=0x20000000\0"\
+        "try_auto_burn=update 700 750;\0"\
+        "sdcburncfg=aml_sdc_burn.ini\0"\
+        "sdc_burning=sdc_burn ${sdcburncfg}\0"\
+        "wipe_data=successful\0"\
+        "wipe_cache=successful\0"\
+        "upgrade_check="\
+                "if itest ${upgrade_step} == 3; then run update; fi; "\
+                "if itest ${upgrade_step} == 1; then env default -a; setenv upgrade_step 2; saveenv; fi; "\
+                "\0"\
+        "storeargs="\
+            "setenv bootargs ${bootargs} androidboot.firstboot=${firstboot}; "\
+            "\0"\
+        "switch_bootmode="\
+            "get_rebootmode; clear_rebootmode; echo reboot_mode=${reboot_mode};"\
+            "if test ${reboot_mode} = factory_reset; then "\
+                    "run recovery_from_flash;"\
+            "else if test ${reboot_mode} = update; then "\
+                    "run update;"\
+            "else if test ${reboot_mode} = cold_boot; then "\
+                /*"run try_auto_burn; "*/\
+            "fi;fi;fi;"\
+            "\0" \
         "storeboot="\
-				"get_rebootmode; echo reboot_mode=${reboot_mode};"\
-				"if test ${reboot_mode} = factory_reset; then "\
-								"run recovery;"\
-				"else if test ${reboot_mode} = update; then "\
-								"run recovery;"\
-				"else if test ${reboot_mode} = usb_burning; then "\
-								"run usb_burning;"\
-				"else "\
-                        "setenv bootargs ${bootargs} androidboot.firstboot=${firstboot}; "\
-								"mmc dev 1;mmc read 1080000 17E000 10000;bootm 0x1080000;"\
-				"fi;fi;fi\0"\
-		"recovery="\
-				"echo enter recovery;"\
-				"if mmcinfo; then "\
-								"if fatload mmc 0 0x1080000 recovery.img; then bootm 0x1080000;fi;"\
-				"fi; "\
-				"if usb start 0; then "\
-								"if fatload usb 0 0x1080000 recovery.img; then bootm 0x1080000; fi;"\
-								"fi;"\
-				"if amlnf lread boot 1080000 0 1000000; then "\
-								"bootm 1080000; "\
-				"else "\
-								"echo no recovery in flash; "\
-				"fi;\0"\
+            "if imgread kernel boot ${loadaddr}; then bootm ${loadaddr}; fi;"\
+            "\0"\
+        "factory_reset_poweroff_protect="\
+            "echo wipe_data=${wipe_data}; echo wipe_cache=${wipe_cache};"\
+            "if test ${wipe_data} = failed; then "\
+                "run recovery_from_flash;"\
+            "fi; "\
+            "if test ${wipe_cache} = failed; then "\
+                "run recovery_from_flash;"\
+            "fi; \0" \
+         "update="\
+            /*first usb burning, second sdc_burn, third ext-sd autoscr/recovery, last udisk autoscr/recovery*/\
+            "run usb_burning; "\
+            "run storeargs;"\
+            "if mmcinfo; then "\
+                "run recovery_from_sdcard;"\
+            "fi;"\
+            "if usb start 0; then "\
+                "run recovery_from_udisk;"\
+            "fi;"\
+            "run recovery_from_flash;"\
+            "\0"\
+        "recovery_from_sdcard="\
+            "if fatload mmc 0 ${loadaddr} aml_autoscript; then autoscr ${loadaddr}; fi;"\
+            "if fatload mmc 0 ${loadaddr} recovery.img; then bootm ${loadaddr};fi;"\
+            "\0"\
+        "recovery_from_udisk="\
+            "if fatload usb 0 ${loadaddr} aml_autoscript; then autoscr ${loadaddr}; fi;"\
+            "if fatload usb 0 ${loadaddr} recovery.img; then bootm ${loadaddr};fi;"\
+            "\0"\
+        "recovery_from_flash="\
+            "if imgread kernel recovery ${loadaddr}; then bootm ${loadaddr}; fi"\
+            "\0"\
 
+
+#define CONFIG_PREBOOT  \
+            "run upgrade_check;"\
+            "run storeargs;"\
+            "run switch_bootmode;" \
+            "run factory_reset_poweroff_protect;"
 #define CONFIG_BOOTARGS "init=/init console=ttyS0,115200 no_console_suspend earlyprintk=aml-uart,0xc81004c0 selinux=0"
 #define CONFIG_BOOTCOMMAND "run storeboot"
 
@@ -184,7 +225,8 @@
 #define CONFIG_NEED_BL301	1
 #define CONFIG_BOOTDELAY	1 //delay 1s
 #define CONFIG_SYS_LONGHELP 1
-#define CONFIG_CMD_MISC         1
+#define CONFIG_CMD_MISC     1
+#define CONFIG_CMD_ITEST    1
 
 #endif
 
