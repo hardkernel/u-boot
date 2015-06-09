@@ -205,6 +205,8 @@ class fixer(object):
 		no_blank_str_tmp = no_blank_str.replace("    ", "	")
 		if (no_blank_str_tmp == no_blank_str):
 			no_blank_str = no_blank_str.replace("	", "    ")
+		else:
+			no_blank_str = no_blank_str_tmp
 		#print self.cur_line_content
 		self.cur_line_content = no_blank_str + self.cur_line_content[cur_line_first_noblank_pos:cur_line_length]
 		#print self.cur_line_content
