@@ -66,7 +66,7 @@ ssize_t efuse_write(const char *buf, size_t count, loff_t *ppos )
 {
 	unsigned pos = *ppos;
 
-	if (pos >= EFUSE_BYTES)
+	if ((pos&0xffff) >= EFUSE_BYTES)
 		return 0;	/* Past EOF */
 	if (count > EFUSE_BYTES - pos)
 		count = EFUSE_BYTES - pos;

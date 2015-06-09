@@ -212,6 +212,7 @@ obj-$(CONFIG_USB_KEYBOARD) += usb_kbd.o
 obj-$(CONFIG_CMD_DFU) += cmd_dfu.o
 obj-$(CONFIG_CMD_GPT) += cmd_gpt.o
 obj-$(CONFIG_CMD_EFUSE) += cmd_efuse.o
+obj-$(CONFIG_CMD_CPU_TEMP) += cmd_cpu_temp.o
 endif
 
 ifdef CONFIG_SPL_BUILD

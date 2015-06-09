@@ -188,6 +188,7 @@
 #define CONFIG_BOOTDELAY	1
 #define CONFIG_SYS_LONGHELP 1
 #define CONFIG_CMD_MISC         1
+#define CONFIG_CMD_CPU_TEMP 1
 
 //support secure boot
 //#define CONFIG_AML_SECURE_UBOOT   1

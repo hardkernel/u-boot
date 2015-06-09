@@ -50,6 +50,9 @@ int efuse_getinfo(char *title, efuseinfo_item_t *info);
 int efuse_read_usr(char *buf, size_t count, loff_t *ppos);
 int efuse_write_usr(char* buf, size_t count, loff_t* ppos);
 uint32_t efuse_get_max(void);
+ssize_t efuse_read(char *buf, size_t count, loff_t *ppos );
+ssize_t efuse_write(const char *buf, size_t count, loff_t *ppos );
+int efuse_dump(char *buf, size_t count, loff_t *ppos);
 
 /*EFUSE_BYTES,EFUSE_DWORDS move to cpu.h in arch/arm/include/asm/arch-mxx/cpu.h */
 // for m6 and after efuse length
@@ -69,6 +72,12 @@ struct efuse_hal_api_arg{
 #define EFUSE_HAL_API_WRITE 1
 #define EFUSE_HAL_API_WRITE_PATTERN 2
 #define EFUSE_HAL_API_USER_MAX 3
+
+#define EFUSE_USER_MASK            (0x1 << 16)
+#define EFUSE_THERMAL_MASK         (0x1 << 17)
+#define EFUSE_THERMAL_VERFLAG_MASK (0x1 << 18)
+#define EFUSE_ENCRYPT_MASK         (0x1 << 19)
+#define EFUSE_DUMP_ALL             (0x1 << 30)
 
 #define ASSIST_HW_REV                              0x1f53
 

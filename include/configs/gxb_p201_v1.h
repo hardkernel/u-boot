@@ -233,6 +233,7 @@
 #define CONFIG_SYS_LONGHELP 1
 #define CONFIG_CMD_MISC     1
 #define CONFIG_CMD_ITEST    1
+#define CONFIG_CMD_CPU_TEMP 1
 
 #endif
 
