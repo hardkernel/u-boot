@@ -27,7 +27,7 @@ Reboot reason AND corresponding env setting:
 0:  Cold boot                 cold_boot
 1:  Normal boot               normal
 2:  Factory reset             factory_reset
-3:  Upgrade system            upgrade
+3:  Upgrade system            update
 4:  USB Burning               usb_burning
 5:  Suspend                   suspend_off
 6:  Hibernate                 hibernate

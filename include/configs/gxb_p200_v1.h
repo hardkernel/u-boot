@@ -59,7 +59,7 @@
             "setenv bootargs ${bootargs} androidboot.firstboot=${firstboot}; "\
             "\0"\
         "switch_bootmode="\
-            "get_rebootmode; clear_rebootmode; echo reboot_mode=${reboot_mode};"\
+            "get_rebootmode; echo reboot_mode=${reboot_mode};"\
             "if test ${reboot_mode} = factory_reset; then "\
                     "run recovery_from_flash;"\
             "else if test ${reboot_mode} = update; then "\

@@ -24,6 +24,7 @@
 #include <asm/arch/reboot.h>
 #include <asm/arch/secure_apb.h>
 #include <asm/io.h>
+#include <asm/arch/bl31_apis.h>
 
 /*
 run get_rebootmode  //set reboot_mode env with current mode
@@ -84,7 +85,40 @@ int do_get_rebootmode (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]
 			break;
 		}
 	}
+	return 0;
+}
 
+int do_reboot (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+	uint32_t reboot_mode_val = AMLOGIC_NORMAL_BOOT;
+	if (argc <= 1) {
+		printf("reboot use default mode: normal\n");
+	}
+	else {
+		printf("reboot mode: %s\n", argv[1]);
+		char * mode = argv[1];
+		if (strcmp(mode, "cold_boot") == 0)
+			reboot_mode_val = AMLOGIC_COLD_BOOT;
+		else if (strcmp(mode, "normal") == 0)
+			reboot_mode_val = AMLOGIC_NORMAL_BOOT;
+		else if (strcmp(mode, "recovery") == 0 || strcmp(mode, "factory_reset") == 0)
+			reboot_mode_val = AMLOGIC_FACTORY_RESET_REBOOT;
+		else if (strcmp(mode, "update") == 0)
+			reboot_mode_val = AMLOGIC_UPDATE_REBOOT;
+		else if (strcmp(mode, "usb_burning") == 0)
+			reboot_mode_val = AMLOGIC_USB_BURNING_REBOOT;
+		else if (strcmp(mode, "suspend_off") == 0)
+			reboot_mode_val = AMLOGIC_SUSPEND_REBOOT;
+		else if (strcmp(mode, "hibernate") == 0)
+			reboot_mode_val = AMLOGIC_HIBERNATE_REBOOT;
+		else if (strcmp(mode, "crash_dump") == 0)
+			reboot_mode_val = AMLOGIC_CRASH_REBOOT;
+		else {
+			printf("Can not find match reboot mode, use normal by default\n");
+			reboot_mode_val = AMLOGIC_NORMAL_BOOT;
+		}
+	}
+	aml_reboot (PSCI_SYS_REBOOT, reboot_mode_val, 0, 0);
 	return 0;
 }
 
@@ -92,20 +126,23 @@ U_BOOT_CMD(
 	get_rebootmode,	1,	0,	do_get_rebootmode,
 	"get reboot mode",
 	"/N\n"
-	"This command will set 'reboot_mode'\n"
+	"  This command will get and setenv 'reboot_mode'\n"
+	"get_rebootmode\n"
 );
-
-int do_clear_rebootmode (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
-{
-	/*uint32_t reboot_mode_val =  readl(AO_SEC_SD_CFG15)  & 0xfffU ;*/
-	/*writel(reboot_mode_val, AO_SEC_SD_CFG15);*/
-	return 0;
-}
 
 U_BOOT_CMD(
-	clear_rebootmode,	1,	0,	do_clear_rebootmode,
-	"clear rebootmode",
-	"This command will clear reboot_mode\n"
+	reboot,	2,	0,	do_reboot,
+	"set reboot mode and reboot system",
+	"[rebootmode]/N\n"
+	"  This command will set reboot mode and reboot system\n"
+	"\n"
+	"  support following [rebootmode]:\n"
+	"    cold_boot\n"
+	"    normal[default]\n"
+	"    factory_reset/recovery\n"
+	"    update\n"
+	"    usb_burning\n"
+	"    suspend_off\n"
+	"    hibernate\n"
+	"    crash_dump\n"
 );
-
-
