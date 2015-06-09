@@ -69,21 +69,27 @@ unsigned int pll_init(void){
 		(sys_pll_cntl&0x1FF)/ \
 		(1<<((sys_pll_cntl>>16)&0x3))));
 
+	//FIXED PLL
+	Wr(HHI_MPLL_CNTL4, CFG_MPLL_CNTL_4);
+	Wr(HHI_MPLL_CNTL, Rd(HHI_MPLL_CNTL)|(1<<29));
+	_udelay(200);
+	Wr(HHI_MPLL_CNTL2, CFG_MPLL_CNTL_2);
+	Wr(HHI_MPLL_CNTL3, CFG_MPLL_CNTL_3);
+	//Wr(HHI_MPLL_CNTL4, CFG_MPLL_CNTL_4);
+	Wr(HHI_MPLL_CNTL5, CFG_MPLL_CNTL_5);
+	Wr(HHI_MPLL_CNTL6, CFG_MPLL_CNTL_6);
+	Wr(HHI_MPLL_CNTL, ((1 << 30) | (1<<29) | (3 << 9) | (250 << 0)) );
+	Wr(HHI_MPLL_CNTL, Rd(HHI_MPLL_CNTL)&(~(1<<29)));	//set reset bit to 0
+	_udelay(800);
+	Wr(HHI_MPLL_CNTL4, Rd(HHI_MPLL_CNTL4)|(1<<14));
 	do {
-		Wr(HHI_MPLL_CNTL, (1<<29));
-		Wr(HHI_MPLL_CNTL2, CFG_MPLL_CNTL_2 );
-		Wr(HHI_MPLL_CNTL3, CFG_MPLL_CNTL_3 );
-		Wr(HHI_MPLL_CNTL4, CFG_MPLL_CNTL_4 );
-		Wr(HHI_MPLL_CNTL5, CFG_MPLL_CNTL_5 );
-		Wr(HHI_MPLL_CNTL6, CFG_MPLL_CNTL_6 );
-		Wr(HHI_MPLL_CNTL7, 0 );
-		Wr(HHI_MPLL_CNTL8, 0 );
-		Wr(HHI_MPLL_CNTL9, 0 );
-		Wr( HHI_MPLL_CNTL, ((1 << 30) | (1<<29) | (3 << 9) | (250 << 0)) );
-		_udelay(10);
+		if ((Rd(HHI_MPLL_CNTL)&(1<<31)) != 0)
+			break;
+		Wr(HHI_MPLL_CNTL,Rd(HHI_MPLL_CNTL) | (1<<29));
+		_udelay(1000);
 		Wr(HHI_MPLL_CNTL, Rd(HHI_MPLL_CNTL)&(~(1<<29)));
-		_udelay(100);
-	} while(pll_lock_check(HHI_MPLL_CNTL, "FIX PLL"));
+		_udelay(1000);
+	}while(pll_lock_check(HHI_MPLL_CNTL, "FIX PLL"));
 
 	// Enable the separate fclk_div2 and fclk_div3
 	//		.MPLL_CLK_OUT_DIV2_EN		( hi_mpll_cntl10[7:0]		),
