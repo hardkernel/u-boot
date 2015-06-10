@@ -18,8 +18,6 @@ struct scpi_opp_entry cpu_dvfs_tbl[] = {
 	DVFS(1032000000, 1050),
 	DVFS(1296000000, 1150),
 	DVFS(1536000000, 1150),
-	DVFS(1752000000, 1150),
-	DVFS(2016000000, 1150),
 };
 static void *memcpy(void *dest, const void *src, unsigned int count)
 {
