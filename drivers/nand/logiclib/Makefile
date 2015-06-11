@@ -5,4 +5,4 @@
 # SPDX-License-Identifier:	GPL-2.0+
 #
 
-obj-$(CONFIG_AML_NAND) += aml_nand_logic-150522.o
+obj-$(CONFIG_AML_NAND) += aml_nand_logic-150611.o
