@@ -67,6 +67,7 @@ void get_dvfs_info(unsigned int domain,
 
 void set_dvfs(unsigned int domain, unsigned int index)
 {
+#if 0
 	if (cpu_dvfs_tbl[index].volt_mv == 1150) {
 		unsigned int val;
 		val = readl(0xda834400 + 0xc*4);
@@ -77,4 +78,5 @@ void set_dvfs(unsigned int domain, unsigned int index)
 		val = val & (~(1<<29));
 		writel(val , (0xda834400 + 0xd*4));
 	}
+#endif
 }

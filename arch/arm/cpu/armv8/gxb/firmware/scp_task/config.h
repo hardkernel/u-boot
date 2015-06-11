@@ -1,6 +1,6 @@
 
 /*
-  * BL301 whole memory : 20KB
+  * BL301 whole memory : 16KB
 
   * Secure Priority Task Entry					128B
   * High Priority Task Entry						128B
@@ -13,8 +13,8 @@
   * Low Priority Task share memory:		1k
 */
 
-#define CONFIG_RAM_BASE        (0x10000000 + 36 * 1024)
-#define CONFIG_RAM_SIZE         (17 * 1024)
+#define CONFIG_RAM_BASE        (0x10000000 + 40 * 1024)
+#define CONFIG_RAM_SIZE         (13 * 1024)
 #define CONFIG_RAM_END		(CONFIG_RAM_BASE+CONFIG_RAM_SIZE)
 
 #define CONFIG_TASK_STACK_SIZE	1024
