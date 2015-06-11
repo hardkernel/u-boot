@@ -24,6 +24,7 @@
 #include <asm/arch/watchdog.h>
 #include <io.h>
 #include <asm/arch/io.h>
+#include <timer.h>
 
 void watchdog_init(uint32_t msec)
 {
@@ -52,20 +53,20 @@ void watchdog_disable(void)
 }
 void reset_system(void)
 {
-        int i;
-
-        while (1) {
-		writel(   0x3   | (1 << 21) // sys reset en
-				| (1 << 23) // interrupt en
-				| (1 << 24) // clk en
-				| (1 << 25) // clk div en
-				| (1 << 26) // sys reset now
+	int i;
+	_udelay(10000); //wait print
+	while (1) {
+		writel( 0x3 | (1 << 21) // sys reset en
+					| (1 << 23) // interrupt en
+					| (1 << 24) // clk en
+					| (1 << 25) // clk div en
+					| (1 << 26) // sys reset now
 			, P_WATCHDOG_CNTL);
-                writel(0, P_WATCHDOG_RESET);
+		writel(0, P_WATCHDOG_RESET);
 
-                writel(readl(P_WATCHDOG_CNTL) | (1<<18), // watchdog en
+		writel(readl(P_WATCHDOG_CNTL) | (1<<18), // watchdog en
 			P_WATCHDOG_CNTL);
-                for (i=0; i<100; i++)
-                        readl(P_WATCHDOG_CNTL);/*Deceive gcc for waiting some cycles */
+		for (i=0; i<100; i++)
+			readl(P_WATCHDOG_CNTL);/*Deceive gcc for waiting some cycles */
 	}
 }
