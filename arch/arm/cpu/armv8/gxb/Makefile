@@ -4,3 +4,4 @@ obj-y	+= usb.o
 obj-y   += bl31_apis.o
 obj-y	+= watchdog.o
 obj-y	+= timer.o
+obj-y	+= mailbox.o

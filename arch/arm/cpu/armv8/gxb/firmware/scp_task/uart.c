@@ -47,20 +47,23 @@ static int uart_tx_isfull(void)
 		UART_STAT_MASK_TFIFO_FULL;
 }
 
+void wait_uart_empty(void)
+{
+	while (!(readl(P_UART_STATUS(UART_PORT_CONS)) & (1 << 22)))
+		;
+}
+
 int uart_putc(int c)
 {
-	if (c == '\n') {
-		while ((readl(P_UART_STATUS(UART_PORT_CONS)) &
-					UART_STAT_MASK_TFIFO_FULL))
-						;
-		writel('\r', P_UART_WFIFO(UART_PORT_CONS));
-	}
+	if (c == '\n')
+		uart_putc('\r');
 
 	/* Wait until TX is not full */
 	while (uart_tx_isfull())
 		;
 
 	writel((char)c, P_UART_WFIFO(UART_PORT_CONS));
+	/*wait_uart_empty();*/
 	return c;
 }
 
@@ -69,12 +72,6 @@ int uart_puts(const char *s)
 	while (*s)
 		uart_putc(*s++);
 	return 1;
-}
-
-void wait_uart_empty(void)
-{
-	while (!(readl(P_UART_STATUS(UART_PORT_CONS)) & (1 << 22)))
-		;
 }
 
 void uart_put_hex(unsigned int data, unsigned bitlen)

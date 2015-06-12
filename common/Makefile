@@ -282,5 +282,6 @@ obj-y += cmd_disk.o
 
 # amlogic commands
 obj-$(CONFIG_CMD_REBOOT) += cmd_reboot.o
+obj-y += cmd_scp.o
 
 CFLAGS_env_embedded.o := -Wa,--no-warn -DENV_CRC=$(shell tools/envcrc 2>/dev/null)
