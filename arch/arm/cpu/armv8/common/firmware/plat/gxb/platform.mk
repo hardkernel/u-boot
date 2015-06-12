@@ -60,6 +60,7 @@ BL2_SOURCES		+=	lib/locks/bakery/bakery_lock.c		\
 				plat/${PLAT}/watchdog.c                 \
 				plat/${PLAT}/efuse.c                    \
 				plat/${PLAT}/pll.c                      \
+				plat/${PLAT}/power_init.c               \
 				plat/${PLAT}/timer.c                    \
 				plat/${PLAT}/crypto/secureboot.c        \
 				plat/${PLAT}/ddr/ddr.c

@@ -37,11 +37,14 @@
  * Place holder function to perform any S-EL1 specific architectural setup. At
  * the moment there is nothing to do.
  ******************************************************************************/
+extern void platform_power_init(int mode);
 void bl2_arch_setup(void)
 {
 	/* Give access to FP/SIMD registers */
 	write_cpacr(CPACR_EL1_FPEN(CPACR_EL1_FP_TRAP_NONE));
 
+	/* init power for each domain */
+	platform_power_init(0);
 	/* Init plls */
 #ifndef CONFIG_PXP_EMULATOR
 	pll_init();

@@ -29,6 +29,13 @@
 #warning "include warning"
 #endif
 
+/*
+ * platform power init config
+ */
+#define CONFIG_PLATFORM_POWER_INIT
+#define CONFIG_VCCK_INIT_VOLTAGE	1100
+#define CONFIG_VDDEE_INIT_VOLTAGE	1100
+
 /* SMP Definitinos */
 #define CPU_RELEASE_ADDR		secondary_boot_func
 
