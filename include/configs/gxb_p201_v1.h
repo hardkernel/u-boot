@@ -63,7 +63,7 @@
                 "if itest ${upgrade_step} == 1; then env default -a; setenv upgrade_step 2; saveenv; fi; "\
                 "\0"\
         "storeargs="\
-            "setenv bootargs ${bootargs} androidboot.firstboot=${firstboot}; "\
+            "setenv bootargs ${bootargs} hdmitx=${cecconfig} androidboot.firstboot=${firstboot}; "\
             "\0"\
         "switch_bootmode="\
             "get_rebootmode; echo reboot_mode=${reboot_mode};"\
@@ -76,6 +76,7 @@
             "fi;fi;fi;"\
             "\0" \
         "storeboot="\
+            "run storeargs; "\
             "if imgread kernel boot ${loadaddr}; then bootm ${loadaddr}; fi;"\
             "\0"\
         "factory_reset_poweroff_protect="\
