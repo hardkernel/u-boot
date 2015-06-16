@@ -116,7 +116,7 @@
             "run storeargs;"\
             "run switch_bootmode;" \
             "run factory_reset_poweroff_protect;"
-#define CONFIG_BOOTARGS "init=/init console=ttyS0,115200 no_console_suspend earlyprintk=aml-uart,0xc81004c0 selinux=0"
+#define CONFIG_BOOTARGS "rootfstype=ramfs init=/init console=ttyS0,115200 no_console_suspend earlyprintk=aml-uart,0xc81004c0 selinux=0"
 #define CONFIG_BOOTCOMMAND "run storeboot"
 
 //#define CONFIG_ENV_IS_NOWHERE  1
