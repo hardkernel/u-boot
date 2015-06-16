@@ -32,6 +32,7 @@
 #include <arch_helpers.h>
 #include <pll.h>
 #include <stdio.h>
+#include <saradc.h>
 
 /*******************************************************************************
  * Place holder function to perform any S-EL1 specific architectural setup. At
@@ -43,10 +44,15 @@ void bl2_arch_setup(void)
 	/* Give access to FP/SIMD registers */
 	write_cpacr(CPACR_EL1_FPEN(CPACR_EL1_FP_TRAP_NONE));
 
+	/* get board id */
+	saradc_ch1_get();
+
 	/* init power for each domain */
 	platform_power_init(0);
+
 	/* Init plls */
 #ifndef CONFIG_PXP_EMULATOR
 	pll_init();
 #endif
+
 }
