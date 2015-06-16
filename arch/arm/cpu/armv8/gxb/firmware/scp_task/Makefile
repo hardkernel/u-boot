@@ -33,7 +33,11 @@ CFLAGS_INCLUDE=-I. \
                -I./include \
                -I./build
 
-CFLAGS=$(CFLAGS_CPU) $(CFLAGS_WARN) $(CFLAGS_INCLUDE) $(CFLAGS_FPU-y)
+VPATH_LIST=     $(buildsrc)/board/$(BOARDDIR)
+
+VPATH_LIST:=$(VPATH_LIST:%=%/firmware/scp_task/)
+
+CFLAGS=$(CFLAGS_CPU) $(CFLAGS_WARN) $(VPATH_LIST:%=-I%) $(CFLAGS_INCLUDE) $(CFLAGS_FPU-y)
 ASFLAGS= -gdwarf2 -mcpu=$(ARM_CPU)
 DUMP_FLAGS = -D -x
 
@@ -45,6 +49,7 @@ obj=$(buildtree)/scp_task
 
 vpath %.lds ./
 vpath %.S ./
+vpath %.c $(VPATH_LIST)
 vpath %.c ./
 
 #OBJS = user_task_entry.o
@@ -55,6 +60,8 @@ OBJS += uart.o
 OBJS += suspend.o
 OBJS += dvfs.o
 OBJS += scp_remote.o
+OBJS += lib/string.o
+OBJS += lib/delay.o
 
 OBJS := $(OBJS:%=$(obj)/%)
 

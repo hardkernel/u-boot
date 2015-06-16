@@ -1,16 +1,10 @@
 #include "config.h"
 #include "registers.h"
 #include "task_apis.h"
-
-#define	UDEFINED_WAKEUP	0
-#define	CHARGING_WAKEUP	1
-#define	REMOTE_WAKEUP		2
-#define	RTC_WAKEUP			3
-#define	BT_WAKEUP			4
-#define	WIFI_WAKEUP			5
-#define	POWER_KEY_WAKEUP	6
-#define writel(val, reg) (*((volatile unsigned *)(reg))) = (val)
-#define readl(reg)		(*((volatile unsigned *)(reg)))
+#include "suspend.h"
+#include <pwr_ctrl.c>
+static struct pwr_op pwr_op_d;
+static struct pwr_op *p_pwr_op;
 
 static void write_flag(unsigned int flag)
 {
@@ -20,20 +14,19 @@ static void write_flag(unsigned int flag)
 	val = val | (flag << 28);
 	writel(val, SEC_AO_SEC_SD_CFG15);
 }
-static int detect_key(void)
-{
-	int exit_reason = 0;
-	do {
-		if (remote_detect_key()) {
-			exit_reason = 0;
-			write_flag(REMOTE_WAKEUP);
-			break;
-		}
-	} while (1);
-	return exit_reason;
-}
 
 void enter_suspend(void)
 {
-	detect_key();
+	int exit_reason = REMOTE_WAKEUP;
+	int suspend_from = 0;
+	p_pwr_op = &pwr_op_d;
+	pwr_op_init(p_pwr_op);
+	p_pwr_op->power_off_3v3();
+	p_pwr_op->power_off_5v();
+	p_pwr_op->power_off_vcck();
+	exit_reason = p_pwr_op->detect_key(suspend_from);
+	write_flag(exit_reason);
+	p_pwr_op->power_on_vcck();
+	p_pwr_op->power_on_5v();
+	p_pwr_op->power_on_3v3();
 }

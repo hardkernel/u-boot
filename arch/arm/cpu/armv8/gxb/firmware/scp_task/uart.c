@@ -1,5 +1,6 @@
 #include "registers.h"
 #include <stdint.h>
+#include "task_apis.h"
 
 /* #define P_AO_UART_WFIFO                 (0xc81004c0) */
 /* #define P_AO_RTI_PIN_MUX_REG          (0xc8100014) */
@@ -37,9 +38,6 @@
 #define P_UART_CTRL(uart_base)		P_UART(uart_base, UART_CTRL)
 #define P_UART_STATUS(uart_base)	P_UART(uart_base, UART_STATUS)
 
-
-#define writel(v, addr) (*((unsigned *)addr) = v)
-#define readl(addr) (*((unsigned *)addr))
 
 static int uart_tx_isfull(void)
 {

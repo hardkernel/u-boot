@@ -21,8 +21,6 @@ enum{
 	DECODEMODE_SANYO,
 	DECODEMODE_MAX
 };
-#define writel(val, reg) (*((volatile unsigned *)(reg))) = (val)
-#define readl(reg)		(*((volatile unsigned *)(reg)))
 
 #define IR_POWER_KEY_MASK 0xffffffff
 unsigned int kk[] = {
