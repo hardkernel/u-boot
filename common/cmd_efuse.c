@@ -28,30 +28,45 @@
 
 #define EFUSE_WRITE 0
 #define EFUSE_READ 1
-
-extern ssize_t efuse_read(char *buf, size_t count, loff_t *ppos);
-extern ssize_t efuse_write(const char *buf, size_t count, loff_t *ppos);
-extern uint32_t efuse_get_max(void);
-extern int32_t meson_trustzone_efuse(struct efuse_hal_api_arg *arg);
-extern uint32_t meson_trustzone_efuse_check(unsigned char *addr);
+#define EFUSE_DUMP 2
 
 int cmd_efuse(int argc, char * const argv[], char *buf)
 {
 	int i, action = -1;
-	efuseinfo_item_t info;
 	uint32_t offset;
 	uint32_t size, max_size;
 	char *end;
 	char *s;
 	int ret;
 
-	if (strncmp(argv[1], "read", 4) == 0)
+	if (strncmp(argv[1], "read", 4) == 0) {
 		action = EFUSE_READ;
-	else if (strncmp(argv[1], "write", 5) == 0)
+	} else if (strncmp(argv[1], "write", 5) == 0) {
 		action = EFUSE_WRITE;
-	else{
+	} else if (strncmp(argv[1], "dump", 4) == 0) {
+		action = EFUSE_DUMP;
+	} else{
 		printf("%s arg error\n", argv[1]);
 		return CMD_RET_USAGE;
+	}
+
+	if (action == EFUSE_DUMP) {
+		offset = 0;
+		ret = efuse_dump(buf, 0xc0, (loff_t *)&offset);
+
+		if (ret == -1) {
+			printf("ERROR: efuse read user data fail!\n");
+			return -1;
+		}
+
+		printf("efuse dump data\n");
+		for (i = 0; i < 512; i++) {
+			if (i%16 == 0)
+				printf("\n");
+			printf(":%02x", buf[i]);
+		}
+		printf("\n");
+		return 0;
 	}
 
 	if (argc < 4)
@@ -59,7 +74,7 @@ int cmd_efuse(int argc, char * const argv[], char *buf)
 	/*check efuse user data max size*/
 	offset = simple_strtoul(argv[2], &end, 16);
 	size = simple_strtoul(argv[3], &end, 16);
-	printf("%s: offset is %d  size is  %d \n", __func__, offset, size);
+	printf("%s: offset is %d  size is  %d\n", __func__, offset, size);
 	max_size = efuse_get_max();
 	if (!size) {
 		printf("\n error: size is zero!!!\n");
@@ -86,12 +101,12 @@ int cmd_efuse(int argc, char * const argv[], char *buf)
 		}
 
 		if (ret != size)
-			printf("ERROR: read %d byte(s) not %d byte(s) data\n", ret, size);
+			printf("ERROR: read %d byte(s) not %d byte(s) data\n",
+			       ret, size);
 		printf("efuse read data");
 		for (i = 0; i < size; i++) {
-			if (i%16 == 0) {
+			if (i%16 == 0)
 				printf("\n");
-			}
 			printf(":%02x", buf[i]);
 		}
 		printf("\n");
@@ -107,14 +122,13 @@ int cmd_efuse(int argc, char * const argv[], char *buf)
 
 		s = argv[4];
 		memcpy(buf, s, strlen(s));
-		if (efuse_write_usr(buf, size, (loff_t*)&offset) < 0) {
+		if (efuse_write_usr(buf, size, (loff_t *)&offset) < 0) {
 			printf("error: efuse write fail.\n");
 			return -1;
+		} else {
+			printf("%s written done.\n", __func__);
 		}
-		else
-			printf("%s written done.\n", info.title);
-	}
-	else{
+	} else{
 		printf("arg error\n");
 		return CMD_RET_USAGE;
 	}
@@ -136,7 +150,7 @@ int do_efuse(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 }
 
 static char efuse_help_text[] =
-	"[read/write offset size [data]]\n"
+	"[read/write/dump offset size [data]]\n"
 	"  [read/wirte]  - read or write 'size' data from\n"
 	"                  'offset' from efuse user data ;\n"
 	"  [offset]      - the offset byte from the beginning\n"

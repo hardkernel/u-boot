@@ -21,4 +21,4 @@
 # MA 02111-1307 USA
 #
 
-obj-$(CONFIG_EFUSE) += efuse_version.o efuse.o
+obj-$(CONFIG_EFUSE) += efuse.o
