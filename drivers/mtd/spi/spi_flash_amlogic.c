@@ -223,6 +223,7 @@ int spi_xfer(struct spi_slave *slave, unsigned int bitlen,
 	u8		 *rxp = (u8 *)din;
 	u32		 value;
 	int i,j;
+	volatile unsigned int * c0;
 
 	if (bitlen == 0)/* Finish any previously submitted transfers */
 		goto out;
@@ -258,9 +259,11 @@ int spi_xfer(struct spi_slave *slave, unsigned int bitlen,
 	//Write data to SPI data cache for transfer
 	//Then SPI controller will transfer them to SPI device with WREN(Writer enable) & PP(Page program)
 	if ((txp) && (flags&SPI_XFER_WRITECACHE)) {
+		c0 = P_SPI_FLASH_C0;
 		for ( j=0;j<len;j+=4) {
-			printf("buf%d:0x%x\n",j,*(u32*)(txp+j));
-			writel(*(u32*)(txp+j), P_SPI_FLASH_C0+j);
+			value = *(u32*)(txp+j);
+			writel(value, c0++);
+			//printf("buf%d:0x%x\n", j, value);
 		}
 		goto out;
 	}
@@ -301,12 +304,15 @@ int spi_xfer(struct spi_slave *slave, unsigned int bitlen,
 	//Load from SPI controller data cache
 	if (flags&SPI_XFER_READCACHE) {
 		temp_len = len/4;
+		c0 = P_SPI_FLASH_C0;
 		for ( i=0;i<temp_len*4;i+=4) {
-			*(u32 *)(rxp+i)=readl(P_SPI_FLASH_C0+i);
+			value = readl(c0++);
+			*(u32 *)(rxp+i) = value;
+			//printf("val[%d]=0x%8x\n", i, value);
 		}
 		if (len%4) {
 			temp_len = len%4;
-			*(u32 *)buf = readl(P_SPI_FLASH_C0+i);
+			*(u32 *)buf = readl(c0++);
 			for (j=0;j<temp_len;j++) {
 				*(u8 *)(rxp+i+j)=*(buf+j);
 			}
@@ -590,7 +596,7 @@ int spi_flash_read_amlogic(struct spi_flash *flash,u32 offset, size_t len, void 
 		//Read data from SPI controller from temp_addr to 0x3fffff
 		//From 0x400000 to (temp_addr+len) need to set address and
 		//load from cache with 32Bytes per package
-		flags = SPI_XFER_READCACHE;//SPI_XFER_END;//|SPI_XFER_COPY;
+		flags = SPI_XFER_END|SPI_XFER_COPY;
 		spi_xfer(spi,(0x400000-temp_addr)*8,&temp_addr,buf,flags);
 		buf += (0x400000-temp_addr);
 		temp_length = len - (0x400000-temp_addr);
@@ -598,7 +604,7 @@ int spi_flash_read_amlogic(struct spi_flash *flash,u32 offset, size_t len, void 
     }
     /* 0x000000 ~ 0x3fffff */
 	else if(temp_addr < 0x400000){
-	   flags=SPI_XFER_READCACHE;//SPI_XFER_END;//|SPI_XFER_COPY;
+	   flags=SPI_XFER_END|SPI_XFER_COPY;
        spi_xfer(spi,temp_length*8,&temp_addr,buf,flags);
 	   return 0;
     }
