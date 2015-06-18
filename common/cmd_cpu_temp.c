@@ -207,15 +207,22 @@ static int do_read_temp(cmd_tbl_t *cmdtp, int flag1,
 	 int temp;
 	int  ppos;
 	int TS_C;
-	int flag, ret;
+	int flag, ret, adc, count, tempa;
 	flag = 0;
 
 	ppos = simple_strtoul(argv[1], NULL, 10);
-
+	adc_init_chan6();
 	ret = do_read_efuse(ppos, &flag, &temp, &TS_C);
 	if (ret > 0) {
-		int adc = get_cpu_temp(TS_C, flag);
-		int tempa = 0;
+		adc = 0;
+		count = 0;
+		while (count < 64) {
+			adc += get_cpu_temp(TS_C, flag);
+			count++;
+			udelay(200);
+		}
+		adc /= count;
+		tempa = 0;
 		printf("adc=%d\n", adc);
 		if (flag) {
 			tempa = (10*(adc-temp))/34+27;
