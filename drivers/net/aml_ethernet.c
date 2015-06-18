@@ -1321,83 +1321,124 @@ static int do_ethdbg(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	return 0;
 }
 
+#define MSR_CLK_REG0 0x21d7
+#define MSR_CLK_REG2 0x21d9
+
 static unsigned int clk_util_clk_msr(unsigned int clk_mux)
 {
 	unsigned int regval = 0;
-	/*
+
 	WRITE_CBUS_REG(MSR_CLK_REG0, 0);
-	//Set the measurement gate to 64uS
+	/* Set the measurement gate to 64uS */
 	CLEAR_CBUS_REG_MASK(MSR_CLK_REG0, 0xffff);
-	/SET_CBUS_REG_MASK(MSR_CLK_REG0, (64 - 1)); //64uS is enough for measure the frequence?
-	//Disable continuous measurement
-	//Disable interrupts
+	/* 64uS is enough for measure the frequence? */
+	SET_CBUS_REG_MASK(MSR_CLK_REG0, (64 - 1));
+	/* Disable continuous measurement */
+	/* Disable interrupts */
 	CLEAR_CBUS_REG_MASK(MSR_CLK_REG0, ((1 << 18) | (1 << 17)));
-	CLEAR_CBUS_REG_MASK(MSR_CLK_REG0, (0x1f << 20));
-	SET_CBUS_REG_MASK(MSR_CLK_REG0, (clk_mux << 20) | // Select MUX
-			(1 << 19) |       // enable the clock
-			(1 << 16));       //enable measuring
-	//Wait for the measurement to be done
+	CLEAR_CBUS_REG_MASK(MSR_CLK_REG0, (0x7f << 20));
+	SET_CBUS_REG_MASK(MSR_CLK_REG0, (clk_mux << 20) | /* Select MUX */
+			(1 << 19) |       /* enable the clock */
+			(1 << 16));       /* enable measuring */
+	/* Wait for the measurement to be done */
 	regval = READ_CBUS_REG(MSR_CLK_REG0);
 	do {
 		regval = READ_CBUS_REG(MSR_CLK_REG0);
 	} while (regval & (1 << 31));
 
-	//Disable measuring
+	/* Disable measuring */
 	CLEAR_CBUS_REG_MASK(MSR_CLK_REG0, (1 << 16));
 	regval = (READ_CBUS_REG(MSR_CLK_REG2) + 31) & 0x000FFFFF;
-	*/
+
 	return (regval >> 6);
 }
 
 static int do_clkmsr(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	const char* clk_table[] = {
-		" CTS_PWM_A_CLK(45)",
-		" CTS_PWM_B_CLK(44)",
-		" CTS_PWM_C_CLK(43)",
-		" CTS_PWM_D_CLK(42)",
-		" CTS_ETH_RX_TX (41)",
-		" CTS_PCM_MCLK(40)",
-		" CTS_PCM_SCLK(39)",
-		" CTS_VDIN_MEAS_CLK(38)",
-		" CTS_VDAC_CLK1(37)",
-		" CTS_HDMI_TX_PIXEL_CLK(36)",
-		" CTS_MALI_CLK (35)",
-		" CTS_SDHC_CLK1(34)",
-		" CTS_SDHC_CLK0(33)",
-		" CTS_AUDAC_CLKPI(32)",
-		" CTS_A9_CLK(31)",
-		" CTS_DDR_CLK(30)",
-		" CTS_VDAC_CLK0(29)",
-		" CTS_SAR_ADC_CLK (28)",
-		" CTS_ENCI_CL(27)",
-		" SC_CLK_INT(26)",
-		" USB_CLK_12MHZ (25)",
-		" LVDS_FIFO_CLK (24)",
-		" HDMI_CH3_TMDSCLK(23)",
-		" MOD_ETH_CLK50_I (22)",
-		" MOD_AUDIN_AMCLK_I  (21)",
-		" CTS_BTCLK27 (20)",
-		" CTS_HDMI_SYS_CLK(19)",
-		" CTS_LED_PLL_CLK(18)",
-		" CTS_VGHL_PLL_CLK (17)",
-		" CTS_FEC_CLK_2(16)",
-		" CTS_FEC_CLK_1 (15)",
-		" CTS_FEC_CLK_0 (14)",
-		" CTS_AMCLK(13)",
-		" VID2_PLL_CLK(12)",
-		" CTS_ETH_RMII(11)",
-		" CTS_ENCT_CLK(10)",
-		" CTS_ENCL_CLK(9)",
-		" CTS_ENCP_CLK(8)",
-		" CLK81(7)",
-		" VID_PLL_CLK(6)",
-		" AUD_PLL_CLK(5)",
-		" MISC_PLL_CLK(4)",
-		" DDR_PLL_CLK(3)",
-		" SYS_PLL_CLK(2)",
-		" AM_RING_OSC_CLK_OUT1(1)",
-		" AM_RING_OSC_CLK_OUT0(0)",
+		[82] = "Cts_ge2d_clk ",
+		[81] = "Cts_vapbclk ",
+		[80] = "Rng_ring_osc_clk[3] ",
+		[79] = "Rng_ring_osc_clk[2] ",
+		[78] = "Rng_ring_osc_clk[1] ",
+		[77] = "Rng_ring_osc_clk[0] ",
+		[76] = "cts_aoclk_int ",
+		[75] = "cts_aoclkx2_int ",
+		[74] = "0 ",
+		[73] = "cts_pwm_C_clk ",
+		[72] = "cts_pwm_D_clk ",
+		[71] = "cts_pwm_E_clk ",
+		[70] = "cts_pwm_F_clk ",
+		[69] = "0 ",
+		[68] = "0 ",
+		[67] = "0 ",
+		[66] = "cts_vid_lock_clk ",
+		[65] = "0 ",
+		[64] = "0 ",
+		[63] = "0 ",
+		[62] = "cts_hevc_clk ",
+		[61] = "gpio_clk_msr ",
+		[60] = "alt_32k_clk ",
+		[59] = "cts_hcodec_clk ",
+		[58] = "0 ",
+		[57] = "0 ",
+		[56] = "0 ",
+		[55] = "vid_pll_div_clk_out ",
+		[54] = "0 ",
+		[53] = "Sd_emmc_clk_A ",
+		[52] = "Sd_emmc_clk_B ",
+		[51] = "Cts_nand_core_clk ",
+		[50] = "Mp3_clk_out ",
+		[49] = "mp2_clk_out ",
+		[48] = "mp1_clk_out ",
+		[47] = "ddr_dpll_pt_clk ",
+		[46] = "cts_vpu_clk ",
+		[45] = "cts_pwm_A_clk ",
+		[44] = "cts_pwm_B_clk ",
+		[43] = "fclk_div5 ",
+		[42] = "mp0_clk_out ",
+		[41] = "eth_rx_clk_or_clk_rmii ",
+		[40] = "cts_pcm_mclk ",
+		[39] = "cts_pcm_sclk ",
+		[38] = "0 ",
+		[37] = "cts_clk_i958 ",
+		[36] = "cts_hdmi_tx_pixel_clk ",
+		[35] = "cts_mali_clk ",
+		[34] = "0 ",
+		[33] = "0 ",
+		[32] = "cts_vdec_clk ",
+		[31] = "MPLL_CLK_TEST_OUT ",
+		[30] = "0 ",
+		[29] = "0 ",
+		[28] = "0 ",
+		[27] = "0 ",
+		[26] = "sc_clk_int ",
+		[25] = "0 ",
+		[24] = "0 ",
+		[23] = "HDMI_CLK_TODIG ",
+		[22] = "eth_phy_ref_clk ",
+		[21] = "i2s_clk_in_src0 ",
+		[20] = "rtc_osc_clk_out ",
+		[19] = "cts_hdmitx_sys_clk ",
+		[18] = "A53_clk_div16 ",
+		[17] = "0 ",
+		[16] = "cts_FEC_CLK_2 ",
+		[15] = "cts_FEC_CLK_1 ",
+		[14] = "cts_FEC_CLK_0 ",
+		[13] = "cts_amclk ",
+		[12] = "Cts_pdm_clk ",
+		[11] = "rgmii_tx_clk_to_phy ",
+		[10] = "cts_vdac_clk ",
+		[9] = "cts_encl_clk " ,
+		[8] = "cts_encp_clk " ,
+		[7] = "clk81 " ,
+		[6] = "cts_enci_clk " ,
+		[5] = "0 " ,
+		[4] = "gp0_pll_clk " ,
+		[3] = "A53_ring_osc_clk " ,
+		[2] = "am_ring_osc_clk_out_ee[2] " ,
+		[1] = "am_ring_osc_clk_out_ee[1] " ,
+		[0] = "am_ring_osc_clk_out_ee[0] " ,
 	};
 	int i;
 	int index = 0xff;
@@ -1407,12 +1448,12 @@ static int do_clkmsr(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	}
 
 	if (index == 0xff) {
-		for (i = 0; i < sizeof(clk_table) / sizeof(char *); i++) {
-			printf("[%4d MHz] %s\n", clk_util_clk_msr(i), clk_table[45-i]);
-		}
+		for (i = 0; i < sizeof(clk_table) / sizeof(char *); i++)
+			printf("[%4d MHz] %s[%d]\n", clk_util_clk_msr(i),
+			       clk_table[i], i);
 		return 0;
 	}
-	printf("[%4d MHz] %s\n", clk_util_clk_msr(index), clk_table[45-index]);
+	printf("[%4d MHz] %s\n", clk_util_clk_msr(index), clk_table[82-index]);
 
 	return 0;
 }
