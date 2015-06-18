@@ -164,6 +164,9 @@
 #define CONFIG_VPU_PRESET 1
 #endif
 
+/* Display VIDEO & HDMITX */
+#define CONFIG_AML_HDMITX20 1
+
 /* USB
  * Enable CONFIG_MUSB_HCD for Host functionalities MSC, keyboard
  * Enable CONFIG_MUSB_UDD for Device functionalities.

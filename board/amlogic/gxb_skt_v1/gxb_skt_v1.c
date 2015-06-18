@@ -35,6 +35,9 @@
 #ifdef CONFIG_AML_V2_FACTORY_BURN
 #include <amlogic/aml_v2_burning.h>
 #endif// #ifdef CONFIG_AML_V2_FACTORY_BURN
+#ifdef CONFIG_AML_HDMITX20
+#include <amlogic/hdmi.h>
+#endif
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -322,6 +325,12 @@ struct amlogic_usb_config g_usb_config_gx_skt_h={
 };
 #endif /*CONFIG_USB_DWC_OTG_HCD*/
 
+#ifdef CONFIG_AML_HDMITX20
+static void hdmi_tx_set_hdmi_5v(void)
+{
+}
+#endif
+
 int board_init(void)
 {
 #ifdef CONFIG_AML_V2_FACTORY_BURN
@@ -337,6 +346,10 @@ int board_init(void)
 #endif /*CONFIG_USB_DWC_OTG_HCD*/
 #ifdef CONFIG_VPU_PRESET
 	vpu_probe();
+#endif
+#ifdef CONFIG_AML_HDMITX20
+	hdmi_tx_set_hdmi_5v();
+	hdmi_tx_init();
 #endif
 	return 0;
 }

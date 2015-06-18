@@ -3,5 +3,6 @@ obj-y	:= clock.o sdio.o gpio.o
 obj-y	+= usb.o
 obj-y   += bl31_apis.o
 obj-y	+= watchdog.o
+obj-$(CONFIG_AML_HDMITX20) += hdmitx20/
 obj-y	+= timer.o
 obj-y	+= mailbox.o
