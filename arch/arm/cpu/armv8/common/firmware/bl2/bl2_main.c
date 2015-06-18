@@ -39,7 +39,7 @@
 #include <stdio.h>
 #include "bl2_private.h"
 #include <console.h>
-
+#include <plat_init.h>
 extern unsigned int ddr_init(void);
 
 /*******************************************************************************
@@ -50,6 +50,8 @@ extern unsigned int ddr_init(void);
  ******************************************************************************/
 void bl2_main(void)
 {
+	pinmux_init();
+
 	printf("\n\nBL2 %s. Ver: %s @ %s\n\n", build_message, PLAIN_VERSION, CONFIG_SYS_CONFIG_NAME);
 
 	/* Perform remaining generic architectural setup in S-El1 */

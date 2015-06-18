@@ -34,7 +34,7 @@
 
 /*sdio defines*/
 #define MAX_DESC_NUM                    8
-#define MAX_BLOCK_COUNTS                512
+#define MAX_BLOCK_COUNTS                128
 uint64_t storage_init(void);
 uint64_t storage_load(uint64_t src, uint64_t des, uint64_t size, const char * image_name);
 uint64_t get_boot_device(void);

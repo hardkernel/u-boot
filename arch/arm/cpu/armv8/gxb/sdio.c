@@ -49,6 +49,7 @@ void  cpu_sd_emmc_pwr_prepare(unsigned port)
         do nothing here
     */
 }
+unsigned sd_debug_board_1bit_flag = 0;
 int cpu_sd_emmc_init(unsigned port)
 {
 
@@ -60,7 +61,10 @@ int cpu_sd_emmc_init(unsigned port)
 			break;
 
         case SDIO_PORT_B:
-			setbits_le32(P_PERIPHS_PIN_MUX_2,0x3f<<10);
+			if (sd_debug_board_1bit_flag == 1)
+                setbits_le32(P_PERIPHS_PIN_MUX_2,(0x3<<10)|(0x1<<15));
+            else
+                setbits_le32(P_PERIPHS_PIN_MUX_2,0x3f<<10);
 			break;
         case SDIO_PORT_C://SDIOC GPIOB_2~GPIOB_7
 			clrbits_le32(P_PERIPHS_PIN_MUX_2,(0x1f<<22));

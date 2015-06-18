@@ -202,7 +202,7 @@ static int sd_inand_check_response(struct mmc_cmd *cmd)
 	}
 	return ret;
 }*/
-
+extern unsigned sd_debug_board_1bit_flag;
 static int sd_inand_staff_init(struct mmc *mmc)
 {
 	struct aml_card_sd_info * sdio=mmc->priv;
@@ -227,6 +227,12 @@ static int sd_inand_staff_init(struct mmc *mmc)
     }
     sdio->sd_emmc_pwr_on(sdio->sd_emmc_port);
     sdio->sd_emmc_init(sdio->sd_emmc_port);
+	if (sd_debug_board_1bit_flag == 1) {
+        struct mmc_config *cfg;
+        cfg = &((struct aml_card_sd_info *)mmc->priv)->cfg;
+        cfg->host_caps = MMC_MODE_HS;
+        mmc->cfg = cfg;
+    }
 
     if (sdio->sd_emmc_port == SDIO_PORT_B) {   //only power ctrl for external tf card
         base=get_timer(0);
