@@ -293,11 +293,11 @@ int optimus_report_burn_complete_sta(int isFailed, int rebootAfterBurn)
 {
     if (isFailed)
     {
-        DWN_MSG("======sdc burn Failed!!!!!\n");
+        DWN_MSG("=====Burn Failed!!!!!\n");
         DWN_MSG("PLS long-press power key to shut down\n");
         optimus_led_show_burning_failure();
         while (1) {
-            /*if(ctrlc())*/
+            /*if(ctrlc())run_command("reset", 0);*/
         }
 
         return __LINE__;
@@ -320,7 +320,7 @@ static int sdc_burn_dtb_load(HIMAGE hImg)
 
     hImgItem = image_item_open(hImg, partName, "meson");
     if (!hImgItem) {
-        DWN_ERR("Fail to open verify file for part (%s)\n", partName);
+        DWN_ERR("Fail to open item [meson,%s]\n", partName);
         return ITEM_NOT_EXIST;
     }
 
@@ -558,7 +558,7 @@ int optimus_burn_with_cfg_file(const char* cfgFile)
         ret = __LINE__; goto _finish;
     }
 
-    if (pSdcCfgPara->custom.eraseBootloader)
+    if (pSdcCfgPara->custom.eraseBootloader && strcmp("1", getenv("usb_update")))
     {
         if (is_bootloader_old())
         {
@@ -602,7 +602,7 @@ int optimus_burn_with_cfg_file(const char* cfgFile)
 
     //update dtb for burning drivers
     ret = sdc_burn_dtb_load(hImg);
-    if (ret) {
+    if (ITEM_NOT_EXIST != ret && ret) {
         DWN_ERR("Fail in load dtb for sdc_burn\n");
         ret = __LINE__; goto _finish;
     }
@@ -705,17 +705,6 @@ int optimus_burn_package_in_sdmmc(const char* sdc_cfg_file)
 {
     int rcode = 0;
 
-#if (MESON_CPU_TYPE_MESON8 <= MESON_CPU_TYPE)
-        //AML_WATCH_DOG_DISABLE(); //disable watchdog
-#endif// #if (MESON_CPU_TYPE_MESON8 <= MESON_CPU_TYPE)
-
-    DWN_MSG("mmcinfo\n");
-    rcode = run_command("mmcinfo", 0);
-    if (rcode) {
-        DWN_ERR("Fail in init mmc, Does sdcard not plugged in?\n");
-        return __LINE__;
-    }
-
 #if 0//this asserted by 'run update' and 'aml_check_is_ready_for_sdc_produce'
     rcode = do_fat_get_fileSz(sdc_cfg_file);
     if (!rcode) {
@@ -724,6 +713,13 @@ int optimus_burn_package_in_sdmmc(const char* sdc_cfg_file)
     }
 #endif//#if 0
 
+    rcode = optimus_device_probe("mmc", "0");
+    if (rcode) {
+        DWN_ERR("Fail to detect device mmc 0\n");
+        return __LINE__;
+    }
+
+    setenv("usb_update","0");
     rcode = optimus_burn_with_cfg_file(sdc_cfg_file);
 
     return rcode;
@@ -736,6 +732,11 @@ int do_sdc_burn(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 
     if (argc < 2 ) {
         cmd_usage(cmdtp);
+        return __LINE__;
+    }
+
+    if ( !aml_check_is_ready_for_sdc_produce() ) {
+        DWN_DBG("Not ready\n");
         return __LINE__;
     }
 

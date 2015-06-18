@@ -399,12 +399,6 @@ static int get_key_val_for_fmt_onlyone(const char* licenseName, u8* keyVal, unsi
         char _cmd[96];
 
         optimus_sdc_burn_switch_to_extmmc();
-        sprintf(_cmd, "fatexist mmc 0:1 %s", licenseName);
-        rc = run_command(_cmd, 0);
-        if (rc) {
-                errorP("file[%s] is not existed\n", licenseName);
-                return __LINE__;
-        }
 
         sprintf(_cmd, "fatload mmc 0:1 0x%p %s", keyVal, licenseName);
         rc = run_command(_cmd, 0);

@@ -1186,43 +1186,35 @@ int optimus_set_burn_complete_flag(void)
 
 static int _optimus_set_reboot_mode(const int cfgFlag)
 {
-    unsigned _reboot_mode = 0;
+    char cmdbuf[96];
+    const char* reboot_mode = NULL;
     switch (cfgFlag)
     {
-    case OPTIMUS_BURN_COMPLETE__REBOOT_UPDATE:
-            _reboot_mode = AMLOGIC_UPDATE_REBOOT;
+        case OPTIMUS_BURN_COMPLETE__REBOOT_UPDATE:
+            reboot_mode = "update";
             break;
 
-    case OPTIMUS_BURN_COMPLETE__REBOOT_SDC_BURN:
+        case OPTIMUS_BURN_COMPLETE__REBOOT_SDC_BURN:
             /*reboot_mode = MESON_SDC_BURNER_REBOOT;  */
             break;
 
-    case OPTIMUS_BURN_COMPLETE__REBOOT_NORMAL:
-    default:
-            _reboot_mode = AMLOGIC_NORMAL_BOOT;
+        case OPTIMUS_BURN_COMPLETE__REBOOT_NORMAL:
+        default:
+            reboot_mode = "normal";
             break;
     }
 
-    _reboot_mode <<= 12;
-    _reboot_mode |= readl(AO_SEC_SD_CFG15) & 0xfffU;
-    /*writel(_reboot_mode, AO_SEC_SD_CFG15);*/
+    sprintf(cmdbuf, "reboot %s", reboot_mode);
 
-    return 0;
+    return run_command(cmdbuf, 0);
 }
 
 void optimus_reset(const int cfgFlag)
 {
     unsigned i = 0x100;
 
-    //writel(0, CONFIG_TPL_BOOT_ID_ADDR);//clear boot_id
-
     //set reboot mode
     _optimus_set_reboot_mode(cfgFlag);
-
-#if defined(CONFIG_M6) || defined(CONFIG_M6TV)
-    //if not clear, uboot command reset will fail -> blocked
-    *((volatile unsigned long *)P_AO_RTI_STATUS_REG0) = 0;
-#endif//#if defined(CONFIG_M6) || defined(CONFIG_M6TV)
     printf("Burn Reboot...\n");//Add printf to delay to save env
     while (--i) ;
 
@@ -1244,8 +1236,6 @@ void optimus_reset(const int cfgFlag)
 
 void optimus_poweroff(void)
 {
-    run_command("clear_rebootmode", 0);
-
 #if CONFIG_POWER_KEY_NOT_SUPPORTED_FOR_BURN
     DWN_MSG("stop here as poweroff and powerkey not supported in platform!\n");
     DWN_MSG("You can <Ctrl-c> to reboot\n");

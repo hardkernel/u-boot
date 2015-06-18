@@ -24,7 +24,7 @@ extern int optimus_burn_package_in_sdmmc(const char* sdc_cfg_file);
 extern void close_usb_phy_clock(int cfg);
 
 //check ${sdcburncfg} exist in external mmc and internal flash not burned yet!
-static int aml_check_is_ready_for_sdc_produce(void)
+int aml_check_is_ready_for_sdc_produce(void)
 {
     char* sdc_cfg_file = NULL;
     const char* cmd = NULL;
@@ -36,7 +36,7 @@ static int aml_check_is_ready_for_sdc_produce(void)
             return 1;//not ready
     }
 
-    cmd = "mmcinfo 0";
+    cmd = "mmcinfo";
     ret = run_command(cmd, 0);
     if (ret) {
         DWN_MSG("mmcinfo failed!\n");
@@ -46,13 +46,12 @@ static int aml_check_is_ready_for_sdc_produce(void)
     sdc_cfg_file = getenv("sdcburncfg");
     if (!sdc_cfg_file) {
         sdc_cfg_file = "aml_sdc_burn.ini";
-        setenv("sdcburncfg", sdc_cfg_file);
-    }
+        setenv("sdcburncfg", sdc_cfg_file); }
 
-    cmd = "fatexist mmc 0 ${sdcburncfg}";
+    cmd = "fatsize mmc 0 ${sdcburncfg}";
     ret = run_command(cmd, 0);
     if (ret) {
-        DWN_DBG("%s not exist in external mmc\n", sdc_cfg_file);
+        DWN_DBG("%s not exist\n", sdc_cfg_file);
         return 0;
     }
 
@@ -156,6 +155,11 @@ int aml_try_factory_sdcard_burning(int flag, bd_t* bis)
 {
         if (!is_tpl_loaded_from_ext_sdmmc()) return 1;
 
-        return aml_burn_sdc_producing(flag, bis);
+        if ( aml_check_is_ready_for_sdc_produce() )
+        {
+            return aml_burn_sdc_producing(flag, bis);
+        }
+
+        return 0;
 }
 

@@ -9,7 +9,7 @@
  * Copyright (c) 2013 Amlogic. All Rights Reserved.
  *
  */
-#include "../v2_burning_i.h"
+#include "../v2_sdc_burn/optimus_sdc_burn_i.h"
 
 //FIMXE:
 COMPILE_TYPE_CHK(128 == sizeof(ItemInfo_V1), _op_a);
@@ -108,7 +108,7 @@ HIMAGE image_open(const char* interface, const char* device, const char* part, c
         DWN_ERR("error verison 0x%x\n", hImg->imgHead.version);
         goto _err;
     }
-    DWN_MSG("image version [0x%8x]\n", imgVer);
+    DWN_MSG("image version [0x%08x]\n", imgVer);
     if (MAX_ITEM_NUM < hImg->imgHead.itemNum) {
             DWN_ERR("max itemNum(%d)<actual itemNum (%d)\n", MAX_ITEM_NUM, hImg->imgHead.itemNum);
             goto _err;

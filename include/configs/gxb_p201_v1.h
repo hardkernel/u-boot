@@ -59,7 +59,7 @@
         "wipe_data=successful\0"\
         "wipe_cache=successful\0"\
         "upgrade_check="\
-                "if itest ${upgrade_step} == 3; then run update; fi; "\
+                "if itest ${upgrade_step} == 3; then run storeargs; run update; fi; "\
                 "if itest ${upgrade_step} == 1; then env default -a; setenv upgrade_step 2; saveenv; fi; "\
                 "\0"\
         "storeargs="\
@@ -72,11 +72,10 @@
             "else if test ${reboot_mode} = update; then "\
                     "run update;"\
             "else if test ${reboot_mode} = cold_boot; then "\
-                /*"run try_auto_burn; "*/\
+                "run try_auto_burn; "\
             "fi;fi;fi;"\
             "\0" \
         "storeboot="\
-            "run storeargs; "\
             "if imgread kernel boot ${loadaddr}; then bootm ${loadaddr}; fi;"\
             "\0"\
         "factory_reset_poweroff_protect="\
@@ -90,7 +89,7 @@
          "update="\
             /*first usb burning, second sdc_burn, third ext-sd autoscr/recovery, last udisk autoscr/recovery*/\
             "run usb_burning; "\
-            "run storeargs;"\
+            "run sdc_burning; "\
             "if mmcinfo; then "\
                 "run recovery_from_sdcard;"\
             "fi;"\
@@ -180,8 +179,11 @@
 	#define CONFIG_USB_DWC_OTG_HCD  1
 	#define CONFIG_USB_DWC_OTG_294	1
 #endif //#if defined(CONFIG_CMD_USB)
-//#define CONFIG_AML_TINY_USBTOOL 1
-#define CONFIG_AML_V2_FACTORY_BURN   1
+
+//UBOOT Facotry usb/sdcard burning config
+#define CONFIG_AML_V2_FACTORY_BURN              1       //support facotry usb burning
+#define CONFIG_AML_FACTORY_BURN_LOCAL_UPGRADE   1       //support factory sdcard burning
+#define CONFIG_POWER_KEY_NOT_SUPPORTED_FOR_BURN 1       //There isn't power-key for factory sdcard burning
 
 /* net */
 #define CONFIG_CMD_NET   1

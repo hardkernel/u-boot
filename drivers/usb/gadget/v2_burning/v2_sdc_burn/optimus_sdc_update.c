@@ -47,7 +47,7 @@ int optimus_device_probe(const char* interface, const char* inPart)
 		}
 		part = (int)simple_strtoul(++ep, NULL, 16);
 	}
-	if (fat_register_device(dev_desc,part) != 0) {
+	if (optimus_fat_register_device(dev_desc,part) != 0) {
 		printf("\n** Unable to use %s %d:%d for device probe **\n",
 			interface, dev, part);
 		return 1;
@@ -151,6 +151,7 @@ int sdc_burn_verify(const char* verifyFile)
     char cmdBuf[64];
     char *usb_update = getenv("usb_update");
 
+    run_command("mmcinfo", 0);
     if (!strcmp(usb_update,"1")) {
           sprintf(cmdBuf, "%s 0x%p %s",  "fatload usb 0 ", verifyCmd, verifyFile);
     }
@@ -267,7 +268,7 @@ int do_sdc_update(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
     const char* fileFmt     = argc > 3 ? argv[3] : NULL;
     const char* verifyFile  = argc > 4 ? argv[4] : NULL;
 
-	setenv("usb_update",0);
+    setenv("usb_update","0");
 #if BURN_DBG
     printf("argc %d, %s, %s\n", argc, argv[0], argv[1]);
     if (argc < 3)
@@ -291,18 +292,11 @@ int do_sdc_update(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
         return __LINE__;
     }
 
-#if 0
-    if (!do_fat_get_fileSz(imgItemPath)) {
-        SDC_ERR("file (%s) not existed\n", imgItemPath);
-        return __LINE__;
-    }
-#else
     rcode = optimus_device_probe("mmc", "0");
     if (rcode) {
         SDC_ERR("Fail to detect device mmc 0\n");
         return __LINE__;
     }
-#endif//#if 0
 
     if (!fileFmt)
     {
@@ -313,18 +307,6 @@ int do_sdc_update(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
         }
         fileFmt = rcode ? "sparse" : "normal";
     }
-
-#if 0
-    if (!getenv("disk_initial")) //if disk_initial command not executed for burning
-    {
-        rcode = optimus_storage_init(0);//can't erase as not full updating
-        if (rcode) {
-            SDC_ERR("Fail in init storage, rcode %d\n", rcode);
-            return rcode;
-        }
-        setenv("disk_initial", "0");
-    }
-#endif//#if 0
 
     rcode = optimus_burn_partition_image(partName, imgItemPath, fileFmt, verifyFile, 0);
     if (rcode) {

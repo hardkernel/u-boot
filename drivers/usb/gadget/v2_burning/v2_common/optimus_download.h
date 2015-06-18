@@ -148,18 +148,6 @@ int optimus_update_progress(const unsigned thisBurnSz);
 #define DWN_DBG(...)
 #define DWN_HERE()    printf("f(%s)L%d\n", __FILE__, __LINE__)
 
-//for fat fs
-long do_fat_fopen(const char *filename);
-long do_fat_fread(int fd, __u8 *buffer, unsigned long maxsize);
-void do_fat_fclose(int fd);
-s64 do_fat_get_fileSz(const char* imgItemPath);
-int do_fat_fseek(int fd, const __u64 offset, int wherehence);
-unsigned do_fat_get_bytesperclust(int fd);
-int optimus_device_probe(const char* interface, const char* inPart);
-
-//<0 if failed, 0 is normal, 1 is sparse, others reserved
-int do_fat_get_file_format(const char* imgFilePath, unsigned char* pbuf, const unsigned bufSz);
-
 //common internal function
 int optimus_erase_bootloader(char* info);
 void optimus_reset(const int cfgFlag);

@@ -13,6 +13,7 @@
 #ifndef __V2_BURNING_I_H__
 #define __V2_BURNING_I_H__
 
+#include <config.h>
 #include <common.h>
 #include <environment.h>
 #include <asm/string.h>

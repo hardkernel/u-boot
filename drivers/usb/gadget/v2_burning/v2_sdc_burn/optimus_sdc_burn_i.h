@@ -104,5 +104,21 @@ int optimus_sdc_keysprovider_update_license(const void* pHdle);
 
 int optimus_keysburn_onekey(const char* keyName, u8* keyVal, unsigned keyValLen);
 
+
+//for fat fs
+long do_fat_fopen(const char *filename);
+long do_fat_fread(int fd, __u8 *buffer, unsigned long maxsize);
+void do_fat_fclose(int fd);
+s64 do_fat_get_fileSz(const char* imgItemPath);
+int do_fat_fseek(int fd, const __u64 offset, int wherehence);
+unsigned do_fat_get_bytesperclust(int fd);
+int optimus_device_probe(const char* interface, const char* inPart);
+int optimus_fat_register_device(block_dev_desc_t *dev_desc, int part_no);
+
+//<0 if failed, 0 is normal, 1 is sparse, others reserved
+int do_fat_get_file_format(const char* imgFilePath, unsigned char* pbuf, const unsigned bufSz);
+
+extern int aml_check_is_ready_for_sdc_produce(void);
+
 #endif//#ifndef __OPTIMUS_SDC_BURN_I_H__
 

@@ -27,13 +27,19 @@ int optimus_burn_package_in_usb(const char* sdc_cfg_file)
         return __LINE__;
     }
 
-#if 0//this asserted by 'run update' and 'aml_check_is_ready_for_sdc_produce'
+#if 1//this asserted by 'run update' and 'aml_check_is_ready_for_sdc_produce'
     rcode = do_fat_get_fileSz(sdc_cfg_file);
     if (!rcode) {
-        printf("The [%s] not exist in bootable mmc card\n", sdc_cfg_file);
+        DWN_ERR("The [%s] not exist in udisk\n", sdc_cfg_file);
         return __LINE__;
     }
 #endif//#if 0
+
+    rcode = optimus_device_probe("usb", "0");
+    if (rcode) {
+        DWN_ERR("Fail to detect device usb 0\n");
+        return __LINE__;
+    }
 
     rcode = optimus_burn_with_cfg_file(sdc_cfg_file);
 
