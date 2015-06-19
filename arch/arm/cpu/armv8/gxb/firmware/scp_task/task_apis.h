@@ -29,6 +29,7 @@ int remote_detect_key(void);
 void *memcpy(void *dest, const void *src, unsigned int count);
 void *memset(void *s, int c, unsigned int count);
 void _udelay(unsigned int us);
+unsigned int get_time(void);
 
 
 #endif

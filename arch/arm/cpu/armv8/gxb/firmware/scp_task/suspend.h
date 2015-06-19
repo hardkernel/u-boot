@@ -25,6 +25,15 @@ struct pwr_op {
 
 	unsigned int (*detect_key)(unsigned int);
 };
+static void inline aml_update_bits(unsigned int  reg, unsigned int mask, unsigned int val)
+{
+	unsigned int tmp, orig;
+	orig = readl(reg);
+	tmp = orig & ~mask;
+	tmp |= val & mask;
+	writel(tmp, reg);
+}
+
 #endif
 
 
