@@ -32,14 +32,14 @@ static int pwm_voltage_table[][2] = {
 };
 
 struct scpi_opp_entry cpu_dvfs_tbl[] = {
-	DVFS(100000000, 1050),
-	DVFS(250000000, 1050),
-	DVFS(500000000, 1050),
-	DVFS(1000000000, 1050),
-	DVFS(1296000000, 1140),
-	DVFS(1536000000, 1140),
-	DVFS(1752000000, 1140),
-	DVFS(2016000000, 1140),
+	DVFS( 100000000,  860),
+	DVFS( 250000000,  860),
+	DVFS( 500000000,  860),
+	DVFS(1000000000,  940),
+	DVFS(1296000000,  980),
+	DVFS(1536000000, 1050),
+	DVFS(1752000000, 1050),
+	DVFS(2016000000, 1050),
 };
 
 
@@ -149,5 +149,6 @@ void set_dvfs(unsigned int domain, unsigned int index)
 		P_PWM_PWM_B = pwm_voltage_table[cur][0];
 		_udelay(100);
 	}
+	_udelay(200);
 }
 
