@@ -1,6 +1,5 @@
 #include <common.h>
 #include <linux/stddef.h>
-#include <amlogic/aml_tv.h>
 #include <amlogic/hdmi.h>
 
 static struct hdmi_format_para fmt_para_1920x1080p60_16x9 = {

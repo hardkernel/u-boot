@@ -1,7 +1,6 @@
 #include <common.h>
 #include <asm/io.h>
 #include <asm/arch/register.h>
-#include <amlogic/aml_tv.h>
 #include <amlogic/hdmi.h>
 #include "hdmitx_reg.h"
 #include "hdmitx_tvenc.h"

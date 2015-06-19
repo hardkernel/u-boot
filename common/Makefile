@@ -286,5 +286,6 @@ obj-$(CONFIG_CMD_REBOOT) += cmd_reboot.o
 obj-y += cmd_scp.o
 obj-$(CONFIG_AML_HDMITX20) += hdmi_parameters.o cmd_hdmitx.o
 obj-$(CONFIG_CMD_JTAG) += cmd_jtag.o
+obj-$(CONFIG_AML_OSD) += cmd_osd.o
 
 CFLAGS_env_embedded.o := -Wa,--no-warn -DENV_CRC=$(shell tools/envcrc 2>/dev/null)

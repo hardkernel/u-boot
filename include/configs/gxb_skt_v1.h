@@ -121,8 +121,13 @@
 #define CONFIG_VPU_PRESET 1
 #endif
 
-/* Display VIDEO & HDMITX */
+/* DISPLAY & HDMITX */
 #define CONFIG_AML_HDMITX20 1
+#define CONFIG_AML_CANVAS 1
+#define CONFIG_AML_VOUT 1
+#define CONFIG_AML_OSD 1
+#define CONFIG_OSD_SCALE_ENABLE 1
+#define CONFIG_CMD_BMP 1
 
 /* USB
  * Enable CONFIG_MUSB_HCD for Host functionalities MSC, keyboard

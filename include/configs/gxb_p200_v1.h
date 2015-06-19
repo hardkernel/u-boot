@@ -51,6 +51,17 @@
         "firstboot=1\0"\
         "upgrade_step=0\0"\
         "loadaddr=1080000\0"\
+        "outputmode=1080p60hz\0" \
+        "display_width=1920\0" \
+        "display_height=1080\0" \
+        "display_bpp=16\0" \
+        "display_color_index=16\0" \
+        "display_layer=osd2\0" \
+        "display_color_fg=0xffff\0" \
+        "display_color_bg=0\0" \
+        "fb_addr=0x3e000000\0" \
+        "fb_width=1920\0" \
+        "fb_height=1080\0" \
         "usb_burning=update 1000\0" \
         "fdt_high=0x20000000\0"\
         "try_auto_burn=update 700 750;\0"\
@@ -165,8 +176,15 @@
 #define CONFIG_VPU_PRESET 1
 #endif
 
-/* Display VIDEO & HDMITX */
+/* DISPLAY & HDMITX */
 #define CONFIG_AML_HDMITX20 1
+#define CONFIG_AML_CANVAS 1
+#define CONFIG_AML_VOUT 1
+#define CONFIG_AML_OSD 1
+#define CONFIG_OSD_SCALE_ENABLE 1
+#define CONFIG_CMD_BMP 1
+
+
 
 /* USB
  * Enable CONFIG_MUSB_HCD for Host functionalities MSC, keyboard

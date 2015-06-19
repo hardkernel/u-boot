@@ -1,5 +1,4 @@
 #include <common.h>
-#include <amlogic/aml_tv.h>
 #include <amlogic/enc_clk_config.h>
 #include <asm/arch/io.h>
 #include <asm/io.h>
