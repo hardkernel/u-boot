@@ -77,28 +77,6 @@ ssize_t efuse_write(const char *buf, size_t count, loff_t *ppos)
 	}
 }
 
-int efuse_dump(char *buf, size_t count, loff_t *ppos)
-{
-	struct efuse_hal_api_arg arg;
-	unsigned int retcnt;
-	unsigned pos = *ppos;
-	int ret;
-
-	arg.cmd = EFUSE_HAL_API_READ;
-	pos |= EFUSE_DUMP_ALL;
-	arg.offset = pos;
-	arg.size = count;
-	arg.buffer_phy = (unsigned long)buf;
-	arg.retcnt_phy = (unsigned long)&retcnt;
-	ret = meson_trustzone_efuse(&arg);
-	if (ret == 0) {
-		*ppos += retcnt;
-	  return retcnt;
-	} else {
-	  return ret;
-	}
-}
-
 int efuse_read_usr(char *buf, size_t count, loff_t *ppos)
 {
 	char data[EFUSE_BYTES];

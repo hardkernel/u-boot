@@ -46,7 +46,6 @@ struct efuse_hal_api_arg {
 #define EFUSE_THERMAL_MASK         (0x1 << 17)
 #define EFUSE_THERMAL_VERFLAG_MASK (0x1 << 18)
 #define EFUSE_ENCRYPT_MASK         (0x1 << 19)
-#define EFUSE_DUMP_ALL             (0x1 << 30)
 
 #define ASSIST_HW_REV                              0x1f53
 
@@ -55,7 +54,6 @@ int efuse_write_usr(char *buf, size_t count, loff_t *ppos);
 uint32_t efuse_get_max(void);
 ssize_t efuse_read(char *buf, size_t count, loff_t *ppos);
 ssize_t efuse_write(const char *buf, size_t count, loff_t *ppos);
-int efuse_dump(char *buf, size_t count, loff_t *ppos);
 
 int32_t meson_trustzone_efuse(struct efuse_hal_api_arg *arg);
 int32_t meson_trustzone_efuse_get_max(struct efuse_hal_api_arg *arg);

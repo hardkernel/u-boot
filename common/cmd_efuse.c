@@ -28,7 +28,6 @@
 
 #define EFUSE_WRITE 0
 #define EFUSE_READ 1
-#define EFUSE_DUMP 2
 
 int cmd_efuse(int argc, char * const argv[], char *buf)
 {
@@ -43,30 +42,9 @@ int cmd_efuse(int argc, char * const argv[], char *buf)
 		action = EFUSE_READ;
 	} else if (strncmp(argv[1], "write", 5) == 0) {
 		action = EFUSE_WRITE;
-	} else if (strncmp(argv[1], "dump", 4) == 0) {
-		action = EFUSE_DUMP;
 	} else{
 		printf("%s arg error\n", argv[1]);
 		return CMD_RET_USAGE;
-	}
-
-	if (action == EFUSE_DUMP) {
-		offset = 0;
-		ret = efuse_dump(buf, 0xc0, (loff_t *)&offset);
-
-		if (ret == -1) {
-			printf("ERROR: efuse read user data fail!\n");
-			return -1;
-		}
-
-		printf("efuse dump data\n");
-		for (i = 0; i < 512; i++) {
-			if (i%16 == 0)
-				printf("\n");
-			printf(":%02x", buf[i]);
-		}
-		printf("\n");
-		return 0;
 	}
 
 	if (argc < 4)
@@ -150,7 +128,7 @@ int do_efuse(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 }
 
 static char efuse_help_text[] =
-	"[read/write/dump offset size [data]]\n"
+	"[read/write offset size [data]]\n"
 	"  [read/wirte]  - read or write 'size' data from\n"
 	"                  'offset' from efuse user data ;\n"
 	"  [offset]      - the offset byte from the beginning\n"
