@@ -52,6 +52,8 @@
         "upgrade_step=0\0"\
         "loadaddr=1080000\0"\
         "outputmode=1080p60hz\0" \
+        "hdmimode=1080p60hz\0" \
+        "cvbsmode=576cvbs\0" \
         "display_width=1920\0" \
         "display_height=1080\0" \
         "display_bpp=16\0" \
@@ -69,12 +71,15 @@
         "sdc_burning=sdc_burn ${sdcburncfg}\0"\
         "wipe_data=successful\0"\
         "wipe_cache=successful\0"\
+        "initargs="\
+            "rootfstype=ramfs init=/init console=ttyS0,115200 no_console_suspend earlyprintk=aml-uart,0xc81004c0 selinux=0"\
+            "\0"\
         "upgrade_check="\
-                "if itest ${upgrade_step} == 3; then run storeargs; run update; fi; "\
+                "if itest ${upgrade_step} == 3; then run init_display; run storeargs; run update; fi; "\
                 "if itest ${upgrade_step} == 1; then env default -a; setenv upgrade_step 2; saveenv; fi; "\
                 "\0"\
         "storeargs="\
-            "setenv bootargs ${bootargs} hdmitx=${cecconfig} androidboot.firstboot=${firstboot}; "\
+            "setenv bootargs ${initargs} logo=osd1,loaded,${fb_addr},${outputmode},hdmimode=${hdmimode} cvbsmode=${cvbsmode} hdmitx=${cecconfig} androidboot.firstboot=${firstboot}; "\
             "\0"\
         "switch_bootmode="\
             "get_rebootmode; echo reboot_mode=${reboot_mode};"\
@@ -120,13 +125,16 @@
         "recovery_from_flash="\
             "if imgread kernel recovery ${loadaddr}; then bootm ${loadaddr}; fi"\
             "\0"\
+        "init_display="\
+            "osd open;osd clear;hdmitx output ${outputmode};imgread pic logo bootup $loadaddr;bmp display $bootup_offset;"\
+            "\0"\
 
 #define CONFIG_PREBOOT  \
             "run upgrade_check;"\
+            "run init_display;"\
             "run storeargs;"\
             "run switch_bootmode;" \
             "run factory_reset_poweroff_protect;"
-#define CONFIG_BOOTARGS "rootfstype=ramfs init=/init console=ttyS0,115200 no_console_suspend earlyprintk=aml-uart,0xc81004c0 selinux=0"
 #define CONFIG_BOOTCOMMAND "run storeboot"
 
 //#define CONFIG_ENV_IS_NOWHERE  1
