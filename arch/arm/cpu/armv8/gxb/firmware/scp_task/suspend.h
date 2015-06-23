@@ -8,6 +8,7 @@
 #define	BT_WAKEUP			4
 #define	WIFI_WAKEUP			5
 #define	POWER_KEY_WAKEUP	6
+#define	AUTO_WAKEUP			7
 
 struct pwr_op {
 	void (*power_off_3v3)(void);

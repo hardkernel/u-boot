@@ -44,7 +44,16 @@ unsigned int detect_key(unsigned int suspend_from)
 {
 
 	int exit_reason = 0;
+	unsigned int time_out = readl(AO_DEBUG_REG2);
+	unsigned int init_time = get_time();
+	init_remote();
 	do {
+		if (time_out != 0) {
+			if ((get_time() - init_time) >= time_out * 1000 * 1000) {
+				exit_reason = AUTO_WAKEUP;
+				break;
+			}
+		}
 		if (remote_detect_key()) {
 			exit_reason = REMOTE_WAKEUP;
 			break;
