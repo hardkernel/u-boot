@@ -319,6 +319,23 @@ typedef struct {
 
 #define LOGO_OLD_FMT_READ_SZ (8U<<20)//if logo format old, read 8M
 
+static int img_res_check_log_header(const AmlResImgHead_t* pResImgHead)
+{
+    int rc = 0;
+
+    rc = memcmp(pResImgHead->magic, AML_RES_IMG_V1_MAGIC, AML_RES_IMG_V1_MAGIC_LEN);
+    if (rc) {
+        debugP("Magic error for res\n");
+        return 1;
+    }
+    if (AML_RES_IMG_VERSION_V2 != pResImgHead->version) {
+        errorP("res version 0x%x != 0x%x\n", pResImgHead->version, AML_RES_IMG_VERSION_V2);
+        return 2;
+    }
+
+    return 0;
+}
+
 static int do_image_read_res(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
     const char* const partName = argv[1];
@@ -343,13 +360,9 @@ static int do_image_read_res(cmd_tbl_t *cmdtp, int flag, int argc, char * const 
     }
     flashReadOff = IMG_PRELOAD_SZ;
 
-    rc = memcmp(pResImgHead->magic, AML_RES_IMG_V1_MAGIC, AML_RES_IMG_V1_MAGIC_LEN);
-    if (rc)
-    {
-        wrnP("Magic error, read old version in size 0x%x\n", RES_OLD_FMT_READ_SZ);
-
-        rc = store_read_ops((unsigned char*)partName, loadaddr + (unsigned)flashReadOff, flashReadOff, RES_OLD_FMT_READ_SZ - flashReadOff);
-        return rc;
+    if (img_res_check_log_header(pResImgHead)) {
+        errorP("Logo header err.\n");
+        return __LINE__;
     }
 
     //Read the actual size of the new version res imgae
@@ -414,14 +427,9 @@ static int do_image_read_pic(cmd_tbl_t *cmdtp, int flag, int argc, char * const 
     }
     flashReadOff = PreloadSz;
 
-    rc = memcmp(pResImgHead->magic, AML_RES_IMG_V1_MAGIC, AML_RES_IMG_V1_MAGIC_LEN);
-    if (rc) {
-        errorP("head magic error\n");
+    if (img_res_check_log_header(pResImgHead)) {
+        errorP("Logo header err.\n");
         return __LINE__;
-    }
-    if (AML_RES_IMG_VERSION_V2 != pResImgHead->version) {
-            errorP("res version 0x%x != 0x%x\n", pResImgHead->version, AML_RES_IMG_VERSION_V2);
-            return __LINE__;
     }
 
     //correct bootup for mbox
@@ -453,12 +461,15 @@ static int do_image_read_pic(cmd_tbl_t *cmdtp, int flag, int argc, char * const 
                     char env_data[IH_NMLEN*2];
                     unsigned long picLoadAddr = (unsigned long)loadaddr + (unsigned)pItem->start;
 
-                    //emmc read can't support offset not align 512
-                    rc = store_read_ops((unsigned char*)partName, (unsigned char *)((picLoadAddr>>9)<<9),
-                                    ((pItem->start>>9)<<9), pItem->size + (picLoadAddr & 0x1ff));
-                     if (rc) {
+                    if (pItem->start + pItem->size > flashReadOff)
+                    {
+                        //emmc read can't support offset not align 512
+                        rc = store_read_ops((unsigned char*)partName, (unsigned char *)((picLoadAddr>>9)<<9),
+                                ((pItem->start>>9)<<9), pItem->size + (picLoadAddr & 0x1ff));
+                        if (rc) {
                             errorP("Fail to read pic at offset 0x%x\n", pItem->start);
                             return __LINE__;
+                        }
                     }
 
                     sprintf(env_name, "%s_offset", argv[2]);//be bootup_offset ,not bootup_720_offset
@@ -519,5 +530,55 @@ U_BOOT_CMD(
    "        to read recovery.img from part recovery from flash: <imgread kernel recovery loadaddr> \n"   //usage
    "        to read logo.img     from part logo     from flash: <imgread res    logo loadaddr> \n"   //usage
    "        to read one picture named 'bootup' from logo.img    from logo: <imgread pic logo bootup loadaddr> \n"   //usage
+);
+
+//[imgread pic] logo bootup $loadaddr_misc
+static int do_unpackimg(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+    unsigned char* loadaddr = 0;
+    const AmlResImgHead_t* pResImgHead = NULL;
+    unsigned itemIndex = 0;
+    const AmlResItemHead_t* pItem = NULL;
+
+    loadaddr = (unsigned char*)simple_strtoul(argc > 1 ? argv[1] : getenv("loadaddr_misc"), NULL, 16);
+
+    pResImgHead = (AmlResImgHead_t*)loadaddr;
+
+    if (img_res_check_log_header(pResImgHead)) {
+        errorP("Logo header err.\n");
+        return __LINE__;
+    }
+
+    pItem = (AmlResItemHead_t*)(pResImgHead + 1);
+    for (itemIndex = 0; itemIndex < pResImgHead->imgItemNum; ++itemIndex, ++pItem)
+    {
+        if (IH_MAGIC != pItem->magic) {
+            errorP("item magic 0x%x != 0x%x\n", pItem->magic, IH_MAGIC);
+            return __LINE__;
+        }
+        char env_name[IH_NMLEN*2];
+        char env_data[IH_NMLEN*2];
+        unsigned long picLoadAddr = (unsigned long)loadaddr + (unsigned)pItem->start;
+
+        sprintf(env_name, "%s_offset", pItem->name);//be bootup_offset ,not bootup_720_offset
+        sprintf(env_data, "0x%lx", picLoadAddr);
+        setenv(env_name, env_data);
+
+        sprintf(env_name, "%s_size", pItem->name);
+        sprintf(env_data, "0x%x", pItem->size);
+        setenv(env_name, env_data);
+    }
+
+    return 0;//success
+}
+
+U_BOOT_CMD(
+   unpackimg,           //command name
+   2,                   //maxargs
+   0,                   //repeatable
+   do_unpackimg,   //command function
+   "un pack logo image into pictures",           //description
+   "    argv: unpackimg <imgLoadaddr> \n"   //usage
+   "    un pack the logo image, which already loaded at <imgLoadaddr>.\n"
 );
 
