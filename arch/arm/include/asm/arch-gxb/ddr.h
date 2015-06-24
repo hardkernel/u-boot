@@ -4,12 +4,15 @@
 #include <stdint.h>
 
 /* io defines */
-#define wr_reg(addr, data)	(*((volatile uint32_t *)addr))=(uint32_t)(uint64_t)(data)
-#define rd_reg(addr)		(*((volatile uint32_t *)(addr)))
+//#define wr_reg(addr, data)	(*((volatile uint32_t *)addr))=(uint32_t)(uint64_t)(data)
+//#define rd_reg(addr)		(*((volatile uint32_t *)(addr)))
+#define wr_reg(addr, data)	writel(data, addr)
+#define rd_reg(addr)	readl(addr)
 /*clear [mask] 0 bits in [addr], set these 0 bits with [value] corresponding bits*/
 #define modify_reg(addr, value, mask) wr_reg(addr, ((rd_reg(addr) & (mask)) | (value)))
 #define wait_set(addr, loc) do{}while(0 == (rd_reg(addr) & (1<<loc)));
 #define wait_clr(addr, loc) do{}while(1 == (rd_reg(addr) & (1<<loc)));
+#define wait_equal(addr, data) do{}while(data != (rd_reg(addr)));
 
 /* function defines */
 unsigned int ddr_init(void);
@@ -24,6 +27,24 @@ void ddr_debug(void);
 
 #define CFG_DDR_BASE_ADDR					0X0
 #define CFG_DDR_START_OFFSET				0X01000000 //SKIP 16MB
+
+/* ddr functions */
+#define CONFIG_DDR_ZQ_POWER_DOWN
+#define CONFIG_DDR_POWER_DOWN_PHY_VREF
+
+/* pctl status */
+#define  UPCTL_STAT_MASK        (7)
+#define  UPCTL_STAT_INIT        (0)
+#define  UPCTL_STAT_CONFIG      (1)
+#define  UPCTL_STAT_ACCESS      (3)
+#define  UPCTL_STAT_LOW_POWER   (5)
+
+/* pctl cmds */
+#define UPCTL_CMD_INIT         (0)
+#define UPCTL_CMD_CONFIG       (1)
+#define UPCTL_CMD_GO           (2)
+#define UPCTL_CMD_SLEEP        (3)
+#define UPCTL_CMD_WAKEUP       (4)
 
 /* PUB PIR setting */
 #define PUB_PIR_INIT						(1<<0)
@@ -60,6 +81,7 @@ void ddr_debug(void);
 #define CONFIG_DDR0_RANK0_ONLY				1
 #define CONFIG_DDR0_RANK01_SAME				2
 #define CONFIG_DDR01_SHARE_AC				3
+#define CONFIG_DDR0_ONLY_16BIT				4
 
 /* ddr type identifier */
 #define CONFIG_DDR_TIMMING_LPDDR2			0x02

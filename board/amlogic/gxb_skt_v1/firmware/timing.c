@@ -46,6 +46,45 @@
 #define CFG_DDR3_DRV  DDR3_DRV_40OHM
 #define CFG_DDR3_ODT  DDR3_ODT_120OHM
 
+/*
+ * these parameters are corresponding to the pcb layout,
+ * please don't enable this function unless these signals
+ * has been measured by oscilloscope.
+ */
+#ifdef CONFIG_DDR_CMD_BDL_TUNE
+#define DDR_AC_LCDLR   0
+#define	DDR_CK0_BDL	18
+#define	DDR_RAS_BDL	18
+#define	DDR_CAS_BDL	24
+#define	DDR_WE_BDL	21
+#define	DDR_BA0_BDL	16
+#define	DDR_BA1_BDL	2
+#define	DDR_BA2_BDL	13
+#define	DDR_ACPDD_BDL	27
+#define	DDR_CS0_BDL	27
+#define	DDR_CS1_BDL	27
+#define	DDR_ODT0_BDL	27
+#define	DDR_ODT1_BDL	27
+#define	DDR_CKE0_BDL	27
+#define	DDR_CKE1_BDL	27
+#define	DDR_A0_BDL	14
+#define	DDR_A1_BDL	9
+#define	DDR_A2_BDL	5
+#define	DDR_A3_BDL	18
+#define	DDR_A4_BDL	4
+#define	DDR_A5_BDL	16
+#define	DDR_A6_BDL	1
+#define	DDR_A7_BDL	10
+#define	DDR_A8_BDL	4
+#define	DDR_A9_BDL	7
+#define	DDR_A10_BDL	10
+#define	DDR_A11_BDL	9
+#define	DDR_A12_BDL	6
+#define	DDR_A13_BDL	16
+#define	DDR_A14_BDL	8
+#define	DDR_A15_BDL	27
+#endif
+
 /* CAUTION!! */
 /*
  * For DDR3:
@@ -276,7 +315,7 @@ static ddr_set_t __ddr_setting = {
 	.t_pub_pgcr1			= 0x0380c6a0,   //PUB PGCR1
 	//.t_pub_pgcr2			= 0x00f05f97,   //PUB PGCR2
 	.t_pub_pgcr2			= 0x11f12480,   //PUB PGCR2
-	.t_pub_pgcr3			= 0xc0aaf860,   //PUB PGCR3
+	.t_pub_pgcr3			= 0xc0aafe60,   //PUB PGCR3
 	.t_pub_dxccr			= 0x00181884,   //PUB DXCCR
 	.t_pub_dtcr				= 0x43003087,    //PUB DTCR
 	.t_pub_aciocr			= {0},  //PUB ACIOCRx
@@ -291,10 +330,10 @@ static ddr_set_t __ddr_setting = {
 	//.t_pub_zq1pr			= 0x7b,   //PUB ZQ1PR
 	//.t_pub_zq2pr			= 0x7b,   //PUB ZQ2PR
 	//.t_pub_zq3pr			= 0x7b,   //PUB ZQ3PR
-	.t_pub_zq0pr			= 0x69,   //PUB ZQ0PR
-	.t_pub_zq1pr			= 0x69,   //PUB ZQ1PR
-	.t_pub_zq2pr			= 0x69,   //PUB ZQ2PR
-	.t_pub_zq3pr			= 0x69,   //PUB ZQ3PR
+	.t_pub_zq0pr			= 0x1d,   //PUB ZQ0PR
+	.t_pub_zq1pr			= 0x19,   //PUB ZQ1PR
+	.t_pub_zq2pr			= 0x19,   //PUB ZQ2PR
+	.t_pub_zq3pr			= 0x19,   //PUB ZQ3PR
 
 	/* pctl0 defines */
 	/* pctl1 use same define as pctl0 */
@@ -303,7 +342,10 @@ static ddr_set_t __ddr_setting = {
 	.t_pctl0_init_us		= 2,   //PCTL TINIT
 	.t_pctl0_rsth_us		= 2,   //PCTL TRSTH
 	.t_pctl0_mcfg			= 0XA2F21,   //PCTL MCFG default 1T
-	.t_pctl0_mcfg1			= 0X80000000,  //PCTL MCFG1
+	//.t_pctl0_mcfg1			= 0X80000000,  //PCTL MCFG1
+	.t_pctl0_mcfg1			=  (1<<31)|(0x20<<16)|(0x80<<0)//[B31]hw_exit_idle_en
+								|( 0<<8), //[B10,B9,B8] tfaw_cfg_offset:
+								//tFAW= (4 + MCFG.tfaw_cfg)*tRRD - tfaw_cfg_offset,  //PCTL MCFG1
 	.t_pctl0_scfg			= 0xF01,   //PCTL SCFG
 	.t_pctl0_sctl			= 0x1,   //PCTL SCTL
 	//.t_pctl0_ppcfg			= (0xF0 << 1),

@@ -146,7 +146,9 @@ void ddr_print_info(void){
 
 unsigned int ddr_init_dmc(void){
 	wr_reg(DMC_DDR_CTRL, p_ddr_set->ddr_dmc_ctrl);
-	if (p_ddr_set->ddr_channel_set == CONFIG_DDR01_SHARE_AC) {
+	if ((p_ddr_set->ddr_channel_set == CONFIG_DDR01_SHARE_AC)||
+		(p_ddr_set->ddr_channel_set == CONFIG_DDR0_ONLY_16BIT))//jiaxing find use 16bit channel 0 only must write map0-4?
+	{
 		//CONIFG DDR PHY comamnd address map to 32bits linear address.
 	   //DDR0 ROW 14:0.   DDR1 ROW 13:0.   COL 9:0.
 		wr_reg( DDR0_ADDRMAP_0, ( 0 | 5 << 5 | 6 << 10 | 7 << 15 | 8 << 20 | 9 << 25 ));
@@ -275,16 +277,16 @@ unsigned int ddr_init_pctl(void){
 	wr_reg(DDR0_PUB_ACIOCR5, 0);
 	wr_reg(DDR0_PUB_DX0GCR1, 0);
 	wr_reg(DDR0_PUB_DX0GCR2, 0);
-	wr_reg(DDR0_PUB_DX0GCR3, 0);
+	wr_reg(DDR0_PUB_DX0GCR3, (0x1<<10)|(0x2<<12)); //power down dm recevier
 	wr_reg(DDR0_PUB_DX1GCR1, 0);
 	wr_reg(DDR0_PUB_DX1GCR2, 0);
-	wr_reg(DDR0_PUB_DX1GCR3, 0);
+	wr_reg(DDR0_PUB_DX1GCR3, (0x1<<10)|(0x2<<12));//power down dm recevier
 	wr_reg(DDR0_PUB_DX2GCR1, 0);
 	wr_reg(DDR0_PUB_DX2GCR2, 0);
-	wr_reg(DDR0_PUB_DX2GCR3, 0);
+	wr_reg(DDR0_PUB_DX2GCR3, (0x1<<10)|(0x2<<12));//power down dm recevier
 	wr_reg(DDR0_PUB_DX3GCR1, 0);
 	wr_reg(DDR0_PUB_DX3GCR2, 0);
-	wr_reg(DDR0_PUB_DX3GCR3, 0);
+	wr_reg(DDR0_PUB_DX3GCR3, (0x1<<10)|(0x2<<12));//power down dm recevier
 
 	//   2:0   011: DDR0_ MODE.   100:   LPDDR2 MODE.
 	//   3:    8 BANK.
@@ -297,7 +299,7 @@ unsigned int ddr_init_pctl(void){
 	wr_reg(DDR0_PUB_DTAR3, (0X18 | p_ddr_set->t_pub_dtar));
 
 	//// DDR PHY INITIALIZATION
-	wr_reg(DDR0_PUB_PIR, 0X581);
+	//wr_reg(DDR0_PUB_PIR, 0X581);
 	wr_reg(DDR0_PUB_DSGCR, p_ddr_set->t_pub_dsgcr);
 
 	//DDR0_SDRAM_INIT_WAIT :
@@ -469,6 +471,25 @@ unsigned int ddr_init_pctl(void){
 	_udelay(10);
 	wr_reg(DDR0_PUB_ZQCR,(rd_reg(DDR0_PUB_ZQCR))&(~((1<<2)|(1<<27))));
 	_udelay(30);
+	if (p_ddr_set->ddr_channel_set == CONFIG_DDR0_ONLY_16BIT)
+	{
+		wr_reg(DDR0_PUB_DX2GCR0, (0xfffffffe&rd_reg(DDR0_PUB_DX2GCR0)));
+		wr_reg(DDR0_PUB_DX3GCR0, (0xfffffffe&rd_reg(DDR0_PUB_DX3GCR0)));
+	}
+
+#ifdef CONFIG_DDR_CMD_BDL_TUNE
+	wr_reg(DDR0_PUB_ACLCDLR, DDR_AC_LCDLR);  //ck0
+	wr_reg(DDR0_PUB_ACBDLR0, DDR_CK0_BDL);  //ck0
+	wr_reg(DDR0_PUB_ACBDLR1, (DDR_WE_BDL<<16)|(DDR_CAS_BDL<<8)|(DDR_RAS_BDL)); //ras cas we
+	wr_reg(DDR0_PUB_ACBDLR2, ((DDR_ACPDD_BDL<<24)|(DDR_BA2_BDL<<16)|(DDR_BA1_BDL<<8)|(DDR_BA0_BDL))); //ba0 ba1 ba2
+	wr_reg(DDR0_PUB_ACBDLR3, ((DDR_CS1_BDL<<8)|(DDR_CS0_BDL)));  //cs0 cs1
+	wr_reg(DDR0_PUB_ACBDLR4, ((DDR_ODT1_BDL<<8)|(DDR_ODT0_BDL))); //odt0 odt1
+	wr_reg(DDR0_PUB_ACBDLR5, ((DDR_CKE1_BDL<<8)|(DDR_CKE0_BDL)));  //cke0 cke1
+	wr_reg(DDR0_PUB_ACBDLR6, ((DDR_A3_BDL<<24)|(DDR_A2_BDL<<16)|(DDR_A1_BDL<<8)|(DDR_A0_BDL))); //a0 a1 a2 a3
+	wr_reg(DDR0_PUB_ACBDLR7, ((DDR_A7_BDL<<24)|(DDR_A6_BDL<<16)|(DDR_A5_BDL<<8)|(DDR_A4_BDL))); //a4 a5 a6 a7
+	wr_reg(DDR0_PUB_ACBDLR8, ((DDR_A11_BDL<<24)|(DDR_A10_BDL<<16)|(DDR_A9_BDL<<8)|(DDR_A8_BDL)));  //a8 a9 a10 a11
+	wr_reg(DDR0_PUB_ACBDLR9, ((DDR_A15_BDL<<24)|(DDR_A14_BDL<<16)|(DDR_A13_BDL<<8)|(DDR_A12_BDL)));  //a12 a13 a14 a15
+#endif
 
 	wr_reg(DDR0_PUB_PIR, (DDR_PIR | PUB_PIR_INIT));
 	do {
@@ -476,6 +497,24 @@ unsigned int ddr_init_pctl(void){
 	} while(DDR_PGSR0_CHECK());
 #endif
 
+	if ((p_ddr_set->ddr_2t_mode) && \
+		(p_ddr_set->ddr_channel_set != CONFIG_DDR01_SHARE_AC) && \
+		(((p_ddr_set->t_pub_dcr)&0x7)== 0x3)) {
+		//jiaxing mark----must place after training ,because training is 1t mode  ,if delay too much training will not ok
+		wr_reg(DDR0_PUB_ACLCDLR, 0x1f);  //delay cmd/address 2t signle not effect cs cke odt
+		//wr_reg(DDR0_PUB_ACBDLR0, 0x10);  //ck0
+		/*
+		wr_reg(DDR0_PUB_ACBDLR1, (0x18<<16)|(0x18<<8)|(0x18)); //ras cas we
+		wr_reg(DDR0_PUB_ACBDLR2, ((0x18<<16)|(0x18<<8)|(0x18))); //ba0 ba1 ba2
+		//wr_reg(DDR0_PUB_ACBDLR3, ((0<<8)|(0)));  //cs0 cs1
+		//wr_reg(DDR0_PUB_ACBDLR4, ((0<<8)|(0))); //odt0 odt1
+		//wr_reg(DDR0_PUB_ACBDLR5, ((0<<8)|(0)));  //cke0 cke1
+		wr_reg(DDR0_PUB_ACBDLR6, ((0x18<<24)|(0x18<<16)|(0x18<<8)|(0x18))); //a0 a1 a2 a3
+		wr_reg(DDR0_PUB_ACBDLR7, ((0x18<<24)|(0x18<<16)|(0x18<<8)|(0x18))); //a4 a5 a6 a7
+		wr_reg(DDR0_PUB_ACBDLR8, ((0x18<<24)|(0x18<<16)|(0x18<<8)|(0x18)));  //a8 a9 a10 a11
+		wr_reg(DDR0_PUB_ACBDLR9, ((0x18<<24)|(0x18<<16)|(0x18<<8)|(0x18)));  //a12 a13 a14 a15
+		*/
+	}
 	//DDR0_CMD_TIMER_WAIT
 	if (ddr0_enabled)
 		wait_set(DDR0_PCTL_CMDTSTAT, 0);
@@ -484,19 +523,30 @@ unsigned int ddr_init_pctl(void){
 
 	////APB_WR(PCTL_PCTL_SCTL, 2); // INIT: 0, CFG: 1, GO: 2, SLEEP: 3, WAKEUP: 4
 	if (ddr0_enabled)
-		wr_reg(DDR0_PCTL_SCTL, 2);
+		wr_reg(DDR0_PCTL_SCTL, UPCTL_CMD_GO);
 	if (ddr1_enabled)
-		wr_reg(DDR1_PCTL_SCTL, 2);
+		wr_reg(DDR1_PCTL_SCTL, UPCTL_CMD_GO);
 
 	////WHILE ((APB_RD(DDR0_PCTL_STAT) & 0x7 ) != 3 ) {}
 	//DDR0_STAT_GO_WAIT:
 	if (ddr0_enabled)
-		wait_set(DDR0_PCTL_STAT, 1);
+		wait_equal(DDR0_PCTL_STAT, UPCTL_STAT_ACCESS);
 	if (ddr1_enabled)
-		wait_set(DDR1_PCTL_STAT, 1);
+		wait_equal(DDR1_PCTL_STAT, UPCTL_STAT_ACCESS);
 
 	wr_reg( DDR0_PUB_ZQCR,(rd_reg(DDR0_PUB_ZQCR))|(1<<2));
 	wr_reg( DDR0_PUB_ZQCR,(rd_reg(DDR0_PUB_ZQCR))&(~(1<<2)));
+
+/* power down zq for power saving */
+#ifdef CONFIG_DDR_ZQ_POWER_DOWN
+	wr_reg( DDR0_PUB_ZQCR,(rd_reg(DDR0_PUB_ZQCR))|(1<<2));
+#endif
+
+/* power down phy vref for power saving */
+#ifdef CONFIG_DDR_POWER_DOWN_PHY_VREF
+	wr_reg(DDR0_PUB_IOVCR0, 0);
+	wr_reg(DDR0_PUB_IOVCR1, 0);
+#endif
 
 	//// ENABLE THE DMC AUTO REFRESH FUNCTION
 	if (ddr0_enabled) {
@@ -583,6 +633,20 @@ void ddr_pre_init(void){
 		p_ddr_set->t_pctl0_ppcfg = (0xF0 << 1);
 		p_ddr_set->t_pctl0_dfiodtcfg = 0x08;
 	}
+	else if (p_ddr_set->ddr_channel_set == CONFIG_DDR0_ONLY_16BIT) {
+		printf("DDR channel setting: ONLY DDR0 16bit mode\n");
+		ddr_rank_set = 0x2;
+		//ddr_chl_interface = 0;
+		//ddr_chl_select = 1;
+		ddr_chl_interface = 3;
+		ddr_chl_select = 1;
+		ddr_dual_rank_sel = 0;
+		ddr0_size = p_ddr_set->ddr_size;
+		ddr1_size = 0x1<<(7+convert_reg_size);
+		//p_ddr_set->t_pctl0_ppcfg = (0xF0 << 1);
+		p_ddr_set->t_pctl0_ppcfg =(0x1fc | 1 );
+		p_ddr_set->t_pctl0_dfiodtcfg = 0x08;
+	}
 	else if (p_ddr_set->ddr_channel_set == CONFIG_DDR01_SHARE_AC) {
 		printf("DDR channel setting: DDR0+1 share ac\n");
 		ddr_rank_set = 0x1;
@@ -625,9 +689,11 @@ void ddr_pre_init(void){
 	/* config t_pub_pgcr2[28] share-ac-dual */
 	p_ddr_set->t_pub_pgcr2 |= (ddr_dual_rank_sel << 28);
 
+/*
 	if ((p_ddr_set->ddr_2t_mode) &&(p_ddr_set->ddr_channel_set != CONFIG_DDR01_SHARE_AC)) {
 		p_ddr_timing->cfg_ddr_cl=p_ddr_timing->cfg_ddr_cl-1;
 	}
+*/
 
 	/* update pctl timing */
 	int tmp_val = 0;
@@ -681,6 +747,11 @@ void ddr_pre_init(void){
 								(p_ddr_timing->cfg_ddr_cke << 13)		|
 								(p_ddr_timing->cfg_ddr_mrd << 18)		|
 								(0 << 29)); //tAOFDx
+	p_ddr_set->t_pctl0_mcfg = ((p_ddr_set->t_pctl0_mcfg)&(~(0x3<<18)))	|
+								(((((p_ddr_timing->cfg_ddr_faw+p_ddr_timing->cfg_ddr_rrd-1)/p_ddr_timing->cfg_ddr_rrd)-4)&0x3)<<18);
+	p_ddr_set->t_pctl0_mcfg1 |= ((((p_ddr_timing->cfg_ddr_faw%p_ddr_timing->cfg_ddr_rrd)?(p_ddr_timing->cfg_ddr_rrd-(p_ddr_timing->cfg_ddr_faw%p_ddr_timing->cfg_ddr_rrd)):0)&0x7)<<8);
+	printf("p_ddr_set->t_pctl0_mcfg: 0x%8x\n", p_ddr_set->t_pctl0_mcfg);
+	printf("p_ddr_set->t_pctl0_mcfg1: 0x%8x\n", p_ddr_set->t_pctl0_mcfg1);
 }
 
 void ddr_test(void){
