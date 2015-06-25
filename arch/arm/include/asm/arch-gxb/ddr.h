@@ -28,10 +28,6 @@ void ddr_debug(void);
 #define CFG_DDR_BASE_ADDR					0X0
 #define CFG_DDR_START_OFFSET				0X01000000 //SKIP 16MB
 
-/* ddr functions */
-#define CONFIG_DDR_ZQ_POWER_DOWN
-#define CONFIG_DDR_POWER_DOWN_PHY_VREF
-
 /* pctl status */
 #define  UPCTL_STAT_MASK        (7)
 #define  UPCTL_STAT_INIT        (0)

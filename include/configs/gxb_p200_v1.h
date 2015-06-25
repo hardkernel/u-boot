@@ -159,6 +159,9 @@
 #define CONFIG_DDR_CHANNEL_SET			CONFIG_DDR0_RANK01_SAME
 #define CONFIG_DDR_FULL_TEST			0 //1 for ddr full test
 #define CONFIG_NR_DRAM_BANKS			1
+/* ddr power saving */
+#define CONFIG_DDR_ZQ_POWER_DOWN
+#define CONFIG_DDR_POWER_DOWN_PHY_VREF
 
 /* storage: emmc/nand/sd */
 #define	CONFIG_STORE_COMPATIBLE 1

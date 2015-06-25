@@ -497,6 +497,41 @@ unsigned int ddr_init_pctl(void){
 	} while(DDR_PGSR0_CHECK());
 #endif
 
+	if ((p_ddr_set->ddr_channel_set == CONFIG_DDR0_RANK0_ONLY) || (p_ddr_set->ddr_channel_set == CONFIG_DDR0_RANK01_SAME))
+	{
+		unsigned int i=0, j=0;
+		i=(rd_reg(DDR0_PUB_DX2LCDLR0));
+		wr_reg(DDR0_PUB_DX2LCDLR0,((i>>8)|(i&(0xffffff00))));
+		i=(((rd_reg(DDR0_PUB_DX2GTR))>>3)&((7<<0)));
+		j=(((rd_reg(DDR0_PUB_DX2GTR))>>14)&((3<<0)));
+		wr_reg(DDR0_PUB_DX2GTR,i|(i<<3)|(j<<12)|(j<<14));
+		i=(rd_reg(DDR0_PUB_DX2LCDLR2));
+		wr_reg(DDR0_PUB_DX2LCDLR2,((i>>8)|(i&(0xffffff00))));
+		i=(rd_reg(DDR0_PUB_DX3LCDLR0));
+		wr_reg(DDR0_PUB_DX3LCDLR0,((i>>8)|(i&(0xffffff00))));
+		i=(((rd_reg(DDR0_PUB_DX3GTR))>>3)&((7<<0)));
+		j=(((rd_reg(DDR0_PUB_DX3GTR))>>14)&((3<<0)));
+		wr_reg(DDR0_PUB_DX3GTR,i|(i<<3)|(j<<12)|(j<<14));
+		i=(rd_reg(DDR0_PUB_DX3LCDLR2));
+		wr_reg(DDR0_PUB_DX3LCDLR2,((i>>8)|(i&(0xffffff00))));
+		i=(rd_reg(DDR0_PUB_DX0LCDLR0));
+		wr_reg(DDR0_PUB_DX0LCDLR0,((i<<8)|(i&(0xffff00ff))));
+		i=(((rd_reg(DDR0_PUB_DX0GTR))<<0)&((7<<0)));
+		j=(((rd_reg(DDR0_PUB_DX0GTR))>>12)&((3<<0)));
+		wr_reg(DDR0_PUB_DX0GTR,i|(i<<3)|(j<<12)|(j<<14));
+		i=(rd_reg(DDR0_PUB_DX0LCDLR2));
+		wr_reg(DDR0_PUB_DX0LCDLR2,((i<<8)|(i&(0xffff00ff))));
+		i=(rd_reg(DDR0_PUB_DX1LCDLR0));
+		wr_reg(DDR0_PUB_DX1LCDLR0,((i<<8)|(i&(0xffff00ff))));
+		i=(((rd_reg(DDR0_PUB_DX1GTR))<<0)&((7<<0)));
+		j=(((rd_reg(DDR0_PUB_DX1GTR))>>12)&((3<<0)));
+		wr_reg(DDR0_PUB_DX1GTR,i|(i<<3)|(j<<12)|(j<<14));
+		i=(rd_reg(DDR0_PUB_DX1LCDLR2));
+		wr_reg(DDR0_PUB_DX1LCDLR2,((i<<8)|(i&(0xffff00ff))));
+		//wr_reg(DDR0_PUB_PGCR2,((((1<<28))|p_ddr_set->t_pub_pgcr2)));
+		wr_reg(DDR0_PUB_PGCR2,(((~(1<<28))&p_ddr_set->t_pub_pgcr2)));
+	}
+
 	if ((p_ddr_set->ddr_2t_mode) && \
 		(p_ddr_set->ddr_channel_set != CONFIG_DDR01_SHARE_AC) && \
 		(((p_ddr_set->t_pub_dcr)&0x7)== 0x3)) {
@@ -750,20 +785,22 @@ void ddr_pre_init(void){
 	p_ddr_set->t_pctl0_mcfg = ((p_ddr_set->t_pctl0_mcfg)&(~(0x3<<18)))	|
 								(((((p_ddr_timing->cfg_ddr_faw+p_ddr_timing->cfg_ddr_rrd-1)/p_ddr_timing->cfg_ddr_rrd)-4)&0x3)<<18);
 	p_ddr_set->t_pctl0_mcfg1 |= ((((p_ddr_timing->cfg_ddr_faw%p_ddr_timing->cfg_ddr_rrd)?(p_ddr_timing->cfg_ddr_rrd-(p_ddr_timing->cfg_ddr_faw%p_ddr_timing->cfg_ddr_rrd)):0)&0x7)<<8);
-	printf("p_ddr_set->t_pctl0_mcfg: 0x%8x\n", p_ddr_set->t_pctl0_mcfg);
-	printf("p_ddr_set->t_pctl0_mcfg1: 0x%8x\n", p_ddr_set->t_pctl0_mcfg1);
 }
 
 void ddr_test(void){
 	if (memTestDataBus((volatile unsigned int *)(uint64_t) \
-		(p_ddr_set->ddr_base_addr + p_ddr_set->ddr_start_offset)))
+		(p_ddr_set->ddr_base_addr + p_ddr_set->ddr_start_offset))) {
 		printf("DataBus test failed!!!\n");
+		reset_system();
+	}
 	else
 		printf("DataBus test pass!\n");
 	if (memTestAddressBus((volatile unsigned int *)(uint64_t) \
 		(p_ddr_set->ddr_base_addr + p_ddr_set->ddr_start_offset), \
-		((p_ddr_set->ddr_size << 20) - p_ddr_set->ddr_start_offset)))
+		((p_ddr_set->ddr_size << 20) - p_ddr_set->ddr_start_offset))) {
 		printf("AddrBus test failed!!!\n");
+		reset_system();
+	}
 	else
 		printf("AddrBus test pass!\n");
 	if (p_ddr_set->ddr_full_test) {
@@ -772,8 +809,10 @@ void ddr_test(void){
 		watchdog_disable();
 		if (memTestDevice((volatile unsigned int *)(uint64_t) \
 			(p_ddr_set->ddr_base_addr + p_ddr_set->ddr_start_offset), \
-			((p_ddr_set->ddr_size << 20) - p_ddr_set->ddr_start_offset)))
+			((p_ddr_set->ddr_size << 20) - p_ddr_set->ddr_start_offset))) {
 			printf("Device test failed!!!\n");
+			reset_system();
+		}
 		else
 			printf("Device test pass!\n");
 	}
@@ -789,6 +828,7 @@ unsigned int hot_boot(void){
 	}
 }
 
+#if 0
 void ddr_debug(void){
 	/*debug ddr and print info*/
 	printf("DDR debug information:\n");
@@ -806,3 +846,4 @@ void ddr_debug(void){
 	printf("	MAP_0_3:  0x%8x    MAP_1_3:  0x%8x\n", rd_reg(DDR0_ADDRMAP_3), rd_reg(DDR1_ADDRMAP_3));
 	printf("	MAP_0_4:  0x%8x    MAP_1_4:  0x%8x\n", rd_reg(DDR0_ADDRMAP_4), rd_reg(DDR1_ADDRMAP_4));
 }
+#endif
