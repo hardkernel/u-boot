@@ -51,7 +51,7 @@ static void hdelay(int us)
 static void hdmitx_set_hw(struct hdmitx_dev *hdev);
 
 // Internal functions:
-void hdmitx_csc_config (unsigned char input_color_format,
+static void hdmitx_csc_config (unsigned char input_color_format,
                         unsigned char output_color_format,
                         unsigned char color_depth);
 
@@ -66,7 +66,7 @@ static void dump_regs(void)
 		printk("[0x%08x]=0x%08x\n", ladr, reg_val);
 	}
 #define VPU_REG_ADDR(reg) (0xd0100000 + (reg << 2))
-	for (reg_adr = 0x1b80; reg_adr < 0x1c00; reg_adr ++) {
+	for (reg_adr = 0x1b00; reg_adr < 0x1c00; reg_adr ++) {
 		ladr = VPU_REG_ADDR(reg_adr);
 		reg_val = hd_read_reg(ladr);
 		printk("[0x%08x]=0x%08x\n", ladr, reg_val);
@@ -189,7 +189,7 @@ static int hdmitx_read_edid(unsigned char *buf, unsigned char addr, unsigned cha
 	return read_edid_8bytes(buf, addr);
 }
 
-void hdmitx_turnoff(void)
+static void hdmitx_turnoff(void)
 {
         /* Close HDMITX PHY */
         hd_write_reg(P_HHI_HDMI_PHY_CNTL0, 0);
@@ -275,10 +275,10 @@ void hdmi_tx_set(struct hdmitx_dev *hdev)
 
 #define NUM_INT_VSYNC   INT_VEC_VIU1_VSYNC
 
-unsigned long modulo(unsigned long a, unsigned long b);
-signed int to_signed(unsigned int a);
+static unsigned long modulo(unsigned long a, unsigned long b);
+static signed int to_signed(unsigned int a);
 
-void config_hdmi20_tx ( enum hdmi_vic vic, struct hdmi_format_para *para,
+static void config_hdmi20_tx ( enum hdmi_vic vic, struct hdmi_format_para *para,
                         unsigned char   color_depth,            // Pixel bit width: 4=24-bit; 5=30-bit; 6=36-bit; 7=48-bit.
                         unsigned char   input_color_format,     // Pixel format: 0=RGB444; 1=YCbCr422; 2=YCbCr444; 3=YCbCr420.
                         unsigned char   input_color_range,      // Pixel range: 0=limited; 1=full.
@@ -847,44 +847,18 @@ void config_hdmi20_tx ( enum hdmi_vic vic, struct hdmi_format_para *para,
 	hdmitx_wr_reg(HDMITX_DWC_MC_SWRSTZREQ, data32);
 } /* config_hdmi20_tx */
 
-void hdmi_tx_enc(enum hdmi_vic vic)
+static void hdmitx_enc(enum hdmi_vic vic)
 {
-    struct hdmi_format_para *para = NULL;
-    para = hdmi_get_fmt_paras(vic);
-    if (para == NULL) {
-        printk("error at %s[%d]\n", __func__, __LINE__);
-        return;
-    }
+	// --------------------------------------------------------
+	// Set TV encoder for HDMI
+	// --------------------------------------------------------
+	printk("Configure VENC\n");
 
-    // --------------------------------------------------------
-    // Set TV encoder for HDMI
-    // --------------------------------------------------------
-    printk("Configure VENC\n");
+	set_vmode_enc_hw(vic);
 
-        set_vmode_enc_hw(vic);
+	hdmi_tvenc_set(vic);
 
-    hdmi_tvenc_set(vic);
-
-//    hd_set_reg_bits(P_VPU_VIU_VENC_MUX_CTRL, 2, 0, 2); // [1:0] cntl_viu1_sel_venc: 0=ENCL, 1=ENCI, 2=ENCP, 3=ENCT.
-
-    // --------------------------------------------------------
-    // Configure video format timing for HDMI:
-    // Based on the corresponding settings in set_tv_enc.c, calculate
-    // the register values to meet the timing requirements defined in CEA-861-D
-    // --------------------------------------------------------
-    printk("Configure HDMI video format timing\n");
-
-    // --------------------------------------------------------
-    // Set up HDMI
-    // --------------------------------------------------------
-    config_hdmi20_tx(vic, para,                     // pixel_repeat,
-                     TX_COLOR_DEPTH,                        // Pixel bit width: 4=24-bit; 5=30-bit; 6=36-bit; 7=48-bit.
-                     TX_INPUT_COLOR_FORMAT,                 // input_color_format: 0=RGB444; 1=YCbCr422; 2=YCbCr444; 3=YCbCr420.
-                     TX_INPUT_COLOR_RANGE,                  // input_color_range: 0=limited; 1=full.
-                     TX_OUTPUT_COLOR_FORMAT,                // output_color_format: 0=RGB444; 1=YCbCr422; 2=YCbCr444; 3=YCbCr420.
-                     TX_OUTPUT_COLOR_RANGE                 // output_color_range: 0=limited; 1=full.
-                     );
-    return;
+	return;
 }
 
 static void hdmitx_set_pll(struct hdmitx_dev *hdev)
@@ -1935,11 +1909,67 @@ static void set_tmds_clk_div40(unsigned int div40)
 	hdmitx_wr_reg(HDMITX_TOP_TMDS_CLK_PTTN_CNTL, 0x2);            // 0xc
 }
 
-void hdmitx_set_hw(struct hdmitx_dev* hdev)
+static void hdmitx_set_vsi_pkt(enum hdmi_vic vic)
 {
+	/* convert to HDMI_VIC */
+	if (vic == HDMI_3840x2160p30_16x9)
+		vic = 1;
+	else if (vic == HDMI_3840x2160p25_16x9)
+		vic = 2;
+	else if (vic == HDMI_3840x2160p24_16x9)
+		vic = 3;
+	else
+		vic = 4;
+
+	hdmitx_wr_reg(HDMITX_DWC_FC_VSDIEEEID0, 0x03);
+	hdmitx_wr_reg(HDMITX_DWC_FC_VSDIEEEID1, 0x0c);
+	hdmitx_wr_reg(HDMITX_DWC_FC_VSDIEEEID2, 0x00);
+	hdmitx_wr_reg(HDMITX_DWC_FC_AVIVID, 0);
+	hdmitx_wr_reg(HDMITX_DWC_FC_VSDPAYLOAD0, 0x20);
+	hdmitx_wr_reg(HDMITX_DWC_FC_VSDPAYLOAD1, vic);
+	hdmitx_wr_reg(HDMITX_DWC_FC_VSDSIZE, 5);
+	hdmitx_set_reg_bits(HDMITX_DWC_FC_DATAUTO0, 1, 3, 1);
+	hdmitx_wr_reg(HDMITX_DWC_FC_DATAUTO1, 0);
+	hdmitx_wr_reg(HDMITX_DWC_FC_DATAUTO2, 0x10);
+	hdmitx_set_reg_bits(HDMITX_DWC_FC_PACKET_TX_EN, 1, 4, 1);
+}
+
+static void hdmitx_set_hw(struct hdmitx_dev* hdev)
+{
+	struct hdmi_format_para *para = NULL;
+
+	para = hdmi_get_fmt_paras(hdev->vic);
+	if (para == NULL) {
+		printk("error at %s[%d]\n", __func__, __LINE__);
+		return;
+	}
+
 	hdmitx_set_pll(hdev);
 	hdmitx_set_phy(hdev);
-	hdmi_tx_enc(hdev->vic);
+	hdmitx_enc(hdev->vic);
+
+	// --------------------------------------------------------
+	// Set up HDMI
+	// --------------------------------------------------------
+	config_hdmi20_tx(hdev->vic, para,                     // pixel_repeat,
+		TX_COLOR_DEPTH,                        // Pixel bit width: 4=24-bit; 5=30-bit; 6=36-bit; 7=48-bit.
+		TX_INPUT_COLOR_FORMAT,                 // input_color_format: 0=RGB444; 1=YCbCr422; 2=YCbCr444; 3=YCbCr420.
+		TX_INPUT_COLOR_RANGE,                  // input_color_range: 0=limited; 1=full.
+		TX_OUTPUT_COLOR_FORMAT,                // output_color_format: 0=RGB444; 1=YCbCr422; 2=YCbCr444; 3=YCbCr420.
+		TX_OUTPUT_COLOR_RANGE                 // output_color_range: 0=limited; 1=full.
+		);
+
+	/* switch HDMI_VIC for 2160p30/25/24hz */
+	switch (hdev->vic) {
+	case HDMI_3840x2160p24_16x9:
+	case HDMI_3840x2160p25_16x9:
+	case HDMI_3840x2160p30_16x9:
+	case HDMI_4096x2160p24_256x135:
+		hdmitx_set_vsi_pkt(hdev->vic);
+		break;
+	default:
+		break;
+	}
 	hd_write_reg(P_VPU_HDMI_FMT_CTRL,(((TX_INPUT_COLOR_FORMAT==HDMI_COLOR_FORMAT_420)?2:0)  << 0) | // [ 1: 0] hdmi_vid_fmt. 0=444; 1=convert to 422; 2=convert to 420.
 						 (2													 << 2) | // [ 3: 2] chroma_dnsmp. 0=use pixel 0; 1=use pixel 1; 2=use average.
 						 (0													 << 4) | // [	4] dith_en. 1=enable dithering before HDMI TX input.
@@ -1982,7 +2012,7 @@ void hdmitx_set_hw(struct hdmitx_dev* hdev)
 
 // Use this self-made function rather than %, because % appears to produce wrong
 // value for divisor which are not 2's exponential.
-unsigned long modulo(unsigned long a, unsigned long b)
+static unsigned long modulo(unsigned long a, unsigned long b)
 {
 	if (a >= b) {
 		return(a-b);
@@ -1991,7 +2021,7 @@ unsigned long modulo(unsigned long a, unsigned long b)
 	}
 }
 
-signed int to_signed(unsigned int a)
+static signed int to_signed(unsigned int a)
 {
 	if (a <= 7) {
 		return(a);
@@ -2001,7 +2031,7 @@ signed int to_signed(unsigned int a)
 }
 
 // TODO
-void hdmitx_csc_config (unsigned char input_color_format,
+static void hdmitx_csc_config (unsigned char input_color_format,
                         unsigned char output_color_format,
                         unsigned char color_depth)
 {
