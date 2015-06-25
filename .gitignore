@@ -20,6 +20,9 @@
 *.bin
 *.patch
 *.cfgtmp
+*.diff
+fip/*.bl2
+fip/*.tpl
 
 # host programs on Cygwin
 *.exe

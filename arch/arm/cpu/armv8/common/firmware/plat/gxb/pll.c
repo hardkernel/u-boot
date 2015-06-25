@@ -28,19 +28,21 @@
 #include <stdio.h>
 #include <asm/arch/timing.h>
 
-extern pll_set_t __pll_setting;
 unsigned lock_check_loop = 0;
+extern pll_set_t __pll_setting;
 static pll_set_t * p_pll_set = &__pll_setting;
 
 unsigned int pll_init(void){
-	// Switch to oscillator, the SYS CPU might have already been programmed
+	// Switch clk81 to the oscillator input
+	// romcode might have already programmed clk81 to a PLL
+	Wr( HHI_MPEG_CLK_CNTL, Rd(HHI_MPEG_CLK_CNTL) & ~(1 << 8) );
+	// Switch sys clk to oscillator, the SYS CPU might have already been programmed
 	clocks_set_sys_cpu_clk( 0, 0, 0, 0);
-	/*FIX PLL*/
-	Wr( HHI_MPEG_CLK_CNTL, Rd(HHI_MPEG_CLK_CNTL) & ~(1 << 8) ); // Switch clk81 to the oscillator input (boot.s might have already programmed clk81 to a PLL)
 
 	//SYS PLL,FIX PLL bangap
 	Wr(HHI_MPLL_CNTL6, Rd(HHI_MPLL_CNTL6)|(1<<26));
 	_udelay(100);
+
 	unsigned int sys_pll_cntl = 0;
 	if ((p_pll_set->cpu_clk >= 600) && (p_pll_set->cpu_clk <= 1200)) {
 		sys_pll_cntl = (1<<16/*OD*/) | (1<<9/*N*/) | (p_pll_set->cpu_clk / 12/*M*/);

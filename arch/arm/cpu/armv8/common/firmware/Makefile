@@ -14,9 +14,6 @@ MAKEFLAGS += --no-print-directory
 .PHONY: all clean realclean distclean
 
 all:
-ifdef CONFIG_AML_SMP
-	./bin2code smp_code $(srctree)/$(CPUDIR)/$(SOC)/firmware/smp.bin $(srctree)/$(CPUDIR)/$(SOC)/firmware/smp.dat
-endif
 	$(Q)$(MAKE) -f Makefile.$(targetComplier)
 
 #ifndef CONFIG_M3

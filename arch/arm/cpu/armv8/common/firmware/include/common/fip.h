@@ -97,17 +97,18 @@ typedef struct aml_fip_header {
 #define FM_BIN_BL33_SIZE			0x78 //0xA0
 #endif
 
-#define FM_FIP_HEADER_LOAD_ADDR		0x01400000
+/* load address assignment */
 #define FM_BL30_LOAD_ADDR			CONFIG_SYS_TEXT_BASE
 #define FM_BL301_LOAD_ADDR			CONFIG_SYS_TEXT_BASE
-#define FM_BL31_LOAD_ADDR			0x10100000
-#define FM_BL32_LOAD_ADDR			0x10200000
+#define FM_BL31_LOAD_ADDR			0x10100000 //0x05000000
+#define FM_BL32_LOAD_ADDR			0x05200000
 #define FM_BL33_LOAD_ADDR			CONFIG_SYS_TEXT_BASE
 
 /*usb burning func*/
 #define USB_BL2_RETURN_ROM_ADDR			0xd9044504
 #define FM_USB_MODE_LOAD_ADDR			0x02000000
 
+#define FM_FIP_HEADER_LOAD_ADDR			0x01400000 /*tmp addr until bl33 load done*/
 #define BL2_MMU_TABLE_BASE				0x01500000
 #define BL2_MMU_TABLE_SIZE				(sizeof(uint64_t) * MAX_XLAT_TABLES * XLAT_TABLE_ENTRIES)
 #define BL2_MMAP_BASE					0x01600000

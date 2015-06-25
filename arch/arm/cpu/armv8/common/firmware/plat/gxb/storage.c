@@ -243,8 +243,8 @@ uint64_t sdio_read_blocks(struct sd_emmc_global_regs *sd_emmc_regs,
 		ret |= SD_EMMC_DESC_TIMEOUT_ERROR;
 	if (ret)
 		printf("sd/emmc read data error: status=0x%x; ret=%d\n",ret);
-	else
-		printf("read data success!\n");
+	//else
+		//printf("read data success!\n");
 	return ret;
 }
 
@@ -262,10 +262,13 @@ uint64_t sdio_read_data(uint64_t boot_device, uint64_t src, uint64_t des, uint64
 		printf("sd/emmc boot device error\n");
 
 	mode = s_setup->b.sdhc | s_setup->b.hcs ? 1 : 0;
+
+#if 0
 	if (mode)
 		printf("sd/emmc is lba mode\n");
 	else
 		printf("sd/emmc is byte mode\n");
+#endif
 
 	blk_cnt = ((size+511)&(~(511)))>>9;
 	do {

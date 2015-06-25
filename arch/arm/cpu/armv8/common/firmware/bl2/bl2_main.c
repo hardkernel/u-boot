@@ -52,7 +52,7 @@ void bl2_main(void)
 {
 	pinmux_init();
 
-	printf("\n\nBL2 %s. Ver: %s @ %s\n\n", build_message, PLAIN_VERSION, CONFIG_SYS_CONFIG_NAME);
+	printf("\n\nBL2 %s.\n%s @ %s\n\n", build_message, CONFIG_SYS_CONFIG_NAME, PLAIN_VERSION);
 
 	/* Perform remaining generic architectural setup in S-El1 */
 	bl2_arch_setup();
