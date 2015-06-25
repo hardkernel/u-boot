@@ -42,7 +42,7 @@
 #define CONFIG_SYS_MAXARGS  64
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	"storeboot=\0"
-#define CONFIG_BOOTARGS "init=/init console=ttyS0,115200 no_console_suspend earlyprintk=aml-uart,0xc81004c0 selinux=0"
+#define CONFIG_BOOTARGS "init=/init console=ttyS0,115200 no_console_suspend earlyprintk=aml-uart,0xc81004c0"
 #define CONFIG_BOOTCOMMAND "run storeboot"
 
 //#define CONFIG_ENV_IS_NOWHERE  1
