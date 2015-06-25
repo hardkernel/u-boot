@@ -268,7 +268,7 @@ static void vout_vmode_init(void)
 	int vmode = -1;
 
 	outputmode = getenv("outputmode");
-	vout_log("outputmode: %s\n", outputmode);
+	/*vout_log("outputmode: %s\n", outputmode);*/
 	vmode = vout_find_mode_by_name(outputmode);
 	vout_set_current_vmode(vmode);
 }

@@ -21,29 +21,34 @@ extern int lcd_drawchars (ushort x, ushort y, uchar *str, int count);
 #define lcd_printf(fmt...)
 #endif// #ifdef CONFIG_VIDEO_AMLLCD
 
-#ifdef CONFIG_VIDEO_AMLTVOUT
-#define _VIDEO_DEV_OPEN "video dev open ${outputmode};"
+#ifdef CONFIG_AML_VOUT
+#define _VIDEO_DEV_OPEN "osd open;osd clear;hdmitx output ${outputmode};"
 #else
 #define _VIDEO_DEV_OPEN "video dev bl_on;"
 #endif// #ifdef CONFIG_VIDEO_AMLTVOUT
 
-//if env upgrade_logo_offset exist, use bmp resources existed in memory
-int video_res_prepare_for_upgrade(HIMAGE hImg)
+const char* const UpgradeLogoAddr = (const char*)(OPTIMUS_DOWNLOAD_DISPLAY_BUF + OPTIMUS_DOWNLOAD_SLOT_SZ);
+
+static int optimus_prepare_upgrading_bmps(HIMAGE hImg)
 {
-    const char* env_name  = NULL;
+    char env_buf[96];
+    static const char* bmpsLoadAddr = (const char*)UpgradeLogoAddr;
     int ret = 0;
-    const char* UpgradeLogoAddr = (const char*)OPTIMUS_DOWNLOAD_DISPLAY_BUF;
-    char env_buf[32];
+
+    sprintf(env_buf, "unpackimg 0x%p", bmpsLoadAddr);
+    ret = run_command(env_buf, 0);
+    if (!ret) return 0;
+    bmpsLoadAddr = UpgradeLogoAddr;//Reset to default if unapckimg directly failed
 
     //imgread res logo ${loadaddr_misc};
-    sprintf(env_buf, "imgread res logo 0x%p", UpgradeLogoAddr);
+    sprintf(env_buf, "imgread res logo 0x%p", bmpsLoadAddr);
     ret = run_command(env_buf, 0);
-
     if (!ret) {
-            sprintf(env_buf, "unpackimg 0x%p", UpgradeLogoAddr);
-            ret = run_command(env_buf, 0);
+        sprintf(env_buf, "unpackimg 0x%p", bmpsLoadAddr);
+        ret = run_command(env_buf, 0);
     }
-    if (ret)
+
+    if (ret && hImg)
     {//Failed to load logo resources from memory, then Load it from package
         unsigned imgItemSz = 0;
         HIMAGEITEM hItem = NULL;
@@ -56,7 +61,13 @@ int video_res_prepare_for_upgrade(HIMAGE hImg)
         }
 
         imgItemSz = (unsigned)image_item_get_size(hItem);
-        ret = image_item_read(hImg, hItem, (void*)UpgradeLogoAddr, imgItemSz);
+        const unsigned itemSzNotAligned = image_item_get_first_cluster_size(hImg, hItem);
+        if (itemSzNotAligned & 0x7) {//Not Aligned 8bytes/64bits, mmc dma read will failed
+            DWN_MSG("align 4 mmc read...\t");//Assert Make 'DDR' buffer addr align 8
+            bmpsLoadAddr -= itemSzNotAligned;
+            sprintf(env_buf, "unpackimg 0x%p", bmpsLoadAddr);
+        }
+        ret = image_item_read(hImg, hItem, (char*)bmpsLoadAddr, imgItemSz);
         if (ret) {
             DWN_ERR("Fail to read item logo\n");
             image_item_close(hItem); return __LINE__;
@@ -70,8 +81,22 @@ int video_res_prepare_for_upgrade(HIMAGE hImg)
         }
     }
 
-    //video prepare to show upgrade bmp
+    return ret;
+}
 
+//if env upgrade_logo_offset exist, use bmp resources existed in memory
+int video_res_prepare_for_upgrade(HIMAGE hImg)
+{
+    const char* env_name  = NULL;
+    int ret = 0;
+
+    ret = optimus_prepare_upgrading_bmps(hImg);
+    if (ret) {
+        DWN_ERR("Fail in loading bmps for upgradig\n");
+        return __LINE__;
+    }
+
+    //video prepare to show upgrade bmp
 #ifdef CONFIG_VIDEO_AMLLCD
     if (OPTIMUS_WORK_MODE_SDC_PRODUCE == optimus_work_mode_get())
     {
@@ -81,21 +106,9 @@ int video_res_prepare_for_upgrade(HIMAGE hImg)
 #endif// #ifdef CONFIG_VIDEO_AMLLCD
 
     DWN_MSG("echo video prepare for upgrade\n");
-#ifdef CONFIG_CMD_LOGO
-    DWN_MSG("outputmode=%s\n", getenv("outputmode"));
-    env_name = "logo size ${outputmode}";
-    ret = run_command(env_name, 0);
-    if (ret) goto _fail;
-#endif// #ifdef CONFIG_CMD_LOGO
-    env_name = "video open; video clear;";
-    ret = run_command(env_name, 0);
-    if (ret) goto _fail;
-
     env_name = _VIDEO_DEV_OPEN;
     ret = run_command(env_name, 0);
     if (ret) goto _fail;
-
-    ret = run_command("video clear", 0);//twice clear it
 
     return 0;
 
@@ -111,11 +124,8 @@ static int _show_burn_logo(const char* bmpOffsetName) //Display logo to report b
     char* bmpAddrEnv = getenv((char*)bmpOffsetName);
 
     if (!bmpAddrEnv) {
-        const char* UpgradeLogoAddr = (const char*)OPTIMUS_DOWNLOAD_DISPLAY_BUF;
-        char env_buf[32];
-        sprintf(env_buf, "unpackimg 0x%p", UpgradeLogoAddr);
-
-        ret = run_command(env_buf, 0);//need re-unpack after 'defenv'
+        DWN_MSG("Reload bmps env.\n");
+        ret = optimus_prepare_upgrading_bmps(NULL);
         if (ret) {
             DWN_ERR("Fail in re-unpack res img\n");
             return __LINE__;
@@ -130,7 +140,7 @@ static int _show_burn_logo(const char* bmpOffsetName) //Display logo to report b
         return __LINE__;
     }
 #ifdef CONFIG_OSD_SCALE_ENABLE
-    run_command("bmp scale", 0);
+    //run_command("bmp scale", 0);
 #endif// #ifdef CONFIG_OSD_SCALE_ENABLE
 
     return 0;
@@ -201,7 +211,7 @@ typedef struct _uiProgress{
 }UiProgress_t;
 
 
-__hdle optimus_progress_ui_request(int totalPercents_f, int startPercent, unsigned bmpBarAddr,
+__hdle optimus_progress_ui_request(int totalPercents_f, int startPercent, unsigned long bmpBarAddr,
                                     int display_width,  int progressBarY_f )
 {
     UiProgress_t* pUiProgress = NULL;
@@ -266,7 +276,7 @@ int optimus_progress_ui_set_smart_mode(__hdle hUiProgress, const u64 smartModeTo
     return 0;
 }
 
-int optimus_progress_ui_set_unfocus_bkg(__hdle hUiProgress, unsigned unfocusBmpAddr)
+int optimus_progress_ui_set_unfocus_bkg(__hdle hUiProgress, unsigned long unfocusBmpAddr)
 {
     UiProgress_t* pUiProgress   = (UiProgress_t*)hUiProgress;
     bmp_header_t* bkgBmpHead    = (bmp_header_t*)unfocusBmpAddr;
@@ -292,7 +302,7 @@ int optimus_progress_ui_set_unfocus_bkg(__hdle hUiProgress, unsigned unfocusBmpA
     {
         char cmd[64];
 
-        sprintf(cmd, "bmp display 0x%x %d %d 1", unfocusBmpAddr, progressBarX, progressBarY);
+        sprintf(cmd, "bmp display 0x%lx %d %d", unfocusBmpAddr, progressBarX, progressBarY);
         if (run_command(cmd, 0)) {
             DWN_ERR("Fail to in cmd[%s]\n", cmd);
             show_logo_report_burn_ui_error();
@@ -303,7 +313,7 @@ int optimus_progress_ui_set_unfocus_bkg(__hdle hUiProgress, unsigned unfocusBmpA
     }
 
 #ifdef CONFIG_OSD_SCALE_ENABLE
-    run_command("bmp scale", 0);
+    //run_command("bmp scale", 0);
 #endif// #ifdef CONFIG_OSD_SCALE_ENABLE
 
     return 0;
@@ -368,7 +378,7 @@ int optimus_progress_ui_direct_update_progress(__hdle hUiProgress, const int per
         const unsigned bmpAddr          = pUiProgress->bmpAddr_f;
         char cmd[64];
 
-        sprintf(cmd, "bmp display %x %d %d 1", bmpAddr, progressBarX, progressBarY);
+        sprintf(cmd, "bmp display %x %d %d ", bmpAddr, progressBarX, progressBarY);
         if (run_command(cmd, 0)) {
             DWN_ERR("Fail to in cmd[%s]\n", cmd);
             show_logo_report_burn_ui_error();
@@ -378,7 +388,7 @@ int optimus_progress_ui_direct_update_progress(__hdle hUiProgress, const int per
         pUiProgress->nextProgressBarX += pUiProgress->progressBarWidth_f;
     }
 #ifdef CONFIG_OSD_SCALE_ENABLE
-    run_command("bmp scale", 0);
+    //run_command("bmp scale", 0);
 #endif// #ifdef CONFIG_OSD_SCALE_ENABLE
 
     pUiProgress->curPercent                 = percents;
@@ -552,6 +562,9 @@ static int do_progress_bar_test(cmd_tbl_t *cmdtp, int flag, int argc, char * con
         return 0;
     }
 
+    run_command("imgread res logo $loadaddr; unpackimg $loadaddr", 0);
+    run_command("setenv outputmode 1080p60hz;", 0);
+
     if (!hProgressBar)
     {
         unsigned barAddr = simple_strtoul(getenv("upgrade_bar_offset"), NULL, 0);
@@ -597,12 +610,13 @@ static int do_progress_bar_test(cmd_tbl_t *cmdtp, int flag, int argc, char * con
         lcd_printf("-----25%%");
     }
 
+    //dir: directly show percents
     if (!strcmp("dir", argv[1]))
     {
         percents = simple_strtoul(argv[2], NULL, 10);
         optimus_progress_ui_direct_update_progress(hProgressBar, percents);
     }
-    else if(!strcmp("nb", argv[1]))
+    else if(!strcmp("nb", argv[1]))//smart mode, display in bytes
     {
         static u64 dataBytes = 0;
         unsigned nBytes = simple_strtoul(argv[2], NULL, 10);
@@ -627,8 +641,8 @@ U_BOOT_CMD(
    0,               //repeatable
    do_progress_bar_test,   //command function
    "Test dynamic upgrade progress bar",           //description
-   "argv: [percents]\n"//usage
-   "    -10 means 10%\n"
+   "argv: dir [percents]: show percents directlry\n"//usage
+   "argv: nb [bytes]: smart mode, show percents with bytes\n"//usage
 );
 #endif//#if PROGRESS_BAR_TEST
 

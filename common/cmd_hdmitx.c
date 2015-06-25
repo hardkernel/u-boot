@@ -88,7 +88,7 @@ static int do_output(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 		if (hdmitx_device.vic == HDMI_unkown) {
 			/* Not find VIC */
 			printf("Not find '%s' mapped VIC\n", argv[1]);
-			return 0;
+			return CMD_RET_FAILURE;
 		} else
 			printf("set hdmitx VIC = %d\n", hdmitx_device.vic);
 
@@ -98,7 +98,7 @@ static int do_output(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 			hdmitx_device.mode420 = 0;
 		hdmi_tx_set(&hdmitx_device);
 	}
-	return 1;
+	return CMD_RET_SUCCESS;
 }
 
 static int do_off(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])

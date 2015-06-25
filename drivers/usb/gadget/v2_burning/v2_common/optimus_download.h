@@ -144,7 +144,8 @@ int optimus_progress_exit(void);
 int optimus_update_progress(const unsigned thisBurnSz);
 
 #define DWN_ERR(fmt ...) printf("ERR(%s)L%d:", __FILE__, __LINE__);printf(fmt)
-#define DWN_MSG(fmt ...) printf("msg:"fmt)
+#define DWN_MSG(fmt ...) printf("[MSG]"fmt)
+#define DWN_WRN(fmt ...) printf("[WRN]"fmt)
 #define DWN_DBG(...)
 #define DWN_HERE()    printf("f(%s)L%d\n", __FILE__, __LINE__)
 

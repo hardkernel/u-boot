@@ -29,12 +29,12 @@ int show_logo_to_report_burn_failed(void); //Display logo to report burning resu
 int show_logo_to_report_burn_success(void);
 
 __hdle optimus_progress_ui_request(const int totalPercents_f,       int startPercent,
-                                 unsigned bmpBarAddr,       int display_width,  int progressBarY_f );
+                                 unsigned long bmpBarAddr,       int display_width,  int progressBarY_f );
 __hdle optimus_progress_ui_request_for_sdc_burn(void);
 
 int optimus_progress_ui_release(__hdle hUiPrgress);
 
-int optimus_progress_ui_set_unfocus_bkg(__hdle hUiProgress, unsigned unfocusBmpAddr);
+int optimus_progress_ui_set_unfocus_bkg(__hdle hUiProgress, unsigned long unfocusBmpAddr);
 
 int optimus_progress_ui_direct_update_progress(__hdle hUiProgress, const int percents);
 

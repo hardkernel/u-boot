@@ -1013,7 +1013,7 @@ void osd_enable_3d_mode_hw(u32 index, u32 enable)
 
 void osd_enable_hw(u32 index, u32 enable)
 {
-	osd_logi("osd[%d] enable: %d\n", index, enable);
+	osd_logd("osd[%d] enable: %d\n", index, enable);
 
 	osd_hw.enable[index] = enable;
 	add_to_update_list(index, OSD_ENABLE);

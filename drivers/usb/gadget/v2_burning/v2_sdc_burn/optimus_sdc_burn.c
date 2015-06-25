@@ -320,7 +320,7 @@ static int sdc_burn_dtb_load(HIMAGE hImg)
 
     hImgItem = image_item_open(hImg, partName, "meson");
     if (!hImgItem) {
-        DWN_ERR("Fail to open item [meson,%s]\n", partName);
+        DWN_WRN("Fail to open item [meson,%s]\n", partName);
         return ITEM_NOT_EXIST;
     }
 
@@ -609,7 +609,8 @@ int optimus_burn_with_cfg_file(const char* cfgFile)
 
     if (video_res_prepare_for_upgrade(hImg)) {
         DWN_ERR("Fail when prepare bm res or init video for upgrade\n");
-        ret = __LINE__; goto _finish;
+        image_close(hImg);
+        return __LINE__;
     }
     show_logo_to_report_burning();
 
@@ -731,8 +732,7 @@ int do_sdc_burn(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
     const char* sdc_cfg_file = argv[1];
 
     if (argc < 2 ) {
-        cmd_usage(cmdtp);
-        return __LINE__;
+        return CMD_RET_USAGE;
     }
 
     if ( !aml_check_is_ready_for_sdc_produce() ) {

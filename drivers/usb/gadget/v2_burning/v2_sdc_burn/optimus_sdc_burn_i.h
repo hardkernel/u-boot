@@ -49,15 +49,22 @@ typedef struct _burnParts{
     unsigned    bitsMap4BurnParts;
 }BurnParts_t;
 
+typedef struct _burnDisplay{
+    char*       outputmode;
+    unsigned    bitsMap4Display;
+}BurnDisplay_t;
+
 typedef struct _ConfigPara{
     BurnParts_t     burnParts;
     CustomPara_t    custom;
     BurnEx_t        burnEx;
+    BurnDisplay_t   display;
     struct {
         unsigned    burnParts : 1;
         unsigned    custom    : 1;
         unsigned    burnEx    : 1;
-        unsigned    reserv    : 32 - 3;
+        unsigned    display   : 1;
+        unsigned    reserv    : 32 - 4;
     }setsBitMap;
 }ConfigPara_t;
 

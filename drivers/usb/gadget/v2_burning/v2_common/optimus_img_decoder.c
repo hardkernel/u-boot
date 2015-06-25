@@ -70,7 +70,7 @@ HIMAGE image_open(const char* interface, const char* device, const char* part, c
 
     if (!strcmp("store", interface))
     {
-            DWN_DBG("imgHead=0x%x, hImg=%p\n", (unsigned)&hImg->imgHead, hImg);
+            DWN_DBG("imgHead=0x%p, hImg=%p\n", &hImg->imgHead, hImg);
             ret = store_read_ops((u8*)part, (u8*)&hImg->imgHead, IMG_OFFSET_IN_PART, HeadSz);
             if (ret) {
                     DWN_ERR("Fail to read image header.\n");
@@ -199,7 +199,7 @@ HIMAGEITEM image_item_open(HIMAGE hImg, const char* mainType, const char* subTyp
             }
     }
     if (i >= itemNr) {
-        DWN_ERR("Can't find item [%s, %s]\n", mainType, subType);
+        DWN_WRN("Can't find item [%s, %s]\n", mainType, subType);
         return NULL;
     }
 

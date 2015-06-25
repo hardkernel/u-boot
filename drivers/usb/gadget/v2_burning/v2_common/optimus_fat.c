@@ -1215,9 +1215,10 @@ long do_fat_fread(int fd, __u8 *buffer, unsigned long maxsize)
         else
         {/* Case 4 */
             memcpy(buffer, fs_info[fd].fat_buf+ offset_in_clust, bytesperclust - offset_in_clust);
-            actsize -= (bytesperclust - offset_in_clust);
-            gotsize = (bytesperclust - offset_in_clust);
-            offset += (bytesperclust - offset_in_clust);
+            gotsize = bytesperclust - offset_in_clust;
+            FAT_DPRINT("buffer=%p, gotsize=0x%x, offset_in_clust=0x%lx\n", buffer, gotsize, offset_in_clust);
+            actsize -= gotsize;
+            offset += gotsize;
             buffer += gotsize;
 
             //update cluster index if seeked to next cluster
@@ -1283,7 +1284,7 @@ long do_fat_fread(int fd, __u8 *buffer, unsigned long maxsize)
 
             //If this message printed when burning, we saied the bootloader is above data parts in image.cfg, or
             //sdc_burn not burn data partitions in the order in image
-            FAT_MSG("sz 0x%x gz 0x%x, bps 0x%x\n", (unsigned)actsize, gotsize, bytesperclust);//bpc:bytesperclust
+            FAT_MSG("0x:leftSz %x < BPS %x, gotSz %x\n", (unsigned)actsize, bytesperclust, gotsize);//bpc:bytesperclust
             actsize  = 0;///end the loop
         }
     }

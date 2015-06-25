@@ -18,11 +18,13 @@
 #define  SET_BURN_PARTS     "burn_parts"
 #define  SET_CUSTOM_PARA    "common"
 #define  SET_BURN_PARA_EX    "burn_ex"
+#define  SET_BURN_DISPLAY    "display"
 
 static const char* _iniSets[] = {
     SET_BURN_PARTS      ,
     SET_CUSTOM_PARA     ,
     SET_BURN_PARA_EX    ,
+    SET_BURN_DISPLAY    ,
 };
 
 #define TOTAL_SET_NUM   ( sizeof(_iniSets)/sizeof(const char*) )
@@ -151,6 +153,30 @@ static int parse_set_burnEx(const char* key, const char* strVal)
             strcpy(pBurnEx->mediaPath, strVal);
             pBurnEx->bitsMap.mediaPath = 1;
         }
+
+        return 0;
+    }
+
+    return 0;
+}
+
+static int parse_set_display(const char* key, const char* strVal)
+{
+    BurnDisplay_t* pburnDisplay = &g_sdcBurnPara.display;
+
+    if (!strcmp("outputmode", key))
+    {
+        if (pburnDisplay->bitsMap4Display & (1U<<0)) {
+            err("key outputmode in burn_ex is duplicated!\n");
+            return __LINE__;
+        }
+        if (!strVal) {
+            err("value for package in set burn_ex can't be empty!\n");
+            return __LINE__;
+        }
+        setenv(key, strVal);
+        DWN_MSG("^^Set %s to (%s) for upgrade^^\n", key, strVal);
+        pburnDisplay->bitsMap4Display |= 1U<<0;
 
         return 0;
     }
@@ -364,6 +390,10 @@ static int optimus_aml_sdc_burn_ini_parse_usr_cfg(const char* setName, const cha
         if (!strcmp(SET_BURN_PARA_EX, setName))
         {
                 return parse_set_burnEx(keyName, usrKeyVal);
+        }
+        if (!strcmp(SET_BURN_DISPLAY, setName))
+        {
+                return parse_set_display(keyName, usrKeyVal);
         }
 
         return ret;
