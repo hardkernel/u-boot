@@ -22,6 +22,7 @@
 #include <linux/ctype.h>
 #include <linux/err.h>
 #include <u-boot/zlib.h>
+#include <asm/arch/bl31_apis.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -124,6 +125,23 @@ int do_bootm(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		 */
 		if ((*endp != 0) && (*endp != ':') && (*endp != '#'))
 			return do_bootm_subcommand(cmdtp, flag, argc, argv);
+	}
+
+	unsigned int nLoadAddr = GXB_IMG_LOAD_ADDR; //default load address
+
+	if (argc > 0)
+	{
+		char *endp;
+		nLoadAddr = simple_strtoul(argv[0], &endp, 16);
+		//printf("aml log : addr = 0x%x\n",nLoadAddr);
+	}
+
+	int nRet = aml_sec_boot_check(GXB_TYPE_IMG_SECURE_BOOT,nLoadAddr,GXB_IMG_SIZE,GXB_IMG_DEC_ALL);
+
+	if (nRet)
+	{
+		printf("\naml log : Sig Check %d\n",nRet);
+		return nRet;
 	}
 
 	return do_bootm_states(cmdtp, flag, argc, argv, BOOTM_STATE_START |

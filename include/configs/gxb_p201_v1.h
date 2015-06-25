@@ -268,5 +268,17 @@
 #define CONFIG_CMD_ITEST    1
 #define CONFIG_CMD_CPU_TEMP 1
 
+//support secure boot
+//#define CONFIG_AML_SECURE_UBOOT   1
+
+//unify build for generate encrypted bootloader "u-boot.bin.encrypt"
+//#define CONFIG_AML_CRYPTO_UBOOT   1
+
+//unify build for generate encrypted kernel image
+//SRC : "board/amlogic/gxb_p201_v1/boot.img"
+//DST : "fip/boot.img.encrypt"
+//#define CONFIG_AML_CRYPTO_IMG       1
+
+
 #endif
 

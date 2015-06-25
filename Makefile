@@ -898,6 +898,9 @@ endif
 ifeq ($(CONFIG_AML_CRYPTO_UBOOT), y)
 	$(Q)$(FIP_FOLDER)/aml_encrypt_$(SOC) --bootsig --input $(FIP_FOLDER)/boot_new.bin --amluserkey $(srctree)/board/$(BOARDDIR)/aml-user-key.sig --aeskey enable --output $(FIP_FOLDER)/u-boot.bin.encrypt
 endif
+ifeq ($(CONFIG_AML_CRYPTO_IMG), y)
+	$(Q)$(FIP_FOLDER)/aml_encrypt_$(SOC) --imgsig --input $(srctree)/board/$(BOARDDIR)/boot.img --amluserkey $(srctree)/board/$(BOARDDIR)/aml-user-key.sig --output $(FIP_FOLDER)/boot.img.encrypt
+endif
 	@rm -f $(FIP_FOLDER)/bl2_new.bin $(FIP_FOLDER)/boot_new.bin
 	@echo '$(FIP_FOLDER)/u-boot.bin build done!'
 

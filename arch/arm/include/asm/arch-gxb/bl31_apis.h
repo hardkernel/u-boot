@@ -72,8 +72,30 @@ struct sram_hal_api_arg {
 #define JTAG_M3_EE     1
 #define JTAG_A53_AO    2
 #define JTAG_A53_EE 3
+
+
+/////////////////////////////////////////////////////////////////////////////////
+#define GXB_TYPE_EFUSE_SECURE_BOOT  (0)
+#define GXB_TYPE_EFUSE_NORMAL_BOOT  (1)
+#define GXB_TYPE_IMG_SECURE_BOOT    (2)
+
+#define AML_DATA_PROCESS                 (0x820000FF)
+	#define AML_D_P_W_EFUSE_SECURE_BOOT  (0x1)
+	#define AML_D_P_W_EFUSE_NORMAL_WRITE (0x2)
+	#define AML_D_P_IMG_DECRYPT          (0x4)
+
+#define GXB_EFUSE_PATTERN_SIZE      (0x500)
+#define GXB_IMG_SIZE                (24<<20)
+#define GXB_IMG_LOAD_ADDR           (0x1080000)
+	#define GXB_IMG_DEC_KNL   (1<<0)
+	#define GXB_IMG_DEC_RMD   (1<<1)
+	#define GXB_IMG_DEC_DTB   (1<<2)
+	#define GXB_IMG_DEC_ALL   (GXB_IMG_DEC_KNL|GXB_IMG_DEC_RMD|GXB_IMG_DEC_DTB)
+
 void aml_set_jtag_state(unsigned state, unsigned select);
 unsigned aml_get_reboot_reason(void);
 unsigned aml_reboot(uint64_t function_id, uint64_t arg0, uint64_t arg1, uint64_t arg2);
+unsigned long aml_sec_boot_check(unsigned long ,unsigned long ,unsigned long,unsigned long );
+long get_sharemem_info(unsigned long);
 
 #endif

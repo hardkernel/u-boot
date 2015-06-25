@@ -252,3 +252,63 @@ unsigned aml_reboot(uint64_t function_id, uint64_t arg0, uint64_t arg1, uint64_t
 
 	return function_id;
 }
+
+unsigned long aml_sec_boot_check(unsigned long nType,
+	unsigned long pBuffer,
+	unsigned long nLength,
+	unsigned long nOption)
+{
+	uint64_t ret = 1;
+
+//#define AML_SECURE_LOG_TE
+
+#if defined(AML_SECURE_LOG_TE)
+	#define AML_GET_TE(a) do{a = *((volatile unsigned int*)0xc1109988);}while(0);
+	unsigned nT1,nT2,nT3;
+#else
+	#define AML_GET_TE(...)
+#endif
+
+	AML_GET_TE(nT1);
+
+	asm __volatile__("" : : : "memory");
+
+	register uint64_t x0 asm("x0") = AML_DATA_PROCESS;
+	register uint64_t x1 asm("x1") = AML_D_P_W_EFUSE_SECURE_BOOT;
+	register uint64_t x2 asm("x2") = pBuffer;
+	register uint64_t x3 asm("x3") = nLength;
+	register uint64_t x4 asm("x4") = nOption;
+	switch (nType)
+	{
+	case GXB_TYPE_EFUSE_NORMAL_BOOT : x1 = AML_D_P_W_EFUSE_NORMAL_WRITE; break;
+	case GXB_TYPE_IMG_SECURE_BOOT :   x1 = AML_D_P_IMG_DECRYPT;break;
+	}
+	do {
+		asm volatile(
+		    __asmeq("%0", "x0")
+		    __asmeq("%1", "x0")
+		    __asmeq("%2", "x1")
+		    __asmeq("%3", "x2")
+		    __asmeq("%4", "x3")
+		    __asmeq("%5", "x4")
+		    "smc #0\n"
+		    : "=r"(x0)
+		    : "r"(x0), "r"(x1), "r"(x2),"r"(x3),"r"(x4));
+	} while (0);
+
+	ret = x0;
+
+	AML_GET_TE(nT2);;
+
+	flush_dcache_range((unsigned long )pBuffer, (unsigned long )pBuffer+nLength);
+
+	AML_GET_TE(nT3);
+
+#if defined(AML_SECURE_LOG_TE)
+	printf("aml log : dec use %d(us) , flush cache used %d(us)\n",
+		nT2 - nT1, nT3 - nT2);
+#endif
+
+	return ret;
+
+}

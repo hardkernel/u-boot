@@ -25,9 +25,11 @@
 #include <command.h>
 #include <malloc.h>
 #include <asm/arch/efuse.h>
+#include <asm/arch/bl31_apis.h>
 
-#define EFUSE_WRITE 0
-#define EFUSE_READ 1
+#define CMD_EFUSE_WRITE 0
+#define CMD_EFUSE_READ 1
+#define CMD_EFUSE_SECURE_BOOT_SET 6
 
 int cmd_efuse(int argc, char * const argv[], char *buf)
 {
@@ -37,11 +39,15 @@ int cmd_efuse(int argc, char * const argv[], char *buf)
 	char *end;
 	char *s;
 	int ret;
+	long lAddr1,lAddr2;
 
 	if (strncmp(argv[1], "read", 4) == 0) {
-		action = EFUSE_READ;
+		action = CMD_EFUSE_READ;
 	} else if (strncmp(argv[1], "write", 5) == 0) {
-		action = EFUSE_WRITE;
+		action = CMD_EFUSE_WRITE;
+	} else if (strncmp(argv[1], "secure_boot_set", 5) == 0) {
+		action = CMD_EFUSE_SECURE_BOOT_SET;
+		goto efuse_action;
 	} else{
 		printf("%s arg error\n", argv[1]);
 		return CMD_RET_USAGE;
@@ -69,8 +75,10 @@ int cmd_efuse(int argc, char * const argv[], char *buf)
 		return -1;
 	}
 
+efuse_action:
+
 	/* efuse read */
-	if (action == EFUSE_READ) {
+	if (action == CMD_EFUSE_READ) {
 		memset(buf, 0, size);
 		ret = efuse_read_usr(buf, size, (loff_t *)&offset);
 		if (ret == -1) {
@@ -91,7 +99,7 @@ int cmd_efuse(int argc, char * const argv[], char *buf)
 	}
 
 	/* efuse write */
-	else if (action == EFUSE_WRITE) {
+	else if (action == CMD_EFUSE_WRITE) {
 		if (argc < 5) {
 			printf("arg count error\n");
 			return CMD_RET_USAGE;
@@ -106,7 +114,27 @@ int cmd_efuse(int argc, char * const argv[], char *buf)
 		} else {
 			printf("%s written done.\n", __func__);
 		}
-	} else{
+	/*efuse secure_boot_set*/
+	} if ( CMD_EFUSE_SECURE_BOOT_SET == action ) {
+
+		lAddr1 = GXB_IMG_LOAD_ADDR;
+
+		if (argc > 2)
+			lAddr1 = simple_strtoul(argv[2], &end, 16);
+
+		lAddr2 = get_sharemem_info(GET_SHARE_MEM_INPUT_BASE);
+		memcpy((void*)lAddr2,(void*)lAddr1,GXB_EFUSE_PATTERN_SIZE);
+
+		ret = aml_sec_boot_check(GXB_TYPE_EFUSE_SECURE_BOOT,lAddr2,GXB_EFUSE_PATTERN_SIZE,0);
+
+		if (ret)
+			printf("aml log : Secure boot EFUSE pattern programming fail [%d]!\n",ret);
+		else
+			printf("aml log : Secure boot EFUSE pattern programming success!\n");
+
+		return ret;
+	}
+	else{
 		printf("arg error\n");
 		return CMD_RET_USAGE;
 	}
