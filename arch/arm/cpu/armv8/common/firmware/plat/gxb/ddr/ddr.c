@@ -196,7 +196,7 @@ unsigned int ddr_init_dmc(void){
 	wr_reg(DMC_HEVC_SEC_READ_CTRL, 0x55555555 );
 
 	//// ENABLE THE DC_REQS.
-	wr_reg(DMC_REQ_CTRL, 0xFFFF);
+	wr_reg(DMC_REQ_CTRL, 0xFFF);
 
 	// SCRATCH1
 	wr_reg(0xC1107d40, 0xbaadf00d);
@@ -263,7 +263,7 @@ unsigned int ddr_init_pctl(void){
 
 	wr_reg(DDR0_PUB_DTPR2, p_ddr_set->t_pub_dtpr[2]);
 	wr_reg(DDR0_PUB_DTPR3, p_ddr_set->t_pub_dtpr[3]);
-	wr_reg(DDR0_PUB_DTCR, p_ddr_set->t_pub_dtcr);
+	wr_reg(DDR0_PUB_DTCR, p_ddr_set->t_pub_dtcr|(1<<6)); //use mpr
 
 	//DDR0_DLL_LOCK_WAIT
 	wait_set(DDR0_PUB_PGSR0, 0);
@@ -291,7 +291,7 @@ unsigned int ddr_init_pctl(void){
 	//   2:0   011: DDR0_ MODE.   100:   LPDDR2 MODE.
 	//   3:    8 BANK.
 	//   7;    MPR FOR DATA TRAINING.
-	wr_reg(DDR0_PUB_DCR, p_ddr_set->t_pub_dcr);
+	wr_reg(DDR0_PUB_DCR, p_ddr_set->t_pub_dcr|(1<<7)); //use mpr
 
 	wr_reg(DDR0_PUB_DTAR0, p_ddr_set->t_pub_dtar);
 	wr_reg(DDR0_PUB_DTAR1, (0X8 | p_ddr_set->t_pub_dtar));
