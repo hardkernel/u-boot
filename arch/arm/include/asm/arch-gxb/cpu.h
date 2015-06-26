@@ -29,7 +29,7 @@
 #define CONFIG_AML_MESON_GX 1
 
 /* Size of malloc() pool */
-#define CONFIG_SYS_MALLOC_LEN		(8*1024*1024)
+#define CONFIG_SYS_MALLOC_LEN		(64*1024*1024)
 
 /* dram */
 #define PHYS_SDRAM_1_BASE					0x00000000UL

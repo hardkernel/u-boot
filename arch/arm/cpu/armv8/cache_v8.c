@@ -38,7 +38,12 @@ static void mmu_setup(void)
 	/* Setup an identity-mapping for all RAM space */
 	for (i = 0; i < CONFIG_NR_DRAM_BANKS; i++) {
 		ulong start = bd->bi_dram[i].start;
+		/* plus CONFIG_SYS_MEM_TOP_HIDE, for all ddr need cached */
+#if defined(CONFIG_SYS_MEM_TOP_HIDE)
+		ulong end = bd->bi_dram[i].start + bd->bi_dram[i].size + CONFIG_SYS_MEM_TOP_HIDE;
+#else
 		ulong end = bd->bi_dram[i].start + bd->bi_dram[i].size;
+#endif
 		for (j = start >> SECTION_SHIFT;
 		     j < end >> SECTION_SHIFT; j++) {
 			set_pgtable_section(page_table, j, j << SECTION_SHIFT,

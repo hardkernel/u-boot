@@ -213,6 +213,11 @@ static int show_dram_config(void)
 	size = gd->ram_size;
 #endif
 
+/* add HIDE mem size, print total ddr size */
+#if defined(CONFIG_SYS_MEM_TOP_HIDE)
+	size = size + CONFIG_SYS_MEM_TOP_HIDE;
+#endif
+
 	print_size(size, "");
 	board_add_ram_info(0);
 	putc('\n');

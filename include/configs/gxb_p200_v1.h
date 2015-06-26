@@ -259,6 +259,7 @@
 #define CONFIG_MMC 1
 #define CONFIG_FS_FAT 1
 #define CONFIG_FS_EXT4 1
+#define CONFIG_LZO 1
 
 /* Cache Definitions */
 //#define CONFIG_SYS_DCACHE_OFF
@@ -271,6 +272,7 @@
 #define CONFIG_CMD_MISC     1
 #define CONFIG_CMD_ITEST    1
 #define CONFIG_CMD_CPU_TEMP 1
+#define CONFIG_SYS_MEM_TOP_HIDE 0x08000000 //hide 128MB for kernel reserve
 
 //support secure boot
 //#define CONFIG_AML_SECURE_UBOOT   1

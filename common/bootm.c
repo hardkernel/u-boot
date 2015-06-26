@@ -152,13 +152,14 @@ static int bootm_find_os(cmd_tbl_t *cmdtp, int flag, int argc,
 #ifdef CONFIG_ANDROID_BOOT_IMAGE
 	case IMAGE_FORMAT_ANDROID:
 		images.os.type = IH_TYPE_KERNEL;
-		images.os.comp = IH_COMP_NONE;
+		images.os.comp =  android_image_get_comp(os_hdr);
 		images.os.os = IH_OS_LINUX;
 
 		images.os.end = android_image_get_end(os_hdr);
 		images.os.load = android_image_get_kload(os_hdr);
-		/*images.ep = images.os.load;*/
-		images.ep = (ulong)os_hdr + 0x800;
+		if (images.os.load == 0x10008000)
+			images.os.load = 0x1080000;
+		images.ep = images.os.load;
 		ep_found = true;
 		break;
 #endif
@@ -284,7 +285,6 @@ static int decomp_image(int comp, ulong load, ulong image_start, int type,
 {
 	const char *type_name = genimg_get_type_name(type);
 	__attribute__((unused)) uint unc_len = CONFIG_SYS_BOOTM_LEN;
-
 	*load_end = load;
 	switch (comp) {
 	case IH_COMP_NONE:
@@ -354,7 +354,6 @@ static int decomp_image(int comp, ulong load, ulong image_start, int type,
 		int ret;
 
 		printf("   Uncompressing %s ... ", type_name);
-
 		ret = lzop_decompress(image_buf, image_len, load_buf, &size);
 		if (ret != LZO_E_OK) {
 			printf("LZO: uncompress or overwrite error %d - must RESET board to recover\n",
@@ -381,8 +380,7 @@ static int bootm_load_os(bootm_headers_t *images, unsigned long *load_end,
 			 int boot_progress)
 {
 	image_info_t os = images->os;
-	/*ulong load = os.load;*/
-	ulong load = images->ep;
+	ulong load = os.load;
 	ulong blob_start = os.start;
 	ulong blob_end = os.end;
 	ulong image_start = os.image_start;
@@ -390,21 +388,8 @@ static int bootm_load_os(bootm_headers_t *images, unsigned long *load_end,
 	bool no_overlap;
 	void *load_buf, *image_buf;
 	int err;
-	uint64_t dst;
 
 	load_buf = map_sysmem(load, 0);
-
-	/*
-	 * copy from booti_setup
-	 * If we are not at the correct run-time location, set the new
-	 * correct location and then move the image there.
-	 */
-	dst = gd->bd->bi_dram[0].start + 0x1080000; /*le32_to_cpu(ih->text_offset)*/
-	if (images->ep != dst) {
-		debug("Moving Image from 0x%lx to 0x%llx\n", images->ep, dst);
-		images->ep = dst;
-		load_buf = map_sysmem(images->ep, 0);
-	}
 
 	image_buf = map_sysmem(os.image_start, image_len);
 	err = decomp_image(os.comp, load, os.image_start, os.type, load_buf,
@@ -425,7 +410,7 @@ static int bootm_load_os(bootm_headers_t *images, unsigned long *load_end,
 		      blob_start, blob_end);
 		debug("images.os.load = 0x%lx, load_end = 0x%lx\n", load,
 		      *load_end);
-
+#ifndef CONFIG_ANDROID_BOOT_IMAGE
 		/* Check what type of image this is. */
 		if (images->legacy_hdr_valid) {
 			if (image_get_type(&images->legacy_hdr_os_copy)
@@ -437,6 +422,7 @@ static int bootm_load_os(bootm_headers_t *images, unsigned long *load_end,
 			bootstage_error(BOOTSTAGE_ID_OVERWRITTEN);
 			return BOOTM_ERR_RESET;
 		}
+#endif
 	}
 
 	return 0;
@@ -588,6 +574,7 @@ int do_bootm_states(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[],
 		argc = 0;	/* consume the args */
 	}
 
+
 	/* Load the OS */
 	if (!ret && (states & BOOTM_STATE_LOADOS)) {
 		ulong load_end;
@@ -671,10 +658,10 @@ int do_bootm_states(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[],
 	}
 
 	/* Now run the OS! We hope this doesn't return */
-	if (!ret && (states & BOOTM_STATE_OS_GO))
+	if (!ret && (states & BOOTM_STATE_OS_GO)) {
 		ret = boot_selected_os(argc, argv, BOOTM_STATE_OS_GO,
 				images, boot_fn);
-
+		}
 	/* Deal with any fallout */
 err:
 	if (iflag)
@@ -844,6 +831,10 @@ static const void *boot_get_kernel(cmd_tbl_t *cmdtp, int flag, int argc,
 #ifdef CONFIG_ANDROID_BOOT_IMAGE
 	case IMAGE_FORMAT_ANDROID:
 		printf("## Booting Android Image at 0x%08lx ...\n", img_addr);
+		if (!android_image_need_move(&img_addr, buf))
+			buf = map_sysmem(img_addr, 0);
+		else
+			return NULL;
 		if (android_image_get_kernel(buf, images->verify,
 					     os_data, os_len))
 			return NULL;
@@ -856,7 +847,7 @@ static const void *boot_get_kernel(cmd_tbl_t *cmdtp, int flag, int argc,
 	}
 
 	debug("   kernel data at 0x%08lx, len = 0x%08lx (%ld)\n",
-	    *os_data, *os_len, *os_len);
+	      *os_data, *os_len, *os_len);
 
 	return buf;
 }
