@@ -26,11 +26,12 @@ enum{
 unsigned int kk[] = {
 	0xe51afb04,
 };
-void init_remote(void)
+int init_remote(void)
 {
 	unsigned int val;
+	val = readl(P_AO_IR_DEC_STATUS);
 	val = readl(P_AO_IR_DEC_FRAME);
-	return;
+	return val;
 }
 
 int remote_detect_key(void)

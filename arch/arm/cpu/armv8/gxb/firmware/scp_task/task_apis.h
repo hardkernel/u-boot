@@ -30,5 +30,5 @@ void *memcpy(void *dest, const void *src, unsigned int count);
 void *memset(void *s, int c, unsigned int count);
 void _udelay(unsigned int us);
 unsigned int get_time(void);
-void init_remote(void);
+int  init_remote(void);
 #endif
