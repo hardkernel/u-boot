@@ -196,7 +196,7 @@ unsigned int ddr_init_dmc(void){
 	wr_reg(DMC_HEVC_SEC_READ_CTRL, 0x55555555 );
 
 	//// ENABLE THE DC_REQS.
-	wr_reg(DMC_REQ_CTRL, 0xFFF);
+	wr_reg(DMC_REQ_CTRL, 0xFFFF);
 
 	// SCRATCH1
 	wr_reg(0xC1107d40, 0xbaadf00d);
