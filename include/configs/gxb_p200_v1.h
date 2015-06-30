@@ -58,7 +58,7 @@
         "display_height=1080\0" \
         "display_bpp=16\0" \
         "display_color_index=16\0" \
-        "display_layer=osd2\0" \
+        "display_layer=osd1\0" \
         "display_color_fg=0xffff\0" \
         "display_color_bg=0\0" \
         "fb_addr=0x3e000000\0" \

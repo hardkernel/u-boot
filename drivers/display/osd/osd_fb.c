@@ -240,6 +240,7 @@ void *video_hw_init(void)
 	u32 fb_height = 0;;
 	char *layer_str;
 
+	vout_init();
 	fb_addr = env_strtoul("fb_addr", 16);
 #ifdef CONFIG_OSD_SCALE_ENABLE
 	fb_width = env_strtoul("fb_width", 10);
@@ -272,9 +273,9 @@ void *video_hw_init(void)
 		return NULL;
 	}
 
-	if (strcmp(layer_str, "osd1") == 0)
+	if (strcmp(layer_str, "osd0") == 0)
 		osd_layer_init(fb_gdev, OSD1);
-	else if (strcmp(layer_str, "osd2") == 0)
+	else if (strcmp(layer_str, "osd1") == 0)
 		osd_layer_init(fb_gdev, OSD2);
 	else {
 		osd_loge("display_layer(%s) invalid\n", layer_str);
@@ -302,6 +303,7 @@ int video_display_bitmap(ulong bmp_image, int x, int y)
 	unsigned long pheight = fb_gdev.fb_height;
 	unsigned long pwidth = fb_gdev.fb_width;
 #else
+	unsigned long pheight = info->vl_row;
 	unsigned long pwidth = info->vl_col;
 #endif
 	unsigned colors, bpix, bmp_bpix;
@@ -310,9 +312,9 @@ int video_display_bitmap(ulong bmp_image, int x, int y)
 	int osd_index = -1;
 
 	layer_str = getenv("display_layer");
-	if (strcmp(layer_str, "osd1") == 0)
+	if (strcmp(layer_str, "osd0") == 0)
 		osd_index = 0;
-	else if (strcmp(layer_str, "osd2") == 0)
+	else if (strcmp(layer_str, "osd1") == 0)
 		osd_index = 1;
 
 	if (!((bmp->header.signature[0] == 'B') &&
@@ -328,7 +330,6 @@ int video_display_bitmap(ulong bmp_image, int x, int y)
 
 	bpix = NBITS(info->vl_bpix);
 
-#ifdef CONFIG_OSD_SCALE_ENABLE
 	if ((x == -1) && (y == -1)) {
 		if ((width > pwidth) || (height > pheight)) {
 			x = 0;
@@ -338,17 +339,6 @@ int video_display_bitmap(ulong bmp_image, int x, int y)
 			y = (pheight - height) / 2;
 		}
 	}
-#else
-	if ((x == -1) && (y == -1)) {
-		if ((width > info->vl_col) || (height > info->vl_row)) {
-			x = 0;
-			y = 0;
-		} else {
-			x = (info->vl_col - width) / 2;
-			y = (info->vl_row - height) / 2;
-		}
-	}
-#endif
 
 	if ((bpix != 1) && (bpix != 8) && (bpix != 16) && (bpix != 24) &&
 	    (bpix != 32)) {
@@ -392,17 +382,10 @@ int video_display_bitmap(ulong bmp_image, int x, int y)
 		y = max(0, info->vl_row - height + y + 1);
 #endif /* CONFIG_SPLASH_SCREEN_ALIGN */
 
-#ifdef CONFIG_OSD_SCALE_ENABLE
 	if ((x + width) > pwidth)
 		width = pwidth - x;
 	if ((y + height) > pheight)
 		height = pheight - y;
-#else
-	if ((x + width) > pwidth)
-		width = pwidth - x;
-	if ((y + height) > info->vl_row)
-		height = info->vl_row - y;
-#endif
 
 	osd_enable_hw(osd_index, 1);
 
@@ -472,123 +455,19 @@ int video_display_bitmap(ulong bmp_image, int x, int y)
 		osd_loge("error: gdev.bpp %d, but bmp.bpp %d\n", fb_gdev.gdfBytesPP, bmp_bpix);
 		return (-1);
 	}
+#if 0
 	flush_cache((unsigned long)info->vd_base,
 		    info->vl_col * info->vl_row * info->vl_bpix / 8);
+#else
+	flush_cache((unsigned long)info->vd_base,
+		    pheight * pwidth * info->vl_bpix / 8);
+
+#endif
 
 	return (0);
 }
 
 #ifdef CONFIG_OSD_SCALE_ENABLE
-static int my_atoi(const char *str)
-{
-	int result = 0;
-	int signal = 1;
-
-	if ((*str >= '0' && *str <= '9') || *str == '-' || *str == '+') {
-		if (*str == '-' || *str == '+') {
-			if (*str == '-')
-				signal = -1;
-			str++;
-		}
-	} else
-		return 0;
-
-	while (*str >= '0' && *str <= '9')
-		result = result * 10 + (*str++ -'0');
-
-	return signal * result;
-}
-
-static int getenv_int(char *env, int def)
-{
-	if (getenv(env) == NULL)
-		return def;
-	else
-		return my_atoi(getenv(env));
-}
-
-static int get_window_axis(int *axis)
-{
-	int ret = 0;
-	char *mode = getenv("outputmode");
-
-	if (strcmp(mode, "480i") == 0 || strcmp(mode, "480cvbs") == 0) {
-		axis[0] = getenv_int("480i_x", 0);
-		axis[1] = getenv_int("480i_y", 0);
-		axis[2] = getenv_int("480i_w", 720);
-		axis[3] = getenv_int("480i_h", 480);
-	} else if (strcmp(mode, "480p") == 0) {
-		axis[0] = getenv_int("480p_x", 0);
-		axis[1] = getenv_int("480p_y", 0);
-		axis[2] = getenv_int("480p_w", 720);
-		axis[3] = getenv_int("480p_h", 480);
-	} else if (strcmp(mode, "576i") == 0 || strcmp(mode, "576cvbs") == 0) {
-		axis[0] = getenv_int("576i_x", 0);
-		axis[1] = getenv_int("576i_y", 0);
-		axis[2] = getenv_int("576i_w", 720);
-		axis[3] = getenv_int("576i_h", 576);
-	} else if (strcmp(mode, "576p") == 0) {
-		axis[0] = getenv_int("576p_x", 0);
-		axis[1] = getenv_int("576p_y", 0);
-		axis[2] = getenv_int("576p_w", 720);
-		axis[3] = getenv_int("576p_h", 576);
-	} else if (strcmp(mode, "720p") == 0 || strcmp(mode, "720p50hz") == 0) {
-		axis[0] = getenv_int("720p_x", 0);
-		axis[1] = getenv_int("720p_y", 0);
-		axis[2] = getenv_int("720p_w", 1280);
-		axis[3] = getenv_int("720p_h", 720);
-	} else if (strcmp(mode, "1080i") == 0 || strcmp(mode, "1080i50hz") == 0) {
-		axis[0] = getenv_int("1080i_x", 0);
-		axis[1] = getenv_int("1080i_y", 0);
-		axis[2] = getenv_int("1080i_w", 1920);
-		axis[3] = getenv_int("1080i_h", 1080);
-	} else if (strcmp(mode, "4k2k24hz") == 0) {
-		axis[0] = getenv_int("4k2k24hz_x", 0);
-		axis[1] = getenv_int("4k2k24hz_y", 0);
-		axis[2] = getenv_int("4k2k24hz_w", 3840);
-		axis[3] = getenv_int("4k2k24hz_h", 2160);
-	} else if (strcmp(mode, "4k2k25hz") == 0) {
-		axis[0] = getenv_int("4k2k25hz_x", 0);
-		axis[1] = getenv_int("4k2k25hz_y", 0);
-		axis[2] = getenv_int("4k2k25hz_w", 3840);
-		axis[3] = getenv_int("4k2k25hz_h", 2160);
-	} else if (strcmp(mode, "4k2k30hz") == 0) {
-		axis[0] = getenv_int("4k2k30hz_x", 0);
-		axis[1] = getenv_int("4k2k30hz_y", 0);
-		axis[2] = getenv_int("4k2k30hz_w", 3840);
-		axis[3] = getenv_int("4k2k30hz_h", 2160);
-	}  else if (strcmp(mode, "4k2k50hz420") == 0) {
-		axis[0] = getenv_int("4k2k420_x", 0);
-		axis[1] = getenv_int("4k2k420_y", 0);
-		axis[2] = getenv_int("4k2k420_w", 3840);
-		axis[3] = getenv_int("4k2k420_h", 2160);
-	} else if (strcmp(mode, "4k2k60hz420") == 0) {
-		axis[0] = getenv_int("4k2k420_x", 0);
-		axis[1] = getenv_int("4k2k420_y", 0);
-		axis[2] = getenv_int("4k2k420_w", 3840);
-		axis[3] = getenv_int("4k2k420_h", 2160);
-	} else if (strcmp(mode, "4k2ksmpte") == 0) {
-		axis[0] = getenv_int("4k2ksmpte_x", 0);
-		axis[1] = getenv_int("4k2ksmpte_y", 0);
-		axis[2] = getenv_int("4k2ksmpte_w", 4096);
-		axis[3] = getenv_int("4k2ksmpte_h", 2160);
-	} else if (strcmp(mode, "1080p") == 0 || strcmp(mode, "1080p50hz") == 0 ||
-		   strcmp(mode, "1080p24hz") == 0) {
-		axis[0] = getenv_int("1080p_x", 0);
-		axis[1] = getenv_int("1080p_y", 0);
-		axis[2] = getenv_int("1080p_w", 1920);
-		axis[3] = getenv_int("1080p_h", 1080);
-	} else {
-		axis[0] = getenv_int("1080p_x", 0);
-		axis[1] = getenv_int("1080p_y", 0);
-		axis[2] = getenv_int("1080p_w", 1920);
-		axis[3] = getenv_int("1080p_h", 1080);
-	}
-	osd_logd2("bmp scale: mode=%s , x=%d, y=%d, w=%d, h=%d\n", mode, axis[0], axis[1], axis[2], axis[3]);
-
-	return ret;
-}
-
 int video_scale_bitmap(void)
 {
 	char *layer_str = NULL;
@@ -599,10 +478,10 @@ int video_scale_bitmap(void)
 		fb_gdev.fb_width, fb_gdev.fb_height, fb_gdev.winSizeX, fb_gdev.winSizeY);
 
 	layer_str = getenv("display_layer");
-	get_window_axis(axis);
-	if (strcmp(layer_str, "osd1") == 0)
+	vout_get_current_axis(axis);
+	if (strcmp(layer_str, "osd0") == 0)
 		osd_index = 0;
-	else if (strcmp(layer_str, "osd2") == 0)
+	else if (strcmp(layer_str, "osd1") == 0)
 		osd_index = 1;
 #ifdef CONFIG_OSD_SUPERSCALE_ENABLE
 	if ((fb_gdev.fb_width * 2 != fb_gdev.winSizeX) ||

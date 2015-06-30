@@ -14,6 +14,7 @@ extern void osd_debug(void);
 extern void osd_set_log_level(int);
 extern void osd_test(void);
 extern void osd_enable_hw(u32 index, u32 enable);
+extern void osd_set_free_scale_enable_hw(u32 index, u32 enable);
 
 static int do_osd_open(cmd_tbl_t *cmdtp, int flag, int argc,
 		       char *const argv[])
@@ -26,12 +27,25 @@ static int do_osd_open(cmd_tbl_t *cmdtp, int flag, int argc,
 	return 0;
 }
 
+static int do_osd_enable(cmd_tbl_t *cmdtp, int flag, int argc,
+			char *const argv[])
+{
+	ulong index = 0;
+
+	index = simple_strtoul(getenv("display_layer"), NULL, 0);
+	osd_enable_hw(index, 0);
+
+	return 0;
+}
+
 static int do_osd_close(cmd_tbl_t *cmdtp, int flag, int argc,
 			char *const argv[])
 {
 	gdev = NULL;
 	osd_enable_hw(0, 0);
 	osd_enable_hw(1, 0);
+	osd_set_free_scale_enable_hw(0, 0);
+	osd_set_free_scale_enable_hw(1, 0);
 
 	return 0;
 }
@@ -122,6 +136,7 @@ static int do_osd_display(cmd_tbl_t *cmdtp, int flag, int argc,
 
 static cmd_tbl_t cmd_osd_sub[] = {
 	U_BOOT_CMD_MKENT(open, 2, 0, do_osd_open, "", ""),
+	U_BOOT_CMD_MKENT(enable, 2, 0, do_osd_enable, "", ""),
 	U_BOOT_CMD_MKENT(close, 2, 0, do_osd_close, "", ""),
 	U_BOOT_CMD_MKENT(clear, 2, 0, do_osd_clear, "", ""),
 	U_BOOT_CMD_MKENT(debug, 2, 0, do_osd_debug, "", ""),
@@ -148,11 +163,12 @@ static int do_osd(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 U_BOOT_CMD(
 	osd,	5,	1,	do_osd,
 	"osd sub-system",
-	"open                 - open osd device\n"
-	"osd close                - close osd device\n"
-	"osd clear                - clear osd framebuffer\n"
-	"osd debug                - debug osd device\n"
-	"osd test                 - test osd device\n"
-	"osd display <imageAddr>  - display image\n"
+	"open                      - open osd device\n"
+	"osd enable                    - enable osd device\n"
+	"osd close                     - close osd device\n"
+	"osd clear                     - clear osd framebuffer\n"
+	"osd debug                     - debug osd device\n"
+	"osd test                      - test osd device\n"
+	"osd display <imageAddr> [x y] - display image\n"
 );
 

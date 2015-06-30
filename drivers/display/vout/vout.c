@@ -33,13 +33,20 @@
 			vout_log("%s:%d\n", __func__, __LINE__); \
 	} while (0)
 
+
+#define REG_BASE_VCBUS                  (0xd0100000L)
+#define VPP_POSTBLEND_H_SIZE 0x1d21
+#define REG_OFFSET_VCBUS(reg)           ((reg << 2))
+#define REG_ADDR_VCBUS(reg)             (REG_BASE_VCBUS + REG_OFFSET_VCBUS(reg))
+
+
 static int g_vmode = -1;
 
 typedef struct vout_set_s {
 	char *name;
 	int mode;
-	int width;
-	int height;
+	ulong width;
+	ulong height;
 } vout_set_t;
 
 
@@ -98,88 +105,16 @@ static const vout_set_t vout_sets[] = {
 		.width             = 1920,
 		.height            = 1080,
 	},
-	{ /* VMODE_4K2K_30HZ */
-		.name              = "4k2k30hz",
-		.mode              = VMODE_4K2K_30HZ,
-		.width             = 3840,
-		.height            = 2160,
-	},
-	{ /* VMODE_4K2K_SMPTE */
-		.name              = "4k2ksmpte",
-		.mode              = VMODE_4K2K_SMPTE,
-		.width             = 4096,
-		.height            = 2160,
-	},
-	{ /* VMODE_4K2K_FAKE_5G */
-		.name              = "4k2k5g",
-		.mode              = VMODE_4K2K_FAKE_5G,
-		.width             = 3840,
-		.height            = 2160,
-	},
 	{ /* VMODE_4K2K_60HZ */
-		.name              = "4k2k60hz",
+		.name              = "2160p",
 		.mode              = VMODE_4K2K_60HZ,
 		.width             = 3840,
 		.height            = 2160,
 	},
-	{ /* VMODE_4K1K_100HZ_Y420 */
-		.name              = "4k1k100hz420",
-		.mode              = VMODE_4K1K_100HZ_Y420,
-		.width             = 3840,
-		.height            = 1080,
-	},
-	{ /* VMODE_4K1K_100HZ */
-		.name              = "4k1k100hz",
-		.mode              = VMODE_4K1K_100HZ,
-		.width             = 3840,
-		.height            = 1080,
-	},
-	{ /* VMODE_4K1K_120HZ_Y420 */
-		.name              = "4k1k120hz420",
-		.mode              = VMODE_4K1K_120HZ_Y420,
-		.width             = 3840,
-		.height            = 1080,
-	},
-	{ /* VMODE_4K1K_120HZ */
-		.name              = "4k1k120hz",
-		.mode              = VMODE_4K1K_120HZ,
-		.width             = 3840,
-		.height            = 1080,
-	},
-	{ /* VMODE_4K05K_200HZ_Y420 */
-		.name              = "4k05k200hz420",
-		.mode              = VMODE_4K05K_200HZ_Y420,
-		.width             = 3840,
-		.height            = 1080,
-	},
-	{ /* VMODE_4K05K_200HZ */
-		.name              = "4k05k200hz",
-		.mode              = VMODE_4K05K_200HZ,
-		.width             = 3840,
-		.height            = 540,
-	},
-	{ /* VMODE_4K05K_240HZ_Y420 */
-		.name              = "4k05k240hz420",
-		.mode              = VMODE_4K05K_240HZ_Y420,
-		.width             = 3840,
-		.height            = 540,
-	},
-	{ /* VMODE_4K05K_240HZ */
-		.name              = "4k05k240hz",
-		.mode              = VMODE_4K05K_240HZ,
-		.width             = 3840,
-		.height            = 1080,
-	},
-	{ /* VMODE_4K2K_50HZ_Y420 */
-		.name              = "4k2k50hz420",
-		.mode              = VMODE_4K2K_50HZ_Y420,
-		.width             = 3840,
-		.height            = 2160,
-	},
-	{ /* VMODE_4K2K_50HZ */
-		.name              = "4k2k50hz",
-		.mode              = VMODE_4K2K_50HZ,
-		.width             = 3840,
+	{ /* VMODE_4K2K_SMPTE */
+		.name              = "smpte24hz",
+		.mode              = VMODE_4K2K_SMPTE,
+		.width             = 4096,
 		.height            = 2160,
 	},
 	{ /* VMODE_vga */
@@ -236,6 +171,12 @@ vidinfo_t tv_info = {
 	.priv = NULL,                /* Pointer to driver-specific data */
 };
 
+static inline void vout_reg_write(u32 reg,
+				 const u32 val)
+{
+	*(volatile unsigned int *)REG_ADDR_VCBUS(reg) = (val);
+}
+
 static int vout_find_mode_by_name(const char *name)
 {
 	int mode = -1;
@@ -252,6 +193,36 @@ static int vout_find_mode_by_name(const char *name)
 	return -1;
 }
 
+static int vout_find_width_by_name(const char* name)
+{
+	int i = 0;
+	ulong width = 0;
+
+	for (i = 0; i < sizeof(vout_sets) / sizeof(struct vout_set_s); i++) {
+		if (strncmp(name, vout_sets[i].name, strlen(vout_sets[i].name)) == 0) {
+			width = vout_sets[i].width;
+			return width;
+		}
+	}
+
+	return width;
+}
+
+static int vout_find_height_by_name(const char* name)
+{
+	int height = 0;
+	int i = 0;
+
+	for (i = 0; i < sizeof(vout_sets) / sizeof(struct vout_set_s); i++) {
+		if (strncmp(name, vout_sets[i].name, strlen(vout_sets[i].name)) == 0) {
+			height = vout_sets[i].height;
+			return height;
+		}
+	}
+
+	return height;
+}
+
 static void vout_vinfo_init(void)
 {
 	tv_info.vd_base = (void *)simple_strtoul(getenv("fb_addr"), NULL, 0);
@@ -262,15 +233,117 @@ static void vout_vinfo_init(void)
 	tv_info.vd_color_bg = simple_strtoul(getenv("display_color_bg"), NULL, 0);
 }
 
+static void vout_axis_init(ulong w, ulong h)
+{
+	ulong width = w;
+	ulong height = h;
+
+	setenv_ulong("display_width", width);
+	setenv_ulong("display_height", height);
+}
+
 static void vout_vmode_init(void)
 {
 	char *outputmode = NULL;
 	int vmode = -1;
+	ulong width = 0;
+	ulong height = 0;
 
 	outputmode = getenv("outputmode");
-	/*vout_log("outputmode: %s\n", outputmode);*/
 	vmode = vout_find_mode_by_name(outputmode);
 	vout_set_current_vmode(vmode);
+	width = vout_find_width_by_name(outputmode);
+	height = vout_find_height_by_name(outputmode);
+	vout_reg_write(VPP_POSTBLEND_H_SIZE, width);
+	vout_axis_init(width, height);
+}
+
+static int my_atoi(const char *str)
+{
+	int result = 0;
+	int signal = 1;
+
+	if ((*str >= '0' && *str <= '9') || *str == '-' || *str == '+') {
+		if (*str == '-' || *str == '+') {
+			if (*str == '-')
+				signal = -1;
+			str++;
+		}
+	} else
+		return 0;
+
+	while (*str >= '0' && *str <= '9')
+		result = result * 10 + (*str++ -'0');
+
+	return signal * result;
+}
+
+static int getenv_int(char *env, int def)
+{
+	if (getenv(env) == NULL)
+		return def;
+	else
+		return my_atoi(getenv(env));
+}
+
+static int get_window_axis(int *axis)
+{
+	int ret = 0;
+	char *mode = getenv("outputmode");
+
+	if (strncmp(mode, "480i", 4) == 0 || strcmp(mode, "480cvbs") == 0) {
+		axis[0] = getenv_int("480i_x", 0);
+		axis[1] = getenv_int("480i_y", 0);
+		axis[2] = getenv_int("480i_w", 720);
+		axis[3] = getenv_int("480i_h", 480);
+	} else if (strncmp(mode, "480p", 4) == 0) {
+		axis[0] = getenv_int("480p_x", 0);
+		axis[1] = getenv_int("480p_y", 0);
+		axis[2] = getenv_int("480p_w", 720);
+		axis[3] = getenv_int("480p_h", 480);
+	} else if (strncmp(mode, "576i", 4) == 0 || strcmp(mode, "576cvbs") == 0) {
+		axis[0] = getenv_int("576i_x", 0);
+		axis[1] = getenv_int("576i_y", 0);
+		axis[2] = getenv_int("576i_w", 720);
+		axis[3] = getenv_int("576i_h", 576);
+	} else if (strncmp(mode, "576p", 4) == 0) {
+		axis[0] = getenv_int("576p_x", 0);
+		axis[1] = getenv_int("576p_y", 0);
+		axis[2] = getenv_int("576p_w", 720);
+		axis[3] = getenv_int("576p_h", 576);
+	} else if (strncmp(mode, "720p", 4) == 0) {
+		axis[0] = getenv_int("720p_x", 0);
+		axis[1] = getenv_int("720p_y", 0);
+		axis[2] = getenv_int("720p_w", 1280);
+		axis[3] = getenv_int("720p_h", 720);
+	} else if (strncmp(mode, "1080i", 5) == 0) {
+		axis[0] = getenv_int("1080i_x", 0);
+		axis[1] = getenv_int("1080i_y", 0);
+		axis[2] = getenv_int("1080i_w", 1920);
+		axis[3] = getenv_int("1080i_h", 1080);
+	} else if (strncmp(mode, "1080p", 5) == 0) {
+		axis[0] = getenv_int("1080p_x", 0);
+		axis[1] = getenv_int("1080p_y", 0);
+		axis[2] = getenv_int("1080p_w", 1920);
+		axis[3] = getenv_int("1080p_h", 1080);
+	} else if (strncmp(mode, "2160p", 5) == 0) {
+		axis[0] = getenv_int("2160p_x", 0);
+		axis[1] = getenv_int("2160p_y", 0);
+		axis[2] = getenv_int("2160p_w", 3840);
+		axis[3] = getenv_int("2160p_h", 2160);
+	} else if (strcmp(mode, "smpte24hz") == 0) {
+		axis[0] = getenv_int("4k2ksmpte_x", 0);
+		axis[1] = getenv_int("4k2ksmpte_y", 0);
+		axis[2] = getenv_int("4k2ksmpte_w", 4096);
+		axis[3] = getenv_int("4k2ksmpte_h", 2160);
+	} else {
+		axis[0] = getenv_int("1080p_x", 0);
+		axis[1] = getenv_int("1080p_y", 0);
+		axis[2] = getenv_int("1080p_w", 1920);
+		axis[3] = getenv_int("1080p_h", 1080);
+	}
+
+	return ret;
 }
 
 void vout_set_current_vmode(int mode)
@@ -290,14 +363,17 @@ vidinfo_t *vout_get_current_vinfo(void)
 
 	vout_logl();
 
-	vout_init();
-
 #if defined CONFIG_VIDEO_AMLLCD
 	extern vidinfo_t tv_info;
 	info = &panel_info;
 #endif
 
 	return info;
+}
+
+int vout_get_current_axis(int *axis)
+{
+	return get_window_axis(axis);
 }
 
 void vout_vinfo_dump(void)
@@ -317,6 +393,6 @@ void vout_vinfo_dump(void)
 void vout_init(void)
 {
 	vout_logl();
-	vout_vinfo_init();
 	vout_vmode_init();
+	vout_vinfo_init();
 }

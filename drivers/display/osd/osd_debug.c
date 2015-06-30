@@ -123,6 +123,8 @@ static void osd_debug_dump_register_all(void)
 	osd_logi("reg[0x%x]: 0x%08x\n", reg, osd_reg_read(reg));
 	reg = VPP_OSD_SCO_V_START_END;
 	osd_logi("reg[0x%x]: 0x%08x\n\n", reg, osd_reg_read(reg));
+	reg = VPP_POSTBLEND_H_SIZE;
+	osd_logi("reg[0x%x]: 0x%08x\n\n", reg, osd_reg_read(reg));
 
 	for (index = 0; index < 2; index++) {
 		if (index == 1)
