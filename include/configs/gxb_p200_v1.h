@@ -72,7 +72,7 @@
         "wipe_data=successful\0"\
         "wipe_cache=successful\0"\
         "initargs="\
-            "rootfstype=ramfs init=/init console=ttyS0,115200 no_console_suspend earlyprintk=aml-uart,0xc81004c0"\
+            "rootfstype=ramfs init=/init console=ttyS0,115200 no_console_suspend earlyprintk=aml-uart,0xc81004c0 androidboot.selinux=permissive"\
             "\0"\
         "upgrade_check="\
                 "if itest ${upgrade_step} == 3; then run init_display; run storeargs; run update; fi; "\
