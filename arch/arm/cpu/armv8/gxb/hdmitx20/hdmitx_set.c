@@ -1818,6 +1818,7 @@ static void hdmi_tvenc_set(enum hdmi_vic vic)
 		hd_set_reg_bits(P_VPU_HDMI_SETTING, 1, 1, 1);  // [    1] src_sel_encp: Enable ENCP output to HDMI
 		break;
 	case HDMI_1280x720p60_16x9:
+	case HDMI_1280x720p50_16x9:
 		// Annie 01Sep2011: Register VENC_DVI_SETTING and VENC_DVI_SETTING_MORE are no long valid, use VPU_HDMI_SETTING instead.
 		hd_write_reg(P_VPU_HDMI_SETTING, (0                                 << 0) | // [    0] src_sel_enci
                              (0                                 << 1) | // [    1] src_sel_encp
