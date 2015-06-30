@@ -39,7 +39,7 @@ int cmd_efuse(int argc, char * const argv[], char *buf)
 	char *end;
 	char *s;
 	int ret;
-	long lAddr1,lAddr2;
+	long lAddr1, lAddr2;
 
 	if (strncmp(argv[1], "read", 4) == 0) {
 		action = CMD_EFUSE_READ;
@@ -114,8 +114,8 @@ efuse_action:
 		} else {
 			printf("%s written done.\n", __func__);
 		}
-	/*efuse secure_boot_set*/
-	} if ( CMD_EFUSE_SECURE_BOOT_SET == action ) {
+	} else if (CMD_EFUSE_SECURE_BOOT_SET == action) {
+		/*efuse secure_boot_set*/
 
 		lAddr1 = GXB_IMG_LOAD_ADDR;
 
@@ -123,18 +123,19 @@ efuse_action:
 			lAddr1 = simple_strtoul(argv[2], &end, 16);
 
 		lAddr2 = get_sharemem_info(GET_SHARE_MEM_INPUT_BASE);
-		memcpy((void*)lAddr2,(void*)lAddr1,GXB_EFUSE_PATTERN_SIZE);
+		memcpy((void *)lAddr2, (void *)lAddr1, GXB_EFUSE_PATTERN_SIZE);
 
-		ret = aml_sec_boot_check(GXB_TYPE_EFUSE_SECURE_BOOT,lAddr2,GXB_EFUSE_PATTERN_SIZE,0);
+		ret = aml_sec_boot_check(GXB_TYPE_EFUSE_SECURE_BOOT, lAddr2,
+			GXB_EFUSE_PATTERN_SIZE, 0);
 
 		if (ret)
-			printf("aml log : Secure boot EFUSE pattern programming fail [%d]!\n",ret);
+			printf("aml log : Secure boot EFUSE pattern programming fail [%d]!\n",
+			       ret);
 		else
 			printf("aml log : Secure boot EFUSE pattern programming success!\n");
 
 		return ret;
-	}
-	else{
+	} else{
 		printf("arg error\n");
 		return CMD_RET_USAGE;
 	}

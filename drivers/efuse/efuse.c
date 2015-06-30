@@ -88,7 +88,6 @@ int efuse_read_usr(char *buf, size_t count, loff_t *ppos)
 
 	pdata = data;
 	pos = *ppos;
-	pos |= EFUSE_USER_MASK;
 	ret = efuse_read(pdata, count, (loff_t *)&pos);
 
 	memcpy(buf, data, count);
@@ -118,7 +117,6 @@ int efuse_write_usr(char *buf, size_t count, loff_t *ppos)
 
 	memcpy(penc, pdata, count);
 	pos = *ppos;
-	pos |= EFUSE_USER_MASK;
 
 	ret = efuse_write(efuse_buf, count, (loff_t *)&pos);
 
