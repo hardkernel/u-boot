@@ -11,16 +11,14 @@
 #define	AUTO_WAKEUP			7
 
 struct pwr_op {
-	void (*power_off_3v3)(void);
-	void (*power_on_3v3)(void);
+	void (*power_off_at_clk81)(void);
+	void (*power_on_at_clk81)(void);
 
-	void (*power_off_5v)(void);
-	void (*power_on_5v)(void);
-	void (*power_off_vcck)(void);
-	void (*power_on_vcck)(void);
+	void (*power_off_at_24M)(void);
+	void (*power_on_at_24M)(void);
 
-	void (*power_off_ddr)(void);
-	void (*power_on_ddr)(void);
+	void (*power_off_at_32k)(void);
+	void (*power_on_at_32k)(void);
 
 	void (*shut_down)(void);
 
