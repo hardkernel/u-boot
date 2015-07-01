@@ -280,6 +280,8 @@ endif
 
 obj-$(CONFIG_CMD_BLOB) += cmd_blob.o
 
+obj-$(CONFIG_INSTABOOT) += cmd_wipeisb.o instaboot.o
+
 # We always have this since drivers/ddr/fs/interactive.c needs it
 obj-y += cli_simple.o
 

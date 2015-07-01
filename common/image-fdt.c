@@ -15,6 +15,9 @@
 #include <image.h>
 #include <libfdt.h>
 #include <asm/io.h>
+#ifdef CONFIG_INSTABOOT
+#include <amlogic/instaboot.h>
+#endif
 
 #ifndef CONFIG_SYS_FDT_PAD
 #define CONFIG_SYS_FDT_PAD 0x3000
@@ -532,6 +535,10 @@ int image_setup_libfdt(bootm_headers_t *images, void *blob,
 	fdt_initrd(blob, *initrd_start, *initrd_end);
 	if (!ft_verify_fdt(blob))
 		goto err;
+
+#ifdef CONFIG_INSTABOOT
+	fdt_instaboot(blob);
+#endif
 
 #if defined(CONFIG_SOC_KEYSTONE)
 	if (IMAGE_OF_BOARD_SETUP)
