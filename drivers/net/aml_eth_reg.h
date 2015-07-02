@@ -481,19 +481,19 @@
 
 
 struct _tx_desc {
-    unsigned long tdes0;
-    unsigned long tdes1;
-    unsigned long tdes2;
-    unsigned long tdes3;
-    unsigned long reverse[4];//for 32 bytes cahce aligned
+    unsigned int tdes0;
+    unsigned int tdes1;
+    unsigned int tdes2;
+    unsigned int tdes3;
+    unsigned int reverse[4];//for 32 bytes cahce aligned
 } ;
 
 struct _rx_desc {
-    unsigned long rdes0;
-    unsigned long rdes1;
-    unsigned long rdes2;
-    unsigned long rdes3;
-    unsigned long reverse[4];//for 32 bytes cahce aligned
+    unsigned int rdes0;
+    unsigned int rdes1;
+    unsigned int rdes2;
+    unsigned int rdes3;
+    unsigned int reverse[4];//for 32 bytes cahce aligned
 } ;
 
 

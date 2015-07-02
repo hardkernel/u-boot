@@ -35,6 +35,7 @@
 #include <asm/arch/io.h>
 #include "aml_eth_reg.h"
 #include "aml_phy_8700.h"
+#include <asm/arch/secure_apb.h>
 
 
 
@@ -45,10 +46,8 @@
  * arch/arm/cpu/aml_meson
  *
  */
-extern unsigned __net_dma_start;
-extern unsigned __net_dma_end;
 
-
+#define NET_DMA_BUFFER_SIZE	0x20000
 
 static unsigned char g_bi_enetaddr[6] = {0, 0, 0, 0, 0, 0};
 static struct _gStruct*	gS = NULL;
@@ -69,10 +68,11 @@ static unsigned int  g_mdc_clock_range=ETH_MAC_4_GMII_Addr_CR_100_150;
 #define PHY_INTERNAL            0x79898963
 #define PHY_RTL_8211F         0x001cc916
 #define PHY_MICREL_KSZ9031    0x00221620
+#define PHY_MICREL_KSZ9031RNX 0x00221622
 #define MAC_MODE_RMII_CLK_EXTERNAL       0
 #define MAC_MODE_RMII_CLK_INTERNAL       1
 #define MAC_MODE_RGMII                   2
-static int g_mac_mode = MAC_MODE_RMII_CLK_EXTERNAL;
+static int g_mac_mode = MAC_MODE_RGMII;
 
 static int g_debug = 0;
 //#define ET_DEBUG
@@ -144,6 +144,11 @@ static void hardware_reset(void)
 		udelay(500000);
 		SET_CBUS_REG_MASK(PREG_PAD_GPIO3_O, 1 << 23);
 	}*/
+	if (get_cpuid() == 0x1f) { // s905
+		clrbits_le32(PREG_PAD_GPIO3_O, 1 << 14);
+		udelay(500000);
+		setbits_le32(PREG_PAD_GPIO3_O, 1 << 14);
+	}
 	printf("ETH PHY hardware reset OK\n");
 
 	return;
@@ -292,17 +297,13 @@ void init_internal_phy_100B(int phyad)
 #endif
 static inline void _dcache_flush_range_for_net(unsigned long startAddr, unsigned long endAddr)
 {
-	//cc comment
-	//dcache_flush_range(startAddr, endAddr - startAddr + 1);
-	return;
+	flush_dcache_range(startAddr, endAddr);
 }
 
 static inline void _dcache_inv_range_for_net(unsigned long startAddr, unsigned long endAddr)
 {
 
-	//cc comment
-	//dcache_invalid_range(startAddr, endAddr - startAddr + 1);
-	return;
+	invalidate_dcache_range(startAddr, endAddr);
 }
 
 static unsigned int detect_phyad(void)
@@ -329,10 +330,11 @@ static void set_mac_mode(void)
 	printf("set_mac_mode(%d)\n", g_mac_mode);
 	if (g_mac_mode == 2) {
 		/* RGMII */
-		aml_eth_writel((ETH_MAC_0_Configuration_PS_GMII | ETH_MAC_0_Configuration_DM| ETH_MAC_0_Configuration_RE | ETH_MAC_0_Configuration_TE), ETH_MAC_0_Configuration);
+		aml_eth_writel(aml_eth_readl(ETH_MAC_0_Configuration)|(ETH_MAC_0_Configuration_PS_GMII | ETH_MAC_0_Configuration_TC | ETH_MAC_0_Configuration_DM
+					| ETH_MAC_0_Configuration_RE | ETH_MAC_0_Configuration_TE), ETH_MAC_0_Configuration);
 	} else {
 		/* RMII */
-		aml_eth_writel((ETH_MAC_0_Configuration_PS_MII | ETH_MAC_0_Configuration_FES_100M | ETH_MAC_0_Configuration_DM
+		aml_eth_writel(aml_eth_readl(ETH_MAC_0_Configuration)|(ETH_MAC_0_Configuration_PS_MII | ETH_MAC_0_Configuration_FES_100M | ETH_MAC_0_Configuration_DM
 					| ETH_MAC_0_Configuration_RE | ETH_MAC_0_Configuration_TE), ETH_MAC_0_Configuration);
 	}
 
@@ -401,6 +403,7 @@ static void netdev_chk(void)
 				gS->linked = rint2&(1<<2);
 				break;
 			case PHY_MICREL_KSZ9031:
+			case PHY_MICREL_KSZ9031RNX:
 				rint2 = phy_reg_rd(id, 31);
 				speed = (rint2 & (1 << 4))? 0:((rint2 &(1<<5))? 1:2);
 				full = ((rint2) & (1 << 3));
@@ -454,6 +457,7 @@ static void netdev_chk(void)
 			aml_eth_writel(val,ETH_PLL_CNTL);
 #endif
 			aml_eth_writel(aml_eth_readl(ETH_MAC_0_Configuration) & ~ ETH_MAC_0_Configuration_FES_100M, ETH_MAC_0_Configuration);
+			aml_eth_writel(((aml_eth_readl(ETH_MAC_0_Configuration)) | (ETH_MAC_0_Configuration_PS_MII)), ETH_MAC_0_Configuration);	// program mac
 #ifndef NEW_MAC_LOGIC
 			if ( get_cpuid() < 0x1B ) {
 				aml_eth_writel(aml_eth_readl(ETH_PLL_CNTL) & ~ETH_PLL_CNTL_DIVEN, ETH_PLL_CNTL);		// Disable the Ethernet clocks
@@ -475,6 +479,7 @@ static void netdev_chk(void)
 			aml_eth_writel(val,ETH_PLL_CNTL);
 #endif
 			aml_eth_writel(aml_eth_readl(ETH_MAC_0_Configuration) | ETH_MAC_0_Configuration_FES_100M, ETH_MAC_0_Configuration);	// program mac
+			aml_eth_writel(((aml_eth_readl(ETH_MAC_0_Configuration)) | (ETH_MAC_0_Configuration_PS_MII)), ETH_MAC_0_Configuration);	// program mac
 #ifndef NEW_MAC_LOGIC
 
 			if (get_cpuid()< 0x1B) {
@@ -556,7 +561,6 @@ static int eth_reset(struct _gStruct* emac_config)
 	int i, k, phyad;
 	unsigned int val,ori_ctl_val=0;
 	struct _gStruct* m=emac_config;
-	//SET_CBUS_REG_MASK(HHI_GCLK_MPEG1,1<<3);
 	if (get_cpuid() >= 0x16) {
 		/* make sure PHY power-on */
 		set_phy_mode();
@@ -770,11 +774,11 @@ static int aml_eth_send(struct eth_device *net_current, void *packet, int length
 		goto err;
 	}
 
-	if (!(unsigned char*)pTx->tdes2) {
+	if (!(unsigned char*)(unsigned long)pTx->tdes2) {
 		goto err;
 	}
-	g_current_tx = (struct _tx_desc*)pTx->tdes3;
-	memcpy((unsigned char*)pTx->tdes2, (unsigned char*)packet, length);
+	g_current_tx = (struct _tx_desc*)(unsigned long)pTx->tdes3;
+	memcpy((unsigned char*)(unsigned long)pTx->tdes2, (unsigned char*)packet, length);
 	//pTx->tdes1 &= DescEndOfRing;
 	_dcache_flush_range_for_net((unsigned long)pTx->tdes2, (unsigned long)pTx->tdes2 + length - 1);
 	pTx->tdes1 = ((length << TDES1_TBS1_P) & TDES1_TBS1_MASK) | TDES1_FS | TDES1_LS | TDES1_TCH | TDES1_IC;
@@ -863,14 +867,14 @@ static int aml_eth_rx(struct eth_device * net_current)
 		// pbuf_header(pb, -sizeof(short));
 		_dcache_inv_range_for_net((unsigned long)pRx->rdes2, (unsigned long)pRx->rdes2 + len - 1);
 
-		if (!memcpy((unsigned char*)NetRxPackets[0], (unsigned char*)pRx->rdes2, len)) {
+		if (!memcpy((unsigned char*)NetRxPackets[0], (unsigned char*)(unsigned long)pRx->rdes2, len)) {
 			printf("memcp error\n");
 			goto NEXT_BUF;
 		}
 NEXT_BUF:
 		pRx->rdes0 = RDES0_OWN;
 		_dcache_flush_range_for_net((unsigned long)pRx, (unsigned long)(pRx + 1) - 1);
-		pRx = (struct _rx_desc*)g_current_rx->rdes3;
+		pRx = (struct _rx_desc*)(unsigned long)g_current_rx->rdes3;
 		_dcache_inv_range_for_net((unsigned long)pRx, (unsigned long)(pRx + 1) - 1);
 		g_current_rx = pRx;
 		rxnum++;
@@ -885,18 +889,21 @@ static int aml_ethernet_init(struct eth_device * net_current, bd_t *bd)
 {
 	unsigned long net_dma_start_addr;
 	unsigned long net_dma_end_addr;
-	net_dma_start_addr = (unsigned long)&__net_dma_start;
-	net_dma_end_addr   = (unsigned long)&__net_dma_end;
+	unsigned char *net_dma_buffer = NULL;
 	unsigned long tx_start, rx_start;
 	struct _rx_desc * pRDesc;
 	struct _tx_desc * pTDesc;
 	unsigned char * bufptr;
 	int i;
-	//SET_CBUS_REG_MASK(HHI_GCLK_MPEG1,1<<3);
 	if (g_nInitialized) {
 		return 0;
 	}
 	printf("Amlogic Ethernet Init\n");
+
+	/* alloc the dma buffer */
+	net_dma_buffer = malloc(NET_DMA_BUFFER_SIZE);
+	net_dma_start_addr = (unsigned long)net_dma_buffer;
+	net_dma_end_addr   = (unsigned long)(net_dma_buffer + NET_DMA_BUFFER_SIZE);
 
 	/* init the dma descriptor 128k */
 	gS = (struct _gStruct*)malloc(sizeof(struct _gStruct));
@@ -986,6 +993,9 @@ static int aml_ethernet_init(struct eth_device * net_current, bd_t *bd)
 	g_current_tx = gS->tx;
 	_dcache_flush_range_for_net((unsigned long)gS->tx, (unsigned long)gS->tx + sizeof(struct _tx_desc)*gS->tx_len);
 
+	/* get mii interface */
+	g_mac_mode = (aml_eth_readl(PREG_ETH_REG0) & 0x1) ? MAC_MODE_RGMII:MAC_MODE_RMII_CLK_EXTERNAL;
+
 	/* mac and phy reset */
 	eth_reset(gS);
 
@@ -1017,7 +1027,6 @@ int aml_eth_init(bd_t *bis)
 	struct eth_device *dev;
 	dev = (struct eth_device *)malloc(sizeof(*dev));
 	memset(dev, 0, sizeof(*dev));
-	//SET_CBUS_REG_MASK(HHI_GCLK_MPEG1,1<<3);
 	sprintf(dev->name, "Meson_Ethernet");
 	dev->init	= aml_ethernet_init;
 	dev->halt 	= aml_eth_halt;
