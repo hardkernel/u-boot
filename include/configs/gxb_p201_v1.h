@@ -22,19 +22,24 @@
 #ifndef __GXB_P201_V1_H__
 #define __GXB_P201_V1_H__
 
+#ifndef __SUSPEND_FIRMWARE__
 #include <asm/arch/cpu.h>
+#endif		/* for compile problem of A53 and m3 */
 
 #define CONFIG_SYS_GENERIC_BOARD  1
+#ifndef __SUSPEND_FIRMWARE__
 #ifndef CONFIG_AML_MESON
 #warning "include warning"
 #endif
+#endif		/* for compile problem of A53 and m3 */
 
 /*
  * platform power init config
  */
 #define CONFIG_PLATFORM_POWER_INIT
 #define CONFIG_VCCK_INIT_VOLTAGE	1100
-#define CONFIG_VDDEE_INIT_VOLTAGE	1000
+#define CONFIG_VDDEE_INIT_VOLTAGE	1000		// voltage for power up
+#define CONFIG_VDDEE_SLEEP_VOLTAGE	 850		// voltage for suspend
 
 /* SMP Definitinos */
 #define CPU_RELEASE_ADDR		secondary_boot_func

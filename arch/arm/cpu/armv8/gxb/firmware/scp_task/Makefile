@@ -29,7 +29,10 @@ CFLAGS_CPU=-march=$(ARM_ARCH) -mcpu=$(ARM_CPU) -mthumb -Os -mno-sched-prolog
 # FPU compilation flags
 CFLAGS_FPU-$(CONFIG_FPU)=-mfpu=fpv4-sp-d16 -mfloat-abi=hard
 
-CFLAGS_INCLUDE=-I. \
+CFLAGS_INCLUDE=-I$(buildsrc)/build/include/ \
+               -I$(buildsrc)/include/ \
+               -I$(buildsrc)/arch/arm/include/ \
+               -I. \
                -I./include \
                -I./build
 
