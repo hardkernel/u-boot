@@ -79,7 +79,7 @@
                 "if itest ${upgrade_step} == 1; then env default -a; setenv upgrade_step 2; saveenv; fi; "\
                 "\0"\
         "storeargs="\
-            "setenv bootargs ${initargs} logo=osd1,loaded,${fb_addr},${outputmode},hdmimode=${hdmimode} cvbsmode=${cvbsmode} hdmitx=${cecconfig} androidboot.firstboot=${firstboot}; "\
+            "setenv bootargs ${initargs} logo=${display_layer},loaded,${fb_addr},${outputmode},hdmimode=${hdmimode} cvbsmode=${cvbsmode} hdmitx=${cecconfig} androidboot.firstboot=${firstboot}; "\
             "\0"\
         "switch_bootmode="\
             "get_rebootmode; echo reboot_mode=${reboot_mode};"\
@@ -126,7 +126,7 @@
             "if imgread kernel recovery ${loadaddr}; then bootm ${loadaddr}; fi"\
             "\0"\
         "init_display="\
-            "osd open;osd clear;hdmitx output ${outputmode};imgread pic logo bootup $loadaddr;bmp display $bootup_offset;"\
+            "osd open;osd clear;hdmitx output ${outputmode};imgread pic logo bootup $loadaddr;bmp display $bootup_offset;bmp scale"\
             "\0"\
 
 #define CONFIG_PREBOOT  \
