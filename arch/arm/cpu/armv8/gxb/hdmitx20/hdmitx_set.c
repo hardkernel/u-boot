@@ -895,8 +895,8 @@ static void hdmitx_set_phy(struct hdmitx_dev *hdev)
                 break;
         case HDMI_1920x1080p60_16x9:
         default:
-                hd_write_reg(P_HHI_HDMI_PHY_CNTL0, 0x33634143);
-                hd_write_reg(P_HHI_HDMI_PHY_CNTL3, 0x013a115b);
+                hd_write_reg(P_HHI_HDMI_PHY_CNTL0, 0x33632113);
+                hd_write_reg(P_HHI_HDMI_PHY_CNTL3, 0x211a115b);
         break;
 	}
 
