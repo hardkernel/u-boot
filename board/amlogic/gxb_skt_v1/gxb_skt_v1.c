@@ -357,8 +357,23 @@ int board_init(void)
 
 #ifdef CONFIG_BOARD_LATE_INIT
 int board_late_init(void){
+	int ret;
 	/*add board late init function here*/
 	run_command("setenv fdt_high 0x20000000", 1);
+	run_command("setenv dtb_mem_addr 0x1000000", 1);
+	ret = run_command("store dtb read $dtb_mem_addr", 1);
+	if (ret) {
+		printf("%s(): [store dtb read $dtb_mem_addr] fail\n", __func__);
+		#ifdef CONFIG_DTB_MEM_ADDR
+		char cmd[64];
+		printf("load dtb to %x\n", CONFIG_DTB_MEM_ADDR);
+		sprintf(cmd, "store dtb read %x", CONFIG_DTB_MEM_ADDR);
+		ret = run_command(cmd, 1);
+		if (ret) {
+			printf("%s(): %s fail\n", __func__, cmd);
+		}
+		#endif
+	}
 
 #ifdef CONFIG_AML_V2_FACTORY_BURN
 	/*aml_try_factory_sdcard_burning(0, gd->bd);*/

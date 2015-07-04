@@ -427,11 +427,11 @@ int boot_get_fdt(int flag, int argc, char * const argv[], uint8_t arch,
 				fdt_error("image is not a fdt");
 				goto error;
 			}
-
+			/*
 			if (fdt_totalsize(fdt_blob) != images->ft_len) {
 				fdt_error("fdt size != image size");
 				goto error;
-			}
+			}*/
 		}
 		#else
 		debug("## No Flattened Device Tree\n");

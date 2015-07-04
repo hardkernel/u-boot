@@ -70,6 +70,7 @@
         "display_layer=osd1\0" \
         "display_color_fg=0xffff\0" \
         "display_color_bg=0\0" \
+        "dtb_mem_addr=0x1000000\0" \
         "fb_addr=0x3f800000\0" \
         "fb_width=1920\0" \
         "fb_height=1080\0" \
@@ -84,8 +85,8 @@
             "rootfstype=ramfs init=/init console=ttyS0,115200 no_console_suspend ao_jtag_on earlyprintk=aml-uart,0xc81004c0 androidboot.selinux=permissive"\
             "\0"\
         "upgrade_check="\
-                "if itest ${upgrade_step} == 3; then run init_display; run storeargs; run update; fi; "\
-                "if itest ${upgrade_step} == 1; then env default -a; setenv upgrade_step 2; saveenv; fi; "\
+                "echo ${upgrade_step}; if itest ${upgrade_step} == 3; then run init_display; run storeargs; run update; fi; "\
+                "echo ${upgrade_step}; if itest ${upgrade_step} == 1; then env default -a; setenv upgrade_step 2; saveenv; fi; "\
                 "jtagon apao; "\
                 "\0"\
         "storeargs="\
@@ -102,7 +103,7 @@
             "fi;fi;fi;"\
             "\0" \
         "storeboot="\
-            "if imgread kernel boot ${loadaddr}; then bootm ${loadaddr}; fi;"\
+            "if imgread kernel boot ${loadaddr}; then store dtb read $dtb_mem_addr; bootm ${loadaddr}; fi;"\
             "\0"\
         "factory_reset_poweroff_protect="\
             "echo wipe_data=${wipe_data}; echo wipe_cache=${wipe_cache};"\

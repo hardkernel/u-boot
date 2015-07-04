@@ -228,6 +228,15 @@ static int bootm_find_fdt(int flag, int argc, char * const argv[])
 	int ret;
 
 	/* find flattened device tree */
+	#ifdef CONFIG_DTB_MEM_ADDR
+	unsigned long long dtb_mem_addr =  -1;
+	if (getenv("dtb_mem_addr"))
+		dtb_mem_addr = simple_strtoul(getenv("dtb_mem_addr"), NULL, 16);
+	else
+		dtb_mem_addr = CONFIG_DTB_MEM_ADDR;
+
+	images.ft_addr = (char *)map_sysmem(dtb_mem_addr, 0);
+	#endif
 	ret = boot_get_fdt(flag, argc, argv, IH_ARCH_DEFAULT, &images,
 			   &images.ft_addr, &images.ft_len);
 	if (ret) {

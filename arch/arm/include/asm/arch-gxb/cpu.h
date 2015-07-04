@@ -53,4 +53,6 @@
 /* use "hush" command parser */
 #define CONFIG_SYS_HUSH_PARSER
 
+#define CONFIG_DTB_MEM_ADDR 0x1000000
+
 #endif /* _CPU_H */
