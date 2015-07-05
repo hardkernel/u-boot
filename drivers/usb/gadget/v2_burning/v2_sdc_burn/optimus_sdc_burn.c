@@ -318,7 +318,8 @@ static int sdc_burn_dtb_load(HIMAGE hImg)
     const u64 partBaseOffset = OPTIMUS_DOWNLOAD_TRANSFER_BUF_ADDR;
     unsigned char* dtbTransferBuf     = (unsigned char*)partBaseOffset;
 
-    hImgItem = image_item_open(hImg, partName, "meson");
+    //meson1.dtb but not meson.dtb for m8 compatible
+    hImgItem = image_item_open(hImg, partName, "meson1");
     if (!hImgItem) {
         DWN_WRN("Fail to open item [meson,%s]\n", partName);
         return ITEM_NOT_EXIST;
@@ -609,8 +610,8 @@ int optimus_burn_with_cfg_file(const char* cfgFile)
 
     if (video_res_prepare_for_upgrade(hImg)) {
         DWN_ERR("Fail when prepare bm res or init video for upgrade\n");
-        image_close(hImg);
-        return __LINE__;
+        /*image_close(hImg);*/
+        /*return __LINE__;*/
     }
     show_logo_to_report_burning();
 

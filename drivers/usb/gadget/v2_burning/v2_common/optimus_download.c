@@ -11,14 +11,11 @@
  */
 #include "../v2_burning_i.h"
 #include <libfdt.h>
-#include <asm/arch/reboot.h>
-#include <asm/arch/secure_apb.h>
-#include <asm/io.h>
+#include <partition_table.h>
 
 #if defined(CONFIG_ACS)
 #include <asm/arch/cpu.h>
 #include <asm/arch/acs.h>
-#include <partition_table.h>
 #define MAGIC_ACS   "acs_"
 #endif//#if defined(CONFIG_ACS)
 
@@ -38,6 +35,8 @@ unsigned v2_key_burn(const char* keyName, const u8* keyVal, const unsigned keyVa
     return OPT_DOWN_FAIL;
 }
 #endif//#ifndef CONFIG_UNIFY_KEY_MANAGE
+
+static unsigned long _dtb_is_loaded = 0;
 
 
 #define IMG_VERIFY_ALG_NONE     0 //not need to veryfy
@@ -474,34 +473,32 @@ static u32 optimus_storage_write(struct ImgBurnInfo* pDownInfo, u64 addrOrOffset
             if (!strcmp("dtb", pDownInfo->partName)) //as memory write back size = min[fileSz, 2G], so reach here if downloaded ok!
             {
                 int rc = 0;
-                char* dtbLoadAddr = NULL;//(char*)CONFIG_DTB_LOAD_ADDR;
+                unsigned char* dtbLoadAddr = (unsigned char*)OPTIMUS_DTB_LOAD_ADDR;
                 const int DtbMaxSz = (2U<<20);
                 unsigned fdtSz = 0;
-                unsigned char* destDtb = (unsigned char*)data;
+                unsigned char* srcDownDtb = (unsigned char*)data;
 
                 //Make sure flash already inited before 'run aml_dt'
                 //old tool will download dtb before 'disk_initial', but new tool will 'disk_initial' first
-                if (is_optimus_storage_inited() ||
-                                (OPTIMUS_WORK_MODE_USB_PRODUCE != optimus_work_mode_get()))
-                {
-                        /*destDtb = (unsigned char*)(uint64_t)get_multi_dt_entry((unsigned int)data);*/
-                        destDtb = NULL;
+                if (1) {
+                    /*srcDownDtb = (unsigned char*)(uint64_t)get_multi_dt_entry((unsigned int)data);*/
                 }
-                rc = fdt_check_header(destDtb);
+                rc = fdt_check_header(srcDownDtb);
                 if (rc) {
                     sprintf(errInfo, "failed at fdt_check_header\n");
                     DWN_ERR(errInfo);
                     return 0;
                 }
-                fdtSz = fdt_totalsize(destDtb);
+                fdtSz = fdt_totalsize(srcDownDtb);
                 if (DtbMaxSz <= fdtSz) {
                     sprintf(errInfo, "failed: fdt header ok but sz 0%x > max 0x%x\n", fdtSz, DtbMaxSz);
                     DWN_ERR(errInfo);
                     return 0;
                 }
 
-                DWN_MSG("load dtb to 0x%p\n", dtbLoadAddr);
-                memcpy(dtbLoadAddr, destDtb, fdtSz);
+                memcpy(dtbLoadAddr, srcDownDtb, fdtSz);
+                DWN_MSG("load dtb to 0x%p, sz=0x%x\n", dtbLoadAddr, fdtSz);
+                _dtb_is_loaded = fdtSz;
             }
 
             burnSz = dataSz;
@@ -742,6 +739,7 @@ int optimus_storage_init(int toErase)
 {
     int ret = 0;
     char* cmd = NULL;
+    unsigned char* dtbLoadedAddr = (unsigned char*)OPTIMUS_DTB_LOAD_ADDR;
 
     if (_disk_intialed_ok) {//To assert only actual disk intialed once
         DWN_MSG("Disk inited again.\n");
@@ -752,6 +750,17 @@ int optimus_storage_init(int toErase)
     {
         DWN_MSG("Exit before re-init\n");
         store_exit();
+    }
+
+    if (!_dtb_is_loaded) {
+        DWN_WRN("dtb is not loaded yet\n");
+    }
+    else{
+        ret = get_partition_from_dts(dtbLoadedAddr);
+        if (ret) {
+            DWN_ERR("Failed at get_partition_from_dts\n");
+            return __LINE__;
+        }
     }
 
     switch (toErase)
@@ -797,6 +806,14 @@ int optimus_storage_init(int toErase)
     {
         _disk_intialed_ok  = 1;
         _disk_intialed_ok += toErase <<16;
+
+        if (_dtb_is_loaded) {
+            ret = store_dtb_rw(dtbLoadedAddr, _dtb_is_loaded, 1);
+            if (ret) {
+                DWN_ERR("FAiled in dtb wr\n");
+                return __LINE__;
+            }
+        }
 
         if (OPTIMUS_WORK_MODE_USB_PRODUCE == optimus_work_mode_get()) //env not relocated in this case
         {
@@ -1062,7 +1079,7 @@ int optimus_parse_download_cmd(int argc, char* argv[])
             if (!strcmp("dtb", part_name))
             {
                 partBaseOffset = OPTIMUS_DOWNLOAD_TRANSFER_BUF_ADDR;
-                DWN_MSG("dtb boot down to %llx\n", partBaseOffset);
+                DWN_DBG("dtb down to %llx\n", partBaseOffset);
             }
         }
     }

@@ -755,9 +755,7 @@ static int _amlnf_init(struct platform_device *pdev, u32 flag)
 		}
 		goto exit_error0;
 	}
-	PHY_NAND_LINE
-	/* store  */
-	device_boot_flag = NAND_BOOT_FLAG;
+
 	PHY_NAND_LINE
 	//only read id, quit myself.
 	if (flag == NAND_SCAN_ID_INIT)
@@ -889,16 +887,16 @@ MODULE_DESCRIPTION("aml nand flash driver");
 #ifdef AML_NAND_UBOOT
 struct amlnand_phydev *aml_phy_get_dev(char * name)
 {
-        struct amlnand_phydev * phy_dev = NULL;
+	struct amlnand_phydev * phy_dev = NULL;
 
-        list_for_each_entry(phy_dev, &nphy_dev_list, list){
-			if (!strncmp((char*)phy_dev->name, name, MAX_DEVICE_NAME_LEN)) {
-					aml_nand_dbg("nand get phy dev %s ",name);
-					return phy_dev;
-			}
+	list_for_each_entry(phy_dev, &nphy_dev_list, list){
+		if (!strncmp((char*)phy_dev->name, name, MAX_DEVICE_NAME_LEN)) {
+				aml_nand_dbg("nand get phy dev %s ",name);
+				return phy_dev;
 		}
-        aml_nand_msg("nand get phy dev %s       failed",name);
-        return NULL;
+	}
+	aml_nand_msg("nand get phy dev %s       failed",name);
+	return NULL;
 }
 
 

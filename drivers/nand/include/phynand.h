@@ -120,13 +120,14 @@ union nand_core_clk_t {
 #define ADJUST_PART_SIZE	10
 #define ADJUST_SIZE_NFTL	8
 
-#define	SHIPPED_BBT_HEAD_MAGIC		"fbbt"
+#define	SHIPPED_BBT_HEAD_MAGIC	"fbbt"
 #define	BBT_HEAD_MAGIC			"nbbt"
 #define	CONFIG_HEAD_MAGIC		"ncnf"
-#define	HYNIX_DEV_HEAD_MAGIC		"nhix"
+#define	HYNIX_DEV_HEAD_MAGIC	"nhix"
 #define	KEY_INFO_HEAD_MAGIC		"nkey"
-#define	SECURE_INFO_HEAD_MAGIC		"nsec"
+#define	SECURE_INFO_HEAD_MAGIC	"nsec"
 #define	ENV_INFO_HEAD_MAGIC		"nenv"
+#define	DTD_INFO_HEAD_MAGIC		"ndtb"
 
 #define	FBBT_COPY_NUM	1
 
@@ -136,6 +137,10 @@ union nand_core_clk_t {
 #define CONFIG_SECURE_SIZE	(0x10000*2) /* 128k */
 /*fixme, arguing...*/
 #define SECURE_SIZE (CONFIG_SECURE_SIZE - (sizeof(u32)))
+
+/* fixme, max dtd size is 256KBytes. */
+#define CONFIG_DTB_SIZE  (256*1024U)
+#define DTB_SIZE (CONFIG_DTB_SIZE - (sizeof(u32)))
 
 #define FULL_BLK	0
 #define FULL_PAGE	1
@@ -800,6 +805,9 @@ struct amlnand_chip {
 	struct nand_arg_info nand_key;
 	struct nand_arg_info nand_secure;
 	struct nand_arg_info uboot_env;
+#if (AML_CFG_DTB_RSV_EN)
+	struct nand_arg_info amlnf_dtb;
+#endif
 #ifndef AML_NAND_UBOOT
 	struct pinctrl *nand_pinctrl;
 	struct pinctrl_state *nand_pinstate;
@@ -885,6 +893,9 @@ extern int amlnand_read_info_by_name(struct amlnand_chip *aml_chip,
 	u8 *buf,
 	u8 *name,
 	u32 size);
+extern int amlnand_erase_info_by_name(struct amlnand_chip *aml_chip,
+	u8 *info,
+	u8 *name);
 extern int aml_sys_info_error_handle(struct amlnand_chip *aml_chip);
 extern int aml_nand_update_key(struct amlnand_chip *aml_chip, char *key_ptr);
 extern int aml_nand_update_secure(struct amlnand_chip *aml_chip,
@@ -892,6 +903,8 @@ extern int aml_nand_update_secure(struct amlnand_chip *aml_chip,
 extern int aml_nand_update_ubootenv(struct amlnand_chip *aml_chip,
 	char *env_ptr);
 
+extern int aml_nand_update_dtb(struct amlnand_chip *aml_chip,
+	char *dtb_ptr);
 
 extern void amlchip_dumpinfo(struct amlnand_chip *aml_chip);
 

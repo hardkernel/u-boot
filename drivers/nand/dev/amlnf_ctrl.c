@@ -8,6 +8,9 @@
 #include <asm/arch/secure_apb.h>
 
 extern int aml_ubootenv_init(struct amlnand_chip *aml_chip);
+#if (AML_CFG_DTB_RSV_EN)
+extern int amlnf_dtb_init(struct amlnand_chip *aml_chip);
+#endif
 extern int amlnand_save_info_by_name(struct amlnand_chip *aml_chip,unsigned char * info,unsigned char * buf, u8 * name,unsigned size);
 extern int aml_nand_update_key(struct amlnand_chip * aml_chip, char *key_ptr);
 extern int aml_nand_update_ubootenv(struct amlnand_chip * aml_chip, char *env_ptr);
@@ -533,6 +536,9 @@ int aml_sys_info_init(struct amlnand_chip *aml_chip)
 #ifdef CONFIG_SECURE_NAND
 	struct nand_arg_info *nand_secure = &aml_chip->nand_secure;
 #endif
+#if (AML_CFG_DTB_RSV_EN)
+	struct nand_arg_info *amlnf_dtb = &aml_chip->amlnf_dtb;
+#endif
 	struct nand_arg_info *uboot_env =  &aml_chip->uboot_env;
 	u8 *buf = NULL;
 	u32 buf_size = 0;
@@ -571,6 +577,17 @@ int aml_sys_info_init(struct amlnand_chip *aml_chip)
 		}
 	}
 #endif
+#if (AML_CFG_DTB_RSV_EN)
+	if (amlnf_dtb->arg_valid == 0) {
+		NAND_LINE
+		ret = amlnf_dtb_init(aml_chip);
+		if (ret < 0) {
+			aml_nand_msg("amlnf dtb init failed");
+			/* fixme, should go on! */
+			//goto exit_error;
+		}
+	}
+#endif
 	NAND_LINE
 	printk("boot_device_flag %d\n", boot_device_flag);
 	if ((uboot_env->arg_valid == 0) && (boot_device_flag == 1)) {
@@ -599,6 +616,7 @@ int aml_sys_info_init(struct amlnand_chip *aml_chip)
 #endif
 
 #ifdef CONFIG_SECURE_NAND
+	/*save a empty value! */
 	if (nand_secure->arg_valid == 0) {
 		NAND_LINE
 		ret = amlnand_save_info_by_name(aml_chip,
@@ -611,6 +629,9 @@ int aml_sys_info_init(struct amlnand_chip *aml_chip)
 			goto exit_error;
 		}
 	}
+#endif
+#if (AML_CFG_DTB_RSV_EN)
+	/* fixme, no need to save a empty dtb. */
 #endif
 	NAND_LINE
 exit_error:
@@ -647,6 +668,20 @@ int aml_sys_info_error_handle(struct amlnand_chip *aml_chip)
 			aml_chip->nand_secure.arg_valid,
 			aml_chip->nand_secure.valid_blk_addr,
 			aml_chip->nand_secure.valid_page_addr);
+	}
+#endif
+
+#if (AML_CFG_DTB_RSV_EN)
+	if ((aml_chip->amlnf_dtb.arg_valid == 1)
+		&& (aml_chip->amlnf_dtb.update_flag)) {
+		aml_nand_update_dtb(aml_chip, NULL);
+		aml_chip->amlnf_dtb.update_flag = 0;
+		aml_nand_msg("NAND UPDATE CKECK  : ");
+		aml_nand_msg("arg%s:arg_valid=%d,blk_addr=%d,page_addr=%d",
+			"dtb",
+			aml_chip->amlnf_dtb.arg_valid,
+			aml_chip->amlnf_dtb.valid_blk_addr,
+			aml_chip->amlnf_dtb.valid_page_addr);
 	}
 #endif
 	if ((aml_chip->uboot_env.arg_valid == 1)

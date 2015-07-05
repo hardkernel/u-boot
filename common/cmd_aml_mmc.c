@@ -30,6 +30,9 @@
 #include <emmc_partitions.h>
 
 extern int find_dev_num_by_partition_name (char *name);
+#define DTB_BLOCK_CNT	1024
+#define SZ_1M	0x100000
+#define DTB_ADDR_SIZE	(SZ_1M * 40)
 bool emmckey_is_protected (struct mmc *mmc)
 {
 	return 0;
@@ -621,3 +624,76 @@ U_BOOT_CMD(
 	"amlmmc part <device num> - show partition infomation of mmc\n"
 	"amlmmc list - lists available devices\n"
 	"amlmmc switch <device num> <part name> - part name : boot0, boot1, user");
+
+int do_amlmmc_dtb(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+		int dev, ret = 0;
+		void *addr = NULL;
+		u64 cnt =0,n =0, blk =0;
+		//u64 size;
+	if (argc < 4) {
+		printf("argv too small\n");
+		return 1;
+	}
+	if (strcmp(argv[1], "dtb_read") == 0) {
+		printf("read emmc dtb\n");
+		dev = 1;
+		struct mmc *mmc = find_mmc_device(dev);
+		if (!mmc) {
+			printf("not find mmc\n");
+			return 1;
+		}
+		ret = mmc_init(mmc);
+		if (ret) {
+			printf("mmc init failed\n");
+			return 1;
+		}
+		addr = (void *)simple_strtoul(argv[2], NULL, 16);
+		//size = simple_strtoull(argv[3], NULL, 16);
+		blk = DTB_ADDR_SIZE / mmc->read_bl_len;
+		cnt = DTB_BLOCK_CNT;
+		n = mmc->block_dev.block_read(dev, blk, cnt, addr);
+		if (n != cnt)
+			printf("mmc dtb_read: dev # %d, block # %#llx, count # %#llx ERROR!\n",
+						dev, blk, cnt);
+		return (n == cnt) ? 0 : 1;
+	} else if (strcmp(argv[1], "dtb_write") == 0) {
+		printf("write emmc dtb\n");
+		dev = 1;
+		struct mmc *mmc = find_mmc_device(dev);
+		if (!mmc) {
+			printf("not find mmc\n");
+			return 1;
+		}
+		ret = mmc_init(mmc);
+		if (ret) {
+			printf("mmc init failed\n");
+			return 1;
+		}
+		addr = (void *)simple_strtoul(argv[2], NULL, 16);
+		//size = simple_strtoull(argv[3], NULL, 16);
+		blk = DTB_ADDR_SIZE / mmc->read_bl_len;
+		cnt = DTB_BLOCK_CNT;
+		n = mmc->block_dev.block_write(dev, blk, cnt, addr);
+		if (n != cnt) {
+			printf("mmc dtb_write: dev # %d, block # %#llx, count # %#llx ERROR!\n",
+						dev, blk, cnt);
+			return 1;
+		}
+		//return (n == cnt) ? 0 : 1;
+		ret = mmc_device_init(mmc);
+		if (ret == 0) {
+			printf(" partition table success\n");
+			return 0;
+		}
+		printf(" partition table error\n");
+		return 1;
+	}
+	return 0;
+}
+
+U_BOOT_CMD(
+	emmc, 4, 1, do_amlmmc_dtb,
+	"EMMC sub system",
+	"emmc dtb_read addr size\n"
+	"emmc dtb_write addr size\n");

@@ -56,4 +56,8 @@ extern int info_disprotect;
 #define DISPROTECT_SECURE		1<<1
 #define DISPROTECT_FBBT		1<<2
 #define DISPROTECT_HYNIX		1<<3
-#endif
+
+extern int get_partition_from_dts(unsigned char * buffer);
+
+#endif// #ifndef _PARTITION_TABLE_H
+

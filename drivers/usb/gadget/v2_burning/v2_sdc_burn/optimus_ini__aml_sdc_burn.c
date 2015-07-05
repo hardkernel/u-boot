@@ -11,7 +11,7 @@
  */
 #include "optimus_sdc_burn_i.h"
 
-#define dbg(fmt ...)  //printf(fmt)
+#define dbg(fmt ...)  //printf("[INI_SDC]"fmt)
 #define msg           DWN_MSG
 #define err           DWN_ERR
 

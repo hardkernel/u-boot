@@ -62,5 +62,8 @@ int store_init(unsigned  flag);
 
 int store_exit(void);
 
+//dtb read/write
+int store_dtb_rw(void* buf, unsigned dtbSz, int isWrite);
+
 #endif//ifndef __STOARGE_IF_H__
 

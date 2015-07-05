@@ -317,22 +317,23 @@ int amlnf_phy_init(u8 flag, struct platform_device *pdev)
 		goto exit_error1;
 	}
 	PHY_NAND_LINE
+	/* update device_boot_flag for outsides */
+	device_boot_flag = NAND_BOOT_FLAG;
+	PHY_NAND_LINE
 	if (aml_chip->init_flag == NAND_SCAN_ID_INIT)
 		goto exit_error1;
 	PHY_NAND_LINE
 
 	//fixme, debug code
 	//dbg_phyop(aml_chip);
-
 	//dbg_erase_whole_chip(aml_chip);
-	//dbg code, only init boot phydev, so we can burn uboot.
-#if 0 //fixme, dbg code.
+
+	/* step 3.5 init boot phydev 1st, then we can operate uboot no matter what happens further.*/
 	boot_dev_init(aml_chip);
 	if (aml_chip->init_flag == 6) {	//NAND_PHY_INIT
 			PHY_NAND_LINE
 			goto exit_error0;
 	}
-#endif //0
 
 	//Step 4: get device configs
 	ret = amlnand_get_dev_configs(aml_chip);

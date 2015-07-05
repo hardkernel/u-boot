@@ -1611,8 +1611,9 @@ if (!is_phydev_off_adjust()) {
 			phydev->size >>= 1;
 			aml_nand_msg(" DEV %s enable SLC mode", phydev->name);
 		}
-
-		list_add_tail(&phydev->list, &nphy_dev_list);
+		/* fixme, add new physic device */
+		//list_add_tail(&phydev->list, &nphy_dev_list);
+		phydev_add_list(phydev);
 
 #if (AML_NAND_DBG)
 		amldev_dumpinfo(phydev);

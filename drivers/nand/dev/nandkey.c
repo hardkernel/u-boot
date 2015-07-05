@@ -149,7 +149,7 @@ int aml_key_init(struct amlnand_chip *aml_chip)
 		goto exit_error0;
 	}
 	memset(key_ptr,0x0,CONFIG_KEYSIZE);
-	aml_nand_dbg("nand key: nand_key_probe. ");
+	aml_nand_msg("nand key: nand_key_probe. ");
 
 	ret = amlnand_info_init(aml_chip, (u8 *)&(aml_chip->nand_key),(u8 *)key_ptr,(u8 *)KEY_INFO_HEAD_MAGIC, CONFIG_KEYSIZE);
 	if (ret < 0) {

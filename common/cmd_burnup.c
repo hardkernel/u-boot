@@ -259,6 +259,16 @@ int store_exit(void)
 
 }
 
+//store dtb read/write buf sz
+int store_dtb_rw(void* buf, unsigned dtbSz, int isWrite)
+{
+    char _cmdBuf[128];
+    char* ops = isWrite ? "write" : "read";
+
+    sprintf(_cmdBuf, "store dtb %s 0x%p 0x%x", ops, buf, dtbSz);
+    return run_command(_cmdBuf, 0);
+}
+
 #if 0
 int do_store_test(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
 {

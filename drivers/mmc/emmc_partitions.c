@@ -8,12 +8,17 @@
 #include <partition_table.h>
 
 #define		POR_BOOT_VALUE 0
-
+#define		DTB_PART_SIZE	512*1024 //512K
+#define SZ_1M	0x100000
+#define DTB_ADDR_SIZE	(SZ_1M * 40)
 struct mmc_partition_config * mmc_partition_config_of =NULL;
 bool is_partition_checked = false;
-unsigned device_boot_flag = _AML_DEVICE_BOOT_FLAG_DEFAULT;
+unsigned device_boot_flag = (unsigned)_AML_DEVICE_BOOT_FLAG_DEFAULT;
 extern struct mmc *find_mmc_device_by_port (unsigned sdio_port);
-
+extern int get_dtb_struct(struct mmc *mmc);
+extern struct partitions *part_table;
+extern int get_partition_from_dts(unsigned char * buffer);
+#if 0
 struct partitions part_table[MAX_PART_NUM]={
 		{
 			.name = "logo",
@@ -73,7 +78,7 @@ struct partitions part_table[MAX_PART_NUM]={
 			.mask_flags = STORE_DATA,
 		},
 };
-
+#endif
 
 #define PARTITION_ELEMENT(na, sz, flags) {.name = na, .size = sz, .mask_flags = flags,}
 struct partitions emmc_partition_table[]={
@@ -168,7 +173,9 @@ int mmc_get_partition_table (struct mmc *mmc)
 
 	memset(mmc_partition_config_of,0x0,(sizeof(struct mmc_partition_config)));
 	part_ptr = mmc_partition_config_of->partitions;
-
+	ret = get_dtb_struct(mmc);
+	if (ret)
+		goto exit_err;
     set_partition_info(part_table, MAX_MMC_PART_NUM,
             emmc_partition_table, ARRAY_SIZE(emmc_partition_table), MMC_ENV_NAME);
     set_partition_info(part_table, MAX_MMC_PART_NUM,
@@ -224,7 +231,7 @@ int mmc_get_partition_table (struct mmc *mmc)
 
 		if ((part_table[i].size == -1) || ((part_ptr[part_num].offset + part_ptr[part_num].size) > mmc->capacity)) {
             part_ptr[part_num].size = mmc->capacity - part_ptr[part_num].offset;
-            // printf("mmc->capacity=%llx, mmc_device->size=%llx\n", mmc->capacity, part_ptr[part_num].size);
+            //printf("mmc->capacity=%llx, mmc_device->size=%llx\n", mmc->capacity, part_ptr[part_num].size);
 			break;
         }
 		part_num++;
@@ -509,4 +516,40 @@ int find_dev_num_by_partition_name (char *name)
 //    }
 
     return dev_num;
+}
+
+int get_dtb_struct(struct mmc *mmc)
+{
+    int ret=0, start_blk, size, blk_cnt=0;
+    unsigned char *dst = NULL;
+    unsigned char *buffer = NULL;
+
+    //Burning empty emmc flash, dtb downloaded from usb tool
+    if (part_table) return 0;
+
+    buffer = (unsigned char *)malloc(sizeof(unsigned char) * DTB_PART_SIZE);
+    //struct partitions *pp = NULL;
+    start_blk = (DTB_ADDR_SIZE) / mmc->read_bl_len;
+    size = DTB_PART_SIZE;
+    dst = buffer;
+	if (size >= mmc->read_bl_len) {
+        blk_cnt = size / mmc->read_bl_len;
+        printf("mmc read lba=%#x, blocks=%#x\n", start_blk, blk_cnt);
+        ret = mmc->block_dev.block_read(mmc->block_dev.dev, start_blk, blk_cnt, dst);
+		if (ret == 0) { // error
+            ret = -1;
+            goto exit_err;
+        }
+    }
+    ret = get_partition_from_dts(buffer);
+	if (ret) {
+        printf("!!!!get dts FAILED\n");
+        goto exit_err;
+    }
+    printf("%s: Get emmc dtb %s!\n", __FUNCTION__, (ret==0)? "OK": "ERROR");
+exit_err:
+	if (buffer)
+        kfree(buffer);
+
+    return ret;
 }

@@ -33,6 +33,12 @@ extern void amlnand_dump_page(struct amlnand_phydev *phydev);
 extern int  amlnf_erase_ops(uint64_t off, uint64_t erase_len,unsigned char scrub_flag);
 extern int  amlnf_markbad_reserved_ops(uint32_t start_blk);
 
+#if (AML_CFG_DTB_RSV_EN)
+extern int amlnf_dtb_save(u8 *buf, int len);
+extern int amlnf_dtb_read(u8 *buf, int len);
+extern int amlnf_dtb_erase(void);
+#endif
+
 extern int amlnf_init(unsigned char flag);
 extern int amlnf_exit(void);
 //static int plane_mode;
@@ -292,11 +298,22 @@ static int do_amlnfphy(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]
 
 	cmd = argv[1];
 
-	/* ----------------------------------- */
+	/* for dbg entry! */
 	if (strcmp(cmd, "dbg") == 0) {
 		dbg_phyop();
 		return 0;
 	}
+	/* show boot flag!*/
+	if (strcmp(cmd, "boot") == 0) {
+		aml_nand_msg("device_boot_flag 0x%x", device_boot_flag);
+		if (device_boot_flag == NAND_BOOT_FLAG) {
+			aml_nand_msg("boot from nand!");
+		} else {
+			aml_nand_msg("bootflag not ready yet!");
+		}
+		return 0;
+	}
+
 	if (strcmp(cmd, "device") == 0) {
 	   //printk("argc %d\n", argc);
 		if (argc == 2) {
@@ -582,6 +599,46 @@ static int do_amlnfphy(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]
 
 		return ret;
 	}
+#if (AML_CFG_DTB_RSV_EN)
+	if ((strcmp(cmd, "dtb_write") == 0)
+		|| (strcmp(cmd, "dtb_read") == 0)) {
+		nfread_flag = 0;
+		if (strncmp(cmd, "dtb_read", 8) == 0)
+				nfread_flag = 1;
+
+		if (argc < 3)
+			goto usage;
+
+		addr = (ulong)strtoul(argv[2], NULL, 16);
+		size = (ulong)strtoul(argv[3], NULL, 16);
+		aml_nand_msg("cmd %s: ",
+			nfread_flag ? "dtb_read" : "dtb_write");
+
+		//memset(devops, 0x0, sizeof(struct phydev_ops));
+
+		if (nfread_flag) {
+			ret = amlnf_dtb_read((u8 *)addr, (int)size);
+			if (ret < 0)
+				aml_nand_msg("nand read dtd failed");
+		} else {
+			ret = amlnf_dtb_save((u8 *)addr, (int)size);
+			if (ret < 0)
+				aml_nand_msg("nand write dtd failed");
+		}
+
+		aml_nand_msg("%llu bytes %s : %s",
+				size,
+				nfread_flag ? "dtd_read" : "dtd_write",
+				ret ? "ERROR" : "OK");
+		return ret;
+	}
+
+	if (strcmp(cmd, "dtb_erase") == 0) {
+		ret = amlnf_dtb_erase();
+		aml_nand_msg("dtb erase %s", ret ? "Fail" : "Okay");
+		return ret;
+	}
+#endif
 	/* avoid fail... */
 	amlnf_get_chip_size(&chipsize);
 
@@ -655,10 +712,14 @@ static int do_amlnfphy(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]
 
 		int percent = 0;
 		int percent_complete = -1;
+		int without_check = 0;
 
 		dev_name = argv[2];
-		if (strcmp(dev_name, "boot") == 0)
+		if (strcmp(dev_name, "boot") == 0) {
 			dev_name = NAND_BOOT_NAME;
+			/* do not check bad block in uboot area! */
+			without_check = 1;
+		}
 		else if (strcmp(dev_name, "code") == 0)
 			dev_name = NAND_CODE_NAME;
 		else if (strcmp(dev_name, "cache") == 0)
@@ -715,19 +776,19 @@ static int do_amlnfphy(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]
 			devops->addr = erase_addr;
 			devops->len = phydev->erasesize;
 			devops->mode = NAND_HW_ECC;
-
-			ret = phydev->block_isbad(phydev);
-			if (ret > 0) {
-				aml_nand_msg("\rSkipping bad block at 0x%08llx",
-					erase_addr);
-				continue;
-			} else if (ret < 0) {
-				aml_nand_msg("get blk failed:ret=%d addr=%llx",
-					ret,
-					erase_addr);
-				return -1;
+			if (!without_check) {
+				ret = phydev->block_isbad(phydev);
+				if (ret > 0) {
+					aml_nand_msg("\rSkipping bad block at 0x%08llx",
+						erase_addr);
+					continue;
+				} else if (ret < 0) {
+					aml_nand_msg("get blk failed:ret=%d addr=%llx",
+						ret,
+						erase_addr);
+					return -1;
+				}
 			}
-
 			ret = nand_erase(phydev);
 			if (ret < 0) {
 				aml_nand_msg("\nAMLNAND Erase fail:%d %llx\n",
@@ -976,6 +1037,11 @@ static char amlnand_help_text[] =
 	"markbad addr - mark block bad at addr\n"
 	"mark_reserved reserved_blk_NO -mark reserved_blk_NO bad \n"
 	"ldevice[dev] - show/get nftl(logic) device by name\n"
+	"rom_read/write addr off cnt - read/write uboot.\n"
+	"boot - show boot flag"
+#if (AML_CFG_DTB_RSV_EN)
+	"dtb_read/write addr cnt - read/write dtd.\n"
+#endif
 	"";
 #endif
 

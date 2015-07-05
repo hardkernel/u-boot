@@ -115,7 +115,7 @@ int aml_secure_init(struct amlnand_chip *aml_chip)
 		goto exit_error0;
 	}
 	memset(secure_ptr,0x0,CONFIG_SECURE_SIZE);
-	aml_nand_dbg("nand secure: nand_secure_probe. ");
+	aml_nand_msg("nand secure: nand_secure_probe. ");
 
 	ret = amlnand_info_init(aml_chip, (unsigned char *)(&aml_chip->nand_secure),secure_ptr,(unsigned char *)SECURE_INFO_HEAD_MAGIC, CONFIG_SECURE_SIZE);
 	if (ret < 0) {

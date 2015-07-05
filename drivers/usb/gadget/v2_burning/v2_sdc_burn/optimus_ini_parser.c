@@ -11,7 +11,7 @@
  */
 #include "optimus_sdc_burn_i.h"
 
-#define dbg(fmt ...)  //printf(fmt)
+#define dbg(fmt ...)  //printf("[INI]"fmt)
 #define msg           DWN_MSG
 #define err           DWN_ERR
 
@@ -91,11 +91,17 @@ int _optimus_parse_buf_2_lines(char* pTextBuf, const unsigned textSz,
         for (i = 0; i < textSz ; i++, ++pTemp)
         {
                 char c = *pTemp;
-                int isFileEnd = i + 1 >= textSz;
+                const int isFileEnd = i + 1 >= textSz;
 
                 if (MaxLines <= lineNum) {
                         DWN_ERR("total line number %d too many, at most %d lines!\n", lineNum, MaxLines);
                         break;
+                }
+
+                if (isFileEnd) {
+                        dbg("fileend:curLine=[%s]\n", curLine);
+                        lines[lineNum++] = curLine;
+                        break;//End to read file if file ended
                 }
 
                 if ('\r' != c && '\n' != c) {
@@ -103,13 +109,6 @@ int _optimus_parse_buf_2_lines(char* pTextBuf, const unsigned textSz,
                 }
                 *pTemp = 0;///
 
-                if (isFileEnd)
-                {
-                        lines[lineNum++] = curLine;
-                        break;//End to read file if file ended
-                }
-
-                DWN_DBG("%3d: %s\n", lineNum, curLine);
                 if ('\r' == c) //for DOS \r\n mode
                 {
                         if ('\n' == pTemp[1])
@@ -131,6 +130,8 @@ int _optimus_parse_buf_2_lines(char* pTextBuf, const unsigned textSz,
                         lines[lineNum++] = curLine;
                         curLine = pTemp + 1;
                 }
+
+                dbg("Get Line[%03d]: %s\n", lineNum, lines[lineNum - 1]);
         }
 
         *totalLineNum = lineNum;
@@ -385,8 +386,7 @@ int optimus_ini_trans_lines_2_usr_params(const char* const lines[], const unsign
 
                         dbg("set line, set is %s\n", iniSet);
                         CurrentSetName = NULL;
-                        ret = pCheckSetUseFul(iniSet);
-                        if (!ret) {//the set don't care
+                        if ( !pCheckSetUseFul(iniSet) ) {//the set don't care
                                 continue;
                         }
 
@@ -397,8 +397,7 @@ int optimus_ini_trans_lines_2_usr_params(const char* const lines[], const unsign
                                         CurrentSetName = cacheSetNames[setIndex] = iniSet;
                                         break;
                                 }
-                                ret = strcmp(pset, iniSet);
-                                if (!ret) {
+                                if (!strcmp(pset, iniSet)) {
                                         ret = __LINE__;
                                         goto _set_duplicated;
                                 }

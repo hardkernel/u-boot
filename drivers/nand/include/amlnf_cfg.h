@@ -12,8 +12,12 @@
 #define	AML_NAND_DBG				(0)
 #define	AML_CFG_INSIDE_PARTTBL		(0)
 #define AML_CFG_2PLANE_READ_EN		(1)
+/* support nand with readretry&e-slc */
 #define	AML_CFG_NEW_NAND_SUPPORT	(1)
+/* new oob mode */
 #define AML_CFG_NEWOOB_EN			(1)
+/* store dtd in rsv area! */
+#define AML_CFG_DTB_RSV_EN			(1)
 
 #define NAND_ADJUST_PART_TABLE
 

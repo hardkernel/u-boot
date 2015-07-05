@@ -72,23 +72,104 @@ struct partitions partition_table[] = {
 		},
 };
 #else
-extern struct partitions part_table[];
+extern struct partitions * part_table;
+#define SZ_1M                           0x00100000
+struct partitions def_partition_table[] = {
+		{
+			.name = "logo",
+			.size = 32*SZ_1M,
+			.mask_flags = STORE_CODE,
+		},
+		{
+			.name = "recovery",
+			.size = 32*SZ_1M,
+			.mask_flags = STORE_CODE,
+		},
+		{
+			.name = "dtb",
+			.size = 8*SZ_1M,
+			.mask_flags = STORE_CODE,
+		},
+		{
+			.name = "tee",
+			.size = 8*SZ_1M,
+			.mask_flags = STORE_CODE,
+		},
+		{
+			.name = "crypt",
+			.size = 32*SZ_1M,
+			.mask_flags = STORE_CODE,
+		},
+		{
+			.name = "misc",
+			.size = 32*SZ_1M,
+			.mask_flags = STORE_CODE,
+		},
+#ifdef CONFIG_INSTABOOT
+		{
+			.name = "instaboot",
+			.size = 1024*SZ_1M,
+			.mask_flags = STORE_CODE,
+		},
+#endif
+		{
+			.name = "boot",
+			.size = 32*SZ_1M,
+			.mask_flags = STORE_CODE,
+		},
+		{
+			.name = "system",
+			.size = 1024*SZ_1M,
+			.mask_flags = STORE_CODE,
+		},
+		{
+			.name = "cache",
+			.size = 512*SZ_1M,
+			.mask_flags = STORE_CACHE,
+		},
+		{
+			.name = "data",
+			.size = NAND_PART_SIZE_FULL,
+			.mask_flags = STORE_DATA,
+		},
+};
 #endif /* AML_CFG_INSIDE_PARTTBL */
 
-int amlnand_get_partition_table(void)
+#if (AML_CFG_DTB_RSV_EN)
+extern int amlnf_dtb_init_partitions(struct amlnand_chip *aml_chip);
+#endif
+
+int amlnand_get_partition_table(struct amlnand_chip *aml_chip)
 {
 	int ret = 0;
 	u32	config_size;
 	int i;
+
 	/* fixme, debug code for pxp.... */
 #if (AML_CFG_INSIDE_PARTTBL)
 	part_table = partition_table;
 #endif
+	aml_nand_msg("%s() %p", __func__, part_table);
 	if (part_table == NULL) {
-		aml_nand_msg("part_table from ACS is NULL, do not init nand");
+		aml_nand_msg("part_table from outside is NULL, using dtb on nand");
+		/* fixme, not initialized by outside then using dtb of our self. */
+	#if (AML_CFG_DTB_RSV_EN)
+		ret = amlnf_dtb_init_partitions(aml_chip);
+		if (ret < 0) {
+			aml_nand_msg("amlnf dtb init failed");
+			return -NAND_FAILED;
+			/* do not use default partition_table anyway!*/
+			/*ret = -NAND_FAILED;*/
+		}
+	#else
 		return -NAND_FAILED;
+	#endif
 	}
-
+	if (ret) {
+		part_table = def_partition_table;
+		aml_nand_msg("%s() %p, using default one to bootup", __func__, part_table);
+		ret = 0;
+	}
 	config_size = MAX_NAND_PART_NUM * sizeof(struct amlnf_partition);
 	amlnand_config = aml_nand_malloc(config_size);
 	if (!amlnand_config) {

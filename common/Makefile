@@ -34,6 +34,9 @@ obj-$(CONFIG_CMD_BOOTM) += cmd_bootm.o bootm.o bootm_os.o
 obj-y += cmd_help.o
 obj-y += cmd_version.o
 
+#partitions
+obj-y += partitions.o
+
 # environment
 obj-y += env_attr.o
 obj-y += env_callback.o

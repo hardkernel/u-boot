@@ -13,8 +13,10 @@
 #include<partition_table.h>
 
 extern int amlnf_init(unsigned flag);
+extern int get_partition_from_dts(unsigned char * buffer);
 
 #define MsgP(fmt...)   printf("[store]"fmt)
+#define ErrP(fmt...)   printf("[store]Err:%s,L%d:", __func__, __LINE__),printf(fmt)
 
 #define NAND_INIT_FAILED 20
 #define STORE_BOOT_NORMAL					0
@@ -94,7 +96,7 @@ static int emmc_init(void)
 	return ret;
 }
 
-int get_device_boot_flag(void)
+static int get_device_boot_flag(void)
 {
 	int ret=0;
     if (1) {//nand and emmc
@@ -147,831 +149,974 @@ static int get_off_size(int argc, char *argv[],  loff_t *off, loff_t *size)
 		return 0;
 }
 
-int do_store(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
+//store dtb read/write buff size
+static int do_store_dtb_ops(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 {
-		int i, init_flag=0, ret = 0;
-		uint64_t addr;
-		loff_t off=0, size=0;
-		char *cmd, *s, *area;
-		char	str[128];
-		//unsigned char *tmp_buf = NULL;
+	int ret = 0;
+	char _cmdBuf[128];
+	char* ops = argv[2];
+	const unsigned maxDtbSz = 256 * 1024;
+	unsigned actualDtbSz = 0;
+	char* devCmd = NULL;
 
-        if (argc < 2)
-				goto usage;
+    if (argc < 4) return CMD_RET_USAGE;
 
-		cmd = argv[1];
+	const int is_write = !strcmp("write", ops);
+    if (!is_write) {
+		ret = strcmp("read", ops);//must be 0
+        if (ret) return CMD_RET_USAGE;
+	}
 
-        if (strcmp(cmd, "erase") == 0) {
-			if (argc <= 3)
-                goto usage;
-				area = argv[2];
-                if (strcmp(area, "boot") == 0) {
-                        if (device_boot_flag == NAND_BOOT_FLAG) {
-								off =  simple_strtoul(argv[3], NULL, 16);
-								size =  simple_strtoul(argv[4], NULL, 16);
-								store_dbg("NAND BOOT,erase uboot : %s %d  off =%llx ,size=%llx",__func__,__LINE__, off, size);
+	actualDtbSz = maxDtbSz;
+    if (argc > 4) {
+		const unsigned bufSz = simple_strtoul(argv[4], NULL, 0);
+        if (bufSz > maxDtbSz) {
+			ErrP("bufSz (%s) > max 0x%x\n", argv[4], maxDtbSz);
+			return CMD_RET_FAILURE;
+		}
+	}
 
-								ret = run_command("amlnf deverase boot 0",0);
-                                if (ret != 0) {
-										store_msg("nand cmd %s failed ",cmd);
-										return -1;
-								}
-								return ret;
-						}else if((device_boot_flag==SPI_EMMC_FLAG)||(device_boot_flag==SPI_NAND_FLAG)){
-								off =  simple_strtoul(argv[3], NULL, 16);
-								size =  simple_strtoul(argv[4], NULL, 16);
+	ops = is_write ? "dtb_write" : "dtb_read";
 
-								store_dbg("SPI BOOT,erase uboot :  %s %d  off =%llx ,size=%llx",__func__,__LINE__,off,size);
+    switch (device_boot_flag)
+	{
+		case NAND_BOOT_FLAG:
+		case SPI_NAND_FLAG:
+			{
+				devCmd = "amlnf";
+			}
+			break;
 
-								ret = run_command("sf probe 2",0);
-                                if (ret != 0) {
-										store_msg("nand cmd %s failed",cmd);
-										return -1;
-								}
-                                sprintf(str, "sf erase  0 0x%x", CONFIG_ENV_IN_SPI_OFFSET);//store erase boot shoould NOT erase ENV in flash!
-                                ret = run_command(str,0);
-                                if (ret != 0) {
-                                        store_msg("nand cmd %s failed",cmd);
-                                        return -1;
-                                }
-                                return ret;
-                        }else if(device_boot_flag == EMMC_BOOT_FLAG){
-                                off =  simple_strtoul(argv[3], NULL, 16);
-                                size =  simple_strtoul(argv[4], NULL, 16);
+		case EMMC_BOOT_FLAG:
+		case SPI_EMMC_FLAG:
+			{
+				devCmd = "emmc";
+			}
+			break;
 
-                                store_dbg("MMC BOOT,erase uboot :  %s %d  off =%llx ,size=%llx",__func__,__LINE__,off,size);
+		default:
+			ErrP("device_boot_flag=0x%x err\n", device_boot_flag);
+			return CMD_RET_FAILURE;
+	}
 
-                                sprintf(str, "amlmmc  erase bootloader");
-                                ret = run_command(str, 0);
-                                if (ret != 0) {
-                                        store_msg("amlmmc cmd %s failed",cmd);
-                                        return -1;
-                                }
+	sprintf(_cmdBuf, "%s %s %s 0x%x", devCmd, ops, argv[3], actualDtbSz);
+	MsgP("To run cmd[%s]\n", _cmdBuf);
+	ret = run_command(_cmdBuf, 0);
 
-#ifdef MMC_BOOT_PARTITION_SUPPORT
+	return ret;
+}
 
-                                for (i=0; i<2; i++) {
-                                        //switch to boot partition here
-                                        sprintf(str, "amlmmc switch 1 boot%d", i);
-                                        store_dbg("command: %s\n", str);
-                                        ret = run_command(str, 0);
-                                        if (ret == -1) {
-                                                //store_msg("mmc cmd %s failed \n",cmd);
-                                                return 0;
-                                        }
-                                        else if(ret != 0){
-                                                store_msg("amlmmc cmd %s failed",cmd);
-                                                //return -1;
-                                                goto E_SWITCH_BACK;
-                                        }
+static int do_store_init(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
+{
+	int i, init_flag=0, ret = 0;
+	char *cmd = "";
+	char	str[128];
 
-                                        //erase boot partition
-                                        sprintf(str, "amlmmc erase bootloader");
-                                        ret = run_command(str, 0);
-                                        if (ret != 0) {
-                                                store_msg("amlmmc cmd %s failed",cmd);
-                                                //return -1;
-                                                goto E_SWITCH_BACK;
-                                        }
-                                }
+	init_flag = (argc > 2) ? (int)simple_strtoul(argv[2], NULL, 16) : 0;
+	store_dbg("init_flag %d",init_flag);
 
-E_SWITCH_BACK:
-                                //switch back to urs partition
-                                sprintf(str, "amlmmc switch 1 user");
-                                store_dbg("command: %s\n", str);
-                                ret = run_command(str, 0);
-                                if (ret != 0) {
-                                        store_msg("amlmmc cmd %s failed \n",cmd);
-                                        return -1;
-                                }
+    if (device_boot_flag == _AML_DEVICE_BOOT_FLAG_DEFAULT ) {
+		i = get_device_boot_flag();
+        if (i) {
+			MsgP("ERR:FAILED in get_device_boot_flag\n");
+			return __LINE__;
+		}
+	}
 
+    switch (device_boot_flag)
+	{
+		case NAND_BOOT_FLAG:
+			{
+                if ((init_flag >=STORE_BOOT_ERASE_PROTECT_CACHE) && (init_flag <=STORE_BOOT_SCRUB_ALL)) {
+					sprintf(str, "amlnf  init  %d ",init_flag);
+					run_command(str, 0);
+				}
+
+				sprintf(str, "amlnf  init  %d ",1);
+				printf("command:	%s -> %d\n", str, init_flag);
+				device_boot_flag = NAND_BOOT_FLAG;
+				ret = run_command(str, 0);
+                if (ret != 0) {
+#if	0
+                    if ((ret == NAND_INIT_FAILED) && (init_flag == STORE_BOOT_ERASE_ALL)) {
+						sprintf(str, "amlnf  init  %d ",4);
+						ret = run_command(str, 0);
+					}
+                    if (ret) {
+						store_msg("nand cmd %s failed,ret=%d ",cmd,ret);
+						return -1;
+					}
+					return 0;
+#else
+					return -1;
 #endif
-
-                                return ret;
-                        }else{
-                                store_dbg("CARD BOOT,erase uboot :  %s %d  off =%llx ,size=%llx",__func__,__LINE__,off,size);
-                                return 0;
-                        }
-                }
-                else if(strcmp(area, "data") == 0){
-
-                        if (device_boot_flag == NAND_BOOT_FLAG) {
-                                store_dbg("NAND BOOT,erase data : %s %d  off =%llx ,size=%llx",__func__,__LINE__, off, size);
-
-                                ret = run_command("amlnf  deverase data 0",0);
-                                if (ret != 0) {
-                                        store_msg("nand cmd %s failed ",cmd);
-                                        return -1;
-                                }
-
-                                ret = run_command("amlnf  deverase code 0",0);
-                                if (ret != 0) {
-                                        store_msg("nand cmd %s failed ",cmd);
-                                        return -1;
-                                }
-                                ret = run_command("amlnf  deverase cache 0",0);
-                                if (ret != 0) {
-                                        store_msg("nand cmd %s failed ",cmd);
-                                        return -1;
-                                }
-                                return ret;
-                        }
-                        else if(device_boot_flag == SPI_NAND_FLAG){
-                                store_dbg("spi+nand , %s %d ",__func__,__LINE__);
-                                ret = run_command("amlnf  deverase data 0",0);
-                                if (ret != 0) {
-                                        store_msg("nand cmd %s failed ",cmd);
-                                        return -1;
-                                }
-
-                                ret = run_command("amlnf  deverase code 0",0);
-                                if (ret != 0) {
-                                        store_msg("nand cmd %s failed ",cmd);
-                                        return -1;
-                                }
-                                ret = run_command("amlnf  deverase cache 0",0);
-                                if (ret != 0) {
-                                        store_msg("nand cmd %s failed ",cmd);
-                                        return -1;
-                                }
-                                return ret;
-                        }
-                        else if(device_boot_flag == SPI_EMMC_FLAG){
-                                store_dbg("spi+mmc , %s %d ",__func__,__LINE__);
-                                off = size =0;
-                                ret = run_command("mmc  erase  1",0); // whole
-                                if (ret != 0) {
-                                        store_msg("mmc cmd %s failed ",cmd);
-                                        return -1;
-                                }
-
-                                return ret;
-                        }
-                        else if(device_boot_flag==EMMC_BOOT_FLAG){
-                                store_dbg("MMC BOOT,erase data : %s %d  off =%llx ,size=%llx",__func__,__LINE__, off, size);
-                                off = size =0;
-                                ret = run_command("amlmmc erase 1",0); //whole
-                                if (ret != 0) {
-                                        store_msg("amlmmc cmd %s failed ",cmd);
-                                        return -1;
-                                }
-                                return ret;
-                        }else{
-                                store_dbg("CARD BOOT,erase data : %s %d  off =%llx ,size=%llx",__func__,__LINE__, off, size);
-                                return 0;
-                        }
-                }
-                else {
-                        goto usage;
-                }
-
-        }
-        else if(strcmp(cmd, "read") == 0){
-                if (argc < 6)
-                        goto usage;
-
-                s = argv[2];
-                addr = (ulong)simple_strtoul(argv[3], NULL, 16);
-                if (get_off_size(argc - 4, (char **)(argv + 4), &off, &size) != 0)
-                        goto usage;
-
-                store_dbg("addr = %llx off= 0x%llx  size=0x%llx",addr,off,size);
-                if ((device_boot_flag == NAND_BOOT_FLAG)) {
-                        sprintf(str, "amlnf  read_byte %s 0x%llx  0x%llx  0x%llx",s, addr, off, size);
-                        store_dbg("command:	%s", str);
-                        ret = run_command(str, 0);
-                        if (ret != 0) {
-                                store_msg("nand cmd %s failed ",cmd);
-                                return -1;
-                        }
-                        return ret;
-                }
-                else if(device_boot_flag == SPI_NAND_FLAG){
-                        sprintf(str, "amlnf  read_byte %s 0x%llx  0x%llx  0x%llx", s, addr, off, size);
-                        store_dbg("command:	%s\n", str);
-                        ret = run_command(str, 0);
-                        if (ret != 0) {
-                                store_msg("nand cmd %s failed \n",cmd);
-                                return -1;
-                        }
-                        return ret;
-                }
-                else if(device_boot_flag == SPI_EMMC_FLAG){
-                        store_dbg("spi+mmc , %s %d ",__func__,__LINE__);
-                        sprintf(str, "amlmmc  read %s 0x%llx  0x%llx  0x%llx", s, addr, off, size);
-                        store_dbg("command:	%s\n", str);
-                        ret = run_command(str, 0);
-                        if (ret != 0) {
-                                store_msg("amlmmc cmd %s failed \n",cmd);
-                                return -1;
-                        }
-                        return ret;
-                }
-                else if(device_boot_flag==EMMC_BOOT_FLAG) {
-                        store_dbg("MMC BOOT, %s %d \n",__func__,__LINE__);
-                        sprintf(str, "amlmmc  read %s 0x%llx  0x%llx  0x%llx", s, addr, off, size);
-                        store_dbg("command:	%s\n", str);
-                        ret = run_command(str, 0);
-                        if (ret != 0) {
-                                store_msg("amlmmc cmd %s failed \n",cmd);
-                                return -1;
-                        }
-                        return ret;
-                }else{
-                        store_dbg("CARD BOOT, %s %d ",__func__,__LINE__);
-
-                        return 0;
-                }
-        }
-        else if(strcmp(cmd, "write") == 0){
-                if (argc < 6)
-                        goto usage;
-                s = argv[2];
-                addr = (ulong)simple_strtoul(argv[3], NULL, 16);
-                if (get_off_size(argc - 4, (char **)(argv + 4), &off, &size) != 0)
-                        goto usage;
-                if (device_boot_flag == NAND_BOOT_FLAG) {
-
-                        sprintf(str, "amlnf  write_byte %s 0x%llx  0x%llx  0x%llx", s, addr, off, size);
-                        store_dbg("command:	%s", str);
-                        ret = run_command(str, 0);
-                        if (ret != 0) {
-                                store_msg("nand cmd %s failed ",cmd);
-                                return -1;
-                        }
-                        return ret;
-                }
-                else if(device_boot_flag == SPI_NAND_FLAG){
-                        store_dbg("spi+nand , %s %d ",__func__,__LINE__);
-                        sprintf(str, "amlnf  write_byte %s 0x%llx  0x%llx  0x%llx", s, addr, off, size);
-                        store_dbg("command:	%s", str);
-                        ret = run_command(str, 0);
-                        if (ret != 0) {
-                                store_msg("nand cmd %s failed \n",cmd);
-                                return -1;
-                        }
-                        return ret;
-                }
-                else if(device_boot_flag == SPI_EMMC_FLAG){
-                        store_dbg("spi+mmc , %s %d ",__func__,__LINE__);
-                        sprintf(str, "amlmmc  write %s 0x%llx  0x%llx  0x%llx", s, addr, off, size);
-                        store_dbg("command: %s\n", str);
-                        ret = run_command(str, 0);
-                        if (ret != 0) {
-                                store_msg("amlmmc cmd %s failed \n",cmd);
-                                return -1;
-                        }
-                        return ret;
-                }
-                else if(device_boot_flag==EMMC_BOOT_FLAG){
-                        store_dbg("MMC BOOT, %s %d \n",__func__,__LINE__);
-                        sprintf(str, "amlmmc  write %s 0x%llx  0x%llx  0x%llx", s, addr, off, size);
-                        store_dbg("command: %s\n", str);
-                        ret = run_command(str, 0);
-                        if (ret != 0) {
-                                store_msg("amlmmc cmd %s failed \n",cmd);
-                                return -1;
-                        }
-                        return ret;
-                }else{
-                        store_dbg("CARD BOOT, %s %d ",__func__,__LINE__);
-                        return 0;
                 }
                 return ret;
-        }
-        else if(strcmp(cmd, "rom_write") == 0){
-                if (argc < 5)
-                        goto usage;
-                addr = (ulong)simple_strtoul(argv[2], NULL, 16);
-                if (get_off_size(argc - 3, (char **)(argv + 3), &off, &size) != 0)
-                        goto usage;
-                if (device_boot_flag == NAND_BOOT_FLAG) {
-                        sprintf(str, "amlnf  rom_write  0x%llx  0x%llx  0x%llx",  addr, off, size);
-                        store_dbg("command:	%s", str);
-                        ret = run_command(str, 0);
-                        if (ret != 0) {
-                                store_msg("nand cmd %s failed",cmd);
-                                return -1;
-                        }
-                        return ret;
+            }
+            break;
+        case EMMC_BOOT_FLAG:
+            {
+                store_dbg("MMC BOOT, %s %d \n",__func__,__LINE__);
+                device_boot_flag = EMMC_BOOT_FLAG;
+                run_command("mmc dev 1",0);
+                ret = run_command("mmcinfo", 0);
+                if (ret != 0) {
+                    store_msg("amlmmc cmd %s failed \n",cmd);
+                    return -1;
                 }
-                else if ((device_boot_flag==SPI_EMMC_FLAG)||(device_boot_flag==SPI_NAND_FLAG)){
-                        ret = run_command("sf  probe 2",0);
-                        if (ret != 0) {
-                                store_msg("nand cmd %s failed",cmd);
-                                return -1;
-                        }
-                        sprintf(str, "sf  erase  0x%llx  0x%llx ", off, size);
-                        ret = run_command(str, 0);
-                        if (ret != 0) {
-                                store_msg("nand cmd %s failed",cmd);
-                                return -1;
-                        }
-                        sprintf(str, "sf  write 0x%llx  0x%llx  0x%llx ",addr, off, size);
-                        store_dbg("command:	%s", str);
-                        ret = run_command(str, 0);
-                        if (ret != 0) {
-                                store_msg("nand cmd %s failed",cmd);
-                                return -1;
-                        }
-                        return ret;
+                if (init_flag == STORE_BOOT_ERASE_PROTECT_CACHE) { // OTA upgrade protect cache
+                    ret = run_command("amlmmc erase non_cache", 0);
+                }else if(init_flag >= STORE_BOOT_ERASE_ALL){ // erase all except  reserved area
+                    if (_info_disprotect_back_before_mmcinfo1 & DISPROTECT_KEY) {
+                        MsgP("amlmmc key\n");
+                        run_command("amlmmc key", 0);
+                    }
+                    MsgP("amlmmc erase 1");
+                    ret = run_command("amlmmc erase 1", 0);
                 }
-                else if(device_boot_flag==EMMC_BOOT_FLAG){
-                        store_dbg("MMC BOOT, %s %d \n",__func__,__LINE__);
 
-#ifndef CONFIG_AML_SECU_BOOT_V2
-#ifdef MMC_UBOOT_CLEAR_MBR
-                        //modify the 55 AA info for emmc uboot
-                        unsigned char *tmp_buf= (unsigned char *)addr;
-                        _mbrFlag[0] = tmp_buf[510];
-                        _mbrFlag[1] = tmp_buf[511];
-                        tmp_buf[510]=0;
-                        tmp_buf[511]=0;
+                return ret;
+            }
+            break;
+        case SPI_EMMC_FLAG:
+        case SPI_NAND_FLAG:
+            {
+                /*
+                   if (device_boot_flag == -1)
+                   {
+                   ret = run_command("sf probe 2", 0);
+                   if (ret) {
+                   store_msg(" cmd %s failed \n",cmd);
+                   return -1;
+                   }
+                   if ((init_flag > STORE_BOOT_ERASE_PROTECT_CACHE) && (init_flag <= STORE_BOOT_SCRUB_ALL)) {
+                   sprintf(str, "sf erase 0 0x%x", _SPI_FLASH_ERASE_SZ);
+                   ret = run_command(str,0);
+                   }
+                   sprintf(str, "amlnf  init  %d ",init_flag);
+                   store_dbg("command:	%s", str);
+                   ret = run_command(str, 0);
+                   if (ret < 0) //fail to init NAND flash
+                   {
+                   store_msg("nand cmd %s failed \n",cmd);
+                   device_boot_flag = SPI_EMMC_FLAG;
+                   store_dbg("spi+mmc , %s %d ",__func__,__LINE__);
+                   ret = run_command("mmcinfo 1", 0);
+                   if (ret != 0) {
+                   store_msg("mmc cmd %s failed \n",cmd);
+                   return -2;
+                   }
+                   if (init_flag == STORE_BOOT_ERASE_PROTECT_CACHE) { // OTA upgrade protect cache
+                   store_msg("mmc erase non_cache \n");
+                   ret = run_command("mmc erase non_cache", 0);
+                   }else if(init_flag >= STORE_BOOT_ERASE_ALL){ // erase all except  reserved area
+                   if (_info_disprotect_back_before_mmcinfo1 & DISPROTECT_KEY) {
+                   MsgP("mmc key;\n");
+                   run_command("mmc key", 0);
+                   }
+                   MsgP("mmc erase 1 \n");
+                   ret = run_command("mmc erase 1", 0);
+                   }
+                   return 0;
+                   }
+                   else if((ret == NAND_INIT_FAILED)&&(init_flag == STORE_BOOT_ERASE_ALL)){
+                   sprintf(str, "amlnf  init  %d ",4);
+                   ret = run_command(str, 0);
+                   }
+                   device_boot_flag = SPI_NAND_FLAG;
+                   return 0;
+                   }
+                   */
+                if (device_boot_flag == SPI_NAND_FLAG) {
+                    store_dbg("spi+nand , %s %d ",__func__,__LINE__);
+
+                    if ((init_flag >=STORE_BOOT_ERASE_PROTECT_CACHE) && (init_flag <=STORE_BOOT_SCRUB_ALL)) {
+                        sprintf(str, "amlnf  init  %d ",init_flag);
+                        run_command(str, 0);
+                    }
+                    sprintf(str, "amlnf  init  %d ",1);
+                    store_dbg("command:	%s", str);
+                    ret = run_command(str, 0);
+#if	0
+                    if ((ret == NAND_INIT_FAILED) && (init_flag == STORE_BOOT_ERASE_ALL)) {
+                        sprintf(str, "amlnf  init  %d ",4);
+                        ret = run_command(str, 0);
+                    }
+#else
+                    if (ret == NAND_INIT_FAILED) {
+                        return -1;
+                    }
 #endif
-#endif// #if defined(CONFIG_AML_SECU_BOOT_V2)
-                        sprintf(str, "amlmmc  write bootloader 0x%llx  0x%llx  0x%llx", addr, off, size);
-                        store_dbg("command: %s\n", str);
-                        ret = run_command(str, 0);
-                        if (ret != 0) {
-                                store_msg("amlmmc cmd %s failed \n",cmd);
-                                return -1;
-                        }
-#ifdef MMC_BOOT_PARTITION_SUPPORT
-
-                        for (i=0; i<2; i++) {
-                                //switch to boot partition here
-                                sprintf(str, "amlmmc switch 1 boot%d", i);
-                                store_dbg("command: %s\n", str);
-                                ret = run_command(str, 0);
-                                if (ret == -1) {
-                                        //store_msg("mmc cmd %s failed \n",cmd);
-                                        ret = 0;
-                                        return ret;
-                                }
-                                else if(ret != 0){
-                                        store_msg("amlmmc cmd %s failed",cmd);
-                                        //return -1;
-                                        goto W_SWITCH_BACK;
-                                }
-
-                                //write uboot to boot partition
-                                sprintf(str, "amlmmc  write bootloader 0x%llx  0x%llx  0x%llx", addr, off, size);
-                                store_dbg("command: %s\n", str);
-                                ret = run_command(str, 0);
-                                if (ret != 0) {
-                                        store_msg("amlmmc cmd %s failed \n",cmd);
-                                        //return -1;
-                                        goto W_SWITCH_BACK;
-                                }
-                        }
-
-W_SWITCH_BACK:
-                        //switch back to urs partition
-                        sprintf(str, "amlmmc switch 1 user");
-                        store_dbg("command: %s\n", str);
-                        ret = run_command(str, 0);
-                        if (ret != 0) {
-                                store_msg("amlmmc cmd %s failed \n",cmd);
-                                return -1;
-                        }
-
-#endif
-                        return ret;
-                }else{
-                        store_dbg("CARD BOOT, %s %d",__func__,__LINE__);
-                        return 0;
-                }
-
-        }
-        else if(strcmp(cmd, "rom_read") == 0){
-                if (argc < 5)
-                        goto usage;
-                addr = (ulong)simple_strtoul(argv[2], NULL, 16);
-                if (get_off_size(argc - 3, (char **)(argv + 3), &off, &size) != 0)
-                        goto usage;
-                if (device_boot_flag == NAND_BOOT_FLAG) {
-                        sprintf(str, "amlnf  rom_read  0x%llx  0x%llx  0x%llx",  addr, off, size);
-                        store_dbg("command:	%s", str);
-                        ret = run_command(str, 0);
-                        if (ret != 0) {
-                                store_msg("nand cmd %s failed",cmd);
-                                return -1;
-                        }
-                        return ret;
-                }else if ((device_boot_flag==SPI_EMMC_FLAG)||(device_boot_flag==SPI_NAND_FLAG)){
-                        ret = run_command("sf  probe 2",0);
-                        if (ret != 0) {
-                                return -1;
-                        }
-                        sprintf(str, "sf  read 0x%llx  0x%llx  0x%llx ",addr, off, size);
-                        store_dbg("command:	%s", str);
-                        ret = run_command(str, 0);
-                        if (ret != 0) {
-                                store_msg("nand cmd %s failed",cmd);
-                                return -1;
-                        }
-                        return ret;
-                }else if (device_boot_flag==EMMC_BOOT_FLAG){
-                        store_dbg("MMC BOOT, %s %d \n",__func__,__LINE__);
-                        sprintf(str, "amlmmc  read bootloader 0x%llx  0x%llx  0x%llx", addr, off, size);
-                        store_dbg("command: %s\n", str);
-                        //tmp_buf= (unsigned char *)addr;
-                        ret = run_command(str, 0);
-                        if (ret != 0) {
-                                store_msg("amlmmc cmd %s failed \n",cmd);
-                                return -1;
-                        }
-
-#ifdef MMC_BOOT_PARTITION_SUPPORT
-
-                        for (i=0; i<2; i++) {
-                                //switch to boot partition here
-                                sprintf(str, "amlmmc switch 1 boot%d", i);
-                                store_dbg("command: %s\n", str);
-                                ret = run_command(str, 0);
-                                if (ret == -1) {
-                                        //store_msg("mmc cmd %s failed \n",cmd);
-                                        return 0;
-                                }
-                                else if(ret != 0){
-                                        store_msg("amlmmc cmd %s failed",cmd);
-                                        goto R_SWITCH_BACK;
-                                        //return -1;
-                                }
-
-                                //write uboot to boot partition
-                                sprintf(str, "amlmmc  read bootloader 0x%llx  0x%llx  0x%llx", addr, off, size);
-                                store_dbg("command: %s\n", str);
-                                ret = run_command(str, 0);
-                                if (ret != 0) {
-                                        store_msg("amlmmc cmd %s failed \n",cmd);
-                                        //return -1;
-                                        goto R_SWITCH_BACK;
-                                }
-                        }
-
-R_SWITCH_BACK:
-                        //switch back to urs partition
-                        sprintf(str, "amlmmc switch 1 user");
-                        store_dbg("command: %s\n", str);
-                        ret = run_command(str, 0);
-                        if (ret != 0) {
-                                store_msg("amlmmc cmd %s failed \n",cmd);
-                                return -1;
-                        }
-
-#endif
-#ifndef CONFIG_AML_SECU_BOOT_V2
-#ifdef MMC_UBOOT_CLEAR_MBR
-                        unsigned char *tmp_buf= (unsigned char *)addr;
-                        tmp_buf[510]= _mbrFlag[0];
-                        tmp_buf[511]= _mbrFlag[1];
-#endif
-#endif// #ifndef CONFIG_AML_SECU_BOOT_V2
-                        return ret;
-                }else{
-                        store_dbg("CARD BOOT, %s %d ",__func__,__LINE__);
-                        return 0;
-                }
-
-        }
-        else if (strcmp(cmd, "rom_protect") == 0){
-                if (argc < 3)
-                        goto usage;
-
-                area = argv[2];
-                if (device_boot_flag == NAND_BOOT_FLAG) {
-                        sprintf(str, "amlnf  rom_protect  %s", area);
-                        store_dbg("command:	%s", str);
-                        ret = run_command(str, 0);
-                        if (ret != 0) {
-                                store_msg("nand cmd %s failed",cmd);
-                                return -1;
-                        }
-                        return ret;
-                }
-        }
-        else if (strcmp(cmd, "scrub") == 0){
-                off = (ulong)simple_strtoul(argv[2], NULL, 16);
-                sprintf(str, "amlnf  scrub %d", (int)off);
-                if (device_boot_flag == NAND_BOOT_FLAG) {
-                        ret = run_command(str, 0);
-                        if (ret != 0) {
-                                store_msg("nand cmd %s failed",cmd);
-                                return -1;
-                        }
-                }
-                else if(device_boot_flag == SPI_NAND_FLAG){
-                        store_dbg("spi+nand , %s %d ",__func__,__LINE__);
-                        ret = run_command(str, 0);
-                        if (ret != 0) {
-                                store_msg("nand cmd %s failed",cmd);
-                                return -1;
-                        }
+                    if ((init_flag > STORE_BOOT_ERASE_PROTECT_CACHE) && (init_flag <= STORE_BOOT_SCRUB_ALL)) {
                         ret = run_command("sf probe 2", 0);
-                        if (ret != 0) {
-                                store_msg("nand cmd %s failed",cmd);
-                                return -1;
-                        }
                         sprintf(str, "sf erase  0 0x%x", _SPI_FLASH_ERASE_SZ);
                         ret = run_command(str,0);
-                        if (ret != 0) {
-                                store_msg("nand cmd %s failed",cmd);
-                                return -1;
-                        }
-                        return ret;
+                    }
                 }
-                else if(device_boot_flag == SPI_EMMC_FLAG){
-                        store_dbg("spi+mmc , %s %d ",__func__,__LINE__);
-                        ret = run_command("amlmmc erase whole",0);
-                        if (ret != 0) {
-                                store_msg("amlmmc cmd %s failed \n",cmd);
-                                return -1;
-                        }
-                        return ret;
-                }
-                else if(device_boot_flag==EMMC_BOOT_FLAG){
-                        store_dbg("MMC BOOT, %s %d \n",__func__,__LINE__);
-                        device_boot_flag = EMMC_BOOT_FLAG;
-                        run_command("mmc dev 1", 0);
-                        ret = run_command("mmcinfo", 0);
-                        if (ret != 0) {
-                                store_msg("amlmmc cmd %s failed \n",cmd);
-                                return -1;
-                        }
+                if (device_boot_flag == SPI_EMMC_FLAG) {
+                    store_dbg("spi+mmc , %s %d ",__func__,__LINE__);
+                    ret = run_command("mmcinfo 1", 0);
+
+                    if (init_flag == STORE_BOOT_ERASE_PROTECT_CACHE) { // OTA upgrade protect cache
+                        store_msg("amlmmc erase non_cache \n");
+                        ret = run_command("amlmmc erase non_cache", 0);
+                    }else if(init_flag == STORE_BOOT_ERASE_ALL){ // erase all except  reserved area
                         if (_info_disprotect_back_before_mmcinfo1 & DISPROTECT_KEY) {
-                                MsgP("mmc key\n");
-                                run_command("mmc key", 0);
+                            run_command("mmc key", 0);
                         }
-                        MsgP("amlmmc erase 1");
+                        MsgP("amlmmc erase 1 \n");
                         ret = run_command("amlmmc erase 1", 0);
+                    }
+                    if ((init_flag > STORE_BOOT_ERASE_PROTECT_CACHE) && (init_flag <= STORE_BOOT_SCRUB_ALL)) {
+                        ret = run_command("sf probe 2", 0);
+                        sprintf(str, "sf erase  0 0x%x", _SPI_FLASH_ERASE_SZ);
+                        ret = run_command(str,0);
+                    }
                 }
+
+                if (ret != 0) {
+                    store_msg("cmd %s failed \n",cmd);
+                    return -1;
+                }
+
                 return ret;
+            }
+        default:
+            store_dbg("CARD BOOT, %s %d",__func__,__LINE__);
+            return CMD_RET_FAILURE;
+    }
+
+    return 0;
+}
+
+static int do_store_exit(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
+{
+    if (device_boot_flag == NAND_BOOT_FLAG) {
+        int ret = run_command("amlnf exit", 0);
+        if (ret != 0) {
+            MsgP("amlnf exit failed");
+            return -1;
         }
-        else if(strcmp(cmd, "init") == 0){
+    }
 
-                init_flag = (argc > 2) ? (int)simple_strtoul(argv[2], NULL, 16) : 0;
-                store_dbg("init_flag %d",init_flag);
+    return 0;
+}
 
-                if (device_boot_flag == _AML_DEVICE_BOOT_FLAG_DEFAULT ) {
-                        i = get_device_boot_flag();
-                        if (i) {
-                            MsgP("ERR:FAILED in get_device_boot_flag\n");
-                            return __LINE__;
-                        }
-                }
-                if (device_boot_flag == NAND_BOOT_FLAG)
-                {
-                        if ((init_flag >=STORE_BOOT_ERASE_PROTECT_CACHE) && (init_flag <=STORE_BOOT_SCRUB_ALL)) {
-                                sprintf(str, "amlnf  init  %d ",init_flag);
-                                run_command(str, 0);
-                        }
+static int do_store_disprotect(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
+{
+    char *area;
 
-                        sprintf(str, "amlnf  init  %d ",1);
-                        printf("command:	%s -> %d\n", str, init_flag);
-                        device_boot_flag = NAND_BOOT_FLAG;
-                        ret = run_command(str, 0);
-                        if (ret != 0) {
-#if	0
-                                if ((ret == NAND_INIT_FAILED) && (init_flag == STORE_BOOT_ERASE_ALL)) {
-                                        sprintf(str, "amlnf  init  %d ",4);
-                                        ret = run_command(str, 0);
-                                }
-                                if (ret) {
-                                        store_msg("nand cmd %s failed,ret=%d ",cmd,ret);
-                                        return -1;
-                                }
-                                return 0;
-#else
-                                return -1;
-#endif
-                        }
-                        return ret;
-                }
-                else if((device_boot_flag==SPI_EMMC_FLAG)||(device_boot_flag==SPI_NAND_FLAG))
-                {
-                        /*
-                           if (device_boot_flag == -1)
-                           {
-                           ret = run_command("sf probe 2", 0);
-                           if (ret) {
-                           store_msg(" cmd %s failed \n",cmd);
-                           return -1;
-                           }
-                           if ((init_flag > STORE_BOOT_ERASE_PROTECT_CACHE) && (init_flag <= STORE_BOOT_SCRUB_ALL)) {
-                           sprintf(str, "sf erase 0 0x%x", _SPI_FLASH_ERASE_SZ);
-                           ret = run_command(str,0);
-                           }
-                           sprintf(str, "amlnf  init  %d ",init_flag);
-                           store_dbg("command:	%s", str);
-                           ret = run_command(str, 0);
-                           if (ret < 0) //fail to init NAND flash
-                           {
-                           store_msg("nand cmd %s failed \n",cmd);
-                           device_boot_flag = SPI_EMMC_FLAG;
-                           store_dbg("spi+mmc , %s %d ",__func__,__LINE__);
-                           ret = run_command("mmcinfo 1", 0);
-                           if (ret != 0) {
-                           store_msg("mmc cmd %s failed \n",cmd);
-                           return -2;
-                           }
-                           if (init_flag == STORE_BOOT_ERASE_PROTECT_CACHE) { // OTA upgrade protect cache
-                           store_msg("mmc erase non_cache \n");
-                           ret = run_command("mmc erase non_cache", 0);
-                           }else if(init_flag >= STORE_BOOT_ERASE_ALL){ // erase all except  reserved area
-                           if (_info_disprotect_back_before_mmcinfo1 & DISPROTECT_KEY) {
-                           MsgP("mmc key;\n");
-                           run_command("mmc key", 0);
-                           }
-                           MsgP("mmc erase 1 \n");
-                           ret = run_command("mmc erase 1", 0);
-                           }
-                           return 0;
-                           }
-                           else if((ret == NAND_INIT_FAILED)&&(init_flag == STORE_BOOT_ERASE_ALL)){
-                           sprintf(str, "amlnf  init  %d ",4);
-                           ret = run_command(str, 0);
-                           }
-                           device_boot_flag = SPI_NAND_FLAG;
-                           return 0;
-                           }
-                           */
-                        if (device_boot_flag == SPI_NAND_FLAG) {
-                                store_dbg("spi+nand , %s %d ",__func__,__LINE__);
+    area = argv[2];
+    if (strcmp(area, "key") == 0) {
+        MsgP("disprotect key\n");
+        info_disprotect |= DISPROTECT_KEY;
+        _info_disprotect_back_before_mmcinfo1 |= DISPROTECT_KEY;
+    }
+    if (strcmp(area, "secure") == 0) {
+        store_msg("disprotect secure");
+        info_disprotect |= DISPROTECT_SECURE;
+    }
+    if (strcmp(area, "fbbt") == 0) {
+        store_msg("disprotect fbbt");
+        info_disprotect |= DISPROTECT_FBBT;
+    }
+    if (strcmp(area, "hynix") == 0) {
+        store_msg("disprotect hynix");
+        info_disprotect |= DISPROTECT_HYNIX;
+    }
 
-                                if ((init_flag >=STORE_BOOT_ERASE_PROTECT_CACHE) && (init_flag <=STORE_BOOT_SCRUB_ALL)) {
-                                        sprintf(str, "amlnf  init  %d ",init_flag);
-                                        run_command(str, 0);
-                                }
-                                sprintf(str, "amlnf  init  %d ",1);
-                                store_dbg("command:	%s", str);
-                                ret = run_command(str, 0);
-#if	0
-                                if ((ret == NAND_INIT_FAILED) && (init_flag == STORE_BOOT_ERASE_ALL)) {
-                                        sprintf(str, "amlnf  init  %d ",4);
-                                        ret = run_command(str, 0);
-                                }
-#else
-                                if (ret == NAND_INIT_FAILED) {
-                                        return -1;
-                                }
-#endif
-                                if ((init_flag > STORE_BOOT_ERASE_PROTECT_CACHE) && (init_flag <= STORE_BOOT_SCRUB_ALL)) {
-                                        ret = run_command("sf probe 2", 0);
-                                        sprintf(str, "sf erase  0 0x%x", _SPI_FLASH_ERASE_SZ);
-                                        ret = run_command(str,0);
-                                }
-                        }
-                        if (device_boot_flag == SPI_EMMC_FLAG) {
-                                store_dbg("spi+mmc , %s %d ",__func__,__LINE__);
-                                ret = run_command("mmcinfo 1", 0);
+    return 0;
+}
 
-                                if (init_flag == STORE_BOOT_ERASE_PROTECT_CACHE) { // OTA upgrade protect cache
-                                        store_msg("amlmmc erase non_cache \n");
-                                        ret = run_command("amlmmc erase non_cache", 0);
-                                }else if(init_flag == STORE_BOOT_ERASE_ALL){ // erase all except  reserved area
-                                        if (_info_disprotect_back_before_mmcinfo1 & DISPROTECT_KEY) {
-                                                run_command("mmc key", 0);
-                                        }
-                                        MsgP("amlmmc erase 1 \n");
-                                        ret = run_command("amlmmc erase 1", 0);
-                                }
-                                if ((init_flag > STORE_BOOT_ERASE_PROTECT_CACHE) && (init_flag <= STORE_BOOT_SCRUB_ALL)) {
-                                        ret = run_command("sf probe 2", 0);
-                                        sprintf(str, "sf erase  0 0x%x", _SPI_FLASH_ERASE_SZ);
-                                        ret = run_command(str,0);
-                                }
-                        }
+static int do_store_size(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
+{
+    int ret = 0;
+    uint64_t addr;
+    char *cmd = NULL, *s = NULL;
+    char	str[128];
 
-                        if (ret != 0) {
-                                store_msg("cmd %s failed \n",cmd);
-                                return -1;
-                        }
+    if (argc < 4) return CMD_RET_USAGE;
 
-                        return ret;
-                }
-                else if(device_boot_flag == EMMC_BOOT_FLAG){
-                        store_dbg("MMC BOOT, %s %d \n",__func__,__LINE__);
-                        device_boot_flag = EMMC_BOOT_FLAG;
-                        run_command("mmc dev 1",0);
-                        ret = run_command("mmcinfo", 0);
-                        if (ret != 0) {
-                                store_msg("amlmmc cmd %s failed \n",cmd);
-                                return -1;
-                        }
-                        if (init_flag == STORE_BOOT_ERASE_PROTECT_CACHE) { // OTA upgrade protect cache
-                                ret = run_command("amlmmc erase non_cache", 0);
-                        }else if(init_flag >= STORE_BOOT_ERASE_ALL){ // erase all except  reserved area
-                                if (_info_disprotect_back_before_mmcinfo1 & DISPROTECT_KEY) {
-                                        MsgP("amlmmc key\n");
-                                        run_command("amlmmc key", 0);
-                                }
-                                MsgP("amlmmc erase 1");
-                                ret = run_command("amlmmc erase 1", 0);
-                        }
-
-                        return ret;
-                }else{
-                        store_dbg("CARD BOOT, %s %d",__func__,__LINE__);
-                        return 0;
-                }
+    s = argv[2];
+    addr = (ulong)simple_strtoul(argv[3], NULL, 16);
+    if (device_boot_flag == NAND_BOOT_FLAG) {
+        sprintf(str, "amlnf  size  %s %llx",s,addr);
+        store_dbg("command:	%s", str);
+        ret = run_command(str, 0);
+        if (ret != 0) {
+            store_msg("nand cmd %s failed",cmd);
+            return -1;
         }
-        else if(strcmp(cmd, "size") == 0){
-
-                if (argc < 4)
-                        goto usage;
-
-                s = argv[2];
-                addr = (ulong)simple_strtoul(argv[3], NULL, 16);
-                if (device_boot_flag == NAND_BOOT_FLAG) {
-                        sprintf(str, "amlnf  size  %s %llx",s,addr);
-                        store_dbg("command:	%s", str);
-                        ret = run_command(str, 0);
-                        if (ret != 0) {
-                                store_msg("nand cmd %s failed",cmd);
-                                return -1;
-                        }
-                        return ret;
-                }
-                else if(device_boot_flag == SPI_NAND_FLAG){
-                        sprintf(str, "amlnf  size  %s %llx",s,addr);
-                        store_dbg("command:	%s", str);
-                        ret = run_command(str, 0);
-                        if (ret != 0) {
-                                store_msg("nand cmd %s failed",cmd);
-                                return -1;
-                        }
-                        return ret;
-                }
-                else if(device_boot_flag == SPI_EMMC_FLAG){
-                        store_dbg("MMC , %s %d ",__func__,__LINE__);
-                        sprintf(str, "amlmmc  size  %s %llx",s,addr);
-                        store_dbg("command:	%s", str);
-                        ret = run_command(str, 0);
-                        if (ret != 0) {
-                                store_msg("amlmmc cmd %s failed",cmd);
-                                return -1;
-                        }
-                        return ret;
-                }
-                else if(device_boot_flag==EMMC_BOOT_FLAG){
-                        store_dbg("MMC , %s %d ",__func__,__LINE__);
-                        sprintf(str, "amlmmc  size  %s %llx",s,addr);
-                        store_dbg("command:	%s", str);
-                        ret = run_command(str, 0);
-                        if (ret != 0) {
-                                store_msg("amlmmc cmd %s failed",cmd);
-                                return -1;
-                        }
-                        return ret;
-                }
-                else if(device_boot_flag==CARD_BOOT_FLAG){
-                        store_dbg("CARD BOOT , %s %d ",__func__,__LINE__);
-                        return 0;
-                }
-        }
-        else if(strcmp(cmd, "disprotect") == 0){
-                area = argv[2];
-                if (strcmp(area, "key") == 0) {
-                        MsgP("disprotect key\n");
-                        info_disprotect |= DISPROTECT_KEY;
-                        _info_disprotect_back_before_mmcinfo1 |= DISPROTECT_KEY;
-                }
-                if (strcmp(area, "secure") == 0) {
-                        store_msg("disprotect secure");
-                        info_disprotect |= DISPROTECT_SECURE;
-                }
-                if (strcmp(area, "fbbt") == 0) {
-                        store_msg("disprotect fbbt");
-                        info_disprotect |= DISPROTECT_FBBT;
-                }
-                if (strcmp(area, "hynix") == 0) {
-                        store_msg("disprotect hynix");
-                        info_disprotect |= DISPROTECT_HYNIX;
-                }
-                return 0;
-        }
-        else if(strcmp(cmd, "exit") == 0){
-
-                if (device_boot_flag == NAND_BOOT_FLAG) {
-                        ret = run_command("amlnf exit", 0);
-                        if (ret != 0) {
-                                store_msg("nand cmd %s failed",cmd);
-                                return -1;
-                        }
-                }
-                return 0;
-        }
-        else{
-                goto usage;
-        }
-
         return ret;
+    }
+    else if(device_boot_flag == SPI_NAND_FLAG){
+        sprintf(str, "amlnf  size  %s %llx",s,addr);
+        store_dbg("command:	%s", str);
+        ret = run_command(str, 0);
+        if (ret != 0) {
+            store_msg("nand cmd %s failed",cmd);
+            return -1;
+        }
+        return ret;
+    }
+    else if(device_boot_flag == SPI_EMMC_FLAG){
+        store_dbg("MMC , %s %d ",__func__,__LINE__);
+        sprintf(str, "amlmmc  size  %s %llx",s,addr);
+        store_dbg("command:	%s", str);
+        ret = run_command(str, 0);
+        if (ret != 0) {
+            store_msg("amlmmc cmd %s failed",cmd);
+            return -1;
+        }
+        return ret;
+    }
+    else if(device_boot_flag==EMMC_BOOT_FLAG){
+        store_dbg("MMC , %s %d ",__func__,__LINE__);
+        sprintf(str, "amlmmc  size  %s %llx",s,addr);
+        store_dbg("command:	%s", str);
+        ret = run_command(str, 0);
+        if (ret != 0) {
+            store_msg("amlmmc cmd %s failed",cmd);
+            return -1;
+        }
+        return ret;
+    }
+    else if(device_boot_flag==CARD_BOOT_FLAG){
+        store_dbg("CARD BOOT , %s %d ",__func__,__LINE__);
+        return CMD_RET_FAILURE;
+    }
 
-usage:
-        cmd_usage(cmdtp);
-        return 1;
+    return CMD_RET_FAILURE;
+}
 
+static int do_store_erase(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
+{
+    int i, ret = 0;
+    loff_t size=0;
+    char *cmd = NULL, *area;
+    char	str[128];
+    loff_t off;
+
+    if (argc <= 3) return CMD_RET_USAGE;
+
+    off = off;
+    area = argv[2];
+    if (strcmp(area, "boot") == 0) {
+        if (device_boot_flag == NAND_BOOT_FLAG) {
+            off =  simple_strtoul(argv[3], NULL, 16);
+            size =  simple_strtoul(argv[4], NULL, 16);
+            store_dbg("NAND BOOT,erase uboot : %s %d  off =%llx ,size=%llx",__func__,__LINE__, off, size);
+
+            ret = run_command("amlnf deverase boot 0",0);
+            if (ret != 0) {
+                store_msg("nand cmd %s failed ",cmd);
+                return -1;
+            }
+            return ret;
+        }else if((device_boot_flag==SPI_EMMC_FLAG)||(device_boot_flag==SPI_NAND_FLAG)){
+            off =  simple_strtoul(argv[3], NULL, 16);
+            size =  simple_strtoul(argv[4], NULL, 16);
+
+            store_dbg("SPI BOOT,erase uboot :  %s %d  off =%llx ,size=%llx",__func__,__LINE__,off,size);
+
+            ret = run_command("sf probe 2",0);
+            if (ret != 0) {
+                store_msg("nand cmd %s failed",cmd);
+                return -1;
+            }
+            sprintf(str, "sf erase  0 0x%x", CONFIG_ENV_IN_SPI_OFFSET);//store erase boot shoould NOT erase ENV in flash!
+            ret = run_command(str,0);
+            if (ret != 0) {
+                store_msg("nand cmd %s failed",cmd);
+                return -1;
+            }
+            return ret;
+        }else if(device_boot_flag == EMMC_BOOT_FLAG){
+            off =  simple_strtoul(argv[3], NULL, 16);
+            size =  simple_strtoul(argv[4], NULL, 16);
+
+            store_dbg("MMC BOOT,erase uboot :  %s %d  off =%llx ,size=%llx",__func__,__LINE__,off,size);
+
+            sprintf(str, "amlmmc  erase bootloader");
+            ret = run_command(str, 0);
+            if (ret != 0) {
+                store_msg("amlmmc cmd %s failed",cmd);
+                return -1;
+            }
+
+#ifdef MMC_BOOT_PARTITION_SUPPORT
+
+            for (i=0; i<2; i++) {
+                //switch to boot partition here
+                sprintf(str, "amlmmc switch 1 boot%d", i);
+                store_dbg("command: %s\n", str);
+                ret = run_command(str, 0);
+                if (ret == -1) {
+                    //store_msg("mmc cmd %s failed \n",cmd);
+                    return 0;
+                }
+                else if(ret != 0){
+                    store_msg("amlmmc cmd %s failed",cmd);
+                    //return -1;
+                    goto E_SWITCH_BACK;
+                }
+
+                //erase boot partition
+                sprintf(str, "amlmmc erase bootloader");
+                ret = run_command(str, 0);
+                if (ret != 0) {
+                    store_msg("amlmmc cmd %s failed",cmd);
+                    //return -1;
+                    goto E_SWITCH_BACK;
+                }
+            }
+
+E_SWITCH_BACK:
+            //switch back to urs partition
+            sprintf(str, "amlmmc switch 1 user");
+            store_dbg("command: %s\n", str);
+            ret = run_command(str, 0);
+            if (ret != 0) {
+                store_msg("amlmmc cmd %s failed \n",cmd);
+                return -1;
+            }
+
+#endif
+
+            return ret;
+        }else{
+            store_dbg("CARD BOOT,erase uboot :  %s %d  off =%llx ,size=%llx",__func__,__LINE__,off,size);
+            return 0;
+        }
+    }
+    else if(strcmp(area, "data") == 0){
+
+        if (device_boot_flag == NAND_BOOT_FLAG) {
+            store_dbg("NAND BOOT,erase data : %s %d  off =%llx ,size=%llx",__func__,__LINE__, off, size);
+
+            ret = run_command("amlnf  deverase data 0",0);
+            if (ret != 0) {
+                store_msg("nand cmd %s failed ",cmd);
+                return -1;
+            }
+
+            ret = run_command("amlnf  deverase code 0",0);
+            if (ret != 0) {
+                store_msg("nand cmd %s failed ",cmd);
+                return -1;
+            }
+            ret = run_command("amlnf  deverase cache 0",0);
+            if (ret != 0) {
+                store_msg("nand cmd %s failed ",cmd);
+                return -1;
+            }
+            return ret;
+        }
+        else if(device_boot_flag == SPI_NAND_FLAG){
+            store_dbg("spi+nand , %s %d ",__func__,__LINE__);
+            ret = run_command("amlnf  deverase data 0",0);
+            if (ret != 0) {
+                store_msg("nand cmd %s failed ",cmd);
+                return -1;
+            }
+
+            ret = run_command("amlnf  deverase code 0",0);
+            if (ret != 0) {
+                store_msg("nand cmd %s failed ",cmd);
+                return -1;
+            }
+            ret = run_command("amlnf  deverase cache 0",0);
+            if (ret != 0) {
+                store_msg("nand cmd %s failed ",cmd);
+                return -1;
+            }
+            return ret;
+        }
+        else if(device_boot_flag == SPI_EMMC_FLAG){
+            store_dbg("spi+mmc , %s %d ",__func__,__LINE__);
+            off = size =0;
+            ret = run_command("mmc  erase  1",0); // whole
+            if (ret != 0) {
+                store_msg("mmc cmd %s failed ",cmd);
+                return -1;
+            }
+
+            return ret;
+        }
+        else if(device_boot_flag==EMMC_BOOT_FLAG){
+            store_dbg("MMC BOOT,erase data : %s %d  off =%llx ,size=%llx",__func__,__LINE__, off, size);
+            off = size =0;
+            ret = run_command("amlmmc erase 1",0); //whole
+            if (ret != 0) {
+                store_msg("amlmmc cmd %s failed ",cmd);
+                return -1;
+            }
+            return ret;
+        }else{
+            store_dbg("CARD BOOT,erase data : %s %d  off =%llx ,size=%llx",__func__,__LINE__, off, size);
+            return 0;
+        }
+    }
+
+    return CMD_RET_USAGE;
+}
+
+static int do_store_scrub(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
+{
+    int ret = 0;
+    loff_t off=0;
+    char *cmd = NULL;
+    char	str[128];
+
+    off = (ulong)simple_strtoul(argv[2], NULL, 16);
+    sprintf(str, "amlnf  scrub %d", (int)off);
+    if (device_boot_flag == NAND_BOOT_FLAG) {
+        ret = run_command(str, 0);
+        if (ret != 0) {
+            store_msg("nand cmd %s failed",cmd);
+            return -1;
+        }
+    }
+    else if(device_boot_flag == SPI_NAND_FLAG){
+        store_dbg("spi+nand , %s %d ",__func__,__LINE__);
+        ret = run_command(str, 0);
+        if (ret != 0) {
+            store_msg("nand cmd %s failed",cmd);
+            return -1;
+        }
+        ret = run_command("sf probe 2", 0);
+        if (ret != 0) {
+            store_msg("nand cmd %s failed",cmd);
+            return -1;
+        }
+        sprintf(str, "sf erase  0 0x%x", _SPI_FLASH_ERASE_SZ);
+        ret = run_command(str,0);
+        if (ret != 0) {
+            store_msg("nand cmd %s failed",cmd);
+            return -1;
+        }
+        return ret;
+    }
+    else if(device_boot_flag == SPI_EMMC_FLAG){
+        store_dbg("spi+mmc , %s %d ",__func__,__LINE__);
+        ret = run_command("amlmmc erase whole",0);
+        if (ret != 0) {
+            store_msg("amlmmc cmd %s failed \n",cmd);
+            return -1;
+        }
+        return ret;
+    }
+    else if(device_boot_flag==EMMC_BOOT_FLAG){
+        store_dbg("MMC BOOT, %s %d \n",__func__,__LINE__);
+        device_boot_flag = EMMC_BOOT_FLAG;
+        run_command("mmc dev 1", 0);
+        ret = run_command("mmcinfo", 0);
+        if (ret != 0) {
+            store_msg("amlmmc cmd %s failed \n",cmd);
+            return -1;
+        }
+        if (_info_disprotect_back_before_mmcinfo1 & DISPROTECT_KEY) {
+            MsgP("mmc key\n");
+            run_command("mmc key", 0);
+        }
+        MsgP("amlmmc erase 1");
+        ret = run_command("amlmmc erase 1", 0);
+    }
+
+    return ret;
+}
+
+static int do_store_rom_protect(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
+{
+    char *cmd = NULL, *area = NULL;
+    char	str[128];
+
+    if (argc < 3)return CMD_RET_USAGE;
+
+    area = argv[2];
+    if (device_boot_flag == NAND_BOOT_FLAG) {
+        sprintf(str, "amlnf  rom_protect  %s", area);
+        store_dbg("command:	%s", str);
+        int ret = run_command(str, 0);
+        if (ret != 0) {
+            store_msg("nand cmd %s failed",cmd);
+            return -1;
+        }
+    }
+
+    return CMD_RET_SUCCESS;
+}
+
+static int do_store_rom_write(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
+{
+    uint64_t addr;
+    loff_t off=0, size=0;
+    char *cmd = NULL;
+    char	str[128];
+    int ret = 0;
+    int i = 0;
+
+    if (argc < 5) return CMD_RET_USAGE;
+
+    addr = (ulong)simple_strtoul(argv[2], NULL, 16);
+    if (get_off_size(argc - 3, (char **)(argv + 3), &off, &size) != 0) return CMD_RET_FAILURE;
+
+    if (device_boot_flag == NAND_BOOT_FLAG) {
+        sprintf(str, "amlnf  rom_write  0x%llx  0x%llx  0x%llx",  addr, off, size);
+        store_dbg("command:	%s", str);
+        ret = run_command(str, 0);
+        if (ret != 0) {
+            store_msg("nand cmd %s failed",cmd);
+            return -1;
+        }
+        return ret;
+    }
+    else if ((device_boot_flag==SPI_EMMC_FLAG)||(device_boot_flag==SPI_NAND_FLAG)){
+        ret = run_command("sf  probe 2",0);
+        if (ret != 0) {
+            store_msg("nand cmd %s failed",cmd);
+            return -1;
+        }
+        sprintf(str, "sf  erase  0x%llx  0x%llx ", off, size);
+        ret = run_command(str, 0);
+        if (ret != 0) {
+            store_msg("nand cmd %s failed",cmd);
+            return -1;
+        }
+        sprintf(str, "sf  write 0x%llx  0x%llx  0x%llx ",addr, off, size);
+        store_dbg("command:	%s", str);
+        ret = run_command(str, 0);
+        if (ret != 0) {
+            store_msg("nand cmd %s failed",cmd);
+            return -1;
+        }
+        return ret;
+    }
+    else if(device_boot_flag==EMMC_BOOT_FLAG){
+        store_dbg("MMC BOOT, %s %d \n",__func__,__LINE__);
+
+#ifndef CONFIG_AML_SECU_BOOT_V2
+#ifdef MMC_UBOOT_CLEAR_MBR
+        //modify the 55 AA info for emmc uboot
+        unsigned char *tmp_buf= (unsigned char *)addr;
+        _mbrFlag[0] = tmp_buf[510];
+        _mbrFlag[1] = tmp_buf[511];
+        tmp_buf[510]=0;
+        tmp_buf[511]=0;
+#endif
+#endif// #if defined(CONFIG_AML_SECU_BOOT_V2)
+        sprintf(str, "amlmmc  write bootloader 0x%llx  0x%llx  0x%llx", addr, off, size);
+        store_dbg("command: %s\n", str);
+        ret = run_command(str, 0);
+        if (ret != 0) {
+            store_msg("amlmmc cmd %s failed \n",cmd);
+            return -1;
+        }
+#ifdef MMC_BOOT_PARTITION_SUPPORT
+
+        for (i=0; i<2; i++) {
+            //switch to boot partition here
+            sprintf(str, "amlmmc switch 1 boot%d", i);
+            store_dbg("command: %s\n", str);
+            ret = run_command(str, 0);
+            if (ret == -1) {
+                //store_msg("mmc cmd %s failed \n",cmd);
+                ret = 0;
+                return ret;
+            }
+            else if(ret != 0){
+                store_msg("amlmmc cmd %s failed",cmd);
+                //return -1;
+                goto W_SWITCH_BACK;
+            }
+
+            //write uboot to boot partition
+            sprintf(str, "amlmmc  write bootloader 0x%llx  0x%llx  0x%llx", addr, off, size);
+            store_dbg("command: %s\n", str);
+            ret = run_command(str, 0);
+            if (ret != 0) {
+                store_msg("amlmmc cmd %s failed \n",cmd);
+                //return -1;
+                goto W_SWITCH_BACK;
+            }
+        }
+
+W_SWITCH_BACK:
+        //switch back to urs partition
+        sprintf(str, "amlmmc switch 1 user");
+        store_dbg("command: %s\n", str);
+        ret = run_command(str, 0);
+        if (ret != 0) {
+            store_msg("amlmmc cmd %s failed \n",cmd);
+            return -1;
+        }
+
+#endif
+        return ret;
+    }else{
+        store_dbg("CARD BOOT, %s %d",__func__,__LINE__);
+        return 0;
+    }
+
+}
+
+static int do_store_rom_read(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
+{
+    uint64_t addr;
+    loff_t off=0, size=0;
+    char *cmd = NULL;
+    char	str[128];
+    int ret = 0;
+    int i = 0;
+
+    if (argc < 5) return CMD_RET_USAGE;
+
+    addr = (ulong)simple_strtoul(argv[2], NULL, 16);
+    if (get_off_size(argc - 3, (char **)(argv + 3), &off, &size) != 0) return CMD_RET_FAILURE;
+
+    if (device_boot_flag == NAND_BOOT_FLAG) {
+        sprintf(str, "amlnf  rom_read  0x%llx  0x%llx  0x%llx",  addr, off, size);
+        store_dbg("command:	%s", str);
+        ret = run_command(str, 0);
+        if (ret != 0) {
+            store_msg("nand cmd %s failed",cmd);
+            return -1;
+        }
+        return ret;
+    }else if ((device_boot_flag==SPI_EMMC_FLAG)||(device_boot_flag==SPI_NAND_FLAG)){
+        ret = run_command("sf  probe 2",0);
+        if (ret != 0) {
+            return -1;
+        }
+        sprintf(str, "sf  read 0x%llx  0x%llx  0x%llx ",addr, off, size);
+        store_dbg("command:	%s", str);
+        ret = run_command(str, 0);
+        if (ret != 0) {
+            store_msg("nand cmd %s failed",cmd);
+            return -1;
+        }
+        return ret;
+    }else if (device_boot_flag==EMMC_BOOT_FLAG){
+        store_dbg("MMC BOOT, %s %d \n",__func__,__LINE__);
+        sprintf(str, "amlmmc  read bootloader 0x%llx  0x%llx  0x%llx", addr, off, size);
+        store_dbg("command: %s\n", str);
+        //tmp_buf= (unsigned char *)addr;
+        ret = run_command(str, 0);
+        if (ret != 0) {
+            store_msg("amlmmc cmd %s failed \n",cmd);
+            return -1;
+        }
+
+#ifdef MMC_BOOT_PARTITION_SUPPORT
+
+        for (i=0; i<2; i++) {
+            //switch to boot partition here
+            sprintf(str, "amlmmc switch 1 boot%d", i);
+            store_dbg("command: %s\n", str);
+            ret = run_command(str, 0);
+            if (ret == -1) {
+                //store_msg("mmc cmd %s failed \n",cmd);
+                return 0;
+            }
+            else if(ret != 0){
+                store_msg("amlmmc cmd %s failed",cmd);
+                goto R_SWITCH_BACK;
+                //return -1;
+            }
+
+            //write uboot to boot partition
+            sprintf(str, "amlmmc  read bootloader 0x%llx  0x%llx  0x%llx", addr, off, size);
+            store_dbg("command: %s\n", str);
+            ret = run_command(str, 0);
+            if (ret != 0) {
+                store_msg("amlmmc cmd %s failed \n",cmd);
+                //return -1;
+                goto R_SWITCH_BACK;
+            }
+        }
+
+R_SWITCH_BACK:
+        //switch back to urs partition
+        sprintf(str, "amlmmc switch 1 user");
+        store_dbg("command: %s\n", str);
+        ret = run_command(str, 0);
+        if (ret != 0) {
+            store_msg("amlmmc cmd %s failed \n",cmd);
+            return -1;
+        }
+
+#endif
+#ifndef CONFIG_AML_SECU_BOOT_V2
+#ifdef MMC_UBOOT_CLEAR_MBR
+        unsigned char *tmp_buf= (unsigned char *)addr;
+        tmp_buf[510]= _mbrFlag[0];
+        tmp_buf[511]= _mbrFlag[1];
+#endif
+#endif// #ifndef CONFIG_AML_SECU_BOOT_V2
+        return ret;
+    }else{
+        store_dbg("CARD BOOT, %s %d ",__func__,__LINE__);
+        return 0;
+    }
+
+}
+
+static int do_store_read(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
+{
+    uint64_t addr;
+    loff_t off=0, size=0;
+    char *cmd = NULL;
+    char	str[128];
+    int ret = 0;
+    char * s = argv[2];
+
+    if (argc < 6) return CMD_RET_USAGE;
+
+    addr = (ulong)simple_strtoul(argv[3], NULL, 16);
+
+    if (get_off_size(argc - 4, (char **)(argv + 4), &off, &size) != 0) return CMD_RET_FAILURE;
+
+    store_dbg("addr = %llx off= 0x%llx  size=0x%llx",addr,off,size);
+    if ((device_boot_flag == NAND_BOOT_FLAG)) {
+        sprintf(str, "amlnf  read_byte %s 0x%llx  0x%llx  0x%llx",s, addr, off, size);
+        store_dbg("command:	%s", str);
+        ret = run_command(str, 0);
+        if (ret != 0) {
+            store_msg("nand cmd %s failed ",cmd);
+            return -1;
+        }
+        return ret;
+    }
+    else if(device_boot_flag == SPI_NAND_FLAG){
+        sprintf(str, "amlnf  read_byte %s 0x%llx  0x%llx  0x%llx", s, addr, off, size);
+        store_dbg("command:	%s\n", str);
+        ret = run_command(str, 0);
+        if (ret != 0) {
+            store_msg("nand cmd %s failed \n",cmd);
+            return -1;
+        }
+        return ret;
+    }
+    else if(device_boot_flag == SPI_EMMC_FLAG){
+        store_dbg("spi+mmc , %s %d ",__func__,__LINE__);
+        sprintf(str, "amlmmc  read %s 0x%llx  0x%llx  0x%llx", s, addr, off, size);
+        store_dbg("command:	%s\n", str);
+        ret = run_command(str, 0);
+        if (ret != 0) {
+            store_msg("amlmmc cmd %s failed \n",cmd);
+            return -1;
+        }
+        return ret;
+    }
+    else if(device_boot_flag==EMMC_BOOT_FLAG) {
+        store_dbg("MMC BOOT, %s %d \n",__func__,__LINE__);
+        sprintf(str, "amlmmc  read %s 0x%llx  0x%llx  0x%llx", s, addr, off, size);
+        store_dbg("command:	%s\n", str);
+        ret = run_command(str, 0);
+        if (ret != 0) {
+            store_msg("amlmmc cmd %s failed \n",cmd);
+            return -1;
+        }
+        return ret;
+    }else{
+        store_dbg("CARD BOOT, %s %d ",__func__,__LINE__);
+
+        return 0;
+    }
+}
+
+static int do_store_write(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
+{
+    uint64_t addr;
+    loff_t off=0, size=0;
+    char *cmd = NULL;
+    char	str[128];
+    int ret = 0;
+    char * s = argv[2];
+
+    if (argc < 6) return CMD_RET_USAGE;
+
+    addr = (ulong)simple_strtoul(argv[3], NULL, 16);
+    if (get_off_size(argc - 4, (char **)(argv + 4), &off, &size) != 0) return CMD_RET_FAILURE;
+
+    if (device_boot_flag == NAND_BOOT_FLAG) {
+
+        sprintf(str, "amlnf  write_byte %s 0x%llx  0x%llx  0x%llx", s, addr, off, size);
+        store_dbg("command:	%s", str);
+        ret = run_command(str, 0);
+        if (ret != 0) {
+            store_msg("nand cmd %s failed ",cmd);
+            return -1;
+        }
+        return ret;
+    }
+    else if(device_boot_flag == SPI_NAND_FLAG){
+        store_dbg("spi+nand , %s %d ",__func__,__LINE__);
+        sprintf(str, "amlnf  write_byte %s 0x%llx  0x%llx  0x%llx", s, addr, off, size);
+        store_dbg("command:	%s", str);
+        ret = run_command(str, 0);
+        if (ret != 0) {
+            store_msg("nand cmd %s failed \n",cmd);
+            return -1;
+        }
+        return ret;
+    }
+    else if(device_boot_flag == SPI_EMMC_FLAG){
+        store_dbg("spi+mmc , %s %d ",__func__,__LINE__);
+        sprintf(str, "amlmmc  write %s 0x%llx  0x%llx  0x%llx", s, addr, off, size);
+        store_dbg("command: %s\n", str);
+        ret = run_command(str, 0);
+        if (ret != 0) {
+            store_msg("amlmmc cmd %s failed \n",cmd);
+            return -1;
+        }
+        return ret;
+    }
+    else if(device_boot_flag==EMMC_BOOT_FLAG){
+        store_dbg("MMC BOOT, %s %d \n",__func__,__LINE__);
+        sprintf(str, "amlmmc  write %s 0x%llx  0x%llx  0x%llx", s, addr, off, size);
+        store_dbg("command: %s\n", str);
+        ret = run_command(str, 0);
+        if (ret != 0) {
+            store_msg("amlmmc cmd %s failed \n",cmd);
+            return -1;
+        }
+        return ret;
+    }else{
+        store_dbg("CARD BOOT, %s %d ",__func__,__LINE__);
+        return CMD_RET_FAILURE;
+    }
+    return ret;
+}
+
+static cmd_tbl_t cmd_store_sub[] = {
+    U_BOOT_CMD_MKENT(init,          4, 0, do_store_init, "", ""),
+    U_BOOT_CMD_MKENT(exit,          3, 0, do_store_exit, "", ""),
+    U_BOOT_CMD_MKENT(disprotect,    3, 0, do_store_disprotect, "", ""),
+    U_BOOT_CMD_MKENT(rom_protect,   5, 0, do_store_rom_protect, "", ""),
+    U_BOOT_CMD_MKENT(size,          5, 0, do_store_size, "", ""),
+    U_BOOT_CMD_MKENT(scrub,         3, 0, do_store_scrub, "", ""),
+    U_BOOT_CMD_MKENT(erase,         5, 0, do_store_erase, "", ""),
+    U_BOOT_CMD_MKENT(read,          6, 0, do_store_read, "", ""),
+    U_BOOT_CMD_MKENT(write,         6, 0, do_store_write, "", ""),
+    U_BOOT_CMD_MKENT(rom_read,      5, 0, do_store_rom_read, "", ""),
+    U_BOOT_CMD_MKENT(rom_write,     5, 0, do_store_rom_write, "", ""),
+    U_BOOT_CMD_MKENT(dtb,           5, 0, do_store_dtb_ops, "", ""),
+};
+
+static int do_store(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
+{
+    cmd_tbl_t *c;
+
+    if (argc < 2) return CMD_RET_USAGE;
+
+    c = find_cmd_tbl(argv[1], cmd_store_sub, ARRAY_SIZE(cmd_store_sub));
+
+	if (c) {
+        return	c->cmd(cmdtp, flag, argc, argv);
+    }
+
+    return CMD_RET_USAGE;
 }
 
 
@@ -990,5 +1135,7 @@ U_BOOT_CMD(store, CONFIG_SYS_MAXARGS, 1, do_store,
 	"	erase the area which is uboot or data \n"
 	"store scrub off|partition size\n"
 	"	scrub the area from offset and size \n"
+	"store dtb read/write <size>\n"
+	"	read/write dtb, size is optional \n"
 );
 
