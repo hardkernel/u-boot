@@ -47,8 +47,19 @@ static int uart_tx_isfull(void)
 
 void wait_uart_empty(void)
 {
+#if 0
 	while (!(readl(P_UART_STATUS(UART_PORT_CONS)) & (1 << 22)))
 		;
+#else
+	unsigned int count=0;
+	do {
+		if ((readl(P_UART_STATUS(UART_PORT_CONS)) & (1 << 22)) == 0)
+			_udelay(4);
+		else
+			break;
+		count++;
+	} while ( count < 20000);
+#endif
 }
 
 int uart_putc(int c)

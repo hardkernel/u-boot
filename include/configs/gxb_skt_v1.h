@@ -29,6 +29,10 @@
 #warning "include warning"
 #endif
 
+/* configs for CEC */
+#define CONFIG_CEC_OSD_NAME		"Mbox"
+#define CONFIG_CEC_WAKEUP
+
 /* SMP Definitinos */
 #define CPU_RELEASE_ADDR		secondary_boot_func
 

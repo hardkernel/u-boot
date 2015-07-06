@@ -9,6 +9,7 @@
 #define	WIFI_WAKEUP			5
 #define	POWER_KEY_WAKEUP	6
 #define	AUTO_WAKEUP			7
+#define CEC_WAKEUP		8
 
 struct pwr_op {
 	void (*power_off_at_clk81)(void);
