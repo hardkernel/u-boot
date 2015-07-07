@@ -211,10 +211,6 @@ unsigned int ddr_init_dmc(void){
 	//__asm__ volatile("ISB");
 	//__asm__ volatile("DMB SY");
 
-	//change PL310 address filtering to allow DRAM reads to go to M1
-	wr_reg(0xc4200c04, 0xbff00000);
-	wr_reg(0xc4200c00, 0x00000001);
-
 	return 0;
 }
 
