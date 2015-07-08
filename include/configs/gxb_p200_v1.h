@@ -70,7 +70,7 @@
         "display_layer=osd1\0" \
         "display_color_fg=0xffff\0" \
         "display_color_bg=0\0" \
-        "fb_addr=0x3ec81000\0" \
+        "fb_addr=0x3f800000\0" \
         "fb_width=1920\0" \
         "fb_height=1080\0" \
         "usb_burning=update 1000\0" \
