@@ -847,17 +847,11 @@ static void config_hdmi20_tx ( enum hdmi_vic vic, struct hdmi_format_para *para,
 	hdmitx_wr_reg(HDMITX_DWC_MC_SWRSTZREQ, data32);
 } /* config_hdmi20_tx */
 
+/* Set TV encoder for HDMI */
 static void hdmitx_enc(enum hdmi_vic vic)
 {
-	// --------------------------------------------------------
-	// Set TV encoder for HDMI
-	// --------------------------------------------------------
-	printk("Configure VENC\n");
-
 	set_vmode_enc_hw(vic);
-
 	hdmi_tvenc_set(vic);
-
 	return;
 }
 
@@ -1935,6 +1929,22 @@ static void hdmitx_set_vsi_pkt(enum hdmi_vic vic)
 	hdmitx_set_reg_bits(HDMITX_DWC_FC_PACKET_TX_EN, 1, 4, 1);
 }
 
+/* record HDMITX current format */
+/* ISA_DEBUG_REG0 0x2600
+ * bit[11]: Y420
+ * bit[10:8]: HDMI VIC
+ * bit[7:0]: CEA VIC
+ */
+static void save_hdmitx_format(enum hdmi_vic vic, int y420)
+{
+	unsigned int data32;
+
+	data32 = vic & 0xff;
+	data32 |= (hdmitx_rd_reg(HDMITX_DWC_FC_VSDPAYLOAD1) & 0x7) << 8;
+	data32 |= (!!y420) << 11;
+	hd_write_reg(P_ISA_DEBUG_REG0, data32);
+}
+
 static void hdmitx_set_hw(struct hdmitx_dev* hdev)
 {
 	struct hdmi_format_para *para = NULL;
@@ -1971,6 +1981,10 @@ static void hdmitx_set_hw(struct hdmitx_dev* hdev)
 	default:
 		break;
 	}
+
+	/* Using ISA_DEBUG_REG0 to record HDMITX current format */
+	save_hdmitx_format(hdev->vic, hdev->mode420);
+
 	hd_write_reg(P_VPU_HDMI_FMT_CTRL,(((TX_INPUT_COLOR_FORMAT==HDMI_COLOR_FORMAT_420)?2:0)  << 0) | // [ 1: 0] hdmi_vid_fmt. 0=444; 1=convert to 422; 2=convert to 420.
 						 (2													 << 2) | // [ 3: 2] chroma_dnsmp. 0=use pixel 0; 1=use pixel 1; 2=use average.
 						 (0													 << 4) | // [	4] dith_en. 1=enable dithering before HDMI TX input.

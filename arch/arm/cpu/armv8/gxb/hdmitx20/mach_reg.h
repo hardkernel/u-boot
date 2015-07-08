@@ -299,6 +299,9 @@ unsigned sec_reg_read(unsigned *addr);
 #define PAD_PULL_UP_EN_REG6 0x204e	/* register.h:469 */
 #define P_PAD_PULL_UP_EN_REG6 CBUS_REG_ADDR(PAD_PULL_UP_EN_REG6)
 
+#define ISA_DEBUG_REG0 0x2600
+#define P_ISA_DEBUG_REG0 CBUS_REG_ADDR(ISA_DEBUG_REG0)
+
 #define VENC_DVI_SETTING 0x1b62	/* register.h:8014 */
 #define P_VENC_DVI_SETTING VCBUS_REG_ADDR(VENC_DVI_SETTING)
 
