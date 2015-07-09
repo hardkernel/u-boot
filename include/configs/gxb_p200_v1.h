@@ -81,11 +81,12 @@
         "wipe_data=successful\0"\
         "wipe_cache=successful\0"\
         "initargs="\
-            "rootfstype=ramfs init=/init console=ttyS0,115200 no_console_suspend earlyprintk=aml-uart,0xc81004c0 androidboot.selinux=permissive"\
+            "rootfstype=ramfs init=/init console=ttyS0,115200 no_console_suspend ao_jtag_on earlyprintk=aml-uart,0xc81004c0 androidboot.selinux=permissive"\
             "\0"\
         "upgrade_check="\
                 "if itest ${upgrade_step} == 3; then run init_display; run storeargs; run update; fi; "\
                 "if itest ${upgrade_step} == 1; then env default -a; setenv upgrade_step 2; saveenv; fi; "\
+                "jtagon apao; "\
                 "\0"\
         "storeargs="\
             "setenv bootargs ${initargs} logo=${display_layer},loaded,${fb_addr},${outputmode},hdmimode=${hdmimode} cvbsmode=${cvbsmode} hdmitx=${cecconfig} androidboot.firstboot=${firstboot}; "\
