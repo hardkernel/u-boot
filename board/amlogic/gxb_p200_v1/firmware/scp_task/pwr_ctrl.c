@@ -149,6 +149,22 @@ unsigned int detect_key(unsigned int suspend_from)
 			exit_reason = REMOTE_WAKEUP;
 			break;
 		}
+#ifdef CONFIG_BT_WAKEUP
+		if (!(readl(PREG_PAD_GPIO4_EN_N) & (0x01 << 20)) &&
+			(readl(PREG_PAD_GPIO4_O) & (0x01 << 20)) &&
+			!(readl(PREG_PAD_GPIO4_I) & (0x01 << 21))) {
+			exit_reason = BT_WAKEUP;
+			break;
+		}
+#endif
+#ifdef CONFIG_WIFI_WAKEUP
+		if (!(readl(PREG_PAD_GPIO4_EN_N) & (0x01 << 6)) &&
+			(readl(PREG_PAD_GPIO4_O) & (0x01 << 6)) &&
+			!(readl(PREG_PAD_GPIO4_I) & (0x01 << 7))) {
+			exit_reason = WIFI_WAKEUP;
+			break;
+		}
+#endif
 	} while (1);
 	return exit_reason;
 }

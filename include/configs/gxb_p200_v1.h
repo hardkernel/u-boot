@@ -45,6 +45,11 @@
 #define CONFIG_CEC_OSD_NAME		"Mbox"
 #define CONFIG_CEC_WAKEUP
 
+/* bt wake up */
+#define CONFIG_BT_WAKEUP
+/* wifi wake up */
+#define CONFIG_WIFI_WAKEUP
+
 /* SMP Definitinos */
 #define CPU_RELEASE_ADDR		secondary_boot_func
 
