@@ -1945,6 +1945,22 @@ static void save_hdmitx_format(enum hdmi_vic vic, int y420)
 	hd_write_reg(P_ISA_DEBUG_REG0, data32);
 }
 
+static void hdmitx_set_vdac(unsigned int enable)
+{
+	if (0 == enable)
+	{
+		hd_write_reg(P_HHI_VDAC_CNTL0, 0);
+		hd_write_reg(P_HHI_VDAC_CNTL1, 8);
+	}
+	else if (1 == enable)
+	{
+		hd_write_reg(P_HHI_VDAC_CNTL0, 1);
+		hd_write_reg(P_HHI_VDAC_CNTL1, 0);
+	}
+
+	return ;
+}
+
 static void hdmitx_set_hw(struct hdmitx_dev* hdev)
 {
 	struct hdmi_format_para *para = NULL;
@@ -1958,6 +1974,7 @@ static void hdmitx_set_hw(struct hdmitx_dev* hdev)
 	hdmitx_set_pll(hdev);
 	hdmitx_set_phy(hdev);
 	hdmitx_enc(hdev->vic);
+	hdmitx_set_vdac(0);
 
 	// --------------------------------------------------------
 	// Set up HDMI
