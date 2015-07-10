@@ -2100,7 +2100,81 @@ int amlnand_set_readretry_slc_para(struct amlnand_chip *aml_chip)
 		retry_info->handle = readretry_handle_toshiba;
 		retry_info->exit = readretry_exit_toshiba;
 		break;
+	/* toshiba 15nm */
+	case TOSHIBA_15NM:
+		retry_info->flag = 1;
+		retry_info->reg_cnt_lp = 5;
+		retry_info->retry_cnt_lp = 10;
 
+		retry_info->reg_addr_lp[0] = 0x04;
+		retry_info->reg_addr_lp[1] = 0x05;
+		retry_info->reg_addr_lp[2] = 0x06;
+		retry_info->reg_addr_lp[3] = 0x07;
+		retry_info->reg_addr_lp[3] = 0x0D;
+
+		retry_info->reg_offs_val_lp[0][0][0] = 0;
+		retry_info->reg_offs_val_lp[0][0][1] = 0;
+		retry_info->reg_offs_val_lp[0][0][2] = 0;
+		retry_info->reg_offs_val_lp[0][0][3] = 0;
+		retry_info->reg_offs_val_lp[0][0][4] = 0;
+
+		retry_info->reg_offs_val_lp[0][1][0] = 0x02;
+		retry_info->reg_offs_val_lp[0][1][1] = 0x04;
+		retry_info->reg_offs_val_lp[0][1][2] = 0x02;
+		retry_info->reg_offs_val_lp[0][1][3] = 0x00;
+		retry_info->reg_offs_val_lp[0][1][4] = 0x00;
+
+		retry_info->reg_offs_val_lp[0][2][0] = 0x7c;
+		retry_info->reg_offs_val_lp[0][2][1] = 0x00;
+		retry_info->reg_offs_val_lp[0][2][2] = 0x7c;
+		retry_info->reg_offs_val_lp[0][2][3] = 0x7c;
+		retry_info->reg_offs_val_lp[0][2][4] = 0x00;
+
+		retry_info->reg_offs_val_lp[0][3][0] = 0x7a;
+		retry_info->reg_offs_val_lp[0][3][1] = 0x00;
+		retry_info->reg_offs_val_lp[0][3][2] = 0x7a;
+		retry_info->reg_offs_val_lp[0][3][3] = 0x7a;
+		retry_info->reg_offs_val_lp[0][3][4] = 0x00;
+
+		retry_info->reg_offs_val_lp[0][4][0] = 0x78;
+		retry_info->reg_offs_val_lp[0][4][1] = 0x02;
+		retry_info->reg_offs_val_lp[0][4][2] = 0x78;
+		retry_info->reg_offs_val_lp[0][4][3] = 0x7a;
+		retry_info->reg_offs_val_lp[0][4][4] = 0x00;
+
+		retry_info->reg_offs_val_lp[0][5][0] = 0x7e;
+		retry_info->reg_offs_val_lp[0][5][1] = 0x04;
+		retry_info->reg_offs_val_lp[0][5][2] = 0x7e;
+		retry_info->reg_offs_val_lp[0][5][3] = 0x7a;
+		retry_info->reg_offs_val_lp[0][5][4] = 0x00;
+
+		retry_info->reg_offs_val_lp[0][6][0] = 0x76;
+		retry_info->reg_offs_val_lp[0][6][1] = 0x04;
+		retry_info->reg_offs_val_lp[0][6][2] = 0x76;
+		retry_info->reg_offs_val_lp[0][6][3] = 0x78;
+		retry_info->reg_offs_val_lp[0][6][4] = 0x00;
+
+		retry_info->reg_offs_val_lp[0][7][0] = 0x04;
+		retry_info->reg_offs_val_lp[0][7][1] = 0x04;
+		retry_info->reg_offs_val_lp[0][7][2] = 0x04;
+		retry_info->reg_offs_val_lp[0][7][3] = 0x76;
+		retry_info->reg_offs_val_lp[0][7][4] = 0x00;
+
+		retry_info->reg_offs_val_lp[0][8][0] = 0x06;
+		retry_info->reg_offs_val_lp[0][8][1] = 0x0a;
+		retry_info->reg_offs_val_lp[0][8][2] = 0x06;
+		retry_info->reg_offs_val_lp[0][8][3] = 0x02;
+		retry_info->reg_offs_val_lp[0][8][4] = 0x00;
+
+		retry_info->reg_offs_val_lp[0][9][0] = 0x74;
+		retry_info->reg_offs_val_lp[0][9][1] = 0x7c;
+		retry_info->reg_offs_val_lp[0][9][2] = 0x74;
+		retry_info->reg_offs_val_lp[0][9][3] = 0x76;
+		retry_info->reg_offs_val_lp[0][9][4] = 0x00;
+
+		retry_info->handle = readretry_handle_toshiba;
+		retry_info->exit = readretry_exit_toshiba;
+		break;
 	case SUMSUNG_2XNM:
 		/* read retry */
 		retry_info->flag = 1;
