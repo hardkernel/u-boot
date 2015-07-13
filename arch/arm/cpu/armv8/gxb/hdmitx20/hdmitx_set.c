@@ -874,10 +874,10 @@ static void hdmitx_set_phy(struct hdmitx_dev *hdev)
         case HDMI_4096x2160p60_256x135:
                 if (hdev->mode420 == 1) {
                 hd_write_reg(P_HHI_HDMI_PHY_CNTL0, 0x33634283);
-                hd_write_reg(P_HHI_HDMI_PHY_CNTL3, 0x013a115b);
+                hd_write_reg(P_HHI_HDMI_PHY_CNTL3, 0xb000115b);
                 } else {
                 hd_write_reg(P_HHI_HDMI_PHY_CNTL0, 0x33352245);
-                hd_write_reg(P_HHI_HDMI_PHY_CNTL3, 0x211a115b);
+                hd_write_reg(P_HHI_HDMI_PHY_CNTL3, 0x2100115b);
                 }
                 break;
         case HDMI_3840x2160p24_16x9:
@@ -885,15 +885,14 @@ static void hdmitx_set_phy(struct hdmitx_dev *hdev)
         case HDMI_3840x2160p30_16x9:
         case HDMI_4096x2160p24_256x135:
                 hd_write_reg(P_HHI_HDMI_PHY_CNTL0, 0x33634283);
-                hd_write_reg(P_HHI_HDMI_PHY_CNTL3, 0x013a115b);
+                hd_write_reg(P_HHI_HDMI_PHY_CNTL3, 0xb000115b);
                 break;
         case HDMI_1920x1080p60_16x9:
         default:
-                hd_write_reg(P_HHI_HDMI_PHY_CNTL0, 0x33632113);
-                hd_write_reg(P_HHI_HDMI_PHY_CNTL3, 0x211a115b);
+                hd_write_reg(P_HHI_HDMI_PHY_CNTL0, 0x33632122);
+                hd_write_reg(P_HHI_HDMI_PHY_CNTL3, 0x2000115b);
         break;
 	}
-
 /* P_HHI_HDMI_PHY_CNTL1	bit[1]: enable clock	bit[0]: soft reset */
 #define RESET_HDMI_PHY() \
 do { \
