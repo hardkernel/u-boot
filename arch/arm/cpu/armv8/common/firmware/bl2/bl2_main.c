@@ -56,6 +56,7 @@ void bl2_main(void)
 
 	/* Perform remaining generic architectural setup in S-El1 */
 	bl2_arch_setup();
+	bl2_plat_arch_setup();
 
 	/* process usb burning case */
 	if (BOOT_DEVICE_USB == get_boot_device()) {
