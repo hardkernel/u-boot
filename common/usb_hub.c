@@ -262,7 +262,8 @@ void usb_hub_port_connect_change(struct usb_device *dev, int port)
 		usb->speed = USB_SPEED_FULL;
 		break;
 	}
-
+	if ((usb->speed != USB_SPEED_HIGH) && (usb->speed != USB_SPEED_SUPER))
+		return;
 	dev->children[port] = usb;
 	usb->parent = dev;
 	usb->portnr = port + 1;
