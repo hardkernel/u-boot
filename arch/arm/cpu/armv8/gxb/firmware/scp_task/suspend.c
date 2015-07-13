@@ -27,7 +27,42 @@ void switch_to_clk81(void)
 {
 	aml_update_bits(AO_RTI_PWR_CNTL_REG0, 0x1<<0, 0);
 }
-
+static void gxbb_com_gate_off(void)
+{
+	/* gate off fix_clk_div2*/
+	aml_update_bits(HHI_MPLL_CNTL6, 1<<27, 0);
+	/* gate off fix_clk_div4*/
+	aml_update_bits(HHI_MPLL_CNTL6, 1<<29, 0);
+	/* gate off fix_clk_div5*/
+	aml_update_bits(HHI_MPLL_CNTL6, 1<<30, 0);
+	/* gate off fix_clk_div7*/
+	aml_update_bits(HHI_MPLL_CNTL6, 1<<31, 0);
+	/* switch vpu to fclk_div4 */
+	aml_update_bits(HHI_VPU_CLK_CNTL, 7 << 9, 0);
+	/* gate off mpll 0 ~ 3 */
+	aml_update_bits(HHI_MPLL_CNTL7, 1 << 15, 0);
+	aml_update_bits(HHI_MPLL_CNTL8, 1 << 15, 0);
+	aml_update_bits(HHI_MPLL_CNTL9, 1 << 15, 0);
+	aml_update_bits(HHI_MPLL3_CNTL0, 1 << 10, 0);
+}
+static void gxbb_com_gate_on(void)
+{
+	/* gate on mpll 0 ~ 3 */
+	aml_update_bits(HHI_MPLL_CNTL7, 1 << 15, 1 << 15);
+	aml_update_bits(HHI_MPLL_CNTL8, 1 << 15, 1 << 15);
+	aml_update_bits(HHI_MPLL_CNTL9, 1 << 15, 1 << 15);
+	aml_update_bits(HHI_MPLL3_CNTL0, 1 << 10, 1 << 10);
+	/* switch vpu to fclk_div3 */
+	aml_update_bits(HHI_VPU_CLK_CNTL, 7 << 9, 1 << 9);
+	/* gate on fix_clk_div2*/
+	aml_update_bits(HHI_MPLL_CNTL6, 1<<27, 1<<27);
+	/* gate on fix_clk_div4*/
+	aml_update_bits(HHI_MPLL_CNTL6, 1<<29, 1<<29);
+	/* gate on fix_clk_div5*/
+	aml_update_bits(HHI_MPLL_CNTL6, 1<<30, 1<<30);
+	/* gate on fix_clk_div7*/
+	aml_update_bits(HHI_MPLL_CNTL6, 1<<31, 1<<31);
+}
 void enter_suspend(void)
 {
 	int exit_reason = UDEFINED_WAKEUP;
@@ -44,10 +79,11 @@ void enter_suspend(void)
 	p_pwr_op->power_off_at_24M();
 
 	switch_to_32k();
+	gxbb_com_gate_off();
 	p_pwr_op->power_off_at_32k();
 	exit_reason = p_pwr_op->detect_key(suspend_from);
 	p_pwr_op->power_on_at_32k();
-
+	gxbb_com_gate_on();
 	switch_to_clk81();
 	uart_puts("exit_reason:0x");
 	uart_put_hex(exit_reason, 8);
