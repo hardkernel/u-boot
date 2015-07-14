@@ -295,7 +295,9 @@ unsigned int ddr_init_pctl(void){
 	wr_reg(DDR0_PUB_DTAR3, (0X18 | p_ddr_set->t_pub_dtar));
 
 	//// DDR PHY INITIALIZATION
-	//wr_reg(DDR0_PUB_PIR, 0X581);
+#ifdef CONFIG_PXP_EMULATOR
+	wr_reg(DDR0_PUB_PIR, 0X581);
+#endif
 	wr_reg(DDR0_PUB_DSGCR, p_ddr_set->t_pub_dsgcr);
 
 	//DDR0_SDRAM_INIT_WAIT :
