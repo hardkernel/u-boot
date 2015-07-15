@@ -32,6 +32,25 @@
 #include <asm/arch/cpu_sdio.h>
 #include <asm/arch/nand.h>
 #include <fip.h>
+#include <asm/arch/watchdog.h>
+
+void dump_ddr_data(void)
+{
+#ifdef CONFIG_SPL_DDR_DUMP
+	if (CONFIG_SPL_DDR_DUMP_FLAG == readl(P_PREG_STICKY_REG0)) {
+		printf("Dump ddr[0x%8x-0x%8x] to %s device[0x%8x-0x%8x]\n\n", CONFIG_SPL_DDR_DUMP_ADDR, \
+			(CONFIG_SPL_DDR_DUMP_ADDR+CONFIG_SPL_DDR_DUMP_SIZE), \
+			(CONFIG_SPL_DDR_DUMP_DEV_TYPE==BOOT_DEVICE_SD)?"External":"Internal", \
+			CONFIG_SPL_DDR_DUMP_DEV_OFFSET, (CONFIG_SPL_DDR_DUMP_DEV_OFFSET+CONFIG_SPL_DDR_DUMP_SIZE));
+		writel(0, P_PREG_STICKY_REG0);
+		watchdog_disable();
+		sdio_write_data(CONFIG_SPL_DDR_DUMP_DEV_TYPE, CONFIG_SPL_DDR_DUMP_ADDR, \
+			CONFIG_SPL_DDR_DUMP_DEV_OFFSET, CONFIG_SPL_DDR_DUMP_SIZE);
+		reset_system();
+	}
+#endif
+	return;
+}
 
 uint64_t storage_init(void)
 {
@@ -131,7 +150,11 @@ uint64_t spi_read(uint64_t src, uint64_t des, uint64_t size)
 	 * use sys_clock_freq/10: 0x002aa949
 	 * use sys_clock_freq/16: 0x002aaf7f
 	 */
+#ifndef CONFIG_PXP_EMULATOR
+	writel(0x2aa949,P_SPI_FLASH_CTRL);
+#else
 	writel(0x002ab000,P_SPI_FLASH_CTRL);
+#endif
 
 	/*load data*/
 	uint64_t des64, src64;
@@ -248,6 +271,113 @@ uint64_t sdio_read_blocks(struct sd_emmc_global_regs *sd_emmc_regs,
 	return ret;
 }
 
+uint64_t sdio_write_blocks(struct sd_emmc_global_regs *sd_emmc_regs,
+			uint64_t src, uint64_t des, uint64_t size, uint64_t mode)
+{
+	unsigned ret = 0;
+	unsigned write_start;
+	unsigned vstart = 0;
+	unsigned status_irq = 0;
+	unsigned response[4];
+	struct cmd_cfg *des_cmd_cur = NULL;
+	struct sd_emmc_desc_info desc[MAX_DESC_NUM];
+	struct sd_emmc_desc_info *desc_cur;
+	struct sd_emmc_start *desc_start = (struct sd_emmc_start*)&vstart;
+	struct sd_emmc_status *status_irq_reg = (void *)&status_irq;
+
+	memset(desc,0,MAX_DESC_NUM*sizeof(struct sd_emmc_desc_info));
+	desc_cur = desc;
+
+	if (mode)
+		write_start = des>>9;
+	else
+		write_start = des;
+
+	des_cmd_cur = (struct cmd_cfg *)&(desc_cur->cmd_info);
+	//starting reading......
+		des_cmd_cur->cmd_index = 25;  //muti write data command
+    if (mode) {
+		des_cmd_cur->block_mode = 1;
+		des_cmd_cur->length = size;
+	}else{
+		des_cmd_cur->block_mode = 0;
+		des_cmd_cur->length = size;
+	}
+
+	des_cmd_cur->data_io = 1;
+	des_cmd_cur->data_wr = 1;
+	des_cmd_cur->data_num = 0;
+	des_cmd_cur->no_resp = 0;
+	des_cmd_cur->resp_num = 0;
+	des_cmd_cur->timeout = 7;
+	des_cmd_cur->owner = 1;
+	des_cmd_cur->end_of_chain = 1;
+
+	desc_cur->cmd_arg = write_start;
+	desc_cur->data_addr = src;
+	desc_cur->data_addr &= ~(1<<0);   //DDR
+	desc_cur->resp_addr = (unsigned long)response;
+
+	desc_start->init = 0;
+	desc_start->busy = 1;
+	desc_start->addr = (unsigned long)desc >> 2;
+	sd_emmc_regs->gstatus = 0x3fff;
+	//sd_emmc_regs->gstart = vstart;
+	sd_emmc_regs->gcmd_cfg = desc_cur->cmd_info;
+	sd_emmc_regs->gcmd_dat = desc_cur->data_addr;
+	sd_emmc_regs->gcmd_arg = desc_cur->cmd_arg;
+
+
+	while (1) {
+		status_irq = sd_emmc_regs->gstatus;
+		if (status_irq_reg->end_of_chain)
+			break;
+	}
+	//send stop cmd
+	desc_cur = &desc[1];
+	des_cmd_cur = (struct cmd_cfg *)&(desc_cur->cmd_info);
+	des_cmd_cur->cmd_index = 12;
+	des_cmd_cur->data_io = 0;
+	des_cmd_cur->no_resp = 0;
+	des_cmd_cur->r1b = 1;
+	des_cmd_cur->owner = 1;
+	des_cmd_cur->end_of_chain = 1;
+
+	desc_start->init = 0;
+	desc_start->busy = 1;
+	desc_start->addr = (unsigned long)desc_cur >> 2;
+	sd_emmc_regs->gstatus = 0x3fff;
+	//sd_emmc_regs->gstart = vstart;
+	sd_emmc_regs->gcmd_cfg = desc_cur->cmd_info;
+	sd_emmc_regs->gcmd_dat = desc_cur->data_addr;
+	sd_emmc_regs->gcmd_arg = desc_cur->cmd_arg;
+
+	while (1) {
+		status_irq = sd_emmc_regs->gstatus;
+		//printf("status_irq=0x%x\n",status_irq);
+		if (status_irq_reg->end_of_chain)
+			break;
+	}
+
+	if (status_irq_reg->rxd_err)
+		ret |= SD_EMMC_RXD_ERROR;
+	if (status_irq_reg->txd_err)
+		ret |= SD_EMMC_TXD_ERROR;
+	if (status_irq_reg->desc_err)
+		ret |= SD_EMMC_DESC_ERROR;
+	if (status_irq_reg->resp_err)
+		ret |= SD_EMMC_RESP_CRC_ERROR;
+	if (status_irq_reg->resp_timeout)
+		ret |= SD_EMMC_RESP_TIMEOUT_ERROR;
+	if (status_irq_reg->desc_timeout)
+		ret |= SD_EMMC_DESC_TIMEOUT_ERROR;
+	if (ret)
+		printf("sd/emmc write data error: status=0x%x; ret=%d\n",ret);
+	//else
+		//printf("write data success!\n");
+	return ret;
+}
+
 uint64_t sdio_read_data(uint64_t boot_device, uint64_t src, uint64_t des, uint64_t size)
 {
 	unsigned mode,blk_cnt,ret;
@@ -273,6 +403,44 @@ uint64_t sdio_read_data(uint64_t boot_device, uint64_t src, uint64_t des, uint64
 	blk_cnt = ((size+511)&(~(511)))>>9;
 	do {
 		ret = sdio_read_blocks(sd_emmc_regs,src,des,(blk_cnt>MAX_BLOCK_COUNTS)?MAX_BLOCK_COUNTS:blk_cnt,mode);
+		if (ret)
+			return ret;
+		if (blk_cnt>MAX_BLOCK_COUNTS) {
+			src += MAX_BLOCK_COUNTS<<9;
+			des += MAX_BLOCK_COUNTS<<9;
+			blk_cnt -= MAX_BLOCK_COUNTS;
+		}else
+			break;
+	}while(1);
+
+	return ret;
+}
+
+uint64_t sdio_write_data(uint64_t boot_device, uint64_t src, uint64_t des, uint64_t size)
+{
+	unsigned mode,blk_cnt,ret;
+	struct sd_emmc_global_regs *sd_emmc_regs=0;
+	union sd_emmc_setup *s_setup = (union sd_emmc_setup *)SEC_AO_SEC_GP_CFG1;
+
+	if (boot_device == BOOT_DEVICE_EMMC)
+		sd_emmc_regs = (struct sd_emmc_global_regs *)SD_EMMC_BASE_C;
+	else if(boot_device == BOOT_DEVICE_SD)
+		sd_emmc_regs = (struct sd_emmc_global_regs *)SD_EMMC_BASE_B;
+	else
+		printf("sd/emmc boot device error\n");
+
+	mode = s_setup->b.sdhc | s_setup->b.hcs ? 1 : 0;
+
+#if 0
+	if (mode)
+		printf("sd/emmc is lba mode\n");
+	else
+		printf("sd/emmc is byte mode\n");
+#endif
+
+	blk_cnt = ((size+511)&(~(511)))>>9;
+	do {
+		ret = sdio_write_blocks(sd_emmc_regs,src,des,(blk_cnt>MAX_BLOCK_COUNTS)?MAX_BLOCK_COUNTS:blk_cnt,mode);
 		if (ret)
 			return ret;
 		if (blk_cnt>MAX_BLOCK_COUNTS) {

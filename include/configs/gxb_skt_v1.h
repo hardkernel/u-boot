@@ -208,6 +208,16 @@
 #define CONFIG_CMD_CPU_TEMP 1
 #define CONFIG_SYS_MEM_TOP_HIDE 0x08000000 //hide 128MB for kernel reserve
 
+/* ddr dump function defines */
+//#define CONFIG_SPL_DDR_DUMP 1
+#ifdef CONFIG_SPL_DDR_DUMP
+	#define CONFIG_SPL_DDR_DUMP_ADDR 			0x01000000
+	#define CONFIG_SPL_DDR_DUMP_SIZE			0x00200000
+	#define CONFIG_SPL_DDR_DUMP_DEV_TYPE		0x4 //device type, 1:emmc, 4:sd
+	#define CONFIG_SPL_DDR_DUMP_DEV_OFFSET		0x40000000 //offset of store device
+	#define CONFIG_SPL_DDR_DUMP_FLAG			0x1 //flag write in sticky reg
+#endif
+
 //support secure boot
 //#define CONFIG_AML_SECURE_UBOOT   1
 

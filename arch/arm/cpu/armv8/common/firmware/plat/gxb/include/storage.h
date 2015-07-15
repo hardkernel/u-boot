@@ -44,6 +44,10 @@ uint64_t sdio_read_data(uint64_t boot_device, uint64_t src, uint64_t des, uint64
 uint64_t usb_boot(uint64_t src, uint64_t des, uint64_t size);
 uint64_t get_boot_device(void);
 uint64_t get_ddr_size(void);
+void dump_ddr_data(void);
+uint64_t sdio_write_data(uint64_t boot_device, uint64_t src, uint64_t des, uint64_t size);
+uint64_t sdio_write_blocks(struct sd_emmc_global_regs *sd_emmc_regs,
+			uint64_t src, uint64_t des, uint64_t size, uint64_t mode);
 
 /*SIZE defines*/
 #define SIZE_1K							0x400

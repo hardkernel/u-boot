@@ -54,7 +54,11 @@ unsigned int ddr_init(void){
 	ddr_init_pctl();
 	ddr_init_dmc();
 	ddr_print_info();
-	ddr_test();
+#ifdef CONFIG_SPL_DDR_DUMP
+	if (CONFIG_SPL_DDR_DUMP_FLAG != readl(P_PREG_STICKY_REG0)) {
+		ddr_test();
+	}
+#endif
 	return 0;
 }
 

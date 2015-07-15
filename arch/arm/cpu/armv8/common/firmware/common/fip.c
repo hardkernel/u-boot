@@ -41,6 +41,9 @@
 static int aml_check(unsigned long pBuffer,unsigned int nLength,unsigned int nAESFlag);
 
 void bl2_load_image(void){
+	/* dump ddr data when function enabled and flag set */
+	dump_ddr_data();
+
 	//meminfo_t *bl2_tzram_layout;
 	bl31_params_t *bl2_to_bl31_params;
 	entry_point_info_t *bl31_ep_info;
