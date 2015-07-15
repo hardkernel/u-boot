@@ -1419,6 +1419,7 @@ int mmc_init(struct mmc *mmc)
 	debug("%s: %d, time %lu\n", __func__, err, get_timer(start));
 	if (err)
 		return err;
+	printf("[%s] mmc init success\n", __func__);
 	if (mmc->block_dev.dev == 1)  {device_boot_flag = EMMC_BOOT_FLAG; }
 #ifdef CONFIG_STORE_COMPATIBLE
 	if (aml_is_emmc_tsd(mmc)) { // eMMC OR TSD

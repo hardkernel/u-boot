@@ -130,7 +130,8 @@ static struct partitions* find_partition_by_name (struct partitions *part_tbl, i
 struct partitions* find_mmc_partition_by_name (char *name)
 {
     struct partitions *p=NULL;
-
+    if (mmc_partition_config_of == NULL)
+        return p;
     p = find_partition_by_name(mmc_partition_config_of->partitions, mmc_partition_config_of->part_num, name);
     if (!p)
         printf("Can not find partition name \"%s\"\n", name);

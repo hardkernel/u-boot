@@ -602,9 +602,9 @@ int do_amlmmcops(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
                                         n = mmc->block_dev.block_erase(dev, blk, cnt);
 
                                 printf("dev # %d, %s, several blocks erased %s\n",
-                                                dev, (flag == 0) ? " ":(argv[2]),(n == cnt) ? "OK" : "ERROR");
+                                                dev, (flag == 0) ? " ":(argv[2]),(n == 0) ? "OK" : "ERROR");
 
-                                return (n == cnt) ? 0 : 1;
+                                return (n == 0) ? 0 : 1;
 
                         } else
                                 rc = cmd_usage(cmdtp);
