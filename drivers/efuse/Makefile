@@ -22,3 +22,6 @@
 #
 
 obj-$(CONFIG_EFUSE) += efuse.o
+ifdef CONFIG_OF_LIBFDT
+obj-$(CONFIG_EFUSE) += efuse_usr_space_api.o
+endif
