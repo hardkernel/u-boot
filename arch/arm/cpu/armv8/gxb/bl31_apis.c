@@ -26,8 +26,6 @@
 static long sharemem_input_base;
 static long sharemem_output_base;
 
-#define __asmeq(x, y)  ".ifnc " x "," y " ; .err ; .endif\n\t"
-
 long get_sharemem_info(unsigned long function_id)
 {
 	asm volatile(

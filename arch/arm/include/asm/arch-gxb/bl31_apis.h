@@ -31,6 +31,11 @@
 #define GET_SHARE_MEM_INPUT_BASE		0x82000020
 #define GET_SHARE_MEM_OUTPUT_BASE		0x82000021
 #define GET_REBOOT_REASON		0x82000022
+#define GET_SHARE_STORAGE_IN_BASE		0x82000023
+#define GET_SHARE_STORAGE_OUT_BASE		0x82000024
+#define GET_SHARE_STORAGE_BLOCK_BASE	0x82000025
+#define GET_SHARE_STORAGE_MESSAGE_BASE	0x82000026
+#define GET_SHARE_STORAGE_BLOCK_SIZE		0x82000027
 
 /* Set Reboot Reason then Reboot*/
 #define PSCI_SYS_REBOOT		0x84000009
@@ -51,6 +56,17 @@
 /* JTAG*/
 #define JTAG_ON                                0x82000040
 #define JTAG_OFF                               0x82000041
+
+/* Security Key*/
+#define SECURITY_KEY_QUERY	0x82000060
+#define SECURITY_KEY_READ	0x82000061
+#define SECURITY_KEY_WRITE	0x82000062
+#define SECURITY_KEY_TELL		0x82000063
+#define SECURITY_KEY_VERIFY	0x82000064
+#define SECURITY_KEY_STATUS	0x82000065
+#define SECURITY_KEY_NOTIFY	0x82000066
+#define SECURITY_KEY_LIST		0x82000067
+#define SECURITY_KEY_REMOVE	0x82000068
 
 /* Secure HAL APIs */
 #define TRUSTZONE_HAL_API_SRAM                  0x400
@@ -91,6 +107,8 @@ struct sram_hal_api_arg {
 	#define GXB_IMG_DEC_RMD   (1<<1)
 	#define GXB_IMG_DEC_DTB   (1<<2)
 	#define GXB_IMG_DEC_ALL   (GXB_IMG_DEC_KNL|GXB_IMG_DEC_RMD|GXB_IMG_DEC_DTB)
+
+#define __asmeq(x, y)  ".ifnc " x "," y " ; .err ; .endif\n\t"
 
 void aml_set_jtag_state(unsigned state, unsigned select);
 unsigned aml_get_reboot_reason(void);

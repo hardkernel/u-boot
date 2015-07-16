@@ -307,6 +307,7 @@
 //DST : "fip/boot.img.encrypt"
 //#define CONFIG_AML_CRYPTO_IMG       1
 
+#define CONFIG_SECURE_STORAGE 1
 
 #endif
 
