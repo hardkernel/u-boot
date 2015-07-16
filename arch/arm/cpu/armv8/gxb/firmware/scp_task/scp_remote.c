@@ -1,10 +1,6 @@
 #include "config.h"
 #include "registers.h"
 #include "task_apis.h"
-#undef	P_AO_IR_DEC_STATUS
-#undef	P_AO_IR_DEC_FRAME
-#define   P_AO_IR_DEC_STATUS                   (0xc8100400 + (0x26 << 2))
-#define   P_AO_IR_DEC_FRAME                    (0xc8100400 + (0x25 << 2))
 
 enum{
 	DECODEMODE_NEC = 0,
@@ -23,22 +19,22 @@ enum{
 };
 
 #define IR_POWER_KEY_MASK 0xffffffff
-unsigned int kk[] = {
+static unsigned int kk[] = {
 	0xe51afb04,
 };
-int init_remote(void)
+static int init_remote(void)
 {
 	unsigned int val;
-	val = readl(P_AO_IR_DEC_STATUS);
-	val = readl(P_AO_IR_DEC_FRAME);
+	val = readl(AO_IR_DEC_STATUS);
+	val = readl(AO_IR_DEC_FRAME);
 	return val;
 }
 
-int remote_detect_key(void)
+static int remote_detect_key(void)
 {
 	unsigned power_key;
-	if (((readl(P_AO_IR_DEC_STATUS))>>3) & 0x1) {
-		power_key = readl(P_AO_IR_DEC_FRAME);
+	if (((readl(AO_IR_DEC_STATUS))>>3) & 0x1) {
+		power_key = readl(AO_IR_DEC_FRAME);
 		if ((power_key&IR_POWER_KEY_MASK) == kk[DECODEMODE_NEC])
 			return 1;
 

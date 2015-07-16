@@ -3,9 +3,11 @@
 #include "task_apis.h"
 #include "suspend.h"
 unsigned int time;
+#include <scp_remote.c>
 
 #include <pwr_ctrl.c>
 #include <hdmi_cec_arc.c>
+
 static struct pwr_op pwr_op_d;
 static struct pwr_op *p_pwr_op;
 

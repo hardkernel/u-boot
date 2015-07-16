@@ -25,10 +25,9 @@ void enter_suspend(void);
 void get_dvfs_info(unsigned int domain,
 		unsigned char *info_out, unsigned int *size_out);
 void set_dvfs(unsigned int domain, unsigned int index);
-int remote_detect_key(void);
 void *memcpy(void *dest, const void *src, unsigned int count);
 void *memset(void *s, int c, unsigned int count);
 void _udelay(unsigned int us);
 unsigned int get_time(void);
-int  init_remote(void);
+
 #endif
