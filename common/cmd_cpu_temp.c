@@ -64,7 +64,7 @@ int adc_init_chan6(void)
 
 int get_adc_sample(int chan)
 {
-	int value;
+	unsigned value;
 
 	/*adc reg3 bit29: read adc sample value flag*/
 	while (readl(0xc110868c)&(1<<29))
@@ -77,19 +77,21 @@ int get_adc_sample(int chan)
 
 	value = readl(0xc1108698);
 	writel(readl(0xc110868c)&(~(1 < 29)), 0xc110868c);
-	value = value&0xfff;
+	value = value&0x3ff;
 
 	return value;
 }
 unsigned int get_cpu_temp(int tsc, int flag)
 {
-	int value;
+	unsigned value;
 	if (flag) {
-		value = readl(0xc810062c);
-	  writel((value|((tsc&0x1f)<<14)), 0xc810062c); /* bit[14-18]:tsc */
+		value = readl(0xc11086ac);
+	  writel(((value&(~(0x1f<<14)))|((tsc&0x1f)<<14)), 0xc11086ac);
+	  /* bit[14-18]:tsc */
 	} else{
-		value = readl(0xc810062c);
-	  writel((value|(0x10<<14)), 0xc810062c); /* bit[14-18]:0x16 */
+		value = readl(0xc11086ac);
+	  writel(((value&(~(0x1f<<14)))|(0x10<<14)), 0xc11086ac);
+	  /* bit[14-18]:0x16 */
 	}
 	return  get_adc_sample(6);
 }
@@ -120,7 +122,7 @@ void quicksort(int a[], int numsize)
 int do_read_calib_data(int *flag, int *temp, int *TS_C)
 {
 	char buf[2];
-	int ret;
+	unsigned ret;
 	*flag = 0;
 	buf[0] = 0; buf[1] = 0;
 
@@ -128,7 +130,8 @@ int do_read_calib_data(int *flag, int *temp, int *TS_C)
 
 	ret = readl(AO_SEC_SD_CFG12);
 	flagbuf = (ret>>24)&0xff;
-	if (((int)flagbuf != 0xA0) && ((int)flagbuf != 0x40)) {
+	if (((int)flagbuf != 0xA0) && ((int)flagbuf != 0x40)
+		&& ((int)flagbuf != 0xC0)) {
 		printf("thermal ver flag error!\n");
 		printf("flagbuf is 0x%x!\n", flagbuf);
 		return -1;
@@ -142,6 +145,9 @@ int do_read_calib_data(int *flag, int *temp, int *TS_C)
 	*TS_C =  *temp&0x1f;
 	*flag = (*temp&0x8000)>>15;
 	*temp = (*temp&0x7fff)>>5;
+
+	if (0x40 == (int)flagbuf)/*ver2*/
+		*TS_C = 16;
 	printf("adc=%d,TS_C=%d,flag=%d\n", *temp, *TS_C, *flag);
 	return ret;
 }
@@ -149,17 +155,28 @@ int do_read_calib_data(int *flag, int *temp, int *TS_C)
 static int do_write_trim(cmd_tbl_t *cmdtp, int flag1,
 	int argc, char * const argv[])
 {
-	 int temp = 0;
-	 int temp1[NUM];
+	int temp = 0;
+	int temp1[NUM];
 	char buf[2];
 	unsigned int data;
 	int i, TS_C;
 	int ret;
+	int flag;
 
 	memset(temp1, 0, NUM);
 
 	adc_init_chan6();
 
+	ret = do_read_calib_data(&flag, &temp, &TS_C);
+	if (ret > 0) {
+		printf("chip has trimed!!!\n");
+		return 0;
+	} else {
+		printf("chip is not triming! triming now......\n");
+		flag = 0;
+		temp = 0;
+		TS_C = 0;
+	}
 	for (i = 0; i < NUM; i++) {
 		udelay(10000);
 
@@ -218,7 +235,8 @@ static int do_read_temp(cmd_tbl_t *cmdtp, int flag1,
 {
 	int temp;
 	int TS_C;
-	int flag, ret, adc, count, tempa;
+	int flag, adc, count, tempa;
+	unsigned ret;
 	flag = 0;
 
 	adc_init_chan6();
@@ -270,8 +288,8 @@ static int do_temp_triming(cmd_tbl_t *cmdtp, int flag1,
 	run_command("write_trim", 0);
 	/*FB calibration v5: 1010 0000*/
 	/*manual calibration v2: 0100 0000*/
-	printf("manual calibration v2: 0100 0000\n");
-	run_command("write_version 0x40", 0);
+	printf("manual calibration v3: 1100 0000\n");
+	run_command("write_version 0xc0", 0);
 	run_command("read_temp", 0);
 	return 0;
 }
