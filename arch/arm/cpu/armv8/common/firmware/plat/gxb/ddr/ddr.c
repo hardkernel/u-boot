@@ -36,6 +36,7 @@
 #include <asm/arch/watchdog.h>
 #include <cache.h>
 #include "timing.c"
+#include "ddr_detect.c"
 
 static ddr_set_t * p_ddr_set = &__ddr_setting;
 static ddr_timing_t * p_ddr_timing = NULL;
@@ -127,6 +128,9 @@ unsigned int ddr_init_pll(void){
 }
 
 void ddr_print_info(void){
+#ifdef CONFIG_DDR_SIZE_AUTO_DETECT
+	ddr_size_detect(p_ddr_set);
+#endif
 	unsigned int dmc_reg = rd_reg(DMC_DDR_CTRL);
 	unsigned int chl0_size_reg = (dmc_reg & 0x7);
 	unsigned int chl1_size_reg = ((dmc_reg>>3) & 0x7);
@@ -156,18 +160,23 @@ unsigned int ddr_init_dmc(void){
 		//CONIFG DDR PHY comamnd address map to 32bits linear address.
 	   //DDR0 ROW 14:0.   DDR1 ROW 13:0.   COL 9:0.
 		wr_reg( DDR0_ADDRMAP_0, ( 0 | 5 << 5 | 6 << 10 | 7 << 15 | 8 << 20 | 9 << 25 ));
-		wr_reg( DDR0_ADDRMAP_1, ( 13| 0 << 5 | 0 << 10 | 10 << 15 | 11 << 20 | 12 << 25 ));
+		wr_reg( DDR0_ADDRMAP_1, ( 13| 30<< 5 | 0 << 10 | 10 << 15 | 11 << 20 | 12 << 25 ));
 		//wr_reg( DDR0_ADDRMAP_1, ( 0| 0 << 5 | 0 << 10 | 10 << 15 | 11 << 20 | 12 << 25 ));
 		wr_reg( DDR0_ADDRMAP_2, ( 16| 17 << 5 | 18 << 10 | 19 << 15 | 20 << 20 | 21 << 25 ));
 		wr_reg( DDR0_ADDRMAP_3, ( 22| 23 << 5 | 24 << 10 | 25 << 15 | 26 << 20 | 27 << 25 ));
-		wr_reg( DDR0_ADDRMAP_4, ( 0 | 14 << 5 | 15 << 10 | 28 << 15 | 0 << 20 | 0 << 25 ));
+		wr_reg( DDR0_ADDRMAP_4, ( 29| 14 << 5 | 15 << 10 | 28 << 15 | 0 << 20 | 0 << 25 ));
 
 		wr_reg( DDR1_ADDRMAP_0, ( 0 | 5 << 5 | 6 << 10 | 7 << 15 | 8 << 20 | 9 << 25 ));
-		wr_reg( DDR1_ADDRMAP_1, ( 13| 0 << 5 | 0 << 10 | 10 << 15 | 11 << 20 | 12 << 25 ));
+		wr_reg( DDR1_ADDRMAP_1, ( 13| 30<< 5 | 0 << 10 | 10 << 15 | 11 << 20 | 12 << 25 ));
 		//wr_reg( DDR1_ADDRMAP_1, ( 13| 0 << 5 | 0 << 10 | 10 << 15 | 11 << 20 | 12 << 25 ));
 		wr_reg( DDR1_ADDRMAP_2, ( 16| 17 << 5 | 18 << 10 | 19 << 15 | 20 << 20 | 21 << 25 ));
 		wr_reg( DDR1_ADDRMAP_3, ( 22| 23 << 5 | 24 << 10 | 25 << 15 | 26 << 20 | 27 << 25 ));
-		wr_reg( DDR1_ADDRMAP_4, ( 0 | 14 << 5 | 15 << 10 | 28 << 15 | 0 << 20 | 0 << 25 ));
+		wr_reg( DDR1_ADDRMAP_4, ( 29| 14 << 5 | 15 << 10 | 28 << 15 | 0 << 20 | 0 << 25 ));
+	}
+	else if(p_ddr_set->ddr_channel_set == CONFIG_DDR0_RANK01_SAME){
+		//wr_reg( DDR0_ADDRMAP_1, ( 11| 0 << 5 | 0 << 10 | 0 << 15 | 15 << 20 | 16 << 25 ));
+		wr_reg( DDR0_ADDRMAP_1, ( 11| 31 << 5 | 0 << 10 | 14 << 15 | 15 << 20 | 16 << 25 ));
+		wr_reg( DDR0_ADDRMAP_4, ( 30| 12 << 5 | 13 << 10 | 29 << 15 | 0 << 20 | 0 << 25 ));
 	}
 
 	wr_reg(DMC_PCTL_LP_CTRL, 0x440620);
@@ -837,6 +846,14 @@ void ddr_debug(void){
 	printf("	ZQ0DR:    0x%8x    ZQ1DR: 0x%8x    ZQ2DR: 0x%8x\n", \
 			rd_reg(DDR0_PUB_ZQ0DR), rd_reg(DDR0_PUB_ZQ1DR), rd_reg(DDR0_PUB_ZQ2DR));
 	printf("	PIR:      0x%8x    PGSR0: 0x%8x\n", rd_reg(DDR0_PUB_PIR), rd_reg(DDR0_PUB_PGSR0));
+	printf("	DX0GSR0:  0x%8x\n", rd_reg(DDR0_PUB_DX0GSR0));
+	printf("	DX1GSR0:  0x%8x\n", rd_reg(DDR0_PUB_DX1GSR0));
+	printf("	DX2GSR0:  0x%8x\n", rd_reg(DDR0_PUB_DX2GSR0));
+	printf("	DX3GSR0:  0x%8x\n", rd_reg(DDR0_PUB_DX3GSR0));
+	printf("	DX0GSR1:  0x%8x\n", rd_reg(DDR0_PUB_DX0GSR1));
+	printf("	DX1GSR1:  0x%8x\n", rd_reg(DDR0_PUB_DX1GSR1));
+	printf("	DX2GSR1:  0x%8x\n", rd_reg(DDR0_PUB_DX2GSR1));
+	printf("	DX3GSR1:  0x%8x\n", rd_reg(DDR0_PUB_DX3GSR1));
 	printf("	DX0GSR2:  0x%8x\n", rd_reg(DDR0_PUB_DX0GSR2));
 	printf("	DX1GSR2:  0x%8x\n", rd_reg(DDR0_PUB_DX1GSR2));
 	printf("	DX2GSR2:  0x%8x\n", rd_reg(DDR0_PUB_DX2GSR2));
