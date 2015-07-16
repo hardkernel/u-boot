@@ -23,6 +23,7 @@ static void power_on_at_32k(void)
 static unsigned int detect_key(unsigned int suspend_from)
 {
 	int exit_reason = 0;
+	init_remote();
 #ifdef CONFIG_CEC_WAKEUP
 	if (hdmi_cec_func_config & 0x1) {
 		remote_cec_hw_reset();
