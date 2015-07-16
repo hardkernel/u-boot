@@ -42,7 +42,6 @@
 #include <xlat_tables.h>
 #include <io.h>
 #include "storage.h"
-#include <asm/arch/secure_apb.h>
 
 /*******************************************************************************
  * Declarations of linker defined symbols which will help us find the layout
@@ -204,7 +203,6 @@ void bl2_plat_flush_bl31_params(void)
  ******************************************************************************/
 void bl2_plat_arch_setup(void)
 {
-	writel(readl(SYS_CPU_MISC) | (0x3 << 20),SYS_CPU_MISC);
 	return;
 }
 
