@@ -62,6 +62,7 @@ obj-$(CONFIG_ENV_IS_NOWHERE) += env_nowhere.o
 # command
 obj-$(CONFIG_CMD_AES) += cmd_aes.o
 obj-$(CONFIG_CMD_AMBAPP) += cmd_ambapp.o
+obj-$(CONFIG_CMD_AUTOSCRIPT) += cmd_autoscript.o
 obj-$(CONFIG_SOURCE) += cmd_source.o
 obj-$(CONFIG_CMD_SOURCE) += cmd_source.o
 obj-$(CONFIG_CMD_BDI) += cmd_bdinfo.o

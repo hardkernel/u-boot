@@ -109,6 +109,7 @@
             "\0" \
         "storeboot="\
             "if imgread kernel boot ${loadaddr}; then store dtb read $dtb_mem_addr; bootm ${loadaddr}; fi;"\
+            "run update;"\
             "\0"\
         "factory_reset_poweroff_protect="\
             "echo wipe_data=${wipe_data}; echo wipe_cache=${wipe_cache};"\
@@ -269,6 +270,7 @@
 #define CONFIG_CMD_REBOOT 1
 #define CONFIG_CMD_ECHO 1
 #define CONFIG_CMD_JTAG	1
+#define CONFIG_CMD_AUTOSCRIPT 1
 
 /*file system*/
 #define CONFIG_DOS_PARTITION 1

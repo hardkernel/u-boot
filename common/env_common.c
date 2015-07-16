@@ -200,6 +200,7 @@ int env_import(const char *buf, int check)
 
 		if (crc32(0, ep->data, ENV_SIZE) != crc) {
 			set_default_env("!bad CRC");
+			run_command("saveenv", 0);
 			return 0;
 		}
 	}
