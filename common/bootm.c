@@ -230,15 +230,30 @@ static int bootm_find_fdt(int flag, int argc, char * const argv[])
 	/* find flattened device tree */
 	#ifdef CONFIG_DTB_MEM_ADDR
 	unsigned long long dtb_mem_addr =  -1;
+	char *ft_addr_bak;
+	ulong ft_len_bak;
 	if (getenv("dtb_mem_addr"))
 		dtb_mem_addr = simple_strtoul(getenv("dtb_mem_addr"), NULL, 16);
 	else
 		dtb_mem_addr = CONFIG_DTB_MEM_ADDR;
 
+	ft_addr_bak = (char *)images.ft_addr;
+	ft_len_bak = images.ft_len;
 	images.ft_addr = (char *)map_sysmem(dtb_mem_addr, 0);
+	printf("load dtb from 0x%lx ......\n", (unsigned long)(images.ft_addr));
 	#endif
 	ret = boot_get_fdt(flag, argc, argv, IH_ARCH_DEFAULT, &images,
 			   &images.ft_addr, &images.ft_len);
+	#ifdef CONFIG_DTB_MEM_ADDR
+	if (ret) {
+		images.ft_addr = ft_addr_bak;
+		images.ft_len = ft_len_bak;
+		printf("load dtb from 0x%lx ......\n",
+			(unsigned long)(images.ft_addr));
+		ret = boot_get_fdt(flag, argc, argv, IH_ARCH_DEFAULT, &images,
+			   &images.ft_addr, &images.ft_len);
+	}
+	#endif
 	if (ret) {
 		puts("Could not find a valid device tree\n");
 		return 1;
