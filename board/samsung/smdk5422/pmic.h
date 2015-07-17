@@ -65,6 +65,7 @@
 
 #define VDD_
 extern void pmic_init(void);
+extern void pmic_deinit(void);
 extern void IIC0_EWrite(unsigned char ChipId,
 		unsigned char IicAddr, unsigned char IicData);
 extern void IIC0_ERead(unsigned char ChipId,
