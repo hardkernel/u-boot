@@ -469,7 +469,7 @@ int board_late_init(void)
 {
 	struct exynos5_power *pmu = (struct exynos5_power *)EXYNOS5_POWER_BASE;
 
-    LED_GREEN(ON);          LED_BLUE(OFF);          LED_RED(OFF);
+    LED_GREEN(OFF);          LED_BLUE(ON);          LED_RED(OFF);
 
     if (readl(&pmu->sysip_dat0) & 0xFFFF)     {
         unsigned char   cmd[32];
