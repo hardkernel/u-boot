@@ -16,6 +16,9 @@ extern int amlnf_init(unsigned flag);
 extern int amlnf_key_write(u8 *buf, int len);
 extern int amlnf_key_read(u8 * buf, int len);
 extern int get_partition_from_dts(unsigned char * buffer);
+extern int mmc_key_read(unsigned char *buf, unsigned int size);
+extern int mmc_key_write(unsigned char *buf, unsigned int size);
+extern int mmc_key_erase(void);
 
 #define MsgP(fmt...)   printf("[store]"fmt)
 #define ErrP(fmt...)   printf("[store]Err:%s,L%d:", __func__, __LINE__),printf(fmt)
@@ -276,7 +279,7 @@ int store_key_read(uint8_t * buffer,  uint32_t length)
 
 		case EMMC_BOOT_FLAG:
 		case SPI_EMMC_FLAG:
-		//todo:
+		ret = mmc_key_read(buffer, (int) length);
 		break;
 		default:
 		ErrP("device_boot_flag=0x%x err\n", device_boot_flag);
@@ -297,7 +300,7 @@ int store_key_write(uint8_t * buffer, uint32_t length)
 
 		case EMMC_BOOT_FLAG:
 		case SPI_EMMC_FLAG:
-		//todo:
+		ret = mmc_key_write(buffer, (int) length);
 		break;
 		default:
 		ErrP("device_boot_flag=0x%x err\n", device_boot_flag);

@@ -42,8 +42,10 @@
 #define     MMC_ENV_SIZE                    (8*SZ_1M)
 
 // #define     MMC_KEY_NAME                    "key"
-// #define     MMC_KEY_SIZE                    (0x1*SZ_1M)
-
+#define     MMC_KEY_SIZE                    (256*1024)
+#define     EMMCKEY_RESERVE_OFFSET           (0x4000)
+#define     MMC_RESERVED_OFFSET              (36*SZ_1M)
+#define     MMC_BLOCK_SIZE                   (512)
 // #define     MMC_SECURE_NAME                 "secure"
 // #define     MMC_SECURE_SIZE                 (0x1*SZ_1M)
 

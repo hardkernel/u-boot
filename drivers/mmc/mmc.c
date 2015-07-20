@@ -1640,3 +1640,58 @@ int mmc_set_rst_n_function(struct mmc *mmc, u8 enable)
 			  enable);
 }
 #endif
+
+int mmc_key_read(unsigned char *buf, unsigned int size)
+{
+	ulong start, start_blk, blkcnt, ret;
+	unsigned char *temp_buf = buf;
+	start = EMMCKEY_RESERVE_OFFSET + MMC_RESERVED_OFFSET;
+	start_blk = (start / MMC_BLOCK_SIZE);
+	blkcnt = (size / MMC_BLOCK_SIZE);
+	ret = mmc_bread(1, start_blk, blkcnt, temp_buf);
+	if (ret != blkcnt) {
+		printf("[%s] %d, mmc_bread error\n",
+			__func__, __LINE__);
+		return 1;
+	}
+	return 0;
+}
+
+extern ulong mmc_bwrite(int dev_num, lbaint_t start,
+				lbaint_t blkcnt, const void *src);
+int mmc_key_write(unsigned char *buf, unsigned int size)
+{
+	ulong start, start_blk, blkcnt, ret;
+	unsigned char * temp_buf = buf;
+	int i = 2;
+	start = EMMCKEY_RESERVE_OFFSET + MMC_RESERVED_OFFSET;
+	start_blk = (start / MMC_BLOCK_SIZE);
+	blkcnt = (size / MMC_BLOCK_SIZE);
+	do {
+		ret = mmc_bwrite(1, start_blk, blkcnt, temp_buf);
+		if (ret != blkcnt) {
+			printf("[%s] %d, mmc_bwrite error\n",
+				__func__, __LINE__);
+			return 1;
+		}
+		start_blk += MMC_KEY_SIZE / MMC_BLOCK_SIZE;
+	} while (--i);
+	return 0;
+}
+
+extern unsigned long mmc_berase(int dev_num,
+				lbaint_t start, lbaint_t blkcnt);
+int mmc_key_erase(void)
+{
+	ulong start, start_blk, blkcnt, ret;
+	start = EMMCKEY_RESERVE_OFFSET + MMC_RESERVED_OFFSET;
+	start_blk = (start / MMC_BLOCK_SIZE);
+	blkcnt = (MMC_KEY_SIZE / MMC_BLOCK_SIZE) * 2;//key and backup key
+	ret = mmc_berase(1, start_blk, blkcnt);
+	if (ret) {
+		printf("[%s] %d mmc_berase error\n",
+				__func__, __LINE__);
+		return 1;
+	}
+	return 0;
+}
