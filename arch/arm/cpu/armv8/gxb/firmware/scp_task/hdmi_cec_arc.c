@@ -11,7 +11,7 @@
 #define CEC_DBG_PRINT
 #ifdef CEC_DBG_PRINT
 	#define cec_dbg_print(s,v) {uart_puts(s);uart_put_hex(v,8);}
-	#define cec_dbg_prints(s)  {uart_puts(s);wait_uart_empty();}
+	#define cec_dbg_prints(s)  {uart_puts(s);}
 #else
 	#define cec_dbg_print(s,v)
 	#define cec_dbg_prints(s)
@@ -177,12 +177,19 @@ void remote_cec_hw_reset(void)
 unsigned char remote_cec_ll_rx(void)
 {
 	int i;
+	int print = 1;
 	unsigned char rx_msg_length = cec_rd_reg(CEC_RX_MSG_LENGTH) + 1;
 
-	cec_dbg_print("cec rx:", cec_msg.log_addr);
+	cec_dbg_prints("cec R:");
 	for (i = 0; i < rx_msg_length; i++) {
 		cec_msg.buf[cec_msg.rx_write_pos].msg[i] = cec_rd_reg(CEC_RX_MSG_0_HEADER + i);
-		cec_dbg_print(" ", cec_msg.buf[cec_msg.rx_write_pos].msg[i]);
+		if (print) {
+			cec_dbg_print(" ", cec_msg.buf[cec_msg.rx_write_pos].msg[i]);
+		}
+		if (i == 1 && cec_msg.buf[cec_msg.rx_write_pos].msg[i] == CEC_OC_VENDOR_COMMAND_WITH_ID) {
+			/* do not print command with ID */
+			print = 0;
+		}
 	}
 	cec_msg.buf[cec_msg.rx_write_pos].msg_len = rx_msg_length;
 	cec_dbg_prints("\n");
@@ -234,7 +241,7 @@ int cec_triggle_tx(unsigned char *msg, unsigned char len)
 
 	if ((TX_IDLE == cec_rd_reg(CEC_TX_MSG_STATUS)) ||
 	    (TX_DONE == cec_rd_reg(CEC_TX_MSG_STATUS))) {
-		cec_dbg_print("cec tx:", cec_msg.log_addr);
+		cec_dbg_prints("cec T:");
 		for (i = 0; i < len; i++) {
 			cec_wr_reg(CEC_TX_MSG_0_HEADER + i, msg[i]);
 			cec_dbg_print(" ", msg[i]);
@@ -545,7 +552,7 @@ unsigned int cec_handler(void)
 		}
 		cec_wr_reg(CEC_RX_MSG_CMD, RX_ACK_CURRENT);
 		cec_wr_reg(CEC_RX_MSG_CMD, RX_NO_OP);
-		cec_dbg_prints("RX_DONE\n");
+		cec_dbg_prints("RX_OK\n");
 		break;
 	case RX_ERROR:
 		cec_dbg_prints("RX_ERROR\n");
@@ -565,14 +572,14 @@ unsigned int cec_handler(void)
 	switch (cec_rd_reg(CEC_TX_MSG_STATUS)) {
 	case TX_DONE:
 		cec_wr_reg(CEC_TX_MSG_CMD, TX_NO_OP);
-		cec_dbg_prints("@TX_DONE\n");
 		cec_tx_msgs.send_idx = (cec_tx_msgs.send_idx + 1) & CEC_TX_MSG_BUF_MASK;
 		s_idx = cec_tx_msgs.send_idx;
 		if (cec_tx_msgs.send_idx != cec_tx_msgs.queue_idx) {
+			cec_dbg_prints("TX_OK\n");
 			cec_triggle_tx(cec_tx_msgs.msg[s_idx].buf,
 				       cec_tx_msgs.msg[s_idx].len);
 		} else {
-			cec_dbg_prints("@TX_FINISHED\n");
+			cec_dbg_prints("TX_END\n");
 		}
 		busy_count = 0;
 		break;
