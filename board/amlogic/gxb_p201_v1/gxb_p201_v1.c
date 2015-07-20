@@ -383,7 +383,8 @@ int board_init(void)
 #ifdef CONFIG_AML_V2_FACTORY_BURN
 	aml_try_factory_usb_burning(0, gd->bd);
 #endif// #ifdef CONFIG_AML_V2_FACTORY_BURN
-
+	/*for LED*/
+	clrbits_le32(AO_RTI_PIN_MUX_REG, 1<<3);
 	/*Power on GPIOAO_2 for VCC_5V*/
 	clrbits_le32(P_AO_GPIO_O_EN_N, ((1<<2)|(1<<18)));
 	#ifdef CONFIG_USB_DWC_OTG_HCD
