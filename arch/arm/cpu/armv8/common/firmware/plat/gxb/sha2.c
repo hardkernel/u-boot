@@ -26,9 +26,11 @@
 #include <platform_def.h>
 #include <sha2.h>
 #include <asm/arch/secure_apb.h>
+#include <ndma_utils.h>
 
-static struct sha2_ctx *cur_ctx;
+#define CONFIG_AML_SHA2_HW_DMA
 
+static sha2_ctx *cur_ctx;
 static void hw_init(uint32_t is224)
 {
 	uint32_t i, tmp;
@@ -170,7 +172,7 @@ static void hw_final(uint8_t output[32])
  * @param ctx         context
  * @param digest_len  digest length in bits (224 or 256)
  */
-void SHA2_HW_init(struct sha2_ctx *ctx, uint32_t digest_len)
+void SHA2_HW_init(sha2_ctx *ctx, uint32_t digest_len)
 {
 	if (cur_ctx != NULL) {
 		printf("Err:sha\n");
@@ -187,7 +189,7 @@ void SHA2_HW_init(struct sha2_ctx *ctx, uint32_t digest_len)
 /**
  * SHA-2 Family Hash Update
  */
-void SHA2_HW_update(struct sha2_ctx *ctx, const uint8_t *data, uint32_t len)
+void SHA2_HW_update(sha2_ctx *ctx, const uint8_t *data, uint32_t len)
 {
 	unsigned int fill_len, data_len, rem_len,offset;
 
@@ -241,7 +243,7 @@ void SHA2_HW_update(struct sha2_ctx *ctx, const uint8_t *data, uint32_t len)
  *
  * Returns pointer to ctx->buf containing hash.
  */
-uint8_t *SHA2_HW_final(struct sha2_ctx *ctx)
+uint8_t *SHA2_HW_final(sha2_ctx *ctx)
 {
 	if (cur_ctx != ctx) {
 		printf("Err:sha\n");
@@ -259,35 +261,156 @@ uint8_t *SHA2_HW_final(struct sha2_ctx *ctx)
 	return ctx->buf;
 }
 
+#if defined(CONFIG_AML_SHA2_HW_DMA)
+#define THREAD1_TABLE_LOC  0x5510000
+#define SHA_Wr(addr, data) *(volatile uint32_t *)(addr)=(data)
+#define SHA_Rd(addr)       *(volatile uint32_t *)(addr)
+#define SEC_ALLOWED_MASK   0xa // thread 3 and thread 1 are allowed non-secure
+int g_n_sha_Start_flag = 0;
+int g_n_sha_thread_num = 0;
+#endif
 
-void SHA2_init(struct sha2_ctx *ctx, uint32_t digest_len)
+void SHA2_init(sha2_ctx *ctx, unsigned int digest_len)
 {
+#if defined(CONFIG_AML_SHA2_HW_DMA)
+
+	unsigned int sha2_256_msg_in[8] = {
+		0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
+		0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19};
+
+	g_n_sha_thread_num = 0; //fixed SHA2 with thread 0
+
+
+	// Setup secure and non-secure transfers
+	// Also set up the general readback of crypto outputs to the SHA engine
+	// assign              sec_allowed_mask        = sec_gen_reg0[11:8];
+	// wire    [1:0]       sec_read_sel            = sec_gen_reg0[13:12];
+	SHA_Wr(SEC_SEC_BLKMV_GEN_REG0, ((SHA_Rd(SEC_SEC_BLKMV_GEN_REG0) & ~((0x3 << 12) | (0xf << 8))) | (1 << 12) | (SEC_ALLOWED_MASK << 8)) );
+	// Allow secure DDR tranfers for the Secure domains
+	// wire    [3:0]       sec_ddr_sec_id_en   = sec_gen_reg0[7:4];       // Even though a thread is secure, we may not want it to use the DDR secure ID (just in case);
+	SHA_Wr(SEC_SEC_BLKMV_GEN_REG0, ((SHA_Rd(SEC_SEC_BLKMV_GEN_REG0) & ~(0xf << 4)) | (0x4 << 4)) );   // only thread 2 can issue Secure transfers
+
+	// Enable the SHA engine
+	// wire                sec_sha_dma_enable      = sec_sha_control[3];
+	SHA_Wr( SEC_SEC_BLKMV_SHA_CONTROL, SHA_Rd(SEC_SEC_BLKMV_SHA_CONTROL) | (1 << 3) );
+
+	// For DMA modes, pretend there is a PIO request for the AES (not SHA)
+	// reg                 pio_granted;        // pio_control[31];
+	// wire                pio_hold_all    = pio_control[5];       // set to 1 to block all in-line processing regardless of the PIO being used
+	// wire                pio_request     = pio_control[4];
+	// wire    [2:0]       pio_inline_type = pio_control[2:0];
+	SHA_Wr( SEC_SEC_BLKMV_PIO_CNTL0, (SHA_Rd(SEC_SEC_BLKMV_PIO_CNTL0) & ~((1 << 4) | (0x7 << 0))) | ((1 << 4) | (4 << 0)) );   // Request for AES
+
+	//
+	// Write the initial message and datatlen
+	//
+	// initial the internal CPU fifo write counter for the save/restore engine
+	// wire                sec_sha_cpu_save_init   = sec_sha_control[6];      // Pulsed
+	// wire    [1:0]       sec_sha_thread          = sec_sha_control[5:4];
+	SHA_Wr( SEC_SEC_BLKMV_SHA_CONTROL, (SHA_Rd(SEC_SEC_BLKMV_SHA_CONTROL) & ~(3 << 4)) | (1 << 6) | (g_n_sha_thread_num << 4) );  // pulse bit (init cpu counters)
+	SHA_Wr( SEC_SEC_BLKMV_SHA_DMA_MSG_IN, sha2_256_msg_in[7] );
+	SHA_Wr( SEC_SEC_BLKMV_SHA_DMA_MSG_IN, sha2_256_msg_in[6] );
+	SHA_Wr( SEC_SEC_BLKMV_SHA_DMA_MSG_IN, sha2_256_msg_in[5] );
+	SHA_Wr( SEC_SEC_BLKMV_SHA_DMA_MSG_IN, sha2_256_msg_in[4] );
+	SHA_Wr( SEC_SEC_BLKMV_SHA_DMA_MSG_IN, sha2_256_msg_in[3] );
+	SHA_Wr( SEC_SEC_BLKMV_SHA_DMA_MSG_IN, sha2_256_msg_in[2] );
+	SHA_Wr( SEC_SEC_BLKMV_SHA_DMA_MSG_IN, sha2_256_msg_in[1] );
+	SHA_Wr( SEC_SEC_BLKMV_SHA_DMA_MSG_IN, sha2_256_msg_in[0] );
+	SHA_Wr( SEC_SEC_BLKMV_SHA_DMA_DATALEN_IN, 0 );
+	SHA_Wr( SEC_SEC_BLKMV_SHA_DMA_DATALEN_IN, 0 );
+
+	memset((void*)THREAD1_TABLE_LOC,0,10*32);
+
+	NDMA_set_table_position_secure( g_n_sha_thread_num, THREAD1_TABLE_LOC, THREAD1_TABLE_LOC + (10*32) );	 // 2 thread entries
+	g_n_sha_Start_flag = 0;
+#else
 	SHA2_HW_init(ctx, digest_len);
+#endif
 }
 
-void SHA2_update(struct sha2_ctx *ctx, const uint8_t *data, uint32_t len)
+void SHA2_update(sha2_ctx *ctx, const unsigned char *data, unsigned int len)
 {
+
+#if defined(CONFIG_AML_SHA2_HW_DMA)
+
+	if (!len)
+		return;
+
+	NDMA_add_descriptor_sha( g_n_sha_thread_num, 	// uint32_t   thread_num,
+							 1,						// uint32_t   irq,
+							 2,						// uint32_t   sha_mode, 	  // 1:sha1;2:sha2-256;3:sha2_224
+							 0,						// uint32_t   pre_endian,
+							 len,					// uint32_t   bytes_to_move,
+							 (uint32_t)(unsigned long)data, 	// uint32_t   src_addr,
+							 0 );					// uint32_t   last_block,
+	if (!g_n_sha_Start_flag)
+	{
+		NDMA_start(g_n_sha_thread_num);
+		g_n_sha_Start_flag = 1;
+	}
+#else
 	SHA2_HW_update(ctx, data, len);
+#endif
 }
 
-uint8_t *SHA2_final(struct sha2_ctx *ctx)
+void SHA2_final(sha2_ctx *ctx,const unsigned char *data, unsigned int len)
 {
-	uint8_t * h;
+#if defined(CONFIG_AML_SHA2_HW_DMA)
+	unsigned int *pOUT = (unsigned int *)(unsigned char *)ctx->buf;
 
-	h = SHA2_HW_final(ctx);
+	NDMA_add_descriptor_sha( g_n_sha_thread_num,		// uint32_t   thread_num,
+							 1,						// uint32_t   irq,
+							 2,						// uint32_t   sha_mode, 	  // 1:sha1;2:sha2-256;3:sha2_224
+							 0,						// uint32_t   pre_endian,
+							 len,					// uint32_t   bytes_to_move,
+							 (uint32_t)(unsigned long)data,	// uint32_t   src_addr,
+							 1 );					// uint32_t   last_block,
 
-	return h;
+	if (!g_n_sha_Start_flag)
+	{
+		NDMA_start(g_n_sha_thread_num);
+		g_n_sha_Start_flag = 1;
+	}
+
+	NDMA_wait_for_completion(g_n_sha_thread_num);
+	NDMA_stop(g_n_sha_thread_num);
+	g_n_sha_Start_flag = 0;
+
+	pOUT[0] = SHA_Rd(SEC_SEC_BLKMV_PIO_DATA0);
+	pOUT[1] = SHA_Rd(SEC_SEC_BLKMV_PIO_DATA1);
+	pOUT[2] = SHA_Rd(SEC_SEC_BLKMV_PIO_DATA2);
+	pOUT[3] = SHA_Rd(SEC_SEC_BLKMV_PIO_DATA3);
+	pOUT[4] = SHA_Rd(SEC_SEC_BLKMV_PIO_DATA4);
+	pOUT[5] = SHA_Rd(SEC_SEC_BLKMV_PIO_DATA5);
+	pOUT[6] = SHA_Rd(SEC_SEC_BLKMV_PIO_DATA6);
+	pOUT[7] = SHA_Rd(SEC_SEC_BLKMV_PIO_DATA7);
+
+#else
+	SHA2_HW_update(ctx, data, len);
+	SHA2_HW_final(ctx);
+#endif
+
 }
 
 
-void sha2(const uint8_t *input,
-	  uint32_t ilen,
-	  uint8_t output[32],
-	  uint32_t is224)
+void sha2(const uint8_t *input, unsigned int ilen, unsigned char output[32], unsigned int is224)
 {
-	struct sha2_ctx sha_ctx;
-	SHA2_HW_init(&sha_ctx, is224 ? 224: 256);
-	SHA2_HW_update(&sha_ctx, input, ilen);
-	SHA2_HW_final(&sha_ctx);
+	sha2_ctx sha_ctx;
+	unsigned long nSRCAddr = (unsigned long)input;
+
+	if (((nSRCAddr >> 24) &  (0xFF)) == 0xD9)
+	{
+		printf("aml log : PIO SHA\n");
+		SHA2_HW_init(&sha_ctx, is224 ? 224: 256);
+		SHA2_HW_update(&sha_ctx, input, ilen);
+		SHA2_HW_final(&sha_ctx);
+
+	}
+	else
+	{
+		printf("aml log : DMA SHA\n");
+		SHA2_init( &sha_ctx, is224 ? 224: 256);
+		SHA2_final( &sha_ctx, input,ilen);
+	}
 	memcpy(output,sha_ctx.buf,32);
 }

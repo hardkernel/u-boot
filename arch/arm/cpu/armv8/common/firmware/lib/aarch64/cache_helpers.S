@@ -44,6 +44,9 @@
 	.globl	dcsw_op_louis
 	.globl	dcsw_op_all
 
+	.global _clean_dcache_addr
+	.global _clean_invd_dcache_addr
+
 func dcisw
 	dc	isw, x0
 	ret
@@ -211,3 +214,25 @@ func dcsw_op_louis
 
 func dcsw_op_all
 	dcsw_op #LOC_SHIFT, #CLIDR_FIELD_WIDTH, #LEVEL_SHIFT
+
+
+#if 0
+//==============================================
+// void _clean_dcache_addr(unsigned long addr)
+// clean dcache by VA
+//==============================================
+	.type _clean_dcache_addr, @function
+_clean_dcache_addr:
+	dc cvac, x0
+	dsb sy
+	ret
+//==============================================
+// void _clean_invd_dcache_addr(unsigned long addr)
+// clean&invalid dcache by VA
+//==============================================
+	.type _clean_invd_dcache_addr, @function
+_clean_invd_dcache_addr:
+	dc civac, x0
+	dsb sy
+	ret
+#endif

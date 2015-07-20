@@ -81,6 +81,11 @@ void dcsw_op_all(unsigned int);
 void disable_mmu_el3(void);
 void disable_mmu_icache_el3(void);
 
+
+void _clean_dcache_addr(unsigned long);
+void _clean_invd_dcache_addr(unsigned long);
+
+
 /*******************************************************************************
  * Misc. accessor prototypes
  ******************************************************************************/
