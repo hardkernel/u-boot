@@ -11,14 +11,6 @@ unsigned int time;
 static struct pwr_op pwr_op_d;
 static struct pwr_op *p_pwr_op;
 
-static void write_flag(unsigned int flag)
-{
-	unsigned int val;
-	val = readl(SEC_AO_SEC_SD_CFG15);
-	val = val & (~(0xf << 28));
-	val = val | (flag << 28);
-	writel(val, SEC_AO_SEC_SD_CFG15);
-}
 void switch_to_32k(void)
 {
 	aml_update_bits(AO_RTI_PWR_CNTL_REG0, 0x7<<2, 0x4<<2);
@@ -90,7 +82,7 @@ void enter_suspend(void)
 	uart_puts("exit_reason:0x");
 	uart_put_hex(exit_reason, 8);
 	uart_puts("\n");
-	write_flag(exit_reason);
+	set_wakeup_method(exit_reason);
 	p_pwr_op->power_on_at_24M();
 	p_pwr_op->power_on_at_clk81();
 }

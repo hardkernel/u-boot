@@ -30,4 +30,5 @@ void *memset(void *s, int c, unsigned int count);
 void _udelay(unsigned int us);
 unsigned int get_time(void);
 
+void set_wakeup_method(unsigned int method);
 #endif

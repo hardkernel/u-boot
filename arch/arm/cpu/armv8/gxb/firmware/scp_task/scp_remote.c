@@ -24,10 +24,9 @@ static unsigned int kk[] = {
 };
 static int init_remote(void)
 {
-	unsigned int val;
-	val = readl(AO_IR_DEC_STATUS);
-	val = readl(AO_IR_DEC_FRAME);
-	return val;
+	uart_put_hex(readl(AO_IR_DEC_STATUS), 32);
+	uart_put_hex(readl(AO_IR_DEC_FRAME), 32);
+	return 0;
 }
 
 static int remote_detect_key(void)

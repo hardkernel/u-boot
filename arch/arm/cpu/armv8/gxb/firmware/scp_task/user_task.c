@@ -37,6 +37,7 @@ void secure_task(void)
 	unsigned *response =
 	    (unsigned *)(&(secure_task_share_mem[TASK_RESPONSE_OFFSET]));
 	unsigned command;
+	struct resume_param *presume;
 
 	/*init bss */
 	bss_init();
@@ -53,10 +54,17 @@ void secure_task(void)
 				enter_suspend();
 				*pcommand = 0;
 				*response = RESPONSE_SUSPEND_LEAVE;
+				presume = (struct resume_param *)(response+1);
+				presume->method = resume_data.method;
 			}
 	}
 		__switch_back_highmb();
 	}
+}
+
+void set_wakeup_method(unsigned int method)
+{
+	resume_data.method = method;
 }
 
 void process_high_task(unsigned command)
