@@ -136,6 +136,10 @@
 #define CONFIG_OSD_SCALE_ENABLE 1
 #define CONFIG_CMD_BMP 1
 
+#if defined(CONFIG_AML_VOUT)
+#define CONFIG_AML_CVBS 1
+#endif
+
 /* USB
  * Enable CONFIG_MUSB_HCD for Host functionalities MSC, keyboard
  * Enable CONFIG_MUSB_UDD for Device functionalities.

@@ -31,7 +31,13 @@ static int do_hpd_detect(cmd_tbl_t *cmdtp, int flag, int argc,
 	char *const argv[])
 {
 	int st = hdmitx_device.HWOp.get_hpd_state();
-	printf("%c\n", st ? '1' : '0');
+	printf("hpd_state=%c\n", st ? '1' : '0');
+
+	if (st) {
+		setenv("outputmode", getenv("hdmimode"));
+	} else {
+		setenv("outputmode", getenv("cvbsmode"));
+	}
 	return st;
 }
 

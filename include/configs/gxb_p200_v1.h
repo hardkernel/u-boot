@@ -143,7 +143,7 @@
             "if imgread kernel recovery ${loadaddr}; then bootm ${loadaddr}; fi"\
             "\0"\
         "init_display="\
-            "osd open;osd clear;hdmitx output ${outputmode};imgread pic logo bootup $loadaddr;bmp display $bootup_offset;bmp scale"\
+            "hdmitx hpd;osd open;osd clear;vout output ${outputmode};imgread pic logo bootup $loadaddr;bmp display $bootup_offset;bmp scale"\
             "\0"\
 
 #define CONFIG_PREBOOT  \
@@ -211,7 +211,9 @@
 #define CONFIG_OSD_SCALE_ENABLE 1
 #define CONFIG_CMD_BMP 1
 
-
+#if defined(CONFIG_AML_VOUT)
+#define CONFIG_AML_CVBS 1
+#endif
 
 /* USB
  * Enable CONFIG_MUSB_HCD for Host functionalities MSC, keyboard
