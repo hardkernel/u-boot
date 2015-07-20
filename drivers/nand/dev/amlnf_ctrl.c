@@ -530,7 +530,7 @@ void uboot_set_ran_mode(struct amlnand_phydev *phydev)
 
 int aml_sys_info_init(struct amlnand_chip *aml_chip)
 {
-#ifdef CONFIG_AML_NAND_KEY
+#if (AML_CFG_KEY_RSV_EN)
 	struct nand_arg_info *nand_key = &aml_chip->nand_key;
 #endif
 #ifdef CONFIG_SECURE_NAND
@@ -556,7 +556,7 @@ int aml_sys_info_init(struct amlnand_chip *aml_chip)
 
 	memset(buf, 0x0, buf_size);
 	NAND_LINE
-#ifdef CONFIG_AML_NAND_KEY
+#if (AML_CFG_KEY_RSV_EN)
 	if (nand_key->arg_valid == 0) {
 		NAND_LINE
 		ret = aml_key_init(aml_chip);
@@ -599,7 +599,7 @@ int aml_sys_info_init(struct amlnand_chip *aml_chip)
 		}
 	}
 
-#ifdef CONFIG_AML_NAND_KEY
+#if (AML_CFG_KEY_RSV_EN)
 	if (nand_key->arg_valid == 0) {
 		NAND_LINE
 		ret = amlnand_save_info_by_name(aml_chip,
@@ -643,7 +643,7 @@ exit_error:
 int aml_sys_info_error_handle(struct amlnand_chip *aml_chip)
 {
 
-#ifdef CONFIG_AML_NAND_KEY
+#if (AML_CFG_KEY_RSV_EN)
 	 if ((aml_chip->nand_key.arg_valid == 1) &&
 		(aml_chip->nand_key.update_flag)) {
 		aml_nand_update_key(aml_chip, NULL);

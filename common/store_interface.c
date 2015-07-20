@@ -13,6 +13,8 @@
 #include<partition_table.h>
 
 extern int amlnf_init(unsigned flag);
+extern int amlnf_key_write(u8 *buf, int len);
+extern int amlnf_key_read(u8 * buf, int len);
 extern int get_partition_from_dts(unsigned char * buffer);
 
 #define MsgP(fmt...)   printf("[store]"fmt)
@@ -203,6 +205,104 @@ static int do_store_dtb_ops(cmd_tbl_t * cmdtp, int flag, int argc, char * const 
 	MsgP("To run cmd[%s]\n", _cmdBuf);
 	ret = run_command(_cmdBuf, 0);
 
+	return ret;
+}
+
+static int do_store_key_ops(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
+{
+	int ret = 0;
+	char _cmdBuf[128];
+	char* ops = argv[2];
+	const unsigned maxKyeSz = 256 * 1024;
+	unsigned actualDtbSz = 0;
+	char* devCmd = NULL;
+
+    if (argc < 4) return CMD_RET_USAGE;
+
+	const int is_write = !strcmp("write", ops);
+    if (!is_write) {
+		ret = strcmp("read", ops);//must be 0
+        if (ret) return CMD_RET_USAGE;
+	}
+
+	actualDtbSz = maxKyeSz;
+    if (argc > 4) {
+		const unsigned bufSz = simple_strtoul(argv[4], NULL, 0);
+        if (bufSz > maxKyeSz) {
+			ErrP("bufSz (%s) > max 0x%x\n", argv[4], maxKyeSz);
+			return CMD_RET_FAILURE;
+		}
+	}
+
+	ops = is_write ? "key_write" : "key_read";
+
+    switch (device_boot_flag)
+	{
+		case NAND_BOOT_FLAG:
+		case SPI_NAND_FLAG:
+			{
+				devCmd = "amlnf";
+			}
+			break;
+
+		case EMMC_BOOT_FLAG:
+		case SPI_EMMC_FLAG:
+			{
+				devCmd = "emmc";
+			}
+			break;
+
+		default:
+			ErrP("device_boot_flag=0x%x err\n", device_boot_flag);
+			return CMD_RET_FAILURE;
+	}
+
+	sprintf(_cmdBuf, "%s %s %s 0x%x", devCmd, ops, argv[3], actualDtbSz);
+	MsgP("To run cmd[%s]\n", _cmdBuf);
+	ret = run_command(_cmdBuf, 0);
+
+	return ret;
+}
+
+int store_key_read(uint8_t * buffer,  uint32_t length)
+{
+	int ret = 0;
+	switch (device_boot_flag)
+	{
+		case NAND_BOOT_FLAG:
+		case SPI_NAND_FLAG:
+		ret = amlnf_key_read(buffer, (int) length);
+		break;
+
+		case EMMC_BOOT_FLAG:
+		case SPI_EMMC_FLAG:
+		//todo:
+		break;
+		default:
+		ErrP("device_boot_flag=0x%x err\n", device_boot_flag);
+			return CMD_RET_FAILURE;
+	}
+	return ret;
+}
+
+int store_key_write(uint8_t * buffer, uint32_t length)
+{
+	int ret = 0;
+	switch (device_boot_flag)
+	{
+		case NAND_BOOT_FLAG:
+		case SPI_NAND_FLAG:
+		ret = amlnf_key_write(buffer, (int) length);
+		break;
+
+		case EMMC_BOOT_FLAG:
+		case SPI_EMMC_FLAG:
+		//todo:
+		break;
+		default:
+		ErrP("device_boot_flag=0x%x err\n", device_boot_flag);
+			return CMD_RET_FAILURE;
+	}
 	return ret;
 }
 
@@ -1102,6 +1202,7 @@ static cmd_tbl_t cmd_store_sub[] = {
     U_BOOT_CMD_MKENT(rom_read,      5, 0, do_store_rom_read, "", ""),
     U_BOOT_CMD_MKENT(rom_write,     5, 0, do_store_rom_write, "", ""),
     U_BOOT_CMD_MKENT(dtb,           5, 0, do_store_dtb_ops, "", ""),
+    U_BOOT_CMD_MKENT(key,           5, 0, do_store_key_ops, "", ""),
 };
 
 static int do_store(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
@@ -1137,5 +1238,7 @@ U_BOOT_CMD(store, CONFIG_SYS_MAXARGS, 1, do_store,
 	"	scrub the area from offset and size \n"
 	"store dtb read/write <size>\n"
 	"	read/write dtb, size is optional \n"
+	"store key read/write <size>\n"
+	"	read/write key, size is optional \n"
 );
 

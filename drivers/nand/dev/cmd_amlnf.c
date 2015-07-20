@@ -39,6 +39,12 @@ extern int amlnf_dtb_read(u8 *buf, int len);
 extern int amlnf_dtb_erase(void);
 #endif
 
+#if (AML_CFG_KEY_RSV_EN)
+extern int amlnf_key_write(u8 *buf, int len);
+extern int amlnf_key_read(u8 * buf, int len);
+extern int amlnf_key_erase(void);
+#endif
+
 extern int amlnf_init(unsigned char flag);
 extern int amlnf_exit(void);
 //static int plane_mode;
@@ -639,6 +645,47 @@ static int do_amlnfphy(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]
 		return ret;
 	}
 #endif
+	/* need full environments */
+#if (AML_CFG_KEY_RSV_EN)
+	if ((strcmp(cmd, "key_write") == 0)
+		|| (strcmp(cmd, "key_read") == 0)) {
+		nfread_flag = 0;
+		if (strncmp(cmd, "key_read", 8) == 0)
+				nfread_flag = 1;
+
+		if (argc < 3)
+			goto usage;
+
+		addr = (ulong)strtoul(argv[2], NULL, 16);
+		size = (ulong)strtoul(argv[3], NULL, 16);
+		aml_nand_msg("cmd %s: ",
+			nfread_flag ? "key_read" : "key_write");
+
+		//memset(devops, 0x0, sizeof(struct phydev_ops));
+
+		if (nfread_flag) {
+			ret = amlnf_key_read((u8 *)addr, (int)size);
+			if (ret < 0)
+				aml_nand_msg("nand read key failed");
+		} else {
+			ret = amlnf_key_write((u8 *)addr, (int)size);
+			if (ret < 0)
+				aml_nand_msg("nand write key failed");
+		}
+
+		aml_nand_msg("%llu bytes %s : %s",
+				size,
+				nfread_flag ? "key_read" : "key_write",
+				ret ? "ERROR" : "OK");
+		return ret;
+	}
+
+	if (strcmp(cmd, "key_erase") == 0) {
+		ret = amlnf_key_erase();
+		aml_nand_msg("key erase %s", ret ? "Fail" : "Okay");
+		return ret;
+	}
+#endif
 	/* avoid fail... */
 	amlnf_get_chip_size(&chipsize);
 
@@ -1041,6 +1088,11 @@ static char amlnand_help_text[] =
 	"boot - show boot flag"
 #if (AML_CFG_DTB_RSV_EN)
 	"dtb_read/write addr cnt - read/write dtd.\n"
+	"dtb_erase - erase dtb!\n"
+#endif
+#if (AML_CFG_KEY_RSV_EN)
+	"key_read/write addr cnt - read/write dtd.\n"
+	"key_erase - erase keys!\n"
 #endif
 	"";
 #endif

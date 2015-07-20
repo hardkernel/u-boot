@@ -65,5 +65,9 @@ int store_exit(void);
 //dtb read/write
 int store_dtb_rw(void* buf, unsigned dtbSz, int isWrite);
 
+//key read/write
+int store_key_read(uint8_t * buffer,  uint32_t length);
+int store_key_write(uint8_t * buffer,  uint32_t length);
+
 #endif//ifndef __STOARGE_IF_H__
 

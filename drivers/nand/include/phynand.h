@@ -131,14 +131,15 @@ union nand_core_clk_t {
 
 #define	FBBT_COPY_NUM	1
 
-#define CONFIG_KEYSIZE		0x1000
+/* 512K */
+#define CONFIG_KEYSIZE		0x80000
 #define KEYSIZE	(CONFIG_KEYSIZE - (sizeof(u32)))
-
-#define CONFIG_SECURE_SIZE	(0x10000*2) /* 128k */
+/* 128k */
+#define CONFIG_SECURE_SIZE	(0x10000*2)
 /*fixme, arguing...*/
 #define SECURE_SIZE (CONFIG_SECURE_SIZE - (sizeof(u32)))
 
-/* fixme, max dtd size is 256KBytes. */
+/* 256KBytes. */
 #define CONFIG_DTB_SIZE  (256*1024U)
 #define DTB_SIZE (CONFIG_DTB_SIZE - (sizeof(u32)))
 

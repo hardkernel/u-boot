@@ -18,6 +18,8 @@
 #define AML_CFG_NEWOOB_EN			(1)
 /* store dtd in rsv area! */
 #define AML_CFG_DTB_RSV_EN			(1)
+/* store key in rsv area */
+#define AML_CFG_KEY_RSV_EN			(1)
 
 #define NAND_ADJUST_PART_TABLE
 
