@@ -400,7 +400,7 @@ void sha2(const uint8_t *input, unsigned int ilen, unsigned char output[32], uns
 
 	if (((nSRCAddr >> 24) &  (0xFF)) == 0xD9)
 	{
-		printf("aml log : PIO SHA\n");
+		//printf("aml log : PIO SHA\n");
 		SHA2_HW_init(&sha_ctx, is224 ? 224: 256);
 		SHA2_HW_update(&sha_ctx, input, ilen);
 		SHA2_HW_final(&sha_ctx);
@@ -408,7 +408,7 @@ void sha2(const uint8_t *input, unsigned int ilen, unsigned char output[32], uns
 	}
 	else
 	{
-		printf("aml log : DMA SHA\n");
+		//printf("aml log : DMA SHA\n");
 		SHA2_init( &sha_ctx, is224 ? 224: 256);
 		SHA2_final( &sha_ctx, input,ilen);
 	}

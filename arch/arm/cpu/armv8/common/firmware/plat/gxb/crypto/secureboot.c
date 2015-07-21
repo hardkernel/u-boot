@@ -353,12 +353,23 @@ int aml_sig_check_buffer(unsigned long pBuffer,unsigned int *pEntry)
 	unsigned char *pSig;
 #endif
 
+	int nTick;
+
+//#define AML_SECURE_LOG_TE 1
+
+#if defined(AML_SECURE_LOG_TE)
+	#define AML_GET_TE(a) do{a = *((volatile unsigned int*)0xc1109988);}while(0);
+	unsigned nT1,nT2;
+#else
+	#define AML_GET_TE(...)
+#endif
+
 	unsigned char *pData=0;
 	st_aml_block_header * pBlkHdr = 0;
 	int nBL3XSigFlag = 0;
 	unsigned char szSHA2[32];
 	unsigned char *szAMLBLK= (unsigned char *)(unsigned long)(0x10800000);
-	struct sha2_ctx sha_ctx;
+	sha2_ctx sha_ctx;
 	pBlkHdr = (st_aml_block_header *)pBuffer;
 
 	aml_printf("aml log : Ln = %d\n",__LINE__);
@@ -423,15 +434,20 @@ int aml_sig_check_buffer(unsigned long pBuffer,unsigned int *pEntry)
 	//if(aml_check_secure_set_match(nBL3XSigFlag))
 	//	goto exit;
 
-
+	nTick = 64 - (pBlkHdr->nPUKDataLen & (63));
 	//backup header
 	memcpy((void*)szAMLBLK,(void*)pBuffer,pBlkHdr->nDataOffset);
 	pBlkHdr = (st_aml_block_header *)szAMLBLK;
+
+	flush_dcache_range((unsigned long )szAMLBLK, pBlkHdr->nDataOffset);
 
 	//move original
 	memcpy((void*)pBuffer,(void *)(pBuffer + pBlkHdr->nDataLen),pBlkHdr->nDataOffset);
 
 	flush_dcache_range((unsigned long )pBuffer, pBlkHdr->nDataOffset);
+
+	memcpy((void*)(szAMLBLK+pBlkHdr->nDataOffset),(void*)pBuffer,nTick);
+	flush_dcache_range((unsigned long )(szAMLBLK+pBlkHdr->nDataOffset), nTick);
 
 	aml_printf("aml log : Ln = %d\n",__LINE__);
 
@@ -441,18 +457,32 @@ int aml_sig_check_buffer(unsigned long pBuffer,unsigned int *pEntry)
 	pSig = (unsigned char *)(szAMLBLK + pBlkHdr->nSigOffset);
 #endif //#if defined(CONFIG_AML_SECURE_UBOOT)
 
+	AML_GET_TE(nT1);
+
 	SHA2_init( &sha_ctx, 256);
 	//hash header
 	SHA2_update( &sha_ctx, szAMLBLK, pBlkHdr->bySizeHdr);
 	//skip signature
 	//hash PUK
-	SHA2_update( &sha_ctx, pData, pBlkHdr->nPUKDataLen);
-	//hash data
-	SHA2_update( &sha_ctx, (unsigned char *)(pBuffer), pBlkHdr->nDataLen);
-	//done
-	SHA2_final( &sha_ctx);
+	SHA2_update( &sha_ctx, pData, pBlkHdr->nPUKDataLen+nTick);
+	SHA2_final( &sha_ctx, (unsigned char *)(pBuffer+nTick), pBlkHdr->nDataLen-nTick);
+	AML_GET_TE(nT2);
+
+	//flush_dcache_range((unsigned long )sha_ctx.buf,32);
+
+#if defined(AML_SECURE_LOG_TE)
+	printf("aml log : SHA %d (bytes) used %d(us)\n",pBlkHdr->nDataLen+ pBlkHdr->nPUKDataLen +pBlkHdr->bySizeHdr,
+	nT2 - nT1);
+#endif
 
 	memcpy(szSHA2,sha_ctx.buf,32);
+
+	flush_dcache_range((unsigned long )szSHA2,32);
+
+#if defined(AML_DEBUG_SHOW)
+	aml_printf("\naml log : dump cal SHA2 :\n");
+	aml_u8_printf((unsigned char *)szSHA2,32);
+#endif
 
 	if (!nBL3XSigFlag)
 	{
@@ -460,6 +490,10 @@ int aml_sig_check_buffer(unsigned long pBuffer,unsigned int *pEntry)
 		nReturn = memcmp((const void*)szSHA2,
 		(const void*)(szAMLBLK+pBlkHdr->nSigOffset),sizeof(szSHA2));
 
+#if defined(AML_DEBUG_SHOW)
+		aml_printf("\naml log : dump org SHA :\n");
+		aml_u8_printf((unsigned char *)(szAMLBLK+pBlkHdr->nSigOffset),32);
+#endif
 		//if(!nReturn && pEntry)
 		//	*pEntry = 0;
 		//else
