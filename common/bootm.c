@@ -237,6 +237,12 @@ static int bootm_find_fdt(int flag, int argc, char * const argv[])
 	else
 		dtb_mem_addr = CONFIG_DTB_MEM_ADDR;
 
+#ifdef CONFIG_MULTI_DTB
+	extern unsigned long get_multi_dt_entry(unsigned long fdt_addr);
+	/* update dtb address, compatible with single dtb and multi dtbs */
+	dtb_mem_addr = get_multi_dt_entry(dtb_mem_addr);
+#endif
+
 	ft_addr_bak = (char *)images.ft_addr;
 	ft_len_bak = images.ft_len;
 	images.ft_addr = (char *)map_sysmem(dtb_mem_addr, 0);

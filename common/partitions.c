@@ -27,8 +27,13 @@ int get_partition_from_dts(unsigned char * buffer)
 
 	if ( buffer == NULL)
 		goto _err;
+#ifdef CONFIG_MULTI_DTB
+	extern unsigned long get_multi_dt_entry(unsigned long fdt_addr);
+	dt_addr = (char *)get_multi_dt_entry((unsigned long)buffer);
+#else
 	dt_addr = (char *)buffer;
-	printf("start dts,buffer=%p\n", buffer);
+#endif
+	printf("start dts,buffer=%p,dt_addr=%p\n", buffer, dt_addr);
 	ret = fdt_check_header(dt_addr);
 	if ( ret < 0 )
 	{
