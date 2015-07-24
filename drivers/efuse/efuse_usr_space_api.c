@@ -81,7 +81,7 @@ int efuse_usr_api_init_dtb(const char*  dt_addr)
 		/* printf("%s: propname: %s\n",__func__,propname); */
 		phandle = fdt_getprop(dt_addr, nodeoffset, propname, NULL);
 		if (!phandle) {
-			printf("don't find  match %s\n", propname);
+			EFUSE_ERR("don't find  match %s\n", propname);
 			goto err;
 		}
         poffset = fdt_node_offset_by_phandle(dt_addr,
@@ -113,7 +113,7 @@ int efuse_usr_api_init_dtb(const char*  dt_addr)
         }
 		theKeyInf->size = be32_to_cpup((u32 *)phandle);
 
-		EFUSE_MSG("key[%02d] name=%12s, offset=0x%04x, size=0x%04x\n",
+		EFUSE_DBG("key[%02d] name=%12s, offset=0x%04x, size=0x%04x\n",
                 index, theKeyInf->keyname, theKeyInf->offset, theKeyInf->size);
         if (theKeyInf->offset + theKeyInf->size > max_size) {
             EFUSE_ERR("\n offset (0x%x) + size (0x%x) > max [0x%x]!\n", theKeyInf->offset, theKeyInf->size, max_size);
@@ -123,13 +123,13 @@ int efuse_usr_api_init_dtb(const char*  dt_addr)
 
     _efuseKeyInfos.totalCfgKeyNums = efusekeynum;
     _efuseKeyInfos.pKeyInf         = efusekey_infos;
-	printf("%s success!\n", __func__);
+    EFUSE_DBG("%s success!\n", __func__);
     _efuseKeyInfos.initMaigc = 0xee;
 	return 0;
 
 err:
 	free(efusekey_infos);
-	printf("%s error!\n", __func__);
+	EFUSE_ERR("%s error!\n", __func__);
 	return -1;
 }
 

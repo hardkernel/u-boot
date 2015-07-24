@@ -315,7 +315,7 @@ static int sdc_burn_dtb_load(HIMAGE hImg)
     HIMAGEITEM hImgItem = NULL;
     int rc = 0;
     const char* partName = "dtb";
-    const u64 partBaseOffset = OPTIMUS_DOWNLOAD_TRANSFER_BUF_ADDR;
+    u64 partBaseOffset = OPTIMUS_DOWNLOAD_TRANSFER_BUF_ADDR;
     unsigned char* dtbTransferBuf     = (unsigned char*)partBaseOffset;
 
     //meson1.dtb but not meson.dtb for m8 compatible
@@ -330,6 +330,15 @@ static int sdc_burn_dtb_load(HIMAGE hImg)
         DWN_ERR("Item size 0\n");
         image_item_close(hImgItem); return __LINE__;
     }
+
+#if 1
+    const unsigned itemSzNotAligned = image_item_get_first_cluster_size(hImg, hImgItem);
+    if (itemSzNotAligned & 0x7) {//Not Aligned 8bytes/64bits, mmc dma read will failed
+        DWN_MSG("align 64 for mmc read...\t");//Assert Make 'DDR' buffer addr align 8
+        dtbTransferBuf -= itemSzNotAligned;
+        partBaseOffset -= itemSzNotAligned;
+    }
+#endif
 
     rc = image_item_read(hImg, hImgItem, dtbTransferBuf, (unsigned)itemSz);
     if (rc) {

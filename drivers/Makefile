@@ -25,6 +25,7 @@ obj-y += input/
 obj-y += soc/
 obj-y += thermal/
 obj-$(CONFIG_EFUSE) += efuse/
+obj-$(CONFIG_UNIFY_KEY_MANAGE) += keymanage/
 obj-$(CONFIG_AML_V2_FACTORY_BURN)	+= usb/gadget/v2_burning/
 obj-y += display/
 obj-$(CONFIG_SECURE_STORAGE) += securestorage/

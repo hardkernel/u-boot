@@ -22,7 +22,7 @@
 extern unsigned int get_multi_dt_entry(unsigned int fdt_addr);
 int is_optimus_storage_inited(void);
 
-#ifndef CONFIG_UNIFY_KEY_MANAGE
+#if !defined(CONFIG_UNIFY_KEY_MANAGE)
 int v2_key_read(const char* keyName, u8* keyVal, const unsigned keyValLen, char* errInfo, unsigned* fmtLen)
 {
     DWN_ERR("burn key not supported as CONFIG_UNIFY_KEY_MANAGE undef!!");
@@ -31,6 +31,13 @@ int v2_key_read(const char* keyName, u8* keyVal, const unsigned keyValLen, char*
 
 unsigned v2_key_burn(const char* keyName, const u8* keyVal, const unsigned keyValLen, char* errInfo)
 {
+    DWN_ERR("burn key not supported as CONFIG_UNIFY_KEY_MANAGE undef!!");
+    return OPT_DOWN_FAIL;
+}
+
+int v2_key_command(const int argc, char * const argv[], char *info)
+{
+
     DWN_ERR("burn key not supported as CONFIG_UNIFY_KEY_MANAGE undef!!");
     return OPT_DOWN_FAIL;
 }
@@ -820,6 +827,7 @@ int optimus_storage_init(int toErase)
             DWN_MSG("usb producing env_relocate\n");
             env_relocate();
         }
+        setenv("dtb_mem_addr", simple_itoa((unsigned long)dtbLoadedAddr));
     }
 
     return ret;

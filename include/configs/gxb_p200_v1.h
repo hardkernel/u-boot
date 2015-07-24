@@ -96,6 +96,7 @@
                 "\0"\
         "storeargs="\
             "setenv bootargs ${initargs} logo=${display_layer},loaded,${fb_addr},${outputmode},hdmimode=${hdmimode} cvbsmode=${cvbsmode} hdmitx=${cecconfig} androidboot.firstboot=${firstboot}; "\
+            "run cmdline_keys;"\
             "\0"\
         "switch_bootmode="\
             "get_rebootmode; echo reboot_mode=${reboot_mode};"\
@@ -144,6 +145,16 @@
             "\0"\
         "init_display="\
             "hdmitx hpd;osd open;osd clear;vout output ${outputmode};imgread pic logo bootup $loadaddr;bmp display $bootup_offset;bmp scale"\
+            "\0"\
+        "cmdline_keys="\
+            "if keyman init 0x1234; then "\
+                "if keyman read usid ${loadaddr} str; then "\
+                    "setenv bootargs ${bootargs} androidboot.serialno=${usid};"\
+                "fi;"\
+                "if keyman read mac ${loadaddr} str; then "\
+                    "setenv bootargs ${bootargs} mac=${mac};"\
+                "fi;"\
+            "fi;"\
             "\0"\
 
 #define CONFIG_PREBOOT  \
@@ -236,6 +247,9 @@
 #define CONFIG_AML_FACTORY_BURN_LOCAL_UPGRADE   1       //support factory sdcard burning
 #define CONFIG_POWER_KEY_NOT_SUPPORTED_FOR_BURN 1       //There isn't power-key for factory sdcard burning
 #define CONFIG_SD_BURNING_SUPPORT_UI            1       //Displaying upgrading progress bar when sdcard/udisk burning
+
+#define CONFIG_AML_SECURITY_KEY                 1
+#define CONFIG_UNIFY_KEY_MANAGE                 1
 
 /* net */
 #define CONFIG_CMD_NET   1

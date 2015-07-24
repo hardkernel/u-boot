@@ -9,15 +9,6 @@
 #define USB_BURN_POWER_CONTROL  1
 #endif// #ifdef CONFIG_CMD_AML
 
-#ifndef CONFIG_UNIFY_KEY_MANAGE
-int v2_key_command(const int argc, char * const argv[], char *info)
-{
-
-    DWN_ERR("burn key not supported as CONFIG_UNIFY_KEY_MANAGE undef!!\n");
-    return OPT_DOWN_FAIL;
-}
-#endif//#ifndef CONFIG_UNIFY_KEY_MANAGE
-
 static inline int str2long(const char *p, unsigned long *num)
 {
 	char *endptr;
@@ -527,7 +518,7 @@ int optimus_working (const char *cmd, char* buff)
                 int flag = 0;
                 ret = run_command(cmd, flag);
                 DWN_MSG("ret = %d\n", ret);
-                ret = ret < 0 ? ret : 0;
+                /*ret = ret < 0 ? ret : 0;*/
         }
 
         if (ret)
