@@ -38,7 +38,7 @@ unsigned long get_multi_dt_entry(unsigned long fdt_addr){
 		printf("      Single dtb detected\n");
 		return fdt_addr;
 	}
-	if (dt_magic == AML_DT_HEADER_MAGIC) {/*multi dtb*/
+	else if (dt_magic == AML_DT_HEADER_MAGIC) {/*multi dtb*/
 		printf("      Multi dtb detected\n");
 		/* check and set aml_dt */
 		int i = 0;
@@ -153,6 +153,10 @@ unsigned long get_multi_dt_entry(unsigned long fdt_addr){
 			printf("      Not match any dtb.\n");
 			return fdt_addr;
 		}
+	}
+	else {
+		printf("      Cannot find legal dtb!\n");
+		return fdt_addr;
 	}
 	return 0;
 }
