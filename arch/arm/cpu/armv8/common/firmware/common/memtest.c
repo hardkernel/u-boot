@@ -98,6 +98,15 @@ memTestAddressBus(volatile unsigned int * baseAddress, unsigned int nBytes)
 
 	unsigned int data1, data2;
 
+	/* align the mask address */
+	unsigned int temp_i=1, temp_j=0;
+	temp_j = addressMask;
+	do {
+		temp_i=(temp_i<<1);
+		temp_j=(temp_j>>1);
+	}while((temp_j));
+	addressMask=((temp_i)-1);
+
 	unsigned int ret = 0;
 
 	/*

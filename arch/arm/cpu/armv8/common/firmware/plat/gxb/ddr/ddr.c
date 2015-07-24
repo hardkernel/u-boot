@@ -59,6 +59,8 @@ unsigned int ddr_init(void){
 	if (CONFIG_SPL_DDR_DUMP_FLAG != readl(P_PREG_STICKY_REG0)) {
 		ddr_test();
 	}
+#else
+	ddr_test();
 #endif
 	return 0;
 }
@@ -323,7 +325,10 @@ unsigned int ddr_init_pctl(void){
 		wr_reg(DDR0_PCTL_TINIT, p_ddr_set->t_pctl0_init_us); //20
 		wr_reg(DDR0_PCTL_TRSTH, p_ddr_set->t_pctl0_rsth_us); //50
 		wr_reg(DDR0_PCTL_MCFG, (p_ddr_set->t_pctl0_mcfg)|((p_ddr_set->ddr_2t_mode)?(1<<3):(0<<3)));
-		wr_reg(DDR0_PCTL_MCFG1, p_ddr_set->t_pctl0_mcfg1);
+		if (p_ddr_set->ddr_channel_set == CONFIG_DDR01_SHARE_AC)
+			wr_reg(DDR0_PCTL_MCFG1, ((p_ddr_set->t_pctl0_mcfg1)&0xFFFFFF00));
+		else
+			wr_reg(DDR0_PCTL_MCFG1, p_ddr_set->t_pctl0_mcfg1);
 	}
 
 	if (ddr1_enabled) {
