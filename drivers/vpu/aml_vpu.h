@@ -32,6 +32,7 @@ enum VPU_Chip_e {
 	VPU_CHIP_MAX,
 };
 
+/*
 static char *vpu_chip_name[] = {
 	"m8",
 	"m8baby",
@@ -41,6 +42,7 @@ static char *vpu_chip_name[] = {
 	"gxbaby",
 	"invalid",
 };
+*/
 
 struct VPU_Conf_t {
 	enum VPU_Chip_e  chip_type;

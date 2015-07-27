@@ -67,11 +67,25 @@
 #define RESET2_REGISTER                 0x1103
 #define RESET3_REGISTER                 0x1104
 #define RESET4_REGISTER                 0x1105
+#define RESET5_REGISTER                 0x1106
+#define RESET6_REGISTER                 0x1107
+#define RESET7_REGISTER                 0x1108
 #define RESET0_MASK                     0x1110
 #define RESET1_MASK                     0x1111
 #define RESET2_MASK                     0x1112
 #define RESET3_MASK                     0x1113
 #define RESET4_MASK                     0x1114
+#define RESET5_MASK                     0x1115
+#define RESET6_MASK                     0x1116
+#define RESET7_MASK                     0x1118
+#define RESET0_LEVEL                    0x1120
+#define RESET1_LEVEL                    0x1121
+#define RESET2_LEVEL                    0x1122
+#define RESET3_LEVEL                    0x1123
+#define RESET4_LEVEL                    0x1124
+#define RESET5_LEVEL                    0x1125
+#define RESET6_LEVEL                    0x1126
+#define RESET7_LEVEL                    0x1127
 /* GX register */
 #define RESET0_REGISTER_GX              0x01
 #define RESET1_REGISTER_GX              0x02

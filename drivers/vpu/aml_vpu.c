@@ -27,10 +27,10 @@
 #include "aml_vpu_reg.h"
 #include "aml_vpu.h"
 
-#define VPU_VERION	"v01"
+#define VPU_VERION	"v02"
 /* #define VPU_VCBUS_TEST */
 
-static char * dt_addr;
+static char *dt_addr;
 static int dts_ready = 0;
 
 static struct VPU_Conf_t vpu_conf = {
@@ -263,20 +263,22 @@ static void vpu_power_on_m8_g9(void)
 	unsigned int i;
 
 	vpu_ao_setb(AO_RTI_GEN_PWR_SLEEP0, 0, 8, 1); /* [8] power on */
+	udelay(20);
+
 	/* power up memories */
 	for (i = 0; i < 32; i+=2) {
 		vpu_hiu_setb(HHI_VPU_MEM_PD_REG0, 0, i, 2);
-		udelay(2);
+		udelay(5);
 	}
 	for (i = 0; i < 32; i+=2) {
 		vpu_hiu_setb(HHI_VPU_MEM_PD_REG1, 0, i, 2);
-		udelay(2);
+		udelay(5);
 	}
 	for (i = 8; i < 16; i++) {
 		vpu_hiu_setb(HHI_MEM_PD_REG0, 0, i, 1);
-		udelay(2);
+		udelay(5);
 	}
-	udelay(2);
+	udelay(20);
 
 	/* Reset VIU + VENC */
 	/* Reset VENCI + VENCP + VADC + VENCL */
@@ -303,39 +305,41 @@ static void vpu_power_on_gx(void)
 	unsigned int i;
 
 	vpu_ao_setb(AO_RTI_GEN_PWR_SLEEP0, 0, 8, 1); /* [8] power on */
+	udelay(20);
+
 	/* power up memories */
 	for (i = 0; i < 32; i+=2) {
 		vpu_hiu_setb(HHI_VPU_MEM_PD_REG0_GX, 0, i, 2);
-		udelay(2);
+		udelay(5);
 	}
 	for (i = 0; i < 32; i+=2) {
 		vpu_hiu_setb(HHI_VPU_MEM_PD_REG1_GX, 0, i, 2);
-		udelay(2);
+		udelay(5);
 	}
 	for (i = 8; i < 16; i++) {
 		vpu_hiu_setb(HHI_MEM_PD_REG0_GX, 0, i, 1);
-		udelay(2);
+		udelay(5);
 	}
-	udelay(2);
+	udelay(20);
 
 	/* Reset VIU + VENC */
 	/* Reset VENCI + VENCP + VADC + VENCL */
 	/* Reset HDMI-APB + HDMI-SYS + HDMI-TX + HDMI-CEC */
-	vpu_cbus_clr_mask(RESET0_MASK, ((1 << 5) | (1<<10)));
-	vpu_cbus_clr_mask(RESET4_MASK, ((1 << 6) | (1<<7) | (1<<9) | (1<<13)));
-	vpu_cbus_clr_mask(RESET2_MASK, ((1 << 2) | (1<<3) | (1<<11) | (1<<15)));
-	vpu_cbus_write(RESET2_REGISTER, ((1 << 2) | (1<<3) | (1<<11) | (1<<15)));
-	/* reset this will cause VBUS reg to 0 */
-	vpu_cbus_write(RESET4_REGISTER, ((1 << 6) | (1<<7) | (1<<9) | (1<<13)));
-	vpu_cbus_write(RESET0_REGISTER, ((1 << 5) | (1<<10)));
-	vpu_cbus_write(RESET4_REGISTER, ((1 << 6) | (1<<7) | (1<<9) | (1<<13)));
-	vpu_cbus_write(RESET2_REGISTER, ((1 << 2) | (1<<3) | (1<<11) | (1<<15)));
-	vpu_cbus_set_mask(RESET0_MASK, ((1 << 5) | (1<<10)));
-	vpu_cbus_set_mask(RESET4_MASK, ((1 << 6) | (1<<7) | (1<<9) | (1<<13)));
-	vpu_cbus_set_mask(RESET2_MASK, ((1 << 2) | (1<<3) | (1<<11) | (1<<15)));
+	vpu_cbus_clr_mask(RESET0_LEVEL, ((1<<5) | (1<<10) | (1<<19) | (1<<13)));
+	vpu_cbus_clr_mask(RESET1_LEVEL, (1<<5));
+	vpu_cbus_clr_mask(RESET2_LEVEL, (1<<15));
+	vpu_cbus_clr_mask(RESET4_LEVEL, ((1<<6) | (1<<7) | (1<<13) | (1<<5) | (1<<9) | (1<<4) | (1<<12)));
+	vpu_cbus_clr_mask(RESET7_LEVEL, (1<<7));
 
 	/* Remove VPU_HDMI ISO */
 	vpu_ao_setb(AO_RTI_GEN_PWR_SLEEP0, 0, 9, 1); /* [9] VPU_HDMI */
+
+	/* release Reset */
+	vpu_cbus_set_mask(RESET0_LEVEL, ((1 << 5) | (1<<10) | (1<<19) | (1<<13)));
+	vpu_cbus_set_mask(RESET1_LEVEL, (1<<5));
+	vpu_cbus_set_mask(RESET2_LEVEL, (1<<15));
+	vpu_cbus_set_mask(RESET4_LEVEL, ((1<<6) | (1<<7) | (1<<13) | (1<<5) | (1<<9) | (1<<4) | (1<<12)));
+	vpu_cbus_set_mask(RESET7_LEVEL, (1<<7));
 }
 
 static void vpu_power_off_m8_g9(void)
@@ -345,20 +349,22 @@ static void vpu_power_off_m8_g9(void)
 	/* Power down VPU_HDMI */
 	/* Enable Isolation */
 	vpu_ao_setb(AO_RTI_GEN_PWR_SLEEP0, 1, 9, 1); /* ISO */
+	udelay(20);
+
 	/* power down memories */
 	for (i = 0; i < 32; i+=2) {
 		vpu_hiu_setb(HHI_VPU_MEM_PD_REG0, 0x3, i, 2);
-		udelay(2);
+		udelay(5);
 	}
 	for (i = 0; i < 32; i+=2) {
 		vpu_hiu_setb(HHI_VPU_MEM_PD_REG1, 0x3, i, 2);
-		udelay(2);
+		udelay(5);
 	}
 	for (i = 8; i < 16; i++) {
 		vpu_hiu_setb(HHI_MEM_PD_REG0, 0x1, i, 1);
-		udelay(2);
+		udelay(5);
 	}
-	udelay(2);
+	udelay(20);
 
 	/* Power down VPU domain */
 	vpu_ao_setb(AO_RTI_GEN_PWR_SLEEP0, 1, 8, 1); /* PDN */
@@ -373,20 +379,22 @@ static void vpu_power_off_gx(void)
 	/* Power down VPU_HDMI */
 	/* Enable Isolation */
 	vpu_ao_setb(AO_RTI_GEN_PWR_SLEEP0, 1, 9, 1); /* ISO */
+	udelay(20);
+
 	/* power down memories */
 	for (i = 0; i < 32; i+=2) {
 		vpu_hiu_setb(HHI_VPU_MEM_PD_REG0_GX, 0x3, i, 2);
-		udelay(2);
+		udelay(5);
 	}
 	for (i = 0; i < 32; i+=2) {
 		vpu_hiu_setb(HHI_VPU_MEM_PD_REG1_GX, 0x3, i, 2);
-		udelay(2);
+		udelay(5);
 	}
 	for (i = 8; i < 16; i++) {
 		vpu_hiu_setb(HHI_MEM_PD_REG0_GX, 0x1, i, 1);
-		udelay(2);
+		udelay(5);
 	}
-	udelay(2);
+	udelay(20);
 
 	/* Power down VPU domain */
 	vpu_ao_setb(AO_RTI_GEN_PWR_SLEEP0, 1, 8, 1); /* PDN */
@@ -468,11 +476,9 @@ static void detect_vpu_chip(void)
 	vpu_conf.fclk_type = FCLK_TYPE_GXBB;
 #endif
 
-	printf("vpu driver detect cpu type: %s\n",
-			vpu_chip_name[vpu_chip_type]);
+	printf("vpu detect type: %d\n", vpu_chip_type);
 }
 
-#ifdef VPU_VCBUS_TEST
 #define VCBUS_TEST_NUM    4
 static unsigned int vcbus_reg[] = {
 	0x1d00, /* VPP_DUMMY_DATA */
@@ -480,7 +486,7 @@ static unsigned int vcbus_reg[] = {
 	0x1c30, /* ENCP_DVI_HSO_BEGIN */
 	0x1b78, /* VENC_VDAC_DACSEL0 */
 };
-static void vcbus_test(void)
+void vcbus_test(void)
 {
 	unsigned int val;
 	unsigned int temp;
@@ -508,7 +514,6 @@ static void vcbus_test(void)
 		printf("\n");
 	}
 }
-#endif
 
 static int get_vpu_config(void)
 {
@@ -566,7 +571,7 @@ int vpu_probe(void)
 	ret = get_vpu_config();
 	vpu_power_on();
 	set_vpu_clk(vpu_conf.clk_level);
-	vpu_power_on();
+	//vpu_power_on();
 #ifdef VPU_VCBUS_TEST
 	vcbus_test();
 #endif

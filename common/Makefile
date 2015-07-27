@@ -197,7 +197,7 @@ obj-$(CONFIG_YAFFS2) += cmd_yaffs2.o
 obj-$(CONFIG_CMD_SPL) += cmd_spl.o
 obj-$(CONFIG_CMD_ZIP) += cmd_zip.o
 obj-$(CONFIG_CMD_ZFS) += cmd_zfs.o
-obj-$(CONFIG_VPU_PRESET) += cmd_vpu.o
+obj-$(CONFIG_AML_VPU) += cmd_vpu.o
 obj-$(CONFIG_CMD_DDR_TEST) += cmd_d2pll.o
 obj-$(CONFIG_CMD_DDR_TEST) += cmd_ddr_test.o
 

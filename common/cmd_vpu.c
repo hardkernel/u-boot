@@ -2,7 +2,7 @@
 #include <command.h>
 #include <vpu.h>
 
-#ifdef CONFIG_VPU_PRESET
+#ifdef CONFIG_AML_VPU
 static int do_vpu_enable(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	vpu_probe();
@@ -38,10 +38,17 @@ static int do_vpu_clk(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	return ret;
 }
 
+static int do_vpu_test(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+	vcbus_test();
+	return 0;
+}
+
 static cmd_tbl_t cmd_vpu_sub[] = {
 	U_BOOT_CMD_MKENT(probe, 2, 0, do_vpu_enable, "", ""),
 	U_BOOT_CMD_MKENT(remove, 2, 0, do_vpu_disable, "", ""),
 	U_BOOT_CMD_MKENT(clk, 3, 0, do_vpu_clk, "", ""),
+	U_BOOT_CMD_MKENT(test, 2, 0, do_vpu_test, "", ""),
 };
 
 static int do_vpu(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
@@ -67,5 +74,6 @@ U_BOOT_CMD(
 	"vpu sub-system",
 	"vpu probe        - enable vpu layer\n"
 	"vpu remove       - disable vpu layer\n"
+	"vpu test         - test vcbus access\n"
 );
 #endif
