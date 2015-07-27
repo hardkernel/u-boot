@@ -114,7 +114,7 @@ static int abortboot_keyed(int bootdelay)
 					delaykey[i].len, delaykey[i].str,
 					delaykey[i].len) == 0) {
 					debug_bootkeys("got %skey\n",
-						delaykey[i].retry ? "delay" :
+						       delaykey[i].retry ? "delay" :
 						"stop");
 
 				/* don't retry auto boot */
@@ -146,6 +146,7 @@ static int abortboot_normal(int bootdelay)
 {
 	int abort = 0;
 	unsigned long ts;
+	int key;
 
 #ifdef CONFIG_MENUPROMPT
 	printf(CONFIG_MENUPROMPT);
@@ -167,21 +168,18 @@ static int abortboot_normal(int bootdelay)
 		}
 	}
 #endif
-
 	while ((bootdelay > 0) && (!abort)) {
 		--bootdelay;
 		/* delay 1000 ms */
 		ts = get_timer(0);
 		do {
 			if (tstc()) {	/* we got a key press	*/
-				abort  = 1;	/* don't auto boot	*/
-				bootdelay = 0;	/* no more delay	*/
-# ifdef CONFIG_MENUKEY
-				menukey = getc();
-# else
-				(void) getc();  /* consume input	*/
-# endif
-				break;
+				key = getc();
+				if ((key != 0xff) && (key != 0)) {
+					abort  = 1;	/* don't auto boot	*/
+					bootdelay = 0;	/* no more delay	*/
+					break;
+				}
 			}
 			udelay(10000);
 		} while (!abort && get_timer(ts) < 1000);
