@@ -10,6 +10,7 @@
 struct hdmitx_dev hdmitx_device;
 
 static void hdmi_tvenc_set(enum hdmi_vic vic);
+extern void _udelay(unsigned int us);
 
 #define HSYNC_POLARITY      1                       // HSYNC polarity: active high
 #define VSYNC_POLARITY      1                       // VSYNC polarity: active high
@@ -312,13 +313,16 @@ static void config_hdmi20_tx ( enum hdmi_vic vic, struct hdmi_format_para *para,
 	/* Enable tmds_clk */
 	/* Bring HDMITX MEM output of power down */
 	hd_set_reg_bits(P_HHI_MEM_PD_REG0, 0, 8, 8);
-    // Enable APB3 fail on error
-    hd_set_reg_bits(P_HDMITX_CTRL_PORT, 1, 15, 1);
-    hd_set_reg_bits((P_HDMITX_CTRL_PORT + 0x10), 1, 15, 1);
-
+	/* reset HDMITX APB & TX & PHY */
+	hd_set_reg_bits(P_RESET0_REGISTER, 1, 19, 1);
+	hd_set_reg_bits(P_RESET2_REGISTER, 1, 15, 1);
+	hd_set_reg_bits(P_RESET2_REGISTER, 1,  2, 1);
+	// Enable APB3 fail on error
+	hd_set_reg_bits(P_HDMITX_CTRL_PORT, 1, 15, 1);
+	hd_set_reg_bits((P_HDMITX_CTRL_PORT + 0x10), 1, 15, 1);
 	/* Bring out of reset */
 	hdmitx_wr_reg(HDMITX_TOP_SW_RESET,  0);
-
+	_udelay(200);
 	/* Enable internal pixclk, tmds_clk, spdif_clk, i2s_clk, cecclk */
 	hdmitx_wr_reg(HDMITX_TOP_CLK_CNTL,  0x0000003f);
 	hdmitx_wr_reg(HDMITX_DWC_MC_LOCKONCLOCK, 0xff);
