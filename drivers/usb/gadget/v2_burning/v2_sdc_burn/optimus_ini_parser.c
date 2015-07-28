@@ -191,11 +191,11 @@ int parse_ini_file_2_valid_lines(const char* filePath, char* iniBuf, const unsig
     fileSz = (unsigned)do_fat_get_fileSz(filePath);
     if (!fileSz) {
             err("File %s not exist in sdcard??\n", filePath);
-            return __LINE__;
+            return 0;
     }
     if (fileSz >= bufSz) {
             err("file size 0x%x illegal, > bufSz 0x%x\n", fileSz, bufSz);
-            return __LINE__;
+            return 0;
     }
     DWN_MSG("ini sz 0x%xB\n", fileSz);
 
