@@ -29,6 +29,9 @@
 #include <fdt.h>
 #include <libfdt.h>
 #include <fdt_support.h>
+#if defined(CONFIG_MACH_MESON8_ODROIDC)
+#include <asm/arch/gpio.h>
+#endif
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -273,6 +276,16 @@ static int bootm_linux_fdt(int machid, bootm_headers_t *images)
 	fdt_initrd(*of_flat_tree, *initrd_start, *initrd_end, 1);
 
 	announce_and_cleanup();
+
+#if defined(CONFIG_MACH_MESON8_ODROIDC)
+	amlogic_gpio_direction_output(GPIOAO_3, 1);  // TF_3V3N_1V8 -> 1.8V
+	amlogic_gpio_direction_output(GPIOY_12, 0);  // TFLASH_VDD_EN -> disable
+
+	udelay(500000);
+
+	amlogic_gpio_direction_output(GPIOAO_3, 0);  // TF_3V3N_1V8 -> 3.3V
+	amlogic_gpio_direction_output(GPIOY_12, 1);  // TFLASH_VDD_EN -> enable
+#endif
 
 	kernel_entry(0, machid, *of_flat_tree);
 	/* does not return */
