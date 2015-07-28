@@ -427,7 +427,7 @@ int do_keyunify (cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
         unsigned len  = argc > 4 ? simple_strtoul(argv[4], NULL, 0) : 0;
         char*  dataBuf = NULL;
 
-        if (argc < 4)
+        if (argc == 4)
         {
             const char* hexascii = argv[3];
 

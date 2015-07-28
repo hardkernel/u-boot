@@ -375,7 +375,7 @@ U_BOOT_CMD(
 	"size keyname <addr>  --- get key size configured in dts\n"
 	"read keyname addr <size> --- read key value to mem addr \n"
 	"write --- write key value\n"
-	"       efuse_user write keyname hex string --- write key value in hex string\n"
+	"       efuse_user write keyname hexstring --- write key value in hex string\n"
 	"       efuse_user write keyname addr size --- write key value, U need load you key value into mem addr first\n"
 );
 

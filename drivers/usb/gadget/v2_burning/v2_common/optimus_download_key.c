@@ -119,8 +119,9 @@ int v2_key_command(const int argc, char * const argv[], char *info)
             DWN_ERR(info);
             return __LINE__;
         }
-        sprintf(info, "%s:key[%s] was %s burned yet\n",
-                !keyIsBurned ? "failed" : "success", queryKey, !keyIsBurned ? "NOT" : "");
+        sprintf(info, "%s:key[%s] was %s burned", keyIsBurned ? "success" : "failed",
+                        queryKey, keyIsBurned ? "" : "NOT");
+        rcode = !keyIsBurned;
     }
     else if(!strcmp("can_write", keyCmd))
     {
@@ -149,6 +150,7 @@ int v2_key_command(const int argc, char * const argv[], char *info)
         int canWrite = ! (exist && !canOverWrite);
         sprintf(info, "%s:key[%s] %s can write(exist=%d, canOverWrite=%d)\n",
                 canWrite ? "success" : "failed", queryKey, canWrite ? "" : "NOT", exist, canOverWrite);
+        rcode = !canWrite;
     }
     else if(!strcmp("can_read", keyCmd))
     {
@@ -170,6 +172,7 @@ int v2_key_command(const int argc, char * const argv[], char *info)
         }
         sprintf(info, "%s:key[%s] %s can read\n",
                 isSecure ? "failed" : "success", queryKey, isSecure ? "NOT" : "");
+        rcode = isSecure;
     }
     else if(!strcmp("write", keyCmd))
     {
@@ -216,6 +219,7 @@ int v2_key_command(const int argc, char * const argv[], char *info)
             return __LINE__;
         }
         sprintf(info, "success%zd\n", keySz);
+        rcode = !keySz;
     }
     else{
         sprintf(info, "failed:Error keyCmd[%s]\n", keyCmd);
