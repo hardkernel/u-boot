@@ -90,16 +90,26 @@
             "rootfstype=ramfs init=/init console=ttyS0,115200 no_console_suspend ao_jtag_on earlyprintk=aml-uart,0xc81004c0 androidboot.selinux=permissive"\
             "\0"\
         "upgrade_check="\
-                "echo ${upgrade_step}; if itest ${upgrade_step} == 3; then run init_display; run storeargs; run update; fi; "\
-                "echo ${upgrade_step}; if itest ${upgrade_step} == 1; then env default -a; setenv upgrade_step 2; saveenv; fi; "\
-                "jtagon apao; "\
-                "\0"\
+            "echo upgrade_step=${upgrade_step}; "\
+            "if itest ${upgrade_step} == 3; then "\
+                "run init_display; run storeargs; run update;"\
+            "else if itest ${upgrade_step} == 1; then "\
+                "env default -a; setenv upgrade_step 2; saveenv;"\
+            "fi;fi;"\
+            "jtagon apao; "\
+            "\0"\
+	    "bootmode_check="\
+            "get_rebootmode; echo reboot_mode=${reboot_mode};"\
+            "if test ${reboot_mode} = factory_reset; then "\
+                "env default -a;save;"\
+            "fi;"\
+            "\0" \
         "storeargs="\
             "setenv bootargs ${initargs} logo=${display_layer},loaded,${fb_addr},${outputmode},hdmimode=${hdmimode} cvbsmode=${cvbsmode} hdmitx=${cecconfig} androidboot.firstboot=${firstboot}; "\
             "run cmdline_keys;"\
             "\0"\
         "switch_bootmode="\
-            "get_rebootmode; echo reboot_mode=${reboot_mode};"\
+            "get_rebootmode;"\
             "if test ${reboot_mode} = factory_reset; then "\
                     "run recovery_from_flash;"\
             "else if test ${reboot_mode} = update; then "\
@@ -157,8 +167,10 @@
             "fi;"\
             "\0"\
 
+
 #define CONFIG_PREBOOT  \
             "run upgrade_check;"\
+            "run bootmode_check;"\
             "run init_display;"\
             "run storeargs;"\
             "run switch_bootmode;" \
