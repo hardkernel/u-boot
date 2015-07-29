@@ -55,12 +55,15 @@ unsigned int ddr_init(void){
 	ddr_init_pctl();
 	ddr_init_dmc();
 	ddr_print_info();
+#ifndef CONFIG_PXP_EMULATOR
+//can not enable ddr test on pxp, for kernel and dtb already load in ddr
 #ifdef CONFIG_SPL_DDR_DUMP
 	if (CONFIG_SPL_DDR_DUMP_FLAG != readl(P_PREG_STICKY_REG0)) {
 		ddr_test();
 	}
 #else
 	ddr_test();
+#endif
 #endif
 	return 0;
 }
