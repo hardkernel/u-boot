@@ -161,13 +161,18 @@
                 "fi;"\
             "fi;"\
             "\0"\
-
+        "upgrade_key="\
+            "if gpio input GPIOAO_3; then "\
+                "echo detect upgrade key; sleep 5; run update;"\
+            "fi;"\
+            "\0"\
 
 #define CONFIG_PREBOOT  \
             "run upgrade_check;"\
             "run bootmode_check;"\
             "run init_display;"\
             "run storeargs;"\
+            "run upgrade_key;" \
             "run switch_bootmode;" \
             "run factory_reset_poweroff_protect;"
 #define CONFIG_BOOTCOMMAND "run storeboot"
@@ -295,6 +300,7 @@
 #define CONFIG_CMD_ECHO 1
 #define CONFIG_CMD_JTAG	1
 #define CONFIG_CMD_AUTOSCRIPT 1
+#define CONFIG_CMD_MISC 1
 
 /*file system*/
 #define CONFIG_DOS_PARTITION 1
