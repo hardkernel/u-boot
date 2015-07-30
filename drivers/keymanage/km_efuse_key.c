@@ -10,6 +10,10 @@
  *
  */
 #include "key_manage_i.h"
+#include <asm/arch/secure_apb.h>
+#include <asm/io.h>
+
+#define SECURE_BOOT_KEY_NAME    "secure_boot_set"
 
 extern int efuse_usr_api_init_dtb(const char*  dt_addr);
 extern int efuse_usr_api_get_cfg_key_size(const char* keyname, unsigned* pSz);
@@ -54,7 +58,16 @@ int keymanage_efuse_write(const char *keyname, const void* keydata, unsigned int
 {
     int ret = 0;
 
-    ret = efuse_usr_api_write_key(keyname,  keydata, datalen);
+    if (!strcmp(SECURE_BOOT_KEY_NAME, keyname))
+    {
+            char _cmdbuf[96];
+            sprintf(_cmdbuf, "efuse %s %p", keyname, keydata);
+            ret = run_command(_cmdbuf, 0);;
+    }
+    else
+    {
+            ret = efuse_usr_api_write_key(keyname,  keydata, datalen);
+    }
 
     return ret;
 }
@@ -75,34 +88,53 @@ ssize_t keymanage_efuse_size(const char* keyname)
 
 int keymanage_efuse_exist(const char* keyname)
 {
-    int ret = 0;
-    const ssize_t cfgSz = keymanage_efuse_size(keyname);
-    char* databuf = NULL;
-    int isEmpty = 1;
-    int i = 0;
 
-    databuf = (char*)malloc(cfgSz);
-    if (!databuf) {
-        KM_ERR("Fail to alloc bufsz 0x%x for key %s\n", (unsigned)cfgSz, keyname);
-        return 0;
-    }
-    ret = keymanage_efuse_read(keyname, databuf, cfgSz);
-    if (ret) {
-        KM_ERR("Fail at read key[%s]\n", keyname);
-        goto _exit;
-    }
-    for (i = 0; i < cfgSz && isEmpty; ++i) {
-        isEmpty = !databuf[i];
-    }
+        if (!strcmp(SECURE_BOOT_KEY_NAME, keyname))
+        {
+                const unsigned long cfg10 = readl(AO_SEC_SD_CFG10);
+                KM_MSG("cfg10=0x%lX\n", cfg10);
+                return ( cfg10 & (0x1<< 4) );
+        }
+        else
+        {
+                int ret = 0;
+                const ssize_t cfgSz = keymanage_efuse_size(keyname);
+                char* databuf = NULL;
+                int isEmpty = 1;
+                int i = 0;
+
+                databuf = (char*)malloc(cfgSz);
+                if (!databuf) {
+                        KM_ERR("Fail to alloc bufsz 0x%x for key %s\n", (unsigned)cfgSz, keyname);
+                        return 0;
+                }
+                ret = keymanage_efuse_read(keyname, databuf, cfgSz);
+                if (ret) {
+                        KM_ERR("Fail at read key[%s]\n", keyname);
+                        goto _exit;
+                }
+                for (i = 0; i < cfgSz && isEmpty; ++i) {
+                        isEmpty = !databuf[i];
+                }
 
 _exit:
-    free(databuf);
-    return !isEmpty;
+                free(databuf);
+                return !isEmpty;
+        }
+
+        return __LINE__;
 }
 
 int keymanage_efuse_query_can_read(const char* keyname)
 {
-    return 1;//user space always can be read
+        if (!strcmp(SECURE_BOOT_KEY_NAME, keyname))
+        {
+                return 0;
+        }
+        else
+        {
+                return 1;//user space always can be read
+        }
 }
 
 //data format is hexdata

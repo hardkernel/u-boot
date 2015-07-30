@@ -99,7 +99,7 @@ static int _burn_key_in_type_mac(const char* keyname, const char* srcKeyVal, con
                 return __LINE__;
             }
         }
-        if (':' != *p && *p) {
+        if (':' != *p && index + k < _UsrMacKeyLen) {
             KM_ERR("mac str(%s) fmt err at index[%d], must be :, but %c\n", srcKeyVal, index + 2, *p);
             return __LINE__;
         }
