@@ -75,7 +75,7 @@ static int nand_key_read(struct aml_keybox_provider_s * provider, u8 * buf, int 
 	struct nand_menson_key *key_ptr = NULL;
 	//int error = 0,i=0;
 	int error = 0;
-	if (len > KEYSIZE)
+	if (len > CONFIG_KEYSIZE)
 	{
 		printk("key data len too much,%s\n",__func__);
 		return -EFAULT;
@@ -107,7 +107,7 @@ static int nand_key_write(struct aml_keybox_provider_s * provider, u8 *buf,int l
 	//int error = 0,i=0;
 	int error = 0;
 
-	if (len > KEYSIZE)
+	if (len > CONFIG_KEYSIZE)
 	{
 		printk("key data len too much,%s\n",__func__);
 		return -EFAULT;

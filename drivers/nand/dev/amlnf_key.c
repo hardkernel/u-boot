@@ -17,7 +17,7 @@ int amlnf_key_read(u8 * buf, int len)
 		return -EFAULT;
 	}
 
-	if (len > KEYSIZE) {
+	if (len > CONFIG_KEYSIZE) {
 		printk("%s key data len too much\n",__func__);
 		return -EFAULT;
 	}
@@ -57,7 +57,7 @@ int amlnf_key_write(u8 *buf, int len)
 		return -EFAULT;
 	}
 
-	if (len > KEYSIZE) {
+	if (len > CONFIG_KEYSIZE) {
 		printk("key data len too much,%s\n",__func__);
 		return -EFAULT;
 	}

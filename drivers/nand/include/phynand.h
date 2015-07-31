@@ -132,7 +132,7 @@ union nand_core_clk_t {
 #define	FBBT_COPY_NUM	1
 
 /* 512K */
-#define CONFIG_KEYSIZE		0x80000
+#define CONFIG_KEYSIZE		(256*1024)
 #define KEYSIZE	(CONFIG_KEYSIZE - (sizeof(u32)))
 /* 128k */
 #define CONFIG_SECURE_SIZE	(0x10000*2)
