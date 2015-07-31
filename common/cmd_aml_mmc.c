@@ -33,9 +33,29 @@ extern int find_dev_num_by_partition_name (char *name);
 #define DTB_BLOCK_CNT	1024
 #define SZ_1M	0x100000
 #define DTB_ADDR_SIZE	(SZ_1M * 40)
+#define CONFIG_SECURITYKEY
 bool emmckey_is_protected (struct mmc *mmc)
 {
-	return 0;
+#ifdef CONFIG_STORE_COMPATIBLE
+#ifdef CONFIG_SECURITYKEY
+	if (info_disprotect & DISPROTECT_KEY) { // disprotect
+		printf("emmckey_is_protected : disprotect\n ");
+		return 0;
+	}else{
+		printf("emmckey_is_protected : protect\n ");
+	// protect
+		return 1;
+	}
+#else
+		return 0;
+#endif
+#else
+#ifdef CONFIG_SECURITYKEY
+		//return mmc->key_protect;
+#else
+		return 0;
+#endif
+#endif
 }
 
 unsigned emmc_cur_partition = 0;
@@ -347,9 +367,10 @@ int do_amlmmcops(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
                                         printf("device %d is invalid\n",dev);
                                         return 1;
                                 }
-                                mmc->key_protect = 0;
+                                //mmc->key_protect = 0;
 #ifdef CONFIG_STORE_COMPATIBLE
                                 info_disprotect |= DISPROTECT_KEY;  //disprotect
+                                printf("emmc disprotect key\n");
 #endif
                                 return 0;
                         }
