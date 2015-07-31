@@ -87,13 +87,12 @@ static int amlnand_oops_handle(struct amlnand_chip *aml_chip, int flag)
 	}
 	memset(buf,0x0,buf_size);
 
-#ifdef CONFIG_SECURITYKEY
+	/* fixme, should not exit here, 20150801 */
 	ret = amlnand_info_init(aml_chip, (unsigned char *)&(aml_chip->nand_key),buf,(unsigned char *)KEY_INFO_HEAD_MAGIC, CONFIG_KEYSIZE);
 	if (ret < 0) {
-		aml_nand_msg("invalid nand key\n");
+		aml_nand_msg("%s() %d invalid nand key\n", __FUNCTION__, __LINE__);
 		goto exit_error0;
 	}
-#endif
 
 #ifdef CONFIG_SECURE_NAND
 	ret = amlnand_info_init(aml_chip, (unsigned char *)&(aml_chip->nand_secure),buf,(unsigned char *)SECURE_INFO_HEAD_MAGIC, CONFIG_SECURE_SIZE);
@@ -183,9 +182,7 @@ static int amlnand_oops_handle(struct amlnand_chip *aml_chip, int flag)
 				aml_nand_msg("nand erasing %d %% --%d %% complete",percent,percent+10);
 		}
 	}
-#if defined(CONFIG_SECURE_NAND) || defined(CONFIG_SECURITYKEY)
 exit_error0:
-#endif
 	if (buf) {
 		kfree(buf);
 		buf = NULL;
@@ -3469,13 +3466,11 @@ int  shipped_bbt_invalid_ops(struct amlnand_chip *aml_chip)
 	} else {
 	/* normal boot or upgrade, no need to erase the whole chip! */
 	/* init key info here!*/
-#ifdef CONFIG_SECURITYKEY
 		ret = amlnand_info_init(aml_chip, (unsigned char *)&(aml_chip->nand_key),buf,(unsigned char *)KEY_INFO_HEAD_MAGIC, CONFIG_KEYSIZE);
 		if (ret < 0) {
 			aml_nand_msg("invalid nand key\n");
 			goto exit_error0;
 		}
-#endif
 #ifdef CONFIG_SECURE_NAND
 		ret = amlnand_info_init(aml_chip, (unsigned char *)&(aml_chip->nand_secure),buf,(unsigned char *)SECURE_INFO_HEAD_MAGIC, CONFIG_SECURE_SIZE);
 		if (ret < 0) {
@@ -3542,13 +3537,11 @@ int  shipped_bbt_invalid_ops(struct amlnand_chip *aml_chip)
 	}
 #else
 
-#ifdef CONFIG_SECURITYKEY
 	ret = amlnand_info_init(aml_chip, (unsigned char *)&(aml_chip->nand_key),buf,(unsigned char *)KEY_INFO_HEAD_MAGIC, CONFIG_KEYSIZE);
 	if (ret < 0) {
 	aml_nand_msg("invalid nand key\n");
 	goto exit_error0;
 	}
-#endif
 
 #ifdef CONFIG_SECURE_NAND
 	ret = amlnand_info_init(aml_chip, (unsigned char *)&(aml_chip->nand_secure),buf,(unsigned char *)SECURE_INFO_HEAD_MAGIC, CONFIG_SECURE_SIZE);

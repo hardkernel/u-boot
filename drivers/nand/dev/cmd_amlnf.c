@@ -341,6 +341,7 @@ static int do_amlnfphy(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]
 
 	if (strcmp(cmd, "disprotect") == 0) {
 		protect_name = argv[2];
+		/* fixme, using amlnf_chip*/
 		amlnf_disprotect(protect_name);
 		return 0;
 	}

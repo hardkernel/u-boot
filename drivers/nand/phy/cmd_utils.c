@@ -168,7 +168,64 @@ int nand_write_ops(struct amlnand_phydev *phydev)
 
 	return ret;
 }
+#if 1
+static int erase_env_protect(struct amlnand_chip *aml_chip, int blk)
+{
+	struct hw_controller *controller = &aml_chip->controller;
+	struct nand_flash *flash = &aml_chip->flash;
+	struct read_retry_info *retry_info = &(controller->retry_info);
+	struct nand_arg_info *shipped_bbtinfo = &aml_chip->shipped_bbtinfo;
+	struct nand_arg_info *nand_key = &aml_chip->nand_key;
+	struct nand_arg_info *nand_secure = &aml_chip->nand_secure;
+	unsigned char phys_erase_shift;
+	unsigned short start_blk, nand_boot;
+	unsigned  offset;
+	int ret = 0;
 
+	nand_boot = 1;
+
+	if (nand_boot)
+		offset = (1024 * flash->pagesize);
+	else {
+		offset = 0;
+	}
+
+	phys_erase_shift = ffs(flash->blocksize) - 1;
+
+	start_blk = (int)(offset >> phys_erase_shift);
+
+	blk  -= (controller->chip_num - 1) * start_blk;
+
+	if (!(info_disprotect & DISPROTECT_FBBT)) {
+		/* do not erase fbbt whenever! */
+		if (((blk == shipped_bbtinfo->valid_blk_addr))
+			&&(shipped_bbtinfo->valid_blk_addr >= start_blk)){
+			aml_nand_msg("protect fbbt at blk %d",blk);
+			ret = -1;
+		}else if(((blk == retry_info->info_save_blk)
+			&&(retry_info->info_save_blk >= start_blk)
+			&&(flash->new_type)
+			&&(flash->new_type < 10))
+			&&(!(info_disprotect & DISPROTECT_HYNIX))){
+			aml_nand_msg("protect hynix retry info at blk %d",blk);
+			ret = -1;
+		}else if((blk == nand_key->valid_blk_addr)
+			&&(nand_key->valid_blk_addr >= start_blk)
+			&&(!(info_disprotect & DISPROTECT_KEY))){
+			aml_nand_msg("protect nand_key info at blk %d",blk);
+			ret = -1;
+		}else if((blk == nand_secure->valid_blk_addr)
+			&&(nand_secure->valid_blk_addr >= start_blk)
+			&&(!(info_disprotect & DISPROTECT_SECURE))){
+			aml_nand_msg("protect nand_secure info at blk %d",blk);
+			ret = -1;
+		}else{
+			ret = 0;
+		}
+	}
+	return ret;
+}
+#else
 static int erase_env_protect(struct amlnand_chip *aml_chip, int blk)
 {
 	struct hw_controller *controller = &aml_chip->controller;
@@ -228,6 +285,7 @@ static int erase_env_protect(struct amlnand_chip *aml_chip, int blk)
 
 	return ret;
 }
+#endif
 
 int  amlnf_erase_ops(u64 off, u64 erase_len, u8 scrub_flag)
 {
@@ -264,7 +322,7 @@ int  amlnf_erase_ops(u64 off, u64 erase_len, u8 scrub_flag)
 		temp_value /= controller->chip_num;
 		ops_para->page_addr = temp_value * pages_per_blk;
 		ops_para->chipnr = start_blk % controller->chip_num;
-		printk("%04d, ", start_blk);
+		/* printk("%04d, ", start_blk); */
 		controller->select_chip(controller, ops_para->chipnr);
 
 		ret = erase_env_protect(aml_chip, start_blk);

@@ -706,31 +706,36 @@ void amlnf_disprotect(char * name)
 {
 	//struct amlnand_chip *aml_chip = aml_nand_chip;
 
-#ifdef CONFIG_SECURITYKEY
+/* #ifdef CONFIG_SECURITYKEY */
 	if (strcmp((const char *)name, "key") == 0) {
 		aml_nand_msg("disprotect key");
 		info_disprotect |= DISPROTECT_KEY;
+		aml_nand_chip->protect |= DISPROTECT_KEY;
 	}
-#endif
+/*#endif */
 
 #ifdef CONFIG_SECURE_NAND
 	if (strcmp((const char *)name, "secure") == 0) {
 		aml_nand_msg("disprotect secure");
 		info_disprotect |= DISPROTECT_SECURE;
+		aml_nand_chip->protect |= DISPROTECT_SECURE;
 	}
 #endif
 
 	if (strcmp((const char *)name, "fbbt") == 0) {
 		aml_nand_msg("disprotect fbbt");
 		info_disprotect |= DISPROTECT_FBBT;
+		aml_nand_chip->protect |= DISPROTECT_FBBT;
 	}
 	if (strcmp((const char *)name, "hynix") == 0) {
 		aml_nand_msg("disprotect hynix");
 		info_disprotect |= DISPROTECT_HYNIX;
+		aml_nand_chip->protect |= DISPROTECT_HYNIX;
 	}
 	if (strcmp((const char *)name, "dbg") == 0) {
 		aml_nand_msg("disprotect dbg");
 		info_disprotect |= DISPROTECT_DBG;
+		aml_nand_chip->protect |= DISPROTECT_DBG;
 	}
 	aml_nand_msg("disprotect 0x%08x", info_disprotect);
 	return ;
