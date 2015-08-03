@@ -99,12 +99,12 @@ static void power_on_at_clk81(void)
 static void power_off_at_24M(void)
 {
 	//LED gpioao_13
-	aml_update_bits(AO_RTI_PIN_MUX_REG, 1<<3, 1<<3);
+	aml_update_bits(AO_GPIO_O_EN_N, 1<<29, 0);
 }
 
 static void power_on_at_24M(void)
 {
-	aml_update_bits(AO_RTI_PIN_MUX_REG, 1<<3, 0);
+	aml_update_bits(AO_GPIO_O_EN_N, 1<<29, 1<<29);
 }
 
 static void power_off_at_32k(void)
