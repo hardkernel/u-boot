@@ -3,18 +3,22 @@
 #include <command.h>
 #include <watchdog.h>
 #include <malloc.h>
+#if defined(CONFIG_AML_NAND)
 #include <nand.h>
-#include <mmc.h>
 #include <asm/arch/nand.h>
+#endif
+#include <mmc.h>
 #include <linux/ctype.h>
 #include <asm/byteorder.h>
 #include <div64.h>
 #include <linux/err.h>
 #include<partition_table.h>
 
+#if defined(CONFIG_AML_NAND)
 extern int amlnf_init(unsigned flag);
 extern int amlnf_key_write(u8 *buf, int len);
 extern int amlnf_key_read(u8 * buf, int len);
+#endif
 extern int get_partition_from_dts(unsigned char * buffer);
 extern int mmc_key_read(unsigned char *buf, unsigned int size);
 extern int mmc_key_write(unsigned char *buf, unsigned int size);
@@ -42,7 +46,7 @@ static char _mbrFlag[4] ;
 
 //extern void get_device_boot_flag(void);
 static int _info_disprotect_back_before_mmcinfo1 = 0;//mmcinfo 1 will clear info_disprotect before run_command("mmc erase 1")
-extern int info_disprotect;
+int info_disprotect = 0;
 static inline int isstring(char *p)
 {
 	char *endptr = p;
@@ -114,6 +118,8 @@ static int get_device_boot_flag(void)
 		}
 		printf("EMMC init failed\n");
 
+#if defined(CONFIG_AML_NAND)
+
 		//try nand first
 		device_boot_flag = NAND_BOOT_FLAG;
 		ret = amlnf_init(0x5);
@@ -122,6 +128,7 @@ static int get_device_boot_flag(void)
 			return 0;
 		}
 		printf("NAND init failed\n");
+#endif //CONFIG_AML_NAND
 	}
 
 	printf("device_boot_flag=%d\n",device_boot_flag);
@@ -272,11 +279,12 @@ int store_key_read(uint8_t * buffer,  uint32_t length)
 	int ret = 0;
 	switch (device_boot_flag)
 	{
+#if defined(CONFIG_AML_NAND)
 		case NAND_BOOT_FLAG:
 		case SPI_NAND_FLAG:
 		ret = amlnf_key_read(buffer, (int) length);
 		break;
-
+#endif
 		case EMMC_BOOT_FLAG:
 		case SPI_EMMC_FLAG:
 		ret = mmc_key_read(buffer, (int) length);
@@ -293,11 +301,12 @@ int store_key_write(uint8_t * buffer, uint32_t length)
 	int ret = 0;
 	switch (device_boot_flag)
 	{
+#if defined(CONFIG_AML_NAND)
 		case NAND_BOOT_FLAG:
 		case SPI_NAND_FLAG:
 		ret = amlnf_key_write(buffer, (int) length);
 		break;
-
+#endif
 		case EMMC_BOOT_FLAG:
 		case SPI_EMMC_FLAG:
 		ret = mmc_key_write(buffer, (int) length);
@@ -328,6 +337,7 @@ static int do_store_init(cmd_tbl_t * cmdtp, int flag, int argc, char * const arg
 
     switch (device_boot_flag)
 	{
+#if defined(CONFIG_AML_NAND)
 		case NAND_BOOT_FLAG:
 			{
                 if ((init_flag >=STORE_BOOT_ERASE_PROTECT_CACHE) && (init_flag <=STORE_BOOT_SCRUB_ALL)) {
@@ -357,6 +367,7 @@ static int do_store_init(cmd_tbl_t * cmdtp, int flag, int argc, char * const arg
                 return ret;
             }
             break;
+#endif
         case EMMC_BOOT_FLAG:
             {
                 store_dbg("MMC BOOT, %s %d \n",__func__,__LINE__);
@@ -432,7 +443,7 @@ static int do_store_init(cmd_tbl_t * cmdtp, int flag, int argc, char * const arg
                    */
                 if (device_boot_flag == SPI_NAND_FLAG) {
                     store_dbg("spi+nand , %s %d ",__func__,__LINE__);
-
+#if defined(CONFIG_AML_NAND)
                     if ((init_flag >=STORE_BOOT_ERASE_PROTECT_CACHE) && (init_flag <=STORE_BOOT_SCRUB_ALL)) {
                         sprintf(str, "amlnf  init  %d ",init_flag);
                         run_command(str, 0);
@@ -440,6 +451,9 @@ static int do_store_init(cmd_tbl_t * cmdtp, int flag, int argc, char * const arg
                     sprintf(str, "amlnf  init  %d ",1);
                     store_dbg("command:	%s", str);
                     ret = run_command(str, 0);
+#else
+                    ret = NAND_INIT_FAILED;
+#endif
 #if	0
                     if ((ret == NAND_INIT_FAILED) && (init_flag == STORE_BOOT_ERASE_ALL)) {
                         sprintf(str, "amlnf  init  %d ",4);
@@ -494,6 +508,7 @@ static int do_store_init(cmd_tbl_t * cmdtp, int flag, int argc, char * const arg
 
 static int do_store_exit(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 {
+#if defined(CONFIG_AML_NAND)
     if (device_boot_flag == NAND_BOOT_FLAG) {
         int ret = run_command("amlnf exit", 0);
         if (ret != 0) {
@@ -501,12 +516,13 @@ static int do_store_exit(cmd_tbl_t * cmdtp, int flag, int argc, char * const arg
             return -1;
         }
     }
-
+#endif
     return 0;
 }
 
 static int do_store_disprotect(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 {
+#if defined(CONFIG_AML_NAND)
     char *area;
 
     area = argv[2];
@@ -527,7 +543,7 @@ static int do_store_disprotect(cmd_tbl_t * cmdtp, int flag, int argc, char * con
         store_msg("disprotect hynix");
         info_disprotect |= DISPROTECT_HYNIX;
     }
-
+#endif //CONFIG_AML_NAND
     return 0;
 }
 
@@ -543,9 +559,13 @@ static int do_store_size(cmd_tbl_t * cmdtp, int flag, int argc, char * const arg
     s = argv[2];
     addr = (ulong)simple_strtoul(argv[3], NULL, 16);
     if (device_boot_flag == NAND_BOOT_FLAG) {
+        #if defined(CONFIG_AML_NAND)
         sprintf(str, "amlnf  size  %s %llx",s,addr);
         store_dbg("command:	%s", str);
         ret = run_command(str, 0);
+        #else
+        ret = -1;
+        #endif
         if (ret != 0) {
             store_msg("nand cmd %s failed",cmd);
             return -1;
@@ -553,9 +573,13 @@ static int do_store_size(cmd_tbl_t * cmdtp, int flag, int argc, char * const arg
         return ret;
     }
     else if(device_boot_flag == SPI_NAND_FLAG){
+        #if defined(CONFIG_AML_NAND)
         sprintf(str, "amlnf  size  %s %llx",s,addr);
         store_dbg("command:	%s", str);
         ret = run_command(str, 0);
+        #else
+        ret = -1;
+        #endif
         if (ret != 0) {
             store_msg("nand cmd %s failed",cmd);
             return -1;
@@ -606,11 +630,15 @@ static int do_store_erase(cmd_tbl_t * cmdtp, int flag, int argc, char * const ar
     area = argv[2];
     if (strcmp(area, "boot") == 0) {
         if (device_boot_flag == NAND_BOOT_FLAG) {
+            #if defined(CONFIG_AML_NAND)
             off =  simple_strtoul(argv[3], NULL, 16);
             size =  simple_strtoul(argv[4], NULL, 16);
             store_dbg("NAND BOOT,erase uboot : %s %d  off =%llx ,size=%llx",__func__,__LINE__, off, size);
 
             ret = run_command("amlnf deverase boot 0",0);
+            #else
+            ret = -1;
+            #endif
             if (ret != 0) {
                 store_msg("nand cmd %s failed ",cmd);
                 return -1;
@@ -697,12 +725,12 @@ E_SWITCH_BACK:
         if (device_boot_flag == NAND_BOOT_FLAG) {
             store_dbg("NAND BOOT,erase data : %s %d  off =%llx ,size=%llx",__func__,__LINE__, off, size);
 
+            #if defined(CONFIG_AML_NAND)
             ret = run_command("amlnf  deverase data 0",0);
             if (ret != 0) {
                 store_msg("nand cmd %s failed ",cmd);
                 return -1;
             }
-
             ret = run_command("amlnf  deverase code 0",0);
             if (ret != 0) {
                 store_msg("nand cmd %s failed ",cmd);
@@ -713,10 +741,12 @@ E_SWITCH_BACK:
                 store_msg("nand cmd %s failed ",cmd);
                 return -1;
             }
+            #endif
             return ret;
         }
         else if(device_boot_flag == SPI_NAND_FLAG){
             store_dbg("spi+nand , %s %d ",__func__,__LINE__);
+            #if defined(CONFIG_AML_NAND)
             ret = run_command("amlnf  deverase data 0",0);
             if (ret != 0) {
                 store_msg("nand cmd %s failed ",cmd);
@@ -733,6 +763,7 @@ E_SWITCH_BACK:
                 store_msg("nand cmd %s failed ",cmd);
                 return -1;
             }
+            #endif
             return ret;
         }
         else if(device_boot_flag == SPI_EMMC_FLAG){
@@ -774,7 +805,11 @@ static int do_store_scrub(cmd_tbl_t * cmdtp, int flag, int argc, char * const ar
     off = (ulong)simple_strtoul(argv[2], NULL, 16);
     sprintf(str, "amlnf  scrub %d", (int)off);
     if (device_boot_flag == NAND_BOOT_FLAG) {
+        #if defined(CONFIG_AML_NAND)
         ret = run_command(str, 0);
+        #else
+        ret = -1;
+        #endif
         if (ret != 0) {
             store_msg("nand cmd %s failed",cmd);
             return -1;
@@ -782,11 +817,14 @@ static int do_store_scrub(cmd_tbl_t * cmdtp, int flag, int argc, char * const ar
     }
     else if(device_boot_flag == SPI_NAND_FLAG){
         store_dbg("spi+nand , %s %d ",__func__,__LINE__);
+        #if defined(CONFIG_AML_NAND)
         ret = run_command(str, 0);
         if (ret != 0) {
             store_msg("nand cmd %s failed",cmd);
             return -1;
         }
+        #endif
+
         ret = run_command("sf probe 2", 0);
         if (ret != 0) {
             store_msg("nand cmd %s failed",cmd);
@@ -831,20 +869,27 @@ static int do_store_scrub(cmd_tbl_t * cmdtp, int flag, int argc, char * const ar
 
 static int do_store_rom_protect(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 {
-    char *cmd = NULL, *area = NULL;
+
+#if defined(CONFIG_AML_NAND)
+    char *cmd = NULL;
     char	str[128];
+    char *area = argv[2];
+#endif
 
     if (argc < 3)return CMD_RET_USAGE;
 
-    area = argv[2];
     if (device_boot_flag == NAND_BOOT_FLAG) {
+#if defined(CONFIG_AML_NAND)
         sprintf(str, "amlnf  rom_protect  %s", area);
         store_dbg("command:	%s", str);
         int ret = run_command(str, 0);
-        if (ret != 0) {
+		if (ret != 0) {
             store_msg("nand cmd %s failed",cmd);
             return -1;
         }
+#else
+        return -1;
+#endif
     }
 
     return CMD_RET_SUCCESS;
@@ -865,9 +910,13 @@ static int do_store_rom_write(cmd_tbl_t * cmdtp, int flag, int argc, char * cons
     if (get_off_size(argc - 3, (char **)(argv + 3), &off, &size) != 0) return CMD_RET_FAILURE;
 
     if (device_boot_flag == NAND_BOOT_FLAG) {
+        #if defined(CONFIG_AML_NAND)
         sprintf(str, "amlnf  rom_write  0x%llx  0x%llx  0x%llx",  addr, off, size);
         store_dbg("command:	%s", str);
         ret = run_command(str, 0);
+        #else
+        ret = -1;
+        #endif
         if (ret != 0) {
             store_msg("nand cmd %s failed",cmd);
             return -1;
@@ -978,9 +1027,13 @@ static int do_store_rom_read(cmd_tbl_t * cmdtp, int flag, int argc, char * const
     if (get_off_size(argc - 3, (char **)(argv + 3), &off, &size) != 0) return CMD_RET_FAILURE;
 
     if (device_boot_flag == NAND_BOOT_FLAG) {
+        #if defined(CONFIG_AML_NAND)
         sprintf(str, "amlnf  rom_read  0x%llx  0x%llx  0x%llx",  addr, off, size);
         store_dbg("command:	%s", str);
         ret = run_command(str, 0);
+        #else
+        ret = -1;
+        #endif
         if (ret != 0) {
             store_msg("nand cmd %s failed",cmd);
             return -1;
@@ -1081,9 +1134,13 @@ static int do_store_read(cmd_tbl_t * cmdtp, int flag, int argc, char * const arg
 
     store_dbg("addr = %llx off= 0x%llx  size=0x%llx",addr,off,size);
     if ((device_boot_flag == NAND_BOOT_FLAG)) {
+        #if defined(CONFIG_AML_NAND)
         sprintf(str, "amlnf  read_byte %s 0x%llx  0x%llx  0x%llx",s, addr, off, size);
         store_dbg("command:	%s", str);
         ret = run_command(str, 0);
+        #else
+        ret = -1;
+        #endif
         if (ret != 0) {
             store_msg("nand cmd %s failed ",cmd);
             return -1;
@@ -1091,9 +1148,13 @@ static int do_store_read(cmd_tbl_t * cmdtp, int flag, int argc, char * const arg
         return ret;
     }
     else if(device_boot_flag == SPI_NAND_FLAG){
+        #if defined(CONFIG_AML_NAND)
         sprintf(str, "amlnf  read_byte %s 0x%llx  0x%llx  0x%llx", s, addr, off, size);
         store_dbg("command:	%s\n", str);
         ret = run_command(str, 0);
+        #else
+        ret = -1;
+        #endif
         if (ret != 0) {
             store_msg("nand cmd %s failed \n",cmd);
             return -1;
@@ -1144,9 +1205,13 @@ static int do_store_write(cmd_tbl_t * cmdtp, int flag, int argc, char * const ar
 
     if (device_boot_flag == NAND_BOOT_FLAG) {
 
+        #if defined(CONFIG_AML_NAND)
         sprintf(str, "amlnf  write_byte %s 0x%llx  0x%llx  0x%llx", s, addr, off, size);
         store_dbg("command:	%s", str);
         ret = run_command(str, 0);
+        #else
+        ret = -1;
+        #endif
         if (ret != 0) {
             store_msg("nand cmd %s failed ",cmd);
             return -1;
@@ -1155,9 +1220,13 @@ static int do_store_write(cmd_tbl_t * cmdtp, int flag, int argc, char * const ar
     }
     else if(device_boot_flag == SPI_NAND_FLAG){
         store_dbg("spi+nand , %s %d ",__func__,__LINE__);
+        #if defined(CONFIG_AML_NAND)
         sprintf(str, "amlnf  write_byte %s 0x%llx  0x%llx  0x%llx", s, addr, off, size);
         store_dbg("command:	%s", str);
         ret = run_command(str, 0);
+        #else
+        ret = -1;
+        #endif
         if (ret != 0) {
             store_msg("nand cmd %s failed \n",cmd);
             return -1;
