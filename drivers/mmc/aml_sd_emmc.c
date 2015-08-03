@@ -75,9 +75,6 @@ void aml_sd_cfg_swth(struct mmc *mmc)
 
 	sd_debug("mmc->clock=%d; clk_div=%d\n",mmc->clock ,clk_div);
 
-	if (mmc->clock > 12000000)
-		mmc->clock = 12000000;
-
 	if (mmc->clock > 12000000) {
 		clk = SD_EMMC_CLKSRC_DIV2;
 		clk_src = 1;
@@ -111,7 +108,7 @@ void aml_sd_cfg_swth(struct mmc *mmc)
     sd_emmc_cfg->bl_len = 9;      //512byte block length
     sd_emmc_cfg->resp_timeout = 7;      //64 CLK cycle, here 2^8 = 256 clk cycles
     sd_emmc_cfg->rc_cc = 4;      //1024 CLK cycle, Max. 100mS.
-    sd_emmc_cfg->ddr = mmc->ddr_mode;
+    /* sd_emmc_cfg->ddr = mmc->ddr_mode; */
     sd_emmc_reg->gcfg = vconf;
 
 	sd_debug("bus_width=%d; tclk_div=%d; tclk=%d;sd_clk=%d\n",
@@ -468,7 +465,7 @@ void sd_emmc_register(struct aml_card_sd_info * aml_priv)
 
 	cfg->voltages = MMC_VDD_33_34|MMC_VDD_32_33|MMC_VDD_31_32|MMC_VDD_165_195;
 	cfg->host_caps = MMC_MODE_8BIT|MMC_MODE_4BIT | MMC_MODE_HS_52MHz | MMC_MODE_HS |
-			     MMC_MODE_HC|MMC_MODE_DDR_52MHz;
+			     MMC_MODE_HC;
 	cfg->f_min = 400000;
 	cfg->f_max = 50000000;
 	cfg->b_max = 256;
