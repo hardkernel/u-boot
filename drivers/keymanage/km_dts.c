@@ -198,13 +198,14 @@ static int unifykey_item_dt_parse(const void* dt_addr,int nodeoffset,int id,char
 	}
 
     temp_item->permit = 0;
-    if (fdt_stringlist_contains(prop->data, prop->len, UNIFYKEY_PERMIT_READ)) {
+    const int propLen = prop->len > 512 ? strnlen(prop->data, 512) : prop->len;
+    if (fdt_stringlist_contains(prop->data, propLen, UNIFYKEY_PERMIT_READ)) {
         temp_item->permit |= KEY_M_PERMIT_READ;
     }
-    if (fdt_stringlist_contains(prop->data, prop->len, UNIFYKEY_PERMIT_WRITE)) {
+    if (fdt_stringlist_contains(prop->data, propLen, UNIFYKEY_PERMIT_WRITE)) {
         temp_item->permit |= KEY_M_PERMIT_WRITE;
     }
-    if (fdt_stringlist_contains(prop->data, prop->len, UNIFYKEY_PERMIT_DEL)) {
+    if (fdt_stringlist_contains(prop->data, propLen, UNIFYKEY_PERMIT_DEL)) {
         temp_item->permit |= KEY_M_PERMIT_DEL;
     }
 
