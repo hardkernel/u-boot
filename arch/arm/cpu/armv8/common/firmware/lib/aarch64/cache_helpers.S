@@ -46,6 +46,13 @@
 
 	.global _clean_dcache_addr
 	.global _clean_invd_dcache_addr
+	.globl	platform_stack_set_bl2
+
+	.type   platform_stack_set_bl2, @function
+platform_stack_set_bl2:
+	mov x9, x30 //lr
+	mov sp, x0
+	ret x9
 
 func dcisw
 	dc	isw, x0

@@ -27,6 +27,7 @@
 #include <asm/arch/secure_apb.h>
 #include <arch_helpers.h>
 
+#include <ndma_utils.h>
 
 //#define AML_DEBUG_SHOW
 
@@ -539,6 +540,10 @@ exit:
 }
 
 #if defined(CONFIG_AML_SECURE_UBOOT)
+
+//#define CONFIG_AML_HW_AES_PIO
+
+#if defined(CONFIG_AML_HW_AES_PIO)
 void aes_setkey( const uint8_t *key)
 {
     uint32_t i;
@@ -582,9 +587,75 @@ void aes_cbc_decrypt(uint32_t *cpt)
 
     for (i=0; i<4; i++) cpt[i] = readl(SEC_SEC_BLKMV_PIO_DATA0 + i*4);
 }
+#else
+//HW AES DMA
+#define AES_Wr(addr, data) *(volatile uint32_t *)(addr)=(data)
+#define AES_Rd(addr)       *(volatile uint32_t *)(addr)
+#define THREAD0_TABLE_LOC  0x5500000
+int g_n_aes_thread_num = 0;
+void aes_setkey( const uint8_t *key)
+{
+    uint32_t *key32 = (uint32_t *)key;
+
+    g_n_aes_thread_num = 0; //fixed thread number to 0
+
+    AES_Wr( SEC_SEC_BLKMV_PIO_CNTL0, (AES_Rd(SEC_SEC_BLKMV_PIO_CNTL0)| (5<<0)) );
+
+    AES_Wr(SEC_SEC_BLKMV_GEN_REG0, ((AES_Rd(SEC_SEC_BLKMV_GEN_REG0) & ~(0xf << 8)) | (0xf << 8)) );
+    AES_Wr(SEC_SEC_BLKMV_GEN_REG0, ((AES_Rd(SEC_SEC_BLKMV_GEN_REG0) & ~(0xf << 0)) | (0 << 0)) );
+
+    AES_Wr(SEC_SEC_BLKMV_GEN_REG0, ((AES_Rd(SEC_SEC_BLKMV_GEN_REG0) & ~(0xf << 4)) | (0x0<< 4)) );   // only thread 2 can issue Secure transfers
+
+    AES_Wr( SEC_SEC_BLKMV_AES_REG0, (AES_Rd(SEC_SEC_BLKMV_AES_REG0) & ~(0x1 << 3)) );
+    AES_Wr( NDMA_AES_REG0, (AES_Rd(NDMA_AES_REG0) & ~(0x3 << 8)) | (g_n_aes_thread_num << 8) );
+
+    //key
+    AES_Wr( NDMA_AES_KEY_0, (key32[0]) );
+    AES_Wr( NDMA_AES_KEY_1, (key32[1]) );
+    AES_Wr( NDMA_AES_KEY_2, (key32[2]) );
+    AES_Wr( NDMA_AES_KEY_3, (key32[3]) );
+    AES_Wr( NDMA_AES_KEY_4, (key32[4]) );
+    AES_Wr( NDMA_AES_KEY_5, (key32[5]) );
+    AES_Wr( NDMA_AES_KEY_6, (key32[6]) );
+    AES_Wr( NDMA_AES_KEY_7, (key32[7]) );
+
+    //set IV
+    AES_Wr( NDMA_AES_IV_0, 0);
+    AES_Wr( NDMA_AES_IV_1, 0);
+    AES_Wr( NDMA_AES_IV_2, 0);
+    AES_Wr( NDMA_AES_IV_3, 0);
+
+    NDMA_set_table_position_secure( g_n_aes_thread_num, THREAD0_TABLE_LOC, THREAD0_TABLE_LOC + (10*32) );	  // 2 thread entries
+
+}
+
+void aes_cbc_decrypt(uint32_t *ct,uint32_t *pt,int nLen)
+{
+    NDMA_add_descriptor_aes(    g_n_aes_thread_num, // uint32_t   thread_num,
+                                1,                  // uint32_t   irq,
+                                1,                  // uint32_t   cbc_enable,
+                                1,                  // uint32_t   cbc_reset,
+                                0,                  // uint32_t   encrypt,        // 0 = decrypt, 1 = encrypt
+                                2,                  // uint32_t   aes_type,       // 00 = 128, 01 = 192, 10 = 256
+                                0,                  // uint32_t   pre_endian,
+                                0,                  // uint32_t   post_endian,
+                                nLen,               // uint32_t   bytes_to_move,
+                                (unsigned int)(long)ct, // uint32_t   src_addr,
+                                (unsigned int)(long)pt, // uint32_t   dest_addr )
+                                0xf,                // uint32_t   ctr_endian,
+                                0 );                // uint32_t   ctr_limit )
+    NDMA_start(g_n_aes_thread_num);
+
+    NDMA_wait_for_completion(g_n_aes_thread_num);
+
+    NDMA_stop(g_n_aes_thread_num);
+
+}
+
+#endif
 #endif //CONFIG_AML_SECURE_UBOOT
 
-int aml_data_check(unsigned long pBuffer,unsigned int nLength,unsigned int nAESFlag)
+int aml_data_check(unsigned long pBuffer,unsigned long pBufferDST,unsigned int nLength,unsigned int nAESFlag)
 {
 
 #define TOC_HEADER_NAME 			(0xAA640001)
@@ -592,8 +663,11 @@ int aml_data_check(unsigned long pBuffer,unsigned int nLength,unsigned int nAESF
 
 #if defined(CONFIG_AML_SECURE_UBOOT)
 	unsigned char szAESKey[32];
+	#if defined(CONFIG_AML_HW_AES_PIO)
 	unsigned int *ct32;
 	int i = 0;
+	#endif
+	unsigned char *pDST= (unsigned char *)(pBufferDST);
 #endif //CONFIG_AML_SECURE_UBOOT
 
 #if defined(AML_DEBUG_SHOW)
@@ -621,17 +695,34 @@ int aml_data_check(unsigned long pBuffer,unsigned int nLength,unsigned int nAESF
 
 	if (nAESFlag)
 	{
+
+		if (nAESFlag)
+			pCHK = (unsigned int*)pDST;
+
 		sha2((unsigned char *)0xd9000000,16,szAESKey,0);
 		aes_setkey(szAESKey);
 
+#if defined(CONFIG_AML_HW_AES_PIO)
+		//HW AES PIO
 		ct32 = (unsigned int *)pBuffer;
 
 		for (i=0; i<nLength/16; i++)
 			aes_cbc_decrypt(&ct32[i*4]);
 
+		memcpy(pDST,(void*)pBuffer,nLength);
+#else
+		//HW AES DMA
+		aes_cbc_decrypt((unsigned int *)pBuffer,(unsigned int *)pDST,nLength);
+#endif
+		pBuffer = (unsigned long)pDST;
+
+		flush_dcache_range((unsigned long )pDST, nLength);
+
 #if defined(AML_DEBUG_SHOW)
 		nEnd = *((volatile unsigned int*)0xc1109988);
-		aml_printf("\naml log : AES Len= %d; Time = %d(us)\n",nLength,nEnd - nBegin);
+		aml_printf("aml log : begin dump buffer after AES nTPLAESFlag=%d len=%d time=%dus\n",
+		nAESFlag,nLength,nEnd - nBegin);
+		aml_u8_printf((unsigned char *)pBuffer,32);
 #endif
 		if (TOC_HEADER_NAME == *pCHK && TOC_HEADER_SERIAL_NUMBER == *(pCHK+1))
 			return 0;

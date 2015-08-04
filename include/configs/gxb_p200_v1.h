@@ -326,13 +326,22 @@
 //support secure boot
 //#define CONFIG_AML_SECURE_UBOOT   1
 
+#if defined(CONFIG_AML_SECURE_UBOOT)
+
+//for GXBB SRAM size limitation just disable NAND
+//as the socket board default has no NAND
+//#undef CONFIG_AML_NAND
+
 //unify build for generate encrypted bootloader "u-boot.bin.encrypt"
-//#define CONFIG_AML_CRYPTO_UBOOT   1
+#define CONFIG_AML_CRYPTO_UBOOT   1
 
 //unify build for generate encrypted kernel image
-//SRC : "board/amlogic/gxb_p200_v1/boot.img"
+//SRC : "board/amlogic/gxb_skt_v1/boot.img"
 //DST : "fip/boot.img.encrypt"
 //#define CONFIG_AML_CRYPTO_IMG       1
+
+#endif //CONFIG_AML_SECURE_UBOOT
+
 
 #define CONFIG_SECURE_STORAGE 1
 

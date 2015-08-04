@@ -44,5 +44,5 @@ void SHA2_init(sha2_ctx *, unsigned int );
 void SHA2_update(sha2_ctx *, const uint8_t *, unsigned int);
 void SHA2_final(sha2_ctx *,const unsigned char *, unsigned int );
 void sha2(const unsigned char *, unsigned int , unsigned char output[32], unsigned int);
-int  aml_data_check(unsigned long ,unsigned int ,unsigned int );
+int  aml_data_check(unsigned long ,unsigned long ,unsigned int ,unsigned int );
 #endif /*__PLAT_SHA2_H_*/

@@ -38,7 +38,7 @@
 #include <timer.h>
 #include <io.h>
 
-static int aml_check(unsigned long pBuffer,unsigned int nLength,unsigned int nAESFlag);
+static int aml_check(unsigned long pBufferSRC,unsigned long pBufferDST,unsigned int nLength,unsigned int nAESFlag);
 
 void bl2_load_image(void){
 	/* dump ddr data when function enabled and flag set */
@@ -50,23 +50,31 @@ void bl2_load_image(void){
 	//meminfo_t bl33_mem_info;
 	unsigned int * pCHK = (unsigned int *)FM_FIP_HEADER_LOAD_ADDR;
 	unsigned int nAESFlag = 1;
-
+	unsigned int nBL3XLoadAddr = readl(0xc8100228);
+	nBL3XLoadAddr = readl(0xc8100228);
+	int nSecFlag = nBL3XLoadAddr & (1<<4);
 	/*load fip header*/
 	aml_fip_header_t *fip_header;
 	fip_header = (aml_fip_header_t *)(uint64_t)FM_FIP_HEADER_LOAD_ADDR;
+#if defined(CONFIG_AML_SECURE_UBOOT)
+	extern  void platform_stack_set_bl2 (unsigned long);
+	platform_stack_set_bl2(BL2_SEC_BOOT_SP_BASE);
+#endif
 	storage_load(BL2_SIZE, (uint64_t)fip_header, sizeof(aml_fip_header_t), "fip header");
+	memcpy((void*)FM_FIP_BL3X_TEMP_LOAD_ADDR,(void*)FM_FIP_HEADER_LOAD_ADDR,sizeof(aml_fip_header_t));
 	if (TOC_HEADER_NAME == *pCHK && TOC_HEADER_SERIAL_NUMBER == *(pCHK+1))
 	{
 		nAESFlag = 0;
 	}
 
-	aml_check(FM_FIP_HEADER_LOAD_ADDR,sizeof(aml_fip_header_t),nAESFlag);
+	aml_check(FM_FIP_BL3X_TEMP_LOAD_ADDR,FM_FIP_HEADER_LOAD_ADDR,sizeof(aml_fip_header_t),nAESFlag);
 
 	/*load and process bl30*/
 	image_info_t bl30_image_info;
 	entry_point_info_t bl30_ep_info;
-	storage_load(BL2_SIZE + (fip_header->bl30_entry.offset), FM_BL30_LOAD_ADDR, (fip_header->bl30_entry.size), "bl30");
-	parse_blx(&bl30_image_info, &bl30_ep_info, FM_BL30_LOAD_ADDR, (fip_header->bl30_entry.size),nAESFlag);
+	nBL3XLoadAddr = nSecFlag ?  FM_FIP_BL3X_TEMP_LOAD_ADDR : FM_BL30_LOAD_ADDR;
+	storage_load(BL2_SIZE + (fip_header->bl30_entry.offset),nBL3XLoadAddr, (fip_header->bl30_entry.size), "bl30");
+	parse_blx(&bl30_image_info, &bl30_ep_info,nBL3XLoadAddr, FM_BL30_LOAD_ADDR, (fip_header->bl30_entry.size),nAESFlag);
 	/*process bl30*/
 	process_bl30x(&bl30_image_info, &bl30_ep_info, "bl30");
 
@@ -74,8 +82,9 @@ void bl2_load_image(void){
 	/*load and process bl301*/
 	image_info_t bl301_image_info;
 	entry_point_info_t bl301_ep_info;
-	storage_load(BL2_SIZE + (fip_header->bl301_entry.offset), FM_BL301_LOAD_ADDR, (fip_header->bl301_entry.size), "bl301");
-	parse_blx(&bl301_image_info, &bl301_ep_info, FM_BL301_LOAD_ADDR, (fip_header->bl301_entry.size),nAESFlag);
+	nBL3XLoadAddr = nSecFlag ?  FM_FIP_BL3X_TEMP_LOAD_ADDR : FM_BL301_LOAD_ADDR;
+	storage_load(BL2_SIZE + (fip_header->bl301_entry.offset),nBL3XLoadAddr, (fip_header->bl301_entry.size), "bl301");
+	parse_blx(&bl301_image_info, &bl301_ep_info, nBL3XLoadAddr ,FM_BL301_LOAD_ADDR, (fip_header->bl301_entry.size),nAESFlag);
 	/*process bl301*/
 	process_bl30x(&bl301_image_info, &bl301_ep_info, "bl301");
 #endif
@@ -85,8 +94,9 @@ void bl2_load_image(void){
 	bl31_ep_info = bl2_plat_get_bl31_ep_info();
 	/* Set the X0 parameter to bl31 */
 	bl31_ep_info->args.arg0 = (unsigned long)bl2_to_bl31_params;
-	storage_load(BL2_SIZE + (fip_header->bl31_entry.offset), FM_BL31_LOAD_ADDR, (fip_header->bl31_entry.size), "bl31");
-	parse_blx(bl2_to_bl31_params->bl31_image_info, bl31_ep_info, FM_BL31_LOAD_ADDR, (fip_header->bl31_entry.size),nAESFlag);
+	nBL3XLoadAddr = nSecFlag ?  FM_FIP_BL3X_TEMP_LOAD_ADDR : FM_BL31_LOAD_ADDR;
+	storage_load(BL2_SIZE + (fip_header->bl31_entry.offset), nBL3XLoadAddr, (fip_header->bl31_entry.size), "bl31");
+	parse_blx(bl2_to_bl31_params->bl31_image_info, bl31_ep_info,nBL3XLoadAddr, FM_BL31_LOAD_ADDR, (fip_header->bl31_entry.size),nAESFlag);
 	bl2_plat_set_bl31_ep_info(bl2_to_bl31_params->bl31_image_info, bl31_ep_info);
 
 #if (NEED_BL32)
@@ -101,18 +111,20 @@ void bl2_load_image(void){
 	 */
 	meminfo_t bl32_mem_info;
 	bl2_plat_get_bl32_meminfo(&bl32_mem_info);
-	storage_load(BL2_SIZE + fip_header->bl32_entry.offset, FM_BL32_LOAD_ADDR, fip_header->bl32_entry.size, "bl32");
+	nBL3XLoadAddr = nSecFlag ?  FM_FIP_BL3X_TEMP_LOAD_ADDR : FM_BL32_LOAD_ADDR;
+	storage_load(BL2_SIZE + fip_header->bl32_entry.offset, nBL3XLoadAddr , fip_header->bl32_entry.size, "bl32");
 	parse_blx(bl2_to_bl31_params->bl32_image_info, bl2_to_bl31_params->bl32_ep_info,
-				FM_BL32_LOAD_ADDR, fip_header->bl32_entry.size,nAESFlag);
+				nBL3XLoadAddr, FM_BL32_LOAD_ADDR, fip_header->bl32_entry.size,nAESFlag);
 	bl2_plat_set_bl32_ep_info(bl2_to_bl31_params->bl32_image_info, bl2_to_bl31_params->bl32_ep_info);
 	printf("BL32 addr: 0x%8x\n", bl2_to_bl31_params->bl32_image_info->image_base);
 	printf("BL32 size: 0x%8x\n", bl2_to_bl31_params->bl32_image_info->image_size);
 #endif /* NEED_BL32 */
 
 	/*load and process bl33*/
-	storage_load(BL2_SIZE + fip_header->bl33_entry.offset, FM_BL33_LOAD_ADDR, fip_header->bl33_entry.size, "bl33");
+	nBL3XLoadAddr = nSecFlag ?  FM_FIP_BL3X_TEMP_LOAD_ADDR : FM_BL33_LOAD_ADDR;
+	storage_load(BL2_SIZE + fip_header->bl33_entry.offset,nBL3XLoadAddr, fip_header->bl33_entry.size, "bl33");
 	parse_blx(bl2_to_bl31_params->bl33_image_info, bl2_to_bl31_params->bl33_ep_info,
-				FM_BL33_LOAD_ADDR, fip_header->bl33_entry.size,nAESFlag);
+				nBL3XLoadAddr, FM_BL33_LOAD_ADDR, fip_header->bl33_entry.size,nAESFlag);
 	//bl2_plat_get_bl33_meminfo(&bl33_mem_info);
 	bl2_plat_set_bl33_ep_info(bl2_to_bl31_params->bl33_image_info, bl2_to_bl31_params->bl33_ep_info);
 
@@ -139,12 +151,12 @@ void bl2_load_image(void){
 */
 }
 
-static int aml_check(unsigned long pBuffer,unsigned int nLength,unsigned int nAESFlag)
+static int aml_check(unsigned long pBufferSRC,unsigned long pBufferDST,unsigned int nLength,unsigned int nAESFlag)
 {
-	int nReturn = aml_data_check(pBuffer,nLength,nAESFlag);
+	int nReturn = aml_data_check(pBufferSRC,pBufferDST,nLength,nAESFlag);
 	if (nReturn)
 	{
-		printf("aml log : SIG CHK : %d for address 0x%08X\n",nAESFlag,pBuffer);
+		printf("aml log : SIG CHK : %d for address 0x%08X\n",nReturn,pBufferSRC);
 		//while(1);
 		check_handler();
 	}
@@ -155,16 +167,17 @@ static int aml_check(unsigned long pBuffer,unsigned int nLength,unsigned int nAE
 /*blx header parse function*/
 void parse_blx(image_info_t *image_data,
 				entry_point_info_t *entry_point_info,
-				unsigned int addr,
+				unsigned int src,
+				unsigned int dst,
 				unsigned int length,
 				unsigned int nAESFlag)
 {
-	image_data->image_base = addr;
+	image_data->image_base = dst;
 	image_data->image_size = length;
 	if (entry_point_info != NULL)
-		entry_point_info->pc = addr;
+		entry_point_info->pc = dst;
 
-	aml_check(addr,length,nAESFlag);
+	aml_check(src,dst,length,nAESFlag);
 }
 
 /*process bl30x, transfer to m3, etc..*/

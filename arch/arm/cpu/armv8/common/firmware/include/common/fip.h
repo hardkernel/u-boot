@@ -117,6 +117,8 @@ typedef struct aml_fip_header {
 #define BL2_SEC_BOOT_BUF_SIZE			0x00100000
 #define BL2_NAND_BUF_BASE				0x01800000
 #define BL2_NAND_BUF_SIZE				0x00100000
+#define BL2_SEC_BOOT_SP_BASE			(BL2_NAND_BUF_BASE)
+#define FM_FIP_BL3X_TEMP_LOAD_ADDR      (BL2_SEC_BOOT_BUF_BASE) /*tmp addr for bl3x load & process for secure boot*/
 
 /*fip defines*/
 void bl2_load_image(void);
@@ -124,7 +126,8 @@ void bl2_load_image(void);
 /*parse blx*/
 void parse_blx(image_info_t *image_data,
 				entry_point_info_t *entry_point_info,
-				unsigned int addr,
+				unsigned int src,
+				unsigned int dst,
 				unsigned int length,
 				unsigned int);
 void process_bl30x(image_info_t *image_data,
