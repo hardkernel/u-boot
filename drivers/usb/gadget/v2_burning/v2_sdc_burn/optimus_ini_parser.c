@@ -98,16 +98,16 @@ int _optimus_parse_buf_2_lines(char* pTextBuf, const unsigned textSz,
                         break;
                 }
 
+                if ('\r' != c && '\n' != c) {
+                        continue;
+                }
+                *pTemp = 0;///
+
                 if (isFileEnd) {
                         dbg("fileend:curLine=[%s]\n", curLine);
                         lines[lineNum++] = curLine;
                         break;//End to read file if file ended
                 }
-
-                if ('\r' != c && '\n' != c) {
-                        continue;
-                }
-                *pTemp = 0;///
 
                 if ('\r' == c) //for DOS \r\n mode
                 {

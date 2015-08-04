@@ -55,7 +55,7 @@ int optimus_simg_probe(const u8* source, const u32 length)
         return 0;
     }
 	if (header->magic != SPARSE_HEADER_MAGIC) {
-		sperr("sparse bad magic, expect 0x%x but 0x%x\n", SPARSE_HEADER_MAGIC, header->magic);
+		spmsg("sparse bad magic, expect 0x%x but 0x%x\n", SPARSE_HEADER_MAGIC, header->magic);
 		return 0;
 	}
 

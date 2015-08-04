@@ -35,7 +35,7 @@
 #undef  FAT_ERROR
 #define FAT_ERROR(fmt...) printf("[FAT_ERR]L%d,", __LINE__),printf(fmt)
 #ifndef FAT_DPRINT
-#define FAT_DPRINT(fmt ...)      //FAT_ERROR
+#define FAT_DPRINT(fmt ...)      //printf("[FAT_DP]L%d,", __LINE__),printf(fmt)
 #endif
 
 #ifndef SECTOR_SIZE
@@ -358,6 +358,21 @@ get_fatent(fsdata *mydata, __u32 entry/*cluster index*/)
 	return ret;
 }
 
+static int optimus_fat_get_fat_next_entry(fsdata* mydata, __u32 curclust, __u32* nextEntry, __u32 filesize, __u32 offset)
+{
+		//not next ccluster as file end
+        if (offset >= filesize) return 0;
+
+		curclust = get_fatent(mydata, curclust);//get next cluster index
+        if (CHECK_CLUST(curclust, mydata->fatsize)) {
+				FAT_ERROR("curclust: 0x%x\n", curclust);
+				FAT_ERROR("Invalid FAT entry\n");
+				return __LINE__;
+		}
+
+		*nextEntry = curclust;
+		return 0;
+}
 
 /*
  * Read at most 'size' bytes from the specified cluster into 'buffer'.
@@ -465,7 +480,7 @@ get_vfatname(fsdata *mydata, int curclust, __u8 *cluster,
 		}
 		if (get_cluster(mydata, curclust, get_vfatname_block,
 				mydata->clust_size * SECTOR_SIZE) != 0) {
-            FAT_ERROR("Error: reading directory block\n");
+						FAT_ERROR("Error: reading directory block\n");
 			return -1;
 		}
 		slotptr2 = (dir_slot*) get_vfatname_block;
@@ -1114,186 +1129,167 @@ unsigned do_fat_get_bytesperclust(int fd)
     return bytesperclust;
 }
 
+// clusters need to read:
+// data moddule: <first cluser not engouh cluster> + <n * Consecutive clusters > + <last cluster not engouh cluster>
 long do_fat_fread(int fd, __u8 *buffer, unsigned long maxsize)
 {
-    __u32 gotsize = 0;
-    __u32 curclust;
-	unsigned long actsize;
-    unsigned long offset;
-    unsigned long offset_in_clust;
-    struct _fs_info* theFsInfo = fs_info + fd;
-	const unsigned bytesperclust = theFsInfo->datablock.clust_size * SECTOR_SIZE;
-    fsdata* mydata = &fs_info[fd].datablock;
+        __u32 gotsize = 0;
+        __u32 curclust;
+        unsigned long actsize = maxsize;
+        unsigned long offset;
+        unsigned long offset_in_clust;
+        struct _fs_info* theFsInfo = fs_info + fd;
+        const unsigned bytesperclust = theFsInfo->datablock.clust_size * SECTOR_SIZE;
+        fsdata* mydata = &fs_info[fd].datablock;
+        struct file* pFile = files + fd;
+        int ret = 0;
 
-    if (fd < 0) {
-        FAT_ERROR("Invalid fd %d\n", fd);
-        return -1;
-    }
-
-    offset = files[fd].offset;
-
-
-#if 0
-	seeked=0;
-
-    /* seek to offset */
-    while (1) {
-
-        if (seeked + bytesperclust > offset)
-        {
-            printf("Seeked to %d, target offset %d, clust %d\n", seeked, offset, curclust);
-            break;
-        }
-
-        curclust = get_fatent(&fs_info[fd].datablock, curclust);
-
-        if (CHECK_CLUST(curclust, mydata->fatsize)) {
-            FAT_DPRINT("curclust: 0x%x\n", curclust);
-            FAT_DPRINT("Invalid FAT entry\n");
-            return 0;
-        }
-
-        seeked += bytesperclust;
-    }
-#else
-
-    curclust = files[fd].curclust;
-
-#endif
-
-    /* calc actual size to read */
-    if (offset + maxsize > files[fd].filesize)
-    {
-        actsize = files[fd].filesize - offset;
-    }
-    else
-    {
-        actsize = maxsize;
-    }
-    FAT_DPRINT("offset=0x%lx, readsz=%lx, bytesperclust=%x, curclust=%x\n",
-            offset, actsize, bytesperclust, curclust);
-
-    /* Deal with partial data at the first cluster */
-
-    /* Data occupation in cluster 1
-    Case 1:
-
-    cluster1 :   |####____|
-
-    Case 2:
-    cluster1 :   |########|
-
-    Case 3:
-    cluster1 :   |__####__|
-
-    Case 4:
-    cluster1 :   |__######|
-    */
-
-    offset_in_clust = (offset % bytesperclust);
-    if (offset_in_clust != 0)
-    {
-        if (curclust != theFsInfo->fat_buf_cluster_index)
-        {//should seldom reach here if the image item consecutive
-            FAT_MSG("offset_in_clust 0x%lx\n", offset_in_clust);
-            /* Use vfat_buf as intermedia buffer to deal with the situation that size of _buf_ is smaller than a cluster */
-            //FIXME:check if the fat_buf cache the data user wanted, and copy directly if wanted!!
-            if (get_cluster(mydata, curclust, (__u8*)fs_info[fd].fat_buf, (int)bytesperclust) != 0) {
-                FAT_ERROR("Error reading cluster\n");
+        if (fd < 0) {
+                FAT_ERROR("Invalid fd %d\n", fd);
                 return -1;
-            }
-            fs_info[fd].fat_buf_cluster_index = curclust;
         }
 
-        if (actsize < (bytesperclust - offset_in_clust))
-        {/* Case 3: the end of the cluster is not reached */
-            memcpy(buffer, fs_info[fd].fat_buf+ offset_in_clust, actsize);
-            offset += actsize;
-            gotsize = actsize;
-            goto exit;
+        offset = pFile->offset;
+        curclust = pFile->curclust;
+
+        /* calc actual size to read */
+        if (offset + maxsize > pFile->filesize) {
+                FAT_ERROR("offset(0x%lx) + wantsz(0x%lx) > filesize(0x%lx)\n", offset, maxsize, pFile->filesize);
+                return 0;
         }
-        else
-        {/* Case 4 */
-            memcpy(buffer, fs_info[fd].fat_buf+ offset_in_clust, bytesperclust - offset_in_clust);
-            gotsize = bytesperclust - offset_in_clust;
-            FAT_DPRINT("buffer=%p, gotsize=0x%x, offset_in_clust=0x%lx\n", buffer, gotsize, offset_in_clust);
-            actsize -= gotsize;
-            offset += gotsize;
-            buffer += gotsize;
+        FAT_DPRINT("offset=0x%lx, readsz=%lx, bytesperclust=%x, curclust=%x\n",
+                        offset, actsize, bytesperclust, curclust);
 
-            //update cluster index if seeked to next cluster
-            curclust = get_fatent(mydata, curclust);//get next cluster index
-            if (CHECK_CLUST(curclust, mydata->fatsize)) {
-                FAT_ERROR("curclust: 0x%x\n", curclust);
-                FAT_ERROR("Invalid FAT entry\n");
-                goto exit;
-            }
+        /* Deal with partial data at the first cluster */
+
+        /* Data occupation in cluster 1
+           Case 1:
+
+cluster1 :   |####____|
+
+Case 2:
+cluster1 :   |########|
+
+Case 3:
+cluster1 :   |__####__|
+
+Case 4:
+cluster1 :   |__######|
+*/
+
+        offset_in_clust = (offset % bytesperclust);
+        if (offset_in_clust != 0)
+        {
+                FAT_DPRINT("offset_in_clust 0x%lx, curclust 0x%x, cached 0x%x\n",
+                                offset_in_clust, curclust, theFsInfo->fat_buf_cluster_index);
+                if (curclust != theFsInfo->fat_buf_cluster_index)
+                {//should seldom reach here if the image item consecutive
+                        FAT_MSG("offset_in_clust 0x%lx\n", offset_in_clust);
+                        /* Use vfat_buf as intermedia buffer to deal with the situation that size of _buf_ is smaller than a cluster */
+                        //FIXME:check if the fat_buf cache the data user wanted, and copy directly if wanted!!
+                        if (get_cluster(mydata, curclust, (__u8*)fs_info[fd].fat_buf, (int)bytesperclust) != 0) {
+                                FAT_ERROR("Error reading cluster\n");
+                                return -1;
+                        }
+                        fs_info[fd].fat_buf_cluster_index = curclust;
+                }
+
+                if (actsize < (bytesperclust - offset_in_clust))
+                {/* Case 3: the end of the cluster is not reached */
+                        memcpy(buffer, fs_info[fd].fat_buf+ offset_in_clust, actsize);
+                        offset += actsize;
+                        gotsize = actsize;
+                        goto exit;
+                }
+                else
+                {/* Case 4 */
+                        gotsize = bytesperclust - offset_in_clust;
+                        memcpy(buffer, fs_info[fd].fat_buf+ offset_in_clust, gotsize);
+                        FAT_DPRINT("buffer=%p, gotsize=0x%x, offset_in_clust=0x%lx\n", buffer, gotsize, offset_in_clust);
+                        actsize -= gotsize;
+                        offset += gotsize;
+                        buffer += gotsize;
+
+                        //update cluster index if seeked to next cluster
+                        ret = optimus_fat_get_fat_next_entry(mydata, curclust, &curclust, pFile->filesize, offset);
+                        if (ret) {
+                                FAT_ERROR("Fail in get next entry, ret=%d\n", __LINE__);
+                                return 0;
+                        }
+                }
         }
-    }
 
-    //Following disposing data which 'offset % bytesperclust == 0', that is start from align offset
-    while (actsize) //left data length
-    {
-        __u32 endclust; //last cluster index of this consecutive clusters
-        __u32 newclust = 0; //new cluster index of next consecutive clusters
-        unsigned thisConsecutiveLen = 0;
-
-        endclust = curclust;
-        /* search for consecutive clusters until get enghou size*/
+        FAT_DPRINT("while actsize=0x%lx, buffer=0x%p\n", actsize, buffer);
+        //Following disposing data which 'offset % bytesperclust == 0', that is start from align offset
+        //if left data length >= bytesperclust, can read to user buffer directly
         while (actsize >= bytesperclust)
         {
-            newclust = get_fatent(mydata, endclust);//get next cluster index
-            if (CHECK_CLUST(newclust, mydata->fatsize)) {
-                FAT_ERROR("curclust: 0x%x\n", newclust);
-                FAT_ERROR("Invalid FAT entry\n");
-                goto exit;
-            }
-            thisConsecutiveLen+= bytesperclust;
-            actsize     -= bytesperclust;
+                __u32 endclust; //last cluster index of this consecutive clusters
+                __u32 newclust = 0; //new cluster index of next consecutive clusters
+                unsigned thisConsecutiveLen = 0;
 
-            //clusters not consecutive
-            if ((newclust -1)!= endclust) break;
-            endclust     =newclust;//update curclust for next read
-		}
-        if (thisConsecutiveLen)
+                endclust = curclust;
+                thisConsecutiveLen       =      bytesperclust;
+                actsize                 -=      bytesperclust;
+
+                /* search for consecutive clusters until get enghou size*/
+                for (; actsize >= bytesperclust; actsize -= bytesperclust, thisConsecutiveLen += bytesperclust)
+                {
+                       //for actsize >= bytesperclust
+                        newclust = get_fatent(mydata, endclust);//get next cluster index
+                        if (CHECK_CLUST(newclust, mydata->fatsize)) {
+                                FAT_ERROR("curclust: 0x%x, bytesperclust=0x%x\n", newclust, bytesperclust);
+                                FAT_ERROR("Invalid FAT entry,actsize=0x%lx\n", actsize);
+                                goto exit;
+                        }
+                        //clusters not consecutive
+                        if ((newclust -1)!= endclust) break;
+                        endclust                =       newclust;//update curclust for next read
+                }
+
+                if (get_cluster(mydata, curclust, buffer, thisConsecutiveLen) != 0) {
+                        FAT_ERROR("Error reading cluster\n");
+                        return -1;
+                }
+                buffer  += thisConsecutiveLen;
+                gotsize += thisConsecutiveLen;
+                offset  += thisConsecutiveLen;
+
+                ret = optimus_fat_get_fat_next_entry(mydata, endclust, &curclust, pFile->filesize, offset);
+                if (ret) {
+                        FAT_ERROR("Fail in get next entry, ret=%d\n", __LINE__);
+                        return 0;
+                }
+                /*DWN_DBG("thisConsecutiveLen 0x%x\n", thisConsecutiveLen);*/
+
+        }// while (actsize >= bytesperclust)
+
+        //left data not enough one cluster
+        if (actsize) //Left data in the 'next' cluster < bytesperclust
         {
-            if (get_cluster(mydata, curclust, buffer, thisConsecutiveLen) != 0) {
-                FAT_ERROR("Error reading cluster\n");
-                return -1;
-            }
-            buffer  += thisConsecutiveLen;
-            gotsize += thisConsecutiveLen;
-            offset  += thisConsecutiveLen;
-            curclust = newclust;
-            /*DWN_DBG("thisConsecutiveLen 0x%x\n", thisConsecutiveLen);*/
+                __u8*   clusterCache = (__u8*)theFsInfo->fat_buf;
+
+                if (get_cluster(mydata, curclust, clusterCache, bytesperclust) != 0) {
+                        FAT_ERROR("Error reading cluster\n");
+                        return -1;
+                }
+                theFsInfo->fat_buf_cluster_index = curclust;
+                memcpy(buffer, clusterCache, actsize);
+
+                gotsize += actsize;
+                offset  += actsize;
+
+                //If this message printed when burning, we saied the bootloader is above data parts in image.cfg, or
+                //sdc_burn not burn data partitions in the order in image
+                FAT_MSG("0x:leftSz %x < BPS %x, gotSz %x\n", (unsigned)actsize, bytesperclust, gotsize);//bpc:bytesperclust
+                actsize  = 0;///end the loop
         }
-        //data not enough
-        if (actsize < bytesperclust && actsize) //Left data in the 'next' cluster < bytesperclust
-        {
-            __u8*   clusterCache = (__u8*)theFsInfo->fat_buf;
-
-            if (get_cluster(mydata, curclust, clusterCache, bytesperclust) != 0) {
-                FAT_ERROR("Error reading cluster\n");
-                return -1;
-            }
-            theFsInfo->fat_buf_cluster_index = curclust;
-            memcpy(buffer, clusterCache, actsize);
-
-            gotsize += actsize;
-            offset  += actsize;
-
-            //If this message printed when burning, we saied the bootloader is above data parts in image.cfg, or
-            //sdc_burn not burn data partitions in the order in image
-            FAT_MSG("0x:leftSz %x < BPS %x, gotSz %x\n", (unsigned)actsize, bytesperclust, gotsize);//bpc:bytesperclust
-            actsize  = 0;///end the loop
-        }
-    }
 
 exit:
 
-    files[fd].offset = offset;
-    files[fd].curclust = curclust;
-    return gotsize;
+        pFile->offset = offset;
+        pFile->curclust = curclust;
+        return gotsize;
 }
 
 void

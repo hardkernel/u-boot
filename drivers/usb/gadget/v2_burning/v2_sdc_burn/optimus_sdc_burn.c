@@ -357,7 +357,7 @@ static int sdc_burn_dtb_load(HIMAGE hImg)
         char errInfo[512];
 
         wrLen = optimus_download_img_data(dtbTransferBuf, (unsigned)itemSz, errInfo);
-        rc = (wrLen == itemSz) ? 0 : wrLen;
+        rc = (wrLen == itemSz) ? 0 : __LINE__;
     }
 
     return rc;
