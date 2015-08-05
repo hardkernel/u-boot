@@ -83,7 +83,7 @@ static int _aml_get_secure_boot_kernel_size(const void* pLoadaddr, unsigned* pTo
     *pTotalEncKernelSz = 0;
     rc = memcmp(AML_SECU_BOOT_IMG_HDR_MAGIC, amlEncrypteBootimgInfo->magic, AML_SECU_BOOT_IMG_HDR_MAGIC_SIZE);
     if (rc) {
-            return __LINE__;
+            return 0;
     }
     if (AML_SECU_BOOT_IMG_HDR_VESRION != amlEncrypteBootimgInfo->version) {
             errorP("magic ok but version err, err ver=0x%x\n", amlEncrypteBootimgInfo->version);
