@@ -216,7 +216,7 @@
 	#define CONFIG_GENERIC_MMC 1
 	#define CONFIG_CMD_MMC 1
 #endif
-#define CONFIG_AML_NAND	1
+//#define CONFIG_AML_NAND	1
 #ifdef CONFIG_AML_NAND
 #endif
 #define	CONFIG_PARTITIONS 1
@@ -324,7 +324,7 @@
 #define CONFIG_MULTI_DTB    1
 
 //support secure boot
-//#define CONFIG_AML_SECURE_UBOOT   1
+#define CONFIG_AML_SECURE_UBOOT   1
 
 #if defined(CONFIG_AML_SECURE_UBOOT)
 
