@@ -177,7 +177,10 @@
                     "setenv bootargs ${bootargs} androidboot.serialno=${usid};"\
                 "fi;"\
                 "if keyman read mac ${loadaddr} str; then "\
-                    "setenv bootargs ${bootargs} mac=${mac};"\
+                    "setenv bootargs ${bootargs} mac=${mac} androidboot.mac=${mac};"\
+                "fi;"\
+                "if keyman read deviceid ${loadaddr} str; then "\
+                    "setenv bootargs ${bootargs} androidboot.deviceid=${deviceid};"\
                 "fi;"\
             "fi;"\
             "\0"\
