@@ -117,7 +117,7 @@ static void dump_load_info(unsigned long image_load_addr,
 			   unsigned long image_size,
 			   const meminfo_t *mem_layout)
 {
-#if DEBUG
+#if 0
 	printf("Trying to load image at address 0x%lx, size = 0x%lx\r\n",
 		image_load_addr, image_size);
 	printf("Current memory layout:\r\n");

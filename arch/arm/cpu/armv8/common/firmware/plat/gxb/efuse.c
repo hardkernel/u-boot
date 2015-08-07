@@ -36,11 +36,13 @@ void efuse_read(uint64_t offset, uint64_t length, const char * buffer){
 
 void efuse_print(uint64_t offset, uint64_t length, const char * buffer){
 	uint32_t loop = 0;
-	printf("Efuse Read:");
+	serial_puts("Efuse Read:");
 	for (loop=0; loop<length; loop++) {
 		if (0 == (loop % 16))
-			printf("\n");
-		printf("%2x ", buffer[loop]);
+			serial_puts("\n");
+		serial_put_hex(buffer[loop], 8);
+		serial_puts(" ");
+		//printf("%2x ", buffer[loop]);
 	}
-	printf("\n");
+	serial_puts("\n");
 }

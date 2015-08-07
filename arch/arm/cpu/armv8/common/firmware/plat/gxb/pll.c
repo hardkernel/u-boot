@@ -64,12 +64,14 @@ unsigned int pll_init(void){
 	clocks_set_sys_cpu_clk( 1, 0, 0, 0); // Connect SYS CPU to the PLL divider output
 
 	sys_pll_cntl = Rd(HHI_SYS_PLL_CNTL);
-	/* cpu clk = 24/N*M/2^OD */
-	printf("CPU clk: %dMHz\n", \
-		(24/ \
+	unsigned cpu_clk = (24/ \
 		((sys_pll_cntl>>9)&0x1F)* \
 		(sys_pll_cntl&0x1FF)/ \
-		(1<<((sys_pll_cntl>>16)&0x3))));
+		(1<<((sys_pll_cntl>>16)&0x3)));
+	/* cpu clk = 24/N*M/2^OD */
+	serial_puts("CPU clk: ");
+	serial_put_dec(cpu_clk);
+	serial_puts("MHz\n");
 
 	//FIXED PLL
 	Wr(HHI_MPLL_CNTL4, CFG_MPLL_CNTL_4);
@@ -249,13 +251,18 @@ unsigned pll_lock_check(unsigned long pll_reg, const char *pll_name){
 	unsigned lock = ((Rd(pll_reg) >> PLL_LOCK_BIT_OFFSET) & 0x1);
 	if (lock) {
 		lock_check_loop = 0;
-		//printf("%s lock ok!\n", pll_name);
+		//serial_puts(pll_name);
+		//serial_puts("" lock ok!\n");
 	}
 	else{
 		lock_check_loop++;
-		printf("%s lock check %d\n", pll_name, lock_check_loop);
+		serial_puts(pll_name);
+		serial_puts(" lock check ");
+		serial_put_dec(lock_check_loop);
+		serial_puts("\n");
 		if (lock_check_loop >= PLL_lOCK_CHECK_LOOP) {
-			printf("%s lock failed! reset...\n", pll_name);
+			serial_puts(pll_name);
+			serial_puts(" lock failed! reset...\n");
 			reset_system();
 			while (1) ;
 		}

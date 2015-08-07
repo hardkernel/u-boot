@@ -52,8 +52,11 @@ unsigned int saradc_ch1_get(void)
 	_udelay(20);
 
 	while ( (  Rd(P_SAR_SAR_ADC_REG0)& 0x70000000) && (cnt++ <100)) ;
-	if (cnt >= 100)
-		printf(" Get saradc sample Error. Cnt_%d \n", cnt);
+	if (cnt >= 100) {
+		serial_puts(" Get saradc sample Error. Cnt_");
+		serial_put_dec(cnt);
+		serial_puts("\n");
+	}
 	val = Rd(P_SAR_FIFO_READ) & 0x3ff;
 	for (idx=0; idx<SAMP_COUNT; idx++)
 	{
@@ -62,7 +65,9 @@ unsigned int saradc_ch1_get(void)
 	}
 
 	Wr(SEC_AO_SEC_GP_CFG0, ((Rd(SEC_AO_SEC_GP_CFG0) & 0xFFFF00ff) | (idx << 8)));
-	printf("Board ID = %d\n", idx);
+	serial_puts("Board ID = ");
+	serial_put_dec(idx);
+	serial_puts("\n");
 	return idx;
 }
 

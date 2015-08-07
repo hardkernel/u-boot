@@ -43,14 +43,17 @@
  * TODO : add debug levels.
  */
 #if DEBUG
- #define INFO(...)	printf("INFO: " __VA_ARGS__)
- #define WARN(...)	printf("WARN: " __VA_ARGS__)
+ //#define INFO(...)	printf("INFO: " __VA_ARGS__)
+ //#define WARN(...)	printf("WARN: " __VA_ARGS__)
+ #define INFO(...)
+ #define WARN(...)
 #else
  #define INFO(...)
  #define WARN(...)
 #endif
 
-#define ERROR(...)	printf("ERROR: " __VA_ARGS__)
+//#define ERROR(...)	printf("ERROR: " __VA_ARGS__)
+#define ERROR(...)
 
 
 /* For the moment this Panic function is very basic, Report an error and

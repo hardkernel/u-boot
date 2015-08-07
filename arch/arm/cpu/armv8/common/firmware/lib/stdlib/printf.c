@@ -31,6 +31,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 
+#ifdef ENABLE_PRINTF
 /* Choose max of 128 chars for now. */
 #define PRINT_BUFFER_SIZE 128
 int printf(const char *fmt, ...)
@@ -58,3 +59,4 @@ int printf(const char *fmt, ...)
 
 	return count;
 }
+#endif

@@ -35,10 +35,10 @@ void pinmux_init(void) {
 	if (!(readl(P_PREG_PAD_GPIO2_I)&(1<<24))) {  //sd_d3 low, debug board in
 		clrbits_le32(P_AO_RTI_PIN_MUX_REG,3<<11);   //clear AO uart pinmux
 		setbits_le32(P_PERIPHS_PIN_MUX_8,3<<9);
-		printf("\nsdio debug board detected ");
+		serial_puts("\nsdio debug board detected ");
 	}
 	else{
 		writel(pinmux_2,P_PERIPHS_PIN_MUX_2);
-		printf("\nno sdio debug board detected ");
+		serial_puts("\nno sdio debug board detected ");
 	}
 }

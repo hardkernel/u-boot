@@ -35,6 +35,6 @@
  */
 void abort (void)
 {
-	printf("ABORT\n\r");
+	serial_puts("ABORT\n\r");
 	while (1) ;
 }

@@ -38,9 +38,10 @@
 #include <platform_def.h>
 #include <stdio.h>
 #include "bl2_private.h"
-#include <console.h>
+#include <serial.h>
 #include <plat_init.h>
 extern unsigned int ddr_init(void);
+void print_version(void);
 
 /*******************************************************************************
  * The only thing to do in BL2 is to load further images and pass control to
@@ -52,7 +53,7 @@ void bl2_main(void)
 {
 	pinmux_init();
 
-	printf("\n\nBL2 %s.\n%s @ %s\n\n", build_message, CONFIG_SYS_CONFIG_NAME, PLAIN_VERSION);
+	print_version();
 
 	/* Perform remaining generic architectural setup in S-El1 */
 	bl2_arch_setup();
@@ -61,7 +62,7 @@ void bl2_main(void)
 	if (BOOT_DEVICE_USB == get_boot_device()) {
 		if (!get_ddr_size()) {
 			ddr_init();
-			printf("USB mode!\n");
+			serial_puts("USB mode!\n");
 			bl2_to_romcode(USB_BL2_RETURN_ROM_ADDR);
 		}
 	}
@@ -75,6 +76,18 @@ void bl2_main(void)
 	/* Load images */
 	bl2_load_image();
 
-	printf("NEVER BE HERE\n");
+	serial_puts("NEVER BE HERE\n");
 	while (1);
+}
+
+void print_version(void)
+{
+	serial_puts("serial_puts_test\n");
+	serial_puts("\n\nBL2 ");
+	serial_puts(build_message);
+	serial_puts(".\n");
+	serial_puts(CONFIG_SYS_CONFIG_NAME);
+	serial_puts("@");
+	serial_puts(PLAIN_VERSION);
+	serial_puts("\n\n");
 }

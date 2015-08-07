@@ -1,5 +1,5 @@
 #include "config.h"
-#include <console.h>
+#include <serial.h>
 #include <stdio.h>
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
@@ -151,8 +151,12 @@ void power_init(int mode)
 {
 	pwm_init(pwm_b);
 	pwm_init(pwm_d);
-	printf("set vcck to %d mv\n", CONFIG_VCCK_INIT_VOLTAGE);
+	serial_puts("set vcck to ");
+	serial_put_dec(CONFIG_VCCK_INIT_VOLTAGE);
+	serial_puts(" mv\n");
 	pwm_set_voltage(pwm_b, CONFIG_VCCK_INIT_VOLTAGE);
-	printf("set vddee to %d mv\n", CONFIG_VDDEE_INIT_VOLTAGE);
+	serial_puts("set vddee to ");
+	serial_put_dec(CONFIG_VDDEE_INIT_VOLTAGE);
+	serial_puts(" mv\n");
 	pwm_set_voltage(pwm_d, CONFIG_VDDEE_INIT_VOLTAGE);
 }

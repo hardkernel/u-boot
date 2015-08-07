@@ -70,7 +70,7 @@ void *mymalloc(int size)
 
 	if (p)
 		malloc_addr += size;
-	ss_printf("malloc size %d/%d addr %p\n", size, malloc_addr, p);
+	//ss_printf("malloc size %d/%d addr %p\n", size, malloc_addr, p);
 
 	//printf("aml log : malloc_buffer=%p malloc_addr=0x%x p=%p size=%d\n",
 	//	malloc_buffer,malloc_addr,p,size);

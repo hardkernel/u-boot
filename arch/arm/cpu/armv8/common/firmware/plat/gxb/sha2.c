@@ -96,7 +96,7 @@ static void hw_update(const uint8_t *input, uint32_t ilen, uint8_t last_update)
 	uint32_t *p;
 
 	if (!last_update && (ilen % 64)) {
-		printf("Err:sha\n");
+		serial_puts("Err:sha\n");
 		// sha2 usage problem
 		return;
 	}
@@ -175,7 +175,7 @@ static void hw_final(uint8_t output[32])
 void SHA2_HW_init(sha2_ctx *ctx, uint32_t digest_len)
 {
 	if (cur_ctx != NULL) {
-		printf("Err:sha\n");
+		serial_puts("Err:sha\n");
 		// sha2 usage problem
 		return;
 	}
@@ -194,7 +194,7 @@ void SHA2_HW_update(sha2_ctx *ctx, const uint8_t *data, uint32_t len)
 	unsigned int fill_len, data_len, rem_len,offset;
 
 	if (cur_ctx != ctx) {
-		printf("Err:sha\n");
+		serial_puts("Err:sha\n");
 		// sha2 usage problem
 		return;
 	}
@@ -246,12 +246,12 @@ void SHA2_HW_update(sha2_ctx *ctx, const uint8_t *data, uint32_t len)
 uint8_t *SHA2_HW_final(sha2_ctx *ctx)
 {
 	if (cur_ctx != ctx) {
-		printf("Err:sha\n");
+		serial_puts("Err:sha\n");
 		// sha2 usage problem
 		return ctx->buf;
 	}
 	if (ctx->len == 0 || ctx->len > SHA256_BLOCK_SIZE) {
-		printf("Err:sha\n");
+		serial_puts("Err:sha\n");
 		// internal sha2 problem
 		return ctx->buf;
 	}
@@ -400,7 +400,7 @@ void sha2(const uint8_t *input, unsigned int ilen, unsigned char output[32], uns
 
 	if (((nSRCAddr >> 24) &  (0xFF)) == 0xD9)
 	{
-		//printf("aml log : PIO SHA\n");
+		//serial_puts("aml log : PIO SHA\n");
 		SHA2_HW_init(&sha_ctx, is224 ? 224: 256);
 		SHA2_HW_update(&sha_ctx, input, ilen);
 		SHA2_HW_final(&sha_ctx);
@@ -408,7 +408,7 @@ void sha2(const uint8_t *input, unsigned int ilen, unsigned char output[32], uns
 	}
 	else
 	{
-		//printf("aml log : DMA SHA\n");
+		//serial_puts("aml log : DMA SHA\n");
 		SHA2_init( &sha_ctx, is224 ? 224: 256);
 		SHA2_final( &sha_ctx, input,ilen);
 	}

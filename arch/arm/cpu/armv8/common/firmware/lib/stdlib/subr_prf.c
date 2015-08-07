@@ -84,6 +84,8 @@ struct snprintf_arg {
 
 extern	int log_open;
 
+#ifdef ENABLE_PRINTF
+
 static char *ksprintn(char *nbuf, uintmax_t num, int base, int *len, int upper);
 static void  snprintf_func(int ch, void *arg);
 static int kvprintf(char const *fmt, void (*func)(int, void*), void *arg, int radix, va_list ap);
@@ -546,3 +548,5 @@ number:
 	}
 #undef PCHAR
 }
+
+#endif

@@ -110,7 +110,9 @@ uint64_t plat_get_syscnt_freq(void)
 }
 
 void plat_report_exception(void){
-	printf("Enter exception!\nValue: 0x%8x\n", read_esr_el1());
+	serial_puts("Enter exception!\nValue: 0x");
+	serial_put_hex(read_esr_el1(), 32);
+	serial_puts("\n");
 	reset_system();
 	/*never return*/
 	while (1) ;

@@ -45,6 +45,7 @@
 #include <sys/cdefs.h>
 #include <sys/_null.h>
 #include <sys/_types.h>
+#include <serial.h>
 
 #ifndef _SIZE_T_DECLARED
 typedef	__size_t	size_t;
@@ -58,6 +59,8 @@ typedef	__ssize_t	ssize_t;
 
 #define	EOF	(-1)
 
+
+#ifdef ENABLE_PRINTF
 int	 printf(const char * __restrict, ...);
 int	 putchar(int);
 int	 puts(const char *);
@@ -70,6 +73,7 @@ int	 snprintf(char * __restrict, size_t, const char * __restrict,
 	   ...) __printflike(3, 4);
 int	 vsnprintf(char * __restrict, size_t, const char * __restrict,
 	   __va_list) __printflike(3, 0);
+#endif
 #endif
 
 #endif /* !_STDIO_H_ */

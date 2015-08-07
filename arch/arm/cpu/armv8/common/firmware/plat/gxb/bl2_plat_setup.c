@@ -31,7 +31,7 @@
 #include <arch_helpers.h>
 #include <assert.h>
 #include <bl_common.h>
-#include <console.h>
+#include <serial.h>
 #include <debug.h>
 #include <platform.h>
 #include <platform_def.h>
@@ -159,7 +159,7 @@ struct entry_point_info *bl2_plat_get_bl31_ep_info(void)
  ******************************************************************************/
 void bl2_early_platform_setup(meminfo_t *mem_layout)
 {
-	//console_init(52);   //24M
+	//serial_init(52);   //24M
 
 	bl2_tzram_layout.total_base = TZRAM_BASE;
 	bl2_tzram_layout.total_size = TZRAM_SIZE;

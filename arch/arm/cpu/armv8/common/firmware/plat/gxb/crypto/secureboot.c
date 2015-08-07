@@ -531,7 +531,12 @@ int aml_sig_check_buffer(unsigned long pBuffer,unsigned int *pEntry)
 
 	}
 
-	printf("aml log : RSA-%d check %s!\n",rsa_ctx.len<<3, nReturn ? "fail": "pass");
+	//printf("aml log : RSA-%d check %s!\n",rsa_ctx.len<<3, nReturn ? "fail": "pass");
+	serial_puts("aml log : RSA-");
+	serial_put_dec(rsa_ctx.len<<3);
+	serial_puts(" check ");
+	serial_puts(nReturn ? "fail": "pass");
+	serial_puts("!\n");
 #endif //CONFIG_AML_SECURE_UBOOT
 
 exit:

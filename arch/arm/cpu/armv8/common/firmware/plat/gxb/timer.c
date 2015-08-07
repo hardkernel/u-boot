@@ -52,5 +52,8 @@ void timer_start(void)
 void timer_end(const char * name)
 {
 	time_end = get_time();
-	printf("%s Time: %d us\n", name, (time_end - time_start));
+	serial_puts(name);
+	serial_puts(" Time: ");
+	serial_put_dec(time_end - time_start);
+	serial_puts(" us\n");
 }

@@ -116,8 +116,6 @@ void bl2_load_image(void){
 	parse_blx(bl2_to_bl31_params->bl32_image_info, bl2_to_bl31_params->bl32_ep_info,
 				nBL3XLoadAddr, FM_BL32_LOAD_ADDR, fip_header->bl32_entry.size,nAESFlag);
 	bl2_plat_set_bl32_ep_info(bl2_to_bl31_params->bl32_image_info, bl2_to_bl31_params->bl32_ep_info);
-	printf("BL32 addr: 0x%8x\n", bl2_to_bl31_params->bl32_image_info->image_base);
-	printf("BL32 size: 0x%8x\n", bl2_to_bl31_params->bl32_image_info->image_size);
 #endif /* NEED_BL32 */
 
 	/*load and process bl33*/
@@ -145,7 +143,9 @@ void bl2_load_image(void){
 /*
 	typedef unsigned long (*FUNC_TPL)(void );
 	unsigned long bl33_entry = FM_BL33_LOAD_ADDR;
-	printf("bl33 entry: 0x%8x\n", bl33_entry);
+	serial_puts("bl33 entry: 0x");
+	serial_put_hex(bl33_entry, 32);
+	serial_puts("\n");
 	FUNC_TPL func_tpl=(FUNC_TPL)bl33_entry;
 	func_tpl();
 */
@@ -156,7 +156,12 @@ static int aml_check(unsigned long pBufferSRC,unsigned long pBufferDST,unsigned 
 	int nReturn = aml_data_check(pBufferSRC,pBufferDST,nLength,nAESFlag);
 	if (nReturn)
 	{
-		printf("aml log : SIG CHK : %d for address 0x%08X\n",nReturn,pBufferSRC);
+		//printf("aml log : SIG CHK : %d for address 0x%08X\n",nReturn,pBufferSRC);
+		serial_puts("aml log : SIG CHK : ");
+		serial_put_dec(nReturn);
+		serial_puts(" for address 0x");
+		serial_put_hex(pBufferSRC, 32);
+		serial_puts("\n");
 		//while(1);
 		check_handler();
 	}
@@ -184,7 +189,7 @@ void parse_blx(image_info_t *image_data,
 void process_bl30x(image_info_t *image_data,
 				entry_point_info_t *entry_point_info, const char * name)
 {
-	//printf("start sha2\n");
+	//serial_puts("start sha2\n");
 	uint8_t _sha2[32] = {0};
 	sha2((const uint8_t *)image_data->image_base,
 		image_data->image_size,
@@ -192,14 +197,16 @@ void process_bl30x(image_info_t *image_data,
 		0); /*0 means sha256, else means sha224*/
 
 #if 0
-	//printf("%s sha2:", name);
+	serial_puts(name);
+	serial_puts(" sha2:");
 	int print_loop = 0;
 	for (print_loop=0; print_loop<32; print_loop++) {
 		if (0 == (print_loop % 16))
-			printf("\n");
-		printf("0x%2x ", _sha2[print_loop]);
+			serial_puts("\n");
+		serial_put_hex(_sha2[print_loop], 8);
+		serial_puts(" ");
 	}
-	printf("\n");
+	serial_puts("\n");
 #endif
 
 	send_bl30x(image_data->image_base, image_data->image_size, \
@@ -230,11 +237,11 @@ void bl2_to_romcode(uintptr_t entry)
 
 void check_handler(void) {
 	if (BOOT_DEVICE_USB == get_boot_device()) {
-		printf("USB mode!\n");
+		serial_puts("USB mode!\n");
 		bl2_to_romcode(USB_BL2_RETURN_ROM_ADDR);
 	}
 	else{
-		printf("reset...\n");
+		serial_puts("reset...\n");
 		reset_system();
 	}
 }

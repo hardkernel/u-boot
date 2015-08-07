@@ -14,6 +14,8 @@
  * expressed or implied by its publication or distribution.
  **********************************************************************/
 
+#define MEM_TEST_DEBUG 0
+
 #include <stdio.h>
 
 /**********************************************************************
@@ -52,9 +54,17 @@ memTestDataBus(volatile unsigned int * address)
 		 */
 		if (data != pattern)
 		{
-			printf("  memTestDataBus - write: 0x%8x, read back: 0x%8x\n", pattern, data);
+#if (MEM_TEST_DEBUG)
+			//printf("  memTestDataBus - write: 0x%8x, read back: 0x%8x\n", pattern, data);
+			serial_puts("  memTestDataBus - write: 0x");
+			serial_put_hex(pattern, 32);
+			serial_puts(", read back: 0x");
+			serial_put_hex(data, 32);
+			serial_puts("\n");
 			ret = 1;
-			//return (pattern);
+#else
+			return (pattern);
+#endif
 		}
 	}
 	return (ret);
@@ -129,15 +139,35 @@ memTestAddressBus(volatile unsigned int * baseAddress, unsigned int nBytes)
 		data2 = baseAddress[offset];
 		if (data1 != data2)
 		{
-			printf("  memTestAddressBus - read twice different[offset]: 0x%8x-0x%8x\n", data1, data2);
+#if (MEM_TEST_DEBUG)
+			//printf("  memTestAddressBus - read twice different[offset]: 0x%8x-0x%8x\n", data1, data2);
+			serial_puts("  memTestAddressBus - read twice different[offset]: 0x");
+			serial_put_hex(data1, 32);
+			serial_puts("-0x");
+			serial_put_hex(data2, 32);
+			serial_puts("\n");
+#endif
 			ret = 1;
 		}
 		if (data1 != pattern)
 		{
-			printf("  memTestAddressBus - write[0x%8x]: 0x%8x, read[0x%8x]: 0x%8x\n", \
+#if (MEM_TEST_DEBUG)
+			/*printf("  memTestAddressBus - write[0x%8x]: 0x%8x, read[0x%8x]: 0x%8x\n", \
 				offset, pattern, offset, data1);
+			*/
+			serial_puts("  memTestAddressBus - write[0x");
+			serial_put_hex(offset, 32);
+			serial_puts("]: 0x");
+			serial_put_hex(pattern, 32);
+			serial_puts(", read[0x");
+			serial_put_hex(offset, 32);
+			serial_puts("]: 0x");
+			serial_put_hex(data1, 32);
+			serial_puts("\n");
 			ret = 1;
-			//return ((unsigned int) &baseAddress[offset]);
+#else
+			return ((unsigned int)(unsigned long) &baseAddress[offset]);
+#endif
 		}
 	}
 
@@ -152,10 +182,21 @@ memTestAddressBus(volatile unsigned int * baseAddress, unsigned int nBytes)
 
 		if (baseAddress[0] != pattern)
 		{
-			printf("  memTestAddressBus2 - write baseAddress[0x%8x]: 0x%8x, read baseAddress[0]: 0x%8x\n", \
+#if (MEM_TEST_DEBUG)
+			/*printf("  memTestAddressBus2 - write baseAddress[0x%8x]: 0x%8x, read baseAddress[0]: 0x%8x\n", \
 				testOffset, antipattern, baseAddress[0]);
+			*/
+			serial_puts("  memTestAddressBus2 - write baseAddress[0x");
+			serial_put_hex(testOffset, 32);
+			serial_puts("]: 0x");
+			serial_put_hex(antipattern, 32);
+			serial_puts(", read baseAddress[0]: 0x");
+			serial_put_hex(baseAddress[0], 32);
+			serial_puts("\n");
 			ret = 1;
-			//return ((unsigned int) &baseAddress[testOffset]);
+#else
+			return ((unsigned int)(unsigned long) &baseAddress[testOffset]);
+#endif
 		}
 
 		for (offset = 1; (offset & addressMask) != 0; offset <<= 1)
@@ -163,10 +204,23 @@ memTestAddressBus(volatile unsigned int * baseAddress, unsigned int nBytes)
 			data1 = baseAddress[offset];
 			if ((data1 != pattern) && (offset != testOffset))
 			{
-				printf("  memTestAddressBus3 - write baseAddress[0x%8x]: 0x%8x, read baseAddress[0x%8x]: 0x%8x\n", \
+#if (MEM_TEST_DEBUG)
+				/*printf("  memTestAddressBus3 - write baseAddress[0x%8x]: 0x%8x, read baseAddress[0x%8x]: 0x%8x\n", \
 					testOffset, antipattern, testOffset, data1);
+				*/
+				serial_puts("  memTestAddressBus3 - write baseAddress[0x");
+				serial_put_hex(testOffset, 32);
+				serial_puts("]: 0x");
+				serial_put_hex(antipattern, 32);
+				serial_puts(", read baseAddress[0x");
+				serial_put_hex(testOffset, 32);
+				serial_puts("]: 0x");
+				serial_put_hex(data1, 32);
+				serial_puts("\n");
 				ret = 1;
-				//return ((unsigned int) &baseAddress[testOffset]);
+#else
+				return ((unsigned int)(unsigned long) &baseAddress[testOffset]);
+#endif
 			}
 		}
 
@@ -208,7 +262,9 @@ memTestDevice(volatile unsigned int * baseAddress, unsigned int nBytes)
 	unsigned int data;
 	unsigned int pattern;
 	unsigned int antipattern;
-	printf("\nTotal Size 0x%8x\n", nBytes);
+	serial_puts("\nTotal Size 0x");
+	serial_put_hex(nBytes, 32);
+	serial_puts("\n");
 
 	/*
 	 * Fill memory with a known pattern.
@@ -219,12 +275,13 @@ memTestDevice(volatile unsigned int * baseAddress, unsigned int nBytes)
 #ifdef AML_DEBUG_ROM
 		if ((offset&0x3ffff) == 0)
 		{
-			printf("\r0x%8x", offset<<2);
+			serial_puts("\r0x");
+			serial_put_hex(offset<<2, 32);
 		}
 #endif
 
 	}
-	printf("\n");
+	serial_puts("\n");
 
 	/*
 	 * Check each location and invert it for the second pass.
@@ -234,10 +291,23 @@ memTestDevice(volatile unsigned int * baseAddress, unsigned int nBytes)
 		data = baseAddress[offset];
 		if ( data!= pattern)
 		{
-			printf("  memTestDevice - write baseAddress[0x%8x]: 0x%8x, read baseAddress[0x%8x]: 0x%8x\n", \
+#if (MEM_TEST_DEBUG)
+			/*printf("  memTestDevice - write baseAddress[0x%8x]: 0x%8x, read baseAddress[0x%8x]: 0x%8x\n", \
 				offset, pattern, offset, data);
+			*/
+			serial_puts("  memTestDevice - write baseAddress[0x");
+			serial_put_hex(offset, 32);
+			serial_puts("]: 0x");
+			serial_put_hex(pattern, 32);
+			serial_puts(", read baseAddress[0x");
+			serial_put_hex(offset, 32);
+			serial_puts("]: 0x");
+			serial_put_hex(data, 32);
+			serial_puts("\n");
 			ret = 1;
-			//return ((unsigned int) &baseAddress[offset]);
+#else
+			return ((unsigned int)(unsigned long) &baseAddress[offset]);
+#endif
 		}
 
 		antipattern = ~pattern;
@@ -245,12 +315,13 @@ memTestDevice(volatile unsigned int * baseAddress, unsigned int nBytes)
 #ifdef AML_DEBUG_ROM
 		if ((offset&0x3ffff) == 0)
 		{
-			printf("\r0x%8x", (offset<<2));
+			serial_puts("\r0x");
+			serial_put_hex((offset<<2), 32);
 		}
 #endif
 
 	}
-	printf("\n");
+	serial_puts("\n");
 
 	/*
 	 * Check each location for the inverted pattern and zero it.
@@ -261,21 +332,35 @@ memTestDevice(volatile unsigned int * baseAddress, unsigned int nBytes)
 		data = baseAddress[offset];
 		if (data != antipattern)
 		{
-			printf("  memTestDevice2 - write baseAddress[0x%8x]: 0x%8x, read baseAddress[0x%8x]: 0x%8x\n", \
+#if (MEM_TEST_DEBUG)
+			/*printf("  memTestDevice2 - write baseAddress[0x%8x]: 0x%8x, read baseAddress[0x%8x]: 0x%8x\n", \
 				offset, antipattern, offset, data);
+			*/
+			serial_puts("  memTestDevice2 - write baseAddress[0x");
+			serial_put_hex(offset, 32);
+			serial_puts("]: 0x");
+			serial_put_hex(pattern, 32);
+			serial_puts(", read baseAddress[0x");
+			serial_put_hex(offset, 32);
+			serial_puts("]: 0x");
+			serial_put_hex(data, 32);
+			serial_puts("\n");
 			ret = 1;
-			//return ((unsigned int) &baseAddress[offset]);
+#else
+			return ((unsigned int)(unsigned long) &baseAddress[offset]);
+#endif
 		}
 #ifdef AML_DEBUG_ROM
 		if ((offset&0x3ffff) == 0)
 		{
-			printf("\r0x%8x", (offset<<2));
+			serial_puts("\r0x");
+			serial_put_hex((offset<<2), 32);
 		}
 #endif
 
 	}
 #undef AML_DEBUG_ROM
-	printf("\n");
+	serial_puts("\n");
 
 	return (ret);
 }   /* memTestDevice() */

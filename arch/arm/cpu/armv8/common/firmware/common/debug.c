@@ -27,7 +27,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#include <console.h>
+#include <serial.h>
 #include <debug.h>
 #include <stdio.h>
 
@@ -44,25 +44,25 @@ void print_string_value(char *s, unsigned long *mem)
 	while (*s) {
 		i = 16;
 		while (*s)
-			console_putc(*s++);
+			serial_putc(*s++);
 
 		s++;
 
-		console_putc('\t');
-		console_putc(':');
-		console_putc('0');
-		console_putc('x');
+		serial_putc('\t');
+		serial_putc(':');
+		serial_putc('0');
+		serial_putc('x');
 
 		val = *mem++;
 
 		while (i--) {
 			temp = (val >> (i << 2)) & 0xf;
 			if (temp <  0xa)
-				console_putc('0' + temp);
+				serial_putc('0' + temp);
 			else
-				console_putc('A' + (temp - 0xa));
+				serial_putc('A' + (temp - 0xa));
 		}
-		console_putc('\n');
+		serial_putc('\n');
 	}
 }
 
@@ -73,7 +73,11 @@ void print_string_value(char *s, unsigned long *mem)
 #if DEBUG
 void __dead2 do_panic(const char *file, int line)
 {
-		printf("PANIC in file: %s line: %d\n", file, line);
+		serial_puts("PANIC in file: ");
+		serial_puts(file);
+		serial_puts(" line: ");
+		serial_put_dec(line);
+		serial_puts("\n");
 		while (1)
 			;
 }
@@ -87,7 +91,10 @@ void __dead2 do_panic(void)
 	/* x30 reports the next eligible instruction whereas we want the
 	 * place where panic() is invoked. Hence decrement by 4.
 	 */
-	printf("PANIC in PC location 0x%016X\n", pc_reg - 0x4);
+	//printf("PANIC in PC location 0x%016X\n", pc_reg - 0x4);
+	serial_puts("PANIC in PC location 0x");
+	serial_put_hex(pc_reg - 0x4, 64);
+	serial_puts("\n");
 	while (1)
 		;
 

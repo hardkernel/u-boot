@@ -317,7 +317,7 @@
 #define CONFIG_SYS_MEM_TOP_HIDE 0x08000000 //hide 128MB for kernel reserve
 
 //support secure boot
-//#define CONFIG_AML_SECURE_UBOOT   1
+#define CONFIG_AML_SECURE_UBOOT   1
 
 #if defined(CONFIG_AML_SECURE_UBOOT)
 

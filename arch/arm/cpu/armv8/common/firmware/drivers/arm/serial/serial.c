@@ -1,5 +1,7 @@
 #include <serial.h>
 #include <io.h>
+#include <stdint.h>
+#include <asm/arch/secure_apb.h>
 
 void serial_set_pin_port(unsigned port_base)
 {
@@ -10,14 +12,7 @@ void serial_set_pin_port(unsigned port_base)
 #define UART_PRTY_BIT 0
 #define UART_CHAR_LEN   UART_CNTL_MASK_CHAR_8BIT
 
-void console_init(unsigned set);
-int console_putc(int c);
-int console_getc(void);
-int console_puts(const char *s);
-void console_put_hex(unsigned long data,unsigned int bitlen);
-void console_put_dec(unsigned long data);
-
-void console_init(unsigned set)
+void serial_init(unsigned set)
 {
     /* baud rate */
     writel(set| UART_STP_BIT
@@ -35,7 +30,7 @@ void console_init(unsigned set)
 	    UART_CNTL_MASK_RST_TX | UART_CNTL_MASK_RST_RX | UART_CNTL_MASK_CLR_ERR);
 }
 
-int console_putc(int c)
+int serial_putc(int c)
 {
     if (c == '\n') {
         while ((readl(P_UART_STATUS(UART_PORT_CONS)) & UART_STAT_MASK_TFIFO_FULL));
@@ -48,7 +43,7 @@ int console_putc(int c)
     return c;
 }
 
-int console_getc(void)
+int serial_getc(void)
 {
    unsigned char ch;
     /* Wait till character is placed in fifo */
@@ -65,32 +60,32 @@ int console_getc(void)
     return ((int)ch);
 }
 
-int console_puts(const char *s){
+int serial_puts(const char *s){
 	while (*s) {
-		console_putc(*s++);
+		serial_putc(*s++);
 	}
 	return 0;
 }
 
-//support 64bit number, console_put_hex(data, 64);
-void console_put_hex(unsigned long data,unsigned int bitlen)
+//support 64bit number, serial_put_hex(data, 64);
+void serial_put_hex(unsigned long data,unsigned int bitlen)
 {
 	int i;
 	for (i=bitlen-4;i>=0;i-=4) {
         if ((data>>i) == 0)
         {
-            console_putc(0x30);
+            serial_putc(0x30);
             continue;
         }
         unsigned char s = (data>>i)&0xf;
         if (s<10)
-            console_putc(0x30+s);
+            serial_putc(0x30+s);
         else
-            console_putc(0x61+s-10);
+            serial_putc(0x61+s-10);
     }
 }
 
-void console_put_dec(unsigned long data)
+void serial_put_dec(unsigned long data)
 {
 	char szTxt[10];
 	szTxt[0] = 0x30;
@@ -102,5 +97,5 @@ void console_put_dec(unsigned long data)
 	} while(data);
 
 	for (--i;i >=0;--i)
-		console_putc(szTxt[i]);
+		serial_putc(szTxt[i]);
 }

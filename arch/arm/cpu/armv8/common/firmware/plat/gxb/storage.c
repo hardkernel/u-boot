@@ -38,10 +38,18 @@ void dump_ddr_data(void)
 {
 #ifdef CONFIG_SPL_DDR_DUMP
 	if (CONFIG_SPL_DDR_DUMP_FLAG == readl(P_PREG_STICKY_REG0)) {
-		printf("Dump ddr[0x%8x-0x%8x] to %s device[0x%8x-0x%8x]\n\n", CONFIG_SPL_DDR_DUMP_ADDR, \
-			(CONFIG_SPL_DDR_DUMP_ADDR+CONFIG_SPL_DDR_DUMP_SIZE), \
-			(CONFIG_SPL_DDR_DUMP_DEV_TYPE==BOOT_DEVICE_SD)?"External":"Internal", \
-			CONFIG_SPL_DDR_DUMP_DEV_OFFSET, (CONFIG_SPL_DDR_DUMP_DEV_OFFSET+CONFIG_SPL_DDR_DUMP_SIZE));
+		serial_puts("Dump ddr[0x");
+		serial_put_hex(CONFIG_SPL_DDR_DUMP_ADDR, 32);
+		serial_puts("-0x");
+		serial_put_hex((CONFIG_SPL_DDR_DUMP_ADDR+CONFIG_SPL_DDR_DUMP_SIZE), 32);
+		serial_puts("] to ");
+		serial_puts((CONFIG_SPL_DDR_DUMP_DEV_TYPE==BOOT_DEVICE_SD)?"External":"Internal");
+		serial_puts(" device[0x");
+		serial_put_hex(CONFIG_SPL_DDR_DUMP_DEV_OFFSET, 32);
+		serial_puts("-0x");
+		serial_put_hex((CONFIG_SPL_DDR_DUMP_DEV_OFFSET+CONFIG_SPL_DDR_DUMP_SIZE), 32);
+		serial_puts("]\n\n");
+
 		writel(0, P_PREG_STICKY_REG0);
 		watchdog_disable();
 		sdio_write_data(CONFIG_SPL_DDR_DUMP_DEV_TYPE, CONFIG_SPL_DDR_DUMP_ADDR, \
@@ -59,12 +67,12 @@ uint64_t storage_init(void)
 	switch (boot_device) {
 #if defined(CONFIG_AML_NAND)
 		case BOOT_DEVICE_NAND:
-			printf( "NAND init\n");
+			serial_puts( "NAND init\n");
 			nfio_init();
 			break;
 #endif //CONFIG_AML_NAND
 		default:
-			//printf("do nothing!\n");
+			//serial_puts("do nothing!\n");
 			break;
 	}
 	return 0;
@@ -102,8 +110,19 @@ uint64_t storage_load(uint64_t src, uint64_t des, uint64_t size, const char * im
 		default:
 			break;
 	}
-	printf("Load %s from %s, src: 0x%x, dst: 0x%x, size: 0x%x\n",
-		image_name, device_name, src, des, size);
+	//printf("Load %s from %s, src: 0x%x, dst: 0x%x, size: 0x%x\n",
+	//	image_name, device_name, src, des, size);
+	serial_puts("Load ");
+	serial_puts(image_name);
+	serial_puts(" from ");
+	serial_puts(device_name);
+	serial_puts(", src: 0x");
+	serial_put_hex(src, 32);
+	serial_puts(", des: 0x");
+	serial_put_hex(des, 32);
+	serial_puts(", size: 0x");
+	serial_put_hex(size, 32);
+	serial_puts("\n");
 	switch (boot_device) {
 		case BOOT_DEVICE_RESERVED:
 			break;
@@ -264,10 +283,13 @@ uint64_t sdio_read_blocks(struct sd_emmc_global_regs *sd_emmc_regs,
 		ret |= SD_EMMC_RESP_TIMEOUT_ERROR;
 	if (status_irq_reg->desc_timeout)
 		ret |= SD_EMMC_DESC_TIMEOUT_ERROR;
-	if (ret)
-		printf("sd/emmc read data error: status=0x%x; ret=%d\n",ret);
+	if (ret) {
+		serial_puts("sd/emmc read data error: ret=");
+		serial_put_dec(ret);
+		serial_puts("\n");
+	}
 	//else
-		//printf("read data success!\n");
+		//serial_puts("read data success!\n");
 	return ret;
 }
 
@@ -371,10 +393,13 @@ uint64_t sdio_write_blocks(struct sd_emmc_global_regs *sd_emmc_regs,
 		ret |= SD_EMMC_RESP_TIMEOUT_ERROR;
 	if (status_irq_reg->desc_timeout)
 		ret |= SD_EMMC_DESC_TIMEOUT_ERROR;
-	if (ret)
-		printf("sd/emmc write data error: status=0x%x; ret=%d\n",ret);
+	if (ret) {
+		serial_puts("sd/emmc write data error: ret=");
+		serial_put_dec(ret);
+		serial_puts("\n");
+	}
 	//else
-		//printf("write data success!\n");
+		//serial_puts("write data success!\n");
 	return ret;
 }
 
@@ -389,15 +414,15 @@ uint64_t sdio_read_data(uint64_t boot_device, uint64_t src, uint64_t des, uint64
 	else if(boot_device == BOOT_DEVICE_SD)
 		sd_emmc_regs = (struct sd_emmc_global_regs *)SD_EMMC_BASE_B;
 	else
-		printf("sd/emmc boot device error\n");
+		serial_puts("sd/emmc boot device error\n");
 
 	mode = s_setup->b.sdhc | s_setup->b.hcs ? 1 : 0;
 
 #if 0
 	if (mode)
-		printf("sd/emmc is lba mode\n");
+		serial_puts("sd/emmc is lba mode\n");
 	else
-		printf("sd/emmc is byte mode\n");
+		serial_puts("sd/emmc is byte mode\n");
 #endif
 
 	blk_cnt = ((size+511)&(~(511)))>>9;
@@ -427,15 +452,15 @@ uint64_t sdio_write_data(uint64_t boot_device, uint64_t src, uint64_t des, uint6
 	else if(boot_device == BOOT_DEVICE_SD)
 		sd_emmc_regs = (struct sd_emmc_global_regs *)SD_EMMC_BASE_B;
 	else
-		printf("sd/emmc boot device error\n");
+		serial_puts("sd/emmc boot device error\n");
 
 	mode = s_setup->b.sdhc | s_setup->b.hcs ? 1 : 0;
 
 #if 0
 	if (mode)
-		printf("sd/emmc is lba mode\n");
+		serial_puts("sd/emmc is lba mode\n");
 	else
-		printf("sd/emmc is byte mode\n");
+		serial_puts("sd/emmc is byte mode\n");
 #endif
 
 	blk_cnt = ((size+511)&(~(511)))>>9;

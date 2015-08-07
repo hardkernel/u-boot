@@ -36,6 +36,12 @@
 void __assert (const char *function, const char *file, unsigned int line,
 		const char *assertion)
 {
-	printf("ASSERT: %s <%d> : %s\n\r", function, line, assertion);
+	serial_puts("ASSERT: ");
+	serial_puts(function);
+	serial_puts(" <");
+	serial_put_dec(line);
+	serial_puts("> : ");
+	serial_puts(assertion);
+	serial_puts("\n\r");
 	while (1) ;
 }

@@ -33,14 +33,14 @@ void mb_send_data(uint32_t val, uint32_t port)
 	unsigned long  set_addr;
 
 	if (port > 5) {
-		printf("Error: Use the error port num!\n");
+		serial_puts("Error: Use the error port num!\n");
 		return;
 	}
 
 	set_addr = base_addr + port*3*4;
 
 	if (!val) {
-		printf("Error: mailbox try to send zero val!\n");
+		serial_puts("Error: mailbox try to send zero val!\n");
 		return;
 	}
 
@@ -55,7 +55,7 @@ uint32_t mb_read_data(uint32_t port)
 	uint32_t val;
 
 	if (port > 5) {
-		printf("Error: Use the error port num!\n");
+		serial_puts("Error: Use the error port num!\n");
 		return 0;
 	}
 
@@ -76,12 +76,12 @@ void mb_clear_data(uint32_t val, uint32_t port)
 	unsigned long clean_addr = base_addr + port*3*4;
 
 	if (port > 5) {
-		printf("Error: Use the error port num!\n");
+		serial_puts("Error: Use the error port num!\n");
 		return;
 	}
 
 	if (!val) {
-		printf("Warning: clean val=0.\n");
+		serial_puts("Warning: clean val=0.\n");
 		return;
 	}
 
@@ -98,13 +98,14 @@ void send_bl30x(uint32_t addr, uint32_t size, const uint8_t * sha2, \
 
 	if (0 == strcmp("bl301", name)) {
 		/*bl301 must wait bl30 run*/
-		printf("Wait bl30...");
+		serial_puts("Wait bl30...");
 		while (0x3 != ((readl(AO_SEC_SD_CFG15) >> 20) & 0x3)) {}
-		printf("Done\n");
+		serial_puts("Done\n");
 	}
 
-	printf("Sending %s", name);
-	//printf("time=0x%x size=0x%x\n", readl(0xc1109988),size);
+	serial_puts("Sending ");
+	serial_puts(name);
+	//serial_puts("time=0x%x size=0x%x\n", readl(0xc1109988),size);
 
 	mb_send_data(CMD_DATA_LEN, 3);
 	do {} while(mb_read_data(3));
@@ -113,7 +114,7 @@ void send_bl30x(uint32_t addr, uint32_t size, const uint8_t * sha2, \
 	do {} while(mb_read_data(3));
 
 	for (i = 0; i < size; i+=1024) {
-		printf(".");
+		serial_puts(".");
 		if (size >= i + 1024)
 			memcpy((void *)MB_SRAM_BASE,(const void *)(unsigned long)(addr+i),1024);
 		else if(size > i)
@@ -125,7 +126,9 @@ void send_bl30x(uint32_t addr, uint32_t size, const uint8_t * sha2, \
 	mb_send_data(CMD_OP_SHA, 3);
 
 	do {} while(mb_read_data(3));
-	printf("OK. \nRun %s...\n", name);
+	serial_puts("OK. \nRun ");
+	serial_puts(name);
+	serial_puts("...\n");
 
 	/* The BL31 will run after this command */
 	mb_send_data(CMD_END,3);//code transfer end.

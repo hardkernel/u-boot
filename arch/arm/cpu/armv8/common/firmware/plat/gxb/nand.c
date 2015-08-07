@@ -80,7 +80,7 @@ unsigned char page_list_hynix_2x[128] = {
 	0xEE, 0xEF, 0xF2, 0xF3, 0xF6, 0xF7, 0xFA, 0xFB,
 };
 
-#define PRINT	printf
+//#define PRINT	printf
 #if 0
 static void _dump_mem_u8(uint8_t * buf, uint32_t len)
 {
@@ -561,17 +561,17 @@ uint32_t nfio_page_read(uint32_t src, uint32_t mem)
 
             // check blank page
             if ((info>>16&0x3f) < 0xa) {
-				PRINT("blank @ page 0x%08x\n", src);
+                //PRINT("blank @ page 0x%08x\n", src);
                 return ERROR_NAND_BLANK_PAGE;
             }
             else {
-				PRINT("ecc fail @ page 0x%08x\n", src);
+                //PRINT("ecc fail @ page 0x%08x\n", src);
                 return ERROR_NAND_ECC;
             }
         }
 
         if (k == 0 && (info & 0xc000ffff) != 0xc000aa55) { //magic word error
-			PRINT("magic fail @ page 0x%08x\n", src);
+            //PRINT("magic fail @ page 0x%08x\n", src);
             return ERROR_NAND_MAGIC_WORD;
 		}
         info_adr += 8;
@@ -731,7 +731,7 @@ uint32_t nfio_init()
 	glb_ext_info.new_type = p_ext_info->new_type;
 	glb_ext_info.page_per_blk = p_ext_info->page_per_blk;
 
-	printf("cfg %x, new %x, pages %x\n", glb_setup.cfg.d32, glb_ext_info.new_type, glb_ext_info.page_per_blk);
+	//printf("cfg %x, new %x, pages %x\n", glb_setup.cfg.d32, glb_ext_info.new_type, glb_ext_info.page_per_blk);
 	NFIO_LINE
 
 	return ret;
@@ -755,7 +755,7 @@ uint32_t nf_read(uint32_t boot_device, uint32_t src, uint32_t des, uint32_t size
     _page_size = (ecc_mode < 2 ? 64 : 128) * 8 * ecc_pages;
 	//printf("ecc_mode %d, ecc_pages %d, pagesize %d\n", ecc_mode, ecc_pages, _page_size);
 	if (src % SRC_ALIGN_SIZE) {
-		PRINT("%s(), unaligned src 0x%08x\n", __func__, src);
+		//PRINT("%s(), unaligned src 0x%08x\n", __func__, src);
 		ret = ERROR_NAND_UNALIGN_SRC;
 		goto _out;
 	}
