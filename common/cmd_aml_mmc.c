@@ -317,21 +317,47 @@ int do_amlmmcops(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
                                         return 1;
                                 }
                                 mmc_init(mmc);
+                                printf("mmc switch to ");
                                 if (strcmp(argv[3], "boot0") == 0) {
                                         rc = mmc_switch_part(dev, 1);
-                                        if (rc == 0)
+                                        if (rc == 0) {
                                                 emmc_cur_partition = 1;
+                                                printf("boot0 success\n");
+                                        } else {
+                                                printf("boot0 failed\n");
+                                        }
                                 }
-                                else if(strcmp(argv[3], "boot1")==0){
+                                else if(strcmp(argv[3], "boot1") == 0) {
                                         rc = mmc_switch_part(dev, 2);
-                                        if (rc == 0)
+                                        if (rc == 0) {
                                                 emmc_cur_partition = 2;
+                                                printf("boot1 success\n");
+                                        } else {
+                                                printf("boot1 failed\n");
+                                        }
                                 }
-                                else if(strcmp(argv[3], "user")==0){
+                                else if(strcmp(argv[3], "user") == 0) {
                                         rc = mmc_switch_part(dev, 0);
-                                        if (rc == 0)
+                                        if (rc == 0) {
                                                 emmc_cur_partition = 0;
+                                                printf("user success\n");
+                                        } else {
+                                                printf("user failed\n");
+                                       }
                                 }
+#ifdef CONFIG_SUPPORT_EMMC_RPMB
+                                else if(strcmp(argv[3], "rpmb") == 0) {
+                                        rc = mmc_switch_part(dev, 3);
+                                        if (rc == 0) {
+                                                emmc_cur_partition = 3;
+                                                printf("rpmb success\n");
+                                        } else {
+                                                printf("rpmb failed\n");
+                                        }
+                                }
+#endif
+                                else
+                                        printf("%s failed\n", argv[3]);
                                 return rc;
                         }
 
