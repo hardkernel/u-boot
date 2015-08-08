@@ -25,13 +25,17 @@ include $(TOPDIR)/config.mk
 
 LIB	:= $(obj)libusb_gadget.o
 
+COBJS-$(CONFIG_EXYNOS_USBD3) += usbd3-ss.o
+COBJS-$(CONFIG_S3C_USBD) += usbd-otg-hs.o
+
 # new USB gadget layer dependencies
 ifdef CONFIG_USB_GADGET
 COBJS-y += epautoconf.o config.o usbstring.o
 COBJS-$(CONFIG_USB_GADGET_S3C_UDC_OTG) += s3c_udc_otg.o
 endif
 ifdef CONFIG_USB_ETHER
-COBJS-y += ether.o epautoconf.o config.o usbstring.o
+#COBJS-y += epautoconf.o config.o usbstring.o
+COBJS-y += ether.o
 COBJS-$(CONFIG_USB_ETH_RNDIS) += rndis.o
 COBJS-$(CONFIG_MV_UDC)	+= mv_udc.o
 else
@@ -44,9 +48,6 @@ COBJS-$(CONFIG_OMAP1510) += omap1510_udc.o
 COBJS-$(CONFIG_OMAP1610) += omap1510_udc.o
 COBJS-$(CONFIG_MPC885_FAMILY) += mpc8xx_udc.o
 COBJS-$(CONFIG_CPU_PXA27X) += pxa27x_udc.o
-else
-COBJS-$(CONFIG_EXYNOS_USBD3) += usbd3-ss.o
-COBJS-$(CONFIG_S3C_USBD) += usbd-otg-hs.o
 endif
 endif
 

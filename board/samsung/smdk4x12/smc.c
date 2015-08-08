@@ -22,6 +22,9 @@ static inline u32 exynos_smc(u32 cmd, u32 arg1, u32 arg2, u32 arg3)
 	register u32 reg3 __asm__("r3") = arg3;
 
 	__asm__ volatile (
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+		".arch_extension sec\n"
+#endif
 		"smc	0\n"
 		: "+r"(reg0), "+r"(reg1), "+r"(reg2), "+r"(reg3)
 
@@ -36,6 +39,9 @@ static inline u32 exynos_smc_read(u32 cmd)
 	register u32 reg1 __asm__("r1") = 0;
 
 	__asm__ volatile (
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+		".arch_extension sec\n"
+#endif
 		"smc	0\n"
 		: "+r"(reg0), "+r"(reg1)
 

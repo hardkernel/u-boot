@@ -329,6 +329,7 @@ int do_fat_cfgload(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
             if(wpos)    {
                 if(wpos < sizeof(cmd)) {
                     if(first)   {
+#if CONFIG_MACH_TYPE == MACH_TYPE_ODROIDXU
                         if(!strncmp(cmd, "ODROIDXU-UBOOT-CONFIG", sizeof("ODROIDXU-UBOOT-CONFIG"))) {
                             printf("Find boot.ini file from FAT/Ext4 Area!!\n");     first = 0;
                         }
@@ -336,6 +337,19 @@ int do_fat_cfgload(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
                             printf("Find boot.ini file. But This file is not odroidxu config file!\n");
                             return  0;
                         }
+#elif CONFIG_MACH_TYPE == MACH_TYPE_ODROIDX
+                        if(!strncmp(cmd, "ODROID4412-UBOOT-CONFIG", sizeof("ODROID4412-UBOOT-CONFIG"))) {
+                            printf("Find boot.ini file from FAT/Ext4 Area!!\n");     first = 0;
+                        }
+                        else    {
+                            printf("Find boot.ini file. But This file is not odroid4412 config file!\n");
+                            return  0;
+                        }
+#else
+			first = 0;
+			printf("boot.ini command = %s\n", cmd);
+			run_command(cmd, 0);
+#endif
                     }
                     else    {
                         printf("boot.ini command = %s\n", cmd);

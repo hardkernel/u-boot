@@ -24,7 +24,23 @@
 #include <common.h>
 #include <asm/io.h>
 
+#if defined(CONFIG_BOARD_HARDKERNEL) && defined(CONFIG_EXYNOS4412)
+#include <asm/arch/gpio.h>
+#include <asm/arch/pmic_hkdk4212.h>
+#endif
+
 void reset_cpu(ulong addr)
 {
+#if defined(CONFIG_BOARD_HARDKERNEL) && defined(CONFIG_EXYNOS4412)
+	struct exynos4_gpio_part2 *gpio2 = (struct exynos4_gpio_part2 *) EXYNOS4_GPIO_PART2_BASE;
+
+	emmc_pwr_reset();
+
+	s5p_gpio_cfg_pin(&gpio2->k1, 2, GPIO_OUTPUT);
+	s5p_gpio_set_value(&gpio2->k1, 2, 0);
+	udelay (50000);				/* wait 50 ms */
+	s5p_gpio_set_value(&gpio2->k1, 2, 1);
+#endif
+
 	writel(0x1, samsung_get_base_swreset());
 }

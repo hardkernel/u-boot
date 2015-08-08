@@ -48,6 +48,22 @@
 /* Declare global data pointer */
 DECLARE_GLOBAL_DATA_PTR;
 
+#if defined(CONFIG_BOARD_HARDKERNEL) && defined(CONFIG_EXYNOS4412)
+void max77686_update_reg(u8 reg, u8 val, u8 mask) {
+	u8 old_val, new_val;
+
+	val = val & 0xFF;
+	mask = mask & 0xFF;
+	reg = reg & 0xFF;
+	if (pmic_read(reg, &old_val, 1)) printf("pmic_read error\n");
+	if (old_val >= 0) {
+		old_val = old_val & 0xff;
+		new_val = (val & mask) | (old_val & (~mask));
+		pmic_write(reg, &new_val, 1);
+	}
+}
+#endif
+
 /**
  * Contains pointers to register base addresses
  * for the usb controller.
@@ -320,6 +336,15 @@ static void reset_usb_phy(struct exynos_usb_phy *usb)
 
 void usb_eth_init() {
 	/* Turn off and turn on the power to LAN9730 - LDO 25 */
+#if defined(CONFIG_BOARD_HARDKERNEL) && defined(CONFIG_EXYNOS4412)
+	mdelay(10);
+	max77686_update_reg(0x37, 0x0, 0x3F); /* 0V */
+	mdelay(10);
+	max77686_update_reg(0x37, 0x33, 0x3F); /* 3.3V */
+	mdelay(10);
+	max77686_update_reg(0x36, 0x3, 0x3); /*ON val=3, mask=4*/
+	mdelay(10);
+#else
 	unsigned char rdata;
 
 	IIC0_ERead (0x09, 0x78, &rdata);
@@ -328,10 +353,12 @@ void usb_eth_init() {
 
 	IIC0_ERead(0x09, 0x78, &rdata);
 	IIC0_EWrite(0x09, 0x78, rdata | 0xC0);
+#endif
 }
 
 void usb_hub_init () {
         u32     a, val, i2c_dat;
+	int clk_inv;
 
 #define	GPX0BASE ((void *) (0x13400C00))
 #define GPX1BASE ((void *) (0x13400C20))
@@ -341,9 +368,13 @@ void usb_hub_init () {
         s_gpio_set_value(GPX1BASE, 4, 0);
         mdelay(10);
 
+        clk_inv = getenv_yesno("usb_invert_clken");
+        printf("usb: usb_refclk_enable is active low: %s\n", clk_inv ? "NO" : "YES");
+        printf("ProTIP: If usb doesn't work - try playing with 'usb_invert_clken' environment\n");
+
         /* RefCLK 24MHz INTN pin low */
         s_gpio_direction_output(GPX0BASE, 7, 0);
-        s_gpio_set_value(GPX0BASE, 7, 0);
+        s_gpio_set_value(GPX0BASE, 7, clk_inv);
         mdelay(10);
 
 	/* HUB CONNECT low */

@@ -30,11 +30,15 @@
 #include <asm/arch/mmc.h>
 #include <asm/arch/sromc.h>
 #include <asm/arch/clk.h>
+#ifdef CONFIG_BOARD_HARDKERNEL_FAN
+#include <asm/arch/pwm.h>
+#endif
 
 DECLARE_GLOBAL_DATA_PTR;
 struct exynos4_gpio_part1 *gpio1;
 struct exynos4_gpio_part2 *gpio2;
 
+#ifdef CONFIG_SMC911X
 static void smc9115_pre_init(void)
 {
 	u32 smc_bw_conf, smc_bc_conf;
@@ -52,6 +56,30 @@ static void smc9115_pre_init(void)
 	/* Select and configure the SROMC bank */
 	s5p_config_sromc(CONFIG_ENV_SROM_BANK, smc_bw_conf, smc_bc_conf);
 }
+#endif
+
+#ifdef CONFIG_BOARD_HARDKERNEL_FAN
+static void hmdk4412_fan_init(void)
+{
+	u8 fan_duty = 255;
+	u8 fan_enable = getenv_yesno("odroid_fan_enable");
+	int fan_duty_ns;
+
+	if (fan_enable) {
+		char *fan_duty_str = getenv("odroid_fan_duty");
+		if (fan_duty_str != NULL) {
+			fan_duty = simple_strtoul(fan_duty_str, NULL, 10);
+		}
+		fan_duty_ns = fan_duty * 20972 / 255;
+
+		pwm_init(0, MUX_DIV_8, 1);
+		pwm_disable(0);
+		pwm_config(0, fan_duty_ns, 20972);
+		pwm_enable(0);
+		s5p_gpio_cfg_pin(&gpio1->d0, 0, GPIO_FUNC(2));
+	}
+}
+#endif
 
 int board_init(void)
 {
@@ -60,12 +88,26 @@ int board_init(void)
 	u8 read_vol_int = 0x0;
 	u8 read_vol_g3d = 0x0;
 	u8 read_vol_mif = 0x0;
+	u8 read_pmic_id = 0x0;
+	unsigned int vol_conv;
 
 	int OmPin = readl(EXYNOS4_POWER_BASE + INFORM3_OFFSET);
+
+	char bl1_version[9] = {0};
 
 	gpio1 = (struct exynos4_gpio_part1 *) EXYNOS4_GPIO_PART1_BASE;
 	gpio2 = (struct exynos4_gpio_part2 *) EXYNOS4_GPIO_PART2_BASE;
 
+	/* display BL1 version */
+#ifdef CONFIG_TRUSTZONE
+	printf("\nTrustZone Enabled BSP");
+	strncpy(&bl1_version[0], (char *)(CONFIG_PHY_IRAM_NS_BASE + 0x810), 8);
+#else
+	strncpy(&bl1_version[0], (char *)0x020233c8, 8);
+#endif
+	printf("\nBL1 version: %s\n", &bl1_version[0]);
+
+#if !defined(CONFIG_BOARD_HARDKERNEL)
 	IIC0_ERead(0xcc, 0, &read_id);
 	if (read_id == 0x77) {
 		IIC0_ERead(0xcc, 0x19, &read_vol_arm);
@@ -88,8 +130,43 @@ int board_init(void)
 	printf("vol_int: %X\n", read_vol_int);
 	printf("vol_g3d: %X\n", read_vol_g3d);
 	printf("vol_mif: %X\n", read_vol_mif);
+#else
+	if(pmic_read(0x00, &read_pmic_id, 1)) printf("pmic read error!\n");
+	else
+		printf("PMIC VER : %X, CHIP REV : %X\n", (read_pmic_id & 0x78) >> 3, (read_pmic_id & 0x07));
 
+	if(pmic_read(0x11, &read_vol_mif, 1)) printf("pmic read error!\n");
+	else
+	{
+		vol_conv = 750000 + (read_vol_mif >> 3) * 50000;
+		printf("VDD MIF : %d.%05dV\n", vol_conv / 1000000, vol_conv % 1000000);
+	}
+
+	if(pmic_read(0x14, &read_vol_arm, 1)) printf("pmic read error!\n");
+	else
+	{
+		vol_conv = 600000 + read_vol_arm * 12500;
+		printf("VDD ARM : %d.%05dV\n", vol_conv / 1000000, vol_conv % 1000000);
+	}
+
+	if(pmic_read(0x1E, &read_vol_int, 1)) printf("pmic read error!\n");
+	else
+	{
+		vol_conv = 600000 + read_vol_int * 12500;
+		printf("VDD INT : %d.%05dV\n", vol_conv / 1000000, vol_conv % 1000000);
+	}
+
+	if(pmic_read(0x28, &read_vol_g3d, 1)) printf("pmic read error!\n");
+	else
+	{
+		vol_conv = 600000 + read_vol_g3d * 12500;
+		printf("VDD G3D : %d.%05dV\n", vol_conv / 1000000, vol_conv % 1000000);
+	}
+#endif
+
+#ifdef CONFIG_SMC911X
 	smc9115_pre_init();
+#endif
 
 	gd->bd->bi_boot_params = (PHYS_SDRAM_1 + 0x100UL);
 
@@ -167,6 +244,13 @@ int board_eth_init(bd_t *bis)
 	int rc = 0;
 #ifdef CONFIG_SMC911X
 	rc = smc911x_initialize(0, CONFIG_SMC911X_BASE);
+#endif
+
+#ifdef CONFIG_USB_ETHER
+	setenv("stdin", "serial");
+	setenv("stdout", "serial");
+	setenv("stderr", "serial");
+	rc = usb_eth_initialize(bis);
 #endif
 	return rc;
 }
@@ -296,6 +380,10 @@ int board_late_init(void)
 		(struct exynos4_gpio_part2 *) samsung_get_base_gpio_part2();
 	int second_boot_info = readl(CONFIG_SECONDARY_BOOT_INFORM_BASE);
 	int err;
+
+#ifdef CONFIG_BOARD_HARDKERNEL_FAN
+	hmdk4412_fan_init();
+#endif
 
 	err = exynos_pinmux_config(PERIPH_ID_INPUT_X0_0, PINMUX_FLAG_NONE);
 	if (err) {

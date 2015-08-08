@@ -752,7 +752,7 @@ static int rx_handler (const unsigned char *buffer, unsigned int buffer_size)
 	/* Use 65 instead of 64
 	   null gets dropped
 	   strcpy's need the extra byte */
-	char response[65];
+	ALLOC_CACHE_ALIGN_BUFFER(char, response, 65);
 
 	if (download_size)
 	{
@@ -1782,7 +1782,9 @@ int do_fastboot (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 
 		    printf("\n\n*** fastboot poweroff cmd : system power off! ***\n\n");
 
+#if defined(CONFIG_LED_CONTROL)
             LED_BLUE(OFF);   LED_GREEN(OFF);    LED_RED(OFF);
+#endif
 
         	while(1)    POWER_PS_HOLD = 0x5200;
 		}
