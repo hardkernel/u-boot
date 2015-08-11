@@ -30,3 +30,4 @@ obj-$(CONFIG_AML_V2_FACTORY_BURN)	+= usb/gadget/v2_burning/
 obj-y += display/
 obj-$(CONFIG_SECURE_STORAGE) += securestorage/
 obj-$(CONFIG_SECURE_STORAGE) += storagekey/
+obj-$(CONFIG_CMD_SARADC) += adc/
