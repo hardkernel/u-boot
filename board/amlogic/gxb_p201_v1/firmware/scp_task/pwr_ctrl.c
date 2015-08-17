@@ -87,11 +87,11 @@ static void power_off_at_clk81(void)
 {
 	power_off_3v3();
 	power_off_vcck();
-	pwm_set_voltage(pwm_d, CONFIG_VDDEE_SLEEP_VOLTAGE);	// reduce power
+	//pwm_set_voltage(pwm_d, CONFIG_VDDEE_SLEEP_VOLTAGE);	// reduce power
 }
 static void power_on_at_clk81(void)
 {
-	pwm_set_voltage(pwm_d, CONFIG_VDDEE_INIT_VOLTAGE);
+	//pwm_set_voltage(pwm_d, CONFIG_VDDEE_INIT_VOLTAGE);
 	power_on_vcck();
 	power_on_3v3();
 }
