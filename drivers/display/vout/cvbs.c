@@ -67,12 +67,24 @@ static unsigned int cvbs_get_logic_addr(unsigned int bus, unsigned int addr_offs
 {
 	unsigned int ret;
 
-	if (bus == BUS_TYPE_HIU)
+	if (bus == BUS_TYPE_CBUS)
+		ret = (CBUS_BASE + (addr_offset<<2));
+	else if (bus == BUS_TYPE_HIU)
 		ret = (HIU_BASE + ((addr_offset&0xff)<<2));
 	else if (bus == BUS_TYPE_VCBUS)
 		ret = (VCBUS_BASE + (addr_offset<<2));
 
 	return ret;
+}
+
+static int cvbs_write_cbus(unsigned int addr_offset, unsigned int value)
+{
+	return cvbs_write_reg_linear(cvbs_get_logic_addr(BUS_TYPE_CBUS, addr_offset), value);
+}
+
+static int cvbs_read_cbus(unsigned int addr_offset)
+{
+	return cvbs_read_reg_linear(cvbs_get_logic_addr(BUS_TYPE_CBUS, addr_offset));
 }
 
 static int cvbs_write_hiu(unsigned int addr_offset, unsigned int value)
@@ -251,29 +263,26 @@ int cvbs_reg_debug(int argc, char* const argv[])
 		if (argc != 4)
 			goto fail_cmd;
 
-		if (!strcmp(argv[2], "h"))
-		{
-			addr = simple_strtoul(argv[3], NULL, 16);
+		addr = simple_strtoul(argv[3], NULL, 16);
+		if (!strcmp(argv[2], "c"))
+			printf("cvbs read cbus[0x%.2x] = 0x%.4x\n", addr, cvbs_read_cbus(addr));
+		else if (!strcmp(argv[2], "h"))
 			printf("cvbs read hiu[0x%.2x] = 0x%.4x\n", addr, cvbs_read_hiu(addr));
-		} else if (!strcmp(argv[2], "v"))
-		{
-			addr = simple_strtoul(argv[3], NULL, 16);
+		else if (!strcmp(argv[2], "v"))
 			printf("cvbs read vcbus[0x%.2x] = 0x%.4x\n", addr, cvbs_read_vcbus(addr));
-		}
 	} else if (!strcmp(argv[1], "w")) {
 		if (argc != 5)
 			goto fail_cmd;
 
-		if (!strcmp(argv[3], "h"))
-		{
-			addr = simple_strtoul(argv[4], NULL, 16);
-			value = simple_strtoul(argv[2], NULL, 16);
+		addr = simple_strtoul(argv[4], NULL, 16);
+		value = simple_strtoul(argv[2], NULL, 16);
+		if (!strcmp(argv[3], "c")) {
+			cvbs_write_cbus(addr, value);
+			printf("cvbs write cbus[0x%.2x] = 0x%.4x\n", addr, cvbs_read_hiu(addr));
+		} else if (!strcmp(argv[3], "h")) {
 			cvbs_write_hiu(addr, value);
 			printf("cvbs write hiu[0x%.2x] = 0x%.4x\n", addr, cvbs_read_hiu(addr));
-		} else if (!strcmp(argv[3], "v"))
-		{
-			addr = simple_strtoul(argv[4], NULL, 16);
-			value = simple_strtoul(argv[2], NULL, 16);
+		} else if (!strcmp(argv[3], "v")) {
 			cvbs_write_vcbus(addr, value);
 			printf("cvbs write hiu[0x%.2x] = 0x%.4x\n", addr, cvbs_read_vcbus(addr));
 		}
@@ -285,9 +294,11 @@ int cvbs_reg_debug(int argc, char* const argv[])
 			goto fail_cmd;
 
 		if (!strcmp(argv[2], "h"))
-			type = 0;
+			type = BUS_TYPE_CBUS;
+		if (!strcmp(argv[2], "h"))
+			type = BUS_TYPE_HIU;
 		else if (!strcmp(argv[2], "v"))
-			type = 1;
+			type = BUS_TYPE_VCBUS;
 
 		if (type == 0xff)
 			goto fail_cmd;
@@ -295,10 +306,13 @@ int cvbs_reg_debug(int argc, char* const argv[])
 		start = simple_strtoul(argv[3], NULL, 16);
 		end = simple_strtoul(argv[4], NULL, 16);
 
-		if (type == 0) {
+		if (type == BUS_TYPE_CBUS) {
+			for (i=start; i<=end; i++)
+				printf("cvbs read cbus[0x%.2x] = 0x%.4x\n", i, cvbs_read_cbus(i));
+		} if (type == BUS_TYPE_HIU) {
 			for (i=start; i<=end; i++)
 				printf("cvbs read hiu[0x%.2x] = 0x%.4x\n", i, cvbs_read_hiu(i));
-		} else if (type == 1) {
+		} else if (type == BUS_TYPE_VCBUS) {
 			for (i=start; i<=end; i++)
 				printf("cvbs read vcbus[0x%.2x] = 0x%.4x\n", i, cvbs_read_vcbus(i));
 		}
@@ -336,7 +350,7 @@ fail_cmd:
 			printf("pll[0x%x] reset %d times\n", reg, 9 - cnt);\
 	} while(0);
 
-static int cvbs_config_clock(void)
+static void cvbs_config_hdmipll_gxb(void)
 {
 	cvbs_write_hiu(HHI_HDMI_PLL_CNTL,	0x5800023d);
 	cvbs_write_hiu(HHI_HDMI_PLL_CNTL2,	0x00404e00);
@@ -346,6 +360,35 @@ static int cvbs_config_clock(void)
 	cvbs_write_hiu(HHI_HDMI_PLL_CNTL6,	0x00000e55);
 	cvbs_write_hiu(HHI_HDMI_PLL_CNTL,	0x4800023d);
 	WAIT_FOR_PLL_LOCKED(HHI_HDMI_PLL_CNTL);
+
+	return;
+}
+
+static void cvbs_config_hdmipll_gxtvbb(void)
+{
+	cvbs_write_hiu(HHI_HDMI_PLL_CNTL,	0x5800023d);
+	cvbs_write_hiu(HHI_HDMI_PLL_CNTL2,	0x00404380);
+	cvbs_write_hiu(HHI_HDMI_PLL_CNTL3,	0x0d5c5091);
+	cvbs_write_hiu(HHI_HDMI_PLL_CNTL4,	0x801da72c);
+	cvbs_write_hiu(HHI_HDMI_PLL_CNTL5,	0x71486980);
+	cvbs_write_hiu(HHI_HDMI_PLL_CNTL6,	0x00000e55);
+	cvbs_write_hiu(HHI_HDMI_PLL_CNTL,	0x4800023d);
+	WAIT_FOR_PLL_LOCKED(HHI_HDMI_PLL_CNTL);
+
+	return;
+}
+
+static int check_cpu_type(unsigned int cpu_type)
+{
+	return (cvbs_read_cbus(ASSIST_HW_REV)==cpu_type);
+}
+
+static int cvbs_config_clock(void)
+{
+	if (check_cpu_type(MESON_CPU_MAJOR_ID_GXBB))
+		cvbs_config_hdmipll_gxb();
+	else if (check_cpu_type(MESON_CPU_MAJOR_ID_GXTVBB))
+		cvbs_config_hdmipll_gxtvbb();
 
 	cvbs_set_hiu_bits(HHI_VIID_CLK_CNTL, 0, VCLK2_EN, 1);
 	//udelay(5);
@@ -421,13 +464,17 @@ int cvbs_set_vmode(char* vmode_name)
 		cvbs_config_enci(0);
 		cvbs_config_clock();
 		cvbs_set_vdac(1);
+		return 0;
 	} else if (!strncmp(vmode_name, "480cvbs", strlen("480cvbs"))) {
 		cvbs_mode = 1;
 		cvbs_config_enci(1);
 		cvbs_config_clock();
 		cvbs_set_vdac(1);
-	} else
+		return 0;
+	} else {
 		printf("[%s] is invalid for cvbs.\n", vmode_name);
+		return -1;
+	}
 
 	return 0;
 }

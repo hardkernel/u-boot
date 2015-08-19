@@ -1,6 +1,8 @@
 #include <common.h>
 #include <command.h>
+#ifdef CONFIG_AML_VPU
 #include <vpu.h>
+#endif
 
 #ifdef CONFIG_AML_VPU
 static int do_vpu_enable(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
@@ -72,8 +74,8 @@ static int do_vpu(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 U_BOOT_CMD(
 	vpu,	5,	0,	do_vpu,
 	"vpu sub-system",
-	"vpu probe        - enable vpu layer\n"
-	"vpu remove       - disable vpu layer\n"
+	"vpu probe        - enable vpu domain\n"
+	"vpu remove       - disable vpu domain\n"
 	"vpu test         - test vcbus access\n"
 );
 #endif

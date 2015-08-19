@@ -33,9 +33,16 @@
 #define REG_BASE_HIU                    (0xc883c000L)
 #define REG_BASE_VCBUS                  (0xd0100000L)
 #define REG_OFFSET_AOBUS(reg)           ((reg))
-#define REG_OFFSET_CBUS(reg)            ((reg << 2))
-#define REG_OFFSET_HIU(reg)             ((reg << 2))
-#define REG_OFFSET_VCBUS(reg)           ((reg << 2))
+#define REG_OFFSET_CBUS(reg)            ((reg) << 2)
+#define REG_OFFSET_HIU(reg)             ((reg) << 2)
+#define REG_OFFSET_VCBUS(reg)           ((reg) << 2)
+/* memory mapping */
+#define REG_ADDR_AOBUS(reg)             (REG_BASE_AOBUS + REG_OFFSET_AOBUS(reg))
+#define REG_ADDR_CBUS(reg)              (REG_BASE_CBUS + REG_OFFSET_CBUS(reg))
+#define REG_ADDR_HIU(reg)               (REG_BASE_HIU + REG_OFFSET_HIU(reg))
+#define REG_ADDR_RST(reg)               (REG_BASE_RST + REG_OFFSET_RST(reg))
+#define REG_ADDR_VCBUS(reg)             (REG_BASE_VCBUS + REG_OFFSET_VCBUS(reg))
+
 
 /* offset address */
 #define AO_RTI_GEN_PWR_SLEEP0           ((0x00 << 10) | (0x3a << 2))
@@ -86,37 +93,18 @@
 #define RESET5_LEVEL                    0x1125
 #define RESET6_LEVEL                    0x1126
 #define RESET7_LEVEL                    0x1127
-/* GX register */
-#define RESET0_REGISTER_GX              0x01
-#define RESET1_REGISTER_GX              0x02
-#define RESET2_REGISTER_GX              0x03
-#define RESET3_REGISTER_GX              0x04
-#define RESET4_REGISTER_GX              0x05
-#define RESET0_MASK_GX                  0x10
-#define RESET1_MASK_GX                  0x11
-#define RESET2_MASK_GX                  0x12
-#define RESET3_MASK_GX                  0x13
-#define RESET4_MASK_GX                  0x14
-#define VPU_RST_REG_GX(addr)            (addr)//(addr & 0xff)
-
-/* memory mapping */
-#define REG_ADDR_AOBUS(reg)             (REG_BASE_AOBUS + REG_OFFSET_AOBUS(reg))
-#define REG_ADDR_CBUS(reg)              (REG_BASE_CBUS + REG_OFFSET_CBUS(reg))
-#define REG_ADDR_HIU(reg)               (REG_BASE_HIU + REG_OFFSET_HIU(reg))
-#define REG_ADDR_RST(reg)               (REG_BASE_RST + REG_OFFSET_RST(reg))
-#define REG_ADDR_VCBUS(reg)             (REG_BASE_VCBUS + REG_OFFSET_VCBUS(reg))
 
 /* ********************************
  * register access api
  * ********************************* */
-enum VPU_Chip_e vpu_chip_type;
+enum vpu_chip_e vpu_chip_type;
 
 /* use offset address */
 static inline unsigned int vpu_hiu_read(unsigned int _reg)
 {
 	//return __raw_readl(REG_ADDR_CBUS(_reg));
 	//printf("read reg=0x%x\n", REG_ADDR_HIU(_reg));
-	if (vpu_chip_type == VPU_CHIP_GXBB)
+	if (vpu_chip_type >= VPU_CHIP_GXBB)
 		return *(volatile unsigned int *)(REG_ADDR_HIU(_reg));
 	else
 		return *(volatile unsigned int *)(REG_ADDR_CBUS(_reg));
@@ -126,16 +114,14 @@ static inline void vpu_hiu_write(unsigned int _reg, unsigned int _value)
 {
 	//__raw_writel(_value, REG_ADDR_CBUS(_reg));
 	//printf("write reg=%u\n", REG_ADDR_HIU(_reg));
-	if (vpu_chip_type == VPU_CHIP_GXBB)
+	if (vpu_chip_type >= VPU_CHIP_GXBB)
 		*(volatile unsigned int *)REG_ADDR_HIU(_reg) = (_value);
 	else
 		*(volatile unsigned int *)REG_ADDR_CBUS(_reg) = (_value);
 };
 
-static inline void vpu_hiu_setb(unsigned int _reg,
-		unsigned int _value,
-		unsigned int _start,
-		unsigned int _len)
+static inline void vpu_hiu_setb(unsigned int _reg, unsigned int _value,
+		unsigned int _start, unsigned int _len)
 {
 	vpu_hiu_write(_reg, ((vpu_hiu_read(_reg) &
 			~(((1L << (_len))-1) << (_start))) |
@@ -170,10 +156,8 @@ static inline void vpu_cbus_write(unsigned int _reg, unsigned int _value)
 	*(volatile unsigned int *)REG_ADDR_CBUS(_reg) = (_value);
 };
 
-static inline void vpu_cbus_setb(unsigned int _reg,
-		unsigned int _value,
-		unsigned int _start,
-		unsigned int _len)
+static inline void vpu_cbus_setb(unsigned int _reg, unsigned int _value,
+		unsigned int _start, unsigned int _len)
 {
 	vpu_cbus_write(_reg, ((vpu_cbus_read(_reg) &
 			~(((1L << (_len))-1) << (_start))) |
@@ -208,10 +192,8 @@ static inline void vpu_aobus_write(unsigned int _reg, unsigned int _value)
 	*(volatile unsigned int *)REG_ADDR_AOBUS(_reg) = (_value);
 };
 
-static inline void vpu_ao_setb(unsigned int _reg,
-		unsigned int _value,
-		unsigned int _start,
-		unsigned int _len)
+static inline void vpu_ao_setb(unsigned int _reg, unsigned int _value,
+		unsigned int _start, unsigned int _len)
 {
 	vpu_aobus_write(_reg, ((vpu_aobus_read(_reg) &
 			~(((1L << (_len))-1) << (_start))) |

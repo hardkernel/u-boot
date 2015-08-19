@@ -32,9 +32,16 @@
 #ifdef CONFIG_AML_CVBS
 #include <amlogic/cvbs.h>
 #endif
+#ifdef CONFIG_AML_LCD
+#include <amlogic/aml_lcd.h>
+#endif
 
 static int do_vout_list(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 {
+#ifdef CONFIG_AML_LCD
+	struct aml_lcd_drv_s *lcd_drv = get_aml_lcd_driver();
+#endif
+
 #ifdef CONFIG_AML_HDMITX20
 	printf("\nvalid hdmi mode:\n");
 	hdmitx_device.HWOp.list_support_modes();
@@ -43,7 +50,18 @@ static int do_vout_list(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv
 #ifdef CONFIG_AML_CVBS
 	printf("\nvalid cvbs mode:\n");
 	cvbs_show_valid_vmode();
-	printf("\n");
+#endif
+
+#ifdef CONFIG_AML_LCD
+	printf("\nvalid lcd mode:\n");
+	if (lcd_drv) {
+		if (lcd_drv->list_support_mode)
+			lcd_drv->list_support_mode();
+		else
+			printf("no lcd list_support_mode\n");
+	} else {
+		printf("no lcd driver\n");
+	}
 #endif
 
 	return CMD_RET_SUCCESS;
@@ -51,11 +69,16 @@ static int do_vout_list(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv
 
 static int do_vout_output(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 {
+#ifdef CONFIG_AML_LCD
+	struct aml_lcd_drv_s *lcd_drv = get_aml_lcd_driver();
+#endif
+
 	if (argc != 2)
 		return CMD_RET_FAILURE;
 
 #ifdef CONFIG_AML_CVBS
-	cvbs_set_vmode(argv[1]);
+	if (cvbs_set_vmode(argv[1]) == 0)
+		return CMD_RET_SUCCESS;
 #endif
 
 #ifdef CONFIG_AML_HDMITX20
@@ -63,15 +86,28 @@ static int do_vout_output(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv
 	if (hdmitx_device.vic == HDMI_unkown) {
 		/* Not find VIC */
 		printf("Not find '%s' mapped VIC\n", argv[1]);
-		return CMD_RET_SUCCESS;
-	} else
+	} else {
 		printf("set hdmitx VIC = %d\n", hdmitx_device.vic);
 
-	if (strstr(argv[1], "hz420") != NULL)
-		hdmitx_device.mode420 = 1;
-	else
-		hdmitx_device.mode420 = 0;
-	hdmi_tx_set(&hdmitx_device);
+		if (strstr(argv[1], "hz420") != NULL)
+			hdmitx_device.mode420 = 1;
+		else
+			hdmitx_device.mode420 = 0;
+		hdmi_tx_set(&hdmitx_device);
+
+		return CMD_RET_SUCCESS;
+	}
+#endif
+
+#ifdef CONFIG_AML_LCD
+	if (lcd_drv) {
+		if (lcd_drv->lcd_enable)
+			lcd_drv->lcd_enable(argv[1]);
+		else
+			printf("no lcd enable\n");
+	} else {
+		printf("no lcd driver\n");
+	}
 #endif
 
 	return CMD_RET_SUCCESS;

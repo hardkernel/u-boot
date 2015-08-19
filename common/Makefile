@@ -302,5 +302,6 @@ obj-$(CONFIG_CMD_JTAG) += cmd_jtag.o
 obj-$(CONFIG_AML_OSD) += cmd_osd.o
 obj-$(CONFIG_AML_CVBS) += cmd_cvbs.o
 obj-$(CONFIG_AML_VOUT) += cmd_vout.o
+obj-$(CONFIG_AML_LCD) += cmd_lcd.o
 
 CFLAGS_env_embedded.o := -Wa,--no-warn -DENV_CRC=$(shell tools/envcrc 2>/dev/null)

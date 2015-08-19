@@ -55,6 +55,8 @@
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	"loadaddr=1080000\0"\
 	"dtb_mem_addr=0x1000000\0" \
+	"panel_type=lvds_0\0" \
+	"outputmode=1080p60hz\0" \
     "storeboot="\
     "if imgread kernel boot ${loadaddr}; then store dtb read $dtb_mem_addr; bootm ${loadaddr}; fi;"\
 	"\0"
@@ -139,12 +141,9 @@
 
 /* vpu */
 #define CONFIG_AML_VPU 1
-#ifdef CONFIG_AML_VPU
-#define CONFIG_VPU_PRESET 1
-#endif
 
 /* DISPLAY & HDMITX */
-#define CONFIG_AML_HDMITX20 1
+//#define CONFIG_AML_HDMITX20 1
 #define CONFIG_AML_CANVAS 1
 #define CONFIG_AML_VOUT 1
 #define CONFIG_AML_OSD 1
@@ -154,6 +153,10 @@
 #if defined(CONFIG_AML_VOUT)
 #define CONFIG_AML_CVBS 1
 #endif
+
+#define CONFIG_AML_LCD    1
+#define CONFIG_AML_LCD_TV 1
+/* #define CONFIG_AML_LCD_TABLET 1 */
 
 /* USB
  * Enable CONFIG_MUSB_HCD for Host functionalities MSC, keyboard

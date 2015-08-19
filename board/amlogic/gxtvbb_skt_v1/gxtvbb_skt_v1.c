@@ -38,6 +38,9 @@
 #ifdef CONFIG_AML_HDMITX20
 #include <amlogic/hdmi.h>
 #endif
+#ifdef CONFIG_AML_LCD
+#include <amlogic/aml_lcd.h>
+#endif
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -351,6 +354,9 @@ int board_init(void)
 #ifdef CONFIG_AML_HDMITX20
 	hdmi_tx_set_hdmi_5v();
 	hdmi_tx_init();
+#endif
+#ifdef CONFIG_AML_LCD
+	lcd_probe();
 #endif
 	return 0;
 }
