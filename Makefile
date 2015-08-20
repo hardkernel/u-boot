@@ -244,9 +244,13 @@ export	HOSTARCH HOSTOS
 # set default to nothing for native builds
 ifeq ($(HOSTARCH),$(ARCH))
 CROSS_COMPILE ?=
+else
+ifeq ($(CROSS_COMPILE),)
+CROSS_COMPILE = /opt/gcc-linaro-aarch64-none-elf-4.8-2013.11_linux/bin/aarch64-none-elf-
+export CROSS_COMPILE
 endif
 
-export CROSS_COMPILE=/opt/gcc-linaro-aarch64-none-elf-4.8-2013.11_linux/bin/aarch64-none-elf-
+endif
 
 KCONFIG_CONFIG	?= .config
 export KCONFIG_CONFIG
