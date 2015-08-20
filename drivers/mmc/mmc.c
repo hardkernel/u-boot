@@ -1420,6 +1420,9 @@ int mmc_init(struct mmc *mmc)
 	if (err)
 		return err;
 	printf("[%s] mmc init success\n", __func__);
+#if !defined(CONFIG_MACH_ODROIDC2)
+	if (mmc->block_dev.dev == 1)  {device_boot_flag = EMMC_BOOT_FLAG; }
+#endif
 #ifdef CONFIG_STORE_COMPATIBLE
 	if (mmc->block_dev.dev == 1)  {device_boot_flag = EMMC_BOOT_FLAG; }
 	if (aml_is_emmc_tsd(mmc)) { // eMMC OR TSD
@@ -1641,6 +1644,7 @@ int mmc_set_rst_n_function(struct mmc *mmc, u8 enable)
 }
 #endif
 
+#ifdef  CONFIG_STORE_COMPATIBLE
 int mmc_key_read(unsigned char *buf, unsigned int size)
 {
 	ulong start, start_blk, blkcnt, ret;
@@ -1695,3 +1699,4 @@ int mmc_key_erase(void)
 	}
 	return 0;
 }
+#endif

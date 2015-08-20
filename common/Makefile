@@ -35,7 +35,9 @@ obj-y += cmd_help.o
 obj-y += cmd_version.o
 
 #partitions
+ifndef CONFIG_MACH_ODROIDC2
 obj-y += partitions.o
+endif
 
 #remote support
 obj-$(CONFIG_IR_REMOTE) += cmd_irkey.o
@@ -143,7 +145,7 @@ obj-$(CONFIG_CMD_MII) += cmd_mdio.o
 endif
 obj-$(CONFIG_CMD_MISC) += cmd_misc.o
 obj-$(CONFIG_CMD_MMC) += cmd_mmc.o
-obj-$(CONFIG_CMD_MMC) += cmd_aml_mmc.o
+#obj-$(CONFIG_CMD_MMC) += cmd_aml_mmc.o
 obj-$(CONFIG_STORE_COMPATIBLE) += store_interface.o cmd_burnup.o
 obj-$(CONFIG_STORE_COMPATIBLE) += cmd_imgread.o
 obj-$(CONFIG_CMD_MMC_SPI) += cmd_mmc_spi.o

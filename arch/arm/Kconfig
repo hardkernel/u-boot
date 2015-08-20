@@ -990,6 +990,8 @@ source "board/zipitz2/Kconfig"
 
 source "board/amlogic/Kconfig"
 
+source "board/hardkernel/Kconfig"
+
 source "arch/arm/Kconfig.debug"
 
 endmenu
