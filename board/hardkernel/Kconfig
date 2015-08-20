@@ -1,0 +1,7 @@
+config ODROID_C2
+	bool "Support Hardkernel ODROID-C2 board"
+	default n
+
+if ODROID_C2
+source "board/hardkernel/odroid-c2/Kconfig"
+endif
