@@ -76,8 +76,9 @@ void ddr_debug(void);
 /* ddr channel defines */
 #define CONFIG_DDR0_RANK0_ONLY				1
 #define CONFIG_DDR0_RANK01_SAME				2
-#define CONFIG_DDR01_SHARE_AC				3
-#define CONFIG_DDR0_ONLY_16BIT				4
+#define CONFIG_DDR0_RANK01_DIFF				3
+#define CONFIG_DDR01_SHARE_AC				4
+#define CONFIG_DDR0_ONLY_16BIT				5
 
 /* ddr type identifier */
 #define CONFIG_DDR_TIMMING_LPDDR2			0x02
@@ -88,6 +89,12 @@ void ddr_debug(void);
 #define CONFIG_DDR_TIMMING_DDR3_12			0x0C
 #define CONFIG_DDR_TIMMING_DDR3_13			0x0D
 #define CONFIG_DDR_TIMMING_DDR3_14			0x0E
+
+#define DDR_USE_1_CHANNEL(chl_set)	((chl_set == CONFIG_DDR0_RANK01_SAME) || \
+				(chl_set == CONFIG_DDR0_ONLY_16BIT) || \
+				(chl_set == CONFIG_DDR0_RANK0_ONLY))
+#define DDR_USE_2_CHANNEL(chl_set)	((chl_set == CONFIG_DDR01_SHARE_AC) || \
+					(chl_set == CONFIG_DDR0_RANK01_DIFF))
 
 /* PHY initialize register (PIR) */
 #define DDR_PIR ((PUB_PIR_ZCAL) 		|\

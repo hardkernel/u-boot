@@ -89,17 +89,17 @@ unsigned int ddr_init_pll(void){
 
 	/* if enabled, change ddr pll setting */
 #ifdef CONFIG_CMD_DDR_TEST
-	serial_puts("P_PREG_STICKY_REG0: 0x");
+	serial_puts("STICKY_REG0: 0x");
 	serial_put_hex(rd_reg(P_PREG_STICKY_REG0), 32);
 	serial_puts("\n");
-	serial_puts("P_PREG_STICKY_REG1: 0x");
+	serial_puts("STICKY_REG1: 0x");
 	serial_put_hex(rd_reg(P_PREG_STICKY_REG1), 32);
 	serial_puts("\n");
 	if ((rd_reg(P_PREG_STICKY_REG0)>>20) == 0xf13) {
 		unsigned zqcr = rd_reg(P_PREG_STICKY_REG0) & 0xfffff;
 		if (0 == zqcr)
 			zqcr = p_ddr_set->t_pub_zq0pr;
-		serial_puts("Change ZQCR: 0x");
+		serial_puts("ZQCR: 0x");
 		serial_put_hex(p_ddr_set->t_pub_zq0pr, 32);
 		serial_puts(" -> 0x");
 		serial_put_hex(zqcr, 32);
@@ -108,7 +108,7 @@ unsigned int ddr_init_pll(void){
 		p_ddr_set->t_pub_zq1pr = zqcr;
 		p_ddr_set->t_pub_zq2pr = zqcr;
 		p_ddr_set->t_pub_zq3pr = zqcr;
-		serial_puts("Change PLL : 0x");
+		serial_puts("PLL : 0x");
 		serial_put_hex(p_ddr_set->ddr_pll_ctrl, 32);
 		serial_puts(" -> 0x");
 		serial_put_hex(rd_reg(P_PREG_STICKY_REG1), 32);
@@ -145,54 +145,58 @@ unsigned int ddr_init_pll(void){
 }
 
 void ddr_print_info(void){
-#ifdef CONFIG_DDR_SIZE_AUTO_DETECT
-	ddr_size_detect(p_ddr_set);
-#endif
-	unsigned int dmc_reg = rd_reg(DMC_DDR_CTRL);
-	unsigned int chl0_size_reg = (dmc_reg & 0x7);
-	unsigned int chl1_size_reg = ((dmc_reg>>3) & 0x7);
-	unsigned int chl0_size = 1 << (chl0_size_reg+7); //MB
-	unsigned int chl1_size = 1 << (chl1_size_reg+7); //MB
+	if (p_ddr_set->ddr_size_detect)
+		ddr_size_detect(p_ddr_set);
 
-	if (ddr0_enabled) {
-		serial_puts("DDR0: ");
-		serial_put_dec((chl0_size_reg)>5?0:chl0_size);
-		serial_puts("MB @ ");
-		serial_put_dec((chl0_size_reg)>5?0:p_ddr_set->ddr_clk);
+	unsigned int dmc_reg = rd_reg(DMC_DDR_CTRL);
+	unsigned char ddr_2t_mode = 0;
+	unsigned char ddr_chl = DDR_USE_2_CHANNEL(p_ddr_set->ddr_channel_set);
+
+	/* 0:1t, 1:2t, 2:f2t(force) */
+	ddr_2t_mode = ((rd_reg(DDR0_PCTL_MCFG) >> 3) & 0x1);
+	if (p_ddr_set->ddr_channel_set == CONFIG_DDR01_SHARE_AC)
+		ddr_2t_mode = 2;
+
+	for (int i=0; i<=ddr_chl; i++) {
+		/* ddr info */
+		serial_puts("DDR");
+		serial_put_dec(i);
+		serial_puts(": ");
+		serial_put_dec(1 << (((dmc_reg>>(3*i)) & 0x7)+7));
+		serial_puts("MB");
+		if (p_ddr_set->ddr_size_detect)
+			serial_puts("(auto)");
+		serial_puts(" @ ");
+		serial_put_dec(p_ddr_set->ddr_clk);
 		serial_puts("MHz(");
-		serial_puts(((p_ddr_set->ddr_channel_set == CONFIG_DDR01_SHARE_AC)?"F1T":(((rd_reg(DDR0_PCTL_MCFG) >> 3) & 0x1)?"2T":"1T")));
+		serial_puts(((ddr_2t_mode==2)?"F1T":((ddr_2t_mode==1)?"2T":"1T")));
 		serial_puts(")-");
 		serial_put_dec(p_ddr_set->ddr_timing_ind);
 		serial_puts("\n");
-		/*
-		printf("DDR0: %4dMB @ %dMHz(%s)-%d\n", \
-			(chl0_size_reg)>5?0:chl0_size, (chl0_size_reg)>5?0:p_ddr_set->ddr_clk, \
-			((p_ddr_set->ddr_channel_set == CONFIG_DDR01_SHARE_AC)?"F1T":(((rd_reg(DDR0_PCTL_MCFG) >> 3) & 0x1)?"2T":"1T")), \
-			p_ddr_set->ddr_timing_ind);
-		*/
 	}
-	if (ddr1_enabled) {
-		serial_puts("DDR1: ");
-		serial_put_dec((chl1_size_reg)>5?0:chl1_size);
-		serial_puts("MB @ ");
-		serial_put_dec((chl1_size_reg)>5?0:p_ddr_set->ddr_clk);
-		serial_puts("MHz(");
-		serial_puts(((p_ddr_set->ddr_channel_set == CONFIG_DDR01_SHARE_AC)?"F1T":(((rd_reg(DDR1_PCTL_MCFG) >> 3) & 0x1)?"2T":"1T")));
-		serial_puts(")-");
-		serial_put_dec(p_ddr_set->ddr_timing_ind);
-		serial_puts("\n");
-		/*
-		printf("DDR1: %4dMB @ %dMHz(%s)-%d\n", \
-			(chl1_size_reg)>5?0:chl1_size, (chl1_size_reg)>5?0:p_ddr_set->ddr_clk, \
-			((p_ddr_set->ddr_channel_set == CONFIG_DDR01_SHARE_AC)?"F1T":(((rd_reg(DDR1_PCTL_MCFG) >> 3) & 0x1)?"2T":"1T")), \
-			p_ddr_set->ddr_timing_ind);
-		*/
-	}
+
 	/* write ddr size to reg */
 	wr_reg(SEC_AO_SEC_GP_CFG0, ((rd_reg(SEC_AO_SEC_GP_CFG0) & 0x0000ffff) | ((p_ddr_set->ddr_size) << 16)));
 }
 
 unsigned int ddr_init_dmc(void){
+	unsigned int ddr0_size = 0, ddr1_size = 0;
+	unsigned int ddr0_size_reg = 0, ddr1_size_reg = 0;
+//	unsigned int i=0, j=0, convert_reg_size = 6;
+
+	/* transfer correct dmc ctrl setting */
+	unsigned int ddr_one_chl = DDR_USE_1_CHANNEL(p_ddr_set->ddr_channel_set);
+	ddr0_size = (p_ddr_set->ddr_size)>>(7-ddr_one_chl);
+	ddr1_size = ddr_one_chl?0x7:((p_ddr_set->ddr_size)>>7);
+	ddr1_size_reg=ddr_one_chl?0x5:0x0;
+	while (!((ddr0_size>>=1)&0x1))
+		ddr0_size_reg++;
+	while (!((ddr1_size>>=1)&0x1))
+		ddr1_size_reg++;
+
+	p_ddr_set->ddr_dmc_ctrl &= (~0x3f); //clear ddr capacity reg bits
+	p_ddr_set->ddr_dmc_ctrl |= ((ddr0_size_reg)|(ddr1_size_reg<<3));
+
 	wr_reg(DMC_DDR_CTRL, p_ddr_set->ddr_dmc_ctrl);
 	if ((p_ddr_set->ddr_channel_set == CONFIG_DDR01_SHARE_AC)||
 		(p_ddr_set->ddr_channel_set == CONFIG_DDR0_ONLY_16BIT))//jiaxing find use 16bit channel 0 only must write map0-4?
@@ -217,6 +221,11 @@ unsigned int ddr_init_dmc(void){
 		//wr_reg( DDR0_ADDRMAP_1, ( 11| 0 << 5 | 0 << 10 | 0 << 15 | 15 << 20 | 16 << 25 ));
 		wr_reg( DDR0_ADDRMAP_1, ( 11| 31 << 5 | 0 << 10 | 14 << 15 | 15 << 20 | 16 << 25 ));
 		wr_reg( DDR0_ADDRMAP_4, ( 30| 12 << 5 | 13 << 10 | 29 << 15 | 0 << 20 | 0 << 25 ));
+	}
+	else if(p_ddr_set->ddr_channel_set == CONFIG_DDR0_RANK01_DIFF){
+		//wr_reg( DDR0_ADDRMAP_1, ( 11| 0 << 5 | 0 << 10 | 0 << 15 | 15 << 20 | 16 << 25 ));
+		wr_reg( DDR0_ADDRMAP_1, ( 11| 31 << 5 | 0 << 10 | 14 << 15 | 15 << 20 | 16 << 25 ));
+		wr_reg( DDR0_ADDRMAP_4, ( 0| 12 << 5 | 13 << 10 | 29 << 15 | 0 << 20 | 30 << 25 ));
 	}
 
 	wr_reg(DMC_PCTL_LP_CTRL, 0x440620);
@@ -311,7 +320,7 @@ unsigned int ddr_init_pctl(void){
 
 	wr_reg(DDR0_PUB_DTPR2, p_ddr_set->t_pub_dtpr[2]);
 	wr_reg(DDR0_PUB_DTPR3, p_ddr_set->t_pub_dtpr[3]);
-	wr_reg(DDR0_PUB_DTCR, p_ddr_set->t_pub_dtcr|(1<<6)); //use mpr
+	wr_reg(DDR0_PUB_DTCR, p_ddr_set->t_pub_dtcr); //use mpr |(1<<6)
 
 	//DDR0_DLL_LOCK_WAIT
 	wait_set(DDR0_PUB_PGSR0, 0);
@@ -339,7 +348,7 @@ unsigned int ddr_init_pctl(void){
 	//   2:0   011: DDR0_ MODE.   100:   LPDDR2 MODE.
 	//   3:    8 BANK.
 	//   7;    MPR FOR DATA TRAINING.
-	wr_reg(DDR0_PUB_DCR, p_ddr_set->t_pub_dcr|(1<<7)); //use mpr
+	wr_reg(DDR0_PUB_DCR, p_ddr_set->t_pub_dcr); //use mpr |(1<<7)
 
 	wr_reg(DDR0_PUB_DTAR0, p_ddr_set->t_pub_dtar);
 	wr_reg(DDR0_PUB_DTAR1, (0X8 | p_ddr_set->t_pub_dtar));
@@ -375,7 +384,11 @@ unsigned int ddr_init_pctl(void){
 		wr_reg(DDR1_PCTL_TINIT, p_ddr_set->t_pctl0_init_us); //20
 		wr_reg(DDR1_PCTL_TRSTH, p_ddr_set->t_pctl0_rsth_us); //50
 		wr_reg(DDR1_PCTL_MCFG, (p_ddr_set->t_pctl0_mcfg)|((p_ddr_set->ddr_2t_mode)?(1<<3):(0<<3)));
-		wr_reg(DDR1_PCTL_MCFG1, p_ddr_set->t_pctl0_mcfg1);
+		//wr_reg(DDR1_PCTL_MCFG1, p_ddr_set->t_pctl0_mcfg1);
+		if (p_ddr_set->ddr_channel_set == CONFIG_DDR01_SHARE_AC)
+			wr_reg(DDR1_PCTL_MCFG1, ((p_ddr_set->t_pctl0_mcfg1)&0xFFFFFF00));
+		else
+			wr_reg(DDR1_PCTL_MCFG1, p_ddr_set->t_pctl0_mcfg1);
 	}
 
 	_udelay(500);
@@ -417,6 +430,7 @@ unsigned int ddr_init_pctl(void){
 		wr_reg(DDR0_PCTL_TCKSRX, p_ddr_timing->cfg_ddr_cksrx);
 		wr_reg(DDR0_PCTL_TMOD, p_ddr_timing->cfg_ddr_mod);
 		wr_reg(DDR0_PCTL_TCKE, p_ddr_timing->cfg_ddr_cke);
+		wr_reg(DDR0_PCTL_TCKESR, p_ddr_timing->cfg_ddr_cke+1);
 		wr_reg(DDR0_PCTL_TZQCS, p_ddr_timing->cfg_ddr_zqcs);
 		wr_reg(DDR0_PCTL_TZQCL, p_ddr_timing->cfg_ddr_zqcl);
 		wr_reg(DDR0_PCTL_TXPDLL, p_ddr_timing->cfg_ddr_xpdll);
@@ -446,6 +460,7 @@ unsigned int ddr_init_pctl(void){
 		wr_reg(DDR1_PCTL_TCKSRX, p_ddr_timing->cfg_ddr_cksrx);
 		wr_reg(DDR1_PCTL_TMOD, p_ddr_timing->cfg_ddr_mod);
 		wr_reg(DDR1_PCTL_TCKE, p_ddr_timing->cfg_ddr_cke);
+		wr_reg(DDR1_PCTL_TCKESR, p_ddr_timing->cfg_ddr_cke+1);
 		wr_reg(DDR1_PCTL_TZQCS, p_ddr_timing->cfg_ddr_zqcs);
 		wr_reg(DDR1_PCTL_TZQCL, p_ddr_timing->cfg_ddr_zqcl);
 		wr_reg(DDR1_PCTL_TXPDLL, p_ddr_timing->cfg_ddr_xpdll);
@@ -550,7 +565,8 @@ unsigned int ddr_init_pctl(void){
 	} while(DDR_PGSR0_CHECK());
 #endif
 
-	if ((p_ddr_set->ddr_channel_set == CONFIG_DDR0_RANK0_ONLY) || (p_ddr_set->ddr_channel_set == CONFIG_DDR0_RANK01_SAME))
+	if ((p_ddr_set->ddr_channel_set == CONFIG_DDR0_RANK0_ONLY) || \
+		(p_ddr_set->ddr_channel_set == CONFIG_DDR0_RANK01_SAME))
 	{
 		unsigned int i=0, j=0;
 		i=(rd_reg(DDR0_PUB_DX2LCDLR0));
@@ -581,6 +597,10 @@ unsigned int ddr_init_pctl(void){
 		wr_reg(DDR0_PUB_DX1GTR,i|(i<<3)|(j<<12)|(j<<14));
 		i=(rd_reg(DDR0_PUB_DX1LCDLR2));
 		wr_reg(DDR0_PUB_DX1LCDLR2,((i<<8)|(i&(0xffff00ff))));
+	}
+	if ((p_ddr_set->ddr_channel_set == CONFIG_DDR0_RANK0_ONLY) || \
+		(p_ddr_set->ddr_channel_set == CONFIG_DDR0_RANK01_SAME) || \
+		(p_ddr_set->ddr_channel_set == CONFIG_DDR0_RANK01_DIFF)) {
 		//wr_reg(DDR0_PUB_PGCR2,((((1<<28))|p_ddr_set->t_pub_pgcr2)));
 		wr_reg(DDR0_PUB_PGCR2,(((~(1<<28))&p_ddr_set->t_pub_pgcr2)));
 	}
@@ -688,100 +708,57 @@ void ddr_pre_init(void){
 		reset_system();
 	}
 
-	unsigned int ddr_rank_set = 0;
-	unsigned int ddr_chl_interface = 0;
-	unsigned int ddr_chl_select = 0;
 	unsigned int ddr_dual_rank_sel = 0;
-	unsigned int ddr0_size = 0, ddr1_size = 0;
-	unsigned int ddr0_size_reg = 0, ddr1_size_reg = 0;
-	unsigned int i=0, j=0, convert_reg_size = 6;
+	unsigned int ddr_chl_set = 0;
 
 	//BIT22. 1:RANK1 IS SAME AS RANK0
 	//BIT21. 0:SEC RANK DISABLE, 1:SEC RANK ENABLE
 	//BIT20. SHARE AC MODE, 0:DISABLE, 1:ENABLE
 	if (p_ddr_set->ddr_channel_set == CONFIG_DDR0_RANK0_ONLY) {
 		serial_puts("DDR channel setting: DDR0 Rank0 only\n");
-		ddr_rank_set = 0x2; //b'010: BIT22, BIT21, BIT20
-		ddr_chl_interface = 0; //BIT[17:16], DDR0_DDR1 DATA WIDTH, 0:32BIT, 1:16BIT
-		ddr_chl_select = 1; //b'00:DDR0_DDR1, b'01: DDR0_ONLY, b'10:DDR1_ONLY
+		ddr_chl_set = ((0x2 << 20)		| //b'010: BIT22, BIT21, BIT20
+					(0 << 16)			| //BIT[17:16], DDR0_DDR1 DATA WIDTH, 0:32BIT, 1:16BIT
+					(1 << 6));			  //b'00:DDR0_DDR1, b'01: DDR0_ONLY, b'10:DDR1_ONLY
 		ddr_dual_rank_sel = 0; //SET PGCR2[28], RANK0 AND RANK1 USE SAME RANK SELECT SIGNAL
-		ddr0_size = p_ddr_set->ddr_size;
-		ddr1_size = 0x1<<(7+convert_reg_size); //the purpose is convert ddr1_size_reg bigger than 0x5(reserve as 0MB)
 		p_ddr_set->t_pctl0_ppcfg = (0xF0 << 1);
 		p_ddr_set->t_pctl0_dfiodtcfg = 0x0808;
 	}
 	else if (p_ddr_set->ddr_channel_set == CONFIG_DDR0_RANK01_SAME) {
 		serial_puts("DDR channel setting: DDR0 Rank0+1 same\n");
-		ddr_rank_set = 0x4;
-		ddr_chl_interface = 0;
-		ddr_chl_select = 1;
+		ddr_chl_set = ((0x4 << 20) | (0 << 16) | (1 << 6));
 		ddr_dual_rank_sel = 1;
-		ddr0_size = p_ddr_set->ddr_size;
-		ddr1_size = 0x1<<(7+convert_reg_size);
+		p_ddr_set->t_pctl0_ppcfg = (0xF0 << 1);
+		p_ddr_set->t_pctl0_dfiodtcfg = 0x08;
+	}
+	else if (p_ddr_set->ddr_channel_set == CONFIG_DDR0_RANK01_DIFF) {
+		serial_puts("DDR channel setting: DDR0 Rank0+1 diff\n");
+		ddr_chl_set = ((0x2 << 20) | (0 << 16) | (1 << 6));
+		ddr_dual_rank_sel = 0;
 		p_ddr_set->t_pctl0_ppcfg = (0xF0 << 1);
 		p_ddr_set->t_pctl0_dfiodtcfg = 0x08;
 	}
 	else if (p_ddr_set->ddr_channel_set == CONFIG_DDR0_ONLY_16BIT) {
 		serial_puts("DDR channel setting: ONLY DDR0 16bit mode\n");
-		ddr_rank_set = 0x2;
-		//ddr_chl_interface = 0;
-		//ddr_chl_select = 1;
-		ddr_chl_interface = 3;
-		ddr_chl_select = 1;
+		ddr_chl_set = ((0x2 << 20) | (3 << 16) | (1 << 6));
 		ddr_dual_rank_sel = 0;
-		ddr0_size = p_ddr_set->ddr_size;
-		ddr1_size = 0x1<<(7+convert_reg_size);
 		//p_ddr_set->t_pctl0_ppcfg = (0xF0 << 1);
 		p_ddr_set->t_pctl0_ppcfg =(0x1fc | 1 );
 		p_ddr_set->t_pctl0_dfiodtcfg = 0x08;
 	}
 	else if (p_ddr_set->ddr_channel_set == CONFIG_DDR01_SHARE_AC) {
 		serial_puts("DDR channel setting: DDR0+1 share ac\n");
-		ddr_rank_set = 0x1;
-		ddr_chl_interface = 3;
-		ddr_chl_select = 0;
+		ddr_chl_set = ((0x1 << 20) | (3 << 16) | (0 << 6));
 		ddr_dual_rank_sel = 1;
-		/* calculate ddr size and assign each channel */
-		for (i=p_ddr_set->ddr_size; i; i>>=1) {
-			j += 1;
-			if (i & 0x1)
-				break;
-		}
-		/* if ddr0 and ddr1 size different */
-		if (1 == i) {
-			ddr0_size = 1<<(j-2);
-			ddr1_size = 1<<(j-2);
-		}
-		else if(3 == i){
-			ddr0_size = 1<<(j);
-			ddr1_size = 1<<(j-1);
-		}
 		p_ddr_set->t_pctl0_ppcfg = (0x1fc | 1 );
 		p_ddr_set->t_pctl0_dfiodtcfg = 0x08;
 		p_ddr_set->ddr_dmc_ctrl	|= (5 << 8);
 		p_ddr_set->ddr_2t_mode = 1;
 	}
-
-	/* config ddr size reg */
-	ddr0_size = ddr0_size>>convert_reg_size;
-	while (!((ddr0_size>>=1)&0x1))
-		ddr0_size_reg++;
-	ddr1_size = ddr1_size>>convert_reg_size;
-	while (!((ddr1_size>>=1)&0x1))
-		ddr1_size_reg++;
-	p_ddr_set->ddr_dmc_ctrl	|= ((ddr_rank_set << 20)	|
-							(ddr_chl_interface << 16)	|
-							(ddr_chl_select << 6)		|
-							(ddr1_size_reg << 3)		|
-							(ddr0_size_reg << 0));
+	p_ddr_set->ddr_dmc_ctrl	|= (ddr_chl_set |
+							(0x5 << 3)		| //set to max size
+							(0x5 << 0));	//set to max size
 	/* config t_pub_pgcr2[28] share-ac-dual */
 	p_ddr_set->t_pub_pgcr2 |= (ddr_dual_rank_sel << 28);
-
-/*
-	if ((p_ddr_set->ddr_2t_mode) &&(p_ddr_set->ddr_channel_set != CONFIG_DDR01_SHARE_AC)) {
-		p_ddr_timing->cfg_ddr_cl=p_ddr_timing->cfg_ddr_cl-1;
-	}
-*/
 
 	/* update pctl timing */
 	int tmp_val = 0;
@@ -871,6 +848,7 @@ void ddr_test(void){
 	}
 }
 
+#if 0
 unsigned int hot_boot(void){
 	if (((rd_reg(SCRATCH0) >> 24) & 0xFF) == 0x11) {
 		/*hot boot*/
@@ -880,3 +858,4 @@ unsigned int hot_boot(void){
 		return 1;
 	}
 }
+#endif

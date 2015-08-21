@@ -24,26 +24,27 @@
 
 struct ddr_set{
 	/* common and function defines */
-	unsigned short ddr_channel_set;
-	unsigned short ddr_type;
-	unsigned int   ddr_clk;
+	unsigned char  ddr_channel_set;
+	unsigned char  ddr_type;
+	unsigned char  ddr_2t_mode;
+	unsigned char  ddr_full_test;
+	unsigned char  ddr_size_detect;
+	unsigned char  ddr_drv;
+	unsigned char  ddr_odt;
+	unsigned char  ddr_timing_ind;
+	unsigned short ddr_size; //define in header file
+	unsigned short ddr_clk;
 	unsigned int   ddr_base_addr;
 	unsigned int   ddr_start_offset;
-	unsigned short ddr_timing_ind;
-	unsigned short ddr_size; //define in header file
 	unsigned int   ddr_pll_ctrl;
 	unsigned int   ddr_dmc_ctrl;
 	unsigned int   ddr0_addrmap[5];
 	unsigned int   ddr1_addrmap[5];
-	unsigned char  ddr_2t_mode;
-	unsigned char  ddr_full_test;
-	unsigned char  ddr_drv;
-	unsigned char  ddr_odt;
 
 	/* pub defines */
 	unsigned int   t_pub_ptr[5];  //PUB PTR0-3
-	unsigned int   t_pub_odtcr;
 	unsigned short t_pub_mr[4];   //PUB MR0-3
+	unsigned int   t_pub_odtcr;
 	unsigned int   t_pub_dtpr[4]; //PUB DTPR0-3
 	unsigned int   t_pub_pgcr0;   //PUB PGCR0
 	unsigned int   t_pub_pgcr1;   //PUB PGCR1
@@ -108,15 +109,19 @@ struct ddr_timing{
 	unsigned char  cfg_ddr_mrd;
 	unsigned char  cfg_ddr_mod;
 	unsigned char  cfg_ddr_faw;
-	unsigned short cfg_ddr_rfc;
 	unsigned char  cfg_ddr_wlmrd;
 	unsigned char  cfg_ddr_wlo;
 
 	//DTPR2
-	unsigned short cfg_ddr_xs;
 	unsigned char  cfg_ddr_xp;
-	unsigned char  cfg_ddr_cke;
+
+	//DTPR1
+	unsigned short cfg_ddr_rfc;
+
+	//DTPR2
+	unsigned short cfg_ddr_xs;
 	unsigned short cfg_ddr_dllk;
+	unsigned char  cfg_ddr_cke;
 	unsigned char  cfg_ddr_rtodt;
 	unsigned char  cfg_ddr_rtw;
 
@@ -126,13 +131,13 @@ struct ddr_timing{
 	unsigned char  cfg_ddr_wr;
 	unsigned char  cfg_ddr_cwl;
 	unsigned char  cfg_ddr_al;
-	unsigned short cfg_ddr_exsr;
 	unsigned char  cfg_ddr_dqs;
 	unsigned char  cfg_ddr_cksre;
 	unsigned char  cfg_ddr_cksrx;
 	unsigned char  cfg_ddr_zqcs;
-	unsigned short cfg_ddr_zqcl;
 	unsigned char  cfg_ddr_xpdll;
+	unsigned short cfg_ddr_exsr;
+	unsigned short cfg_ddr_zqcl;
 	unsigned short cfg_ddr_zqcsi;
 }__attribute__ ((packed));
 

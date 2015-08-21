@@ -23,11 +23,11 @@
 #define debug_serial_puts(a) serial_puts(a)
 #define debug_serial_put_hex(a, b) serial_put_hex(a, b)
 #else
-#define debug_serial_puts(a) ((void)0)
-#define debug_serial_put_hex(a, b) ((void)0)
+#define debug_serial_puts(a)
+#define debug_serial_put_hex(a, b)
 #endif
 
-#ifdef CONFIG_DDR_SIZE_AUTO_DETECT
+#if (CONFIG_DDR_SIZE_AUTO_DETECT)
 void ddr_size_detect(ddr_set_t * p_ddr_set) {
 	/* Set max col, row, bank size */
 	debug_serial_puts("DMC_DDR_CTRL: 0x");
@@ -40,7 +40,6 @@ void ddr_size_detect(ddr_set_t * p_ddr_set) {
 
 	uint32_t size_loop=0;
 	uint64_t write_addr=0;
-	uint32_t ddr_size=0;
 	uint32_t ddr0_size=0;
 	uint32_t ddr1_size=0;
 	uint32_t ddr0_size_reg=0;
@@ -63,46 +62,21 @@ void ddr_size_detect(ddr_set_t * p_ddr_set) {
 		debug_serial_puts(", rd_reg(0x4<<size_loop):0x");
 		debug_serial_put_hex(rd_reg(write_addr), 32);
 		debug_serial_puts("\n");
-		if (rd_reg(DDR_SIZE_VERI_ADDR) != 0) {
+		if ((rd_reg(DDR_SIZE_VERI_ADDR) != 0) && (rd_reg(DDR_SIZE_VERI_ADDR) != DDR_SIZE_PATTERN)) {
 			debug_serial_puts("find match size1: 0x");
 			debug_serial_put_hex(size_loop, 32);
 			debug_serial_puts("\n");
 			/* get correct ddr size */
-			ddr_size = 1<<(size_loop+2);
-			p_ddr_set->ddr_size = (ddr_size >> 20);
+			p_ddr_set->ddr_size = 1<<(size_loop+2-20); //MB
 			/* set correct dmc cntl reg */
-			if (p_ddr_set->ddr_channel_set == CONFIG_DDR0_RANK01_SAME) {
-				/* config ddr size reg */
-				ddr0_size = (p_ddr_set->ddr_size)>>6;
-				ddr1_size_reg=0x7;
-				debug_serial_puts("ddr0_size: 0x");
-				debug_serial_put_hex(ddr0_size, 32);
-				debug_serial_puts("\n");
-				debug_serial_puts("ddr1_size: 0x");
-				debug_serial_put_hex(ddr1_size, 32);
-				debug_serial_puts("\n");
-				while (!((ddr0_size>>=1)&0x1))
-					ddr0_size_reg++;
-			}
-			else if (p_ddr_set->ddr_channel_set == CONFIG_DDR01_SHARE_AC) {
-				/* config ddr size reg */
-				ddr0_size = (p_ddr_set->ddr_size)>>7;
-				ddr1_size = (p_ddr_set->ddr_size)>>7;
-				debug_serial_puts("ddr0_size: 0x");
-				debug_serial_put_hex(ddr0_size, 32);
-				debug_serial_puts("\n");
-				debug_serial_puts("ddr1_size: 0x");
-				debug_serial_put_hex(ddr1_size, 32);
-				debug_serial_puts("\n");
-				while (!((ddr0_size>>=1)&0x1))
-					ddr0_size_reg++;
-				while (!((ddr1_size>>=1)&0x1))
-					ddr1_size_reg++;
-			}
-			else {
-				serial_puts("ddr size detect failed\n");
-				reset_system();
-			}
+			unsigned int ddr_one_chl = DDR_USE_1_CHANNEL(p_ddr_set->ddr_channel_set);
+			ddr0_size = (p_ddr_set->ddr_size)>>(7-ddr_one_chl);
+			ddr1_size = ddr_one_chl?0x7:((p_ddr_set->ddr_size)>>7);
+			ddr1_size_reg=ddr_one_chl?0x5:0x0;
+			while (!((ddr0_size>>=1)&0x1))
+				ddr0_size_reg++;
+			while (!((ddr1_size>>=1)&0x1))
+				ddr1_size_reg++;
 			break;
 		}
 	}
@@ -115,5 +89,8 @@ void ddr_size_detect(ddr_set_t * p_ddr_set) {
 	debug_serial_puts("\n");
 	return;
 }
-
+#else
+void ddr_size_detect(ddr_set_t * p_ddr_set) {
+	return;
+}
 #endif

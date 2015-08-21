@@ -297,6 +297,7 @@ static ddr_set_t __ddr_setting = {
 	.ddr1_addrmap			= {0},
 	.ddr_2t_mode			= 1,
 	.ddr_full_test			= CONFIG_DDR_FULL_TEST,
+	.ddr_size_detect		= CONFIG_DDR_SIZE_AUTO_DETECT,
 	.ddr_drv				= CFG_DDR3_DRV,
 	.ddr_odt				= CFG_DDR3_ODT,
 
@@ -314,7 +315,7 @@ static ddr_set_t __ddr_setting = {
 	.t_pub_pgcr0			= 0x07d81e3f,   //PUB PGCR0
 	.t_pub_pgcr1			= 0x0380c6a0,   //PUB PGCR1
 	//.t_pub_pgcr2			= 0x00f05f97,   //PUB PGCR2
-	.t_pub_pgcr2			= 0x11f12480,   //PUB PGCR2
+	.t_pub_pgcr2			= 0x01f12480,   //PUB PGCR2
 	.t_pub_pgcr3			= 0xc0aafe60,   //PUB PGCR3
 	.t_pub_dxccr			= 0x00181884,   //PUB DXCCR
 	.t_pub_dtcr				= 0x43003087,    //PUB DTCR

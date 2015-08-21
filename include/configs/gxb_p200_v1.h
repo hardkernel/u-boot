@@ -200,6 +200,7 @@
 /* DDR channel setting, please refer hardware design.
  *    CONFIG_DDR0_RANK0_ONLY   : one channel
  *    CONFIG_DDR0_RANK01_SAME  : one channel use two rank with same setting
+ *    CONFIG_DDR0_RANK01_DIFF  : one channel use two rank with diff setting
  *    CONFIG_DDR01_SHARE_AC    : two channels  */
 #define CONFIG_DDR_CHANNEL_SET			CONFIG_DDR0_RANK01_SAME
 #define CONFIG_DDR_FULL_TEST			0 //1 for ddr full test
@@ -208,7 +209,7 @@
 #define CONFIG_DDR_ZQ_POWER_DOWN
 #define CONFIG_DDR_POWER_DOWN_PHY_VREF
 /* ddr detection */
-#define CONFIG_DDR_SIZE_AUTO_DETECT	1
+#define CONFIG_DDR_SIZE_AUTO_DETECT		1
 
 /* storage: emmc/nand/sd */
 #define	CONFIG_STORE_COMPATIBLE 1
