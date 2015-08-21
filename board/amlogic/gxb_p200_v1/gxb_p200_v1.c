@@ -104,7 +104,7 @@ static void setup_net_chip(void)
 	/* hardware reset ethernet phy : gpioz14 connect phyreset pin*/
 	clrbits_le32(PREG_PAD_GPIO3_EN_N, 1 << 14);
 	clrbits_le32(PREG_PAD_GPIO3_O, 1 << 14);
-	udelay(100000);
+	udelay(10000);
 	setbits_le32(PREG_PAD_GPIO3_O, 1 << 14);
 }
 
