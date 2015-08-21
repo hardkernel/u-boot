@@ -24,6 +24,7 @@
 #include <linux/compiler.h>
 #include <bootm.h>
 #include <vxworks.h>
+#include <asm/arch/timer.h>
 
 #if defined(CONFIG_ARMV7_NONSEC) || defined(CONFIG_ARMV7_VIRT)
 #include <asm/armv7.h>
@@ -276,6 +277,7 @@ static void boot_jump_linux(bootm_headers_t *images, int flag)
 
 	if (!fake) {
 		do_nonsec_virt_switch();
+		printf("uboot time: %u us\n", get_time());
 		kernel_entry(images->ft_addr, NULL, NULL, NULL);
 	}
 #else
