@@ -79,7 +79,9 @@
 	"boardname=ODROIDC2\0"		\
 	"loadaddr=0x10800000\0"		\
 	"dtb_mem_addr=0x1000000\0"	\
-	"fdt_high=0x20000000\0"
+	"fdt_high=0x20000000\0"		\
+	"bootargs=root=/dev/mmcblk0p2 init=/init console=ttyS0,115200 hdmimode=1080p earlyprintk=aml-uart,0xc81004c0\0"	\
+	"bootcmd=fatload mmc 0 ${loadaddr} image; fatload mmc 0 ${dtb_mem_addr} gxbb_p200_2g.dtb; booti ${loadaddr} - ${dtb_mem_addr}\0"
 
 #define CONFIG_PREBOOT
 #define CONFIG_BOOTCOMMAND
