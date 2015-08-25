@@ -396,9 +396,9 @@ int board_init(void)
 	/*Power on GPIOAO_2 for VCC_5V*/
 	clrbits_le32(P_AO_GPIO_O_EN_N, ((1<<2)|(1<<18)));
 	#ifdef CONFIG_USB_DWC_OTG_HCD
-	board_usb_init(&g_usb_config_gx_skt_a,BOARD_USB_MODE_HOST);
-	board_usb_init(&g_usb_config_gx_skt_b,BOARD_USB_MODE_HOST);
-	board_usb_init(&g_usb_config_gx_skt_h,BOARD_USB_MODE_CHARGER);
+	amlogic_usb_init(&g_usb_config_gx_skt_a,BOARD_USB_MODE_HOST);
+	amlogic_usb_init(&g_usb_config_gx_skt_b,BOARD_USB_MODE_HOST);
+	amlogic_usb_init(&g_usb_config_gx_skt_h,BOARD_USB_MODE_CHARGER);
 	#endif /*CONFIG_USB_DWC_OTG_HCD*/
 #ifdef CONFIG_AML_VPU
 	vpu_probe();

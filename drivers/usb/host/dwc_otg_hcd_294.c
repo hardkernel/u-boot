@@ -1725,7 +1725,7 @@ usb_lowlevel_init(int index,enum usb_init_type init, void **controller)
 
     printf("dwc_usb driver version: %s\n",DWC_DRIVER_VERSION);
 
-    usb_config = board_usb_start(BOARD_USB_MODE_HOST,index);
+    usb_config = amlogic_usb_start(BOARD_USB_MODE_HOST,index);
 
     if (!usb_config || !usb_config->base_addr) {
 			ERR("Bad usb config or base addr! Need call board_usb_init() in board init\n");
@@ -1826,7 +1826,7 @@ usb_lowlevel_stop(int index)
 #endif
 
     dwc_otg_hcd_stop(core_if);
-    board_usb_stop(BOARD_USB_MODE_HOST,dwc_otg_dev.index);
+    amlogic_usb_stop(BOARD_USB_MODE_HOST,dwc_otg_dev.index);
 #if 0
     if (core_if->temp_buffer) {
         kfree(core_if->temp_buffer);

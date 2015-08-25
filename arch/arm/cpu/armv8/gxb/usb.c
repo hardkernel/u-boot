@@ -254,7 +254,7 @@ static void usb_bc_detect(amlogic_usb_config_t * usb_cfg)
 	usb_cfg->battery_charging_det_cb(bc_mode);
 
 }
-amlogic_usb_config_t * board_usb_start(int mode,int index)
+amlogic_usb_config_t * amlogic_usb_start(int mode,int index)
 {
 	if (mode < 0 || mode >= BOARD_USB_MODE_MAX||!g_usb_cfg[mode][index])
 		return 0;
@@ -268,7 +268,7 @@ amlogic_usb_config_t * board_usb_start(int mode,int index)
 	return g_usb_cfg[mode][index];
 }
 
-int board_usb_stop(int mode,int index)
+int amlogic_usb_stop(int mode,int index)
 {
 	printf("board_usb_stop cfg: %d\n",mode);
 	if (mode < 0 || mode >= BOARD_USB_MODE_MAX)
@@ -279,7 +279,7 @@ int board_usb_stop(int mode,int index)
 }
 
 int usb_index = 0;
-void board_usb_init(amlogic_usb_config_t * usb_cfg,int mode)
+void amlogic_usb_init(amlogic_usb_config_t * usb_cfg,int mode)
 {
 
 	if (mode < 0 || mode >= BOARD_USB_MODE_MAX || !usb_cfg)

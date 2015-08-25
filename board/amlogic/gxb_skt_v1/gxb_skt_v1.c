@@ -341,9 +341,9 @@ int board_init(void)
 #ifdef CONFIG_USB_DWC_OTG_HCD
 	//setbits_le32(PREG_PAD_GPIO0_EN_N, 1<<24);
 	//setbits_le32(PREG_PAD_GPIO0_O, 1<<24);
-	board_usb_init(&g_usb_config_gx_skt_a,BOARD_USB_MODE_HOST);
-	board_usb_init(&g_usb_config_gx_skt_b,BOARD_USB_MODE_HOST);
-	board_usb_init(&g_usb_config_gx_skt_h,BOARD_USB_MODE_CHARGER);
+	amlogic_usb_init(&g_usb_config_gx_skt_a,BOARD_USB_MODE_HOST);
+	amlogic_usb_init(&g_usb_config_gx_skt_b,BOARD_USB_MODE_HOST);
+	amlogic_usb_init(&g_usb_config_gx_skt_h,BOARD_USB_MODE_CHARGER);
 #endif /*CONFIG_USB_DWC_OTG_HCD*/
 #ifdef CONFIG_AML_VPU
 	vpu_probe();
