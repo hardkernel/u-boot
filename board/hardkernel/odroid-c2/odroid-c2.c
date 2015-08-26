@@ -266,6 +266,16 @@ static struct amlogic_usb_config usb_config1= {
 	.id_mode	= USB_ID_MODE_SW_HOST,
 	.set_vbus_power	= callback_host_power,
 };
+
+struct amlogic_usb_config *amlogic_usb_config(int port)
+{
+	if (0 == port)
+		return &usb_config0;
+	else if (1 == port)
+		return &usb_config1;
+
+	return NULL;
+}
 #endif
 
 int board_init(void)
