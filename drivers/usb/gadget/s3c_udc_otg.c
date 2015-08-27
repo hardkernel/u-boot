@@ -805,7 +805,7 @@ int s3c_udc_probe(struct s3c_plat_otg_data *pdata)
 
 	dev->pdata = pdata;
 
-	reg = (struct s3c_usbotg_reg *)pdata->regs_otg;
+	reg = (struct s3c_usbotg_reg *)(uintptr_t)pdata->regs_otg;
 
 	/* regs_otg = (void *)pdata->regs_otg; */
 
@@ -821,7 +821,7 @@ int s3c_udc_probe(struct s3c_plat_otg_data *pdata)
 	for (i = 0; i < S3C_MAX_ENDPOINTS+1; i++) {
 		dev->dma_buf[i] = memalign(CONFIG_SYS_CACHELINE_SIZE,
 					   DMA_BUFFER_SIZE);
-		dev->dma_addr[i] = (dma_addr_t) dev->dma_buf[i];
+		dev->dma_addr[i] = (dma_addr_t) (uintptr_t) dev->dma_buf[i];
 		invalidate_dcache_range((unsigned long) dev->dma_buf[i],
 					(unsigned long) (dev->dma_buf[i]
 							 + DMA_BUFFER_SIZE));
