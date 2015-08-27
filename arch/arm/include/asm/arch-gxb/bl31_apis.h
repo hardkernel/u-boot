@@ -57,6 +57,13 @@
 #define JTAG_ON                                0x82000040
 #define JTAG_OFF                               0x82000041
 
+#define SET_USB_BOOT_FUNC	0x82000043
+	/* USB BOOT FUNC sub command list*/
+	#define CLEAR_USB_BOOT			1
+	#define FORCE_USB_BOOT			2
+	#define RUN_COMD_USB_BOOT		3
+	#define PANIC_DUMP_USB_BOOT	4
+
 /* Security Key*/
 #define SECURITY_KEY_QUERY	0x82000060
 #define SECURITY_KEY_READ	0x82000061
@@ -115,5 +122,6 @@ unsigned aml_get_reboot_reason(void);
 unsigned aml_reboot(uint64_t function_id, uint64_t arg0, uint64_t arg1, uint64_t arg2);
 unsigned long aml_sec_boot_check(unsigned long ,unsigned long ,unsigned long,unsigned long );
 long get_sharemem_info(unsigned long);
+void set_usb_boot_function(unsigned long command);
 
 #endif

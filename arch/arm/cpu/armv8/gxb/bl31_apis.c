@@ -310,3 +310,16 @@ unsigned long aml_sec_boot_check(unsigned long nType,
 	return ret;
 
 }
+
+void set_usb_boot_function(unsigned long command)
+{
+	register long x0 asm("x0") = SET_USB_BOOT_FUNC;
+	register long x1 asm("x1") = command;
+
+	asm volatile(
+			__asmeq("%0", "x0")
+			__asmeq("%1", "x1")
+			"smc	#0\n"
+		: "+r" (x0)
+		: "r" (x1));
+}
