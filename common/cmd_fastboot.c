@@ -10,10 +10,21 @@
 #include <common.h>
 #include <command.h>
 #include <g_dnl.h>
+#if defined(CONFIG_MACH_ODROIDC2)
+#include <usb.h>
+#endif
 
 static int do_fastboot(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 {
 	int ret;
+
+#if defined(CONFIG_MACH_ODROIDC2)
+	/* Initiate USB device port for fastboot */
+	if (board_usb_init(0, USB_INIT_DEVICE)) {
+		error("Couldn't init USB controller.");
+		return CMD_RET_FAILURE;
+	}
+#endif
 
 	g_dnl_clear_detach();
 	ret = g_dnl_register("usb_dnl_fastboot");

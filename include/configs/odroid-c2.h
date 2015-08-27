@@ -11,6 +11,8 @@
 #ifndef __ODROID_C2_H__
 #define __ODROID_C2_H__
 
+#include <linux/sizes.h>
+
 #define CONFIG_MACH_ODROIDC2		1
 
 #ifndef __SUSPEND_FIRMWARE__
@@ -117,6 +119,7 @@
 #define CONFIG_CMD_CPU_TEMP		1
 #define CONFIG_CMD_MEMTEST		1
 #define CONFIG_CMD_USB_MASS_STORAGE	1
+#define CONFIG_CMD_FASTBOOT		1
 
 #if defined(CONFIG_CMD_USB_MASS_STORAGE)
 #define CONFIG_USB_GADGET		1
@@ -135,6 +138,11 @@
 #define CONFIG_G_DNL_VENDOR_NUM		0x18d1
 #define CONFIG_G_DNL_PRODUCT_NUM	0x0002
 #define CONFIG_G_DNL_MANUFACTURER	"Hardkernel Co., Ltd"
+#endif
+
+#if defined(CONFIG_CMD_FASTBOOT)
+#define CONFIG_USB_FASTBOOT_BUF_ADDR	CONFIG_SYS_LOAD_ADDR
+#define CONFIG_USB_FASTBOOT_BUF_SIZE	SZ_512M
 #endif
 
 #if defined(CONFIG_CMD_MEMTEST)
