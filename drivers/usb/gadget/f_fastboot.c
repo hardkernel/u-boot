@@ -32,7 +32,11 @@
 
 #define RX_ENDPOINT_MAXIMUM_PACKET_SIZE_2_0  (0x0200)
 #define RX_ENDPOINT_MAXIMUM_PACKET_SIZE_1_1  (0x0040)
+#if defined(CONFIG_MACH_ODROIDC2)
+#define TX_ENDPOINT_MAXIMUM_PACKET_SIZE      (0x0200)
+#else
 #define TX_ENDPOINT_MAXIMUM_PACKET_SIZE      (0x0040)
+#endif
 
 /* The 64 defined bytes plus \0 */
 #define RESPONSE_LEN	(64 + 1)
