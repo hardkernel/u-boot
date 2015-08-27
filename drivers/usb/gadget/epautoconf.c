@@ -165,9 +165,11 @@ static int ep_matches(
 	if (USB_ENDPOINT_XFER_BULK == type) {
 		int size = ep->maxpacket;
 
+#if !defined(CONFIG_MACH_ODROIDC2)
 		/* min() doesn't work on bitfields with gcc-3.5 */
 		if (size > 64)
 			size = 64;
+#endif
 		put_unaligned(cpu_to_le16(size), &desc->wMaxPacketSize);
 	}
 	return 1;
