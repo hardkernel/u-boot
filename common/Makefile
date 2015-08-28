@@ -37,6 +37,8 @@ obj-y += cmd_version.o
 #partitions
 obj-y += partitions.o
 
+#remote support
+obj-$(CONFIG_IR_REMOTE) += cmd_irkey.o
 
 # environment
 obj-y += env_attr.o

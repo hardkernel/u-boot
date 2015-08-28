@@ -58,6 +58,8 @@
 #define CONFIG_BAUDRATE  115200
 #define CONFIG_AML_MESON_SERIAL   1
 #define CONFIG_SERIAL_MULTI		1
+//for detect remote key
+#define CONFIG_IR_REMOTE  1
 
 /* args/envs */
 #define CONFIG_SYS_MAXARGS  64
@@ -170,6 +172,15 @@
                 "echo detect upgrade key; run update;"\
             "fi;"\
             "\0"\
+	"irremote_update="\
+		"if irkey 0xe31cfb04 0xb748fb04 2500000; then "\
+			"echo read irkey ok!; " \
+		"if itest ${irkey_value} == 0xe31cfb04; then " \
+			"run update;" \
+		"else if itest ${irkey_value} == 0xb748fb04; then " \
+			"run update;\n" \
+			"fi;fi;" \
+		"fi;\0" \
 
 
 #define CONFIG_PREBOOT  \
@@ -178,6 +189,7 @@
             "run init_display;"\
             "run storeargs;"\
             "run upgrade_key;" \
+            "run irremote_update;"\
             "run switch_bootmode;" \
             "run factory_reset_poweroff_protect;"
 #define CONFIG_BOOTCOMMAND "run storeboot"
