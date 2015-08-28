@@ -12,12 +12,9 @@
 #include "../v2_burning_i.h"
 #include <libfdt.h>
 #include <partition_table.h>
-
-#if defined(CONFIG_ACS)
-#include <asm/arch/cpu.h>
-#include <asm/arch/acs.h>
-#define MAGIC_ACS   "acs_"
-#endif//#if defined(CONFIG_ACS)
+#include <asm/arch/secure_apb.h>
+#include <asm/arch/bl31_apis.h>
+#include <asm/io.h>
 
 extern unsigned int get_multi_dt_entry(unsigned int fdt_addr);
 int is_optimus_storage_inited(void);
@@ -1328,14 +1325,8 @@ int optimus_burn_complete(const int choice)
 #if ROM_BOOT_SKIP_BOOT_ENABLED
 int optimus_enable_romboot_skip_boot(void)
 {
-#ifdef CONFIG_MESON_TRUSTZONE
-	writel(meson_trustzone_sram_read_reg32(SKIP_BOOT_REG_BACK_ADDR), P_AO_RTI_STATUS_REG0); //disable watchdog
-#else
-	/*writel(readl(SKIP_BOOT_REG_BACK_ADDR), P_AO_RTI_STATUS_REG0); //disable watchdog*/
-#endif// #ifdef CONFIG_MESON_TRUSTZONE
+        set_usb_boot_function(FORCE_USB_BOOT);
 
-	//enable romboot skip_boot function to jump to usb boot
-    /*DWN_MSG("Skip boot flag[%x]\n", (unsigned int)readl(P_AO_RTI_STATUS_REG0));*/
-    return 0;
+        return 0;
 }
 #endif// #if ROM_BOOT_SKIP_BOOT_ENABLED

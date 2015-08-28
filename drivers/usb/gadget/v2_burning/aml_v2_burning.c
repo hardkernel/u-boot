@@ -70,7 +70,12 @@ static unsigned _get_romcode_boot_id(void)
 //is the uboot loaded from usb otg
 int is_tpl_loaded_from_usb(void)
 {
-    return (BOOT_DEVICE_USB == _get_romcode_boot_id());
+        const int boot_id  = _get_romcode_boot_id();
+        const unsigned forceUsbBoot = readl(P_AO_SEC_GP_CFG7) ;
+        DWN_DBG("forceUsbBoot=%p, %x\n", P_AO_SEC_GP_CFG7, forceUsbBoot);
+        int ret = (BOOT_DEVICE_USB == boot_id) || ( forceUsbBoot & (1U<<31) );
+
+        return ret;
 }
 
 //is the uboot loaded from sdcard mmc 0

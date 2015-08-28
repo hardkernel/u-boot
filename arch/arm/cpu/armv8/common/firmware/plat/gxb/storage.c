@@ -105,7 +105,6 @@ uint64_t storage_load(uint64_t src, uint64_t des, uint64_t size, const char * im
 			break;
 		case BOOT_DEVICE_USB:
 			device_name = "USB";
-			src += FM_USB_MODE_LOAD_ADDR;
 			break;
 		default:
 			break;
@@ -293,6 +292,7 @@ uint64_t sdio_read_blocks(struct sd_emmc_global_regs *sd_emmc_regs,
 	return ret;
 }
 
+#ifdef CONFIG_SPL_DDR_DUMP
 uint64_t sdio_write_blocks(struct sd_emmc_global_regs *sd_emmc_regs,
 			uint64_t src, uint64_t des, uint64_t size, uint64_t mode)
 {
@@ -402,6 +402,7 @@ uint64_t sdio_write_blocks(struct sd_emmc_global_regs *sd_emmc_regs,
 		//serial_puts("write data success!\n");
 	return ret;
 }
+#endif // #ifdef CONFIG_SPL_DDR_DUMP
 
 uint64_t sdio_read_data(uint64_t boot_device, uint64_t src, uint64_t des, uint64_t size)
 {
@@ -441,6 +442,7 @@ uint64_t sdio_read_data(uint64_t boot_device, uint64_t src, uint64_t des, uint64
 	return ret;
 }
 
+#ifdef CONFIG_SPL_DDR_DUMP
 uint64_t sdio_write_data(uint64_t boot_device, uint64_t src, uint64_t des, uint64_t size)
 {
 	unsigned mode,blk_cnt,ret;
@@ -478,12 +480,7 @@ uint64_t sdio_write_data(uint64_t boot_device, uint64_t src, uint64_t des, uint6
 
 	return ret;
 }
-
-uint64_t usb_boot(uint64_t src, uint64_t des, uint64_t size) {
-	/* data is ready in ddr, just need memcpy */
-	memcpy((void *)des, (void *)(src), size);
-	return 0;
-}
+#endif // #ifdef CONFIG_SPL_DDR_DUMP
 
 uint64_t get_boot_device(void) {
 	return (readl(SEC_AO_SEC_GP_CFG0) & 0xf);

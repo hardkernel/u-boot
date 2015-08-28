@@ -180,7 +180,7 @@ int optimus_work_mode_set(int workmode);
 #define OPTIMUS_BURN_COMPLETE__QUERY                        (0xe1)
 
 #if (MESON_CPU_TYPE >= MESON_CPU_TYPE_MESON8)
-#define ROM_BOOT_SKIP_BOOT_ENABLED      0//skip boot function is supported by romboot
+#define ROM_BOOT_SKIP_BOOT_ENABLED      1//skip boot function is supported by romboot
 #else
 #define ROM_BOOT_SKIP_BOOT_ENABLED      0
 #endif// #if (MESON_CPU_TYPE >= MESON_CPU_TYPE_MESON8)

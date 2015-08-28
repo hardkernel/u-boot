@@ -106,7 +106,9 @@ typedef struct aml_fip_header {
 
 /*usb burning func*/
 #define USB_BL2_RETURN_ROM_ADDR			0xd9044504
-#define FM_USB_MODE_LOAD_ADDR			0x02000000
+#define FM_USB_MODE_LOAD_ADDR			0x0200c000//using u-boot.bin.usb.tpl, not u-boot.bin
+#define BL2_RETURN_ROM_USB_ADDR			0xd9043df0
+#define USB_BL2_RUN_CMD_PARA_ADDR               (void*)(0XD9000000 + 0XC000)//(BL1_RAM_END)//sram_start + 48K
 
 #define FM_FIP_HEADER_LOAD_ADDR			0x01400000 /*tmp addr until bl33 load done*/
 #define BL2_MMU_TABLE_BASE				0x01500000

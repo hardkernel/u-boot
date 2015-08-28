@@ -232,6 +232,7 @@ void bl2_to_romcode(uintptr_t entry)
 	watchdog_disable();
 	disable_mmu_el1();
 
+	bl31_ep_info->args.arg0 = 0;
 	smc(RUN_IMAGE, (unsigned long)bl31_ep_info, 0, 0, 0, 0, 0, 0);
 }
 

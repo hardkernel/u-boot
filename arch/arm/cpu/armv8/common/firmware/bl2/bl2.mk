@@ -29,6 +29,7 @@
 #
 
 BL2_SOURCES		+=	bl2/bl2_main.c				\
+				bl2/usb_bl2_cmd.c			\
 				bl2/aarch64/bl2_entrypoint.S		\
 				bl2/aarch64/bl2_arch_setup.c		\
 				common/aarch64/early_exceptions.S	\

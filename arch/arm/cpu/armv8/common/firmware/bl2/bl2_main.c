@@ -40,8 +40,11 @@
 #include "bl2_private.h"
 #include <serial.h>
 #include <plat_init.h>
+#include <common.h>
+#include <asm/arch/secure_apb.h>
 extern unsigned int ddr_init(void);
 void print_version(void);
+extern int bl2_usb_handler(void);
 
 /*******************************************************************************
  * The only thing to do in BL2 is to load further images and pass control to
@@ -58,17 +61,9 @@ void bl2_main(void)
 	/* Perform remaining generic architectural setup in S-El1 */
 	bl2_arch_setup();
 
-	/* process usb burning case */
-	if (BOOT_DEVICE_USB == get_boot_device()) {
-		if (!get_ddr_size()) {
-			ddr_init();
-			serial_puts("USB mode!\n");
-			bl2_to_romcode(USB_BL2_RETURN_ROM_ADDR);
-		}
-	}
-	else {
-		ddr_init();
-	}
+	bl2_usb_handler();
+
+	ddr_init();
 
 	/* Perform platform setup in BL1 */
 	bl2_platform_setup();

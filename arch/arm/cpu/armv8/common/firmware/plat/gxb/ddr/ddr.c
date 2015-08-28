@@ -833,6 +833,7 @@ void ddr_test(void){
 	}
 	else
 		serial_puts("AddrBus test pass!\n");
+#if MEM_TEST_DEVICE
 	if (p_ddr_set->ddr_full_test) {
 		extern void watchdog_disable(void);
 		//disable_mmu_el1();
@@ -846,6 +847,7 @@ void ddr_test(void){
 		else
 			serial_puts("Device test pass!\n");
 	}
+#endif// #if MEM_TEST_DEVICE
 }
 
 #if 0

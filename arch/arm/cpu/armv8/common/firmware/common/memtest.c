@@ -251,7 +251,8 @@ memTestAddressBus(volatile unsigned int * baseAddress, unsigned int nBytes)
  *			  additional information about the problem.
  *
  **********************************************************************/
-#define AML_DEBUG_ROM
+/*#define AML_DEBUG_ROM*/
+#if MEM_TEST_DEVICE
 unsigned int
 memTestDevice(volatile unsigned int * baseAddress, unsigned int nBytes)
 {
@@ -364,3 +365,5 @@ memTestDevice(volatile unsigned int * baseAddress, unsigned int nBytes)
 
 	return (ret);
 }   /* memTestDevice() */
+#endif// #if MEM_TEST_DEVICE
+
