@@ -16,6 +16,8 @@
 #include <fat.h>
 #include <part.h>
 
+#define ITEM_NOT_EXIST   0x55
+
 typedef struct _burnEx{
     char        pkgPath[128];
     char        mediaPath[128];
@@ -94,6 +96,7 @@ int get_burn_parts_from_img(HIMAGE hImg, ConfigPara_t* pcfg);
 
 //declare for aml_sysrecovery
 int optimus_sdc_burn_partitions(ConfigPara_t* pCfgPara, HIMAGE hImg, __hdle hUiProgress, int needVerify);
+int optimus_sdc_burn_dtb_load(HIMAGE hImg);
 
 int optimus_burn_bootlader(HIMAGE hImg);
 
@@ -101,6 +104,8 @@ int optimus_report_burn_complete_sta(int isFailed, int rebootAfterBurn);
 
 
 int optimus_sdc_burn_switch_to_extmmc(void);
+
+int optimus_save_loaded_dtb_to_flash(void);
 
 //Followings are For burn keys only
 int optimus_sdc_keysprovider_init(void);

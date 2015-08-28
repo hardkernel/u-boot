@@ -127,6 +127,17 @@ static int optimus_sysrec_burn_package_from_partition(const char* partName, cons
                 ret = __LINE__; goto _finish;
         }
 
+        ret = optimus_sdc_burn_dtb_load(hImg);
+        if (ITEM_NOT_EXIST != ret && ret) {
+                DWN_ERR("Fail in load dtb for sdc_burn\n");
+                ret = __LINE__; goto _finish;
+        }
+        ret = optimus_save_loaded_dtb_to_flash();
+        if (ret) {
+                DWN_ERR("FAiled in dtb wr\n");
+                return __LINE__;
+        }
+
         optimus_progress_ui_direct_update_progress(hUiProgress, UPGRADE_STPES_AFTER_BURN_DATA_PARTS_OK);
 
 #if CONFIG_AML_SYS_RECOVERY_CLEAR_USR_DATA

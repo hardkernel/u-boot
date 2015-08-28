@@ -22,7 +22,7 @@ extern int lcd_drawchars (ushort x, ushort y, uchar *str, int count);
 #endif// #ifdef CONFIG_VIDEO_AMLLCD
 
 #ifdef CONFIG_AML_VOUT
-#define _VIDEO_DEV_OPEN "osd open;osd clear;hdmitx output ${outputmode};"
+#define _VIDEO_DEV_OPEN "hdmitx hpd;osd open;osd clear;vout output ${outputmode};bmp scale;"
 #else
 #define _VIDEO_DEV_OPEN "video dev bl_on;"
 #endif// #ifdef CONFIG_VIDEO_AMLTVOUT
@@ -108,11 +108,10 @@ int video_res_prepare_for_upgrade(HIMAGE hImg)
     DWN_MSG("echo video prepare for upgrade\n");
     env_name = _VIDEO_DEV_OPEN;
     ret = run_command(env_name, 0);
-    if (ret) goto _fail;
+    /*if (ret) goto _fail;*/
 
     return 0;
 
-_fail:
     DWN_ERR("Fail in run_command[%s]\n", env_name);
     return ret;
 }
@@ -140,7 +139,7 @@ static int _show_burn_logo(const char* bmpOffsetName) //Display logo to report b
         return __LINE__;
     }
 #ifdef CONFIG_OSD_SCALE_ENABLE
-    //run_command("bmp scale", 0);
+    /*run_command("bmp scale", 0);*/
 #endif// #ifdef CONFIG_OSD_SCALE_ENABLE
 
     return 0;
@@ -443,8 +442,8 @@ __hdle optimus_progress_ui_request_for_sdc_burn(void)
 {
     __hdle hUiProgress = NULL;
     unsigned barAddr = simple_strtoul(getenv("upgrade_bar_offset"), NULL, 0);
-    unsigned display_width = simple_strtoul(getenv("display_width"), NULL, 0);
-    unsigned display_height = simple_strtoul(getenv("display_height"), NULL, 0);
+    unsigned display_width = simple_strtoul(getenv("fb_width"), NULL, 0);
+    unsigned display_height = simple_strtoul(getenv("fb_height"), NULL, 0);
     bmp_header_t* upgrading  = (bmp_header_t*)simple_strtoul(getenv("upgrade_upgrading_offset"), NULL, 0);
     const unsigned loadingHeight = upgrading->height;
     const unsigned barYCor       =
@@ -459,12 +458,12 @@ __hdle optimus_progress_ui_request_for_sdc_burn(void)
     }
     if (!display_width) {
         DWN_ERR("Fail to getenv[%s=%s]\n",
-                "display_width", getenv("display_width"));
+                "fb_width", getenv("fb_width"));
         show_logo_report_burn_ui_error(); return NULL;
     }
     if (!display_height) {
         DWN_ERR("Fail to getenv[%s=%s]\n",
-                "display_height", getenv("display_height")); return NULL;
+                "fb_height", getenv("fb_height")); return NULL;
     }
     if (!upgrading) {
         DWN_ERR("Fail to getenv[%s=%s]\n",
@@ -568,8 +567,8 @@ static int do_progress_bar_test(cmd_tbl_t *cmdtp, int flag, int argc, char * con
     if (!hProgressBar)
     {
         unsigned barAddr = simple_strtoul(getenv("upgrade_bar_offset"), NULL, 0);
-        unsigned display_width = simple_strtoul(getenv("display_width"), NULL, 0);
-        unsigned display_height = simple_strtoul(getenv("display_height"), NULL, 0);
+        unsigned display_width = simple_strtoul(getenv("fb_width"), NULL, 0);
+        unsigned display_height = simple_strtoul(getenv("fb_height"), NULL, 0);
         bmp_header_t* upgrading  = (bmp_header_t*)simple_strtoul(getenv("upgrade_upgrading_offset"), NULL, 0);
         const unsigned loadingHeight = upgrading->height;
         const unsigned barYCor       =
@@ -582,11 +581,11 @@ static int do_progress_bar_test(cmd_tbl_t *cmdtp, int flag, int argc, char * con
         }
         if (!display_width) {
             DWN_ERR("Fail to getenv[%s=%s]\n",
-                   "display_width", getenv("display_width")); return __LINE__;
+                   "fb_width", getenv("fb_width")); return __LINE__;
         }
         if (!display_height) {
             DWN_ERR("Fail to getenv[%s=%s]\n",
-                    "display_height", getenv("display_height")); return __LINE__;
+                    "fb_height", getenv("fb_height")); return __LINE__;
         }
         if (!upgrading) {
             DWN_ERR("Fail to getenv[%s=%s]\n",

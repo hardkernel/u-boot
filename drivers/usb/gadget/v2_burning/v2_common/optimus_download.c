@@ -476,33 +476,12 @@ static u32 optimus_storage_write(struct ImgBurnInfo* pDownInfo, u64 addrOrOffset
             }
             if (!strcmp("dtb", pDownInfo->partName)) //as memory write back size = min[fileSz, 2G], so reach here if downloaded ok!
             {
-                int rc = 0;
                 unsigned char* dtbLoadAddr = (unsigned char*)OPTIMUS_DTB_LOAD_ADDR;
-                const int DtbMaxSz = (2U<<20);
-                unsigned fdtSz = 0;
                 unsigned char* srcDownDtb = (unsigned char*)data;
 
-                //Make sure flash already inited before 'run aml_dt'
-                //old tool will download dtb before 'disk_initial', but new tool will 'disk_initial' first
-                if (1) {
-                    /*srcDownDtb = (unsigned char*)(uint64_t)get_multi_dt_entry((unsigned int)data);*/
-                }
-                rc = fdt_check_header(srcDownDtb);
-                if (rc) {
-                    sprintf(errInfo, "failed at fdt_check_header\n");
-                    DWN_ERR(errInfo);
-                    return 0;
-                }
-                fdtSz = fdt_totalsize(srcDownDtb);
-                if (DtbMaxSz <= fdtSz) {
-                    sprintf(errInfo, "failed: fdt header ok but sz 0%x > max 0x%x\n", fdtSz, DtbMaxSz);
-                    DWN_ERR(errInfo);
-                    return 0;
-                }
-
-                memcpy(dtbLoadAddr, srcDownDtb, fdtSz);
-                DWN_MSG("load dtb to 0x%p, sz=0x%x\n", dtbLoadAddr, fdtSz);
-                _dtb_is_loaded = fdtSz;
+                memcpy(dtbLoadAddr, srcDownDtb, dataSz);
+                DWN_MSG("load dt.img to 0x%p, sz=0x%x\n", dtbLoadAddr, dataSz);
+                _dtb_is_loaded = dataSz;
             }
 
             burnSz = dataSz;
@@ -739,6 +718,16 @@ int is_optimus_storage_inited(void)
         return _disk_intialed_ok;
 }
 
+int optimus_save_loaded_dtb_to_flash(void)
+{
+        unsigned char* dtbLoadedAddr = (unsigned char*)OPTIMUS_DTB_LOAD_ADDR;
+
+        if (!_dtb_is_loaded) return 0;
+
+        //fixme: add dtb erasing before write
+        return store_dtb_rw(dtbLoadedAddr, _dtb_is_loaded, 1);
+}
+
 int optimus_storage_init(int toErase)
 {
     int ret = 0;
@@ -811,12 +800,10 @@ int optimus_storage_init(int toErase)
         _disk_intialed_ok  = 1;
         _disk_intialed_ok += toErase <<16;
 
-        if (_dtb_is_loaded) {
-            ret = store_dtb_rw(dtbLoadedAddr, _dtb_is_loaded, 1);
-            if (ret) {
+        ret = optimus_save_loaded_dtb_to_flash();
+        if (ret) {
                 DWN_ERR("FAiled in dtb wr\n");
                 return __LINE__;
-            }
         }
 
         if (OPTIMUS_WORK_MODE_USB_PRODUCE == optimus_work_mode_get()) //env not relocated in this case
@@ -1258,7 +1245,7 @@ void optimus_reset(const int cfgFlag)
 
 void optimus_poweroff(void)
 {
-#if CONFIG_POWER_KEY_NOT_SUPPORTED_FOR_BURN
+#ifndef CONFIG_POWER_KEY_SUPPORTED_FOR_BURN //default not support power key
     DWN_MSG("stop here as poweroff and powerkey not supported in platform!\n");
     DWN_MSG("You can <Ctrl-c> to reboot\n");
     while (!ctrlc()) continue;
@@ -1267,7 +1254,7 @@ void optimus_poweroff(void)
     printf("To poweroff\n");
     run_command("poweroff", 0);
     printf("!!!After run command poweroff!!\n");
-#endif// #if CONFIG_POWER_KEY_NOT_SUPPORTED_FOR_BURN
+#endif// #if CONFIG_POWER_KEY_SUPPORTED_FOR_BURN
 
     return;
 }
@@ -1282,18 +1269,14 @@ int optimus_burn_complete(const int choice)
     {
         case OPTIMUS_BURN_COMPLETE__POWEROFF_AFTER_POWERKEY://wait power key to power off, for sdc_burn
             {
-#if CONFIG_POWER_KEY_NOT_SUPPORTED_FOR_BURN
-                DWN_MSG("stop here as poweroff and powerkey not supported in platform!\n");
-                DWN_MSG("You can <Ctrl-c> to reboot\n");
-
-                while (!ctrlc()) continue;
-                optimus_reset(OPTIMUS_BURN_COMPLETE__REBOOT_NORMAL);
-#endif// #if CONFIG_POWER_KEY_NOT_SUPPORTED_FOR_BURN
-                DWN_MSG("PLS short-press power key to shut down\n");
-                do
-                {
-                    rc = run_command("getkey", 0);
-                }while(rc);
+#ifndef CONFIG_POWER_KEY_SUPPORTED_FOR_BURN
+                    optimus_poweroff();
+#endif// #if CONFIG_POWER_KEY_SUPPORTED_FOR_BURN
+                    DWN_MSG("PLS short-press power key to shut down\n");
+                    do
+                    {
+                            rc = run_command("getkey", 0);
+                    }while(rc);
             }
         case OPTIMUS_BURN_COMPLETE__POWEROFF_DIRECT:
             optimus_poweroff();

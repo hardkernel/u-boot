@@ -69,8 +69,6 @@ int get_burn_parts_from_img(HIMAGE hImg, ConfigPara_t* pcfgPara)
     return OPT_DOWN_OK;
 }
 
-#define ITEM_NOT_EXIST   0x55
-
 int optimus_verify_partition(const char* partName, HIMAGE hImg, char* _errInfo)
 {
 #define MaxSz (64 - 7) //verify file to at most 64B to corresponding to USB burn, strlen("verify ") == 7
@@ -309,7 +307,7 @@ int optimus_report_burn_complete_sta(int isFailed, int rebootAfterBurn)
     return 0;
 }
 
-static int sdc_burn_dtb_load(HIMAGE hImg)
+int optimus_sdc_burn_dtb_load(HIMAGE hImg)
 {
     s64 itemSz = 0;
     HIMAGEITEM hImgItem = NULL;
@@ -611,7 +609,7 @@ int optimus_burn_with_cfg_file(const char* cfgFile)
     }
 
     //update dtb for burning drivers
-    ret = sdc_burn_dtb_load(hImg);
+    ret = optimus_sdc_burn_dtb_load(hImg);
     if (ITEM_NOT_EXIST != ret && ret) {
         DWN_ERR("Fail in load dtb for sdc_burn\n");
         ret = __LINE__; goto _finish;
