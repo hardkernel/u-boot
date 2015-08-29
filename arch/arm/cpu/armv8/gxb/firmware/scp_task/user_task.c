@@ -38,6 +38,7 @@ void secure_task(void)
 	    (unsigned *)(&(secure_task_share_mem[TASK_RESPONSE_OFFSET]));
 	unsigned command;
 	struct resume_param *presume;
+	unsigned int state;
 
 	/*init bss */
 	bss_init();
@@ -51,7 +52,8 @@ void secure_task(void)
 			dbg_print("process command ", command);
 
 			if (command == COMMAND_SUSPEND_ENTER) {
-				enter_suspend();
+				state = *(pcommand+1);
+				enter_suspend(state);
 				*pcommand = 0;
 				*response = RESPONSE_SUSPEND_LEAVE;
 				presume = (struct resume_param *)(response+1);

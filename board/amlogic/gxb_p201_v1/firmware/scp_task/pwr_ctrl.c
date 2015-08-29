@@ -130,16 +130,18 @@ unsigned int detect_key(unsigned int suspend_from)
 #endif
 	do {
 	#ifdef CONFIG_CEC_WAKEUP
-		if (cec_msg.log_addr) {
-			if (hdmi_cec_func_config & 0x1) {
-				cec_handler();
-				if (cec_msg.cec_power == 0x1) {  //cec power key
-					exit_reason = CEC_WAKEUP;
-					break;
+		if (suspend_from) {
+			if (cec_msg.log_addr) {
+				if (hdmi_cec_func_config & 0x1) {
+					cec_handler();
+					if (cec_msg.cec_power == 0x1) {  //cec power key
+						exit_reason = CEC_WAKEUP;
+						break;
+					}
 				}
+			} else if (hdmi_cec_func_config & 0x1) {
+				cec_node_init();
 			}
-		} else if (hdmi_cec_func_config & 0x1) {
-			cec_node_init();
 		}
 	#endif
 		if ((readl(AO_GPIO_I) & (1<<3)) ==0) {

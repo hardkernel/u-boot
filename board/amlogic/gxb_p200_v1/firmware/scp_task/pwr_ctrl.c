@@ -117,7 +117,6 @@ static void power_on_at_32k(void)
 
 unsigned int detect_key(unsigned int suspend_from)
 {
-
 	int exit_reason = 0;
 	unsigned int time_out = readl(AO_DEBUG_REG2);
 	unsigned int init_time = get_time();
@@ -130,16 +129,18 @@ unsigned int detect_key(unsigned int suspend_from)
 #endif
 	do {
 	#ifdef CONFIG_CEC_WAKEUP
-		if (cec_msg.log_addr) {
-			if (hdmi_cec_func_config & 0x1) {
-				cec_handler();
-				if (cec_msg.cec_power == 0x1) {  //cec power key
-					exit_reason = CEC_WAKEUP;
-					break;
+		if (suspend_from) {
+			if (cec_msg.log_addr) {
+				if (hdmi_cec_func_config & 0x1) {
+					cec_handler();
+					if (cec_msg.cec_power == 0x1) {  //cec power key
+						exit_reason = CEC_WAKEUP;
+						break;
+					}
 				}
+			} else if (hdmi_cec_func_config & 0x1) {
+				cec_node_init();
 			}
-		} else if (hdmi_cec_func_config & 0x1) {
-			cec_node_init();
 		}
 	#endif
 		if ((readl(AO_GPIO_I) & (1<<3)) == 0) {
@@ -165,11 +166,13 @@ unsigned int detect_key(unsigned int suspend_from)
 		}
 #endif
 #ifdef CONFIG_WIFI_WAKEUP
-		if (!(readl(PREG_PAD_GPIO4_EN_N) & (0x01 << 6)) &&
-			(readl(PREG_PAD_GPIO4_O) & (0x01 << 6)) &&
-			!(readl(PREG_PAD_GPIO4_I) & (0x01 << 7))) {
-			exit_reason = WIFI_WAKEUP;
-			break;
+		if (suspend_from) {
+			if (!(readl(PREG_PAD_GPIO4_EN_N) & (0x01 << 6)) &&
+				(readl(PREG_PAD_GPIO4_O) & (0x01 << 6)) &&
+				!(readl(PREG_PAD_GPIO4_I) & (0x01 << 7))) {
+				exit_reason = WIFI_WAKEUP;
+				break;
+			}
 		}
 #endif
 	} while (1);

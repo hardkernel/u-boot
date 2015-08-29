@@ -21,7 +21,7 @@ int uart_puts(const char *s);
 /* #define dbg_prints(s)  {uart_puts(s);wait_uart_empty();} */
 #define dbg_prints(s)  {uart_puts(s); }
 
-void enter_suspend(void);
+void enter_suspend(unsigned int suspend_from);
 void get_dvfs_info(unsigned int domain,
 		unsigned char *info_out, unsigned int *size_out);
 void set_dvfs(unsigned int domain, unsigned int index);

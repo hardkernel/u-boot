@@ -57,10 +57,16 @@ static void gxbb_com_gate_on(void)
 	/* gate on fix_clk_div7*/
 	aml_update_bits(HHI_MPLL_CNTL6, 1<<31, 1<<31);
 }
-void enter_suspend(void)
+
+/*
+ *suspend_from defines who call this function.
+ * 1: suspend
+ * 0: power off
+*/
+
+void enter_suspend(unsigned int suspend_from)
 {
 	int exit_reason = UDEFINED_WAKEUP;
-	int suspend_from = 0;
 	p_pwr_op = &pwr_op_d;
 	pwr_op_init(p_pwr_op);
 #ifdef CONFIG_CEC_WAKEUP
