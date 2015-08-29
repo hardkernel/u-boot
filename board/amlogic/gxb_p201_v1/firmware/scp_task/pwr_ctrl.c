@@ -9,6 +9,7 @@
 #ifdef CONFIG_CEC_WAKEUP
 #include <cec_tx_reg.h>
 #endif
+#include <gpio-gxbb.h>
 
 extern int pwm_voltage_table[31][2];
 
@@ -115,12 +116,63 @@ static void power_on_at_32k(void)
 {
 }
 
-unsigned int detect_key(unsigned int suspend_from)
+void get_wakeup_source(void *response, unsigned int suspend_from)
+{
+	struct wakeup_info *p = (struct wakeup_info *)response;
+	unsigned val;
+	struct wakeup_gpio_info *gpio;
+
+	p->status = RESPONSE_OK;
+	val = (POWER_KEY_WAKEUP_SRC | AUTO_WAKEUP_SRC | REMOTE_WAKEUP_SRC);
+#ifdef CONFIG_CEC_WAKEUP
+	if (suspend_from != SYS_POWEROFF)
+		val |= CEC_WAKEUP_SRC;
+#endif
+	p->sources = val;
+
+	/* Power Key: AO_GPIO[3]*/
+	gpio = &(p->gpio_info[0]);
+	gpio->wakeup_id = POWER_KEY_WAKEUP_SRC;
+	gpio->gpio_in_idx = GPIOAO_3;
+	gpio->gpio_in_ao = 1;
+	gpio->gpio_out_idx = -1;
+	gpio->gpio_out_ao = -1;
+	gpio->irq = IRQ_AO_GPIO0_NUM;
+	gpio->trig_type = GPIO_IRQ_FALLING_EDGE;
+
+	p->gpio_info_count = 1;
+}
+void wakeup_timer_setup(void)
+{
+	/* 1ms resolution*/
+	unsigned value;
+	value = readl(P_ISA_TIMER_MUX);
+	value |= ((0x3<<0) | (0x1<<12) | (0x1<<16));
+	writel(value, P_ISA_TIMER_MUX);
+	/*10ms generate an interrupt*/
+	writel(10, P_ISA_TIMERA);
+}
+void wakeup_timer_clear(void)
+{
+	unsigned value;
+	value = readl(P_ISA_TIMER_MUX);
+	value &= ~((0x1<<12) | (0x1<<16));
+	writel(value, P_ISA_TIMER_MUX);
+}
+static unsigned int detect_key(unsigned int suspend_from)
 {
 
 	int exit_reason = 0;
 	unsigned int time_out = readl(AO_DEBUG_REG2);
-	unsigned int init_time = get_time();
+	unsigned time_out_ms = time_out*100;
+	unsigned *irq = (unsigned *)SECURE_TASK_SHARE_IRQ;
+	/* unsigned *wakeup_en = (unsigned *)SECURE_TASK_RESPONSE_WAKEUP_EN; */
+
+	/* setup wakeup resources*/
+	/*auto suspend: timerA 10ms resolution*/
+	if (time_out_ms != 0)
+		wakeup_timer_setup();
+
 	init_remote();
 #ifdef CONFIG_CEC_WAKEUP
 	if (hdmi_cec_func_config & 0x1) {
@@ -128,38 +180,56 @@ unsigned int detect_key(unsigned int suspend_from)
 		cec_node_init();
 	}
 #endif
+
+	/* *wakeup_en = 1;*/
 	do {
-	#ifdef CONFIG_CEC_WAKEUP
-		if (suspend_from) {
+		switch (*irq) {
+#ifdef CONFIG_CEC_WAKEUP
+		case IRQ_AO_CEC_NUM:
+			if (suspend_from == SYS_POWEROFF)
+				break;
 			if (cec_msg.log_addr) {
 				if (hdmi_cec_func_config & 0x1) {
 					cec_handler();
-					if (cec_msg.cec_power == 0x1) {  //cec power key
+					if (cec_msg.cec_power == 0x1) {
+						/*cec power key*/
 						exit_reason = CEC_WAKEUP;
 						break;
 					}
 				}
-			} else if (hdmi_cec_func_config & 0x1) {
+			} else if (hdmi_cec_func_config & 0x1)
 				cec_node_init();
-			}
-		}
-	#endif
-		if ((readl(AO_GPIO_I) & (1<<3)) ==0) {
-				exit_reason = POWER_KEY_WAKEUP;
-				break;
-		}
-
-		if (time_out != 0) {
-			if ((get_time() - init_time) >= time_out * 1000 * 1000) {
+		break;
+#endif
+		case IRQ_TIMERA_NUM:
+			if (time_out_ms != 0)
+				time_out_ms--;
+			if (time_out_ms == 0) {
+				wakeup_timer_clear();
 				exit_reason = AUTO_WAKEUP;
-				break;
 			}
-		}
-		if (remote_detect_key()) {
-			exit_reason = REMOTE_WAKEUP;
+			break;
+
+		case IRQ_AO_IR_DEC_NUM:
+			if (remote_detect_key())
+				exit_reason = REMOTE_WAKEUP;
+			break;
+
+		case IRQ_AO_GPIO0_NUM:
+			if ((readl(AO_GPIO_I) & (1<<3)) == 0)
+				exit_reason = POWER_KEY_WAKEUP;
+			break;
+
+		default:
 			break;
 		}
+		*irq = 0xffffffff;
+		if (exit_reason)
+			break;
+		else
+			asm volatile("wfi");
 	} while (1);
+
 	return exit_reason;
 }
 
@@ -173,5 +243,6 @@ static void pwr_op_init(struct pwr_op *pwr_op)
 	pwr_op->power_on_at_32k = power_on_at_32k;
 
 	pwr_op->detect_key = detect_key;
+	pwr_op->get_wakeup_source = get_wakeup_source;
 }
 
