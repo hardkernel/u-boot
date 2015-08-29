@@ -43,6 +43,9 @@ void secure_task(void)
 	/*init bss */
 	bss_init();
 	dbg_prints("secure task start!\n");
+
+	/* suspend pwr ops init*/
+	suspend_pwr_ops_init();
 	*pcommand = 0;
 
 	while (1) {
@@ -50,8 +53,11 @@ void secure_task(void)
 		command = *pcommand;
 		if (command) {
 			dbg_print("process command ", command);
-
-			if (command == COMMAND_SUSPEND_ENTER) {
+			if (command == SEC_TASK_GET_WAKEUP_SRC) {
+				state = *(pcommand+1);
+				suspend_get_wakeup_source(
+						(void *)response,  state);
+			} else if (command == COMMAND_SUSPEND_ENTER) {
 				state = *(pcommand+1);
 				enter_suspend(state);
 				*pcommand = 0;

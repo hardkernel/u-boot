@@ -58,17 +58,27 @@ static void gxbb_com_gate_on(void)
 	aml_update_bits(HHI_MPLL_CNTL6, 1<<31, 1<<31);
 }
 
+void suspend_pwr_ops_init(void)
+{
+	p_pwr_op = &pwr_op_d;
+	pwr_op_init(p_pwr_op);
+}
+
+void suspend_get_wakeup_source(void *response, unsigned int suspend_from)
+{
+	if (!p_pwr_op->get_wakeup_source)
+		return;
+	p_pwr_op->get_wakeup_source(response, suspend_from);
+}
+
 /*
  *suspend_from defines who call this function.
  * 1: suspend
  * 0: power off
 */
-
 void enter_suspend(unsigned int suspend_from)
 {
 	int exit_reason = UDEFINED_WAKEUP;
-	p_pwr_op = &pwr_op_d;
-	pwr_op_init(p_pwr_op);
 #ifdef CONFIG_CEC_WAKEUP
 	hdmi_cec_func_config = readl(P_AO_DEBUG_REG0);
 	uart_puts("CEC cfg:0x");
