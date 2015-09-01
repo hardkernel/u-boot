@@ -126,9 +126,23 @@
         "factory_reset_poweroff_protect="\
             "echo wipe_data=${wipe_data}; echo wipe_cache=${wipe_cache};"\
             "if test ${wipe_data} = failed; then "\
+                "run init_display; run storeargs;"\
+                "if mmcinfo; then "\
+                    "run recovery_from_sdcard;"\
+                "fi;"\
+                "if usb start 0; then "\
+                    "run recovery_from_udisk;"\
+                "fi;"\
                 "run recovery_from_flash;"\
             "fi; "\
             "if test ${wipe_cache} = failed; then "\
+                "run init_display; run storeargs;"\
+                "if mmcinfo; then "\
+                    "run recovery_from_sdcard;"\
+                "fi;"\
+                "if usb start 0; then "\
+                    "run recovery_from_udisk;"\
+                "fi;"\
                 "run recovery_from_flash;"\
             "fi; \0" \
          "update="\
@@ -184,14 +198,14 @@
 
 
 #define CONFIG_PREBOOT  \
+            "run factory_reset_poweroff_protect;"\
             "run upgrade_check;"\
             "run bootmode_check;"\
             "run init_display;"\
             "run storeargs;"\
             "run upgrade_key;" \
             "run irremote_update;"\
-            "run switch_bootmode;" \
-            "run factory_reset_poweroff_protect;"
+            "run switch_bootmode;"
 #define CONFIG_BOOTCOMMAND "run storeboot"
 
 //#define CONFIG_ENV_IS_NOWHERE  1
