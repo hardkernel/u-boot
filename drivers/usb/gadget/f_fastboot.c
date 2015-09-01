@@ -127,6 +127,8 @@ static struct usb_gadget_strings *fastboot_strings[] = {
 
 static void rx_handler_command(struct usb_ep *ep, struct usb_request *req);
 
+static char *transfer_buffer = (void *)CONFIG_USB_FASTBOOT_BUF_ADDR;
+
 static void fastboot_complete(struct usb_ep *ep, struct usb_request *req)
 {
 	int status = req->status;
@@ -401,8 +403,7 @@ static void rx_handler_dl_image(struct usb_ep *ep, struct usb_request *req)
 	if (buffer_size < transfer_size)
 		transfer_size = buffer_size;
 
-	memcpy((void *)CONFIG_USB_FASTBOOT_BUF_ADDR + download_bytes,
-	       buffer, transfer_size);
+	memcpy((void *)transfer_buffer + download_bytes, buffer, transfer_size);
 
 	pre_dot_num = download_bytes / BYTES_PER_DOT;
 	download_bytes += transfer_size;
@@ -510,8 +511,8 @@ static void cb_flash(struct usb_ep *ep, struct usb_request *req)
 
 	strcpy(response, "FAILno flash device defined");
 #ifdef CONFIG_FASTBOOT_FLASH_MMC_DEV
-	fb_mmc_flash_write(cmd, (void *)CONFIG_USB_FASTBOOT_BUF_ADDR,
-			   download_bytes, response);
+	fb_mmc_flash_write(cmd, (void *)transfer_buffer, download_bytes,
+			response);
 #endif
 	fastboot_tx_write_str(response);
 }
