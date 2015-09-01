@@ -127,7 +127,49 @@ static struct usb_gadget_strings *fastboot_strings[] = {
 
 static void rx_handler_command(struct usb_ep *ep, struct usb_request *req);
 
+#define FASTBOOT_MAXPENTRY		16
+
 static char *transfer_buffer = (void *)CONFIG_USB_FASTBOOT_BUF_ADDR;
+static fastboot_ptentry ptable[FASTBOOT_MAXPENTRY];
+static unsigned int pcount;
+
+void fastboot_flash_reset_ptn(void)
+{
+	pcount = 0;
+}
+
+void fastboot_flash_add_ptn(fastboot_ptentry *ptn)
+{
+	if (pcount < FASTBOOT_MAXPENTRY) {
+		memcpy((ptable + pcount), ptn, sizeof(*ptn));
+		pcount++;
+	}
+}
+
+fastboot_ptentry *fastboot_flash_find_ptn(const char *name)
+{
+	unsigned int n;
+
+	for (n = 0; n < pcount; n++) {
+		/* Make sure a substring is not accepted */
+		if (strlen(name) == strlen(ptable[n].name)) {
+			if (0 == strcmp(ptable[n].name, name))
+				return ptable + n;
+		}
+	}
+	return 0;
+}
+
+void fastboot_flash_dump_ptn(void)
+{
+	unsigned int n;
+
+	for (n = 0; n < pcount; n++) {
+		fastboot_ptentry *ptn = ptable + n;
+		printf("ptn %d name='%s'", n, ptn->name);
+		printf(" start=%d len=%d\n", ptn->start, ptn->length);
+	}
+}
 
 static void fastboot_complete(struct usb_ep *ep, struct usb_request *req)
 {
@@ -369,6 +411,24 @@ static void cb_getvar(struct usb_ep *ep, struct usb_request *req)
 			strncat(response, s, chars_left);
 		else
 			strcpy(response, "FAILValue not set");
+	} else if (!strcmp_l1("partition-type:", cmd)) {
+		const char *partition_name = cmd + 15;
+
+		if (!strcmp_l1(partition_name, "all")) {
+			sprintf(response, "OKAY");
+		} else {
+			/* FIXME: partition-type would be required to supported
+			 * to return its type per each partition.
+			 */
+			fastboot_ptentry* ptn
+				= fastboot_flash_find_ptn(partition_name);
+			if (ptn) {
+				strncat(response, "raw", sizeof(response));
+			} else {
+				sprintf(response, "FAILunknown partition %s",
+						partition_name);
+			}
+		}
 	} else {
 		error("unknown variable: %s\n", cmd);
 		strcpy(response, "FAILVariable not implemented");
