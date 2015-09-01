@@ -10,9 +10,12 @@
 #include <part.h>
 #include <aboot.h>
 #include <sparse_format.h>
+#include <usb/fastboot.h>
 
+#if !defined(CONFIG_DOS_PARTITION) || !defined(CONFIG_CMD_FASTBOOT)
 #ifndef CONFIG_FASTBOOT_GPT_NAME
 #define CONFIG_FASTBOOT_GPT_NAME GPT_ENTRY_NAME
+#endif
 #endif
 
 /* The 64 defined bytes plus the '\0' */
@@ -80,6 +83,21 @@ void fb_mmc_flash_write(const char *cmd, void *download_buffer,
 		return;
 	}
 
+#if defined(CONFIG_DOS_PARTITION) && defined(CONFIG_CMD_FASTBOOT)
+	fastboot_ptentry *ptn = fastboot_flash_find_ptn(cmd);
+	if (ptn == 0) {
+		printf("Partition:[%s] does not exist\n", cmd);
+		sprintf(response, "FAILpartition does not exist");
+	} else if ((download_bytes > ptn->length) &&
+			!(ptn->flags & FASTBOOT_PTENTRY_FLAGS_WRITE_ENV)) {
+		printf("Image too large for the partition\n");
+		sprintf(response, "FAILimage too large for partition");
+	} else {
+		info.start = ptn->start;
+		info.size = ptn->length;
+		info.blksz = dev_desc->blksz;
+	}
+#else
 	if (strcmp(cmd, CONFIG_FASTBOOT_GPT_NAME) == 0) {
 		printf("%s: updating MBR, Primary and Backup GPT(s)\n",
 		       __func__);
@@ -102,6 +120,7 @@ void fb_mmc_flash_write(const char *cmd, void *download_buffer,
 		fastboot_fail("cannot find partition");
 		return;
 	}
+#endif
 
 	if (is_sparse_image(download_buffer))
 		write_sparse_image(dev_desc, &info, cmd, download_buffer,
