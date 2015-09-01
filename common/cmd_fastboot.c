@@ -13,6 +13,7 @@
 #if defined(CONFIG_MACH_ODROIDC2)
 #include <usb.h>
 #endif
+#include <usb/fastboot.h>
 
 static int do_fastboot(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 {
@@ -26,10 +27,14 @@ static int do_fastboot(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 	}
 #endif
 
+	board_partition_init();
+
 	g_dnl_clear_detach();
 	ret = g_dnl_register("usb_dnl_fastboot");
 	if (ret)
 		return ret;
+
+	fastboot_flash_dump_ptn();
 
 	while (1) {
 		if (g_dnl_detach())
