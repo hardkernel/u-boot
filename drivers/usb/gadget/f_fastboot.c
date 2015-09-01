@@ -639,6 +639,8 @@ static void rx_handler_command(struct usb_ep *ep, struct usb_request *req)
 	void (*func_cb)(struct usb_ep *ep, struct usb_request *req) = NULL;
 	int i;
 
+	*(cmdbuf + req->actual) = '\0';
+
 	for (i = 0; i < ARRAY_SIZE(cmd_dispatch_info); i++) {
 		if (!strcmp_l1(cmd_dispatch_info[i].cmd, cmdbuf)) {
 			func_cb = cmd_dispatch_info[i].cb;
