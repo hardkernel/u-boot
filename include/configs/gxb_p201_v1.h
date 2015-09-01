@@ -99,7 +99,7 @@
             "fi;"\
             "\0" \
         "storeargs="\
-            "setenv bootargs ${initargs} logo=${display_layer},loaded,${fb_addr},${outputmode},hdmimode=${hdmimode} cvbsmode=${cvbsmode} hdmitx=${cecconfig} androidboot.firstboot=${firstboot}; "\
+            "setenv bootargs ${initargs} logo=${display_layer},loaded,${fb_addr},${outputmode} hdmimode=${hdmimode} cvbsmode=${cvbsmode} hdmitx=${cecconfig} androidboot.firstboot=${firstboot}; "\
             "run cmdline_keys;"\
             "\0"\
         "switch_bootmode="\
