@@ -18,6 +18,7 @@
 #include <linux/usb/gadget.h>
 #include <linux/usb/composite.h>
 #include <linux/compiler.h>
+#include <usb/fastboot.h>
 #include <version.h>
 #include <g_dnl.h>
 #ifdef CONFIG_FASTBOOT_FLASH_MMC_DEV
@@ -578,6 +579,27 @@ static void cb_flash(struct usb_ep *ep, struct usb_request *req)
 }
 #endif
 
+int fastboot_oem(const char *cmd)
+{
+	printf("fastboot_oem:%s", cmd);
+	if (!strcmp(cmd, "format"))
+		return do_format();
+	return -1;
+}
+
+static void cb_oem(struct usb_ep *ep, struct usb_request *req)
+{
+	char *cmd = req->buf;
+
+	printf("calling fastboot oem!! : %s\n", cmd);
+	int r = fastboot_oem(cmd + 4);
+	if (r < 0) {
+		fastboot_tx_write_str("FAIL");
+	} else {
+		fastboot_tx_write_str("OKAY");
+	}
+}
+
 struct cmd_dispatch_info {
 	char *cmd;
 	void (*cb)(struct usb_ep *ep, struct usb_request *req);
@@ -599,6 +621,9 @@ static const struct cmd_dispatch_info cmd_dispatch_info[] = {
 	}, {
 		.cmd = "continue",
 		.cb = cb_continue,
+	}, {
+		.cmd = "oem",
+		.cb = cb_oem,
 	},
 #ifdef CONFIG_FASTBOOT_FLASH
 	{
