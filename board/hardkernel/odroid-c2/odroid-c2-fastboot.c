@@ -198,3 +198,25 @@ int board_partition_init(void)
 
 	return 0;
 }
+
+int board_fastboot_pre_flash(block_dev_desc_t *dev_desc, lbaint_t start,
+		void *buffer)
+{
+	if (start == 0) {
+		/* MUST be trying to modify MBR, hence at least DOS partition
+		 * table have to be kept. So buffer to flashing will be
+		 * overwritten with exist partition table.
+		 */
+		u8 mbr[512];
+
+		if (dev_desc->block_read(dev_desc->dev, start, 1, mbr) != 1) {
+			printf("fastboot: can't read MBR from device %d\n",
+					dev_desc->dev);
+			return -EIO;
+		}
+
+		memcpy(buffer + 0x1be, &mbr[0x1be], 512 - 0x1be);
+	}
+
+	return 0;
+}
