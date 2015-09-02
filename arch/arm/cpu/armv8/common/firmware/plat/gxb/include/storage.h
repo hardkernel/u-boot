@@ -31,6 +31,7 @@
 #define BOOT_DEVICE_SPI                 3
 #define BOOT_DEVICE_SD                  4
 #define BOOT_DEVICE_USB                 5
+#define BOOT_DEVICE_USB_FORCEMODE       6//force booting from usb mode
 
 /*sdio defines*/
 #define MAX_DESC_NUM                    8

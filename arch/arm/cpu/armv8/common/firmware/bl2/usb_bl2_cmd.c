@@ -285,9 +285,11 @@ static int usb_bl2_run_cmd(void* usbBl2Para)
 
                 case USB_BL2_RUN_CMD_TYPE_RUN_IMG:
                         {
-                                unsigned int* skipBootReg = (unsigned int*)SEC_AO_RTI_STATUS_REG3;
-                                const unsigned skipBootRegVal =  readl(skipBootReg);
-                                writel(skipBootRegVal & ( ~( 0XFU << 12 )) , skipBootReg );//clear skip boot flag
+                                /*
+                                 *unsigned int* skipBootReg = (unsigned int*)SEC_AO_RTI_STATUS_REG3;
+                                 *const unsigned skipBootRegVal =  readl(skipBootReg);
+                                 *writel(skipBootRegVal & ( ~( 0XFU << 12 )) , skipBootReg );//clear skip boot flag
+                                 */
                                 writel((readl(SEC_AO_SEC_GP_CFG7) | (1U<<31)), SEC_AO_SEC_GP_CFG7);
 
                                 UsbBl2RunCmdPara_RunImage* pRunImgPara  = (UsbBl2RunCmdPara_RunImage*)pBl2RunPara;

@@ -104,6 +104,7 @@ uint64_t storage_load(uint64_t src, uint64_t des, uint64_t size, const char * im
 			src += 512; //sd boot must add 512 offset
 			break;
 		case BOOT_DEVICE_USB:
+		case BOOT_DEVICE_USB_FORCEMODE:
 			device_name = "USB";
 			break;
 		default:
@@ -140,6 +141,7 @@ uint64_t storage_load(uint64_t src, uint64_t des, uint64_t size, const char * im
 			sdio_read_data(boot_device, src, des, size);
 			break;
 		case BOOT_DEVICE_USB:
+		case BOOT_DEVICE_USB_FORCEMODE:
 			usb_boot(src, des, size);
 			break;
 		default:
@@ -483,6 +485,10 @@ uint64_t sdio_write_data(uint64_t boot_device, uint64_t src, uint64_t des, uint6
 #endif // #ifdef CONFIG_SPL_DDR_DUMP
 
 uint64_t get_boot_device(void) {
+	const unsigned forceUsbRegVal   =  readl(SEC_AO_RTI_STATUS_REG3);
+	const unsigned forceUsbBootFlag = ( forceUsbRegVal>>12 ) & 0xF;
+        if ( 2 ==  forceUsbBootFlag) return BOOT_DEVICE_USB_FORCEMODE;
+
 	return (readl(SEC_AO_SEC_GP_CFG0) & 0xf);
 }
 

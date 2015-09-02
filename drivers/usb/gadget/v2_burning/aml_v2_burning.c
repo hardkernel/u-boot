@@ -13,6 +13,7 @@
 #include <mmc.h>
 #include <asm/arch/secure_apb.h>
 #include <asm/arch/io.h>
+#include <asm/arch/bl31_apis.h>
 
 #ifndef BOOT_DEVICE_USB
 #define BOOT_DEVICE_SD                  4
@@ -115,6 +116,7 @@ int aml_burn_usb_producing(int flag, bd_t* bis)
 {
     flag = flag; bis = bis;//avoid compile warning
 
+    set_usb_boot_function(CLEAR_USB_BOOT);
     optimus_work_mode_set(OPTIMUS_WORK_MODE_USB_PRODUCE);
 
     close_usb_phy_clock(0);//disconect before re-connect to enhance pc compatibility
