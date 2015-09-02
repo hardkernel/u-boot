@@ -93,6 +93,8 @@ int board_partition_init(void);
 char *board_dos_partition_name(int part, char* name);
 lbaint_t board_dos_partition_start(void);
 lbaint_t board_dos_partition_next(int *part, u8* type);
+__weak int board_fastboot_pre_flash(block_dev_desc_t *dev_desc, lbaint_t start,
+		void *buffer);
 
 #endif
 #endif
