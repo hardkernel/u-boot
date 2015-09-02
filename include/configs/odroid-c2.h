@@ -89,8 +89,10 @@
 #define CONFIG_BOOTCOMMAND
 
 //#define CONFIG_ENV_IS_NOWHERE  1
-#define CONFIG_ENV_SIZE			(32 * 1024)	/* 32kB */
-#define CONFIG_ENV_OFFSET		(640 * 1024)
+#define CONFIG_ENV_SIZE			(32 * SZ_1K)	/* 32kB */
+#define CONFIG_ENV_OFFSET		(720 * SZ_1K)	/* FIXME: should be
+							   close to U-boot image
+							   size to save space */
 #define CONFIG_FIT			1
 #define CONFIG_OF_LIBFDT		1
 #define CONFIG_ANDROID_BOOT_IMAGE	1
