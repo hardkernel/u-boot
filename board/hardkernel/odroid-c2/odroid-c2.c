@@ -15,6 +15,7 @@
 #include <asm/arch/eth_setup.h>
 #include <asm/arch-gxb/gpio.h>
 #include <asm-generic/gpio.h>
+#include <usb/fastboot.h>
 
 #ifdef CONFIG_AML_VPU
 #include <vpu.h>
@@ -234,6 +235,8 @@ int board_early_init_f(void)
 #ifdef CONFIG_BOARD_LATE_INIT
 int board_late_init(void)
 {
+	board_partition_init();
+
 	return 0;
 }
 #endif
