@@ -932,7 +932,7 @@ int amlnand_erase_info_by_name(struct amlnand_chip *aml_chip,
 				ops_para->chipnr,
 				ops_para->page_addr);
 		}
-
+		arg_info->arg_valid = 0;
 	}
 
 	return ret;

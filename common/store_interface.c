@@ -13,6 +13,8 @@
 #include <div64.h>
 #include <linux/err.h>
 #include<partition_table.h>
+#include <libfdt.h>
+#include <linux/string.h>
 
 #if defined(CONFIG_AML_NAND)
 extern int amlnf_init(unsigned flag);
@@ -164,58 +166,76 @@ static int get_off_size(int argc, char *argv[],  loff_t *off, loff_t *size)
 //store dtb read/write buff size
 static int do_store_dtb_ops(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 {
-	int ret = 0;
-	char _cmdBuf[128];
-	char* ops = argv[2];
-	const unsigned maxDtbSz = 256 * 1024;
-	unsigned actualDtbSz = 0;
-	char* devCmd = NULL;
+        int ret = 0;
+        char _cmdBuf[128];
+        char* ops = argv[2];
+        const unsigned maxDtbSz = 256 * 1024;
+        unsigned actualDtbSz = 0;
+        char* devCmd = NULL;
+        char* dtbLoadaddr = argv[3];
 
-    if (argc < 4) return CMD_RET_USAGE;
+        if (argc < 4) return CMD_RET_USAGE;
 
-	const int is_write = !strcmp("write", ops);
-    if (!is_write) {
-		ret = strcmp("read", ops);//must be 0
-        if (ret) return CMD_RET_USAGE;
-	}
+        const int is_write = !strcmp("write", ops);
+        if (!is_write) {
+                ret = !strcmp("read", ops) || !strcmp("iread", ops);//must be 0
+                if (!ret) return CMD_RET_USAGE;
+        }
 
-	actualDtbSz = maxDtbSz;
-    if (argc > 4) {
-		const unsigned bufSz = simple_strtoul(argv[4], NULL, 0);
-        if (bufSz > maxDtbSz) {
-			ErrP("bufSz (%s) > max 0x%x\n", argv[4], maxDtbSz);
-			return CMD_RET_FAILURE;
-		}
-	}
+        actualDtbSz = maxDtbSz;
+        if (argc > 4) {
+                const unsigned bufSz = simple_strtoul(argv[4], NULL, 0);
+                if (bufSz > maxDtbSz) {
+                        ErrP("bufSz (%s) > max 0x%x\n", argv[4], maxDtbSz);
+                        return CMD_RET_FAILURE;
+                }
+        }
 
-	ops = is_write ? "dtb_write" : "dtb_read";
+        ops = is_write ? "dtb_write" : "dtb_read";
 
-    switch (device_boot_flag)
-	{
-		case NAND_BOOT_FLAG:
-		case SPI_NAND_FLAG:
-			{
-				devCmd = "amlnf";
-			}
-			break;
+        switch (device_boot_flag)
+        {
+                case NAND_BOOT_FLAG:
+                case SPI_NAND_FLAG:
+                        {
+                                devCmd = "amlnf";
+                        }
+                        break;
 
-		case EMMC_BOOT_FLAG:
-		case SPI_EMMC_FLAG:
-			{
-				devCmd = "emmc";
-			}
-			break;
+                case EMMC_BOOT_FLAG:
+                case SPI_EMMC_FLAG:
+                        {
+                                devCmd = "emmc";
+                        }
+                        break;
 
-		default:
-			ErrP("device_boot_flag=0x%x err\n", device_boot_flag);
-			return CMD_RET_FAILURE;
-	}
+                default:
+                        ErrP("device_boot_flag=0x%x err\n", device_boot_flag);
+                        return CMD_RET_FAILURE;
+        }
 
-	sprintf(_cmdBuf, "%s %s %s 0x%x", devCmd, ops, argv[3], actualDtbSz);
-	MsgP("To run cmd[%s]\n", _cmdBuf);
-	ret = run_command(_cmdBuf, 0);
+        sprintf(_cmdBuf, "%s %s %s 0x%x", devCmd, ops, dtbLoadaddr, actualDtbSz);
+        MsgP("To run cmd[%s]\n", _cmdBuf);
+        ret = run_command(_cmdBuf, 0);
 
-	return ret;
+#ifdef CONFIG_MULTI_DTB
+        if (!is_write && strcmp("iread", ops))
+        {
+                extern unsigned long get_multi_dt_entry(unsigned long fdt_addr);
+                unsigned long dtImgAddr = simple_strtoul(dtbLoadaddr, NULL, 16);
+
+                unsigned long fdtAddr = get_multi_dt_entry(dtImgAddr);
+                ret = fdt_check_header((char*)fdtAddr);
+                if (ret) {
+                        ErrP("Fail in fdt check header\n");
+                        return CMD_RET_FAILURE;
+                }
+                unsigned fdtsz    = fdt_totalsize((char*)fdtAddr);
+                memmove((char*)dtImgAddr, (char*)fdtAddr, fdtsz);
+        }
+#endif// #ifdef CONFIG_MULTI_DTB
+
+        return ret;
 }
 
 static int do_store_key_ops(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
@@ -624,7 +644,7 @@ static int do_store_erase(cmd_tbl_t * cmdtp, int flag, int argc, char * const ar
     char	str[128];
     loff_t off;
 
-    if (argc <= 3) return CMD_RET_USAGE;
+    if (argc < 3) return CMD_RET_USAGE;
 
     off = off;
     area = argv[2];
@@ -720,7 +740,7 @@ E_SWITCH_BACK:
             return 0;
         }
     }
-    else if(strcmp(area, "data") == 0){
+    else if (strcmp(area, "data") == 0){
 
         if (device_boot_flag == NAND_BOOT_FLAG) {
             store_dbg("NAND BOOT,erase data : %s %d  off =%llx ,size=%llx",__func__,__LINE__, off, size);
@@ -791,8 +811,45 @@ E_SWITCH_BACK:
             return 0;
         }
     }
-
-    return CMD_RET_USAGE;
+    else if (strcmp(area, "key") == 0){
+        if (device_boot_flag == EMMC_BOOT_FLAG) {
+            sprintf(str, "emmc erase key");
+            ret = run_command(str, 0);
+            if (ret != 0) {
+                store_msg("emmc cmd %s failed",cmd);
+                return CMD_RET_USAGE;
+            }
+        } else if (device_boot_flag == NAND_BOOT_FLAG) {
+        #if defined(CONFIG_AML_NAND)
+            sprintf(str, "amlnf key_erase");
+            ret = run_command(str, 0);
+            if (ret != 0) {
+                store_msg("emmc cmd %s failed",cmd);
+                return CMD_RET_USAGE;
+            }
+        #endif
+        }
+    }
+    else if (strcmp(area, "dtb") == 0) {
+        if (device_boot_flag == EMMC_BOOT_FLAG) {
+            sprintf(str, "emmc erase dtb");
+            ret = run_command(str, 0);
+            if (ret != 0) {
+                store_msg("emmc cmd %s failed",cmd);
+                return CMD_RET_USAGE;
+            }
+        } else if (device_boot_flag == NAND_BOOT_FLAG) {
+        #if defined(CONFIG_AML_NAND)
+            sprintf(str, "amlnf dtb_erase");
+            ret = run_command(str, 0);
+            if (ret != 0) {
+                store_msg("emmc cmd %s failed",cmd);
+                return CMD_RET_USAGE;
+            }
+        #endif
+        }
+    }
+    return 0;
 }
 
 static int do_store_scrub(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
@@ -1306,9 +1363,11 @@ U_BOOT_CMD(store, CONFIG_SYS_MAXARGS, 1, do_store,
 	"	write uboot to the boot device\n"
 	"store erase boot/data: \n"
 	"	erase the area which is uboot or data \n"
+	"store erase dtb \n"
+	"store erase key \n"
 	"store scrub off|partition size\n"
 	"	scrub the area from offset and size \n"
-	"store dtb read/write <size>\n"
+	"store dtb iread/read/write <size>\n"
 	"	read/write dtb, size is optional \n"
 	"store key read/write <size>\n"
 	"	read/write key, size is optional \n"

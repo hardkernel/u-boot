@@ -16,7 +16,7 @@
 #include <asm/arch/bl31_apis.h>
 #include <asm/io.h>
 
-extern unsigned int get_multi_dt_entry(unsigned int fdt_addr);
+extern unsigned int get_multi_dt_entry(unsigned long fdt_addr);
 int is_optimus_storage_inited(void);
 
 #if !defined(CONFIG_UNIFY_KEY_MANAGE)
@@ -724,7 +724,8 @@ int optimus_save_loaded_dtb_to_flash(void)
 
         if (!_dtb_is_loaded) return 0;
 
-        //fixme: add dtb erasing before write
+        //dtb erasing before write
+        store_erase_ops((u8*)"dtb", 0, 0, 0);
         return store_dtb_rw(dtbLoadedAddr, _dtb_is_loaded, 1);
 }
 
@@ -811,7 +812,20 @@ int optimus_storage_init(int toErase)
             DWN_MSG("usb producing env_relocate\n");
             env_relocate();
         }
-        setenv("dtb_mem_addr", simple_itoa((unsigned long)dtbLoadedAddr));
+
+        if (_dtb_is_loaded)
+        {
+                unsigned long fdtAddr = (unsigned long)dtbLoadedAddr;
+#ifdef CONFIG_MULTI_DTB
+                fdtAddr = get_multi_dt_entry(fdtAddr);
+#endif// #ifdef CONFIG_MULTI_DTB
+                ret = fdt_check_header((char*)fdtAddr);
+                if (ret) {
+                        DWN_ERR("Fail in fdt check header\n");
+                        return __LINE__;
+                }
+                setenv("dtb_mem_addr", simple_itoa(fdtAddr));
+        }
     }
 
     return ret;
