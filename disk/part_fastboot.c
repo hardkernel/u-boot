@@ -71,7 +71,7 @@ int fastboot_load_dos_partition(void)
 			sprintf(ptn.name, "part-%d", n);
 
 		ptn.start = part_info.start;
-		ptn.length = part_info.size * dev_desc->blksz;
+		ptn.length = part_info.size;
 
 		fastboot_flash_add_ptn(&ptn);
 		nr_parts++;
