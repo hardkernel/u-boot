@@ -12,6 +12,9 @@
 #include <sparse_format.h>
 #include <usb/fastboot.h>
 
+__weak int board_fastboot_pre_flash(block_dev_desc_t *dev_desc, lbaint_t start,
+		void *buffer) { return 0; }
+
 #if !defined(CONFIG_DOS_PARTITION) || !defined(CONFIG_CMD_FASTBOOT)
 #ifndef CONFIG_FASTBOOT_GPT_NAME
 #define CONFIG_FASTBOOT_GPT_NAME GPT_ENTRY_NAME
@@ -97,6 +100,8 @@ void fb_mmc_flash_write(const char *cmd, void *download_buffer,
 		info.start = ptn->start;
 		info.size = ptn->length;
 		info.blksz = dev_desc->blksz;
+
+		board_fastboot_pre_flash(dev_desc, ptn->start, download_buffer);
 	}
 #else
 	if (strcmp(cmd, CONFIG_FASTBOOT_GPT_NAME) == 0) {
