@@ -88,7 +88,8 @@ void fb_mmc_flash_write(const char *cmd, void *download_buffer,
 	if (ptn == 0) {
 		printf("Partition:[%s] does not exist\n", cmd);
 		sprintf(response, "FAILpartition does not exist");
-	} else if ((download_bytes > ptn->length) &&
+	} else if (((download_bytes + (dev_desc->blksz - 1))
+				/ dev_desc->blksz > ptn->length) &&
 			!(ptn->flags & FASTBOOT_PTENTRY_FLAGS_WRITE_ENV)) {
 		printf("Image too large for the partition\n");
 		sprintf(response, "FAILimage too large for partition");
