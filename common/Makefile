@@ -308,3 +308,4 @@ obj-$(CONFIG_AML_VOUT) += cmd_vout.o
 CFLAGS_env_embedded.o := -Wa,--no-warn -DENV_CRC=$(shell tools/envcrc 2>/dev/null)
 
 obj-$(CONFIG_MACH_ODROIDC2) += cmd_movi.o
+obj-$(CONFIG_MACH_ODROIDC2) += cmd_cfgload.o
