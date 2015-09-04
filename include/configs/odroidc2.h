@@ -107,6 +107,7 @@
 //#define CONFIG_CMD_I2C			1
 #define CONFIG_CMD_MEMORY		1
 #define CONFIG_CMD_FAT			1
+#define CONFIG_CMD_EXT4			1
 #define CONFIG_CMD_GPIO			1
 #define CONFIG_CMD_RUN			1
 #define CONFIG_CMD_REBOOT		1
