@@ -345,17 +345,17 @@ int checkhw(char * name)
 
 	switch (ddr_size) {
 	case 0x80000000:
-		strcpy(loc_name, "odroid-c2_2g\0");
+		strcpy(loc_name, "odroidc2_2g\0");
 		break;
 	case 0x40000000:
-		strcpy(loc_name, "odroid-c2_1g\0");
+		strcpy(loc_name, "odroidc2_1g\0");
 		break;
 	case 0x2000000:
-		strcpy(loc_name, "odroid-c2_512m\0");
+		strcpy(loc_name, "odroidc2_512m\0");
 		break;
 	default:
 		//printf("DDR size: 0x%x, multi-dt doesn't support\n", ddr_size);
-		strcpy(loc_name, "odroid-c2_unsupport");
+		strcpy(loc_name, "odroidc2_unsupport");
 		break;
 	}
 
