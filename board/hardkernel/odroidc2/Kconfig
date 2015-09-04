@@ -6,7 +6,7 @@ config SYS_CPU
 
 config SYS_BOARD
 	string
-	default "odroid-c2"
+	default "odroidc2"
 
 config SYS_VENDOR
 	string
@@ -17,6 +17,6 @@ config SYS_SOC
 	default "gxb"
 
 config SYS_CONFIG_NAME
-	default "odroid-c2"
+	default "odroidc2"
 
 endif

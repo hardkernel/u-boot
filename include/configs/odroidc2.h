@@ -224,7 +224,7 @@
 #endif
 
 #define IP101PHY			1
-#define CONFIG_HOSTNAME			odroid-c2
+#define CONFIG_HOSTNAME			odroidc2
 #define CONFIG_ETHADDR			00:15:18:01:81:31	/* MAC address */
 #define CONFIG_GATEWAYIP		192.168.0.1	/* Gateway */
 #define CONFIG_IPADDR			192.168.0.2	/* IP */

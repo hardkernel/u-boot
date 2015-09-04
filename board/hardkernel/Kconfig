@@ -3,5 +3,5 @@ config ODROID_C2
 	default n
 
 if ODROID_C2
-source "board/hardkernel/odroid-c2/Kconfig"
+source "board/hardkernel/odroidc2/Kconfig"
 endif
