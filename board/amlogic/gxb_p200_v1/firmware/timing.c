@@ -324,17 +324,17 @@ static ddr_set_t __ddr_setting = {
 	.t_pub_dx1gcr			= {0},  //PUB DX1GCRx
 	.t_pub_dx2gcr			= {0},  //PUB DX2GCRx
 	.t_pub_dx3gcr			= {0},  //PUB DX3GCRx
-	.t_pub_dcr				= 0X8B,     //PUB DCR
+	.t_pub_dcr				= 0XB,     //PUB DCR
 	.t_pub_dtar				= (0X0 | (0X0 <<12) | (0 << 28)),
-	.t_pub_dsgcr			= 0x020641a,
+	.t_pub_dsgcr			= 0x020645a,
 	//.t_pub_zq0pr			= 0x7b,   //PUB ZQ0PR
 	//.t_pub_zq1pr			= 0x7b,   //PUB ZQ1PR
 	//.t_pub_zq2pr			= 0x7b,   //PUB ZQ2PR
 	//.t_pub_zq3pr			= 0x7b,   //PUB ZQ3PR
-	.t_pub_zq0pr			= 0x1d,   //PUB ZQ0PR
-	.t_pub_zq1pr			= 0x19,   //PUB ZQ1PR
-	.t_pub_zq2pr			= 0x19,   //PUB ZQ2PR
-	.t_pub_zq3pr			= 0x19,   //PUB ZQ3PR
+	.t_pub_zq0pr			= 0x69,   //PUB ZQ0PR
+	.t_pub_zq1pr			= 0x69,   //PUB ZQ1PR
+	.t_pub_zq2pr			= 0x69,   //PUB ZQ2PR
+	.t_pub_zq3pr			= 0x69,   //PUB ZQ3PR
 
 	/* pctl0 defines */
 	/* pctl1 use same define as pctl0 */
@@ -344,7 +344,7 @@ static ddr_set_t __ddr_setting = {
 	.t_pctl0_rsth_us		= 2,   //PCTL TRSTH
 	.t_pctl0_mcfg			= 0XA2F21,   //PCTL MCFG default 1T
 	//.t_pctl0_mcfg1			= 0X80000000,  //PCTL MCFG1
-	.t_pctl0_mcfg1			=  (1<<31)|(0x20<<16)|(0x40<<0)//[B31]hw_exit_idle_en
+	.t_pctl0_mcfg1			=  (1<<31)|(0x20<<16)|(0x0<<0)//[B31]hw_exit_idle_en
 								|( 0<<8), //[B10,B9,B8] tfaw_cfg_offset:
 								//tFAW= (4 + MCFG.tfaw_cfg)*tRRD - tfaw_cfg_offset,  //PCTL MCFG1
 	.t_pctl0_scfg			= 0xF01,   //PCTL SCFG
