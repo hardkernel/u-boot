@@ -23,7 +23,7 @@
 
 /*----------------------------------------------------------------------------*/
 // global variables
-static unsigned int cvbs_mode = 0xff; // default to 0xff as invalid vmode
+unsigned int cvbs_mode = 0xff; // default to 0xff as invalid vmode
 
 
 /*----------------------------------------------------------------------------*/

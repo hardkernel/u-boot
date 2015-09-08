@@ -2,11 +2,23 @@
 
 #define SECUREBOOT_FLAG_ADDR 0xc8100228
 
+#ifdef CONFIG_AML_CVBS
+extern unsigned int cvbs_mode;
+#endif
 void ee_gate_off(void)
 {
 	printf("ee_gate_off ...\n");
 
 	int secureboot = readl(SECUREBOOT_FLAG_ADDR)&(1<<5);
+
+#ifdef CONFIG_AML_CVBS
+	unsigned int cvbs_opened = 0;
+#endif
+
+#ifdef CONFIG_AML_CVBS
+	if ((cvbs_mode == 0) || (cvbs_mode == 1))
+		cvbs_opened = 1;
+#endif
 
 	/*
 	//if close , audio maybe have noise
@@ -22,12 +34,24 @@ void ee_gate_off(void)
 	/*kernel will reopen */
 	CLK_GATE_OFF(CTS_ENCL);
 	/* CLK_GATE_OFF(CTS_ENCT); */
+#ifdef CONFIG_AML_CVBS
+	if (cvbs_opened == 0)
+		CLK_GATE_OFF(CTS_ENCI);
+#else
 	CLK_GATE_OFF(CTS_ENCI);
+#endif
 	/* CLK_GATE_OFF(CTS_ENCP); */
 
 	/*close cvbs clock*/
+#ifdef CONFIG_AML_CVBS
+	if (cvbs_opened == 0) {
+		CLK_GATE_OFF(DAC_CLK);
+		CLK_GATE_OFF(CTS_VDAC);
+	}
+#else
 	CLK_GATE_OFF(DAC_CLK);
 	CLK_GATE_OFF(CTS_VDAC);
+#endif
 
 	/* usb clock close */
 	CLK_GATE_OFF(USB0);
@@ -46,13 +70,24 @@ void ee_gate_off(void)
 	CLK_GATE_OFF(VCLK2_VENCT);
 	CLK_GATE_OFF(VCLK2_VENCT1);
 	CLK_GATE_OFF(VCLK2_OTHER);
+#ifdef CONFIG_AML_CVBS
+	if (cvbs_opened == 0) {
+		CLK_GATE_OFF(VCLK2_VENCI);
+		CLK_GATE_OFF(VCLK2_VENCI1);
+	}
+#else
 	CLK_GATE_OFF(VCLK2_VENCI);
 	CLK_GATE_OFF(VCLK2_VENCI1);
+#endif
 	CLK_GATE_OFF(VCLK2_VENCL);
 	CLK_GATE_OFF(VCLK2_OTHER1);
 
-
+#ifdef CONFIG_AML_CVBS
+	if (cvbs_opened == 0)
+		CLK_GATE_OFF(VCLK2_ENCI);
+#else
 	CLK_GATE_OFF(VCLK2_ENCI);
+#endif
 	CLK_GATE_OFF(VCLK2_ENCL);
 	CLK_GATE_OFF(VCLK2_ENCT);
 
