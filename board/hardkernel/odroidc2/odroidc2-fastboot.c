@@ -26,7 +26,7 @@ static struct fbt_partition {
 	},
 #if 0	/* FIXME: 'bcb' partition is required for Android recovery. */
 	{
-		.name = "bcb",			/* Bootloader * control * block */
+		.name = "bcb",			/* Bootloader control block */
 		.size_kb = bytes_to_kb(SZ_4K)
 	},
 #endif
@@ -34,10 +34,10 @@ static struct fbt_partition {
 		.name = "env",			/* "environment" */
 		.size_kb = bytes_to_kb(CONFIG_ENV_SIZE)
 	}, {
-		.name = "dtb",			/* Device * Tree */
+		.name = "dtb",			/* Device Tree */
 		.size_kb = bytes_to_kb(SZ_64K)
 	}, {
-		.name = "boot",			/* Boot * image */
+		.name = "boot",			/* Boot image */
 		.size_kb = bytes_to_kb(10 * SZ_1M)
 	}, {
 		.name = "recovery",		/* Recovery Image */
