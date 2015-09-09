@@ -38,7 +38,7 @@ static struct fbt_partition {
 		.size_kb = bytes_to_kb(SZ_64K)
 	}, {
 		.name = "boot",			/* Boot image */
-		.size_kb = bytes_to_kb(10 * SZ_1M)
+		.size_kb = bytes_to_kb(16 * SZ_1M)
 	}, {
 		.name = "recovery",		/* Recovery Image */
 		.size_kb = bytes_to_kb(12 * SZ_1M)
