@@ -2,6 +2,7 @@
 #include <config.h>
 #include <io.h>
 #include <stdint.h>
+#include <asm/arch/ddr_define.h>
 
 /* io defines */
 //#define wr_reg(addr, data)	(*((volatile uint32_t *)addr))=(uint32_t)(uint64_t)(data)
@@ -24,9 +25,6 @@ void ddr_print_info(void);
 void ddr_test(void);
 void ddr_pre_init(void);
 void ddr_debug(void);
-
-#define CFG_DDR_BASE_ADDR					0X0
-#define CFG_DDR_START_OFFSET				0X01000000 //SKIP 16MB
 
 /* pctl status */
 #define  UPCTL_STAT_MASK        (7)
@@ -67,34 +65,6 @@ void ddr_debug(void);
 #define PUB_PIR_DCALBYP						(1<<29)
 #define PUB_PIR_ZCALBYP						(1<<30)
 #define PUB_PIR_INITBYP						(1<<31)
-
-/* ddr type defines */
-#define CONFIG_DDR_TYPE_DDR3				0
-#define CONFIG_DDR_TYPE_LPDDR2				1
-#define CONFIG_DDR_TYPE_LPDDR3				2
-
-/* ddr channel defines */
-#define CONFIG_DDR0_RANK0_ONLY				1
-#define CONFIG_DDR0_RANK01_SAME				2
-#define CONFIG_DDR0_RANK01_DIFF				3
-#define CONFIG_DDR01_SHARE_AC				4
-#define CONFIG_DDR0_ONLY_16BIT				5
-
-/* ddr type identifier */
-#define CONFIG_DDR_TIMMING_LPDDR2			0x02
-#define CONFIG_DDR_TIMMING_LPDDR3			0x03
-#define CONFIG_DDR_TIMMING_DDR3_7			0x07
-#define CONFIG_DDR_TIMMING_DDR3_9			0x09
-#define CONFIG_DDR_TIMMING_DDR3_11			0x0B
-#define CONFIG_DDR_TIMMING_DDR3_12			0x0C
-#define CONFIG_DDR_TIMMING_DDR3_13			0x0D
-#define CONFIG_DDR_TIMMING_DDR3_14			0x0E
-
-#define DDR_USE_1_CHANNEL(chl_set)	((chl_set == CONFIG_DDR0_RANK01_SAME) || \
-				(chl_set == CONFIG_DDR0_ONLY_16BIT) || \
-				(chl_set == CONFIG_DDR0_RANK0_ONLY))
-#define DDR_USE_2_CHANNEL(chl_set)	((chl_set == CONFIG_DDR01_SHARE_AC) || \
-					(chl_set == CONFIG_DDR0_RANK01_DIFF))
 
 /* PHY initialize register (PIR) */
 #define DDR_PIR ((PUB_PIR_ZCAL) 		|\

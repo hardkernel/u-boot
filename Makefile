@@ -718,7 +718,7 @@ endif
 
 # Always append ALL so that arch config.mk's can add custom ones
 ALL-y += u-boot.srec u-boot.bin System.map binary_size_check
-ALL-y += u-boot.hex bl2.bin
+ALL-y += u-boot.hex
 ifeq ($(CONFIG_NEED_BL301), y)
 ALL-y += bl301.bin
 endif
@@ -864,35 +864,32 @@ FIP_ARGS += --bl32 $(FIP_FOLDER)/bl32.bin
 endif
 FIP_ARGS += --bl33 $(FIP_FOLDER)/bl33.bin
 
-BL2_BUILD_TYPE := release
-export BL2_BUILD_TYPE
-
 .PHONY: fip.bin
-fip.bin: u-boot.bin u-boot.hex
+ifeq ($(CONFIG_NEED_BL301), y)
+fip.bin: tools prepare acs.bin bl301.bin
+else
+fip.bin: tools prepare acs.bin
+endif
 	$(Q)cp u-boot.bin $(srctree)/fip/bl33.bin
 	$(Q)$(FIP_FOLDER)/fip_create ${FIP_ARGS} $(FIP_FOLDER)/fip.bin
 	$(Q)$(FIP_FOLDER)/fip_create --dump $(FIP_FOLDER)/fip.bin
 
-.PHONY : bl2.bin
-bl2.bin: tools prepare
-	$(Q)$(MAKE) -C $(srctree)/$(CPUDIR)/common/firmware all FIRMWARE=$@
-	$(Q)cp $(buildtree)/firmware/${SOC}/${BL2_BUILD_TYPE}/bl2.bin bl2.bin
-	$(Q)cp bl2.bin $(srctree)/fip/bl2.bin
-
 ifeq ($(CONFIG_NEED_BL301), y)
 .PHONY : bl301.bin
-bl301.bin: tools prepare
+bl301.bin: tools prepare acs.bin
 	$(Q)$(MAKE) -C $(srctree)/$(CPUDIR)/${SOC}/firmware/scp_task
 	$(Q)cp $(buildtree)/scp_task/bl301.bin $(srctree)/fip/bl301.bin -f
 endif
 
+.PHONY : acs.bin
+acs.bin: tools prepare u-boot.bin
+	$(Q)$(MAKE) -C $(srctree)/$(CPUDIR)/${SOC}/firmware/acs all FIRMWARE=$@
+	$(Q)cp $(buildtree)/board/${BOARDDIR}/firmware/acs.bin $(srctree)/fip/acs.bin -f
+
 .PHONY : boot.bin
-ifeq ($(CONFIG_NEED_BL301), y)
-boot.bin: bl2.bin bl301.bin fip.bin
-else
-boot.bin: bl2.bin fip.bin
-endif
-	$(Q)$(FIP_FOLDER)/bl2_fix.sh $(FIP_FOLDER)/bl2.bin $(FIP_FOLDER)/zero_tmp $(FIP_FOLDER)/bl2_new.bin
+boot.bin: fip.bin
+	$(Q)$(FIP_FOLDER)/acs_tool.pyc $(FIP_FOLDER)/bl2.bin $(FIP_FOLDER)/bl2_acs.bin $(FIP_FOLDER)/acs.bin 0
+	$(Q)$(FIP_FOLDER)/bl2_fix.sh $(FIP_FOLDER)/bl2_acs.bin $(FIP_FOLDER)/zero_tmp $(FIP_FOLDER)/bl2_new.bin
 	$(Q)cat $(FIP_FOLDER)/bl2_new.bin  $(FIP_FOLDER)/fip.bin > $(FIP_FOLDER)/boot_new.bin
 	$(Q)$(FIP_FOLDER)/aml_encrypt_$(SOC) --bootsig --input $(FIP_FOLDER)/boot_new.bin --output $(FIP_FOLDER)/u-boot.bin
 ifeq ($(CONFIG_AML_CRYPTO_UBOOT), y)
@@ -1405,18 +1402,18 @@ distclean: mrproper
 		\( -name '*.orig' -o -name '*.rej' -o -name '*~' \
 		-o -name '*.bak' -o -name '#*#' -o -name '.*.orig' \
 		-o -name '.*.rej' -o -name '*%' -o -name 'core' \
-		-o -name '*.pyc' -o -name '*.o' \) \
+		#-o -name '*.pyc'\
+		-o -name '*.o' \) \
 		-type f -print | xargs rm -f
 	@rm -f boards.cfg
 	@rm -rf $(buildtree)/*
-	@rm -f $(srctree)/fip/bl2.bin
+	@rm -f $(srctree)/fip/acs.bin
+	@rm -f $(srctree)/fip/bl2_acs.bin
 	@rm -f $(srctree)/fip/bl301.bin
 	@rm -f $(srctree)/fip/bl33.bin
 	@rm -f $(srctree)/fip/fip.bin
-	@rm -f $(srctree)/fip/bl2_fix.bin
 	@rm -f $(srctree)/fip/boot.bin
 	@rm -f $(srctree)/fip/boot_sd.bin
-	@rm -f $(srctree)/fip/bl2.bin.pkg
 	@rm -f $(srctree)/fip/u-boot.bin
 	@rm -f $(srctree)/fip/u-boot.bin.*
 

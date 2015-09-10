@@ -18,6 +18,9 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
+#include <asm/arch/timing.h>
+#include <asm/arch/ddr_define.h>
+
 /* DDR freq range */
 #define CONFIG_DDR_CLK_LOW  375
 #define CONFIG_DDR_CLK_HIGH 1500
@@ -95,7 +98,7 @@
  *     13-13-13: CONFIG_DDR_CLK range  933~1066
  *     14-14-14: CONFIG_DDR_CLK range 1066~1200
  */
-static ddr_timing_t __ddr_timming[] = {
+ddr_timing_t __ddr_timming[] = {
 	//ddr3_7_7_7
 	{
 		.identifier				= CONFIG_DDR_TIMMING_DDR3_7,
@@ -282,7 +285,7 @@ static ddr_timing_t __ddr_timming[] = {
 	}
 };
 
-static ddr_set_t __ddr_setting = {
+ddr_set_t __ddr_setting = {
 	/* common and function defines */
 	.ddr_channel_set		= CONFIG_DDR_CHANNEL_SET,
 	.ddr_type				= CONFIG_DDR_TYPE,
