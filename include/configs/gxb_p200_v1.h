@@ -204,7 +204,6 @@
             "run init_display;"\
             "run storeargs;"\
             "run upgrade_key;" \
-            "run irremote_update;"\
             "run switch_bootmode;"
 #define CONFIG_BOOTCOMMAND "run storeboot"
 
