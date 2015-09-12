@@ -824,7 +824,10 @@ int optimus_storage_init(int toErase)
                         DWN_ERR("Fail in fdt check header\n");
                         return __LINE__;
                 }
-                setenv("dtb_mem_addr", simple_itoa(fdtAddr));
+                /*setenv("dtb_mem_addr", simple_itoa(fdtAddr));*/
+                char _cmd[64];
+                sprintf(_cmd, "setenv dtb_mem_addr 0x%lx", fdtAddr);//itoa is decimal, not mistake if others specify 16 in strtoul
+                run_command(_cmd, 0);
         }
     }
 
@@ -1319,11 +1322,42 @@ int optimus_burn_complete(const int choice)
     return rc;
 }
 
-#if ROM_BOOT_SKIP_BOOT_ENABLED
-int optimus_enable_romboot_skip_boot(void)
+static int optimus_enable_romboot_skip_boot(const char* extBootDev)
 {
+    if (!strcmp("usb", extBootDev))
+    {
+#if ROM_BOOT_SKIP_BOOT_ENABLED_4_USB
         set_usb_boot_function(FORCE_USB_BOOT);
+#endif// #if ROM_BOOT_SKIP_BOOT_ENABLED_4_USB
+    }
 
-        return 0;
+    if (!strcmp("sdc", extBootDev))
+    {
+#if ROM_BOOT_SKIP_BOOT_ENABLED_4_SDC
+#error "undefined yet"
+#endif// #if ROM_BOOT_SKIP_BOOT_ENABLED_4_SDC
+    }
+
+    return 0;
 }
-#endif// #if ROM_BOOT_SKIP_BOOT_ENABLED
+
+//I assume that store_inited yet when "bootloader_is_old"!!!!
+int optimus_erase_bootloader(const char* extBootDev)
+{
+    if (!strcmp("usb", extBootDev))
+    {
+#if ROM_BOOT_SKIP_BOOT_ENABLED_4_USB
+    return optimus_enable_romboot_skip_boot("usb");
+#endif// #if ROM_BOOT_SKIP_BOOT_ENABLED_4_USB
+    }
+
+    if (!strcmp("sdc", extBootDev))
+    {
+#if ROM_BOOT_SKIP_BOOT_ENABLED_4_SDC
+    return optimus_enable_romboot_skip_boot("sdc");
+#endif// #if ROM_BOOT_SKIP_BOOT_ENABLED_4_SDC
+    }
+
+    return store_erase_ops((u8*)"boot", 0, 0, 0);
+}
+

@@ -72,7 +72,7 @@ static int do_opt_keysburn_probe(cmd_tbl_t *cmdtp, int flag, int argc, char * co
 
                 if (!_mmcprobe)
                 {
-                        rc = run_command("mmcinfo 0", 0);
+                        rc = run_command("mmcinfo", 0);
                         if (rc) {
                                 _AML_KEY_ERR("failed: in mmcinfo\n");
                                 return __LINE__;
@@ -209,7 +209,7 @@ int optimus_keysburn_onekey(const char* keyName, u8* keyVal, unsigned keyValLen)
         wrLen = v2_key_burn(keyName, keyVal, keyValLen, _errInfo);
         DWN_MSG("writeLen=====%d\n", wrLen);
         rc = wrLen != keyValLen;
-        _AML_KEY_ERR("%s in burn key[%s]\n", rc ? "failed" : "success", keyName);
+        DWN_MSG("%s in burn key[%s]\n", rc ? "failed" : "success", keyName);
 
         return rc;
 }

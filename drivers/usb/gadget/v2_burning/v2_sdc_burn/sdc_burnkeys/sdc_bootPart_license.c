@@ -31,7 +31,7 @@ int optimus_sdc_bootPart_lic_download(void)
         int rc = 0;
 
 //1, Read from _OPT_BOOT_PART_LIC_INFO_LOADADDR
-        rc = run_command("mmcinfo 0", 0);
+        rc = run_command("mmcinfo", 0);
         if (rc) {
                 DWN_ERR("Fail to init external sdcard\n");
                 return __LINE__;
@@ -108,7 +108,7 @@ int optimus_sdc_bootPart_lic_upload(void)
                 return __LINE__;
         }
 
-        rc = run_command("mmcinfo 0", 0);
+        rc = run_command("mmcinfo", 0);
         if (rc) {
                 DWN_ERR("Fail to init external sdcard\n");
                 return __LINE__;
@@ -192,7 +192,7 @@ int optimus_sdc_bootPart_lic_update_key_inf(const char* keyName, unsigned char* 
         //3, find the item and return the count, return 0 if not found
         for(itemIndex = 0; itemIndex < itemCnt; ++itemIndex,
                         prevItemInf     = pBootPartKeyItemInf,
-                        pBootPartKeyItemInf = (BootPartKeyInf_Item_t*)(pBootPartKeyItemInf->itemSz + (unsigned)pBootPartKeyItemInf))
+                        pBootPartKeyItemInf = (BootPartKeyInf_Item_t*)(pBootPartKeyItemInf->itemSz + (unsigned long)pBootPartKeyItemInf))
         {
                 const unsigned char* theKeyName = pBootPartKeyItemInf->keyName;
 
@@ -214,7 +214,7 @@ int optimus_sdc_bootPart_lic_update_key_inf(const char* keyName, unsigned char* 
         }
         if (prevItemInf)
         {
-                prevItemInf->nextItemInfOffset = (unsigned)pBootPartKeyItemInf - _OPT_BOOT_PART_LIC_INFO_LOADADDR;
+                prevItemInf->nextItemInfOffset = (unsigned long)pBootPartKeyItemInf - _OPT_BOOT_PART_LIC_INFO_LOADADDR;
         }
 
         if (itemIndex != itemCnt) {

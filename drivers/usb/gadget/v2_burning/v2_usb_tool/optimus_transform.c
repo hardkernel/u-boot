@@ -330,23 +330,6 @@ int set_low_power_for_usb_burn(int arg, char* buff)
     return 0;
 }
 
-//I assume that store_inited yet when "bootloader_is_old"!!!!
-int optimus_erase_bootloader(char* info)
-{
-    int ret = 0;
-
-#if ROM_BOOT_SKIP_BOOT_ENABLED
-    optimus_enable_romboot_skip_boot();
-#else
-    if (SPI_EMMC_FLAG == device_boot_flag || SPI_NAND_FLAG == device_boot_flag) {
-        run_command("sf probe 2", 0);
-    }
-    ret = store_erase_ops((u8*)"boot", 0, 0, 0);
-#endif// #if ROM_BOOT_SKIP_BOOT_ENABLED
-
-    return ret;
-}
-
 int cb_4_dis_connect_intr(void)
 {
     if (optimus_burn_complete(OPTIMUS_BURN_COMPLETE__QUERY))
@@ -435,7 +418,7 @@ int optimus_working (const char *cmd, char* buff)
         }
         else if(!strcmp(optCmd, "erase_bootloader"))
         {
-                ret = optimus_erase_bootloader(buff);
+                ret = optimus_erase_bootloader("usb");
 
                 if (ret)sprintf(buff, "Failed to erase bootloader\n") ;
         }

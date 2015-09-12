@@ -75,7 +75,10 @@ int optimus_sdc_burn_switch_to_extmmc(void)
     return 0;
 }
 #else
-#define optimus_sdc_burn_switch_to_extmmc(arg ...)   0
+int optimus_sdc_burn_switch_to_extmmc(void)
+{
+        return 0;
+}
 #endif//
 
 static int v2_ext_mmc_read(__u32 startblock, __u32 nBlk, __u8 * bufptr)
@@ -1217,6 +1220,12 @@ cluster1 :   |__######|
                                 return 0;
                         }
                 }
+        }
+
+        if ( (unsigned long)buffer  & ( SECTOR_SIZE - 1 ) )
+        {
+                FAT_ERROR("buffer[0x%p] not align sector\n", buffer);
+                return 0;
         }
 
         FAT_DPRINT("while actsize=0x%lx, buffer=0x%p\n", actsize, buffer);

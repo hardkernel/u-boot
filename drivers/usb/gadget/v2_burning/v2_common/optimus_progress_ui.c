@@ -54,16 +54,21 @@ static int optimus_prepare_upgrading_bmps(HIMAGE hImg)
         HIMAGEITEM hItem = NULL;
 
         DWN_MSG("Use upgrade res in pkg\n");
-        hItem = image_item_open(hImg, "PARTITION", "logo");
+        hItem = image_item_open(hImg, "logo", "aml_sdc_burn");
+        DWN_MSG("logo for sdc UPGRADE[%s]\n", hItem ? "aml_sdc_burn" : "PARTITION");
         if (!hItem) {
-            DWN_ERR("Fail to get logo.PARTITION for display logo\n");
-            return __LINE__;
+            hItem = image_item_open(hImg, "PARTITION", "logo");
+        }
+        if (!hItem) {
+                DWN_ERR("Fail to get logo.PARTITION for display logo\n");
+                return __LINE__;
         }
 
         imgItemSz = (unsigned)image_item_get_size(hItem);
         const unsigned itemSzNotAligned = image_item_get_first_cluster_size(hImg, hItem);
-        if (itemSzNotAligned & 0x7) {//Not Aligned 8bytes/64bits, mmc dma read will failed
+        if (itemSzNotAligned /*& 0x7*/) {//Not Aligned 8bytes/64bits, mmc dma read will failed
             DWN_MSG("align 4 mmc read...\t");//Assert Make 'DDR' buffer addr align 8
+            bmpsLoadAddr += image_get_cluster_size(hImg);
             bmpsLoadAddr -= itemSzNotAligned;
             sprintf(env_buf, "unpackimg 0x%p", bmpsLoadAddr);
         }

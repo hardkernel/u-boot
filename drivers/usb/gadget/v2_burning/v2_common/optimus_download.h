@@ -152,7 +152,7 @@ int optimus_update_progress(const unsigned thisBurnSz);
 #define DWN_HERE()    printf("f(%s)L%d\n", __FILE__, __LINE__)
 
 //common internal function
-int optimus_erase_bootloader(char* info);
+int optimus_erase_bootloader(const char* extBootDev);
 void optimus_reset(const int cfgFlag);
 int optimus_storage_init(int toErase);//init dest burning staorge
 int optimus_storage_exit(void);
@@ -179,12 +179,8 @@ int optimus_work_mode_set(int workmode);
 #define OPTIMUS_BURN_COMPLETE__REBOOT_UPDATE                (0xeb)
 #define OPTIMUS_BURN_COMPLETE__QUERY                        (0xe1)
 
-#if (MESON_CPU_TYPE >= MESON_CPU_TYPE_MESON8)
-#define ROM_BOOT_SKIP_BOOT_ENABLED      1//skip boot function is supported by romboot
-#else
-#define ROM_BOOT_SKIP_BOOT_ENABLED      0
-#endif// #if (MESON_CPU_TYPE >= MESON_CPU_TYPE_MESON8)
-int optimus_enable_romboot_skip_boot(void);
+#define ROM_BOOT_SKIP_BOOT_ENABLED_4_USB      1//skip boot to usb supported by romboot
+#define ROM_BOOT_SKIP_BOOT_ENABLED_4_SDC      0//skip boot sdcard supported by romboot
 
 //ENV for auto jump into producing
 #define _ENV_TIME_OUT_TO_AUTO_BURN "identifyWaitTime"

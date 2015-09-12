@@ -331,10 +331,10 @@ int optimus_sdc_burn_dtb_load(HIMAGE hImg)
 
 #if 1
     const unsigned itemSzNotAligned = image_item_get_first_cluster_size(hImg, hImgItem);
-    if (itemSzNotAligned & 0x7) {//Not Aligned 8bytes/64bits, mmc dma read will failed
-        DWN_MSG("align 64 for mmc read...\t");//Assert Make 'DDR' buffer addr align 8
-        dtbTransferBuf -= itemSzNotAligned;
-        partBaseOffset -= itemSzNotAligned;
+    if (itemSzNotAligned /*& 0x7*/) {//Not Aligned 8bytes/64bits, mmc dma read will failed
+        DWN_MSG("align 4 mmc read...\t");//Assert Make 'DDR' buffer addr align 8
+        dtbTransferBuf += image_get_cluster_size(hImg) - itemSzNotAligned;
+        partBaseOffset += image_get_cluster_size(hImg) - itemSzNotAligned;
     }
 #endif
 
@@ -384,6 +384,12 @@ static int sdc_burn_get_user_key_names(HIMAGE hImg, const char* **pKeysName, uns
                 image_item_close(hImgItem); return __LINE__;
         }
 
+        const unsigned itemSzNotAligned = image_item_get_first_cluster_size(hImg, hImgItem);
+        if (itemSzNotAligned /*& 0x7*/) {//Not Aligned 8bytes/64bits, mmc dma read will failed
+            DWN_MSG("align 4 mmc read...\t");//Assert Make 'DDR' buffer addr align 8
+            thisReadBuf += image_get_cluster_size(hImg);
+            thisReadBuf -= itemSzNotAligned;
+        }
         rc = image_item_read(hImg, hImgItem, thisReadBuf, itemSz);
         if (rc) {
                 DWN_ERR("Failed at item read, rc = %d\n", rc);
@@ -459,7 +465,7 @@ static int sdc_burn_aml_keys(HIMAGE hImg, const int keyOverWrite)
                 unsigned seed = 0;
                 char cmd[96];
 
-                random32 = seed = get_utimer(0) + 12345;//make it random
+                random32 = seed = get_timer(0) + 12345;//FIXME:make it random
                 /*random32 = random_u32(seed);*/
                 DWN_MSG("random value is 0x%x\n", random32);
                 sprintf(cmd, "aml_key_burn init 0x%x", random32);
@@ -496,7 +502,7 @@ static int sdc_burn_aml_keys(HIMAGE hImg, const int keyOverWrite)
                 rc = sdc_check_key_need_to_burn(keyName, keyOverWrite);
                 if (rc < 0) {
                         DWN_ERR("Fail when when check stauts for key(%s)\n", keyName);
-                        return __LINE__;
+                        /*return __LINE__;*/
                 }
                 if (!rc) continue;//not need to burn this key
 
@@ -571,7 +577,7 @@ int optimus_burn_with_cfg_file(const char* cfgFile)
         if (is_bootloader_old())
         {
             DWN_MSG("To erase OLD bootloader !\n");
-            ret = optimus_erase_bootloader(NULL);
+            ret = optimus_erase_bootloader("sdc");
             if (ret) {
                 DWN_ERR("Fail to erase bootloader\n");
                 ret = __LINE__; goto _finish;
@@ -617,8 +623,8 @@ int optimus_burn_with_cfg_file(const char* cfgFile)
 
     if (video_res_prepare_for_upgrade(hImg)) {
         DWN_ERR("Fail when prepare bm res or init video for upgrade\n");
-        /*image_close(hImg);*/
-        /*return __LINE__;*/
+        image_close(hImg);
+        return __LINE__;
     }
     show_logo_to_report_burning();
 

@@ -430,13 +430,14 @@ static int update_lic_for_fmt_hdcp2rx(const char* keyName, const char* licenseNa
 
 int optimus_sdc_keysprovider_init(void)
 {
-        return optimus_sdc_bootPart_lic_download();
+        /*return optimus_sdc_bootPart_lic_download();*/
+        return 0;
 }
 
 int optimus_sdc_keysprovider_exit(void)
 {
-
-        return optimus_sdc_bootPart_lic_upload();
+        /*return optimus_sdc_bootPart_lic_upload();*/
+        return 0;
 }
 
 //check whether the key license is existed and supported
