@@ -474,11 +474,18 @@ int get_last_reserve_block(struct amlnand_chip *aml_chip)
 	struct chip_ops_para  *ops_para = &aml_chip->ops_para;
 	struct nand_flash *flash = &aml_chip->flash;
 
-	u32 offset, start_blk, total_blk, blk_addr, tmp_blk, pages_per_blk;
+	u32 offset, start_blk, blk_addr, tmp_blk, pages_per_blk;
 	u8 phys_erase_shift, phys_page_shift;
 	int  ret = 0;
 	u32 tmp_value;
-
+	static u32 total_blk = 0, scan_flag = 0;
+	if ((total_blk > RESERVED_BLOCK_CNT) && (scan_flag == 1)) {
+		aml_nand_msg("total_blk:%d",total_blk);
+		return total_blk;
+	}
+	if (aml_chip->nand_bbtinfo.arg_valid) {
+		scan_flag = 1;
+	}
 	offset = (1024 * flash->pagesize);
 
 	phys_erase_shift = ffs(flash->blocksize) - 1;
@@ -1877,7 +1884,11 @@ int amlnand_check_info_by_name(struct amlnand_chip *aml_chip,
 
 	start_blk = (offset >> phys_erase_shift);
 	tmp_blk = start_blk;
+#if 0
 	total_blk = (offset >> phys_erase_shift) + RESERVED_BLOCK_CNT;
+#else
+	total_blk = get_last_reserve_block(aml_chip);
+#endif
 	ENV_NAND_LINE
 #if 1
 	for (; start_blk < total_blk; start_blk++) {
@@ -3356,6 +3367,12 @@ int  bbt_valid_ops(struct amlnand_chip *aml_chip)
 {
 	int  ret = 0;
 	ENV_NAND_LINE
+	ret = amlnand_info_init(aml_chip, (unsigned char *)&(aml_chip->shipped_bbtinfo),(unsigned char *)(aml_chip->shipped_bbt_ptr),(unsigned char *)SHIPPED_BBT_HEAD_MAGIC, sizeof(struct shipped_bbt));
+	if (ret < 0) {
+		aml_nand_msg("Waring:Serch fbbt faile:%d",ret);
+		//goto exit_error0;
+	}
+
 	PRINT("%s\n", __func__);
 	ret = amlnand_info_init(aml_chip, (unsigned char *)&(aml_chip->config_msg),(unsigned char *)(aml_chip->config_ptr),(unsigned char *)CONFIG_HEAD_MAGIC, sizeof(struct nand_config));
 	if (ret < 0) {
