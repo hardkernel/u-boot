@@ -247,6 +247,7 @@
 							   kernel reserve */
 
 /* ODROID reboot reasons */
+#define ODROID_REBOOT_CMD_UNKNOWN	-1
 #define ODROID_REBOOT_CMD_COLD		0x0
 #define ODROID_REBOOT_CMD_NORMAL	0x1
 #define ODROID_REBOOT_CMD_FASTBOOT	0x5

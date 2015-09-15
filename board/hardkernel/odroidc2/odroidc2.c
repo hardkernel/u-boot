@@ -27,6 +27,8 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
+extern int board_get_recovery_message(void);
+
 #define GPIO_BLUELED		132
 #define GPIO_USB_PWREN		123
 #define GPIO_OTG_PWREN		124
@@ -52,9 +54,24 @@ void secondary_boot_func(void)
 	 */
 }
 
+
+/*
+ * Discover the boot reason:
+ *   1. check if the board is started with Android Self-Installation.
+ *   2. if rebooted by 'reboot' command in previous kernel boot.
+ *   3. Otherwise returns normal boot response by power cycle.
+ */
 int board_reboot_reason(void)
 {
-	return (readl(AO_SEC_SD_CFG15) >> 12) & 0xf;
+	static int __reboot_reason = ODROID_REBOOT_CMD_UNKNOWN;
+
+	if (ODROID_REBOOT_CMD_UNKNOWN == __reboot_reason) {
+		__reboot_reason = board_get_recovery_message();
+		if (ODROID_REBOOT_CMD_UNKNOWN == __reboot_reason)
+			__reboot_reason = (readl(AO_SEC_SD_CFG15) >> 12) & 0xf;
+	}
+
+	return __reboot_reason;
 }
 
 #if CONFIG_AML_SD_EMMC
@@ -252,10 +269,11 @@ static void board_run_recovery(void)
 #ifdef CONFIG_BOARD_LATE_INIT
 int board_late_init(void)
 {
-	int reboot_reason = board_reboot_reason();
+	int reboot_reason;
 
 	board_partition_init();
 
+	reboot_reason = board_reboot_reason();
 	if (ODROID_REBOOT_CMD_FASTBOOT == reboot_reason)
 		board_run_fastboot();
 	else if (ODROID_REBOOT_CMD_RECOVERY == reboot_reason)
