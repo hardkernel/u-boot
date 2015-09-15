@@ -245,4 +245,11 @@
 #define CONFIG_SYS_LONGHELP		1
 #define CONFIG_SYS_MEM_TOP_HIDE		0x08000000	/* Hide 128MB for
 							   kernel reserve */
+
+/* ODROID reboot reasons */
+#define ODROID_REBOOT_CMD_COLD		0x0
+#define ODROID_REBOOT_CMD_NORMAL	0x1
+#define ODROID_REBOOT_CMD_FASTBOOT	0x5
+#define ODROID_REBOOT_CMD_RECOVERY	0x6
+
 #endif
