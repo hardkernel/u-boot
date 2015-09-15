@@ -16,20 +16,21 @@
 #define kbytes_to_lba(x)	bytes_to_lba(x * SZ_1K)
 #define bytes_to_kb(x)		((size_t)x / SZ_1K)
 
+#define SZ_BOOTLOADER		bytes_to_kb(720 * SZ_1K)
+#define SZ_BOOTMESSAGE		bytes_to_kb(4 * SZ_1K)
+
 static struct fbt_partition {
 	const char *name;
 	unsigned int size_kb;
 } partitions[] = {
 	{
 		.name = "bootloader",
-		.size_kb = bytes_to_kb(720 * SZ_1K),
+		.size_kb = SZ_BOOTLOADER - SZ_BOOTMESSAGE
 	},
-#if 0	/* FIXME: 'bcb' partition is required for Android recovery. */
 	{
 		.name = "bcb",			/* Bootloader control block */
-		.size_kb = bytes_to_kb(SZ_4K)
+		.size_kb = SZ_BOOTMESSAGE
 	},
-#endif
 	{
 		.name = "env",			/* "environment" */
 		.size_kb = bytes_to_kb(CONFIG_ENV_SIZE)
