@@ -9,7 +9,7 @@ void ee_gate_off(void)
 {
 	printf("ee_gate_off ...\n");
 
-	int secureboot = readl(SECUREBOOT_FLAG_ADDR)&(1<<5);
+/*	int secureboot = readl(SECUREBOOT_FLAG_ADDR)&(1<<5);*/
 
 #ifdef CONFIG_AML_CVBS
 	unsigned int cvbs_opened = 0;
@@ -221,13 +221,19 @@ void ee_gate_off(void)
 	CLK_GATE_OFF(ENC480P);
 
 	CLK_GATE_OFF(DEMUX);
-
+/*
+*	EFUSE/BLK_MOV clock gate must be on,
+	kernel storage ops depend on them.
+	it can be reference PD#112732
+*/
+/*
 	if (secureboot) {
 		printf("secure boot ignore [ BLK_MOV, efuse ] clk gate\n");
 	} else {
 		CLK_GATE_OFF(EFUSE);
 		CLK_GATE_OFF(BLK_MOV);
 	}
+*/
 }
 
 void ee_gate_on(void)
