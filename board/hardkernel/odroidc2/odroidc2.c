@@ -52,6 +52,11 @@ void secondary_boot_func(void)
 	 */
 }
 
+int board_reboot_reason(void)
+{
+	return (readl(AO_SEC_SD_CFG15) >> 12) & 0xf;
+}
+
 #if CONFIG_AML_SD_EMMC
 #include <mmc.h>
 #include <asm/arch/sd_emmc.h>
