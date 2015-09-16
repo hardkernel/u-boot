@@ -240,7 +240,17 @@ int board_early_init_f(void)
 #ifdef CONFIG_BOARD_LATE_INIT
 int board_late_init(void)
 {
+	int reboot_reason = board_reboot_reason();
+
 	board_partition_init();
+
+	if (ODROID_REBOOT_CMD_FASTBOOT == reboot_reason) {
+		run_command("fastboot", 0);
+	} else if (ODROID_REBOOT_CMD_RECOVERY == reboot_reason) {
+		run_command("movi read dtb 0 ${dtb_mem_addr}", 0);
+		run_command("movi read recovery 0 ${loadaddr}", 0);
+		run_command("bootm ${load_addr}", 0);
+	}
 
 	return 0;
 }
