@@ -237,6 +237,18 @@ int board_early_init_f(void)
 }
 #endif
 
+static void board_run_fastboot(void)
+{
+	run_command("fastboot", 0);
+}
+
+static void board_run_recovery(void)
+{
+	run_command("movi read dtb 0 ${dtb_mem_addr}", 0);
+	run_command("movi read recovery 0 ${loadaddr}", 0);
+	run_command("bootm ${load_addr}", 0);
+}
+
 #ifdef CONFIG_BOARD_LATE_INIT
 int board_late_init(void)
 {
@@ -244,13 +256,10 @@ int board_late_init(void)
 
 	board_partition_init();
 
-	if (ODROID_REBOOT_CMD_FASTBOOT == reboot_reason) {
-		run_command("fastboot", 0);
-	} else if (ODROID_REBOOT_CMD_RECOVERY == reboot_reason) {
-		run_command("movi read dtb 0 ${dtb_mem_addr}", 0);
-		run_command("movi read recovery 0 ${loadaddr}", 0);
-		run_command("bootm ${load_addr}", 0);
-	}
+	if (ODROID_REBOOT_CMD_FASTBOOT == reboot_reason)
+		board_run_fastboot();
+	else if (ODROID_REBOOT_CMD_RECOVERY == reboot_reason)
+		board_run_recovery();
 
 	return 0;
 }
