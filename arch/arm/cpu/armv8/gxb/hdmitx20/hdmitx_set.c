@@ -110,6 +110,50 @@ static int hdmitx_get_hpd_state(void)
 	return st;
 }
 
+static void hdmitx_hw_init(void)
+{
+	static int hw_init_flag;
+
+	if (hw_init_flag)
+		return;
+	else
+		hw_init_flag = 1;
+
+	/* Enable clocks and bring out of reset */
+
+	/* Enable hdmitx_sys_clk */
+	/* .clk0 ( cts_oscin_clk ), */
+	/* .clk1 ( fclk_div4 ), */
+	/* .clk2 ( fclk_div3 ), */
+	/* .clk3 ( fclk_div5 ), */
+	hd_set_reg_bits(P_HHI_HDMI_CLK_CNTL, 0x0100, 0, 16);
+
+	/* Enable clk81_hdmitx_pclk */
+	hd_set_reg_bits(P_HHI_GCLK_MPEG2, 1, 4, 1);
+
+	/* wire	wr_enable = control[3]; */
+	/* wire	fifo_enable = control[2]; */
+	/* assign phy_clk_en = control[1]; */
+	/* Enable tmds_clk */
+	/* Bring HDMITX MEM output of power down */
+	hd_set_reg_bits(P_HHI_MEM_PD_REG0, 0, 8, 8);
+	/* reset HDMITX APB & TX & PHY */
+	hd_set_reg_bits(P_RESET0_REGISTER, 1, 19, 1);
+	hd_set_reg_bits(P_RESET2_REGISTER, 1, 15, 1);
+	hd_set_reg_bits(P_RESET2_REGISTER, 1,  2, 1);
+	// Enable APB3 fail on error
+	hd_set_reg_bits(P_HDMITX_CTRL_PORT, 1, 15, 1);
+	hd_set_reg_bits((P_HDMITX_CTRL_PORT + 0x10), 1, 15, 1);
+	/* Bring out of reset */
+	hdmitx_wr_reg(HDMITX_TOP_SW_RESET,  0);
+	_udelay(200);
+	/* Enable internal pixclk, tmds_clk, spdif_clk, i2s_clk, cecclk */
+	hdmitx_wr_reg(HDMITX_TOP_CLK_CNTL,  0x0000003f);
+	hdmitx_wr_reg(HDMITX_DWC_MC_LOCKONCLOCK, 0xff);
+
+	hdmitx_wr_reg(HDMITX_DWC_MC_CLKDIS, 0x40);
+}
+
 /*
  * Note: read 8 Bytes of EDID data every time
  */
@@ -142,7 +186,15 @@ static int read_edid_8bytes(unsigned char *rx_edid, unsigned char addr)
 
 static void ddc_init(void)
 {
+	static int ddc_init_flag;
 	unsigned int data32 = 0;
+
+
+	if (ddc_init_flag)
+		return;
+	else
+		ddc_init_flag = 1;
+
 //--------------------------------------------------------------------------
 // Configure E-DDC interface
 //--------------------------------------------------------------------------
@@ -165,15 +217,15 @@ static void ddc_init(void)
 	data32 |= (0    << 3);  // [  3] i2c_fast_mode: 0=standard mode; 1=fast mode.
 	hdmitx_wr_reg(HDMITX_DWC_I2CM_DIV,      data32);
 
-	hdmitx_wr_reg(HDMITX_DWC_I2CM_SS_SCL_HCNT_1,    0);
-	hdmitx_wr_reg(HDMITX_DWC_I2CM_SS_SCL_HCNT_0,    0x60);
-	hdmitx_wr_reg(HDMITX_DWC_I2CM_SS_SCL_LCNT_1,    0);
-	hdmitx_wr_reg(HDMITX_DWC_I2CM_SS_SCL_LCNT_0,    0x71);
-	hdmitx_wr_reg(HDMITX_DWC_I2CM_FS_SCL_HCNT_1,    0);
-	hdmitx_wr_reg(HDMITX_DWC_I2CM_FS_SCL_HCNT_0,    0x0f);
-	hdmitx_wr_reg(HDMITX_DWC_I2CM_FS_SCL_LCNT_1,    0);
-	hdmitx_wr_reg(HDMITX_DWC_I2CM_FS_SCL_LCNT_0,    0x20);
-	hdmitx_wr_reg(HDMITX_DWC_I2CM_SDA_HOLD,         0x08);
+	hdmitx_wr_reg(HDMITX_DWC_I2CM_SS_SCL_HCNT_1, 0);
+	hdmitx_wr_reg(HDMITX_DWC_I2CM_SS_SCL_HCNT_0, 0x67);
+	hdmitx_wr_reg(HDMITX_DWC_I2CM_SS_SCL_LCNT_1, 0);
+	hdmitx_wr_reg(HDMITX_DWC_I2CM_SS_SCL_LCNT_0, 0x78);
+	hdmitx_wr_reg(HDMITX_DWC_I2CM_FS_SCL_HCNT_1, 0);
+	hdmitx_wr_reg(HDMITX_DWC_I2CM_FS_SCL_HCNT_0, 0x0f);
+	hdmitx_wr_reg(HDMITX_DWC_I2CM_FS_SCL_LCNT_1, 0);
+	hdmitx_wr_reg(HDMITX_DWC_I2CM_FS_SCL_LCNT_0, 0x20);
+	hdmitx_wr_reg(HDMITX_DWC_I2CM_SDA_HOLD,	0x08);
 
 	data32  = 0;
 	data32 |= (0    << 5);  // [  5] updt_rd_vsyncpoll_en
@@ -188,6 +240,40 @@ static int hdmitx_read_edid(unsigned char *buf, unsigned char addr, unsigned cha
 	if ((addr + size) > 256)
 		return 0;
 	return read_edid_8bytes(buf, addr);
+}
+
+static void scdc_rd_sink(unsigned char adr, unsigned char *val)
+{
+	hdmitx_wr_reg(HDMITX_DWC_I2CM_SLAVE, 0x54);
+	hdmitx_wr_reg(HDMITX_DWC_I2CM_ADDRESS, adr);
+	hdmitx_wr_reg(HDMITX_DWC_I2CM_OPERATION, 1);
+	_udelay(2000);
+	*val = (unsigned char)hdmitx_rd_reg(HDMITX_DWC_I2CM_DATAI);
+}
+
+static void scdc_wr_sink(unsigned char adr, unsigned char val)
+{
+	hdmitx_wr_reg(HDMITX_DWC_I2CM_SLAVE, 0x54);
+	hdmitx_wr_reg(HDMITX_DWC_I2CM_ADDRESS, adr);
+	hdmitx_wr_reg(HDMITX_DWC_I2CM_DATAO, val);
+	hdmitx_wr_reg(HDMITX_DWC_I2CM_OPERATION, 0x10);
+	_udelay(2000);
+}
+
+static void scdc_prepare(void)
+{
+	unsigned char rx_ver = 0;
+
+	scdc_rd_sink(SINK_VER, &rx_ver);
+	if (rx_ver != 1)
+		scdc_rd_sink(SINK_VER, &rx_ver);	/* Recheck */
+	printf("hdmirx version is %s\n", (rx_ver == 1) ? "2.0" : "1.4 or below");
+	if (rx_ver == 1) {
+		scdc_wr_sink(SOURCE_VER, 0x1);
+		scdc_wr_sink(SOURCE_VER, 0x1);
+		scdc_wr_sink(TMDS_CFG, 0x3); /* TMDS 1/40 & Scramble */
+		scdc_wr_sink(TMDS_CFG, 0x3); /* TMDS 1/40 & Scramble */
+	}
 }
 
 static void hdmitx_turnoff(void)
@@ -259,7 +345,18 @@ void hdmi_tx_init(void)
 
 void hdmi_tx_set(struct hdmitx_dev *hdev)
 {
+	hdmitx_hw_init();
 	hdmitx_debug();
+	ddc_init();
+	switch (hdev->vic) {
+	case HDMI_3840x2160p60_16x9:
+	case HDMI_3840x2160p50_16x9:
+		if (hdev->mode420 == 0)
+			scdc_prepare();
+		break;
+	default:
+		break;
+	}
 	hdmitx_set_hw(hdev);
 	hdmitx_debug();
 	return;
@@ -295,50 +392,7 @@ static void config_hdmi20_tx ( enum hdmi_vic vic, struct hdmi_format_para *para,
 
 #define GET_TIMING(name)      (t->name)
 
-	/* Enable clocks and bring out of reset */
-
-	/* Enable hdmitx_sys_clk */
-	/* .clk0 ( cts_oscin_clk ), */
-	/* .clk1 ( fclk_div4 ), */
-	/* .clk2 ( fclk_div3 ), */
-	/* .clk3 ( fclk_div5 ), */
-	hd_set_reg_bits(P_HHI_HDMI_CLK_CNTL, 0x0100, 0, 16);
-
-	/* Enable clk81_hdmitx_pclk */
-	hd_set_reg_bits(P_HHI_GCLK_MPEG2, 1, 4, 1);
-
-	/* wire	wr_enable = control[3]; */
-	/* wire	fifo_enable = control[2]; */
-	/* assign phy_clk_en = control[1]; */
-	/* Enable tmds_clk */
-	/* Bring HDMITX MEM output of power down */
-	hd_set_reg_bits(P_HHI_MEM_PD_REG0, 0, 8, 8);
-	/* reset HDMITX APB & TX & PHY */
-	hd_set_reg_bits(P_RESET0_REGISTER, 1, 19, 1);
-	hd_set_reg_bits(P_RESET2_REGISTER, 1, 15, 1);
-	hd_set_reg_bits(P_RESET2_REGISTER, 1,  2, 1);
-	// Enable APB3 fail on error
-	hd_set_reg_bits(P_HDMITX_CTRL_PORT, 1, 15, 1);
-	hd_set_reg_bits((P_HDMITX_CTRL_PORT + 0x10), 1, 15, 1);
-	/* Bring out of reset */
-	hdmitx_wr_reg(HDMITX_TOP_SW_RESET,  0);
-	_udelay(200);
-	/* Enable internal pixclk, tmds_clk, spdif_clk, i2s_clk, cecclk */
-	hdmitx_wr_reg(HDMITX_TOP_CLK_CNTL,  0x0000003f);
-	hdmitx_wr_reg(HDMITX_DWC_MC_LOCKONCLOCK, 0xff);
-
-/* But keep spdif_clk and i2s_clk disable
- * until later enable by test.c
- */
-	data32  = 0;
-	data32 |= (1 << 6);
-	data32 |= (0 << 5);
-	data32 |= (0 << 4);
-	data32 |= (0 << 3);
-	data32 |= (0 << 2);
-	data32 |= (0 << 1);
-	data32 |= (0 << 0);
-	hdmitx_wr_reg(HDMITX_DWC_MC_CLKDIS, data32);
+	hdmitx_hw_init();
 
 	/* Enable normal output to PHY */
 
