@@ -511,7 +511,7 @@ int get_last_reserve_block(struct amlnand_chip *aml_chip)
 
 		ret = operation->block_isbad(aml_chip);
 		if (ret ==  NAND_BLOCK_FACTORY_BAD) {
-			aml_nand_msg("nand blk %d is shipped bad block ",
+			aml_nand_msg("blk %d is shipped bad block ",
 				total_blk);
 			total_blk++;
 			continue;
@@ -582,7 +582,7 @@ int repair_reserved_bad_block(struct amlnand_chip *aml_chip)
 
 		ret = operation->block_isbad(aml_chip);
 		if (ret ==  NAND_BLOCK_FACTORY_BAD) {
-			aml_nand_msg("nand blk %d is shipped bad block ",
+			aml_nand_msg("blk %d is shipped bad block ",
 				total_blk);
 			total_blk++;
 			continue;
@@ -1905,7 +1905,7 @@ int amlnand_check_info_by_name(struct amlnand_chip *aml_chip,
 		controller->select_chip(controller, ops_para->chipnr);
 		ret = operation->block_isbad(aml_chip);
 		if (ret) {
-			aml_nand_msg("nand block at blk %d is bad ", start_blk);
+			aml_nand_msg("blk %d is bad ", start_blk);
 			continue;
 		}
 		for (i = 0; i < pages_read;) {
@@ -2013,7 +2013,7 @@ int amlnand_check_info_by_name(struct amlnand_chip *aml_chip,
 		controller->select_chip(controller, ops_para->chipnr);
 		ret = operation->block_isbad(aml_chip);
 		if (ret < 0) {
-			aml_nand_msg("nand block at blk %d is bad ",
+			aml_nand_msg("blk %d is bad ",
 				start_blk);
 			continue;
 		}
@@ -2907,7 +2907,7 @@ int aml_nand_scan_hynix_info(struct amlnand_chip *aml_chip)
 		ret = operation->block_isbad(aml_chip);
 		flash->new_type = nand_type;
 		if (ret == NAND_BLOCK_FACTORY_BAD) {
-			aml_nand_msg("nand block at blk %d is bad ", start_blk);
+			aml_nand_msg("blk %d is bad ", start_blk);
 			continue;
 		}
 

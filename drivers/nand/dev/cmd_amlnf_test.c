@@ -5,14 +5,14 @@ extern int amlnand_init(unsigned char flag);
 extern void amlchip_dumpinfo(struct amlnand_chip *aml_chip);
 extern void amldev_dumpinfo(struct amlnand_phydev *phydev);
 //static int plane_mode = 0;
-struct aml_nftl_dev * nftl_device;
+//struct aml_nftl_dev * nftl_device;
 
 /* just like memset function but the paraments' type is  little different */
 void *memset_nand_test(void *s, u32 c, size_t count)
 {
 	u32 *sl = (u32 *) s;
 	u32 cl = 0;
-	char *s8;
+	//char *s8;
 	int i;
 
 	/* do it one word at a time (32 bits or 64 bits) while possible */
@@ -244,7 +244,7 @@ static int nand_write_ops_test(struct amlnand_phydev *phydev , uint64_t off, uin
 	offset = off;
 	write_len = len;
 	buffer = dat_buf;
-
+	flag = 1; /* fixme, verify flag! */
 	if (!buffer) {
 		aml_nand_msg("nand write no buf");
 		return -NAND_WRITE_FAILED;
@@ -332,8 +332,8 @@ exit_error:
 static int amlnand_test4(void)
 {
     struct amlnand_phydev *phydev = NULL;
-    struct amlnand_chip *aml_chip;
-    struct phydev_ops  *devops;
+    //struct amlnand_chip *aml_chip;
+    //struct phydev_ops  *devops;
 
     int ret =0, j = 0, verify_lag  =0;
     unsigned char * data_buf = NULL;
@@ -349,8 +349,8 @@ static int amlnand_test4(void)
     memset(data_buf, 0xa5, phydev->writesize);
     if (strncmp(phydev->name,NAND_BOOT_NAME,strlen((const char*)NAND_BOOT_NAME))) {
         aml_nand_msg("nand test 4 : phydev->name %s",phydev->name);
-        aml_chip = (struct amlnand_chip *)phydev->priv;
-        devops = &phydev->ops;
+        //aml_chip = (struct amlnand_chip *)phydev->priv;
+        //devops = &phydev->ops;
 //erase
         erase_off = 0;
         erase_len = phydev->size ;
@@ -403,8 +403,8 @@ exit_0:
 static int amlnand_test3(void)
 {
     struct amlnand_phydev *phydev = NULL;
-    struct amlnand_chip *aml_chip;
-    struct phydev_ops  *devops;
+    //struct amlnand_chip *aml_chip;
+    //struct phydev_ops  *devops;
 
     int ret =0, verify_lag  =0;
     unsigned char * data_buf = NULL;
@@ -420,8 +420,8 @@ static int amlnand_test3(void)
     memset(data_buf, 0xa5, phydev->writesize);
     if (strncmp(phydev->name,NAND_BOOT_NAME,strlen((const char*)NAND_BOOT_NAME))) {
         aml_nand_msg("nand test 3 : phydev->name %s",phydev->name);
-        aml_chip = (struct amlnand_chip *)phydev->priv;
-        devops = &phydev->ops;
+        //aml_chip = (struct amlnand_chip *)phydev->priv;
+        //devops = &phydev->ops;
         aml_nand_msg("nand test 3 : phydev->size=%llx ",phydev->size);
 //erase
         erase_off = 0;
@@ -437,7 +437,7 @@ static int amlnand_test3(void)
     //write
             offset = i<<phydev->erasesize_shift;
             write_len =  (i&0xff)*phydev->writesize;
-            verify_lag = 0;  // 1 indicate verify data when write
+            verify_lag = 1;  // 1 indicate verify data when write
             aml_nand_msg("nand test 3 : poffset=%llx ",offset);
             ret = nand_write_ops_test(phydev, offset, write_len,data_buf,verify_lag);
             if (ret < 0 ) {
@@ -479,8 +479,8 @@ exit_0:
 static int amlnand_test2(void)
 {
     struct amlnand_phydev *phydev = NULL;
-    struct amlnand_chip *aml_chip;
-    struct phydev_ops  *devops;
+    //struct amlnand_chip *aml_chip;
+    //struct phydev_ops  *devops;
 
     int ret =0, j = 0, verify_lag  =0;
     unsigned char * data_buf = NULL;
@@ -499,8 +499,8 @@ static int amlnand_test2(void)
             memset(data_buf, 0xa5, phydev->writesize);
         if (strncmp(phydev->name,NAND_BOOT_NAME,strlen((const char*)NAND_BOOT_NAME))) {
             aml_nand_msg("nand test 2 : phydev->name %s",phydev->name);
-            aml_chip = (struct amlnand_chip *)phydev->priv;
-            devops = &phydev->ops;
+            //aml_chip = (struct amlnand_chip *)phydev->priv;
+            //devops = &phydev->ops;
 //erase
             erase_off = 0;
             erase_len = phydev->size ;
@@ -555,8 +555,8 @@ exit_0:
 static int amlnand_test1(void)
 {
 	struct amlnand_phydev *phydev = NULL;
-	struct amlnand_chip *aml_chip;
-	struct phydev_ops  *devops;
+	//struct amlnand_chip *aml_chip;
+	//struct phydev_ops  *devops;
 
 	int ret =0, i = 0, verify_lag  =0;
 	unsigned char * data_buf = NULL;
@@ -574,8 +574,8 @@ static int amlnand_test1(void)
 
 		if (strncmp(phydev->name,NAND_BOOT_NAME,strlen((const char*)NAND_BOOT_NAME))) {
 			aml_nand_msg("nand test 1 : phydev->name %s",phydev->name);
-			aml_chip = (struct amlnand_chip *)phydev->priv;
-			devops = &phydev->ops;
+			// aml_chip = (struct amlnand_chip *)phydev->priv;
+			// devops = &phydev->ops;
 //erase
 			erase_off = 0;
 			erase_len = phydev->size ;
@@ -641,8 +641,8 @@ exit_0:
 static int amlnand_test0(void)
 {
 	struct amlnand_phydev *phydev = NULL;
-	struct amlnand_chip *aml_chip;
-	struct phydev_ops  *devops;
+	//struct amlnand_chip *aml_chip;
+	//struct phydev_ops  *devops;
 
 	int ret =0, verify_lag  =0;
 	unsigned char * data_buf = NULL;
@@ -661,8 +661,8 @@ static int amlnand_test0(void)
 
 		if (strncmp(phydev->name,NAND_BOOT_NAME,strlen((const char*)NAND_BOOT_NAME))) {
 			aml_nand_msg("nand test 0 : phydev->name %s",phydev->name);
-			aml_chip = (struct amlnand_chip *)phydev->priv;
-			devops = &phydev->ops;
+			// aml_chip = (struct amlnand_chip *)phydev->priv;
+			// devops = &phydev->ops;
 //erase
 			aml_nand_msg("nand test 0 : erase");
 			erase_off = 0;

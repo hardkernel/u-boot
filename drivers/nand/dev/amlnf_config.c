@@ -149,9 +149,9 @@ int amlnand_get_partition_table(struct amlnand_chip *aml_chip)
 #if (AML_CFG_INSIDE_PARTTBL)
 	part_table = partition_table;
 #endif
-	aml_nand_msg("%s() %p", __func__, part_table);
+	aml_nand_msg("outside dtb: %p", part_table);
 	if (part_table == NULL) {
-		aml_nand_msg("part_table from outside is NULL, using dtb on nand");
+		aml_nand_msg("using dtb on nand");
 		/* fixme, not initialized by outside then using dtb of our self. */
 	#if (AML_CFG_DTB_RSV_EN)
 		ret = amlnf_dtb_init_partitions(aml_chip);

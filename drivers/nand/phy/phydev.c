@@ -18,6 +18,12 @@
 	extern struct amlnf_partition * amlnf_partitions;
 #endif
 
+#define DBG_WRITE_VERIFY	(0)
+
+#if (DBG_WRITE_VERIFY)
+u8 * glb_verify_buffer = NULL;
+#endif
+
 enum chip_state_t get_chip_state(struct amlnand_chip *aml_chip)
 {
 	return aml_chip->state;
@@ -81,6 +87,9 @@ static u32 amlnand_slc_addr_trs(struct amlnand_phydev *phydev)
 	return page_addr;
 }
 
+/*
+ * fixme, pls use DBG_WRITE_VERIFY instead(20150918) before fix! yyh.
+ */
 static void nand_write_verify(struct amlnand_phydev *phydev)
 {
 	struct amlnand_chip *aml_chip = (struct amlnand_chip *)phydev->priv;
@@ -214,7 +223,11 @@ static int nand_read(struct amlnand_phydev *phydev)
 	return ret;
 }
 
+#if (DBG_WRITE_VERIFY)
+static int _nand_write(struct amlnand_phydev *phydev)
+#else
 static int nand_write(struct amlnand_phydev *phydev)
+#endif
 {
 	struct amlnand_chip *aml_chip = (struct amlnand_chip *)phydev->priv;
 	struct phydev_ops *devops = &(phydev->ops);
@@ -299,6 +312,28 @@ static int nand_write(struct amlnand_phydev *phydev)
 
 	return ret;
 }
+
+#if (DBG_WRITE_VERIFY)
+static int nand_write(struct amlnand_phydev *phydev)
+{
+	int ret;
+	u8 * tmp;
+	struct phydev_ops *devops = &(phydev->ops);
+
+	ret = _nand_write(phydev);
+	tmp = devops->datbuf;
+	devops->datbuf = glb_verify_buffer;
+	nand_read(phydev);
+
+	devops->datbuf = tmp;
+	printf(".");
+	if (memcmp(tmp, glb_verify_buffer, phydev->writesize)) {
+		aml_nand_msg("nand write verify failed");
+		while (1) ;
+	}
+	return ret;
+}
+#endif
 
 int nand_erase(struct amlnand_phydev *phydev)
 {
@@ -1133,8 +1168,8 @@ static void show_phydev_info(void)
 		else
 			config2 = "single_plane";
 
-		aml_nand_msg("%-10s: ", phydev->name);
-		aml_nand_msg("off:0x%012llx-0x%012llx :partn=%d:%s %s",
+		aml_nand_msg("%-10s: 0x%012llx-0x%012llx :partn=%d:%s %s",
+			phydev->name,
 			phydev->offset,
 			phydev->size,
 			phydev->nr_partitions,
@@ -1409,9 +1444,9 @@ int amlnand_phydev_init(struct amlnand_chip *aml_chip)
 
 			phydev->offset = 0;
 			phydev->size = (BOOT_COPY_NUM * BOOT_PAGES_PER_COPY);
-			printk("----------%llx\n", phydev->size);
+			//printk("----------%llx\n", phydev->size);
 			phydev->size *= flash->pagesize;
-			printk("----------%llx\n", phydev->size);
+			//printk("----------%llx\n", phydev->size);
 			/* phydev->size *= chip_num; */
 
 			phydev->writesize_shift = ffs(phydev->writesize) - 1;
@@ -1436,7 +1471,18 @@ int amlnand_phydev_init(struct amlnand_chip *aml_chip)
 				phydev->erasesize <<= 1;
 				phydev->oobavail <<= 1;
 			}
+		#if (DBG_WRITE_VERIFY)
+			/*debug code */
+			if ( NULL == glb_verify_buffer ) {
+				glb_verify_buffer = aml_nand_malloc(phydev->writesize);
+				if (glb_verify_buffer == NULL) {
+					aml_nand_msg("%s() %d, malloc glb_verify_buffer failed!\n",
+						__func__, __LINE__);
 
+				}
+
+			}
+		#endif
 			phydev->writesize_shift = ffs(phydev->writesize) - 1;
 			phydev->erasesize_shift = ffs(phydev->erasesize) - 1;
 
@@ -1509,7 +1555,7 @@ int amlnand_phydev_init(struct amlnand_chip *aml_chip)
 					total_blk = dev_size >> tmp_erase_shift;
 				else {
 				*/
-				aml_nand_msg("adjust phy offset: %d",
+				aml_nand_dbg("adjust phy offset: %d",
 					ADJUST_BLOCK_NUM);
 				total_blk =
 					dev_size >> phydev->erasesize_shift;
@@ -1672,7 +1718,7 @@ if (!is_phydev_off_adjust()) {
 				relative_offset += phydev->erasesize;
 		} while (relative_offset < phydev->size);
 
-		aml_nand_msg("bad block count = %d\n", bad_blk_cnt);
+		aml_nand_msg("(%s) bad blks %d", phydev->name, bad_blk_cnt);
 
 		if ((bad_blk_cnt * 32 >
 			(phydev->size >> phydev->erasesize_shift)) ||

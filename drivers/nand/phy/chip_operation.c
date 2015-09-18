@@ -615,7 +615,7 @@ static int read_page_two_plane(struct amlnand_chip *aml_chip,
 	if ((controller->oob_mod) && (ops_para->oob_buf)
 		&& (!ops_para->data_buf))
 		new_oob = 1;
-	printf("p0, oob %p, data %p\n", controller->oob_buf, ops_para->data_buf);
+	//printf("p0, oob %p, data %p\n", controller->oob_buf, ops_para->data_buf);
 
 	ret = _read_page_single_plane(aml_chip, chipnr, p0_addr) ;
 	if (new_oob)
@@ -625,6 +625,7 @@ static int read_page_two_plane(struct amlnand_chip *aml_chip,
 	//printf("p0-, oob %p, data %p\n", controller->oob_buf, ops_para->data_buf);
 
 	controller->oob_buf += user_byte_num; /* fixme, maybe not right!*/
+	if (ops_para->data_buf)
 	ops_para->data_buf += page_size;
 	//printf("p1, oob %p, data %p\n", controller->oob_buf, ops_para->data_buf);
 

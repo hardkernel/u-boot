@@ -421,7 +421,7 @@ void set_nand_core_clk(struct hw_controller *controller, int clk_freq)
 			amlnf_write_reg32(controller->nand_clk_reg, 0x81000245);
 			printk("%s() %d, using default clock setting!\n", __func__, __LINE__);
 		}
-		printk("clk_reg 0x%x\n", AMLNF_READ_REG(controller->nand_clk_reg));
+		//printk("clk_reg 0x%x\n", AMLNF_READ_REG(controller->nand_clk_reg));
 		return;
 	} else {
 		printk("cpu type can not support!\n");
