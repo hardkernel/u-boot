@@ -59,7 +59,7 @@ static struct dos_partition {
 		.name = "cache",
 		.part = 2,
 		.type = 0x83,
-		.size_kb = bytes_to_kb(2 * SZ_1G),
+		.size_kb = bytes_to_kb(320 * SZ_1M),
 	}, {
 		.name = "system",
 		.part = 3,
