@@ -64,7 +64,7 @@ static struct dos_partition {
 		.name = "system",
 		.part = 3,
 		.type = 0x83,
-		.size_kb = bytes_to_kb(2 * SZ_1G),
+		.size_kb = bytes_to_kb(1 * SZ_1G),
 	}, {
 		.name = "userdata",
 		.part = 4,
