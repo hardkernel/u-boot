@@ -90,6 +90,10 @@ struct ddr_set{
 	unsigned int   t_pctl0_dfiodtcfg;
 	unsigned int   t_pctl0_dfiodtcfg1;
 	unsigned int   t_pctl0_dfilpcfg0;
+
+	//PUB CLK fine tune
+	unsigned int   t_pub_acbdlr0; //2015.09.21 CK0 delay for different board PCB design
+
 }__attribute__ ((packed));
 
 struct ddr_timing{
