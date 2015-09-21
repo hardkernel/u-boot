@@ -376,4 +376,6 @@ ddr_set_t __ddr_setting = {
 pll_set_t __pll_setting = {
 	.cpu_clk				= CONFIG_CPU_CLK / 24 * 24,
 	.spi_ctrl				= 0,
+	.vddee					= CONFIG_VDDEE_INIT_VOLTAGE,
+	.vcck					= CONFIG_VCCK_INIT_VOLTAGE,
 };

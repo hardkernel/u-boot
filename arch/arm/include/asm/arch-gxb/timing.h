@@ -151,6 +151,8 @@ typedef struct ddr_timing ddr_timing_t;
 struct pll_set{
 	unsigned int cpu_clk;
 	unsigned int spi_ctrl;
+	unsigned short vddee;
+	unsigned short vcck;
 }__attribute__ ((packed));
 
 typedef struct pll_set pll_set_t;
