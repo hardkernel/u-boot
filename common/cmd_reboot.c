@@ -25,6 +25,7 @@
 #include <asm/arch/secure_apb.h>
 #include <asm/io.h>
 #include <asm/arch/bl31_apis.h>
+#include <asm/arch/watchdog.h>
 
 /*
 run get_rebootmode  //set reboot_mode env with current mode
@@ -79,6 +80,11 @@ int do_get_rebootmode (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]
 			setenv("reboot_mode","crash_dump");
 			break;
 		}
+		case AMLOGIC_KERNEL_PANIC:
+		{
+			setenv("reboot_mode","kernel_panic");
+			break;
+		}
 		default:
 		{
 			setenv("reboot_mode","charging");
@@ -113,12 +119,35 @@ int do_reboot (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 			reboot_mode_val = AMLOGIC_HIBERNATE_REBOOT;
 		else if (strcmp(mode, "crash_dump") == 0)
 			reboot_mode_val = AMLOGIC_CRASH_REBOOT;
+		else if (strcmp(mode, "kernel_panic") == 0)
+			reboot_mode_val = AMLOGIC_KERNEL_PANIC;
 		else {
 			printf("Can not find match reboot mode, use normal by default\n");
 			reboot_mode_val = AMLOGIC_NORMAL_BOOT;
 		}
 	}
 	aml_reboot (PSCI_SYS_REBOOT, reboot_mode_val, 0, 0);
+	return 0;
+}
+
+/* USB BOOT FUNC sub command list*/
+#define CLEAR_USB_BOOT			1
+#define FORCE_USB_BOOT			2
+#define RUN_COMD_USB_BOOT		3
+#define PANIC_DUMP_USB_BOOT		4
+
+int do_set_usb_boot(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+	unsigned int usb_mode = 0;
+	if (argc <= 1) {
+		printf("usb flag default 0\n");
+	}
+	else {
+		usb_mode = simple_strtoul(argv[1], NULL, 16);
+	}
+	printf("usb flag: %d\n", usb_mode);
+	set_usb_boot_function(usb_mode);
+
 	return 0;
 }
 
@@ -145,4 +174,15 @@ U_BOOT_CMD(
 	"    suspend_off\n"
 	"    hibernate\n"
 	"    crash_dump\n"
+);
+
+U_BOOT_CMD(
+	set_usb_boot,	2,	0,	do_set_usb_boot,
+	"set usb boot mode",
+	"[usb boot mode]/N\n"
+	"  support following [usb boot mode]:\n"
+	"    1: CLEAR_USB_BOOT\n"
+	"    2: FORCE_USB_BOOT[default]\n"
+	"    3: RUN_COMD_USB_BOOT/recovery\n"
+	"    4: PANIC_DUMP_USB_BOOT\n"
 );
