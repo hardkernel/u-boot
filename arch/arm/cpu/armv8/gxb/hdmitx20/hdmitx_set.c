@@ -151,7 +151,7 @@ static void hdmitx_hw_init(void)
 	hdmitx_wr_reg(HDMITX_TOP_CLK_CNTL,  0x0000003f);
 	hdmitx_wr_reg(HDMITX_DWC_MC_LOCKONCLOCK, 0xff);
 
-	hdmitx_wr_reg(HDMITX_DWC_MC_CLKDIS, 0x40);
+	hdmitx_wr_reg(HDMITX_DWC_MC_CLKDIS, 0x00);
 }
 
 /*
@@ -369,6 +369,17 @@ void hdmi_tx_set(struct hdmitx_dev *hdev)
 	hdmi_tx_set_vend_spec_infofram(vic);
 	hdmi_tx_phy(vic);
 #endif
+}
+
+#define __asmeq(x, y)  ".ifnc " x "," y " ; .err ; .endif\n\t"
+static void hdcp14_init(void)
+{
+	register long x0 asm("x0") = 0x82000012;
+	asm volatile(
+		__asmeq("%0", "x0")
+		"smc #0\n"
+		: : "r"(x0)
+	);
 }
 
 #define NUM_INT_VSYNC   INT_VEC_VIU1_VSYNC
@@ -780,27 +791,7 @@ static void config_hdmi20_tx ( enum hdmi_vic vic, struct hdmi_format_para *para,
 
 	hdmitx_wr_reg(HDMITX_DWC_A_OESSWCFG,    0x40);
 
-	data32  = 0;
-	data32 |= (0 << 4);
-	data32 |= (0 << 3);
-	data32 |= (1 << 2);
-	data32 |= (1 << 1);
-	data32 |= (1 << 0);
-	hdmitx_wr_reg(HDMITX_DWC_A_HDCPCFG1,    data32);
-
-	/* configure_hdcp_dpk(base_offset, 0xa938); */
-
-	/* initialize HDCP, with rxdetect low */
-	data32  = 0;
-	data32 |= (0 << 7);
-	data32 |= (1 << 6);
-	data32 |= (1 << 5);
-	data32 |= (1 << 4);
-	data32 |= (0 << 3);
-	data32 |= (0 << 2);
-	data32 |= (1 << 1);
-	data32 |= (1 << 0);
-	hdmitx_wr_reg(HDMITX_DWC_A_HDCPCFG0, data32);
+	hdcp14_init();
 
 	/* Interrupts */
 	/* Clear interrupts */
