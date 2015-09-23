@@ -376,5 +376,10 @@ ddr_set_t __ddr_setting = {
 
 pll_set_t __pll_setting = {
 	.cpu_clk				= CONFIG_CPU_CLK / 24 * 24,
+#ifdef CONFIG_PXP_EMULATOR
+	.pxp					= 1,
+#else
+	.pxp					= 0,
+#endif
 	.spi_ctrl				= 0,
 };
