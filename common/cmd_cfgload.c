@@ -8,6 +8,7 @@
 #include <common.h>
 #include <command.h>
 #include <asm/errno.h>
+#include <malloc.h>
 #include <linux/ctype.h>    /* isalpha, isdigit */
 #include <linux/sizes.h>
 
@@ -81,7 +82,7 @@ static char* read_cfgload(void)
 		 * proceed the commands.
 		 */
 		if (!strncmp(s, BOOTINI_MAGIC, sizeof(BOOTINI_MAGIC)))
-			return p;
+			return memcpy(malloc(filesize), p, filesize);
 	}
 
 	printf("cfgload: MAGIC NAME, %s, is not found!!\n", BOOTINI_MAGIC);
