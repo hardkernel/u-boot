@@ -888,7 +888,7 @@ acs.bin: tools prepare u-boot.bin
 
 .PHONY : boot.bin
 boot.bin: fip.bin
-	$(Q)$(FIP_FOLDER)/acs_tool.pyc $(FIP_FOLDER)/bl2.bin $(FIP_FOLDER)/bl2_acs.bin $(FIP_FOLDER)/acs.bin 0
+	$(Q)python $(FIP_FOLDER)/acs_tool.pyc $(FIP_FOLDER)/bl2.bin $(FIP_FOLDER)/bl2_acs.bin $(FIP_FOLDER)/acs.bin 0
 	$(Q)$(FIP_FOLDER)/bl2_fix.sh $(FIP_FOLDER)/bl2_acs.bin $(FIP_FOLDER)/zero_tmp $(FIP_FOLDER)/bl2_new.bin
 	$(Q)cat $(FIP_FOLDER)/bl2_new.bin  $(FIP_FOLDER)/fip.bin > $(FIP_FOLDER)/boot_new.bin
 	$(Q)$(FIP_FOLDER)/aml_encrypt_$(SOC) --bootsig --input $(FIP_FOLDER)/boot_new.bin --output $(FIP_FOLDER)/u-boot.bin
