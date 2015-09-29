@@ -196,16 +196,14 @@ void spi_disable_write_protect(void)
 int spi_claim_bus(struct spi_slave *slave)
 {
 	debug("%s: bus:%i cs:%i\n", __func__, slave->bus, slave->cs);
-	clrbits_le32(P_PERIPHS_PIN_MUX_4,(1<<20)|(7<<22)|(1<<31));
-	setbits_le32(P_PERIPHS_PIN_MUX_5,((1<<0) | (1<<1) | (1<<2) | (1<<3)));
+	setbits_le32(P_PERIPHS_PIN_MUX_5,(0xf<<16));
 	return 0;
 }
 
 void spi_release_bus(struct spi_slave *slave)
 {
 	debug("%s: bus:%i cs:%i\n", __func__, slave->bus, slave->cs);
-
-	clrbits_le32(P_PERIPHS_PIN_MUX_5,((1<<0)|(1<<1)|(1<<2)|(1<<3)));
+	clrbits_le32(P_PERIPHS_PIN_MUX_5,(0xf<<16));
 }
 
 //Only for Amlogic SPI controller
