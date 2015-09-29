@@ -50,6 +50,8 @@
 /* wifi wake up */
 #define CONFIG_WIFI_WAKEUP
 
+#define CONFIG_INSTABOOT
+
 /* SMP Definitinos */
 #define CPU_RELEASE_ADDR		secondary_boot_func
 

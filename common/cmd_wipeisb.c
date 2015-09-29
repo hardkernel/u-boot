@@ -6,12 +6,14 @@
 #endif
 
 unsigned char w_buf[PAGE_SIZE];
-
+extern int has_instaboot_part(void);
 static int do_wipeisb(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	int rc = 0;
 	u64 partSz = 0;
 
+	if (!has_instaboot_part())
+		return 0;
 	rc = store_get_partititon_size((unsigned char*)"instaboot", &partSz);
 	if (rc || !partSz) {
 	    printf("can not get instaboot part size\n");

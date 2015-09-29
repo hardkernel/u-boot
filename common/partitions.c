@@ -11,6 +11,17 @@ struct partitions_data{
 };
 
 struct partitions *part_table = NULL;
+static int parts_total_num;
+
+int get_partitions_table(struct partitions **table)
+{
+	int ret = 0;
+	if (part_table && parts_total_num) {
+		*table = part_table;
+		ret = parts_total_num;
+	}
+	return ret;
+}
 
 int get_partition_from_dts(unsigned char * buffer)
 {
@@ -59,8 +70,8 @@ int get_partition_from_dts(unsigned char * buffer)
 			return -1;
 		}
 		memset(part_table, 0, sizeof(struct partitions)*(be32_to_cpup((u32*)parts_num)));
+		parts_total_num = be32_to_cpup((u32*)parts_num);
 	}
-
 	for (index = 0; index < be32_to_cpup((u32*)parts_num); index++)
 	{
 		sprintf(propname,"part-%d", index);
