@@ -475,3 +475,11 @@ int checkhw(char * name)
 	return 0;
 }
 #endif
+
+const char * const _env_args_reserve_[] =
+{
+		"aml_dt",
+
+		NULL//Keep NULL be last to tell END
+};
+

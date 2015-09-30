@@ -252,6 +252,7 @@ endif
 obj-y += cmd_nvedit.o
 #environment
 obj-y += env_common.o
+obj-y += cmd_defenv_without.o
 #others
 obj-$(CONFIG_DDR_SPD) += ddr_spd.o
 obj-$(CONFIG_SPD_EEPROM) += ddr_spd.o

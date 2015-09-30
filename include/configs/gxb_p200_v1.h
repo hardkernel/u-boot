@@ -96,13 +96,13 @@
             "if itest ${upgrade_step} == 3; then "\
                 "run init_display; run storeargs; run update;"\
             "else if itest ${upgrade_step} == 1; then "\
-                "env default -a; setenv upgrade_step 2; saveenv;"\
+                "defenv_reserv; setenv upgrade_step 2; saveenv;"\
             "fi;fi;"\
             "\0"\
 	    "bootmode_check="\
             "get_rebootmode; echo reboot_mode=${reboot_mode};"\
             "if test ${reboot_mode} = factory_reset; then "\
-                "env default -a;save;"\
+                "defenv_reserv aml_dt;setenv upgrade_step 2; save;"\
             "fi;"\
             "\0" \
         "storeargs="\
