@@ -1422,7 +1422,8 @@ int mmc_erase(struct mmc *mmc, int part, u32 start, u32 block)
 					block = (block / 1024) + 1;
 				}
 			}
-		}
+		} else
+			block -= 1;
 	}
 
 	/* Set ERASE start group */
