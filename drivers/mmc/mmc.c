@@ -398,7 +398,6 @@ mmc_erase(int dev_num, unsigned long start, lbaint_t block)
 				} else {
 					block = (block / 1024) + 1;
 				}
-				block -= 1;
 			}
 		}
 	}
