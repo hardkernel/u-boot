@@ -1384,7 +1384,15 @@ int mmc_erase(struct mmc *mmc, int part, u32 start, u32 block)
 	u32 count, dis, blk_hc;
 	struct mmc_cmd cmd;
 
+	char *start_str[16], *block_str[16];
+	sprintf(start_str, "%x", start);
+	sprintf(block_str, "%x", block);
 	printf("START: %d BLOCK: %d\n", start, block);
+
+	start = simple_strtol(start_str, NULL, 16);
+	block = simple_strtol(block_str, NULL, 16);
+
+	printf("START: 0x%x BLOCK: 0x%x\n", start, block);
 	printf("high_capacity: %d\n", mmc->high_capacity);
 	printf("Capacity: %d\n", mmc->capacity);
 

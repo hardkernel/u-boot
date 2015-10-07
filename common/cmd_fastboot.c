@@ -567,8 +567,8 @@ static int write_to_ptn_sdmmc(struct fastboot_ptentry *ptn, unsigned int addr, u
 				sprintf(cmd, "erase");
 				sprintf(buffer, "user");
 				sprintf(device, "%d", DEV_NUM);
-				sprintf(start, "%x", bl_st);
-				sprintf(length, "%x", bl_cnt);
+				sprintf(start, "%d", bl_st);
+				sprintf(length, "%d", bl_cnt);
 				printf("mmc %s %s %s %s %s\n", argv[1], argv[2], argv[3], argv[4], argv[5]);
 
 				ret = do_mmcops(NULL, 0, 6, argv);
