@@ -636,7 +636,7 @@ static void config_hdmi20_tx ( enum hdmi_vic vic, struct hdmi_format_para *para,
 	data32  = 0;
 	data32 |= (default_phase << 2);
 	data32 |= (0 << 1);
-	data32 |= (0 << 0);
+	data32 |= (1 << 0);
 	hdmitx_wr_reg(HDMITX_DWC_FC_GCP, data32);
 
 	/* write AVI Infoframe packet configuration */
