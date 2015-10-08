@@ -238,7 +238,9 @@ static int do_read_temp(cmd_tbl_t *cmdtp, int flag1,
 	int flag, adc, count, tempa;
 	unsigned ret;
 	flag = 0;
+	char buf[100] = {};
 
+	setenv("tempa", " ");
 	adc_init_chan6();
 	ret = do_read_calib_data(&flag, &temp, &TS_C);
 	if (ret > 0) {
@@ -255,9 +257,26 @@ static int do_read_temp(cmd_tbl_t *cmdtp, int flag1,
 		if (flag) {
 			tempa = (10*(adc-temp))/34+27;
 			printf("tempa=%d\n", tempa);
+
+			sprintf(buf, "%d", tempa);
+			setenv("tempa", buf);
+			memset(buf, 0, sizeof(buf));
+			sprintf(buf, "temp:%d, adc:%d, tsc:%d, dout:%d", tempa, adc, TS_C, temp);
+			setenv("err_info_tempa", buf);
+		} else {
+			printf("This chip is not trimmed\n");
+			sprintf(buf, "%s", "This chip is not trimmed");
+			setenv("err_info_tempa", buf);
+			return -1;
 		}
+	} else {
+		printf("read calibrated data failed\n");
+		sprintf(buf, "%s", "read calibrated data failed");
+		setenv("err_info_tempa", buf);
+		return -1;
 	}
-	return ret;
+
+	return 0;
 }
 
 static int do_write_version(cmd_tbl_t *cmdtp, int flag1,

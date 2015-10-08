@@ -360,7 +360,7 @@ static int _cpu_temp_in_valid_range(int argc, char* argv[], char* errInfo)
                 sprintf(errInfo, "Invalid:minTemp=%s, maxTemp=%s\n", argv[1], argv[2]);
                 return __LINE__;
         }
-        ret = run_command("cpu_temp -p", 0);
+        ret = run_command("read_temp", 0);
         if (ret < 0) {
                 sprintf(errInfo, "cmd[cpu_temp] failed\n");
                 return __LINE__;
@@ -481,14 +481,7 @@ int optimus_working (const char *cmd, char* buff)
 #ifndef CONFIG_CMD_CPU_TEMP
                 ret = __LINE__;
 #else
-                ret = run_command("cpu_temp -p", 0);
-                if (ret <= 0) {
-                        DWN_MSG("Fail in cmd[cpu_temp]\n");
-                        ret = __LINE__;
-                }
-                else{
-                        ret = 0;
-                }
+                ret = 0;
 #endif// #ifdef CONFIG_CMD_CPU_TEMP
                 sprintf(buff + 7, "cpu temp control cmd %s supported.\n", ret ? "NOT" : "DO");//7 == strlen("failed")
         }
