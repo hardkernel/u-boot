@@ -36,9 +36,10 @@ unsigned v2_key_burn(const char* keyName, const u8* keyVal, const unsigned keyVa
     int ret = 0;
     unsigned writtenLen = 0;
 
+    DWN_DBG("to write key[%s] in len=%d\n", keyName, keyValLen);
     ret = key_manage_write(keyName, keyVal, keyValLen);
     if (ret) {
-        DWN_ERR("Fail to write len=0x%x\n", writtenLen);
+        DWN_ERR("Fail to write key[%s] in len=%d\n", keyName, keyValLen);
         return 0;
     }
 

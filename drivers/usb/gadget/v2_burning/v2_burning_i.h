@@ -22,10 +22,6 @@
 #include <malloc.h>
 #include <u-boot/sha1.h>
 
-#ifdef CONFIG_MESON_TRUSTZONE
-#include <asm/arch/trustzone.h>
-#endif//#ifdef CONFIG_MESON_TRUSTZONE
-
 #include <amlogic/aml_v2_burning.h>
 //#include <asm/arch/reboot.h>
 #include <asm/arch/romboot.h>

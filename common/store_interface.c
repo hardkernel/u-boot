@@ -542,7 +542,6 @@ static int do_store_exit(cmd_tbl_t * cmdtp, int flag, int argc, char * const arg
 
 static int do_store_disprotect(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 {
-#if defined(CONFIG_AML_NAND)
     char *area;
 
     area = argv[2];
@@ -550,10 +549,6 @@ static int do_store_disprotect(cmd_tbl_t * cmdtp, int flag, int argc, char * con
         MsgP("disprotect key\n");
         info_disprotect |= DISPROTECT_KEY;
         _info_disprotect_back_before_mmcinfo1 |= DISPROTECT_KEY;
-    }
-    if (strcmp(area, "secure") == 0) {
-        store_msg("disprotect secure");
-        info_disprotect |= DISPROTECT_SECURE;
     }
     if (strcmp(area, "fbbt") == 0) {
         store_msg("disprotect fbbt");
@@ -563,7 +558,7 @@ static int do_store_disprotect(cmd_tbl_t * cmdtp, int flag, int argc, char * con
         store_msg("disprotect hynix");
         info_disprotect |= DISPROTECT_HYNIX;
     }
-#endif //CONFIG_AML_NAND
+
     return 0;
 }
 

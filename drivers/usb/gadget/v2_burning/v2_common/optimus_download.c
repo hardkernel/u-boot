@@ -62,7 +62,7 @@ static unsigned long _dtb_is_loaded = 0;
 
 //Image info for burnning and verify
 //FIXME: how to assert that image not larger than the partition
-#define IMG_BURN_INFO_SZ    64
+#define IMG_BURN_INFO_SZ    96
 struct ImgBurnInfo{
     u8  imgType;    //0 normal, 1 sparse
     u8  verifyAlgorithm;//0--sha1sum, 1--crc32, 2--addsum
@@ -76,9 +76,9 @@ struct ImgBurnInfo{
     u64 partBaseOffset;//start offset of this part
 
     void* devHdle;
-    char partName[16];//
+    char partName[32];//
 
-    u8  burnInfoPrivate[IMG_BURN_INFO_SZ - 16 - sizeof(void*) - sizeof(u64) * 5];//needed private info when verify, for example when we read ext4 to sparse file
+    u8  burnInfoPrivate[IMG_BURN_INFO_SZ - 32 - sizeof(void*) - sizeof(u64) * 5];//needed private info when verify, for example when we read ext4 to sparse file
 };
 
 static struct ImgBurnInfo OptimusImgBurnInfo = {0};
@@ -98,127 +98,34 @@ struct imgBurnInfo_bootloader{
 
 COMPILE_TIME_ASSERT(IMG_BURN_INFO_SZ == sizeof(struct ImgBurnInfo));
 
-#if defined(CONFIG_ACS)
-#if 0
-static void _show_partition_table(const struct partitions* pPartsTab)
-{
-	int i=0;
-	const struct partitions* partInfo = pPartsTab;
-
-	for (i=0; i < MAX_PART_NUM; i++, ++partInfo)
-    {
-		if (partInfo->size == -1) {
-			printf("part: %d, name : %10s, size : %-4s\n",i, partInfo->name, "end");
-			break;
-		}
-        printf("part: %d, name : %10s, size : %-4llx\n",i, partInfo->name, partInfo->size);
-	}
-
-	return;
-}
-#endif
-
-static int _check_partition_table_consistency(const unsigned uboot_bin)
-{
-    int rc = 0;
-    unsigned partitionTableSz = 0;
-    const int acsOffsetInSpl   = START_ADDR - AHB_SRAM_BASE;
-    const int addrMapFromAhb2Bin = AHB_SRAM_BASE - uboot_bin;
-
-    const struct acs_setting* acsSettingInBin   = NULL;
-    unsigned partTabAddrInBin             = 0;
-    const struct partitions*  partsTabInBin     = NULL;
-
-    const struct acs_setting* acsSettingInSram  = NULL;
-    const struct partitions*  partsTabInSram    = NULL;
-
-    DWN_DBG("uboot_bin 0x%p, acsOffsetInSpl 0x%x, addrMapFromAhb2Bin 0x%x\n", uboot_bin, acsOffsetInSpl, addrMapFromAhb2Bin);
-    acsSettingInBin   = (struct acs_setting*)(*(unsigned*)(uboot_bin + acsOffsetInSpl) - addrMapFromAhb2Bin);
-
-    if ( (unsigned)acsSettingInBin >= uboot_bin + 64*1024 || (unsigned)acsSettingInBin <= uboot_bin) {//acs not in the spl
-        DWN_MSG("Acs not in the spl of uboot_bin\n");
-        return 0;
-    }
-
-    if (memcmp(MAGIC_ACS, acsSettingInBin->acs_magic, strlen(MAGIC_ACS))
-        || memcmp(TABLE_MAGIC_NAME, acsSettingInBin->partition_table_magic, strlen(TABLE_MAGIC_NAME)))
-    {
-        DWN_MSG("acs magic OR part magic in ubootin not match\n");
-        return 0;//Not to check partTable as acs magic or part magic not match in u-boot.bin, maybe encrypted by AMLETOOL
-    }
-    partTabAddrInBin  = acsSettingInBin->partition_table_addr - addrMapFromAhb2Bin;
-    partsTabInBin     = (const struct partitions*)partTabAddrInBin;
-
-#ifndef CONFIG_MESON_TRUSTZONE
-    acsSettingInSram  = (struct acs_setting*)(*(unsigned*)START_ADDR);
-#else
-    //twice eget value at sram address and copy 1K to memory
-    acsSettingInSram  = (struct acs_setting*)meson_trustzone_acs_addr(START_ADDR);
-    DWN_MSG("[Trust]acsSettingInSram=0x%p\n", acsSettingInSram);
-#endif// #ifndef CONFIG_MESON_TRUSTZONE
-    partsTabInSram    = (const struct partitions*)acsSettingInSram->partition_table_addr;
-    DWN_MSG("partsTabInSram=0x%p\n", partsTabInSram);
-
-    if (memcmp(MAGIC_ACS, acsSettingInSram->acs_magic, strlen(MAGIC_ACS))
-       || memcmp(TABLE_MAGIC_NAME, acsSettingInSram->partition_table_magic, strlen(TABLE_MAGIC_NAME)))
-    {
-        DWN_MSG("acs magic OR part magic in SPL not match\n");
-        return __LINE__;//Not to check partTable as acs magic or part magic not match in SRAM, assert this!!
-    }
-
-#ifdef CONFIG_MESON_TRUSTZONE
-    partsTabInSram    = (const struct partitions*)meson_trustzone_acs_addr((unsigned)&acsSettingInSram->partition_table_addr);
-#endif// #ifndef CONFIG_MESON_TRUSTZONE
-
-    partitionTableSz = acsSettingInBin->partition_table_length;
-    DWN_MSG("acsSettingInBin=0x%x, partTabSz=0x%x\n", (unsigned int)acsSettingInBin, partitionTableSz);
-
-    rc = memcmp(partsTabInSram, partsTabInBin, partitionTableSz);
-    DWN_MSG("Check parts table %s\n", !rc ? "OK." : "FAILED!");
-#if 0//I comment print as str-prefix function (strcmp, strcmp, and .etc) are all not reliable in uboot
-    if (rc)
-    {
-        DWN_MSG("acs_setting    0x%p, 0x%p\n", acsSettingInBin, acsSettingInSram);
-        DWN_MSG("partitions     0x%08x, 0x%p\n", partTabAddrInBin, partsTabInSram);
-        DWN_MSG("partition_table_addr 0x%x, 0x%x\n", acsSettingInSram->partition_table_addr, acsSettingInBin->partition_table_addr);
-
-        DWN_MSG("part in ubootbin:\n");
-        _show_partition_table(partsTabInBin);
-
-        DWN_MSG("part in spl:\n");
-        _show_partition_table(partsTabInSram);
-        return __LINE__;
-    }
-#endif//#if 0
-
-    return rc;
-}
-#else
-#define _check_partition_table_consistency(a)   0
-#endif//#if defined(CONFIG_ACS)
-
-#if 0
-//asset nand logical partition size equals CFG size in storage.c
+#if 1
+//asset logical partition size >= CFG size in storage.c
 //nand often make mistake this size, emmc should always ok
 static int _assert_logic_partition_cap(const char* thePartName, const uint64_t nandPartCap)
 {
-	extern struct partitions * part_table;
+        extern struct partitions * part_table;
 
-	struct partitions * thePart = NULL;
+        int partIndex                   = 0;
+        struct partitions * thePart     = NULL;
 
-        for (thePart = part_table; NAND_PART_SIZE_FULL != thePart->size; ++thePart)
+        for (thePart = part_table; partIndex < MAX_PART_NAME_LEN; ++thePart, ++partIndex)
         {
                 const uint64_t partSzInBytes = thePart->size;
-                if (strcmp(thePartName, thePart->name)) continue;
-                if (partSzInBytes != nandPartCap) {
-                        DWN_ERR("partSz in ACS %llx != flash Sz %llx\n", partSzInBytes, nandPartCap);
+                if (memcmp(thePartName, thePart->name, strlen(thePartName))) continue;
+
+                DWN_DBG("cfg partSzInBytes %llx for part(%s)\n", partSzInBytes, thePartName);
+                if (NAND_PART_SIZE_FULL == partSzInBytes) {return 0;}
+                if (partSzInBytes > nandPartCap) {
+                        DWN_ERR("partSz of logic part(%s): sz dts %llx > Sz flash %llx\n",
+                                        thePartName, partSzInBytes, nandPartCap);
                         return __LINE__;
                 }
 
-                break;
+                return 0;
         }
 
-	return 0;
+        DWN_ERR("Can't find your download part(%s)\n", thePartName);
+        return __LINE__;
 }
 #else
 #define _assert_logic_partition_cap(...)        0
@@ -235,11 +142,13 @@ static int optimus_download_bootloader_image(struct ImgBurnInfo* pDownInfo, u32 
         return 0;
     }
 
+#if 0
     ret = _check_partition_table_consistency((unsigned)data);
     if (ret) {
         DWN_ERR("Fail in _check_partition_table_consistency\n");
         return 0;
     }
+#endif
     if (size > (1U<<20)) {
         DWN_ERR("uboot.bin size 0x%llx > 1M unsupported\n", size);
         return 0;
