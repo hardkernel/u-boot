@@ -224,17 +224,22 @@
 
 /* storage: emmc/nand/sd */
 #define	CONFIG_STORE_COMPATIBLE 1
-#define CONFIG_ENV_OVERWRITE
-#define CONFIG_CMD_SAVEENV
-#define CONFIG_ENV_IS_IN_AMLNAND
+#define CONFIG_AML_NAND	1
+/* env */
+#define 	CONFIG_ENV_OVERWRITE
+#define 	CONFIG_CMD_SAVEENV
+/* fixme, need fix*/
+
+#if (defined(CONFIG_ENV_IS_IN_AMLNAND) || defined(CONFIG_ENV_IS_IN_MMC)) && defined(CONFIG_STORE_COMPATIBLE)
+#error env in amlnand/mmc already be compatible;
+#endif
 #define CONFIG_AML_SD_EMMC 1
 #ifdef	CONFIG_AML_SD_EMMC
 	#define CONFIG_GENERIC_MMC 1
 	#define CONFIG_CMD_MMC 1
+	#define	CONFIG_SYS_MMC_ENV_DEV 1
 #endif
-#define CONFIG_AML_NAND	1
-#ifdef CONFIG_AML_NAND
-#endif
+
 #define	CONFIG_PARTITIONS 1
 #define CONFIG_SYS_NO_FLASH  1
 

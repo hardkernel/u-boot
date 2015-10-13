@@ -10,30 +10,30 @@
 #ifndef __ASSEMBLY__
 
 //Partition table defines
-#define 	NAND_PART_SIZE_FULL  		-1
-#define 	MAX_PART_NUM			16
-#define	 MAX_PART_NAME_LEN		 16
+#define NAND_PART_SIZE_FULL		-1
+#define MAX_PART_NUM			16
+#define	 MAX_PART_NAME_LEN		16
 //#define 	SZ_1M 					0x100000
 
-#define 	STORE_CODE 				1
-#define	STORE_CACHE				(1<<1)
-#define 	STORE_DATA				(1<<2)
+#define STORE_CODE		1
+#define	STORE_CACHE		(1<<1)
+#define STORE_DATA		(1<<2)
 
-#define SPI_BOOT_FLAG 			0
+#define SPI_BOOT_FLAG		0
 #define NAND_BOOT_FLAG 		1
 #define EMMC_BOOT_FLAG 		2
 #define CARD_BOOT_FLAG 		3
-#define SPI_NAND_FLAG			4
-#define SPI_EMMC_FLAG			5
+#define SPI_NAND_FLAG		4
+#define SPI_EMMC_FLAG		5
 
-#define CARD_TYPE_SHIFT             4
-#define CARD_TYPE_MASK              0xf
-#define CARD_TYPE_UNKNOWN           0        /* unknown */
-//#define CARD_TYPE_MMC               1        /* MMC card */
-//#define CARD_TYPE_SD                2        /* SD card */
-#define CARD_TYPE_SDIO              3        /* SDIO card */
-#define CARD_TYPE_SD_COMBO          4        /* SD combo (IO+mem) card */
-#define CARD_TYPE_NON_SDIO          5        /* NON sdio device (means SD/MMC card) */
+#define CARD_TYPE_SHIFT		4
+#define CARD_TYPE_MASK		0xf
+#define CARD_TYPE_UNKNOWN	0        /* unknown */
+//#define CARD_TYPE_MMC		1        /* MMC card */
+//#define CARD_TYPE_SD		2        /* SD card */
+#define CARD_TYPE_SDIO		3        /* SDIO card */
+#define CARD_TYPE_SD_COMBO	4        /* SD combo (IO+mem) card */
+#define CARD_TYPE_NON_SDIO	5        /* NON sdio device (means SD/MMC card) */
 
 #define AML_GET_CARD_TYPE(val, port)    ((val >> (port * CARD_TYPE_SHIFT)) & CARD_TYPE_MASK)
 #define AML_SET_CARD_TYPE(val, port, type)   \

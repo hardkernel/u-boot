@@ -313,6 +313,7 @@ int amlnf_phy_init(u8 flag, struct platform_device *pdev)
 	ret = amlnand_chip_init(aml_chip);
 	if (ret < 0) {
 		aml_nand_msg("chip detect failed and ret:%x", ret);
+		device_boot_flag = EMMC_BOOT_FLAG;
 		ret = -NAND_FAILED;
 		goto exit_error1;
 	}

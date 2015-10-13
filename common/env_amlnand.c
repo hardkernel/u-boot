@@ -38,10 +38,12 @@
 #define CONFIG_ENV_RANGE	CONFIG_ENV_SIZE
 #endif
 
+#ifdef CONFIG_AML_NAND
 extern int amlnf_env_read(u_char *buf, int len);
 extern int amlnf_env_save(u_char *buf, int len);
-char *env_name_spec = "aml-nand";
 
+#ifndef CONFIG_STORE_COMPATIBLE
+char *env_name_spec = "aml-nand";
 #if defined(ENV_IS_EMBEDDED)
 env_t *env_ptr = &environment;
 #elif defined(CONFIG_NAND_ENV_DST)
@@ -49,9 +51,8 @@ env_t *env_ptr = (env_t *)CONFIG_NAND_ENV_DST;
 #else /* ! ENV_IS_EMBEDDED */
 env_t *env_ptr;
 #endif /* ENV_IS_EMBEDDED */
-
+#endif /* CONFIG_STORE_COMPATIBLE */
 DECLARE_GLOBAL_DATA_PTR;
-
 /*
  * This is called before nand_init() so we can't read NAND to
  * validate env data.
@@ -64,7 +65,11 @@ DECLARE_GLOBAL_DATA_PTR;
  * This way the SPL loads not only the U-Boot image from NAND but
  * also the environment.
  */
+#ifdef CONFIG_STORE_COMPATIBLE
+int amlnand_env_int(void)
+#else
 int env_init(void)
+#endif
 {
 #if defined(ENV_IS_EMBEDDED) || defined(CONFIG_NAND_ENV_DST)
 	int crc1_ok = 0, crc2_ok = 0;
@@ -96,7 +101,11 @@ int env_init(void)
 }
 
 #ifdef CMD_SAVEENV
+#ifdef CONFIG_STORE_COMPATIBLE
+int amlnand_saveenv(void)
+#else
 int saveenv(void)
+#endif
 {
 	int	ret = 0;
 	ALLOC_CACHE_ALIGN_BUFFER(env_t, env_new, 1);
@@ -111,7 +120,6 @@ int saveenv(void)
 }
 #endif /* CMD_SAVEENV */
 
-//static int readenv(size_t offset, u_char *buf)
 static int readenv(u_char *buf)
 {
 	int ret;
@@ -120,7 +128,6 @@ static int readenv(u_char *buf)
 	if (ret) {
 		printf("%s() return %d\n", __func__, ret);
 	}
-
 	return ret;
 }
 
@@ -129,7 +136,11 @@ static int readenv(u_char *buf)
  * device i.e., nand_dev_desc + 0. This is also the behaviour using
  * the new NAND code.
  */
+#ifdef CONFIG_STORE_COMPATIBLE
+void amlnand_env_relocate_spec(void)
+#else
 void env_relocate_spec(void)
+#endif
 {
 #if !defined(ENV_IS_EMBEDDED)
 	int ret;
@@ -145,3 +156,5 @@ void env_relocate_spec(void)
 	env_import((char *)buf, 1);
 #endif /* ! ENV_IS_EMBEDDED */
 }
+
+#endif

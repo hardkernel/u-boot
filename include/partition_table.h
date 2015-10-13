@@ -1,8 +1,8 @@
 #ifndef _PARTITION_TABLE_H
 #define _PARTITION_TABLE_H
-#ifdef CONFIG_STORE_COMPATIBLE
+// #ifdef CONFIG_STORE_COMPATIBLE
 #include <storage.h>
-#endif
+// #endif
 //#include <asm/arch/nand.h>
 //#include <asm/arch/poc.h>
 

@@ -1420,8 +1420,8 @@ int mmc_init(struct mmc *mmc)
 	if (err)
 		return err;
 	printf("[%s] mmc init success\n", __func__);
-	if (mmc->block_dev.dev == 1)  {device_boot_flag = EMMC_BOOT_FLAG; }
 #ifdef CONFIG_STORE_COMPATIBLE
+	if (mmc->block_dev.dev == 1)  {device_boot_flag = EMMC_BOOT_FLAG; }
 	if (aml_is_emmc_tsd(mmc)) { // eMMC OR TSD
 		if (!is_partition_checked) {
 			if (mmc_device_init(mmc) == 0) {
