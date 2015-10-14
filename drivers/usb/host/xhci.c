@@ -256,7 +256,7 @@ static int xhci_configure_endpoints(struct usb_device *udev, bool ctx_change)
 	virt_dev = ctrl->devs[udev->slot_id];
 	in_ctx = virt_dev->in_ctx;
 
-	xhci_flush_cache((uint32_t)in_ctx->bytes, in_ctx->size);
+	xhci_flush_cache((ulong)in_ctx->bytes, in_ctx->size);
 	xhci_queue_command(ctrl, in_ctx->bytes, udev->slot_id, 0,
 			   ctx_change ? TRB_EVAL_CONTEXT : TRB_CONFIG_EP);
 	event = xhci_wait_for_event(ctrl, TRB_COMPLETION);
@@ -325,7 +325,7 @@ static int xhci_set_configuration(struct usb_device *udev)
 			max_ep_flag = ep_flag;
 	}
 
-	xhci_inval_cache((uint32_t)out_ctx->bytes, out_ctx->size);
+	xhci_inval_cache((ulong)out_ctx->bytes, out_ctx->size);
 
 	/* slot context */
 	xhci_slot_copy(ctrl, in_ctx, out_ctx);
@@ -442,7 +442,7 @@ static int xhci_address_device(struct usb_device *udev)
 		 */
 		return ret;
 
-	xhci_inval_cache((uint32_t)virt_dev->out_ctx->bytes,
+	xhci_inval_cache((ulong)virt_dev->out_ctx->bytes,
 				virt_dev->out_ctx->size);
 	slot_ctx = xhci_get_slot_ctx(ctrl, virt_dev->out_ctx);
 
@@ -525,7 +525,7 @@ int xhci_check_maxpacket(struct usb_device *udev)
 	ifdesc = &udev->config.if_desc[0];
 
 	out_ctx = ctrl->devs[slot_id]->out_ctx;
-	xhci_inval_cache((uint32_t)out_ctx->bytes, out_ctx->size);
+	xhci_inval_cache((ulong)out_ctx->bytes, out_ctx->size);
 
 	ep_ctx = xhci_get_ep_ctx(ctrl, out_ctx, ep_index);
 	hw_max_packet_size = MAX_PACKET_DECODED(le32_to_cpu(ep_ctx->ep_info2));

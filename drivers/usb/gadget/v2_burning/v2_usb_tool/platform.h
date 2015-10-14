@@ -23,8 +23,11 @@
 #define PORT_REG_OFFSET   0
 #endif
 
-
+#if defined CONFIG_AML_MESON_GXTVBB
+#define DWC_REG_BASE   0xc9100000
+#else
 #define DWC_REG_BASE  (0xC9000000 + PORT_REG_OFFSET)
+#endif
 
 #define PERI_BASE_ADDR               0xc1100000
 #define ISABASE                      0x01000000

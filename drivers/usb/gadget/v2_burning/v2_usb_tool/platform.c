@@ -7,12 +7,161 @@
  *
  */
  #include "platform.h"
+//#include "power_gate.h"
 
 /*CONFIG_AML_MESON_8 include m8, m8baby, m8m2, etc... defined in cpu.h*/
-#if !( defined(CONFIG_AML_MESON_GX)  )
+#if !( defined(CONFIG_AML_MESON_GX) || defined(CONFIG_AML_MESON_GXTVBB)  )
 #error "platform is not GX !!"
 #endif//#if
 
+
+#if defined CONFIG_AML_MESON_GXTVBB
+#define PREI_USB_PHY_2_REG_BASE 0xd0078020
+#define PREI_USB_PHY_3_REG_BASE 0xd0078080
+
+typedef struct u2p_aml_regs {
+	volatile uint32_t u2p_r0;
+	volatile uint32_t u2p_r1;
+	volatile uint32_t u2p_r2;
+} u2p_aml_regs_t;
+
+typedef union u2p_r0 {
+	/** raw register data */
+	uint32_t d32;
+	/** register bits */
+	struct {
+		unsigned bypass_sel:1;   // 0
+		unsigned bypass_dm_en:1; // 1
+		unsigned bypass_dp_en:1; // 2
+		unsigned txbitstuffenh:1;// 3
+		unsigned txbitstuffen:1; // 4
+		unsigned dmpulldown:1;   // 5
+		unsigned dppulldown:1;   // 6
+		unsigned vbusvldextsel:1;// 7
+		unsigned vbusvldext:1;   // 8
+		unsigned adp_prb_en:1;   // 9
+		unsigned adp_dischrg:1;  // 10
+		unsigned adp_chrg:1;     // 11
+		unsigned drvvbus:1;      // 12
+		unsigned idpullup:1;     // 13
+		unsigned loopbackenb:1;  // 14
+		unsigned otgdisable:1;   // 15
+		unsigned commononn:1;    // 16
+		unsigned fsel:3;         // 17
+		unsigned refclksel:2;    // 20
+		unsigned por:1;          // 22
+		unsigned vatestenb:2;    // 23
+		unsigned set_iddq:1;     // 25
+		unsigned ate_reset:1;    // 26
+		unsigned fsv_minus:1;    // 27
+		unsigned fsv_plus:1;     // 28
+		unsigned bypass_dm_data:1; // 29
+		unsigned bypass_dp_data:1; // 30
+		unsigned not_used:1;
+	} b;
+} u2p_r0_t;
+
+typedef struct usb_aml_regs {
+	volatile uint32_t usb_r0;
+	volatile uint32_t usb_r1;
+	volatile uint32_t usb_r2;
+	volatile uint32_t usb_r3;
+	volatile uint32_t usb_r4;
+	volatile uint32_t usb_r5;
+	volatile uint32_t usb_r6;
+} usb_aml_regs_t;
+
+typedef union usb_r0 {
+	/** raw register data */
+	uint32_t d32;
+	/** register bits */
+	struct {
+		unsigned p30_fsel:6; // 0
+		unsigned p30_phy_reset:1; // 6
+		unsigned p30_test_powerdown_hsp:1; // 7
+		unsigned p30_test_powerdown_ssp:1; // 8
+		unsigned p30_acjt_level:5;         // 9
+		unsigned p30_tx_vboost_lvl:3;      // 14
+		unsigned p30_lane0_tx2rx_loopbk:1; // 17
+		unsigned p30_lane0_ext_pclk_req:1; // 18
+		unsigned p30_pcs_rx_los_mask_val:10; // 19
+		unsigned u2d_ss_scaledown_mode:2;  // 29
+		unsigned u2d_act:1; // 31
+	} b;
+} usb_r0_t;
+
+typedef union usb_r4 {
+	/** raw register data */
+	uint32_t d32;
+	/** register bits */
+	struct {
+		unsigned p21_PORTRESET0:1; // 0
+		unsigned p21_SLEEPM0:1; // 1
+		unsigned mem_pd:2;
+		unsigned reserved4:28; // 31
+	} b;
+} usb_r4_t;
+#define   P_AO_RTC_ALT_CLK_CNTL0                               (volatile uint32_t *)(0xc8100000 + (0x25 << 2))
+#define   P_AO_RTI_PWR_CNTL_REG0                               (volatile uint32_t *)(0xc8100000 + (0x04 << 2))
+
+void set_usb_phy_config(int cfg)
+{
+    const int time_dly = 500;
+    u2p_aml_regs_t * u2p_aml_regs = (u2p_aml_regs_t * )PREI_USB_PHY_2_REG_BASE;
+    usb_aml_regs_t * usb_aml_regs = (usb_aml_regs_t * )PREI_USB_PHY_3_REG_BASE;
+
+    u2p_r0_t u2p_r0;
+    usb_r0_t usb_r0;
+    usb_r4_t usb_r4;
+    //if (!IS_CLK_GATE_ON(USB0)) {
+    //        SET_CBUS_REG_MASK(GCLK_REG_USB0, GCLK_MASK_USB0);
+    //}
+    /*printf("%s %d\n", __func__, __LINE__);*/
+    cfg = cfg;//avoid compiler warning
+    *P_RESET1_REGISTER = (1<<2);//usb reset
+	//writel((1 << 2),P_RESET1_REGISTER);	//usb reset
+    //udelay(time_dly);//by Sam: delay after reset
+
+	*P_AO_RTC_ALT_CLK_CNTL0 |= (1<<31)|(1<<30);
+	*P_AO_RTI_PWR_CNTL_REG0 |= (4<<10);
+
+	u2p_r0.d32 = u2p_aml_regs->u2p_r0;
+	u2p_r0.b.fsel = 5;
+    u2p_r0.b.por = 1;
+	u2p_r0.b.dppulldown = 0;
+	u2p_r0.b.dmpulldown = 0;
+	u2p_aml_regs->u2p_r0 = u2p_r0.d32;
+
+	u2p_r0.d32 = u2p_aml_regs->u2p_r0;
+	u2p_r0.b.por = 0;
+	u2p_aml_regs->u2p_r0 = u2p_r0.d32;
+
+	usb_r0.d32 = usb_aml_regs->usb_r0;
+	usb_r0.b.u2d_act = 1;
+	usb_aml_regs->usb_r0 = usb_r0.d32;
+
+    usb_r4.d32 = usb_aml_regs->usb_r4;
+    usb_r4.b.p21_SLEEPM0 = 1;
+    usb_aml_regs->usb_r4 = usb_r4.d32;
+
+    udelay(time_dly);
+    return;
+}
+
+void close_usb_phy_clock(int cfg)
+{
+    cfg = cfg;//avoid compiler warning
+
+    dwc_otg_pullup(0);//disconnect
+    __udelay(20);
+    /*dwc_otg_power_off_phy();*///Don't call this as it may cause pull-down failed!!!!
+    run_command("sleep 1", 0);//sleep sometime to improve pc compatibility!!
+
+    return;
+}
+#endif
+
+#if defined CONFIG_AML_MESON_GX
 /*
    cfg = 0 : EXT clock
    cfg = 1 : INT clock
@@ -157,5 +306,5 @@ void close_usb_phy_clock(int cfg)
 
         return;
 }
-
+#endif
 

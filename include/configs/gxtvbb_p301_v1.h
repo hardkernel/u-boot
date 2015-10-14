@@ -1,6 +1,6 @@
 
 /*
- * include/configs/gxb_skt_v1.h
+ * include/configs/gxtvbb_p300_v1.h
  *
  * Copyright (C) 2015 Amlogic, Inc. All rights reserved.
  *
@@ -19,8 +19,8 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-#ifndef __GXTVBB_SKT_V1_H__
-#define __GXTVBB_SKT_V1_H__
+#ifndef __GXTVBB_P300_V1_H__
+#define __GXTVBB_P300_V1_H__
 
 #include <asm/arch/cpu.h>
 
@@ -57,11 +57,14 @@
 	"dtb_mem_addr=0x1000000\0" \
 	"panel_type=lvds_0\0" \
 	"outputmode=1080p60hz\0" \
-    "storeboot="\
-    "if imgread kernel boot ${loadaddr}; then store dtb read $dtb_mem_addr; bootm ${loadaddr}; fi;"\
+	"display_layer=osd1\0" \
+	"display_color_index=16\0" \
+	"storeboot="\
+	"if imgread kernel boot ${loadaddr}; then store dtb read $dtb_mem_addr; bootm ${loadaddr}; fi;"\
 	"\0"
 #define CONFIG_BOOTARGS "init=/init console=ttyS0,115200 no_console_suspend earlyprintk=aml-uart,0xc81004c0 ramoops.mem_address=0x20000000 ramoops.mem_size=0x100000 ramoops.record_size=0x8000 ramoops.console_size=0x4000"
-#define CONFIG_BOOTCOMMAND "run storeboot"
+#define CONFIG_BOOTCOMMAND "osd open;"\
+    "run storeboot"
 
 //#define CONFIG_ENV_IS_NOWHERE  1
 #define CONFIG_ENV_SIZE   (64*1024)
@@ -75,8 +78,8 @@
 #define CONFIG_CPU_CLK					1536 //MHz. Range: 600-1800, should be multiple of 24
 
 /* ddr */
-#define CONFIG_DDR_SIZE					2048 //MB
-#define CONFIG_DDR_CLK					912  //MHz, Range: 384-1200, should be multiple of 24
+#define CONFIG_DDR_SIZE					1024 //MB
+#define CONFIG_DDR_CLK					768  //MHz, Range: 384-1200, should be multiple of 24
 #define CONFIG_DDR_TYPE					CONFIG_DDR_TYPE_DDR3
 /* DDR channel setting, please refer hardware design.
  *    CONFIG_DDR0_ONLY_32BIT           : one channel 32bit
@@ -85,6 +88,8 @@
  *    CONFIG_DDR01_TWO_CHANNEL_16BIT   : two channels 16bit */
 #define CONFIG_DDR_CHANNEL_SET			CONFIG_DDR01_TWO_CHANNEL
 #define CONFIG_DDR_FULL_TEST			0 //1 for ddr full test
+#define CONFIG_CMD_DDR_TEST
+#define CONFIG_DDR_CMD_BDL_TUNE
 #define CONFIG_NR_DRAM_BANKS			1
 /* ddr power saving */
 #define CONFIG_DDR_ZQ_POWER_DOWN

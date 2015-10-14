@@ -36,6 +36,8 @@
 
 #define XHCI_MAX_RESET_USEC	(250*1000)
 
+#define CONFIG_SYS_USB_XHCI_MAX_ROOT_PORTS 12
+
 /*
  * These bits are Read Only (RO) and should be saved and written to the
  * registers: 0, 3, 10:13, 30
@@ -1242,8 +1244,8 @@ int xhci_bulk_tx(struct usb_device *udev, unsigned long pipe,
 int xhci_ctrl_tx(struct usb_device *udev, unsigned long pipe,
 		 struct devrequest *req, int length, void *buffer);
 int xhci_check_maxpacket(struct usb_device *udev);
-void xhci_flush_cache(uint32_t addr, u32 type_len);
-void xhci_inval_cache(uint32_t addr, u32 type_len);
+void xhci_flush_cache(ulong addr, u32 type_len);
+void xhci_inval_cache(ulong addr, u32 type_len);
 void xhci_cleanup(struct xhci_ctrl *ctrl);
 struct xhci_ring *xhci_ring_alloc(unsigned int num_segs, bool link_trbs);
 int xhci_alloc_virt_device(struct usb_device *udev);
