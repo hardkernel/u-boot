@@ -82,6 +82,37 @@ void main_loop(void)
 	if (cli_process_fdt(&s))
 		cli_secure_boot_cmd(s);
 
+#if defined(CONFIG_AML_UBOOT_AUTO_TEST)
+	//stick 0 and stick 1 will be used to check the boot process of uboot
+	//stick 0 is the start counter (0xC8834400 + 0x7C<<2) = 0xc88345f0
+	//stick 1 is the end counter   (0xC8834400 + 0x7D<<2) = 0xc88345f4
+	if (*((volatile unsigned int*)(0xc88345f0)))
+	{
+		printf("\n\naml log : TE = %d\n",*((volatile unsigned int*)0xc1109988));
+		*((volatile unsigned int*)(0xc88345f4)) += 1; //stick 1
+		printf("\n\naml log : Boot success %d times @ %d\n",*((volatile unsigned int*)(0xc88345f4)),
+			*((volatile unsigned int*)(0xc88345f0))); //stick 0 set in bl2_main.c
+		int ndelay = 10;
+		int nabort = 0;
+		while (ndelay)
+		{
+			udelay(1);
+			if (tstc())
+			switch (getc())
+			{
+			//case 0x20: /* Space */
+			case 0x0d: /* Enter */
+				nabort = 1;
+				break;
+			}
+			ndelay -= 1;
+		}
+		if (!nabort)
+			run_command("reset",0);
+	}
+#endif //#if defined(CONFIG_AML_UBOOT_AUTO_TEST)
+
+
 	autoboot_command(s);
 
 	cli_loop();

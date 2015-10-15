@@ -246,5 +246,8 @@
 
 #define CONFIG_SECURE_STORAGE 1
 
+//build with uboot auto test
+//#define CONFIG_AML_UBOOT_AUTO_TEST 1
+
 #endif
 
