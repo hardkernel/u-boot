@@ -1,6 +1,6 @@
 #!/bin/bash
 
-make distclean
+make SOC=gxb distclean
 make $1'_config'
 make -j
 

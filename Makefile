@@ -854,15 +854,16 @@ u-boot-comp.bin:u-boot.bin
 #	$(objtree)/tools/uclpack $< $@
 
 FIP_FOLDER := $(srctree)/fip
-FIP_ARGS += --bl30 $(FIP_FOLDER)/bl30.bin
+FIP_FOLDER_SOC := $(FIP_FOLDER)/$(SOC)
+FIP_ARGS += --bl30 $(FIP_FOLDER_SOC)/bl30.bin
 ifeq ($(CONFIG_NEED_BL301), y)
-FIP_ARGS += --bl301 $(FIP_FOLDER)/bl301.bin
+FIP_ARGS += --bl301 $(FIP_FOLDER_SOC)/bl301.bin
 endif
-FIP_ARGS += --bl31 $(FIP_FOLDER)/bl31.bin
+FIP_ARGS += --bl31 $(FIP_FOLDER_SOC)/bl31.bin
 ifeq ($(CONFIG_NEED_BL32), y)
-FIP_ARGS += --bl32 $(FIP_FOLDER)/bl32.bin
+FIP_ARGS += --bl32 $(FIP_FOLDER_SOC)/bl32.bin
 endif
-FIP_ARGS += --bl33 $(FIP_FOLDER)/bl33.bin
+FIP_ARGS += --bl33 $(FIP_FOLDER_SOC)/bl33.bin
 
 .PHONY: fip.bin
 ifeq ($(CONFIG_NEED_BL301), y)
@@ -870,36 +871,36 @@ fip.bin: tools prepare acs.bin bl301.bin
 else
 fip.bin: tools prepare acs.bin
 endif
-	$(Q)cp u-boot.bin $(srctree)/fip/bl33.bin
-	$(Q)$(FIP_FOLDER)/fip_create ${FIP_ARGS} $(FIP_FOLDER)/fip.bin
-	$(Q)$(FIP_FOLDER)/fip_create --dump $(FIP_FOLDER)/fip.bin
+	$(Q)cp u-boot.bin $(FIP_FOLDER_SOC)/bl33.bin
+	$(Q)$(FIP_FOLDER)/fip_create ${FIP_ARGS} $(FIP_FOLDER_SOC)/fip.bin
+	$(Q)$(FIP_FOLDER)/fip_create --dump $(FIP_FOLDER_SOC)/fip.bin
 
 ifeq ($(CONFIG_NEED_BL301), y)
 .PHONY : bl301.bin
 bl301.bin: tools prepare acs.bin
 	$(Q)$(MAKE) -C $(srctree)/$(CPUDIR)/${SOC}/firmware/scp_task
-	$(Q)cp $(buildtree)/scp_task/bl301.bin $(srctree)/fip/bl301.bin -f
+	$(Q)cp $(buildtree)/scp_task/bl301.bin $(FIP_FOLDER_SOC)/bl301.bin -f
 endif
 
 .PHONY : acs.bin
 acs.bin: tools prepare u-boot.bin
 	$(Q)$(MAKE) -C $(srctree)/$(CPUDIR)/${SOC}/firmware/acs all FIRMWARE=$@
-	$(Q)cp $(buildtree)/board/${BOARDDIR}/firmware/acs.bin $(srctree)/fip/acs.bin -f
+	$(Q)cp $(buildtree)/board/${BOARDDIR}/firmware/acs.bin $(FIP_FOLDER_SOC)/acs.bin -f
 
 .PHONY : boot.bin
 boot.bin: fip.bin
-	$(Q)python $(FIP_FOLDER)/acs_tool.pyc $(FIP_FOLDER)/bl2.bin $(FIP_FOLDER)/bl2_acs.bin $(FIP_FOLDER)/acs.bin 0
-	$(Q)$(FIP_FOLDER)/bl2_fix.sh $(FIP_FOLDER)/bl2_acs.bin $(FIP_FOLDER)/zero_tmp $(FIP_FOLDER)/bl2_new.bin
-	$(Q)cat $(FIP_FOLDER)/bl2_new.bin  $(FIP_FOLDER)/fip.bin > $(FIP_FOLDER)/boot_new.bin
-	$(Q)$(FIP_FOLDER)/aml_encrypt_$(SOC) --bootsig --input $(FIP_FOLDER)/boot_new.bin --output $(FIP_FOLDER)/u-boot.bin
+	$(Q)python $(FIP_FOLDER)/acs_tool.pyc $(FIP_FOLDER_SOC)/bl2.bin $(FIP_FOLDER_SOC)/bl2_acs.bin $(FIP_FOLDER_SOC)/acs.bin 0
+	$(Q)$(FIP_FOLDER)/bl2_fix.sh $(FIP_FOLDER_SOC)/bl2_acs.bin $(FIP_FOLDER_SOC)/zero_tmp $(FIP_FOLDER_SOC)/bl2_new.bin
+	$(Q)cat $(FIP_FOLDER_SOC)/bl2_new.bin  $(FIP_FOLDER_SOC)/fip.bin > $(FIP_FOLDER_SOC)/boot_new.bin
+	$(Q)$(FIP_FOLDER_SOC)/aml_encrypt_$(SOC) --bootsig --input $(FIP_FOLDER_SOC)/boot_new.bin --output $(FIP_FOLDER_SOC)/u-boot.bin
 ifeq ($(CONFIG_AML_CRYPTO_UBOOT), y)
-	$(Q)$(FIP_FOLDER)/aml_encrypt_$(SOC) --bootsig --input $(FIP_FOLDER)/boot_new.bin --amluserkey $(srctree)/board/$(BOARDDIR)/aml-user-key.sig --aeskey enable --output $(FIP_FOLDER)/u-boot.bin.encrypt
+	$(Q)$(FIP_FOLDER_SOC)/aml_encrypt_$(SOC) --bootsig --input $(FIP_FOLDER_SOC)/boot_new.bin --amluserkey $(srctree)/board/$(BOARDDIR)/aml-user-key.sig --aeskey enable --output $(FIP_FOLDER_SOC)/u-boot.bin.encrypt
 endif
 ifeq ($(CONFIG_AML_CRYPTO_IMG), y)
-	$(Q)$(FIP_FOLDER)/aml_encrypt_$(SOC) --imgsig --input $(srctree)/board/$(BOARDDIR)/boot.img --amluserkey $(srctree)/board/$(BOARDDIR)/aml-user-key.sig --output $(FIP_FOLDER)/boot.img.encrypt
+	$(Q)$(FIP_FOLDER_SOC)/aml_encrypt_$(SOC) --imgsig --input $(srctree)/board/$(BOARDDIR)/boot.img --amluserkey $(srctree)/board/$(BOARDDIR)/aml-user-key.sig --output $(FIP_FOLDER_SOC)/boot.img.encrypt
 endif
-	@rm -f $(FIP_FOLDER)/bl2_new.bin $(FIP_FOLDER)/boot_new.bin
-	@echo '$(FIP_FOLDER)/u-boot.bin build done!'
+	@rm -f $(FIP_FOLDER_SOC)/bl2_new.bin $(FIP_FOLDER_SOC)/boot_new.bin
+	@echo '$(FIP_FOLDER_SOC)/u-boot.bin build done!'
 
 #
 # U-Boot entry point, needed for booting of full-blown U-Boot
@@ -1406,15 +1407,18 @@ distclean: mrproper
 		-type f -print | xargs rm -f
 	@rm -f boards.cfg
 	@rm -rf $(buildtree)/*
-	@rm -f $(srctree)/fip/acs.bin
-	@rm -f $(srctree)/fip/bl2_acs.bin
-	@rm -f $(srctree)/fip/bl301.bin
-	@rm -f $(srctree)/fip/bl33.bin
-	@rm -f $(srctree)/fip/fip.bin
-	@rm -f $(srctree)/fip/boot.bin
-	@rm -f $(srctree)/fip/boot_sd.bin
-	@rm -f $(srctree)/fip/u-boot.bin
-	@rm -f $(srctree)/fip/u-boot.bin.*
+	@rm -f $(FIP_FOLDER_SOC)/acs.bin
+	@rm -f $(FIP_FOLDER_SOC)/bl2_acs.bin
+	@rm -f $(FIP_FOLDER_SOC)/bl301.bin
+	@rm -f $(FIP_FOLDER_SOC)/bl33.bin
+	@rm -f $(FIP_FOLDER_SOC)/fip.bin
+	@rm -f $(FIP_FOLDER_SOC)/boot.bin
+	@rm -f $(FIP_FOLDER_SOC)/boot_sd.bin
+	@rm -f $(FIP_FOLDER_SOC)/u-boot.bin
+	@rm -f $(FIP_FOLDER_SOC)/u-boot.bin.*
+#following are temp to remove all former images which make confusion, will be removed later
+	@rm -f $(srctree)/fip/*.bin $(srctree)/fip/*.bl2 $(srctree)/fip/*.tpl $(srctree)/fip/u-boot.bin.*
+	@rm -f $(srctree)/fip/aml_encrypt_gxb
 
 backup:
 	F=`basename $(srctree)` ; cd .. ; \
