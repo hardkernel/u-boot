@@ -898,7 +898,9 @@ ifeq ($(CONFIG_AML_CRYPTO_UBOOT), y)
 endif
 ifeq ($(CONFIG_AML_CRYPTO_IMG), y)
 	$(Q)$(FIP_FOLDER_SOC)/aml_encrypt_$(SOC) --imgsig --input $(srctree)/board/$(BOARDDIR)/boot.img --amluserkey $(srctree)/board/$(BOARDDIR)/aml-user-key.sig --output $(FIP_FOLDER_SOC)/boot.img.encrypt
+	@cp -f $(FIP_FOLDER_SOC)/boot.img.encrypt $(FIP_FOLDER)/boot.img.encrypt
 endif
+	@cp -f $(FIP_FOLDER_SOC)/u-boot.* $(FIP_FOLDER)/
 	@rm -f $(FIP_FOLDER_SOC)/bl2_new.bin $(FIP_FOLDER_SOC)/boot_new.bin
 	@echo '$(FIP_FOLDER_SOC)/u-boot.bin build done!'
 
@@ -1415,9 +1417,8 @@ distclean: mrproper
 	@rm -f $(FIP_FOLDER_SOC)/boot.bin
 	@rm -f $(FIP_FOLDER_SOC)/boot_sd.bin
 	@rm -f $(FIP_FOLDER_SOC)/u-boot.bin
-	@rm -f $(FIP_FOLDER_SOC)/u-boot.bin.*
-#following are temp to remove all former images which make confusion, will be removed later
-	@rm -f $(srctree)/fip/*.bin $(srctree)/fip/*.bl2 $(srctree)/fip/*.tpl $(srctree)/fip/u-boot.bin.*
+	@rm -f $(FIP_FOLDER_SOC)/u-boot.bin.* $(FIP_FOLDER_SOC)/*.encrypt
+	@rm -f $(FIP_FOLDER)/u-boot.bin.* $(FIP_FOLDER)/*.bin $(FIP_FOLDER)/*.encrypt
 	@rm -f $(srctree)/fip/aml_encrypt_gxb
 
 backup:
