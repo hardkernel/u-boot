@@ -80,7 +80,7 @@ static void aml_i2c_set_clk(struct aml_i2c *i2c)
 	i2c_clock_set = sys_clk / i2c->master_i2c_speed;
 
 	AML_I2C_DBG(1, "i2c->master_i2c_speed is 0x%x\n", i2c->master_i2c_speed);
-#if MESON_CPU_TYPE > MESON_CPU_TYPE_MESON8
+#if 1
 	i2c_clock_set >>= 1;
 	ctrl = (struct aml_i2c_reg_ctrl*)&(i2c->master_regs->i2c_ctrl);
 	if (i2c_clock_set > 0xfff) i2c_clock_set = 0xfff;
@@ -314,7 +314,7 @@ static int aml_i2c_do_address(struct aml_i2c *i2c, unsigned int addr)
     AML_I2C_DBG(1, "FILE:%s:%d, FUNC:%s\n", __FILE__,__LINE__,__func__);
 
     i2c->cur_slave_addr = addr & AML_I2C_SLAVE_ADDR_MASK_7BIT;
-#if MESON_CPU_TYPE > MESON_CPU_TYPE_MESON8
+#if 1
     i2c->master_regs->i2c_slave_addr &=(~AML_I2C_SLAVE_ADDR_MASK);
 
     i2c->master_regs->i2c_slave_addr |=(i2c->cur_slave_addr<<1);
@@ -327,11 +327,21 @@ static int aml_i2c_do_address(struct aml_i2c *i2c, unsigned int addr)
 static void aml_i2c_stop(struct aml_i2c *i2c)
 {
 	AML_I2C_DBG(1, "FILE:%s:%d, FUNC:%s\n", __FILE__,__LINE__,__func__);
-	aml_i2c_clear_token_list(i2c);
-	i2c->token_tag[0]=TOKEN_STOP;
-	aml_i2c_set_token_list(i2c);
-	aml_i2c_start_token_xfer(i2c);
-	aml_i2c_wait_ack(i2c);
+	// aml_i2c_clear_token_list(i2c);
+	// i2c->token_tag[0]=TOKEN_STOP;
+	// aml_i2c_set_token_list(i2c);
+	// aml_i2c_start_token_xfer(i2c);
+	// aml_i2c_wait_ack(i2c);
+	struct aml_i2c_reg_ctrl* ctrl;
+	ctrl = (struct aml_i2c_reg_ctrl*)&(i2c->master_regs->i2c_ctrl);
+	if (!ctrl->error) {
+		AML_I2C_DBG(1, "FILE1:%s:%d, FUNC:%s\n", __FILE__,__LINE__,__func__);
+		aml_i2c_clear_token_list(i2c);
+		i2c->token_tag[0]=TOKEN_STOP;
+		aml_i2c_set_token_list(i2c);
+		aml_i2c_start_token_xfer(i2c);
+		aml_i2c_wait_ack(i2c);
+	}
 }
 
 static long aml_i2c_read(struct aml_i2c *i2c, unsigned char *buf,
@@ -610,11 +620,15 @@ __attribute__((unused))  static ssize_t show_i2c_info(void)
 }
 
 static const unsigned long g_aml_i2c_reg_start[] = {
-    [0] = MESON_I2C_MASTER_A_START,/*master a*/
-    [1] = MESON_I2C_MASTER_B_START,/*master b*/
-    [2] = MESON_I2C_SLAVE_START,/*slave*/
+	[0] = MESON_I2C_MASTER_AO_START,/*master a*/
+	[1] = MESON_I2C_MASTER_A_START,/*master a*/
+	[2] = MESON_I2C_MASTER_B_START,/*master b*/
+	[3] = MESON_I2C_MASTER_C_START,/*master b*/
+	[4] = MESON_I2C_MASTER_D_START,/*master b*/
+	//    [2] = MESON_I2C_SLAVE_START,/*slave*/
+
 #ifdef HAS_AO_MODULE
-    [3] = MESON_I2C_MASTER_AO_START,/*master ao*/
+	[3] = MESON_I2C_MASTER_AO_START,/*master ao*/
 #endif
 };
 
@@ -671,8 +685,8 @@ int aml_i2c_init(void)
  */
 int i2c_read(uchar chip, uint addr, int alen, uchar *buffer, int len)
 {
-	int ret;
-	struct i2c_msg *msgs = {0};
+	int ret = 0;
+
     /*
 	 * I2C data address within the chip.  This can be 1 or
 	 * 2 bytes long.  Some day it might be 3 bytes long :-).
@@ -718,26 +732,6 @@ int i2c_read(uchar chip, uint addr, int alen, uchar *buffer, int len)
 	}
 
 
-	if (len == 1)
-	{
-		struct i2c_msg msg[] = {
-			{
-				.addr = chip,
-				.flags = 0,
-				.len = alen,             //I2C data address length.
-				.buf = devaddr,
-			},
-			{
-				.addr = chip,
-				.flags = 1,
-				.len = 1,                //read 1 byte from I2C data address.
-				.buf = buffer,
-			}
-		};
-		msgs = msg;
-	}
-	else if(len>1)
-	{
 		struct i2c_msg msg[] = {
 			{
 				.addr = chip,
@@ -752,10 +746,8 @@ int i2c_read(uchar chip, uint addr, int alen, uchar *buffer, int len)
 				.buf = buffer,
 			}
 		};
-		msgs = msg;
-	}
 
-	ret = aml_i2c_xfer(msgs, 2);
+	ret = aml_i2c_xfer((struct i2c_msg *)msg, 2);
     if (ret < 0) {
         printf("%s: i2c transfer failed\n", __FUNCTION__);
 		return ret;
@@ -780,7 +772,6 @@ int i2c_write(unsigned char chip, unsigned int addr, int alen,unsigned char *buf
 {
 	int ret;
 	int length = 0;
-	struct i2c_msg *msgs;
 	uint8_t buff[3];
 
     /*
@@ -860,7 +851,13 @@ int i2c_write(unsigned char chip, unsigned int addr, int alen,unsigned char *buf
 			.buf = buff,
 			}
 		};
-		msgs = msg;
+
+		ret = aml_i2c_xfer((struct i2c_msg *)msg, 1);
+		if (ret < 0) {
+		    printf("%s: i2c transfer failed\n", __FUNCTION__);
+			    return ret;
+		}
+
 	}
 	else
 	{
@@ -871,11 +868,7 @@ int i2c_write(unsigned char chip, unsigned int addr, int alen,unsigned char *buf
 		return -1;
 	}
 
-	ret = aml_i2c_xfer(msgs, 1);
-    if (ret < 0) {
-        printf("%s: i2c transfer failed\n", __FUNCTION__);
-		return ret;
-    }
+
 
 	return 0;
 }

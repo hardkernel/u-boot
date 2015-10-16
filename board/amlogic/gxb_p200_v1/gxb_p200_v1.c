@@ -27,6 +27,7 @@
 #ifdef CONFIG_SYS_I2C_AML
 #include <aml_i2c.h>
 #include <asm/arch/secure_apb.h>
+#include <asm/arch/io.h>
 #endif
 #ifdef CONFIG_AML_VPU
 #include <vpu.h>
@@ -252,20 +253,22 @@ int board_mmc_init(bd_t	*bis)
 #if 0
 static void board_i2c_set_pinmux(void){
 	/*********************************************/
-	/*                | I2C_Master_AO        |I2C_Slave            |       */
+	/*                | I2C_Master_B        |I2C_Slave            |       */
 	/*********************************************/
 	/*                | I2C_SCK                | I2C_SCK_SLAVE  |      */
-	/* GPIOAO_4  | [AO_PIN_MUX: 6]     | [AO_PIN_MUX: 2]   |     */
+	/* GPIODV_26  | [AO_PIN_MUX: 6]     | [AO_PIN_MUX: 2]   |     */
 	/*********************************************/
 	/*                | I2C_SDA                 | I2C_SDA_SLAVE  |     */
-	/* GPIOAO_5  | [AO_PIN_MUX: 5]     | [AO_PIN_MUX: 1]   |     */
+	/* GPIODV_27  | [AO_PIN_MUX: 5]     | [AO_PIN_MUX: 1]   |     */
 	/*********************************************/
 
-	//disable all other pins which share with I2C_SDA_AO & I2C_SCK_AO
-	clrbits_le32(P_AO_RTI_PIN_MUX_REG, ((1<<2)|(1<<24)|(1<<1)|(1<<23)));
-	//enable I2C MASTER AO pins
-	setbits_le32(P_AO_RTI_PIN_MUX_REG,
-	(MESON_I2C_MASTER_AO_GPIOAO_4_BIT | MESON_I2C_MASTER_AO_GPIOAO_5_BIT));
+	//disable all other pins which share with I2C_SDA_B & I2C_SCK_B
+	clrbits_le32(P_PERIPHS_PIN_MUX_0, ((1<<9)|(1<<10)));
+	clrbits_le32(P_PERIPHS_PIN_MUX_2, ((1<<26)|(1<<27)));
+	clrbits_le32(P_PERIPHS_PIN_MUX_5, ((1<<8)|(1<<9)|(1<<10)));
+	//enable I2C MASTER B pins
+	setbits_le32(P_PERIPHS_PIN_MUX_7,
+	(MESON_I2C_MASTER_B_GPIODV_26_BIT | MESON_I2C_MASTER_B_GPIODV_27_BIT));
 
 	udelay(10);
 };
@@ -275,15 +278,15 @@ struct aml_i2c_platform g_aml_i2c_plat = {
 	.wait_ack_interval  = 5,
 	.wait_read_interval = 5,
 	.wait_xfer_interval = 5,
-	.master_no          = AML_I2C_MASTER_AO,
+	.master_no          = AML_I2C_MASTER_B,
 	.use_pio            = 0,
 	.master_i2c_speed   = AML_I2C_SPPED_400K,
-	.master_ao_pinmux = {
-		.scl_reg    = (unsigned long)MESON_I2C_MASTER_AO_GPIOAO_4_REG,
-		.scl_bit    = MESON_I2C_MASTER_AO_GPIOAO_4_BIT,
-		.sda_reg    = (unsigned long)MESON_I2C_MASTER_AO_GPIOAO_5_REG,
-		.sda_bit    = MESON_I2C_MASTER_AO_GPIOAO_5_BIT,
-	}
+	.master_b_pinmux = {
+	.scl_reg    = (unsigned long)MESON_I2C_MASTER_B_GPIODV_27_REG,
+	.scl_bit    = MESON_I2C_MASTER_B_GPIODV_27_BIT,
+	.sda_reg    = (unsigned long)MESON_I2C_MASTER_B_GPIODV_26_REG,
+	.sda_bit    = MESON_I2C_MASTER_B_GPIODV_26_BIT,
+}
 };
 #if 0
 static void board_i2c_init(void)

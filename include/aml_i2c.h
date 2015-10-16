@@ -85,7 +85,7 @@ struct aml_i2c_reg_ctrl {
 		pulled low.  If this bit is '1' then the SDA line is tri-stated.*/
 	unsigned int rdscl:1; 		/*[25] Read back level of the SCL line*/
 	unsigned int rdsda:1; 		/*[26] Read back level of the SDA line*/
-#if MESON_CPU_TYPE > MESON_CPU_TYPE_MESON8
+#if 1
 	unsigned int unused:1; 	/*[27]*/
 	unsigned int clk_delay_ext:2; 	/*[29:28]*/
 	unsigned int unused2:2; 	/*[31:30]*/
@@ -112,7 +112,7 @@ struct aml_i2c_reg_slave_addr {
 	unsigned int scl_filter:3;	/*[13:11] SCL FILTER*/
 	/*A filter was added in the SCL input path to allow for filtering of slow
 		rise times.  0 = no filtering, 7 = max filtering*/
-#if MESON_CPU_TYPE > MESON_CPU_TYPE_MESON8
+#if 1
 	unsigned int unused:2;	/*[15:14]*/
 	unsigned int clk_low_delay:12;	/*[27:16]*/
 	unsigned int clk_low_delay_en:1;	/*[28]*/
