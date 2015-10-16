@@ -137,6 +137,7 @@ struct partitions def_partition_table[] = {
 
 #if (AML_CFG_DTB_RSV_EN)
 extern int amlnf_dtb_init_partitions(struct amlnand_chip *aml_chip);
+extern int amlnf_detect_dtb_partitions(struct amlnand_chip *aml_chip);
 #endif
 
 int amlnand_get_partition_table(struct amlnand_chip *aml_chip)
@@ -165,6 +166,10 @@ int amlnand_get_partition_table(struct amlnand_chip *aml_chip)
 		return -NAND_FAILED;
 	#endif
 	}
+	else{
+		amlnf_detect_dtb_partitions(aml_chip);
+	}
+
 	if (ret) {
 		part_table = def_partition_table;
 		aml_nand_msg("%s() %p, using default one to bootup", __func__, part_table);

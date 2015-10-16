@@ -11,7 +11,7 @@ struct cdev amlnf_dtb;
 struct device *dtb_dev = NULL;
 struct class *amlnf_dtb_class = NULL;
 #endif  /* AML_NAND_UBOOT */
-
+int dtb_erase_blk = -1;
 extern int get_partition_from_dts(unsigned char * buffer);
 
 struct amlnand_chip *aml_chip_dtb = NULL;
@@ -420,6 +420,55 @@ int amlnf_dtb_init_partitions(struct amlnand_chip *aml_chip)
 	if (ret) {
 		aml_nand_msg("%s  get_partition_from_dts failed", __func__);
 	}
+exit_err:
+	if (dtb_buf) {
+		kfree(dtb_buf);
+		dtb_buf = NULL;
+	}
+	return ret;
+}
+
+
+/*****************************************************************************
+ Prototype    : amlnf_detect_dtb_partitions
+ Description  : if 'dtb, write the bad block, we can't erase this block.
+				So we have to find the 'dtb' address in flash and flag it.
+ Input        : struct amlnand_chip *aml_chip
+ Output       : NULL
+ Return Value :	ret
+ Called By    : amlnand_get_partition_table
+
+  History        :
+  1.Date         : 2015/10/15
+	Author       : Fly Mo
+	Modification : Created function
+
+*****************************************************************************/
+int amlnf_detect_dtb_partitions(struct amlnand_chip *aml_chip)
+{
+	int ret = 0;
+	u8 *dtb_buf = NULL;
+	aml_chip_dtb = aml_chip;
+	struct nand_arg_info test_amlnf_dtb;
+	memset(&test_amlnf_dtb, 0, sizeof(test_amlnf_dtb));
+	dtb_erase_blk = -1;
+	dtb_buf = aml_nand_malloc(CONFIG_DTB_SIZE);
+	if (dtb_buf == NULL) {
+		aml_nand_msg("nand malloc for dtb_buf failed");
+		ret = -1;
+		goto exit_err;
+	}
+	memset(dtb_buf, 0x0, CONFIG_DTB_SIZE);
+	test_amlnf_dtb.arg_type = aml_chip->amlnf_dtb.arg_type;
+	ret = amlnand_info_init(aml_chip,
+		(u8 *)&(test_amlnf_dtb),
+		dtb_buf,
+		(u8 *)DTD_INFO_HEAD_MAGIC,
+		CONFIG_DTB_SIZE);
+	if (test_amlnf_dtb.arg_valid == 1) {
+		dtb_erase_blk = test_amlnf_dtb.valid_blk_addr;
+	}
+	aml_nand_msg("%s:dtb_erase_blk:%d", __func__,dtb_erase_blk);
 exit_err:
 	if (dtb_buf) {
 		kfree(dtb_buf);

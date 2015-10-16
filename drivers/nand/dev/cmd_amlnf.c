@@ -296,7 +296,7 @@ static int do_amlnfphy(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]
 	int  start_secor, length,  ret = 0;
 	char *cmd, *protect_name;
 	char *dev_name = NULL;
-	u32 *markbad_reserved_addr = NULL;
+	unsigned long markbad_reserved_addr = 0;
 
 	/* at least two arguments please */
 	if (argc < 1)
@@ -1041,12 +1041,12 @@ static int do_amlnfphy(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]
 			goto usage;
 		}
 
-		if (!(str2long(argv[2], (unsigned long*)markbad_reserved_addr))) {
+		if (!(str2long(argv[2], (unsigned long*)&markbad_reserved_addr))) {
 			aml_nand_dbg("'%s' is not a number", argv[2]);
 			goto usage;
 		}
-		printf("mark_reserved block:%d\n",*markbad_reserved_addr);
-        ret = amlnf_markbad_reserved_ops(*markbad_reserved_addr);
+		printf("mark_reserved block:%d\n", (int)markbad_reserved_addr);
+		ret = amlnf_markbad_reserved_ops(markbad_reserved_addr);
 
 		printf("NAND %s %s\n", "MARKBAD", (ret <0) ? "ERROR" : "OK");
 		return 0;

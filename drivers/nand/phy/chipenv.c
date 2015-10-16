@@ -60,6 +60,17 @@ int chipenv_init_erase_protect(struct amlnand_chip *aml_chip, int flag,int block
 	return ret;
 }
 
+#if (AML_CFG_DTB_RSV_EN)
+extern int dtb_erase_blk;
+int bad_block_is_dtb_blk( const int blk_addr)
+{
+	if (dtb_erase_blk == blk_addr && dtb_erase_blk != -1) {
+		return 1;
+	}
+	return 0;
+}
+#endif
+
 /***
 *erase whole nand as scrub
 * start_blk = 0; total_blk;
@@ -80,7 +91,7 @@ static int amlnand_oops_handle(struct amlnand_chip *aml_chip, int flag)
 	int percent=0, percent_complete = -1;
 	unsigned char *buf = NULL;
 	unsigned int buf_size = MAX(CONFIG_SECURE_SIZE, CONFIG_KEYSIZE);
-
+	int last_reserve_blk;
 	buf = aml_nand_malloc(buf_size);
 	if (!buf) {
 	  aml_nand_msg("%s() %d: malloc failed", __FUNCTION__, __LINE__);
@@ -117,7 +128,7 @@ static int amlnand_oops_handle(struct amlnand_chip *aml_chip, int flag)
 		total_blk = get_last_reserve_block(aml_chip);
 		aml_nand_msg("start_blk =%d,total_blk=%d",start_blk, total_blk);
 	}
-
+	last_reserve_blk = get_last_reserve_block(aml_chip);
 	for (;start_blk< total_blk; start_blk++) {
 		memset((unsigned char *)ops_para, 0x0, sizeof(struct chip_ops_para));
 		ops_para->page_addr =(((start_blk - start_blk % controller->chip_num) /controller->chip_num)) * pages_per_blk;
@@ -127,7 +138,13 @@ static int amlnand_oops_handle(struct amlnand_chip *aml_chip, int flag)
 		ret = operation->block_isbad(aml_chip);
 		if (ret ) {
 			aml_nand_msg("bad block skipping!!!!0x%x",start_blk);
-			continue;
+			//fixme, check is dtb, if dtb ,erase it!
+			if (start_blk < last_reserve_blk && bad_block_is_dtb_blk(start_blk)) {
+				aml_nand_msg("bad block dtb is dtb block:0x%x,not skipping",start_blk);
+			}
+			else {
+				continue;
+			}
 		}	//check bbt
 
 
@@ -3856,20 +3873,20 @@ int amlnand_get_dev_configs(struct amlnand_chip *aml_chip)
 	int  ret = 0;
 
 	/* 1. setting config attribute.*/
-	ENV_NAND_LINE
+	ENV_NAND_LINE;
 	amlnand_set_config_attribute(aml_chip);
 
-	ENV_NAND_LINE
+	ENV_NAND_LINE;
 	ret = amlnand_config_buf_malloc(aml_chip);
 	if (ret < 0) {
 		aml_nand_msg("nand malloc buf failed");
 		goto exit_error0;
 	}
-	ENV_NAND_LINE
+	ENV_NAND_LINE;
 	/* get retry infos on the otp area.*/
 	if (aml_chip->flash.new_type) {
-		ENV_NAND_LINE
-		aml_nand_dbg("detect new nand here and new_type:%d", aml_chip->flash.new_type);
+		ENV_NAND_LINE;
+		aml_nand_msg("detect new nand here and new_type:%d", aml_chip->flash.new_type);
 		ret = amlnand_set_readretry_slc_para(aml_chip);
 		if (ret<0) {
 			aml_nand_msg("setting new nand para failed and ret:0x%x", ret);
@@ -3877,7 +3894,7 @@ int amlnand_get_dev_configs(struct amlnand_chip *aml_chip)
 		}
 	}
 
-	ENV_NAND_LINE
+	ENV_NAND_LINE;
 #ifdef AML_NAND_UBOOT
 	/* 2. get partition table from outsides, maybe sram.*/
 	ret = amlnand_get_partition_table(aml_chip);
@@ -3889,17 +3906,17 @@ int amlnand_get_dev_configs(struct amlnand_chip *aml_chip)
 
 	/* 3. with erase flags*/
 	if ((aml_chip->init_flag > NAND_BOOT_ERASE_PROTECT_CACHE)) {
-		ENV_NAND_LINE
+		ENV_NAND_LINE;
 		/* 3.1 get bbt info 1st*/
 		ret = amlnand_info_init(aml_chip, (unsigned char *)&(aml_chip->nand_bbtinfo),(unsigned char *)(aml_chip->block_status),(unsigned char *)BBT_HEAD_MAGIC, sizeof(struct block_status));
 		if (ret < 0) {
 			aml_nand_msg("%s() %d: nand scan bbt info failed and ret:%d", __FUNCTION__, __LINE__, ret);
 			//goto exit_error0;
 		}
-		ENV_NAND_LINE
+		ENV_NAND_LINE;
 		/* 3.2 get fbbt info if bbt info is not exist.*/
 		if (aml_chip->nand_bbtinfo.arg_valid == 0) {
-			ENV_NAND_LINE
+			ENV_NAND_LINE;
 			ret = amlnand_info_init(aml_chip, (unsigned char *)&(aml_chip->shipped_bbtinfo),(unsigned char *)aml_chip->shipped_bbt_ptr,(unsigned char *)SHIPPED_BBT_HEAD_MAGIC, sizeof(struct shipped_bbt));
 			if (ret < 0) {
 				aml_nand_msg("%s() %d: nand scan shipped bbt info failed and ret:%d", __FUNCTION__, __LINE__, ret);
@@ -3913,7 +3930,7 @@ int amlnand_get_dev_configs(struct amlnand_chip *aml_chip)
 				if a clean nand, first scan factory bad block and then created a bad block table.
 				else fbbt is lost ,need to do some test-patterns and search bad blocks.
 			*/
-				ENV_NAND_LINE
+				ENV_NAND_LINE;
 				ret = shipped_bbt_invalid_ops(aml_chip);
 				if (ret < 0) {
 					aml_nand_msg("shipped_bbt_invalid_ops and ret:%d", ret);
@@ -3921,7 +3938,7 @@ int amlnand_get_dev_configs(struct amlnand_chip *aml_chip)
 				}
 			} else {
 				/* 3.4 ship bbt valid, */
-				ENV_NAND_LINE
+				ENV_NAND_LINE;
 				ret = shipped_bbt_valid_ops(aml_chip);
 				if (ret < 0) {
 					aml_nand_msg("shipped_bbt_valid_ops and ret:%d", ret);
@@ -3933,18 +3950,18 @@ int amlnand_get_dev_configs(struct amlnand_chip *aml_chip)
 				for amlnand_oops_handle,it will not erase fbbt if exist.
 			  fixme, may need to check fbbt which may need a refresh.
 			*/
-			ENV_NAND_LINE
+			ENV_NAND_LINE;
 			ret = amlnand_info_init(aml_chip, (unsigned char *)&(aml_chip->shipped_bbtinfo),(unsigned char *)(aml_chip->shipped_bbt_ptr),(unsigned char *)SHIPPED_BBT_HEAD_MAGIC, sizeof(struct shipped_bbt));
 			if (ret < 0) {
 				aml_nand_msg("nand scan shipped info failed and ret:%d",ret);
 			}
-			ENV_NAND_LINE
+			ENV_NAND_LINE;
 			amlnand_oops_handle(aml_chip,aml_chip->init_flag);
 		}
-		ENV_NAND_LINE
+		ENV_NAND_LINE;
 	}else if(aml_chip->init_flag == NAND_BOOT_ERASE_PROTECT_CACHE) {
 		/* 4. erase protect cache only!*/
-		ENV_NAND_LINE
+		ENV_NAND_LINE;
 		amlnand_oops_handle(aml_chip, aml_chip->init_flag);
 	} else {
 		/* 5. without erase, normal boot or upgrade */
