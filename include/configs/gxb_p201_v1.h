@@ -152,11 +152,15 @@
             "\0"\
         "recovery_from_sdcard="\
             "if fatload mmc 0 ${loadaddr} aml_autoscript; then autoscr ${loadaddr}; fi;"\
-            "if fatload mmc 0 ${loadaddr} recovery.img; then bootm ${loadaddr};fi;"\
+            "if fatload mmc 0 ${loadaddr} recovery.img; then "\
+                    "if fatload mmc 0 ${dtb_mem_addr} dtb.img; then echo sd dtb.img loaded; fi;"\
+                    "bootm ${loadaddr};fi;"\
             "\0"\
         "recovery_from_udisk="\
             "if fatload usb 0 ${loadaddr} aml_autoscript; then autoscr ${loadaddr}; fi;"\
-            "if fatload usb 0 ${loadaddr} recovery.img; then bootm ${loadaddr};fi;"\
+            "if fatload usb 0 ${loadaddr} recovery.img; then "\
+                "if fatload usb 0 ${dtb_mem_addr} dtb.img; then echo udisk dtb.img loaded; fi;"\
+                "bootm ${loadaddr};fi;"\
             "\0"\
         "recovery_from_flash="\
             "if imgread kernel recovery ${loadaddr}; then bootm ${loadaddr}; fi"\
