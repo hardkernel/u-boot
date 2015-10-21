@@ -80,17 +80,19 @@
 
 /* storage: emmc/nand/sd */
 #define		CONFIG_STORE_COMPATIBLE 1
+#define CONFIG_AML_NAND	1
 #define 	CONFIG_ENV_OVERWRITE
 #define 	CONFIG_CMD_SAVEENV
-#define		CONFIG_ENV_IS_IN_MMC 1
-#define		CONFIG_SYS_MMC_ENV_DEV 1
+/* fixme, need fix*/
+
+#if (defined(CONFIG_ENV_IS_IN_AMLNAND) || defined(CONFIG_ENV_IS_IN_MMC)) && defined(CONFIG_STORE_COMPATIBLE)
+#error env in amlnand/mmc already be compatible;
+#endif
 #define		CONFIG_AML_SD_EMMC 1
 #ifdef		CONFIG_AML_SD_EMMC
 	#define 	CONFIG_GENERIC_MMC 1
 	#define 	CONFIG_CMD_MMC 1
-#endif
-#define 	CONFIG_AML_NAND	1
-#ifdef CONFIG_AML_NAND
+	#define	CONFIG_SYS_MMC_ENV_DEV 1
 #endif
 #define		CONFIG_PARTITIONS 1
 #define 	CONFIG_SYS_NO_FLASH  1
@@ -232,7 +234,7 @@
 
 //for GXBB SRAM size limitation just disable NAND
 //as the socket board default has no NAND
-#undef CONFIG_AML_NAND
+//#undef CONFIG_AML_NAND
 
 //unify build for generate encrypted bootloader "u-boot.bin.encrypt"
 #define CONFIG_AML_CRYPTO_UBOOT   1
