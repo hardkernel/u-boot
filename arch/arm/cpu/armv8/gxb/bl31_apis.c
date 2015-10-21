@@ -279,7 +279,8 @@ unsigned long aml_sec_boot_check(unsigned long nType,
 	switch (nType)
 	{
 	case GXB_TYPE_EFUSE_NORMAL_BOOT : x1 = AML_D_P_W_EFUSE_NORMAL_WRITE; break;
-	case GXB_TYPE_IMG_SECURE_BOOT :   x1 = AML_D_P_IMG_DECRYPT;break;
+	case GXB_TYPE_IMG_SECURE_BOOT   : x1 = AML_D_P_IMG_DECRYPT;break;
+	case GXB_TYPE_UPGRADE_CHECK     : x1 = AML_D_P_UPGRADE_CHECK;break;
 	}
 	do {
 		asm volatile(

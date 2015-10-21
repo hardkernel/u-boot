@@ -101,11 +101,14 @@ struct sram_hal_api_arg {
 #define GXB_TYPE_EFUSE_SECURE_BOOT  (0)
 #define GXB_TYPE_EFUSE_NORMAL_BOOT  (1)
 #define GXB_TYPE_IMG_SECURE_BOOT    (2)
+#define GXB_TYPE_UPGRADE_CHECK      (3)
+
 
 #define AML_DATA_PROCESS                 (0x820000FF)
 	#define AML_D_P_W_EFUSE_SECURE_BOOT  (0x1)
 	#define AML_D_P_W_EFUSE_NORMAL_WRITE (0x2)
 	#define AML_D_P_IMG_DECRYPT          (0x4)
+	#define AML_D_P_UPGRADE_CHECK        (0x8)
 
 #define GXB_EFUSE_PATTERN_SIZE      (0x500)
 #define GXB_IMG_SIZE                (24<<20)
