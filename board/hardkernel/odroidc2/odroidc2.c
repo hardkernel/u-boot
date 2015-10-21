@@ -29,6 +29,7 @@ DECLARE_GLOBAL_DATA_PTR;
 
 extern int board_get_recovery_message(void);
 
+#define GPIO_SW_UMS		28	/* GPIOY_5 */
 #define GPIO_BLUELED		132
 #define GPIO_USB_PWREN		123
 #define GPIO_OTG_PWREN		124
@@ -271,6 +272,12 @@ int board_late_init(void)
 {
 	int reboot_reason;
 
+	/*
+	 * If UMS SW is 'on', the device will run as USB Mass Storage
+	 */
+	if (1 == gpio_get_value(GPIO_SW_UMS))
+		run_command("ums 0 mmc 0", 0);
+
 	board_partition_init();
 
 	reboot_reason = board_reboot_reason();
@@ -342,6 +349,14 @@ int board_init(void)
 	 */
 	gpio_request(GPIO_OTG_PWREN, "otg_pwren");
 	gpio_direction_output(GPIO_OTG_PWREN, 0);
+
+	/*
+	 * GPIO: USB MassStorage
+	 * Low  - Normal boot
+	 * High - Act as USB Mass Storage Device
+	 */
+	gpio_request(GPIO_SW_UMS, "sw_ums");
+	gpio_direction_input(GPIO_SW_UMS);
 
 #if defined(CONFIG_USB_DWC_OTG_HCD)
 	amlogic_usb_init(&usb_config0, BOARD_USB_MODE_SLAVE);
