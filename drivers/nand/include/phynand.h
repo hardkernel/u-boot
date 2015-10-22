@@ -810,6 +810,7 @@ struct amlnand_chip {
 	struct nand_arg_info uboot_env;
 #if (AML_CFG_DTB_RSV_EN)
 	struct nand_arg_info amlnf_dtb;
+	u32 detect_dtb_flag;	/*1:no dtb in flash */
 #endif
 #ifndef AML_NAND_UBOOT
 	struct pinctrl *nand_pinctrl;
@@ -911,4 +912,6 @@ extern int aml_nand_update_dtb(struct amlnand_chip *aml_chip,
 
 extern void amlchip_dumpinfo(struct amlnand_chip *aml_chip);
 
+extern int bad_block_is_dtb_blk( const int blk_addr);
+extern int get_last_reserve_block(struct amlnand_chip *aml_chip);
 #endif /* NAND_H_INCLUDED */

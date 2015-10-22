@@ -339,7 +339,8 @@ int amlnf_phy_init(u8 flag, struct platform_device *pdev)
 	//Step 4: get device configs
 	ret = amlnand_get_dev_configs(aml_chip);
 	if (ret < 0) {
-		if ((ret == -NAND_CONFIGS_FAILED) || (ret == -NAND_SHIPPED_BADBLOCK_FAILED)) {
+		if ((ret == -NAND_CONFIGS_FAILED) || (ret == -NAND_SHIPPED_BADBLOCK_FAILED)
+				|| (ret == -NAND_DETECT_DTB_FAILED)) {
 			aml_nand_msg("get device configs failed and ret:%x", ret);
 			goto exit_error0;
 		}else{

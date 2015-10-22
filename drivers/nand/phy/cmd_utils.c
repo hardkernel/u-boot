@@ -175,6 +175,7 @@ static int erase_env_protect(struct amlnand_chip *aml_chip, int blk)
 	struct nand_flash *flash = &aml_chip->flash;
 	struct read_retry_info *retry_info = &(controller->retry_info);
 	struct nand_arg_info *shipped_bbtinfo = &aml_chip->shipped_bbtinfo;
+	struct nand_arg_info *bbtinfo = &aml_chip->nand_bbtinfo;
 	struct nand_arg_info *nand_key = &aml_chip->nand_key;
 	struct nand_arg_info *nand_secure = &aml_chip->nand_secure;
 	unsigned char phys_erase_shift;
@@ -201,6 +202,10 @@ static int erase_env_protect(struct amlnand_chip *aml_chip, int blk)
 		if (((blk == shipped_bbtinfo->valid_blk_addr))
 			&&(shipped_bbtinfo->valid_blk_addr >= start_blk)){
 			aml_nand_msg("protect fbbt at blk %d",blk);
+			ret = -1;
+		}else if((blk == bbtinfo->valid_blk_addr)
+			&&(bbtinfo->valid_blk_addr >= start_blk)){
+			aml_nand_msg("protect bbt at blk %d",blk);
 			ret = -1;
 		}else if(((blk == retry_info->info_save_blk)
 			&&(retry_info->info_save_blk >= start_blk)
@@ -298,7 +303,7 @@ int  amlnf_erase_ops(u64 off, u64 erase_len, u8 scrub_flag)
 	int  start_blk, total_blk, ret = 0;
 	int percent = 0;
 	int percent_complete = -1;
-	int temp_value;
+	int temp_value,last_reserve_blk;
 
 	erase_shift = ffs(flash->blocksize) - 1;
 	write_shift =  ffs(flash->pagesize) - 1;
@@ -312,8 +317,8 @@ int  amlnf_erase_ops(u64 off, u64 erase_len, u8 scrub_flag)
 				start_blk = ((1024 / pages_per_blk));
 		}
 	}
-	aml_nand_dbg("start_blk =%d,total_blk=%d", start_blk, total_blk);
-
+	aml_nand_msg("%s:start_blk =%d,total_blk=%d", __func__, start_blk, total_blk);
+	last_reserve_blk = get_last_reserve_block(aml_chip);
 	for (; start_blk < total_blk; start_blk++) {
 		memset((u8 *)ops_para,
 			0x0,
@@ -331,8 +336,16 @@ int  amlnf_erase_ops(u64 off, u64 erase_len, u8 scrub_flag)
 
 		if (!scrub_flag) {
 			ret = operation->block_isbad(aml_chip);
-			if (ret)
-				continue;
+			if (ret) {
+				if (start_blk < last_reserve_blk \
+					&& bad_block_is_dtb_blk(start_blk)) {
+					aml_nand_msg("erase bad dtb block:0x%x",start_blk);
+				}
+				else {
+					//aml_nand_msg("Skiping block:0x%x!!!", start_blk);
+					continue;
+				}
+			}
 		}
 		nand_get_chip(aml_chip);
 

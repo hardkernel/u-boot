@@ -158,12 +158,14 @@ int amlnand_get_partition_table(struct amlnand_chip *aml_chip)
 		ret = amlnf_dtb_init_partitions(aml_chip);
 		if (ret < 0) {
 			aml_nand_msg("amlnf dtb init failed");
-			return -NAND_FAILED;
+			aml_chip->detect_dtb_flag = 1;
+			return -NAND_DETECT_DTB_FAILED;
 			/* do not use default partition_table anyway!*/
 			/*ret = -NAND_FAILED;*/
 		}
 	#else
-		return -NAND_FAILED;
+		aml_chip->detect_dtb_flag = 1;
+		return -NAND_DETECT_DTB_FAILED;
 	#endif
 	}
 	else{

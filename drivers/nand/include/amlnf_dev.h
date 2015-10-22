@@ -172,6 +172,7 @@ enum amlnf_error_t {
 	NAND_SHIPPED_BAD_FAILURE = 18,
 	NAND_CONFIGS_FAILED	= 19,
 	NAND_SHIPPED_BADBLOCK_FAILED = 20,
+	NAND_DETECT_DTB_FAILED = 21,
 };
 
 struct _nftl_cfg {

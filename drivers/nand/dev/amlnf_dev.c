@@ -750,7 +750,12 @@ static int _amlnf_init(struct platform_device *pdev, u32 flag)
 			ret = -1; // controller failed
 		}else if(ret == -NAND_SHIPPED_BADBLOCK_FAILED){
 			ret = NAND_SHIPPED_BADBLOCK_FAILED;
-		}else{
+		}
+		else if (ret == -NAND_DETECT_DTB_FAILED)
+		{
+			ret = NAND_DETECT_DTB_FAILED;
+		}
+		else{
 			ret = 1;
 		}
 		goto exit_error0;

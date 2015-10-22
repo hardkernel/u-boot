@@ -1360,11 +1360,12 @@ U_BOOT_CMD(store, CONFIG_SYS_MAXARGS, 1, do_store,
 	"	erase the area which is uboot or data \n"
 	"store erase dtb \n"
 	"store erase key \n"
+	"store rom_protect on/off \n"
 	"store scrub off|partition size\n"
 	"	scrub the area from offset and size \n"
-	"store dtb iread/read/write <size>\n"
+	"store dtb iread/read/write addr <size>\n"
 	"	read/write dtb, size is optional \n"
-	"store key read/write <size>\n"
+	"store key read/write addr <size>\n"
 	"	read/write key, size is optional \n"
 );
 

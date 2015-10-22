@@ -62,10 +62,19 @@ int chipenv_init_erase_protect(struct amlnand_chip *aml_chip, int flag,int block
 
 #if (AML_CFG_DTB_RSV_EN)
 extern int dtb_erase_blk;
-int bad_block_is_dtb_blk( const int blk_addr)
+extern struct amlnand_chip *aml_chip_dtb;
+int bad_block_is_dtb_blk(const int blk_addr)
 {
+	/*laod dtb form ram*/
 	if (dtb_erase_blk == blk_addr && dtb_erase_blk != -1) {
 		return 1;
+	}
+	/*laod dtb form flash*/
+	if (aml_chip_dtb != NULL) {
+		if (aml_chip_dtb->amlnf_dtb.arg_valid == 1 &&\
+			aml_chip_dtb->amlnf_dtb.valid_blk_addr == blk_addr) {
+			return 1;
+		}
 	}
 	return 0;
 }
@@ -497,7 +506,7 @@ int get_last_reserve_block(struct amlnand_chip *aml_chip)
 	u32 tmp_value;
 	static u32 total_blk = 0, scan_flag = 0;
 	if ((total_blk > RESERVED_BLOCK_CNT) && (scan_flag == 1)) {
-		aml_nand_msg("total_blk:%d",total_blk);
+		aml_nand_dbg("total_blk:%d",total_blk);
 		return total_blk;
 	}
 	if (aml_chip->nand_bbtinfo.arg_valid) {
@@ -528,7 +537,7 @@ int get_last_reserve_block(struct amlnand_chip *aml_chip)
 
 		ret = operation->block_isbad(aml_chip);
 		if (ret ==  NAND_BLOCK_FACTORY_BAD) {
-			aml_nand_msg("blk %d is shipped bad block ",
+			aml_nand_dbg("blk %d is shipped bad block ",
 				total_blk);
 			total_blk++;
 			continue;
@@ -1922,7 +1931,7 @@ int amlnand_check_info_by_name(struct amlnand_chip *aml_chip,
 		controller->select_chip(controller, ops_para->chipnr);
 		ret = operation->block_isbad(aml_chip);
 		if (ret) {
-			aml_nand_msg("blk %d is bad ", start_blk);
+			aml_nand_dbg("blk %d is bad ", start_blk);
 			continue;
 		}
 		for (i = 0; i < pages_read;) {
@@ -2374,6 +2383,51 @@ exit_error0:
 	return ret;
 }
 
+int amlnand_recover_fbbt(struct amlnand_chip *aml_chip)
+{
+	struct hw_controller *controller = &aml_chip->controller;
+	struct nand_flash *flash = &aml_chip->flash;
+	u32 total_blk, chipnr, start_block, factory_badblock_cnt=0;
+	u16 *tmp_bbt, *tmp_status;
+	u8 phys_erase_shift;
+	u64 chip_size;
+
+	aml_nand_dbg("%s : start",__func__);
+	phys_erase_shift = ffs(flash->blocksize) - 1;
+	chip_size = flash->chipsize;
+	total_blk = (int) ((chip_size<<20) >> phys_erase_shift);
+	factory_badblock_cnt = 0;
+
+	for (chipnr = 0; chipnr < controller->chip_num;  chipnr++) {
+
+		tmp_bbt = &aml_chip->shipped_bbt_ptr->shipped_bbt[chipnr][0];
+		tmp_status = &aml_chip->block_status->blk_status[chipnr][0];
+		for (start_block = 0; start_block < total_blk; start_block++) {
+
+			if (tmp_status[start_block] == NAND_BLOCK_FACTORY_BAD) {
+
+				tmp_bbt[factory_badblock_cnt++] = (0x8000 | (u16)start_block);
+				if ((controller->flash_type == NAND_TYPE_MLC) &&
+						(flash->option & NAND_MULTI_PLANE_MODE)) {
+					// if  plane 0 is bad block,just set plane 1 to bad
+					if ((start_block % 2) == 0 ) {
+						start_block += 1;
+						tmp_bbt[factory_badblock_cnt++] = (u16)start_block |0x8000;
+					}	// if plane 1 is bad block, just set plane 0 to bad
+					else{
+						tmp_bbt[factory_badblock_cnt++] = (u16)(start_block -1) |0x8000;
+					}
+
+					if (factory_badblock_cnt >= MAX_BAD_BLK_NUM) {
+						aml_nand_dbg("%s : error too many bad blocks",__func__);
+						return -1;
+					}
+				}
+			}
+		}
+	}
+	return 0;
+}
 
 /*****************************************************************************
 *Name         :amlnand_init_block_status
@@ -2391,15 +2445,15 @@ int amlnand_init_block_status(struct amlnand_chip *aml_chip)
 	u32 total_blk, chipnr;
 	u16 *tmp_bbt, *tmp_status;
 	u8 phys_erase_shift;
-	u64 tmp_size;
+	u64 chip_size;
 	int ret = 0, i, j;
 
 	aml_nand_dbg("amlnand_init_block_status : start");
 
 	phys_erase_shift = ffs(flash->blocksize) - 1;
 
-	tmp_size = flash->chipsize;
-	total_blk = (int) ((tmp_size<<20) >> phys_erase_shift);
+	chip_size = flash->chipsize;
+	total_blk = (int) ((chip_size<<20) >> phys_erase_shift);
 
 #if 0
 	aml_nand_dbg("show the bbt");
@@ -2428,15 +2482,15 @@ int amlnand_init_block_status(struct amlnand_chip *aml_chip)
 							i,
 							tmp_status[i]);
 					} else {
-				if (i == 0)
-					tmp_status[i] = NAND_BLOCK_GOOD;
-				else{
-					tmp_status[i] = NAND_BLOCK_USED_BAD;
-					aml_nand_dbg("s[%d][%d]=%d",
-						chipnr,
-						i,
-						tmp_status[i]);
-				}
+						if (i == 0)
+							tmp_status[i] = NAND_BLOCK_GOOD;
+						else{
+							tmp_status[i] = NAND_BLOCK_USED_BAD;
+							aml_nand_dbg("s[%d][%d]=%d",
+								chipnr,
+								i,
+								tmp_status[i]);
+						}
 					}
 					break;
 				}
@@ -3383,12 +3437,7 @@ void amlnand_set_config_attribute(struct amlnand_chip *aml_chip)
 int  bbt_valid_ops(struct amlnand_chip *aml_chip)
 {
 	int  ret = 0;
-	ENV_NAND_LINE
-	ret = amlnand_info_init(aml_chip, (unsigned char *)&(aml_chip->shipped_bbtinfo),(unsigned char *)(aml_chip->shipped_bbt_ptr),(unsigned char *)SHIPPED_BBT_HEAD_MAGIC, sizeof(struct shipped_bbt));
-	if (ret < 0) {
-		aml_nand_msg("Waring:Serch fbbt faile:%d",ret);
-		//goto exit_error0;
-	}
+	ENV_NAND_LINE;
 
 	PRINT("%s\n", __func__);
 	ret = amlnand_info_init(aml_chip, (unsigned char *)&(aml_chip->config_msg),(unsigned char *)(aml_chip->config_ptr),(unsigned char *)CONFIG_HEAD_MAGIC, sizeof(struct nand_config));
@@ -3404,6 +3453,11 @@ int  bbt_valid_ops(struct amlnand_chip *aml_chip)
 		goto exit_error0;
 	}
 
+	if (aml_chip->detect_dtb_flag) {
+		ret = -NAND_DETECT_DTB_FAILED;
+		aml_nand_msg("%s()%d:Now we must stop init !!!",__func__, __LINE__);
+		goto exit_error0;
+	}
 	ENV_NAND_LINE
 #ifdef AML_NAND_UBOOT
 	if (aml_chip->config_msg.arg_valid == 1) {
@@ -3423,15 +3477,6 @@ int  bbt_valid_ops(struct amlnand_chip *aml_chip)
 		ENV_NAND_LINE
 		// do nothing....
 		aml_nand_msg("%s: do nothing!", __func__);
-//		ret = amlnand_info_init(aml_chip, (unsigned char *)&(aml_chip->shipped_bbtinfo),(unsigned char *)aml_chip->shipped_bbt_ptr,(unsigned char *)SHIPPED_BBT_HEAD_MAGIC, sizeof(struct shipped_bbt));
-//		if(ret < 0){
-//			aml_nand_msg("nand scan shipped info failed and ret:%d",ret);
-//			goto exit_error0;
-//		}
-//		if(aml_chip->shipped_bbt_ptr->chipnum != controller->chip_num){
-//			aml_nand_msg("nand read chipnum in config %d,controller->chip_num",aml_chip->shipped_bbt_ptr->chipnum,controller->chip_num);
-//			ret = -NAND_SHIPPED_BADBLOCK_FAILED;
-//		}
 	}
 #endif
 	ENV_NAND_LINE
@@ -3545,6 +3590,13 @@ int  shipped_bbt_invalid_ops(struct amlnand_chip *aml_chip)
 		 aml_nand_msg("nand save shipped bbt failed and ret:%d",ret);
 		 goto exit_error0;
 		}
+
+		if (aml_chip->detect_dtb_flag) {
+			ret = -NAND_DETECT_DTB_FAILED;
+			aml_nand_msg("%s()%d:Now we must stop init !!!",__func__, __LINE__);
+			goto exit_error0;
+		}
+
 		//save config
 		aml_chip->config_ptr->driver_version = DRV_PHY_VERSION;
 		aml_chip->config_ptr->fbbt_blk_addr = aml_chip->shipped_bbtinfo.valid_blk_addr;
@@ -3696,6 +3748,12 @@ int shipped_bbt_valid_ops(struct amlnand_chip *aml_chip)
 		ret = amlnand_save_info_by_name(aml_chip, (unsigned char *)&(aml_chip->nand_bbtinfo),(unsigned char *)(aml_chip->block_status),(unsigned char *)BBT_HEAD_MAGIC, sizeof(struct block_status));
 		if (ret < 0) {
 			aml_nand_msg("nand save bbt failed and ret:%d", ret);
+			goto exit_error0;
+		}
+
+		if (aml_chip->detect_dtb_flag) {
+			ret = -NAND_DETECT_DTB_FAILED;
+			aml_nand_msg("%s()%d:Now we must stop init !!!",__func__, __LINE__);
 			goto exit_error0;
 		}
 		ENV_NAND_LINE
@@ -3893,35 +3951,36 @@ int amlnand_get_dev_configs(struct amlnand_chip *aml_chip)
 			goto exit_error0;
 		}
 	}
-
-	ENV_NAND_LINE;
 #ifdef AML_NAND_UBOOT
-	/* 2. get partition table from outsides, maybe sram.*/
-	ret = amlnand_get_partition_table(aml_chip);
+	ENV_NAND_LINE;
+	/* 2. serch fbbt & nbbt in flash.*/
+
+	/* 2.1 serch fbbt & nbbt in flash.*/
+	ret = amlnand_info_init(aml_chip, (unsigned char *)&(aml_chip->nand_bbtinfo),(unsigned char *)(aml_chip->block_status),(unsigned char *)BBT_HEAD_MAGIC, sizeof(struct block_status));
 	if (ret < 0) {
-		aml_nand_msg("amlnand_get_partition_table failed");
+		aml_nand_msg("%s() %d: nand scan bbt info failed and ret:%d", __FUNCTION__, __LINE__, ret);
+	}
+	ENV_NAND_LINE;
+	ret = amlnand_info_init(aml_chip, (unsigned char *)&(aml_chip->shipped_bbtinfo),(unsigned char *)aml_chip->shipped_bbt_ptr,(unsigned char *)SHIPPED_BBT_HEAD_MAGIC, sizeof(struct shipped_bbt));
+	if (ret < 0) {
+		aml_nand_msg("%s() %d: nand scan shipped bbt info failed and ret:%d", __FUNCTION__, __LINE__, ret);
+	}
+	ENV_NAND_LINE;
+
+	/* 2.1 get partition table from outsides, maybe sram.*/
+	ret = amlnand_get_partition_table(aml_chip);
+	if (ret < 0 && ret != -NAND_DETECT_DTB_FAILED) {
+		aml_nand_msg("amlnand_get_partition_table failed:ret:%d",ret);
 		goto exit_error0;
 	}
+
 #endif
 
 	/* 3. with erase flags*/
 	if ((aml_chip->init_flag > NAND_BOOT_ERASE_PROTECT_CACHE)) {
 		ENV_NAND_LINE;
-		/* 3.1 get bbt info 1st*/
-		ret = amlnand_info_init(aml_chip, (unsigned char *)&(aml_chip->nand_bbtinfo),(unsigned char *)(aml_chip->block_status),(unsigned char *)BBT_HEAD_MAGIC, sizeof(struct block_status));
-		if (ret < 0) {
-			aml_nand_msg("%s() %d: nand scan bbt info failed and ret:%d", __FUNCTION__, __LINE__, ret);
-			//goto exit_error0;
-		}
-		ENV_NAND_LINE;
 		/* 3.2 get fbbt info if bbt info is not exist.*/
 		if (aml_chip->nand_bbtinfo.arg_valid == 0) {
-			ENV_NAND_LINE;
-			ret = amlnand_info_init(aml_chip, (unsigned char *)&(aml_chip->shipped_bbtinfo),(unsigned char *)aml_chip->shipped_bbt_ptr,(unsigned char *)SHIPPED_BBT_HEAD_MAGIC, sizeof(struct shipped_bbt));
-			if (ret < 0) {
-				aml_nand_msg("%s() %d: nand scan shipped bbt info failed and ret:%d", __FUNCTION__, __LINE__, ret);
-				//goto exit_error0;
-			}
 			/* 3.3 ship bbt invalid, rebuild it */
 			if (aml_chip->shipped_bbtinfo.arg_valid == 0) {
 			/*todo
@@ -3951,12 +4010,27 @@ int amlnand_get_dev_configs(struct amlnand_chip *aml_chip)
 			  fixme, may need to check fbbt which may need a refresh.
 			*/
 			ENV_NAND_LINE;
-			ret = amlnand_info_init(aml_chip, (unsigned char *)&(aml_chip->shipped_bbtinfo),(unsigned char *)(aml_chip->shipped_bbt_ptr),(unsigned char *)SHIPPED_BBT_HEAD_MAGIC, sizeof(struct shipped_bbt));
-			if (ret < 0) {
-				aml_nand_msg("nand scan shipped info failed and ret:%d",ret);
-			}
-			ENV_NAND_LINE;
 			amlnand_oops_handle(aml_chip,aml_chip->init_flag);
+
+			if (aml_chip->shipped_bbtinfo.arg_valid == 0) {
+				amlnand_recover_fbbt(aml_chip);	/*recover fbbt table*/
+
+				/* save fbbt info.*/
+				aml_chip->shipped_bbt_ptr->crc = aml_info_checksum(
+				(unsigned char *)aml_chip->shipped_bbt_ptr->shipped_bbt,
+					(MAX_CHIP_NUM*MAX_BAD_BLK_NUM) );
+
+				aml_chip->shipped_bbt_ptr->chipnum = controller->chip_num;
+				ret = amlnand_save_info_by_name(aml_chip,
+					(unsigned char *)&(aml_chip->shipped_bbtinfo),
+					(unsigned char *)aml_chip->shipped_bbt_ptr,
+					(unsigned char *)SHIPPED_BBT_HEAD_MAGIC, sizeof(struct shipped_bbt));
+
+				if (ret < 0) {
+					aml_nand_msg("error:%s(),%d,ret=%d", __func__, __LINE__, ret);
+					goto exit_error0;
+				}
+			}
 		}
 		ENV_NAND_LINE;
 	}else if(aml_chip->init_flag == NAND_BOOT_ERASE_PROTECT_CACHE) {
@@ -3965,21 +4039,8 @@ int amlnand_get_dev_configs(struct amlnand_chip *aml_chip)
 		amlnand_oops_handle(aml_chip, aml_chip->init_flag);
 	} else {
 		/* 5. without erase, normal boot or upgrade */
-		/* 5.1 search bbt 1st.*/
-		ENV_NAND_LINE
-		ret = amlnand_info_init(aml_chip, (unsigned char *)&(aml_chip->nand_bbtinfo),(unsigned char *)(aml_chip->block_status),(unsigned char *)BBT_HEAD_MAGIC, sizeof(struct block_status));
-		if (ret < 0) {
-			aml_nand_msg("nand scan bbt info  failed :%d",ret);
-		}
-
 		if (aml_chip->nand_bbtinfo.arg_valid == 0) { // bbt invalid
 #ifdef AML_NAND_UBOOT
-			ENV_NAND_LINE
-			ret = amlnand_info_init(aml_chip, (unsigned char *)&(aml_chip->shipped_bbtinfo),(unsigned char *)(aml_chip->shipped_bbt_ptr),(unsigned char *)SHIPPED_BBT_HEAD_MAGIC, sizeof(struct shipped_bbt));
-			if (ret < 0) {
-				aml_nand_msg("nand scan shipped info failed and ret:%d",ret);
-				//goto exit_error0;
-			}
 			ENV_NAND_LINE
 			if (aml_chip->shipped_bbtinfo.arg_valid == 0) {	// ship bbt invalid
 				ret = shipped_bbt_invalid_ops(aml_chip);
@@ -4001,6 +4062,26 @@ int amlnand_get_dev_configs(struct amlnand_chip *aml_chip)
 			goto exit_error0;
 #endif
 		} else {	// bbt valid
+
+			if (aml_chip->shipped_bbtinfo.arg_valid == 0) {
+				amlnand_recover_fbbt(aml_chip);	/*recover fbbt table*/
+				/* save fbbt info.*/
+				aml_chip->shipped_bbt_ptr->crc = aml_info_checksum(
+				(unsigned char *)aml_chip->shipped_bbt_ptr->shipped_bbt,
+					(MAX_CHIP_NUM*MAX_BAD_BLK_NUM) );
+
+				aml_chip->shipped_bbt_ptr->chipnum = controller->chip_num;
+				ret = amlnand_save_info_by_name(aml_chip,
+					(unsigned char *)&(aml_chip->shipped_bbtinfo),
+					(unsigned char *)aml_chip->shipped_bbt_ptr,
+					(unsigned char *)SHIPPED_BBT_HEAD_MAGIC, sizeof(struct shipped_bbt));
+
+				if (ret < 0) {
+					aml_nand_msg("error:%s(),%d,ret=%d", __func__, __LINE__, ret);
+					goto exit_error0;
+				}
+			}
+
 			ENV_NAND_LINE
 			ret = bbt_valid_ops(aml_chip);
 			if (ret < 0) {
@@ -4057,13 +4138,15 @@ int amlnand_get_dev_configs(struct amlnand_chip *aml_chip)
 	}
 	/*fixme, should not return here?*/
 	//return ret;
-	ENV_NAND_LINE
+	ENV_NAND_LINE;
 exit_error0:
 /* fixme, debug code*/
 	/* free this for bad block detect! */
-	ENV_NAND_LINE
-	kfree(aml_chip->block_status);
-	aml_chip->block_status = NULL;
+	ENV_NAND_LINE;
+	if (ret != -NAND_DETECT_DTB_FAILED) {
+		kfree(aml_chip->block_status);
+		aml_chip->block_status = NULL;
+	}
 #if 0
 	kfree(aml_chip->shipped_bbt_ptr);
 	aml_chip->shipped_bbt_ptr = NULL;
