@@ -178,6 +178,7 @@
                 "bootm ${loadaddr};fi;"\
             "\0"\
         "recovery_from_flash="\
+            "setenv bootargs ${bootargs} aml_dt=${aml_dt};"\
             "if imgread kernel recovery ${loadaddr}; then bootm ${loadaddr}; fi"\
             "\0"\
         "init_display="\
