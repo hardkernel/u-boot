@@ -30,6 +30,8 @@
 #define CMD_EFUSE_WRITE 0
 #define CMD_EFUSE_READ 1
 #define CMD_EFUSE_SECURE_BOOT_SET 6
+#define CMD_EFUSE_PASSWORD_SET 7
+
 
 int cmd_efuse(int argc, char * const argv[], char *buf)
 {
@@ -45,8 +47,11 @@ int cmd_efuse(int argc, char * const argv[], char *buf)
 		action = CMD_EFUSE_READ;
 	} else if (strncmp(argv[1], "write", 5) == 0) {
 		action = CMD_EFUSE_WRITE;
-	} else if (strncmp(argv[1], "secure_boot_set", 5) == 0) {
+	} else if (strncmp(argv[1], "secure_boot_set", 15) == 0) {
 		action = CMD_EFUSE_SECURE_BOOT_SET;
+		goto efuse_action;
+	} else if (strncmp(argv[1], "password_set", 12) == 0) {
+		action = CMD_EFUSE_PASSWORD_SET;
 		goto efuse_action;
 	} else{
 		printf("%s arg error\n", argv[1]);
@@ -135,7 +140,29 @@ efuse_action:
 			printf("aml log : Secure boot EFUSE pattern programming success!\n");
 
 		return ret;
-	} else{
+	} else if(CMD_EFUSE_PASSWORD_SET == action)	{
+		/*efuse password_set*/
+
+		lAddr1 = GXB_IMG_LOAD_ADDR;
+
+		if (argc > 2)
+			lAddr1 = simple_strtoul(argv[2], &end, 16);
+
+		lAddr2 = get_sharemem_info(GET_SHARE_MEM_INPUT_BASE);
+		memcpy((void *)lAddr2, (void *)lAddr1, GXB_EFUSE_PATTERN_SIZE);
+
+		ret = aml_sec_boot_check(GXB_TYPE_EFUSE_NORMAL_BOOT, lAddr2,
+			GXB_EFUSE_PATTERN_SIZE, 0);
+
+		if (ret)
+			printf("aml log : Password EFUSE pattern programming fail [%d]!\n",
+			       ret);
+		else
+			printf("aml log : Password EFUSE pattern programming success!\n");
+
+		return ret;
+	}else
+	{
 		printf("arg error\n");
 		return CMD_RET_USAGE;
 	}
