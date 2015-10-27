@@ -928,7 +928,7 @@ static void hdmitx_set_phy(struct hdmitx_dev *hdev)
                 hd_write_reg(P_HHI_HDMI_PHY_CNTL0, 0x33634283);
                 hd_write_reg(P_HHI_HDMI_PHY_CNTL3, 0xb000115b);
                 } else {
-                hd_write_reg(P_HHI_HDMI_PHY_CNTL0, 0x33352245);
+                hd_write_reg(P_HHI_HDMI_PHY_CNTL0, 0x33353245);
                 hd_write_reg(P_HHI_HDMI_PHY_CNTL3, 0x2100115b);
                 }
                 break;
