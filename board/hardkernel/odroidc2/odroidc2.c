@@ -295,6 +295,49 @@ static void board_run_recovery(void)
 	run_command("bootm ${load_addr}", 0);
 }
 
+#ifdef CONFIG_DISPLAY_LOGO
+static int display_logo(void)
+{
+	int ret;
+
+	setenv("bootlogo_addr", "0x20000000"); /* initrd load address + 0xD0000000 */
+#ifdef CONFIG_VIDEO_BMP_GZIP
+	ret = run_command("fatload mmc 0 ${bootlogo_addr} boot-logo.bmp.gz", 1);
+	if (!ret) 	goto display_logo;
+#endif
+	ret = run_command("fatload mmc 0 ${bootlogo_addr} boot-logo.bmp", 1);
+	if (!ret)	goto display_logo;
+
+	return 1;
+
+display_logo:
+	/* for video_hw_init in osd_fb.c */
+	setenv("fb_addr", "0x3f800000");
+	setenv("fb_width", "1280");
+	setenv("fb_height", "720");
+	setenv("display_width", "1280");
+	setenv("display_height", "720");
+	setenv("display_bpp", "24");
+	setenv("display_color_index", "24");
+	setenv("display_layer", "osd1");
+	setenv("display_color_fg", "0xffff");
+	setenv("display_color_bg", "0");
+	setenv("outputmode", "720p60hz");
+	setenv("hdmimode", "720p60hz");
+	setenv("cvbsmode", "576cvbs");
+
+	run_command("hdmitx hpd", 0);
+	run_command("osd open", 0);
+	run_command("osd clear", 0);
+	run_command("vout output ${outputmode}", 0);
+	run_command("hdmitx output ${outputmode}", 0);
+	run_command("bmp display ${bootlogo_addr}", 0);
+	run_command("setenv logo ${display_layer},loaded,${fb_addr},${outputmode}", 0);
+
+	return 0;
+}
+#endif  /* CONFIG_DISPLAY_LOGO */
+
 #ifdef CONFIG_BOARD_LATE_INIT
 int board_late_init(void)
 {
@@ -314,6 +357,10 @@ int board_late_init(void)
 	else if (ODROID_REBOOT_CMD_RECOVERY == reboot_reason)
 		board_run_recovery();
 
+#ifdef CONFIG_DISPLAY_LOGO
+	if (display_logo())
+		printf("no available logo file. skip logo display.\n");
+#endif
 	return 0;
 }
 #endif

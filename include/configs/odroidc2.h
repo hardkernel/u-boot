@@ -83,7 +83,7 @@
 	"dtb_mem_addr=0x1000000\0"	\
 	"fdt_high=0x20000000\0"		\
 	"bootargs=root=/dev/mmcblk0p2 init=/init console=ttyS0,115200 hdmimode=1080p earlyprintk=aml-uart,0xc81004c0\0"	\
-	"bootcmd=cfgload; fatload mmc 0 ${loadaddr} image; fatload mmc 0 ${dtb_mem_addr} gxbb_p200_2g.dtb; booti ${loadaddr} - ${dtb_mem_addr}\0"
+	"bootcmd=cfgload; fatload mmc 0 ${loadaddr} image; fatload mmc 0 ${dtb_mem_addr} meson64_odroidc2.dtb; booti ${loadaddr} - ${dtb_mem_addr}\0"
 
 #define CONFIG_PREBOOT
 #define CONFIG_BOOTCOMMAND
@@ -246,6 +246,11 @@
 #define CONFIG_SYS_LONGHELP		1
 #define CONFIG_SYS_MEM_TOP_HIDE		0x08000000	/* Hide 128MB for
 							   kernel reserve */
+#define CONFIG_DISPLAY_LOGO		1
+#ifdef CONFIG_DISPLAY_LOGO
+#define CONFIG_VIDEO_BMP_GZIP		1
+#define CONFIG_SYS_VIDEO_LOGO_MAX_SIZE	(3 << 20) /* for decompressed img */
+#endif
 
 /* ODROID reboot reasons */
 #define ODROID_REBOOT_CMD_UNKNOWN	-1
