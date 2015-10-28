@@ -27,10 +27,12 @@
 #include <asm/arch/efuse.h>
 #include <asm/arch/bl31_apis.h>
 
-#define CMD_EFUSE_WRITE 0
-#define CMD_EFUSE_READ 1
-#define CMD_EFUSE_SECURE_BOOT_SET 6
-#define CMD_EFUSE_PASSWORD_SET 7
+#define CMD_EFUSE_WRITE            0
+#define CMD_EFUSE_READ             1
+#define CMD_EFUSE_SECURE_BOOT_SET  6
+#define CMD_EFUSE_PASSWORD_SET     7
+#define CMD_EFUSE_CUSTOMER_ID_SET  8
+
 
 
 int cmd_efuse(int argc, char * const argv[], char *buf)
@@ -52,6 +54,9 @@ int cmd_efuse(int argc, char * const argv[], char *buf)
 		goto efuse_action;
 	} else if (strncmp(argv[1], "password_set", 12) == 0) {
 		action = CMD_EFUSE_PASSWORD_SET;
+		goto efuse_action;
+	} else if (strncmp(argv[1], "customer_id_set", 15) == 0) {
+		action = CMD_EFUSE_CUSTOMER_ID_SET;
 		goto efuse_action;
 	} else{
 		printf("%s arg error\n", argv[1]);
@@ -129,8 +134,9 @@ efuse_action:
 
 		lAddr2 = get_sharemem_info(GET_SHARE_MEM_INPUT_BASE);
 		memcpy((void *)lAddr2, (void *)lAddr1, GXB_EFUSE_PATTERN_SIZE);
+		flush_cache(lAddr2,GXB_EFUSE_PATTERN_SIZE);
 
-		ret = aml_sec_boot_check(GXB_TYPE_EFUSE_SECURE_BOOT, lAddr2,
+		ret = aml_sec_boot_check(AML_D_P_W_EFUSE_SECURE_BOOT, lAddr2,
 			GXB_EFUSE_PATTERN_SIZE, 0);
 
 		if (ret)
@@ -150,8 +156,9 @@ efuse_action:
 
 		lAddr2 = get_sharemem_info(GET_SHARE_MEM_INPUT_BASE);
 		memcpy((void *)lAddr2, (void *)lAddr1, GXB_EFUSE_PATTERN_SIZE);
+		flush_cache(lAddr2,GXB_EFUSE_PATTERN_SIZE);
 
-		ret = aml_sec_boot_check(GXB_TYPE_EFUSE_NORMAL_BOOT, lAddr2,
+		ret = aml_sec_boot_check(AML_D_P_W_EFUSE_PASSWORD, lAddr2,
 			GXB_EFUSE_PATTERN_SIZE, 0);
 
 		if (ret)
@@ -161,7 +168,30 @@ efuse_action:
 			printf("aml log : Password EFUSE pattern programming success!\n");
 
 		return ret;
-	}else
+	}else if(CMD_EFUSE_CUSTOMER_ID_SET == action)	{
+		/*efuse customer_id_set*/
+
+		lAddr1 = GXB_IMG_LOAD_ADDR;
+
+		if (argc > 2)
+			lAddr1 = simple_strtoul(argv[2], &end, 16);
+
+		lAddr2 = get_sharemem_info(GET_SHARE_MEM_INPUT_BASE);
+		memcpy((void *)lAddr2, (void *)lAddr1, GXB_EFUSE_PATTERN_SIZE);
+		flush_cache(lAddr2,GXB_EFUSE_PATTERN_SIZE);
+
+		ret = aml_sec_boot_check(AML_D_P_W_EFUSE_CUSTOMER_ID, lAddr2,
+			GXB_EFUSE_PATTERN_SIZE, 0);
+
+		if (ret)
+			printf("aml log : Customer ID EFUSE pattern programming fail [%d]!\n",
+			       ret);
+		else
+			printf("aml log : Customer ID EFUSE pattern programming success!\n");
+
+		return ret;
+	}
+	else
 	{
 		printf("arg error\n");
 		return CMD_RET_USAGE;

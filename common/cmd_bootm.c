@@ -139,7 +139,7 @@ int do_bootm(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		//printf("aml log : addr = 0x%x\n",nLoadAddr);
 	}
 
-	int nRet = aml_sec_boot_check(GXB_TYPE_IMG_SECURE_BOOT,nLoadAddr,GXB_IMG_SIZE,GXB_IMG_DEC_ALL);
+	int nRet = aml_sec_boot_check(AML_D_P_IMG_DECRYPT,nLoadAddr,GXB_IMG_SIZE,GXB_IMG_DEC_ALL);
 	if (nRet)
 	{
 		printf("\naml log : Sig Check %d\n",nRet);
