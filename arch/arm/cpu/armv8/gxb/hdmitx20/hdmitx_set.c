@@ -479,6 +479,8 @@ static void config_hdmi20_tx ( enum hdmi_vic vic, struct hdmi_format_para *para,
 	data32  = 0;
     data32 |= (((output_color_format==HDMI_COLOR_FORMAT_422)? HDMI_COLOR_DEPTH_24B : color_depth)   << 4);  // [7:4] color_depth
 	data32 |= (0 << 0);
+	if ((data32 & 0xf0) == 0x40 )
+		data32 &= ~(0xf << 4);
 	hdmitx_wr_reg(HDMITX_DWC_VP_PR_CD,  data32);
 
 	/* Video Packet Stuffing */
