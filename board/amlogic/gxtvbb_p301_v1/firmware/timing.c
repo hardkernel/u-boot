@@ -409,7 +409,22 @@ ddr_set_t __ddr_setting = {
 	.t_pctl0_dfiodtcfg1		= (0x0 | (0x6 << 16)),
 	.t_pctl0_dfilpcfg0		= ( 1 | (3 << 4) | (1 << 8) | (3 << 12) | (7 <<16) | (1 <<24) | ( 3 << 28)),
 
-	.t_pub_acbdlr0          = 0,  //2015.09.21 add for  CK0 delay fine tune
+	.t_pub_acbdlr0          = 0x1F,  //2015.09.21 add for  CK0 delay fine tune
+
+	/* v2 added */
+	.t_pub_aclcdlr			= 0x10,
+	.t_pub_acbdlr3			= 0,
+	.t_pub_acbdlr4			= 0,
+	.t_pub_acbdlr5			= 0,
+
+	.t_pub_dx0lcdlr1		= -((0x00<<24)|(0x3<<16)|(0x3<<8)|(0x0)),
+	.t_pub_dx1lcdlr1		= -((0x00<<24)|(0x3<<16)|(0x3<<8)|(0x0)),
+	.t_pub_dx2lcdlr1		= -((0x00<<24)|(0x3<<16)|(0x3<<8)|(0x0)),
+	.t_pub_dx3lcdlr1		= -((0x00<<24)|(0x3<<16)|(0x3<<8)|(0x0)),
+	.t_pub_dx0lcdlr2		= 0,
+	.t_pub_dx1lcdlr2		= 0,
+	.t_pub_dx2lcdlr2		= 0,
+	.t_pub_dx3lcdlr2		= 0,
 };
 
 pll_set_t __pll_setting = {

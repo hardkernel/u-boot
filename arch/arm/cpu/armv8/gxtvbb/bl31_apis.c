@@ -283,15 +283,11 @@ unsigned long aml_sec_boot_check(unsigned long nType,
 	asm __volatile__("" : : : "memory");
 
 	register uint64_t x0 asm("x0") = AML_DATA_PROCESS;
-	register uint64_t x1 asm("x1") = AML_D_P_W_EFUSE_SECURE_BOOT;
+	register uint64_t x1 asm("x1") = nType;
 	register uint64_t x2 asm("x2") = pBuffer;
 	register uint64_t x3 asm("x3") = nLength;
 	register uint64_t x4 asm("x4") = nOption;
-	switch (nType)
-	{
-	case GXB_TYPE_EFUSE_NORMAL_BOOT : x1 = AML_D_P_W_EFUSE_NORMAL_WRITE; break;
-	case GXB_TYPE_IMG_SECURE_BOOT :   x1 = AML_D_P_IMG_DECRYPT;break;
-	}
+
 	do {
 		asm volatile(
 		    __asmeq("%0", "x0")

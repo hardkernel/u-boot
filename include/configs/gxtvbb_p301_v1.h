@@ -19,8 +19,8 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-#ifndef __GXTVBB_P300_V1_H__
-#define __GXTVBB_P300_V1_H__
+#ifndef __GXTVBB_P301_V1_H__
+#define __GXTVBB_P301_V1_H__
 
 #include <asm/arch/cpu.h>
 
@@ -62,7 +62,7 @@
 	"storeboot="\
 	"if imgread kernel boot ${loadaddr}; then store dtb read $dtb_mem_addr; bootm ${loadaddr}; fi;"\
 	"\0"
-#define CONFIG_BOOTARGS "init=/init console=ttyS0,115200 no_console_suspend earlyprintk=aml-uart,0xc81004c0 ramoops.mem_address=0x20000000 ramoops.mem_size=0x100000 ramoops.record_size=0x8000 ramoops.console_size=0x4000"
+#define CONFIG_BOOTARGS "rootfstype=ramfs init=/init console=ttyS0,115200 no_console_suspend earlyprintk=aml-uart,0xc81004c0 androidboot.selinux=disabled logo=osd1,loaded,0x3f800000,1080p60hz panel_type=lvds_0 hdmitx= androidboot.firstboot=1"
 #define CONFIG_BOOTCOMMAND "osd open;"\
     "run storeboot"
 
@@ -79,7 +79,7 @@
 
 /* ddr */
 #define CONFIG_DDR_SIZE					1024 //MB
-#define CONFIG_DDR_CLK					768  //MHz, Range: 384-1200, should be multiple of 24
+#define CONFIG_DDR_CLK					720  //MHz, Range: 384-1200, should be multiple of 24
 #define CONFIG_DDR_TYPE					CONFIG_DDR_TYPE_DDR3
 /* DDR channel setting, please refer hardware design.
  *    CONFIG_DDR0_ONLY_32BIT           : one channel 32bit

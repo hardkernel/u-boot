@@ -1,24 +1,3 @@
-
-/*
- * arch/arm/cpu/armv8/gxtvbb/firmware/scp_task/user_task.c
- *
- * Copyright (C) 2015 Amlogic, Inc. All rights reserved.
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
- * more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-*/
-
 #include "config.h"
 #include "data.h"
 #include "registers.h"
@@ -64,6 +43,9 @@ void secure_task(void)
 	/*init bss */
 	bss_init();
 	dbg_prints("secure task start!\n");
+
+	/* suspend pwr ops init*/
+	suspend_pwr_ops_init();
 	*pcommand = 0;
 
 	while (1) {
@@ -71,8 +53,11 @@ void secure_task(void)
 		command = *pcommand;
 		if (command) {
 			dbg_print("process command ", command);
-
-			if (command == COMMAND_SUSPEND_ENTER) {
+			if (command == SEC_TASK_GET_WAKEUP_SRC) {
+				state = *(pcommand+1);
+				suspend_get_wakeup_source(
+						(void *)response,  state);
+			} else if (command == COMMAND_SUSPEND_ENTER) {
 				state = *(pcommand+1);
 				enter_suspend(state);
 				*pcommand = 0;

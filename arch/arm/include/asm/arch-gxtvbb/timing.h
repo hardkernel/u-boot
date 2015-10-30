@@ -94,6 +94,20 @@ struct ddr_set{
 	//PUB CLK fine tune
 	unsigned int   t_pub_acbdlr0; //2015.09.21 CK0 delay for different board PCB design
 
+	/* v2 added */
+	unsigned int   t_pub_aclcdlr;
+	unsigned int   t_pub_acbdlr3;
+	unsigned int   t_pub_acbdlr4;
+	unsigned int   t_pub_acbdlr5;
+
+	int   t_pub_dx0lcdlr1;
+	int   t_pub_dx1lcdlr1;
+	int   t_pub_dx2lcdlr1;
+	int   t_pub_dx3lcdlr1;
+	int   t_pub_dx0lcdlr2;
+	int   t_pub_dx1lcdlr2;
+	int   t_pub_dx2lcdlr2;
+	int   t_pub_dx3lcdlr2;
 }__attribute__ ((packed));
 
 struct ddr_timing{

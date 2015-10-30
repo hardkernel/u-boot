@@ -288,18 +288,18 @@
 // ---------------------------
 // Generic production test
 // ----------------------------
-#define     PROD_TEST_REG0                                     (0xc8834400 + (0x60 << 2))
-#define SEC_PROD_TEST_REG0                                     (0xda834400 + (0x60 << 2))
-#define   P_PROD_TEST_REG0                                     (volatile uint32_t *)(0xc8834400 + (0x60 << 2))
-#define     PROD_TEST_REG1                                     (0xc8834400 + (0x61 << 2))
-#define SEC_PROD_TEST_REG1                                     (0xda834400 + (0x61 << 2))
-#define   P_PROD_TEST_REG1                                     (volatile uint32_t *)(0xc8834400 + (0x61 << 2))
-#define     PROD_TEST_REG2                                     (0xc8834400 + (0x62 << 2))
-#define SEC_PROD_TEST_REG2                                     (0xda834400 + (0x62 << 2))
-#define   P_PROD_TEST_REG2                                     (volatile uint32_t *)(0xc8834400 + (0x62 << 2))
-#define     PROD_TEST_REG3                                     (0xc8834400 + (0x63 << 2))
-#define SEC_PROD_TEST_REG3                                     (0xda834400 + (0x63 << 2))
-#define   P_PROD_TEST_REG3                                     (volatile uint32_t *)(0xc8834400 + (0x63 << 2))
+#define     PROD_TEST_REG0                                     (0xc8834400 + (0x66 << 2))
+#define SEC_PROD_TEST_REG0                                     (0xda834400 + (0x66 << 2))
+#define   P_PROD_TEST_REG0                                     (volatile uint32_t *)(0xc8834400 + (0x66 << 2))
+#define     PROD_TEST_REG1                                     (0xc8834400 + (0x67 << 2))
+#define SEC_PROD_TEST_REG1                                     (0xda834400 + (0x67 << 2))
+#define   P_PROD_TEST_REG1                                     (volatile uint32_t *)(0xc8834400 + (0x67 << 2))
+#define     PROD_TEST_REG2                                     (0xc8834400 + (0x68 << 2))
+#define SEC_PROD_TEST_REG2                                     (0xda834400 + (0x68 << 2))
+#define   P_PROD_TEST_REG2                                     (volatile uint32_t *)(0xc8834400 + (0x68 << 2))
+#define     PROD_TEST_REG3                                     (0xc8834400 + (0x69 << 2))
+#define SEC_PROD_TEST_REG3                                     (0xda834400 + (0x69 << 2))
+#define   P_PROD_TEST_REG3                                     (volatile uint32_t *)(0xc8834400 + (0x69 << 2))
 // ---------------------------
 // am_analog_top
 // ----------------------------
@@ -817,6 +817,9 @@
 #define     HHI_MPLL_CNTL10                                    (0xc883c000 + (0xa9 << 2))
 #define SEC_HHI_MPLL_CNTL10                                    (0xda83c000 + (0xa9 << 2))
 #define   P_HHI_MPLL_CNTL10                                    (volatile uint32_t *)(0xc883c000 + (0xa9 << 2))
+#define     HHI_MPLL_CNTL11                                    (0xc883c000 + (0xaf << 2))
+#define SEC_HHI_MPLL_CNTL11                                    (0xda83c000 + (0xaf << 2))
+#define   P_HHI_MPLL_CNTL11                                    (volatile uint32_t *)(0xc883c000 + (0xaf << 2))
 #define     HHI_ADC_PLL_CNTL                                   (0xc883c000 + (0xaa << 2))
 #define SEC_HHI_ADC_PLL_CNTL                                   (0xda83c000 + (0xaa << 2))
 #define   P_HHI_ADC_PLL_CNTL                                   (volatile uint32_t *)(0xc883c000 + (0xaa << 2))
@@ -991,7 +994,9 @@
 #define     HHI_ATV_DMD_SYS_CLK_CNTL                           (0xc883c000 + (0xf3 << 2))
 #define SEC_HHI_ATV_DMD_SYS_CLK_CNTL                           (0xda83c000 + (0xf3 << 2))
 #define   P_HHI_ATV_DMD_SYS_CLK_CNTL                           (volatile uint32_t *)(0xc883c000 + (0xf3 << 2))
-// `define HHI_EE_MISC_CNTL            8'hf4
+#define     HHI_EE_MISC_CNTL                                   (0xc883c000 + (0xf4 << 2))
+#define SEC_HHI_EE_MISC_CNTL                                   (0xda83c000 + (0xf4 << 2))
+#define   P_HHI_EE_MISC_CNTL                                   (volatile uint32_t *)(0xc883c000 + (0xf4 << 2))
 #define     HHI_BT656_CLK_CNTL                                 (0xc883c000 + (0xf5 << 2))
 #define SEC_HHI_BT656_CLK_CNTL                                 (0xda83c000 + (0xf5 << 2))
 #define   P_HHI_BT656_CLK_CNTL                                 (volatile uint32_t *)(0xc883c000 + (0xf5 << 2))
@@ -1339,8 +1344,6 @@
     #define NDMA_PERIODIC_INT_DLY_LSB   16
     #define NDMA_PERIODIC_INT_EN        15
     #define NDMA_ENABLE                 14
-    #define NDMA_AHB_DELAY_MSB          13
-    #define NDMA_AHB_DELAY_LSB          0
 #define     NDMA_TABLE_ADD_REG                                 (0xc8832000 + (0x72 << 2))
 #define SEC_NDMA_TABLE_ADD_REG                                 (0xda832000 + (0x72 << 2))
 #define   P_NDMA_TABLE_ADD_REG                                 (volatile uint32_t *)(0xc8832000 + (0x72 << 2))
@@ -1593,6 +1596,12 @@
 #define     AO_RTI_INTER_OSC_CTL1                              (0xc8100000 + (0x1c << 2))
 #define SEC_AO_RTI_INTER_OSC_CTL1                              (0xda100000 + (0x1c << 2))
 #define   P_AO_RTI_INTER_OSC_CTL1                              (volatile uint32_t *)(0xc8100000 + (0x1c << 2))
+#define     AO_RTI_INTER_OSC_CTL2                              (0xc8100000 + (0x1d << 2))
+#define SEC_AO_RTI_INTER_OSC_CTL2                              (0xda100000 + (0x1d << 2))
+#define   P_AO_RTI_INTER_OSC_CTL2                              (volatile uint32_t *)(0xc8100000 + (0x1d << 2))
+#define     AO_METAL_REVISION                                  (0xc8100000 + (0x1f << 2))
+#define SEC_AO_METAL_REVISION                                  (0xda100000 + (0x1f << 2))
+#define   P_AO_METAL_REVISION                                  (volatile uint32_t *)(0xc8100000 + (0x1f << 2))
 #define     AO_IRQ_MASK_FIQ_SEL                                (0xc8100000 + (0x20 << 2))
 #define SEC_AO_IRQ_MASK_FIQ_SEL                                (0xda100000 + (0x20 << 2))
 #define   P_AO_IRQ_MASK_FIQ_SEL                                (volatile uint32_t *)(0xc8100000 + (0x20 << 2))
@@ -1605,7 +1614,9 @@
 #define     AO_IRQ_STAT_CLR                                    (0xc8100000 + (0x23 << 2))
 #define SEC_AO_IRQ_STAT_CLR                                    (0xda100000 + (0x23 << 2))
 #define   P_AO_IRQ_STAT_CLR                                    (volatile uint32_t *)(0xc8100000 + (0x23 << 2))
-// `define AO_SAR_CLK                  8'h24 moved to the EE domain in Gx
+#define     AO_SAR_CLK                                         (0xc8100000 + (0x24 << 2))
+#define SEC_AO_SAR_CLK                                         (0xda100000 + (0x24 << 2))
+#define   P_AO_SAR_CLK                                         (volatile uint32_t *)(0xc8100000 + (0x24 << 2))
 #define     AO_RTC_ALT_CLK_CNTL0                               (0xc8100000 + (0x25 << 2))
 #define SEC_AO_RTC_ALT_CLK_CNTL0                               (0xda100000 + (0x25 << 2))
 #define   P_AO_RTC_ALT_CLK_CNTL0                               (volatile uint32_t *)(0xc8100000 + (0x25 << 2))
@@ -1712,6 +1723,9 @@
 #define     AO_WATCHDOG_RESET                                  (0xc8100000 + (0x4b << 2))
 #define SEC_AO_WATCHDOG_RESET                                  (0xda100000 + (0x4b << 2))
 #define   P_AO_WATCHDOG_RESET                                  (volatile uint32_t *)(0xc8100000 + (0x4b << 2))
+#define     AO_SYS_OSCIN_CNTL                                  (0xc8100000 + (0x4c << 2))
+#define SEC_AO_SYS_OSCIN_CNTL                                  (0xda100000 + (0x4c << 2))
+#define   P_AO_SYS_OSCIN_CNTL                                  (volatile uint32_t *)(0xc8100000 + (0x4c << 2))
 //
 // Secure APB3 Slot 2 registers
 //
@@ -2022,6 +2036,15 @@
 #define     AO_PWM_DELTA_SIGMA_AB                              (0xc8100400 + (0x57 << 2))
 #define SEC_AO_PWM_DELTA_SIGMA_AB                              (0xda100400 + (0x57 << 2))
 #define   P_AO_PWM_DELTA_SIGMA_AB                              (volatile uint32_t *)(0xc8100400 + (0x57 << 2))
+#define     AO_PWM_TIME_AB                                     (0xc8100400 + (0x58 << 2))
+#define SEC_AO_PWM_TIME_AB                                     (0xda100400 + (0x58 << 2))
+#define   P_AO_PWM_TIME_AB                                     (volatile uint32_t *)(0xc8100400 + (0x58 << 2))
+#define     AO_PWM_A2                                          (0xc8100400 + (0x59 << 2))
+#define SEC_AO_PWM_A2                                          (0xda100400 + (0x59 << 2))
+#define   P_AO_PWM_A2                                          (volatile uint32_t *)(0xc8100400 + (0x59 << 2))
+#define     AO_PWM_B2                                          (0xc8100400 + (0x5a << 2))
+#define SEC_AO_PWM_B2                                          (0xda100400 + (0x5a << 2))
+#define   P_AO_PWM_B2                                          (volatile uint32_t *)(0xc8100400 + (0x5a << 2))
 // ----------------------------
 // Multiformat IR Remote
 // ----------------------------
@@ -2079,19 +2102,48 @@
 // ---------------------------
 // SAR ADC
 // ---------------------------
-// `define AO_SAR_ADC_REG0             8'h80
-// `define AO_SAR_ADC_CHAN_LIST        8'h81
-// `define AO_SAR_ADC_AVG_CNTL         8'h82
-// `define AO_SAR_ADC_REG3             8'h83
-// `define AO_SAR_ADC_DELAY            8'h84
-// `define AO_SAR_ADC_LAST_RD          8'h85
-// `define AO_SAR_ADC_FIFO_RD          8'h86
-// `define AO_SAR_ADC_AUX_SW           8'h87
-// `define AO_SAR_ADC_CHAN_10_SW       8'h88
-// `define AO_SAR_ADC_DETECT_IDLE_SW   8'h89
-// `define AO_SAR_ADC_DELTA_10         8'h8a
-// `define AO_SAR_ADC_REG11            8'h8b
-// `define AO_SAR_ADC_REG12            8'h8c
+#define     AO_SAR_ADC_REG0                                    (0xc8100400 + (0x80 << 2))
+#define SEC_AO_SAR_ADC_REG0                                    (0xda100400 + (0x80 << 2))
+#define   P_AO_SAR_ADC_REG0                                    (volatile uint32_t *)(0xc8100400 + (0x80 << 2))
+#define     AO_SAR_ADC_CHAN_LIST                               (0xc8100400 + (0x81 << 2))
+#define SEC_AO_SAR_ADC_CHAN_LIST                               (0xda100400 + (0x81 << 2))
+#define   P_AO_SAR_ADC_CHAN_LIST                               (volatile uint32_t *)(0xc8100400 + (0x81 << 2))
+#define     AO_SAR_ADC_AVG_CNTL                                (0xc8100400 + (0x82 << 2))
+#define SEC_AO_SAR_ADC_AVG_CNTL                                (0xda100400 + (0x82 << 2))
+#define   P_AO_SAR_ADC_AVG_CNTL                                (volatile uint32_t *)(0xc8100400 + (0x82 << 2))
+#define     AO_SAR_ADC_REG3                                    (0xc8100400 + (0x83 << 2))
+#define SEC_AO_SAR_ADC_REG3                                    (0xda100400 + (0x83 << 2))
+#define   P_AO_SAR_ADC_REG3                                    (volatile uint32_t *)(0xc8100400 + (0x83 << 2))
+#define     AO_SAR_ADC_DELAY                                   (0xc8100400 + (0x84 << 2))
+#define SEC_AO_SAR_ADC_DELAY                                   (0xda100400 + (0x84 << 2))
+#define   P_AO_SAR_ADC_DELAY                                   (volatile uint32_t *)(0xc8100400 + (0x84 << 2))
+#define     AO_SAR_ADC_LAST_RD                                 (0xc8100400 + (0x85 << 2))
+#define SEC_AO_SAR_ADC_LAST_RD                                 (0xda100400 + (0x85 << 2))
+#define   P_AO_SAR_ADC_LAST_RD                                 (volatile uint32_t *)(0xc8100400 + (0x85 << 2))
+#define     AO_SAR_ADC_FIFO_RD                                 (0xc8100400 + (0x86 << 2))
+#define SEC_AO_SAR_ADC_FIFO_RD                                 (0xda100400 + (0x86 << 2))
+#define   P_AO_SAR_ADC_FIFO_RD                                 (volatile uint32_t *)(0xc8100400 + (0x86 << 2))
+#define     AO_SAR_ADC_AUX_SW                                  (0xc8100400 + (0x87 << 2))
+#define SEC_AO_SAR_ADC_AUX_SW                                  (0xda100400 + (0x87 << 2))
+#define   P_AO_SAR_ADC_AUX_SW                                  (volatile uint32_t *)(0xc8100400 + (0x87 << 2))
+#define     AO_SAR_ADC_CHAN_10_SW                              (0xc8100400 + (0x88 << 2))
+#define SEC_AO_SAR_ADC_CHAN_10_SW                              (0xda100400 + (0x88 << 2))
+#define   P_AO_SAR_ADC_CHAN_10_SW                              (volatile uint32_t *)(0xc8100400 + (0x88 << 2))
+#define     AO_SAR_ADC_DETECT_IDLE_SW                          (0xc8100400 + (0x89 << 2))
+#define SEC_AO_SAR_ADC_DETECT_IDLE_SW                          (0xda100400 + (0x89 << 2))
+#define   P_AO_SAR_ADC_DETECT_IDLE_SW                          (volatile uint32_t *)(0xc8100400 + (0x89 << 2))
+#define     AO_SAR_ADC_DELTA_10                                (0xc8100400 + (0x8a << 2))
+#define SEC_AO_SAR_ADC_DELTA_10                                (0xda100400 + (0x8a << 2))
+#define   P_AO_SAR_ADC_DELTA_10                                (volatile uint32_t *)(0xc8100400 + (0x8a << 2))
+#define     AO_SAR_ADC_REG11                                   (0xc8100400 + (0x8b << 2))
+#define SEC_AO_SAR_ADC_REG11                                   (0xda100400 + (0x8b << 2))
+#define   P_AO_SAR_ADC_REG11                                   (volatile uint32_t *)(0xc8100400 + (0x8b << 2))
+#define     AO_SAR_ADC_REG12                                   (0xc8100400 + (0x8c << 2))
+#define SEC_AO_SAR_ADC_REG12                                   (0xda100400 + (0x8c << 2))
+#define   P_AO_SAR_ADC_REG12                                   (volatile uint32_t *)(0xc8100400 + (0x8c << 2))
+#define     AO_SAR_ADC_REG13                                   (0xc8100400 + (0x8d << 2))
+#define SEC_AO_SAR_ADC_REG13                                   (0xda100400 + (0x8d << 2))
+#define   P_AO_SAR_ADC_REG13                                   (volatile uint32_t *)(0xc8100400 + (0x8d << 2))
 // ---------------------------
 // RTC (4)
 // ---------------------------
@@ -2106,3 +2158,4 @@
 //
 
 #endif // SECURE_APB_H
+
