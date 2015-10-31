@@ -173,6 +173,10 @@ static int do_image_read_kernel(cmd_tbl_t *cmdtp, int flag, int argc, char * con
     }
     debugP("totalSz=0x%x\n", actualBootImgSz);
 
+    //because secure boot will use DMA which need disable MMU temp
+    //here must update the cache, otherwise nand will fail (eMMC is OK)
+    flush_cache((unsigned long)loadaddr,(unsigned long)actualBootImgSz);
+
     return 0;
 }
 
