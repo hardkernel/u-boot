@@ -48,6 +48,8 @@ typedef struct graphic_device {
     unsigned int cprBase;
     unsigned int frameAdrs;
     unsigned int memSize;
+    unsigned int fb_width;
+    unsigned int fb_height;
     unsigned int mode;
     unsigned int gdfIndex;
     unsigned int gdfBytesPP;

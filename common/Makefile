@@ -34,6 +34,12 @@ obj-$(CONFIG_CMD_BOOTM) += cmd_bootm.o bootm.o bootm_os.o
 obj-y += cmd_help.o
 obj-y += cmd_version.o
 
+#partitions
+obj-y += partitions.o
+
+#remote support
+obj-$(CONFIG_IR_REMOTE) += cmd_irkey.o
+
 # environment
 obj-y += env_attr.o
 obj-y += env_callback.o
@@ -48,6 +54,8 @@ obj-$(CONFIG_ENV_IS_IN_FLASH) += env_flash.o
 obj-$(CONFIG_ENV_IS_IN_MMC) += env_mmc.o
 obj-$(CONFIG_ENV_IS_IN_FAT) += env_fat.o
 obj-$(CONFIG_ENV_IS_IN_NAND) += env_nand.o
+obj-$(CONFIG_ENV_IS_IN_AMLNAND) += env_amlnand.o
+obj-$(CONFIG_STORE_COMPATIBLE) += env_storage.o env_amlnand.o env_mmc.o
 obj-$(CONFIG_ENV_IS_IN_NVRAM) += env_nvram.o
 obj-$(CONFIG_ENV_IS_IN_ONENAND) += env_onenand.o
 obj-$(CONFIG_ENV_IS_IN_SPI_FLASH) += env_sf.o
@@ -58,6 +66,7 @@ obj-$(CONFIG_ENV_IS_NOWHERE) += env_nowhere.o
 # command
 obj-$(CONFIG_CMD_AES) += cmd_aes.o
 obj-$(CONFIG_CMD_AMBAPP) += cmd_ambapp.o
+obj-$(CONFIG_CMD_AUTOSCRIPT) += cmd_autoscript.o
 obj-$(CONFIG_SOURCE) += cmd_source.o
 obj-$(CONFIG_CMD_SOURCE) += cmd_source.o
 obj-$(CONFIG_CMD_BDI) += cmd_bdinfo.o
@@ -70,6 +79,7 @@ obj-$(CONFIG_CMD_CACHE) += cmd_cache.o
 obj-$(CONFIG_CMD_CBFS) += cmd_cbfs.o
 obj-$(CONFIG_CMD_CLK) += cmd_clk.o
 obj-$(CONFIG_CMD_CONSOLE) += cmd_console.o
+obj-$(CONFIG_CMD_SARADC) += cmd_saradc.o
 obj-$(CONFIG_CMD_CPLBINFO) += cmd_cplbinfo.o
 obj-$(CONFIG_DATAFLASH_MMC_SELECT) += cmd_dataflash_mmc_mux.o
 obj-$(CONFIG_CMD_DATE) += cmd_date.o
@@ -93,6 +103,7 @@ obj-$(CONFIG_CMD_EXT2) += cmd_ext2.o
 obj-$(CONFIG_CMD_FAT) += cmd_fat.o
 obj-$(CONFIG_CMD_FDC) += cmd_fdc.o
 obj-$(CONFIG_OF_LIBFDT) += cmd_fdt.o fdt_support.o
+obj-$(CONFIG_MULTI_DTB) += aml_dt.o
 obj-$(CONFIG_CMD_FITUPD) += cmd_fitupd.o
 obj-$(CONFIG_CMD_FLASH) += cmd_flash.o
 ifdef CONFIG_FPGA
@@ -132,6 +143,9 @@ obj-$(CONFIG_CMD_MII) += cmd_mdio.o
 endif
 obj-$(CONFIG_CMD_MISC) += cmd_misc.o
 obj-$(CONFIG_CMD_MMC) += cmd_mmc.o
+obj-$(CONFIG_CMD_MMC) += cmd_aml_mmc.o
+obj-$(CONFIG_STORE_COMPATIBLE) += store_interface.o cmd_burnup.o
+obj-$(CONFIG_STORE_COMPATIBLE) += cmd_imgread.o
 obj-$(CONFIG_CMD_MMC_SPI) += cmd_mmc_spi.o
 obj-$(CONFIG_MP) += cmd_mp.o
 obj-$(CONFIG_CMD_MTDPARTS) += cmd_mtdparts.o
@@ -187,6 +201,9 @@ obj-$(CONFIG_YAFFS2) += cmd_yaffs2.o
 obj-$(CONFIG_CMD_SPL) += cmd_spl.o
 obj-$(CONFIG_CMD_ZIP) += cmd_zip.o
 obj-$(CONFIG_CMD_ZFS) += cmd_zfs.o
+obj-$(CONFIG_AML_VPU) += cmd_vpu.o
+obj-$(CONFIG_CMD_DDR_TEST) += cmd_d2pll.o
+obj-$(CONFIG_CMD_DDR_TEST) += cmd_ddr_test.o
 
 # others
 obj-$(CONFIG_BOOTSTAGE) += bootstage.o
@@ -204,6 +221,8 @@ obj-$(CONFIG_UPDATE_TFTP) += update.o
 obj-$(CONFIG_USB_KEYBOARD) += usb_kbd.o
 obj-$(CONFIG_CMD_DFU) += cmd_dfu.o
 obj-$(CONFIG_CMD_GPT) += cmd_gpt.o
+obj-$(CONFIG_CMD_EFUSE) += cmd_efuse.o
+obj-$(CONFIG_CMD_CPU_TEMP) += cmd_cpu_temp.o
 endif
 
 ifdef CONFIG_SPL_BUILD
@@ -234,6 +253,7 @@ endif
 obj-y += cmd_nvedit.o
 #environment
 obj-y += env_common.o
+obj-y += cmd_defenv_without.o
 #others
 obj-$(CONFIG_DDR_SPD) += ddr_spd.o
 obj-$(CONFIG_SPD_EEPROM) += ddr_spd.o
@@ -262,6 +282,8 @@ endif
 
 obj-$(CONFIG_CMD_BLOB) += cmd_blob.o
 
+obj-$(CONFIG_INSTABOOT) += cmd_wipeisb.o instaboot.o
+
 # We always have this since drivers/ddr/fs/interactive.c needs it
 obj-y += cli_simple.o
 
@@ -271,5 +293,14 @@ obj-y += command.o
 obj-y += s_record.o
 obj-y += xyzModem.o
 obj-y += cmd_disk.o
+
+# amlogic commands
+obj-$(CONFIG_CMD_REBOOT) += cmd_reboot.o
+obj-y += cmd_scp.o
+obj-$(CONFIG_AML_HDMITX20) += hdmi_parameters.o cmd_hdmitx.o
+obj-$(CONFIG_CMD_JTAG) += cmd_jtag.o
+obj-$(CONFIG_AML_OSD) += cmd_osd.o
+obj-$(CONFIG_AML_CVBS) += cmd_cvbs.o
+obj-$(CONFIG_AML_VOUT) += cmd_vout.o
 
 CFLAGS_env_embedded.o := -Wa,--no-warn -DENV_CRC=$(shell tools/envcrc 2>/dev/null)

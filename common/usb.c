@@ -35,6 +35,7 @@
 #include <asm/unaligned.h>
 #include <errno.h>
 #include <usb.h>
+#include <asm/arch/usb.h>
 #ifdef CONFIG_4xx
 #include <asm/4xx_pci.h>
 #endif
@@ -51,6 +52,27 @@ char usb_started; /* flag for the started/stopped USB status */
 #define CONFIG_USB_MAX_CONTROLLER_COUNT 1
 #endif
 
+extern int usb_lowlevel_init(int index,enum usb_init_type init, void **controller);
+extern int usb_lowlevel_stop(int index);
+extern int submit_int_msg(struct usb_device *dev, unsigned long pipe, void *buffer, int len, int interval);
+extern int submit_control_msg(struct usb_device *dev, unsigned long pipe, void *buffer,
+                   int len, struct devrequest *setup);
+extern int submit_bulk_msg(struct usb_device *dev, unsigned long pipe, void *buf, int len);
+
+/***********************************************************************
+ * wait_ms
+
+void wait_ms(unsigned long ms)
+{
+	while (ms-- > 0)
+		_udelay(1000);
+}*/
+void _mdelay(unsigned long ms)
+{
+	while (ms-- > 0)
+		_udelay(1000);
+}
+
 /***************************************************************************
  * Init USB Device
  */
@@ -60,7 +82,7 @@ int usb_init(void)
 	struct usb_device *dev;
 	int i, start_index = 0;
 	int ret;
-
+	int usb_count = get_usb_count();
 	dev_index = 0;
 	asynch_allowed = 1;
 	usb_hub_reset();
@@ -72,7 +94,7 @@ int usb_init(void)
 	}
 
 	/* init low_level USB */
-	for (i = 0; i < CONFIG_USB_MAX_CONTROLLER_COUNT; i++) {
+	for (i = 0; i < usb_count; i++) {
 		/* init low_level USB */
 		printf("USB%d:   ", i);
 		ret = usb_lowlevel_init(i, USB_INIT_HOST, &ctrl);
@@ -101,11 +123,13 @@ int usb_init(void)
 
 		if (start_index == dev_index)
 			puts("No USB Device found\n");
-		else
+		else {
 			printf("%d USB Device(s) found\n",
 				dev_index - start_index);
 
-		usb_started = 1;
+			usb_started = 1;
+			break;
+		}
 	}
 
 	debug("scan end\n");
@@ -212,7 +236,7 @@ int usb_control_msg(struct usb_device *dev, unsigned int pipe,
 	while (timeout--) {
 		if (!((volatile unsigned long)dev->status & USB_ST_NOT_PROC))
 			break;
-		mdelay(1);
+		_mdelay(1);
 	}
 	if (dev->status)
 		return -1;
@@ -237,7 +261,7 @@ int usb_bulk_msg(struct usb_device *dev, unsigned int pipe,
 	while (timeout--) {
 		if (!((volatile unsigned long)dev->status & USB_ST_NOT_PROC))
 			break;
-		mdelay(1);
+		_mdelay(1);
 	}
 	*actual_length = dev->act_len;
 	if (dev->status == 0)
@@ -998,7 +1022,7 @@ int usb_new_device(struct usb_device *dev)
 		return 1;
 	}
 
-	mdelay(10);	/* Let the SET_ADDRESS settle */
+	_mdelay(10);	/* Let the SET_ADDRESS settle */
 
 	tmp = sizeof(dev->descriptor);
 
@@ -1058,9 +1082,4 @@ int usb_new_device(struct usb_device *dev)
 	return 0;
 }
 
-__weak
-int board_usb_init(int index, enum usb_init_type init)
-{
-	return 0;
-}
 /* EOF */

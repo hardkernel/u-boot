@@ -1,0 +1,8 @@
+config AML_NAND
+	bool "AML Nand Support"
+	help
+	  Enable support for the Amlogic NAND controller.
+
+config SECURE_NAND
+	bool "secure nand"
+	depends on AML_NAND

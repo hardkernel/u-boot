@@ -25,7 +25,7 @@ void set_pgtable_section(u64 *page_table, u64 index, u64 section,
 /* to activate the MMU we need to set up virtual memory */
 static void mmu_setup(void)
 {
-	int i, j, el;
+	u64 i, j, el;
 	bd_t *bd = gd->bd;
 	u64 *page_table = (u64 *)gd->arch.tlb_addr;
 
@@ -38,7 +38,12 @@ static void mmu_setup(void)
 	/* Setup an identity-mapping for all RAM space */
 	for (i = 0; i < CONFIG_NR_DRAM_BANKS; i++) {
 		ulong start = bd->bi_dram[i].start;
+		/* plus CONFIG_SYS_MEM_TOP_HIDE, for all ddr need cached */
+#if defined(CONFIG_SYS_MEM_TOP_HIDE)
+		ulong end = bd->bi_dram[i].start + bd->bi_dram[i].size + CONFIG_SYS_MEM_TOP_HIDE;
+#else
 		ulong end = bd->bi_dram[i].start + bd->bi_dram[i].size;
+#endif
 		for (j = start >> SECTION_SHIFT;
 		     j < end >> SECTION_SHIFT; j++) {
 			set_pgtable_section(page_table, j, j << SECTION_SHIFT,
@@ -126,7 +131,8 @@ void dcache_disable(void)
 
 	set_sctlr(sctlr & ~(CR_C|CR_M));
 
-	flush_dcache_all();
+	__asm_flush_dcache_all();
+	flush_l3_cache();
 	__asm_invalidate_tlb_all();
 }
 

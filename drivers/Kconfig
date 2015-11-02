@@ -48,4 +48,7 @@ source "drivers/dma/Kconfig"
 
 source "drivers/crypto/Kconfig"
 
+source "drivers/vpu/Kconfig"
+
+source "drivers/nand/Kconfig"
 endmenu

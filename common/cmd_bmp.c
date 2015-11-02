@@ -18,7 +18,13 @@
 #include <splash.h>
 #include <video.h>
 
-static int bmp_info (ulong addr);
+static int bmp_info(ulong addr);
+#ifdef CONFIG_OSD_SCALE_ENABLE
+static int bmp_scale(void);
+#else
+static int bmp_scale(ulong src_addr, ulong dst_addr, unsigned int new_width,
+		     unsigned new_height);
+#endif
 
 /*
  * Allocate and decompress a BMP image using gunzip().
@@ -63,7 +69,7 @@ bmp_image_t *gunzip_bmp(unsigned long addr, unsigned long *lenp,
 	}
 	if (len == CONFIG_SYS_VIDEO_LOGO_MAX_SIZE)
 		puts("Image could be truncated"
-				" (increase CONFIG_SYS_VIDEO_LOGO_MAX_SIZE)!\n");
+		     " (increase CONFIG_SYS_VIDEO_LOGO_MAX_SIZE)!\n");
 
 	/*
 	 * Check for bmp mark 'BM'
@@ -87,7 +93,7 @@ bmp_image_t *gunzip_bmp(unsigned long addr, unsigned long *lenp,
 }
 #endif
 
-static int do_bmp_info(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
+static int do_bmp_info(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 {
 	ulong addr;
 
@@ -105,7 +111,8 @@ static int do_bmp_info(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[
 	return (bmp_info(addr));
 }
 
-static int do_bmp_display(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
+static int do_bmp_display(cmd_tbl_t *cmdtp, int flag, int argc,
+			  char *const argv[])
 {
 	ulong addr;
 	int x = 0, y = 0;
@@ -118,6 +125,8 @@ static int do_bmp_display(cmd_tbl_t * cmdtp, int flag, int argc, char * const ar
 		break;
 	case 2:		/* use argument */
 		addr = simple_strtoul(argv[1], NULL, 16);
+		x = -1;
+		y = -1;
 		break;
 	case 4:
 		addr = simple_strtoul(argv[1], NULL, 16);
@@ -128,16 +137,44 @@ static int do_bmp_display(cmd_tbl_t * cmdtp, int flag, int argc, char * const ar
 		return CMD_RET_USAGE;
 	}
 
-	 return (bmp_display(addr, x, y));
+	return (bmp_display(addr, x, y));
+}
+
+static int do_bmp_scale(cmd_tbl_t *cmdtp, int flag, int argc,
+			char *const argv[])
+{
+#ifndef CONFIG_OSD_SCALE_ENABLE
+	ulong src_addr, dst_addr;
+	unsigned width, height;
+
+	switch (argc) {
+	case 3:
+		src_addr = simple_strtoul(argv[1], NULL, 16);
+		dst_addr = simple_strtoul(argv[2], NULL, 16);
+		width = simple_strtoul(getenv("display_width"), NULL, 0);
+		height = simple_strtoul(getenv("display_height"), NULL, 0);
+		printf("src_addr=0x%x,dst_addr=0x%x,w=%d,h=%d\n", (uint)src_addr,
+		       (uint)dst_addr, width, height);
+		break;
+	default:
+		return cmd_usage(cmdtp);
+		break;
+	}
+	return (bmp_scale(src_addr, dst_addr, width, height));
+#else
+	return (bmp_scale());
+#endif
 }
 
 static cmd_tbl_t cmd_bmp_sub[] = {
 	U_BOOT_CMD_MKENT(info, 3, 0, do_bmp_info, "", ""),
 	U_BOOT_CMD_MKENT(display, 5, 0, do_bmp_display, "", ""),
+	U_BOOT_CMD_MKENT(scale, 4, 0, do_bmp_scale, "", ""),
 };
 
 #ifdef CONFIG_NEEDS_MANUAL_RELOC
-void bmp_reloc(void) {
+void bmp_reloc(void)
+{
 	fixup_cmdtable(cmd_bmp_sub, ARRAY_SIZE(cmd_bmp_sub));
 }
 #endif
@@ -152,7 +189,7 @@ void bmp_reloc(void) {
  * Return:      None
  *
  */
-static int do_bmp(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+static int do_bmp(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 {
 	cmd_tbl_t *c;
 
@@ -171,8 +208,9 @@ static int do_bmp(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 U_BOOT_CMD(
 	bmp,	5,	1,	do_bmp,
 	"manipulate BMP image data",
-	"info <imageAddr>          - display image info\n"
-	"bmp display <imageAddr> [x y] - display image at x,y"
+	"info <imageAddr>              - display image info\n"
+	"bmp display <imageAddr> [x y]     - display image at x,y\n"
+	"bmp scale [imageAddr scaleAddr]   - scale image\n"
 );
 
 /*
@@ -187,12 +225,12 @@ U_BOOT_CMD(
  */
 static int bmp_info(ulong addr)
 {
-	bmp_image_t *bmp=(bmp_image_t *)addr;
+	bmp_image_t *bmp = (bmp_image_t *)addr;
 	void *bmp_alloc_addr = NULL;
 	unsigned long len;
 
-	if (!((bmp->header.signature[0]=='B') &&
-	      (bmp->header.signature[1]=='M')))
+	if (!((bmp->header.signature[0] == 'B') &&
+	      (bmp->header.signature[1] == 'M')))
 		bmp = gunzip_bmp(addr, &len, &bmp_alloc_addr);
 
 	if (bmp == NULL) {
@@ -208,7 +246,7 @@ static int bmp_info(ulong addr)
 	if (bmp_alloc_addr)
 		free(bmp_alloc_addr);
 
-	return(0);
+	return (0);
 }
 
 /*
@@ -228,8 +266,8 @@ int bmp_display(ulong addr, int x, int y)
 	void *bmp_alloc_addr = NULL;
 	unsigned long len;
 
-	if (!((bmp->header.signature[0]=='B') &&
-	      (bmp->header.signature[1]=='M')))
+	if (!((bmp->header.signature[0] == 'B') &&
+	      (bmp->header.signature[1] == 'M')))
 		bmp = gunzip_bmp(addr, &len, &bmp_alloc_addr);
 
 	if (!bmp) {
@@ -239,7 +277,7 @@ int bmp_display(ulong addr, int x, int y)
 
 #if defined(CONFIG_LCD)
 	ret = lcd_display_bitmap((ulong)bmp, x, y);
-#elif defined(CONFIG_VIDEO)
+#elif defined(CONFIG_VIDEO) || defined(CONFIG_AML_OSD)
 	ret = video_display_bitmap((unsigned long)bmp, x, y);
 #else
 # error bmp_display() requires CONFIG_LCD or CONFIG_VIDEO
@@ -250,3 +288,75 @@ int bmp_display(ulong addr, int x, int y)
 
 	return ret;
 }
+
+#ifdef CONFIG_OSD_SCALE_ENABLE
+static int bmp_scale(void)
+{
+	int ret = 0;
+
+	extern int video_scale_bitmap(void);
+	ret = video_scale_bitmap();
+
+	return ret;
+}
+#else
+static int bmp_scale(ulong src_addr, ulong dst_addr, unsigned int new_width,
+		     unsigned new_height)
+{
+	bmp_image_t *bmp = (bmp_image_t *)src_addr;
+	bmp_image_t *bmp_dst = (bmp_image_t *)dst_addr;
+	unsigned long len;
+	void *bmp_alloc_addr = NULL;
+	char *pBuf = (char *)bmp + bmp->header.data_offset;
+
+	printf("Begin bmp scale ...\n");
+	if (!((bmp->header.signature[0] == 'B') &&
+	      (bmp->header.signature[1] == 'M')))
+		bmp = gunzip_bmp(src_addr, &len, &bmp_alloc_addr);
+
+	if (!bmp) {
+		printf("There is no valid bmp file at the given address\n");
+		if (bmp_alloc_addr)
+			free(bmp_alloc_addr);
+
+		return 1;
+	}
+
+	memcpy(bmp_dst, bmp, sizeof(bmp_image_t));
+	bmp_dst->header.width = new_width;
+	bmp_dst->header.height = new_height;
+	char *pBuf_dst = (char *)bmp_dst + bmp_dst->header.data_offset;
+
+#if 1//Fast scale
+	int nWidth, nNewWidth, nNewHeight, nNewWidthBit;
+	float m_xscale, m_yscale;
+	int i, j, x, y, oldoffset;
+	char *pNewTmp = NULL;
+
+	m_xscale = (float)bmp_dst->header.width / (float)bmp->header.width;
+	m_yscale = (float)bmp_dst->header.height / (float)bmp->header.height;
+	nWidth = bmp->header.width;
+	//nHeight = bmp->header.height;
+	nNewHeight = bmp_dst->header.width;
+	nNewWidth =	bmp_dst->header.width;
+	nNewWidthBit = (4 - nNewWidth * 3 % 4) % 4 + nNewWidth * 3;
+
+	for (i = 0; i < nNewHeight; i++) {
+		pNewTmp = pBuf_dst + nNewWidthBit * i;
+		for (j = 0; j < nNewWidth * 3; j += 3) {
+			x = (int)(j / m_xscale);
+			y = (int)(i / m_yscale);
+			oldoffset = (y * nWidth * 3 + x) - (y * nWidth * 3 + x) %
+				    3; //correct positon in 3 byte mode
+			memcpy(pNewTmp + j, pBuf + oldoffset, 3);
+		}
+	}
+#endif
+	printf("End bmp scale \n");
+
+	if (bmp_alloc_addr)
+		free(bmp_alloc_addr);
+
+	return 0;
+}
+#endif

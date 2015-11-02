@@ -255,6 +255,80 @@ int fdt_initrd(void *fdt, ulong initrd_start, ulong initrd_end)
 	return 0;
 }
 
+#ifdef CONFIG_INSTABOOT
+#include <amlogic/instaboot.h>
+
+int fdt_instaboot(void *fdt)
+{
+	int   nodeoffset;
+	struct instaboot_info ib_info;
+	int err;
+	u32   tmp;
+	/* Find the "chosen" node.  */
+	nodeoffset = fdt_path_offset (fdt, "/chosen");
+
+	/* If there is no "chosen" node in the blob return */
+	if (nodeoffset < 0) {
+		printf("fdt_instaboot: %s\n", fdt_strerror(nodeoffset));
+		return nodeoffset;
+	}
+
+	err = get_instaboot_header(&ib_info);
+	if (err < 0) {
+		printf("fdt_instaboot: get header err\n");
+		return err;
+	}
+
+	err = fdt_setprop(fdt, nodeoffset,
+		"instaboot,sysname", ib_info.uts.sysname,
+			strlen(ib_info.uts.sysname)+1);
+	if (err < 0) {
+		printf("WARNING: could not set instaboot,sysname %s.\n",
+				fdt_strerror(err));
+		return err;
+	}
+
+	err = fdt_setprop(fdt, nodeoffset,
+		"instaboot,release", ib_info.uts.release,
+			strlen(ib_info.uts.release)+1);
+	if (err < 0) {
+		printf("WARNING: could not set instaboot,release %s.\n",
+				fdt_strerror(err));
+		return err;
+	}
+
+	err = fdt_setprop(fdt, nodeoffset,
+		"instaboot,version", ib_info.uts.version,
+			strlen(ib_info.uts.version)+1);
+	if (err < 0) {
+		printf("WARNING: could not set instaboot,version %s.\n",
+				fdt_strerror(err));
+		return err;
+	}
+
+	err = fdt_setprop(fdt, nodeoffset,
+		"instaboot,machine", ib_info.uts.machine,
+			strlen(ib_info.uts.machine)+1);
+	if (err < 0) {
+		printf("WARNING: could not set instaboot,machine %s.\n",
+				fdt_strerror(err));
+		return err;
+	}
+
+	tmp = __cpu_to_be32(ib_info.version_code);
+	err = fdt_setprop(fdt, nodeoffset,
+		"instaboot,version_code", &tmp, sizeof(tmp));
+	if (err < 0) {
+		printf("WARNING: could not set instaboot,version_code %s.\n",
+			fdt_strerror(err));
+
+		return err;
+	}
+	return 0;
+}
+
+#endif /* CONFIG_INSTABOOT */
+
 int fdt_chosen(void *fdt)
 {
 	int   nodeoffset;

@@ -152,11 +152,13 @@ static int bootm_find_os(cmd_tbl_t *cmdtp, int flag, int argc,
 #ifdef CONFIG_ANDROID_BOOT_IMAGE
 	case IMAGE_FORMAT_ANDROID:
 		images.os.type = IH_TYPE_KERNEL;
-		images.os.comp = IH_COMP_NONE;
+		images.os.comp =  android_image_get_comp(os_hdr);
 		images.os.os = IH_OS_LINUX;
 
 		images.os.end = android_image_get_end(os_hdr);
 		images.os.load = android_image_get_kload(os_hdr);
+		if (images.os.load == 0x10008000)
+			images.os.load = 0x1080000;
 		images.ep = images.os.load;
 		ep_found = true;
 		break;
@@ -226,8 +228,38 @@ static int bootm_find_fdt(int flag, int argc, char * const argv[])
 	int ret;
 
 	/* find flattened device tree */
+	#ifdef CONFIG_DTB_MEM_ADDR
+	unsigned long long dtb_mem_addr =  -1;
+	char *ft_addr_bak;
+	ulong ft_len_bak;
+	if (getenv("dtb_mem_addr"))
+		dtb_mem_addr = simple_strtoul(getenv("dtb_mem_addr"), NULL, 16);
+	else
+		dtb_mem_addr = CONFIG_DTB_MEM_ADDR;
+
+#ifdef CONFIG_MULTI_DTB
+	extern unsigned long get_multi_dt_entry(unsigned long fdt_addr);
+	/* update dtb address, compatible with single dtb and multi dtbs */
+	dtb_mem_addr = get_multi_dt_entry(dtb_mem_addr);
+#endif
+
+	ft_addr_bak = (char *)images.ft_addr;
+	ft_len_bak = images.ft_len;
+	images.ft_addr = (char *)map_sysmem(dtb_mem_addr, 0);
+	printf("load dtb from 0x%lx ......\n", (unsigned long)(images.ft_addr));
+	#endif
 	ret = boot_get_fdt(flag, argc, argv, IH_ARCH_DEFAULT, &images,
 			   &images.ft_addr, &images.ft_len);
+	#ifdef CONFIG_DTB_MEM_ADDR
+	if (ret) {
+		images.ft_addr = ft_addr_bak;
+		images.ft_len = ft_len_bak;
+		printf("load dtb from 0x%lx ......\n",
+			(unsigned long)(images.ft_addr));
+		ret = boot_get_fdt(flag, argc, argv, IH_ARCH_DEFAULT, &images,
+			   &images.ft_addr, &images.ft_len);
+	}
+	#endif
 	if (ret) {
 		puts("Could not find a valid device tree\n");
 		return 1;
@@ -283,13 +315,13 @@ static int decomp_image(int comp, ulong load, ulong image_start, int type,
 {
 	const char *type_name = genimg_get_type_name(type);
 	__attribute__((unused)) uint unc_len = CONFIG_SYS_BOOTM_LEN;
-
 	*load_end = load;
 	switch (comp) {
 	case IH_COMP_NONE:
-		if (load == image_start) {
+		/*if (load == image_start) {
 			printf("   XIP %s ... ", type_name);
-		} else {
+		} else */
+		{
 			printf("   Loading %s ... ", type_name);
 			memmove_wd(load_buf, image_buf, image_len, CHUNKSZ);
 		}
@@ -352,7 +384,6 @@ static int decomp_image(int comp, ulong load, ulong image_start, int type,
 		int ret;
 
 		printf("   Uncompressing %s ... ", type_name);
-
 		ret = lzop_decompress(image_buf, image_len, load_buf, &size);
 		if (ret != LZO_E_OK) {
 			printf("LZO: uncompress or overwrite error %d - must RESET board to recover\n",
@@ -389,6 +420,7 @@ static int bootm_load_os(bootm_headers_t *images, unsigned long *load_end,
 	int err;
 
 	load_buf = map_sysmem(load, 0);
+
 	image_buf = map_sysmem(os.image_start, image_len);
 	err = decomp_image(os.comp, load, os.image_start, os.type, load_buf,
 			   image_buf, image_len, load_end);
@@ -398,7 +430,7 @@ static int bootm_load_os(bootm_headers_t *images, unsigned long *load_end,
 	}
 	flush_cache(load, (*load_end - load) * sizeof(ulong));
 
-	debug("   kernel loaded at 0x%08lx, end = 0x%08lx\n", load, *load_end);
+	printf("   kernel loaded at 0x%08lx, end = 0x%08lx\n", load, *load_end);
 	bootstage_mark(BOOTSTAGE_ID_KERNEL_LOADED);
 
 	no_overlap = (os.comp == IH_COMP_NONE && load == image_start);
@@ -408,7 +440,7 @@ static int bootm_load_os(bootm_headers_t *images, unsigned long *load_end,
 		      blob_start, blob_end);
 		debug("images.os.load = 0x%lx, load_end = 0x%lx\n", load,
 		      *load_end);
-
+#ifndef CONFIG_ANDROID_BOOT_IMAGE
 		/* Check what type of image this is. */
 		if (images->legacy_hdr_valid) {
 			if (image_get_type(&images->legacy_hdr_os_copy)
@@ -420,6 +452,7 @@ static int bootm_load_os(bootm_headers_t *images, unsigned long *load_end,
 			bootstage_error(BOOTSTAGE_ID_OVERWRITTEN);
 			return BOOTM_ERR_RESET;
 		}
+#endif
 	}
 
 	return 0;
@@ -571,6 +604,7 @@ int do_bootm_states(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[],
 		argc = 0;	/* consume the args */
 	}
 
+
 	/* Load the OS */
 	if (!ret && (states & BOOTM_STATE_LOADOS)) {
 		ulong load_end;
@@ -654,10 +688,10 @@ int do_bootm_states(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[],
 	}
 
 	/* Now run the OS! We hope this doesn't return */
-	if (!ret && (states & BOOTM_STATE_OS_GO))
+	if (!ret && (states & BOOTM_STATE_OS_GO)) {
 		ret = boot_selected_os(argc, argv, BOOTM_STATE_OS_GO,
 				images, boot_fn);
-
+		}
 	/* Deal with any fallout */
 err:
 	if (iflag)
@@ -827,6 +861,10 @@ static const void *boot_get_kernel(cmd_tbl_t *cmdtp, int flag, int argc,
 #ifdef CONFIG_ANDROID_BOOT_IMAGE
 	case IMAGE_FORMAT_ANDROID:
 		printf("## Booting Android Image at 0x%08lx ...\n", img_addr);
+		if (!android_image_need_move(&img_addr, buf))
+			buf = map_sysmem(img_addr, 0);
+		else
+			return NULL;
 		if (android_image_get_kernel(buf, images->verify,
 					     os_data, os_len))
 			return NULL;
