@@ -55,6 +55,21 @@ void secondary_boot_func(void)
 	 */
 }
 
+/*
+ * Discover the boot device within MicroSD or eMMC
+ * and return 1 for eMMC, otherwise 0.
+ */
+#define BOOT_DEVICE_RESERVED	0
+#define BOOT_DEVICE_EMMC	1
+#define BOOT_DEVICE_NAND	2
+#define BOOT_DEVICE_SPI		3
+#define BOOT_DEVICE_SD		4
+#define BOOT_DEVICE_USB		5
+
+int get_boot_device(void)
+{
+	return readl(AO_SEC_GP_CFG0) & 0xf;
+}
 
 /*
  * Discover the boot reason:
@@ -201,8 +216,21 @@ int board_mmc_init(bd_t	*bis)
 #else
 	//board_mmc_register(SDIO_PORT_B);
 #endif
-	board_mmc_register(SDIO_PORT_B);
-	board_mmc_register(SDIO_PORT_C);
+	switch (get_boot_device())
+	{
+	case BOOT_DEVICE_EMMC:
+		board_mmc_register(SDIO_PORT_C);	// "mmc0"
+		board_mmc_register(SDIO_PORT_B);
+		break;
+	case BOOT_DEVICE_SD:
+		board_mmc_register(SDIO_PORT_B);	// "mmc0"
+		board_mmc_register(SDIO_PORT_C);
+		break;
+	default:
+		printf("No available mmc device! Check boot device!\n");
+		do_reset(NULL, 0, 0, NULL);
+		break;
+	}
 	//	board_mmc_register(SDIO_PORT_B1);
 	return 0;
 }
