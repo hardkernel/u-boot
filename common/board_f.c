@@ -213,6 +213,11 @@ static int show_dram_config(void)
 	size = gd->ram_size;
 #endif
 
+/* add HIDE mem size, print total ddr size */
+#if defined(CONFIG_SYS_MEM_TOP_HIDE)
+	size = size + CONFIG_SYS_MEM_TOP_HIDE;
+#endif
+
 	print_size(size, "");
 	board_add_ram_info(0);
 	putc('\n');
@@ -737,6 +742,8 @@ static int setup_reloc(void)
 	gd->reloc_off = gd->relocaddr - CONFIG_SYS_TEXT_BASE;
 #endif
 	memcpy(gd->new_gd, (char *)gd, sizeof(gd_t));
+
+	printf("Relocation Offset is: %08lx\n", gd->reloc_off);
 
 	debug("Relocation Offset is: %08lx\n", gd->reloc_off);
 	debug("Relocating to %08lx, new gd at %08lx, sp at %08lx\n",

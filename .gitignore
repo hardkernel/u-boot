@@ -20,6 +20,11 @@
 *.bin
 *.patch
 *.cfgtmp
+*.diff
+fip/*.bl2
+fip/*.tpl
+fip/gxb/*.bl2
+fip/gxb/*.tpl
 
 # host programs on Cygwin
 *.exe
@@ -48,6 +53,7 @@
 /LOG
 /spl/
 /tpl/
+/build/
 
 #
 # Generated include files

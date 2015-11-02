@@ -22,6 +22,7 @@
 #include <linux/ctype.h>
 #include <linux/err.h>
 #include <u-boot/zlib.h>
+#include <asm/arch/bl31_apis.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -108,6 +109,9 @@ int do_bootm(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	}
 #endif
 
+	extern void ee_gate_off(void);
+	extern void ee_gate_on(void);
+
 	/* determine if we have a sub command */
 	argc--; argv++;
 	if (argc > 0) {
@@ -126,7 +130,24 @@ int do_bootm(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 			return do_bootm_subcommand(cmdtp, flag, argc, argv);
 	}
 
-	return do_bootm_states(cmdtp, flag, argc, argv, BOOTM_STATE_START |
+	unsigned int nLoadAddr = GXB_IMG_LOAD_ADDR; //default load address
+
+	if (argc > 0)
+	{
+		char *endp;
+		nLoadAddr = simple_strtoul(argv[0], &endp, 16);
+		//printf("aml log : addr = 0x%x\n",nLoadAddr);
+	}
+
+	int nRet = aml_sec_boot_check(AML_D_P_IMG_DECRYPT,nLoadAddr,GXB_IMG_SIZE,GXB_IMG_DEC_ALL);
+	if (nRet)
+	{
+		printf("\naml log : Sig Check %d\n",nRet);
+		return nRet;
+	}
+
+	ee_gate_off();
+	nRet = do_bootm_states(cmdtp, flag, argc, argv, BOOTM_STATE_START |
 		BOOTM_STATE_FINDOS | BOOTM_STATE_FINDOTHER |
 		BOOTM_STATE_LOADOS |
 #if defined(CONFIG_PPC) || defined(CONFIG_MIPS)
@@ -134,6 +155,8 @@ int do_bootm(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 #endif
 		BOOTM_STATE_OS_PREP | BOOTM_STATE_OS_FAKE_GO |
 		BOOTM_STATE_OS_GO, &images, 1);
+	ee_gate_on();
+	return nRet;//should be here.
 }
 
 int bootm_maybe_autostart(cmd_tbl_t *cmdtp, const char *cmd)

@@ -66,7 +66,7 @@ static int do_test(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	int i, op, left, adv, expr, last_expr, last_unop, last_binop;
 
 	/* args? */
-	if (argc < 3)
+	if (argc < 4)
 		return 1;
 
 #ifdef DEBUG

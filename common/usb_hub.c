@@ -39,7 +39,7 @@
 
 static struct usb_hub_device hub_dev[USB_MAX_HUB];
 static int usb_hub_index;
-
+extern void _mdelay(unsigned long ms);
 __weak void usb_hub_reset_devices(int port)
 {
 	return;
@@ -99,7 +99,7 @@ static void usb_hub_power_on(struct usb_hub_device *hub)
 	 * Wait for power to become stable,
 	 * plus spec-defined max time for device to connect
 	 */
-	mdelay(pgood_delay + 1000);
+	_mdelay(pgood_delay + 1000);
 }
 
 void usb_hub_reset(void)
@@ -151,7 +151,7 @@ int hub_port_reset(struct usb_device *dev, int port,
 	for (tries = 0; tries < MAX_TRIES; tries++) {
 
 		usb_set_port_feature(dev, port + 1, USB_PORT_FEAT_RESET);
-		mdelay(200);
+		_mdelay(200);
 
 		if (usb_get_port_status(dev, port + 1, portsts) < 0) {
 			debug("get_port_status failed status %lX\n",
@@ -190,7 +190,7 @@ int hub_port_reset(struct usb_device *dev, int port,
 		if (portstatus & USB_PORT_STAT_ENABLE)
 			break;
 
-		mdelay(200);
+		_mdelay(200);
 	}
 
 	if (tries == MAX_TRIES) {
@@ -235,7 +235,7 @@ void usb_hub_port_connect_change(struct usb_device *dev, int port)
 		if (!(portstatus & USB_PORT_STAT_CONNECTION))
 			return;
 	}
-	mdelay(200);
+	_mdelay(200);
 
 	/* Reset the port */
 	if (hub_port_reset(dev, port, &portstatus) < 0) {
@@ -243,7 +243,7 @@ void usb_hub_port_connect_change(struct usb_device *dev, int port)
 		return;
 	}
 
-	mdelay(200);
+	_mdelay(200);
 
 	/* Allocate a new device struct for it */
 	usb = usb_alloc_new_device(dev->controller);
@@ -262,7 +262,8 @@ void usb_hub_port_connect_change(struct usb_device *dev, int port)
 		usb->speed = USB_SPEED_FULL;
 		break;
 	}
-
+	if ((usb->speed != USB_SPEED_HIGH) && (usb->speed != USB_SPEED_SUPER))
+		return;
 	dev->children[port] = usb;
 	usb->parent = dev;
 	usb->portnr = port + 1;
@@ -410,7 +411,7 @@ static int usb_hub_configure(struct usb_device *dev)
 		ALLOC_CACHE_ALIGN_BUFFER(struct usb_port_status, portsts, 1);
 		unsigned short portstatus, portchange;
 		int ret;
-		ulong start = get_timer(0);
+		ulong start = get_time();
 
 		/*
 		 * Wait for (whichever finishes first)
@@ -434,7 +435,7 @@ static int usb_hub_configure(struct usb_device *dev)
 				(portstatus & USB_PORT_STAT_CONNECTION))
 				break;
 
-		} while (get_timer(start) < CONFIG_SYS_HZ * 10);
+		} while (get_time()-start < CONFIG_SYS_HZ * 10);
 
 		if (ret < 0)
 			continue;

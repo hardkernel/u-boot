@@ -34,7 +34,8 @@ obj-$(CONFIG_SOCFPGA_DWMMC) += socfpga_dw_mmc.o
 obj-$(CONFIG_SPEAR_SDHCI) += spear_sdhci.o
 obj-$(CONFIG_TEGRA_MMC) += tegra_mmc.o
 obj-$(CONFIG_ZYNQ_SDHCI) += zynq_sdhci.o
-
+obj-$(CONFIG_AML_SD_EMMC) += aml_sd_emmc.o
+obj-y += emmc_partitions.o
 ifdef CONFIG_SPL_BUILD
 obj-$(CONFIG_SPL_MMC_BOOT) += fsl_esdhc_spl.o
 else
