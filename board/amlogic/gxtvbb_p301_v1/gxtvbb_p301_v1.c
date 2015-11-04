@@ -177,8 +177,9 @@ void pmu4_phy_config(void)
 	aml_pmu4_write(0x81, 0x0b);
 	aml_pmu4_write(0x82, 0xd1);
 	aml_pmu4_write(0x83, 0x00);
-	aml_pmu4_write(0x84, 0x00);
-	aml_pmu4_write(0x85, 0x00);
+	/* 24M to 50M */
+	aml_pmu4_write(0x84, 0x55);
+	aml_pmu4_write(0x85, 0x0d);
 
 	/*cfg4- --- cfg 45 */
 	aml_pmu4_write(0x88, 0x0);
@@ -253,6 +254,9 @@ static int aml_pmu4_reg_init(unsigned int reg_base, unsigned int *val,
 static int aml_pmu4_power_init(void)
 {
 	int ret;
+
+	/* enable input 24M clock */
+	setbits_le32(0xc8100634, 0x93);
 
 	/* pmu4 analog register init */
 	ret = aml_pmu4_reg_init(AML1220_ANALOG_ADDR, &pmu4_analog_reg[0],
