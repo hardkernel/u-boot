@@ -13,7 +13,11 @@
 #define DTB_ADDR_SIZE	(SZ_1M * 40)
 struct mmc_partition_config * mmc_partition_config_of =NULL;
 bool is_partition_checked = false;
+#ifdef CONFIG_AML_NAND
 unsigned device_boot_flag = (unsigned)_AML_DEVICE_BOOT_FLAG_DEFAULT;
+#else
+unsigned device_boot_flag = (unsigned)EMMC_BOOT_FLAG;
+#endif
 extern struct mmc *find_mmc_device_by_port (unsigned sdio_port);
 extern int get_dtb_struct(struct mmc *mmc);
 extern struct partitions *part_table;

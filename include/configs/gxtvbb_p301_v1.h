@@ -108,7 +108,7 @@
 	#define 	CONFIG_GENERIC_MMC 1
 	#define 	CONFIG_CMD_MMC 1
 #endif
-#define 	CONFIG_AML_NAND	1
+//#define 	CONFIG_AML_NAND	1
 #ifdef CONFIG_AML_NAND
 #endif
 #define		CONFIG_PARTITIONS 1
