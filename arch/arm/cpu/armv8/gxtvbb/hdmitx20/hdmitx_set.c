@@ -657,7 +657,7 @@ static void config_hdmi20_tx ( enum hdmi_vic vic, struct hdmi_format_para *para,
 	data32  = 0;
 	data32 |= (default_phase << 2);
 	data32 |= (0 << 1);
-	data32 |= (0 << 0);
+	data32 |= (1 << 0);
 	hdmitx_wr_reg(HDMITX_DWC_FC_GCP, data32);
 
 	/* write AVI Infoframe packet configuration */
@@ -949,7 +949,7 @@ static void hdmitx_set_phy(struct hdmitx_dev *hdev)
                 hd_write_reg(P_HHI_HDMI_PHY_CNTL0, 0x33634283);
                 hd_write_reg(P_HHI_HDMI_PHY_CNTL3, 0xb000115b);
                 } else {
-                hd_write_reg(P_HHI_HDMI_PHY_CNTL0, 0x33352245);
+                hd_write_reg(P_HHI_HDMI_PHY_CNTL0, 0x33353245);
                 hd_write_reg(P_HHI_HDMI_PHY_CNTL3, 0x2100115b);
                 }
                 break;

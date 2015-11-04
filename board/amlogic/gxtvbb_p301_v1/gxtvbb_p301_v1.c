@@ -545,22 +545,16 @@ int board_init(void)
 	board_usb_init(&g_usb_config_GXTVBB_skt,BOARD_USB_MODE_HOST);
 #endif /*CONFIG_USB_XHCI_AMLOGIC*/
 
-#ifdef CONFIG_AML_VPU
-	vpu_probe();
-#endif
-#ifdef CONFIG_AML_HDMITX20
-	hdmi_tx_set_hdmi_5v();
-	hdmi_tx_init();
-#endif
-#ifdef CONFIG_AML_LCD
-	lcd_probe();
-#endif
-
 #ifdef CONFIG_SYS_I2C_AML
 // #ifdef 1
 	board_i2c_init();
 // #endif /*CONFIG_AML_I2C*/
 #endif
+
+	//temp  for p301, usb 5V power
+	//run_command("mw 0xc8100024 BFFF3FDF", 0);
+	run_command("gpio s GPIOAO_5", 0);
+
 	return 0;
 }
 
@@ -583,6 +577,17 @@ int board_late_init(void){
 		}
 		#endif
 	}
+
+#ifdef CONFIG_AML_VPU
+	vpu_probe();
+#endif
+#ifdef CONFIG_AML_HDMITX20
+	hdmi_tx_set_hdmi_5v();
+	hdmi_tx_init();
+#endif
+#ifdef CONFIG_AML_LCD
+	lcd_probe();
+#endif
 
 #ifdef CONFIG_AML_V2_FACTORY_BURN
 	/*aml_try_factory_sdcard_burning(0, gd->bd);*/
@@ -621,3 +626,32 @@ phys_size_t get_effective_memsize(void)
 	return (((readl(AO_SEC_GP_CFG0)) & 0xFFFF0000) << 4);
 #endif
 }
+
+#ifdef CONFIG_MULTI_DTB
+int checkhw(char * name)
+{
+	unsigned int boardid = 0;
+	char loc_name[64] = {0};
+	boardid = (readl(AO_SEC_GP_CFG0)>>8)&0xff;
+	printf("%s: boardid = 0x%x\n", __func__,boardid);
+
+	switch (boardid) {
+		case 0:
+			strcpy(loc_name, "gxtvbb_p301_1g\0");
+			break;
+		case 8:
+			strcpy(loc_name, "gxtvbb_p300_2g\0");
+			break;
+		case 12:
+			strcpy(loc_name, "gxtvbb_skt_2g\0");
+			break;
+		default:
+			printf("boardid: 0x%x, multi-dt doesn't support\n", boardid);
+			//strcpy(loc_name, "gxb_p200_unsupport");
+			break;
+	}
+	strcpy(name, loc_name);
+	setenv("aml_dt", loc_name);
+	return 0;
+}
+#endif

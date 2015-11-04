@@ -57,11 +57,14 @@
 	"dtb_mem_addr=0x1000000\0" \
 	"panel_type=lvds_0\0" \
 	"outputmode=1080p60hz\0" \
-    "storeboot="\
-    "if imgread kernel boot ${loadaddr}; then store dtb read $dtb_mem_addr; bootm ${loadaddr}; fi;"\
+	"display_layer=osd1\0" \
+	"display_color_index=16\0" \
+	"storeboot="\
+	"if imgread kernel boot ${loadaddr}; then store dtb read $dtb_mem_addr; bootm ${loadaddr}; fi;"\
 	"\0"
 #define CONFIG_BOOTARGS "init=/init console=ttyS0,115200 no_console_suspend earlyprintk=aml-uart,0xc81004c0 ramoops.mem_address=0x20000000 ramoops.mem_size=0x100000 ramoops.record_size=0x8000 ramoops.console_size=0x4000"
-#define CONFIG_BOOTCOMMAND "run storeboot"
+#define CONFIG_BOOTCOMMAND "osd open;"\
+    "run storeboot"
 
 //#define CONFIG_ENV_IS_NOWHERE  1
 #define CONFIG_ENV_SIZE   (64*1024)
@@ -231,6 +234,8 @@
 #define CONFIG_CMD_MISC         1
 #define CONFIG_CMD_CPU_TEMP 1
 #define CONFIG_SYS_MEM_TOP_HIDE 0x08000000 //hide 128MB for kernel reserve
+
+#define CONFIG_MULTI_DTB    1
 
 /* ddr dump function defines */
 //#define CONFIG_SPL_DDR_DUMP 1

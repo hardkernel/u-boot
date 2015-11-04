@@ -1,9 +1,116 @@
+/*
+ * drivers/display/lcd/aml_lcd_common.c
+ *
+ * Copyright (C) 2015 Amlogic, Inc. All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
+ *
+*/
+
 #include <common.h>
 #include <malloc.h>
-#include <asm/arch/io.h>
 #include "aml_lcd_reg.h"
 #include "aml_lcd_common.h"
 
+static char *lcd_type_table[] = {
+	"ttl",
+	"lvds",
+	"vbyone",
+	"mipi",
+	"edp",
+	"invalid",
+};
+
+int lcd_type_str_to_type(const char *str)
+{
+	int type;
+
+	for (type = 0; type < ARRAY_SIZE(lcd_type_table); type++) {
+		if (!strcmp(str, lcd_type_table[type]))
+			break;
+	}
+	return type;
+}
+
+char *lcd_type_type_to_str(int type)
+{
+	return lcd_type_table[type];
+}
+
+static char *lcd_mode_table[] = {
+	"tv",
+	"tablet",
+	"invalid",
+};
+
+int lcd_mode_str_to_mode(const char *str)
+{
+	int mode;
+
+	for (mode = 0; mode < ARRAY_SIZE(lcd_mode_table); mode++) {
+		if (!strcmp(str, lcd_mode_table[mode]))
+			break;
+	}
+	return mode;
+}
+
+void vpp_set_matrix_ycbcr2rgb(int vd1_or_vd2_or_post, int mode)
+{
+	if (vd1_or_vd2_or_post == 0) { //vd1
+		lcd_vcbus_setb(VPP_MATRIX_CTRL, 1, 5, 1);
+		lcd_vcbus_setb(VPP_MATRIX_CTRL, 1, 8, 2);
+	} else if (vd1_or_vd2_or_post == 1) { //vd2
+		lcd_vcbus_setb(VPP_MATRIX_CTRL, 1, 4, 1);
+		lcd_vcbus_setb(VPP_MATRIX_CTRL, 2, 8, 2);
+	} else {
+		lcd_vcbus_setb(VPP_MATRIX_CTRL, 1, 0, 1);
+		lcd_vcbus_setb(VPP_MATRIX_CTRL, 0, 8, 2);
+		if (mode == 0)
+			lcd_vcbus_setb(VPP_MATRIX_CTRL, 1, 1, 2);
+		else if (mode == 1)
+			lcd_vcbus_setb(VPP_MATRIX_CTRL, 0, 1, 2);
+	}
+
+	if (mode == 0) { //ycbcr not full range, 601 conversion
+		lcd_vcbus_write(VPP_MATRIX_PRE_OFFSET0_1, 0x0064C8FF);
+		lcd_vcbus_write(VPP_MATRIX_PRE_OFFSET2, 0x006400C8);
+		//1.164     0       1.596
+		//1.164   -0.392    -0.813
+		//1.164   2.017     0
+		lcd_vcbus_write(VPP_MATRIX_COEF00_01, 0x04A80000);
+		lcd_vcbus_write(VPP_MATRIX_COEF02_10, 0x066204A8);
+		lcd_vcbus_write(VPP_MATRIX_COEF11_12, 0x1e701cbf);
+		lcd_vcbus_write(VPP_MATRIX_COEF20_21, 0x04A80812);
+		lcd_vcbus_write(VPP_MATRIX_COEF22, 0x00000000);
+		lcd_vcbus_write(VPP_MATRIX_OFFSET0_1, 0x00000000);
+		lcd_vcbus_write(VPP_MATRIX_OFFSET2, 0x00000000);
+		lcd_vcbus_write(VPP_MATRIX_PRE_OFFSET0_1, 0x0FC00E00);
+		lcd_vcbus_write(VPP_MATRIX_PRE_OFFSET2, 0x00000E00);
+	} else if (mode == 1) {//ycbcr full range, 601 conversion
+		lcd_vcbus_write(VPP_MATRIX_PRE_OFFSET0_1, 0x0000E00);
+		lcd_vcbus_write(VPP_MATRIX_PRE_OFFSET2, 0x0E00);
+		//	1	0			1.402
+		//	1	-0.34414	-0.71414
+		//	1	1.772		0
+		lcd_vcbus_write(VPP_MATRIX_COEF00_01, (0x400 << 16) |0);
+		lcd_vcbus_write(VPP_MATRIX_COEF02_10, (0x59c << 16) |0x400);
+		lcd_vcbus_write(VPP_MATRIX_COEF11_12, (0x1ea0 << 16) |0x1d24);
+		lcd_vcbus_write(VPP_MATRIX_COEF20_21, (0x400 << 16) |0x718);
+		lcd_vcbus_write(VPP_MATRIX_COEF22, 0x0);
+		lcd_vcbus_write(VPP_MATRIX_OFFSET0_1, 0x0);
+		lcd_vcbus_write(VPP_MATRIX_OFFSET2, 0x0);
+	}
+}
+
+#if 0
 static unsigned od_table[4] = {1, 2, 4, 8};
 
 #if 0
@@ -659,4 +766,5 @@ generate_clk_done:
 		printf("lcd error: Out of clock range, reset to default setting\n");
 	}
 }
+#endif
 

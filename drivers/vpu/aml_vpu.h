@@ -22,6 +22,10 @@
 #ifndef __VPU_PARA_H__
 #define __VPU_PARA_H__
 
+//#define VPU_DEBUG_PRINT
+#define VPUPR(fmt, args...)     printf("vpu: "fmt"", ## args)
+#define VPUERR(fmt, args...)    printf("vpu: error: "fmt"", ## args)
+
 enum vpu_chip_e {
 	VPU_CHIP_M8 = 0,
 	VPU_CHIP_M8B,

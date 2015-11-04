@@ -1,6 +1,6 @@
 
 /*
- * drivers/vpu/aml_lcd_reg.h
+ * drivers/display/lcd/aml_lcd_reg.h
  *
  * Copyright (C) 2015 Amlogic, Inc. All rights reserved.
  *
@@ -14,9 +14,6 @@
  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
  * more details.
  *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 #ifndef __AML_LCD_REG_H__
@@ -48,11 +45,18 @@
 /* ********************************
  * AO:
  * ******************************** */
-#define AO_RTI_GEN_PWR_SLEEP0                      0x003a
+#define AO_RTI_GEN_PWR_SLEEP0                      0x3a
 
 /* ********************************
  * PERIPHS: 0xc8834400
  * ******************************** */
+#define AO_GPIO_O_EN_N                             0x09
+#define AO_GPIO_I                                  0x0a
+
+#define PREG_PAD_GPIO0_EN_N                        0x0c
+#define PREG_PAD_GPIO0_O                           0x0d
+#define PREG_PAD_GPIO0_I                           0x0e
+
 #define PREG_PAD_GPIO1_EN_N                        0x0f
 #define PREG_PAD_GPIO1_O                           0x10
 #define PREG_PAD_GPIO1_I                           0x11
@@ -719,12 +723,18 @@ static inline void lcd_aobus_write(unsigned int _reg, unsigned int _value)
 	*(volatile unsigned int *)REG_ADDR_AOBUS(_reg) = (_value);
 };
 
-static inline void lcd_ao_setb(unsigned int _reg, unsigned int _value,
+static inline void lcd_aobus_setb(unsigned int _reg, unsigned int _value,
 		unsigned int _start, unsigned int _len)
 {
 	lcd_aobus_write(_reg, ((lcd_aobus_read(_reg) &
 			~(((1L << (_len))-1) << (_start))) |
 			(((_value)&((1L<<(_len))-1)) << (_start))));
+}
+
+static inline unsigned int lcd_aobus_getb(unsigned int _reg,
+		unsigned int _start, unsigned int _len)
+{
+	return (lcd_aobus_read(_reg) & (((1L << (_len)) - 1) << (_start)));
 }
 
 static inline unsigned int lcd_periphs_read(unsigned int _reg)
@@ -737,6 +747,20 @@ static inline void lcd_periphs_write(unsigned int _reg, unsigned int _value)
 	*(volatile unsigned int *)REG_ADDR_PERIPHS(_reg) = (_value);
 };
 
+static inline void lcd_periphs_setb(unsigned int _reg, unsigned int _value,
+		unsigned int _start, unsigned int _len)
+{
+	lcd_periphs_write(_reg, ((lcd_periphs_read(_reg) &
+			~(((1L << (_len))-1) << (_start))) |
+			(((_value)&((1L<<(_len))-1)) << (_start))));
+}
+
+static inline unsigned int lcd_periphs_getb(unsigned int _reg,
+		unsigned int _start, unsigned int _len)
+{
+	return (lcd_periphs_read(_reg) & (((1L << (_len)) - 1) << (_start)));
+}
+
 static inline void lcd_pinmux_set_mask(unsigned int n, unsigned int _mask)
 {
 	unsigned int _reg = PERIPHS_PIN_MUX_0;
@@ -745,7 +769,7 @@ static inline void lcd_pinmux_set_mask(unsigned int n, unsigned int _mask)
 	lcd_periphs_write(_reg, (lcd_periphs_read(_reg) | (_mask)));
 }
 
-static inline void lcd_pinmux_clk_mask(unsigned int n, unsigned int _mask)
+static inline void lcd_pinmux_clr_mask(unsigned int n, unsigned int _mask)
 {
 	unsigned int _reg = PERIPHS_PIN_MUX_0;
 

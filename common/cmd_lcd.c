@@ -6,7 +6,7 @@ static int do_lcd_probe(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[
 {
 	struct aml_lcd_drv_s *lcd_drv;
 
-	lcd_drv = get_aml_lcd_driver();
+	lcd_drv = aml_lcd_get_driver();
 	if (lcd_drv) {
 		if (lcd_drv->lcd_probe)
 			lcd_drv->lcd_probe();
@@ -20,7 +20,7 @@ static int do_lcd_probe(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[
 
 static int do_lcd_enable(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
-	struct aml_lcd_drv_s *lcd_drv = get_aml_lcd_driver();
+	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
 	char *mode;
 
 	mode = getenv("outputmode");
@@ -39,7 +39,7 @@ static int do_lcd_disable(cmd_tbl_t *cmdtp, int flag, int argc, char * const arg
 {
 	struct aml_lcd_drv_s *lcd_drv;
 
-	lcd_drv = get_aml_lcd_driver();
+	lcd_drv = aml_lcd_get_driver();
 	if (lcd_drv) {
 		if (lcd_drv->lcd_disable)
 			lcd_drv->lcd_disable();
@@ -55,7 +55,7 @@ static int do_lcd_info(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]
 {
 	struct aml_lcd_drv_s *lcd_drv;
 
-	lcd_drv = get_aml_lcd_driver();
+	lcd_drv = aml_lcd_get_driver();
 	if (lcd_drv) {
 		if (lcd_drv->lcd_info)
 			lcd_drv->lcd_info();
@@ -77,7 +77,7 @@ static int do_lcd_test(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]
 	}
 	num = (int)simple_strtoul(argv[1], NULL, 10);
 
-	lcd_drv = get_aml_lcd_driver();
+	lcd_drv = aml_lcd_get_driver();
 	if (lcd_drv) {
 		if (lcd_drv->lcd_test)
 			lcd_drv->lcd_test(num);

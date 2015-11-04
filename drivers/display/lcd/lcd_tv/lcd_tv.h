@@ -1,6 +1,6 @@
 
 /*
- * drivers/vpu/aml_vpu_reg.h
+ * drivers/display/lcd/lcd_tv/lcd_tv.h
  *
  * Copyright (C) 2015 Amlogic, Inc. All rights reserved.
  *
@@ -14,15 +14,12 @@
  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
  * more details.
  *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 #ifndef __AML_LCD_TV_H__
 #define __AML_LCD_TV_H__
 
-#define LCD_DRV_VERSION    "20151012"
+#define LCD_DRV_VERSION    "20151026"
 
 extern int lvds_init(struct lcd_config_s *pconf);
 extern int vbyone_init(struct lcd_config_s *pconf);

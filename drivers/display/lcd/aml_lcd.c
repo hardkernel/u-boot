@@ -1,5 +1,5 @@
 /*
- * AMLOGIC timing controller driver.
+ * drivers/display/lcd/aml_lcd.c
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -11,15 +11,12 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA
- *
  */
+
 #include <common.h>
 #include <malloc.h>
-#include <amlogic/aml_lcd.h>
 #include <asm/arch/gpio.h>
+#include <amlogic/aml_lcd.h>
 #ifdef CONFIG_AML_LCD_EXTERN
 #include <amlogic/aml_lcd_extern.h>
 #endif
@@ -28,98 +25,10 @@
 
 #define PANEL_NAME	"panel"
 
-static struct lcd_config_s *aml_lcd_config;
-static struct bl_config_s *aml_bl_config;
+unsigned int lcd_debug_print_flag;
 static struct aml_lcd_drv_s aml_lcd_driver;
 
 #if 0
-static unsigned int aml_lcd_pinmux_reg[] = {
-	PERIPHS_PIN_MUX_0,
-	PERIPHS_PIN_MUX_1,
-	PERIPHS_PIN_MUX_2,
-	PERIPHS_PIN_MUX_3,
-	PERIPHS_PIN_MUX_4,
-	PERIPHS_PIN_MUX_5,
-	PERIPHS_PIN_MUX_6,
-	PERIPHS_PIN_MUX_7,
-	PERIPHS_PIN_MUX_8,
-	PERIPHS_PIN_MUX_9,
-	PERIPHS_PIN_MUX_10,
-	//AO_RTI_PIN_MUX_REG,
-};
-#endif
-
-extern void mdelay(unsigned long msec);
-#if 0
-static void panel_power_ctrl(Bool_t status)
-{
-#ifdef CONFIG_AML_LCD_EXTERN
-	struct aml_lcd_extern_driver_t *ext_drv;
-#endif
-	lcd_printf("statu=%s gpio=%d value=%d \n",(status ? "ON" : "OFF"),
-		pDev->pconf->lcd_power_ctrl.panel_power->gpio,
-		(status ?pDev->pconf->lcd_power_ctrl.panel_power->on_value:
-				pDev->pconf->lcd_power_ctrl.panel_power->off_value));
-
-	if ( ON == status) {
-		amlogic_gpio_direction_output(pDev->pconf->lcd_power_ctrl.panel_power->gpio,
-						pDev->pconf->lcd_power_ctrl.panel_power->on_value);
-		mdelay(pDev->pconf->lcd_power_ctrl.panel_power->panel_on_delay);
-#ifdef CONFIG_AML_LCD_EXTERN
-		if (pDev->pconf->lcd_control.ext_config->index < LCD_EXTERN_INDEX_INVALID) {
-			ext_drv = aml_lcd_extern_get_driver();
-			if (ext_drv) {
-				if (ext_drv->power_on)
-					ext_drv->power_on();
-			}
-			if (pDev->pconf->lcd_control.ext_config->on_delay > 0)
-				mdelay(pDev->pconf->lcd_control.ext_config->on_delay);
-		}
-#endif
-	} else {
-#ifdef CONFIG_AML_LCD_EXTERN
-		if (pDev->pconf->lcd_control.ext_config->index < LCD_EXTERN_INDEX_INVALID) {
-			if (pDev->pconf->lcd_control.ext_config->off_delay > 0)
-				mdelay(pDev->pconf->lcd_control.ext_config->off_delay);
-			ext_drv = aml_lcd_extern_get_driver();
-			if (ext_drv) {
-				if (ext_drv->power_off)
-					ext_drv->power_off();
-			}
-		}
-#endif
-		mdelay(pDev->pconf->lcd_power_ctrl.panel_power->panel_off_delay);
-		amlogic_gpio_direction_output(pDev->pconf->lcd_power_ctrl.panel_power->gpio,
-						pDev->pconf->lcd_power_ctrl.panel_power->off_value);
-	}
-}
-
-static int aml_lcd_pinmux_set(unsigned int mux_index, unsigned int mux_mask)
-{
-	lcd_printf("aml_lcd_pinmux_set: reg=%d, mask=%x\n",mux_index,mux_mask);
-	if (mux_index < ARRAY_SIZE(aml_lcd_pinmux_reg)) {
-		lcd_cbus_set_mask(aml_lcd_pinmux_reg[mux_index], mux_mask);
-
-		return 0;
-	} else {
-		printf("lcd error: wrong pinmux index %d\n", mux_index);
-		return -1;
-	}
-}
-
-static int aml_lcd_pinmux_clr(unsigned int mux_index, unsigned int mux_mask)
-{
-	lcd_printf("aml_lcd_pinmux_clr: reg=%d  mask=%x\n",mux_index,mux_mask);
-
-	if (mux_index <  ARRAY_SIZE(aml_lcd_pinmux_reg)) {
-		lcd_cbus_clr_mask(aml_lcd_pinmux_reg[mux_index], mux_mask);
-		return 0;
-	} else {
-		printf("lcd error: wrong pinmux index %d\n", mux_index);
-		return -1;
-	}
-}
-
 static void aml_bl_pwm_param_init(Bl_Pwm_Config_t *bl_pwm_conf)
 {
 	unsigned int pwm_freq;
@@ -287,29 +196,117 @@ static void lcd_backlight_power_ctrl(Bool_t status)
 }
 #endif
 
+static void lcd_power_ctrl(int status)
+{
+	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
+	struct lcd_power_ctrl_s *lcd_power;
+	struct lcd_power_step_s *power_step;
+#ifdef CONFIG_AML_LCD_EXTERN
+	struct aml_lcd_extern_driver_s *ext_drv;
+	int index;
+#endif
+	int i, gpio;
+
+	i = 0;
+	lcd_power = lcd_drv->lcd_config->lcd_power;
+	while (i < LCD_PWR_STEP_MAX) {
+		if (status)
+			power_step = &lcd_power->power_on_step[i];
+		else
+			power_step = &lcd_power->power_off_step[i];
+
+		if (power_step->type >= LCD_POWER_TYPE_MAX)
+			break;
+		if (lcd_debug_print_flag) {
+			LCDPR("power_ctrl: %d, step %d: type=%d, index=%d, value=%d, delay=%d\n",
+				status, i, power_step->type, power_step->index,
+				power_step->value, power_step->delay);
+		}
+		switch (power_step->type) {
+		case LCD_POWER_TYPE_CPU:
+			if (power_step->index < LCD_CPU_GPIO_NUM_MAX) {
+				gpio = lcd_power->cpu_gpio[power_step->index];
+				aml_lcd_gpio_set(gpio, power_step->value);
+			} else {
+				LCDPR("cpu_gpio index: %d\n", power_step->index);
+			}
+			break;
+		case LCD_POWER_TYPE_PMU:
+			if (power_step->index < LCD_PMU_GPIO_NUM_MAX)
+				LCDPR("to do\n");
+			else
+				LCDPR("pmu_gpio index: %d\n", power_step->index);
+			break;
+		case LCD_POWER_TYPE_SIGNAL:
+			if (status)
+				lcd_drv->driver_init();
+			else
+				lcd_drv->driver_disable();
+			break;
+#ifdef CONFIG_AML_LCD_EXTERN
+		case LCD_POWER_TYPE_EXTERN:
+			ext_drv = aml_lcd_extern_get_driver();
+			if (status)
+				ext_drv->power_on();
+			else
+				ext_drv->power_off();
+			break;
+#endif
+		default:
+			break;
+		}
+		if (power_step->delay)
+			mdelay(power_step->delay);
+		i++;
+	}
+
+	if (lcd_debug_print_flag)
+		LCDPR("%s: %d\n", __func__, status);
+}
+
 static void lcd_module_enable(char *mode)
 {
-	LCDPR("module enable: %s\n", aml_lcd_config->lcd_basic.model_name);
-	//panel_power_ctrl(1);
+	unsigned int sync_duration;
+	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
+	struct lcd_config_s *pconf = lcd_drv->lcd_config;
+	int ret;
 
-	init_lcd_driver(aml_lcd_config, mode);
-	//_enable_vsync_interrupt();
+	LCDPR("driver version: %s\n", lcd_drv->version);
 
-	//set_lcd_backlight_level(1, bl_config->bl_pwm.level_default);
+	ret = lcd_drv->config_check(mode);
+	if (ret) {
+		LCDERR("init exit\n");
+		return;
+	}
 
+	sync_duration = pconf->lcd_timing.sync_duration_num;
+	sync_duration = (sync_duration * 10 / pconf->lcd_timing.sync_duration_den);
+	LCDPR("%s, %s, %ux%u@%u.%uHz\n", pconf->lcd_basic.model_name,
+		lcd_type_type_to_str(pconf->lcd_basic.lcd_type),
+		pconf->lcd_basic.h_active, pconf->lcd_basic.v_active,
+		(sync_duration / 10), (sync_duration % 10));
+
+	lcd_power_ctrl(1);
+	lcd_vcbus_write(VPP_POSTBLEND_H_SIZE, pconf->lcd_basic.h_active);
+	lcd_vcbus_write(VENC_INTCTRL, 0x200);
+
+	//set_lcd_backlight_level(lcd_drv->bl_config->level_default);
 	//lcd_backlight_power_ctrl(1);
+
+	lcd_drv->lcd_status = 1;
 }
 
 static void lcd_module_disable(void)
 {
-	LCDPR("module disable: %s\n", aml_lcd_config->lcd_basic.model_name);
+	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
+
+	LCDPR("disable: %s\n", lcd_drv->lcd_config->lcd_basic.model_name);
+
 	//lcd_backlight_power_ctrl(0);
 
-	//set_lcd_backlight_level(0, 0);
+	lcd_power_ctrl(0);
 
-	disable_lcd_driver();
-
-	//panel_power_ctrl(0);
+	lcd_drv->lcd_status = 0;
 }
 
 static void lcd_timing_info_print(struct lcd_config_s * pconf)
@@ -340,33 +337,69 @@ static void lcd_timing_info_print(struct lcd_config_s * pconf)
 	   video_on_pixel, video_on_line);
 }
 
-static const char *lcd_type_table[]={
-	"lvds",
-	"vbyone",
-	"ttl",
-	"invalid",
-};
+static void lcd_power_info_print(struct lcd_config_s *pconf, int status)
+{
+	int i;
+	struct lcd_power_step_s *power_step;
+
+	if (status)
+		printf("power on step:\n");
+	else
+		printf("power off step:\n");
+
+	i = 0;
+	while (i < LCD_PWR_STEP_MAX) {
+		if (status)
+			power_step = &pconf->lcd_power->power_on_step[i];
+		else
+			power_step = &pconf->lcd_power->power_off_step[i];
+
+		if (power_step->type >= LCD_POWER_TYPE_MAX)
+			break;
+		switch (power_step->type) {
+		case LCD_POWER_TYPE_CPU:
+		case LCD_POWER_TYPE_PMU:
+			printf("%d: type=%d, index=%d, value=%d, delay=%d\n",
+				i, power_step->type, power_step->index,
+				power_step->value, power_step->delay);
+			break;
+		case LCD_POWER_TYPE_EXTERN:
+			printf("%d: type=%d, index=%d, delay=%d\n",
+				i, power_step->type, power_step->index,
+				power_step->delay);
+			break;
+		case LCD_POWER_TYPE_SIGNAL:
+			printf("%d: type=%d, delay=%d\n",
+				i, power_step->type, power_step->delay);
+			break;
+		default:
+			break;
+		}
+		i++;
+	}
+}
 
 static void print_lcd_info(void)
 {
-	unsigned lcd_clk;
+	unsigned int lcd_clk;
 	unsigned int sync_duration;
-	struct aml_lcd_drv_s *lcd_drv = get_aml_lcd_driver();
-	struct lcd_config_s *pconf = aml_lcd_config;
+	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
+	struct lcd_config_s *pconf = lcd_drv->lcd_config;
 
 	LCDPR("driver version: %s\n", lcd_drv->version);
+	LCDPR("status: %d\n", lcd_drv->lcd_status);
 
 	lcd_clk = (pconf->lcd_timing.lcd_clk / 1000);
 	sync_duration = pconf->lcd_timing.sync_duration_num;
 	sync_duration = (sync_duration * 10 / pconf->lcd_timing.sync_duration_den);
-	printf("LCD mode: %s, %s, %ux%u@%u.%uHz\n"
+	LCDPR("%s, %s, %ux%u@%u.%uHz\n"
 		"fr_adj_type       %d\n"
 		"lcd_clk           %u.%03uMHz\n\n",
 		pconf->lcd_basic.model_name,
-		lcd_type_table[pconf->lcd_basic.lcd_type],
+		lcd_type_type_to_str(pconf->lcd_basic.lcd_type),
 		pconf->lcd_basic.h_active, pconf->lcd_basic.v_active,
 		(sync_duration / 10), (sync_duration % 10),
-		pconf->lcd_timing.frame_rate_adj_type,
+		pconf->lcd_timing.fr_adjust_type,
 		(lcd_clk / 1000), (lcd_clk % 1000));
 
 	lcd_timing_info_print(pconf);
@@ -374,12 +407,12 @@ static void print_lcd_info(void)
 	switch (pconf->lcd_basic.lcd_type) {
 	case LCD_LVDS:
 		printf("lvds_repack       %u\n"
-		   "pn_swap           %u\n"
 		   "dual_port         %u\n"
+		   "pn_swap           %u\n"
 		   "port_swap         %u\n\n",
 		   pconf->lcd_control.lvds_config->lvds_repack,
-		   pconf->lcd_control.lvds_config->pn_swap,
 		   pconf->lcd_control.lvds_config->dual_port,
+		   pconf->lcd_control.lvds_config->pn_swap,
 		   pconf->lcd_control.lvds_config->port_swap);
 		break;
 	case LCD_VBYONE:
@@ -394,67 +427,30 @@ static void print_lcd_info(void)
 		break;
 	}
 
-	printf("power_gpio        %d\n"
-	   "power_on_value    %d\n"
-	   "power_off_value   %d\n"
-	   "power_on_delay    %d\n"
-	   "power_off_delay   %d\n\n",
-	   pconf->lcd_power->gpio,
-	   pconf->lcd_power->on_value,
-	   pconf->lcd_power->off_value,
-	   pconf->lcd_power->on_delay,
-	   pconf->lcd_power->off_delay);
-#ifdef CONFIG_AML_LCD_EXTERN
-	printf("extern index      %d\n"
-	   "extern on_delay   %d\n"
-	   "extern off_delay  %d\n\n",
-	   pconf->lcd_control.ext_config->index,
-	   pconf->lcd_control.ext_config->on_delay,
-	   pconf->lcd_control.ext_config->off_delay);
-#endif
+	lcd_power_info_print(pconf, 1);
+	lcd_power_info_print(pconf, 0);
 }
 
 int lcd_probe(void)
 {
-	//LCDPR("driver version: %s\n", LCD_DRV_DATE);
-#if 0
-	aml_lcd_config = (struct lcd_config_s *)malloc(sizeof(struct lcd_config_s));
-	if (aml_lcd_config == NULL) {
-		LCDPR("error: Not enough memory\n");
-		return -1;
-	}
-	memset(aml_lcd_config, 0, sizeof(*aml_lcd_config));
+#ifdef LCD_DEBUG_INFO
+	lcd_debug_print_flag = 1;
 #else
-	aml_lcd_config = &lcd_config_dft;
+	lcd_debug_print_flag = 0;
+	lcd_debug_print_flag = simple_strtoul(getenv("lcd_debug_print"), NULL, 10);
 #endif
-#if 0
-	aml_bl_config = (struct bl_config_s *)malloc(sizeof(struct bl_config_s));
-	if (aml_bl_config == NULL) {
-		LCDPR("error: Not enough memory\n");
-		free(aml_lcd_config);
-		aml_lcd_config = NULL;
-		return -1;
-	}
-	memset(aml_bl_config, 0, sizeof(*aml_bl_config));
-#endif
-	aml_bl_config = NULL;
-	get_lcd_config(aml_lcd_config, aml_bl_config);
-	//lcd_module_enable();
+
+	get_lcd_config();
 
 	return 0;
 }
 
 int lcd_remove(void)
 {
-	// lcd_module_disable();
 // #ifdef CONFIG_AML_LCD_EXTERN
 	// aml_lcd_extern_remove();
 // #endif
 
-	free(aml_lcd_config);
-	free(aml_bl_config);
-	aml_lcd_config = NULL;
-	aml_bl_config = NULL;
 	return 0;
 }
 
@@ -463,22 +459,18 @@ int lcd_remove(void)
  * ********************************************** */
 static void lcd_enable(char *mode)
 {
-	if (aml_lcd_config == NULL)
-		printf("lcd: invalid lcd driver\n");
+	if (aml_lcd_driver.lcd_status)
+		LCDPR("already enabled\n");
 	else
 		lcd_module_enable(mode);
 }
 
 static void lcd_disable(void)
 {
-	if (aml_lcd_config == NULL) {
-		printf("lcd: invalid lcd driver\n");
-	} else {
+	if (aml_lcd_driver.lcd_status)
 		lcd_module_disable();
-#ifdef CONFIG_AML_LCD_EXTERN
-		aml_lcd_extern_remove();
-#endif
-	}
+	else
+		LCDPR("already disabled\n");
 }
 
 #define TV_LCD_ENC_TST_NUM_MAX    8
@@ -505,8 +497,13 @@ static unsigned int lcd_enc_tst[][7] = {
 	{0,    0x074,   0x3fd,  0x1ad,   1,      0,        1},  /* 7 */
 };
 
-static void lcd_test(unsigned int num, struct lcd_config_s *pconf)
+static void lcd_test(unsigned int num)
 {
+	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
+	unsigned int start, width;
+
+	start = lcd_drv->lcd_config->lcd_timing.video_on_pixel;
+	width = lcd_drv->lcd_config->lcd_basic.h_active / 9;
 	num = (num >= TV_LCD_ENC_TST_NUM_MAX) ? 0 : num;
 	if (num >= 0) {
 		lcd_vcbus_write(ENCL_VIDEO_RGBIN_CTRL, lcd_enc_tst[num][6]);
@@ -514,8 +511,8 @@ static void lcd_test(unsigned int num, struct lcd_config_s *pconf)
 		lcd_vcbus_write(ENCL_TST_Y, lcd_enc_tst[num][1]);
 		lcd_vcbus_write(ENCL_TST_CB, lcd_enc_tst[num][2]);
 		lcd_vcbus_write(ENCL_TST_CR, lcd_enc_tst[num][3]);
-		lcd_vcbus_write(ENCL_TST_CLRBAR_STRT, pconf->lcd_timing.video_on_pixel);
-		lcd_vcbus_write(ENCL_TST_CLRBAR_WIDTH, (pconf->lcd_basic.h_active / 9));
+		lcd_vcbus_write(ENCL_TST_CLRBAR_STRT, start);
+		lcd_vcbus_write(ENCL_TST_CLRBAR_WIDTH, width);
 		lcd_vcbus_write(ENCL_TST_EN, lcd_enc_tst[num][4]);
 		lcd_vcbus_setb(ENCL_VIDEO_MODE_ADV, lcd_enc_tst[num][5], 3, 1);
 		printf("lcd: show test pattern: %s\n", lcd_enc_tst_str[num]);
@@ -526,59 +523,43 @@ static void lcd_test(unsigned int num, struct lcd_config_s *pconf)
 
 static void aml_lcd_test(int num)
 {
-	if (aml_lcd_config == NULL)
-		printf("lcd: invalid lcd driver\n");
+	if (aml_lcd_driver.lcd_status)
+		lcd_test(num);
 	else
-		lcd_test(num, aml_lcd_config);
+		LCDPR("already disabled\n");
 }
 
 static void aml_lcd_info(void)
 {
-	if (aml_lcd_config == NULL)
-		printf("lcd: invalid lcd driver\n");
-	else
-		print_lcd_info();
+	print_lcd_info();
 }
 
 #if 0
 static void aml_set_backlight_level(int level)
 {
-	if (aml_bl_config == NULL)
-		printf("lcd: invalid lcd driver\n");
-	else
-		set_lcd_backlight_level(ON,level);
+	set_lcd_backlight_level(ON,level);
 }
 
 static int aml_get_backlight_level(void)
 {
-	if (aml_bl_config == NULL) {
-		printf("lcd: invalid lcd driver\n");
-		return 0;
-	} else
-		return get_lcd_backlight_level();
+	return get_lcd_backlight_level();
 }
 
 static void aml_backlight_power_on(void)
 {
-	if (aml_bl_config == NULL)
-		printf("lcd: invalid lcd driver\n");
-	else
-		lcd_backlight_power_ctrl(ON);
+	lcd_backlight_power_ctrl(ON);
 }
 
 static void aml_backlight_power_off(void)
 {
-	if (aml_bl_config == NULL)
-		printf("lcd: invalid lcd driver\n");
-	else
-		lcd_backlight_power_ctrl(OFF);
+	lcd_backlight_power_ctrl(OFF);
 }
 #endif
 
 static struct aml_lcd_drv_s aml_lcd_driver = {
-	//.lcd_config = aml_lcd_config,
-	//.bl_config = aml_bl_config,
-	.list_support_mode = lcd_list_support_mode,
+	.lcd_status = 0,
+	.lcd_config = &lcd_config_dft,
+	.bl_config = &bl_config_dft,
 	.lcd_probe = lcd_probe,
 	.lcd_enable = lcd_enable,
 	.lcd_disable = lcd_disable,
@@ -590,7 +571,7 @@ static struct aml_lcd_drv_s aml_lcd_driver = {
 	//.get_bl_level = aml_get_backlight_level,
 };
 
-struct aml_lcd_drv_s *get_aml_lcd_driver(void)
+struct aml_lcd_drv_s *aml_lcd_get_driver(void)
 {
 	return &aml_lcd_driver;
 }

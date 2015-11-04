@@ -25,6 +25,10 @@
 #include <command.h>
 #include <asm/arch/secure_apb.h>
 #include <asm/arch/mailbox.h>
+#include <asm/arch/thermal.h>
+
+//#define HHI_SAR_CLK_CNTL    0xc883c000+0xf6*4 //0xc883c3d8
+
 int temp_base = 27;
 #define NUM 30
 
@@ -46,19 +50,19 @@ int get_tsc(int temp)
 int adc_init_chan6(void)
 {
 	/*adc reg3 bit28: config adc registers flag*/
-	if (readl(0xc110868c)&(0x1<<28))
+	if (readl(SAR_ADC_REG3)&(0x1<<28))
 		return 0;
-	writel(0x003c2000, 0xc11086ac);
-	writel(0x00000006, 0xc1108684);
-	writel(0x00003000, 0xc1108688);
-	writel(0xc3a8500a, 0xc110868c);
-	writel(0x010a000a, 0xc1108690);
-	writel(0x03eb1a0c, 0xc110869c);
-	writel(0x008c000c, 0xc11086a0);
-	writel(0x030e030c, 0xc11086a4);
-	writel(0x0c00c400, 0xc11086a8);
-	writel(0x00000114, 0xc883c3d8);        /* Clock */
-	writel(readl(0xc110868c)|(0x1<<28), 0xc110868c);
+	writel(0x003c2000, SAR_ADC_REG11);
+	writel(0x00000006, SAR_ADC_CHAN_LIST);
+	writel(0x00003000, SAR_ADC_AVG_CNTL);
+	writel(0xc3a8500a, SAR_ADC_REG3);
+	writel(0x010a000a, SAR_ADC_DELAY);
+	writel(0x03eb1a0c, SAR_ADC_AUX_SW);
+	writel(0x008c000c, SAR_ADC_CHAN_10_SW);
+	writel(0x030e030c, SAR_ADC_DETECT_IDLE_SW);
+	writel(0x0c00c400, SAR_ADC_DELTA_10);
+	writel(0x00000114, SAR_CLK_CNTL);        /* Clock */
+	writel(readl(0xc110868c)|(0x1<<28), SAR_ADC_REG3);
 	return 0;
 }
 
@@ -67,16 +71,16 @@ int get_adc_sample(int chan)
 	unsigned value;
 
 	/*adc reg3 bit29: read adc sample value flag*/
-	while (readl(0xc110868c)&(1<<29))
+	while (readl(SAR_ADC_REG3)&(1<<29))
 		udelay(10000);
-	writel(readl(0xc110868c)|(1 < 29), 0xc110868c);
+	writel(readl(SAR_ADC_REG3)|(1 < 29), SAR_ADC_REG3);
 
-	writel(0x84064040, 0xc1108680);
-	writel(0x84064041, 0xc1108680);
-	writel(0x84064045, 0xc1108680);
+	writel(0x84064040, SAR_ADC_REG0);
+	writel(0x84064041, SAR_ADC_REG0);
+	writel(0x84064045, SAR_ADC_REG0);
 
-	value = readl(0xc1108698);
-	writel(readl(0xc110868c)&(~(1 < 29)), 0xc110868c);
+	value = readl(SAR_ADC_FIFO_RD);
+	writel(readl(SAR_ADC_REG3)&(~(1 < 29)), SAR_ADC_REG3);
 	value = value&0x3ff;
 
 	return value;
@@ -85,12 +89,12 @@ unsigned int get_cpu_temp(int tsc, int flag)
 {
 	unsigned value;
 	if (flag) {
-		value = readl(0xc11086ac);
-	  writel(((value&(~(0x1f<<14)))|((tsc&0x1f)<<14)), 0xc11086ac);
+		value = readl(SAR_ADC_REG11);
+	  writel(((value&(~(0x1f<<14)))|((tsc&0x1f)<<14)), SAR_ADC_REG11);
 	  /* bit[14-18]:tsc */
 	} else{
-		value = readl(0xc11086ac);
-	  writel(((value&(~(0x1f<<14)))|(0x10<<14)), 0xc11086ac);
+		value = readl(SAR_ADC_REG11);
+	  writel(((value&(~(0x1f<<14)))|(0x10<<14)), SAR_ADC_REG11);
 	  /* bit[14-18]:0x16 */
 	}
 	return  get_adc_sample(6);
@@ -134,7 +138,7 @@ int do_read_calib_data(int *flag, int *temp, int *TS_C)
 		&& ((int)flagbuf != 0xC0)) {
 		printf("thermal ver flag error!\n");
 		printf("flagbuf is 0x%x!\n", flagbuf);
-		return -1;
+		return 0;
 	}
 
 	buf[0] = (ret)&0xff;
@@ -168,7 +172,7 @@ static int do_write_trim(cmd_tbl_t *cmdtp, int flag1,
 	adc_init_chan6();
 
 	ret = do_read_calib_data(&flag, &temp, &TS_C);
-	if (ret > 0) {
+	if (ret) {
 		printf("chip has trimed!!!\n");
 		return 0;
 	} else {
@@ -243,7 +247,7 @@ static int do_read_temp(cmd_tbl_t *cmdtp, int flag1,
 	setenv("tempa", " ");
 	adc_init_chan6();
 	ret = do_read_calib_data(&flag, &temp, &TS_C);
-	if (ret > 0) {
+	if (ret) {
 		adc = 0;
 		count = 0;
 		while (count < 64) {

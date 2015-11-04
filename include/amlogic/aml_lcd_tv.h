@@ -1,5 +1,5 @@
 /*
- * AMLOGIC lcd controller driver.
+ * include/amlogic/aml_lcd_tv.h
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -10,10 +10,6 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA
  *
  */
 
@@ -28,13 +24,13 @@
 //lcd driver version
 //**********************************
 #define LCD_DRV_TYPE      "tv"
-#define LCD_DRV_DATE      "20151009"
+#define LCD_DRV_DATE      "20151026"
 //**********************************
 
 #define Rsv_val 0xffffffff
 struct ext_lcd_config_s {
 	const char *panel_type;
-	int lcd_type; // LCD_DIGITAL_TTL /LCD_DIGITAL_LVDS/LCD_DIGITAL_VBYONE
+	int lcd_type; // LCD_TTL /LCD_LVDS/LCD_VBYONE
 	unsigned char lcd_bits;
 
 	unsigned short h_active;
@@ -47,8 +43,8 @@ struct ext_lcd_config_s {
 	unsigned short vsync_bp;
 
 	unsigned int customer_val_0; //fr_adjust_type
-	unsigned int customer_val_1; //clk_auto_generate
-	unsigned int customer_val_2; //ss_level
+	unsigned int customer_val_1; //ss_level
+	unsigned int customer_val_2; //clk_auto_generate
 	unsigned int customer_val_3;
 	unsigned int customer_val_4;
 	unsigned int customer_val_5;
@@ -68,27 +64,21 @@ struct ext_lcd_config_s {
 	int lcd_spc_val8;
 	int lcd_spc_val9;
 
-	unsigned int power_gpio;
-	unsigned short power_on_value;
-	unsigned short power_off_value;
-	unsigned short power_on_delay;
-	unsigned short power_off_delay;
+	struct lcd_power_step_s *power_on_step;
+	struct lcd_power_step_s *power_off_step;
 
-	int extern_index;
-	int extern_on_delay;
-	int extern_off_delay;
-
+	unsigned int bl_method;
 	unsigned int bl_gpio;
 	unsigned short bl_on_value;
 	unsigned short bl_off_value;
 	unsigned short bl_on_delay;
 	unsigned short bl_off_delay;
 
+	unsigned pwm_method;
 	unsigned pwm_port;
 	unsigned pwm_freq;
 	unsigned pwm_duty_max;
 	unsigned pwm_duty_min;
-	unsigned pwm_positive;
 
 	unsigned level_default;
 	unsigned level_min;
@@ -96,8 +86,8 @@ struct ext_lcd_config_s {
 
 };
 
-#define LCD_TYPE_MAX 	15
+#define LCD_NUM_MAX         10
 
-extern struct ext_lcd_config_s ext_lcd_config[LCD_TYPE_MAX];
+extern struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX];
 
 #endif /* INL_AML_LCD_TV_H */

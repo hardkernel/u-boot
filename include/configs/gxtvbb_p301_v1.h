@@ -237,6 +237,8 @@
 #define CONFIG_CMD_CPU_TEMP 1
 #define CONFIG_SYS_MEM_TOP_HIDE 0x08000000 //hide 128MB for kernel reserve
 
+#define CONFIG_MULTI_DTB    1
+
 /* ddr dump function defines */
 //#define CONFIG_SPL_DDR_DUMP 1
 #ifdef CONFIG_SPL_DDR_DUMP
