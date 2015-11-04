@@ -39,7 +39,7 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	{/* AOC: public Platform lvds : 1920x1080@60hz 8bit pixel clk@74.25mhz 2prot*/
 	"lvds_0",LCD_LVDS,8,
 	/* basic timing */
-	1920,1080,2200,1125,44,148,5,36,
+	1920,1080,2200,1125,44,148,0,5,36,0,
 	/* clk_attr */
 	0,0,1,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
 	/* lvds_attr */
@@ -54,7 +54,7 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	{/*BOE: HV550QU2-305 vx1 : 3840x2160@60hz 8lane */
 	"vbyone_0",LCD_VBYONE,10,
 	/* basic timing */
-	3840,2160,4400,2250,33,477,6,81,
+	3840,2160,4400,2250,33,477,0,6,81,0,
 	/* clk_attr */
 	0,0,1,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
 	/* vbyone_attr */
@@ -69,7 +69,7 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	{/*LG: RDL550WY: 3840x2160@60hz 8lane */
 	"vbyone_1",LCD_VBYONE,10,
 	/* basic timing */
-	3840,2160,4400,2250,33,477,6,81,
+	3840,2160,4400,2250,33,477,0,6,81,0,
 	/* clk_attr */
 	2,0,1,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
 	/* vbyone_attr */
@@ -84,7 +84,7 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	{/*INL: V580DJ2: 3840x2160@60hz 8lane */
 	"vbyone_2",LCD_VBYONE,10,
 	/* basic timing */
-	3840,2160,4400,2250,33,477,6,81,
+	3840,2160,4400,2250,33,477,0,6,81,0,
 	/* clk_attr */
 	2,0,1,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
 	/* vbyone_attr */
@@ -167,8 +167,10 @@ struct lcd_config_s lcd_config_dft = {
 
 		.hsync_width = 44,
 		.hsync_bp    = 148,
+		.hsync_pol   = 0,
 		.vsync_width = 5,
 		.vsync_bp    = 36,
+		.vsync_pol   = 0,
 	},
 
 	.lcd_control = {

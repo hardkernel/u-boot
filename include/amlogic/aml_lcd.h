@@ -27,9 +27,9 @@
  * ********************************** */
 //#define LCD_DEBUG_INFO
 extern unsigned int lcd_debug_print_flag;
+
 #define LCDPR(fmt, args...)     printf("lcd: "fmt"", ## args)
 #define LCDERR(fmt, args...)    printf("lcd: error: "fmt"", ## args)
-#define lcd_printf(fmt,args...) printf("lcd: "fmt"", ## args)
 
 /* **********************************
  * clk parameter bit define
@@ -119,9 +119,9 @@ struct lcd_timing_s {
 	unsigned int div_ctrl;  /* divider settings */
 	unsigned int clk_ctrl;  /* clock settings */
 
-	unsigned char ss_level;
 	unsigned char fr_adjust_type; /* 0=clock, 1=htotal, 2=vtotal */
-	unsigned int pol_ctrl;
+	unsigned char ss_level;
+	/* unsigned int pol_ctrl; */
 
 	unsigned short sync_duration_num;
 	unsigned short sync_duration_den;
@@ -131,8 +131,10 @@ struct lcd_timing_s {
 
 	unsigned short hsync_width;
 	unsigned short hsync_bp;
+	unsigned short hsync_pol;
 	unsigned short vsync_width;
 	unsigned short vsync_bp;
+	unsigned short vsync_pol;
 	/* unsigned int vsync_h_phase; // [31]sign, [15:0]value */
 	unsigned int h_offset;
 	unsigned int v_offset;
@@ -372,6 +374,7 @@ extern struct bl_config_s bl_config_dft;
 /* ==============lcd driver================== */
 struct aml_lcd_drv_s {
 	char version[15];
+	enum lcd_chip_e chip_type;
 	unsigned int lcd_status;
 
 	struct lcd_config_s *lcd_config;

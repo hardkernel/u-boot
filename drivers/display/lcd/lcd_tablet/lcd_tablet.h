@@ -1,6 +1,6 @@
 
 /*
- * drivers/display/lcd/lcd_tv/lcd_tv.h
+ * drivers/display/lcd/lcd_tablet/lcd_tablet.h
  *
  * Copyright (C) 2015 Amlogic, Inc. All rights reserved.
  *
@@ -16,23 +16,16 @@
  *
 */
 
-#ifndef __AML_LCD_TV_H__
-#define __AML_LCD_TV_H__
-#include <amlogic/aml_lcd.h>
+#ifndef __AML_LCD_TABLET_H__
+#define __AML_LCD_TABLET_H__
 
 //**********************************
 //lcd driver version
 //**********************************
-#define LCD_DRV_TYPE      "tv"
+#define LCD_DRV_TYPE      "tablet"
 
-#define LCD_DRV_VERSION    "20151105"
+#define LCD_DRV_VERSION    "20151026"
 //**********************************
 
-extern int lvds_init(struct lcd_config_s *pconf);
-extern int lvds_disable(struct lcd_config_s *pconf);
-extern int vbyone_init(struct lcd_config_s *pconf);
-extern int vbyone_disable(struct lcd_config_s *pconf);
-
-extern void set_vbyone_config(struct lcd_config_s *pconf);
 
 #endif

@@ -20,13 +20,6 @@
 #include <linux/list.h>
 #include <amlogic/aml_lcd.h>
 
-//**********************************
-//lcd driver version
-//**********************************
-#define LCD_DRV_TYPE      "tv"
-#define LCD_DRV_DATE      "20151026"
-//**********************************
-
 #define Rsv_val 0xffffffff
 struct ext_lcd_config_s {
 	const char *panel_type;
@@ -39,8 +32,10 @@ struct ext_lcd_config_s {
 	unsigned short v_period;
 	unsigned short hsync_width;
 	unsigned short hsync_bp;
+	unsigned short hsync_pol;
 	unsigned short vsync_width;
 	unsigned short vsync_bp;
+	unsigned short vsync_pol;
 
 	unsigned int customer_val_0; //fr_adjust_type
 	unsigned int customer_val_1; //ss_level

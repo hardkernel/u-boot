@@ -23,9 +23,10 @@
 #include "../aml_lcd_common.h"
 #include "lcd_tv.h"
 
-static void set_tcon_lvds(struct lcd_config_s *pconf)
+static void set_lvds_tcon(void)
 {
 	vpp_set_matrix_ycbcr2rgb(2, 0);
+
 	lcd_vcbus_write(L_RGB_BASE_ADDR, 0);
 	lcd_vcbus_write(L_RGB_COEFF_ADDR, 0x400);
 
@@ -34,20 +35,25 @@ static void set_tcon_lvds(struct lcd_config_s *pconf)
 	lcd_vcbus_write(VPP_MISC, lcd_vcbus_read(VPP_MISC) & ~(VPP_OUT_SATURATE));
 }
 
-static void init_lvds_phy(struct lcd_config_s *pconf)
+static void set_lvds_phy(int status)
 {
-	lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL1, 0x6c6cca80);
-	lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL2, 0x0000006c);
-	lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL3, 0x0fff0800);
-	//od   clk 1039.5 / 2 = 519.75 = 74.25*7
-	//lcd_hiu_write(HHI_LVDS_TX_PHY_CNTL0, 0x0fff0040);
+	if (status) {
+		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL1, 0x6c6cca80);
+		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL2, 0x0000006c);
+		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL3, 0x0fff0800);
+	} else {
+		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL1, 0x0);
+		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL2, 0x0);
+		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL3, 0x0);
+	}
 }
 
 static void set_lvds_clk_util(struct lcd_config_s *pconf)
 {
-	unsigned int fifo_mode, phy_div;
+	unsigned int fifo_mode, phy_div, dual_port;
 
-	if (pconf->lcd_control.lvds_config->dual_port) {
+	dual_port = pconf->lcd_control.lvds_config->dual_port;
+	if (dual_port) {
 		fifo_mode = 0x3;
 		phy_div = 2;
 	} else {
@@ -70,7 +76,7 @@ static void set_lvds_clk_util(struct lcd_config_s *pconf)
 	lcd_hiu_setb(HHI_LVDS_TX_PHY_CNTL1, 1, 31, 1);
 }
 
-static void set_control_lvds(struct lcd_config_s *pconf)
+static void set_lvds_control(struct lcd_config_s *pconf)
 {
 	unsigned int bit_num = 1;
 	unsigned int pn_swap = 0;
@@ -85,24 +91,23 @@ static void set_control_lvds(struct lcd_config_s *pconf)
 	dual_port = (pconf->lcd_control.lvds_config->dual_port) & 0x1;
 	port_swap = (pconf->lcd_control.lvds_config->port_swap) & 0x1;
 
-	// switch (pconf->lcd_control.lvds_config->lvds_bits) {
-	// case 10:
-		// bit_num=0;
-		// break;
-	// case 8:
-		// bit_num=1;
-		// break;
-	// case 6:
-		// bit_num=2;
-		// break;
-	// case 4:
-		// bit_num=3;
-		// break;
-	// default:
-		// bit_num=1;
-		// break;
-	// }
-	bit_num=1;
+	switch (pconf->lcd_basic.lcd_bits) {
+	case 10:
+		bit_num=0;
+		break;
+	case 8:
+		bit_num=1;
+		break;
+	case 6:
+		bit_num=2;
+		break;
+	case 4:
+		bit_num=3;
+		break;
+	default:
+		bit_num=1;
+		break;
+	}
 
 	lcd_vcbus_write(LVDS_PACK_CNTL_ADDR,
 			( lvds_repack<<0 ) | // repack
@@ -118,7 +123,7 @@ static void set_control_lvds(struct lcd_config_s *pconf)
 			( 2<<14 ));		//b_select  //0:R, 1:G, 2:B, 3:0;
 }
 
-static void venc_set_lvds(struct lcd_config_s *pconf)
+static void set_lvds_venc(struct lcd_config_s *pconf)
 {
 //	lcd_vcbus_write(VPU_VIU_VENC_MUX_CTRL, (0<<0)|(0<<2));     // viu1 select encl  | viu2 select encl
 	lcd_vcbus_write(ENCL_VIDEO_EN, 0);
@@ -146,6 +151,7 @@ static void venc_set_lvds(struct lcd_config_s *pconf)
 	lcd_vcbus_write(ENCL_VIDEO_EN, 1);
 }
 
+#if 0
 static void clocks_set_vid_clk_div(int div_sel)
 {
 	int shift_val = 0;
@@ -229,10 +235,8 @@ static void enable_crt_video_encl(int enable, int inSel)
 #endif
 }
 
-static void set_clk_pll(struct lcd_config_s *pconf)
+static void lcd_set_clk_pll(void)
 {
-	//generate_clk_parameter(pconf);
-	//set_vclk_lcd(pconf);
 	unsigned int pll_lock;
 	int wait_loop = 100;
 
@@ -244,33 +248,45 @@ static void set_clk_pll(struct lcd_config_s *pconf)
 	lcd_hiu_write(HHI_HDMI_PLL_CNTL6, 0x00000e55);
 	lcd_hiu_write(HHI_HDMI_PLL_CNTL, 0x48000256);
 	do {
-		//hpll_load_en();
 		mdelay(10);
 		pll_lock = (lcd_hiu_read(HHI_HDMI_PLL_CNTL) >> 31) & 0x1;
 		wait_loop--;
 	} while ((pll_lock == 0) && (wait_loop > 0));
 	if (wait_loop == 0)
 		LCDPR("error: hpll lock failed\n");
-
-
 }
+#endif
 
-static void set_clk_lvds(struct lcd_config_s *pconf)
+static void set_lvds_clk(struct lcd_config_s *pconf)
 {
-	set_clk_pll(pconf);
+#if 1
+	lcd_clk_set(pconf);
+#else
+	lcd_set_clk_pll(pconf);
 	clocks_set_vid_clk_div(CLK_DIV_SEL_7);
 	set_crt_video_enc(0, 0, 1);  //configure crt_video V1: inSel=vid_pll_clk(0),DivN=xd)
 	enable_crt_video_encl(1, 0); //select and enable the output
+#endif
 }
 
 int lvds_init(struct lcd_config_s *pconf)
 {
-	//LCDPR("lvds mode is selected\n");
-	set_clk_lvds(pconf);
-	venc_set_lvds(pconf);
-	set_control_lvds(pconf);
-	set_tcon_lvds(pconf);
-	init_lvds_phy(pconf);
+	if (lcd_debug_print_flag)
+		LCDPR("%s\n", __func__);
+
+	set_lvds_clk(pconf);
+	set_lvds_venc(pconf);
+	set_lvds_control(pconf);
+	set_lvds_tcon();
+	set_lvds_phy(1);
 
 	return 0;
 }
+
+int lvds_disable(struct lcd_config_s *pconf)
+{
+	set_lvds_phy(0);
+
+	return 0;
+}
+

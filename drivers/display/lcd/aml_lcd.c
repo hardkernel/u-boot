@@ -28,6 +28,38 @@
 unsigned int lcd_debug_print_flag;
 static struct aml_lcd_drv_s aml_lcd_driver;
 
+static void lcd_chip_detect(void)
+{
+#if 0
+	unsigned int cpu_type;
+
+	cpu_type = get_cpu_type();
+	switch (cpu_type) {
+	case MESON_CPU_MAJOR_ID_M8:
+		aml_lcd_driver.chip_type = LCD_CHIP_M8;
+		break;
+	case MESON_CPU_MAJOR_ID_M8B:
+		aml_lcd_driver.chip_type = LCD_CHIP_M8B;
+		break;
+	case MESON_CPU_MAJOR_ID_M8M2:
+		aml_lcd_driver.chip_type = LCD_CHIP_M8M2;
+		break;
+	case MESON_CPU_MAJOR_ID_MG9TV:
+		aml_lcd_driver.chip_type = LCD_CHIP_G9TV;
+		break;
+	case MESON_CPU_MAJOR_ID_GXTVBB:
+		aml_lcd_driver.chip_type = LCD_CHIP_GXTVBB;
+		break;
+	default:
+		aml_lcd_driver.chip_type = LCD_CHIP_MAX;
+	}
+#else
+	aml_lcd_driver.chip_type = LCD_CHIP_GXTVBB;
+#endif
+	if (lcd_debug_print_flag)
+		LCDPR("check chip: %d\n", aml_lcd_driver.chip_type);
+}
+
 #if 0
 static void aml_bl_pwm_param_init(Bl_Pwm_Config_t *bl_pwm_conf)
 {
@@ -281,7 +313,7 @@ static void lcd_module_enable(char *mode)
 
 	sync_duration = pconf->lcd_timing.sync_duration_num;
 	sync_duration = (sync_duration * 10 / pconf->lcd_timing.sync_duration_den);
-	LCDPR("%s, %s, %ux%u@%u.%uHz\n", pconf->lcd_basic.model_name,
+	LCDPR("enable: %s, %s, %ux%u@%u.%uHz\n", pconf->lcd_basic.model_name,
 		lcd_type_type_to_str(pconf->lcd_basic.lcd_type),
 		pconf->lcd_basic.h_active, pconf->lcd_basic.v_active,
 		(sync_duration / 10), (sync_duration % 10));
@@ -311,8 +343,8 @@ static void lcd_module_disable(void)
 
 static void lcd_timing_info_print(struct lcd_config_s * pconf)
 {
-	unsigned int hs_width, hs_bp, h_period;
-	unsigned int vs_width, vs_bp, v_period;
+	unsigned int hs_width, hs_bp, hs_pol, h_period;
+	unsigned int vs_width, vs_bp, vs_pol, v_period;
 	unsigned int video_on_pixel, video_on_line;
 
 	video_on_pixel = pconf->lcd_timing.video_on_pixel;
@@ -322,19 +354,23 @@ static void lcd_timing_info_print(struct lcd_config_s * pconf)
 
 	hs_width = pconf->lcd_timing.hsync_width;
 	hs_bp = pconf->lcd_timing.hsync_bp;
+	hs_pol = pconf->lcd_timing.hsync_pol;
 	vs_width = pconf->lcd_timing.vsync_width;
 	vs_bp = pconf->lcd_timing.vsync_bp;
+	vs_pol = pconf->lcd_timing.vsync_pol;
 
 	printf("h_period          %d\n"
 	   "v_period          %d\n"
 	   "hs_width          %d\n"
 	   "hs_backporch      %d\n"
+	   "hs_pol            %d\n"
 	   "vs_width          %d\n"
 	   "vs_backporch      %d\n"
+	   "vs_pol            %d\n"
 	   "video_on_pixel    %d\n"
 	   "video_on_line     %d\n\n",
-	   h_period, v_period, hs_width, hs_bp, vs_width, vs_bp,
-	   video_on_pixel, video_on_line);
+	   h_period, v_period, hs_width, hs_bp, hs_pol,
+	   vs_width, vs_bp, vs_pol, video_on_pixel, video_on_line);
 }
 
 static void lcd_power_info_print(struct lcd_config_s *pconf, int status)
@@ -417,11 +453,11 @@ static void print_lcd_info(void)
 		break;
 	case LCD_VBYONE:
 		printf("lane_count        %u\n"
-		   "byte_mode         %u\n"
-		   "region_num        %u\n\n",
+		   "region_num        %u\n"
+		   "byte_mode         %u\n\n",
 		   pconf->lcd_control.vbyone_config->lane_count,
-		   pconf->lcd_control.vbyone_config->byte_mode,
-		   pconf->lcd_control.vbyone_config->region_num);
+		   pconf->lcd_control.vbyone_config->region_num,
+		   pconf->lcd_control.vbyone_config->byte_mode);
 		break;
 	default:
 		break;
@@ -440,7 +476,9 @@ int lcd_probe(void)
 	lcd_debug_print_flag = simple_strtoul(getenv("lcd_debug_print"), NULL, 10);
 #endif
 
+	lcd_chip_detect();
 	get_lcd_config();
+	lcd_clk_config_probe();
 
 	return 0;
 }

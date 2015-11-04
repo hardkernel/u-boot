@@ -1,5 +1,5 @@
 /*
- * drivers/display/lcd/lcd_tv/lcd_tv.c
+ * drivers/display/lcd/lcd_tablet/lcd_tablet.c
  *
  * Copyright (C) 2015 Amlogic, Inc. All rights reserved.
  *
@@ -20,148 +20,29 @@
 #ifdef CONFIG_OF_LIBFDT
 #include <libfdt.h>
 #endif
-#include <amlogic/aml_lcd_tv.h>
+#include <amlogic/aml_lcd_tablet.h>
 #ifdef CONFIG_AML_LCD_EXTERN
 #include <amlogic/aml_lcd_extern.h>
 #endif
 #include "../aml_lcd_reg.h"
 #include "../aml_lcd_common.h"
-#include "lcd_tv.h"
+#include "lcd_tablet.h"
 
-enum {
-	LCD_OUTPUT_MODE_768P = 0,
-	LCD_OUTPUT_MODE_768P50HZ,
-	LCD_OUTPUT_MODE_1080P,
-	LCD_OUTPUT_MODE_1080P50HZ,
-	LCD_OUTPUT_MODE_4K2K60HZ420,
-	LCD_OUTPUT_MODE_4K2K50HZ420,
-	LCD_OUTPUT_MODE_4K2K60HZ,
-	LCD_OUTPUT_MODE_4K2K50HZ,
-	LCD_OUTPUT_MODE_MAX,
-};
-
-struct lcd_info_s {
-	char *name;
-	int width;
-	int height;
-	int sync_duration_num;
-	int sync_duration_den;
-};
-
-static struct lcd_info_s lcd_info[] = {
-	{
-		.name              = "768p60hz",
-		.width             = 1366,
-		.height            = 768,
-		.sync_duration_num = 60,
-		.sync_duration_den = 1,
-	},
-	{
-		.name              = "768p50hz",
-		.width             = 1366,
-		.height            = 768,
-		.sync_duration_num = 50,
-		.sync_duration_den = 1,
-	},
-	{
-		.name              = "1080p60hz",
-		.width             = 1920,
-		.height            = 1080,
-		.sync_duration_num = 60,
-		.sync_duration_den = 1,
-	},
-	{
-		.name              = "1080p50hz",
-		.width             = 1920,
-		.height            = 1080,
-		.sync_duration_num = 50,
-		.sync_duration_den = 1,
-	},
-	{
-		.name              = "2160p60hz420",
-		.width             = 3840,
-		.height            = 2160,
-		.sync_duration_num = 60,
-		.sync_duration_den = 1,
-	},
-	{
-		.name              = "2160p50hz420",
-		.width             = 3840,
-		.height            = 2160,
-		.sync_duration_num = 50,
-		.sync_duration_den = 1,
-	},
-	{
-		.name              = "2160p60hz",
-		.width             = 3840,
-		.height            = 2160,
-		.sync_duration_num = 60,
-		.sync_duration_den = 1,
-	},
-	{
-		.name              = "2160p50hz",
-		.width             = 3840,
-		.height            = 2160,
-		.sync_duration_num = 50,
-		.sync_duration_den = 1,
-	},
-	{
-		.name              = "invalid",
-		.width             = 1920,
-		.height            = 1080,
-		.sync_duration_num = 60,
-		.sync_duration_den = 1,
-	},
-};
-
-static int lcd_vmode_is_mached(struct lcd_config_s *pconf, int vmode)
+static int check_lcd_output_mode(char *mode)
 {
-	if ((pconf->lcd_basic.h_active != lcd_info[vmode].width) ||
-		(pconf->lcd_basic.v_active != lcd_info[vmode].height)) {
-		LCDERR("outputmode[%s] and panel_type is not match\n",
-			lcd_info[vmode].name);
-		return -1;
-	}
-	return 0;
-}
-
-static int check_lcd_output_mode(struct lcd_config_s *pconf, char *mode)
-{
-	int vmode, i;
 	int ret;
 
-	for (i = 0; i < ARRAY_SIZE(lcd_info); i++) {
-		if (strcmp(mode, lcd_info[i].name) == 0)
-			break;
-	}
-	vmode = i;
-	if (vmode >= LCD_OUTPUT_MODE_MAX) {
+	if (strcmp(mode, "panel") != 0) {
 		LCDERR("outputmode[%s] is not support\n", mode);
-		return LCD_OUTPUT_MODE_MAX;
+		return -1;
 	}
-	ret = lcd_vmode_is_mached(pconf, vmode);
-	if (ret)
-		return LCD_OUTPUT_MODE_MAX;
 
-	pconf->lcd_timing.sync_duration_num = lcd_info[vmode].sync_duration_num;
-	pconf->lcd_timing.sync_duration_den = lcd_info[vmode].sync_duration_den;
-
-	return vmode;
+	return 0;
 }
 
 static void lcd_list_support_mode(void)
 {
-	int i;
-	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
-	struct lcd_basic_s *lcd_basic;
-
-	lcd_basic = &lcd_drv->lcd_config->lcd_basic;
-	for (i = 0; i < (ARRAY_SIZE(lcd_info) - 1); i++) {
-		if ((lcd_basic->h_active == lcd_info[i].width) &&
-		(lcd_basic->v_active == lcd_info[i].height)) {
-			printf("%s\n", lcd_info[i].name);
-		}
-	}
+	printf("panel\n");
 }
 
 static void lcd_config_load_print(struct lcd_config_s *pconf)
@@ -180,10 +61,8 @@ static void lcd_config_load_print(struct lcd_config_s *pconf)
 
 	LCDPR("hsync_width = %d\n", pconf->lcd_timing.hsync_width);
 	LCDPR("hsync_bp = %d\n", pconf->lcd_timing.hsync_bp);
-	LCDPR("hsync_pol = %d\n", pconf->lcd_timing.hsync_pol);
 	LCDPR("vsync_width = %d\n", pconf->lcd_timing.vsync_width);
 	LCDPR("vsync_bp = %d\n", pconf->lcd_timing.vsync_bp);
-	LCDPR("vsync_pol = %d\n", pconf->lcd_timing.vsync_pol);
 
 	LCDPR("fr_adjust_type = %d\n", pconf->lcd_timing.fr_adjust_type);
 	LCDPR("ss_level = %d\n", pconf->lcd_timing.ss_level);
@@ -281,12 +160,10 @@ static int lcd_config_load_from_dts(char *dt_addr, struct lcd_config_s *pconf)
 		LCDERR("failed to get lcd_timing\n");
 		return -1;
 	} else {
-		pconf->lcd_timing.hsync_width = be32_to_cpup((u32*)propdata);
-		pconf->lcd_timing.hsync_bp    = be32_to_cpup((((u32*)propdata)+1));
-		pconf->lcd_timing.hsync_pol   = be32_to_cpup((((u32*)propdata)+2));
-		pconf->lcd_timing.vsync_width = be32_to_cpup((((u32*)propdata)+3));
-		pconf->lcd_timing.vsync_bp    = be32_to_cpup((((u32*)propdata)+4));
-		pconf->lcd_timing.vsync_pol   = be32_to_cpup((((u32*)propdata)+5));
+		pconf->lcd_timing.hsync_width    = be32_to_cpup((((u32*)propdata)+3));
+		pconf->lcd_timing.hsync_bp       = be32_to_cpup((((u32*)propdata)+4));
+		pconf->lcd_timing.vsync_width    = be32_to_cpup((((u32*)propdata)+5));
+		pconf->lcd_timing.vsync_bp       = be32_to_cpup((((u32*)propdata)+6));
 	}
 
 	propdata = (char *)fdt_getprop(dt_addr, child_offset, "clk_attr", NULL);
@@ -308,8 +185,8 @@ static int lcd_config_load_from_dts(char *dt_addr, struct lcd_config_s *pconf)
 			LCDERR("failed to get lvds_attr\n");
 		} else {
 			pconf->lcd_control.lvds_config->lvds_repack = be32_to_cpup((u32*)propdata);
-			pconf->lcd_control.lvds_config->dual_port   = be32_to_cpup((((u32*)propdata)+1));
-			pconf->lcd_control.lvds_config->pn_swap     = be32_to_cpup((((u32*)propdata)+2));
+			pconf->lcd_control.lvds_config->pn_swap     = be32_to_cpup((((u32*)propdata)+1));
+			pconf->lcd_control.lvds_config->dual_port   = be32_to_cpup((((u32*)propdata)+2));
 			pconf->lcd_control.lvds_config->port_swap   = be32_to_cpup((((u32*)propdata)+3));
 		}
 		break;
@@ -319,8 +196,8 @@ static int lcd_config_load_from_dts(char *dt_addr, struct lcd_config_s *pconf)
 			LCDERR("failed to get vbyone_attr\n");
 		} else {
 			pconf->lcd_control.vbyone_config->lane_count = be32_to_cpup((u32*)propdata);
-			pconf->lcd_control.vbyone_config->region_num = be32_to_cpup((((u32*)propdata)+1));
-			pconf->lcd_control.vbyone_config->byte_mode  = be32_to_cpup((((u32*)propdata)+2));
+			pconf->lcd_control.vbyone_config->byte_mode  = be32_to_cpup((((u32*)propdata)+1));
+			pconf->lcd_control.vbyone_config->region_num = be32_to_cpup((((u32*)propdata)+2));
 			pconf->lcd_control.vbyone_config->color_fmt  = be32_to_cpup((((u32*)propdata)+3));
 		}
 		break;
@@ -432,10 +309,8 @@ static int lcd_config_load_from_bsp(struct lcd_config_s *pconf)
 	pconf->lcd_basic.v_period = ext_lcd->v_period;
 	pconf->lcd_timing.hsync_width = ext_lcd->hsync_width;
 	pconf->lcd_timing.hsync_bp    = ext_lcd->hsync_bp;
-	pconf->lcd_timing.hsync_pol    = ext_lcd->hsync_pol;
 	pconf->lcd_timing.vsync_width = ext_lcd->vsync_width;
 	pconf->lcd_timing.vsync_bp    = ext_lcd->vsync_bp;
-	pconf->lcd_timing.vsync_pol    = ext_lcd->vsync_pol;
 
 	/* fr_adjust_type */
 	temp = ext_lcd->customer_val_0;
@@ -907,60 +782,6 @@ static void lcd_config_init(struct lcd_config_s *pconf)
 	lcd_tcon_config(pconf);
 }
 
-/* change clock(frame_rate) for different vmode */
-static int lcd_vmode_change(struct lcd_config_s *pconf, int vmode)
-{
-	unsigned int pclk = pconf->lcd_timing.lcd_clk;
-	unsigned int h_period = pconf->lcd_basic.h_period;
-	unsigned int v_period = pconf->lcd_basic.v_period;
-	unsigned char type = pconf->lcd_timing.fr_adjust_type;
-	unsigned int sync_duration_num = lcd_info[vmode].sync_duration_num;
-	unsigned int sync_duration_den = lcd_info[vmode].sync_duration_den;
-
-	/* init lcd pixel clock */
-	//pclk = h_period * v_period * 60;
-	//pconf->lcd_timing.lcd_clk = pclk;
-
-	/* frame rate 60hz as default, no need adjust */
-	//if ((sync_duration_num / sync_duration_den) > 55)
-	//	return 0;
-
-	/* frame rate adjust */
-	switch (type) {
-	case 1: /* htotal adjust */
-		h_period = ((pclk / v_period) * sync_duration_den * 10) / sync_duration_num;
-		h_period = (h_period + 5) / 10; /* round off */
-		if (pconf->lcd_basic.h_period != h_period) {
-			LCDPR("vmode_change: adjust h_period %u -> %u\n",
-				pconf->lcd_basic.h_period, h_period);
-			pconf->lcd_basic.h_period = h_period;
-		}
-		break;
-	case 2: /* vtotal adjust */
-		v_period = ((pclk / h_period) * sync_duration_den * 10) / sync_duration_num;
-		v_period = (v_period + 5) / 10; /* round off */
-		if (pconf->lcd_basic.v_period != v_period) {
-			LCDPR("vmode_change: adjust v_period %u -> %u\n",
-				pconf->lcd_basic.v_period, v_period);
-			pconf->lcd_basic.v_period = v_period;
-		}
-		break;
-	case 0: /* pixel clk adjust */
-	default:
-		pclk = (h_period * v_period * sync_duration_num) / sync_duration_den;
-		if (pconf->lcd_timing.lcd_clk != pclk) {
-			LCDPR("vmode_change: adjust pclk %u.%03uMHz -> %u.%03uMHz\n",
-				(pconf->lcd_timing.lcd_clk / 1000000),
-				((pconf->lcd_timing.lcd_clk / 1000) % 1000),
-				(pclk / 1000000), ((pclk / 1000) % 1000));
-			pconf->lcd_timing.lcd_clk = pclk;
-		}
-		break;
-	}
-
-	return 0;
-}
-
 static int lcd_driver_init(void)
 {
 	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
@@ -983,21 +804,7 @@ static int lcd_driver_init(void)
 
 static void lcd_driver_disable(void)
 {
-	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
-	struct lcd_config_s *pconf;
-
-	pconf = lcd_drv->lcd_config;
-	switch (pconf->lcd_basic.lcd_type) {
-	case LCD_LVDS:
-		lvds_disable(pconf);
-		lcd_vcbus_setb(LVDS_GEN_CNTL, 0, 3, 1); /* disable lvds fifo */
-		break;
-	case LCD_VBYONE:
-		vbyone_disable(pconf);
-		break;
-	default:
-		break;
-	}
+	int vclk_sel = 0;
 
 	lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL3, 0);
 	lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL1, 0);
@@ -1005,32 +812,21 @@ static void lcd_driver_disable(void)
 
 	lcd_vcbus_write(ENCL_VIDEO_EN, 0);
 
-	clk_lcd_disable();
+	if (vclk_sel)
+		lcd_hiu_setb(HHI_VIID_CLK_CNTL, 0, 0, 5); //close vclk2 gate: 0x104b[4:0]
+	else
+		lcd_hiu_setb(HHI_VID_CLK_CNTL, 0, 0, 5); //close vclk1 gate: 0x105f[4:0]
 
 	//LCDPR("%s\n", __func__);
 }
 
 static int lcd_config_check(char *mode)
 {
-	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
-	int vmode;
+	int ret;
 
-	vmode = check_lcd_output_mode(lcd_drv->lcd_config, mode);
-	if (vmode >= LCD_OUTPUT_MODE_MAX)
+	ret = check_lcd_output_mode(mode);
+	if (ret)
 		return -1;
-
-	lcd_vmode_change(lcd_drv->lcd_config, vmode);
-	switch (lcd_drv->lcd_config->lcd_basic.lcd_type) {
-	case LCD_LVDS:
-		break;
-	case LCD_VBYONE:
-		set_vbyone_config(lcd_drv->lcd_config);
-		break;
-	default:
-		LCDPR("invalid lcd type\n");
-		break;
-	}
-	lcd_clk_generate_parameter(lcd_drv->lcd_config);
 
 	return 0;
 }
@@ -1039,7 +835,6 @@ int get_lcd_config(void)
 {
 	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
 	int load_id;
-	unsigned int lcd_debug_test = 0;
 #ifdef CONFIG_OF_LIBFDT
 	char *dt_addr;
 #endif
@@ -1069,9 +864,6 @@ int get_lcd_config(void)
 	lcd_drv->driver_disable = lcd_driver_disable;
 	lcd_drv->config_check = lcd_config_check;
 
-	lcd_debug_test = simple_strtoul(getenv("lcd_debug_test"), NULL, 10);
-	if (lcd_debug_test)
-		load_id = 0;
 	if (load_id == 1 ) {
 #ifdef CONFIG_OF_LIBFDT
 		LCDPR("load config from dts\n");
