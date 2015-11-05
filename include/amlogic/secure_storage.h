@@ -32,6 +32,7 @@ void secure_storage_notifier(void);
 int32_t secure_storage_list(uint8_t *listbuf, uint32_t buflen,
 				uint32_t *readlen);
 int32_t secure_storage_remove(uint8_t *keyname);
+void secure_storage_set_info(uint32_t info);
 #endif
 
 #endif

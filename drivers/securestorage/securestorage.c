@@ -276,3 +276,15 @@ int32_t secure_storage_remove(uint8_t *keyname)
 
 	return smc_to_ns_errno(ret);
 }
+
+void secure_storage_set_info(uint32_t info)
+{
+	register uint64_t x0 asm("x0")= SET_STORAGE_INFO;
+	register uint64_t x1 asm("x1") = info;
+	asm volatile(
+		__asmeq("%0", "x0")
+		__asmeq("%1", "x1")
+		"smc    #0\n"
+		: :"r" (x0), "r"(x1));
+
+}
