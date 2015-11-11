@@ -154,6 +154,8 @@ struct pll_set{
 	unsigned int spi_ctrl;
 	unsigned short vddee;
 	unsigned short vcck;
+	unsigned char szPad[4];
+	unsigned long  lCustomerID;
 }__attribute__ ((packed));
 
 typedef struct pll_set pll_set_t;

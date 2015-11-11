@@ -379,4 +379,5 @@ pll_set_t __pll_setting = {
 	.spi_ctrl				= 0,
 	.vddee					= CONFIG_VDDEE_INIT_VOLTAGE,
 	.vcck					= CONFIG_VCCK_INIT_VOLTAGE,
+	.lCustomerID			= CONFIG_AML_CUSTOMER_ID,
 };

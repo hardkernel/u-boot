@@ -55,4 +55,5 @@
 
 #define CONFIG_DTB_MEM_ADDR 0x1000000
 
+#define CONFIG_AML_CUSTOMER_ID  (0)
 #endif /* _CPU_H */

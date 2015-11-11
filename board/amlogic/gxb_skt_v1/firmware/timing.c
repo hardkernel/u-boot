@@ -382,4 +382,5 @@ pll_set_t __pll_setting = {
 	.pxp					= 0,
 #endif
 	.spi_ctrl				= 0,
+	.lCustomerID			= CONFIG_AML_CUSTOMER_ID,
 };
