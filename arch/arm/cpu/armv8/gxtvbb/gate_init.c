@@ -20,12 +20,16 @@
 */
 
 #include "power_gate.h"
+#ifdef CONFIG_AML_LCD
+#include <amlogic/aml_lcd.h>
+#endif
 
 #define SECUREBOOT_FLAG_ADDR 0xc8100228
 
 #ifdef CONFIG_AML_CVBS
 extern unsigned int cvbs_mode;
 #endif
+
 void ee_gate_off(void)
 {
 	printf("ee_gate_off ...\n");
@@ -35,10 +39,18 @@ void ee_gate_off(void)
 #ifdef CONFIG_AML_CVBS
 	unsigned int cvbs_opened = 0;
 #endif
+#ifdef CONFIG_AML_LCD
+	unsigned int lcd_status = 0;
+	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
+#endif
 
 #ifdef CONFIG_AML_CVBS
 	if ((cvbs_mode == 0) || (cvbs_mode == 1))
 		cvbs_opened = 1;
+#endif
+#ifdef CONFIG_AML_LCD
+	if (lcd_drv)
+		lcd_status = lcd_drv->lcd_status;
 #endif
 
 	/*
@@ -53,7 +65,12 @@ void ee_gate_off(void)
 	CLK_GATE_OFF(SANA);
 
 	/*kernel will reopen */
+#ifdef CONFIG_AML_LCD
+	if (lcd_status == 0)
+		CLK_GATE_OFF(CTS_ENCL);
+#else
 	CLK_GATE_OFF(CTS_ENCL);
+#endif
 	/* CLK_GATE_OFF(CTS_ENCT); */
 #ifdef CONFIG_AML_CVBS
 	if (cvbs_opened == 0)
@@ -100,7 +117,12 @@ void ee_gate_off(void)
 	CLK_GATE_OFF(VCLK2_VENCI);
 	CLK_GATE_OFF(VCLK2_VENCI1);
 #endif
+#ifdef CONFIG_AML_LCD
+	if (lcd_status == 0)
+		CLK_GATE_OFF(VCLK2_VENCL);
+#else
 	CLK_GATE_OFF(VCLK2_VENCL);
+#endif
 	CLK_GATE_OFF(VCLK2_OTHER1);
 
 #ifdef CONFIG_AML_CVBS
@@ -109,7 +131,12 @@ void ee_gate_off(void)
 #else
 	CLK_GATE_OFF(VCLK2_ENCI);
 #endif
+#ifdef CONFIG_AML_LCD
+	if (lcd_status == 0)
+		CLK_GATE_OFF(VCLK2_ENCL);
+#else
 	CLK_GATE_OFF(VCLK2_ENCL);
+#endif
 	CLK_GATE_OFF(VCLK2_ENCT);
 
 	CLK_GATE_OFF(VDEC_CLK_1);
