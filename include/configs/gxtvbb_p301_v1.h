@@ -56,7 +56,7 @@
         "firstboot=1\0"\
         "upgrade_step=0\0"\
         "loadaddr=1080000\0"\
-	    "panel_type=lvds_0\0" \
+        "panel_type=lvds_0\0" \
         "outputmode=1080p60hz\0" \
         "display_width=1920\0" \
         "display_height=1080\0" \
@@ -91,7 +91,7 @@
             "fi;"\
             "\0" \
         "storeargs="\
-            "setenv bootargs rootfstype=ramfs init=/init console=ttyS0,115200 no_console_suspend earlyprintk=aml-uart,0xc81004c0 androidboot.selinux=disabled ${display_layer},loaded,${fb_addr},${outputmode} panel_type=lvds_0 hdmitx= androidboot.firstboot=1"\
+            "setenv bootargs rootfstype=ramfs init=/init console=ttyS0,115200 no_console_suspend earlyprintk=aml-uart,0xc81004c0 androidboot.selinux=disabled logo=${display_layer},loaded,${fb_addr},${outputmode} vout=${outputmode},enable panel_type=${panel_type} hdmitx= androidboot.firstboot=1 "\
             "run cmdline_keys;"\
             "\0"\
         "switch_bootmode="\
