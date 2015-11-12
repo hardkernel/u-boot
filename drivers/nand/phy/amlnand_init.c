@@ -12,6 +12,7 @@
 *****************************************************************/
 
 #include "../include/phynand.h"
+#include <amlogic/secure_storage.h>
 
 struct amlnand_chip *aml_nand_chip = NULL;
 extern int boot_dev_init(struct amlnand_chip *aml_chip);
@@ -320,6 +321,9 @@ int amlnf_phy_init(u8 flag, struct platform_device *pdev)
 	PHY_NAND_LINE
 	/* update device_boot_flag for outsides */
 	device_boot_flag = NAND_BOOT_FLAG;
+	/* write 2 gp2*/
+	secure_storage_set_info(STORAGE_DEV_NAND);
+
 	PHY_NAND_LINE
 	if (aml_chip->init_flag == NAND_SCAN_ID_INIT)
 		goto exit_error1;

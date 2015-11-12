@@ -39,6 +39,14 @@
 #define AML_SET_CARD_TYPE(val, port, type)   \
     (val |= ((type & CARD_TYPE_MASK) << (port * CARD_TYPE_SHIFT)))
 
+/* storage device */
+#define STORAGE_DEV_NOSET	(0)
+#define STORAGE_DEV_EMMC	(1)
+#define STORAGE_DEV_NAND	(2)
+#define STORAGE_DEV_SPI		(3)
+#define STORAGE_DEV_SDCARD	(4)
+#define STORAGE_DEV_USB		(5)
+
 struct partitions {
 	char name[MAX_PART_NAME_LEN];			/* identifier string */
 	uint64_t size;			/* partition size */

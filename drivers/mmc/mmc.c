@@ -21,6 +21,7 @@
 #ifdef CONFIG_STORE_COMPATIBLE
 #include <emmc_partitions.h>
 #include <partition_table.h>
+#include <amlogic/secure_storage.h>
 #endif
 
 static struct list_head mmc_devices;
@@ -1421,7 +1422,11 @@ int mmc_init(struct mmc *mmc)
 		return err;
 	printf("[%s] mmc init success\n", __func__);
 #ifdef CONFIG_STORE_COMPATIBLE
-	if (mmc->block_dev.dev == 1)  {device_boot_flag = EMMC_BOOT_FLAG; }
+	if (mmc->block_dev.dev == 1)  {
+		device_boot_flag = EMMC_BOOT_FLAG;
+		secure_storage_set_info(STORAGE_DEV_EMMC);
+
+	}
 	if (aml_is_emmc_tsd(mmc)) { // eMMC OR TSD
 		if (!is_partition_checked) {
 			if (mmc_device_init(mmc) == 0) {
