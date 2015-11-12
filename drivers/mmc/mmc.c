@@ -971,13 +971,14 @@ static int mmc_read_ext_csd(struct mmc *host)
 
 	ext_csd_struct = ext_csd[EXT_CSD_REV];
 	host->ext_csd.boot_size_multi = ext_csd[BOOT_SIZE_MULTI];
-	
+#if !defined(CONFIG_HKDK4412)
 	if (ext_csd_struct > 7) {
 		printf("unrecognised EXT_CSD structure "
 			"version %d\n", ext_csd_struct);
 		err = -1;
 		goto out;
 	}
+#endif
 
 	if (ext_csd_struct >= 2) {
 		host->ext_csd.sectors =
