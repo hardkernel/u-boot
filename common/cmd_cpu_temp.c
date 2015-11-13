@@ -52,7 +52,7 @@ int adc_init_chan6(void)
 	/*adc reg3 bit28: config adc registers flag*/
 	if (readl(SAR_ADC_REG3)&(0x1<<28))
 		return 0;
-	writel(0x003c2000, SAR_ADC_REG11);
+	writel(0x002c2000, SAR_ADC_REG11);/*bit20: test mode disabled*/
 	writel(0x00000006, SAR_ADC_CHAN_LIST);
 	writel(0x00003000, SAR_ADC_AVG_CNTL);
 	writel(0xc3a8500a, SAR_ADC_REG3);
