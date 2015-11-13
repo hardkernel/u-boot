@@ -355,16 +355,17 @@ int board_late_init(void)
 
 	board_partition_init();
 
+#ifdef CONFIG_DISPLAY_LOGO
+	if (display_logo())
+		printf("no available logo file. skip logo display.\n");
+#endif
+
 	reboot_reason = board_reboot_reason();
 	if (ODROID_REBOOT_CMD_FASTBOOT == reboot_reason)
 		board_run_fastboot();
 	else if (ODROID_REBOOT_CMD_RECOVERY == reboot_reason)
 		board_run_recovery();
 
-#ifdef CONFIG_DISPLAY_LOGO
-	if (display_logo())
-		printf("no available logo file. skip logo display.\n");
-#endif
 	return 0;
 }
 #endif
