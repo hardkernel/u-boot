@@ -877,7 +877,7 @@ endif
 
 ifeq ($(CONFIG_NEED_BL301), y)
 .PHONY : bl301.bin
-bl301.bin: tools prepare acs.bin
+bl301.bin: tools prepare acs.bin bl21.bin
 	$(Q)$(MAKE) -C $(srctree)/$(CPUDIR)/${SOC}/firmware/scp_task
 	$(Q)cp $(buildtree)/scp_task/bl301.bin $(FIP_FOLDER_SOC)/bl301.bin -f
 endif
@@ -887,6 +887,11 @@ acs.bin: tools prepare u-boot.bin
 	$(Q)$(MAKE) -C $(srctree)/$(CPUDIR)/${SOC}/firmware/acs all FIRMWARE=$@
 	$(Q)cp $(buildtree)/board/${BOARDDIR}/firmware/acs.bin $(FIP_FOLDER_SOC)/acs.bin -f
 
+.PHONY : bl21.bin
+bl21.bin: tools prepare u-boot.bin acs.bin
+	$(Q)$(MAKE) -C $(srctree)/$(CPUDIR)/${SOC}/firmware/bl21 all FIRMWARE=$@
+	$(Q)cp $(buildtree)/board/${BOARDDIR}/firmware/bl21.bin $(FIP_FOLDER_SOC)/bl21.bin -f
+
 .PHONY : boot.bin
 boot.bin: fip.bin
 ifeq ($(CONFIG_AML_UBOOT_AUTO_TEST), y)
@@ -894,7 +899,7 @@ ifeq ($(CONFIG_AML_UBOOT_AUTO_TEST), y)
 else
 	$(Q)python $(FIP_FOLDER)/acs_tool.pyc $(FIP_FOLDER_SOC)/bl2.bin $(FIP_FOLDER_SOC)/bl2_acs.bin $(FIP_FOLDER_SOC)/acs.bin 0
 endif
-	$(Q)$(FIP_FOLDER)/bl2_fix.sh $(FIP_FOLDER_SOC)/bl2_acs.bin $(FIP_FOLDER_SOC)/zero_tmp $(FIP_FOLDER_SOC)/bl2_new.bin
+	$(Q)$(FIP_FOLDER)/bl2_fix.sh $(FIP_FOLDER_SOC)/bl2_acs.bin $(FIP_FOLDER_SOC)/zero_tmp $(FIP_FOLDER_SOC)/bl2_zero.bin $(FIP_FOLDER_SOC)/bl21.bin $(FIP_FOLDER_SOC)/bl21_zero.bin $(FIP_FOLDER_SOC)/bl2_new.bin
 	$(Q)cat $(FIP_FOLDER_SOC)/bl2_new.bin  $(FIP_FOLDER_SOC)/fip.bin > $(FIP_FOLDER_SOC)/boot_new.bin
 	$(Q)$(FIP_FOLDER_SOC)/aml_encrypt_$(SOC) --bootsig --input $(FIP_FOLDER_SOC)/boot_new.bin --output $(FIP_FOLDER_SOC)/u-boot.bin
 ifeq ($(CONFIG_AML_CRYPTO_UBOOT), y)
