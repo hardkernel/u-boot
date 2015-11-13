@@ -308,6 +308,10 @@ static int display_logo(void)
 	ret = run_command("fatload mmc 0 ${bootlogo_addr} boot-logo.bmp", 1);
 	if (!ret)	goto display_logo;
 
+	ret = run_command("movi read logo 0 ${bootlogo_addr}", 1);
+	if (!ret)
+		goto display_logo;
+
 	return 1;
 
 display_logo:
