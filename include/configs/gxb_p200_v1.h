@@ -62,6 +62,12 @@
 #define CONFIG_SERIAL_MULTI		1
 //for detect remote key
 #define CONFIG_IR_REMOTE  1
+//Enable ir remote wake up for bl30
+#define CONFIG_IR_REMOTE_POWER_UP_KEY_CNT 3
+#define CONFIG_IR_REMOTE_POWER_UP_KEY_VAL1 0XE51AFB04 //amlogic tv ir --- power
+#define CONFIG_IR_REMOTE_POWER_UP_KEY_VAL2 0XBB44FB04 //amlogic tv ir --- ch+
+#define CONFIG_IR_REMOTE_POWER_UP_KEY_VAL3 0xF20DFE01 //amlogic tv ir --- ch-
+#define CONFIG_IR_REMOTE_POWER_UP_KEY_VAL4 0xFFFFFFFF
 
 /* args/envs */
 #define CONFIG_SYS_MAXARGS  64

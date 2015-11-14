@@ -1,3 +1,6 @@
+#ifdef CONFIG_CEC_WAKEUP
+#include <cec_tx_reg.h>
+#endif
 #include <gpio-gxbb.h>
 
 static void power_off_at_clk81(void)

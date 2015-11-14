@@ -1,3 +1,4 @@
+#include <config.h>
 #include "config.h"
 #include "registers.h"
 #include "task_apis.h"
@@ -20,7 +21,10 @@ enum{
 
 #define IR_POWER_KEY_MASK 0xffffffff
 static unsigned int kk[] = {
-	0xe51afb04,
+	CONFIG_IR_REMOTE_POWER_UP_KEY_VAL1,
+	CONFIG_IR_REMOTE_POWER_UP_KEY_VAL2,
+	CONFIG_IR_REMOTE_POWER_UP_KEY_VAL3,
+	CONFIG_IR_REMOTE_POWER_UP_KEY_VAL4,
 };
 static int init_remote(void)
 {
@@ -32,11 +36,22 @@ static int init_remote(void)
 static int remote_detect_key(void)
 {
 	unsigned power_key;
+	int j;
+#if 0
 	if (((readl(AO_IR_DEC_STATUS))>>3) & 0x1) {
 		power_key = readl(AO_IR_DEC_FRAME);
-		if ((power_key&IR_POWER_KEY_MASK) == kk[DECODEMODE_NEC])
+		if ((power_key&IR_POWER_KEY_MASK) == kk[j])
 			return 1;
 
+	}
+#endif
+	if (((readl(AO_IR_DEC_STATUS))>>3) & 0x1) {
+	power_key = readl(AO_IR_DEC_FRAME);
+	for (j = 0 ; j < CONFIG_IR_REMOTE_POWER_UP_KEY_CNT; j++) {
+		if ((power_key&IR_POWER_KEY_MASK) == kk[j]) {
+		return 1;
+		}
+	}
 	}
 	return 0;
 }
