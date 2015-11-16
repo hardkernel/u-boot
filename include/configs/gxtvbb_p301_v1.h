@@ -146,16 +146,23 @@
             "if fatload mmc 0 ${loadaddr} aml_autoscript; then autoscr ${loadaddr}; fi;"\
             "if fatload mmc 0 ${loadaddr} recovery.img; then "\
                     "if fatload mmc 0 ${dtb_mem_addr} dtb.img; then echo sd dtb.img loaded; fi;"\
+                    "run set_recovery_mode;"\
                     "bootm ${loadaddr};fi;"\
             "\0"\
         "recovery_from_udisk="\
             "if fatload usb 0 ${loadaddr} aml_autoscript; then autoscr ${loadaddr}; fi;"\
             "if fatload usb 0 ${loadaddr} recovery.img; then "\
                 "if fatload usb 0 ${dtb_mem_addr} dtb.img; then echo udisk dtb.img loaded; fi;"\
+                "run set_recovery_mode;"\
                 "bootm ${loadaddr};fi;"\
             "\0"\
         "recovery_from_flash="\
-            "if imgread kernel recovery ${loadaddr}; then bootm ${loadaddr}; fi"\
+            "if imgread kernel recovery ${loadaddr}; then "\
+                "run set_recovery_mode;"\
+                "bootm ${loadaddr}; fi"\
+            "\0"\
+        "set_recovery_mode="\
+            "setenv bootargs ${bootargs} recovery_mode=y;"\
             "\0"\
         "init_display="\
             "osd open;osd clear;vout output ${outputmode};imgread pic logo bootup $loadaddr;bmp display $bootup_offset;bmp scale"\
