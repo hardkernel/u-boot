@@ -309,3 +309,4 @@ CFLAGS_env_embedded.o := -Wa,--no-warn -DENV_CRC=$(shell tools/envcrc 2>/dev/nul
 
 obj-$(CONFIG_MACH_ODROIDC2) += cmd_movi.o
 obj-$(CONFIG_MACH_ODROIDC2) += cmd_cfgload.o
+obj-$(CONFIG_MACH_ODROIDC2) += cmd_showlogo.o
