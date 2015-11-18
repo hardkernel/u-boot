@@ -910,8 +910,8 @@ struct amlnf_dev* aml_nftl_get_dev(char * name)
 	struct amlnf_dev * nf_dev = NULL;
 
 	list_for_each_entry(nf_dev, &nf_dev_list, list){
-		if (!strncmp((char*)nf_dev->name, name, strlen(nf_dev->name))) {
-				aml_nand_dbg("nand get nftl dev %s ", name);
+		if (!strcmp((char*)nf_dev->name, name)) {
+				aml_nand_dbg("nand get nftl dev %s ",name);
 				return nf_dev;
 		}
 	}
