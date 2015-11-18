@@ -61,30 +61,7 @@
 	"display_color_index=16\0" \
 	"storeboot="\
 	"if imgread kernel boot ${loadaddr}; then store dtb read $dtb_mem_addr; bootm ${loadaddr}; fi;"\
-	"\0"\
-	"recovery_from_sdcard="\
-		"if fatload mmc 0 ${loadaddr} aml_autoscript; then autoscr ${loadaddr}; fi;"\
-		"if fatload mmc 0 ${loadaddr} recovery.img; then "\
-			"if fatload mmc 0 ${dtb_mem_addr} dtb.img; then echo sd dtb.img loaded; fi;"\
-			"run set_recovery_mode;"\
-			"bootm ${loadaddr};fi;"\
-		"\0"\
-	"recovery_from_udisk="\
-		"if fatload usb 0 ${loadaddr} aml_autoscript; then autoscr ${loadaddr}; fi;"\
-		"if fatload usb 0 ${loadaddr} recovery.img; then "\
-			"if fatload usb 0 ${dtb_mem_addr} dtb.img; then echo udisk dtb.img loaded; fi;"\
-			"run set_recovery_mode;"\
-			"bootm ${loadaddr};fi;"\
-		"\0"\
-	"recovery_from_flash="\
-		"if imgread kernel recovery ${loadaddr}; then "\
-			"run set_recovery_mode;"\
-			"bootm ${loadaddr}; fi"\
-		"\0"\
-	"set_recovery_mode="\
-		"setenv bootargs ${bootargs} recovery_mode=y;"\
-		"\0"\
-
+	"\0"
 #define CONFIG_BOOTARGS "init=/init console=ttyS0,115200 no_console_suspend earlyprintk=aml-uart,0xc81004c0 ramoops.mem_address=0x20000000 ramoops.mem_size=0x100000 ramoops.record_size=0x8000 ramoops.console_size=0x4000"
 #define CONFIG_BOOTCOMMAND "osd open;"\
     "run storeboot"
