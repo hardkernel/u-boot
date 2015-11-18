@@ -911,7 +911,7 @@ struct amlnf_dev* aml_nftl_get_dev(char * name)
 
 	list_for_each_entry(nf_dev, &nf_dev_list, list){
 		if (!strncmp((char*)nf_dev->name, name, strlen(nf_dev->name))) {
-				aml_nand_dbg("nand get nftl dev %s ",name);
+				aml_nand_dbg("nand get nftl dev %s ", name);
 				return nf_dev;
 		}
 	}
@@ -924,7 +924,8 @@ void show_ldev_list(void)
 	struct amlnf_dev * nf_dev = NULL;
 	int i = 0;
 	list_for_each_entry(nf_dev, &nf_dev_list, list) {
-		printf("%d: %s: %llx\n", i++, (char*)nf_dev->name, nf_dev->size_sector);
+		printf("%d: %s: %llx  %llx\n", i++, (char*)nf_dev->name,
+			nf_dev->offset_sector, nf_dev->size_sector);
 	}
 }
 
