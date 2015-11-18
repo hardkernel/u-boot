@@ -130,6 +130,7 @@ struct usb_device {
 	void *controller;		/* hardware controller private data */
 	/* slot_id - for xHCI enabled devices */
 	unsigned int slot_id;
+	unsigned int connect_status;
 };
 
 struct int_queue;

@@ -922,6 +922,7 @@ int usb_new_device(struct usb_device *dev)
 	/* We still haven't set the Address yet */
 	addr = dev->devnum;
 	dev->devnum = 0;
+	dev->connect_status = 1;
 
 #ifdef CONFIG_LEGACY_USB_INIT_SEQ
 	/* this is the old and known way of initializing devices, it is

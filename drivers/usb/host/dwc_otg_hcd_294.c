@@ -997,6 +997,7 @@ dwc_otg_submit_job(struct usb_device *dev, unsigned long pipe, int dir, void *bu
     int t2,t4,t8;
     int allchannel_int_mask;
     hcint_data_t    hcint;
+    hprt0_data_t    hprt0;
     dwc_otg_host_global_regs_t *host_global_regs = host_if->host_global_regs;
 
 //    printf("dwc_otg_submit_job: dev: %d ,dev->parent: %x, dev->speed: %d\n",
@@ -1011,6 +1012,13 @@ dwc_otg_submit_job(struct usb_device *dev, unsigned long pipe, int dir, void *bu
 //			return -EOPNOTSUPP;
 
     int             type = usb_pipetype(pipe);
+
+    hprt0.d32 = dwc_read_reg32(core_if->host_if->hprt0);
+    if (hprt0.b.prtconnsts == 0) {
+        dev->connect_status = 0;
+        return -1;
+    }
+
     if (len >= 4096) {
         ERR("Too big job!\n");
         dev->status = USB_ST_CRC_ERR;
@@ -1166,6 +1174,11 @@ dwc_otg_submit_job(struct usb_device *dev, unsigned long pipe, int dir, void *bu
          * Check whether the controller is done
          */
         stat = dwc_otg_interrupt(core_if, is_setup,hcnum,buffer);
+        hprt0.d32 = dwc_read_reg32(core_if->host_if->hprt0);
+        if (hprt0.b.prtconnsts == 0) {
+            dev->connect_status = 0;
+            return -1;
+        }
 
         if (stat >= 0) {
 			if (chg_flag)
@@ -1217,6 +1230,8 @@ SETUP_RETRY:
 
     usb_settoggle(dev, epnum, 1, 0);
     ret = dwc_otg_submit_job(dev, pipe, 0, setup, sizeof(struct devrequest), 1);
+    if (dev->connect_status == 0)
+        return -1;
     if (ret < 0) {
        if (retry++ < CTL_RETRY)
             goto SETUP_RETRY;
@@ -1243,6 +1258,8 @@ DATA_RETRY:
         ret = dwc_otg_submit_job(dev, pipe,
                                  dir_in,
                                  (__u8 *) buffer, len, 0);
+        if (dev->connect_status == 0)
+            return -1;
 
         if (ret < 0) {
                 if (retry++ < CTL_RETRY)
@@ -1268,6 +1285,8 @@ STATUS_RETRY:
 
     usb_settoggle(dev, epnum, !dir_in, 1);
     ret = dwc_otg_submit_job(dev, pipe, !dir_in, NULL, 0, 0);
+    if (dev->connect_status == 0)
+        return -1;
     if (ret < 0) {
           if (retry++ < CTL_RETRY)
                goto STATUS_RETRY;
@@ -1317,6 +1336,8 @@ RETRY:
         ret = dwc_otg_submit_job(dev, pipe,
                                  !dir_out,
                                  (__u8 *) buffer + done, max > len - done ? len - done : max, 0);
+        if (dev->connect_status == 0)
+            return -1;
         if (ret < 0 ) {
             if (retry--) {
                 DBG("error on bulk message, retry: %d",retry);

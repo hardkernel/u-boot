@@ -666,7 +666,8 @@ static int usb_stor_BBB_transport(ccb *srb, struct us_data *us)
 	unsigned char *ptr;
 	int index;
 #endif
-
+	if (us->pusb_dev->connect_status == 0)
+		return -1;
 	dir_in = US_DIRECTION(srb->cmd[0]);
 
 	/* COMMAND phase */
@@ -895,6 +896,8 @@ static int usb_inquiry(ccb *srb, struct us_data *ss)
 	int retry, i;
 	retry = 5;
 	do {
+		if (ss->pusb_dev->connect_status == 0)
+			return -1;
 		memset(&srb->cmd[0], 0, 12);
 		srb->cmd[0] = SCSI_INQUIRY;
 		srb->cmd[1] = srb->lun << 5;
@@ -937,6 +940,8 @@ static int usb_test_unit_ready(ccb *srb, struct us_data *ss)
 {
 	int retries = 10;
 	do {
+		if (ss->pusb_dev->connect_status == 0)
+			return -1;
 		memset(&srb->cmd[0], 0, 12);
 		srb->cmd[0] = SCSI_TST_U_RDY;
 		srb->cmd[1] = srb->lun << 5;
@@ -969,6 +974,8 @@ static int usb_read_capacity(ccb *srb, struct us_data *ss)
 	/* XXX retries */
 	retry = 3;
 	do {
+		if (ss->pusb_dev->connect_status == 0)
+			return -1;
 		memset(&srb->cmd[0], 0, 12);
 		srb->cmd[0] = SCSI_RD_CAPAC;
 		srb->cmd[1] = srb->lun << 5;
