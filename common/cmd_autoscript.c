@@ -157,9 +157,9 @@ autoscript (ulong addr, const char *fit_uname)
 	memmove (cmd, (char *)data, len);
 	*(cmd + len) = 0;
 
-//#ifdef CONFIG_SYS_HUSH_PARSER /*?? */
-//	rcode = parse_string_outer (cmd, FLAG_PARSE_SEMICOLON);
-//#else
+#ifdef  CONFIG_SYS_HUSH_PARSER
+	rcode = parse_string_outer (cmd, FLAG_PARSE_SEMICOLON);
+#else
 	{
 		char *line = cmd;
 		char *next = cmd;
@@ -188,7 +188,7 @@ autoscript (ulong addr, const char *fit_uname)
 		if (rcode == 0 && *line)
 			rcode = (run_command(line, 0) >= 0);
 	}
-//#endif
+#endif // #ifdef  CONFIG_SYS_HUSH_PARSER
 	free (cmd);
 	return rcode;
 }

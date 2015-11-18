@@ -132,7 +132,10 @@ static int _burn_key_in_type_mac(const char* keyname, const char* srcKeyVal, con
 
     KM_DBG("targetKeyLen=%zd\n", targetKeyLen);
     for (index = 0; index < targetKeyLen; ++index) {
-        const char *theByteStr = srcKeyVal + index * 3;
+        char theByteStr[4] ;
+        theByteStr[0] = srcKeyVal[index * 3 + 0];
+        theByteStr[1] = srcKeyVal[index * 3 + 1];
+        theByteStr[2] = '\0';
         unsigned byteSum = 0;
 
         byteSum = simple_strtoul(theByteStr, NULL, 16);
