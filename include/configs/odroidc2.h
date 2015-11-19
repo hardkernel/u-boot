@@ -82,7 +82,7 @@
 	"loadaddr=0x10800000\0"		\
 	"dtb_mem_addr=0x1000000\0"	\
 	"fdt_high=0x20000000\0"		\
-	"bootargs=root=/dev/mmcblk0p2 init=/init console=ttyS0,115200 hdmimode=1080p earlyprintk=aml-uart,0xc81004c0\0"	\
+	"bootargs=root=/dev/mmcblk0p2 init=/init console=ttyS0,115200 hdmimode=720p60hz androidboot.hardware=odroidc2 earlyprintk=aml-uart,0xc81004c0\0"	\
 	"bootcmd=cfgload; fatload mmc 0 ${loadaddr} image; fatload mmc 0 ${dtb_mem_addr} meson64_odroidc2.dtb; booti ${loadaddr} - ${dtb_mem_addr}\0"
 
 #define CONFIG_PREBOOT
