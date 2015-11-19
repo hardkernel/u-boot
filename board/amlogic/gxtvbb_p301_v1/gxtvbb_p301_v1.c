@@ -165,7 +165,7 @@ void pmu4_phy_config(void)
 	aml_pmu4_write(0x15, 0x3f);
 
 	/* pll */
-	aml_pmu4_write(0x78, 0x06);
+	aml_pmu4_write(0x78, 0x00);
 	aml_pmu4_write(0x79, 0x05);
 	aml_pmu4_write(0x7a, 0xa1);
 	aml_pmu4_write(0x7b, 0xac);
@@ -254,9 +254,8 @@ static int aml_pmu4_reg_init(unsigned int reg_base, unsigned int *val,
 static int aml_pmu4_power_init(void)
 {
 	int ret;
-
-	/* enable input 24M clock */
-	setbits_le32(0xc8100634, 0x93);
+	int i = 0;
+	uint8_t value;
 
 	/* pmu4 analog register init */
 	ret = aml_pmu4_reg_init(AML1220_ANALOG_ADDR, &pmu4_analog_reg[0],
@@ -265,6 +264,17 @@ static int aml_pmu4_power_init(void)
 		return ret;
 
 	pmu4_phy_config();
+
+	/* enable input 24M clock */
+	setbits_le32(0xc8100634, 0x93);
+
+	do {
+		aml_pmu4_read(0x9c, &value);
+		mdelay(10);
+	} while (((value & 0x01) == 0) && (i++ < 10));
+	if(!(value&0x01)) {
+		printf("WARING: PMU4 PLL not lock!");
+	}
 
 	return 0;
 
