@@ -11,41 +11,37 @@
 #include <usb/fastboot.h>
 
 /* FIXME: Is block size always 512? */
-#define lba_to_bytes(x)		(int)((size_t)x * 512)
-#define bytes_to_lba(x)		((size_t)x / 512)
-#define kbytes_to_lba(x)	bytes_to_lba(x * SZ_1K)
-#define bytes_to_kb(x)		((size_t)x / SZ_1K)
+#define bytes_to_lba(x)		((x) / 512)
+#define gbytes_to_lba(x)	((x) * 1024 * 1024 * 2)
 
-#define SZ_BOOTLOADER		bytes_to_kb(720 * SZ_1K)
-#define SZ_BOOTMESSAGE		bytes_to_kb(4 * SZ_1K)
+#define SZ_BOOTLOADER		(720 * SZ_1K)
+#define SZ_BOOTMESSAGE		(4 * SZ_1K)
 
 static struct fbt_partition {
 	const char *name;
-	unsigned int size_kb;
+	lbaint_t lba;
 } partitions[] = {
 	{
 		.name = "bootloader",
-		.size_kb = SZ_BOOTLOADER - SZ_BOOTMESSAGE
-	},
-	{
+		.lba = bytes_to_lba(SZ_BOOTLOADER - SZ_BOOTMESSAGE)
+	}, {
 		.name = "bcb",			/* Bootloader control block */
-		.size_kb = SZ_BOOTMESSAGE
-	},
-	{
+		.lba = bytes_to_lba(SZ_BOOTMESSAGE)
+	}, {
 		.name = "env",			/* "environment" */
-		.size_kb = bytes_to_kb(CONFIG_ENV_SIZE)
+		.lba = bytes_to_lba(CONFIG_ENV_SIZE)
 	}, {
 		.name = "dtb",			/* Device Tree */
-		.size_kb = bytes_to_kb(SZ_64K)
+		.lba = bytes_to_lba(SZ_64K)
 	}, {
 		.name = "boot",			/* Boot image */
-		.size_kb = bytes_to_kb(16 * SZ_1M)
+		.lba = bytes_to_lba(16 * SZ_1M)
 	}, {
 		.name = "recovery",		/* Recovery Image */
-		.size_kb = bytes_to_kb(12 * SZ_1M)
+		.lba = bytes_to_lba(12 * SZ_1M)
 	}, {
 		.name = "logo",			/* Logo */
-		.size_kb = bytes_to_kb(2 * SZ_1M)
+		.lba = bytes_to_lba(2 * SZ_1M)
 	}
 };
 
@@ -53,28 +49,28 @@ static struct dos_partition {
 	const char *name;
 	int part;
 	u8 type;
-	size_t size_kb;
+	lbaint_t lba;
 } dos_partitions[] = {
 	{
 		.name = "cache",
 		.part = 2,
 		.type = 0x83,
-		.size_kb = bytes_to_kb(512 * SZ_1M),
+		.lba = bytes_to_lba(512 * SZ_1M),
 	}, {
 		.name = "system",
 		.part = 3,
 		.type = 0x83,
-		.size_kb = bytes_to_kb(1 * SZ_1G),
+		.lba = gbytes_to_lba(1),
 	}, {
 		.name = "userdata",
 		.part = 4,
 		.type = 0x83,
-		.size_kb = bytes_to_kb(3 * SZ_1G),
+		.lba = gbytes_to_lba(3),
 	}, {
 		.name = "vfat",
 		.part = 1,
 		.type = 0x0c,
-		.size_kb = -1,
+		.lba = -1,
 	},
 };
 
@@ -94,7 +90,7 @@ lbaint_t board_dos_partition_start(void)
 	lbaint_t next = 0;
 
 	for (n = 0 ; n < ARRAY_SIZE(partitions); n++)
-		next += kbytes_to_lba(partitions[n].size_kb);
+		next += partitions[n].lba;
 
 	return next;
 }
@@ -114,10 +110,10 @@ lbaint_t board_dos_partition_next(int *part, u8 *type)
 	*type = p->type;	/* partition type */
 
 	/* Use remained sectors for this partition */
-	if (p->size_kb == -1)
+	if (p->lba == -1)
 		return -1;
 
-	return kbytes_to_lba(p->size_kb);
+	return p->lba;
 }
 
 /*
@@ -160,7 +156,7 @@ int board_partition_init(void)
 	mmc = find_mmc_device(CONFIG_FASTBOOT_FLASH_MMC_DEV);
 
 	for (n = 0 ; mmc && n < ARRAY_SIZE(partitions); n++) {
-		len = kbytes_to_lba(partitions[n].size_kb);
+		len = partitions[n].lba;
 
 		/* Skip to add the partition if start with '-', but move forward
 		 * to next position as much as its size
@@ -178,7 +174,7 @@ int board_partition_init(void)
 				(bytes_to_lba(CONFIG_ENV_OFFSET) != next)) {
 			printf("WARNING!!: Invalid offset of 'env' partition,"
 					" it must be " LBAFU " but " LBAFU "\n",
-					next, bytes_to_lba(CONFIG_ENV_OFFSET));
+					next, (lbaint_t)bytes_to_lba(CONFIG_ENV_OFFSET));
 		}
 
 		if (len == 0)
