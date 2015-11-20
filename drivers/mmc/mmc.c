@@ -199,7 +199,7 @@ static int mmc_read_blocks(struct mmc *mmc, void *dst, lbaint_t start,
 {
 	struct mmc_cmd cmd;
 	struct mmc_data data;
-
+	int ret;
 	if (blkcnt > 1)
 		cmd.cmdidx = MMC_CMD_READ_MULTIPLE_BLOCK;
 	else
@@ -217,8 +217,7 @@ static int mmc_read_blocks(struct mmc *mmc, void *dst, lbaint_t start,
 	data.blocksize = mmc->read_bl_len;
 	data.flags = MMC_DATA_READ;
 
-	if (mmc_send_cmd(mmc, &cmd, &data))
-		return 0;
+	ret = mmc_send_cmd(mmc, &cmd, &data);
 
 	if (blkcnt > 1) {
 		cmd.cmdidx = MMC_CMD_STOP_TRANSMISSION;
@@ -231,8 +230,10 @@ static int mmc_read_blocks(struct mmc *mmc, void *dst, lbaint_t start,
 			return 0;
 		}
 	}
-
-	return blkcnt;
+	if (ret)
+		return 0;
+	else
+		return blkcnt;
 }
 
 static ulong mmc_bread(int dev_num, lbaint_t start, lbaint_t blkcnt, void *dst)
