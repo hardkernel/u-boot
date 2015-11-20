@@ -14,6 +14,7 @@
 #define bytes_to_lba(x)		((x) / 512)
 #define gbytes_to_lba(x)	((x) * 1024 * 1024 * 2)
 
+#define SZ_RESERVED		(48 * SZ_1K + 512)	/* BL1 + MBR */
 #define SZ_BOOTLOADER		(720 * SZ_1K)
 #define SZ_BOOTMESSAGE		(4 * SZ_1K)
 
@@ -22,8 +23,12 @@ static struct fbt_partition {
 	lbaint_t lba;
 } partitions[] = {
 	{
+		.name = "-reserved",
+		.lba = bytes_to_lba(SZ_RESERVED)
+	}, {
 		.name = "bootloader",
-		.lba = bytes_to_lba(SZ_BOOTLOADER - SZ_BOOTMESSAGE)
+		.lba = bytes_to_lba(SZ_BOOTLOADER
+				- (SZ_RESERVED + SZ_BOOTMESSAGE))
 	}, {
 		.name = "bcb",			/* Bootloader control block */
 		.lba = bytes_to_lba(SZ_BOOTMESSAGE)
