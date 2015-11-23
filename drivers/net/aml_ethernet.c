@@ -297,13 +297,13 @@ void init_internal_phy_100B(int phyad)
 #endif
 static inline void _dcache_flush_range_for_net(unsigned long startAddr, unsigned long endAddr)
 {
-	flush_dcache_range(startAddr, endAddr);
+	flush_dcache_range(startAddr, ROUND(endAddr, ETH_CACHE_LINE_SIZE));
 }
 
 static inline void _dcache_inv_range_for_net(unsigned long startAddr, unsigned long endAddr)
 {
 
-	invalidate_dcache_range(startAddr, endAddr);
+	invalidate_dcache_range(startAddr, ROUND(endAddr, ETH_CACHE_LINE_SIZE));
 }
 
 static unsigned int detect_phyad(void)
@@ -901,7 +901,7 @@ static int aml_ethernet_init(struct eth_device * net_current, bd_t *bd)
 	printf("Amlogic Ethernet Init\n");
 
 	/* alloc the dma buffer */
-	net_dma_buffer = malloc(NET_DMA_BUFFER_SIZE);
+	net_dma_buffer = memalign(ETH_CACHE_LINE_SIZE, NET_DMA_BUFFER_SIZE);
 	net_dma_start_addr = (unsigned long)net_dma_buffer;
 	net_dma_end_addr   = (unsigned long)(net_dma_buffer + NET_DMA_BUFFER_SIZE);
 
@@ -967,6 +967,7 @@ static int aml_ethernet_init(struct eth_device * net_current, bd_t *bd)
 	pRDesc->rdes2 = (unsigned long)bufptr;
 	pRDesc->rdes3 = (unsigned long)gS->rx; 		//circle
 	_dcache_flush_range_for_net(( unsigned long )gS->rx, (unsigned long)gS->rx + sizeof(struct _rx_desc)*gS->rx_len);
+	_dcache_flush_range_for_net(( unsigned long )gS->rx_buf_addr, (unsigned long)gS->rx_buf_addr + CRX_BUFFER_NUM * CBUFFER_SIZE);
 
 	/* init TX desc */
 	pTDesc = (struct _tx_desc *)gS->tx;
@@ -992,6 +993,7 @@ static int aml_ethernet_init(struct eth_device * net_current, bd_t *bd)
 	pTDesc->tdes3 = (unsigned long)gS->tx; 		//circle
 	g_current_tx = gS->tx;
 	_dcache_flush_range_for_net((unsigned long)gS->tx, (unsigned long)gS->tx + sizeof(struct _tx_desc)*gS->tx_len);
+	_dcache_flush_range_for_net(( unsigned long )gS->tx_buf_addr, (unsigned long)gS->tx_buf_addr + CTX_BUFFER_NUM * CBUFFER_SIZE);
 
 	/* get mii interface */
 	g_mac_mode = (aml_eth_readl(PREG_ETH_REG0) & 0x1) ? MAC_MODE_RGMII:MAC_MODE_RMII_CLK_EXTERNAL;

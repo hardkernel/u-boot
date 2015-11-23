@@ -478,14 +478,14 @@
 
 
 
-
+#define ETH_CACHE_LINE_SIZE		64
 
 struct _tx_desc {
     unsigned int tdes0;
     unsigned int tdes1;
     unsigned int tdes2;
     unsigned int tdes3;
-    unsigned int reverse[4];//for 32 bytes cahce aligned
+    unsigned int reverse[12];//for 64 bytes cahce aligned
 } ;
 
 struct _rx_desc {
@@ -493,7 +493,7 @@ struct _rx_desc {
     unsigned int rdes1;
     unsigned int rdes2;
     unsigned int rdes3;
-    unsigned int reverse[4];//for 32 bytes cahce aligned
+    unsigned int reverse[12];//for 64 bytes cahce aligned
 } ;
 
 
