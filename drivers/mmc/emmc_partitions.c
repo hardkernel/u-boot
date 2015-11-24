@@ -88,7 +88,9 @@ struct partitions part_table[MAX_PART_NUM]={
 struct partitions emmc_partition_table[]={
     PARTITION_ELEMENT(MMC_BOOT_NAME, MMC_BOOT_DEVICE_SIZE, 0),
     PARTITION_ELEMENT(MMC_RESERVED_NAME, MMC_RESERVED_SIZE, 0),
-    PARTITION_ELEMENT(MMC_CACHE_NAME, 0, 0),                    // the size and flag should be get from spl
+    /* prior partitions, same partition name with dts*/
+    /* partition size will be overide by dts*/
+    PARTITION_ELEMENT(MMC_CACHE_NAME, 0, 0),
     // PARTITION_ELEMENT(MMC_KEY_NAME, MMC_KEY_SIZE, 0),
     // PARTITION_ELEMENT(MMC_SECURE_NAME, MMC_SECURE_SIZE, 0),
     PARTITION_ELEMENT(MMC_ENV_NAME, MMC_ENV_SIZE, 0),
@@ -164,9 +166,37 @@ int set_partition_info (struct partitions *src_tbl, int src_part_num,
     return 0; // OK
 }
 
+/* overide partitons's size config by dts. */
+int overide_emmc_partition_table(void)
+{
+    int i, ret = 0;
+
+	for (i = 0; i < ARRAY_SIZE(emmc_partition_table); i++) {
+		if (0 == set_partition_info(part_table, MAX_MMC_PART_NUM,
+            emmc_partition_table, ARRAY_SIZE(emmc_partition_table),
+            emmc_partition_table[i].name)) {
+            printf("%s: overide %s \n", __func__, emmc_partition_table[i].name);
+        }
+    }
+
+    return ret;
+}
+
+int is_in_emmc_partition_tbl(char * name)
+{
+    int ret = 1;
+    struct partitions *part=NULL;
+
+    part = find_partition_by_name(emmc_partition_table, ARRAY_SIZE(emmc_partition_table), name);
+    if (!part)
+        ret = 0;
+
+    return ret;
+}
+
 int mmc_get_partition_table (struct mmc *mmc)
 {
-	int i, part_num_left, resv_size, ret=0, part_num=0;
+    int i, resv_size, ret=0, part_num=0;
 	struct partitions *part_ptr;
 
 	mmc_partition_config_of = kmalloc((sizeof(struct mmc_partition_config)), 0);
@@ -181,11 +211,10 @@ int mmc_get_partition_table (struct mmc *mmc)
 	ret = get_dtb_struct(mmc);
 	if (ret)
 		goto exit_err;
-    set_partition_info(part_table, MAX_MMC_PART_NUM,
-            emmc_partition_table, ARRAY_SIZE(emmc_partition_table), MMC_ENV_NAME);
-    set_partition_info(part_table, MAX_MMC_PART_NUM,
-            emmc_partition_table, ARRAY_SIZE(emmc_partition_table), MMC_CACHE_NAME);
 
+	overide_emmc_partition_table();
+
+	/* set inherent partitions info*/
 	for (i=0; i < ARRAY_SIZE(emmc_partition_table); i++) {
 		strncpy(part_ptr[part_num].name, emmc_partition_table[i].name, MAX_MMC_PART_NAME_LEN);
 		part_ptr[part_num].size = emmc_partition_table[i].size;
@@ -211,15 +240,10 @@ int mmc_get_partition_table (struct mmc *mmc)
 		part_num++;
     }
 
-    part_num_left = MAX_MMC_PART_NUM - part_num;
-	for (i=0; i < part_num_left ; i++) {
-        if (!strncmp(part_table[i].name, MMC_ENV_NAME, MAX_MMC_PART_NAME_LEN)) { // skip env partition
-            printf("[%s] skip %s partition.\n", __FUNCTION__, MMC_ENV_NAME);
-            continue;
-        }
-
-        if (!strncmp(part_table[i].name, MMC_CACHE_NAME, MAX_MMC_PART_NAME_LEN)) { // get the info of cache partition
-            printf("[%s] skip %s partition.\n", __FUNCTION__, MMC_CACHE_NAME);
+	for (i=0; i < MAX_MMC_PART_NUM; i++) {
+        //skip partitions already setted by emmc_partition_table.
+		if (is_in_emmc_partition_tbl(part_table[i].name)) {
+            printf("[%s] skip partition %s.\n", __FUNCTION__, part_table[i].name);
             continue;
         }
 
