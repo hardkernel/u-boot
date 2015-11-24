@@ -1,0 +1,218 @@
+
+/*
+ * board/amlogic/gxtvbb_skt_v1/firmware/scp_task/pwr_ctrl.c
+ *
+ * Copyright (C) 2015 Amlogic, Inc. All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+*/
+
+static void power_off_at_clk81(void)
+{
+}
+static void power_on_at_clk81(void)
+{
+}
+
+static void power_off_at_24M(void)
+{
+}
+static void power_on_at_24M(void)
+{
+}
+
+static void power_off_at_32k(void)
+{
+}
+static void power_on_at_32k(void)
+{
+}
+
+static void wakeup_timer_setup(void)
+{
+	/* 1ms resolution*/
+	unsigned value;
+	value = readl(P_ISA_TIMER_MUX);
+	value |= ((0x3<<0) | (0x1<<12) | (0x1<<16));
+	writel(value, P_ISA_TIMER_MUX);
+	writel(10, P_ISA_TIMERA);
+}
+static void wakeup_timer_clear(void)
+{
+	unsigned value;
+	value = readl(P_ISA_TIMER_MUX);
+	value &= ~((0x1<<12) | (0x1<<16));
+	writel(value, P_ISA_TIMER_MUX);
+}
+
+static void get_wakeup_source(void *response, unsigned int suspend_from)
+{
+	struct wakeup_info *p = (struct wakeup_info *)response;
+	unsigned val;
+	p->gpio_info_count = 0;
+	p->status = RESPONSE_OK;
+	val = (AUTO_WAKEUP_SRC | REMOTE_WAKEUP_SRC);
+#ifdef CONFIG_BT_WAKEUP
+	val |= BT_WAKEUP_SRC;
+#endif
+
+#ifdef CONFIG_CEC_WAKEUP
+	if (suspend_from != SYS_POWEROFF)
+		val |= CEC_WAKEUP_SRC;
+#endif
+#ifdef CONFIG_WIFI_WAKEUP
+	if (suspend_from != SYS_POWEROFF)
+		val |= WIFI_WAKEUP_SRC;
+#endif
+
+	p->sources = val;
+
+#ifdef CONFIG_BT_WAKEUP
+{
+	struct wakeup_gpio_info *gpio;
+	/* BT Wakeup: IN: GPIOX[21], OUT: GPIOX[20]*/
+	gpio = &(p->gpio_info[1]);
+	gpio->wakeup_id = BT_WAKEUP;
+	gpio->gpio_in_idx = GPIOX_21;
+	gpio->gpio_in_ao = 0;
+	gpio->gpio_out_idx = GPIOX_20;
+	gpio->gpio_out_ao = 0;
+	gpio->irq = IRQ_GPIO0_NUM;
+	gpio->trig_type = GPIO_IRQ_FALLING_EDGE;
+	p->gpio_info_count ++;
+}
+#endif
+
+#ifdef CONFIG_WIFI_WAKEUP
+	if (suspend_from != SYS_POWEROFF) {
+		struct wakeup_gpio_info *gpio;
+		/*WIFI Wakeup: IN: GPIOX[7], OUT: GPIOX[6]*/
+		gpio = &(p->gpio_info[2]);
+		gpio->wakeup_id = WIFI_WAKEUP;
+		gpio->gpio_in_idx = GPIOX_7;
+		gpio->gpio_in_ao = 0;
+		gpio->gpio_out_idx = GPIOX_6;
+		gpio->gpio_out_ao = 0;
+		gpio->irq = IRQ_GPIO1_NUM;
+		gpio->trig_type = GPIO_IRQ_FALLING_EDGE;
+		p->gpio_info_count ++;
+	}
+#endif
+
+}
+static unsigned int detect_key(unsigned int suspend_from)
+{
+	int exit_reason = 0;
+	unsigned int time_out = readl(AO_DEBUG_REG2);
+	unsigned time_out_ms = time_out*100;
+	unsigned *irq = (unsigned *)SECURE_TASK_SHARE_IRQ;
+	/* unsigned *wakeup_en = (unsigned *)SECURE_TASK_RESPONSE_WAKEUP_EN; */
+
+	/* setup wakeup resources*/
+	/*auto suspend: timerA 10ms resolution*/
+	if (time_out_ms != 0)
+		wakeup_timer_setup();
+
+	init_remote();
+#ifdef CONFIG_CEC_WAKEUP
+	if (hdmi_cec_func_config & 0x1) {
+		remote_cec_hw_reset();
+		cec_node_init();
+	}
+#endif
+
+	/* *wakeup_en = 1;*/
+	do {
+		switch (*irq) {
+#ifdef CONFIG_CEC_WAKEUP
+		case IRQ_AO_CEC_NUM:
+			if (suspend_from == SYS_POWEROFF)
+				break;
+			if (cec_msg.log_addr) {
+				if (hdmi_cec_func_config & 0x1) {
+					cec_handler();
+					if (cec_msg.cec_power == 0x1) {
+						/*cec power key*/
+						exit_reason = CEC_WAKEUP;
+						break;
+					}
+				}
+			} else if (hdmi_cec_func_config & 0x1)
+				cec_node_init();
+		break;
+#endif
+		case IRQ_TIMERA_NUM:
+			if (time_out_ms != 0)
+				time_out_ms--;
+			if (time_out_ms == 0) {
+				wakeup_timer_clear();
+				exit_reason = AUTO_WAKEUP;
+			}
+			break;
+
+		case IRQ_AO_IR_DEC_NUM:
+			if (remote_detect_key())
+				exit_reason = REMOTE_WAKEUP;
+			break;
+
+#ifdef CONFIG_BT_WAKEUP
+		case IRQ_GPIO0_NUM:
+			if (!(readl(PREG_PAD_GPIO4_EN_N)
+					&(0x01 << 20)) &&
+					(readl(PREG_PAD_GPIO4_O)
+					& (0x01 << 20)) &&
+					!(readl(PREG_PAD_GPIO4_I)
+					& (0x01 << 21)))
+						exit_reason = BT_WAKEUP;
+			break;
+#endif
+#ifdef CONFIG_WIFI_WAKEUP
+		case IRQ_GPIO1_NUM:
+			if (suspend_from) {
+				if (!(readl(PREG_PAD_GPIO4_EN_N)
+						& (0x01 << 6)) &&
+						(readl(PREG_PAD_GPIO4_O)
+						& (0x01 << 6)) &&
+						!(readl(PREG_PAD_GPIO4_I)
+						& (0x01 << 7)))
+						exit_reason = WIFI_WAKEUP;
+			}
+			break;
+#endif
+		default:
+			break;
+		}
+		*irq = 0xffffffff;
+		if (exit_reason)
+			break;
+		else
+			asm volatile("wfi");
+	} while (1);
+
+	return exit_reason;
+}
+
+static void pwr_op_init(struct pwr_op *pwr_op)
+{
+	pwr_op->power_off_at_clk81 = power_off_at_clk81;
+	pwr_op->power_on_at_clk81 = power_on_at_clk81;
+	pwr_op->power_off_at_24M = power_off_at_24M;
+	pwr_op->power_on_at_24M = power_on_at_24M;
+	pwr_op->power_off_at_32k = power_off_at_32k;
+	pwr_op->power_on_at_32k = power_on_at_32k;
+
+	pwr_op->detect_key = detect_key;
+	pwr_op->get_wakeup_source = get_wakeup_source;
+}

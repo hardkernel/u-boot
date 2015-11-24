@@ -19,8 +19,8 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-#ifndef __GXTVBB_P301_V1_H__
-#define __GXTVBB_P301_V1_H__
+#ifndef __GXTVBB_P300_V1_H__
+#define __GXTVBB_P300_V1_H__
 
 #include <asm/arch/cpu.h>
 
@@ -201,7 +201,7 @@
 #define CONFIG_CPU_CLK					1536 //MHz. Range: 600-1800, should be multiple of 24
 
 /* ddr */
-#define CONFIG_DDR_SIZE					1024 //MB
+#define CONFIG_DDR_SIZE					2048 //MB
 #define CONFIG_DDR_CLK					720  //MHz, Range: 384-1200, should be multiple of 24
 #define CONFIG_DDR_TYPE					CONFIG_DDR_TYPE_DDR3
 /* DDR channel setting, please refer hardware design.
