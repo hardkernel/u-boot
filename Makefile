@@ -854,6 +854,7 @@ u-boot-comp.bin:u-boot.bin
 	cp $< $@
 #	$(objtree)/tools/uclpack $< $@
 
+FUSING_FOLDER := $(srctree)/sd_fuse
 FIP_FOLDER := $(srctree)/fip
 FIP_FOLDER_SOC := $(FIP_FOLDER)/$(SOC)
 FIP_ARGS += --bl30 $(FIP_FOLDER_SOC)/bl30.bin
@@ -1401,6 +1402,7 @@ distclean: mrproper
 	@rm -f $(FIP_FOLDER_SOC)/u-boot.bin.* $(FIP_FOLDER_SOC)/*.encrypt
 	@rm -f $(FIP_FOLDER)/u-boot.bin.* $(FIP_FOLDER)/*.bin $(FIP_FOLDER)/*.encrypt
 	@rm -f $(srctree)/fip/aml_encrypt_gxb
+	@rm -f $(FUSING_FOLDER)/u-boot.bin
 
 backup:
 	F=`basename $(srctree)` ; cd .. ; \
