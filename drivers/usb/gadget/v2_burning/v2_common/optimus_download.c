@@ -729,14 +729,13 @@ int optimus_storage_init(int toErase)
                 fdtAddr = get_multi_dt_entry(fdtAddr);
 #endif// #ifdef CONFIG_MULTI_DTB
                 ret = fdt_check_header((char*)fdtAddr);
-                if (ret) {
+                unsigned fdtsz    = fdt_totalsize((char*)fdtAddr);
+                if (ret || !fdtsz || fdtsz > _dtb_is_loaded) {
                         DWN_ERR("Fail in fdt check header\n");
                         return __LINE__;
                 }
-                /*setenv("dtb_mem_addr", simple_itoa(fdtAddr));*/
-                char _cmd[64];
-                sprintf(_cmd, "setenv dtb_mem_addr 0x%lx", fdtAddr);//itoa is decimal, not mistake if others specify 16 in strtoul
-                run_command(_cmd, 0);
+                if (fdtsz < _dtb_is_loaded)
+                        memmove((char*)dtbLoadedAddr, (char*)fdtAddr, fdtsz);
         }
     }
 
