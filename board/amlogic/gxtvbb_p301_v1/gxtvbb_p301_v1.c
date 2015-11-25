@@ -40,6 +40,7 @@
 #include <amlogic/hdmi.h>
 #endif
 #include <asm/arch/eth_setup.h>
+#include <phy.h>
 #ifdef CONFIG_AML_LCD
 #include <amlogic/aml_lcd.h>
 #endif
@@ -328,7 +329,7 @@ static void setup_net_chip(void)
 #endif
 }
 
-extern int aml_eth_init(bd_t *bis);
+extern int designware_initialize(ulong base_addr, u32 interface);
 int board_eth_init(bd_t *bis)
 {
 #ifdef CONFIG_AML_PMU4
@@ -336,7 +337,7 @@ int board_eth_init(bd_t *bis)
 #endif
 	setup_net_chip();
 	udelay(1000);
-	aml_eth_init(bis);
+	designware_initialize(ETH_BASE, PHY_INTERFACE_MODE_RMII);
 	return 0;
 }
 

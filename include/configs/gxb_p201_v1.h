@@ -305,15 +305,12 @@
 /* net */
 #define CONFIG_CMD_NET   1
 #if defined(CONFIG_CMD_NET)
-	#define CONFIG_AML_ETHERNET 1
+	#define CONFIG_DESIGNWARE_ETH 1
+	#define CONFIG_PHYLIB	1
 	#define CONFIG_NET_MULTI 1
 	#define CONFIG_CMD_PING 1
 	#define CONFIG_CMD_DHCP 1
 	#define CONFIG_CMD_RARP 1
-	//#define CONFIG_NET_RGMII
-	//	//#define CONFIG_NET_RMII_CLK_EXTERNAL //use external 50MHz clock source
-	#define CONFIG_AML_ETHERNET    1                   /*to link /driver/net/aml_ethernet.c*/
-	#define IP101PHY    1                   /*to link /driver/net/aml_ethernet.c*/
 	#define CONFIG_HOSTNAME        arm_gxbb
 	#define CONFIG_ETHADDR         00:15:18:01:81:31   /* Ethernet address */
 	#define CONFIG_IPADDR          10.18.9.97          /* Our ip address */

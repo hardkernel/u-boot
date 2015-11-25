@@ -39,6 +39,7 @@
 #include <amlogic/hdmi.h>
 #endif
 #include <asm/arch/eth_setup.h>
+#include <phy.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -109,12 +110,12 @@ static void setup_net_chip(void)
 }
 
 extern struct eth_board_socket* eth_board_setup(char *name);
-extern int aml_eth_init(bd_t *bis);
+extern int designware_initialize(ulong base_addr, u32 interface);
 int board_eth_init(bd_t *bis)
 {
 	setup_net_chip();
 	udelay(1000);
-	aml_eth_init(bis);
+	designware_initialize(ETH_BASE, PHY_INTERFACE_MODE_RGMII);
 
 	return 0;
 }
