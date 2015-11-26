@@ -89,33 +89,73 @@ struct lcd_clk_config_s *get_lcd_clk_config(void)
 
 static void lcd_clk_config_print(void)
 {
-	LCDPR("lcd clk config:\n"
-		"pll_m_max:      %d\n"
-		"pll_m_min:      %d\n"
-		"pll_n_max:      %d\n"
-		"pll_n_min:      %d\n"
-		"pll_frac_range: %d\n"
-		"pll_od_sel_max: %d\n"
-		"ss_level_max:   %d\n"
-		"pll_ref_fmax:   %d\n"
-		"pll_ref_fmin:   %d\n"
-		"pll_vco_fmax:   %d\n"
-		"pll_vco_fmin:   %d\n"
-		"pll_out_fmax:   %d\n"
-		"pll_out_fmin:   %d\n"
-		"div_pre_in_fmax: %d\n"
-		"div_pre_out_fmax: %d\n"
-		"div_post_out_fmax: %d\n"
-		"xd_out_fmax: %d\n\n",
-		clk_conf.pll_m_max, clk_conf.pll_m_min,
-		clk_conf.pll_n_max, clk_conf.pll_n_min,
-		clk_conf.pll_frac_range,
-		clk_conf.pll_od_sel_max, clk_conf.ss_level_max,
-		clk_conf.pll_ref_fmax, clk_conf.pll_ref_fmin,
-		clk_conf.pll_vco_fmax, clk_conf.pll_vco_fmin,
-		clk_conf.pll_out_fmax, clk_conf.pll_out_fmin,
-		clk_conf.div_pre_in_fmax, clk_conf.div_pre_out_fmax,
-		clk_conf.div_post_out_fmax, clk_conf.xd_out_fmax);
+	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
+
+	switch (lcd_drv->chip_type) {
+	case LCD_CHIP_M8:
+	case LCD_CHIP_M8M2:
+	case LCD_CHIP_M8B:
+		LCDPR("lcd clk config:\n"
+			"pll_m_max:      %d\n"
+			"pll_m_min:      %d\n"
+			"pll_n_max:      %d\n"
+			"pll_n_min:      %d\n"
+			"pll_frac_range: %d\n"
+			"pll_od_sel_max: %d\n"
+			"ss_level_max:   %d\n"
+			"pll_ref_fmax:      %d\n"
+			"pll_ref_fmin:      %d\n"
+			"pll_vco_fmax:      %d\n"
+			"pll_vco_fmin:      %d\n"
+			"pll_out_fmax:      %d\n"
+			"pll_out_fmin:      %d\n"
+			"div_pre_in_fmax:   %d\n"
+			"div_pre_out_fmax:  %d\n"
+			"div_post_out_fmax: %d\n"
+			"xd_out_fmax:       %d\n\n",
+			clk_conf.pll_m_max, clk_conf.pll_m_min,
+			clk_conf.pll_n_max, clk_conf.pll_n_min,
+			clk_conf.pll_frac_range,
+			clk_conf.pll_od_sel_max, clk_conf.ss_level_max,
+			clk_conf.pll_ref_fmax, clk_conf.pll_ref_fmin,
+			clk_conf.pll_vco_fmax, clk_conf.pll_vco_fmin,
+			clk_conf.pll_out_fmax, clk_conf.pll_out_fmin,
+			clk_conf.div_pre_in_fmax, clk_conf.div_pre_out_fmax,
+			clk_conf.div_post_out_fmax, clk_conf.xd_out_fmax);
+		break;
+	case LCD_CHIP_G9TV:
+	case LCD_CHIP_G9BB:
+	case LCD_CHIP_GXTVBB:
+		LCDPR("lcd clk config:\n"
+			"pll_m_max:      %d\n"
+			"pll_m_min:      %d\n"
+			"pll_n_max:      %d\n"
+			"pll_n_min:      %d\n"
+			"pll_frac_range: %d\n"
+			"pll_od_sel_max: %d\n"
+			"ss_level_max:   %d\n"
+			"pll_ref_fmax:      %d\n"
+			"pll_ref_fmin:      %d\n"
+			"pll_vco_fmax:      %d\n"
+			"pll_vco_fmin:      %d\n"
+			"pll_out_fmax:      %d\n"
+			"pll_out_fmin:      %d\n"
+			"div_in_fmax:       %d\n"
+			"div_out_fmax:      %d\n"
+			"xd_out_fmax:       %d\n\n",
+			clk_conf.pll_m_max, clk_conf.pll_m_min,
+			clk_conf.pll_n_max, clk_conf.pll_n_min,
+			clk_conf.pll_frac_range,
+			clk_conf.pll_od_sel_max, clk_conf.ss_level_max,
+			clk_conf.pll_ref_fmax, clk_conf.pll_ref_fmin,
+			clk_conf.pll_vco_fmax, clk_conf.pll_vco_fmin,
+			clk_conf.pll_out_fmax, clk_conf.pll_out_fmin,
+			clk_conf.div_in_fmax, clk_conf.div_out_fmax,
+			clk_conf.xd_out_fmax);
+		break;
+	default:
+		break;
+	}
 }
 
 static void lcd_clk_config_chip_init(void)
@@ -1471,7 +1511,7 @@ void lcd_clk_set(struct lcd_config_s *pconf)
 	lcd_set_vclk_crt(pconf->lcd_basic.lcd_type, &clk_conf);
 }
 
-void clk_lcd_disable(void)
+void lcd_clk_disable(void)
 {
 	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
 

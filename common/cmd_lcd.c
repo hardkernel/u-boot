@@ -51,6 +51,52 @@ static int do_lcd_disable(cmd_tbl_t *cmdtp, int flag, int argc, char * const arg
 	return 0;
 }
 
+static int do_lcd_bl(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+	struct aml_lcd_drv_s *lcd_drv;
+	int level;
+	int ret = 0;
+
+	if (argc == 1) {
+		return -1;
+	}
+
+	lcd_drv = aml_lcd_get_driver();
+	if (lcd_drv == NULL) {
+		printf("no lcd driver\n");
+		return ret;
+	}
+	if (strcmp(argv[1], "on") == 0) {
+		if (lcd_drv->bl_on)
+			lcd_drv->bl_on();
+		else
+			printf("no lcd bl_on\n");
+	} else if (strcmp(argv[1], "off") == 0) {
+		if (lcd_drv->bl_off)
+			lcd_drv->bl_off();
+		else
+			printf("no lcd bl_off\n");
+	} else if (strcmp(argv[1], "set") == 0) {
+		if (argc == 3) {
+			level = (int)simple_strtoul(argv[2], NULL, 10);
+			if (lcd_drv->set_bl_level)
+				lcd_drv->set_bl_level(level);
+			else
+				printf("no lcd set_bl_level\n");
+		} else {
+			ret = -1;
+		}
+	} else if (strcmp(argv[1], "get") == 0) {
+		if (lcd_drv->get_bl_level)
+			lcd_drv->get_bl_level();
+		else
+			printf("no lcd set_bl_level\n");
+	} else {
+		ret = -1;
+	}
+	return ret;
+}
+
 static int do_lcd_info(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	struct aml_lcd_drv_s *lcd_drv;
@@ -91,6 +137,7 @@ static cmd_tbl_t cmd_lcd_sub[] = {
 	U_BOOT_CMD_MKENT(probe, 2, 0, do_lcd_probe, "", ""),
 	U_BOOT_CMD_MKENT(enable, 2, 0, do_lcd_enable, "", ""),
 	U_BOOT_CMD_MKENT(disable, 2, 0, do_lcd_disable, "", ""),
+	U_BOOT_CMD_MKENT(bl,   4, 0, do_lcd_bl,   "", ""),
 	U_BOOT_CMD_MKENT(info, 2, 0, do_lcd_info, "", ""),
 	U_BOOT_CMD_MKENT(test, 3, 0, do_lcd_test, "", ""),
 };
@@ -119,6 +166,7 @@ U_BOOT_CMD(
 	"lcd probe         - probe lcd parameters\n"
 	"lcd enable        - enable lcd module\n"
 	"lcd disable       - disable lcd module\n"
+	"lcd bl           - disable lcd module\n"
 	"lcd info         - show lcd parameters\n"
 	"lcd test         - show lcd bist pattern\n"
 );

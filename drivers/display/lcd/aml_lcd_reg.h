@@ -91,6 +91,16 @@
 #define PERIPHS_PIN_MUX_11                         0x37
 #define PERIPHS_PIN_MUX_12                         0x38
 
+#define PWM_PWM_A                                  0x2154
+#define PWM_PWM_B                                  0x2155
+#define PWM_MISC_REG_AB                            0x2156
+#define PWM_PWM_C                                  0x2190
+#define PWM_PWM_D                                  0x2191
+#define PWM_MISC_REG_CD                            0x2192
+#define PWM_PWM_E                                  0x21b0
+#define PWM_PWM_F                                  0x21b1
+#define PWM_MISC_REG_EF                            0x21b2
+
 /* ********************************
  * HIU:  HHI_CBUS_BASE = 0x10
  * ******************************** */
@@ -605,6 +615,11 @@
 #define VPU_VIU_VENC_MUX_CTRL                      0x271a
 
 #define VPU_MISC_CTRL                              0x2740
+
+#define VPU_VPU_PWM_V0                             0x2730
+#define VPU_VPU_PWM_V1                             0x2731
+#define VPU_VPU_PWM_V2                             0x2732
+#define VPU_VPU_PWM_V3                             0x2733
 /* ******************************** */
 
 /* ********************************

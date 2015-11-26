@@ -284,7 +284,7 @@ enum div_sel_e {
 extern struct lcd_clk_config_s *get_lcd_clk_config(void);
 
 extern void lcd_clk_set(struct lcd_config_s *pconf);
-extern void clk_lcd_disable(void);
+extern void lcd_clk_disable(void);
 
 extern void lcd_clk_generate_parameter(struct lcd_config_s *pconf);
 extern void lcd_clk_config_probe(void);

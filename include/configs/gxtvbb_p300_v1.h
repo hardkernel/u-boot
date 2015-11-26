@@ -93,7 +93,7 @@
             "fi;"\
             "\0" \
         "storeargs="\
-            "setenv bootargs rootfstype=ramfs init=/init console=ttyS0,115200 no_console_suspend earlyprintk=aml-uart,0xc81004c0 androidboot.selinux=disabled logo=${display_layer},loaded,${fb_addr},${outputmode} vout=${outputmode},enable panel_type=${panel_type} hdmitx= androidboot.firstboot=1;"\
+            "setenv bootargs rootfstype=ramfs init=/init console=ttyS0,115200 no_console_suspend earlyprintk=aml-uart,0xc81004c0 androidboot.selinux=disabled logo=${display_layer},loaded,${fb_addr} vout=${outputmode},enable panel_type=${panel_type} hdmitx= androidboot.firstboot=1;"\
             "run cmdline_keys;"\
             "\0"\
         "switch_bootmode="\
@@ -286,7 +286,7 @@
 
 #define CONFIG_AML_LCD    1
 #define CONFIG_AML_LCD_TV 1
-/* #define CONFIG_AML_LCD_TABLET 1 */
+#define CONFIG_AML_LCD_TABLET 1
 
 /* USB
  * Enable CONFIG_MUSB_HCD for Host functionalities MSC, keyboard

@@ -25,14 +25,12 @@
 //**********************************
 #define LCD_DRV_TYPE      "tv"
 
-#define LCD_DRV_VERSION    "20151105"
+#define LCD_DRV_VERSION    "20151120"
 //**********************************
 
-extern int lvds_init(struct lcd_config_s *pconf);
-extern int lvds_disable(struct lcd_config_s *pconf);
-extern int vbyone_init(struct lcd_config_s *pconf);
-extern int vbyone_disable(struct lcd_config_s *pconf);
+extern int lcd_tv_driver_init(void);
+extern void lcd_tv_driver_disable(void);
 
-extern void set_vbyone_config(struct lcd_config_s *pconf);
+extern void lcd_vbyone_config_set(struct lcd_config_s *pconf);
 
 #endif
