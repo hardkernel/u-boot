@@ -28,7 +28,11 @@ SOBJS	:= mem_init_smdk4x12.o
 SOBJS	+= clock_init_smdk4x12.o
 SOBJS	+= lowlevel_init.o
 COBJS	+= smc.o
+ifdef CONFIG_BOARD_HARDKERNEL
+COBJS	+= pmic_hkdk4212.o
+else
 COBJS	+= pmic.o
+endif
 ifndef CONFIG_SPL_BUILD
 COBJS	+= smdk4x12.o
 endif

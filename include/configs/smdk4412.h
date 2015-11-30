@@ -28,20 +28,30 @@
 /* High Level Configuration Options */
 #define CONFIG_SAMSUNG			1	/* in a SAMSUNG core */
 #define CONFIG_S5P			1	/* S5P Family */
-#define CONFIG_ARCH_EXYNOS		1       /* which is in a Exynos Family */
+#define CONFIG_ARCH_EXYNOS		1	/* which is in a Exynos Family */
 #define CONFIG_EXYNOS4X12		1	/* which is a EXYNOS4x12 SoC */
 #define CONFIG_EXYNOS4412		1	/* which is a EXYNOS4412 SoC */
-#define CONFIG_SMDKV310			1	/* working with SMDKV310*/
-#undef CONFIG_EXYNOS4412_EVT2
+#define CONFIG_S5PC210			1	/* which is in a S5PC210 */
+#define CONFIG_S5PC220			1	/* which is in a S5PC220 */
+#define CONFIG_SMDKC210			1
+#define CONFIG_SMDKC220			1
+#define CONFIG_EXYNOS4212		1
+#define CONFIG_EXYNOS4412_EVT2		1
+
+#define CONFIG_BOARD_HARDKERNEL
+
+#define CONFIG_BOARD_HARDKERNEL_FAN
+#if defined(CONFIG_BOARD_HARDKERNEL_FAN)
+#define CONFIG_BOARD_HARDKERNEL_FAN_ENABLE	y
+#define CONFIG_BOARD_HARDKERNEL_FAN_DUTY	255
+#endif
 
 #define CONFIG_BL_MONITOR
 
 #define CONFIG_TRUSTZONE
 #define CONFIG_TRUSTZONE_RESERVED_DRAM	0x100000
-#ifdef CONFIG_TRUSTZONE
-#define CONFIG_PHY_IRAM_BASE            (0x02020000)
-#define CONFIG_PHY_IRAM_NS_BASE         (CONFIG_PHY_IRAM_BASE + 0x2F000)
-#endif
+#define CONFIG_PHY_IRAM_BASE		(0x02020000)
+#define CONFIG_PHY_IRAM_NS_BASE		(CONFIG_PHY_IRAM_BASE + 0x2F000)
 
 /* Configuration of secure boot */
 #undef CONFIG_UBOOT_SECURE_BOOT
@@ -52,11 +62,11 @@
 #define CONFIG_UBOOT_SECURE_BOOT
 #define CONFIG_TZSW_SECURE_BOOT
 #define CONFIG_SECURE_ROOTFS
-#define CONFIG_SECURE_CONTEXT_BASE      0x40003800
-#define CONFIG_SECURE_KERNEL_BASE       0x40008000
-#define CONFIG_SECURE_KERNEL_SIZE       0x400000
-#define CONFIG_SECURE_ROOTFS_BASE       0x41000000
-#define CONFIG_SECURE_ROOTFS_SIZE       0x100000
+#define CONFIG_SECURE_CONTEXT_BASE	0x40003800
+#define CONFIG_SECURE_KERNEL_BASE	0x40008000
+#define CONFIG_SECURE_KERNEL_SIZE	0x400000
+#define CONFIG_SECURE_ROOTFS_BASE	0x41000000
+#define CONFIG_SECURE_ROOTFS_SIZE	0x100000
 #endif
 
 /* APLL : 800MHz */
@@ -75,8 +85,9 @@
 #endif
 
 /* Power Management is enabled */
+#define CONFIG_PM
 #define CONFIG_PM_VDD_ARM	1.2
-#define CONFIG_PM_VDD_INT	1.1
+#define CONFIG_PM_VDD_INT	1.0
 #define CONFIG_PM_VDD_G3D	1.1
 #define CONFIG_PM_VDD_MIF	1.1
 #define CONFIG_PM_VDD_LDO14	1.8
@@ -88,7 +99,11 @@
 #define CONFIG_DISPLAY_BOARDINFO
 
 /* Mach Type */
+#if defined(CONFIG_BOARD_HARDKERNEL)
+#define CONFIG_MACH_TYPE		MACH_TYPE_ODROIDX
+#else
 #define CONFIG_MACH_TYPE		MACH_TYPE_SMDK4412
+#endif
 
 /* Keep L2 Cache Disabled */
 #define CONFIG_L2_OFF			1
@@ -158,10 +173,13 @@
 #define CONFIG_MMC_EARLY_INIT
 #define MMC_MAX_CHANNEL		5
 
+#define USE_MMC2
 #define USE_MMC4
 
 #define PHASE_DEVIDER			4
 
+#define SDR_CH2			0x00010001
+#define DDR_CH2			0x00010001
 #define SDR_CH4			0x00010001
 #define DDR_CH4			0x00010001
 #endif
@@ -175,33 +193,72 @@
 /* Command definition*/
 #include <config_cmd_default.h>
 
+#define CONFIG_CMD_CACHE
+#define CONFIG_CMD_REGINFO
+
 #define CONFIG_CMD_PING
 #define CONFIG_CMD_ELF
 #define CONFIG_CMD_DHCP
 #define CONFIG_CMD_MMC
-#define CONFIG_CMD_EXT2
+#define CONFIG_CMD_EXT4
 #define CONFIG_CMD_NET
+#define CONFIG_CMD_NFS
 #define CONFIG_CMD_FAT
 #define CONFIG_CMD_BOOTZ
+#define CONFIG_CMD_MTDPARTS
+#define CONFIG_MTD_DEVICE
 
 #define CONFIG_BOOTDELAY		3
 #define CONFIG_ZERO_BOOTDELAY_CHECK
 
 /* USB */
-#undef CONFIG_CMD_USB
+#define CONFIG_CMD_USB
 /* EHCI : 2.0 Host */
-#undef CONFIG_USB_EHCI
-#undef CONFIG_USB_EHCI_EXYNOS
-#undef CONFIG_USB_STORAGE
+#define CONFIG_USB_EHCI
+#define CONFIG_USB_EHCI_EXYNOS
+#define CONFIG_USB_STORAGE
+#define CONFIG_SYS_USB_EHCI_MAX_ROOT_PORTS	10
+
+#define HAVE_BLOCK_DEVICE
 
 /* OHCI : Host 1.0 */
-#define CONFIG_USB_OHCI
+#undef CONFIG_USB_OHCI
 #undef CONFIG_USB_CPUMODE
 
 #define CONFIG_S3C_USBD
 
-#define USBD_DOWN_ADDR                  0x40000000
-#define EXYNOS_SYSREG_BASE              EXYNOS4_SYSREG_BASE
+#define USBD_DOWN_ADDR			0x40000000
+#define EXYNOS_SYSREG_BASE		EXYNOS4_SYSREG_BASE
+
+/* Gadget Support */
+#define CONFIG_USB_GADGET
+#define CONFIG_USB_GADGET_S3C_UDC_OTG
+#define CONFIG_USB_GADGET_DUALSPEED
+#define CONFIG_USB_GADGET_VBUS_DRAW 2
+#define CONFIG_USB_CABLE_CHECK
+
+/* USB gadget mass storage */
+#define CONFIG_USBDOWNLOAD_GADGET
+#define CONFIG_CMD_USB_MASS_STORAGE
+#define CONFIG_USB_GADGET_MASS_STORAGE
+
+/* USB Samsung's IDs */
+#define CONFIG_G_DNL_VENDOR_NUM 0x04E8
+#define CONFIG_G_DNL_PRODUCT_NUM 0x6601
+#define CONFIG_G_DNL_MANUFACTURER "Samsung"
+
+/* USB OTG Ethernet */
+#define CONFIG_USB_ETHER
+#define CONFIG_USB_ETH_CDC
+
+/* USB OTG MAC Addresses for HOST and DEVICE */
+#define CONFIG_USBNET_DEV_ADDR		"DE:AD:BE:EF:00:02"
+#define CONFIG_USBNET_DEV_IP		"10.10.10.11"
+#define CONFIG_USBNET_DEV_NETMASK	"255.255.255.0"
+
+#define CONFIG_USBNET_HOST_ADDR		"DE:AD:BE:EF:00:01"
+#define CONFIG_USBNET_HOST_IP		"10.10.10.10"
+#define CONFIG_USBNET_HOST_NETMASK	"255.255.255.0"
 
 /*
  *  Fast Boot
@@ -209,19 +266,42 @@
 /* Fastboot variables */
 #define CONFIG_FASTBOOT
 
-#define CFG_FASTBOOT_TRANSFER_BUFFER            (0x48000000)
-#define CFG_FASTBOOT_TRANSFER_BUFFER_SIZE       (0x10000000)   /* 256MB */
-#define CFG_FASTBOOT_ADDR_KERNEL                (0x40008000)
-#define CFG_FASTBOOT_ADDR_RAMDISK               (0x40800000)
-#define CFG_FASTBOOT_PAGESIZE                   (2048)  // Page size of booting device
-#define CFG_FASTBOOT_SDMMC_BLOCKSIZE            (512)   // Block size of sdmmc
+#define CFG_FASTBOOT_TRANSFER_BUFFER		(0x48000000)
+#define CFG_FASTBOOT_TRANSFER_BUFFER_SIZE	(0x10000000)   /* 256MB */
+#define CFG_FASTBOOT_ADDR_KERNEL		(0x40008000)
+#define CFG_FASTBOOT_ADDR_RAMDISK		(0x40800000)
+#define CFG_FASTBOOT_PAGESIZE			(2048)  // Page size of booting device
+#define CFG_FASTBOOT_SDMMC_BLOCKSIZE		(512)   // Block size of sdmmc
 #define CFG_FASTBOOT_SDMMCBSP
+
+#if defined(CONFIG_BOARD_HARDKERNEL)
+#define ON		1
+#define OFF		0
+#define REBOOT_FASTBOOT	0xFAB0
+#define REBOOT_UPDATE	0xFADA
+#endif
 
 /* MMC SPL */
 #define CONFIG_SPL
 #define COPY_BL2_FNPTR_ADDR	0x00002488
 
+#if defined(CONFIG_BOARD_HARDKERNEL)
+#define CONFIG_BOOTCOMMAND  \
+	"    cfgload;"				\
+	"    mmc rescan 0:1; mmc rescan 0:2;"	\
+	"    if run loadbootscript_1; "		\
+	"        then run bootscript; "		\
+	"    else "				\
+	"       if run loadbootscript_2;"	\
+	"           then run bootscript; "	\
+	"       else "				\
+	"           run default_bootcmd; "	\
+	"       fi ;"				\
+	"    fi ;"
+#define CONFIG_BOOTARGS		"fb_x_res=1280 fb_y_res=720 hdmi_phy_res=720 "
+#else
 #define CONFIG_BOOTCOMMAND	"movi r k 0 40008000; movi r r 0 41000000 100000; bootz 40008000 41000000"
+#endif
 
 #define CONFIG_RECOVERYCOMMAND	\
 		"emmc partition 0 10 0;"	\
@@ -249,11 +329,15 @@
 /* Miscellaneous configurable options */
 #define CONFIG_SYS_LONGHELP		/* undef to save memory */
 #define CONFIG_SYS_HUSH_PARSER		/* use "hush" command parser	*/
+#if defined(CONFIG_BOARD_HARDKERNEL)
+#define CONFIG_SYS_PROMPT		"Exynos4412 # "
+#else
 #define CONFIG_SYS_PROMPT		"SMDK4412 # "
+#endif
 #define CONFIG_SYS_CBSIZE		256	/* Console I/O Buffer Size*/
 #define CONFIG_SYS_PBSIZE		384	/* Print Buffer Size */
 #define CONFIG_SYS_MAXARGS		16	/* max number of command args */
-#define CONFIG_DEFAULT_CONSOLE		"console=ttySAC2,115200n8\0"
+#define CONFIG_DEFAULT_CONSOLE		"console=ttySAC1,115200n8\0"
 /* Boot Argument Buffer Size */
 #define CONFIG_SYS_BARGSIZE		CONFIG_SYS_CBSIZE
 /* memtest works on */
@@ -263,9 +347,11 @@
 
 #define CONFIG_SYS_HZ			1000
 
+#define CONFIG_SYS_CACHELINE_SIZE	32
+
 /* Stack sizes */
 #define CONFIG_STACKSIZE		(256 << 10)	/* 256KB */
-#undef  USE_2G_DRAM
+#define USE_2G_DRAM			1
 
 #ifdef  USE_2G_DRAM
 #define CONFIG_NR_DRAM_BANKS	8
@@ -283,8 +369,8 @@
 #ifdef  USE_2G_DRAM
 #define PHYS_SDRAM_4_SIZE	SDRAM_BANK_SIZE
 #else
-#define PHYS_SDRAM_4_SIZE	(SDRAM_BANK_SIZE                        \
-                                        - CONFIG_TRUSTZONE_RESERVED_DRAM)
+#define PHYS_SDRAM_4_SIZE	(SDRAM_BANK_SIZE			\
+					- CONFIG_TRUSTZONE_RESERVED_DRAM)
 #endif
 #define PHYS_SDRAM_5		(CONFIG_SYS_SDRAM_BASE + (4 * SDRAM_BANK_SIZE))
 #define PHYS_SDRAM_5_SIZE	SDRAM_BANK_SIZE
@@ -293,12 +379,16 @@
 #define PHYS_SDRAM_7		(CONFIG_SYS_SDRAM_BASE + (6 * SDRAM_BANK_SIZE))
 #define PHYS_SDRAM_7_SIZE	SDRAM_BANK_SIZE
 #define PHYS_SDRAM_8		(CONFIG_SYS_SDRAM_BASE + (7 * SDRAM_BANK_SIZE))
-#define PHYS_SDRAM_8_SIZE	(SDRAM_BANK_SIZE                        \
-                                        - CONFIG_TRUSTZONE_RESERVED_DRAM)
+#define PHYS_SDRAM_8_SIZE	(SDRAM_BANK_SIZE			\
+					- CONFIG_TRUSTZONE_RESERVED_DRAM)
 /* FLASH and environment organization */
 #define CONFIG_SYS_NO_FLASH		1
 #undef	CONFIG_CMD_IMLS
+#if defined(CONFIG_BOARD_HARDKERNEL)
+#define CONFIG_IDENT_STRING		" for Exynos4412"
+#else
 #define CONFIG_IDENT_STRING		" for SMDK4412"
+#endif
 
 #ifdef CONFIG_USE_IRQ
 #define CONFIG_STACKSIZE_IRQ		(4*1024)	/* IRQ stack */
@@ -317,7 +407,8 @@
 #define BL1_SIZE			(16 << 10) /*16 K reserved for BL1*/
 #define CONFIG_ENV_OFFSET		(RESERVE_BLOCK_SIZE + BL1_SIZE)
 #define CONFIG_DOS_PARTITION		1
-#define CFG_PARTITION_START             0x4000000
+#define CONFIG_PARTITION_UUIDS		1
+#define CFG_PARTITION_START		0x4000000
 
 #define CONFIG_SYS_INIT_SP_ADDR	(CONFIG_SYS_LOAD_ADDR - GENERATED_GBL_DATA_SIZE)
 
@@ -327,16 +418,15 @@
 #define BL2_SIZE_BLOC_COUNT	(COPY_BL2_SIZE/512)
 
 /* Base address for secondary boot information */
-#define CONFIG_SECONDARY_BOOT_INFORM_BASE       (CONFIG_SYS_TEXT_BASE - 0x8)
+#define CONFIG_SECONDARY_BOOT_INFORM_BASE	(CONFIG_SYS_TEXT_BASE - 0x8)
 
 /* Ethernet Controllor Driver */
 #ifdef CONFIG_CMD_NET
-#define CONFIG_SMC911X
-#define CONFIG_SMC911X_BASE		0x5000000
-#define CONFIG_SMC911X_16_BIT
-#define CONFIG_ENV_SROM_BANK		1
+#define CONFIG_USB_HOST_ETHER
+#define CONFIG_USB_ETHER_SMSC95XX
 #endif /*CONFIG_CMD_NET*/
 
 /* Enable devicetree support */
 #define CONFIG_OF_LIBFDT
+#define CONFIG_SYS_BOOTMAPSZ	(8 << 20) /* Initial Memory map for Linux */
 #endif	/* __CONFIG_H */

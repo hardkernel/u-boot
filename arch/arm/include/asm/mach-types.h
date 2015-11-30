@@ -1109,6 +1109,7 @@ extern unsigned int __machine_arch_type;
 #define MACH_TYPE_SMDK5250             3825
 #define MACH_TYPE_SMDK5410             4151
 #define MACH_TYPE_OMAP5_SEVM           3777
+#define MACH_TYPE_ODROIDX              4289
 #define MACH_TYPE_ODROIDXU			   4689
 
 #ifdef CONFIG_ARCH_EBSA110

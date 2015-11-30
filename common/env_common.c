@@ -145,6 +145,14 @@ const uchar default_environment[] = {
 	"soc="		CONFIG_SYS_SOC			"\0"
 #endif
 #endif
+#ifdef CONFIG_EHCI_EXYNOS
+	"usb_invert_clken=n\0"
+#endif
+#ifdef CONFIG_BOARD_HARDKERNEL_FAN
+	"odroid_fan_enable="	MK_STR(CONFIG_BOARD_HARDKERNEL_FAN_ENABLE)	"\0"
+	"odroid_fan_duty="	MK_STR(CONFIG_BOARD_HARDKERNEL_FAN_DUTY)	"\0"
+#endif
+
 #ifdef	CONFIG_EXTRA_ENV_SETTINGS
 	CONFIG_EXTRA_ENV_SETTINGS
 #endif
