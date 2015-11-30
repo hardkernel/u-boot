@@ -28,6 +28,8 @@
 #include <mmc.h>
 #include <partition_table.h>
 #include <emmc_partitions.h>
+#include <asm/arch/cpu_sdio.h>
+#include <asm/arch/sd_emmc.h>
 
 extern int mmc_key_erase(void);
 extern int find_dev_num_by_partition_name (char *name);
@@ -63,6 +65,50 @@ bool emmckey_is_protected (struct mmc *mmc)
 }
 
 unsigned emmc_cur_partition = 0;
+
+int mmc_read_status(struct mmc *mmc, int timeout)
+{
+	struct mmc_cmd cmd;
+	int err, retries = 5;
+	int status;
+
+	cmd.cmdidx = MMC_CMD_SEND_STATUS;
+	cmd.resp_type = MMC_RSP_R1;
+	if (!mmc_host_is_spi(mmc))
+		cmd.cmdarg = mmc->rca << 16;
+	do {
+		err = mmc_send_cmd(mmc, &cmd, NULL);
+		if (!err) {
+			if ((cmd.response[0] & MMC_STATUS_RDY_FOR_DATA) &&
+			    (cmd.response[0] & MMC_STATUS_CURR_STATE) !=
+			     MMC_STATE_PRG)
+				break;
+			else if (cmd.response[0] & MMC_STATUS_MASK) {
+				printf("Status Error: 0x%08X\n",
+					cmd.response[0]);
+				return COMM_ERR;
+			}
+		} else if (--retries < 0)
+			return err;
+
+		udelay(1000);
+
+	} while (timeout--);
+
+	status = (cmd.response[0] & MMC_STATUS_CURR_STATE) >> 9;
+	printf("CURR STATE:%d, status = 0x%x\n", status, cmd.response[0]);
+
+	if (timeout <= 0) {
+		printf("read status Timeout waiting card ready\n");
+		return TIMEOUT;
+	}
+	if (cmd.response[0] & MMC_STATUS_SWITCH_ERROR) {
+		printf("mmc status swwitch error status =0x%x\n", status);
+		return SWITCH_ERR;
+	}
+	return 0;
+}
+
 
 static int get_off_size(struct mmc * mmc, char * name, uint64_t offset, uint64_t  size, u64 * blk, u64 * cnt, u64 * sz_byte)
 {
@@ -306,12 +352,83 @@ int do_amlmmcops(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
                                 // (cnt == 0) ? (int)(mmc->block_dev.lba): cnt ,
                                 // (n == 0) ? "OK" : "ERROR");
                                 return (n == 0) ? 0 : 1;
+                        } else if (strcmp(argv[1], "status") == 0) {
+                            int dev = simple_strtoul(argv[2], NULL, 10);
+                            if (dev < 0) {
+                                printf("Cannot find dev.\n");
+                                return 1;
+                            }
+                            struct mmc *mmc = find_mmc_device(dev);
+
+                            if (!mmc)
+                                return 1;
+							if (!mmc->has_init) {
+                                printf("mmc dev %d has not been initialed\n", dev);
+                                    return 1;
+                            }
+                            rc = mmc_read_status(mmc, 1000);
+							if (rc)
+                                return 1;
+                            else
+                                return 0;
+                        } else if (strcmp(argv[1], "response") == 0) {
+                            int dev = simple_strtoul(argv[2], NULL, 10);
+                            if (dev < 0) {
+                                printf("Cannot find dev.\n");
+                                return 1;
+                            }
+                            struct mmc *mmc = find_mmc_device(dev);
+							if (!mmc)
+                                return 1;
+							if (!mmc->has_init) {
+                                printf("mmc dev %d has not been initialed\n", dev);
+                                return 1;
+                            }
+                            struct aml_card_sd_info *aml_priv = mmc->priv;
+                            struct sd_emmc_global_regs *sd_emmc_reg = aml_priv->sd_emmc_reg;
+
+                            printf("last cmd = %d, response0 = 0x%x\n",
+                                (sd_emmc_reg->gcmd_cfg & 0x3f), sd_emmc_reg->gcmd_rsp0);
+                            return 0;
+                        } else if (strcmp(argv[1], "controller") == 0) {
+                            int dev = simple_strtoul(argv[2], NULL, 10);
+                            if (dev < 0) {
+                                printf("Cannot find dev.\n");
+                                return 1;
+                            }
+                            struct mmc *mmc = find_mmc_device(dev);
+							if (!mmc)
+                                return 1;
+                            struct aml_card_sd_info *aml_priv = mmc->priv;
+                            struct sd_emmc_global_regs *sd_emmc_reg = aml_priv->sd_emmc_reg;
+                            printf("sd_emmc_reg->gclock = 0x%x\n", sd_emmc_reg->gclock);
+                            printf("sd_emmc_reg->gdelay = 0x%x\n", sd_emmc_reg->gdelay);
+                            printf("sd_emmc_reg->gadjust = 0x%x\n", sd_emmc_reg->gadjust);
+                            printf("sd_emmc_reg->reserved_0c = 0x%x\n", sd_emmc_reg->reserved_0c);
+                            printf("sd_emmc_reg->gcalout = 0x%x\n", sd_emmc_reg->gcalout);
+							if (!mmc->has_init) {
+                                printf("mmc dev %d has not been initialed\n", dev);
+                                return 1;
+                            }
+                            printf("sd_emmc_reg->gstart = 0x%x\n", sd_emmc_reg->gstart);
+                            printf("sd_emmc_reg->gcfg = 0x%x\n", sd_emmc_reg->gcfg);
+                            printf("sd_emmc_reg->gstatus = 0x%x\n", sd_emmc_reg->gstatus);
+                            printf("sd_emmc_reg->girq_en = 0x%x\n", sd_emmc_reg->girq_en);
+                            printf("sd_emmc_reg->gcmd_cfg = 0x%x\n", sd_emmc_reg->gcmd_cfg);
+                            printf("sd_emmc_reg->gcmd_arg = 0x%x\n", sd_emmc_reg->gcmd_arg);
+                            printf("sd_emmc_reg->gcmd_dat = 0x%x\n", sd_emmc_reg->gcmd_dat);
+                            printf("sd_emmc_reg->gcmd_rsp0 = 0x%x\n", sd_emmc_reg->gcmd_rsp0);
+                            printf("sd_emmc_reg->gcmd_rsp1 = 0x%x\n", sd_emmc_reg->gcmd_rsp1);
+                            printf("sd_emmc_reg->gcmd_rsp2 = 0x%x\n", sd_emmc_reg->gcmd_rsp2);
+                            printf("sd_emmc_reg->gcmd_rsp3 = 0x%x\n", sd_emmc_reg->gcmd_rsp3);
+                            return 0;
                         } else {
                                 return cmd_usage(cmdtp);
                         }
 
                 case 0:
                 case 1:
+                        return CMD_RET_USAGE;
                 case 4:
                         if (strcmp(argv[1], "switch") == 0) {
                                 int dev = simple_strtoul(argv[2], NULL, 10);
@@ -490,12 +607,8 @@ int do_amlmmcops(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
                                 /* flush cache after read */
                                 //flush_cache((ulong)addr, cnt * 512); /* FIXME */
 
-                                if (n != cnt) {
-                                        printf("MMC read: dev # %d, block # %#llx, count # %#llx, byte_size # %#llx ERROR!\n",
-                                                        dev, blk, cnt, sz_byte);
-                                        printf("%#llx blocks read: %s\n",
-                                                        n, (n==cnt) ? "OK" : "ERROR");
-                                }
+                                printf("MMC read: dev # %d, block # %#llx, count # %#llx, byte_size # %#llx %s!\n",
+                                                        dev, blk, cnt, sz_byte, (n==cnt) ? "OK" : "ERROR");
                                 return (n == cnt) ? 0 : 1;
                         } else if (strcmp(argv[1], "write") == 0) {
                                 int dev;
@@ -578,10 +691,7 @@ int do_amlmmcops(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
                                         }
                                         free(addr_tmp);
                                 }
-
-                                if (cnt != n) {
-                                        printf("%#llx blocks , %#llx bytes written: ERROR\n", n, sz_byte);
-                                }
+                                printf("%#llx blocks , %#llx bytes written: %s\n", n, sz_byte, (n==cnt) ? "OK" : "ERROR");
                                 return (n == cnt) ? 0 : 1;
                         }
                         else if (strcmp(argv[1], "erase") == 0) {
@@ -667,14 +777,17 @@ int do_amlmmcops(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 U_BOOT_CMD(
 	amlmmc, 6, 1, do_amlmmcops,
 	"AMLMMC sub system",
-	"amlmmc read  <partition name> ram_addr addr_byte# cnt_byte\n"
-	"amlmmc write <partition name> ram_addr addr_byte# cnt_byte\n"
-	"amlmmc erase <partition name> addr_byte# cnt_byte\n"
-	"amlmmc erase <partition name>/<device num>\n"
-	"amlmmc rescan <device num>\n"
-	"amlmmc part <device num> - show partition infomation of mmc\n"
+	"read  <partition_name> ram_addr addr_byte# cnt_byte\n"
+	"amlmmc write <partition_name> ram_addr addr_byte# cnt_byte\n"
+	"amlmmc erase <partition_name> addr_byte# cnt_byte\n"
+	"amlmmc erase <partition_name>/<device num>\n"
+	"amlmmc rescan <device_num>\n"
+	"amlmmc part <device_num> - show partition infomation of mmc\n"
 	"amlmmc list - lists available devices\n"
-	"amlmmc switch <device num> <part name> - part name : boot0, boot1, user");
+	"amlmmc switch <device_num> <part name> - part name : boot0, boot1, user\n"
+	"amlmmc status <device_num> - read sd/emmc device status\n"
+	"amlmmc response <device_num> - read sd/emmc last command response\n"
+	"amlmmc controller <device_num> - read sd/emmc controller register\n");
 
 int do_amlmmc_dtb_key(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
