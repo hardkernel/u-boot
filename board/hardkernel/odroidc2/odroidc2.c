@@ -16,6 +16,7 @@
 #include <asm/arch-gxb/gpio.h>
 #include <asm-generic/gpio.h>
 #include <usb/fastboot.h>
+#include <asm/arch/efuse.h>
 
 #ifdef CONFIG_AML_VPU
 #include <vpu.h>
@@ -88,6 +89,53 @@ int board_reboot_reason(void)
 	}
 
 	return __reboot_reason;
+}
+
+int board_print_info(void)
+{
+	int i;
+	int offset, length;
+	char buf[EFUSE_BYTES];
+
+	printf("-------------------------------------------------\n");
+	printf("* Welcome to Hardkernel's ODROID-C2\n");
+	printf("-------------------------------------------------\n");
+
+	/* CPU */
+	printf("CPU : AMLogic S905\n");
+
+	/* S/N */
+	offset = 20;
+	length = 16;
+	memset(buf, 0, EFUSE_BYTES);
+	efuse_read_usr(buf, length, (loff_t *)&offset);
+	buf[length] = '\0';
+	printf("S/N : ");
+	printf("%s\n", buf);
+
+	/* MAC */
+	offset = 52;
+	length = 6;
+	memset(buf, 0, EFUSE_BYTES);
+	efuse_read_usr(buf, length, (loff_t *)&offset);
+	buf[length] = '\0';
+	printf("MAC : ");
+	for (i=0;i<(length-1);i++)
+		printf("%02x:", buf[i]);
+	printf("%02x\n", buf[i]);
+
+	/* BID */
+	offset = 70;
+	length = 48;
+	memset(buf, 0, EFUSE_BYTES);
+	efuse_read_usr(buf, length, (loff_t *)&offset);
+	buf[0xA] = '\0';
+	printf("BID : ");
+	printf("%s\n", buf);
+
+	printf("-------------------------------------------------\n");
+
+	return 0;
 }
 
 #if CONFIG_AML_SD_EMMC
@@ -364,6 +412,8 @@ struct amlogic_usb_config *amlogic_usb_config(int port)
 
 int board_init(void)
 {
+	board_print_info();
+
 	/* LED: SYSLED (Blue color) */
 	gpio_request(GPIO_BLUELED, "blueled");
 	gpio_direction_output(GPIO_BLUELED, 0);
