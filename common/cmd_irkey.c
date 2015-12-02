@@ -14,7 +14,7 @@ void init_custom_trigger(void)
     setbits_le32(P_AO_RTI_PIN_MUX_REG, 1 << 0); // SET IR_DEC_INPUT
     clrbits_le32(P_AO_RTI_PIN_MUX_REG, 1 << 21); // CLEAR IR_REMOTE_OUTPU
 
-    writel((readl(P_AO_IR_DEC_REG1) | (1 << 15)), P_AO_IR_DEC_REG1);
+    writel((readl(P_AO_MF_IR_DEC_REG1) | (1 << 15)), P_AO_MF_IR_DEC_REG1);
     //printf("P_AO_IR_DEC_REG0:%x, P_AO_IR_DEC_REG1:%x\n", readl(P_AO_IR_DEC_REG0),readl(P_AO_IR_DEC_REG1));
 }
 
@@ -25,11 +25,11 @@ void ir_release(void)
 
 uint32_t read_key(void)
 {
-    if (!(readl(P_AO_IR_DEC_STATUS) & (1<<3))) {
+    if (!(readl(P_AO_MF_IR_DEC_STATUS) & (1<<3))) {
         return 0;
     }
 
-    keycode = readl(P_AO_IR_DEC_FRAME);
+    keycode = readl(P_AO_MF_IR_DEC_FRAME);
 
     printf("keycode = %x\n",keycode);
     return keycode;
