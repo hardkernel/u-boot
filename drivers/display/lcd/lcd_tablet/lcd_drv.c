@@ -192,8 +192,15 @@ static void lcd_tcon_set(struct lcd_config_s *pconf)
 	else if (pconf->lcd_basic.lcd_bits == 8)
 		lcd_vcbus_write(L_DITH_CNTL_ADDR,  0x400);
 
-	if (pconf->lcd_basic.lcd_type == LCD_LVDS)
+	switch (pconf->lcd_basic.lcd_type) {
+	case LCD_LVDS:
 		lcd_vcbus_setb(L_POL_CNTL_ADDR, 1, 0, 1);
+		if (pconf->lcd_timing.vsync_pol)
+			lcd_vcbus_setb(L_POL_CNTL_ADDR, 1, 1, 1);
+		break;
+	default:
+		break;
+	}
 
 	/* DE signal for TTL m8,m8m2 */
 	lcd_vcbus_write(L_OEH_HS_ADDR, tcon_adr->de_hs_addr);
@@ -303,6 +310,9 @@ static void lcd_lvds_control_set(struct lcd_config_s *pconf)
 	unsigned int lvds_repack = 1;
 	unsigned int port_swap = 0;
 
+	if (lcd_debug_print_flag)
+		LCDPR("%s\n", __func__);
+
 	lcd_lvds_clk_util_set(pconf);
 
 	lvds_repack = (pconf->lcd_control.lvds_config->lvds_repack) & 0x1;
@@ -349,6 +359,7 @@ static void lcd_venc_set(struct lcd_config_s *pconf)
 
 	if (lcd_debug_print_flag)
 		LCDPR("%s\n", __func__);
+
 	h_active = pconf->lcd_basic.h_active;
 	v_active = pconf->lcd_basic.v_active;
 	video_on_pixel = pconf->lcd_timing.video_on_pixel;

@@ -37,22 +37,6 @@ static void lcd_vbyone_pinmux_set(int status)
 	}
 }
 
-static void lcd_lvds_phy_set(int status)
-{
-	if (lcd_debug_print_flag)
-		LCDPR("%s: %d\n", __func__, status);
-
-	if (status) {
-		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL1, 0x6c6cca80);
-		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL2, 0x0000006c);
-		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL3, 0x0fff0800);
-	} else {
-		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL1, 0x0);
-		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL2, 0x0);
-		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL3, 0x0);
-	}
-}
-
 static void lcd_vbyone_phy_set(int status)
 {
 	if (lcd_debug_print_flag)
@@ -62,6 +46,22 @@ static void lcd_vbyone_phy_set(int status)
 		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL1, 0x6e0ec918);
 		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL2, 0x00000a7c);
 		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL3, 0x00ff0800);
+	} else {
+		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL1, 0x0);
+		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL2, 0x0);
+		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL3, 0x0);
+	}
+}
+
+static void lcd_lvds_phy_set(int status)
+{
+	if (lcd_debug_print_flag)
+		LCDPR("%s: %d\n", __func__, status);
+
+	if (status) {
+		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL1, 0x6c6cca80);
+		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL2, 0x0000006c);
+		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL3, 0x0fff0800);
 	} else {
 		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL1, 0x0);
 		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL2, 0x0);
@@ -79,8 +79,21 @@ static void lcd_tcon_set(struct lcd_config_s *pconf)
 	if (pconf->lcd_basic.lcd_bits == 8)
 		lcd_vcbus_write(L_DITH_CNTL_ADDR,  0x400);
 
-	if (pconf->lcd_basic.lcd_type == LCD_LVDS)
+	switch (pconf->lcd_basic.lcd_type) {
+	case LCD_LVDS:
 		lcd_vcbus_setb(L_POL_CNTL_ADDR, 1, 0, 1);
+		if (pconf->lcd_timing.vsync_pol)
+			lcd_vcbus_setb(L_POL_CNTL_ADDR, 1, 1, 1);
+		break;
+	case LCD_VBYONE:
+		if (pconf->lcd_timing.hsync_pol)
+			lcd_vcbus_setb(L_POL_CNTL_ADDR, 1, 0, 1);
+		if (pconf->lcd_timing.vsync_pol)
+			lcd_vcbus_setb(L_POL_CNTL_ADDR, 1, 1, 1);
+		break;
+	default:
+		break;
+	}
 
 	lcd_vcbus_write(VPP_MISC, lcd_vcbus_read(VPP_MISC) & ~(VPP_OUT_SATURATE));
 }
@@ -120,6 +133,9 @@ static void lcd_lvds_control_set(struct lcd_config_s *pconf)
 	unsigned int dual_port = 1;
 	unsigned int lvds_repack = 1;
 	unsigned int port_swap = 0;
+
+	if (lcd_debug_print_flag)
+		LCDPR("%s\n", __func__);
 
 	lcd_lvds_clk_util_set(pconf);
 
@@ -363,7 +379,7 @@ static void lcd_vbyone_wait_stable(void)
 	int i = 1000;
 
 	while ((lcd_vcbus_read(VBO_STATUS_L) & 0x3f) != 0x20) {
-		udelay(5);
+		udelay(10);
 		if (i-- == 0)
 			break;
 	}
@@ -377,6 +393,7 @@ static void lcd_venc_set(struct lcd_config_s *pconf)
 
 	if (lcd_debug_print_flag)
 		LCDPR("%s\n", __func__);
+
 	h_active = pconf->lcd_basic.h_active;
 	v_active = pconf->lcd_basic.v_active;
 	video_on_pixel = pconf->lcd_timing.video_on_pixel;
@@ -425,6 +442,9 @@ void lcd_vbyone_config_set(struct lcd_config_s *pconf)
 	unsigned int lcd_bits;
 	unsigned int temp, i;
 
+	if (lcd_debug_print_flag)
+		LCDPR("%s\n", __func__);
+
 	//auto calculate bandwidth, clock
 	lane_count = pconf->lcd_control.vbyone_config->lane_count;
 	lcd_bits = 10;
@@ -467,8 +487,12 @@ void lcd_vbyone_config_set(struct lcd_config_s *pconf)
 
 	pconf->lcd_control.vbyone_config->phy_div = phy_div;
 	pconf->lcd_control.vbyone_config->bit_rate = bit_rate;
-	//LCDPR("lane_count=%u, bit_rate = %uMHz, pclk=%u.%03uMhz\n",
-	//	lane_count, (bit_rate / 1000000), (pclk / 1000), (pclk % 1000));
+
+	if (lcd_debug_print_flag) {
+		LCDPR("lane_count=%u, bit_rate = %uMHz, pclk=%u.%03uMhz\n",
+			lane_count, (bit_rate / 1000000),
+			(pclk / 1000), (pclk % 1000));
+	}
 }
 
 int lcd_tv_driver_init(void)
@@ -483,7 +507,7 @@ int lcd_tv_driver_init(void)
 	lcd_clk_set(pconf);
 	lcd_venc_set(pconf);
 	lcd_tcon_set(pconf);
-	switch (lcd_drv->lcd_config->lcd_basic.lcd_type) {
+	switch (pconf->lcd_basic.lcd_type) {
 	case LCD_LVDS:
 		lcd_lvds_control_set(pconf);
 		lcd_lvds_phy_set(1);

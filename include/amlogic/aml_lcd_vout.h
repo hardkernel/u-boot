@@ -412,6 +412,7 @@ struct aml_lcd_drv_s {
 	void (*lcd_disable)(void);
 	void (*lcd_test)(int num);
 	void (*lcd_info)(void);
+	void (*lcd_reg)(void);
 	void (*bl_on)(void);
 	void (*bl_off)(void);
 	void (*set_bl_level)(int level);

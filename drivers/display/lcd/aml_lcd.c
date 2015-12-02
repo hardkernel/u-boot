@@ -581,7 +581,7 @@ static void lcd_power_info_print(struct lcd_config_s *pconf, int status)
 	}
 }
 
-static void print_lcd_info(void)
+static void lcd_info_print(void)
 {
 	unsigned int lcd_clk;
 	unsigned int sync_duration;
@@ -632,6 +632,198 @@ static void print_lcd_info(void)
 
 	lcd_power_info_print(pconf, 1);
 	lcd_power_info_print(pconf, 0);
+}
+
+static unsigned int lcd_reg_dump_clk[] = {
+	HHI_HDMI_PLL_CNTL,
+	HHI_HDMI_PLL_CNTL2,
+	HHI_HDMI_PLL_CNTL3,
+	HHI_HDMI_PLL_CNTL4,
+	HHI_HDMI_PLL_CNTL5,
+	HHI_HDMI_PLL_CNTL6,
+	HHI_VID_PLL_CLK_DIV,
+	HHI_VIID_CLK_DIV,
+	HHI_VIID_CLK_CNTL,
+	HHI_VID_CLK_CNTL2,
+};
+
+static unsigned int lcd_reg_dump_encl[] = {
+	VPU_VIU_VENC_MUX_CTRL,
+	ENCL_VIDEO_EN,
+	ENCL_VIDEO_MODE,
+	ENCL_VIDEO_MODE_ADV,
+	ENCL_VIDEO_MAX_PXCNT,
+	ENCL_VIDEO_MAX_LNCNT,
+	ENCL_VIDEO_HAVON_BEGIN,
+	ENCL_VIDEO_HAVON_END,
+	ENCL_VIDEO_VAVON_BLINE,
+	ENCL_VIDEO_VAVON_ELINE,
+	ENCL_VIDEO_HSO_BEGIN,
+	ENCL_VIDEO_HSO_END,
+	ENCL_VIDEO_VSO_BEGIN,
+	ENCL_VIDEO_VSO_END,
+	ENCL_VIDEO_VSO_BLINE,
+	ENCL_VIDEO_VSO_ELINE,
+	ENCL_VIDEO_RGBIN_CTRL,
+	L_GAMMA_CNTL_PORT,
+	L_RGB_BASE_ADDR,
+	L_RGB_COEFF_ADDR,
+	L_POL_CNTL_ADDR,
+	L_DITH_CNTL_ADDR,
+};
+
+static void lcd_ttl_reg_print(void)
+{
+	unsigned int reg;
+
+	printf("\nttl registers:\n");
+	reg = L_DUAL_PORT_CNTL_ADDR;
+	printf("PORT_CNTL           [0x%04x] = 0x%08x\n",
+		reg, lcd_vcbus_read(reg));
+	reg = L_STH1_HS_ADDR;
+	printf("STH1_HS_ADDR        [0x%04x] = 0x%08x\n",
+		reg, lcd_vcbus_read(reg));
+	reg = L_STH1_HE_ADDR;
+	printf("STH1_HE_ADDR        [0x%04x] = 0x%08x\n",
+		reg, lcd_hiu_read(reg));
+	reg = L_STH1_VS_ADDR;
+	printf("STH1_VS_ADDR        [0x%04x] = 0x%08x\n",
+		reg, lcd_hiu_read(reg));
+	reg = L_STH1_VE_ADDR;
+	printf("STH1_VE_ADDR        [0x%04x] = 0x%08x\n",
+		reg, lcd_hiu_read(reg));
+	reg = L_STV1_HS_ADDR;
+	printf("STV1_HS_ADDR        [0x%04x] = 0x%08x\n",
+		reg, lcd_hiu_read(reg));
+	reg = L_STV1_HE_ADDR;
+	printf("STV1_HE_ADDR        [0x%04x] = 0x%08x\n",
+		reg, lcd_hiu_read(reg));
+	reg = L_STV1_VS_ADDR;
+	printf("STV1_VS_ADDR        [0x%04x] = 0x%08x\n",
+		reg, lcd_hiu_read(reg));
+	reg = L_STV1_VE_ADDR;
+	printf("STV1_VE_ADDR        [0x%04x] = 0x%08x\n",
+		reg, lcd_hiu_read(reg));
+	reg = L_OEH_HS_ADDR;
+	printf("OEH_HS_ADDR         [0x%04x] = 0x%08x\n",
+		reg, lcd_hiu_read(reg));
+	reg = L_OEH_HE_ADDR;
+	printf("OEH_HE_ADDR         [0x%04x] = 0x%08x\n",
+		reg, lcd_hiu_read(reg));
+	reg = L_OEH_VS_ADDR;
+	printf("OEH_VS_ADDR         [0x%04x] = 0x%08x\n",
+		reg, lcd_hiu_read(reg));
+	reg = L_OEH_VE_ADDR;
+	printf("OEH_VE_ADDR         [0x%04x] = 0x%08x\n",
+		reg, lcd_hiu_read(reg));
+}
+
+static void lcd_lvds_reg_print(void)
+{
+	unsigned int reg;
+
+	printf("\nlvds registers:\n");
+	reg = LVDS_PACK_CNTL_ADDR;
+	printf("LVDS_PACK_CNTL      [0x%04x] = 0x%08x\n",
+		reg, lcd_vcbus_read(reg));
+	reg = LVDS_GEN_CNTL;
+	printf("LVDS_GEN_CNTL       [0x%04x] = 0x%08x\n",
+		reg, lcd_vcbus_read(reg));
+	reg = HHI_LVDS_TX_PHY_CNTL0;
+	printf("LVDS_PHY_CNTL0      [0x%04x] = 0x%08x\n",
+		reg, lcd_hiu_read(reg));
+	reg = HHI_LVDS_TX_PHY_CNTL1;
+	printf("LVDS_PHY_CNTL1      [0x%04x] = 0x%08x\n",
+		reg, lcd_hiu_read(reg));
+}
+
+static void lcd_vbyone_reg_print(void)
+{
+	unsigned int reg;
+
+	printf("\nvbyone registers:\n");
+	reg = PERIPHS_PIN_MUX_7;
+	printf("VX1_PINMUX          [0x%04x] = 0x%08x\n",
+		reg, lcd_periphs_read(reg));
+	reg = VBO_STATUS_L;
+	printf("VX1_STATUS          [0x%04x] = 0x%08x\n",
+		reg, lcd_vcbus_read(reg));
+	reg = VBO_FSM_HOLDER_L;
+	printf("VX1_FSM_HOLDER_L    [0x%04x] = 0x%08x\n",
+		reg, lcd_vcbus_read(reg));
+	reg = VBO_FSM_HOLDER_H;
+	printf("VX1_FSM_HOLDER_H    [0x%04x] = 0x%08x\n",
+		reg, lcd_vcbus_read(reg));
+	reg = VBO_INTR_STATE_CTRL;
+	printf("VX1_INTR_STATE_CTRL [0x%04x] = 0x%08x\n",
+		reg, lcd_vcbus_read(reg));
+	reg = VBO_INTR_UNMASK;
+	printf("VX1_INTR_UNMASK     [0x%04x] = 0x%08x\n",
+		reg, lcd_vcbus_read(reg));
+	reg = VBO_INTR_STATE;
+	printf("VX1_INTR_STATE      [0x%04x] = 0x%08x\n",
+		reg, lcd_vcbus_read(reg));
+	reg = HHI_LVDS_TX_PHY_CNTL0;
+	printf("VX1_PHY_CNTL0       [0x%04x] = 0x%08x\n",
+		reg, lcd_hiu_read(reg));
+}
+
+static void lcd_phy_analog_reg_print(void)
+{
+	unsigned int reg;
+
+	printf("\nphy analog registers:\n");
+	reg = HHI_DIF_CSI_PHY_CNTL1;
+	printf("PHY_CNTL1           [0x%04x] = 0x%08x\n",
+		reg, lcd_hiu_read(reg));
+	reg = HHI_DIF_CSI_PHY_CNTL2;
+	printf("PHY_CNTL2           [0x%04x] = 0x%08x\n",
+		reg, lcd_hiu_read(reg));
+	reg = HHI_DIF_CSI_PHY_CNTL3;
+	printf("PHY_CNTL3           [0x%04x] = 0x%08x\n",
+		reg, lcd_hiu_read(reg));
+}
+
+static void lcd_reg_print(void)
+{
+	int i;
+	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
+	struct lcd_config_s *pconf;
+
+	pconf = lcd_drv->lcd_config;
+	printf("clk registers:\n");
+	for (i = 0; i < ARRAY_SIZE(lcd_reg_dump_clk); i++) {
+		printf("hiu     [0x%04x] = 0x%08x\n",
+			lcd_reg_dump_clk[i],
+			lcd_hiu_read(lcd_reg_dump_clk[i]));
+	}
+
+	printf("\nencl registers:\n");
+	for (i = 0; i < ARRAY_SIZE(lcd_reg_dump_encl); i++) {
+		printf("vcbus   [0x%04x] = 0x%08x\n",
+			lcd_reg_dump_encl[i],
+			lcd_vcbus_read(lcd_reg_dump_encl[i]));
+	}
+
+	switch (pconf->lcd_basic.lcd_type) {
+	case LCD_TTL:
+		lcd_ttl_reg_print();
+		break;
+	case LCD_LVDS:
+		lcd_lvds_reg_print();
+		lcd_phy_analog_reg_print();
+		break;
+	case LCD_VBYONE:
+		lcd_vbyone_reg_print();
+		lcd_phy_analog_reg_print();
+		break;
+	case LCD_MIPI:
+		break;
+	case LCD_EDP:
+		break;
+	default:
+		break;
+	}
 }
 
 #ifdef CONFIG_OF_LIBFDT
@@ -1204,7 +1396,14 @@ static void aml_lcd_info(void)
 {
 	if (lcd_check_valid())
 		return;
-	print_lcd_info();
+	lcd_info_print();
+}
+
+static void aml_lcd_reg(void)
+{
+	if (lcd_check_valid())
+		return;
+	lcd_reg_print();
 }
 
 static void aml_set_backlight_level(int level)
@@ -1237,6 +1436,7 @@ static struct aml_lcd_drv_s aml_lcd_driver = {
 	.lcd_disable = lcd_disable,
 	.lcd_test = aml_lcd_test,
 	.lcd_info = aml_lcd_info,
+	.lcd_reg = aml_lcd_reg,
 	.bl_on = aml_backlight_power_on,
 	.bl_off = aml_backlight_power_off,
 	.set_bl_level = aml_set_backlight_level,

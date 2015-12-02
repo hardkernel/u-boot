@@ -51,11 +51,11 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	/* power step */
 	lcd_power_on_step, lcd_power_off_step,
 	/* backlight */
-	BL_CTRL_MAX,0,1,0,50,50,
-	BL_PWM_POSITIVE,BL_PWM_B,180,100,25,1,0,50,50,
+	BL_CTRL_MAX,0,1,0,200,200,
+	BL_PWM_POSITIVE,BL_PWM_B,180,100,25,1,0,180,220,
 	60,10,255,128,128},
 
-	{/*BOE: HV550QU2-305 vx1 : 3840x2160@60hz 8lane */
+	{/*public vx1 : 3840x2160@60hz 8lane */
 	"vbyone_0",LCD_VBYONE,10,
 	/* basic timing */
 	3840,2160,4400,2250,33,477,0,6,81,0,
@@ -66,8 +66,8 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	/* power step */
 	lcd_power_on_step, lcd_power_off_step,
 	/* backlight */
-	BL_CTRL_MAX,0,1,0,50,50,
-	BL_PWM_POSITIVE,BL_PWM_B,180,100,25,1,0,50,50,
+	BL_CTRL_MAX,0,1,0,200,200,
+	BL_PWM_POSITIVE,BL_PWM_B,180,100,25,1,0,180,220,
 	60,10,255,128,128},
 
 	{/*LG: RDL550WY: 3840x2160@60hz 8lane */
@@ -81,8 +81,8 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	/* power step */
 	lcd_power_on_step, lcd_power_off_step,
 	/* backlight */
-	BL_CTRL_MAX,0,1,0,50,50,
-	BL_PWM_POSITIVE,BL_PWM_B,180,100,25,1,0,50,50,
+	BL_CTRL_MAX,0,1,0,200,200,
+	BL_PWM_POSITIVE,BL_PWM_B,180,100,25,1,0,180,220,
 	60,10,255,128,128},
 
 	{/*INL: V580DJ2: 3840x2160@60hz 8lane */
@@ -96,8 +96,23 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	/* power step */
 	lcd_power_on_step, lcd_power_off_step,
 	/* backlight */
-	BL_CTRL_MAX,0,1,0,50,50,
-	BL_PWM_POSITIVE,BL_PWM_B,180,100,25,1,0,50,50,
+	BL_CTRL_MAX,0,1,0,200,200,
+	BL_PWM_POSITIVE,BL_PWM_B,180,100,25,1,0,180,220,
+	60,10,255,128,128},
+
+	{/*BOE: HV550QU2: 3840x2160@60hz 8lane */
+	"vbyone_3",LCD_VBYONE,10,
+	/* basic timing */
+	3840,2160,4400,2250,33,477,1,6,81,0,
+	/* clk_attr */
+	2,0,1,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	/* vbyone_attr */
+	8,2,4,4,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	/* power step */
+	lcd_power_on_step, lcd_power_off_step,
+	/* backlight */
+	BL_CTRL_MAX,0,1,0,200,200,
+	BL_PWM_POSITIVE,BL_PWM_B,180,100,25,1,0,180,220,
 	60,10,255,128,128},
 };
 
@@ -188,7 +203,7 @@ struct bl_config_s bl_config_dft = {
 
 	.method = BL_CTRL_MAX,
 	.power_on_delay = 200,
-	.power_off_delay = 30,
+	.power_off_delay = 200,
 
 	.gpio = 0,
 	.gpio_on = 1,
@@ -201,8 +216,8 @@ struct bl_config_s bl_config_dft = {
 	.pwm_duty_min = 20,
 	.pwm_gpio = 1,
 	.pwm_gpio_off = 0,
-	.pwm_on_delay = 200,
-	.pwm_off_delay = 30,
+	.pwm_on_delay = 180,
+	.pwm_off_delay = 220,
 
 	.gpio_name = lcd_bl_gpio,
 	.pinmux_set = {{10, 0x00800000}, {LCD_PINMUX_END, 0x0}},
