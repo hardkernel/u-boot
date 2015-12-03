@@ -21,8 +21,10 @@
 *.patch
 *.cfgtmp
 *.diff
-fip/*.bl2
-fip/*.tpl
+*.bl2
+*.tpl
+*.efuse
+*.encrypt
 
 # host programs on Cygwin
 *.exe

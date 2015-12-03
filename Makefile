@@ -1476,6 +1476,8 @@ help:
 	@echo  ''
 	@echo  'Execute "make" or "make all" to build all targets marked with [*] '
 	@echo  'For further info see the ./README file'
+	@export srctree
+	@$(srctree)/amlogic_help.sh
 
 
 # Documentation targets
