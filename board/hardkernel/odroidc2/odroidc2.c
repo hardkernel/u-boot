@@ -348,10 +348,6 @@ int board_late_init(void)
 {
 	int reboot_reason;
 
-#ifdef CONFIG_DISPLAY_LOGO
-	run_command("showlogo 720p60hz", 0);
-#endif
-
 	/*
 	 * If UMS SW is 'on', the device will run as USB Mass Storage
 	 */
@@ -359,6 +355,10 @@ int board_late_init(void)
 		run_command("ums 0 mmc 0", 0);
 
 	board_partition_init();
+
+#ifdef CONFIG_DISPLAY_LOGO
+	run_command("showlogo 720p60hz", 0);
+#endif
 
 	reboot_reason = board_reboot_reason();
 	if (ODROID_REBOOT_CMD_FASTBOOT == reboot_reason)
