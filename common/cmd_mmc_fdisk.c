@@ -15,6 +15,9 @@
 
 #define		BLOCK_SIZE			512
 #define		BLOCK_END			0xFFFFFFFF
+
+#define		_1GB_BLOCK_CNT  		(2*1024*1024)
+
 #define		_10MB				(10*1024*1024)
 #define		_100MB				(100*1024*1024)
 #define		_8_4GB				(1023*254*63)
@@ -533,3 +536,42 @@ U_BOOT_CMD(
 	"fdisk -c <device_num> [<sys. part size(MB)> <user data part size> <cache part size>]\t- create partition.\n"
 );
 
+int do_get_mmc_size(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
+{
+	int total_block_count = 0;
+	unsigned char   mmc_size[5];
+
+	if ( argc == 2 )
+	{
+		total_block_count = get_mmc_block_count(argv[1]);
+		memset(mmc_size, 0x00, sizeof(mmc_size));
+
+		if 	(total_block_count > (200 * _1GB_BLOCK_CNT))    sprintf(mmc_size, "%d", 256);
+		else if (total_block_count > (100 * _1GB_BLOCK_CNT))    sprintf(mmc_size, "%d", 128);
+		else if (total_block_count > (50  * _1GB_BLOCK_CNT))    sprintf(mmc_size, "%d", 64);
+		else if (total_block_count > (25  * _1GB_BLOCK_CNT))    sprintf(mmc_size, "%d", 32);
+		else if (total_block_count > (10  * _1GB_BLOCK_CNT))    sprintf(mmc_size, "%d", 16);
+		else if (total_block_count > (5   * _1GB_BLOCK_CNT))    sprintf(mmc_size, "%d", 8);
+		else if (total_block_count > (3   * _1GB_BLOCK_CNT))    sprintf(mmc_size, "%d", 4);
+		else if (total_block_count > (1   * _1GB_BLOCK_CNT))    sprintf(mmc_size, "%d", 2);
+		else 							sprintf(mmc_size, "%d", 1);
+	
+		if (total_block_count < 0)  {
+			printf("error total block count == 0\n");
+			return -1;
+		}
+		setenv("mmc_size_gb", mmc_size);
+	}
+	else
+	{
+	           printf("Usage:\nget_mmc_size <device_num>\n");
+	}
+	return 0;
+}
+
+U_BOOT_CMD(
+	get_mmc_size, 2, 0, do_get_mmc_size,
+	"get_mmc_size\t- mmc size check for sd/mmc.\n",
+	"env mmc_size_gb = 1, 2, 4, 8, 16, 32, 64, 128.\n"
+	"get_mmc_size <device_num>\n"
+);
