@@ -1,6 +1,6 @@
 
 /*
- * include/configs/gxtvbb_p300_v1.h
+ * include/configs/gxtvbb_p301_v1.h
  *
  * Copyright (C) 2015 Amlogic, Inc. All rights reserved.
  *
@@ -55,140 +55,174 @@
 /* args/envs */
 #define CONFIG_SYS_MAXARGS  64
 #define CONFIG_EXTRA_ENV_SETTINGS \
-        "firstboot=1\0"\
-        "upgrade_step=0\0"\
-        "loadaddr=1080000\0"\
-        "panel_type=lvds_0\0" \
-        "outputmode=1080p60hz\0" \
-        "display_width=1920\0" \
-        "display_height=1080\0" \
-        "display_bpp=16\0" \
-        "display_color_index=16\0" \
-        "display_layer=osd1\0" \
-        "display_color_fg=0xffff\0" \
-        "display_color_bg=0\0" \
-        "dtb_mem_addr=0x1000000\0" \
-        "fb_addr=0x3b000000\0" \
-        "fb_width=1920\0" \
-        "fb_height=1080\0" \
-        "usb_burning=update 1000\0" \
-        "fdt_high=0x20000000\0"\
-        "try_auto_burn=update 700 750;\0"\
-        "sdcburncfg=aml_sdc_burn.ini\0"\
-        "sdc_burning=sdc_burn ${sdcburncfg}\0"\
-        "wipe_data=successful\0"\
-        "wipe_cache=successful\0"\
-        "upgrade_check="\
-            "echo upgrade_step=${upgrade_step}; "\
-            "if itest ${upgrade_step} == 3; then "\
-                "run init_display; run storeargs; run update;"\
-            "else if itest ${upgrade_step} == 1; then "\
-                "env default -a; setenv upgrade_step 2; saveenv;"\
-            "fi;fi;"\
-            "\0"\
-	    "bootmode_check="\
-            "get_rebootmode; echo reboot_mode=${reboot_mode};"\
-            "if test ${reboot_mode} = factory_reset; then "\
-                "env default -a;save;"\
-            "fi;"\
-            "\0" \
-        "storeargs="\
-            "setenv bootargs rootfstype=ramfs init=/init console=ttyS0,115200 no_console_suspend earlyprintk=aml-uart,0xc81004c0 androidboot.selinux=disabled logo=${display_layer},loaded,${fb_addr} vout=${outputmode},enable panel_type=${panel_type} hdmitx= androidboot.firstboot=1;"\
-            "run cmdline_keys;"\
-            "\0"\
-        "switch_bootmode="\
-            "get_rebootmode;"\
-            "if test ${reboot_mode} = factory_reset; then "\
-                    "run recovery_from_flash;"\
-            "else if test ${reboot_mode} = update; then "\
-                    "run update;"\
-            "else if test ${reboot_mode} = cold_boot; then "\
-                "run try_auto_burn; "\
-            "fi;fi;fi;"\
-            "\0" \
-        "storeboot="\
-            "if imgread kernel boot ${loadaddr}; then store dtb read $dtb_mem_addr; bootm ${loadaddr}; fi;"\
-            "run update;"\
-            "\0"\
-        "factory_reset_poweroff_protect="\
-            "echo wipe_data=${wipe_data}; echo wipe_cache=${wipe_cache};"\
-            "if test ${wipe_data} = failed; then "\
-                "run init_display; run storeargs;"\
-                "if mmcinfo; then "\
-                    "run recovery_from_sdcard;"\
-                "fi;"\
-                "if usb start 0; then "\
-                    "run recovery_from_udisk;"\
-                "fi;"\
-                "run recovery_from_flash;"\
-            "fi; "\
-            "if test ${wipe_cache} = failed; then "\
-                "run init_display; run storeargs;"\
-                "if mmcinfo; then "\
-                    "run recovery_from_sdcard;"\
-                "fi;"\
-                "if usb start 0; then "\
-                    "run recovery_from_udisk;"\
-                "fi;"\
-                "run recovery_from_flash;"\
-            "fi; \0" \
-         "update="\
-            /*first usb burning, second sdc_burn, third ext-sd autoscr/recovery, last udisk autoscr/recovery*/\
-            "run usb_burning; "\
-            "run sdc_burning; "\
-            "if mmcinfo; then "\
-                "run recovery_from_sdcard;"\
-            "fi;"\
-            "if usb start 0; then "\
-                "run recovery_from_udisk;"\
-            "fi;"\
-            "run recovery_from_flash;"\
-            "\0"\
-        "recovery_from_sdcard="\
-            "if fatload mmc 0 ${loadaddr} aml_autoscript; then autoscr ${loadaddr}; fi;"\
-            "if fatload mmc 0 ${loadaddr} recovery.img; then "\
-                    "if fatload mmc 0 ${dtb_mem_addr} dtb.img; then echo sd dtb.img loaded; fi;"\
-                    "bootm ${loadaddr};fi;"\
-            "\0"\
-        "recovery_from_udisk="\
-            "if fatload usb 0 ${loadaddr} aml_autoscript; then autoscr ${loadaddr}; fi;"\
-            "if fatload usb 0 ${loadaddr} recovery.img; then "\
-                "if fatload usb 0 ${dtb_mem_addr} dtb.img; then echo udisk dtb.img loaded; fi;"\
-                "bootm ${loadaddr};fi;"\
-            "\0"\
-        "recovery_from_flash="\
-            "if imgread kernel recovery ${loadaddr}; then bootm ${loadaddr}; fi"\
-            "\0"\
-        "init_display="\
-            "osd open;osd clear;vout output ${outputmode};imgread pic logo bootup $loadaddr;bmp display $bootup_offset;bmp scale"\
-            "\0"\
-        "cmdline_keys="\
-            "if keyman init 0x1234; then "\
-                "if keyman read usid ${loadaddr} str; then "\
-                    "setenv bootargs ${bootargs} androidboot.serialno=${usid};"\
-                "fi;"\
-                "if keyman read mac ${loadaddr} str; then "\
-                    "setenv bootargs ${bootargs} mac=${mac} androidboot.mac=${mac};"\
-                "fi;"\
-                "if keyman read deviceid ${loadaddr} str; then "\
-                    "setenv bootargs ${bootargs} androidboot.deviceid=${deviceid};"\
-                "fi;"\
-            "fi;"\
-            "\0"\
-        "upgrade_key="\
-            "if gpio input GPIOAO_3; then "\
-                "echo detect upgrade key; sleep 5; run update;"\
-            "fi;"\
-            "\0"\
+	"firstboot=1\0"\
+	"upgrade_step=0\0"\
+	"loadaddr=1080000\0"\
+	"panel_type=lvds_0\0" \
+	"outputmode=1080p60hz\0" \
+	"display_width=1920\0" \
+	"display_height=1080\0" \
+	"display_bpp=16\0" \
+	"display_color_index=16\0" \
+	"display_layer=osd1\0" \
+	"display_color_fg=0xffff\0" \
+	"display_color_bg=0\0" \
+	"dtb_mem_addr=0x1000000\0" \
+	"fb_addr=0x3b000000\0" \
+	"fb_width=1920\0" \
+	"fb_height=1080\0" \
+	"usb_burning=update 1000\0" \
+	"fdt_high=0x20000000\0"\
+	"try_auto_burn=update 700 750;\0"\
+	"sdcburncfg=aml_sdc_burn.ini\0"\
+	"sdc_burning=sdc_burn ${sdcburncfg}\0"\
+	"wipe_data=successful\0"\
+	"wipe_cache=successful\0"\
+	"jtag=apao\0"\
+	"upgrade_check="\
+		"echo upgrade_step=${upgrade_step}; "\
+		"if itest ${upgrade_step} == 3; then "\
+			"run init_display; run storeargs; run update; "\
+		"else if itest ${upgrade_step} == 1; then "\
+			"env default -a; setenv upgrade_step 2; saveenv; "\
+		"fi; fi; "\
+		"\0"\
+	"bootmode_check="\
+		"get_rebootmode; echo reboot_mode=${reboot_mode}; "\
+		"if test ${reboot_mode} = factory_reset; then "\
+			"env default -a; save; "\
+		"fi; "\
+		"\0" \
+	"storeargs="\
+		"setenv bootargs rootfstype=ramfs init=/init "\
+		"console=ttyS0,115200 no_console_suspend "\
+		"earlyprintk=aml-uart,0xc81004c0 "\
+		"androidboot.selinux=disabled "\
+		"logo=${display_layer},loaded,${fb_addr} "\
+		"vout=${outputmode},enable "\
+		"panel_type=${panel_type} hdmitx= "\
+		"jtag=${jtag} "\
+		"androidboot.firstboot=1; "\
+		"run cmdline_keys; "\
+		"\0"\
+	"switch_bootmode="\
+		"get_rebootmode; "\
+		"if test ${reboot_mode} = factory_reset; then "\
+			"run recovery_from_flash; "\
+		"else if test ${reboot_mode} = update; then "\
+			"run update; "\
+		"else if test ${reboot_mode} = cold_boot; then "\
+			"run try_auto_burn; "\
+		"fi; fi; fi; "\
+		"\0" \
+	"storeboot="\
+		"if imgread kernel boot ${loadaddr}; then "\
+			"store dtb read $dtb_mem_addr; "\
+			"bootm ${loadaddr}; "\
+		"fi; "\
+		"run update; "\
+		"\0"\
+	"factory_reset_poweroff_protect="\
+		"echo wipe_data=${wipe_data}; echo wipe_cache=${wipe_cache}; "\
+		"if test ${wipe_data} = failed; then "\
+			"run init_display; run storeargs; "\
+			"if mmcinfo; then "\
+				"run recovery_from_sdcard; "\
+			"fi; "\
+			"if usb start 0; then "\
+				"run recovery_from_udisk; "\
+			"fi; "\
+			"run recovery_from_flash; "\
+		"fi; "\
+		"if test ${wipe_cache} = failed; then "\
+			"run init_display; run storeargs; "\
+			"if mmcinfo; then "\
+				"run recovery_from_sdcard; "\
+			"fi; "\
+			"if usb start 0; then "\
+				"run recovery_from_udisk; "\
+			"fi; "\
+			"run recovery_from_flash; "\
+		"fi; "\
+		"\0" \
+	"update="\
+		/*first usb burning,
+		second sdc_burn,
+		third ext-sd autoscr/recovery,
+		last udisk autoscr/recovery*/\
+		"run usb_burning; "\
+		"run sdc_burning; "\
+		"if mmcinfo; then "\
+			"run recovery_from_sdcard; "\
+		"fi; "\
+		"if usb start 0; then "\
+			"run recovery_from_udisk; "\
+		"fi; "\
+		"run recovery_from_flash; "\
+		"\0"\
+	"recovery_from_sdcard="\
+		"if fatload mmc 0 ${loadaddr} aml_autoscript; then "\
+			"autoscr ${loadaddr}; "\
+		"fi; "\
+		"if fatload mmc 0 ${loadaddr} recovery.img; then "\
+			"if fatload mmc 0 ${dtb_mem_addr} dtb.img; then "\
+				"echo sd dtb.img loaded; "\
+			"fi; "\
+			"bootm ${loadaddr}; "\
+		"fi; "\
+		"\0"\
+	"recovery_from_udisk="\
+		"if fatload usb 0 ${loadaddr} aml_autoscript; then "\
+			"autoscr ${loadaddr}; "\
+		"fi; "\
+		"if fatload usb 0 ${loadaddr} recovery.img; then "\
+			"if fatload usb 0 ${dtb_mem_addr} dtb.img; then "\
+				"echo udisk dtb.img loaded; "\
+			"fi; "\
+			"bootm ${loadaddr}; "\
+		"fi; "\
+		"\0"\
+	"recovery_from_flash="\
+		"if imgread kernel recovery ${loadaddr}; then "\
+			"bootm ${loadaddr}; "\
+		"fi"\
+		"\0"\
+	"init_display="\
+		"osd open; osd clear; "\
+		"vout output ${outputmode}; "\
+		"imgread pic logo bootup $loadaddr; "\
+		"bmp display $bootup_offset; bmp scale"\
+		"\0"\
+	"cmdline_keys="\
+		"if keyman init 0x1234; then "\
+			"if keyman read usid ${loadaddr} str; then "\
+				"setenv bootargs ${bootargs} "\
+				"androidboot.serialno=${usid}; "\
+			"fi; "\
+			"if keyman read mac ${loadaddr} str; then "\
+				"setenv bootargs ${bootargs} "\
+				"mac=${mac} androidboot.mac=${mac}; "\
+			"fi; "\
+			"if keyman read deviceid ${loadaddr} str; then "\
+				"setenv bootargs ${bootargs} "\
+				"androidboot.deviceid=${deviceid}; "\
+			"fi; "\
+		"fi; "\
+		"\0"\
+	"upgrade_key="\
+		"if gpio input GPIOAO_3; then "\
+			"echo detect upgrade key; sleep 5; run update; "\
+		"fi; "\
+		"\0"\
 
 #define CONFIG_PREBOOT  \
-            "run factory_reset_poweroff_protect;"\
-            "run upgrade_check;"\
-            "run bootmode_check;"\
-            "run init_display;"\
-            "run storeargs;"\
-            "run upgrade_key;" \
-            "run switch_bootmode;"
+	"run factory_reset_poweroff_protect; "\
+	"run upgrade_check; "\
+	"run bootmode_check; "\
+	"run init_display; "\
+	"run storeargs; "\
+	"run upgrade_key; "\
+	"run switch_bootmode;"
 #define CONFIG_BOOTCOMMAND "run storeboot"
 
 //#define CONFIG_ENV_IS_NOWHERE  1
