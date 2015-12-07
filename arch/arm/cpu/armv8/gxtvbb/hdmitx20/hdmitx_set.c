@@ -127,7 +127,7 @@ static int hdmitx_get_hpd_state(void)
 {
 	int st = 0;
 
-	st = !!(hd_read_reg(P_PREG_PAD_GPIO1_I) & (1 << 20));
+	st = !!(hd_read_reg(P_PREG_PAD_GPIO1_I) & (1 << 25));
 	return st;
 }
 
@@ -219,10 +219,10 @@ static void ddc_init(void)
 //--------------------------------------------------------------------------
 // Configure E-DDC interface
 //--------------------------------------------------------------------------
-	hd_set_reg_bits(P_PAD_PULL_UP_EN_REG1, 0, 19, 2);    // Disable GPIOH_3/4 pull-up/down
-	hd_set_reg_bits(P_PAD_PULL_UP_REG1, 0, 19, 2);
-	hd_set_reg_bits(P_PREG_PAD_GPIO1_EN_N, 3, 2, 2);     // GPIOH_3/4 input
-	hd_set_reg_bits(P_PERIPHS_PIN_MUX_1, 3, 24, 2);      // Mux DDC SDA/SCL
+	hd_set_reg_bits(P_PAD_PULL_UP_EN_REG1, 0, 23, 2);    // Disable GPIOH_3/4 pull-up/down
+	hd_set_reg_bits(P_PAD_PULL_UP_REG1, 0, 23, 2);
+	hd_set_reg_bits(P_PREG_PAD_GPIO1_EN_N, 3, 24, 2);     // GPIOH_3/4 input
+	hd_set_reg_bits(P_PERIPHS_PIN_MUX_7, 3, 19, 2);      // Mux DDC SDA/SCL
 
 	data32  = 0;
 	data32 |= (0    << 6);  // [  6] read_req_mask
