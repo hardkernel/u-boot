@@ -122,5 +122,6 @@ unsigned aml_reboot(uint64_t function_id, uint64_t arg0, uint64_t arg1, uint64_t
 unsigned long aml_sec_boot_check(unsigned long ,unsigned long ,unsigned long,unsigned long );
 long get_sharemem_info(unsigned long);
 void set_usb_boot_function(unsigned long command);
+void aml_system_off(void);
 
 #endif

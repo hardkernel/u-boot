@@ -186,3 +186,16 @@ U_BOOT_CMD(
 	"    3: RUN_COMD_USB_BOOT/recovery\n"
 	"    4: PANIC_DUMP_USB_BOOT\n"
 );
+
+int do_systemoff(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+	aml_system_off();
+	return 0;
+}
+
+
+U_BOOT_CMD(
+	systemoff,	2,	1,	do_systemoff,
+	"system off ",
+	"systemoff "
+);
