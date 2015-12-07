@@ -12,6 +12,7 @@
 #include <linux/ctype.h>    /* isalpha, isdigit */
 #include <linux/err.h>
 #include <usb/fastboot.h>
+#include <mmc.h>
 
 static int isstring(const char *p)
 {
@@ -88,6 +89,69 @@ U_BOOT_CMD(
 		"    - read the partitoin/sector of storage to memory\n"
 		"    - write the partiton/sector of storage from memory\n"
 		"    - all parameters must be hexa-decimal only\n"
+);
+
+#define		_1GB_BLOCK_CNT  		(2*1024*1024)
+
+/////////////////////////////////////////////////////////////////
+int get_mmc_block_count(char *device_name)
+{
+	struct mmc *mmc;
+	int block_count = 0;
+	int dev_num;
+
+	dev_num = simple_strtoul(device_name, NULL, 0);
+
+	mmc = find_mmc_device(dev_num);
+	if (!mmc)
+	{
+		printf("mmc/sd device is NOT founded.\n");
+		return -1;
+	}
+
+	block_count = mmc->capacity / mmc->read_bl_len;
+
+	return block_count;
+}
+
+static int do_get_mmc_size(cmd_tbl_t* cmdtp, int flag, int argc, char *const argv[])
+{
+	int total_block_count = 0;
+	char   mmc_size[5];
+
+	if ( argc == 2 )
+	{
+		total_block_count = get_mmc_block_count(argv[1]);
+		memset(mmc_size, 0x00, sizeof(mmc_size));
+
+		if 	(total_block_count > (200 * _1GB_BLOCK_CNT))    sprintf(mmc_size, "%d", 256);
+		else if (total_block_count > (100 * _1GB_BLOCK_CNT))    sprintf(mmc_size, "%d", 128);
+		else if (total_block_count > (50  * _1GB_BLOCK_CNT))    sprintf(mmc_size, "%d", 64);
+		else if (total_block_count > (25  * _1GB_BLOCK_CNT))    sprintf(mmc_size, "%d", 32);
+		else if (total_block_count > (10  * _1GB_BLOCK_CNT))    sprintf(mmc_size, "%d", 16);
+		else if (total_block_count > (5   * _1GB_BLOCK_CNT))    sprintf(mmc_size, "%d", 8);
+		else if (total_block_count > (3   * _1GB_BLOCK_CNT))    sprintf(mmc_size, "%d", 4);
+		else if (total_block_count > (1   * _1GB_BLOCK_CNT))    sprintf(mmc_size, "%d", 2);
+		else 							sprintf(mmc_size, "%d", 1);
+
+		if (total_block_count < 0)  {
+			printf("error total block count == 0\n");
+			return -1;
+		}
+		setenv("mmc_size_gb", mmc_size);
+	}
+	else
+	{
+	           printf("Usage:\nget_mmc_size <device_num>\n");
+	}
+	return 0;
+}
+
+U_BOOT_CMD(
+	get_mmc_size, 2, 0, do_get_mmc_size,
+	"get_mmc_size\t- mmc size check for sd/mmc.\n",
+	"env mmc_size_gb = 1, 2, 4, 8, 16, 32, 64, 128.\n"
+	"get_mmc_size <device_num>\n"
 );
 
 /* vim: set ts=4 sw=4 tw=80: */
