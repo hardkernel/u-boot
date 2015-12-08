@@ -644,10 +644,10 @@ static int do_store_erase(cmd_tbl_t * cmdtp, int flag, int argc, char * const ar
     off = off;
     area = argv[2];
     if (strcmp(area, "boot") == 0) {
+            off =  argc > 3 ? simple_strtoul(argv[3], NULL, 16) : 0;
+            size =  argc > 4 ? simple_strtoul(argv[4], NULL, 16) : 0x60000;
         if (device_boot_flag == NAND_BOOT_FLAG) {
             #if defined(CONFIG_AML_NAND)
-            off =  simple_strtoul(argv[3], NULL, 16);
-            size =  simple_strtoul(argv[4], NULL, 16);
             store_dbg("NAND BOOT,erase uboot : %s %d  off =%llx ,size=%llx",__func__,__LINE__, off, size);
 
             ret = run_command("amlnf deverase boot 0",0);
@@ -660,9 +660,6 @@ static int do_store_erase(cmd_tbl_t * cmdtp, int flag, int argc, char * const ar
             }
             return ret;
         }else if((device_boot_flag==SPI_EMMC_FLAG)||(device_boot_flag==SPI_NAND_FLAG)){
-            off =  simple_strtoul(argv[3], NULL, 16);
-            size =  simple_strtoul(argv[4], NULL, 16);
-
             store_dbg("SPI BOOT,erase uboot :  %s %d  off =%llx ,size=%llx",__func__,__LINE__,off,size);
 
             ret = run_command("sf probe 2",0);
@@ -678,9 +675,6 @@ static int do_store_erase(cmd_tbl_t * cmdtp, int flag, int argc, char * const ar
             }
             return ret;
         }else if(device_boot_flag == EMMC_BOOT_FLAG){
-            off =  simple_strtoul(argv[3], NULL, 16);
-            size =  simple_strtoul(argv[4], NULL, 16);
-
             store_dbg("MMC BOOT,erase uboot :  %s %d  off =%llx ,size=%llx",__func__,__LINE__,off,size);
 
             sprintf(str, "amlmmc  erase bootloader");

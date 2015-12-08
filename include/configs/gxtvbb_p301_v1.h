@@ -84,13 +84,13 @@
 		"if itest ${upgrade_step} == 3; then "\
 			"run init_display; run storeargs; run update; "\
 		"else if itest ${upgrade_step} == 1; then "\
-			"env default -a; setenv upgrade_step 2; saveenv; "\
+			"defenv_reserv; setenv upgrade_step 2; saveenv; "\
 		"fi; fi; "\
 		"\0"\
 	"bootmode_check="\
 		"get_rebootmode; echo reboot_mode=${reboot_mode}; "\
 		"if test ${reboot_mode} = factory_reset; then "\
-			"env default -a; save; "\
+			"defenv_reserv aml_dt;setenv upgrade_step 2; save;"\
 		"fi; "\
 		"\0" \
 	"storeargs="\
@@ -102,7 +102,7 @@
 		"vout=${outputmode},enable "\
 		"panel_type=${panel_type} hdmitx= "\
 		"jtag=${jtag} "\
-		"androidboot.firstboot=1; "\
+		"androidboot.firstboot=${firstboot}; "\
 		"run cmdline_keys; "\
 		"\0"\
 	"switch_bootmode="\
@@ -183,6 +183,7 @@
 		"fi; "\
 		"\0"\
 	"recovery_from_flash="\
+                "setenv bootargs ${bootargs} aml_dt=${aml_dt};"\
 		"if imgread kernel recovery ${loadaddr}; then "\
 			"bootm ${loadaddr}; "\
 		"fi"\
