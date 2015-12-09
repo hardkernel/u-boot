@@ -26,6 +26,13 @@
 #include <vxworks.h>
 #include <asm/arch/timer.h>
 
+#ifdef CONFIG_ODROID_C2
+#include <asm/arch-gxb/gpio.h>
+#include <asm-generic/gpio.h>
+#define GPIO_TF3V3		35
+#define GPIO_TF1V8		122
+#endif
+
 #if defined(CONFIG_ARMV7_NONSEC) || defined(CONFIG_ARMV7_VIRT)
 #include <asm/armv7.h>
 #endif
@@ -196,6 +203,21 @@ static void do_nonsec_virt_switch(void)
 	armv8_switch_to_el2();
 #ifdef CONFIG_ARMV8_SWITCH_TO_EL1
 	armv8_switch_to_el1();
+#endif
+
+#ifdef CONFIG_ODROID_C2
+	/* T-Flash card reset */
+	gpio_request(GPIO_TF1V8, "TF_1V8");
+	gpio_request(GPIO_TF3V3, "TF_3V3");
+
+	gpio_direction_output(GPIO_TF1V8, 0);
+	udelay(500000);
+	gpio_direction_output(GPIO_TF1V8, 1);
+	gpio_direction_output(GPIO_TF3V3, 0);
+	udelay(500000);
+
+	gpio_direction_output(GPIO_TF1V8, 0);
+	gpio_direction_output(GPIO_TF3V3, 1);
 #endif
 }
 #endif

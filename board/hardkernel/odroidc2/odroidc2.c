@@ -34,6 +34,8 @@ extern int board_get_recovery_message(void);
 #define GPIO_BLUELED		132
 #define GPIO_USB_PWREN		123
 #define GPIO_OTG_PWREN		124
+#define GPIO_TF3V3		35	/* GPIOY_12 */
+#define GPIO_TF1V8		122	/* GPIOAO_3 */
 
 int serial_set_pin_port(unsigned long port_base)
 {
@@ -413,6 +415,12 @@ struct amlogic_usb_config *amlogic_usb_config(int port)
 int board_init(void)
 {
 	board_print_info();
+
+	/* T-Flash Init voltage : T-Flash I/O 3.3V, T-Flash mem 3.3V */
+	gpio_request(GPIO_TF1V8, "TF_1V8");
+	gpio_direction_output(GPIO_TF1V8, 0);
+	gpio_request(GPIO_TF3V3, "TF_3V3");
+	gpio_direction_output(GPIO_TF3V3, 1);
 
 	/* LED: SYSLED (Blue color) */
 	gpio_request(GPIO_BLUELED, "blueled");
