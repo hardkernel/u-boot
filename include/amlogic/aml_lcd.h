@@ -62,12 +62,19 @@ struct ext_lcd_config_s {
 	struct lcd_power_step_s *power_on_step;
 	struct lcd_power_step_s *power_off_step;
 
+	/* backlight */
+	unsigned int level_default;
+	unsigned int level_max;
+	unsigned int level_min;
+	unsigned int level_mid;
+	unsigned int level_mid_mapping;
+
 	unsigned int bl_method;
-	unsigned int bl_gpio;
-	unsigned short bl_on_value;
-	unsigned short bl_off_value;
-	unsigned short bl_on_delay;
-	unsigned short bl_off_delay;
+	unsigned int bl_en_gpio;
+	unsigned short bl_en_gpio_on;
+	unsigned short bl_en_gpio_off;
+	unsigned short bl_power_on_delay;
+	unsigned short bl_power_off_delay;
 
 	unsigned int pwm_method;
 	unsigned int pwm_port;
@@ -76,14 +83,25 @@ struct ext_lcd_config_s {
 	unsigned int pwm_duty_min;
 	unsigned int pwm_gpio;
 	unsigned int pwm_gpio_off;
+
+	unsigned int pwm2_method;
+	unsigned int pwm2_port;
+	unsigned int pwm2_freq;
+	unsigned int pwm2_duty_max;
+	unsigned int pwm2_duty_min;
+	unsigned int pwm2_gpio;
+	unsigned int pwm2_gpio_off;
+
+	unsigned int pwm_level_max;
+	unsigned int pwm_level_min;
+	unsigned int pwm2_level_max;
+	unsigned int pwm2_level_min;
+
 	unsigned int pwm_on_delay;
 	unsigned int pwm_off_delay;
 
-	unsigned int level_default;
-	unsigned int level_min;
-	unsigned int level_max;
-	unsigned int level_mid;
-	unsigned int level_mid_mapping;
+	/* backlight extern */
+	unsigned int bl_ext_index;
 };
 
 #define LCD_NUM_MAX         10

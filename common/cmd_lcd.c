@@ -87,10 +87,12 @@ static int do_lcd_bl(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 			ret = -1;
 		}
 	} else if (strcmp(argv[1], "get") == 0) {
-		if (lcd_drv->get_bl_level)
-			lcd_drv->get_bl_level();
-		else
+		if (lcd_drv->get_bl_level) {
+			level = lcd_drv->get_bl_level();
+			printf("lcd get_bl_level: %d\n", level);
+		} else {
 			printf("no lcd set_bl_level\n");
+		}
 	} else {
 		ret = -1;
 	}

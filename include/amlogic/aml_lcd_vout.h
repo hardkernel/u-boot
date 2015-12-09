@@ -326,7 +326,7 @@ enum bl_pwm_method_e {
 	BL_PWM_METHOD_MAX,
 };
 
-enum bl_pwm_e {
+enum bl_pwm_port_e {
 	BL_PWM_A = 0,
 	BL_PWM_B,
 	BL_PWM_C,
@@ -352,6 +352,23 @@ enum bl_pwm_e {
 #define BL_LEVEL_DEFAULT	BL_LEVEL_MID
 
 #define BL_GPIO_NUM_MAX		5
+
+struct bl_pwm_config_s {
+	enum bl_pwm_method_e pwm_method;
+	enum bl_pwm_port_e pwm_port;
+	unsigned int level_max;
+	unsigned int level_min;
+	unsigned int pwm_freq; /* pwm_vs: 1~4(vfreq), pwm: freq(unit: Hz) */
+	unsigned int pwm_duty_max; /* unit: % */
+	unsigned int pwm_duty_min; /* unit: % */
+	unsigned int pwm_cnt; /* internal used for pwm control */
+	unsigned int pwm_pre_div; /* internal used for pwm control */
+	unsigned int pwm_max; /* internal used for pwm control */
+	unsigned int pwm_min; /* internal used for pwm control */
+	unsigned int pwm_gpio;
+	unsigned int pwm_gpio_off;
+};
+
 struct bl_config_s {
 	char name[20];
 	int level_default;
@@ -362,28 +379,19 @@ struct bl_config_s {
 	int level;
 
 	enum bl_ctrl_method_e method;
+	unsigned int en_gpio;
+	unsigned int en_gpio_on;
+	unsigned int en_gpio_off;
 	unsigned short power_on_delay;
 	unsigned short power_off_delay;
-
-	int gpio;
-	unsigned short gpio_on;
-	unsigned short gpio_off;
 	unsigned int dim_max;
 	unsigned int dim_min;
 
-	enum bl_pwm_method_e pwm_method;
-	enum bl_pwm_e pwm_port;
-	unsigned int pwm_freq; /* pwm_vs: 1~4(vfreq multiple), other pwm: real freq(unit: Hz) */
-	unsigned int pwm_duty_max; /* unit: % */
-	unsigned int pwm_duty_min; /* unit: % */
-	unsigned int pwm_cnt; /* internal used for pwm control */
-	unsigned int pwm_pre_div; /* internal used for pwm control */
-	unsigned int pwm_max; /* internal used for pwm control */
-	unsigned int pwm_min; /* internal used for pwm control */
-	int pwm_gpio;
-	unsigned int pwm_gpio_off;
-	unsigned short pwm_on_delay;
-	unsigned short pwm_off_delay;
+	struct bl_pwm_config_s *bl_pwm;
+	struct bl_pwm_config_s *bl_pwm_combo0;
+	struct bl_pwm_config_s *bl_pwm_combo1;
+	unsigned int pwm_on_delay;
+	unsigned int pwm_off_delay;
 
 	char **gpio_name;
 	//unsigned pinmux_set_num;

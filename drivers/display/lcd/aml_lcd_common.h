@@ -27,7 +27,6 @@ extern int lcd_type_str_to_type(const char *str);
 extern char *lcd_type_type_to_str(int type);
 extern int lcd_mode_str_to_mode(const char *str);
 extern char *lcd_mode_mode_to_str(int mode);
-extern int lcd_backlight_get_pwm_port(char *str);
 extern void vpp_set_matrix_ycbcr2rgb(int vd1_or_vd2_or_post, int mode);
 extern void lcd_tcon_config(struct lcd_config_s *pconf);
 
@@ -39,6 +38,15 @@ extern unsigned int aml_lcd_gpio_input_get(int gpio);
 /* lcd driver */
 extern int get_lcd_tv_config(char *dt_addr, int load_id);
 extern int get_lcd_tablet_config(char *dt_addr, int load_id);
+
+/* aml_bl driver */
+extern void aml_bl_set_level(unsigned int level);
+extern unsigned int aml_bl_get_level(void);
+extern void aml_bl_power_ctrl(int status);
+#ifdef CONFIG_OF_LIBFDT
+extern int aml_bl_config_load_from_dts(char *dt_addr, unsigned int index, struct bl_config_s *bconf);
+#endif
+extern int aml_bl_config_load_from_bsp(struct bl_config_s *bconf);
 
 #endif
 

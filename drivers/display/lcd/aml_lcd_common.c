@@ -85,30 +85,6 @@ char *lcd_mode_mode_to_str(int mode)
 	return lcd_mode_table[mode];
 }
 
-int lcd_backlight_get_pwm_port(char *str)
-{
-	int port;
-
-	if (strcmp(str, "PWM_A") == 0)
-		port = BL_PWM_A;
-	else if (strcmp(str, "PWM_B") == 0)
-		port = BL_PWM_B;
-	else if (strcmp(str, "PWM_C") == 0)
-		port = BL_PWM_C;
-	else if (strcmp(str, "PWM_D") == 0)
-		port = BL_PWM_D;
-	else if (strcmp(str, "PWM_E") == 0)
-		port = BL_PWM_E;
-	else if (strcmp(str, "PWM_F") == 0)
-		port = BL_PWM_F;
-	else if (strcmp(str, "PWM_VS") == 0)
-		port = BL_PWM_VS;
-	else
-		port = BL_PWM_MAX;
-
-	return port;
-}
-
 void vpp_set_matrix_ycbcr2rgb(int vd1_or_vd2_or_post, int mode)
 {
 	if (vd1_or_vd2_or_post == 0) { //vd1
@@ -199,10 +175,10 @@ void lcd_tcon_config(struct lcd_config_s *pconf)
 	pconf->lcd_timing.vs_ve_addr = vend;
 
 	if (lcd_debug_print_flag) {
-		LCDPR("hs_hs_addr=%d, hs_he_addr=%d, hs_vs_addr=%d, hs_ve_addr=%d\n"
-			"vs_hs_addr=%d, vs_he_addr=%d, vs_vs_addr=%d, vs_ve_addr=%d\n",
+		LCDPR("hs_hs_addr=%d, hs_he_addr=%d, hs_vs_addr=%d, hs_ve_addr=%d\n",
 			pconf->lcd_timing.hs_hs_addr, pconf->lcd_timing.hs_he_addr,
-			pconf->lcd_timing.hs_vs_addr, pconf->lcd_timing.hs_ve_addr,
+			pconf->lcd_timing.hs_vs_addr, pconf->lcd_timing.hs_ve_addr);
+		LCDPR("vs_hs_addr=%d, vs_he_addr=%d, vs_vs_addr=%d, vs_ve_addr=%d\n",
 			pconf->lcd_timing.vs_hs_addr, pconf->lcd_timing.vs_he_addr,
 			pconf->lcd_timing.vs_vs_addr, pconf->lcd_timing.vs_ve_addr);
 	}
