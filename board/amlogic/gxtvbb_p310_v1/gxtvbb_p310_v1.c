@@ -299,6 +299,7 @@ static void setup_net_chip(void)
 	eth_reg0.b.rgmii_rx_reuse = 0;
 	eth_reg0.b.eth_urgent = 0;
 	setbits_le32(P_PREG_ETH_REG0, eth_reg0.d32);// rgmii mode
+	setbits_le32(P_PREG_ETH_REG1, 0x20000);// rx delay
 
 	setbits_le32(HHI_GCLK_MPEG1,1<<3);
 
