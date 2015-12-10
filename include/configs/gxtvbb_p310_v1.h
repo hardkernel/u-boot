@@ -165,6 +165,7 @@
 			"if fatload mmc 0 ${dtb_mem_addr} dtb.img; then "\
 				"echo sd dtb.img loaded; "\
 			"fi; "\
+			"wipeisb; "\
 			"bootm ${loadaddr}; "\
 		"fi; "\
 		"\0"\
@@ -176,12 +177,14 @@
 			"if fatload usb 0 ${dtb_mem_addr} dtb.img; then "\
 				"echo udisk dtb.img loaded; "\
 			"fi; "\
+			"wipeisb; "\
 			"bootm ${loadaddr}; "\
 		"fi; "\
 		"\0"\
 	"recovery_from_flash="\
                 "setenv bootargs ${bootargs} aml_dt=${aml_dt};"\
 		"if imgread kernel recovery ${loadaddr}; then "\
+			"wipeisb; "\
 			"bootm ${loadaddr}; "\
 		"fi"\
 		"\0"\
