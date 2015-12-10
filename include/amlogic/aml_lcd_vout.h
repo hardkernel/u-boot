@@ -173,7 +173,7 @@ struct lcd_effect_s {
 };
 
 struct ttl_config_s {
-	unsigned int pol_ctrl; /* [3]clk, [2]DE, [1]vsync, [0]hsync */
+	unsigned int clk_pol;
 	unsigned int sync_valid; /* [1]DE, [0]hvsync */
 	unsigned int swap_ctrl; /* [1]rb swap, [0]bit swap */
 };

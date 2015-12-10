@@ -254,18 +254,16 @@ static void lcd_tcon_set(struct lcd_config_s *pconf)
 	lcd_vcbus_write(L_VSYNC_VE_ADDR,  tcon_adr->vs_ve_addr);
 
 	lcd_vcbus_write(L_INV_CNT_ADDR, 0);
-	lcd_vcbus_write(L_TCON_MISC_SEL_ADDR,
-		((1 << STV1_SEL) | (1 << STV2_SEL)));
+	lcd_vcbus_write(L_TCON_MISC_SEL_ADDR, ((1 << STV1_SEL) | (1 << STV2_SEL)));
 
-	lcd_vcbus_write(VPP_MISC,
-		lcd_vcbus_read(VPP_MISC) & ~(VPP_OUT_SATURATE));
+	lcd_vcbus_write(VPP_MISC, lcd_vcbus_read(VPP_MISC) & ~(VPP_OUT_SATURATE));
 }
 
 static void lcd_ttl_control_set(struct lcd_config_s *pconf)
 {
 	unsigned int clk_pol, rb_swap, bit_swap;
 
-	clk_pol = pconf->lcd_control.ttl_config->pol_ctrl;
+	clk_pol = pconf->lcd_control.ttl_config->clk_pol;
 	rb_swap = (pconf->lcd_control.ttl_config->swap_ctrl >> 1) & 1;
 	bit_swap = (pconf->lcd_control.ttl_config->swap_ctrl >> 0) & 1;
 
@@ -287,7 +285,7 @@ static void lcd_lvds_clk_util_set(struct lcd_config_s *pconf)
 		phy_div = 1;
 	}
 
-	lcd_vcbus_write(LVDS_GEN_CNTL, (lcd_vcbus_read(LVDS_GEN_CNTL)| (1 << 4) | (fifo_mode << 0)));
+	lcd_vcbus_write(LVDS_GEN_CNTL, (lcd_vcbus_read(LVDS_GEN_CNTL) | (1 << 4) | (fifo_mode << 0)));
 	lcd_vcbus_setb(LVDS_GEN_CNTL, 1, 3, 1);
 
 	/* set fifo_clk_sel: div 7 */

@@ -179,6 +179,11 @@ void lcd_tcon_config(struct lcd_config_s *pconf)
 	pconf->lcd_timing.video_on_pixel = de_hstart;
 	pconf->lcd_timing.video_on_line = de_vstart;
 
+	pconf->lcd_timing.de_hs_addr = de_hstart;
+	pconf->lcd_timing.de_he_addr = de_hstart + h_active;
+	pconf->lcd_timing.de_vs_addr = de_vstart;
+	pconf->lcd_timing.de_ve_addr = de_vstart + v_active - 1;
+
 	hstart = (de_hstart + h_period - hsync_bp - hsync_width) % h_period;
 	hend = (de_hstart + h_period - hsync_bp) % h_period;
 	pconf->lcd_timing.hs_hs_addr = hstart;

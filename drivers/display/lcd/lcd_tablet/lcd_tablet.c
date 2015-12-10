@@ -69,7 +69,7 @@ static void lcd_config_load_print(struct lcd_config_s *pconf)
 	LCDPR("clk_auto = %d\n", pconf->lcd_timing.clk_auto);
 
 	if (pconf->lcd_basic.lcd_type == LCD_TTL) {
-		LCDPR("pol_ctrl = %d\n", pconf->lcd_control.ttl_config->pol_ctrl);
+		LCDPR("clk_pol = %d\n", pconf->lcd_control.ttl_config->clk_pol);
 		LCDPR("sync_valid = %d\n", pconf->lcd_control.ttl_config->sync_valid);
 		LCDPR("swap_ctrl = %d\n", pconf->lcd_control.ttl_config->swap_ctrl);
 	} else if (pconf->lcd_basic.lcd_type == LCD_LVDS) {
@@ -195,7 +195,7 @@ static int lcd_config_load_from_dts(char *dt_addr, struct lcd_config_s *pconf)
 		if (propdata == NULL) {
 			LCDERR("failed to get ttl_attr\n");
 		} else {
-			pconf->lcd_control.ttl_config->pol_ctrl = be32_to_cpup((u32*)propdata);
+			pconf->lcd_control.ttl_config->clk_pol = be32_to_cpup((u32*)propdata);
 			pconf->lcd_control.ttl_config->sync_valid =
 				(((be32_to_cpup((((u32*)propdata)+1))) << 1) |
 				((be32_to_cpup((((u32*)propdata)+2))) << 0));
@@ -360,7 +360,7 @@ static int lcd_config_load_from_bsp(struct lcd_config_s *pconf)
 		pconf->lcd_timing.clk_auto = (unsigned char)temp;
 
 	if (pconf->lcd_basic.lcd_type == LCD_TTL) {
-		pconf->lcd_control.ttl_config->pol_ctrl = ext_lcd->lcd_spc_val0;
+		pconf->lcd_control.ttl_config->clk_pol = ext_lcd->lcd_spc_val0;
 		pconf->lcd_control.ttl_config->sync_valid =
 			((ext_lcd->lcd_spc_val1 << 1) |
 			(ext_lcd->lcd_spc_val2 << 0));
