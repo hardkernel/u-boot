@@ -1,0 +1,226 @@
+/*
+ * AMLOGIC TV LCD panel driver.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the named License,
+ * or any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ */
+
+#include <common.h>
+#include <amlogic/aml_lcd.h>
+#include <asm/arch/gpio.h>
+
+//Rsv_val = 0xffffffff
+
+static char *lcd_cpu_gpio[LCD_CPU_GPIO_NUM_MAX] = {
+	"GPIOX_3",
+	"invalid", /* ending flag */
+};
+
+static struct lcd_power_step_s lcd_power_on_step[] = {
+	{LCD_POWER_TYPE_SIGNAL,0,0,50,},
+	{LCD_POWER_TYPE_MAX,   0,0,0,},
+};
+static struct lcd_power_step_s lcd_power_off_step[] = {
+	{LCD_POWER_TYPE_SIGNAL,0,0,50,},
+	{LCD_POWER_TYPE_MAX,   0,0,0,},
+};
+
+static char *lcd_bl_gpio[BL_GPIO_NUM_MAX] = {
+	"GPIOAO_4",
+	"GPIOY_13",
+	"invalid", /* ending flag */
+};
+
+struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
+	{/* AOC: public Platform lvds : 1920x1080@60hz 8bit pixel clk@74.25mhz 2prot*/
+	"lvds_0",LCD_LVDS,8,
+	/* basic timing */
+	1920,1080,2200,1125,44,148,0,5,36,0,
+	/* clk_attr */
+	0,0,1,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	/* lvds_attr */
+	1,1,0,0,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	/* power step */
+	lcd_power_on_step, lcd_power_off_step,
+	/* backlight */
+	BL_CTRL_MAX,0,1,0,200,200,
+	BL_PWM_POSITIVE,BL_PWM_B,180,100,25,1,0,180,220,
+	60,10,255,128,128},
+
+	{/*public vx1 : 3840x2160@60hz 8lane */
+	"vbyone_0",LCD_VBYONE,10,
+	/* basic timing */
+	3840,2160,4400,2250,33,477,0,6,81,0,
+	/* clk_attr */
+	0,0,1,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	/* vbyone_attr */
+	8,2,4,4,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	/* power step */
+	lcd_power_on_step, lcd_power_off_step,
+	/* backlight */
+	BL_CTRL_MAX,0,1,0,200,200,
+	BL_PWM_POSITIVE,BL_PWM_B,180,100,25,1,0,180,220,
+	60,10,255,128,128},
+
+	{/*LG: RDL550WY: 3840x2160@60hz 8lane */
+	"vbyone_1",LCD_VBYONE,10,
+	/* basic timing */
+	3840,2160,4400,2250,33,477,0,6,81,0,
+	/* clk_attr */
+	2,0,1,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	/* vbyone_attr */
+	8,2,4,4,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	/* power step */
+	lcd_power_on_step, lcd_power_off_step,
+	/* backlight */
+	BL_CTRL_MAX,0,1,0,200,200,
+	BL_PWM_POSITIVE,BL_PWM_B,180,100,25,1,0,180,220,
+	60,10,255,128,128},
+
+	{/*INL: V580DJ2: 3840x2160@60hz 8lane */
+	"vbyone_2",LCD_VBYONE,10,
+	/* basic timing */
+	3840,2160,4400,2250,33,477,0,6,81,0,
+	/* clk_attr */
+	2,0,1,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	/* vbyone_attr */
+	8,1,4,4,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	/* power step */
+	lcd_power_on_step, lcd_power_off_step,
+	/* backlight */
+	BL_CTRL_MAX,0,1,0,200,200,
+	BL_PWM_POSITIVE,BL_PWM_B,180,100,25,1,0,180,220,
+	60,10,255,128,128},
+
+	{/*BOE: HV550QU2: 3840x2160@60hz 8lane */
+	"vbyone_3",LCD_VBYONE,10,
+	/* basic timing */
+	3840,2160,4400,2250,33,477,1,6,81,0,
+	/* clk_attr */
+	2,0,1,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	/* vbyone_attr */
+	8,2,4,4,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	/* power step */
+	lcd_power_on_step, lcd_power_off_step,
+	/* backlight */
+	BL_CTRL_MAX,0,1,0,200,200,
+	BL_PWM_POSITIVE,BL_PWM_B,180,100,25,1,0,180,220,
+	60,10,255,128,128},
+};
+
+//**** Special parameters just for Vbyone ***//
+static struct vbyone_config_s lcd_vbyone_config = {
+	.lane_count   = 8,
+	.byte_mode    = 4,
+	.region_num   = 2,
+	.color_fmt    = 4,
+};
+
+//**** Special parameters just for lvds ***//
+static struct lvds_config_s lcd_lvds_config = {
+	.lvds_repack  = 1, //0=JEDIA mode,  1=VESA mode
+	.dual_port    = 1, //0=single port, 1=double port
+	.pn_swap      = 0, //0=normal,      1=swap
+	.port_swap    = 0, //0=normal,      1=swap
+};
+
+static struct lcd_power_ctrl_s lcd_power_ctrl = {
+	.cpu_gpio = lcd_cpu_gpio,
+	.power_on_step = {
+		{
+			.type = LCD_POWER_TYPE_SIGNAL,
+			.delay = 50, /* unit: ms */
+		},
+		{
+			.type = LCD_POWER_TYPE_MAX, /* ending flag */
+		},
+	},
+	.power_off_step = {
+		{
+			.type = LCD_POWER_TYPE_SIGNAL,
+			.delay = 50, /* unit: ms */
+		},
+		{
+			.type = LCD_POWER_TYPE_MAX, /* ending flag */
+		},
+	},
+};
+
+struct lcd_config_s lcd_config_dft = {
+	.lcd_mode = LCD_MODE_TV,
+	.lcd_basic = {
+		.model_name = "default",
+		.lcd_type = LCD_TYPE_MAX, //LCD_TTL /LCD_LVDS/LCD_VBYONE
+		.lcd_bits = 8,
+		.h_active = 1920,
+		.v_active = 1080,
+		.h_period = 2200,
+		.v_period = 1125,
+
+		.screen_width   = 16,
+		.screen_height  = 9,
+	},
+
+	.lcd_timing = {
+		.clk_auto = 1,
+		.lcd_clk = 60,
+		.ss_level = 0,
+		.fr_adjust_type = 0,
+
+		.hsync_width = 44,
+		.hsync_bp    = 148,
+		.hsync_pol   = 0,
+		.vsync_width = 5,
+		.vsync_bp    = 36,
+		.vsync_pol   = 0,
+	},
+
+	.lcd_control = {
+		.lvds_config   = &lcd_lvds_config,
+		.vbyone_config = &lcd_vbyone_config,
+	},
+	.lcd_power = &lcd_power_ctrl,
+	.pinmux_set = {{7, 0x00001800}, {LCD_PINMUX_END, 0x0}},
+	.pinmux_clr = {{7, 0x00000603}, {LCD_PINMUX_END, 0x0}},
+};
+
+struct bl_config_s bl_config_dft = {
+	.name = "default",
+	.level_default = 100,
+	.level_min = 10,
+	.level_max = 255,
+	.level_mid = 128,
+	.level_mid_mapping = 128,
+	.level = 0,
+
+	.method = BL_CTRL_MAX,
+	.power_on_delay = 200,
+	.power_off_delay = 200,
+
+	.gpio = 0,
+	.gpio_on = 1,
+	.gpio_off = 0,
+
+	.pwm_method = BL_PWM_POSITIVE,
+	.pwm_port = BL_PWM_B,
+	.pwm_freq = 200,
+	.pwm_duty_max = 100,
+	.pwm_duty_min = 20,
+	.pwm_gpio = 1,
+	.pwm_gpio_off = 0,
+	.pwm_on_delay = 180,
+	.pwm_off_delay = 220,
+
+	.gpio_name = lcd_bl_gpio,
+	.pinmux_set = {{10, 0x00800000}, {LCD_PINMUX_END, 0x0}},
+	.pinmux_clr = {{10, 0x0100a000}, {LCD_PINMUX_END, 0x0}},
+};
+

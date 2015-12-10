@@ -31,6 +31,10 @@ config GXTVBB_9023_SKT_V1
 	bool "Support amlogic gxtv baby 9023 socket v1 board"
 	default n
 
+config GXTVBB_T966_SKT_V1
+	bool "Support amlogic gxtv baby 9023 socket v1 board"
+	default n
+
 config PXP_EMULATOR
 	bool "Support pxp environment"
 	default n
@@ -65,4 +69,8 @@ endif
 
 if GXTVBB_9023_SKT_V1
 source "board/amlogic/gxtvbb_9023_skt_v1/Kconfig"
+endif
+
+if GXTVBB_T966_SKT_V1
+source "board/amlogic/gxtvbb_t966_skt_v1/Kconfig"
 endif
