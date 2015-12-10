@@ -1661,76 +1661,64 @@ dwc_otg_reset_port(dwc_otg_core_if_t * _core_if)
 static int
 dwc_otg_port_init(dwc_otg_core_if_t * _core_if)
 {
-		int retry = 10;
-    hprt0_data_t    hprt0,hprt0_modify;
-    hprt0.d32 = 0;
-/*
-    hprt0.d32 = dwc_otg_read_hprt0(_core_if);
+	int retry = 10;
+	hprt0_data_t    hprt0,hprt0_modify;
+	hprt0.d32 = 0;
 
-    hprt0_data_t    hprt0_modify;
+	next:
+	hprt0.d32 = dwc_read_reg32(_core_if->host_if->hprt0);
+	DBG("%s port data is 0x%X", __func__, hprt0.d32);
 
-    hprt0_modify.b.prtena = 0;
-    hprt0_modify.b.prtconndet = 0;
-    hprt0_modify.b.prtenchng = 0;
-    hprt0_modify.b.prtovrcurrchng = 0;
+	hprt0_modify.d32 = dwc_read_reg32(_core_if->host_if->hprt0);
 
-    _mdelay(30);
-*/
-next:
-    hprt0.d32 = dwc_read_reg32(_core_if->host_if->hprt0);
-    DBG("%s port data is 0x%X", __func__, hprt0.d32);
-
-    hprt0_modify.d32 = dwc_read_reg32(_core_if->host_if->hprt0);
-
-    if (hprt0.b.prtconndet) {//wait prtconndet interrupt
-        /*
-         * clear detect intr
-         */
-        _mdelay(30);
-        dwc_write_reg32(_core_if->host_if->hprt0, hprt0_modify.d32);
-        _mdelay(30);
-        /*
-         * reset port  6.1.1.6
-         */
-        dwc_otg_reset_port(_core_if);
-        hprt0_modify.b.prtconndet = 1;
-
-    }else{
-        _mdelay(100);
+	if (hprt0.b.prtconndet) {
+		/*
+		* clear detect intr
+		*/
+		_mdelay(30);
+		dwc_write_reg32(_core_if->host_if->hprt0, hprt0_modify.d32);
+		_mdelay(30);
+		/*
+		* reset port  6.1.1.6
+		*/
+		dwc_otg_reset_port(_core_if);
+		hprt0_modify.b.prtconndet = 1;
+	} else {
+		_mdelay(100);
 		if (retry--)
 			goto next;
 		INFO("No USB device found !");
 		return 0;
-    }
-    /*
-     * Determine if the connected device is a high/full/low speed device
-     */
-    hprt0.d32 = dwc_read_reg32(_core_if->host_if->hprt0);
+	}
+	/*
+	* Determine if the connected device is a high/full/low speed device
+	*/
+	hprt0.d32 = dwc_read_reg32(_core_if->host_if->hprt0);
 
-    if (hprt0.b.prtenchng) {//6.1.1.8
-        hprt0.d32 = dwc_read_reg32(_core_if->host_if->hprt0);
+	if (hprt0.b.prtenchng) {
+		hprt0.d32 = dwc_read_reg32(_core_if->host_if->hprt0);
 
-        hprt0_modify.b.prtena = 0;
-        hprt0_modify.b.prtconndet = 0;
-        hprt0_modify.b.prtenchng = 0;
-        hprt0_modify.b.prtovrcurrchng = 0;
-        hprt0_modify.b.prtenchng = 1;
-        dwc_write_reg32(_core_if->host_if->hprt0, hprt0_modify.d32);
+		hprt0_modify.b.prtena = 0;
+		hprt0_modify.b.prtconndet = 0;
+		hprt0_modify.b.prtenchng = 0;
+		hprt0_modify.b.prtovrcurrchng = 0;
+		hprt0_modify.b.prtenchng = 1;
+		dwc_write_reg32(_core_if->host_if->hprt0, hprt0_modify.d32);
+	}
 
-    }
+	_core_if->host_if->do_ping = 0;
 
-//    _core_if->host_if->do_ping = 1; // init value
-    _core_if->host_if->do_ping = 0; // init value
+	if (hprt0.b.prtspd == DWC_HPRT0_PRTSPD_LOW_SPEED) {
+		INFO("Lowspeed device found !\n");
+		return 0;
+	} else if (hprt0.b.prtspd == DWC_HPRT0_PRTSPD_FULL_SPEED) {
+		INFO("Fullspeed device found !\n");
+		return 0;
+	} else if (hprt0.b.prtspd == DWC_HPRT0_PRTSPD_HIGH_SPEED) {
+		INFO("Highspeed device found !\n");
+	}
 
-    if (hprt0.b.prtspd == DWC_HPRT0_PRTSPD_LOW_SPEED) {//6.1.1.9
-        INFO("Lowspeed device found !\n");
-    } else if (hprt0.b.prtspd == DWC_HPRT0_PRTSPD_FULL_SPEED) {
-        INFO("Fullspeed device found !\n");
-    } else if (hprt0.b.prtspd == DWC_HPRT0_PRTSPD_HIGH_SPEED) {
-        INFO("Highspeed device found !\n");
-    }
-
-		return 1;
+	return 1;
 }
 /*
  * --- Init functions ------------------------------------------------------
