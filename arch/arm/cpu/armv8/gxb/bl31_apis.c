@@ -319,9 +319,3 @@ void set_usb_boot_function(unsigned long command)
 		: "+r" (x0)
 		: "r" (x1));
 }
-void aml_system_off(void)
-{
-	/* TODO: Add poweroff capability */
-	aml_reboot(0x82000042, 1, 0, 0);
-	aml_reboot(0x84000008, 0, 0, 0);
-}
