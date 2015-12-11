@@ -636,7 +636,7 @@ void osd_setup_hw(u32 index,
 		add_to_update_list(index, OSD_COLOR_MODE);
 	if (update_geometry)
 		add_to_update_list(index, DISP_GEOMETRY);
-
+	add_to_update_list(index, DISP_OSD_REVERSE);
 	osd_wait_vsync_hw();
 }
 
@@ -2246,7 +2246,9 @@ static void osd2_update_disp_3d_mode(void)
 void osd_init_hw(void)
 {
 	u32 group, idx, data32;
+	char *osd_reverse;
 
+	osd_reverse = getenv("osd_reverse");
 	for (group = 0; group < HW_OSD_COUNT; group++)
 		for (idx = 0; idx < HW_REG_INDEX_MAX; idx++)
 			osd_hw.reg[group][idx].update_func =
@@ -2326,7 +2328,10 @@ void osd_init_hw(void)
 	osd_hw.free_scale[OSD1].h_enable = 0;
 	osd_hw.free_scale[OSD2].v_enable = 0;
 	osd_hw.free_scale[OSD2].v_enable = 0;
-	osd_hw.osd_reverse[OSD1] = osd_hw.osd_reverse[OSD2] = 0;
+	if (osd_reverse != NULL && strcmp(osd_reverse, "all,true") == 0)
+		osd_hw.osd_reverse[OSD1] = osd_hw.osd_reverse[OSD2] = 1;
+	else
+		osd_hw.osd_reverse[OSD1] = osd_hw.osd_reverse[OSD2] = 0;
 	osd_hw.rotation_pandata[OSD1].x_start = 0;
 	osd_hw.rotation_pandata[OSD1].y_start = 0;
 	osd_hw.rotation_pandata[OSD2].x_start = 0;
