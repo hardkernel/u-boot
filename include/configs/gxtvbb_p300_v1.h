@@ -60,6 +60,9 @@
 	"loadaddr=1080000\0"\
 	"panel_type=lvds_0\0" \
 	"outputmode=1080p60hz\0" \
+	"panel_reverse=0\0" \
+	"osd_reverse=n\0" \
+	"video_reverse=n\0" \
 	"display_width=1920\0" \
 	"display_height=1080\0" \
 	"display_bpp=16\0" \
@@ -101,6 +104,7 @@
 		"logo=${display_layer},loaded,${fb_addr} "\
 		"vout=${outputmode},enable "\
 		"panel_type=${panel_type} hdmitx= "\
+		"osd_reverse=${osd_reverse} video_reverse=${video_reverse} "\
 		"jtag=${jtag} "\
 		"androidboot.firstboot=${firstboot}; "\
 		"run cmdline_keys; "\

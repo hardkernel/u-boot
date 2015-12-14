@@ -56,6 +56,9 @@
 	"loadaddr=1080000\0"\
  "dtb_mem_addr=0x1000000\0" \
 	"outputmode=1080p60hz\0" \
+	"panel_reverse=0\0" \
+	"osd_reverse=n\0" \
+	"video_reverse=n\0" \
         "display_width=1920\0" \
         "display_height=1080\0" \
         "display_bpp=16\0" \
@@ -67,7 +70,7 @@
         "fb_width=1920\0" \
         "fb_height=1080\0" \
         "storeargs="\
-            "setenv bootargs rootfstype=ramfs init=/init console=ttyS0,115200 no_console_suspend earlyprintk=aml-uart,0xc81004c0 androidboot.selinux=disabled logo=osd1,loaded,0x3b000000 vout=1080p60hz,enable hdmitx= androidboot.firstboot=1"\
+            "setenv bootargs rootfstype=ramfs init=/init console=ttyS0,115200 no_console_suspend earlyprintk=aml-uart,0xc81004c0 androidboot.selinux=disabled logo=osd1,loaded,0x3b000000 vout=1080p60hz,enable hdmitx= osd_reverse=${osd_reverse} video_reverse=${video_reverse} androidboot.firstboot=1"\
             "\0"\
 	"storeboot="\
 	"if imgread kernel boot ${loadaddr}; then store dtb read $dtb_mem_addr; bootm ${loadaddr}; fi;"\

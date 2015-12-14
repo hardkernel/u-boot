@@ -57,6 +57,9 @@
 	"dtb_mem_addr=0x1000000\0" \
 	"panel_type=lvds_0\0" \
 	"outputmode=1080p60hz\0" \
+	"panel_reverse=0\0" \
+	"osd_reverse=n\0" \
+	"video_reverse=n\0" \
 	"display_layer=osd1\0" \
 	"display_color_index=16\0" \
 	"storeboot="\
