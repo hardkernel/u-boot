@@ -23,7 +23,14 @@
 
 /*----------------------------------------------------------------------------*/
 // global variables
-unsigned int cvbs_mode = 0xff; // default to 0xff as invalid vmode
+enum CVBS_MODE_e
+{
+	VMODE_PAL,
+	VMODE_NTSC,
+	VMODE_MAX
+};
+
+unsigned int cvbs_mode = VMODE_MAX;
 
 
 /*----------------------------------------------------------------------------*/
@@ -201,11 +208,11 @@ static void cvbs_dump_cvbs_regs(void)
 {
 	struct reg_s *p = NULL;
 
-	if (0 == cvbs_mode) {
+	if (VMODE_PAL == cvbs_mode) {
 		// 576cvbs
 		p = (struct reg_s*)&tvregs_576cvbs_enc[0];
 
-	} else if (1 == cvbs_mode) {
+	} else if (VMODE_NTSC == cvbs_mode) {
 		// 480cvbs
 		p = (struct reg_s*)&tvregs_480cvbs_enc[0];
 	}
@@ -444,12 +451,74 @@ static void cvbs_write_vcbus_array(struct reg_s *s)
 	return ;
 }
 
+#ifdef CONFIG_CVBS_PERFORMANCE_COMPATIBILITY_SUPPORT
+
+void cvbs_performance_config(void)
+{
+	int actived = CONFIG_CVBS_PERFORMANCE_ACTIVED;
+	char buf[8];
+
+	sprintf(buf, "%d", actived);
+	setenv("cvbs_drv", buf);
+
+	return ;
+}
+
+static void cvbs_performance_enhancement(int mode)
+{
+	unsigned int index = CONFIG_CVBS_PERFORMANCE_ACTIVED;
+	unsigned int max = 0;
+	unsigned int type = 0;
+	const struct reg_s *s = NULL;
+
+	if (VMODE_PAL != mode)
+		return;
+
+	if (0xff == index)
+		return;
+
+	if (check_cpu_type(MESON_CPU_MAJOR_ID_M8B)) {
+		max = sizeof(tvregs_576cvbs_performance_m8b)
+			/ sizeof(struct reg_s *);
+		index = (index >= max) ? 0 : index;
+		s = tvregs_576cvbs_performance_m8b[index];
+		type = 1;
+	} else if (check_cpu_type(MESON_CPU_MAJOR_ID_M8M2)) {
+		max = sizeof(tvregs_576cvbs_performance_m8m2)
+			/ sizeof(struct reg_s *);
+		index = (index >= max) ? 0 : index;
+		s = tvregs_576cvbs_performance_m8m2[index];
+		type = 2;
+	} else if (check_cpu_type(MESON_CPU_MAJOR_ID_M8)) {
+		max = sizeof(tvregs_576cvbs_performance_m8)
+			/ sizeof(struct reg_s *);
+		index = (index >= max) ? 0 : index;
+		s = tvregs_576cvbs_performance_m8[index];
+		type = 0;
+	} else if (check_cpu_type(MESON_CPU_MAJOR_ID_GXBB)) {
+		max = sizeof(tvregs_576cvbs_performance_gxbb)
+			/ sizeof(struct reg_s *);
+		index = (index >= max) ? 0 : index;
+		s = tvregs_576cvbs_performance_gxbb[index];
+		type = 0;
+	}
+
+	printf("cvbs performance type = %d, table = %d\n", type, index);
+	cvbs_write_vcbus_array((struct reg_s*)s);
+
+	return;
+}
+
+#endif
+
 static int cvbs_config_enci(int vmode)
 {
-	if (0 == vmode)
+	if (VMODE_PAL == vmode)
 		cvbs_write_vcbus_array((struct reg_s*)&tvregs_576cvbs_enc[0]);
-	else if (1 == vmode)
+	else if (VMODE_NTSC == vmode)
 		cvbs_write_vcbus_array((struct reg_s*)&tvregs_480cvbs_enc[0]);
+
+	cvbs_performance_enhancement(vmode);
 
 	return 0;
 }
@@ -460,13 +529,13 @@ static int cvbs_config_enci(int vmode)
 int cvbs_set_vmode(char* vmode_name)
 {
 	if (!strncmp(vmode_name, "576cvbs", strlen("576cvbs"))) {
-		cvbs_mode = 0;
+		cvbs_mode = VMODE_PAL;
 		cvbs_config_enci(0);
 		cvbs_config_clock();
 		cvbs_set_vdac(1);
 		return 0;
 	} else if (!strncmp(vmode_name, "480cvbs", strlen("480cvbs"))) {
-		cvbs_mode = 1;
+		cvbs_mode = VMODE_NTSC;
 		cvbs_config_enci(1);
 		cvbs_config_clock();
 		cvbs_set_vdac(1);
@@ -484,6 +553,15 @@ int cvbs_set_vmode(char* vmode_name)
 void cvbs_show_valid_vmode(void)
 {
 	printf("576cvbs\n""480cvbs\n");
+	return;
+}
+
+void cvbs_init(void)
+{
+#ifdef CONFIG_CVBS_PERFORMANCE_COMPATIBILITY_SUPPORT
+	cvbs_performance_config();
+#endif
+
 	return;
 }
 

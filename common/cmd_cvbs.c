@@ -26,6 +26,13 @@
 #include <asm/byteorder.h>
 #include <amlogic/cvbs.h>
 
+static int do_cvbs_init(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
+{
+	cvbs_init();
+
+	return CMD_RET_SUCCESS;
+}
+
 static int do_cvbs_debug(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 {
 	if ((argc != 2) && (argc != 4) && (argc != 5)) {
@@ -76,6 +83,7 @@ static int do_vdac(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 }
 
 static cmd_tbl_t cmd_cvbs_sub[] = {
+	U_BOOT_CMD_MKENT(init, 1, 1, do_cvbs_init, "", ""),
 	U_BOOT_CMD_MKENT(debug, 1, 1, do_cvbs_debug, "", ""),
 	U_BOOT_CMD_MKENT(output, 3, 1, do_cvbs_output, "", ""),
 	U_BOOT_CMD_MKENT(vdac, 1, 1, do_vdac, "", ""),
@@ -101,6 +109,8 @@ static int do_cvbs(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 
 U_BOOT_CMD(cvbs, CONFIG_SYS_MAXARGS, 1, do_cvbs,
 	"CVBS sub-system",
+	"cvbs init\n"
+	"    init of cvbs\n"
 	"cvbs debug\n"
 	"    r h/v address\n"
 	"    w value h/v address\n"
