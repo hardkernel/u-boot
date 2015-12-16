@@ -79,11 +79,17 @@
 
 #define CONFIG_EXTRA_ENV_SETTINGS	\
 	"boardname=ODROIDC2\0"		\
-	"loadaddr=0x10800000\0"		\
-	"dtb_mem_addr=0x1000000\0"	\
+	"loadaddr=0x20000000\0"		\
+	"dtbaddr=0x1000000\0"		\
 	"fdt_high=0x20000000\0"		\
-	"bootargs=root=/dev/mmcblk0p2 init=/init console=ttyS0,115200 hdmimode=720p60hz androidboot.hardware=odroidc2 earlyprintk=aml-uart,0xc81004c0\0"	\
-	"bootcmd=cfgload; fatload mmc 0 ${loadaddr} image; fatload mmc 0 ${dtb_mem_addr} meson64_odroidc2.dtb; booti ${loadaddr} - ${dtb_mem_addr}\0"
+	"hdmimode=720p60hz\0"		\
+	"bootargs=root=/dev/mmcblk0p3 rw init=/init rootwait "	\
+		"console=ttyS0,115200 "				\
+		"hdmimode=720p60hz hdmitx=cecf "		\
+		"logo=osd1,loaded,0x3f800000,720p60hz "		\
+		"androidboot.hardware=odroidc2 androidboot.serialno=${fbt_id#} "	\
+		"androidboot.selinux=disabled  \0"		\
+	"bootcmd=cfgload; showlogo ${hdmimode}; movi read dtb 0 ${dtbaddr}; movi read boot 0 ${loadaddr}; booti ${loadaddr} - ${dtbaddr}\0"
 
 #define CONFIG_PREBOOT
 #define CONFIG_BOOTCOMMAND
