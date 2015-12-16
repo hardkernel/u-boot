@@ -7,6 +7,16 @@
 #define TASK_ID_HIGH_MB	3
 #define TASK_ID_SECURE_MB  4
 
+enum scpi_client_id {
+	SCPI_CL_NONE,
+	SCPI_CL_CLOCKS,
+	SCPI_CL_DVFS,
+	SCPI_CL_POWER,
+	SCPI_CL_THERMAL,
+	SCPI_CL_REMOTE,
+	SCPI_MAX,
+};
+
 void __switch_back_securemb(void)
 {
 	register int p0 asm("r0") = 2;
@@ -66,7 +76,7 @@ void secure_task(void)
 				presume->method = resume_data.method;
 			}
 	}
-		__switch_back_highmb();
+		__switch_back_securemb();
 	}
 }
 
@@ -110,6 +120,7 @@ void high_task(void)
 	}
 }
 
+extern unsigned int usr_pwr_key;
 void process_low_task(unsigned command)
 {
 	unsigned *pcommand =
@@ -122,6 +133,11 @@ void process_low_task(unsigned command)
 		para1 = *(pcommand + 1);
 		get_dvfs_info(para1,
 			(unsigned char *)(response+2), (response+1));
+	} else if ((command & 0xffff) == LOW_TASK_USR_DATA) {/*0-15bit: comd; 16-31bit: client_id*/
+		if ((command >> 16) == SCPI_CL_REMOTE) {
+			usr_pwr_key = *(pcommand + 2);/*tx_size locates at *(pcommand + 1)*/
+			dbg_print("pwr_key=",usr_pwr_key);
+		}
 	}
 }
 
