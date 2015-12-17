@@ -48,7 +48,7 @@ static char _mbrFlag[4] ;
 
 //extern void get_device_boot_flag(void);
 static int _info_disprotect_back_before_mmcinfo1 = 0;//mmcinfo 1 will clear info_disprotect before run_command("mmc erase 1")
-int info_disprotect = 0;
+extern int info_disprotect;
 static inline int isstring(char *p)
 {
 	char *endptr = p;
@@ -100,7 +100,7 @@ static int emmc_init(void)
 {
 	int ret = -1;
 	struct mmc *mmc = NULL;
-	mmc = find_mmc_device(1);
+	mmc = find_mmc_device(CONFIG_SYS_MMC_ENV_DEV);
 	if (mmc) {
 		ret = mmc_init(mmc); // init eMMC/tSD+
 	}
@@ -392,7 +392,8 @@ static int do_store_init(cmd_tbl_t * cmdtp, int flag, int argc, char * const arg
             {
                 store_dbg("MMC BOOT, %s %d \n",__func__,__LINE__);
                 device_boot_flag = EMMC_BOOT_FLAG;
-                run_command("mmc dev 1",0);
+                sprintf(str, "mmc dev %d", CONFIG_SYS_MMC_ENV_DEV);
+                run_command(str,0);
                 ret = run_command("mmcinfo", 0);
                 if (ret != 0) {
                     store_msg("amlmmc cmd %s failed \n",cmd);
@@ -405,8 +406,9 @@ static int do_store_init(cmd_tbl_t * cmdtp, int flag, int argc, char * const arg
                         MsgP("amlmmc key\n");
                         run_command("amlmmc key", 0);
                     }
-                    MsgP("amlmmc erase 1");
-                    ret = run_command("amlmmc erase 1", 0);
+                    sprintf(str, "amlmmc erase %d", CONFIG_SYS_MMC_ENV_DEV);
+                    MsgP("amlmmc erase %d", CONFIG_SYS_MMC_ENV_DEV);
+                    ret = run_command(cmd, 0);
                 }
 
                 return ret;

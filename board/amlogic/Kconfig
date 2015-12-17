@@ -45,6 +45,9 @@ config PXP_EMULATOR
 
 config SUPPORT_CUSOTMER_BOARD
 	bool "Customer board support"
+
+config ODROID_C2
+	bool "Support Hardkernel ODROID-C2 board"
 	default n
 
 if GXB_SKT_V1
@@ -85,4 +88,8 @@ endif
 
 if GXTVBB_T966_SKT_V1
 source "board/amlogic/gxtvbb_t966_skt_v1/Kconfig"
+endif
+
+if ODROID_C2
+source "board/hardkernel/odroidc2/Kconfig"
 endif

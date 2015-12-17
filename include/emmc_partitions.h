@@ -17,6 +17,7 @@
 #include <asm/arch/clock.h>
 #include<partition_table.h>
 #include <storage.h>
+#include <linux/sizes.h>
 
 #define     AML_MMC_DBG
 
@@ -25,7 +26,6 @@
 #define     MAX_MMC_PART_NUM                32
 #define     MAX_MMC_PART_NAME_LEN           16
 
-#define		SZ_1M							0x100000
 #define     PARTITION_RESERVED              (8*SZ_1M)  // 8MB
 #define     MMC_BOOT_PARTITION_RESERVED     (32*SZ_1M) // 32MB
 

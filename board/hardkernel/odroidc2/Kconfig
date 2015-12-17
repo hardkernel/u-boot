@@ -1,0 +1,22 @@
+if TARGET_MESON_GX
+
+config SYS_CPU
+	string
+	default "armv8"
+
+config SYS_BOARD
+	string
+	default "odroidc2"
+
+config SYS_VENDOR
+	string
+	default "hardkernel"
+
+config SYS_SOC
+	string
+	default "gxb"
+
+config SYS_CONFIG_NAME
+	default "odroidc2"
+
+endif

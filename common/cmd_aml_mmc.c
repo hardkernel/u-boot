@@ -30,15 +30,16 @@
 #include <emmc_partitions.h>
 #include <asm/arch/cpu_sdio.h>
 #include <asm/arch/sd_emmc.h>
+#include <linux/sizes.h>
 
 extern int mmc_key_erase(void);
 extern int find_dev_num_by_partition_name (char *name);
 #define DTB_BLOCK_CNT		1024
-#define SZ_1M				0x100000
 #define DTB_ADDR_SIZE		(SZ_1M * 40)
 #define KEY_SIZE_CNT		()
 #define KEY_ADDR_SIZE		(SZ_1M * 40 + 16 * 1024)
 #define CONFIG_SECURITYKEY
+int info_disprotect = 0;
 bool emmckey_is_protected (struct mmc *mmc)
 {
 #ifdef CONFIG_STORE_COMPATIBLE

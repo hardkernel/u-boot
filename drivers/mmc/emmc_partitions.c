@@ -9,7 +9,6 @@
 
 #define		POR_BOOT_VALUE 0
 #define		DTB_PART_SIZE	512*1024 //512K
-#define SZ_1M	0x100000
 #define DTB_ADDR_SIZE	(SZ_1M * 40)
 struct mmc_partition_config * mmc_partition_config_of =NULL;
 bool is_partition_checked = false;
