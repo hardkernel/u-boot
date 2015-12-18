@@ -90,7 +90,8 @@ BL_COMMON_SOURCES	:=	common/bl_common.c			\
 
 BUILD_BASE		:=	$(buildtree)/firmware
 #BUILD_PLAT		:=	${BUILD_BASE}/${PLAT}
-BUILD_PLAT		:=	$(buildtree)/board/${BOARDDIR}/firmware
+#BUILD_PLAT		:=	$(buildtree)/board/${BOARDDIR}/firmware
+BUILD_PLAT		:=	$(buildtree)/${BOARDDIR}/firmware
 
 # Convenience function for adding build definitions
 # $(eval $(call add_define,FOO)) will have:
@@ -171,7 +172,8 @@ $(eval $(call add_define,NS_TIMER_SWITCH))
 $(eval $(call assert_boolean,RESET_TO_BL31))
 $(eval $(call add_define,RESET_TO_BL31))
 
-VPATH_LIST = $(buildsrc)/board/$(BOARDDIR)
+#VPATH_LIST = $(buildsrc)/board/$(BOARDDIR)
+VPATH_LIST = $(buildsrc)/$(BOARDDIR)
 VPATH_LIST:=$(VPATH_LIST:%=%/firmware/)
 
 vpath %.c $(VPATH_LIST)

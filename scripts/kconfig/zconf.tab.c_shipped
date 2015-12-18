@@ -1923,7 +1923,20 @@ yyreduce:
 
     {
 	printd(DEBUG_PARSE, "%s:%d:source %s\n", zconf_curname(), zconf_lineno(), (yyvsp[(2) - (3)].string));
-	zconf_nextfile((yyvsp[(2) - (3)].string));
+	printd(DEBUG_PARSE, "strcmp : %d\n", strncmp("customer", (yyvsp[(2) - (3)].string), 8));
+	if (0 == strncmp("customer", (yyvsp[(2) - (3)].string), 8)) {
+		FILE *file;
+		file = zconf_fopen((yyvsp[(2) - (3)].string));
+		if (file) {
+			zconf_nextfile((yyvsp[(2) - (3)].string));
+		}
+		else {
+			printd(DEBUG_PARSE, "Customer folder doesn't exist!\n");
+		}
+	}
+	else{
+		zconf_nextfile((yyvsp[(2) - (3)].string));
+	}
 }
     break;
 

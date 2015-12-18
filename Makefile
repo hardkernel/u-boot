@@ -654,7 +654,8 @@ libs-$(CONFIG_HAS_POST) += post/
 libs-y += test/
 libs-y += test/dm/
 
-libs-y += $(if $(BOARDDIR),board/$(BOARDDIR)/)
+#libs-y += $(if $(BOARDDIR),board/$(BOARDDIR)/)
+libs-y += $(if $(BOARDDIR),$(BOARDDIR)/)
 
 libs-y := $(sort $(libs-y))
 
@@ -885,12 +886,12 @@ endif
 .PHONY : acs.bin
 acs.bin: tools prepare u-boot.bin
 	$(Q)$(MAKE) -C $(srctree)/$(CPUDIR)/${SOC}/firmware/acs all FIRMWARE=$@
-	$(Q)cp $(buildtree)/board/${BOARDDIR}/firmware/acs.bin $(FIP_FOLDER_SOC)/acs.bin -f
+	$(Q)cp $(buildtree)/${BOARDDIR}/firmware/acs.bin $(FIP_FOLDER_SOC)/acs.bin -f
 
 .PHONY : bl21.bin
 bl21.bin: tools prepare u-boot.bin acs.bin
 	$(Q)$(MAKE) -C $(srctree)/$(CPUDIR)/${SOC}/firmware/bl21 all FIRMWARE=$@
-	$(Q)cp $(buildtree)/board/${BOARDDIR}/firmware/bl21.bin $(FIP_FOLDER_SOC)/bl21.bin -f
+	$(Q)cp $(buildtree)/${BOARDDIR}/firmware/bl21.bin $(FIP_FOLDER_SOC)/bl21.bin -f
 
 .PHONY : boot.bin
 boot.bin: fip.bin
@@ -903,10 +904,10 @@ endif
 	$(Q)cat $(FIP_FOLDER_SOC)/bl2_new.bin  $(FIP_FOLDER_SOC)/fip.bin > $(FIP_FOLDER_SOC)/boot_new.bin
 	$(Q)$(FIP_FOLDER_SOC)/aml_encrypt_$(SOC) --bootsig --input $(FIP_FOLDER_SOC)/boot_new.bin --output $(FIP_FOLDER_SOC)/u-boot.bin
 ifeq ($(CONFIG_AML_CRYPTO_UBOOT), y)
-	$(Q)$(FIP_FOLDER_SOC)/aml_encrypt_$(SOC) --bootsig --input $(FIP_FOLDER_SOC)/boot_new.bin --amluserkey $(srctree)/board/$(BOARDDIR)/aml-user-key.sig --aeskey enable --output $(FIP_FOLDER_SOC)/u-boot.bin.encrypt
+	$(Q)$(FIP_FOLDER_SOC)/aml_encrypt_$(SOC) --bootsig --input $(FIP_FOLDER_SOC)/boot_new.bin --amluserkey $(srctree)/$(BOARDDIR)/aml-user-key.sig --aeskey enable --output $(FIP_FOLDER_SOC)/u-boot.bin.encrypt
 endif
 ifeq ($(CONFIG_AML_CRYPTO_IMG), y)
-	$(Q)$(FIP_FOLDER_SOC)/aml_encrypt_$(SOC) --imgsig --input $(srctree)/board/$(BOARDDIR)/boot.img --amluserkey $(srctree)/board/$(BOARDDIR)/aml-user-key.sig --output $(FIP_FOLDER_SOC)/boot.img.encrypt
+	$(Q)$(FIP_FOLDER_SOC)/aml_encrypt_$(SOC) --imgsig --input $(srctree)/$(BOARDDIR)/boot.img --amluserkey $(srctree)/$(BOARDDIR)/aml-user-key.sig --output $(FIP_FOLDER_SOC)/boot.img.encrypt
 	@cp -f $(FIP_FOLDER_SOC)/boot.img.encrypt $(FIP_FOLDER)/boot.img.encrypt
 endif
 	@cp -f $(FIP_FOLDER_SOC)/u-boot.* $(FIP_FOLDER)/

@@ -45,14 +45,18 @@ ifdef	SOC
 sinclude $(srctree)/$(CPUDIR)/$(SOC)/config.mk	# include  SoC	specific rules
 endif
 ifneq ($(BOARD),)
+ifeq ($(CONFIG_SUPPORT_CUSOTMER_BOARD), y) #SUPPORT_CUSOTMER_BOARD
+BOARDDIR = customer/board/$(BOARD)
+else #SUPPORT_CUSOTMER_BOARD
 ifdef	VENDOR
-BOARDDIR = $(VENDOR)/$(BOARD)
+BOARDDIR = board/$(VENDOR)/$(BOARD)
 else
-BOARDDIR = $(BOARD)
+BOARDDIR = board/$(BOARD)
 endif
+endif #SUPPORT_CUSOTMER_BOARD
 endif
 ifdef	BOARD
-sinclude $(srctree)/board/$(BOARDDIR)/config.mk	# include board specific rules
+sinclude $(srctree)/$(BOARDDIR)/config.mk	# include board specific rules
 endif
 
 ifdef FTRACE

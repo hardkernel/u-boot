@@ -39,6 +39,10 @@ config PXP_EMULATOR
 	bool "Support pxp environment"
 	default n
 
+config SUPPORT_CUSOTMER_BOARD
+	bool "Customer board support"
+	default n
+
 if GXB_SKT_V1
 source "board/amlogic/gxb_skt_v1/Kconfig"
 endif
