@@ -54,10 +54,10 @@ int aml_lcd_gpio_set(int gpio, int value)
 {
 	int ret = 0;
 
+	if (gpio >= LCD_GPIO_MAX)
+		return -1;
 	if (lcd_debug_print_flag)
 		LCDPR("gpio: %d, value: %d\n", gpio, value);
-	if (gpio == LCD_GPIO_MAX)
-		return -1;
 	/* grab the pin before we tweak it */
 	ret = gpio_request(gpio, "aml_lcd_gpio");
 	if (ret && ret != -EBUSY) {

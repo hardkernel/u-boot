@@ -76,11 +76,11 @@ static struct bl_config_s *bl_check_valid(void)
 static unsigned int pwm_misc[6][5] = {
 	/* pwm_reg,         pre_div, clk_sel, clk_en, pwm_en*/
 	{PWM_MISC_REG_AB,   8,       4,       15,     0,},
-	{PWM_MISC_REG_AB,   16,      6,       23,     1,},
+	{PWM_MISC_REG_AB,   16,      6,       23,     0,},
 	{PWM_MISC_REG_CD,   8,       4,       15,     0,},
-	{PWM_MISC_REG_CD,   16,      6,       23,     1,},
+	{PWM_MISC_REG_CD,   16,      6,       23,     0,},
 	{PWM_MISC_REG_EF,   8,       4,       15,     0,},
-	{PWM_MISC_REG_EF,   16,      6,       23,     1,},
+	{PWM_MISC_REG_EF,   16,      6,       23,     0,},
 };
 
 static unsigned int pwm_reg[6] = {
@@ -97,6 +97,10 @@ static void bl_pwm_config_init(struct bl_pwm_config_s *bl_pwm)
 	unsigned int freq, pre_div, cnt;
 	int i;
 
+	if (lcd_debug_print_flag) {
+		LCDPR("bl: %s pwm_port %d: freq = %u\n",
+			__func__, bl_pwm->pwm_port, bl_pwm->pwm_freq);
+	}
 	freq = bl_pwm->pwm_freq;
 	switch (bl_pwm->pwm_port) {
 	case BL_PWM_VS:
@@ -137,39 +141,51 @@ static unsigned int bl_level_mapping(unsigned int level)
 	if (mid == mid_map)
 		return level;
 
-	if (level >= mid)
+	level = level > max ? max : level;
+	if ((level >= mid) && (level <= max))
 		level = (((level - mid) * (max - mid_map)) / (max - mid)) + mid_map;
-	else
+	else if ((level >= min) && (level < mid))
 		level = (((level - min) * (mid_map - min)) / (mid - min)) + min;
+	else
+		level = 0;
 
 	return level;
 }
 
 static void bl_set_level_pwm(struct bl_pwm_config_s *bl_pwm, unsigned int level)
 {
-	unsigned int pwm_hi = 0, pwm_lo = 0;
+	unsigned int pwm_hi = 0, pwm_lo = 0, pwm_level;
 	unsigned int min = bl_pwm->level_min;
 	unsigned int max = bl_pwm->level_max;
 	unsigned int pwm_max = bl_pwm->pwm_max;
 	unsigned int pwm_min = bl_pwm->pwm_min;
 	unsigned int port = bl_pwm->pwm_port;
 	unsigned int vs[4], ve[4], sw, n, i;
-	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
 
 	level = bl_level_mapping(level);
 	max = bl_level_mapping(max);
 	min = bl_level_mapping(min);
-	level = (pwm_max - pwm_min) * (level - min) / (max - min) + pwm_min;
+	if ((max <= min) || (level < min))
+		pwm_level = pwm_min;
+	else
+		pwm_level = (pwm_max - pwm_min) * (level - min) / (max - min) + pwm_min;
+	if (lcd_debug_print_flag) {
+		LCDPR("bl: port %d mapping: level=%d, level_max=%d, level_min=%d\n",
+			port, level, max, min);
+		LCDPR("bl: port %d: pwm_max=%d, pwm_min=%d, pwm_level=%d\n",
+			port, pwm_max, pwm_min, pwm_level);
+	}
 	switch (bl_pwm->pwm_method) {
 	case BL_PWM_POSITIVE:
-		pwm_hi = level;
-		pwm_lo = bl_pwm->pwm_cnt - level;
+		pwm_hi = pwm_level;
+		pwm_lo = bl_pwm->pwm_cnt - pwm_level;
 		break;
 	case BL_PWM_NEGATIVE:
-		pwm_lo = level;
-		pwm_hi = bl_pwm->pwm_cnt - level;
+		pwm_lo = pwm_level;
+		pwm_hi = bl_pwm->pwm_cnt - pwm_level;
 		break;
 	default:
+		LCDERR("bl: port %d: invalid pwm_method %d\n", port, bl_pwm->pwm_method);
 		break;
 	}
 
@@ -178,12 +194,9 @@ static void bl_set_level_pwm(struct bl_pwm_config_s *bl_pwm, unsigned int level)
 	case BL_PWM_B:
 	case BL_PWM_C:
 	case BL_PWM_D:
-		lcd_cbus_write(pwm_reg[port], (pwm_hi << 16) | pwm_lo);
-		break;
 	case BL_PWM_E:
 	case BL_PWM_F:
-		if (lcd_drv->chip_type >= LCD_CHIP_M8)
-			lcd_cbus_write(pwm_reg[port], (pwm_hi << 16) | pwm_lo);
+		lcd_cbus_write(pwm_reg[port], (pwm_hi << 16) | pwm_lo);
 		break;
 	case BL_PWM_VS:
 		memset(vs, 0, sizeof(unsigned int) * 4);
@@ -226,18 +239,10 @@ void aml_bl_set_level(unsigned int level)
 		return;
 
 	LCDPR("bl: set level: %u, last level: %u\n", level, bconf->level);
+	/* level range check */
 	level = (level > bconf->level_max ? bconf->level_max :
 			(level < bconf->level_min ? bconf->level_min : level));
 	bconf->level = level;
-
-	/* mapping */
-	if (level > bconf->level_mid) {
-		level = ((level - bconf->level_mid) * (bconf->level_max - bconf->level_mid_mapping)) /
-			(bconf->level_max - bconf->level_mid) + bconf->level_mid_mapping;
-	} else {
-		level = ((level - bconf->level_min) * (bconf->level_mid_mapping - bconf->level_min)) /
-			(bconf->level_mid - bconf->level_min) + bconf->level_min;
-	}
 
 	switch (bconf->method) {
 	case BL_CTRL_GPIO:
@@ -248,12 +253,16 @@ void aml_bl_set_level(unsigned int level)
 	case BL_CTRL_PWM_COMBO:
 		pwm0 = bconf->bl_pwm_combo0;
 		pwm1 = bconf->bl_pwm_combo1;
-		if ((level >= pwm0->level_min) || (level <= pwm0->level_max)) {
+		if ((level >= pwm0->level_min) && (level <= pwm0->level_max)) {
 			temp = (pwm0->level_min > pwm1->level_min) ? pwm1->level_max : pwm1->level_min;
+			if (lcd_debug_print_flag)
+				LCDPR("bl: pwm0 region, level=%u, pwm1_level=%u\n", level, temp);
 			bl_set_level_pwm(pwm0, level);
 			bl_set_level_pwm(pwm1, temp);
-		} else if ((level >= pwm1->level_min) || (level <= pwm1->level_max)) {
+		} else if ((level >= pwm1->level_min) && (level <= pwm1->level_max)) {
 			temp = (pwm1->level_min > pwm0->level_min) ? pwm0->level_max : pwm0->level_min;
+			if (lcd_debug_print_flag)
+				LCDPR("bl: pwm1 region, level=%u, pwm0_level=%u\n", level, temp);
 			bl_set_level_pwm(pwm0, temp);
 			bl_set_level_pwm(pwm1, level);
 		}
@@ -347,7 +356,6 @@ static void bl_pwm_pinmux_ctrl(struct bl_config_s *bconf, int status)
 static void bl_pwm_ctrl(struct bl_pwm_config_s *bl_pwm, int status)
 {
 	int port, pre_div;
-	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
 
 	port = bl_pwm->pwm_port;
 	pre_div = bl_pwm->pwm_pre_div;
@@ -358,6 +366,8 @@ static void bl_pwm_ctrl(struct bl_pwm_config_s *bl_pwm, int status)
 		case BL_PWM_B:
 		case BL_PWM_C:
 		case BL_PWM_D:
+		case BL_PWM_E:
+		case BL_PWM_F:
 			/* pwm clk_div */
 			lcd_cbus_setb(pwm_misc[port][0], pre_div, pwm_misc[port][1], 7);
 			/* pwm clk_sel */
@@ -365,20 +375,7 @@ static void bl_pwm_ctrl(struct bl_pwm_config_s *bl_pwm, int status)
 			/* pwm clk_en */
 			lcd_cbus_setb(pwm_misc[port][0], 1, pwm_misc[port][3], 1);
 			/* pwm enable */
-			lcd_cbus_setb(pwm_misc[port][0], 1, pwm_misc[port][4], 1);
-			break;
-		case BL_PWM_E:
-		case BL_PWM_F:
-			if (lcd_drv->chip_type >= LCD_CHIP_M8) {
-				/* pwm clk_div */
-				lcd_cbus_setb(pwm_misc[port][0], pre_div, pwm_misc[port][1], 7);
-				/* pwm clk_sel */
-				lcd_cbus_setb(pwm_misc[port][0], 0, pwm_misc[port][2], 2);
-				/* pwm clk_en */
-				lcd_cbus_setb(pwm_misc[port][0], 1, pwm_misc[port][3], 1);
-				/* pwm enable */
-				lcd_cbus_setb(pwm_misc[port][0], 1, pwm_misc[port][4], 1);
-			}
+			lcd_cbus_setb(pwm_misc[port][0], 0x3, pwm_misc[port][4], 2);
 			break;
 		default:
 			break;
@@ -390,12 +387,10 @@ static void bl_pwm_ctrl(struct bl_pwm_config_s *bl_pwm, int status)
 		case BL_PWM_B:
 		case BL_PWM_C:
 		case BL_PWM_D:
-			lcd_cbus_setb(pwm_misc[port][0], 0, pwm_misc[port][4], 1);
-			break;
 		case BL_PWM_E:
 		case BL_PWM_F:
-			if (lcd_drv->chip_type >= LCD_CHIP_M8)
-				lcd_cbus_setb(pwm_misc[port][0], 0, pwm_misc[port][4], 1);
+			/* pwm clk_disable */
+			lcd_cbus_setb(pwm_misc[port][0], 0, pwm_misc[port][3], 1);
 			break;
 		default:
 			break;
@@ -408,10 +403,10 @@ static void bl_power_en_ctrl(struct bl_config_s *bconf, int status)
 	if (status) {
 		if (bconf->power_on_delay > 0)
 			mdelay(bconf->power_on_delay);
-		if (bconf->en_gpio < BL_GPIO_NUM_MAX)
+		if (bconf->en_gpio < LCD_GPIO_MAX)
 			aml_lcd_gpio_set(bconf->en_gpio, bconf->en_gpio_on);
 	} else {
-		if (bconf->en_gpio < BL_GPIO_NUM_MAX)
+		if (bconf->en_gpio < LCD_GPIO_MAX)
 			aml_lcd_gpio_set(bconf->en_gpio, bconf->en_gpio_off);
 		if (bconf->power_off_delay > 0)
 			mdelay(bconf->power_off_delay);
@@ -749,7 +744,7 @@ int aml_bl_config_load_from_dts(char *dt_addr, unsigned int index, struct bl_con
 			if (bl_pwm->pwm_freq > XTAL_HALF_FREQ_HZ)
 				bl_pwm->pwm_freq = XTAL_HALF_FREQ_HZ;
 			if (lcd_debug_print_flag)
-				LCDPR("bl_pwm freq=%dHz\n", bl_pwm->pwm_freq);
+				LCDPR("bl: bl_pwm freq=%dHz\n", bl_pwm->pwm_freq);
 		}
 		propdata = (char *)fdt_getprop(dt_addr, child_offset, "bl_pwm_power", NULL);
 		if (propdata == NULL) {
@@ -1091,6 +1086,7 @@ int aml_bl_config_load_from_bsp(struct bl_config_s *bconf)
 		bconf->pwm_on_delay   = ext_lcd->pwm_on_delay;
 		bconf->pwm_off_delay  = ext_lcd->pwm_off_delay;
 
+		bl_pwm_config_init(bl_pwm);
 		if (lcd_debug_print_flag) {
 			LCDPR("bl: pwm_method    = %d\n", bl_pwm->pwm_method);
 			LCDPR("bl: pwm_port      = %d\n", bl_pwm->pwm_port);
@@ -1149,6 +1145,8 @@ int aml_bl_config_load_from_bsp(struct bl_config_s *bconf)
 		bconf->pwm_on_delay   = ext_lcd->pwm_on_delay;
 		bconf->pwm_off_delay  = ext_lcd->pwm_off_delay;
 
+		bl_pwm_config_init(pwm_combo0);
+		bl_pwm_config_init(pwm_combo1);
 		if (lcd_debug_print_flag) {
 			LCDPR("bl: pwm_combo0_method   = %d\n", pwm_combo0->pwm_method);
 			LCDPR("bl: pwm_combo0_port     = %d\n", pwm_combo0->pwm_port);
@@ -1174,7 +1172,7 @@ int aml_bl_config_load_from_bsp(struct bl_config_s *bconf)
 		break;
 	default:
 		if (lcd_debug_print_flag)
-			LCDERR("bl: wrong backlight control method\n");
+			LCDPR("bl: invalid backlight control method\n");
 		break;
 	}
 
