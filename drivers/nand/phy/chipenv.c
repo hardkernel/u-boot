@@ -241,7 +241,7 @@ void reset_amlchip_member(struct amlnand_chip *aml_chip)
 }
 #endif /* AML_NAND_UBOOT */
 
-static u32 aml_info_checksum(u8 *data, int lenth)
+u32 aml_info_checksum(u8 *data, int lenth)
 {
 	u32 checksum;
 	u8 *pdata;
@@ -263,6 +263,7 @@ static int aml_info_check_datasum(void *data, u8 *name)
 	struct block_status *blk_status = NULL;
 	struct shipped_bbt *bbt = NULL;
 	struct nand_config *config = NULL;
+	struct phy_partition_info *phy_part = NULL;
 
 	if (!memcmp(name, BBT_HEAD_MAGIC, 4)) {
 		blk_status = (struct block_status *)data;
@@ -292,6 +293,17 @@ static int aml_info_check_datasum(void *data, u8 *name)
 			(MAX_DEVICE_NUM*sizeof(struct dev_para))) != crc) {
 			aml_nand_msg("%s : nand check config crc error",
 				__func__);
+			ret = -NAND_READ_FAILED;
+		}
+	}
+
+	if (!memcmp(name, PHY_PARTITION_HEAD_MAGIC, 4)) {
+		phy_part = (struct phy_partition_info *)data;
+		crc = phy_part->crc;
+		if (aml_info_checksum((u8 *)(phy_part->partition),
+		(MAX_DEVICE_NUM*sizeof(struct _phy_partition))) != crc) {
+			aml_nand_msg("%s : nand check phy partition crc error",
+			__func__);
 			ret = -NAND_READ_FAILED;
 		}
 	}
@@ -1450,9 +1462,11 @@ get_free_blk:
 						if (aml_chip->state == CHIP_READY)
 							nand_get_chip(aml_chip);
 				#endif
+			/*
 			aml_nand_msg("normal blk write,pgnum=%d pgaddr=%x",
 						temp_page_num,
 						ops_para->page_addr);
+			*/
 						ret =
 						operation->write_page(aml_chip);
 				#ifdef AML_NAND_UBOOT
@@ -2642,9 +2656,12 @@ int amlnand_configs_confirm(struct amlnand_chip *aml_chip)
 	ENV_NAND_LINE
 	ret = phrase_driver_version(config_ptr->driver_version,DRV_PHY_VERSION);
 	if (ret) {
-		aml_nand_msg("nand driver version confirm failed :  driver_version in nand  %d.%02d.%03d.%04d ",(config_ptr->driver_version >> 24)&0xff,
-		(config_ptr->driver_version >> 16)&0xff,(config_ptr->driver_version >> 8)&0xff,(config_ptr->driver_version)&0xff);
-		confirm_flag = 1;
+		aml_nand_msg("driver_version in nand  %d.%02d.%03d.%04d ",
+			(config_ptr->driver_version >> 24)&0xff,
+			(config_ptr->driver_version >> 16)&0xff,
+			(config_ptr->driver_version >> 8)&0xff,
+			(config_ptr->driver_version)&0xff);
+		/*confirm_flag = 1;*/
 	}
 	ENV_NAND_LINE
 
@@ -3232,7 +3249,7 @@ for (n = 0; n < controller->chip_num; n++)
 
 				if (((controller->mfr_type == NAND_MFR_SAMSUNG ) && ((col0_oob != 0xFF) || (col0_data != 0xFF))) \
 					|| ((controller->mfr_type == NAND_MFR_TOSHIBA ) && ((col0_oob != 0xFF) || (col0_data != 0xFF))) \
-					||((controller->mfr_type  == NAND_MFR_MICRON ) && ((col0_oob == 0x0) ||(col0_oob != 0xFF))) \
+					||((controller->mfr_type  == NAND_MFR_MICRON ) && (col0_oob == 0x0)) \
 					||((controller->mfr_type  == NAND_MFR_HYNIX ) && (col0_oob != 0xFF)) \
 					||((controller->mfr_type  == NAND_MFR_SANDISK ) && (col0_oob != 0xFF))){
 
@@ -3325,6 +3342,10 @@ void amlnand_config_buf_free(struct amlnand_chip *aml_chip)
 		kfree(aml_chip->config_ptr);
 		aml_chip->config_ptr = NULL;
 	}
+	if (aml_chip->phy_part_ptr) {
+		kfree(aml_chip->phy_part_ptr);
+		aml_chip->phy_part_ptr = NULL;
+	}
 	if (aml_chip->user_oob_buf) {
 		kfree(aml_chip->user_oob_buf);
 		aml_chip->user_oob_buf = NULL;
@@ -3405,6 +3426,17 @@ static int amlnand_config_buf_malloc(struct amlnand_chip *aml_chip)
 	}
 	memset(aml_chip->config_ptr, 0x0, (sizeof(struct nand_config)));
 
+	aml_chip->phy_part_ptr =
+		aml_nand_malloc(sizeof(struct phy_partition_info));
+	if (aml_chip->phy_part_ptr == NULL) {
+		aml_nand_msg("malloc failed for phy_part_ptr ");
+		ret = -NAND_MALLOC_FAILURE;
+		goto exit_error0;
+	}
+	memset(aml_chip->phy_part_ptr,
+		0x0,
+		(sizeof(struct phy_partition_info)));
+
 	return ret;
 
 exit_error0:
@@ -3425,6 +3457,7 @@ void amlnand_set_config_attribute(struct amlnand_chip *aml_chip)
 	aml_chip->nand_secure.arg_type = FULL_PAGE;
 	aml_chip->nand_key.arg_type = FULL_PAGE;
 	aml_chip->uboot_env.arg_type = FULL_PAGE;
+	aml_chip->nand_phy_partition.arg_type = FULL_PAGE;
 #if (AML_CFG_DTB_RSV_EN)
 	aml_chip->amlnf_dtb.arg_type = FULL_PAGE;
 #endif
@@ -4112,6 +4145,18 @@ int amlnand_get_dev_configs(struct amlnand_chip *aml_chip)
 				goto exit_error0;
 			}
 		}
+		/* scan phy partition info here,
+		if we can't find phy partition,
+		we will calc and save it in phydev init stage. */
+		ret = amlnand_info_init(aml_chip,
+			(unsigned char *)&(aml_chip->nand_phy_partition),
+			(unsigned char *)aml_chip->phy_part_ptr,
+			(unsigned char *)PHY_PARTITION_HEAD_MAGIC,
+			sizeof(struct phy_partition_info));
+		if (ret < 0)
+			aml_nand_msg("scan phy partition failed and ret:%d",
+				ret);
+
 		ENV_NAND_LINE
 		if (flash->new_type && (flash->new_type < 10) && (retry_info->default_flag == 0)) {
 			ENV_NAND_LINE

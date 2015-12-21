@@ -4,6 +4,7 @@
 #include "../include/amlnf_dev.h"
 
 #ifndef AML_NAND_UBOOT
+
 #include <linux/pinctrl/consumer.h>
 #include <linux/amlogic/cpu_version.h>
 #include <linux/io.h>
@@ -128,6 +129,7 @@ union nand_core_clk_t {
 #define	SECURE_INFO_HEAD_MAGIC	"nsec"
 #define	ENV_INFO_HEAD_MAGIC		"nenv"
 #define	DTD_INFO_HEAD_MAGIC		"ndtb"
+#define	PHY_PARTITION_HEAD_MAGIC	"phyp"
 
 #define	FBBT_COPY_NUM	1
 
@@ -707,6 +709,20 @@ struct dev_para {
 
 	u32 option;
 };
+
+struct _phy_partition {
+	const char name[MAX_DEVICE_NAME_LEN];
+	uint64_t phy_off;
+	uint64_t phy_len;
+    uint64_t logic_len;
+};
+
+struct phy_partition_info {
+	unsigned int crc;
+	struct _phy_partition partition[MAX_DEVICE_NUM];
+	unsigned char dev_num;
+};
+
 #if (AML_CFG_INSIDE_PARTTBL)
 #define MAX_PART_NUM	16
 #define PART_NAME_LEN 16
@@ -801,6 +817,7 @@ struct amlnand_chip {
 
 	struct nand_arg_info config_msg;
 	struct nand_config *config_ptr;
+	struct phy_partition_info *phy_part_ptr;
 
 	struct nand_arg_info nand_bbtinfo;
 	struct nand_arg_info shipped_bbtinfo;
@@ -809,6 +826,7 @@ struct amlnand_chip {
 	struct nand_arg_info nand_key;
 	struct nand_arg_info nand_secure;
 	struct nand_arg_info uboot_env;
+	struct nand_arg_info  nand_phy_partition;
 #if (AML_CFG_DTB_RSV_EN)
 	struct nand_arg_info amlnf_dtb;
 	u32 detect_dtb_flag;	/*1:no dtb in flash */
@@ -879,6 +897,7 @@ extern void nand_get_chip(void *aml_chip);
 extern void nand_release_chip(void *aml_chip);
 extern int aml_key_init(struct amlnand_chip *aml_chip);
 extern int aml_secure_init(struct amlnand_chip *aml_chip);
+extern unsigned int aml_info_checksum(unsigned char *data, int lenth);
 extern int amlnand_info_init(struct amlnand_chip *aml_chip,
 	u8 *info,
 	u8 *buf,
