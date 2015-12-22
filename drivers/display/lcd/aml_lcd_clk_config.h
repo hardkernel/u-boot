@@ -229,7 +229,7 @@ enum div_sel_e {
 
 /* ******** frequency limit (unit: kHz) ******** */
 /* pll */
-#define SS_LEVEL_MAX_G9BB           5
+#define SS_LEVEL_MAX_G9BB           3
 #define PLL_M_MIN_G9BB              2
 #define PLL_M_MAX_G9BB              511
 #define PLL_N_MIN_G9BB              1
@@ -263,7 +263,7 @@ enum div_sel_e {
 
 /* ******** frequency limit (unit: kHz) ******** */
 /* pll */
-#define SS_LEVEL_MAX_GXTVBB         1
+#define SS_LEVEL_MAX_GXTVBB         5
 #define PLL_M_MIN_GXTVBB            2
 #define PLL_M_MAX_GXTVBB            511
 #define PLL_N_MIN_GXTVBB            1
@@ -283,6 +283,8 @@ enum div_sel_e {
 
 extern struct lcd_clk_config_s *get_lcd_clk_config(void);
 
+extern char *lcd_get_spread_spectrum(void);
+extern void lcd_set_spread_spectrum(void);
 extern void lcd_clk_set(struct lcd_config_s *pconf);
 extern void lcd_clk_disable(void);
 

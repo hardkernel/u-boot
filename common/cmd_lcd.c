@@ -51,6 +51,43 @@ static int do_lcd_disable(cmd_tbl_t *cmdtp, int flag, int argc, char * const arg
 	return 0;
 }
 
+static int do_lcd_ss(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+	struct aml_lcd_drv_s *lcd_drv;
+	int level;
+	int ret = 0;
+
+	if (argc == 1) {
+		return -1;
+	}
+
+	lcd_drv = aml_lcd_get_driver();
+	if (lcd_drv == NULL) {
+		printf("no lcd driver\n");
+		return ret;
+	}
+	if (strcmp(argv[1], "set") == 0) {
+		if (argc == 3) {
+			level = (int)simple_strtoul(argv[2], NULL, 10);
+			if (lcd_drv->lcd_set_ss)
+				lcd_drv->lcd_set_ss(level);
+			else
+				printf("no lcd lcd_set_ss\n");
+		} else {
+			ret = -1;
+		}
+	} else if (strcmp(argv[1], "get") == 0) {
+		if (lcd_drv->lcd_get_ss) {
+			printf("lcd_get_ss: %s\n", lcd_drv->lcd_get_ss());
+		} else {
+			printf("no lcd_get_ss\n");
+		}
+	} else {
+		ret = -1;
+	}
+	return ret;
+}
+
 static int do_lcd_bl(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	struct aml_lcd_drv_s *lcd_drv;
@@ -155,6 +192,7 @@ static cmd_tbl_t cmd_lcd_sub[] = {
 	U_BOOT_CMD_MKENT(probe,   2, 0, do_lcd_probe, "", ""),
 	U_BOOT_CMD_MKENT(enable,  2, 0, do_lcd_enable, "", ""),
 	U_BOOT_CMD_MKENT(disable, 2, 0, do_lcd_disable, "", ""),
+	U_BOOT_CMD_MKENT(ss,   4, 0, do_lcd_ss, "", ""),
 	U_BOOT_CMD_MKENT(bl,   4, 0, do_lcd_bl,   "", ""),
 	U_BOOT_CMD_MKENT(info, 2, 0, do_lcd_info, "", ""),
 	U_BOOT_CMD_MKENT(reg,  2, 0, do_lcd_reg, "", ""),
@@ -185,7 +223,8 @@ U_BOOT_CMD(
 	"lcd probe        - probe lcd parameters\n"
 	"lcd enable       - enable lcd module\n"
 	"lcd disable      - disable lcd module\n"
-	"lcd bl           - disable lcd module\n"
+	"lcd ss           - lcd pll spread spectrum operation\n"
+	"lcd bl           - lcd backlight operation\n"
 	"lcd info         - show lcd parameters\n"
 	"lcd reg          - dump lcd registers\n"
 	"lcd test         - show lcd bist pattern\n"

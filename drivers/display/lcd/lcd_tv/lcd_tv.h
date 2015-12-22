@@ -25,7 +25,7 @@
 //**********************************
 #define LCD_DRV_TYPE      "tv"
 
-#define LCD_DRV_VERSION    "20151120"
+#define LCD_DRV_VERSION    "20151222"
 //**********************************
 
 extern int lcd_tv_driver_init(void);

@@ -638,6 +638,34 @@ static void lcd_disable(void)
 		LCDPR("already disabled\n");
 }
 
+static void aml_lcd_set_ss(int level)
+{
+	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
+
+	if (lcd_check_valid())
+		return;
+	if (aml_lcd_driver.lcd_status) {
+		lcd_drv->lcd_config->lcd_timing.ss_level = level;
+		lcd_set_spread_spectrum();
+	} else {
+		LCDPR("already disabled\n");
+	}
+}
+
+static char *aml_lcd_get_ss(void)
+{
+	char *str = "invalid";
+
+	if (lcd_check_valid())
+		return str;
+	if (aml_lcd_driver.lcd_status)
+		str = lcd_get_spread_spectrum();
+	else
+		LCDPR("already disabled\n");
+
+	return str;
+}
+
 #define TV_LCD_ENC_TST_NUM_MAX    8
 static char *lcd_enc_tst_str[] = {
 	"0-None",        /* 0 */
@@ -738,6 +766,8 @@ static struct aml_lcd_drv_s aml_lcd_driver = {
 	.lcd_probe = lcd_probe,
 	.lcd_enable = lcd_enable,
 	.lcd_disable = lcd_disable,
+	.lcd_set_ss = aml_lcd_set_ss,
+	.lcd_get_ss = aml_lcd_get_ss,
 	.lcd_test = aml_lcd_test,
 	.lcd_info = aml_lcd_info,
 	.lcd_reg = aml_lcd_reg,
