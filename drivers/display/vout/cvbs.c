@@ -494,13 +494,19 @@ static void cvbs_performance_enhancement(int mode)
 			/ sizeof(struct reg_s *);
 		index = (index >= max) ? 0 : index;
 		s = tvregs_576cvbs_performance_m8[index];
-		type = 0;
+		type = 3;
 	} else if (check_cpu_type(MESON_CPU_MAJOR_ID_GXBB)) {
 		max = sizeof(tvregs_576cvbs_performance_gxbb)
 			/ sizeof(struct reg_s *);
 		index = (index >= max) ? 0 : index;
 		s = tvregs_576cvbs_performance_gxbb[index];
-		type = 0;
+		type = 4;
+	} else if (check_cpu_type(MESON_CPU_MAJOR_ID_GXTVBB)) {
+		max = sizeof(tvregs_576cvbs_performance_gxtvbb)
+			/ sizeof(struct reg_s *);
+		index = (index >= max) ? 0 : index;
+		s = tvregs_576cvbs_performance_gxtvbb[index];
+		type = 5;
 	}
 
 	printf("cvbs performance type = %d, table = %d\n", type, index);
