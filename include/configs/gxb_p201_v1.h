@@ -125,7 +125,7 @@
             "fi;fi;fi;"\
             "\0" \
         "storeboot="\
-            "if imgread kernel boot ${loadaddr}; then store dtb read $dtb_mem_addr; bootm ${loadaddr}; fi;"\
+            "if imgread kernel boot ${loadaddr}; then bootm ${loadaddr}; fi;"\
             "run update;"\
             "\0"\
         "factory_reset_poweroff_protect="\

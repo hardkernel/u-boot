@@ -63,7 +63,7 @@
 	"display_layer=osd1\0" \
 	"display_color_index=16\0" \
 	"storeboot="\
-	"if imgread kernel boot ${loadaddr}; then store dtb read $dtb_mem_addr; bootm ${loadaddr}; fi;"\
+	"if imgread kernel boot ${loadaddr}; then bootm ${loadaddr}; fi;"\
 	"\0"
 #define CONFIG_BOOTARGS "init=/init console=ttyS0,115200 no_console_suspend earlyprintk=aml-uart,0xc81004c0 ramoops.mem_address=0x20000000 ramoops.mem_size=0x100000 ramoops.record_size=0x8000 ramoops.console_size=0x4000"
 #define CONFIG_BOOTCOMMAND "osd open;"\

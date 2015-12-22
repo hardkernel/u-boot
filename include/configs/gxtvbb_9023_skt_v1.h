@@ -73,7 +73,7 @@
             "setenv bootargs rootfstype=ramfs init=/init console=ttyS0,115200 no_console_suspend earlyprintk=aml-uart,0xc81004c0 androidboot.selinux=disabled logo=osd1,loaded,0x3b000000 vout=1080p60hz,enable hdmitx= osd_reverse=${osd_reverse} video_reverse=${video_reverse} androidboot.firstboot=1"\
             "\0"\
 	"storeboot="\
-	"if imgread kernel boot ${loadaddr}; then store dtb read $dtb_mem_addr; bootm ${loadaddr}; fi;"\
+	"if imgread kernel boot ${loadaddr}; then bootm ${loadaddr}; fi;"\
 	"\0"\
         "init_display="\
             "osd open;osd clear;vout output ${outputmode};imgread pic logo bootup $loadaddr;bmp display $bootup_offset;bmp scale"\

@@ -120,7 +120,6 @@
 		"\0" \
 	"storeboot="\
 		"if imgread kernel boot ${loadaddr}; then "\
-			"store dtb read $dtb_mem_addr; "\
 			"bootm ${loadaddr}; "\
 		"fi; "\
 		"run update; "\
