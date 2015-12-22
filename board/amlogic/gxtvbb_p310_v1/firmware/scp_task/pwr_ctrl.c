@@ -18,12 +18,127 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
+#include <config.h>
+
+static unsigned int pwm_voltage_table[][2] = {
+	{ 0x180004, 900},
+	{ 0x170005, 910},
+	{ 0x160006, 920},
+	{ 0x150007, 930},
+	{ 0x140008, 940},
+	{ 0x130009, 950},
+	{ 0x12000a, 960},
+	{ 0x11000b, 970},
+	{ 0x10000c, 980},
+	{ 0x0f000d, 990},
+	{ 0x0e000e, 1000},
+	{ 0x0d000f, 1010},
+	{ 0x0c0010, 1020},
+	{ 0x0b0011, 1030},
+	{ 0x0a0012, 1040},
+	{ 0x090013, 1050},
+	{ 0x080014, 1060},
+	{ 0x070015, 1070},
+	{ 0x060016, 1080},
+	{ 0x050017, 1090},
+	{ 0x040018, 1100},
+	{ 0x030019, 1110},
+	{ 0x02001a, 1120},
+	{ 0x01001b, 1130},
+	{ 0x00001c, 1140},
+};
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
+#define P_PIN_MUX_REG3		(*((volatile unsigned *)(0xda834400 + (0x2f << 2))))
+#define P_PIN_MUX_REG7		(*((volatile unsigned *)(0xda834400 + (0x33 << 2))))
+
+#define P_PWM_MISC_REG_AB	(*((volatile unsigned *)(0xc1100000 + (0x2156 << 2))))
+#define P_PWM_PWM_B		(*((volatile unsigned *)(0xc1100000 + (0x2155 << 2))))
+#define P_PWM_MISC_REG_CD	(*((volatile unsigned *)(0xc1100000 + (0x2196 << 2))))
+#define P_PWM_PWM_D		(*((volatile unsigned *)(0xc1100000 + (0x2195 << 2))))
+#define P_AO_PWM_PWM_B1		(*((volatile unsigned *)(0xc8100400 + (0x55 << 2))))
+#define P_EE_TIMER_E		(*((volatile unsigned *)(0xc1100000 + (0x2662 << 2))))
+
+enum pwm_id {
+    pwm_a = 0,
+    pwm_b,
+    pwm_c,
+    pwm_d,
+    pwm_e,
+    pwm_f,
+    pwm_ao_a,
+    pwm_ao_b,
+};
+
+static void pwm_set_voltage(unsigned int id, unsigned int voltage)
+{
+	int to;
+
+	uart_puts("set vddee to 0x");
+	uart_put_hex(voltage, 16);
+	uart_puts("mv\n");
+	for (to = 0; to < ARRAY_SIZE(pwm_voltage_table); to++) {
+		if (pwm_voltage_table[to][1] >= voltage) {
+			break;
+		}
+	}
+	if (to >= ARRAY_SIZE(pwm_voltage_table)) {
+		to = ARRAY_SIZE(pwm_voltage_table) - 1;
+	}
+	switch (id) {
+	case pwm_b:
+		P_PWM_PWM_B = pwm_voltage_table[to][0];
+		break;
+
+	case pwm_ao_b:
+		P_AO_PWM_PWM_B1 = pwm_voltage_table[to][0];
+		break;
+	case pwm_d:
+		P_PWM_PWM_D = pwm_voltage_table[to][0];
+		break;
+	default:
+		break;
+	}
+	_udelay(200);
+}
+
+
+/*p310:GPIOAO_2: L= POWER on mode, H = standby mode*/
+
+static void power_off_3v3_5v(void)
+{
+	aml_update_bits(AO_GPIO_O_EN_N, 1<<2, 0);
+	aml_update_bits(AO_GPIO_O_EN_N, 1<<18, 1<<18);
+}
+static void power_on_3v3_5v(void)
+{
+	aml_update_bits(AO_GPIO_O_EN_N, 1<<2, 0);
+	aml_update_bits(AO_GPIO_O_EN_N, 1<<18, 0);
+}
+
+/*p310	GPIOAO_3  powr on	:1, standby	:0*/
+static void power_off_vcck(void)
+{
+	aml_update_bits(AO_GPIO_O_EN_N, 1<<3, 0);
+	aml_update_bits(AO_GPIO_O_EN_N, 1<<19, 0);
+}
+static void power_on_vcck(void)
+{
+	aml_update_bits(AO_GPIO_O_EN_N, 1<<3, 0);
+	aml_update_bits(AO_GPIO_O_EN_N, 1<<19, 1<<19);
+}
+
 
 static void power_off_at_clk81(void)
 {
+	pwm_set_voltage(pwm_ao_b, CONFIG_VDDEE_SLEEP_VOLTAGE);	// reduce power
+	power_off_3v3_5v();
+	power_off_vcck();
 }
 static void power_on_at_clk81(void)
 {
+	pwm_set_voltage(pwm_ao_b, CONFIG_VDDEE_INIT_VOLTAGE);
+	power_on_vcck();
+	power_on_3v3_5v();
 }
 
 static void power_off_at_24M(void)

@@ -25,14 +25,14 @@ static void gxbb_com_gate_off(void)
 {
 	/* gate off fix_clk_div2*/
 	aml_update_bits(HHI_MPLL_CNTL6, 1<<27, 0);
+	/* gate off fix_clk_div3*/
+	aml_update_bits(HHI_MPLL_CNTL6, 1<<28, 0);
 	/* gate off fix_clk_div4*/
 	aml_update_bits(HHI_MPLL_CNTL6, 1<<29, 0);
 	/* gate off fix_clk_div5*/
 	aml_update_bits(HHI_MPLL_CNTL6, 1<<30, 0);
 	/* gate off fix_clk_div7*/
 	aml_update_bits(HHI_MPLL_CNTL6, 1<<31, 0);
-	/* switch vpu to fclk_div4 */
-	aml_update_bits(HHI_VPU_CLK_CNTL, 7 << 9, 0);
 	/* gate off mpll 0 ~ 3 */
 	aml_update_bits(HHI_MPLL_CNTL7, 1 << 15, 0);
 	aml_update_bits(HHI_MPLL_CNTL8, 1 << 15, 0);
@@ -46,10 +46,10 @@ static void gxbb_com_gate_on(void)
 	aml_update_bits(HHI_MPLL_CNTL8, 1 << 15, 1 << 15);
 	aml_update_bits(HHI_MPLL_CNTL9, 1 << 15, 1 << 15);
 	aml_update_bits(HHI_MPLL3_CNTL0, 1 << 10, 1 << 10);
-	/* switch vpu to fclk_div3 */
-	aml_update_bits(HHI_VPU_CLK_CNTL, 7 << 9, 1 << 9);
 	/* gate on fix_clk_div2*/
 	aml_update_bits(HHI_MPLL_CNTL6, 1<<27, 1<<27);
+	/* gate on fix_clk_div3*/
+	aml_update_bits(HHI_MPLL_CNTL6, 1<<28, 1<<28);
 	/* gate on fix_clk_div4*/
 	aml_update_bits(HHI_MPLL_CNTL6, 1<<29, 1<<29);
 	/* gate on fix_clk_div5*/
@@ -70,7 +70,6 @@ void suspend_get_wakeup_source(void *response, unsigned int suspend_from)
 		return;
 	p_pwr_op->get_wakeup_source(response, suspend_from);
 }
-
 /*
  *suspend_from defines who call this function.
  * 1: suspend
