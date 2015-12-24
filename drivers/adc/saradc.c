@@ -37,8 +37,24 @@
 
 #define GXBB_ADC   1
 #define AML_ADC_SAMPLE_DEBUG 0
-#define GXBB_CLK_REG                (volatile unsigned int *)0xc883c3d8
 
+#ifdef  CONFIG_TARGET_MESON_GXTV
+#define GXBB_CLK_REG                (volatile unsigned int *)0xc8100090
+#define P_SAR_SAR_ADC_REG0		    (volatile unsigned int *)0xc8100600
+#define P_SAR_ADC_CHAN_LIST		    (volatile unsigned int *)0xc8100604
+#define P_SAR_ADC_AVG_CNTL		    (volatile unsigned int *)0xc8100608
+#define P_SAR_ADC_REG3				(volatile unsigned int *)0xc810060c
+#define P_SAR_ADC_DELAY			    (volatile unsigned int *)0xc8100610
+#define P_SAR_ADC_LAST_RD			(volatile unsigned int *)0xc8100614
+#define P_SAR_ADC_FIFO_RD			(volatile unsigned int *)0xc8100618
+#define P_SAR_ADC_AUX_SW			(volatile unsigned int *)0xc810061c
+#define P_SAR_ADC_CHAN_10_SW		(volatile unsigned int *)0xc8100620
+#define P_SAR_ADC_DETECT_IDLE_SW	(volatile unsigned int *)0xc8100624
+#define P_SAR_ADC_DELTA_10	        (volatile unsigned int *)0xc8100628
+#define P_SAR_ADC_DELTA_11          (volatile unsigned int *)0xc810062c
+
+#else
+#define GXBB_CLK_REG                (volatile unsigned int *)0xc883c3d8
 #define P_SAR_SAR_ADC_REG0		    (volatile unsigned int *)0xc1108680
 #define P_SAR_ADC_CHAN_LIST		    (volatile unsigned int *)0xc1108684
 #define P_SAR_ADC_AVG_CNTL		    (volatile unsigned int *)0xc1108688
@@ -51,7 +67,7 @@
 #define P_SAR_ADC_DETECT_IDLE_SW	(volatile unsigned int *)0xc11086a4
 #define P_SAR_ADC_DELTA_10	        (volatile unsigned int *)0xc11086a8
 #define P_SAR_ADC_DELTA_11          (volatile unsigned int *)0xc11086aC
-
+#endif
 /*
 #define P_SAR_ADC_DELTA_11		    (volatile unsigned int *)0xc11086a8
 #define P_SAR_ADC_TEMP_SES		    (volatile unsigned int *)0xc11086ac
