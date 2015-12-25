@@ -79,7 +79,6 @@ static void lcd_power_ctrl(int status)
 	struct lcd_power_step_s *power_step;
 #ifdef CONFIG_AML_LCD_EXTERN
 	struct aml_lcd_extern_driver_s *ext_drv;
-	int index;
 #endif
 	char *str;
 	int i, gpio;
@@ -124,10 +123,12 @@ static void lcd_power_ctrl(int status)
 #ifdef CONFIG_AML_LCD_EXTERN
 		case LCD_POWER_TYPE_EXTERN:
 			ext_drv = aml_lcd_extern_get_driver();
-			if (status)
-				ext_drv->power_on();
-			else
-				ext_drv->power_off();
+			if (ext_drv) {
+				if (status)
+					ext_drv->power_on();
+				else
+					ext_drv->power_off();
+			}
 			break;
 #endif
 		default:
@@ -608,9 +609,9 @@ int lcd_probe(void)
 
 int lcd_remove(void)
 {
-// #ifdef CONFIG_AML_LCD_EXTERN
-	// aml_lcd_extern_remove();
-// #endif
+#ifdef CONFIG_AML_LCD_EXTERN
+	aml_lcd_extern_remove();
+#endif
 
 	return 0;
 }

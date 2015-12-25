@@ -426,7 +426,6 @@ static int lcd_config_load_from_bsp(struct lcd_config_s *pconf)
 #ifdef CONFIG_AML_LCD_EXTERN
 static int lcd_extern_load_config(char *dt_addr, struct lcd_config_s *pconf)
 {
-	struct aml_lcd_extern_driver_s *ext_drv;
 	struct lcd_power_step_s *power_step;
 	int index, i;
 
@@ -446,6 +445,8 @@ static int lcd_extern_load_config(char *dt_addr, struct lcd_config_s *pconf)
 		}
 		i++;
 	}
+
+	return 0;
 }
 #endif
 
