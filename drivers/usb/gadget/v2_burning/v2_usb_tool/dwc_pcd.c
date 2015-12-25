@@ -12,7 +12,7 @@
 #include "dwc_pcd.h"
 #include "dwc_pcd_irq.h"
 
-pcd_struct_t this_pcd ;//FIXME:This PCD should point to different or cause bug!!
+pcd_struct_t this_pcd[NUM_EP];//FIXME:This PCD should point to different or cause bug!!
 
 dwc_ep_t g_dwc_eps[NUM_EP];
 
@@ -21,7 +21,7 @@ int dwc_core_init(void)
     gotgctl_data_t gctrldata;
     int32_t         snpsid;
 
-    memset(&this_pcd, 0, sizeof(this_pcd));
+    memset(this_pcd, 0, sizeof(this_pcd));
 
     DBG("DWC_REG_GSNPSID 0x%x\n", DWC_REG_GSNPSID+DWC_REG_BASE);
     snpsid = dwc_read_reg32(DWC_REG_GSNPSID);
@@ -426,111 +426,6 @@ static void dwc_otg_flush_rx_fifo( )
  * @param _core_if Programming view of DWC_otg controller.
  * @param _ep The EP0 data.
  */
- #if 0
-void dwc_otg_ep0_start_transfer(dwc_ep_t *_ep)
-{
-	depctl_data_t depctl;
-	deptsiz0_data_t deptsiz;
-        gintmsk_data_t intr_mask = { 0};
-
-        _ep->total_len = _ep->xfer_len;
-
-	//DBG("dwc_otg_ep0_start_transfer: xfer_len:%d\n",_ep->xfer_len);
-	/* IN endpoint */
-	if (_ep->is_in == 1) {
-		gnptxsts_data_t tx_status = { 0};
-
-		tx_status.d32 = dwc_read_reg32(DWC_REG_GNPTXSTS);
-		if (tx_status.b.nptxqspcavail == 0) {
-			return;
-		}
-
-		depctl.d32 = dwc_read_reg32(DWC_REG_IN_EP_REG(0));
-		deptsiz.d32 = dwc_read_reg32(DWC_REG_IN_EP_TSIZE(0));
-
-		/* Zero Length Packet? */
-		if (_ep->xfer_len == 0) {
-			deptsiz.b.xfersize = 0;
-			deptsiz.b.pktcnt = 1;
-		} else {
-			/* Program the transfer size and packet count
-			*  as follows: xfersize = N * maxpacket +
-			*  short_packet pktcnt = N + (short_packet
-			*  exist ? 1 : 0)
-			*/
-			if (_ep->xfer_len > _ep->maxpacket) {
-				_ep->xfer_len = _ep->maxpacket;
-				deptsiz.b.xfersize = _ep->maxpacket;
-			}
-			else {
-				deptsiz.b.xfersize = _ep->xfer_len;
-			}
-			deptsiz.b.pktcnt = 1;
-
-		}
-		dwc_write_reg32(DWC_REG_IN_EP_TSIZE(0), deptsiz.d32);
-             //DBG( "IN len=%d  xfersize=%d pktcnt=%d [%08x]\n",
-              //              _ep->xfer_len,deptsiz.b.xfersize, deptsiz.b.pktcnt, deptsiz.d32);
-
-
-		flush_cpu_cache();
-
-		/* EP enable, IN data in FIFO */
-		depctl.b.cnak = 1;
-		depctl.b.epena = 1;
-		dwc_write_reg32(DWC_REG_IN_EP_REG(0), depctl.d32);
-
-		/**
-		 * Enable the Non-Periodic Tx FIFO empty interrupt, the
-		 * data will be written into the fifo by the ISR.
-		 */
-
-		/* First clear it from GINTSTS */
-		intr_mask.b.nptxfempty = 1;
-		dwc_modify_reg32( DWC_REG_GINTSTS,intr_mask.d32, 0);
-		dwc_modify_reg32( DWC_REG_GINTMSK,intr_mask.d32, intr_mask.d32);
-
-
-	} else { /* OUT endpoint */
-
-		depctl.d32 = dwc_read_reg32(DWC_REG_OUT_EP_REG(0));
-		deptsiz.d32 = dwc_read_reg32(DWC_REG_OUT_EP_TSIZE(0));
-
-		/* Program the transfer size and packet count as follows:
-		*  xfersize = N * (maxpacket + 4 - (maxpacket % 4))
-		*  pktcnt = N                                          */
-#if 0
-		if (_ep->xfer_len == 0) {
-			/* Zero Length Packet */
-			deptsiz.b.xfersize = _ep->maxpacket;
-			deptsiz.b.pktcnt = 1;
-		} else {
-			deptsiz.b.pktcnt =
-			(_ep->xfer_len + (_ep->maxpacket - 1)) /_ep->maxpacket;
-			deptsiz.b.xfersize = deptsiz.b.pktcnt * _ep->maxpacket;
-		}
-#else   // ep0 pktcnt is 1 bit
-
-		deptsiz.b.xfersize = _ep->maxpacket;
-		deptsiz.b.pktcnt = 1;
-		udelay(1); // This is needed, don't know reason.
-#endif
-
-
-		dwc_write_reg32(DWC_REG_OUT_EP_TSIZE(0), deptsiz.d32);
-             //DBG( "OUT len=%d  xfersize=%d pktcnt=%d\n",
-             //               _ep->xfer_len,deptsiz.b.xfersize, deptsiz.b.pktcnt);
-
-
-		/* EP enable */
-		depctl.b.cnak = 1;
-		depctl.b.epena = 1;
-		dwc_write_reg32 (DWC_REG_OUT_EP_REG(0), depctl.d32);
-	}
-
-	flush_cpu_cache();
-}
- #endif
 
 void dwc_otg_ep_start_transfer(dwc_ep_t *_ep)
 {

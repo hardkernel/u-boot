@@ -252,6 +252,7 @@ int optimus_simg_to_media(char* simgPktHead, const u32 pktLen, u32* unParsedData
                                     _filledBufValidLen = thisChunkFilledLen;
                             }
 
+                            DWN_DBG("LeftDataLen to fill:0x%x\n", LeftDataLen);
                             do {
                                     unsigned actualWrLen = 0;
 

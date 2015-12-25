@@ -214,7 +214,7 @@ static void pcd_setup( pcd_struct_t *_pcd )
  */
 static void handle_ep0( int is_in )
 {
-	pcd_struct_t * _pcd = &this_pcd;//Oh, this_pcd
+	pcd_struct_t * _pcd = &this_pcd[0];//Oh, this_pcd
 	dwc_ep_t * ep0 = &g_dwc_eps[0];
 
     switch (_pcd->ep0state)
@@ -266,14 +266,14 @@ static void handle_ep0( int is_in )
 }
 
 /**
- * This function completes the request for the EP.  If there are
+ * This function completes the request for the 'BULK' EP.  If there are
  * additional requests for the EP in the queue they will be started.
  */
 static void complete_ep( int ep_num,int is_in )
 {
-	deptsiz_data_t deptsiz;
-	pcd_struct_t *pcd = &this_pcd;
-	dwc_ep_t *ep = &g_dwc_eps[ep_num];
+        deptsiz_data_t deptsiz;
+        pcd_struct_t *pcd = &this_pcd[ep_num];
+        dwc_ep_t *ep = &g_dwc_eps[ep_num];
 
 	if (is_in)
     {
@@ -433,13 +433,9 @@ void dwc_otg_ep_write_packet( dwc_ep_t *_ep)
                 return;
         }
 
-	/* Find the byte length of the packet either short packet or MPS */
-	if ((_ep->xfer_len - _ep->xfer_count) < _ep->maxpacket) {
-		byte_count = _ep->xfer_len - _ep->xfer_count;
-	}
-	else {
-		byte_count = _ep->maxpacket;
-	}
+        /* Find the byte length of the packet either short packet or MPS */
+        byte_count = _ep->xfer_len - _ep->xfer_count;
+        if (byte_count > _ep->maxpacket) byte_count = _ep->maxpacket;
 
 	/* Find the DWORD length, padded by extra bytes as neccessary if MPS
 	 * is not a multiple of DWORD */
@@ -603,7 +599,7 @@ int32_t dwc_otg_pcd_handle_rx_status_q_level_intr(void)
                     if (!status.b.epnum)
                     {
                         /*const char* p = ep->xfer_buff - status.b.bcnt;*/
-                        this_pcd.cmdtype.out_complete = 1;
+                        this_pcd[0].cmdtype.out_complete = 1;
                         /*
                          *if(!strcmp("power", p) || !strcmp("low_power", p)){
                          *    printf("%s, bcnt %d, cnt %d, %d\n", p, status.b.bcnt, ep->xfer_count, this_pcd.cmdtype.in_complete);
@@ -627,14 +623,14 @@ int32_t dwc_otg_pcd_handle_rx_status_q_level_intr(void)
             {
                 static int _is_first_setup_out_in_cmd = 1;
 
-                dwc_otg_read_setup_packet( this_pcd.setup_pkt.d32);
-                this_pcd.request_enable = 1;
+                dwc_otg_read_setup_packet( this_pcd[0].setup_pkt.d32);
+                this_pcd[0].request_enable = 1;
                 ep->xfer_count += status.b.bcnt;
 
                 DBG("set %d, %d\n", status.b.bcnt, ep->xfer_count);
                 if (_is_first_setup_out_in_cmd) //first tplcmd/bulkcmd that in sequence 'setup + out + in'
                 {
-                    struct usb_ctrlrequest request = this_pcd.setup_pkt.req;
+                    struct usb_ctrlrequest request = this_pcd[0].setup_pkt.req;
                     if ( USB_TYPE_VENDOR == (request.bRequestType & USB_TYPE_MASK) )
                     {
                         unsigned bRequest = request.bRequest;
@@ -800,13 +796,13 @@ int32_t dwc_otg_pcd_handle_enum_done_intr(void)
 	dctl.b.cgnpinnak = 1;
 	dwc_modify_reg32(DWC_REG_DCTL, dctl.d32, dctl.d32);
 
-        if (this_pcd.ep0state == EP0_DISCONNECT) {
-                this_pcd.ep0state = EP0_IDLE;
-        } else if (this_pcd.ep0state == EP0_STALL) {
-                this_pcd.ep0state = EP0_IDLE;
+        if (this_pcd[0].ep0state == EP0_DISCONNECT) {
+				this_pcd[0].ep0state = EP0_IDLE;
+		} else if (this_pcd[0].ep0state == EP0_STALL) {
+				this_pcd[0].ep0state = EP0_IDLE;
         }
 
-	 this_pcd.ep0state = EP0_IDLE;
+    this_pcd[0].ep0state = EP0_IDLE;
 
 
 	/* Set USB turnaround time based on device speed and PHY interface. */
@@ -1035,6 +1031,7 @@ do { \
                         }
                         /** IN Token received with TxF Empty */
                         if (diepint.b.intktxfemp) {
+                                DWN_MSG("diepint.b.intktxfemp\n");
 #if 0
                                 if (!ep->stopped && epnum != 0) {
                                         diepmsk_data_t diepmsk = { 0};
@@ -1047,7 +1044,8 @@ do { \
                         }
                         /** IN Token Received with EP mismatch */
                         if (diepint.b.intknepmis) {
-				CLEAR_IN_EP_INTR(epnum,intknepmis);
+                                DWN_MSG("intknepmis ep%d\n", epnum);
+                                CLEAR_IN_EP_INTR(epnum,intknepmis);
                         }
                         /** IN Endpoint NAK Effective */
                         if (diepint.b.inepnakeff) {
@@ -1240,11 +1238,11 @@ int dwc_pcd_irq(void)
 	DBG("irq gintmsk & gintrsts = 0x%08x\n",gintr_status.d32);
 
 	if (gintr_status.b.rxstsqlvl) {
-	    dwc_otg_pcd_handle_rx_status_q_level_intr();
-        pcd_out_completed(&this_pcd);
+		dwc_otg_pcd_handle_rx_status_q_level_intr();
+		pcd_out_completed(&this_pcd[0]);
 	}
 	if (gintr_status.b.nptxfempty) {
-	    dwc_otg_pcd_handle_np_tx_fifo_empty_intr( );
+		dwc_otg_pcd_handle_np_tx_fifo_empty_intr( );
 	}
 
 	if (gintr_status.b.usbreset) {

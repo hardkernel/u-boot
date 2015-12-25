@@ -193,13 +193,16 @@ typedef struct pcd_struct_s{
      unsigned sequenceNo;
      int      xferNeedReply;
 
+     short  xferAckLen;   //usually is 512, and value is 'OK!!'/"Continue:32" when success/failed
+     short  dataChkSumAlg;//Data check sum algorithm for 64k transfer
+
 	 unsigned request_config : 1;
 	 unsigned request_enable : 1;
      unsigned request_reserv : 30;
 
 }pcd_struct_t;
 
-extern pcd_struct_t this_pcd;
+extern pcd_struct_t this_pcd[];
 extern dwc_ep_t g_dwc_eps[NUM_EP];
 
 /**

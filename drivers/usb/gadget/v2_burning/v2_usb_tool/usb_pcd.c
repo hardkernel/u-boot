@@ -390,9 +390,8 @@ void do_gadget_setup( pcd_struct_t *_pcd, struct usb_ctrlrequest * ctrl)
 		break;
 
 	default:
-		USB_ERR("--unknown control req %02x.%02x v%04x i%04x l%u\n",
-			ctrl->bRequestType, ctrl->bRequest,
-			w_value, w_index, w_length);
+		USB_ERR("--un handled standard req %02x.%02x v%04x i%04x l%u\n",
+			ctrl->bRequestType, ctrl->bRequest, w_value, w_index, w_length);
 	}
 
 	w_index = 0; //remove compile warning
@@ -409,150 +408,154 @@ void do_vendor_request( pcd_struct_t *_pcd, struct usb_ctrlrequest * ctrl)
 	u16			w_value = ctrl->wValue;
 	u16			w_length = ctrl->wLength;
 
+	usb_set_reply_cmd_id(0);//clear reply
 	switch (ctrl->bRequest)
-    {
-	  case AM_REQ_WRITE_MEM:
-		if (ctrl->bRequestType != (USB_DIR_OUT | USB_TYPE_VENDOR |
-				USB_RECIP_DEVICE))
-				break;
-		USB_DBG("--am req write memory\n");
-		value = (w_value << 16) + w_index;
-		USB_DBG("addr = 0x%08X, size = %d\n\n",value,w_length);
-		_pcd->buf = (char *)value; // copy to dst memory directly
-		_pcd->length = w_length;
-		break;
+	{
+	        case AM_REQ_WRITE_MEM:
+	                if (ctrl->bRequestType !=
+	                                (USB_DIR_OUT | USB_TYPE_VENDOR | USB_RECIP_DEVICE))
+	                        break;
+	                USB_DBG("--am req write memory\n");
+	                value = (w_value << 16) + w_index;
+	                USB_DBG("addr = 0x%08X, size = %d\n\n",value,w_length);
+	                _pcd->buf = (char *)value; // copy to dst memory directly
+	                _pcd->length = w_length;
+	                break;
 
-	  case AM_REQ_READ_MEM:
-		if (ctrl->bRequestType != (USB_DIR_IN | USB_TYPE_VENDOR |
-				USB_RECIP_DEVICE))
-				break;
-		value = (w_value << 16) + w_index;
+	        case AM_REQ_READ_MEM:
+	                if (ctrl->bRequestType != (USB_DIR_IN | USB_TYPE_VENDOR |
+	                                        USB_RECIP_DEVICE))
+	                        break;
+	                value = (w_value << 16) + w_index;
 
-		/*usb_memcpy((char *)buff,(char*)value,w_length);*/
-		memcpy((void*)buff,(void*)value,w_length);
+	                /*usb_memcpy((char *)buff,(char*)value,w_length);*/
+	                memcpy((void*)buff,(void*)value,w_length);
 
-		_pcd->buf = buff;
-		_pcd->length = w_length;
-		break;
+	                _pcd->buf = buff;
+	                _pcd->length = w_length;
+	                break;
 
-	  case AM_REQ_READ_AUX:
-		if (ctrl->bRequestType != (USB_DIR_IN | USB_TYPE_VENDOR |
-				USB_RECIP_DEVICE))
-				break;
-		/*unsigned int data = 0;*/
-		value = (w_value << 16) + w_index;
+	        case AM_REQ_READ_AUX:
+	                if (ctrl->bRequestType != (USB_DIR_IN | USB_TYPE_VENDOR |
+	                                        USB_RECIP_DEVICE))
+	                        break;
+	                /*unsigned int data = 0;*/
+	                value = (w_value << 16) + w_index;
 
-		//data = _lr(value);
-		/**(unsigned int *)(unsigned)buff = data;*/
-                memset((char*)buff, 0, sizeof(unsigned));
+	                //data = _lr(value);
+	                /**(unsigned int *)(unsigned)buff = data;*/
+	                memset((char*)buff, 0, sizeof(unsigned));
 
-		_pcd->buf = buff;
-		_pcd->length = w_length;
-		break;
+	                _pcd->buf = buff;
+	                _pcd->length = w_length;
+	                break;
 
-	  case AM_REQ_FILL_MEM:
-	  case AM_REQ_WRITE_AUX:
-	  case AM_REQ_MODIFY_MEM:
-		if (ctrl->bRequestType != (USB_DIR_OUT | USB_TYPE_VENDOR |
-				USB_RECIP_DEVICE))
-				break;
-		_pcd->buf = buff;
-		_pcd->length = w_length;
-		break;
+	        case AM_REQ_FILL_MEM:
+	        case AM_REQ_WRITE_AUX:
+	        case AM_REQ_MODIFY_MEM:
+	                if (ctrl->bRequestType != (USB_DIR_OUT | USB_TYPE_VENDOR |
+	                                        USB_RECIP_DEVICE))
+	                        break;
+	                _pcd->buf = buff;
+	                _pcd->length = w_length;
+	                break;
 
-	  case AM_REQ_RUN_IN_ADDR:
-		if (ctrl->bRequestType != (USB_DIR_OUT | USB_TYPE_VENDOR |
-				USB_RECIP_DEVICE))
-				break;
-		value = (w_value << 16) + w_index;
-		USB_DBG("--am req run in addr %p\n\n",value);
-		_pcd->buf = buff;
-		_pcd->length = w_length;
-		break;
+	        case AM_REQ_RUN_IN_ADDR:
+	                if (ctrl->bRequestType != (USB_DIR_OUT | USB_TYPE_VENDOR |
+	                                        USB_RECIP_DEVICE))
+	                        break;
+	                value = (w_value << 16) + w_index;
+	                USB_DBG("--am req run in addr %p\n\n",value);
+	                _pcd->buf = buff;
+	                _pcd->length = w_length;
+	                break;
 
-	  case AM_REQ_WR_LARGE_MEM:
-		value = 1;
-	  case AM_REQ_RD_LARGE_MEM:
-		USB_DBG("--am req large %s mem \n\n",value?"write":"read");
+	        case AM_REQ_WR_LARGE_MEM:
+	                value = 1;
+	        case AM_REQ_RD_LARGE_MEM:
+	                USB_DBG("--am req large %s mem \n\n",value?"write":"read");
 
-		_pcd->bulk_len = w_value;	// block length
-		_pcd->bulk_num = w_index; // number of block
-		_pcd->buf = buff;       //EP0 command data buffer
-		_pcd->length = w_length; //EP0 command data length
-         /*FIXME: cann't delay when writelargeMem, or it will fail??*/
-        /*
-         *printf("f(%s)L%d: bulk_len=0x%x, bulk_num=%d, bufAddr=0x%x, len=0x%x\n",
-         *        __func__, __LINE__, _pcd->bulk_len, _pcd->bulk_num, _pcd->buf, _pcd->length);
-         */
-		break;
+	                _pcd->bulk_len = w_value;	// block length
+	                _pcd->bulk_num = w_index; // number of block
+	                _pcd->buf = buff;       //EP0 command data buffer
+	                _pcd->length = w_length; //EP0 command data length
+	                /*FIXME: cann't delay when writelargeMem, or it will fail??*/
+	                /*
+	                 *printf("f(%s)L%d: bulk_len=0x%x, bulk_num=%d, bufAddr=0x%x, len=0x%x\n",
+	                 *        __func__, __LINE__, _pcd->bulk_len, _pcd->bulk_num, _pcd->buf, _pcd->length);
+	                 */
+	                break;
 
-      case AM_REQ_DOWNLOAD:
-        {
-            value = 1;//is out
-            _pcd->bulk_len  = w_value;//block length
-            _pcd->bulk_num  = w_index;//how many times to transfer
-            _pcd->buf       = buff;
-            _pcd->length    = w_length;
-        }
-        break;
+	        case AM_REQ_DOWNLOAD:
+	                {
+	                        value = 1;//is out
+	                        _pcd->bulk_len  = w_value;//block length
+	                        _pcd->bulk_num  = w_index;//how many times to transfer
+	                        _pcd->buf       = buff;
+	                        _pcd->length    = w_length;
+	                        if (65535 == w_index && 0x20 == w_length)
+	                                usb_set_reply_cmd_id(AM_REQ_DOWNLOAD);
+	                }
+	                break;
 
-      case AM_REQ_UPLOAD:
-        {
-            _pcd->buf       = _resultInfo;
-            _pcd->length    = w_length;//assert that lenght == 16 ????
+	        case AM_REQ_UPLOAD:
+	                {
+	                        _pcd->buf       = _resultInfo;
+	                        _pcd->length    = w_length;//assert that lenght == 16 ????
 
-            optimus_buf_manager_get_command_data_for_upload_transfer((u8*)_resultInfo, w_length);
-        }
-        break;
+	                        optimus_buf_manager_get_command_data_for_upload_transfer((u8*)_resultInfo, w_length);
+	                }
+	                break;
 
 
-	  case AM_REQ_IDENTIFY_HOST:
-        {
-            static const char id[4] =
-            {
-                [0] = USB_ROM_VER_MAJOR,
-                [1] = USB_ROM_VER_MINOR,
-                [2] = USB_ROM_STAGE_MAJOR,
-                [3] = USB_ROM_STAGE_MINOR,
-            };
+	        case AM_REQ_IDENTIFY_HOST:
+	                {
+	                        static const char id[4] =
+	                        {
+	                                [0] = USB_ROM_VER_MAJOR,
+	                                [1] = USB_ROM_VER_MINOR,
+	                                [2] = USB_ROM_STAGE_MAJOR,
+	                                [3] = USB_ROM_STAGE_MINOR,
+	                        };
 
-            _pcd->buf = (char*)id;
-            _pcd->length = w_length;//FIXME:asset w_length == 4 ??
-            _auto_burn_time_out_base = 0;//get burning tool identify command, so clear the timeout flag
-            printf("\nID[%d]\n", _pcd->buf[3]);
-        }
-        break;
+	                        _pcd->buf = (char*)id;
+	                        _pcd->length = w_length;//FIXME:asset w_length == 4 ??
+	                        _auto_burn_time_out_base = 0;//get burning tool identify command, so clear the timeout flag
+	                        printf("\nID[%d]\n", _pcd->buf[3]);
+	                }
+	                break;
 
-      case AM_REQ_BULKCMD://Added by Sam
-        {
-            _pcd->bulk_len = w_value;	// block length
-            _pcd->bulk_num = w_index; // number of block
-            _pcd->buf      = buff;       //EP0 command data buffer, out buffer after set_up command
-            _pcd->length   = w_length; //EP0 command data length
-            /*printf("blkc:len %d\n", _pcd->length);*/
-            _pcd->cmdtype.setup_complete = 1;
-        }
-        break;
+	        case AM_REQ_BULKCMD://Added by Sam
+	                {
+	                        _pcd->bulk_len = w_value;	// block length
+	                        _pcd->bulk_num = w_index; // number of block
+	                        _pcd->buf      = buff;       //EP0 command data buffer, out buffer after set_up command
+	                        _pcd->length   = w_length; //EP0 command data length
+	                        /*printf("blkc:len %d\n", _pcd->length);*/
+	                        _pcd->cmdtype.setup_complete = 1;
+	                        if (2 == w_index) usb_set_reply_cmd_id(AM_REQ_BULKCMD) ;
+	                }
+	                break;
 
-	  case AM_REQ_TPL_CMD:
-        {
-            _pcd->buf = buff;
-            _pcd->length = w_length;
-        }
-        break;
+	        case AM_REQ_TPL_CMD:
+	                {
+	                        _pcd->buf = buff;
+	                        _pcd->length = w_length;
+	                }
+	                break;
 
-	  case AM_REQ_TPL_STAT:
-        {
-            _pcd->buf = _resultInfo;
-            _pcd->length = w_length;
-        }
-        break;
+	        case AM_REQ_TPL_STAT:
+	                {
+	                        _pcd->buf = _resultInfo;
+	                        _pcd->length = w_length;
+	                }
+	                break;
 
-	  default:
-		USB_ERR("--unknown vendor req %02x.%02x v%04x i%04x l%u\n",
-			ctrl->bRequestType, ctrl->bRequest,
-			w_value, w_index, w_length);
-		break;
+	        default:
+	                USB_ERR("--unknown vendor req %02x.%02x v%04x i%04x l%u\n",
+	                                ctrl->bRequestType, ctrl->bRequest,
+	                                w_value, w_index, w_length);
+	                break;
 	}
 
 	return;
@@ -571,162 +574,135 @@ void do_vendor_out_complete( pcd_struct_t *_pcd, struct usb_ctrlrequest * ctrl)
 	volatile char * buf;
 
 	//USB_DBG("do_vendor_out_complete(0x%x)\n", ctrl->bRequest);
-	switch (ctrl->bRequest)
+    switch (ctrl->bRequest)
     {
-	  case AM_REQ_WRITE_MEM:
-		if (ctrl->bRequestType != (USB_DIR_OUT | USB_TYPE_VENDOR |
-				USB_RECIP_DEVICE))
-				break;
-			USB_DBG("--am req write memory completed\n\n");
-		break;
+        case AM_REQ_WRITE_MEM:
+            if (ctrl->bRequestType != (USB_DIR_OUT | USB_TYPE_VENDOR |
+                        USB_RECIP_DEVICE))
+                break;
+            USB_DBG("--am req write memory completed\n\n");
+            break;
 
-	  case AM_REQ_FILL_MEM:
-		buf = (char*)_pcd->buf;
-		unsigned long addr,i;
-		for (i = 0; i < _pcd->length; i+=8) {
-			addr = *((unsigned int *)&buf[i]) ;
-			value = *((unsigned int *)&buf[i+4]) ;
-			*(unsigned int*)addr = value;
-		}
-		break;
-
-	  case AM_REQ_WRITE_AUX:
-		buf = _pcd->buf;
-		unsigned int data =0;
-
-		data = *((unsigned int *)&buf[0]) ; //reg value
-		value = (w_value << 16) + w_index; //aux reg
-
-                dwc_write_reg32(value, data);
-		break;
-
-	  case AM_REQ_MODIFY_MEM:
-		do_modify_memory(w_value,(char*)_pcd->buf);
-		break;
-
-	  case AM_REQ_RUN_IN_ADDR:
-		if (ctrl->bRequestType != (USB_DIR_OUT | USB_TYPE_VENDOR |
-				USB_RECIP_DEVICE))
-				break;
-		value = (w_value << 16) + w_index;
-		USB_DBG("run addr = 0x%08X\n",value);
-		fp = (void(*)(void))value;
-		dwc_otg_power_off_phy();
-		fp();
-		break;
-
-	  case AM_REQ_WR_LARGE_MEM:
-		value = 1; // is_out = 1
-      case AM_REQ_RD_LARGE_MEM:
-        {
-            const unsigned* intBuf = (unsigned*)buff;
-            _pcd->bulk_out = (char)value; // read or write
-            _pcd->bulk_buf = (char*)(u64)intBuf[0];
-            _pcd->bulk_data_len = intBuf[1]; // data length
-
-            //added by Sam.Wu
-            _pcd->bulk_xfer_len = 0;
-            _pcd->xferNeedReply = 0;
-
-            _pcd->bulk_len     = DWC_BLK_LEN(_pcd->bulk_data_len);
-            _pcd->bulk_num      = DWC_BLK_NUM(_pcd->bulk_data_len);
-            start_bulk_transfer(_pcd);
-        }
-        break;
-
-      case AM_REQ_DOWNLOAD:
-        value = 2;//2 to differ from write_large_mem
-        {
-            const unsigned* intBuf = (unsigned*)buff;
-            unsigned isPktResended   = intBuf[0];
-            unsigned sequenceNo = intBuf[2];
-            _pcd->bulk_out      = value;
-            _pcd->bulk_data_len = intBuf[1];
-            _pcd->bulk_xfer_len = 0;
-            _pcd->origiSum      = intBuf[3];
-            _pcd->isPktResended = isPktResended;
-
-            if (!isPktResended) //request next buffer slot only if transfer packet not re-sended packet
-            {
-                int ret = optimus_buf_manager_get_buf_for_bulk_transfer(&_pcd->bulk_buf, _pcd->bulk_data_len, sequenceNo, NULL);
-                if (ret) _pcd->bulk_data_len = _pcd->bulk_len = _pcd->bulk_num = 0;
+        case AM_REQ_FILL_MEM:
+            buf = (char*)_pcd->buf;
+            unsigned long addr,i;
+            for (i = 0; i < _pcd->length; i+=8) {
+                addr = *((unsigned int *)&buf[i]) ;
+                value = *((unsigned int *)&buf[i+4]) ;
+                *(unsigned int*)addr = value;
             }
+            break;
 
-            _pcd->sequenceNo = sequenceNo;
+        case AM_REQ_WRITE_AUX:
+            buf = _pcd->buf;
+            unsigned int data =0;
 
-            _pcd->bulk_len     = DWC_BLK_LEN(_pcd->bulk_data_len);
-            _pcd->bulk_num     = DWC_BLK_NUM(_pcd->bulk_data_len);
-            _pcd->xferNeedReply= 1;///////
-            start_bulk_transfer(_pcd);
-        }
-        break;
+            data = *((unsigned int *)&buf[0]) ; //reg value
+            value = (w_value << 16) + w_index; //aux reg
 
-      case AM_REQ_UPLOAD:
-        {
-            //command foramt: [4-7]dataLen, other don't care now
-            const u8* cmdData       = (const u8*)_resultInfo;
-            const u32 sequenceNo    = *(unsigned*)(cmdData + 8);
-            const u32 leftDataLen   = *(unsigned*)(cmdData + 4);
-            int ret = 0;
+            dwc_write_reg32(value, data);
+            break;
 
-            _pcd->bulk_out      = 0;
-            _pcd->bulk_xfer_len = 0;
-            _pcd->bulk_data_len = leftDataLen;
+        case AM_REQ_MODIFY_MEM:
+            do_modify_memory(w_value,(char*)_pcd->buf);
+            break;
 
-            _pcd->bulk_len     = DWC_BLK_LEN(leftDataLen);
-            _pcd->bulk_num      = DWC_BLK_NUM(leftDataLen);
+        case AM_REQ_RUN_IN_ADDR:
+            if (ctrl->bRequestType != (USB_DIR_OUT | USB_TYPE_VENDOR |
+                        USB_RECIP_DEVICE))
+                break;
+            value = (w_value << 16) + w_index;
+            USB_DBG("run addr = 0x%08X\n",value);
+            fp = (void(*)(void))value;
+            dwc_otg_power_off_phy();
+            fp();
+            break;
 
-            ret = optimus_buf_manager_get_buf_for_bulk_transfer(&_pcd->bulk_buf, _pcd->bulk_data_len, sequenceNo, _resultInfo);
-            if (ret) _pcd->bulk_data_len = _pcd->bulk_len = _pcd->bulk_num = 0;//respond 0 byte data to stop transfer
+        case AM_REQ_WR_LARGE_MEM:
+            value = 1; // is_out = 1
+        case AM_REQ_RD_LARGE_MEM:
+            {
+                const unsigned* intBuf = (unsigned*)buff;
+                _pcd->bulk_out = (char)value; // read or write
+                _pcd->bulk_buf = (char*)(u64)intBuf[0];
+                _pcd->bulk_data_len = intBuf[1]; // data length
 
-            DWN_DBG("up 0x:len %x, buf %p, bulk_num %d\n", _pcd->bulk_data_len, _pcd->bulk_buf, _pcd->bulk_num);
-            _pcd->xferNeedReply= 1;///////
-            start_bulk_transfer(_pcd);
-        }
-        break;
+                //added by Sam.Wu
+                _pcd->bulk_xfer_len = 0;
+                _pcd->xferNeedReply = 0;
 
+                _pcd->bulk_len     = DWC_BLK_LEN(_pcd->bulk_data_len);
+                _pcd->bulk_num      = DWC_BLK_NUM(_pcd->bulk_data_len);
+                memcpy(&this_pcd[value ? BULK_OUT_EP_NUM : BULK_IN_EP_NUM], _pcd, sizeof(pcd_struct_t));
+                start_bulk_transfer(_pcd);
+            }
+            break;
 
-	  case AM_REQ_TPL_CMD:
-		  /* this is an example for any command */
-		if (!w_index) {/* assume subcode is 0 */
-/*	???????????????????????????
-			char dev[16] = {0};
-			u64 offset = 0;
-			u64 tmp = 0;
-			u32 mem_addr = (*(unsigned int*)buff);
-			offset |= (*(unsigned int*)&buff[16]);
-			tmp = (*(unsigned int*)&buff[20]);
-			offset |= (tmp << 32);
+        case AM_REQ_DOWNLOAD:
+            value = 2;//2 to differ from write_large_mem
+            {
+                const unsigned* intBuf = (unsigned*)buff;
+                unsigned isPktResended   = intBuf[0];
+                unsigned sequenceNo = intBuf[2];
+                _pcd->bulk_out      = value;
+                _pcd->bulk_data_len = intBuf[1];
+                _pcd->bulk_xfer_len = 0;
+                _pcd->origiSum      = intBuf[3];
+                _pcd->isPktResended = isPktResended;
+                if (0x20 == _pcd->length) {//new protocol
+                    _pcd->dataChkSumAlg = intBuf[4] & 0xffff;
+                    _pcd->xferAckLen = intBuf[4] >> 16;
+                }
+                else{
+                    _pcd->dataChkSumAlg = WRITE_MEDIA_CKC_ALG_ADDSUM;
+                    _pcd->xferAckLen    = AM_BULK_REPLY_LEN;
+                }
 
-			u32 size = (*(unsigned int*)&buff[12]);
-			usb_memcpy(dev,&buff[32],16);
-			burn_board(dev, mem_addr, offset, size);
-*/
-		}
-		else if(w_index == 1){
-			char cmd[CMD_BUFF_SIZE];
-			memcpy(cmd, (void*)buff, CMD_BUFF_SIZE);
-			if (strncmp(cmd,"bootm",(sizeof("bootm")-1)) == 0) {
-				dwc_otg_pullup(0);//disconnect
-			}
-            printf("tplcmd[%s]\n", cmd);
-			optimus_working(cmd, _resultInfo);
-		}
-		break;
+                if (!isPktResended) //request next buffer slot only if transfer packet not re-sended packet
+                {
+                    int ret = optimus_buf_manager_get_buf_for_bulk_transfer(&_pcd->bulk_buf, _pcd->bulk_data_len, sequenceNo, NULL);
+                    if (ret) _pcd->bulk_data_len = _pcd->bulk_len = _pcd->bulk_num = 0;
+                }
 
-      case AM_REQ_BULKCMD:
-        {
-            do_bulk_cmd((char*)buff);
-        }
-        break;
+                _pcd->sequenceNo = sequenceNo;
 
-	  default:
-		USB_ERR("--unknown vendor req comp %02x.%02x v%04x i%04x l%u\n",
-			ctrl->bRequestType, ctrl->bRequest,
-			w_value, w_index, w_length);
-	}
-	w_length = 0;//remove compile warning
-	return;
+                _pcd->bulk_len     = DWC_BLK_LEN(_pcd->bulk_data_len);
+                _pcd->bulk_num     = DWC_BLK_NUM(_pcd->bulk_data_len);
+                _pcd->xferNeedReply= 1;///////
+                memcpy(&this_pcd[BULK_OUT_EP_NUM], _pcd, sizeof(pcd_struct_t));
+                start_bulk_transfer(_pcd);
+            }
+            break;
+
+        case AM_REQ_TPL_CMD:
+            /* this is an example for any command */
+            if (!w_index) {/* assume subcode is 0 */
+            }
+            else if(w_index == 1){
+                char cmd[CMD_BUFF_SIZE];
+                memcpy(cmd, (void*)buff, CMD_BUFF_SIZE);
+                if (strncmp(cmd,"bootm",(sizeof("bootm")-1)) == 0) {
+                    dwc_otg_pullup(0);//disconnect
+                }
+                printf("tplcmd[%s]\n", cmd);
+                optimus_working(cmd, _resultInfo);
+            }
+            break;
+
+        case AM_REQ_BULKCMD:
+            {
+                memcpy(&this_pcd[BULK_IN_EP_NUM], _pcd, sizeof(pcd_struct_t));
+                do_bulk_cmd((char*)buff);
+            }
+            break;
+
+        default:
+            USB_ERR("--unknown vendor req comp %02x.%02x v%04x i%04x l%u\n",
+                    ctrl->bRequestType, ctrl->bRequest,
+                    w_value, w_index, w_length);
+    }
+    w_length = 0;//remove compile warning
+    return;
 }
 
 /*
@@ -768,6 +744,7 @@ void do_vendor_in_complete( pcd_struct_t *_pcd, struct usb_ctrlrequest * ctrl)
 
             DWN_DBG("up 0x:len %x, buf %p, bulk_num %d\n", _pcd->bulk_data_len, _pcd->bulk_buf, _pcd->bulk_num);
             _pcd->xferNeedReply= 1;///////
+            memcpy(&this_pcd[BULK_IN_EP_NUM], _pcd, sizeof(pcd_struct_t));
             start_bulk_transfer(_pcd);
         }
         break;
@@ -785,7 +762,6 @@ void do_vendor_in_complete( pcd_struct_t *_pcd, struct usb_ctrlrequest * ctrl)
 int bulk_transfer_reply(const pcd_struct_t* _pcd)
 {
     static int _mediaErr = 0;
-    static pcd_struct_t pcd;
     char* replyBuf = _resultInfo;
     const void* data    = _pcd->bulk_buf;
     const unsigned len  = _pcd->bulk_xfer_len;
@@ -810,12 +786,16 @@ int bulk_transfer_reply(const pcd_struct_t* _pcd)
         ret = __LINE__;
     }
     else
-    {
-        genSum = add_sum(data, len);
-
-        if (origiSum != genSum)
+    {//check sum for usb ---> mem
+        const int checkSumAlg = _pcd->dataChkSumAlg;
+        if (WRITE_MEDIA_CKC_ALG_ADDSUM == checkSumAlg)
         {
-            sprintf(replyBuf, "0x: genSum %x != org %x at seq %x, len %x, resend %d\n", genSum, origiSum, sequenceNo, len, isPktResended);
+            genSum = add_sum(data, len);
+        }
+        if ( origiSum != genSum && WRITE_MEDIA_CKC_ALG_NONE != checkSumAlg)
+        {
+            sprintf(replyBuf, "Alg[%x]0x: genSum %x != org %x at seq %x, len %x, resend %d\n",
+                    checkSumAlg, genSum, origiSum, sequenceNo, len, isPktResended);
             DWN_ERR(replyBuf);
             ret = __LINE__;
         }
@@ -838,14 +818,17 @@ int bulk_transfer_reply(const pcd_struct_t* _pcd)
 
     //PCD fields needed for reply
     //see implementation of dwc_otg_ep_req_start
-    pcd.bulk_data_len = AM_BULK_REPLY_LEN;//total length <= 4k
-    pcd.bulk_len      = DWC_BLK_LEN(pcd.bulk_data_len);//total length <= 4k
-    pcd.bulk_num      = DWC_BLK_NUM(pcd.bulk_data_len);
-    pcd.bulk_buf      = replyBuf;
-    pcd.bulk_xfer_len = 0;
+    pcd_struct_t* reply_pcd  = &this_pcd[isOut ? BULK_OUT_EP_NUM : BULK_IN_EP_NUM];
+    memcpy(reply_pcd, _pcd, sizeof(pcd_struct_t));
+    reply_pcd->bulk_data_len = _pcd->xferAckLen;//total length <= 4k
+    reply_pcd->bulk_len      = DWC_BLK_LEN(reply_pcd->bulk_data_len);//total length <= 4k
+    reply_pcd->bulk_num      = DWC_BLK_NUM(reply_pcd->bulk_data_len);
+    reply_pcd->bulk_buf      = replyBuf;
+    reply_pcd->bulk_xfer_len = 0;
+    reply_pcd->bulk_out      = isOut;
 
-    DWN_DBG("replyBuf %s\n", replyBuf);
-    dwc_otg_ep_req_start(&pcd,  isOut?BULK_OUT_EP_NUM:BULK_IN_EP_NUM);
+    DWN_DBG("Down replyBuf %s\n", replyBuf);
+    dwc_otg_ep_req_start(reply_pcd,  isOut?BULK_OUT_EP_NUM:BULK_IN_EP_NUM);
 
     return ret;
 }
@@ -856,58 +839,92 @@ int bulk_transfer_reply(const pcd_struct_t* _pcd)
  */
 void do_bulk_complete( pcd_struct_t *_pcd)
 {
-	_pcd->bulk_lock = 0;
-	_pcd->bulk_num--;
-	/*_pcd->bulk_data_len -= _pcd->xfer_len;*/
-    _pcd->bulk_xfer_len += _pcd->xfer_len;
+        const int bRequest = _pcd->setup_pkt.req.bRequest;
+        _pcd->bulk_lock = 0;
+        _pcd->bulk_num--;
+        /*_pcd->bulk_data_len -= _pcd->xfer_len;*/
+        _pcd->bulk_xfer_len += _pcd->xfer_len;
+        const int leftDataLen = _pcd->bulk_data_len - _pcd->bulk_xfer_len;
 
-    //open this debug info if see if _pcd->bulk_num is 0 has been reponsed! i.e, all data transfrred ended
-    //if not bulk in tranferred, open in printf will let down the csw of mwrite(csw will be invalid transfer)
-    DWN_DBG("left blk %d, this len 0x%x, bulk_xfer_len 0x%x\n", _pcd->bulk_num, _pcd->xfer_len, _pcd->bulk_xfer_len);
-
-	if(_pcd->bulk_num > 0
-            && _pcd->bulk_len)//if earlier packet length is 0, no next xfer here!!
-	{
-        const u32 leftDataLen = _pcd->bulk_data_len - _pcd->bulk_xfer_len;
-
-        _pcd->bulk_len     = DWC_BLK_LEN(leftDataLen);
-
-		/*_pcd->bulk_buf += _pcd->bulk_len;*/
-		start_bulk_transfer(_pcd);
-
-        return;/////////////////
-	}
-
-    if (this_pcd.xferNeedReply) //get download command and is out
-    {
-        this_pcd.xferNeedReply = 0;////
-
-        if (2 == _pcd->bulk_out) //2 means download command 0x32, only this command need handshake??!!!!!
+        //Transfer NEXT block (at most 4K)
+        switch (bRequest)
         {
-            bulk_transfer_reply(_pcd);
-            return;////////
+                case AM_REQ_BULKCMD:
+                        {
+                                if (leftDataLen) {
+                                        DWN_DBG("BULKCMD:total 0x%x != tranferred 0x%x, xfer_len=0x%x\n",
+                                                        _pcd->bulk_data_len, _pcd->bulk_xfer_len, _pcd->xfer_len);
+                                }
+                                return ;//not need reply
+                        }
+                        break;
+
+                case AM_REQ_DOWNLOAD :
+                        {
+                                //called after xferNeedReply
+                                if (!_pcd->xferNeedReply) return;
+                        }
+                case AM_REQ_UPLOAD :
+                case AM_REQ_WR_LARGE_MEM:
+                case AM_REQ_RD_LARGE_MEM:
+                        {
+                                if (leftDataLen) //if earlier packet length is 0, no next xfer here!!
+                                {
+                                        if (leftDataLen < 0) {
+                                                DWN_WRN("total 0x%x < tranferred 0x%x\n", _pcd->bulk_data_len, _pcd->bulk_xfer_len);
+                                                return ;
+                                        }
+                                        _pcd->bulk_len     = DWC_BLK_LEN(leftDataLen);
+                                        start_bulk_transfer(_pcd);
+
+                                        return;/////////////////
+                                }
+                        }
+                        break;
+                default:
+                        DWN_WRN("Unhandled bulk bRequest 0x%x, leftDataLen %d\n", bRequest, leftDataLen);
+                        DWN_WRN("bulk_xfer_len=%d, bulk_data_len=%d\n", _pcd->bulk_xfer_len, _pcd->bulk_data_len);
         }
 
-        if (!_pcd->bulk_out)
+        //update states if all blocks (at most 64k) transferred end
+        if (_pcd->xferNeedReply  && 0 == leftDataLen) //get download command and is out
         {
-            optimus_buf_manager_report_transfer_complete(_pcd->bulk_xfer_len, NULL);
+                _pcd->xferNeedReply = 0;////
+
+                switch (bRequest)
+                {
+                        case AM_REQ_DOWNLOAD :
+                                bulk_transfer_reply(_pcd);
+                                break;
+                        case AM_REQ_UPLOAD :
+                                optimus_buf_manager_report_transfer_complete(_pcd->bulk_xfer_len, NULL);
+                                break;
+
+                        default:
+                                DWN_WRN("Unhandled xferNeedReply for bulk bRequest 0x%x\n", bRequest);
+                }
         }
-    }
+
+        return;
 }
+
 
 static int bulk_cmd_reply(const char* replyBuf)
 {
-    static pcd_struct_t pcd;
+    static char _bulk_replyBuf[AM_BULK_REPLY_LEN];
+    memset(_bulk_replyBuf, 0, AM_BULK_REPLY_LEN);
+    memcpy(_bulk_replyBuf, replyBuf, strnlen(replyBuf, AM_BULK_REPLY_LEN - 1));
 
+    pcd_struct_t* pcd = &this_pcd[BULK_IN_EP_NUM];
     //PCD fields needed for reply
     //see implementation of dwc_otg_ep_req_start
-    pcd.bulk_len      = AM_BULK_REPLY_LEN;
-    pcd.bulk_buf      = (char*)replyBuf;
-    pcd.bulk_xfer_len = 0;
-
-	this_pcd.bulk_out = 0;//////////////////////////////OH NO!!!! I don't like the common pcd, FIXME to use various PCD !!
-    this_pcd.xferNeedReply = 0;
-    dwc_otg_ep_req_start(&pcd,  BULK_IN_EP_NUM);//bulk in to reply result, it is ALWAYS IN
+    pcd->bulk_len      = AM_BULK_REPLY_LEN;
+    pcd->bulk_data_len = pcd->bulk_len;///
+    pcd->bulk_xfer_len = 0;
+    pcd->bulk_buf      = _bulk_replyBuf;
+    pcd->bulk_out = 0;//////////////////////////////
+    DWN_DBG("reply..[%s]\n", _bulk_replyBuf);
+    dwc_otg_ep_req_start(pcd,  BULK_IN_EP_NUM);//bulk in to reply result, it is ALWAYS IN
 
     return 0;
 }
@@ -976,5 +993,83 @@ void do_modify_memory(u16 opcode, char *inbuff)
 		break;
 	}
 
+}
+
+static int _cbReplyCmdId = 0;
+static unsigned _cbUnReportedSz = 0;
+void usb_set_reply_cmd_id(const int cmdId)
+{
+    _cbReplyCmdId   = cmdId;
+    _cbUnReportedSz = 0;
+}
+
+extern int32_t dwc_otg_pcd_handle_np_tx_fifo_empty_intr(void);
+static int cb_4_bulk_in_reply(const char* replyInf)
+{
+    gintsts_data_t  gintr_status;
+    gintr_status.d32 = dwc_read_reg32(DWC_REG_GINTSTS);
+    if (!gintr_status.b.nptxfempty) return 0;
+    if (gintr_status.b.intokenrx) DWN_MSG("intokenrx\n") ;//FIXME:try wait pc in-nak, must never catch it!
+
+    bulk_cmd_reply(replyInf);
+    dwc_otg_pcd_handle_np_tx_fifo_empty_intr();
+
+#if 0
+    //clear 'xfercompl' intr as not needed to handle for bulk_cmd_reply
+    diepint_data_t diepint = { 0 };
+    diepint.d32 = dwc_read_reg32( DWC_REG_IN_EP_INTR(BULK_IN_EP_NUM)) & dwc_read_reg32(DWC_REG_DAINTMSK);
+    /*if(diepint.b.xfercompl)DWN_MSG("xfercompl\n");*/
+    diepint.b.xfercompl = 1;
+    dwc_write_reg32(DWC_REG_IN_EP_INTR(BULK_IN_EP_NUM), diepint.d32);
+#endif
+    return 0;
+}
+
+static int cb_usb_bulk_in_reply_busy(void)
+{
+    switch (_cbReplyCmdId)
+    {
+        case AM_REQ_DOWNLOAD:
+            return cb_4_bulk_in_reply("Continue:32");
+        case AM_REQ_BULKCMD:
+            return cb_4_bulk_in_reply("Continue:34");
+        default:
+            return 0;
+    }
+    return 0;
+}
+
+//1, add @_timeElaspedBeforeLastReport to remember elapsed time, to avoid depend on long period timer,
+//  i.e, assume that timer is short cycle, such as only 5 seconds a cycle
+//2,
+int platform_busy_increase_un_reported_size(const unsigned nBytes)
+{
+    static unsigned long _lastReportTick    = 0;
+    static unsigned      _timeElaspedBeforeLastReport = 0;
+    const int            ReportTimePeriod   = 16 * 1000;//16 seconds
+    //Add @ReportMinLen to 'avoid report busy when data ended', or it blocked in dwc_irq_pcd.c
+    const int            ReportMinLen       = OPTIMUS_SHA1SUM_BUFFER_LEN;//8M
+
+    if (!_cbReplyCmdId) return 0;
+
+    if (!_cbUnReportedSz) {
+        _lastReportTick = get_timer(0);//start time re-init
+        _timeElaspedBeforeLastReport = 0;
+    }
+    unsigned long timePeriod = get_timer(_lastReportTick);
+
+    _cbUnReportedSz                  += nBytes;
+    //Maybe timer is not long enough cycle, so add another variable to remember the elapsed period
+    if (timePeriod > 2000) {
+        _timeElaspedBeforeLastReport += timePeriod;
+        _lastReportTick              += timePeriod;
+    }
+    DWN_DBG("_timeElaspedBeforeLastReport=%u, _unReportedLen=%u\n", _timeElaspedBeforeLastReport, _cbUnReportedSz);
+    if (_timeElaspedBeforeLastReport  < ReportTimePeriod || _cbUnReportedSz < ReportMinLen) return 0;
+
+    _timeElaspedBeforeLastReport = 0;
+    _cbUnReportedSz              = 0;
+    DWN_DBG("_lastReportTick=%lu\n", _lastReportTick);
+    return cb_usb_bulk_in_reply_busy();
 }
 

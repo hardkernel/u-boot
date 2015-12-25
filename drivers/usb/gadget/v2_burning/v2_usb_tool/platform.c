@@ -148,14 +148,17 @@ void set_usb_phy_config(int cfg)
     return;
 }
 
+//sleep sometime before and after disconnect,
+//      to let usb_burning_tool.exe detect both fast plug-out and plug-in
 void close_usb_phy_clock(int cfg)
 {
     cfg = cfg;//avoid compiler warning
 
+    run_command("sleep 1", 0);//improve pc compatibility!!
     dwc_otg_pullup(0);//disconnect
     __udelay(20);
     /*dwc_otg_power_off_phy();*///Don't call this as it may cause pull-down failed!!!!
-    run_command("sleep 1", 0);//sleep sometime to improve pc compatibility!!
+    run_command("sleep 1", 0);
 
     return;
 }
@@ -295,10 +298,13 @@ int chip_watchdog(void)
 };
 #endif
 
+//sleep sometime before and after disconnect,
+//      to let usb_burning_tool.exe detect both fast plug-out and plug-in
 void close_usb_phy_clock(int cfg)
 {
         cfg = cfg;//avoid compiler warning
 
+        run_command("sleep 1", 0);//sleep sometime to improve pc compatibility!!
         dwc_otg_pullup(0);//disconnect
         __udelay(20);
         /*dwc_otg_power_off_phy();*///Don't call this as it may cause pull-down failed!!!!

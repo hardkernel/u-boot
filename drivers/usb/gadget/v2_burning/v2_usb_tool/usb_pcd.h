@@ -15,6 +15,7 @@
 int usb_pcd_init(void);
 int usb_pcd_irq(void);
 extern int optimus_working (const char *cmd, char* buff);
+void usb_set_reply_cmd_id(const int cmdId);
 
 // Vendor request defines
 #define AM_REQ_WRITE_MEM	0x01
@@ -37,5 +38,25 @@ void do_modify_memory(u16 opcode, char *inbuff);
 #define AM_REQ_UPLOAD       0X33
 #define AM_REQ_BULKCMD      0X34
 #define AM_BULK_REPLY_LEN   CMD_BUFF_SIZE
+
+//improved download protocol
+#define WRITE_MEDIA_CMD_DATA_LEN                (0x20)
+#define WRITE_MEDIA_CKC_ALG_NONE                (0X00EE)
+#define WRITE_MEDIA_CKC_ALG_ADDSUM              (0X00EF)
+#define WRITE_MEDIA_CKC_ALG_CRC32               (0X00F0)
+#define WRITE_MEDIA_REPLY_IN_SZ                 (0x200)
+
+#pragma pack(push, 4)
+struct CmdData_WriteMedia{
+        unsigned        retryTimes;
+        unsigned        userDataLen;
+        unsigned        sequenceNo;
+        unsigned        dataCheckSum;
+        unsigned short  dataCheckAlgorithm;
+        unsigned short  bulkInAckLen;
+        unsigned char   reserv[12];
+};
+#pragma pack(pop)
+
 
 #endif

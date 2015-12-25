@@ -200,6 +200,7 @@ u32 optimus_cb_simg_write_media(const unsigned destAddrInSec, const unsigned dat
         DWN_ERR("Fail to write to media, ret = %d\n", ret);
         return 0;
     }
+    platform_busy_increase_un_reported_size(dataSzInBy);
 
     return dataSzInBy;
 }
@@ -236,6 +237,7 @@ static u32 optimus_download_normal_image(struct ImgBurnInfo* pDownInfo, u32 data
         DWN_ERR("Fail to write to media\n");
         return 0;
     }
+    platform_busy_increase_un_reported_size(dataSz);
 
     pDownInfo->nextMediaOffset += dataSz;
 
@@ -431,6 +433,7 @@ static int optimus_storage_read(struct ImgBurnInfo* pDownInfo, u64 addrOrOffsetI
                 else
                 {
                     ret = store_read_ops(partName, buff, addrOrOffsetInBy, (u64)readSzInBy);
+                    platform_busy_increase_un_reported_size(readSzInBy);
                 }
                 if (ret) {
                     if (errInfo) sprintf(errInfo, "Read failed\n") ;
