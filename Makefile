@@ -860,9 +860,17 @@ FIP_ARGS += --bl30 $(FIP_FOLDER_SOC)/bl30.bin
 ifeq ($(CONFIG_NEED_BL301), y)
 FIP_ARGS += --bl301 $(FIP_FOLDER_SOC)/bl301.bin
 endif
-FIP_ARGS += --bl31 $(FIP_FOLDER_SOC)/bl31.bin
+ifeq ($(CONFIG_FIP_IMG_SUPPORT), y)
+BL3X_SUFFIX := img
+else
+BL3X_SUFFIX := bin
+endif
+FIP_ARGS += --bl31 $(FIP_FOLDER_SOC)/bl31.$(BL3X_SUFFIX)
 ifeq ($(CONFIG_NEED_BL32), y)
-FIP_ARGS += --bl32 $(FIP_FOLDER_SOC)/bl32.bin
+FIP_BL32 := $(notdir $(shell find $(FIP_FOLDER_SOC) -name "bl32.$(BL3X_SUFFIX)"))
+ifeq ($(FIP_BL32), bl32.$(BL3X_SUFFIX))
+FIP_ARGS += --bl32 $(FIP_FOLDER_SOC)/bl32.$(BL3X_SUFFIX)
+endif
 endif
 FIP_ARGS += --bl33 $(FIP_FOLDER_SOC)/bl33.bin
 

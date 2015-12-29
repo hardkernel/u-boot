@@ -637,6 +637,16 @@ int do_bootm_states(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[],
 		}
 	}
 #endif
+
+	/* Check reserved memory region */
+#ifdef CONFIG_CMD_RSVMEM
+	ret = run_command("rsvmem check", 0);
+	if (ret) {
+		puts("rsvmem check failed\n");
+		return ret;
+	}
+#endif
+
 #if defined(CONFIG_OF_LIBFDT) && defined(CONFIG_LMB)
 	if (!ret && (states & BOOTM_STATE_FDT)) {
 		boot_fdt_add_mem_rsv_regions(&images->lmb, images->ft_addr);
