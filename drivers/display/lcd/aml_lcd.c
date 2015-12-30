@@ -603,6 +603,7 @@ int lcd_probe(void)
 	lcd_chip_detect();
 	lcd_clk_config_probe();
 	lcd_mode_probe();
+	aml_bl_power_ctrl(0); /* init backlight ctrl port */
 
 	return 0;
 }
