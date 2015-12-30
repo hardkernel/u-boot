@@ -227,6 +227,47 @@ static unsigned long env_strtoul(const char *name, int base)
 	return ret;
 }
 
+unsigned long get_fb_addr(void)
+{
+	char *dt_addr = NULL;
+	unsigned long fb_addr = 0;
+#ifdef CONFIG_OF_LIBFDT
+	int parent_offset;
+	char *propdata;
+#endif
+
+	fb_addr = env_strtoul("fb_addr", 16);
+#ifdef CONFIG_OF_LIBFDT
+#ifdef CONFIG_DTB_MEM_ADDR
+	dt_addr = (char *)CONFIG_DTB_MEM_ADDR;
+#else
+	dt_addr = (char *)0x01000000;
+#endif
+	if (fdt_check_header(dt_addr) < 0) {
+		osd_logi("check dts: %s, load default fb_addr parameters\n",
+			fdt_strerror(fdt_check_header(dt_addr)));
+	} else {
+		osd_logi("load fb addr from dts\n");
+		parent_offset = fdt_path_offset(dt_addr, "/meson-fb");
+		if (parent_offset < 0) {
+			osd_logi("not find /meson-fb node: %s\n",fdt_strerror(parent_offset));
+			osd_logi("use default fb_addr parameters\n");
+		} else {
+			/* check fb_addr */
+			propdata = (char *)fdt_getprop(dt_addr, parent_offset, "logo_addr", NULL);
+			if (propdata == NULL) {
+				osd_logi("failed to get fb addr for logo\n");
+				osd_logi("use default fb_addr parameters\n");
+			} else {
+				fb_addr = simple_strtoul(propdata, NULL, 16);
+			}
+		}
+	}
+#endif
+	osd_logi("fb_addr for logo: 0x%lx\n", fb_addr);
+	return fb_addr;
+}
+
 void *video_hw_init(void)
 {
 	u32 fb_addr = 0;
@@ -241,7 +282,7 @@ void *video_hw_init(void)
 	char *layer_str;
 
 	vout_init();
-	fb_addr = env_strtoul("fb_addr", 16);
+	fb_addr = get_fb_addr();
 #ifdef CONFIG_OSD_SCALE_ENABLE
 	fb_width = env_strtoul("fb_width", 10);
 	fb_height = env_strtoul("fb_height", 10);

@@ -225,7 +225,7 @@ static int vout_find_height_by_name(const char* name)
 
 static void vout_vinfo_init(void)
 {
-	tv_info.vd_base = (void *)simple_strtoul(getenv("fb_addr"), NULL, 0);
+	tv_info.vd_base = (void *)get_fb_addr();
 	tv_info.vl_col = simple_strtoul(getenv("display_width"), NULL, 0);
 	tv_info.vl_row = simple_strtoul(getenv("display_height"), NULL, 0);
 	tv_info.vl_bpix = simple_strtoul(getenv("display_bpp"), NULL, 10);
