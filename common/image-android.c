@@ -13,6 +13,10 @@ static const unsigned char lzop_magic[] = {
 	0x89, 0x4c, 0x5a, 0x4f, 0x00, 0x0d, 0x0a, 0x1a, 0x0a
 };
 
+static const unsigned char gzip_magic[] = {
+	0x1f, 0x8b
+};
+
 static char andr_tmp_str[ANDR_BOOT_ARGS_SIZE + 1];
 
 /**
@@ -143,12 +147,20 @@ ulong android_image_get_comp(const struct andr_img_hdr *os_hdr)
 	/* read magic: 9 first bytes */
 	for (i = 0; i < ARRAY_SIZE(lzop_magic); i++) {
 		if (*src++ != lzop_magic[i])
-				break;
+			break;
 	}
 	if (i == ARRAY_SIZE(lzop_magic))
 		return IH_COMP_LZO;
-	else
-		return IH_COMP_NONE;
+
+	src = (unsigned char *)os_hdr + os_hdr->page_size;
+	for (i = 0; i < ARRAY_SIZE(gzip_magic); i++) {
+		if (*src++ != gzip_magic[i])
+			break;
+	}
+	if (i == ARRAY_SIZE(gzip_magic))
+		return IH_COMP_GZIP;
+
+	return IH_COMP_NONE;
 }
 int android_image_need_move(ulong *img_addr, const struct andr_img_hdr *hdr)
 {
