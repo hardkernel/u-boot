@@ -149,13 +149,16 @@ static int optimus_download_bootloader_image(struct ImgBurnInfo* pDownInfo, u32 
         return 0;
     }
 #endif
-    if (size > (1U<<20)) {
-        DWN_ERR("uboot.bin size 0x%llx > 1M unsupported\n", size);
+    if (size > (2U<<20)) {
+        DWN_ERR("uboot.bin size 0x%llx > 2M unsupported\n", size);
         return 0;
     }
 
-    size = size <= 0x60000 ? 0x60000 : (1U<<20);//384K when non-secure_os, 1M when secure_os
+    size += (1U<<20) -1;
+    size >>= 20;
+    size <<= 20;
     ret = store_boot_write((unsigned char*)data, 0, size);
+    DWN_MSG("align bootloader sz from 0x%x to 0x%llx\n", dataSzReceived, size);
 
     return ret ? 0 : dataSzReceived;
 }
