@@ -112,7 +112,7 @@ static const vout_set_t vout_sets[] = {
 		.height            = 2160,
 	},
 	{ /* VMODE_4K2K_SMPTE */
-		.name              = "smpte24hz",
+		.name              = "smpte",
 		.mode              = VMODE_4K2K_SMPTE,
 		.width             = 4096,
 		.height            = 2160,
@@ -331,7 +331,7 @@ static int get_window_axis(int *axis)
 		axis[1] = getenv_int("2160p_y", 0);
 		axis[2] = getenv_int("2160p_w", 3840);
 		axis[3] = getenv_int("2160p_h", 2160);
-	} else if (strcmp(mode, "smpte24hz") == 0) {
+	} else if (strncmp(mode, "smpte",5) == 0) {
 		axis[0] = getenv_int("4k2ksmpte_x", 0);
 		axis[1] = getenv_int("4k2ksmpte_y", 0);
 		axis[2] = getenv_int("4k2ksmpte_w", 4096);

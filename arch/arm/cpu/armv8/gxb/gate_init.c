@@ -70,6 +70,7 @@ void ee_gate_off(void)
 	CLK_GATE_OFF(VCLK2_VENCT);
 	CLK_GATE_OFF(VCLK2_VENCT1);
 	CLK_GATE_OFF(VCLK2_OTHER);
+#if 0    /* HDMITX 480i60hz/576i50hz need HHI_GCLK_OTHER[8][2] */
 #ifdef CONFIG_AML_CVBS
 	if (cvbs_opened == 0) {
 		CLK_GATE_OFF(VCLK2_VENCI);
@@ -79,14 +80,16 @@ void ee_gate_off(void)
 	CLK_GATE_OFF(VCLK2_VENCI);
 	CLK_GATE_OFF(VCLK2_VENCI1);
 #endif
+#endif
 	CLK_GATE_OFF(VCLK2_VENCL);
 	CLK_GATE_OFF(VCLK2_OTHER1);
-
+#if 0    /* HDMITX 480i60hz/576i50hz need HHI_GCLK_OTHER[8][2] */
 #ifdef CONFIG_AML_CVBS
 	if (cvbs_opened == 0)
 		CLK_GATE_OFF(VCLK2_ENCI);
 #else
 	CLK_GATE_OFF(VCLK2_ENCI);
+#endif
 #endif
 	CLK_GATE_OFF(VCLK2_ENCL);
 	CLK_GATE_OFF(VCLK2_ENCT);

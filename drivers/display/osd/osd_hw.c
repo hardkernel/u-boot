@@ -405,6 +405,12 @@ int osd_set_scan_mode(u32 index)
 	case VMODE_4K2K_25HZ:
 	case VMODE_4K2K_30HZ:
 	case VMODE_4K2K_SMPTE:
+	case VMODE_4K2K_SMPTE_25HZ:
+	case VMODE_4K2K_SMPTE_30HZ:
+	case VMODE_4K2K_SMPTE_50HZ:
+	case VMODE_4K2K_SMPTE_60HZ:
+	case VMODE_4K2K_SMPTE_50HZ_Y420:
+	case VMODE_4K2K_SMPTE_60HZ_Y420:
 		if (osd_hw.fb_for_4k2k) {
 			if (osd_hw.free_scale_enable[index])
 				osd_hw.scale_workaround = 1;
