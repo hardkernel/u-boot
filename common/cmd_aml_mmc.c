@@ -607,8 +607,8 @@ int do_amlmmcops(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
                                 /* flush cache after read */
                                 //flush_cache((ulong)addr, cnt * 512); /* FIXME */
 
-                                printf("MMC read: dev # %d, block # %#llx, count # %#llx, byte_size # %#llx %s!\n",
-                                                        dev, blk, cnt, sz_byte, (n==cnt) ? "OK" : "ERROR");
+                                //printf("MMC read: dev # %d, block # %#llx, count # %#llx, byte_size # %#llx %s!\n",
+                                //                        dev, blk, cnt, sz_byte, (n==cnt) ? "OK" : "ERROR");
                                 return (n == cnt) ? 0 : 1;
                         } else if (strcmp(argv[1], "write") == 0) {
                                 int dev;
@@ -691,7 +691,7 @@ int do_amlmmcops(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
                                         }
                                         free(addr_tmp);
                                 }
-                                printf("%#llx blocks , %#llx bytes written: %s\n", n, sz_byte, (n==cnt) ? "OK" : "ERROR");
+                                //printf("%#llx blocks , %#llx bytes written: %s\n", n, sz_byte, (n==cnt) ? "OK" : "ERROR");
                                 return (n == cnt) ? 0 : 1;
                         }
                         else if (strcmp(argv[1], "erase") == 0) {

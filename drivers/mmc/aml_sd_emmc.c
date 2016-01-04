@@ -362,25 +362,42 @@ int aml_sd_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd, struct	mmc_data *data)
         sd_emmc_reg->gcmd_dat = desc_cur->data_addr;
         sd_emmc_reg->gcmd_arg = desc_cur->cmd_arg;
 #endif
-        //waiting end of chain
+    //waiting end of chain
         while (1) {
                 status_irq = sd_emmc_reg->gstatus;
-                if (status_irq_reg->end_of_chain)
+				if (status_irq_reg->end_of_chain)
                         break;
         }
-
-        if (status_irq_reg->rxd_err)
+        if (status_irq_reg->rxd_err) {
                 ret |= SD_EMMC_RXD_ERROR;
-        if (status_irq_reg->txd_err)
+                printf("emmc/sd read error, cmd%d, status=0x%x\n",
+                    cmd->cmdidx, status_irq);
+        }
+        if (status_irq_reg->txd_err) {
                 ret |= SD_EMMC_TXD_ERROR;
-        if (status_irq_reg->desc_err)
+                printf("emmc/sd write error, cmd%d, status=0x%x\n",
+                    cmd->cmdidx, status_irq);
+        }
+        if (status_irq_reg->desc_err) {
                 ret |= SD_EMMC_DESC_ERROR;
-        if (status_irq_reg->resp_err)
+                printf("emmc/sd descripter error, cmd%d, status=0x%x\n",
+                    cmd->cmdidx, status_irq);
+        }
+        if (status_irq_reg->resp_err) {
                 ret |= SD_EMMC_RESP_CRC_ERROR;
-        if (status_irq_reg->resp_timeout)
+                printf("emmc/sd response crc error, cmd%d, status=0x%x\n",
+                    cmd->cmdidx, status_irq);
+        }
+        if (status_irq_reg->resp_timeout) {
                 ret |= SD_EMMC_RESP_TIMEOUT_ERROR;
-        if (status_irq_reg->desc_timeout)
+                printf("emmc/sd response timeout, cmd%d, status=0x%x\n",
+                    cmd->cmdidx, status_irq);
+        }
+        if (status_irq_reg->desc_timeout) {
                 ret |= SD_EMMC_DESC_TIMEOUT_ERROR;
+                printf("emmc/sd descripter timeout, cmd%d, status=0x%x\n",
+                    cmd->cmdidx, status_irq);
+        }
         if (data) {
                 if ((data->blocks*data->blocksize <0x200) && (data->flags == MMC_DATA_READ)) {
                         memcpy(data->dest, (const void *)sd_emmc_reg->gping,data->blocks*data->blocksize);
