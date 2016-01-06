@@ -27,6 +27,10 @@ config GXTVBB_P310_V1
 	bool "Support amlogic gxtv baby P310 socket v1 board"
 	default n
 
+config GXTVBB_P311_V1
+	bool "Support amlogic gxtv baby P311 socket v1 board"
+	default n
+
 config GXTVBB_9023_SKT_V1
 	bool "Support amlogic gxtv baby 9023 socket v1 board"
 	default n
@@ -69,6 +73,10 @@ endif
 
 if GXTVBB_P310_V1
 source "board/amlogic/gxtvbb_p310_v1/Kconfig"
+endif
+
+if GXTVBB_P311_V1
+source "board/amlogic/gxtvbb_p311_v1/Kconfig"
 endif
 
 if GXTVBB_9023_SKT_V1
