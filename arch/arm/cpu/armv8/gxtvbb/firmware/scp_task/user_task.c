@@ -66,7 +66,7 @@ void secure_task(void)
 				presume->method = resume_data.method;
 			}
 	}
-		__switch_back_highmb();
+		__switch_back_securemb();
 	}
 }
 

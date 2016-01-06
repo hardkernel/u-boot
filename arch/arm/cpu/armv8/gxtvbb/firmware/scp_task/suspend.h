@@ -29,8 +29,8 @@ struct pwr_op {
 	void (*power_off_at_24M)(void);
 	void (*power_on_at_24M)(void);
 
-	void (*power_off_at_32k)(void);
-	void (*power_on_at_32k)(void);
+	void (*power_off_at_32k)(unsigned int);
+	void (*power_on_at_32k)(unsigned int);
 
 	void (*shut_down)(void);
 
