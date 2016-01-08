@@ -1,6 +1,6 @@
 
 /*
- * include/configs/gxb_skt_v1.h
+ * include/configs/gxtvbb_skt_v1.h
  *
  * Copyright (C) 2015 Amlogic, Inc. All rights reserved.
  *
@@ -37,10 +37,6 @@
 #define CONFIG_VDDEE_INIT_VOLTAGE	1000		// voltage for power up
 #define CONFIG_VDDEE_SLEEP_VOLTAGE	 850		// voltage for suspend
 
-/* configs for CEC */
-#define CONFIG_CEC_OSD_NAME		"Mbox"
-#define CONFIG_CEC_WAKEUP
-
 /* SMP Definitinos */
 #define CPU_RELEASE_ADDR		secondary_boot_func
 
@@ -55,19 +51,31 @@
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	"loadaddr=1080000\0"\
 	"dtb_mem_addr=0x1000000\0" \
+	"fdt_high=0x20000000\0" \
 	"panel_type=lvds_0\0" \
 	"outputmode=1080p60hz\0" \
 	"panel_reverse=0\0" \
 	"osd_reverse=n\0" \
 	"video_reverse=n\0" \
-	"display_layer=osd1\0" \
+	"display_width=1920\0" \
+	"display_height=1080\0" \
+	"display_bpp=16\0" \
 	"display_color_index=16\0" \
+	"display_layer=osd1\0" \
+	"display_color_fg=0xffff\0" \
+	"display_color_bg=0\0" \
+	"fb_addr=0x3b000000\0" \
+	"fb_width=1920\0" \
+	"fb_height=1080\0" \
 	"storeboot="\
-	"if imgread kernel boot ${loadaddr}; then bootm ${loadaddr}; fi;"\
-	"\0"
-#define CONFIG_BOOTARGS "init=/init console=ttyS0,115200 no_console_suspend earlyprintk=aml-uart,0xc81004c0 ramoops.mem_address=0x20000000 ramoops.mem_size=0x100000 ramoops.record_size=0x8000 ramoops.console_size=0x4000"
+		"if imgread kernel boot ${loadaddr}; then "\
+			"bootm ${loadaddr}; "\
+		"fi;"\
+		"\0"
+#define CONFIG_BOOTARGS "init=/init console=ttyS0,115200 no_console_suspend "\
+	"earlyprintk=aml-uart,0xc81004c0 androidboot.selinux=disabled"
 #define CONFIG_BOOTCOMMAND "osd open;"\
-    "run storeboot"
+	"run storeboot"
 
 //#define CONFIG_ENV_IS_NOWHERE  1
 #define CONFIG_ENV_SIZE   (64*1024)
