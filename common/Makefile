@@ -132,6 +132,7 @@ obj-$(CONFIG_LOGBUFFER) += cmd_log.o
 obj-$(CONFIG_ID_EEPROM) += cmd_mac.o
 obj-$(CONFIG_CMD_MD5SUM) += cmd_md5sum.o
 obj-$(CONFIG_CMD_MEMORY) += cmd_mem.o
+obj-$(CONFIG_CMD_MEMORY) += cmd_mem_mask.o
 obj-$(CONFIG_CMD_IO) += cmd_io.o
 obj-$(CONFIG_CMD_MFSL) += cmd_mfsl.o
 obj-$(CONFIG_MII) += miiphyutil.o
