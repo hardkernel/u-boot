@@ -34,11 +34,13 @@ void ee_gate_off(void)
 	/*kernel will reopen */
 	CLK_GATE_OFF(CTS_ENCL);
 	/* CLK_GATE_OFF(CTS_ENCT); */
+#if 0    /* HDMITX 480i60hz/576i50hz need this gate */
 #ifdef CONFIG_AML_CVBS
 	if (cvbs_opened == 0)
 		CLK_GATE_OFF(CTS_ENCI);
 #else
 	CLK_GATE_OFF(CTS_ENCI);
+#endif
 #endif
 	/* CLK_GATE_OFF(CTS_ENCP); */
 
