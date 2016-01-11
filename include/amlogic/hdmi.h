@@ -224,6 +224,7 @@ struct hdmitx_dev {
 		void (*list_support_modes)(void);
 		void (*dump_regs)(void);
 		void (*test_bist)(unsigned int mode);
+		void (*output_blank)(unsigned int blank);
 	} HWOp;
 	enum hdmi_vic vic;
 	unsigned int mode420;

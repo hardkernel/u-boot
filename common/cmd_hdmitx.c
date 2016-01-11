@@ -107,6 +107,19 @@ static int do_output(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 	return CMD_RET_SUCCESS;
 }
 
+static int do_blank(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
+{
+	if (argc < 1)
+		return cmd_usage(cmdtp);
+
+	if (strcmp(argv[1], "1") == 0)
+		hdmitx_device.HWOp.output_blank(1);
+	if (strcmp(argv[1], "0") == 0)
+		hdmitx_device.HWOp.output_blank(0);
+
+	return CMD_RET_SUCCESS;
+}
+
 static int do_off(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 {
 	hdmitx_device.vic = HDMI_unkown;
@@ -125,6 +138,7 @@ static cmd_tbl_t cmd_hdmi_sub[] = {
 	U_BOOT_CMD_MKENT(hpd, 1, 1, do_hpd_detect, "", ""),
 	U_BOOT_CMD_MKENT(edid, 3, 1, do_edid, "", ""),
 	U_BOOT_CMD_MKENT(output, 3, 1, do_output, "", ""),
+	U_BOOT_CMD_MKENT(blank, 3, 1, do_blank, "", ""),
 	U_BOOT_CMD_MKENT(off, 1, 1, do_off, "", ""),
 	U_BOOT_CMD_MKENT(dump, 1, 1, do_dump, "", ""),
 };
@@ -159,6 +173,8 @@ U_BOOT_CMD(hdmitx, CONFIG_SYS_MAXARGS, 1, do_hdmitx,
 	"    list: list support formats\n"
 	"    FORMAT can be 720p60/50hz, 1080i60/50hz, 1080p60hz, etc\n"
 	"    bist MODE: 1 Color bar  2 Line  3 Dots  0 default\n"
+	"hdmitx blank [0|1]\n"
+	"    1: output blank  0: output normal\n"
 	"hdmitx off\n"
 	"    Turn off hdmitx output\n"
 );

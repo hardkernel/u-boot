@@ -362,6 +362,15 @@ static void hdmitx_test_bist(unsigned int mode)
 	}
 }
 
+static void hdmitx_output_blank(unsigned int blank)
+{
+	if (blank == 1)
+		hd_write_reg(P_VPU_HDMI_DATA_OVR,
+			((1 << 31) | (1 << 29) | (1 << 9)));
+	if (blank == 0)
+		hd_write_reg(P_VPU_HDMI_DATA_OVR, 0);
+}
+
 void hdmi_tx_init(void)
 {
 	hdmitx_device.HWOp.get_hpd_state = hdmitx_get_hpd_state;
@@ -370,6 +379,7 @@ void hdmi_tx_init(void)
 	hdmitx_device.HWOp.list_support_modes = hdmitx_list_support_modes;
 	hdmitx_device.HWOp.dump_regs = dump_regs;
 	hdmitx_device.HWOp.test_bist = hdmitx_test_bist;
+	hdmitx_device.HWOp.output_blank = hdmitx_output_blank;
 }
 
 void hdmi_tx_set(struct hdmitx_dev *hdev)
