@@ -21,16 +21,31 @@
 
 static char *lcd_cpu_gpio[LCD_CPU_GPIO_NUM_MAX] = {
 	"GPIOX_3",
+	"GPIOX_2",
 	"invalid", /* ending flag */
 };
 
 static struct lcd_power_step_s lcd_power_on_step[] = {
-	{LCD_POWER_TYPE_SIGNAL,0,0,50,},
-	{LCD_POWER_TYPE_MAX,   0,0,0,},
+	{LCD_POWER_TYPE_CPU,   0,1,50,}, /* power on */
+	{LCD_POWER_TYPE_SIGNAL,0,0,0,},  /* signal */
+	{LCD_POWER_TYPE_MAX,   0,0,0,},  /* ending flag */
 };
 static struct lcd_power_step_s lcd_power_off_step[] = {
-	{LCD_POWER_TYPE_SIGNAL,0,0,50,},
-	{LCD_POWER_TYPE_MAX,   0,0,0,},
+	{LCD_POWER_TYPE_SIGNAL,0,0,50,},  /* signal */
+	{LCD_POWER_TYPE_CPU,   0,0,100,}, /* power off */
+	{LCD_POWER_TYPE_MAX,   0,0,0,},   /* ending flag */
+};
+static struct lcd_power_step_s lcd_power_on_step_3d_disable[] = {
+	{LCD_POWER_TYPE_CPU,   0,1,20,}, /* power on */
+	{LCD_POWER_TYPE_CPU,   1,0,10,}, /* 3d_disable */
+	{LCD_POWER_TYPE_SIGNAL,0,0,0,},  /* signal */
+	{LCD_POWER_TYPE_MAX,   0,0,0,},  /* ending flag */
+};
+static struct lcd_power_step_s lcd_power_off_step_3d_disable[] = {
+	{LCD_POWER_TYPE_SIGNAL,0,0,30,},  /* signal */
+	{LCD_POWER_TYPE_CPU,   1,2,0,},   /* 3d_disable */
+	{LCD_POWER_TYPE_CPU,   0,0,100,}, /* power off */
+	{LCD_POWER_TYPE_MAX,   0,0,0,},   /* ending flag */
 };
 
 static char *lcd_bl_gpio[BL_GPIO_NUM_MAX] = {
@@ -52,7 +67,7 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	lcd_power_on_step, lcd_power_off_step,
 	/* backlight */
 	60,255,10,128,128,
-	BL_CTRL_MAX,0,1,0,200,200,
+	BL_CTRL_PWM,0,1,0,200,200,
 	BL_PWM_POSITIVE,BL_PWM_B,180,100,25,1,0,
 	Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
 	Rsv_val,Rsv_val,Rsv_val,Rsv_val,
@@ -70,7 +85,7 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	lcd_power_on_step, lcd_power_off_step,
 	/* backlight */
 	60,255,10,128,128,
-	BL_CTRL_MAX,0,1,0,200,200,
+	BL_CTRL_PWM,0,1,0,200,200,
 	BL_PWM_POSITIVE,BL_PWM_B,180,100,25,1,0,
 	Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
 	Rsv_val,Rsv_val,Rsv_val,Rsv_val,
@@ -88,7 +103,7 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	lcd_power_on_step, lcd_power_off_step,
 	/* backlight */
 	60,255,10,128,128,
-	BL_CTRL_MAX,0,1,0,200,200,
+	BL_CTRL_PWM,0,1,0,200,200,
 	BL_PWM_POSITIVE,BL_PWM_B,180,100,25,1,0,
 	Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
 	Rsv_val,Rsv_val,Rsv_val,Rsv_val,
@@ -106,7 +121,7 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	lcd_power_on_step, lcd_power_off_step,
 	/* backlight */
 	60,255,10,128,128,
-	BL_CTRL_MAX,0,1,0,200,200,
+	BL_CTRL_PWM,0,1,0,200,200,
 	BL_PWM_POSITIVE,BL_PWM_B,180,100,25,1,0,
 	Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
 	Rsv_val,Rsv_val,Rsv_val,Rsv_val,
@@ -121,10 +136,10 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	/* vbyone_attr */
 	8,2,4,4,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
 	/* power step */
-	lcd_power_on_step, lcd_power_off_step,
+	lcd_power_on_step_3d_disable, lcd_power_off_step_3d_disable,
 	/* backlight */
 	60,255,10,128,128,
-	BL_CTRL_MAX,0,1,0,200,200,
+	BL_CTRL_PWM,0,1,0,200,200,
 	BL_PWM_POSITIVE,BL_PWM_B,180,100,25,1,0,
 	Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
 	Rsv_val,Rsv_val,Rsv_val,Rsv_val,
@@ -151,8 +166,14 @@ static struct lcd_power_ctrl_s lcd_power_ctrl = {
 	.cpu_gpio = lcd_cpu_gpio,
 	.power_on_step = {
 		{
-			.type = LCD_POWER_TYPE_SIGNAL,
+			.type = LCD_POWER_TYPE_CPU,
+			.index = 0, /* point to cpu_gpio[] struct */
+			.value = 1, /* 0=output_low, 1=output_high, 2=input */
 			.delay = 50, /* unit: ms */
+		},
+		{
+			.type = LCD_POWER_TYPE_SIGNAL,
+			.delay = 0, /* unit: ms */
 		},
 		{
 			.type = LCD_POWER_TYPE_MAX, /* ending flag */
@@ -162,6 +183,12 @@ static struct lcd_power_ctrl_s lcd_power_ctrl = {
 		{
 			.type = LCD_POWER_TYPE_SIGNAL,
 			.delay = 50, /* unit: ms */
+		},
+		{
+			.type = LCD_POWER_TYPE_CPU,
+			.index = 0, /* point to cpu_gpio[] struct */
+			.value = 0, /* 0=output_low, 1=output_high, 2=input */
+			.delay = 100, /* unit: ms */
 		},
 		{
 			.type = LCD_POWER_TYPE_MAX, /* ending flag */

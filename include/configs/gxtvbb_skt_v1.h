@@ -67,15 +67,33 @@
 	"fb_addr=0x3b000000\0" \
 	"fb_width=1920\0" \
 	"fb_height=1080\0" \
+	"init_display="\
+		"osd open; osd clear; "\
+		"vout output ${outputmode}; "\
+		"imgread pic logo bootup $loadaddr; "\
+		"bmp display $bootup_offset; bmp scale; "\
+		"\0"\
+	"storeargs=setenv bootargs "\
+		"rootfstype=ramfs init=/init "\
+		"console=ttyS0,115200 no_console_suspend "\
+		"earlyprintk=aml-uart,0xc81004c0 "\
+		"androidboot.selinux=disabled "\
+		"logo=${display_layer},loaded,${fb_addr} "\
+		"vout=${outputmode},enable "\
+		"panel_type=${panel_type} hdmitx= "\
+		"osd_reverse=${osd_reverse} video_reverse=${video_reverse} "\
+		"\0"\
 	"storeboot="\
 		"if imgread kernel boot ${loadaddr}; then "\
 			"bootm ${loadaddr}; "\
 		"fi;"\
 		"\0"
-#define CONFIG_BOOTARGS "init=/init console=ttyS0,115200 no_console_suspend "\
-	"earlyprintk=aml-uart,0xc81004c0 androidboot.selinux=disabled"
-#define CONFIG_BOOTCOMMAND "osd open;"\
-	"run storeboot"
+
+#define CONFIG_PREBOOT \
+	"run init_display; "\
+	"run storeargs; "
+
+#define CONFIG_BOOTCOMMAND "run storeboot"
 
 //#define CONFIG_ENV_IS_NOWHERE  1
 #define CONFIG_ENV_SIZE   (64*1024)
