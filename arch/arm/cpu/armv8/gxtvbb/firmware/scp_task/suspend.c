@@ -10,7 +10,7 @@ unsigned int time;
 
 static struct pwr_op pwr_op_d;
 static struct pwr_op *p_pwr_op;
-/*
+#if 0
 static void internal_osc_32k_init(void)
 {
 	do {
@@ -22,7 +22,6 @@ static void internal_osc_32k_init(void)
 	}while(((readl(AO_RTI_INTER_OSC_CTL0)>>31)&0x1)!= 0x1);
 
 }
-*/
 void switch_to_32k(void)
 {
 	/*
@@ -30,13 +29,13 @@ void switch_to_32k(void)
 	   aml_update_bits(AO_RTI_PWR_CNTL_REG0, 0x1<<0, 0x1<<0);
 	 */
 }
-
 void switch_to_clk81(void)
 {
 	/*
 	   aml_update_bits(AO_RTI_PWR_CNTL_REG0, 0x1<<0, 0);
 	 */
 }
+#endif
 
 static void ao_switch_to_ao_24M(void)
 {
@@ -60,7 +59,7 @@ static void ao_switch_to_ee(void)
 	val = val & (~(0x1 << 8));
 	writel(val, AO_RTI_PWR_CNTL_REG0);
 }
-
+#if 0
 static void gxbb_com_gate_off(void)
 {
 	/* gate off fix_clk_div2 */
@@ -98,7 +97,7 @@ static void gxbb_com_gate_on(void)
 	/* gate on fix_clk_div7 */
 	aml_update_bits(HHI_MPLL_CNTL6, 1 << 31, 1 << 31);
 }
-
+#endif
 void suspend_pwr_ops_init(void)
 {
 	p_pwr_op = &pwr_op_d;
@@ -128,22 +127,17 @@ void enter_suspend(unsigned int suspend_from)
 #endif
 	p_pwr_op->power_off_at_clk81();
 	p_pwr_op->power_off_at_24M();
-
-	switch_to_32k();
-	gxbb_com_gate_off();
 	if (suspend_from == SYS_POWEROFF)
 		ao_switch_to_ao_24M();
 	p_pwr_op->power_off_at_32k(suspend_from);
 	exit_reason = p_pwr_op->detect_key(suspend_from);
+	p_pwr_op->power_on_at_24M();
+	p_pwr_op->power_on_at_clk81();
 	p_pwr_op->power_on_at_32k(suspend_from);
 	if (suspend_from == SYS_POWEROFF)
 		ao_switch_to_ee();
-	gxbb_com_gate_on();
-	switch_to_clk81();
 	uart_puts("exit_reason:0x");
 	uart_put_hex(exit_reason, 8);
 	uart_puts("\n");
 	set_wakeup_method(exit_reason);
-	p_pwr_op->power_on_at_24M();
-	p_pwr_op->power_on_at_clk81();
 }

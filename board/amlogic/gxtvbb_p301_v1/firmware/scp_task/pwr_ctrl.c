@@ -139,7 +139,7 @@ static void power_on_at_clk81(void)
 	pwm_set_voltage(pwm_ao_b, CONFIG_VDDEE_INIT_VOLTAGE);
 	power_on_usb5v();
 	power_on_3v3_5v();
-	_udelay(5000);
+	_udelay(6000);
 }
 
 static void power_off_at_24M(void)
