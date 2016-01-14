@@ -67,6 +67,7 @@
 	"fb_addr=0x3b000000\0" \
 	"fb_width=1920\0" \
 	"fb_height=1080\0" \
+	"jtag=apao\0"\
 	"init_display="\
 		"osd open; osd clear; "\
 		"vout output ${outputmode}; "\
@@ -82,6 +83,7 @@
 		"vout=${outputmode},enable "\
 		"panel_type=${panel_type} hdmitx= "\
 		"osd_reverse=${osd_reverse} video_reverse=${video_reverse} "\
+		"jtag=${jtag} "\
 		"\0"\
 	"storeboot="\
 		"if imgread kernel boot ${loadaddr}; then "\
