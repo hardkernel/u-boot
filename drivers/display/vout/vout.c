@@ -23,6 +23,9 @@
 
 #include <amlogic/vmode.h>
 #include <amlogic/vout.h>
+#ifdef CONFIG_AML_LCD
+#include <amlogic/aml_lcd.h>
+#endif
 
 #define VOUT_LOG_DBG 0
 #define VOUT_LOG_TAG "[VOUT]"
@@ -153,6 +156,12 @@ static const vout_set_t vout_sets[] = {
 		.width             = 1920,
 		.height            = 1080,
 	},
+	{ /* VMODE_LCD */
+		.name              = "panel",
+		.mode              = VMODE_LCD,
+		.width             = 1280,
+		.height            = 720,
+	},
 };
 
 vidinfo_t tv_info = {
@@ -248,12 +257,26 @@ static void vout_vmode_init(void)
 	int vmode = -1;
 	ulong width = 0;
 	ulong height = 0;
+#ifdef CONFIG_AML_LCD
+	struct aml_lcd_drv_s *lcd_drv;
+#endif
 
 	outputmode = getenv("outputmode");
 	vmode = vout_find_mode_by_name(outputmode);
 	vout_set_current_vmode(vmode);
-	width = vout_find_width_by_name(outputmode);
-	height = vout_find_height_by_name(outputmode);
+	switch (vmode) {
+#ifdef CONFIG_AML_LCD
+	case VMODE_LCD:
+		lcd_drv = aml_lcd_get_driver();
+		width = lcd_drv->lcd_config->lcd_basic.h_active;
+		height = lcd_drv->lcd_config->lcd_basic.v_active;
+		break;
+#endif
+	default:
+		width = vout_find_width_by_name(outputmode);
+		height = vout_find_height_by_name(outputmode);
+		break;
+	}
 	vout_reg_write(VPP_POSTBLEND_H_SIZE, width);
 	vout_axis_init(width, height);
 }
@@ -362,11 +385,6 @@ vidinfo_t *vout_get_current_vinfo(void)
 	vidinfo_t *info = &tv_info;
 
 	vout_logl();
-
-#if defined CONFIG_VIDEO_AMLLCD
-	extern vidinfo_t tv_info;
-	info = &panel_info;
-#endif
 
 	return info;
 }

@@ -275,6 +275,7 @@ static void osd_check_scan_mode(void)
 	vmode = vout_get_current_vmode();
 #endif
 	switch (vmode) {
+	case VMODE_LCD:
 	case VMODE_480I:
 	case VMODE_480CVBS:
 	case VMODE_576I:
@@ -360,6 +361,7 @@ int osd_set_scan_mode(u32 index)
 	osd_hw.scan_mode = SCAN_MODE_PROGRESSIVE;
 	osd_hw.scale_workaround = 0;
 	switch (vmode) {
+	case VMODE_LCD:
 	case VMODE_480I:
 	case VMODE_480CVBS:
 	case VMODE_576I:
@@ -909,6 +911,7 @@ void osd_get_window_axis_hw(u32 index, s32 *x0, s32 *y0, s32 *x1, s32 *y1)
 	vmode = vout_get_current_vmode();
 #endif
 	switch (vmode) {
+	case VMODE_LCD:
 	case VMODE_480I:
 	case VMODE_480CVBS:
 	case VMODE_576I:
@@ -937,6 +940,7 @@ void osd_set_window_axis_hw(u32 index, s32 x0, s32 y0, s32 x1, s32 y1)
 	vmode = vout_get_current_vmode();
 #endif
 	switch (vmode) {
+	case VMODE_LCD:
 	case VMODE_480I:
 	case VMODE_480CVBS:
 	case VMODE_576I:
