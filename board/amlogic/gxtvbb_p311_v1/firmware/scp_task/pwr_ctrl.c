@@ -148,10 +148,10 @@ static void power_on_at_24M(void)
 {
 }
 
-static void power_off_at_32k(void)
+static void power_off_at_32k(unsigned int suspend_from)
 {
 }
-static void power_on_at_32k(void)
+static void power_on_at_32k(unsigned int suspend_from)
 {
 }
 

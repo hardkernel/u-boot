@@ -1,4 +1,6 @@
-
+#ifdef CONFIG_CEC_WAKEUP
+#include <cec_tx_reg.h>
+#endif
 /*
  * board/amlogic/gxtvbb_skt_v1/firmware/scp_task/pwr_ctrl.c
  *
