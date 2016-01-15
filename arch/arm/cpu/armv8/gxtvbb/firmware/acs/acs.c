@@ -31,7 +31,8 @@ struct acs_setting __acs_set={
 					.acs_set_length	= sizeof(__acs_set),
 
 					.ddr_magic		= "ddrs_",
-					.ddr_set_version= 2, //2015.10.30 update to v2
+					.ddr_set_version= 3, //2015.10.30 update to v2
+										 //2016.01.15 update to v3, add dqs gate tuning
 					.ddr_set_length	= sizeof(ddr_set_t),
 					.ddr_set_addr	= (unsigned long)(&__ddr_setting),
 

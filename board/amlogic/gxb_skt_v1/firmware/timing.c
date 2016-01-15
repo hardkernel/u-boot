@@ -372,6 +372,24 @@ ddr_set_t __ddr_setting = {
 	.t_pctl0_dfilpcfg0		= ( 1 | (3 << 4) | (1 << 8) | (3 << 12) | (7 <<16) | (1 <<24) | ( 3 << 28)),
 
 	.t_pub_acbdlr0          = 0,  //2015.09.21 add for  CK0 delay fine tune
+
+	.ddr_func				= DDR_FUNC, /* ddr func demo 2016.01.26 */
+	.wr_adj_per				= {			/* dqs tuning demo 2016.01.26 */
+								[0] = 100,
+								[1] = 100,
+								[2] = 100,
+								[3] = 100,
+								[4] = 100,
+								[5] = 100,
+							},
+	.rd_adj_per				= {
+								[0] = 100,
+								[1] = 100,
+								[2] = 100,
+								[3] = 100,
+								[4] = 100,
+								[5] = 100,
+							},
 };
 
 pll_set_t __pll_setting = {

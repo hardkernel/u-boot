@@ -48,3 +48,32 @@
 									 (CONFIG_DDR1_ONLY_32BIT == chl_set))
 
 #define DDR_USE_2_CHANNEL(chl_set)	((CONFIG_DDR01_TWO_CHANNEL == chl_set))
+
+/* how to add a new ddr function?
+   1. add CONFIG_CMD_DDR_XXX in (config).h file
+   2. add define in this file.
+      2.1 add
+        #ifndef CONFIG_CMD_DDR_XXX
+        #define CONFIG_CMD_DDR_XXX 0
+        #endif
+      2.2 add
+        #define DDR_FUNC_XXX (CONFIG_FUNC_XXX<<X)
+      2.3 add DDR_FUNC_XXX |\ in DDR_FUNC
+   3. add same define and parser in bl2 code
+   */
+/* 2.1, 2,2, 2,3 example */
+/*
+#ifndef CONFIG_CMD_DDR_D2PLL
+#define CONFIG_CMD_DDR_D2PLL				0
+#endif
+#define DDR_FUNC_D2PLL						(CONFIG_CMD_DDR_D2PLL<<0)
+#define DDR_FUNC							(EXISTING_FUNCTIONS) |\
+											(DDR_FUNC_D2PLL)
+*/
+
+#ifndef CONFIG_CMD_DDR_D2PLL
+#define CONFIG_CMD_DDR_D2PLL				0
+#endif
+#define DDR_FUNC_D2PLL						(CONFIG_CMD_DDR_D2PLL<<0)
+
+#define DDR_FUNC							(DDR_FUNC_D2PLL)

@@ -100,14 +100,11 @@ struct ddr_set{
 	unsigned int   t_pub_acbdlr4;
 	unsigned int   t_pub_acbdlr5;
 
-	int   t_pub_dx0lcdlr1;
-	int   t_pub_dx1lcdlr1;
-	int   t_pub_dx2lcdlr1;
-	int   t_pub_dx3lcdlr1;
-	int   t_pub_dx0lcdlr2;
-	int   t_pub_dx1lcdlr2;
-	int   t_pub_dx2lcdlr2;
-	int   t_pub_dx3lcdlr2;
+	/* v3 added, ddr functions */
+	unsigned int   ddr_func;
+	/* v3 added, dqs correction */
+	unsigned char  wr_adj_per[12];
+	unsigned char  rd_adj_per[12];
 }__attribute__ ((packed));
 
 struct ddr_timing{

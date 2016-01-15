@@ -253,7 +253,10 @@
 #define CONFIG_DDR_ZQ_POWER_DOWN
 #define CONFIG_DDR_POWER_DOWN_PHY_VREF
 /* ddr detection */
-#define CONFIG_DDR_SIZE_AUTO_DETECT		1
+#define CONFIG_DDR_SIZE_AUTO_DETECT     1 //0:disable, 1:enable
+/* ddr functions */
+#define CONFIG_CMD_DDR_D2PLL            0 //0:disable, 1:enable. d2pll cmd
+#define CONFIG_CMD_DDR_TEST             0 //0:disable, 1:enable. ddrtest cmd
 
 /* storage: emmc/nand/sd */
 #define	CONFIG_STORE_COMPATIBLE 1

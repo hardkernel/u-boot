@@ -417,14 +417,6 @@ ddr_set_t __ddr_setting = {
 	.t_pub_acbdlr4			= 0,
 	.t_pub_acbdlr5			= 0,
 
-	.t_pub_dx0lcdlr1		= -((0x00<<24)|(0x3<<16)|(0x3<<8)|(0x0)),
-	.t_pub_dx1lcdlr1		= -((0x00<<24)|(0x3<<16)|(0x3<<8)|(0x0)),
-	.t_pub_dx2lcdlr1		= -((0x00<<24)|(0x3<<16)|(0x3<<8)|(0x0)),
-	.t_pub_dx3lcdlr1		= -((0x00<<24)|(0x3<<16)|(0x3<<8)|(0x0)),
-	.t_pub_dx0lcdlr2		= 0,
-	.t_pub_dx1lcdlr2		= 0,
-	.t_pub_dx2lcdlr2		= 0,
-	.t_pub_dx3lcdlr2		= 0,
 };
 
 pll_set_t __pll_setting = {
