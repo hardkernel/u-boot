@@ -98,16 +98,8 @@
 		"echo upgrade_step=${upgrade_step}; "\
 		"if itest ${upgrade_step} == 3; then "\
 			"run init_display; run storeargs; run update; "\
-		"else if itest ${upgrade_step} == 1; then "\
-			"defenv_reserv; setenv upgrade_step 2; saveenv; "\
-		"fi; fi; "\
+		"else fi; "\
 		"\0"\
-	"bootmode_check="\
-		"get_rebootmode; echo reboot_mode=${reboot_mode}; "\
-		"if test ${reboot_mode} = factory_reset; then "\
-			"defenv_reserv aml_dt;setenv upgrade_step 2;save; "\
-		"fi; "\
-		"\0" \
 	"storeargs="\
 		"setenv bootargs rootfstype=ramfs init=/init "\
 		"console=ttyS0,115200 no_console_suspend "\
@@ -227,7 +219,6 @@
 #define CONFIG_PREBOOT  \
 	"run factory_reset_poweroff_protect; "\
 	"run upgrade_check; "\
-	"run bootmode_check; "\
 	"run init_display; "\
 	"run storeargs; "\
 	"run switch_bootmode;"
@@ -343,7 +334,15 @@
 	#define CONFIG_USB_XHCI_AMLOGIC 1
 #endif //#if defined(CONFIG_CMD_USB)
 //#define CONFIG_AML_TINY_USBTOOL 1
-#define CONFIG_AML_V2_FACTORY_BURN   1
+
+//UBOOT Facotry usb/sdcard burning config
+#define CONFIG_AML_V2_FACTORY_BURN              1       //support facotry usb burning
+#define CONFIG_AML_FACTORY_BURN_LOCAL_UPGRADE   1       //support factory sdcard burning
+#define CONFIG_POWER_KEY_NOT_SUPPORTED_FOR_BURN 1       //There isn't power-key for factory sdcard burning
+#define CONFIG_SD_BURNING_SUPPORT_UI            1       //Displaying upgrading progress bar when sdcard/udisk burning
+
+#define CONFIG_AML_SECURITY_KEY                 1
+#define CONFIG_UNIFY_KEY_MANAGE                 1
 
 /* net */
 #define CONFIG_CMD_NET   1

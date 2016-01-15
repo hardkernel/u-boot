@@ -105,9 +105,7 @@
             "echo upgrade_step=${upgrade_step}; "\
             "if itest ${upgrade_step} == 3; then "\
                 "run init_display; run storeargs; run update;"\
-            "else if itest ${upgrade_step} == 1; then "\
-                "defenv_reserv; setenv upgrade_step 2; saveenv;"\
-            "fi;fi;"\
+            "else fi;"\
             "\0"\
 	    "bootmode_check="\
             "get_rebootmode; echo reboot_mode=${reboot_mode};"\

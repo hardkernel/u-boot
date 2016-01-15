@@ -100,17 +100,9 @@
             "echo upgrade_step=${upgrade_step}; "\
             "if itest ${upgrade_step} == 3; then "\
                 "run init_display; run storeargs; run update;"\
-            "else if itest ${upgrade_step} == 1; then "\
-                "defenv_reserv; setenv upgrade_step 2; saveenv;"\
-            "fi;fi;"\
+            "else fi;"\
             "\0"\
-	    "bootmode_check="\
-            "get_rebootmode; echo reboot_mode=${reboot_mode};"\
-            "if test ${reboot_mode} = factory_reset; then "\
-                "defenv_reserv aml_dt;setenv upgrade_step 2; save;"\
-            "fi;"\
-            "\0" \
-        "storeargs="\
+    "storeargs="\
             "setenv bootargs ${initargs} logo=${display_layer},loaded,${fb_addr},${outputmode} vout=${outputmode},enable hdmimode=${hdmimode} cvbsmode=${cvbsmode} hdmitx=${cecconfig} cvbsdrv=${cvbs_drv} androidboot.firstboot=${firstboot} jtag=${jtag}; "\
             "run cmdline_keys;"\
             "\0"\
@@ -204,7 +196,6 @@
 #define CONFIG_PREBOOT  \
             "run factory_reset_poweroff_protect;"\
             "run upgrade_check;"\
-            "run bootmode_check;"\
             "run init_display;"\
             "run storeargs;"\
             "run upgrade_key;" \
