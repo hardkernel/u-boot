@@ -246,6 +246,7 @@ static int bootm_find_fdt(int flag, int argc, char * const argv[])
 	ft_addr_bak = (char *)images.ft_addr;
 	ft_len_bak = images.ft_len;
 	images.ft_addr = (char *)map_sysmem(dtb_mem_addr, 0);
+	images.ft_len = fdt_get_header(dtb_mem_addr, totalsize);
 	printf("load dtb from 0x%lx ......\n", (unsigned long)(images.ft_addr));
 	#endif
 	ret = boot_get_fdt(flag, argc, argv, IH_ARCH_DEFAULT, &images,

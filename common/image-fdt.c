@@ -435,6 +435,9 @@ int boot_get_fdt(int flag, int argc, char * const argv[], uint8_t arch,
 				fdt_error("fdt size != image size");
 				goto error;
 			}*/
+		} else {
+			printf("## No Flattened Device Tree\n");
+			goto error;
 		}
 		#else
 		debug("## No Flattened Device Tree\n");
@@ -452,8 +455,10 @@ int boot_get_fdt(int flag, int argc, char * const argv[], uint8_t arch,
 no_fdt:
 	ok_no_fdt = 1;
 error:
+#ifndef CONFIG_ANDROID_IMG
 	*of_flat_tree = NULL;
 	*of_size = 0;
+#endif
 	if (!select && ok_no_fdt) {
 		debug("Continuing to boot without FDT\n");
 		return 0;
