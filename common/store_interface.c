@@ -408,7 +408,7 @@ static int do_store_init(cmd_tbl_t * cmdtp, int flag, int argc, char * const arg
                     }
                     sprintf(str, "amlmmc erase %d", CONFIG_SYS_MMC_ENV_DEV);
                     MsgP("amlmmc erase %d", CONFIG_SYS_MMC_ENV_DEV);
-                    ret = run_command(cmd, 0);
+                    ret = run_command(str, 0);
                 }
 
                 return ret;
