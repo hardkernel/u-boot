@@ -85,53 +85,6 @@ char *lcd_mode_mode_to_str(int mode)
 	return lcd_mode_table[mode];
 }
 
-void vpp_set_matrix_ycbcr2rgb(int vd1_or_vd2_or_post, int mode)
-{
-	if (vd1_or_vd2_or_post == 0) { //vd1
-		lcd_vcbus_setb(VPP_MATRIX_CTRL, 1, 5, 1);
-		lcd_vcbus_setb(VPP_MATRIX_CTRL, 1, 8, 2);
-	} else if (vd1_or_vd2_or_post == 1) { //vd2
-		lcd_vcbus_setb(VPP_MATRIX_CTRL, 1, 4, 1);
-		lcd_vcbus_setb(VPP_MATRIX_CTRL, 2, 8, 2);
-	} else {
-		lcd_vcbus_setb(VPP_MATRIX_CTRL, 1, 0, 1);
-		lcd_vcbus_setb(VPP_MATRIX_CTRL, 0, 8, 2);
-		if (mode == 0)
-			lcd_vcbus_setb(VPP_MATRIX_CTRL, 1, 1, 2);
-		else if (mode == 1)
-			lcd_vcbus_setb(VPP_MATRIX_CTRL, 0, 1, 2);
-	}
-
-	if (mode == 0) { //ycbcr not full range, 601 conversion
-		lcd_vcbus_write(VPP_MATRIX_PRE_OFFSET0_1, 0x0064C8FF);
-		lcd_vcbus_write(VPP_MATRIX_PRE_OFFSET2, 0x006400C8);
-		//1.164     0       1.596
-		//1.164   -0.392    -0.813
-		//1.164   2.017     0
-		lcd_vcbus_write(VPP_MATRIX_COEF00_01, 0x04A80000);
-		lcd_vcbus_write(VPP_MATRIX_COEF02_10, 0x066204A8);
-		lcd_vcbus_write(VPP_MATRIX_COEF11_12, 0x1e701cbf);
-		lcd_vcbus_write(VPP_MATRIX_COEF20_21, 0x04A80812);
-		lcd_vcbus_write(VPP_MATRIX_COEF22, 0x00000000);
-		lcd_vcbus_write(VPP_MATRIX_OFFSET0_1, 0x00000000);
-		lcd_vcbus_write(VPP_MATRIX_OFFSET2, 0x00000000);
-		lcd_vcbus_write(VPP_MATRIX_PRE_OFFSET0_1, 0x0FC00E00);
-		lcd_vcbus_write(VPP_MATRIX_PRE_OFFSET2, 0x00000E00);
-	} else if (mode == 1) {//ycbcr full range, 601 conversion
-		lcd_vcbus_write(VPP_MATRIX_PRE_OFFSET0_1, 0x0000E00);
-		lcd_vcbus_write(VPP_MATRIX_PRE_OFFSET2, 0x0E00);
-		//	1	0			1.402
-		//	1	-0.34414	-0.71414
-		//	1	1.772		0
-		lcd_vcbus_write(VPP_MATRIX_COEF00_01, (0x400 << 16) |0);
-		lcd_vcbus_write(VPP_MATRIX_COEF02_10, (0x59c << 16) |0x400);
-		lcd_vcbus_write(VPP_MATRIX_COEF11_12, (0x1ea0 << 16) |0x1d24);
-		lcd_vcbus_write(VPP_MATRIX_COEF20_21, (0x400 << 16) |0x718);
-		lcd_vcbus_write(VPP_MATRIX_COEF22, 0x0);
-		lcd_vcbus_write(VPP_MATRIX_OFFSET0_1, 0x0);
-		lcd_vcbus_write(VPP_MATRIX_OFFSET2, 0x0);
-	}
-}
 
 void lcd_tcon_config(struct lcd_config_s *pconf)
 {
@@ -184,4 +137,104 @@ void lcd_tcon_config(struct lcd_config_s *pconf)
 	}
 }
 
+/* change clock(frame_rate) for different vmode */
+int lcd_vmode_change(struct lcd_config_s *pconf)
+{
+	unsigned int pclk = pconf->lcd_timing.lcd_clk;
+	unsigned int h_period = pconf->lcd_basic.h_period;
+	unsigned int v_period = pconf->lcd_basic.v_period;
+	unsigned char type = pconf->lcd_timing.fr_adjust_type;
+	unsigned int sync_duration_num = pconf->lcd_timing.sync_duration_num;
+	unsigned int sync_duration_den = pconf->lcd_timing.sync_duration_den;
 
+	/* frame rate adjust */
+	switch (type) {
+	case 1: /* htotal adjust */
+		h_period = ((pclk / v_period) * sync_duration_den * 10) / sync_duration_num;
+		h_period = (h_period + 5) / 10; /* round off */
+		if (pconf->lcd_basic.h_period != h_period) {
+			LCDPR("vmode_change: adjust h_period %u -> %u\n",
+				pconf->lcd_basic.h_period, h_period);
+			pconf->lcd_basic.h_period = h_period;
+			/* check clk frac update */
+			pclk = (h_period * v_period) / sync_duration_den * sync_duration_num;
+			if (pconf->lcd_timing.lcd_clk != pclk)
+				pconf->lcd_timing.lcd_clk = pclk;
+		}
+		break;
+	case 2: /* vtotal adjust */
+		v_period = ((pclk / h_period) * sync_duration_den * 10) / sync_duration_num;
+		v_period = (v_period + 5) / 10; /* round off */
+		if (pconf->lcd_basic.v_period != v_period) {
+			LCDPR("vmode_change: adjust v_period %u -> %u\n",
+				pconf->lcd_basic.v_period, v_period);
+			pconf->lcd_basic.v_period = v_period;
+			/* check clk frac update */
+			pclk = (h_period * v_period) / sync_duration_den * sync_duration_num;
+			if (pconf->lcd_timing.lcd_clk != pclk)
+				pconf->lcd_timing.lcd_clk = pclk;
+		}
+		break;
+	case 0: /* pixel clk adjust */
+	default:
+		pclk = (h_period * v_period * sync_duration_num) / sync_duration_den;
+		if (pconf->lcd_timing.lcd_clk != pclk) {
+			LCDPR("vmode_change: adjust pclk %u.%03uMHz -> %u.%03uMHz\n",
+				(pconf->lcd_timing.lcd_clk / 1000000),
+				((pconf->lcd_timing.lcd_clk / 1000) % 1000),
+				(pclk / 1000000), ((pclk / 1000) % 1000));
+			pconf->lcd_timing.lcd_clk = pclk;
+		}
+		break;
+	}
+
+	return 0;
+}
+
+void vpp_set_matrix_ycbcr2rgb(int vd1_or_vd2_or_post, int mode)
+{
+	if (vd1_or_vd2_or_post == 0) { //vd1
+		lcd_vcbus_setb(VPP_MATRIX_CTRL, 1, 5, 1);
+		lcd_vcbus_setb(VPP_MATRIX_CTRL, 1, 8, 2);
+	} else if (vd1_or_vd2_or_post == 1) { //vd2
+		lcd_vcbus_setb(VPP_MATRIX_CTRL, 1, 4, 1);
+		lcd_vcbus_setb(VPP_MATRIX_CTRL, 2, 8, 2);
+	} else {
+		lcd_vcbus_setb(VPP_MATRIX_CTRL, 1, 0, 1);
+		lcd_vcbus_setb(VPP_MATRIX_CTRL, 0, 8, 2);
+		if (mode == 0)
+			lcd_vcbus_setb(VPP_MATRIX_CTRL, 1, 1, 2);
+		else if (mode == 1)
+			lcd_vcbus_setb(VPP_MATRIX_CTRL, 0, 1, 2);
+	}
+
+	if (mode == 0) { //ycbcr not full range, 601 conversion
+		lcd_vcbus_write(VPP_MATRIX_PRE_OFFSET0_1, 0x0064C8FF);
+		lcd_vcbus_write(VPP_MATRIX_PRE_OFFSET2, 0x006400C8);
+		//1.164     0       1.596
+		//1.164   -0.392    -0.813
+		//1.164   2.017     0
+		lcd_vcbus_write(VPP_MATRIX_COEF00_01, 0x04A80000);
+		lcd_vcbus_write(VPP_MATRIX_COEF02_10, 0x066204A8);
+		lcd_vcbus_write(VPP_MATRIX_COEF11_12, 0x1e701cbf);
+		lcd_vcbus_write(VPP_MATRIX_COEF20_21, 0x04A80812);
+		lcd_vcbus_write(VPP_MATRIX_COEF22, 0x00000000);
+		lcd_vcbus_write(VPP_MATRIX_OFFSET0_1, 0x00000000);
+		lcd_vcbus_write(VPP_MATRIX_OFFSET2, 0x00000000);
+		lcd_vcbus_write(VPP_MATRIX_PRE_OFFSET0_1, 0x0FC00E00);
+		lcd_vcbus_write(VPP_MATRIX_PRE_OFFSET2, 0x00000E00);
+	} else if (mode == 1) {//ycbcr full range, 601 conversion
+		lcd_vcbus_write(VPP_MATRIX_PRE_OFFSET0_1, 0x0000E00);
+		lcd_vcbus_write(VPP_MATRIX_PRE_OFFSET2, 0x0E00);
+		//	1	0			1.402
+		//	1	-0.34414	-0.71414
+		//	1	1.772		0
+		lcd_vcbus_write(VPP_MATRIX_COEF00_01, (0x400 << 16) |0);
+		lcd_vcbus_write(VPP_MATRIX_COEF02_10, (0x59c << 16) |0x400);
+		lcd_vcbus_write(VPP_MATRIX_COEF11_12, (0x1ea0 << 16) |0x1d24);
+		lcd_vcbus_write(VPP_MATRIX_COEF20_21, (0x400 << 16) |0x718);
+		lcd_vcbus_write(VPP_MATRIX_COEF22, 0x0);
+		lcd_vcbus_write(VPP_MATRIX_OFFSET0_1, 0x0);
+		lcd_vcbus_write(VPP_MATRIX_OFFSET2, 0x0);
+	}
+}

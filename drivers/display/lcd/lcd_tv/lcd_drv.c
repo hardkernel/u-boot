@@ -23,6 +23,24 @@
 #include "../aml_lcd_common.h"
 #include "lcd_tv.h"
 
+static int lcd_type_supported(struct lcd_config_s *pconf)
+{
+	int lcd_type = pconf->lcd_basic.lcd_type;
+	int ret = -1;
+
+	switch (lcd_type) {
+	case LCD_LVDS:
+	case LCD_VBYONE:
+		ret = 0;
+		break;
+	default:
+		LCDPR("invalid lcd type: %s(%d)\n",
+			lcd_type_type_to_str(lcd_type), lcd_type);
+		break;
+	}
+	return ret;
+}
+
 /* set VX1_LOCKN && VX1_HTPDN */
 static void lcd_vbyone_pinmux_set(int status)
 {
@@ -435,7 +453,7 @@ static unsigned int vbyone_lane_num[] = {
 
 #define VBYONE_BIT_RATE_MAX		2970 //MHz
 #define VBYONE_BIT_RATE_MIN		600
-void lcd_vbyone_config_set(struct lcd_config_s *pconf)
+static void lcd_vbyone_config_set(struct lcd_config_s *pconf)
 {
 	unsigned int band_width, bit_rate, pclk, phy_div;
 	unsigned int byte_mode, lane_count, minlane;
@@ -495,13 +513,30 @@ void lcd_vbyone_config_set(struct lcd_config_s *pconf)
 	}
 }
 
+void lcd_tv_config_update(struct lcd_config_s *pconf)
+{
+	/* update interface timing */
+	switch (pconf->lcd_basic.lcd_type) {
+	case LCD_VBYONE:
+		lcd_vbyone_config_set(pconf);
+		break;
+	default:
+		break;
+	}
+	lcd_clk_generate_parameter(pconf);
+}
+
 int lcd_tv_driver_init(void)
 {
 	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
 	struct lcd_config_s *pconf;
+	int ret;
 
 	LCDPR("tv driver init\n");
 	pconf = lcd_drv->lcd_config;
+	ret = lcd_type_supported(pconf);
+	if (ret)
+		return -1;
 
 	/* init driver */
 	lcd_clk_set(pconf);
@@ -519,7 +554,6 @@ int lcd_tv_driver_init(void)
 		lcd_vbyone_wait_stable();
 		break;
 	default:
-		LCDPR("invalid lcd type\n");
 		break;
 	}
 
@@ -534,8 +568,14 @@ void lcd_tv_driver_disable(void)
 {
 	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
 	struct lcd_config_s *pconf;
+	int ret;
 
+	LCDPR("disable driver\n");
 	pconf = lcd_drv->lcd_config;
+	ret = lcd_type_supported(pconf);
+	if (ret)
+		return;
+
 	switch (pconf->lcd_basic.lcd_type) {
 	case LCD_LVDS:
 		lcd_lvds_phy_set(0);
@@ -553,6 +593,7 @@ void lcd_tv_driver_disable(void)
 
 	lcd_clk_disable();
 
-	LCDPR("disable driver\n");
+	if (lcd_debug_print_flag)
+		LCDPR("%s finished\n", __func__);
 }
 

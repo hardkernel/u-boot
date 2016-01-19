@@ -27,8 +27,11 @@ extern int lcd_type_str_to_type(const char *str);
 extern char *lcd_type_type_to_str(int type);
 extern int lcd_mode_str_to_mode(const char *str);
 extern char *lcd_mode_mode_to_str(int mode);
-extern void vpp_set_matrix_ycbcr2rgb(int vd1_or_vd2_or_post, int mode);
+
 extern void lcd_tcon_config(struct lcd_config_s *pconf);
+extern int lcd_vmode_change(struct lcd_config_s *pconf);
+
+extern void vpp_set_matrix_ycbcr2rgb(int vd1_or_vd2_or_post, int mode);
 
 /* lcd gpio */
 extern int aml_lcd_gpio_name_map_num(const char *name);

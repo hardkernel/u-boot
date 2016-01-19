@@ -21,9 +21,6 @@
 #include <libfdt.h>
 #endif
 #include <amlogic/aml_lcd.h>
-#ifdef CONFIG_AML_LCD_EXTERN
-#include <amlogic/aml_lcd_extern.h>
-#endif
 #include "../aml_lcd_reg.h"
 #include "../aml_lcd_common.h"
 #include "lcd_tv.h"
@@ -520,97 +517,16 @@ static int lcd_config_load_from_bsp(struct lcd_config_s *pconf)
 	return 0;
 }
 
-#ifdef CONFIG_AML_LCD_EXTERN
-static int lcd_extern_load_config(char *dt_addr, struct lcd_config_s *pconf)
-{
-	struct lcd_power_step_s *power_step;
-	int index, i;
-
-	i = 0;
-	while (i < LCD_PWR_STEP_MAX) {
-		power_step = &pconf->lcd_power->power_on_step[i];
-		if (power_step->type >= LCD_POWER_TYPE_MAX)
-			break;
-		if (power_step->type == LCD_POWER_TYPE_EXTERN) {
-			if (lcd_debug_print_flag) {
-				LCDPR("power_on: step %d: type=%d, index=%d\n",
-					i, power_step->type, power_step->index);
-			}
-			index = power_step->index;
-			if (index < LCD_EXTERN_INDEX_INVALID)
-				aml_lcd_extern_probe(dt_addr, index);
-		}
-		i++;
-	}
-
-	return 0;
-}
-#endif
-
 static void lcd_config_init(struct lcd_config_s *pconf)
 {
-	unsigned int h_period = pconf->lcd_basic.h_period;
-	unsigned int v_period = pconf->lcd_basic.v_period;
+	unsigned int clk;
 
-	pconf->lcd_timing.lcd_clk = h_period * v_period * 60;
+	clk = pconf->lcd_basic.h_period * pconf->lcd_basic.v_period * 60;
+	pconf->lcd_timing.lcd_clk = clk;
 	pconf->lcd_timing.sync_duration_num = 60;
 	pconf->lcd_timing.sync_duration_den = 1;
 
 	lcd_tcon_config(pconf);
-}
-
-/* change clock(frame_rate) for different vmode */
-static int lcd_vmode_change(struct lcd_config_s *pconf, int vmode)
-{
-	unsigned int pclk = pconf->lcd_timing.lcd_clk;
-	unsigned int h_period = pconf->lcd_basic.h_period;
-	unsigned int v_period = pconf->lcd_basic.v_period;
-	unsigned char type = pconf->lcd_timing.fr_adjust_type;
-	unsigned int sync_duration_num = lcd_info[vmode].sync_duration_num;
-	unsigned int sync_duration_den = lcd_info[vmode].sync_duration_den;
-
-	/* init lcd pixel clock */
-	//pclk = h_period * v_period * 60;
-	//pconf->lcd_timing.lcd_clk = pclk;
-
-	/* frame rate 60hz as default, no need adjust */
-	//if ((sync_duration_num / sync_duration_den) > 55)
-	//	return 0;
-
-	/* frame rate adjust */
-	switch (type) {
-	case 1: /* htotal adjust */
-		h_period = ((pclk / v_period) * sync_duration_den * 10) / sync_duration_num;
-		h_period = (h_period + 5) / 10; /* round off */
-		if (pconf->lcd_basic.h_period != h_period) {
-			LCDPR("vmode_change: adjust h_period %u -> %u\n",
-				pconf->lcd_basic.h_period, h_period);
-			pconf->lcd_basic.h_period = h_period;
-		}
-		break;
-	case 2: /* vtotal adjust */
-		v_period = ((pclk / h_period) * sync_duration_den * 10) / sync_duration_num;
-		v_period = (v_period + 5) / 10; /* round off */
-		if (pconf->lcd_basic.v_period != v_period) {
-			LCDPR("vmode_change: adjust v_period %u -> %u\n",
-				pconf->lcd_basic.v_period, v_period);
-			pconf->lcd_basic.v_period = v_period;
-		}
-		break;
-	case 0: /* pixel clk adjust */
-	default:
-		pclk = (h_period * v_period * sync_duration_num) / sync_duration_den;
-		if (pconf->lcd_timing.lcd_clk != pclk) {
-			LCDPR("vmode_change: adjust pclk %u.%03uMHz -> %u.%03uMHz\n",
-				(pconf->lcd_timing.lcd_clk / 1000000),
-				((pconf->lcd_timing.lcd_clk / 1000) % 1000),
-				(pclk / 1000000), ((pclk / 1000) % 1000));
-			pconf->lcd_timing.lcd_clk = pclk;
-		}
-		break;
-	}
-
-	return 0;
 }
 
 static int lcd_config_check(char *mode)
@@ -622,18 +538,11 @@ static int lcd_config_check(char *mode)
 	if (vmode >= LCD_OUTPUT_MODE_MAX)
 		return -1;
 
-	lcd_vmode_change(lcd_drv->lcd_config, vmode);
-	switch (lcd_drv->lcd_config->lcd_basic.lcd_type) {
-	case LCD_LVDS:
-		break;
-	case LCD_VBYONE:
-		lcd_vbyone_config_set(lcd_drv->lcd_config);
-		break;
-	default:
-		LCDPR("invalid lcd type\n");
-		break;
-	}
-	lcd_clk_generate_parameter(lcd_drv->lcd_config);
+	lcd_drv->lcd_config->lcd_timing.sync_duration_num = lcd_info[vmode].sync_duration_num;
+	lcd_drv->lcd_config->lcd_timing.sync_duration_den = lcd_info[vmode].sync_duration_den;
+	/* update clk & timing config */
+	lcd_vmode_change(lcd_drv->lcd_config);
+	lcd_tv_config_update(lcd_drv->lcd_config);
 
 	return 0;
 }
@@ -656,10 +565,6 @@ int get_lcd_tv_config(char *dt_addr, int load_id)
 		lcd_config_load_from_bsp(lcd_drv->lcd_config);
 	}
 	lcd_config_load_print(lcd_drv->lcd_config);
-
-#ifdef CONFIG_AML_LCD_EXTERN
-	lcd_extern_load_config(dt_addr, lcd_drv->lcd_config);
-#endif
 	lcd_config_init(lcd_drv->lcd_config);
 
 	return 0;

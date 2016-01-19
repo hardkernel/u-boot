@@ -421,6 +421,7 @@ struct aml_lcd_drv_s {
 	void (*lcd_set_ss)(int level);
 	char *(*lcd_get_ss)(void);
 	void (*lcd_test)(int num);
+	void (*lcd_clk)(void);
 	void (*lcd_info)(void);
 	void (*lcd_reg)(void);
 	void (*bl_on)(void);

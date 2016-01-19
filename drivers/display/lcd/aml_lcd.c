@@ -507,6 +507,33 @@ static void lcd_reg_print(void)
 	}
 }
 
+#ifdef CONFIG_AML_LCD_EXTERN
+static int lcd_extern_load_config(char *dt_addr, struct lcd_config_s *pconf)
+{
+	struct lcd_power_step_s *power_step;
+	int index, i;
+
+	i = 0;
+	while (i < LCD_PWR_STEP_MAX) {
+		power_step = &pconf->lcd_power->power_on_step[i];
+		if (power_step->type >= LCD_POWER_TYPE_MAX)
+			break;
+		if (power_step->type == LCD_POWER_TYPE_EXTERN) {
+			if (lcd_debug_print_flag) {
+				LCDPR("power_on: step %d: type=%d, index=%d\n",
+					i, power_step->type, power_step->index);
+			}
+			index = power_step->index;
+			if (index < LCD_EXTERN_INDEX_INVALID)
+				aml_lcd_extern_probe(dt_addr, index);
+		}
+		i++;
+	}
+
+	return 0;
+}
+#endif
+
 static int lcd_mode_probe(void)
 {
 	int load_id = 0;
@@ -577,6 +604,9 @@ static int lcd_mode_probe(void)
 		LCDPR("invalid lcd mode\n");
 		break;
 	}
+#ifdef CONFIG_AML_LCD_EXTERN
+	lcd_extern_load_config(dt_addr, aml_lcd_driver->lcd_config);
+#endif
 
 	/* load bl config */
 	if (load_id == 1 ) {
@@ -726,6 +756,13 @@ static void aml_lcd_test(int num)
 		LCDPR("already disabled\n");
 }
 
+static void aml_lcd_clk(void)
+{
+	if (lcd_check_valid())
+		return;
+	lcd_clk_config_print();
+}
+
 static void aml_lcd_info(void)
 {
 	if (lcd_check_valid())
@@ -771,6 +808,7 @@ static struct aml_lcd_drv_s aml_lcd_driver = {
 	.lcd_set_ss = aml_lcd_set_ss,
 	.lcd_get_ss = aml_lcd_get_ss,
 	.lcd_test = aml_lcd_test,
+	.lcd_clk = aml_lcd_clk,
 	.lcd_info = aml_lcd_info,
 	.lcd_reg = aml_lcd_reg,
 	.bl_on = aml_backlight_power_on,

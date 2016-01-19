@@ -21,9 +21,6 @@
 #include <libfdt.h>
 #endif
 #include <amlogic/aml_lcd.h>
-#ifdef CONFIG_AML_LCD_EXTERN
-#include <amlogic/aml_lcd_extern.h>
-#endif
 #include "../aml_lcd_reg.h"
 #include "../aml_lcd_common.h"
 #include "lcd_tablet.h"
@@ -423,33 +420,6 @@ static int lcd_config_load_from_bsp(struct lcd_config_s *pconf)
 	return 0;
 }
 
-#ifdef CONFIG_AML_LCD_EXTERN
-static int lcd_extern_load_config(char *dt_addr, struct lcd_config_s *pconf)
-{
-	struct lcd_power_step_s *power_step;
-	int index, i;
-
-	i = 0;
-	while (i < LCD_PWR_STEP_MAX) {
-		power_step = &pconf->lcd_power->power_on_step[i];
-		if (power_step->type >= LCD_POWER_TYPE_MAX)
-			break;
-		if (power_step->type == LCD_POWER_TYPE_EXTERN) {
-			if (lcd_debug_print_flag) {
-				LCDPR("power_on: step %d: type=%d, index=%d\n",
-					i, power_step->type, power_step->index);
-			}
-			index = power_step->index;
-			if (index < LCD_EXTERN_INDEX_INVALID)
-				aml_lcd_extern_probe(dt_addr, index);
-		}
-		i++;
-	}
-
-	return 0;
-}
-#endif
-
 static void lcd_config_init(struct lcd_config_s *pconf)
 {
 	unsigned int h_period = pconf->lcd_basic.h_period;
@@ -466,8 +436,8 @@ static void lcd_config_init(struct lcd_config_s *pconf)
 	pconf->lcd_timing.sync_duration_num = sync_duration;
 	pconf->lcd_timing.sync_duration_den = 100;
 
-	lcd_clk_generate_parameter(pconf);
 	lcd_tcon_config(pconf);
+	lcd_clk_generate_parameter(pconf);
 }
 
 static int lcd_config_check(char *mode)
@@ -499,10 +469,6 @@ int get_lcd_tablet_config(char *dt_addr, int load_id)
 		lcd_config_load_from_bsp(lcd_drv->lcd_config);
 	}
 	lcd_config_load_print(lcd_drv->lcd_config);
-
-#ifdef CONFIG_AML_LCD_EXTERN
-	lcd_extern_load_config(dt_addr, lcd_drv->lcd_config);
-#endif
 	lcd_config_init(lcd_drv->lcd_config);
 
 	return 0;
