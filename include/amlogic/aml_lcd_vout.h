@@ -70,6 +70,12 @@ extern unsigned int lcd_debug_print_flag;
 
 #define LCD_PINMUX_END              0xff
 #define LCD_PINMUX_NUM              10
+
+/* **********************************
+ * VENC to TCON sync delay
+ * ********************************** */
+#define TTL_DELAY                   13
+
 /* **********************************
  * global control define
  * ********************************** */

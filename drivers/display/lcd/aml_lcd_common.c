@@ -92,7 +92,16 @@ void lcd_tcon_config(struct lcd_config_s *pconf)
 	unsigned short hsync_bp, hsync_width, vsync_bp, vsync_width;
 	unsigned short de_hstart, de_vstart;
 	unsigned short hstart, hend, vstart, vend;
+	unsigned short h_delay;
 
+	switch (pconf->lcd_basic.lcd_type) {
+	case LCD_TTL:
+		h_delay = TTL_DELAY;
+		break;
+	default:
+		h_delay = 0;
+		break;
+	}
 	h_period = pconf->lcd_basic.h_period;
 	v_period = pconf->lcd_basic.v_period;
 	h_active = pconf->lcd_basic.h_active;
@@ -105,7 +114,7 @@ void lcd_tcon_config(struct lcd_config_s *pconf)
 	de_hstart = h_period - h_active - 1;
 	de_vstart = v_period - v_active;
 
-	pconf->lcd_timing.video_on_pixel = de_hstart;
+	pconf->lcd_timing.video_on_pixel = de_hstart - h_delay;
 	pconf->lcd_timing.video_on_line = de_vstart;
 
 	pconf->lcd_timing.de_hs_addr = de_hstart;
