@@ -452,11 +452,13 @@ void nand_boot_info_prepare(struct amlnand_phydev *phydev,
 {
 	struct amlnand_chip *aml_chip = (struct amlnand_chip *)phydev->priv;
 	struct nand_flash *flash = &(aml_chip->flash);
-	/* struct phydev_ops *devops = &(phydev->ops); */
+	struct phydev_ops *devops = &(phydev->ops);
 	struct hw_controller *controller = &(aml_chip->controller);
 	struct en_slc_info *slc_info = NULL;
 	int i, nand_read_info;
 	u32 en_slc, configure_data;
+	u32 boot_num = 1, each_boot_pages;
+	u32 valid_pages = BOOT_COPY_NUM * BOOT_PAGES_PER_COPY;
 
 	nand_page0_t * p_nand_page0 = NULL;
 	ext_info_t * p_ext_info = NULL;
@@ -507,14 +509,38 @@ void nand_boot_info_prepare(struct amlnand_phydev *phydev,
 	/* chip_num occupy the lowest 2 bit */
 	nand_read_info = controller->chip_num;
 
+	/*
+	make it
+	1)calu the number of boot saved and pages each boot needs.
+	2)the number is 2*n but less than 4.
+	*/
+	aml_nand_msg("valid_pages = %d en_slc = %d devops->len = %llx",
+		valid_pages,
+		en_slc, devops->len);
+	valid_pages = (en_slc)?(valid_pages>>1):valid_pages;
+	for (i = 1;
+		i < ((valid_pages*flash->pagesize)/devops->len + 1); i++) {
+		if (((valid_pages*flash->pagesize)/(2*i) >= devops->len)
+				&& (boot_num < 4))
+			boot_num <<= 1;
+		else
+			break;
+	}
+	each_boot_pages = valid_pages/boot_num;
+	each_boot_pages = (en_slc)?(each_boot_pages<<1):each_boot_pages;
+
 	p_ext_info->read_info = nand_read_info;
 	p_ext_info->new_type = aml_chip->flash.new_type;
 	p_ext_info->page_per_blk = flash->blocksize / flash->pagesize;
 	p_ext_info->ce_mask = aml_chip->ce_bit_mask;
 	p_ext_info->xlc = 2;
+	p_ext_info->boot_num = boot_num;
+	p_ext_info->each_boot_pages = each_boot_pages;
 
 	printk("new_type = 0x%x\n", p_ext_info->new_type);
 	printk("page_per_blk = 0x%x\n", p_ext_info->page_per_blk);
+	aml_nand_msg("boot_num = %d each_boot_pages = %d", boot_num,
+		each_boot_pages);
 }
 
 void uboot_set_ran_mode(struct amlnand_phydev *phydev)

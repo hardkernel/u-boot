@@ -61,7 +61,9 @@ typedef struct _ext_info{
 	uint32_t page_per_blk;	//pages_in_block;
 	uint32_t xlc;			//slc=1, mlc=2, tlc=3.
 	uint32_t ce_mask;
-	uint32_t rsv[4];
+	uint32_t boot_num;
+	uint32_t each_boot_pages;
+	uint32_t rsv[2];
 	/* add new below, */
 } ext_info_t;
 
