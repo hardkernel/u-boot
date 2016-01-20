@@ -40,6 +40,7 @@
 #include <amlogic/hdmi.h>
 #endif
 #include <asm/arch/eth_setup.h>
+#include <phy.h>
 #ifdef CONFIG_AML_LCD
 #include <amlogic/aml_lcd.h>
 #endif
@@ -165,7 +166,7 @@ void pmu4_phy_config(void)
 	aml_pmu4_write(0x15, 0x3f);
 
 	/* pll */
-	aml_pmu4_write(0x78, 0x06);
+	aml_pmu4_write(0x78, 0x00);
 	aml_pmu4_write(0x79, 0x05);
 	aml_pmu4_write(0x7a, 0xa1);
 	aml_pmu4_write(0x7b, 0xac);
@@ -177,8 +178,9 @@ void pmu4_phy_config(void)
 	aml_pmu4_write(0x81, 0x0b);
 	aml_pmu4_write(0x82, 0xd1);
 	aml_pmu4_write(0x83, 0x00);
-	aml_pmu4_write(0x84, 0x00);
-	aml_pmu4_write(0x85, 0x00);
+	/* 24M to 50M */
+	aml_pmu4_write(0x84, 0x55);
+	aml_pmu4_write(0x85, 0x0d);
 
 	/*cfg4- --- cfg 45 */
 	aml_pmu4_write(0x88, 0x0);
@@ -253,6 +255,8 @@ static int aml_pmu4_reg_init(unsigned int reg_base, unsigned int *val,
 static int aml_pmu4_power_init(void)
 {
 	int ret;
+	int i = 0;
+	uint8_t value;
 
 	/* pmu4 analog register init */
 	ret = aml_pmu4_reg_init(AML1220_ANALOG_ADDR, &pmu4_analog_reg[0],
@@ -261,6 +265,17 @@ static int aml_pmu4_power_init(void)
 		return ret;
 
 	pmu4_phy_config();
+
+	/* enable input 24M clock */
+	setbits_le32(0xc8100634, 0x93);
+
+	do {
+		aml_pmu4_read(0x9c, &value);
+		mdelay(10);
+	} while (((value & 0x01) == 0) && (i++ < 10));
+	if (!(value&0x01)) {
+		printf("WARING: PMU4 PLL not lock!");
+	}
 
 	return 0;
 
@@ -279,15 +294,15 @@ static void setup_net_chip(void)
 	setbits_le32(P_PERIPHS_PIN_MUX_8, 0x1fff8000);
 
 	eth_reg0.d32 = 0;
-	eth_reg0.b.phy_intf_sel = 1;
+	eth_reg0.b.phy_intf_sel = 0;
 	eth_reg0.b.data_endian = 0;
 	eth_reg0.b.desc_endian = 0;
 	eth_reg0.b.rx_clk_rmii_invert = 0;
 	eth_reg0.b.rgmii_tx_clk_src = 0;
-	eth_reg0.b.rgmii_tx_clk_phase = 1;
-	eth_reg0.b.rgmii_tx_clk_ratio = 4;
-	eth_reg0.b.phy_ref_clk_enable = 1;
-	eth_reg0.b.clk_rmii_i_invert = 0;
+	eth_reg0.b.rgmii_tx_clk_phase = 0;
+	eth_reg0.b.rgmii_tx_clk_ratio = 0;
+	eth_reg0.b.phy_ref_clk_enable = 0;
+	eth_reg0.b.clk_rmii_i_invert = 1;
 	eth_reg0.b.clk_en = 1;
 	eth_reg0.b.adj_enable = 0;
 	eth_reg0.b.adj_setup = 0;
@@ -298,8 +313,7 @@ static void setup_net_chip(void)
 	eth_reg0.b.cali_sel = 0;
 	eth_reg0.b.rgmii_rx_reuse = 0;
 	eth_reg0.b.eth_urgent = 0;
-	setbits_le32(P_PREG_ETH_REG0, eth_reg0.d32);// rgmii mode
-	setbits_le32(P_PREG_ETH_REG1, 0x20000);// rx delay
+	setbits_le32(P_PREG_ETH_REG0, eth_reg0.d32);// rmii mode
 
 	setbits_le32(HHI_GCLK_MPEG1,1<<3);
 
@@ -315,7 +329,7 @@ static void setup_net_chip(void)
 #endif
 }
 
-extern int aml_eth_init(bd_t *bis);
+extern int designware_initialize(ulong base_addr, u32 interface);
 int board_eth_init(bd_t *bis)
 {
 #ifdef CONFIG_AML_PMU4
@@ -323,7 +337,7 @@ int board_eth_init(bd_t *bis)
 #endif
 	setup_net_chip();
 	udelay(1000);
-	aml_eth_init(bis);
+	designware_initialize(ETH_BASE, PHY_INTERFACE_MODE_RMII);
 	return 0;
 }
 
@@ -472,10 +486,10 @@ static void board_i2c_set_pinmux(void){
 	/*********************************************/
 
 	//disable all other pins which share with I2C_SDA_AO & I2C_SCK_AO
-	clrbits_le32(PERIPHS_PIN_MUX_7, (1<<19)|(1<<20));
+	clrbits_le32(PERIPHS_PIN_MUX_10, (1<<12)|(1<<13)|(1<<21)|(1<<22)|(1<<23)|(1<<24));
 	//enable I2C MASTER AO pins
-	setbits_le32(PERIPHS_PIN_MUX_7,
-	((MESON_I2C_MASTER_B_GPIOH_3_BIT) | (MESON_I2C_MASTER_B_GPIOH_4_BIT)));
+	setbits_le32(PERIPHS_PIN_MUX_10,
+	((MESON_I2C_MASTER_B_GPIOY_12_BIT) | (MESON_I2C_MASTER_B_GPIOY_13_BIT)));
 
 	udelay(10);
 };
@@ -489,10 +503,10 @@ struct aml_i2c_platform g_aml_i2c_plat = {
 	.use_pio            = 0,
 	.master_i2c_speed   = AML_I2C_SPPED_400K,
 	.master_b_pinmux = {
-		.scl_reg    = (unsigned long)MESON_I2C_MASTER_B_GPIOH_4_REG,
-		.scl_bit    = MESON_I2C_MASTER_B_GPIOH_4_BIT,
-		.sda_reg    = (unsigned long)MESON_I2C_MASTER_B_GPIOH_3_REG,
-		.sda_bit    = MESON_I2C_MASTER_B_GPIOH_3_BIT,
+		.scl_reg    = (unsigned long)MESON_I2C_MASTER_B_GPIOY_13_REG,
+		.scl_bit    = MESON_I2C_MASTER_B_GPIOY_13_BIT,
+		.sda_reg    = (unsigned long)MESON_I2C_MASTER_B_GPIOY_12_REG,
+		.sda_bit    = MESON_I2C_MASTER_B_GPIOY_12_BIT,
 	}
 };
 #if 1
