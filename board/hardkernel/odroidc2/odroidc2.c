@@ -93,7 +93,7 @@ int board_reboot_reason(void)
 	return __reboot_reason;
 }
 
-int board_print_info(void)
+void board_print_info(void)
 {
 	int i;
 	int offset, length;
@@ -136,8 +136,24 @@ int board_print_info(void)
 	printf("%s\n", buf);
 
 	printf("-------------------------------------------------\n");
+}
 
-	return 0;
+void board_identity(void)
+{
+	char __serialno[17];
+	int offset, length;
+
+	/* S/N */
+	offset = 20;
+	length = 16;
+
+	memset(__serialno, 0, 17);
+	efuse_read_usr(__serialno, length, (loff_t *)&offset);
+
+	__serialno[16] = '\0';
+
+	setenv("fbt_id#", __serialno);
+	run_command("saveenv", 1);
 }
 
 #if CONFIG_AML_SD_EMMC
@@ -361,6 +377,8 @@ int board_late_init(void)
 #ifdef CONFIG_DISPLAY_LOGO
 	run_command("showlogo 720p60hz", 0);
 #endif
+
+	board_identity();
 
 	reboot_reason = board_reboot_reason();
 	if (ODROID_REBOOT_CMD_FASTBOOT == reboot_reason)
