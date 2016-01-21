@@ -343,6 +343,13 @@ enum bl_pwm_port_e {
 	BL_PWM_MAX,
 };
 
+enum bl_off_policy_e {
+	BL_OFF_POLICY_NONE = 0,
+	BL_OFF_POLICY_ALWAYS,
+	BL_OFF_POLICY_ONCE,
+	BL_OFF_POLICY_MAX,
+};
+
 #define XTAL_FREQ_HZ		(24*1000*1000) /* 24M in HZ */
 #define XTAL_HALF_FREQ_HZ	(24*1000*500)  /* 24M/2 in HZ */
 

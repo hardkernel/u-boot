@@ -542,7 +542,6 @@ static int lcd_mode_probe(void)
 #ifdef CONFIG_OF_LIBFDT
 	int parent_offset;
 	char *propdata;
-	unsigned int index;
 #endif
 
 	dt_addr = NULL;
@@ -609,14 +608,7 @@ static int lcd_mode_probe(void)
 #endif
 
 	/* load bl config */
-	if (load_id == 1 ) {
-#ifdef CONFIG_OF_LIBFDT
-		index = aml_lcd_driver.lcd_config->backlight_index;
-		aml_bl_config_load_from_dts(dt_addr, index, aml_lcd_driver.bl_config);
-#endif
-	} else {
-		aml_bl_config_load_from_bsp(aml_lcd_driver.bl_config);
-	}
+	aml_bl_config_load(dt_addr, load_id);
 
 	return 0;
 }

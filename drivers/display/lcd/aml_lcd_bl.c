@@ -23,6 +23,8 @@
 #include "aml_lcd_reg.h"
 #include "aml_lcd_common.h"
 
+static unsigned int bl_off_policy;
+
 static struct bl_config_s *bl_check_valid(void)
 {
 	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
@@ -431,6 +433,12 @@ void aml_bl_power_ctrl(int status)
 		LCDPR("bl: status=%d gpio=%d value=%d\n", status, gpio, value);
 
 	if (status) {
+		/* bl_off_policy */
+		if (bl_off_policy != BL_OFF_POLICY_NONE) {
+			LCDPR("bl_off_policy=%d for bl_off\n", bl_off_policy);
+			return;
+		}
+
 		switch (bconf->method) {
 		case BL_CTRL_GPIO:
 			bl_power_en_ctrl(bconf, 1);
@@ -564,7 +572,7 @@ static enum bl_pwm_port_e bl_pwm_str_to_pwm(const char *str)
 	return pwm_port;
 }
 
-int aml_bl_config_load_from_dts(char *dt_addr, unsigned int index, struct bl_config_s *bconf)
+static int aml_bl_config_load_from_dts(char *dt_addr, unsigned int index, struct bl_config_s *bconf)
 {
 	int parent_offset;
 	char *propdata;
@@ -1001,7 +1009,7 @@ int aml_bl_config_load_from_dts(char *dt_addr, unsigned int index, struct bl_con
 }
 #endif
 
-int aml_bl_config_load_from_bsp(struct bl_config_s *bconf)
+static int aml_bl_config_load_from_bsp(struct bl_config_s *bconf)
 {
 	struct ext_lcd_config_s *ext_lcd = NULL;
 	char *panel_type = getenv("panel_type");
@@ -1174,6 +1182,40 @@ int aml_bl_config_load_from_bsp(struct bl_config_s *bconf)
 		if (lcd_debug_print_flag)
 			LCDPR("bl: invalid backlight control method\n");
 		break;
+	}
+
+	return 0;
+}
+
+int aml_bl_config_load(char *dt_addr, int load_id)
+{
+	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
+#ifdef CONFIG_OF_LIBFDT
+	unsigned int index;
+#endif
+	char *bl_off_policy_str;
+
+	/* load bl config */
+	if (load_id == 1 ) {
+#ifdef CONFIG_OF_LIBFDT
+		index = lcd_drv->lcd_config->backlight_index;
+		aml_bl_config_load_from_dts(dt_addr, index, lcd_drv->bl_config);
+#endif
+	} else {
+		aml_bl_config_load_from_bsp(lcd_drv->bl_config);
+	}
+
+	/* get bl_off_policy */
+	bl_off_policy = BL_OFF_POLICY_NONE;
+	bl_off_policy_str = getenv("bl_off");
+	if (bl_off_policy_str) {
+		if (strncmp(bl_off_policy_str, "none", 2) == 0)
+			bl_off_policy = BL_OFF_POLICY_NONE;
+		else if (strncmp(bl_off_policy_str, "always", 2) == 0)
+			bl_off_policy = BL_OFF_POLICY_ALWAYS;
+		else if (strncmp(bl_off_policy_str, "once", 2) == 0)
+			bl_off_policy = BL_OFF_POLICY_ONCE;
+		LCDPR("bl_off_policy: %s\n", bl_off_policy_str);
 	}
 
 	return 0;

@@ -671,8 +671,10 @@ static void lcd_set_pll_ss_g9tv(struct lcd_clk_config_s *cConf)
 		lcd_hiu_write(HHI_HDMI_PLL_CNTL4, 0x801da72c);
 		break;
 	}
-	LCDPR("set pll spread spectrum: %s\n",
-		lcd_pll_ss_table_g9tv[cConf->ss_level]);
+	if (lcd_debug_print_flag) {
+		LCDPR("set pll spread spectrum: %s\n",
+			lcd_pll_ss_table_g9tv[cConf->ss_level]);
+	}
 }
 
 static void lcd_set_pll_g9tv(struct lcd_clk_config_s *cConf)
@@ -726,8 +728,10 @@ static void lcd_set_pll_ss_g9bb(struct lcd_clk_config_s *cConf)
 		lcd_hiu_write(HHI_HDMI_PLL_CNTL4, 0x801da72c);
 		break;
 	}
-	LCDPR("set pll spread spectrum: %s\n",
-		lcd_pll_ss_table_g9bb[cConf->ss_level]);
+	if (lcd_debug_print_flag) {
+		LCDPR("set pll spread spectrum: %s\n",
+			lcd_pll_ss_table_g9bb[cConf->ss_level]);
+	}
 }
 
 static void lcd_set_pll_g9bb(struct lcd_clk_config_s *cConf)
@@ -810,8 +814,10 @@ static void lcd_set_pll_ss_gxtvbb(struct lcd_clk_config_s *cConf)
 		lcd_hiu_write(HHI_HDMI_PLL_CNTL6, 0x00000a55);
 		break;
 	}
-	LCDPR("set pll spread spectrum: %s\n",
-		lcd_pll_ss_table_gxtvbb[cConf->ss_level]);
+	if (lcd_debug_print_flag) {
+		LCDPR("set pll spread spectrum: %s\n",
+			lcd_pll_ss_table_gxtvbb[cConf->ss_level]);
+	}
 }
 
 static void lcd_set_pll_gxtvbb(struct lcd_clk_config_s *cConf)

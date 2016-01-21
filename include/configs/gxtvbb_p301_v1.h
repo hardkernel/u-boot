@@ -76,6 +76,7 @@
 	"panel_reverse=0\0" \
 	"osd_reverse=n\0" \
 	"video_reverse=n\0" \
+	"bl_off=none\0" \
 	"display_width=1920\0" \
 	"display_height=1080\0" \
 	"display_bpp=16\0" \
@@ -110,6 +111,7 @@
 		"vout=${outputmode},enable "\
 		"panel_type=${panel_type} hdmitx= "\
 		"osd_reverse=${osd_reverse} video_reverse=${video_reverse} "\
+		"bl_off=${bl_off} "\
 		"jtag=${jtag} "\
 		"ramoops.pstore_en=1 ramoops.record_size=0x8000 ramoops.console_size=0x4000 "\
 		"androidboot.firstboot=${firstboot}; "\

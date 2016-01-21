@@ -44,10 +44,7 @@ extern int get_lcd_tablet_config(char *dt_addr, int load_id);
 extern void aml_bl_set_level(unsigned int level);
 extern unsigned int aml_bl_get_level(void);
 extern void aml_bl_power_ctrl(int status);
-#ifdef CONFIG_OF_LIBFDT
-extern int aml_bl_config_load_from_dts(char *dt_addr, unsigned int index, struct bl_config_s *bconf);
-#endif
-extern int aml_bl_config_load_from_bsp(struct bl_config_s *bconf);
+extern int aml_bl_config_load(char *dt_addr, int load_id);
 
 #endif
 
