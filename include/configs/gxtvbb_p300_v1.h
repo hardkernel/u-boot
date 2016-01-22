@@ -112,6 +112,7 @@
 		"osd_reverse=${osd_reverse} video_reverse=${video_reverse} "\
 		"jtag=${jtag} "\
 		"androidboot.firstboot=${firstboot}; "\
+		"setenv bootargs ${bootargs} androidboot.hardware=amlogic;"\
 		"run cmdline_keys; "\
 		"\0"\
 	"switch_bootmode="\
