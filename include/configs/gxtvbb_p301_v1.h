@@ -71,7 +71,7 @@
 	"firstboot=1\0"\
 	"upgrade_step=0\0"\
 	"loadaddr=1080000\0"\
-	"panel_type=lvds_0\0" \
+	"panel_type=lvds_2\0" \
 	"outputmode=1080p60hz\0" \
 	"panel_reverse=0\0" \
 	"osd_reverse=n\0" \
