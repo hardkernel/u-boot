@@ -58,12 +58,12 @@ static struct dos_partition {
 } dos_partitions[] = {
 	{
 		.name = "cache",
-		.part = 2,
+		.part = 3,
 		.type = 0x83,
 		.lba = bytes_to_lba(512 * SZ_1M),
 	}, {
 		.name = "system",
-		.part = 3,
+		.part = 2,
 		.type = 0x83,
 		.lba = gbytes_to_lba(1),
 	}, {
