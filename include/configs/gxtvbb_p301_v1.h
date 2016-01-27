@@ -111,6 +111,7 @@
 		"panel_type=${panel_type} hdmitx= "\
 		"osd_reverse=${osd_reverse} video_reverse=${video_reverse} "\
 		"jtag=${jtag} "\
+		"ramoops.pstore_en=1 ramoops.record_size=0x8000 ramoops.console_size=0x4000 "\
 		"androidboot.firstboot=${firstboot}; "\
 		"setenv bootargs ${bootargs} androidboot.hardware=amlogic;"\
 		"run cmdline_keys; "\

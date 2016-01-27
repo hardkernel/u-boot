@@ -92,7 +92,7 @@
             "osd open;osd clear;vout output ${outputmode};imgread pic logo bootup $loadaddr;bmp display $bootup_offset;bmp scale"\
             "\0"
 
-#define CONFIG_BOOTARGS "init=/init console=ttyS0,115200 no_console_suspend earlyprintk=aml-uart,0xc81004c0 ramoops.mem_address=0x20000000 ramoops.mem_size=0x100000 ramoops.record_size=0x8000 ramoops.console_size=0x4000"
+#define CONFIG_BOOTARGS "init=/init console=ttyS0,115200 no_console_suspend earlyprintk=aml-uart,0xc81004c0 ramoops.pstore_en=1 ramoops.record_size=0x8000 ramoops.console_size=0x4000 "
 #define CONFIG_PREBOOT  \
 			"hdmitx output 1080p60hz;" \
 			"run init_display;" \
