@@ -4,6 +4,7 @@
 #include "suspend.h"
 unsigned int time;
 #include <scp_remote.c>
+#include <scp_adc.c>
 
 #include <pwr_ctrl.c>
 #include <hdmi_cec_arc.c>

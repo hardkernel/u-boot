@@ -7,6 +7,16 @@
 #define TASK_ID_HIGH_MB	3
 #define TASK_ID_SECURE_MB  4
 
+enum scpi_client_id {
+	SCPI_CL_NONE,
+	SCPI_CL_CLOCKS,
+	SCPI_CL_DVFS,
+	SCPI_CL_POWER,
+	SCPI_CL_THERMAL,
+	SCPI_CL_REMOTE,
+	SCPI_MAX,
+};
+
 void __switch_back_securemb(void)
 {
 	register int p0 asm("r0") = 2;
@@ -110,6 +120,7 @@ void high_task(void)
 	}
 }
 
+unsigned int test_usr_pwr_key=0;
 void process_low_task(unsigned command)
 {
 	unsigned *pcommand =
@@ -117,11 +128,18 @@ void process_low_task(unsigned command)
 	unsigned *response =
 	    (unsigned *)(&(low_task_share_mem[TASK_RESPONSE_OFFSET]));
 	unsigned para1;
+	uart_puts("into process_low_task \n");
 
 	if (command == LOW_TASK_GET_DVFS_INFO) {
 		para1 = *(pcommand + 1);
 		get_dvfs_info(para1,
 			(unsigned char *)(response+2), (response+1));
+	} else if ((command & 0xffff) == LOW_TASK_USR_DATA) {//0-15bit: comd; 16-31bit: client_id
+		uart_puts("into LOW_TASK_USR_DATA \n");
+		if ((command >> 16) == SCPI_CL_POWER) {
+			test_usr_pwr_key = *(pcommand + 2);
+			dbg_print("test_usr_pwr_key=",test_usr_pwr_key);
+		}
 	}
 }
 
