@@ -67,14 +67,14 @@ static struct dos_partition {
 		.type = 0x83,
 		.lba = gbytes_to_lba(1),
 	}, {
-		.name = "userdata",
-		.part = 4,
-		.type = 0x83,
-		.lba = gbytes_to_lba(3),
-	}, {
 		.name = "vfat",
 		.part = 1,
 		.type = 0x0c,
+		.lba = bytes_to_lba(128 * SZ_1M),
+	}, {
+		.name = "userdata",
+		.part = 4,
+		.type = 0x83,
 		.lba = -1,
 	},
 };
