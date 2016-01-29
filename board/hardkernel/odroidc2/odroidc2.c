@@ -29,6 +29,7 @@
 DECLARE_GLOBAL_DATA_PTR;
 
 extern int board_get_recovery_message(void);
+extern unsigned int get_mmc_size(void);
 
 #define GPIO_BLUELED		132
 #define GPIO_USB_PWREN		123
@@ -360,12 +361,36 @@ static void board_run_recovery(void)
 	run_command("bootm ${load_addr}", 0);
 }
 
+void board_get_mmc_size(void)
+{
+	char str[3];
+	unsigned int actual_size = get_mmc_size();
+	unsigned int card_size, result;
+	unsigned char i=0;
+
+	while (1) {
+		card_size = (8 << i);
+		result = actual_size / card_size;
+
+		if (1 > result)		break;
+		else if (10 < i)	break;
+		else	i++;
+	}
+
+	sprintf(str, "%d", card_size);
+	if (card_size < 128) 	str[2] = '\0';
+
+	setenv("mmc_size", str);
+}
+
 #ifdef CONFIG_BOARD_LATE_INIT
 int board_late_init(void)
 {
 	int reboot_reason;
 
 	board_partition_init();
+
+	board_get_mmc_size();
 
 #ifdef CONFIG_DISPLAY_LOGO
 	run_command("showlogo 720p60hz", 0);

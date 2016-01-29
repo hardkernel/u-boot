@@ -592,6 +592,27 @@ static int do_mmc_setdsr(cmd_tbl_t *cmdtp, int flag,
 	return ret;
 }
 
+unsigned int get_mmc_size(void)
+{
+	struct mmc *mmc;
+
+	if (curr_device < 0) {
+		if (get_mmc_num() > 0)
+			curr_device = 0;
+		else {
+			puts("No MMC device available\n");
+			return 1;
+		}
+	}
+
+	mmc = init_mmc_device(curr_device, false);
+	if (!mmc) {
+		return CMD_RET_FAILURE;
+	}
+
+	return (unsigned int) (mmc->capacity >> 30);
+}
+
 static cmd_tbl_t cmd_mmc[] = {
 	U_BOOT_CMD_MKENT(info, 1, 0, do_mmcinfo, "", ""),
 	U_BOOT_CMD_MKENT(read, 4, 1, do_mmc_read, "", ""),
