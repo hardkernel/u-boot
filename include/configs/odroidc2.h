@@ -83,7 +83,7 @@
 	"dtbaddr=0x1000000\0"		\
 	"fdt_high=0x20000000\0"		\
 	"hdmimode=720p60hz\0"		\
-	"bootargs=root=/dev/mmcblk0p3 rw init=/init rootwait "	\
+	"bootargs=root=/dev/mmcblk0p2 rw init=/init rootwait "	\
 		"console=ttyS0,115200 "				\
 		"hdmimode=720p60hz hdmitx=cecf "		\
 		"logo=osd1,loaded,0x3f800000,720p60hz "		\
