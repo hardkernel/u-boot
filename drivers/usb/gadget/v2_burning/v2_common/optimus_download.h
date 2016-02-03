@@ -61,7 +61,7 @@ int v2_key_read(const char* keyName, u8* keyVal, const unsigned keyValLen, char*
  */
 unsigned v2_key_burn(const char* keyName, const u8* keyVal, const unsigned keyValLen, char* errInfo);
 
-#define DDR_MEM_ADDR_START  ( CONFIG_SYS_SDRAM_BASE + (16<<20) )
+#define DDR_MEM_ADDR_START  ( 0x073<<20 )
 
 //  |<---Back 2M---->|<------------USB transfer Buf 64 ----------->|<--Backed sparse format info for verify-->|
 //      Back buf                          Transfer buf

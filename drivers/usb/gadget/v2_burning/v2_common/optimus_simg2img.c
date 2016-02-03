@@ -15,8 +15,8 @@
 #include <partition_table.h>
 
 #define sperr               DWN_ERR
-#define spmsg(fmt ...)      //printf("spmsg:"fmt)
-#define spdbg(fmt ...)      //printf("SP:"), printf(__VA_ARGS__)
+#define spmsg(fmt ...)      //printf("[spmsg]"fmt)
+#define spdbg(fmt ...)      //printf("[spdbg]"fmt)
 
 #define  SPARSE_HEADER_MAJOR_VER 1
 #define  CHUNK_HEAD_SIZE        sizeof(chunk_header_t)
@@ -31,7 +31,7 @@ static struct
     unsigned sparseBlkSz;//block size of sparse format packet
     unsigned parsedPacketCrc;//crc value for packet that already parsed
 
-    int      pktHeadLen;
+    s32      pktHeadLen;
     u32      reservetoAlign64;
 
     //If long chunk data sz > write back size(e.g. 64M), write it at next write back time, This can't reduce copy and use less buffer
@@ -82,7 +82,7 @@ int optimus_simg_parser_init(const u8* source)
     _spPacketStates.parsedPacketCrc = 0;
     _spPacketStates.pktHeadLen      = header->file_hdr_sz;
     _spPacketStates.sparseBlkSz     = header->blk_sz;//often 4k
-    spmsg("totalChunkNum %d, fileHeadSz 0x%x, chunkHeadSz 0x%x\n", _spPacketStates.leftChunkNum, _spPacketStates.pktHeadLen, CHUNK_HEAD_SIZE);
+    spmsg("totalChunkNum %d, fileHeadSz 0x%x, chunkHeadSz 0x%zx\n", _spPacketStates.leftChunkNum, _spPacketStates.pktHeadLen, CHUNK_HEAD_SIZE);
 
     //for verify
     _spPacketStates.chunkInfoBackAddr = OPTIMUS_DOWNLOAD_SPARSE_INFO_FOR_VERIFY;
@@ -153,7 +153,7 @@ int optimus_simg_to_media(char* simgPktHead, const u32 pktLen, u32* unParsedData
         unsigned thisWriteLen = 0;
 
         if (CHUNK_HEAD_SIZE > unParsedBufLen) {//total size not enough for CHUNK_HEAD_SIZE yet!!
-            spmsg("unParsedBufLen 0x%x < head sz 0x%x\n", unParsedBufLen, CHUNK_HEAD_SIZE);
+            spmsg("unParsedBufLen 0x%x < head sz 0x%zx\n", unParsedBufLen, CHUNK_HEAD_SIZE);
             break;
         }
 
