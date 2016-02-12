@@ -9,6 +9,7 @@
 #include <malloc.h>
 #include <asm/arch/eth_setup.h>
 #include <asm/arch/secure_apb.h>
+#include <asm/arch/efuse.h>
 
 #if defined(CONFIG_AML_ETHERNET)
 extern int aml_eth_init(bd_t *bis);
@@ -87,9 +88,16 @@ static void setup_net_chip(void)
 
 int board_eth_init(bd_t *bis)
 {
+	const int MACADDR_SIZE = 6;
+	uint8_t mac_addr[MACADDR_SIZE];
+	int eth_offset = 52;
+
 	setup_net_chip();
 	udelay(1000);
 	aml_eth_init(bis);
+
+	efuse_read_usr((char *)mac_addr, MACADDR_SIZE, (loff_t *)&eth_offset);
+	eth_setenv_enetaddr("ethaddr", mac_addr);
 
 	return 0;
 }
