@@ -89,8 +89,6 @@ static void lcd_lvds_phy_set(int status)
 
 static void lcd_tcon_set(struct lcd_config_s *pconf)
 {
-	vpp_set_matrix_ycbcr2rgb(2, 0);
-
 	lcd_vcbus_write(L_RGB_BASE_ADDR, 0);
 	lcd_vcbus_write(L_RGB_COEFF_ADDR, 0x400);
 

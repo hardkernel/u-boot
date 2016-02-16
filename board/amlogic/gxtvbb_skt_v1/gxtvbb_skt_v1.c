@@ -33,6 +33,7 @@
 #ifdef CONFIG_AML_VPU
 #include <vpu.h>
 #endif
+#include <vpp.h>
 #ifdef CONFIG_AML_V2_FACTORY_BURN
 #include <amlogic/aml_v2_burning.h>
 #endif// #ifdef CONFIG_AML_V2_FACTORY_BURN
@@ -584,6 +585,7 @@ int board_late_init(void){
 #ifdef CONFIG_AML_LCD
 	lcd_probe();
 #endif
+	vpp_init();
 
 #ifdef CONFIG_AML_V2_FACTORY_BURN
 	/*aml_try_factory_sdcard_burning(0, gd->bd);*/

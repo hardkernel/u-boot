@@ -15,6 +15,7 @@ obj-y += tpm/
 obj-y += twserial/
 obj-y += video/
 obj-y += vpu/
+obj-y += vpp/
 obj-y += watchdog/
 obj-$(CONFIG_QE) += qe/
 obj-$(CONFIG_U_QE) += qe/

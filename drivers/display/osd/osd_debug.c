@@ -191,12 +191,21 @@ static void osd_test_dummydata(void)
 	dummy_data = osd_reg_read(VPP_DUMMY_DATA1);
 	osd_reset();
 	osd_logi("--- OSD TEST DUMMYDATA ---\n");
+#ifdef CONFIG_AML_MESON_GXTVBB
+	osd_reg_write(VPP_DUMMY_DATA1, 0xFF0000); /* R */
+	msleep(OSD_TEST_DURATION);
+	osd_reg_write(VPP_DUMMY_DATA1, 0xFF00); /* G */
+	msleep(OSD_TEST_DURATION);
+	osd_reg_write(VPP_DUMMY_DATA1, 0xFF); /* B */
+	msleep(OSD_TEST_DURATION);
+#else
 	osd_reg_write(VPP_DUMMY_DATA1, 0xFF);
 	msleep(OSD_TEST_DURATION);
 	osd_reg_write(VPP_DUMMY_DATA1, 0);
 	msleep(OSD_TEST_DURATION);
 	osd_reg_write(VPP_DUMMY_DATA1, 0xFF00);
 	msleep(OSD_TEST_DURATION);
+#endif
 	osd_reg_write(VPP_DUMMY_DATA1, dummy_data);
 }
 

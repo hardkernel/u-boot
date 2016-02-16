@@ -196,11 +196,7 @@ static void lcd_lvds_phy_set(int status)
 #define STV1_SEL         4
 static void lcd_tcon_set(struct lcd_config_s *pconf)
 {
-	struct lcd_timing_s *tcon_adr;
-
-	tcon_adr = &pconf->lcd_timing;
-
-	vpp_set_matrix_ycbcr2rgb(2, 0);
+	struct lcd_timing_s *tcon_adr = &pconf->lcd_timing;
 
 	lcd_vcbus_write(L_RGB_BASE_ADDR, 0);
 	lcd_vcbus_write(L_RGB_COEFF_ADDR, 0x400);
