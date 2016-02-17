@@ -73,6 +73,7 @@
 #define CONFIG_SERIAL_MULTI		1
 
 #define CONFIG_BOOTDELAY		1	// Seconds
+#define CONFIG_ABORTBOOT_WITH_ENTERKEY
 
 /* args/envs */
 #define CONFIG_SYS_MAXARGS		64
