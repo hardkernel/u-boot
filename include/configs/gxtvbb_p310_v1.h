@@ -34,7 +34,7 @@
  */
 #define CONFIG_PLATFORM_POWER_INIT
 #define CONFIG_VCCK_INIT_VOLTAGE	1100
-#define CONFIG_VDDEE_INIT_VOLTAGE	1100		// voltage for power up
+#define CONFIG_VDDEE_INIT_VOLTAGE	1000		// voltage for power up
 #define CONFIG_VDDEE_SLEEP_VOLTAGE	 850		// voltage for suspend
 
 /* configs for CEC */
@@ -237,7 +237,7 @@
 
 /* ddr */
 #define CONFIG_DDR_SIZE					1024 //MB
-#define CONFIG_DDR_CLK					912  //MHz, Range: 384-1200, should be multiple of 24
+#define CONFIG_DDR_CLK					720  //MHz, Range: 384-1200, should be multiple of 24
 #define CONFIG_DDR_TYPE					CONFIG_DDR_TYPE_DDR3
 /* DDR channel setting, please refer hardware design.
  *    CONFIG_DDR0_ONLY_32BIT           : one channel 32bit
@@ -266,7 +266,7 @@
 	#define CONFIG_EMMC_DDR52_EN 1
 	#define CONFIG_EMMC_DDR52_CLK 35000000
 #endif
-#define 	CONFIG_AML_NAND	1
+//#define 	CONFIG_AML_NAND	1
 #ifdef CONFIG_AML_NAND
 #endif
 #define		CONFIG_PARTITIONS 1
@@ -381,6 +381,8 @@
 #define CONFIG_CMD_REBOOT 1
 #define CONFIG_CMD_ECHO 1
 #define CONFIG_CMD_JTAG	1
+#define CONFIG_CMD_AUTOSCRIPT 1
+#define CONFIG_CMD_MISC 1
 
 /*file system*/
 #define CONFIG_DOS_PARTITION 1
