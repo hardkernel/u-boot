@@ -147,12 +147,15 @@ static int abortboot_normal(int bootdelay)
 	int abort = 0;
 	unsigned long ts;
 	int key;
+#ifdef CONFIG_ABORTBOOT_WITH_ENTERKEY
+	unsigned char keycheck = 2;
+#endif
 
 #ifdef CONFIG_MENUPROMPT
 	printf(CONFIG_MENUPROMPT);
 #else
 	if (bootdelay >= 0)
-		printf("Hit any key to stop autoboot: %2d ", bootdelay);
+		printf("Hit [Enter] key twice to stop autoboot: %2d ", bootdelay);
 #endif
 
 #if defined CONFIG_ZERO_BOOTDELAY_CHECK
@@ -173,6 +176,24 @@ static int abortboot_normal(int bootdelay)
 		/* delay 1000 ms */
 		ts = get_timer(0);
 		do {
+
+#ifdef CONFIG_ABORTBOOT_WITH_ENTERKEY
+			if (tstc()) {
+				key = getc();
+				switch (key) {
+				/* Enter Key */
+				case 0x0d:
+					--keycheck;
+					if(!keycheck) {
+						abort = 1;
+						bootdelay = 0;
+					}
+					break;
+				default:
+					break;
+				}
+			}
+#else /* CONFIG_ABORTBOOT_WITH_ENTERKEY */
 			if (tstc()) {	/* we got a key press	*/
 				key = getc();
 				if ((key != 0xff) && (key != 0)) {
@@ -181,6 +202,8 @@ static int abortboot_normal(int bootdelay)
 					break;
 				}
 			}
+#endif /* CONFIG_ABORTBOOT_WITH_ENTERKEY */
+
 			udelay(1000);
 		} while (!abort && get_timer(ts) < 100);
 
