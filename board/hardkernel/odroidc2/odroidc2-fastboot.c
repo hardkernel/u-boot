@@ -17,6 +17,7 @@
 #define SZ_RESERVED		(48 * SZ_1K + 512)	/* BL1 + MBR */
 #define SZ_BOOTLOADER		(720 * SZ_1K)
 #define SZ_BOOTMESSAGE		(4 * SZ_1K)
+#define SZ_RESERVED2		((1 * SZ_1M) + (208 * SZ_1K))
 
 static struct fbt_partition {
 	const char *name;
@@ -47,6 +48,9 @@ static struct fbt_partition {
 	}, {
 		.name = "logo",			/* Logo */
 		.lba = bytes_to_lba(2 * SZ_1M)
+	}, {
+		.name = "-reserved2",			/* Reserved */
+		.lba = bytes_to_lba(SZ_RESERVED2)
 	}
 };
 
