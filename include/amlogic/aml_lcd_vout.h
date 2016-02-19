@@ -367,19 +367,25 @@ enum bl_off_policy_e {
 #define BL_GPIO_NUM_MAX		5
 
 struct bl_pwm_config_s {
+	unsigned int index;
 	enum bl_pwm_method_e pwm_method;
 	enum bl_pwm_port_e pwm_port;
 	unsigned int level_max;
 	unsigned int level_min;
 	unsigned int pwm_freq; /* pwm_vs: 1~4(vfreq), pwm: freq(unit: Hz) */
+	unsigned int pwm_duty; /* unit: % */
 	unsigned int pwm_duty_max; /* unit: % */
 	unsigned int pwm_duty_min; /* unit: % */
 	unsigned int pwm_cnt; /* internal used for pwm control */
 	unsigned int pwm_pre_div; /* internal used for pwm control */
 	unsigned int pwm_max; /* internal used for pwm control */
 	unsigned int pwm_min; /* internal used for pwm control */
+	unsigned int pwm_level; /* internal used for pwm control */
 	unsigned int pwm_gpio;
 	unsigned int pwm_gpio_off;
+	unsigned int pinmux_flag;
+	unsigned int pinmux_set[10][2];
+	unsigned int pinmux_clr[10][2];
 };
 
 struct bl_config_s {

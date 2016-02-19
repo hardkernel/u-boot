@@ -24,6 +24,9 @@
 #include "aml_lcd_common.h"
 
 static unsigned int bl_off_policy;
+static unsigned int bl_status;
+
+static void bl_set_pwm_gpio_check(struct bl_pwm_config_s *bl_pwm);
 
 static struct bl_config_s *bl_check_valid(void)
 {
@@ -73,6 +76,194 @@ static struct bl_config_s *bl_check_valid(void)
 		break;
 	}
 	return bconf;
+}
+
+static void bl_pwm_pinmux_gpio_set(int pwm_index, int gpio_level)
+{
+	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
+	struct bl_config_s *bconf;
+	struct bl_pwm_config_s *bl_pwm = NULL;
+	int i;
+
+	bconf = lcd_drv->bl_config;
+
+	switch (bconf->method) {
+	case BL_CTRL_PWM:
+		bl_pwm = bconf->bl_pwm;
+	case BL_CTRL_PWM_COMBO:
+		if (pwm_index == 0)
+			bl_pwm = bconf->bl_pwm_combo0;
+		else
+			bl_pwm = bconf->bl_pwm_combo1;
+		break;
+	default:
+		break;
+	}
+
+	if (bl_pwm == NULL)
+		return;
+
+	if (lcd_debug_print_flag) {
+		LCDPR("bl: %s: pwm_port=%d, pinmux_flag=%d\n",
+			__func__, bl_pwm->pwm_port, bl_pwm->pinmux_flag);
+	}
+	if (bl_pwm->pinmux_flag > 0) {
+		i = 0;
+		while (i < LCD_PINMUX_NUM) {
+			if (bl_pwm->pinmux_set[i][0] == LCD_PINMUX_END)
+				break;
+			lcd_pinmux_clr_mask(bl_pwm->pinmux_set[i][0],
+				bl_pwm->pinmux_set[i][1]);
+			if (lcd_debug_print_flag) {
+			LCDPR("bl: %s: port=%d, pinmux_clr=%d,0x%08x\n",
+				__func__, bl_pwm->pwm_port,
+				bl_pwm->pinmux_set[i][0], bl_pwm->pinmux_set[i][1]);
+		}
+			i++;
+		}
+		bl_pwm->pinmux_flag = 0;
+	}
+	/* set gpio */
+	if (bl_pwm->pwm_gpio < LCD_GPIO_MAX)
+		aml_lcd_gpio_set(bl_pwm->pwm_gpio, gpio_level);
+}
+
+static void bl_pwm_pinmux_gpio_clr(unsigned int pwm_index)
+{
+	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
+	struct bl_config_s *bconf;
+	struct bl_pwm_config_s *bl_pwm = NULL;
+	int i;
+
+	bconf = lcd_drv->bl_config;
+
+	switch (bconf->method) {
+	case BL_CTRL_PWM:
+		bl_pwm = bconf->bl_pwm;
+	case BL_CTRL_PWM_COMBO:
+		if (pwm_index == 0)
+			bl_pwm = bconf->bl_pwm_combo0;
+		else
+			bl_pwm = bconf->bl_pwm_combo1;
+		break;
+	default:
+		break;
+	}
+
+	if (bl_pwm == NULL)
+		return;
+	if (lcd_debug_print_flag) {
+		LCDPR("bl: %s: pwm_port=%d, pinmux_flag=%d\n",
+			__func__, bl_pwm->pwm_port, bl_pwm->pinmux_flag);
+	}
+	if (bl_pwm->pinmux_flag > 0)
+		return;
+
+	/* set pinmux */
+	i = 0;
+	while (i < LCD_PINMUX_NUM) {
+		if (bl_pwm->pinmux_set[i][0] == LCD_PINMUX_END)
+			break;
+		lcd_pinmux_set_mask(bl_pwm->pinmux_set[i][0],
+			bl_pwm->pinmux_set[i][1]);
+		if (lcd_debug_print_flag) {
+			LCDPR("bl: %s: port=%d, pinmux_set=%d,0x%08x\n",
+				__func__, bl_pwm->pwm_port,
+				bl_pwm->pinmux_set[i][0], bl_pwm->pinmux_set[i][1]);
+		}
+		i++;
+	}
+	bl_pwm->pinmux_flag = 1;
+}
+
+static void bl_pwm_pinmux_ctrl(struct bl_config_s *bconf, int status)
+{
+	int i;
+
+	if (lcd_debug_print_flag)
+		LCDPR("bl: %s: %d\n", __func__, status);
+	if (status) {
+		/* set pinmux */
+		switch (bconf->method) {
+		case BL_CTRL_PWM:
+			bl_set_pwm_gpio_check(bconf->bl_pwm);
+			break;
+		case BL_CTRL_PWM_COMBO:
+			bl_set_pwm_gpio_check(bconf->bl_pwm_combo0);
+			bl_set_pwm_gpio_check(bconf->bl_pwm_combo1);
+			break;
+		default:
+			break;
+		}
+	} else {
+		switch (bconf->method) {
+		case BL_CTRL_PWM:
+			i = 0;
+			while (i < LCD_PINMUX_NUM) {
+				if (bconf->bl_pwm->pinmux_set[i][0] == LCD_PINMUX_END)
+					break;
+				lcd_pinmux_clr_mask(bconf->bl_pwm->pinmux_set[i][0],
+					bconf->bl_pwm->pinmux_set[i][1]);
+				if (lcd_debug_print_flag) {
+					LCDPR("bl: %s: port=%d, pinmux_clr=%d,0x%08x\n",
+						__func__, bconf->bl_pwm->pwm_port,
+						bconf->bl_pwm->pinmux_set[i][0],
+						bconf->bl_pwm->pinmux_set[i][1]);
+				}
+				i++;
+			}
+			bconf->bl_pwm->pinmux_flag = 0;
+
+			if (bconf->bl_pwm->pwm_gpio < BL_GPIO_NUM_MAX) {
+				aml_lcd_gpio_set(bconf->bl_pwm->pwm_gpio,
+					bconf->bl_pwm->pwm_gpio_off);
+			}
+			break;
+		case BL_CTRL_PWM_COMBO:
+			i = 0;
+			while (i < LCD_PINMUX_NUM) {
+				if (bconf->bl_pwm_combo0->pinmux_set[i][0] == LCD_PINMUX_END)
+					break;
+				lcd_pinmux_clr_mask(bconf->bl_pwm_combo0->pinmux_set[i][0],
+					bconf->bl_pwm_combo0->pinmux_set[i][1]);
+				if (lcd_debug_print_flag) {
+					LCDPR("bl: %s: port=%d, pinmux_clr=%d,0x%08x\n",
+						__func__, bconf->bl_pwm_combo0->pwm_port,
+						bconf->bl_pwm_combo0->pinmux_set[i][0],
+						bconf->bl_pwm_combo0->pinmux_set[i][1]);
+				}
+				i++;
+			}
+			i = 0;
+			while (i < LCD_PINMUX_NUM) {
+				if (bconf->bl_pwm_combo1->pinmux_set[i][0] == LCD_PINMUX_END)
+					break;
+				lcd_pinmux_clr_mask(bconf->bl_pwm_combo1->pinmux_set[i][0],
+					bconf->bl_pwm_combo1->pinmux_set[i][1]);
+				if (lcd_debug_print_flag) {
+					LCDPR("bl: %s: port=%d, pinmux_clr=%d,0x%08x\n",
+						__func__, bconf->bl_pwm_combo1->pwm_port,
+						bconf->bl_pwm_combo1->pinmux_set[i][0],
+						bconf->bl_pwm_combo1->pinmux_set[i][1]);
+				}
+				i++;
+			}
+			bconf->bl_pwm_combo0->pinmux_flag = 0;
+			bconf->bl_pwm_combo1->pinmux_flag = 0;
+
+			if (bconf->bl_pwm_combo0->pwm_gpio < BL_GPIO_NUM_MAX) {
+				aml_lcd_gpio_set(bconf->bl_pwm_combo0->pwm_gpio,
+					bconf->bl_pwm_combo0->pwm_gpio_off);
+			}
+			if (bconf->bl_pwm_combo1->pwm_gpio < BL_GPIO_NUM_MAX) {
+				aml_lcd_gpio_set(bconf->bl_pwm_combo1->pwm_gpio,
+					bconf->bl_pwm_combo1->pwm_gpio_off);
+			}
+			break;
+		default:
+			break;
+		}
+	}
 }
 
 static unsigned int pwm_misc[6][5] = {
@@ -154,37 +345,64 @@ static unsigned int bl_level_mapping(unsigned int level)
 	return level;
 }
 
-static void bl_set_level_pwm(struct bl_pwm_config_s *bl_pwm, unsigned int level)
+static void bl_set_pwm_gpio_check(struct bl_pwm_config_s *bl_pwm)
 {
-	unsigned int pwm_hi = 0, pwm_lo = 0, pwm_level;
-	unsigned int min = bl_pwm->level_min;
-	unsigned int max = bl_pwm->level_max;
-	unsigned int pwm_max = bl_pwm->pwm_max;
-	unsigned int pwm_min = bl_pwm->pwm_min;
+	unsigned int pwm_index, gpio_level;
+
+	pwm_index = bl_pwm->index;
+
+	/* pwm duty 100% or 0% special control */
+	if ((bl_pwm->pwm_duty == 0) || (bl_pwm->pwm_duty == 100)) {
+		switch (bl_pwm->pwm_method) {
+		case BL_PWM_POSITIVE:
+			if (bl_pwm->pwm_duty == 0)
+				gpio_level = 0;
+			else
+				gpio_level = 1;
+			break;
+		case BL_PWM_NEGATIVE:
+			if (bl_pwm->pwm_duty == 0)
+				gpio_level = 1;
+			else
+				gpio_level = 0;
+			break;
+		default:
+			LCDERR("bl: %s: port=%d: invalid pwm_method %d\n",
+				__func__, bl_pwm->pwm_port, bl_pwm->pwm_method);
+			gpio_level = 0;
+			break;
+		}
+		if (lcd_debug_print_flag) {
+			LCDPR("bl: %s: pwm port=%d, duty=%d%%, switch to gpio %d\n",
+				__func__, bl_pwm->pwm_port, bl_pwm->pwm_duty, gpio_level);
+		}
+		bl_pwm_pinmux_gpio_set(pwm_index, gpio_level);
+	} else {
+		if (lcd_debug_print_flag) {
+			LCDPR("bl: %s: pwm_port=%d set as pwm\n",
+				__func__, bl_pwm->pwm_port);
+		}
+		bl_pwm_pinmux_gpio_clr(pwm_index);
+	}
+}
+
+static void bl_set_pwm(struct bl_pwm_config_s *bl_pwm)
+{
+	unsigned int pwm_hi = 0, pwm_lo = 0;
 	unsigned int port = bl_pwm->pwm_port;
 	unsigned int vs[4], ve[4], sw, n, i;
 
-	level = bl_level_mapping(level);
-	max = bl_level_mapping(max);
-	min = bl_level_mapping(min);
-	if ((max <= min) || (level < min))
-		pwm_level = pwm_min;
-	else
-		pwm_level = (pwm_max - pwm_min) * (level - min) / (max - min) + pwm_min;
-	if (lcd_debug_print_flag) {
-		LCDPR("bl: port %d mapping: level=%d, level_max=%d, level_min=%d\n",
-			port, level, max, min);
-		LCDPR("bl: port %d: pwm_max=%d, pwm_min=%d, pwm_level=%d\n",
-			port, pwm_max, pwm_min, pwm_level);
-	}
+	if (bl_status > 0)
+		bl_set_pwm_gpio_check(bl_pwm);
+
 	switch (bl_pwm->pwm_method) {
 	case BL_PWM_POSITIVE:
-		pwm_hi = pwm_level;
-		pwm_lo = bl_pwm->pwm_cnt - pwm_level;
+		pwm_hi = bl_pwm->pwm_level;
+		pwm_lo = bl_pwm->pwm_cnt - bl_pwm->pwm_level;
 		break;
 	case BL_PWM_NEGATIVE:
-		pwm_lo = pwm_level;
-		pwm_hi = bl_pwm->pwm_cnt - pwm_level;
+		pwm_lo = bl_pwm->pwm_level;
+		pwm_hi = bl_pwm->pwm_cnt - bl_pwm->pwm_level;
 		break;
 	default:
 		LCDERR("bl: port %d: invalid pwm_method %d\n", port, bl_pwm->pwm_method);
@@ -225,6 +443,32 @@ static void bl_set_level_pwm(struct bl_pwm_config_s *bl_pwm, unsigned int level)
 	default:
 		break;
 	}
+}
+
+static void bl_set_level_pwm(struct bl_pwm_config_s *bl_pwm, unsigned int level)
+{
+	unsigned int min = bl_pwm->level_min;
+	unsigned int max = bl_pwm->level_max;
+	unsigned int pwm_max = bl_pwm->pwm_max;
+	unsigned int pwm_min = bl_pwm->pwm_min;
+
+	level = bl_level_mapping(level);
+	max = bl_level_mapping(max);
+	min = bl_level_mapping(min);
+	if ((max <= min) || (level < min))
+		bl_pwm->pwm_level = pwm_min;
+	else
+		bl_pwm->pwm_level = (pwm_max - pwm_min) * (level - min) / (max - min) + pwm_min;
+	if (lcd_debug_print_flag) {
+		LCDPR("bl: port %d mapping: level=%d, level_max=%d, level_min=%d\n",
+			bl_pwm->pwm_port, level, max, min);
+		LCDPR("bl: port %d: pwm_max=%d, pwm_min=%d, pwm_level=%d\n",
+			bl_pwm->pwm_port, pwm_max, pwm_min, bl_pwm->pwm_level);
+	}
+
+	bl_pwm->pwm_duty = bl_pwm->pwm_level * 100 / bl_pwm->pwm_cnt;
+
+	bl_set_pwm(bl_pwm);
 }
 
 void aml_bl_set_level(unsigned int level)
@@ -301,60 +545,6 @@ unsigned int aml_bl_get_level(void)
 	return bconf->level;
 }
 
-static void bl_pwm_pinmux_ctrl(struct bl_config_s *bconf, int status)
-{
-	int i;
-
-	if (status) {
-		/* set pin mux */
-		i = 0;
-		while (i < LCD_PINMUX_NUM) {
-			if (bconf->pinmux_clr[i][0] == LCD_PINMUX_END)
-				break;
-			lcd_pinmux_clr_mask(bconf->pinmux_clr[i][0],
-				bconf->pinmux_clr[i][1]);
-			i++;
-		}
-		i = 0;
-		while (i < LCD_PINMUX_NUM) {
-			if (bconf->pinmux_set[i][0] == LCD_PINMUX_END)
-				break;
-			lcd_pinmux_set_mask(bconf->pinmux_set[i][0],
-				bconf->pinmux_set[i][1]);
-			i++;
-		}
-	} else {
-		i = 0;
-		while (i < LCD_PINMUX_NUM) {
-			if (bconf->pinmux_set[i][0] == LCD_PINMUX_END)
-				break;
-			lcd_pinmux_clr_mask(bconf->pinmux_set[i][0],
-				bconf->pinmux_set[i][1]);
-			i++;
-		}
-		switch (bconf->method) {
-		case BL_CTRL_PWM:
-			if (bconf->bl_pwm->pwm_gpio < BL_GPIO_NUM_MAX) {
-				aml_lcd_gpio_set(bconf->bl_pwm->pwm_gpio,
-					bconf->bl_pwm->pwm_gpio_off);
-			}
-			break;
-		case BL_CTRL_PWM_COMBO:
-			if (bconf->bl_pwm_combo0->pwm_gpio < BL_GPIO_NUM_MAX) {
-				aml_lcd_gpio_set(bconf->bl_pwm_combo0->pwm_gpio,
-					bconf->bl_pwm_combo0->pwm_gpio_off);
-			}
-			if (bconf->bl_pwm_combo1->pwm_gpio < BL_GPIO_NUM_MAX) {
-				aml_lcd_gpio_set(bconf->bl_pwm_combo1->pwm_gpio,
-					bconf->bl_pwm_combo1->pwm_gpio_off);
-			}
-			break;
-		default:
-			break;
-		}
-	}
-}
-
 static void bl_pwm_ctrl(struct bl_pwm_config_s *bl_pwm, int status)
 {
 	int port, pre_div;
@@ -400,22 +590,22 @@ static void bl_pwm_ctrl(struct bl_pwm_config_s *bl_pwm, int status)
 	}
 }
 
-static void bl_power_en_ctrl(struct bl_config_s *bconf, int status)
+static void bl_power_en_ctrl(struct bl_config_s *bconf, int status, int delay_flag)
 {
 	if (status) {
-		if (bconf->power_on_delay > 0)
+		if ((bconf->power_on_delay > 0) && (delay_flag > 0))
 			mdelay(bconf->power_on_delay);
 		if (bconf->en_gpio < LCD_GPIO_MAX)
 			aml_lcd_gpio_set(bconf->en_gpio, bconf->en_gpio_on);
 	} else {
 		if (bconf->en_gpio < LCD_GPIO_MAX)
 			aml_lcd_gpio_set(bconf->en_gpio, bconf->en_gpio_off);
-		if (bconf->power_off_delay > 0)
+		if ((bconf->power_off_delay > 0) && (delay_flag > 0))
 			mdelay(bconf->power_off_delay);
 	}
 }
 
-void aml_bl_power_ctrl(int status)
+void aml_bl_power_ctrl(int status, int delay_flag)
 {
 	int gpio, value;
 	struct bl_config_s *bconf;
@@ -439,9 +629,10 @@ void aml_bl_power_ctrl(int status)
 			return;
 		}
 
+		bl_status = 1;
 		switch (bconf->method) {
 		case BL_CTRL_GPIO:
-			bl_power_en_ctrl(bconf, 1);
+			bl_power_en_ctrl(bconf, 1, delay_flag);
 			break;
 		case BL_CTRL_PWM:
 			/* step 1: power on pwm */
@@ -450,7 +641,7 @@ void aml_bl_power_ctrl(int status)
 			bl_pwm_ctrl(bconf->bl_pwm, 1);
 			bl_pwm_pinmux_ctrl(bconf, 1);
 			/* step 2: power on enable */
-			bl_power_en_ctrl(bconf, 1);
+			bl_power_en_ctrl(bconf, 1, delay_flag);
 			break;
 		case BL_CTRL_PWM_COMBO:
 			/* step 1: power on pwm_combo */
@@ -460,12 +651,12 @@ void aml_bl_power_ctrl(int status)
 			bl_pwm_ctrl(bconf->bl_pwm_combo1, 1);
 			bl_pwm_pinmux_ctrl(bconf, 1);
 			/* step 2: power on enable */
-			bl_power_en_ctrl(bconf, 1);
+			bl_power_en_ctrl(bconf, 1, delay_flag);
 			break;
 #ifdef CONFIG_AML_LOCAL_DIMMING
 		case BL_CTRL_LOCAL_DIMING:
 			/* step 1: power on enable */
-			bl_power_en_ctrl(bconf, 1);
+			bl_power_en_ctrl(bconf, 1, delay_flag);
 			/* step 2: power on ldim */
 			aml_bl_power_ctrl_ldim(1);
 			break;
@@ -473,7 +664,7 @@ void aml_bl_power_ctrl(int status)
 #ifdef CONFIG_AML_BL_EXTERN
 		case BL_CTRL_EXTERN:
 			/* step 1: power on enable */
-			bl_power_en_ctrl(bconf, 1);
+			bl_power_en_ctrl(bconf, 1, delay_flag);
 			/* step 2: power on bl_extern */
 			bl_ext = aml_bl_extern_get_driver();
 			if (bl_ext->power_on)
@@ -488,13 +679,14 @@ void aml_bl_power_ctrl(int status)
 			break;
 		}
 	} else {
+		bl_status = 0;
 		switch (bconf->method) {
 		case BL_CTRL_GPIO:
-			bl_power_en_ctrl(bconf, 0);
+			bl_power_en_ctrl(bconf, 0, delay_flag);
 			break;
 		case BL_CTRL_PWM:
 			/* step 1: power off enable */
-			bl_power_en_ctrl(bconf, 0);
+			bl_power_en_ctrl(bconf, 0, delay_flag);
 			/* step 2: power off pwm */
 			bl_pwm_ctrl(bconf->bl_pwm, 0);
 			bl_pwm_pinmux_ctrl(bconf, 0);
@@ -503,7 +695,7 @@ void aml_bl_power_ctrl(int status)
 			break;
 		case BL_CTRL_PWM_COMBO:
 			/* step 1: power off enable */
-			bl_power_en_ctrl(bconf, 0);
+			bl_power_en_ctrl(bconf, 0, delay_flag);
 			/* step 2: power off pwm_combo */
 			bl_pwm_ctrl(bconf->bl_pwm_combo0, 0);
 			bl_pwm_ctrl(bconf->bl_pwm_combo1, 0);
@@ -516,7 +708,7 @@ void aml_bl_power_ctrl(int status)
 			/* step 1: power off ldim */
 			aml_bl_power_ctrl_ldim(0);
 			/* step 2: power off enable */
-			bl_power_en_ctrl(bconf, 0);
+			bl_power_en_ctrl(bconf, 0, delay_flag);
 			break;
 #endif
 #ifdef CONFIG_AML_BL_EXTERN
@@ -528,7 +720,7 @@ void aml_bl_power_ctrl(int status)
 			else
 				LCDERR("bl: bl_extern: power off is null\n");
 			/* step 2: power off enable */
-			bl_power_en_ctrl(bconf, 0);
+			bl_power_en_ctrl(bconf, 0, delay_flag);
 			break;
 #endif
 		default:
@@ -544,7 +736,8 @@ void aml_bl_power_ctrl(int status)
 static const char *bl_pinmux_str[] = {
 	"bl_pwm_on_pin",        /* 0 */
 	"bl_pwm_vs_on_pin",     /* 1 */
-	"bl_pwm_combo_on_pin",  /* 2 */
+	"bl_pwm_combo_0_on_pin",  /* 2 */
+	"bl_pwm_combo_1_on_pin",  /* 3 */
 };
 
 static char *bl_pwm_name[] = {
@@ -707,6 +900,7 @@ static int aml_bl_config_load_from_dts(char *dt_addr, unsigned int index, struct
 			return -1;
 		}
 		bl_pwm = bconf->bl_pwm;
+		bl_pwm->index = 0;
 
 		bl_pwm->level_max = bconf->level_max;
 		bl_pwm->level_min = bconf->level_min;
@@ -780,11 +974,72 @@ static int aml_bl_config_load_from_dts(char *dt_addr, unsigned int index, struct
 				bconf->pwm_on_delay, bconf->pwm_off_delay);
 		}
 
+		bl_pwm->pwm_duty = bl_pwm->pwm_duty_min;
 		bl_pwm_config_init(bl_pwm);
+
 		if (bl_pwm->pwm_port == BL_PWM_VS)
 			pinmux_index = 1;
 		else
 			pinmux_index = 0;
+		sprintf(propname,"/pinmux/%s", bl_pinmux_str[pinmux_index]);
+		parent_offset = fdt_path_offset(dt_addr, propname);
+		if (parent_offset < 0) {
+			LCDERR("bl: not find %s node\n", propname);
+			bl_pwm->pinmux_set[0][0] = LCD_PINMUX_END;
+			bl_pwm->pinmux_set[0][1] = 0x0;
+			bl_pwm->pinmux_clr[0][0] = LCD_PINMUX_END;
+			bl_pwm->pinmux_clr[0][1] = 0x0;
+			return 0;
+		} else {
+			propdata = (char *)fdt_getprop(dt_addr, parent_offset, "amlogic,setmask", &len);
+			if (propdata == NULL) {
+				LCDERR("bl: failed to get amlogic,setmask\n");
+				bl_pwm->pinmux_set[0][0] = LCD_PINMUX_END;
+				bl_pwm->pinmux_set[0][1] = 0x0;
+			} else {
+				temp = len / 8;
+				for (i = 0; i < temp; i++) {
+					bl_pwm->pinmux_set[i][0] = be32_to_cpup((((u32*)propdata)+2*i));
+					bl_pwm->pinmux_set[i][1] = be32_to_cpup((((u32*)propdata)+2*i+1));
+				}
+				if (temp < (LCD_PINMUX_NUM - 1)) {
+					bl_pwm->pinmux_set[temp][0] = LCD_PINMUX_END;
+					bl_pwm->pinmux_set[temp][1] = 0x0;
+				}
+			}
+			propdata = (char *)fdt_getprop(dt_addr, parent_offset, "amlogic,clrmask", &len);
+			if (propdata == NULL) {
+				LCDERR("bl: failed to get amlogic,clrmask\n");
+				bl_pwm->pinmux_clr[0][0] = LCD_PINMUX_END;
+				bl_pwm->pinmux_clr[0][1] = 0x0;
+			} else {
+				temp = len / 8;
+				for (i = 0; i < temp; i++) {
+					bl_pwm->pinmux_clr[i][0] = be32_to_cpup((((u32*)propdata)+2*i));
+					bl_pwm->pinmux_clr[i][1] = be32_to_cpup((((u32*)propdata)+2*i+1));
+				}
+				if (temp < (LCD_PINMUX_NUM - 1)) {
+					bl_pwm->pinmux_clr[temp][0] = LCD_PINMUX_END;
+					bl_pwm->pinmux_clr[temp][1] = 0x0;
+				}
+			}
+			if (lcd_debug_print_flag) {
+				i = 0;
+				while (i < LCD_PINMUX_NUM) {
+					if (bl_pwm->pinmux_set[i][0] == LCD_PINMUX_END)
+						break;
+					LCDPR("bl: bl_pinmux set: %d, 0x%08x\n", bl_pwm->pinmux_set[i][0], bl_pwm->pinmux_set[i][1]);
+					i++;
+				}
+				i = 0;
+				while (i < LCD_PINMUX_NUM) {
+					if (bl_pwm->pinmux_clr[i][0] == LCD_PINMUX_END)
+						break;
+					LCDPR("bl: bl_pinmux clr: %d, 0x%08x\n", bl_pwm->pinmux_clr[i][0], bl_pwm->pinmux_clr[i][1]);
+					i++;
+				}
+			}
+		}
 		break;
 	case BL_CTRL_PWM_COMBO:
 		bconf->bl_pwm_combo0 = (struct bl_pwm_config_s *)malloc(sizeof(struct bl_pwm_config_s));
@@ -799,6 +1054,9 @@ static int aml_bl_config_load_from_dts(char *dt_addr, unsigned int index, struct
 		}
 		pwm_combo0 = bconf->bl_pwm_combo0;
 		pwm_combo1 = bconf->bl_pwm_combo1;
+
+		pwm_combo0->index = 0;
+		pwm_combo1->index = 1;
 
 		propdata = (char *)fdt_getprop(dt_addr, child_offset, "bl_pwm_combo_level_mapping", NULL);
 		if (propdata == NULL) {
@@ -884,12 +1142,12 @@ static int aml_bl_config_load_from_dts(char *dt_addr, unsigned int index, struct
 				pwm_combo1->pwm_freq = BL_FREQ_VS_DEFAULT;
 			}
 			if (lcd_debug_print_flag)
-				LCDPR("bl: bl_pwm combo0_freq=%d x Vfreq\n", pwm_combo1->pwm_freq);
+				LCDPR("bl: bl_pwm combo1_freq=%d x Vfreq\n", pwm_combo1->pwm_freq);
 		} else {
 			if (pwm_combo1->pwm_freq > XTAL_HALF_FREQ_HZ)
 				pwm_combo1->pwm_freq = XTAL_HALF_FREQ_HZ;
 			if (lcd_debug_print_flag)
-				LCDPR("bl_pwm combo0_freq=%dHz\n", pwm_combo1->pwm_freq);
+				LCDPR("bl_pwm combo1_freq=%dHz\n", pwm_combo1->pwm_freq);
 		}
 		propdata = (char *)fdt_getprop(dt_addr, child_offset, "bl_pwm_combo_power", NULL);
 		if (propdata == NULL) {
@@ -929,79 +1187,136 @@ static int aml_bl_config_load_from_dts(char *dt_addr, unsigned int index, struct
 				bconf->pwm_on_delay, bconf->pwm_off_delay);
 		}
 
+		pwm_combo0->pwm_duty = pwm_combo0->pwm_duty_min;
+		pwm_combo1->pwm_duty = pwm_combo1->pwm_duty_min;
 		bl_pwm_config_init(pwm_combo0);
 		bl_pwm_config_init(pwm_combo1);
-		pinmux_index = 2;
-		break;
-	default:
-		return 0;
-		break;
-	}
 
-	switch (bconf->method) {
-	case BL_CTRL_PWM:
-	case BL_CTRL_PWM_COMBO:
-		sprintf(propname,"/pinmux/%s", bl_pinmux_str[pinmux_index]);
+		sprintf(propname,"/pinmux/%s", bl_pinmux_str[2]);
 		parent_offset = fdt_path_offset(dt_addr, propname);
 		if (parent_offset < 0) {
 			LCDERR("bl: not find %s node\n", propname);
-			bconf->pinmux_set[0][0] = LCD_PINMUX_END;
-			bconf->pinmux_set[0][1] = 0x0;
-			bconf->pinmux_clr[0][0] = LCD_PINMUX_END;
-			bconf->pinmux_clr[0][1] = 0x0;
+			pwm_combo0->pinmux_set[0][0] = LCD_PINMUX_END;
+			pwm_combo0->pinmux_set[0][1] = 0x0;
+			pwm_combo0->pinmux_clr[0][0] = LCD_PINMUX_END;
+			pwm_combo0->pinmux_clr[0][1] = 0x0;
 			return 0;
 		} else {
 			propdata = (char *)fdt_getprop(dt_addr, parent_offset, "amlogic,setmask", &len);
 			if (propdata == NULL) {
 				LCDERR("bl: failed to get amlogic,setmask\n");
-				bconf->pinmux_set[0][0] = LCD_PINMUX_END;
-				bconf->pinmux_set[0][1] = 0x0;
+				pwm_combo0->pinmux_set[0][0] = LCD_PINMUX_END;
+				pwm_combo0->pinmux_set[0][1] = 0x0;
 			} else {
 				temp = len / 8;
 				for (i = 0; i < temp; i++) {
-					bconf->pinmux_set[i][0] = be32_to_cpup((((u32*)propdata)+2*i));
-					bconf->pinmux_set[i][1] = be32_to_cpup((((u32*)propdata)+2*i+1));
+					pwm_combo0->pinmux_set[i][0] = be32_to_cpup((((u32*)propdata)+2*i));
+					pwm_combo0->pinmux_set[i][1] = be32_to_cpup((((u32*)propdata)+2*i+1));
 				}
 				if (temp < (LCD_PINMUX_NUM - 1)) {
-					bconf->pinmux_set[temp][0] = LCD_PINMUX_END;
-					bconf->pinmux_set[temp][1] = 0x0;
+					pwm_combo0->pinmux_set[temp][0] = LCD_PINMUX_END;
+					pwm_combo0->pinmux_set[temp][1] = 0x0;
 				}
 			}
 			propdata = (char *)fdt_getprop(dt_addr, parent_offset, "amlogic,clrmask", &len);
 			if (propdata == NULL) {
 				LCDERR("bl: failed to get amlogic,clrmask\n");
-				bconf->pinmux_clr[0][0] = LCD_PINMUX_END;
-				bconf->pinmux_clr[0][1] = 0x0;
+				pwm_combo0->pinmux_clr[0][0] = LCD_PINMUX_END;
+				pwm_combo0->pinmux_clr[0][1] = 0x0;
 			} else {
 				temp = len / 8;
 				for (i = 0; i < temp; i++) {
-					bconf->pinmux_clr[i][0] = be32_to_cpup((((u32*)propdata)+2*i));
-					bconf->pinmux_clr[i][1] = be32_to_cpup((((u32*)propdata)+2*i+1));
+					pwm_combo0->pinmux_clr[i][0] = be32_to_cpup((((u32*)propdata)+2*i));
+					pwm_combo0->pinmux_clr[i][1] = be32_to_cpup((((u32*)propdata)+2*i+1));
 				}
 				if (temp < (LCD_PINMUX_NUM - 1)) {
-					bconf->pinmux_clr[temp][0] = LCD_PINMUX_END;
-					bconf->pinmux_clr[temp][1] = 0x0;
+					pwm_combo0->pinmux_clr[temp][0] = LCD_PINMUX_END;
+					pwm_combo0->pinmux_clr[temp][1] = 0x0;
 				}
 			}
 			if (lcd_debug_print_flag) {
 				i = 0;
 				while (i < LCD_PINMUX_NUM) {
-					if (bconf->pinmux_set[i][0] == LCD_PINMUX_END)
+					if (pwm_combo0->pinmux_set[i][0] == LCD_PINMUX_END)
 						break;
-					LCDPR("bl: bl_pinmux set: %d, 0x%08x\n", bconf->pinmux_set[i][0], bconf->pinmux_set[i][1]);
+					LCDPR("bl: pwm_combo0 pinmux_set: %d, 0x%08x\n",
+						pwm_combo0->pinmux_set[i][0], pwm_combo0->pinmux_set[i][1]);
 					i++;
 				}
 				i = 0;
 				while (i < LCD_PINMUX_NUM) {
-					if (bconf->pinmux_clr[i][0] == LCD_PINMUX_END)
+					if (pwm_combo0->pinmux_clr[i][0] == LCD_PINMUX_END)
 						break;
-					LCDPR("bl: bl_pinmux clr: %d, 0x%08x\n", bconf->pinmux_clr[i][0], bconf->pinmux_clr[i][1]);
+					LCDPR("bl: pwm_combo0 pinmux_clr: %d, 0x%08x\n",
+						pwm_combo0->pinmux_clr[i][0], pwm_combo0->pinmux_clr[i][1]);
+					i++;
+				}
+			}
+		}
+		sprintf(propname,"/pinmux/%s", bl_pinmux_str[3]);
+		parent_offset = fdt_path_offset(dt_addr, propname);
+		if (parent_offset < 0) {
+			LCDERR("bl: not find %s node\n", propname);
+			pwm_combo1->pinmux_set[0][0] = LCD_PINMUX_END;
+			pwm_combo1->pinmux_set[0][1] = 0x0;
+			pwm_combo1->pinmux_clr[0][0] = LCD_PINMUX_END;
+			pwm_combo1->pinmux_clr[0][1] = 0x0;
+			return 0;
+		} else {
+			propdata = (char *)fdt_getprop(dt_addr, parent_offset, "amlogic,setmask", &len);
+			if (propdata == NULL) {
+				LCDERR("bl: failed to get amlogic,setmask\n");
+				pwm_combo1->pinmux_set[0][0] = LCD_PINMUX_END;
+				pwm_combo1->pinmux_set[0][1] = 0x0;
+			} else {
+				temp = len / 8;
+				for (i = 0; i < temp; i++) {
+					pwm_combo1->pinmux_set[i][0] = be32_to_cpup((((u32*)propdata)+2*i));
+					pwm_combo1->pinmux_set[i][1] = be32_to_cpup((((u32*)propdata)+2*i+1));
+				}
+				if (temp < (LCD_PINMUX_NUM - 1)) {
+					pwm_combo1->pinmux_set[temp][0] = LCD_PINMUX_END;
+					pwm_combo1->pinmux_set[temp][1] = 0x0;
+				}
+			}
+			propdata = (char *)fdt_getprop(dt_addr, parent_offset, "amlogic,clrmask", &len);
+			if (propdata == NULL) {
+				LCDERR("bl: failed to get amlogic,clrmask\n");
+				pwm_combo1->pinmux_clr[0][0] = LCD_PINMUX_END;
+				pwm_combo1->pinmux_clr[0][1] = 0x0;
+			} else {
+				temp = len / 8;
+				for (i = 0; i < temp; i++) {
+					pwm_combo1->pinmux_clr[i][0] = be32_to_cpup((((u32*)propdata)+2*i));
+					pwm_combo1->pinmux_clr[i][1] = be32_to_cpup((((u32*)propdata)+2*i+1));
+				}
+				if (temp < (LCD_PINMUX_NUM - 1)) {
+					pwm_combo1->pinmux_clr[temp][0] = LCD_PINMUX_END;
+					pwm_combo1->pinmux_clr[temp][1] = 0x0;
+				}
+			}
+			if (lcd_debug_print_flag) {
+				i = 0;
+				while (i < LCD_PINMUX_NUM) {
+					if (pwm_combo1->pinmux_set[i][0] == LCD_PINMUX_END)
+						break;
+					LCDPR("bl: pwm_combo1 pinmux_set: %d, 0x%08x\n",
+						pwm_combo1->pinmux_set[i][0], pwm_combo1->pinmux_set[i][1]);
+					i++;
+				}
+				i = 0;
+				while (i < LCD_PINMUX_NUM) {
+					if (pwm_combo1->pinmux_clr[i][0] == LCD_PINMUX_END)
+						break;
+					LCDPR("bl: pwm_combo1 pinmux_clr: %d, 0x%08x\n",
+						pwm_combo1->pinmux_clr[i][0], pwm_combo1->pinmux_clr[i][1]);
 					i++;
 				}
 			}
 		}
 		break;
 	default:
+		return 0;
 		break;
 	}
 
@@ -1094,7 +1409,25 @@ static int aml_bl_config_load_from_bsp(struct bl_config_s *bconf)
 		bconf->pwm_on_delay   = ext_lcd->pwm_on_delay;
 		bconf->pwm_off_delay  = ext_lcd->pwm_off_delay;
 
+		bl_pwm->pwm_duty = bl_pwm->pwm_duty_min;
 		bl_pwm_config_init(bl_pwm);
+
+		i = 0;
+		while (i < LCD_PINMUX_NUM) {
+			if (bconf->pinmux_set[i][0] == LCD_PINMUX_END) {
+				bl_pwm->pinmux_set[i][0] = LCD_PINMUX_END;
+				bl_pwm->pinmux_set[i][1] = 0;
+				bl_pwm->pinmux_clr[i][0] = LCD_PINMUX_END;
+				bl_pwm->pinmux_clr[i][1] = 0;
+				break;
+			}
+			bl_pwm->pinmux_set[i][0] = bconf->pinmux_set[i][0];
+			bl_pwm->pinmux_set[i][1] = bconf->pinmux_set[i][1];
+			bl_pwm->pinmux_clr[i][0] = bconf->pinmux_clr[i][0];
+			bl_pwm->pinmux_clr[i][1] = bconf->pinmux_clr[i][1];
+			i++;
+		}
+
 		if (lcd_debug_print_flag) {
 			LCDPR("bl: pwm_method    = %d\n", bl_pwm->pwm_method);
 			LCDPR("bl: pwm_port      = %d\n", bl_pwm->pwm_port);
@@ -1153,8 +1486,20 @@ static int aml_bl_config_load_from_bsp(struct bl_config_s *bconf)
 		bconf->pwm_on_delay   = ext_lcd->pwm_on_delay;
 		bconf->pwm_off_delay  = ext_lcd->pwm_off_delay;
 
+		pwm_combo0->pwm_duty = pwm_combo0->pwm_duty_min;
+		pwm_combo1->pwm_duty = pwm_combo1->pwm_duty_min;
 		bl_pwm_config_init(pwm_combo0);
 		bl_pwm_config_init(pwm_combo1);
+
+		pwm_combo0->pinmux_set[0][0] = LCD_PINMUX_END;
+		pwm_combo0->pinmux_set[0][1] = 0x0;
+		pwm_combo0->pinmux_clr[0][0] = LCD_PINMUX_END;
+		pwm_combo0->pinmux_clr[0][1] = 0x0;
+		pwm_combo1->pinmux_set[0][0] = LCD_PINMUX_END;
+		pwm_combo1->pinmux_set[0][1] = 0x0;
+		pwm_combo1->pinmux_clr[0][0] = LCD_PINMUX_END;
+		pwm_combo1->pinmux_clr[0][1] = 0x0;
+
 		if (lcd_debug_print_flag) {
 			LCDPR("bl: pwm_combo0_method   = %d\n", pwm_combo0->pwm_method);
 			LCDPR("bl: pwm_combo0_port     = %d\n", pwm_combo0->pwm_port);
@@ -1194,6 +1539,8 @@ int aml_bl_config_load(char *dt_addr, int load_id)
 	unsigned int index;
 #endif
 	char *bl_off_policy_str;
+
+	bl_status = 0;
 
 	/* load bl config */
 	if (load_id == 1 ) {

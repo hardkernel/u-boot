@@ -170,7 +170,7 @@ static void lcd_module_enable(char *mode)
 	lcd_vcbus_write(VENC_INTCTRL, 0x200);
 
 	aml_bl_set_level(lcd_drv->bl_config->level_default);
-	aml_bl_power_ctrl(1);
+	aml_bl_power_ctrl(1, 1);
 
 	lcd_drv->lcd_status = 1;
 }
@@ -181,7 +181,7 @@ static void lcd_module_disable(void)
 
 	LCDPR("disable: %s\n", lcd_drv->lcd_config->lcd_basic.model_name);
 
-	aml_bl_power_ctrl(0);
+	aml_bl_power_ctrl(0, 1);
 
 	lcd_power_ctrl(0);
 
@@ -625,7 +625,8 @@ int lcd_probe(void)
 	lcd_chip_detect();
 	lcd_clk_config_probe();
 	lcd_mode_probe();
-	aml_bl_power_ctrl(0); /* init backlight ctrl port */
+	aml_bl_power_ctrl(0, 0); /* init backlight ctrl port */
+	mdelay(10);
 
 	return 0;
 }
@@ -781,12 +782,12 @@ static int aml_get_backlight_level(void)
 
 static void aml_backlight_power_on(void)
 {
-	aml_bl_power_ctrl(1);
+	aml_bl_power_ctrl(1, 1);
 }
 
 static void aml_backlight_power_off(void)
 {
-	aml_bl_power_ctrl(0);
+	aml_bl_power_ctrl(0, 1);
 }
 
 static struct aml_lcd_drv_s aml_lcd_driver = {
