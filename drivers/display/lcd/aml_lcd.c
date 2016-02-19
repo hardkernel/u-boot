@@ -278,13 +278,15 @@ static void lcd_info_print(void)
 	sync_duration = (sync_duration * 10 / pconf->lcd_timing.sync_duration_den);
 	LCDPR("%s, %s, %ux%u@%u.%uHz\n"
 		"fr_adj_type       %d\n"
-		"lcd_clk           %u.%03uMHz\n\n",
+		"lcd_clk           %u.%03uMHz\n"
+		"ss_level          %u\n\n",
 		pconf->lcd_basic.model_name,
 		lcd_type_type_to_str(pconf->lcd_basic.lcd_type),
 		pconf->lcd_basic.h_active, pconf->lcd_basic.v_active,
 		(sync_duration / 10), (sync_duration % 10),
 		pconf->lcd_timing.fr_adjust_type,
-		(lcd_clk / 1000), (lcd_clk % 1000));
+		(lcd_clk / 1000), (lcd_clk % 1000),
+		pconf->lcd_timing.ss_level);
 
 	lcd_timing_info_print(pconf);
 

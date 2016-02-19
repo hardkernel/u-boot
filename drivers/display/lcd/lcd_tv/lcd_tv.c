@@ -519,6 +519,8 @@ static int lcd_config_load_from_bsp(struct lcd_config_s *pconf)
 
 static void lcd_config_init(struct lcd_config_s *pconf)
 {
+	struct lcd_clk_config_s *cconf = get_lcd_clk_config();
+	unsigned int ss_level;
 	unsigned int clk;
 
 	clk = pconf->lcd_basic.h_period * pconf->lcd_basic.v_period * 60;
@@ -527,6 +529,8 @@ static void lcd_config_init(struct lcd_config_s *pconf)
 	pconf->lcd_timing.sync_duration_den = 1;
 
 	lcd_tcon_config(pconf);
+	ss_level = pconf->lcd_timing.ss_level;
+	cconf->ss_level = (ss_level >= cconf->ss_level_max) ? 0 : ss_level;
 }
 
 static int lcd_config_check(char *mode)
