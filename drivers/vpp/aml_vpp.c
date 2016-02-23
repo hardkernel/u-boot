@@ -89,9 +89,36 @@ static void vpp_set_matrix_ycbcr2rgb(int vd1_or_vd2_or_post, int mode)
 	}
 }
 
+static void vpp_set_post_matrix_rgb2ycbcr (void)
+{
+	/* enable post matrix */
+	vpp_reg_setb(VPP_MATRIX_CTRL, 1, 0, 1);
+	vpp_reg_setb(VPP_MATRIX_CTRL, 0, 8, 2);
+	vpp_reg_setb(VPP_MATRIX_CTRL, 0, 1, 2);
+
+	/* 602 limit to rgb */
+	vpp_reg_write(VPP_MATRIX_PRE_OFFSET0_1, 0x0);
+	vpp_reg_write(VPP_MATRIX_PRE_OFFSET2, 0x0);
+
+	//0.257     0.504   0.098
+	//-0.148    -0.291  0.439
+	//0.439     -0.368 -0.071
+	vpp_reg_write(VPP_MATRIX_COEF00_01, (0x107 << 16) | 0x204);
+	vpp_reg_write(VPP_MATRIX_COEF02_10, (0x64 << 16) | 0x1f68);
+	vpp_reg_write(VPP_MATRIX_COEF11_12, (0x1ed6 << 16) | 0x1c2);
+	vpp_reg_write(VPP_MATRIX_COEF20_21, (0x1c2 << 16) | 0x1e87);
+	vpp_reg_write(VPP_MATRIX_COEF22, 0x1fb7);
+	vpp_reg_write(VPP_MATRIX_OFFSET0_1, (0x40 << 16) | 0x0200);
+	vpp_reg_write(VPP_MATRIX_OFFSET2, 0x0200);
+
+}
+
 void vpp_init(void)
 {
 	VPP_PR("%s\n", __func__);
 	vpp_set_matrix_ycbcr2rgb(0, 0); /* 601 to RGB */
 	vpp_reg_write(VPP_DUMMY_DATA1, 0x0); /* set dummy data default RGB black */
+#if ((defined CONFIG_AML_HDMITX20) || (defined CONFIG_AML_CVBS))
+	vpp_set_post_matrix_rgb2ycbcr();
+#endif
 }
