@@ -651,6 +651,9 @@ int i2c_probe(uchar chip);
  */
 int i2c_read(uchar chip, uint addr, int alen, uchar *buffer, int len);
 int i2c_write(uchar chip, uint addr, int alen, uchar *buffer, int len);
+#if defined(CONFIG_CMD_EEPROM)
+int i2c_eeprom_write(unsigned char chip, unsigned int addr, int alen,unsigned char *buffer, int len);
+#endif
 
 /*
  * Utility routines to read/write registers.

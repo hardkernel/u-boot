@@ -507,7 +507,6 @@ int aml_i2c_xfer(struct i2c_msg *msgs,
 		return ret;
 	}
 }
-
 /*General i2c master transfer 100k*/
 int aml_i2c_xfer_slow(struct i2c_msg *msgs,
 							int num)
@@ -633,7 +632,6 @@ static const unsigned long g_aml_i2c_reg_start[] = {
 };
 
 static int __i2c_init_flag = 0;
-
 int aml_i2c_init(void)
 {
 	extern struct aml_i2c_platform g_aml_i2c_plat;
@@ -654,7 +652,7 @@ int aml_i2c_init(void)
 	i2c->ops = &g_aml_i2c_m1_ops;
 	i2c->master_no = plat->master_no;
 	i2c->use_pio = plat->use_pio;
-	AML_I2C_ASSERT((i2c->master_no >= 0) && (i2c->master_no <= 3));
+	AML_I2C_ASSERT((i2c->master_no >= 0) && (i2c->master_no <= 4));
 
 	/*master a or master b*/
 	  if (i2c->master_no >= ARRAY_SIZE(g_aml_i2c_reg_start))
@@ -673,9 +671,10 @@ int aml_i2c_init(void)
 
 	g_bAmlogicI2CInitialized = 1;
 
-    __i2c_init_flag = 1;
+   /* __i2c_init_flag = 1;*/
 	return 0;
 }
+
 
 /*****************************
  ** add by wch for cmd_i2c **
@@ -711,13 +710,16 @@ int i2c_read(uchar chip, uint addr, int alen, uchar *buffer, int len)
 					devaddr[0] = addr & 0xff;
 			   break;
 
-		case 2:							 //I2C data address:2 bytes long within the chip.
+		case 2:
+#if 0
+			//I2C data address:2 bytes long within the chip.
 			   if (addr>0xffff || addr<0x1ff)
 			   {
 					puts ("'*.2' shows i2c data or register address 2 bytes long within the chip. \n");
 					return -1;
 			   }
 			   else
+#endif
 			   {
 					devaddr[0] = addr & 0xff;
 					devaddr[1] = (addr >> 8) & 0xff;
@@ -798,13 +800,16 @@ int i2c_write(unsigned char chip, unsigned int addr, int alen,unsigned char *buf
 					devaddr[0] = addr & 0xff;
 			   break;
 
-		case 2:							//I2C data address:2 bytes long within the chip.
-			   if (addr>0xffff || addr<0x1ff)
-			   {
-					puts ("'*.2' shows i2c data or register address 2 bytes long within the chip. \n");
-					return -1;
-			   }
-			   else
+		case 2:
+#if 0
+			//I2C data address:2 bytes long within the chip.
+			if (addr>0xffff || addr<0x1ff)
+			{
+				puts ("'*.2' shows i2c data or register address 2 bytes long within the chip. \n");
+				return -1;
+			}
+			else
+#endif
 			   {
 					devaddr[0] = addr & 0xff;
 					devaddr[1] = (addr >> 8) & 0xff;
@@ -972,5 +977,87 @@ int i2c_set_bus_speed(unsigned int speed)
 		return -1;
 	}
 
+}
+#if defined(CONFIG_CMD_EEPROM)
+int i2c_eeprom_write(unsigned char chip, unsigned int addr, int alen,unsigned char *buffer, int len)
+{
+	int i, err;
+	struct aml_i2c *i2c = &g_aml_i2c_data;
+	unsigned char buf[4];
+
+	if (alen > 4) return -1;
+	for (i=0; i<alen; i++) {
+		buf[i] = addr&0xff;
+		addr >>= 8;
+	}
+
+	i2c->msg_flags = 0;
+	i2c->ops->xfer_prepare(i2c);
+	i2c->ops->do_address(i2c, chip);
+	err = i2c->ops->write(i2c, buf, alen);
+	if (!err) {
+		i2c->msg_flags |= I2C_M_NOSTART;
+		err = i2c->ops->write(i2c, buffer, len);
+	}
+	i2c->ops->stop(i2c);
+	return err;
+}
+#endif
+
+/*General i2c master transfer,it can Send to a specific master control*/
+int aml_i2c_transfer(int adap_num,struct i2c_msg *msgs,
+							int num)
+{
+	AML_I2C_DBG(1, "FILE:%s:%d, FUNC:%s\n", __FILE__,__LINE__,__func__);
+
+	if (0 == g_bAmlogicI2CInitialized) {
+		return -ENXIO; //device not initialized
+		}
+
+	g_aml_i2c_data.master_no = adap_num;
+	struct aml_i2c *i2c = &g_aml_i2c_data;
+	i2c->master_regs = (struct aml_i2c_reg_master __iomem*)(g_aml_i2c_reg_start[i2c->master_no]);
+	struct i2c_msg * p=0;
+	unsigned int i;
+	unsigned int ret=0;
+
+	i2c->ops->xfer_prepare(i2c);
+
+	for (i = 0; !ret && i < num; i++) {
+		p = &msgs[i];
+		i2c->msg_flags = p->flags;
+		ret = i2c->ops->do_address(i2c, p->addr);
+		if (ret || !p->len)
+		{
+			continue;
+		}
+		if (p->flags & I2C_M_RD)
+			ret = i2c->ops->read(i2c, p->buf, p->len);
+		else
+			ret = i2c->ops->write(i2c, p->buf, p->len);
+	}
+
+	i2c->ops->stop(i2c);
+
+
+	if (p->flags & I2C_M_RD) {
+		AML_I2C_DBG(0, "read ");
+	}
+	else {
+		AML_I2C_DBG(0, "write ");
+	}
+	for (i=0;i<p->len;i++)
+		AML_I2C_DBG(0, "%x-",*(p->buf)++);
+	AML_I2C_DBG(0, "\n");
+
+	/* Return the number of messages processed, or the error code*/
+	if (ret == 0)
+		return num;
+	else {
+		printf("[aml_i2c_xfer] error ret = %d \t", ret);
+		printf("i2c master %s current slave addr is 0x%x\n",
+						i2c->master_no?"a":"b", i2c->cur_slave_addr);
+		return ret;
+	}
 }
 
