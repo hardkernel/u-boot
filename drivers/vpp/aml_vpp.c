@@ -73,7 +73,7 @@ static void vpp_set_matrix_ycbcr2rgb(int vd1_or_vd2_or_post, int mode)
 		vpp_reg_write(VPP_MATRIX_COEF22, 0x0);
 		vpp_reg_write(VPP_MATRIX_OFFSET0_1, 0x0);
 		vpp_reg_write(VPP_MATRIX_OFFSET2, 0x0);
-	} else if (mode == 2) {/*709F 2 RGB*/
+	} else if (mode == 2) {/*709F to RGB*/
 		vpp_reg_write(VPP_MATRIX_PRE_OFFSET0_1, 0x0000E00);
 		vpp_reg_write(VPP_MATRIX_PRE_OFFSET2, 0x0E00);
 		//	1	0			1.402
@@ -92,6 +92,6 @@ static void vpp_set_matrix_ycbcr2rgb(int vd1_or_vd2_or_post, int mode)
 void vpp_init(void)
 {
 	VPP_PR("%s\n", __func__);
-	vpp_set_matrix_ycbcr2rgb(0, 2);
+	vpp_set_matrix_ycbcr2rgb(0, 0); /* 601 to RGB */
 	vpp_reg_write(VPP_DUMMY_DATA1, 0x0); /* set dummy data default RGB black */
 }
