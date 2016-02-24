@@ -55,11 +55,13 @@ static int pwm_voltage_table[][2] = {
 
 #define P_PIN_MUX_AO		(*((volatile unsigned *)(0xc8100000 + (0x05 << 2))))
 #define P_PIN_MUX_REG10		(*((volatile unsigned *)(0xda834400 + (0x36 << 2))))
+#define P_PIN_MUX_REG7         (*((volatile unsigned *)(0xda834400 + (0x33 << 2))))
 
 #define P_PWM_MISC_REG_AB	(*((volatile unsigned *)(0xc1100000 + (0x2156 << 2))))
 #define P_PWM_PWM_A		(*((volatile unsigned *)(0xc1100000 + (0x2154 << 2))))
 
 #define P_PWM_MISC_REG_EF	(*((volatile unsigned *)(0xc1100000 + (0x21b2 << 2))))
+#define P_PWM_PWM_E		(*((volatile unsigned *)(0xc1100000 + (0x21b0 << 2))))
 #define P_PWM_PWM_F		(*((volatile unsigned *)(0xc1100000 + (0x21b1 << 2))))
 
 #ifdef P_AO_PWM_MISC_REG_AB
@@ -129,7 +131,25 @@ void pwm_init(int id)
 		reg  = P_PIN_MUX_AO;
 		reg |=  (1 << 21);		// enable PWM_AO_B
 		P_PIN_MUX_AO = reg;
+		break;
 
+	case pwm_e:
+		reg = P_PWM_MISC_REG_EF;
+		reg &= ~(0x7f << 8);
+		reg |=	((1 << 15) | (1 << 1) |(1 << 0));
+		P_PWM_MISC_REG_EF = reg;
+		/*
+		 * default set to max voltage
+		 */
+		P_PWM_PWM_E =  pwm_voltage_table[ARRAY_SIZE(pwm_voltage_table) - 1][0];
+
+		reg  = P_PIN_MUX_REG7;
+		reg &= ~((1 << 26)| (1 << 18)|(1 << 30));
+		P_PIN_MUX_REG7 = reg;
+
+		reg  = P_PIN_MUX_REG7;
+		reg |=	(1 << 29);		// enable PWM_E
+		P_PIN_MUX_REG7 = reg;
 		break;
 
 	case pwm_f:
@@ -187,6 +207,10 @@ void pwm_set_voltage(unsigned int id, unsigned int voltage)
 		P_AO_PWM_PWM_B = pwm_voltage_table[to][0];
 		break;
 
+	case pwm_e:
+		P_PWM_PWM_E = pwm_voltage_table[to][0];
+		break;
+
 	case pwm_f:
 		P_PWM_PWM_F = pwm_voltage_table[to][0];
 		break;
@@ -199,12 +223,12 @@ void pwm_set_voltage(unsigned int id, unsigned int voltage)
 
 void power_init(int mode)
 {
-	pwm_init(pwm_a);
+	pwm_init(pwm_e);
 	pwm_init(pwm_ao_b);
 	serial_puts("set vcck to ");
 	serial_put_dec(CONFIG_VCCK_INIT_VOLTAGE);
 	serial_puts(" mv\n");
-	pwm_set_voltage(pwm_a, CONFIG_VCCK_INIT_VOLTAGE);
+	pwm_set_voltage(pwm_e, CONFIG_VCCK_INIT_VOLTAGE);
 	serial_puts("set vddee to ");
 	serial_put_dec(CONFIG_VDDEE_INIT_VOLTAGE);
 	serial_puts(" mv\n");
