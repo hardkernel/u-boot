@@ -1001,7 +1001,6 @@ static int aml_ethernet_init(struct eth_device * net_current, bd_t *bd)
 	/* mac and phy reset */
 	eth_reset(gS);
 
-#ifndef CONFIG_RANDOM_MAC_ADDR
 	/* set mac addr */
 	eth_getenv_enetaddr("ethaddr", g_bi_enetaddr);
 	set_mac_addrs(g_bi_enetaddr);
@@ -1009,7 +1008,7 @@ static int aml_ethernet_init(struct eth_device * net_current, bd_t *bd)
 	/* get the mac and ip */
 	printf("MAC address is %02x:%02x:%02x:%02x:%02x:%02x\n", g_bi_enetaddr[0], g_bi_enetaddr[1],
 			g_bi_enetaddr[2], g_bi_enetaddr[3], g_bi_enetaddr[4], g_bi_enetaddr[5]);
-#endif
+
 	/* start the dma para, but don't start the receive dma */
 	aml_eth_writel(ETH_DMA_6_Operation_Mode_EFC | ETH_DMA_6_Operation_Mode_TTC_16 | ETH_DMA_6_Operation_Mode_RSF | ETH_DMA_6_Operation_Mode_TSF | ETH_DMA_6_Operation_Mode_DT, ETH_DMA_6_Operation_Mode);
 	// | ETH_DMA_6_Operation_Mode_RTC_32 | ETH_DMA_6_Operation_Mode_FUF
