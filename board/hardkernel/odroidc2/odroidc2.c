@@ -36,6 +36,7 @@ extern unsigned int get_mmc_size(void);
 #define GPIO_OTG_PWREN		124
 #define GPIO_TF3V3		35	/* GPIOY_12 */
 #define GPIO_TF1V8		122	/* GPIOAO_3 */
+#define GPIO_UPS_POWER_LATCH	9	/* GPIOX_9 */
 
 int serial_set_pin_port(unsigned long port_base)
 {
@@ -407,6 +408,10 @@ int board_late_init(void)
 		board_run_fastboot();
 	else if (ODROID_REBOOT_CMD_RECOVERY == reboot_reason)
 		board_run_recovery();
+
+	/* UPS Power latch */
+	gpio_request(GPIO_UPS_POWER_LATCH, "ups power latch");
+	gpio_direction_output(GPIO_UPS_POWER_LATCH, 1);
 
 	return 0;
 }
