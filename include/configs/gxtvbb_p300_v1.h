@@ -330,9 +330,9 @@
 #define CONFIG_OSD_SCALE_ENABLE 1
 #define CONFIG_CMD_BMP 1
 
-#if defined(CONFIG_AML_VOUT)
-#define CONFIG_AML_CVBS 1
-#endif
+// #if defined(CONFIG_AML_VOUT)
+// #define CONFIG_AML_CVBS 1
+// #endif
 
 #define CONFIG_AML_LCD    1
 #define CONFIG_AML_LCD_TV 1

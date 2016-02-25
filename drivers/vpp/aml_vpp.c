@@ -89,6 +89,7 @@ static void vpp_set_matrix_ycbcr2rgb(int vd1_or_vd2_or_post, int mode)
 	}
 }
 
+#if ((defined CONFIG_AML_HDMITX20) || (defined CONFIG_AML_CVBS))
 static void vpp_set_post_matrix_rgb2ycbcr (void)
 {
 	/* enable post matrix */
@@ -112,6 +113,7 @@ static void vpp_set_post_matrix_rgb2ycbcr (void)
 	vpp_reg_write(VPP_MATRIX_OFFSET2, 0x0200);
 
 }
+#endif
 
 void vpp_init(void)
 {
