@@ -83,7 +83,7 @@ struct partitions part_table[MAX_PART_NUM]={
 };
 #endif
 
-#define PARTITION_ELEMENT(na, sz, flags) {.name = na, .size = sz, .mask_flags = flags,}
+#ifndef CONFIG_AML_MMC_INHERENT_PART
 struct partitions emmc_partition_table[]={
     PARTITION_ELEMENT(MMC_BOOT_NAME, MMC_BOOT_DEVICE_SIZE, 0),
     PARTITION_ELEMENT(MMC_RESERVED_NAME, MMC_RESERVED_SIZE, 0),
@@ -95,6 +95,11 @@ struct partitions emmc_partition_table[]={
     PARTITION_ELEMENT(MMC_ENV_NAME, MMC_ENV_SIZE, 0),
 };
 
+int get_emmc_partition_arraysize(void)
+{
+    return ARRAY_SIZE(emmc_partition_table);
+}
+#endif
 void show_mmc_patition (struct partitions *part, int part_num)
 {
     int i, cnt_stuff;
@@ -170,9 +175,9 @@ int overide_emmc_partition_table(void)
 {
     int i, ret = 0;
 
-	for (i = 0; i < ARRAY_SIZE(emmc_partition_table); i++) {
+	for (i = 0; i < get_emmc_partition_arraysize(); i++) {
 		if (0 == set_partition_info(part_table, MAX_MMC_PART_NUM,
-            emmc_partition_table, ARRAY_SIZE(emmc_partition_table),
+			emmc_partition_table, get_emmc_partition_arraysize(),
             emmc_partition_table[i].name)) {
             printf("%s: overide %s \n", __func__, emmc_partition_table[i].name);
         }
@@ -186,7 +191,7 @@ int is_in_emmc_partition_tbl(char * name)
     int ret = 1;
     struct partitions *part=NULL;
 
-    part = find_partition_by_name(emmc_partition_table, ARRAY_SIZE(emmc_partition_table), name);
+    part = find_partition_by_name(emmc_partition_table, get_emmc_partition_arraysize(), name);
     if (!part)
         ret = 0;
 
@@ -214,7 +219,7 @@ int mmc_get_partition_table (struct mmc *mmc)
 	overide_emmc_partition_table();
 
 	/* set inherent partitions info*/
-	for (i=0; i < ARRAY_SIZE(emmc_partition_table); i++) {
+	for (i=0; i < get_emmc_partition_arraysize(); i++) {
 		strncpy(part_ptr[part_num].name, emmc_partition_table[i].name, MAX_MMC_PART_NAME_LEN);
 		part_ptr[part_num].size = emmc_partition_table[i].size;
 		part_ptr[part_num].mask_flags= emmc_partition_table[i].mask_flags;
@@ -259,6 +264,8 @@ int mmc_get_partition_table (struct mmc *mmc)
 
 		if ((part_table[i].size == -1) || ((part_ptr[part_num].offset + part_ptr[part_num].size) > mmc->capacity)) {
             part_ptr[part_num].size = mmc->capacity - part_ptr[part_num].offset;
+            part_ptr[part_num].size = (part_ptr[part_num].size > MMC_BOTTOM_RSV_SIZE) ?
+                (part_ptr[part_num].size - MMC_BOTTOM_RSV_SIZE):part_ptr[part_num].size;
             //printf("mmc->capacity=%llx, mmc_device->size=%llx\n", mmc->capacity, part_ptr[part_num].size);
 			break;
         }

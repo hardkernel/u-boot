@@ -26,6 +26,7 @@
 #define     MAX_MMC_PART_NUM                32
 #define     MAX_MMC_PART_NAME_LEN           16
 
+#ifndef CONFIG_AML_MMC_INHERENT_PART
 #define     PARTITION_RESERVED              (8*SZ_1M)  // 8MB
 #define     MMC_BOOT_PARTITION_RESERVED     (32*SZ_1M) // 32MB
 
@@ -34,6 +35,8 @@
 
 #define     MMC_RESERVED_NAME               "reserved"
 #define     MMC_RESERVED_SIZE               (64*SZ_1M)
+#define		MMC_BOTTOM_RSV_SIZE				(0)
+#endif		/* CONFIG_AML_MMC_INHERENT_PART */
 
 #define     MMC_CACHE_NAME                  "cache"
 // #define     MMC_CACHE_SIZE                  (512*SZ_1M) // this is not used and should be get from spl
@@ -92,10 +95,13 @@ struct _mmc_device{
 */
 
 extern bool is_partition_checked;
-
+extern struct partitions emmc_partition_table[];
+extern int get_emmc_partition_arraysize(void);
 struct partitions* find_mmc_partition_by_name (char *name);
 bool aml_is_emmc_tsd (struct mmc *mmc);
 int mmc_device_init (struct mmc *mmc);
+
+#define PARTITION_ELEMENT(na, sz, flags) {.name = na, .size = sz, .mask_flags = flags,}
 
 #endif
 
