@@ -2,7 +2,9 @@
 #include "config.h"
 #include "registers.h"
 #include "task_apis.h"
-
+#ifndef CONFIG_IR_REMOTE_USE_PROTOCOL
+#define CONFIG_IR_REMOTE_USE_PROTOCOL 0
+#endif
 enum {
 	DECODEMODE_NEC = 0,
 	DECODEMODE_DUOKAN = 1,
@@ -142,6 +144,58 @@ static const reg_remote RDECODEMODE_RCA[] = {
 	{CONFIG_END, 0}
 };
 
+#if 1
+static const reg_remote RDECODEMODE_RCMM[] = {
+	/*used old decode  for NEC*/
+	{AO_IR_DEC_LDR_ACTIVE, ((unsigned)500<<16) | ((unsigned)400<<0)},
+	{AO_IR_DEC_LDR_IDLE, 300<<16 | 200<<0},/*leader idle*/
+	{AO_IR_DEC_LDR_REPEAT, 150<<16|80<<0}, /*leader repeat*/
+	{AO_IR_DEC_BIT_0, 72<<16|40<<0 },/*logic '0' or '00'*/
+	{AO_IR_DEC_REG0, 3<<28|(0xFA0<<12)|0x13},/*20us body 108ms*/
+	{AO_IR_DEC_STATUS, (134<<20)|(90<<10)},/*logic'1'or'01'*/
+	{AO_IR_DEC_REG1, 0xbe10},/*boby long decode (9-13)*/
+	// used new decode
+	{AO_MF_IR_DEC_LDR_ACTIVE,((unsigned)35<<16) | ((unsigned)17<<0)},//leader active
+	{AO_MF_IR_DEC_LDR_IDLE, 17<<16 | 8<<0},// leader idle
+	{AO_MF_IR_DEC_LDR_REPEAT,31<<16 | 11<<0}, // leader repeat
+	{AO_MF_IR_DEC_BIT_0,25<<16|21<<0 },// logic '0' or '00' 1200us
+	{AO_MF_IR_DEC_REG0,3<<28|(590<<12)|0x13},  // sys clock boby time.base time = 20 body frame
+	{AO_MF_IR_DEC_STATUS,(36<<20)|(29<<10)}, // logic '1' or '01'     2400us
+	{AO_MF_IR_DEC_REG1,0x9f00},// boby long decode (8-13) //framn len = 24bit //backup
+	{AO_MF_IR_DEC_REG2,0x1150a},//back up
+	{AO_MF_IR_DEC_DURATN2,43<<16 | 37<<0},
+	{AO_MF_IR_DEC_DURATN3,50<<16 | 44<<0},
+	{AO_MF_IR_DEC_REG3,1200<<0},
+	{CONFIG_END,            0      }
+};
+#else
+static const reg_remote RDECODEMODE_RCMM[] = {
+	/*// used old decode
+	{LDR_ACTIVE-0x40,((unsigned)477<<16) | ((unsigned)400<<0)},// NEC leader 9500us,max 477: (477* timebase = 20) = 9540 ;min 400 = 8000us
+	{LDR_IDLE-0x40, 248<<16 | 202<<0},// leader idle
+	{LDR_REPEAT-0x40,130<<16|110<<0}, // leader repeat
+	{DURATION_REG0-0x40,60<<16|48<<0 },// logic '0' or '00'
+	{OPERATION_CTRL_REG0-0x40,3<<28|(0xFA0<<12)|0x13},  // sys clock boby time.base time = 20 body frame 108ms
+	{DURATION_REG1_AND_STATUS-0x40,(111<<20)|(100<<10)}, // logic '1' or '01'
+	{OPERATION_CTRL_REG1-0x40,0xbe00},// boby long decode (9-13)*/
+	// used new decode
+	{AO_MF_IR_DEC_LDR_ACTIVE,((unsigned)35<<16) | ((unsigned)17<<0)},//leader active
+	{AO_MF_IR_DEC_LDR_IDLE, 17<<16 | 8<<0},// leader idle
+	{AO_MF_IR_DEC_LDR_REPEAT,31<<16 | 11<<0}, // leader repeat
+	{AO_MF_IR_DEC_BIT_0,25<<16|21<<0 },// logic '0' or '00' 1200us
+	{AO_MF_IR_DEC_REG0,3<<28|(590<<12)|0x13},  // sys clock boby time.base time = 20 body frame
+	{AO_MF_IR_DEC_STATUS,(33<<20)|(29<<10)}, // logic '1' or '01'     2400us
+	{AO_MF_IR_DEC_REG1,0x9f48},// boby long decode (8-13) //framn len = 24bit
+	//{AO_MF_IR_DEC_REG1,0x9f00},// boby long decode (8-13) //framn len = 24bit //backup
+	{AO_MF_IR_DEC_REG2,0x102},
+	//{AO_MF_IR_DEC_REG2,0x1150a},//back up
+	{AO_MF_IR_DEC_DURATN2,41<<16 | 36<<0},
+	{AO_MF_IR_DEC_DURATN3,50<<16 | 44<<0},
+	{AO_MF_IR_DEC_REG3,1200<<0},
+	{CONFIG_END,            0      }
+};
+#endif
+
 #endif
 
 static const reg_remote *remoteregsTab[] = {
@@ -149,6 +203,7 @@ static const reg_remote *remoteregsTab[] = {
 	RDECODEMODE_DUOKAN,
 	RDECODEMODE_TOSHIBA,
 	RDECODEMODE_RCA,
+	RDECODEMODE_RCMM,
 };
 
 void setremotereg(const reg_remote * r)
@@ -210,7 +265,7 @@ static int ir_remote_init_32k_mode(void)
 	//volatile unsigned int status,data_value;
 	int val = readl(AO_RTI_PIN_MUX_REG);
 	writel((val | (1 << 0)), AO_RTI_PIN_MUX_REG);
-	set_remote_mode(0);
+	set_remote_mode(CONFIG_IR_REMOTE_USE_PROTOCOL);
 	//status = readl(AO_MF_IR_DEC_STATUS);
 	tmp = readl(AO_MF_IR_DEC_STATUS);
 	//data_value = readl(AO_MF_IR_DEC_FRAME);
@@ -247,11 +302,16 @@ static int remote_detect_key(void)
 {
 	unsigned power_key;
 	int j;
-#if 0
+
+#ifdef CONFIG_COMPAT_IR
+
 	if (((readl(AO_IR_DEC_STATUS)) >> 3) & 0x1) {
 		power_key = readl(AO_IR_DEC_FRAME);
-		if ((power_key & IR_POWER_KEY_MASK) == kk[j])
-			return 1;
+		for (j = 0; j < CONFIG_IR_REMOTE_POWER_UP_KEY_CNT; j++) {
+		if ((power_key & IR_POWER_KEY_MASK) == kk[j]) {
+				return 1;
+			}
+		}
 
 	}
 #endif

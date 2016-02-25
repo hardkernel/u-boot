@@ -3,6 +3,10 @@
 #include "registers.h"
 #include "task_apis.h"
 
+#ifndef CONFIG_IR_REMOTE_USE_PROTOCOL
+#define CONFIG_IR_REMOTE_USE_PROTOCOL 0
+#endif
+
 enum{
 	DECODEMODE_NEC = 0,
 	DECODEMODE_DUOKAN = 1,
@@ -190,6 +194,30 @@ static const reg_remote RDECODEMODE_NEC_RCA_2IN1[] = {
 	{CONFIG_END, 0}
 };
 
+static const reg_remote RDECODEMODE_RCMM[] = {
+	/*used old decode  for NEC*/
+	{AO_IR_DEC_LDR_ACTIVE, ((unsigned)500<<16) | ((unsigned)400<<0)},
+	{AO_IR_DEC_LDR_IDLE, 300<<16 | 200<<0},/*leader idle*/
+	{AO_IR_DEC_LDR_REPEAT, 150<<16|80<<0}, /*leader repeat*/
+	{AO_IR_DEC_BIT_0, 72<<16|40<<0 },/*logic '0' or '00'*/
+	{AO_IR_DEC_REG0, 3<<28|(0xFA0<<12)|0x13},/*20us body 108ms*/
+	{AO_IR_DEC_STATUS, (134<<20)|(90<<10)},/*logic'1'or'01'*/
+	{AO_IR_DEC_REG1, 0xbe10},/*boby long decode (9-13)*/
+	// used new decode
+	{AO_MF_IR_DEC_LDR_ACTIVE,((unsigned)35<<16) | ((unsigned)17<<0)},//leader active
+	{AO_MF_IR_DEC_LDR_IDLE, 17<<16 | 8<<0},// leader idle
+	{AO_MF_IR_DEC_LDR_REPEAT,31<<16 | 11<<0}, // leader repeat
+	{AO_MF_IR_DEC_BIT_0,25<<16|21<<0 },// logic '0' or '00' 1200us
+	{AO_MF_IR_DEC_REG0,3<<28|(590<<12)|0x13},  // sys clock boby time.base time = 20 body frame
+	{AO_MF_IR_DEC_STATUS,(36<<20)|(29<<10)}, // logic '1' or '01'     2400us
+	{AO_MF_IR_DEC_REG1,0x9f00},// boby long decode (8-13) //framn len = 24bit //backup
+	{AO_MF_IR_DEC_REG2,0x1150a},//back up
+	{AO_MF_IR_DEC_DURATN2,43<<16 | 37<<0},
+	{AO_MF_IR_DEC_DURATN3,50<<16 | 44<<0},
+	{AO_MF_IR_DEC_REG3,1200<<0},
+	{CONFIG_END,            0      }
+};
+
 #endif
 
 static const reg_remote *remoteregsTab[] = {
@@ -199,6 +227,7 @@ static const reg_remote *remoteregsTab[] = {
 	RDECODEMODE_RCA,
 	RDECODEMODE_NEC_TOSHIBA_2IN1,
 	RDECODEMODE_NEC_RCA_2IN1,
+	RDECODEMODE_RCMM,
 };
 
 void setremotereg(const reg_remote * r)
