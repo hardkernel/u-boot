@@ -196,10 +196,29 @@ enum hdmi_audio_packet {
  */
 #define GET_TIMING(name) (t->name)
 
+struct parse_cd {
+	enum hdmi_color_depth cd;
+	const char *name;
+};
+
+struct parse_cs {
+	enum hdmi_color_format cs;
+	const char *name;
+};
+
+struct parse_cr {
+	enum hdmi_color_format cr;
+	const char *name;
+};
+
 struct hdmi_format_para {
 	enum hdmi_vic vic;
 	char *name; /* full name, 1280x720p60hz */
 	char *sname; /* short name, 1280x720p60hz -> 720p60hz */
+	char ext_name[32];
+	enum hdmi_color_depth cd; /* cd8, cd10 or cd12 */
+	enum hdmi_color_format cs; /* rgb, y444, y422, y420 */
+	enum hdmi_color_range cr; /* limit, full */
 	unsigned int pixel_repetition_factor;
 	unsigned int progress_mode:1; /* 0: Interlace  1: Progressive */
 	unsigned int scrambler_en:1;
@@ -226,6 +245,7 @@ struct hdmitx_dev {
 		void (*test_bist)(unsigned int mode);
 		void (*output_blank)(unsigned int blank);
 	} HWOp;
+	struct hdmi_format_para *para;
 	enum hdmi_vic vic;
 	unsigned int mode420;
 	unsigned int dc30;

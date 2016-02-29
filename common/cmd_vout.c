@@ -69,6 +69,7 @@ static int do_vout_list(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv
 
 static int do_vout_output(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 {
+	char mode[64];
 #ifdef CONFIG_AML_LCD
 	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
 #endif
@@ -82,7 +83,13 @@ static int do_vout_output(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv
 #endif
 
 #ifdef CONFIG_AML_HDMITX20
+	memset(mode, 0, sizeof(mode));
+	sprintf(mode, "hdmitx output %s", argv[1]);
+	run_command(mode, 0);
+	return CMD_RET_SUCCESS;
+#if 0
 	hdmitx_device.vic = hdmi_get_fmt_vic(argv[1]);
+	hdmitx_device.para = hdmi_get_fmt_paras(hdmitx_device.vic);
 	if (hdmitx_device.vic == HDMI_unkown) {
 		/* Not find VIC */
 		printf("Not find '%s' mapped VIC\n", argv[1]);
@@ -90,13 +97,12 @@ static int do_vout_output(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv
 		printf("set hdmitx VIC = %d\n", hdmitx_device.vic);
 
 		if (strstr(argv[1], "hz420") != NULL)
-			hdmitx_device.mode420 = 1;
-		else
-			hdmitx_device.mode420 = 0;
+			hdmitx_device.para->cs = HDMI_COLOR_FORMAT_420;
 		hdmi_tx_set(&hdmitx_device);
 
 		return CMD_RET_SUCCESS;
 	}
+#endif
 #endif
 
 #ifdef CONFIG_AML_LCD

@@ -752,6 +752,61 @@ struct hdmi_format_para *hdmi_get_fmt_paras(enum hdmi_vic vic)
 	return NULL;
 }
 
+static struct parse_cd parse_cd_[] = {
+	{HDMI_COLOR_DEPTH_24B, "8bit",},
+	{HDMI_COLOR_DEPTH_30B, "10bit"},
+	{HDMI_COLOR_DEPTH_36B, "12bit"},
+	{HDMI_COLOR_DEPTH_48B, "16bit"},
+};
+
+static struct parse_cs parse_cs_[] = {
+	{HDMI_COLOR_FORMAT_RGB, "rgb",},
+	{HDMI_COLOR_FORMAT_444, "444",},
+	{HDMI_COLOR_FORMAT_422, "422",},
+	{HDMI_COLOR_FORMAT_420, "420",},
+};
+
+static struct parse_cr parse_cr_[] = {
+	{HDMI_COLOR_RANGE_LIM, "limit",},
+	{HDMI_COLOR_RANGE_FUL, "full",},
+};
+
+/* parse the string from "dhmitx output FORMAT" */
+static void hdmi_parse_attr(struct hdmi_format_para *para, char const *name)
+{
+	int i;
+
+	/* parse color depth */
+	for (i = 0; i < ARRAY_SIZE(parse_cd_); i++) {
+		if (strstr(name, parse_cd_[i].name)) {
+			para->cd = parse_cd_[i].cd;
+			break;
+		}
+	}
+	if (i == ARRAY_SIZE(parse_cd_)) /* set default value */
+		para->cd = HDMI_COLOR_DEPTH_24B;
+
+	/* parse color space */
+	for (i = 0; i < ARRAY_SIZE(parse_cs_); i++) {
+		if (strstr(name, parse_cs_[i].name)) {
+			para->cs = parse_cs_[i].cs;
+			break;
+		}
+	}
+	if (i == ARRAY_SIZE(parse_cs_)) /* set default value */
+		para->cs = HDMI_COLOR_FORMAT_444;
+
+	/* parse color range */
+	for (i = 0; i < ARRAY_SIZE(parse_cr_); i++) {
+		if (strstr(name, parse_cr_[i].name)) {
+			para->cr = parse_cr_[i].cr;
+			break;
+		}
+	}
+	if (i == ARRAY_SIZE(parse_cr_)) /* set default value */
+		para->cr = HDMI_COLOR_RANGE_FUL;
+}
+
 /*
  * Paramter 'name' can be 1080p60hz, or 1920x1080p60hz
  * or 3840x2160p60hz, 2160p60hz
@@ -761,14 +816,26 @@ enum hdmi_vic hdmi_get_fmt_vic(char const *name)
 {
 	int i;
 	char *lname;
+	enum hdmi_vic vic = HDMI_unkown;
+	struct hdmi_format_para *para;
 
 	for (i = 0; i < ARRAY_SIZE(all_fmt_paras); i++) {
 		lname = all_fmt_paras[i]->name;
-		if (strncmp(lname, name, strlen(lname)) == 0)
-			return all_fmt_paras[i]->vic;
+		if (strncmp(lname, name, strlen(lname)) == 0) {
+			vic = all_fmt_paras[i]->vic;
+			break;
+		}
 		lname = all_fmt_paras[i]->sname;
-		if (strncmp(lname, name, strlen(lname)) == 0)
-			return all_fmt_paras[i]->vic;
+		if (strncmp(lname, name, strlen(lname)) == 0) {
+			vic = all_fmt_paras[i]->vic;
+			break;
+		}
 	}
-	return HDMI_unkown;
+	if ((vic != HDMI_unkown) && (i != ARRAY_SIZE(all_fmt_paras))) {
+		para = all_fmt_paras[i];
+		memset(&para->ext_name[0], 0, sizeof(para->ext_name));
+		memcpy(&para->ext_name[0], name, strlen(name));
+		hdmi_parse_attr(para, name);
+	}
+	return vic;
 }
