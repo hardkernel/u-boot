@@ -128,6 +128,9 @@ obj-$(CONFIG_CMD_CRAMFS) += cmd_cramfs.o
 obj-$(CONFIG_CMD_LDRINFO) += cmd_ldrinfo.o
 obj-$(CONFIG_CMD_LED) += cmd_led.o
 obj-$(CONFIG_CMD_LICENSE) += cmd_license.o
+ifdef CONFIG_BOOTLOADER_CONTROL_BLOCK
+obj-y += cmd_bcb.o
+endif
 obj-y += cmd_load.o
 obj-$(CONFIG_LOGBUFFER) += cmd_log.o
 obj-$(CONFIG_ID_EEPROM) += cmd_mac.o
