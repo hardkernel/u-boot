@@ -606,7 +606,7 @@ static int lcd_mode_probe(void)
 		break;
 	}
 #ifdef CONFIG_AML_LCD_EXTERN
-	lcd_extern_load_config(dt_addr, aml_lcd_driver->lcd_config);
+	lcd_extern_load_config(dt_addr, aml_lcd_driver.lcd_config);
 #endif
 
 	/* load bl config */
