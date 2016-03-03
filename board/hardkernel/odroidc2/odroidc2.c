@@ -381,6 +381,10 @@ void board_get_mmc_size(void)
 	if (card_size < 128) 	str[2] = '\0';
 
 	setenv("mmc_size", str);
+
+	printf("----------------------------------\n");
+	printf("MMC Size : %d GB\n", card_size);
+	printf("----------------------------------\n");
 }
 
 #ifdef CONFIG_BOARD_LATE_INIT
