@@ -974,7 +974,7 @@ static void enc_vpu_bridge_reset(int mode)
 {
     unsigned int wr_clk = 0;
 
-    printk("%s[%d]\n", __func__, __LINE__);
+    // printk("%s[%d]\n", __func__, __LINE__);
     wr_clk = (hd_read_reg(P_VPU_HDMI_SETTING) & 0xf00) >> 8;
     if (mode) {
         hd_write_reg(P_ENCP_VIDEO_EN, 0);

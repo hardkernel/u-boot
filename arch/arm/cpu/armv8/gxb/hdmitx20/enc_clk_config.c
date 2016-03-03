@@ -68,7 +68,7 @@ static void set_hdmitx_sys_clk(void)
 static void set_hpll_clk_out(unsigned clk)
 {
 	check_clk_config(clk);
-	printk("config HPLL = %d\n", clk);
+	// printk("config HPLL = %d\n", clk);
 	switch (clk) {
 	case 5940:
 		hd_write_reg(P_HHI_HDMI_PLL_CNTL, 0x5800027b);
@@ -79,7 +79,7 @@ static void set_hpll_clk_out(unsigned clk)
 		hd_write_reg(P_HHI_HDMI_PLL_CNTL6, 0x00000e55);
 		hd_set_reg_bits(P_HHI_HDMI_PLL_CNTL, 0x4, 28, 3);
 		WAIT_FOR_PLL_LOCKED(P_HHI_HDMI_PLL_CNTL);
-		printk("HPLL: 0x%lx\n", hd_read_reg(P_HHI_HDMI_PLL_CNTL));
+		// printk("HPLL: 0x%lx\n", hd_read_reg(P_HHI_HDMI_PLL_CNTL));
 		hd_set_reg_bits(P_HHI_HDMI_PLL_CNTL2, 0x4c00, 0, 16); // div_frac
 		break;
 	case 2970:
@@ -91,7 +91,7 @@ static void set_hpll_clk_out(unsigned clk)
 		hd_write_reg(P_HHI_HDMI_PLL_CNTL6, 0x00000e55);
 		hd_set_reg_bits(P_HHI_HDMI_PLL_CNTL, 0x4, 28, 3);
 		WAIT_FOR_PLL_LOCKED(P_HHI_HDMI_PLL_CNTL);
-		printk("HPLL: 0x%lx\n", hd_read_reg(P_HHI_HDMI_PLL_CNTL));
+		// printk("HPLL: 0x%lx\n", hd_read_reg(P_HHI_HDMI_PLL_CNTL));
 		hd_set_reg_bits(P_HHI_HDMI_PLL_CNTL2, 0x4e00, 0, 16); // div_frac
 		break;
     case 4320:
@@ -104,7 +104,7 @@ static void set_hpll_clk_out(unsigned clk)
 	hd_set_reg_bits(P_HHI_HDMI_PLL_CNTL, 0x4, 28, 3);
 	WAIT_FOR_PLL_LOCKED(P_HHI_HDMI_PLL_CNTL);
 	hd_write_reg(P_HHI_HDMI_PLL_CNTL, 0x4800025a);
-	printk("HPLL: 0x%lx\n", hd_read_reg(P_HHI_HDMI_PLL_CNTL));
+	// printk("HPLL: 0x%lx\n", hd_read_reg(P_HHI_HDMI_PLL_CNTL));
         break;
     case 2448:
         hd_set_reg_bits(P_HHI_HDMI_PLL_CNTL2, 1, 14, 1); // div mode
@@ -116,7 +116,7 @@ static void set_hpll_clk_out(unsigned clk)
         hd_write_reg(P_HHI_HDMI_PLL_CNTL, 0x00000266);
         hd_set_reg_bits(P_HHI_HDMI_PLL_CNTL, 0x5, 28, 3);  //reset hpll
         hd_set_reg_bits(P_HHI_HDMI_PLL_CNTL, 0x4, 28, 3);
-        printk("waiting HPLL lock\n");
+        // printk("waiting HPLL lock\n");
         WAIT_FOR_PLL_LOCKED(P_HHI_HDMI_PLL_CNTL);
         break;
     case 1080:
@@ -137,7 +137,7 @@ static void set_hpll_clk_out(unsigned clk)
         printk("error hpll clk: %d\n", clk);
         break;
     }
-    printk("config HPLL done\n");
+    // printk("config HPLL done\n");
 }
 
 static void set_hpll_od1(unsigned div)
@@ -213,7 +213,7 @@ static void set_hpll_od3_clk_div(int div_sel)
     int shift_val = 0;
     int shift_sel = 0;
 
-    printk("%s[%d] div = %d\n", __func__, __LINE__, div_sel);
+    // printk("%s[%d] div = %d\n", __func__, __LINE__, div_sel);
     // Disable the output clock
     hd_set_reg_bits(P_HHI_VID_PLL_CLK_DIV, 0, 19, 1);
     hd_set_reg_bits(P_HHI_VID_PLL_CLK_DIV, 0, 15, 1);
@@ -332,7 +332,7 @@ void set_hdmitx_clk(enum hdmi_vic vic)
     set_hpll_od2(p_enc[j].od2);
     set_hpll_od3(p_enc[j].od3);
     set_hpll_od3_clk_div(p_enc[j].vid_pll_div);
-	printk("j = %d  vid_clk_div = %d\n", j, p_enc[j].vid_clk_div);
+	// printk("j = %d  vid_clk_div = %d\n", j, p_enc[j].vid_clk_div);
     set_vid_clk_div(p_enc[j].vid_clk_div);
     set_hdmi_tx_pixel_div(p_enc[j].hdmi_tx_pixel_div);
     set_encp_div(p_enc[j].encp_div);

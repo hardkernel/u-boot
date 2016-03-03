@@ -576,7 +576,7 @@ void set_vmode_enc_hw(enum hdmi_vic vic)
 	const struct reg_t *s = tvregs_setting_mode(vic);
 
 	if (s) {
-		pr_info("hdmitx: set enc for VIC: %d\n", vic);
+		// pr_info("hdmitx: set enc for VIC: %d\n", vic);
 		while (MREG_END_MARKER != s->reg)
 			setreg(s++);
 	} else
