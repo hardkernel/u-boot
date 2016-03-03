@@ -48,6 +48,8 @@
 #define SEC_TASK_GET_WAKEUP_SRC	0x6
 
 #define LOW_TASK_USR_DATA  0x100
+#define LOW_TASK_USR_LED_TIMER 0x110
+
 	/*bl301 resume to BL30*/
 #define RESPONSE_OK					0x0
 #define RESPONSE_SUSPEND_LEAVE			0x1

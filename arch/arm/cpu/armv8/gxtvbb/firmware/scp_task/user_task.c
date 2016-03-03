@@ -6,6 +6,7 @@
 #define TASK_ID_LOW_MB	2
 #define TASK_ID_HIGH_MB	3
 #define TASK_ID_SECURE_MB  4
+#define TASK_ID_LOW_TIMER  9
 
 enum scpi_client_id {
 	SCPI_CL_NONE,
@@ -14,6 +15,7 @@ enum scpi_client_id {
 	SCPI_CL_POWER,
 	SCPI_CL_THERMAL,
 	SCPI_CL_REMOTE,
+	SCPI_CL_LED_TIMER,
 	SCPI_MAX,
 };
 
@@ -36,6 +38,14 @@ void __switch_back_lowmb(void)
 {
 	register int p0 asm("r0") = 2;
 	register int p1 asm("r1") = TASK_ID_LOW_MB;
+
+	asm("svc 0" :  : "r"(p0), "r"(p1));
+}
+
+void __switch_back_low_timer(void)
+{
+	register int p0 asm("r0") = 2;
+	register int p1 asm("r1") = TASK_ID_LOW_TIMER;
 
 	asm("svc 0" :  : "r"(p0), "r"(p1));
 }
@@ -121,6 +131,12 @@ void high_task(void)
 }
 
 unsigned int test_usr_pwr_key=0;
+static struct scp_led *g_led = 0;
+void scp_led_register(struct scp_led *led)
+{
+	g_led = led;
+}
+
 void process_low_task(unsigned command)
 {
 	unsigned *pcommand =
@@ -140,6 +156,20 @@ void process_low_task(unsigned command)
 			test_usr_pwr_key = *(pcommand + 2);
 			dbg_print("test_usr_pwr_key=",test_usr_pwr_key);
 		}
+		else if ((command >> 16) == SCPI_CL_LED_TIMER) {
+			para1 = *(pcommand + 4); /*size locates at *(pcommand + 1), para2 is ledmode*/
+			if (g_led && g_led->init) {
+				g_led->init(para1);
+				g_led->count = 0;
+			}
+			dbg_print("LED timer. ledmode=0x", para1);
+		}
+	}
+	else if(command == LOW_TASK_USR_LED_TIMER) {
+		/*You can add your led op here.*/
+		if (g_led && g_led->timer_proc)
+			g_led->timer_proc(g_led->count++);
+		dbg_prints("LED timer...\n");
 	}
 }
 
@@ -157,6 +187,7 @@ void low_task(void)
 	while (1) {
 		/* do low task process */
 		command = *pcommand;
+		dbg_print("low task comd=0x",command);
 		if (command) {
 			process_low_task(command);
 

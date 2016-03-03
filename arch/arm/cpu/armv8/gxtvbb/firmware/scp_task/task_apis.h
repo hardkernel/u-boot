@@ -33,4 +33,12 @@ unsigned int get_time(void);
 void set_wakeup_method(unsigned int method);
 void suspend_pwr_ops_init(void);
 void suspend_get_wakeup_source(void *reponse, unsigned int suspend_from);
+
+struct scp_led {
+	int count;
+	void (*init)(int mode);
+	void (*timer_proc)(int count);
+};
+void scp_led_register(struct scp_led *led);
+
 #endif

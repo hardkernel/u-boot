@@ -19,6 +19,10 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
+#ifdef CONFIG_AML_LED
+#include <aml_led.c>
+#include <aml_led_pwm.c>
+#endif
 #include <config.h>
 #define ON 1
 #define OFF 0
@@ -292,6 +296,28 @@ static void get_wakeup_source(void *response, unsigned int suspend_from)
 #endif
 
 }
+static unsigned int ao_timer_ctrl;
+static unsigned int ao_timera;
+static void reset_ao_timera(void)
+{
+	unsigned int val;
+	ao_timer_ctrl = readl(AO_TIMER_REG);
+	ao_timera = readl(AO_TIMERA_REG);
+/* set ao timera work mode and interrrupt time
+ * 100us resolution
+ */
+	val = (1 << 2) | (3 << 0) | (1 << 3);
+	writel(val, AO_TIMER_REG);
+
+/* 	periodic time 10m
+ */
+	writel(100,AO_TIMERA_REG);
+}
+static void restore_ao_timer(void)
+{
+	writel(ao_timer_ctrl,AO_TIMER_REG);
+	writel(ao_timera,AO_TIMERA_REG);
+}
 
 static unsigned int detect_key(unsigned int suspend_from)
 {
@@ -302,6 +328,7 @@ static unsigned int detect_key(unsigned int suspend_from)
 	/* unsigned *wakeup_en = (unsigned *)SECURE_TASK_RESPONSE_WAKEUP_EN; */
 	uart_puts("enter detect key\n");
 	_udelay(10000);
+	reset_ao_timera();
 	/* setup wakeup resources */
 	/*auto suspend: timerA 10ms resolution */
 	if (time_out_ms != 0) {
@@ -318,6 +345,9 @@ static unsigned int detect_key(unsigned int suspend_from)
 		}
 	}
 	init_remote();
+#ifdef CONFIG_AML_LED
+	pled_suspend_init();
+#endif
 #ifdef CONFIG_CEC_WAKEUP
 	if (hdmi_cec_func_config & 0x1) {
 		remote_cec_hw_reset();
@@ -353,7 +383,11 @@ static unsigned int detect_key(unsigned int suspend_from)
 				exit_reason = AUTO_WAKEUP;
 			}
 			break;
-
+		case IRQ_AO_TIMERA_NUM:
+#ifdef CONFIG_AML_LED
+			pled_suspend_timer_proc();
+#endif
+			break;
 		case IRQ_AO_IR_DEC_NUM:
 			if (remote_detect_key())
 				exit_reason = REMOTE_WAKEUP;
@@ -390,7 +424,7 @@ static unsigned int detect_key(unsigned int suspend_from)
 		else
 			asm volatile ("wfi");
 	} while (1);
-
+	restore_ao_timer();
 	return exit_reason;
 }
 
@@ -405,4 +439,7 @@ static void pwr_op_init(struct pwr_op *pwr_op)
 
 	pwr_op->detect_key = detect_key;
 	pwr_op->get_wakeup_source = get_wakeup_source;
+#ifdef CONFIG_AML_LED
+	scp_led_register(&pwm_scp_led);
+#endif
 }

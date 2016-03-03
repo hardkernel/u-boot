@@ -45,7 +45,10 @@
 #ifdef CONFIG_AML_LCD
 #include <amlogic/aml_lcd.h>
 #endif
-
+#ifdef CONFIG_AML_LED
+#include <asm/arch/mailbox.h>
+#include <amlogic/aml_led.h>
+#endif
 DECLARE_GLOBAL_DATA_PTR;
 
 //new static eth setup
@@ -551,6 +554,93 @@ static void hdmi_tx_set_hdmi_5v(void)
 }
 #endif
 
+#ifdef CONFIG_AML_LED
+static enum led_workmode lwm_get_workmode(char *str)
+{
+	if (!str)
+		return LWM_NULL;
+	else if (!strncmp(str, "off", 3))
+		return LWM_OFF;
+	else if (!strncmp(str, "on", 2))
+		return LWM_ON;
+	else if (!strncmp(str, "flash", 5))
+		return LWM_FLASH;
+	else if (!strncmp(str, "breath", 6))
+		return LWM_BREATH;
+	else
+		return LWM_NULL;
+}
+
+/* options example:
+ * ledmode=standby:on,booting:flash,working:breath
+ */
+static unsigned int lwm_parse_workmode(char *options)
+{
+	char *option;
+	enum led_workmode mode;
+	unsigned int ledmode = 0;
+
+	while ((option = strsep(&options, ",")) != NULL) {
+		if (!strncmp(option, "standby:", 8)) {
+			option += 8;
+			mode = lwm_get_workmode(option);
+			lwm_set_standby(ledmode, mode);
+		}
+
+		if (!strncmp(option, "booting:", 8)) {
+			option += 8;
+			mode = lwm_get_workmode(option);
+			lwm_set_booting(ledmode, mode);
+		}
+
+		if (!strncmp(option, "working:", 8)) {
+			option += 8;
+			mode = lwm_get_workmode(option);
+			lwm_set_working(ledmode, mode);
+		}
+	}
+
+	return ledmode;
+}
+
+/*Need add build config here.*/
+static int send_led_timer_data(void)
+{
+	struct led_timer_strc{
+		unsigned int expires;
+		unsigned int expires_count;
+		unsigned int led_mode;
+	} led_val;
+	char *env, env_buf[64];
+
+	env = getenv("jtag");
+	if (strcmp(env, "disable")) {
+		printf("mux to jtag %s, led unavailable\n", env);
+		return -1;
+	}
+	env = getenv("ledmode");
+	if (!env)
+		return -1;
+	strcpy(env_buf, env);
+	env = env_buf;
+	printf("ledmode=%s\n", env);
+	led_val.led_mode = lwm_parse_workmode(env);
+	lwm_set_suspend(led_val.led_mode, SHUTDOWN_MODE);
+	printf("ledmode=0x%x\n", led_val.led_mode);
+	led_val.expires = 350*1000;
+	if (lwm_get_booting(led_val.led_mode) == LWM_ON)
+		led_val.expires_count = 8; //off-on-off-on-off-on-off-on...
+	else
+		led_val.expires_count = 7; //off-on-off-on-off-on-off...
+
+	if (send_usr_data(SCPI_CL_LED_TIMER,(unsigned int *)&led_val,sizeof(led_val))) {
+		printf("send_led_timer_data send error!...\n");
+		return 0;
+	}
+	return 0;
+}
+#endif
+
 int board_init(void)
 {
 #ifdef CONFIG_AML_V2_FACTORY_BURN
@@ -617,7 +707,9 @@ int board_late_init(void){
 #ifdef CONFIG_AML_V2_FACTORY_BURN
 	aml_try_factory_sdcard_burning(0, gd->bd);
 #endif// #ifdef CONFIG_AML_V2_FACTORY_BURN
-
+#ifdef CONFIG_AML_LED
+	send_led_timer_data();
+#endif
 	return 0;
 }
 #endif

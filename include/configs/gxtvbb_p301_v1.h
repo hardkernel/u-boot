@@ -65,6 +65,12 @@
 #define CONFIG_IR_REMOTE_POWER_UP_KEY_VAL8 0xf30c0e0e  //skyworth
 #define CONFIG_IR_REMOTE_POWER_UP_KEY_VAL9 0xFFFFFFFF
 
+#define CONFIG_AML_LED
+//#define CONFIG_LED_PWM_INVERT
+#define CONFIG_CMD_LED
+#define CONFIG_STATUS_LED
+#define CONFIG_BOARD_SPECIFIC_LED
+
 /* args/envs */
 #define CONFIG_SYS_MAXARGS  64
 #define CONFIG_EXTRA_ENV_SETTINGS \
@@ -96,6 +102,7 @@
 	"wipe_data=successful\0"\
 	"wipe_cache=successful\0"\
 	"jtag=apao\0"\
+	"ledmode=standby:breath,booting:on,working:on\0"\
 	"upgrade_check="\
 		"echo upgrade_step=${upgrade_step}; "\
 		"if itest ${upgrade_step} == 3; then "\
@@ -113,6 +120,7 @@
 		"osd_reverse=${osd_reverse} video_reverse=${video_reverse} "\
 		"bl_off=${bl_off} "\
 		"jtag=${jtag} "\
+		"ledmode=${ledmode} "\
 		"ramoops.pstore_en=1 ramoops.record_size=0x8000 ramoops.console_size=0x4000 "\
 		"androidboot.firstboot=${firstboot}; "\
 		"setenv bootargs ${bootargs} androidboot.hardware=amlogic;"\
@@ -164,6 +172,7 @@
 		last udisk autoscr/recovery*/\
 		"run usb_burning; "\
 		"run sdc_burning; "\
+		"led 0 toggle; "\
 		"if mmcinfo; then "\
 			"run recovery_from_sdcard; "\
 		"fi; "\

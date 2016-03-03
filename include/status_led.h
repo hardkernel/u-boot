@@ -101,6 +101,9 @@ void status_led_set  (int led, int state);
 #elif defined(CONFIG_BOARD_SPECIFIC_LED)
 /* led_id_t is unsigned long mask */
 typedef unsigned long led_id_t;
+#define STATUS_LED_BIT		0
+#define STATUS_LED_PERIOD	(CONFIG_SYS_HZ / 2)	/* Blinking periode is 500 ms */
+#define STATUS_LED_STATE	STATUS_LED_BLINKING
 
 extern void __led_toggle (led_id_t mask);
 extern void __led_init (led_id_t mask, int state);

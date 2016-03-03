@@ -15,12 +15,12 @@ static struct pwr_op *p_pwr_op;
 static void internal_osc_32k_init(void)
 {
 	do {
-		writel(0x62054377,AO_RTI_INTER_OSC_CTL0);
-		writel(0x00027939,AO_RTI_INTER_OSC_CTL1);
-		writel(0x00000043,AO_RTI_INTER_OSC_CTL2);
-		writel(0x42054377,AO_RTI_INTER_OSC_CTL0);
+		writel(0x62054377, AO_RTI_INTER_OSC_CTL0);
+		writel(0x00027939, AO_RTI_INTER_OSC_CTL1);
+		writel(0x00000043, AO_RTI_INTER_OSC_CTL2);
+		writel(0x42054377, AO_RTI_INTER_OSC_CTL0);
 		_udelay(400);
-	}while(((readl(AO_RTI_INTER_OSC_CTL0)>>31)&0x1)!= 0x1);
+	} while (((readl(AO_RTI_INTER_OSC_CTL0)>>31)&0x1) != 0x1);
 
 }
 void switch_to_32k(void)
