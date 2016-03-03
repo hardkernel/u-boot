@@ -184,6 +184,8 @@ struct ttl_config_s {
 	unsigned int swap_ctrl; /* [1]rb swap, [0]bit swap */
 };
 
+#define LVDS_PHY_VSWING_DFT    3
+#define LVDS_PHY_PREEM_DFT     0
 struct lvds_config_s {
 	unsigned int lvds_vswing;
 	unsigned int lvds_repack;
@@ -191,8 +193,12 @@ struct lvds_config_s {
 	unsigned int pn_swap;
 	unsigned int port_swap;
 	unsigned int port_sel;
+	unsigned int phy_vswing;
+	unsigned int phy_preem;
 };
 
+#define VX1_PHY_VSWING_DFT    3
+#define VX1_PHY_PREEM_DFT     0
 struct vbyone_config_s {
 	unsigned int lane_count;
 	unsigned int region_num;
@@ -200,6 +206,8 @@ struct vbyone_config_s {
 	unsigned int color_fmt;
 	unsigned int phy_div;
 	unsigned int bit_rate;
+	unsigned int phy_vswing;
+	unsigned int phy_preem;
 };
 
 /* mipi-dsi config */

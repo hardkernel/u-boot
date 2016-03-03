@@ -295,19 +295,27 @@ static void lcd_info_print(void)
 		printf("lvds_repack       %u\n"
 		   "dual_port         %u\n"
 		   "pn_swap           %u\n"
-		   "port_swap         %u\n\n",
+		   "port_swap         %u\n"
+		   "phy_vswing        %u\n"
+		   "phy_preemphasis   %u\n\n",
 		   pconf->lcd_control.lvds_config->lvds_repack,
 		   pconf->lcd_control.lvds_config->dual_port,
 		   pconf->lcd_control.lvds_config->pn_swap,
-		   pconf->lcd_control.lvds_config->port_swap);
+		   pconf->lcd_control.lvds_config->port_swap,
+		   pconf->lcd_control.lvds_config->phy_vswing,
+		   pconf->lcd_control.lvds_config->phy_preem);
 		break;
 	case LCD_VBYONE:
 		printf("lane_count        %u\n"
 		   "region_num        %u\n"
-		   "byte_mode         %u\n\n",
+		   "byte_mode         %u\n"
+		   "phy_vswing        %u\n"
+		   "phy_preemphasis   %u\n\n",
 		   pconf->lcd_control.vbyone_config->lane_count,
 		   pconf->lcd_control.vbyone_config->region_num,
-		   pconf->lcd_control.vbyone_config->byte_mode);
+		   pconf->lcd_control.vbyone_config->byte_mode,
+		   pconf->lcd_control.lvds_config->phy_vswing,
+		   pconf->lcd_control.lvds_config->phy_preem);
 		break;
 	default:
 		break;

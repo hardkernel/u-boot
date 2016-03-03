@@ -298,6 +298,19 @@ static int lcd_config_load_from_dts(char *dt_addr, struct lcd_config_s *pconf)
 			pconf->lcd_control.lvds_config->pn_swap     = be32_to_cpup((((u32*)propdata)+2));
 			pconf->lcd_control.lvds_config->port_swap   = be32_to_cpup((((u32*)propdata)+3));
 		}
+		propdata = (char *)fdt_getprop(dt_addr, child_offset, "phy_attr", NULL);
+		if (propdata == NULL) {
+			if (lcd_debug_print_flag)
+				LCDPR("failed to get phy_attr\n");
+			pconf->lcd_control.lvds_config->phy_vswing = LVDS_PHY_VSWING_DFT;
+			pconf->lcd_control.lvds_config->phy_preem  = LVDS_PHY_PREEM_DFT;
+		} else {
+			pconf->lcd_control.lvds_config->phy_vswing = be32_to_cpup((u32*)propdata);
+			pconf->lcd_control.lvds_config->phy_preem  = be32_to_cpup((((u32*)propdata)+1));
+			LCDPR("set phy vswing=%d, preemphasis=%d\n",
+				pconf->lcd_control.lvds_config->phy_vswing,
+				pconf->lcd_control.lvds_config->phy_preem);
+		}
 		break;
 	case LCD_VBYONE:
 		propdata = (char *)fdt_getprop(dt_addr, child_offset, "vbyone_attr", NULL);
@@ -308,6 +321,19 @@ static int lcd_config_load_from_dts(char *dt_addr, struct lcd_config_s *pconf)
 			pconf->lcd_control.vbyone_config->region_num = be32_to_cpup((((u32*)propdata)+1));
 			pconf->lcd_control.vbyone_config->byte_mode  = be32_to_cpup((((u32*)propdata)+2));
 			pconf->lcd_control.vbyone_config->color_fmt  = be32_to_cpup((((u32*)propdata)+3));
+		}
+		propdata = (char *)fdt_getprop(dt_addr, child_offset, "phy_attr", NULL);
+		if (propdata == NULL) {
+			if (lcd_debug_print_flag)
+				LCDPR("failed to get phy_attr\n");
+			pconf->lcd_control.vbyone_config->phy_vswing = VX1_PHY_VSWING_DFT;
+			pconf->lcd_control.vbyone_config->phy_preem  = VX1_PHY_PREEM_DFT;
+		} else {
+			pconf->lcd_control.vbyone_config->phy_vswing = be32_to_cpup((u32*)propdata);
+			pconf->lcd_control.vbyone_config->phy_preem  = be32_to_cpup((((u32*)propdata)+1));
+			LCDPR("set phy vswing=%d, preemphasis=%d\n",
+				pconf->lcd_control.vbyone_config->phy_vswing,
+				pconf->lcd_control.vbyone_config->phy_preem);
 		}
 		break;
 	default:
@@ -459,6 +485,8 @@ static int lcd_config_load_from_bsp(struct lcd_config_s *pconf)
 		pconf->lcd_control.vbyone_config->region_num = ext_lcd->lcd_spc_val1;
 		pconf->lcd_control.vbyone_config->byte_mode  = ext_lcd->lcd_spc_val2;
 		pconf->lcd_control.vbyone_config->color_fmt  = ext_lcd->lcd_spc_val3;
+		pconf->lcd_control.vbyone_config->phy_vswing = VX1_PHY_VSWING_DFT;
+		pconf->lcd_control.vbyone_config->phy_preem  = VX1_PHY_PREEM_DFT;
 	} else if (pconf->lcd_basic.lcd_type == LCD_TTL) {
 		LCDPR("this is ttl att \n");
 	} else if (pconf->lcd_basic.lcd_type == LCD_LVDS) {
@@ -466,6 +494,8 @@ static int lcd_config_load_from_bsp(struct lcd_config_s *pconf)
 		pconf->lcd_control.lvds_config->dual_port   = ext_lcd->lcd_spc_val1;
 		pconf->lcd_control.lvds_config->pn_swap     = ext_lcd->lcd_spc_val2;
 		pconf->lcd_control.lvds_config->port_swap   = ext_lcd->lcd_spc_val3;
+		pconf->lcd_control.lvds_config->phy_vswing = LVDS_PHY_VSWING_DFT;
+		pconf->lcd_control.lvds_config->phy_preem  = LVDS_PHY_PREEM_DFT;
 	}
 
 	i = 0;

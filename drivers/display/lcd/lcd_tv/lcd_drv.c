@@ -55,14 +55,33 @@ static void lcd_vbyone_pinmux_set(int status)
 	}
 }
 
-static void lcd_vbyone_phy_set(int status)
+static void lcd_vbyone_phy_set(struct lcd_config_s *pconf, int status)
 {
+	unsigned int vswing, preem;
+	unsigned int data32;
+
 	if (lcd_debug_print_flag)
 		LCDPR("%s: %d\n", __func__, status);
 
 	if (status) {
-		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL1, 0x6e0ec918);
-		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL2, 0x00000a7c);
+		vswing = pconf->lcd_control.vbyone_config->phy_vswing;
+		preem = pconf->lcd_control.vbyone_config->phy_preem;
+		if (vswing > 7) {
+			LCDERR("%s: wrong vswing_level=%d, use default\n",
+				__func__, vswing);
+			vswing = VX1_PHY_VSWING_DFT;
+		}
+		if (preem > 7) {
+			LCDERR("%s: wrong preemphasis_level=%d, use default\n",
+				__func__, preem);
+			preem = VX1_PHY_PREEM_DFT;
+		}
+		data32 = 0x6e0ec900 | (vswing << 3);
+		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL1, data32);
+		data32 = 0x00000a7c | (preem << 20);
+		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL2, data32);
+		/*lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL1, 0x6e0ec918);
+		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL2, 0x00000a7c);*/
 		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL3, 0x00ff0800);
 	} else {
 		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL1, 0x0);
@@ -71,13 +90,30 @@ static void lcd_vbyone_phy_set(int status)
 	}
 }
 
-static void lcd_lvds_phy_set(int status)
+static void lcd_lvds_phy_set(struct lcd_config_s *pconf, int status)
 {
+	unsigned int vswing, preem;
+	unsigned int data32;
+
 	if (lcd_debug_print_flag)
 		LCDPR("%s: %d\n", __func__, status);
 
 	if (status) {
-		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL1, 0x6c6cca80);
+		vswing = pconf->lcd_control.lvds_config->phy_vswing;
+		preem = pconf->lcd_control.lvds_config->phy_preem;
+		if (vswing > 7) {
+			LCDERR("%s: wrong vswing_level=%d, use default\n",
+				__func__, vswing);
+			vswing = LVDS_PHY_VSWING_DFT;
+		}
+		if (preem > 7) {
+			LCDERR("%s: wrong preemphasis_level=%d, use default\n",
+				__func__, preem);
+			preem = LVDS_PHY_PREEM_DFT;
+		}
+		data32 = 0x606cca80 | (vswing << 26) | (preem << 0);
+		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL1, data32);
+		/*lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL1, 0x6c6cca80);*/
 		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL2, 0x0000006c);
 		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL3, 0x0fff0800);
 	} else {
@@ -543,11 +579,11 @@ int lcd_tv_driver_init(void)
 	switch (pconf->lcd_basic.lcd_type) {
 	case LCD_LVDS:
 		lcd_lvds_control_set(pconf);
-		lcd_lvds_phy_set(1);
+		lcd_lvds_phy_set(pconf, 1);
 		break;
 	case LCD_VBYONE:
 		lcd_vbyone_control_set(pconf);
-		lcd_vbyone_phy_set(1);
+		lcd_vbyone_phy_set(pconf, 1);
 		lcd_vbyone_pinmux_set(1);
 		lcd_vbyone_wait_stable();
 		break;
@@ -576,12 +612,12 @@ void lcd_tv_driver_disable(void)
 
 	switch (pconf->lcd_basic.lcd_type) {
 	case LCD_LVDS:
-		lcd_lvds_phy_set(0);
+		lcd_lvds_phy_set(pconf, 0);
 		lcd_vcbus_setb(LVDS_GEN_CNTL, 0, 3, 1); /* disable lvds fifo */
 		break;
 	case LCD_VBYONE:
 		lcd_vbyone_pinmux_set(0);
-		lcd_vbyone_phy_set(0);
+		lcd_vbyone_phy_set(pconf, 0);
 		break;
 	default:
 		break;
