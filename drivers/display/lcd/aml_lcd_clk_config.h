@@ -32,6 +32,7 @@ struct lcd_clk_config_s { /* unit: kHz */
 	/* pll parameters */
 	unsigned int pll_m;
 	unsigned int pll_n;
+	unsigned int pll_fvco;
 	unsigned int pll_od1_sel;
 	unsigned int pll_od2_sel;
 	unsigned int pll_od3_sel;
