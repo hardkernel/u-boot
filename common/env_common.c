@@ -267,6 +267,18 @@ void env_relocate(void)
 	} else {
 		env_relocate_spec();
 	}
+
+#if defined(CONFIG_SILENT_CONSOLE) && \
+	defined(CONFIG_SILENT_CONSOLE_UPDATE_ON_RELOC)
+	char *silent_v = getenv("silent");
+	if ((silent_v != NULL) && (!strcmp("on", silent_v)))
+		gd->flags |= GD_FLG_SILENT;
+	else {
+		gd->flags &= ~GD_FLG_SILENT;
+		flush_print_buf();
+	}
+	destory_print_buf();
+#endif
 }
 
 #if defined(CONFIG_AUTO_COMPLETE) && !defined(CONFIG_SPL_BUILD)

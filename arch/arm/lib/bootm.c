@@ -277,6 +277,7 @@ static void boot_jump_linux(bootm_headers_t *images, int flag)
 
 	if (!fake) {
 		do_nonsec_virt_switch();
+		gd->flags &= ~GD_FLG_SILENT;
 		printf("uboot time: %u us\n", get_time());
 		kernel_entry(images->ft_addr, NULL, NULL, NULL);
 	}

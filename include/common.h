@@ -751,6 +751,7 @@ unsigned int rand_r(unsigned int *seedp);
 
 /* common/console.c */
 int	console_init_f(void);	/* Before relocation; uses the serial  stuff	*/
+int	console_init_m(void);
 int	console_init_r(void);	/* After  relocation; uses the console stuff	*/
 int	console_assign(int file, const char *devname);	/* Assign the console	*/
 int	ctrlc (void);
@@ -774,6 +775,11 @@ void	puts(const char *s);
 int	printf(const char *fmt, ...)
 		__attribute__ ((format (__printf__, 1, 2)));
 int	vprintf(const char *fmt, va_list args);
+
+#ifdef CONFIG_SILENT_CONSOLE
+extern void flush_print_buf(void);
+extern void destory_print_buf(void);
+#endif
 
 /* stderr */
 #define eputc(c)		fputc(stderr, c)

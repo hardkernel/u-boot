@@ -275,7 +275,7 @@ int fdt_instaboot(void *fdt)
 
 	err = get_instaboot_header(&ib_info);
 	if (err < 0) {
-		printf("fdt_instaboot: get header err\n");
+		printf("fdt_instaboot: no instaboot image\n");
 		return err;
 	}
 

@@ -415,6 +415,12 @@ static inline void pre_console_puts(const char *s) {}
 static inline void print_pre_console_buffer(void) {}
 #endif
 
+
+#ifdef CONFIG_SILENT_CONSOLE
+static void print_to_buf(const char *s);
+#endif
+
+
 void putc(const char c)
 {
 #ifdef CONFIG_SANDBOX
@@ -424,8 +430,13 @@ void putc(const char c)
 	}
 #endif
 #ifdef CONFIG_SILENT_CONSOLE
-	if (gd->flags & GD_FLG_SILENT)
+	char s[2];
+	s[0] = c;
+	s[1] = '\0';
+	if (gd->flags & GD_FLG_SILENT) {
+		print_to_buf(s);
 		return;
+	}
 #endif
 
 #ifdef CONFIG_DISABLE_CONSOLE
@@ -445,6 +456,91 @@ void putc(const char c)
 	}
 }
 
+#ifdef CONFIG_SILENT_CONSOLE
+#define PRT_BUF_SIZE		65536
+#define PRT_BUF_END		(PRT_BUF_SIZE - 8)
+static int buf_p = 0;
+static char* print_buf = NULL;
+
+static void print_to_buf(const char *s)
+{
+	int len, end;
+	int i = 0;
+	if (!print_buf)
+		return;
+	if (buf_p < PRT_BUF_END) {
+		len = strlen(s);
+		end = buf_p + len;
+		if (end < PRT_BUF_END) {
+			while (buf_p < end)
+				print_buf[buf_p++] = s[i++];
+		} else {
+			end = PRT_BUF_END;
+			while (buf_p < end)
+				print_buf[buf_p++] = s[i++];
+			while (buf_p < PRT_BUF_END + 6)
+				print_buf[buf_p++] = '.';
+			print_buf[buf_p++] = '\n';
+		}
+	}
+	return;
+}
+
+void flush_print_buf(void)
+{
+	char tmp_buf[CONFIG_SYS_PBSIZE + 1];
+	int out_p = 0;
+	int left_size = buf_p;
+	if (print_buf) {
+		memset(tmp_buf, 0, CONFIG_SYS_PBSIZE + 1);
+		while (left_size >  CONFIG_SYS_PBSIZE) {
+			memcpy(tmp_buf, print_buf + out_p, CONFIG_SYS_PBSIZE);
+			printf("%s", tmp_buf);
+			left_size -= CONFIG_SYS_PBSIZE;
+			out_p += CONFIG_SYS_PBSIZE;
+			memset(tmp_buf, 0, CONFIG_SYS_PBSIZE + 1);
+		}
+		if (left_size) {
+			memcpy(tmp_buf, print_buf + out_p, left_size);
+			printf("%s", tmp_buf);
+		}
+		memset(print_buf, 0, PRT_BUF_SIZE);
+		buf_p = 0;
+	}
+	return;
+}
+
+void destory_print_buf(void)
+{
+	if (print_buf)
+		free(print_buf);
+	print_buf = NULL;
+	buf_p = 0;
+}
+
+static int do_silent(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+	if (argc != 2)
+		return -1;
+	if (!strncmp(argv[1], "on", 6))
+		gd->flags |= GD_FLG_SILENT;
+	else if (!strncmp(argv[1], "off", 7))
+		gd->flags &= ~GD_FLG_SILENT;
+	else
+		return -1;
+	return 0;
+}
+
+U_BOOT_CMD(
+   silent,         //command name
+   2,               //maxargs
+   0,               //repeatable
+   do_silent,   //command function
+   "silent",
+   "make console silence on/off"
+);
+#endif /* CONFIG_MUTE_PRINT */
+
 void puts(const char *s)
 {
 #ifdef CONFIG_SANDBOX
@@ -455,8 +551,10 @@ void puts(const char *s)
 #endif
 
 #ifdef CONFIG_SILENT_CONSOLE
-	if (gd->flags & GD_FLG_SILENT)
+	if (gd->flags & GD_FLG_SILENT) {
+		print_to_buf(s);
 		return;
+	}
 #endif
 
 #ifdef CONFIG_DISABLE_CONSOLE
@@ -674,13 +772,23 @@ int console_init_f(void)
 {
 	gd->have_console = 1;
 
-#ifdef CONFIG_SILENT_CONSOLE
-	if (getenv("silent") != NULL)
-		gd->flags |= GD_FLG_SILENT;
-#endif
-
 	print_pre_console_buffer();
 
+	return 0;
+}
+
+int console_init_m(void)
+{
+#ifdef CONFIG_SILENT_CONSOLE
+	print_buf = (char*)malloc(PRT_BUF_SIZE);
+	if (!print_buf) {
+		puts("no memory for print_buf\n");
+	} else {
+		memset(print_buf, 0, PRT_BUF_SIZE);
+		buf_p = 0;
+		gd->flags |= GD_FLG_SILENT;
+	}
+#endif
 	return 0;
 }
 
@@ -721,7 +829,6 @@ int console_init_r(void)
 #ifdef CONFIG_CONSOLE_MUX
 	int iomux_err = 0;
 #endif
-
 	/* set default handlers at first */
 	gd->jt[XF_getc] = serial_getc;
 	gd->jt[XF_tstc] = serial_tstc;
