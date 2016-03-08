@@ -108,12 +108,6 @@
                 "run init_display; run storeargs; run update;"\
             "else fi;"\
             "\0"\
-	    "bootmode_check="\
-            "get_rebootmode; echo reboot_mode=${reboot_mode};"\
-            "if test ${reboot_mode} = factory_reset; then "\
-                "defenv_reserv aml_dt;setenv upgrade_step 2; save;"\
-            "fi;"\
-            "\0" \
         "storeargs="\
             "setenv bootargs ${initargs} logo=${display_layer},loaded,${fb_addr},${outputmode} vout=${outputmode},enable hdmimode=${hdmimode} cvbsmode=${cvbsmode} hdmitx=${cecconfig} cvbsdrv=${cvbs_drv} androidboot.firstboot=${firstboot} jtag=${jtag}; "\
 	"setenv bootargs ${bootargs} androidboot.hardware=amlogic;"\
@@ -220,7 +214,6 @@
 #define CONFIG_PREBOOT  \
             "run factory_reset_poweroff_protect;"\
             "run upgrade_check;"\
-            "run bootmode_check;"\
             "run init_display;"\
             "run storeargs;"\
             "run upgrade_key;" \
