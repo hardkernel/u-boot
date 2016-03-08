@@ -125,12 +125,14 @@ static int do_image_read_kernel(cmd_tbl_t *cmdtp, int flag, int argc, char * con
     }
     hdr_addr = (boot_img_hdr*)loadaddr;
 
+    if (3 < argc) flashReadOff = simple_strtoull(argv[3], NULL, 0) ;
+
     rc = store_read_ops((unsigned char*)partName, loadaddr, flashReadOff, IMG_PRELOAD_SZ);
     if (rc) {
         errorP("Fail to read 0x%xB from part[%s] at offset 0\n", IMG_PRELOAD_SZ, partName);
         return __LINE__;
     }
-    flashReadOff = IMG_PRELOAD_SZ;
+    flashReadOff += IMG_PRELOAD_SZ;
 
     genFmt = genimg_get_format(hdr_addr);
     if (IMAGE_FORMAT_ANDROID != genFmt) {
@@ -165,7 +167,7 @@ static int do_image_read_kernel(cmd_tbl_t *cmdtp, int flag, int argc, char * con
         const unsigned leftSz = actualBootImgSz - IMG_PRELOAD_SZ;
 
         debugP("Left sz 0x%x\n", leftSz);
-        rc = store_read_ops((unsigned char*)partName, loadaddr + (unsigned)flashReadOff, flashReadOff, leftSz);
+        rc = store_read_ops((unsigned char*)partName, loadaddr + IMG_PRELOAD_SZ, flashReadOff, leftSz);
         if (rc) {
             errorP("Fail to read 0x%xB from part[%s] at offset 0x%x\n", leftSz, partName, IMG_PRELOAD_SZ);
             return __LINE__;
@@ -376,9 +378,9 @@ static int do_image_read_pic(cmd_tbl_t *cmdtp, int flag, int argc, char * const 
 }
 
 static cmd_tbl_t cmd_imgread_sub[] = {
-	U_BOOT_CMD_MKENT(kernel, 3, 0, do_image_read_kernel, "", ""),
-	U_BOOT_CMD_MKENT(res,    3, 0, do_image_read_res, "", ""),
-	U_BOOT_CMD_MKENT(pic,    4, 0, do_image_read_pic, "", ""),
+    U_BOOT_CMD_MKENT(kernel, 4, 0, do_image_read_kernel, "", ""),
+    U_BOOT_CMD_MKENT(res,    3, 0, do_image_read_res, "", ""),
+    U_BOOT_CMD_MKENT(pic,    4, 0, do_image_read_pic, "", ""),
 };
 
 static int do_image_read(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
@@ -412,7 +414,7 @@ U_BOOT_CMD(
    "imgread picture --- Read one picture from Amlogic logo"
    "    - e.g. \n"
    "        to read boot.img     from part boot     from flash: <imgread kernel boot loadaddr> \n"   //usage
-   "        to read recovery.img from part recovery from flash: <imgread kernel recovery loadaddr> \n"   //usage
+   "        to read recovery.img from part recovery from flash: <imgread kernel recovery loadaddr $offset> \n"   //usage
    "        to read logo.img     from part logo     from flash: <imgread res    logo loadaddr> \n"   //usage
    "        to read one picture named 'bootup' from logo.img    from logo: <imgread pic logo bootup loadaddr> \n"   //usage
 );
