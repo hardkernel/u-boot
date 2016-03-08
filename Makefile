@@ -860,10 +860,11 @@ else #SUPPORT_CUSOTMER_BOARD
 FIP_FOLDER := $(srctree)/fip
 endif #SUPPORT_CUSOTMER_BOARD
 FIP_FOLDER_SOC := $(FIP_FOLDER)/$(SOC)
-FIP_ARGS += --bl30 $(FIP_FOLDER_SOC)/bl30.bin
-ifeq ($(CONFIG_NEED_BL301), y)
-FIP_ARGS += --bl301 $(FIP_FOLDER_SOC)/bl301.bin
-endif
+FIP_ARGS += --bl30 $(FIP_FOLDER_SOC)/bl30_new.bin
+#remove bl301
+#ifeq ($(CONFIG_NEED_BL301), y)
+#FIP_ARGS += --bl301 $(FIP_FOLDER_SOC)/bl301.bin
+#endif
 ifeq ($(CONFIG_FIP_IMG_SUPPORT), y)
 BL3X_SUFFIX := img
 else
@@ -885,6 +886,7 @@ else
 fip.bin: tools prepare acs.bin
 endif
 	$(Q)cp u-boot.bin $(FIP_FOLDER_SOC)/bl33.bin
+	@rm -f $(FIP_FOLDER_SOC)/fip.bin
 	$(Q)$(FIP_FOLDER)/fip_create ${FIP_ARGS} $(FIP_FOLDER_SOC)/fip.bin
 	$(Q)$(FIP_FOLDER)/fip_create --dump $(FIP_FOLDER_SOC)/fip.bin
 
@@ -893,6 +895,14 @@ ifeq ($(CONFIG_NEED_BL301), y)
 bl301.bin: tools prepare acs.bin bl21.bin
 	$(Q)$(MAKE) -C $(srctree)/$(CPUDIR)/${SOC}/firmware/scp_task
 	$(Q)cp $(buildtree)/scp_task/bl301.bin $(FIP_FOLDER_SOC)/bl301.bin -f
+	$(Q)$(FIP_FOLDER)/blx_fix.sh \
+		$(FIP_FOLDER_SOC)/bl30.bin \
+		$(FIP_FOLDER_SOC)/zero_tmp \
+		$(FIP_FOLDER_SOC)/bl30_zero.bin \
+		$(FIP_FOLDER_SOC)/bl301.bin \
+		$(FIP_FOLDER_SOC)/bl301_zero.bin \
+		$(FIP_FOLDER_SOC)/bl30_new.bin \
+		bl30
 endif
 
 .PHONY : acs.bin
@@ -912,7 +922,14 @@ ifeq ($(CONFIG_AML_UBOOT_AUTO_TEST), y)
 else
 	$(Q)python $(FIP_FOLDER)/acs_tool.pyc $(FIP_FOLDER_SOC)/bl2.bin $(FIP_FOLDER_SOC)/bl2_acs.bin $(FIP_FOLDER_SOC)/acs.bin 0
 endif
-	$(Q)$(FIP_FOLDER)/bl2_fix.sh $(FIP_FOLDER_SOC)/bl2_acs.bin $(FIP_FOLDER_SOC)/zero_tmp $(FIP_FOLDER_SOC)/bl2_zero.bin $(FIP_FOLDER_SOC)/bl21.bin $(FIP_FOLDER_SOC)/bl21_zero.bin $(FIP_FOLDER_SOC)/bl2_new.bin
+	$(Q)$(FIP_FOLDER)/blx_fix.sh \
+		$(FIP_FOLDER_SOC)/bl2_acs.bin \
+		$(FIP_FOLDER_SOC)/zero_tmp \
+		$(FIP_FOLDER_SOC)/bl2_zero.bin \
+		$(FIP_FOLDER_SOC)/bl21.bin \
+		$(FIP_FOLDER_SOC)/bl21_zero.bin \
+		$(FIP_FOLDER_SOC)/bl2_new.bin \
+		bl2
 	$(Q)cat $(FIP_FOLDER_SOC)/bl2_new.bin  $(FIP_FOLDER_SOC)/fip.bin > $(FIP_FOLDER_SOC)/boot_new.bin
 	$(Q)$(FIP_FOLDER_SOC)/aml_encrypt_$(SOC) --bootsig --input $(FIP_FOLDER_SOC)/boot_new.bin --output $(FIP_FOLDER_SOC)/u-boot.bin
 ifeq ($(CONFIG_AML_CRYPTO_UBOOT), y)
