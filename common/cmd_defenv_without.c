@@ -49,7 +49,7 @@ static int _reserve_env_list_after_defenv(const int reservNum, const char* const
                 const char* cfgEnvVal = getenv(cfgEnvKey);
 
                 if (cfgEnvVal) {
-                        sumOfEnvVal += strlen(cfgEnvKey) + 1;
+                        sumOfEnvVal += strlen(cfgEnvVal) + 1;
                 }
                 valListBuf[index] = cfgEnvVal;
         }
