@@ -23,7 +23,7 @@
 #include <amlogic/aml_lcd_extern.h>
 #include "lcd_extern.h"
 
-#define LCD_EXTERN_INDEX		0
+#define LCD_EXTERN_INDEX		1
 #define LCD_EXTERN_NAME			"mipi_KD080D13"
 #define LCD_EXTERN_TYPE			LCD_EXTERN_MIPI
 

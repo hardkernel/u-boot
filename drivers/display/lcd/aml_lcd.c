@@ -19,6 +19,7 @@
 #ifdef CONFIG_OF_LIBFDT
 #include <libfdt.h>
 #endif
+#include <amlogic/keyunify.h>
 #include <amlogic/aml_lcd.h>
 #ifdef CONFIG_AML_LCD_EXTERN
 #include <amlogic/aml_lcd_extern.h>
@@ -277,8 +278,9 @@ static void lcd_info_print(void)
 	struct lcd_config_s *pconf = lcd_drv->lcd_config;
 
 	LCDPR("driver version: %s\n", lcd_drv->version);
-	LCDPR("status: %d\n", lcd_drv->lcd_status);
-	LCDPR("mode  : %s\n", lcd_mode_mode_to_str(aml_lcd_driver.lcd_config->lcd_mode));
+	LCDPR("key_valid: %d\n", aml_lcd_driver.lcd_config->lcd_key_valid);
+	LCDPR("mode: %s, status: %d\n",
+		 lcd_mode_mode_to_str(aml_lcd_driver.lcd_config->lcd_mode), lcd_drv->lcd_status);
 
 	lcd_clk = (pconf->lcd_timing.lcd_clk / 1000);
 	sync_duration = pconf->lcd_timing.sync_duration_num;
@@ -551,15 +553,108 @@ static int lcd_extern_load_config(char *dt_addr, struct lcd_config_s *pconf)
 }
 #endif
 
+#ifdef CONFIG_OF_LIBFDT
+static int lcd_init_load_from_dts(char *dt_addr)
+{
+	struct lcd_config_s *pconf = aml_lcd_driver.lcd_config;
+	int parent_offset;
+	char *propdata, *p;
+	const char *str;
+	int i, j;
+
+	/* check bl_key_valid */
+	parent_offset = fdt_path_offset(dt_addr, "/backlight");
+	if (parent_offset < 0) {
+		LCDERR("not find /backlight node: %s\n", fdt_strerror(parent_offset));
+		aml_lcd_driver.bl_config->bl_key_valid = 0;
+	}
+	propdata = (char *)fdt_getprop(dt_addr, parent_offset, "key_valid", NULL);
+	if (propdata == NULL) {
+		LCDERR("failed to get key_valid\n");
+		aml_lcd_driver.bl_config->bl_key_valid = 0;
+	} else {
+		aml_lcd_driver.bl_config->bl_key_valid = (unsigned char)(be32_to_cpup((u32*)propdata));
+	}
+
+	parent_offset = fdt_path_offset(dt_addr, "/lcd");
+	if (parent_offset < 0) {
+		LCDERR("not find /lcd node: %s\n", fdt_strerror(parent_offset));
+		return -1;
+	}
+
+	/* check lcd_mode & lcd_key_valid */
+	propdata = (char *)fdt_getprop(dt_addr, parent_offset, "mode", NULL);
+	if (propdata == NULL) {
+		LCDERR("failed to get mode\n");
+		return -1;
+	} else {
+		pconf->lcd_mode = lcd_mode_str_to_mode(propdata);
+	}
+	str = propdata;
+	propdata = (char *)fdt_getprop(dt_addr, parent_offset, "key_valid", NULL);
+	if (propdata == NULL) {
+		LCDERR("failed to get key_valid\n");
+		pconf->lcd_key_valid = 0;
+	} else {
+		pconf->lcd_key_valid = (unsigned char)(be32_to_cpup((u32*)propdata));
+	}
+	LCDPR("detect mode: %s, key_valid: %d\n", str, pconf->lcd_key_valid);
+
+	i = 0;
+	propdata = (char *)fdt_getprop(dt_addr, parent_offset, "lcd_cpu_gpio_names", NULL);
+	if (propdata == NULL) {
+		LCDPR("failed to get lcd_cpu_gpio_names\n");
+	} else {
+		p = propdata;
+		while (i < LCD_CPU_GPIO_NUM_MAX) {
+			str = p;
+			if (strlen(str) == 0)
+				break;
+			strcpy(pconf->lcd_power->cpu_gpio[i], str);
+			if (lcd_debug_print_flag) {
+				LCDPR("i=%d, gpio=%s\n",
+					i, pconf->lcd_power->cpu_gpio[i]);
+			}
+			p += strlen(p) + 1;
+			i++;
+		}
+	}
+	for (j = i; j < LCD_CPU_GPIO_NUM_MAX; j++)
+		strcpy(pconf->lcd_power->cpu_gpio[j], "invalid");
+
+	return 0;
+}
+#endif
+
+static int lcd_init_load_from_bsp(void)
+{
+	struct lcd_config_s *pconf = aml_lcd_driver.lcd_config;
+	int i, j;
+
+	pconf->lcd_key_valid = 0;
+	aml_lcd_driver.bl_config->bl_key_valid = 0;
+	LCDPR("detect mode: %s, key_valid: %d\n",
+		lcd_mode_mode_to_str(pconf->lcd_mode), pconf->lcd_key_valid);
+
+	i = 0;
+	while (i < LCD_CPU_GPIO_NUM_MAX) {
+		if (strcmp(pconf->lcd_power->cpu_gpio[i], "invalid") == 0)
+			break;
+		i++;
+	}
+	for (j = i; j < LCD_CPU_GPIO_NUM_MAX; j++) {
+		strcpy(pconf->lcd_power->cpu_gpio[j], "invalid");
+	}
+
+	return 0;
+}
+
 static int lcd_mode_probe(void)
 {
 	int load_id = 0;
 	unsigned int lcd_debug_test = 0;
 	char *dt_addr;
-#ifdef CONFIG_OF_LIBFDT
-	int parent_offset;
-	char *propdata;
-#endif
+	int ret;
 
 	dt_addr = NULL;
 #ifdef CONFIG_OF_LIBFDT
@@ -572,36 +667,46 @@ static int lcd_mode_probe(void)
 		LCDERR("check dts: %s, load default lcd parameters\n",
 			fdt_strerror(fdt_check_header(dt_addr)));
 	} else {
-		load_id = 1;
+		load_id = 0x1;
 	}
 #endif
 
 	lcd_debug_test = simple_strtoul(getenv("lcd_debug_test"), NULL, 10);
 	if (lcd_debug_test)
-		load_id = 0;
+		load_id = 0x0;
 
-	if (load_id == 1 ) {
+	if (load_id & 0x1 ) {
 #ifdef CONFIG_OF_LIBFDT
-		LCDPR("load config from dts\n");
-		parent_offset = fdt_path_offset(dt_addr, "/lcd");
-		if (parent_offset < 0) {
-			LCDERR("not find /lcd node: %s\n",fdt_strerror(parent_offset));
+		ret = lcd_init_load_from_dts(dt_addr);
+		if (ret)
 			return -1;
-		}
-
-		/* check lcd_mode */
-		propdata = (char *)fdt_getprop(dt_addr, parent_offset, "mode", NULL);
-		if (propdata == NULL) {
-			LCDERR("failed to get mode\n");
-			return -1;
+		if (aml_lcd_driver.lcd_config->lcd_key_valid) {
+			ret = aml_lcd_unifykey_check("lcd");
+			if (ret == 0) {
+				LCDPR("load config from unifykey\n");
+				load_id |= 0x10;
+			} else {
+				LCDPR("load config from dts\n");
+			}
 		} else {
-			aml_lcd_driver.lcd_config->lcd_mode = lcd_mode_str_to_mode(propdata);
+			LCDPR("load config from dts\n");
 		}
-		LCDPR("detect mode: %s\n", propdata);
 #endif
 	} else {
-		LCDPR("load config from lcd.c\n");
-		LCDPR("detect mode: %s\n", lcd_mode_mode_to_str(aml_lcd_driver.lcd_config->lcd_mode));
+		ret = lcd_init_load_from_bsp();
+		if (ret)
+			return -1;
+		if (aml_lcd_driver.lcd_config->lcd_key_valid) {
+			ret = aml_lcd_unifykey_check("lcd");
+			if (ret == 0) {
+				LCDPR("load lcd_config from unifykey\n");
+				load_id |= 0x10;
+			} else {
+				LCDPR("load lcd_config from lcd.c\n");
+			}
+		} else {
+			LCDPR("load config from lcd.c\n");
+		}
 	}
 
 	/* load lcd config */
@@ -625,6 +730,18 @@ static int lcd_mode_probe(void)
 #endif
 
 	/* load bl config */
+	if (aml_lcd_driver.bl_config->bl_key_valid) {
+		ret = aml_lcd_unifykey_check("backlight");
+		if (ret == 0) {
+			LCDPR("load backlight_config from unifykey\n");
+			load_id |= 0x10;
+		} else {
+			LCDPR("load backlight_config from dts\n");
+			load_id &= ~(0x10);
+		}
+	} else {
+		load_id &= ~(0x10);
+	}
 	aml_bl_config_load(dt_addr, load_id);
 
 	return 0;
@@ -774,6 +891,7 @@ static void aml_lcd_clk(void)
 	lcd_clk_config_print();
 }
 
+extern void lcd_unifykey_test(void);
 static void aml_lcd_info(void)
 {
 	if (lcd_check_valid())
@@ -808,6 +926,27 @@ static void aml_backlight_power_off(void)
 	aml_bl_power_ctrl(0, 1);
 }
 
+static void aml_lcd_unifykey_test(void)
+{
+	aml_lcd_test_unifykey();
+	aml_lcd_extern_test_unifykey();
+	aml_bl_test_unifykey();
+	lcd_mode_probe();
+}
+
+static void aml_lcd_extern_info(void)
+{
+#ifdef CONFIG_AML_LCD_EXTERN
+	struct aml_lcd_extern_driver_s *ext_drv;
+
+	ext_drv = aml_lcd_extern_get_driver();
+	if (ext_drv)
+		ext_drv->info_print();
+#else
+	printf("lcd_extern is not support\n");
+#endif
+}
+
 static struct aml_lcd_drv_s aml_lcd_driver = {
 	.lcd_status = 0,
 	.lcd_config = &lcd_config_dft,
@@ -826,6 +965,8 @@ static struct aml_lcd_drv_s aml_lcd_driver = {
 	.bl_off = aml_backlight_power_off,
 	.set_bl_level = aml_set_backlight_level,
 	.get_bl_level = aml_get_backlight_level,
+	.unifykey_test = aml_lcd_unifykey_test,
+	.lcd_extern_info = aml_lcd_extern_info,
 };
 
 struct aml_lcd_drv_s *aml_lcd_get_driver(void)

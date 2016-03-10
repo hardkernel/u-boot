@@ -29,7 +29,7 @@
 #include "../aml_lcd_reg.h"
 
 #ifdef CONFIG_SYS_I2C_AML
-#define LCD_EXTERN_INDEX		0
+#define LCD_EXTERN_INDEX		1
 #define LCD_EXTERN_NAME			"i2c_tc101"
 #define LCD_EXTERN_TYPE			LCD_EXTERN_I2C
 
@@ -145,7 +145,7 @@ static int lcd_extern_port_init(void)
 	for (i = 0; i < ARRAY_SIZE(aml_lcd_extern_pinmux_set); i++) {
 		pinmux_reg = aml_lcd_extern_pinmux_set[i].reg;
 		pinmux_data = aml_lcd_extern_pinmux_set[i].mux;
-		lcd_pinmux_clr_mask(pinmux_reg, pinmux_data);
+		lcd_pinmux_set_mask(pinmux_reg, pinmux_data);
 	}
 
 	return 0;

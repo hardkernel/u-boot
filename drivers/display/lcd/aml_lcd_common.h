@@ -17,6 +17,7 @@
 #define _AML_LCD_COMMON_H
 #include <amlogic/aml_lcd.h>
 #include "aml_lcd_clk_config.h"
+#include "aml_lcd_unifykey.h"
 
 #define VPP_OUT_SATURATE            (1 << 0)
 

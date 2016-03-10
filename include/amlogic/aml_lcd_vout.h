@@ -312,7 +312,8 @@ struct lcd_power_ctrl_s {
 };
 
 struct lcd_config_s {
-	unsigned int lcd_mode;
+	unsigned char lcd_mode;
+	unsigned char lcd_key_valid;
 	unsigned int backlight_index;
 	struct lcd_basic_s lcd_basic;
 	struct lcd_timing_s lcd_timing;
@@ -398,6 +399,7 @@ struct bl_pwm_config_s {
 };
 
 struct bl_config_s {
+	unsigned char bl_key_valid;
 	char name[20];
 	int level_default;
 	int level_min;
@@ -434,7 +436,7 @@ extern struct bl_config_s bl_config_dft;
 struct aml_lcd_drv_s {
 	char version[15];
 	enum lcd_chip_e chip_type;
-	unsigned int lcd_status;
+	unsigned char lcd_status;
 
 	struct lcd_config_s *lcd_config;
 	struct bl_config_s *bl_config;
@@ -456,6 +458,8 @@ struct aml_lcd_drv_s {
 	void (*bl_off)(void);
 	void (*set_bl_level)(int level);
 	int  (*get_bl_level)(void);
+	void (*unifykey_test)(void);
+	void (*lcd_extern_info)(void);
 };
 
 extern void lcd_config_gpio_init(void);

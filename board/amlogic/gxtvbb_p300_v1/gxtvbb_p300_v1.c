@@ -600,6 +600,8 @@ int board_late_init(void){
 		#endif
 	}
 
+	/* load unifykey */
+	run_command("keyunify init 0x1234", 0);
 #ifdef CONFIG_AML_VPU
 	vpu_probe();
 #endif

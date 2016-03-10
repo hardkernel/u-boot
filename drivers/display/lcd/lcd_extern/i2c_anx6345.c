@@ -30,7 +30,7 @@
 #include "../aml_lcd_reg.h"
 
 #ifdef CONFIG_SYS_I2C_AML
-#define LCD_EXTERN_INDEX		0
+#define LCD_EXTERN_INDEX		1
 #define LCD_EXTERN_NAME			"i2c_ANX6345"
 #define LCD_EXTERN_TYPE			LCD_EXTERN_I2C
 #define LCD_EXTERN_I2C_ADDR		0x70
@@ -478,7 +478,7 @@ static int lcd_extern_port_init(void)
 	for (i = 0; i < ARRAY_SIZE(aml_lcd_extern_pinmux_set); i++) {
 		pinmux_reg = aml_lcd_extern_pinmux_set[i].reg;
 		pinmux_data = aml_lcd_extern_pinmux_set[i].mux;
-		lcd_pinmux_clr_mask(pinmux_reg, pinmux_data);
+		lcd_pinmux_set_mask(pinmux_reg, pinmux_data);
 	}
 
 	return 0;
@@ -554,12 +554,12 @@ static int aml_lcd_extern_get_dt_config(int index)
 	char *propdata;
 	int value;
 
-	nodeoffset = aml_lcd_extern_get_dt_child(index);
+	nodeoffset = aml_lcd_extern_get_dts_child(index);
 	if (nodeoffset < 0) {
 		return -1;
 	}
 
-	propdata = aml_lcd_extern_get_dt_prop(nodeoffset, "lane_num");
+	propdata = aml_lcd_extern_get_dts_prop(nodeoffset, "lane_num");
 	if (propdata == NULL) {
 		edp_parameter.lane_num = 1;
 		EXTERR("%s failed to get lane_num\n", LCD_EXTERN_NAME);
@@ -569,7 +569,7 @@ static int aml_lcd_extern_get_dt_config(int index)
 	if (lcd_debug_print_flag)
 		EXTPR("lane_num = %d\n", edp_parameter.lane_num);
 
-	propdata = aml_lcd_extern_get_dt_prop(nodeoffset, "bits");
+	propdata = aml_lcd_extern_get_dts_prop(nodeoffset, "bits");
 	if (propdata == NULL) {
 		edp_parameter.bits = 0x00;
 		EXTERR("%s failed to get bits\n", LCD_EXTERN_NAME);
@@ -585,7 +585,7 @@ static int aml_lcd_extern_get_dt_config(int index)
 	if (lcd_debug_print_flag)
 		EXTPR("bits = %d\n", edp_parameter.bits);
 
-	propdata = aml_lcd_extern_get_dt_prop(nodeoffset, "link_rate");
+	propdata = aml_lcd_extern_get_dts_prop(nodeoffset, "link_rate");
 	if (propdata == NULL) {
 		edp_parameter.link_rate = 0x0a;
 		EXTERR("%s failed to get link_rate\n", LCD_EXTERN_NAME);

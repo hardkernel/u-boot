@@ -204,6 +204,38 @@ static int do_lcd_test(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]
 	return 0;
 }
 
+static int do_lcd_key(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+	struct aml_lcd_drv_s *lcd_drv;
+
+	lcd_drv = aml_lcd_get_driver();
+	if (lcd_drv) {
+		if (lcd_drv->unifykey_test)
+			lcd_drv->unifykey_test();
+		else
+			printf("no lcd unifykey_test\n");
+	} else {
+		printf("no lcd driver\n");
+	}
+	return 0;
+}
+
+static int do_lcd_ext(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+	struct aml_lcd_drv_s *lcd_drv;
+
+	lcd_drv = aml_lcd_get_driver();
+	if (lcd_drv) {
+		if (lcd_drv->lcd_extern_info)
+			lcd_drv->lcd_extern_info();
+		else
+			printf("no lcd lcd_extern_info\n");
+	} else {
+		printf("no lcd driver\n");
+	}
+	return 0;
+}
+
 static cmd_tbl_t cmd_lcd_sub[] = {
 	U_BOOT_CMD_MKENT(probe,   2, 0, do_lcd_probe, "", ""),
 	U_BOOT_CMD_MKENT(enable,  2, 0, do_lcd_enable, "", ""),
@@ -214,6 +246,8 @@ static cmd_tbl_t cmd_lcd_sub[] = {
 	U_BOOT_CMD_MKENT(info, 2, 0, do_lcd_info, "", ""),
 	U_BOOT_CMD_MKENT(reg,  2, 0, do_lcd_reg, "", ""),
 	U_BOOT_CMD_MKENT(test, 3, 0, do_lcd_test, "", ""),
+	U_BOOT_CMD_MKENT(key,  2, 0, do_lcd_key, "", ""),
+	U_BOOT_CMD_MKENT(ext,  2, 0, do_lcd_ext, "", ""),
 };
 
 static int do_lcd(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
@@ -246,4 +280,6 @@ U_BOOT_CMD(
 	"lcd info         - show lcd parameters\n"
 	"lcd reg          - dump lcd registers\n"
 	"lcd test         - show lcd bist pattern\n"
+	"lcd key          - show lcd unifykey test\n"
+	"lcd ext          - show lcd extern information\n"
 );

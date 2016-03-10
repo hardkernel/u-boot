@@ -23,19 +23,47 @@ enum lcd_extern_type_e {
 	LCD_EXTERN_MAX,
 };
 
-#define LCD_EXTERN_GPIO_NUM_MAX    5
-#define LCD_EXTERN_INDEX_INVALID   0xff
-#define LCD_EXTERN_NAME_LEN_MAX    30
+enum lcd_extern_i2c_bus_e {
+	LCD_EXTERN_I2C_BUS_AO = 0,
+	LCD_EXTERN_I2C_BUS_A,
+	LCD_EXTERN_I2C_BUS_B,
+	LCD_EXTERN_I2C_BUS_C,
+	LCD_EXTERN_I2C_BUS_D,
+	LCD_EXTERN_I2C_BUS_MAX,
+};
+#define LCD_EXTERN_I2C_BUS_INVALID   0xff
+
+#define LCD_EXTERN_SPI_CLK_FREQ_DFT  10000 /* default 10k */
+
+#define LCD_EXTERN_INIT_TABLE_MAX    500
+
+#define LCD_EXTERN_INIT_GPIO         0x00
+#define LCD_EXTERN_INIT_CMD          0x10
+#define LCD_EXTERN_INIT_CMD2         0x11  //only for special i2c device
+#define LCD_EXTERN_INIT_NONE         0xf0
+#define LCD_EXTERN_INIT_END          0xff
+
+
+#define LCD_EXTERN_GPIO_NUM_MAX      6
+#define LCD_EXTERN_INDEX_INVALID     0xff
+#define LCD_EXTERN_NAME_LEN_MAX      30
 struct lcd_extern_config_s {
-	int index;
+	unsigned char index;
 	char name[LCD_EXTERN_NAME_LEN_MAX];
 	enum lcd_extern_type_e type;
-	int status;
-	int i2c_addr;
-	int i2c_bus;
-	int spi_cs;
-	int spi_clk;
-	int spi_data;
+	unsigned char status;
+	unsigned char i2c_addr;
+	unsigned char i2c_addr2;
+	unsigned char i2c_bus;
+	unsigned char spi_gpio_cs;
+	unsigned char spi_gpio_clk;
+	unsigned char spi_gpio_data;
+	unsigned int spi_clk_freq;
+	unsigned char spi_clk_pol;
+	unsigned char cmd_size;
+	unsigned char table_init_loaded; /* internal use */
+	unsigned char *table_init_on;
+	unsigned char *table_init_off;
 };
 
 //global API
@@ -45,9 +73,7 @@ struct aml_lcd_extern_driver_s {
 	int (*reg_write) (unsigned char reg, unsigned char value);
 	int (*power_on)(void);
 	int (*power_off)(void);
-	unsigned char *init_on_cmd_8;
-	unsigned char *init_off_cmd_8;
-	int (*get_lcd_ext_config)(void);
+	void (*info_print)(void);
 };
 
 extern struct aml_lcd_extern_driver_s *aml_lcd_extern_get_driver(void);

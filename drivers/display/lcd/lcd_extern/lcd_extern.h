@@ -28,12 +28,20 @@ struct aml_lcd_extern_pinmux_s {
 
 extern void udelay(unsigned long usec);
 extern void mdelay(unsigned long msec);
-
-#ifdef CONFIG_OF_LIBFDT
-extern char *aml_lcd_extern_get_dt_prop(int nodeoffset, char *propname);
-extern int aml_lcd_extern_get_dt_child(int index);
+#ifdef CONFIG_SYS_I2C_AML
+extern int aml_i2c_xfer_slow(struct i2c_msg *msgs, int num);
+extern int aml_i2c_xfer(struct i2c_msg *msgs, int num);
 #endif
 
+#ifdef CONFIG_OF_LIBFDT
+extern char *aml_lcd_extern_get_dts_prop(int nodeoffset, char *propname);
+extern int aml_lcd_extern_get_dts_child(int index);
+#endif
+
+extern int aml_lcd_extern_get_gpio(unsigned char index);
+extern int aml_lcd_extern_set_gpio(unsigned char index, int value);
+
+extern int aml_lcd_extern_default_probe(struct aml_lcd_extern_driver_s *ext_drv);
 #ifdef CONFIG_SYS_I2C_AML
 #ifdef CONFIG_AML_LCD_EXTERN_I2C_T5800Q
 extern int aml_lcd_extern_i2c_T5800Q_get_default_index(void);
