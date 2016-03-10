@@ -69,7 +69,9 @@ static int do_vout_list(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv
 
 static int do_vout_output(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 {
+#ifdef CONFIG_AML_HDMITX20
 	char mode[64];
+#endif
 #ifdef CONFIG_AML_LCD
 	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
 #endif
