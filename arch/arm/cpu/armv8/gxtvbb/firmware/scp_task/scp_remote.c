@@ -124,7 +124,7 @@ static const reg_remote RDECODEMODE_TOSHIBA[] = {
 	{AO_MF_IR_DEC_BIT_0, 60 << 16 | 40 << 0},
 	{AO_MF_IR_DEC_REG0, 3 << 28 | (0xFA0 << 12) | 0x13},
 	{AO_MF_IR_DEC_STATUS, (124 << 20) | (100 << 10)},
-	{AO_MF_IR_DEC_REG1, 0x9f50},
+	{AO_MF_IR_DEC_REG1, 0x9f10},
 	{AO_MF_IR_DEC_REG2, 0x5},
 	{AO_MF_IR_DEC_DURATN2, 0},
 	{AO_MF_IR_DEC_DURATN3, 0},
@@ -138,7 +138,7 @@ static const reg_remote RDECODEMODE_RCA[] = {
 	{AO_MF_IR_DEC_BIT_0, 100 << 16 | 48 << 0},	// logic '0' or '00' 1500us
 	{AO_MF_IR_DEC_REG0, 3 << 28 | (0xFA0 << 12) | 0x13},	// sys clock boby time.base time = 20 body frame
 	{AO_MF_IR_DEC_STATUS, (150 << 20) | (110 << 10)},	// logic '1' or '01'    2500us
-	{AO_MF_IR_DEC_REG1, 0x9740},	// boby long decode (8-13) //framn len = 24bit
+	{AO_MF_IR_DEC_REG1, 0x9700},	// boby long decode (8-13) //framn len = 24bit
 	/*it may get the wrong customer value and key value from register if the value is set to 0x4,so the register value must set to 0x104 */
 	{AO_MF_IR_DEC_REG2, 0x104},
 	{AO_MF_IR_DEC_DURATN2, 0},
@@ -163,7 +163,7 @@ static const reg_remote RDECODEMODE_NEC_TOSHIBA_2IN1[] = {
 	{AO_MF_IR_DEC_BIT_0, 60 << 16 | 40 << 0},
 	{AO_MF_IR_DEC_REG0, 3 << 28 | (0xFA0 << 12) | 0x13},
 	{AO_MF_IR_DEC_STATUS, (124 << 20) | (100 << 10)},
-	{AO_MF_IR_DEC_REG1, 0x9f50},
+	{AO_MF_IR_DEC_REG1, 0x9f10},
 	{AO_MF_IR_DEC_REG2, 0x5},
 	{AO_MF_IR_DEC_DURATN2, 0},
 	{AO_MF_IR_DEC_DURATN3, 0},
@@ -186,7 +186,7 @@ static const reg_remote RDECODEMODE_NEC_RCA_2IN1[] = {
 	{AO_MF_IR_DEC_BIT_0, 100 << 16 | 48 << 0},	// logic '0' or '00' 1500us
 	{AO_MF_IR_DEC_REG0, 3 << 28 | (0xFA0 << 12) | 0x13},	// sys clock boby time.base time = 20 body frame
 	{AO_MF_IR_DEC_STATUS, (150 << 20) | (110 << 10)},	// logic '1' or '01'    2500us
-	{AO_MF_IR_DEC_REG1, 0x9740},	// boby long decode (8-13) //framn len = 24bit
+	{AO_MF_IR_DEC_REG1, 0x9700},	// boby long decode (8-13) //framn len = 24bit
 	/*it may get the wrong customer value and key value from register if the value is set to 0x4,so the register value must set to 0x104 */
 	{AO_MF_IR_DEC_REG2, 0x104},
 	{AO_MF_IR_DEC_DURATN2, 0},

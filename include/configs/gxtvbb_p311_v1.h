@@ -59,7 +59,7 @@
 #define CONFIG_IR_REMOTE_POWER_UP_KEY_VAL2 0xf30cfe01 //amlogic nec tv ir --- ch+
 #define CONFIG_IR_REMOTE_POWER_UP_KEY_VAL3 0xf20dfe01 //amlogic nec tv ir --- ch-
 #define CONFIG_IR_REMOTE_POWER_UP_KEY_VAL4 0xe51afb04 //amlogic nec box ir --- power
-#define CONFIG_IR_REMOTE_POWER_UP_KEY_VAL5 0xe31cfe01 //amlogic nec tv ir --- right
+#define CONFIG_IR_REMOTE_POWER_UP_KEY_VAL5 0xFFFFFFFF //amlogic nec tv ir --- right
 #define CONFIG_IR_REMOTE_POWER_UP_KEY_VAL6 0x00f2a0d5  //tcl rca
 #define CONFIG_IR_REMOTE_POWER_UP_KEY_VAL7 0xf40b1818  //hair toshiba
 #define CONFIG_IR_REMOTE_POWER_UP_KEY_VAL8 0xf30c0e0e  //skyworth
