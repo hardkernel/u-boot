@@ -20,7 +20,8 @@
 */
 
 #include <config.h>
-
+#define ON 1
+#define OFF 0
 static unsigned int pwm_voltage_table[][2] = {
 	{0x180004, 900},
 	{0x170005, 910},
@@ -60,6 +61,7 @@ static unsigned int pwm_voltage_table[][2] = {
 #define P_AO_PWM_PWM_B1		(*((volatile unsigned *)(0xc8100400 + (0x55 << 2))))
 #define P_EE_TIMER_E		(*((volatile unsigned *)(0xc1100000 + (0x2662 << 2))))
 
+static void power_on_ddr(void);
 enum pwm_id {
 	pwm_a = 0,
 	pwm_b,
@@ -70,7 +72,22 @@ enum pwm_id {
 	pwm_ao_a,
 	pwm_ao_b,
 };
+static void power_switch_to_ee(unsigned int pwr_ctrl)
+{
+	if (pwr_ctrl == ON) {
+		writel(readl(AO_RTI_PWR_CNTL_REG0) | (0x1 << 9), AO_RTI_PWR_CNTL_REG0);
+		_udelay(1000);
+		writel(readl(AO_RTI_PWR_CNTL_REG0)
+			& (~((0x3 << 3) | (0x1 << 1))), AO_RTI_PWR_CNTL_REG0);
+	} else {
+		writel(readl(AO_RTI_PWR_CNTL_REG0)
+		       | ((0x3 << 3) | (0x1 << 1)), AO_RTI_PWR_CNTL_REG0);
 
+		writel(readl(AO_RTI_PWR_CNTL_REG0) & (~(0x1 << 9)),
+		       AO_RTI_PWR_CNTL_REG0);
+
+	}
+}
 static void pwm_set_voltage(unsigned int id, unsigned int voltage)
 {
 	int to;
@@ -129,17 +146,24 @@ static void power_on_usb5v(void)
 
 static void power_off_at_clk81(void)
 {
-	pwm_set_voltage(pwm_ao_b, CONFIG_VDDEE_SLEEP_VOLTAGE);	// reduce power
+	pwm_set_voltage(pwm_ao_b, CONFIG_VDDEE_SLEEP_VOLTAGE);	/* reduce power */
 	power_off_3v3_5v();
 	power_off_usb5v();
+
 }
 
-static void power_on_at_clk81(void)
+static void power_on_at_clk81(unsigned int suspend_from)
 {
 	pwm_set_voltage(pwm_ao_b, CONFIG_VDDEE_INIT_VOLTAGE);
-	power_on_usb5v();
 	power_on_3v3_5v();
-	_udelay(6000);
+	_udelay(10000);
+	_udelay(10000);
+	_udelay(10000);
+	_udelay(10000);
+	power_on_usb5v();
+	if (suspend_from == SYS_POWEROFF) {
+		power_switch_to_ee(ON);
+	}
 }
 
 static void power_off_at_24M(void)
@@ -148,6 +172,7 @@ static void power_off_at_24M(void)
 
 static void power_on_at_24M(void)
 {
+
 }
 
 static void power_off_ddr(void)
@@ -160,16 +185,12 @@ static void power_on_ddr(void)
 {
 	aml_update_bits(AO_GPIO_O_EN_N, 1 << 3, 0);
 	aml_update_bits(AO_GPIO_O_EN_N, 1 << 19, 1 << 19);
+	_udelay(10000);
 }
 
 static void power_off_ee(void)
 {
-	pwm_set_voltage(pwm_ao_b, CONFIG_VDDEE_INIT_VOLTAGE);
-	writel(readl(AO_RTI_PWR_CNTL_REG0)
-	       | ((0x3 << 3) | (0x1 << 1)), AO_RTI_PWR_CNTL_REG0);
-	_udelay(100);
-	writel(readl(AO_RTI_PWR_CNTL_REG0) & (~(0x1 << 9)),
-	       AO_RTI_PWR_CNTL_REG0);
+	power_switch_to_ee(OFF);
 	aml_update_bits(AO_GPIO_O_EN_N, 1 << 8, 0);
 	aml_update_bits(AO_GPIO_O_EN_N, 1 << 24, 1 << 24);
 }
@@ -179,26 +200,22 @@ static void power_on_ee(void)
 	aml_update_bits(AO_GPIO_O_EN_N, 1 << 8, 0);
 	aml_update_bits(AO_GPIO_O_EN_N, 1 << 24, 0);
 	_udelay(10000);
-	pwm_set_voltage(pwm_ao_b, CONFIG_VDDEE_INIT_VOLTAGE);
-	writel(readl(AO_RTI_PWR_CNTL_REG0) | (0x1 << 9), AO_RTI_PWR_CNTL_REG0);
-	_udelay(500);
-	writel(readl(AO_RTI_PWR_CNTL_REG0)
-	       & (~((0x3 << 3) | (0x1 << 1))), AO_RTI_PWR_CNTL_REG0);
+	_udelay(10000);
 }
 
 static void power_off_at_32k(unsigned int suspend_from)
 {
 	if (suspend_from == SYS_POWEROFF) {
-		power_off_ddr();
 		power_off_ee();
+		power_off_ddr();
 	}
 }
 
 static void power_on_at_32k(unsigned int suspend_from)
 {
 	if (suspend_from == SYS_POWEROFF) {
-		power_on_ee();
 		power_on_ddr();
+		power_on_ee();
 
 	}
 }
@@ -284,7 +301,8 @@ static unsigned int detect_key(unsigned int suspend_from)
 	unsigned time_out_ms = time_out * 100;
 	unsigned *irq = (unsigned *)SECURE_TASK_SHARE_IRQ;
 	/* unsigned *wakeup_en = (unsigned *)SECURE_TASK_RESPONSE_WAKEUP_EN; */
-
+	uart_puts("enter detect key\n");
+	_udelay(10000);
 	/* setup wakeup resources */
 	/*auto suspend: timerA 10ms resolution */
 	if (time_out_ms != 0) {

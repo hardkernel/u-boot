@@ -134,7 +134,8 @@ static void power_off_at_clk81(void)
 	power_off_3v3_5v();
 	power_off_vcck();
 }
-static void power_on_at_clk81(void)
+
+static void power_on_at_clk81(unsigned int suspend_from)
 {
 	pwm_set_voltage(pwm_ao_b, CONFIG_VDDEE_INIT_VOLTAGE);
 	power_on_vcck();

@@ -24,7 +24,8 @@
 static void power_off_at_clk81(void)
 {
 }
-static void power_on_at_clk81(void)
+
+static void power_on_at_clk81(unsigned int suspend_from)
 {
 }
 

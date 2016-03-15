@@ -132,9 +132,9 @@ void enter_suspend(unsigned int suspend_from)
 		ao_switch_to_ao_24M();
 	p_pwr_op->power_off_at_32k(suspend_from);
 	exit_reason = p_pwr_op->detect_key(suspend_from);
-	p_pwr_op->power_on_at_24M();
-	p_pwr_op->power_on_at_clk81();
 	p_pwr_op->power_on_at_32k(suspend_from);
+	p_pwr_op->power_on_at_24M();
+	p_pwr_op->power_on_at_clk81(suspend_from);
 	if (suspend_from == SYS_POWEROFF)
 		ao_switch_to_ee();
 	uart_puts("exit_reason:0x");
