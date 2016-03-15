@@ -868,7 +868,7 @@ endif
 FIP_ARGS += --bl33 $(FIP_FOLDER_SOC)/bl33.bin
 
 .PHONY: fip.bin
-fip.bin: tools prepare
+fip.bin: tools prepare u-boot.bin
 	$(Q)cp u-boot.bin $(FIP_FOLDER_SOC)/bl33.bin
 	$(Q)$(FIP_FOLDER)/fip_create ${FIP_ARGS} $(FIP_FOLDER_SOC)/fip.bin
 	$(Q)$(FIP_FOLDER)/fip_create --dump $(FIP_FOLDER_SOC)/fip.bin
