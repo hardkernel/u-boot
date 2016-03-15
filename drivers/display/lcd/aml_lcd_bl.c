@@ -80,16 +80,18 @@ static struct bl_config_s *bl_check_valid(void)
 
 static void bl_pwm_pinmux_gpio_set(int pwm_index, int gpio_level)
 {
-	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
 	struct bl_config_s *bconf;
 	struct bl_pwm_config_s *bl_pwm = NULL;
 	int i;
 
-	bconf = lcd_drv->bl_config;
+	bconf = bl_check_valid();
+	if (bconf == NULL)
+		return;
 
 	switch (bconf->method) {
 	case BL_CTRL_PWM:
 		bl_pwm = bconf->bl_pwm;
+		break;
 	case BL_CTRL_PWM_COMBO:
 		if (pwm_index == 0)
 			bl_pwm = bconf->bl_pwm_combo0;
@@ -97,9 +99,9 @@ static void bl_pwm_pinmux_gpio_set(int pwm_index, int gpio_level)
 			bl_pwm = bconf->bl_pwm_combo1;
 		break;
 	default:
+		LCDERR("bl: %s: invalid method %d\n", __func__, bconf->method);
 		break;
 	}
-
 	if (bl_pwm == NULL)
 		return;
 
@@ -130,16 +132,18 @@ static void bl_pwm_pinmux_gpio_set(int pwm_index, int gpio_level)
 
 static void bl_pwm_pinmux_gpio_clr(unsigned int pwm_index)
 {
-	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
 	struct bl_config_s *bconf;
 	struct bl_pwm_config_s *bl_pwm = NULL;
 	int i;
 
-	bconf = lcd_drv->bl_config;
+	bconf = bl_check_valid();
+	if (bconf == NULL)
+		return;
 
 	switch (bconf->method) {
 	case BL_CTRL_PWM:
 		bl_pwm = bconf->bl_pwm;
+		break;
 	case BL_CTRL_PWM_COMBO:
 		if (pwm_index == 0)
 			bl_pwm = bconf->bl_pwm_combo0;
@@ -147,11 +151,12 @@ static void bl_pwm_pinmux_gpio_clr(unsigned int pwm_index)
 			bl_pwm = bconf->bl_pwm_combo1;
 		break;
 	default:
+		LCDERR("bl: %s: invalid method %d\n", __func__, bconf->method);
 		break;
 	}
-
 	if (bl_pwm == NULL)
 		return;
+
 	if (lcd_debug_print_flag) {
 		LCDPR("bl: %s: pwm_port=%d, pinmux_flag=%d\n",
 			__func__, bl_pwm->pwm_port, bl_pwm->pinmux_flag);

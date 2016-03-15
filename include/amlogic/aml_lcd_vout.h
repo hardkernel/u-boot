@@ -326,7 +326,7 @@ extern struct lcd_config_s lcd_config_dft;
 
 /* ==============backlight control config================== */
 enum bl_ctrl_method_e {
-	BL_CTRL_GPIO,
+	BL_CTRL_GPIO = 0,
 	BL_CTRL_PWM,
 	BL_CTRL_PWM_COMBO,
 	BL_CTRL_LOCAL_DIMING,
