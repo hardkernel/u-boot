@@ -13,6 +13,7 @@
 
 #include "../include/phynand.h"
 #include <amlogic/secure_storage.h>
+#include <asm/arch/secure_apb.h>
 
 struct amlnand_chip *aml_nand_chip = NULL;
 extern int boot_dev_init(struct amlnand_chip *aml_chip);
@@ -268,6 +269,12 @@ void dbg_phyop( void )
 	dbg_buffer_free(aml_chip);
 }
 
+void amlnand_clear_pinmux(struct amlnand_chip *aml_chip)
+{
+	amlnf_clr_reg32_mask(P_PERIPHS_PIN_MUX_4,(0x7ff<<20));
+	return;
+}
+
 int amlnf_phy_init(u8 flag, struct platform_device *pdev)
 {
 	struct amlnand_chip *aml_chip = NULL;
@@ -315,6 +322,7 @@ int amlnf_phy_init(u8 flag, struct platform_device *pdev)
 	if (ret < 0) {
 		aml_nand_msg("chip detect failed and ret:%x", ret);
 		device_boot_flag = EMMC_BOOT_FLAG;
+		amlnand_clear_pinmux(aml_chip);
 		ret = -NAND_FAILED;
 		goto exit_error1;
 	}
