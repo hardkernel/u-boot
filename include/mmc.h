@@ -164,6 +164,8 @@
 #define EXT_CSD_HC_WP_GRP_SIZE		221	/* RO */
 #define EXT_CSD_HC_ERASE_GRP_SIZE	224	/* RO */
 #define EXT_CSD_BOOT_MULT		226	/* RO */
+#define EXT_CSD_DEV_LIFETIME_EST_TYP_A	268	/* RO */
+#define EXT_CSD_DEV_LIFETIME_EST_TYP_B	269	/* RO */
 
 /*
  * EXT_CSD field definitions
@@ -308,6 +310,8 @@ struct mmc {
 	uint read_bl_len;
 	uint write_bl_len;
 	uint erase_grp_size;
+	uint dev_lifetime_est_typ_a;
+	uint dev_lifetime_est_typ_b;
 	u64 capacity;
 	u64 capacity_user;
 	u64 capacity_boot;

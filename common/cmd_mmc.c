@@ -444,6 +444,25 @@ static int do_mmc_list(cmd_tbl_t *cmdtp, int flag,
 	print_mmc_devices('\n');
 	return CMD_RET_SUCCESS;
 }
+
+static int do_mmc_ext_csd(cmd_tbl_t *cmdtp, int flag,
+		       int argc, char * const argv[])
+{
+	int dev;
+	struct mmc *mmc;
+
+	if (curr_device < 0)
+		dev = 1;
+	else
+		dev = curr_device;
+	mmc = init_mmc_device(dev, false);
+	if (!mmc)
+		return CMD_RET_FAILURE;
+	printf("dev_lifetime_est_type: a = %x, b = %x\n",
+			mmc->dev_lifetime_est_typ_a, mmc->dev_lifetime_est_typ_b);
+	return CMD_RET_SUCCESS;
+}
+
 #ifdef CONFIG_SUPPORT_EMMC_BOOT
 static int do_mmc_bootbus(cmd_tbl_t *cmdtp, int flag,
 			  int argc, char * const argv[])
@@ -601,6 +620,7 @@ static cmd_tbl_t cmd_mmc[] = {
 	U_BOOT_CMD_MKENT(part, 1, 1, do_mmc_part, "", ""),
 	U_BOOT_CMD_MKENT(dev, 3, 0, do_mmc_dev, "", ""),
 	U_BOOT_CMD_MKENT(list, 1, 1, do_mmc_list, "", ""),
+	U_BOOT_CMD_MKENT(lifetime, 1, 1, do_mmc_ext_csd, "", ""),
 #ifdef CONFIG_SUPPORT_EMMC_BOOT
 	U_BOOT_CMD_MKENT(bootbus, 5, 0, do_mmc_bootbus, "", ""),
 	U_BOOT_CMD_MKENT(bootpart-resize, 4, 0, do_mmc_boot_resize, "", ""),
@@ -650,6 +670,7 @@ U_BOOT_CMD(
 	"mmc part - lists available partition on current mmc device\n"
 	"mmc dev [dev] [part] - show or set current mmc device [partition]\n"
 	"mmc list - lists available devices\n"
+	"mmc lifetime - show dev life time estimate type A/B\n"
 #ifdef CONFIG_SUPPORT_EMMC_BOOT
 	"mmc bootbus dev boot_bus_width reset_boot_bus_width boot_mode\n"
 	" - Set the BOOT_BUS_WIDTH field of the specified device\n"

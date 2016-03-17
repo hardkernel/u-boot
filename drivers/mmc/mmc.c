@@ -1016,6 +1016,12 @@ static int mmc_startup(struct mmc *mmc)
 			break;
 		}
 
+		/* dev life time estimate type A/B */
+		mmc->dev_lifetime_est_typ_a
+			= ext_csd[EXT_CSD_DEV_LIFETIME_EST_TYP_A];
+		mmc->dev_lifetime_est_typ_b
+			= ext_csd[EXT_CSD_DEV_LIFETIME_EST_TYP_B];
+
 		/*
 		 * Host needs to enable ERASE_GRP_DEF bit if device is
 		 * partitioned. This bit will be lost every time after a reset
