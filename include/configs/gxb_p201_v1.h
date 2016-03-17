@@ -57,6 +57,8 @@
 #define CONFIG_SERIAL_MULTI		1
 
 //Enable ir remote wake up for bl30
+//#define CONFIG_IR_REMOTE
+//#define CONFIG_AML_IRDETECT_EARLY
 #define CONFIG_IR_REMOTE_POWER_UP_KEY_CNT 3
 #define CONFIG_IR_REMOTE_USE_PROTOCOL 0         // 0:nec  1:duokan  2:Toshiba 3:rca 4:rcmm
 #define CONFIG_IR_REMOTE_POWER_UP_KEY_VAL1 0XE51AFB04 //amlogic tv ir --- power
