@@ -36,7 +36,7 @@ extern unsigned int get_mmc_size(void);
 #define GPIO_OTG_PWREN		124
 #define GPIO_TF3V3		35	/* GPIOY_12 */
 #define GPIO_TF1V8		122	/* GPIOAO_3 */
-#define GPIO_UPS_POWER_LATCH	9	/* GPIOX_9 */
+#define GPIO_UPS_POWER_LATCH	37	/* GPIOY_14 */
 
 int serial_set_pin_port(unsigned long port_base)
 {
