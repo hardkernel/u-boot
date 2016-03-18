@@ -292,6 +292,23 @@ typedef struct pack_header{
 }AmlResItemHead_t;
 #pragma pack(pop)
 
+#define CONFIG_MAX_PIC_LEN (12 << 20)
+static const unsigned char gzip_magic[] = { 0x1f, 0x8b };
+
+//uncompress known format for 'imgread pic'
+static int imgread_uncomp_pic(unsigned char* srcAddr, const unsigned srcSz,
+        unsigned char* dstAddr, const unsigned dstBufSz, unsigned long* dstDatSz)
+{
+    /*debugP("srcAddr[%x, %x]\n", srcAddr[0], srcAddr[1]);*/
+    if (!memcmp(srcAddr, gzip_magic, sizeof(gzip_magic)))
+    {
+        *dstDatSz = srcSz;
+        return gunzip(dstAddr, dstBufSz, srcAddr, dstDatSz);
+    }
+
+    return 0;
+}
+
 //[imgread pic] logo bootup $loadaddr_misc
 static int do_image_read_pic(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
@@ -310,12 +327,14 @@ static int do_image_read_pic(cmd_tbl_t *cmdtp, int flag, int argc, char * const 
 
     pResImgHead = (AmlResImgHead_t*)loadaddr;
 
+    debugP("to read pic (%s)\n", picName);
     rc = store_read_ops((unsigned char*)partName, loadaddr, flashReadOff, PreloadSz);
     if (rc) {
         errorP("Fail to read 0x%xB from part[%s] at offset 0\n", PreloadSz, partName);
         return __LINE__;
     }
     flashReadOff = PreloadSz;
+    debugP("end read pic sz %d\n", PreloadSz);
 
     if (img_res_check_log_header(pResImgHead)) {
         errorP("Logo header err.\n");
@@ -350,16 +369,33 @@ static int do_image_read_pic(cmd_tbl_t *cmdtp, int flag, int argc, char * const 
                     char env_name[IH_NMLEN*2];
                     char env_data[IH_NMLEN*2];
                     unsigned long picLoadAddr = (unsigned long)loadaddr + (unsigned)pItem->start;
+                    int         itemSz      = pItem->size;
+                    int         uncompSz    = 0;
 
-                    if (pItem->start + pItem->size > flashReadOff)
+                    if (pItem->start + itemSz > flashReadOff)
                     {
                         //emmc read can't support offset not align 512
                         rc = store_read_ops((unsigned char*)partName, (unsigned char *)((picLoadAddr>>9)<<9),
-                                ((pItem->start>>9)<<9), pItem->size + (picLoadAddr & 0x1ff));
+                                ((pItem->start>>9)<<9), itemSz + (picLoadAddr & 0x1ff));
                         if (rc) {
                             errorP("Fail to read pic at offset 0x%x\n", pItem->start);
                             return __LINE__;
                         }
+                        debugP("pic sz 0x%x\n", itemSz);
+                    }
+
+                    //uncompress supported format
+                    unsigned long uncompLoadaddr = picLoadAddr + itemSz + 7;
+                    uncompLoadaddr &= ~(0x7U);
+                    rc = imgread_uncomp_pic((unsigned char*)picLoadAddr, itemSz, (unsigned char*)uncompLoadaddr,
+                            CONFIG_MAX_PIC_LEN, (unsigned long*)&uncompSz);
+                    if (rc) {
+                        errorP("Fail in uncomp pic,rc[%d]\n", rc);
+                        return __LINE__;
+                    }
+                    if (uncompSz) {
+                        itemSz      = uncompSz;
+                        picLoadAddr = uncompLoadaddr;
                     }
 
                     sprintf(env_name, "%s_offset", argv[2]);//be bootup_offset ,not bootup_720_offset
@@ -367,9 +403,10 @@ static int do_image_read_pic(cmd_tbl_t *cmdtp, int flag, int argc, char * const 
                     setenv(env_name, env_data);
 
                     sprintf(env_name, "%s_size", argv[2]);
-                    sprintf(env_data, "0x%x", pItem->size);
+                    sprintf(env_data, "0x%x", itemSz);
                     setenv(env_name, env_data);
 
+                    debugP("end read pic[%s]\n", picName);
                     return 0;//success
             }
     }
