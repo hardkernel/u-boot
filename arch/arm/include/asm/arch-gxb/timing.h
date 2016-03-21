@@ -1,6 +1,5 @@
 
 /*
- * arch/arm/include/asm/arch-gxb/timing.h
  *
  * Copyright (C) 2015 Amlogic, Inc. All rights reserved.
  *
@@ -99,6 +98,17 @@ struct ddr_set{
 	/* v2 added, dqs correction */
 	unsigned char  wr_adj_per[6];
 	unsigned char  rd_adj_per[6];
+
+	/* v3 added, lpddr3 support */
+	unsigned short t_pub_mr11;
+	unsigned char  t_lpddr3_ca0;
+	unsigned char  t_lpddr3_ca1;
+	unsigned char  t_lpddr3_remap;
+	unsigned char  t_lpddr3_wl;
+	unsigned char  rsv1;
+	unsigned char  rsv2;
+
+	/* aligned 4 bytes */
 }__attribute__ ((packed));
 
 struct ddr_timing{
@@ -148,6 +158,15 @@ struct ddr_timing{
 	unsigned short cfg_ddr_exsr;
 	unsigned short cfg_ddr_zqcl;
 	unsigned short cfg_ddr_zqcsi;
+
+	/* timing v2 added, lpddr3 support */
+	unsigned short cfg_ddr_rpab;
+	unsigned short cfg_ddr_rppb;
+	unsigned short cfg_ddr_tdqsck;
+	unsigned short cfg_ddr_tdqsckmax;
+	unsigned short cfg_ddr_tckesr;
+	unsigned short cfg_ddr_tdpd;
+	unsigned short cfg_ddr_taond_aofd;
 }__attribute__ ((packed));
 
 typedef struct ddr_set ddr_set_t;

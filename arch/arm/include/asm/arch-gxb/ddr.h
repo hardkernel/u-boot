@@ -16,10 +16,10 @@
 #define wait_equal(addr, data) do{}while(data != (rd_reg(addr)));
 
 /* function defines */
-unsigned int ddr_init(void);
+unsigned int ddr_init(unsigned int flag);
 unsigned int ddr_init_pll(void);
 unsigned int ddr_init_dmc(void);
-unsigned int ddr_init_pctl(void);
+unsigned int ddr_init_pctl(unsigned int flag);
 unsigned int hot_boot(void);
 void ddr_print_info(void);
 void ddr_test(void);
@@ -82,14 +82,33 @@ void ddr_debug(void);
 				(PUB_PIR_WREYE)			 \
 				)
 
+#define DDR_PIR_ONLY_WL ((PUB_PIR_ZCAL) 		|\
+				(PUB_PIR_PLLINIT) 		|\
+				(PUB_PIR_DCAL) 			|\
+				(PUB_PIR_PHYRST)		|\
+				(PUB_PIR_DRAMRST)		|\
+				(PUB_PIR_DRAMINIT)		|\
+				(PUB_PIR_WL)			\
+				)
+
+//#define CONFIG_DDR_ZQ_POWER_DOWN
+//#define CONFIG_DDR_POWER_DOWN_PHY_VREF
+
 /* PHY general status register (PGSR0) */
-#if (CONFIG_DDR_TYPE == CONFIG_DDR_TYPE_DDR3)
 #define DDR_PGSR0_CHECK() ((rd_reg(DDR0_PUB_PGSR0) != 0xC0000fff) && \
 							(rd_reg(DDR0_PUB_PGSR0) != 0x80000fff))
-#elif (CONFIG_DDR_TYPE == CONFIG_DDR_TYPE_LPDDR2)
-#define DDR_PGSR0_CHECK()
-#elif (CONFIG_DDR_TYPE == CONFIG_DDR_TYPE_LPDDR3)
-#define DDR_PGSR0_CHECK()
+#define DDR_PGSR0_CHECK_LPDDR2()
+
+#ifdef CONFIG_LPDDR3_CA_TRAINING
+#define DDR_PGSR0_CHECK_LPDDR3() ((rd_reg(DDR0_PUB_PGSR0) != 0xC0001fbf) && \
+							(rd_reg(DDR0_PUB_PGSR0) != 0xe0001fbf)&& \
+							(rd_reg(DDR0_PUB_PGSR0) != 0xa0001fbf)&& \
+							(rd_reg(DDR0_PUB_PGSR0) != 0x80001fbf))
+#else
+#define DDR_PGSR0_CHECK_LPDDR3() ((rd_reg(DDR0_PUB_PGSR0) != 0xC0000fbf) && \
+							(rd_reg(DDR0_PUB_PGSR0) != 0xe0000fbf)&& \
+							(rd_reg(DDR0_PUB_PGSR0) != 0xa0000fbf)&& \
+							(rd_reg(DDR0_PUB_PGSR0) != 0x80000fbf))
 #endif
 
 /* other regs */

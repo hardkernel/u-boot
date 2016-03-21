@@ -10,12 +10,13 @@ struct acs_setting __acs_set={
 					.acs_set_length	= sizeof(__acs_set),
 
 					.ddr_magic		= "ddrs_",
-					.ddr_set_version= 2, //2016.01.15 update to v2, add dqs gate tuning
+					.ddr_set_version= 3, //2016.01.15 update to v2, add dqs gate tuning
+										//2016.03.21 update to v3, add lpddr3 support
 					.ddr_set_length	= sizeof(ddr_set_t),
 					.ddr_set_addr	= (unsigned long)(&__ddr_setting),
 
 					.ddrt_magic		= "ddrt_",
-					.ddrt_set_version= 1,
+					.ddrt_set_version= 2, //2016.03.21 update to v2, add lpddr3 support
 					.ddrt_set_length= sizeof(ddr_timing_t),
 					.ddrt_set_addr	= (unsigned long)(&__ddr_timming),
 

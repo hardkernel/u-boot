@@ -46,8 +46,39 @@
 #define DDR3_ODT_20OHM		4
 #define DDR3_ODT_30OHM		5
 
-#define CFG_DDR3_DRV  DDR3_DRV_40OHM
-#define CFG_DDR3_ODT  DDR3_ODT_120OHM
+/* lpddr2 drv odt */
+#define LPDDR2_DRV_34OHM	1
+#define LPDDR2_DRV_40OHM	2
+#define LPDDR2_DRV_48OHM	3
+#define LPDDR2_DRV_60OHM	4
+#define LPDDR2_DRV_80OHM	6
+#define LPDDR2_DRV_120OHM	7
+#define LPDDR2_ODT_0OHM		0
+
+/* lpddr3 drv odt */
+#define LPDDR3_DRV_34OHM	1
+#define LPDDR3_DRV_40OHM	2
+#define LPDDR3_DRV_48OHM	3
+#define LPDDR3_DRV_60OHM	4
+#define LPDDR3_DRV_80OHM	6
+#define LPDDR3_DRV_34_40OHM	9
+#define LPDDR3_DRV_40_48OHM	10
+#define LPDDR3_DRV_34_48OHM	11
+#define LPDDR3_ODT_0OHM		0
+#define LPDDR3_ODT_60OHM	1
+#define LPDDR3_ODT_12OHM	2
+#define LPDDR3_ODT_240HM	3
+
+#if (CONFIG_DDR_TYPE == CONFIG_DDR_TYPE_DDR3)
+#define CFG_DDR_DRV  DDR3_DRV_40OHM
+#define CFG_DDR_ODT  DDR3_ODT_120OHM
+#elif (CONFIG_DDR_TYPE == CONFIG_DDR_TYPE_LPDDR2)
+#define CFG_DDR_DRV  LPDDR2_DRV_48OHM
+#define CFG_DDR_ODT  DDR3_ODT_120OHM
+#elif (CONFIG_DDR_TYPE == CONFIG_DDR_TYPE_LPDDR3)
+#define CFG_DDR_DRV  LPDDR3_DRV_48OHM
+#define CFG_DDR_ODT  LPDDR3_ODT_12OHM
+#endif
 
 /*
  * these parameters are corresponding to the pcb layout,
@@ -282,6 +313,94 @@ ddr_timing_t __ddr_timming[] = {
 		.cfg_ddr_zqcl			= (136),
 		.cfg_ddr_xpdll			= (23),
 		.cfg_ddr_zqcsi			= (1000),
+	},
+	/* lpddr2 */
+	{
+		.identifier				= CONFIG_LPDDR2_TIMMING_DDR1066,
+		.cfg_ddr_rtp			= 4,//(4),0
+		.cfg_ddr_wtr			= (4),
+		.cfg_ddr_rp				= (12),
+		.cfg_ddr_rcd			= (10),
+		.cfg_ddr_ras			= (23),
+		.cfg_ddr_rrd			= (6),
+		.cfg_ddr_rc				= (36),
+		.cfg_ddr_mrd			= (5),
+		.cfg_ddr_mod			= (0),
+		.cfg_ddr_faw			= (27),
+		.cfg_ddr_rfc			= (70),
+		.cfg_ddr_wlmrd			= (0),
+		.cfg_ddr_wlo			= (0),
+		.cfg_ddr_xs				= (512),
+		.cfg_ddr_xp				= (4),
+		.cfg_ddr_cke			= (3),
+		.cfg_ddr_dllk			= (512),
+		.cfg_ddr_rtodt			= (0),
+		.cfg_ddr_rtw			= (4),
+		.cfg_ddr_refi			= (39),
+		.cfg_ddr_refi_mddr3		= (0),
+		.cfg_ddr_cl				= (8),
+		.cfg_ddr_wr				= (8),
+		.cfg_ddr_cwl			= (4),
+		.cfg_ddr_al				= (0),
+		.cfg_ddr_exsr			= (76),
+		.cfg_ddr_dqs			= (4),
+		.cfg_ddr_cksre			= (0),
+		.cfg_ddr_cksrx			= (2),
+		.cfg_ddr_zqcs			= (48),
+		.cfg_ddr_zqcl			= (192),
+		.cfg_ddr_xpdll			= (0),
+		.cfg_ddr_zqcsi			= (1000),
+		.cfg_ddr_rpab			= (12),
+		.cfg_ddr_rppb			= (10),
+		.cfg_ddr_tdqsck			= (1),
+		.cfg_ddr_tdqsckmax		= (2),
+		.cfg_ddr_tckesr			= (8),
+		.cfg_ddr_tdpd			= (500),
+		.cfg_ddr_taond_aofd		= 2,
+	},
+	/* lpddr3 */
+	{
+		.identifier				= CONFIG_LPDDR3_TIMMING_DDR1600,
+		.cfg_ddr_rtp			=6,// (6),0
+		.cfg_ddr_wtr			= (6),
+		.cfg_ddr_rp				= (17),
+		.cfg_ddr_rcd			= (15),
+		.cfg_ddr_ras			= (34),
+		.cfg_ddr_rrd			= (8),
+		.cfg_ddr_rc				= (51),
+		.cfg_ddr_mrd			= (11),
+		.cfg_ddr_mod			= (0),
+		.cfg_ddr_faw			= (40),
+		.cfg_ddr_rfc			= (128),
+		.cfg_ddr_wlmrd			= (32),
+		.cfg_ddr_wlo			= (8),
+		.cfg_ddr_xs				= (512),
+		.cfg_ddr_xp				= (6),
+		.cfg_ddr_cke			= 7,//(6),//need <=7
+		.cfg_ddr_dllk			= (512),
+		.cfg_ddr_rtodt			= (0),
+		.cfg_ddr_rtw			= (4),
+		.cfg_ddr_refi			= (39),
+		.cfg_ddr_refi_mddr3		= (0),
+		.cfg_ddr_cl				= (12),
+		.cfg_ddr_wr				= (12),
+		.cfg_ddr_cwl			= (6),
+		.cfg_ddr_al				= (0),
+		.cfg_ddr_exsr			= (112),
+		.cfg_ddr_dqs			= (4),
+		.cfg_ddr_cksre			= 2,// (12),//pctl need 2?
+		.cfg_ddr_cksrx			= 2,// (12),//pctl need 2?
+		.cfg_ddr_zqcs			= (72),
+		.cfg_ddr_zqcl			= (288),
+		.cfg_ddr_xpdll			= (0),
+		.cfg_ddr_zqcsi			= (1000),
+		.cfg_ddr_rpab			= (17),
+		.cfg_ddr_rppb			= (15),
+		.cfg_ddr_tdqsck			= (3),//2500-5500ps if no gate training should (int+1)
+		.cfg_ddr_tdqsckmax		= (5),
+		.cfg_ddr_tckesr			= (12),
+		.cfg_ddr_tdpd			= (500),
+		.cfg_ddr_taond_aofd		= 2,
 	}
 };
 
@@ -301,8 +420,8 @@ ddr_set_t __ddr_setting = {
 	.ddr_2t_mode			= 1,
 	.ddr_full_test			= CONFIG_DDR_FULL_TEST,
 	.ddr_size_detect		= CONFIG_DDR_SIZE_AUTO_DETECT,
-	.ddr_drv				= CFG_DDR3_DRV,
-	.ddr_odt				= CFG_DDR3_ODT,
+	.ddr_drv				= CFG_DDR_DRV,
+	.ddr_odt				= CFG_DDR_ODT,
 
 	/* pub defines */
 	.t_pub_ptr				= {
@@ -374,6 +493,13 @@ ddr_set_t __ddr_setting = {
 	.t_pub_acbdlr0          = 0x10,  //2015.09.21 add for  CK0 delay fine tune
 
 	.ddr_func				= DDR_FUNC, /* ddr func demo 2016.01.26 */
+
+	/* v3 added, lpddr3 support */
+	.t_pub_mr11				= CFG_DDR_ODT,
+	.t_lpddr3_ca0			= CONFIG_LPDDR3_CA_TRAINING_CA0,
+	.t_lpddr3_ca1			= CONFIG_LPDDR3_CA_TRAINING_CA1,
+	.t_lpddr3_remap			= CONFIG_LPDDR_REMAP_SET,
+	.t_lpddr3_wl			= CONFIG_LPDDR3_WRITE_LEVELING,
 };
 
 pll_set_t __pll_setting = {
