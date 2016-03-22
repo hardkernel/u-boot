@@ -124,10 +124,17 @@ static void lcd_power_ctrl(int status)
 		case LCD_POWER_TYPE_EXTERN:
 			ext_drv = aml_lcd_extern_get_driver();
 			if (ext_drv) {
-				if (status)
-					ext_drv->power_on();
-				else
-					ext_drv->power_off();
+				if (status) {
+					if (ext_drv->power_on)
+						ext_drv->power_on();
+					else
+						LCDERR("no ext power on\n");
+				} else {
+					if (ext_drv->power_off)
+						ext_drv->power_off();
+					else
+						LCDERR("no ext power off\n");
+				}
 			}
 			break;
 #endif
