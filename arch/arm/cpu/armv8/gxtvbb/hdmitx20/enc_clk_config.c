@@ -94,7 +94,7 @@ static void set_hpll_clk_out(unsigned clk)
 	case 5940:
 		hd_write_reg(P_HHI_HDMI_PLL_CNTL, 0x5800027b);
 		hd_set_reg_bits(P_HHI_HDMI_PLL_CNTL2, 0x4300, 0, 16); // div_frac
-		hd_write_reg(P_HHI_HDMI_PLL_CNTL3, 0x135c5091);
+		hd_write_reg(P_HHI_HDMI_PLL_CNTL3, 0x12dc5081);
 		hd_write_reg(P_HHI_HDMI_PLL_CNTL4, 0x801da72c);
 		hd_write_reg(P_HHI_HDMI_PLL_CNTL5, 0x71486980);
 		hd_write_reg(P_HHI_HDMI_PLL_CNTL6, 0x00002e55);
