@@ -991,38 +991,60 @@ static void hdmitx_set_pll(struct hdmitx_dev *hdev)
 	}
 }
 
+static void set_phy_by_mode(unsigned int mode)
+{
+	switch (mode) {
+	case 1: /* 5.94Gbps, 3.7125Gbsp */
+		hd_write_reg(P_HHI_HDMI_PHY_CNTL0, 0x33353245);
+		hd_write_reg(P_HHI_HDMI_PHY_CNTL3, 0x2100115b);
+		break;
+	case 2: /* 2.97Gbps */
+		hd_write_reg(P_HHI_HDMI_PHY_CNTL0, 0x33634283);
+		hd_write_reg(P_HHI_HDMI_PHY_CNTL3, 0xb000115b);
+		break;
+	case 3: /* 1.485Gbps, and below */
+	default:
+		hd_write_reg(P_HHI_HDMI_PHY_CNTL0, 0x33632122);
+		hd_write_reg(P_HHI_HDMI_PHY_CNTL3, 0x2000115b);
+		break;
+	}
+}
+
 static void hdmitx_set_phy(struct hdmitx_dev *hdev)
 {
 	if (!hdev)
 		return;
 
 	switch (hdev->vic) {
-        case HDMI_3840x2160p50_16x9:
-        case HDMI_3840x2160p60_16x9:
-        case HDMI_4096x2160p50_256x135:
-        case HDMI_4096x2160p60_256x135:
-                if (hdev->para->cs == HDMI_COLOR_FORMAT_420) {
-                    hd_write_reg(P_HHI_HDMI_PHY_CNTL0, 0x33634283);
-                    hd_write_reg(P_HHI_HDMI_PHY_CNTL3, 0xb000115b);
-                } else {
-                    hd_write_reg(P_HHI_HDMI_PHY_CNTL0, 0x33353245);
-                    hd_write_reg(P_HHI_HDMI_PHY_CNTL3, 0x2100115b);
-                }
-                break;
-        case HDMI_3840x2160p24_16x9:
-        case HDMI_3840x2160p25_16x9:
-        case HDMI_3840x2160p30_16x9:
-        case HDMI_4096x2160p24_256x135:
-        case HDMI_4096x2160p25_256x135:
-        case HDMI_4096x2160p30_256x135:
-                hd_write_reg(P_HHI_HDMI_PHY_CNTL0, 0x33634283);
-                hd_write_reg(P_HHI_HDMI_PHY_CNTL3, 0xb000115b);
-                break;
-        case HDMI_1920x1080p60_16x9:
-        default:
-                hd_write_reg(P_HHI_HDMI_PHY_CNTL0, 0x33632122);
-                hd_write_reg(P_HHI_HDMI_PHY_CNTL3, 0x2000115b);
-        break;
+	case HDMI_3840x2160p50_16x9:
+	case HDMI_3840x2160p60_16x9:
+	case HDMI_4096x2160p50_256x135:
+	case HDMI_4096x2160p60_256x135:
+		if ((hdev->para->cs == HDMI_COLOR_FORMAT_420)
+			&& (hdev->para->cd == HDMI_COLOR_DEPTH_24B))
+			set_phy_by_mode(1);
+		else
+			set_phy_by_mode(2);
+		break;
+	case HDMI_3840x2160p24_16x9:
+	case HDMI_3840x2160p24_64x27:
+	case HDMI_3840x2160p25_16x9:
+	case HDMI_3840x2160p25_64x27:
+	case HDMI_3840x2160p30_16x9:
+	case HDMI_3840x2160p30_64x27:
+	case HDMI_4096x2160p24_256x135:
+	case HDMI_4096x2160p25_256x135:
+	case HDMI_4096x2160p30_256x135:
+		if ((hdev->para->cs == HDMI_COLOR_FORMAT_422)
+			|| (hdev->para->cd == HDMI_COLOR_DEPTH_24B))
+			set_phy_by_mode(2);
+		else
+			set_phy_by_mode(1);
+		break;
+	case HDMI_1920x1080p60_16x9:
+	default:
+		set_phy_by_mode(3);
+		break;
 	}
 /* P_HHI_HDMI_PHY_CNTL1	bit[1]: enable clock	bit[0]: soft reset */
 #define RESET_HDMI_PHY() \
@@ -2219,6 +2241,18 @@ static void hdmitx_set_hw(struct hdmitx_dev* hdev)
 	case HDMI_4096x2160p60_256x135:
 		if ((hdev->para->cs == HDMI_COLOR_FORMAT_420)
 		   && (hdev->para->cd == HDMI_COLOR_DEPTH_24B))
+			set_tmds_clk_div40(0);
+		else
+			set_tmds_clk_div40(1);
+		break;
+	case HDMI_3840x2160p24_16x9:
+	case HDMI_3840x2160p24_64x27:
+	case HDMI_3840x2160p25_16x9:
+	case HDMI_3840x2160p25_64x27:
+	case HDMI_3840x2160p30_16x9:
+	case HDMI_3840x2160p30_64x27:
+		if ((hdev->para->cs == HDMI_COLOR_FORMAT_422)
+			|| (hdev->para->cd == HDMI_COLOR_DEPTH_24B))
 			set_tmds_clk_div40(0);
 		else
 			set_tmds_clk_div40(1);
