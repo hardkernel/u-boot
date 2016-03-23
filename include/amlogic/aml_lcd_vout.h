@@ -293,6 +293,7 @@ enum lcd_pmu_gpio_e {
 
 /* Power Control */
 #define LCD_CPU_GPIO_NUM_MAX         10
+#define LCD_CPU_GPIO_NAME_MAX        10
 #define LCD_PMU_GPIO_NUM_MAX         3
 
 #define LCD_PWR_STEP_MAX             15
@@ -304,7 +305,7 @@ struct lcd_power_step_s {
 };
 
 struct lcd_power_ctrl_s {
-	char **cpu_gpio;
+	char cpu_gpio[LCD_CPU_GPIO_NUM_MAX][LCD_CPU_GPIO_NAME_MAX];
 	int *pmu_gpio;
 	struct lcd_power_step_s power_on_step[LCD_PWR_STEP_MAX];
 	struct lcd_power_step_s power_off_step[LCD_PWR_STEP_MAX];
@@ -420,7 +421,7 @@ struct bl_config_s {
 	unsigned int pwm_on_delay;
 	unsigned int pwm_off_delay;
 
-	char **gpio_name;
+	char gpio_name[BL_GPIO_NUM_MAX][LCD_CPU_GPIO_NAME_MAX];
 	//unsigned pinmux_set_num;
 	unsigned int pinmux_set[10][2];
 	//unsigned pinmux_clr_num;
@@ -456,6 +457,8 @@ struct aml_lcd_drv_s {
 	void (*set_bl_level)(int level);
 	int  (*get_bl_level)(void);
 };
+
+extern void lcd_config_gpio_init(void);
 
 extern struct aml_lcd_drv_s *aml_lcd_get_driver(void);
 

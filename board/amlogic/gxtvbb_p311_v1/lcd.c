@@ -19,7 +19,7 @@
 
 //Rsv_val = 0xffffffff
 
-static char *lcd_cpu_gpio[LCD_CPU_GPIO_NUM_MAX] = {
+static char lcd_cpu_gpio[LCD_CPU_GPIO_NUM_MAX][LCD_CPU_GPIO_NAME_MAX] = {
 	"GPIOX_3",
 	"invalid", /* ending flag */
 };
@@ -33,7 +33,7 @@ static struct lcd_power_step_s lcd_power_off_step[] = {
 	{LCD_POWER_TYPE_MAX,   0,0,0,},
 };
 
-static char *lcd_bl_gpio[BL_GPIO_NUM_MAX] = {
+static char lcd_bl_gpio[BL_GPIO_NUM_MAX][LCD_CPU_GPIO_NAME_MAX] = {
 	"GPIOAO_4",
 	"GPIOY_13",
 	"invalid", /* ending flag */
@@ -148,7 +148,6 @@ static struct lvds_config_s lcd_lvds_config = {
 };
 
 static struct lcd_power_ctrl_s lcd_power_ctrl = {
-	.cpu_gpio = lcd_cpu_gpio,
 	.power_on_step = {
 		{
 			.type = LCD_POWER_TYPE_SIGNAL,
@@ -230,8 +229,26 @@ struct bl_config_s bl_config_dft = {
 	.pwm_on_delay = 10,
 	.pwm_off_delay = 10,
 
-	.gpio_name = lcd_bl_gpio,
 	.pinmux_set = {{10, 0x00800000}, {LCD_PINMUX_END, 0x0}},
 	.pinmux_clr = {{10, 0x0100a000}, {LCD_PINMUX_END, 0x0}},
 };
 
+void lcd_config_gpio_init(void)
+{
+	int i, j;
+
+	for (i = 0; i < LCD_CPU_GPIO_NUM_MAX; i++) {
+		if (strcmp(lcd_cpu_gpio[i], "invalid") == 0)
+			break;
+		strcpy(lcd_power_ctrl.cpu_gpio[i], lcd_cpu_gpio[i]);
+	}
+	for (j = i; j < LCD_CPU_GPIO_NUM_MAX; j++)
+		strcpy(lcd_power_ctrl.cpu_gpio[j], "invalid");
+	for (i = 0; i < BL_GPIO_NUM_MAX; i++) {
+		if (strcmp(lcd_bl_gpio[i], "invalid") == 0)
+			break;
+		strcpy(bl_config_dft.gpio_name[i], lcd_bl_gpio[i]);
+	}
+	for (j = i; j < BL_GPIO_NUM_MAX; j++)
+		strcpy(bl_config_dft.gpio_name[j], "invalid");
+}

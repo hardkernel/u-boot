@@ -640,6 +640,7 @@ int lcd_probe(void)
 #endif
 
 	lcd_chip_detect();
+	lcd_config_gpio_init();
 	lcd_clk_config_probe();
 	lcd_mode_probe();
 	aml_bl_power_ctrl(0, 0); /* init backlight ctrl port */
