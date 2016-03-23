@@ -138,8 +138,9 @@ struct sd_emmc_status{
 	uint32_t dat_i:8;        /*[23:16]   Input data signals. */
 	uint32_t cmd_i:1;        /*[24]      nput response signal. */
 	uint32_t ds:1;           /*[25]      Input data strobe. */
-	uint32_t bus_fsm:1;      /*[30:28]   BUS fsm */
-    uint32_t desc_wr_rdy:1;  /*[31]      Descriptor write back process is done and it is ready for CPU to read.*/
+	uint32_t bus_fsm:4;      /*[29:26]   BUS fsm */
+    uint32_t desc_wr_rdy:1;  /*[30]      Descriptor write back process is done and it is ready for CPU to read.*/
+	uint32_t core_rdy:1;	 /*[31]       desc_busy or sd_emmc_irq or bus_fsm is not idle.*/
 };//__attribute__((__may_alias__));
 
 
@@ -181,9 +182,11 @@ struct sd_emmc_adjust{
     uint32_t cali_enable:1;         /*[12]        Enable calibration. */
     uint32_t adj_enable:1;          /*[13]       Adjust interface timing by resampling the input signals. */
     uint32_t cali_rise:1;           /*[14]       1: test the rising edge. 0: test the falling edge. */
-    uint32_t reserved15:1;
+    uint32_t ds_enable:1;			/*[15]		Sampling the DAT based on DS in HS400 mode*/
     uint32_t adj_delay:6;           /*[21:16]       Resample the input signals when clock index==adj_delay. */
-    uint32_t reserved22:10;
+    uint32_t adj_auto:1;			/*[22]			Use cali_dut first falling edge to adjust the timing */
+										/*set cali_enable to 1 to use this function*/
+	uint32_t reserved23:9;
 };
 
 

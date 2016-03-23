@@ -53,26 +53,27 @@ unsigned sd_debug_board_1bit_flag = 0;
 int cpu_sd_emmc_init(unsigned port)
 {
 
-    //printf("inand sdio  port:%d\n",port);
-    switch (port)
-    {
-        case SDIO_PORT_A:
-			setbits_le32(P_PERIPHS_PIN_MUX_8,0x3f);
-			break;
-
-        case SDIO_PORT_B:
-			if (sd_debug_board_1bit_flag == 1)
-                setbits_le32(P_PERIPHS_PIN_MUX_2,(0x3<<10)|(0x1<<15));
-            else
-                setbits_le32(P_PERIPHS_PIN_MUX_2,0x3f<<10);
-			break;
-        case SDIO_PORT_C://SDIOC GPIOB_2~GPIOB_7
-			clrbits_le32(P_PERIPHS_PIN_MUX_2,(0x1f<<22));
-			setbits_le32(P_PERIPHS_PIN_MUX_4,(0x3<<18)|(3<<30));
-            //printf("inand sdio  port:%d\n",port);
-            break;
-        default:
-            return -1;
-    }
-    return 0;
+	//printf("inand sdio  port:%d\n",port);
+	switch (port)
+	{
+	case SDIO_PORT_A:
+        setbits_le32(P_PERIPHS_PIN_MUX_5, (0x3f << 26) | (0x1 << 24));
+		break;
+	case SDIO_PORT_B:
+		if (sd_debug_board_1bit_flag == 1)
+			setbits_le32(P_PERIPHS_PIN_MUX_6, 0x7 << 2);
+        else {
+            clrbits_le32(P_PERIPHS_PIN_MUX_6, 0x3f << 6);
+			setbits_le32(P_PERIPHS_PIN_MUX_6, 0x3f << 0);
+        }
+		break;
+	case SDIO_PORT_C://SDIOC GPIOB_2~GPIOB_7
+		clrbits_le32(P_PERIPHS_PIN_MUX_7, (0x7 << 5) | (0xff << 16));
+        setbits_le32(P_PERIPHS_PIN_MUX_7, 0x29 << 7);
+        //printf("inand sdio  port:%d\n",port);
+		break;
+	default:
+		return -1;
+	}
+	return 0;
 }

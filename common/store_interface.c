@@ -15,6 +15,7 @@
 #include<partition_table.h>
 #include <libfdt.h>
 #include <linux/string.h>
+#include <asm/cpu_id.h>
 
 #if defined(CONFIG_AML_NAND)
 extern int amlnf_init(unsigned flag);
@@ -951,6 +952,7 @@ static int do_store_rom_write(cmd_tbl_t * cmdtp, int flag, int argc, char * cons
     char	str[128];
     int ret = 0;
     int i = 0;
+    cpu_id_t cpu_id = get_cpu_id();
 
     if (argc < 5) return CMD_RET_USAGE;
 
@@ -1005,6 +1007,8 @@ static int do_store_rom_write(cmd_tbl_t * cmdtp, int flag, int argc, char * cons
         tmp_buf[511]=0;
 #endif
 #endif// #if defined(CONFIG_AML_SECU_BOOT_V2)
+		if (cpu_id.family_id >= MESON_CPU_MAJOR_ID_GXL)
+            off += 1;
         sprintf(str, "amlmmc  write bootloader 0x%llx  0x%llx  0x%llx", addr, off, size);
         store_dbg("command: %s\n", str);
         ret = run_command(str, 0);

@@ -34,6 +34,7 @@ enum vpu_chip_e {
 	VPU_CHIP_G9BB,
 	VPU_CHIP_GXBB,
 	VPU_CHIP_GXTVBB,
+	VPU_CHIP_GXL,
 	VPU_CHIP_MAX,
 };
 
@@ -108,6 +109,11 @@ static unsigned int fclk_table[] = { /* unit: MHz */
 #define CLK_LEVEL_DFT_GXTVBB     7
 #define CLK_LEVEL_MAX_GTVXBB     8
 #define FCLK_TYPE_GXTVBB         FCLK_2000M
+/* GXL */
+/* freq max=666M, default=666M */
+#define CLK_LEVEL_DFT_GXL     7
+#define CLK_LEVEL_MAX_GXL     8
+#define FCLK_TYPE_GXL         FCLK_2000M
 
 /* vpu clk setting */
 enum vpu_mux_e {

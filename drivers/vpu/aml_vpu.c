@@ -89,6 +89,12 @@ static void vpu_chip_detect(void)
 		vpu_conf.clk_level_max = CLK_LEVEL_MAX_GXTVBB;
 		vpu_conf.fclk_type = FCLK_TYPE_GXTVBB;
 		break;
+	case MESON_CPU_MAJOR_ID_GXL:
+		vpu_chip_type = VPU_CHIP_GXL;
+		vpu_conf.clk_level_dft = CLK_LEVEL_DFT_GXL;
+		vpu_conf.clk_level_max = CLK_LEVEL_MAX_GXL;
+		vpu_conf.fclk_type = FCLK_TYPE_GXL;
+		break;
 	default:
 		vpu_chip_type = VPU_CHIP_MAX;
 		vpu_conf.clk_level_dft = 0;
@@ -479,6 +485,7 @@ static void vpu_power_on(void)
 	switch (vpu_chip_type) {
 	case VPU_CHIP_GXBB:
 	case VPU_CHIP_GXTVBB:
+	case VPU_CHIP_GXL:
 		vpu_power_on_gx();
 		break;
 	case VPU_CHIP_M8:
@@ -498,6 +505,7 @@ static void vpu_power_off(void)
 	switch (vpu_chip_type) {
 	case VPU_CHIP_GXBB:
 	case VPU_CHIP_GXTVBB:
+	case VPU_CHIP_GXL:
 		vpu_power_off_gx();
 		break;
 	case VPU_CHIP_M8:
@@ -631,6 +639,7 @@ int vpu_clk_change(int level)
 	switch (vpu_chip_type) {
 	case VPU_CHIP_GXBB:
 	case VPU_CHIP_GXTVBB:
+	case VPU_CHIP_GXL:
 		reg = HHI_VPU_CLK_CNTL_GX;
 		vpu_clk_switch(reg);
 
@@ -670,6 +679,7 @@ void vpu_clk_get(void)
 	switch (vpu_chip_type) {
 	case VPU_CHIP_GXBB:
 	case VPU_CHIP_GXTVBB:
+	case VPU_CHIP_GXL:
 		reg = HHI_VPU_CLK_CNTL_GX;
 		break;
 	default:
