@@ -277,9 +277,9 @@ enum div_sel_e {
 #define PLL_VCO_MAX_GXTVBB          (6000 * 1000)
 
 /* video */
-#define CLK_DIV_IN_MAX_GXTVBB       (3000 * 1000)
-#define CRT_VID_CLK_IN_MAX_GXTVBB   (3000 * 1000)
-#define ENCL_CLK_IN_MAX_GXTVBB      (600 * 1000)
+#define CLK_DIV_IN_MAX_GXTVBB       (3100 * 1000)
+#define CRT_VID_CLK_IN_MAX_GXTVBB   (3100 * 1000)
+#define ENCL_CLK_IN_MAX_GXTVBB      (620 * 1000)
 
 
 extern struct lcd_clk_config_s *get_lcd_clk_config(void);

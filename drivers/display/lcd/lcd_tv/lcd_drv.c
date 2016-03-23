@@ -500,7 +500,7 @@ static unsigned int vbyone_lane_num[] = {
 	8,
 };
 
-#define VBYONE_BIT_RATE_MAX		2970 //MHz
+#define VBYONE_BIT_RATE_MAX		3100 //MHz
 #define VBYONE_BIT_RATE_MIN		600
 static void lcd_vbyone_config_set(struct lcd_config_s *pconf)
 {

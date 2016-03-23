@@ -789,34 +789,34 @@ static void lcd_set_pll_ss_gxtvbb(struct lcd_clk_config_s *cConf)
 	if ((cConf->pll_fvco >= 5500000) && (cConf->pll_fvco <= 6000000)) {
 		switch (cConf->ss_level) {
 		case 1: /* +/- 0.3% */
-			lcd_hiu_write(HHI_HDMI_PLL_CNTL3, 0x131c5090);
+			lcd_hiu_write(HHI_HDMI_PLL_CNTL3, 0x12dc5080);
 			lcd_hiu_write(HHI_HDMI_PLL_CNTL4, 0xb01da72c);
 			lcd_hiu_write(HHI_HDMI_PLL_CNTL5, 0x51486980);
 			lcd_hiu_write(HHI_HDMI_PLL_CNTL6, 0x00082a55);
 			break;
 		case 2: /* +/- 0.5% */
-			lcd_hiu_write(HHI_HDMI_PLL_CNTL3, 0x131c5090);
+			lcd_hiu_write(HHI_HDMI_PLL_CNTL3, 0x12dc5080);
 			lcd_hiu_write(HHI_HDMI_PLL_CNTL4, 0xa85da72c);
 			lcd_hiu_write(HHI_HDMI_PLL_CNTL5, 0x51486980);
 			lcd_hiu_write(HHI_HDMI_PLL_CNTL6, 0x00082a55);
 			break;
 		case 3: /* +/- 0.9% */
-			lcd_hiu_write(HHI_HDMI_PLL_CNTL3, 0x131c5090);
+			lcd_hiu_write(HHI_HDMI_PLL_CNTL3, 0x12dc5080);
 			lcd_hiu_write(HHI_HDMI_PLL_CNTL4, 0xb09da72c);
 			lcd_hiu_write(HHI_HDMI_PLL_CNTL5, 0x51486980);
 			lcd_hiu_write(HHI_HDMI_PLL_CNTL6, 0x00082a55);
 			break;
 		case 4: /* +/- 1.2% */
-			lcd_hiu_write(HHI_HDMI_PLL_CNTL3, 0x131c5090);
+			lcd_hiu_write(HHI_HDMI_PLL_CNTL3, 0x12dc5080);
 			lcd_hiu_write(HHI_HDMI_PLL_CNTL4, 0xb0dda72c);
 			lcd_hiu_write(HHI_HDMI_PLL_CNTL5, 0x51486980);
 			lcd_hiu_write(HHI_HDMI_PLL_CNTL6, 0x00082a55);
 			break;
 		default: /* disable */
-			lcd_hiu_write(HHI_HDMI_PLL_CNTL3, 0x135c5091);
+			lcd_hiu_write(HHI_HDMI_PLL_CNTL3, 0x12dc5081);
 			lcd_hiu_write(HHI_HDMI_PLL_CNTL4, 0x801da72c);
 			lcd_hiu_write(HHI_HDMI_PLL_CNTL5, 0x71486980);
-			lcd_hiu_write(HHI_HDMI_PLL_CNTL6, 0x00000a55);
+			lcd_hiu_write(HHI_HDMI_PLL_CNTL6, 0x00002a55);
 			break;
 		}
 	} else {
@@ -846,10 +846,10 @@ static void lcd_set_pll_ss_gxtvbb(struct lcd_clk_config_s *cConf)
 			lcd_hiu_write(HHI_HDMI_PLL_CNTL6, 0x00082a55);
 			break;
 		default: /* disable */
-			lcd_hiu_write(HHI_HDMI_PLL_CNTL3, 0x135c5091);
+			lcd_hiu_write(HHI_HDMI_PLL_CNTL3, 0x0d5c5091);
 			lcd_hiu_write(HHI_HDMI_PLL_CNTL4, 0x801da72c);
 			lcd_hiu_write(HHI_HDMI_PLL_CNTL5, 0x71486980);
-			lcd_hiu_write(HHI_HDMI_PLL_CNTL6, 0x00000a55);
+			lcd_hiu_write(HHI_HDMI_PLL_CNTL6, 0x00002a55);
 			break;
 		}
 	}
@@ -879,17 +879,25 @@ static void lcd_set_pll_gxtvbb(struct lcd_clk_config_s *cConf)
 
 	lcd_hiu_write(HHI_HDMI_PLL_CNTL, pll_ctrl | (1 << LCD_PLL_RST_GXTVBB));
 	lcd_hiu_write(HHI_HDMI_PLL_CNTL2, pll_ctrl2);
-	lcd_hiu_write(HHI_HDMI_PLL_CNTL3, 0x135c5091);
-	lcd_hiu_write(HHI_HDMI_PLL_CNTL4, 0x801da72c);
-	lcd_hiu_write(HHI_HDMI_PLL_CNTL5, 0x71486980);
-	lcd_hiu_write(HHI_HDMI_PLL_CNTL6, 0x00000a55);
+	if ((cConf->pll_fvco >= 5500000) && (cConf->pll_fvco <= 6000000)) {
+		lcd_hiu_write(HHI_HDMI_PLL_CNTL3, 0x12dc5081);
+		lcd_hiu_write(HHI_HDMI_PLL_CNTL4, 0x801da72c);
+		lcd_hiu_write(HHI_HDMI_PLL_CNTL5, 0x71486980);
+		lcd_hiu_write(HHI_HDMI_PLL_CNTL6, 0x00002a55);
+	} else {
+		lcd_hiu_write(HHI_HDMI_PLL_CNTL3, 0x0d5c5091);
+		lcd_hiu_write(HHI_HDMI_PLL_CNTL4, 0x801da72c);
+		lcd_hiu_write(HHI_HDMI_PLL_CNTL5, 0x71486980);
+		lcd_hiu_write(HHI_HDMI_PLL_CNTL6, 0x00002a55);
+	}
 	lcd_hiu_write(HHI_HDMI_PLL_CNTL, pll_ctrl);
 
 	ret = lcd_pll_wait_lock(HHI_HDMI_PLL_CNTL, LCD_PLL_LOCK_GXTVBB);
 	if (ret)
 		LCDERR("hpll lock failed\n");
 
-	lcd_set_pll_ss_gxtvbb(cConf);
+	if (cConf->ss_level > 0)
+		lcd_set_pll_ss_gxtvbb(cConf);
 }
 
 static void lcd_update_pll_frac_gxtvbb(struct lcd_clk_config_s *cConf)
