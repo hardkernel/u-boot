@@ -64,6 +64,8 @@ static int pwm_voltage_table[][2] = {
 #define P_PWM_PWM_E		(*((volatile unsigned *)(0xc1100000 + (0x21b0 << 2))))
 #define P_PWM_PWM_F		(*((volatile unsigned *)(0xc1100000 + (0x21b1 << 2))))
 
+#define P_AO_OUTPUT_EN		(*((volatile unsigned *)(0xc8100000 + (0x09 << 2))))
+
 #ifdef P_AO_PWM_MISC_REG_AB
 #undef P_AO_PWM_MISC_REG_AB
 #endif
@@ -220,6 +222,13 @@ void pwm_set_voltage(unsigned int id, unsigned int voltage)
 	_udelay(200);
 }
 
+static void power_on_3v3_5v(void)
+{
+	unsigned int val = P_AO_OUTPUT_EN;
+	val = val & (~(1 << 2));
+	val = val & (~(1 << 18));
+	P_AO_OUTPUT_EN = val;
+}
 void power_init(int mode)
 {
 	pwm_init(pwm_e);
@@ -232,4 +241,5 @@ void power_init(int mode)
 	serial_put_dec(CONFIG_VDDEE_INIT_VOLTAGE);
 	serial_puts(" mv\n");
 	pwm_set_voltage(pwm_ao_b, CONFIG_VDDEE_INIT_VOLTAGE);
+	power_on_3v3_5v();
 }
