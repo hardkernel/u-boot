@@ -228,6 +228,11 @@ static void lcd_lvds_control_set(struct lcd_config_s *pconf)
 			(2 << 14));		//b_select  //0:R, 1:G, 2:B, 3:0;
 }
 
+static void lcd_lvds_disable(void)
+{
+	lcd_vcbus_setb(LVDS_GEN_CNTL, 0, 3, 1); /* disable lvds fifo */
+}
+
 static void lcd_vbyone_sync_pol(int hsync_pol, int vsync_pol)
 {
 	lcd_vcbus_setb(VBO_VIN_CTRL, hsync_pol, 4, 1);
@@ -424,6 +429,16 @@ static void lcd_vbyone_control_set(struct lcd_config_s *pconf)
 
 	/*force vencl clk enable, otherwise, it might auto turn off by mipi DSI
 	//lcd_vcbus_setb(VPU_MISC_CTRL, 1, 0, 1); */
+
+	/* reset vbyone */
+	lcd_vcbus_write(VBO_SOFT_RST, 0x1ff);
+	udelay(5);
+	lcd_vcbus_write(VBO_SOFT_RST, 0);
+}
+
+static void lcd_vbyone_disable(void)
+{
+	lcd_vcbus_setb(VBO_CTRL_L, 0, 0, 1);
 }
 
 static void lcd_vbyone_wait_stable(void)
@@ -431,11 +446,11 @@ static void lcd_vbyone_wait_stable(void)
 	int i = 1000;
 
 	while ((lcd_vcbus_read(VBO_STATUS_L) & 0x3f) != 0x20) {
-		udelay(10);
+		mdelay(2);
 		if (i-- == 0)
 			break;
 	}
-	LCDPR("%s status: 0x%x\n", __func__, lcd_vcbus_read(VBO_STATUS_L));
+	LCDPR("%s status: 0x%x, i=%d\n", __func__, lcd_vcbus_read(VBO_STATUS_L), i);
 }
 
 static void lcd_venc_set(struct lcd_config_s *pconf)
@@ -582,9 +597,9 @@ int lcd_tv_driver_init(void)
 		lcd_lvds_phy_set(pconf, 1);
 		break;
 	case LCD_VBYONE:
+		lcd_vbyone_pinmux_set(1);
 		lcd_vbyone_control_set(pconf);
 		lcd_vbyone_phy_set(pconf, 1);
-		lcd_vbyone_pinmux_set(1);
 		lcd_vbyone_wait_stable();
 		break;
 	default:
@@ -613,11 +628,12 @@ void lcd_tv_driver_disable(void)
 	switch (pconf->lcd_basic.lcd_type) {
 	case LCD_LVDS:
 		lcd_lvds_phy_set(pconf, 0);
-		lcd_vcbus_setb(LVDS_GEN_CNTL, 0, 3, 1); /* disable lvds fifo */
+		lcd_lvds_disable();
 		break;
 	case LCD_VBYONE:
-		lcd_vbyone_pinmux_set(0);
 		lcd_vbyone_phy_set(pconf, 0);
+		lcd_vbyone_pinmux_set(0);
+		lcd_vbyone_disable();
 		break;
 	default:
 		break;
