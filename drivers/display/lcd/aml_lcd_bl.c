@@ -801,6 +801,85 @@ static enum bl_pwm_port_e bl_pwm_str_to_pwm(const char *str)
 	return pwm_port;
 }
 
+static void aml_bl_config_print(struct bl_config_s *bconf)
+{
+	struct bl_pwm_config_s *bl_pwm;
+
+	LCDPR("bl: name: %s\n", bconf->name);
+	LCDPR("bl: method: %d\n", bconf->method);
+	if (lcd_debug_print_flag == 0)
+		return;
+
+	LCDPR("bl: level_default     = %d\n", bconf->level_default);
+	LCDPR("bl: level_min         = %d\n", bconf->level_min);
+	LCDPR("bl: level_max         = %d\n", bconf->level_max);
+	LCDPR("bl: level_mid         = %d\n", bconf->level_mid);
+	LCDPR("bl: level_mid_mapping = %d\n", bconf->level_mid_mapping);
+
+	LCDPR("bl: en_gpio           = %d\n", bconf->en_gpio);
+	LCDPR("bl: en_gpio_on        = %d\n", bconf->en_gpio_on);
+	LCDPR("bl: en_gpio_off       = %d\n", bconf->en_gpio_off);
+	LCDPR("bl: power_on_delay    = %d\n", bconf->power_on_delay);
+	LCDPR("bl: power_off_delay   = %d\n\n", bconf->power_off_delay);
+	switch (bconf->method) {
+	case BL_CTRL_PWM:
+		if (bconf->bl_pwm) {
+			bl_pwm = bconf->bl_pwm;
+			LCDPR("bl: pwm_index     = %d\n", bl_pwm->index);
+			LCDPR("bl: pwm_method    = %d\n", bl_pwm->pwm_method);
+			LCDPR("bl: pwm_port      = %d\n", bl_pwm->pwm_port);
+			if (bl_pwm->pwm_port == BL_PWM_VS) {
+				LCDPR("bl: pwm_freq      = %d x vfreq\n", bl_pwm->pwm_freq);
+				LCDPR("bl: pwm_cnt       = %u\n", bl_pwm->pwm_cnt);
+			} else {
+				LCDPR("bl: pwm_freq      = %uHz\n", bl_pwm->pwm_freq);
+				LCDPR("bl: pwm_cnt       = %u\n", bl_pwm->pwm_cnt);
+				LCDPR("bl: pwm_pre_div   = %u\n", bl_pwm->pwm_pre_div);
+			}
+			LCDPR("bl: pwm_duty_max  = %d\n", bl_pwm->pwm_duty_max);
+			LCDPR("bl: pwm_duty_min  = %d\n", bl_pwm->pwm_duty_min);
+			LCDPR("bl: pwm_gpio      = %d\n", bl_pwm->pwm_gpio);
+			LCDPR("bl: pwm_gpio_off  = %d\n", bl_pwm->pwm_gpio_off);
+		}
+		LCDPR("bl: pwm_on_delay  = %d\n", bconf->pwm_on_delay);
+		LCDPR("bl: pwm_off_delay = %d\n", bconf->pwm_off_delay);
+		break;
+	case BL_CTRL_PWM_COMBO:
+		if (bconf->bl_pwm_combo0) {
+			bl_pwm = bconf->bl_pwm_combo0;
+			LCDPR("bl: pwm_combo0_index    = %d\n", bl_pwm->index);
+			LCDPR("bl: pwm_combo0_method   = %d\n", bl_pwm->pwm_method);
+			LCDPR("bl: pwm_combo0_port     = %d\n", bl_pwm->pwm_port);
+			LCDPR("bl: pwm_combo0_freq     = %d\n", bl_pwm->pwm_freq);
+			LCDPR("bl: pwm_combo0_duty_max = %d\n", bl_pwm->pwm_duty_max);
+			LCDPR("bl: pwm_combo0_duty_min = %d\n", bl_pwm->pwm_duty_min);
+			LCDPR("bl: pwm_combo0_gpio     = %d\n", bl_pwm->pwm_gpio);
+			LCDPR("bl: pwm_combo0_gpio_off = %d\n", bl_pwm->pwm_gpio_off);
+		}
+		if (bconf->bl_pwm_combo1) {
+			bl_pwm = bconf->bl_pwm_combo1;
+			LCDPR("bl: pwm_combo1_index    = %d\n", bl_pwm->index);
+			LCDPR("bl: pwm_combo1_method   = %d\n", bl_pwm->pwm_method);
+			LCDPR("bl: pwm_combo1_port     = %d\n", bl_pwm->pwm_port);
+			LCDPR("bl: pwm_combo1_freq     = %d\n", bl_pwm->pwm_freq);
+			LCDPR("bl: pwm_combo1_duty_max = %d\n", bl_pwm->pwm_duty_max);
+			LCDPR("bl: pwm_combo1_duty_min = %d\n", bl_pwm->pwm_duty_min);
+			LCDPR("bl: pwm_combo1_gpio     = %d\n", bl_pwm->pwm_gpio);
+			LCDPR("bl: pwm_combo1_gpio_off = %d\n", bl_pwm->pwm_gpio_off);
+		}
+		LCDPR("bl: pwm_on_delay        = %d\n", bconf->pwm_on_delay);
+		LCDPR("bl: pwm_off_delay       = %d\n", bconf->pwm_off_delay);
+		break;
+	case BL_CTRL_LOCAL_DIMING:
+		break;
+	case BL_CTRL_EXTERN:
+		break;
+	default:
+		LCDPR("bl: invalid backlight control method\n");
+		break;
+	}
+}
+
 static int aml_bl_config_load_from_dts(char *dt_addr, unsigned int index, struct bl_config_s *bconf)
 {
 	int parent_offset;
@@ -873,7 +952,6 @@ static int aml_bl_config_load_from_dts(char *dt_addr, unsigned int index, struct
 	} else {
 		bconf->method = be32_to_cpup((u32*)propdata);
 	}
-	LCDPR("bl: ctrl_method=%d\n", bconf->method);
 	propdata = (char *)fdt_getprop(dt_addr, child_offset, "bl_power_attr", NULL);
 	if (propdata == NULL) {
 		LCDERR("bl: failed to get bl_power_attr\n");
@@ -888,12 +966,6 @@ static int aml_bl_config_load_from_dts(char *dt_addr, unsigned int index, struct
 		bconf->en_gpio_off = be32_to_cpup((((u32*)propdata)+2));
 		bconf->power_on_delay = be32_to_cpup((((u32*)propdata)+3));
 		bconf->power_off_delay = be32_to_cpup((((u32*)propdata)+4));
-	}
-	if (lcd_debug_print_flag) {
-		LCDPR("bl: bl_en gpio=%d, on=%d, off=%d\n",
-			bconf->en_gpio, bconf->en_gpio_on, bconf->en_gpio_off);
-		LCDPR("bl: bl_power_delay on=%d, off=%d\n",
-			bconf->power_on_delay, bconf->power_off_delay);
 	}
 
 	switch (bconf->method) {
@@ -916,8 +988,6 @@ static int aml_bl_config_load_from_dts(char *dt_addr, unsigned int index, struct
 		} else {
 			bl_pwm->pwm_port = bl_pwm_str_to_pwm(propdata);
 		}
-		if (lcd_debug_print_flag)
-			LCDPR("bl: bl_pwm port=%d\n", bl_pwm->pwm_port);
 		propdata = (char *)fdt_getprop(dt_addr, child_offset, "bl_pwm_attr", NULL);
 		if (propdata == NULL) {
 			LCDERR("bl: failed to get bl_pwm_attr\n");
@@ -934,23 +1004,14 @@ static int aml_bl_config_load_from_dts(char *dt_addr, unsigned int index, struct
 			bl_pwm->pwm_duty_max = be32_to_cpup((((u32*)propdata)+2));
 			bl_pwm->pwm_duty_min = be32_to_cpup((((u32*)propdata)+3));
 		}
-		if (lcd_debug_print_flag) {
-			LCDPR("bl: bl_pwm method=%d\n", bl_pwm->pwm_method);
-			LCDPR("bl: bl_pwm_duty max=%d%%, min=%d%%\n",
-				bl_pwm->pwm_duty_max, bl_pwm->pwm_duty_min);
-		}
 		if (bl_pwm->pwm_port == BL_PWM_VS) {
 			if (bl_pwm->pwm_freq > 4) {
 				LCDERR("bl: bl_pwm_vs wrong freq %d\n", bl_pwm->pwm_freq);
 				bl_pwm->pwm_freq = BL_FREQ_VS_DEFAULT;
 			}
-			if (lcd_debug_print_flag)
-				LCDPR("bl: bl_pwm freq=%d x Vfreq\n", bl_pwm->pwm_freq);
 		} else {
 			if (bl_pwm->pwm_freq > XTAL_HALF_FREQ_HZ)
 				bl_pwm->pwm_freq = XTAL_HALF_FREQ_HZ;
-			if (lcd_debug_print_flag)
-				LCDPR("bl: bl_pwm freq=%dHz\n", bl_pwm->pwm_freq);
 		}
 		propdata = (char *)fdt_getprop(dt_addr, child_offset, "bl_pwm_power", NULL);
 		if (propdata == NULL) {
@@ -964,12 +1025,6 @@ static int aml_bl_config_load_from_dts(char *dt_addr, unsigned int index, struct
 			bl_pwm->pwm_gpio_off = be32_to_cpup((((u32*)propdata)+1));
 			bconf->pwm_on_delay = be32_to_cpup((((u32*)propdata)+2));
 			bconf->pwm_off_delay = be32_to_cpup((((u32*)propdata)+3));
-		}
-		if (lcd_debug_print_flag) {
-			LCDPR("bl: bl_pwm gpio=%d, gpio_off=%d\n",
-				bl_pwm->pwm_gpio, bl_pwm->pwm_gpio_off);
-			LCDPR("bl: bl_pwm_delay on=%d, off=%d\n",
-				bconf->pwm_on_delay, bconf->pwm_off_delay);
 		}
 
 		bl_pwm->pwm_duty = bl_pwm->pwm_duty_min;
@@ -988,7 +1043,6 @@ static int aml_bl_config_load_from_dts(char *dt_addr, unsigned int index, struct
 		}
 		pwm_combo0 = bconf->bl_pwm_combo0;
 		pwm_combo1 = bconf->bl_pwm_combo1;
-
 		pwm_combo0->index = 0;
 		pwm_combo1->index = 1;
 
@@ -1018,10 +1072,6 @@ static int aml_bl_config_load_from_dts(char *dt_addr, unsigned int index, struct
 			str = p;
 			pwm_combo1->pwm_port = bl_pwm_str_to_pwm(str);
 		}
-		if (lcd_debug_print_flag) {
-			LCDPR("bl: pwm_port combo0=%d, combo1=%d\n",
-				pwm_combo0->pwm_port, pwm_combo1->pwm_port);
-		}
 		propdata = (char *)fdt_getprop(dt_addr, child_offset, "bl_pwm_combo_attr", NULL);
 		if (propdata == NULL) {
 			LCDERR("bl: failed to get bl_pwm_combo_attr\n");
@@ -1049,39 +1099,23 @@ static int aml_bl_config_load_from_dts(char *dt_addr, unsigned int index, struct
 			pwm_combo1->pwm_duty_max = be32_to_cpup((((u32*)propdata)+6));
 			pwm_combo1->pwm_duty_min = be32_to_cpup((((u32*)propdata)+7));
 		}
-		if (lcd_debug_print_flag) {
-			LCDPR("bl: bl_pwm_method combo0=%d, combo1=%d\n",
-				pwm_combo0->pwm_method, pwm_combo1->pwm_method);
-			LCDPR("bl: bl_pwm_duty combo0_max=%d%%, combo0_min=%d%%\n",
-				pwm_combo0->pwm_duty_max, pwm_combo0->pwm_duty_min);
-			LCDPR("bl: bl_pwm_duty combo1_max=%d%%, combo1_min=%d%%\n",
-				pwm_combo1->pwm_duty_max, pwm_combo1->pwm_duty_min);
-		}
 		if (pwm_combo0->pwm_port == BL_PWM_VS) {
 			if (pwm_combo0->pwm_freq > 4) {
 				LCDERR("bl: bl_pwm_vs wrong freq %d\n", pwm_combo0->pwm_freq);
 				pwm_combo0->pwm_freq = BL_FREQ_VS_DEFAULT;
 			}
-			if (lcd_debug_print_flag)
-				LCDPR("bl: bl_pwm combo0_freq=%d x Vfreq\n", pwm_combo0->pwm_freq);
 		} else {
 			if (pwm_combo0->pwm_freq > XTAL_HALF_FREQ_HZ)
 				pwm_combo0->pwm_freq = XTAL_HALF_FREQ_HZ;
-			if (lcd_debug_print_flag)
-				LCDPR("bl_pwm combo0_freq=%dHz\n", pwm_combo0->pwm_freq);
 		}
 		if (pwm_combo1->pwm_port == BL_PWM_VS) {
 			if (pwm_combo1->pwm_freq > 4) {
 				LCDERR("bl: bl_pwm_vs wrong freq %d\n", pwm_combo1->pwm_freq);
 				pwm_combo1->pwm_freq = BL_FREQ_VS_DEFAULT;
 			}
-			if (lcd_debug_print_flag)
-				LCDPR("bl: bl_pwm combo1_freq=%d x Vfreq\n", pwm_combo1->pwm_freq);
 		} else {
 			if (pwm_combo1->pwm_freq > XTAL_HALF_FREQ_HZ)
 				pwm_combo1->pwm_freq = XTAL_HALF_FREQ_HZ;
-			if (lcd_debug_print_flag)
-				LCDPR("bl_pwm combo1_freq=%dHz\n", pwm_combo1->pwm_freq);
 		}
 		propdata = (char *)fdt_getprop(dt_addr, child_offset, "bl_pwm_combo_power", NULL);
 		if (propdata == NULL) {
@@ -1099,14 +1133,6 @@ static int aml_bl_config_load_from_dts(char *dt_addr, unsigned int index, struct
 			pwm_combo1->pwm_gpio_off = be32_to_cpup((((u32*)propdata)+3));
 			bconf->pwm_on_delay = be32_to_cpup((((u32*)propdata)+4));
 			bconf->pwm_off_delay = be32_to_cpup((((u32*)propdata)+5));
-		}
-		if (lcd_debug_print_flag) {
-			LCDPR("bl: bl_pwm combo0 gpio=%d, gpio_off=%d\n",
-				pwm_combo0->pwm_gpio, pwm_combo0->pwm_gpio_off);
-			LCDPR("bl: bl_pwm combo1 gpio=%d, gpio_off=%d\n",
-				pwm_combo1->pwm_gpio, pwm_combo1->pwm_gpio_off);
-			LCDPR("bl: bl_pwm_delay on=%d, off=%d\n",
-				bconf->pwm_on_delay, bconf->pwm_off_delay);
 		}
 
 		pwm_combo0->pwm_duty = pwm_combo0->pwm_duty_min;
@@ -1153,7 +1179,6 @@ static int aml_bl_config_load_from_bsp(struct bl_config_s *bconf)
 	bconf->level_mid_mapping = ext_lcd->level_mid_mapping;
 
 	bconf->method          = ext_lcd->bl_method;
-	LCDPR("bl: method: %d\n", bconf->method);
 
 	if (ext_lcd->bl_en_gpio >= BL_GPIO_NUM_MAX) {
 		bconf->en_gpio    = LCD_GPIO_MAX;
@@ -1166,20 +1191,6 @@ static int aml_bl_config_load_from_bsp(struct bl_config_s *bconf)
 	bconf->power_on_delay  = ext_lcd->bl_power_on_delay;
 	bconf->power_off_delay = ext_lcd->bl_power_off_delay;
 
-	if (lcd_debug_print_flag) {
-		LCDPR("bl: level_default     = %d\n", bconf->level_default);
-		LCDPR("bl: level_min         = %d\n", bconf->level_min);
-		LCDPR("bl: level_max         = %d\n", bconf->level_max);
-		LCDPR("bl: level_mid         = %d\n", bconf->level_mid);
-		LCDPR("bl: level_mid_mapping = %d\n", bconf->level_mid_mapping);
-
-		LCDPR("bl: en_gpio           = %d\n", bconf->en_gpio);
-		LCDPR("bl: en_gpio_on        = %d\n", bconf->en_gpio_on);
-		LCDPR("bl: en_gpio_off       = %d\n", bconf->en_gpio_off);
-		LCDPR("bl: power_on_delay    = %d\n", bconf->power_on_delay);
-		LCDPR("bl: power_off_delay   = %d\n\n", bconf->power_off_delay);
-	}
-
 	switch (bconf->method) {
 	case BL_CTRL_PWM:
 		bconf->bl_pwm = (struct bl_pwm_config_s *)malloc(sizeof(struct bl_pwm_config_s));
@@ -1188,6 +1199,7 @@ static int aml_bl_config_load_from_bsp(struct bl_config_s *bconf)
 			return -1;
 		}
 		bl_pwm = bconf->bl_pwm;
+		bl_pwm->index = 0;
 
 		bl_pwm->level_max     = bconf->level_max;
 		bl_pwm->level_min     = bconf->level_min;
@@ -1205,18 +1217,6 @@ static int aml_bl_config_load_from_bsp(struct bl_config_s *bconf)
 
 		bl_pwm->pwm_duty = bl_pwm->pwm_duty_min;
 		bl_pwm_config_init(bl_pwm);
-
-		if (lcd_debug_print_flag) {
-			LCDPR("bl: pwm_method    = %d\n", bl_pwm->pwm_method);
-			LCDPR("bl: pwm_port      = %d\n", bl_pwm->pwm_port);
-			LCDPR("bl: pwm_freq      = %d\n", bl_pwm->pwm_freq);
-			LCDPR("bl: pwm_duty_max  = %d\n", bl_pwm->pwm_duty_max);
-			LCDPR("bl: pwm_duty_min  = %d\n", bl_pwm->pwm_duty_min);
-			LCDPR("bl: pwm_gpio      = %d\n", bl_pwm->pwm_gpio);
-			LCDPR("bl: pwm_gpio_off  = %d\n", bl_pwm->pwm_gpio_off);
-			LCDPR("bl: pwm_on_delay  = %d\n", bconf->pwm_on_delay);
-			LCDPR("bl: pwm_off_delay = %d\n", bconf->pwm_off_delay);
-		}
 		break;
 	case BL_CTRL_PWM_COMBO:
 		bconf->bl_pwm_combo0 = (struct bl_pwm_config_s *)malloc(sizeof(struct bl_pwm_config_s));
@@ -1231,6 +1231,8 @@ static int aml_bl_config_load_from_bsp(struct bl_config_s *bconf)
 		}
 		pwm_combo0 = bconf->bl_pwm_combo0;
 		pwm_combo1 = bconf->bl_pwm_combo1;
+		pwm_combo0->index = 0;
+		pwm_combo1->index = 1;
 
 		pwm_combo0->level_max     = ext_lcd->pwm_level_max;
 		pwm_combo0->level_min     = ext_lcd->pwm_level_min;
@@ -1268,25 +1270,6 @@ static int aml_bl_config_load_from_bsp(struct bl_config_s *bconf)
 		pwm_combo1->pwm_duty = pwm_combo1->pwm_duty_min;
 		bl_pwm_config_init(pwm_combo0);
 		bl_pwm_config_init(pwm_combo1);
-
-		if (lcd_debug_print_flag) {
-			LCDPR("bl: pwm_combo0_method   = %d\n", pwm_combo0->pwm_method);
-			LCDPR("bl: pwm_combo0_port     = %d\n", pwm_combo0->pwm_port);
-			LCDPR("bl: pwm_combo0_freq     = %d\n", pwm_combo0->pwm_freq);
-			LCDPR("bl: pwm_combo0_duty_max = %d\n", pwm_combo0->pwm_duty_max);
-			LCDPR("bl: pwm_combo0_duty_min = %d\n", pwm_combo0->pwm_duty_min);
-			LCDPR("bl: pwm_combo0_gpio     = %d\n", pwm_combo0->pwm_gpio);
-			LCDPR("bl: pwm_combo0_gpio_off = %d\n", pwm_combo0->pwm_gpio_off);
-			LCDPR("bl: pwm_combo1_method   = %d\n", pwm_combo1->pwm_method);
-			LCDPR("bl: pwm_combo1_port     = %d\n", pwm_combo1->pwm_port);
-			LCDPR("bl: pwm_combo1_freq     = %d\n", pwm_combo1->pwm_freq);
-			LCDPR("bl: pwm_combo1_duty_max = %d\n", pwm_combo1->pwm_duty_max);
-			LCDPR("bl: pwm_combo1_duty_min = %d\n", pwm_combo1->pwm_duty_min);
-			LCDPR("bl: pwm_combo1_gpio     = %d\n", pwm_combo1->pwm_gpio);
-			LCDPR("bl: pwm_combo1_gpio_off = %d\n", pwm_combo1->pwm_gpio_off);
-			LCDPR("bl: pwm_on_delay        = %d\n", bconf->pwm_on_delay);
-			LCDPR("bl: pwm_off_delay       = %d\n", bconf->pwm_off_delay);
-		}
 		break;
 	case BL_CTRL_LOCAL_DIMING:
 		break;
@@ -1351,7 +1334,6 @@ static int aml_bl_config_load_from_unifykey(struct bl_config_s *bconf)
 	str = (const char *)p;
 	strcpy(bconf->name, str);
 	p += LCD_UKEY_BL_NAME;
-	LCDPR("bl: name: %s\n", bconf->name);
 
 	/* level: 12byte */
 	bconf->level_default = (*p | ((*(p + 1)) << 8));
@@ -1369,7 +1351,6 @@ static int aml_bl_config_load_from_unifykey(struct bl_config_s *bconf)
 	/* method: 8byte */
 	bconf->method = *p;
 	p += LCD_UKEY_BL_METHOD;
-	LCDPR("bl: method: %d\n", bconf->method);
 
 	bconf->en_gpio = *p;
 	p += LCD_UKEY_BL_EN_GPIO;
@@ -1382,20 +1363,6 @@ static int aml_bl_config_load_from_unifykey(struct bl_config_s *bconf)
 	bconf->power_off_delay = (*p | ((*(p + 1)) << 8));
 	p += LCD_UKEY_BL_OFF_DELAY;
 
-	if (lcd_debug_print_flag) {
-		LCDPR("bl: level_default     = %d\n", bconf->level_default);
-		LCDPR("bl: level_min         = %d\n", bconf->level_min);
-		LCDPR("bl: level_max         = %d\n", bconf->level_max);
-		LCDPR("bl: level_mid         = %d\n", bconf->level_mid);
-		LCDPR("bl: level_mid_mapping = %d\n", bconf->level_mid_mapping);
-
-		LCDPR("bl: en_gpio           = %d\n", bconf->en_gpio);
-		LCDPR("bl: en_gpio_on        = %d\n", bconf->en_gpio_on);
-		LCDPR("bl: en_gpio_off       = %d\n", bconf->en_gpio_off);
-		LCDPR("bl: power_on_delay    = %d\n", bconf->power_on_delay);
-		LCDPR("bl: power_off_delay   = %d\n\n", bconf->power_off_delay);
-	}
-
 	/* pwm: 32byte */
 	switch (bconf->method) {
 	case BL_CTRL_PWM:
@@ -1406,6 +1373,7 @@ static int aml_bl_config_load_from_unifykey(struct bl_config_s *bconf)
 			return -1;
 		}
 		bl_pwm = bconf->bl_pwm;
+		bl_pwm->index = 0;
 
 		bl_pwm->level_max = bconf->level_max;
 		bl_pwm->level_min = bconf->level_min;
@@ -1445,18 +1413,6 @@ static int aml_bl_config_load_from_unifykey(struct bl_config_s *bconf)
 
 		bl_pwm->pwm_duty = bl_pwm->pwm_duty_min;
 		bl_pwm_config_init(bl_pwm);
-
-		if (lcd_debug_print_flag) {
-			LCDPR("bl: pwm_method    = %d\n", bl_pwm->pwm_method);
-			LCDPR("bl: pwm_port      = %d\n", bl_pwm->pwm_port);
-			LCDPR("bl: pwm_freq      = %d\n", bl_pwm->pwm_freq);
-			LCDPR("bl: pwm_duty_max  = %d\n", bl_pwm->pwm_duty_max);
-			LCDPR("bl: pwm_duty_min  = %d\n", bl_pwm->pwm_duty_min);
-			LCDPR("bl: pwm_gpio      = %d\n", bl_pwm->pwm_gpio);
-			LCDPR("bl: pwm_gpio_off  = %d\n", bl_pwm->pwm_gpio_off);
-			LCDPR("bl: pwm_on_delay  = %d\n", bconf->pwm_on_delay);
-			LCDPR("bl: pwm_off_delay = %d\n", bconf->pwm_off_delay);
-		}
 		break;
 	case BL_CTRL_PWM_COMBO:
 		bconf->bl_pwm_combo0 = (struct bl_pwm_config_s *)malloc(sizeof(struct bl_pwm_config_s));
@@ -1473,6 +1429,8 @@ static int aml_bl_config_load_from_unifykey(struct bl_config_s *bconf)
 		}
 		pwm_combo0 = bconf->bl_pwm_combo0;
 		pwm_combo1 = bconf->bl_pwm_combo1;
+		pwm_combo0->index = 0;
+		pwm_combo1->index = 1;
 
 		bconf->pwm_on_delay = (*p | ((*(p + 1)) << 8));
 		p += LCD_UKEY_BL_PWM_ON_DELAY;
@@ -1521,25 +1479,6 @@ static int aml_bl_config_load_from_unifykey(struct bl_config_s *bconf)
 		pwm_combo1->pwm_duty = pwm_combo1->pwm_duty_min;
 		bl_pwm_config_init(pwm_combo0);
 		bl_pwm_config_init(pwm_combo1);
-
-		if (lcd_debug_print_flag) {
-			LCDPR("bl: pwm_combo0_method   = %d\n", pwm_combo0->pwm_method);
-			LCDPR("bl: pwm_combo0_port     = %d\n", pwm_combo0->pwm_port);
-			LCDPR("bl: pwm_combo0_freq     = %d\n", pwm_combo0->pwm_freq);
-			LCDPR("bl: pwm_combo0_duty_max = %d\n", pwm_combo0->pwm_duty_max);
-			LCDPR("bl: pwm_combo0_duty_min = %d\n", pwm_combo0->pwm_duty_min);
-			LCDPR("bl: pwm_combo0_gpio     = %d\n", pwm_combo0->pwm_gpio);
-			LCDPR("bl: pwm_combo0_gpio_off = %d\n", pwm_combo0->pwm_gpio_off);
-			LCDPR("bl: pwm_combo1_method   = %d\n", pwm_combo1->pwm_method);
-			LCDPR("bl: pwm_combo1_port     = %d\n", pwm_combo1->pwm_port);
-			LCDPR("bl: pwm_combo1_freq     = %d\n", pwm_combo1->pwm_freq);
-			LCDPR("bl: pwm_combo1_duty_max = %d\n", pwm_combo1->pwm_duty_max);
-			LCDPR("bl: pwm_combo1_duty_min = %d\n", pwm_combo1->pwm_duty_min);
-			LCDPR("bl: pwm_combo1_gpio     = %d\n", pwm_combo1->pwm_gpio);
-			LCDPR("bl: pwm_combo1_gpio_off = %d\n", pwm_combo1->pwm_gpio_off);
-			LCDPR("bl: pwm_on_delay        = %d\n", bconf->pwm_on_delay);
-			LCDPR("bl: pwm_off_delay       = %d\n", bconf->pwm_off_delay);
-		}
 		break;
 	default:
 		break;
@@ -1902,6 +1841,7 @@ int aml_bl_config_load(char *dt_addr, int load_id)
 		if (ret == 0)
 			aml_bl_init_load_from_bsp(lcd_drv->bl_config);
 	}
+	aml_bl_config_print(lcd_drv->bl_config);
 
 	/* get bl_off_policy */
 	bl_off_policy = BL_OFF_POLICY_NONE;
