@@ -854,12 +854,13 @@ u-boot-comp.bin:u-boot.bin
 	cp $< $@
 #	$(objtree)/tools/uclpack $< $@
 
-ifeq ($(CONFIG_SUPPORT_CUSOTMER_BOARD), y) #SUPPORT_CUSOTMER_BOARD
-FIP_FOLDER := $(srctree)/customer/board/$(BOARD)/fip
-else #SUPPORT_CUSOTMER_BOARD
 FIP_FOLDER := $(srctree)/fip
-endif #SUPPORT_CUSOTMER_BOARD
+ifeq ($(CONFIG_SUPPORT_CUSOTMER_BOARD), y) #SUPPORT_CUSOTMER_BOARD
+FIP_FOLDER_SOC := $(srctree)/customer/board/$(BOARD)/fip/$(SOC)
+else #SUPPORT_CUSOTMER_BOARD
 FIP_FOLDER_SOC := $(FIP_FOLDER)/$(SOC)
+endif #SUPPORT_CUSOTMER_BOARD
+
 FIP_ARGS += --bl30 $(FIP_FOLDER_SOC)/bl30_new.bin
 #remove bl301
 #ifeq ($(CONFIG_NEED_BL301), y)
