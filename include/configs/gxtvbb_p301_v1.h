@@ -394,6 +394,7 @@
 #define CONFIG_EFUSE 1
 #define CONFIG_SYS_I2C_AML 1
 #define CONFIG_SYS_I2C_SPEED     400000
+#define CONFIG_HDMI_UART_BOARD 1
 
 /* commands */
 #define CONFIG_CMD_CACHE 1
