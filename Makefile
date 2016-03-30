@@ -887,6 +887,9 @@ endif
 	@cp -f $(FIP_FOLDER_SOC)/u-boot.* $(FIP_FOLDER)/
 	$(Q)dd if=$(FIP_FOLDER)/u-boot.bin of=$(FUSING_FOLDER)/u-boot.bin bs=512 skip=96
 	@rm -f $(FIP_FOLDER_SOC)/boot_new.bin
+	@dd if=$(FUSING_FOLDER)/bl1.bin.hardkernel of=$(srctree)/u-boot.bin conv=fsync
+	@dd if=$(FUSING_FOLDER)/bl1.bin.hardkernel of=$(srctree)/u-boot.bin conv=fsync,notrunc bs=512 skip=1 seek=1
+	@dd if=$(FUSING_FOLDER)/u-boot.bin of=$(srctree)/u-boot.bin conv=fsync,notrunc bs=512 seek=97
 	@echo '$(FIP_FOLDER_SOC)/u-boot.bin build done!'
 
 #
