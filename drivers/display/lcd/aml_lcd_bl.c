@@ -1387,6 +1387,15 @@ static int aml_bl_config_load_from_unifykey(struct bl_config_s *bconf)
 		bl_pwm->pwm_port = *p;
 		p += LCD_UKEY_BL_PWM_PORT;
 		bl_pwm->pwm_freq = (*p | ((*(p + 1)) << 8) | ((*(p + 2)) << 8) | ((*(p + 3)) << 8));
+		if (bl_pwm->pwm_port == BL_PWM_VS) {
+			if (bl_pwm->pwm_freq > 4) {
+				LCDERR("bl: bl_pwm_vs wrong freq %d\n", bl_pwm->pwm_freq);
+				bl_pwm->pwm_freq = BL_FREQ_VS_DEFAULT;
+			}
+		} else {
+			if (bl_pwm->pwm_freq > XTAL_HALF_FREQ_HZ)
+				bl_pwm->pwm_freq = XTAL_HALF_FREQ_HZ;
+		}
 		p += LCD_UKEY_BL_PWM_FREQ;
 		bl_pwm->pwm_duty_max = *p;
 		p += LCD_UKEY_BL_PWM_DUTY_MAX;
@@ -1442,6 +1451,15 @@ static int aml_bl_config_load_from_unifykey(struct bl_config_s *bconf)
 		pwm_combo0->pwm_port = *p;
 		p += LCD_UKEY_BL_PWM_PORT;
 		pwm_combo0->pwm_freq = (*p | ((*(p + 1)) << 8) | ((*(p + 2)) << 8) | ((*(p + 3)) << 8));
+		if (pwm_combo0->pwm_port == BL_PWM_VS) {
+			if (pwm_combo0->pwm_freq > 4) {
+				LCDERR("bl: bl_pwm_vs wrong freq %d\n", pwm_combo0->pwm_freq);
+				pwm_combo0->pwm_freq = BL_FREQ_VS_DEFAULT;
+			}
+		} else {
+			if (pwm_combo0->pwm_freq > XTAL_HALF_FREQ_HZ)
+				pwm_combo0->pwm_freq = XTAL_HALF_FREQ_HZ;
+		}
 		p += LCD_UKEY_BL_PWM_FREQ;
 		pwm_combo0->pwm_duty_max = *p;
 		p += LCD_UKEY_BL_PWM_DUTY_MAX;
@@ -1456,6 +1474,15 @@ static int aml_bl_config_load_from_unifykey(struct bl_config_s *bconf)
 		pwm_combo1->pwm_port =  *p;
 		p += LCD_UKEY_BL_PWM2_PORT;
 		pwm_combo1->pwm_freq = (*p | ((*(p + 1)) << 8) | ((*(p + 2)) << 8) | ((*(p + 3)) << 8));
+		if (pwm_combo1->pwm_port == BL_PWM_VS) {
+			if (pwm_combo1->pwm_freq > 4) {
+				LCDERR("bl: bl_pwm_vs wrong freq %d\n", pwm_combo1->pwm_freq);
+				pwm_combo1->pwm_freq = BL_FREQ_VS_DEFAULT;
+			}
+		} else {
+			if (pwm_combo1->pwm_freq > XTAL_HALF_FREQ_HZ)
+				pwm_combo1->pwm_freq = XTAL_HALF_FREQ_HZ;
+		}
 		p += LCD_UKEY_BL_PWM2_FREQ;
 		pwm_combo1->pwm_duty_max = *p;
 		p += LCD_UKEY_BL_PWM2_DUTY_MAX;
