@@ -385,7 +385,7 @@ ddr_set_t __ddr_setting = {
 	.t_pctl0_rsth_us		= 2,   //PCTL TRSTH
 	.t_pctl0_mcfg			= 0XA2F21,   //PCTL MCFG default 1T
 	//.t_pctl0_mcfg1			= 0X80000000,  //PCTL MCFG1
-	.t_pctl0_mcfg1			=  (1<<31)|(0x20<<16)|(0x80<<0)//[B31]hw_exit_idle_en
+	.t_pctl0_mcfg1			=  (1<<31)|(0x20<<16)|(0x00<<0)//[B31]hw_exit_idle_en
 								|( 0<<8), //[B10,B9,B8] tfaw_cfg_offset:
 								//tFAW= (4 + MCFG.tfaw_cfg)*tRRD - tfaw_cfg_offset,  //PCTL MCFG1
 	.t_pctl0_scfg			= 0xF01,   //PCTL SCFG
