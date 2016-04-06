@@ -267,4 +267,7 @@
 #define ODROID_REBOOT_CMD_FASTBOOT	0x5
 #define ODROID_REBOOT_CMD_RECOVERY	0x6
 
+/* HPD Disable : Always HDMI Connect */
+#define	ODROID_DISABLE_HPD		1
+
 #endif
