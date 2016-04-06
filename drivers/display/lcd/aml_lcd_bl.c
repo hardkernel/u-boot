@@ -20,6 +20,9 @@
 #include <libfdt.h>
 #endif
 #include <amlogic/aml_lcd.h>
+#ifdef CONFIG_AML_LOCAL_DIMMING
+#include <amlogic/aml_ldim.h>
+#endif
 #include "aml_lcd_reg.h"
 #include "aml_lcd_common.h"
 
@@ -34,6 +37,9 @@ static struct bl_config_s *bl_check_valid(void)
 	struct bl_config_s *bconf;
 #ifdef CONFIG_AML_BL_EXTERN
 	struct aml_bl_extern_driver_s *bl_ext;
+#endif
+#ifdef CONFIG_AML_LOCAL_DIMMING
+	struct aml_ldim_driver_s *ldim_drv;
 #endif
 
 	bconf = lcd_drv->bl_config;
@@ -58,6 +64,11 @@ static struct bl_config_s *bl_check_valid(void)
 		break;
 #ifdef CONFIG_AML_LOCAL_DIMMING
 	case BL_CTRL_LOCAL_DIMING:
+		ldim_drv = aml_ldim_get_driver();
+		if (ldim_drv == NULL) {
+			LCDERR("bl: no ldim driver\n");
+			bconf = NULL;
+		}
 		break;
 #endif
 #ifdef CONFIG_AML_BL_EXTERN
@@ -321,6 +332,9 @@ static void bl_pwm_config_init(struct bl_pwm_config_s *bl_pwm)
 		LCDERR("bl: %s: bl_pwm is NULL\n", __func__);
 		return;
 	}
+	if (bl_pwm->pwm_port >= BL_PWM_MAX)
+		return;
+
 	if (lcd_debug_print_flag) {
 		LCDPR("bl: %s pwm_port %d: freq = %u\n",
 			__func__, bl_pwm->pwm_port, bl_pwm->pwm_freq);
@@ -356,6 +370,10 @@ static void bl_pwm_config_init(struct bl_pwm_config_s *bl_pwm)
 
 void aml_bl_pwm_config_update(struct bl_config_s *bconf)
 {
+#ifdef CONFIG_AML_LOCAL_DIMMING
+	struct aml_ldim_driver_s *ldim_drv;
+#endif
+
 	switch (bconf->method) {
 	case BL_CTRL_PWM:
 		bl_pwm_config_init(bconf->bl_pwm);
@@ -364,6 +382,15 @@ void aml_bl_pwm_config_update(struct bl_config_s *bconf)
 		bl_pwm_config_init(bconf->bl_pwm_combo0);
 		bl_pwm_config_init(bconf->bl_pwm_combo1);
 		break;
+#ifdef CONFIG_AML_LOCAL_DIMMING
+	case BL_CTRL_LOCAL_DIMING:
+		ldim_drv = aml_ldim_get_driver();
+		if (ldim_drv->ldim_pwm)
+			bl_pwm_config_init(ldim_drv->ldim_pwm);
+		else
+			LCDERR("bl: ldim_pwm is null\n");
+		break;
+#endif
 	default:
 		break;
 	}
@@ -525,6 +552,9 @@ void aml_bl_set_level(unsigned int level)
 #ifdef CONFIG_AML_BL_EXTERN
 	struct aml_bl_extern_driver_s *bl_ext;
 #endif
+#ifdef CONFIG_AML_LOCAL_DIMMING
+	struct aml_ldim_driver_s *ldim_drv;
+#endif
 
 	bconf = bl_check_valid();
 	if (bconf == NULL)
@@ -561,7 +591,11 @@ void aml_bl_set_level(unsigned int level)
 		break;
 #ifdef CONFIG_AML_LOCAL_DIMMING
 	case BL_CTRL_LOCAL_DIMING:
-		/* to do */
+		ldim_drv = aml_ldim_get_driver();
+		if (ldim_drv->set_level)
+			ldim_drv->set_level(level);
+		else
+			LCDERR("bl: ldim set_level is null\n");
 		break;
 #endif
 #ifdef CONFIG_AML_BL_EXTERN
@@ -591,7 +625,7 @@ unsigned int aml_bl_get_level(void)
 	return bconf->level;
 }
 
-static void bl_pwm_ctrl(struct bl_pwm_config_s *bl_pwm, int status)
+void bl_pwm_ctrl(struct bl_pwm_config_s *bl_pwm, int status)
 {
 	int port, pre_div;
 
@@ -667,6 +701,9 @@ void aml_bl_power_ctrl(int status, int delay_flag)
 #ifdef CONFIG_AML_BL_EXTERN
 	struct aml_bl_extern_driver_s *bl_ext;
 #endif
+#ifdef CONFIG_AML_LOCAL_DIMMING
+	struct aml_ldim_driver_s *ldim_drv;
+#endif
 
 	bconf = bl_check_valid();
 	if (bconf == NULL)
@@ -710,10 +747,14 @@ void aml_bl_power_ctrl(int status, int delay_flag)
 			break;
 #ifdef CONFIG_AML_LOCAL_DIMMING
 		case BL_CTRL_LOCAL_DIMING:
+			ldim_drv = aml_ldim_get_driver();
 			/* step 1: power on enable */
 			bl_power_en_ctrl(bconf, 1, delay_flag);
 			/* step 2: power on ldim */
-			aml_bl_power_ctrl_ldim(1);
+			if (ldim_drv->power_on)
+				ldim_drv->power_on();
+			else
+				LCDERR("bl: ldim power on is null\n");
 			break;
 #endif
 #ifdef CONFIG_AML_BL_EXTERN
@@ -760,8 +801,12 @@ void aml_bl_power_ctrl(int status, int delay_flag)
 			break;
 #ifdef CONFIG_AML_LOCAL_DIMMING
 		case BL_CTRL_LOCAL_DIMING:
+			ldim_drv = aml_ldim_get_driver();
 			/* step 1: power off ldim */
-			aml_bl_power_ctrl_ldim(0);
+			if (ldim_drv->power_off)
+				ldim_drv->power_off();
+			else
+				LCDERR("bl: ldim power off is null\n");
 			/* step 2: power off enable */
 			bl_power_en_ctrl(bconf, 0, delay_flag);
 			break;
@@ -805,7 +850,7 @@ static char *bl_pwm_name[] = {
 	"PWM_VS",
 };
 
-static enum bl_pwm_port_e bl_pwm_str_to_pwm(const char *str)
+enum bl_pwm_port_e bl_pwm_str_to_pwm(const char *str)
 {
 	enum bl_pwm_port_e pwm_port = BL_PWM_MAX;
 	int i;
@@ -1159,6 +1204,11 @@ static int aml_bl_config_load_from_dts(char *dt_addr, unsigned int index, struct
 		/* bl_pwm_config_init(pwm_combo0);
 		bl_pwm_config_init(pwm_combo1); */
 		break;
+#ifdef CONFIG_AML_LOCAL_DIMMING
+	case BL_CTRL_LOCAL_DIMING:
+		aml_ldim_probe(dt_addr, 0);
+		break;
+#endif
 	default:
 		break;
 	}
@@ -1290,8 +1340,11 @@ static int aml_bl_config_load_from_bsp(struct bl_config_s *bconf)
 		/* bl_pwm_config_init(pwm_combo0);
 		bl_pwm_config_init(pwm_combo1); */
 		break;
+#ifdef CONFIG_AML_LOCAL_DIMMING
 	case BL_CTRL_LOCAL_DIMING:
+		aml_ldim_probe(NULL, 1);
 		break;
+#endif
 	case BL_CTRL_EXTERN:
 		break;
 	default:
@@ -1526,6 +1579,11 @@ static int aml_bl_config_load_from_unifykey(struct bl_config_s *bconf)
 		/* bl_pwm_config_init(pwm_combo0);
 		bl_pwm_config_init(pwm_combo1); */
 		break;
+#ifdef CONFIG_AML_LOCAL_DIMMING
+	case BL_CTRL_LOCAL_DIMING:
+		aml_ldim_probe(NULL, 2);
+		break;
+#endif
 	default:
 		break;
 	}

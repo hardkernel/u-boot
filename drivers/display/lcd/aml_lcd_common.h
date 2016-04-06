@@ -47,6 +47,9 @@ extern void aml_bl_set_level(unsigned int level);
 extern unsigned int aml_bl_get_level(void);
 extern void aml_bl_power_ctrl(int status, int delay_flag);
 extern int aml_bl_config_load(char *dt_addr, int load_id);
+#ifdef CONFIG_AML_LOCAL_DIMMING
+extern int ldim_config_load(char *dt_addr);
+#endif
 
 #endif
 

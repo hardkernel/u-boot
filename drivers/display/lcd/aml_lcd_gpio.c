@@ -86,7 +86,7 @@ unsigned int aml_lcd_gpio_input_get(int gpio)
 {
 	unsigned int value;
 
-	if (gpio == LCD_GPIO_MAX)
+	if (gpio >= LCD_GPIO_MAX)
 		return 0;
 	gpio_direction_input(gpio);
 	value = gpio_get_value(gpio);
