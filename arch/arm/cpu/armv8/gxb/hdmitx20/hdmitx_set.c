@@ -106,7 +106,11 @@ static int hdmitx_get_hpd_state(void)
 {
 	int st = 0;
 
+#if defined(ODROID_DISABLE_HPD)
+	st = 1;
+#else
 	st = !!(hd_read_reg(P_PREG_PAD_GPIO1_I) & (1 << 20));
+#endif
 	return st;
 }
 
