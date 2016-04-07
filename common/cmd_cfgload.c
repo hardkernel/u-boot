@@ -90,6 +90,8 @@ static char* read_cfgload(void)
 	return NULL;
 }
 
+extern int is_hdmimode_valid(const char *);
+
 static int do_load_cfgload(cmd_tbl_t *cmdtp, int flag, int argc,
 		char *const argv[])
 {
@@ -115,6 +117,11 @@ static int do_load_cfgload(cmd_tbl_t *cmdtp, int flag, int argc,
 		parse_string_outer(cmd, FLAG_PARSE_SEMICOLON
 				| FLAG_EXIT_FROM_LOOP);
 #endif
+		/* Check the hdmimode validation */
+		if (strstr(cmd, "hdmimode")) {
+			if (!is_hdmimode_valid(getenv("hdmimode")))
+				setenv("hdmimode", "720p60hz");
+		}
 	}
 
 	return 0;
