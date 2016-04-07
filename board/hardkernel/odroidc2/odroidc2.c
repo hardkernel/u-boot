@@ -17,6 +17,7 @@
 #include <asm-generic/gpio.h>
 #include <usb/fastboot.h>
 #include <asm/arch/efuse.h>
+#include <linux/kernel.h>
 
 #ifdef CONFIG_AML_VPU
 #include <vpu.h>
@@ -37,6 +38,49 @@ extern unsigned int get_mmc_size(void);
 #define GPIO_TF3V3		35	/* GPIOY_12 */
 #define GPIO_TF1V8		122	/* GPIOAO_3 */
 #define GPIO_UPS_POWER_LATCH	37	/* GPIOY_14 */
+
+static const char *c2_hdmimodes[] = {
+	"480p60hz",
+	"576p50hz",
+	"720p60hz",
+	"720p50hz",
+	"1080p60hz",
+	"1080p50hz",
+	"1080p30hz",
+	"1080p24hz",
+	"1080i60hz",
+	"1080i50hz",
+	"2160p60hz",
+	"2160p50hz",
+	"2160p30hz",
+	"2160p25hz",
+	"2160p24hz",
+	"2160p60hz420",
+	"2160p50hz420",
+	"600x480p60hz",
+	"800x480p60hz",
+	"1024x600p60hz",
+	"1024x768p60hz",
+	"1280x800p60hz",
+	"1280x1024p60hz",
+	"1360x768p60hz",
+	"1440x900p60hz",
+	"1600x900p60hz",
+	"1680x1050p60hz",
+	"1920x1200p60hz",
+};
+
+int is_hdmimode_valid(const char *mode)
+{
+	int i = 0;
+
+	for (i = 0; i < ARRAY_SIZE(c2_hdmimodes); ++i) {
+		if (!strcmp(c2_hdmimodes[i], mode))
+			return 1;
+	}
+
+	return 0;
+}
 
 int serial_set_pin_port(unsigned long port_base)
 {
