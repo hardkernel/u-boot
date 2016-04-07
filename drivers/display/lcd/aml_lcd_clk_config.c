@@ -874,8 +874,7 @@ static void lcd_set_pll_gxtvbb(struct lcd_clk_config_s *cConf)
 	pll_ctrl2 = ((cConf->pll_od3_sel << LCD_PLL_OD3_GXTVBB) |
 		(cConf->pll_od2_sel << LCD_PLL_OD2_GXTVBB) |
 		(cConf->pll_od1_sel << LCD_PLL_OD1_GXTVBB));
-	if (cConf->pll_frac > 0)
-		pll_ctrl2 |= ((1 << 14) | (cConf->pll_frac << 0));
+	pll_ctrl2 |= ((1 << 14) | (cConf->pll_frac << 0));
 
 	lcd_hiu_write(HHI_HDMI_PLL_CNTL, pll_ctrl | (1 << LCD_PLL_RST_GXTVBB));
 	lcd_hiu_write(HHI_HDMI_PLL_CNTL2, pll_ctrl2);

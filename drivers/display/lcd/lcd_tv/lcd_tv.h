@@ -25,7 +25,7 @@
 //**********************************
 #define LCD_DRV_TYPE      "tv"
 
-#define LCD_DRV_VERSION    "20160323"
+#define LCD_DRV_VERSION    "20160407"
 //**********************************
 
 extern void lcd_tv_config_update(struct lcd_config_s *pconf);
