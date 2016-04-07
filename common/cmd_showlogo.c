@@ -8,24 +8,67 @@
 #include <common.h>
 #include <command.h>
 #include <asm/errno.h>
+#include <vsprintf.h>
+#include <linux/kernel.h>
 
 #ifdef CONFIG_DISPLAY_LOGO
+static struct c2_resolution {
+	const char *name;
+	int fb_width;
+	int fb_height;
+} c2_res_list[] = {
+	{"480p60hz", 720, 480},
+	{"576p50hz", 720, 576},
+	{"720p60hz", 1280, 720},
+	{"720p50hz", 1280, 720},
+	{"1080p60hz", 1920, 1080},
+	{"1080p50hz", 1920, 1080},
+	{"1080p30hz", 1920, 1080},
+	{"1080p24hz", 1920, 1080},
+	{"1080i60hz", 1920, 1080},
+	{"1080i50hz", 1920, 1080},
+	{"2160p60hz", 3840, 2160},
+	{"2160p50hz", 3840, 2160},
+	{"2160p30hz", 3840, 2160},
+	{"2160p25hz", 3840, 2160},
+	{"2160p24hz", 3840, 2160},
+	{"2160p60hz420", 3840, 2160},
+	{"2160p50hz420", 3840, 2160},
+	{"600x480p60hz", 600, 480},
+	{"800x480p60hz", 800, 480},
+	{"1024x600p60hz", 1024, 600},
+	{"1024x768p60hz", 1024, 768},
+	{"1280x800p60hz", 1280, 800},
+	{"1280x1024p60hz", 1280, 1024},
+	{"1360x768p60hz", 1360, 768},
+	{"1440x900p60hz", 1440, 900},
+	{"1600x900p60hz", 1600, 900},
+	{"1680x1050p60hz", 1680, 1050},
+	{"1920x1200p60hz", 1920, 1200},
+};
+
 static int display_logo(const char* mode)
 {
-	int ret;
+	int ret = 0;
+	int i = 0;
 
-	if (!strncmp("720", mode, 3)) {
+	for (i = 0; i < ARRAY_SIZE(c2_res_list); ++i) {
+		if (!strcmp(c2_res_list[i].name, mode)) {
+			setenv("fb_width", simple_itoa(c2_res_list[i].fb_width));
+			setenv("fb_height", simple_itoa(c2_res_list[i].fb_height));
+			break;
+		}
+	}
+
+	/* If hdmimode is set by invalid mode, u-boot set the default mode(720p60hz). */
+	if (i == ARRAY_SIZE(c2_res_list)) {
+		printf("error: '%s' is invalid resolution.\n", mode);
+		printf("Set the default resolution. => 720p60hz.\n");
+		mode = "720p60hz";
 		setenv("fb_width", "1280");
 		setenv("fb_height", "720");
-	} else if (!strncmp("1080", mode, 4)) {
-		setenv("fb_width", "1920");
-		setenv("fb_height", "1080");
-	} else if (!strncmp("2160", mode, 4)) {
-		setenv("fb_width", "3840");
-		setenv("fb_height", "2160");
-	} else {
-		printf("error: '%s' is invalid resolution.\n", mode);
-		return 1;
+		setenv("hdmimode", "720p60hz");
+		run_command("save", 0);
 	}
 
 	setenv("bootlogo_addr", "0x20000000"); /* initrd load address + 0xD0000000 */
