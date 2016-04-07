@@ -41,6 +41,7 @@ void switch_to_clk81(void)
 static void ao_switch_to_ao_24M(void)
 {
 	unsigned int val;
+	return;
 	writel(0xc72db2dc, 0xc8100094);
 	writel(0x0100a007, 0xc8100098);
 	val = readl(AO_RTI_PWR_CNTL_REG0);
@@ -56,6 +57,7 @@ static void ao_switch_to_ao_24M(void)
 static void ao_switch_to_ee(void)
 {
 	unsigned int val;
+	return;
 	val = readl(AO_RTI_PWR_CNTL_REG0);
 	val = val & (~(0x1 << 8));
 	writel(val, AO_RTI_PWR_CNTL_REG0);

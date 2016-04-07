@@ -91,7 +91,7 @@ static void power_switch_to_ee(unsigned int pwr_ctrl)
 static void pwm_set_voltage(unsigned int id, unsigned int voltage)
 {
 	int to;
-	return;
+
 	uart_puts("set vddee to 0x");
 	uart_put_hex(voltage, 16);
 	uart_puts("mv\n");
@@ -161,9 +161,11 @@ static void power_on_at_clk81(unsigned int suspend_from)
 	_udelay(10000);
 	_udelay(10000);
 	power_on_usb5v();
+#if 0
 	if (suspend_from == SYS_POWEROFF) {
 		power_switch_to_ee(ON);
 	}
+#endif
 }
 
 static void power_off_at_24M(void)
@@ -190,6 +192,7 @@ static void power_on_ddr(void)
 
 static void power_off_ee(void)
 {
+	return;
 	power_switch_to_ee(OFF);
 	aml_update_bits(AO_GPIO_O_EN_N, 1 << 8, 0);
 	aml_update_bits(AO_GPIO_O_EN_N, 1 << 24, 1 << 24);
@@ -197,6 +200,7 @@ static void power_off_ee(void)
 
 static void power_on_ee(void)
 {
+	return;
 	aml_update_bits(AO_GPIO_O_EN_N, 1 << 8, 0);
 	aml_update_bits(AO_GPIO_O_EN_N, 1 << 24, 0);
 	_udelay(10000);
@@ -205,6 +209,7 @@ static void power_on_ee(void)
 
 static void power_off_at_32k(unsigned int suspend_from)
 {
+
 	if (suspend_from == SYS_POWEROFF) {
 		power_off_ee();
 		power_off_ddr();
@@ -213,6 +218,7 @@ static void power_off_at_32k(unsigned int suspend_from)
 
 static void power_on_at_32k(unsigned int suspend_from)
 {
+
 	if (suspend_from == SYS_POWEROFF) {
 		power_on_ddr();
 		power_on_ee();
@@ -302,6 +308,7 @@ static unsigned int detect_key(unsigned int suspend_from)
 	unsigned *irq = (unsigned *)SECURE_TASK_SHARE_IRQ;
 	/* unsigned *wakeup_en = (unsigned *)SECURE_TASK_RESPONSE_WAKEUP_EN; */
 	uart_puts("enter detect key\n");
+
 	_udelay(10000);
 	/* setup wakeup resources */
 	/*auto suspend: timerA 10ms resolution */
