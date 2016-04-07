@@ -767,7 +767,7 @@ static void lcd_set_pll_g9bb(struct lcd_clk_config_s *cConf)
 	if (ret)
 		LCDERR("hpll lock failed\n");
 
-	lcd_set_pll_ss_g9bb(cConf);
+	/* lcd_set_pll_ss_g9bb(cConf); */
 }
 
 static void lcd_update_pll_frac_g9(struct lcd_clk_config_s *cConf)
@@ -896,8 +896,8 @@ static void lcd_set_pll_gxtvbb(struct lcd_clk_config_s *cConf)
 	if (ret)
 		LCDERR("hpll lock failed\n");
 
-	if (cConf->ss_level > 0)
-		lcd_set_pll_ss_gxtvbb(cConf);
+	/* if (cConf->ss_level > 0)
+		lcd_set_pll_ss_gxtvbb(cConf); */
 }
 
 static void lcd_update_pll_frac_gxtvbb(struct lcd_clk_config_s *cConf)

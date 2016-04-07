@@ -448,6 +448,8 @@ int lcd_tablet_driver_init(void)
 	default:
 		break;
 	}
+	if (pconf->lcd_timing.ss_level > 0)
+		lcd_set_spread_spectrum();
 
 	lcd_vcbus_write(VENC_INTCTRL, 0x200);
 

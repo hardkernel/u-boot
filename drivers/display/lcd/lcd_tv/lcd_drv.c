@@ -445,6 +445,12 @@ static void lcd_vbyone_wait_stable(void)
 {
 	int i = 1000;
 
+	mdelay(10);
+	/* reset vbyone */
+	lcd_vcbus_write(VBO_SOFT_RST, 0x1ff);
+	udelay(10);
+	lcd_vcbus_write(VBO_SOFT_RST, 0);
+
 	while ((lcd_vcbus_read(VBO_STATUS_L) & 0x3f) != 0x20) {
 		mdelay(2);
 		if (i-- == 0)
@@ -605,6 +611,8 @@ int lcd_tv_driver_init(void)
 	default:
 		break;
 	}
+	if (pconf->lcd_timing.ss_level > 0)
+		lcd_set_spread_spectrum();
 
 	lcd_vcbus_write(VENC_INTCTRL, 0x200);
 
