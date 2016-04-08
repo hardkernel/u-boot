@@ -27,6 +27,7 @@
 
 #define CONFIG_AML_MESON 1
 #define CONFIG_AML_MESON_GX 1
+#define CONFIG_AML_MESON_GXL 1
 
 /* Size of malloc() pool */
 #define CONFIG_SYS_MALLOC_LEN		(64*1024*1024)
@@ -56,4 +57,9 @@
 #define CONFIG_DTB_MEM_ADDR 0x1000000
 
 #define CONFIG_AML_CUSTOMER_ID  (0)
+
+#define CONFIG_SILENT_CONSOLE
+#define CONFIG_SILENT_CONSOLE_UPDATE_ON_RELOC
+#define CONFIG_SILENT_U_BOOT_ONLY
+
 #endif /* _CPU_H */

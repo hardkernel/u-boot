@@ -12,7 +12,7 @@
 #$7:name flag
 if [ "$7" = "bl30" ]; then
 	declare blx_bin_limit=41984
-	declare blx01_bin_limit=12228
+	declare blx01_bin_limit=12288
 elif [ "$7" = "bl2" ]; then
 	declare blx_bin_limit=41984
 	declare blx01_bin_limit=7168

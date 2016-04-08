@@ -48,7 +48,7 @@ enum scpi_error_codes {
 	SCPI_ERR_MAX
 };
 
-void open_scp_log(void);
+void open_scp_log(unsigned int channel);
 int thermal_calibration(unsigned int type, unsigned int data);
 int thermal_get_value(unsigned int sensor_id, unsigned int *value);
 

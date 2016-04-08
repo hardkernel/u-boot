@@ -101,9 +101,9 @@ static void scpi_send32(unsigned int command,
 	mb_message_end(priority);
 }
 
-void open_scp_log(void)
+void open_scp_log(unsigned int channel)
 {
-	scpi_send32(SCPI_CMD_OPEN_SCP_LOG, 0x1, LOW_PRIORITY);
+	scpi_send32(SCPI_CMD_OPEN_SCP_LOG, channel, LOW_PRIORITY);
 }
 
 /*
