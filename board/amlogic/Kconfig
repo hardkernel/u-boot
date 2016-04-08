@@ -43,6 +43,14 @@ config GXL_SKT_V1
 	bool "Support amlogic gxl socket v1 board"
 	default n
 
+config GXL_P211_V1
+	bool "Support amlogic gxl p211 board"
+	default n
+
+config GXL_P212_V1
+	bool "Support amlogic gxl p212 board"
+	default n
+
 config PXP_EMULATOR
 	bool "Support pxp environment"
 	default n
@@ -96,6 +104,14 @@ endif
 
 if GXL_SKT_V1
 source "board/amlogic/gxl_skt_v1/Kconfig"
+endif
+
+if GXL_P211_V1
+source "board/amlogic/gxl_p211_v1/Kconfig"
+endif
+
+if GXL_P212_V1
+source "board/amlogic/gxl_p212_v1/Kconfig"
 endif
 
 if ODROID_C2
