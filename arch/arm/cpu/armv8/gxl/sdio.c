@@ -69,7 +69,7 @@ int cpu_sd_emmc_init(unsigned port)
 		break;
 	case SDIO_PORT_C://SDIOC GPIOB_2~GPIOB_7
 		clrbits_le32(P_PERIPHS_PIN_MUX_7, (0x7 << 5) | (0xff << 16));
-        setbits_le32(P_PERIPHS_PIN_MUX_7, 0x29 << 7);
+		setbits_le32(P_PERIPHS_PIN_MUX_7, 0x7 << 29);
         //printf("inand sdio  port:%d\n",port);
 		break;
 	default:
