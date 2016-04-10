@@ -69,7 +69,7 @@
 
 /* ddr */
 #define CONFIG_DDR_SIZE					1024 //MB
-#define CONFIG_DDR_CLK					912  //MHz, Range: 384-1200, should be multiple of 24
+#define CONFIG_DDR_CLK					792  //MHz, Range: 384-1200, should be multiple of 24
 #define CONFIG_DDR_TYPE					CONFIG_DDR_TYPE_DDR3
 /* DDR channel setting, please refer hardware design.
  *    CONFIG_DDR0_RANK0        : DDR0 rank0
@@ -224,6 +224,13 @@
 #define CONFIG_CMD_MISC         1
 #define CONFIG_CMD_CPU_TEMP 1
 #define CONFIG_SYS_MEM_TOP_HIDE 0x08000000 //hide 128MB for kernel reserve
+
+/* debug mode defines */
+//#define CONFIG_DEBUG_MODE			1
+#ifdef CONFIG_DEBUG_MODE
+#define CONFIG_DDR_CLK_DEBUG		636
+#define CONFIG_CPU_CLK_DEBUG		600
+#endif
 
 /* ddr dump function defines */
 //#define CONFIG_SPL_DDR_DUMP 1

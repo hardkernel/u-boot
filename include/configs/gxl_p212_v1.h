@@ -364,6 +364,13 @@
 #define CONFIG_CMD_CPU_TEMP 1
 #define CONFIG_SYS_MEM_TOP_HIDE 0x08000000 //hide 128MB for kernel reserve
 
+/* debug mode defines */
+//#define CONFIG_DEBUG_MODE           1
+#ifdef CONFIG_DEBUG_MODE
+#define CONFIG_DDR_CLK_DEBUG        636
+#define CONFIG_CPU_CLK_DEBUG        600
+#endif
+
 //support secure boot
 #define CONFIG_AML_SECURE_UBOOT   1
 

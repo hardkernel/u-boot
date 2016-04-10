@@ -51,7 +51,8 @@ struct ddr_set{
 	unsigned int   t_pub_pgcr2;   //PUB PGCR2
 	unsigned int   t_pub_pgcr3;   //PUB PGCR3
 	unsigned int   t_pub_dxccr;   //PUB DXCCR
-	unsigned int   t_pub_dtcr;    //PUB DTCR
+	unsigned int   t_pub_dtcr0;    //PUB DTCR
+	unsigned int   t_pub_dtcr1;    //PUB DTCR
 	unsigned int   t_pub_aciocr[5];  //PUB ACIOCRx
 	unsigned int   t_pub_dx0gcr[3];  //PUB DX0GCRx
 	unsigned int   t_pub_dx1gcr[3];  //PUB DX1GCRx
@@ -166,6 +167,15 @@ struct pll_set{
 	unsigned short vcck;
 	unsigned char szPad[4];
 	unsigned long  lCustomerID;
+	unsigned short	debug_mode;
+	unsigned short	ddr_clk_debug;
+	unsigned short	cpu_clk_debug;
+	unsigned short	rsv_s1;
+	/* align */
+	unsigned long	rsv_l2;
+	unsigned long	rsv_l3;
+	unsigned long	rsv_l4;
+	unsigned long	rsv_l5;
 }__attribute__ ((packed));
 
 typedef struct pll_set pll_set_t;

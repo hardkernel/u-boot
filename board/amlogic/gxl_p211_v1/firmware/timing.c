@@ -357,16 +357,31 @@ ddr_set_t __ddr_setting = {
 	//.t_pub_pgcr2			= 0x01f12480,   //PUB PGCR2
 	.t_pub_pgcr3			= 0xc0aae860,   //PUB PGCR3
 	.t_pub_dxccr			= 0x20c01884,   //PUB DXCCR
-	.t_pub_dtcr				= 0x80003187,    //PUB DTCR //S905 use 0x800031c7
 	.t_pub_aciocr			= {0},  //PUB ACIOCRx
 	.t_pub_dx0gcr			= {0},  //PUB DX0GCRx
 	.t_pub_dx1gcr			= {0},  //PUB DX1GCRx
 	.t_pub_dx2gcr			= {0},  //PUB DX2GCRx
 	.t_pub_dx3gcr			= {0},  //PUB DX3GCRx
+#if (CONFIG_DDR_TYPE == CONFIG_DDR_TYPE_DDR3)
 	.t_pub_dcr				= 0X8B,     //PUB DCR
-	.t_pub_vtcr1			= 0x03f00172,
+	.t_pub_dtcr0			= 0x80003187,    //PUB DTCR //S905 use 0x800031c7
+	.t_pub_dtcr1			= 0x00010237,    //PUB DTCR
+#elif (CONFIG_DDR_TYPE == CONFIG_DDR_TYPE_DDR4)
+	.t_pub_dcr				= 0X40C,     //PUB DCR
+	.t_pub_dtcr0			= 0x800031c7,    //PUB DTCR //S905 use 0x800031c7
+	.t_pub_dtcr1			= 0x00010237,
+#elif (CONFIG_DDR_TYPE == CONFIG_DDR_TYPE_LPDDR3)
+	.t_pub_dcr				= 0X89,     //PUB DCR
+	.t_pub_dtcr0			= 0x80003187,    //PUB DTCR //S905 use 0x800031c7
+	.t_pub_dtcr1			= 0x00010237,
+#endif
+	.t_pub_vtcr1			= 0x0fc00172,
 	.t_pub_dtar				= (0X0 | (0X0 <<12) | (0 << 28)),
+#if( CONFIG_DDR_TYPE	== CONFIG_DDR_TYPE_LPDDR3)
+	.t_pub_dsgcr			= 0x02064db,
+#else
 	.t_pub_dsgcr			= 0x020641b,
+#endif
 	//.t_pub_zq0pr			= 0x7b,   //PUB ZQ0PR
 	//.t_pub_zq1pr			= 0x7b,   //PUB ZQ1PR
 	//.t_pub_zq2pr			= 0x7b,   //PUB ZQ2PR
@@ -384,8 +399,7 @@ ddr_set_t __ddr_setting = {
 	.t_pctl0_rsth_us		= 2,   //PCTL TRSTH
 	.t_pctl0_mcfg			= 0XA2F01,   //PCTL MCFG default 1T
 	//.t_pctl0_mcfg1			= 0X80000000,  //PCTL MCFG1
-	.t_pctl0_mcfg1			=  (1<<31)|(0x20<<16)|(0x80<<0)//[B31]hw_exit_idle_en
-								|( 0<<8), //[B10,B9,B8] tfaw_cfg_offset:
+	.t_pctl0_mcfg1			=  0, //[B10,B9,B8] tfaw_cfg_offset
 								//tFAW= (4 + MCFG.tfaw_cfg)*tRRD - tfaw_cfg_offset,  //PCTL MCFG1
 	.t_pctl0_scfg			= 0xF01,   //PCTL SCFG
 	.t_pctl0_sctl			= 0x1,   //PCTL SCTL
@@ -411,7 +425,7 @@ ddr_set_t __ddr_setting = {
 	.t_pctl0_dfiodtcfg1		= (0x0 | (0x6 << 16)),
 
 	.t_pctl0_dfilpcfg0		= ( 1 | (3 << 4) | (1 << 8) | (13 << 12) | (7 <<16) | (1 <<24) | ( 3 << 28)),
-	.t_pub_acbdlr0			= 0,  //2015.09.21 add for  CK0 delay fine tune
+	.t_pub_acbdlr0			= 0x10,  //2015.09.21 add for  CK0 delay fine tune
 
 	.ddr_func				= DDR_FUNC, /* ddr func demo 2016.01.26 */
 
@@ -423,4 +437,9 @@ pll_set_t __pll_setting = {
 	.vddee					= CONFIG_VDDEE_INIT_VOLTAGE,
 	.vcck					= CONFIG_VCCK_INIT_VOLTAGE,
 	.lCustomerID			= CONFIG_AML_CUSTOMER_ID,
+#ifdef CONFIG_DEBUG_MODE
+	.debug_mode				= CONFIG_DEBUG_MODE,
+	.ddr_clk_debug			= CONFIG_DDR_CLK_DEBUG,
+	.cpu_clk_debug			= CONFIG_CPU_CLK_DEBUG,
+#endif
 };
