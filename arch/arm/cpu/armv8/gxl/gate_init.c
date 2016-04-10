@@ -8,7 +8,7 @@ extern unsigned int cvbs_mode;
 void ee_gate_off(void)
 {
 	printf("ee_gate_off ...\n");
-
+	return;
 /*	int secureboot = readl(SECUREBOOT_FLAG_ADDR)&(1<<5);*/
 
 #ifdef CONFIG_AML_CVBS
