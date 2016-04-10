@@ -1008,7 +1008,7 @@ static int do_store_rom_write(cmd_tbl_t * cmdtp, int flag, int argc, char * cons
 #endif
 #endif// #if defined(CONFIG_AML_SECU_BOOT_V2)
 		if (cpu_id.family_id >= MESON_CPU_MAJOR_ID_GXL)
-            off += 1;
+			off += 512;
         sprintf(str, "amlmmc  write bootloader 0x%llx  0x%llx  0x%llx", addr, off, size);
         store_dbg("command: %s\n", str);
         ret = run_command(str, 0);
