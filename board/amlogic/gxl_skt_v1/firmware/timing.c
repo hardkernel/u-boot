@@ -332,7 +332,7 @@ ddr_set_t __ddr_setting = {
 	.t_pub_dx2gcr			= {0},  //PUB DX2GCRx
 	.t_pub_dx3gcr			= {0},  //PUB DX3GCRx
 #if (CONFIG_DDR_TYPE == CONFIG_DDR_TYPE_DDR3)
-	.t_pub_dcr				= 0X8B,     //PUB DCR
+	.t_pub_dcr				= 0Xb,     //PUB DCR
 	.t_pub_dtcr0			= 0x80003187,    //PUB DTCR //S905 use 0x800031c7
 	.t_pub_dtcr1			= 0x00010237,    //PUB DTCR
 #elif (CONFIG_DDR_TYPE == CONFIG_DDR_TYPE_DDR4)

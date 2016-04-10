@@ -329,7 +329,7 @@ ddr_set_t __ddr_setting = {
 	.ddr_dmc_ctrl			= 0,
 	.ddr0_addrmap			= {0},
 	.ddr1_addrmap			= {0},
-	.ddr_2t_mode			= 1,
+	.ddr_2t_mode			= 0,
 	.ddr_full_test			= CONFIG_DDR_FULL_TEST,
 	.ddr_size_detect		= CONFIG_DDR_SIZE_AUTO_DETECT,
 	.ddr_drv				= CFG_DDR_DRV,
@@ -363,7 +363,7 @@ ddr_set_t __ddr_setting = {
 	.t_pub_dx2gcr			= {0},  //PUB DX2GCRx
 	.t_pub_dx3gcr			= {0},  //PUB DX3GCRx
 #if (CONFIG_DDR_TYPE == CONFIG_DDR_TYPE_DDR3)
-	.t_pub_dcr				= 0X8B,     //PUB DCR
+	.t_pub_dcr				= 0XB,     //PUB DCR
 	.t_pub_dtcr0			= 0x80003187,    //PUB DTCR //S905 use 0x800031c7
 	.t_pub_dtcr1			= 0x00010237,    //PUB DTCR
 #elif (CONFIG_DDR_TYPE == CONFIG_DDR_TYPE_DDR4)
