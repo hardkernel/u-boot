@@ -38,7 +38,7 @@
  */
 #define CONFIG_PLATFORM_POWER_INIT
 #define CONFIG_VCCK_INIT_VOLTAGE	1100
-#define CONFIG_VDDEE_INIT_VOLTAGE	1100		// voltage for power up
+#define CONFIG_VDDEE_INIT_VOLTAGE	1000		// voltage for power up
 #define CONFIG_VDDEE_SLEEP_VOLTAGE	 850		// voltage for suspend
 
 /* configs for CEC */
@@ -218,7 +218,7 @@
 #define CONFIG_SYS_BOOTM_LEN (64<<20) /* Increase max gunzip size*/
 
 /* cpu */
-#define CONFIG_CPU_CLK					1024 //MHz. Range: 600-1800, should be multiple of 24
+#define CONFIG_CPU_CLK					1400 //MHz. Range: 600-1800, should be multiple of 24
 
 /* ddr */
 #define CONFIG_DDR_SIZE					2048 //MB
