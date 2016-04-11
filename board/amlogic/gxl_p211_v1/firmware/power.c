@@ -1,6 +1,6 @@
 
 /*
- * board/amlogic/gxb_p201_v1/firmware/power.c
+ * board/amlogic/gxb_p200_v1/firmware/power.c
  *
  * Copyright (C) 2015 Amlogic, Inc. All rights reserved.
  *
@@ -56,14 +56,15 @@ static int pwm_voltage_table[][2] = {
 	{ 0x01001b, 1130},
 	{ 0x00001c, 1140}
 };
-
+#define P_PIN_MUX_REG1         (*((volatile unsigned *)(0xda834400 + (0x2d << 2))))
+#define P_PIN_MUX_REG2         (*((volatile unsigned *)(0xda834400 + (0x2e << 2))))
 #define P_PIN_MUX_REG3		(*((volatile unsigned *)(0xda834400 + (0x2f << 2))))
 #define P_PIN_MUX_REG7		(*((volatile unsigned *)(0xda834400 + (0x33 << 2))))
 
 #define P_PWM_MISC_REG_AB	(*((volatile unsigned *)(0xc1100000 + (0x2156 << 2))))
 #define P_PWM_PWM_B		(*((volatile unsigned *)(0xc1100000 + (0x2155 << 2))))
-#define P_PWM_MISC_REG_CD	(*((volatile unsigned *)(0xc1100000 + (0x2196 << 2))))
-#define P_PWM_PWM_D		(*((volatile unsigned *)(0xc1100000 + (0x2195 << 2))))
+#define P_PWM_MISC_REG_CD	(*((volatile unsigned *)(0xc1100000 + (0x2192 << 2))))
+#define P_PWM_PWM_D		(*((volatile unsigned *)(0xc1100000 + (0x2191 << 2))))
 
 #define P_EE_TIMER_E		(*((volatile unsigned *)(0xc1100000 + (0x2662 << 2))))
 
@@ -108,14 +109,14 @@ void pwm_init(int id)
 		 * default set to max voltage
 		 */
 		P_PWM_PWM_B = pwm_voltage_table[ARRAY_SIZE(pwm_voltage_table) - 1][0];
-		reg  = P_PIN_MUX_REG7;
-		reg &= ~(1 << 22);
-		P_PIN_MUX_REG7 = reg;
+		reg  = P_PIN_MUX_REG1;
+		reg &= ~(1 << 10);
+		P_PIN_MUX_REG1 = reg;
 
-		reg  = P_PIN_MUX_REG3;
-		reg &= ~(1 << 22);
-		reg |=  (1 << 21);		// enable PWM_B
-		P_PIN_MUX_REG3 = reg;
+		reg  = P_PIN_MUX_REG2;
+		reg &= ~(1 << 5);
+		reg |=  (1 << 11);		// enable PWM_B
+		P_PIN_MUX_REG2 = reg;
 		break;
 
 	case pwm_d:
@@ -127,13 +128,14 @@ void pwm_init(int id)
 		 * default set to max voltage
 		 */
 		P_PWM_PWM_D = pwm_voltage_table[ARRAY_SIZE(pwm_voltage_table) - 1][0];
-		reg  = P_PIN_MUX_REG7;
-		reg &= ~(1 << 23);
-		P_PIN_MUX_REG7 = reg;
+		reg  = P_PIN_MUX_REG1;
+		reg &= ~(1 << 9);
+		reg &= ~(1 << 11);
+		P_PIN_MUX_REG1 = reg;
 
-		reg  = P_PIN_MUX_REG3;
-		reg |=  (1 << 20);		// enable PWM_D
-		P_PIN_MUX_REG3 = reg;
+		reg  = P_PIN_MUX_REG2;
+		reg |=  (1 << 12);		// enable PWM_D
+		P_PIN_MUX_REG2 = reg;
 		break;
 	default:
 		break;
@@ -175,9 +177,9 @@ void power_init(int mode)
 	serial_puts("set vcck to ");
 	serial_put_dec(CONFIG_VCCK_INIT_VOLTAGE);
 	serial_puts(" mv\n");
-	pwm_set_voltage(pwm_b, CONFIG_VCCK_INIT_VOLTAGE);
+	pwm_set_voltage(pwm_d, CONFIG_VCCK_INIT_VOLTAGE);
 	serial_puts("set vddee to ");
 	serial_put_dec(CONFIG_VDDEE_INIT_VOLTAGE);
 	serial_puts(" mv\n");
-	pwm_set_voltage(pwm_d, CONFIG_VDDEE_INIT_VOLTAGE);
+	pwm_set_voltage(pwm_b, CONFIG_VDDEE_INIT_VOLTAGE);
 }
