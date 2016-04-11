@@ -38,6 +38,8 @@
 #define MESON_CPU_MAJOR_ID_M8M2		0x1D
 #define MESON_CPU_MAJOR_ID_GXBB		0x1F
 #define MESON_CPU_MAJOR_ID_GXTVBB	0x20
+#define MESON_CPU_MAJOR_ID_GXL		0x21
+
 
 #define ASSIST_HW_REV           0x1f53
 

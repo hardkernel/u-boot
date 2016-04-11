@@ -371,6 +371,21 @@ static void cvbs_config_hdmipll_gxb(void)
 	return;
 }
 
+static void cvbs_config_hdmipll_gxl(void)
+{
+	cvbs_write_hiu(HHI_HDMI_PLL_CNTL, 0x4000027b);
+	cvbs_write_hiu(HHI_HDMI_PLL_CNTL2, 0x800cb300);
+	cvbs_write_hiu(HHI_HDMI_PLL_CNTL3, 0xa6212844);
+	cvbs_write_hiu(HHI_HDMI_PLL_CNTL4, 0x0c4d000c);
+	cvbs_write_hiu(HHI_HDMI_PLL_CNTL5, 0x001fa729);
+	cvbs_write_hiu(HHI_HDMI_PLL_CNTL6, 0x01a31500);
+	cvbs_set_hiu_bits(HHI_HDMI_PLL_CNTL, 0x1, 28, 1);
+	cvbs_set_hiu_bits(HHI_HDMI_PLL_CNTL, 0x0, 28, 1);
+	WAIT_FOR_PLL_LOCKED(HHI_HDMI_PLL_CNTL);
+
+	return;
+}
+
 static void cvbs_config_hdmipll_gxtvbb(void)
 {
 	cvbs_write_hiu(HHI_HDMI_PLL_CNTL,	0x5800023d);
@@ -396,6 +411,8 @@ static int cvbs_config_clock(void)
 		cvbs_config_hdmipll_gxb();
 	else if (check_cpu_type(MESON_CPU_MAJOR_ID_GXTVBB))
 		cvbs_config_hdmipll_gxtvbb();
+	else if (check_cpu_type(MESON_CPU_MAJOR_ID_GXL))
+		cvbs_config_hdmipll_gxl();
 
 	cvbs_set_hiu_bits(HHI_VIID_CLK_CNTL, 0, VCLK2_EN, 1);
 	//udelay(5);
