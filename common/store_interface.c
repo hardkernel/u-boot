@@ -1072,6 +1072,7 @@ static int do_store_rom_read(cmd_tbl_t * cmdtp, int flag, int argc, char * const
     char	str[128];
     int ret = 0;
     int i = 0;
+    cpu_id_t cpu_id = get_cpu_id();
 
     if (argc < 5) return CMD_RET_USAGE;
 
@@ -1105,6 +1106,8 @@ static int do_store_rom_read(cmd_tbl_t * cmdtp, int flag, int argc, char * const
         }
         return ret;
     }else if (device_boot_flag==EMMC_BOOT_FLAG){
+       if ( cpu_id.family_id >= MESON_CPU_MAJOR_ID_GXL)
+                off += 512;
         store_dbg("MMC BOOT, %s %d \n",__func__,__LINE__);
         sprintf(str, "amlmmc  read bootloader 0x%llx  0x%llx  0x%llx", addr, off, size);
         store_dbg("command: %s\n", str);

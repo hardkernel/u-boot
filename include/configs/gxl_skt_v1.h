@@ -324,8 +324,15 @@
 	#define CONFIG_USB_XHCI		1
 	#define CONFIG_USB_XHCI_AMLOGIC_GXL 1
 #endif //#if defined(CONFIG_CMD_USB)
-//#define CONFIG_AML_TINY_USBTOOL 1
-#define CONFIG_AML_V2_FACTORY_BURN   1
+
+//UBOOT Facotry usb/sdcard burning config
+#define CONFIG_AML_V2_FACTORY_BURN              1       //support facotry usb burning
+#define CONFIG_AML_FACTORY_BURN_LOCAL_UPGRADE   1       //support factory sdcard burning
+#define CONFIG_POWER_KEY_NOT_SUPPORTED_FOR_BURN 1       //There isn't power-key for factory sdcard burning
+#define CONFIG_SD_BURNING_SUPPORT_UI            1       //Displaying upgrading progress bar when sdcard/udisk burning
+
+#define CONFIG_AML_SECURITY_KEY                 1
+#define CONFIG_UNIFY_KEY_MANAGE                 1
 
 /* net */
 #define CONFIG_CMD_NET   1
