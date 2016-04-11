@@ -317,6 +317,10 @@ static void bl_pwm_config_init(struct bl_pwm_config_s *bl_pwm)
 	unsigned int freq, pre_div, cnt;
 	int i;
 
+	if (bl_pwm == NULL) {
+		LCDERR("bl: %s: bl_pwm is NULL\n", __func__);
+		return;
+	}
 	if (lcd_debug_print_flag) {
 		LCDPR("bl: %s pwm_port %d: freq = %u\n",
 			__func__, bl_pwm->pwm_port, bl_pwm->pwm_freq);
@@ -348,6 +352,21 @@ static void bl_pwm_config_init(struct bl_pwm_config_s *bl_pwm)
 	bl_pwm->pwm_min = (bl_pwm->pwm_cnt * bl_pwm->pwm_duty_min / 100);
 	if (lcd_debug_print_flag)
 		LCDPR("bl: pwm_max = %u, pwm_min = %u\n", bl_pwm->pwm_max, bl_pwm->pwm_min);
+}
+
+void aml_bl_pwm_config_update(struct bl_config_s *bconf)
+{
+	switch (bconf->method) {
+	case BL_CTRL_PWM:
+		bl_pwm_config_init(bconf->bl_pwm);
+		break;
+	case BL_CTRL_PWM_COMBO:
+		bl_pwm_config_init(bconf->bl_pwm_combo0);
+		bl_pwm_config_init(bconf->bl_pwm_combo1);
+		break;
+	default:
+		break;
+	}
 }
 
 static unsigned int bl_level_mapping(unsigned int level)
@@ -1028,7 +1047,7 @@ static int aml_bl_config_load_from_dts(char *dt_addr, unsigned int index, struct
 		}
 
 		bl_pwm->pwm_duty = bl_pwm->pwm_duty_min;
-		bl_pwm_config_init(bl_pwm);
+		/* bl_pwm_config_init(bl_pwm); */
 		break;
 	case BL_CTRL_PWM_COMBO:
 		bconf->bl_pwm_combo0 = (struct bl_pwm_config_s *)malloc(sizeof(struct bl_pwm_config_s));
@@ -1137,8 +1156,8 @@ static int aml_bl_config_load_from_dts(char *dt_addr, unsigned int index, struct
 
 		pwm_combo0->pwm_duty = pwm_combo0->pwm_duty_min;
 		pwm_combo1->pwm_duty = pwm_combo1->pwm_duty_min;
-		bl_pwm_config_init(pwm_combo0);
-		bl_pwm_config_init(pwm_combo1);
+		/* bl_pwm_config_init(pwm_combo0);
+		bl_pwm_config_init(pwm_combo1); */
 		break;
 	default:
 		break;
@@ -1216,7 +1235,7 @@ static int aml_bl_config_load_from_bsp(struct bl_config_s *bconf)
 		bconf->pwm_off_delay  = ext_lcd->pwm_off_delay;
 
 		bl_pwm->pwm_duty = bl_pwm->pwm_duty_min;
-		bl_pwm_config_init(bl_pwm);
+		/* bl_pwm_config_init(bl_pwm); */
 		break;
 	case BL_CTRL_PWM_COMBO:
 		bconf->bl_pwm_combo0 = (struct bl_pwm_config_s *)malloc(sizeof(struct bl_pwm_config_s));
@@ -1268,8 +1287,8 @@ static int aml_bl_config_load_from_bsp(struct bl_config_s *bconf)
 
 		pwm_combo0->pwm_duty = pwm_combo0->pwm_duty_min;
 		pwm_combo1->pwm_duty = pwm_combo1->pwm_duty_min;
-		bl_pwm_config_init(pwm_combo0);
-		bl_pwm_config_init(pwm_combo1);
+		/* bl_pwm_config_init(pwm_combo0);
+		bl_pwm_config_init(pwm_combo1); */
 		break;
 	case BL_CTRL_LOCAL_DIMING:
 		break;
@@ -1421,7 +1440,7 @@ static int aml_bl_config_load_from_unifykey(struct bl_config_s *bconf)
 		p += LCD_UKEY_BL_PWM2_LEVEL_MIN; */
 
 		bl_pwm->pwm_duty = bl_pwm->pwm_duty_min;
-		bl_pwm_config_init(bl_pwm);
+		/* bl_pwm_config_init(bl_pwm); */
 		break;
 	case BL_CTRL_PWM_COMBO:
 		bconf->bl_pwm_combo0 = (struct bl_pwm_config_s *)malloc(sizeof(struct bl_pwm_config_s));
@@ -1504,8 +1523,8 @@ static int aml_bl_config_load_from_unifykey(struct bl_config_s *bconf)
 
 		pwm_combo0->pwm_duty = pwm_combo0->pwm_duty_min;
 		pwm_combo1->pwm_duty = pwm_combo1->pwm_duty_min;
-		bl_pwm_config_init(pwm_combo0);
-		bl_pwm_config_init(pwm_combo1);
+		/* bl_pwm_config_init(pwm_combo0);
+		bl_pwm_config_init(pwm_combo1); */
 		break;
 	default:
 		break;

@@ -177,6 +177,7 @@ static void lcd_module_enable(char *mode)
 	lcd_vcbus_write(VPP_POSTBLEND_H_SIZE, pconf->lcd_basic.h_active);
 	lcd_vcbus_write(VENC_INTCTRL, 0x200);
 
+	aml_bl_pwm_config_update(lcd_drv->bl_config);
 	aml_bl_set_level(lcd_drv->bl_config->level_default);
 	aml_bl_power_ctrl(1, 1);
 

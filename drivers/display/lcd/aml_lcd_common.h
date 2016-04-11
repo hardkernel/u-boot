@@ -42,6 +42,7 @@ extern int get_lcd_tv_config(char *dt_addr, int load_id);
 extern int get_lcd_tablet_config(char *dt_addr, int load_id);
 
 /* aml_bl driver */
+extern void aml_bl_pwm_config_update(struct bl_config_s *bconf);
 extern void aml_bl_set_level(unsigned int level);
 extern unsigned int aml_bl_get_level(void);
 extern void aml_bl_power_ctrl(int status, int delay_flag);
