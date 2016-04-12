@@ -23,7 +23,7 @@
 #define PORT_REG_OFFSET   0
 #endif
 
-#if defined CONFIG_AML_MESON_GXTVBB
+#if ((defined CONFIG_USB_XHCI))
 #define DWC_REG_BASE   0xc9100000
 #else
 #define DWC_REG_BASE  (0xC9000000 + PORT_REG_OFFSET)

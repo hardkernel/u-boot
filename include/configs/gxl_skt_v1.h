@@ -24,6 +24,7 @@
 
 #include <asm/arch/cpu.h>
 
+
 #define CONFIG_SYS_GENERIC_BOARD  1
 #ifndef CONFIG_AML_MESON
 #warning "include warning"
@@ -316,11 +317,12 @@
 /* #define CONFIG_MUSB_UDC		1 */
 #define CONFIG_CMD_USB 1
 #if defined(CONFIG_CMD_USB)
-	#define CONFIG_M8_USBPORT_BASE_A	0xC9000000
-	#define CONFIG_M8_USBPORT_BASE_B	0xC9100000
+	#define CONFIG_GXL_XHCI_BASE		0xc9000000
+	#define CONFIG_GXL_USB_PHY2_BASE	0xd0078000
+	#define CONFIG_GXL_USB_PHY3_BASE	0xd0078080
 	#define CONFIG_USB_STORAGE      1
-	#define CONFIG_USB_DWC_OTG_HCD  1
-	#define CONFIG_USB_DWC_OTG_294	1
+	#define CONFIG_USB_XHCI		1
+	#define CONFIG_USB_XHCI_AMLOGIC_GXL 1
 #endif //#if defined(CONFIG_CMD_USB)
 //#define CONFIG_AML_TINY_USBTOOL 1
 #define CONFIG_AML_V2_FACTORY_BURN   1

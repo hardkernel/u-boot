@@ -264,66 +264,17 @@ int board_early_init_f(void){
 }
 #endif
 
-#ifdef CONFIG_USB_DWC_OTG_HCD
-#include <asm/arch/usb.h>
-
-static void gpio_set_vbus_power(char is_power_on)
-{
-	if (is_power_on) {
-		setbits_le32(PREG_PAD_GPIO0_EN_N, 1<<24);
-		setbits_le32(PREG_PAD_GPIO0_O, 1<<24);
-	} else {
-	}
-}
-
-static int usb_charging_detect_call_back(char bc_mode)
-{
-	switch (bc_mode) {
-		case BC_MODE_DCP:
-		case BC_MODE_CDP:
-			//Pull up chargging current > 500mA
-			break;
-
-		case BC_MODE_UNKNOWN:
-		case BC_MODE_SDP:
-		default:
-			//Limit chargging current <= 500mA
-			//Or detet dec-charger
-			break;
-	}
-	return 0;
-}
-//note: try with some M3 pll but only following can work
-//USB_PHY_CLOCK_SEL_M3_XTAL @ 1 (24MHz)
-//USB_PHY_CLOCK_SEL_M3_XTAL_DIV2 @ 0 (12MHz)
-//USB_PHY_CLOCK_SEL_M3_DDR_PLL @ 27(336MHz); @Rev2663 M3 SKT board DDR is 336MHz
-//                                                            43 (528MHz); M3 SKT board DDR not stable for 528MHz
-
-struct amlogic_usb_config g_usb_config_gx_skt_a={
-	USB_PHY_CLK_SEL_XTAL,
-	1, //PLL divider: (clock/12 -1)
-	CONFIG_M8_USBPORT_BASE_A,
-	USB_ID_MODE_SW_HOST,
-	gpio_set_vbus_power, //set_vbus_power
-	NULL,
-};
-struct amlogic_usb_config g_usb_config_gx_skt_b={
-	USB_PHY_CLK_SEL_XTAL,
-	1, //PLL divider: (clock/12 -1)
-	CONFIG_M8_USBPORT_BASE_B,
-	USB_ID_MODE_SW_HOST,
-	NULL,//gpio_set_vbus_power, //set_vbus_power
-	NULL,
-};
-struct amlogic_usb_config g_usb_config_gx_skt_h={
-	USB_PHY_CLK_SEL_XTAL,
-	1, //PLL divider: (clock/12 -1)
-	CONFIG_M8_USBPORT_BASE_A,
+#ifdef CONFIG_USB_XHCI_AMLOGIC_GXL
+#include <asm/arch/usb-new.h>
+#include <asm/arch/gpio.h>
+struct amlogic_usb_config g_usb_config_GXL_skt={
+	CONFIG_GXL_XHCI_BASE,
 	USB_ID_MODE_HARDWARE,
 	NULL,//gpio_set_vbus_power, //set_vbus_power
-	usb_charging_detect_call_back,
+	CONFIG_GXL_USB_PHY2_BASE,
+	CONFIG_GXL_USB_PHY3_BASE,
 };
-#endif /*CONFIG_USB_DWC_OTG_HCD*/
+#endif /*CONFIG_USB_XHCI_AMLOGIC*/
 
 #ifdef CONFIG_AML_HDMITX20
 static void hdmi_tx_set_hdmi_5v(void)
@@ -337,13 +288,9 @@ int board_init(void)
 	aml_try_factory_usb_burning(0, gd->bd);
 #endif// #ifdef CONFIG_AML_V2_FACTORY_BURN
 
-#ifdef CONFIG_USB_DWC_OTG_HCD
-	//setbits_le32(PREG_PAD_GPIO0_EN_N, 1<<24);
-	//setbits_le32(PREG_PAD_GPIO0_O, 1<<24);
-	board_usb_init(&g_usb_config_gx_skt_a,BOARD_USB_MODE_HOST);
-	board_usb_init(&g_usb_config_gx_skt_b,BOARD_USB_MODE_HOST);
-	board_usb_init(&g_usb_config_gx_skt_h,BOARD_USB_MODE_CHARGER);
-#endif /*CONFIG_USB_DWC_OTG_HCD*/
+#ifdef CONFIG_USB_XHCI_AMLOGIC_GXL
+	board_usb_init(&g_usb_config_GXL_skt,BOARD_USB_MODE_HOST);
+#endif /*CONFIG_USB_XHCI_AMLOGIC*/
 #ifdef CONFIG_AML_VPU
 	vpu_probe();
 #endif

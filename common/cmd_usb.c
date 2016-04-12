@@ -441,6 +441,26 @@ static int do_usb_stop_keyboard(int force)
 	return 0;
 }
 
+#ifdef TSET_SPEED
+static void report_time(ulong cycles)
+{
+	ulong minutes, seconds, milliseconds;
+	ulong total_seconds, remainder;
+
+	total_seconds = cycles / CONFIG_SYS_HZ;
+	remainder = cycles % CONFIG_SYS_HZ;
+	minutes = total_seconds / 60;
+	seconds = total_seconds % 60;
+	/* approximate millisecond value */
+	milliseconds = (remainder * 1000 + CONFIG_SYS_HZ / 2) / CONFIG_SYS_HZ;
+
+	printf("\ntime:");
+	if (minutes)
+		printf(" %lu minutes,", minutes);
+	printf(" %lu.%03lu seconds\n", seconds, milliseconds);
+}
+#endif
+
 /******************************************************************************
  * usb command intepreter
  */
@@ -452,6 +472,9 @@ static int do_usb(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	extern char usb_started;
 #ifdef CONFIG_USB_STORAGE
 	block_dev_desc_t *stor_dev;
+#endif
+#ifdef TSET_SPEED
+	ulong ticks;
 #endif
 
 	if (argc < 2)
@@ -588,8 +611,15 @@ static int do_usb(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 			printf("\nUSB read: device %d block # %ld, count %ld"
 				" ... ", usb_stor_curr_dev, blk, cnt);
 			stor_dev = usb_stor_get_dev(usb_stor_curr_dev);
+#ifdef TSET_SPEED
+			ticks = get_timer(0);
+#endif
 			n = stor_dev->block_read(usb_stor_curr_dev, blk, cnt,
 						 (ulong *)addr);
+#ifdef TSET_SPEED
+			ticks = get_timer(ticks);
+			report_time(ticks);
+#endif
 			printf("%ld blocks read: %s\n", n,
 				(n == cnt) ? "OK" : "ERROR");
 			if (n == cnt)

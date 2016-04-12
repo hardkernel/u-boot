@@ -10,12 +10,12 @@
 //#include "power_gate.h"
 
 /*CONFIG_AML_MESON_8 include m8, m8baby, m8m2, etc... defined in cpu.h*/
-#if !( defined(CONFIG_AML_MESON_GX) || defined(CONFIG_AML_MESON_GXTVBB)  )
+#if !(defined(CONFIG_USB_XHCI) || defined(CONFIG_USB_DWC_OTG_294))
 #error "platform is not GX !!"
 #endif//#if
 
 
-#if defined CONFIG_AML_MESON_GXTVBB
+#if (defined CONFIG_USB_XHCI)
 #define PREI_USB_PHY_2_REG_BASE 0xd0078020
 #define PREI_USB_PHY_3_REG_BASE 0xd0078080
 
@@ -126,7 +126,12 @@ void set_usb_phy_config(int cfg)
 	*P_AO_RTI_PWR_CNTL_REG0 |= (4<<10);
 
 	u2p_r0.d32 = u2p_aml_regs->u2p_r0;
+#if (defined  CONFIG_AML_MESON_GXTVBB)
 	u2p_r0.b.fsel = 5;
+
+#elif  (defined CONFIG_AML_MESON_GXL)
+	u2p_r0.b.fsel = 2;
+#endif
     u2p_r0.b.por = 1;
 	u2p_r0.b.dppulldown = 0;
 	u2p_r0.b.dmpulldown = 0;
@@ -164,7 +169,8 @@ void close_usb_phy_clock(int cfg)
 }
 #endif
 
-#if defined CONFIG_AML_MESON_GX
+#if (defined CONFIG_USB_DWC_OTG_294)
+
 /*
    cfg = 0 : EXT clock
    cfg = 1 : INT clock
