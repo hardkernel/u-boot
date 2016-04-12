@@ -374,7 +374,8 @@ struct amlogic_usb_config g_usb_config_gx_skt_h={
 static void hdmi_tx_set_hdmi_5v(void)
 {
 	/*Power on VCC_5V for HDMI_5V*/
-	clrbits_le32(P_AO_GPIO_O_EN_N, ((1<<2)|(1<<18)));
+	clrbits_le32(P_PREG_PAD_GPIO1_EN_N, 1 << 23);
+	clrbits_le32(P_PREG_PAD_GPIO1_O, 1 << 23);
 }
 #endif
 
