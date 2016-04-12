@@ -11,16 +11,6 @@ unsigned int time;
 static struct pwr_op pwr_op_d;
 static struct pwr_op *p_pwr_op;
 
-void switch_to_32k(void)
-{
-	aml_update_bits(AO_RTI_PWR_CNTL_REG0, 0x7<<2, 0x4<<2);
-	aml_update_bits(AO_RTI_PWR_CNTL_REG0, 0x1<<0, 0x1<<0);
-}
-
-void switch_to_clk81(void)
-{
-	aml_update_bits(AO_RTI_PWR_CNTL_REG0, 0x1<<0, 0);
-}
 static void gxbb_com_gate_off(void)
 {
 	/* gate off fix_clk_div2*/
@@ -88,13 +78,11 @@ void enter_suspend(unsigned int suspend_from)
 	p_pwr_op->power_off_at_clk81();
 	p_pwr_op->power_off_at_24M();
 
-	switch_to_32k();
 	gxbb_com_gate_off();
 	p_pwr_op->power_off_at_32k();
 	exit_reason = p_pwr_op->detect_key(suspend_from);
 	p_pwr_op->power_on_at_32k();
 	gxbb_com_gate_on();
-	switch_to_clk81();
 	uart_puts("exit_reason:0x");
 	uart_put_hex(exit_reason, 8);
 	uart_puts("\n");

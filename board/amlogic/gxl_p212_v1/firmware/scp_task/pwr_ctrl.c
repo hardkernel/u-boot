@@ -18,11 +18,12 @@ extern int pwm_voltage_table[31][2];
 
 #define P_PWM_MISC_REG_AB	(*((volatile unsigned *)(0xc1100000 + (0x2156 << 2))))
 #define P_PWM_PWM_B		(*((volatile unsigned *)(0xc1100000 + (0x2155 << 2))))
-#define P_PWM_MISC_REG_CD	(*((volatile unsigned *)(0xc1100000 + (0x2196 << 2))))
-#define P_PWM_PWM_D		(*((volatile unsigned *)(0xc1100000 + (0x2195 << 2))))
+#define P_PWM_MISC_REG_CD	(*((volatile unsigned *)(0xc1100000 + (0x2192 << 2))))
+#define P_PWM_PWM_D		(*((volatile unsigned *)(0xc1100000 + (0x2191 << 2))))
 
 #define P_EE_TIMER_E		(*((volatile unsigned *)(0xc1100000 + (0x2662 << 2))))
-
+#define ON 1
+#define OFF 0
 enum pwm_id {
     pwm_a = 0,
     pwm_b,
@@ -60,52 +61,55 @@ void pwm_set_voltage(unsigned int id, unsigned int voltage)
 	}
 	_udelay(200);
 }
-
-static void power_off_3v3(void)
+/*GPIOH_3*/
+static void hdmi_5v_ctrl(unsigned int ctrl)
 {
-	aml_update_bits(AO_GPIO_O_EN_N, 1<<2, 0);
-	aml_update_bits(AO_GPIO_O_EN_N, 1<<18, 1<<18);
+	if (ctrl == ON) {
+		aml_update_bits(PREG_PAD_GPIO1_EN_N, 1 << 23, 0);
+		aml_update_bits(PREG_PAD_GPIO1_O, 1 << 23, 0);
+	} else {
+		aml_update_bits(PREG_PAD_GPIO1_EN_N, 1 << 23, 0);
+		aml_update_bits(PREG_PAD_GPIO1_O, 1 << 23, 1 << 23);
+	}
 }
-static void power_on_3v3(void)
+/*GPIODV_25*/
+static void vcck_ctrl(unsigned int ctrl)
 {
-	aml_update_bits(AO_GPIO_O_EN_N, 1<<2, 0);
-	aml_update_bits(AO_GPIO_O_EN_N, 1<<18, 0);
-}
-
-/*p200/201	GPIOAO_4  powr on	:1, power_off	:0*/
-static void power_off_vcck(void)
-{
-	aml_update_bits(AO_GPIO_O_EN_N, 1<<4, 0);
-	aml_update_bits(AO_GPIO_O_EN_N, 1<<20, 0);
-}
-static void power_on_vcck(void)
-{
-	aml_update_bits(AO_GPIO_O_EN_N, 1<<4, 0);
-	aml_update_bits(AO_GPIO_O_EN_N, 1<<20, 1<<20);
+	if (ctrl == ON) {
+		aml_update_bits(PREG_PAD_GPIO0_EN_N, 1 << 25, 0);
+		aml_update_bits(PREG_PAD_GPIO0_O, 1 << 25, 1 << 25);
+		/* vcc = 1.1v resume*/
+		pwm_set_voltage(pwm_d, 1100);
+	} else {
+		aml_update_bits(PREG_PAD_GPIO0_EN_N, 1 << 25, 0);
+		aml_update_bits(PREG_PAD_GPIO0_O, 1 << 25, 0);
+	}
 }
 
 static void power_off_at_clk81(void)
 {
-	power_off_3v3();
-	power_off_vcck();
-	pwm_set_voltage(pwm_d, CONFIG_VDDEE_SLEEP_VOLTAGE);	// reduce power
+	hdmi_5v_ctrl(OFF);
+	vcck_ctrl(OFF);
+	pwm_set_voltage(pwm_b, CONFIG_VDDEE_SLEEP_VOLTAGE);	// reduce power
 }
 static void power_on_at_clk81(void)
 {
-	pwm_set_voltage(pwm_d, CONFIG_VDDEE_INIT_VOLTAGE);
-	power_on_vcck();
-	power_on_3v3();
+	pwm_set_voltage(pwm_b, CONFIG_VDDEE_INIT_VOLTAGE);
+	vcck_ctrl(ON);
+	hdmi_5v_ctrl(ON);
 }
 
 static void power_off_at_24M(void)
 {
-	//LED gpioao_13
-	aml_update_bits(AO_GPIO_O_EN_N, 1<<29, 0);
+	/* LED GPIODV_24*/
+	aml_update_bits(PREG_PAD_GPIO0_EN_N, 1 << 24, 0);
+	aml_update_bits(PREG_PAD_GPIO0_O, 1 << 24, 0);
 }
 
 static void power_on_at_24M(void)
 {
-	aml_update_bits(AO_GPIO_O_EN_N, 1<<29, 1<<29);
+	aml_update_bits(PREG_PAD_GPIO0_EN_N, 1 << 24, 0);
+	aml_update_bits(PREG_PAD_GPIO0_O, 1 << 24, 1 << 24);
 }
 
 static void power_off_at_32k(void)
