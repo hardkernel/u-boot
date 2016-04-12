@@ -14,6 +14,7 @@
 #include <asm/cache.h>
 #include "spi_flash_amlogic.h"
 
+
 #ifdef CONFIG_SPI_NOR_SECURE_STORAGE
 #include "spi_secure_storage.h"
 #endif
@@ -81,15 +82,44 @@ struct aml_spi_slave {
 	u32    ctl;
 };
 
+#ifdef CONFIG_AML_SPICC
+extern void spicc_cs_activate(struct spi_slave *slave);
+extern void spicc_cs_deactivate(struct spi_slave *slave);
+extern struct spi_slave *spicc_setup_slave(unsigned int bus, unsigned int cs,
+			unsigned int max_hz, unsigned int mode);
+extern void spicc_free_slave(struct spi_slave *slave);
+extern int spicc_claim_bus(struct spi_slave *slave);
+extern void spicc_release_bus(struct spi_slave *slave);
+extern int spicc_xfer(struct spi_slave *slave, unsigned int bitlen,
+		const void *dout, void *din, unsigned long flags);
+#endif
+
 static inline struct aml_spi_slave *to_aml_spi(struct spi_slave *slave){
 	return container_of(slave, struct aml_spi_slave, slave);
 }
 
+__attribute__((weak)) void spi_init(void){}
 __attribute__((weak)) int spi_cs_is_valid(unsigned int bus, unsigned int cs){return 0;}
 
-__attribute__((weak)) void spi_cs_activate(struct spi_slave *slave) {}
+__attribute__((weak)) void spi_cs_activate(struct spi_slave *slave)
+{
+#ifdef CONFIG_AML_SPICC
+	if (slave->bus == BUS_SPICC) {
+		spicc_cs_activate(slave);
+		return;
+	}
+#endif
+}
 
-__attribute__((weak)) void spi_cs_deactivate(struct spi_slave *slave){}
+__attribute__((weak)) void spi_cs_deactivate(struct spi_slave *slave)
+{
+#ifdef CONFIG_AML_SPICC
+	if (slave->bus == BUS_SPICC) {
+		spicc_cs_deactivate(slave);
+		return;
+	}
+#endif
+}
 
 static void spi_initialize(void){
 	writel(0xea949,P_SPI_FLASH_CTRL); //SPI clock-> system clock / 10
@@ -98,6 +128,11 @@ static void spi_initialize(void){
 struct spi_slave *spi_setup_slave(unsigned int bus, unsigned int cs,
 			unsigned int max_hz, unsigned int mode)
 {
+#ifdef CONFIG_AML_SPICC
+	if (bus == BUS_SPICC) {
+		return spicc_setup_slave(bus, cs, max_hz, mode);
+	}
+#endif
 	struct aml_spi_slave * amls;
 	amls = ( struct aml_spi_slave *)malloc(sizeof(struct aml_spi_slave));
 	if (!amls)
@@ -117,6 +152,12 @@ struct spi_slave *spi_setup_slave(unsigned int bus, unsigned int cs,
 
 void spi_free_slave(struct spi_slave *slave)
 {
+#ifdef CONFIG_AML_SPICC
+	if (slave->bus == BUS_SPICC) {
+		spicc_free_slave(slave);
+		return;
+	}
+#endif
 	struct aml_spi_slave *amls = to_aml_spi(slave);
 	free(amls);
 }
@@ -195,6 +236,11 @@ void spi_disable_write_protect(void)
 
 int spi_claim_bus(struct spi_slave *slave)
 {
+#ifdef CONFIG_AML_SPICC
+	if (slave->bus == BUS_SPICC) {
+		return spicc_claim_bus(slave);
+	}
+#endif
 	debug("%s: bus:%i cs:%i\n", __func__, slave->bus, slave->cs);
 	setbits_le32(P_PERIPHS_PIN_MUX_5,(0xf<<16));
 	return 0;
@@ -202,6 +248,12 @@ int spi_claim_bus(struct spi_slave *slave)
 
 void spi_release_bus(struct spi_slave *slave)
 {
+#ifdef CONFIG_AML_SPICC
+	if (slave->bus == BUS_SPICC) {
+		spicc_release_bus(slave);
+		return;
+	}
+#endif
 	debug("%s: bus:%i cs:%i\n", __func__, slave->bus, slave->cs);
 	clrbits_le32(P_PERIPHS_PIN_MUX_5,(0xf<<16));
 }
@@ -212,6 +264,11 @@ void spi_release_bus(struct spi_slave *slave)
 int spi_xfer(struct spi_slave *slave, unsigned int bitlen,
 			const void *dout, void *din, unsigned long flags)
 {
+#ifdef CONFIG_AML_SPICC
+	if (slave->bus == BUS_SPICC) {
+		return spicc_xfer(slave, bitlen, dout, din, flags);
+	}
+#endif
 	struct aml_spi_slave *as = to_aml_spi(slave);
 	u32 len;
 	u32 temp_len;

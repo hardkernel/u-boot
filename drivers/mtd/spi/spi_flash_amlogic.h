@@ -16,6 +16,8 @@
 #include <spi_flash.h>
 #include <asm/arch/io.h>
 
+#define BUS_SPICC 2
+
 #ifdef CONFIG_AMLOGIC_SPI_FLASH
 
 /* SPI transfer flags */

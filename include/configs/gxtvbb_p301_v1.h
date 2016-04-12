@@ -71,6 +71,9 @@
 #define CONFIG_STATUS_LED
 #define CONFIG_BOARD_SPECIFIC_LED
 
+#define CONFIG_AML_SPICC
+#define CONFIG_CMD_SPI
+
 /* args/envs */
 #define CONFIG_SYS_MAXARGS  64
 #define CONFIG_EXTRA_ENV_SETTINGS \
