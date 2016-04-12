@@ -995,17 +995,17 @@ static void set_phy_by_mode(unsigned int mode)
 {
 	switch (mode) {
 	case 1: /* 5.94Gbps, 3.7125Gbsp */
-		hd_write_reg(P_HHI_HDMI_PHY_CNTL0, 0x33353282);
-		hd_write_reg(P_HHI_HDMI_PHY_CNTL3, 0x211a315b);
+		hd_write_reg(P_HHI_HDMI_PHY_CNTL0, 0x333d3282);
+		hd_write_reg(P_HHI_HDMI_PHY_CNTL3, 0x2136315b);
 		break;
 	case 2: /* 2.97Gbps */
-		hd_write_reg(P_HHI_HDMI_PHY_CNTL0, 0x33353282);
-		hd_write_reg(P_HHI_HDMI_PHY_CNTL3, 0x211a315b);
+		hd_write_reg(P_HHI_HDMI_PHY_CNTL0, 0x33303382);
+		hd_write_reg(P_HHI_HDMI_PHY_CNTL3, 0x2036315b);
 		break;
 	case 3: /* 1.485Gbps, and below */
 	default:
-		hd_write_reg(P_HHI_HDMI_PHY_CNTL0, 0x33353282);
-		hd_write_reg(P_HHI_HDMI_PHY_CNTL3, 0x211a315b);
+		hd_write_reg(P_HHI_HDMI_PHY_CNTL0, 0x33303362);
+		hd_write_reg(P_HHI_HDMI_PHY_CNTL3, 0x2016315b);
 		break;
 	}
 }
