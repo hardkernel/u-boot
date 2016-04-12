@@ -43,9 +43,9 @@ struct ddr_set{
 
 	/* pub defines */
 	unsigned int   t_pub_ptr[5];  //PUB PTR0-3
-	unsigned short t_pub_mr[4];   //PUB MR0-3
+	unsigned short t_pub_mr[8];   //PUB MR0-3
 	unsigned int   t_pub_odtcr;
-	unsigned int   t_pub_dtpr[6]; //PUB DTPR0-3
+	unsigned int   t_pub_dtpr[8]; //PUB DTPR0-3
 	unsigned int   t_pub_pgcr0;   //PUB PGCR0
 	unsigned int   t_pub_pgcr1;   //PUB PGCR1
 	unsigned int   t_pub_pgcr2;   //PUB PGCR2
@@ -99,12 +99,19 @@ struct ddr_set{
 
 	//PUB CLK fine tune
 	unsigned int   t_pub_acbdlr0; //2015.09.21 CK0 delay for different board PCB design
+	unsigned int   t_pub_aclcdlr;
 
 	/* ddr functions */
 	unsigned int   ddr_func;
 	/* dqs correction */
 	unsigned char  wr_adj_per[6];
 	unsigned char  rd_adj_per[6];
+
+	/* aligned */
+	/* 2016.04.12 update */
+	unsigned long  t_rsv_int64_0;
+	unsigned long  t_rsv_int64_1;
+	unsigned long  t_rsv_int64_2;
 }__attribute__ ((packed));
 
 struct ddr_timing{
@@ -154,6 +161,16 @@ struct ddr_timing{
 	unsigned short cfg_ddr_exsr;
 	unsigned short cfg_ddr_zqcl;
 	unsigned short cfg_ddr_zqcsi;
+
+	/* aligned */
+	/* 2016.04.12 update */
+	unsigned char  cfg_ddr_tccdl;
+	unsigned char  cfg_ddr_tdqsck;
+	unsigned char  cfg_ddr_tdqsckmax;
+	unsigned char  rsv_char;
+
+	/* reserved */
+	unsigned int   rsv_int;
 }__attribute__ ((packed));
 
 typedef struct ddr_set ddr_set_t;

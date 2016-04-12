@@ -215,7 +215,7 @@ ddr_timing_t __ddr_timming[] = {
 		.cfg_ddr_rrd			= (7),
 		.cfg_ddr_rc				= (45),
 		.cfg_ddr_mrd			= (6),
-		.cfg_ddr_mod			= (4),
+		.cfg_ddr_mod			= (12),
 		.cfg_ddr_faw			= (33),
 		.cfg_ddr_rfc			= (280),
 		.cfg_ddr_wlmrd			= (40),
@@ -252,7 +252,7 @@ ddr_timing_t __ddr_timming[] = {
 		.cfg_ddr_rrd			= (7),
 		.cfg_ddr_rc				= (52),
 		.cfg_ddr_mrd			= (6),
-		.cfg_ddr_mod			= (4),
+		.cfg_ddr_mod			= (12),
 		.cfg_ddr_faw			= (33),
 		.cfg_ddr_rfc			= (280),
 		.cfg_ddr_wlmrd			= (40),
@@ -288,7 +288,7 @@ ddr_timing_t __ddr_timming[] = {
 		.cfg_ddr_rrd			= (7),
 		.cfg_ddr_rc				= (52),
 		.cfg_ddr_mrd			= (6),
-		.cfg_ddr_mod			= (4),
+		.cfg_ddr_mod			= (12),
 		.cfg_ddr_faw			= (33),
 		.cfg_ddr_rfc			= (280),
 		.cfg_ddr_wlmrd			= (40),
@@ -329,7 +329,7 @@ ddr_set_t __ddr_setting = {
 	.ddr_dmc_ctrl			= 0,
 	.ddr0_addrmap			= {0},
 	.ddr1_addrmap			= {0},
-	.ddr_2t_mode			= 0,
+	.ddr_2t_mode			= 1,
 	.ddr_full_test			= CONFIG_DDR_FULL_TEST,
 	.ddr_size_detect		= CONFIG_DDR_SIZE_AUTO_DETECT,
 	.ddr_drv				= CFG_DDR_DRV,
@@ -356,7 +356,7 @@ ddr_set_t __ddr_setting = {
 	.t_pub_pgcr2			= 0x00f05f97,   //PUB PGCR2
 	//.t_pub_pgcr2			= 0x01f12480,   //PUB PGCR2
 	.t_pub_pgcr3			= 0xc0aae860,   //PUB PGCR3
-	.t_pub_dxccr			= 0x20c01884,   //PUB DXCCR
+	.t_pub_dxccr			= 0x20c01ee4,   //PUB DXCCR
 	.t_pub_aciocr			= {0},  //PUB ACIOCRx
 	.t_pub_dx0gcr			= {0},  //PUB DX0GCRx
 	.t_pub_dx1gcr			= {0},  //PUB DX1GCRx
@@ -375,7 +375,7 @@ ddr_set_t __ddr_setting = {
 	.t_pub_dtcr0			= 0x80003187,    //PUB DTCR //S905 use 0x800031c7
 	.t_pub_dtcr1			= 0x00010237,
 #endif
-	.t_pub_vtcr1			= 0x03f00172,
+	.t_pub_vtcr1			= 0x0fc00172,
 	.t_pub_dtar				= (0X0 | (0X0 <<12) | (0 << 28)),
 #if( CONFIG_DDR_TYPE	== CONFIG_DDR_TYPE_LPDDR3)
 	.t_pub_dsgcr			= 0x02064db,
@@ -387,9 +387,9 @@ ddr_set_t __ddr_setting = {
 	//.t_pub_zq2pr			= 0x7b,   //PUB ZQ2PR
 	//.t_pub_zq3pr			= 0x7b,   //PUB ZQ3PR
 	.t_pub_zq0pr			= 0x1d,   //PUB ZQ0PR
-	.t_pub_zq1pr			= 0x19,   //PUB ZQ1PR
-	.t_pub_zq2pr			= 0x19,   //PUB ZQ2PR
-	.t_pub_zq3pr			= 0x19,   //PUB ZQ3PR
+	.t_pub_zq1pr			= 0x1d,   //PUB ZQ1PR
+	.t_pub_zq2pr			= 0x1d,   //PUB ZQ2PR
+	.t_pub_zq3pr			= 0x1d,   //PUB ZQ3PR
 
 	/* pctl0 defines */
 	/* pctl1 use same define as pctl0 */
@@ -425,10 +425,30 @@ ddr_set_t __ddr_setting = {
 	.t_pctl0_dfiodtcfg1		= (0x0 | (0x6 << 16)),
 
 	.t_pctl0_dfilpcfg0		= ( 1 | (3 << 4) | (1 << 8) | (13 << 12) | (7 <<16) | (1 <<24) | ( 3 << 28)),
-	.t_pub_acbdlr0			= 0x10,  //2015.09.21 add for  CK0 delay fine tune
+	.t_pub_acbdlr0			= 0x18,  //2015.09.21 add for  CK0 delay fine tune
+#if ( CONFIG_DDR_TYPE == CONFIG_DDR_TYPE_LPDDR3)
+	.t_pub_aclcdlr			= 0x0,
+#else
+	.t_pub_aclcdlr			= 0,//0x18,   ///1t  ,if 2t can add some value
+#endif
 
 	.ddr_func				= DDR_FUNC, /* ddr func demo 2016.01.26 */
 
+	.wr_adj_per				= {
+							[0]=100,
+							[1]=100,
+							[2]=95,
+							[3]=95,
+							[4]=95,
+							[5]=95,
+							},
+	.rd_adj_per				= {
+							[0]=100,
+							[1]=100,
+							[2]=95,
+							[3]=95,
+							[4]=95,
+							[5]=95,},
 };
 
 pll_set_t __pll_setting = {

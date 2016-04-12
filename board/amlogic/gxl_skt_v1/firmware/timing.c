@@ -46,8 +46,8 @@
 #define DDR3_ODT_20OHM		4
 #define DDR3_ODT_30OHM		5
 
-#define CFG_DDR3_DRV  DDR3_DRV_40OHM
-#define CFG_DDR3_ODT  DDR3_ODT_120OHM
+#define CFG_DDR3_DRV  DDR3_DRV_34OHM
+#define CFG_DDR3_ODT  DDR3_ODT_60OHM
 
 /*
  * these parameters are corresponding to the pcb layout,
@@ -184,7 +184,7 @@ ddr_timing_t __ddr_timming[] = {
 		.cfg_ddr_rrd			= (7),
 		.cfg_ddr_rc				= (45),
 		.cfg_ddr_mrd			= (6),
-		.cfg_ddr_mod			= (4),
+		.cfg_ddr_mod			= (12),
 		.cfg_ddr_faw			= (33),
 		.cfg_ddr_rfc			= (280),
 		.cfg_ddr_wlmrd			= (40),
@@ -221,7 +221,7 @@ ddr_timing_t __ddr_timming[] = {
 		.cfg_ddr_rrd			= (7),
 		.cfg_ddr_rc				= (52),
 		.cfg_ddr_mrd			= (6),
-		.cfg_ddr_mod			= (4),
+		.cfg_ddr_mod			= (12),
 		.cfg_ddr_faw			= (33),
 		.cfg_ddr_rfc			= (280),
 		.cfg_ddr_wlmrd			= (40),
@@ -257,7 +257,7 @@ ddr_timing_t __ddr_timming[] = {
 		.cfg_ddr_rrd			= (7),
 		.cfg_ddr_rc				= (52),
 		.cfg_ddr_mrd			= (6),
-		.cfg_ddr_mod			= (4),
+		.cfg_ddr_mod			= (12),
 		.cfg_ddr_faw			= (33),
 		.cfg_ddr_rfc			= (280),
 		.cfg_ddr_wlmrd			= (40),
@@ -298,7 +298,7 @@ ddr_set_t __ddr_setting = {
 	.ddr_dmc_ctrl			= 0,
 	.ddr0_addrmap			= {0},
 	.ddr1_addrmap			= {0},
-	.ddr_2t_mode			= 1,
+	.ddr_2t_mode			= 0,
 	.ddr_full_test			= CONFIG_DDR_FULL_TEST,
 	.ddr_size_detect		= CONFIG_DDR_SIZE_AUTO_DETECT,
 	.ddr_drv				= CFG_DDR3_DRV,
@@ -325,7 +325,7 @@ ddr_set_t __ddr_setting = {
 	.t_pub_pgcr2			= 0x00f05f97,   //PUB PGCR2
 	//.t_pub_pgcr2			= 0x01f12480,   //PUB PGCR2
 	.t_pub_pgcr3			= 0xc0aae860,   //PUB PGCR3
-	.t_pub_dxccr			= 0x20c01884,   //PUB DXCCR
+	.t_pub_dxccr			= 0x20c01ee4,   //PUB DXCCR
 	.t_pub_aciocr			= {0},  //PUB ACIOCRx
 	.t_pub_dx0gcr			= {0},  //PUB DX0GCRx
 	.t_pub_dx1gcr			= {0},  //PUB DX1GCRx
@@ -355,10 +355,10 @@ ddr_set_t __ddr_setting = {
 	//.t_pub_zq1pr			= 0x7b,   //PUB ZQ1PR
 	//.t_pub_zq2pr			= 0x7b,   //PUB ZQ2PR
 	//.t_pub_zq3pr			= 0x7b,   //PUB ZQ3PR
-	.t_pub_zq0pr			= 0x1d,   //PUB ZQ0PR
-	.t_pub_zq1pr			= 0x19,   //PUB ZQ1PR
-	.t_pub_zq2pr			= 0x19,   //PUB ZQ2PR
-	.t_pub_zq3pr			= 0x19,   //PUB ZQ3PR
+	.t_pub_zq0pr			= 0x59,   //PUB ZQ0PR
+	.t_pub_zq1pr			= 0x5d,   //PUB ZQ1PR
+	.t_pub_zq2pr			= 0x5d,   //PUB ZQ2PR
+	.t_pub_zq3pr			= 0x1d,   //PUB ZQ3PR
 
 	/* pctl0 defines */
 	/* pctl1 use same define as pctl0 */
@@ -398,6 +398,21 @@ ddr_set_t __ddr_setting = {
 
 	.ddr_func				= DDR_FUNC, /* ddr func demo 2016.01.26 */
 
+	.wr_adj_per 			= {
+							[0] = 100,
+							[1] = 100,
+							[2] = 95,
+							[3] = 95,
+							[4] = 95,
+							[5] = 95,
+							},
+	.rd_adj_per				= {
+							[0] = 100,
+							[1] = 100,
+							[2] = 95,
+							[3] = 95,
+							[4] = 95,
+							[5] = 95,},
 };
 
 pll_set_t __pll_setting = {

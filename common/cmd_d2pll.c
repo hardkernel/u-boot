@@ -37,7 +37,7 @@ int do_ddr2pll(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	if (argc < 2)
 		goto usage;
 
-	pll = simple_strtoul(argv[1], &endp, 16);
+	pll = simple_strtoul(argv[1], &endp,0);
 	if (*argv[1] == 0 || *endp != 0) {
 		printf ("Error: Wrong format parament!\n");
 		return 1;
