@@ -70,7 +70,7 @@ static void ddc_pinmux_init(void)
 {
 	hd_set_reg_bits(P_PAD_PULL_UP_EN_REG1, 0, 21, 2);    // Disable GPIOH_1/2 pull-up/down
 	hd_set_reg_bits(P_PAD_PULL_UP_REG1, 0, 21, 2);
-	hd_set_reg_bits(P_PREG_PAD_GPIO1_EN_N, 3, 22, 2);     // GPIOH_1/2 input
+	hd_set_reg_bits(P_PREG_PAD_GPIO1_EN_N, 3, 21, 2);     // GPIOH_1/2 input
 	hd_set_reg_bits(P_PERIPHS_PIN_MUX_6, 3, 29, 2);      // Mux DDC SDA/SCL
 }
 
