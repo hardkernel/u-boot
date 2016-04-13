@@ -6,6 +6,7 @@
  */
 #include "../include/phynand.h"
 #include <asm/arch/secure_apb.h>
+#include <asm/cpu_id.h>
 
 extern int aml_ubootenv_init(struct amlnand_chip *aml_chip);
 #if (AML_CFG_DTB_RSV_EN)
@@ -343,6 +344,7 @@ void amlnand_release_device(struct amlnand_chip *aml_chip)
 void nand_get_chip(void *chip)
 {
 	/* fixme, */
+	cpu_id_t cpu_id = get_cpu_id();
 
 	/* pull up enable */
 	aml_nand_dbg("PAD_PULL_UP_EN_REG2 0x%x, PAD_PULL_UP_REG2 0x%x, PERIPHS_PIN_MUX_4 0x%x", P_PAD_PULL_UP_EN_REG2, P_PAD_PULL_UP_REG2, P_PERIPHS_PIN_MUX_4);
@@ -351,11 +353,16 @@ void nand_get_chip(void *chip)
 	/* pull direction, dqs pull down */
 	AMLNF_SET_REG_MASK(P_PAD_PULL_UP_REG2, 0x8700);
 	/* switch pinmux */
-	//AMLNF_SET_REG_MASK(P_PERIPHS_PIN_MUX_4, ((0x1<<30) | (0x3fff<<20)));
-	AMLNF_SET_REG_MASK(P_PERIPHS_PIN_MUX_4, ((0x1<<30) | (0x3ff<<20)));
-	AMLNF_CLEAR_REG_MASK(P_PERIPHS_PIN_MUX_0, (0x1 << 19));
-	AMLNF_CLEAR_REG_MASK(P_PERIPHS_PIN_MUX_4, (0x3 << 18));
-	AMLNF_CLEAR_REG_MASK(P_PERIPHS_PIN_MUX_5, (0xF));
+	if (cpu_id.family_id == MESON_CPU_MAJOR_ID_GXL) {
+		AMLNF_CLEAR_REG_MASK(P_PERIPHS_PIN_MUX_7,
+			((0x7 << 28) | (0x1FF << 15) | (0xF << 10)));
+		AMLNF_SET_REG_MASK(P_PERIPHS_PIN_MUX_7, ((0x1<<31) | 0xff));
+	} else if (cpu_id.family_id == MESON_CPU_MAJOR_ID_GXBB) {
+		AMLNF_SET_REG_MASK(P_PERIPHS_PIN_MUX_4, ((0x1<<30) | (0x3ff<<20)));
+		AMLNF_CLEAR_REG_MASK(P_PERIPHS_PIN_MUX_0, (0x1 << 19));
+		AMLNF_CLEAR_REG_MASK(P_PERIPHS_PIN_MUX_4, (0x3 << 18));
+		AMLNF_CLEAR_REG_MASK(P_PERIPHS_PIN_MUX_5, (0xF));
+	}
 	aml_nand_dbg("PAD_PULL_UP_EN_REG2 0x%x, PAD_PULL_UP_REG2 0x%x, PERIPHS_PIN_MUX_4 0x%x", AMLNF_READ_REG(P_PAD_PULL_UP_EN_REG2), AMLNF_READ_REG(P_PAD_PULL_UP_REG2), AMLNF_READ_REG(P_PERIPHS_PIN_MUX_4));
 	return ;
 }
@@ -364,11 +371,17 @@ void nand_release_chip(void *chip)
 {
 	struct amlnand_chip *aml_chip = (struct amlnand_chip *)chip;
 	struct hw_controller * controller;
+	cpu_id_t cpu_id = get_cpu_id();
+
 	controller = &aml_chip->controller;
 	NFC_SEND_CMD_STANDBY(controller, 5);
 	/* do not release cs0 & cs1 */
-	//fixme, dbg code here.
-	//AMLNF_CLEAR_REG_MASK(P_PERIPHS_PIN_MUX_2, ((0x33f<<20) | (0x1<< 30)));
+	//fixme,
+	if (cpu_id.family_id == MESON_CPU_MAJOR_ID_GXL) {
+		//AMLNF_CLEAR_REG_MASK(P_PERIPHS_PIN_MUX_7, ((0x1<<30) | (0x3f << 30)));
+	} else if (cpu_id.family_id == MESON_CPU_MAJOR_ID_GXBB) {
+		//AMLNF_CLEAR_REG_MASK(P_PERIPHS_PIN_MUX_2, ((0x33f<<20) | (0x1<< 30)));
+	}
 	return;
 }
 
