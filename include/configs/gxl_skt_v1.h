@@ -114,6 +114,7 @@
             "fi;fi;fi;"\
             "\0" \
         "storeboot="\
+            "hdmitx output 1080p60hz;"\
             "if imgread kernel boot ${loadaddr}; then bootm ${loadaddr}; fi;"\
             "run update;"\
             "\0"\
