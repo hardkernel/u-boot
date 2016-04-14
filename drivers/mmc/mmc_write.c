@@ -12,6 +12,9 @@
 #include <part.h>
 #include "mmc_private.h"
 
+extern bool emmckey_is_access_range_legal(struct mmc *mmc,
+		ulong start, lbaint_t blkcnt);
+
 static ulong mmc_erase_t(struct mmc *mmc, ulong start, lbaint_t blkcnt)
 {
 	struct mmc_cmd cmd;
@@ -72,6 +75,10 @@ unsigned long mmc_berase(int dev_num, lbaint_t start, lbaint_t blkcnt)
 
 	if (!mmc)
 		return -1;
+
+	if (!emmckey_is_access_range_legal(mmc, start, blkcnt))
+		return blkcnt;
+
 	if (blkcnt == 0) {
 		blkcnt = mmc->capacity/512 - (mmc->capacity/512)% mmc->erase_grp_size; // erase whole
 		printf("blkcnt = %lu\n",blkcnt);
@@ -165,6 +172,9 @@ ulong mmc_bwrite(int dev_num, lbaint_t start, lbaint_t blkcnt, const void *src)
 
 	struct mmc *mmc = find_mmc_device(dev_num);
 	if (!mmc)
+		return 0;
+
+	if (!emmckey_is_access_range_legal(mmc, start, blkcnt))
 		return 0;
 
 	if (mmc_set_blocklen(mmc, mmc->write_bl_len))

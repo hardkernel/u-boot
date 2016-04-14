@@ -31,6 +31,9 @@
 #include <linux/types.h>
 #include <amlogic/secure_storage.h>
 #include <amlogic/storage_if.h>
+#ifdef CONFIG_STORE_COMPATIBLE
+#include <partition_table.h>
+#endif
 
 /* key buffer status */
 /* bit0, dirty flag*/
@@ -92,6 +95,9 @@ int32_t amlkey_init(uint8_t *seed, uint32_t len)
 		goto _out;
 	}
 	secure_storage_notifier();
+#ifdef CONFIG_STORE_COMPATIBLE
+	info_disprotect &= ~DISPROTECT_KEY;  //protect
+#endif
 _out:
 	return ret;
 }
