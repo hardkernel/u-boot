@@ -64,22 +64,31 @@ void panel_power_init(void)
 		(PNL_REG_R(PNL_PREG_PAD_GPIO1_EN_N) & ~(1 << 13)));
 }
 
+#define SEC_AO_SEC_GP_CFG0			(0xda100000 + (0x90 << 2))
+static int check_is_ddr_inited(void)
+{
+	return ((readl(SEC_AO_SEC_GP_CFG0) >> 16) & 0xffff);
+}
+
 void board_init(void)
 {
 	power_init(0);
 
-	/* dram 1.5V reset */
-	serial_puts("DRAM reset...\n");
-	/* power off ddr */
-	//aml_update_bits(P_AO_GPIO_O_EN_N, 1 << 3, 0);
-	//aml_update_bits(P_AO_GPIO_O_EN_N, 1 << 19, 0);
-	writel((readl(P_AO_GPIO_O_EN_N) & (~((1 << 3) | (1 << 19)))),P_AO_GPIO_O_EN_N);
-	/* need delay */
-	_udelay(40000);
-	/* power on ddr */
-	//aml_update_bits(P_AO_GPIO_O_EN_N, 1 << 3, 0);
-	//aml_update_bits(P_AO_GPIO_O_EN_N, 1 << 19, 1 << 19);
-	writel((readl(P_AO_GPIO_O_EN_N) | (1 << 19)),P_AO_GPIO_O_EN_N);
+	//only run once before ddr inited.
+	if (!check_is_ddr_inited()) {
+		/* dram 1.5V reset */
+		serial_puts("DRAM reset...\n");
+		/* power off ddr */
+		//aml_update_bits(P_AO_GPIO_O_EN_N, 1 << 3, 0);
+		//aml_update_bits(P_AO_GPIO_O_EN_N, 1 << 19, 0);
+		writel((readl(P_AO_GPIO_O_EN_N) & (~((1 << 3) | (1 << 19)))),P_AO_GPIO_O_EN_N);
+		/* need delay */
+		_udelay(40000);
+		/* power on ddr */
+		//aml_update_bits(P_AO_GPIO_O_EN_N, 1 << 3, 0);
+		//aml_update_bits(P_AO_GPIO_O_EN_N, 1 << 19, 1 << 19);
+		writel((readl(P_AO_GPIO_O_EN_N) | (1 << 19)),P_AO_GPIO_O_EN_N);
+	}
 
 	panel_power_init();
 }
