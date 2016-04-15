@@ -1,5 +1,5 @@
 /*
- * arch/arm/include/asm/arch-gxb/thermal.h
+ * arch/arm/include/asm/arch-gxl/thermal.h
  *
  * Copyright (C) 2015 Amlogic, Inc. All rights reserved.
  *
@@ -35,3 +35,6 @@
 
 #define SAR_CLK_CNTL						HHI_SAR_CLK_CNTL
 #define SAR_BUS_CLK_EN				HHI_GCLK_MPEG2
+
+
+#define SAMPLE_BIT_MASK     0xfff  /*12bit*/

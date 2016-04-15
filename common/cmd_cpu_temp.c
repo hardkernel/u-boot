@@ -26,6 +26,7 @@
 #include <asm/arch/secure_apb.h>
 #include <asm/arch/mailbox.h>
 #include <asm/arch/thermal.h>
+#include <asm/cpu_id.h>
 
 //#define HHI_SAR_CLK_CNTL    0xc883c000+0xf6*4 //0xc883c3d8
 
@@ -35,9 +36,24 @@ int temp_base = 27;
 int get_tsc(int temp)
 {
 	int vmeasure, TS_C;
-	vmeasure = temp-(435+(temp_base-27)*3.4);
-	printf("vmeasure=%d\n", vmeasure);
-	TS_C = ((vmeasure)/8.25)+16;
+	switch (get_cpu_id().family_id) {
+	case MESON_CPU_MAJOR_ID_GXBB:
+	case MESON_CPU_MAJOR_ID_GXTVBB:
+		/*TS_C = (adc-435)/8.25+16*/
+		vmeasure = temp-(435+(temp_base-27)*3.4);
+		printf("vmeasure=%d\n", vmeasure);
+		TS_C = ((vmeasure)/8.25)+16;
+		break;
+	case MESON_CPU_MAJOR_ID_GXL:
+		/*TS_C = 16-(adc-1778)/41*/
+		vmeasure = temp-(1778+(temp_base-27)*17);
+		printf("vmeasure=%d\n", vmeasure);
+		TS_C = 16-((vmeasure)/42);
+		break;
+	default:
+		printf("cpu family id not support!!!\n");
+		return -1;
+	}
 
 	if (TS_C > 31)
 		TS_C = 31;
@@ -52,17 +68,37 @@ int adc_init_chan6(void)
 	/*adc reg3 bit28: config adc registers flag*/
 	if (readl(SAR_ADC_REG3)&(0x1<<28))
 		return 0;
-	writel(0x002c2000, SAR_ADC_REG11);/*bit20: test mode disabled*/
-	writel(0x00000006, SAR_ADC_CHAN_LIST);
-	writel(0x00003000, SAR_ADC_AVG_CNTL);
-	writel(0xc3a8500a, SAR_ADC_REG3);
-	writel(0x010a000a, SAR_ADC_DELAY);
-	writel(0x03eb1a0c, SAR_ADC_AUX_SW);
-	writel(0x008c000c, SAR_ADC_CHAN_10_SW);
-	writel(0x030e030c, SAR_ADC_DETECT_IDLE_SW);
-	writel(0x0c00c400, SAR_ADC_DELTA_10);
-	writel(0x00000114, SAR_CLK_CNTL);        /* Clock */
-	writel(readl(0xc110868c)|(0x1<<28), SAR_ADC_REG3);
+	switch (get_cpu_id().family_id) {
+	case MESON_CPU_MAJOR_ID_GXBB:
+	case MESON_CPU_MAJOR_ID_GXTVBB:
+		writel(0x002c2000, SAR_ADC_REG11);/*bit20: test mode disabled*/
+		writel(0x00000006, SAR_ADC_CHAN_LIST);
+		writel(0x00003000, SAR_ADC_AVG_CNTL);
+		writel(0xc3a8500a, SAR_ADC_REG3);
+		writel(0x010a000a, SAR_ADC_DELAY);
+		writel(0x03eb1a0c, SAR_ADC_AUX_SW);
+		writel(0x008c000c, SAR_ADC_CHAN_10_SW);
+		writel(0x030e030c, SAR_ADC_DETECT_IDLE_SW);
+		writel(0x0c00c400, SAR_ADC_DELTA_10);
+		writel(0x00000114, SAR_CLK_CNTL);        /* Clock */
+		writel(readl(0xc110868c)|(0x1<<28), SAR_ADC_REG3);
+		break;
+	case MESON_CPU_MAJOR_ID_GXL:
+		writel(0x002c2060, SAR_ADC_REG11);/*bit20 disabled*/
+		writel(0x00000006, SAR_ADC_CHAN_LIST);/*channel 6*/
+		writel(0x00003000, SAR_ADC_AVG_CNTL);
+		writel(0xc8a8500a, SAR_ADC_REG3);/*bit27:0*/
+		writel(0x010a000a, SAR_ADC_DELAY);
+		writel(0x03eb1a0c, SAR_ADC_AUX_SW);
+		writel(0x008c000c, SAR_ADC_CHAN_10_SW);
+		writel(0x030e030c, SAR_ADC_DETECT_IDLE_SW);
+		writel(0x0c00c400, SAR_ADC_DELTA_10);
+		writel(0x00000114, SAR_CLK_CNTL);/*Clock*/
+		break;
+	default:
+		printf("cpu family id not support!!!\n");
+		return -1;
+	}
 	return 0;
 }
 
@@ -81,7 +117,7 @@ int get_adc_sample(int chan)
 
 	value = readl(SAR_ADC_FIFO_RD);
 	writel(readl(SAR_ADC_REG3)&(~(1 < 29)), SAR_ADC_REG3);
-	value = value&0x3ff;
+	value = value&SAMPLE_BIT_MASK;
 
 	return value;
 }
@@ -150,8 +186,12 @@ int do_read_calib_data(int *flag, int *temp, int *TS_C)
 	*flag = (*temp&0x8000)>>15;
 	*temp = (*temp&0x7fff)>>5;
 
-	if (0x40 == (int)flagbuf)/*ver2*/
+	if ((get_cpu_id().family_id == MESON_CPU_MAJOR_ID_GXBB)
+		&&(0x40 == (int)flagbuf))/*ver2*/
 		*TS_C = 16;
+
+	if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_GXL)
+		*temp = (*temp)<<2; /*adc 12bit sample*/
 	printf("adc=%d,TS_C=%d,flag=%d\n", *temp, *TS_C, *flag);
 	return ret;
 }
@@ -183,7 +223,7 @@ static int do_write_trim(cmd_tbl_t *cmdtp, int flag1,
 	}
 	for (i = 0; i < NUM; i++) {
 		udelay(10000);
-
+		/*adc sample value*/
 		temp1[i] = get_cpu_temp(16, 0);
 	}
 
@@ -204,6 +244,8 @@ static int do_write_trim(cmd_tbl_t *cmdtp, int flag1,
 
 /**********************************/
 	TS_C = get_tsc(temp);
+	if (TS_C < 0)
+		return -1;
 /**********************************/
 	temp = 0;
 	memset(temp1, 0, NUM);
@@ -220,9 +262,19 @@ static int do_write_trim(cmd_tbl_t *cmdtp, int flag1,
 	for (i = 2; i < NUM-2; i++)
 		temp += temp1[i];
 	temp = temp/(NUM-4);
+	printf("the adc cpu adc=%d\n", temp);
 
 /**************recalculate to 27******/
-	temp = temp - 3.4*(temp_base - 27);
+	switch (get_cpu_id().family_id) {
+	case MESON_CPU_MAJOR_ID_GXBB:
+	case MESON_CPU_MAJOR_ID_GXTVBB:
+		temp = temp - 3.4*(temp_base - 27);
+		break;
+	case MESON_CPU_MAJOR_ID_GXL:/*12bit*/
+		temp = temp - 17*(temp_base - 27);
+		temp = temp>>2;/*efuse only 10bit adc*/
+		break;
+	}
 /**********************************/
 	temp = ((temp<<5)|(TS_C&0x1f))&0xffff;
 /* write efuse tsc,flag */
@@ -259,7 +311,15 @@ static int do_read_temp(cmd_tbl_t *cmdtp, int flag1,
 		tempa = 0;
 		printf("adc=%d\n", adc);
 		if (flag) {
-			tempa = (10*(adc-temp))/34+27;
+			switch (get_cpu_id().family_id) {
+			case MESON_CPU_MAJOR_ID_GXBB:
+			case MESON_CPU_MAJOR_ID_GXTVBB:
+				tempa = (10*(adc-temp))/34+27;
+				break;
+			case MESON_CPU_MAJOR_ID_GXL:
+				tempa = (10*(adc-temp))/171+27;
+				break;
+			}
 			printf("tempa=%d\n", tempa);
 
 			sprintf(buf, "%d", tempa);

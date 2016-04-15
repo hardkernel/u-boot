@@ -35,3 +35,5 @@
 
 #define SAR_CLK_CNTL						HHI_SAR_CLK_CNTL
 #define SAR_BUS_CLK_EN				HHI_GCLK_MPEG2
+
+#define SAMPLE_BIT_MASK     0x3ff  /*10bit*/
