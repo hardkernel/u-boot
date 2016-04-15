@@ -982,11 +982,11 @@ static void hdmitx_set_pll(struct hdmitx_dev *hdev)
         if (hdev->para->cs == HDMI_COLOR_FORMAT_420) {
 		hd_set_reg_bits(P_HHI_HDMI_CLK_CNTL, 1, 16, 4);
 		if ((hdev->para->cd) == HDMI_COLOR_DEPTH_24B) {
-			hd_set_reg_bits(P_HHI_HDMI_PLL_CNTL2, 1, 16, 2);
-			hd_set_reg_bits(P_HHI_HDMI_PLL_CNTL2, 0, 18, 2);
+			hd_set_reg_bits(P_HHI_HDMI_PLL_CNTL3, 1, 21, 2);
+			hd_set_reg_bits(P_HHI_HDMI_PLL_CNTL3, 0, 19, 2);
 		} else {
-			hd_set_reg_bits(P_HHI_HDMI_PLL_CNTL2, 0, 16, 2);
-			hd_set_reg_bits(P_HHI_HDMI_PLL_CNTL2, 0, 18, 2);
+			hd_set_reg_bits(P_HHI_HDMI_PLL_CNTL3, 0, 21, 2);
+			hd_set_reg_bits(P_HHI_HDMI_PLL_CNTL3, 0, 19, 2);
 		}
 	}
 }
