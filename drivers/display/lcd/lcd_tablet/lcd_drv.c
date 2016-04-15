@@ -420,22 +420,35 @@ static void lcd_venc_set(struct lcd_config_s *pconf)
 	lcd_vcbus_write(ENCL_VIDEO_EN, 1);
 }
 
+void lcd_tablet_driver_init_pre(void)
+{
+	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
+	struct lcd_config_s *pconf;
+	int ret;
+
+	LCDPR("tablet driver init(ver: %s)\n", lcd_drv->version);
+	pconf = lcd_drv->lcd_config;
+	ret = lcd_type_supported(pconf);
+	if (ret)
+		return;
+
+	lcd_clk_set(pconf);
+	lcd_venc_set(pconf);
+	lcd_tcon_set(pconf);
+}
+
 int lcd_tablet_driver_init(void)
 {
 	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
 	struct lcd_config_s *pconf;
 	int ret;
 
-	LCDPR("tablet driver init\n");
 	pconf = lcd_drv->lcd_config;
 	ret = lcd_type_supported(pconf);
 	if (ret)
 		return -1;
 
 	/* init driver */
-	lcd_clk_set(pconf);
-	lcd_venc_set(pconf);
-	lcd_tcon_set(pconf);
 	switch (pconf->lcd_basic.lcd_type) {
 	case LCD_TTL:
 		lcd_ttl_control_set(pconf);
@@ -448,8 +461,6 @@ int lcd_tablet_driver_init(void)
 	default:
 		break;
 	}
-	if (pconf->lcd_timing.ss_level > 0)
-		lcd_set_spread_spectrum();
 
 	lcd_vcbus_write(VENC_INTCTRL, 0x200);
 

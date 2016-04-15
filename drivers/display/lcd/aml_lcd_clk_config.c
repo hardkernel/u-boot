@@ -389,7 +389,7 @@ static void lcd_clk_config_chip_init(void)
 static int lcd_pll_wait_lock(unsigned int reg, unsigned int lock_bit)
 {
 	unsigned int pll_lock;
-	int wait_loop = PLL_WAIT_LOCK_CNT;
+	int wait_loop = PLL_WAIT_LOCK_CNT; /* 200 */
 	int ret = 0;
 
 	do {
@@ -397,8 +397,10 @@ static int lcd_pll_wait_lock(unsigned int reg, unsigned int lock_bit)
 		pll_lock = lcd_hiu_getb(reg, lock_bit, 1);
 		wait_loop--;
 	} while ((pll_lock == 0) && (wait_loop > 0));
-	if (wait_loop == 0)
+	if (pll_lock == 0)
 		ret = -1;
+	LCDPR("%s: pll_lock=%d, wait_loop=%d\n",
+		__func__, pll_lock, (PLL_WAIT_LOCK_CNT - wait_loop));
 	return ret;
 }
 
@@ -767,7 +769,7 @@ static void lcd_set_pll_g9bb(struct lcd_clk_config_s *cConf)
 	if (ret)
 		LCDERR("hpll lock failed\n");
 
-	/* lcd_set_pll_ss_g9bb(cConf); */
+	lcd_set_pll_ss_g9bb(cConf);
 }
 
 static void lcd_update_pll_frac_g9(struct lcd_clk_config_s *cConf)
@@ -895,8 +897,8 @@ static void lcd_set_pll_gxtvbb(struct lcd_clk_config_s *cConf)
 	if (ret)
 		LCDERR("hpll lock failed\n");
 
-	/* if (cConf->ss_level > 0)
-		lcd_set_pll_ss_gxtvbb(cConf); */
+	if (cConf->ss_level > 0)
+		lcd_set_pll_ss_gxtvbb(cConf);
 }
 
 static void lcd_update_pll_frac_gxtvbb(struct lcd_clk_config_s *cConf)
@@ -1714,8 +1716,16 @@ static void lcd_clk_generate_g9_gxtvbb(struct lcd_config_s *pconf)
 			goto generate_clk_done_g9_gxtvbb;
 		if (lcd_debug_print_flag == 2)
 			LCDPR("pll_fout=%d\n", pll_fout);
-		cConf->xd = 1;
-		clk_div_out = cConf->fout;
+		if ((clk_div_in / cConf->fout) > 15)
+			cConf->xd = 4;
+		else
+			cConf->xd = 1;
+		clk_div_out = cConf->fout * cConf->xd;
+		if (lcd_debug_print_flag == 2) {
+			LCDPR("clk_div_in=%d, fout=%d, xd=%d, clk_div_out=%d\n",
+				clk_div_in, cConf->fout,
+				clk_div_out, cConf->xd);
+		}
 		if (clk_div_out > cConf->div_out_fmax)
 			goto generate_clk_done_g9_gxtvbb;
 		clk_div_sel = clk_div_get_g9_gxtvbb(
@@ -2001,6 +2011,7 @@ void lcd_clk_set(struct lcd_config_s *pconf)
 		break;
 	}
 	lcd_set_vclk_crt(pconf->lcd_basic.lcd_type, &clk_conf);
+	mdelay(10);
 }
 
 void lcd_clk_disable(void)

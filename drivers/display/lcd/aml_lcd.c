@@ -158,8 +158,6 @@ static void lcd_module_enable(char *mode)
 	struct lcd_config_s *pconf = lcd_drv->lcd_config;
 	int ret;
 
-	LCDPR("driver version: %s\n", lcd_drv->version);
-
 	ret = lcd_drv->config_check(mode);
 	if (ret) {
 		LCDERR("init exit\n");
@@ -173,6 +171,7 @@ static void lcd_module_enable(char *mode)
 		pconf->lcd_basic.h_active, pconf->lcd_basic.v_active,
 		(sync_duration / 10), (sync_duration % 10));
 
+	lcd_drv->driver_init_pre();
 	lcd_power_ctrl(1);
 	lcd_vcbus_write(VPP_POSTBLEND_H_SIZE, pconf->lcd_basic.h_active);
 	lcd_vcbus_write(VENC_INTCTRL, 0x200);

@@ -343,6 +343,38 @@ static int lcd_vbyone_lanes_set(int lane_num, int byte_mode, int region_num,
 	return 0;
 }
 
+static void lcd_vbyone_sw_reset(void)
+{
+	if (lcd_debug_print_flag)
+		LCDPR("%s\n", __func__);
+
+	/* force PHY to 0 */
+	lcd_hiu_setb(HHI_LVDS_TX_PHY_CNTL0, 3, 8, 2);
+	lcd_vcbus_write(VBO_SOFT_RST, 0x1ff);
+	udelay(5);
+	/* realease PHY */
+	lcd_hiu_setb(HHI_LVDS_TX_PHY_CNTL0, 0, 8, 2);
+	lcd_vcbus_write(VBO_SOFT_RST, 0);
+}
+
+static void lcd_vbyone_wait_timing_stable(void)
+{
+	unsigned int timing_state;
+	int i = 200;
+
+	timing_state = lcd_vcbus_read(VBO_INTR_STATE) & 0x1ff;
+	while ((timing_state) && (i > 0)) {
+		/* clear video timing error intr */
+		lcd_vcbus_setb(VBO_INTR_STATE_CTRL, 0x7, 0, 3);
+		lcd_vcbus_setb(VBO_INTR_STATE_CTRL, 0, 0, 3);
+		mdelay(2);
+		timing_state = lcd_vcbus_read(VBO_INTR_STATE) & 0x1ff;
+		i--;
+	};
+	LCDPR("vbyone timing state: 0x%03x, i=%d\n", timing_state, (200 - i));
+	mdelay(2);
+}
+
 static void lcd_vbyone_control_set(struct lcd_config_s *pconf)
 {
 	int lane_count, byte_mode, region_num, hsize, vsize;
@@ -430,10 +462,8 @@ static void lcd_vbyone_control_set(struct lcd_config_s *pconf)
 	/*force vencl clk enable, otherwise, it might auto turn off by mipi DSI
 	//lcd_vcbus_setb(VPU_MISC_CTRL, 1, 0, 1); */
 
-	/* reset vbyone */
-	lcd_vcbus_write(VBO_SOFT_RST, 0x1ff);
-	udelay(5);
-	lcd_vcbus_write(VBO_SOFT_RST, 0);
+	lcd_vbyone_wait_timing_stable();
+	lcd_vbyone_sw_reset();
 }
 
 static void lcd_vbyone_disable(void)
@@ -443,20 +473,13 @@ static void lcd_vbyone_disable(void)
 
 static void lcd_vbyone_wait_stable(void)
 {
-	int i = 1000;
+	int i = 500;
 
-	mdelay(10);
-	/* reset vbyone */
-	lcd_vcbus_write(VBO_SOFT_RST, 0x1ff);
-	udelay(10);
-	lcd_vcbus_write(VBO_SOFT_RST, 0);
-
-	while ((lcd_vcbus_read(VBO_STATUS_L) & 0x3f) != 0x20) {
+	while (((lcd_vcbus_read(VBO_STATUS_L) & 0x3f) != 0x20) && (i > 0)) {
 		mdelay(2);
-		if (i-- == 0)
-			break;
+		i--;
 	}
-	LCDPR("%s status: 0x%x, i=%d\n", __func__, lcd_vcbus_read(VBO_STATUS_L), i);
+	LCDPR("%s status: 0x%x, i=%d\n", __func__, lcd_vcbus_read(VBO_STATUS_L), (500 - i));
 }
 
 static void lcd_venc_set(struct lcd_config_s *pconf)
@@ -581,22 +604,35 @@ void lcd_tv_config_update(struct lcd_config_s *pconf)
 	lcd_clk_generate_parameter(pconf);
 }
 
+void lcd_tv_driver_init_pre(void)
+{
+	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
+	struct lcd_config_s *pconf;
+	int ret;
+
+	LCDPR("tv driver init(ver: %s)\n", lcd_drv->version);
+	pconf = lcd_drv->lcd_config;
+	ret = lcd_type_supported(pconf);
+	if (ret)
+		return;
+
+	lcd_clk_set(pconf);
+	lcd_venc_set(pconf);
+	lcd_tcon_set(pconf);
+}
+
 int lcd_tv_driver_init(void)
 {
 	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
 	struct lcd_config_s *pconf;
 	int ret;
 
-	LCDPR("tv driver init\n");
 	pconf = lcd_drv->lcd_config;
 	ret = lcd_type_supported(pconf);
 	if (ret)
 		return -1;
 
 	/* init driver */
-	lcd_clk_set(pconf);
-	lcd_venc_set(pconf);
-	lcd_tcon_set(pconf);
 	switch (pconf->lcd_basic.lcd_type) {
 	case LCD_LVDS:
 		lcd_lvds_control_set(pconf);
@@ -611,8 +647,6 @@ int lcd_tv_driver_init(void)
 	default:
 		break;
 	}
-	if (pconf->lcd_timing.ss_level > 0)
-		lcd_set_spread_spectrum();
 
 	lcd_vcbus_write(VENC_INTCTRL, 0x200);
 

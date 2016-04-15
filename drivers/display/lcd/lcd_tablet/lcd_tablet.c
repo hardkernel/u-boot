@@ -698,9 +698,10 @@ int get_lcd_tablet_config(char *dt_addr, int load_id)
 
 	strcpy(lcd_drv->version, LCD_DRV_VERSION);
 	lcd_drv->list_support_mode = lcd_list_support_mode;
+	lcd_drv->config_check = lcd_config_check;
+	lcd_drv->driver_init_pre = lcd_tablet_driver_init_pre;
 	lcd_drv->driver_init = lcd_tablet_driver_init;
 	lcd_drv->driver_disable = lcd_tablet_driver_disable;
-	lcd_drv->config_check = lcd_config_check;
 
 	if (load_id & 0x10) { /* unifykey */
 		lcd_config_load_from_unifykey(lcd_drv->lcd_config);

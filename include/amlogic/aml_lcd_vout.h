@@ -442,6 +442,7 @@ struct aml_lcd_drv_s {
 	struct bl_config_s *bl_config;
 
 	int  (*config_check)(char *mode);
+	void  (*driver_init_pre)(void);
 	int  (*driver_init)(void);
 	void (*driver_disable)(void);
 	void (*list_support_mode)(void);
