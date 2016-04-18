@@ -1,5 +1,5 @@
 
-static int pwm_voltage_table[][2] = {
+int pwm_voltage_table[31][2] = {
 	{ 0x1c0000,  860},
 	{ 0x1b0001,  870},
 	{ 0x1a0002,  880},
@@ -34,23 +34,25 @@ static int pwm_voltage_table[][2] = {
 struct scpi_opp_entry cpu_dvfs_tbl[] = {
 	DVFS( 100000000,  860),
 	DVFS( 250000000,  860),
-	DVFS( 500000000,  860),
-	DVFS( 667000000,  900),
-	DVFS(1000000000,  940),
-	DVFS(1200000000,  980),
-	DVFS(1296000000, 1000),
-	DVFS(1416000000, 1020),
-	DVFS(1536000000, 1050),
-	DVFS(1752000000, 1050),
-	DVFS(2016000000, 1050)
+	DVFS( 500000000,  880),
+	DVFS( 667000000,  920),
+	DVFS(1000000000,  960),
+	DVFS(1200000000, 1040),
+	DVFS(1296000000, 1080),
+	DVFS(1416000000, 1110),
+	DVFS(1536000000, 1110),
+	DVFS(1752000000, 1110),
+	DVFS(2016000000, 1110)
 };
 
 
 
-#define P_PIN_MUX_REG3		(*((volatile unsigned *)(0xda834400 + (0x2f << 2))))
-#define P_PIN_MUX_REG7		(*((volatile unsigned *)(0xda834400 + (0x33 << 2))))
+#define P_PIN_MUX_REG1         (*((volatile unsigned *)(0xda834400 + (0x2d << 2))))
+#define P_PIN_MUX_REG2         (*((volatile unsigned *)(0xda834400 + (0x2e << 2))))
+
 #define P_PWM_MISC_REG_AB	(*((volatile unsigned *)(0xc1100000 + (0x2156 << 2))))
 #define P_PWM_PWM_B		(*((volatile unsigned *)(0xc1100000 + (0x2155 << 2))))
+
 
 enum pwm_id {
 	pwm_a = 0,
@@ -68,7 +70,6 @@ void pwm_init(int id)
 	 * TODO: support more pwm controllers, right now only support PWM_B
 	 */
 	unsigned int reg;
-
 	reg = P_PWM_MISC_REG_AB;
 	reg &= ~(0x7f << 16);
 	reg |=  ((1 << 23) | (1 << 1));
@@ -77,15 +78,15 @@ void pwm_init(int id)
 	 * default set to max voltage
 	 */
 	P_PWM_PWM_B = pwm_voltage_table[ARRAY_SIZE(pwm_voltage_table) - 1][0];
+	reg  = P_PIN_MUX_REG1;
+	reg &= ~(1 << 10);
+	P_PIN_MUX_REG1 = reg;
 
-	reg  = P_PIN_MUX_REG7;
-	reg &= ~(1 << 22);
-	P_PIN_MUX_REG7 = reg;
+	reg  = P_PIN_MUX_REG2;
+	reg &= ~(1 << 5);		// clear PWM_VS
+	reg |=  (1 << 11);		// enable PWM_B
+	P_PIN_MUX_REG2 = reg;
 
-	reg  = P_PIN_MUX_REG3;
-	reg &= ~(1 << 22);
-	reg |=  (1 << 21);		// enable PWM_B
-	P_PIN_MUX_REG3 = reg;
 
 	_udelay(200);
 }
@@ -152,5 +153,6 @@ void set_dvfs(unsigned int domain, unsigned int index)
 		P_PWM_PWM_B = pwm_voltage_table[cur][0];
 		_udelay(100);
 	}
+	_udelay(200);
 }
 
