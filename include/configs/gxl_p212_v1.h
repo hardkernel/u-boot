@@ -195,8 +195,9 @@
             "fi;"\
             "\0"\
         "upgrade_key="\
-            "if gpio input GPIOAO_3; then "\
-                "echo detect upgrade key; sleep 5; run update;"\
+            "if gpio input GPIOAO_2; then "\
+                "echo detect upgrade key; sleep 3;"\
+                "if gpio input GPIOAO_2; then run update; fi;"\
             "fi;"\
             "\0"\
 
