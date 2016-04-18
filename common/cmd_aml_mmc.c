@@ -31,14 +31,21 @@
 #include <asm/arch/cpu_sdio.h>
 #include <asm/arch/sd_emmc.h>
 #include <linux/sizes.h>
+#include <asm/cpu_id.h>
 
 extern int mmc_key_erase(void);
 extern int find_dev_num_by_partition_name (char *name);
 #define DTB_BLOCK_CNT		1024
 #define DTB_ADDR_SIZE		(SZ_1M * 40)
-#define KEY_SIZE_CNT		()
-#define KEY_ADDR_SIZE		(SZ_1M * 40 + 16 * 1024)
 #define CONFIG_SECURITYKEY
+
+#if !defined(CONFIG_SYS_MMC_BOOT_DEV)
+	#define CONFIG_SYS_MMC_BOOT_DEV (CONFIG_SYS_MMC_ENV_DEV)
+#endif
+
+#define GXB_START_BLK	0
+#define GXL_START_BLK	1
+#define UBOOT_SIZE	(0x1000) // uboot size  2MB
 int info_disprotect = 0;
 bool emmckey_is_protected (struct mmc *mmc)
 {
@@ -618,7 +625,7 @@ int do_amlmmcops(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
                                 u64 cnt =0,n =0, blk =0,sz_byte =0;
                                 char *name=NULL;
                                 u64 offset =0,size =0;
-
+                                cpu_id_t cpu_id = get_cpu_id();
                                 if (argc != 6) {
                                         printf("Input is invalid, nothing happen.\n");
                                         return 1;
@@ -626,13 +633,16 @@ int do_amlmmcops(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 
                                 if (isstring(argv[2])) {
                                         name = argv[2];
-                                        dev = find_dev_num_by_partition_name (name);
+                                        if (strcmp(name, "bootloader") == 0)
+                                            dev = CONFIG_SYS_MMC_BOOT_DEV;
+                                        else
+                                            dev = find_dev_num_by_partition_name (name);
                                         addr = (void *)simple_strtoul(argv[3], NULL, 16);
                                         offset  = simple_strtoull(argv[4], NULL, 16);
                                         size = simple_strtoull(argv[5], NULL, 16);
                                         flag = 1;
                                         if ((strcmp(argv[2], "card") == 0)) {
-                                                flag = 2;
+                                            flag = 2;
                                         }
                                 }else{
                                         dev = simple_strtoul(argv[2], NULL, 10);
@@ -647,7 +657,15 @@ int do_amlmmcops(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
                                 struct mmc *mmc = find_mmc_device(dev);
 
                                 if (flag == 1) { // tsd or emmc
-                                        get_off_size(mmc, name, offset, size, &blk, &cnt, &sz_byte);
+                                        if (strcmp(name, "bootloader") == 0) {
+                                            if (cpu_id.family_id >= MESON_CPU_MAJOR_ID_GXL)
+                                                blk = GXL_START_BLK;
+                                            else
+                                                blk = GXB_START_BLK;
+                                            cnt = UBOOT_SIZE;
+                                            sz_byte = 0;
+                                        } else
+                                            get_off_size(mmc, name, offset, size, &blk, &cnt, &sz_byte);
                                 }
                                 else if(flag == 2){ // card
                                         int blk_shift = ffs( mmc->read_bl_len) -1;
@@ -659,8 +677,8 @@ int do_amlmmcops(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
                                 if (!mmc)
                                         return 1;
 
-                                // printf("MMC write: dev # %d, block # %#llx, count # %#llx ... ",
-                                // dev, blk, cnt);
+                                 //printf("MMC write: dev # %d, block # %#llx, count # %#llx ... ",
+                                 //dev, blk, cnt);
 
                                 mmc_init(mmc);
 
