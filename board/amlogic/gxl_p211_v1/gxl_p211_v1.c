@@ -66,13 +66,30 @@ int dram_init(void)
 void secondary_boot_func(void)
 {
 }
+void internalPhyConfig(struct phy_device *phydev)
+{
+	/*Enable Analog and DSP register Bank access by*/
+	phy_write(phydev, MDIO_DEVAD_NONE, 0x14, 0x0000);
+	phy_write(phydev, MDIO_DEVAD_NONE, 0x14, 0x0400);
+	phy_write(phydev, MDIO_DEVAD_NONE, 0x14, 0x0000);
+	phy_write(phydev, MDIO_DEVAD_NONE, 0x14, 0x0400);
+	/*Write Analog register 23*/
+	phy_write(phydev, MDIO_DEVAD_NONE, 0x17, 0x8E0D);
+	phy_write(phydev, MDIO_DEVAD_NONE, 0x14, 0x4417);
+	/*Enable fractional PLL*/
+	phy_write(phydev, MDIO_DEVAD_NONE, 0x17, 0x0005);
+	phy_write(phydev, MDIO_DEVAD_NONE, 0x14, 0x5C1B);
+	//Programme fraction FR_PLL_DIV1
+	phy_write(phydev, MDIO_DEVAD_NONE, 0x17, 0x029A);
+	phy_write(phydev, MDIO_DEVAD_NONE, 0x14, 0x5C1D);
+	//## programme fraction FR_PLL_DiV1
+	phy_write(phydev, MDIO_DEVAD_NONE, 0x17, 0xAAAA);
+	phy_write(phydev, MDIO_DEVAD_NONE, 0x14, 0x5C1C);
+}
 
 static void setup_net_chip(void)
 {
 	eth_aml_reg0_t eth_reg0;
-
-	//setup ethernet clk need calibrate to configre
-	setbits_le32(P_PERIPHS_PIN_MUX_6, 0x3c73);
 
 	eth_reg0.d32 = 0;
 	eth_reg0.b.phy_intf_sel = 0;
@@ -95,17 +112,12 @@ static void setup_net_chip(void)
 	eth_reg0.b.rgmii_rx_reuse = 0;
 	eth_reg0.b.eth_urgent = 0;
 	setbits_le32(P_PREG_ETH_REG0, eth_reg0.d32);// rmii mode
-
+	*P_PREG_ETH_REG2 = 0x10110181;
+	*P_PREG_ETH_REG3 = 0xe409087f;
 	setbits_le32(HHI_GCLK_MPEG1,1<<3);
-
 	/* power on memory */
 	clrbits_le32(HHI_MEM_PD_REG0, (1 << 3) | (1<<2));
 
-	/* hardware reset ethernet phy : gpioz14 connect phyreset pin*/
-	clrbits_le32(PREG_PAD_GPIO3_EN_N, 1 << 14);
-	clrbits_le32(PREG_PAD_GPIO3_O, 1 << 14);
-	udelay(10000);
-	setbits_le32(PREG_PAD_GPIO3_O, 1 << 14);
 }
 
 extern struct eth_board_socket* eth_board_setup(char *name);

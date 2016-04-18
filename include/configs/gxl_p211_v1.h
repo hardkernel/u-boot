@@ -404,5 +404,6 @@
   #define CONFIG_AML_CUSTOMER_ID  CONFIG_CUSTOMER_ID
 #endif
 
+#define ETHERNET_INTERNAL_PHY
 #endif
 

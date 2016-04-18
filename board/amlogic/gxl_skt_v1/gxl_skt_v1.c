@@ -38,6 +38,8 @@
 #ifdef CONFIG_AML_HDMITX20
 #include <amlogic/hdmi.h>
 #endif
+#include <asm/arch/eth_setup.h>
+#include <phy.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -65,13 +67,70 @@ int dram_init(void)
 void secondary_boot_func(void)
 {
 }
+void internalPhyConfig(struct phy_device *phydev)
+{
+	/*Enable Analog and DSP register Bank access by*/
+	phy_write(phydev, MDIO_DEVAD_NONE, 0x14, 0x0000);
+	phy_write(phydev, MDIO_DEVAD_NONE, 0x14, 0x0400);
+	phy_write(phydev, MDIO_DEVAD_NONE, 0x14, 0x0000);
+	phy_write(phydev, MDIO_DEVAD_NONE, 0x14, 0x0400);
+	/*Write Analog register 23*/
+	phy_write(phydev, MDIO_DEVAD_NONE, 0x17, 0x8E0D);
+	phy_write(phydev, MDIO_DEVAD_NONE, 0x14, 0x4417);
+	/*Enable fractional PLL*/
+	phy_write(phydev, MDIO_DEVAD_NONE, 0x17, 0x0005);
+	phy_write(phydev, MDIO_DEVAD_NONE, 0x14, 0x5C1B);
+	//Programme fraction FR_PLL_DIV1
+	phy_write(phydev, MDIO_DEVAD_NONE, 0x17, 0x029A);
+	phy_write(phydev, MDIO_DEVAD_NONE, 0x14, 0x5C1D);
+	//## programme fraction FR_PLL_DiV1
+	phy_write(phydev, MDIO_DEVAD_NONE, 0x17, 0xAAAA);
+	phy_write(phydev, MDIO_DEVAD_NONE, 0x14, 0x5C1C);
+}
+
+
+static void setup_net_chip(void)
+{
+	eth_aml_reg0_t eth_reg0;
+
+	eth_reg0.d32 = 0;
+	eth_reg0.b.phy_intf_sel = 0;
+	eth_reg0.b.data_endian = 0;
+	eth_reg0.b.desc_endian = 0;
+	eth_reg0.b.rx_clk_rmii_invert = 0;
+	eth_reg0.b.rgmii_tx_clk_src = 0;
+	eth_reg0.b.rgmii_tx_clk_phase = 0;
+	eth_reg0.b.rgmii_tx_clk_ratio = 0;
+	eth_reg0.b.phy_ref_clk_enable = 0;
+	eth_reg0.b.clk_rmii_i_invert = 1;
+	eth_reg0.b.clk_en = 1;
+	eth_reg0.b.adj_enable = 0;
+	eth_reg0.b.adj_setup = 0;
+	eth_reg0.b.adj_delay = 0;
+	eth_reg0.b.adj_skew = 0;
+	eth_reg0.b.cali_start = 0;
+	eth_reg0.b.cali_rise = 0;
+	eth_reg0.b.cali_sel = 0;
+	eth_reg0.b.rgmii_rx_reuse = 0;
+	eth_reg0.b.eth_urgent = 0;
+	setbits_le32(P_PREG_ETH_REG0, eth_reg0.d32);// rmii mode
+	*P_PREG_ETH_REG2 = 0x10110181;
+	*P_PREG_ETH_REG3 = 0xe409087f;
+	setbits_le32(HHI_GCLK_MPEG1,1<<3);
+	/* power on memory */
+	clrbits_le32(HHI_MEM_PD_REG0, (1 << 3) | (1<<2));
+
+}
 
 extern struct eth_board_socket* eth_board_setup(char *name);
+extern int designware_initialize(ulong base_addr, u32 interface);
+
 int board_eth_init(bd_t *bis)
 {
-	int rc = 0;
-	eth_board_setup("g9bb");
-	return rc;
+	setup_net_chip();
+	udelay(1000);
+	designware_initialize(ETH_BASE, PHY_INTERFACE_MODE_RMII);
+	return 0;
 }
 
 #if CONFIG_AML_SD_EMMC

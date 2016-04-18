@@ -19,6 +19,7 @@
 #include <errno.h>
 #include <linux/err.h>
 #include <linux/compiler.h>
+extern void internalPhyConfig(struct phy_device *phydev);
 
 /* Generic PHY support and helper functions */
 
@@ -367,6 +368,9 @@ int genphy_config(struct phy_device *phydev)
 	int val;
 	u32 features;
 
+#ifdef ETHERNET_INTERNAL_PHY
+	internalPhyConfig(phydev);
+#endif
 	/* For now, I'll claim that the generic driver supports
 	 * all possible port types */
 	features = (SUPPORTED_TP | SUPPORTED_MII
@@ -610,7 +614,7 @@ static struct phy_device *create_phy_by_mask(struct mii_dev *bus,
 		int addr = ffs(phy_mask) - 1;
 		int r = get_phy_id(bus, addr, devad, &phy_id);
 		/* If the PHY ID is mostly f's, we didn't find anything */
-		if (r == 0 && (phy_id & 0x1fffffff) != 0x1fffffff)
+		if (phy_id != 0 && r == 0 && (phy_id & 0x1fffffff) != 0x1fffffff)
 			return phy_device_create(bus, addr, phy_id, interface);
 		phy_mask &= ~(1 << addr);
 	}
