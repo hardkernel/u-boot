@@ -1237,6 +1237,14 @@ int dwc_pcd_irq(void)
 	gintr_status.d32 = gintr_status.d32 & gintr_msk.d32;
 	DBG("irq gintmsk & gintrsts = 0x%08x\n",gintr_status.d32);
 
+    if (gintr_status.b.sofintr)
+	{
+        if (_sofintr_not_occur) {
+			DWN_MSG("sof\n");
+			_sofintr_not_occur = 0;
+		}
+	}
+
 	if (gintr_status.b.rxstsqlvl) {
 		dwc_otg_pcd_handle_rx_status_q_level_intr();
 		pcd_out_completed(&this_pcd[0]);

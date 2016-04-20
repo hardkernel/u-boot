@@ -208,14 +208,17 @@ int usb_pcd_init(void)
 }
 
 static unsigned int need_check_timeout;
-static unsigned int time_out_val;
+static unsigned int time_out_val;//wati time for pc enumerate
 static unsigned int _auto_burn_time_out_base = 0;
+//
+//wait time for gintsts_data_t.b.sofintr, 1/2 time_out_val, 1/2 * 700 in trunk
+static unsigned int time_out_wait_sof;
+static unsigned int _sofintr_not_occur;
 
 void usb_parameter_init(int time_out)
 {
-	need_check_timeout = 0;
 	/* clear utimer */
-	need_check_timeout=get_timer(need_check_timeout)?get_timer(need_check_timeout):1;
+	need_check_timeout=get_timer(0);
 	if (time_out)
 	{
 		time_out_val = time_out; // wait PC GetDescriptor command for 1us changed by Elvis
@@ -225,6 +228,8 @@ void usb_parameter_init(int time_out)
 	{
 		time_out_val = USB_ROM_CONN_TIMEOUT; // wait PC GetDescriptor command
 	}
+	time_out_wait_sof   = time_out_val >> 1;
+	_sofintr_not_occur  = 1;
     //printf("need_check_timeout %d, time_out_val %d, time_out %d\n", need_check_timeout, time_out_val, time_out);
 
     //Added by Sam Wu
@@ -237,7 +242,12 @@ int usb_pcd_irq(void)
 {
         if (need_check_timeout)
         {
-                unsigned curTime = get_timer(need_check_timeout);
+                unsigned curTime    = get_timer(need_check_timeout);
+                if (curTime > time_out_wait_sof && _sofintr_not_occur) {
+                    ERR("noSof\n");
+                    dwc_otg_power_off_phy();
+                    return 2;
+                }
                 if (curTime > time_out_val) {
                         dwc_otg_power_off_phy();
                         ERR("Try connect time out %u, %u, %u\n", curTime, time_out_val, need_check_timeout);

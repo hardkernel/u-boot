@@ -16,11 +16,11 @@ int v2_usbburning(unsigned timeout)
 #if defined(CONFIG_SILENT_CONSOLE)
         gd->flags &= ~GD_FLG_SILENT;
 #endif
-        printf("Enter USB burn\n");
+        printf("InUsbBurn\n");
         set_usb_phy_config(cfg);
         usb_parameter_init(timeout);
         if (usb_pcd_init()) {
-                printf("Fail in usb_pcd_init\n");
+                /*printf("Fail in usb_pcd_init\n");*/
                 return __LINE__;
         }
 

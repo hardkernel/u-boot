@@ -110,7 +110,7 @@
             "else if test ${reboot_mode} = update; then "\
                     "run update;"\
             "else if test ${reboot_mode} = cold_boot; then "\
-                "run try_auto_burn; "\
+                /*"run try_auto_burn; "*/\
             "fi;fi;fi;"\
             "\0" \
         "storeboot="\
@@ -367,7 +367,10 @@
 #define CONFIG_CMD_GPIO 1
 #define CONFIG_CMD_RUN
 #define CONFIG_CMD_REBOOT 1
+#define CONFIG_CMD_ECHO 1
 #define CONFIG_CMD_JTAG	1
+#define CONFIG_CMD_AUTOSCRIPT 1
+#define CONFIG_CMD_MISC 1
 
 /*file system*/
 #define CONFIG_DOS_PARTITION 1
@@ -388,6 +391,7 @@
 #define CONFIG_BOOTDELAY	1
 #define CONFIG_SYS_LONGHELP 1
 #define CONFIG_CMD_MISC         1
+#define CONFIG_CMD_ITEST    1
 #define CONFIG_CMD_CPU_TEMP 1
 #define CONFIG_SYS_MEM_TOP_HIDE 0x08000000 //hide 128MB for kernel reserve
 

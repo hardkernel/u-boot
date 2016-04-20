@@ -223,6 +223,7 @@ static void dwc_otg_enable_common_interrupts()
         intr_mask.b.disconnect = 1;
         intr_mask.b.usbsuspend = 1;
         intr_mask.b.sessreqintr = 1;
+        intr_mask.b.sofintr     = 1;
         dwc_write_reg32(DWC_REG_GINTMSK, intr_mask.d32);
 }
 
@@ -251,6 +252,7 @@ static void dwc_otg_enable_device_interrupts()
         intr_mask.b.inepintr = 1;
         intr_mask.b.outepintr = 1;
         intr_mask.b.erlysuspend = 1;
+        intr_mask.b.sofintr     = 1;
 
         dwc_modify_reg32( DWC_REG_GINTMSK, intr_mask.d32, intr_mask.d32);
 

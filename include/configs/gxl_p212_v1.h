@@ -119,7 +119,7 @@
             "else if test ${reboot_mode} = update; then "\
                     "run update;"\
             "else if test ${reboot_mode} = cold_boot; then "\
-                "run try_auto_burn; "\
+                /*"run try_auto_burn; "*/\
             "fi;fi;fi;"\
             "\0" \
         "storeboot="\
