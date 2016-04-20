@@ -73,6 +73,17 @@ static void amlogic_usb2_phy_init(struct u2p_aml_regs *phy)
 
 static void amlogic_usb3_phy_init(struct usb_aml_regs *phy)
 {
+	union usb_r1_t r1 = {.d32 = 0};
+	int i;
+
+	for (i = 0; i < 1; i++) {
+		usb_aml_reg = (struct usb_aml_regs *)((ulong)phy+i*PHY_REGISTER_SIZE);
+
+		r1.d32 = usb_aml_reg->usb_r1;
+		r1.b.u3h_fladj_30mhz_reg = 0x20;
+		usb_aml_reg->usb_r1 = r1.d32;
+	}
+
 	return;
 }
 
