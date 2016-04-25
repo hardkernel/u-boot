@@ -8,6 +8,9 @@ extern int aml_sys_info_error_handle(struct amlnand_chip *aml_chip);
 extern int aml_sys_info_init(struct amlnand_chip *aml_chip);
 extern int aml_nand_update_ubootenv(struct amlnand_chip * aml_chip, char *env_ptr);
 extern int amlnand_get_partition_table(struct amlnand_chip *aml_chip);
+extern void amlnf_get_chip_size(u64 *size);
+extern int  amlnf_erase_ops(uint64_t off,
+	uint64_t erase_len, unsigned char scrub_flag);
 /* fixme, */
 extern int info_disprotect;
 
@@ -3520,28 +3523,35 @@ exit_error0:
 int  shipped_bbt_invalid_ops(struct amlnand_chip *aml_chip)
 {
 	struct hw_controller *controller = &aml_chip->controller;
-	//struct nand_flash *flash = &aml_chip->flash;
-	//struct chip_operation *operation = & aml_chip->operation;
-	//struct chip_ops_para  *ops_para = & aml_chip->ops_para;
-	// nand_arg_info * nand_key = &aml_chip->nand_key;
-	//nand_arg_info  * nand_secure= &aml_chip->nand_secure;
+	struct nand_flash *flash = &aml_chip->flash;
+	uint64_t chipsize;
 	unsigned char *buf = NULL;
-	int  ret = 0;
-#if 0
-	unsigned int buf_size = MAX(CONFIG_SECURE_SIZE,CONFIG_KEYSIZE);
+	int ret = 0, pre_erase = 0;
 
-	buf = aml_nand_malloc(buf_size);
-	if (!buf) {
-	  aml_nand_msg("aml_sys_info_init : malloc failed");
-	}
-	memset(buf,0x0,buf_size);
-#endif
 /*
 	clean nand case!!!!!
 */
 #if 1 //clean nand case
 	/* need erase */
 	if (aml_chip->init_flag > NAND_BOOT_ERASE_PROTECT_CACHE) {
+		/*
+		sandisk flash can't promise all the blocks are clean and
+		need to be erased at the first time using.
+		need be sure that factory bad block can't be erased.
+		*/
+		if (flash->id[0] == NAND_MFR_SANDISK) {
+			/*
+			set info_disprotect variant wich DISPROTECT_FBBT
+			to skip env_protect erea.
+			*/
+			info_disprotect |= DISPROTECT_FBBT;
+			amlnf_get_chip_size(&chipsize);
+			/*background for carring out, bbt table is all zero*/
+			/*make all blocks are erased*/
+			amlnf_erase_ops(0, chipsize, 1);
+			pre_erase = 1;
+		}
+
 		/*check factory bad block by reading bad flags.*/
 		ret = shipped_badblock_detect(aml_chip);
 		if (ret < 0 ) {
@@ -3556,8 +3566,11 @@ int  shipped_bbt_invalid_ops(struct amlnand_chip *aml_chip)
 		}
 
 		aml_chip->nand_bbtinfo.arg_valid =1;//risking?it is need here.
+
 		/* erasing the whole chip then! */
-		amlnand_oops_handle(aml_chip,aml_chip->init_flag);
+		if (!pre_erase)
+			amlnand_oops_handle(aml_chip,aml_chip->init_flag);
+
 		/* save bbt info.*/
 		aml_chip->nand_bbtinfo.arg_valid =0;
 		aml_chip->block_status->crc = aml_info_checksum((unsigned char *)aml_chip->block_status->blk_status,(MAX_CHIP_NUM*MAX_BLK_NUM));
@@ -3955,12 +3968,7 @@ int amlnand_get_dev_configs(struct amlnand_chip *aml_chip)
 {
 	struct hw_controller *controller = &aml_chip->controller;
 	struct nand_flash *flash = &aml_chip->flash;
-	//struct chip_operation *operation = & aml_chip->operation;
-	//struct chip_ops_para  *ops_para = & aml_chip->ops_para;
 	struct read_retry_info *retry_info = &(controller->retry_info);
-	//struct dev_para *dev_para = NULL;
-	// nand_arg_info * nand_key = &aml_chip->nand_key;
-	//nand_arg_info  * nand_secure= &aml_chip->nand_secure;
 	int  ret = 0;
 
 	/* 1. setting config attribute.*/
@@ -3989,14 +3997,24 @@ int amlnand_get_dev_configs(struct amlnand_chip *aml_chip)
 	/* 2. serch fbbt & nbbt in flash.*/
 
 	/* 2.1 serch fbbt & nbbt in flash.*/
-	ret = amlnand_info_init(aml_chip, (unsigned char *)&(aml_chip->nand_bbtinfo),(unsigned char *)(aml_chip->block_status),(unsigned char *)BBT_HEAD_MAGIC, sizeof(struct block_status));
+	ret = amlnand_info_init(aml_chip,
+		(unsigned char *)&(aml_chip->nand_bbtinfo),
+		(unsigned char *)(aml_chip->block_status),
+		(unsigned char *)BBT_HEAD_MAGIC,
+		sizeof(struct block_status));
 	if (ret < 0) {
-		aml_nand_msg("%s() %d: nand scan bbt info failed and ret:%d", __FUNCTION__, __LINE__, ret);
+		aml_nand_msg("%s() %d: nand scan bbt info failed and ret:%d",
+			__FUNCTION__, __LINE__, ret);
 	}
 	ENV_NAND_LINE;
-	ret = amlnand_info_init(aml_chip, (unsigned char *)&(aml_chip->shipped_bbtinfo),(unsigned char *)aml_chip->shipped_bbt_ptr,(unsigned char *)SHIPPED_BBT_HEAD_MAGIC, sizeof(struct shipped_bbt));
+	ret = amlnand_info_init(aml_chip,
+		(unsigned char *)&(aml_chip->shipped_bbtinfo),
+		(unsigned char *)aml_chip->shipped_bbt_ptr,
+		(unsigned char *)SHIPPED_BBT_HEAD_MAGIC,
+		sizeof(struct shipped_bbt));
 	if (ret < 0) {
-		aml_nand_msg("%s() %d: nand scan shipped bbt info failed and ret:%d", __FUNCTION__, __LINE__, ret);
+		aml_nand_msg("%s() %d: nand scan shipped bbt info failed and ret:%d",
+			__FUNCTION__, __LINE__, ret);
 	}
 	ENV_NAND_LINE;
 
