@@ -44,10 +44,10 @@
 #define P_SPI_FLASH_C0		(volatile unsigned int *)0xc1108cc0
 
 #define P_SPI_START_ADDR 	(volatile unsigned int *)0xCC000000
-
+#if 0
 #define P_PERIPHS_PIN_MUX_4		0xc88344c0
 #define P_PERIPHS_PIN_MUX_5		0xc88344c4
-
+#endif
 #define SPI_FLASH_CMD                              0x2320
     #define SPI_FLASH_READ    31
     #define SPI_FLASH_WREN    30

@@ -13,7 +13,8 @@
 #include <malloc.h>
 #include <asm/cache.h>
 #include "spi_flash_amlogic.h"
-
+#include <asm/arch/secure_apb.h>
+#include <asm/cpu_id.h>
 
 #ifdef CONFIG_SPI_NOR_SECURE_STORAGE
 #include "spi_secure_storage.h"
@@ -781,6 +782,15 @@ struct spi_flash *spi_flash_probe(unsigned int bus, unsigned int cs,
 	struct spi_flash *flash = NULL;
 	int ret, i, shift;
 	u8 idcode[IDCODE_LEN], *idp;
+
+	if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_GXL) {
+		*P_PAD_PULL_UP_EN_REG2 = 0xffff87ff;
+		*P_PAD_PULL_UP_REG2 = 0xffff8700;
+		// deselect nand/emmc, select spi.
+		*P_PERIPHS_PIN_MUX_7 &= ~((1<<28) | (7<<2) | 1);
+		*P_PERIPHS_PIN_MUX_7 |= 0xf<<10;
+		(*((volatile unsigned *)((volatile uint32_t *)0xc1108c88)))=(0x2aaf7f);
+	}
 
 	spi = spi_setup_slave(bus, cs, max_hz, spi_mode);
 	if (!spi) {
