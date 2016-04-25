@@ -355,10 +355,9 @@ int board_init(void)
 	clrbits_le32(AO_RTI_PIN_MUX_REG, ((1<<3)|(1<<4)));
 	clrbits_le32(AO_RTI_PIN_MUX_REG2, ((1<<1)|(1<<31)));
 	//set output mode
-	clrbits_le32(P_AO_GPIO_O_EN_N, (1<<13));
+	clrbits_le32(PREG_PAD_GPIO0_EN_N, (1 << 24));
 	//set output 1
-	setbits_le32(P_AO_GPIO_O_EN_N, (1<<29));
-
+	setbits_le32(PREG_PAD_GPIO0_O, (1 << 24));
 
 	/*Power on GPIOAO_2 for VCC_5V*/
 	clrbits_le32(P_AO_GPIO_O_EN_N, ((1<<2)|(1<<18)));
