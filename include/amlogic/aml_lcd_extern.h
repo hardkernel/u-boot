@@ -37,9 +37,9 @@ enum lcd_extern_i2c_bus_e {
 
 #define LCD_EXTERN_INIT_TABLE_MAX    500
 
-#define LCD_EXTERN_INIT_GPIO         0x00
-#define LCD_EXTERN_INIT_CMD          0x10
-#define LCD_EXTERN_INIT_CMD2         0x11  //only for special i2c device
+#define LCD_EXTERN_INIT_CMD          0x00
+#define LCD_EXTERN_INIT_CMD2         0x01  //only for special i2c device
+#define LCD_EXTERN_INIT_GPIO         0x10
 #define LCD_EXTERN_INIT_NONE         0xf0
 #define LCD_EXTERN_INIT_END          0xff
 

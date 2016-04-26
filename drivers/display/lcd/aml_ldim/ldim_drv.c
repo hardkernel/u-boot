@@ -52,17 +52,20 @@ static unsigned int pwm_reg[6] = {
 	PWM_PWM_F,
 };
 
-static int ldim_enable(void)
+static int ldim_power_on(void)
 {
-	if (ldim_driver.device_power_on)
+	if (ldim_driver.device_power_on) {
 		ldim_driver.device_power_on();
+		ldim_on_flag = 1;
+	}
 	if (ldim_level > 0)
 		ldim_set_level(ldim_level);
 
 	return 0;
 }
-static int ldim_disable(void)
+static int ldim_power_off(void)
 {
+	ldim_on_flag = 0;
 	if (ldim_driver.device_power_off)
 		ldim_driver.device_power_off();
 
@@ -108,7 +111,6 @@ static int ldim_set_level(unsigned int level)
 	}
 	level = dim_min + ((level - level_min) * (dim_max - dim_min)) /
 			(level_max - level_min);
-	level &= 0xfff;
 	ldim_brightness_update(level);
 
 	return ret;
@@ -248,8 +250,8 @@ static struct aml_ldim_driver_s ldim_driver = {
 	.ldim_pwm = &ldim_pwm_config,
 	.ld_config = NULL,
 	.ldim_matrix_2_spi = NULL,
-	.power_on = ldim_enable,
-	.power_off = ldim_disable,
+	.power_on = ldim_power_on,
+	.power_off = ldim_power_off,
 	.set_level = ldim_set_level,
 	.pinmux_ctrl = ldim_pwm_pinmux_ctrl,
 	.device_power_on = NULL,

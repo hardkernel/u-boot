@@ -23,6 +23,7 @@
 struct ld_config_s {
 	unsigned int dim_min;
 	unsigned int dim_max;
+	unsigned char cmd_size;
 };
 
 /*******global API******/

@@ -398,7 +398,7 @@ static int aml_lcd_extern_get_config_dts(char *dtaddr, int index, struct lcd_ext
 		if (lcd_debug_print_flag)
 			EXTPR("%s: cmd_size=%d\n", extconf->name, extconf->cmd_size);
 		cmd_size = extconf->cmd_size;
-		if (cmd_size >= 1) {
+		if (cmd_size > 1) {
 			propdata = (char *)fdt_getprop(dtaddr, nodeoffset, "init_on", NULL);
 			if (propdata == NULL) {
 				EXTERR("get %s init_on failed\n", extconf->name);
@@ -503,7 +503,7 @@ static int aml_lcd_extern_get_config_dts(char *dtaddr, int index, struct lcd_ext
 		if (lcd_debug_print_flag)
 			EXTPR("%s: cmd_size=%d\n", extconf->name, extconf->cmd_size);
 		cmd_size = extconf->cmd_size;
-		if (cmd_size >= 1) {
+		if (cmd_size > 1) {
 			propdata = (char *)fdt_getprop(dtaddr, nodeoffset, "init_on", NULL);
 			if (propdata == NULL) {
 				EXTERR("get %s init_on failed\n", extconf->name);
