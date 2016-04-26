@@ -932,9 +932,31 @@ endif
 		$(FIP_FOLDER_SOC)/bl2_new.bin \
 		bl2
 	$(Q)cat $(FIP_FOLDER_SOC)/bl2_new.bin  $(FIP_FOLDER_SOC)/fip.bin > $(FIP_FOLDER_SOC)/boot_new.bin
+
+ifeq ($(SOC),gxl)
+	$(Q)$(FIP_FOLDER_SOC)/aml_encrypt_$(SOC) --bl3enc  --input $(FIP_FOLDER_SOC)/bl30_new.bin
+	$(Q)$(FIP_FOLDER_SOC)/aml_encrypt_$(SOC) --bl3enc  --input $(FIP_FOLDER_SOC)/bl31.$(BL3X_SUFFIX)
+ifeq ($(FIP_BL32), bl32.$(BL3X_SUFFIX))
+	$(Q)$(FIP_FOLDER_SOC)/aml_encrypt_$(SOC) --bl3enc  --input $(FIP_FOLDER_SOC)/bl32.$(BL3X_SUFFIX)
+FIP_BL32_PROCESS = --bl32 $(FIP_FOLDER_SOC)/bl32.$(BL3X_SUFFIX).enc
+endif
+	$(Q)$(FIP_FOLDER_SOC)/aml_encrypt_$(SOC) --bl3enc  --input $(FIP_FOLDER_SOC)/bl33.bin
+	$(Q)$(FIP_FOLDER_SOC)/aml_encrypt_$(SOC) --bl2sig  --input $(FIP_FOLDER_SOC)/bl2_new.bin   --output $(FIP_FOLDER_SOC)/bl2.n.bin.sig
+	$(Q)$(FIP_FOLDER_SOC)/aml_encrypt_$(SOC) --bootmk  --output $(FIP_FOLDER_SOC)/u-boot.bin \
+	--bl2   $(FIP_FOLDER_SOC)/bl2.n.bin.sig  --bl30  $(FIP_FOLDER_SOC)/bl30_new.bin.enc  \
+	--bl31  $(FIP_FOLDER_SOC)/bl31.$(BL3X_SUFFIX).enc  $(FIP_BL32_PROCESS) --bl33  $(FIP_FOLDER_SOC)/bl33.bin.enc
+	@rm -f $(FIP_FOLDER_SOC)/bl*.enc $(FIP_FOLDER_SOC)/bl2*.sig
+else
 	$(Q)$(FIP_FOLDER_SOC)/aml_encrypt_$(SOC) --bootsig --input $(FIP_FOLDER_SOC)/boot_new.bin --output $(FIP_FOLDER_SOC)/u-boot.bin
+endif
+
 ifeq ($(CONFIG_AML_CRYPTO_UBOOT), y)
-	$(Q)$(FIP_FOLDER_SOC)/aml_encrypt_$(SOC) --bootsig --input $(FIP_FOLDER_SOC)/boot_new.bin --amluserkey $(srctree)/$(BOARDDIR)/aml-user-key.sig --aeskey enable --output $(FIP_FOLDER_SOC)/u-boot.bin.encrypt
+ifeq ($(SOC),gxl)
+	$(Q)$(FIP_FOLDER_SOC)/aml_encrypt_$(SOC) --efsgen --amluserkey $(srctree)/$(BOARDDIR)/aml-user-key.sig \
+			--output $(FIP_FOLDER_SOC)/u-boot.bin.encrypt.efuse
+endif
+	$(Q)$(FIP_FOLDER_SOC)/aml_encrypt_$(SOC) --bootsig --input $(FIP_FOLDER_SOC)/u-boot.bin --amluserkey $(srctree)/$(BOARDDIR)/aml-user-key.sig \
+	 --aeskey enable --output $(FIP_FOLDER_SOC)/u-boot.bin.encrypt
 endif
 ifeq ($(CONFIG_AML_CRYPTO_IMG), y)
 	$(Q)$(FIP_FOLDER_SOC)/aml_encrypt_$(SOC) --imgsig --input $(srctree)/$(BOARDDIR)/boot.img --amluserkey $(srctree)/$(BOARDDIR)/aml-user-key.sig --output $(FIP_FOLDER_SOC)/boot.img.encrypt
