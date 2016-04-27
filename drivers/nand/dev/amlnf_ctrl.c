@@ -540,7 +540,7 @@ void nand_boot_info_prepare(struct amlnand_phydev *phydev,
 			break;
 	}
 	each_boot_pages = valid_pages/boot_num;
-	each_boot_pages = (en_slc)?(each_boot_pages<<1):each_boot_pages;
+	//each_boot_pages = (en_slc)?(each_boot_pages<<1):each_boot_pages;
 
 	p_ext_info->read_info = nand_read_info;
 	p_ext_info->new_type = aml_chip->flash.new_type;

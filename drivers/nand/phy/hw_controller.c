@@ -553,7 +553,7 @@ static int controller_hw_init(struct hw_controller *controller)
 	bus_timing = (start_cycle + end_cycle) / 2;
 #else
 	bus_cycle  = 6;
-	bus_timing = bus_cycle + 2;
+	bus_timing = bus_cycle + 1;
 #endif
 	//NFC_SET_CFG(controller, 0);
 	NFC_SET_TIMING_ASYC(controller, bus_timing, (bus_cycle - 1));

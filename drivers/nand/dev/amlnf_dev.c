@@ -9,14 +9,13 @@
 int boot_device_flag = 0;
 struct aml_nand_device *aml_nand_dev = NULL;
 
-
-
 int is_phydev_off_adjust(void)
 {
 	int ret = 0;
 	#ifdef NAND_ADJUST_PART_TABLE
 		ret = 1;
 	#endif
+
 	return  ret ;
 }
 
