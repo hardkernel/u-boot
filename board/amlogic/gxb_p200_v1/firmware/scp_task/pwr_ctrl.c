@@ -202,6 +202,7 @@ static unsigned int detect_key(unsigned int suspend_from)
 	unsigned int time_out = readl(AO_DEBUG_REG2);
 	unsigned time_out_ms = time_out*100;
 	unsigned *irq = (unsigned *)SECURE_TASK_SHARE_IRQ;
+	unsigned int ret;
 	/* unsigned *wakeup_en = (unsigned *)SECURE_TASK_RESPONSE_WAKEUP_EN; */
 
 	/* setup wakeup resources*/
@@ -247,8 +248,11 @@ static unsigned int detect_key(unsigned int suspend_from)
 			break;
 
 		case IRQ_AO_IR_DEC_NUM:
-			if (remote_detect_key())
+			ret = remote_detect_key();
+			if (ret == 1)
 				exit_reason = REMOTE_WAKEUP;
+			if (ret == 2)
+				exit_reason = REMOTE_CUS_WAKEUP;
 			break;
 
 		case IRQ_AO_GPIO0_NUM:

@@ -311,7 +311,7 @@ static int init_remote(void)
 	return 0;
 }
 
-unsigned int usr_pwr_key;
+unsigned int usr_pwr_key = CONFIG_IR_REMOTE_POWER_UP_KEY_VAL5;
 
 static int remote_detect_key(void)
 {
@@ -333,10 +333,12 @@ static int remote_detect_key(void)
 	if (((readl(AO_MF_IR_DEC_STATUS)) >> 3) & 0x1) {
 		power_key = readl(AO_MF_IR_DEC_FRAME);
 		for (j = 0; j < CONFIG_IR_REMOTE_POWER_UP_KEY_CNT; j++) {
-			if (((power_key & IR_POWER_KEY_MASK) == kk[j])
-				|| (((power_key&IR_POWER_KEY_MASK) == usr_pwr_key) && usr_pwr_key)) {
+			if (((power_key & IR_POWER_KEY_MASK) == kk[j])) {
 				return 1;
 			}
+			if ((((power_key&IR_POWER_KEY_MASK) == usr_pwr_key) &&
+			     usr_pwr_key))
+				return 2;
 		}
 	}
 	return 0;
