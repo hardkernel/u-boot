@@ -222,24 +222,23 @@
 #define CONFIG_CPU_CLK					1400 //MHz. Range: 600-1800, should be multiple of 24
 
 /* ddr */
-#define CONFIG_DDR_SIZE					2048 //MB
+#define CONFIG_DDR_SIZE					0 //MB //0 means ddr size auto-detect
 #define CONFIG_DDR_CLK					912  //MHz, Range: 384-1200, should be multiple of 24
 #define CONFIG_DDR_TYPE					CONFIG_DDR_TYPE_DDR3
 /* DDR channel setting, please refer hardware design.
  *    CONFIG_DDR0_RANK0        : DDR0 rank0
  *    CONFIG_DDR0_RANK01       : DDR0 rank0+1
- *    CONFIG_DDR0_16BIT        : DDR0 16bit mode */
-#define CONFIG_DDR_CHANNEL_SET			CONFIG_DDR0_RANK01
+ *    CONFIG_DDR0_16BIT        : DDR0 16bit mode
+ *    CONFIG_DDR_CHL_AUTO      : auto detect RANK0 / RANK0+1 */
+#define CONFIG_DDR_CHANNEL_SET			CONFIG_DDR_CHL_AUTO
 #define CONFIG_DDR_FULL_TEST			0 //1 for ddr full test
 #define CONFIG_NR_DRAM_BANKS			1
-/* ddr power saving */
-#define CONFIG_DDR_ZQ_POWER_DOWN
-#define CONFIG_DDR_POWER_DOWN_PHY_VREF
-/* ddr detection */
-#define CONFIG_DDR_SIZE_AUTO_DETECT		0 //0:disable, 1:enable
 /* ddr functions */
 #define CONFIG_CMD_DDR_D2PLL			0 //0:disable, 1:enable. d2pll cmd
 #define CONFIG_CMD_DDR_TEST				0 //0:disable, 1:enable. ddrtest cmd
+#define CONFIG_DDR_LOW_POWER			0 //0:disable, 1:enable. ddr clk gate for lp
+#define CONFIG_DDR_ZQ_PD				0 //0:disable, 1:enable. ddr zq power down
+#define CONFIG_DDR_USE_EXT_VREF			0 //0:disable, 1:enable. ddr use external vref
 
 /* storage: emmc/nand/sd */
 #define	CONFIG_STORE_COMPATIBLE 1

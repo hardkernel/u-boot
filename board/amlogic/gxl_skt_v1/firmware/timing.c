@@ -300,7 +300,11 @@ ddr_set_t __ddr_setting = {
 	.ddr1_addrmap			= {0},
 	.ddr_2t_mode			= 0,
 	.ddr_full_test			= CONFIG_DDR_FULL_TEST,
-	.ddr_size_detect		= CONFIG_DDR_SIZE_AUTO_DETECT,
+#if (0 == CONFIG_DDR_SIZE)
+	.ddr_size_detect		= 1,
+#else
+	.ddr_size_detect		= 0,
+#endif
 	.ddr_drv				= CFG_DDR3_DRV,
 	.ddr_odt				= CFG_DDR3_ODT,
 

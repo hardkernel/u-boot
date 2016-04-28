@@ -9,6 +9,7 @@
 #define CONFIG_DDR0_16BIT					1
 #define CONFIG_DDR0_RANK0					2
 #define CONFIG_DDR0_RANK01					3
+/* CONFIG_DDR_CHL_AUTO mode support RANK0 and RANK0+1 mode auto detect */
 #define CONFIG_DDR_CHL_AUTO					0xF
 
 #define CFG_DDR_BASE_ADDR					0X0
@@ -65,9 +66,33 @@
 											(DDR_FUNC_D2PLL)
 */
 
+/* d2pll support */
 #ifndef CONFIG_CMD_DDR_D2PLL
 #define CONFIG_CMD_DDR_D2PLL				0
 #endif
 #define DDR_FUNC_D2PLL						(CONFIG_CMD_DDR_D2PLL<<0)
 
-#define DDR_FUNC							(DDR_FUNC_D2PLL)
+/* ddr low power function support */
+#ifndef CONFIG_DDR_LOW_POWER
+#define CONFIG_DDR_LOW_POWER				0
+#endif
+#define DDR_FUNC_LP							(CONFIG_DDR_LOW_POWER<<1)
+
+/* ddr zq power down support */
+#ifndef CONFIG_DDR_ZQ_PD
+#define CONFIG_DDR_ZQ_PD					0
+#endif
+#define DDR_FUNC_ZQ_PD						(CONFIG_DDR_ZQ_PD<<2)
+
+/* ddr vref function */
+#ifndef CONFIG_DDR_USE_EXT_VREF
+#define CONFIG_DDR_USE_EXT_VREF				0
+#endif
+#define DDR_FUNC_EXT_VREF					(CONFIG_DDR_USE_EXT_VREF<<3)
+
+#define DDR_FUNC							(DDR_FUNC_D2PLL		| \
+											DDR_FUNC_LP			| \
+											DDR_FUNC_ZQ_PD		| \
+											DDR_FUNC_EXT_VREF	| \
+											(1 << 31) 			\
+											)

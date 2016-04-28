@@ -331,7 +331,11 @@ ddr_set_t __ddr_setting = {
 	.ddr1_addrmap			= {0},
 	.ddr_2t_mode			= 1,
 	.ddr_full_test			= CONFIG_DDR_FULL_TEST,
-	.ddr_size_detect		= CONFIG_DDR_SIZE_AUTO_DETECT,
+#if (0 == CONFIG_DDR_SIZE)
+	.ddr_size_detect		= 1,
+#else
+	.ddr_size_detect		= 0,
+#endif
 	.ddr_drv				= CFG_DDR_DRV,
 	.ddr_odt				= CFG_DDR_ODT,
 
@@ -425,7 +429,7 @@ ddr_set_t __ddr_setting = {
 	.t_pctl0_dfiodtcfg1		= (0x0 | (0x6 << 16)),
 
 	.t_pctl0_dfilpcfg0		= ( 1 | (3 << 4) | (1 << 8) | (13 << 12) | (7 <<16) | (1 <<24) | ( 3 << 28)),
-	.t_pub_acbdlr0			= 0x18,  //2015.09.21 add for  CK0 delay fine tune
+	.t_pub_acbdlr0			= 0,  //add for  CK0 delay fine tune
 #if ( CONFIG_DDR_TYPE == CONFIG_DDR_TYPE_LPDDR3)
 	.t_pub_aclcdlr			= 0x0,
 #else
