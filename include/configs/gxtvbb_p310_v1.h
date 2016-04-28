@@ -104,12 +104,11 @@
 		"setenv bootargs rootfstype=ramfs init=/init "\
 		"console=ttyS0,115200 no_console_suspend "\
 		"earlyprintk=aml-uart,0xc81004c0 "\
-		"androidboot.selinux=disabled "\
+		"androidboot.selinux=enforcing "\
 		"logo=${display_layer},loaded,${fb_addr} "\
 		"vout=${outputmode},enable "\
 		"osd_reverse=${osd_reverse} video_reverse=${video_reverse} "\
 		"jtag=${jtag} "\
-		"androidboot.selinux=enforcing "\
 		"androidboot.firstboot=${firstboot}; "\
 		"run cmdline_keys; "\
 		"\0"\

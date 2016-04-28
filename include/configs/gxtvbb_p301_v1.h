@@ -116,7 +116,7 @@
 		"setenv bootargs rootfstype=ramfs init=/init "\
 		"console=ttyS0,115200 no_console_suspend "\
 		"earlyprintk=aml-uart,0xc81004c0 "\
-		"androidboot.selinux=disabled "\
+		"androidboot.selinux=enforcing "\
 		"logo=${display_layer},loaded,${fb_addr} "\
 		"vout=${outputmode},enable "\
 		"panel_type=${panel_type} hdmitx= "\
@@ -125,7 +125,6 @@
 		"jtag=${jtag} "\
 		"ledmode=${ledmode} "\
 		"ramoops.pstore_en=1 ramoops.record_size=0x8000 ramoops.console_size=0x4000 "\
-		"androidboot.selinux=enforcing "\
 		"androidboot.firstboot=${firstboot}; "\
 		"setenv bootargs ${bootargs} androidboot.hardware=amlogic;"\
 		"run cmdline_keys; "\
