@@ -451,3 +451,43 @@ phys_size_t get_effective_memsize(void)
 	return (((readl(AO_SEC_GP_CFG0)) & 0xFFFF0000) << 4);
 #endif
 }
+
+#ifdef CONFIG_MULTI_DTB
+int checkhw(char * name)
+{
+	unsigned int ddr_size=0;
+	char loc_name[64] = {0};
+	int i;
+	for (i=0; i<CONFIG_NR_DRAM_BANKS; i++) {
+		ddr_size += gd->bd->bi_dram[i].size;
+	}
+#if defined(CONFIG_SYS_MEM_TOP_HIDE)
+	ddr_size += CONFIG_SYS_MEM_TOP_HIDE;
+#endif
+	switch (ddr_size) {
+		case 0x80000000:
+			strcpy(loc_name, "gxl_p212_2g\0");
+			break;
+		case 0x40000000:
+			strcpy(loc_name, "gxl_p212_1g\0");
+			break;
+		case 0x2000000:
+			strcpy(loc_name, "gxl_p212_512m\0");
+			break;
+		default:
+			//printf("DDR size: 0x%x, multi-dt doesn't support\n", ddr_size);
+			strcpy(loc_name, "gxl_p212_unsupport");
+			break;
+	}
+	strcpy(name, loc_name);
+	setenv("aml_dt", loc_name);
+	return 0;
+}
+#endif
+
+const char * const _env_args_reserve_[] =
+{
+		"aml_dt",
+
+		NULL//Keep NULL be last to tell END
+};
