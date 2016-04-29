@@ -34,13 +34,15 @@
 #define BLOCK_DATA            (0<<6)
 #define SINGLE_DATA           (1<<6)
 #define IW7019_DEV_ADDR        1
-#define IW7019_REG_BRIGHTNESS  0x01
+#define IW7019_REG_BRIGHTNESS      0x01
+#define IW7019_REG_BRIGHTNESS_CHK  0x00
 
 
 #define IW7019_GPIO_EN        "GPIOX_9"
 #define IW7019_GPIO_CS        "GPIOH_9"
 
 struct iw7019 {
+	unsigned char write_check;
 	int en_gpio;
 	int cs_hold_delay;
 	int cs_clk_delay;
@@ -171,7 +173,6 @@ static u8 iw7019_ini_data[IW7019_INIT_ON_SIZE] = {
 #endif
 };
 
-#if 0
 //iw7019 register read
 static int iw7019_rreg(struct spi_slave *slave, u8 addr, u8 *val)
 {
@@ -203,7 +204,6 @@ end:
 	spi_release_bus(slave);
 	return ret;
 }
-#endif
 
 //iw7019 register write
 static int iw7019_wreg(struct spi_slave *slave, u8 addr, u8 val)
@@ -264,9 +264,10 @@ static int iw7019_wregs(struct spi_slave *slave, u8 addr, u8 *val, int len)
 		udelay(bl_iw7019->cs_clk_delay);
 
 	tbuf[0] = NORMAL_MSG | BLOCK_DATA | IW7019_DEV_ADDR;
-	tbuf[1] = addr & 0x7f;
-	size = (len + 2) * 8;
-	memcpy(&tbuf[2], val, len);
+	tbuf[1] = len;
+	tbuf[2] = addr & 0x7f;
+	size = (len + 3) * 8;
+	memcpy(&tbuf[3], val, len);
 	ret = spi_xfer(slave, size, tbuf, 0, 0);
 	if (bl_iw7019->cs_clk_delay)
 		udelay(bl_iw7019->cs_clk_delay);
@@ -323,25 +324,65 @@ static int iw7019_hw_init_off(struct iw7019 *bl)
 	return 0;
 }
 
+static int iw7019_reset_handler(void)
+{
+	/* disable BL_ON once */
+	LDIMPR("reset iw7019 BL_ON\n");
+	aml_lcd_gpio_set(bl_iw7019->en_gpio, 0);
+	mdelay(1000);
+	aml_lcd_gpio_set(bl_iw7019->en_gpio, 1);
+	mdelay(2);
+	iw7019_power_on_init();
+
+	return 0;
+}
+
 static int iw7019_smr(unsigned short *buf, unsigned char len)
 {
-	int i;
-	u8 val[12];
+	int i, offset, cmd_len;
+	u8 val[13];
 	int br0, br1;
+	unsigned char bri_reg;
+	unsigned char temp, reg_chk, clk_sel;
 
 	if (len != 8) {
 		LDIMERR("%s: data len %d invalid\n", __func__, len);
 		return -1;
 	}
+	if (bl_iw7019->write_check) {
+		offset = 1;
+		val[0] = 0x0f;
+		cmd_len = 13;
+		bri_reg = IW7019_REG_BRIGHTNESS_CHK;
+	} else {
+		offset = 0;
+		cmd_len = 12;
+		bri_reg = IW7019_REG_BRIGHTNESS;
+	}
 	for (i = 0; i < 4; i++) {
 		br0 = buf[i*2+0];
 		br1 = buf[i*2+1];
-		val[i*3+0] = (br0 >> 4) & 0xff; /* br0[11~4] */
-		val[i*3+1] = ((br0 & 0xf) << 4) | ((br1 >> 8) & 0xf);
+		val[i*3+offset] = (br0 >> 4) & 0xff; /* br0[11~4] */
+		val[i*3+offset+1] = ((br0 & 0xf) << 4) | ((br1 >> 8) & 0xf);
 		/* br0[3~0]|br1[11~8] */
-		val[i*3+2] = br1 & 0xff; /* br1[7~0] */
+		val[i*3+offset+2] = br1 & 0xff; /* br1[7~0] */
 	}
-	iw7019_wregs(bl_iw7019->spi, IW7019_REG_BRIGHTNESS, val, ARRAY_SIZE(val));
+	iw7019_wregs(bl_iw7019->spi, bri_reg, val, cmd_len);
+
+	if (bl_iw7019->write_check) { /* brightness write check */
+		iw7019_rreg(bl_iw7019->spi, 0x00, &reg_chk);
+		for (i = 1; i < 3; i++) {
+			iw7019_rreg(bl_iw7019->spi, 0x00, &temp);
+			if (temp != reg_chk)
+				break;
+		}
+		clk_sel = (reg_chk >> 1) & 0x3;
+		if ((reg_chk == 0xff) || (clk_sel == 0x1) || (clk_sel == 0x2)) {
+			LDIMPR("%s: spi write failed, 0x00=0x%02x\n",
+				__func__, reg_chk);
+			iw7019_reset_handler();
+		}
+	}
 
 	return 0;
 }
@@ -381,6 +422,7 @@ static int iw7019_config_load_from_dts(char *dt_addr)
 	unsigned char cmd_size;
 	int i, j;
 
+	bl_iw7019->write_check = 0;
 	bl_iw7019->en_gpio = aml_lcd_gpio_name_map_num(IW7019_GPIO_EN);
 	bl_iw7019->cs_hold_delay = 0;
 	bl_iw7019->cs_clk_delay = 0;
@@ -409,6 +451,14 @@ static int iw7019_config_load_from_dts(char *dt_addr)
 		LDIMPR("iw7019 cs_hold_delay=%dus, cs_clk_delay=%dus\n",
 			bl_iw7019->cs_hold_delay, bl_iw7019->cs_clk_delay);
 	}
+
+	propdata = (char *)fdt_getprop(dt_addr, child_offset, "spi_write_check", NULL);
+	if (propdata == NULL)
+		LDIMERR("failed to get spi_write_check\n");
+	else
+		bl_iw7019->write_check = (unsigned char)(be32_to_cpup((u32*)propdata));
+	if (lcd_debug_print_flag)
+		LDIMPR("iw7019 write_check=%d\n", bl_iw7019->write_check);
 
 	propdata = (char *)fdt_getprop(dt_addr, child_offset, "dim_max_min", NULL);
 	if (propdata == NULL) {
