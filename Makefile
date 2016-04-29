@@ -876,6 +876,7 @@ ifeq ($(CONFIG_NEED_BL32), y)
 FIP_BL32 := $(notdir $(shell find $(FIP_FOLDER_SOC) -name "bl32.$(BL3X_SUFFIX)"))
 ifeq ($(FIP_BL32), bl32.$(BL3X_SUFFIX))
 FIP_ARGS += --bl32 $(FIP_FOLDER_SOC)/bl32.$(BL3X_SUFFIX)
+FIP_BL32_PROCESS = --bl32 $(FIP_FOLDER_SOC)/bl32.$(BL3X_SUFFIX).enc
 endif
 endif
 FIP_ARGS += --bl33 $(FIP_FOLDER_SOC)/bl33.bin
@@ -938,7 +939,6 @@ ifeq ($(SOC),gxl)
 	$(Q)$(FIP_FOLDER_SOC)/aml_encrypt_$(SOC) --bl3enc  --input $(FIP_FOLDER_SOC)/bl31.$(BL3X_SUFFIX)
 ifeq ($(FIP_BL32), bl32.$(BL3X_SUFFIX))
 	$(Q)$(FIP_FOLDER_SOC)/aml_encrypt_$(SOC) --bl3enc  --input $(FIP_FOLDER_SOC)/bl32.$(BL3X_SUFFIX)
-FIP_BL32_PROCESS = --bl32 $(FIP_FOLDER_SOC)/bl32.$(BL3X_SUFFIX).enc
 endif
 	$(Q)$(FIP_FOLDER_SOC)/aml_encrypt_$(SOC) --bl3enc  --input $(FIP_FOLDER_SOC)/bl33.bin
 	$(Q)$(FIP_FOLDER_SOC)/aml_encrypt_$(SOC) --bl2sig  --input $(FIP_FOLDER_SOC)/bl2_new.bin   --output $(FIP_FOLDER_SOC)/bl2.n.bin.sig
