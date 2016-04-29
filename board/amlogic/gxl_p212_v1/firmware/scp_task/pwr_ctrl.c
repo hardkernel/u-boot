@@ -37,9 +37,6 @@ void pwm_set_voltage(unsigned int id, unsigned int voltage)
 {
 	int to;
 
-	uart_puts("set vddee to 0x");
-	uart_put_hex(voltage, 16);
-	uart_puts("mv\n");
 	for (to = 0; to < ARRAY_SIZE(pwm_voltage_table); to++) {
 		if (pwm_voltage_table[to][1] >= voltage) {
 			break;
@@ -50,10 +47,16 @@ void pwm_set_voltage(unsigned int id, unsigned int voltage)
 	}
 	switch (id) {
 	case pwm_b:
+		uart_puts("set vddee to 0x");
+		uart_put_hex(pwm_voltage_table[to][1], 16);
+		uart_puts("mv\n");
 		P_PWM_PWM_B = pwm_voltage_table[to][0];
 		break;
 
 	case pwm_d:
+		uart_puts("set vcck to 0x");
+		uart_put_hex(pwm_voltage_table[to][1], 16);
+		uart_puts("mv\n");
 		P_PWM_PWM_D = pwm_voltage_table[to][0];
 		break;
 	default:
@@ -78,8 +81,9 @@ static void vcck_ctrl(unsigned int ctrl)
 	if (ctrl == ON) {
 		aml_update_bits(PREG_PAD_GPIO0_EN_N, 1 << 25, 0);
 		aml_update_bits(PREG_PAD_GPIO0_O, 1 << 25, 1 << 25);
-		/* vcc = 1.1v resume*/
-		pwm_set_voltage(pwm_d, 1100);
+		/* after power on vcck, should init vcck*/
+		_udelay(5000);
+		pwm_set_voltage(pwm_d, CONFIG_VCCK_INIT_VOLTAGE);
 	} else {
 		aml_update_bits(PREG_PAD_GPIO0_EN_N, 1 << 25, 0);
 		aml_update_bits(PREG_PAD_GPIO0_O, 1 << 25, 0);
