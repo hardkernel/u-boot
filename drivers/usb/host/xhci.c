@@ -363,6 +363,9 @@ static int xhci_set_configuration(struct usb_device *udev)
 			cpu_to_le32(((0 & MAX_BURST_MASK) << MAX_BURST_SHIFT) |
 			((3 & ERROR_COUNT_MASK) << ERROR_COUNT_SHIFT));
 
+		if (endpt_desc->bInterval > 0)
+			ep_ctx[ep_index]->ep_info |= cpu_to_le32((endpt_desc->bInterval-1)<<16);
+
 		trb_64 = (uintptr_t)
 				virt_dev->eps[ep_index].ring->enqueue;
 		ep_ctx[ep_index]->deq = cpu_to_le64(trb_64 |
@@ -866,7 +869,12 @@ submit_int_msg(struct usb_device *udev, unsigned long pipe, void *buffer,
 	 * TODO: Not addressing any interrupt type transfer requests
 	 * Add support for it later.
 	 */
-	return -EINVAL;
+	if (usb_pipetype(pipe) != PIPE_INTERRUPT) {
+		printf("non-interrupt pipe (type=%lu)", usb_pipetype(pipe));
+		return -EINVAL;
+	}
+
+	return xhci_bulk_tx(udev, pipe, length, buffer);
 }
 
 /**
