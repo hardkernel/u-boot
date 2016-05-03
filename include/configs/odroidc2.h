@@ -89,7 +89,7 @@
 		"console=ttyS0,115200 "				\
 		"hdmimode=720p60hz hdmitx=cecf "		\
 		"logo=osd1,loaded,0x3f800000,720p60hz "		\
-		"androidboot.hardware=odroidc2 androidboot.serialno=${fbt_id#} "	\
+		"androidboot.hardware=odroidc2 "	\
 		"androidboot.selinux=disabled  \0"		\
 	"bootcmd=cfgload; showlogo ${hdmimode}; movi read dtb 0 ${dtbaddr}; movi read boot 0 ${loadaddr}; booti ${loadaddr} - ${dtbaddr}\0"
 
