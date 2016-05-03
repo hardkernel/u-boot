@@ -188,6 +188,9 @@ void board_identity(void)
 	char __serialno[17];
 	int offset, length;
 
+	if (getenv("fbt_id#") != NULL)
+		return;
+
 	/* S/N */
 	offset = 20;
 	length = 16;
