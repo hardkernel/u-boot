@@ -198,7 +198,12 @@ void board_identity(void)
 	__serialno[16] = '\0';
 
 	setenv("fbt_id#", __serialno);
-	run_command("saveenv", 1);
+
+	/* update serialno env in bootargs */
+	run_command("setenv bootargs ${bootargs} androidboot.serialno=${fbt_id#}", 1);
+
+	/* saveenv */
+	run_command("saveenv", 0);
 }
 
 #if CONFIG_AML_SD_EMMC
