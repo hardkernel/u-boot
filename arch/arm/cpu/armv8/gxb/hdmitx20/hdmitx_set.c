@@ -177,7 +177,7 @@ static void hdmitx_hw_init(void)
 	hdmitx_wr_reg(HDMITX_TOP_SW_RESET,  0);
 	_udelay(200);
 	/* Enable internal pixclk, tmds_clk, spdif_clk, i2s_clk, cecclk */
-	hdmitx_wr_reg(HDMITX_TOP_CLK_CNTL,  0x0000003f);
+	hdmitx_wr_reg(HDMITX_TOP_CLK_CNTL,  0x000000ff);
 	hdmitx_wr_reg(HDMITX_DWC_MC_LOCKONCLOCK, 0xff);
 
 	hdmitx_wr_reg(HDMITX_DWC_MC_CLKDIS, 0x00);
