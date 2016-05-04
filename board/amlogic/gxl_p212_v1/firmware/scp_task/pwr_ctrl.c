@@ -68,11 +68,11 @@ void pwm_set_voltage(unsigned int id, unsigned int voltage)
 static void hdmi_5v_ctrl(unsigned int ctrl)
 {
 	if (ctrl == ON) {
+		/* VCC5V ON GPIOH_3 output mode*/
 		aml_update_bits(PREG_PAD_GPIO1_EN_N, 1 << 23, 0);
-		aml_update_bits(PREG_PAD_GPIO1_O, 1 << 23, 0);
 	} else {
-		aml_update_bits(PREG_PAD_GPIO1_EN_N, 1 << 23, 0);
-		aml_update_bits(PREG_PAD_GPIO1_O, 1 << 23, 1 << 23);
+		/* VCC5V OFF GPIOH_3 input mode*/
+		aml_update_bits(PREG_PAD_GPIO1_EN_N, 1 << 23, 1 << 23);
 	}
 }
 /*GPIODV_25*/
@@ -108,10 +108,6 @@ static void power_off_at_24M(void)
 	/* LED GPIODV_24*/
 	aml_update_bits(PREG_PAD_GPIO0_EN_N, 1 << 24, 0);
 	aml_update_bits(PREG_PAD_GPIO0_O, 1 << 24, 0);
-
-	/* VCC5V OFF */
-	aml_update_bits(PREG_PAD_GPIO1_EN_N, 1 << 23, 1 << 23); //GPIOH_3 input mode
-
 }
 
 static void power_on_at_24M(void)
@@ -119,8 +115,6 @@ static void power_on_at_24M(void)
 	aml_update_bits(PREG_PAD_GPIO0_EN_N, 1 << 24, 0);
 	aml_update_bits(PREG_PAD_GPIO0_O, 1 << 24, 1 << 24);
 
-	/* VCC5V ON */
-	aml_update_bits(PREG_PAD_GPIO1_EN_N, 1 << 23, 0); //GPIOH_3 output mode
 }
 
 static void power_off_at_32k(void)
