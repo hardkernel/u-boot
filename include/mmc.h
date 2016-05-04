@@ -273,6 +273,8 @@ struct mmc_ops {
 	int (*init)(struct mmc *mmc);
 	int (*getcd)(struct mmc *mmc);
 	int (*getwp)(struct mmc *mmc);
+	int (*calibration)(struct mmc *mmc);
+	int (*refix)(struct mmc *mmc);
 };
 
 struct mmc_config {
@@ -324,6 +326,8 @@ struct mmc {
 	char preinit;		/* start init as early as possible */
 	uint op_cond_response;	/* the response byte from the last op_cond */
 	int ddr_mode;
+	unsigned char calout[20][20];
+	int refix;
 };
 
 int mmc_register(struct mmc *mmc);

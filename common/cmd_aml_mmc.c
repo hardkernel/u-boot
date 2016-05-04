@@ -515,8 +515,8 @@ int do_amlmmcops(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 #ifdef CONFIG_SECURITYKEY
                         if (strcmp(argv[1], "key") == 0) {
                                 struct mmc* mmc;
-                                char *name = "logo";
-                                int dev = find_dev_num_by_partition_name (name);
+                                //char *name = "logo";
+                                int dev = CONFIG_SYS_MMC_BOOT_DEV;
                                 mmc = find_mmc_device(dev);
                                 if (!mmc) {
                                         printf("device %d is invalid\n",dev);

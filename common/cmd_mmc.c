@@ -89,7 +89,7 @@ static void print_mmcinfo(struct mmc *mmc)
 	printf("High Capacity: %s\n", mmc->high_capacity ? "Yes" : "No");
 	puts("Capacity: ");
 	print_size(mmc->capacity, "\n");
-
+	printf("mmc clock: %u\n", mmc->clock);
 	printf("Bus Width: %d-bit%s\n", mmc->bus_width,
 			mmc->ddr_mode ? " DDR" : "");
 }

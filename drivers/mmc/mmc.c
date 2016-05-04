@@ -821,6 +821,15 @@ static void mmc_set_ios(struct mmc *mmc)
 		mmc->cfg->ops->set_ios(mmc);
 }
 
+int aml_emmc_refix(struct mmc *mmc)
+{
+	mmc->refix = 1;
+	mmc->cfg->ops->calibration(mmc);
+	mmc->cfg->ops->refix(mmc);
+	mmc->refix = 0;
+	return 0;
+}
+
 void mmc_set_clock(struct mmc *mmc, uint clock)
 {
 	if (clock > mmc->cfg->f_max)
@@ -1225,6 +1234,19 @@ static int mmc_startup(struct mmc *mmc)
 	}
 
 	mmc_set_clock(mmc, mmc->tran_speed);
+
+	/* refix emmc DDR52 mode*/
+	if (mmc->ddr_mode) {
+		if (!IS_SD(mmc)) {
+			err = aml_emmc_refix(mmc);
+			if (!err)
+				printf("[%s] mmc refix success\n", __func__);
+			else {
+				printf("[%s] mmc refix error\n", __func__);
+				mmc_set_clock(mmc, 26000000);
+			}
+		}
+	}
 
 	/* Fix the block length for DDR mode */
 	if (mmc->ddr_mode) {
