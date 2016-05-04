@@ -464,9 +464,10 @@ union xhci_trb *xhci_wait_for_event(struct xhci_ctrl *ctrl, trb_type expected)
 		return NULL;
 
 	printf("XHCI timeout on event type %d... cannot recover.\n", expected);
-	BUG();
+	return NULL;
+	/*BUG();*/
 }
-
+#if 0
 /*
  * Stops transfer processing for an endpoint and throws away all unprocessed
  * TRBs by setting the xHC's dequeue pointer to our enqueue pointer. The next
@@ -506,6 +507,7 @@ static void abort_td(struct usb_device *udev, int ep_index)
 		event->event_cmd.status)) != COMP_SUCCESS);
 	xhci_acknowledge_event(ctrl);
 }
+#endif
 
 static void record_transfer_result(struct usb_device *udev,
 				   union xhci_trb *event, int length)
@@ -708,7 +710,7 @@ int xhci_bulk_tx(struct usb_device *udev, unsigned long pipe,
 	event = xhci_wait_for_event(ctrl, TRB_TRANSFER);
 	if (!event) {
 		debug("XHCI bulk transfer timed out, aborting...\n");
-		abort_td(udev, ep_index);
+		/*abort_td(udev, ep_index);*/
 		udev->status = USB_ST_NAK_REC;  /* closest thing to a timeout */
 		udev->act_len = 0;
 		return -ETIMEDOUT;
@@ -932,7 +934,7 @@ int xhci_ctrl_tx(struct usb_device *udev, unsigned long pipe,
 
 abort:
 	debug("XHCI control transfer timed out, aborting...\n");
-	abort_td(udev, ep_index);
+	/*abort_td(udev, ep_index);*/
 	udev->status = USB_ST_NAK_REC;
 	udev->act_len = 0;
 	return -ETIMEDOUT;
