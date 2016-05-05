@@ -44,6 +44,8 @@
 struct iw7019 {
 	unsigned char write_check;
 	int en_gpio;
+	int en_on;
+	int en_off;
 	int cs_hold_delay;
 	int cs_clk_delay;
 	int cmd_size;
@@ -305,7 +307,7 @@ static int iw7019_hw_init(struct iw7019 *bl)
 {
 	struct aml_ldim_driver_s *ld_drv = aml_ldim_get_driver();
 
-	aml_lcd_gpio_set(bl->en_gpio, 1);
+	aml_lcd_gpio_set(bl->en_gpio, bl->en_on);
 	mdelay(2);
 	ld_drv->pinmux_ctrl(1);
 	mdelay(100);
@@ -319,7 +321,7 @@ static int iw7019_hw_init_off(struct iw7019 *bl)
 	struct aml_ldim_driver_s *ld_drv = aml_ldim_get_driver();
 
 	ld_drv->pinmux_ctrl(0);
-	aml_lcd_gpio_set(bl->en_gpio, 0);
+	aml_lcd_gpio_set(bl->en_gpio, bl->en_off);
 
 	return 0;
 }
@@ -328,9 +330,9 @@ static int iw7019_reset_handler(void)
 {
 	/* disable BL_ON once */
 	LDIMPR("reset iw7019 BL_ON\n");
-	aml_lcd_gpio_set(bl_iw7019->en_gpio, 0);
+	aml_lcd_gpio_set(bl_iw7019->en_gpio, bl_iw7019->en_off);
 	mdelay(1000);
-	aml_lcd_gpio_set(bl_iw7019->en_gpio, 1);
+	aml_lcd_gpio_set(bl_iw7019->en_gpio, bl_iw7019->en_on);
 	mdelay(2);
 	iw7019_power_on_init();
 
@@ -419,11 +421,15 @@ static int iw7019_config_load_from_dts(char *dt_addr)
 	int parent_offset;
 	int child_offset;
 	char *propdata;
+	char *en_gpio_str;
 	unsigned char cmd_size;
 	int i, j;
 
 	bl_iw7019->write_check = 0;
-	bl_iw7019->en_gpio = aml_lcd_gpio_name_map_num(IW7019_GPIO_EN);
+	en_gpio_str = IW7019_GPIO_EN;
+	bl_iw7019->en_gpio = aml_lcd_gpio_name_map_num(en_gpio_str);
+	bl_iw7019->en_on = 1;
+	bl_iw7019->en_off = 0;
 	bl_iw7019->cs_hold_delay = 0;
 	bl_iw7019->cs_clk_delay = 0;
 
@@ -438,6 +444,27 @@ static int iw7019_config_load_from_dts(char *dt_addr)
 	if (child_offset < 0) {
 		LDIMERR("not find /spicc/iw7019 node: %s\n", fdt_strerror(child_offset));
 		return -1;
+	}
+
+	propdata = (char *)fdt_getprop(dt_addr, child_offset, "en_gpio_name", NULL);
+	if (propdata == NULL) {
+		LDIMERR("failed to get en_gpio_name\n");
+	} else {
+		en_gpio_str = propdata;
+		bl_iw7019->en_gpio = aml_lcd_gpio_name_map_num(en_gpio_str);
+	}
+	if (lcd_debug_print_flag)
+		LDIMPR("iw7019 en_gpio=%s(%d)\n", en_gpio_str, bl_iw7019->en_gpio);
+	propdata = (char *)fdt_getprop(dt_addr, child_offset, "en_gpio_on_off", NULL);
+	if (propdata == NULL) {
+		LDIMERR("failed to get en_gpio_on_off\n");
+	} else {
+		bl_iw7019->en_on = be32_to_cpup((u32*)propdata);
+		bl_iw7019->en_off = be32_to_cpup((((u32*)propdata)+1));
+	}
+	if (lcd_debug_print_flag) {
+		LDIMPR("iw7019 en_on=%d, en_off=%d\n",
+			bl_iw7019->en_on, bl_iw7019->en_off);
 	}
 
 	propdata = (char *)fdt_getprop(dt_addr, child_offset, "spi_cs_delay", NULL);
