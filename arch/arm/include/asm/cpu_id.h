@@ -19,9 +19,6 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-#include <asm/arch/secure_apb.h>
-#include <asm/arch/io.h>
-
 #define MESON_CPU_MAJOR_ID_M6		0x16
 #define MESON_CPU_MAJOR_ID_M6TV		0x17
 #define MESON_CPU_MAJOR_ID_M6TVL	0x18

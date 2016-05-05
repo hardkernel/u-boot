@@ -20,6 +20,8 @@
 */
 
 #include <asm/cpu_id.h>
+#include <asm/arch/secure_apb.h>
+#include <asm/arch/io.h>
 
 cpu_id_t get_cpu_id(void) {
 	cpu_id_t cpu_id;
