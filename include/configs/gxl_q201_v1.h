@@ -1,6 +1,6 @@
 
 /*
- * include/configs/gxl_p212_v1.h
+ * include/configs/gxl_q201_v1.h
  *
  * Copyright (C) 2015 Amlogic, Inc. All rights reserved.
  *
@@ -19,8 +19,8 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-#ifndef __GXL_P212_V1_H__
-#define __GXL_P212_V1_H__
+#ifndef __GXL_Q201_V1_H__
+#define __GXL_Q201_V1_H__
 
 #ifndef __SUSPEND_FIRMWARE__
 #include <asm/arch/cpu.h>

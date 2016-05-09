@@ -39,7 +39,7 @@
 #endif
 #include <asm/arch/eth_setup.h>
 #include <phy.h>
-
+#include <asm/cpu_id.h>
 DECLARE_GLOBAL_DATA_PTR;
 
 //new static eth setup
@@ -426,9 +426,11 @@ int board_late_init(void){
 #ifdef CONFIG_AML_V2_FACTORY_BURN
 	aml_try_factory_sdcard_burning(0, gd->bd);
 #endif// #ifdef CONFIG_AML_V2_FACTORY_BURN
-
 	if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_GXL) {
 		setenv("maxcpus","4");
+	}
+	if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_GXM) {
+		setenv("maxcpus","8");
 	}
 	return 0;
 }
