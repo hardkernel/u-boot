@@ -142,6 +142,21 @@
 /* Bit 7:0      CR */
 #define VPP_DUMMY_DATA1                            0x1d69
 
+#define VIU_OSD1_MATRIX_CTRL 0x1a90
+#define VIU_OSD1_MATRIX_COEF00_01 0x1a91
+#define VIU_OSD1_MATRIX_COEF02_10 0x1a92
+#define VIU_OSD1_MATRIX_COEF11_12 0x1a93
+#define VIU_OSD1_MATRIX_COEF20_21 0x1a94
+#define VIU_OSD1_MATRIX_COLMOD_COEF42 0x1a95
+#define VIU_OSD1_MATRIX_OFFSET0_1 0x1a96
+#define VIU_OSD1_MATRIX_OFFSET2 0x1a97
+#define VIU_OSD1_MATRIX_PRE_OFFSET0_1 0x1a98
+#define VIU_OSD1_MATRIX_PRE_OFFSET2 0x1a99
+#define VIU_OSD1_MATRIX_COEF22_30 0x1a9d
+#define VIU_OSD1_MATRIX_COEF31_32 0x1a9e
+#define VIU_OSD1_MATRIX_COEF40_41 0x1a9f
+
+#define VIU_OSD2_CTRL_STAT2				0x1a4d
 /* ********************************
  * register access api
  * ********************************* */

@@ -31,6 +31,7 @@
 #ifdef CONFIG_AML_VPU
 #include <vpu.h>
 #endif
+#include <vpp.h>
 #ifdef CONFIG_AML_V2_FACTORY_BURN
 #include <amlogic/aml_v2_burning.h>
 #endif// #ifdef CONFIG_AML_V2_FACTORY_BURN
@@ -368,6 +369,7 @@ int board_init(void)
 #ifdef CONFIG_AML_VPU
 	vpu_probe();
 #endif
+	vpp_init();
 #ifndef CONFIG_AML_IRDETECT_EARLY
 #ifdef CONFIG_AML_HDMITX20
 	hdmi_tx_set_hdmi_5v();

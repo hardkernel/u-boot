@@ -19,6 +19,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
+#include <asm/cpu_id.h>
 #include <config.h>
 #include <common.h>
 #include <vpp.h>
@@ -89,6 +90,68 @@ static void vpp_set_matrix_ycbcr2rgb(int vd1_or_vd2_or_post, int mode)
 	}
 }
 
+#define COEFF_NORM(a) ((int)((((a) * 2048.0) + 1) / 2))
+#define MATRIX_5x3_COEF_SIZE 24
+static int RGB709_to_YUV709l_coeff[MATRIX_5x3_COEF_SIZE] = {
+	0, 0, 0, /* pre offset */
+	COEFF_NORM(0.181873),	COEFF_NORM(0.611831),	COEFF_NORM(0.061765),
+	COEFF_NORM(-0.100251),	COEFF_NORM(-0.337249),	COEFF_NORM(0.437500),
+	COEFF_NORM(0.437500),	COEFF_NORM(-0.397384),	COEFF_NORM(-0.040116),
+	0, 0, 0, /* 10'/11'/12' */
+	0, 0, 0, /* 20'/21'/22' */
+	0, 512, 512, /* offset */
+	0, 0, 0 /* mode, right_shift, clip_en */
+};
+
+static void set_osd1_rgb2yuv(bool on)
+{
+	int *m = NULL;
+
+	m = RGB709_to_YUV709l_coeff;
+	/* osd matrix, VPP_MATRIX_0 */
+	vpp_reg_write(VIU_OSD1_MATRIX_PRE_OFFSET0_1,
+		((m[0] & 0xfff) << 16) | (m[1] & 0xfff));
+	vpp_reg_write(VIU_OSD1_MATRIX_PRE_OFFSET2,
+		m[2] & 0xfff);
+	vpp_reg_write(VIU_OSD1_MATRIX_COEF00_01,
+		((m[3] & 0x1fff) << 16) | (m[4] & 0x1fff));
+	vpp_reg_write(VIU_OSD1_MATRIX_COEF02_10,
+		((m[5] & 0x1fff) << 16) | (m[6] & 0x1fff));
+	vpp_reg_write(VIU_OSD1_MATRIX_COEF11_12,
+		((m[7] & 0x1fff) << 16) | (m[8] & 0x1fff));
+	vpp_reg_write(VIU_OSD1_MATRIX_COEF20_21,
+		((m[9] & 0x1fff) << 16) | (m[10] & 0x1fff));
+	if (m[21]) {
+		vpp_reg_write(VIU_OSD1_MATRIX_COEF22_30,
+			((m[11] & 0x1fff) << 16) | (m[12] & 0x1fff));
+		vpp_reg_write(VIU_OSD1_MATRIX_COEF31_32,
+			((m[13] & 0x1fff) << 16) | (m[14] & 0x1fff));
+		vpp_reg_write(VIU_OSD1_MATRIX_COEF40_41,
+			((m[15] & 0x1fff) << 16) | (m[16] & 0x1fff));
+		vpp_reg_write(VIU_OSD1_MATRIX_COLMOD_COEF42,
+			m[17] & 0x1fff);
+	} else {
+		vpp_reg_write(VIU_OSD1_MATRIX_COEF22_30,
+			(m[11] & 0x1fff) << 16);
+	}
+	vpp_reg_write(VIU_OSD1_MATRIX_OFFSET0_1,
+		((m[18] & 0xfff) << 16) | (m[19] & 0xfff));
+	vpp_reg_write(VIU_OSD1_MATRIX_OFFSET2,
+		m[20] & 0xfff);
+	vpp_reg_setb(VIU_OSD1_MATRIX_COLMOD_COEF42,
+		m[21], 30, 2);
+	vpp_reg_setb(VIU_OSD1_MATRIX_COLMOD_COEF42,
+		m[22], 16, 3);
+	/* 23 reserved for clipping control */
+	vpp_reg_setb(VIU_OSD1_MATRIX_CTRL, on, 0, 1);
+	vpp_reg_setb(VIU_OSD1_MATRIX_CTRL, 0, 1, 1);
+
+	/* set osd2 output range to full */
+	vpp_reg_setb(VIU_OSD2_CTRL_STAT2, 1, 3, 1);
+}
+
+
+
 #if ((defined CONFIG_AML_HDMITX20) || (defined CONFIG_AML_CVBS))
 static void vpp_set_post_matrix_rgb2ycbcr (void)
 {
@@ -97,30 +160,36 @@ static void vpp_set_post_matrix_rgb2ycbcr (void)
 	vpp_reg_setb(VPP_MATRIX_CTRL, 0, 8, 2);
 	vpp_reg_setb(VPP_MATRIX_CTRL, 0, 1, 2);
 
-	/* 602 limit to rgb */
+	/* RGB -> 709F*/
+	vpp_reg_write(VPP_MATRIX_COEF00_01, 0xda02dc);
+	vpp_reg_write(VPP_MATRIX_COEF02_10, 0x4a1f8a);
+	vpp_reg_write(VPP_MATRIX_COEF11_12, 0x1e760200);
+	vpp_reg_write(VPP_MATRIX_COEF20_21, 0x2001e2f);
+	vpp_reg_write(VPP_MATRIX_COEF22, 0x1fd1);
+	vpp_reg_write(VPP_MATRIX_OFFSET0_1, 0x200);
+	vpp_reg_write(VPP_MATRIX_OFFSET2, 0x200);
 	vpp_reg_write(VPP_MATRIX_PRE_OFFSET0_1, 0x0);
 	vpp_reg_write(VPP_MATRIX_PRE_OFFSET2, 0x0);
-
-	//0.257     0.504   0.098
-	//-0.148    -0.291  0.439
-	//0.439     -0.368 -0.071
-	vpp_reg_write(VPP_MATRIX_COEF00_01, (0x107 << 16) | 0x204);
-	vpp_reg_write(VPP_MATRIX_COEF02_10, (0x64 << 16) | 0x1f68);
-	vpp_reg_write(VPP_MATRIX_COEF11_12, (0x1ed6 << 16) | 0x1c2);
-	vpp_reg_write(VPP_MATRIX_COEF20_21, (0x1c2 << 16) | 0x1e87);
-	vpp_reg_write(VPP_MATRIX_COEF22, 0x1fb7);
-	vpp_reg_write(VPP_MATRIX_OFFSET0_1, (0x40 << 16) | 0x0200);
-	vpp_reg_write(VPP_MATRIX_OFFSET2, 0x0200);
-
 }
 #endif
 
 void vpp_init(void)
 {
 	VPP_PR("%s\n", __func__);
-	vpp_set_matrix_ycbcr2rgb(0, 0); /* 601 to RGB */
-	vpp_reg_write(VPP_DUMMY_DATA1, 0x0); /* set dummy data default RGB black */
-#if ((defined CONFIG_AML_HDMITX20) || (defined CONFIG_AML_CVBS))
-	vpp_set_post_matrix_rgb2ycbcr();
-#endif
+
+	if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_GXTVBB) {
+		/* 601 to RGB */
+		vpp_set_matrix_ycbcr2rgb(0, 0);
+		/* set dummy data default RGB black */
+		vpp_reg_write(VPP_DUMMY_DATA1, 0x0);
+
+	#if ((defined CONFIG_AML_HDMITX20) || (defined CONFIG_AML_CVBS))
+		vpp_set_post_matrix_rgb2ycbcr();
+	#endif
+	} else {
+		/* set dummy data default RGB black */
+		vpp_reg_write(VPP_DUMMY_DATA1, 0x8080);
+		/* osd1: rgb->yuv , osd2: yuv*/
+		set_osd1_rgb2yuv(1);
+	}
 }
