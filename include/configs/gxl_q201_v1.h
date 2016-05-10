@@ -37,7 +37,8 @@
  * platform power init config
  */
 #define CONFIG_PLATFORM_POWER_INIT
-#define CONFIG_VCCK_INIT_VOLTAGE	1120
+#define CONFIG_VCCKA_INIT_VOLTAGE	1120		// cluster_0
+#define CONFIG_VCCKB_INIT_VOLTAGE	1050		// cluster_1
 #define CONFIG_VDDEE_INIT_VOLTAGE	1000		// voltage for power up
 #define CONFIG_VDDEE_SLEEP_VOLTAGE	 850		// voltage for suspend
 

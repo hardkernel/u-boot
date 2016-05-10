@@ -60,11 +60,21 @@ static int pwm_voltage_table[][2] = {
 #define P_PIN_MUX_REG2         (*((volatile unsigned *)(0xda834400 + (0x2e << 2))))
 #define P_PIN_MUX_REG3		(*((volatile unsigned *)(0xda834400 + (0x2f << 2))))
 #define P_PIN_MUX_REG7		(*((volatile unsigned *)(0xda834400 + (0x33 << 2))))
+#define P_PIN_MUX_REG8		(*((volatile unsigned *)(0xda834400 + (0x34 << 2))))
+#define P_PIN_MUX_AO_REG	(*((volatile unsigned *)(0xc8100000 + (0x5 << 2))))
 
 #define P_PWM_MISC_REG_AB	(*((volatile unsigned *)(0xc1100000 + (0x2156 << 2))))
 #define P_PWM_PWM_B		(*((volatile unsigned *)(0xc1100000 + (0x2155 << 2))))
 #define P_PWM_MISC_REG_CD	(*((volatile unsigned *)(0xc1100000 + (0x2192 << 2))))
 #define P_PWM_PWM_D		(*((volatile unsigned *)(0xc1100000 + (0x2191 << 2))))
+
+#define P_PWM_MISC_REG_EF	(*((volatile unsigned *)(0xc1100000 + (0x21b2 << 2))))
+#define P_PWM_PWM_F		(*((volatile unsigned *)(0xc1100000 + (0x21b1 << 2))))
+
+#undef P_AO_PWM_MISC_REG_AB
+#undef P_AO_PWM_PWM_A
+#define P_AO_PWM_MISC_REG_AB	(*((volatile unsigned *)(0xc8100400 + (0x56 << 2))))
+#define P_AO_PWM_PWM_A		(*((volatile unsigned *)(0xc8100400 + (0x54 << 2))))
 
 #define P_EE_TIMER_E		(*((volatile unsigned *)(0xc1100000 + (0x2662 << 2))))
 
@@ -75,6 +85,7 @@ enum pwm_id {
     pwm_d,
     pwm_e,
     pwm_f,
+    pwm_ao_a,
 };
 
 unsigned int _get_time(void)
@@ -119,24 +130,43 @@ void pwm_init(int id)
 		P_PIN_MUX_REG2 = reg;
 		break;
 
-	case pwm_d:
-		reg = P_PWM_MISC_REG_CD;
-		reg &= ~(0x7f << 16);
-		reg |=  ((1 << 23) | (1 << 1));
-		P_PWM_MISC_REG_CD = reg;
+	case pwm_ao_a:
+		reg = P_AO_PWM_MISC_REG_AB;
+		reg &= ~(0x7f << 8);
+		reg |=  ((1 << 15) | (1 << 0));
+		P_AO_PWM_MISC_REG_AB = reg;
 		/*
 		 * default set to max voltage
 		 */
-		P_PWM_PWM_D = pwm_voltage_table[ARRAY_SIZE(pwm_voltage_table) - 1][0];
-		reg  = P_PIN_MUX_REG1;
+		P_AO_PWM_PWM_A = pwm_voltage_table[ARRAY_SIZE(pwm_voltage_table) - 1][0];
+		reg  = P_PIN_MUX_AO_REG;
 		reg &= ~(1 << 9);
-		reg &= ~(1 << 11);
-		P_PIN_MUX_REG1 = reg;
+		reg &= ~(1 << 7);
+		P_PIN_MUX_AO_REG = reg;
 
-		reg  = P_PIN_MUX_REG2;
-		reg |=  (1 << 12);		// enable PWM_D
-		P_PIN_MUX_REG2 = reg;
+		reg  = P_PIN_MUX_AO_REG;
+		reg |=  (1 << 22);		// enable PWM_AO_A
+		P_PIN_MUX_AO_REG = reg;
 		break;
+
+	case pwm_f:
+		reg = P_PWM_MISC_REG_EF;
+		reg &= ~(0x7f << 16);
+		reg |=  ((1 << 23) | (1 << 1));
+		P_PWM_MISC_REG_EF = reg;
+		/*
+		 * default set to max voltage
+		 */
+		P_PWM_PWM_F = pwm_voltage_table[ARRAY_SIZE(pwm_voltage_table) - 1][0];
+		reg  = P_PIN_MUX_REG8;
+		reg &= ~(1 << 29);
+		P_PIN_MUX_REG8 = reg;
+
+		reg  = P_PIN_MUX_REG8;
+		reg |=  (1 << 30);		// enable PWM_F
+		P_PIN_MUX_REG8 = reg;
+		break;
+
 	default:
 		break;
 	}
@@ -160,9 +190,11 @@ void pwm_set_voltage(unsigned int id, unsigned int voltage)
 	case pwm_b:
 		P_PWM_PWM_B = pwm_voltage_table[to][0];
 		break;
-
-	case pwm_d:
-		P_PWM_PWM_D = pwm_voltage_table[to][0];
+	case pwm_f:
+		P_PWM_PWM_F = pwm_voltage_table[to][0];
+		break;
+	case pwm_ao_a:
+		P_AO_PWM_PWM_A = pwm_voltage_table[to][0];
 		break;
 	default:
 		break;
@@ -173,11 +205,18 @@ void pwm_set_voltage(unsigned int id, unsigned int voltage)
 void power_init(int mode)
 {
 	pwm_init(pwm_b);
-	pwm_init(pwm_d);
-	serial_puts("set vcck to ");
-	serial_put_dec(CONFIG_VCCK_INIT_VOLTAGE);
+	pwm_init(pwm_ao_a);
+	pwm_init(pwm_f);
+	serial_puts("set vdd cpu_a to ");
+	serial_put_dec(CONFIG_VCCKA_INIT_VOLTAGE);
 	serial_puts(" mv\n");
-	pwm_set_voltage(pwm_d, CONFIG_VCCK_INIT_VOLTAGE);
+	pwm_set_voltage(pwm_ao_a, CONFIG_VCCKA_INIT_VOLTAGE);
+
+	serial_puts("set vdd cpu_b to ");
+	serial_put_dec(CONFIG_VCCKB_INIT_VOLTAGE);
+	serial_puts(" mv\n");
+	pwm_set_voltage(pwm_f, CONFIG_VCCKB_INIT_VOLTAGE);
+
 	serial_puts("set vddee to ");
 	serial_put_dec(CONFIG_VDDEE_INIT_VOLTAGE);
 	serial_puts(" mv\n");

@@ -13,15 +13,14 @@
 
 extern int pwm_voltage_table[31][2];
 
-#define P_PIN_MUX_REG3		(*((volatile unsigned *)(0xda834400 + (0x2f << 2))))
-#define P_PIN_MUX_REG7		(*((volatile unsigned *)(0xda834400 + (0x33 << 2))))
-
 #define P_PWM_MISC_REG_AB	(*((volatile unsigned *)(0xc1100000 + (0x2156 << 2))))
 #define P_PWM_PWM_B		(*((volatile unsigned *)(0xc1100000 + (0x2155 << 2))))
-#define P_PWM_MISC_REG_CD	(*((volatile unsigned *)(0xc1100000 + (0x2192 << 2))))
-#define P_PWM_PWM_D		(*((volatile unsigned *)(0xc1100000 + (0x2191 << 2))))
+
+#define P_PWM_PWM_F		(*((volatile unsigned *)(0xc1100000 + (0x21b1 << 2))))
+#define P_PWM_PWM_AO_A		(*((volatile unsigned *)(0xc8100400 + (0x54 << 2))))
 
 #define P_EE_TIMER_E		(*((volatile unsigned *)(0xc1100000 + (0x2662 << 2))))
+
 #define ON 1
 #define OFF 0
 enum pwm_id {
@@ -31,6 +30,7 @@ enum pwm_id {
     pwm_d,
     pwm_e,
     pwm_f,
+    pwm_ao_a,
 };
 
 void pwm_set_voltage(unsigned int id, unsigned int voltage)
@@ -53,11 +53,18 @@ void pwm_set_voltage(unsigned int id, unsigned int voltage)
 		P_PWM_PWM_B = pwm_voltage_table[to][0];
 		break;
 
-	case pwm_d:
-		uart_puts("set vcck to 0x");
+	case pwm_ao_a:
+		uart_puts("set vdd_cpu a to 0x");
 		uart_put_hex(pwm_voltage_table[to][1], 16);
 		uart_puts("mv\n");
-		P_PWM_PWM_D = pwm_voltage_table[to][0];
+		P_PWM_PWM_AO_A = pwm_voltage_table[to][0];
+		break;
+
+	case pwm_f:
+		uart_puts("set vdd_cpu a to 0x");
+		uart_put_hex(pwm_voltage_table[to][1], 16);
+		uart_puts("mv\n");
+		P_PWM_PWM_F = pwm_voltage_table[to][0];
 		break;
 	default:
 		break;
@@ -79,14 +86,27 @@ static void hdmi_5v_ctrl(unsigned int ctrl)
 static void vcck_ctrl(unsigned int ctrl)
 {
 	if (ctrl == ON) {
-		aml_update_bits(PREG_PAD_GPIO0_EN_N, 1 << 25, 0);
-		aml_update_bits(PREG_PAD_GPIO0_O, 1 << 25, 1 << 25);
+		/* vddcpu_a*/
+		aml_update_bits(AO_GPIO_O_EN_N, 1 << 4, 0);
+		aml_update_bits(AO_GPIO_O_EN_N, 1 << 20, 1<<20);
 		/* after power on vcck, should init vcck*/
 		_udelay(5000);
-		pwm_set_voltage(pwm_d, CONFIG_VCCK_INIT_VOLTAGE);
+		pwm_set_voltage(pwm_ao_a, CONFIG_VCCKA_INIT_VOLTAGE);
+
+		/* vddcpu_b*/
+		aml_update_bits(PREG_PAD_GPIO3_EN_N, 1 << 28, 0);
+		aml_update_bits(PREG_PAD_GPIO3_O, 1 << 28, 1<<28);
+		/* after power on vcck, should init vcck*/
+		_udelay(5000);
+		pwm_set_voltage(pwm_f, CONFIG_VCCKB_INIT_VOLTAGE);
 	} else {
-		aml_update_bits(PREG_PAD_GPIO0_EN_N, 1 << 25, 0);
-		aml_update_bits(PREG_PAD_GPIO0_O, 1 << 25, 0);
+		/* vddcpu_a*/
+		aml_update_bits(AO_GPIO_O_EN_N, 1 << 4, 0);
+		aml_update_bits(AO_GPIO_O_EN_N, 1 << 20, 0);
+
+		/* vddcpu_b*/
+		aml_update_bits(PREG_PAD_GPIO3_EN_N, 1 << 28, 0);
+		aml_update_bits(PREG_PAD_GPIO3_O, 1 << 28, 0);
 	}
 }
 
@@ -105,15 +125,15 @@ static void power_on_at_clk81(void)
 
 static void power_off_at_24M(void)
 {
-	/* LED GPIODV_24*/
-	aml_update_bits(PREG_PAD_GPIO0_EN_N, 1 << 24, 0);
-	aml_update_bits(PREG_PAD_GPIO0_O, 1 << 24, 0);
+	/* LED GPIOAO_9*/
+	aml_update_bits(AO_GPIO_O_EN_N, 1 << 9, 0);
+	aml_update_bits(AO_GPIO_O_EN_N, 1 << 25, 0);
 }
 
 static void power_on_at_24M(void)
 {
-	aml_update_bits(PREG_PAD_GPIO0_EN_N, 1 << 24, 0);
-	aml_update_bits(PREG_PAD_GPIO0_O, 1 << 24, 1 << 24);
+	aml_update_bits(AO_GPIO_O_EN_N, 1 << 9, 0);
+	aml_update_bits(AO_GPIO_O_EN_N, 1 << 25, 1 << 25);
 
 }
 

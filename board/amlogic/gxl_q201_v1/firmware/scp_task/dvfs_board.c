@@ -52,44 +52,94 @@ struct scpi_opp_entry cpu_dvfs_tbl[] = {
 #define P_PWM_MISC_REG_CD	(*((volatile unsigned *)(0xc1100000 + (0x2192 << 2))))
 #define P_PWM_PWM_D		(*((volatile unsigned *)(0xc1100000 + (0x2191 << 2))))
 
+#define P_PWM_MISC_REG_EF	(*((volatile unsigned *)(0xc1100000 + (0x21b2 << 2))))
+#define P_PWM_PWM_F		(*((volatile unsigned *)(0xc1100000 + (0x21b1 << 2))))
 
+#undef P_AO_PWM_MISC_REG_AB
+#undef P_AO_PWM_PWM_A
+#define P_AO_PWM_MISC_REG_AB	(*((volatile unsigned *)(0xc8100400 + (0x56 << 2))))
+#define P_AO_PWM_PWM_A (*((volatile unsigned *)(0xc8100400 + (0x54 << 2))))
+
+#define P_EE_TIMER_E		(*((volatile unsigned *)(0xc1100000 + (0x2662 << 2))))
+
+#define P_PIN_MUX_AO_REG	(*((volatile unsigned *)(0xc8100000 + (0x5 << 2))))
+#define P_PIN_MUX_REG8		(*((volatile unsigned *)(0xda834400 + (0x34 << 2))))
 enum pwm_id {
-	pwm_a = 0,
-	pwm_b,
-	pwm_c,
-	pwm_d,
-	pwm_e,
-	pwm_f,
+    pwm_a = 0,
+    pwm_b,
+    pwm_c,
+    pwm_d,
+    pwm_e,
+    pwm_f,
+    pwm_ao_a,
 };
 
+unsigned int _get_time(void)
+{
+	return P_EE_TIMER_E;
+}
+
+void _udelay_(unsigned int us)
+{
+	unsigned int t0 = _get_time();
+
+	while (_get_time() - t0 <= us)
+		;
+}
 
 void pwm_init(int id)
 {
-	/*
-	 * TODO: support more pwm controllers, right now only support PWM_B
-	 */
 	unsigned int reg;
-	reg = P_PWM_MISC_REG_CD;
-	reg &= ~(0x7f << 16);
-	reg |=  ((1 << 23) | (1 << 1));
-	P_PWM_MISC_REG_CD = reg;
+
 	/*
-	 * default set to max voltage
+	 * TODO: support more pwm controllers, right now only support
+	 * PWM_B, PWM_D
 	 */
-	P_PWM_PWM_D = pwm_voltage_table[ARRAY_SIZE(pwm_voltage_table) - 1][0];
-	reg  = P_PIN_MUX_REG1;
-	reg &= ~(1 << 9);
-	reg &= ~(1 << 11);
-	P_PIN_MUX_REG1 = reg;
 
-	reg  = P_PIN_MUX_REG2;
-	reg |=  (1 << 12);		// enable PWM_D
-	P_PIN_MUX_REG2 = reg;
+	switch (id) {
+	case pwm_ao_a:
+		reg = P_AO_PWM_MISC_REG_AB;
+		reg &= ~(0x7f << 8);
+		reg |=  ((1 << 15) | (1 << 0));
+		P_AO_PWM_MISC_REG_AB = reg;
+		/*
+		 * default set to max voltage
+		 */
+		P_AO_PWM_PWM_A = pwm_voltage_table[ARRAY_SIZE(pwm_voltage_table) - 1][0];
+		reg  = P_PIN_MUX_AO_REG;
+		reg &= ~(1 << 9);
+		reg &= ~(1 << 7);
+		P_PIN_MUX_AO_REG = reg;
 
+		reg  = P_PIN_MUX_AO_REG;
+		reg |=  (1 << 22);		// enable PWM_AO_A
+		P_PIN_MUX_AO_REG = reg;
+		break;
 
-	_udelay(200);
+	case pwm_f:
+		reg = P_PWM_MISC_REG_EF;
+		reg &= ~(0x7f << 16);
+		reg |=  ((1 << 23) | (1 << 1));
+		P_PWM_MISC_REG_EF = reg;
+		/*
+		 * default set to max voltage
+		 */
+		P_PWM_PWM_F = pwm_voltage_table[ARRAY_SIZE(pwm_voltage_table) - 1][0];
+		reg  = P_PIN_MUX_REG8;
+		reg &= ~(1 << 29);
+		P_PIN_MUX_REG8 = reg;
+
+		reg  = P_PIN_MUX_REG8;
+		reg |=  (1 << 30);		// enable PWM_F
+		P_PIN_MUX_REG8 = reg;
+		break;
+
+	default:
+		break;
+	}
+
+	_udelay_(200);
 }
-
 int dvfs_get_voltage(void)
 {
 	int i = 0;
@@ -111,9 +161,9 @@ void set_dvfs(unsigned int domain, unsigned int index)
 {
 	int cur, to;
 	static int init_flag = 0;
-
 	if (!init_flag) {
-		pwm_init(pwm_b);
+		pwm_init(pwm_f);
+		pwm_init(pwm_ao_a);
 		init_flag = 1;
 	}
 	cur = dvfs_get_voltage();
@@ -126,7 +176,10 @@ void set_dvfs(unsigned int domain, unsigned int index)
 		to = ARRAY_SIZE(pwm_voltage_table) - 1;
 	}
 	if (cur < 0 || cur >=ARRAY_SIZE(pwm_voltage_table)) {
-		P_PWM_PWM_D = pwm_voltage_table[to][0];
+		if (domain == 0)
+			P_AO_PWM_PWM_A = pwm_voltage_table[to][0];
+		if (domain == 1)
+			P_PWM_PWM_F  = pwm_voltage_table[to][0];
 		_udelay(200);
 		return ;
 	}
@@ -149,7 +202,10 @@ void set_dvfs(unsigned int domain, unsigned int index)
 				cur = to;
 			}
 		}
-		P_PWM_PWM_D = pwm_voltage_table[cur][0];
+		if (domain == 0)
+			P_AO_PWM_PWM_A = pwm_voltage_table[cur][0];
+		if (domain == 1)
+			P_PWM_PWM_F  = pwm_voltage_table[to][0];
 		_udelay(100);
 	}
 	_udelay(200);
