@@ -39,6 +39,7 @@
 #endif
 #include <asm/arch/eth_setup.h>
 #include <phy.h>
+#include <asm/cpu_id.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
