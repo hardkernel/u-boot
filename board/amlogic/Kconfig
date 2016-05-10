@@ -51,6 +51,10 @@ config GXL_Q201_V1
 	bool "Support amlogic gxl q201 board"
 	default n
 
+config GXL_Q200_V1
+	bool "Support amlogic gxl q201 board"
+	default n
+
 config PXP_EMULATOR
 	bool "Support pxp environment"
 	default n
@@ -112,6 +116,10 @@ endif
 
 if GXL_Q201_V1
 source "board/amlogic/gxl_q201_v1/Kconfig"
+endif
+
+if GXL_Q200_V1
+source "board/amlogic/gxl_q200_v1/Kconfig"
 endif
 
 if ODROID_C2
