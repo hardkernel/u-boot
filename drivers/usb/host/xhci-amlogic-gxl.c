@@ -35,6 +35,8 @@ struct amlogic_xhci {
 	struct usb_aml_regs *usb3_phy;
 	struct xhci_hccr *hcd;
 	struct dwc3 *dwc3_reg;
+	unsigned int u2_port_num;
+	unsigned int u3_port_num;
 };
 struct usb_aml_regs *usb_aml_reg;
 
@@ -51,7 +53,7 @@ static void amlogic_usb2_phy_init(struct u2p_aml_regs *phy)
 
 	udelay(time_dly);
 
-	for (i=0; i<2; i++) {
+	for (i=0; i<amlogic.u2_port_num; i++) {
 		u2p_aml_reg = (struct u2p_aml_regs *)((ulong)phy + i * PHY_REGISTER_SIZE);
 
 		reg0.d32 = u2p_aml_reg->u2p_r0;
@@ -76,12 +78,14 @@ static void amlogic_usb3_phy_init(struct usb_aml_regs *phy)
 	union usb_r1_t r1 = {.d32 = 0};
 	int i;
 
-	for (i = 0; i < 1; i++) {
-		usb_aml_reg = (struct usb_aml_regs *)((ulong)phy+i*PHY_REGISTER_SIZE);
+	if (amlogic.u3_port_num == 0) {
+		for (i = 0; i < 1; i++) {
+			usb_aml_reg = (struct usb_aml_regs *)((ulong)phy+i*PHY_REGISTER_SIZE);
 
-		r1.d32 = usb_aml_reg->usb_r1;
-		r1.b.u3h_fladj_30mhz_reg = 0x20;
-		usb_aml_reg->usb_r1 = r1.d32;
+			r1.d32 = usb_aml_reg->usb_r1;
+			r1.b.u3h_fladj_30mhz_reg = 0x20;
+			usb_aml_reg->usb_r1 = r1.d32;
+		}
 	}
 
 	return;
@@ -109,36 +113,46 @@ void dwc3_set_mode(struct dwc3 *dwc3_reg, u32 mode)
 static void dwc3_core_soft_reset(struct dwc3 *dwc3_reg)
 {
 	u32		reg;
+	int		i;
 
 	/* Before Resetting PHY, put Core in Reset */
 	reg = xhci_readl(&dwc3_reg->g_ctl);
 	reg |= DWC3_GCTL_CORESOFTRESET;
 	xhci_writel(&dwc3_reg->g_ctl, reg);
 
-	/* Assert USB2 PHY reset */
-	reg = xhci_readl(&dwc3_reg->g_usb2phycfg[0]);
-	reg |= DWC3_GUSB2PHYCFG_PHYSOFTRST;
-	xhci_writel(&dwc3_reg->g_usb2phycfg[0], reg);
+	for (i = 0; i < amlogic.u3_port_num; i++) {
+		/* Assert USB3 PHY reset */
+		reg = xhci_readl(&dwc3_reg->g_usb3pipectl[i]);
+		reg |= DWC3_GUSB3PIPECTL_PHYSOFTRST;
+		xhci_writel(&dwc3_reg->g_usb3pipectl[i], reg);
+	}
 
-	reg = xhci_readl(&dwc3_reg->g_usb2phycfg[1]);
-	reg |= DWC3_GUSB2PHYCFG_PHYSOFTRST;
-	xhci_writel(&dwc3_reg->g_usb2phycfg[1], reg);
+	for (i = 0; i < amlogic.u2_port_num; i++) {
+		/* Assert USB2 PHY reset */
+		reg = xhci_readl(&dwc3_reg->g_usb2phycfg[i]);
+		reg |= DWC3_GUSB2PHYCFG_PHYSOFTRST;
+		xhci_writel(&dwc3_reg->g_usb2phycfg[i], reg);
+	}
 
 	amlogic_usb2_phy_init(amlogic.usb2_phy);
 	amlogic_usb3_phy_init(amlogic.usb3_phy);
 	mdelay(100);
 
-	/* Clear USB2 PHY reset */
-	reg = xhci_readl(&dwc3_reg->g_usb2phycfg[0]);
-	reg &= ~DWC3_GUSB2PHYCFG_PHYSOFTRST;
-	reg &= ~DWC3_GUSB2PHYCFG_SUSPHY;
-	xhci_writel(&dwc3_reg->g_usb2phycfg[0], reg);
 
-	/* Clear USB2 PHY reset */
-	reg = xhci_readl(&dwc3_reg->g_usb2phycfg[1]);
-	reg &= ~DWC3_GUSB2PHYCFG_PHYSOFTRST;
-	reg &= ~DWC3_GUSB2PHYCFG_SUSPHY;
-	xhci_writel(&dwc3_reg->g_usb2phycfg[1], reg);
+	for (i = 0; i < amlogic.u3_port_num; i++) {
+		/* Clear USB3 PHY reset */
+		reg = xhci_readl(&dwc3_reg->g_usb3pipectl[i]);
+		reg &= ~DWC3_GUSB3PIPECTL_PHYSOFTRST;
+		xhci_writel(&dwc3_reg->g_usb3pipectl[i], reg);
+	}
+
+	for (i = 0; i < amlogic.u2_port_num; i++) {
+			/* Clear USB2 PHY reset */
+		reg = xhci_readl(&dwc3_reg->g_usb2phycfg[i]);
+		reg &= ~DWC3_GUSB2PHYCFG_PHYSOFTRST;
+		reg &= ~DWC3_GUSB2PHYCFG_SUSPHY;
+		xhci_writel(&dwc3_reg->g_usb2phycfg[i], reg);
+	}
 
 	mdelay(100);
 
@@ -243,6 +257,8 @@ int xhci_hcd_init(int index, struct xhci_hccr **hccr, struct xhci_hcor **hcor)
 	ctx->dwc3_reg = (struct dwc3 *)((char *)(ctx->hcd) + DWC3_REG_OFFSET);
 	ctx->usb3_phy = (struct usb_aml_regs *)(ulong)(usb_config->usb_phy3_base_addr);
 	ctx->usb2_phy = (struct u2p_aml_regs *)(ulong)(usb_config->usb_phy2_base_addr);
+	ctx->u2_port_num = usb_config->u2_port_num;
+	ctx->u3_port_num = usb_config->u3_port_num;
 
 	ret = amlogic_xhci_core_init(ctx);
 	if (ret) {

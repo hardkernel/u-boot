@@ -326,6 +326,8 @@ struct amlogic_usb_config {
 	void (* set_vbus_power)(char is_power_on);
 	unsigned int usb_phy2_base_addr;
 	unsigned int usb_phy3_base_addr;
+	unsigned int u2_port_num;
+	unsigned int u3_port_num;
 };
 
 //struct amlogic_usb_config amlogic_usb_config_gxl;
