@@ -43,6 +43,13 @@ struct scpi_opp_entry cpu_dvfs_tbl[] = {
 	DVFS(1752000000, 1110),
 	DVFS(2016000000, 1110)
 };
+struct scpi_opp_entry vlittle_dvfs_tbl[] = {
+	DVFS( 100000000,  860),
+	DVFS( 250000000,  860),
+	DVFS( 500000000,  860),
+	DVFS( 667000000,  900),
+	DVFS(1000000000,  940),
+};
 
 
 
@@ -140,12 +147,17 @@ void pwm_init(int id)
 
 	_udelay_(200);
 }
-int dvfs_get_voltage(void)
+int dvfs_get_voltage(unsigned int domain)
 {
 	int i = 0;
-	unsigned int reg_val;
+	unsigned int reg_val = 0x040018;
 
-	reg_val = P_PWM_PWM_D;
+	if (domain == 0)
+		reg_val = P_AO_PWM_PWM_A;
+
+	if (domain == 1)
+		reg_val = P_PWM_PWM_F;
+
 	for (i = 0; i < ARRAY_SIZE(pwm_voltage_table); i++) {
 		if (pwm_voltage_table[i][0] == reg_val) {
 			return i;
@@ -166,10 +178,17 @@ void set_dvfs(unsigned int domain, unsigned int index)
 		pwm_init(pwm_ao_a);
 		init_flag = 1;
 	}
-	cur = dvfs_get_voltage();
+	cur = dvfs_get_voltage(domain);
 	for (to = 0; to < ARRAY_SIZE(pwm_voltage_table); to++) {
-		if (pwm_voltage_table[to][1] >= cpu_dvfs_tbl[index].volt_mv) {
-			break;
+		if (domain == 0) {
+			if (pwm_voltage_table[to][1] >= cpu_dvfs_tbl[index].volt_mv) {
+				break;
+			}
+		}
+		if (domain == 1) {
+			if (pwm_voltage_table[to][1] >= vlittle_dvfs_tbl[index].volt_mv) {
+				break;
+			}
 		}
 	}
 	if (to >= ARRAY_SIZE(pwm_voltage_table)) {
@@ -211,3 +230,29 @@ void set_dvfs(unsigned int domain, unsigned int index)
 	_udelay(200);
 }
 
+void get_dvfs_info_board(unsigned int domain,
+		unsigned char *info_out, unsigned int *size_out)
+{
+	unsigned int cnt;
+	if (domain == 0)
+		cnt = ARRAY_SIZE(cpu_dvfs_tbl);
+	if (domain == 1)
+		cnt = ARRAY_SIZE(vlittle_dvfs_tbl);
+
+	buf_opp.latency = 200;
+	buf_opp.count = cnt;
+	memset(&buf_opp.opp[0], 0,
+	       MAX_DVFS_OPPS * sizeof(struct scpi_opp_entry));
+
+	if (domain == 0)
+		memcpy(&buf_opp.opp[0], cpu_dvfs_tbl ,
+			cnt * sizeof(struct scpi_opp_entry));
+
+	if (domain == 1)
+		memcpy(&buf_opp.opp[0], vlittle_dvfs_tbl ,
+			cnt * sizeof(struct scpi_opp_entry));
+
+	memcpy(info_out, &buf_opp, sizeof(struct scpi_opp));
+	*size_out = sizeof(struct scpi_opp);
+	return;
+}
