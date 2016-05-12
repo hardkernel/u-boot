@@ -47,12 +47,16 @@ config GXL_P212_V1
 	bool "Support amlogic gxl p212 board"
 	default n
 
-config GXL_Q201_V1
-	bool "Support amlogic gxl q201 board"
+config GXM_SKT_V1
+	bool "Support amlogic gxm/gxl skt board"
 	default n
 
-config GXL_Q200_V1
-	bool "Support amlogic gxl q201 board"
+config GXM_Q201_V1
+	bool "Support amlogic gxm/gxl q201 board"
+	default n
+
+config GXM_Q200_V1
+	bool "Support amlogic gxm/gxl q200 board"
 	default n
 
 config PXP_EMULATOR
@@ -114,12 +118,16 @@ if GXL_P212_V1
 source "board/amlogic/gxl_p212_v1/Kconfig"
 endif
 
-if GXL_Q201_V1
-source "board/amlogic/gxl_q201_v1/Kconfig"
+if GXM_SKT_V1
+source "board/amlogic/gxm_skt_v1/Kconfig"
 endif
 
-if GXL_Q200_V1
-source "board/amlogic/gxl_q200_v1/Kconfig"
+if GXM_Q201_V1
+source "board/amlogic/gxm_q201_v1/Kconfig"
+endif
+
+if GXM_Q200_V1
+source "board/amlogic/gxm_q200_v1/Kconfig"
 endif
 
 if ODROID_C2

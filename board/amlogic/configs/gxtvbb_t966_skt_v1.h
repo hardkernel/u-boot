@@ -1,6 +1,6 @@
 
 /*
- * include/configs/gxtvbb_p300_v1.h
+ * board/amlogic/configs/gxtvbb_t966_skt_v1.h
  *
  * Copyright (C) 2015 Amlogic, Inc. All rights reserved.
  *
@@ -19,8 +19,9 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-#ifndef __GXTVBB_P300_V1_H__
-#define __GXTVBB_P300_V1_H__
+#ifndef __GXTVBB_T966_SKT_V1_H__
+#define __GXTVBB_T966_SKT_V1_H__
+
 
 #include <asm/arch/cpu.h>
 
@@ -39,7 +40,7 @@
 
 /* configs for CEC */
 #define CONFIG_CEC_OSD_NAME		"Mbox"
-//#define CONFIG_CEC_WAKEUP
+#define CONFIG_CEC_WAKEUP
 
 #define CONFIG_INSTABOOT
 
@@ -54,7 +55,7 @@
 #define CONFIG_IR_REMOTE  1
 //Enable ir remote wake up for bl30
 #define CONFIG_IR_REMOTE_POWER_UP_KEY_CNT 8
-#define CONFIG_IR_REMOTE_USE_PROTOCOL 0         // 0:nec,toshiba  1:duokan  2:Toshiba 3:rca
+#define CONFIG_IR_REMOTE_USE_PROTOCOL 0         // 0:nec  1:duokan  2:Toshiba 3:rca
 #define CONFIG_IR_REMOTE_POWER_UP_KEY_VAL1 0xef10fe01 //amlogic nec tv ir --- power
 #define CONFIG_IR_REMOTE_POWER_UP_KEY_VAL2 0xf30cfe01 //amlogic nec tv ir --- ch+
 #define CONFIG_IR_REMOTE_POWER_UP_KEY_VAL3 0xf20dfe01 //amlogic nec tv ir --- ch-
@@ -71,12 +72,11 @@
 	"firstboot=1\0"\
 	"upgrade_step=0\0"\
 	"loadaddr=1080000\0"\
-	"panel_type=lvds_2\0" \
+	"dtb_mem_addr=0x1000000\0" \
 	"outputmode=1080p60hz\0" \
 	"panel_reverse=0\0" \
 	"osd_reverse=n\0" \
 	"video_reverse=n\0" \
-	"bl_off=none\0" \
 	"display_width=1920\0" \
 	"display_height=1080\0" \
 	"display_bpp=16\0" \
@@ -84,7 +84,6 @@
 	"display_layer=osd1\0" \
 	"display_color_fg=0xffff\0" \
 	"display_color_bg=0\0" \
-	"dtb_mem_addr=0x1000000\0" \
 	"fb_addr=0x3b000000\0" \
 	"fb_width=1920\0" \
 	"fb_height=1080\0" \
@@ -100,21 +99,26 @@
 		"echo upgrade_step=${upgrade_step}; "\
 		"if itest ${upgrade_step} == 3; then "\
 			"run init_display; run storeargs; run update; "\
-		"else fi; "\
+		"else if itest ${upgrade_step} == 1; then "\
+			"defenv_reserv; setenv upgrade_step 2; saveenv; "\
+		"fi; fi; "\
 		"\0"\
+	"bootmode_check="\
+		"get_rebootmode; echo reboot_mode=${reboot_mode}; "\
+		"if test ${reboot_mode} = factory_reset; then "\
+			"defenv_reserv aml_dt;setenv upgrade_step 2;save; "\
+		"fi; "\
+		"\0" \
 	"storeargs="\
 		"setenv bootargs rootfstype=ramfs init=/init "\
 		"console=ttyS0,115200 no_console_suspend "\
 		"earlyprintk=aml-uart,0xc81004c0 "\
-		"androidboot.selinux=enforcing "\
+		"androidboot.selinux=disabled "\
 		"logo=${display_layer},loaded,${fb_addr} "\
 		"vout=${outputmode},enable "\
-		"panel_type=${panel_type} hdmitx= "\
 		"osd_reverse=${osd_reverse} video_reverse=${video_reverse} "\
-		"bl_off=${bl_off} "\
 		"jtag=${jtag} "\
 		"androidboot.firstboot=${firstboot}; "\
-		"setenv bootargs ${bootargs} androidboot.hardware=amlogic;"\
 		"run cmdline_keys; "\
 		"\0"\
 	"switch_bootmode="\
@@ -157,10 +161,6 @@
 		"fi; "\
 		"\0" \
 	"update="\
-		/*first usb burning,
-		second sdc_burn,
-		third ext-sd autoscr/recovery,
-		last udisk autoscr/recovery*/\
 		"run usb_burning; "\
 		"run sdc_burning; "\
 		"if mmcinfo; then "\
@@ -179,7 +179,6 @@
 			"if fatload mmc 0 ${dtb_mem_addr} dtb.img; then "\
 				"echo sd dtb.img loaded; "\
 			"fi; "\
-			"wipeisb; "\
 			"bootm ${loadaddr}; "\
 		"fi; "\
 		"\0"\
@@ -191,14 +190,12 @@
 			"if fatload usb 0 ${dtb_mem_addr} dtb.img; then "\
 				"echo udisk dtb.img loaded; "\
 			"fi; "\
-			"wipeisb; "\
 			"bootm ${loadaddr}; "\
 		"fi; "\
 		"\0"\
 	"recovery_from_flash="\
                 "setenv bootargs ${bootargs} aml_dt=${aml_dt};"\
 		"if imgread kernel recovery ${loadaddr}; then "\
-			"wipeisb; "\
 			"bootm ${loadaddr}; "\
 		"fi"\
 		"\0"\
@@ -224,18 +221,13 @@
 			"fi; "\
 		"fi; "\
 		"\0"\
-	"upgrade_key="\
-		"if gpio input GPIOAO_3; then "\
-			"echo detect upgrade key; sleep 5; run update; "\
-		"fi; "\
-		"\0"\
 
 #define CONFIG_PREBOOT  \
 	"run factory_reset_poweroff_protect; "\
 	"run upgrade_check; "\
+	"run bootmode_check; "\
 	"run init_display; "\
 	"run storeargs; "\
-	"run upgrade_key; "\
 	"run switch_bootmode;"
 #define CONFIG_BOOTCOMMAND "run storeboot"
 
@@ -251,8 +243,8 @@
 #define CONFIG_CPU_CLK					1536 //MHz. Range: 600-1800, should be multiple of 24
 
 /* ddr */
-#define CONFIG_DDR_SIZE					2048 //MB
-#define CONFIG_DDR_CLK					720  //MHz, Range: 384-1200, should be multiple of 24
+#define CONFIG_DDR_SIZE					2048//1024 //MB
+#define CONFIG_DDR_CLK					912  //MHz, Range: 384-1200, should be multiple of 24
 #define CONFIG_DDR_TYPE					CONFIG_DDR_TYPE_DDR3
 /* DDR channel setting, please refer hardware design.
  *    CONFIG_DDR0_ONLY_32BIT           : one channel 32bit
@@ -261,8 +253,6 @@
  *    CONFIG_DDR01_TWO_CHANNEL_16BIT   : two channels 16bit */
 #define CONFIG_DDR_CHANNEL_SET			CONFIG_DDR01_TWO_CHANNEL
 #define CONFIG_DDR_FULL_TEST			0 //1 for ddr full test
-#define CONFIG_CMD_DDR_TEST
-#define CONFIG_DDR_CMD_BDL_TUNE
 #define CONFIG_NR_DRAM_BANKS			1
 /* ddr power saving */
 #define CONFIG_DDR_ZQ_POWER_DOWN
@@ -283,7 +273,7 @@
 	#define CONFIG_EMMC_DDR52_EN 1
 	#define CONFIG_EMMC_DDR52_CLK 35000000
 #endif
-//#define 	CONFIG_AML_NAND	1
+#define 	CONFIG_AML_NAND	1
 #ifdef CONFIG_AML_NAND
 #endif
 #define		CONFIG_PARTITIONS 1
@@ -323,20 +313,20 @@
 #define CONFIG_AML_VPU 1
 
 /* DISPLAY & HDMITX */
-//#define CONFIG_AML_HDMITX20 1
+#define CONFIG_AML_HDMITX20 1
 #define CONFIG_AML_CANVAS 1
 #define CONFIG_AML_VOUT 1
 #define CONFIG_AML_OSD 1
 #define CONFIG_OSD_SCALE_ENABLE 1
 #define CONFIG_CMD_BMP 1
 
-// #if defined(CONFIG_AML_VOUT)
-// #define CONFIG_AML_CVBS 1
-// #endif
+#if defined(CONFIG_AML_VOUT)
+#define CONFIG_AML_CVBS 1
+#endif
 
-#define CONFIG_AML_LCD    1
+//#define CONFIG_AML_LCD    1
 #define CONFIG_AML_LCD_TV 1
-#define CONFIG_AML_LCD_TABLET 1
+/* #define CONFIG_AML_LCD_TABLET 1 */
 
 /* USB
  * Enable CONFIG_MUSB_HCD for Host functionalities MSC, keyboard
@@ -352,15 +342,8 @@
 	#define CONFIG_USB_XHCI 1
 	#define CONFIG_USB_XHCI_AMLOGIC 1
 #endif //#if defined(CONFIG_CMD_USB)
-
-//UBOOT Facotry usb/sdcard burning config
-#define CONFIG_AML_V2_FACTORY_BURN              1       //support facotry usb burning
-#define CONFIG_AML_FACTORY_BURN_LOCAL_UPGRADE   1       //support factory sdcard burning
-#define CONFIG_POWER_KEY_NOT_SUPPORTED_FOR_BURN 1       //There isn't power-key for factory sdcard burning
-#define CONFIG_SD_BURNING_SUPPORT_UI            1       //Displaying upgrading progress bar when sdcard/udisk burning
-
-#define CONFIG_AML_SECURITY_KEY                 1
-#define CONFIG_UNIFY_KEY_MANAGE                 1
+//#define CONFIG_AML_TINY_USBTOOL 1
+#define CONFIG_AML_V2_FACTORY_BURN   1
 
 /* net */
 #define CONFIG_CMD_NET   1
@@ -397,8 +380,6 @@
 #define CONFIG_CMD_REBOOT 1
 #define CONFIG_CMD_ECHO 1
 #define CONFIG_CMD_JTAG	1
-#define CONFIG_CMD_AUTOSCRIPT 1
-#define CONFIG_CMD_MISC 1
 
 /*file system*/
 #define CONFIG_DOS_PARTITION 1
@@ -413,9 +394,9 @@
 
 /* other functions */
 #define CONFIG_NEED_BL301	1
-#define CONFIG_BOOTDELAY	1 //delay 1s
+#define CONFIG_BOOTDELAY	1
 #define CONFIG_SYS_LONGHELP 1
-#define CONFIG_CMD_MISC     1
+#define CONFIG_CMD_MISC         1
 #define CONFIG_CMD_ITEST    1
 #define CONFIG_CMD_CPU_TEMP 1
 #define CONFIG_SYS_MEM_TOP_HIDE 0x08000000 //hide 128MB for kernel reserve

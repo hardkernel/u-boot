@@ -1,6 +1,6 @@
 
 /*
- * include/configs/gxl_q200_v1.h
+ * board/amlogic/configs/gxm_skt_v1.h
  *
  * Copyright (C) 2015 Amlogic, Inc. All rights reserved.
  *
@@ -19,8 +19,8 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-#ifndef __GXL_Q200_V1_H__
-#define __GXL_Q200_V1_H__
+#ifndef __GXM_SKT_V1_H__
+#define __GXM_SKT_V1_H__
 
 #ifndef __SUSPEND_FIRMWARE__
 #include <asm/arch/cpu.h>

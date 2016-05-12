@@ -1,6 +1,6 @@
 
 /*
- * include/configs/gxtvbb_skt_v1.h
+ * board/amlogic/configs/gxtvbb_p300_v1.h
  *
  * Copyright (C) 2015 Amlogic, Inc. All rights reserved.
  *
@@ -19,8 +19,8 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-#ifndef __GXTVBB_SKT_V1_H__
-#define __GXTVBB_SKT_V1_H__
+#ifndef __GXTVBB_P300_V1_H__
+#define __GXTVBB_P300_V1_H__
 
 #include <asm/arch/cpu.h>
 
@@ -34,8 +34,14 @@
  */
 #define CONFIG_PLATFORM_POWER_INIT
 #define CONFIG_VCCK_INIT_VOLTAGE	1100
-#define CONFIG_VDDEE_INIT_VOLTAGE	1000		// voltage for power up
+#define CONFIG_VDDEE_INIT_VOLTAGE	1100		// voltage for power up
 #define CONFIG_VDDEE_SLEEP_VOLTAGE	 850		// voltage for suspend
+
+/* configs for CEC */
+#define CONFIG_CEC_OSD_NAME		"Mbox"
+//#define CONFIG_CEC_WAKEUP
+
+#define CONFIG_INSTABOOT
 
 /* SMP Definitinos */
 #define CPU_RELEASE_ADDR		secondary_boot_func
@@ -48,7 +54,7 @@
 #define CONFIG_IR_REMOTE  1
 //Enable ir remote wake up for bl30
 #define CONFIG_IR_REMOTE_POWER_UP_KEY_CNT 8
-#define CONFIG_IR_REMOTE_USE_PROTOCOL 0         // 0:nec  1:duokan  2:Toshiba 3:rca
+#define CONFIG_IR_REMOTE_USE_PROTOCOL 0         // 0:nec,toshiba  1:duokan  2:Toshiba 3:rca
 #define CONFIG_IR_REMOTE_POWER_UP_KEY_VAL1 0xef10fe01 //amlogic nec tv ir --- power
 #define CONFIG_IR_REMOTE_POWER_UP_KEY_VAL2 0xf30cfe01 //amlogic nec tv ir --- ch+
 #define CONFIG_IR_REMOTE_POWER_UP_KEY_VAL3 0xf20dfe01 //amlogic nec tv ir --- ch-
@@ -62,14 +68,15 @@
 /* args/envs */
 #define CONFIG_SYS_MAXARGS  64
 #define CONFIG_EXTRA_ENV_SETTINGS \
+	"firstboot=1\0"\
+	"upgrade_step=0\0"\
 	"loadaddr=1080000\0"\
-	"dtb_mem_addr=0x1000000\0" \
-	"fdt_high=0x20000000\0" \
-	"panel_type=lvds_0\0" \
+	"panel_type=lvds_2\0" \
 	"outputmode=1080p60hz\0" \
 	"panel_reverse=0\0" \
 	"osd_reverse=n\0" \
 	"video_reverse=n\0" \
+	"bl_off=none\0" \
 	"display_width=1920\0" \
 	"display_height=1080\0" \
 	"display_bpp=16\0" \
@@ -77,37 +84,159 @@
 	"display_layer=osd1\0" \
 	"display_color_fg=0xffff\0" \
 	"display_color_bg=0\0" \
+	"dtb_mem_addr=0x1000000\0" \
 	"fb_addr=0x3b000000\0" \
 	"fb_width=1920\0" \
 	"fb_height=1080\0" \
+	"usb_burning=update 1000\0" \
+	"fdt_high=0x20000000\0"\
+	"try_auto_burn=update 700 750;\0"\
+	"sdcburncfg=aml_sdc_burn.ini\0"\
+	"sdc_burning=sdc_burn ${sdcburncfg}\0"\
+	"wipe_data=successful\0"\
+	"wipe_cache=successful\0"\
 	"jtag=apao\0"\
-	"init_display="\
-		"osd open; osd clear; "\
-		"vout output ${outputmode}; "\
-		"imgread pic logo bootup $loadaddr; "\
-		"bmp display $bootup_offset; bmp scale; "\
+	"upgrade_check="\
+		"echo upgrade_step=${upgrade_step}; "\
+		"if itest ${upgrade_step} == 3; then "\
+			"run init_display; run storeargs; run update; "\
+		"else fi; "\
 		"\0"\
-	"storeargs=setenv bootargs "\
-		"rootfstype=ramfs init=/init "\
+	"storeargs="\
+		"setenv bootargs rootfstype=ramfs init=/init "\
 		"console=ttyS0,115200 no_console_suspend "\
 		"earlyprintk=aml-uart,0xc81004c0 "\
-		"androidboot.selinux=disabled "\
+		"androidboot.selinux=enforcing "\
 		"logo=${display_layer},loaded,${fb_addr} "\
 		"vout=${outputmode},enable "\
 		"panel_type=${panel_type} hdmitx= "\
 		"osd_reverse=${osd_reverse} video_reverse=${video_reverse} "\
+		"bl_off=${bl_off} "\
 		"jtag=${jtag} "\
+		"androidboot.firstboot=${firstboot}; "\
+		"setenv bootargs ${bootargs} androidboot.hardware=amlogic;"\
+		"run cmdline_keys; "\
 		"\0"\
+	"switch_bootmode="\
+		"get_rebootmode; "\
+		"if test ${reboot_mode} = factory_reset; then "\
+			"run recovery_from_flash; "\
+		"else if test ${reboot_mode} = update; then "\
+			"run update; "\
+		"else if test ${reboot_mode} = cold_boot; then "\
+			"run try_auto_burn; "\
+		"fi; fi; fi; "\
+		"\0" \
 	"storeboot="\
 		"if imgread kernel boot ${loadaddr}; then "\
 			"bootm ${loadaddr}; "\
-		"fi;"\
-		"\0"
+		"fi; "\
+		"run update; "\
+		"\0"\
+	"factory_reset_poweroff_protect="\
+		"echo wipe_data=${wipe_data}; echo wipe_cache=${wipe_cache}; "\
+		"if test ${wipe_data} = failed; then "\
+			"run init_display; run storeargs; "\
+			"if mmcinfo; then "\
+				"run recovery_from_sdcard; "\
+			"fi; "\
+			"if usb start 0; then "\
+				"run recovery_from_udisk; "\
+			"fi; "\
+			"run recovery_from_flash; "\
+		"fi; "\
+		"if test ${wipe_cache} = failed; then "\
+			"run init_display; run storeargs; "\
+			"if mmcinfo; then "\
+				"run recovery_from_sdcard; "\
+			"fi; "\
+			"if usb start 0; then "\
+				"run recovery_from_udisk; "\
+			"fi; "\
+			"run recovery_from_flash; "\
+		"fi; "\
+		"\0" \
+	"update="\
+		/*first usb burning,
+		second sdc_burn,
+		third ext-sd autoscr/recovery,
+		last udisk autoscr/recovery*/\
+		"run usb_burning; "\
+		"run sdc_burning; "\
+		"if mmcinfo; then "\
+			"run recovery_from_sdcard; "\
+		"fi; "\
+		"if usb start 0; then "\
+			"run recovery_from_udisk; "\
+		"fi; "\
+		"run recovery_from_flash; "\
+		"\0"\
+	"recovery_from_sdcard="\
+		"if fatload mmc 0 ${loadaddr} aml_autoscript; then "\
+			"autoscr ${loadaddr}; "\
+		"fi; "\
+		"if fatload mmc 0 ${loadaddr} recovery.img; then "\
+			"if fatload mmc 0 ${dtb_mem_addr} dtb.img; then "\
+				"echo sd dtb.img loaded; "\
+			"fi; "\
+			"wipeisb; "\
+			"bootm ${loadaddr}; "\
+		"fi; "\
+		"\0"\
+	"recovery_from_udisk="\
+		"if fatload usb 0 ${loadaddr} aml_autoscript; then "\
+			"autoscr ${loadaddr}; "\
+		"fi; "\
+		"if fatload usb 0 ${loadaddr} recovery.img; then "\
+			"if fatload usb 0 ${dtb_mem_addr} dtb.img; then "\
+				"echo udisk dtb.img loaded; "\
+			"fi; "\
+			"wipeisb; "\
+			"bootm ${loadaddr}; "\
+		"fi; "\
+		"\0"\
+	"recovery_from_flash="\
+                "setenv bootargs ${bootargs} aml_dt=${aml_dt};"\
+		"if imgread kernel recovery ${loadaddr}; then "\
+			"wipeisb; "\
+			"bootm ${loadaddr}; "\
+		"fi"\
+		"\0"\
+	"init_display="\
+		"osd open; osd clear; "\
+		"vout output ${outputmode}; "\
+		"imgread pic logo bootup $loadaddr; "\
+		"bmp display $bootup_offset; bmp scale"\
+		"\0"\
+	"cmdline_keys="\
+		"if keyman init 0x1234; then "\
+			"if keyman read usid ${loadaddr} str; then "\
+				"setenv bootargs ${bootargs} "\
+				"androidboot.serialno=${usid}; "\
+			"fi; "\
+			"if keyman read mac ${loadaddr} str; then "\
+				"setenv bootargs ${bootargs} "\
+				"mac=${mac} androidboot.mac=${mac}; "\
+			"fi; "\
+			"if keyman read deviceid ${loadaddr} str; then "\
+				"setenv bootargs ${bootargs} "\
+				"androidboot.deviceid=${deviceid}; "\
+			"fi; "\
+		"fi; "\
+		"\0"\
+	"upgrade_key="\
+		"if gpio input GPIOAO_3; then "\
+			"echo detect upgrade key; sleep 5; run update; "\
+		"fi; "\
+		"\0"\
 
-#define CONFIG_PREBOOT \
+#define CONFIG_PREBOOT  \
+	"run factory_reset_poweroff_protect; "\
+	"run upgrade_check; "\
 	"run init_display; "\
-	"run storeargs; "
-
+	"run storeargs; "\
+	"run upgrade_key; "\
+	"run switch_bootmode;"
 #define CONFIG_BOOTCOMMAND "run storeboot"
 
 //#define CONFIG_ENV_IS_NOWHERE  1
@@ -132,15 +261,14 @@
  *    CONFIG_DDR01_TWO_CHANNEL_16BIT   : two channels 16bit */
 #define CONFIG_DDR_CHANNEL_SET			CONFIG_DDR01_TWO_CHANNEL
 #define CONFIG_DDR_FULL_TEST			0 //1 for ddr full test
+#define CONFIG_CMD_DDR_TEST
+#define CONFIG_DDR_CMD_BDL_TUNE
 #define CONFIG_NR_DRAM_BANKS			1
 /* ddr power saving */
 #define CONFIG_DDR_ZQ_POWER_DOWN
 #define CONFIG_DDR_POWER_DOWN_PHY_VREF
 /* ddr detection */
-#define CONFIG_DDR_SIZE_AUTO_DETECT		1 //0:disable, 1:enable
-/* ddr functions */
-#define CONFIG_CMD_DDR_D2PLL			0 //0:disable, 1:enable. d2pll cmd
-#define CONFIG_CMD_DDR_TEST				0 //0:disable, 1:enable. ddrtest cmd
+#define CONFIG_DDR_SIZE_AUTO_DETECT		0 //0:disable, 1:enable
 
 /* storage: emmc/nand/sd */
 #define		CONFIG_STORE_COMPATIBLE 1
@@ -155,7 +283,7 @@
 	#define CONFIG_EMMC_DDR52_EN 1
 	#define CONFIG_EMMC_DDR52_CLK 35000000
 #endif
-#define 	CONFIG_AML_NAND	1
+//#define 	CONFIG_AML_NAND	1
 #ifdef CONFIG_AML_NAND
 #endif
 #define		CONFIG_PARTITIONS 1
@@ -224,8 +352,15 @@
 	#define CONFIG_USB_XHCI 1
 	#define CONFIG_USB_XHCI_AMLOGIC 1
 #endif //#if defined(CONFIG_CMD_USB)
-//#define CONFIG_AML_TINY_USBTOOL 1
-#define CONFIG_AML_V2_FACTORY_BURN   1
+
+//UBOOT Facotry usb/sdcard burning config
+#define CONFIG_AML_V2_FACTORY_BURN              1       //support facotry usb burning
+#define CONFIG_AML_FACTORY_BURN_LOCAL_UPGRADE   1       //support factory sdcard burning
+#define CONFIG_POWER_KEY_NOT_SUPPORTED_FOR_BURN 1       //There isn't power-key for factory sdcard burning
+#define CONFIG_SD_BURNING_SUPPORT_UI            1       //Displaying upgrading progress bar when sdcard/udisk burning
+
+#define CONFIG_AML_SECURITY_KEY                 1
+#define CONFIG_UNIFY_KEY_MANAGE                 1
 
 /* net */
 #define CONFIG_CMD_NET   1
@@ -260,7 +395,10 @@
 #define CONFIG_CMD_GPIO 1
 #define CONFIG_CMD_RUN
 #define CONFIG_CMD_REBOOT 1
+#define CONFIG_CMD_ECHO 1
 #define CONFIG_CMD_JTAG	1
+#define CONFIG_CMD_AUTOSCRIPT 1
+#define CONFIG_CMD_MISC 1
 
 /*file system*/
 #define CONFIG_DOS_PARTITION 1
@@ -275,9 +413,10 @@
 
 /* other functions */
 #define CONFIG_NEED_BL301	1
-#define CONFIG_BOOTDELAY	1
+#define CONFIG_BOOTDELAY	1 //delay 1s
 #define CONFIG_SYS_LONGHELP 1
-#define CONFIG_CMD_MISC         1
+#define CONFIG_CMD_MISC     1
+#define CONFIG_CMD_ITEST    1
 #define CONFIG_CMD_CPU_TEMP 1
 #define CONFIG_SYS_MEM_TOP_HIDE 0x08000000 //hide 128MB for kernel reserve
 

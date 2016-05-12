@@ -1,6 +1,6 @@
 
 /*
- * include/configs/gxb_p200_v1.h
+ * board/amlogic/configs/gxm_q201_v1.h
  *
  * Copyright (C) 2015 Amlogic, Inc. All rights reserved.
  *
@@ -19,8 +19,8 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-#ifndef __GXB_P200_V1_H__
-#define __GXB_P200_V1_H__
+#ifndef __GXM_Q201_V1_H__
+#define __GXM_Q201_V1_H__
 
 #ifndef __SUSPEND_FIRMWARE__
 #include <asm/arch/cpu.h>
@@ -37,18 +37,14 @@
  * platform power init config
  */
 #define CONFIG_PLATFORM_POWER_INIT
-#define CONFIG_VCCK_INIT_VOLTAGE	1100
+#define CONFIG_VCCKA_INIT_VOLTAGE	1120		// cluster_0 Big cpu
+#define CONFIG_VCCKB_INIT_VOLTAGE	1050		// cluster_1 Little cpu
 #define CONFIG_VDDEE_INIT_VOLTAGE	1000		// voltage for power up
 #define CONFIG_VDDEE_SLEEP_VOLTAGE	 850		// voltage for suspend
 
 /* configs for CEC */
 #define CONFIG_CEC_OSD_NAME		"Mbox"
 #define CONFIG_CEC_WAKEUP
-
-/* bt wake up */
-#define CONFIG_BT_WAKEUP
-/* wifi wake up */
-#define CONFIG_WIFI_WAKEUP
 
 #define CONFIG_INSTABOOT
 
@@ -60,9 +56,10 @@
 #define CONFIG_BAUDRATE  115200
 #define CONFIG_AML_MESON_SERIAL   1
 #define CONFIG_SERIAL_MULTI		1
-//for detect remote key
-#define CONFIG_IR_REMOTE  1
+
 //Enable ir remote wake up for bl30
+//#define CONFIG_IR_REMOTE
+//#define CONFIG_AML_IRDETECT_EARLY
 #define CONFIG_IR_REMOTE_POWER_UP_KEY_CNT 4
 #define CONFIG_IR_REMOTE_USE_PROTOCOL 0         // 0:nec  1:duokan  2:Toshiba 3:rca 4:rcmm
 #define CONFIG_IR_REMOTE_POWER_UP_KEY_VAL1 0XE51AFB04 //amlogic tv ir --- power
@@ -76,7 +73,7 @@
 #define CONFIG_EXTRA_ENV_SETTINGS \
         "firstboot=1\0"\
         "upgrade_step=0\0"\
-        "jtag=apao\0"\
+        "jtag=apee\0"\
         "loadaddr=1080000\0"\
         "outputmode=1080p60hz\0" \
         "hdmimode=1080p60hz\0" \
@@ -111,8 +108,8 @@
                 "run init_display; run storeargs; run update;"\
             "else fi;"\
             "\0"\
-        "storeargs="\
-            "setenv bootargs ${initargs} logo=${display_layer},loaded,${fb_addr},${outputmode} vout=${outputmode},enable hdmimode=${hdmimode} cvbsmode=${cvbsmode} hdmitx=${cecconfig} cvbsdrv=${cvbs_drv} androidboot.firstboot=${firstboot} jtag=${jtag}; "\
+    "storeargs="\
+            "setenv bootargs ${initargs} logo=${display_layer},loaded,${fb_addr},${outputmode} maxcpus=${maxcpus} vout=${outputmode},enable hdmimode=${hdmimode} cvbsmode=${cvbsmode} hdmitx=${cecconfig} cvbsdrv=${cvbs_drv} androidboot.firstboot=${firstboot} jtag=${jtag}; "\
 	"setenv bootargs ${bootargs} androidboot.hardware=amlogic;"\
             "run cmdline_keys;"\
             "\0"\
@@ -123,7 +120,7 @@
             "else if test ${reboot_mode} = update; then "\
                     "run update;"\
             "else if test ${reboot_mode} = cold_boot; then "\
-                "run try_auto_burn; "\
+                /*"run try_auto_burn; "*/\
             "fi;fi;fi;"\
             "\0" \
         "storeboot="\
@@ -199,20 +196,11 @@
             "fi;"\
             "\0"\
         "upgrade_key="\
-            "if gpio input GPIOAO_3; then "\
-                "echo detect upgrade key; run update;"\
+            "if gpio input GPIOAO_2; then "\
+                "echo detect upgrade key; sleep 3;"\
+                "if gpio input GPIOAO_2; then run update; fi;"\
             "fi;"\
             "\0"\
-	"irremote_update="\
-		"if irkey 0xe31cfb04 0xb748fb04 2500000; then "\
-			"echo read irkey ok!; " \
-		"if itest ${irkey_value} == 0xe31cfb04; then " \
-			"run update;" \
-		"else if itest ${irkey_value} == 0xb748fb04; then " \
-			"run update;\n" \
-			"fi;fi;" \
-		"fi;\0" \
-
 
 #define CONFIG_PREBOOT  \
             "run factory_reset_poweroff_protect;"\
@@ -232,28 +220,26 @@
 #define CONFIG_SYS_BOOTM_LEN (64<<20) /* Increase max gunzip size*/
 
 /* cpu */
-#define CONFIG_CPU_CLK					1536 //MHz. Range: 600-1800, should be multiple of 24
+#define CONFIG_CPU_CLK					1200 //MHz. Range: 600-1800, should be multiple of 24
 
 /* ddr */
-#define CONFIG_DDR_SIZE					1024 //MB
+#define CONFIG_DDR_SIZE					0 //MB //0 means ddr size auto-detect
 #define CONFIG_DDR_CLK					912  //MHz, Range: 384-1200, should be multiple of 24
 #define CONFIG_DDR_TYPE					CONFIG_DDR_TYPE_DDR3
 /* DDR channel setting, please refer hardware design.
- *    CONFIG_DDR0_RANK0_ONLY   : one channel
- *    CONFIG_DDR0_RANK01_SAME  : one channel use two rank with same setting
- *    CONFIG_DDR0_RANK01_DIFF  : one channel use two rank with diff setting
- *    CONFIG_DDR01_SHARE_AC    : two channels  */
-#define CONFIG_DDR_CHANNEL_SET			CONFIG_DDR0_RANK01_SAME
+ *    CONFIG_DDR0_RANK0        : DDR0 rank0
+ *    CONFIG_DDR0_RANK01       : DDR0 rank0+1
+ *    CONFIG_DDR0_16BIT        : DDR0 16bit mode
+ *    CONFIG_DDR_CHL_AUTO      : auto detect RANK0 / RANK0+1 */
+#define CONFIG_DDR_CHANNEL_SET			CONFIG_DDR_CHL_AUTO
 #define CONFIG_DDR_FULL_TEST			0 //1 for ddr full test
 #define CONFIG_NR_DRAM_BANKS			1
-/* ddr power saving */
-#define CONFIG_DDR_ZQ_POWER_DOWN
-#define CONFIG_DDR_POWER_DOWN_PHY_VREF
-/* ddr detection */
-#define CONFIG_DDR_SIZE_AUTO_DETECT     1 //0:disable, 1:enable
 /* ddr functions */
-#define CONFIG_CMD_DDR_D2PLL            0 //0:disable, 1:enable. d2pll cmd
-#define CONFIG_CMD_DDR_TEST             0 //0:disable, 1:enable. ddrtest cmd
+#define CONFIG_CMD_DDR_D2PLL			0 //0:disable, 1:enable. d2pll cmd
+#define CONFIG_CMD_DDR_TEST				0 //0:disable, 1:enable. ddrtest cmd
+#define CONFIG_DDR_LOW_POWER			0 //0:disable, 1:enable. ddr clk gate for lp
+#define CONFIG_DDR_ZQ_PD				0 //0:disable, 1:enable. ddr zq power down
+#define CONFIG_DDR_USE_EXT_VREF			0 //0:disable, 1:enable. ddr use external vref
 
 /* storage: emmc/nand/sd */
 #define	CONFIG_STORE_COMPATIBLE 1
@@ -266,7 +252,6 @@
 #if (defined(CONFIG_ENV_IS_IN_AMLNAND) || defined(CONFIG_ENV_IS_IN_MMC)) && defined(CONFIG_STORE_COMPATIBLE)
 #error env in amlnand/mmc already be compatible;
 #endif
-
 #define CONFIG_AML_SD_EMMC 1
 #ifdef	CONFIG_AML_SD_EMMC
 	#define CONFIG_GENERIC_MMC 1
@@ -304,15 +289,16 @@
 /* #define CONFIG_MUSB_UDC		1 */
 #define CONFIG_CMD_USB 1
 #if defined(CONFIG_CMD_USB)
-	#define CONFIG_M8_USBPORT_BASE_A	0xC9000000
-	#define CONFIG_M8_USBPORT_BASE_B	0xC9100000
+	#define CONFIG_GXL_XHCI_BASE		0xc9000000
+	#define CONFIG_GXL_USB_PHY2_BASE	0xd0078000
+	#define CONFIG_GXL_USB_PHY3_BASE	0xd0078080
 	#define CONFIG_USB_STORAGE      1
-	#define CONFIG_USB_DWC_OTG_HCD  1
-	#define CONFIG_USB_DWC_OTG_294	1
+	#define CONFIG_USB_XHCI		1
+	#define CONFIG_USB_XHCI_AMLOGIC_GXL 1
 #endif //#if defined(CONFIG_CMD_USB)
 
 //UBOOT Facotry usb/sdcard burning config
-#define CONFIG_AML_V2_FACTORY_BURN              1
+#define CONFIG_AML_V2_FACTORY_BURN              1       //support facotry usb burning
 #define CONFIG_AML_FACTORY_BURN_LOCAL_UPGRADE   1       //support factory sdcard burning
 #define CONFIG_POWER_KEY_NOT_SUPPORTED_FOR_BURN 1       //There isn't power-key for factory sdcard burning
 #define CONFIG_SD_BURNING_SUPPORT_UI            1       //Displaying upgrading progress bar when sdcard/udisk burning
@@ -355,6 +341,7 @@
 #define CONFIG_CMD_ECHO 1
 #define CONFIG_CMD_JTAG	1
 #define CONFIG_CMD_AUTOSCRIPT 1
+#define CONFIG_CMD_MISC 1
 
 /*file system*/
 #define CONFIG_DOS_PARTITION 1
@@ -378,14 +365,20 @@
 #define CONFIG_CMD_ITEST    1
 #define CONFIG_CMD_CPU_TEMP 1
 #define CONFIG_SYS_MEM_TOP_HIDE 0x08000000 //hide 128MB for kernel reserve
-#define CONFIG_MULTI_DTB    1
+
+/* debug mode defines */
+//#define CONFIG_DEBUG_MODE           1
+#ifdef CONFIG_DEBUG_MODE
+#define CONFIG_DDR_CLK_DEBUG        636
+#define CONFIG_CPU_CLK_DEBUG        600
+#endif
 
 //support secure boot
 #define CONFIG_AML_SECURE_UBOOT   1
 
 #if defined(CONFIG_AML_SECURE_UBOOT)
 
-//for GXBB SRAM size limitation just disable NAND
+//for SRAM size limitation just disable NAND
 //as the socket board default has no NAND
 //#undef CONFIG_AML_NAND
 
@@ -393,12 +386,11 @@
 #define CONFIG_AML_CRYPTO_UBOOT   1
 
 //unify build for generate encrypted kernel image
-//SRC : "board/amlogic/gxb_skt_v1/boot.img"
+//SRC : "board/amlogic/(board)/boot.img"
 //DST : "fip/boot.img.encrypt"
 //#define CONFIG_AML_CRYPTO_IMG       1
 
 #endif //CONFIG_AML_SECURE_UBOOT
-
 
 #define CONFIG_SECURE_STORAGE 1
 
@@ -412,6 +404,7 @@
   #undef CONFIG_AML_CUSTOMER_ID
   #define CONFIG_AML_CUSTOMER_ID  CONFIG_CUSTOMER_ID
 #endif
+#define ETHERNET_INTERNAL_PHY
 
 #endif
 

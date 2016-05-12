@@ -1,6 +1,6 @@
 
 /*
- * include/configs/gxtvbb_p310_v1.h
+ * board/amlogic/configs/gxtvbb_p301_v1.h
  *
  * Copyright (C) 2015 Amlogic, Inc. All rights reserved.
  *
@@ -19,8 +19,8 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-#ifndef __GXTVBB_P310_V1_H__
-#define __GXTVBB_P310_V1_H__
+#ifndef __GXTVBB_P301_V1_H__
+#define __GXTVBB_P301_V1_H__
 
 #include <asm/arch/cpu.h>
 
@@ -54,7 +54,7 @@
 #define CONFIG_IR_REMOTE  1
 //Enable ir remote wake up for bl30
 #define CONFIG_IR_REMOTE_POWER_UP_KEY_CNT 8
-#define CONFIG_IR_REMOTE_USE_PROTOCOL 0         // 0:nec  1:duokan  2:Toshiba 3:rca
+#define CONFIG_IR_REMOTE_USE_PROTOCOL 0         // 0:nec  1:duokan  2:Toshiba 3:rca 4:nec||toshiba 5:nec||rca
 #define CONFIG_IR_REMOTE_POWER_UP_KEY_VAL1 0xef10fe01 //amlogic nec tv ir --- power
 #define CONFIG_IR_REMOTE_POWER_UP_KEY_VAL2 0xf30cfe01 //amlogic nec tv ir --- ch+
 #define CONFIG_IR_REMOTE_POWER_UP_KEY_VAL3 0xf20dfe01 //amlogic nec tv ir --- ch-
@@ -65,17 +65,27 @@
 #define CONFIG_IR_REMOTE_POWER_UP_KEY_VAL8 0xf30c0e0e  //skyworth
 #define CONFIG_IR_REMOTE_POWER_UP_KEY_VAL9 0xFFFFFFFF
 
+#define CONFIG_AML_LED
+//#define CONFIG_LED_PWM_INVERT
+#define CONFIG_CMD_LED
+#define CONFIG_STATUS_LED
+#define CONFIG_BOARD_SPECIFIC_LED
+
+#define CONFIG_AML_SPICC
+#define CONFIG_CMD_SPI
+
 /* args/envs */
 #define CONFIG_SYS_MAXARGS  64
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	"firstboot=1\0"\
 	"upgrade_step=0\0"\
 	"loadaddr=1080000\0"\
-	"dtb_mem_addr=0x1000000\0" \
+	"panel_type=lvds_2\0" \
 	"outputmode=1080p60hz\0" \
 	"panel_reverse=0\0" \
 	"osd_reverse=n\0" \
 	"video_reverse=n\0" \
+	"bl_off=none\0" \
 	"display_width=1920\0" \
 	"display_height=1080\0" \
 	"display_bpp=16\0" \
@@ -83,6 +93,7 @@
 	"display_layer=osd1\0" \
 	"display_color_fg=0xffff\0" \
 	"display_color_bg=0\0" \
+	"dtb_mem_addr=0x1000000\0" \
 	"fb_addr=0x3b000000\0" \
 	"fb_width=1920\0" \
 	"fb_height=1080\0" \
@@ -94,6 +105,7 @@
 	"wipe_data=successful\0"\
 	"wipe_cache=successful\0"\
 	"jtag=apao\0"\
+	"ledmode=standby:breath,booting:on,working:on\0"\
 	"upgrade_check="\
 		"echo upgrade_step=${upgrade_step}; "\
 		"if itest ${upgrade_step} == 3; then "\
@@ -107,9 +119,14 @@
 		"androidboot.selinux=enforcing "\
 		"logo=${display_layer},loaded,${fb_addr} "\
 		"vout=${outputmode},enable "\
+		"panel_type=${panel_type} hdmitx= "\
 		"osd_reverse=${osd_reverse} video_reverse=${video_reverse} "\
+		"bl_off=${bl_off} "\
 		"jtag=${jtag} "\
+		"ledmode=${ledmode} "\
+		"ramoops.pstore_en=1 ramoops.record_size=0x8000 ramoops.console_size=0x4000 "\
 		"androidboot.firstboot=${firstboot}; "\
+		"setenv bootargs ${bootargs} androidboot.hardware=amlogic;"\
 		"run cmdline_keys; "\
 		"\0"\
 	"switch_bootmode="\
@@ -152,8 +169,13 @@
 		"fi; "\
 		"\0" \
 	"update="\
+		/*first usb burning,
+		second sdc_burn,
+		third ext-sd autoscr/recovery,
+		last udisk autoscr/recovery*/\
 		"run usb_burning; "\
 		"run sdc_burning; "\
+		"led 0 toggle; "\
 		"if mmcinfo; then "\
 			"run recovery_from_sdcard; "\
 		"fi; "\
@@ -215,12 +237,18 @@
 			"fi; "\
 		"fi; "\
 		"\0"\
+	"upgrade_key="\
+		"if gpio input GPIOAO_3; then "\
+			"echo detect upgrade key; sleep 5; run update; "\
+		"fi; "\
+		"\0"\
 
 #define CONFIG_PREBOOT  \
 	"run factory_reset_poweroff_protect; "\
 	"run upgrade_check; "\
 	"run init_display; "\
 	"run storeargs; "\
+	"run upgrade_key; "\
 	"run switch_bootmode;"
 #define CONFIG_BOOTCOMMAND "run storeboot"
 
@@ -246,12 +274,14 @@
  *    CONFIG_DDR01_TWO_CHANNEL_16BIT   : two channels 16bit */
 #define CONFIG_DDR_CHANNEL_SET			CONFIG_DDR01_TWO_CHANNEL
 #define CONFIG_DDR_FULL_TEST			0 //1 for ddr full test
+#define CONFIG_CMD_DDR_TEST
+#define CONFIG_DDR_CMD_BDL_TUNE
 #define CONFIG_NR_DRAM_BANKS			1
 /* ddr power saving */
 #define CONFIG_DDR_ZQ_POWER_DOWN
 #define CONFIG_DDR_POWER_DOWN_PHY_VREF
 /* ddr detection */
-#define CONFIG_DDR_SIZE_AUTO_DETECT		1 //0:disable, 1:enable
+#define CONFIG_DDR_SIZE_AUTO_DETECT		0 //0:disable, 1:enable
 
 /* storage: emmc/nand/sd */
 #define		CONFIG_STORE_COMPATIBLE 1
@@ -306,20 +336,20 @@
 #define CONFIG_AML_VPU 1
 
 /* DISPLAY & HDMITX */
-#define CONFIG_AML_HDMITX20 1
+//#define CONFIG_AML_HDMITX20 1
 #define CONFIG_AML_CANVAS 1
 #define CONFIG_AML_VOUT 1
 #define CONFIG_AML_OSD 1
 #define CONFIG_OSD_SCALE_ENABLE 1
 #define CONFIG_CMD_BMP 1
 
-#if defined(CONFIG_AML_VOUT)
-#define CONFIG_AML_CVBS 1
-#endif
+// #if defined(CONFIG_AML_VOUT)
+// #define CONFIG_AML_CVBS 1
+// #endif
 
-//#define CONFIG_AML_LCD    1
+#define CONFIG_AML_LCD    1
 #define CONFIG_AML_LCD_TV 1
-/* #define CONFIG_AML_LCD_TABLET 1 */
+#define CONFIG_AML_LCD_TABLET 1
 
 /* USB
  * Enable CONFIG_MUSB_HCD for Host functionalities MSC, keyboard
@@ -335,7 +365,6 @@
 	#define CONFIG_USB_XHCI 1
 	#define CONFIG_USB_XHCI_AMLOGIC 1
 #endif //#if defined(CONFIG_CMD_USB)
-//#define CONFIG_AML_TINY_USBTOOL 1
 
 //UBOOT Facotry usb/sdcard burning config
 #define CONFIG_AML_V2_FACTORY_BURN              1       //support facotry usb burning
@@ -346,12 +375,12 @@
 #define CONFIG_AML_SECURITY_KEY                 1
 #define CONFIG_UNIFY_KEY_MANAGE                 1
 
-
 /* net */
 #define CONFIG_CMD_NET   1
 #if defined(CONFIG_CMD_NET)
 	#define CONFIG_DESIGNWARE_ETH 1
 	#define CONFIG_PHYLIB	1
+	#define CONFIG_AML_PMU4 1
 	#define CONFIG_NET_MULTI 1
 	#define CONFIG_CMD_PING 1
 	#define CONFIG_CMD_DHCP 1
@@ -368,6 +397,7 @@
 #define CONFIG_EFUSE 1
 #define CONFIG_SYS_I2C_AML 1
 #define CONFIG_SYS_I2C_SPEED     400000
+#define CONFIG_HDMI_UART_BOARD 1
 
 /* commands */
 #define CONFIG_CMD_CACHE 1
@@ -397,9 +427,9 @@
 
 /* other functions */
 #define CONFIG_NEED_BL301	1
-#define CONFIG_BOOTDELAY	1
+#define CONFIG_BOOTDELAY	1 //delay 1s
 #define CONFIG_SYS_LONGHELP 1
-#define CONFIG_CMD_MISC         1
+#define CONFIG_CMD_MISC     1
 #define CONFIG_CMD_ITEST    1
 #define CONFIG_CMD_CPU_TEMP 1
 #define CONFIG_SYS_MEM_TOP_HIDE 0x08000000 //hide 128MB for kernel reserve

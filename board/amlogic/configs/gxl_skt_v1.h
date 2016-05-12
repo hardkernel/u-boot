@@ -1,6 +1,6 @@
 
 /*
- * include/configs/gxb_p201_v1.h
+ * board/amlogic/configs/gxl_skt_v1.h
  *
  * Copyright (C) 2015 Amlogic, Inc. All rights reserved.
  *
@@ -19,33 +19,28 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-#ifndef __GXB_P201_V1_H__
-#define __GXB_P201_V1_H__
+#ifndef __GXL_SKT_V1_H__
+#define __GXL_SKT_V1_H__
 
-#ifndef __SUSPEND_FIRMWARE__
 #include <asm/arch/cpu.h>
-#endif		/* for compile problem of A53 and m3 */
+
 
 #define CONFIG_SYS_GENERIC_BOARD  1
-#ifndef __SUSPEND_FIRMWARE__
 #ifndef CONFIG_AML_MESON
 #warning "include warning"
 #endif
-#endif		/* for compile problem of A53 and m3 */
 
 /*
  * platform power init config
  */
 #define CONFIG_PLATFORM_POWER_INIT
 #define CONFIG_VCCK_INIT_VOLTAGE	1100
-#define CONFIG_VDDEE_INIT_VOLTAGE	1000		// voltage for power up
+#define CONFIG_VDDEE_INIT_VOLTAGE	1100		// voltage for power up
 #define CONFIG_VDDEE_SLEEP_VOLTAGE	 850		// voltage for suspend
 
 /* configs for CEC */
 #define CONFIG_CEC_OSD_NAME		"Mbox"
 #define CONFIG_CEC_WAKEUP
-
-#define CONFIG_INSTABOOT
 
 /* SMP Definitinos */
 #define CPU_RELEASE_ADDR		secondary_boot_func
@@ -57,23 +52,19 @@
 #define CONFIG_SERIAL_MULTI		1
 
 //Enable ir remote wake up for bl30
-//#define CONFIG_IR_REMOTE
-//#define CONFIG_AML_IRDETECT_EARLY
-#define CONFIG_IR_REMOTE_POWER_UP_KEY_CNT 4
-#define CONFIG_IR_REMOTE_USE_PROTOCOL 0         // 0:nec  1:duokan  2:Toshiba 3:rca 4:rcmm
+#define CONFIG_IR_REMOTE_POWER_UP_KEY_CNT 3
 #define CONFIG_IR_REMOTE_POWER_UP_KEY_VAL1 0XE51AFB04 //amlogic tv ir --- power
 #define CONFIG_IR_REMOTE_POWER_UP_KEY_VAL2 0XBB44FB04 //amlogic tv ir --- ch+
 #define CONFIG_IR_REMOTE_POWER_UP_KEY_VAL3 0xF20DFE01 //amlogic tv ir --- ch-
-#define CONFIG_IR_REMOTE_POWER_UP_KEY_VAL4 0xBA45BD02
+#define CONFIG_IR_REMOTE_POWER_UP_KEY_VAL4 0xFFFFFFFF
 
 #define CONFIG_IR_REMOTE_POWER_UP_KEY_VAL5 0x3ac5bd02
-
 /* args/envs */
 #define CONFIG_SYS_MAXARGS  64
 #define CONFIG_EXTRA_ENV_SETTINGS \
         "firstboot=1\0"\
         "upgrade_step=0\0"\
-        "jtag=apee\0"\
+        "jtag=apao\0"\
         "loadaddr=1080000\0"\
         "outputmode=1080p60hz\0" \
         "hdmimode=1080p60hz\0" \
@@ -108,7 +99,7 @@
                 "run init_display; run storeargs; run update;"\
             "else fi;"\
             "\0"\
-    "storeargs="\
+        "storeargs="\
             "setenv bootargs ${initargs} logo=${display_layer},loaded,${fb_addr},${outputmode} vout=${outputmode},enable hdmimode=${hdmimode} cvbsmode=${cvbsmode} hdmitx=${cecconfig} cvbsdrv=${cvbs_drv} androidboot.firstboot=${firstboot} jtag=${jtag}; "\
 	"setenv bootargs ${bootargs} androidboot.hardware=amlogic;"\
             "run cmdline_keys;"\
@@ -120,10 +111,11 @@
             "else if test ${reboot_mode} = update; then "\
                     "run update;"\
             "else if test ${reboot_mode} = cold_boot; then "\
-                "run try_auto_burn; "\
+                /*"run try_auto_burn; "*/\
             "fi;fi;fi;"\
             "\0" \
         "storeboot="\
+            "hdmitx output 1080p60hz;"\
             "if imgread kernel boot ${loadaddr}; then bootm ${loadaddr}; fi;"\
             "run update;"\
             "\0"\
@@ -197,9 +189,19 @@
             "\0"\
         "upgrade_key="\
             "if gpio input GPIOAO_3; then "\
-                "echo detect upgrade key; sleep 5; run update;"\
+                "echo detect upgrade key; run update;"\
             "fi;"\
             "\0"\
+	"irremote_update="\
+		"if irkey 0xe31cfb04 0xb748fb04 2500000; then "\
+			"echo read irkey ok!; " \
+		"if itest ${irkey_value} == 0xe31cfb04; then " \
+			"run update;" \
+		"else if itest ${irkey_value} == 0xb748fb04; then " \
+			"run update;\n" \
+			"fi;fi;" \
+		"fi;\0" \
+
 
 #define CONFIG_PREBOOT  \
             "run factory_reset_poweroff_protect;"\
@@ -219,33 +221,30 @@
 #define CONFIG_SYS_BOOTM_LEN (64<<20) /* Increase max gunzip size*/
 
 /* cpu */
-#define CONFIG_CPU_CLK					1536 //MHz. Range: 600-1800, should be multiple of 24
+#define CONFIG_CPU_CLK					1024 //MHz. Range: 600-1800, should be multiple of 24
 
 /* ddr */
-#define CONFIG_DDR_SIZE					1024 //MB
-#define CONFIG_DDR_CLK					912  //MHz, Range: 384-1200, should be multiple of 24
+#define CONFIG_DDR_SIZE					0 //MB //0 means ddr size auto-detect
+#define CONFIG_DDR_CLK					792  //MHz, Range: 384-1200, should be multiple of 24
 #define CONFIG_DDR_TYPE					CONFIG_DDR_TYPE_DDR3
 /* DDR channel setting, please refer hardware design.
- *    CONFIG_DDR0_RANK0_ONLY   : one channel
- *    CONFIG_DDR0_RANK01_SAME  : one channel use two rank with same setting
- *    CONFIG_DDR0_RANK01_DIFF  : one channel use two rank with diff setting
- *    CONFIG_DDR01_SHARE_AC    : two channels  */
-#define CONFIG_DDR_CHANNEL_SET			CONFIG_DDR0_RANK01_SAME
+ *    CONFIG_DDR0_RANK0        : DDR0 rank0
+ *    CONFIG_DDR0_RANK01       : DDR0 rank0+1
+ *    CONFIG_DDR0_16BIT        : DDR0 16bit mode
+ *    CONFIG_DDR_CHL_AUTO      : auto detect RANK0 / RANK0+1 */
+#define CONFIG_DDR_CHANNEL_SET			CONFIG_DDR_CHL_AUTO
 #define CONFIG_DDR_FULL_TEST			0 //1 for ddr full test
 #define CONFIG_NR_DRAM_BANKS			1
-/* ddr power saving */
-#define CONFIG_DDR_ZQ_POWER_DOWN
-#define CONFIG_DDR_POWER_DOWN_PHY_VREF
-/* ddr detection */
-#define CONFIG_DDR_SIZE_AUTO_DETECT		0 //0:disable, 1:enable
 /* ddr functions */
 #define CONFIG_CMD_DDR_D2PLL			0 //0:disable, 1:enable. d2pll cmd
 #define CONFIG_CMD_DDR_TEST				0 //0:disable, 1:enable. ddrtest cmd
+#define CONFIG_DDR_LOW_POWER			0 //0:disable, 1:enable. ddr clk gate for lp
+#define CONFIG_DDR_ZQ_PD				0 //0:disable, 1:enable. ddr zq power down
+#define CONFIG_DDR_USE_EXT_VREF			0 //0:disable, 1:enable. ddr use external vref
 
 /* storage: emmc/nand/sd */
-#define	CONFIG_STORE_COMPATIBLE 1
+#define		CONFIG_STORE_COMPATIBLE 1
 #define CONFIG_AML_NAND	1
-/* env */
 #define 	CONFIG_ENV_OVERWRITE
 #define 	CONFIG_CMD_SAVEENV
 /* fixme, need fix*/
@@ -253,17 +252,46 @@
 #if (defined(CONFIG_ENV_IS_IN_AMLNAND) || defined(CONFIG_ENV_IS_IN_MMC)) && defined(CONFIG_STORE_COMPATIBLE)
 #error env in amlnand/mmc already be compatible;
 #endif
-#define CONFIG_AML_SD_EMMC 1
-#ifdef	CONFIG_AML_SD_EMMC
-	#define CONFIG_GENERIC_MMC 1
-	#define CONFIG_CMD_MMC 1
+#define		CONFIG_AML_SD_EMMC 1
+#ifdef		CONFIG_AML_SD_EMMC
+	#define 	CONFIG_GENERIC_MMC 1
+	#define 	CONFIG_CMD_MMC 1
 	#define	CONFIG_SYS_MMC_ENV_DEV 1
 	#define CONFIG_EMMC_DDR52_EN 1
 	#define CONFIG_EMMC_DDR52_CLK 35000000
 #endif
+#define		CONFIG_PARTITIONS 1
+#define 	CONFIG_SYS_NO_FLASH  1
 
-#define	CONFIG_PARTITIONS 1
-#define CONFIG_SYS_NO_FLASH  1
+/*SPI*/
+#define CONFIG_AMLOGIC_SPI_FLASH 1
+#ifdef 		CONFIG_AMLOGIC_SPI_FLASH
+#undef 		CONFIG_ENV_IS_NOWHERE
+//#define		CONFIG_SPI_BOOT 1
+#define 	CONFIG_SPI_FLASH_ATMEL
+#define 	CONFIG_SPI_FLASH_EON
+#define 	CONFIG_SPI_FLASH_MACRONIX
+#define 	CONFIG_SPI_FLASH_SPANSION
+#define 	CONFIG_SPI_FLASH_SST
+#define 	CONFIG_SPI_FLASH_STMICRO
+#define 	CONFIG_SPI_FLASH_WINBOND
+#define		CONFIG_SPI_FRAM_RAMTRON
+#define		CONFIG_SPI_M95XXX
+//#define		CONFIG_SPI_FLASH_GIGADEVICE
+//#define		CONFIG_SPI_FLASH_PMDEVICE
+//#define		CONFIG_SPI_NOR_SECURE_STORAGE
+#define		CONFIG_SPI_FLASH_ESMT
+#define		CONFIG_SPI_FLASH 1
+#define 	CONFIG_CMD_SF 1
+#ifdef CONFIG_SPI_BOOT
+	#define CONFIG_ENV_OVERWRITE
+	#define CONFIG_ENV_IS_IN_SPI_FLASH
+	#define CONFIG_CMD_SAVEENV
+	#define CONFIG_ENV_SECT_SIZE		0x10000
+	#define CONFIG_ENV_OFFSET           0x1f0000
+#endif
+#endif
+
 
 /* vpu */
 #define CONFIG_AML_VPU 1
@@ -290,11 +318,12 @@
 /* #define CONFIG_MUSB_UDC		1 */
 #define CONFIG_CMD_USB 1
 #if defined(CONFIG_CMD_USB)
-	#define CONFIG_M8_USBPORT_BASE_A	0xC9000000
-	#define CONFIG_M8_USBPORT_BASE_B	0xC9100000
+	#define CONFIG_GXL_XHCI_BASE		0xc9000000
+	#define CONFIG_GXL_USB_PHY2_BASE	0xd0078000
+	#define CONFIG_GXL_USB_PHY3_BASE	0xd0078080
 	#define CONFIG_USB_STORAGE      1
-	#define CONFIG_USB_DWC_OTG_HCD  1
-	#define CONFIG_USB_DWC_OTG_294	1
+	#define CONFIG_USB_XHCI		1
+	#define CONFIG_USB_XHCI_AMLOGIC_GXL 1
 #endif //#if defined(CONFIG_CMD_USB)
 
 //UBOOT Facotry usb/sdcard burning config
@@ -359,12 +388,29 @@
 #define CONFIG_NEED_BL32	1
 #define CONFIG_CMD_RSVMEM	1
 #define CONFIG_FIP_IMG_SUPPORT	1
-#define CONFIG_BOOTDELAY	1 //delay 1s
+#define CONFIG_BOOTDELAY	1
 #define CONFIG_SYS_LONGHELP 1
-#define CONFIG_CMD_MISC     1
+#define CONFIG_CMD_MISC         1
 #define CONFIG_CMD_ITEST    1
 #define CONFIG_CMD_CPU_TEMP 1
 #define CONFIG_SYS_MEM_TOP_HIDE 0x08000000 //hide 128MB for kernel reserve
+
+/* debug mode defines */
+//#define CONFIG_DEBUG_MODE			1
+#ifdef CONFIG_DEBUG_MODE
+#define CONFIG_DDR_CLK_DEBUG		636
+#define CONFIG_CPU_CLK_DEBUG		600
+#endif
+
+/* ddr dump function defines */
+//#define CONFIG_SPL_DDR_DUMP 1
+#ifdef CONFIG_SPL_DDR_DUMP
+	#define CONFIG_SPL_DDR_DUMP_ADDR 			0x01000000
+	#define CONFIG_SPL_DDR_DUMP_SIZE			0x00200000
+	#define CONFIG_SPL_DDR_DUMP_DEV_TYPE		0x4 //device type, 1:emmc, 4:sd
+	#define CONFIG_SPL_DDR_DUMP_DEV_OFFSET		0x40000000 //offset of store device
+	#define CONFIG_SPL_DDR_DUMP_FLAG			0x1 //flag write in sticky reg
+#endif
 
 //support secure boot
 #define CONFIG_AML_SECURE_UBOOT   1
@@ -397,6 +443,7 @@
   #undef CONFIG_AML_CUSTOMER_ID
   #define CONFIG_AML_CUSTOMER_ID  CONFIG_CUSTOMER_ID
 #endif
+#define ETHERNET_INTERNAL_PHY
 
 #endif
 

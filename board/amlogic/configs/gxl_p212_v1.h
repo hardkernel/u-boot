@@ -1,6 +1,6 @@
 
 /*
- * include/configs/gxl_p212_v1.h
+ * board/amlogic/configs/gxl_p212_v1.h
  *
  * Copyright (C) 2015 Amlogic, Inc. All rights reserved.
  *

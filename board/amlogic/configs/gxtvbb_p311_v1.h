@@ -1,6 +1,6 @@
 
 /*
- * include/configs/gxtvbb_p311_v1.h
+ * board/amlogic/configs/gxtvbb_p311_v1.h
  *
  * Copyright (C) 2015 Amlogic, Inc. All rights reserved.
  *

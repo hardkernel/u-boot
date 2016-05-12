@@ -6,7 +6,7 @@ config SYS_CPU
 
 config SYS_BOARD
 	string
-	default "gxl_q200_v1"
+	default "gxm_q201_v1"
 
 config SYS_VENDOR
 	string
@@ -17,6 +17,6 @@ config SYS_SOC
 	default "gxl"
 
 config SYS_CONFIG_NAME
-	default "gxl_q200_v1"
+	default "gxm_q201_v1"
 
 endif
