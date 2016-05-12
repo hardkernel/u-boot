@@ -10,8 +10,8 @@
 #endif
 #define CEC_DBG_PRINT
 #ifdef CEC_DBG_PRINT
-	#define cec_dbg_print(s,v) {uart_puts(s);uart_put_hex(v,8);}
-	#define cec_dbg_prints(s)  {uart_puts(s);}
+	#define cec_dbg_print(s,v) {uart_puts(s);uart_put_hex(v,8); _udelay(100);}
+	#define cec_dbg_prints(s)  {uart_puts(s); _udelay(100);}
 #else
 	#define cec_dbg_print(s,v)
 	#define cec_dbg_prints(s)
@@ -150,17 +150,43 @@ void cec_hw_buf_clear(void)
 
 void remote_cec_hw_reset(void)
 {
-	cec_dbg_prints("hw reset\n");
+	unsigned int reg;
+	cec_dbg_prints("cec reset\n");
 	/*
 	 * clock switch to 32k
 	 */
-	writel(readl(P_AO_CRT_CLK_CNTL1) | (1 << 16), P_AO_CRT_CLK_CNTL1);
+	reg =   (0 << 31) |
+		(0 << 30) |
+		(1 << 28) |         /* clk_div0/clk_div1 in turn */
+		((732 - 1) << 12) | /* Div_tcnt1 */
+		((733 - 1) << 0);   /* Div_tcnt0 */
+	writel(reg, P_AO_RTC_ALT_CLK_CNTL0);
+	reg =   (0 << 13) |
+		((11 - 1)  << 12) |
+		( (8 - 1)  <<  0);
+	writel(reg, P_AO_RTC_ALT_CLK_CNTL1);
 
-	writel(readl(P_AO_RTI_PIN_MUX_REG) & (~(1 << 14 | 1 << 17)), P_AO_RTI_PIN_MUX_REG);
-	writel(readl(P_AO_RTI_PIN_MUX_REG2) & (~(1 << 0)), P_AO_RTI_PIN_MUX_REG2);
-	writel(readl(P_AO_RTI_PULL_UP_REG) & (~(1 << 12)), P_AO_RTI_PULL_UP_REG);
-	writel(readl(P_AO_RTI_PIN_MUX_REG) | (1 << 15), P_AO_RTI_PIN_MUX_REG);
-	//unsigned long data32;
+	reg = readl(P_AO_RTC_ALT_CLK_CNTL0);
+	reg |= (1 << 31);
+	writel(reg, P_AO_RTC_ALT_CLK_CNTL0);
+
+	_udelay(200);
+	reg |= (1 << 30);
+	writel(reg, P_AO_RTC_ALT_CLK_CNTL0);
+
+	reg = readl(P_AO_CRT_CLK_CNTL1);
+	reg |= (0x800 << 16);   /* select cts_rtc_oscin_clk */
+	writel(reg, P_AO_CRT_CLK_CNTL1);
+
+	reg = readl(P_AO_RTI_PWR_CNTL_REG0);
+	reg &= ~(0x07 << 10);
+	reg |=  (0x04 << 10);   /* XTAL generate 32k */
+	writel(reg, P_AO_RTI_PWR_CNTL_REG0);
+
+	/* set up pinmux */
+	writel(readl(P_AO_RTI_PIN_MUX_REG) & (~(1 << 18 | 1 << 17)), P_AO_RTI_PIN_MUX_REG);
+	writel(readl(P_AO_RTI_PULL_UP_REG) & (~(1 << 9)), P_AO_RTI_PULL_UP_REG);
+	writel(readl(P_AO_RTI_PIN_MUX_REG) | (1 << 16), P_AO_RTI_PIN_MUX_REG);
 	// Assert SW reset AO_CEC
 	writel(0x1, P_AO_CEC_GEN_CNTL);
 	// Enable gated clock (Normal mode).
@@ -475,6 +501,7 @@ void cec_get_version(void)
 unsigned int cec_handle_message(void)
 {
 	unsigned char opcode;
+	unsigned char dest;
 
 	if (((hdmi_cec_func_config>>CEC_FUNC_MASK) & 0x1) &&
 		(cec_msg.buf[cec_msg.rx_read_pos].msg_len > 1)) {
@@ -514,6 +541,14 @@ unsigned int cec_handle_message(void)
 		case CEC_OC_MENU_REQUEST:
 			cec_menu_status_smp(DEVICE_MENU_INACTIVE);
 			break;
+
+		/* TV wake up by down stream devices */
+		case CEC_OC_IMAGE_VIEW_ON:
+		case CEC_OC_TEXT_VIEW_ON:
+			dest = cec_msg.buf[cec_msg.rx_read_pos].msg[0] & 0xf;
+			if (dest == CEC_TV_ADDR)
+				cec_msg.cec_power = 0x1;
+			break;
 		default:
 			break;
 		}
@@ -527,9 +562,9 @@ void cec_reset_addr(void)
 	remote_cec_hw_reset();
 	cec_wr_reg(CEC_LOGICAL_ADDR0, 0);
 	cec_hw_buf_clear();
-	cec_wr_reg(CEC_LOGICAL_ADDR0, cec_msg.log_addr);
+	cec_wr_reg(CEC_LOGICAL_ADDR0, cec_msg.log_addr & 0x0f);
 	_udelay(100);
-	cec_wr_reg(CEC_LOGICAL_ADDR0, (0x1 << 4) | cec_msg.log_addr);
+	cec_wr_reg(CEC_LOGICAL_ADDR0, (0x1 << 4) | (cec_msg.log_addr & 0x0f));
 }
 
 unsigned int cec_handler(void)
@@ -632,6 +667,16 @@ unsigned int cec_handler(void)
 	return 0;
 }
 
+static int is_playback_dev(int addr)
+{
+	if (addr != CEC_PLAYBACK_DEVICE_1_ADDR &&
+		addr != CEC_PLAYBACK_DEVICE_2_ADDR &&
+		addr != CEC_PLAYBACK_DEVICE_3_ADDR) {
+		return 0;
+	}
+	return 1;
+}
+
 void cec_node_init(void)
 {
 	static int i = 0;
@@ -675,6 +720,25 @@ void cec_node_init(void)
 		 */
 		cec_dbg_print("kern log_addr:0x", kern_log_addr);
 		uart_puts("\n");
+		/* we don't need probe TV address */
+		if (!is_playback_dev(kern_log_addr)) {
+			msg[0] = (kern_log_addr << 4) | kern_log_addr;
+			ping_cec_ll_tx(msg, 1);
+			cec_msg.log_addr = 0x10 | kern_log_addr;
+			cec_wr_reg(CEC_LOGICAL_ADDR0, 0);
+			cec_hw_buf_clear();
+			cec_wr_reg(CEC_LOGICAL_ADDR0, kern_log_addr);
+			_udelay(100);
+			cec_wr_reg(CEC_LOGICAL_ADDR0, (0x1 << 4) | kern_log_addr);
+			cec_dbg_print("Set cec log_addr:0x", cec_msg.log_addr);
+			cec_dbg_print(",ADDR0:", cec_rd_reg(CEC_LOGICAL_ADDR0));
+			uart_puts("\n");
+			probe = NULL;
+			regist_devs = 0;
+			i = 0;
+			retry = 0;
+			return ;
+		}
 		for (i = 0; i < 3; i++) {
 			if (kern_log_addr == player_dev[i][0]) {
 				probe = player_dev[i];

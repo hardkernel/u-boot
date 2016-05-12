@@ -48,6 +48,9 @@ static unsigned int pwm_voltage_table[][2] = {
 	{ 0x00001c, 1140},
 };
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
+#ifdef CONFIG_CEC_WAKEUP
+#include <cec_tx_reg.h>
+#endif
 #define P_PIN_MUX_REG3		(*((volatile unsigned *)(0xda834400 + (0x2f << 2))))
 #define P_PIN_MUX_REG7		(*((volatile unsigned *)(0xda834400 + (0x33 << 2))))
 
@@ -182,8 +185,7 @@ static void get_wakeup_source(void *response, unsigned int suspend_from)
 	val = (AUTO_WAKEUP_SRC | REMOTE_WAKEUP_SRC);
 
 #ifdef CONFIG_CEC_WAKEUP
-	if (suspend_from != SYS_POWEROFF)
-		val |= CEC_WAKEUP_SRC;
+	val |= CEC_WAKEUP_SRC;
 #endif
 
 	p->sources = val;
@@ -215,8 +217,6 @@ static unsigned int detect_key(unsigned int suspend_from)
 		switch (*irq) {
 #ifdef CONFIG_CEC_WAKEUP
 		case IRQ_AO_CEC_NUM:
-			if (suspend_from == SYS_POWEROFF)
-				break;
 			if (cec_msg.log_addr) {
 				if (hdmi_cec_func_config & 0x1) {
 					cec_handler();
