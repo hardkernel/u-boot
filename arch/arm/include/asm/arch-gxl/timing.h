@@ -109,7 +109,12 @@ struct ddr_set{
 
 	/* aligned */
 	/* 2016.04.12 update */
-	unsigned long  t_rsv_int64_0;
+	unsigned short ddr4_clk; //2016.05.13 add
+	unsigned char  ddr4_drv; //2016.05.13 add
+	unsigned char  ddr4_odt; //2016.05.13 add
+	unsigned short t_rsv_int16_1;
+	unsigned short t_rsv_int16_2;
+
 	unsigned long  t_rsv_int64_1;
 	unsigned long  t_rsv_int64_2;
 }__attribute__ ((packed));

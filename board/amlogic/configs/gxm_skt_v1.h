@@ -225,13 +225,19 @@
 /* ddr */
 #define CONFIG_DDR_SIZE					0 //MB //0 means ddr size auto-detect
 #define CONFIG_DDR_CLK					912  //MHz, Range: 384-1200, should be multiple of 24
-#define CONFIG_DDR_TYPE					CONFIG_DDR_TYPE_DDR3
+#define CONFIG_DDR4_CLK					1100  //MHz, for boards which use different ddr chip
+/* DDR type setting
+ *    CONFIG_DDR_TYPE_LPDDR3   : LPDDR3
+ *    CONFIG_DDR_TYPE_DDR3     : DDR3
+ *    CONFIG_DDR_TYPE_DDR4     : DDR4
+ *    CONFIG_DDR_TYPE_AUTO     : DDR3/DDR4 auto detect */
+#define CONFIG_DDR_TYPE					CONFIG_DDR_TYPE_AUTO
 /* DDR channel setting, please refer hardware design.
  *    CONFIG_DDR0_RANK0        : DDR0 rank0
  *    CONFIG_DDR0_RANK01       : DDR0 rank0+1
  *    CONFIG_DDR0_16BIT        : DDR0 16bit mode
  *    CONFIG_DDR_CHL_AUTO      : auto detect RANK0 / RANK0+1 */
-#define CONFIG_DDR_CHANNEL_SET			CONFIG_DDR_CHL_AUTO
+#define CONFIG_DDR_CHANNEL_SET			CONFIG_DDR0_RANK0
 #define CONFIG_DDR_FULL_TEST			0 //1 for ddr full test
 #define CONFIG_NR_DRAM_BANKS			1
 /* ddr functions */
@@ -260,9 +266,38 @@
 	#define CONFIG_EMMC_DDR52_EN 1
 	#define CONFIG_EMMC_DDR52_CLK 35000000
 #endif
+#define		CONFIG_PARTITIONS 1
+#define 	CONFIG_SYS_NO_FLASH  1
 
-#define	CONFIG_PARTITIONS 1
-#define CONFIG_SYS_NO_FLASH  1
+/*SPI*/
+#define CONFIG_AMLOGIC_SPI_FLASH 1
+#ifdef 		CONFIG_AMLOGIC_SPI_FLASH
+#undef 		CONFIG_ENV_IS_NOWHERE
+//#define		CONFIG_SPI_BOOT 1
+#define 	CONFIG_SPI_FLASH_ATMEL
+#define 	CONFIG_SPI_FLASH_EON
+#define 	CONFIG_SPI_FLASH_MACRONIX
+#define 	CONFIG_SPI_FLASH_SPANSION
+#define 	CONFIG_SPI_FLASH_SST
+#define 	CONFIG_SPI_FLASH_STMICRO
+#define 	CONFIG_SPI_FLASH_WINBOND
+#define		CONFIG_SPI_FRAM_RAMTRON
+#define		CONFIG_SPI_M95XXX
+//#define		CONFIG_SPI_FLASH_GIGADEVICE
+//#define		CONFIG_SPI_FLASH_PMDEVICE
+//#define		CONFIG_SPI_NOR_SECURE_STORAGE
+#define		CONFIG_SPI_FLASH_ESMT
+#define		CONFIG_SPI_FLASH 1
+#define 	CONFIG_CMD_SF 1
+#ifdef CONFIG_SPI_BOOT
+	#define CONFIG_ENV_OVERWRITE
+	#define CONFIG_ENV_IS_IN_SPI_FLASH
+	#define CONFIG_CMD_SAVEENV
+	#define CONFIG_ENV_SECT_SIZE		0x10000
+	#define CONFIG_ENV_OFFSET           0x1f0000
+#endif
+#endif
+
 
 /* vpu */
 #define CONFIG_AML_VPU 1
