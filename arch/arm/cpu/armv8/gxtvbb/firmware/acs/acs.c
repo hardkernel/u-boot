@@ -38,7 +38,7 @@ struct acs_setting __acs_set={
 
 					.ddrt_magic		= "ddrt_",
 					.ddrt_set_version= 1,
-					.ddrt_set_length= sizeof(ddr_timing_t),
+					.ddrt_set_length= sizeof(__ddr_timming),
 					.ddrt_set_addr	= (unsigned long)(&__ddr_timming),
 
 					.pll_magic		= "pll__",
