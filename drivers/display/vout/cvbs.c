@@ -33,6 +33,7 @@ enum CVBS_MODE_e
 
 unsigned int cvbs_mode = VMODE_MAX;
 
+static cpu_id_t cpu_id;
 /*----------------------------------------------------------------------------*/
 // interface for registers of soc
 
@@ -143,42 +144,30 @@ static int check_cpu_type(unsigned int cpu_type)
 	return (cvbs_read_cbus(ASSIST_HW_REV)==cpu_type);
 }
 
-static bool is_meson_gxl_cpu(void)
+static bool inline is_meson_gxl_cpu(void)
 {
-	cpu_id_t cpu_id;
-
-	cpu_id = get_cpu_id();
-
-	if (cpu_id.family_id == MESON_CPU_MAJOR_ID_GXL)
-		return 1;
-
-	return 0;
+	return (cpu_id.family_id == MESON_CPU_MAJOR_ID_GXL)?
+		1:0;
 }
 
-static bool is_meson_gxl_package_905X(void)
+static bool inline is_meson_gxm_cpu(void)
 {
-	cpu_id_t cpu_id;
+	return (cpu_id.family_id == MESON_CPU_MAJOR_ID_GXM)?
+		1:0;
 
-	cpu_id = get_cpu_id();
-
-	if ((cpu_id.family_id == MESON_CPU_MAJOR_ID_GXL) &&
-		(cpu_id.package_id == MESON_CPU_PACKAGE_ID_905X))
-		return 1;
-
-	return 0;
+}
+static bool inline is_meson_gxl_package_905X(void)
+{
+	return ((cpu_id.family_id == MESON_CPU_MAJOR_ID_GXL) &&
+		(cpu_id.package_id == MESON_CPU_PACKAGE_ID_905X))?
+		1:0;
 }
 
-static bool is_meson_gxl_package_905L(void)
+static bool inline is_meson_gxl_package_905L(void)
 {
-	cpu_id_t cpu_id;
-
-	cpu_id = get_cpu_id();
-
-	if ((cpu_id.family_id == MESON_CPU_MAJOR_ID_GXL) &&
-		(cpu_id.package_id == MESON_CPU_PACKAGE_ID_905L))
-		return 1;
-
-	return 0;
+	return ((cpu_id.family_id == MESON_CPU_MAJOR_ID_GXL) &&
+		(cpu_id.package_id == MESON_CPU_PACKAGE_ID_905L))?
+		1:0;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -229,7 +218,7 @@ int cvbs_set_vdac(int status)
 		break;
 	case 1:// from enci to vdac
 		cvbs_set_vcbus_bits(VENC_VDAC_DACSEL0, 5, 1, 0);
-		if (is_meson_gxl_cpu())
+		if (is_meson_gxl_cpu() || is_meson_gxm_cpu())
 			cvbs_write_hiu(HHI_VDAC_CNTL0, 0xb0001);
 		else
 			cvbs_write_hiu(HHI_VDAC_CNTL0, 1);
@@ -455,7 +444,8 @@ static int cvbs_config_clock(void)
 		cvbs_config_hdmipll_gxb();
 	else if (check_cpu_type(MESON_CPU_MAJOR_ID_GXTVBB))
 		cvbs_config_hdmipll_gxtvbb();
-	else if (check_cpu_type(MESON_CPU_MAJOR_ID_GXL))
+	else if (check_cpu_type(MESON_CPU_MAJOR_ID_GXL) ||
+		is_meson_gxm_cpu())
 		cvbs_config_hdmipll_gxl();
 
 	cvbs_set_hiu_bits(HHI_VIID_CLK_CNTL, 0, VCLK2_EN, 1);
@@ -568,7 +558,8 @@ static void cvbs_performance_enhancement(int mode)
 		index = (index >= max) ? 0 : index;
 		s = tvregs_576cvbs_performance_gxtvbb[index];
 		type = 5;
-	} else if (is_meson_gxl_package_905X()) {
+	} else if (is_meson_gxl_package_905X() ||
+		is_meson_gxm_cpu()) {
 		max = sizeof(tvregs_576cvbs_performance_905x)
 			/ sizeof(struct reg_s *);
 		index = (index >= max) ? 0 : index;
@@ -637,6 +628,8 @@ void cvbs_show_valid_vmode(void)
 
 void cvbs_init(void)
 {
+	cpu_id = get_cpu_id();
+
 #ifdef CONFIG_CVBS_PERFORMANCE_COMPATIBILITY_SUPPORT
 	cvbs_performance_config();
 #endif
