@@ -237,7 +237,7 @@
  *    CONFIG_DDR0_RANK01       : DDR0 rank0+1
  *    CONFIG_DDR0_16BIT        : DDR0 16bit mode
  *    CONFIG_DDR_CHL_AUTO      : auto detect RANK0 / RANK0+1 */
-#define CONFIG_DDR_CHANNEL_SET			CONFIG_DDR0_RANK0
+#define CONFIG_DDR_CHANNEL_SET			CONFIG_DDR0_RANK01
 #define CONFIG_DDR_FULL_TEST			0 //1 for ddr full test
 #define CONFIG_NR_DRAM_BANKS			1
 /* ddr functions */
