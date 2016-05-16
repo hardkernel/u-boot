@@ -1600,7 +1600,7 @@ static   void  osd1_update_color_mode(void)
 		if (!osd_hw.rotate[OSD1].on_off)
 			data32 |= OSD_DATA_LITTLE_ENDIAN << 15;
 		data32 |= osd_hw.color_info[OSD1]->hw_colormat << 2;
-	if (get_cpu_id().family_id < MESON_CPU_MAJOR_ID_GXTVBB) {
+	if (get_cpu_id().family_id != MESON_CPU_MAJOR_ID_GXTVBB) {
 		if (osd_hw.color_info[OSD1]->color_index < COLOR_INDEX_YUV_422)
 			data32 |= 1 << 7; /* yuv enable */
 	}
