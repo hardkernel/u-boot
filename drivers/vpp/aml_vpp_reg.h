@@ -141,6 +141,9 @@
 /* Bit 15:8     CB */
 /* Bit 7:0      CR */
 #define VPP_DUMMY_DATA1                            0x1d69
+/* gxm has no super-core */
+#define VPP_DOLBY_CTRL 0x1d93
+#define VIU_MISC_CTRL1 0x1a07
 
 #define VIU_OSD1_MATRIX_CTRL 0x1a90
 #define VIU_OSD1_MATRIX_COEF00_01 0x1a91

@@ -108,6 +108,8 @@ static void set_osd1_rgb2yuv(bool on)
 	int *m = NULL;
 
 	m = RGB709_to_YUV709l_coeff;
+
+	return;/* osd_hw.c has changed data to yuv */
 	/* osd matrix, VPP_MATRIX_0 */
 	vpp_reg_write(VIU_OSD1_MATRIX_PRE_OFFSET0_1,
 		((m[0] & 0xfff) << 16) | (m[1] & 0xfff));
@@ -186,6 +188,14 @@ void vpp_init(void)
 	#if ((defined CONFIG_AML_HDMITX20) || (defined CONFIG_AML_CVBS))
 		vpp_set_post_matrix_rgb2ycbcr();
 	#endif
+	} else if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_GXM) {
+		vpp_reg_setb(VIU_MISC_CTRL1, 0xff, 16, 8);
+		vpp_reg_write(VPP_DOLBY_CTRL, 0x20000);
+		/* set dummy data default YUV black;
+		bit width change to 10bit in gxm */
+		vpp_reg_write(VPP_DUMMY_DATA1, 0x1020080);
+		/* osd1: rgb->yuv , osd2: yuv*/
+		set_osd1_rgb2yuv(1);
 	} else {
 		/* set dummy data default RGB black */
 		vpp_reg_write(VPP_DUMMY_DATA1, 0x8080);
