@@ -98,9 +98,16 @@
 #endif
 #define DDR_FUNC_EXT_VREF					(CONFIG_DDR_USE_EXT_VREF<<3)
 
-#define DDR_FUNC							(DDR_FUNC_D2PLL		| \
-											DDR_FUNC_LP			| \
-											DDR_FUNC_ZQ_PD		| \
-											DDR_FUNC_EXT_VREF	| \
-											(1 << 31) 			\
+/* ddr4 timing test function */
+#ifndef CONFIG_DDR4_TIMING_TEST
+#define CONFIG_DDR4_TIMING_TEST				0
+#endif
+#define DDR_FUNC_DDR4_TIMING_TEST			(CONFIG_DDR4_TIMING_TEST<<3)
+
+#define DDR_FUNC							(DDR_FUNC_D2PLL					| \
+											DDR_FUNC_LP						| \
+											DDR_FUNC_ZQ_PD					| \
+											DDR_FUNC_EXT_VREF				| \
+											DDR_FUNC_DDR4_TIMING_TEST		| \
+											(1 << 31) 						\
 											)
