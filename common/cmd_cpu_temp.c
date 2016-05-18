@@ -45,6 +45,7 @@ int get_tsc(int temp)
 		TS_C = ((vmeasure)/8.25)+16;
 		break;
 	case MESON_CPU_MAJOR_ID_GXL:
+	case MESON_CPU_MAJOR_ID_GXM:
 		/*TS_C = 16-(adc-1778)/41*/
 		vmeasure = temp-(1778+(temp_base-27)*17);
 		printf("vmeasure=%d\n", vmeasure);
@@ -84,6 +85,7 @@ int adc_init_chan6(void)
 		writel(readl(0xc110868c)|(0x1<<28), SAR_ADC_REG3);
 		break;
 	case MESON_CPU_MAJOR_ID_GXL:
+	case MESON_CPU_MAJOR_ID_GXM:
 		writel(0x002c2060, SAR_ADC_REG11);/*bit20 disabled*/
 		writel(0x00000006, SAR_ADC_CHAN_LIST);/*channel 6*/
 		writel(0x00003000, SAR_ADC_AVG_CNTL);
@@ -159,7 +161,7 @@ void quicksort(int a[], int numsize)
 }
 }
 
-int do_read_calib_data(int *flag, int *temp, int *TS_C)
+unsigned do_read_calib_data(int *flag, int *temp, int *TS_C)
 {
 	char buf[2];
 	unsigned ret;
@@ -190,7 +192,7 @@ int do_read_calib_data(int *flag, int *temp, int *TS_C)
 		&&(0x40 == (int)flagbuf))/*ver2*/
 		*TS_C = 16;
 
-	if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_GXL)
+	if (get_cpu_id().family_id >= MESON_CPU_MAJOR_ID_GXL)
 		*temp = (*temp)<<2; /*adc 12bit sample*/
 	printf("adc=%d,TS_C=%d,flag=%d\n", *temp, *TS_C, *flag);
 	return ret;
@@ -244,8 +246,10 @@ static int do_write_trim(cmd_tbl_t *cmdtp, int flag1,
 
 /**********************************/
 	TS_C = get_tsc(temp);
-	if (TS_C < 0)
+	if ((TS_C == 31) || (TS_C <= 0)) {
+		printf("TS_C: %d NO Trim! Bad chip!Please check!!!\n", TS_C);
 		return -1;
+	}
 /**********************************/
 	temp = 0;
 	memset(temp1, 0, NUM);
@@ -271,6 +275,7 @@ static int do_write_trim(cmd_tbl_t *cmdtp, int flag1,
 		temp = temp - 3.4*(temp_base - 27);
 		break;
 	case MESON_CPU_MAJOR_ID_GXL:/*12bit*/
+	case MESON_CPU_MAJOR_ID_GXM:
 		temp = temp - 17*(temp_base - 27);
 		temp = temp>>2;/*efuse only 10bit adc*/
 		break;
@@ -317,6 +322,7 @@ static int do_read_temp(cmd_tbl_t *cmdtp, int flag1,
 				tempa = (10*(adc-temp))/34+27;
 				break;
 			case MESON_CPU_MAJOR_ID_GXL:
+			case MESON_CPU_MAJOR_ID_GXM:
 				tempa = (10*(adc-temp))/171+27;
 				break;
 			}
