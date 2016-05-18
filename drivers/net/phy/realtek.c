@@ -180,20 +180,27 @@ static int rtl8211f_parse_status(struct phy_device *phydev)
 
 static int rtl8211x_startup(struct phy_device *phydev)
 {
-	/* Read the Status (2x to make sure link is right) */
-	genphy_update_link(phydev);
-	rtl8211x_parse_status(phydev);
+	int ret;
 
-	return 0;
+	/* Read the Status (2x to make sure link is right) */
+	ret = genphy_update_link(phydev);
+	if (ret)
+		return ret;
+
+	return rtl8211x_parse_status(phydev);
 }
 
 static int rtl8211f_startup(struct phy_device *phydev)
 {
-	/* Read the Status (2x to make sure link is right) */
-	genphy_update_link(phydev);
-	rtl8211f_parse_status(phydev);
+	int ret;
 
-	return 0;
+	/* Read the Status (2x to make sure link is right) */
+	ret = genphy_update_link(phydev);
+	if (ret)
+		return ret;
+	/* Read the Status (2x to make sure link is right) */
+
+	return rtl8211f_parse_status(phydev);
 }
 
 /* Support for RTL8211B PHY */

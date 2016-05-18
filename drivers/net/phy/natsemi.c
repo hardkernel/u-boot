@@ -93,10 +93,13 @@ static int dp83865_parse_status(struct phy_device *phydev)
 
 static int dp83865_startup(struct phy_device *phydev)
 {
-	genphy_update_link(phydev);
-	dp83865_parse_status(phydev);
+	int ret;
 
-	return 0;
+	ret = genphy_update_link(phydev);
+	if (ret)
+		return ret;
+
+	return dp83865_parse_status(phydev);
 }
 
 
