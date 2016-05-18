@@ -52,24 +52,23 @@ static int pwm_voltage_table[][2] = {
 };
 
 struct scpi_opp_entry cpu_dvfs_tbl[] = {
-	DVFS( 100000000,  860),
-	DVFS( 250000000,  860),
-	DVFS( 500000000,  860),
-	DVFS( 667000000,  900),
-	DVFS(1000000000,  940),
-	DVFS(1200000000,  980),
-	DVFS(1296000000, 1000),
-	DVFS(1416000000, 1020),
-	DVFS(1536000000, 1050),
-	DVFS(1800000000, 1050),
+	DVFS( 100000000,  860+50),
+	DVFS( 250000000,  860+50),
+	DVFS( 500000000,  860+50),
+	DVFS( 667000000,  900+50),
+	DVFS(1000000000,  940+50),
+	DVFS(1200000000,  980+50),
+	DVFS(1296000000, 1000+50),
+	DVFS(1416000000, 1020+50),
+	DVFS(1536000000, 1050+50),
+	DVFS(1800000000, 1050+50),
 };
 
 
 
-#define P_PIN_MUX_REG3		(*((volatile unsigned *)(0xda834400 + (0x2f << 2))))
 #define P_PIN_MUX_REG7		(*((volatile unsigned *)(0xda834400 + (0x33 << 2))))
-#define P_PWM_MISC_REG_AB	(*((volatile unsigned *)(0xc1100000 + (0x2156 << 2))))
-#define P_PWM_PWM_B		(*((volatile unsigned *)(0xc1100000 + (0x2155 << 2))))
+#define P_PWM_MISC_REG_EF (*((volatile unsigned *)(0xc1100000 + (0x21b2 << 2))))
+#define P_PWM_PWM_E		(*((volatile unsigned *)(0xc1100000 + (0x21b0 << 2))))
 
 enum pwm_id {
 	pwm_a = 0,
@@ -88,23 +87,23 @@ void pwm_init(int id)
 	 */
 	unsigned int reg;
 
-	reg = P_PWM_MISC_REG_AB;
-	reg &= ~(0x7f << 16);
-	reg |=  ((1 << 23) | (1 << 1));
-	P_PWM_MISC_REG_AB = reg;
+	reg = P_PWM_MISC_REG_EF;
+	reg &= ~(0x7f << 8);
+	reg |=  ((1 << 15) | (1 << 1) |(1 << 0));
+	P_PWM_MISC_REG_EF = reg;
+
 	/*
 	 * default set to max voltage
 	 */
-	P_PWM_PWM_B = pwm_voltage_table[ARRAY_SIZE(pwm_voltage_table) - 1][0];
+	P_PWM_PWM_E = pwm_voltage_table[ARRAY_SIZE(pwm_voltage_table) - 1][0];
 
 	reg  = P_PIN_MUX_REG7;
-	reg &= ~(1 << 22);
+	reg &= ~((1 << 26)| (1 << 18)|(1 << 30));
 	P_PIN_MUX_REG7 = reg;
 
-	reg  = P_PIN_MUX_REG3;
-	reg &= ~(1 << 22);
-	reg |=  (1 << 21);		// enable PWM_B
-	P_PIN_MUX_REG3 = reg;
+	reg  = P_PIN_MUX_REG7;
+	reg |=  (1 << 29);      // enable PWM_E
+	P_PIN_MUX_REG7 = reg;
 
 	_udelay(200);
 }
@@ -114,7 +113,7 @@ int dvfs_get_voltage(void)
 	int i = 0;
 	unsigned int reg_val;
 
-	reg_val = P_PWM_PWM_B;
+	reg_val = P_PWM_PWM_E;
 	for (i = 0; i < ARRAY_SIZE(pwm_voltage_table); i++) {
 		if (pwm_voltage_table[i][0] == reg_val) {
 			return i;
@@ -145,7 +144,7 @@ void set_dvfs(unsigned int domain, unsigned int index)
 		to = ARRAY_SIZE(pwm_voltage_table) - 1;
 	}
 	if (cur < 0 || cur >=ARRAY_SIZE(pwm_voltage_table)) {
-		P_PWM_PWM_B = pwm_voltage_table[to][0];
+		P_PWM_PWM_E = pwm_voltage_table[to][0];
 		_udelay(200);
 		return ;
 	}
@@ -168,7 +167,7 @@ void set_dvfs(unsigned int domain, unsigned int index)
 				cur = to;
 			}
 		}
-		P_PWM_PWM_B = pwm_voltage_table[cur][0];
+		P_PWM_PWM_E = pwm_voltage_table[cur][0];
 		_udelay(100);
 	}
 }
