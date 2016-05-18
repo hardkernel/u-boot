@@ -95,6 +95,7 @@
 	"sdc_burning=sdc_burn ${sdcburncfg}\0"\
 	"wipe_data=successful\0"\
 	"wipe_cache=successful\0"\
+	"EnableSelinux=enforcing\0" \
 	"jtag=apao\0"\
 	"upgrade_check="\
 		"echo upgrade_step=${upgrade_step}; "\
@@ -106,7 +107,7 @@
 		"setenv bootargs rootfstype=ramfs init=/init "\
 		"console=ttyS0,115200 no_console_suspend "\
 		"earlyprintk=aml-uart,0xc81004c0 "\
-		"androidboot.selinux=enforcing "\
+		"androidboot.selinux=${EnableSelinux} "\
 		"logo=${display_layer},loaded,${fb_addr} "\
 		"vout=${outputmode},enable "\
 		"panel_type=${panel_type} hdmitx= "\
