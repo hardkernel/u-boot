@@ -823,11 +823,12 @@ static void mmc_set_ios(struct mmc *mmc)
 
 int aml_emmc_refix(struct mmc *mmc)
 {
+	int ret = 0;
 	mmc->refix = 1;
 	mmc->cfg->ops->calibration(mmc);
-	mmc->cfg->ops->refix(mmc);
+	ret = mmc->cfg->ops->refix(mmc);
 	mmc->refix = 0;
-	return 0;
+	return ret;
 }
 
 void mmc_set_clock(struct mmc *mmc, uint clock)
