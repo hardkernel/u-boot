@@ -252,7 +252,7 @@
 #define CONFIG_DDR_ZQ_POWER_DOWN
 #define CONFIG_DDR_POWER_DOWN_PHY_VREF
 /* ddr detection */
-#define CONFIG_DDR_SIZE_AUTO_DETECT		1 //0:disable, 1:enable
+#define CONFIG_DDR_SIZE_AUTO_DETECT		0 //0:disable, 1:enable
 
 /* storage: emmc/nand/sd */
 #define		CONFIG_STORE_COMPATIBLE 1

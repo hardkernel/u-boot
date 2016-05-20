@@ -335,10 +335,10 @@ ddr_set_t __ddr_setting = {
 	//.t_pub_zq1pr			= 0x7b,   //PUB ZQ1PR
 	//.t_pub_zq2pr			= 0x7b,   //PUB ZQ2PR
 	//.t_pub_zq3pr			= 0x7b,   //PUB ZQ3PR
-	.t_pub_zq0pr			= 0x59,   //PUB ZQ0PR
-	.t_pub_zq1pr			= 0x19,   //PUB ZQ1PR
-	.t_pub_zq2pr			= 0x19,   //PUB ZQ2PR
-	.t_pub_zq3pr			= 0x19,   //PUB ZQ3PR
+	.t_pub_zq0pr			= 0x79,   //PUB ZQ0PR
+	.t_pub_zq1pr			= 0x79,   //PUB ZQ1PR
+	.t_pub_zq2pr			= 0x79,   //PUB ZQ2PR
+	.t_pub_zq3pr			= 0x79,   //PUB ZQ3PR
 
 	/* pctl0 defines */
 	/* pctl1 use same define as pctl0 */
@@ -373,6 +373,8 @@ ddr_set_t __ddr_setting = {
 	.t_pctl0_dfilpcfg0		= ( 1 | (3 << 4) | (1 << 8) | (3 << 12) | (7 <<16) | (1 <<24) | ( 3 << 28)),
 
 	.t_pub_acbdlr0          = 0,  //2015.09.21 add for  CK0 delay fine tune
+
+	.ddr_func				= DDR_FUNC,
 };
 
 pll_set_t __pll_setting = {

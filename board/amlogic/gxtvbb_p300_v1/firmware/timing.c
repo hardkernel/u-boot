@@ -372,10 +372,10 @@ ddr_set_t __ddr_setting = {
 	//.t_pub_zq1pr			= 0x7b,   //PUB ZQ1PR
 	//.t_pub_zq2pr			= 0x7b,   //PUB ZQ2PR
 	//.t_pub_zq3pr			= 0x7b,   //PUB ZQ3PR
-	.t_pub_zq0pr			= 0x59,   //PUB ZQ0PR
-	.t_pub_zq1pr			= 0x19,   //PUB ZQ1PR
-	.t_pub_zq2pr			= 0x19,   //PUB ZQ2PR
-	.t_pub_zq3pr			= 0x19,   //PUB ZQ3PR
+	.t_pub_zq0pr			= 0x79,   //PUB ZQ0PR
+	.t_pub_zq1pr			= 0x79,   //PUB ZQ1PR
+	.t_pub_zq2pr			= 0x79,   //PUB ZQ2PR
+	.t_pub_zq3pr			= 0x79,   //PUB ZQ3PR
 
 	/* pctl0 defines */
 	/* pctl1 use same define as pctl0 */
@@ -417,6 +417,7 @@ ddr_set_t __ddr_setting = {
 	.t_pub_acbdlr4			= 0,
 	.t_pub_acbdlr5			= 0,
 
+	.ddr_func				= DDR_FUNC,
 };
 
 pll_set_t __pll_setting = {
