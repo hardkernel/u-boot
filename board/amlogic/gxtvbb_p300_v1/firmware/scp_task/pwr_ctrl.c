@@ -91,13 +91,11 @@ static void power_switch_to_ee(unsigned int pwr_ctrl)
 
 	}
 }
+#define P_PWM_PWM_A		(*((volatile unsigned *)(0xc1100000 + (0x2154 << 2))))
 static void pwm_set_voltage(unsigned int id, unsigned int voltage)
 {
 	int to;
 
-	uart_puts("set vddee to 0x");
-	uart_put_hex(voltage, 16);
-	uart_puts("mv\n");
 	for (to = 0; to < ARRAY_SIZE(pwm_voltage_table); to++) {
 		if (pwm_voltage_table[to][1] >= voltage) {
 			break;
@@ -107,15 +105,18 @@ static void pwm_set_voltage(unsigned int id, unsigned int voltage)
 		to = ARRAY_SIZE(pwm_voltage_table) - 1;
 	}
 	switch (id) {
-	case pwm_b:
-		P_PWM_PWM_B = pwm_voltage_table[to][0];
+	case pwm_a:
+		uart_puts("set vcck to 0x");
+		uart_put_hex(to, 16);
+		uart_puts("mv\n");
+		P_PWM_PWM_A = pwm_voltage_table[to][0];
 		break;
 
 	case pwm_ao_b:
+		uart_puts("set vddee to 0x");
+		uart_put_hex(to, 16);
+		uart_puts("mv\n");
 		P_AO_PWM_PWM_B1 = pwm_voltage_table[to][0];
-		break;
-	case pwm_d:
-		P_PWM_PWM_D = pwm_voltage_table[to][0];
 		break;
 	default:
 		break;
@@ -149,21 +150,21 @@ static void power_on_usb5v(void)
 
 static void power_off_at_clk81(void)
 {
-	pwm_set_voltage(pwm_ao_b, CONFIG_VDDEE_SLEEP_VOLTAGE);	/* reduce power */
 	power_off_3v3_5v();
 	power_off_usb5v();
-
+	pwm_set_voltage(pwm_ao_b, CONFIG_VDDEE_SLEEP_VOLTAGE);	/* reduce power */
 }
 
 static void power_on_at_clk81(unsigned int suspend_from)
 {
 	pwm_set_voltage(pwm_ao_b, CONFIG_VDDEE_INIT_VOLTAGE);
+	power_on_usb5v();
 	power_on_3v3_5v();
 	_udelay(10000);
 	_udelay(10000);
 	_udelay(10000);
 	_udelay(10000);
-	power_on_usb5v();
+	pwm_set_voltage(pwm_a, CONFIG_VCCK_INIT_VOLTAGE);
 #if 0
 	if (suspend_from == SYS_POWEROFF) {
 		power_switch_to_ee(ON);
@@ -177,7 +178,6 @@ static void power_off_at_24M(void)
 
 static void power_on_at_24M(void)
 {
-
 }
 
 static void power_off_ddr(void)
