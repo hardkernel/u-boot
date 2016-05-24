@@ -85,6 +85,12 @@ int do_get_rebootmode (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]
 			setenv("reboot_mode","kernel_panic");
 			break;
 		}
+		case AMLOGIC_WATCHDOG_REBOOT:
+		{
+			setenv("reboot_mode","watchdog_reboot");
+			break;
+		}
+
 		default:
 		{
 			setenv("reboot_mode","charging");
