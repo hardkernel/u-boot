@@ -431,6 +431,7 @@ static unsigned int detect_key(unsigned int suspend_from)
 		else
 			asm volatile ("wfi");
 	} while (1);
+	wakeup_timer_clear();
 	restore_ao_timer();
 	return exit_reason;
 }
