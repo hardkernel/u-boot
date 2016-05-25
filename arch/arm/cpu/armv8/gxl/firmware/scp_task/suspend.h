@@ -60,6 +60,19 @@ static void inline aml_update_bits(unsigned int  reg, unsigned int mask, unsigne
 #define GPIO_IRQ_FALLING_EDGE	2
 #define GPIO_IRQ_RISING_EDGE		3
 
+enum {
+	IRQ_TIMERA = 0,
+	IRQ_GPIO0,
+	IRQ_GPIO1,
+	IRQ_GPIO2,
+	IRQ_GPIO3,
+	IRQ_AO_IR_DEC,
+	IRQ_AO_CEC,
+	IRQ_AO_GPIO0,
+	IRQ_AO_GPIO1,
+	IRQ_AO_TIMERA,
+	WAKE_UP_MAX = 32,
+};
 
 /* M3 CPU has 2 ao-gpio-irq, 4 gpio-irq*/
 #define GPIO_WAKEUP_MAX		6

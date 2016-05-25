@@ -28,7 +28,7 @@ SECTIONS
 	. = ALIGN(4);
 	_bssend = . ;
 
-	. = CONFIG_RAM_END - 3*CONFIG_TASK_STACK_SIZE;
+	. = CONFIG_RAM_END - 3*CONFIG_TASK_STACK_SIZE - 128;
 	.bss_stack : { *(.bss_stack.usr_stack) }
 
 }
