@@ -81,8 +81,8 @@
 #define DDR4_ODT_34OHM		7
 
 #if ((CONFIG_DDR_TYPE == CONFIG_DDR_TYPE_DDR3) || (CONFIG_DDR_TYPE == CONFIG_DDR_TYPE_AUTO))
-#define CFG_DDR_DRV  DDR3_DRV_40OHM
-#define CFG_DDR_ODT  DDR3_ODT_120OHM
+#define CFG_DDR_DRV  DDR3_DRV_34OHM
+#define CFG_DDR_ODT  DDR3_ODT_60OHM
 #elif (CONFIG_DDR_TYPE == CONFIG_DDR_TYPE_LPDDR2)
 #define CFG_DDR_DRV  LPDDR2_DRV_48OHM
 #define CFG_DDR_ODT  DDR3_ODT_120OHM
@@ -94,7 +94,7 @@
 #define CFG_DDR_ODT  DDR4_ODT_60OHM //useless, no effect
 #endif
 
-#define CFG_DDR4_DRV  DDR4_DRV_34OHM //ddr4 driver use this one
+#define CFG_DDR4_DRV  DDR4_DRV_48OHM //ddr4 driver use this one
 #define CFG_DDR4_ODT  DDR4_ODT_60OHM //ddr4 driver use this one
 
 /*
@@ -336,12 +336,12 @@ ddr_timing_t __ddr_timming[] = {
 	/* ddr4 2400 timing */
 	{
 		.identifier				= CONFIG_DDR_TIMMING_DDR4_2400,
-		.cfg_ddr_rtp			= (4),
-		.cfg_ddr_wtr			= (6),
+		.cfg_ddr_rtp			= 9,//(4),
+		.cfg_ddr_wtr			= 9,//(6),
 		.cfg_ddr_rp				= 15*1.2,//(11),
 		.cfg_ddr_rcd			= 15*1.2,//(11),
 		.cfg_ddr_ras			= 35*1.2,//(35),
-		.cfg_ddr_rrd			= (4),
+		.cfg_ddr_rrd			= (8),
 		.cfg_ddr_rc				=50*1.2,// (46),//RAS+RP
 		.cfg_ddr_mrd			= (8),
 		.cfg_ddr_mod			= (24),
@@ -425,7 +425,7 @@ ddr_set_t __ddr_setting = {
 	.ddr_dmc_ctrl			= 0,
 	.ddr0_addrmap			= {0},
 	.ddr1_addrmap			= {0},
-	.ddr_2t_mode			= 0,
+	.ddr_2t_mode			= 1,
 	.ddr_full_test			= CONFIG_DDR_FULL_TEST,
 #if (0 == CONFIG_DDR_SIZE)
 	.ddr_size_detect		= 1,
@@ -491,9 +491,9 @@ ddr_set_t __ddr_setting = {
 	//.t_pub_zq1pr			= 0x7b,   //PUB ZQ1PR
 	//.t_pub_zq2pr			= 0x7b,   //PUB ZQ2PR
 	//.t_pub_zq3pr			= 0x7b,   //PUB ZQ3PR
-	.t_pub_zq0pr			= 0x5d95d,   //PUB ZQ0PR
-	.t_pub_zq1pr			= 0x5d95d,   //PUB ZQ1PR
-	.t_pub_zq2pr			= 0x5d95d,   //PUB ZQ2PR
+	.t_pub_zq0pr			= 0x5995d,   //PUB ZQ0PR
+	.t_pub_zq1pr			= 0x3f95d,   //PUB ZQ1PR
+	.t_pub_zq2pr			= 0x3f95d,   //PUB ZQ2PR
 	.t_pub_zq3pr			= 0x1dd1d,   //PUB ZQ3PR
 
 	/* pctl0 defines */
@@ -531,25 +531,24 @@ ddr_set_t __ddr_setting = {
 
 	.t_pctl0_dfilpcfg0		= ( 1 | (3 << 4) | (1 << 8) | (13 << 12) | (7 <<16) | (1 <<24) | ( 3 << 28)),
 	.t_pub_acbdlr0			= 0,  //CK0 delay fine tune
-	.t_pub_aclcdlr			= 0,
+	.t_pub_aclcdlr			= 0x10,
 	.ddr_func				= DDR_FUNC, /* ddr func demo 2016.01.26 */
 
 	.wr_adj_per 			= {
-							[0]=100,
-							[1]=100,
-							[2]=95,
-							[3]=95,
-							[4]=95,
-							[5]=95,
+							[0] = 100,
+							[1] = 100,
+							[2] = 100,
+							[3] = 100,
+							[4] = 100,
+							[5] = 100,
 							},
 	.rd_adj_per				= {
-							[0]=100,
-							[1]=100,
-							[2]=95,
-							[3]=95,
-							[4]=95,
-							[5]=95,
-							},
+							[0] = 100,
+							[1] = 100,
+							[2] = 100,
+							[3] = 100,
+							[4] = 100,
+							[5] = 100,},
 };
 
 pll_set_t __pll_setting = {

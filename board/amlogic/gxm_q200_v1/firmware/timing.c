@@ -336,12 +336,12 @@ ddr_timing_t __ddr_timming[] = {
 	/* ddr4 2400 timing */
 	{
 		.identifier				= CONFIG_DDR_TIMMING_DDR4_2400,
-		.cfg_ddr_rtp			= (4),
-		.cfg_ddr_wtr			= (6),
+		.cfg_ddr_rtp			= 9,//(4),
+		.cfg_ddr_wtr			= 9,//(6),
 		.cfg_ddr_rp				= 15*1.2,//(11),
 		.cfg_ddr_rcd			= 15*1.2,//(11),
 		.cfg_ddr_ras			= 35*1.2,//(35),
-		.cfg_ddr_rrd			= (4),
+		.cfg_ddr_rrd			= (8),
 		.cfg_ddr_rc				=50*1.2,// (46),//RAS+RP
 		.cfg_ddr_mrd			= (8),
 		.cfg_ddr_mod			= (24),
@@ -491,9 +491,9 @@ ddr_set_t __ddr_setting = {
 	//.t_pub_zq1pr			= 0x7b,   //PUB ZQ1PR
 	//.t_pub_zq2pr			= 0x7b,   //PUB ZQ2PR
 	//.t_pub_zq3pr			= 0x7b,   //PUB ZQ3PR
-	.t_pub_zq0pr			= 0x5d91d,   //PUB ZQ0PR
-	.t_pub_zq1pr			= 0x5d91d,   //PUB ZQ1PR
-	.t_pub_zq2pr			= 0x5d91d,   //PUB ZQ2PR
+	.t_pub_zq0pr			= 0x5aa59,   //PUB ZQ0PR, 0x5aa59,0x59959,  0x58859,  //99drriver s912 ddr4 maybe 950m is bad
+	.t_pub_zq1pr			= 0x3f94f,   //PUB ZQ1PR//0x3f95d, 0x4f95d,
+	.t_pub_zq2pr			= 0x3f94f,   //PUB ZQ2PR//0x3f95d, 0x4f95d,
 	.t_pub_zq3pr			= 0x1dd1d,   //PUB ZQ3PR
 
 	/* pctl0 defines */
@@ -535,21 +535,20 @@ ddr_set_t __ddr_setting = {
 	.ddr_func				= DDR_FUNC, /* ddr func demo 2016.01.26 */
 
 	.wr_adj_per 			= {
-							[0]=100,
-							[1]=100,
-							[2]=95,
-							[3]=95,
-							[4]=95,
-							[5]=95,
+							[0] = 100,
+							[1] = 100,
+							[2] = 100,
+							[3] = 100,
+							[4] = 100,
+							[5] = 100,
 							},
 	.rd_adj_per				= {
-							[0]=100,
-							[1]=100,
-							[2]=95,
-							[3]=95,
-							[4]=95,
-							[5]=95,
-							},
+							[0] = 100,
+							[1] = 100,
+							[2] = 100,
+							[3] = 100,
+							[4] = 100,
+							[5] = 100,},
 };
 
 pll_set_t __pll_setting = {
