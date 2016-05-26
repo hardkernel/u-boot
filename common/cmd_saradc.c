@@ -47,6 +47,16 @@ static int do_saradc_getval(cmd_tbl_t *cmdtp, int flag, int argc, char * const a
 	return 0;
 }
 
+static int do_saradc_getval_12bit(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+	char value_str[10];
+	int val = get_adc_sample_gxbb_12bit(current_channel);
+	printf("SARADC channel(%d) is 0x%x.\n", current_channel, val);
+	sprintf(value_str, "0x%x", val);
+	setenv(SARADC_VALUE, value_str);
+	return 0;
+}
+
 static int do_saradc_get_in_range(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	char value_str[10];
@@ -55,12 +65,34 @@ static int do_saradc_get_in_range(cmd_tbl_t *cmdtp, int flag, int argc, char * c
 	min = simple_strtoul(argv[1], NULL, 10);
 	max = simple_strtoul(argv[2], NULL, 10);
 	int donot_setenv = 0;
-	if (argc>3)
-    {
+	if (argc > 3) {
 		donot_setenv = simple_strtoul(argv[2], NULL, 10);
 	}
-	if ((val<min) || (val>max))
-	{
+	if ((val<min) || (val>max)) {
+		debug("SARADC channel(%d) is 0x%x, Out of range(0x%x~0x%x)!\n",
+			current_channel, val, min, max);
+		return -1;
+	}
+	debug("SARADC channel(%d) is 0x%x (0x%x~0x%x).\n",
+		current_channel, val, min, max);
+	sprintf(value_str, "0x%x", val);
+	if (!donot_setenv)
+		setenv(SARADC_VALUE, value_str);
+	return 0;
+}
+
+static int do_saradc_get_in_range_12bit(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+	char value_str[10];
+	int max, min;
+	int val = get_adc_sample_gxbb_12bit(current_channel);
+	min = simple_strtoul(argv[1], NULL, 10);
+	max = simple_strtoul(argv[2], NULL, 10);
+	int donot_setenv = 0;
+	if (argc > 3) {
+		donot_setenv = simple_strtoul(argv[2], NULL, 10);
+	}
+	if ((val<min) || (val>max)) {
 		debug("SARADC channel(%d) is 0x%x, Out of range(0x%x~0x%x)!\n",
 			current_channel, val, min, max);
 		return -1;
@@ -105,4 +137,34 @@ U_BOOT_CMD(
 	"saradc get_in_range <min> <max>	- return 0 if current value in the range of current channel\n"
 );
 
+static cmd_tbl_t cmd_saradc_12bit_sub[] = {
+	U_BOOT_CMD_MKENT(open, 2, 0, do_saradc_open, "", ""),
+	U_BOOT_CMD_MKENT(close, 1, 0, do_saradc_close, "", ""),
+	U_BOOT_CMD_MKENT(getval, 1, 0, do_saradc_getval_12bit, "", ""),
+	U_BOOT_CMD_MKENT(get_in_range, 3, 0, do_saradc_get_in_range_12bit, "", ""),
+};
+
+static int do_saradc_12bit(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+	cmd_tbl_t *c;
+	/* Strip off leading 'bmp' command argument */
+	argc--;
+	argv++;
+	c = find_cmd_tbl(argv[0], &cmd_saradc_12bit_sub[0], ARRAY_SIZE(cmd_saradc_12bit_sub));
+	if (c) {
+		return	c->cmd(cmdtp, flag, argc, argv);
+	} else {
+		cmd_usage(cmdtp);
+		return 1;
+	}
+}
+
+U_BOOT_CMD(
+	saradc_12bit,	8,	0,	do_saradc_12bit,
+	"saradc sub-system",
+	"saradc_12bit open <channel>		- open a SARADC channel\n"
+	"saradc_12bit close	- close the SARADC\n"
+	"saradc_12bit getval	- get the value in current channel\n"
+	"saradc_12bit get_in_range <min> <max>	- return 0 if current value in the range of current channel\n"
+);
 
