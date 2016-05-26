@@ -252,7 +252,7 @@ static unsigned int detect_key(unsigned int suspend_from)
 
 		if (irq[IRQ_AO_GPIO0] == IRQ_AO_GPIO0_NUM) {
 			irq[IRQ_AO_GPIO0] = 0xFFFFFFFF;
-			if ((readl(AO_GPIO_I) & (1<<3)) == 0)
+			if ((readl(AO_GPIO_I) & (1<<2)) == 0)
 				exit_reason = POWER_KEY_WAKEUP;
 		}
 		if (exit_reason)
