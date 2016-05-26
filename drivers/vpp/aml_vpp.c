@@ -89,7 +89,7 @@ static void vpp_set_matrix_ycbcr2rgb(int vd1_or_vd2_or_post, int mode)
 			vpp_reg_setb(VPP_MATRIX_CTRL, 0, 1, 2);
 	}
 
-	if (mode == 0) { //ycbcr not full range, 601 conversion
+	if (mode == 0) { /* 601 limit to RGB */
 		vpp_reg_write(VPP_MATRIX_PRE_OFFSET0_1, 0x0064C8FF);
 		vpp_reg_write(VPP_MATRIX_PRE_OFFSET2, 0x006400C8);
 		//1.164     0       1.596
@@ -104,7 +104,7 @@ static void vpp_set_matrix_ycbcr2rgb(int vd1_or_vd2_or_post, int mode)
 		vpp_reg_write(VPP_MATRIX_OFFSET2, 0x00000000);
 		vpp_reg_write(VPP_MATRIX_PRE_OFFSET0_1, 0x0FC00E00);
 		vpp_reg_write(VPP_MATRIX_PRE_OFFSET2, 0x00000E00);
-	} else if (mode == 1) {//ycbcr full range, 601 conversion
+	} else if (mode == 1) { /* 601 limit to RGB  */
 		vpp_reg_write(VPP_MATRIX_PRE_OFFSET0_1, 0x0000E00);
 		vpp_reg_write(VPP_MATRIX_PRE_OFFSET2, 0x0E00);
 		//	1	0			1.402
@@ -117,7 +117,7 @@ static void vpp_set_matrix_ycbcr2rgb(int vd1_or_vd2_or_post, int mode)
 		vpp_reg_write(VPP_MATRIX_COEF22, 0x0);
 		vpp_reg_write(VPP_MATRIX_OFFSET0_1, 0x0);
 		vpp_reg_write(VPP_MATRIX_OFFSET2, 0x0);
-	} else if (mode == 2) {/*709F to RGB*/
+	} else if (mode == 2) { /* 709F to RGB */
 		vpp_reg_write(VPP_MATRIX_PRE_OFFSET0_1, 0x0000E00);
 		vpp_reg_write(VPP_MATRIX_PRE_OFFSET2, 0x0E00);
 		//	1	0			1.402
@@ -130,7 +130,22 @@ static void vpp_set_matrix_ycbcr2rgb(int vd1_or_vd2_or_post, int mode)
 		vpp_reg_write(VPP_MATRIX_COEF22, 0x0);
 		vpp_reg_write(VPP_MATRIX_OFFSET0_1, 0x0);
 		vpp_reg_write(VPP_MATRIX_OFFSET2, 0x0);
+	} else if (mode == 3) { /* 709L to RGB */
+		vpp_reg_write(VPP_MATRIX_PRE_OFFSET0_1, 0x0FC00E00);
+		vpp_reg_write(VPP_MATRIX_PRE_OFFSET2, 0x00000E00);
+		/* ycbcr limit range, 709 to RGB */
+		/* -16      1.164  0      1.793  0 */
+		/* -128     1.164 -0.213 -0.534  0 */
+		/* -128     1.164  2.115  0      0 */
+		vpp_reg_write(VPP_MATRIX_COEF00_01, 0x04A80000);
+		vpp_reg_write(VPP_MATRIX_COEF02_10, 0x072C04A8);
+		vpp_reg_write(VPP_MATRIX_COEF11_12, 0x1F261DDD);
+		vpp_reg_write(VPP_MATRIX_COEF20_21, 0x04A80876);
+		vpp_reg_write(VPP_MATRIX_COEF22, 0x0);
+		vpp_reg_write(VPP_MATRIX_OFFSET0_1, 0x0);
+		vpp_reg_write(VPP_MATRIX_OFFSET2, 0x0);
 	}
+	vpp_reg_setb(VPP_MATRIX_CLIP, 0, 5, 3);
 }
 
 /***************************** gxl hdr ****************************/
@@ -456,7 +471,7 @@ static int RGB709_to_YUV709l_coeff[MATRIX_5x3_COEF_SIZE] = {
 	COEFF_NORM(0.437500),	COEFF_NORM(-0.397384),	COEFF_NORM(-0.040116),
 	0, 0, 0, /* 10'/11'/12' */
 	0, 0, 0, /* 20'/21'/22' */
-	0, 512, 512, /* offset */
+	64, 512, 512, /* offset */
 	0, 0, 0 /* mode, right_shift, clip_en */
 };
 
@@ -805,24 +820,24 @@ static void set_osd1_rgb2yuv(bool on)
 	vpp_reg_setb(VIU_OSD1_BLK0_CFG_W0, 0, 7, 1);
 
 	/* set osd2 luma range: Full */
-	vpp_reg_setb(VIU_OSD2_CTRL_STAT2, 1, 3, 1);
+	/* vpp_reg_setb(VIU_OSD2_CTRL_STAT2, 1, 3, 1); */
 
 	/* eotf lut bypass */
 	set_vpp_lut(VPP_LUT_OSD_EOTF,
-			eotf_33_linear_mapping, /* R */
-			eotf_33_linear_mapping, /* G */
-			eotf_33_linear_mapping, /* B */
-			CSC_ON);
+		eotf_33_linear_mapping, /* R */
+		eotf_33_linear_mapping, /* G */
+		eotf_33_linear_mapping, /* B */
+		CSC_OFF);
 	/* eotf matrix bypass */
 	set_vpp_matrix(VPP_MATRIX_OSD_EOTF,
 		eotf_bypass_coeff,
-		CSC_ON);
+		CSC_OFF);
 	/* oetf lut bypass */
 	set_vpp_lut(VPP_LUT_OSD_OETF,
 		oetf_41_linear_mapping, /* R */
 		oetf_41_linear_mapping, /* G */
 		oetf_41_linear_mapping, /* B */
-		CSC_ON);
+		CSC_OFF);
 	/* osd matrix RGB709 to YUV709 limit */
 	set_vpp_matrix(VPP_MATRIX_OSD,
 		RGB709_to_YUV709l_coeff,
@@ -831,23 +846,36 @@ static void set_osd1_rgb2yuv(bool on)
 
 
 #if ((defined CONFIG_AML_HDMITX20) || (defined CONFIG_AML_CVBS))
-static void vpp_set_post_matrix_rgb2ycbcr (void)
+static void vpp_set_post_matrix_rgb2ycbcr(int mode)
 {
 	/* enable post matrix */
 	vpp_reg_setb(VPP_MATRIX_CTRL, 1, 0, 1);
 	vpp_reg_setb(VPP_MATRIX_CTRL, 0, 8, 2);
 	vpp_reg_setb(VPP_MATRIX_CTRL, 0, 1, 2);
 
-	/* RGB -> 709F*/
-	vpp_reg_write(VPP_MATRIX_COEF00_01, 0xda02dc);
-	vpp_reg_write(VPP_MATRIX_COEF02_10, 0x4a1f8a);
-	vpp_reg_write(VPP_MATRIX_COEF11_12, 0x1e760200);
-	vpp_reg_write(VPP_MATRIX_COEF20_21, 0x2001e2f);
-	vpp_reg_write(VPP_MATRIX_COEF22, 0x1fd1);
-	vpp_reg_write(VPP_MATRIX_OFFSET0_1, 0x200);
-	vpp_reg_write(VPP_MATRIX_OFFSET2, 0x200);
-	vpp_reg_write(VPP_MATRIX_PRE_OFFSET0_1, 0x0);
-	vpp_reg_write(VPP_MATRIX_PRE_OFFSET2, 0x0);
+	if (mode  == 0) {
+		/* RGB -> 709 limit */
+		vpp_reg_write(VPP_MATRIX_COEF00_01, 0x00bb0275);
+		vpp_reg_write(VPP_MATRIX_COEF02_10, 0x003f1f99);
+		vpp_reg_write(VPP_MATRIX_COEF11_12, 0x1ea601c2);
+		vpp_reg_write(VPP_MATRIX_COEF20_21, 0x01c21e67);
+		vpp_reg_write(VPP_MATRIX_COEF22, 0x00001fd7);
+		vpp_reg_write(VPP_MATRIX_OFFSET0_1, 0x00400200);
+		vpp_reg_write(VPP_MATRIX_OFFSET2, 0x00000200);
+		vpp_reg_write(VPP_MATRIX_PRE_OFFSET0_1, 0x0);
+		vpp_reg_write(VPP_MATRIX_PRE_OFFSET2, 0x0);
+	} else {
+		/* RGB -> 709 full */
+		vpp_reg_write(VPP_MATRIX_COEF00_01, 0xda02dc);
+		vpp_reg_write(VPP_MATRIX_COEF02_10, 0x4a1f8a);
+		vpp_reg_write(VPP_MATRIX_COEF11_12, 0x1e760200);
+		vpp_reg_write(VPP_MATRIX_COEF20_21, 0x2001e2f);
+		vpp_reg_write(VPP_MATRIX_COEF22, 0x1fd1);
+		vpp_reg_write(VPP_MATRIX_OFFSET0_1, 0x200);
+		vpp_reg_write(VPP_MATRIX_OFFSET2, 0x200);
+		vpp_reg_write(VPP_MATRIX_PRE_OFFSET0_1, 0x0);
+		vpp_reg_write(VPP_MATRIX_PRE_OFFSET2, 0x0);
+	}
 }
 #endif
 
@@ -856,13 +884,14 @@ void vpp_init(void)
 	VPP_PR("%s\n", __func__);
 
 	if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_GXTVBB) {
-		/* 601 to RGB */
-		vpp_set_matrix_ycbcr2rgb(0, 0);
+		/* 709 limit to RGB */
+		vpp_set_matrix_ycbcr2rgb(0, 3);
 		/* set dummy data default RGB black */
 		vpp_reg_write(VPP_DUMMY_DATA1, 0x0);
 
 	#if ((defined CONFIG_AML_HDMITX20) || (defined CONFIG_AML_CVBS))
-		vpp_set_post_matrix_rgb2ycbcr();
+		/* RGB to 709 limit */
+		vpp_set_post_matrix_rgb2ycbcr(0);
 	#endif
 	} else if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_GXM) {
 		vpp_reg_setb(VIU_MISC_CTRL1, 0xff, 16, 8);
@@ -870,12 +899,12 @@ void vpp_init(void)
 		/* set dummy data default YUV black;
 		bit width change to 10bit in gxm */
 		vpp_reg_write(VPP_DUMMY_DATA1, 0x1020080);
-		/* osd1: rgb->yuv , osd2: yuv*/
+		/* osd1: rgb->yuv limit , osd2: yuv limit */
 		set_osd1_rgb2yuv(1);
 	} else {
 		/* set dummy data default YUV black */
-		vpp_reg_write(VPP_DUMMY_DATA1, 0x8080);
-		/* osd1: rgb->yuv , osd2: yuv*/
+		vpp_reg_write(VPP_DUMMY_DATA1, 0x108080);
+		/* osd1: rgb->yuv limit , osd2: yuv limit */
 		set_osd1_rgb2yuv(1);
 	}
 }
