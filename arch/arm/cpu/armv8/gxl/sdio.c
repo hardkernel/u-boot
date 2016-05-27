@@ -23,31 +23,19 @@
 #include <asm/arch/io.h>
 #include <asm/arch/cpu_sdio.h>
 #include <asm/arch/secure_apb.h>
+#include <asm/cpu_id.h>
 
 void  cpu_sd_emmc_pwr_prepare(unsigned port)
 {
-//    switch(port)
-//    {
-//        case SDIO_PORT_A:
-//            clrbits_le32(P_PREG_PAD_GPIO4_EN_N,0x30f);
-//            clrbits_le32(P_PREG_PAD_GPIO4_O   ,0x30f);
-//            clrbits_le32(P_PERIPHS_PIN_MUX_8,0x3f);
-//            break;
-//        case SDIO_PORT_B:
-//            clrbits_le32(P_PREG_PAD_GPIO5_EN_N,0x3f<<23);
-//            clrbits_le32(P_PREG_PAD_GPIO5_O   ,0x3f<<23);
-//            clrbits_le32(P_PERIPHS_PIN_MUX_2,0x3f<<10);
-//            break;
-//        case SDIO_PORT_C:
-//            //clrbits_le32(P_PREG_PAD_GPIO3_EN_N,0xc0f);
-//            //clrbits_le32(P_PREG_PAD_GPIO3_O   ,0xc0f);
-//            //clrbits_le32(P_PERIPHS_PIN_MUX_6,(0x3f<<24));break;
-//            break;
-//    }
-
-    /**
-        do nothing here
+    /** here you can add io pin voltage operation if you need.
+		but now it was used to open emmc gate for gxm
     */
+
+	if ((port == SDIO_PORT_C)
+        && (get_cpu_id().family_id >= MESON_CPU_MAJOR_ID_GXM)
+        && (readl(HHI_NAND_CLK_CNTL) != 0x80))
+        writel(0x80, HHI_NAND_CLK_CNTL);
+
 }
 unsigned sd_debug_board_1bit_flag = 0;
 int cpu_sd_emmc_init(unsigned port)
@@ -70,7 +58,6 @@ int cpu_sd_emmc_init(unsigned port)
 	case SDIO_PORT_C://SDIOC GPIOB_2~GPIOB_7
 		clrbits_le32(P_PERIPHS_PIN_MUX_7, (0x7 << 5) | (0xff << 16));
 		setbits_le32(P_PERIPHS_PIN_MUX_7, 0x7 << 29);
-        //printf("inand sdio  port:%d\n",port);
 		break;
 	default:
 		return -1;
