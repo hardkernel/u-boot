@@ -1,6 +1,6 @@
 
 /*
- * drivers/display/lcd/aml_ldim/ldim_drv.h
+ * drivers/display/lcd/aml_ldim/ldim_dev_drv.h
  *
  * Copyright (C) 2015 Amlogic, Inc. All rights reserved.
  *
@@ -16,23 +16,19 @@
  *
 */
 
-#ifndef __AML_LDIM_DRV_H__
-#define __AML_LDIM_DRV_H__
-#include <asm/arch/io.h>
-#include <amlogic/aml_lcd_vout.h>
+#ifndef __LDIM_DEV_DRV_H
+#define __LDIM_DEV_DRV_H
 
-#define LDIMPR(fmt, args...)     printf("ldim: "fmt"", ## args)
-#define LDIMERR(fmt, args...)    printf("ldim: error: "fmt"", ## args)
-
-#define LD_DATA_DEPTH   12
-#define LD_DATA_MAX     0xfff
-
-extern void bl_pwm_ctrl(struct bl_pwm_config_s *bl_pwm, int status);
-#ifdef CONFIG_OF_LIBFDT
-extern enum bl_pwm_port_e bl_pwm_str_to_pwm(const char *str);
-#endif
+extern void ldim_set_gpio(int index, int value);
+extern unsigned int ldim_get_gpio(int index);
 
 /* ldim device probe function */
-extern int aml_ldim_device_probe(char *dt_addr);
+#ifdef CONFIG_AML_SPICC
+#ifdef CONFIG_AML_LOCAL_DIMMING_IW7019
+extern int ldim_dev_iw7019_probe(void);
+extern int ldim_dev_iw7019_remove(void);
+#endif
+
+#endif
 
 #endif

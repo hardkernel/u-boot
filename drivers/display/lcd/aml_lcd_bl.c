@@ -385,10 +385,10 @@ void aml_bl_pwm_config_update(struct bl_config_s *bconf)
 #ifdef CONFIG_AML_LOCAL_DIMMING
 	case BL_CTRL_LOCAL_DIMING:
 		ldim_drv = aml_ldim_get_driver();
-		if (ldim_drv->ldim_pwm)
-			bl_pwm_config_init(ldim_drv->ldim_pwm);
+		if (ldim_drv->ldev_conf)
+			bl_pwm_config_init(&ldim_drv->ldev_conf->pwm_config);
 		else
-			LCDERR("bl: ldim_pwm is null\n");
+			LCDERR("bl: ldim_config is null\n");
 		break;
 #endif
 	default:
@@ -865,14 +865,18 @@ enum bl_pwm_port_e bl_pwm_str_to_pwm(const char *str)
 	return pwm_port;
 }
 
-static void aml_bl_config_print(struct bl_config_s *bconf)
+void aml_bl_config_print(void)
 {
+	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
+	struct bl_config_s *bconf;
 	struct bl_pwm_config_s *bl_pwm;
+#ifdef CONFIG_AML_LOCAL_DIMMING
+	struct aml_ldim_driver_s *ldim_drv = aml_ldim_get_driver();
+#endif
 
+	bconf = lcd_drv->bl_config;
 	LCDPR("bl: name: %s\n", bconf->name);
 	LCDPR("bl: method: %d\n", bconf->method);
-	if (lcd_debug_print_flag == 0)
-		return;
 
 	LCDPR("bl: level_default     = %d\n", bconf->level_default);
 	LCDPR("bl: level_min         = %d\n", bconf->level_min);
@@ -934,8 +938,11 @@ static void aml_bl_config_print(struct bl_config_s *bconf)
 		LCDPR("bl: pwm_on_delay        = %d\n", bconf->pwm_on_delay);
 		LCDPR("bl: pwm_off_delay       = %d\n", bconf->pwm_off_delay);
 		break;
+#ifdef CONFIG_AML_LOCAL_DIMMING
 	case BL_CTRL_LOCAL_DIMING:
+		ldim_drv->config_print();
 		break;
+#endif
 	case BL_CTRL_EXTERN:
 		break;
 	default:
@@ -946,12 +953,11 @@ static void aml_bl_config_print(struct bl_config_s *bconf)
 
 static int aml_bl_config_load_from_dts(char *dt_addr, unsigned int index, struct bl_config_s *bconf)
 {
-	int parent_offset;
+	int parent_offset, child_offset;
+	char propname[30];
 	char *propdata;
 	char *p;
 	const char *str;
-	char propname[30];
-	int child_offset;
 	struct bl_pwm_config_s *bl_pwm;
 	struct bl_pwm_config_s *pwm_combo0, *pwm_combo1;
 
@@ -975,7 +981,7 @@ static int aml_bl_config_load_from_dts(char *dt_addr, unsigned int index, struct
 	sprintf(propname,"/backlight/backlight_%d", index);
 	child_offset = fdt_path_offset(dt_addr, propname);
 	if (child_offset < 0) {
-		LCDERR("bl: not find %s node %s\n", propname, fdt_strerror(child_offset));
+		LCDERR("bl: not find %s node: %s\n", propname, fdt_strerror(child_offset));
 		return -1;
 	}
 
@@ -1945,7 +1951,13 @@ int aml_bl_config_load(char *dt_addr, int load_id)
 		if (ret == 0)
 			aml_bl_init_load_from_bsp(lcd_drv->bl_config);
 	}
-	aml_bl_config_print(lcd_drv->bl_config);
+	if (lcd_debug_print_flag) {
+		aml_bl_config_print();
+	} else {
+		LCDPR("bl: name: %s, method: %d\n",
+			lcd_drv->bl_config->name,
+			lcd_drv->bl_config->method);
+	}
 
 	/* get bl_off_policy */
 	bl_off_policy = BL_OFF_POLICY_NONE;

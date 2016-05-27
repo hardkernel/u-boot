@@ -965,6 +965,7 @@ static struct aml_lcd_drv_s aml_lcd_driver = {
 	.bl_off = aml_backlight_power_off,
 	.set_bl_level = aml_set_backlight_level,
 	.get_bl_level = aml_get_backlight_level,
+	.bl_config_print = aml_bl_config_print,
 	.unifykey_test = aml_lcd_unifykey_test,
 	.lcd_extern_info = aml_lcd_extern_info,
 };

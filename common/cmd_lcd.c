@@ -130,6 +130,12 @@ static int do_lcd_bl(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		} else {
 			printf("no lcd set_bl_level\n");
 		}
+	} else if (strcmp(argv[1], "info") == 0) {
+		if (lcd_drv->bl_config_print) {
+			lcd_drv->bl_config_print();
+		} else {
+			printf("no lcd bl_config_print\n");
+		}
 	} else {
 		ret = -1;
 	}
