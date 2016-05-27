@@ -783,7 +783,7 @@ struct spi_flash *spi_flash_probe(unsigned int bus, unsigned int cs,
 	int ret, i, shift;
 	u8 idcode[IDCODE_LEN], *idp;
 
-	if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_GXL) {
+	if (get_cpu_id().family_id >= MESON_CPU_MAJOR_ID_GXL) {
 		*P_PAD_PULL_UP_EN_REG2 = 0xffff87ff;
 		*P_PAD_PULL_UP_REG2 = 0xffff8700;
 		// deselect nand/emmc, select spi.
