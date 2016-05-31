@@ -371,14 +371,20 @@ static int do_set_trim_base(cmd_tbl_t *cmdtp, int flag1,
 static int do_temp_triming(cmd_tbl_t *cmdtp, int flag1,
 	int argc, char * const argv[])
 {
+	int cmd_result;
 	int temp = simple_strtoul(argv[1], NULL, 10);
 	temp_base = temp;
 	printf("set base temperature: %d\n", temp_base);
-	run_command("write_trim", 0);
-	/*FB calibration v5: 1010 0000*/
-	/*manual calibration v2: 0100 0000*/
-	printf("manual calibration v3: 1100 0000\n");
-	run_command("write_version 0xc0", 0);
+
+	cmd_result = run_command("write_trim", 0);
+	if (cmd_result == CMD_RET_SUCCESS) {
+		/*FB calibration v5: 1010 0000*/
+		/*manual calibration v2: 0100 0000*/
+		printf("manual calibration v3: 1100 0000\n");
+		run_command("write_version 0xc0", 0);
+	} else {
+		printf("trim FAIL!!!Please check!!!\n");
+	}
 	run_command("read_temp", 0);
 	return 0;
 }
