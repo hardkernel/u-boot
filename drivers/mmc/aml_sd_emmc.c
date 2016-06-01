@@ -781,7 +781,7 @@ void sd_emmc_register(struct aml_card_sd_info * aml_priv)
 			     MMC_MODE_HC;
 #endif
 	cfg->f_min = 400000;
-	cfg->f_max = 50000000;
+	cfg->f_max = 40000000;
 
 	cfg->b_max = 256;
 	mmc_create(cfg,aml_priv);
