@@ -67,6 +67,10 @@ config GXM_Q200_V1
 	bool "Support amlogic gxm/gxl q200 board"
 	default n
 
+config TXL_SKT_V1
+	bool "Support amlogic txl socket v1 board"
+	default n
+
 config PXP_EMULATOR
 	bool "Support pxp environment"
 	default n
@@ -144,6 +148,10 @@ endif
 
 if GXM_Q200_V1
 source "board/amlogic/gxm_q200_v1/Kconfig"
+endif
+
+if TXL_SKT_V1
+source "board/amlogic/txl_skt_v1/Kconfig"
 endif
 
 if ODROID_C2
