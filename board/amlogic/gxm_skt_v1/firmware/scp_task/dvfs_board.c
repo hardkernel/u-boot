@@ -1,5 +1,5 @@
 
-int pwm_voltage_table[31][2] = {
+int pwm_voltage_table[][2] = {
 	{ 0x1c0000,  860},
 	{ 0x1b0001,  870},
 	{ 0x1a0002,  880},
