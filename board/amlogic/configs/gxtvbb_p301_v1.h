@@ -186,6 +186,7 @@
 		"run recovery_from_flash; "\
 		"\0"\
 	"recovery_from_sdcard="\
+	      "setenv bootargs ${bootargs} aml_dt=${aml_dt};"\
 		"if fatload mmc 0 ${loadaddr} aml_autoscript; then "\
 			"autoscr ${loadaddr}; "\
 		"fi; "\
@@ -198,6 +199,7 @@
 		"fi; "\
 		"\0"\
 	"recovery_from_udisk="\
+	      "setenv bootargs ${bootargs} aml_dt=${aml_dt};"\
 		"if fatload usb 0 ${loadaddr} aml_autoscript; then "\
 			"autoscr ${loadaddr}; "\
 		"fi; "\

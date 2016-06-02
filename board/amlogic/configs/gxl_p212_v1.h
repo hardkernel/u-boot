@@ -162,6 +162,7 @@
             "run recovery_from_flash;"\
             "\0"\
         "recovery_from_sdcard="\
+            "setenv bootargs ${bootargs} aml_dt=${aml_dt} recovery_part={recovery_part} recovery_offset={recovery_offset};"\
             "if fatload mmc 0 ${loadaddr} aml_autoscript; then autoscr ${loadaddr}; fi;"\
             "if fatload mmc 0 ${loadaddr} recovery.img; then "\
                     "if fatload mmc 0 ${dtb_mem_addr} dtb.img; then echo sd dtb.img loaded; fi;"\
@@ -169,6 +170,7 @@
                     "bootm ${loadaddr};fi;"\
             "\0"\
         "recovery_from_udisk="\
+            "setenv bootargs ${bootargs} aml_dt=${aml_dt} recovery_part={recovery_part} recovery_offset={recovery_offset};"\
             "if fatload usb 0 ${loadaddr} aml_autoscript; then autoscr ${loadaddr}; fi;"\
             "if fatload usb 0 ${loadaddr} recovery.img; then "\
                 "if fatload usb 0 ${dtb_mem_addr} dtb.img; then echo udisk dtb.img loaded; fi;"\
