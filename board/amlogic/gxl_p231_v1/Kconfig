@@ -1,0 +1,22 @@
+if TARGET_MESON_GX
+
+config SYS_CPU
+	string
+	default "armv8"
+
+config SYS_BOARD
+	string
+	default "gxm_q201_v1"
+
+config SYS_VENDOR
+	string
+	default "amlogic"
+
+config SYS_SOC
+	string
+	default "gxl"
+
+config SYS_CONFIG_NAME
+	default "gxl_p231_v1"
+
+endif

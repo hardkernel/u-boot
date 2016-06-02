@@ -47,6 +47,14 @@ config GXL_P212_V1
 	bool "Support amlogic gxl p212 board"
 	default n
 
+config GXL_P230_V1
+	bool "Support amlogic gxm/gxl p230 board"
+	default n
+
+config GXL_P231_V1
+	bool "Support amlogic gxm/gxl p231 board"
+	default n
+
 config GXM_SKT_V1
 	bool "Support amlogic gxm/gxl skt board"
 	default n
@@ -116,6 +124,14 @@ endif
 
 if GXL_P212_V1
 source "board/amlogic/gxl_p212_v1/Kconfig"
+endif
+
+if GXL_P230_V1
+source "board/amlogic/gxl_p230_v1/Kconfig"
+endif
+
+if GXL_P231_V1
+source "board/amlogic/gxl_p231_v1/Kconfig"
 endif
 
 if GXM_SKT_V1

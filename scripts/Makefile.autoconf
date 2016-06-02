@@ -68,17 +68,17 @@ include/autoconf.mk include/autoconf.mk.dep: include/config.h
 # support amlogic config folder and customer folder
 
 # 1st. this is old u-boot config file folder
-config_file=$(shell echo "$(srctree)/include/configs/$(CONFIG_SYS_CONFIG_NAME).h")
+config_file=$(shell echo "$(srctree)/include/configs/$(CONFIG_SYS_BOARD).h")
 ifneq ($(config_file), $(wildcard $(config_file)))
 
 # 2nd. this is amlogic config file folder
-config_file=$(shell echo "$(srctree)/board/amlogic/configs/$(CONFIG_SYS_CONFIG_NAME).h")
+config_file=$(shell echo "$(srctree)/board/amlogic/configs/$(CONFIG_SYS_BOARD).h")
 ifneq ($(config_file), $(wildcard $(config_file)))
 
 # 3rd. this is amlogic customer config folder
-config_file=$(shell echo "$(srctree)/customer/board/configs/$(CONFIG_SYS_CONFIG_NAME).h")
+config_file=$(shell echo "$(srctree)/customer/board/configs/$(CONFIG_SYS_BOARD).h")
 ifneq ($(config_file), $(wildcard $(config_file)))
-$(error $(shell echo "Error: Can not find $(CONFIG_SYS_CONFIG_NAME).h"))
+$(error $(shell echo "Error: Can not find $(CONFIG_SYS_BOARD).h"))
 endif
 endif
 endif
@@ -99,7 +99,7 @@ define filechk_config_h
 	echo \#include \<asm/config.h\>;				\
 	echo \#include \<config_fallbacks.h\>;				\
 	echo \#include \<config_uncmd_spl.h\>; \
-	echo \#define SYS_PROMPT \"$(BOARD)\#\"; )
+	echo \#define SYS_PROMPT \"$(CONFIG_SYS_CONFIG_NAME)\#\"; )
 endef
 
 include/config.h: scripts/Makefile.autoconf create_symlink FORCE
