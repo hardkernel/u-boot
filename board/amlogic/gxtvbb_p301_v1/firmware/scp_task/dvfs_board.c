@@ -18,7 +18,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
-
+#if 0
 static int pwm_voltage_table[][2] = {
 	{ 0x1c0000,  860},
 	{ 0x1b0001,  870},
@@ -49,6 +49,16 @@ static int pwm_voltage_table[][2] = {
 	{ 0x02001a, 1120},
 	{ 0x01001b, 1130},
 	{ 0x00001c, 1140}
+};
+#endif
+static int pwm_voltage_table[][2] = {
+	{ 0x170005,  910},
+	{ 0x130009,  950},
+	{ 0x0f000d,  990},
+	{ 0x0b0011, 1030},
+	{ 0x090013, 1050},
+	{ 0x070015, 1070},
+	{ 0x040018, 1100},
 };
 
 struct scpi_opp_entry cpu_dvfs_tbl[] = {
