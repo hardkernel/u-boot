@@ -2323,6 +2323,16 @@ static void hdmitx_set_hw(struct hdmitx_dev* hdev)
 		hd_set_reg_bits(P_VPU_HDMI_SETTING, 0, 4, 4);
 		hd_set_reg_bits(P_VPU_HDMI_SETTING, 1, 8, 1);
 	}
+	switch (hdev->para->cd) {
+	case HDMI_COLOR_DEPTH_30B:
+	case HDMI_COLOR_DEPTH_36B:
+	case HDMI_COLOR_DEPTH_48B:
+		hd_set_reg_bits(P_VPU_HDMI_FMT_CTRL, 0, 4, 1);
+		break;
+	default:
+		hd_set_reg_bits(P_VPU_HDMI_FMT_CTRL, 1, 4, 1);
+		break;
+	}
 	switch (hdev->vic) {
 	case HDMI_720x480i60_16x9:
 	case HDMI_720x576i50_16x9:
