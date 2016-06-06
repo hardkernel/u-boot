@@ -529,6 +529,37 @@ static struct hdmi_format_para fmt_para_720x576i50_16x9 = {
 	},
 };
 
+static struct hdmi_format_para fmt_para_vesa_1024x600p60_17x10 = {
+	.vic = HDMI_1024x600p60_17x10,
+	.name = "1024x600p60hz",
+	.sname = "1024x600p60hz",
+	.pixel_repetition_factor = 0,
+	.progress_mode = 1,
+	.scrambler_en = 0,
+	.tmds_clk_div40 = 0,
+	.tmds_clk = 48960,
+	.timing = {
+		.pixel_freq = 48960,
+		.h_freq = 37320,
+		.v_freq = 60000,
+		.vsync_polarity = 1,
+		.hsync_polarity = 0,
+		.h_active = 1024,
+		.h_total = 1312,
+		.h_blank = 288,
+		.h_front = 40,
+		.h_sync = 104,
+		.h_back = 144,
+		.v_active = 600,
+		.v_total = 622,
+		.v_blank = 22,
+		.v_front = 1,
+		.v_sync = 3,
+		.v_back = 18,
+		.v_sync_ln = 1,
+	},
+};
+
 static struct hdmi_format_para *all_fmt_paras[] = {
 	&fmt_para_3840x2160p60_16x9,
 	&fmt_para_3840x2160p50_16x9,
@@ -547,6 +578,7 @@ static struct hdmi_format_para *all_fmt_paras[] = {
 	&fmt_para_720x480i60_16x9,
 	&fmt_para_720x576p50_16x9,
 	&fmt_para_720x576i50_16x9,
+	&fmt_para_vesa_1024x600p60_17x10,
 };
 
 struct hdmi_format_para *hdmi_get_fmt_paras(enum hdmi_vic vic)
