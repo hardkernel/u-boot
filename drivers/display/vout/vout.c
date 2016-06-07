@@ -159,6 +159,12 @@ static const vout_set_t vout_sets[] = {
 		.width             = 1024,
 		.height            = 600,
 	},
+	{ /* 800x480p60hz */
+		.name              = "800x480p60hz",
+		.mode              = VMODE_800X480P_60HZ,
+		.width             = 800,
+		.height            = 480,
+	},
 };
 
 vidinfo_t tv_info = {
@@ -347,6 +353,11 @@ static int get_window_axis(int *axis)
 		axis[1] = getenv_int("1024x600p_y", 0);
 		axis[2] = getenv_int("1024x600p_w", 1024);
 		axis[3] = getenv_int("1024x600p_h", 600);
+	} else if (strncmp(mode, "800x480p", 8) == 0) {
+		axis[0] = getenv_int("800x480p_x", 0);
+		axis[1] = getenv_int("800x480p_y", 0);
+		axis[2] = getenv_int("800x480p_w", 800);
+		axis[3] = getenv_int("800x480p_h", 480);
 	} else {
 		axis[0] = getenv_int("1080p_x", 0);
 		axis[1] = getenv_int("1080p_y", 0);
