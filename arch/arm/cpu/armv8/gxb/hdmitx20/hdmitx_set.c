@@ -310,6 +310,7 @@ static struct hdmi_support_mode gxbb_modes[] = {
 	{HDMI_720x576p50_16x9, "576p50hz", 0},
 	{HDMI_720x576i50_16x9, "576i50hz", 0},
 	{HDMI_1024x600p60_17x10, "1024x600p60hz", 0},
+	{HDMI_800x480p60_5x3, "800x480p60hz", 0},
 };
 
 static void hdmitx_list_support_modes(void)
@@ -1608,6 +1609,20 @@ static void hdmi_tvenc_set_def(enum hdmi_vic vic)
 		BACK_PORCH          = 144;
 		VSYNC_LINES         = 3;
 		SOF_LINES           = 18;
+		break;
+	case HDMI_800x480p60_5x3:
+		INTERLACE_MODE      = 0;
+		PIXEL_REPEAT_VENC   = 0;
+		PIXEL_REPEAT_HDMI   = 0;
+		ACTIVE_PIXELS       = 800;
+		ACTIVE_LINES        = 480;
+		LINES_F0            = 500;
+		LINES_F1            = 500;
+		FRONT_PORCH         = 24;
+		HSYNC_PIXELS        = 72;
+		BACK_PORCH          = 96;
+		VSYNC_LINES         = 7;
+		SOF_LINES           = 10;
 		break;
 	default:
 		break;

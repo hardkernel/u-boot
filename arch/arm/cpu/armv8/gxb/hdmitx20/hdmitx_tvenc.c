@@ -549,6 +549,32 @@ static const struct reg_t tvregs_vesa_1024x600p60hz[] = {
 	{MREG_END_MARKER, 0}
 };
 
+static const struct reg_t tvregs_vesa_800x480p60hz[] = {
+	{P_ENCP_VIDEO_EN, 0},
+	{P_ENCI_VIDEO_EN, 0},
+
+	{P_ENCP_VIDEO_MODE, 0x4040},
+	{P_ENCP_VIDEO_MODE_ADV, 0x18},
+	{P_ENCP_VIDEO_MAX_PXCNT, 0x3DF},
+	{P_ENCP_VIDEO_MAX_LNCNT, 0x1F3},
+	{P_ENCP_VIDEO_HAVON_BEGIN, 0xA8},
+	{P_ENCP_VIDEO_HAVON_END, 0x3C7},
+	{P_ENCP_VIDEO_VAVON_BLINE, 0x11},
+	{P_ENCP_VIDEO_VAVON_ELINE, 0x1F0},
+	{P_ENCP_VIDEO_HSO_BEGIN, 0x0},
+	{P_ENCP_VIDEO_HSO_END, 0x48},
+	{P_ENCP_VIDEO_VSO_BEGIN, 0x1E},
+	{P_ENCP_VIDEO_VSO_END, 0x32},
+	{P_ENCP_VIDEO_VSO_BLINE, 0x0},
+	{P_ENCP_VIDEO_VSO_ELINE, 0x7},
+
+	{P_ENCP_VIDEO_EN, 1},
+	{P_ENCI_VIDEO_EN, 0},
+	{MREG_END_MARKER, 0},
+
+};
+
+
 struct vic_tvregs_set {
 	enum hdmi_vic vic;
 	const struct reg_t *reg_setting;
@@ -578,6 +604,7 @@ static struct vic_tvregs_set tvregsTab[] = {
 	{HDMI_3840x2160p60_16x9, tvregs_4k2k_30hz},
 	{HDMI_3840x2160p50_16x9, tvregs_4k2k_25hz},
 	{HDMI_1024x600p60_17x10, tvregs_vesa_1024x600p60hz},
+	{HDMI_800x480p60_5x3, tvregs_vesa_800x480p60hz},
 };
 
 static inline void setreg(const struct reg_t *r)
