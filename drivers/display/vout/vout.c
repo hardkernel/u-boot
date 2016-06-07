@@ -153,6 +153,12 @@ static const vout_set_t vout_sets[] = {
 		.width             = 1920,
 		.height            = 1080,
 	},
+	{ /* 1024x600p60hz */
+		.name              = "1024x600p60hz",
+		.mode              = VMODE_1024X600P_60HZ,
+		.width             = 1024,
+		.height            = 600,
+	},
 };
 
 vidinfo_t tv_info = {
@@ -336,6 +342,11 @@ static int get_window_axis(int *axis)
 		axis[1] = getenv_int("4k2ksmpte_y", 0);
 		axis[2] = getenv_int("4k2ksmpte_w", 4096);
 		axis[3] = getenv_int("4k2ksmpte_h", 2160);
+	} else if (strncmp(mode, "1024x600p", 9) == 0) {
+		axis[0] = getenv_int("1024x600p_x", 0);
+		axis[1] = getenv_int("1024x600p_y", 0);
+		axis[2] = getenv_int("1024x600p_w", 1024);
+		axis[3] = getenv_int("1024x600p_h", 600);
 	} else {
 		axis[0] = getenv_int("1080p_x", 0);
 		axis[1] = getenv_int("1080p_y", 0);
