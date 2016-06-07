@@ -861,8 +861,13 @@ FIP_ARGS += --bl32 $(FIP_FOLDER_SOC)/bl32.bin
 endif
 FIP_ARGS += --bl33 $(FIP_FOLDER_SOC)/bl33.bin
 
+.PHONY: fip_create
+fip_create:
+	$(Q)$(MAKE) -C $(srctree)/tools/fip_create/
+	$(Q)cp $(srctree)/tools/fip_create/fip_create $(FIP_FOLDER)/
+
 .PHONY: fip.bin
-fip.bin: tools prepare u-boot.bin
+fip.bin: tools prepare u-boot.bin fip_create
 	$(Q)cp u-boot.bin $(FIP_FOLDER_SOC)/bl33.bin
 	$(Q)$(FIP_FOLDER)/fip_create ${FIP_ARGS} $(FIP_FOLDER_SOC)/fip.bin
 	$(Q)$(FIP_FOLDER)/fip_create --dump $(FIP_FOLDER_SOC)/fip.bin
@@ -1398,8 +1403,10 @@ distclean: mrproper
 	@rm -f $(FIP_FOLDER_SOC)/u-boot.bin
 	@rm -f $(FIP_FOLDER_SOC)/u-boot.bin.* $(FIP_FOLDER_SOC)/*.encrypt
 	@rm -f $(FIP_FOLDER)/u-boot.bin.* $(FIP_FOLDER)/*.bin $(FIP_FOLDER)/*.encrypt
+	@rm -f $(FIP_FOLDER)/fip_create
 	@rm -f $(srctree)/fip/aml_encrypt_gxb
 	@rm -f $(FUSING_FOLDER)/u-boot.bin
+	@$(MAKE) -C $(srctree)/tools/fip_create clean
 
 backup:
 	F=`basename $(srctree)` ; cd .. ; \
