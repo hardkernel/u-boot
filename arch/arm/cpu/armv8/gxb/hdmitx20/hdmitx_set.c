@@ -114,6 +114,18 @@ static int hdmitx_get_hpd_state(void)
 	return st;
 }
 
+static void hdmitx_dvi_config(unsigned int dvi_mode)
+{
+	if (dvi_mode) {
+		/* DVI */
+		hdmitx_csc_config(TX_INPUT_COLOR_FORMAT, HDMI_COLOR_FORMAT_RGB, TX_COLOR_DEPTH);
+		hdmitx_set_reg_bits(HDMITX_DWC_FC_INVIDCONF, 0, 3, 1);
+	} else {
+		/* HDMI */
+		hdmitx_set_reg_bits(HDMITX_DWC_FC_INVIDCONF, 1, 3, 1);
+	}
+}
+
 static void hdmitx_hw_init(void)
 {
 	static int hw_init_flag;
