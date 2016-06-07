@@ -143,6 +143,16 @@ static void set_hpll_clk_out(unsigned clk)
 		hd_set_reg_bits(P_HHI_HDMI_PLL_CNTL, 0x4, 28, 3); /* set pll */
 		WAIT_FOR_PLL_LOCKED(P_HHI_HDMI_PLL_CNTL);
 		break;
+	case 297:
+		hd_write_reg(P_HHI_HDMI_PLL_CNTL, 0x58000263);
+		hd_write_reg(P_HHI_HDMI_PLL_CNTL2, 0x00000000);
+		hd_write_reg(P_HHI_HDMI_PLL_CNTL3, 0x0d5c5091);
+		hd_write_reg(P_HHI_HDMI_PLL_CNTL4, 0x801da72c);
+		hd_write_reg(P_HHI_HDMI_PLL_CNTL5, 0x71486980);
+		hd_write_reg(P_HHI_HDMI_PLL_CNTL6, 0x00000e55);
+		hd_set_reg_bits(P_HHI_HDMI_PLL_CNTL, 0x4, 28, 3); /* set pll */
+		WAIT_FOR_PLL_LOCKED(P_HHI_HDMI_PLL_CNTL);
+		break;
 	default:
 		printk("error hpll clk: %d\n", clk);
 		break;
@@ -318,6 +328,7 @@ static hw_enc_clk_val_t setting_enc_clk_val[] = {
     {HDMI_3840x2160p50_16x9, 1, VIU_ENCP, 5940, 1, 1, 2, CLK_UTIL_VID_PLL_DIV_5, 1, 1, 1, -1},
     /* VESA */
     {HDMI_1024x600p60_17x10, 1, VIU_ENCP, 490, 4, 2, 2, CLK_UTIL_VID_PLL_DIV_5, 1, 1, 1, -1},
+    {HDMI_800x480p60_5x3, 1, VIU_ENCP, 297, 4, 4, 2, CLK_UTIL_VID_PLL_DIV_5, 1, 1, 1, -1},
 };
 
 void set_hdmitx_clk(enum hdmi_vic vic)
