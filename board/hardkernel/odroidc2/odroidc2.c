@@ -59,6 +59,7 @@ static const char *c2_hdmimodes[] = {
 	"2160p50hz420",
 	"600x480p60hz",
 	"800x480p60hz",
+	"800x600p60hz",
 	"1024x600p60hz",
 	"1024x768p60hz",
 	"1280x800p60hz",
