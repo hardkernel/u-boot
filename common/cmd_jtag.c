@@ -4,6 +4,7 @@
 #include <command.h>
 #include <malloc.h>
 #include <asm/arch/bl31_apis.h>
+#include <asm/cpu_id.h>
 
 static int get_jtag_sel(const char *argv)
 {
@@ -35,14 +36,24 @@ int do_jtagon(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		return -1;
 	}
 
+	if ((get_cpu_id().family_id == MESON_CPU_MAJOR_ID_GXM) && (sel >1)) {
+		if (argv[2]) {
+			int tmp = simple_strtoul(argv[2], NULL, 10);
+			sel = sel | (tmp << CLUSTER_BIT);
+		} else {
+			printf("gxm: set A53 jtag to cluster0 by default!\n");
+		}
+	}
 	aml_set_jtag_state(JTAG_STATE_ON, sel);
 	return 0;
 }
 
 U_BOOT_CMD(
-	jtagon,	2,	1,	do_jtagon,
+	jtagon,	3,	1,	do_jtagon,
 	"enable jtag",
-	"jtagon [apao|apee|scpao|scpee]"
+	"jtagon [apao|apee|scpao|scpee] [0|1]\n"
+	" [apao|apee|scpao|scpee]  - ap or scp jtag connect to ao or ee domain\n"
+	" [0|1]                    - special for gxm, ap jtag to cluster 0 or cluster 1\n"
 );
 
 int do_jtagoff(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])

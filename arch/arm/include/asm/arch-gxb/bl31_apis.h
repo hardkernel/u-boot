@@ -96,7 +96,7 @@ struct sram_hal_api_arg {
 #define JTAG_M3_EE     1
 #define JTAG_A53_AO    2
 #define JTAG_A53_EE 3
-
+#define CLUSTER_BIT 2
 
 /////////////////////////////////////////////////////////////////////////////////
 #define AML_DATA_PROCESS                 (0x820000FF)
