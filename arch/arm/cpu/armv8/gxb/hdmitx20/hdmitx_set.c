@@ -2139,6 +2139,8 @@ static void hdmitx_set_hw(struct hdmitx_dev* hdev)
 	hdmitx_set_reg_bits(HDMITX_DWC_FC_INVIDCONF, 0, 3, 1);
 	msleep(1);
 	hdmitx_set_reg_bits(HDMITX_DWC_FC_INVIDCONF, 1, 3, 1);
+
+	hdmitx_dvi_config(hdev->dvimode);
 }
 
 // Use this self-made function rather than %, because % appears to produce wrong

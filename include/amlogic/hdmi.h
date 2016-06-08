@@ -230,6 +230,7 @@ struct hdmitx_dev {
 	enum hdmi_vic vic;
 	unsigned int mode420;
 	unsigned int dc30;
+	unsigned int dvimode;
 };
 
 struct hdmi_format_para *hdmi_get_fmt_paras(enum hdmi_vic vic);

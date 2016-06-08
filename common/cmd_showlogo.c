@@ -104,7 +104,7 @@ display_logo:
 	setenv("display_height", getenv("fb_height"));
 
 	run_command("hdmitx hpd; osd open; osd clear", 0);
-	run_command("vout output ${outputmode}; hdmitx output ${outputmode}", 0);
+	run_command("vout output ${outputmode}; hdmitx mode ${vout_mode}; hdmitx output ${outputmode}", 0);
 	run_command("bmp display ${bootlogo_addr}", 0);
 	run_command("setenv logoopt ${display_layer},loaded,${fb_addr},${hdmimode}", 0);
 
