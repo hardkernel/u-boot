@@ -2172,6 +2172,7 @@ static void hdmitx_csc_config (unsigned char input_color_format,
 	unsigned long   csc_coeff_c1, csc_coeff_c2, csc_coeff_c3, csc_coeff_c4;
 	unsigned char   csc_scale;
 	unsigned long   data32;
+	unsigned char	rgb_ycc_indicator;
 
 	conv_en = (((input_color_format  == HDMI_COLOR_FORMAT_RGB) ||
                 (output_color_format == HDMI_COLOR_FORMAT_RGB)) &&
@@ -2267,4 +2268,29 @@ static void hdmitx_csc_config (unsigned char input_color_format,
 	data32 |= (color_depth  << 4);  // [7:4] csc_color_depth
 	data32 |= (csc_scale	<< 0);  // [1:0] cscscale
 	hdmitx_wr_reg(HDMITX_DWC_CSC_SCALE,         data32);
+
+	/* set csc in video path */
+	hdmitx_wr_reg(HDMITX_DWC_MC_FLOWCTRL, (conv_en == 1)?0x1:0x0);
+
+	/* set rgb_ycc indicator */
+	switch (output_color_format) {
+	case HDMI_COLOR_FORMAT_RGB:
+		rgb_ycc_indicator = 0x0;
+		break;
+	case HDMI_COLOR_FORMAT_422:
+		rgb_ycc_indicator = 0x1;
+		break;
+	case HDMI_COLOR_FORMAT_444:
+	default:
+		rgb_ycc_indicator = 0x2;
+		break;
+	case HDMI_COLOR_FORMAT_420:
+		rgb_ycc_indicator = 0x3;
+		break;
+	}
+	hdmitx_set_reg_bits(HDMITX_DWC_FC_AVICONF0,
+		((rgb_ycc_indicator & 0x4) >> 2), 7, 1);
+	hdmitx_set_reg_bits(HDMITX_DWC_FC_AVICONF0,
+		(rgb_ycc_indicator & 0x3), 0, 2);
+
 }   /* hdmitx_csc_config */
