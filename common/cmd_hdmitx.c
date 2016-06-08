@@ -121,12 +121,23 @@ static int do_dump(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 	return 1;
 }
 
+static int do_mode(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
+{
+	if (strstr(argv[1], "dvi") != NULL)
+		hdmitx_device.dvimode = 1;
+	else
+		hdmitx_device.dvimode = 0;
+
+	return 1;
+}
+
 static cmd_tbl_t cmd_hdmi_sub[] = {
 	U_BOOT_CMD_MKENT(hpd, 1, 1, do_hpd_detect, "", ""),
 	U_BOOT_CMD_MKENT(edid, 3, 1, do_edid, "", ""),
 	U_BOOT_CMD_MKENT(output, 3, 1, do_output, "", ""),
 	U_BOOT_CMD_MKENT(off, 1, 1, do_off, "", ""),
 	U_BOOT_CMD_MKENT(dump, 1, 1, do_dump, "", ""),
+	U_BOOT_CMD_MKENT(mode, 1, 1, do_mode, "", ""),
 };
 
 static int do_hdmitx(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
