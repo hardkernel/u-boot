@@ -219,7 +219,7 @@ int cvbs_set_vdac(int status)
 	case 1:// from enci to vdac
 		cvbs_set_vcbus_bits(VENC_VDAC_DACSEL0, 5, 1, 0);
 		if (is_meson_gxl_cpu() || is_meson_gxm_cpu())
-			cvbs_write_hiu(HHI_VDAC_CNTL0, 0xb0001);
+			cvbs_write_hiu(HHI_VDAC_CNTL0, 0xf0001);
 		else
 			cvbs_write_hiu(HHI_VDAC_CNTL0, 1);
 		cvbs_write_hiu(HHI_VDAC_CNTL1, 0);
