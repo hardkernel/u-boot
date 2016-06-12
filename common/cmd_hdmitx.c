@@ -78,6 +78,91 @@ static int do_edid(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 	return st;
 }
 
+static int do_rx_det(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
+{
+	unsigned char edid_addr = 0xf8;     // Fixed Address
+	unsigned char st = 0;
+
+	memset(edid_raw_buf, 0, ARRAY_SIZE(edid_raw_buf));
+
+	// read edid raw data
+	// current only support read 1 byte edid data
+	st = hdmitx_device.HWOp.read_edid(&edid_raw_buf[edid_addr & 0xf8], edid_addr & 0xf8, 8);
+	if (1)      // Debug only
+		dump_edid_raw(&edid_raw_buf[edid_addr & 0xf8]);
+	if (st) {
+#if 0
+		// set fake value for debug
+		edid_raw_buf[250] = 0xfb;
+		edid_raw_buf[251] = 0x0c;
+		edid_raw_buf[252] = 0x01;
+#endif
+		if ((edid_raw_buf[250] == 0xfb) & (edid_raw_buf[251] == 0x0c)) {
+			printf("RX is FBC\n");
+
+			// set outputmode ENV
+			switch (edid_raw_buf[252] & 0x0f) {
+			case 0x0:
+				run_command("setenv outputmode 1080p50hz", 0);
+				break;
+			case 0x1:
+				run_command("setenv outputmode 2160p50hz420", 0);
+				break;
+			case 0x2:
+				run_command("setenv outputmode 1080p50hz44410bit", 0);
+				break;
+			case 0x3:
+				run_command("setenv outputmode 2160p50hz42010bit", 0);
+				break;
+			case 0x4:
+				run_command("setenv outputmode 2160p50hz42210bit", 0);
+				break;
+			case 0x5:
+				run_command("setenv outputmode 2160p50hz", 0);
+				break;
+			default:
+				run_command("setenv outputmode 1080p50hz", 0);
+				break;
+			}
+
+			// set RX 3D Info
+			switch ((edid_raw_buf[252] >> 4) & 0x0f) {
+			case 0x00:
+				run_command("setenv rx_3d_info 0", 0);
+				break;
+			case 0x01:
+				run_command("setenv rx_3d_info 1", 0);
+				break;
+			case 0x02:
+				run_command("setenv rx_3d_info 2", 0);
+				break;
+			case 0x03:
+				run_command("setenv rx_3d_info 3", 0);
+				break;
+			case 0x04:
+				run_command("setenv rx_3d_info 4", 0);
+				break;
+			default:
+				break;
+			}
+
+			switch (edid_raw_buf[253]) {
+			case 0x1:
+				// TODO
+				break;
+			case 0x2:
+				// TODO
+				break;
+			default:
+				break;
+			}
+		}
+	} else
+		printf("edid read failed\n");
+
+	return st;
+}
+
 static int do_output(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 {
 	if (argc < 1)
@@ -145,6 +230,7 @@ static int do_info(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 static cmd_tbl_t cmd_hdmi_sub[] = {
 	U_BOOT_CMD_MKENT(hpd, 1, 1, do_hpd_detect, "", ""),
 	U_BOOT_CMD_MKENT(edid, 3, 1, do_edid, "", ""),
+	U_BOOT_CMD_MKENT(rx_det, 1, 1, do_rx_det, "", ""),
 	U_BOOT_CMD_MKENT(output, 3, 1, do_output, "", ""),
 	U_BOOT_CMD_MKENT(blank, 3, 1, do_blank, "", ""),
 	U_BOOT_CMD_MKENT(off, 1, 1, do_off, "", ""),
@@ -190,4 +276,6 @@ U_BOOT_CMD(hdmitx, CONFIG_SYS_MAXARGS, 0, do_hdmitx,
 	"    Turn off hdmitx output\n"
 	"hdmitx info\n"
 	"    current mode info\n"
+	"hdmitx rx_det\n"
+	"    Auto detect if RX is FBC and set outputmode\n"
 );

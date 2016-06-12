@@ -195,10 +195,10 @@ static int read_edid_8bytes(unsigned char *rx_edid, unsigned char addr)
 	hdmitx_wr_reg(HDMITX_DWC_I2CM_SEGADDR, 0x30);
 	hdmitx_wr_reg(HDMITX_DWC_I2CM_SEGPTR, 0);
 	hdmitx_wr_reg(HDMITX_DWC_I2CM_ADDRESS, addr & 0xff);
-	hdmitx_wr_reg(HDMITX_DWC_I2CM_OPERATION, 1 << 3);
+	hdmitx_wr_reg(HDMITX_DWC_I2CM_OPERATION, 1 << 2);
 	timeout = 0;
 	while ((!(hdmitx_rd_reg(HDMITX_DWC_IH_I2CM_STAT0) & (1 << 1))) && (timeout < 3)) {
-		mdelay(2);
+		_udelay(2000);
 		timeout ++;
 	}
 	if (timeout == 3) {
@@ -218,7 +218,8 @@ static void ddc_init(void)
 	static int ddc_init_flag;
 	unsigned int data32 = 0;
 
-
+	hdmitx_hw_init();
+	_udelay(200);
 	if (ddc_init_flag)
 		return;
 	else
