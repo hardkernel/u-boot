@@ -123,7 +123,7 @@ void enter_suspend(unsigned int suspend_from)
 {
 	int exit_reason = UDEFINED_WAKEUP;
 #ifdef CONFIG_CEC_WAKEUP
-	hdmi_cec_func_config = readl(P_AO_DEBUG_REG0);
+	hdmi_cec_func_config = readl(P_AO_DEBUG_REG0) & 0xff;
 	uart_puts("CEC cfg:0x");
 	uart_put_hex(hdmi_cec_func_config, 16);
 	uart_puts("\n");
