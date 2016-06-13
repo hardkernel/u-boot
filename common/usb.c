@@ -76,7 +76,11 @@ void _mdelay(unsigned long ms)
 /***************************************************************************
  * Init USB Device
  */
+#if !defined(CONFIG_MACH_ODROIDC2)
 int usb_init(void)
+#else
+int usb_init(int scan)
+#endif
 {
 	void *ctrl;
 	struct usb_device *dev;
@@ -107,34 +111,45 @@ int usb_init(void)
 			puts("lowlevel init failed\n");
 			continue;
 		}
-		/*
-		 * lowlevel init is OK, now scan the bus for devices
-		 * i.e. search HUBs and configure them
-		 */
-		start_index = dev_index;
-		printf("scanning bus %d for devices... ", i);
-		dev = usb_alloc_new_device(ctrl);
-		/*
-		 * device 0 is always present
-		 * (root hub, so let it analyze)
-		 */
-		if (dev)
-			usb_new_device(dev);
 
-		if (start_index == dev_index)
-			puts("No USB Device found\n");
-		else {
-			printf("%d USB Device(s) found\n",
-				dev_index - start_index);
+#if defined(CONFIG_MACH_ODROIDC2)
+		if (scan)
+#endif
+		{
+			/*
+			 * lowlevel init is OK, now scan the bus for devices
+			 * i.e. search HUBs and configure them
+			 */
+			start_index = dev_index;
+			printf("scanning bus %d for devices... ", i);
+			dev = usb_alloc_new_device(ctrl);
+			/*
+			 * device 0 is always present
+			 * (root hub, so let it analyze)
+			 */
+			if (dev)
+				usb_new_device(dev);
 
-			usb_started = 1;
-			break;
+			if (start_index == dev_index)
+				puts("No USB Device found\n");
+			else {
+				printf("%d USB Device(s) found\n",
+					dev_index - start_index);
+
+				usb_started = 1;
+				break;
+			}
 		}
 	}
 
 	debug("scan end\n");
 	/* if we were not able to find at least one working bus, bail out */
-	if (!usb_started) {
+#if !defined(CONFIG_MACH_ODROIDC2)
+	if (!usb_started)
+#else
+	if (!usb_started && scan)
+#endif
+	{
 		puts("USB error: all controllers failed lowlevel init\n");
 		return -1;
 	}
