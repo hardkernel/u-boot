@@ -257,7 +257,7 @@
 #define CONFIG_DISPLAY_LOGO		1
 #ifdef CONFIG_DISPLAY_LOGO
 #define CONFIG_VIDEO_BMP_GZIP		1
-#define CONFIG_SYS_VIDEO_LOGO_MAX_SIZE	(3 << 20) /* for decompressed img */
+#define CONFIG_SYS_VIDEO_LOGO_MAX_SIZE	(6 << 20) /* for decompressed img with 1080p gunzipped bmp */
 #endif
 
 /* ODROID reboot reasons */
