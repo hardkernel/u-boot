@@ -83,12 +83,12 @@
 	"loadaddr=0x20000000\0"		\
 	"dtbaddr=0x1000000\0"		\
 	"fdt_high=0x20000000\0"		\
-	"hdmimode=720p60hz\0"		\
+	"hdmimode=1080p60hz\0"		\
 	"cecconfig=cec0xf\0"		\
 	"bootargs=root=/dev/mmcblk0p2 rw init=/init rootwait "	\
 		"console=ttyS0,115200 "				\
-		"hdmimode=720p60hz hdmitx=cecf "		\
-		"logo=osd1,loaded,0x3f800000,720p60hz "		\
+		"hdmimode=1080p60hz hdmitx=cecf "		\
+		"logo=osd1,loaded,0x3f800000,1080p60hz "		\
 		"androidboot.hardware=odroidc2 "	\
 		"androidboot.selinux=disabled  \0"		\
 	"bootcmd=cfgload; showlogo ${hdmimode}; movi read dtb 0 ${dtbaddr}; movi read boot 0 ${loadaddr}; booti ${loadaddr} - ${dtbaddr}\0"

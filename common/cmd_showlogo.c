@@ -64,14 +64,14 @@ static int display_logo(const char* mode)
 		}
 	}
 
-	/* If hdmimode is set by invalid mode, u-boot set the default mode(720p60hz). */
+	/* If hdmimode is set by invalid mode, u-boot set the default mode(1080p60hz). */
 	if (i == ARRAY_SIZE(c2_res_list)) {
 		printf("error: '%s' is invalid resolution.\n", mode);
-		printf("Set the default resolution. => 720p60hz.\n");
-		mode = "720p60hz";
-		setenv("fb_width", "1280");
-		setenv("fb_height", "720");
-		setenv("hdmimode", "720p60hz");
+		printf("Set the default resolution. => 1080p60hz.\n");
+		mode = "1080p60hz";
+		setenv("fb_width", "1920");
+		setenv("fb_height", "1080");
+		setenv("hdmimode", "1080p60hz");
 		run_command("save", 0);
 	}
 
@@ -135,7 +135,7 @@ U_BOOT_CMD(
 		"Displaying BMP logo file to HDMI screen with the specified resolution",
 		"<resolution>\n"
 		"    resolution - screen resoltuion on HDMI screen\n"
-		"                 '720p60hz' will be used by default if missing"
+		"                 '1080p60hz' will be used by default if missing"
 );
 #endif  /* CONFIG_DISPLAY_LOGO */
 
