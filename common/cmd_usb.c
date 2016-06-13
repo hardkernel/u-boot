@@ -464,7 +464,12 @@ static int do_usb(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 			return 1;
 		usb_stop();
 		printf("(Re)start USB...\n");
+
+#if !defined(CONFIG_MACH_ODROIDC2)
 		if (usb_init() >= 0) {
+#else
+		if (usb_init(1) >= 0) {
+#endif
 #ifdef CONFIG_USB_STORAGE
 			/* try to recognize storage devices immediately */
 			usb_stor_curr_dev = usb_stor_scan(1);
@@ -488,6 +493,13 @@ static int do_usb(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		usb_stop();
 		return 0;
 	}
+#if defined(CONFIG_MACH_ODROIDC2)
+	if (strncmp(argv[1], "pwren", 5) == 0) {
+		usb_stop();
+		usb_init(0);
+		return 0;
+	}
+#endif
 	if (!usb_started) {
 		printf("USB is stopped. Please issue 'usb start' first.\n");
 		return 1;
@@ -668,7 +680,8 @@ U_BOOT_CMD(
 	"usb read addr blk# cnt - read `cnt' blocks starting at block `blk#'\n"
 	"    to memory address `addr'\n"
 	"usb write addr blk# cnt - write `cnt' blocks starting at block `blk#'\n"
-	"    from memory address `addr'"
+	"    from memory address `addr'\n"
+	"usb pwren - reset USB controller and enable USB Host power\n"
 #endif /* CONFIG_USB_STORAGE */
 );
 

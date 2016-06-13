@@ -236,7 +236,11 @@ int usb_kbd_deregister(int force);
 
 #endif
 /* routines */
+#if !defined(CONFIG_MACH_ODROIDC2)
 int usb_init(void); /* initialize the USB Controller */
+#else
+int usb_init(int scan); /* initialize the USB Controller */
+#endif
 int usb_stop(void); /* stop the USB Controller */
 
 
