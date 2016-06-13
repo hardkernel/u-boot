@@ -374,11 +374,11 @@ static void cec_report_physical_address(void)
 	remote_cec_ll_tx(msg, 5);
 }
 
-static void cec_report_device_power_status(void)
+static void cec_report_device_power_status(int dst)
 {
 	unsigned char msg[3];
 
-	msg[0] = ((cec_msg.log_addr & 0xf) << 4)| CEC_TV_ADDR;
+	msg[0] = ((cec_msg.log_addr & 0xf) << 4)| (dst & 0xf);
 	msg[1] = CEC_OC_REPORT_POWER_STATUS;
 	msg[2] = cec_msg.power_status;
 
@@ -413,47 +413,47 @@ static void cec_device_vendor_id(void)
 	remote_cec_ll_tx(msg, 5);
 }
 
-static void cec_menu_status_smp(int menu_status)
+static void cec_menu_status_smp(int menu_status, int dst)
 {
 	unsigned char msg[3];
 
-	msg[0] = ((cec_msg.log_addr & 0xf) << 4)| CEC_TV_ADDR;
+	msg[0] = ((cec_msg.log_addr & 0xf) << 4)| (dst & 0xf);
 	msg[1] = CEC_OC_MENU_STATUS;
 	msg[2] = menu_status;
 
 	remote_cec_ll_tx(msg, 3);
 }
 
-static void cec_give_deck_status(void)
+static void cec_give_deck_status(int dst)
 {
 	unsigned char msg[3];
 
-	msg[0] = ((cec_msg.log_addr & 0xf) << 4) | CEC_TV_ADDR;
+	msg[0] = ((cec_msg.log_addr & 0xf) << 4) | (dst & 0xf);
 	msg[1] = CEC_OC_DECK_STATUS;
 	msg[2] = 0x1a;
 
 	remote_cec_ll_tx(msg, 3);
 }
 
-static void cec_set_osd_name(void)
+static void cec_set_osd_name(int dst)
 {
 	unsigned char msg[16];
 	unsigned char osd_len = cec_strlen(CONFIG_CEC_OSD_NAME);
 
-	msg[0] = ((cec_msg.log_addr & 0xf) << 4) | CEC_TV_ADDR;
+	msg[0] = ((cec_msg.log_addr & 0xf) << 4) | (dst & 0xf);
 	msg[1] = CEC_OC_SET_OSD_NAME;
 	cec_memcpy(&msg[2], CONFIG_CEC_OSD_NAME, osd_len);
 
 	remote_cec_ll_tx(msg, osd_len + 2);
 }
 
-static void cec_get_version(void)
+static void cec_get_version(int dst)
 {
 	unsigned char dest_log_addr = cec_msg.log_addr & 0xf;
 	unsigned char msg[3];
 
 	if (0xf != dest_log_addr) {
-		msg[0] = ((cec_msg.log_addr & 0xf) << 4) | CEC_TV_ADDR;
+		msg[0] = ((cec_msg.log_addr & 0xf) << 4) | (dst & 0xf);
 		msg[1] = CEC_OC_CEC_VERSION;
 		msg[2] = CEC_VERSION_14A;
 		remote_cec_ll_tx(msg, 3);
@@ -504,10 +504,10 @@ static unsigned int cec_handle_message(void)
 		opcode = cec_msg.buf[cec_msg.rx_read_pos].msg[1];
 		switch (opcode) {
 		case CEC_OC_GET_CEC_VERSION:
-			cec_get_version();
+			cec_get_version(source);
 			break;
 		case CEC_OC_GIVE_DECK_STATUS:
-			cec_give_deck_status();
+			cec_give_deck_status(source);
 			break;
 		case CEC_OC_GIVE_PHYSICAL_ADDRESS:
 			cec_report_physical_address();
@@ -516,13 +516,13 @@ static unsigned int cec_handle_message(void)
 			cec_device_vendor_id();
 			break;
 		case CEC_OC_GIVE_OSD_NAME:
-			cec_set_osd_name();
+			cec_set_osd_name(source);
 			break;
 		case CEC_OC_SET_STREAM_PATH:
 			cec_set_stream_path();
 			break;
 		case CEC_OC_GIVE_DEVICE_POWER_STATUS:
-			cec_report_device_power_status();
+			cec_report_device_power_status(source);
 			break;
 		case CEC_OC_USER_CONTROL_PRESSED:
 			if (((hdmi_cec_func_config >> CEC_FUNC_MASK) & 0x1) &&
@@ -535,7 +535,20 @@ static unsigned int cec_handle_message(void)
 			}
 			break;
 		case CEC_OC_MENU_REQUEST:
-			cec_menu_status_smp(DEVICE_MENU_INACTIVE);
+			cec_menu_status_smp(DEVICE_MENU_INACTIVE, source);
+			break;
+
+		/* TV Wake up by image/text view on */
+		case CEC_OC_IMAGE_VIEW_ON:
+		case CEC_OC_TEXT_VIEW_ON:
+			if (!is_playback_dev(cec_msg.log_addr)) {
+				/* request active source needed */
+				phy_addr = 0xffff;
+				cec_msg.cec_power = 0x1;
+				wake =  (phy_addr << 0) |
+					(source << 16);
+				writel(wake, P_AO_RTI_STATUS_REG1);
+			}
 			break;
 
 		/* TV Wake up by active source*/
