@@ -454,7 +454,7 @@ int board_late_init(void)
 	board_get_mmc_size();
 
 #ifdef CONFIG_DISPLAY_LOGO
-	run_command("showlogo 720p60hz", 0);
+	run_command("showlogo 1080p60hz", 0);
 #endif
 
 	board_identity();
