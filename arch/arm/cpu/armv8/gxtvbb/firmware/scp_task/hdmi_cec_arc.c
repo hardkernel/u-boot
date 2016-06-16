@@ -172,6 +172,7 @@ void remote_cec_hw_reset(void)
 	_udelay(100);
 	// Release SW reset
 	writel(readl(P_AO_CEC_GEN_CNTL) & ~(1<<0), P_AO_CEC_GEN_CNTL);
+	writel(readl(P_AO_CEC_INTR_MASKN) | (0x03 << 1), P_AO_CEC_INTR_MASKN);
 
 	cec_arbit_bit_time_set(3, 0x118);
 	cec_arbit_bit_time_set(5, 0x000);
@@ -541,7 +542,9 @@ static unsigned int cec_handle_message(void)
 		/* TV Wake up by image/text view on */
 		case CEC_OC_IMAGE_VIEW_ON:
 		case CEC_OC_TEXT_VIEW_ON:
-			if (!is_playback_dev(cec_msg.log_addr)) {
+			if (((hdmi_cec_func_config >> CEC_FUNC_MASK) & 0x1) &&
+			    ((hdmi_cec_func_config >> AUTO_POWER_ON_MASK) & 0x1) &&
+			    (!is_playback_dev(cec_msg.log_addr))) {
 				/* request active source needed */
 				phy_addr = 0xffff;
 				cec_msg.cec_power = 0x1;
@@ -555,7 +558,9 @@ static unsigned int cec_handle_message(void)
 		case CEC_OC_ACTIVE_SOURCE:
 			phy_addr = (cec_msg.buf[cec_msg.rx_read_pos].msg[2] << 8) |
 				   (cec_msg.buf[cec_msg.rx_read_pos].msg[3] << 0);
-			if (!is_playback_dev(cec_msg.log_addr) && check_addr(phy_addr)) {
+			if (((hdmi_cec_func_config >> CEC_FUNC_MASK) & 0x1) &&
+			    ((hdmi_cec_func_config >> AUTO_POWER_ON_MASK) & 0x1) &&
+			    (!is_playback_dev(cec_msg.log_addr) && check_addr(phy_addr))) {
 				cec_msg.cec_power = 0x1;
 				wake =  (phy_addr << 0) |
 					(source << 16);
