@@ -319,19 +319,12 @@ static void lcd_ttl_control_set(struct lcd_config_s *pconf)
 
 static void lcd_lvds_clk_util_set(struct lcd_config_s *pconf)
 {
-	unsigned int fifo_mode, phy_div, dual_port;
+	unsigned int phy_div;
 
-	dual_port = pconf->lcd_control.lvds_config->dual_port;
-	if (dual_port) {
-		fifo_mode = 0x3;
+	if (pconf->lcd_control.lvds_config->dual_port)
 		phy_div = 2;
-	} else {
-		fifo_mode = 0x1;
+	else
 		phy_div = 1;
-	}
-
-	lcd_vcbus_write(LVDS_GEN_CNTL, (lcd_vcbus_read(LVDS_GEN_CNTL) | (1 << 4) | (fifo_mode << 0)));
-	lcd_vcbus_setb(LVDS_GEN_CNTL, 1, 3, 1);
 
 	/* set fifo_clk_sel: div 7 */
 	lcd_hiu_write(HHI_LVDS_TX_PHY_CNTL0, (1 << 6));
@@ -348,10 +341,9 @@ static void lcd_lvds_clk_util_set(struct lcd_config_s *pconf)
 static void lcd_lvds_control_set(struct lcd_config_s *pconf)
 {
 	unsigned int bit_num = 1;
-	unsigned int pn_swap = 0;
-	unsigned int dual_port = 1;
+	unsigned int pn_swap, port_swap;
+	unsigned int dual_port, fifo_mode;
 	unsigned int lvds_repack = 1;
-	unsigned int port_swap = 0;
 
 	if (lcd_debug_print_flag)
 		LCDPR("%s\n", __func__);
@@ -380,6 +372,10 @@ static void lcd_lvds_control_set(struct lcd_config_s *pconf)
 		bit_num=1;
 		break;
 	}
+	if (dual_port)
+		fifo_mode = 0x3;
+	else
+		fifo_mode = 0x1;
 
 	lcd_vcbus_write(LVDS_PACK_CNTL_ADDR,
 			(lvds_repack << 0) | // repack
@@ -393,6 +389,14 @@ static void lcd_lvds_control_set(struct lcd_config_s *pconf)
 			(0 << 10) |		//r_select  //0:R, 1:G, 2:B, 3:0
 			(1 << 12) |		//g_select  //0:R, 1:G, 2:B, 3:0
 			(2 << 14));		//b_select  //0:R, 1:G, 2:B, 3:0;
+
+	lcd_vcbus_write(LVDS_GEN_CNTL, (lcd_vcbus_read(LVDS_GEN_CNTL) | (1 << 4) | (fifo_mode << 0)));
+	lcd_vcbus_setb(LVDS_GEN_CNTL, 1, 3, 1);
+}
+
+static void lcd_lvds_disable(void)
+{
+	lcd_vcbus_setb(LVDS_GEN_CNTL, 0, 3, 1); /* disable lvds fifo */
 }
 
 static void lcd_venc_set(struct lcd_config_s *pconf)
@@ -502,7 +506,7 @@ void lcd_tablet_driver_disable(void)
 		break;
 	case LCD_LVDS:
 		lcd_lvds_phy_set(pconf, 0);
-		lcd_vcbus_setb(LVDS_GEN_CNTL, 0, 3, 1); /* disable lvds fifo */
+		lcd_lvds_disable();
 		break;
 	default:
 		break;

@@ -39,6 +39,9 @@
 #ifdef CONFIG_AML_HDMITX20
 #include <amlogic/hdmi.h>
 #endif
+#ifdef CONFIG_AML_LCD
+#include <amlogic/aml_lcd.h>
+#endif
 #include <asm/arch/eth_setup.h>
 #include <phy.h>
 
@@ -327,7 +330,7 @@ int board_early_init_f(void){
 #ifdef CONFIG_USB_XHCI_AMLOGIC_GXL
 #include <asm/arch/usb-new.h>
 #include <asm/arch/gpio.h>
-#define CONFIG_GXL_USB_U2_PORT_NUM	2
+#define CONFIG_GXL_USB_U2_PORT_NUM	4
 #define CONFIG_GXL_USB_U3_PORT_NUM	0
 
 struct amlogic_usb_config g_usb_config_GXL_skt={
@@ -356,14 +359,7 @@ int board_init(void)
 #ifdef CONFIG_USB_XHCI_AMLOGIC_GXL
 	board_usb_init(&g_usb_config_GXL_skt,BOARD_USB_MODE_HOST);
 #endif /*CONFIG_USB_XHCI_AMLOGIC*/
-#ifdef CONFIG_AML_VPU
-	vpu_probe();
-#endif
-	vpp_init();
-#ifdef CONFIG_AML_HDMITX20
-	hdmi_tx_set_hdmi_5v();
-	hdmi_tx_init();
-#endif
+
 #ifdef CONFIG_AML_NAND
 	extern int amlnf_init(unsigned char flag);
 	amlnf_init(0);
@@ -395,6 +391,20 @@ int board_late_init(void){
 		}
 		#endif
 	}
+
+	/* load unifykey */
+	run_command("keyunify init 0x1234", 0);
+#ifdef CONFIG_AML_VPU
+	vpu_probe();
+#endif
+	vpp_init();
+#ifdef CONFIG_AML_HDMITX20
+	hdmi_tx_set_hdmi_5v();
+	hdmi_tx_init();
+#endif
+#ifdef CONFIG_AML_LCD
+	lcd_probe();
+#endif
 
 #ifdef CONFIG_AML_V2_FACTORY_BURN
 	/*aml_try_factory_sdcard_burning(0, gd->bd);*/

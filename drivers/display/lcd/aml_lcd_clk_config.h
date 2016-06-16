@@ -281,6 +281,40 @@ enum div_sel_e {
 #define CRT_VID_CLK_IN_MAX_GXTVBB   (3100 * 1000)
 #define ENCL_CLK_IN_MAX_GXTVBB      (620 * 1000)
 
+/* **********************************
+ * TXL
+ * ********************************** */
+/* ******** register bit ******** */
+/* PLL_CNTL 0x10c8 */
+#define LCD_PLL_LOCK_TXL            31
+#define LCD_PLL_EN_TXL              30
+#define LCD_PLL_RST_TXL             28
+#define LCD_PLL_N_TXL               9
+#define LCD_PLL_M_TXL               0
+
+#define LCD_PLL_OD3_TXL             19
+#define LCD_PLL_OD2_TXL             23
+#define LCD_PLL_OD1_TXL             21
+
+/* ******** frequency limit (unit: kHz) ******** */
+/* pll */
+#define SS_LEVEL_MAX_TXL            5
+#define PLL_M_MIN_TXL               2
+#define PLL_M_MAX_TXL               511
+#define PLL_N_MIN_TXL               1
+#define PLL_N_MAX_TXL               1
+#define PLL_FRAC_RANGE_TXL          (1 << 10)
+#define PLL_OD_SEL_MAX_TXL          3
+#define PLL_FREF_MIN_TXL            (5 * 1000)
+#define PLL_FREF_MAX_TXL            (25 * 1000)
+#define PLL_VCO_MIN_TXL             (3000 * 1000)
+#define PLL_VCO_MAX_TXL             (6000 * 1000)
+
+/* video */
+#define CLK_DIV_IN_MAX_TXL          (3100 * 1000)
+#define CRT_VID_CLK_IN_MAX_TXL      (3100 * 1000)
+#define ENCL_CLK_IN_MAX_TXL         (620 * 1000)
+
 
 extern struct lcd_clk_config_s *get_lcd_clk_config(void);
 extern void lcd_clk_config_print(void);

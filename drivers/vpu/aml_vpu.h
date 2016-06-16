@@ -35,6 +35,8 @@ enum vpu_chip_e {
 	VPU_CHIP_GXBB,
 	VPU_CHIP_GXTVBB,
 	VPU_CHIP_GXL,
+	VPU_CHIP_GXM,
+	VPU_CHIP_TXL,
 	VPU_CHIP_MAX,
 };
 
@@ -107,13 +109,23 @@ static unsigned int fclk_table[] = { /* unit: MHz */
 /* GXTVBB */
 /* freq max=666M, default=666M */
 #define CLK_LEVEL_DFT_GXTVBB     7
-#define CLK_LEVEL_MAX_GTVXBB     8
+#define CLK_LEVEL_MAX_GXTVBB     8
 #define FCLK_TYPE_GXTVBB         FCLK_2000M
 /* GXL */
 /* freq max=666M, default=666M */
 #define CLK_LEVEL_DFT_GXL     7
 #define CLK_LEVEL_MAX_GXL     8
 #define FCLK_TYPE_GXL         FCLK_2000M
+/* GXM */
+/* freq max=666M, default=666M */
+#define CLK_LEVEL_DFT_GXM     7
+#define CLK_LEVEL_MAX_GXM     8
+#define FCLK_TYPE_GXM         FCLK_2000M
+/* TXL */
+/* freq max=666M, default=666M */
+#define CLK_LEVEL_DFT_TXL     7
+#define CLK_LEVEL_MAX_TXL     8
+#define FCLK_TYPE_TXL         FCLK_2000M
 
 /* vpu clk setting */
 enum vpu_mux_e {
@@ -149,7 +161,7 @@ static unsigned int vpu_clk_table[2][12][3] = {/* compatible for all chip */
 		{696000000,    GPLL_CLK,     0}, /* 8 */ /* G9TV use gp1_pll */
 		{850000000,    FCLK_DIV3,    0}, /* 9 */
 	},
-	{ /* gxbb, gxtvbb, fpll=2000M */
+	{ /* gxbb, gxtvbb, gxl, txl, fpll=2000M */
 		/* frequency   clk_mux       div */
 		{100000000,    FCLK_DIV5,    3}, /* 0 */
 		{166667000,    FCLK_DIV3,    3}, /* 1 */

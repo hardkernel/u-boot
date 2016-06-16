@@ -1931,6 +1931,11 @@ int aml_bl_config_load(char *dt_addr, int load_id)
 			if (lcd_debug_print_flag)
 				LCDPR("bl: load bl_config from dts\n");
 			index = lcd_drv->lcd_config->backlight_index;
+			if (index == 0xff) {
+				lcd_drv->bl_config->method = BL_CTRL_MAX;
+				LCDPR("bl: no backlight exist\n");
+				return -1;
+			}
 			ret = aml_bl_config_load_from_dts(dt_addr, index, lcd_drv->bl_config);
 #endif
 		}

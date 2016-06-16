@@ -906,5 +906,9 @@ void vpp_init(void)
 		vpp_reg_write(VPP_DUMMY_DATA1, 0x108080);
 		/* osd1: rgb->yuv limit , osd2: yuv limit */
 		set_osd1_rgb2yuv(1);
+	#if (defined CONFIG_AML_LCD)
+		/* 709 limit to RGB */
+		vpp_set_matrix_ycbcr2rgb(0, 3);
+	#endif
 	}
 }

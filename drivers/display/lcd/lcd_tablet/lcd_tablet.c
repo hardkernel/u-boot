@@ -347,7 +347,7 @@ static int lcd_config_load_from_dts(char *dt_addr, struct lcd_config_s *pconf)
 	propdata = (char *)fdt_getprop(dt_addr, child_offset, "backlight_index", NULL);
 	if (propdata == NULL) {
 		LCDERR("failed to get backlight_index\n");
-		pconf->backlight_index = 0;
+		pconf->backlight_index = 0xff;
 		return 0;
 	} else {
 		pconf->backlight_index = be32_to_cpup((u32*)propdata);

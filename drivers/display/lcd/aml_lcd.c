@@ -15,6 +15,7 @@
 
 #include <common.h>
 #include <malloc.h>
+#include <asm/cpu_id.h>
 #include <asm/arch/gpio.h>
 #ifdef CONFIG_OF_LIBFDT
 #include <libfdt.h>
@@ -34,10 +35,10 @@ static struct aml_lcd_drv_s aml_lcd_driver;
 
 static void lcd_chip_detect(void)
 {
-#if 0
+#if 1
 	unsigned int cpu_type;
 
-	cpu_type = get_cpu_type();
+	cpu_type = get_cpu_id().family_id;
 	switch (cpu_type) {
 	case MESON_CPU_MAJOR_ID_M8:
 		aml_lcd_driver.chip_type = LCD_CHIP_M8;
@@ -54,11 +55,14 @@ static void lcd_chip_detect(void)
 	case MESON_CPU_MAJOR_ID_GXTVBB:
 		aml_lcd_driver.chip_type = LCD_CHIP_GXTVBB;
 		break;
+	case MESON_CPU_MAJOR_ID_TXL:
+		aml_lcd_driver.chip_type = LCD_CHIP_TXL;
+		break;
 	default:
 		aml_lcd_driver.chip_type = LCD_CHIP_MAX;
 	}
 #else
-	aml_lcd_driver.chip_type = LCD_CHIP_GXTVBB;
+	aml_lcd_driver.chip_type = LCD_CHIP_TXL;
 #endif
 	if (lcd_debug_print_flag)
 		LCDPR("check chip: %d\n", aml_lcd_driver.chip_type);
@@ -679,7 +683,7 @@ static int lcd_mode_probe(void)
 {
 	int load_id = 0;
 	unsigned int lcd_debug_test = 0;
-	char *dt_addr;
+	char *dt_addr, *str;
 	int ret;
 
 	dt_addr = NULL;
@@ -697,7 +701,14 @@ static int lcd_mode_probe(void)
 	}
 #endif
 
-	lcd_debug_test = simple_strtoul(getenv("lcd_debug_test"), NULL, 10);
+	str = getenv("lcd_debug_test");
+	if (str == NULL) {
+		lcd_debug_test = 0;
+		LCDPR("no lcd_debug_test flag\n");
+	} else {
+		lcd_debug_test = simple_strtoul(str, NULL, 10);
+		LCDPR("lcd_debug_test flag: %d\n", lcd_debug_test);
+	}
 	if (lcd_debug_test)
 		load_id = 0x0;
 
@@ -778,8 +789,16 @@ int lcd_probe(void)
 #ifdef LCD_DEBUG_INFO
 	lcd_debug_print_flag = 1;
 #else
-	lcd_debug_print_flag = 0;
-	lcd_debug_print_flag = simple_strtoul(getenv("lcd_debug_print"), NULL, 10);
+	char *str;
+
+	str = getenv("lcd_debug_print");
+	if (str == NULL) {
+		lcd_debug_print_flag = 0;
+		LCDPR("no lcd_debug_print flag\n");
+	} else {
+		lcd_debug_print_flag = simple_strtoul(str, NULL, 10);
+		LCDPR("lcd_debug_print flag: %d\n", lcd_debug_print_flag);
+	}
 #endif
 
 	lcd_chip_detect();

@@ -87,13 +87,14 @@ enum lcd_mode_e {
 
 enum lcd_chip_e {
 	LCD_CHIP_M6 = 0,
-	LCD_CHIP_M8,
-	LCD_CHIP_M8B,
-	LCD_CHIP_M8M2,
-	LCD_CHIP_G9TV,
-	LCD_CHIP_G9BB,
-	LCD_CHIP_GXTVBB,
-	LCD_CHIP_MAX,
+	LCD_CHIP_M8,     /* 1 */
+	LCD_CHIP_M8B,    /* 2 */
+	LCD_CHIP_M8M2,   /* 3 */
+	LCD_CHIP_G9TV,   /* 4 */
+	LCD_CHIP_G9BB,   /* 5 */
+	LCD_CHIP_GXTVBB, /* 6 */
+	LCD_CHIP_TXL,    /* 7 */
+	LCD_CHIP_MAX,    /* 8 */
 };
 
 enum lcd_type_e {

@@ -19,6 +19,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
+#include <asm/cpu_id.h>
 #include <config.h>
 #include <linux/kernel.h>
 #ifdef CONFIG_OF_LIBFDT
@@ -42,10 +43,10 @@ static struct vpu_conf_s vpu_conf = {
 
 static void vpu_chip_detect(void)
 {
-#if 0
+#if 1
 	unsigned int cpu_type;
 
-	cpu_type = get_cpu_type();
+	cpu_type = get_cpu_id().family_id;
 	switch (cpu_type) {
 	case MESON_CPU_MAJOR_ID_M8:
 		vpu_chip_type = VPU_CHIP_M8;
@@ -95,10 +96,23 @@ static void vpu_chip_detect(void)
 		vpu_conf.clk_level_max = CLK_LEVEL_MAX_GXL;
 		vpu_conf.fclk_type = FCLK_TYPE_GXL;
 		break;
+	case MESON_CPU_MAJOR_ID_GXM:
+		vpu_chip_type = VPU_CHIP_GXM;
+		vpu_conf.clk_level_dft = CLK_LEVEL_DFT_GXM;
+		vpu_conf.clk_level_max = CLK_LEVEL_MAX_GXM;
+		vpu_conf.fclk_type = FCLK_TYPE_GXM;
+		break;
+	/*case MESON_CPU_MAJOR_ID_TXL:
+		vpu_chip_type = VPU_CHIP_TXL;
+		vpu_conf.clk_level_dft = CLK_LEVEL_DFT_TXL;
+		vpu_conf.clk_level_max = CLK_LEVEL_MAX_TXL;
+		vpu_conf.fclk_type = FCLK_TYPE_TXL;
+		break;*/
 	default:
-		vpu_chip_type = VPU_CHIP_MAX;
-		vpu_conf.clk_level_dft = 0;
-		vpu_conf.clk_level_max = 1;
+		vpu_chip_type = VPU_CHIP_GXBB;
+		vpu_conf.clk_level_dft = CLK_LEVEL_DFT_GXBB;
+		vpu_conf.clk_level_max = CLK_LEVEL_MAX_GXBB;
+		vpu_conf.fclk_type = FCLK_TYPE_GXBB;
 	}
 #else
 	vpu_chip_type = VPU_CHIP_GXBB;
@@ -108,12 +122,12 @@ static void vpu_chip_detect(void)
 #endif
 
 #ifdef VPU_DEBUG_PRINT
-	VPUPR("vpu: detect chip type: %d\n", vpu_chip_type);
-	VPUPR("vpu: clk_level default: %d(%dHz), max: %d(%dHz)\n",
+	VPUPR("detect chip type: %d\n", vpu_chip_type);
+	VPUPR("clk_level default: %d(%dHz), max: %d(%dHz)\n",
 		vpu_conf.clk_level_dft,
 		vpu_clk_table[vpu_conf.fclk_type][vpu_conf.clk_level_dft][0],
 		vpu_conf.clk_level_max,
-		vpu_clk_table[vpu_conf.fclk_type][vpu_conf.clk_level_max][0],);
+		vpu_clk_table[vpu_conf.fclk_type][vpu_conf.clk_level_max][0]);
 #endif
 }
 
@@ -141,10 +155,18 @@ static unsigned int get_vpu_clk(void)
 	unsigned int fclk, clk_source;
 	unsigned int mux, div;
 
-	if (vpu_chip_type == VPU_CHIP_GXBB)
-		reg = HHI_VPU_CLK_CNTL_GX;
-	else
+	switch (vpu_chip_type) {
+	case VPU_CHIP_M8:
+	case VPU_CHIP_M8B:
+	case VPU_CHIP_M8M2:
+	case VPU_CHIP_G9TV:
+	case VPU_CHIP_G9BB:
 		reg = HHI_VPU_CLK_CNTL;
+		break;
+	default:
+		reg = HHI_VPU_CLK_CNTL_GX;
+		break;
+	}
 
 	fclk = fclk_table[vpu_conf.fclk_type] * 100; /* 0.01M resolution */
 	mux = vpu_hiu_getb(reg, 9, 3);
@@ -326,10 +348,18 @@ static int set_vpu_clk(unsigned int vclk)
 		VPUPR("clk out of supported range, set to default\n");
 	}
 
-	if (vpu_chip_type == VPU_CHIP_GXBB)
-		ret = adjust_vpu_clk_gx(clk_level);
-	else
+	switch (vpu_chip_type) {
+	case VPU_CHIP_M8:
+	case VPU_CHIP_M8B:
+	case VPU_CHIP_M8M2:
+	case VPU_CHIP_G9TV:
+	case VPU_CHIP_G9BB:
 		ret = adjust_vpu_clk_m8_g9(clk_level);
+		break;
+	default:
+		ret = adjust_vpu_clk_gx(clk_level);
+		break;
+	}
 
 	return ret;
 }
@@ -483,11 +513,6 @@ static void vpu_power_off_gx(void)
 static void vpu_power_on(void)
 {
 	switch (vpu_chip_type) {
-	case VPU_CHIP_GXBB:
-	case VPU_CHIP_GXTVBB:
-	case VPU_CHIP_GXL:
-		vpu_power_on_gx();
-		break;
 	case VPU_CHIP_M8:
 	case VPU_CHIP_M8B:
 	case VPU_CHIP_M8M2:
@@ -496,6 +521,7 @@ static void vpu_power_on(void)
 		vpu_power_on_m8_g9();
 		break;
 	default:
+		vpu_power_on_gx();
 		break;
 	}
 }
@@ -503,11 +529,6 @@ static void vpu_power_on(void)
 static void vpu_power_off(void)
 {
 	switch (vpu_chip_type) {
-	case VPU_CHIP_GXBB:
-	case VPU_CHIP_GXTVBB:
-	case VPU_CHIP_GXL:
-		vpu_power_off_gx();
-		break;
 	case VPU_CHIP_M8:
 	case VPU_CHIP_M8B:
 	case VPU_CHIP_M8M2:
@@ -516,6 +537,7 @@ static void vpu_power_off(void)
 		vpu_power_off_m8_g9();
 		break;
 	default:
+		vpu_power_off_gx();
 		break;
 	}
 }
@@ -637,18 +659,6 @@ int vpu_clk_change(int level)
 	vpu_clk = vpu_clk_table[vpu_conf.fclk_type][vpu_conf.clk_level][0];
 
 	switch (vpu_chip_type) {
-	case VPU_CHIP_GXBB:
-	case VPU_CHIP_GXTVBB:
-	case VPU_CHIP_GXL:
-		reg = HHI_VPU_CLK_CNTL_GX;
-		vpu_clk_switch(reg);
-
-		if (vpu_clk >= (VPU_CLKB_MAX * 1000000))
-			div = 2;
-		else
-			div = 1;
-		vpu_hiu_setb(HHI_VPU_CLKB_CNTL_GX, (div - 1), 0, 8);
-		break;
 	case VPU_CHIP_M8:
 		reg = HHI_VPU_CLK_CNTL;
 		mux = vpu_clk_table[vpu_conf.fclk_type][vpu_conf.clk_level][1];
@@ -663,7 +673,14 @@ int vpu_clk_change(int level)
 		vpu_clk_switch(reg);
 		break;
 	default:
-		reg = HHI_VPU_CLK_CNTL;
+		reg = HHI_VPU_CLK_CNTL_GX;
+		vpu_clk_switch(reg);
+
+		if (vpu_clk >= (VPU_CLKB_MAX * 1000000))
+			div = 2;
+		else
+			div = 1;
+		vpu_hiu_setb(HHI_VPU_CLKB_CNTL_GX, (div - 1), 0, 8);
 		break;
 	}
 
@@ -677,13 +694,15 @@ void vpu_clk_get(void)
 	unsigned int reg;
 
 	switch (vpu_chip_type) {
-	case VPU_CHIP_GXBB:
-	case VPU_CHIP_GXTVBB:
-	case VPU_CHIP_GXL:
-		reg = HHI_VPU_CLK_CNTL_GX;
+	case VPU_CHIP_M8:
+	case VPU_CHIP_M8B:
+	case VPU_CHIP_M8M2:
+	case VPU_CHIP_G9TV:
+	case VPU_CHIP_G9BB:
+		reg = HHI_VPU_CLK_CNTL;
 		break;
 	default:
-		reg = HHI_VPU_CLK_CNTL;
+		reg = HHI_VPU_CLK_CNTL_GX;
 		break;
 	}
 
