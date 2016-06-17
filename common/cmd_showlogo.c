@@ -122,7 +122,7 @@ static int do_showlogo(cmd_tbl_t *cmdtp, int flag, int argc,
 
 	if (argc <= 1) {
 		mode = getenv("hdmimode");
-		display_logo((NULL == mode) ? "720p60hz" : mode);
+		display_logo((NULL == mode) ? "1080p60hz" : mode);
 	} else {
 		display_logo(argv[1]);
 	}

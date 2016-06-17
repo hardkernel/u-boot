@@ -120,7 +120,7 @@ static int do_load_cfgload(cmd_tbl_t *cmdtp, int flag, int argc,
 		/* Check the hdmimode validation */
 		if (strstr(cmd, "hdmimode")) {
 			if (!is_hdmimode_valid(getenv("hdmimode")))
-				setenv("hdmimode", "720p60hz");
+				setenv("hdmimode", "1080p60hz");
 		}
 	}
 
