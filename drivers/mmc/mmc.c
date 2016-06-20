@@ -219,7 +219,8 @@ static int mmc_read_blocks(struct mmc *mmc, void *dst, lbaint_t start,
 {
 	struct mmc_cmd cmd;
 	struct mmc_data data;
-	int ret;
+	int ret = 0, err = 0, err_flag = 0, retries = 0;
+__RETRY:
 	if (blkcnt > 1)
 		cmd.cmdidx = MMC_CMD_READ_MULTIPLE_BLOCK;
 	else
@@ -243,17 +244,27 @@ static int mmc_read_blocks(struct mmc *mmc, void *dst, lbaint_t start,
 		cmd.cmdidx = MMC_CMD_STOP_TRANSMISSION;
 		cmd.cmdarg = 0;
 		cmd.resp_type = MMC_RSP_R1b;
-		if (mmc_send_cmd(mmc, &cmd, NULL)) {
+		err = mmc_send_cmd(mmc, &cmd, NULL);
+		if (err) {
 #if !defined(CONFIG_SPL_BUILD) || defined(CONFIG_SPL_LIBCOMMON_SUPPORT)
 			printf("mmc fail to send stop cmd\n");
 #endif
-			return 0;
 		}
 	}
-	if (ret)
+	if (ret || err) {
+		if (err_flag == 0) {
+			err_flag = 1;
+			retries = 5;
+		}
+		if (retries) {
+			printf("retry read, count: %d\n", retries);
+			retries--;
+			goto __RETRY;
+		}
+		printf("retry read error !!!\n");
 		return 0;
-	else
-		return blkcnt;
+	}
+	return blkcnt;
 }
 
 static ulong mmc_bread(int dev_num, lbaint_t start, lbaint_t blkcnt, void *dst)
