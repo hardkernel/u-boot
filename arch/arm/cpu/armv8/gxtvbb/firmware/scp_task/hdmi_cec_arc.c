@@ -436,6 +436,16 @@ static void cec_give_deck_status(int dst)
 	remote_cec_ll_tx(msg, 3);
 }
 
+static void cec_standby(void)
+{
+	unsigned char msg[2];
+
+	msg[0] = ((cec_msg.log_addr & 0xf) << 4) | CEC_BROADCAST_ADDR;
+	msg[1] = CEC_OC_STANDBY;
+
+	remote_cec_ll_tx(msg, 2);
+}
+
 static void cec_set_osd_name(int dst)
 {
 	unsigned char msg[16];
@@ -687,6 +697,15 @@ unsigned int cec_handler(void)
 	return 0;
 }
 
+static void check_standby(void)
+{
+	if (((cec_msg.log_addr & 0xf) == 0) &&
+	    ((hdmi_cec_func_config >> CEC_FUNC_MASK) & 0x1) &&
+	    ((hdmi_cec_func_config >> ONE_TOUCH_STANDBY_MASK) & 0x1)) {
+		cec_standby();
+	}
+}
+
 void cec_node_init(void)
 {
 	static int i = 0;
@@ -747,6 +766,7 @@ void cec_node_init(void)
 			regist_devs = 0;
 			i = 0;
 			retry = 0;
+			check_standby();
 			return ;
 		}
 		for (i = 0; i < 3; i++) {
