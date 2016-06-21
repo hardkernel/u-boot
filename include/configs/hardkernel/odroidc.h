@@ -455,4 +455,9 @@
 
 #define CONFIG_I2C_EDID
 
+#if defined(CONFIG_LOGO_PRELOAD)
+#define CONFIG_VIDEO_BMP_GZIP		1
+#define CONFIG_SYS_VIDEO_LOGO_MAX_SIZE	(6 << 20) /* Fixed for 1080p gzipped bmp */
+#endif /* CONFIG_LOGO_PRELOAD */
+
 #endif //__CONFIG_ODROIDC_H__
