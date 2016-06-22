@@ -165,6 +165,90 @@ static const vout_set_t vout_sets[] = {
 		.width             = 800,
 		.height            = 480,
 	},
+	{ /* 3440x1440p60hz */
+		.name              = "3440x1440p60hz",
+		.mode              = VMODE_3440X1440P_60HZ,
+		.width             = 3440,
+		.height            = 1440,
+	},
+	{ /* 2560x1600p60hz */
+		.name              = "2560x1600p60hz",
+		.mode              = VMODE_2560X1600P_60HZ,
+		.width             = 2560,
+		.height            = 1600,
+	},
+	{ /* 2560x1440p60hz */
+		.name              = "2560x1440p60hz",
+		.mode              = VMODE_2560X1440P_60HZ,
+		.width             = 2560,
+		.height            = 1440,
+	},
+	{ /* 2560x1080p60hz */
+		.name              = "2560x1080p60hz",
+		.mode              = VMODE_2560X1080P_60HZ,
+		.width             = 2560,
+		.height            = 1080,
+	},
+	{ /* 1920x1200p60hz */
+		.name              = "1920x1200p60hz",
+		.mode              = VMODE_1920X1200P_60HZ,
+		.width             = 1920,
+		.height            = 1200,
+	},
+	{ /* 1680x1050p60hz */
+		.name              = "1680x1050p60hz",
+		.mode              = VMODE_1680X1050P_60HZ,
+		.width             = 1680,
+		.height            = 1050,
+	},
+	{ /* 1600x900p60hz */
+		.name              = "1600x900p60hz",
+		.mode              = VMODE_1600X900P_60HZ,
+		.width             = 1600,
+		.height            = 900,
+	},
+	{ /* 1440x900p60hz */
+		.name              = "1440x900p60hz",
+		.mode              = VMODE_1440X900P_60HZ,
+		.width             = 1440,
+		.height            = 900,
+	},
+	{ /* 1360x768p60hz */
+		.name              = "1360x768p60hz",
+		.mode              = VMODE_1360X768P_60HZ,
+		.width             = 1360,
+		.height            = 768,
+	},
+	{ /* 1280x1024p60hz */
+		.name              = "1280x1024p60hz",
+		.mode              = VMODE_1280X1024P_60HZ,
+		.width             = 1280,
+		.height            = 1024,
+	},
+	{ /* 1280x800p60hz */
+		.name              = "1280x800p60hz",
+		.mode              = VMODE_1280X800P_60HZ,
+		.width             = 1280,
+		.height            = 800,
+	},
+	{ /* 1024x768p60hz */
+		.name              = "1024x768p60hz",
+		.mode              = VMODE_1024X768P_60HZ,
+		.width             = 1024,
+		.height            = 768,
+	},
+	{ /* 800x600p60hz */
+		.name              = "800x600p60hz",
+		.mode              = VMODE_800X600P_60HZ,
+		.width             = 800,
+		.height            = 600,
+	},
+	{ /* 640x480p60hz */
+		.name              = "640x480p60hz",
+		.mode              = VMODE_640X480P_60HZ,
+		.width             = 640,
+		.height            = 480,
+	},
 };
 
 vidinfo_t tv_info = {
@@ -358,6 +442,76 @@ static int get_window_axis(int *axis)
 		axis[1] = getenv_int("800x480p_y", 0);
 		axis[2] = getenv_int("800x480p_w", 800);
 		axis[3] = getenv_int("800x480p_h", 480);
+	} else if (strncmp(mode, "3440x1440p", 10) == 0) {
+		axis[0] = getenv_int("3440x1440p_x", 0);
+		axis[1] = getenv_int("3440x1440p_y", 0);
+		axis[2] = getenv_int("3440x1440p_w", 3440);
+		axis[3] = getenv_int("3440x1440p_h", 1440);
+	} else if (strncmp(mode, "2560x1600p", 10) == 0) {
+		axis[0] = getenv_int("2560x1600p_x", 0);
+		axis[1] = getenv_int("2560x1600p_y", 0);
+		axis[2] = getenv_int("2560x1600p_w", 2560);
+		axis[3] = getenv_int("2560x1600p_h", 1600);
+	} else if (strncmp(mode, "2560x1440p", 10) == 0) {
+		axis[0] = getenv_int("2560x1440p_x", 0);
+		axis[1] = getenv_int("2560x1440p_y", 0);
+		axis[2] = getenv_int("2560x1440p_w", 2560);
+		axis[3] = getenv_int("2560x1440p_h", 1440);
+	} else if (strncmp(mode, "2560x1080p", 10) == 0) {
+		axis[0] = getenv_int("2560x1080p_x", 0);
+		axis[1] = getenv_int("2560x1080p_y", 0);
+		axis[2] = getenv_int("2560x1080p_w", 2560);
+		axis[3] = getenv_int("2560x1080p_h", 1080);
+	} else if (strncmp(mode, "1920x1200p", 10) == 0) {
+		axis[0] = getenv_int("1920x1200p_x", 0);
+		axis[1] = getenv_int("1920x1200p_y", 0);
+		axis[2] = getenv_int("1920x1200p_w", 1920);
+		axis[3] = getenv_int("1920x1200p_h", 1200);
+	} else if (strncmp(mode, "1680x1050p", 10) == 0) {
+		axis[0] = getenv_int("1680x1050p_x", 0);
+		axis[1] = getenv_int("1680x1050p_y", 0);
+		axis[2] = getenv_int("1680x1050p_w", 1680);
+		axis[3] = getenv_int("1680x1050p_h", 1050);
+	} else if (strncmp(mode, "1600x900p", 9) == 0) {
+		axis[0] = getenv_int("1600x900p_x", 0);
+		axis[1] = getenv_int("1600x900p_y", 0);
+		axis[2] = getenv_int("1600x900p_w", 1600);
+		axis[3] = getenv_int("1600x900p_h", 900);
+	} else if (strncmp(mode, "1440x900p", 9) == 0) {
+		axis[0] = getenv_int("1440x900p_x", 0);
+		axis[1] = getenv_int("1440x900p_y", 0);
+		axis[2] = getenv_int("1440x900p_w", 1440);
+		axis[3] = getenv_int("1440x900p_h", 900);
+	} else if (strncmp(mode, "1360x768p", 9) == 0) {
+		axis[0] = getenv_int("1360x768p_x", 0);
+		axis[1] = getenv_int("1360x768p_y", 0);
+		axis[2] = getenv_int("1360x768p_w", 1360);
+		axis[3] = getenv_int("1360x768p_h", 768);
+	} else if (strncmp(mode, "1280x1024p", 10) == 0) {
+		axis[0] = getenv_int("1280x1024p_x", 0);
+		axis[1] = getenv_int("1280x1024p_y", 0);
+		axis[2] = getenv_int("1280x1024p_w", 1280);
+		axis[3] = getenv_int("1280x1024p_h", 1024);
+	} else if (strncmp(mode, "1280x800p", 9) == 0) {
+		axis[0] = getenv_int("1280x800p_x", 0);
+		axis[1] = getenv_int("1280x800p_y", 0);
+		axis[2] = getenv_int("1280x800p_w", 1280);
+		axis[3] = getenv_int("1280x800p_h", 800);
+	} else if (strncmp(mode, "1024x768p", 9) == 0) {
+		axis[0] = getenv_int("1024x768p_x", 0);
+		axis[1] = getenv_int("1024x768p_y", 0);
+		axis[2] = getenv_int("1024x768p_w", 1024);
+		axis[3] = getenv_int("1024x768p_h", 768);
+	} else if (strncmp(mode, "800x600p", 8) == 0) {
+		axis[0] = getenv_int("800x600p_x", 0);
+		axis[1] = getenv_int("800x600p_y", 0);
+		axis[2] = getenv_int("800x600p_w", 800);
+		axis[3] = getenv_int("800x600p_h", 600);
+	} else if (strncmp(mode, "640x480p", 8) == 0) {
+		axis[0] = getenv_int("640x480p_x", 0);
+		axis[1] = getenv_int("640x480p_y", 0);
+		axis[2] = getenv_int("640x480p_w", 640);
+		axis[3] = getenv_int("640x480p_h", 480);
 	} else {
 		axis[0] = getenv_int("1080p_x", 0);
 		axis[1] = getenv_int("1080p_y", 0);
