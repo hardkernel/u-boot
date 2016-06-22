@@ -74,7 +74,7 @@
 /* args/envs */
 #define CONFIG_SYS_MAXARGS  64
 #define CONFIG_EXTRA_ENV_SETTINGS \
-	"firstboot=1\0"\
+	"firstboot=0\0"\
 	"upgrade_step=0\0"\
 	"loadaddr=1080000\0"\
 	"panel_type=lvds_2\0" \

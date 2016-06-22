@@ -83,7 +83,7 @@
         "fb_width=1920\0" \
         "fb_height=1080\0" \
         "storeargs="\
-            "setenv bootargs rootfstype=ramfs init=/init console=ttyS0,115200 no_console_suspend earlyprintk=aml-uart,0xc81004c0 androidboot.selinux=disabled logo=osd1,loaded,0x3b000000 vout=1080p60hz,enable hdmitx= osd_reverse=${osd_reverse} video_reverse=${video_reverse} androidboot.firstboot=1"\
+            "setenv bootargs rootfstype=ramfs init=/init console=ttyS0,115200 no_console_suspend earlyprintk=aml-uart,0xc81004c0 androidboot.selinux=disabled logo=osd1,loaded,0x3b000000 vout=1080p60hz,enable hdmitx= osd_reverse=${osd_reverse} video_reverse=${video_reverse} androidboot.firstboot=0"\
             "\0"\
 	"storeboot="\
 	"if imgread kernel boot ${loadaddr}; then bootm ${loadaddr}; fi;"\
