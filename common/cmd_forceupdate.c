@@ -17,7 +17,7 @@ static void check_auto_update(void)
 	int times=40;
 	while (times--) {
 		udelay(100000);
-		source_key_value = get_source_key(2);
+		source_key_value = get_source_key(0);
 		if ((source_key_value >= 0) && (source_key_value < 40)) {
 			//printk("press update key!\n");
 		} else {

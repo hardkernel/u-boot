@@ -48,6 +48,8 @@
 
 #define CONFIG_INSTABOOT
 
+#define CONFIG_CMD_SARADC 1
+
 /* SMP Definitinos */
 #define CPU_RELEASE_ADDR		secondary_boot_func
 
@@ -211,6 +213,7 @@
             "run init_display;"\
             "run storeargs;"\
             "run upgrade_key;" \
+            "forceupdate;" \
             "run switch_bootmode;"
 #define CONFIG_BOOTCOMMAND "run storeboot"
 
