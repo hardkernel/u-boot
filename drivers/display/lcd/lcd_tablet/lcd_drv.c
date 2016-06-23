@@ -178,7 +178,7 @@ static void lcd_ttl_pinmux_set(int status)
 
 static void lcd_lvds_phy_set(struct lcd_config_s *pconf, int status)
 {
-	unsigned int vswing, preem;
+	unsigned int vswing, preem, clk_vswing, clk_preem;
 	unsigned int data32;
 
 	if (lcd_debug_print_flag)
@@ -187,6 +187,8 @@ static void lcd_lvds_phy_set(struct lcd_config_s *pconf, int status)
 	if (status) {
 		vswing = pconf->lcd_control.lvds_config->phy_vswing;
 		preem = pconf->lcd_control.lvds_config->phy_preem;
+		clk_vswing = pconf->lcd_control.lvds_config->phy_clk_vswing;
+		clk_preem = pconf->lcd_control.lvds_config->phy_clk_preem;
 		if (vswing > 7) {
 			LCDERR("%s: wrong vswing_level=%d, use default\n",
 				__func__, vswing);
@@ -197,11 +199,23 @@ static void lcd_lvds_phy_set(struct lcd_config_s *pconf, int status)
 				__func__, preem);
 			preem = LVDS_PHY_PREEM_DFT;
 		}
+		if (clk_vswing > 7) {
+			LCDERR("%s: wrong clk_vswing_level=%d, use default\n",
+				__func__, clk_vswing);
+			clk_vswing = LVDS_PHY_CLK_VSWING_DFT;
+		}
+		if (clk_preem > 7) {
+			LCDERR("%s: wrong clk_preem_level=%d, use default\n",
+				__func__, clk_preem);
+			clk_preem = LVDS_PHY_CLK_PREEM_DFT;
+		}
 		data32 = 0x606cca80 | (vswing << 26) | (preem << 0);
 		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL1, data32);
 		/*lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL1, 0x6c6cca80);*/
 		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL2, 0x0000006c);
-		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL3, 0x0fff0800);
+		data32 = 0x0fff0800 | (clk_vswing << 8) | (clk_preem << 5);
+		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL3, data32);
+		/*lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL3, 0x0fff0800);*/
 	} else {
 		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL1, 0x0);
 		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL2, 0x0);

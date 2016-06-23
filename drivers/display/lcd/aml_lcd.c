@@ -306,13 +306,17 @@ static void lcd_info_print(void)
 		   "pn_swap           %u\n"
 		   "port_swap         %u\n"
 		   "phy_vswing        %u\n"
-		   "phy_preemphasis   %u\n\n",
+		   "phy_preem         %u\n"
+		   "phy_clk_vswing    %u\n"
+		   "phy_clk_preem     %u\n\n",
 		   pconf->lcd_control.lvds_config->lvds_repack,
 		   pconf->lcd_control.lvds_config->dual_port,
 		   pconf->lcd_control.lvds_config->pn_swap,
 		   pconf->lcd_control.lvds_config->port_swap,
 		   pconf->lcd_control.lvds_config->phy_vswing,
-		   pconf->lcd_control.lvds_config->phy_preem);
+		   pconf->lcd_control.lvds_config->phy_preem,
+		   pconf->lcd_control.lvds_config->phy_clk_vswing,
+		   pconf->lcd_control.lvds_config->phy_clk_preem);
 		break;
 	case LCD_VBYONE:
 		printf("lane_count        %u\n"
@@ -325,6 +329,18 @@ static void lcd_info_print(void)
 		   pconf->lcd_control.vbyone_config->byte_mode,
 		   pconf->lcd_control.lvds_config->phy_vswing,
 		   pconf->lcd_control.lvds_config->phy_preem);
+		break;
+	case LCD_TTL:
+		printf("clk_pol           %u\n"
+		   "hvsync_valid      %u\n"
+		   "DE_valid          %u\n"
+		   "bit_swap          %u\n"
+		   "rb_swap           %u\n\n",
+		   pconf->lcd_control.ttl_config->clk_pol,
+		   (pconf->lcd_control.ttl_config->sync_valid >> 0) & 1,
+		   (pconf->lcd_control.ttl_config->sync_valid >> 1) & 1,
+		   (pconf->lcd_control.ttl_config->swap_ctrl >> 0) & 1,
+		   (pconf->lcd_control.ttl_config->swap_ctrl >> 1) & 1);
 		break;
 	default:
 		break;

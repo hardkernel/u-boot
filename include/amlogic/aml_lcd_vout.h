@@ -184,8 +184,10 @@ struct ttl_config_s {
 	unsigned int swap_ctrl; /* [1]rb swap, [0]bit swap */
 };
 
-#define LVDS_PHY_VSWING_DFT    3
-#define LVDS_PHY_PREEM_DFT     0
+#define LVDS_PHY_VSWING_DFT        3
+#define LVDS_PHY_PREEM_DFT         0
+#define LVDS_PHY_CLK_VSWING_DFT    0
+#define LVDS_PHY_CLK_PREEM_DFT     0
 struct lvds_config_s {
 	unsigned int lvds_vswing;
 	unsigned int lvds_repack;
@@ -195,6 +197,8 @@ struct lvds_config_s {
 	unsigned int port_sel;
 	unsigned int phy_vswing;
 	unsigned int phy_preem;
+	unsigned int phy_clk_vswing;
+	unsigned int phy_clk_preem;
 };
 
 #define VX1_PHY_VSWING_DFT    3
