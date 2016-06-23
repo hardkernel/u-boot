@@ -665,7 +665,9 @@ int optimus_storage_init(int toErase)
         DWN_WRN("dtb is not loaded yet\n");
     }
     else{
-        ret = get_partition_from_dts(dtbLoadedAddr);
+        unsigned char* dtb4FlashInit = (unsigned char*)OPTIMUS_DOWNLOAD_TRANSFER_BUF_ADDR;
+        memcpy(dtb4FlashInit, dtbLoadedAddr, _dtb_is_loaded);
+        ret = get_partition_from_dts(dtb4FlashInit);
         if (ret) {
             DWN_ERR("Failed at get_partition_from_dts\n");
             return __LINE__;
