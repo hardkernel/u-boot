@@ -217,7 +217,7 @@ int abortboot(int bootdelay)
 #ifdef CONFIG_MENUPROMPT
 	printf(CONFIG_MENUPROMPT);
 #else
-	printf("Press 'Enter' or 'Space' to stop autoboot: %2d ", bootdelay);
+	printf("Press quickly 'Enter' twice to stop autoboot: %2d ", bootdelay);
 #endif
 
 #if defined CONFIG_ZERO_BOOTDELAY_CHECK
@@ -225,10 +225,10 @@ int abortboot(int bootdelay)
 	 * Check if key already pressed
 	 * Don't check if bootdelay < 0
 	 */
-	if (bootdelay >= 0) {
+	if (bootdelay == 0) {
 		if (tstc()) {	/* we got a key press	*/
 			input = getc();  /* consume input	*/
-			if((input==0x20)||(input==0x0d)) {
+			if(input==0x0d) {
 				puts ("\b\b\b 0");
 				abort = 1;	/* don't auto boot	*/
 			}
@@ -238,6 +238,7 @@ int abortboot(int bootdelay)
 
 	while ((bootdelay > 0) && (!abort)) {
 		int i;
+		int count=0;
 
 		--bootdelay;
 		/* delay 100 * 10ms */
@@ -248,10 +249,14 @@ int abortboot(int bootdelay)
 # else
 				input=getc();  /* consume input	*/
 # endif
-				if((input==0x20)||(input==0x0d)) {
-					abort  = 1;	/* don't auto boot	*/
-					bootdelay = 0;	/* no more delay	*/
-					break;
+				if(input==0x0d) {
+				    count++;
+				    if(count>=2) {
+    					abort  = 1;	/* don't auto boot	*/
+    					bootdelay = 0;	/* no more delay	*/
+    					count = 0;
+    					break;
+    				}
 				}
 			}
 			udelay(10000);

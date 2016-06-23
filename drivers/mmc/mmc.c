@@ -399,7 +399,8 @@ mmc_erase(int dev_num, unsigned long start, lbaint_t block)
 					block = (block / 1024) + 1;
 				}
 			}
-		}
+		} else
+			block -= 1;
 	}
 	printf("byte_addressing\n");
 	/* Set ERASE start group */

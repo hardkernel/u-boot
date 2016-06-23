@@ -327,3 +327,9 @@ void pmic_init(void)
     
 #endif	
 }
+
+void pmic_deinit(void)
+{
+	/* CTRL1 Master Reset Disable & PWRHOLD is Low(force) */
+	IIC0_EWrite(0xcc, 0x0c, 0x00);  // disable
+}

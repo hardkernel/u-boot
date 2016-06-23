@@ -80,6 +80,10 @@
 #endif
 #include <decompress_ext4.h>
 
+#if defined(CONFIG_BOARD_HARDKERNEL)
+#include "../board/samsung/smdk5422/pmic.h"
+#endif
+
 #if defined(CONFIG_S5P6450)
 DECLARE_GLOBAL_DATA_PTR;
 #endif
@@ -1775,6 +1779,7 @@ int do_fastboot (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		if (strcmp(argv[1], "poweroff") == 0 ) {
 
 		    printf("\n\n*** fastboot poweroff cmd : system power off! ***\n\n");
+            pmic_deinit();
 
             LED_BLUE(OFF);   LED_GREEN(OFF);    LED_RED(OFF);
 
