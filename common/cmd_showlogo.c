@@ -49,6 +49,7 @@ static struct c2_resolution {
 	{"2560x1600p60hz", 2560, 1600},
 	{"2560x1440p60hz", 2560, 1440},
 	{"2560x1080p60hz", 2560, 1080},
+	{"3440x1440p60hz", 3440, 1440},
 };
 
 static int display_logo(const char* mode)
