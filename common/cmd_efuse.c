@@ -33,6 +33,7 @@
 #define CMD_EFUSE_PASSWORD_SET     7
 #define CMD_EFUSE_CUSTOMER_ID_SET  8
 
+#define CMD_EFUSE_AMLOGIC_SET      20
 
 
 int cmd_efuse(int argc, char * const argv[], char *buf)
@@ -57,6 +58,9 @@ int cmd_efuse(int argc, char * const argv[], char *buf)
 		goto efuse_action;
 	} else if (strncmp(argv[1], "customer_id_set", 15) == 0) {
 		action = CMD_EFUSE_CUSTOMER_ID_SET;
+		goto efuse_action;
+	} else if (strncmp(argv[1], "amlogic_set", 11) == 0) {
+		action = CMD_EFUSE_AMLOGIC_SET;
 		goto efuse_action;
 	} else{
 		printf("%s arg error\n", argv[1]);
@@ -144,6 +148,28 @@ efuse_action:
 			       ret);
 		else
 			printf("aml log : Secure boot EFUSE pattern programming success!\n");
+
+		return ret;
+	} else if (CMD_EFUSE_AMLOGIC_SET == action) {
+		/*efuse amlogic_set*/
+
+		lAddr1 = GXB_IMG_LOAD_ADDR;
+
+		if (argc > 2)
+			lAddr1 = simple_strtoul(argv[2], &end, 16);
+
+		lAddr2 = get_sharemem_info(GET_SHARE_MEM_INPUT_BASE);
+		memcpy((void *)lAddr2, (void *)lAddr1, GXB_EFUSE_PATTERN_SIZE);
+		flush_cache(lAddr2,GXB_EFUSE_PATTERN_SIZE);
+
+		ret = aml_sec_boot_check(AML_D_P_W_EFUSE_AMLOGIC, lAddr2,
+			GXB_EFUSE_PATTERN_SIZE, 0);
+
+		if (ret)
+			printf("aml log : Amlogic EFUSE pattern programming fail [%d]!\n",
+			       ret);
+		else
+			printf("aml log : Amlogic EFUSE pattern programming success!\n");
 
 		return ret;
 	} else if(CMD_EFUSE_PASSWORD_SET == action)	{
