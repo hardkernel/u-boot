@@ -117,6 +117,56 @@
 #define XMK_STR(x)      #x
 #define MK_STR(x)       XMK_STR(x)
 
+#ifdef CONFIG_ODROIDC_REV2
+#define CONFIG_EXTRA_ENV_SETTINGS \
+        "boardname=ODROIDC\0" \
+        "bootargs=root=" MK_STR(CONFIG_DEFAULT_ROOT) " rw " \
+                "console=" CONFIG_CONSOLE_PROTOCOL " no_console_suspend\0" \
+        "bootcmd="\
+                "cfgload;" \
+                "setenv bootargs root=" MK_STR(CONFIG_DEFAULT_ROOT) " rw " \
+                        "console=" CONFIG_CONSOLE_PROTOCOL " no_console_suspend " \
+                        "vdaccfg=${vdac_config} " \
+                        "logo=osd1,loaded,${fb_addr},${outputmode},full " \
+                        "hdmimode=${hdmimode} " \
+                        "cvbsmode=${cvbsmode} " \
+                        "hdmitx=${cecconfig} " \
+                        "androidboot.selinux=disabled " \
+                        "androidboot.serialno=${fbt_id#}; " \
+                "movi read boot 0 0x12000000;" \
+                "movi read dtb 0 0x12800000;" \
+                "bootm 0x12000000 - 0x12800000\0" \
+        "bootm_low=0x00000000\0" \
+        "bootm_size=0x80000000\0" \
+        "bootpath=u-boot.bin\0" \
+        "bootsize=100000\0" \
+        "bootstart=0\0" \
+        "chipname=8726m8\0" \
+        "console=" CONFIG_CONSOLE_PROTOCOL "\0" \
+        "cvbsmode=480cvbs\0" \
+        "display_bpp=24\0" \
+        "display_color_bg=0\0" \
+        "display_color_fg=0xffff\0" \
+        "display_color_format_index=24\0" \
+        "display_width=1920\0" \
+        "display_height=1080\0" \
+        "display_layer=osd2\0" \
+        "fb_addr=0x7900000\0" \
+        "fb_width=1280\0"\
+        "fb_height=720\0"\
+        "firstboot=1\0" \
+        "outputmode=720p\0" \
+        "hdmimode=720p\0" \
+        "initrd_high=60000000\0" \
+        "loadaddr=" MK_STR(CONFIG_SYS_LOAD_ADDR) "\0" \
+        "loadaddr_logo=0x14000000\0" \
+        "preloadlogo=logo size ${outputmode}; video open;" \
+                "video clear; video dev open ${outputmode};" \
+                "movi read logo 0 ${loadaddr_logo};" \
+                "bmp display ${loadaddr_logo}; bmp scale\0" \
+        "vdac_config=0x10\0" \
+        "video_dev=tvout\0"
+#else
 #define CONFIG_EXTRA_ENV_SETTINGS \
         "boardname=ODROIDC\0" \
         "bootargs=root=" MK_STR(CONFIG_DEFAULT_ROOT) " rw " \
@@ -164,6 +214,7 @@
                 "bmp display ${loadaddr_logo}; bmp scale\0" \
         "vdac_config=0x10\0" \
         "video_dev=tvout\0"
+#endif
 
 #define CONFIG_BOOTCOMMAND              "bootm"
 
