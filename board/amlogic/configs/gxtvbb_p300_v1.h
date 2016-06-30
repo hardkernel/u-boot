@@ -37,6 +37,12 @@
 #define CONFIG_VDDEE_INIT_VOLTAGE	1100		// voltage for power up
 #define CONFIG_VDDEE_SLEEP_VOLTAGE	 850		// voltage for suspend
 
+#define CONFIG_AML_SPICC
+/*#define CONFIG_AML_LOCAL_DIMMING*/
+/*#define CONFIG_AML_LOCAL_DIMMING_IW7019*/
+/*#define CONFIG_AML_LOCAL_DIMMING_OB3350*/
+
+
 /* configs for CEC */
 #define CONFIG_CEC_OSD_NAME		"AML_TV"
 #define CONFIG_CEC_WAKEUP

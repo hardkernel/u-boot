@@ -62,10 +62,10 @@ static void ldim_brightness_update(unsigned int level)
 
 	size = ldim_blk_row * ldim_blk_col;
 	for (i = 0; i < size; i++)
-		ldim_driver.ldim_matrix_2_spi[i] = (unsigned short)level;
+		ldim_driver.ldim_matrix_buf[i] = (unsigned short)level;
 
 	if (ldim_driver.device_bri_update)
-		ldim_driver.device_bri_update(ldim_driver.ldim_matrix_2_spi, size);
+		ldim_driver.device_bri_update(ldim_driver.ldim_matrix_buf, size);
 	else
 		LDIMPR("%s: device_bri_update is null\n", __func__);
 }
@@ -143,7 +143,7 @@ static struct aml_ldim_driver_s ldim_driver = {
 	.valid_flag = 0, /* default invalid, active when bl_ctrl_method=ldim */
 	.dev_index = 0,
 	.ldev_conf = NULL,
-	.ldim_matrix_2_spi = NULL,
+	.ldim_matrix_buf = NULL,
 	.power_on = ldim_power_on,
 	.power_off = ldim_power_off,
 	.set_level = ldim_set_level,
@@ -232,9 +232,9 @@ int aml_ldim_probe(char *dt_addr, int flag)
 		break;
 	}
 	size = ldim_blk_row * ldim_blk_col;
-	ldim_driver.ldim_matrix_2_spi = (unsigned short *)malloc(sizeof(unsigned short) * size);
-	if (ldim_driver.ldim_matrix_2_spi == NULL) {
-		LDIMERR("ldim_matrix_2_spi malloc error\n");
+	ldim_driver.ldim_matrix_buf = (unsigned short *)malloc(sizeof(unsigned short) * size);
+	if (ldim_driver.ldim_matrix_buf == NULL) {
+		LDIMERR("ldim_matrix_buf malloc error\n");
 		return -1;
 	}
 

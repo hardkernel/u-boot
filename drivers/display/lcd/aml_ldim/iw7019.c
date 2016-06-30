@@ -49,6 +49,8 @@ struct iw7019 {
 };
 struct iw7019 *bl_iw7019;
 
+extern struct ldim_spi_dev_info_s ldim_spi_dev;
+
 #if 0
 static u8 iw7019_ini_data[LDIM_SPI_INIT_ON_SIZE] = {
 #if 1
@@ -457,7 +459,20 @@ int ldim_dev_iw7019_probe(void)
 	memset(bl_iw7019, 0, sizeof(struct iw7019));
 
 	iw7019_on_flag = 0;
-	bl_iw7019->spi = ldim_drv->spi;
+
+	/* register spi */
+	ldim_drv->spi_dev->spi =
+		spi_setup_slave(ldim_drv->spi_dev->bus_num,
+					ldim_drv->spi_dev->chip_select,
+					ldim_drv->spi_dev->max_speed_hz,
+					ldim_drv->spi_dev->mode);
+	if (ldim_drv->spi_dev->spi == NULL) {
+		LDIMERR("register ldim_dev spi driver failed\n");
+		return -1;
+	}
+	spi_cs_deactivate(ldim_drv->spi_dev->spi);
+
+	bl_iw7019->spi = ldim_drv->spi_dev->spi;
 	bl_iw7019->cs_hold_delay = ldim_drv->ldev_conf->cs_hold_delay;
 	bl_iw7019->cs_clk_delay = ldim_drv->ldev_conf->cs_clk_delay;
 	bl_iw7019->cmd_size = ldim_drv->ldev_conf->cmd_size;

@@ -21,10 +21,19 @@
 #include <amlogic/aml_lcd.h>
 #include <spi.h>
 
+enum ldim_dev_type_e {
+	LDIM_DEV_TYPE_NORMAL = 0,
+	LDIM_DEV_TYPE_SPI,
+	LDIM_DEV_TYPE_I2C,
+	LDIM_DEV_TYPE_MAX,
+};
+
 #define LDIM_SPI_INIT_ON_SIZE     300
 #define LDIM_SPI_INIT_OFF_SIZE    20
 struct ldim_dev_config_s {
 	char name[20];
+	char pinmux_name[20];
+	unsigned char type;
 	int cs_hold_delay;
 	int cs_clk_delay;
 	int en_gpio;
@@ -44,12 +53,22 @@ struct ldim_dev_config_s {
 	char gpio_name[BL_GPIO_NUM_MAX][LCD_CPU_GPIO_NAME_MAX];
 };
 
+struct ldim_spi_dev_info_s {
+	char modalias[20];
+	int mode;
+	int max_speed_hz;
+	int bus_num;
+	int chip_select;
+
+	struct spi_slave *spi;
+};
+
 /*******global API******/
 struct aml_ldim_driver_s {
 	int valid_flag;
 	int dev_index;
 	struct ldim_dev_config_s *ldev_conf;
-	unsigned short *ldim_matrix_2_spi;
+	unsigned short *ldim_matrix_buf;
 	int (*power_on)(void);
 	int (*power_off)(void);
 	int (*set_level)(unsigned int level);
@@ -58,7 +77,7 @@ struct aml_ldim_driver_s {
 	int (*device_power_on)(void);
 	int (*device_power_off)(void);
 	int (*device_bri_update)(unsigned short *buf, unsigned char len);
-	struct spi_slave *spi;
+	struct ldim_spi_dev_info_s *spi_dev;
 };
 
 extern struct aml_ldim_driver_s *aml_ldim_get_driver(void);
