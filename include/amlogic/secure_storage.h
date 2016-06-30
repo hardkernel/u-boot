@@ -29,6 +29,7 @@ int32_t secure_storage_verify(uint8_t *keyname, uint8_t *hashbuf);
 int32_t secure_storage_status(uint8_t *keyname, uint32_t *retval);
 void *secure_storage_getbuffer(uint32_t *size);
 void secure_storage_notifier(void);
+void secure_storage_notifier_ex(uint32_t storagesize, uint32_t rsvarg);
 int32_t secure_storage_list(uint8_t *listbuf, uint32_t buflen,
 				uint32_t *readlen);
 int32_t secure_storage_remove(uint8_t *keyname);

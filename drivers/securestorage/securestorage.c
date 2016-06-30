@@ -20,6 +20,19 @@ static uint64_t bl31_storage_ops(uint64_t function_id)
 	return function_id;
 }
 
+uint64_t bl31_storage_ops3(uint64_t function_id, uint64_t arg1, uint32_t arg2)
+{
+	asm volatile(
+		__asmeq("%0", "x0")
+		__asmeq("%1", "x1")
+		__asmeq("%2", "x2")
+		"smc    #0\n"
+		: "+r" (function_id)
+		: "r"(arg1), "r"(arg2));
+
+	return function_id;
+}
+
 static uint64_t bl31_storage_write(uint8_t *keyname, uint8_t *keybuf,
 				uint32_t keylen, uint32_t keyattr)
 {
@@ -186,12 +199,20 @@ void *secure_storage_getbuffer(uint32_t *size)
 {
 	if (!storage_init_status)
 		secure_storage_init();
+	else
+		storage_share_block_size =
+			bl31_storage_ops(GET_SHARE_STORAGE_BLOCK_SIZE);
 	*size = (uint32_t)storage_share_block_size;
 	return (void *)storage_share_block_base;
 }
 void secure_storage_notifier(void)
 {
 	bl31_storage_ops(SECURITY_KEY_NOTIFY);
+}
+
+void secure_storage_notifier_ex(uint32_t storagesize, uint32_t rsvarg)
+{
+	bl31_storage_ops3(SECURITY_KEY_NOTIFY_EX, storagesize, rsvarg);
 }
 
 int32_t secure_storage_write(uint8_t *keyname, uint8_t *keybuf,
