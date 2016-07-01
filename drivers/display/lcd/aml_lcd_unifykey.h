@@ -71,10 +71,12 @@ struct aml_lcd_unifykey_header_s {
 #define LCD_UKEY_SS_LEVEL          1
 #define LCD_UKEY_CLK_AUTO_GEN      1
 #define LCD_UKEY_PCLK              4
-#define LCD_UKEY_CUST_VAL_4        4
-#define LCD_UKEY_CUST_VAL_5        4
-#define LCD_UKEY_CUST_VAL_6        4
-#define LCD_UKEY_CUST_VAL_7        4
+#define LCD_UKEY_H_PERIOD_MIN      2
+#define LCD_UKEY_H_PERIOD_MAX      2
+#define LCD_UKEY_V_PERIOD_MIN      2
+#define LCD_UKEY_V_PERIOD_MAX      2
+#define LCD_UKEY_PCLK_MIN          4
+#define LCD_UKEY_PCLK_MAX          4
 #define LCD_UKEY_CUST_VAL_8        4
 #define LCD_UKEY_CUST_VAL_9        4
 /* interface (20Byte) */

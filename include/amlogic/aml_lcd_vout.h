@@ -115,14 +115,26 @@ struct lcd_basic_s {
 	unsigned short v_active; /* Vertical display area */
 	unsigned short h_period; /* Horizontal total period time */
 	unsigned short v_period; /* Vertical total period time */
+	unsigned short h_period_min;
+	unsigned short h_period_max;
+	unsigned short v_period_min;
+	unsigned short v_period_max;
+	unsigned int lcd_clk_min;
+	unsigned int lcd_clk_max;
 
 	unsigned short screen_width;  /* screen physical width in "mm" unit */
 	unsigned short screen_height; /* screen physical height in "mm" unit */
 };
 
+#define LCD_CLK_FRAC_UPDATE     (1 << 0)
+#define LCD_CLK_PLL_CHANGE      (1 << 1)
 struct lcd_timing_s {
 	unsigned char clk_auto; /* clk parameters auto generation */
 	unsigned int lcd_clk;   /* pixel clock(unit: Hz) */
+	unsigned int lcd_clk_dft; /* internal used */
+	unsigned int h_period_dft; /* internal used */
+	unsigned int v_period_dft; /* internal used */
+	unsigned char clk_change; /* internal used */
 	unsigned int pll_ctrl;  /* pll settings */
 	unsigned int div_ctrl;  /* divider settings */
 	unsigned int clk_ctrl;  /* clock settings */

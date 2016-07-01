@@ -215,17 +215,27 @@ static void lcd_timing_info_print(struct lcd_config_s * pconf)
 	vs_pol = pconf->lcd_timing.vsync_pol;
 
 	printf("h_period          %d\n"
-	   "v_period          %d\n"
-	   "hs_width          %d\n"
-	   "hs_backporch      %d\n"
-	   "hs_pol            %d\n"
-	   "vs_width          %d\n"
-	   "vs_backporch      %d\n"
-	   "vs_pol            %d\n"
-	   "video_on_pixel    %d\n"
-	   "video_on_line     %d\n\n",
-	   h_period, v_period, hs_width, hs_bp, hs_pol,
-	   vs_width, vs_bp, vs_pol, video_on_pixel, video_on_line);
+		"v_period          %d\n"
+		"hs_width          %d\n"
+		"hs_backporch      %d\n"
+		"hs_pol            %d\n"
+		"vs_width          %d\n"
+		"vs_backporch      %d\n"
+		"vs_pol            %d\n"
+		"video_on_pixel    %d\n"
+		"video_on_line     %d\n\n",
+		h_period, v_period, hs_width, hs_bp, hs_pol,
+		vs_width, vs_bp, vs_pol, video_on_pixel, video_on_line);
+
+	printf("h_period_min      %d\n"
+		"h_period_max      %d\n"
+		"v_period_min      %d\n"
+		"v_period_max      %d\n"
+		"pclk_min          %d\n"
+		"pclk_max          %d\n\n",
+		pconf->lcd_basic.h_period_min, pconf->lcd_basic.h_period_max,
+		pconf->lcd_basic.v_period_min, pconf->lcd_basic.v_period_max,
+		pconf->lcd_basic.lcd_clk_min, pconf->lcd_basic.lcd_clk_max);
 }
 
 static void lcd_power_info_print(struct lcd_config_s *pconf, int status)

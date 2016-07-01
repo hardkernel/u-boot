@@ -24,7 +24,7 @@
 //**********************************
 #define LCD_DRV_TYPE      "tablet"
 
-#define LCD_DRV_VERSION    "20160623"
+#define LCD_DRV_VERSION    "20160630"
 //**********************************
 
 extern void lcd_tablet_driver_init_pre(void);

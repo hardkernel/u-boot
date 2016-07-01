@@ -624,8 +624,9 @@ void lcd_tv_driver_init_pre(void)
 	struct lcd_config_s *pconf;
 	int ret;
 
-	LCDPR("tv driver init(ver: %s)\n", lcd_drv->version);
 	pconf = lcd_drv->lcd_config;
+	LCDPR("tv driver init(ver %s): %s\n", lcd_drv->version,
+		lcd_type_type_to_str(pconf->lcd_basic.lcd_type));
 	ret = lcd_type_supported(pconf);
 	if (ret)
 		return;
