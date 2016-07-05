@@ -59,8 +59,8 @@ static int km_get_user_key_format(const char* srcKeyName, int* key_type)
             ret = !strcmp(srcKeyName, "mac") || !strcmp(srcKeyName, "mac_bt") || !strcmp(srcKeyName, "mac_wifi");
             if (ret) { srcKeyType = KM_USER_KEY_TYPE_MAC; break; }
 
-            ret = !strcmp(srcKeyName, "hdcp") ;
-            if (ret) { srcKeyType = KM_USER_KEY_TYPE_SHA1; break; }
+            /*ret = !strcmp(srcKeyName, "hdcp") ;*/
+            /*if (ret) { srcKeyType = KM_USER_KEY_TYPE_SHA1; break; }*/
 
             ret = !strcmp(srcKeyName, "hdcp2") ;
             if (ret) { srcKeyType = KM_USER_KEY_TYPE_HDCP2; break; }

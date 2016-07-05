@@ -39,6 +39,7 @@ enum key_manager_type_e{
 struct key_item_t{
     char name[KEY_UNIFY_NAME_LEN];
     char keyType[KEY_UNIFY_TYPE_LEN_MAX + 1];//mac/sha1/hdcp2/normal
+    char encType[KEY_UNIFY_TYPE_LEN_MAX + 1];//mac/sha1/hdcp2/normal
     int id;
     unsigned int dev; //key save in device //efuse,
     unsigned int datFmt;  //data format

@@ -31,6 +31,7 @@
 #include <linux/types.h>
 #include <amlogic/secure_storage.h>
 #include <amlogic/storage_if.h>
+#include <amlogic/amlkey_if.h>
 #ifdef CONFIG_STORE_COMPATIBLE
 #include <partition_table.h>
 #endif
@@ -125,11 +126,7 @@ int32_t amlkey_isexsit(const uint8_t * name)
 	return (int32_t)retval;
 }
 
-/**
- * 3. query if the prgrammed key is secure
- * return secure 1, non 0;
- */
-int32_t amlkey_issecure(const uint8_t * name)
+static int32_t amlkey_get_attr(const uint8_t * name)
 {
 	int32_t ret = 0;
 	uint32_t retval;
@@ -145,9 +142,26 @@ int32_t amlkey_issecure(const uint8_t * name)
 		retval = 0;
 	}
 
-	return (int32_t)retval;
+	return (int32_t)(retval);
 }
 
+/**
+ * 3.1 query if the prgrammed key is secure. key must exsit!
+ * return secure 1, non 0;
+ */
+int32_t amlkey_issecure(const uint8_t * name)
+{
+	return (amlkey_get_attr(name)&UNIFYKEY_ATTR_SECURE_MASK);
+}
+
+/**
+ * 3.2 query if the prgrammed key is encrypt
+ * return encrypt 1, non-encrypt 0;
+ */
+int32_t amlkey_isencrypt(const uint8_t * name)
+{
+	return (amlkey_get_attr(name)&UNIFYKEY_ATTR_ENCRYPT_MASK);
+}
 /**
  * 4. actual bytes of key value
  *  return actual size.
@@ -199,9 +213,11 @@ _out:
 
 /**
  * 6.write secure/non-secure key in bytes , return bytes readback actully
+ * attr: bit0, secure/non-secure;
+ *		 bit8, encrypt/non-encrypt;
  * return actual size write down.
  */
-ssize_t amlkey_write(const uint8_t *name, uint8_t *buffer, uint32_t len, uint32_t secure)
+ssize_t amlkey_write(const uint8_t *name, uint8_t *buffer, uint32_t len, uint32_t attr)
 {
 	int32_t ret = 0;
 	ssize_t retval = 0;
@@ -210,7 +226,7 @@ ssize_t amlkey_write(const uint8_t *name, uint8_t *buffer, uint32_t len, uint32_
 		printf("%s() %d, invalid key ", __func__, __LINE__);
 		return retval;
 	}
-	ret = secure_storage_write((uint8_t *)name, buffer, len, secure);
+	ret = secure_storage_write((uint8_t *)name, buffer, len, attr);
 	if (ret) {
 		printf("%s() %d: return %d\n", __func__, __LINE__, ret);
 		retval = 0;

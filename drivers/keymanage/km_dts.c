@@ -93,6 +93,23 @@ enum key_manager_dev_e keymanage_dts_get_key_device(const char *keyname)
 	return key_manage->dev;
 }
 
+const char* keymanage_dts_get_enc_type(const char* keyname)
+{
+	struct key_item_t *key_manage;
+
+    if (!unify_key_info.key_flag) {
+		KM_ERR("/unify not parsed yet!\n");
+		return NULL;
+	}
+	key_manage = unifykey_find_item_by_name(keyname);
+	if (key_manage == NULL) {
+		KM_ERR("%s key name is not exist\n",keyname);
+		return NULL;
+	}
+
+	return key_manage->encType;
+}
+
 const char* keymanage_dts_get_key_type(const char* keyname)
 {
 	struct key_item_t *key_manage;
@@ -133,6 +150,16 @@ static int unifykey_item_dt_parse(const void* dt_addr,int nodeoffset,int id,char
 	int count;
 
 	temp_item = unifykey_item + id;
+
+	propdata = (char*)fdt_getprop(dt_addr, nodeoffset, "key-encrypt", NULL);
+	if (propdata) {
+		count = strlen(propdata);
+        if ( count > KEY_UNIFY_TYPE_LEN_MAX ) {
+			KM_ERR("key-encrypt [%s] too long\n", propdata);
+			return __LINE__;
+		}
+		memcpy(temp_item->encType, propdata, count);
+	}
 
 	propdata = (char*)fdt_getprop(dt_addr, nodeoffset, "key-name",NULL);
 	if (!propdata) {

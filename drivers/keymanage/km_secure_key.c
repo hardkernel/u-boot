@@ -27,7 +27,9 @@ int keymanage_secukey_write(const char *keyname, const void* keydata, unsigned i
 {
     int ret = 0;
     uint8_t origSum[SHA256_SUM_LEN];
-    const int isSecure =  ( KEY_M_SECURE_KEY == keymanage_dts_get_key_device(keyname) ) ;
+    const int isSecure =  ( KEY_M_SECURE_KEY == keymanage_dts_get_key_device(keyname) ) ? 1 : 0;
+    const int isEncrypt= strlen(keymanage_dts_get_enc_type(keyname)) ? 1 : 0;
+    const unsigned int keyAttr = ( isSecure << 0 ) | ( isEncrypt << 8 );
     ssize_t writenLen = 0;
 
     if (isSecure)
@@ -38,8 +40,10 @@ int keymanage_secukey_write(const char *keyname, const void* keydata, unsigned i
         sha256_finish(&ctx, origSum);
     }
 
+    KM_MSG("isEncrypt=%s\n", keymanage_dts_get_enc_type(keyname));
     KM_DBG("%s, keyname=%s, keydata=%p, datalen=%d, isSecure=%d\n", __func__, keyname, keydata, datalen, isSecure);
-    writenLen = amlkey_write((uint8_t*)keyname, (uint8_t*)keydata, datalen, isSecure);
+    KM_MSG("keyAttr is 0x%08X\n", keyAttr);
+    writenLen = amlkey_write((uint8_t*)keyname, (uint8_t*)keydata, datalen, keyAttr);
     if (writenLen != datalen) {
         KM_ERR("Want to write %u bytes, but only %zd Bytes\n", datalen, writenLen);
         return __LINE__;

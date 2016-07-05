@@ -32,6 +32,7 @@ int keymanage_dts_parse(const void* dt_addr);
 enum key_manager_df_e keymanage_dts_get_key_fmt(const char *keyname);
 enum key_manager_dev_e keymanage_dts_get_key_device(const char *keyname);
 const char* keymanage_dts_get_key_type(const char* keyname);
+const char* keymanage_dts_get_enc_type(const char* keyname);
 char unifykey_get_efuse_version(void);
 
 int keymanage_efuse_init(const char *buf, int len);
