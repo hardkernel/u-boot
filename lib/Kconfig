@@ -19,6 +19,11 @@ config USE_PRIVATE_LIBGCC
 	  of U-boot instead of the one privided by the compiler.
 	  If unsure, say N.
 
+config OF_LIBFDT_OVERLAY
+        bool "Enable the FDT library overlay support"
+        help
+          This enables the FDT library (libfdt) overlay support.
+
 config SYS_HZ
 	int
 	default 1000
