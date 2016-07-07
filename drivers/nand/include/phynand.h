@@ -135,17 +135,14 @@ union nand_core_clk_t {
 
 #define	FBBT_COPY_NUM	1
 
-/* 512K */
-#define CONFIG_KEYSIZE		(256*1024)
-#define KEYSIZE	(CONFIG_KEYSIZE - (sizeof(u32)))
 /* 128k */
 #define CONFIG_SECURE_SIZE	(0x10000*2)
 /*fixme, arguing...*/
 #define SECURE_SIZE (CONFIG_SECURE_SIZE - (sizeof(u32)))
 
 /* 256KBytes. */
-#define CONFIG_DTB_SIZE  (256*1024U)
-#define DTB_SIZE (CONFIG_DTB_SIZE - (sizeof(u32)))
+//#define CONFIG_DTB_MAXIMUM_SIZE  (256*1024U)
+//#define DTB_SIZE (CONFIG_DTB_SIZE - (sizeof(u32)))
 
 #define FULL_BLK	0
 #define FULL_PAGE	1
@@ -762,7 +759,7 @@ struct shipped_bbt {
 
 struct nand_menson_key {
 	u32 crc;
-	u8 data[KEYSIZE];
+	u8 data[252];
 };
 
 /* typedef struct nand_menson_key meson_key; */	/* fixme, */
@@ -853,6 +850,10 @@ struct amlnand_chip {
 	void __iomem *nand_clk_reg;
 #endif /*  */
 	u8 shipped_retry_flag; /* do factory bad block detect less than 2 times*/
+
+	u32 h_cache_dev;
+	u32 keysize;
+	u32 dtbsize;
 };
 
 extern struct nand_flash flash_ids_slc[];

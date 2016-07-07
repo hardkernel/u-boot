@@ -16,25 +16,35 @@
 #ifdef AML_SLC_NAND_SUPPORT
 struct nand_flash flash_ids_slc[] = {
 	/***for SLC nand***/
-	{"NAND 128MiB 3,3V 8-bit", {0, 0x79}, 512, 128, 0x4000, 0, 0, 0},
-
-	{"NAND 256MiB 3,3V 8-bit", {0, 0x71}, 512, 256, 0x4000, 0, 0, 0},
-	/*512 Megabit */
-	{"NAND 64MiB 3,3V 8-bit", {0, 0xF2}, 0,  64, 0, 0, 0, 0},
-	/* 1 Gigabit */
-	{"NAND 128MiB 3,3V 8-bit", {0, 0xF1}, 0, 128, 0, 0, 0, 0},
-	/* 2 Gigabit */
-	{"NAND 256MiB 3,3V 8-bit", {0, 0xDA}, 0, 256, 0, 0, 0, 0},
-	/* 4 Gigabit */
-	{"NAND 512MiB 3,3V 8-bit", {0, 0xDC}, 0, 512, 0, 0, 0, 0},
-	/* 8 Gigabit */
-	{"NAND 1GiB 3,3V 8-bit", {0, 0xD3}, 0, 1024, 0, 0, 0, 0},
 	{NULL,}
 };
 #endif
 
 #ifdef AML_MLC_NAND_SUPPORT
 struct nand_flash flash_ids_mlc[] = {
+/***for SLC nand***/
+	{"TOSHIBA 128MB SLC TC58BVG0S3HBAI6",
+		{NAND_MFR_TOSHIBA, 0xF1, 0x80, 0x15, 0xF2},
+		2048,
+		128,
+		0x20000,
+		64,
+		1,
+		20,
+		25,
+		0,
+		0},
+	{"TOSHIBA 256MB SLC TC58BVG0S3HBAI6",
+		{NAND_MFR_TOSHIBA, 0xDA, 0x90, 0x15, 0xF6},
+		2048,
+		256,
+		0x20000,
+		64,
+		1,
+		20,
+		25,
+		0,
+		0},
 /***for MLC nand***/
 	{"A revision NAND 2GiB H27UAG8T2A",
 		{NAND_MFR_HYNIX, 0xd5, 0x94, 0x25, 0x44, 0x41},

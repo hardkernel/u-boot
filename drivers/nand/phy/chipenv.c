@@ -102,16 +102,18 @@ static int amlnand_oops_handle(struct amlnand_chip *aml_chip, int flag)
 	int  start_blk,total_blk, ret = 0;
 	int percent=0, percent_complete = -1;
 	unsigned char *buf = NULL;
-	unsigned int buf_size = MAX(CONFIG_SECURE_SIZE, CONFIG_KEYSIZE);
+	unsigned int buf_size;
 	int last_reserve_blk;
+
+	buf_size = 0x40000; /*rsv item max size is 256KB*/
 	buf = aml_nand_malloc(buf_size);
 	if (!buf) {
 	  aml_nand_msg("%s() %d: malloc failed", __FUNCTION__, __LINE__);
 	}
-	memset(buf,0x0,buf_size);
+	memset(buf, 0x0, buf_size);
 
 	/* fixme, should not exit here, 20150801 */
-	ret = amlnand_info_init(aml_chip, (unsigned char *)&(aml_chip->nand_key),buf,(unsigned char *)KEY_INFO_HEAD_MAGIC, CONFIG_KEYSIZE);
+	ret = amlnand_info_init(aml_chip, (unsigned char *)&(aml_chip->nand_key),buf,(unsigned char *)KEY_INFO_HEAD_MAGIC, aml_chip->keysize);
 	if (ret < 0) {
 		aml_nand_msg("%s() %d invalid nand key\n", __FUNCTION__, __LINE__);
 		goto exit_error0;
@@ -1849,8 +1851,11 @@ get_free_blk:
 #endif
 			}
 		}
-
-		if (arg_info->arg_type == FULL_PAGE) {
+		/*
+		add 'flash->blocksize > 0x40000' here,nand flash which blocksize
+		is smaller than 256KB(slc flash) shoudn't write again.
+		*/
+		if ((arg_info->arg_type == FULL_PAGE) && (flash->blocksize > 0x40000)) {
 			if (write_page_cnt == 0) {
 				arg_info->arg_valid = 1;
 				full_page_flag = 0;
@@ -2601,46 +2606,75 @@ static void init_dev_para(struct dev_para*dev_para_ptr,struct amlnf_partition *c
 }
 static void amlnand_get_dev_num(struct amlnand_chip *aml_chip,struct amlnf_partition *config_init)
 {
-	//struct dev_para *dev_para = NULL;
-	struct dev_para*dev_para_ptr =NULL;
-	//struct amlnf_partition *partition = NULL;
-	//struct amlnf_partition * partition_ptr =NULL;
-	//int j, i,k,tmp_num=0,partiton_num=0,dev_num=0,ret=0;
-	int i,tmp_num=0;
-	int device_num =PHY_DEV_NUM;
+	struct dev_para *dev_para_ptr =NULL;
+	int i , tmp_num=0;
+	int device_num;
+
+	device_num = (aml_chip->h_cache_dev)? 3 : 2;
 
 	if (boot_device_flag == 1) {
-		memcpy((void *)(aml_chip->config_ptr->dev_para[tmp_num].name), NAND_BOOT_NAME, strlen(NAND_BOOT_NAME));
+		memcpy((void *)(aml_chip->config_ptr->dev_para[tmp_num].name),
+			NAND_BOOT_NAME, strlen(NAND_BOOT_NAME));
 		aml_chip->config_ptr->dev_para[tmp_num].nr_partitions = 0;
 		aml_chip->config_ptr->dev_para[tmp_num].option = 0;
 		tmp_num++;
-		device_num = PHY_DEV_NUM + 1;
+		device_num += 1;
 	}
 	aml_chip->config_ptr->dev_num = device_num;
 
-	for (i=0;tmp_num < device_num;tmp_num++,i++) {
+	for (i=0; tmp_num < device_num; tmp_num++, i++) {
+		int dev_flag;
+		u32 option;
 		dev_para_ptr = &(aml_chip->config_ptr->dev_para[tmp_num]);
 		if (i == 0) {
-			//printf("cache!\n");
-			memcpy((void *)(dev_para_ptr->name), NAND_CACHE_NAME, strlen(NAND_CACHE_NAME));
-			init_dev_para(dev_para_ptr,config_init,STORE_CACHE);
-			dev_para_ptr->option = NAND_DATA_OPTION;
-		}else if(i==1) {
-			//printf("code!\n");
-			memcpy((void *)(dev_para_ptr->name), NAND_CODE_NAME, strlen(NAND_CODE_NAME));
-			init_dev_para(dev_para_ptr,config_init,STORE_CODE);
-			dev_para_ptr->option = NAND_CODE_OPTION;
-		}else if(i==2) {
-			//printf("data!\n");
-			memcpy((void *)(dev_para_ptr->name), NAND_DATA_NAME, strlen(NAND_DATA_NAME));
-			init_dev_para(dev_para_ptr,config_init,STORE_DATA);
-			dev_para_ptr->option = NAND_DATA_OPTION;
-		}else {
-			aml_nand_msg("%s: something wrong %d!!", __func__, __LINE__);
+			if (aml_chip->h_cache_dev) {
+				memcpy((void *)(dev_para_ptr->name),
+					NAND_CACHE_NAME,
+					strlen(NAND_CACHE_NAME));
+				dev_flag = STORE_CACHE;
+				option = NAND_DATA_OPTION;
+			} else {
+				memcpy((void *)(dev_para_ptr->name),
+					NAND_CODE_NAME,
+					strlen(NAND_CODE_NAME));
+				dev_flag = STORE_CODE;
+				option = NAND_CODE_OPTION;
+			}
+			init_dev_para(dev_para_ptr, config_init, dev_flag);
+			dev_para_ptr->option = option;
+		} else if (i == 1) {
+			if (aml_chip->h_cache_dev) {
+				memcpy((void *)(dev_para_ptr->name),
+					NAND_CODE_NAME,
+					strlen(NAND_CODE_NAME));
+				dev_flag = STORE_CODE;
+				option = NAND_CODE_OPTION;
+			} else {
+				memcpy((void *)(dev_para_ptr->name),
+					NAND_DATA_NAME,
+					strlen(NAND_DATA_NAME));
+				dev_flag = STORE_DATA;
+				option = NAND_DATA_OPTION;
+			}
+			init_dev_para(dev_para_ptr, config_init, dev_flag);
+			dev_para_ptr->option = option;
+		} else if (i == 2) {
+			if (aml_chip->h_cache_dev) {
+				memcpy((void *)(dev_para_ptr->name),
+					NAND_DATA_NAME,
+					strlen(NAND_DATA_NAME));
+				dev_flag = STORE_DATA;
+				option = NAND_DATA_OPTION;
+				init_dev_para(dev_para_ptr,
+					config_init, dev_flag);
+				dev_para_ptr->option = option;
+			}
+		} else {
+			aml_nand_msg("%s:something wrong here",
+				__func__);
 			break;
 		}
 	}
-
 	return ;
 }
 
@@ -2655,8 +2689,12 @@ int amlnand_configs_confirm(struct amlnand_chip *aml_chip)
 	struct dev_para *dev_para_cmp = NULL;
 	unsigned char  confirm_flag=0;
 	int i, tmp_num=0,ret = 0;
-	int device_num =PHY_DEV_NUM;
+	int device_num;
+
 	ENV_NAND_LINE
+
+	device_num = (aml_chip->h_cache_dev)? 3 : 2;
+
 	ret = phrase_driver_version(config_ptr->driver_version,DRV_PHY_VERSION);
 	if (ret) {
 		aml_nand_msg("driver_version in nand  %d.%02d.%03d.%04d ",
@@ -2670,7 +2708,7 @@ int amlnand_configs_confirm(struct amlnand_chip *aml_chip)
 
 	if (boot_device_flag == 1) {
 		tmp_num++;
-		device_num = PHY_DEV_NUM + 1;
+		device_num += 1;
 	}
 	ENV_NAND_LINE
 	//check device num
@@ -2680,33 +2718,53 @@ int amlnand_configs_confirm(struct amlnand_chip *aml_chip)
 		confirm_flag = 1;
 	}
 	ENV_NAND_LINE
-	for (i=0;tmp_num < device_num;tmp_num++,i++) {
+	for (i=0; tmp_num < device_num; tmp_num++, i++) {
 		ENV_NAND_LINE
 		dev_para_cmp = &(aml_chip->config_ptr->dev_para[tmp_num]);
 		if (i == 0) {
-			ret = confirm_dev_para(dev_para_cmp,configs_init,STORE_CACHE);
+			if (aml_chip->h_cache_dev)
+				ret = confirm_dev_para(dev_para_cmp,
+					configs_init, STORE_CACHE);
+			else
+				ret = confirm_dev_para(dev_para_cmp,
+					configs_init, STORE_CODE);
 			if (ret) {
 				confirm_flag = 1;
 				break;
 			}
-		}else if(i==1) {
-			ret = confirm_dev_para(dev_para_cmp,configs_init,STORE_CODE);
+		} else if (i == 1) {
+			if (aml_chip->h_cache_dev)
+				ret = confirm_dev_para(dev_para_cmp,
+					configs_init, STORE_CODE);
+			else
+				ret = confirm_dev_para(dev_para_cmp,
+					configs_init, STORE_DATA);
 			if (ret) {
 				confirm_flag = 1;
 				break;
 			}
-		}else if(i==2) {
-			ret = confirm_dev_para(dev_para_cmp,configs_init,STORE_DATA);
-			if (ret) {
+		} else if (i == 2) {
+			if (aml_chip->h_cache_dev) {
+				ret = confirm_dev_para(dev_para_cmp,
+					configs_init, STORE_DATA);
+				if (ret) {
+					confirm_flag = 1;
+					break;
+				}
+			} else {
+				aml_nand_msg("%s %d: something wrong here!!",
+					__func__, __LINE__);
 				confirm_flag = 1;
 				break;
 			}
-		}else {
-			aml_nand_msg("%s: something wrong %d!!", __func__, __LINE__);
+		} else {
+			aml_nand_msg("%s %d: something wrong here!!",
+					__func__, __LINE__);
 			confirm_flag = 1;
 			break;
 		}
 	}
+
 	ENV_NAND_LINE
 	if (confirm_flag == 0) {
 		aml_nand_dbg("nand configs confirm all right");
@@ -3591,7 +3649,7 @@ int  shipped_bbt_invalid_ops(struct amlnand_chip *aml_chip)
 	} else {
 	/* normal boot or upgrade, no need to erase the whole chip! */
 	/* init key info here!*/
-		ret = amlnand_info_init(aml_chip, (unsigned char *)&(aml_chip->nand_key),buf,(unsigned char *)KEY_INFO_HEAD_MAGIC, CONFIG_KEYSIZE);
+		ret = amlnand_info_init(aml_chip, (unsigned char *)&(aml_chip->nand_key),buf,(unsigned char *)KEY_INFO_HEAD_MAGIC, aml_chip->keysize);
 		if (ret < 0) {
 			aml_nand_msg("invalid nand key\n");
 			goto exit_error0;
@@ -3669,7 +3727,7 @@ int  shipped_bbt_invalid_ops(struct amlnand_chip *aml_chip)
 	}
 #else
 
-	ret = amlnand_info_init(aml_chip, (unsigned char *)&(aml_chip->nand_key),buf,(unsigned char *)KEY_INFO_HEAD_MAGIC, CONFIG_KEYSIZE);
+	ret = amlnand_info_init(aml_chip, (unsigned char *)&(aml_chip->nand_key),buf,(unsigned char *)KEY_INFO_HEAD_MAGIC, aml_chip->keysize);
 	if (ret < 0) {
 	aml_nand_msg("invalid nand key\n");
 	goto exit_error0;
@@ -3970,6 +4028,18 @@ int amlnand_get_dev_configs(struct amlnand_chip *aml_chip)
 	struct nand_flash *flash = &aml_chip->flash;
 	struct read_retry_info *retry_info = &(controller->retry_info);
 	int  ret = 0;
+
+	if (flash->blocksize < 0x40000) {
+		aml_chip->keysize = flash->blocksize;
+		aml_chip->dtbsize = flash->blocksize;
+	} else {
+		/*
+		fix size key/dtb!!!
+		max key/dtb size is 256KB
+		*/
+		aml_chip->keysize = 0x40000;
+		aml_chip->dtbsize = 0x40000;
+	}
 
 	/* 1. setting config attribute.*/
 	ENV_NAND_LINE;

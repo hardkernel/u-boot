@@ -1735,10 +1735,12 @@ int mmc_set_rst_n_function(struct mmc *mmc, u8 enable)
 }
 #endif
 
-int mmc_key_read(unsigned char *buf, unsigned int size)
+int mmc_key_read(unsigned char *buf, unsigned int size, uint32_t *actual_lenth)
 {
 	ulong start, start_blk, blkcnt, ret;
 	unsigned char *temp_buf = buf;
+
+	*actual_lenth =  0x40000;/*key size is 256KB*/
 	start = EMMCKEY_RESERVE_OFFSET + MMC_RESERVED_OFFSET;
 	start_blk = (start / MMC_BLOCK_SIZE);
 	blkcnt = (size / MMC_BLOCK_SIZE);
@@ -1755,7 +1757,7 @@ int mmc_key_read(unsigned char *buf, unsigned int size)
 
 extern ulong mmc_bwrite(int dev_num, lbaint_t start,
 				lbaint_t blkcnt, const void *src);
-int mmc_key_write(unsigned char *buf, unsigned int size)
+int mmc_key_write(unsigned char *buf, unsigned int size, uint32_t *actual_lenth)
 {
 	ulong start, start_blk, blkcnt, ret;
 	unsigned char * temp_buf = buf;

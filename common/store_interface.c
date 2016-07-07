@@ -20,12 +20,14 @@
 
 #if defined(CONFIG_AML_NAND)
 extern int amlnf_init(unsigned flag);
-extern int amlnf_key_write(u8 *buf, int len);
-extern int amlnf_key_read(u8 * buf, int len);
+extern int amlnf_key_write(u8 *buf, int len, uint32_t *actual_lenth);
+extern int amlnf_key_read(u8 * buf, int len, uint32_t *actual_lenth);
 #endif
 extern int get_partition_from_dts(unsigned char * buffer);
-extern int mmc_key_read(unsigned char *buf, unsigned int size);
-extern int mmc_key_write(unsigned char *buf, unsigned int size);
+extern int mmc_key_read(unsigned char *buf,
+		unsigned int size, uint32_t *actual_lenth);
+extern int mmc_key_write(unsigned char *buf,
+		unsigned int size, uint32_t *actual_lenth);
 extern int mmc_key_erase(void);
 extern int find_dev_num_by_partition_name (char *name);
 extern unsigned emmc_cur_partition;
@@ -298,7 +300,7 @@ static int do_store_key_ops(cmd_tbl_t * cmdtp, int flag, int argc, char * const 
 	return ret;
 }
 
-int store_key_read(uint8_t * buffer,  uint32_t length)
+int store_key_read(uint8_t * buffer, uint32_t length, uint32_t *actual_lenth)
 {
 	int ret = 0;
 	switch (device_boot_flag)
@@ -306,12 +308,12 @@ int store_key_read(uint8_t * buffer,  uint32_t length)
 #if defined(CONFIG_AML_NAND)
 		case NAND_BOOT_FLAG:
 		case SPI_NAND_FLAG:
-		ret = amlnf_key_read(buffer, (int) length);
+		ret = amlnf_key_read(buffer, (int) length, actual_lenth);
 		break;
 #endif
 		case EMMC_BOOT_FLAG:
 		case SPI_EMMC_FLAG:
-		ret = mmc_key_read(buffer, (int) length);
+		ret = mmc_key_read(buffer, (int) length, actual_lenth);
 		break;
 		default:
 		ErrP("device_boot_flag=0x%x err\n", device_boot_flag);
@@ -320,20 +322,21 @@ int store_key_read(uint8_t * buffer,  uint32_t length)
 	return ret;
 }
 
-int store_key_write(uint8_t * buffer, uint32_t length)
+int store_key_write(uint8_t * buffer, uint32_t length, uint32_t *actual_lenth)
 {
 	int ret = 0;
+
 	switch (device_boot_flag)
 	{
 #if defined(CONFIG_AML_NAND)
 		case NAND_BOOT_FLAG:
 		case SPI_NAND_FLAG:
-		ret = amlnf_key_write(buffer, (int) length);
+		ret = amlnf_key_write(buffer, (int) length,  actual_lenth);
 		break;
 #endif
 		case EMMC_BOOT_FLAG:
 		case SPI_EMMC_FLAG:
-		ret = mmc_key_write(buffer, (int) length);
+		ret = mmc_key_write(buffer, (int) length, actual_lenth);
 		break;
 		default:
 		ErrP("device_boot_flag=0x%x err\n", device_boot_flag);

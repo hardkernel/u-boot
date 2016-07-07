@@ -6,37 +6,46 @@ static struct amlnand_chip *aml_chip_key = NULL;
 /*
  * This funcion reads the u-boot keys.
  */
-int amlnf_key_read(u8 * buf, int len)
+int amlnf_key_read(u8 * buf, int len, uint32_t *actual_lenth)
 {
 	struct amlnand_chip * aml_chip = aml_chip_key;
 	struct nand_menson_key *key_ptr = NULL;
+	u32 keysize = aml_chip->keysize - sizeof(u32);
 	int error = 0;
+
+	*actual_lenth = keysize;
 
 	if (aml_chip == NULL) {
 		printk("%s(): amlnf key not ready yet!", __func__);
 		return -EFAULT;
 	}
 
-	if (len > CONFIG_KEYSIZE) {
+	if (len > keysize) {
+		/*
+		No return here! keep consistent, should memset zero
+		for the rest.
+		*/
 		printk("%s key data len too much\n",__func__);
-		return -EFAULT;
+		memset(buf + keysize, 0 , len - keysize);
+		//return -EFAULT;
 	}
-	key_ptr = kzalloc(CONFIG_KEYSIZE, GFP_KERNEL);
+
+	key_ptr = kzalloc(aml_chip->keysize, GFP_KERNEL);
 	if (key_ptr == NULL)
 		return -ENOMEM;
-	memset(key_ptr, 0, CONFIG_KEYSIZE);
 
 	error = amlnand_read_info_by_name(aml_chip,
 		(u8 *)&(aml_chip->nand_key),
 		(u8 *)key_ptr,
 		(u8*)KEY_INFO_HEAD_MAGIC,
-		CONFIG_KEYSIZE);
+		aml_chip->keysize);
 	if (error) {
 		printk("%s: read key error\n",__func__);
 		error = -EFAULT;
 		goto exit;
 	}
-	memcpy(buf, key_ptr->data, len);
+
+	memcpy(buf, key_ptr->data, keysize);
 
 exit:
 	kfree(key_ptr);
@@ -46,10 +55,11 @@ exit:
 /*
  * This funcion write the keys.
  */
-int amlnf_key_write(u8 *buf, int len)
+int amlnf_key_write(u8 *buf, int len, uint32_t *actual_lenth)
 {
 	struct amlnand_chip * aml_chip = aml_chip_key;
 	struct nand_menson_key *key_ptr = NULL;
+	u32 keysize = aml_chip->keysize - sizeof(u32);
 	int error = 0;
 
 	if (aml_chip == NULL) {
@@ -57,21 +67,27 @@ int amlnf_key_write(u8 *buf, int len)
 		return -EFAULT;
 	}
 
-	if (len > CONFIG_KEYSIZE) {
+	if (len > keysize) {
+		/*
+		No return here! keep consistent, should memset zero
+		for the rest.
+		*/
 		printk("key data len too much,%s\n",__func__);
-		return -EFAULT;
+		memset(buf + keysize, 0 , len - keysize);
+		//return -EFAULT;
 	}
-	key_ptr = kzalloc(CONFIG_KEYSIZE, GFP_KERNEL);
+
+	key_ptr = kzalloc(aml_chip->keysize, GFP_KERNEL);
 	if (key_ptr == NULL)
 		return -ENOMEM;
-	memset(key_ptr,0,CONFIG_KEYSIZE);
-	memcpy(key_ptr->data + 0, buf, len);
+
+	memcpy(key_ptr->data + 0, buf, keysize);
 
 	error = amlnand_save_info_by_name(aml_chip,
 		(u8 *)&(aml_chip->nand_key),
 		(u8 *)key_ptr,
 		(u8 *)KEY_INFO_HEAD_MAGIC,
-		CONFIG_KEYSIZE);
+		aml_chip->keysize);
 	if (error) {
 		printk("save key error,%s\n",__func__);
 		error = -EFAULT;
@@ -108,19 +124,19 @@ int aml_key_init(struct amlnand_chip *aml_chip)
 	/* avoid null */
 	aml_chip_key = aml_chip;
 
-	key_ptr = aml_nand_malloc(CONFIG_KEYSIZE);
+	key_ptr = aml_nand_malloc(aml_chip->keysize);
 	if (key_ptr == NULL) {
 		printk("nand malloc for key_ptr failed");
 		ret = -1;
 		goto exit_error0;
 	}
-	memset(key_ptr, 0x0, CONFIG_KEYSIZE);
+	memset(key_ptr, 0x0, aml_chip->keysize);
 	printk("%s probe.\n", __func__);
 
 	ret = amlnand_info_init(aml_chip,
 		(u8 *)&(aml_chip->nand_key),
 		(u8 *)key_ptr,(u8 *)KEY_INFO_HEAD_MAGIC,
-		CONFIG_KEYSIZE);
+		aml_chip->keysize);
 	if (ret < 0) {
 		printk("invalid nand key\n");
 	}
@@ -140,17 +156,16 @@ int aml_nand_update_key(struct amlnand_chip * aml_chip, char *key_ptr)
 	char *key_buf = NULL;
 
 	if (key_buf == NULL) {
-
-		key_buf = kzalloc(CONFIG_KEYSIZE, GFP_KERNEL);
+		key_buf = kzalloc(aml_chip->keysize, GFP_KERNEL);
 		malloc_flag = 1;
 		if (key_buf == NULL)
 			return -ENOMEM;
-		memset(key_buf,0,CONFIG_KEYSIZE);
+		memset(key_buf, 0, aml_chip->keysize);
 		ret = amlnand_read_info_by_name(aml_chip,
 			(u8 *)&(aml_chip->nand_key),
 			(u8 *)key_buf,
 			(u8 *)KEY_INFO_HEAD_MAGIC,
-			CONFIG_KEYSIZE);
+			aml_chip->keysize);
 		if (ret) {
 			printk("%s: read key error\n", __func__);
 			ret = -EFAULT;
@@ -169,7 +184,7 @@ int aml_nand_update_key(struct amlnand_chip * aml_chip, char *key_ptr)
 		(u8 *)&(aml_chip->nand_key),
 		(u8 *)key_buf,
 		(u8 *)KEY_INFO_HEAD_MAGIC,
-		CONFIG_KEYSIZE);
+		aml_chip->keysize);
 	if (ret < 0) {
 		printk("%s : save key info failed\n", __func__);
 	}

@@ -243,6 +243,9 @@ static ssize_t nand_part_table_get(struct class *class,
 	struct dev_para *dev_paramt = NULL;
 	struct partitions *part_table = NULL;
 	int i = 0, j = 0, k = 0, m = 0, tmp_num = 0;
+	int device_num;
+
+	device_num = (aml_chip->h_cache_dev)? 3 : 2;
 
 	list_for_each_entry(phydev, &nphy_dev_list, list) {
 		if ((phydev != NULL)
@@ -267,7 +270,7 @@ static ssize_t nand_part_table_get(struct class *class,
 		tmp_num = i;
 	}
 
-	for (; i < PHY_DEV_NUM+1; i++) {
+	for (; i < device_num + 1; i++) {
 		dev_paramt = &config->dev_para[i];
 		if ((!strncmp((char *)dev_paramt->name,
 				NAND_CODE_NAME,
@@ -296,7 +299,7 @@ static ssize_t nand_part_table_get(struct class *class,
 	}
 
 	i = tmp_num;
-	for (; i < PHY_DEV_NUM+1; i++) {
+	for (; i < device_num + 1; i++) {
 		dev_paramt = &config->dev_para[i];
 		/*
 		aml_nand_msg("cache : dev_paramt name %s ",dev_paramt->name);
@@ -329,7 +332,7 @@ static ssize_t nand_part_table_get(struct class *class,
 	}
 
 	i = tmp_num;
-	for (; i < PHY_DEV_NUM+1; i++) {
+	for (; i < device_num + 1; i++) {
 		dev_paramt = &config->dev_para[i];
 		/*
 		aml_nand_msg("dev_paramt name %s ",dev_paramt->name);

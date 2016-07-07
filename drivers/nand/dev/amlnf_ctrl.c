@@ -583,12 +583,7 @@ int aml_sys_info_init(struct amlnand_chip *aml_chip)
 	u32 buf_size = 0;
 	int ret = 0;
 
-	NAND_LINE
-	if (CONFIG_SECURE_SIZE > CONFIG_KEYSIZE)
-		buf_size = CONFIG_SECURE_SIZE;
-	else
-		buf_size = CONFIG_KEYSIZE;
-	NAND_LINE
+	buf_size = 0x40000; /*rsv item max size is 256KB*/
 	buf = aml_nand_malloc(buf_size);
 	if (!buf)
 		aml_nand_msg("aml_sys_info_init : malloc failed");
@@ -645,7 +640,7 @@ int aml_sys_info_init(struct amlnand_chip *aml_chip)
 			(u8 *)(&(aml_chip->nand_key)),
 			buf,
 			(u8 *)KEY_INFO_HEAD_MAGIC,
-			CONFIG_KEYSIZE);
+			aml_chip->keysize);
 		NAND_LINE
 		if (ret < 0) {
 			aml_nand_msg("nand save default key failed");

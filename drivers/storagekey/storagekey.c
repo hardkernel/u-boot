@@ -63,7 +63,7 @@ static struct storagekey_info_t storagekey_info = {
 int32_t amlkey_init(uint8_t *seed, uint32_t len)
 {
 	int32_t ret = 0;
-	uint32_t buffer_size;
+	uint32_t buffer_size, actual_size;
 
 	/* do nothing for now*/
 	printf("%s() enter!\n", __func__);
@@ -76,26 +76,31 @@ int32_t amlkey_init(uint8_t *seed, uint32_t len)
 	storagekey_info.buffer = secure_storage_getbuffer(&buffer_size);
 	if (storagekey_info.buffer == NULL) {
 		printf("%s() %d: can't get buffer from bl31!\n",
-				__func__, __LINE__);
+			__func__, __LINE__);
 		ret = -1;
 		goto _out;
 	}
-	if (buffer_size != storagekey_info.size) {
-		printf("%s() %d: warnning! %d/%d\n",
-			__func__, __LINE__, buffer_size, storagekey_info.size);
-		/* using innor size!*/
-		storagekey_info.size = buffer_size;
-	}
 
 	/* full fill key infos from storage. */
-	ret = store_key_read(storagekey_info.buffer,  storagekey_info.size);
+	ret = store_key_read(storagekey_info.buffer,
+		storagekey_info.size,
+		&actual_size);
 	if (ret) {
 		/* memset head info for bl31 */
 		memset(storagekey_info.buffer, 0, SECUESTORAGE_HEAD_SIZE);
 		ret = 0;
 		goto _out;
 	}
-	secure_storage_notifier();
+
+	storagekey_info.size = actual_size;
+	secure_storage_notifier_ex(actual_size, 0);
+
+	storagekey_info.buffer = secure_storage_getbuffer(&buffer_size);
+	if (buffer_size != actual_size) {
+		ret = -1;
+		goto _out;
+	}
+
 #ifdef CONFIG_STORE_COMPATIBLE
 	info_disprotect &= ~DISPROTECT_KEY;  //protect
 #endif
@@ -221,6 +226,7 @@ ssize_t amlkey_write(const uint8_t *name, uint8_t *buffer, uint32_t len, uint32_
 {
 	int32_t ret = 0;
 	ssize_t retval = 0;
+	uint32_t actual_size;
 
 	if ( NULL == name ) {
 		printf("%s() %d, invalid key ", __func__, __LINE__);
@@ -235,9 +241,12 @@ ssize_t amlkey_write(const uint8_t *name, uint8_t *buffer, uint32_t len, uint32_
 		retval = (ssize_t)len;
 		/* write down! */
 		if (storagekey_info.buffer != NULL) {
-			ret = store_key_write(storagekey_info.buffer, storagekey_info.size);
+			ret = store_key_write(storagekey_info.buffer,
+				storagekey_info.size,
+				&actual_size);
 			if (ret) {
-				printf("%s() %d, store_key_write fail\n", __func__, __LINE__);
+				printf("%s() %d, store_key_write fail\n",
+					__func__, __LINE__);
 				retval = 0;
 			}
 		}
@@ -265,16 +274,21 @@ int32_t amlkey_hash_4_secure(const uint8_t * name, uint8_t * hash)
 int32_t amlkey_del(const uint8_t * name)
 {
 	int32_t ret = 0;
+	uint32_t actual_size;
 
 	ret = secure_storage_remove((uint8_t *)name);
 	if ((ret == 0) && (storagekey_info.buffer != NULL)) {
 		/* flush back */
-		ret = store_key_write(storagekey_info.buffer, storagekey_info.size);
+		ret = store_key_write(storagekey_info.buffer,
+			storagekey_info.size,
+			&actual_size);
 		if (ret) {
-			printf("%s() %d, store_key_write fail\n", __func__, __LINE__);
+			printf("%s() %d, store_key_write fail\n",
+				__func__, __LINE__);
 		}
 	} else {
-		printf("%s() %d, remove key fail\n", __func__, __LINE__);
+		printf("%s() %d, remove key fail\n",
+			__func__, __LINE__);
 	}
 
 	return ret;

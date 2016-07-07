@@ -28,24 +28,25 @@ int amlnf_dtb_save(u8 *buf, int len)
 		return -EFAULT;
 	}
 
-	if (len > CONFIG_DTB_SIZE) {
-		aml_nand_msg("%s: length too much", __func__);
-		return -EFAULT;
+	if (len > aml_chip_dtb->dtbsize) {
+		aml_nand_msg("warnning!!! %s: length too much", __func__);
+		len = aml_chip_dtb->dtbsize;
+		/*return -EFAULT;*/
 	}
-	dtb_buf = aml_nand_malloc(CONFIG_DTB_SIZE);
+	dtb_buf = aml_nand_malloc(aml_chip_dtb->dtbsize);
 	if (dtb_buf == NULL) {
 		aml_nand_msg("%s: malloc failed", __func__);
 		ret = -1;
 		goto exit_err;
 	}
-	memset(dtb_buf, 0, CONFIG_DTB_SIZE);
+	memset(dtb_buf, 0, aml_chip_dtb->dtbsize);
 	memcpy(dtb_buf, buf, len);
 
 	ret = amlnand_save_info_by_name(aml_chip_dtb,
 		(u8 *)&(aml_chip_dtb->amlnf_dtb),
 		dtb_buf,
 		(u8 *)DTD_INFO_HEAD_MAGIC,
-		CONFIG_DTB_SIZE);
+		aml_chip_dtb->dtbsize);
 	if (ret) {
 		aml_nand_msg("%s: nand dtd save failed", __func__);
 		ret = -EFAULT;
@@ -84,9 +85,10 @@ int amlnf_dtb_read(u8 *buf, int len)
 
 	aml_nand_msg("%s: ####", __func__);
 
-	if (len > CONFIG_DTB_SIZE) {
-		aml_nand_msg("%s dtd length too much", __func__);
-		return -EFAULT;
+	if (len > aml_chip_dtb->dtbsize) {
+		aml_nand_msg("warnning!!! %s dtd length too much", __func__);
+		len = aml_chip_dtb->dtbsize;
+		/*return -EFAULT;*/
 	}
 	if (aml_chip_dtb == NULL) {
 		memset(buf, 0x0, len);
@@ -100,19 +102,19 @@ int amlnf_dtb_read(u8 *buf, int len)
 		return 0;
 	}
 
-	dtb_buf = aml_nand_malloc(CONFIG_DTB_SIZE);
+	dtb_buf = aml_nand_malloc(aml_chip_dtb->dtbsize);
 	if (dtb_buf == NULL) {
 		aml_nand_msg("%s: malloc failed", __func__);
 		ret = -1;
 		goto exit_err;
 	}
-	memset(dtb_buf, 0, CONFIG_DTB_SIZE);
+	memset(dtb_buf, 0, aml_chip_dtb->dtbsize);
 
 	ret = amlnand_read_info_by_name(aml_chip_dtb,
 		(u8 *)&(aml_chip_dtb->amlnf_dtb),
 		(u8 *)dtb_buf,
 		(u8 *)DTD_INFO_HEAD_MAGIC,
-		CONFIG_DTB_SIZE);
+		aml_chip_dtb->dtbsize);
 	if (ret) {
 		aml_nand_msg("dtb error,%s", __func__);
 		ret = -EFAULT;
@@ -146,20 +148,20 @@ ssize_t dtb_store(struct class *class, struct class_attribute *attr,
 	u8 *dtb_ptr = NULL;
 	aml_nand_dbg("dtb_store : #####");
 
-	dtb_ptr = kzalloc(CONFIG_DTB_SIZE, GFP_KERNEL);
+	dtb_ptr = kzalloc(aml_chip_dtb->dtbsize, GFP_KERNEL);
 	if (dtb_ptr == NULL) {
 		aml_nand_msg("%s: malloc buf failed ", __func__);
 		return -ENOMEM;
 	}
 	/* fixme, why read back then write? */
-	ret = amlnf_dtb_read(dtb_ptr, CONFIG_DTB_SIZE);
+	ret = amlnf_dtb_read(dtb_ptr, aml_chip_dtb->dtbsize);
 	if (ret) {
 		aml_nand_msg("%s: read failed", __func__);
 		kfree(dtb_ptr);
 		return -EFAULT;
 	}
 
-	ret = amlnf_dtb_save(dtb_ptr, CONFIG_DTB_SIZE);
+	ret = amlnf_dtb_save(dtb_ptr, aml_chip_dtb->dtbsize);
 	if (ret) {
 		aml_nand_msg("%s: save failed", __func__);
 		kfree(dtb_ptr);
@@ -187,31 +189,30 @@ ssize_t dtb_read(struct file *file,
 	ssize_t read_size = 0;
 	int ret = 0;
 
-	if (*ppos == CONFIG_DTB_SIZE)
+	if (*ppos == aml_chip_dtb->dtbsize)
 		return 0;
 
-	if (*ppos >= CONFIG_DTB_SIZE) {
+	if (*ppos >= aml_chip_dtb->dtbsize) {
 		aml_nand_msg("%s:data access out of space!", __func__);
 		return -EFAULT;
 	}
 
-	/* dtb_ptr = kzalloc(CONFIG_DTB_SIZE, GFP_KERNEL); */
-	dtb_ptr = vmalloc(CONFIG_DTB_SIZE + flash->pagesize);
+	dtb_ptr = vmalloc(aml_chip_dtb->dtbsize + flash->pagesize);
 	if (dtb_ptr == NULL) {
 		aml_nand_msg("%s: malloc buf failed ", __func__);
 		return -ENOMEM;
 	}
 
 	amlnand_get_device(aml_chip_dtb, CHIP_READING);
-	ret = amlnf_dtb_read((u8 *)dtb_ptr, CONFIG_DTB_SIZE);
+	ret = amlnf_dtb_read((u8 *)dtb_ptr, aml_chip_dtb->dtbsize);
 	if (ret) {
 		aml_nand_msg("%s: read failed:%d", __func__, ret);
 		ret = -EFAULT;
 		goto exit;
 	}
 
-	if ((*ppos + count) > CONFIG_DTB_SIZE)
-		read_size = CONFIG_DTB_SIZE - *ppos;
+	if ((*ppos + count) > aml_chip_dtb->dtbsize)
+		read_size = aml_chip_dtb->dtbsize - *ppos;
 	else
 		read_size = count;
 
@@ -233,37 +234,36 @@ ssize_t dtb_write(struct file *file,
 	struct nand_flash *flash = &aml_chip_dtb->flash;
 	int ret = 0;
 
-	if (*ppos == CONFIG_DTB_SIZE)
+	if (*ppos == aml_chip_dtb->dtbsize)
 		return 0;
 
-	if (*ppos >= CONFIG_DTB_SIZE) {
+	if (*ppos >= aml_chip_dtb->dtbsize) {
 		aml_nand_msg("%s: data access out of space!", __func__);
 		return -EFAULT;
 	}
 
-	/* dtb_ptr = kzalloc(CONFIG_DTB_SIZE, GFP_KERNEL); */
-	dtb_ptr = vmalloc(CONFIG_DTB_SIZE + flash->pagesize);
+	dtb_ptr = vmalloc(aml_chip_dtb->dtbsize + flash->pagesize);
 	if (dtb_ptr == NULL) {
 		aml_nand_msg("%s: malloc buf failed ", __func__);
 		return -ENOMEM;
 	}
 	amlnand_get_device(aml_chip_dtb, CHIP_WRITING);
 
-	ret = amlnf_dtb_read((u8 *)dtb_ptr, CONFIG_DTB_SIZE);
+	ret = amlnf_dtb_read((u8 *)dtb_ptr, aml_chip_dtb->dtbsize);
 	if (ret) {
 		aml_nand_msg("%s: read failed", __func__);
 		ret = -EFAULT;
 		goto exit;
 	}
 
-	if ((*ppos + count) > CONFIG_DTB_SIZE)
-		write_size = CONFIG_DTB_SIZE - *ppos;
+	if ((*ppos + count) > aml_chip_dtb->dtbsize)
+		write_size = aml_chip_dtb->dtbsize - *ppos;
 	else
 		write_size = count;
 
 	ret = copy_from_user((dtb_ptr + *ppos), buf, write_size);
 
-	ret = amlnf_dtb_save(dtb_ptr, CONFIG_DTB_SIZE);
+	ret = amlnf_dtb_save(dtb_ptr, aml_chip_dtb->dtbsize);
 	if (ret) {
 		aml_nand_msg("%s: read failed", __func__);
 		ret = -EFAULT;
@@ -297,32 +297,25 @@ int amlnf_dtb_init(struct amlnand_chip *aml_chip)
 	u8 *dtb_buf = NULL;
 	aml_chip_dtb = aml_chip;
 
-	dtb_buf = aml_nand_malloc(CONFIG_DTB_SIZE);
+	dtb_buf = aml_nand_malloc(aml_chip_dtb->dtbsize);
 	if (dtb_buf == NULL) {
 		aml_nand_msg("nand malloc for dtb_buf failed");
 		ret = -1;
 		goto exit_err;
 	}
-	memset(dtb_buf, 0x0, CONFIG_DTB_SIZE);
+	memset(dtb_buf, 0x0, aml_chip_dtb->dtbsize);
 	aml_nand_msg("nand dtb: probe.");
 	ret = amlnand_info_init(aml_chip,
 		(u8 *)&(aml_chip->amlnf_dtb),
 		dtb_buf,
 		(u8 *)DTD_INFO_HEAD_MAGIC,
-		CONFIG_DTB_SIZE);
+		aml_chip_dtb->dtbsize);
 	if (ret < 0) {
 		aml_nand_msg("%s failed", __func__);
 		ret = -1;
 		goto exit_err;
 	}
 
-	/*if(aml_chip->amlnf_dtb.arg_valid == 0){
-		memset(dtb_buf,0x0,CONFIG_DTB_SIZE);
-		ret = amlnf_dtb_save(dtb_buf,CONFIG_DTB_SIZE);
-		if (ret) {
-			aml_nand_msg("amlnf_dtb_save: save env failed");
-		}
-	}*/
 #ifndef AML_NAND_UBOOT
 	aml_nand_dbg("%s: register dtb cdev", __func__);
 	ret = alloc_chrdev_region(&amlnf_dtb_no, 0, 1, DTB_NAME);
@@ -396,19 +389,19 @@ int amlnf_dtb_init_partitions(struct amlnand_chip *aml_chip)
 	u8 *dtb_buf = NULL;
 	aml_chip_dtb = aml_chip;
 
-	dtb_buf = aml_nand_malloc(CONFIG_DTB_SIZE);
+	dtb_buf = aml_nand_malloc(aml_chip_dtb->dtbsize);
 	if (dtb_buf == NULL) {
 		aml_nand_msg("nand malloc for dtb_buf failed");
 		ret = -1;
 		goto exit_err;
 	}
-	memset(dtb_buf, 0x0, CONFIG_DTB_SIZE);
+	memset(dtb_buf, 0x0, aml_chip_dtb->dtbsize);
 	aml_nand_msg("%s: probe. ", __func__);
 	ret = amlnand_info_init(aml_chip,
 		(u8 *)&(aml_chip->amlnf_dtb),
 		dtb_buf,
 		(u8 *)DTD_INFO_HEAD_MAGIC,
-		CONFIG_DTB_SIZE);
+		aml_chip_dtb->dtbsize);
 	if (ret < 0) {
 		aml_nand_msg("%s failed", __func__);
 		ret = -1;
@@ -452,19 +445,19 @@ int amlnf_detect_dtb_partitions(struct amlnand_chip *aml_chip)
 	struct nand_arg_info test_amlnf_dtb;
 	memset(&test_amlnf_dtb, 0, sizeof(test_amlnf_dtb));
 	dtb_erase_blk = -1;
-	dtb_buf = aml_nand_malloc(CONFIG_DTB_SIZE);
+	dtb_buf = aml_nand_malloc(aml_chip_dtb->dtbsize);
 	if (dtb_buf == NULL) {
 		aml_nand_msg("nand malloc for dtb_buf failed");
 		ret = -1;
 		goto exit_err;
 	}
-	memset(dtb_buf, 0x0, CONFIG_DTB_SIZE);
+	memset(dtb_buf, 0x0, aml_chip_dtb->dtbsize);
 	test_amlnf_dtb.arg_type = aml_chip->amlnf_dtb.arg_type;
 	ret = amlnand_info_init(aml_chip,
 		(u8 *)&(test_amlnf_dtb),
 		dtb_buf,
 		(u8 *)DTD_INFO_HEAD_MAGIC,
-		CONFIG_DTB_SIZE);
+		aml_chip_dtb->dtbsize);
 	if (test_amlnf_dtb.arg_valid == 1) {
 		dtb_erase_blk = test_amlnf_dtb.valid_blk_addr;
 	}
@@ -485,16 +478,16 @@ int aml_nand_update_dtb(struct amlnand_chip *aml_chip, char *dtb_ptr)
 	char *dtb_buf = NULL;
 
 	if (dtb_buf == NULL) {
-		dtb_buf = kzalloc(CONFIG_DTB_SIZE, GFP_KERNEL);
+		dtb_buf = kzalloc(aml_chip_dtb->dtbsize, GFP_KERNEL);
 		malloc_flag = 1;
 		if (dtb_buf == NULL)
 			return -ENOMEM;
-		memset(dtb_buf, 0, CONFIG_DTB_SIZE);
+		memset(dtb_buf, 0, aml_chip_dtb->dtbsize);
 		ret = amlnand_read_info_by_name(aml_chip,
 			(u8 *)&(aml_chip->amlnf_dtb),
 			(u8 *)dtb_buf,
 			(u8 *)DTD_INFO_HEAD_MAGIC,
-			CONFIG_DTB_SIZE);
+			aml_chip_dtb->dtbsize);
 		if (ret) {
 			aml_nand_msg("read dtb error,%s\n", __func__);
 			ret = -EFAULT;
@@ -507,7 +500,7 @@ int aml_nand_update_dtb(struct amlnand_chip *aml_chip, char *dtb_ptr)
 		(u8 *)&(aml_chip->amlnf_dtb),
 		(u8 *)dtb_buf,
 		(u8 *)DTD_INFO_HEAD_MAGIC,
-		CONFIG_DTB_SIZE);
+		aml_chip_dtb->dtbsize);
 	if (ret < 0)
 		aml_nand_msg("%s: update failed", __func__);
 exit:

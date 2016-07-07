@@ -187,12 +187,17 @@ int amlnand_get_partition_table(struct amlnand_chip *aml_chip)
 	/* show_partition_table(); */
 	//memcpy(amlnand_config, part_table, config_size);
 	/* do not use memcpy avoid further change */
+	aml_chip->h_cache_dev = 0;
 	for (i = 0; i < MAX_PART_NUM; i++) {
 		memcpy(amlnand_config[i].name, part_table[i].name, MAX_PART_NAME_LEN);
 		amlnand_config[i].size = part_table[i].size;
 		amlnand_config[i].offset = part_table[i].offset;
 		amlnand_config[i].mask_flags = part_table[i].mask_flags;
 
+		if (amlnand_config[i].mask_flags == STORE_CACHE) {
+			aml_chip->h_cache_dev = 1;/*have cache dev*/
+			aml_nand_msg("cache !!!");
+		}
 		if (part_table[i].size == NAND_PART_SIZE_FULL)
 			break;
 	}
