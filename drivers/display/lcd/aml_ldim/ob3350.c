@@ -70,6 +70,9 @@ static int ob3350_smr(unsigned short *buf, unsigned char len)
 	struct aml_ldim_driver_s *ldim_drv = aml_ldim_get_driver();
 	unsigned short val;
 
+	val = ob3350_get_value(buf[0]);
+	ldim_drv->ldev_conf->pwm_config.pwm_duty = val;
+
 	if (ob3350_on_flag == 0) {
 		if (lcd_debug_print_flag)
 			LDIMPR("%s: on_flag=%d\n", __func__, ob3350_on_flag);
@@ -81,9 +84,6 @@ static int ob3350_smr(unsigned short *buf, unsigned char len)
 		return -1;
 	}
 
-	val = ob3350_get_value(buf[0]);
-
-	ldim_drv->ldev_conf->pwm_config.pwm_duty = val;
 	ldim_set_duty_pwm(&(ldim_drv->ldev_conf->pwm_config));
 
 	return 0;
@@ -93,6 +93,8 @@ static int ob3350_power_on(void)
 {
 	ob3350_hw_init_on();
 	ob3350_on_flag = 1;
+	/* init brightness level */
+	ldim_set_duty_pwm(&(ldim_drv->ldev_conf->pwm_config));
 
 	LDIMPR("%s: ok\n", __func__);
 	return 0;

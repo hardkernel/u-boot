@@ -191,7 +191,6 @@ static int ldim_pwm_pinmux_ctrl(int status)
 		LDIMPR("%s: %d\n", __func__, status);
 
 	if (status) {
-		ldim_set_duty_pwm(ld_pwm);
 		bl_pwm_ctrl(ld_pwm, 1);
 		/* set pinmux */
 		ld_pwm->pinmux_flag = 1;
