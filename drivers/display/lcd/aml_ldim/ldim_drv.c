@@ -25,6 +25,7 @@
 #include "../aml_lcd_common.h"
 #include "ldim_drv.h"
 
+#define LD_DATA_MIN           10
 #define LDIM_BRI_LEVEL_MAX    0xfff
 #define LDIM_BRI_LEVEL_MIN    0x7f
 static unsigned int ldim_blk_row = 1;
@@ -84,8 +85,9 @@ static int ldim_set_level(unsigned int level)
 	level_max = lcd_drv->bl_config->level_max;
 	level_min = lcd_drv->bl_config->level_min;
 
-	level = ((level - level_min) * LD_DATA_MAX) / (level_max - level_min);
-	level &= LD_DATA_MAX;
+	level = ((level - level_min) * (LD_DATA_MAX - LD_DATA_MIN)) /
+		(level_max - level_min) + LD_DATA_MIN;
+	level &= 0xfff;
 	ldim_brightness_update(level);
 
 	return ret;
