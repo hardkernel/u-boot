@@ -34,6 +34,7 @@ struct fbt_partition {
         unsigned size_kb;
 };
 
+#if !defined(CONFIG_ODROIDC_REV2)
 struct fbt_partition sys_partitions[] = {
         {
                 .name = "-SPL",         /* SPL */
@@ -98,6 +99,75 @@ struct fbt_partition fbt_partitions[] = {
                 .size_kb = 0
         },
 };
+#else
+struct fbt_partition sys_partitions[] = {
+        {
+                .name = "-SPL",         /* SPL */
+                .type = "raw",
+                .size_kb = 32
+        }, {
+                .name = "bootloader",
+                .type = "raw",
+                .size_kb = 684       /* SPL + BCB */
+        }, {
+                .name = "bcb",          /* Bootloader control block */
+                .type = "raw",
+                .size_kb = 4
+        }, {
+                .name = CONFIG_ENV_BLK_PARTITION,       /* "environment" */
+                .type = "raw",
+                .size_kb = CONFIG_ENV_SIZE / 1024
+        }, {
+                .name = "dtb",          /* Device Tree */
+                .type= "raw",
+                .size_kb = 64
+        }, {
+                .name = "boot",         /* Boot image */
+                .type = "boot",
+                .size_kb = 16 * 1024
+        }, {
+                .name = "recovery",     /* Recovery Image */
+                .type = "boot",
+                .size_kb = 12 * 1024
+        }, {
+                .name = "logo",         /* Logo */
+                .type = "raw",
+                .size_kb = 2 * 1024
+        }, {
+                .name = 0,
+                .type = 0,
+                .size_kb = 0
+        },
+};
+
+struct fbt_partition fbt_partitions[] = {
+	{
+                .name = "cache",	/* mmcblk0p3 */
+                .type = "ext4",
+                .size_kb = 512 * 1024
+        },
+        {
+                .name = "system",	/* mmcblk0p2 */
+                .type = "ext4",
+                .size_kb = 1024 * 1024
+        },
+	{
+                .name = "fat",		/* mmcblk0p1 */
+                .type = "vfat",
+                .size_kb = 128 * 1024,
+        },
+	{
+                .name = "userdata",	/* mmcblk0p4 */
+                .type = "ext4",
+                .size_kb = 0	/* remaining area */
+        },
+		{
+                .name = 0,
+                .type = 0,
+                .size_kb = 0
+        },
+};
+#endif /* CONFIG_ODROIDC_REV2 */
 
 static unsigned userptn_start_lba = 0;
 static unsigned userptn_end_lba = 0;
@@ -149,13 +219,21 @@ int board_find_partition(const char *name, unsigned *start, unsigned *bytes)
 
 int board_fbt_load_ptbl()
 {
+#if !defined(CONFIG_ODROIDC_REV2)
         char *android_name[] = {
                 "fat",
                 "system",
                 "userdata",
                 "cache",
         };
-
+#else
+        char *android_name[] = {
+                "fat",
+                "system",
+                "cache",
+                "userdata",
+        };
+#endif
         disk_partition_t ptn;
         int n;
         int res = -1;

@@ -225,6 +225,7 @@ void make_partitionInfo(int LBA_start, int count, SDInfo sdInfo, PartitionInfo *
         }
 }
 
+#if !defined(CONFIG_ODROIDC_REV2)
 /////////////////////////////////////////////////////////////////
 int make_mmc_partition(int total_block_count, unsigned char *mbr, int flag, char *argv[])
 {
@@ -296,6 +297,75 @@ int make_mmc_partition(int total_block_count, unsigned char *mbr, int flag, char
 
 	return 0;
 }
+#else /* CONFIG_ODROIDC_REV2 */
+int make_mmc_partition(int total_block_count, unsigned char *mbr, int flag, char *argv[])
+{
+	int		block_start = 0, block_offset;
+
+	SDInfo		sdInfo;
+	PartitionInfo	partInfo[4];
+
+	memset((unsigned char *)&sdInfo, 0x00, sizeof(SDInfo));
+
+	get_SDInfo(total_block_count, &sdInfo);
+
+	/* 1st Partition : cache (mmcblk0p3)  */
+	block_start = calc_unit(CFG_PARTITION_START, sdInfo);
+	if (flag)
+		block_offset = calc_unit((unsigned long long)simple_strtoul(argv[3], NULL, 0)*1024*1024, sdInfo);
+	else
+		block_offset = calc_unit((unsigned long long)BOARD_CACHEIMAGE_PARTITION_SIZE * _MB_, sdInfo);
+
+	partInfo[0].bootable	= 0x00;
+	partInfo[0].partitionId	= 0x83;
+
+	make_partitionInfo(block_start, block_offset, sdInfo, &partInfo[0]);
+
+	/* 2nd Partition : system (mmcblk0p2)  */
+	block_start += block_offset;
+	if (flag)
+		block_offset = calc_unit((unsigned long long)simple_strtoul(argv[4], NULL, 0)*1024*1024, sdInfo);
+	else
+		block_offset = calc_unit((unsigned long long)BOARD_SYSTEMIMAGE_PARTITION_SIZE * _MB_, sdInfo);
+
+	partInfo[1].bootable	= 0x00;
+	partInfo[1].partitionId	= 0x83;
+
+	make_partitionInfo(block_start, block_offset, sdInfo, &partInfo[1]);
+
+	/* 3rd Partition : storage (mmcblk0p1)  */
+	block_start += block_offset;
+	if (flag)
+		block_offset = calc_unit((unsigned long long)simple_strtoul(argv[5], NULL, 0)*1024*1024, sdInfo);
+	else
+		block_offset = calc_unit((unsigned long long)BOARD_STORAGE_PARTITION_SIZE * _MB_, sdInfo);
+
+	partInfo[2].bootable	= 0x00;
+	partInfo[2].partitionId	= 0x0C;
+
+	make_partitionInfo(block_start, block_offset, sdInfo, &partInfo[2]);
+
+	/* 3rd Partition : storage (mmcblk0p1)  */
+	block_start += block_offset;
+	block_offset = BLOCK_END;
+
+	partInfo[3].bootable	= 0x00;
+	partInfo[3].partitionId	= 0x83;
+
+	make_partitionInfo(block_start, block_offset, sdInfo, &partInfo[3]);
+
+	/* Encode PartitionInfo  */
+	memset(mbr, 0x00, sizeof(mbr));
+	mbr[510] = 0x55; mbr[511] = 0xAA;
+
+	encode_partitionInfo(partInfo[0], &mbr[0x1DE]); /* cache */
+	encode_partitionInfo(partInfo[1], &mbr[0x1CE]); /* system */
+	encode_partitionInfo(partInfo[2], &mbr[0x1BE]); /* storage */
+	encode_partitionInfo(partInfo[3], &mbr[0x1EE]); /* userdata */
+
+	return 0;
+}
+#endif /* CONFIG_ODROIDC_REV2 */
 
 /////////////////////////////////////////////////////////////////
 int get_mmc_block_count(char *device_name)

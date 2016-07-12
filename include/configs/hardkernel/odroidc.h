@@ -219,8 +219,14 @@
 #define CONFIG_BOOTCOMMAND              "bootm"
 
 #define CONFIG_AUTO_COMPLETE            1
+
+#ifdef CONFIG_ODROIDC_REV2
+#define CONFIG_ENV_SIZE                 (32 * 1024)     // unit: bytes
+#define CONFIG_ENV_OFFSET               (720 * 1024)    // unit: bytes
+#else
 #define CONFIG_ENV_SIZE                 (32 * 1024)     // unit: bytes
 #define CONFIG_ENV_OFFSET               (512 * 1024)    // unit: bytes
+#endif
 
 #define CONFIG_MMC_BOOT
 
@@ -344,9 +350,15 @@
 
 #define CONFIG_CUSTOM_MBR_LBA           (512 * 1024 / 512)
 
+#ifdef CONFIG_ODROIDC_REV2
+#define BOARD_CACHEIMAGE_PARTITION_SIZE		512
+#define BOARD_SYSTEMIMAGE_PARTITION_SIZE	1024
+#define BOARD_STORAGE_PARTITION_SIZE		128
+#else
 #define BOARD_SYSTEMIMAGE_PARTITION_SIZE        1024            // 1GB
 #define BOARD_USERDATAIMAGE_PARTITION_SIZE      (3 * 1024)      // 3GB
 #define BOARD_CACHEIMAGE_PARTITION_SIZE         512             // 512MB
+#endif
 
 #define CONFIG_ENV_BLK_PARTITION        "environment"
 
@@ -377,7 +389,11 @@
 
 /* FDISK command */
 #define CONFIG_MMC_FDISK
+#ifdef CONFIG_ODROIDC_REV2
+#define CFG_PARTITION_START             (32 * 1024 * 1024)
+#else
 #define CFG_PARTITION_START             (24 * 1024 * 1024)
+#endif
 
 /* Linux reboot command - include/uapi/linux/reboot.h */
 #define LINUX_REBOOT_CMD_POWER_OFF      0x4321FEDC
