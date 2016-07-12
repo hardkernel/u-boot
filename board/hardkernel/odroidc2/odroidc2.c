@@ -190,11 +190,10 @@ void board_print_info(void)
 
 void board_identity(void)
 {
-	char __serialno[17];
+	char __serialno[17], *flash_fbt_id;
 	int offset, length;
 
-	if (getenv("fbt_id#") != NULL)
-		return;
+	flash_fbt_id = getenv("fbt_id#");
 
 	/* S/N */
 	offset = 20;
@@ -205,12 +204,10 @@ void board_identity(void)
 
 	__serialno[16] = '\0';
 
+	if (flash_fbt_id && !memcmp(flash_fbt_id, __serialno, 17))
+		return;
+
 	setenv("fbt_id#", __serialno);
-
-	/* update serialno env in bootargs */
-	run_command("setenv bootargs ${bootargs} androidboot.serialno=${fbt_id#}", 1);
-
-	/* saveenv */
 	run_command("saveenv", 0);
 }
 
