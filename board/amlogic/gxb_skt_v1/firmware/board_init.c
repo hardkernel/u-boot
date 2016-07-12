@@ -19,10 +19,10 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-//#include "power.c"
+#include "power.c"
 
 /* bl2 customer code */
 void board_init(void)
 {
-	//power_init(0);
+	power_init(0);
 }

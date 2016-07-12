@@ -1,5 +1,5 @@
 
-static int pwm_voltage_table[][2] = {
+int pwm_voltage_table[][2] = {
 	{ 0x1c0000,  860},
 	{ 0x1b0001,  870},
 	{ 0x1a0002,  880},
@@ -152,5 +152,6 @@ void set_dvfs(unsigned int domain, unsigned int index)
 		P_PWM_PWM_B = pwm_voltage_table[cur][0];
 		_udelay(100);
 	}
+	_udelay(200);
 }
 
