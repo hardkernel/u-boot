@@ -71,6 +71,10 @@ config TXL_SKT_V1
 	bool "Support amlogic txl socket v1 board"
 	default n
 
+config TXL_P321_V1
+	bool "Support amlogic txl p321 board"
+	default n
+
 config PXP_EMULATOR
 	bool "Support pxp environment"
 	default n
@@ -152,6 +156,10 @@ endif
 
 if TXL_SKT_V1
 source "board/amlogic/txl_skt_v1/Kconfig"
+endif
+
+if TXL_P321_V1
+source "board/amlogic/txl_p321_v1/Kconfig"
 endif
 
 if ODROID_C2

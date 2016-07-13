@@ -1,6 +1,6 @@
 
 /*
- * board/amlogic/configs/txl_skt_v1.h
+ * board/amlogic/configs/txl_p321_v1.h
  *
  * Copyright (C) 2015 Amlogic, Inc. All rights reserved.
  *
@@ -19,11 +19,10 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-#ifndef __TXL_SKT_V1_H__
-#define __TXL_SKT_V1_H__
+#ifndef __TXL_P321_V1_H__
+#define __TXL_P321_V1_H__
 
 #include <asm/arch/cpu.h>
-
 
 #define CONFIG_SYS_GENERIC_BOARD  1
 #ifndef CONFIG_AML_MESON
@@ -35,7 +34,7 @@
  */
 #define CONFIG_PLATFORM_POWER_INIT
 #define CONFIG_VCCK_INIT_VOLTAGE	1100
-#define CONFIG_VDDEE_INIT_VOLTAGE	1100		// voltage for power up
+#define CONFIG_VDDEE_INIT_VOLTAGE	1000		// voltage for power up
 #define CONFIG_VDDEE_SLEEP_VOLTAGE	 850		// voltage for suspend
 
 /* configs for CEC */
@@ -67,7 +66,7 @@
 #define CONFIG_EXTRA_ENV_SETTINGS \
         "firstboot=1\0"\
         "upgrade_step=0\0"\
-        "jtag=apao\0"\
+        "jtag=disable\0"\
         "loadaddr=1080000\0"\
         "panel_type=lvds_0\0" \
         "outputmode=1080p60hz\0" \
@@ -237,7 +236,7 @@
  *    CONFIG_DDR_TYPE_DDR3     : DDR3
  *    CONFIG_DDR_TYPE_DDR4     : DDR4
  *    CONFIG_DDR_TYPE_AUTO     : DDR3/DDR4 auto detect */
-#define CONFIG_DDR_TYPE					CONFIG_DDR_TYPE_AUTO
+#define CONFIG_DDR_TYPE					CONFIG_DDR_TYPE_DDR3
 /* DDR channel setting, please refer hardware design.
  *    CONFIG_DDR0_RANK0        : DDR0 rank0
  *    CONFIG_DDR0_RANK01       : DDR0 rank0+1
@@ -316,9 +315,9 @@
 #define CONFIG_OSD_SCALE_ENABLE 1
 #define CONFIG_CMD_BMP 1
 
-#if defined(CONFIG_AML_VOUT)
-//#define CONFIG_AML_CVBS 1
-#endif
+// #if defined(CONFIG_AML_VOUT)
+// #define CONFIG_AML_CVBS 1
+// #endif
 
 #define CONFIG_AML_LCD    1
 #define CONFIG_AML_LCD_TV 1
@@ -409,10 +408,10 @@
 #define CONFIG_SYS_MEM_TOP_HIDE 0x08000000 //hide 128MB for kernel reserve
 
 /* debug mode defines */
-//#define CONFIG_DEBUG_MODE			1
+//#define CONFIG_DEBUG_MODE           1
 #ifdef CONFIG_DEBUG_MODE
-#define CONFIG_DDR_CLK_DEBUG		636
-#define CONFIG_CPU_CLK_DEBUG		600
+#define CONFIG_DDR_CLK_DEBUG        636
+#define CONFIG_CPU_CLK_DEBUG        600
 #endif
 
 //support secure boot
@@ -420,7 +419,7 @@
 
 #if defined(CONFIG_AML_SECURE_UBOOT)
 
-//for GXBB SRAM size limitation just disable NAND
+//for SRAM size limitation just disable NAND
 //as the socket board default has no NAND
 //#undef CONFIG_AML_NAND
 
@@ -428,7 +427,7 @@
 #define CONFIG_AML_CRYPTO_UBOOT   1
 
 //unify build for generate encrypted kernel image
-//SRC : "board/amlogic/gxb_skt_v1/boot.img"
+//SRC : "board/amlogic/(board)/boot.img"
 //DST : "fip/boot.img.encrypt"
 //#define CONFIG_AML_CRYPTO_IMG       1
 

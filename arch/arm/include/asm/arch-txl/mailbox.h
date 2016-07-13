@@ -31,6 +31,7 @@
 #define __GXBB_MAILBOX_H_
 
 #define SCPI_CMD_SENSOR_VALUE 0x1C
+#define SCPI_CMD_SET_USR_DATA 0x20
 #define SCPI_CMD_OPEN_SCP_LOG 0xC4
 #define SCPI_CMD_THERMAL_CALIB 0xC5
 
@@ -42,6 +43,17 @@
 #define MHU_HIGH_AP_TO_SCP_PAYLOAD		0x13600
 #define MHU_LOW_SCP_TO_AP_PAYLOAD		0x13000
 #define MHU_LOW_AP_TO_SCP_PAYLOAD		0x13200
+
+enum scpi_client_id {
+	SCPI_CL_NONE,
+	SCPI_CL_CLOCKS,
+	SCPI_CL_DVFS,
+	SCPI_CL_POWER,
+	SCPI_CL_THERMAL,
+	SCPI_CL_REMOTE,
+	SCPI_CL_LED_TIMER,
+	SCPI_MAX = 0xff,
+};
 
 enum scpi_error_codes {
 	SCPI_SUCCESS = 0, /* Success */
@@ -62,5 +74,6 @@ enum scpi_error_codes {
 void open_scp_log(unsigned int channel);
 int thermal_calibration(unsigned int type, unsigned int data);
 int thermal_get_value(unsigned int sensor_id, unsigned int *value);
+int send_usr_data(unsigned int clinet_id, unsigned int *val, unsigned int size);
 
  #endif

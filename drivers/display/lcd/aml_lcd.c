@@ -472,7 +472,17 @@ static void lcd_vbyone_reg_print(void)
 	unsigned int reg;
 
 	printf("\nvbyone registers:\n");
-	reg = PERIPHS_PIN_MUX_7;
+	switch (aml_lcd_driver.chip_type) {
+	case LCD_CHIP_GXTVBB:
+		reg = PERIPHS_PIN_MUX_7;
+		break;
+	case LCD_CHIP_TXL:
+		reg = PERIPHS_PIN_MUX_0;
+		break;
+	default:
+		reg = PERIPHS_PIN_MUX_0;
+		break;
+	}
 	printf("VX1_PINMUX          [0x%04x] = 0x%08x\n",
 		reg, lcd_periphs_read(reg));
 	reg = VBO_STATUS_L;

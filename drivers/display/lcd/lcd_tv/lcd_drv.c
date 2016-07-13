@@ -44,14 +44,34 @@ static int lcd_type_supported(struct lcd_config_s *pconf)
 /* set VX1_LOCKN && VX1_HTPDN */
 static void lcd_vbyone_pinmux_set(int status)
 {
+	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
+
 	if (lcd_debug_print_flag)
 		LCDPR("%s: %d\n", __func__, status);
 
 	if (status) {
-		lcd_pinmux_clr_mask(7, ((1 << 1) | (1 << 2) | (1 << 9) | (1 << 10)));
-		lcd_pinmux_set_mask(7, ((1 << 11) | (1 << 12)));
+		switch (lcd_drv->chip_type) {
+		case LCD_CHIP_GXTVBB:
+			lcd_pinmux_clr_mask(7, ((1 << 1) | (1 << 2) | (1 << 9) | (1 << 10)));
+			lcd_pinmux_set_mask(7, ((1 << 11) | (1 << 12)));
+			break;
+		case LCD_CHIP_TXL:
+			lcd_pinmux_set_mask(0, ((1 << 30) | (1 << 31)));
+			break;
+		default:
+			break;
+		}
 	} else {
-		lcd_pinmux_clr_mask(7, ((1 << 11) | (1 << 12)));
+		switch (lcd_drv->chip_type) {
+		case LCD_CHIP_GXTVBB:
+			lcd_pinmux_clr_mask(7, ((1 << 11) | (1 << 12)));
+			break;
+		case LCD_CHIP_TXL:
+			lcd_pinmux_clr_mask(0, ((1 << 30) | (1 << 31)));
+			break;
+		default:
+			break;
+		}
 	}
 }
 

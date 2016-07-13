@@ -6,7 +6,7 @@ config SYS_CPU
 
 config SYS_BOARD
 	string
-	default "txl_skt_v1"
+	default "txl_p321_v1"
 
 config SYS_VENDOR
 	string
@@ -17,6 +17,6 @@ config SYS_SOC
 	default "txl"
 
 config SYS_CONFIG_NAME
-	default "txl_skt_v1"
+	default "txl_p321_v1"
 
 endif
