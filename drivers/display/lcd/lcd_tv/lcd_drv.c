@@ -496,6 +496,22 @@ static void lcd_vbyone_wait_stable(void)
 	LCDPR("%s status: 0x%x, i=%d\n", __func__, lcd_vcbus_read(VBO_STATUS_L), (500 - i));
 }
 
+static void lcd_vx1_wait_hpd(void)
+{
+	int i = 0;
+	while (lcd_vcbus_read(VBO_STATUS_L) & 0x40) {
+		if (i++ >= 10000)
+			break;
+		udelay(50);
+	}
+	if (lcd_vcbus_read(VBO_STATUS_L) & 0x40)
+		LCDPR("%s: hpd=%d\n", __func__,
+			((lcd_vcbus_read(VBO_STATUS_L) >> 6) & 0x1));
+	else
+		LCDPR("%s: hpd=%d, i=%d\n", __func__,
+			((lcd_vcbus_read(VBO_STATUS_L) >> 6) & 0x1), i);
+}
+
 static void lcd_venc_set(struct lcd_config_s *pconf)
 {
 	unsigned int h_active, v_active;
@@ -656,6 +672,7 @@ int lcd_tv_driver_init(void)
 	case LCD_VBYONE:
 		lcd_vbyone_pinmux_set(1);
 		lcd_vbyone_control_set(pconf);
+		lcd_vx1_wait_hpd();
 		lcd_vbyone_phy_set(pconf, 1);
 		lcd_vbyone_wait_stable();
 		break;
