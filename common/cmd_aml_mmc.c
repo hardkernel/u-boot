@@ -35,6 +35,8 @@
 
 extern int mmc_key_erase(void);
 extern int find_dev_num_by_partition_name (char *name);
+extern int mmc_get_ext_csd(struct mmc *mmc, u8 *ext_csd);
+extern int mmc_set_ext_csd(struct mmc *mmc, u8 index, u8 value);
 #define DTB_BLOCK_CNT       1024
 #define DTB_ADDR_SIZE       (SZ_1M * 40)
 #define CONFIG_SECURITYKEY
@@ -305,6 +307,7 @@ int do_amlmmcops(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
                                                         blk -= PARTITION_RESERVED;
                                                 }
                                                 blk >>= blk_shift;
+                                                blk -= start_blk;
 
                                                 n=0;
 
@@ -488,16 +491,44 @@ int do_amlmmcops(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
                                 else
                                         printf("%s failed\n", argv[3]);
                                 return rc;
-                        }
+                        } else if (strcmp(argv[1], "ext_csd") == 0) {
+                            int ret;
+                            u8 ext_csd[512] = {0};
+                            int dev = simple_strtoul(argv[2], NULL, 10);
+                            int bit = simple_strtoul(argv[3], NULL, 10);
+                            if ((bit > 511) || (bit < 0)) {
+                                printf("bit is out of area!\n");
+                                return 1;
+                            }
+                            struct mmc* mmc = find_mmc_device(dev);
+                            if (!mmc) {
+                                puts("no mmc devices available\n");
+                                return 1;
+                            }
+                            mmc_init(mmc);
+                            ret = mmc_get_ext_csd(mmc, ext_csd);
+                            printf("read EXT_CSD bit[%d] val[0x%x] %s\n",
+                                    bit, ext_csd[bit], (ret == 0) ? "ok" : "fail");
+                            return ret;
+                        } else if (strcmp(argv[1], "size") == 0) {
+                            char *name;
+                            uint64_t* addr =NULL;
+                            name = argv[2];
+                            addr = (uint64_t *)simple_strtoul(argv[3], NULL, 16);
+                            if (!strcmp(name, "wholeDev")) {
+                                int dev = CONFIG_SYS_MMC_BOOT_DEV;
+                                struct mmc* mmc = find_mmc_device(dev);
+                                if (!mmc) {
+                                    puts("no mmc devices available\n");
+                                    return 1;
+                                }
+                                mmc_init(mmc);
 
-                        if (strcmp(argv[1], "size") == 0) {
-                                char *name;
-                                uint64_t* addr =NULL;
-                                name = argv[2];
-                                addr = (uint64_t *)simple_strtoul(argv[3], NULL, 16);
-                                return get_partition_size((unsigned char *)name, addr);
+                                *addr = mmc->capacity >> 9; // unit: 512 bytes
+                                return 0;
+                            }
+                            return get_partition_size((unsigned char *)name, addr);
                         }
-
                         return cmd_usage(cmdtp);
 
                 case 2:
@@ -788,6 +819,26 @@ int do_amlmmcops(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 
                                 return (n == 0) ? 0 : 1;
 
+                        } else if (strcmp(argv[1], "ext_csd") == 0) {
+                            int ret;
+                            int dev = simple_strtoul(argv[2], NULL, 10);
+                            int bit = simple_strtoul(argv[3], NULL, 10);
+                            int val = simple_strtoul(argv[4], NULL, 16);
+                            if ((bit > 191) || (bit < 0)) {
+                                printf("bit is not able to write!\n");
+                                return 1;
+                            }
+                            struct mmc* mmc = find_mmc_device(dev);
+                            if (!mmc) {
+                                puts("no mmc devices available\n");
+                                return 1;
+                            }
+                            mmc_init(mmc);
+                            ret = mmc_set_ext_csd(mmc, bit, val);
+                            printf("write EXT_CSD bit[%d] val[0x%x] %s\n",
+                                    bit, val, (ret == 0) ? "ok" : "fail");
+                            return ret;
+
                         } else
                                 rc = cmd_usage(cmdtp);
 
@@ -807,6 +858,7 @@ U_BOOT_CMD(
     "amlmmc list - lists available devices\n"
     "amlmmc switch <device_num> <part name> - part name : boot0, boot1, user\n"
     "amlmmc status <device_num> - read sd/emmc device status\n"
+    "amlmmc ext_csd <bit> <value> - read/write sd/emmc device EXT_CSD [bit] value\n"
     "amlmmc response <device_num> - read sd/emmc last command response\n"
     "amlmmc controller <device_num> - read sd/emmc controller register\n");
 

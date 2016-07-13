@@ -445,7 +445,7 @@ static int do_mmc_list(cmd_tbl_t *cmdtp, int flag,
 	return CMD_RET_SUCCESS;
 }
 
-static int do_mmc_ext_csd(cmd_tbl_t *cmdtp, int flag,
+static int do_mmc_lifetime(cmd_tbl_t *cmdtp, int flag,
 		       int argc, char * const argv[])
 {
 	int dev;
@@ -461,6 +461,33 @@ static int do_mmc_ext_csd(cmd_tbl_t *cmdtp, int flag,
 	printf("dev_lifetime_est_type: a = %x, b = %x\n",
 			mmc->dev_lifetime_est_typ_a, mmc->dev_lifetime_est_typ_b);
 	return CMD_RET_SUCCESS;
+}
+
+static int do_mmc_ext_csd(cmd_tbl_t *cmdtp, int flag,
+		       int argc, char * const argv[])
+{
+	int bit = 0, value = 0, ret = 0;
+	struct mmc *mmc;
+	char str[128] = {0};
+
+	if ((argc != 2) && (argc != 3))
+		return CMD_RET_USAGE;
+
+	bit = simple_strtoul(argv[1], NULL, 10);
+	if (argc == 3)
+		value = simple_strtoul(argv[2], NULL, 16);
+
+	mmc = init_mmc_device(curr_device, false);
+	if (!mmc)
+		return CMD_RET_FAILURE;
+
+	if (argc == 2)
+		sprintf(str, "amlmmc ext_csd 1 %d", bit);
+	else
+		sprintf(str, "amlmmc ext_csd 1 %d %x", bit, value);
+
+	ret = run_command(str, 0);
+	return (ret == 0) ? CMD_RET_SUCCESS : CMD_RET_FAILURE;
 }
 
 #ifdef CONFIG_SUPPORT_EMMC_BOOT
@@ -620,7 +647,8 @@ static cmd_tbl_t cmd_mmc[] = {
 	U_BOOT_CMD_MKENT(part, 1, 1, do_mmc_part, "", ""),
 	U_BOOT_CMD_MKENT(dev, 3, 0, do_mmc_dev, "", ""),
 	U_BOOT_CMD_MKENT(list, 1, 1, do_mmc_list, "", ""),
-	U_BOOT_CMD_MKENT(lifetime, 1, 1, do_mmc_ext_csd, "", ""),
+	U_BOOT_CMD_MKENT(lifetime, 1, 1, do_mmc_lifetime, "", ""),
+	U_BOOT_CMD_MKENT(ext_csd, 3, 0, do_mmc_ext_csd, "", ""),
 #ifdef CONFIG_SUPPORT_EMMC_BOOT
 	U_BOOT_CMD_MKENT(bootbus, 5, 0, do_mmc_bootbus, "", ""),
 	U_BOOT_CMD_MKENT(bootpart-resize, 4, 0, do_mmc_boot_resize, "", ""),
@@ -671,6 +699,7 @@ U_BOOT_CMD(
 	"mmc dev [dev] [part] - show or set current mmc device [partition]\n"
 	"mmc list - lists available devices\n"
 	"mmc lifetime - show dev life time estimate type A/B\n"
+	"mmc ext_csd [bit] <val> - read/write ext_csd [bit] value\n"
 #ifdef CONFIG_SUPPORT_EMMC_BOOT
 	"mmc bootbus dev boot_bus_width reset_boot_bus_width boot_mode\n"
 	" - Set the BOOT_BUS_WIDTH field of the specified device\n"

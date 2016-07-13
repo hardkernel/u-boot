@@ -523,6 +523,30 @@ static int mmc_switch(struct mmc *mmc, u8 set, u8 index, u8 value)
 
 }
 
+u8 ext_csd_w[] = {191, 187, 185, 183, 179, 178, 177, 175,
+					173, 171, 169, 167, 165, 164, 163, 162,
+					161, 156, 155, 143, 140, 136, 134, 133,
+					132, 131, 62, 59, 56, 52, 37, 34,
+					33, 32, 31, 30, 29, 22, 17, 16, 15};
+int mmc_set_ext_csd(struct mmc *mmc, u8 index, u8 value)
+{
+	int ret = SWITCH_ERR, i;
+
+	for (i = 0; i < sizeof(ext_csd_w); i++) {
+		if (ext_csd_w[i] == index)
+			break;
+	}
+	if (i != sizeof(ext_csd_w))
+		ret = mmc_switch(mmc, EXT_CSD_CMD_SET_NORMAL, index, value);
+
+	return ret;
+}
+
+int mmc_get_ext_csd(struct mmc *mmc, u8 *ext_csd)
+{
+	return mmc_send_ext_csd(mmc, ext_csd);
+}
+
 static int mmc_change_freq(struct mmc *mmc)
 {
 	ALLOC_CACHE_ALIGN_BUFFER(u8, ext_csd, MMC_MAX_BLOCK_LEN);
