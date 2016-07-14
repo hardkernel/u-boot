@@ -59,6 +59,9 @@ static int do_cvbs_output(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv
 		printf("cvbs output mode can be:\n"
 			"    576cvbs\n"
 			"    480cvbs\n"
+			"    ntsc_m\n"
+			"    pal_m\n"
+			"    pal_n\n"
 			"    bist [off|1 or colorbar|2 or thinline|3 or dotgrid|0 or fixval]\n");
 		return CMD_RET_FAILURE;
 	}
@@ -118,7 +121,7 @@ U_BOOT_CMD(cvbs, CONFIG_SYS_MAXARGS, 1, do_cvbs,
 	"    enci\n"
 	"    clock\n"
 	"cvbs output [FORMAT | bist MODE]\n"
-	"    FORMAT : [576cvbs|480cvbs]\n"
+	"    FORMAT : [576cvbs|480cvbs|ntsc_m|pal_m|pal_n]\n"
 	"    bist mode : [off|1 or colorbar|2 or thinline|3 or dotgrid|0 or fixval]\n"
 	"cvbs vdac\n"
 	"    0 for off, 1 for enci, 2 for atv, 3 for analog-cvbs passthrough\n"

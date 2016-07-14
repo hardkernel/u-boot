@@ -30,6 +30,9 @@ enum CVBS_MODE_e
 {
 	VMODE_PAL,
 	VMODE_NTSC,
+	VMODE_PAL_M,
+	VMODE_PAL_N,
+	VMODE_NTSC_M,
 	VMODE_MAX
 };
 
@@ -560,7 +563,7 @@ static void cvbs_performance_enhancement(int mode)
 	unsigned int type = 0;
 	const struct reg_s *s = NULL;
 
-	if (VMODE_PAL != mode)
+	if (VMODE_PAL != mode && VMODE_PAL_M != mode && VMODE_PAL_N != mode)
 		return;
 
 	if (0xff == index)
@@ -632,6 +635,12 @@ static int cvbs_config_enci(int vmode)
 		cvbs_write_vcbus_array((struct reg_s*)&tvregs_576cvbs_enc[0]);
 	else if (VMODE_NTSC == vmode)
 		cvbs_write_vcbus_array((struct reg_s*)&tvregs_480cvbs_enc[0]);
+	else if (VMODE_NTSC_M == vmode)
+		cvbs_write_vcbus_array((struct reg_s*)&tvregs_480cvbs_enc[0]);
+	else if (VMODE_PAL_M == vmode)
+		cvbs_write_vcbus_array((struct reg_s*)&tvregs_pal_m_enc[0]);
+	else if (VMODE_PAL_N == vmode)
+		cvbs_write_vcbus_array((struct reg_s*)&tvregs_pal_n_enc[0]);
 
 	cvbs_performance_enhancement(vmode);
 
@@ -655,6 +664,24 @@ int cvbs_set_vmode(char* vmode_name)
 		cvbs_config_clock();
 		cvbs_set_vdac(1);
 		return 0;
+	} else if (!strncmp(vmode_name, "ntsc_m", strlen("ntsc_m"))) {
+		cvbs_mode = VMODE_NTSC_M;
+		cvbs_config_enci(VMODE_NTSC_M);
+		cvbs_config_clock();
+		cvbs_set_vdac(1);
+		return 0;
+	} else if (!strncmp(vmode_name, "pal_m", strlen("pal_m"))) {
+		cvbs_mode = VMODE_PAL_M;
+		cvbs_config_enci(VMODE_PAL_M);
+		cvbs_config_clock();
+		cvbs_set_vdac(1);
+		return 0;
+	} else if (!strncmp(vmode_name, "pal_n", strlen("pal_n"))) {
+		cvbs_mode = VMODE_PAL_N;
+		cvbs_config_enci(VMODE_PAL_N);
+		cvbs_config_clock();
+		cvbs_set_vdac(1);
+		return 0;
 	} else {
 		printf("[%s] is invalid for cvbs.\n", vmode_name);
 		return -1;
@@ -667,7 +694,7 @@ int cvbs_set_vmode(char* vmode_name)
 // list for valid video mode
 void cvbs_show_valid_vmode(void)
 {
-	printf("576cvbs\n""480cvbs\n");
+	printf("576cvbs\n""480cvbs\n""ntsc_m\n""pal_m\n""pal_n\n");
 	return;
 }
 
