@@ -80,7 +80,7 @@ static unsigned int detect_key(unsigned int suspend_from)
 	int exit_reason = 0;
 	unsigned int time_out = readl(AO_DEBUG_REG2);
 	unsigned time_out_ms = time_out*100;
-	unsigned *irq = (unsigned *)SECURE_TASK_SHARE_IRQ;
+	unsigned *irq = (unsigned *)WAKEUP_SRC_IRQ_ADDR_BASE;
 	/* unsigned *wakeup_en = (unsigned *)SECURE_TASK_RESPONSE_WAKEUP_EN; */
 
 	/* setup wakeup resources*/
@@ -98,11 +98,11 @@ static unsigned int detect_key(unsigned int suspend_from)
 
 	/* *wakeup_en = 1;*/
 	do {
-		switch (*irq) {
 #ifdef CONFIG_CEC_WAKEUP
-		case IRQ_AO_CEC_NUM:
+		if (irq[IRQ_AO_CEC] == IRQ_AO_CEC_NUM) {
+			irq[IRQ_AO_CEC] = 0xFFFFFFFF;
 			if (suspend_from == SYS_POWEROFF)
-				break;
+				continue;
 			if (cec_msg.log_addr) {
 				if (hdmi_cec_func_config & 0x1) {
 					cec_handler();
@@ -114,26 +114,23 @@ static unsigned int detect_key(unsigned int suspend_from)
 				}
 			} else if (hdmi_cec_func_config & 0x1)
 				cec_node_init();
-		break;
+		}
 #endif
-		case IRQ_TIMERA_NUM:
+		if (irq[IRQ_TIMERA] == IRQ_TIMERA_NUM) {
+			irq[IRQ_TIMERA] = 0xFFFFFFFF;
 			if (time_out_ms != 0)
 				time_out_ms--;
 			if (time_out_ms == 0) {
 				wakeup_timer_clear();
 				exit_reason = AUTO_WAKEUP;
 			}
-			break;
+		}
 
-		case IRQ_AO_IR_DEC_NUM:
+		if (irq[IRQ_AO_IR_DEC] == IRQ_AO_IR_DEC_NUM) {
+			irq[IRQ_AO_IR_DEC] = 0xFFFFFFFF;
 			if (remote_detect_key())
 				exit_reason = REMOTE_WAKEUP;
-			break;
-
-		default:
-			break;
 		}
-		*irq = 0xffffffff;
 		if (exit_reason)
 			break;
 		else
