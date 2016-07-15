@@ -323,7 +323,7 @@ static int decomp_image(int comp, ulong load, ulong image_start, int type,
 			printf("   XIP %s ... ", type_name);
 		} else */
 		{
-			printf("   Loading %s ... ", type_name);
+			printf("   Loading %s(COMP_NONE) ... ", type_name);
 			memmove_wd(load_buf, image_buf, image_len, CHUNKSZ);
 		}
 		*load_end = load + image_len;
@@ -452,6 +452,12 @@ static int bootm_load_os(bootm_headers_t *images, unsigned long *load_end,
 			puts("ERROR: new format image overwritten - must RESET the board to recover\n");
 			bootstage_error(BOOTSTAGE_ID_OVERWRITTEN);
 			return BOOTM_ERR_RESET;
+		}
+#else
+		#define LINUX_ARM64_IMAGE_MAGIC	0x644d5241
+		if (*(uint32_t *)((images->ep) + 0x38) != le32_to_cpu(LINUX_ARM64_IMAGE_MAGIC)) {
+			printf("Bad Linux ARM64 Image magic!(Maybe unsupported zip mode.)\n");
+			return 1;
 		}
 #endif
 	}
