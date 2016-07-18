@@ -37,6 +37,25 @@
 
 #define CANVAS_NUM 192
 static canvas_t canvasPool[CANVAS_NUM];
+static int canvas_inited = 0;
+
+static void canvas_init(void)
+{
+	int index = 0;
+
+	if (canvas_inited == 1)
+		return;
+
+	canvas_log("canvas init");
+	canvas_reg_write(0, DC_CAV_LUT_DATAL);
+	canvas_reg_write(0, DC_CAV_LUT_DATAH);
+	for (index = 0; index < CANVAS_NUM; index++) {
+		canvas_reg_write(CANVAS_LUT_WR_EN | index, DC_CAV_LUT_ADDR);
+		canvas_reg_read(DC_CAV_LUT_DATAH);
+	}
+
+	canvas_inited = 1;
+}
 
 void canvas_config(u32 index, ulong addr, u32 width,
 		   u32 height, u32 wrap, u32 blkmode)
@@ -46,8 +65,9 @@ void canvas_config(u32 index, ulong addr, u32 width,
 	if (index >= CANVAS_NUM)
 		return;
 
-	canvas_log("addr=0x%08lx width=%d, height=%d\n", addr, width, height);
+	canvas_init();
 
+	canvas_log("addr=0x%08lx width=%d, height=%d", addr, width, height);
 	canvas_reg_write((((addr + 7) >> 3) & CANVAS_ADDR_LMASK) |
 			 ((((width + 7) >> 3) & CANVAS_WIDTH_LMASK) << CANVAS_WIDTH_LBIT),
 			 DC_CAV_LUT_DATAL);
