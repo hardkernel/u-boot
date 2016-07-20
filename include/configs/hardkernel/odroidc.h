@@ -120,6 +120,7 @@
 #ifdef CONFIG_ODROIDC_REV2
 #define CONFIG_EXTRA_ENV_SETTINGS \
         "boardname=ODROIDC\0" \
+        "cecconfig=cec0xf\0"  \
         "bootargs=root=" MK_STR(CONFIG_DEFAULT_ROOT) " rw " \
                 "console=" CONFIG_CONSOLE_PROTOCOL " no_console_suspend\0" \
         "bootcmd="\
