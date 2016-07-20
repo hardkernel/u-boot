@@ -17,36 +17,40 @@ static int do_logo_size(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[
     if(mode != NULL) {
         int width, height, fbw, fbh;
         char buf[8];
+
+	fbw = 1280;
+	fbh = 720;
+
         if(strncmp(mode, "480", 3) == 0) {
             width = 720;
             height = 480;
-            fbw = 1280;
-            fbh = 720;
         } else if(strncmp(mode, "576", 3) == 0) {
             width = 720;
             height = 576;
-            fbw = 1280;
-            fbh = 720;
         } else if(strncmp(mode, "720", 3) == 0) {
             width = 1280;
             height = 720;
-            fbw = 1280;
-            fbh = 720;
         } else if(strncmp(mode, "4k2ksmpte", 9) == 0) {
             width = 4096;
             height = 2160;    
+#ifndef CONFIG_ODROIDC_REV2
             fbw = 1920;
             fbh = 1080;
+#endif
         } else if(strncmp(mode, "4k2k", 4) == 0) {
             width = 3840;
             height = 2160;    
+#ifndef CONFIG_ODROIDC_REV2
             fbw = 1920;
             fbh = 1080;
+#endif
         } else {
             width = 1920;
             height = 1080;
+#ifndef CONFIG_ODROIDC_REV2
             fbw = 1920;
             fbh = 1080;
+#endif
         } 
         memset(buf, 0 , 8);
         sprintf(buf, "%d", width);
