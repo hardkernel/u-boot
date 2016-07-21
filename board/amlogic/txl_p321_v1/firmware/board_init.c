@@ -38,18 +38,14 @@
 void panel_power_init(void)
 {
 	serial_puts("init panel power\n");
-	/* GPIOZ_3 */
-	PNL_REG_W(PNL_PREG_PAD_GPIO3_O,
-		(PNL_REG_R(PNL_PREG_PAD_GPIO3_O) & ~(1 << 3)));
-	PNL_REG_W(PNL_PREG_PAD_GPIO3_EN_N,
-		(PNL_REG_R(PNL_PREG_PAD_GPIO3_EN_N) & ~(1 << 3)));
-	/* GPIOH_4/5/6/7 */
-	PNL_REG_W(PNL_PREG_PAD_GPIO1_O,
-		(PNL_REG_R(PNL_PREG_PAD_GPIO1_O) & ~(0xf << 24)));
-	PNL_REG_W(PNL_PREG_PAD_GPIO1_EN_N,
-		(PNL_REG_R(PNL_PREG_PAD_GPIO1_EN_N) & ~(0xf << 24)));
 
-	/* GPIOZ_2/6/7 */
+	/* panel: GPIOH_4/5/6/7/8 */ /* remove GPIOH_6 for 2D/3D special case */
+	PNL_REG_W(PNL_PREG_PAD_GPIO1_O,
+		(PNL_REG_R(PNL_PREG_PAD_GPIO1_O) & ~(0x1b << 24)));
+	PNL_REG_W(PNL_PREG_PAD_GPIO1_EN_N,
+		(PNL_REG_R(PNL_PREG_PAD_GPIO1_EN_N) & ~(0x1b << 24)));
+
+	/* backlight: GPIOZ_2/6/7 */
 	PNL_REG_W(PNL_PREG_PAD_GPIO3_O,
 		(PNL_REG_R(PNL_PREG_PAD_GPIO3_O) & ~((1 << 2) | (0x3 << 6))));
 	PNL_REG_W(PNL_PREG_PAD_GPIO3_EN_N,
