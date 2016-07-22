@@ -62,6 +62,12 @@ static int get_tsc(int temp)
 			TS_C = 16-((vmeasure)/42);
 			break;
 		}
+	case MESON_CPU_MAJOR_ID_TXL:
+		/*TS_C = 16-(adc-1530)/40*/
+		vmeasure = temp-(1530+(temp_base-27)*15.5);
+		printf("vmeasure=%d\n", vmeasure);
+		TS_C = 16-((vmeasure)/40);
+		break;
 	default:
 		printf("cpu family id not support!!!\n");
 		return -1;
@@ -107,6 +113,18 @@ static int adc_init_chan6(void)
 		writel(0x030e030c, SAR_ADC_DETECT_IDLE_SW);
 		writel(0x0c00c400, SAR_ADC_DELTA_10);
 		writel(0x00000114, SAR_CLK_CNTL);/*Clock*/
+		break;
+	case MESON_CPU_MAJOR_ID_TXL:
+		writel(0x00000006, SAR_ADC_CHAN_LIST);/*channel 6*/
+		writel(0x00003000, SAR_ADC_AVG_CNTL);
+		writel(0xc8a8500a, SAR_ADC_REG3);/*bit27:1 disable*/
+		writel(0x010a000a, SAR_ADC_DELAY);
+		writel(0x03eb1a0c, SAR_ADC_AUX_SW);
+		writel(0x008c000c, SAR_ADC_CHAN_10_SW);
+		writel(0x030e030c, SAR_ADC_DETECT_IDLE_SW);
+		writel(0x0c00c400, SAR_ADC_DELTA_10);
+		writel(0x00000110, SAR_CLK_CNTL);/*Clock*/
+		writel(0x002c2060, SAR_ADC_REG11);/*bit20 disabled*/
 		break;
 	default:
 		printf("cpu family id not support!!!\n");
@@ -154,11 +172,18 @@ static int get_adc_sample(int chan)
 	 */
 	if (get_cpu_id().family_id >= MESON_CPU_MAJOR_ID_GXL) {
 		saradc_vref = (readl(SAR_ADC_REG13)>>8)&0x3f; /*back up SAR_ADC_REG13[13:8]*/
+		printf("saradc_vref = 0x%x\n",saradc_vref);
 		if ((readl(AO_SEC_SD_CFG12)>>19) & 0x1f) { /*thermal VREF*/
 			writel(((readl(SAR_ADC_REG13))&(~(0x3f<<8))) /*SAR_ADC_REG13[8]:0*/
 				|(((readl(AO_SEC_SD_CFG12)>>19) & 0x1f)<<9), /*SAR_ADC_REG13[13:9]*/
 				SAR_ADC_REG13);
 			vref_en = 1;
+		} else if ((get_cpu_id().family_id == MESON_CPU_MAJOR_ID_TXL)&&
+			((trim == 1)||
+			((((readl(SEC_AO_SEC_SD_CFG12))>>24)&0xff)==0xc0))) {
+			writel(((readl(SAR_ADC_REG13))&(~(0x3f<<8))) /*SAR_ADC_REG13[13:8]:0*/
+				|(0x1e<<8), /*SAR_ADC_REG13[13:8]:[0x1e]*/
+				SAR_ADC_REG13);
 		} else {
 			writel((readl(SAR_ADC_REG13))&(~(0x3f<<8)), SAR_ADC_REG13);
 		}
@@ -367,6 +392,10 @@ static int do_write_trim(cmd_tbl_t *cmdtp, int flag1,
 			temp = temp>>2;/*efuse only 10bit adc*/
 			break;
 		}
+	case MESON_CPU_MAJOR_ID_TXL:
+		temp = temp - 15.5*(temp_base - 27);
+		temp = temp>>2;/*efuse only 10bit adc*/
+		break;
 	default:
 		printf("cpu family id not support!!!\n");
 		goto err;
@@ -421,6 +450,9 @@ static int do_read_temp(cmd_tbl_t *cmdtp, int flag1,
 					tempa = (10*(adc-temp))/153+27;
 				else
 					tempa = (10*(adc-temp))/171+27;
+				break;
+			case MESON_CPU_MAJOR_ID_TXL:
+				tempa = (10*(adc-temp))/155+27;
 				break;
 			}
 			printf("tempa=%d\n", tempa);
