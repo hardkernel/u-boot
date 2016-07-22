@@ -1377,9 +1377,6 @@
 #define     AO_SAR_CLK                                         (0xc8100000 + (0x24 << 2))
 #define SEC_AO_SAR_CLK                                         (0xda100000 + (0x24 << 2))
 #define   P_AO_SAR_CLK                                         (volatile uint32_t *)(0xc8100000 + (0x24 << 2))
-/* HHI_SAR_CLK_CNTL removed */
-#define HHI_SAR_CLK_CNTL                                       (AO_SAR_CLK)
-
 #define     AO_RTC_ALT_CLK_CNTL0                               (0xc8100000 + (0x25 << 2))
 #define SEC_AO_RTC_ALT_CLK_CNTL0                               (0xda100000 + (0x25 << 2))
 #define   P_AO_RTC_ALT_CLK_CNTL0                               (volatile uint32_t *)(0xc8100000 + (0x25 << 2))

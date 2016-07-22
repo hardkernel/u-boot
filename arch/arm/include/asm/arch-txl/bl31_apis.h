@@ -106,6 +106,7 @@ struct sram_hal_api_arg {
 #define JTAG_M3_EE     1
 #define JTAG_A53_AO    2
 #define JTAG_A53_EE 3
+#define CLUSTER_BIT 2
 
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -113,6 +114,7 @@ struct sram_hal_api_arg {
 	#define AML_D_P_W_EFUSE_SECURE_BOOT  (0x10)
 	#define AML_D_P_W_EFUSE_PASSWORD     (0x11)
 	#define AML_D_P_W_EFUSE_CUSTOMER_ID  (0x12)
+	#define AML_D_P_W_EFUSE_AMLOGIC 	 (0x20)
 	#define AML_D_P_IMG_DECRYPT          (0x40)
 	#define AML_D_P_UPGRADE_CHECK        (0x80)
 

@@ -131,7 +131,8 @@
 #define GCLK_IDX_SAR_ADC         10
 #define GCLK_NAME_SAR_ADC      "SAR_ADC"
 #define GCLK_DEV_SAR_ADC      "CLKGATE_SAR_ADC"
-#define GCLK_REG_SAR_ADC      (HHI_SAR_CLK_CNTL)
+//#define GCLK_REG_SAR_ADC      (HHI_SAR_CLK_CNTL) //no HHI_SAR_CLK_CNTL on TXL
+#define GCLK_REG_SAR_ADC      (AO_SAR_CLK)
 #define GCLK_MASK_SAR_ADC      (1<<8)
 
 #define GCLK_IDX_SMART_CARD_MPEG_DOMAIN         11

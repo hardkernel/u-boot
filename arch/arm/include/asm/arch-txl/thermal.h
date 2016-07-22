@@ -34,7 +34,8 @@
 #define SAR_ADC_DELTA_10		SAR_ADC_BASE +(0xa*4)//0xc11086a8
 #define SAR_ADC_REG11			SAR_ADC_BASE +(0xb*4)//0xc11086ac
 
-#define SAR_CLK_CNTL			HHI_SAR_CLK_CNTL
+//#define SAR_CLK_CNTL			HHI_SAR_CLK_CNTL //no HHI_SAR_CLK_CNTL on TXL
+#define SAR_CLK_CNTL			AO_SAR_CLK
 #define SAR_BUS_CLK_EN			HHI_GCLK_MPEG2
 
 #define EN_BIT					22
