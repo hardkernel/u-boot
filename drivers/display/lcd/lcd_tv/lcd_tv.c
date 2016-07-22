@@ -108,6 +108,8 @@ static int lcd_outputmode_to_lcd_vmode(const char *mode)
 	int n;
 
 	p = strchr(mode, 'p');
+	if (p == NULL)
+		return LCD_VMODE_MAX;
 	n = p - mode + 1;
 	strncpy(temp, mode, n);
 	temp[n] = '\0';
@@ -130,9 +132,13 @@ static int lcd_outputmode_to_lcd_frame_rate(const char *mode)
 	int n, i;
 
 	p = strchr(mode, 'p');
+	if (p == NULL)
+		return 0;
 	n = p - mode + 1;
 	strncpy(temp, mode+n, (strlen(mode)-n));
 	p = strchr(temp, 'h');
+	if (p == NULL)
+		return 0;
 	*p = '\0';
 	n = (int)simple_strtoul(temp, NULL, 10);
 	if (lcd_debug_print_flag)
