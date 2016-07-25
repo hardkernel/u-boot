@@ -184,9 +184,9 @@ void remote_cec_hw_reset(void)
 	writel(reg, P_AO_RTI_PWR_CNTL_REG0);
 
 	/* set up pinmux */
-	writel(readl(P_AO_RTI_PIN_MUX_REG) & (~(1 << 18 | 1 << 17)), P_AO_RTI_PIN_MUX_REG);
+	writel(readl(P_AO_RTI_PIN_MUX_REG) & (~(1 << 14 | 1 << 17)), P_AO_RTI_PIN_MUX_REG);
 	writel(readl(P_AO_RTI_PULL_UP_REG) & (~(1 << 9)), P_AO_RTI_PULL_UP_REG);
-	writel(readl(P_AO_RTI_PIN_MUX_REG) | (1 << 16), P_AO_RTI_PIN_MUX_REG);
+	writel(readl(P_AO_RTI_PIN_MUX_REG) | (1 << 15), P_AO_RTI_PIN_MUX_REG);
 	// Assert SW reset AO_CEC
 	writel(0x1, P_AO_CEC_GEN_CNTL);
 	// Enable gated clock (Normal mode).
