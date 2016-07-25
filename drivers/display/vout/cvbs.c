@@ -155,6 +155,12 @@ static bool inline is_meson_gxl_cpu(void)
 		1:0;
 }
 
+static bool inline is_meson_txl_cpu(void)
+{
+	return (cpu_id.family_id == MESON_CPU_MAJOR_ID_TXL)?
+		1:0;
+}
+
 static bool inline is_meson_gxm_cpu(void)
 {
 	return (cpu_id.family_id == MESON_CPU_MAJOR_ID_GXM)?
@@ -219,15 +225,26 @@ int cvbs_set_vdac(int status)
 	{
 	case 0:// close vdac
 		cvbs_write_hiu(HHI_VDAC_CNTL0, 0);
-		cvbs_write_hiu(HHI_VDAC_CNTL1, 8);
+		if (is_meson_txl_cpu())
+			cvbs_write_hiu(HHI_VDAC_CNTL1, 0);
+		else
+			cvbs_write_hiu(HHI_VDAC_CNTL1, 8);
 		break;
 	case 1:// from enci to vdac
 		cvbs_set_vcbus_bits(VENC_VDAC_DACSEL0, 5, 1, 0);
-		if (is_meson_gxl_cpu() || is_meson_gxm_cpu())
-			cvbs_write_hiu(HHI_VDAC_CNTL0, 0xf0001);
+		if (is_equal_after_meson_cpu(MESON_CPU_MAJOR_ID_GXL)) {
+			if (is_meson_txl_cpu())
+				cvbs_write_hiu(HHI_VDAC_CNTL0, 0xb0201);
+			else
+				cvbs_write_hiu(HHI_VDAC_CNTL0, 0xb0001);
+		}
 		else
 			cvbs_write_hiu(HHI_VDAC_CNTL0, 1);
-		cvbs_write_hiu(HHI_VDAC_CNTL1, 0);
+
+		if (is_meson_txl_cpu())
+			cvbs_write_hiu(HHI_VDAC_CNTL1, 8);
+		else
+			cvbs_write_hiu(HHI_VDAC_CNTL1, 0);
 		break;
 	case 2:// from atv to vdac
 		cvbs_set_vcbus_bits(VENC_VDAC_DACSEL0, 5, 1, 1);
