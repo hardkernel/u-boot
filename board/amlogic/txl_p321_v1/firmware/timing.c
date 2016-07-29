@@ -538,9 +538,9 @@ ddr_set_t __ddr_setting = {
 	.t_pctl0_dfiodtcfg1		= (0x0 | (0x6 << 16)),
 
 	.t_pctl0_dfilpcfg0		= ( 1 | (3 << 4) | (1 << 8) | (13 << 12) | (7 <<16) | (1 <<24) | ( 3 << 28)),
-	.t_pub_acbdlr0			= 0x28,
-	.t_pub_aclcdlr			= 0x38,//0x18,   ///1t  ,if 2t can add some value
-	.t_pub_acbdlr3			= 0x18,//0xa,  //cs
+	.t_pub_acbdlr0			= 0x3f,
+	.t_pub_aclcdlr			= 0x28,//0x18,   ///1t  ,if 2t can add some value
+	.t_pub_acbdlr3			= 0x0,//0xa,  //cs
 	//.t_pub_acbdlr0		= 0x0,
 	//.t_pub_aclcdlr		= 0x10,//0x18,   ///1t  ,if 2t can add some value
 	//.t_pub_acbdlr3		= 0x14,//0xa,  //cs
@@ -553,18 +553,18 @@ ddr_set_t __ddr_setting = {
 	.wr_adj_per 			= {
 							[0] = 100,
 							[1] = 100,
-							[2] = 105,
-							[3] = 105,
-							[4] = 105,
-							[5] = 105,
+							[2] = 100,
+							[3] = 100,
+							[4] = 100,
+							[5] = 100,
 							},
 	.rd_adj_per				= {
 							[0] = 100,
 							[1] = 100,
-							[2] = 105,
-							[3] = 95,
-							[4] = 95,
-							[5] = 95,},
+							[2] = 100,
+							[3] = 100,
+							[4] = 100,
+							[5] = 100,},
 };
 
 pll_set_t __pll_setting = {
