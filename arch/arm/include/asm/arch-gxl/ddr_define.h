@@ -111,11 +111,18 @@
 #endif
 #define DDR_FUNC_DDR_PLL_BYPASS				(CONFIG_DDR_PLL_BYPASS<<5)
 
+/* ddr rdbi function */
+#ifndef CONFIG_DDR_FUNC_RDBI
+#define CONFIG_DDR_FUNC_RDBI				0
+#endif
+#define DDR_FUNC_RDBI						(CONFIG_DDR_FUNC_RDBI<<6)
+
 #define DDR_FUNC							(DDR_FUNC_D2PLL					| \
 											DDR_FUNC_LP						| \
 											DDR_FUNC_ZQ_PD					| \
 											DDR_FUNC_EXT_VREF				| \
 											DDR_FUNC_DDR4_TIMING_TEST		| \
 											DDR_FUNC_DDR_PLL_BYPASS			| \
+											DDR_FUNC_RDBI					| \
 											(1 << 31) 						\
 											)
