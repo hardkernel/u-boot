@@ -90,11 +90,12 @@
         "sdc_burning=sdc_burn ${sdcburncfg}\0"\
         "wipe_data=successful\0"\
         "wipe_cache=successful\0"\
+        "EnableSelinux=enforcing\0" \
         "recovery_part=recovery\0"\
         "recovery_offset=0\0"\
         "cvbs_drv=0\0"\
         "initargs="\
-            "rootfstype=ramfs init=/init console=ttyS0,115200 no_console_suspend earlyprintk=aml-uart,0xc81004c0 ramoops.pstore_en=1 ramoops.record_size=0x8000 ramoops.console_size=0x4000 androidboot.selinux=enforcing"\
+            "rootfstype=ramfs init=/init console=ttyS0,115200 no_console_suspend earlyprintk=aml-uart,0xc81004c0 ramoops.pstore_en=1 ramoops.record_size=0x8000 ramoops.console_size=0x4000 androidboot.selinux=${EnableSelinux} "\
             "\0"\
         "upgrade_check="\
             "echo upgrade_step=${upgrade_step}; "\
