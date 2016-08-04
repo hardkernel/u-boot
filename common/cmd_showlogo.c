@@ -17,6 +17,8 @@ static struct c2_resolution {
 	int display_width;
 	int display_height;
 } c2_res_list[] = {
+	{"480cvbs", 720, 480},
+	{"576cvbs", 720, 576},
 	{"480p60hz", 720, 480},
 	{"576p50hz", 720, 576},
 	{"720p60hz", 1280, 720},

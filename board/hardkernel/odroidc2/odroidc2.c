@@ -40,6 +40,8 @@ extern unsigned int get_mmc_size(void);
 #define GPIO_UPS_POWER_LATCH	37	/* GPIOY_14 */
 
 static const char *c2_hdmimodes[] = {
+	"480cvbs",
+	"576cvbs",
 	"480p60hz",
 	"576p50hz",
 	"720p60hz",
