@@ -401,6 +401,10 @@
 /* other functions */
 #define CONFIG_NEED_BL301	1
 #define CONFIG_BOOTDELAY	1
+#define CONFIG_NEED_BL32	1
+#define CONFIG_CMD_RSVMEM	1
+#define CONFIG_FIP_IMG_SUPPORT	1
+#define CONFIG_BOOTDELAY	1 //delay 1s
 #define CONFIG_SYS_LONGHELP 1
 #define CONFIG_CMD_MISC         1
 #define CONFIG_CMD_ITEST    1
