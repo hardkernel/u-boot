@@ -1600,10 +1600,11 @@ static   void  osd1_update_color_mode(void)
 		if (!osd_hw.rotate[OSD1].on_off)
 			data32 |= OSD_DATA_LITTLE_ENDIAN << 15;
 		data32 |= osd_hw.color_info[OSD1]->hw_colormat << 2;
-	if (get_cpu_id().family_id < MESON_CPU_MAJOR_ID_GXTVBB) {
-		if (osd_hw.color_info[OSD1]->color_index < COLOR_INDEX_YUV_422)
-			data32 |= 1 << 7; /* yuv enable */
-	}
+		if (get_cpu_id().family_id < MESON_CPU_MAJOR_ID_GXTVBB) {
+			if (osd_hw.color_info[OSD1]->color_index
+				< COLOR_INDEX_YUV_422)
+				data32 |= 1 << 7; /* yuv enable */
+		}
 		/* osd_blk_mode */
 		data32 |=  osd_hw.color_info[OSD1]->hw_blkmode << 8;
 		VSYNCOSD_WR_MPEG_REG(VIU_OSD1_BLK0_CFG_W0, data32);
@@ -1622,10 +1623,11 @@ static void osd2_update_color_mode(void)
 		if (!osd_hw.rotate[OSD2].on_off)
 			data32 |= OSD_DATA_LITTLE_ENDIAN << 15;
 		data32 |= osd_hw.color_info[OSD2]->hw_colormat << 2;
-	if (get_cpu_id().family_id != MESON_CPU_MAJOR_ID_GXTVBB) {
-		if (osd_hw.color_info[OSD2]->color_index < COLOR_INDEX_YUV_422)
-			data32 |= 1 << 7; /* yuv enable */
-	}
+		if (get_cpu_id().family_id != MESON_CPU_MAJOR_ID_GXTVBB) {
+			if (osd_hw.color_info[OSD2]->color_index
+				< COLOR_INDEX_YUV_422)
+				data32 |= 1 << 7; /* yuv enable */
+		}
 		/* osd_blk_mode */
 		data32 |=  osd_hw.color_info[OSD2]->hw_blkmode << 8;
 		VSYNCOSD_WR_MPEG_REG(VIU_OSD2_BLK0_CFG_W0, data32);
@@ -2365,7 +2367,13 @@ void osd_init_hw(void)
 		osd_hw.free_scale_data[OSD2].y_end = 0;
 		osd_hw.free_scale_mode[OSD1] = 1;
 		osd_hw.free_scale_mode[OSD2] = 1;
-		osd_reg_write(VPP_OSD_SC_DUMMY_DATA, 0x00808000);
+		if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_GXM)
+			osd_reg_write(VPP_OSD_SC_DUMMY_DATA, 0x00202000);
+		else if (get_cpu_id().family_id ==
+			MESON_CPU_MAJOR_ID_GXTVBB)
+			osd_reg_write(VPP_OSD_SC_DUMMY_DATA, 0xff);
+		else
+			osd_reg_write(VPP_OSD_SC_DUMMY_DATA, 0x00808000);
 	} else {
 		osd_hw.free_scale_mode[OSD1] = 0;
 		osd_hw.free_scale_mode[OSD2] = 0;
