@@ -172,7 +172,6 @@ static int get_adc_sample(int chan)
 	 */
 	if (get_cpu_id().family_id >= MESON_CPU_MAJOR_ID_GXL) {
 		saradc_vref = (readl(SAR_ADC_REG13)>>8)&0x3f; /*back up SAR_ADC_REG13[13:8]*/
-		printf("saradc_vref = 0x%x\n",saradc_vref);
 		if ((readl(AO_SEC_SD_CFG12)>>19) & 0x1f) { /*thermal VREF*/
 			writel(((readl(SAR_ADC_REG13))&(~(0x3f<<8))) /*SAR_ADC_REG13[8]:0*/
 				|(((readl(AO_SEC_SD_CFG12)>>19) & 0x1f)<<9), /*SAR_ADC_REG13[13:9]*/
