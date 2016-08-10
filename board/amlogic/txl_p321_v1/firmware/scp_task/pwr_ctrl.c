@@ -19,16 +19,191 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
+
 #ifdef CONFIG_CEC_WAKEUP
 #include <cec_tx_reg.h>
 #endif
 #include <gpio-gxbb.h>
+#define P_PIN_MUX_REG3		(*((volatile unsigned *)(0xda834400 + (0x2f << 2))))
+#define P_PIN_MUX_REG7		(*((volatile unsigned *)(0xda834400 + (0x33 << 2))))
+
+#define P_PWM_MISC_REG_AB	(*((volatile unsigned *)(0xc1100000 + (0x2156 << 2))))
+#define P_PWM_PWM_B		(*((volatile unsigned *)(0xc1100000 + (0x2155 << 2))))
+#define P_PWM_MISC_REG_CD	(*((volatile unsigned *)(0xc1100000 + (0x2196 << 2))))
+#define P_PWM_PWM_D		(*((volatile unsigned *)(0xc1100000 + (0x2195 << 2))))
+#define P_AO_PWM_PWM_B1		(*((volatile unsigned *)(0xc8100400 + (0x55 << 2))))
+#define P_EE_TIMER_E		(*((volatile unsigned *)(0xc1100000 + (0x2662 << 2))))
+
+#define ON 1
+#define OFF 0
+
+static unsigned int pwm_voltage_table[][2] = {
+	{0x190003, 900},
+	{0x0f000d, 1000},
+};
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
+
+static void power_on_ddr(void);
+enum pwm_id {
+	pwm_a = 0,
+	pwm_b,
+	pwm_c,
+	pwm_d,
+	pwm_e,
+	pwm_f,
+	pwm_ao_a,
+	pwm_ao_b,
+};
+
+static void power_switch_to_ee(unsigned int pwr_ctrl)
+{
+	if (pwr_ctrl == ON) {
+		writel(readl(AO_RTI_PWR_CNTL_REG0) | (0x1 << 9), AO_RTI_PWR_CNTL_REG0);
+		_udelay(1000);
+		writel(readl(AO_RTI_PWR_CNTL_REG0)
+			& (~((0x3 << 3) | (0x1 << 1))), AO_RTI_PWR_CNTL_REG0);
+	} else {
+		writel(readl(AO_RTI_PWR_CNTL_REG0)
+		       | ((0x3 << 3) | (0x1 << 1)), AO_RTI_PWR_CNTL_REG0);
+
+		writel(readl(AO_RTI_PWR_CNTL_REG0) & (~(0x1 << 9)),
+		       AO_RTI_PWR_CNTL_REG0);
+
+	}
+}
+#define P_PWM_PWM_A		(*((volatile unsigned *)(0xc1100000 + (0x2154 << 2))))
+static void pwm_set_voltage(unsigned int id, unsigned int voltage)
+{
+	int to;
+
+	for (to = 0; to < ARRAY_SIZE(pwm_voltage_table); to++) {
+		if (pwm_voltage_table[to][1] >= voltage) {
+			break;
+		}
+	}
+	if (to >= ARRAY_SIZE(pwm_voltage_table)) {
+		to = ARRAY_SIZE(pwm_voltage_table) - 1;
+	}
+	switch (id) {
+	case pwm_a:
+		uart_puts("set vcck to 0x");
+		uart_put_hex(to, 16);
+		uart_puts("mv\n");
+		P_PWM_PWM_A = pwm_voltage_table[to][0];
+		break;
+
+	case pwm_ao_b:
+		uart_puts("set vddee to 0x");
+		uart_put_hex(to, 16);
+		uart_puts("mv\n");
+		P_AO_PWM_PWM_B1 = pwm_voltage_table[to][0];
+		break;
+	default:
+		break;
+	}
+	_udelay(200);
+}
+
+static void power_off_3v3_5v(void)
+{
+	aml_update_bits(AO_GPIO_O_EN_N, 1 << 2, 0);
+	aml_update_bits(AO_GPIO_O_EN_N, 1 << 18, 0);
+}
+
+static void power_on_3v3_5v(void)
+{
+	aml_update_bits(AO_GPIO_O_EN_N, 1 << 2, 0);
+	aml_update_bits(AO_GPIO_O_EN_N, 1 << 18, 1 << 18);
+}
+
+static void power_off_usb5v(void)
+{
+	unsigned int hwid = 1;
+	#if 0
+	//v1
+	aml_update_bits(AO_GPIO_O_EN_N, 1 << 4, 0);
+	aml_update_bits(AO_GPIO_O_EN_N, 1 << 20, 0);
+	//v2
+	aml_update_bits(AO_GPIO_O_EN_N, 1 << 10, 0);
+    aml_update_bits(AO_GPIO_O_EN_N, 1 << 26, 0);
+	#endif
+
+	/* enable 5V for USB, panel, wifi */
+	hwid = (readl(P_AO_SEC_GP_CFG0) >> 8) & 0xFF;
+	switch (hwid) {
+		case 1:
+			aml_update_bits(AO_GPIO_O_EN_N, 1 << 4, 0);
+			aml_update_bits(AO_GPIO_O_EN_N, 1 << 20, 0);
+			uart_puts("poweroff 5v - hwid 1\n");
+			break;
+		case 2:
+			aml_update_bits(AO_GPIO_O_EN_N, 1 << 10, 0);
+			aml_update_bits(AO_GPIO_O_EN_N, 1 << 26, 0);
+			uart_puts("poweroff 5v - hwid 2\n");
+			break;
+		default:
+			aml_update_bits(AO_GPIO_O_EN_N, 1 << 10, 0);
+			aml_update_bits(AO_GPIO_O_EN_N, 1 << 26, 0);
+			uart_puts("poweroff 5v - invalid hwid\n");
+			break;
+	}
+}
+
+static void power_on_usb5v(void)
+{
+	unsigned int hwid = 1;
+	#if 0
+	//v1
+	aml_update_bits(AO_GPIO_O_EN_N, 1 << 4, 0);
+	aml_update_bits(AO_GPIO_O_EN_N, 1 << 20, 1 << 20);
+	//v2
+	aml_update_bits(AO_GPIO_O_EN_N, 1 << 10, 0);
+    aml_update_bits(AO_GPIO_O_EN_N, 1 << 26, 1 << 26);
+	#endif
+
+	/* enable 5V for USB, panel, wifi */
+	hwid = (readl(P_AO_SEC_GP_CFG0) >> 8) & 0xFF;
+	switch (hwid) {
+		case 1:
+			aml_update_bits(AO_GPIO_O_EN_N, 1 << 4, 0);
+			aml_update_bits(AO_GPIO_O_EN_N, 1 << 20, 1 << 20);
+			uart_puts("poweron 5v - hwid 1\n");
+			break;
+		case 2:
+			aml_update_bits(AO_GPIO_O_EN_N, 1 << 10, 0);
+			aml_update_bits(AO_GPIO_O_EN_N, 1 << 26, 1 << 26);
+			uart_puts("poweron 5v - hwid 2\n");
+			break;
+		default:
+			aml_update_bits(AO_GPIO_O_EN_N, 1 << 10, 0);
+			aml_update_bits(AO_GPIO_O_EN_N, 1 << 26, 1 << 26);
+			uart_puts("poweron 5v - invalid hwid\n");
+			break;
+	}
+}
 
 static void power_off_at_clk81(void)
 {
+	power_off_3v3_5v();
+	power_off_usb5v();
+	pwm_set_voltage(pwm_ao_b, CONFIG_VDDEE_SLEEP_VOLTAGE);	/* reduce power */
 }
-static void power_on_at_clk81(void)
+
+static void power_on_at_clk81(unsigned int suspend_from)
 {
+	pwm_set_voltage(pwm_ao_b, CONFIG_VDDEE_INIT_VOLTAGE);
+	power_on_usb5v();
+	power_on_3v3_5v();
+	_udelay(10000);
+	_udelay(10000);
+	_udelay(10000);
+	_udelay(10000);
+	pwm_set_voltage(pwm_a, CONFIG_VCCK_INIT_VOLTAGE);
+#if 0
+	if (suspend_from == SYS_POWEROFF) {
+		power_switch_to_ee(ON);
+	}
+#endif
 }
 
 static void power_off_at_24M(void)
@@ -38,11 +213,52 @@ static void power_on_at_24M(void)
 {
 }
 
-static void power_off_at_32k(void)
+static void power_off_ddr(void)
 {
+	aml_update_bits(AO_GPIO_O_EN_N, 1 << 11, 0);
+	aml_update_bits(AO_GPIO_O_EN_N, 1 << 27, 0);
 }
-static void power_on_at_32k(void)
+
+static void power_on_ddr(void)
 {
+	aml_update_bits(AO_GPIO_O_EN_N, 1 << 11, 0);
+	aml_update_bits(AO_GPIO_O_EN_N, 1 << 27, 1 << 27);
+	_udelay(10000);
+}
+static void power_off_ee(void)
+{
+	return;
+	power_switch_to_ee(OFF);
+	aml_update_bits(AO_GPIO_O_EN_N, 1 << 8, 0);
+	aml_update_bits(AO_GPIO_O_EN_N, 1 << 24, 0);
+}
+
+static void power_on_ee(void)
+{
+	return;
+	aml_update_bits(AO_GPIO_O_EN_N, 1 << 8, 0);
+	aml_update_bits(AO_GPIO_O_EN_N, 1 << 24, 1 << 24);
+	_udelay(10000);
+	_udelay(10000);
+}
+
+static void power_off_at_32k(unsigned int suspend_from)
+{
+
+	if (suspend_from == SYS_POWEROFF) {
+		power_off_ee();
+		power_off_ddr();
+	}
+}
+
+static void power_on_at_32k(unsigned int suspend_from)
+{
+
+	if (suspend_from == SYS_POWEROFF) {
+		power_on_ddr();
+		power_on_ee();
+
+	}
 }
 
 void get_wakeup_source(void *response, unsigned int suspend_from)
