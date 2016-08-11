@@ -25,6 +25,7 @@
 #include <environment.h>
 #include <fdt_support.h>
 #include <libfdt.h>
+#include <asm/cpu_id.h>
 #ifdef CONFIG_SYS_I2C_AML
 #include <aml_i2c.h>
 #include <asm/arch/secure_apb.h>
@@ -641,10 +642,12 @@ static int send_led_timer_data(void)
 }
 #endif
 
-#ifdef CONFIG_HDMI_UART_BOARD
-struct hdmi_uart_io {
+/*USE_HDMI_UART_FUNC*/
+#define HDMI_UART_PORT_NUM   3
+
+struct hdmi_uart_date_io {
 	char *power;
-	char *hpd;
+	char *scl;
 	volatile uint32_t * hdmi_sda_reg;
 	unsigned int hdmi_sda_bit;
 	volatile uint32_t * uart_tx_reg;
@@ -655,70 +658,100 @@ struct hdmi_uart_io {
 	unsigned int uart_rx_bit;
 };
 
-#define HDMI_UART_PORT_NUM   3
-struct hdmi_uart_io hdmi_uart_array[HDMI_UART_PORT_NUM+1]=
+struct hdmi_uart_date_io txl_hdmi_uart_date_io[HDMI_UART_PORT_NUM+1]=
+{
+	{"GPIOW_5" ,"GPIOW_7" ,P_PERIPHS_PIN_MUX_5,25,P_PERIPHS_PIN_MUX_5,13,P_PERIPHS_PIN_MUX_5 ,24 ,P_PERIPHS_PIN_MUX_5,12,},
+	{"GPIOW_9", "GPIOW_11",P_PERIPHS_PIN_MUX_5,21,P_PERIPHS_PIN_MUX_5,11,P_PERIPHS_PIN_MUX_5 ,20 ,P_PERIPHS_PIN_MUX_5,10,},
+	{"GPIOW_13","GPIOW_15",P_PERIPHS_PIN_MUX_5,17,P_PERIPHS_PIN_MUX_5,9, P_PERIPHS_PIN_MUX_5 ,16 ,P_PERIPHS_PIN_MUX_5,8,},
+	{NULL,      NULL,      0,                   0,P_AO_RTI_PIN_MUX_REG,12,0 ,                   0 ,P_AO_RTI_PIN_MUX_REG,11,},
+};
+
+struct hdmi_uart_date_io gxtvbb_hdmi_uart_date_io[HDMI_UART_PORT_NUM+1]=
 {
 	{"GPIOW_6" ,"GPIOW_5" ,P_PERIPHS_PIN_MUX_6 ,9  ,P_PERIPHS_PIN_MUX_10,1,P_PERIPHS_PIN_MUX_6 ,10 ,P_PERIPHS_PIN_MUX_6,11,},
 	{"GPIOW_10","GPIOW_9" ,P_PERIPHS_PIN_MUX_6 ,14 ,P_PERIPHS_PIN_MUX_10,2,P_PERIPHS_PIN_MUX_6 ,15 ,P_PERIPHS_PIN_MUX_6,16,},
 	{"GPIOW_14","GPIOW_13",P_PERIPHS_PIN_MUX_6 ,19 ,P_PERIPHS_PIN_MUX_10,3,P_PERIPHS_PIN_MUX_6 ,20 ,P_PERIPHS_PIN_MUX_6,21,},
 	{NULL,      NULL,      0,                   0  ,P_AO_RTI_PIN_MUX_REG,0,0 ,                   0 ,P_AO_RTI_PIN_MUX_REG,1,},
 };
-extern int gpio_direction_input(unsigned gpio);
-extern int gpio_get_value(unsigned gpio);
-extern int gpio_request(unsigned gpio, const char *label);
-extern int gpio_free(unsigned gpio);
-extern int gpio_lookup_name(const char *name, struct udevice **devp,
-		     unsigned int *offsetp, unsigned int *gpiop);
+
+struct hdmi_uart_det_io {
+	char *power;
+	char *scl;
+	volatile uint32_t * uart_det_power_reg;
+	unsigned int uart_det_power_bit;
+	unsigned int uart_det_power_need_level;
+	volatile uint32_t * uart_det_scl_reg;
+	unsigned int uart_det_scl_bit;
+	unsigned int uart_det_scl_need_level;
+};
+
+struct hdmi_uart_det_io txl_hdmi_uart_det_io[HDMI_UART_PORT_NUM]=
+{
+	{"GPIOW_5" , "GPIOW_7" ,  P_PREG_PAD_GPIO4_I , 5 , 0, P_PREG_PAD_GPIO4_I ,7 , 1,},
+	{"GPIOW_9",  "GPIOW_11",  P_PREG_PAD_GPIO4_I , 9 , 0, P_PREG_PAD_GPIO4_I ,11, 1,},
+	{"GPIOW_13", "GPIOW_15" , P_PREG_PAD_GPIO4_I , 13, 0, P_PREG_PAD_GPIO4_I ,15, 1,},
+};
+
+/* in gxtvbb,use hpd port as (txl)scl port */
+struct hdmi_uart_det_io gxtvbb_hdmi_uart_det_io[HDMI_UART_PORT_NUM]=
+{
+	{"GPIOW_6" ,"GPIOW_5" , P_PREG_PAD_GPIO0_I, 6 , 0, P_PREG_PAD_GPIO0_I ,5 , 1,},
+	{"GPIOW_10","GPIOW_9" , P_PREG_PAD_GPIO0_I, 10, 0, P_PREG_PAD_GPIO0_I ,9 , 1,},
+	{"GPIOW_14","GPIOW_13", P_PREG_PAD_GPIO0_I, 14, 0, P_PREG_PAD_GPIO0_I ,13, 1,},
+};
 
 static void init_hdmi_uart_board(void)
 {
-    unsigned int power_gpio,hpd_gpio;
 	int i=0;
-	int p_value=0,h_value=0;
+	int pwr_value=0,scl_value=0;
 	int flag=0;
+	struct hdmi_uart_date_io *hdmi_uart_date_io;
+	struct hdmi_uart_det_io  *hdmi_uart_det_io;
+
+	if (get_cpu_id().family_id <= MESON_CPU_MAJOR_ID_GXTVBB) {
+		hdmi_uart_det_io  = gxtvbb_hdmi_uart_det_io;
+		hdmi_uart_date_io = gxtvbb_hdmi_uart_date_io;
+		/*printf("choose gxtvbb board.\n");*/
+	} else {
+		hdmi_uart_det_io  = txl_hdmi_uart_det_io;
+		hdmi_uart_date_io = txl_hdmi_uart_date_io;
+		/*printf("choose txl board.\n");*/
+	}
 
 	for (i=0; i<HDMI_UART_PORT_NUM; i++) {
-        gpio_lookup_name(hdmi_uart_array[i].power, NULL, NULL, &power_gpio);
-		gpio_request(power_gpio, "cmd_gpio");
-	    gpio_direction_input(power_gpio);
+		pwr_value = readl(hdmi_uart_det_io[i].uart_det_power_reg) >> hdmi_uart_det_io[i].uart_det_power_bit;
+		pwr_value &= 1;
+		scl_value = readl(hdmi_uart_det_io[i].uart_det_scl_reg) >> hdmi_uart_det_io[i].uart_det_scl_bit;
+		scl_value &= 1;
 
-		p_value = gpio_get_value(power_gpio);
-		if (p_value == 0) {
-			gpio_lookup_name(hdmi_uart_array[i].hpd, NULL, NULL, &hpd_gpio);
-			gpio_request(hpd_gpio, "cmd_gpio");
-			gpio_direction_input(hpd_gpio);
-			h_value = gpio_get_value(hpd_gpio);
-			if (h_value == 1) {
-				flag = 1;
-				gpio_free(power_gpio);
-				gpio_free(hpd_gpio);
-				break;
-			}
-			gpio_free(hpd_gpio);
+		if ((pwr_value == hdmi_uart_det_io[i].uart_det_power_need_level)
+			&& (scl_value == hdmi_uart_det_io[i].uart_det_scl_need_level)) {
+			flag = 1;
+			break;
 		}
-        gpio_free(power_gpio);
 	}
 
 	if (flag == 1) {
-        /* clean default uart pinmux */
-        writel(readl(hdmi_uart_array[3].uart_tx_reg)&~(1 << hdmi_uart_array[3].uart_tx_bit),
-			(volatile void *)hdmi_uart_array[3].uart_tx_reg);
-        writel(readl(hdmi_uart_array[3].uart_rx_reg)&~(1 << hdmi_uart_array[3].uart_rx_bit),
-			(volatile void *)hdmi_uart_array[3].uart_rx_reg);
+		printf("switch to %d hdmirx_uart port\n",i);
+		/* clean default uart pinmux */
+		writel(readl(hdmi_uart_date_io[3].uart_tx_reg)&~(1 << hdmi_uart_date_io[3].uart_tx_bit),
+			(volatile void *)hdmi_uart_date_io[3].uart_tx_reg);
+		writel(readl(hdmi_uart_date_io[3].uart_rx_reg)&~(1 << hdmi_uart_date_io[3].uart_rx_bit),
+			(volatile void *)hdmi_uart_date_io[3].uart_rx_reg);
 
-        /* set hdmi_uart pinmux */
-		writel(readl(hdmi_uart_array[i].hdmi_sda_reg)&~(1 << hdmi_uart_array[i].hdmi_sda_bit),
-			(volatile void *)hdmi_uart_array[i].hdmi_sda_reg);
-		writel(readl(hdmi_uart_array[i].uart_tx_reg)|(1 << hdmi_uart_array[i].uart_tx_bit),
-			(volatile void *)hdmi_uart_array[i].uart_tx_reg);
+		/* set hdmi_uart pinmux */
+		writel(readl(hdmi_uart_date_io[i].hdmi_sda_reg)&~(1 << hdmi_uart_date_io[i].hdmi_sda_bit),
+			(volatile void *)hdmi_uart_date_io[i].hdmi_sda_reg);
+		writel(readl(hdmi_uart_date_io[i].uart_tx_reg)|(1 << hdmi_uart_date_io[i].uart_tx_bit),
+			(volatile void *)hdmi_uart_date_io[i].uart_tx_reg);
 
-		writel(readl(hdmi_uart_array[i].hdmi_scl_reg)&~(1 << hdmi_uart_array[i].hdmi_scl_bit),
-			(volatile void *)hdmi_uart_array[i].hdmi_scl_reg);
-		writel(readl(hdmi_uart_array[i].uart_rx_reg)|(1 << hdmi_uart_array[i].uart_rx_bit),
-			(volatile void *)hdmi_uart_array[i].uart_rx_reg);
+		writel(readl(hdmi_uart_date_io[i].hdmi_scl_reg)&~(1 << hdmi_uart_date_io[i].hdmi_scl_bit),
+			(volatile void *)hdmi_uart_date_io[i].hdmi_scl_reg);
+		writel(readl(hdmi_uart_date_io[i].uart_rx_reg)|(1 << hdmi_uart_date_io[i].uart_rx_bit),
+			(volatile void *)hdmi_uart_date_io[i].uart_rx_reg);
 	}
 }
-#endif
+/*endif*/
 
 int board_init(void)
 {
@@ -740,16 +773,25 @@ int board_init(void)
 	//run_command("mw 0xc8100024 BFFF3FDF", 0);
 	run_command("gpio s GPIOAO_5", 0);
 
-	#ifdef CONFIG_HDMI_UART_BOARD
-	printf("CONFIG_HDMI_UART_BOARD\n");
-	init_hdmi_uart_board();
-	#endif
 	return 0;
 }
 
 #ifdef CONFIG_BOARD_LATE_INIT
-int board_late_init(void){
+int board_late_init(void)
+{
 	int ret;
+	char* env;
+
+	/*USE_HDMI_UART_FUNC*/
+	env = getenv("hdmiuart_mode");
+	/*printf("hdmiuart_mode env:%s\n",env);*/
+	if (env) {
+		if (!strcmp(env,"open")) {
+		printf("CONFIG_HDMI_UART_BOARD\n");
+		init_hdmi_uart_board();
+		}
+	}
+	/*endif*/
 
 	//update env before anyone using it
 	run_command("get_rebootmode; echo reboot_mode=${reboot_mode}; "\

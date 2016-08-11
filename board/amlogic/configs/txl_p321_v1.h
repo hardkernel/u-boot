@@ -67,6 +67,7 @@
         "firstboot=1\0"\
         "upgrade_step=0\0"\
         "jtag=disable\0"\
+        "hdmiuart_mode=open\0"\
         "loadaddr=1080000\0"\
         "panel_type=lvds_1\0" \
         "outputmode=1080p60hz\0" \
@@ -104,7 +105,7 @@
             "else fi;"\
             "\0"\
         "storeargs="\
-            "setenv bootargs ${initargs} logo=${display_layer},loaded,${fb_addr} vout=${outputmode},enable panel_type=${panel_type} androidboot.firstboot=${firstboot} jtag=${jtag}; "\
+            "setenv bootargs ${initargs} logo=${display_layer},loaded,${fb_addr} vout=${outputmode},enable panel_type=${panel_type} androidboot.firstboot=${firstboot} jtag=${jtag} ; "\
 	"setenv bootargs ${bootargs} androidboot.hardware=amlogic;"\
             "run cmdline_keys;"\
             "\0"\

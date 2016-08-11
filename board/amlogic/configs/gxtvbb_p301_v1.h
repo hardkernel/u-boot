@@ -86,6 +86,7 @@
 	"loadaddr=1080000\0"\
 	"panel_type=lvds_2\0" \
 	"outputmode=1080p60hz\0" \
+	"hdmiuart_mode=open\0"\
 	"panel_reverse=0\0" \
 	"osd_reverse=n\0" \
 	"video_reverse=n\0" \
