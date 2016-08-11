@@ -2,6 +2,8 @@
 #include "data.h"
 #include "registers.h"
 #include "task_apis.h"
+#include "suspend.h"
+
 
 #define TASK_ID_LOW_MB	2
 #define TASK_ID_HIGH_MB	3
@@ -136,6 +138,13 @@ void scp_led_register(struct scp_led *led)
 {
 	g_led = led;
 }
+unsigned int scan_remote_key[1] ={0x5A5A5A5A};
+struct user_data {
+	unsigned int status;
+#define MAX_DVFS_OPPS		16
+	unsigned int count;
+	unsigned int buf1[MAX_DVFS_OPPS];
+} buf_user;
 
 void process_low_task(unsigned command)
 {
@@ -144,6 +153,7 @@ void process_low_task(unsigned command)
 	unsigned *response =
 	    (unsigned *)(&(low_task_share_mem[TASK_RESPONSE_OFFSET]));
 	unsigned para1;
+	unsigned *irq = (unsigned *)SCP_SHARE_TO_WARMBOOT;
 	uart_puts("into process_low_task \n");
 
 	if (command == LOW_TASK_GET_DVFS_INFO) {
@@ -170,6 +180,13 @@ void process_low_task(unsigned command)
 		if (g_led && g_led->timer_proc)
 			g_led->timer_proc(g_led->count++);
 		dbg_prints("LED timer...\n");
+	}else if ((command & 0xffff) == LOW_TASK_GET_USR_DATA) {
+		if ((command >> 16) == SCPI_CL_POWER) {
+			buf_user.count = 1;
+			buf_user.buf1[0] = irq[IRQ_AO_IR_DEC];
+			*(response + 1) = sizeof(struct user_data);
+			memcpy((char *)(response+2), &buf_user, sizeof(struct user_data));
+		}
 	}
 }
 
@@ -187,7 +204,7 @@ void low_task(void)
 	while (1) {
 		/* do low task process */
 		command = *pcommand;
-		dbg_print("low task comd=0x",command);
+		dbg_print("low command=0x\n", command);
 		if (command) {
 			process_low_task(command);
 

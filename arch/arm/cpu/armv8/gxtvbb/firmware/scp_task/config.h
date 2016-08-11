@@ -36,6 +36,8 @@
 #define HIGH_TASK_RESPONSE_MEM_BASE		0x1000DA00
 #define LOW_TASK_SHARE_MEM_BASE			0x1000DC00
 #define LOW_TASK_RESPONSE_MEM_BASE		0x1000DE00
+#define SCP_SHARE_TO_WARMBOOT			(0x1000DE00 - 32)
+
 /*
   * BL30/BL301 share memory command list
 */
@@ -47,6 +49,7 @@
 #define SEC_TASK_GET_WAKEUP_SRC	0x6
 
 #define LOW_TASK_USR_DATA  0x100
+#define LOW_TASK_GET_USR_DATA  0x101
 #define LOW_TASK_USR_LED_TIMER 0x110
 
 	/*bl301 resume to BL30*/

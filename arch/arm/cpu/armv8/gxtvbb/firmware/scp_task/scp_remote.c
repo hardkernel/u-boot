@@ -2,6 +2,7 @@
 #include "config.h"
 #include "registers.h"
 #include "task_apis.h"
+#include "suspend.h"
 
 #ifndef CONFIG_IR_REMOTE_USE_PROTOCOL
 #define CONFIG_IR_REMOTE_USE_PROTOCOL 0
@@ -339,24 +340,31 @@ static int init_remote(void)
 	return 0;
 }
 
+extern unsigned int scan_remote_key[1];
+
 static int remote_detect_key(void)
 {
 	unsigned power_key;
 	int j;
+	unsigned *irq = (unsigned *)SCP_SHARE_TO_WARMBOOT;
 #if 1
 	if (((readl(AO_IR_DEC_STATUS)) >> 3) & 0x1) {
 		power_key = readl(AO_IR_DEC_FRAME);
 		for (j = 0; j < CONFIG_IR_REMOTE_POWER_UP_KEY_CNT; j++) {
-		if ((power_key & IR_POWER_KEY_MASK) == kk[j])
-		return 1;
+			if ((power_key & IR_POWER_KEY_MASK) == kk[j]) {
+				irq[IRQ_AO_IR_DEC]  = kk[j];
+				return 1;
+			}
 		}
 	}
 #endif
 	if (((readl(AO_MF_IR_DEC_STATUS)) >> 3) & 0x1) {
 		power_key = readl(AO_MF_IR_DEC_FRAME);
 		for (j = 0; j < CONFIG_IR_REMOTE_POWER_UP_KEY_CNT; j++) {
-		if ((power_key&IR_POWER_KEY_MASK) == kk[j])
-			return 1;
+			if ((power_key&IR_POWER_KEY_MASK) == kk[j]) {
+				irq[IRQ_AO_IR_DEC] = kk[j];
+				return 1;
+			}
 		}
 	}
 	return 0;
