@@ -64,7 +64,7 @@ static struct dos_partition {
 		.name = "cache",
 		.part = 3,
 		.type = 0x83,
-		.lba = bytes_to_lba(512 * SZ_1M),
+		.lba = bytes_to_lba(1024 * SZ_1M),
 	}, {
 		.name = "system",
 		.part = 2,
