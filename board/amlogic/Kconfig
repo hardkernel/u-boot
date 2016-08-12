@@ -71,6 +71,10 @@ config TXL_SKT_V1
 	bool "Support amlogic txl socket v1 board"
 	default n
 
+config TXL_P320_V1
+	bool "Support amlogic txl p320 board"
+	default n
+
 config TXL_P321_V1
 	bool "Support amlogic txl p321 board"
 	default n
@@ -156,6 +160,10 @@ endif
 
 if TXL_SKT_V1
 source "board/amlogic/txl_skt_v1/Kconfig"
+endif
+
+if TXL_P320_V1
+source "board/amlogic/txl_p320_v1/Kconfig"
 endif
 
 if TXL_P321_V1
