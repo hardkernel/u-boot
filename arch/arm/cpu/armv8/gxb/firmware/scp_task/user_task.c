@@ -64,13 +64,8 @@ void secure_task(void)
 				presume = (struct resume_param *)(response+1);
 				presume->method = resume_data.method;
 			}
-
-			/* FIXME : __switch_back_highmb() ? */
-			while(1)
-				;
 		}
-
-		__switch_back_highmb();
+		__switch_back_securemb();
 	}
 }
 
