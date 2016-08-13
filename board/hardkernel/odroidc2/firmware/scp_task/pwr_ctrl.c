@@ -62,25 +62,25 @@ void pwm_set_voltage(unsigned int id, unsigned int voltage)
 
 static void power_off_3v3(void)
 {
-	aml_update_bits(AO_GPIO_O_EN_N, 1<<2, 0);
-	aml_update_bits(AO_GPIO_O_EN_N, 1<<18, 1<<18);
+	//aml_update_bits(AO_GPIO_O_EN_N, 1<<2, 0);
+	//aml_update_bits(AO_GPIO_O_EN_N, 1<<18, 1<<18);
 }
 static void power_on_3v3(void)
+{
+	//aml_update_bits(AO_GPIO_O_EN_N, 1<<2, 0);
+	//aml_update_bits(AO_GPIO_O_EN_N, 1<<18, 0);
+}
+
+/*odroidc2	GPIOAO_2  powr on	:1, power_off	:0*/
+static void power_off_vcck(void)
 {
 	aml_update_bits(AO_GPIO_O_EN_N, 1<<2, 0);
 	aml_update_bits(AO_GPIO_O_EN_N, 1<<18, 0);
 }
-
-/*p200/201	GPIOAO_4  powr on	:1, power_off	:0*/
-static void power_off_vcck(void)
-{
-	aml_update_bits(AO_GPIO_O_EN_N, 1<<4, 0);
-	aml_update_bits(AO_GPIO_O_EN_N, 1<<20, 0);
-}
 static void power_on_vcck(void)
 {
-	aml_update_bits(AO_GPIO_O_EN_N, 1<<4, 0);
-	aml_update_bits(AO_GPIO_O_EN_N, 1<<20, 1<<20);
+	aml_update_bits(AO_GPIO_O_EN_N, 1<<2, 0);
+	aml_update_bits(AO_GPIO_O_EN_N, 1<<18, 1<<18);
 }
 
 static void power_off_at_clk81(void)
