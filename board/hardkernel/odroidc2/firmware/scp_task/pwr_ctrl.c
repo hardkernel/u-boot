@@ -248,10 +248,12 @@ unsigned int detect_key(unsigned int suspend_from)
 			cec_node_init();
 		}
 	#endif
+#if 0
 		if ((readl(AO_GPIO_I) & (1<<3)) == 0) {
 				exit_reason = POWER_KEY_WAKEUP;
 				break;
 		}
+#endif
 		if (time_out != 0) {
 			if ((get_time() - init_time) >= time_out * 1000 * 1000) {
 				exit_reason = AUTO_WAKEUP;
