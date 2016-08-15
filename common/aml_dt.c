@@ -87,13 +87,19 @@ unsigned long get_multi_dt_entry(unsigned long fdt_addr){
 		char *aml_dt_buf;
 		aml_dt_buf = (char *)malloc(sizeof(char)*64);
 		memset(aml_dt_buf, 0, sizeof(aml_dt_buf));
-		char *aml_dt = getenv(AML_DT_UBOOT_ENV);
 
+		/* update 2016.07.27, checkhw and setenv everytime,
+		or else aml_dt will set only once if it is reserved */
+#if 1
+		checkhw(aml_dt_buf);
+#else
+		char *aml_dt = getenv(AML_DT_UBOOT_ENV);
 		/* if aml_dt not exist or env not ready, get correct dtb by name */
 		if (NULL == aml_dt)
 			checkhw(aml_dt_buf);
 		else
 			memcpy(aml_dt_buf, aml_dt, (strlen(aml_dt)>64?64:(strlen(aml_dt)+1)));
+#endif
 
 		unsigned int aml_dt_len = aml_dt_buf ? strlen(aml_dt_buf) : 0;
 		if (aml_dt_len <= 0) {
