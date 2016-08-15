@@ -477,3 +477,12 @@ phys_size_t get_effective_memsize(void)
 	return (((readl(AO_SEC_GP_CFG0)) & 0xFFFF0000) << 4);
 #endif
 }
+
+const char * const _env_args_reserve_[] =
+{
+	"aml_dt",
+	"firstboot",
+
+	NULL//Keep NULL be last to tell END
+};
+

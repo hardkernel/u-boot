@@ -488,6 +488,7 @@ int checkhw(char * name)
 const char * const _env_args_reserve_[] =
 {
 		"aml_dt",
+		"firstboot",
 
 		NULL//Keep NULL be last to tell END
 };
