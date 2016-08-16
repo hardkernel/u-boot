@@ -678,9 +678,26 @@ static int controller_ecc_confirm(struct hw_controller *controller)
 #if (AML_CFG_NEWOOB_EN)
 	if (get_cpu_type() >= MESON_CPU_MAJOR_ID_M8) {
 		if (flash->oobsize >= (16+ecc_supports[i].bytes*ecc_page_cnt)) {
-			aml_nand_msg("new oob mode");
-			NFC_SET_OOB_MODE(controller, 3<<26);
-			controller->oob_mod = 1;
+			/* for backward compatbility 4k page mlc. The code
+			we released before like below, which means old oob
+			mode will be used when page size < 4k.
+			------------------------------------
+			if (flash->pagesize > 4096) {
+				aml_nand_msg("AML_NAND_NEW_OOB : new oob");
+				NFC_SET_OOB_MODE(3<<26);
+				controller->oob_mod = 1;
+			}else{
+				controller->oob_mod = 0;
+			}
+			------------------------------------*/
+			if ((flash->pagesize == 4096)
+				&& (flash->chipsize > 2048))
+				controller->oob_mod = 0;
+			else {
+				aml_nand_msg("new oob mode");
+				NFC_SET_OOB_MODE(controller, 3<<26);
+				controller->oob_mod = 1;
+			}
 		}
 	}
 #endif
@@ -756,7 +773,10 @@ static int controller_ecc_confirm(struct hw_controller *controller)
 	}
 
 	controller->bch_mode = bch_index;
-	controller->user_mode = 16 / (flash->pagesize / controller->ecc_unit);
+	if (controller->oob_mod)
+		controller->user_mode = 16 / (flash->pagesize / controller->ecc_unit);
+	else
+		controller->user_mode = 2;
 	tmp_value = controller->ecc_unit + controller->ecc_bytes +
 		controller->user_mode;
 	controller->ecc_steps = (flash->pagesize+flash->oobsize)/tmp_value;
