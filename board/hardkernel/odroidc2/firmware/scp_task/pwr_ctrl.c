@@ -8,6 +8,8 @@
 
 #ifdef CONFIG_CEC_WAKEUP
 #include <cec_tx_reg.h>
+#else
+typedef unsigned int uint32_t;
 #endif
 
 extern int pwm_voltage_table[31][2];
@@ -234,7 +236,7 @@ unsigned int detect_key(unsigned int suspend_from)
 	unsigned int init_time = get_time();
 	init_remote();
 #ifdef CONFIG_CEC_WAKEUP
-	if (hdmi_cec_func_config & 0x1) {
+	if ((hdmi_cec_func_config >> CEC_FUNC_MASK) & 0x1) {
 		remote_cec_hw_reset();
 		cec_node_init();
 	}
@@ -243,19 +245,19 @@ unsigned int detect_key(unsigned int suspend_from)
 	set_custom_gpio_status();
 
 	do {
-	#ifdef CONFIG_CEC_WAKEUP
-		if (cec_msg.log_addr) {
-			if (hdmi_cec_func_config & 0x1) {
+#ifdef CONFIG_CEC_WAKEUP
+		if ((hdmi_cec_func_config >> CEC_FUNC_MASK) & 0x1) {
+			if (cec_msg.log_addr) {
 				cec_handler();
 				if (cec_msg.cec_power == 0x1) {  //cec power key
 					exit_reason = CEC_WAKEUP;
 					break;
 				}
+			} else {
+				cec_node_init();
 			}
-		} else if (hdmi_cec_func_config & 0x1) {
-			cec_node_init();
 		}
-	#endif
+#endif
 #if 0
 		if ((readl(AO_GPIO_I) & (1<<3)) == 0) {
 				exit_reason = POWER_KEY_WAKEUP;
