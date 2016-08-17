@@ -197,6 +197,7 @@ typedef unsigned int uint32_t;
 #define ONE_TOUCH_PLAY_MASK                  1
 #define ONE_TOUCH_STANDBY_MASK               2
 #define AUTO_POWER_ON_MASK                   3
+#define STREAMPATH_POWER_ON_MASK             4
 
 //#define P_HHI_GCLK_MPEG2 CBUS_REG_ADDR(HHI_GCLK_MPEG2)
 //#define P_HHI_HDMI_CLK_CNTL CBUS_REG_ADDR(HHI_HDMI_CLK_CNTL)
@@ -224,6 +225,13 @@ enum _cec_log_dev_addr_e {
     CEC_UNREGISTERED_ADDR
 };
 
+typedef enum {
+	POWER_ON = 0x00,
+	POWER_STANDBY,
+	TRANS_STANDBY_TO_ON,
+	TRANS_ON_TO_STANDBY,
+} cec_power_status_e;
+
 typedef enum  {
     CEC_UNRECONIZED_OPCODE = 0x0,
     CEC_NOT_CORRECT_MODE_TO_RESPOND,
@@ -240,37 +248,18 @@ typedef enum {
 
 /* cec message structure */
 typedef struct {
-    unsigned char msg[16];
+    unsigned char msg[MAX_MSG];
     unsigned char msg_len;
-} cec_msg_buf_t;
-
-typedef struct {
-    cec_msg_buf_t buf[4];          // message memory
-    unsigned char power_status;
-    unsigned char log_addr;
     unsigned char cec_power;
-    unsigned char test;
-    unsigned char rx_write_pos;
-    unsigned char rx_read_pos;
-    unsigned char rx_buf_size;
+    unsigned char log_addr;
+    unsigned int phy_addr;
 } cec_msg_t;
 
 cec_msg_t cec_msg;
 unsigned long hdmi_cec_func_config;
 void cec_node_init(void);
-void cec_power_on(void);
-void cec_off(void);
 unsigned int cec_handler(void);
 void remote_cec_hw_reset(void);
-unsigned char remote_cec_ll_rx(void);
-int remote_cec_ll_tx(unsigned char *msg, unsigned char len);
-void cec_wr_reg(unsigned long addr, unsigned long data);
-unsigned long cec_rd_reg(unsigned long addr);
-void cec_arbit_bit_time_set(unsigned bit_set, unsigned time_set);
-//void cec_give_device_power_status(void);
-void cec_inactive_source(void);
-void cec_set_standby(void);
-
 extern void udelay(int i);
 
 // The following registers are for fine tuning CEC bit timing parameters.
