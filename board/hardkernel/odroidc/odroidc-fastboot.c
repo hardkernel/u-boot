@@ -144,7 +144,7 @@ struct fbt_partition fbt_partitions[] = {
 	{
                 .name = "cache",	/* mmcblk0p3 */
                 .type = "ext4",
-                .size_kb = 512 * 1024
+                .size_kb = 1024 * 1024
         },
         {
                 .name = "system",	/* mmcblk0p2 */
