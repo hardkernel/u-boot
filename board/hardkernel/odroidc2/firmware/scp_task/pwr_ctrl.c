@@ -60,6 +60,13 @@ void pwm_set_voltage(unsigned int id, unsigned int voltage)
 	_udelay(200);
 }
 
+static void power_off_ports(void)
+{
+	/* GPIOAO.BIT4 - USB HUB RST_N */
+	aml_update_bits(AO_GPIO_O_EN_N, 1<<4, 0);
+	aml_update_bits(AO_GPIO_O_EN_N, 1<<20, 0);
+}
+
 static void power_off_3v3(void)
 {
 	//aml_update_bits(AO_GPIO_O_EN_N, 1<<2, 0);
@@ -85,6 +92,7 @@ static void power_on_vcck(void)
 
 static void power_off_at_clk81(void)
 {
+	power_off_ports();
 	power_off_3v3();
 	power_off_vcck();
 	pwm_set_voltage(pwm_d, CONFIG_VDDEE_SLEEP_VOLTAGE);	// reduce power
