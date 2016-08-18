@@ -326,6 +326,96 @@ void *video_hw_init(void)
 	return (void *)&fb_gdev;
 }
 
+int rle8_decode(uchar *ptr, bmp_image_t *bmap_rle8, ulong width_bmp, ulong height_bmp) {
+	uchar a;
+	uchar cnt, runlen;
+	int i;
+	int decode;
+	int pixels;
+	uchar *pic;
+	int limit;
+
+	a = 0xFF;
+	decode = 1;
+	pixels = 0;
+	limit = width_bmp * height_bmp;
+	pic = (uchar *)bmap_rle8 + le32_to_cpu(bmap_rle8->header.data_offset);
+
+	while (decode) {
+		switch (pic[0]) {
+		case 0:
+			switch (pic[1]) {
+			case 0:
+				/* end of row */
+				pic += 2;
+				continue;
+			case 1:
+				/* end of bmp */
+				decode = 0;
+				break;
+			case 2:
+				/* 00 02 mode */
+				pic += 4;
+				break;
+
+			default:
+				/* 00 (03~FF) mode */
+				cnt = pic[1];
+				runlen = cnt;
+				pixels += cnt;
+				if (pixels > limit)
+				{
+					osd_loge("Error: Too much encoded pixel data, validate your bitmap\n");
+					decode = 0;
+					return -1;
+				}
+				pic += 2;
+				for (i = 0; i < cnt; i++) {
+
+					*ptr = bmap_rle8->color_table[*pic].blue;
+					ptr += 1;
+					*ptr = bmap_rle8->color_table[*pic].green;
+					ptr += 1;
+					*ptr = bmap_rle8->color_table[*pic].red;
+					ptr += 1;
+					*ptr = a;
+					ptr += 1;
+					pic += 1;
+				}
+				if (runlen & 1)
+					pic += 1;	/* 0 padding if length is odd */
+				break;
+			}
+			break;
+
+		default:
+			/* normal mode */
+			cnt = pic[0];
+			runlen = cnt;
+			pixels += cnt;
+			if (pixels > limit) {
+				osd_loge("Error: Too much encoded pixel data, validate your bitmap\n");
+				return -1;
+			}
+			pic += 1;
+			for (i = 0; i < cnt; i++) {
+
+				*ptr = bmap_rle8->color_table[*pic].blue;
+				ptr += 1;
+				*ptr = bmap_rle8->color_table[*pic].green;
+				ptr += 1;
+				*ptr = bmap_rle8->color_table[*pic].red;
+				ptr += 1;
+				*ptr = a;
+				ptr += 1;
+			}
+			pic += 1;
+			break;
+		}
+	}
+	return (0);
+}
+
 int video_display_bitmap(ulong bmp_image, int x, int y)
 {
 	vidinfo_t *info = NULL;
@@ -368,7 +458,7 @@ int video_display_bitmap(ulong bmp_image, int x, int y)
 	height = le32_to_cpu(bmp->header.height);
 	bmp_bpix = le16_to_cpu(bmp->header.bit_count);
 	colors = 1 << bmp_bpix;
-
+	uchar *buffer_rgb = NULL;
 	bpix = NBITS(info->vl_bpix);
 
 	if ((x == -1) && (y == -1)) {
@@ -383,18 +473,18 @@ int video_display_bitmap(ulong bmp_image, int x, int y)
 
 	if ((bpix != 1) && (bpix != 8) && (bpix != 16) && (bpix != 24) &&
 	    (bpix != 32)) {
-		osd_loge("%d bit/pixel mode, but BMP has %d bit/pixel\n",
+		osd_loge("%d bit/pixel mode1, but BMP has %d bit/pixel\n",
 			 bpix, bmp_bpix);
 		return 1;
 	}
 
 	/* We support displaying 8bpp BMPs on 16bpp LCDs */
-	if (bpix != bmp_bpix && (bmp_bpix != 8 || bpix != 16)) {
-		osd_loge("%d bit/pixel mode, but BMP has %d bit/pixel\n",
+	/*if (bpix != bmp_bpix && (bmp_bpix != 8 || bpix != 16)) {
+		osd_loge("%d bit/pixel mode2, but BMP has %d bit/pixel\n",
 			 bpix,
 			 le16_to_cpu(bmp->header.bit_count));
 		return 1;
-	}
+	}*/
 
 	osd_logd("Display-bmp: %d x %d  with %d colors\n",
 		 (int)width, (int)height, (int)colors);
@@ -436,25 +526,44 @@ int video_display_bitmap(ulong bmp_image, int x, int y)
 
 	osd_logd("fb=0x%p; bmap=0x%p, width=%ld, height= %ld, lcd_line_length=%d, padded_line=%d\n",
 		 fb, bmap, width, height, lcd_line_length, padded_line);
+
+	if (bmp_bpix == 8) {
+		/* decode of RLE8 */
+		buffer_rgb = (uchar *)malloc(height * width * 4 * sizeof(uchar) + 1);
+		if (buffer_rgb == NULL) {
+			printf("Error:fail to malloc the memory!");
+		}
+	}
+	uchar *ptr_rgb = buffer_rgb;
 	switch (bmp_bpix) {
 	case 8:
 		if (bpix != 16)
 			byte_width = width;
 		else
 			byte_width = width * 2;
-
+		rle8_decode(ptr_rgb, bmp, width, height);
 		for (i = 0; i < height; ++i) {
 			for (j = 0; j < width; j++) {
-				if (bpix != 16)
-					*(fb++) = *(bmap++);
+				if (bpix != 16) {
+					*(fb++) = *buffer_rgb;
+					buffer_rgb += 1;
+					*(fb++) = *buffer_rgb;
+					buffer_rgb += 1;
+					*(fb++) = *buffer_rgb;
+					buffer_rgb += 1;
+					*(fb++) = *buffer_rgb;
+					buffer_rgb += 1;
+				}
 				else {
-					*(uint16_t *)fb = cmap_base[*(bmap++)];
+					*(uint16_t *)fb = cmap_base[*buffer_rgb++];
 					fb += sizeof(uint16_t) / sizeof(*fb);
 				}
 			}
-			bmap += (width - padded_line);
-			fb   -= (byte_width + lcd_line_length);
+			buffer_rgb += (padded_line - width);
+			fb -= (byte_width * 4 + lcd_line_length);
 		}
+		buffer_rgb -= width*height*4;
+		free(buffer_rgb);
 		break;
 	case 16:
 		for (i = 0; i < height; ++i) {
@@ -496,6 +605,9 @@ int video_display_bitmap(ulong bmp_image, int x, int y)
 		osd_loge("error: gdev.bpp %d, but bmp.bpp %d\n", fb_gdev.gdfBytesPP, bmp_bpix);
 		return (-1);
 	}
+	buffer_rgb = NULL;
+	ptr_rgb = NULL;
+
 #if 0
 	flush_cache((unsigned long)info->vd_base,
 		    info->vl_col * info->vl_row * info->vl_bpix / 8);
@@ -504,7 +616,6 @@ int video_display_bitmap(ulong bmp_image, int x, int y)
 		    pheight * pwidth * info->vl_bpix / 8);
 
 #endif
-
 	return (0);
 }
 
