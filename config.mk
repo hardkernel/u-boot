@@ -233,7 +233,7 @@ CFLAGS := $(CPPFLAGS) -Wall -Wstrict-prototypes
 endif
 
 CFLAGS_SSP := $(call cc-option,-fno-stack-protector)
-CFLAGS += $(CFLAGS_SSP)
+CFLAGS += $(CFLAGS_SSP) -std=gnu89
 # Some toolchains enable security related warning flags by default,
 # but they don't make much sense in the u-boot world, so disable them.
 CFLAGS_WARN := $(call cc-option,-Wno-format-nonliteral) \
