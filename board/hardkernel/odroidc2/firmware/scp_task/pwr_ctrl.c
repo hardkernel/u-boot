@@ -250,6 +250,7 @@ unsigned int detect_key(unsigned int suspend_from)
 			if (cec_msg.log_addr) {
 				cec_handler();
 				if (cec_msg.cec_power == 0x1) {  //cec power key
+					uart_puts("CEC wakeup event!\n");
 					exit_reason = CEC_WAKEUP;
 					break;
 				}

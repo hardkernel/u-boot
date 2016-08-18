@@ -8,7 +8,8 @@
 #ifndef NULL
 #define NULL ((void *)0)
 #endif
-#define CEC_DBG_PRINT
+/* #define CEC_DBG_PRINT */
+#undef CEC_DBG_PRINT
 #ifdef CEC_DBG_PRINT
 	#define cec_dbg_print(s,v) {uart_puts(s);uart_put_hex(v,8);}
 	#define cec_dbg_printx(s,v,x) {uart_puts(s);uart_put_hex(v,x);}
@@ -413,8 +414,10 @@ static unsigned int cec_handle_message(void)
 static unsigned int cec_tx_irq_handler(void)
 {
 	unsigned int cnt = 0;
+#ifdef CEC_DBG_PRINT
 	unsigned int tx_msg_status = cec_rd_reg(CEC_TX_MSG_STATUS);
 	unsigned int tx_num_msg = cec_rd_reg(CEC_TX_NUM_MSG);
+#endif
 	cec_dbg_printx("cec_tx_irq_handler tx_msg_status:0x", tx_msg_status, 4);
 	cec_dbg_printx(", tx_num_msg:0x", tx_num_msg, 4);
 	cec_dbg_prints("\n");
@@ -436,7 +439,9 @@ static unsigned int cec_tx_irq_handler(void)
 static unsigned int cec_rx_irq_handler(void)
 {
 	unsigned int cnt = 0;
+#ifdef CEC_DBG_PRINT
 	unsigned int rx_msg_status = cec_rd_reg(CEC_RX_MSG_STATUS);
+#endif
 	unsigned int rx_num_msg = cec_rd_reg(CEC_RX_NUM_MSG);
 	cec_dbg_printx("cec_rx_irq_handler rx_msg_status:0x", rx_msg_status, 4);
 	cec_dbg_printx(", rx_num_msg:0x", rx_num_msg, 4);
