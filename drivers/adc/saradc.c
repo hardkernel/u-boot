@@ -201,7 +201,10 @@ void saradc_enable(void)
 	/* REG2: all chanel set to 8-samples & median averaging mode */
 	set_reg(PP_SAR_ADC_AVG_CNTL, 0);
 
-	set_reg(PP_SAR_ADC_REG3, 0x9388000a);
+	if (flag_12bit)
+		set_reg(PP_SAR_ADC_REG3, 0x9b88000a);
+	else
+		set_reg(PP_SAR_ADC_REG3, 0x9388000a);
 	aml_set_reg32_bits(PP_SAR_ADC_REG3,0x14,10,5);
 
 	/*gxl change vdd
