@@ -53,8 +53,7 @@ void get_wakeup_source(void *response, unsigned int suspend_from)
 	p->status = RESPONSE_OK;
 	val = REMOTE_WAKEUP_SRC;
 #ifdef CONFIG_CEC_WAKEUP
-	if (suspend_from != SYS_POWEROFF)
-		val |= CEC_WAKEUP_SRC;
+	val |= CEC_WAKEUP_SRC;
 #endif
 	p->sources = val;
 	p->gpio_info_count = 0;
@@ -80,8 +79,8 @@ static unsigned int detect_key(unsigned int suspend_from)
 #ifdef CONFIG_CEC_WAKEUP
 		if (irq[IRQ_AO_CEC] == IRQ_AO_CEC_NUM) {
 			irq[IRQ_AO_CEC] = 0xFFFFFFFF;
-			if (suspend_from == SYS_POWEROFF)
-				continue;
+//			if (suspend_from == SYS_POWEROFF)
+//				continue;
 			if (cec_msg.log_addr) {
 				if (hdmi_cec_func_config & 0x1) {
 					cec_handler();

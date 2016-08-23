@@ -266,32 +266,21 @@ typedef struct {
 } cec_msg_buf_t;
 
 typedef struct {
-    cec_msg_buf_t buf[4];          // message memory
+    cec_msg_buf_t buf[2];          // message memory
     unsigned char power_status;
     unsigned char log_addr;
     unsigned char cec_power;
-    unsigned char test;
     unsigned char rx_write_pos;
     unsigned char rx_read_pos;
     unsigned char rx_buf_size;
 } cec_msg_t;
 
 cec_msg_t cec_msg;
-unsigned long hdmi_cec_func_config;
+unsigned char hdmi_cec_func_config;
 void cec_node_init(void);
-void cec_power_on(void);
-void cec_off(void);
 unsigned int cec_handler(void);
 void remote_cec_hw_reset(void);
-unsigned char remote_cec_ll_rx(void);
-int remote_cec_ll_tx(unsigned char *msg, unsigned char len);
-void cec_wr_reg(unsigned long addr, unsigned long data);
-unsigned long cec_rd_reg(unsigned long addr);
-void cec_arbit_bit_time_set(unsigned bit_set, unsigned time_set);
 //void cec_give_device_power_status(void);
-void cec_inactive_source(void);
-void cec_set_standby(void);
-
 extern void udelay(int i);
 
 // The following registers are for fine tuning CEC bit timing parameters.
