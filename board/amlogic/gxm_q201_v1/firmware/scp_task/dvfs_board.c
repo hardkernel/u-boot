@@ -38,10 +38,7 @@ struct scpi_opp_entry cpu_dvfs_tbl[] = {
 	DVFS( 667000000,  900+50),
 	DVFS(1000000000,  940+50),
 	DVFS(1200000000, 1020+50),
-	DVFS(1416000000, 1110+30),
-	DVFS(1536000000, 1110+30),
-	DVFS(1752000000, 1110+30),
-	DVFS(2016000000, 1110+30)
+	DVFS(1512000000, 1110+30),
 };
 struct scpi_opp_entry vlittle_dvfs_tbl[] = {
 	DVFS( 100000000,  860+50),
