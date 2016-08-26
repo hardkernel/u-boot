@@ -491,7 +491,7 @@ static void config_hdmi20_tx ( enum hdmi_vic vic, struct hdmi_format_para *para,
     data32 |= ((((input_color_format ==HDMI_COLOR_FORMAT_422) &&
                  (output_color_format!=HDMI_COLOR_FORMAT_422))? 2 : 0 ) << 4);  // [5:4] intmode
     data32 |= ((((input_color_format !=HDMI_COLOR_FORMAT_422) &&
-                 (output_color_format==HDMI_COLOR_FORMAT_422))? 2 : 0 ) << 0);  // [1:0] decmode
+                 (output_color_format==HDMI_COLOR_FORMAT_422))? 1 : 0 ) << 0);  // [1:0] decmode
 	hdmitx_wr_reg(HDMITX_DWC_CSC_CFG, data32);
 
 	hdmitx_csc_config(input_color_format, output_color_format, color_depth);
