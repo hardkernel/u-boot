@@ -347,8 +347,7 @@ static int dw_eth_recv(struct eth_device *dev)
 	int length = 0;
 	phys_addr_t desc_start = (phys_addr_t)desc_p;
 	phys_addr_t desc_end = desc_start +
-		roundup(sizeof(*desc_p), ARCH_DMA_MINALIGN);
-
+	roundup(sizeof(*desc_p), ARCH_DMA_MINALIGN);
 	/* Invalidate entire buffer descriptor */
 	invalidate_dcache_range(desc_start, desc_end);
 
