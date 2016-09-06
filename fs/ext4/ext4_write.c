@@ -997,7 +997,6 @@ int ext4fs_write(const char *fname, unsigned char *buffer,
 			sizeof(struct ext2_inode));
 		if (ext4fs_put_metadata(temp_ptr, parent_itable_blkno))
 			goto fail;
-		free(temp_ptr);
 	} else {
 		/*
 		 * If parent and child fall in same inode table block
@@ -1008,7 +1007,6 @@ int ext4fs_write(const char *fname, unsigned char *buffer,
 		gd_index--;
 		if (ext4fs_put_metadata(temp_ptr, itable_blkno))
 			goto fail;
-		free(temp_ptr);
 	}
 	ext4fs_update();
 	ext4fs_deinit();
@@ -1019,6 +1017,7 @@ int ext4fs_write(const char *fname, unsigned char *buffer,
 	fs->curr_inode_no = 0;
 	free(inode_buffer);
 	free(g_parent_inode);
+	free(temp_ptr);
 	g_parent_inode = NULL;
 
 	return 0;
@@ -1026,6 +1025,7 @@ fail:
 	ext4fs_deinit();
 	free(inode_buffer);
 	free(g_parent_inode);
+	free(temp_ptr);
 	g_parent_inode = NULL;
 
 	return -1;
