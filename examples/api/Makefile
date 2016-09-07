@@ -10,6 +10,13 @@ endif
 ifeq ($(ARCH),arm)
 LOAD_ADDR = 0x1000000
 endif
+ifeq ($(ARCH),mips)
+ifdef CONFIG_64BIT
+LOAD_ADDR = 0xffffffff80200000
+else
+LOAD_ADDR = 0x80200000
+endif
+endif
 
 # Resulting ELF and binary exectuables will be named demo and demo.bin
 extra-y = demo
