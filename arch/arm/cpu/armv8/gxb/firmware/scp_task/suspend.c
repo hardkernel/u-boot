@@ -73,8 +73,6 @@ void enter_suspend(unsigned int suspend_from)
 	// FIXME : (1) BLUE LED GPIOAO_13 (2) Current issue 12*mA -> 7*mA
 #ifdef CONFIG_CEC_WAKEUP
 	hdmi_cec_func_config = readl(P_AO_DEBUG_REG0) & 0xff;
-	if (!hdmi_cec_func_config)
-		hdmi_cec_func_config = 0x2f; // Force cec config until kernel is "fixed"
 	wait_uart_empty();
 	uart_puts("CEC cfg:0x");
 	uart_put_hex(hdmi_cec_func_config, 8);
