@@ -772,6 +772,9 @@ unsigned sec_reg_read(unsigned *addr);
 #define P_VPU_HDMI_DATA_OVR VCBUS_REG_ADDR(VPU_HDMI_DATA_OVR)
 #define VPU_HDMI_FMT_CTRL 0x2743
 #define P_VPU_HDMI_FMT_CTRL VCBUS_REG_ADDR(VPU_HDMI_FMT_CTRL)
+/* For GXM and later */
+#define VPU_HDMI_DITH_CNTL 0x27fc
+#define P_VPU_HDMI_DITH_CNTL VCBUS_REG_ADDR(VPU_HDMI_DITH_CNTL)
 
 /* c_always_on_pointer.h:71 */
 #define AO_RTI_PULL_UP_REG ((0x00 << 10) | (0x0B << 2))

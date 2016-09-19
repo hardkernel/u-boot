@@ -28,6 +28,7 @@
 #include "hdmitx_tvenc.h"
 #include "mach_reg.h"
 #include "hw_enc_clk_config.h"
+#include <asm/cpu_id.h>
 
 struct hdmitx_dev hdmitx_device;
 
@@ -2433,6 +2434,7 @@ static void hdmitx_set_vdac(unsigned int enable)
 static void hdmitx_set_hw(struct hdmitx_dev* hdev)
 {
 	struct hdmi_format_para *para = NULL;
+	unsigned int cpu_type = get_cpu_id().family_id;
 
 	para = hdmi_get_fmt_paras(hdev->vic);
 	if (para == NULL) {
@@ -2485,12 +2487,41 @@ static void hdmitx_set_hw(struct hdmitx_dev* hdev)
 	case HDMI_COLOR_DEPTH_30B:
 	case HDMI_COLOR_DEPTH_36B:
 	case HDMI_COLOR_DEPTH_48B:
-		hd_set_reg_bits(P_VPU_HDMI_FMT_CTRL, 0, 4, 1);
+		if (cpu_type == MESON_CPU_MAJOR_ID_GXL) {
+			hd_set_reg_bits(P_VPU_HDMI_FMT_CTRL, 0, 4, 1);
+			hd_set_reg_bits(P_VPU_HDMI_FMT_CTRL, 0, 10, 1);
+		} else { /* For GXM and later */
+			unsigned int hs_flag = 0;
+			/* 12-10 dithering on */
+			hd_set_reg_bits(P_VPU_HDMI_FMT_CTRL, 1, 4, 1);
+			/* hsync/vsync not invert */
+			hs_flag = (hd_read_reg(P_VPU_HDMI_SETTING) >> 2) & 0x3;
+			hd_set_reg_bits(P_VPU_HDMI_SETTING, 0, 2, 2);
+			/* 12-10 rounding off */
+			hd_set_reg_bits(P_VPU_HDMI_FMT_CTRL, 0, 10, 1);
+			/* 10-8 dithering off (2x2 old dither) */
+			hd_set_reg_bits(P_VPU_HDMI_DITH_CNTL, 0, 4, 1);
+			/* set hsync/vsync */
+			hd_set_reg_bits(P_VPU_HDMI_DITH_CNTL, hs_flag, 2, 2);
+		}
 		break;
 	default:
-		hd_set_reg_bits(P_VPU_HDMI_FMT_CTRL, 1, 4, 1);
+		if (cpu_type == MESON_CPU_MAJOR_ID_GXL) {
+			hd_set_reg_bits(P_VPU_HDMI_FMT_CTRL, 0, 4, 1);
+			hd_set_reg_bits(P_VPU_HDMI_FMT_CTRL, 1, 10, 1);
+		} else { /* For GXM and later */
+			/* 12-10 dithering off */
+			hd_set_reg_bits(P_VPU_HDMI_FMT_CTRL, 0, 4, 1);
+			/* 12-10 rounding on */
+			hd_set_reg_bits(P_VPU_HDMI_FMT_CTRL, 1, 10, 1);
+			/* 10-8 dithering on (2x2 old dither) */
+			hd_set_reg_bits(P_VPU_HDMI_DITH_CNTL, 1, 4, 1);
+			/* set hsync/vsync as default 0 */
+			hd_set_reg_bits(P_VPU_HDMI_DITH_CNTL, 0, 2, 2);
+		}
 		break;
 	}
+
 	switch (hdev->vic) {
 	case HDMI_720x480i60_16x9:
 	case HDMI_720x576i50_16x9:
