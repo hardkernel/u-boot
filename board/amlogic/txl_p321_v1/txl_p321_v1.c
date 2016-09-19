@@ -473,6 +473,13 @@ int board_init(void)
 	board_usb_init(&g_usb_config_GXL_skt,BOARD_USB_MODE_HOST);
 #endif /*CONFIG_USB_XHCI_AMLOGIC*/
 
+/*
+AO4 -- AO10 change
+tmp for P320 5V_en
+*/
+	writel(readl(AO_GPIO_O_EN_N) & (~(0x1 << 10)), AO_GPIO_O_EN_N); //set mode: output
+	writel(readl(AO_GPIO_O_EN_N) | (0x1 << 26),AO_GPIO_O_EN_N);   //output 1
+
 #ifdef CONFIG_AML_NAND
 	extern int amlnf_init(unsigned char flag);
 	amlnf_init(0);
@@ -537,7 +544,7 @@ int board_late_init(void)
 #endif// #ifdef CONFIG_AML_V2_FACTORY_BURN
 
 	/* enable 5V for USB, panel, wifi */
-	run_command("gpio set GPIOAO_4", 0);
+	//run_command("gpio set GPIOAO_4", 0);
 	return 0;
 }
 #endif
