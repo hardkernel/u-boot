@@ -35,8 +35,8 @@ int uart_puts(const char *s);
 
 /* #define dbg_print(s,v) */
 /* #define dbg_prints(s) */
-#define writel(v, addr) (*((unsigned *)addr) = v)
-#define readl(addr) (*((unsigned *)addr))
+#define writel(v, addr) (*((volatile unsigned *)addr) = v)
+#define readl(addr) (*((volatile unsigned *)addr))
 
 #define dbg_print(s, v) {uart_puts(s); uart_put_hex(v, 32); uart_puts("\n"); }
 /* #define dbg_prints(s)  {uart_puts(s);wait_uart_empty();} */

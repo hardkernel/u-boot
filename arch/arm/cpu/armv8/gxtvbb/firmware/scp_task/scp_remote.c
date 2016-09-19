@@ -288,7 +288,6 @@ void backuremote_register(void)
 
 void resume_remote_register(void)
 {
-	int tmp = 0;
 	writel(backuAO_RTI_PIN_MUX_REG, AO_RTI_PIN_MUX_REG);
 	writel(backuAO_IR_DEC_REG0, AO_MF_IR_DEC_REG0);
 	writel(backuAO_IR_DEC_REG1, AO_MF_IR_DEC_REG1);
@@ -296,20 +295,19 @@ void resume_remote_register(void)
 	writel(backuAO_IR_DEC_LDR_IDLE, AO_MF_IR_DEC_LDR_IDLE);
 	writel(backuAO_IR_DEC_BIT_0, AO_MF_IR_DEC_BIT_0);
 	writel(bakeuAO_IR_DEC_LDR_REPEAT, AO_MF_IR_DEC_LDR_REPEAT);
-	tmp = readl(AO_MF_IR_DEC_FRAME);
+	readl(AO_MF_IR_DEC_FRAME);
 }
 
 static int ir_remote_init_32k_mode(void)
 {
-	int tmp = 0;
 	//volatile unsigned int status,data_value;
 	int val = readl(AO_RTI_PIN_MUX_REG);
 	writel((val | (1 << 12)), AO_RTI_PIN_MUX_REG);
 	set_remote_mode(CONFIG_IR_REMOTE_USE_PROTOCOL);
 	//status = readl(AO_MF_IR_DEC_STATUS);
-	tmp = readl(AO_MF_IR_DEC_STATUS);
+	readl(AO_MF_IR_DEC_STATUS);
 	//data_value = readl(AO_MF_IR_DEC_FRAME);
-	tmp = readl(AO_MF_IR_DEC_FRAME);
+	readl(AO_MF_IR_DEC_FRAME);
 
 	//step 2 : request nec_remote irq  & enable it
 	return 0;
