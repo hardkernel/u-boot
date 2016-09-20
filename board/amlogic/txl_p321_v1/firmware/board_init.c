@@ -67,15 +67,14 @@ void board_init(void)
 		/* dram 1.5V reset */
 		serial_puts("DRAM reset...\n");
 		/* power off ddr */
-		//aml_update_bits(P_AO_GPIO_O_EN_N, 1 << 3, 0);
-		//aml_update_bits(P_AO_GPIO_O_EN_N, 1 << 19, 0);
-		writel((readl(P_AO_GPIO_O_EN_N) & (~((1 << 3) | (1 << 19)))),P_AO_GPIO_O_EN_N);
-		/* need delay */
-		_udelay(40000);
+		writel((readl(P_AO_GPIO_O_EN_N) & (~((1 << 11) | (1 << 27)))),P_AO_GPIO_O_EN_N);
+		/* need delay, check hw design */
+		_udelay(100000);
 		/* power on ddr */
-		//aml_update_bits(P_AO_GPIO_O_EN_N, 1 << 3, 0);
-		//aml_update_bits(P_AO_GPIO_O_EN_N, 1 << 19, 1 << 19);
-		writel((readl(P_AO_GPIO_O_EN_N) | (1 << 19)),P_AO_GPIO_O_EN_N);
+		writel((readl(P_AO_GPIO_O_EN_N) | (1 << 27)),P_AO_GPIO_O_EN_N);
+
+		/* dram RC charge time, check hw design */
+		_udelay(10000);
 	}
 
 	panel_power_init();
