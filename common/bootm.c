@@ -368,7 +368,7 @@ static int bootm_add_ignore_mpt_to_fdt(void *fdth)
 	ret = fdt_setprop(fdth, nodeoffset, "ignore_mpt", NULL, 0);
 
 	if (ret == -FDT_ERR_NOSPACE) {
-		fdt_shrink_to_minimum(fdth);
+		fdt_shrink_to_minimum(fdth, 0);
 		ret = fdt_setprop(fdth, nodeoffset, "ignore_mpt", NULL, 0);
 	}
 
