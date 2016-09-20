@@ -37,9 +37,10 @@ struct pwr_op {
 
 	unsigned int (*detect_key)(unsigned int);
 	void (*get_wakeup_source)(void *, unsigned int);
+	int exit_reason;
 };
-static void inline aml_update_bits(unsigned int  reg, unsigned int mask, unsigned int val)
-{
+static inline void aml_update_bits(unsigned int  reg,
+	unsigned int mask, unsigned int val) {
 	unsigned int tmp, orig;
 	orig = readl(reg);
 	tmp = orig & ~mask;

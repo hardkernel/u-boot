@@ -10,41 +10,41 @@
 #include <cec_tx_reg.h>
 #endif
 #include <gpio-gxbb.h>
+#include "dvfs_board.h"
 
-extern int pwm_voltage_table[31][2];
+#define P_PIN_MUX_REG3	(*((volatile unsigned *)(0xda834400 + (0x2f << 2))))
+#define P_PIN_MUX_REG7	(*((volatile unsigned *)(0xda834400 + (0x33 << 2))))
 
-#define P_PIN_MUX_REG3		(*((volatile unsigned *)(0xda834400 + (0x2f << 2))))
-#define P_PIN_MUX_REG7		(*((volatile unsigned *)(0xda834400 + (0x33 << 2))))
+#define P_PWM_MISC_REG_AB	\
+	(*((volatile unsigned *)(0xc1100000 + (0x2156 << 2))))
+#define P_PWM_PWM_B	(*((volatile unsigned *)(0xc1100000 + (0x2155 << 2))))
+#define P_PWM_MISC_REG_CD	\
+	(*((volatile unsigned *)(0xc1100000 + (0x2192 << 2))))
+#define P_PWM_PWM_D	(*((volatile unsigned *)(0xc1100000 + (0x2191 << 2))))
 
-#define P_PWM_MISC_REG_AB	(*((volatile unsigned *)(0xc1100000 + (0x2156 << 2))))
-#define P_PWM_PWM_B		(*((volatile unsigned *)(0xc1100000 + (0x2155 << 2))))
-#define P_PWM_MISC_REG_CD	(*((volatile unsigned *)(0xc1100000 + (0x2192 << 2))))
-#define P_PWM_PWM_D		(*((volatile unsigned *)(0xc1100000 + (0x2191 << 2))))
-
-#define P_EE_TIMER_E		(*((volatile unsigned *)(0xc1100000 + (0x2662 << 2))))
+#define P_EE_TIMER_E	(*((volatile unsigned *)(0xc1100000 + (0x2662 << 2))))
 #define ON 1
 #define OFF 0
 enum pwm_id {
-    pwm_a = 0,
-    pwm_b,
-    pwm_c,
-    pwm_d,
-    pwm_e,
-    pwm_f,
+	pwm_a = 0,
+	pwm_b,
+	pwm_c,
+	pwm_d,
+	pwm_e,
+	pwm_f,
 };
-
+static struct pwr_op *g_pwr_op;
 void pwm_set_voltage(unsigned int id, unsigned int voltage)
 {
 	int to;
 
 	for (to = 0; to < ARRAY_SIZE(pwm_voltage_table); to++) {
-		if (pwm_voltage_table[to][1] >= voltage) {
+		if (pwm_voltage_table[to][1] >= voltage)
 			break;
-		}
 	}
-	if (to >= ARRAY_SIZE(pwm_voltage_table)) {
+	if (to >= ARRAY_SIZE(pwm_voltage_table))
 		to = ARRAY_SIZE(pwm_voltage_table) - 1;
-	}
+
 	switch (id) {
 	case pwm_b:
 		uart_puts("set vddee to 0x");
@@ -94,7 +94,8 @@ static void power_off_at_clk81(void)
 {
 	hdmi_5v_ctrl(OFF);
 	vcck_ctrl(OFF);
-	pwm_set_voltage(pwm_b, CONFIG_VDDEE_SLEEP_VOLTAGE);	// reduce power
+	pwm_set_voltage(pwm_b, CONFIG_VDDEE_SLEEP_VOLTAGE);
+	/* reduce power */
 }
 static void power_on_at_clk81(void)
 {
@@ -112,9 +113,11 @@ static void power_off_at_24M(void)
 
 static void power_on_at_24M(void)
 {
-	aml_update_bits(PREG_PAD_GPIO0_EN_N, 1 << 24, 0);
-	aml_update_bits(PREG_PAD_GPIO0_O, 1 << 24, 1 << 24);
-
+	if (g_pwr_op->exit_reason != 4) {
+		/* bluetooth wakeup */
+		aml_update_bits(PREG_PAD_GPIO0_EN_N, 1 << 24, 0);
+		aml_update_bits(PREG_PAD_GPIO0_O, 1 << 24, 1 << 24);
+	}
 }
 
 static void power_off_at_32k(void)
@@ -149,7 +152,7 @@ void get_wakeup_source(void *response, unsigned int suspend_from)
 	gpio->gpio_out_ao = -1;
 	gpio->irq = IRQ_AO_GPIO0_NUM;
 	gpio->trig_type = GPIO_IRQ_FALLING_EDGE;
-	p->gpio_info_count ++;
+	p->gpio_info_count++;
 
 	gpio = &(p->gpio_info[1]);
 	gpio->wakeup_id = BT_WAKEUP_SRC;
@@ -159,8 +162,7 @@ void get_wakeup_source(void *response, unsigned int suspend_from)
 	gpio->gpio_out_ao = -1;
 	gpio->irq = IRQ_GPIO0_NUM;
 	gpio->trig_type	= GPIO_IRQ_FALLING_EDGE;
-	p->gpio_info_count ++;
-
+	p->gpio_info_count++;
 }
 void wakeup_timer_setup(void)
 {
@@ -181,7 +183,6 @@ void wakeup_timer_clear(void)
 }
 static unsigned int detect_key(unsigned int suspend_from)
 {
-
 	int exit_reason = 0;
 	unsigned int time_out = readl(AO_DEBUG_REG2);
 	unsigned time_out_ms = time_out*100;
@@ -218,8 +219,9 @@ static unsigned int detect_key(unsigned int suspend_from)
 						break;
 					}
 				}
-			} else if (hdmi_cec_func_config & 0x1)
+			} else if (hdmi_cec_func_config & 0x1) {
 				cec_node_init();
+			}
 		}
 #endif
 		if (irq[IRQ_TIMERA] == IRQ_TIMERA_NUM) {
@@ -272,5 +274,7 @@ static void pwr_op_init(struct pwr_op *pwr_op)
 
 	pwr_op->detect_key = detect_key;
 	pwr_op->get_wakeup_source = get_wakeup_source;
+	pwr_op->exit_reason = 0;
+	g_pwr_op = pwr_op;
 }
 

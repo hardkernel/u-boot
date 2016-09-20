@@ -21,7 +21,7 @@
 
 #include "config.h"
 #include <serial.h>
-//#include <stdio.h>
+/* #include <stdio.h> */
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
@@ -126,7 +126,7 @@ void pwm_init(int id)
 
 		reg  = P_PIN_MUX_REG2;
 		reg &= ~(1 << 5);
-		reg |=  (1 << 11);		// enable PWM_B
+		reg |=  (1 << 11);		/* enable PWM_B */
 		P_PIN_MUX_REG2 = reg;
 		break;
 
@@ -145,7 +145,7 @@ void pwm_init(int id)
 		P_PIN_MUX_AO_REG = reg;
 
 		reg  = P_PIN_MUX_AO_REG;
-		reg |=  (1 << 22);		// enable PWM_AO_A
+		reg |=  (1 << 22);		/* enable PWM_AO_A */
 		P_PIN_MUX_AO_REG = reg;
 		break;
 
@@ -163,7 +163,7 @@ void pwm_init(int id)
 		P_PIN_MUX_REG8 = reg;
 
 		reg  = P_PIN_MUX_REG8;
-		reg |=  (1 << 30);		// enable PWM_F
+		reg |=  (1 << 30);		/* enable PWM_F */
 		P_PIN_MUX_REG8 = reg;
 		break;
 

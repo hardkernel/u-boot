@@ -86,6 +86,7 @@ void enter_suspend(unsigned int suspend_from)
 	uart_puts("exit_reason:0x");
 	uart_put_hex(exit_reason, 8);
 	uart_puts("\n");
+	p_pwr_op->exit_reason = exit_reason;
 	set_wakeup_method(exit_reason);
 	p_pwr_op->power_on_at_24M();
 	p_pwr_op->power_on_at_clk81();
