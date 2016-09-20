@@ -213,7 +213,7 @@ static int config_buf(struct usb_configuration *config,
 
 static int config_desc(struct usb_composite_dev *cdev, unsigned w_value)
 {
-	enum usb_device_speed		speed = USB_SPEED_UNKNOWN;
+	enum usb_device_speed		speed = USB_SPEED_HIGH;
 	struct usb_gadget		*gadget = cdev->gadget;
 	u8				type = w_value >> 8;
 	int                             hs = 0;
@@ -918,8 +918,6 @@ static void composite_unbind(struct usb_gadget *gadget)
 	 * so there's no i/o concurrency that could affect the
 	 * state protected by cdev->lock.
 	 */
-	BUG_ON(cdev->config);
-
 	while (!list_empty(&cdev->configs)) {
 		c = list_first_entry(&cdev->configs,
 				struct usb_configuration, list);

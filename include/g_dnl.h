@@ -13,6 +13,12 @@
 #include <linux/usb/composite.h>
 #include <linker_lists.h>
 
+#define CONFIG_USB_GADGET_VBUS_DRAW 500
+#define CONFIG_USB_FASTBOOT_BUF_SIZE 0xB0000000
+#define CONFIG_USB_FASTBOOT_BUF_ADDR 0x10200000
+#define CONFIG_G_DNL_MANUFACTURER 0123
+#define CONFIG_G_DNL_PRODUCT_NUM 1234
+
 /*
  * @usb_fname: unescaped USB function name
  * @callback_ptr: bind callback, one per function name

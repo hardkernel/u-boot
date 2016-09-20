@@ -54,6 +54,8 @@
 #define DBG(x...) do {} while (0)
 #else
 #define DBG(x...) printf(x)
+#endif
+
 static const char *reqname(unsigned r)
 {
 	switch (r) {
@@ -70,7 +72,6 @@ static const char *reqname(unsigned r)
 	default: return "*UNKNOWN*";
 	}
 }
-#endif
 
 static struct usb_endpoint_descriptor ep0_desc = {
 	.bLength = sizeof(struct usb_endpoint_descriptor),

@@ -42,8 +42,8 @@
 #define DRIVER_VERSION		"usb_dnl 2.0"
 
 static const char product[] = "USB download gadget";
-static char g_dnl_serial[MAX_STRING_SERIAL];
-static const char manufacturer[] = CONFIG_G_DNL_MANUFACTURER;
+static char g_dnl_serial[MAX_STRING_SERIAL] = "1234567890";
+static const char manufacturer[] = "amlogic";
 
 void g_dnl_set_serialnumber(char *s)
 {
@@ -60,8 +60,8 @@ static struct usb_device_descriptor device_desc = {
 	.bDeviceClass = USB_CLASS_COMM,
 	.bDeviceSubClass = 0x02, /*0x02:CDC-modem , 0x00:CDC-serial*/
 
-	.idVendor = __constant_cpu_to_le16(CONFIG_G_DNL_VENDOR_NUM),
-	.idProduct = __constant_cpu_to_le16(CONFIG_G_DNL_PRODUCT_NUM),
+	.idVendor = 0x18d1,
+	.idProduct = 0x0d02,
 	.iProduct = STRING_PRODUCT,
 	.iSerialNumber = STRING_SERIAL,
 	.bNumConfigurations = 1,
@@ -264,7 +264,7 @@ int g_dnl_register(const char *name)
 {
 	int ret;
 
-	debug("%s: g_dnl_driver.name = %s\n", __func__, name);
+	printf("%s: g_dnl_driver.name = %s\n", __func__, name);
 	g_dnl_driver.name = name;
 
 	ret = usb_composite_register(&g_dnl_driver);
