@@ -67,7 +67,7 @@
         "firstboot=1\0"\
         "upgrade_step=0\0"\
         "jtag=disable\0"\
-        "hdmiuart_mode=open\0"\
+        "hdmiuart_mode=close\0"\
         "loadaddr=1080000\0"\
         "panel_type=lvds_1\0" \
         "outputmode=1080p60hz\0" \
