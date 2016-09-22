@@ -473,13 +473,6 @@ int board_init(void)
 	board_usb_init(&g_usb_config_GXL_skt,BOARD_USB_MODE_HOST);
 #endif /*CONFIG_USB_XHCI_AMLOGIC*/
 
-/*
-AO4 -- AO10 change
-tmp for P320 5V_en
-*/
-	writel(readl(AO_GPIO_O_EN_N) & (~(0x1 << 10)), AO_GPIO_O_EN_N); //set mode: output
-	writel(readl(AO_GPIO_O_EN_N) | (0x1 << 26),AO_GPIO_O_EN_N);   //output 1
-
 #ifdef CONFIG_AML_NAND
 	extern int amlnf_init(unsigned char flag);
 	amlnf_init(0);
@@ -492,6 +485,7 @@ int board_late_init(void)
 {
 	int ret;
 	char* env;
+	unsigned int hwid = 1;
 
 	/*USE_HDMI_UART_FUNC*/
 	env = getenv("hdmiuart_mode");
@@ -543,8 +537,28 @@ int board_late_init(void)
 	/*aml_try_factory_sdcard_burning(0, gd->bd);*/
 #endif// #ifdef CONFIG_AML_V2_FACTORY_BURN
 
+
 	/* enable 5V for USB, panel, wifi */
-	//run_command("gpio set GPIOAO_4", 0);
+	hwid = (readl(P_AO_SEC_GP_CFG0) >> 8) & 0xFF;
+	switch (hwid) {
+		case 1:
+			run_command("gpio set GPIOAO_4", 0);
+			break;
+		case 2:
+			/* set output mode for GPIOAO_10 */
+			clrbits_le32(P_AO_GPIO_O_EN_N, (1<<10));
+			/* set output level to high for GPIOAO_10 */
+			setbits_le32(P_AO_GPIO_O_EN_N, (1<<26));
+			break;
+		default:
+			/* set output mode for GPIOAO_10 */
+			clrbits_le32(P_AO_GPIO_O_EN_N, (1<<10));
+			/* set output level to high for GPIOAO_10 */
+			setbits_le32(P_AO_GPIO_O_EN_N, (1<<26));
+			printf("invalid hwid = %d\n", hwid);
+			break;
+	}
+
 	return 0;
 }
 #endif
@@ -578,3 +592,40 @@ phys_size_t get_effective_memsize(void)
 	return (((readl(AO_SEC_GP_CFG0)) & 0xFFFF0000) << 4);
 #endif
 }
+
+#ifdef CONFIG_MULTI_DTB
+int checkhw(char * name)
+{
+	/*
+	 * read board hw id
+	 * set and select the dts according the board hw id.
+	 *
+	 * hwid = 1	p321 v1
+	 * hwid = 2	p321 v2
+	 */
+	unsigned int hwid = 1;
+	char loc_name[64] = {0};
+
+	/* read hwid */
+	hwid = (readl(P_AO_SEC_GP_CFG0) >> 8) & 0xFF;
+
+	printf("checkhw:  hwid = %d\n", hwid);
+
+
+	switch (hwid) {
+		case 1:
+			strcpy(loc_name, "txl_p321_v1\0");
+			break;
+		case 2:
+			strcpy(loc_name, "txl_p321_v2\0");
+			break;
+		default:
+			strcpy(loc_name, "txl_p321_v1");
+			break;
+	}
+	strcpy(name, loc_name);
+	setenv("aml_dt", loc_name);
+	return 0;
+}
+#endif
+
