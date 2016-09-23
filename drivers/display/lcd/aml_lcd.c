@@ -760,17 +760,22 @@ static int lcd_mode_probe(void)
 	switch (aml_lcd_driver.lcd_config->lcd_mode) {
 #ifdef CONFIG_AML_LCD_TV
 	case LCD_MODE_TV:
-		get_lcd_tv_config(dt_addr, load_id);
+		ret = get_lcd_tv_config(dt_addr, load_id);
 		break;
 #endif
 #ifdef CONFIG_AML_LCD_TABLET
 	case LCD_MODE_TABLET:
-		get_lcd_tablet_config(dt_addr, load_id);
+		ret = get_lcd_tablet_config(dt_addr, load_id);
 		break;
 #endif
 	default:
 		LCDPR("invalid lcd mode\n");
 		break;
+	}
+	if (ret) {
+		aml_lcd_driver.config_check = NULL;
+		LCDERR("invalid lcd config\n");
+		return -1;
 	}
 #ifdef CONFIG_AML_LCD_EXTERN
 	lcd_extern_load_config(dt_addr, aml_lcd_driver.lcd_config);
@@ -800,6 +805,7 @@ int lcd_probe(void)
 	lcd_debug_print_flag = 1;
 #else
 	char *str;
+	int ret = 0;
 
 	str = getenv("lcd_debug_print");
 	if (str == NULL) {
@@ -814,7 +820,10 @@ int lcd_probe(void)
 	lcd_chip_detect();
 	lcd_config_gpio_init();
 	lcd_clk_config_probe();
-	lcd_mode_probe();
+	ret = lcd_mode_probe();
+	if (ret)
+		return 0;
+
 	aml_bl_power_ctrl(0, 0); /* init backlight ctrl port */
 	mdelay(10);
 

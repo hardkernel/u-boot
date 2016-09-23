@@ -764,6 +764,7 @@ static int lcd_config_check(char *mode)
 int get_lcd_tablet_config(char *dt_addr, int load_id)
 {
 	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
+	int ret = 0;
 
 	strcpy(lcd_drv->version, LCD_DRV_VERSION);
 	lcd_drv->list_support_mode = lcd_list_support_mode;
@@ -773,14 +774,17 @@ int get_lcd_tablet_config(char *dt_addr, int load_id)
 	lcd_drv->driver_disable = lcd_tablet_driver_disable;
 
 	if (load_id & 0x10) { /* unifykey */
-		lcd_config_load_from_unifykey(lcd_drv->lcd_config);
+		ret = lcd_config_load_from_unifykey(lcd_drv->lcd_config);
 	} else if (load_id & 0x1) { /* dts */
 #ifdef CONFIG_OF_LIBFDT
-		lcd_config_load_from_dts(dt_addr, lcd_drv->lcd_config);
+		ret = lcd_config_load_from_dts(dt_addr, lcd_drv->lcd_config);
 #endif
 	} else { /* bsp */
-		lcd_config_load_from_bsp(lcd_drv->lcd_config);
+		ret = lcd_config_load_from_bsp(lcd_drv->lcd_config);
 	}
+	if (ret)
+		return -1;
+
 	lcd_config_load_print(lcd_drv->lcd_config);
 	lcd_config_init(lcd_drv->lcd_config);
 

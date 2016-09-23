@@ -1956,6 +1956,11 @@ int aml_bl_config_load(char *dt_addr, int load_id)
 		if (ret == 0)
 			aml_bl_init_load_from_bsp(lcd_drv->bl_config);
 	}
+	if (ret) {
+		lcd_drv->bl_config->method = BL_CTRL_MAX;
+		LCDPR("bl: invalid backlight config\n");
+		return -1;
+	}
 	if (lcd_debug_print_flag) {
 		aml_bl_config_print();
 	} else {
