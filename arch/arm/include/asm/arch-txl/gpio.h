@@ -32,6 +32,9 @@
 #define	GPIOAO_7    7
 #define	GPIOAO_8    8
 #define	GPIOAO_9    9
+#define	GPIOAO_10   10
+#define	GPIOAO_11   11
+
 
 /*EE Bank*/
 #define	GPIOZ_0    0
@@ -50,102 +53,79 @@
 #define	GPIOZ_13    13
 #define	GPIOZ_14    14
 #define	GPIOZ_15    15
+#define	GPIOZ_16    16
+#define	GPIOZ_17    17
+#define	GPIOZ_18    18
+#define	GPIOZ_19    19
+#define	GPIOZ_20    20
+#define	GPIOZ_21    21
 
-#define	GPIOH_0    16
-#define	GPIOH_1    17
-#define	GPIOH_2    18
-#define	GPIOH_3    19
-#define	GPIOH_4    20
-#define	GPIOH_5    21
-#define	GPIOH_6    22
-#define	GPIOH_7    23
-#define	GPIOH_8    24
-#define	GPIOH_9    25
+#define	GPIOH_0    22
+#define	GPIOH_1    23
+#define	GPIOH_2    24
+#define	GPIOH_3    25
+#define	GPIOH_4    26
+#define	GPIOH_5    27
+#define	GPIOH_6    28
+#define	GPIOH_7    29
+#define	GPIOH_8    30
+#define	GPIOH_9    31
 
-#define	BOOT_0    26
-#define	BOOT_1    27
-#define	BOOT_2    28
-#define	BOOT_3    29
-#define	BOOT_4    30
-#define	BOOT_5    31
-#define	BOOT_6    32
-#define	BOOT_7    33
-#define	BOOT_8    34
-#define	BOOT_9    35
-#define	BOOT_10    36
-#define	BOOT_11    37
-#define	BOOT_12    38
-#define	BOOT_13    39
-#define	BOOT_14    40
-#define	BOOT_15    41
+#define	BOOT_0    32
+#define	BOOT_1    33
+#define	BOOT_2    34
+#define	BOOT_3    35
+#define	BOOT_4    36
+#define	BOOT_5    37
+#define	BOOT_6    38
+#define	BOOT_7    39
+#define	BOOT_8    40
+#define	BOOT_9    41
+#define	BOOT_10    42
+#define	BOOT_11    43
 
-#define	CARD_0    42
-#define	CARD_1    43
-#define	CARD_2    44
-#define	CARD_3    45
-#define	CARD_4    46
-#define	CARD_5    47
-#define	CARD_6    48
+#define	CARD_0    44
+#define	CARD_1    45
+#define	CARD_2    46
+#define	CARD_3    47
+#define	CARD_4    48
+#define	CARD_5    49
+#define	CARD_6    50
 
-#define	GPIODV_0    49
-#define	GPIODV_1    50
-#define	GPIODV_2    51
-#define	GPIODV_3    52
-#define	GPIODV_4    53
-#define	GPIODV_5    54
-#define	GPIODV_6    55
-#define	GPIODV_7    56
-#define	GPIODV_8    57
-#define	GPIODV_9    58
-#define	GPIODV_10    59
-#define	GPIODV_11    60
-#define	GPIODV_12    61
-#define	GPIODV_13    62
-#define	GPIODV_14    63
-#define	GPIODV_15    64
-#define	GPIODV_16    65
-#define	GPIODV_17    66
-#define	GPIODV_18    67
-#define	GPIODV_19    68
-#define	GPIODV_20    69
-#define	GPIODV_21    70
-#define	GPIODV_22    71
-#define	GPIODV_23    72
-#define	GPIODV_24    73
-#define	GPIODV_25    74
-#define	GPIODV_26    75
-#define	GPIODV_27    76
-#define	GPIODV_28    77
-#define	GPIODV_29    78
+#define	GPIODV_0    51
+#define	GPIODV_1    52
+#define	GPIODV_2    53
+#define	GPIODV_3    54
+#define	GPIODV_4    55
+#define	GPIODV_5    56
+#define	GPIODV_6    57
+#define	GPIODV_7    58
+#define	GPIODV_8    59
+#define	GPIODV_9    60
+#define	GPIODV_10   61
+#define	GPIODV_11   62
 
-#define	GPIOX_0    79
-#define	GPIOX_1    80
-#define	GPIOX_2    81
-#define	GPIOX_3    82
-#define	GPIOX_4    83
-#define	GPIOX_5    84
-#define	GPIOX_6    85
-#define	GPIOX_7    86
-#define	GPIOX_8    87
-#define	GPIOX_9    88
-#define	GPIOX_10    89
-#define	GPIOX_11    90
-#define	GPIOX_12    91
-#define	GPIOX_13    92
-#define	GPIOX_14    93
-#define	GPIOX_15    94
-#define	GPIOX_16    95
-#define	GPIOX_17    96
-#define	GPIOX_18    97
+#define	GPIOW_0    63
+#define	GPIOW_1    64
+#define	GPIOW_2    65
+#define	GPIOW_3    66
+#define	GPIOW_4    67
+#define	GPIOW_5    68
+#define	GPIOW_6    69
+#define	GPIOW_7    70
+#define	GPIOW_8    71
+#define	GPIOW_9    72
+#define	GPIOW_10   73
+#define	GPIOW_11   74
+#define	GPIOW_12   75
+#define	GPIOW_13   76
+#define	GPIOW_14   77
+#define	GPIOW_15   78
 
-#define	GPIOCLK_0    98
-#define	GPIOCLK_1    99
+#define	GPIOCLK_0    79
+#define	GPIOCLK_1    80
 
-#define	GPIO_TEST_N    100
-
-
-
-#define EE_OFFSET 10
+#define EE_OFFSET 12
 
 #define	PIN_GPIOZ_0    (EE_OFFSET + GPIOZ_0)
 #define	PIN_GPIOZ_1    (EE_OFFSET + GPIOZ_1)
@@ -163,6 +143,13 @@
 #define	PIN_GPIOZ_13    (EE_OFFSET + GPIOZ_13)
 #define	PIN_GPIOZ_14    (EE_OFFSET + GPIOZ_14)
 #define	PIN_GPIOZ_15    (EE_OFFSET + GPIOZ_15)
+#define	PIN_GPIOZ_16    (EE_OFFSET + GPIOZ_16)
+#define	PIN_GPIOZ_17    (EE_OFFSET + GPIOZ_17)
+#define	PIN_GPIOZ_18    (EE_OFFSET + GPIOZ_18)
+#define	PIN_GPIOZ_19    (EE_OFFSET + GPIOZ_19)
+#define	PIN_GPIOZ_20    (EE_OFFSET + GPIOZ_20)
+#define	PIN_GPIOZ_21    (EE_OFFSET + GPIOZ_21)
+
 #define	PIN_GPIOH_0    (EE_OFFSET + GPIOH_0)
 #define	PIN_GPIOH_1    (EE_OFFSET + GPIOH_1)
 #define	PIN_GPIOH_2    (EE_OFFSET + GPIOH_2)
@@ -173,6 +160,7 @@
 #define	PIN_GPIOH_7    (EE_OFFSET + GPIOH_7)
 #define	PIN_GPIOH_8    (EE_OFFSET + GPIOH_8)
 #define	PIN_GPIOH_9    (EE_OFFSET + GPIOH_9)
+
 #define	PIN_BOOT_0    (EE_OFFSET + BOOT_0)
 #define	PIN_BOOT_1    (EE_OFFSET + BOOT_1)
 #define	PIN_BOOT_2    (EE_OFFSET + BOOT_2)
@@ -185,10 +173,7 @@
 #define	PIN_BOOT_9    (EE_OFFSET + BOOT_9)
 #define	PIN_BOOT_10    (EE_OFFSET + BOOT_10)
 #define	PIN_BOOT_11    (EE_OFFSET + BOOT_11)
-#define	PIN_BOOT_12    (EE_OFFSET + BOOT_12)
-#define	PIN_BOOT_13    (EE_OFFSET + BOOT_13)
-#define	PIN_BOOT_14    (EE_OFFSET + BOOT_14)
-#define	PIN_BOOT_15    (EE_OFFSET + BOOT_15)
+
 #define	PIN_CARD_0    (EE_OFFSET + CARD_0)
 #define	PIN_CARD_1    (EE_OFFSET + CARD_1)
 #define	PIN_CARD_2    (EE_OFFSET + CARD_2)
@@ -196,6 +181,7 @@
 #define	PIN_CARD_4    (EE_OFFSET + CARD_4)
 #define	PIN_CARD_5    (EE_OFFSET + CARD_5)
 #define	PIN_CARD_6    (EE_OFFSET + CARD_6)
+
 #define	PIN_GPIODV_0    (EE_OFFSET + GPIODV_0)
 #define	PIN_GPIODV_1    (EE_OFFSET + GPIODV_1)
 #define	PIN_GPIODV_2    (EE_OFFSET + GPIODV_2)
@@ -208,43 +194,24 @@
 #define	PIN_GPIODV_9    (EE_OFFSET + GPIODV_9)
 #define	PIN_GPIODV_10    (EE_OFFSET + GPIODV_10)
 #define	PIN_GPIODV_11    (EE_OFFSET + GPIODV_11)
-#define	PIN_GPIODV_12    (EE_OFFSET + GPIODV_12)
-#define	PIN_GPIODV_13    (EE_OFFSET + GPIODV_13)
-#define	PIN_GPIODV_14    (EE_OFFSET + GPIODV_14)
-#define	PIN_GPIODV_15    (EE_OFFSET + GPIODV_15)
-#define	PIN_GPIODV_16    (EE_OFFSET + GPIODV_16)
-#define	PIN_GPIODV_17    (EE_OFFSET + GPIODV_17)
-#define	PIN_GPIODV_18    (EE_OFFSET + GPIODV_18)
-#define	PIN_GPIODV_19    (EE_OFFSET + GPIODV_19)
-#define	PIN_GPIODV_20    (EE_OFFSET + GPIODV_20)
-#define	PIN_GPIODV_21    (EE_OFFSET + GPIODV_21)
-#define	PIN_GPIODV_22    (EE_OFFSET + GPIODV_22)
-#define	PIN_GPIODV_23    (EE_OFFSET + GPIODV_23)
-#define	PIN_GPIODV_24    (EE_OFFSET + GPIODV_24)
-#define	PIN_GPIODV_25    (EE_OFFSET + GPIODV_25)
-#define	PIN_GPIODV_26    (EE_OFFSET + GPIODV_26)
-#define	PIN_GPIODV_27    (EE_OFFSET + GPIODV_27)
-#define	PIN_GPIODV_28    (EE_OFFSET + GPIODV_28)
-#define	PIN_GPIODV_29    (EE_OFFSET + GPIODV_29)
-#define	PIN_GPIOX_0    (EE_OFFSET + GPIOX_0)
-#define	PIN_GPIOX_1    (EE_OFFSET + GPIOX_1)
-#define	PIN_GPIOX_2    (EE_OFFSET + GPIOX_2)
-#define	PIN_GPIOX_3    (EE_OFFSET + GPIOX_3)
-#define	PIN_GPIOX_4    (EE_OFFSET + GPIOX_4)
-#define	PIN_GPIOX_5    (EE_OFFSET + GPIOX_5)
-#define	PIN_GPIOX_6    (EE_OFFSET + GPIOX_6)
-#define	PIN_GPIOX_7    (EE_OFFSET + GPIOX_7)
-#define	PIN_GPIOX_8    (EE_OFFSET + GPIOX_8)
-#define	PIN_GPIOX_9    (EE_OFFSET + GPIOX_9)
-#define	PIN_GPIOX_10    (EE_OFFSET + GPIOX_10)
-#define	PIN_GPIOX_11    (EE_OFFSET + GPIOX_11)
-#define	PIN_GPIOX_12    (EE_OFFSET + GPIOX_12)
-#define	PIN_GPIOX_13    (EE_OFFSET + GPIOX_13)
-#define	PIN_GPIOX_14    (EE_OFFSET + GPIOX_14)
-#define	PIN_GPIOX_15    (EE_OFFSET + GPIOX_15)
-#define	PIN_GPIOX_16    (EE_OFFSET + GPIOX_16)
-#define	PIN_GPIOX_17    (EE_OFFSET + GPIOX_17)
-#define	PIN_GPIOX_18    (EE_OFFSET + GPIOX_18)
+
+#define	PIN_GPIOW_0    (EE_OFFSET + GPIOW_0)
+#define	PIN_GPIOW_1    (EE_OFFSET + GPIOW_1)
+#define	PIN_GPIOW_2    (EE_OFFSET + GPIOW_2)
+#define	PIN_GPIOW_3    (EE_OFFSET + GPIOW_3)
+#define	PIN_GPIOW_4    (EE_OFFSET + GPIOW_4)
+#define	PIN_GPIOW_5    (EE_OFFSET + GPIOW_5)
+#define	PIN_GPIOW_6    (EE_OFFSET + GPIOW_6)
+#define	PIN_GPIOW_7    (EE_OFFSET + GPIOW_7)
+#define	PIN_GPIOW_8    (EE_OFFSET + GPIOW_8)
+#define	PIN_GPIOW_9    (EE_OFFSET + GPIOW_9)
+#define	PIN_GPIOW_10   (EE_OFFSET + GPIOW_10)
+#define	PIN_GPIOW_11   (EE_OFFSET + GPIOW_11)
+#define	PIN_GPIOW_12   (EE_OFFSET + GPIOW_12)
+#define	PIN_GPIOW_13   (EE_OFFSET + GPIOW_13)
+#define	PIN_GPIOW_14   (EE_OFFSET + GPIOW_14)
+#define	PIN_GPIOW_15   (EE_OFFSET + GPIOW_15)
+
 #define	PIN_GPIOCLK_0    (EE_OFFSET + GPIOCLK_0)
 #define	PIN_GPIOCLK_1    (EE_OFFSET + GPIOCLK_1)
 
