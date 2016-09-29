@@ -552,30 +552,20 @@ int find_dev_num_by_partition_name (char *name)
 
     return dev_num;
 }
-
+extern int dtb_read(void *addr);
 int get_dtb_struct(struct mmc *mmc)
 {
-    int ret=0, start_blk, size, blk_cnt=0;
-    unsigned char *dst = NULL;
+    int ret=0;//, start_blk, size, blk_cnt=0;
+    //unsigned char *dst = NULL;
     unsigned char *buffer = NULL;
 
     //Burning empty emmc flash, dtb downloaded from usb tool
     if (part_table) return 0;
 
     buffer = (unsigned char *)malloc(sizeof(unsigned char) * DTB_PART_SIZE);
-    //struct partitions *pp = NULL;
-    start_blk = (DTB_ADDR_SIZE) / mmc->read_bl_len;
-    size = DTB_PART_SIZE;
-    dst = buffer;
-	if (size >= mmc->read_bl_len) {
-        blk_cnt = size / mmc->read_bl_len;
-        printf("mmc read lba=%#x, blocks=%#x\n", start_blk, blk_cnt);
-        ret = mmc->block_dev.block_read(mmc->block_dev.dev, start_blk, blk_cnt, dst);
-		if (ret == 0) { // error
-            ret = -1;
-            goto exit_err;
-        }
-    }
+    /* don't check the return of dtb_read */
+    dtb_read(buffer);
+
     ret = get_partition_from_dts(buffer);
 	if (ret) {
         printf("!!!!get dts FAILED\n");
