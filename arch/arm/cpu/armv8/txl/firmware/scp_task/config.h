@@ -22,8 +22,8 @@
 #ifndef _CONFIG_H_
 #define _CONFIG_H_
 
-#define CONFIG_RAM_BASE        (0x10000000 + 41 * 1024)
-#define CONFIG_RAM_SIZE         (12 * 1024)
+#define CONFIG_RAM_BASE        (0x10000000 + 40 * 1024)
+#define CONFIG_RAM_SIZE         (13 * 1024)
 #define CONFIG_RAM_END		(CONFIG_RAM_BASE+CONFIG_RAM_SIZE)
 
 #define CONFIG_TASK_STACK_SIZE	512

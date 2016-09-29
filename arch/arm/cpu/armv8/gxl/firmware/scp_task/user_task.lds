@@ -17,6 +17,7 @@ SECTIONS
 	{
 		*(.commo*)
 	}
+	. = ALIGN(8*1024);
 	.data	:
 	{
 		*(.bss .data .rodata*)
