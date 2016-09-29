@@ -213,21 +213,44 @@ void get_wakeup_source(void *response, unsigned int suspend_from)
 	unsigned val;
 
 	p->status = RESPONSE_OK;
-	val = REMOTE_WAKEUP_SRC;
+	val = (POWER_KEY_WAKEUP_SRC | AUTO_WAKEUP_SRC | REMOTE_WAKEUP_SRC |
+	       BT_WAKEUP_SRC);
 #ifdef CONFIG_CEC_WAKEUP
-	val |= CEC_WAKEUP_SRC;
+	if (suspend_from != SYS_POWEROFF)
+		val |= CEC_WAKEUP_SRC;
 #endif
 	p->sources = val;
 	p->gpio_info_count = 0;
 }
-
+void wakeup_timer_setup(void)
+{
+	/* 1ms resolution*/
+	unsigned value;
+	value = readl(P_ISA_TIMER_MUX);
+	value |= ((0x3<<0) | (0x1<<12) | (0x1<<16));
+	writel(value, P_ISA_TIMER_MUX);
+	/*10ms generate an interrupt*/
+	writel(10, P_ISA_TIMERA);
+}
+void wakeup_timer_clear(void)
+{
+	unsigned value;
+	value = readl(P_ISA_TIMER_MUX);
+	value &= ~((0x1<<12) | (0x1<<16));
+	writel(value, P_ISA_TIMER_MUX);
+}
 static unsigned int detect_key(unsigned int suspend_from)
 {
 	int exit_reason = 0;
+	unsigned int time_out = readl(AO_DEBUG_REG2);
+	unsigned time_out_ms = time_out*100;
 	unsigned *irq = (unsigned *)WAKEUP_SRC_IRQ_ADDR_BASE;
 	/* unsigned *wakeup_en = (unsigned *)SECURE_TASK_RESPONSE_WAKEUP_EN; */
 
 	/* setup wakeup resources*/
+	/*auto suspend: timerA 10ms resolution*/
+	if (time_out_ms != 0)
+		wakeup_timer_setup();
 	init_remote();
 #ifdef CONFIG_CEC_WAKEUP
 	if (hdmi_cec_func_config & 0x1) {
@@ -256,6 +279,15 @@ static unsigned int detect_key(unsigned int suspend_from)
 				cec_node_init();
 		}
 #endif
+		if (irq[IRQ_TIMERA] == IRQ_TIMERA_NUM) {
+			irq[IRQ_TIMERA] = 0xFFFFFFFF;
+			if (time_out_ms != 0)
+				time_out_ms--;
+			if (time_out_ms == 0) {
+				wakeup_timer_clear();
+				exit_reason = AUTO_WAKEUP;
+			}
+		}
 	if (irq[IRQ_AO_IR_DEC] == IRQ_AO_IR_DEC_NUM) {
 		irq[IRQ_AO_IR_DEC] = 0xFFFFFFFF;
 			if (remote_detect_key())
