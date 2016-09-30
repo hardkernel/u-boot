@@ -24,9 +24,9 @@
 #include "registers.h"
 #include "task_apis.h"
 
-#define TASK_ID_LOW_MB	2
-#define TASK_ID_HIGH_MB	3
-#define TASK_ID_SECURE_MB  4
+#define TASK_ID_LOW_MB	3
+#define TASK_ID_HIGH_MB	4
+#define TASK_ID_SECURE_MB  5
 
 enum scpi_client_id {
 	SCPI_CL_NONE,
