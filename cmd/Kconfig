@@ -743,6 +743,15 @@ config CMD_LOADS
 	help
 	  Load an S-Record file over serial line
 
+config CMD_LOAD_ANDROID
+	bool "load_android"
+	default n
+	depends on ANDROID_BOOT_IMAGE
+	help
+	  Load an Android Boot image from storage. The Android Boot images
+	  define the size and kernel address on the header, which are used by
+	  this command.
+
 config CMD_MMC
 	bool "mmc"
 	help
