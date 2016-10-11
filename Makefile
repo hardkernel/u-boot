@@ -863,8 +863,14 @@ FIP_ARGS += --bl33 $(FIP_FOLDER_SOC)/bl33.bin
 
 .PHONY: fip_create
 fip_create:
+	$(Q)$(FIP_FOLDER)/fip_create > /dev/null 2>&1 && \
+		echo "Pre-built fip_create is valid" || \
+		echo "Re-build fip_create"
+ifneq ($$?, "0")
+	$(Q)rm -f $(FIP_FOLDER)/fip_create
 	$(Q)$(MAKE) -C $(srctree)/tools/fip_create/
 	$(Q)cp $(srctree)/tools/fip_create/fip_create $(FIP_FOLDER)/
+endif
 
 .PHONY: fip.bin
 fip.bin: tools prepare u-boot.bin bl301.bin fip_create
