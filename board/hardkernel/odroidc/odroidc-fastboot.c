@@ -144,7 +144,11 @@ struct fbt_partition fbt_partitions[] = {
 	{
                 .name = "cache",	/* mmcblk0p3 */
                 .type = "ext4",
+#ifndef CONFIG_ODROIDC_REV2
                 .size_kb = 1024 * 1024
+#else
+                .size_kb = 512 * 1024
+#endif
         },
         {
                 .name = "system",	/* mmcblk0p2 */
