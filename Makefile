@@ -1407,7 +1407,7 @@ distclean: mrproper
 	@rm -f $(FIP_FOLDER_SOC)/fip.bin
 	@rm -f $(FIP_FOLDER_SOC)/boot.bin
 	@rm -f $(FIP_FOLDER_SOC)/boot_sd.bin
-	@rm -f $(FIP_FOLDER_SOC)/u-boot.bin
+	@rm -f $(FIP_FOLDER_SOC)/u-boot.bin $(srctree)/u-boot.bin
 	@rm -f $(FIP_FOLDER_SOC)/u-boot.bin.* $(FIP_FOLDER_SOC)/*.encrypt
 	@rm -f $(FIP_FOLDER)/u-boot.bin.* $(FIP_FOLDER)/*.bin $(FIP_FOLDER)/*.encrypt
 	@rm -f $(FIP_FOLDER)/fip_create
