@@ -867,10 +867,17 @@ fip_create:
 	$(Q)cp $(srctree)/tools/fip_create/fip_create $(FIP_FOLDER)/
 
 .PHONY: fip.bin
-fip.bin: tools prepare u-boot.bin fip_create
+fip.bin: tools prepare u-boot.bin bl301.bin fip_create
 	$(Q)cp u-boot.bin $(FIP_FOLDER_SOC)/bl33.bin
 	$(Q)$(FIP_FOLDER)/fip_create ${FIP_ARGS} $(FIP_FOLDER_SOC)/fip.bin
 	$(Q)$(FIP_FOLDER)/fip_create --dump $(FIP_FOLDER_SOC)/fip.bin
+
+.PHONY: bl301.bin
+bl301.bin:tools prepare
+ifneq ("$(wildcard $(srctree)/$(CPUDIR)/${SOC}/firmware/scp_task)", "")
+	$(Q)$(MAKE) -C $(srctree)/$(CPUDIR)/${SOC}/firmware/scp_task
+	$(Q)cp $(buildtree)/scp_task/bl301.bin $(FIP_FOLDER_SOC)/bl301.bin -f
+endif
 
 .PHONY : boot.bin
 boot.bin: fip.bin
