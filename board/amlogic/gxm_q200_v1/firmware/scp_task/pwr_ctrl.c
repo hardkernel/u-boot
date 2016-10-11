@@ -152,7 +152,7 @@ void get_wakeup_source(void *response, unsigned int suspend_from)
 	struct wakeup_gpio_info *gpio;
 
 	p->status = RESPONSE_OK;
-	val = (POWER_KEY_WAKEUP_SRC | AUTO_WAKEUP_SRC | REMOTE_WAKEUP_SRC);
+	val = (POWER_KEY_WAKEUP_SRC | AUTO_WAKEUP_SRC | REMOTE_WAKEUP_SRC|ETH_PHY_WAKEUP_SRC);
 #ifdef CONFIG_CEC_WAKEUP
 	if (suspend_from != SYS_POWEROFF)
 		val |= CEC_WAKEUP_SRC;
@@ -254,6 +254,10 @@ static unsigned int detect_key(unsigned int suspend_from)
 			irq[IRQ_AO_GPIO0] = 0xFFFFFFFF;
 			if ((readl(AO_GPIO_I) & (1<<2)) == 0)
 				exit_reason = POWER_KEY_WAKEUP;
+		}
+		if (irq[IRQ_ETH_PHY] == IRQ_ETH_PHY_NUM) {
+			irq[IRQ_ETH_PHY] = 0xFFFFFFFF;
+				exit_reason = ETH_PHY_WAKEUP;
 		}
 		if (exit_reason)
 			break;
