@@ -670,7 +670,7 @@ void bl_pwm_ctrl(struct bl_pwm_config_s *bl_pwm, int status)
 	}
 }
 
-static void bl_power_en_ctrl(struct bl_config_s *bconf, int status, int delay_flag)
+static void bl_power_en_ctrl(struct bl_config_s *bconf, int status)
 {
 	int gpio;
 	char *str;
@@ -682,15 +682,11 @@ static void bl_power_en_ctrl(struct bl_config_s *bconf, int status, int delay_fl
 		gpio = aml_lcd_gpio_name_map_num(str);
 	}
 	if (status) {
-		if ((bconf->power_on_delay > 0) && (delay_flag > 0))
-			mdelay(bconf->power_on_delay);
 		if (gpio < LCD_GPIO_MAX)
 			aml_lcd_gpio_set(gpio, bconf->en_gpio_on);
 	} else {
 		if (gpio < LCD_GPIO_MAX)
 			aml_lcd_gpio_set(gpio, bconf->en_gpio_off);
-		if ((bconf->power_off_delay > 0) && (delay_flag > 0))
-			mdelay(bconf->power_off_delay);
 	}
 }
 
@@ -722,34 +718,36 @@ void aml_bl_power_ctrl(int status, int delay_flag)
 		}
 
 		bl_status = 1;
+		if ((bconf->power_on_delay > 0) && (delay_flag > 0))
+			mdelay(bconf->power_on_delay);
 		switch (bconf->method) {
 		case BL_CTRL_GPIO:
-			bl_power_en_ctrl(bconf, 1, delay_flag);
+			bl_power_en_ctrl(bconf, 1);
 			break;
 		case BL_CTRL_PWM:
 			/* step 1: power on pwm */
-			if (bconf->pwm_on_delay > 0)
-				mdelay(bconf->pwm_on_delay);
 			bl_pwm_ctrl(bconf->bl_pwm, 1);
 			bl_pwm_pinmux_ctrl(bconf, 1);
+			if (bconf->pwm_on_delay > 0)
+				mdelay(bconf->pwm_on_delay);
 			/* step 2: power on enable */
-			bl_power_en_ctrl(bconf, 1, delay_flag);
+			bl_power_en_ctrl(bconf, 1);
 			break;
 		case BL_CTRL_PWM_COMBO:
 			/* step 1: power on pwm_combo */
-			if (bconf->pwm_on_delay > 0)
-				mdelay(bconf->pwm_on_delay);
 			bl_pwm_ctrl(bconf->bl_pwm_combo0, 1);
 			bl_pwm_ctrl(bconf->bl_pwm_combo1, 1);
 			bl_pwm_pinmux_ctrl(bconf, 1);
+			if (bconf->pwm_on_delay > 0)
+				mdelay(bconf->pwm_on_delay);
 			/* step 2: power on enable */
-			bl_power_en_ctrl(bconf, 1, delay_flag);
+			bl_power_en_ctrl(bconf, 1);
 			break;
 #ifdef CONFIG_AML_LOCAL_DIMMING
 		case BL_CTRL_LOCAL_DIMING:
 			ldim_drv = aml_ldim_get_driver();
 			/* step 1: power on enable */
-			bl_power_en_ctrl(bconf, 1, delay_flag);
+			bl_power_en_ctrl(bconf, 1);
 			/* step 2: power on ldim */
 			if (ldim_drv->power_on)
 				ldim_drv->power_on();
@@ -760,7 +758,7 @@ void aml_bl_power_ctrl(int status, int delay_flag)
 #ifdef CONFIG_AML_BL_EXTERN
 		case BL_CTRL_EXTERN:
 			/* step 1: power on enable */
-			bl_power_en_ctrl(bconf, 1, delay_flag);
+			bl_power_en_ctrl(bconf, 1);
 			/* step 2: power on bl_extern */
 			bl_ext = aml_bl_extern_get_driver();
 			if (bl_ext->power_on)
@@ -778,26 +776,26 @@ void aml_bl_power_ctrl(int status, int delay_flag)
 		bl_status = 0;
 		switch (bconf->method) {
 		case BL_CTRL_GPIO:
-			bl_power_en_ctrl(bconf, 0, delay_flag);
+			bl_power_en_ctrl(bconf, 0);
 			break;
 		case BL_CTRL_PWM:
 			/* step 1: power off enable */
-			bl_power_en_ctrl(bconf, 0, delay_flag);
+			bl_power_en_ctrl(bconf, 0);
 			/* step 2: power off pwm */
-			bl_pwm_ctrl(bconf->bl_pwm, 0);
-			bl_pwm_pinmux_ctrl(bconf, 0);
 			if (bconf->pwm_off_delay > 0)
 				mdelay(bconf->pwm_off_delay);
+			bl_pwm_ctrl(bconf->bl_pwm, 0);
+			bl_pwm_pinmux_ctrl(bconf, 0);
 			break;
 		case BL_CTRL_PWM_COMBO:
 			/* step 1: power off enable */
-			bl_power_en_ctrl(bconf, 0, delay_flag);
+			bl_power_en_ctrl(bconf, 0);
 			/* step 2: power off pwm_combo */
+			if (bconf->pwm_off_delay > 0)
+				mdelay(bconf->pwm_off_delay);
 			bl_pwm_ctrl(bconf->bl_pwm_combo0, 0);
 			bl_pwm_ctrl(bconf->bl_pwm_combo1, 0);
 			bl_pwm_pinmux_ctrl(bconf, 0);
-			if (bconf->pwm_off_delay > 0)
-				mdelay(bconf->pwm_off_delay);
 			break;
 #ifdef CONFIG_AML_LOCAL_DIMMING
 		case BL_CTRL_LOCAL_DIMING:
@@ -808,7 +806,7 @@ void aml_bl_power_ctrl(int status, int delay_flag)
 			else
 				LCDERR("bl: ldim power off is null\n");
 			/* step 2: power off enable */
-			bl_power_en_ctrl(bconf, 0, delay_flag);
+			bl_power_en_ctrl(bconf, 0);
 			break;
 #endif
 #ifdef CONFIG_AML_BL_EXTERN
@@ -820,7 +818,7 @@ void aml_bl_power_ctrl(int status, int delay_flag)
 			else
 				LCDERR("bl: bl_extern: power off is null\n");
 			/* step 2: power off enable */
-			bl_power_en_ctrl(bconf, 0, delay_flag);
+			bl_power_en_ctrl(bconf, 0);
 			break;
 #endif
 		default:
@@ -828,6 +826,8 @@ void aml_bl_power_ctrl(int status, int delay_flag)
 				LCDERR("bl: wrong backlight control method\n");
 			break;
 		}
+		if ((bconf->power_off_delay > 0) && (delay_flag > 0))
+			mdelay(bconf->power_off_delay);
 	}
 	LCDPR("bl: %s: %d\n", __func__, status);
 }
