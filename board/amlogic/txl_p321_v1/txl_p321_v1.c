@@ -537,6 +537,15 @@ int board_late_init(void)
 	/*aml_try_factory_sdcard_burning(0, gd->bd);*/
 #endif// #ifdef CONFIG_AML_V2_FACTORY_BURN
 
+	//CLEAR PINMUX
+	clrbits_le32(P_AO_RTI_PIN_MUX_REG,(1<<23)|(1<<5)|(1<<1));//AO_5
+	clrbits_le32(P_PERIPHS_PIN_MUX_2, (1<<13)|(1<<5)|(1<<28));//DV_9
+	//SET GPIOAO_5 OUTPUT 1
+	clrbits_le32(P_AO_GPIO_O_EN_N, 1 << 5);
+	setbits_le32(P_AO_GPIO_O_EN_N, 1 << 21);
+	//SET GPIODV_9 OUTPUT 1
+	clrbits_le32(P_PREG_PAD_GPIO0_EN_N, 1 << 9);
+	setbits_le32(P_PREG_PAD_GPIO0_O, 1 << 9);
 
 	/* enable 5V for USB, panel, wifi */
 	hwid = (readl(P_AO_SEC_GP_CFG0) >> 8) & 0xFF;

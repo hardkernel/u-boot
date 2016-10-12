@@ -119,6 +119,18 @@ static void power_on_3v3_5v(void)
 static void power_off_usb5v(void)
 {
 	unsigned int hwid = 1;
+
+	//CLEAR PINMUX
+	aml_update_bits(AO_RTI_PIN_MUX_REG, (1<<23)|(1<<5)|(1<<1), 0); //AO_5
+	aml_update_bits(PERIPHS_PIN_MUX_2, (1<<13)|(1<<5)|(1<<28), 0); //DV_9
+	//SET GPIOAO_5 OUTPUT 0
+	aml_update_bits(AO_GPIO_O_EN_N, 1 << 5, 0);
+	aml_update_bits(AO_GPIO_O_EN_N, 1 << 21, 0);
+	//SET GPIODV_9 OUTPUT 0
+	aml_update_bits(PREG_PAD_GPIO0_EN_N, 1 << 9, 0);
+	aml_update_bits(PREG_PAD_GPIO0_O, 1 << 9, 0);
+
+	return ;
 	#if 0
 	//v1
 	aml_update_bits(AO_GPIO_O_EN_N, 1 << 4, 0);
@@ -152,6 +164,15 @@ static void power_off_usb5v(void)
 static void power_on_usb5v(void)
 {
 	unsigned int hwid = 1;
+
+	//SET GPIOAO_5 OUTPUT 1
+	aml_update_bits(AO_GPIO_O_EN_N, 1 << 5, 0);
+	aml_update_bits(AO_GPIO_O_EN_N, 1 << 21, 1 << 21);
+	//SET GPIODV_9 OUTPUT 1
+	aml_update_bits(PREG_PAD_GPIO0_EN_N, 1 << 9, 0);
+	aml_update_bits(PREG_PAD_GPIO0_O, 1 << 9, 1 << 9);
+
+	return ;
 	#if 0
 	//v1
 	aml_update_bits(AO_GPIO_O_EN_N, 1 << 4, 0);
@@ -270,7 +291,7 @@ void get_wakeup_source(void *response, unsigned int suspend_from)
 	val = (POWER_KEY_WAKEUP_SRC | AUTO_WAKEUP_SRC | REMOTE_WAKEUP_SRC |
 	       ETH_PHY_WAKEUP_SRC | BT_WAKEUP_SRC);
 #ifdef CONFIG_CEC_WAKEUP
-	if (suspend_from != SYS_POWEROFF)
+	//if (suspend_from != SYS_POWEROFF)
 		val |= CEC_WAKEUP_SRC;
 #endif
 	p->sources = val;
