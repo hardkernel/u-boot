@@ -342,14 +342,14 @@ static int iw7019_short_reset_handler(void)
 
 	/* disable BL_ON once */
 	LDIMPR("short reset iw7019 BL_ON\n");
-	reset_cnt++;
-	ldim_gpio_set(ldim_drv->ldev_conf->en_gpio,
+
+	ldim_set_gpio(ldim_drv->ldev_conf->en_gpio,
 		ldim_drv->ldev_conf->en_gpio_off);
 	mdelay(300);
-	ldim_gpio_set(ldim_drv->ldev_conf->en_gpio,
+	ldim_set_gpio(ldim_drv->ldev_conf->en_gpio,
 		ldim_drv->ldev_conf->en_gpio_on);
 	mdelay(2);
-	iw7019_power_on_init(IW7019_POWER_RESET);
+	iw7019_power_on_init();
 
 	return 0;
 }

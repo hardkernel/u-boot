@@ -91,6 +91,8 @@ static int ob3350_smr(unsigned short *buf, unsigned char len)
 
 static int ob3350_power_on(void)
 {
+	struct aml_ldim_driver_s *ldim_drv = aml_ldim_get_driver();
+
 	ob3350_hw_init_on();
 	ob3350_on_flag = 1;
 	/* init brightness level */
