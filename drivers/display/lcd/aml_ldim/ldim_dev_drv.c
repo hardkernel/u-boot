@@ -602,6 +602,14 @@ static int ldim_dev_add_driver(struct ldim_dev_config_s *ldev_conf, int index)
 		goto ldim_dev_add_driver_next;
 #endif
 	}
+
+	if (strcmp(ldev_conf->name, "iw7027") == 0) {
+#ifdef CONFIG_AML_LOCAL_DIMMING_IW7027
+		ret = ldim_dev_iw7027_probe();
+		goto ldim_dev_add_driver_next;
+#endif
+	}
+
 #else
 	LDIMERR("%s: no AML_SPICC config\n", __func__);
 	ret = -1;
@@ -640,6 +648,14 @@ static int ldim_dev_remove_driver(struct ldim_dev_config_s *ldev_conf,
 		goto ldim_dev_remove_driver_next;
 #endif
 	}
+
+	if (strcmp(ldev_conf->name, "iw7027") == 0) {
+#ifdef CONFIG_AML_LOCAL_DIMMING_IW7027
+		ret = ldim_dev_iw7027_remove();
+		goto ldim_dev_remove_driver_next;
+#endif
+	}
+
 #else
 	LDIMERR("%s: no AML_SPICC config\n", __func__);
 	ret = -1;

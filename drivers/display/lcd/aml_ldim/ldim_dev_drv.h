@@ -31,6 +31,10 @@ extern int ldim_dev_iw7019_probe(void);
 extern int ldim_dev_iw7019_remove(void);
 #endif
 
+#ifdef CONFIG_AML_LOCAL_DIMMING_IW7027
+extern int ldim_dev_iw7027_probe(void);
+extern int ldim_dev_iw7027_remove(void);
+#endif
 #endif
 
 #ifdef CONFIG_AML_LOCAL_DIMMING_OB3350
