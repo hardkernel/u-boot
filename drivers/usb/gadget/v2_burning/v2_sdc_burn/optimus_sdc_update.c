@@ -11,6 +11,7 @@
  *
  */
 #include "optimus_sdc_burn_i.h"
+#include <partition_table.h>
 
 typedef int __hFileHdl;
 
@@ -98,14 +99,17 @@ s64 storage_get_partition_size_in_byte(const char* partName)
     int ret = 0;
     u64 size = 0;
 
-#if 1
+    if ( !strcmp("_aml_dtb", partName) )
+    {
+        return AML_DTB_IMG_MAX_SZ;
+    }
+
     ret = store_get_partititon_size((u8*)partName, &size);
     if (ret) {
         SDC_ERR("Fail to get size for part %s\n", partName);
         return 0;
     }
     size <<= 9;//trans sector to byte
-#endif
 
     return size;
 }
@@ -119,7 +123,8 @@ int sdc_burn_buf_manager_init(const char* partName, s64 imgItemSz, const char* f
     const char* destMediaType = "store";
     const u64 partBaseOffset = 0;
 
-    if (strcmp("bootloader", partName)) //TODO:bootloader size can't get yet!
+    //TODO:bootloader size can't get yet!
+    if (strcmp("bootloader", partName))
     {
         partCapInByte = storage_get_partition_size_in_byte(partName);
         if (partCapInByte < imgItemSz || !partCapInByte) {

@@ -260,10 +260,11 @@ int store_exit(void)
 }
 
 //store dtb read/write buf sz
-int store_dtb_rw(void* buf, unsigned dtbSz, int isWrite)
+//@rwFlag: 0---read, 1---write, 2---iread
+int store_dtb_rw(void* buf, unsigned dtbSz, int rwFlag)
 {
     char _cmdBuf[128];
-    char* ops = isWrite ? "write" : "read";
+    char* ops = !rwFlag ? "read" : ((1==rwFlag) ? "write" : "iread");
 
     sprintf(_cmdBuf, "store dtb %s 0x%p 0x%x", ops, buf, dtbSz);
     return run_command(_cmdBuf, 0);

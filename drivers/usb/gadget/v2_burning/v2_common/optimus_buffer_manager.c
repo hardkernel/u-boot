@@ -99,7 +99,7 @@ int optimus_buf_manager_tplcmd_init(const char* mediaType,  const char* partName
         writeBackUnitSz = OPTIMUS_SIMG_WRITE_BACK_SZ;
     }
 
-    if (!strcmp("bootloader", partName))
+    if (!strcmp("bootloader", partName) || !strcmp("_aml_dtb", partName))
     {
         if (pktSz4BufManager > _bufManager.transferBufSz) {
             DWN_ERR("packet size 0x%x too large, max is 0x%x\n", (u32)pktSz4BufManager, _bufManager.transferBufSz);

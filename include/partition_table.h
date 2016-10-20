@@ -61,5 +61,7 @@ extern int get_partition_from_dts(unsigned char * buffer);
 
 extern int get_partitions_table(struct partitions **table);
 
+#define AML_DTB_IMG_MAX_SZ  ((256<<10) - 512)
+
 #endif// #ifndef _PARTITION_TABLE_H
 

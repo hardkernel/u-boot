@@ -11,6 +11,8 @@
  */
 #include "optimus_sdc_burn_i.h"
 #include "optimus_led.h"
+#include <asm/arch/secure_apb.h>
+#include <asm/io.h>
 
 static int is_bootloader_old(void)
 {
@@ -307,6 +309,13 @@ int optimus_report_burn_complete_sta(int isFailed, int rebootAfterBurn)
     return 0;
 }
 
+static int _check_if_secureboot_enabled(void)
+{
+    const unsigned long cfg10 = readl(AO_SEC_SD_CFG10);
+    DWN_MSG("cfg10=0x%lX\n", cfg10);
+    return ( cfg10 & (0x1<< 4) );
+}
+
 int optimus_sdc_burn_dtb_load(HIMAGE hImg)
 {
     s64 itemSz = 0;
@@ -317,9 +326,15 @@ int optimus_sdc_burn_dtb_load(HIMAGE hImg)
     unsigned char* dtbTransferBuf     = (unsigned char*)partBaseOffset;
 
     //meson1.dtb but not meson.dtb for m8 compatible
-    hImgItem = image_item_open(hImg, partName, "meson1");
+    if (_check_if_secureboot_enabled()) {
+        DWN_MSG("SecureEnabled, use meson1_ENC\n");
+        hImgItem = image_item_open(hImg, partName, "meson1_ENC");
+    }
+    else {
+        hImgItem = image_item_open(hImg, partName, "meson1");
+    }
     if (!hImgItem) {
-        DWN_WRN("Fail to open item [meson,%s]\n", partName);
+        DWN_WRN("Fail to open item [meson1,%s]\n", partName);
         return ITEM_NOT_EXIST;
     }
 

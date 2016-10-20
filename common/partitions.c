@@ -3,6 +3,7 @@
 #include <linux/err.h>
 #include <partition_table.h>
 #include <libfdt.h>
+#include <asm/arch/bl31_apis.h>
 
 
 struct partitions_data{
@@ -38,6 +39,14 @@ int get_partition_from_dts(unsigned char * buffer)
 
 	if ( buffer == NULL)
 		goto _err;
+
+	flush_cache((unsigned long)buffer, AML_DTB_IMG_MAX_SZ);//flush or failed in usb booting
+	ret = aml_sec_boot_check(AML_D_P_IMG_DECRYPT, (long unsigned)buffer, AML_DTB_IMG_MAX_SZ, 0);
+    if (ret) {
+		printf("Decrypt dtb: Sig Check %d\n",ret);
+		return ret;
+	}
+
 #ifdef CONFIG_MULTI_DTB
 	extern unsigned long get_multi_dt_entry(unsigned long fdt_addr);
 	dt_addr = (char *)get_multi_dt_entry((unsigned long)buffer);

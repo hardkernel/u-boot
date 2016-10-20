@@ -17,6 +17,7 @@
 #include <libfdt.h>
 #include <linux/string.h>
 #include <asm/cpu_id.h>
+#include <asm/arch/bl31_apis.h>
 
 #if defined(CONFIG_AML_NAND)
 extern int amlnf_init(unsigned flag);
@@ -224,11 +225,22 @@ static int do_store_dtb_ops(cmd_tbl_t * cmdtp, int flag, int argc, char * const 
         MsgP("To run cmd[%s]\n", _cmdBuf);
         ret = run_command(_cmdBuf, 0);
 
+        unsigned long dtImgAddr = simple_strtoul(dtbLoadaddr, NULL, 16);
+        //
+        //ONLY need decrypting when 'store dtb read'
+       if (!strcmp("read", argv[2]))
+       {
+           flush_cache(dtImgAddr, AML_DTB_IMG_MAX_SZ);
+           ret = aml_sec_boot_check(AML_D_P_IMG_DECRYPT, dtImgAddr, AML_DTB_IMG_MAX_SZ, 0);
+           if (ret) {
+               MsgP("decrypt dtb: Sig Check %d\n",ret);
+               return ret;
+           }
+       }
 #ifdef CONFIG_MULTI_DTB
-        if (!is_write && strcmp("iread", ops))
+        if (!is_write && strcmp("iread", argv[2]))
         {
                 extern unsigned long get_multi_dt_entry(unsigned long fdt_addr);
-                unsigned long dtImgAddr = simple_strtoul(dtbLoadaddr, NULL, 16);
 
                 unsigned long fdtAddr = get_multi_dt_entry(dtImgAddr);
                 ret = fdt_check_header((char*)fdtAddr);

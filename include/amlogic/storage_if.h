@@ -63,7 +63,8 @@ int store_init(unsigned  flag);
 int store_exit(void);
 
 //dtb read/write
-int store_dtb_rw(void* buf, unsigned dtbSz, int isWrite);
+//@rwFlag: 0---read, 1---write, 2---iread
+int store_dtb_rw(void* buf, unsigned dtbSz, int rwFlag);
 
 //key read/write
 int store_key_read(uint8_t * buffer,
