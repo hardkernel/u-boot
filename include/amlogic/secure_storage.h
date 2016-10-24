@@ -34,6 +34,12 @@ int32_t secure_storage_list(uint8_t *listbuf, uint32_t buflen,
 				uint32_t *readlen);
 int32_t secure_storage_remove(uint8_t *keyname);
 void secure_storage_set_info(uint32_t info);
+int32_t secure_storage_set_enctype(uint32_t type);
+/* return 0: success, -1: fail*/
+int32_t secure_storage_get_enctype(void);
+/*return -1: no storage, 0: default enc, 1: efuse enc, 2: fixed enc*/
+int32_t secure_storage_version(void);
+/*return -1: no storage, others: version*/
 #endif
 
 #endif

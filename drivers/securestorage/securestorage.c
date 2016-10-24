@@ -19,7 +19,17 @@ static uint64_t bl31_storage_ops(uint64_t function_id)
 
 	return function_id;
 }
+uint64_t bl31_storage_ops2(uint64_t function_id, uint64_t arg1)
+{
+	asm volatile(
+		__asmeq("%0", "x0")
+		__asmeq("%1", "x1")
+		"smc    #0\n"
+		: "+r" (function_id)
+		: "r"(arg1));
 
+	return function_id;
+}
 uint64_t bl31_storage_ops3(uint64_t function_id, uint64_t arg1, uint32_t arg2)
 {
 	asm volatile(
@@ -308,4 +318,25 @@ void secure_storage_set_info(uint32_t info)
 		"smc    #0\n"
 		: :"r" (x0), "r"(x1));
 
+}
+
+int32_t secure_storage_set_enctype(uint32_t type)
+{
+	uint64_t  ret;
+	ret = bl31_storage_ops2(SECURITY_KEY_SET_ENCTYPE, type);
+	return smc_to_ns_errno(ret);
+}
+
+int32_t secure_storage_get_enctype(void)
+{
+	uint64_t ret;
+	ret = bl31_storage_ops(SECURITY_KEY_GET_ENCTYPE);
+	return smc_to_ns_errno(ret);
+}
+
+int32_t secure_storage_version(void)
+{
+	uint64_t ret;
+	ret = bl31_storage_ops(SECURITY_KEY_VERSION);
+	return smc_to_ns_errno(ret);
 }
