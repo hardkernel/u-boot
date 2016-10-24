@@ -35,7 +35,6 @@ static int flag_12bit;
 #define WRITE_REG(reg, val) writel(val, reg)
 #define READ_REG(reg)       readl(reg)
 
-#define GXBB_ADC   1
 #define AML_ADC_SAMPLE_DEBUG 0
 
 #ifdef  CONFIG_TARGET_MESON_GXTV
@@ -131,8 +130,35 @@ static __inline__ uint32_t aml_read_reg32(volatile unsigned int *_reg)
 
 //static u8 g_chan_mux[AML_ADC_SARADC_CHAN_NUM] = {0,1,2,3,4,5,6,7};
 
+/*
+* 1:enable
+* 0:disable
+*/
+void saradc_clock_switch(int onoff)
+{
+	if (onoff) {
+		if (get_cpu_id().family_id >= MESON_CPU_MAJOR_ID_GXBB) /*GXBB's clock from the clock tree.*/
+			aml_set_reg32_bits(GXBB_CLK_REG,1,8,1);
+		else
+			aml_set_reg32_bits(PP_SAR_ADC_REG3,1,30,1);
+	} else {
+		if (get_cpu_id().family_id >= MESON_CPU_MAJOR_ID_GXBB) /*GXBB's clock from the clock tree.*/
+			aml_set_reg32_bits(GXBB_CLK_REG,0,8,1);
+		else
+			aml_set_reg32_bits(PP_SAR_ADC_REG3,0,30,1);
+	}
+}
 
-
+void saradc_clock_set(unsigned char val)
+{
+	if (get_cpu_id().family_id >= MESON_CPU_MAJOR_ID_GXBB) { /*bit0-bit7*/
+		val = val & 0xff;
+		aml_write_reg32(GXBB_CLK_REG, (0<<9) | (val << 0));
+	} else {                                               /*bit10-bit15*/
+		val = val & 0x3f;
+		aml_set_reg32_bits(PP_SAR_ADC_REG3,val,10,5);
+	}
+}
 static inline void saradc_power_control(int on)
 {
 	//struct saradc_reg3 *reg3 = (struct saradc_reg3 *)&adc->regs->reg3;
@@ -143,18 +169,9 @@ static inline void saradc_power_control(int on)
 		aml_set_reg32_bits(PP_SAR_ADC_REG3,1,21,1);
 
 		udelay(5);
-
-        #if GXBB_ADC
-            aml_set_reg32_bits(GXBB_CLK_REG,1,8,1);
-        #else
-            aml_set_reg32_bits(PP_SAR_ADC_REG3,1,30,1);
-        #endif
+		saradc_clock_switch(1);
 	}	else {
-		#if GXBB_ADC
-			aml_set_reg32_bits(GXBB_CLK_REG,0,8,1);
-		#else
-			aml_set_reg32_bits(PP_SAR_ADC_REG3,0,30,1);
-        #endif
+		saradc_clock_switch(0);
 		aml_set_reg32_bits(PP_SAR_ADC_REG3,0,30,1);
 		/*aml_set_reg32_bits(PP_SAR_ADC_DELTA_11,0,13,1);*//* disable bandgap */
 		aml_set_reg32_bits(PP_SAR_ADC_DELTA_11,0,5,2);
@@ -175,13 +192,11 @@ static void saradc_internal_cal_12bit(void)
 		aml_set_reg32_bits(PP_SAR_ADC_REG13,i,8,6);
 		udelay(5);
 		val[0] = get_adc_sample_gxbb_12bit(7);
-		//if (val[0] < 3000) {
-			abs_tmp = abs(3000 - val[0]);
-			if (abs_tmp < abs_val) {
-				abs_val = abs_tmp;
-				abs_num = i;
-			}
-		//}
+		abs_tmp = abs(3000 - val[0]);
+		if (abs_tmp < abs_val) {
+			abs_val = abs_tmp;
+			abs_num = i;
+		}
 	}
 	aml_set_reg32_bits(PP_SAR_ADC_REG13,abs_num,8,6);
 }
@@ -213,10 +228,8 @@ void saradc_enable(void)
 	if (flag_12bit)
 		aml_set_reg32_bits(PP_SAR_ADC_REG3,0x1,27,1);
 
+	saradc_clock_set(20);
 
-#if GXBB_ADC
-	aml_write_reg32(GXBB_CLK_REG, (0<<9) | (20 << 0));
-#endif
 	set_reg(PP_SAR_ADC_DELAY, 0x10a000a);
 	set_reg(PP_SAR_ADC_AUX_SW, 0x3eb1a0c);
 	set_reg(PP_SAR_ADC_CHAN_10_SW, 0x8c000c);
@@ -237,34 +250,6 @@ void saradc_enable(void)
 	saradc_internal_cal_12bit();
 }
 
-void adc_set_clock(int div)
-{
-	aml_write_reg32(GXBB_CLK_REG, (1<<8) | (div << 0));
-}
-
-
-/*
-static int saradc_get_cal_value(struct saradc *adc, int val)
-{
-	int nominal;
-
-//	((nominal - ref_nominal) << 10) / (val - ref_val) = coef
-//	==> nominal = ((val - ref_val) * coef >> 10) + ref_nominal
-
-	nominal = val;
-	if ((adc->coef > 0) && (val > 0)) {
-		nominal = (val - adc->ref_val) * adc->coef;
-		nominal >>= 12;
-		nominal += adc->ref_nominal;
-	}
-	if (nominal < 0)
-		nominal = 0;
-	if (nominal > 1023)
-		nominal = 1023;
-	return nominal;
-}
-*/
-
 /*use_10bit_num=1,10 bit
   use_10bit_num=0,12 bit*/
 int get_adc_sample_gxbb_early(int ch, int use_10bit_num)
@@ -282,6 +267,9 @@ int get_adc_sample_gxbb_early(int ch, int use_10bit_num)
 			goto end1;
 		}
 	}
+	saradc_clock_switch(0);
+	saradc_clock_set(0xa0);
+	saradc_clock_switch(1);
 
 	aml_set_reg32_bits(PP_SAR_ADC_DELAY,1,FLAG_BUSY_KERNEL_BIT,1);
 	aml_set_reg32_bits(PP_SAR_ADC_REG3,1,29,1);
@@ -340,6 +328,10 @@ int get_adc_sample_gxbb_early(int ch, int use_10bit_num)
 end:
 	aml_set_reg32_bits(PP_SAR_ADC_REG0,1,14,1);
 	aml_set_reg32_bits(PP_SAR_ADC_REG0,0,0,1);
+
+	saradc_clock_switch(0);
+	saradc_clock_set(20);
+	saradc_clock_switch(1);
 
 end1:
 	aml_set_reg32_bits(PP_SAR_ADC_REG3,0,29,1);
