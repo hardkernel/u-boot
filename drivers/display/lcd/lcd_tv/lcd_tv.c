@@ -709,6 +709,7 @@ static int lcd_config_load_from_unifykey(struct lcd_config_s *pconf)
 	p += LCD_UKEY_PCLK_MIN;
 	pconf->lcd_basic.lcd_clk_max = (*p | ((*(p + 1)) << 8) |
 		((*(p + 2)) << 16) | ((*(p + 3)) << 24));
+	p += LCD_UKEY_PCLK_MAX;
 	/* dummy pointer */
 	p += LCD_UKEY_CUST_VAL_8;
 	p += LCD_UKEY_CUST_VAL_9;
