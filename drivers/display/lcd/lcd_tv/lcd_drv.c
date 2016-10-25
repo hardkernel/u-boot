@@ -208,7 +208,7 @@ static void lcd_lvds_clk_util_set(struct lcd_config_s *pconf)
 static void lcd_lvds_control_set(struct lcd_config_s *pconf)
 {
 	unsigned int bit_num = 1;
-	unsigned int pn_swap, port_swap;
+	unsigned int pn_swap, port_swap, lane_reverse;
 	unsigned int dual_port, fifo_mode;
 	unsigned int lvds_repack = 1;
 
@@ -221,6 +221,7 @@ static void lcd_lvds_control_set(struct lcd_config_s *pconf)
 	pn_swap   = (pconf->lcd_control.lvds_config->pn_swap) & 0x1;
 	dual_port = (pconf->lcd_control.lvds_config->dual_port) & 0x1;
 	port_swap = (pconf->lcd_control.lvds_config->port_swap) & 0x1;
+	lane_reverse = (pconf->lcd_control.lvds_config->lane_reverse) & 0x1;
 
 	switch (pconf->lcd_basic.lcd_bits) {
 	case 10:
@@ -246,7 +247,6 @@ static void lcd_lvds_control_set(struct lcd_config_s *pconf)
 
 	lcd_vcbus_write(LVDS_PACK_CNTL_ADDR,
 			(lvds_repack << 0) | // repack
-			(port_swap << 2) | // odd_even
 			(0 << 3) |		// reserve
 			(0 << 4) |		// lsb first
 			(pn_swap << 5) |	// pn swap
@@ -256,6 +256,10 @@ static void lcd_lvds_control_set(struct lcd_config_s *pconf)
 			(0 << 10) |		//r_select  //0:R, 1:G, 2:B, 3:0
 			(1 << 12) |		//g_select  //0:R, 1:G, 2:B, 3:0
 			(2 << 14));		//b_select  //0:R, 1:G, 2:B, 3:0;
+
+	lcd_vcbus_setb(LCD_PORT_SWAP, port_swap, 12, 1);
+	if (lane_reverse)
+		lcd_vcbus_setb(LVDS_GEN_CNTL, 0x03, 13, 2);
 
 	lcd_vcbus_write(LVDS_GEN_CNTL, (lcd_vcbus_read(LVDS_GEN_CNTL) | (1 << 4) | (fifo_mode << 0)));
 	lcd_vcbus_setb(LVDS_GEN_CNTL, 1, 3, 1);

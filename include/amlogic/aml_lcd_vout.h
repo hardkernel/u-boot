@@ -207,6 +207,7 @@ struct lvds_config_s {
 	unsigned int dual_port;
 	unsigned int pn_swap;
 	unsigned int port_swap;
+	unsigned int lane_reverse;
 	unsigned int port_sel;
 	unsigned int phy_vswing;
 	unsigned int phy_preem;

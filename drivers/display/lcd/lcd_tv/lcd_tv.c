@@ -245,6 +245,7 @@ static void lcd_config_load_print(struct lcd_config_s *pconf)
 		LCDPR("pn_swap = %d\n", pconf->lcd_control.lvds_config->pn_swap);
 		LCDPR("dual_port = %d\n", pconf->lcd_control.lvds_config->dual_port);
 		LCDPR("port_swap = %d\n", pconf->lcd_control.lvds_config->port_swap);
+		LCDPR("lane_reverse = %d\n", pconf->lcd_control.lvds_config->lane_reverse);
 	}
 }
 
@@ -355,15 +356,28 @@ static int lcd_config_load_from_dts(char *dt_addr, struct lcd_config_s *pconf)
 
 	switch (pconf->lcd_basic.lcd_type) {
 	case LCD_LVDS:
-		propdata = (char *)fdt_getprop(dt_addr, child_offset, "lvds_attr", NULL);
+		propdata = (char *)fdt_getprop(dt_addr, child_offset, "lvds_attr", &len);
 		if (propdata == NULL) {
 			LCDERR("failed to get lvds_attr\n");
 		} else {
-			pconf->lcd_control.lvds_config->lvds_repack = be32_to_cpup((u32*)propdata);
-			pconf->lcd_control.lvds_config->dual_port   = be32_to_cpup((((u32*)propdata)+1));
-			pconf->lcd_control.lvds_config->pn_swap     = be32_to_cpup((((u32*)propdata)+2));
-			pconf->lcd_control.lvds_config->port_swap   = be32_to_cpup((((u32*)propdata)+3));
+			len = len / 4;
+			if (len == 5) {
+				pconf->lcd_control.lvds_config->lvds_repack = be32_to_cpup((u32*)propdata);
+				pconf->lcd_control.lvds_config->dual_port   = be32_to_cpup((((u32*)propdata)+1));
+				pconf->lcd_control.lvds_config->pn_swap     = be32_to_cpup((((u32*)propdata)+2));
+				pconf->lcd_control.lvds_config->port_swap   = be32_to_cpup((((u32*)propdata)+3));
+				pconf->lcd_control.lvds_config->lane_reverse = be32_to_cpup((((u32*)propdata)+4));
+			} else if (len == 4) {
+				pconf->lcd_control.lvds_config->lvds_repack = be32_to_cpup((u32*)propdata);
+				pconf->lcd_control.lvds_config->dual_port   = be32_to_cpup((((u32*)propdata)+1));
+				pconf->lcd_control.lvds_config->pn_swap     = be32_to_cpup((((u32*)propdata)+2));
+				pconf->lcd_control.lvds_config->port_swap   = be32_to_cpup((((u32*)propdata)+3));
+				pconf->lcd_control.lvds_config->lane_reverse = 0;
+			} else {
+				LCDERR("invalid lvds_attr parameters cnt: %d\n", len);
+			}
 		}
+
 		propdata = (char *)fdt_getprop(dt_addr, child_offset, "phy_attr", &len);
 		if (propdata == NULL) {
 			if (lcd_debug_print_flag)
@@ -562,6 +576,7 @@ static int lcd_config_load_from_bsp(struct lcd_config_s *pconf)
 		pconf->lcd_control.lvds_config->dual_port   = ext_lcd->lcd_spc_val1;
 		pconf->lcd_control.lvds_config->pn_swap     = ext_lcd->lcd_spc_val2;
 		pconf->lcd_control.lvds_config->port_swap   = ext_lcd->lcd_spc_val3;
+		pconf->lcd_control.lvds_config->lane_reverse= ext_lcd->lcd_spc_val4;
 		pconf->lcd_control.lvds_config->phy_vswing = LVDS_PHY_VSWING_DFT;
 		pconf->lcd_control.lvds_config->phy_preem  = LVDS_PHY_PREEM_DFT;
 		pconf->lcd_control.lvds_config->phy_clk_vswing = LVDS_PHY_CLK_VSWING_DFT;
@@ -750,8 +765,10 @@ static int lcd_config_load_from_unifykey(struct lcd_config_s *pconf)
 		p += LCD_UKEY_IF_ATTR_6;
 		pconf->lcd_control.lvds_config->phy_clk_preem = (*p | ((*(p + 1)) << 8)) & 0xff;
 		p += LCD_UKEY_IF_ATTR_7;
-		/* dummy pointer */
+		pconf->lcd_control.lvds_config->lane_reverse= (*p | ((*(p + 1)) << 8)) & 0xff;
 		p += LCD_UKEY_IF_ATTR_8;
+		/* dummy pointer */
+
 		p += LCD_UKEY_IF_ATTR_9;
 	} else {
 		LCDERR("unsupport lcd_type: %d\n", pconf->lcd_basic.lcd_type);

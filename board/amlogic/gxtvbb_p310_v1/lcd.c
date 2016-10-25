@@ -47,7 +47,7 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	/* clk_attr */
 	0,0,1,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
 	/* lvds_attr */
-	1,1,0,0,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	1,1,0,0,0,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
 	/* power step */
 	lcd_power_on_step, lcd_power_off_step,
 	/* backlight */
@@ -145,6 +145,7 @@ static struct lvds_config_s lcd_lvds_config = {
 	.dual_port    = 1, //0=single port, 1=double port
 	.pn_swap      = 0, //0=normal,      1=swap
 	.port_swap    = 0, //0=normal,      1=swap
+	.lane_reverse = 0, //0=normal,      1=swap
 };
 
 static struct lcd_power_ctrl_s lcd_power_ctrl = {

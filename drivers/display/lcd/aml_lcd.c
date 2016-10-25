@@ -319,6 +319,7 @@ static void lcd_info_print(void)
 		   "dual_port         %u\n"
 		   "pn_swap           %u\n"
 		   "port_swap         %u\n"
+		   "lane_reverse      %u\n"
 		   "phy_vswing        %u\n"
 		   "phy_preem         %u\n"
 		   "phy_clk_vswing    %u\n"
@@ -327,6 +328,7 @@ static void lcd_info_print(void)
 		   pconf->lcd_control.lvds_config->dual_port,
 		   pconf->lcd_control.lvds_config->pn_swap,
 		   pconf->lcd_control.lvds_config->port_swap,
+		   pconf->lcd_control.lvds_config->lane_reverse,
 		   pconf->lcd_control.lvds_config->phy_vswing,
 		   pconf->lcd_control.lvds_config->phy_preem,
 		   pconf->lcd_control.lvds_config->phy_clk_vswing,
