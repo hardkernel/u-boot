@@ -21,7 +21,7 @@
 
 #include <common.h>
 #include <command.h>
-#include <asm/arch/reboot.h>
+#include <asm/reboot.h>
 #include <asm/arch/secure_apb.h>
 #include <asm/io.h>
 #include <asm/arch/bl31_apis.h>
@@ -60,9 +60,14 @@ int do_get_rebootmode (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]
 			setenv("reboot_mode","update");
 			break;
 		}
-		case AMLOGIC_USB_BURNING_REBOOT:
+		case AMLOGIC_FASTBOOT_REBOOT:
 		{
-			setenv("reboot_mode","usb_burning");
+			setenv("reboot_mode","fastboot");
+			break;
+		}
+		case AMLOGIC_BOOTLOADER_REBOOT:
+		{
+			setenv("reboot_mode","bootloader");
 			break;
 		}
 		case AMLOGIC_SUSPEND_REBOOT:
@@ -90,13 +95,26 @@ int do_get_rebootmode (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]
 			setenv("reboot_mode","watchdog_reboot");
 			break;
 		}
-
 		default:
 		{
 			setenv("reboot_mode","charging");
 			break;
 		}
 	}
+
+#ifdef CONFIG_CMD_FASTBOOT
+	switch (reboot_mode_val) {
+		case AMLOGIC_FASTBOOT_REBOOT: {
+			run_command("fastboot", 0);
+			break;
+		}
+		case AMLOGIC_BOOTLOADER_REBOOT: {
+			setenv("bootdelay","-1");
+			break;
+		}
+	}
+#endif
+
 	return 0;
 }
 
@@ -117,8 +135,10 @@ int do_reboot (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 			reboot_mode_val = AMLOGIC_FACTORY_RESET_REBOOT;
 		else if (strcmp(mode, "update") == 0)
 			reboot_mode_val = AMLOGIC_UPDATE_REBOOT;
-		else if (strcmp(mode, "usb_burning") == 0)
-			reboot_mode_val = AMLOGIC_USB_BURNING_REBOOT;
+		else if (strcmp(mode, "fastboot") == 0)
+			reboot_mode_val = AMLOGIC_FASTBOOT_REBOOT;
+		else if (strcmp(mode, "bootloader") == 0)
+			reboot_mode_val = AMLOGIC_BOOTLOADER_REBOOT;
 		else if (strcmp(mode, "suspend_off") == 0)
 			reboot_mode_val = AMLOGIC_SUSPEND_REBOOT;
 		else if (strcmp(mode, "hibernate") == 0)
@@ -176,7 +196,8 @@ U_BOOT_CMD(
 	"    normal[default]\n"
 	"    factory_reset/recovery\n"
 	"    update\n"
-	"    usb_burning\n"
+	"    fastboot\n"
+	"    bootloader\n"
 	"    suspend_off\n"
 	"    hibernate\n"
 	"    crash_dump\n"

@@ -1,6 +1,6 @@
 
 /*
- * arch/arm/include/asm/arch-gxtvbb/reboot.h
+ * arch/arm/include/asm/reboot.h
  *
  * Copyright (C) 2015 Amlogic, Inc. All rights reserved.
  *
@@ -28,20 +28,24 @@ Reboot reason AND corresponding env setting:
 1:  Normal boot               normal
 2:  Factory reset             factory_reset
 3:  Upgrade system            update
-4:  USB Burning               usb_burning
+4:  Fastboot                  fastboot
 5:  Suspend                   suspend_off
 6:  Hibernate                 hibernate
-7~10: reserved
+7:  Fastboot Bootloader       bootloader
+8~10: reserved
 11:  Crash dump               crash_dump
-12~15: reserved
+12:  Kernel panic             kernel_panic
+13:  Watchdog reboot          watchdog_reboot
+14~15: reserved
 */
 #define AMLOGIC_COLD_BOOT				0
 #define	AMLOGIC_NORMAL_BOOT				1
 #define	AMLOGIC_FACTORY_RESET_REBOOT	2
 #define	AMLOGIC_UPDATE_REBOOT			3
-#define AMLOGIC_USB_BURNING_REBOOT		4
+#define AMLOGIC_FASTBOOT_REBOOT			4
 #define AMLOGIC_SUSPEND_REBOOT			5
 #define AMLOGIC_HIBERNATE_REBOOT		6
+#define AMLOGIC_BOOTLOADER_REBOOT		7 /* fastboot bootloader */
 #define	AMLOGIC_CRASH_REBOOT			11
 #define AMLOGIC_KERNEL_PANIC			12
 #define AMLOGIC_WATCHDOG_REBOOT			13
