@@ -14,7 +14,7 @@
 #define UNIFYKEY_PERMIT_WRITE		"write"
 #define UNIFYKEY_PERMIT_DEL			"del"
 
-static struct key_info_t unify_key_info={.key_num =0, .key_flag = 0, .efuse_version = -1};
+static struct key_info_t unify_key_info={.key_num =0, .key_flag = 0, .efuse_version = -1, .encrypt_type = 0};
 static struct key_item_t *unifykey_item=NULL;
 
 static int unifykey_item_verify_check(struct key_item_t *key_item)
@@ -140,6 +140,11 @@ char unifykey_get_efuse_version(void)
 		ver = (char)unify_key_info.efuse_version;
 	}
 	return ver;
+}
+
+int unifykey_get_encrypt_type(void)
+{
+	return unify_key_info.encrypt_type;
 }
 
 static int unifykey_item_dt_parse(const void* dt_addr,int nodeoffset,int id,char *item_path)
@@ -276,7 +281,7 @@ int keymanage_dts_parse(const void* dt_addr)
 {
     int ret = 0;
 	int nodeoffset;
-	char *punifykey_num;
+	char *punifykey_num, *encrypt_type;
 
 	if (fdt_check_header(dt_addr)!= 0) {
         KM_ERR("not a fdt at 0x%p\n", dt_addr);
@@ -301,6 +306,12 @@ int keymanage_dts_parse(const void* dt_addr)
 	if (punifykey_num) {
 //		printf("unifykey-num config is %x\n",be32_to_cpup((unsigned int*)punifykey_num));
 		unify_key_info.key_num = be32_to_cpup((unsigned int*)punifykey_num);
+	}
+
+	unify_key_info.encrypt_type = -1;
+	encrypt_type = (char*)fdt_getprop((const void *)dt_addr, nodeoffset, "unifykey-encrypt",NULL);
+	if (encrypt_type) {
+		unify_key_info.encrypt_type = be32_to_cpup((unsigned int*)encrypt_type);
 	}
 
 	if (unify_key_info.key_num <= 0) {

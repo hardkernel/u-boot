@@ -60,7 +60,7 @@ static struct storagekey_info_t storagekey_info = {
  *1.init
  * return ok 0, fail 1
  */
-int32_t amlkey_init(uint8_t *seed, uint32_t len)
+int32_t amlkey_init(uint8_t *seed, uint32_t len, int encrypt_type)
 {
 	int32_t ret = 0;
 	uint32_t buffer_size, actual_size;
@@ -80,6 +80,10 @@ int32_t amlkey_init(uint8_t *seed, uint32_t len)
 		ret = -1;
 		goto _out;
 	}
+
+	if (encrypt_type == -1)
+		encrypt_type = 0;
+	secure_storage_set_enctype(encrypt_type);
 
 	/* full fill key infos from storage. */
 	ret = store_key_read(storagekey_info.buffer,

@@ -14,7 +14,7 @@
 
 #define AMLKEY_NAME_LEN_MAX     (80)
 //1.init
-int32_t amlkey_init(uint8_t *seed, uint32_t len);
+int32_t amlkey_init(uint8_t *seed, uint32_t len, int encrypt_type);
 
 //2. query if the key already programmed, exsit 1, non 0
 int32_t amlkey_isexsit(const uint8_t * name);

@@ -15,7 +15,10 @@
 
 int keymanage_securekey_init(const char* buf, int len)
 {
-	return amlkey_init((uint8_t*)buf, len);	//confirm
+	int encrypt_type;
+
+	encrypt_type = unifykey_get_encrypt_type();
+	return amlkey_init((uint8_t*)buf, len, encrypt_type);	//confirm
 }
 
 int keymanage_securekey_exit(void)

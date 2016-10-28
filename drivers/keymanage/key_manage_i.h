@@ -34,6 +34,7 @@ enum key_manager_dev_e keymanage_dts_get_key_device(const char *keyname);
 const char* keymanage_dts_get_key_type(const char* keyname);
 const char* keymanage_dts_get_enc_type(const char* keyname);
 char unifykey_get_efuse_version(void);
+int unifykey_get_encrypt_type(void);
 
 int keymanage_efuse_init(const char *buf, int len);
 int keymange_efuse_exit(void);

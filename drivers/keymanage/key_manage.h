@@ -52,6 +52,7 @@ struct key_info_t{
     int key_num;
     int efuse_version;
     int key_flag;
+    int encrypt_type;
 };
 
 
