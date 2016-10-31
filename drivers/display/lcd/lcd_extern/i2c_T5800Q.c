@@ -28,6 +28,9 @@
 #include "../aml_lcd_common.h"
 #include "../aml_lcd_reg.h"
 
+//#define LCD_EXT_I2C_PORT_INIT     /* no need init i2c port here */
+//#define LCD_EXT_DEBUG_INFO
+
 #ifdef CONFIG_SYS_I2C_AML
 #define LCD_EXTERN_INDEX		1
 #define LCD_EXTERN_NAME			"i2c_T5800Q"
@@ -36,7 +39,9 @@
 #define LCD_EXTERN_I2C_ADDR		(0x38 >> 1) //7bit address
 #define LCD_EXTERN_I2C_BUS		AML_I2C_MASTER_C
 
+#ifdef LCD_EXT_I2C_PORT_INIT
 static unsigned aml_i2c_bus_tmp;
+#endif
 static struct lcd_extern_config_s *ext_config;
 
 #define LCD_EXTERN_CMD_SIZE        9
@@ -100,46 +105,6 @@ static int lcd_extern_reg_write(unsigned char reg, unsigned char value)
 	return ret;
 }
 
-static struct aml_lcd_extern_pinmux_s aml_lcd_extern_pinmux_set[] = {
-	{.reg = 1, .mux = ((1 << 22) | (1 << 23)),},
-};
-
-static struct aml_lcd_extern_pinmux_s aml_lcd_extern_pinmux_clr[] = {
-	{.reg = 0, .mux = ((1 << 0) | (1 << 1)  | (1 << 10)  | (1 << 11)  | (1 << 23)),},
-	{.reg = 1, .mux = ((1 << 0) | (1 << 10) | (1 << 24) | (1 << 25)),},
-	{.reg = 2, .mux = ((1 << 0) | (1 << 1)),},
-};
-
-static int lcd_extern_i2c_port_init(void)
-{
-	int i;
-	unsigned pinmux_reg, pinmux_data;
-
-	for (i = 0; i < ARRAY_SIZE(aml_lcd_extern_pinmux_clr); i++) {
-		pinmux_reg = aml_lcd_extern_pinmux_clr[i].reg;
-		pinmux_data = aml_lcd_extern_pinmux_clr[i].mux;
-		lcd_pinmux_clr_mask(pinmux_reg, pinmux_data);
-	}
-	for (i = 0; i < ARRAY_SIZE(aml_lcd_extern_pinmux_set); i++) {
-		pinmux_reg = aml_lcd_extern_pinmux_set[i].reg;
-		pinmux_data = aml_lcd_extern_pinmux_set[i].mux;
-		lcd_pinmux_set_mask(pinmux_reg, pinmux_data);
-	}
-
-	return 0;
-}
-
-static int lcd_extern_change_i2c_bus(unsigned aml_i2c_bus)
-{
-	int ret = 0;
-	extern struct aml_i2c_platform g_aml_i2c_plat;
-
-	g_aml_i2c_plat.master_no = aml_i2c_bus;
-	ret = aml_i2c_init();
-
-	return ret;
-}
-
 static int lcd_extern_power_cmd(unsigned char *init_table)
 {
 	int i = 0, gpio, len;
@@ -178,16 +143,32 @@ static int lcd_extern_power_cmd(unsigned char *init_table)
 	return ret;
 }
 
+#ifdef LCD_EXT_I2C_PORT_INIT
+static int lcd_extern_change_i2c_bus(unsigned aml_i2c_bus)
+{
+	int ret = 0;
+	extern struct aml_i2c_platform g_aml_i2c_plat;
+
+	g_aml_i2c_plat.master_no = aml_i2c_bus;
+	ret = aml_i2c_init();
+
+	return ret;
+}
+#endif
+
 static int lcd_extern_power_ctrl(int flag)
 {
+#ifdef LCD_EXT_I2C_PORT_INIT
 	extern struct aml_i2c_platform g_aml_i2c_plat;
 	aml_i2c_bus_tmp = g_aml_i2c_plat.master_no;
+#endif
 	struct aml_lcd_extern_driver_s *ext_drv = aml_lcd_extern_get_driver();
 	int ret = 0;
 
 	/* step 1: power prepare */
-	lcd_extern_i2c_port_init();
+#ifdef LCD_EXT_I2C_PORT_INIT
 	lcd_extern_change_i2c_bus(ext_config->i2c_bus);
+#endif
 
 	/* step 2: power cmd */
 	if (flag)
@@ -196,7 +177,9 @@ static int lcd_extern_power_ctrl(int flag)
 		ret = lcd_extern_power_cmd(ext_drv->config.table_init_off);
 
 	/* step 3: power finish */
+#ifdef LCD_EXT_I2C_PORT_INIT
 	lcd_extern_change_i2c_bus(aml_i2c_bus_tmp);
+#endif
 
 	EXTPR("%s(%d: %s): %d\n",
 		__func__, ext_config->index, ext_config->name, flag);
