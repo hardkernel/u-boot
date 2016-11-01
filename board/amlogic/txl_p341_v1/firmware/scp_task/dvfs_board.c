@@ -52,7 +52,15 @@ static int pwm_voltage_table[][2] = {
 };
 
 struct scpi_opp_entry cpu_dvfs_tbl[] = {
-	DVFS( 667000000,  1090+20),
+	DVFS( 100000000,  870+80),
+	DVFS( 250000000,  870+80),
+	DVFS( 500000000,  870+80),
+	DVFS( 667000000,  870+80),
+	DVFS(1000000000,  880+80),
+	DVFS(1200000000,  910+80),
+	DVFS(1296000000,  950+80),
+	DVFS(1416000000, 1020+80),
+	DVFS(1488000000, 1060+80),
 };
 
 
@@ -63,9 +71,23 @@ struct scpi_opp_entry cpu_dvfs_tbl[] = {
 #define P_PWM_MISC_REG_AB	(*((volatile unsigned *)(0xc1100000 + (0x2156 << 2))))
 #define P_PWM_PWM_A		(*((volatile unsigned *)(0xc1100000 + (0x2154 << 2))))
 
+/*
+ * gpioao_9 pwm_ao_b is used to adjust VDD_EE
+ */
+#define P_PIN_MUX_AO_REG	(*((volatile unsigned *)(0xc8100000 + (0x5 << 2))))
+
+#define P_AO_PWM_MISC_REG_AB1	(*((volatile unsigned *)(0xc8100400 + (0x56 << 2))))
+#define P_AO_PWM_PWM_B1 (*((volatile unsigned *)(0xc8100400 + (0x55 << 2))))
 
 enum pwm_id {
 	pwm_a = 0,
+	pwm_b,
+	pwm_c,
+	pwm_d,
+	pwm_e,
+	pwm_f,
+	pwm_ao_a,
+	pwm_ao_b,
 };
 
 
@@ -75,22 +97,18 @@ void pwm_init(int id)
 	 * TODO: support more pwm controllers, right now only support PWM_B
 	 */
 	unsigned int reg;
-	reg = P_PWM_MISC_REG_AB;
+	reg = P_AO_PWM_MISC_REG_AB1;
 	reg &= ~(0x7f << 8);
 	reg |=  ((1 << 15) | (1 << 0));
-	P_PWM_MISC_REG_AB = reg;
+	P_AO_PWM_MISC_REG_AB1 = reg;
 	/*
 	 * default set to max voltage
 	 */
-	P_PWM_PWM_A = pwm_voltage_table[ARRAY_SIZE(pwm_voltage_table) - 1][0];
-	reg  = P_PIN_MUX_REG3;
-	reg &= ~(1 << 21);
-	P_PIN_MUX_REG3 = reg;
+	P_AO_PWM_PWM_B1 = pwm_voltage_table[ARRAY_SIZE(pwm_voltage_table) - 1][0];
+	reg  = P_PIN_MUX_AO_REG;
+	reg &= ~(1 << 3);
+	P_PIN_MUX_AO_REG = reg;
 
-	reg  = P_PIN_MUX_REG4;
-	reg &= ~(1 << 26);		// clear PWM_VS
-	reg |=  (1 << 17);		// enable PWM_A
-	P_PIN_MUX_REG4 = reg;
 
 
 	_udelay(200);
@@ -101,7 +119,7 @@ int dvfs_get_voltage(void)
 	int i = 0;
 	unsigned int reg_val;
 
-	reg_val = P_PWM_PWM_A;
+	reg_val = P_AO_PWM_PWM_B1;
 	for (i = 0; i < ARRAY_SIZE(pwm_voltage_table); i++) {
 		if (pwm_voltage_table[i][0] == reg_val) {
 			return i;
@@ -119,7 +137,7 @@ void set_dvfs(unsigned int domain, unsigned int index)
 	static int init_flag = 0;
 
 	if (!init_flag) {
-		pwm_init(pwm_a);
+		pwm_init(pwm_ao_b);
 		init_flag = 1;
 	}
 	cur = dvfs_get_voltage();
@@ -132,7 +150,7 @@ void set_dvfs(unsigned int domain, unsigned int index)
 		to = ARRAY_SIZE(pwm_voltage_table) - 1;
 	}
 	if (cur < 0 || cur >=ARRAY_SIZE(pwm_voltage_table)) {
-		P_PWM_PWM_A = pwm_voltage_table[to][0];
+		P_AO_PWM_PWM_B1 = pwm_voltage_table[to][0];
 		_udelay(200);
 		return ;
 	}
@@ -155,7 +173,7 @@ void set_dvfs(unsigned int domain, unsigned int index)
 				cur = to;
 			}
 		}
-		P_PWM_PWM_A = pwm_voltage_table[cur][0];
+		P_AO_PWM_PWM_B1 = pwm_voltage_table[cur][0];
 		_udelay(100);
 	}
 	_udelay(200);
