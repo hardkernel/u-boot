@@ -96,8 +96,8 @@
 
 #define CFG_DDR4_DRV  DDR4_DRV_48OHM//DDR4_DRV_48OHM //ddr4 driver use this one
 #define CFG_DDR4_ODT DDR4_ODT_60OHM// DDR4_ODT_80OHM //ddr4 driver use this one
-#define CONFIG_SOC_VREF      0// (738/12) //0 //0  is auto --70 ---range 44.07---88.04   %
-#define CONFIG_DRAM_VREF   0// (810/12) // 0 //77 //0 //0  is auto ---70 --range -- 45---92.50    %
+#define CONFIG_SOC_VREF      (1+ (50+((50*48)/(48+480/(2+1)))))// (738/12) //0 //0  is auto --70 ---range 44.07---88.04   %
+#define CONFIG_DRAM_VREF   (1+ (50+((50*34)/(34+60))))// (810/12) // 0 //77 //0 //0  is auto ---70 --range -- 45---92.50    %
 //#define CONFIG_ZQ_VREF   715/15//  60//0 //(50) % //tune ddr4 ,ddr3 use 0
 #define CONFIG_ZQ_VREF   51//60 //700/12//  60//0 //(50) % //tune ddr4 ,ddr3 use 0
 /*
