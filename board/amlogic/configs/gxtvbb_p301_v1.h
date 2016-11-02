@@ -360,6 +360,9 @@
 #define CONFIG_AML_LCD    1
 #define CONFIG_AML_LCD_TV 1
 #define CONFIG_AML_LCD_TABLET 1
+#define CONFIG_AML_LCD_EXTERN
+#define CONFIG_AML_LCD_EXTERN_I2C_T5800Q
+#define CONFIG_AML_LCD_EXTERN_I2C_DLPC3439
 
 /* USB
  * Enable CONFIG_MUSB_HCD for Host functionalities MSC, keyboard

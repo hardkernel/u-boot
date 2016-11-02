@@ -807,6 +807,10 @@ static int aml_lcd_extern_add_i2c(struct aml_lcd_extern_driver_s *ext_drv)
 #ifdef CONFIG_AML_LCD_EXTERN_I2C_ANX6345
 		ret = aml_lcd_extern_i2c_anx6345_probe(ext_drv);
 #endif
+	} else if (strcmp(ext_drv->config.name, "i2c_DLPC3439") == 0) {
+#ifdef CONFIG_AML_LCD_EXTERN_I2C_DLPC3439
+		ret = aml_lcd_extern_i2c_DLPC3439_probe(ext_drv);
+#endif
 	} else {
 		EXTERR("invalid driver name: %s\n", ext_drv->config.name);
 		ret = -1;
@@ -974,6 +978,13 @@ static int aml_lcd_extern_add_driver_default(int index)
 	drv_index = aml_lcd_extern_i2c_anx6345_get_default_index();
 	if (drv_index == index) {
 		ret = aml_lcd_extern_i2c_anx6345_probe(ext_drv);
+		goto add_driver_default_end;
+	}
+#endif
+#ifdef CONFIG_AML_LCD_EXTERN_I2C_DLPC3439
+	drv_index = aml_lcd_extern_i2c_DLPC3439_get_default_index();
+	if (drv_index == index) {
+		ret = aml_lcd_extern_i2c_DLPC3439_probe(ext_drv);
 		goto add_driver_default_end;
 	}
 #endif
