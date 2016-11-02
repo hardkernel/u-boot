@@ -734,8 +734,7 @@ composite_setup(struct usb_gadget *gadget, const struct usb_ctrlrequest *ctrl)
 		switch (w_value >> 8) {
 
 		case USB_DT_DEVICE:
-			cdev->desc.bNumConfigurations =
-				count_configs(cdev, USB_DT_DEVICE);
+			cdev->desc.bNumConfigurations = 1;
 			value = min(w_length, (u16) sizeof cdev->desc);
 			memcpy(req->buf, &cdev->desc, value);
 			break;
