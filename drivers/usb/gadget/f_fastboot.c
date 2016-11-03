@@ -20,10 +20,13 @@
 #include <linux/compiler.h>
 #include <version.h>
 #include <g_dnl.h>
+#include <asm/arch/cpu.h>
 #ifdef CONFIG_FASTBOOT_FLASH_MMC_DEV
 #include <fb_mmc.h>
 #include <fb_storage.h>
 #endif
+
+DECLARE_GLOBAL_DATA_PTR;
 
 #define FASTBOOT_VERSION		"0.4"
 
@@ -125,6 +128,18 @@ static struct usb_gadget_strings *fastboot_strings[] = {
 	&stringtab_fastboot,
 	NULL,
 };
+
+#define DRAM_UBOOT_RESERVE		0x01000000
+unsigned int ddr_size_usable(unsigned int addr_start)
+{
+	unsigned int ddr_size=0;
+	int i;
+
+	for (i = 0; i < CONFIG_NR_DRAM_BANKS; i++)
+		ddr_size += gd->bd->bi_dram[i].size;
+
+	return (ddr_size - DRAM_UBOOT_RESERVE - addr_start - CONFIG_SYS_MALLOC_LEN);
+}
 
 static void rx_handler_command(struct usb_ep *ep, struct usb_request *req);
 
@@ -372,7 +387,7 @@ static void cb_getvar(struct usb_ep *ep, struct usb_request *req)
 		!strcmp_l1("max-download-size", cmd)) {
 		char str_num[12];
 
-		sprintf(str_num, "0x%08x", CONFIG_USB_FASTBOOT_BUF_SIZE);
+		sprintf(str_num, "0x%08x", ddr_size_usable(CONFIG_USB_FASTBOOT_BUF_ADDR));
 		strncat(response, str_num, chars_left);
 	} else if (!strcmp_l1("serialno", cmd)) {
 		/*s = getenv("serial#");*/
@@ -470,7 +485,7 @@ static void cb_download(struct usb_ep *ep, struct usb_request *req)
 
 	if (0 == download_size) {
 		sprintf(response, "FAILdata invalid size");
-	} else if (download_size > CONFIG_USB_FASTBOOT_BUF_SIZE) {
+	} else if (download_size > ddr_size_usable(CONFIG_USB_FASTBOOT_BUF_ADDR)) {
 		download_size = 0;
 		sprintf(response, "FAILdata too large");
 	} else {
