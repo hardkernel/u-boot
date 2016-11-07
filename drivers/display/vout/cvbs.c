@@ -426,8 +426,7 @@ int cvbs_set_vmode(char* vmode_name)
 		cvbs_config_enci(1);
 		cvbs_config_clock();
 		cvbs_set_vdac(1);
-	} else
-		printf("[%s] is invalid for cvbs.\n", vmode_name);
+	}
 
 	return 0;
 }
