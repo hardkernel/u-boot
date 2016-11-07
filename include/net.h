@@ -538,7 +538,7 @@ extern int		net_restart_wrap;	/* Tried all network devices */
 
 enum proto_t {
 	BOOTP, RARP, ARP, TFTPGET, DHCP, PING, DNS, NFS, CDP, NETCONS, SNTP,
-	TFTPSRV, TFTPPUT, LINKLOCAL
+	TFTPSRV, TFTPPUT, LINKLOCAL, FASTBOOT
 };
 
 extern char	net_boot_file_name[1024];/* Boot File name */
@@ -550,6 +550,10 @@ extern u32	net_boot_file_expected_size_in_blocks;
 #if defined(CONFIG_CMD_DNS)
 extern char *net_dns_resolve;		/* The host to resolve  */
 extern char *net_dns_env_var;		/* the env var to put the ip into */
+#endif
+
+#if defined(CONFIG_UDP_FUNCTION_FASTBOOT)
+int do_fastboot_udp(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[]);
 #endif
 
 #if defined(CONFIG_CMD_PING)

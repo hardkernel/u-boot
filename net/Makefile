@@ -30,3 +30,4 @@ obj-$(CONFIG_CMD_NET)  += tftp.o
 # sprintf(buf, index ? "foo%d" : "foo", index)
 # and this is intentional usage.
 CFLAGS_eth_common.o += -Wno-format-extra-args
+obj-$(CONFIG_UDP_FUNCTION_FASTBOOT)  += fastboot.o

@@ -11,18 +11,37 @@
 #include <command.h>
 #include <console.h>
 #include <g_dnl.h>
+#include <net.h>
 #include <usb.h>
 
 static int do_fastboot(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 {
+#ifdef CONFIG_USB_FUNCTION_FASTBOOT
 	int controller_index;
 	char *usb_controller;
 	int ret;
+#endif
 
 	if (argc < 2)
 		return CMD_RET_USAGE;
 
-	usb_controller = argv[1];
+	if (!strcmp(argv[1], "udp")) {
+#ifndef CONFIG_UDP_FUNCTION_FASTBOOT
+		error("Fastboot UDP not enabled\n");
+		return -1;
+#else
+		return do_fastboot_udp(cmdtp, flag, argc, argv);
+#endif
+	}
+
+	if (strcmp(argv[1], "usb") || argc < 3)
+		return CMD_RET_USAGE;
+
+#ifndef CONFIG_USB_FUNCTION_FASTBOOT
+	error("Fastboot USB not enabled\n");
+	return -1;
+#else
+	usb_controller = argv[2];
 	controller_index = simple_strtoul(usb_controller, NULL, 0);
 
 	ret = board_usb_init(controller_index, USB_INIT_DEVICE);
@@ -59,11 +78,14 @@ exit:
 	board_usb_cleanup(controller_index, USB_INIT_DEVICE);
 
 	return ret;
+#endif
 }
 
 U_BOOT_CMD(
-	fastboot, 2, 1, do_fastboot,
-	"use USB Fastboot protocol",
-	"<USB_controller>\n"
-	"    - run as a fastboot usb device"
+	fastboot, 3, 1, do_fastboot,
+	"use USB or UDP Fastboot protocol",
+	"[usb,udp] <USB_controller>\n"
+	" - run as a fastboot usb or udp device\n"
+	"   usb: specify <USB_controller>\n"
+	"   udp: requires ip_addr set and ethernet initialized\n"
 );

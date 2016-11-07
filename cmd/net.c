@@ -70,6 +70,12 @@ U_BOOT_CMD(
 );
 #endif
 
+#ifdef CONFIG_UDP_FUNCTION_FASTBOOT
+int do_fastboot_udp(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
+{
+	return netboot_common(FASTBOOT, cmdtp, argc, argv);
+}
+#endif
 
 #ifdef CONFIG_CMD_RARP
 int do_rarpb(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])

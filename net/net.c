@@ -87,6 +87,9 @@
 #include <environment.h>
 #include <errno.h>
 #include <net.h>
+#if defined(CONFIG_UDP_FUNCTION_FASTBOOT)
+#include <net/fastboot.h>
+#endif
 #include <net/tftp.h>
 #if defined(CONFIG_LED_STATUS)
 #include <miiphy.h>
@@ -451,6 +454,11 @@ restart:
 #ifdef CONFIG_CMD_TFTPSRV
 		case TFTPSRV:
 			tftp_start_server();
+			break;
+#endif
+#ifdef CONFIG_UDP_FUNCTION_FASTBOOT
+		case FASTBOOT:
+			fastboot_start_server();
 			break;
 #endif
 #if defined(CONFIG_CMD_DHCP)
@@ -1324,6 +1332,7 @@ common:
 		/* Fall through */
 
 	case NETCONS:
+	case FASTBOOT:
 	case TFTPSRV:
 		if (net_ip.s_addr == 0) {
 			puts("*** ERROR: `ipaddr' not set\n");
