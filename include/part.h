@@ -69,6 +69,7 @@ typedef struct block_dev_desc {
 #define PART_TYPE_ISO		0x03
 #define PART_TYPE_AMIGA		0x04
 #define PART_TYPE_EFI		0x05
+#define PART_TYPE_AML		0x06
 
 /*
  * Type string for U-Boot bootable partitions
@@ -174,6 +175,16 @@ int   test_part_iso (block_dev_desc_t *dev_desc);
 int get_partition_info_amiga (block_dev_desc_t * dev_desc, int part, disk_partition_t *info);
 void print_part_amiga (block_dev_desc_t *dev_desc);
 int   test_part_amiga (block_dev_desc_t *dev_desc);
+#endif
+
+#ifdef CONFIG_AML_PARTITION
+/* disk/part_aml.c, for aml emmc only */
+int get_partition_info_aml(block_dev_desc_t * dev_desc,
+	int part_num, disk_partition_t * info);
+int get_partition_info_aml_by_name(block_dev_desc_t *dev_desc,
+	const char *name, disk_partition_t *info);
+void print_part_aml (block_dev_desc_t *dev_desc);
+int   test_part_aml (block_dev_desc_t *dev_desc);
 #endif
 
 #ifdef CONFIG_EFI_PARTITION

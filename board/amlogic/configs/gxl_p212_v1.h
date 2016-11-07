@@ -365,6 +365,7 @@
 
 /*file system*/
 #define CONFIG_DOS_PARTITION 1
+#define CONFIG_AML_PARTITION 1
 #define CONFIG_MMC 1
 #define CONFIG_FS_FAT 1
 #define CONFIG_FS_EXT4 1

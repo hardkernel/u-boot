@@ -284,8 +284,7 @@ obj-y += stdio.o
 # This option is not just y/n - it can have a numeric value
 ifdef CONFIG_FASTBOOT_FLASH_MMC_DEV
 obj-y += aboot.o
-#obj-y += fb_mmc.o
-obj-$(CONFIG_STORE_COMPATIBLE) += fb_storage.o
+obj-y += fb_mmc.o
 endif
 
 obj-$(CONFIG_CMD_BLOB) += cmd_blob.o

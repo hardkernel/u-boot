@@ -23,6 +23,14 @@ int get_partitions_table(struct partitions **table)
 	}
 	return ret;
 }
+int get_partition_count(void)
+{
+	return parts_total_num;
+}
+struct partitions *get_partitions(void)
+{
+	return part_table;
+}
 
 int get_partition_from_dts(unsigned char * buffer)
 {

@@ -52,7 +52,10 @@
 // #define     MMC_SECURE_NAME                 "secure"
 // #define     MMC_SECURE_SIZE                 (0x1*SZ_1M)
 
-#define     MMC_UBOOT_VERSION               "01.00.00"
+#define     MMC_MPT_VERSION_1               "01.00.00"
+#define     MMC_MPT_VERSION_2               "01.02.00"
+/* version in use, fixme when kenel driver is updated. */
+#define		MMC_MPT_VERSION					MMC_MPT_VERSION_1
 
 #define     MMC_PARTITIONS_MAGIC            "MPT" // MMC Partition Table
 #define     MMC_CARD_PARTITION_NAME         "card"

@@ -286,6 +286,13 @@ void init_part(block_dev_desc_t *dev_desc)
 	    return;
 	}
 #endif
+
+#ifdef CONFIG_AML_PARTITION
+	if (test_part_aml(dev_desc) == 0) {
+	    dev_desc->part_type = PART_TYPE_AML;
+	    return;
+	}
+#endif
 	dev_desc->part_type = PART_TYPE_UNKNOWN;
 }
 
@@ -376,6 +383,14 @@ void print_part(block_dev_desc_t * dev_desc)
 		print_part_efi (dev_desc);
 		return;
 #endif
+
+#ifdef CONFIG_AML_PARTITION
+	case PART_TYPE_AML:
+		PRINTF ("## Testing for valid EFI partition ##\n");
+		print_part_header ("AML", dev_desc);
+		print_part_aml (dev_desc);
+		return;
+#endif
 	}
 	puts ("## Unknown partition table\n");
 }
@@ -433,6 +448,15 @@ int get_partition_info(block_dev_desc_t *dev_desc, int part,
 	case PART_TYPE_EFI:
 		if (get_partition_info_efi(dev_desc, part, info) == 0) {
 			PRINTF("## Valid EFI partition found ##\n");
+			return 0;
+		}
+		break;
+#endif
+
+#ifdef CONFIG_AML_PARTITION
+	case PART_TYPE_AML:
+		if (get_partition_info_aml(dev_desc, part, info) == 0) {
+			PRINTF("## Valid AML partition found ##\n");
 			return 0;
 		}
 		break;
