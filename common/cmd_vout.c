@@ -55,7 +55,8 @@ static int do_vout_output(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv
 		return CMD_RET_FAILURE;
 
 #ifdef CONFIG_AML_CVBS
-	cvbs_set_vmode(argv[1]);
+	if (!strncmp(argv[1], "576cvbs", 7) || !strncmp(argv[1], "480cvbs", 7))
+		cvbs_set_vmode(argv[1]);
 #endif
 
 #ifdef CONFIG_AML_HDMITX20
