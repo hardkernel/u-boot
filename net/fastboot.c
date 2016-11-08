@@ -45,6 +45,11 @@ static unsigned int last_packet_len = 0;
 static char *cmd_string = NULL;
 static char *cmd_parameter = NULL;
 
+/* Fastboot download parameters */
+static unsigned int bytes_received = 0;
+static unsigned int bytes_expected = 0;
+static unsigned int image_size = 0;
+
 static struct in_addr fastboot_remote_ip;
 /* The UDP port at their end */
 static int fastboot_remote_port;
@@ -52,6 +57,7 @@ static int fastboot_remote_port;
 static int fastboot_our_port;
 
 static void fb_getvar(char*);
+static void fb_download(char*, unsigned int, char*);
 static void cleanup_command_data(void);
 static void write_fb_response(const char*, const char*, char*);
 
@@ -121,6 +127,8 @@ static void fastboot_send(struct fastboot_header fb_header, char *fastboot_data,
 			}
 		} else if (!strcmp("getvar", cmd_string)) {
 			fb_getvar(response);
+		} else if (!strcmp("download", cmd_string)) {
+			fb_download(fastboot_data, fastboot_data_len, response);
 		} else {
 			error("command %s not implemented.\n", cmd_string);
 			write_fb_response("FAIL", "unrecognized command", response);
@@ -179,6 +187,59 @@ static void fb_getvar(char *response)
 	} else {
 		printf("WARNING: unknown variable: %s\n", cmd_parameter);
 		write_fb_response("FAIL", "Variable not implemented", response);
+	}
+}
+
+/**
+ * Copies image data from fastboot_data to CONFIG_FASTBOOT_BUF_ADDR.
+ * Writes to response.
+ *
+ * @param fastboot_data        Pointer to received fastboot data
+ * @param fastboot_data_len    Length of received fastboot data
+ * @param repsonse             Pointer to fastboot response buffer
+ */
+static void fb_download(char *fastboot_data, unsigned int fastboot_data_len,
+		char *response)
+{
+	char *tmp;
+
+	if (bytes_expected == 0) {
+		if (cmd_parameter == NULL) {
+			write_fb_response("FAIL", "Expected command parameter", response);
+			return;
+		}
+		bytes_expected = simple_strtoul(cmd_parameter, &tmp, 16);
+		if (bytes_expected == 0) {
+			write_fb_response("FAIL", "Expected nonzero image size", response);
+			return;
+		}
+	}
+	if (fastboot_data_len == 0 && bytes_received == 0) {
+		/* Nothing to download yet. Response is of the form:
+		 * [DATA|FAIL]$cmd_parameter
+		 *
+		 * where cmd_parameter is an 8 digit hexadecimal number
+		 */
+		if (bytes_expected > CONFIG_FASTBOOT_BUF_SIZE) {
+			write_fb_response("FAIL", cmd_parameter, response);
+		} else {
+			write_fb_response("DATA", cmd_parameter, response);
+		}
+	} else if (fastboot_data_len == 0 && (bytes_received >= bytes_expected)) {
+		/* Download complete. Respond with "OKAY" */
+		write_fb_response("OKAY", "", response);
+		image_size = bytes_received;
+		bytes_expected = bytes_received = 0;
+	} else {
+		if (fastboot_data_len == 0 ||
+				(bytes_received + fastboot_data_len) > bytes_expected) {
+			write_fb_response("FAIL", "Received invalid data length", response);
+			return;
+		}
+		/* Download data to CONFIG_FASTBOOT_BUF_ADDR */
+		memcpy((void*)CONFIG_FASTBOOT_BUF_ADDR + bytes_received, fastboot_data,
+				fastboot_data_len);
+		bytes_received += fastboot_data_len;
 	}
 }
 
