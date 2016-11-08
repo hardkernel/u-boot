@@ -28,6 +28,9 @@ struct __attribute__((packed)) fastboot_header {
 
 #define PACKET_SIZE 1024
 #define FASTBOOT_HEADER_SIZE sizeof(struct fastboot_header)
+#define DATA_SIZE (PACKET_SIZE - FASTBOOT_HEADER_SIZE)
+#define FASTBOOT_RESPONSE_LEN (64 + 1)
+#define FASTBOOT_VERSION "0.4"
 
 /* Sequence number sent for every packet */
 static unsigned short fb_sequence_number = 1;
@@ -38,19 +41,30 @@ static const unsigned short fb_udp_version = 1;
 static uchar last_packet[PACKET_SIZE];
 static unsigned int last_packet_len = 0;
 
+/* Parsed from first fastboot command packet */
+static char *cmd_string = NULL;
+static char *cmd_parameter = NULL;
+
 static struct in_addr fastboot_remote_ip;
 /* The UDP port at their end */
 static int fastboot_remote_port;
 /* The UDP port at our end */
 static int fastboot_our_port;
 
+static void fb_getvar(char*);
+static void cleanup_command_data(void);
+static void write_fb_response(const char*, const char*, char*);
+
 /**
  * Constructs and sends a packet in response to received fastboot packet
  *
- * @param fb_header    Header for response packet
- * @param retransmit   Nonzero if sending last sent packet
+ * @param fb_header            Header for response packet
+ * @param fastboot_data        Pointer to received fastboot data
+ * @param fastboot_data_len    Length of received fastboot data
+ * @param retransmit           Nonzero if sending last sent packet
  */
-static void fastboot_send(struct fastboot_header fb_header, uchar retransmit)
+static void fastboot_send(struct fastboot_header fb_header, char *fastboot_data,
+		unsigned int fastboot_data_len, uchar retransmit)
 {
 	uchar *packet;
 	uchar *packet_base;
@@ -58,6 +72,7 @@ static void fastboot_send(struct fastboot_header fb_header, uchar retransmit)
 	const char *error_msg = "An error occurred.";
 	short tmp;
 	struct fastboot_header fb_response_header = fb_header;
+	char response[FASTBOOT_RESPONSE_LEN] = {0};
 	/*
 	 *	We will always be sending some sort of packet, so
 	 *	cobble together the packet headers now.
@@ -96,6 +111,24 @@ static void fastboot_send(struct fastboot_header fb_header, uchar retransmit)
 		packet += strlen(error_msg);
 		break;
 	case FASTBOOT_FASTBOOT:
+		if (cmd_string == NULL) {
+			/* Parse command and send ack */
+			cmd_parameter = fastboot_data;
+			cmd_string = strsep(&cmd_parameter, ":");
+			cmd_string = strdup(cmd_string);
+			if (cmd_parameter) {
+				cmd_parameter = strdup(cmd_parameter);
+			}
+		} else if (!strcmp("getvar", cmd_string)) {
+			fb_getvar(response);
+		} else {
+			error("command %s not implemented.\n", cmd_string);
+			write_fb_response("FAIL", "unrecognized command", response);
+		}
+		/* Write response to packet */
+		memcpy(packet, response, strlen(response));
+		packet += strlen(response);
+		break;
 	default:
 		error("ID %d not implemented.\n", fb_header.id);
 		return;
@@ -109,6 +142,75 @@ static void fastboot_send(struct fastboot_header fb_header, uchar retransmit)
 
 	net_send_udp_packet(net_server_ethaddr, fastboot_remote_ip,
 			    fastboot_remote_port, fastboot_our_port, len);
+
+	/* OKAY and FAIL indicate command is complete */
+	if (!strncmp("OKAY", response, 4) ||
+			!strncmp("FAIL", response, 4)) {
+		cleanup_command_data();
+	}
+}
+
+/**
+ * Writes ascii string specified by cmd_parameter to response.
+ *
+ * @param repsonse    Pointer to fastboot response buffer
+ */
+static void fb_getvar(char *response)
+{
+
+	if (cmd_parameter == NULL) {
+		write_fb_response("FAIL", "missing var", response);
+	} else if (!strcmp("version", cmd_parameter)) {
+		write_fb_response("OKAY", FASTBOOT_VERSION, response);
+	} else if (!strcmp("bootloader-version", cmd_parameter)) {
+		write_fb_response("OKAY", U_BOOT_VERSION, response);
+	} else if (!strcmp("downloadsize", cmd_parameter) ||
+		!strcmp("max-download-size", cmd_parameter)) {
+		char buf_size_str[12];
+		sprintf(buf_size_str, "0x%08x", CONFIG_FASTBOOT_BUF_SIZE);
+		write_fb_response("OKAY", buf_size_str, response);
+	} else if (!strcmp("serialno", cmd_parameter)) {
+		const char *tmp = getenv("serial#");
+		if (tmp) {
+			write_fb_response("OKAY", tmp, response);
+		} else {
+			write_fb_response("FAIL", "Value not set", response);
+		}
+	} else {
+		printf("WARNING: unknown variable: %s\n", cmd_parameter);
+		write_fb_response("FAIL", "Variable not implemented", response);
+	}
+}
+
+/**
+ * Writes a response to response buffer of the form "$tag$reason".
+ *
+ * @param tag         The first part of the response
+ * @param reason      The second part of the response
+ * @param repsonse    Pointer to fastboot response buffer
+ */
+static void write_fb_response(const char* tag, const char *reason,
+		char *response)
+{
+	strncpy(response, tag, strlen(tag));
+	strncat(response, reason, FASTBOOT_RESPONSE_LEN - strlen(tag) - 1);
+}
+
+/**
+ * Frees any resources allocated during current fastboot command.
+ */
+static void cleanup_command_data(void)
+{
+	/* cmd_parameter and cmd_string potentially point to memory allocated by
+	 * strdup
+	 */
+	if (cmd_parameter) {
+		free(cmd_parameter);
+	}
+	if (cmd_string) {
+		free(cmd_string);
+	}
+	cmd_parameter = cmd_string = NULL;
 }
 
 /**
@@ -124,6 +226,8 @@ static void fastboot_handler(uchar *packet, unsigned dport, struct in_addr sip,
 		unsigned sport, unsigned len)
 {
 	struct fastboot_header fb_header;
+	char fastboot_data[DATA_SIZE] = {0};
+	unsigned int fastboot_data_len = 0;
 
 	if (dport != fastboot_our_port) {
 		return;
@@ -143,22 +247,26 @@ static void fastboot_handler(uchar *packet, unsigned dport, struct in_addr sip,
 
 	switch (fb_header.id) {
 	case FASTBOOT_QUERY:
-		fastboot_send(fb_header, 0);
+		fastboot_send(fb_header, fastboot_data, 0, 0);
 		break;
 	case FASTBOOT_INIT:
+	case FASTBOOT_FASTBOOT:
+		fastboot_data_len = len;
+		if (len > 0) {
+			memcpy(fastboot_data, packet, len);
+		}
 		if (fb_header.seq == fb_sequence_number) {
-			fastboot_send(fb_header, 0);
+			fastboot_send(fb_header, fastboot_data, fastboot_data_len, 0);
 			fb_sequence_number++;
 		} else if (fb_header.seq == fb_sequence_number - 1) {
 			/* Retransmit last sent packet */
-			fastboot_send(fb_header, 1);
+			fastboot_send(fb_header, fastboot_data, fastboot_data_len, 1);
 		}
 		break;
-	case FASTBOOT_FASTBOOT:
 	default:
 		error("ID %d not implemented.\n", fb_header.id);
 		fb_header.id = FASTBOOT_ERROR;
-		fastboot_send(fb_header, 0);
+		fastboot_send(fb_header, fastboot_data, 0, 0);
 		break;
 	}
 }
