@@ -469,6 +469,24 @@ config BOARD_EARLY_INIT_F
 	  debug UART will be available if enabled.
 
 endmenu
+config ANDROID_BOOTLOADER
+	bool "Support for Android Bootloader boot flow"
+	default n
+	depends on ANDROID_BOOT_IMAGE
+	help
+	  If enabled, adds support to boot an Android device following the
+	  Android Bootloader boot flow. This flow requires an Android Bootloader
+	  to handle the Android Bootloader Message stored in the Boot Control
+	  Block (BCB), normally in the "misc" partition of an Android device.
+	  The BCB is used to determine the boot mode of the device (normal mode,
+	  recovery mode or bootloader mode) and, if enabled, the slot to boot
+	  from in devices with multiple boot slots (A/B devices).
+
+config ANDROID_BOOT_IMAGE
+	bool "Enable support for Android Boot Images"
+	help
+	  This enables support for booting images which use the Android
+	  image format header.
 
 menu "Security support"
 
