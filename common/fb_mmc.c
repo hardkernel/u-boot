@@ -74,7 +74,7 @@ static lbaint_t fb_mmc_sparse_reserve(struct sparse_storage *info,
 
 static void write_raw_image(struct blk_desc *dev_desc, disk_partition_t *info,
 		const char *part_name, void *buffer,
-		unsigned int download_bytes)
+		unsigned int download_bytes, char *response)
 {
 	lbaint_t blkcnt;
 	lbaint_t blks;
@@ -85,7 +85,7 @@ static void write_raw_image(struct blk_desc *dev_desc, disk_partition_t *info,
 
 	if (blkcnt > info->size) {
 		error("too large for partition: '%s'\n", part_name);
-		fastboot_fail("too large for partition");
+		fastboot_fail("too large for partition", response);
 		return;
 	}
 
@@ -94,13 +94,13 @@ static void write_raw_image(struct blk_desc *dev_desc, disk_partition_t *info,
 	blks = blk_dwrite(dev_desc, info->start, blkcnt, buffer);
 	if (blks != blkcnt) {
 		error("failed writing to device %d\n", dev_desc->devnum);
-		fastboot_fail("failed writing to device");
+		fastboot_fail("failed writing to device", response);
 		return;
 	}
 
 	printf("........ wrote " LBAFU " bytes to '%s'\n", blkcnt * info->blksz,
 	       part_name);
-	fastboot_okay("");
+	fastboot_okay("", response);
 }
 
 #ifdef CONFIG_ANDROID_BOOT_IMAGE
@@ -261,7 +261,7 @@ static int fb_mmc_update_zimage(struct blk_desc *dev_desc,
 #endif
 
 void fb_mmc_flash_write(const char *cmd, void *download_buffer,
-			unsigned int download_bytes)
+			unsigned int download_bytes, char *response)
 {
 	struct blk_desc *dev_desc;
 	disk_partition_t info;
@@ -269,7 +269,7 @@ void fb_mmc_flash_write(const char *cmd, void *download_buffer,
 	dev_desc = blk_get_dev("mmc", CONFIG_FASTBOOT_FLASH_MMC_DEV);
 	if (!dev_desc || dev_desc->type == DEV_TYPE_UNKNOWN) {
 		error("invalid mmc device\n");
-		fastboot_fail("invalid mmc device");
+		fastboot_fail("invalid mmc device", response);
 		return;
 	}
 
@@ -280,16 +280,17 @@ void fb_mmc_flash_write(const char *cmd, void *download_buffer,
 		if (is_valid_gpt_buf(dev_desc, download_buffer)) {
 			printf("%s: invalid GPT - refusing to write to flash\n",
 			       __func__);
-			fastboot_fail("invalid GPT partition");
+			fastboot_fail("invalid GPT partition", response);
 			return;
 		}
 		if (write_mbr_and_gpt_partitions(dev_desc, download_buffer)) {
 			printf("%s: writing GPT partitions failed\n", __func__);
-			fastboot_fail("writing GPT partitions failed");
+			fastboot_fail(
+				      "writing GPT partitions failed", response);
 			return;
 		}
 		printf("........ success\n");
-		fastboot_okay("");
+		fastboot_okay("", response);
 		return;
 	}
 #endif
@@ -323,7 +324,7 @@ void fb_mmc_flash_write(const char *cmd, void *download_buffer,
 
 	if (part_get_info_by_name_or_alias(dev_desc, cmd, &info) < 0) {
 		error("cannot find partition: '%s'\n", cmd);
-		fastboot_fail("cannot find partition");
+		fastboot_fail("cannot find partition", response);
 		return;
 	}
 
@@ -344,14 +345,14 @@ void fb_mmc_flash_write(const char *cmd, void *download_buffer,
 
 		sparse.priv = &sparse_priv;
 		write_sparse_image(&sparse, cmd, download_buffer,
-				   download_bytes);
+				   download_bytes, response);
 	} else {
 		write_raw_image(dev_desc, &info, cmd, download_buffer,
-				download_bytes);
+				download_bytes, response);
 	}
 }
 
-void fb_mmc_erase(const char *cmd)
+void fb_mmc_erase(const char *cmd, char *response)
 {
 	int ret;
 	struct blk_desc *dev_desc;
@@ -361,21 +362,21 @@ void fb_mmc_erase(const char *cmd)
 
 	if (mmc == NULL) {
 		error("invalid mmc device");
-		fastboot_fail("invalid mmc device");
+		fastboot_fail("invalid mmc device", response);
 		return;
 	}
 
 	dev_desc = blk_get_dev("mmc", CONFIG_FASTBOOT_FLASH_MMC_DEV);
 	if (!dev_desc || dev_desc->type == DEV_TYPE_UNKNOWN) {
 		error("invalid mmc device");
-		fastboot_fail("invalid mmc device");
+		fastboot_fail("invalid mmc device", response);
 		return;
 	}
 
 	ret = part_get_info_by_name_or_alias(dev_desc, cmd, &info);
 	if (ret < 0) {
 		error("cannot find partition: '%s'", cmd);
-		fastboot_fail("cannot find partition");
+		fastboot_fail("cannot find partition", response);
 		return;
 	}
 
@@ -394,11 +395,11 @@ void fb_mmc_erase(const char *cmd)
 	blks = blk_derase(dev_desc, blks_start, blks_size);
 	if (blks != blks_size) {
 		error("failed erasing from device %d", dev_desc->devnum);
-		fastboot_fail("failed erasing from device");
+		fastboot_fail("failed erasing from device", response);
 		return;
 	}
 
 	printf("........ erased " LBAFU " bytes from '%s'\n",
 	       blks_size * info.blksz, cmd);
-	fastboot_okay("");
+	fastboot_okay("", response);
 }

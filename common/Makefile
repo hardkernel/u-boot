@@ -120,6 +120,10 @@ obj-y += fb_nand.o
 endif
 endif
 
+ifneq ($(or $(CONFIG_USB_FUNCTION_FASTBOOT),$(CONFIG_UDP_FUNCTION_FASTBOOT)),)
+obj-y += fb_common.o
+endif
+
 ifdef CONFIG_CMD_EEPROM_LAYOUT
 obj-y += eeprom/eeprom_field.o eeprom/eeprom_layout.o
 endif

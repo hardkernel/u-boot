@@ -150,21 +150,6 @@ static struct usb_gadget_strings *fastboot_strings[] = {
 static void rx_handler_command(struct usb_ep *ep, struct usb_request *req);
 static int strcmp_l1(const char *s1, const char *s2);
 
-
-static char *fb_response_str;
-
-void fastboot_fail(const char *reason)
-{
-	strncpy(fb_response_str, "FAIL\0", 5);
-	strncat(fb_response_str, reason, FASTBOOT_RESPONSE_LEN - 4 - 1);
-}
-
-void fastboot_okay(const char *reason)
-{
-	strncpy(fb_response_str, "OKAY\0", 5);
-	strncat(fb_response_str, reason, FASTBOOT_RESPONSE_LEN - 4 - 1);
-}
-
 static void fastboot_complete(struct usb_ep *ep, struct usb_request *req)
 {
 	int status = req->status;
@@ -598,18 +583,14 @@ static void cb_flash(struct usb_ep *ep, struct usb_request *req)
 		return;
 	}
 
-	/* initialize the response buffer */
-	fb_response_str = response;
-
-	fastboot_fail("no flash device defined");
+	fastboot_fail("no flash device defined", response);
 #ifdef CONFIG_FASTBOOT_FLASH_MMC_DEV
 	fb_mmc_flash_write(cmd, (void *)CONFIG_FASTBOOT_BUF_ADDR,
-			   download_bytes);
+				download_bytes, response);
 #endif
 #ifdef CONFIG_FASTBOOT_FLASH_NAND_DEV
-	fb_nand_flash_write(cmd,
-			    (void *)CONFIG_FASTBOOT_BUF_ADDR,
-			    download_bytes);
+	fb_nand_flash_write(cmd, (void *)CONFIG_FASTBOOT_BUF_ADDR,
+				download_bytes, response);
 #endif
 	fastboot_tx_write_str(response);
 }
@@ -650,15 +631,12 @@ static void cb_erase(struct usb_ep *ep, struct usb_request *req)
 		return;
 	}
 
-	/* initialize the response buffer */
-	fb_response_str = response;
-
-	fastboot_fail("no flash device defined");
+	fastboot_fail("no flash device defined", response);
 #ifdef CONFIG_FASTBOOT_FLASH_MMC_DEV
-	fb_mmc_erase(cmd);
+	fb_mmc_erase(cmd, response);
 #endif
 #ifdef CONFIG_FASTBOOT_FLASH_NAND_DEV
-	fb_nand_erase(cmd);
+	fb_nand_erase(cmd, response);
 #endif
 	fastboot_tx_write_str(response);
 }

@@ -5,6 +5,8 @@
 */
 
 #include <common.h>
+#include <fastboot.h>
+#include <fb_mmc.h>
 #include <net.h>
 #include <net/fastboot.h>
 #include <stdlib.h>
@@ -29,7 +31,6 @@ struct __attribute__((packed)) fastboot_header {
 #define PACKET_SIZE 1024
 #define FASTBOOT_HEADER_SIZE sizeof(struct fastboot_header)
 #define DATA_SIZE (PACKET_SIZE - FASTBOOT_HEADER_SIZE)
-#define FASTBOOT_RESPONSE_LEN (64 + 1)
 #define FASTBOOT_VERSION "0.4"
 
 /* Sequence number sent for every packet */
@@ -58,6 +59,8 @@ static int fastboot_our_port;
 
 static void fb_getvar(char*);
 static void fb_download(char*, unsigned int, char*);
+static void fb_flash(char*);
+static void fb_erase(char*);
 static void cleanup_command_data(void);
 static void write_fb_response(const char*, const char*, char*);
 
@@ -129,6 +132,10 @@ static void fastboot_send(struct fastboot_header fb_header, char *fastboot_data,
 			fb_getvar(response);
 		} else if (!strcmp("download", cmd_string)) {
 			fb_download(fastboot_data, fastboot_data_len, response);
+		} else if (!strcmp("flash", cmd_string)) {
+			fb_flash(response);
+		} else if (!strcmp("erase", cmd_string)) {
+			fb_erase(response);
 		} else {
 			error("command %s not implemented.\n", cmd_string);
 			write_fb_response("FAIL", "unrecognized command", response);
@@ -241,6 +248,29 @@ static void fb_download(char *fastboot_data, unsigned int fastboot_data_len,
 				fastboot_data_len);
 		bytes_received += fastboot_data_len;
 	}
+}
+
+/**
+ * Writes the previously downloaded image to the partition indicated by
+ * cmd_parameter. Writes to response.
+ *
+ * @param repsonse    Pointer to fastboot response buffer
+ */
+static void fb_flash(char *response)
+{
+	fb_mmc_flash_write(cmd_parameter, (void*)CONFIG_FASTBOOT_BUF_ADDR,
+			image_size, response);
+}
+
+/**
+ * Erases the partition indicated by cmd_parameter (clear to 0x00s). Writes
+ * to response.
+ *
+ * @param repsonse    Pointer to fastboot response buffer
+ */
+static void fb_erase(char *response)
+{
+	fb_mmc_erase(cmd_parameter, response);
 }
 
 /**
