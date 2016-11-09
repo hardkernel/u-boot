@@ -34,7 +34,7 @@ static int lcd_type_supported(struct lcd_config_s *pconf)
 		ret = 0;
 		break;
 	default:
-		LCDPR("invalid lcd type: %s(%d)\n",
+		LCDERR("invalid lcd type: %s(%d)\n",
 			lcd_type_type_to_str(lcd_type), lcd_type);
 		break;
 	}
@@ -112,7 +112,7 @@ static void lcd_vbyone_phy_set(struct lcd_config_s *pconf, int status)
 
 static void lcd_lvds_phy_set(struct lcd_config_s *pconf, int status)
 {
-	unsigned int vswing, preem, clk_vswing, clk_preem;
+	unsigned int vswing, preem, clk_vswing, clk_preem, channel_on;
 	unsigned int data32;
 
 	if (lcd_debug_print_flag)
@@ -143,11 +143,14 @@ static void lcd_lvds_phy_set(struct lcd_config_s *pconf, int status)
 				__func__, clk_preem);
 			clk_preem = LVDS_PHY_CLK_PREEM_DFT;
 		}
+		channel_on = lcd_lvds_channel_on_value(pconf);
+
 		data32 = 0x606cca80 | (vswing << 26) | (preem << 0);
 		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL1, data32);
 		/*lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL1, 0x6c6cca80);*/
 		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL2, 0x0000006c);
-		data32 = 0x0fff0800 | (clk_vswing << 8) | (clk_preem << 5);
+		data32 = (channel_on << 16) | 0x0800 | /* DIF_TX_CTL5 */
+			(clk_vswing << 8) | (clk_preem << 5); /* DIF_TX_CTL4 */
 		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL3, data32);
 		/*lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL3, 0x0fff0800);*/
 	} else {
@@ -162,8 +165,18 @@ static void lcd_tcon_set(struct lcd_config_s *pconf)
 	lcd_vcbus_write(L_RGB_BASE_ADDR, 0);
 	lcd_vcbus_write(L_RGB_COEFF_ADDR, 0x400);
 
-	if (pconf->lcd_basic.lcd_bits == 8)
+	switch (pconf->lcd_basic.lcd_bits) {
+	case 6:
+		lcd_vcbus_write(L_DITH_CNTL_ADDR,  0x600);
+		break;
+	case 8:
 		lcd_vcbus_write(L_DITH_CNTL_ADDR,  0x400);
+		break;
+	case 10:
+	default:
+		lcd_vcbus_write(L_DITH_CNTL_ADDR,  0x0);
+		break;
+	}
 
 	switch (pconf->lcd_basic.lcd_type) {
 	case LCD_LVDS:
@@ -217,7 +230,7 @@ static void lcd_lvds_control_set(struct lcd_config_s *pconf)
 
 	lcd_lvds_clk_util_set(pconf);
 
-	lvds_repack = (pconf->lcd_control.lvds_config->lvds_repack) & 0x1;
+	lvds_repack = (pconf->lcd_control.lvds_config->lvds_repack) & 0x3;
 	pn_swap   = (pconf->lcd_control.lvds_config->pn_swap) & 0x1;
 	dual_port = (pconf->lcd_control.lvds_config->dual_port) & 0x1;
 	port_swap = (pconf->lcd_control.lvds_config->port_swap) & 0x1;
@@ -226,6 +239,8 @@ static void lcd_lvds_control_set(struct lcd_config_s *pconf)
 	switch (pconf->lcd_basic.lcd_bits) {
 	case 10:
 		bit_num=0;
+		if (lvds_repack == 1)
+			lvds_repack = 2;
 		break;
 	case 8:
 		bit_num=1;
@@ -246,7 +261,7 @@ static void lcd_lvds_control_set(struct lcd_config_s *pconf)
 		fifo_mode = 0x1;
 
 	lcd_vcbus_write(LVDS_PACK_CNTL_ADDR,
-			(lvds_repack << 0) | // repack
+			(lvds_repack << 0) | // repack //[1:0]
 			(0 << 3) |		// reserve
 			(0 << 4) |		// lsb first
 			(pn_swap << 5) |	// pn swap
@@ -346,8 +361,10 @@ static int lcd_vbyone_lanes_set(int lane_num, int byte_mode, int region_num,
 	default:
 		return -1;
 	}
-	LCDPR("byte_mode=%d, lane_num=%d, region_num=%d\n",
-		byte_mode, lane_num, region_num);
+	if (lcd_debug_print_flag) {
+		LCDPR("byte_mode=%d, lane_num=%d, region_num=%d\n",
+			byte_mode, lane_num, region_num);
+	}
 
 	sublane_num = lane_num / region_num; /* lane num in each region */
 	lcd_vcbus_setb(VBO_LANES, (lane_num - 1), 0, 3);
@@ -408,7 +425,10 @@ static void lcd_vbyone_wait_timing_stable(void)
 		timing_state = lcd_vcbus_read(VBO_INTR_STATE) & 0x1ff;
 		i--;
 	};
-	LCDPR("vbyone timing state: 0x%03x, i=%d\n", timing_state, (200 - i));
+	if (lcd_debug_print_flag) {
+		LCDPR("vbyone timing state: 0x%03x, i=%d\n",
+			timing_state, (200 - i));
+	}
 	mdelay(2);
 }
 
@@ -456,7 +476,7 @@ static void lcd_vbyone_control_set(struct lcd_config_s *pconf)
 		vin_bpp   = 0;
 		break;
 	default:
-		LCDPR("error: vbyone COLOR_FORMAT unsupport\n");
+		LCDERR("vbyone COLOR_FORMAT unsupport\n");
 		return;
 	}
 #else
@@ -611,7 +631,7 @@ static void lcd_vbyone_config_set(struct lcd_config_s *pconf)
 	}
 	minlane = vbyone_lane_num[i];
 	if (lane_count < minlane) {
-		LCDPR("error: vbyone lane_num(%d) is less than min(%d)\n",
+		LCDERR("vbyone lane_num(%d) is less than min(%d)\n",
 			lane_count, minlane);
 		lane_count = minlane;
 		pconf->lcd_control.vbyone_config->lane_count = lane_count;
@@ -625,11 +645,11 @@ static void lcd_vbyone_config_set(struct lcd_config_s *pconf)
 		bit_rate /= 2;
 	}
 	if (bit_rate > (VBYONE_BIT_RATE_MAX * 1000)) {
-		LCDPR("error: vbyone bit rate(%dKHz) is out of max(%dKHz)\n",
+		LCDERR("vbyone bit rate(%dKHz) is out of max(%dKHz)\n",
 			bit_rate, (VBYONE_BIT_RATE_MAX * 1000));
 	}
 	if (bit_rate < (VBYONE_BIT_RATE_MIN * 1000)) {
-		LCDPR("error: vbyone bit rate(%dKHz) is out of min(%dKHz)\n",
+		LCDERR("vbyone bit rate(%dKHz) is out of min(%dKHz)\n",
 			bit_rate, (VBYONE_BIT_RATE_MIN * 1000));
 	}
 	bit_rate = bit_rate * 1000; /* Hz */

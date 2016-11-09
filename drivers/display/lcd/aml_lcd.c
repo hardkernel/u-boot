@@ -299,12 +299,13 @@ static void lcd_info_print(void)
 	lcd_clk = (pconf->lcd_timing.lcd_clk / 1000);
 	sync_duration = pconf->lcd_timing.sync_duration_num;
 	sync_duration = (sync_duration * 10 / pconf->lcd_timing.sync_duration_den);
-	LCDPR("%s, %s, %ux%u@%u.%uHz\n"
+	LCDPR("%s, %s %ubit, %ux%u@%u.%uHz\n"
 		"fr_adj_type       %d\n"
 		"lcd_clk           %u.%03uMHz\n"
 		"ss_level          %u\n\n",
 		pconf->lcd_basic.model_name,
 		lcd_type_type_to_str(pconf->lcd_basic.lcd_type),
+		pconf->lcd_basic.lcd_bits,
 		pconf->lcd_basic.h_active, pconf->lcd_basic.v_active,
 		(sync_duration / 10), (sync_duration % 10),
 		pconf->lcd_timing.fr_adjust_type,
@@ -460,6 +461,9 @@ static void lcd_lvds_reg_print(void)
 		reg, lcd_vcbus_read(reg));
 	reg = LVDS_GEN_CNTL;
 	printf("LVDS_GEN_CNTL       [0x%04x] = 0x%08x\n",
+		reg, lcd_vcbus_read(reg));
+	reg = LCD_PORT_SWAP;
+	printf("LCD_PORT_SWAP       [0x%04x] = 0x%08x\n",
 		reg, lcd_vcbus_read(reg));
 	reg = HHI_LVDS_TX_PHY_CNTL0;
 	printf("LVDS_PHY_CNTL0      [0x%04x] = 0x%08x\n",
@@ -714,15 +718,14 @@ static int lcd_mode_probe(void)
 #endif
 
 	str = getenv("lcd_debug_test");
-	if (str == NULL) {
+	if (str == NULL)
 		lcd_debug_test = 0;
-		LCDPR("no lcd_debug_test flag\n");
-	} else {
+	else
 		lcd_debug_test = simple_strtoul(str, NULL, 10);
+	if (lcd_debug_test) {
+		load_id = 0x0;
 		LCDPR("lcd_debug_test flag: %d\n", lcd_debug_test);
 	}
-	if (lcd_debug_test)
-		load_id = 0x0;
 
 	if (load_id & 0x1 ) {
 #ifdef CONFIG_OF_LIBFDT
@@ -771,7 +774,7 @@ static int lcd_mode_probe(void)
 		break;
 #endif
 	default:
-		LCDPR("invalid lcd mode\n");
+		LCDERR("invalid lcd mode\n");
 		break;
 	}
 	if (ret) {
@@ -812,7 +815,6 @@ int lcd_probe(void)
 	str = getenv("lcd_debug_print");
 	if (str == NULL) {
 		lcd_debug_print_flag = 0;
-		LCDPR("no lcd_debug_print flag\n");
 	} else {
 		lcd_debug_print_flag = simple_strtoul(str, NULL, 10);
 		LCDPR("lcd_debug_print flag: %d\n", lcd_debug_print_flag);

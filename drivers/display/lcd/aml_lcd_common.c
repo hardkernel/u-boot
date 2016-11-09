@@ -85,6 +85,71 @@ char *lcd_mode_mode_to_str(int mode)
 	return lcd_mode_table[mode];
 }
 
+unsigned int lcd_lvds_channel_on_value(struct lcd_config_s *pconf)
+{
+	unsigned int channel_on = 0;
+
+	if (pconf->lcd_control.lvds_config->dual_port == 0) {
+		if (pconf->lcd_control.lvds_config->lane_reverse == 0) {
+			switch (pconf->lcd_basic.lcd_bits) {
+			case 6:
+				channel_on = 0xf;
+				break;
+			case 8:
+				channel_on = 0x1f;
+				break;
+			case 10:
+			default:
+				channel_on = 0x3f;
+				break;
+			}
+		} else {
+			switch (pconf->lcd_basic.lcd_bits) {
+			case 6:
+				channel_on = 0x3c;
+				break;
+			case 8:
+				channel_on = 0x3e;
+				break;
+			case 10:
+			default:
+				channel_on = 0x3f;
+				break;
+			}
+		}
+		if (pconf->lcd_control.lvds_config->port_swap == 1)
+			channel_on = (channel_on << 6); /* use channel B */
+	} else {
+		if (pconf->lcd_control.lvds_config->lane_reverse == 0) {
+			switch (pconf->lcd_basic.lcd_bits) {
+			case 6:
+				channel_on = 0x3cf;
+				break;
+			case 8:
+				channel_on = 0x7df;
+				break;
+			case 10:
+			default:
+				channel_on = 0xfff;
+				break;
+			}
+		} else {
+			switch (pconf->lcd_basic.lcd_bits) {
+			case 6:
+				channel_on = 0xf3c;
+				break;
+			case 8:
+				channel_on = 0xfbe;
+				break;
+			case 10:
+			default:
+				channel_on = 0xfff;
+				break;
+			}
+		}
+	}
+	return channel_on;
+}
 
 void lcd_tcon_config(struct lcd_config_s *pconf)
 {
@@ -329,8 +394,10 @@ int lcd_vmode_change(struct lcd_config_s *pconf)
 			(pclk / 1000000), ((pclk / 1000) % 1000));
 		pconf->lcd_timing.lcd_clk = pclk;
 	}
-	if (len > 0)
-		LCDPR("%s: %s\n", __func__, str);
+	if (lcd_debug_print_flag) {
+		if (len > 0)
+			LCDPR("%s: %s\n", __func__, str);
+	}
 
 	return 0;
 }
