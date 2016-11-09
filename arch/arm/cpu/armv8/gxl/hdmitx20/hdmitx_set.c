@@ -30,6 +30,9 @@
 #include "hw_enc_clk_config.h"
 #include <asm/cpu_id.h>
 
+const static char *vend_name = "Amlogic"; /* Max 8 bytes */
+const static char *prod_desc = "MBox Meson Ref"; /* Max 16 bytes */
+
 struct hdmitx_dev hdmitx_device;
 
 static void hdmi_tvenc_set(enum hdmi_vic vic);
@@ -569,6 +572,26 @@ static int hdmitx_set_audmode(struct hdmitx_dev *hdev)
 	return 0;
 }
 
+/*
+ * set Source Product Description InfoFrame
+ */
+static void hdmitx_set_spdinfo(void)
+{
+	int i;
+
+	if (!(vend_name && prod_desc))
+		return;
+
+	for (i = 0; (i < 8) && vend_name[i]; i++)
+		hdmitx_wr_reg(HDMITX_DWC_FC_SPDVENDORNAME0 + i, vend_name[i]);
+	for (i = 0; (i < 16) && prod_desc[i]; i++)
+		hdmitx_wr_reg(HDMITX_DWC_FC_SDPPRODUCTNAME0 + i, prod_desc[i]);
+	hdmitx_wr_reg(HDMITX_DWC_FC_SPDDEVICEINF, 0x1);
+	hdmitx_set_reg_bits(HDMITX_DWC_FC_DATAUTO0, 1, 4, 1);
+	hdmitx_set_reg_bits(HDMITX_DWC_FC_DATAUTO2, 1, 4, 4);
+	hdmitx_set_reg_bits(HDMITX_DWC_FC_PACKET_TX_EN, 1, 4, 1);
+}
+
 #define NUM_INT_VSYNC   INT_VEC_VIU1_VSYNC
 
 static unsigned long modulo(unsigned long a, unsigned long b);
@@ -1011,8 +1034,8 @@ static void config_hdmi20_tx ( enum hdmi_vic vic, struct hdmi_format_para *para,
 	data32 |= (0 << 1);
 	data32 |= (0 << 0);
 	hdmitx_wr_reg(HDMITX_DWC_FC_DATAUTO0, data32);
+	hdmitx_set_spdinfo();
 	hdmitx_wr_reg(HDMITX_DWC_FC_DATAUTO1, 0);
-	hdmitx_wr_reg(HDMITX_DWC_FC_DATAUTO2, 0);
 	hdmitx_wr_reg(HDMITX_DWC_FC_DATMAN, 0);
 
 	/* packet scheduller configuration for AVI, GCP, AUDI, ACR. */
@@ -1046,7 +1069,7 @@ static void config_hdmi20_tx ( enum hdmi_vic vic, struct hdmi_format_para *para,
 	data32 |= (1 << 2);
 	data32 |= (1 << 1);
 	data32 |= (1 << 0);
-	hdmitx_wr_reg(HDMITX_DWC_FC_PACKET_TX_EN, data32);
+	hdmitx_set_reg_bits(HDMITX_DWC_FC_PACKET_TX_EN, data32, 0, 4);
 
 	/* For 3D video */
 	data32  = 0;
