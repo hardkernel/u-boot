@@ -61,6 +61,9 @@ static void fb_getvar(char*);
 static void fb_download(char*, unsigned int, char*);
 static void fb_flash(char*);
 static void fb_erase(char*);
+static void fb_continue(char*);
+static void fb_reboot(char*);
+static void boot_downloaded_image(void);
 static void cleanup_command_data(void);
 static void write_fb_response(const char*, const char*, char*);
 
@@ -136,6 +139,12 @@ static void fastboot_send(struct fastboot_header fb_header, char *fastboot_data,
 			fb_flash(response);
 		} else if (!strcmp("erase", cmd_string)) {
 			fb_erase(response);
+		} else if (!strcmp("boot", cmd_string)) {
+			write_fb_response("OKAY", "", response);
+		} else if (!strcmp("continue", cmd_string)) {
+			fb_continue(response);
+		} else if (!strncmp("reboot", cmd_string, 6)) {
+			fb_reboot(response);
 		} else {
 			error("command %s not implemented.\n", cmd_string);
 			write_fb_response("FAIL", "unrecognized command", response);
@@ -157,6 +166,18 @@ static void fastboot_send(struct fastboot_header fb_header, char *fastboot_data,
 
 	net_send_udp_packet(net_server_ethaddr, fastboot_remote_ip,
 			    fastboot_remote_port, fastboot_our_port, len);
+
+	/* Continue boot process after sending response */
+	if (!strncmp("OKAY", response, 4)) {
+		if (!strcmp("boot", cmd_string)) {
+			boot_downloaded_image();
+		} else if (!strcmp("continue", cmd_string)) {
+			run_command(getenv("bootcmd"), CMD_FLAG_ENV);
+		} else if (!strncmp("reboot", cmd_string, 6)) {
+			/* Matches reboot or reboot-bootloader */
+			do_reset(NULL, 0, 0, NULL);
+		}
+	}
 
 	/* OKAY and FAIL indicate command is complete */
 	if (!strncmp("OKAY", response, 4) ||
@@ -271,6 +292,55 @@ static void fb_flash(char *response)
 static void fb_erase(char *response)
 {
 	fb_mmc_erase(cmd_parameter, response);
+}
+
+/**
+ * Continues normal boot process by running "bootcmd". Writes
+ * to response.
+ *
+ * @param repsonse    Pointer to fastboot response buffer
+ */
+static void fb_continue(char *response)
+{
+	char *bootcmd;
+	bootcmd = getenv("bootcmd");
+	if (bootcmd) {
+		write_fb_response("OKAY", "", response);
+	} else {
+		write_fb_response("FAIL", "bootcmd not set", response);
+	}
+}
+
+/**
+ * Sets reboot bootloader flag if requested. Writes to response.
+ *
+ * @param repsonse    Pointer to fastboot response buffer
+ */
+static void fb_reboot(char *response)
+{
+	write_fb_response("OKAY", "", response);
+	if (!strcmp("reboot-bootloader", cmd_string)) {
+		strcpy((char*)CONFIG_FASTBOOT_BUF_ADDR, "reboot-bootloader");
+	}
+}
+
+/**
+ * Boots into downloaded image.
+ */
+static void boot_downloaded_image(void)
+{
+	char kernel_addr[12];
+	char *fdt_addr = getenv("fdt_addr_r");
+	char *bootm_args[] = { "bootm", kernel_addr, "-", fdt_addr, NULL };
+
+	sprintf(kernel_addr, "0x%lx", (long)CONFIG_FASTBOOT_BUF_ADDR);
+
+	printf("\nBooting kernel at %s with fdt at %s...\n\n\n",
+			kernel_addr, fdt_addr);
+	do_bootm(NULL, 0, 4, bootm_args);
+
+	/* This only happens if image is faulty so we start over. */
+	do_reset(NULL, 0, 0, NULL);
 }
 
 /**
