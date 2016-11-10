@@ -29,9 +29,12 @@ static int _get_partition_info_aml(block_dev_desc_t * dev_desc,
 	int part_num, disk_partition_t * info, int verb)
 {
 	int ret = 0;
+
+	if (IF_TYPE_MMC != dev_desc->if_type)
+		return -1;
+
 	info->blksz=dev_desc->blksz;
 	sprintf ((char *)info->type, "U-Boot");
-
 	/* using partition name in partition tables */
 	ret = get_part_info_from_tbl(dev_desc, part_num, info);
 	if (ret) {
@@ -73,14 +76,16 @@ void print_part_aml(block_dev_desc_t * dev_desc)
 		i++;
 	} while (_get_partition_info_aml(dev_desc,i,&info,0)!=-1);
 }
-
+#define AML_MPT_OFFSET	(81920)	/* 40M */
+/* fix 40Mbyte to check the MPT magic */
 int test_part_aml (block_dev_desc_t *dev_desc)
 {
-	int ret;
-	disk_partition_t info;
-	ret = _get_partition_info_aml(dev_desc,0,&info,0);
-	//print_part_aml(dev_desc);
-	return(ret);
+	ALLOC_CACHE_ALIGN_BUFFER(char, buffer, dev_desc->blksz);
+	if (dev_desc->block_read(dev_desc->dev, AML_MPT_OFFSET, 1, (ulong *) buffer) != 1)
+		return -1;
+	if (!strncmp(buffer, "MPT", 3))
+		return 0;
+	return 1;
 }
 
 #endif
