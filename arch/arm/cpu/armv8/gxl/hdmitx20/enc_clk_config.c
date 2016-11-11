@@ -146,8 +146,10 @@ static void set_hpll_clk_out(unsigned clk)
 	printk("config HPLL done\n");
 }
 
-static void set_hpll_sspll(enum hdmi_vic vic)
+static void set_hpll_sspll(struct hdmitx_dev *hdev)
 {
+	enum hdmi_vic vic = hdev->vic;
+
 	switch (vic) {
 	case HDMI_1920x1080p60_16x9:
 	case HDMI_1920x1080p50_16x9:
@@ -158,6 +160,21 @@ static void set_hpll_sspll(enum hdmi_vic vic)
 	case HDMI_1920x1080i60_16x9:
 	case HDMI_1920x1080i50_16x9:
 		hd_write_reg(P_HHI_HDMI_PLL_CNTL3, 0x864348c4);
+		break;
+	case HDMI_3840x2160p50_16x9:
+	case HDMI_3840x2160p60_16x9:
+	case HDMI_4096x2160p50_256x135:
+	case HDMI_4096x2160p60_256x135:
+		if (hdev->para->cs == HDMI_COLOR_FORMAT_420)
+			hd_write_reg(P_HHI_HDMI_PLL_CNTL3, 0x862b44c4);
+		break;
+	case HDMI_3840x2160p30_16x9:
+	case HDMI_3840x2160p25_16x9:
+	case HDMI_3840x2160p24_16x9:
+	case HDMI_4096x2160p30_256x135:
+	case HDMI_4096x2160p25_256x135:
+	case HDMI_4096x2160p24_256x135:
+		hd_write_reg(P_HHI_HDMI_PLL_CNTL3, 0x862b44c4);
 		break;
 	default:
 		break;
@@ -323,7 +340,7 @@ static struct hw_enc_clk_val_group setting_enc_clk_val[] = {
 		1, VIU_ENCP, 2970, 2, 2, 2, CLK_UTIL_VID_PLL_DIV_5, 1, 1, 1, -1},
 	{{HDMI_3840x2160p30_16x9, HDMI_3840x2160p25_16x9, HDMI_3840x2160p24_16x9,
 		HDMI_4096x2160p24_256x135, HDMI_4096x2160p25_256x135, HDMI_4096x2160p30_256x135, GROUP_END},
-		1, VIU_ENCP, 2970, 1, 1, 1, CLK_UTIL_VID_PLL_DIV_5, 2, 1, 1, -1},
+		1, VIU_ENCP, 5940, 2, 1, 1, CLK_UTIL_VID_PLL_DIV_5, 2, 1, 1, -1},
 	{{HDMI_3840x2160p60_16x9, HDMI_3840x2160p50_16x9, HDMI_4096x2160p60_256x135,
 		HDMI_4096x2160p50_256x135, GROUP_END},
 		1, VIU_ENCP, 5940, 1, 1, 2, CLK_UTIL_VID_PLL_DIV_5, 1, 1, 1, -1},
@@ -345,11 +362,12 @@ static struct hw_enc_clk_val_group setting_enc_clk_val_30[] = {
 		1, VIU_ENCP, 3712, 1, 1, 1, CLK_UTIL_VID_PLL_DIV_6p25, 1, 2, 2, -1},
 };
 
-void set_hdmitx_clk(enum hdmi_vic vic)
+void set_hdmitx_clk(struct hdmitx_dev *hdev)
 {
 	int i = 0;
 	int j = 0;
-	struct hw_enc_clk_val_group *p_enc =NULL;
+	struct hw_enc_clk_val_group *p_enc = NULL;
+	enum hdmi_vic vic = hdev->vic;
 
 	p_enc = &setting_enc_clk_val[0];
 	for (j = 0; j < ARRAY_SIZE(setting_enc_clk_val); j++) {
@@ -366,7 +384,8 @@ next:
 	set_viu_path(p_enc[j].viu_path, p_enc[j].viu_type);
 	set_hdmitx_sys_clk();
 	set_hpll_clk_out(p_enc[j].hpll_clk_out);
-	set_hpll_sspll(vic);
+	if (1)
+		set_hpll_sspll(hdev);
 	set_hpll_od1(p_enc[j].od1);
 	set_hpll_od2(p_enc[j].od2);
 	set_hpll_od3(p_enc[j].od3);
@@ -378,11 +397,12 @@ next:
 	set_enci_div(p_enc[j].enci_div);
 }
 
-void hdmitx_set_clk_30b(enum hdmi_vic vic)
+void hdmitx_set_clk_30b(struct hdmitx_dev *hdev)
 {
 	int i = 0;
 	int j = 0;
 	struct hw_enc_clk_val_group *p_enc = NULL;
+	enum hdmi_vic vic = hdev->vic;
 
 	p_enc = &setting_enc_clk_val_30[0];
 	for (j = 0; j < sizeof(setting_enc_clk_val_30)

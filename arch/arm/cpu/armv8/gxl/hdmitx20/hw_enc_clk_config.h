@@ -80,8 +80,8 @@ struct hw_enc_clk_val_group {
     unsigned enci_div;
 };
 
-void set_hdmitx_clk(enum hdmi_vic vic);
-void hdmitx_set_clk_30b(enum hdmi_vic vic);
+void set_hdmitx_clk(struct hdmitx_dev *hdev);
+void hdmitx_set_clk_30b(struct hdmitx_dev *hdev);
 void set_hdmitx_clk_420(void);
 
 #endif

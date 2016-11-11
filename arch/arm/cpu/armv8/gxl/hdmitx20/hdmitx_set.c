@@ -1254,15 +1254,15 @@ static void hdmitx_set_pll(struct hdmitx_dev *hdev)
 	if (hdev->para->cs != HDMI_COLOR_FORMAT_422) {
 		switch (hdev->para->cd) {
 		case HDMI_COLOR_DEPTH_30B:
-			hdmitx_set_clk_30b(hdev->vic);
+			hdmitx_set_clk_30b(hdev);
 			break;
 		case HDMI_COLOR_DEPTH_24B:
 		default:
-			set_hdmitx_clk(hdev->vic);
+			set_hdmitx_clk(hdev);
 			break;
 		}
 	} else {
-		set_hdmitx_clk(hdev->vic);
+		set_hdmitx_clk(hdev);
 	}
         if (hdev->para->cs == HDMI_COLOR_FORMAT_420) {
 		hd_set_reg_bits(P_HHI_HDMI_CLK_CNTL, 1, 16, 4);
@@ -1310,9 +1310,9 @@ static void hdmitx_set_phy(struct hdmitx_dev *hdev)
 	case HDMI_4096x2160p60_256x135:
 		if ((hdev->para->cs == HDMI_COLOR_FORMAT_420)
 			&& (hdev->para->cd == HDMI_COLOR_DEPTH_24B))
-			set_phy_by_mode(1);
-		else
 			set_phy_by_mode(2);
+		else
+			set_phy_by_mode(1);
 		break;
 	case HDMI_3840x2160p24_16x9:
 	case HDMI_3840x2160p24_64x27:
