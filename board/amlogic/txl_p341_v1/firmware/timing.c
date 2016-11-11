@@ -471,7 +471,7 @@ ddr_set_t __ddr_setting = {
 	.t_pub_dcr				= 0XB,     //PUB DCR
 	.t_pub_dtcr0			= 0x80003187,    //PUB DTCR //S905 use 0x800031c7
 	.t_pub_dtcr1			= 0x00010237,    //PUB DTCR
-	.t_pub_dsgcr			= 0x020641b,
+	.t_pub_dsgcr			= 0x020641b | (1<<22),
 #elif (CONFIG_DDR_TYPE == CONFIG_DDR_TYPE_DDR4)
 	.t_pub_dcr				= 0X40C,     //PUB DCR
 	.t_pub_dtcr0			= 0x800031c7,    //PUB DTCR //S905 use 0x800031c7
