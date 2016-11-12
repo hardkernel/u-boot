@@ -68,7 +68,6 @@ static char *state_names[] = {
 struct s3c_udc	*the_controller;
 
 static const char driver_name[] = "s3c-udc";
-static const char driver_desc[] = DRIVER_DESC;
 static const char ep0name[] = "ep0-control";
 
 /* Max packet size*/
