@@ -241,7 +241,7 @@ static int sd_inand_staff_init(struct mmc *mmc)
     }
     if (!sdio->inited_flag)
         sdio->inited_flag = 1;
-	return SD_NO_ERROR;
+    return SD_NO_ERROR;
 }
 
 
