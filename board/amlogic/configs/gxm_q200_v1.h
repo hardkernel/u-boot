@@ -391,6 +391,7 @@
 #define CONFIG_CMD_ITEST    1
 #define CONFIG_CMD_CPU_TEMP 1
 #define CONFIG_SYS_MEM_TOP_HIDE 0x08000000 //hide 128MB for kernel reserve
+#define CONFIG_CMD_CHIPID 1
 
 /* debug mode defines */
 //#define CONFIG_DEBUG_MODE           1

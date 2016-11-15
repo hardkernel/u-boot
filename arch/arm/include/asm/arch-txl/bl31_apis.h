@@ -75,6 +75,7 @@
 	#define RUN_COMD_USB_BOOT		3
 	#define PANIC_DUMP_USB_BOOT	4
 
+#define GET_CHIP_ID			0x82000044
 /* Security Key*/
 #define SECURITY_KEY_QUERY	0x82000060
 #define SECURITY_KEY_READ	0x82000061
@@ -140,4 +141,6 @@ long get_sharemem_info(unsigned long);
 void set_usb_boot_function(unsigned long command);
 void aml_system_off(void);
 
+void bl31_get_chipid(unsigned int *, unsigned int *,
+	unsigned int *, unsigned int *);
 #endif

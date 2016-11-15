@@ -68,6 +68,7 @@
 #define JTAG_ON                                0x82000040
 #define JTAG_OFF                               0x82000041
 
+#define GET_CHIP_ID			0x82000044
 #define SET_USB_BOOT_FUNC	0x82000043
 	/* USB BOOT FUNC sub command list*/
 	#define CLEAR_USB_BOOT			1
@@ -139,4 +140,6 @@ long get_sharemem_info(unsigned long);
 void set_usb_boot_function(unsigned long command);
 void aml_system_off(void);
 
+void bl31_get_chipid(unsigned int *, unsigned int *,
+	unsigned int *, unsigned int *);
 #endif

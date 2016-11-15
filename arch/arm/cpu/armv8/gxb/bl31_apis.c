@@ -325,3 +325,39 @@ void aml_system_off(void)
 	aml_reboot(0x82000042, 1, 0, 0);
 	aml_reboot(0x84000008, 0, 0, 0);
 }
+
+struct aml_cpu_info {
+	unsigned int version;
+	u8 chipid[12];
+	unsigned int reserved[103];
+};
+void bl31_get_chipid(unsigned int *low0, unsigned int *low1,
+		unsigned int *high0, unsigned int *high1)
+{
+	static int init = 1;
+	static struct aml_cpu_info cpu_info;
+	unsigned int *p;
+
+
+	if (init) {
+		if (!sharemem_output_base)
+			sharemem_output_base =
+				get_sharemem_info(GET_SHARE_MEM_OUTPUT_BASE);
+		register long x0 asm("x0") = GET_CHIP_ID;
+		register long x1 asm("x1") = 1;
+		asm volatile(
+				__asmeq("%0", "x0")
+				__asmeq("%1", "x1")
+				"smc	#0\n"
+			: "+r" (x0) : "r" (x1));
+		memcpy((void *)&cpu_info,	(const void *)
+			sharemem_output_base,	sizeof(struct aml_cpu_info));
+		init = 1;
+	}
+	p = (unsigned int *)(cpu_info.chipid);
+	*low0 = *p;
+	*low1 = *(p+1);
+	*high0 = *(p+2);
+	*high1 = *(p+3);
+}
+
