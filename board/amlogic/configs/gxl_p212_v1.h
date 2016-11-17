@@ -336,6 +336,7 @@
 	#define CONFIG_CMD_DHCP 1
 	#define CONFIG_CMD_RARP 1
 	#define CONFIG_HOSTNAME        arm_gxbb
+	#define CONFIG_RANDOM_ETHADDR  1				   /* use random eth addr, or default */
 	#define CONFIG_ETHADDR         00:15:18:01:81:31   /* Ethernet address */
 	#define CONFIG_IPADDR          10.18.9.97          /* Our ip address */
 	#define CONFIG_GATEWAYIP       10.18.9.1           /* Our getway ip address */
