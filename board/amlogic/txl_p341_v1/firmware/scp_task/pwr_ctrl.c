@@ -24,6 +24,8 @@
 #include <cec_tx_reg.h>
 #endif
 #include <gpio-gxbb.h>
+#include "pwm_ctrl.h"
+
 #define P_PIN_MUX_REG3		(*((volatile unsigned *)(0xda834400 + (0x2f << 2))))
 #define P_PIN_MUX_REG7		(*((volatile unsigned *)(0xda834400 + (0x33 << 2))))
 
@@ -37,10 +39,7 @@
 #define ON 1
 #define OFF 0
 
-static unsigned int pwm_voltage_table[][2] = {
-	{0x190003, 900},
-	{0x0f000d, 1000},
-};
+
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
 static void power_on_ddr(void);
@@ -118,7 +117,6 @@ static void power_on_3v3_5v(void)
 
 static void power_off_usb5v(void)
 {
-	unsigned int hwid = 1;
 	#if 0
 	//v1
 	aml_update_bits(AO_GPIO_O_EN_N, 1 << 4, 0);
@@ -129,29 +127,14 @@ static void power_off_usb5v(void)
 	#endif
 
 	/* enable 5V for USB, panel, wifi */
-	hwid = (readl(P_AO_SEC_GP_CFG0) >> 8) & 0xFF;
-	switch (hwid) {
-		case 1:
-			aml_update_bits(AO_GPIO_O_EN_N, 1 << 4, 0);
-			aml_update_bits(AO_GPIO_O_EN_N, 1 << 20, 0);
-			uart_puts("poweroff 5v - hwid 1\n");
-			break;
-		case 2:
-			aml_update_bits(AO_GPIO_O_EN_N, 1 << 10, 0);
-			aml_update_bits(AO_GPIO_O_EN_N, 1 << 26, 0);
-			uart_puts("poweroff 5v - hwid 2\n");
-			break;
-		default:
-			aml_update_bits(AO_GPIO_O_EN_N, 1 << 10, 0);
-			aml_update_bits(AO_GPIO_O_EN_N, 1 << 26, 0);
-			uart_puts("poweroff 5v - invalid hwid\n");
-			break;
-	}
+
+	aml_update_bits(AO_GPIO_O_EN_N, 1 << 10, 0);
+	aml_update_bits(AO_GPIO_O_EN_N, 1 << 26, 0);
 }
 
 static void power_on_usb5v(void)
 {
-	unsigned int hwid = 1;
+	//unsigned int hwid = 1;
 	#if 0
 	//v1
 	aml_update_bits(AO_GPIO_O_EN_N, 1 << 4, 0);
@@ -161,25 +144,9 @@ static void power_on_usb5v(void)
     aml_update_bits(AO_GPIO_O_EN_N, 1 << 26, 1 << 26);
 	#endif
 
-	/* enable 5V for USB, panel, wifi */
-	hwid = (readl(P_AO_SEC_GP_CFG0) >> 8) & 0xFF;
-	switch (hwid) {
-		case 1:
-			aml_update_bits(AO_GPIO_O_EN_N, 1 << 4, 0);
-			aml_update_bits(AO_GPIO_O_EN_N, 1 << 20, 1 << 20);
-			uart_puts("poweron 5v - hwid 1\n");
-			break;
-		case 2:
-			aml_update_bits(AO_GPIO_O_EN_N, 1 << 10, 0);
-			aml_update_bits(AO_GPIO_O_EN_N, 1 << 26, 1 << 26);
-			uart_puts("poweron 5v - hwid 2\n");
-			break;
-		default:
-			aml_update_bits(AO_GPIO_O_EN_N, 1 << 10, 0);
-			aml_update_bits(AO_GPIO_O_EN_N, 1 << 26, 1 << 26);
-			uart_puts("poweron 5v - invalid hwid\n");
-			break;
-	}
+	aml_update_bits(AO_GPIO_O_EN_N, 1 << 10, 0);
+	aml_update_bits(AO_GPIO_O_EN_N, 1 << 26, 1 << 26);
+
 }
 
 static void power_off_at_clk81(void)
