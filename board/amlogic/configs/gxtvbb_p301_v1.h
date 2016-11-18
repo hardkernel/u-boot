@@ -285,7 +285,7 @@
  *    CONFIG_DDR01_TWO_CHANNEL_16BIT   : two channels 16bit */
 #define CONFIG_DDR_CHANNEL_SET			CONFIG_DDR01_TWO_CHANNEL
 #define CONFIG_DDR_FULL_TEST			0 //1 for ddr full test
-#define CONFIG_CMD_DDR_TEST
+#define CONFIG_CMD_DDR_TEST				0
 #define CONFIG_DDR_CMD_BDL_TUNE
 #define CONFIG_NR_DRAM_BANKS			1
 /* ddr power saving */
