@@ -633,7 +633,7 @@ static int lcd_config_load_from_bsp(struct lcd_config_s *pconf)
 static int lcd_config_load_from_unifykey(struct lcd_config_s *pconf)
 {
 	unsigned char *para;
-	int i, key_len, len;
+	int key_len, len;
 	unsigned char *p;
 	const char *str;
 	struct aml_lcd_unifykey_header_s lcd_header;
@@ -652,23 +652,31 @@ static int lcd_config_load_from_unifykey(struct lcd_config_s *pconf)
 		return -1;
 	}
 
-	/* check lcd unifykey length */
-	len = 10 + 36 + 18 + 31 + 20;
+	/* step 1: check header */
+	len = LCD_UKEY_HEAD_SIZE;
 	ret = aml_lcd_unifykey_len_check(key_len, len);
 	if (ret) {
-		LCDERR("unifykey length is not correct\n");
+		LCDERR("unifykey header length is incorrect\n");
 		free(para);
 		return -1;
 	}
 
-	/* header: 10byte */
 	aml_lcd_unifykey_header_check(para, &lcd_header);
+	len = 10 + 36 + 18 + 31 + 20;
 	if (lcd_debug_print_flag) {
 		LCDPR("unifykey header:\n");
 		LCDPR("crc32             = 0x%08x\n", lcd_header.crc32);
 		LCDPR("data_len          = %d\n", lcd_header.data_len);
 		LCDPR("version           = 0x%04x\n", lcd_header.version);
 		LCDPR("reserved          = 0x%04x\n", lcd_header.reserved);
+	}
+
+	/* step 2: check lcd parameters */
+	ret = aml_lcd_unifykey_len_check(key_len, len);
+	if (ret) {
+		LCDERR("unifykey parameters length is incorrect\n");
+		free(para);
+		return -1;
 	}
 
 	/* basic: 36byte */
@@ -790,70 +798,11 @@ static int lcd_config_load_from_unifykey(struct lcd_config_s *pconf)
 		p += LCD_UKEY_IF_ATTR_9;
 	}
 
-	/* power: (5byte * n) */
-	i = 0;
-	while (i < LCD_PWR_STEP_MAX) {
-		len += 5;
-		ret = aml_lcd_unifykey_len_check(key_len, len);
-		if (ret) {
-			pconf->lcd_power->power_on_step[i].type = 0xff;
-			pconf->lcd_power->power_on_step[i].index = 0;
-			pconf->lcd_power->power_on_step[i].value = 0;
-			pconf->lcd_power->power_on_step[i].delay = 0;
-			free(para);
-			return -1;
-		}
-		pconf->lcd_power->power_on_step[i].type = *p;
-		p += LCD_UKEY_PWR_TYPE;
-		pconf->lcd_power->power_on_step[i].index = *p;
-		p += LCD_UKEY_PWR_INDEX;
-		pconf->lcd_power->power_on_step[i].value = *p;
-		p += LCD_UKEY_PWR_VAL;
-		pconf->lcd_power->power_on_step[i].delay = (*p | ((*(p + 1)) << 8));
-		p += LCD_UKEY_PWR_DELAY;
-		if (lcd_debug_print_flag) {
-			LCDPR("power_on: step %d: type=%d, index=%d, value=%d, delay=%d\n",
-				i, pconf->lcd_power->power_on_step[i].type,
-				pconf->lcd_power->power_on_step[i].index,
-				pconf->lcd_power->power_on_step[i].value,
-				pconf->lcd_power->power_on_step[i].delay);
-		}
-		if (pconf->lcd_power->power_on_step[i].type >= LCD_POWER_TYPE_MAX)
-			break;
-		else
-			i++;
-	}
-	i = 0;
-	while (i < LCD_PWR_STEP_MAX) {
-		len += 5;
-		ret = aml_lcd_unifykey_len_check(key_len, len);
-		if (ret) {
-			pconf->lcd_power->power_off_step[i].type = 0xff;
-			pconf->lcd_power->power_off_step[i].index = 0;
-			pconf->lcd_power->power_off_step[i].value = 0;
-			pconf->lcd_power->power_off_step[i].delay = 0;
-			free(para);
-			return -1;
-		}
-		pconf->lcd_power->power_off_step[i].type = *p;
-		p += LCD_UKEY_PWR_TYPE;
-		pconf->lcd_power->power_off_step[i].index = *p;
-		p += LCD_UKEY_PWR_INDEX;
-		pconf->lcd_power->power_off_step[i].value = *p;
-		p += LCD_UKEY_PWR_VAL;
-		pconf->lcd_power->power_off_step[i].delay = (*p | ((*(p + 1)) << 8));
-		p += LCD_UKEY_PWR_DELAY;
-		if (lcd_debug_print_flag) {
-			LCDPR("power_off: step %d: type=%d, index=%d, value=%d, delay=%d\n",
-				i, pconf->lcd_power->power_off_step[i].type,
-				pconf->lcd_power->power_off_step[i].index,
-				pconf->lcd_power->power_off_step[i].value,
-				pconf->lcd_power->power_off_step[i].delay);
-		}
-		if (pconf->lcd_power->power_off_step[i].type >= LCD_POWER_TYPE_MAX)
-			break;
-		else
-			i++;
+	/* step 3: check power sequence */
+	ret = lcd_power_load_from_unifykey(pconf, para, key_len, len);
+	if (ret < 0) {
+		free(para);
+		return -1;
 	}
 
 	free(para);

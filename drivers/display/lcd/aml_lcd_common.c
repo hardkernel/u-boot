@@ -151,6 +151,88 @@ unsigned int lcd_lvds_channel_on_value(struct lcd_config_s *pconf)
 	return channel_on;
 }
 
+int lcd_power_load_from_unifykey(struct lcd_config_s *pconf,
+		unsigned char *buf, int key_len, int len)
+{
+	int i;
+	unsigned char *p;
+	int ret = 0;
+
+	/* power: (5byte * n) */
+	p = buf + len;
+	if (lcd_debug_print_flag)
+		LCDPR("power_on step:\n");
+	i = 0;
+	while (i < LCD_PWR_STEP_MAX) {
+		len += 5;
+		ret = aml_lcd_unifykey_len_check(key_len, len);
+		if (ret) {
+			pconf->lcd_power->power_on_step[i].type = 0xff;
+			pconf->lcd_power->power_on_step[i].index = 0;
+			pconf->lcd_power->power_on_step[i].value = 0;
+			pconf->lcd_power->power_on_step[i].delay = 0;
+			LCDERR("unifykey power_on length is incorrect\n");
+			return -1;
+		}
+		pconf->lcd_power->power_on_step[i].type = *p;
+		p += LCD_UKEY_PWR_TYPE;
+		pconf->lcd_power->power_on_step[i].index = *p;
+		p += LCD_UKEY_PWR_INDEX;
+		pconf->lcd_power->power_on_step[i].value = *p;
+		p += LCD_UKEY_PWR_VAL;
+		pconf->lcd_power->power_on_step[i].delay = (*p | ((*(p + 1)) << 8));
+		p += LCD_UKEY_PWR_DELAY;
+		if (lcd_debug_print_flag) {
+			LCDPR("step %d: type=%d, index=%d, value=%d, delay=%d\n",
+				i, pconf->lcd_power->power_on_step[i].type,
+				pconf->lcd_power->power_on_step[i].index,
+				pconf->lcd_power->power_on_step[i].value,
+				pconf->lcd_power->power_on_step[i].delay);
+		}
+		if (pconf->lcd_power->power_on_step[i].type >= LCD_POWER_TYPE_MAX)
+			break;
+		else
+			i++;
+	}
+
+	if (lcd_debug_print_flag)
+		LCDPR("power_off step:\n");
+	i = 0;
+	while (i < LCD_PWR_STEP_MAX) {
+		len += 5;
+		ret = aml_lcd_unifykey_len_check(key_len, len);
+		if (ret) {
+			pconf->lcd_power->power_off_step[i].type = 0xff;
+			pconf->lcd_power->power_off_step[i].index = 0;
+			pconf->lcd_power->power_off_step[i].value = 0;
+			pconf->lcd_power->power_off_step[i].delay = 0;
+			LCDERR("unifykey power_off length is incorrect\n");
+			return -1;
+		}
+		pconf->lcd_power->power_off_step[i].type = *p;
+		p += LCD_UKEY_PWR_TYPE;
+		pconf->lcd_power->power_off_step[i].index = *p;
+		p += LCD_UKEY_PWR_INDEX;
+		pconf->lcd_power->power_off_step[i].value = *p;
+		p += LCD_UKEY_PWR_VAL;
+		pconf->lcd_power->power_off_step[i].delay = (*p | ((*(p + 1)) << 8));
+		p += LCD_UKEY_PWR_DELAY;
+		if (lcd_debug_print_flag) {
+			LCDPR("step %d: type=%d, index=%d, value=%d, delay=%d\n",
+				i, pconf->lcd_power->power_off_step[i].type,
+				pconf->lcd_power->power_off_step[i].index,
+				pconf->lcd_power->power_off_step[i].value,
+				pconf->lcd_power->power_off_step[i].delay);
+		}
+		if (pconf->lcd_power->power_off_step[i].type >= LCD_POWER_TYPE_MAX)
+			break;
+		else
+			i++;
+	}
+
+	return ret;
+}
+
 void lcd_tcon_config(struct lcd_config_s *pconf)
 {
 	unsigned short h_period, v_period, h_active, v_active;
