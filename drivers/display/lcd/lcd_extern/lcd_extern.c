@@ -30,9 +30,14 @@
 static char *dt_addr = NULL;
 static unsigned char lcd_ext_key_valid;
 
-static char *lcd_extern_gpio[LCD_EXTERN_GPIO_NUM_MAX] = {
+static char lcd_extern_gpio[LCD_EXTERN_GPIO_NUM_MAX][LCD_EXTERN_GPIO_LEN_MAX] = {
 	"invalid", /* ending flag */
-};
+	"invalid",
+	"invalid",
+	"invalid",
+	"invalid",
+	"invalid",
+	};
 
 static unsigned char lcd_extern_init_on_table[LCD_EXTERN_INIT_TABLE_MAX] = {
 	0xff,
@@ -172,21 +177,6 @@ int aml_lcd_extern_set_gpio(unsigned char index, int value)
 	gpio = aml_lcd_extern_get_gpio(index);
 	ret = aml_lcd_gpio_set(gpio, value);
 	return ret;
-}
-
-static void aml_lcd_extern_gpio_init(void)
-{
-	int i, j;
-
-	i = 0;
-	while (i < LCD_EXTERN_GPIO_NUM_MAX) {
-		if (strcmp(lcd_extern_gpio[i], "invalid") == 0)
-			break;
-		i++;
-	}
-	for (j = i; j < LCD_EXTERN_GPIO_NUM_MAX; j++) {
-		strcpy(lcd_extern_gpio[j], "invalid");
-	}
 }
 
 #ifdef CONFIG_OF_LIBFDT
@@ -1079,7 +1069,6 @@ int aml_lcd_extern_probe(char *dtaddr, int index)
 		ret = aml_lcd_extern_add_driver_default(index);
 		break;
 	}
-	aml_lcd_extern_gpio_init();
 
 	EXTPR("%s %s\n", __func__, (ret ? "failed" : "ok"));
 	return ret;
