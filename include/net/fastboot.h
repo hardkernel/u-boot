@@ -16,6 +16,12 @@
  * Wait for incoming fastboot comands.
  */
 void fastboot_start_server(void);
+/**
+ * Send an INFO packet during long commands
+ *
+ * @param msg: String describing the reason for waiting
+ */
+void fastboot_send_info(const char*);
 
 /**********************************************************************/
 

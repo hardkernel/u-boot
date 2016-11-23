@@ -30,6 +30,8 @@
 #endif
 
 #define BOOT_PARTITION_NAME "boot"
+#define FASTBOOT_MAX_BLK_WRITE 16384
+static ulong timer;
 
 struct fb_mmc_sparse {
 	struct blk_desc	*dev_desc;
@@ -57,13 +59,37 @@ static int part_get_info_by_name_or_alias(struct blk_desc *dev_desc,
 	return ret;
 }
 
+static lbaint_t fb_mmc_blk_write(struct blk_desc *block_dev, lbaint_t start,
+		lbaint_t blkcnt, const void *buffer)
+{
+	lbaint_t blk = start;
+	lbaint_t blks_written;
+	lbaint_t cur_blkcnt;
+	lbaint_t blks = 0;
+	int i;
+	for (i = 0; i < blkcnt; i += FASTBOOT_MAX_BLK_WRITE) {
+		cur_blkcnt = min((int)blkcnt-i, FASTBOOT_MAX_BLK_WRITE);
+		if (buffer != NULL) {
+			timed_send_info(&timer, "writing");
+			blks_written = blk_dwrite(block_dev, blk, cur_blkcnt,
+					buffer+(i*block_dev->blksz));
+		} else {
+			timed_send_info(&timer, "erasing");
+			blks_written = blk_derase(block_dev, blk, cur_blkcnt);
+		}
+		blk += blks_written;
+		blks += blks_written;
+	}
+	return blks;
+}
+
 static lbaint_t fb_mmc_sparse_write(struct sparse_storage *info,
 		lbaint_t blk, lbaint_t blkcnt, const void *buffer)
 {
 	struct fb_mmc_sparse *sparse = info->priv;
 	struct blk_desc *dev_desc = sparse->dev_desc;
 
-	return blk_dwrite(dev_desc, blk, blkcnt, buffer);
+	return fb_mmc_blk_write(dev_desc, blk, blkcnt, buffer);
 }
 
 static lbaint_t fb_mmc_sparse_reserve(struct sparse_storage *info,
@@ -91,7 +117,7 @@ static void write_raw_image(struct blk_desc *dev_desc, disk_partition_t *info,
 
 	puts("Flashing Raw Image\n");
 
-	blks = blk_dwrite(dev_desc, info->start, blkcnt, buffer);
+	blks = fb_mmc_blk_write(dev_desc, info->start, blkcnt, buffer);
 	if (blks != blkcnt) {
 		error("failed writing to device %d\n", dev_desc->devnum);
 		fastboot_fail("failed writing to device", response);
@@ -392,7 +418,7 @@ void fb_mmc_erase(const char *cmd, char *response)
 	printf("Erasing blocks " LBAFU " to " LBAFU " due to alignment\n",
 	       blks_start, blks_start + blks_size);
 
-	blks = blk_derase(dev_desc, blks_start, blks_size);
+	blks = fb_mmc_blk_write(dev_desc, blks_start, blks_size, NULL);
 	if (blks != blks_size) {
 		error("failed erasing from device %d", dev_desc->devnum);
 		fastboot_fail("failed erasing from device", response);

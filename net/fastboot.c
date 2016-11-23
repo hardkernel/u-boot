@@ -67,6 +67,41 @@ static void boot_downloaded_image(void);
 static void cleanup_command_data(void);
 static void write_fb_response(const char*, const char*, char*);
 
+void fastboot_send_info(const char *msg)
+{
+	uchar *packet;
+	uchar *packet_base;
+	int len = 0;
+	char response[FASTBOOT_RESPONSE_LEN] = {0};
+
+	struct fastboot_header fb_response_header =
+	{
+		.id = FASTBOOT_FASTBOOT,
+		.flags = 0,
+		.seq = htons(fb_sequence_number)
+	};
+	++fb_sequence_number;
+	packet = net_tx_packet + net_eth_hdr_size() + IP_UDP_HDR_SIZE;
+	packet_base = packet;
+
+	/* Write headers */
+	memcpy(packet, &fb_response_header, sizeof(fb_response_header));
+	packet += sizeof(fb_response_header);
+	/* Write response */
+	write_fb_response("INFO", msg, response);
+	memcpy(packet, response, strlen(response));
+	packet += strlen(response);
+
+	len = packet-packet_base;
+
+	/* Save packet for retransmitting */
+	last_packet_len = len;
+	memcpy(last_packet, packet_base, last_packet_len);
+
+	net_send_udp_packet(net_server_ethaddr, fastboot_remote_ip,
+			    fastboot_remote_port, fastboot_our_port, len);
+}
+
 /**
  * Constructs and sends a packet in response to received fastboot packet
  *
@@ -148,6 +183,11 @@ static void fastboot_send(struct fastboot_header fb_header, char *fastboot_data,
 		} else {
 			error("command %s not implemented.\n", cmd_string);
 			write_fb_response("FAIL", "unrecognized command", response);
+		}
+		/* Sent some INFO packets, need to update sequence number in header */
+		if (fb_header.seq != fb_sequence_number) {
+			fb_response_header.seq = htons(fb_sequence_number);
+			memcpy(packet_base, &fb_response_header, sizeof(fb_response_header));
 		}
 		/* Write response to packet */
 		memcpy(packet, response, strlen(response));
