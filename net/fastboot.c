@@ -9,6 +9,7 @@
 #include <fb_mmc.h>
 #include <net.h>
 #include <net/fastboot.h>
+#include <part.h>
 #include <stdlib.h>
 #include <version.h>
 
@@ -180,6 +181,9 @@ static void fastboot_send(struct fastboot_header fb_header, char *fastboot_data,
 			fb_continue(response);
 		} else if (!strncmp("reboot", cmd_string, 6)) {
 			fb_reboot(response);
+		} else if (!strcmp("set_active", cmd_string)) {
+			/* A/B not implemented, for now do nothing */
+			write_fb_response("OKAY", "", response);
 		} else {
 			error("command %s not implemented.\n", cmd_string);
 			write_fb_response("FAIL", "unrecognized command", response);
@@ -238,10 +242,11 @@ static void fb_getvar(char *response)
 		write_fb_response("FAIL", "missing var", response);
 	} else if (!strcmp("version", cmd_parameter)) {
 		write_fb_response("OKAY", FASTBOOT_VERSION, response);
-	} else if (!strcmp("bootloader-version", cmd_parameter)) {
+	} else if (!strcmp("bootloader-version", cmd_parameter) ||
+			!strcmp("version-bootloader", cmd_parameter)) {
 		write_fb_response("OKAY", U_BOOT_VERSION, response);
 	} else if (!strcmp("downloadsize", cmd_parameter) ||
-		!strcmp("max-download-size", cmd_parameter)) {
+			!strcmp("max-download-size", cmd_parameter)) {
 		char buf_size_str[12];
 		sprintf(buf_size_str, "0x%08x", CONFIG_FASTBOOT_BUF_SIZE);
 		write_fb_response("OKAY", buf_size_str, response);
@@ -251,6 +256,43 @@ static void fb_getvar(char *response)
 			write_fb_response("OKAY", tmp, response);
 		} else {
 			write_fb_response("FAIL", "Value not set", response);
+		}
+	} else if (!strcmp("version-baseband", cmd_parameter)) {
+		write_fb_response("OKAY", "N/A", response);
+	} else if (!strcmp("product", cmd_parameter)) {
+		const char *board = getenv("board");
+		if (board) {
+			write_fb_response("OKAY", board, response);
+		} else {
+			write_fb_response("FAIL", "Board not set", response);
+		}
+	} else if (!strcmp("current-slot", cmd_parameter)) {
+		/* A/B not implemented, for now always return _a */
+		write_fb_response("OKAY", "_a", response);
+	} else if (!strcmp("slot-suffixes", cmd_parameter)) {
+		write_fb_response("OKAY", "_a,_b", response);
+	} else if (!strncmp("has-slot", cmd_parameter, 8)) {
+		char *part_name = cmd_parameter;
+
+		cmd_parameter = strsep(&part_name, ":");
+		if (!strcmp(part_name, "boot") || !strcmp(part_name, "system")) {
+			write_fb_response("OKAY", "yes", response);
+		} else {
+			write_fb_response("OKAY", "no", response);
+		}
+	} else if (!strncmp("partition-type", cmd_parameter, 14)) {
+		disk_partition_t part_info;
+		struct blk_desc *dev_desc;
+		char *part_name = cmd_parameter;
+
+		cmd_parameter = strsep(&part_name, ":");
+		dev_desc = blk_get_dev("mmc", 0);
+		if (dev_desc == NULL) {
+			write_fb_response("FAIL", "block device not found", response);
+		} else if (part_get_info_efi_by_name(dev_desc, part_name, &part_info) < 0) {
+			write_fb_response("FAIL", "partition not found", response);
+		} else {
+			write_fb_response("OKAY", (char*)part_info.type, response);
 		}
 	} else {
 		printf("WARNING: unknown variable: %s\n", cmd_parameter);
