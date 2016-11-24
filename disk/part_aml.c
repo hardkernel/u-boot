@@ -76,7 +76,7 @@ void print_part_aml(block_dev_desc_t * dev_desc)
 		i++;
 	} while (_get_partition_info_aml(dev_desc,i,&info,0)!=-1);
 }
-#define AML_MPT_OFFSET	(81920)	/* 40M */
+#define AML_MPT_OFFSET	(73728)	/* 36M */
 /* fix 40Mbyte to check the MPT magic */
 int test_part_aml (block_dev_desc_t *dev_desc)
 {

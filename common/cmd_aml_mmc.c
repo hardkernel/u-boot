@@ -1028,7 +1028,8 @@ int dtb_read(void *addr)
                     __func__, dev, blk);
         } else {
             ret = _verify_dtb_checksum(dtb);
-			if (!ret) {
+            /* check magic avoid whole 0 issue */
+			if (!ret && (dtb->magic != 0)) {
                 info->stamp[cpy] = dtb->timestamp;
                 info->valid[cpy] = 1;
             }

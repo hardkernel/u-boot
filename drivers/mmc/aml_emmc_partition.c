@@ -60,6 +60,10 @@
 #define RSV_SKEY_SIZE		(256*1024UL)
 #define RSV_DTB_OFFSET		(SZ_1M*4)
 
+/* virtual partitions which are in "reserved" */
+#define MAX_MMC_VIRTUAL_PART_CNT	(5)
+
+
 /* BinaryLayout of partition table stored in rsv area */
 struct ptbl_rsv {
     char magic[4];				/* MPT */
@@ -639,7 +643,6 @@ struct partitions *find_mmc_partition_by_name (char *name)
 {
 	struct partitions *partition = NULL;
 
-	/* fixme, */
 	if (NULL == p_iptbl_ept)
 		goto _out;
 	partition = p_iptbl_ept->partitions;
@@ -647,6 +650,33 @@ struct partitions *find_mmc_partition_by_name (char *name)
 			p_iptbl_ept->count, name);
 _out:
 	return partition;
+}
+
+int find_virtual_partition_by_name (char *name, struct partitions *partition)
+{
+	int ret = 0;
+	struct partitions * reserved;
+	if (NULL == partition)
+		return -1;
+
+	if (NULL == p_iptbl_ept)
+		return -1;
+
+	reserved = find_mmc_partition_by_name(MMC_RESERVED_NAME);
+	if (NULL == reserved) {
+		printf("%s(), can't find %s\n", __func__, name);
+		return -1;
+	}
+	if (!strcmp(name, "dtb")) {
+		strcpy(partition->name, name);
+		partition->offset = reserved->offset + RSV_DTB_OFFSET;
+		partition->size = RSV_DTB_SIZE;
+	} else {
+		printf("%s(), can't find %s\n", __func__, name);
+		ret = -1;
+	}
+
+	return ret;
 }
 
 int find_dev_num_by_partition_name (char *name)
@@ -716,18 +746,28 @@ int get_part_info_by_name(block_dev_desc_t *dev_desc,
 	const char *name, disk_partition_t *info)
 {
 	struct partitions *partition = NULL;
+	struct partitions virtual;
 	int ret = 0;
 	cpu_id_t cpu_id = get_cpu_id();
 
 	partition = find_mmc_partition_by_name((char *)name);
-	if (NULL == partition) {
+	if (partition) {
+		info->start = (lbaint_t)(partition->offset/dev_desc->blksz);
+		info->size = (lbaint_t)(partition->size/dev_desc->blksz);
+		info->blksz = dev_desc->blksz;
+		strcpy((char *)info->name, partition->name);
+	} else if (!find_virtual_partition_by_name((char *)name, &virtual)) {
+		/* try virtual partitions */
+		printf("%s(), Got %s in virtual table\n", __func__, name);
+		info->start = (lbaint_t)(virtual.offset/dev_desc->blksz);
+		info->size = (lbaint_t)(virtual.size/dev_desc->blksz);
+		info->blksz = dev_desc->blksz;
+		strcpy((char *)info->name, virtual.name);
+	} else {
+		/* all partitions were tried, fail */
 		ret = -1;
 		goto _out;
 	}
-	info->start = (lbaint_t)(partition->offset/dev_desc->blksz);
-    info->size = (lbaint_t)(partition->size/dev_desc->blksz);
-	info->blksz = dev_desc->blksz;
-    strcpy((char *)info->name, partition->name);
 	/* for bootloader */
 	if ((0 == info->start) && (cpu_id.family_id >= MESON_CPU_MAJOR_ID_GXL)) {
 		info->start = 1;
