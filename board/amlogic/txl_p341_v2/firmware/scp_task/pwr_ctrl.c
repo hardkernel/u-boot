@@ -25,6 +25,7 @@
 #endif
 #include <gpio-gxbb.h>
 #include "pwm_ctrl.h"
+
 #define P_PIN_MUX_REG3		(*((volatile unsigned *)(0xda834400 + (0x2f << 2))))
 #define P_PIN_MUX_REG7		(*((volatile unsigned *)(0xda834400 + (0x33 << 2))))
 
@@ -127,8 +128,8 @@ static void power_off_usb5v(void)
 
 	/* enable 5V for USB, panel, wifi */
 
-			aml_update_bits(AO_GPIO_O_EN_N, 1 << 10, 0);
-			aml_update_bits(AO_GPIO_O_EN_N, 1 << 26, 0);
+	aml_update_bits(AO_GPIO_O_EN_N, 1 << 10, 0);
+	aml_update_bits(AO_GPIO_O_EN_N, 1 << 26, 0);
 }
 
 static void power_on_usb5v(void)
@@ -143,9 +144,8 @@ static void power_on_usb5v(void)
     aml_update_bits(AO_GPIO_O_EN_N, 1 << 26, 1 << 26);
 	#endif
 
-	/* enable 5V for USB, panel, wifi */
-			aml_update_bits(AO_GPIO_O_EN_N, 1 << 10, 0);
-			aml_update_bits(AO_GPIO_O_EN_N, 1 << 26, 1 << 26);
+	aml_update_bits(AO_GPIO_O_EN_N, 1 << 10, 0);
+	aml_update_bits(AO_GPIO_O_EN_N, 1 << 26, 1 << 26);
 
 }
 
@@ -235,9 +235,9 @@ void get_wakeup_source(void *response, unsigned int suspend_from)
 
 	p->status = RESPONSE_OK;
 	val = (POWER_KEY_WAKEUP_SRC | AUTO_WAKEUP_SRC | REMOTE_WAKEUP_SRC |
-	       BT_WAKEUP_SRC);
+	       ETH_PHY_WAKEUP_SRC | BT_WAKEUP_SRC);
 #ifdef CONFIG_CEC_WAKEUP
-	if (suspend_from != SYS_POWEROFF)
+	//if (suspend_from != SYS_POWEROFF)
 		val |= CEC_WAKEUP_SRC;
 #endif
 	p->sources = val;
@@ -314,6 +314,10 @@ static unsigned int detect_key(unsigned int suspend_from)
 			if (remote_detect_key())
 				exit_reason = REMOTE_WAKEUP;
 	}
+		if (irq[IRQ_ETH_PHY] == IRQ_ETH_PHY_NUM) {
+			irq[IRQ_ETH_PHY] = 0xFFFFFFFF;
+				exit_reason = ETH_PHY_WAKEUP;
+		}
 		if (exit_reason)
 			break;
 		else
