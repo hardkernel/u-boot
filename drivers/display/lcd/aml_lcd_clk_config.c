@@ -938,31 +938,30 @@ static void lcd_set_pll_ss_txl(struct lcd_clk_config_s *cConf)
 
 	switch (cConf->ss_level) {
 	case 1: /* +/- 0.3% */
-		pll_ctrl3 &= ~((0xf << 10) | (1 << 18));
+		pll_ctrl3 &= ~(0xf << 10);
 		pll_ctrl3 |= ((1 << 14) | (0xc << 10));
 		pll_ctrl4 &= ~(0x3 << 2);
 		break;
 	case 2: /* +/- 0.4% */
-		pll_ctrl3 &= ~((0xf << 10) | (1 << 18));
+		pll_ctrl3 &= ~(0xf << 10);
 		pll_ctrl3 |= ((1 << 14) | (0x8 << 10));
 		pll_ctrl4 &= ~(0x3 << 2);
 		pll_ctrl4 |= (0x1 << 2);
 		break;
 	case 3: /* +/- 0.9% */
-		pll_ctrl3 &= ~((0xf << 10) | (1 << 18));
+		pll_ctrl3 &= ~(0xf << 10);
 		pll_ctrl3 |= ((1 << 14) | (0xc << 10));
 		pll_ctrl4 &= ~(0x3 << 2);
 		pll_ctrl4 |= (0x2 << 2);
 		break;
 	case 4: /* +/- 1.2% */
-		pll_ctrl3 &= ~((0xf << 10) | (1 << 18));
+		pll_ctrl3 &= ~(0xf << 10);
 		pll_ctrl3 |= ((1 << 14) | (0xc << 10));
 		pll_ctrl4 &= ~(0x3 << 2);
 		pll_ctrl4 |= (0x3 << 2);
 		break;
 	default: /* disable */
 		pll_ctrl3 &= ~((0xf << 10) | (1 << 14));
-		pll_ctrl3 |= (1 << 18);
 		pll_ctrl4 &= ~(0x3 << 2);
 		break;
 	}
@@ -985,7 +984,7 @@ static void lcd_set_pll_txl(struct lcd_clk_config_s *cConf)
 		(cConf->pll_m << LCD_PLL_M_TXL));
 	pll_ctrl2 = 0x800ca000;
 	pll_ctrl2 |= ((1 << 12) | (cConf->pll_frac << 0));
-	pll_ctrl3 = 0xc60730c4; /* bit[30]: od_fb */
+	pll_ctrl3 = 0xc60330c4; /* bit[30]: od_fb */
 	pll_ctrl3 |= ((cConf->pll_od3_sel << LCD_PLL_OD3_TXL) |
 		(cConf->pll_od2_sel << LCD_PLL_OD2_TXL) |
 		(cConf->pll_od1_sel << LCD_PLL_OD1_TXL));
