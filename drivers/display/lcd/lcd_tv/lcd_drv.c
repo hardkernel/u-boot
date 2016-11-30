@@ -699,7 +699,6 @@ void lcd_tv_config_update(struct lcd_config_s *pconf)
 	default:
 		break;
 	}
-	lcd_clk_generate_parameter(pconf);
 }
 
 void lcd_tv_driver_init_pre(void)

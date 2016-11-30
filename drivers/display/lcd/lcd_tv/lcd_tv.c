@@ -256,7 +256,6 @@ static int lcd_config_load_from_dts(char *dt_addr, struct lcd_config_s *pconf)
 	int child_offset;
 	char propname[30];
 	char *propdata;
-	unsigned int i, j, temp;
 	int len;
 
 	parent_offset = fdt_path_offset(dt_addr, "/lcd");
@@ -448,49 +447,7 @@ static int lcd_config_load_from_dts(char *dt_addr, struct lcd_config_s *pconf)
 	}
 
 	/* check power_step */
-	propdata = (char *)fdt_getprop(dt_addr, child_offset, "power_on_step", NULL);
-	if (propdata == NULL) {
-		LCDERR("failed to get power_on_step\n");
-		return 0;
-	} else {
-		i = 0;
-		while (i < LCD_PWR_STEP_MAX) {
-			j = 4 * i;
-			temp = be32_to_cpup((((u32*)propdata)+j));
-			pconf->lcd_power->power_on_step[i].type = temp;
-			if (temp == 0xff)
-				break;
-			temp = be32_to_cpup((((u32*)propdata)+j+1));
-			pconf->lcd_power->power_on_step[i].index = temp;
-			temp = be32_to_cpup((((u32*)propdata)+j+2));
-			pconf->lcd_power->power_on_step[i].value = temp;
-			temp = be32_to_cpup((((u32*)propdata)+j+3));
-			pconf->lcd_power->power_on_step[i].delay = temp;
-			i++;
-		}
-	}
-
-	propdata = (char *)fdt_getprop(dt_addr, child_offset, "power_off_step", NULL);
-	if (propdata == NULL) {
-		LCDERR("failed to get power_off_step\n");
-		return 0;
-	} else {
-		i = 0;
-		while (i < LCD_PWR_STEP_MAX) {
-			j = 4 * i;
-			temp = be32_to_cpup((((u32*)propdata)+j));
-			pconf->lcd_power->power_off_step[i].type = temp;
-			if (temp == 0xff)
-				break;
-			temp = be32_to_cpup((((u32*)propdata)+j+1));
-			pconf->lcd_power->power_off_step[i].index = temp;
-			temp = be32_to_cpup((((u32*)propdata)+j+2));
-			pconf->lcd_power->power_off_step[i].value = temp;
-			temp = be32_to_cpup((((u32*)propdata)+j+3));
-			pconf->lcd_power->power_off_step[i].delay = temp;
-			i++;
-		}
-	}
+	lcd_power_load_from_dts(pconf, dt_addr, child_offset);
 
 	propdata = (char *)fdt_getprop(dt_addr, child_offset, "backlight_index", NULL);
 	if (propdata == NULL) {
@@ -871,6 +828,7 @@ static int lcd_config_check(char *mode)
 	/* update clk & timing config */
 	lcd_vmode_change(lcd_drv->lcd_config);
 	lcd_tv_config_update(lcd_drv->lcd_config);
+	lcd_clk_generate_parameter(lcd_drv->lcd_config);
 
 	return 0;
 }

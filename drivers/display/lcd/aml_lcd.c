@@ -818,7 +818,7 @@ static int lcd_mode_probe(void)
 		break;
 #endif
 	default:
-		LCDERR("invalid lcd mode\n");
+		LCDERR("invalid lcd mode: %d\n", aml_lcd_driver.lcd_config->lcd_mode);
 		break;
 	}
 	if (ret) {

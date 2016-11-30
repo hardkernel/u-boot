@@ -151,6 +151,58 @@ unsigned int lcd_lvds_channel_on_value(struct lcd_config_s *pconf)
 	return channel_on;
 }
 
+int lcd_power_load_from_dts(struct lcd_config_s *pconf, char *dt_addr, int child_offset)
+{
+	char *propdata;
+	unsigned int i, j, temp;
+
+	propdata = (char *)fdt_getprop(dt_addr, child_offset, "power_on_step", NULL);
+	if (propdata == NULL) {
+		LCDERR("failed to get power_on_step\n");
+		return 0;
+	} else {
+		i = 0;
+		while (i < LCD_PWR_STEP_MAX) {
+			j = 4 * i;
+			temp = be32_to_cpup((((u32*)propdata)+j));
+			pconf->lcd_power->power_on_step[i].type = temp;
+			if (temp == 0xff)
+				break;
+			temp = be32_to_cpup((((u32*)propdata)+j+1));
+			pconf->lcd_power->power_on_step[i].index = temp;
+			temp = be32_to_cpup((((u32*)propdata)+j+2));
+			pconf->lcd_power->power_on_step[i].value = temp;
+			temp = be32_to_cpup((((u32*)propdata)+j+3));
+			pconf->lcd_power->power_on_step[i].delay = temp;
+			i++;
+		}
+	}
+
+	propdata = (char *)fdt_getprop(dt_addr, child_offset, "power_off_step", NULL);
+	if (propdata == NULL) {
+		LCDERR("failed to get power_off_step\n");
+		return 0;
+	} else {
+		i = 0;
+		while (i < LCD_PWR_STEP_MAX) {
+			j = 4 * i;
+			temp = be32_to_cpup((((u32*)propdata)+j));
+			pconf->lcd_power->power_off_step[i].type = temp;
+			if (temp == 0xff)
+				break;
+			temp = be32_to_cpup((((u32*)propdata)+j+1));
+			pconf->lcd_power->power_off_step[i].index = temp;
+			temp = be32_to_cpup((((u32*)propdata)+j+2));
+			pconf->lcd_power->power_off_step[i].value = temp;
+			temp = be32_to_cpup((((u32*)propdata)+j+3));
+			pconf->lcd_power->power_off_step[i].delay = temp;
+			i++;
+		}
+	}
+
+	return 0;
+}
+
 int lcd_power_load_from_unifykey(struct lcd_config_s *pconf,
 		unsigned char *buf, int key_len, int len)
 {
