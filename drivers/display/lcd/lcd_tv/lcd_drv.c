@@ -547,6 +547,7 @@ static void lcd_vx1_wait_hpd(void)
 			break;
 		udelay(50);
 	}
+	mdelay(10); /* add 10ms delay for compatibility */
 	if (lcd_vcbus_read(VBO_STATUS_L) & 0x40)
 		LCDPR("%s: hpd=%d\n", __func__,
 			((lcd_vcbus_read(VBO_STATUS_L) >> 6) & 0x1));
