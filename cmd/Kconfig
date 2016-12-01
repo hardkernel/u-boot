@@ -752,6 +752,16 @@ config CMD_LOAD_ANDROID
 	  define the size and kernel address on the header, which are used by
 	  this command.
 
+config CMD_BOOT_ANDROID
+	bool "boot_android"
+	default n
+	depends on ANDROID_BOOTLOADER
+	help
+	  Performs the Android Bootloader boot flow, loading the appropriate
+	  Android image (normal kernel, recovery kernel or "bootloader" mode)
+	  and booting it. The boot mode is determined by the contents of the
+	  Android Bootloader Message.
+
 config CMD_MMC
 	bool "mmc"
 	help

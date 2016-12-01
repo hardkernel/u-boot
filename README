@@ -1243,6 +1243,12 @@ The following options need to be configured:
 		sending again an USB request to the device.
 
 - Android Bootloader support:
+		CONFIG_CMD_BOOT_ANDROID
+		This enables the command "boot_android" which executes the
+		Android Bootloader flow. Enabling CONFIG_CMD_FASTBOOT is
+		recommended to support the Android Fastboot protocol as part
+		of the bootloader.
+
 		CONFIG_ANDROID_BOOTLOADER
 		This enables support for the Android bootloader flow. Android
 		devices can boot in normal mode, recovery mode or bootloader
