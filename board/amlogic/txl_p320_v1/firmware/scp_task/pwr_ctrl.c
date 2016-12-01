@@ -130,26 +130,12 @@ static void power_on_usb5v(void)
 
 static void power_off_at_clk81(void)
 {
-	power_off_3v3_5v();
-	power_off_usb5v();
-	pwm_set_voltage(pwm_ao_b, CONFIG_VDDEE_SLEEP_VOLTAGE);	/* reduce power */
+
 }
 
 static void power_on_at_clk81(unsigned int suspend_from)
 {
-	pwm_set_voltage(pwm_ao_b, CONFIG_VDDEE_INIT_VOLTAGE);
-	power_on_usb5v();
-	power_on_3v3_5v();
-	_udelay(10000);
-	_udelay(10000);
-	_udelay(10000);
-	_udelay(10000);
-	pwm_set_voltage(pwm_a, CONFIG_VCCK_INIT_VOLTAGE);
-#if 0
-	if (suspend_from == SYS_POWEROFF) {
-		power_switch_to_ee(ON);
-	}
-#endif
+
 }
 
 static void power_off_at_24M(void)
@@ -190,7 +176,11 @@ static void power_on_ee(void)
 
 static void power_off_at_32k(unsigned int suspend_from)
 {
-
+	power_off_usb5v();
+	_udelay(5000);
+	power_off_3v3_5v();
+	_udelay(5000);
+	pwm_set_voltage(pwm_ao_b, CONFIG_VDDEE_SLEEP_VOLTAGE);	/* reduce power */
 	if (suspend_from == SYS_POWEROFF) {
 		power_off_ee();
 		power_off_ddr();
@@ -199,6 +189,14 @@ static void power_off_at_32k(unsigned int suspend_from)
 
 static void power_on_at_32k(unsigned int suspend_from)
 {
+	pwm_set_voltage(pwm_ao_b, CONFIG_VDDEE_INIT_VOLTAGE);
+	_udelay(10000);
+	power_on_3v3_5v();
+	_udelay(5000);
+	pwm_set_voltage(pwm_a, CONFIG_VCCK_INIT_VOLTAGE);
+	_udelay(10000);
+	_udelay(10000);
+	power_on_usb5v();
 
 	if (suspend_from == SYS_POWEROFF) {
 		power_on_ddr();
@@ -216,7 +214,7 @@ void get_wakeup_source(void *response, unsigned int suspend_from)
 	val = (POWER_KEY_WAKEUP_SRC | AUTO_WAKEUP_SRC | REMOTE_WAKEUP_SRC |
 	       ETH_PHY_WAKEUP_SRC | BT_WAKEUP_SRC);
 #ifdef CONFIG_CEC_WAKEUP
-	if (suspend_from != SYS_POWEROFF)
+	//if (suspend_from != SYS_POWEROFF)
 		val |= CEC_WAKEUP_SRC;
 #endif
 	p->sources = val;

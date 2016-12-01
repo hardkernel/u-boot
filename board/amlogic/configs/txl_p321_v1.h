@@ -66,7 +66,7 @@
 #define CONFIG_EXTRA_ENV_SETTINGS \
         "firstboot=1\0"\
         "upgrade_step=0\0"\
-        "jtag=disable\0"\
+        "jtag=apee\0"\
         "hdmiuart_mode=close\0"\
         "loadaddr=1080000\0"\
         "panel_type=lvds_1\0" \
