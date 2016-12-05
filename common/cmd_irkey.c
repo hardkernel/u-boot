@@ -2,90 +2,97 @@
 #include <common.h>
 #include <command.h>
 #include <asm/arch/secure_apb.h>
+#include <asm/cpu_id.h>
 
-unsigned int keycode;
+#define KEY_PARAMS_NUM  10
+#define OTHER_PARAMS_NUM 1
 
 extern uint32_t get_time(void);
 
 void init_custom_trigger(void)
 {
-    printf("ir init\n");
-
-    setbits_le32(P_AO_RTI_PIN_MUX_REG, 1 << 0); // SET IR_DEC_INPUT
-    clrbits_le32(P_AO_RTI_PIN_MUX_REG, 1 << 21); // CLEAR IR_REMOTE_OUTPU
-
-    writel((readl(P_AO_MF_IR_DEC_REG1) | (1 << 15)), P_AO_MF_IR_DEC_REG1);
-    //printf("P_AO_IR_DEC_REG0:%x, P_AO_IR_DEC_REG1:%x\n", readl(P_AO_IR_DEC_REG0),readl(P_AO_IR_DEC_REG1));
+	if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_GXTVBB) {
+		setbits_le32(P_AO_RTI_PIN_MUX_REG, 1 << 12); // SET IR_DEC_INPUT
+	} else {
+		setbits_le32(P_AO_RTI_PIN_MUX_REG, 1 << 0);  // SET IR_DEC_INPUT
+		clrbits_le32(P_AO_RTI_PIN_MUX_REG, 1 << 21); //CLEAR IR_REMOTE_OUTPUT
+	}
+	writel((readl(P_AO_MF_IR_DEC_REG1) | (1 << 15)), P_AO_MF_IR_DEC_REG1);
 }
 
 void ir_release(void)
 {
-    clrbits_le32(P_AO_RTI_PIN_MUX_REG, 1 << 0);
+	if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_GXTVBB) {
+		clrbits_le32(P_AO_RTI_PIN_MUX_REG, 1 << 12);
+	} else {
+	    clrbits_le32(P_AO_RTI_PIN_MUX_REG, 1 << 0);
+	}
 }
 
 uint32_t read_key(void)
 {
-    if (!(readl(P_AO_MF_IR_DEC_STATUS) & (1<<3))) {
-        return 0;
-    }
+	unsigned int keycode;
 
-    keycode = readl(P_AO_MF_IR_DEC_FRAME);
+	if (!(readl(P_AO_MF_IR_DEC_STATUS) & (1<<3))) {
+		return 0;
+	}
 
-    printf("keycode = %x\n",keycode);
-    return keycode;
+	keycode = readl(P_AO_MF_IR_DEC_FRAME);
+
+	printf("keycode = %x\n",keycode);
+	return keycode;
 }
 
 static int do_irkey(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
-    uint32_t key = 0, key1 = 0, key2 = 0;
-    uint32_t time_out = 0;
-    uint32_t time_base = 0;
-    char *endp;
-    char str[8];
+	uint32_t key_buf[KEY_PARAMS_NUM];
+	uint32_t time_out = 0;
+	uint32_t time_base = 0;
+	uint32_t key;
+	char *endp;
+	char str[8];
+	u8 i;
 
-    if (argc < 4) {
-        goto usage;
-    }
+	/*at least set a key*/
+	if (argc < 3)
+		return -1;
 
-   key1 = simple_strtoul(argv[1], &endp, 0);
-   printf("key1 = %x\n",key1);
-   if (*argv[1] == 0 || *endp != 0)
-       goto usage;
+	/*obtain timeout time*/
+	time_out = simple_strtoul(argv[1], &endp, 0);
+	printf("time_out = %x\n",time_out);
+	if (*argv[1] == 0 || *endp != 0)
+		return -1;
 
-   key2 = simple_strtoul(argv[2], &endp, 0);
-   printf("key2 = %x\n",key2);
-   if (*argv[2] == 0 || *endp != 0)
-       goto usage;
+	/*obtain IR keys value which need to detect*/
+	for (i=2; i<argc; i++) {
+		key_buf[i-2] = simple_strtoul(argv[i], &endp, 0);
+		printf("key[%d] = %x\n",i-2, key_buf[i-2]);
+		if (*argv[i] == 0 || *endp != 0)
+			return -1;
+	}
 
-   time_out = simple_strtoul(argv[3], &endp, 0);
-   printf("time_out = %x\n",time_out);
-   if (*argv[3] == 0 || *endp != 0)
-       goto usage;
+	init_custom_trigger();
 
-    init_custom_trigger();
+	time_base = get_time();
 
-    time_base = get_time();
-    while ((get_time() - time_base) < time_out)
-    {
-       key = read_key();
-       if (key == key1 || key == key2)
-       {
-            printf("ok\n");
-            sprintf(str, "0x%x", key);
-            setenv("irkey_value",str);
-            ir_release();
-            return 0;
-        }
-    }
-   ir_release();
-    return -1;
-usage:
-    puts("Usage: irkey key_value1 key_value2 time_value \n");
-    return -1;
+	while ((get_time() - time_base) < time_out)
+	{
+		key = read_key();
+		for (i=2; i<argc; i++) {
+			if (key == key_buf[i-2]) {
+				sprintf(str, "0x%x", key);
+				setenv("irkey_value",str);
+				ir_release();
+				return 0;
+			}
+		}
+	}
+	ir_release();
+	return -1;
 }
-
+/*Maxium key arguments: 10*/
 U_BOOT_CMD(
-    irkey, 4, 0, do_irkey,
-    "irkey key_value1 key_value2 time_value",
-    ""
+	irkey, (KEY_PARAMS_NUM + OTHER_PARAMS_NUM + 1), 0, do_irkey,
+	"irkey <timeout> <key1> ...<keyN> - maximum value of N: 10",
+	NULL
 );

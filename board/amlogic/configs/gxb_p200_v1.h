@@ -207,7 +207,7 @@
             "fi;"\
             "\0"\
 	"irremote_update="\
-		"if irkey 0xe31cfb04 0xb748fb04 2500000; then "\
+		"if irkey 2500000 0xe31cfb04 0xb748fb04; then "\
 			"echo read irkey ok!; " \
 		"if itest ${irkey_value} == 0xe31cfb04; then " \
 			"run update;" \
