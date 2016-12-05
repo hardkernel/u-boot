@@ -59,6 +59,8 @@ typedef struct {
 #define OSD1_CANVAS_INDEX 0x40
 #define OSD2_CANVAS_INDEX 0x43
 
+extern void canvas_init(void);
+
 extern void canvas_config(u32 index, ulong addr, u32 width,
 			  u32 height, u32 wrap, u32 blkmode);
 

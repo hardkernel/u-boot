@@ -29,6 +29,7 @@
 #include <asm/arch/secure_apb.h>
 #include <asm/arch/io.h>
 #endif
+#include <amlogic/canvas.h>
 #ifdef CONFIG_AML_VPU
 #include <vpu.h>
 #endif
@@ -402,6 +403,7 @@ int board_init(void)
 	board_usb_init(&g_usb_config_gx_skt_b,BOARD_USB_MODE_HOST);
 	board_usb_init(&g_usb_config_gx_skt_h,BOARD_USB_MODE_CHARGER);
 #endif /*CONFIG_USB_DWC_OTG_HCD*/
+	canvas_init();
 #ifdef CONFIG_AML_VPU
 	vpu_probe();
 #endif

@@ -30,6 +30,7 @@
 #include <asm/arch/secure_apb.h>
  #include <asm/arch/io.h>
 #endif
+#include <amlogic/canvas.h>
 #ifdef CONFIG_AML_VPU
 #include <vpu.h>
 #endif
@@ -547,7 +548,7 @@ int board_init(void)
 #ifdef CONFIG_USB_XHCI_AMLOGIC
 	board_usb_init(&g_usb_config_GXTVBB_skt,BOARD_USB_MODE_HOST);
 #endif /*CONFIG_USB_XHCI_AMLOGIC*/
-
+	canvas_init();
 #ifdef CONFIG_SYS_I2C_AML
 // #ifdef 1
 	board_i2c_init();
