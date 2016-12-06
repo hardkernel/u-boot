@@ -879,6 +879,140 @@ static void vpp_set_post_matrix_rgb2ycbcr(int mode)
 }
 #endif
 
+/* osd+video brightness */
+static void video_adj2_brightness(int val)
+{
+	if (val < -255)
+		val = -255;
+	else if (val > 255)
+		val = 255;
+
+	VPP_PR("brightness_post:%d\n", val);
+
+	if (get_cpu_id().family_id <= MESON_CPU_MAJOR_ID_GXTVBB)
+		vpp_reg_setb(VPP_VADJ2_Y, val, 8, 9);
+	else
+		vpp_reg_setb(VPP_VADJ2_Y, val << 1, 8, 10);
+
+	vpp_reg_setb(VPP_VADJ_CTRL, 1, 2, 1);
+}
+
+/* osd+video contrast */
+static void video_adj2_contrast(int val)
+{
+	if (val < -127)
+		val = -127;
+	else if (val > 127)
+		val = 127;
+
+	VPP_PR("contrast_post:%d\n", val);
+
+	val += 0x80;
+
+	vpp_reg_setb(VPP_VADJ2_Y, val, 0, 8);
+	vpp_reg_setb(VPP_VADJ_CTRL, 1, 2, 1);
+}
+
+/* osd+video saturation/hue */
+static void amvecm_saturation_hue_post(int sat, int hue)
+{
+	int hue_post;  /*-25~25*/
+	int saturation_post;  /*-128~127*/
+	int i, ma, mb, mab, mc, md;
+	int hue_cos[] = {
+		/*0~12*/
+		256, 256, 256, 255, 255, 254, 253, 252, 251, 250,
+		248, 247, 245, 243, 241, 239, 237, 234, 231, 229,
+		226, 223, 220, 216, 213, 209  /*13~25*/
+	};
+	int hue_sin[] = {
+		-147, -142, -137, -132, -126, -121, -115, -109, -104,
+		-98, -92, -86, -80, /*-25~-13*/-74,  -68,  -62,  -56,
+		-50,  -44,  -38,  -31,  -25, -19, -13,  -6, /*-12~-1*/
+		0, /*0*/
+		6,   13,   19,	25,   31,   38,   44,	50,   56,
+		62,	68,  74,      /*1~12*/	80,   86,   92,	98,  104,
+		109,  115,  121,  126,  132, 137, 142, 147 /*13~25*/
+	};
+
+	if (sat < -128)
+		sat = -128;
+	else if (sat > 128)
+		sat = 128;
+
+	if (hue < -25)
+		hue = -25;
+	else if (hue > 25)
+		hue = 25;
+
+	VPP_PR("saturation sat_post:%d hue_post:%d\n", sat, hue);
+
+	saturation_post = sat;
+	hue_post = hue;
+	i = (hue_post > 0) ? hue_post : -hue_post;
+	ma = (hue_cos[i]*(saturation_post + 128)) >> 7;
+	mb = (hue_sin[25+hue_post]*(saturation_post + 128)) >> 7;
+	if (ma > 511)
+		ma = 511;
+	if (ma < -512)
+		ma = -512;
+	if (mb > 511)
+		mb = 511;
+	if (mb < -512)
+		mb = -512;
+	mab =  ((ma & 0x3ff) << 16) | (mb & 0x3ff);
+
+	vpp_reg_write(VPP_VADJ2_MA_MB, mab);
+	mc = (s16)((mab<<22)>>22); /* mc = -mb */
+	mc = 0 - mc;
+	if (mc > 511)
+		mc = 511;
+	if (mc < -512)
+		mc = -512;
+	md = (s16)((mab<<6)>>22);  /* md =	ma; */
+	mab = ((mc&0x3ff)<<16)|(md&0x3ff);
+
+	vpp_reg_write(VPP_VADJ2_MC_MD, mab);
+	vpp_reg_setb(VPP_VADJ_CTRL, 1, 2, 1);
+}
+
+/* init osd+video brightness/contrast/saturaion/hue */
+void vpp_pq_init(int brightness, int contrast, int sat, int hue)
+{
+	video_adj2_brightness(brightness);
+	video_adj2_contrast(contrast);
+	amvecm_saturation_hue_post(sat, hue);
+}
+
+void vpp_pq_load(void)
+{
+	int i = 0, cnt = 0;
+	char const *pq = getenv("pq");
+	char *tk, *str, *tmp[4];
+	short val[4];
+
+	if (pq == NULL) {
+		VPP_PR("%s pq val error !!!\n", __func__);
+		return;
+	}
+
+	str = strdup(pq);
+
+	for (tk = strsep(&str, ","); tk != NULL; tk = strsep(&str, ",")) {
+		tmp[cnt] = tk;
+		if (cnt++ > 4)
+			break;
+	}
+
+	if (cnt == 4) {
+		for (i = 0; i < 4; i++) {
+			val[i] = simple_strtol(tmp[i], NULL, 10);
+			/* VPP_PR("pq[%d]: %d\n", i, val[i]); */
+		}
+		vpp_pq_init(val[0], val[1], val[2], val[3]);
+	}
+}
+
 void vpp_init(void)
 {
 	VPP_PR("%s\n", __func__);

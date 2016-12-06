@@ -109,7 +109,7 @@
             "else fi;"\
             "\0"\
     "storeargs="\
-            "setenv bootargs ${initargs} logo=${display_layer},loaded,${fb_addr},${outputmode} maxcpus=${maxcpus} vout=${outputmode},enable hdmimode=${hdmimode} cvbsmode=${cvbsmode} hdmitx=${cecconfig} cvbsdrv=${cvbs_drv} androidboot.firstboot=${firstboot} jtag=${jtag}; "\
+            "setenv bootargs ${initargs} logo=${display_layer},loaded,${fb_addr},${outputmode} maxcpus=${maxcpus} vout=${outputmode},enable hdmimode=${hdmimode} cvbsmode=${cvbsmode} hdmitx=${cecconfig} cvbsdrv=${cvbs_drv} pq=${pq} androidboot.firstboot=${firstboot} jtag=${jtag}; "\
 	"setenv bootargs ${bootargs} androidboot.hardware=amlogic;"\
             "run cmdline_keys;"\
             "\0"\

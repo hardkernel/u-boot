@@ -301,6 +301,9 @@ obj-y += s_record.o
 obj-y += xyzModem.o
 obj-y += cmd_disk.o
 
+# vpp module
+obj-y += cmd_vpp.o
+
 # amlogic commands
 obj-$(CONFIG_CMD_REBOOT) += cmd_reboot.o
 obj-y += cmd_scp.o

@@ -441,6 +441,10 @@ int board_late_init(void){
 	if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_GXM) {
 		setenv("maxcpus","8");
 	}
+
+	/* load uboot pq value */
+	vpp_pq_load();
+
 	return 0;
 }
 #endif
