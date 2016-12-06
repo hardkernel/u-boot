@@ -652,24 +652,25 @@ _out:
 	return partition;
 }
 
+/*
+ find virtual partition in inherent table.
+*/
 int find_virtual_partition_by_name (char *name, struct partitions *partition)
 {
 	int ret = 0;
-	struct partitions * reserved;
+	ulong offset;
 	if (NULL == partition)
 		return -1;
 
-	if (NULL == p_iptbl_ept)
-		return -1;
-
-	reserved = find_mmc_partition_by_name(MMC_RESERVED_NAME);
-	if (NULL == reserved) {
-		printf("%s(), can't find %s\n", __func__, name);
+	offset = _get_inherent_offset(MMC_RESERVED_NAME);
+	if (-1 == offset) {
+		printf("%s(), can't find %s in inherent\n", __func__, MMC_RESERVED_NAME);
 		return -1;
 	}
+
 	if (!strcmp(name, "dtb")) {
 		strcpy(partition->name, name);
-		partition->offset = reserved->offset + RSV_DTB_OFFSET;
+		partition->offset = offset + RSV_DTB_OFFSET;
 		partition->size = RSV_DTB_SIZE;
 	} else {
 		printf("%s(), can't find %s\n", __func__, name);
