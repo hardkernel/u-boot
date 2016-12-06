@@ -763,27 +763,52 @@ static int lcd_config_load_from_unifykey(struct lcd_config_s *pconf)
 		p += LCD_UKEY_IF_ATTR_8;
 		p += LCD_UKEY_IF_ATTR_9;
 	} else if (pconf->lcd_basic.lcd_type == LCD_LVDS) {
-		pconf->lcd_control.lvds_config->lvds_repack = (*p | ((*(p + 1)) << 8)) & 0xff;
-		p += LCD_UKEY_IF_ATTR_0;
-		pconf->lcd_control.lvds_config->dual_port = (*p | ((*(p + 1)) << 8)) & 0xff;
-		p += LCD_UKEY_IF_ATTR_1;
-		pconf->lcd_control.lvds_config->pn_swap  = (*p | ((*(p + 1)) << 8)) & 0xff;
-		p += LCD_UKEY_IF_ATTR_2;
-		pconf->lcd_control.lvds_config->port_swap  = (*p | ((*(p + 1)) << 8)) & 0xff;
-		p += LCD_UKEY_IF_ATTR_3;
-		pconf->lcd_control.lvds_config->phy_vswing = (*p | ((*(p + 1)) << 8)) & 0xff;
-		p += LCD_UKEY_IF_ATTR_4;
-		pconf->lcd_control.lvds_config->phy_preem = (*p | ((*(p + 1)) << 8)) & 0xff;
-		p += LCD_UKEY_IF_ATTR_5;
-		pconf->lcd_control.lvds_config->phy_clk_vswing = (*p | ((*(p + 1)) << 8)) & 0xff;
-		p += LCD_UKEY_IF_ATTR_6;
-		pconf->lcd_control.lvds_config->phy_clk_preem = (*p | ((*(p + 1)) << 8)) & 0xff;
-		p += LCD_UKEY_IF_ATTR_7;
-		pconf->lcd_control.lvds_config->lane_reverse= (*p | ((*(p + 1)) << 8)) & 0xff;
-		p += LCD_UKEY_IF_ATTR_8;
-		/* dummy pointer */
+		if (lcd_header.version == 1) {
+			pconf->lcd_control.lvds_config->lvds_repack = (*p | ((*(p + 1)) << 8)) & 0xff;
+			p += LCD_UKEY_IF_ATTR_0;
+			pconf->lcd_control.lvds_config->dual_port = (*p | ((*(p + 1)) << 8)) & 0xff;
+			p += LCD_UKEY_IF_ATTR_1;
+			pconf->lcd_control.lvds_config->pn_swap  = (*p | ((*(p + 1)) << 8)) & 0xff;
+			p += LCD_UKEY_IF_ATTR_2;
+			pconf->lcd_control.lvds_config->port_swap  = (*p | ((*(p + 1)) << 8)) & 0xff;
+			p += LCD_UKEY_IF_ATTR_3;
+			pconf->lcd_control.lvds_config->phy_vswing = (*p | ((*(p + 1)) << 8)) & 0xff;
+			p += LCD_UKEY_IF_ATTR_4;
+			pconf->lcd_control.lvds_config->phy_preem = (*p | ((*(p + 1)) << 8)) & 0xff;
+			p += LCD_UKEY_IF_ATTR_5;
+			pconf->lcd_control.lvds_config->phy_clk_vswing = (*p | ((*(p + 1)) << 8)) & 0xff;
+			p += LCD_UKEY_IF_ATTR_6;
+			pconf->lcd_control.lvds_config->phy_clk_preem = (*p | ((*(p + 1)) << 8)) & 0xff;
+			p += LCD_UKEY_IF_ATTR_7;
+			pconf->lcd_control.lvds_config->lane_reverse = 0;
+			p += LCD_UKEY_IF_ATTR_8;
+			/* dummy pointer */
 
-		p += LCD_UKEY_IF_ATTR_9;
+			p += LCD_UKEY_IF_ATTR_9;
+			}
+		else if (lcd_header.version == 2) {
+			pconf->lcd_control.lvds_config->lvds_repack = (*p | ((*(p + 1)) << 8)) & 0xff;
+			p += LCD_UKEY_IF_ATTR_0;
+			pconf->lcd_control.lvds_config->dual_port = (*p | ((*(p + 1)) << 8)) & 0xff;
+			p += LCD_UKEY_IF_ATTR_1;
+			pconf->lcd_control.lvds_config->pn_swap  = (*p | ((*(p + 1)) << 8)) & 0xff;
+			p += LCD_UKEY_IF_ATTR_2;
+			pconf->lcd_control.lvds_config->port_swap  = (*p | ((*(p + 1)) << 8)) & 0xff;
+			p += LCD_UKEY_IF_ATTR_3;
+			pconf->lcd_control.lvds_config->lane_reverse= (*p | ((*(p + 1)) << 8)) & 0xff;
+			p += LCD_UKEY_IF_ATTR_4;
+			pconf->lcd_control.lvds_config->phy_vswing = (*p | ((*(p + 1)) << 8)) & 0xff;
+			p += LCD_UKEY_IF_ATTR_5;
+			pconf->lcd_control.lvds_config->phy_preem = (*p | ((*(p + 1)) << 8)) & 0xff;
+			p += LCD_UKEY_IF_ATTR_6;
+			pconf->lcd_control.lvds_config->phy_clk_vswing = (*p | ((*(p + 1)) << 8)) & 0xff;
+			p += LCD_UKEY_IF_ATTR_7;
+			pconf->lcd_control.lvds_config->phy_clk_preem = (*p | ((*(p + 1)) << 8)) & 0xff;
+			p += LCD_UKEY_IF_ATTR_8;
+			/* dummy pointer */
+
+			p += LCD_UKEY_IF_ATTR_9;
+			}
 	} else {
 		LCDERR("unsupport lcd_type: %d\n", pconf->lcd_basic.lcd_type);
 		p += LCD_UKEY_IF_ATTR_0;

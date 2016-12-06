@@ -24,7 +24,7 @@
 #include "aml_lcd_reg.h"
 #include "aml_lcd_common.h"
 
-/* #define LCD_UNIFYKEY_TEST */
+/*#define LCD_UNIFYKEY_TEST*/
 #define LCDUKEY(fmt, args...)     printf("lcd ukey: "fmt"", ## args)
 #define LCDUKEYERR(fmt, args...)     printf("lcd ukey err: "fmt"", ## args)
 
@@ -201,14 +201,14 @@ void aml_lcd_test_unifykey(void)
 	buf[51] = 0x08; /* h period bit[15:8] */
 	buf[52] = 0x65; /* v period bit[7:0] */ /* 1125 */
 	buf[53] = 0x04; /* v period bit[15:8] */
-	buf[54] = 44;   /* hs width bit[7:0] */
+	buf[54] = 42;   /* hs width bit[7:0] */
 	buf[55] = 0;    /* hs width bit[15:8] */
-	buf[56] = 148;  /* hs bp bit[7:0] */
+	buf[56] = 145;  /* hs bp bit[7:0] */
 	buf[57] = 0;    /* hs bp bit[15:8] */
 	buf[58] = 0;    /* hs pol */
-	buf[59] = 5;    /* vs width bit[7:0] */
+	buf[59] = 6;    /* vs width bit[7:0] */
 	buf[60] = 0;    /* vs width bit[15:8] */
-	buf[61] = 30;   /* vs bp bit[7:0] */
+	buf[61] = 31;   /* vs bp bit[7:0] */
 	buf[62] = 0;    /* vs bp bit[15:8] */
 	buf[63] = 0;    /* hs pol */
 
@@ -232,11 +232,12 @@ void aml_lcd_test_unifykey(void)
 	buf[100] = 0;  /* lvds_pn_swap bit[15:8] */
 	buf[101] = 0;  /* lvds_port_swap bit[7:0] */
 	buf[102] = 0;  /* lvds_port_swap bit[15:8] */
-	buf[103] = 3;  /* phy_vswing_level bit[7:0] */
-	buf[104] = 0;  /* phy_vswing_level bit[15:8] */
-	buf[105] = 0;  /* phy_preem_level bit[7:0] */
-	buf[106] = 0;  /* phy_preem_level bit[15:8] */
-	for (i = 107; i < 115; i++)
+	buf[103] = 0;  /* lane_reverse  */
+	buf[104] = 3;  /* phy_vswing_level bit[7:0] */
+	buf[105] = 0;  /* phy_vswing_level bit[15:8] */
+	buf[106] = 0;  /* phy_preem_level bit[7:0] */
+	buf[107] = 0;  /* phy_preem_level bit[15:8] */
+	for (i = 108; i < 115; i++)
 		buf[i] = 0;
 
 	/* power */
@@ -280,7 +281,7 @@ void aml_lcd_test_unifykey(void)
 	buf[4] = 150;
 	buf[5] = 0;   /* data_len */
 	buf[6] = 1;
-	buf[7] = 0;   /* version */
+	buf[7] = 2;   /* version */
 	buf[8] = 0;
 	buf[9] = 0;   /* reserved */
 	key_crc = crc32(0, &buf[4], 146); //except crc32
