@@ -98,7 +98,7 @@ void pwm_init(int id)
 		/*
 		 * default set to max voltage
 		 */
-		P_PWM_PWM_A = pwm_voltage_table[ARRAY_SIZE(pwm_voltage_table) - 1][0];
+		//P_PWM_PWM_A = pwm_voltage_table[ARRAY_SIZE(pwm_voltage_table) - 1][0];
 		reg  = P_PIN_MUX_REG3;
 		reg &= ~(1 << 21);
 		P_PIN_MUX_REG3 = reg;
@@ -117,8 +117,8 @@ void pwm_init(int id)
 		/*
 		 * default set to max voltage
 		 */
-		vol = pwm_voltage_table[ARRAY_SIZE(pwm_voltage_table) - 1][0];
-		writel(vol ,AO_PWM_PWM_B);
+		//vol = pwm_voltage_table[ARRAY_SIZE(pwm_voltage_table) - 1][0];
+		//writel(vol ,AO_PWM_PWM_B);
 		reg  = readl(AO_RTI_PIN_MUX_REG);
 		reg |= (1 << 3);
 		writel(reg, AO_RTI_PIN_MUX_REG);
@@ -158,8 +158,7 @@ void pwm_set_voltage(unsigned int id, unsigned int voltage)
 
 void power_init(int mode)
 {
-	pwm_init(pwm_a);
-	pwm_init(pwm_ao_b);
+
 	serial_puts("set vcck to ");
 	serial_put_dec(CONFIG_VCCK_INIT_VOLTAGE);
 	serial_puts(" mv\n");
@@ -168,4 +167,6 @@ void power_init(int mode)
 	serial_put_dec(CONFIG_VDDEE_INIT_VOLTAGE);
 	serial_puts(" mv\n");
 	pwm_set_voltage(pwm_ao_b, CONFIG_VDDEE_INIT_VOLTAGE);
+	pwm_init(pwm_a);
+	pwm_init(pwm_ao_b);
 }

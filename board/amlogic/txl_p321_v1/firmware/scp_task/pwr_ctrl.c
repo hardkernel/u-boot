@@ -24,6 +24,8 @@
 #include <cec_tx_reg.h>
 #endif
 #include <gpio-gxbb.h>
+#include "pwm_ctrl.h"
+
 #define P_PIN_MUX_REG3		(*((volatile unsigned *)(0xda834400 + (0x2f << 2))))
 #define P_PIN_MUX_REG7		(*((volatile unsigned *)(0xda834400 + (0x33 << 2))))
 
@@ -37,10 +39,7 @@
 #define ON 1
 #define OFF 0
 
-static unsigned int pwm_voltage_table[][2] = {
-	{0x190003, 900},
-	{0x0f000d, 1000},
-};
+
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
 static void power_on_ddr(void);

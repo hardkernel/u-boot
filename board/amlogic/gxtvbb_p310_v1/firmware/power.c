@@ -124,7 +124,7 @@ void pwm_init(int id)
 		/*
 		 * default set to max voltage
 		 */
-		P_AO_PWM_PWM_B = pwm_voltage_table[ARRAY_SIZE(pwm_voltage_table) - 1][0];
+		//P_AO_PWM_PWM_B = pwm_voltage_table[ARRAY_SIZE(pwm_voltage_table) - 1][0];
 
 		reg  = P_PIN_MUX_AO;
 		reg &= ~(1 << 22);
@@ -143,7 +143,7 @@ void pwm_init(int id)
 		/*
 		 * default set to max voltage
 		 */
-		P_PWM_PWM_E =  pwm_voltage_table[ARRAY_SIZE(pwm_voltage_table) - 1][0];
+		//P_PWM_PWM_E =  pwm_voltage_table[ARRAY_SIZE(pwm_voltage_table) - 1][0];
 
 		reg  = P_PIN_MUX_REG7;
 		reg &= ~((1 << 26)| (1 << 18)|(1 << 30));
@@ -231,8 +231,7 @@ static void power_on_3v3_5v(void)
 }
 void power_init(int mode)
 {
-	pwm_init(pwm_e);
-	pwm_init(pwm_ao_b);
+
 	serial_puts("set vcck to ");
 	serial_put_dec(CONFIG_VCCK_INIT_VOLTAGE);
 	serial_puts(" mv\n");
@@ -241,5 +240,7 @@ void power_init(int mode)
 	serial_put_dec(CONFIG_VDDEE_INIT_VOLTAGE);
 	serial_puts(" mv\n");
 	pwm_set_voltage(pwm_ao_b, CONFIG_VDDEE_INIT_VOLTAGE);
+	pwm_init(pwm_e);
+	pwm_init(pwm_ao_b);
 	power_on_3v3_5v();
 }
