@@ -2323,15 +2323,25 @@ static int get_onfi_features(struct amlnand_chip *aml_chip,
 {
 	struct hw_controller *controller = &(aml_chip->controller);
 	int i, j;
+	int time_out_cnt = 0;
 
 	for (i = 0; i < controller->chip_num; i++) {
 		controller->select_chip(controller, i);
+		if (controller->quene_rb(controller, i) < 0) {
+			aml_nand_dbg("Get features quene rb failed here");
+			return -NAND_BUSY_FAILURE;
+		}
 		controller->cmd_ctrl(controller, NAND_CMD_GET_FEATURES,
 			NAND_CTRL_CLE);
 		controller->cmd_ctrl(controller, addr, NAND_CTRL_ALE);
 		NFC_SEND_CMD_IDLE(controller, NAND_TWB_TIME_CYCLE);
 		NFC_SEND_CMD_IDLE(controller, 0);
-
+		do {
+			if (NFC_CMDFIFO_SIZE(controller) <= 0)
+				break;
+			udelay(2);
+		} while (time_out_cnt++ <= AML_NAND_READ_BUSY_TIMEOUT);
+		udelay(1); //wait 1us
 		for (j = 0; j < 4; j++)
 			buf[j] = controller->readbyte(controller);
 	}
@@ -2353,6 +2363,10 @@ static int set_onfi_features(struct amlnand_chip *aml_chip,
 
 	for (i = 0; i < controller->chip_num; i++) {
 		controller->select_chip(controller, i);
+		if (controller->quene_rb(controller, i) < 0) {
+			aml_nand_dbg("Set features quene rb failed here");
+			return -NAND_BUSY_FAILURE;
+		}
 		controller->cmd_ctrl(controller, NAND_CMD_SET_FEATURES,
 			NAND_CTRL_CLE);
 		controller->cmd_ctrl(controller, addr, NAND_CTRL_ALE);

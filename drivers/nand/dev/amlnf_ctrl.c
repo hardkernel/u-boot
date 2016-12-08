@@ -353,7 +353,7 @@ void nand_get_chip(void *chip)
 	/* pull direction, dqs pull down */
 	AMLNF_SET_REG_MASK(P_PAD_PULL_UP_REG2, 0x8700);
 	/* switch pinmux */
-	if (cpu_id.family_id == MESON_CPU_MAJOR_ID_GXL) {
+	if (cpu_id.family_id >= MESON_CPU_MAJOR_ID_GXL) {
 		AMLNF_CLEAR_REG_MASK(P_PERIPHS_PIN_MUX_7,
 			((0x7 << 28) | (0x1FF << 15) | (0xF << 10)));
 		AMLNF_SET_REG_MASK(P_PERIPHS_PIN_MUX_7, ((0x1<<31) | 0xff));
@@ -377,7 +377,7 @@ void nand_release_chip(void *chip)
 	NFC_SEND_CMD_STANDBY(controller, 5);
 	/* do not release cs0 & cs1 */
 	//fixme,
-	if (cpu_id.family_id == MESON_CPU_MAJOR_ID_GXL) {
+	if (cpu_id.family_id >= MESON_CPU_MAJOR_ID_GXL) {
 		//AMLNF_CLEAR_REG_MASK(P_PERIPHS_PIN_MUX_7, ((0x1<<30) | (0x3f << 30)));
 	} else if (cpu_id.family_id == MESON_CPU_MAJOR_ID_GXBB) {
 		//AMLNF_CLEAR_REG_MASK(P_PERIPHS_PIN_MUX_2, ((0x33f<<20) | (0x1<< 30)));
