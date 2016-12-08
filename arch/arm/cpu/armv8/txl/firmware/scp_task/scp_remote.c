@@ -305,6 +305,22 @@ static int remote_detect_key(void)
 			if ((power_key & IR_POWER_KEY_MASK) == usr_pwr_key)
 					return 2;
 	}
+
+#ifdef CONFIG_COMPAT_IR
+	if (((readl(AO_IR_DEC_STATUS)) >> 3) & 0x1) { /*to judge the frame whether is effective or not*/
+			if (readl(AO_IR_DEC_STATUS) & 0x1) { 	  /*to judge the frame whether is repeat frame or not*/
+					return 0;
+			}
+			power_key = readl(AO_IR_DEC_FRAME);
+			for (j = 0; j < CONFIG_IR_REMOTE_POWER_UP_KEY_CNT; j++) {
+					if ((power_key & IR_POWER_KEY_MASK) == kk[j])
+							return 1;
+			}
+			if ((power_key & IR_POWER_KEY_MASK) == usr_pwr_key)
+					return 2;
+	}
+#endif
+
 	return 0;
 
 }
