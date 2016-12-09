@@ -26,11 +26,31 @@ extern int store_write_ops(
 
 #define COMMANDBUF_SIZE 32
 #define STATUSBUF_SIZE      32
-#define RECOVERYBUF_SIZE 1024
+#define RECOVERYBUF_SIZE 768
+
+#define BOOTINFO_OFFSET 864
+#define SLOTBUF_SIZE    32
+#define MISCBUF_SIZE  1088
 
 #define CMD_WIPE_DATA          "wipe_data"
 #define CMD_SYSTEM_CRASH    "system_crash"
 #define CMD_RUN_RECOVERY   "boot-recovery"
+
+struct bootloader_message {
+    char command[32];
+    char status[32];
+    char recovery[768];
+
+    // The 'recovery' field used to be 1024 bytes.  It has only ever
+    // been used to store the recovery command line, so 768 bytes
+    // should be plenty.  We carve off the last 256 bytes to store the
+    // stage string (for multistage packages) and possible future
+    // expansion.
+    char stage[32];
+    char slot_suffix[32];
+    char reserved[192];
+};
+
 
 static int clear_misc_partition(char *clearbuf, int size)
 {
@@ -56,7 +76,8 @@ static int do_RunBcbCommand(
     char command[COMMANDBUF_SIZE] = {0};
     char status[STATUSBUF_SIZE] = {0};
     char recovery[RECOVERYBUF_SIZE] = {0};
-    char miscbuf[COMMANDBUF_SIZE+STATUSBUF_SIZE+RECOVERYBUF_SIZE] = {0};
+    char miscbuf[MISCBUF_SIZE] = {0};
+    char clearbuf[COMMANDBUF_SIZE+STATUSBUF_SIZE+RECOVERYBUF_SIZE] = {0};
 
     if (argc != 2) {
         return cmd_usage(cmdtp);
@@ -97,7 +118,7 @@ static int do_RunBcbCommand(
     }
 
     // judge misc partition whether has datas
-    char tmpbuf[COMMANDBUF_SIZE+STATUSBUF_SIZE+RECOVERYBUF_SIZE];
+    char tmpbuf[MISCBUF_SIZE];
     memset(tmpbuf, 0, sizeof(tmpbuf));
     if (!memcmp(tmpbuf, miscbuf, strlen(miscbuf))) {
         printf("BCB hasn't any datas,exit!\n");
@@ -107,6 +128,7 @@ static int do_RunBcbCommand(
     memcpy(command, miscbuf, sizeof(command));
     memcpy(status, miscbuf+sizeof(command), sizeof(status));
     memcpy(recovery, miscbuf+sizeof(command)+sizeof(status), sizeof(recovery));
+    memcpy(clearbuf, miscbuf, sizeof(clearbuf));
 
     printf("get bootloader message from misc partition:\n");
     printf("[commannd:%s]\n[status:%s]\n[recovery:%s]\n",
@@ -129,7 +151,7 @@ static int do_RunBcbCommand(
         }
         printf("run command successful.\n");
 
-        if (clear_misc_partition(miscbuf, sizeof(miscbuf)) < 0) {
+        if (clear_misc_partition(clearbuf, sizeof(clearbuf)) < 0) {
             printf("clear misc partition failed.\n");
             goto ERR;
         } else {
