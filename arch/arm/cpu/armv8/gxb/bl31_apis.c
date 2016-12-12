@@ -22,6 +22,7 @@
 #include <asm/cache.h>
 /* #include <asm/system.h> */
 #include <asm/arch/bl31_apis.h>
+#include <asm/cpu_id.h>
 
 static long sharemem_input_base;
 static long sharemem_output_base;
@@ -329,8 +330,11 @@ void aml_system_off(void)
 struct aml_cpu_info {
 	unsigned int version;
 	u8 chipid[12];
-	unsigned int reserved[103];
+	unsigned int  cpuid;
+	unsigned int reserved[102];
 };
+#define MAGIC_31		0xB31B31
+#define MATCH_31(magic)	(((magic >> 8) & 0xffffff) == MAGIC_31)
 void bl31_get_chipid(unsigned int *low0, unsigned int *low1,
 		unsigned int *high0, unsigned int *high1)
 {
@@ -358,6 +362,11 @@ void bl31_get_chipid(unsigned int *low0, unsigned int *low1,
 	*low0 = *p;
 	*low1 = *(p+1);
 	*high0 = *(p+2);
-	*high1 = *(p+3);
+	if (MATCH_31(cpu_info.version) && (cpu_info.version & 0xff)) {
+		*high1 = cpu_info.cpuid;
+	} else {
+		cpu_id_t id = get_cpu_id();
+		*high1 = (id.family_id << 24) | (id.chip_rev << 16) |
+				(id.package_id << 8);
+	}
 }
-
