@@ -638,6 +638,125 @@ static int do_mmc_setdsr(cmd_tbl_t *cmdtp, int flag,
 	return ret;
 }
 
+static int do_mmc_test(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+	int rc = 0;
+	void *addr = NULL;
+	u32 *p = (u32 *)addr;
+	u64 blk, size_blk, blocks, cnt, n, i, j;
+	u32 crc1 = 0,crc2 = 0,count = 1,num = 1;
+	if (argc != 4) {
+		printf("test command Input is invalid, nothing happen.\n");
+		return 1;
+	}
+	printf("enter test().................................\n");
+	struct mmc *mmc = find_mmc_device(curr_device);
+	blk = simple_strtoul(argv[1], NULL, 16);
+	size_blk= simple_strtoul(argv[2],NULL,16);
+	num = simple_strtoul(argv[3],NULL,16);
+	int blk_shift = ffs(mmc->read_bl_len) -1;
+	while (count <= num) {
+		printf("TEST TIMES: %d........................\n",count);
+		n = mmc->block_dev.block_erase(curr_device, blk, size_blk); // erase the whole card
+		if (n != 0) {
+			printf("erase fail\n");
+			return 1;
+		}
+		else
+			printf("erase succeed\n");
+		addr = (u32 *)0x1080000;
+		p = (u32 *)addr;
+		cnt = (1<<17)>>blk_shift; //128k block number
+		printf("start write data...\n");
+		for (i = blk;i <= size_blk - cnt;) {
+			for (j = 0;j < ((1<<17)/4)-1;j++)
+			{
+				*p = i*512 + j*4;
+				crc1 += *p;
+				p++;
+				//printf("*p=%x,crc1=%x\n",*p,crc1);
+			}
+			*p = crc1;
+			p = (u32 *)addr;
+			n = mmc->block_dev.block_write(curr_device, i, cnt , addr);
+			if (n != cnt) {
+				printf("write fail\n");
+				return 1;
+			}
+			crc1 = 0;
+			i += cnt;
+			if (i % 1000 == 0)
+				printf("...");
+		}
+		blocks = size_blk - i;
+		if ((blocks > 0) && (blocks < cnt)) {
+			//printf("\n%llu========\n", blocks);
+			for (j = 0;j < ((blocks << blk_shift)/4)-1;j++)
+			{
+				*p = i*512 + j*4;
+				crc1 += *p;
+				p++;
+				//printf("*p=%x,crc1=%x\n",*p,crc1);
+			}
+			*p = crc1;
+			p = (u32 *)addr;
+			n = mmc->block_dev.block_write(curr_device, i, blocks , addr);
+			if (n != blocks) {
+				printf("write fail\n");
+				return 1;
+			}
+		}
+		printf("\n--------------write succeed----------------\n\n");
+		printf("start read and checksum :...\n");
+		for (i = blk;i <= size_blk - cnt;) {
+			n = mmc->block_dev.block_read(curr_device, i, cnt, addr);
+			if (n != cnt) {
+				printf("read fail\n");
+				return 1;
+			}
+			p = (u32 *)addr;
+			for (j = 0;j < (1<<17)/sizeof(*p)-1;j++) {
+				crc2+=*p;
+				p++;
+			}
+		//	printf("i=%llx,crc1=%x,crc2=%x.....................\n",i,*p,crc2);
+			if (crc2 != *p) {
+				printf("crc1 is not same as crc2\n");
+				return 1;
+			}
+			crc2 = 0;
+			i += cnt;
+			if (i % 1000 == 0)
+				printf("...");
+		}
+		blocks = size_blk - i;
+		if ((blocks > 0) && (blocks < cnt)) {
+			//printf("\n%llu========\n", blocks);
+			n = mmc->block_dev.block_read(curr_device, i, blocks, addr);
+			if (n != blocks) {
+				printf("read fail\n");
+				return 1;
+			}
+			p = (u32 *)addr;
+			for (j = 0;j < ((blocks << blk_shift)/4)-1;j++) {
+				crc2+=*p;
+				p++;
+			}
+		//	printf("i=%llx,crc1=%x,crc2=%x.....................\n",i,*p,crc2);
+			if (crc2 != *p) {
+				printf("crc1 is not same as crc2\n");
+				return 1;
+			}
+		}
+		//printf("i=%llx.....................\n",i);
+		printf("\n----------------read succeed-------------------\n");
+		printf("TEST TIMES: %d...........check sum ok!...............\n\n",count);
+		count++;
+	}
+	return rc;
+}
+
+
 static cmd_tbl_t cmd_mmc[] = {
 	U_BOOT_CMD_MKENT(info, 1, 0, do_mmcinfo, "", ""),
 	U_BOOT_CMD_MKENT(read, 4, 1, do_mmc_read, "", ""),
@@ -659,6 +778,7 @@ static cmd_tbl_t cmd_mmc[] = {
 	U_BOOT_CMD_MKENT(rpmb, CONFIG_SYS_MAXARGS, 1, do_mmcrpmb, "", ""),
 #endif
 	U_BOOT_CMD_MKENT(setdsr, 2, 0, do_mmc_setdsr, "", ""),
+	U_BOOT_CMD_MKENT(test, 5, 0, do_mmc_test, "", ""),
 };
 
 static int do_mmcops(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
