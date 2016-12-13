@@ -1187,6 +1187,7 @@ int is_the_flash_first_burned(void)
 int optimus_set_burn_complete_flag(void)
 {
     int rc = 0;
+#if defined(CONFIG_CMD_SAVEENV) && !defined(CONFIG_ENV_IS_NOWHERE)
     const int IsTplLoadedFromBurningPackage = aml_burn_check_uboot_loaded_for_burn(0);
     char upgrade_step[8];
 
@@ -1222,6 +1223,7 @@ int optimus_set_burn_complete_flag(void)
         DWN_ERR("Fail to saveenv to flash\n");
     }
     udelay(200);
+#endif//#if defined(CONFIG_CMD_SAVEENV) && !defined(CONFIG_ENV_IS_NOWHERE)
 
     return rc;
 }
