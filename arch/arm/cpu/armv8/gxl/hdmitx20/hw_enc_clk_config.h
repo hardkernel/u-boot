@@ -25,21 +25,21 @@
 
 //#include <linux/amlogic/vout/enc_clk_config.h>
 
-#define CLK_UTIL_VID_PLL_DIV_1      0
-#define CLK_UTIL_VID_PLL_DIV_2      1
-#define CLK_UTIL_VID_PLL_DIV_3      2
-#define CLK_UTIL_VID_PLL_DIV_3p5    3
-#define CLK_UTIL_VID_PLL_DIV_3p75   4
-#define CLK_UTIL_VID_PLL_DIV_4      5
-#define CLK_UTIL_VID_PLL_DIV_5      6
-#define CLK_UTIL_VID_PLL_DIV_6      7
-#define CLK_UTIL_VID_PLL_DIV_6p25   8
-#define CLK_UTIL_VID_PLL_DIV_7      9
-#define CLK_UTIL_VID_PLL_DIV_7p5    10
-#define CLK_UTIL_VID_PLL_DIV_12     11
-#define CLK_UTIL_VID_PLL_DIV_14     12
-#define CLK_UTIL_VID_PLL_DIV_15     13
-#define CLK_UTIL_VID_PLL_DIV_2p5    14
+#define VID_PLL_DIV_1      0
+#define VID_PLL_DIV_2      1
+#define VID_PLL_DIV_3      2
+#define VID_PLL_DIV_3p5    3
+#define VID_PLL_DIV_3p75   4
+#define VID_PLL_DIV_4      5
+#define VID_PLL_DIV_5      6
+#define VID_PLL_DIV_6      7
+#define VID_PLL_DIV_6p25   8
+#define VID_PLL_DIV_7      9
+#define VID_PLL_DIV_7p5    10
+#define VID_PLL_DIV_12     11
+#define VID_PLL_DIV_14     12
+#define VID_PLL_DIV_15     13
+#define VID_PLL_DIV_2p5    14
 
 enum viu_type {
     VIU_ENCL = 0,
@@ -81,7 +81,5 @@ struct hw_enc_clk_val_group {
 };
 
 void set_hdmitx_clk(struct hdmitx_dev *hdev);
-void hdmitx_set_clk_30b(struct hdmitx_dev *hdev);
-void set_hdmitx_clk_420(void);
 
 #endif

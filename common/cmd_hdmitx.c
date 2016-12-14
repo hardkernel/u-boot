@@ -185,6 +185,46 @@ static int do_output(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 			printf("set hdmitx VIC = %d\n", hdmitx_device.vic);
 		if (strstr(argv[1], "hz420") != NULL)
 			hdmitx_device.para->cs = HDMI_COLOR_FORMAT_420;
+		if (getenv("colorattribute"))
+			hdmi_parse_attr(hdmitx_device.para, getenv("colorattribute"));
+		/* For RGB444 or YCbCr444 under 6Gbps mode, no deepcolor */
+		/* Only 4k50/60 has 420 modes */
+		switch (hdmitx_device.vic) {
+		case HDMI_3840x2160p50_16x9:
+		case HDMI_3840x2160p60_16x9:
+		case HDMI_4096x2160p50_256x135:
+		case HDMI_4096x2160p60_256x135:
+		case HDMI_3840x2160p50_64x27:
+		case HDMI_3840x2160p60_64x27:
+		case HDMI_3840x2160p50_16x9_Y420:
+		case HDMI_3840x2160p60_16x9_Y420:
+		case HDMI_4096x2160p50_256x135_Y420:
+		case HDMI_4096x2160p60_256x135_Y420:
+		case HDMI_3840x2160p50_64x27_Y420:
+		case HDMI_3840x2160p60_64x27_Y420:
+			if ((hdmitx_device.para->cs == HDMI_COLOR_FORMAT_RGB) ||
+			    (hdmitx_device.para->cs == HDMI_COLOR_FORMAT_444)) {
+				if (hdmitx_device.para->cd != HDMI_COLOR_DEPTH_24B) {
+					printf("vic %d cs %d has no cd %d\n",
+						hdmitx_device.vic,
+						hdmitx_device.para->cs,
+						hdmitx_device.para->cd);
+					hdmitx_device.para->cd = HDMI_COLOR_DEPTH_24B;
+					printf("set cd as %d\n", HDMI_COLOR_DEPTH_24B);
+				}
+			}
+			if (hdmitx_device.para->cs == HDMI_COLOR_FORMAT_420)
+				hdmitx_device.vic |= HDMITX_VIC420_OFFSET;
+			break;
+		default:
+			if (hdmitx_device.para->cs == HDMI_COLOR_FORMAT_420) {
+				printf("vic %d has no cs %d\n", hdmitx_device.vic,
+					hdmitx_device.para->cs);
+				hdmitx_device.para->cs = HDMI_COLOR_FORMAT_444;
+				printf("set cs as %d\n", HDMI_COLOR_FORMAT_444);
+			}
+			break;
+		}
 		hdmi_tx_set(&hdmitx_device);
 	}
 	return CMD_RET_SUCCESS;
@@ -222,8 +262,9 @@ static int do_info(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 	struct hdmitx_dev *hdev = &hdmitx_device;
 	struct hdmi_format_para *para = hdev->para;
 
-	printf("%s\n", para->ext_name);
+	printf("%s %d\n", para->ext_name, hdev->vic);
 	printf("cd%d cs%d cr%d\n", para->cd, para->cs, para->cr);
+	printf("frac_rate: %d\n", hdev->frac_rate_policy);
 	return 1;
 }
 

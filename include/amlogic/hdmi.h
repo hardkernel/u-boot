@@ -28,6 +28,8 @@ enum scdc_addr {
 	MANUFACT_SPECIFIC = 0xDE,
 };
 
+#define HDMITX_VIC420_OFFSET	0x100
+
 /* HDMI VIC definitions */
 enum hdmi_vic {
 	/* Refer to CEA 861-D */
@@ -141,6 +143,24 @@ enum hdmi_vic {
 	HDMI_3840x2160p50_64x27 = 106,
 	HDMI_3840x2160p60_64x27 = 107,
 	HDMI_RESERVED = 108,
+	/*
+	the following vic is for those y420 mode
+	they are all beyond OFFSET_HDMITX_VIC420(0x1000)
+	and they has same vic with normal vic in the lower bytes.
+	*/
+	HDMI_VIC_Y420 =	HDMITX_VIC420_OFFSET,
+	HDMI_3840x2160p50_16x9_Y420 =
+		HDMITX_VIC420_OFFSET + HDMI_3840x2160p50_16x9,
+	HDMI_3840x2160p60_16x9_Y420 =
+		HDMITX_VIC420_OFFSET + HDMI_3840x2160p60_16x9,
+	HDMI_4096x2160p50_256x135_Y420 =
+		HDMITX_VIC420_OFFSET + HDMI_4096x2160p50_256x135,
+	HDMI_4096x2160p60_256x135_Y420 =
+		HDMITX_VIC420_OFFSET + HDMI_4096x2160p60_256x135,
+	HDMI_3840x2160p50_64x27_Y420 =
+		HDMITX_VIC420_OFFSET + HDMI_3840x2160p50_64x27,
+	HDMI_3840x2160p60_64x27_Y420 =
+		HDMITX_VIC420_OFFSET + HDMI_3840x2160p60_64x27,
 };
 
 /* CEA TIMING STRUCT DEFINITION */
@@ -247,12 +267,14 @@ struct hdmitx_dev {
 	} HWOp;
 	struct hdmi_format_para *para;
 	enum hdmi_vic vic;
+	unsigned int frac_rate_policy;
 	unsigned int mode420;
 	unsigned int dc30;
 };
 
 struct hdmi_format_para *hdmi_get_fmt_paras(enum hdmi_vic vic);
 enum hdmi_vic hdmi_get_fmt_vic(char const *name);
+void hdmi_parse_attr(struct hdmi_format_para *para, char const *name);
 void hdmi_tx_set(struct hdmitx_dev *hdev);
 /*
  * Must be called at uboot

@@ -89,22 +89,6 @@ static int do_vout_output(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv
 	sprintf(mode, "hdmitx output %s", argv[1]);
 	run_command(mode, 0);
 	return CMD_RET_SUCCESS;
-#if 0
-	hdmitx_device.vic = hdmi_get_fmt_vic(argv[1]);
-	hdmitx_device.para = hdmi_get_fmt_paras(hdmitx_device.vic);
-	if (hdmitx_device.vic == HDMI_unkown) {
-		/* Not find VIC */
-		printf("Not find '%s' mapped VIC\n", argv[1]);
-	} else {
-		printf("set hdmitx VIC = %d\n", hdmitx_device.vic);
-
-		if (strstr(argv[1], "hz420") != NULL)
-			hdmitx_device.para->cs = HDMI_COLOR_FORMAT_420;
-		hdmi_tx_set(&hdmitx_device);
-
-		return CMD_RET_SUCCESS;
-	}
-#endif
 #endif
 
 #ifdef CONFIG_AML_LCD
