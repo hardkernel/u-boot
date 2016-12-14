@@ -1,55 +1,16 @@
+#define MESON_CPU_MAJOR_ID_GXBB		0x1F
+#define MESON_CPU_MAJOR_ID_GXTVBB	0x20
+#define MESON_CPU_MAJOR_ID_GXL		0x21
+#define MESON_CPU_MAJOR_ID_GXM		0x22
+#define MESON_CPU_MAJOR_ID_TXL		0x23
 
-enum{AML_ADC_CHAN_0 = 0, AML_ADC_CHAN_1, AML_ADC_CHAN_2, AML_ADC_CHAN_3,
-         AML_ADC_CHAN_4,         AML_ADC_CHAN_5, AML_ADC_CHAN_6, AML_ADC_CHAN_7,
-         AML_ADC_SARADC_CHAN_NUM,
-};
-
-enum{AML_ADC_NO_AVG = 0,  AML_ADC_SIMPLE_AVG_1, AML_ADC_SIMPLE_AVG_2,
-         AML_ADC_SIMPLE_AVG_4,AML_ADC_SIMPLE_AVG_8, AML_ADC_MEDIAN_AVG_8,
-};
-
-#define AML_ADC_CHAN_XP AML_ADC_CHAN_0
-#define AML_ADC_CHAN_YP AML_ADC_CHAN_1
-#define AML_ADC_CHAN_XN AML_ADC_CHAN_2
-#define AML_ADC_CHAN_YN AML_ADC_CHAN_3
-
-
-
-typedef struct adckey_info{
-        const char *key;
-        int   value;    /* voltage/3.3v * 1023 */
-        int   tolerance;
-}adckey_info_t;
-
-typedef struct adc_info{
-        char * tint;
-        int    chan;
-        int    adc_type;
-        void * adc_data;
-}adc_info_t;
-
-struct adc_device{
-        adc_info_t * adc_device_info;
-        unsigned dev_num;
-};
-
-
-#define CONFIG_GXBB 1
-
-#define WRITE_REG(reg, val) writel(val, reg)
-#define READ_REG(reg)       readl(reg)
-
-#define GXBB_ADC   1
 #define AML_ADC_SAMPLE_DEBUG 0
 
 #define FLAG_BUSY_KERNEL    (1<<14) /* for bl30 */
 #define FLAG_BUSY_BL30      (1<<15) /* for bl30 */
 
-#define FLAG_INITIALIZED (1<<28)
-//#define FLAG_BUSY (1<<29)
-
-
-#if 0
+#define PP_AO_SEC_SD_CFG8           (volatile unsigned int *)(0xc8100000 + (0x88 << 2))
+#if 0  /*For Mbox Platform*/
 #define GXBB_CLK_REG                (volatile unsigned int *)0xc883c3d8
 #define P_SAR_SAR_ADC_REG0		    (volatile unsigned int *)0xc1108680
 #define P_SAR_ADC_CHAN_LIST		    (volatile unsigned int *)0xc1108684
@@ -63,8 +24,7 @@ struct adc_device{
 #define P_SAR_ADC_DETECT_IDLE_SW	(volatile unsigned int *)0xc11086a4
 #define P_SAR_ADC_DELTA_10	        (volatile unsigned int *)0xc11086a8
 #define P_SAR_ADC_DELTA_11          (volatile unsigned int *)0xc11086aC
-#endif
-
+#else  /*For TV Platform*/
 #define GXBB_CLK_REG                (volatile unsigned int *)0xc8100090
 #define P_SAR_SAR_ADC_REG0		    (volatile unsigned int *)0xc8100600
 #define P_SAR_ADC_CHAN_LIST		    (volatile unsigned int *)0xc8100604
@@ -78,8 +38,8 @@ struct adc_device{
 #define P_SAR_ADC_DETECT_IDLE_SW	(volatile unsigned int *)0xc8100624
 #define P_SAR_ADC_DELTA_10	        (volatile unsigned int *)0xc8100628
 #define P_SAR_ADC_DELTA_11          (volatile unsigned int *)0xc810062c
-
-
+#define P_SAR_ADC_REG13				(volatile unsigned int *)0xc8100634
+#endif
 
 #define PP_SAR_ADC_REG0					P_SAR_SAR_ADC_REG0
 #define PP_SAR_ADC_CHAN_LIST 			P_SAR_ADC_CHAN_LIST
@@ -93,80 +53,154 @@ struct adc_device{
 #define PP_SAR_ADC_DETECT_IDLE_SW	    P_SAR_ADC_DETECT_IDLE_SW
 #define PP_SAR_ADC_DELTA_10				P_SAR_ADC_DELTA_10
 #define PP_SAR_ADC_DELTA_11				P_SAR_ADC_DELTA_11
-
-typedef unsigned int uint32_t;
-
-static void aml_set_reg32_bits(volatile unsigned int *_reg, const uint32_t _value, const uint32_t _start, const uint32_t _len)
-{
-	writel(( (readl((volatile unsigned int *)_reg) & ~((( 1L << (_len) )-1) << (_start))) | ((unsigned)((_value)&((1L<<(_len))-1)) << (_start))), (volatile void *)_reg );
-}
-static uint32_t aml_get_reg32_bits(volatile unsigned int *_reg, const uint32_t _start, const uint32_t _len)
-{
-	return	( (readl((volatile unsigned int *)_reg) >> (_start)) & (( 1L << (_len) ) - 1) );
-}
-static void aml_write_reg32( volatile unsigned int *_reg, const uint32_t _value)
-{
-	writel( _value,(volatile unsigned int *)_reg );
-};
-static uint32_t aml_read_reg32(volatile unsigned int *_reg)
-{
-	return readl((volatile unsigned int *)_reg);
-};
-
+#define PP_SAR_ADC_REG13				P_SAR_ADC_REG13
 
 #define set_bits	aml_set_reg32_bits
 #define get_bits	aml_get_reg32_bits
 #define set_reg	    aml_write_reg32
 #define get_reg	    aml_read_reg32
 
+static int adc_type; /*1:12bit; 0:10bit*/
 
-#define SARADC_STATE_IDLE 0
-#define SARADC_STATE_BUSY 1
-#define SARADC_STATE_SUSPEND 2
+static void aml_set_reg32_bits(volatile unsigned int *_reg, const unsigned int _value, const unsigned int _start, const unsigned int _len)
+{
+	writel(( (readl((volatile unsigned int *)_reg) & ~((( 1L << (_len) )-1) << (_start))) | ((unsigned)((_value)&((1L<<(_len))-1)) << (_start))), (volatile void *)_reg );
+}
+static unsigned int aml_get_reg32_bits(volatile unsigned int *_reg, const unsigned int _start, const unsigned int _len)
+{
+	return	( (readl((volatile unsigned int *)_reg) >> (_start)) & (( 1L << (_len) ) - 1) );
+}
+static void aml_write_reg32( volatile unsigned int *_reg, const unsigned int _value)
+{
+	writel( _value,(volatile unsigned int *)_reg );
+};
+static unsigned int aml_read_reg32(volatile unsigned int *_reg)
+{
+	return readl((volatile unsigned int *)_reg);
+};
 
+static int get_cpu_family_id(void)
+{
+	return ((aml_read_reg32(PP_AO_SEC_SD_CFG8) >> 24) & 0xff);
+}
 
-
-
+/*
+  * description: used to enable and disable the clock of the SARADC
+  * onoff: 1: enable ; 0: disable
+  */
+static void saradc_clock_switch(int onoff)
+{
+/* if the famiy id of the cpu greater than or equal to MESON_CPU_MAJOR_ID_GXBB,
+  * the clock switch from the clock tree register, otherwise from the adc module register.
+  */
+	if (onoff) {
+		if (get_cpu_family_id() >= MESON_CPU_MAJOR_ID_GXBB)
+			aml_set_reg32_bits(GXBB_CLK_REG,1,8,1);
+		else
+			aml_set_reg32_bits(PP_SAR_ADC_REG3,1,30,1);
+	} else {
+		if (get_cpu_family_id() >= MESON_CPU_MAJOR_ID_GXBB)
+			aml_set_reg32_bits(GXBB_CLK_REG,0,8,1);
+		else
+			aml_set_reg32_bits(PP_SAR_ADC_REG3,0,30,1);
+	}
+}
 static inline void saradc_power_control(int on)
 {
-	//struct saradc_reg3 *reg3 = (struct saradc_reg3 *)&adc->regs->reg3;
-	//int nn=0;
 	if (on) {
-        aml_set_reg32_bits(PP_SAR_ADC_DELTA_11,1,13,1);
-        aml_set_reg32_bits(PP_SAR_ADC_REG3,1,21,1);
-		//nn=100;
-		//while(nn--);
+		aml_set_reg32_bits(PP_SAR_ADC_DELTA_11,1,13,1);
+		aml_set_reg32_bits(PP_SAR_ADC_DELTA_11,3,5,2);
+		aml_set_reg32_bits(PP_SAR_ADC_REG3,1,21,1);
+
 		_udelay(5);
 
-        #if GXBB_ADC
-            aml_set_reg32_bits(GXBB_CLK_REG,1,8,1);
-        #else
-            aml_set_reg32_bits(PP_SAR_ADC_REG3,1,30,1);
-        #endif
+		saradc_clock_switch(1);
+
 	}	else {
-		#if GXBB_ADC
-			aml_set_reg32_bits(GXBB_CLK_REG,0,8,1);
-		#else
-			aml_set_reg32_bits(PP_SAR_ADC_REG3,0,30,1);
-        #endif
+		saradc_clock_switch(0);
+
 		aml_set_reg32_bits(PP_SAR_ADC_REG3,0,30,1);
-        aml_set_reg32_bits(PP_SAR_ADC_DELTA_11,0,13,1); /* disable bandgap */
+		/*aml_set_reg32_bits(PP_SAR_ADC_DELTA_11,0,13,1);*//* disable bandgap */
+		aml_set_reg32_bits(PP_SAR_ADC_DELTA_11,0,5,2);
 	}
 }
 
+/*
+  * description: used to set the DIV of the clock
+  */
+static void saradc_clock_set(unsigned char val)
+{
+/* if the famiy id of the cpu greater than or equal to MESON_CPU_MAJOR_ID_GXBB,
+  * the clock switch from the clock tree register, otherwise from the adc module register.
+  */
+	if (get_cpu_family_id() >= MESON_CPU_MAJOR_ID_GXBB) { /*bit0-bit7*/
+		val = val & 0xff;
+		aml_write_reg32(GXBB_CLK_REG, (0<<9) | (val << 0));
+	} else {                                              /*bit10-bit15*/
+		val = val & 0x3f;
+		aml_set_reg32_bits(PP_SAR_ADC_REG3,val,10,5);
+	}
+}
+
+int get_adc_sample_gxbb(int ch);
+
+static void saradc_internal_cal_12bit(void)
+{
+	int val[5]/*, nominal[5] = {0, 1024, 2048, 3072, 4096}*/;
+	int i;
+	int abs_val = 4096;
+	unsigned int abs_num = 0;
+	unsigned int abs_tmp = 0;
+
+	/* set CAL_CNTL: 3/4 VDD*/
+	aml_set_reg32_bits(PP_SAR_ADC_REG3,3,23,3);
+
+	for (i = 0; i < 64; i++) {
+		aml_set_reg32_bits(PP_SAR_ADC_REG13,i,8,6);
+		_udelay(5);
+		val[0] = get_adc_sample_gxbb(7);
+		if (val[0] < 3050/4) {
+			abs_tmp = 3050/4 - val[0];
+			if (abs_tmp < abs_val) {
+				abs_val = abs_tmp;
+				abs_num = i;
+			}
+		}
+	}
+	aml_set_reg32_bits(PP_SAR_ADC_REG13,abs_num,8,6);
+
+	/*for (i=0;i<5;i++) {
+		aml_set_reg32_bits(PP_SAR_ADC_REG3,i,23,3);
+		_udelay(5);
+		val[0] = get_adc_sample_gxbb(7);
+		uart_put_hex(val[0], 32);
+		uart_puts("\n");
+	}*/
+}
 void saradc_enable(void)
 {
+	static int init_times=0;
+	if (get_cpu_family_id() <= MESON_CPU_MAJOR_ID_GXTVBB)
+		adc_type = 0;
+	else
+		adc_type = 1;
+
     set_reg(P_SAR_SAR_ADC_REG0, 0x84004040);
     set_reg(PP_SAR_ADC_CHAN_LIST, 0);
     /* REG2: all chanel set to 8-samples & median averaging mode */
     set_reg(PP_SAR_ADC_AVG_CNTL, 0);
+	set_reg(PP_SAR_ADC_REG3, 0x9388000a);
 
-    set_reg(PP_SAR_ADC_REG3, 0x9388000a);
-    aml_set_reg32_bits(PP_SAR_ADC_REG3, 0x14,10,5);
+	aml_set_reg32_bits(PP_SAR_ADC_REG3,0x14,10,5);
 
-    #if GXBB_ADC
-    aml_write_reg32(GXBB_CLK_REG, (0<<9) | (20 << 0));
-    #endif
+	/*gxl change vdd
+	set_reg(PP_SAR_ADC_REG13, );
+	gxl change sampling mode */
+	if (adc_type)
+		aml_set_reg32_bits(PP_SAR_ADC_REG3,0x1,27,1);
+
+	saradc_clock_set(20);
+
     set_reg(PP_SAR_ADC_DELAY, 0x10a000a);
     set_reg(PP_SAR_ADC_AUX_SW, 0x3eb1a0c);
     set_reg(PP_SAR_ADC_CHAN_10_SW, 0x8c000c);
@@ -183,42 +217,20 @@ void saradc_enable(void)
     printf("ADCREG GXBB_CLK_REG=%x\n",get_reg(GXBB_CLK_REG));
 #endif //AML_ADC_SAMPLE_DEBUG
 
-
     saradc_power_control(1);
-}
-
-
-/*
-static int saradc_get_cal_value(struct saradc *adc, int val)
-{
-	int nominal;
-
-//	((nominal - ref_nominal) << 10) / (val - ref_val) = coef
-//	==> nominal = ((val - ref_val) * coef >> 10) + ref_nominal
-
-	nominal = val;
-	if ((adc->coef > 0) && (val > 0)) {
-		nominal = (val - adc->ref_val) * adc->coef;
-		nominal >>= 12;
-		nominal += adc->ref_nominal;
+	if (!init_times) {
+		init_times = 1;
+		saradc_internal_cal_12bit();
 	}
-	if (nominal < 0)
-		nominal = 0;
-	if (nominal > 1023)
-		nominal = 1023;
-	return nominal;
 }
-*/
 
 int get_adc_sample_gxbb(int ch)
 {
 	int value=0;
 	int count=0;
 	int sum=0;
-	//int nn=0;
+	//static int nn=0;
 	//unsigned long flags;
-
-	//int adc_state = SARADC_STATE_BUSY;
 
 	count = 0;
 	while (aml_read_reg32(PP_SAR_ADC_DELAY) & FLAG_BUSY_BL30) {
@@ -232,15 +244,14 @@ int get_adc_sample_gxbb(int ch)
 		}
 	}
 	aml_set_reg32_bits(PP_SAR_ADC_DELAY,1,FLAG_BUSY_KERNEL,1);
-
-
+/*
 	count = 0;
 	while (aml_get_reg32_bits(PP_SAR_ADC_REG0,21,5) && (count < 32)) {
 		value = aml_read_reg32(PP_SAR_ADC_FIFO_RD);
 		count++;
 	}
-
-	//aml_set_reg32_bits(PP_SAR_ADC_REG3,1,29,1);
+*/
+	aml_set_reg32_bits(PP_SAR_ADC_REG3,1,29,1);
 
     set_reg(PP_SAR_ADC_CHAN_LIST, ch);
     set_reg(PP_SAR_ADC_DETECT_IDLE_SW, (0xc000c | (ch<<23) | (ch<<7)));
@@ -271,7 +282,9 @@ int get_adc_sample_gxbb(int ch)
 		}
         value = aml_read_reg32(PP_SAR_ADC_FIFO_RD);
 		if (((value>>12) & 0x07) == ch) {
-			sum += value & 0x3ff;
+			value &= 0xffc;
+			value >>= 2;
+			sum += value;
 			count++;
 		}	else {
 			uart_puts("chanel error");
@@ -287,18 +300,13 @@ int get_adc_sample_gxbb(int ch)
 		goto end;
 	}
 	value = sum / count;
-	//printf("before cal: %d, count=%d\n", value, count);
-	//uart_puts("before cal:");
-	//uart_put_hex(value, 32);
-	//uart_puts("\n");
-    //value = saradc_get_cal_value(adc, value);
+
 end:
     aml_set_reg32_bits(PP_SAR_ADC_REG0,1,14,1);
     aml_set_reg32_bits(PP_SAR_ADC_REG0,0,0,1);
 
 end1:
-    //aml_set_reg32_bits(PP_SAR_ADC_REG3,0,29,1);
-    //adc_state = SARADC_STATE_IDLE;
+    aml_set_reg32_bits(PP_SAR_ADC_REG3,0,29,1);
 	aml_set_reg32_bits(PP_SAR_ADC_DELAY,0,FLAG_BUSY_KERNEL,1);
 
 	return value;
@@ -313,15 +321,10 @@ int saradc_disable(void)
 int check_adc_key_resume(void)
 {
 	int value;
-	int rang=30;
+	/*the sampling value of adc: 0-1023*/
 	value = get_adc_sample_gxbb(2);
 	if ((value >= 0) && (value <= 40))
 		return 1;
-	else if (((value>=(217-rang)) && (value<=217+rang)) ||
-		     ((value>=(414-rang)) && (value<=414+rang)) ||
-		     ((value>=(616-rang)) && (value<=616+rang)) ||
-		     ((value>=(822-rang)) && (value<=822+rang)))
-		return 2;
 	else
 		return 0;
 }
