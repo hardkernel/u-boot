@@ -33,8 +33,8 @@
  * platform power init config
  */
 #define CONFIG_PLATFORM_POWER_INIT
-#define CONFIG_VCCK_INIT_VOLTAGE	1050
-#define CONFIG_VDDEE_INIT_VOLTAGE	1050//1070		// voltage for power up
+#define CONFIG_VCCK_INIT_VOLTAGE	1000
+#define CONFIG_VDDEE_INIT_VOLTAGE	1000//1070		// voltage for power up
 #define CONFIG_VDDEE_SLEEP_VOLTAGE	 850//900		// voltage for suspend
 
 /* configs for CEC */
@@ -70,7 +70,7 @@
 #define CONFIG_EXTRA_ENV_SETTINGS \
         "firstboot=1\0"\
         "upgrade_step=0\0"\
-        "jtag=disable\0"\
+        "jtag=apao\0"\
         "hdmiuart_mode=close\0"\
         "loadaddr=1080000\0"\
         "panel_type=lvds_1\0" \
