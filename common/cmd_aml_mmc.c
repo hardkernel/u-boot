@@ -37,21 +37,7 @@ extern int mmc_key_erase(void);
 extern int find_dev_num_by_partition_name (char *name);
 extern int mmc_get_ext_csd(struct mmc *mmc, u8 *ext_csd);
 extern int mmc_set_ext_csd(struct mmc *mmc, u8 index, u8 value);
-
-/*
- * 2 copies dtb were stored in dtb area.
- * each is 256K.
- * timestamp&checksum are in the tail.
- * |<--------------DTB Area-------------->|
- * |<------DTB1------->|<------DTB2------>|
- */
-#define DTB_GLB_OFFSET		(SZ_1M * 40)
-#define DTB_BLK_SIZE		(512)
-#define DTB_BLK_CNT			(512)
-#define DTB_SIZE			(DTB_BLK_CNT * DTB_BLK_SIZE)
-#define DTB_COPIES			(2)
-#define DTB_AREA_BLK_CNT	(DTB_BLK_CNT * DTB_COPIES)
-#define EMMC_DTB_DEV		(1)
+extern void mmc_write_cali_mattern(void *addr);
 
 /* info system. */
 #define dtb_err(fmt, ...) printf( "%s()-%d: " fmt , \
@@ -934,10 +920,10 @@ static int _verify_dtb_checksum(struct aml_dtb_rsv * dtb)
     return !(checksum == dtb->checksum);
 }
 
-static int _dtb_read(struct mmc *mmc, u64 blk, void * addr)
+static int _dtb_read(struct mmc *mmc, u64 blk, u64 cnt, void * addr)
 {
     int dev = EMMC_DTB_DEV;
-    u64 n, cnt = DTB_BLK_CNT;
+    u64 n;
     n = mmc->block_dev.block_read(dev, blk, cnt, addr);
 	if (n != cnt) {
         dtb_err("%s: dev # %d, block # %#llx, count # %#llx ERROR!\n",
@@ -946,10 +932,10 @@ static int _dtb_read(struct mmc *mmc, u64 blk, void * addr)
 
     return (n != cnt);
 }
-static int _dtb_write(struct mmc *mmc, u64 blk, void * addr)
+static int _dtb_write(struct mmc *mmc, u64 blk, u64 cnt, void * addr)
 {
     int dev = EMMC_DTB_DEV;
-    u64 n, cnt = DTB_BLK_CNT;
+    u64 n;
     n = mmc->block_dev.block_write(dev, blk, cnt, addr);
 	if (n != cnt) {
         dtb_err("%s: dev # %d, block # %#llx, count # %#llx ERROR!\n",
@@ -977,23 +963,29 @@ static struct mmc *_dtb_init(void)
 
 static int dtb_read_shortcut(struct mmc * mmc, void *addr)
 {
-    u64 blk;
+    u64 blk, cnt, dtb_glb_offset;
     int dev = EMMC_DTB_DEV;
     struct aml_dtb_info *info = &dtb_infos;
-
+    struct partitions * part = NULL;
+    struct virtual_partition *vpart = NULL;
+    vpart = aml_get_virtual_partition_by_name(MMC_DTB_NAME);
+    part = aml_get_partition_by_name(MMC_RESERVED_NAME);
+    dtb_glb_offset = part->offset + vpart->offset;
     /* short cut */
 	if (info->valid[0]) {
         dtb_info("short cut in...\n");
-        blk = DTB_GLB_OFFSET / mmc->read_bl_len;
-		if (_dtb_read(mmc, blk, addr)) {
-            dtb_err("%s: dev # %d, block # %#llx ERROR!\n",
-                    __func__, dev, blk);
+        blk = dtb_glb_offset / mmc->read_bl_len;
+        cnt = vpart->size / mmc->read_bl_len;
+		if (_dtb_read(mmc, blk, cnt, addr)) {
+            dtb_err("%s: dev # %d, block # %#llx,cnt # %#llx ERROR!\n",
+                    __func__, dev, blk, cnt);
             /*try dtb2 if it's valid */
 			if (info->valid[1]) {
-                blk = (DTB_GLB_OFFSET + DTB_SIZE) / mmc->read_bl_len;
-				if (_dtb_read(mmc, blk, addr)) {
-                    dtb_err("%s: dev # %d, block # %#llx ERROR!\n",
-                        __func__, dev, blk);
+				blk = (dtb_glb_offset + vpart->size) / mmc->read_bl_len;
+				cnt = vpart->size / mmc->read_bl_len;
+				if (_dtb_read(mmc, blk, cnt, addr)) {
+					dtb_err("%s: dev # %d, block # %#llx, cnt # %#llx ERROR!\n",
+						__func__, dev, blk, cnt);
                     return -1;
                 }
             }
@@ -1007,11 +999,16 @@ static int dtb_read_shortcut(struct mmc * mmc, void *addr)
 int dtb_read(void *addr)
 {
     int ret = 0, dev = EMMC_DTB_DEV;
-    u64 blk;
+    u64 blk, cnt, dtb_glb_offset;
     struct aml_dtb_rsv * dtb = (struct aml_dtb_rsv *) addr;
     struct aml_dtb_info *info = &dtb_infos;
     int cpy = 1, valid = 0;
     struct mmc * mmc;
+    struct partitions * part = NULL;
+    struct virtual_partition *vpart = NULL;
+    vpart = aml_get_virtual_partition_by_name(MMC_DTB_NAME);
+    part = aml_get_partition_by_name(MMC_RESERVED_NAME);
+    dtb_glb_offset = part->offset + vpart->offset;
 
     mmc = _dtb_init();
 	if (NULL == mmc)
@@ -1022,10 +1019,11 @@ int dtb_read(void *addr)
 
     /* read dtb2 1st, for compatibility without checksum. */
 	while (cpy >= 0) {
-        blk = (DTB_GLB_OFFSET + cpy * DTB_SIZE) / mmc->read_bl_len;
-		if (_dtb_read(mmc, blk, addr)) {
-            dtb_err("%s: dev # %d, block # %#llx ERROR!\n",
-                    __func__, dev, blk);
+		blk = (dtb_glb_offset + cpy * (vpart->size)) / mmc->read_bl_len;
+		cnt = vpart->size / mmc->read_bl_len;
+		if (_dtb_read(mmc, blk, cnt, addr)) {
+			dtb_err("%s: dev # %d, block # %#llx, cnt # %#llx ERROR!\n",
+				__func__, dev, blk, cnt);
         } else {
             ret = _verify_dtb_checksum(dtb);
             /* check magic avoid whole 0 issue */
@@ -1050,17 +1048,17 @@ int dtb_read(void *addr)
         /* only 1 is valid, using the valid one */
         case 1:
 			if (info->valid[1]) {
-                blk = (DTB_GLB_OFFSET + DTB_SIZE) / mmc->read_bl_len;
-				if (_dtb_read(mmc, blk, addr)) {
-                    dtb_err("%s: dev # %d, block # %#llx, ERROR!\n",
-                            __func__, dev, blk);
+				blk = (dtb_glb_offset + vpart->size) / mmc->read_bl_len;
+				if (_dtb_read(mmc, blk, cnt, addr)) {
+				dtb_err("%s: dev # %d, block # %#llx,cnt # %#llx ERROR!\n",
+						__func__, dev, blk, cnt);
                     ret = -2;
                 }
                 /* fixme, update the invalid one - dtb1 */
-                blk = (DTB_GLB_OFFSET) / mmc->read_bl_len;
-				if (_dtb_write(mmc, blk, addr)) {
-                    dtb_err("%s: dev # %d, block # %#llx ERROR!\n",
-                            __func__, dev, blk);
+                blk = (dtb_glb_offset) / mmc->read_bl_len;
+				if (_dtb_write(mmc, blk, cnt, addr)) {
+                    dtb_err("%s: dev # %d, block # %#llx,cnt # %#llx ERROR!\n",
+                        __func__, dev, blk, cnt);
                     ret = -4;
                 }
                 info->valid[0] = 1;
@@ -1068,10 +1066,10 @@ int dtb_read(void *addr)
                 ret = 0;
             } else {
                 dtb_info("update dtb2");
-                blk = (DTB_GLB_OFFSET + DTB_SIZE) / mmc->read_bl_len;
-				if (_dtb_write(mmc, blk, addr)) {
-                    dtb_err("%s: dev # %d, block # %#llx ERROR!\n",
-                            __func__, dev, blk);
+                blk = (dtb_glb_offset + vpart->size) / mmc->read_bl_len;
+				if (_dtb_write(mmc, blk, cnt, addr)) {
+                    dtb_err("%s: dev # %d, block # %#llx,cnt # %#llx ERROR!\n",
+                        __func__, dev, blk, cnt);
                     ret = -2;
                 }
                 info->valid[1] = 1;
@@ -1081,27 +1079,27 @@ int dtb_read(void *addr)
         /* both are valid, pickup new one. */
         case 2:
 			if (stamp_after(info->stamp[1], info->stamp[0])) {
-                blk = (DTB_GLB_OFFSET + DTB_SIZE) / mmc->read_bl_len;
-				if (_dtb_read(mmc, blk, addr)) {
-                    dtb_err("%s: dev # %d, block # %#llx ERROR!\n",
-                            __func__, dev, blk);
+				blk = (dtb_glb_offset + vpart->size) / mmc->read_bl_len;
+				if (_dtb_read(mmc, blk, cnt, addr)) {
+					dtb_err("%s: dev # %d, block # %#llx,cnt # %#llx ERROR!\n",
+							__func__, dev, blk, cnt);
                     ret = -3;
                 }
                 /*update dtb1*/
-                blk = DTB_GLB_OFFSET / mmc->read_bl_len;
-				if (_dtb_write(mmc, blk, addr)) {
-                    dtb_err("%s: dev # %d, block # %#llx ERROR!\n",
-                            __func__, dev, blk);
+                blk = dtb_glb_offset / mmc->read_bl_len;
+				if (_dtb_write(mmc, blk, cnt, addr)) {
+                    dtb_err("%s: dev # %d, block # %#llx,cnt # %#llx ERROR!\n",
+                            __func__, dev, blk, cnt);
                     ret = -3;
                 }
                 info->stamp[0] = dtb->timestamp;
                 ret = 0;
             } else if (stamp_after(info->stamp[0], info->stamp[1])) {
                 /*update dtb2*/
-                blk = (DTB_GLB_OFFSET + DTB_SIZE) / mmc->read_bl_len;
-				if (_dtb_write(mmc, blk, addr)) {
-                    dtb_err("%s: dev # %d, block # %#llx ERROR!\n",
-                            __func__, dev, blk);
+                blk = (dtb_glb_offset + vpart->size) / mmc->read_bl_len;
+				if (_dtb_write(mmc, blk, cnt, addr)) {
+                    dtb_err("%s: dev # %d, block # %#llx,cnt # %#llx ERROR!\n",
+                            __func__, dev, blk, cnt);
                     ret = -3;
                 }
                 info->stamp[1] = dtb->timestamp;
@@ -1125,9 +1123,14 @@ static int dtb_write(void *addr)
     int ret = 0;
     struct aml_dtb_rsv * dtb = (struct aml_dtb_rsv *) addr;
     struct aml_dtb_info *info = &dtb_infos;
-    u64 blk;
+    u64 blk, cnt, dtb_glb_offset;
     int cpy, valid;
     struct mmc * mmc;
+    struct partitions * part = NULL;
+    struct virtual_partition *vpart = NULL;
+    vpart = aml_get_virtual_partition_by_name(MMC_DTB_NAME);
+    part = aml_get_partition_by_name(MMC_RESERVED_NAME);
+    dtb_glb_offset = part->offset + vpart->offset;
 
     mmc = _dtb_init();
 	if (NULL == mmc)
@@ -1158,8 +1161,9 @@ static int dtb_write(void *addr)
         dtb->timestamp, dtb->checksum, dtb->version, (char *)&dtb->magic);
 
 	for (cpy = 0; cpy < DTB_COPIES; cpy++) {
-        blk = (DTB_GLB_OFFSET + cpy * DTB_SIZE) / mmc->read_bl_len;
-        ret |= _dtb_write(mmc, blk, addr);
+		blk = (dtb_glb_offset + cpy * (vpart->size)) / mmc->read_bl_len;
+		cnt = vpart->size / mmc->read_bl_len;
+		ret |= _dtb_write(mmc, blk, cnt, addr);
         info->valid[cpy] = 1;
         info->stamp[cpy] = dtb->timestamp;
     }
@@ -1169,10 +1173,14 @@ static int dtb_write(void *addr)
 
 int do_amlmmc_dtb_key(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
-        int dev, ret = 0;
-        void *addr = NULL;
-        u64 cnt =0,n =0, blk =0;
-        //u64 size;
+    int dev, ret = 0;
+    void *addr = NULL;
+    u64 cnt = 0, n = 0, blk = 0;
+    //u64 size;
+    struct partitions *part = NULL;
+    struct virtual_partition *vpart = NULL;
+    vpart = aml_get_virtual_partition_by_name(MMC_DTB_NAME);
+    part = aml_get_partition_by_name(MMC_RESERVED_NAME);
 
     switch (argc) {
         case 3:
@@ -1185,8 +1193,8 @@ int do_amlmmc_dtb_key(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
                         printf("not find mmc\n");
                         return 1;
                     }
-                    blk = DTB_GLB_OFFSET / mmc->read_bl_len;
-                    cnt = DTB_AREA_BLK_CNT;
+                    blk = (part->offset + vpart->offset) / mmc->read_bl_len;
+                    cnt = (vpart->size * 2) / mmc->read_bl_len;
                     if (cnt != 0)
                         n = mmc->block_dev.block_erase(dev, blk, cnt);
                     printf("dev # %d, %s, several blocks erased %s\n",
@@ -1204,6 +1212,28 @@ int do_amlmmc_dtb_key(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
                     printf("dev # %d, %s, several blocks erased %s\n",
                             dev, (flag == 0) ? " ":(argv[2]),(n == 0) ? "OK" : "ERROR");
                     return (n == 0) ? 0 : 1;
+                }
+            } else if (strcmp(argv[1], "cali_pattern") == 0) {
+
+				if (strcmp(argv[2], "write") == 0) {
+                    dev = EMMC_DTB_DEV;
+                    struct mmc *mmc = find_mmc_device(dev);
+                    if (!mmc) {
+                        printf("not find mmc\n");
+                        return 1;
+                    }
+                    addr = (void *)malloc(CALI_PATTERN_SIZE);
+                    mmc_write_cali_mattern(addr);
+                    vpart = aml_get_virtual_partition_by_name(MMC_PATTERN_NAME);
+                    part = aml_get_partition_by_name(MMC_RESERVED_NAME);
+                    blk = (part->offset + vpart->offset) / mmc->read_bl_len;
+                    cnt = vpart->size / mmc->read_bl_len;
+                    if (cnt != 0)
+                        n = mmc->block_dev.block_write(dev, blk, cnt, addr);
+                    printf("dev # %d, %s, several calibration pattern blocks write %s\n",
+                            dev, (flag == 0) ? " ":(argv[2]),(n == cnt) ? "OK" : "ERROR");
+                    free(addr);
+                    return (n == cnt) ? 0 : 1;
                 }
             }
         case 4:

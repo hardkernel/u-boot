@@ -44,7 +44,7 @@
 #define     MMC_ENV_NAME                    "env"
 #define     MMC_ENV_SIZE                    (8*SZ_1M)
 
-// #define     MMC_KEY_NAME                    "key"
+#define     MMC_KEY_NAME                    "key"
 #define     MMC_KEY_SIZE                    (256*1024)
 #define     EMMCKEY_RESERVE_OFFSET           (0x4000)
 #define     MMC_RESERVED_OFFSET              (36*SZ_1M)
@@ -59,6 +59,47 @@
 
 #define     MMC_PARTITIONS_MAGIC            "MPT" // MMC Partition Table
 #define     MMC_CARD_PARTITION_NAME         "card"
+
+/*
+* partition table
+* |<----partition_table---->|<----key---->|
+*
+*/
+#define MMC_TABLE_NAME		("AML_TABLE")
+#define MMC_TABLE_OFFSET		(0x0)
+#define MMC_TABLE_SIZE		(16*1024)
+
+/*
+* write 128KB data pattern
+* |<----pattern---->||<------DTB------>|
+*/
+#define	MMC_PATTERN_NAME		"pattern"
+#define CALI_PATTERN_OFFSET	(SZ_1M * 3)
+#define CALI_PATTERN_SIZE	(256 * 512)
+#define CALI_BLOCK_SIZE		(512)
+/*
+ * 2 copies dtb were stored in dtb area.
+ * each is 256K.
+ * timestamp&checksum are in the tail.
+ * |<--------------DTB Area-------------->|
+ * |<------DTB1------->|<------DTB2------>|
+ */
+#define MMC_DTB_NAME		"dtb"
+#define DTB_OFFSET		(SZ_1M * 4)
+#define DTB_BLK_SIZE		(512)
+#define DTB_BLK_CNT			(512)
+#define DTB_SIZE			(DTB_BLK_CNT * DTB_BLK_SIZE)
+#define DTB_COPIES			(2)
+#define DTB_AREA_BLK_CNT	(DTB_BLK_CNT * DTB_COPIES)
+#define EMMC_DTB_DEV		(1)
+
+struct virtual_partition {
+	char name[MAX_MMC_PART_NAME_LEN];
+	uint64_t offset;
+	uint64_t size;
+};
+
+#define VIRTUAL_PARTITION_ELEMENT(na, of, sz) {.name = na, .offset = of, .size = sz,}
 
 #ifdef AML_MMC_DBG
 #define aml_mmc_dbg(fmt, ...) printk( "%s: line:%d " fmt "\n", \
@@ -101,10 +142,11 @@ extern bool is_partition_checked;
 extern struct partitions emmc_partition_table[];
 extern int get_emmc_partition_arraysize(void);
 struct partitions* find_mmc_partition_by_name (char *name);
+struct partitions *aml_get_partition_by_name(const char *name);
+struct virtual_partition *aml_get_virtual_partition_by_name(const char *name);
 bool aml_is_emmc_tsd (struct mmc *mmc);
 int mmc_device_init (struct mmc *mmc);
 
 #define PARTITION_ELEMENT(na, sz, flags) {.name = na, .size = sz, .mask_flags = flags,}
 
 #endif
-

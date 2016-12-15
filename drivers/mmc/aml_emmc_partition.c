@@ -52,6 +52,7 @@
   0x480000 - 64MBytes: resv for other usage.
   ...
  */
+/*
 #define RSV_DTB_OFFSET_GLB	(SZ_1M*40)
 #define RSV_DTB_SIZE		(512*1024UL)
 #define RSV_PTBL_OFFSET		(SZ_1M*0)
@@ -59,6 +60,7 @@
 #define RSV_SKEY_OFFSET		(16*1024UL)
 #define RSV_SKEY_SIZE		(256*1024UL)
 #define RSV_DTB_OFFSET		(SZ_1M*4)
+*/
 
 /* virtual partitions which are in "reserved" */
 #define MAX_MMC_VIRTUAL_PART_CNT	(5)
@@ -88,19 +90,32 @@ bool is_partition_checked = false;
 
 #ifndef CONFIG_AML_MMC_INHERENT_PART
 /* fixme, name should be changed as aml_inherent_ptbl */
-struct partitions emmc_partition_table[]={
-    PARTITION_ELEMENT(MMC_BOOT_NAME, MMC_BOOT_DEVICE_SIZE, 0),
-    PARTITION_ELEMENT(MMC_RESERVED_NAME, MMC_RESERVED_SIZE, 0),
-    /* prior partitions, same partition name with dts*/
-    /* partition size will be overide by dts*/
-    PARTITION_ELEMENT(MMC_CACHE_NAME, 0, 0),
-    PARTITION_ELEMENT(MMC_ENV_NAME, MMC_ENV_SIZE, 0),
+struct partitions emmc_partition_table[] = {
+	PARTITION_ELEMENT(MMC_BOOT_NAME, MMC_BOOT_DEVICE_SIZE, 0),
+	PARTITION_ELEMENT(MMC_RESERVED_NAME, MMC_RESERVED_SIZE, 0),
+	/* prior partitions, same partition name with dts*/
+	/* partition size will be overide by dts*/
+	PARTITION_ELEMENT(MMC_CACHE_NAME, 0, 0),
+	PARTITION_ELEMENT(MMC_ENV_NAME, MMC_ENV_SIZE, 0),
+};
+
+struct virtual_partition virtual_partition_table[] = {
+	VIRTUAL_PARTITION_ELEMENT(MMC_TABLE_NAME, MMC_TABLE_OFFSET, MMC_TABLE_SIZE),
+	VIRTUAL_PARTITION_ELEMENT(MMC_KEY_NAME, EMMCKEY_RESERVE_OFFSET, MMC_KEY_SIZE),
+	VIRTUAL_PARTITION_ELEMENT(MMC_PATTERN_NAME, CALI_PATTERN_OFFSET, CALI_PATTERN_SIZE),
+	VIRTUAL_PARTITION_ELEMENT(MMC_DTB_NAME, DTB_OFFSET, DTB_SIZE),
 };
 
 int get_emmc_partition_arraysize(void)
 {
     return ARRAY_SIZE(emmc_partition_table);
 }
+
+int get_emmc_virtual_partition_arraysize(void)
+{
+    return ARRAY_SIZE(virtual_partition_table);
+}
+
 #endif
 
 __weak void _dump_part_tbl(struct partitions *p, int count)
@@ -183,18 +198,19 @@ static struct partitions * get_ptbl_from_dtb(struct mmc *mmc)
 	struct partitions * ptbl = NULL;
 	unsigned char * buffer = NULL;
 	ulong ret, offset;
+	struct virtual_partition *vpart = aml_get_virtual_partition_by_name(MMC_DTB_NAME);
 
 	/* try get dtb table from ddr, which may exsit while usb burning */
 	if (NULL == get_partitions()) {
 		/* if failed, try rsv dtb area then. */
-		buffer = malloc(RSV_DTB_SIZE);
+		buffer = malloc(vpart->size * DTB_COPIES);
 		if (NULL == buffer) {
 			apt_err("Can not alloc enough buffer\n");
 			goto _err;
 		}
-		offset = _get_inherent_offset(MMC_RESERVED_NAME) + RSV_DTB_OFFSET;
-		ret = _mmc_rsv_read(mmc, offset, RSV_DTB_SIZE, buffer);
-		if (ret != RSV_DTB_SIZE) {
+		offset = _get_inherent_offset(MMC_RESERVED_NAME) + vpart->offset;
+		ret = _mmc_rsv_read(mmc, offset, (vpart->size * DTB_COPIES), buffer);
+		if (ret != (vpart->size * DTB_COPIES)) {
 			apt_err("Can not alloc enough buffer\n");
 			goto _err1;
 		}
@@ -407,9 +423,10 @@ static struct ptbl_rsv * get_ptbl_rsv(struct mmc *mmc)
 	uchar * buffer = NULL;
 	ulong ret, size, offset;
 	int checksum, version;
+	struct virtual_partition *vpart = aml_get_virtual_partition_by_name(MMC_TABLE_NAME);
 
 	size = (sizeof(struct ptbl_rsv) + 511) / 512 * 512;
-	if (RSV_PTBL_SIZE < size) {
+	if (vpart->size < size) {
 		apt_err("too much partitons\n");
 		goto _err;
 	}
@@ -419,7 +436,7 @@ static struct ptbl_rsv * get_ptbl_rsv(struct mmc *mmc)
 		return NULL;
 	}
 	/* read it from emmc. */
-	offset = _get_inherent_offset(MMC_RESERVED_NAME) + RSV_PTBL_OFFSET;
+	offset = _get_inherent_offset(MMC_RESERVED_NAME) + vpart->offset;
 	ret = _mmc_rsv_read(mmc, offset, size, buffer);
 	if (ret != size) {
 		apt_err("read ptbl from rsv failed\n");
@@ -464,6 +481,7 @@ static int update_ptbl_rsv(struct mmc *mmc, struct _iptbl *src)
 	uchar *buffer;
 	ulong size, offset;
 	int ret = 0, version;
+	struct virtual_partition *vpart = aml_get_virtual_partition_by_name(MMC_TABLE_NAME);
 
 	size = (sizeof(struct ptbl_rsv) + 511) / 512 * 512;
 	buffer = malloc(size);
@@ -483,7 +501,7 @@ static int update_ptbl_rsv(struct mmc *mmc, struct _iptbl *src)
 	ptbl_rsv->checksum = _calc_iptbl_check(src->partitions, src->count, version);
 	/* write it to emmc. */
 	apt_info("magic %s, version %s, checksum %x\n", ptbl_rsv->magic, ptbl_rsv->version, ptbl_rsv->checksum);
-	offset = _get_inherent_offset(MMC_RESERVED_NAME) + RSV_PTBL_OFFSET;
+	offset = _get_inherent_offset(MMC_RESERVED_NAME) + vpart->offset;
 	if (_mmc_rsv_write(mmc, offset, size, buffer) != size) {
 		apt_err("write ptbl to rsv failed\n");
 		ret = -1;
@@ -564,7 +582,7 @@ _out:
 	*/
 int mmc_device_init (struct mmc *mmc)
 {
-	int ret = 0;
+	int ret = 1;
 	/* partition table from dtb */
 	struct _iptbl iptbl_dtb;
 	/* partition table from emmc rsv area */
@@ -659,6 +677,7 @@ int find_virtual_partition_by_name (char *name, struct partitions *partition)
 {
 	int ret = 0;
 	ulong offset;
+	struct virtual_partition *vpart = aml_get_virtual_partition_by_name(MMC_DTB_NAME);
 	if (NULL == partition)
 		return -1;
 
@@ -670,8 +689,8 @@ int find_virtual_partition_by_name (char *name, struct partitions *partition)
 
 	if (!strcmp(name, "dtb")) {
 		strcpy(partition->name, name);
-		partition->offset = offset + RSV_DTB_OFFSET;
-		partition->size = RSV_DTB_SIZE;
+		partition->offset = offset + vpart->offset;
+		partition->size = (vpart->size * DTB_COPIES);
 	} else {
 		printf("%s(), can't find %s\n", __func__, name);
 		ret = -1;
@@ -743,6 +762,37 @@ void show_partition_info(disk_partition_t *info)
 }
 #endif
 
+struct partitions *aml_get_partition_by_name(const char *name)
+{
+	struct partitions *partition = NULL;
+	partition = _find_partition_by_name(emmc_partition_table,
+			get_emmc_partition_arraysize(), name);
+	if (partition == NULL)
+		apt_wrn("do not find match in inherent table %s\n", name);
+	return partition;
+}
+
+struct virtual_partition *aml_get_virtual_partition_by_name(const char *name)
+{
+	int i = 0, cnt;
+	struct virtual_partition *part = NULL;
+	cnt = get_emmc_virtual_partition_arraysize();
+	while (i < cnt) {
+
+		part = &virtual_partition_table[i];
+		if (!strcmp(name, part->name)) {
+			apt_info("find %s @ tbl[%d]\n", name, i);
+			break;
+		}
+		i++;
+	};
+	if (i == cnt) {
+		part = NULL;
+		apt_wrn("do not find match in table %s\n", name);
+	}
+	return part;
+}
+
 int get_part_info_by_name(block_dev_desc_t *dev_desc,
 	const char *name, disk_partition_t *info)
 {
@@ -781,4 +831,3 @@ int get_part_info_by_name(block_dev_desc_t *dev_desc,
 _out:
 	return ret;
 }
-

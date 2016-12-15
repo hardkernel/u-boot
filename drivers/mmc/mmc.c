@@ -1472,6 +1472,59 @@ int mmc_start_init(struct mmc *mmc)
 	return err;
 }
 
+void mmc_write_cali_mattern(void *addr)
+{
+	int i = 0;
+	u32 *mattern = (u32 *)addr;
+	struct virtual_partition *vpart =
+		aml_get_virtual_partition_by_name(MMC_PATTERN_NAME);
+	for (i = 0;i < (vpart->size)/4;i++)
+		mattern[i] = 0x55aa55aa;
+	return;
+}
+
+int mmc_pattern_check(struct mmc *mmc)
+{
+	void *addr = NULL;
+	int i, dev = EMMC_DTB_DEV;
+	u64 cnt = 0, n = 0, blk = 0;
+	u32 *buf = NULL;
+	struct partitions *part = NULL;
+	struct virtual_partition *vpart = NULL;
+	vpart = aml_get_virtual_partition_by_name(MMC_DTB_NAME);
+	part = aml_get_partition_by_name(MMC_RESERVED_NAME);
+
+	addr = (void *)malloc(vpart->size);
+	vpart = aml_get_virtual_partition_by_name(MMC_PATTERN_NAME);
+	part = aml_get_partition_by_name(MMC_RESERVED_NAME);
+	blk = (part->offset + vpart->offset) / mmc->read_bl_len;
+	cnt = vpart->size / mmc->read_bl_len;
+	n = mmc_bread(dev, blk, cnt, addr);
+	if (n != cnt) {
+		printf("read pattern failed\n");
+		free(addr);
+		return 1;
+	} else {
+		buf = (u32 *)addr;
+		for (i = 0;i < (vpart->size/4);i++) {
+			if (buf[i] != 0x55aa55aa) {
+				printf("check pattern failed, need to write pattern\n");
+				break;
+			}
+		}
+		if (i == (vpart->size/4))
+			printf("check pattern success\n");
+	}
+	if (i != (vpart->size/4)) {
+		mmc_write_cali_mattern(addr);
+		n = mmc_bwrite(dev, blk, cnt, addr);
+		printf("several calibration pattern blocks write %s\n",
+			(n == cnt) ? "OK" : "ERROR");
+	}
+	free(addr);
+	return (n == cnt) ? 0 : 1;
+}
+
 static int mmc_complete_init(struct mmc *mmc)
 {
 	int err = 0;
@@ -1520,6 +1573,7 @@ int mmc_init(struct mmc *mmc)
 			if (mmc_device_init(mmc) == 0) {
 				is_partition_checked = true;
 				printf("eMMC/TSD partition table have been checked OK!\n");
+				mmc_pattern_check(mmc);
 			}
 		}
 	}
@@ -1738,14 +1792,19 @@ int mmc_set_rst_n_function(struct mmc *mmc, u8 enable)
 int mmc_key_read(unsigned char *buf, unsigned int size, uint32_t *actual_lenth)
 {
 	ulong start, start_blk, blkcnt, ret;
+	int dev = EMMC_DTB_DEV;
 	unsigned char *temp_buf = buf;
+	struct partitions * part = NULL;
+	struct virtual_partition *vpart = NULL;
+	vpart = aml_get_virtual_partition_by_name(MMC_KEY_NAME);
+	part = aml_get_partition_by_name(MMC_RESERVED_NAME);
 
 	*actual_lenth =  0x40000;/*key size is 256KB*/
-	start = EMMCKEY_RESERVE_OFFSET + MMC_RESERVED_OFFSET;
+	start = part->offset + vpart->offset;
 	start_blk = (start / MMC_BLOCK_SIZE);
 	blkcnt = (size / MMC_BLOCK_SIZE);
 	info_disprotect |= DISPROTECT_KEY;
-	ret = mmc_bread(1, start_blk, blkcnt, temp_buf);
+	ret = mmc_bread(dev, start_blk, blkcnt, temp_buf);
 	info_disprotect &= ~DISPROTECT_KEY;
 	if (ret != blkcnt) {
 		printf("[%s] %d, mmc_bread error\n",
@@ -1761,13 +1820,18 @@ int mmc_key_write(unsigned char *buf, unsigned int size, uint32_t *actual_lenth)
 {
 	ulong start, start_blk, blkcnt, ret;
 	unsigned char * temp_buf = buf;
-	int i = 2;
-	start = EMMCKEY_RESERVE_OFFSET + MMC_RESERVED_OFFSET;
+	int i = 2, dev = EMMC_DTB_DEV;
+	struct partitions * part = NULL;
+	struct virtual_partition *vpart = NULL;
+	vpart = aml_get_virtual_partition_by_name(MMC_KEY_NAME);
+	part = aml_get_partition_by_name(MMC_RESERVED_NAME);
+
+	start = part->offset + vpart->offset;
 	start_blk = (start / MMC_BLOCK_SIZE);
 	blkcnt = (size / MMC_BLOCK_SIZE);
 	info_disprotect |= DISPROTECT_KEY;
 	do {
-		ret = mmc_bwrite(1, start_blk, blkcnt, temp_buf);
+		ret = mmc_bwrite(dev, start_blk, blkcnt, temp_buf);
 		if (ret != blkcnt) {
 			printf("[%s] %d, mmc_bwrite error\n",
 				__func__, __LINE__);
@@ -1784,11 +1848,17 @@ extern unsigned long mmc_berase(int dev_num,
 int mmc_key_erase(void)
 {
 	ulong start, start_blk, blkcnt, ret;
-	start = EMMCKEY_RESERVE_OFFSET + MMC_RESERVED_OFFSET;
+	struct partitions * part = NULL;
+	struct virtual_partition *vpart = NULL;
+	vpart = aml_get_virtual_partition_by_name(MMC_KEY_NAME);
+	part = aml_get_partition_by_name(MMC_RESERVED_NAME);
+	int dev = EMMC_DTB_DEV;
+
+	start = part->offset + vpart->offset;
 	start_blk = (start / MMC_BLOCK_SIZE);
-	blkcnt = (MMC_KEY_SIZE / MMC_BLOCK_SIZE) * 2;//key and backup key
+	blkcnt = (vpart->size / MMC_BLOCK_SIZE) * 2;//key and backup key
 	info_disprotect |= DISPROTECT_KEY;
-	ret = mmc_berase(1, start_blk, blkcnt);
+	ret = mmc_berase(dev, start_blk, blkcnt);
 	info_disprotect &= ~DISPROTECT_KEY;
 	if (ret) {
 		printf("[%s] %d mmc_berase error\n",
