@@ -27,6 +27,11 @@
 #include <asm/byteorder.h>
 #include <amlogic/hdmi.h>
 
+#undef DEBUG_DUMPEDID
+
+extern void parse_edid(unsigned char *edid, unsigned int blk_len);
+extern char *select_best_resolution(void);
+
 static int do_hpd_detect(cmd_tbl_t *cmdtp, int flag, int argc,
 	char *const argv[])
 {
@@ -41,41 +46,46 @@ static int do_hpd_detect(cmd_tbl_t *cmdtp, int flag, int argc,
 	return st;
 }
 
-static unsigned char edid_raw_buf[256] = {0};
-static void dump_edid_raw(unsigned char *buf)
+/* max edid buffer : 512 bytes */
+static unsigned char edid_raw_buf[512] = {0};
+#ifdef DEBUG_DUMPEDID
+static void dump_edid_raw(unsigned char *buf, unsigned int blk_len)
 {
-	int i = 0;
-	for (i = 0 ; i < 8; i++)
+	int i;
+	for (i = 0 ; i < (128 * blk_len); i++) {
 		printf("%02x ", buf[i]);
+		if (i % 8 == 7)	printf("\n");
+	}
 	printf("\n");
 }
+#endif
 
 static int do_edid(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 {
-	unsigned int tmp_addr = 0;
-	unsigned char edid_addr = 0;
-	unsigned char st = 0;
-
+	unsigned int blk_len = 0;
 	memset(edid_raw_buf, 0, ARRAY_SIZE(edid_raw_buf));
-	if (argc < 2)
+	if (argc < 1)
 		return cmd_usage(cmdtp);
-	if (strcmp(argv[1], "read") == 0) {
-		tmp_addr = simple_strtoul(argv[2], NULL, 16);
-		if (tmp_addr > 0xff)
-			return cmd_usage(cmdtp);
-		edid_addr = tmp_addr;
-		/* read edid raw data */
-		/* current only support read 1 byte edid data */
-		st = hdmitx_device.HWOp.read_edid(
-			&edid_raw_buf[edid_addr & 0xf8], edid_addr & 0xf8, 8);
-		printf("edid[0x%02x]: 0x%02x\n", edid_addr,
-			edid_raw_buf[edid_addr]);
-		if (0) /* Debug only */
-			dump_edid_raw(&edid_raw_buf[edid_addr & 0xf8]);
-		if (!st)
-			printf("edid read failed\n");
+	/* read edid raw data */
+	blk_len = hdmitx_device.HWOp.read_edid(edid_raw_buf);
+
+	if (!blk_len)
+		printf("edid read failed\n");
+	else {
+#ifdef DEBUG_DUMPEDID
+		/* dump all raw data */
+		dump_edid_raw(edid_raw_buf, blk_len);
+#endif
+		/* parsing edid data */
+		parse_edid(edid_raw_buf, blk_len);
+		/* select best resolution */
+		setenv("m", select_best_resolution());
+		setenv("hdmimode", getenv("m"));
+		/* set hdmi csc config */
+		run_command("hdmitx mode ${vout}", 0);
 	}
-	return st;
+
+	return CMD_RET_SUCCESS;
 }
 
 static int do_output(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
@@ -133,7 +143,7 @@ static int do_mode(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 
 static cmd_tbl_t cmd_hdmi_sub[] = {
 	U_BOOT_CMD_MKENT(hpd, 1, 1, do_hpd_detect, "", ""),
-	U_BOOT_CMD_MKENT(edid, 3, 1, do_edid, "", ""),
+	U_BOOT_CMD_MKENT(edid, 1, 1, do_edid, "", ""),
 	U_BOOT_CMD_MKENT(output, 3, 1, do_output, "", ""),
 	U_BOOT_CMD_MKENT(off, 1, 1, do_off, "", ""),
 	U_BOOT_CMD_MKENT(dump, 1, 1, do_dump, "", ""),
@@ -162,10 +172,8 @@ U_BOOT_CMD(hdmitx, CONFIG_SYS_MAXARGS, 1, do_hdmitx,
 	   "HDMITX sub-system",
 	"hdmitx hpd\n"
 	"    Detect hdmi rx plug-in\n"
-#if 0
-	"hdmitx edid read ADDRESS\n"
-	"    Read hdmi rx edid from ADDRESS(0x00~0xff)\n"
-#endif
+	"hdmitx edid\n"
+	"    Read hdmi edid raw format\n"
 	"hdmitx output [list | FORMAT | bist MODE]\n"
 	"    list: list support formats\n"
 	"    FORMAT can be 720p60/50hz, 1080i60/50hz, 1080p60hz, etc\n"
