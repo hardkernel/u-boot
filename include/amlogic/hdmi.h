@@ -232,8 +232,8 @@ struct hdmitx_dev {
 	unsigned char rx_edid[512]; /* some RX may exceeds 256Bytes */
 	struct {
 		int (*get_hpd_state)(void);
-		int (*read_edid)(unsigned char *buf, unsigned char addr,
-				 unsigned char len);
+		unsigned int (*read_edid)(unsigned char *buf);
+
 		void (*turn_off)(void);
 		void (*list_support_modes)(void);
 		void (*dump_regs)(void);
