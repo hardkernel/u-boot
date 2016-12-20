@@ -385,16 +385,20 @@ static int lcd_config_load_from_bsp(struct lcd_config_s *pconf)
 
 	if (panel_type == NULL) {
 		LCDERR("no panel_type, use default lcd config\n ");
-		return 0;
+		return -1;
 	}
 	for (i = 0 ; i < LCD_NUM_MAX ; i++) {
 		ext_lcd = &ext_lcd_config[i];
 		if (strcmp(ext_lcd->panel_type, panel_type) == 0)
 			break;
+		if (strcmp(ext_lcd->panel_type, "invalid") == 0) {
+			i = LCD_NUM_MAX;
+			break;
+		}
 	}
 	if (i >= LCD_NUM_MAX) {
 		LCDERR("can't find %s, use default lcd config\n ", panel_type);
-		return 0;
+		return -1;
 	}
 	LCDPR("use panel_type=%s\n", panel_type);
 

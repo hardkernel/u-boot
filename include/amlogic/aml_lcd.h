@@ -22,7 +22,7 @@
 
 #define Rsv_val 0xffffffff
 struct ext_lcd_config_s {
-	const char *panel_type;
+	const char panel_type[15];
 	int lcd_type; // LCD_TTL /LCD_LVDS/LCD_VBYONE
 	unsigned char lcd_bits;
 

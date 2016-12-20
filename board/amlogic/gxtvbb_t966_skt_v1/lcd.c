@@ -51,9 +51,12 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	/* power step */
 	lcd_power_on_step, lcd_power_off_step,
 	/* backlight */
+	60,255,10,128,128,
 	BL_CTRL_MAX,0,1,0,200,200,
-	BL_PWM_POSITIVE,BL_PWM_B,180,100,25,1,0,180,220,
-	60,10,255,128,128},
+	BL_PWM_POSITIVE,BL_PWM_B,180,100,25,1,0,
+	Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	10,10,Rsv_val},
 
 	{/*public vx1 : 3840x2160@60hz 8lane */
 	"vbyone_0",LCD_VBYONE,10,
@@ -66,9 +69,12 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	/* power step */
 	lcd_power_on_step, lcd_power_off_step,
 	/* backlight */
+	60,255,10,128,128,
 	BL_CTRL_MAX,0,1,0,200,200,
-	BL_PWM_POSITIVE,BL_PWM_B,180,100,25,1,0,180,220,
-	60,10,255,128,128},
+	BL_PWM_POSITIVE,BL_PWM_B,180,100,25,1,0,
+	Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	10,10,Rsv_val},
 
 	{/*LG: RDL550WY: 3840x2160@60hz 8lane */
 	"vbyone_1",LCD_VBYONE,10,
@@ -81,9 +87,12 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	/* power step */
 	lcd_power_on_step, lcd_power_off_step,
 	/* backlight */
+	60,255,10,128,128,
 	BL_CTRL_MAX,0,1,0,200,200,
-	BL_PWM_POSITIVE,BL_PWM_B,180,100,25,1,0,180,220,
-	60,10,255,128,128},
+	BL_PWM_POSITIVE,BL_PWM_B,180,100,25,1,0,
+	Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	10,10,Rsv_val},
 
 	{/*INL: V580DJ2: 3840x2160@60hz 8lane */
 	"vbyone_2",LCD_VBYONE,10,
@@ -96,9 +105,12 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	/* power step */
 	lcd_power_on_step, lcd_power_off_step,
 	/* backlight */
+	60,255,10,128,128,
 	BL_CTRL_MAX,0,1,0,200,200,
-	BL_PWM_POSITIVE,BL_PWM_B,180,100,25,1,0,180,220,
-	60,10,255,128,128},
+	BL_PWM_POSITIVE,BL_PWM_B,180,100,25,1,0,
+	Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	10,10,Rsv_val},
 
 	{/*BOE: HV550QU2: 3840x2160@60hz 8lane */
 	"vbyone_3",LCD_VBYONE,10,
@@ -111,9 +123,14 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	/* power step */
 	lcd_power_on_step, lcd_power_off_step,
 	/* backlight */
+	60,255,10,128,128,
 	BL_CTRL_MAX,0,1,0,200,200,
-	BL_PWM_POSITIVE,BL_PWM_B,180,100,25,1,0,180,220,
-	60,10,255,128,128},
+	BL_PWM_POSITIVE,BL_PWM_B,180,100,25,1,0,
+	Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	10,10,Rsv_val},
+
+	{.panel_type = "invalid"},
 };
 
 //**** Special parameters just for Vbyone ***//
@@ -205,19 +222,15 @@ struct bl_config_s bl_config_dft = {
 	.power_on_delay = 200,
 	.power_off_delay = 200,
 
-	.gpio = 0,
-	.gpio_on = 1,
-	.gpio_off = 0,
+	.en_gpio = 0xff,
+	.en_gpio_on = 1,
+	.en_gpio_off = 0,
 
-	.pwm_method = BL_PWM_POSITIVE,
-	.pwm_port = BL_PWM_B,
-	.pwm_freq = 200,
-	.pwm_duty_max = 100,
-	.pwm_duty_min = 20,
-	.pwm_gpio = 1,
-	.pwm_gpio_off = 0,
-	.pwm_on_delay = 180,
-	.pwm_off_delay = 220,
+	.bl_pwm = NULL,
+	.bl_pwm_combo0 = NULL,
+	.bl_pwm_combo1 = NULL,
+	.pwm_on_delay = 10,
+	.pwm_off_delay = 10,
 
 	.pinmux_set = {{10, 0x00800000}, {LCD_PINMUX_END, 0x0}},
 	.pinmux_clr = {{10, 0x0100a000}, {LCD_PINMUX_END, 0x0}},
