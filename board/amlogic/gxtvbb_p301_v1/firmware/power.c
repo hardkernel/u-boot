@@ -199,6 +199,7 @@ void pwm_set_voltage(unsigned int id, unsigned int voltage)
 
 void power_init(int mode)
 {
+    unsigned int reg;
 	serial_puts("set vcck to ");
 	serial_put_dec(CONFIG_VCCK_INIT_VOLTAGE);
 	serial_puts(" mv\n");
@@ -209,4 +210,9 @@ void power_init(int mode)
 	pwm_set_voltage(pwm_ao_b, CONFIG_VDDEE_INIT_VOLTAGE);
 	pwm_init(pwm_a);
 	pwm_init(pwm_ao_b);
+	serial_puts("set vddee enable AO_8 to high\n ");
+	reg = readl(AO_GPIO_O_EN_N);
+	reg &= ~(1 << 8);
+	reg |=  (1 << 24);
+	writel(reg, AO_GPIO_O_EN_N);
 }
