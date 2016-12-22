@@ -614,8 +614,14 @@ static struct phy_device *create_phy_by_mask(struct mii_dev *bus,
 		int addr = ffs(phy_mask) - 1;
 		int r = get_phy_id(bus, addr, devad, &phy_id);
 		/* If the PHY ID is mostly f's, we didn't find anything */
+#ifdef CONFIG_PXP_EMULATOR
+		if (r == 0 && (phy_id & 0x1fffffff) != 0x1fffffff)
+#else
 		if (phy_id != 0 && r == 0 && (phy_id & 0x1fffffff) != 0x1fffffff)
+#endif
+		{
 			return phy_device_create(bus, addr, phy_id, interface);
+		}
 		phy_mask &= ~(1 << addr);
 	}
 	return NULL;

@@ -117,7 +117,11 @@ static void setup_net_chip(void)
 	eth_reg0.b.eth_urgent = 0;
 	setbits_le32(P_PREG_ETH_REG0, eth_reg0.d32);// rmii mode
 	*P_PREG_ETH_REG2 = 0x10110181;
+#ifdef CONFIG_PXP_EMULATOR
+	*P_PREG_ETH_REG3 = 0x642000b0;
+#else
 	*P_PREG_ETH_REG3 = 0xe409087f;
+#endif
 	setbits_le32(HHI_GCLK_MPEG1,1<<3);
 	/* power on memory */
 	clrbits_le32(HHI_MEM_PD_REG0, (1 << 3) | (1<<2));

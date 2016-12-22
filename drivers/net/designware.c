@@ -242,8 +242,12 @@ static int dw_eth_init(struct eth_device *dev, bd_t *bis)
 	while (readl(&dma_p->busmode) & DMAMAC_SRST) {
 		if (get_timer(start) >= CONFIG_MACRESET_TIMEOUT)
 			return -1;
-
+#ifdef CONFIG_PXP_EMULATOR
+		udelay(100);
+#else
 		mdelay(100);
+#endif
+
 	};
 
 	/* Soft reset above clears HW address registers.
@@ -266,7 +270,11 @@ static int dw_eth_init(struct eth_device *dev, bd_t *bis)
 		       priv->phydev->dev->name);
 		return -1;
 	}
-
+#ifdef CONFIG_PXP_EMULATOR
+	priv->phydev->link = 1;
+	priv->phydev->speed = 100;
+	priv->phydev->duplex = 1;
+#endif
 	dw_adjust_link(mac_p, priv->phydev);
 
 	if (!priv->phydev->link)
@@ -355,7 +363,6 @@ static int dw_eth_recv(struct eth_device *dev)
 
 	/* Check  if the owner is the CPU */
 	if (!(status & DESC_RXSTS_OWNBYDMA)) {
-
 		length = (status & DESC_RXSTS_FRMLENMSK) >> \
 			 DESC_RXSTS_FRMLENSHFT;
 
