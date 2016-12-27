@@ -83,11 +83,30 @@ static const reg_remote RDECODEMODE_RCA[] = {
 	{CONFIG_END, 0}
 };
 
+static const reg_remote RDECODEMODE_RC5[] = {
+	{ AO_MF_IR_DEC_LDR_ACTIVE ,  0            },
+	{ AO_MF_IR_DEC_LDR_IDLE   ,  0            },
+	{ AO_MF_IR_DEC_LDR_REPEAT ,  0            },
+	{ AO_MF_IR_DEC_BIT_0      ,  0            },
+	{ AO_MF_IR_DEC_REG0       ,  ((3 << 28) | (0x1644 << 12) | 0x13)},
+	{ AO_MF_IR_DEC_STATUS     ,  (1 << 30)    },
+	{ AO_MF_IR_DEC_REG1       ,  ((1 << 15) | (13 << 8))},
+	/*bit[0-3]: RC5; bit[8]: MSB first mode; bit[11]: compare frame method*/
+	{ AO_MF_IR_DEC_REG2       ,  ((1 << 13) | (1 << 11) | (1 << 8) | 0x7)},
+	/*Half bit for RC5 format: 888.89us*/
+	{ AO_MF_IR_DEC_DURATN2    ,  ((49 << 16) | (40 << 0))  },
+	/*RC5 typically 1777.78us for whole bit*/
+	{ AO_MF_IR_DEC_DURATN3    ,  ((94 << 16) | (83 << 0))  },
+	{ AO_MF_IR_DEC_REG3       ,  0			 },
+	{CONFIG_END, 0}
+};
+
 static const reg_remote *remoteregsTab[] = {
 	RDECODEMODE_NEC,
 	RDECODEMODE_DUOKAN,
 	RDECODEMODE_TOSHIBA,
 	RDECODEMODE_RCA,
+	RDECODEMODE_RC5,
 };
 
 void setremotereg(const reg_remote * r)
@@ -147,7 +166,7 @@ static int ir_remote_init_32k_mode(void)
 	//volatile unsigned int status,data_value;
 	int val = readl(AO_RTI_PIN_MUX_REG);
 	writel((val | (1 << 0)), AO_RTI_PIN_MUX_REG);
-	set_remote_mode(0);
+	set_remote_mode(CONFIG_IR_REMOTE_USE_PROTOCOL);
 	//status = readl(AO_MF_IR_DEC_STATUS);
 	readl(AO_MF_IR_DEC_STATUS);
 	//data_value = readl(AO_MF_IR_DEC_FRAME);
