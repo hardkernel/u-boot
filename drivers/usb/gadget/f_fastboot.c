@@ -138,7 +138,7 @@ unsigned int ddr_size_usable(unsigned int addr_start)
 	for (i = 0; i < CONFIG_NR_DRAM_BANKS; i++)
 		ddr_size += gd->bd->bi_dram[i].size;
 
-	return (ddr_size - DRAM_UBOOT_RESERVE - addr_start - CONFIG_SYS_MALLOC_LEN);
+	return (ddr_size - DRAM_UBOOT_RESERVE - addr_start - CONFIG_SYS_MALLOC_LEN - CONFIG_SYS_MEM_TOP_HIDE);
 }
 
 static void rx_handler_command(struct usb_ep *ep, struct usb_request *req);
