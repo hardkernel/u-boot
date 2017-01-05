@@ -192,6 +192,7 @@
             "if keyman init 0x1234; then "\
                 "if keyman read usid ${loadaddr} str; then "\
                     "setenv bootargs ${bootargs} androidboot.serialno=${usid};"\
+                    "setenv serial ${usid};"\
                 "fi;"\
                 "if keyman read mac ${loadaddr} str; then "\
                     "setenv bootargs ${bootargs} mac=${mac} androidboot.mac=${mac};"\

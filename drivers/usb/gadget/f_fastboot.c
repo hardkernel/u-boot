@@ -390,12 +390,11 @@ static void cb_getvar(struct usb_ep *ep, struct usb_request *req)
 		sprintf(str_num, "0x%08x", ddr_size_usable(CONFIG_USB_FASTBOOT_BUF_ADDR));
 		strncat(response, str_num, chars_left);
 	} else if (!strcmp_l1("serialno", cmd)) {
-		/*s = getenv("serial#");*/
-		s = DEVICE_SERIAL;
+		s = getenv("serial");
 		if (s)
 			strncat(response, s, chars_left);
 		else
-			strcpy(response, "FAILValue not set");
+			strncat(response, DEVICE_SERIAL, chars_left);
 	} else if (!strcmp_l1("product", cmd)) {
 		s1 = DEVICE_PRODUCT;
 		strncat(response, s1, chars_left);

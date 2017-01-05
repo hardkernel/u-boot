@@ -263,6 +263,7 @@ static struct usb_composite_driver g_dnl_driver = {
 int g_dnl_register(const char *name)
 {
 	int ret;
+	char *s;
 
 	printf("%s: g_dnl_driver.name = %s\n", __func__, name);
 	g_dnl_driver.name = name;
@@ -272,6 +273,12 @@ int g_dnl_register(const char *name)
 		printf("%s: failed!, error: %d\n", __func__, ret);
 		return ret;
 	}
+
+	s = getenv("serial");
+	if (s) {
+		g_dnl_set_serialnumber(s);
+	}
+
 	return 0;
 }
 
