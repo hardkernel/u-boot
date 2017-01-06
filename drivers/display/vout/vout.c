@@ -96,6 +96,12 @@ static const vout_set_t vout_sets[] = {
 		.width             = 1280,
 		.height            = 720,
 	},
+	{ /* VMODE_768P */
+		.name              = "768p",
+		.mode              = VMODE_768P,
+		.width             = 1366,
+		.height            = 768,
+	},
 	{ /* VMODE_1080I */
 		.name              = "1080i",
 		.mode              = VMODE_1080I,
@@ -339,6 +345,11 @@ static int get_window_axis(int *axis)
 		axis[1] = getenv_int("720p_y", 0);
 		axis[2] = getenv_int("720p_w", 1280);
 		axis[3] = getenv_int("720p_h", 720);
+	} else if (strncmp(mode, "768p", 4) == 0) {
+		axis[0] = getenv_int("768p_x", 0);
+		axis[1] = getenv_int("768p_y", 0);
+		axis[2] = getenv_int("768p_w", 1366);
+		axis[3] = getenv_int("768p_h", 768);
 	} else if (strncmp(mode, "1080i", 5) == 0) {
 		axis[0] = getenv_int("1080i_x", 0);
 		axis[1] = getenv_int("1080i_y", 0);
