@@ -97,12 +97,12 @@ static void set_hpll_clk_out(unsigned clk)
 
 	switch (clk) {
 	case 5940000:
-		hd_write_reg(P_HHI_HDMI_PLL_CNTL, 0x400002f7);
+		hd_write_reg(P_HHI_HDMI_PLL_CNTL, 0x4000027b);
 		if (frac_rate)
-			hd_write_reg(P_HHI_HDMI_PLL_CNTL2, 0x800cb103);
+			hd_write_reg(P_HHI_HDMI_PLL_CNTL2, 0x800cb281);
 		else
-			hd_write_reg(P_HHI_HDMI_PLL_CNTL2, 0x800cb200);
-		hd_write_reg(P_HHI_HDMI_PLL_CNTL3, 0x860f30c4);
+			hd_write_reg(P_HHI_HDMI_PLL_CNTL2, 0x800cb300);
+		hd_write_reg(P_HHI_HDMI_PLL_CNTL3, 0xc60f30e0);
 		hd_write_reg(P_HHI_HDMI_PLL_CNTL4, 0x0c8e0000);
 		hd_write_reg(P_HHI_HDMI_PLL_CNTL5, 0x001fa729);
 		hd_write_reg(P_HHI_HDMI_PLL_CNTL6, 0x01a31500);
