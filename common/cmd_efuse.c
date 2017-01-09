@@ -255,5 +255,55 @@ U_BOOT_CMD(
 	"efuse read/write data commands", efuse_help_text
 );
 
+#include <asm/arch/secure_apb.h>
+
+static int do_query(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+	int nReturn = CMD_RET_USAGE;
+
+	if (argc < 2)
+		goto exit;
+
+	struct{
+		char *szQuery;	unsigned long lAddrConfig;	unsigned int nMask; unsigned int nNegFlag;
+	} ArrQuery[] = {
+		{"SecureBoot",AO_SEC_SD_CFG10,1<<4,0},//SecureBoot : 1:enabled;0:disabled
+		{"Dolby",AO_SEC_SD_CFG10,1<<16,0},    //Dolby : 1:enabled; 0: disabled
+		{"DTS",AO_SEC_SD_CFG10,1<<14,0},      //DTS: 1: enabled; 0:disabled
+											  //add more query support here ...
+		{NULL,0,0,0}
+	};
+
+	int nIndex;
+	for (nIndex = 0;nIndex < sizeof(ArrQuery)/sizeof(ArrQuery[0]);++nIndex)
+	{
+		if (ArrQuery[nIndex].szQuery)
+		{
+			if (!strcmp(ArrQuery[nIndex].szQuery,argv[1]))
+			{
+				nReturn  = (readl(ArrQuery[nIndex].lAddrConfig) & ArrQuery[nIndex].nMask) ? 1 : 0;
+				nReturn ^= (ArrQuery[nIndex].nNegFlag ? 1 : 0);
+				break;
+			}
+		}
+	}
+
+exit:
+
+	return nReturn;
+}
+
+static char query_text[] =
+	"[query SecureBoot/Dolby/DTS]\n"
+	"  [SecureBoot]  - query SoC is secure boot enabled(1) or not(0)\n"
+	"  [Dolby]       - query SoC support Dolby (1) or not(0)\n"
+	"  [DTS]         - query SoC support DTS (1) or not(0)\n"
+	"  examples: query SecureBoot\n";
+
+U_BOOT_CMD(
+	query,	5,	2,	do_query,
+	"SoC query commands", query_text
+);
+
 
 /****************************************************/
