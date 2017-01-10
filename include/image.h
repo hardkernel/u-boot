@@ -1238,6 +1238,25 @@ ulong android_image_get_end(const struct andr_img_hdr *hdr);
 ulong android_image_get_kload(const struct andr_img_hdr *hdr);
 void android_print_contents(const struct andr_img_hdr *hdr);
 
+/** android_image_load - Load an Android Image from storage.
+ *
+ * Load an Android Image based on the header size in the storage. Return the
+ * number of bytes read from storage, which could be bigger than the actual
+ * Android Image as described in the header size. In case of error reading the
+ * image or if the image size needed to be read from disk is bigger than the
+ * the passed |max_size| a negative number is returned.
+ *
+ * @dev_desc:		The device where to read the image from
+ * @part_info:		The partition in |dev_desc| where to read the image from
+ * @load_address:	The address where the image will be loaded
+ * @max_size:		The maximum loaded size, in bytes
+ * @return the number of bytes read or a negative number in case of error.
+ */
+long android_image_load(struct blk_desc *dev_desc,
+			const disk_partition_t *part_info,
+			unsigned long load_address,
+			unsigned long max_size);
+
 #endif /* CONFIG_ANDROID_BOOT_IMAGE */
 
 /**

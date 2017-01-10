@@ -8,6 +8,7 @@
 #include <image.h>
 #include <android_image.h>
 #include <malloc.h>
+#include <mapmem.h>
 #include <errno.h>
 
 #define ANDROID_IMAGE_DEFAULT_KERNEL_ADDR	0x10008000
@@ -144,6 +145,56 @@ int android_image_get_ramdisk(const struct andr_img_hdr *hdr,
 
 	*rd_len = hdr->ramdisk_size;
 	return 0;
+}
+
+long android_image_load(struct blk_desc *dev_desc,
+			const disk_partition_t *part_info,
+			unsigned long load_address,
+			unsigned long max_size) {
+	void *buf;
+	long blk_cnt, blk_read = 0;
+
+	if (max_size < part_info->blksz)
+		return -1;
+
+	/* We don't know the size of the Android image before reading the header
+	 * so we don't limit the size of the mapped memory.
+	 */
+	buf = map_sysmem(load_address, 0 /* size */);
+
+	/* Read the Android header first and then read the rest. */
+	if (blk_dread(dev_desc, part_info->start, 1, buf) != 1)
+		blk_read = -1;
+
+	if (!blk_read && android_image_check_header(buf) != 0) {
+		printf("** Invalid Android Image header **\n");
+		blk_read = -1;
+	}
+	if (!blk_read) {
+		blk_cnt = (android_image_get_end(buf) - (ulong)buf +
+			   part_info->blksz - 1) / part_info->blksz;
+		if (blk_cnt * part_info->blksz > max_size) {
+			debug("Android Image too big (%lu bytes, max %lu)\n",
+			      android_image_get_end(buf) - (ulong)buf,
+			      max_size);
+			blk_read = -1;
+		} else {
+			debug("Loading Android Image (%lu blocks) to 0x%lx... ",
+			      blk_cnt, load_address);
+			blk_read = blk_dread(dev_desc, part_info->start,
+					     blk_cnt, buf);
+		}
+	}
+
+	unmap_sysmem(buf);
+	if (blk_read < 0)
+		return blk_read;
+
+	debug("%lu blocks read: %s\n",
+	      blk_read, (blk_read == blk_cnt) ? "OK" : "ERROR");
+	if (blk_read != blk_cnt)
+		return -1;
+	return blk_read;
 }
 
 #if !defined(CONFIG_SPL_BUILD)
