@@ -322,10 +322,10 @@ static void lcd_info_print(void)
 		   "pn_swap           %u\n"
 		   "port_swap         %u\n"
 		   "lane_reverse      %u\n"
-		   "phy_vswing        %u\n"
-		   "phy_preem         %u\n"
-		   "phy_clk_vswing    %u\n"
-		   "phy_clk_preem     %u\n\n",
+		   "phy_vswing        0x%x\n"
+		   "phy_preem         0x%x\n"
+		   "phy_clk_vswing    0x%x\n"
+		   "phy_clk_preem     0x%x\n\n",
 		   pconf->lcd_control.lvds_config->lvds_repack,
 		   pconf->lcd_control.lvds_config->dual_port,
 		   pconf->lcd_control.lvds_config->pn_swap,
@@ -340,8 +340,8 @@ static void lcd_info_print(void)
 		printf("lane_count        %u\n"
 		   "region_num        %u\n"
 		   "byte_mode         %u\n"
-		   "phy_vswing        %u\n"
-		   "phy_preemphasis   %u\n\n",
+		   "phy_vswing        0x%x\n"
+		   "phy_preemphasis   0x%x\n\n",
 		   pconf->lcd_control.vbyone_config->lane_count,
 		   pconf->lcd_control.vbyone_config->region_num,
 		   pconf->lcd_control.vbyone_config->byte_mode,

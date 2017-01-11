@@ -190,22 +190,22 @@ static void lcd_lvds_phy_set(struct lcd_config_s *pconf, int status)
 		clk_vswing = pconf->lcd_control.lvds_config->phy_clk_vswing;
 		clk_preem = pconf->lcd_control.lvds_config->phy_clk_preem;
 		if (vswing > 7) {
-			LCDERR("%s: wrong vswing_level=%d, use default\n",
+			LCDERR("%s: wrong vswing_level=0x%x, use default\n",
 				__func__, vswing);
 			vswing = LVDS_PHY_VSWING_DFT;
 		}
 		if (preem > 7) {
-			LCDERR("%s: wrong preemphasis_level=%d, use default\n",
+			LCDERR("%s: wrong preemphasis_level=0x%x, use default\n",
 				__func__, preem);
 			preem = LVDS_PHY_PREEM_DFT;
 		}
 		if (clk_vswing > 7) {
-			LCDERR("%s: wrong clk_vswing_level=%d, use default\n",
+			LCDERR("%s: wrong clk_vswing_level=0x%x, use default\n",
 				__func__, clk_vswing);
 			clk_vswing = LVDS_PHY_CLK_VSWING_DFT;
 		}
 		if (clk_preem > 7) {
-			LCDERR("%s: wrong clk_preem_level=%d, use default\n",
+			LCDERR("%s: wrong clk_preem_level=0x%x, use default\n",
 				__func__, clk_preem);
 			clk_preem = LVDS_PHY_CLK_PREEM_DFT;
 		}

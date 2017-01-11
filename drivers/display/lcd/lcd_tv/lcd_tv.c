@@ -394,10 +394,10 @@ static int lcd_config_load_from_dts(char *dt_addr, struct lcd_config_s *pconf)
 				pconf->lcd_control.lvds_config->phy_clk_vswing = be32_to_cpup((((u32*)propdata)+2));
 				pconf->lcd_control.lvds_config->phy_clk_preem  = be32_to_cpup((((u32*)propdata)+3));
 				if (lcd_debug_print_flag) {
-					LCDPR("set phy vswing=%d, preemphasis=%d\n",
+					LCDPR("set phy vswing=0x%x, preemphasis=0x%x\n",
 						pconf->lcd_control.lvds_config->phy_vswing,
 						pconf->lcd_control.lvds_config->phy_preem);
-					LCDPR("set phy clk_vswing=%d, clk_preemphasis=%d\n",
+					LCDPR("set phy clk_vswing=0x%x, clk_preemphasis=0x%x\n",
 						pconf->lcd_control.lvds_config->phy_clk_vswing,
 						pconf->lcd_control.lvds_config->phy_clk_preem);
 				}
@@ -407,7 +407,7 @@ static int lcd_config_load_from_dts(char *dt_addr, struct lcd_config_s *pconf)
 				pconf->lcd_control.lvds_config->phy_clk_vswing = LVDS_PHY_CLK_VSWING_DFT;
 				pconf->lcd_control.lvds_config->phy_clk_preem  = LVDS_PHY_CLK_PREEM_DFT;
 				if (lcd_debug_print_flag) {
-					LCDPR("set phy vswing=%d, preemphasis=%d\n",
+					LCDPR("set phy vswing=0x%x, preemphasis=0x%x\n",
 						pconf->lcd_control.lvds_config->phy_vswing,
 						pconf->lcd_control.lvds_config->phy_preem);
 				}
@@ -436,7 +436,7 @@ static int lcd_config_load_from_dts(char *dt_addr, struct lcd_config_s *pconf)
 			pconf->lcd_control.vbyone_config->phy_vswing = be32_to_cpup((u32*)propdata);
 			pconf->lcd_control.vbyone_config->phy_preem  = be32_to_cpup((((u32*)propdata)+1));
 			if (lcd_debug_print_flag) {
-				LCDPR("set phy vswing=%d, preemphasis=%d\n",
+				LCDPR("set phy vswing=0x%x, preemphasis=0x%x\n",
 					pconf->lcd_control.vbyone_config->phy_vswing,
 					pconf->lcd_control.vbyone_config->phy_preem);
 			}
