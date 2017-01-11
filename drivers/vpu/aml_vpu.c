@@ -29,9 +29,13 @@
 #include "aml_vpu_reg.h"
 #include "aml_vpu.h"
 
-#define VPU_VERION	"v02"
+#define VPU_VERION	"v03"
 
+#ifndef DTB_BIND_KERNEL
+#ifdef CONFIG_OF_LIBFDT
 static char *dt_addr;
+#endif
+#endif
 static int dts_ready = 0;
 
 static struct vpu_conf_s vpu_conf = {
@@ -50,73 +54,121 @@ static void vpu_chip_detect(void)
 	switch (cpu_type) {
 	case MESON_CPU_MAJOR_ID_M8:
 		vpu_chip_type = VPU_CHIP_M8;
+#ifdef CONFIG_VPU_CLK_LEVEL_DFT
+		vpu_conf.clk_level_dft = CONFIG_VPU_CLK_LEVEL_DFT;
+#else
 		vpu_conf.clk_level_dft = CLK_LEVEL_DFT_M8;
+#endif
 		vpu_conf.clk_level_max = CLK_LEVEL_MAX_M8;
 		vpu_conf.fclk_type = FCLK_TYPE_M8;
 		break;
 	case MESON_CPU_MAJOR_ID_M8B:
 		vpu_chip_type = VPU_CHIP_M8B;
+#ifdef CONFIG_VPU_CLK_LEVEL_DFT
+		vpu_conf.clk_level_dft = CONFIG_VPU_CLK_LEVEL_DFT;
+#else
 		vpu_conf.clk_level_dft = CLK_LEVEL_DFT_M8B;
+#endif
 		vpu_conf.clk_level_max = CLK_LEVEL_MAX_M8B;
 		vpu_conf.fclk_type = FCLK_TYPE_M8B;
 		break;
 	case MESON_CPU_MAJOR_ID_M8M2:
 		vpu_chip_type = VPU_CHIP_M8M2;
+#ifdef CONFIG_VPU_CLK_LEVEL_DFT
+		vpu_conf.clk_level_dft = CONFIG_VPU_CLK_LEVEL_DFT;
+#else
 		vpu_conf.clk_level_dft = CLK_LEVEL_DFT_M8M2;
+#endif
 		vpu_conf.clk_level_max = CLK_LEVEL_MAX_M8M2;
 		vpu_conf.fclk_type = FCLK_TYPE_M8M2;
 		break;
 	case MESON_CPU_MAJOR_ID_MG9TV:
 		vpu_chip_type = VPU_CHIP_G9TV;
+#ifdef CONFIG_VPU_CLK_LEVEL_DFT
+		vpu_conf.clk_level_dft = CONFIG_VPU_CLK_LEVEL_DFT;
+#else
 		vpu_conf.clk_level_dft = CLK_LEVEL_DFT_G9TV;
+#endif
 		vpu_conf.clk_level_max = CLK_LEVEL_MAX_G9TV;
 		vpu_conf.fclk_type = FCLK_TYPE_G9TV;
 		break;
 	/* case MESON_CPU_MAJOR_ID_MG9BB:
 		vpu_chip_type = VPU_CHIP_G9BB;
+#ifdef CONFIG_VPU_CLK_LEVEL_DFT
+		vpu_conf.clk_level_dft = CONFIG_VPU_CLK_LEVEL_DFT;
+#else
 		vpu_conf.clk_level_dft = CLK_LEVEL_DFT_G9BB;
+#endif
 		vpu_conf.clk_level_max = CLK_LEVEL_MAX_G9BB;
 		vpu_conf.fclk_type = FCLK_TYPE_G9BB;
 		break; */
 	case MESON_CPU_MAJOR_ID_GXBB:
 		vpu_chip_type = VPU_CHIP_GXBB;
+#ifdef CONFIG_VPU_CLK_LEVEL_DFT
+		vpu_conf.clk_level_dft = CONFIG_VPU_CLK_LEVEL_DFT;
+#else
 		vpu_conf.clk_level_dft = CLK_LEVEL_DFT_GXBB;
+#endif
 		vpu_conf.clk_level_max = CLK_LEVEL_MAX_GXBB;
 		vpu_conf.fclk_type = FCLK_TYPE_GXBB;
 		break;
 	case MESON_CPU_MAJOR_ID_GXTVBB:
 		vpu_chip_type = VPU_CHIP_GXTVBB;
+#ifdef CONFIG_VPU_CLK_LEVEL_DFT
+		vpu_conf.clk_level_dft = CONFIG_VPU_CLK_LEVEL_DFT;
+#else
 		vpu_conf.clk_level_dft = CLK_LEVEL_DFT_GXTVBB;
+#endif
 		vpu_conf.clk_level_max = CLK_LEVEL_MAX_GXTVBB;
 		vpu_conf.fclk_type = FCLK_TYPE_GXTVBB;
 		break;
 	case MESON_CPU_MAJOR_ID_GXL:
 		vpu_chip_type = VPU_CHIP_GXL;
+#ifdef CONFIG_VPU_CLK_LEVEL_DFT
+		vpu_conf.clk_level_dft = CONFIG_VPU_CLK_LEVEL_DFT;
+#else
 		vpu_conf.clk_level_dft = CLK_LEVEL_DFT_GXL;
+#endif
 		vpu_conf.clk_level_max = CLK_LEVEL_MAX_GXL;
 		vpu_conf.fclk_type = FCLK_TYPE_GXL;
 		break;
 	case MESON_CPU_MAJOR_ID_GXM:
 		vpu_chip_type = VPU_CHIP_GXM;
+#ifdef CONFIG_VPU_CLK_LEVEL_DFT
+		vpu_conf.clk_level_dft = CONFIG_VPU_CLK_LEVEL_DFT;
+#else
 		vpu_conf.clk_level_dft = CLK_LEVEL_DFT_GXM;
+#endif
 		vpu_conf.clk_level_max = CLK_LEVEL_MAX_GXM;
 		vpu_conf.fclk_type = FCLK_TYPE_GXM;
 		break;
 	case MESON_CPU_MAJOR_ID_TXL:
 		vpu_chip_type = VPU_CHIP_TXL;
+#ifdef CONFIG_VPU_CLK_LEVEL_DFT
+		vpu_conf.clk_level_dft = CONFIG_VPU_CLK_LEVEL_DFT;
+#else
 		vpu_conf.clk_level_dft = CLK_LEVEL_DFT_TXL;
+#endif
 		vpu_conf.clk_level_max = CLK_LEVEL_MAX_TXL;
 		vpu_conf.fclk_type = FCLK_TYPE_TXL;
 		break;
 	default:
 		vpu_chip_type = VPU_CHIP_GXBB;
+#ifdef CONFIG_VPU_CLK_LEVEL_DFT
+		vpu_conf.clk_level_dft = CONFIG_VPU_CLK_LEVEL_DFT;
+#else
 		vpu_conf.clk_level_dft = CLK_LEVEL_DFT_GXBB;
+#endif
 		vpu_conf.clk_level_max = CLK_LEVEL_MAX_GXBB;
 		vpu_conf.fclk_type = FCLK_TYPE_GXBB;
 	}
 #else
 	vpu_chip_type = VPU_CHIP_GXBB;
+#ifdef CONFIG_VPU_CLK_LEVEL_DFT
+	vpu_conf.clk_level_dft = CONFIG_VPU_CLK_LEVEL_DFT;
+#else
 	vpu_conf.clk_level_dft = CLK_LEVEL_DFT_GXBB;
+#endif
 	vpu_conf.clk_level_max = CLK_LEVEL_MAX_GXBB;
 	vpu_conf.fclk_type = FCLK_TYPE_GXBB;
 #endif
@@ -544,11 +596,15 @@ static void vpu_power_off(void)
 
 static int get_vpu_config(void)
 {
+#ifndef DTB_BIND_KERNEL
+#ifdef CONFIG_OF_LIBFDT
 	int nodeoffset;
 	char * propdata;
-
+#endif
+#endif
 
 	if (dts_ready == 1) {
+#ifndef DTB_BIND_KERNEL
 #ifdef CONFIG_OF_LIBFDT
 		nodeoffset = fdt_path_offset(dt_addr, "/vpu");
 		if (nodeoffset < 0) {
@@ -569,6 +625,7 @@ static int get_vpu_config(void)
 		}
 		VPUPR("clk_level in dts: %u\n", vpu_conf.clk_level);
 #endif
+#endif
 	} else {
 		vpu_conf.clk_level = vpu_conf.clk_level_dft;
 		VPUPR("clk_level = %u\n", vpu_conf.clk_level);
@@ -582,6 +639,7 @@ int vpu_probe(void)
 	int ret;
 
 	dts_ready = 0;
+#ifndef DTB_BIND_KERNEL
 #ifdef CONFIG_OF_LIBFDT
 #ifdef CONFIG_DTB_MEM_ADDR
 	dt_addr = (char *)CONFIG_DTB_MEM_ADDR;
@@ -595,6 +653,7 @@ int vpu_probe(void)
 	} else {
 		dts_ready = 1;
 	}
+#endif
 #endif
 
 	vpu_chip_detect();
