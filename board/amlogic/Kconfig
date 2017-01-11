@@ -91,6 +91,10 @@ config TXL_P341_V2
 	bool "Support amlogic txl t950 p341 v2 board"
 	default n
 
+config TXL_P346_V1
+	bool "Support amlogic txl t960 p346 v1 board"
+	default n
+
 config PXP_EMULATOR
 	bool "Support pxp environment"
 	default n
@@ -192,6 +196,10 @@ endif
 
 if TXL_P341_V2
 source "board/amlogic/txl_p341_v2/Kconfig"
+endif
+
+if TXL_P346_V1
+source "board/amlogic/txl_p346_v1/Kconfig"
 endif
 
 if ODROID_C2
