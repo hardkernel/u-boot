@@ -220,6 +220,7 @@ static void set_hpll_clk_out(unsigned clk)
 	printk("config HPLL done\n");
 }
 
+/* HERE MUST BE BIT OPERATION!!! */
 static void set_hpll_sspll(struct hdmitx_dev *hdev)
 {
 	enum hdmi_vic vic = hdev->vic;
@@ -227,20 +228,20 @@ static void set_hpll_sspll(struct hdmitx_dev *hdev)
 	switch (vic) {
 	case HDMI_1920x1080p60_16x9:
 	case HDMI_1920x1080p50_16x9:
-		hd_write_reg(P_HHI_HDMI_PLL_CNTL3, 0x868b48c4);
+		hd_set_reg_bits(P_HHI_HDMI_PLL_CNTL3, 0x68b48c4, 0, 30);
 		break;
 	case HDMI_1280x720p60_16x9:
 	case HDMI_1280x720p50_16x9:
 	case HDMI_1920x1080i60_16x9:
 	case HDMI_1920x1080i50_16x9:
-		hd_write_reg(P_HHI_HDMI_PLL_CNTL3, 0x864348c4);
+		hd_set_reg_bits(P_HHI_HDMI_PLL_CNTL3, 0x64348c4, 0, 30);
 		break;
 	case HDMI_3840x2160p50_16x9:
 	case HDMI_3840x2160p60_16x9:
 	case HDMI_4096x2160p50_256x135:
 	case HDMI_4096x2160p60_256x135:
 		if (hdev->para->cs == HDMI_COLOR_FORMAT_420)
-			hd_write_reg(P_HHI_HDMI_PLL_CNTL3, 0x862b44c4);
+			hd_set_reg_bits(P_HHI_HDMI_PLL_CNTL3, 0x62b44c4, 0, 30);
 		break;
 	case HDMI_3840x2160p30_16x9:
 	case HDMI_3840x2160p25_16x9:
@@ -248,7 +249,7 @@ static void set_hpll_sspll(struct hdmitx_dev *hdev)
 	case HDMI_4096x2160p30_256x135:
 	case HDMI_4096x2160p25_256x135:
 	case HDMI_4096x2160p24_256x135:
-		hd_write_reg(P_HHI_HDMI_PLL_CNTL3, 0x862b44c4);
+		hd_set_reg_bits(P_HHI_HDMI_PLL_CNTL3, 0x62b44c4, 0, 30);
 		break;
 	default:
 		break;
@@ -446,7 +447,7 @@ static struct hw_enc_clk_val_group setting_enc_clk_val_24[] = {
 	  HDMI_3840x2160p60_16x9_Y420,
 	  HDMI_3840x2160p50_16x9_Y420,
 	  GROUP_END},
-		1, VIU_ENCP, 2970000, 1, 1, 1, VID_PLL_DIV_5, 1, 2, 1, -1},
+		1, VIU_ENCP, 5940000, 2, 1, 1, VID_PLL_DIV_5, 1, 2, 1, -1},
 };
 
 /* For colordepth 10bits */
@@ -589,7 +590,7 @@ next:
 	set_viu_path(p_enc[j].viu_path, p_enc[j].viu_type);
 	set_hdmitx_sys_clk();
 	set_hpll_clk_out(p_enc[j].hpll_clk_out);
-	if (1)
+	if (!getenv("sspll_dis"))
 		set_hpll_sspll(hdev);
 	set_hpll_od1(p_enc[j].od1);
 	set_hpll_od2(p_enc[j].od2);
