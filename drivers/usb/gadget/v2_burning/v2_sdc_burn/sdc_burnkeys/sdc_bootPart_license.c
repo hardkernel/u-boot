@@ -156,7 +156,7 @@ int optimus_sdc_bootPart_lic_get_key_infdata(const char* keyName, void** keyInfA
 
         //3, find the item and return the count, return 0 if not found
         for(itemIndex = 0; itemIndex < itemCnt; ++itemIndex,
-                        pBootPartKeyItemInf = (BootPartKeyInf_Item_t*)(pBootPartKeyItemInf->nextItemInfOffset + _OPT_BOOT_PART_LIC_INFO_LOADADDR))
+                        pBootPartKeyItemInf = (BootPartKeyInf_Item_t*)(pBootPartKeyItemInf->nextItemInfOffset + (void*)_OPT_BOOT_PART_LIC_INFO_LOADADDR))
         {
                 const unsigned char* theKeyName = pBootPartKeyItemInf->keyName;
 

@@ -8,7 +8,16 @@
 #include <linux/err.h>
 #include <partition_table.h>
 
-unsigned char *cmd_name = (unsigned char *)("store");
+#define DbgP(fmt...)   //printf("[burnupDbg]"fmt)
+#define MsgP(fmt...)   printf("[burnup]"fmt)
+#define ErrP(fmt...)   printf("[burnup]Err:%s,L%d:", __func__, __LINE__),printf(fmt)
+
+static unsigned char *cmd_name = (unsigned char *)("store");
+extern const char*   _usbDownPartImgType;
+
+#define MtdAlignBits    (12) //32k
+#define MtdAlignSz      (1U << MtdAlignBits)
+#define MtdAlignMask    (MtdAlignSz - 1)
 
 /***
 upgrade_read_ops:
@@ -25,18 +34,33 @@ int store_read_ops(unsigned char *partition_name,unsigned char * buf, uint64_t o
         int ret =0;
 
         if (!buf) {
-                store_msg("upgrade: no buf!!");
+                ErrP("upgrade: no buf!!");
                 return -1;
         }
 
         name = partition_name;
         addr = (unsigned long)buf;
 
-        sprintf(str, "%s  read %s 0x%llx  0x%llx  0x%llx",cmd_name, name, addr, off, size);
-        store_dbg("command:	%s", str);
+#if CONFIG_AML_MTD
+        if (size & MtdAlignMask ) {
+                MsgP("Rd:Up sz 0x%llx to align 0x%x\n", size, MtdAlignSz);
+                size = ((size + MtdAlignMask)>>MtdAlignBits) << MtdAlignBits;
+        }
+#if defined(UBIFS_IMG) || defined(CONFIG_CMD_UBIFS)
+        if (!strcmp(_usbDownPartImgType, "ubifs")) {
+                sprintf(str, "%s  read 0x%llx %s 0x%llx", "ubi", addr, name, size);
+                MsgP("cmd[%s]", str);
+        } else
+#endif
+#endif//#if CONFIG_AML_MTD
+        {// not ubi part
+                sprintf(str, "%s  read %s 0x%llx  0x%llx  0x%llx", cmd_name, name, addr, off, size);
+        }
+
+        DbgP("run cmd[%s]\n", str);
         ret = run_command(str, 0);
         if (ret != 0) {
-                store_msg("cmd %s failed ",cmd_name);
+                ErrP("cmd failed, ret=%d, [%s]\n", ret, str);
                 return -1;
         }
 
@@ -65,11 +89,25 @@ int store_write_ops(unsigned char *partition_name,unsigned char * buf, uint64_t 
         name = partition_name;
         addr = (unsigned long)buf;
 
-        sprintf(str, "%s  write %s 0x%llx  0x%llx  0x%llx",cmd_name, name, addr, off, size);
-        store_dbg("command:	%s", str);
+#if CONFIG_AML_MTD
+        if (size & MtdAlignMask ) {
+                MsgP("Wr:Up sz 0x%llx to align 0x%x\n", size, MtdAlignSz);
+                size = ((size + MtdAlignMask)>>MtdAlignBits) << MtdAlignBits;
+        }
+#if defined(UBIFS_IMG) || defined(CONFIG_CMD_UBIFS)
+        if (strcmp(_usbDownPartImgType, "ubifs")) {
+                sprintf(str, "%s  write %s 0x%llx  0x%llx  0x%llx", cmd_name, name, addr, off, size);
+        } else
+#endif// #if defined(UBIFS_IMG) || defined(CONFIG_CMD_UBIFS)
+#endif// #if CONFIG_AML_MTD
+        {//ubi part
+                sprintf(str, "%s  write 0x%llx %s 0x%llx  ", "ubi", addr, name, size);
+        }
+
+        DbgP("run cmd[%s]\n", str);
         ret = run_command(str, 0);
         if (ret != 0) {
-                store_msg("cmd %s failed ",cmd_name);
+                ErrP("cmd [%s] failed ", str);
                 return -1;
         }
 
@@ -104,7 +142,7 @@ int store_get_partititon_size(unsigned char *partition_name, uint64_t *size)
         store_dbg("command:	%s", str);
         ret = run_command(str, 0);
         if (ret != 0) {
-                store_msg("cmd %s size failed ",cmd_name);
+                MsgP("cmd [%s ] size failed ",cmd_name);
                 return -1;
         }
 
@@ -233,12 +271,12 @@ int store_init(unsigned  flag)
         store_dbg("command:	%s", str);
         ret = run_command(str, 0);
         if (ret != 0) {
-                store_msg("cmd [%s] init failed ",cmd_name);
+                store_msg("cmd [%s] init failed ",str);
                 return -1;
         }
-
         return 0;
 }
+
 
 int store_exit(void)
 {

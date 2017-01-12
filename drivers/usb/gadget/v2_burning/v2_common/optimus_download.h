@@ -191,5 +191,11 @@ int optimus_work_mode_set(int workmode);
 #define _ENV_TIME_OUT_TO_AUTO_BURN "identifyWaitTime"
 #define AML_SYS_RECOVERY_PART      "aml_sysrecovery"
 
+#if defined(CONFIG_AML_MTD) && (defined(UBIFS_IMG) || defined(CONFIG_CMD_UBIFS))
+#define OPTIMUS_BURN_TARGET_SUPPORT_UBIFS       1
+#else
+#define OPTIMUS_BURN_TARGET_SUPPORT_UBIFS       0
+#endif// #if defined(CONFIG_AML_MTD) && (defined(UBIFS_IMG) || defined(CONFIG_CMD_UBIFS))
+
 #endif//ifndef __OPTIMUS_DOWNLOAD_H__
 

@@ -61,6 +61,7 @@ enum {
     IMG_TYPE_NORMAL             ,
     IMG_TYPE_BOOTLOADER         ,
     IMG_TYPE_DTB                ,
+    IMG_TYPE_UBIFS		,
 };
 
 //Image info for burnning and verify
@@ -85,6 +86,7 @@ struct ImgBurnInfo{
 };
 
 static struct ImgBurnInfo OptimusImgBurnInfo = {0};
+const char*   _usbDownPartImgType = "";
 
 struct imgBurnInfo_sparse{
 
@@ -101,7 +103,7 @@ struct imgBurnInfo_bootloader{
 
 COMPILE_TIME_ASSERT(IMG_BURN_INFO_SZ == sizeof(struct ImgBurnInfo));
 
-#if 1
+#if defined(CONFIG_STORE_COMPATIBLE) && !defined(CONFIG_AML_MTD)
 //asset logical partition size >= CFG size in storage.c
 //nand often make mistake this size, emmc should always ok
 static int _assert_logic_partition_cap(const char* thePartName, const uint64_t nandPartCap)
@@ -130,8 +132,6 @@ static int _assert_logic_partition_cap(const char* thePartName, const uint64_t n
         DWN_ERR("Can't find your download part(%s)\n", thePartName);
         return __LINE__;
 }
-#else
-#define _assert_logic_partition_cap(...)        0
 #endif
 
 //return value is the actual size it write
@@ -386,6 +386,9 @@ static u32 optimus_storage_write(struct ImgBurnInfo* pDownInfo, u64 addrOrOffset
                 switch (imgType)
                 {
                     case IMG_TYPE_NORMAL:
+#if defined(UBIFS_IMG) || defined(CONFIG_CMD_UBIFS)
+                    case IMG_TYPE_UBIFS:
+#endif// #if defined(UBIFS_IMG) || defined(CONFIG_CMD_UBIFS)
                         burnSz = optimus_download_normal_image(pDownInfo, dataSz, data);
                         break;
 
@@ -556,12 +559,13 @@ _err:
 static int _parse_img_download_info(struct ImgBurnInfo* pDownInfo, const char* partName,
                                      const u64 imgSz, const char* imgType, const char* mediaType, const u64 partBaseOffset)
 {
-    u64 partCap = 0;
     int ret = 0;
 
     memset(pDownInfo, 0, sizeof(struct ImgBurnInfo));//clear burnning info
 
     //TODO: check format is normal/bootloader if upload!!
+
+    _usbDownPartImgType = "";
 
     if (!strcmp("sparse", imgType))
     {
@@ -577,6 +581,11 @@ static int _parse_img_download_info(struct ImgBurnInfo* pDownInfo, const char* p
     else if(!strcmp("normal", imgType))
     {
         pDownInfo->imgType = (u8)IMG_TYPE_NORMAL;
+    }
+    else if(!strcmp("ubifs", imgType))
+    {
+        pDownInfo->imgType = IMG_TYPE_UBIFS;
+        _usbDownPartImgType = "ubifs";
     }
     else{
         DWN_ERR("err image type %s\n", imgType);
@@ -622,8 +631,10 @@ static int _parse_img_download_info(struct ImgBurnInfo* pDownInfo, const char* p
 
     if (OPTIMUS_MEDIA_TYPE_MEM > pDownInfo->storageMediaType) //if command for burning partition
     {
+#if defined(CONFIG_STORE_COMPATIBLE) && !defined(CONFIG_AML_MTD)
         if (strcmp("bootloader", partName) && strcmp("_aml_dtb", partName)) //get size if not bootloader
         {
+            u64 partCap = 0;
             ret = store_get_partititon_size((u8*)partName, &partCap);
             if (ret) {
                 DWN_ERR("Fail to get size for part %s\n", partName);
@@ -641,6 +652,30 @@ static int _parse_img_download_info(struct ImgBurnInfo* pDownInfo, const char* p
                     return __LINE__;
             }
         }
+#elif OPTIMUS_BURN_TARGET_SUPPORT_UBIFS
+        if (IMG_TYPE_UBIFS == pDownInfo->imgType) //get size if not bootloader
+        {
+                char cmd[64];
+                static int _ubiDeviceIndex = 0;
+               // ret = run_command("mtdparts default", 0);
+               // if(ret){
+               //         DWN_ERR("Fail in mtd def\n"); return __LINE__;
+               // }
+                sprintf(cmd, "ubi part %s", partName);
+                ret = run_command(cmd, 0);
+                if (ret) {
+                        DWN_ERR("Fail in run cmd[%s]\n", cmd); return __LINE__;
+                }
+                sprintf(cmd, "ubi device %d", _ubiDeviceIndex++);
+                ret = run_command(cmd, 0);
+                sprintf(cmd, "ubi create %s", partName);
+                ret = run_command(cmd, 0);
+                if (ret) {
+                        DWN_ERR("Fail in run cmd[%s]\n", cmd); return __LINE__;
+                }
+        }
+#else
+#endif// #if CONFIG_NEXT_NAND
     }
 
     pDownInfo->nextMediaOffset  = pDownInfo->imgSzDisposed = 0;
@@ -919,7 +954,12 @@ static int optimus_sha1sum_verify_partition(const char* partName, const u64 veri
     {
         for (; leftLen;)
         {
+#if defined(UBIFS_IMG) || defined(CONFIG_CMD_UBIFS)
+            int thisReadLen = leftLen;
+#else
             int thisReadLen = (leftLen > buffSz) ? buffSz : ((u32)leftLen);
+#endif
+
             u64 addrOffset = verifyLen - leftLen;
 
             ret = optimus_storage_read(&OptimusImgBurnInfo, addrOffset, thisReadLen, buff, NULL);
