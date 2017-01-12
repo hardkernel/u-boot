@@ -158,7 +158,7 @@ int aml_lcd_extern_i2c_DLPC3439_probe(struct aml_lcd_extern_driver_s *ext_drv)
 {
 	int ret = 0;
 
-	ext_config = &ext_drv->config;
+	ext_config = ext_drv->config;
 	ret = lcd_extern_driver_update(ext_drv);
 
 	if (lcd_debug_print_flag)

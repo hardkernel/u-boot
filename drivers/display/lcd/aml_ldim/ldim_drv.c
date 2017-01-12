@@ -158,9 +158,13 @@ static struct aml_ldim_driver_s ldim_driver = {
 
 struct aml_ldim_driver_s *aml_ldim_get_driver(void)
 {
-	return &ldim_driver;
+	if (ldim_driver.valid_flag)
+		return &ldim_driver;
+	else
+		return NULL;
 }
 
+#ifndef DTB_BIND_KERNEL
 #ifdef CONFIG_OF_LIBFDT
 static int ldim_config_load_from_dts(char *dt_addr)
 {
@@ -206,17 +210,19 @@ static int ldim_config_load_from_dts(char *dt_addr)
 	return 0;
 }
 #endif
+#endif
 
 int aml_ldim_probe(char *dt_addr, int flag)
 {
 	unsigned int size;
-	int ret = 0;
+	int ret = -1;
 
 	ldim_on_flag = 0;
 	ldim_level = 0;
 
 	switch (flag) {
 	case 0: /* dts */
+#ifndef DTB_BIND_KERNEL
 #ifdef CONFIG_OF_LIBFDT
 		if (dt_addr) {
 			if (lcd_debug_print_flag)
@@ -225,14 +231,23 @@ int aml_ldim_probe(char *dt_addr, int flag)
 			ret = aml_ldim_device_probe(dt_addr);
 		}
 #endif
+#endif
 		break;
-	case 1:
+	case 1: /* bsp */
+		LDIMPR("%s: not support bsp config\n", __func__);
 		break;
-	case 2:
+	case 2: /* unifykey */
+		LDIMPR("%s: not support unifykey config\n", __func__);
 		break;
 	default:
 		break;
 	}
+
+	if (ret) {
+		LDIMERR("%s failed\n", __func__);
+		return ret;
+	}
+
 	size = ldim_blk_row * ldim_blk_col;
 	ldim_driver.ldim_matrix_buf = (unsigned short *)malloc(sizeof(unsigned short) * size);
 	if (ldim_driver.ldim_matrix_buf == NULL) {

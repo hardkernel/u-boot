@@ -15,6 +15,9 @@
 
 #ifndef _LCD_EXTERN_H_
 #define _LCD_EXTERN_H_
+#ifdef CONFIG_SYS_I2C_AML
+#include <aml_i2c.h>
+#endif
 
 #define EXTPR(fmt, args...)     printf("lcd extern: "fmt"", ## args)
 #define EXTERR(fmt, args...)    printf("lcd extern: error: "fmt"", ## args)

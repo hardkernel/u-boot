@@ -220,6 +220,7 @@ static struct lcd_power_ctrl_s lcd_power_ctrl = {
 
 struct lcd_config_s lcd_config_dft = {
 	.lcd_mode = LCD_MODE_TV,
+	.lcd_key_valid = 0,
 	.lcd_basic = {
 		.model_name = "default",
 		.lcd_type = LCD_TYPE_MAX, //LCD_TTL /LCD_LVDS/LCD_VBYONE
@@ -256,8 +257,52 @@ struct lcd_config_s lcd_config_dft = {
 	.pinmux_clr = {{LCD_PINMUX_END, 0x0}},
 };
 
+#ifdef CONFIG_AML_LCD_EXTERN
+static char lcd_ext_gpio[LCD_EXTERN_GPIO_NUM_MAX][LCD_EXTERN_GPIO_LEN_MAX] = {
+	"invalid", /* ending flag */
+};
+
+#define LCD_EXTERN_NAME "ext_default"
+#define LCD_EXTERN_CMD_SIZE        9
+static unsigned char init_on_table[LCD_EXTERN_INIT_TABLE_MAX] = {
+	0x00, 0x20, 0x01, 0x02, 0x00, 0x40, 0xFF, 0x00, 0x00,
+	0x00, 0x80, 0x02, 0x00, 0x40, 0x62, 0x51, 0x73, 0x00,
+	0x00, 0x61, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0xC1, 0x05, 0x0F, 0x00, 0x08, 0x70, 0x00, 0x00,
+	0x00, 0x13, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x3D, 0x02, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0xED, 0x0D, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x23, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0A,  /* delay 10ms */
+	0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  /* ending */
+};
+
+static unsigned char init_off_table[LCD_EXTERN_INIT_TABLE_MAX] = {
+	0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  /* ending */
+};
+
+struct lcd_extern_config_s ext_config_dtf = {
+	.lcd_ext_key_valid = 0,
+	.index = LCD_EXTERN_INDEX_INVALID,
+	.type = LCD_EXTERN_MAX, /* LCD_EXTERN_I2C, LCD_EXTERN_SPI, LCD_EXTERN_MAX */
+	.status = 0, /* 0=disable, 1=enable */
+	.i2c_addr = 0x1c, /* 7bit i2c address */
+	.i2c_addr2 = 0xff, /* 7bit i2c address, 0xff for none */
+	.i2c_bus = LCD_EXTERN_I2C_BUS_D, /* LCD_EXTERN_I2C_BUS_AO, LCD_EXTERN_I2C_BUS_A/B/C/D */
+	.spi_gpio_cs = 0,
+	.spi_gpio_clk = 1,
+	.spi_gpio_data = 2,
+	.spi_clk_freq = 0, /* hz */
+	.spi_clk_pol = 0,
+	.cmd_size = LCD_EXTERN_CMD_SIZE,
+	.table_init_on = init_on_table,
+	.table_init_off = init_off_table,
+};
+#endif
+
 struct bl_config_s bl_config_dft = {
 	.name = "default",
+	.bl_key_valid = 0,
+
 	.level_default = 100,
 	.level_min = 10,
 	.level_max = 255,
@@ -283,7 +328,7 @@ struct bl_config_s bl_config_dft = {
 	.pinmux_clr = {{4, 0x00008000}, {3, 0x00200000}, {LCD_PINMUX_END, 0x0}},
 };
 
-void lcd_config_gpio_init(void)
+void lcd_config_bsp_init(void)
 {
 	int i, j;
 
@@ -301,4 +346,16 @@ void lcd_config_gpio_init(void)
 	}
 	for (j = i; j < BL_GPIO_NUM_MAX; j++)
 		strcpy(bl_config_dft.gpio_name[j], "invalid");
+
+#ifdef CONFIG_AML_LCD_EXTERN
+	for (i = 0; i < LCD_EXTERN_GPIO_NUM_MAX; i++) {
+		if (strcmp(lcd_ext_gpio[i], "invalid") == 0)
+			break;
+		strcpy(ext_config_dtf.gpio_name[i], lcd_ext_gpio[i]);
+	}
+	for (j = i; j < LCD_EXTERN_GPIO_NUM_MAX; j++)
+		strcpy(ext_config_dtf.gpio_name[j], "invalid");
+
+	strcpy(ext_config_dtf.name, LCD_EXTERN_NAME);
+#endif
 }

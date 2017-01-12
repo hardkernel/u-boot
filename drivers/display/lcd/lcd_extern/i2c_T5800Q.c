@@ -172,9 +172,9 @@ static int lcd_extern_power_ctrl(int flag)
 
 	/* step 2: power cmd */
 	if (flag)
-		ret = lcd_extern_power_cmd(ext_drv->config.table_init_on);
+		ret = lcd_extern_power_cmd(ext_drv->config->table_init_on);
 	else
-		ret = lcd_extern_power_cmd(ext_drv->config.table_init_off);
+		ret = lcd_extern_power_cmd(ext_drv->config->table_init_off);
 
 	/* step 3: power finish */
 #ifdef LCD_EXT_I2C_PORT_INIT
@@ -209,17 +209,17 @@ static int lcd_extern_driver_update(struct aml_lcd_extern_driver_s *ext_drv)
 		return -1;
 	}
 
-	if (ext_drv->config.type == LCD_EXTERN_MAX) { //default for no dts
-		ext_drv->config.index = LCD_EXTERN_INDEX;
-		ext_drv->config.type = LCD_EXTERN_TYPE;
-		strcpy(ext_drv->config.name, LCD_EXTERN_NAME);
-		ext_drv->config.cmd_size = LCD_EXTERN_CMD_SIZE;
-		ext_drv->config.i2c_addr = LCD_EXTERN_I2C_ADDR;
-		ext_drv->config.i2c_bus = LCD_EXTERN_I2C_BUS;
+	if (ext_drv->config->type == LCD_EXTERN_MAX) { //default for no dts
+		ext_drv->config->index = LCD_EXTERN_INDEX;
+		ext_drv->config->type = LCD_EXTERN_TYPE;
+		strcpy(ext_drv->config->name, LCD_EXTERN_NAME);
+		ext_drv->config->cmd_size = LCD_EXTERN_CMD_SIZE;
+		ext_drv->config->i2c_addr = LCD_EXTERN_I2C_ADDR;
+		ext_drv->config->i2c_bus = LCD_EXTERN_I2C_BUS;
 	}
-	if (ext_drv->config.table_init_loaded == 0) {
-		ext_drv->config.table_init_on  = init_on_table;
-		ext_drv->config.table_init_off = init_off_table;
+	if (ext_drv->config->table_init_loaded == 0) {
+		ext_drv->config->table_init_on  = init_on_table;
+		ext_drv->config->table_init_off = init_off_table;
 	}
 	ext_drv->reg_read  = lcd_extern_reg_read;
 	ext_drv->reg_write = lcd_extern_reg_write;
@@ -238,7 +238,7 @@ int aml_lcd_extern_i2c_T5800Q_probe(struct aml_lcd_extern_driver_s *ext_drv)
 {
 	int ret = 0;
 
-	ext_config = &ext_drv->config;
+	ext_config = ext_drv->config;
 	ret = lcd_extern_driver_update(ext_drv);
 
 	if (lcd_debug_print_flag)

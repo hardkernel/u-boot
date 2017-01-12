@@ -31,6 +31,7 @@
 #define PANEL_NAME	"panel"
 
 unsigned int lcd_debug_print_flag;
+unsigned int lcd_debug_test;
 static struct aml_lcd_drv_s aml_lcd_driver;
 
 static void lcd_chip_detect(void)
@@ -599,6 +600,7 @@ static int lcd_extern_load_config(char *dt_addr, struct lcd_config_s *pconf)
 }
 #endif
 
+#ifndef DTB_BIND_KERNEL
 #ifdef CONFIG_OF_LIBFDT
 static int lcd_init_load_from_dts(char *dt_addr)
 {
@@ -671,14 +673,15 @@ static int lcd_init_load_from_dts(char *dt_addr)
 	return 0;
 }
 #endif
+#endif
 
 static int lcd_init_load_from_bsp(void)
 {
 	struct lcd_config_s *pconf = aml_lcd_driver.lcd_config;
 	int i, j;
 
-	pconf->lcd_key_valid = 0;
-	aml_lcd_driver.bl_config->bl_key_valid = 0;
+	/*pconf->lcd_key_valid = 0;
+	aml_lcd_driver.bl_config->bl_key_valid = 0;*/
 	LCDPR("detect mode: %s, key_valid: %d\n",
 		lcd_mode_mode_to_str(pconf->lcd_mode), pconf->lcd_key_valid);
 
@@ -698,11 +701,11 @@ static int lcd_init_load_from_bsp(void)
 static int lcd_mode_probe(void)
 {
 	int load_id = 0;
-	unsigned int lcd_debug_test = 0;
 	char *dt_addr, *str;
 	int ret;
 
 	dt_addr = NULL;
+#ifndef DTB_BIND_KERNEL
 #ifdef CONFIG_OF_LIBFDT
 #ifdef CONFIG_DTB_MEM_ADDR
 	dt_addr = (char *)CONFIG_DTB_MEM_ADDR;
@@ -716,7 +719,9 @@ static int lcd_mode_probe(void)
 		load_id = 0x1;
 	}
 #endif
+#endif
 
+	lcd_debug_test = 0;
 	str = getenv("lcd_debug_test");
 	if (str == NULL)
 		lcd_debug_test = 0;
@@ -728,6 +733,7 @@ static int lcd_mode_probe(void)
 	}
 
 	if (load_id & 0x1 ) {
+#ifndef DTB_BIND_KERNEL
 #ifdef CONFIG_OF_LIBFDT
 		ret = lcd_init_load_from_dts(dt_addr);
 		if (ret)
@@ -744,6 +750,7 @@ static int lcd_mode_probe(void)
 			LCDPR("load config from dts\n");
 		}
 #endif
+#endif
 	} else {
 		ret = lcd_init_load_from_bsp();
 		if (ret)
@@ -754,10 +761,10 @@ static int lcd_mode_probe(void)
 				LCDPR("load lcd_config from unifykey\n");
 				load_id |= 0x10;
 			} else {
-				LCDPR("load lcd_config from lcd.c\n");
+				LCDPR("load lcd_config from bsp\n");
 			}
 		} else {
-			LCDPR("load config from lcd.c\n");
+			LCDPR("load config from bsp\n");
 		}
 	}
 
@@ -793,7 +800,6 @@ static int lcd_mode_probe(void)
 			LCDPR("load backlight_config from unifykey\n");
 			load_id |= 0x10;
 		} else {
-			LCDPR("load backlight_config from dts\n");
 			load_id &= ~(0x10);
 		}
 	} else {
@@ -822,7 +828,7 @@ int lcd_probe(void)
 #endif
 
 	lcd_chip_detect();
-	lcd_config_gpio_init();
+	lcd_config_bsp_init();
 	lcd_clk_config_probe();
 	ret = lcd_mode_probe();
 	if (ret)

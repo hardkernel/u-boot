@@ -482,7 +482,7 @@ struct aml_lcd_drv_s {
 	void (*lcd_extern_info)(void);
 };
 
-extern void lcd_config_gpio_init(void);
+extern void lcd_config_bsp_init(void);
 
 extern struct aml_lcd_drv_s *aml_lcd_get_driver(void);
 

@@ -198,12 +198,12 @@ static int lcd_extern_driver_update(struct aml_lcd_extern_driver_s *ext_drv)
 		return -1;
 	}
 
-	if (ext_drv->config.type == LCD_EXTERN_MAX) { //default for no dt
-		ext_drv->config.index = LCD_EXTERN_INDEX;
-		ext_drv->config.type = LCD_EXTERN_TYPE;
-		strcpy(ext_drv->config.name, LCD_EXTERN_NAME);
-		ext_drv->config.i2c_addr = LCD_EXTERN_I2C_ADDR;
-		ext_drv->config.i2c_bus = LCD_EXTERN_I2C_BUS;
+	if (ext_drv->config->type == LCD_EXTERN_MAX) { //default for no dt
+		ext_drv->config->index = LCD_EXTERN_INDEX;
+		ext_drv->config->type = LCD_EXTERN_TYPE;
+		strcpy(ext_drv->config->name, LCD_EXTERN_NAME);
+		ext_drv->config->i2c_addr = LCD_EXTERN_I2C_ADDR;
+		ext_drv->config->i2c_bus = LCD_EXTERN_I2C_BUS;
 	}
 	ext_drv->reg_read  = lcd_extern_reg_read;
 	ext_drv->reg_write = lcd_extern_reg_write;
@@ -222,7 +222,7 @@ int aml_lcd_extern_i2c_tc101_probe(struct aml_lcd_extern_driver_s *ext_drv)
 {
 	int ret = 0;
 
-	ext_config = &ext_drv->config;
+	ext_config = ext_drv->config;
 	ret = lcd_extern_driver_update(ext_drv);
 
 	if (lcd_debug_print_flag)

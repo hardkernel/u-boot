@@ -342,31 +342,31 @@ static int lcd_extern_driver_update(struct aml_lcd_extern_driver_s *ext_drv)
 		return -1;
 	}
 
-	if (ext_drv->config.type == LCD_EXTERN_MAX) { //default for no dt
-		ext_drv->config.index = LCD_EXTERN_INDEX;
-		ext_drv->config.type = LCD_EXTERN_TYPE;
-		strcpy(ext_drv->config.name, LCD_EXTERN_NAME);
-		ext_drv->config.cmd_size = LCD_EXTERN_CMD_SIZE;
-		switch (ext_drv->config.type) {
+	if (ext_drv->config->type == LCD_EXTERN_MAX) { //default for no dt
+		ext_drv->config->index = LCD_EXTERN_INDEX;
+		ext_drv->config->type = LCD_EXTERN_TYPE;
+		strcpy(ext_drv->config->name, LCD_EXTERN_NAME);
+		ext_drv->config->cmd_size = LCD_EXTERN_CMD_SIZE;
+		switch (ext_drv->config->type) {
 		case LCD_EXTERN_I2C:
-			ext_drv->config.i2c_addr = LCD_EXTERN_I2C_ADDR;
-			ext_drv->config.i2c_addr2 = LCD_EXTERN_I2C_ADDR2;
-			ext_drv->config.i2c_bus = LCD_EXTERN_I2C_BUS;
+			ext_drv->config->i2c_addr = LCD_EXTERN_I2C_ADDR;
+			ext_drv->config->i2c_addr2 = LCD_EXTERN_I2C_ADDR2;
+			ext_drv->config->i2c_bus = LCD_EXTERN_I2C_BUS;
 			break;
 		case LCD_EXTERN_SPI:
-			ext_drv->config.spi_gpio_cs = SPI_GPIO_CS;
-			ext_drv->config.spi_gpio_clk = SPI_GPIO_CLK;
-			ext_drv->config.spi_gpio_data = SPI_GPIO_DATA;
-			ext_drv->config.spi_clk_freq = SPI_CLK_FREQ;
-			ext_drv->config.spi_clk_pol = SPI_CLK_POL;
+			ext_drv->config->spi_gpio_cs = SPI_GPIO_CS;
+			ext_drv->config->spi_gpio_clk = SPI_GPIO_CLK;
+			ext_drv->config->spi_gpio_data = SPI_GPIO_DATA;
+			ext_drv->config->spi_clk_freq = SPI_CLK_FREQ;
+			ext_drv->config->spi_clk_pol = SPI_CLK_POL;
 			break;
 		default:
 			break;
 		}
 	}
-	if (ext_drv->config.table_init_loaded == 0) {
-		ext_drv->config.table_init_on  = init_on_table;
-		ext_drv->config.table_init_off = init_off_table;
+	if (ext_drv->config->table_init_loaded == 0) {
+		ext_drv->config->table_init_on  = init_on_table;
+		ext_drv->config->table_init_off = init_off_table;
 	}
 	ext_drv->reg_read  = lcd_extern_reg_read;
 	ext_drv->reg_write = lcd_extern_reg_write;
@@ -380,7 +380,7 @@ int aml_lcd_extern_default_probe(struct aml_lcd_extern_driver_s *ext_drv)
 {
 	int ret = 0;
 
-	ext_config = &ext_drv->config;
+	ext_config = ext_drv->config;
 	ret = lcd_extern_driver_update(ext_drv);
 
 	if (lcd_debug_print_flag)

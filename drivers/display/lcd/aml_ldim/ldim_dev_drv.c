@@ -245,6 +245,8 @@ static int ldim_pwm_pinmux_ctrl(int status)
 	return 0;
 }
 
+#ifndef DTB_BIND_KERNEL
+#ifdef CONFIG_OF_LIBFDT
 static int ldim_dev_get_config_from_dts(char *dt_addr, int index)
 {
 	int parent_offset, child_offset;
@@ -264,7 +266,6 @@ static int ldim_dev_get_config_from_dts(char *dt_addr, int index)
 	ldim_dev_config.init_on[0] = 0xff;
 	ldim_dev_config.init_off[0] = 0xff;
 
-#ifdef CONFIG_OF_LIBFDT
 	if (dt_addr == NULL) {
 		LDIMERR("%s: dt_addr is NULL\n", __func__);
 		return -1;
@@ -586,28 +587,28 @@ static int ldim_dev_get_config_from_dts(char *dt_addr, int index)
 		}
 	}
 
-#endif
-
 	return 0;
 }
+#endif
+#endif
 
 static int ldim_dev_add_driver(struct ldim_dev_config_s *ldev_conf, int index)
 {
-	int ret = 0;
+	int ret = -1;
 
 #ifdef CONFIG_AML_SPICC
 	if (strcmp(ldev_conf->name, "iw7019") == 0) {
 #ifdef CONFIG_AML_LOCAL_DIMMING_IW7019
 		ret = ldim_dev_iw7019_probe();
-		goto ldim_dev_add_driver_next;
 #endif
+		goto ldim_dev_add_driver_next;
 	}
 
 	if (strcmp(ldev_conf->name, "iw7027") == 0) {
 #ifdef CONFIG_AML_LOCAL_DIMMING_IW7027
 		ret = ldim_dev_iw7027_probe();
-		goto ldim_dev_add_driver_next;
 #endif
+		goto ldim_dev_add_driver_next;
 	}
 
 #else
@@ -618,12 +619,12 @@ static int ldim_dev_add_driver(struct ldim_dev_config_s *ldev_conf, int index)
 	if (strcmp(ldev_conf->name, "ob3350") == 0) {
 #ifdef CONFIG_AML_LOCAL_DIMMING_OB3350
 		ret = ldim_dev_ob3350_probe();
-		goto ldim_dev_add_driver_next;
 #endif
-	} else {
-		LDIMERR("invalid device name: %s\n", ldev_conf->name);
-		ret = -1;
+		goto ldim_dev_add_driver_next;
 	}
+
+	LDIMERR("invalid device name: %s\n", ldev_conf->name);
+	ret = -1;
 
 ldim_dev_add_driver_next:
 	if (ret) {
@@ -639,21 +640,21 @@ ldim_dev_add_driver_next:
 static int ldim_dev_remove_driver(struct ldim_dev_config_s *ldev_conf,
 		int index)
 {
-	int ret = 0;
+	int ret = -1;
 
 #ifdef CONFIG_AML_SPICC
 	if (strcmp(ldev_conf->name, "iw7019") == 0) {
 #ifdef CONFIG_AML_LOCAL_DIMMING_IW7019
 		ret = ldim_dev_iw7019_remove();
-		goto ldim_dev_remove_driver_next;
 #endif
+		goto ldim_dev_remove_driver_next;
 	}
 
 	if (strcmp(ldev_conf->name, "iw7027") == 0) {
 #ifdef CONFIG_AML_LOCAL_DIMMING_IW7027
 		ret = ldim_dev_iw7027_remove();
-		goto ldim_dev_remove_driver_next;
 #endif
+		goto ldim_dev_remove_driver_next;
 	}
 
 #else
@@ -664,12 +665,12 @@ static int ldim_dev_remove_driver(struct ldim_dev_config_s *ldev_conf,
 	if (strcmp(ldev_conf->name, "ob3350") == 0) {
 #ifdef CONFIG_AML_LOCAL_DIMMING_OB3350
 		ret = ldim_dev_ob3350_remove();
-		goto ldim_dev_remove_driver_next;
 #endif
-	} else {
-		LDIMERR("invalid device name: %s\n", ldev_conf->name);
-		ret = -1;
+		goto ldim_dev_remove_driver_next;
 	}
+
+	LDIMERR("invalid device name: %s\n", ldev_conf->name);
+	ret = -1;
 
 ldim_dev_remove_driver_next:
 	if (ret) {
@@ -690,9 +691,14 @@ int aml_ldim_device_probe(char *dt_addr)
 	/* get configs */
 	ldim_drv->ldev_conf = &ldim_dev_config;
 	ldim_drv->pinmux_ctrl = ldim_pwm_pinmux_ctrl;
+
+#ifndef DTB_BIND_KERNEL
+#ifdef CONFIG_OF_LIBFDT
 	ret = ldim_dev_get_config_from_dts(dt_addr, ldim_drv->dev_index);
 	if (ret)
 		return -1;
+#endif
+#endif
 
 	/* add device driver */
 	ret = ldim_dev_add_driver(ldim_drv->ldev_conf, ldim_drv->dev_index);

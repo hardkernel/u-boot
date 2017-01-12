@@ -374,6 +374,11 @@ void aml_bl_pwm_config_update(struct bl_config_s *bconf)
 	struct aml_ldim_driver_s *ldim_drv;
 #endif
 
+	if (bconf == NULL) {
+		LCDERR("bl: bconf is null\n");
+		return;
+	}
+
 	switch (bconf->method) {
 	case BL_CTRL_PWM:
 		bl_pwm_config_init(bconf->bl_pwm);
@@ -385,10 +390,14 @@ void aml_bl_pwm_config_update(struct bl_config_s *bconf)
 #ifdef CONFIG_AML_LOCAL_DIMMING
 	case BL_CTRL_LOCAL_DIMING:
 		ldim_drv = aml_ldim_get_driver();
-		if (ldim_drv->ldev_conf)
-			bl_pwm_config_init(&ldim_drv->ldev_conf->pwm_config);
-		else
-			LCDERR("bl: ldim_config is null\n");
+		if (ldim_drv) {
+			if (ldim_drv->ldev_conf)
+				bl_pwm_config_init(&ldim_drv->ldev_conf->pwm_config);
+			else
+				LCDERR("bl: ldim_config is null\n");
+		} else {
+			LCDERR("bl: ldim_drv is null\n");
+		}
 		break;
 #endif
 	default:
@@ -944,7 +953,12 @@ void aml_bl_config_print(void)
 		break;
 #ifdef CONFIG_AML_LOCAL_DIMMING
 	case BL_CTRL_LOCAL_DIMING:
-		ldim_drv->config_print();
+		if (ldim_drv) {
+			if (ldim_drv->config_print)
+				ldim_drv->config_print();
+		} else {
+			LCDPR("bl: invalid local dimming driver\n");
+		}
 		break;
 #endif
 	case BL_CTRL_EXTERN:

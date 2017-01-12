@@ -29,6 +29,8 @@
 #include "../aml_lcd_common.h"
 #include "../aml_lcd_reg.h"
 
+//#define LCD_EXT_I2C_PORT_INIT     /* no need init i2c port here */
+
 #ifdef CONFIG_SYS_I2C_AML
 #define LCD_EXTERN_INDEX		1
 #define LCD_EXTERN_NAME			"i2c_ANX6345"
@@ -36,7 +38,9 @@
 #define LCD_EXTERN_I2C_ADDR		0x70
 #define LCD_EXTERN_I2C_BUS		AML_I2C_MASTER_B
 
-static unsigned aml_i2c_bus_tmp;
+#ifdef LCD_EXT_I2C_PORT_INIT
+static unsigned int aml_i2c_bus_tmp;
+#endif
 static struct lcd_extern_config_s *ext_config;
 extern int aml_i2c_xfer_slow(struct i2c_msg *msgs, int num);
 
@@ -455,35 +459,7 @@ static int lcd_extern_i2c_remove(void)
 	return ret;
 }
 
-static struct aml_lcd_extern_pinmux_s aml_lcd_extern_pinmux_set[] = {
-	{.reg = 9, .mux = ((1 << 28) | (1 << 29)),},
-};
-
-static struct aml_lcd_extern_pinmux_s aml_lcd_extern_pinmux_clr[] = {
-	{.reg = 0, .mux = ((1 << 7) | (1 << 10)),},
-	{.reg = 6, .mux = ((1 << 20) | (1 << 21)),},
-	{.reg = 8, .mux = ((1 << 19) | (1 << 20) |  (1 << 21) | (1 << 22) |(1 << 28)),},
-};
-
-static int lcd_extern_port_init(void)
-{
-	int i;
-	unsigned pinmux_reg, pinmux_data;
-
-	for (i = 0; i < ARRAY_SIZE(aml_lcd_extern_pinmux_clr); i++) {
-		pinmux_reg = aml_lcd_extern_pinmux_clr[i].reg;
-		pinmux_data = aml_lcd_extern_pinmux_clr[i].mux;
-		lcd_pinmux_clr_mask(pinmux_reg, pinmux_data);
-	}
-	for (i = 0; i < ARRAY_SIZE(aml_lcd_extern_pinmux_set); i++) {
-		pinmux_reg = aml_lcd_extern_pinmux_set[i].reg;
-		pinmux_data = aml_lcd_extern_pinmux_set[i].mux;
-		lcd_pinmux_set_mask(pinmux_reg, pinmux_data);
-	}
-
-	return 0;
-}
-
+#ifdef LCD_EXT_I2C_PORT_INIT
 static int lcd_extern_change_i2c_bus(unsigned aml_i2c_bus)
 {
 	int ret = 0;
@@ -494,18 +470,24 @@ static int lcd_extern_change_i2c_bus(unsigned aml_i2c_bus)
 
 	return ret;
 }
+#endif
 
 static int lcd_extern_power_on(void)
 {
 	int ret = 0;
+#ifdef LCD_EXT_I2C_PORT_INIT
 	extern struct aml_i2c_platform g_aml_i2c_plat;
 
 	aml_i2c_bus_tmp = g_aml_i2c_plat.master_no;
+#endif
 
-	lcd_extern_port_init();
+#ifdef LCD_EXT_I2C_PORT_INIT
 	lcd_extern_change_i2c_bus(ext_config->i2c_bus);
+#endif
 	ret = lcd_extern_i2c_init();
+#ifdef LCD_EXT_I2C_PORT_INIT
 	lcd_extern_change_i2c_bus(aml_i2c_bus_tmp);
+#endif
 
 	return ret;
 }
@@ -513,14 +495,19 @@ static int lcd_extern_power_on(void)
 static int lcd_extern_power_off(void)
 {
 	int ret = 0;
+#ifdef LCD_EXT_I2C_PORT_INIT
 	extern struct aml_i2c_platform g_aml_i2c_plat;
 
 	aml_i2c_bus_tmp = g_aml_i2c_plat.master_no;
+#endif
 
-	lcd_extern_port_init();
+#ifdef LCD_EXT_I2C_PORT_INIT
 	lcd_extern_change_i2c_bus(ext_config->i2c_bus);
+#endif
 	ret = lcd_extern_i2c_remove();
+#ifdef LCD_EXT_I2C_PORT_INIT
 	lcd_extern_change_i2c_bus(aml_i2c_bus_tmp);
+#endif
 
 	return ret;
 }
@@ -532,12 +519,12 @@ static int lcd_extern_driver_update(struct aml_lcd_extern_driver_s *ext_drv)
 		return -1;
 	}
 
-	if (ext_drv->config.type == LCD_EXTERN_MAX) { //default for no dt
-		ext_drv->config.index = LCD_EXTERN_INDEX;
-		ext_drv->config.type = LCD_EXTERN_TYPE;
-		strcpy(ext_drv->config.name, LCD_EXTERN_NAME);
-		ext_drv->config.i2c_addr = LCD_EXTERN_I2C_ADDR;
-		ext_drv->config.i2c_bus = LCD_EXTERN_I2C_BUS;
+	if (ext_drv->config->type == LCD_EXTERN_MAX) { //default for no dt
+		ext_drv->config->index = LCD_EXTERN_INDEX;
+		ext_drv->config->type = LCD_EXTERN_TYPE;
+		strcpy(ext_drv->config->name, LCD_EXTERN_NAME);
+		ext_drv->config->i2c_addr = LCD_EXTERN_I2C_ADDR;
+		ext_drv->config->i2c_bus = LCD_EXTERN_I2C_BUS;
 	}
 	ext_drv->reg_read  = lcd_extern_reg_read;
 	ext_drv->reg_write = lcd_extern_reg_write;
@@ -615,9 +602,9 @@ int aml_lcd_extern_i2c_anx6345_probe(struct aml_lcd_extern_driver_s *ext_drv)
 {
 	int ret = 0;
 
-	ext_config = &ext_drv->config;
+	ext_config = ext_drv->config;
 #ifdef CONFIG_OF_LIBFDT
-	aml_lcd_extern_get_dt_config(ext_drv->config.index);
+	aml_lcd_extern_get_dt_config(ext_drv->config->index);
 #endif
 	ret = lcd_extern_driver_update(ext_drv);
 

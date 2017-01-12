@@ -22,6 +22,7 @@
 #define VPP_OUT_SATURATE            (1 << 0)
 
 extern void mdelay(unsigned long n);
+extern unsigned int lcd_debug_test;
 
 /* lcd common */
 extern int lcd_type_str_to_type(const char *str);
