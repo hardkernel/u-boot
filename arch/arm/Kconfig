@@ -744,6 +744,10 @@ config TARGET_MESON_TXL
 	bool "Support meson txl-series 64bit"
 	select ARM64
 
+config TARGET_MESON_TXLX
+	bool "Support meson txlx-series 64bit"
+	select ARM64
+
 config TARGET_LS1021AQDS
 	bool "Support ls1021aqds"
 	select CPU_V7

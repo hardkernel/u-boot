@@ -34,7 +34,7 @@
 #define CONFIG_DDR_CHL_AUTO					0xF
 
 #define CFG_DDR_BASE_ADDR					0X0
-#define CFG_DDR_START_OFFSET				0X01000000 //SKIP 16MB
+#define CFG_DDR_START_OFFSET				0X00000000 //TXLX SKIP 0MB
 
 /* ddr type identifier */
 #define CONFIG_DDR_TIMMING_LPDDR2			0x02
