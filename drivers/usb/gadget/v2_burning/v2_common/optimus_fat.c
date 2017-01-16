@@ -930,12 +930,15 @@ long do_fat_fopen(const char *filename)
     char fnamecopy[2048];
     fsdata *mydata;
     int fd;
-    dir_entry *dentptr;
+    dir_entry *dentptr = NULL;
     char *subname = "";
     int rootdir_size, cursect;
     int idx, isdir = 0;
     boot_sector* bs = NULL;
     struct _fs_info* theFsInfo = NULL;
+    int buffer_blk_cnt = 0;
+    int do_read = 0;
+    unsigned int root_cluster = 0;
     /*int firsttime;*/
 
     if ((fd = get_fd()) < 0) {
@@ -952,8 +955,10 @@ long do_fat_fopen(const char *filename)
         put_fd(fd);
         return -1;
     }
+    const int isFat32 = (32 == mydata->fatsize);
     if (mydata->fatsize == 32) {
         mydata->fatlength = bs->fat32_length;
+        root_cluster = bs->root_cluster;
     } else {
         mydata->fatlength = bs->fat_length;
     }
@@ -1009,16 +1014,25 @@ long do_fat_fopen(const char *filename)
     {
         int i;
 
-        if (v2_ext_mmc_read(cursect, mydata->clust_size, _do_fat_read_block) < 0) {
-            FAT_ERROR ("Error: reading rootdir block\n");
-            put_fd(fd);
-            return -1;
+        do_read = (isFat32 && buffer_blk_cnt) ? 0 : 1;
+        FAT_DPRINT("FAT read(sect=%d), clust_size=%d, DIRENTSPERBLOCK=%zd\n", cursect, mydata->clust_size, DIRENTSPERBLOCK );
+        if (do_read) {
+                int read_blk = isFat32 ? mydata->clust_size : PREFETCH_BLOCKS;
+                if (v2_ext_mmc_read(cursect, read_blk, _do_fat_read_block) < 0) {
+                        FAT_ERROR ("Error: reading rootdir block\n");
+                        put_fd(fd);
+                        return -1;
+                }
+                dentptr = (dir_entry *) _do_fat_read_block;
         }
-        dentptr = (dir_entry *) _do_fat_read_block;
         for (i = 0; i < DIRENTSPERBLOCK; i++) {
             char s_name[14], l_name[256];
 
             l_name[0] = '\0';
+            if (DELETED_FLAG == dentptr->name[0]) {
+                    dentptr++;
+                    continue;
+            }
             if ((dentptr->attr & ATTR_VOLUME)) {
 #ifdef CONFIG_SUPPORT_VFAT
                 if (((dentptr->attr & ATTR_VFAT) == ATTR_VFAT) &&
@@ -1058,7 +1072,34 @@ long do_fat_fopen(const char *filename)
 
             goto rootdir_done;  /* We got a match */
         }
-        cursect++;
+
+        /*
+         * On FAT32 need fetch the FAT entries for the next root
+         * directory clusters when a cluster has been completed processed
+         */
+         ++buffer_blk_cnt;
+         int rootdir_end = 0;
+         if (isFat32) {
+                 if ( mydata->clust_size == buffer_blk_cnt ) {
+                         int nxt_cluster = get_fatent(mydata, root_cluster);
+                         rootdir_end = CHECK_CLUST(nxt_cluster, 32);
+                         int nxtsect = mydata->data_begin + (nxt_cluster * mydata->clust_size);
+
+                         root_cluster   = nxt_cluster;
+                         cursect        = nxtsect;
+                         buffer_blk_cnt = 0;
+                 }
+         } else {
+                 if (PREFETCH_BLOCKS == buffer_blk_cnt) buffer_blk_cnt = 0;
+                 rootdir_end = (++cursect - mydata->rootdir_sect >= rootdir_size);
+         }
+
+         //If end of rootdir reached
+         if (rootdir_end) {
+                 FAT_ERROR("Reach end of rootdir\n");
+                 put_fd(fd);
+                 return -1;
+         }
     }
 rootdir_done:
 
