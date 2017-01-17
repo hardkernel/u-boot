@@ -469,8 +469,6 @@ U_BOOT_CMD(hdmi_init, CONFIG_SYS_MAXARGS, 0, do_hdmi_init,
 #endif
 #ifdef CONFIG_BOARD_LATE_INIT
 int board_late_init(void){
-	int ret;
-
 	//update env before anyone using it
 	run_command("get_rebootmode; echo reboot_mode=${reboot_mode}; "\
 			"if test ${reboot_mode} = factory_reset; then "\
@@ -484,6 +482,8 @@ int board_late_init(void){
 	run_command("vout output $outputmode", 0);
 #endif
 	/*add board late init function here*/
+#ifndef DTB_BIND_KERNEL
+	int ret;
 	ret = run_command("store dtb read $dtb_mem_addr", 1);
 	if (ret) {
 		printf("%s(): [store dtb read $dtb_mem_addr] fail\n", __func__);
@@ -497,6 +497,20 @@ int board_late_init(void){
 		}
 		#endif
 	}
+#elif defined(CONFIG_DTB_MEM_ADDR)
+		{
+				char cmd[128];
+                if (!getenv("dtb_mem_addr")) {
+						sprintf(cmd, "setenv dtb_mem_addr 0x%x", CONFIG_DTB_MEM_ADDR);
+						run_command(cmd, 0);
+				}
+				sprintf(cmd, "imgread dtb boot ${dtb_mem_addr}");
+				ret = run_command(cmd, 0);
+                                if (ret) {
+						printf("%s(): cmd[%s] fail, ret=%d\n", __func__, cmd, ret);
+				}
+		}
+#endif// #ifndef DTB_BIND_KERNEL
 #ifdef CONFIG_AML_V2_FACTORY_BURN
 	aml_try_factory_sdcard_burning(0, gd->bd);
 #endif// #ifdef CONFIG_AML_V2_FACTORY_BURN

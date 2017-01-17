@@ -14,10 +14,9 @@
 #include <amlogic/storage_if.h>
 #include <image.h>
 #include <android_image.h>
-#ifdef CONFIG_OF_LIBFDT
+#include <asm/arch/bl31_apis.h>
+#include <asm/arch/secure_apb.h>
 #include <libfdt.h>
-#define DTB_PRELOAD_SZ  (4U<<10) //Total read 4k at first to read the image header
-#endif//#ifdef CONFIG_OF_LIBFDT
 
 typedef struct andr_img_hdr boot_img_hdr;
 
@@ -68,8 +67,14 @@ typedef struct _boot_img_hdr_secure_boot
 
 }AmlSecureBootImgHeader;
 
-/*#define COMPILE_TYPE_CHK(expr, t)       typedef char t[(expr) ? 1 : -1]*/
-/*COMPILE_TYPE_CHK(2048  == sizeof(AmlSecureBootImgHeader), _cc);*/
+#define COMPILE_TYPE_ASSERT(expr, t)       typedef char t[(expr) ? 1 : -1]
+COMPILE_TYPE_ASSERT(2048 >= sizeof(AmlSecureBootImgHeader), _cc);
+
+static int is_secure_boot_enabled(void)
+{
+    const unsigned long cfg10 = readl(AO_SEC_SD_CFG10);
+    return ( cfg10 & (0x1<< 4) );
+}
 
 static int _aml_get_secure_boot_kernel_size(const void* pLoadaddr, unsigned* pTotalEncKernelSz)
 {
@@ -79,11 +84,22 @@ static int _aml_get_secure_boot_kernel_size(const void* pLoadaddr, unsigned* pTo
     unsigned secureKernelImgSz = 2048;
     unsigned int nBlkCnt = amlEncrypteBootimgInfo->nBlkCnt;
     const t_aml_enc_blk* pBlkInf = NULL;
+    const int isSecure = is_secure_boot_enabled();
 
     *pTotalEncKernelSz = 0;
     rc = memcmp(AML_SECU_BOOT_IMG_HDR_MAGIC, amlEncrypteBootimgInfo->magic, AML_SECU_BOOT_IMG_HDR_MAGIC_SIZE);
-    if (rc) {
-            return 0;
+    if (rc) { // img NOT singed
+        if (isSecure) {
+            errorP("img NOT signed but secure boot enabled\n");
+            return __LINE__;
+        }
+        *pTotalEncKernelSz = 0;
+        return 0;
+    } else { //img signed
+            if (!isSecure) {
+                    errorP("Img signed but secure boot NOT enabled\n");
+                    return __LINE__;
+            }
     }
     if (AML_SECU_BOOT_IMG_HDR_VESRION != amlEncrypteBootimgInfo->version) {
             errorP("magic ok but version err, err ver=0x%x\n", amlEncrypteBootimgInfo->version);
@@ -100,8 +116,105 @@ static int _aml_get_secure_boot_kernel_size(const void* pLoadaddr, unsigned* pTo
     }
 
     *pTotalEncKernelSz = secureKernelImgSz;
-    return rc;
+    return 0;
 }
+
+
+static int do_image_read_dtb(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+    boot_img_hdr *hdr_addr = NULL;
+    const char* const partName = argv[1];
+    unsigned char* loadaddr = 0;
+    int nReturn = __LINE__;
+    uint64_t lflashReadOff = 0;
+    unsigned int nFlashLoadLen = 0;
+    unsigned secureKernelImgSz = 0;
+    const int preloadSz = 2048;
+
+    if (2 < argc) {
+        loadaddr = (unsigned char*)simple_strtoul(argv[2], NULL, 16);
+    }
+    else{
+        loadaddr = (unsigned char*)simple_strtoul(getenv("loadaddr"), NULL, 16);
+    }
+
+    hdr_addr = (boot_img_hdr*)loadaddr;
+
+    if (3 < argc) lflashReadOff = simple_strtoull(argv[3], NULL, 0) ;
+
+    nFlashLoadLen = preloadSz;//head info is one page size == 2k
+    debugP("sizeof preloadSz=%u\n", nFlashLoadLen);
+    nReturn = store_read_ops((unsigned char*)partName, loadaddr, lflashReadOff, nFlashLoadLen );
+    if (nReturn) {
+        errorP("Fail to read 0x%xB from part[%s] at offset 0\n", nFlashLoadLen, partName);
+        return __LINE__;
+    }
+
+    if (IMAGE_FORMAT_ANDROID != genimg_get_format(hdr_addr)) {
+        errorP("Fmt unsupported! only support 0x%x\n", IMAGE_FORMAT_ANDROID);
+        return __LINE__;
+    }
+
+    nReturn = _aml_get_secure_boot_kernel_size(loadaddr, &secureKernelImgSz);
+    if (nReturn) {
+        errorP("Fail in _aml_get_secure_boot_kernel_size, rc=%d\n", nReturn);
+        return __LINE__;
+    }
+
+    const int pageSz = hdr_addr->page_size;
+    /*lflashReadOff += secureKernelImgSz ? sizeof(AmlSecureBootImgHeader) : pageSz;*/
+    lflashReadOff += pageSz;
+    lflashReadOff += ALIGN(hdr_addr->kernel_size, pageSz);
+    lflashReadOff += ALIGN(hdr_addr->ramdisk_size, pageSz);
+    nFlashLoadLen  = ALIGN(hdr_addr->second_size, pageSz);
+
+    debugP("lflashReadOff=0x%llx, nFlashLoadLen=0x%x\n", lflashReadOff, nFlashLoadLen);
+    debugP("page sz %u\n", hdr_addr->page_size);
+    if (!nFlashLoadLen) {
+        errorP("NO second part in kernel image\n");
+        return __LINE__;
+    }
+    unsigned char* dtImgAddr = (unsigned char*)loadaddr + lflashReadOff;
+    nReturn = store_read_ops((unsigned char*)partName, dtImgAddr, lflashReadOff, nFlashLoadLen);
+    if (nReturn) {
+        errorP("Fail to read 0x%xB from part[%s] at offset 0x%x\n", nFlashLoadLen, partName, (unsigned int)lflashReadOff);
+        return __LINE__;
+    }
+
+    if (secureKernelImgSz) {
+        //because secure boot will use DMA which need disable MMU temp
+        //here must update the cache, otherwise nand will fail (eMMC is OK)
+        flush_cache((unsigned long)dtImgAddr,(unsigned long)nFlashLoadLen);
+
+        nReturn = aml_sec_boot_check(AML_D_P_IMG_DECRYPT,(unsigned long)loadaddr,GXB_IMG_SIZE,GXB_IMG_DEC_DTB);
+        if (nReturn) {
+            errorP("\n[dtb]aml log : Sig Check is %d\n",nReturn);
+            return __LINE__;
+        }
+        MsgP("Enc dtb sz 0x%x\n", nFlashLoadLen);
+    }
+
+    char* dtDestAddr = (char*)loadaddr;//simple_strtoull(getenv("dtb_mem_addr"), NULL, 0);
+    unsigned long fdtAddr = (unsigned long)dtImgAddr;
+#ifdef CONFIG_MULTI_DTB
+    extern unsigned long get_multi_dt_entry(unsigned long fdt_addr);
+    fdtAddr = get_multi_dt_entry((unsigned long)dtImgAddr);
+    if (!fdtAddr) {
+        errorP("Fail in fdt chk\n");
+        return __LINE__;
+    }
+#endif// #ifdef CONFIG_MULTI_DTB
+    nReturn = fdt_check_header((char*)fdtAddr);
+    if (nReturn) {
+        errorP("Fail in fdt check header\n");
+        return CMD_RET_FAILURE;
+    }
+    const unsigned fdtsz    = fdt_totalsize((char*)fdtAddr);
+    memmove(dtDestAddr, (char*)fdtAddr, fdtsz);
+
+    return nReturn;
+}
+
 
 static int do_image_read_kernel(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
@@ -416,6 +529,7 @@ static int do_image_read_pic(cmd_tbl_t *cmdtp, int flag, int argc, char * const 
 
 static cmd_tbl_t cmd_imgread_sub[] = {
     U_BOOT_CMD_MKENT(kernel, 4, 0, do_image_read_kernel, "", ""),
+    U_BOOT_CMD_MKENT(dtb,    4, 0, do_image_read_dtb, "", ""),
     U_BOOT_CMD_MKENT(res,    3, 0, do_image_read_res, "", ""),
     U_BOOT_CMD_MKENT(pic,    4, 0, do_image_read_pic, "", ""),
 };
@@ -447,6 +561,7 @@ U_BOOT_CMD(
    "    argv: <imageType> <part_name> <loadaddr> \n"   //usage
    "    - <image_type> Current support is kernel/res(ource).\n"
    "imgread kernel  --- Read image in fomart IMAGE_FORMAT_ANDROID\n"
+   "imgread dtb     --- Read dtb in fomart IMAGE_FORMAT_ANDROID\n"
    "imgread res     --- Read image packed by 'Amlogic resource packer'\n"
    "imgread picture --- Read one picture from Amlogic logo"
    "    - e.g. \n"

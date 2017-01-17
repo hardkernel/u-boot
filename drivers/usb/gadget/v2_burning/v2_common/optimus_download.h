@@ -110,7 +110,11 @@ unsigned v2_key_burn(const char* keyName, const u8* keyVal, const unsigned keyVa
 #define OPTIMUS_KEY_DECRYPT_BUF                 OPTIMUS_SPARSE_IMG_LEFT_DATA_ADDR_LOW//buffer for decrypt the key
 #define OPTIMUS_KEY_DECRYPT_BUF_SZ              OPTIMUS_DOWNLOAD_SLOT_SZ
 
+#ifdef CONFIG_DTB_MEM_ADDR
 #define OPTIMUS_DTB_LOAD_ADDR                   CONFIG_DTB_MEM_ADDR
+#else
+#define OPTIMUS_DTB_LOAD_ADDR                   0x1000000
+#endif// #ifdef CONFIG_DTB_MEM_ADDR
 
 #define COMPILE_TYPE_CHK(expr, t)       typedef char t[(expr) ? 1 : -1]
 #define COMPILE_TIME_ASSERT(expr)       typedef char assert_type[(expr) ? 1 : -1]
