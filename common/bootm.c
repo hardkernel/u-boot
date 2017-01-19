@@ -237,17 +237,16 @@ static int bootm_find_fdt(int flag, int argc, char * const argv[])
 	else
 		dtb_mem_addr = CONFIG_DTB_MEM_ADDR;
 
-#ifdef CONFIG_MULTI_DTB
-	extern unsigned long get_multi_dt_entry(unsigned long fdt_addr);
-	/* update dtb address, compatible with single dtb and multi dtbs */
-	dtb_mem_addr = get_multi_dt_entry(dtb_mem_addr);
-#endif
-
 	ft_addr_bak = (char *)images.ft_addr;
 	ft_len_bak = images.ft_len;
 	images.ft_addr = (char *)map_sysmem(dtb_mem_addr, 0);
 	images.ft_len = fdt_get_header(dtb_mem_addr, totalsize);
+	#endif
 	printf("load dtb from 0x%lx ......\n", (unsigned long)(images.ft_addr));
+	#ifdef CONFIG_MULTI_DTB
+	extern unsigned long get_multi_dt_entry(unsigned long fdt_addr);
+	/* update dtb address, compatible with single dtb and multi dtbs */
+	images.ft_addr = (char*)get_multi_dt_entry((unsigned long)images.ft_addr);
 	#endif
 	ret = boot_get_fdt(flag, argc, argv, IH_ARCH_DEFAULT, &images,
 			   &images.ft_addr, &images.ft_len);
@@ -255,8 +254,14 @@ static int bootm_find_fdt(int flag, int argc, char * const argv[])
 	if (ret) {
 		images.ft_addr = ft_addr_bak;
 		images.ft_len = ft_len_bak;
+
 		printf("load dtb from 0x%lx ......\n",
 			(unsigned long)(images.ft_addr));
+		#ifdef CONFIG_MULTI_DTB
+		extern unsigned long get_multi_dt_entry(unsigned long fdt_addr);
+		/* update dtb address, compatible with single dtb and multi dtbs */
+		images.ft_addr = (char*)get_multi_dt_entry((unsigned long)images.ft_addr);
+		#endif
 		ret = boot_get_fdt(flag, argc, argv, IH_ARCH_DEFAULT, &images,
 			   &images.ft_addr, &images.ft_len);
 	}

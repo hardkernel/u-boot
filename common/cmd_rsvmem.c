@@ -31,6 +31,7 @@
 #define rsvmem_info(fmt...)	printf("[rsvmem] "fmt)
 #define rsvmem_err(fmt...)	printf("[rsvmem] "fmt)
 
+#ifndef DTB_BIND_KERNEL
 static int do_rsvmem_check(cmd_tbl_t *cmdtp, int flag, int argc,
 		char *const argv[])
 {
@@ -128,9 +129,14 @@ static cmd_tbl_t cmd_rsvmem_sub[] = {
 	U_BOOT_CMD_MKENT(check, 2, 0, do_rsvmem_check, "", ""),
 	U_BOOT_CMD_MKENT(dump, 2, 0, do_rsvmem_dump, "", ""),
 };
+#endif
 
 static int do_rsvmem(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 {
+#ifdef DTB_BIND_KERNEL
+	rsvmem_err("no check for rsvmem, should check int kernel\n");
+	return 0;
+#else
 	cmd_tbl_t *c;
 
 	/* Strip off leading 'rsvmem' command argument */
@@ -143,6 +149,7 @@ static int do_rsvmem(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 		return  c->cmd(cmdtp, flag, argc, argv);
 	else
 		return CMD_RET_USAGE;
+#endif
 }
 
 U_BOOT_CMD(

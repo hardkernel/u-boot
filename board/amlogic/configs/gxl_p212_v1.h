@@ -46,6 +46,8 @@
 #define CONFIG_CEC_WAKEUP
 
 #define CONFIG_INSTABOOT
+/* configs for dtb in boot.img */
+//#define DTB_BIND_KERNEL
 
 /* SMP Definitinos */
 #define CPU_RELEASE_ADDR		secondary_boot_func
@@ -323,7 +325,9 @@
 #define CONFIG_SD_BURNING_SUPPORT_UI            1       //Displaying upgrading progress bar when sdcard/udisk burning
 
 #define CONFIG_AML_SECURITY_KEY                 1
+#ifndef DTB_BIND_KERNEL
 #define CONFIG_UNIFY_KEY_MANAGE                 1
+#endif
 
 /* net */
 #define CONFIG_CMD_NET   1

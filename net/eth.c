@@ -186,6 +186,11 @@ static inline void eth_hw_addr_random(struct eth_device *dev)
 
 static int eth_get_efuse_mac(struct eth_device *dev)
 {
+#ifndef CONFIG_UNIFY_KEY_MANAGE
+       printf("\nWarning: %s MAC addresses is not from dtb\n",
+                                               dev->name);
+	   return -1;
+#else
 #define MAC_MAX_LEN	17
 	int i = 0;
 	int err = 0, exist = 0;
@@ -219,6 +224,7 @@ static int eth_get_efuse_mac(struct eth_device *dev)
 	}
 
 	return key_unify_uninit();
+#endif
 }
 #endif
 int eth_write_hwaddr(struct eth_device *dev, const char *base_name,
