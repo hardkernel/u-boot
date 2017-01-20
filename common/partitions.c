@@ -32,6 +32,14 @@ struct partitions *get_partitions(void)
 	return part_table;
 }
 
+#ifdef DTB_BIND_KERNEL
+extern struct partitions board_part_table[MAX_PART_NUM];
+int get_partition_from_dts(unsigned char * buffer)
+{
+	part_table = board_part_table;
+	return 0;
+}
+#else
 int get_partition_from_dts(unsigned char * buffer)
 {
 	char * dt_addr;
@@ -128,4 +136,5 @@ _err:
 	}
 	return ret;
 }
+#endif
 
