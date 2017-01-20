@@ -66,8 +66,8 @@
 #define LPDDR3_DRV_34_48OHM	11
 #define LPDDR3_ODT_0OHM		0
 #define LPDDR3_ODT_60OHM	1
-#define LPDDR3_ODT_12OHM	2
-#define LPDDR3_ODT_240HM	3
+#define LPDDR3_ODT_120OHM	2
+#define LPDDR3_ODT_240OHM	3
 
 #define DDR4_DRV_34OHM		0
 #define DDR4_DRV_48OHM		1
@@ -88,14 +88,28 @@
 #define CFG_DDR_ODT  DDR3_ODT_120OHM
 #elif (CONFIG_DDR_TYPE == CONFIG_DDR_TYPE_LPDDR3)
 #define CFG_DDR_DRV  LPDDR3_DRV_48OHM
-#define CFG_DDR_ODT  LPDDR3_ODT_12OHM
+#define CFG_DDR_ODT  LPDDR3_ODT_0OHM
 #elif (CONFIG_DDR_TYPE == CONFIG_DDR_TYPE_DDR4)
 #define CFG_DDR_DRV  DDR4_DRV_34OHM //useless, no effect
 #define CFG_DDR_ODT  DDR4_ODT_60OHM //useless, no effect
 #endif
 
-#define CFG_DDR4_DRV  DDR4_DRV_34OHM //ddr4 driver use this one
-#define CFG_DDR4_ODT  DDR4_ODT_60OHM //ddr4 driver use this one
+//#define CFG_DDR4_DRV  DDR4_DRV_34OHM //ddr4 driver use this one
+//#define CFG_DDR4_ODT  DDR4_ODT_60OHM //ddr4 driver use this one
+#define CFG_DDR4_DRV  DDR4_DRV_48OHM//DDR4_DRV_48OHM //ddr4 driver use this one
+#define CFG_DDR4_ODT DDR4_ODT_48OHM// DDR4_ODT_80OHM //ddr4 driver use this one
+#if (CONFIG_DDR_TYPE == CONFIG_DDR_TYPE_DDR4)
+#define CONFIG_SOC_VREF    1+ (50+((50*48)/(48+480/(6+1)))) // 880/12  //(50+((50*48)/(48+160)))  //0//50+50*drv/(drv+odt)  (738/12) //0 //0  is auto --70 ---range 44.07---88.04   %
+#define CONFIG_DRAM_VREF  1+ (50+((50*37)/(37+48)))// 860/12 // 0// (810/12) // 0 //77 //0 //0  is auto ---70 --range -- 45---92.50    %
+#elif (CONFIG_DDR_TYPE == CONFIG_DDR_TYPE_LPDDR3)
+#define CONFIG_SOC_VREF  51
+#define CONFIG_DRAM_VREF 51
+#else
+#define CONFIG_SOC_VREF  51
+#define CONFIG_DRAM_VREF 51
+#endif
+
+#define CONFIG_ZQ_VREF   51//60 //700/12//  60//0 //(50) % //tune ddr4 ,ddr3 use 0
 
 /*
  * these parameters are corresponding to the pcb layout,
@@ -374,40 +388,46 @@ ddr_timing_t __ddr_timming[] = {
 	/* lpddr3 timing */
 	{
 		.identifier				= CONFIG_DDR_TIMMING_LPDDR3,
-		.cfg_ddr_rtp			= (4),
-		.cfg_ddr_wtr			= (6),
-		.cfg_ddr_rp				= 15*1.2,//(11),
-		.cfg_ddr_rcd			= 15*1.2,//(11),
-		.cfg_ddr_ras			= 35*1.2,//(35),
-		.cfg_ddr_rrd			= (4),
-		.cfg_ddr_rc				= 50*1.2,// (46),//RAS+RP
-		.cfg_ddr_mrd			= (8),
-		.cfg_ddr_mod			= (24),
-		.cfg_ddr_faw			= 35*1.2,//(28),
-		.cfg_ddr_rfc			= 350*1.2,//(280),
-		.cfg_ddr_wlmrd			= (40),
-		.cfg_ddr_wlo			= 9.5*1.2,//(8),
+		.cfg_ddr_rtp			= 6,// (6),0
+		.cfg_ddr_wtr			= (6+2),
+		.cfg_ddr_rp				= (17),
+		.cfg_ddr_rcd			= (15),
+		.cfg_ddr_ras			= (34),
+		.cfg_ddr_rrd			= (8),
+		.cfg_ddr_rc				= (51),
+		.cfg_ddr_mrd			= (11),
+		.cfg_ddr_mod			= (12),//12-17
+		.cfg_ddr_faw			= (40),
+		.cfg_ddr_rfc			= (168),
+		.cfg_ddr_wlmrd			= (32),
+		.cfg_ddr_wlo			= (8),
 		.cfg_ddr_xs				= (512),
-		.cfg_ddr_xp				= (7),
-		.cfg_ddr_cke			= (5),
-		.cfg_ddr_dllk			= (1024),  //597 768 1024
+		.cfg_ddr_xp				= (6),
+		.cfg_ddr_cke			= 7,//(6),//need <=7
+		.cfg_ddr_dllk			= (512),
 		.cfg_ddr_rtodt			= (0),
 		.cfg_ddr_rtw			= (7),
-		.cfg_ddr_refi			= (78),
-		.cfg_ddr_refi_mddr3		= (4),
-		.cfg_ddr_cl				= 15*1.2,// (11),
-		.cfg_ddr_wr				= 15*1.2,// (13),  //15NS+1CLK
-		.cfg_ddr_cwl			= 12,// (11),
+		.cfg_ddr_refi			= (39),
+		.cfg_ddr_refi_mddr3		= (0),
+		.cfg_ddr_cl				= (12),
+		.cfg_ddr_wr				= (12),
+		.cfg_ddr_cwl			= (6),
 		.cfg_ddr_al				= (0),
-		.cfg_ddr_exsr			= (1024),  //597 768 1024
-		.cfg_ddr_dqs			= (23),
-		.cfg_ddr_cksre			= (15),
-		.cfg_ddr_cksrx			= (15),
-		.cfg_ddr_zqcs			= 128,
-		.cfg_ddr_zqcl			= (256),
-		.cfg_ddr_xpdll			= (23),
+		.cfg_ddr_exsr			= (112),
+		.cfg_ddr_dqs			= 9,//9,// (4),//rank0 rank1 turn aroud time jiaxing modify should big for 2rank lpddr3
+		.cfg_ddr_cksre			= 12,// (12),//pctl need 2?
+		.cfg_ddr_cksrx			= 12,// (12),//pctl need 2?
+		.cfg_ddr_zqcs			= (100),
+		.cfg_ddr_zqcl			= (288),
+		.cfg_ddr_xpdll			= (12),
 		.cfg_ddr_zqcsi			= (1000),
-		.cfg_ddr_tccdl			= (6),
+	//	.cfg_ddr_rpab			= (17),
+	//	.cfg_ddr_rppb			= (15),
+	//	.cfg_ddr_tdqsck			= (3),//2500-5500ps if no gate training should (int+1)
+	//	.cfg_ddr_tdqsckmax		= (5),
+	//	.cfg_ddr_tckesr			= (12),
+	//	.cfg_ddr_tdpd			= (500),
+	//	.cfg_ddr_taond_aofd		= 2,
 	}
 };
 
@@ -423,8 +443,42 @@ ddr_set_t __ddr_setting = {
 	.ddr_size				= CONFIG_DDR_SIZE,
 	.ddr_pll_ctrl			= (0),
 	.ddr_dmc_ctrl			= 0,
+#if (CONFIG_DDR_TYPE == CONFIG_DDR_TYPE_LPDDR3)
+#if (CONFIG_LPDDR_REMAP_SET ==  LPDDR_DIE_ROW_COL_R14_C9)
+	.ddr0_addrmap			= {
+								[0]=( 5 |  6 << 5 |  7 << 10 |  8 << 15 |  9 << 20 | 10 << 25) ,
+								[1]=( 11| 0<< 5 | 0 << 10 | 14 << 15 | 15 << 20 | 16 << 25 ) ,
+								[2]=( 17| 18 << 5 | 19 << 10 | 20 << 15 | 21<< 20 | 22 << 25 ) ,
+								[3]=( 23| 24 << 5 | 25 << 10 | 26 << 15 | 27 << 20 |29 << 25 ) ,
+								[4]=( 0| 12 << 5 | 13 << 10 | 28 << 15 | 0 << 20 | 0 << 25 ) ,
+	},
+	.ddr1_addrmap			= {
+								[0]=( 5 |  6 << 5 |  7 << 10 |  8 << 15 |  9 << 20 | 10 << 25) ,
+								[1]=( 11| 0<< 5 | 0 << 10 | 14 << 15 | 15 << 20 | 16 << 25 ) ,
+								[2]=( 17| 18 << 5 | 19 << 10 | 20 << 15 | 21<< 20 | 22 << 25 ) ,
+								[3]=( 23| 24 << 5 | 25 << 10 | 26 << 15 | 27 << 20 |29 << 25 ) ,
+								[4]=( 0| 12 << 5 | 13 << 10 | 28 << 15 | 0 << 20 | 0 << 25 ) ,
+	},
+#elif (CONFIG_LPDDR_REMAP_SET==  LPDDR_DIE_ROW_COL_R13_C10)
+	.ddr0_addrmap			= {
+								[0]=( 5 |  6 << 5 |  7 << 10 |  8 << 15 |  9 << 20 | 10 << 25) ,
+								[1]=( 11| 29 << 5 | 0 << 10 | 14 << 15 | 15 << 20 | 16 << 25 ) ,
+								[2]=( 17| 18 << 5 | 19 << 10 | 20 << 15 | 21<< 20 | 22 << 25 ) ,
+								[3]=( 23| 24 << 5 | 25 << 10 | 26 << 15 | 27 << 20 | 30 << 25 ) ,
+								[4]=( 31| 12 << 5 | 13 << 10 | 28 << 15 | 0 << 20 | 0 << 25 ) ,
+	},
+	.ddr1_addrmap			= {
+								[0]=( 5 |  6 << 5 |  7 << 10 |  8 << 15 |  9 << 20 | 10 << 25) ,
+								[1]=( 11| 29 << 5 | 0 << 10 | 14 << 15 | 15 << 20 | 16 << 25 ) ,
+								[2]=( 17| 18 << 5 | 19 << 10 | 20 << 15 | 21<< 20 | 22 << 25 ) ,
+								[3]=( 23| 24 << 5 | 25 << 10 | 26 << 15 | 27 << 20 | 30 << 25 ) ,
+								[4]=( 31| 12 << 5 | 13 << 10 | 28 << 15 | 0 << 20 | 0 << 25 ) ,
+	},
+#endif /*CONFIG_LPDDR_REMAP_SET*/
+#else
 	.ddr0_addrmap			= {0},
 	.ddr1_addrmap			= {0},
+#endif /*CONFIG_DDR_TYPE_LPDDR3*/
 	.ddr_2t_mode			= 1,
 	.ddr_full_test			= CONFIG_DDR_FULL_TEST,
 #if (0 == CONFIG_DDR_SIZE)
@@ -487,14 +541,31 @@ ddr_set_t __ddr_setting = {
 #endif
 	.t_pub_vtcr1			= 0x0fc00172,
 	.t_pub_dtar				= (0X0 | (0X0 <<12) | (0 << 28)),
-	//.t_pub_zq0pr			= 0x7b,   //PUB ZQ0PR
-	//.t_pub_zq1pr			= 0x7b,   //PUB ZQ1PR
-	//.t_pub_zq2pr			= 0x7b,   //PUB ZQ2PR
-	//.t_pub_zq3pr			= 0x7b,   //PUB ZQ3PR
+
+/* p212 4layer board ddr3
 	.t_pub_zq0pr			= 0x5d95d,   //PUB ZQ0PR
 	.t_pub_zq1pr			= 0x5d95d,   //PUB ZQ1PR
 	.t_pub_zq2pr			= 0x5d95d,   //PUB ZQ2PR
 	.t_pub_zq3pr			= 0x1dd1d,   //PUB ZQ3PR
+*/
+/* 4layer ddr4
+	.t_pub_zq0pr			= 0x0995d,   //PUB ZQ0PR
+	.t_pub_zq1pr			= 0x3f95d,   //PUB ZQ1PR
+	.t_pub_zq2pr			= 0x3f95d,   //PUB ZQ2PR
+	.t_pub_zq3pr			= 0x1dd1d,   //PUB ZQ3PR
+*/
+
+//lpddr3
+	.t_pub_zq0pr			= 0x0ca1c, //0x0ca1c,   //PUB ZQ0PR  //lpddr3
+	.t_pub_zq1pr			= 0x1cf3c,   //PUB ZQ1PR
+	.t_pub_zq2pr			= 0x1cf3c,   //PUB ZQ2PR
+	.t_pub_zq3pr			= 0x1dd1d,   //PUB ZQ3PR
+
+/* 2layer board
+	.t_pub_zq0pr			= 0x00007759,   //PUB ZQ0PR, 0x5aa59,0x59959,  0x58859,  //99drriver s912 ddr4 maybe 950m is bad
+	.t_pub_zq1pr			= 0x0006fc5d,   //PUB ZQ1PR//0x8fc5d, 0x4f95d,
+	.t_pub_zq2pr			= 0x0006fc5d,   //PUB ZQ2PR//0x3fc5d, 0x4f95d,
+*/
 
 	/* pctl0 defines */
 	/* pctl1 use same define as pctl0 */
@@ -530,10 +601,49 @@ ddr_set_t __ddr_setting = {
 	.t_pctl0_dfiodtcfg1		= (0x0 | (0x6 << 16)),
 
 	.t_pctl0_dfilpcfg0		= ( 1 | (3 << 4) | (1 << 8) | (13 << 12) | (7 <<16) | (1 <<24) | ( 3 << 28)),
-	.t_pub_acbdlr0			= 0,  //CK0 delay fine tune
+
+///*lpddr3
+	.t_pub_acbdlr0			= 0,  //CK0 delay fine tune  TAKE CARE LPDDR3 ADD/CMD DELAY
 	.t_pub_aclcdlr			= 0,
+	.t_pub_acbdlr3			= 0x2020,//0,  //CK0 delay fine tune b-3f  //lpddr3 tianhe 2016-10-13
+
+//2layer board DDR4
+/*
+	.t_pub_acbdlr0			= 0x3f,
+	.t_pub_aclcdlr			= 0x28,//0x18,   ///1t  ,if 2t can add some value
+	.t_pub_acbdlr3			=0x10,// 0x10,//0xa,  //cs    add 22ohm 08  0ohm 0x10
+*/
+//4layer ddr3
+/*
+	.t_pub_acbdlr0		= 0x0,
+	.t_pub_aclcdlr		= 0x10,//0x18,   ///1t  ,if 2t can add some value
+	.t_pub_acbdlr3		= 0x14,//0xa,  //cs
+*/
+	.t_pub_soc_vref_dram_vref =((((CONFIG_SOC_VREF<45)?(0):((((CONFIG_SOC_VREF*1000-44070)/698)>0X3F)?(0X3F):(((CONFIG_SOC_VREF*1000-44070)/698))))<<8)|(
+	(((CONFIG_DRAM_VREF))<45)?(0):((((CONFIG_DRAM_VREF))<61)?((((((CONFIG_DRAM_VREF*1000-45000)/650)>0X32)?(0X32):(((CONFIG_DRAM_VREF*1000-45000)/650)))|(1<<6))):
+	((((CONFIG_DRAM_VREF*1000-60000)/650)>0X32)?(0X32):(((CONFIG_DRAM_VREF*1000-60000)/650)))))),
+	.t_pub_mr[7]	= ((CONFIG_ZQ_VREF<45)?(0):((((CONFIG_ZQ_VREF*1000-44070)/698)>0X3F)?(0X3F):(((CONFIG_ZQ_VREF*1000-44070)/698)))) ,//jiaxing use for tune zq vref 20160608
 	.ddr_func				= DDR_FUNC, /* ddr func demo 2016.01.26 */
 
+#if (CONFIG_DDR_TYPE == CONFIG_DDR_TYPE_LPDDR3)
+	//tianhe lpddr3 20161013
+	.wr_adj_per 			= {
+							[0] = 90, //aclcdlr
+							[1] = 100,
+							[2] = 120,
+							[3] = 110,
+							[4] = 120,
+							[5] = 105,
+							},
+	.rd_adj_per				= {
+							[0] = 100,
+							[1] = 100,
+							[2] = 110,
+							[3] = 110,
+							[4] = 110,
+							[5] = 110,},
+#else
+	/* P212 */
 	.wr_adj_per				= {
 							[0]=100,
 							[1]=100,
@@ -545,11 +655,13 @@ ddr_set_t __ddr_setting = {
 	.rd_adj_per				= {
 							[0]=100,
 							[1]=100,
-							[2]=95,
+							[2]=88,
 							[3]=95,
 							[4]=95,
-							[5]=95,
+							[5]=100,
 							},
+#endif
+
 };
 
 pll_set_t __pll_setting = {

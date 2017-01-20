@@ -34,6 +34,14 @@
 #define CONFIG_DDR_TIMMING_DDR4_2666		0x13
 #define CONFIG_DDR_TIMMING_DDR4_3200		0x14
 
+#define LPDDR_DIE_ROW_COL_R13_C9		0
+#define LPDDR_DIE_ROW_COL_R14_C9		1
+#define LPDDR_DIE_ROW_COL_R14_C10		2
+#define LPDDR_DIE_ROW_COL_R13_C10		3
+#define LPDDR_DIE_ROW_COL_R14_C11		4
+
+
+
 #define CONFIG_DDR_FUNC_TEST				(1<<0)
 
 #define CONFIG_DDR_INIT_RETRY_TOTAL			(10)
@@ -52,6 +60,10 @@
 #define DDR_RANK1_SIZE_CTRL					(3)
 #define DDR_RANK0_SIZE_CTRL					(0)
 
+/* lpddr3 defines */
+#ifndef CONFIG_LPDDR_REMAP_SET
+#define CONFIG_LPDDR_REMAP_SET				LPDDR_DIE_ROW_COL_R14_C9
+#endif
 
 /* how to add a new ddr function?
    1. add CONFIG_DDR_FUNC_XXX in (config).h file
@@ -117,6 +129,12 @@
 #endif
 #define DDR_FUNC_RDBI						(CONFIG_DDR_FUNC_RDBI<<6)
 
+/* lpddr3 ca trainingi function */
+#ifndef CONFIG_DDR_FUNC_LPDDR3_CA
+#define CONFIG_DDR_FUNC_LPDDR3_CA				0
+#endif
+#define DDR_FUNC_LPDDR3_CA					(CONFIG_DDR_FUNC_LPDDR3_CA<<7)
+
 #define DDR_FUNC							(DDR_FUNC_D2PLL					| \
 											DDR_FUNC_LP						| \
 											DDR_FUNC_ZQ_PD					| \
@@ -124,5 +142,6 @@
 											DDR_FUNC_DDR4_TIMING_TEST		| \
 											DDR_FUNC_DDR_PLL_BYPASS			| \
 											DDR_FUNC_RDBI					| \
+											DDR_FUNC_LPDDR3_CA|\
 											(1 << 31) 						\
 											)

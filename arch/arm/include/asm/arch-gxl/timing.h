@@ -118,9 +118,11 @@ struct ddr_set{
 
 	/* 2016.07.07 update */
 	unsigned short  t_pub_soc_vref_dram_vref;
-	unsigned short  t_rsv_short_1;
-	unsigned int   t_rsv_int_1;
-	unsigned long  t_rsv_int64_2;
+
+	/* 2016.12.02 update - lpddr3 */
+	unsigned short  t_pub_soc_vref_dram_vref_rank1;
+	unsigned char  wr_adj_per_rank1[6];
+	unsigned char  rd_adj_per_rank1[6];
 }__attribute__ ((packed));
 
 struct ddr_timing{
