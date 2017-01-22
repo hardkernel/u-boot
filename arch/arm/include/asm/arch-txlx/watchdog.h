@@ -22,6 +22,8 @@
 #ifndef _BOOT_ROM_WATCHDOG_H
 #define _BOOT_ROM_WATCHDOG_H
 
+#include <asm/arch/secure_apb.h>
+
 //#include "common.h"
 
 void watchdog_init(uint32_t msec);

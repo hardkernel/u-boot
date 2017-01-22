@@ -8,6 +8,7 @@
  */
  #include "platform.h"
 //#include "power_gate.h"
+#include <asm/arch/secure_apb.h>
 
 /*CONFIG_AML_MESON_8 include m8, m8baby, m8m2, etc... defined in cpu.h*/
 #if !(defined(CONFIG_USB_XHCI) || defined(CONFIG_USB_DWC_OTG_294))
@@ -101,8 +102,8 @@ typedef union usb_r4 {
 		unsigned reserved4:28; // 31
 	} b;
 } usb_r4_t;
-#define   P_AO_RTC_ALT_CLK_CNTL0                               (volatile uint32_t *)(0xc8100000 + (0x25 << 2))
-#define   P_AO_RTI_PWR_CNTL_REG0                               (volatile uint32_t *)(0xc8100000 + (0x04 << 2))
+//#define   P_AO_RTC_ALT_CLK_CNTL0                               (volatile uint32_t *)(0xc8100000 + (0x25 << 2))
+//#define   P_AO_RTI_PWR_CNTL_REG0                               (volatile uint32_t *)(0xc8100000 + (0x04 << 2))
 
 void set_usb_phy_config(int cfg)
 {

@@ -25,18 +25,18 @@
 
 /* CBUS Registers */
  /*TIMER*/
-#define P_ISA_TIMER_MUX                              ((0x2650  << 2) + 0xc1100000)
-#define P_ISA_TIMERA                                 ((0x2651  << 2) + 0xc1100000)
-#define P_ISA_TIMERB                                 ((0x2652  << 2) + 0xc1100000)
-#define P_ISA_TIMERC                                 ((0x2653  << 2) + 0xc1100000)
-#define P_ISA_TIMERD                                 ((0x2654  << 2) + 0xc1100000)
-#define P_ISA_TIMERE                                 ((0x2662  << 2) + 0xc1100000)
-#define P_ISA_TIMERE_HI                              ((0x2663  << 2) + 0xc1100000)
-#define P_ISA_TIMER_MUX1                             ((0x2664  << 2) + 0xc1100000)
-#define P_ISA_TIMERF                                 ((0x2665  << 2) + 0xc1100000)
-#define P_ISA_TIMERG                                 ((0x2666  << 2) + 0xc1100000)
-#define P_ISA_TIMERH                                 ((0x2667  << 2) + 0xc1100000)
-#define P_ISA_TIMERI                                 ((0x2668  << 2) + 0xc1100000)
+#define P_ISA_TIMER_MUX                              ISA_TIMER_MUX
+#define P_ISA_TIMERA                                 ISA_TIMERA
+#define P_ISA_TIMERB                                 ISA_TIMERB
+#define P_ISA_TIMERC                                 ISA_TIMERC
+#define P_ISA_TIMERD                                 ISA_TIMERD
+#define P_ISA_TIMERE                                 ISA_TIMERE
+#define P_ISA_TIMERE_HI                              ISA_TIMERE_HI
+#define P_ISA_TIMER_MUX1                             ISA_TIMER_MUX1
+#define P_ISA_TIMERF                                 ISA_TIMERF
+#define P_ISA_TIMERG                                 ISA_TIMERG
+#define P_ISA_TIMERH                                 ISA_TIMERH
+#define P_ISA_TIMERI                                 ISA_TIMERI
 /* 80K share SRAM base address*/
 #define P_SHARE_SRAM_BASE	0xd9000000
 /*Interrupt number list*/

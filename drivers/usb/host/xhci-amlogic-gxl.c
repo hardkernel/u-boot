@@ -15,13 +15,14 @@
 #include <libfdt.h>
 #include <malloc.h>
 #include <usb.h>
-#include <watchdog.h>
+//#include <watchdog.h>
 #include <asm/arch/cpu.h>
 #include <asm-generic/errno.h>
 #include <linux/compat.h>
 #include <linux/usb/dwc3.h>
 #include <asm/arch/usb-new.h>
 #include "xhci.h"
+#include <asm/arch/secure_apb.h>
 
 /* Declare global data pointer */
 DECLARE_GLOBAL_DATA_PTR;

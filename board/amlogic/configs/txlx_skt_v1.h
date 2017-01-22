@@ -214,16 +214,17 @@
 			"fi;fi;" \
 		"fi;\0" \
 
-
+/*
 #define CONFIG_PREBOOT  \
             "run factory_reset_poweroff_protect;"\
             "run upgrade_check;"\
             "run init_display;"\
             "run storeargs;"\
             "run switch_bootmode;"
-#define CONFIG_BOOTCOMMAND "run storeboot"
+            */
+#define CONFIG_BOOTCOMMAND ""
 
-//#define CONFIG_ENV_IS_NOWHERE  1
+#define CONFIG_ENV_IS_NOWHERE  1
 #define CONFIG_ENV_SIZE   (64*1024)
 #define CONFIG_FIT 1
 #define CONFIG_OF_LIBFDT 1
@@ -283,7 +284,7 @@
 #define 	CONFIG_SYS_NO_FLASH  1
 
 /*SPI*/
-#define CONFIG_AMLOGIC_SPI_FLASH 1
+//#define CONFIG_AMLOGIC_SPI_FLASH 1
 #ifdef 		CONFIG_AMLOGIC_SPI_FLASH
 #undef 		CONFIG_ENV_IS_NOWHERE
 //#define		CONFIG_SPI_BOOT 1
@@ -313,23 +314,23 @@
 
 
 /* vpu */
-#define CONFIG_AML_VPU 1
+//#define CONFIG_AML_VPU 1
 
 /* DISPLAY & HDMITX */
 //#define CONFIG_AML_HDMITX20 1
-#define CONFIG_AML_CANVAS 1
-#define CONFIG_AML_VOUT 1
-#define CONFIG_AML_OSD 1
-#define CONFIG_OSD_SCALE_ENABLE 1
-#define CONFIG_CMD_BMP 1
+//#define CONFIG_AML_CANVAS 1
+//#define CONFIG_AML_VOUT 1
+//#define CONFIG_AML_OSD 1
+//#define CONFIG_OSD_SCALE_ENABLE 1
+//#define CONFIG_CMD_BMP 1
 
 #if defined(CONFIG_AML_VOUT)
 //#define CONFIG_AML_CVBS 1
 #endif
 
-#define CONFIG_AML_LCD    1
-#define CONFIG_AML_LCD_TV 1
-#define CONFIG_AML_LCD_TABLET 1
+//#define CONFIG_AML_LCD    1
+//#define CONFIG_AML_LCD_TV 1
+//#define CONFIG_AML_LCD_TABLET 1
 
 /* USB
  * Enable CONFIG_MUSB_HCD for Host functionalities MSC, keyboard
@@ -353,7 +354,7 @@
 #define CONFIG_USB_GADGET 1
 #define CONFIG_USBDOWNLOAD_GADGET 1
 #define CONFIG_SYS_CACHELINE_SIZE 64
-#define CONFIG_DEVICE_PRODUCT	"txl_skt"
+#define CONFIG_DEVICE_PRODUCT	"txlx_skt"
 
 //UBOOT Facotry usb/sdcard burning config
 #define CONFIG_AML_V2_FACTORY_BURN              1       //support facotry usb burning
@@ -365,7 +366,7 @@
 #define CONFIG_UNIFY_KEY_MANAGE                 1
 
 /* net */
-#define CONFIG_CMD_NET   1
+//#define CONFIG_CMD_NET   1
 #if defined(CONFIG_CMD_NET)
 	#define CONFIG_DESIGNWARE_ETH 1
 	#define CONFIG_PHYLIB	1
@@ -374,7 +375,7 @@
 	#define CONFIG_CMD_DHCP 1
 	#define CONFIG_CMD_RARP 1
 	#define CONFIG_HOSTNAME        arm_gxbb
-	#define CONFIG_RANDOM_ETHADDR  1				   /* use random eth addr, or default */
+	//#define CONFIG_RANDOM_ETHADDR  1				   /* use random eth addr, or default */
 	#define CONFIG_ETHADDR         00:15:18:01:81:31   /* Ethernet address */
 	#define CONFIG_IPADDR          10.18.9.97          /* Our ip address */
 	#define CONFIG_GATEWAYIP       10.18.9.1           /* Our getway ip address */

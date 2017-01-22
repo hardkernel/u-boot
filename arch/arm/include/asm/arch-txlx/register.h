@@ -22,16 +22,17 @@
 #ifndef __REGISTER_H__
 #define __REGISTER_H__
 
-#define IO_CBUS_BASE			  0xc1100000
-#define IO_AXI_BUS_BASE			0xc1300000
-#define IO_AHB_BUS_BASE			0xc9000000
-#define IO_APB_BUS_BASE			0xc8000000
-#define IO_APB_HDMI_BUS_BASE    0xd0040000
-#define IO_VPU_BUS_BASE			0xd0100000
+#define IO_CBUS_BASE			0xFFD00000
+#define IO_AXI_BUS_BASE			0xFFB00000
+#define IO_AHB_BUS_BASE			0xFF500000
+#define IO_APB_BUS_BASE			0xFFFC0000
+#define IO_APB_HDMI_BUS_BASE	0xFFE00000
+#define IO_VPU_BUS_BASE			0xFF900000
 
 #define CBUS_REG_OFFSET(reg) ((reg) << 2)
 #define CBUS_REG_ADDR(reg)	 (IO_CBUS_BASE + CBUS_REG_OFFSET(reg))
 
+#if 0
 /* below UART0,UART1,AO_UART is m8 addr,it is placed is for compiling pass */
 /* -------------------------------
 // UART0
@@ -52,13 +53,11 @@
 #define UART1_MISC                                 0x213b
 #define UART1_REG5                                 0x213c
 
-
 /* ------------------------------------------------------
  The following are handled by $periphs/rtl/periphs_reg.v
   ----------------------------------------              */
 #define PREG_CTLREG0_ADDR                          0x2000
 #define P_PREG_CTLREG0_ADDR CBUS_REG_ADDR(PREG_CTLREG0_ADDR)
-
 
 /* ----------------------------
  clock measure (4)
@@ -71,13 +70,13 @@
 #define P_MSR_CLK_REG0 CBUS_REG_ADDR(MSR_CLK_REG0)
 #define P_MSR_CLK_REG1 CBUS_REG_ADDR(MSR_CLK_REG1)
 #define P_MSR_CLK_REG2 CBUS_REG_ADDR(MSR_CLK_REG2)
+#endif
 
-
-
+#if 0
 /* --------------------------------
  *  AO uart
  * -------------------------------*/
-#define IO_AOBUS_BASE       0xc8100000  ///1M
+#define IO_AOBUS_BASE			0xc8100000  ///1M
 
 #define AOBUS_REG_OFFSET(reg)   ((reg) )
 #define AOBUS_REG_ADDR(reg)	    (IO_AOBUS_BASE + AOBUS_REG_OFFSET(reg))
@@ -94,6 +93,6 @@
 #define P_AO_UART_MISC 		AOBUS_REG_ADDR(AO_UART_MISC)
 #define AO_UART_REG5 ((0x01 << 10) | (0x35 << 2)) 	///../ucode/c_always_on_pointer.h:94
 #define P_AO_UART_REG5 		AOBUS_REG_ADDR(AO_UART_REG5)
-
+#endif
 
 #endif //__REGISTER_H__

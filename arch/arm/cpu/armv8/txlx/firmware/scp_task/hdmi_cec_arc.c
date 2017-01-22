@@ -153,13 +153,13 @@ void remote_cec_hw_reset(void)
 	unsigned int reg;
 	cec_dbg_prints("cec reset\n");
 
-	reg = readl(P_AO_CRT_CLK_CNTL1);
+	reg = readl(AO_GEN_CLK_CNTL);
 	/* 24MHz/ (731 + 1) = 32786.885Hz */
 	reg &= ~(0x7ff << 16);
 	reg |= (731 << 16);     /* divider from 24MHz */
 	reg |= (0x1 << 26);
 	reg &= ~(0x800 << 16);  /* select divider */
-	writel(reg, P_AO_CRT_CLK_CNTL1);
+	writel(reg, AO_GEN_CLK_CNTL);
 
 	/* set up pinmux */
 	writel(readl(P_AO_RTI_PIN_MUX_REG) & (~(1 << 14 | 1 << 17)), P_AO_RTI_PIN_MUX_REG);

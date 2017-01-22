@@ -23,6 +23,7 @@
 #define __AML_MACH_I2C__
 
 #include <asm/io.h>
+#include <asm/arch/secure_apb.h>
 
 /**
  * struct i2c_msg - an I2C transaction segment beginning with START
@@ -74,23 +75,8 @@ struct i2c_msg {
 	__u8 *buf;		/* pointer to msg data			*/
 };
 
-#define I2C_M_0_CONTROL_REG                        0x2140
-
-/*#define I2C_M_0_SLAVE_ADDR                         0x2141
-#define I2C_M_0_TOKEN_LIST0                        0x2142
-#define I2C_M_0_TOKEN_LIST1                        0x2143
-#define I2C_M_0_WDATA_REG0                         0x2144
-#define I2C_M_0_WDATA_REG1                         0x2145
-#define I2C_M_0_RDATA_REG0                         0x2146
-#define I2C_M_0_RDATA_REG1                         0x2147
-*/
-#define I2C_S_CONTROL_REG                          0x2150
-#define I2C_M_1_CONTROL_REG                        0x21f0
-#define I2C_M_2_CONTROL_REG 					   0x21f8
-#define I2C_M_3_CONTROL_REG                        0x2348
-
-#define MESON_I2C_MASTER_AO_START	(0xc8100500)
-#define MESON_I2C_MASTER_AO_END		(0xc810051c+5)
+#define MESON_I2C_MASTER_AO_START	(AO_I2C_M_0_CONTROL_REG)
+//#define MESON_I2C_MASTER_AO_END		(0xc810051c+5)
 
 #define MESON_I2C_MASTER_A_START	CBUS_REG_ADDR(I2C_M_0_CONTROL_REG)
 #define MESON_I2C_MASTER_A_END		(CBUS_REG_ADDR(I2C_M_0_RDATA_REG1+1)-1)

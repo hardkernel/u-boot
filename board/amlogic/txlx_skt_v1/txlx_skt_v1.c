@@ -25,9 +25,9 @@
 #include <environment.h>
 #include <fdt_support.h>
 #include <libfdt.h>
+#include <asm/arch/secure_apb.h>
 #ifdef CONFIG_SYS_I2C_AML
 #include <aml_i2c.h>
-#include <asm/arch/secure_apb.h>
 #endif
 #ifdef CONFIG_AML_VPU
 #include <vpu.h>
@@ -352,6 +352,7 @@ static void hdmi_tx_set_hdmi_5v(void)
 
 int board_init(void)
 {
+#if 0
 #ifdef CONFIG_AML_V2_FACTORY_BURN
 	aml_try_factory_usb_burning(0, gd->bd);
 #endif// #ifdef CONFIG_AML_V2_FACTORY_BURN
@@ -364,11 +365,13 @@ int board_init(void)
 	extern int amlnf_init(unsigned char flag);
 	amlnf_init(0);
 #endif
+#endif
 	return 0;
 }
 
 #ifdef CONFIG_BOARD_LATE_INIT
 int board_late_init(void){
+#if 0
 	int ret;
 
 	//update env before anyone using it
@@ -409,7 +412,7 @@ int board_late_init(void){
 #ifdef CONFIG_AML_V2_FACTORY_BURN
 	/*aml_try_factory_sdcard_burning(0, gd->bd);*/
 #endif// #ifdef CONFIG_AML_V2_FACTORY_BURN
-
+#endif
 	return 0;
 }
 #endif

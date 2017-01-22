@@ -25,6 +25,7 @@
 #include <common.h>
 #include <asm/types.h>
 #include <asm/arch/io.h>
+#include <asm/arch/secure_apb.h>
 
 #define USB_PHY_PORT_MAX	1
 /* Phy register MACRO definitions */
