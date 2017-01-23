@@ -47,8 +47,11 @@ int chipenv_init_erase_protect(struct amlnand_chip *aml_chip, int flag,int block
 			aml_nand_msg("protect nand_bbt info at blk %d",block_num);
 			ret = -1;
 		}else if(((block_num == retry_info->info_save_blk)&&(retry_info->info_save_blk >= start_blk)&&(flash->new_type)&&(flash->new_type < 10))&&(!(info_disprotect & DISPROTECT_HYNIX))){
-			aml_nand_msg("protect hynix retry info at blk %d", block_num);
+			//aml_nand_msg("protect hynix retry info at blk %d", block_num);
 			ret = -1;
+			/* do not protect hynix retry info anymore*/
+			aml_nand_msg("disprotect hynix retry info at blk %d",block_num);
+			ret = 0;
 		}else if((block_num == aml_chip->nand_key.valid_blk_addr)&&(aml_chip->nand_key.valid_blk_addr >= start_blk)&&(!(info_disprotect & DISPROTECT_KEY))){
 			aml_nand_msg("protect nand_key info at blk %d",block_num);
 			ret = -1;
@@ -2819,7 +2822,7 @@ int aml_nand_save_hynix_info(struct amlnand_chip *aml_chip)
 	if ((flash->new_type == 0) || (flash->new_type > 10))
 		return NAND_SUCCESS;
 
-	aml_nand_dbg("aml_nand_save_hynix_info : here!! ");
+	printf("aml_nand_save_hynix_info : here!! \n");
 
 	nand_boot = 1;
 
@@ -2856,7 +2859,7 @@ get_free_blk:
 		ret = -NAND_BAD_BLCOK_FAILURE;
 		goto exit_error0;
 	}
-	aml_nand_dbg("nand get free block for hynix readretry info at %d",
+	printf("nand get free block for hynix readretry info at %d\n",
 		blk_addr);
 
 	for (i = 0; i < pages_read; i++) {
@@ -2978,7 +2981,7 @@ get_free_blk:
 			}
 		}
 		retry_info->info_save_blk = blk_addr;
-		aml_nand_dbg("save hynix readretry info success at blk %d",
+		printf("save hynix readretry info success at blk %d\n",
 			blk_addr);
 	}
 
@@ -3120,7 +3123,7 @@ int aml_nand_scan_hynix_info(struct amlnand_chip *aml_chip)
 				memcpy(&retry_info->reg_def_val[0][0],
 					(u8 *)aml_chip->user_page_buf,
 					MAX_CHIP_NUM*READ_RETRY_REG_NUM);
-				aml_nand_msg("get def value at blk:%d,page:%d",
+				printf("get def value at blk:%d,page:%d\n",
 					start_blk,
 					ops_para->page_addr);
 

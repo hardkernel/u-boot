@@ -175,7 +175,7 @@ static int set_reg_value_hynix(struct hw_controller *controller,
 
 /* only called while uboot.*/
 #ifdef 	AML_NAND_UBOOT
-#define HYNIX_20NM_DBG	(0)
+#define HYNIX_20NM_DBG	(1)
 static int aml_nand_get_20nm_OTP_value(struct hw_controller *controller,  unsigned char *buf,unsigned char chipnr)
 {
 	int i, j, k, check_flag = 0;
@@ -186,7 +186,7 @@ static int aml_nand_get_20nm_OTP_value(struct hw_controller *controller,  unsign
 	int total_reg_cnt, reg_cnt_otp;
 	total_reg_cnt = controller->readbyte(controller);
 	reg_cnt_otp = controller->readbyte(controller);
-	aml_nand_dbg("20 nm flash total_reg_cnt:%d, reg_cnt_otp:%d, chip[%d]", total_reg_cnt, reg_cnt_otp, chipnr);
+	printf("20nm flash total_reg_cnt:%d, reg_cnt_otp:%d, chip[%d]\n", total_reg_cnt, reg_cnt_otp, chipnr);
 #endif
 
 	for (i=0; i<HYNIX_OTP_COPY; i++) {
@@ -610,12 +610,12 @@ static int readretry_init_hynix(struct hw_controller *controller)
 	//struct en_slc_info *slc_info =  &(controller->slc_info);
 	int i, ret = 0;
 
-	//read from nand block
-
-	ret = aml_nand_scan_hynix_info(aml_chip);
-	if (ret < 0)
-		aml_nand_msg("there is not hynix info, need read from otp");
-
+	//read from nand block while nomal boot.
+	if (aml_chip->init_flag < NAND_BOOT_ERASE_PROTECT_CACHE) {
+		ret = aml_nand_scan_hynix_info(aml_chip);
+		if (ret < 0)
+			aml_nand_msg("there is not hynix info, need read from otp");
+	}
 #ifdef AML_NAND_UBOOT
 	//read from nand reg or otp
 	if (retry_info->default_flag == 0) {

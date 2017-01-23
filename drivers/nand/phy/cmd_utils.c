@@ -212,8 +212,10 @@ static int erase_env_protect(struct amlnand_chip *aml_chip, int blk)
 			&&(flash->new_type)
 			&&(flash->new_type < 10))
 			&&(!(info_disprotect & DISPROTECT_HYNIX))){
-			aml_nand_msg("protect hynix retry info at blk %d",blk);
-			ret = -1;
+			//aml_nand_msg("protect hynix retry info at blk %d",blk);
+			//ret = -1;
+			aml_nand_msg("disprotect hynix retry at blk %d",blk);
+			ret = 0;
 		}else if((blk == nand_key->valid_blk_addr)
 			&&(nand_key->valid_blk_addr >= start_blk)
 			&&(!(info_disprotect & DISPROTECT_KEY))){
