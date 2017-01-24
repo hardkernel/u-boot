@@ -401,14 +401,57 @@ static int ep_dequeue(struct usb_ep *usb_ep, struct usb_request *usb_req)
 
 static int ep_halt(struct usb_ep *usb_ep, int value)
 {
-	int retval = 0;
+	depctl_data_t depctl;
+	volatile u32 depctl_addr;
+	pcd_struct_t *pcd;
+	struct dwc_otg_pcd_ep *ep = NULL;
+
+	if (value) {
+		printf("can not halt ep\n");
+		return -EINVAL;
+	}
+
+	pcd = &gadget_wrapper.pcd;
+		if (!gadget_wrapper.driver ||
+			gadget_wrapper.gadget.speed == USB_SPEED_UNKNOWN) {
+			printf("gadget.speed=%d\n",
+					gadget_wrapper.gadget.speed);
+			printf("bogus device state\n");
+			return -EINVAL;
+	}
 
 	if (!usb_ep) {
 		printf("bad ep\n");
 		return -EINVAL;
 	}
 
-	return retval;
+	ep = get_ep_from_handle(pcd, (void *)usb_ep);
+		if (!ep || (!ep->desc && ep->dwc_ep.num != 0)) {
+			printf("bad ep\n");
+			return -EINVAL;
+	}
+
+	if (ep->dwc_ep.is_in == 1)
+		depctl_addr = DWC_REG_IN_EP_REG(1);
+	else
+		depctl_addr = DWC_REG_OUT_EP_REG(1);
+
+	depctl.d32 = dwc_read_reg32(depctl_addr);
+
+	/* clear the stall bits */
+	depctl.b.stall = 0;
+
+	/*
+	 * USB Spec 9.4.5: For endpoints using data toggle, regardless
+	 * of whether an endpoint has the Halt feature set, a
+	 * ClearFeature(ENDPOINT_HALT) request always results in the
+	 * data toggle being reinitialized to DATA0.
+	 */
+	depctl.b.setd0pid = 1;
+
+	dwc_write_reg32(depctl_addr, depctl.d32);
+
+	return 0;
 }
 
 

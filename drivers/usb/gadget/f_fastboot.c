@@ -41,7 +41,6 @@ DECLARE_GLOBAL_DATA_PTR;
 #define DEVICE_PRODUCT	CONFIG_DEVICE_PRODUCT
 #define DEVICE_SERIAL	"0123456789"
 
-
 /* The 64 defined bytes plus \0 */
 #define RESPONSE_LEN	(64 + 1)
 
@@ -276,6 +275,37 @@ err:
 	return ret;
 }
 
+static int  fastboot_setup(struct usb_function *f,
+	const struct usb_ctrlrequest *ctrl)
+{
+	int value = -EOPNOTSUPP;
+	struct f_fastboot *f_fb = func_to_fastboot(f);
+
+	/* composite driver infrastructure handles everything; interface
+	 * activation uses set_alt().
+	 */
+	if (((ctrl->bRequestType & USB_RECIP_MASK) == USB_RECIP_ENDPOINT)
+		&& (ctrl->bRequest == USB_REQ_CLEAR_FEATURE)
+		&& (ctrl->wValue== USB_ENDPOINT_HALT)) {
+		switch (ctrl->wIndex & 0xfe) {
+		case USB_DIR_OUT:
+			value = ctrl->wLength;
+			usb_ep_clear_halt(f_fb->out_ep);
+			break;
+
+		case USB_DIR_IN:
+			value = ctrl->wLength;
+			usb_ep_clear_halt(f_fb->in_ep);
+			break;
+		default:
+			printf("unknown usb_ctrlrequest\n");
+			break;
+		}
+	}
+
+	return value;
+}
+
 static int fastboot_add(struct usb_configuration *c)
 {
 	struct f_fastboot *f_fb = fastboot_func;
@@ -297,6 +327,7 @@ static int fastboot_add(struct usb_configuration *c)
 	f_fb->usb_function.set_alt = fastboot_set_alt;
 	f_fb->usb_function.disable = fastboot_disable;
 	f_fb->usb_function.strings = fastboot_strings;
+	f_fb->usb_function.setup = fastboot_setup;
 
 	status = usb_add_function(c, &f_fb->usb_function);
 	if (status) {

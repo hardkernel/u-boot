@@ -752,7 +752,6 @@ static void dwc_otg_pcd_handle_out_ep_intr(void)
 			}
 			/* Setup Phase Done (contorl EPs) */
 			if (doepint.b.setup) {
-				handle_ep0();
 				CLEAR_OUT_EP_INTR(epnum, setup);
 			}
 		}
