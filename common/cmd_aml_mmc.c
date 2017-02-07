@@ -1118,7 +1118,7 @@ _out:
 }
 
 
-static int dtb_write(void *addr)
+int dtb_write(void *addr)
 {
     int ret = 0;
     struct aml_dtb_rsv * dtb = (struct aml_dtb_rsv *) addr;

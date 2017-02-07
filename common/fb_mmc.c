@@ -15,6 +15,7 @@
 #define CONFIG_FASTBOOT_GPT_NAME GPT_ENTRY_NAME
 #endif
 
+extern int dtb_write(void *addr);
 /* The 64 defined bytes plus the '\0' */
 #define RESPONSE_LEN	(64 + 1)
 
@@ -92,6 +93,7 @@ void fb_mmc_flash_write(const char *cmd, void *download_buffer,
 {
 	block_dev_desc_t *dev_desc;
 	disk_partition_t info;
+	int ret = 0;
 
 	/* initialize the response buffer */
 	response_str = response;
@@ -134,12 +136,20 @@ void fb_mmc_flash_write(const char *cmd, void *download_buffer,
 		return;
 	}
 #endif
-	if (is_sparse_image(download_buffer))
-		write_sparse_image(dev_desc, &info, cmd, download_buffer,
-				   download_bytes);
-	else
-		write_raw_image(dev_desc, &info, cmd, download_buffer,
-				download_bytes);
+	if (strcmp(cmd, "dtb") == 0) {
+		ret = dtb_write(download_buffer);
+		if (ret)
+			fastboot_fail("fastboot write dtb fail");
+		else
+			fastboot_okay("");
+	} else {
+		if (is_sparse_image(download_buffer))
+			write_sparse_image(dev_desc, &info, cmd, download_buffer,
+					download_bytes);
+		else
+			write_raw_image(dev_desc, &info, cmd, download_buffer,
+					download_bytes);
+	}
 }
 
 
