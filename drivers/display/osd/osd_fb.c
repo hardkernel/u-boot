@@ -577,15 +577,29 @@ int video_display_bitmap(ulong bmp_image, int x, int y)
 		}
 		break;
 	case 24:
-		for (i = 0; i < height; ++i) {
-			for (j = 0; j < width; j++) {
+		if (bpix == 32) {
+			for (i = 0; i < height; ++i) {
+				for (j = 0; j < width; j++) {
 
-				*(fb++) = *(bmap++);
-				*(fb++) = *(bmap++);
-				*(fb++) = *(bmap++);
+					*(fb++) = *(bmap++);
+					*(fb++) = *(bmap++);
+					*(fb++) = *(bmap++);
+					*(fb++) = 0xff;
+				}
+				bmap += (padded_line - width);
+				fb   -= (width * 4 + lcd_line_length);
 			}
-			bmap += (padded_line - width);
-			fb   -= (width * 3 + lcd_line_length);
+		} else {
+			for (i = 0; i < height; ++i) {
+				for (j = 0; j < width; j++) {
+
+					*(fb++) = *(bmap++);
+					*(fb++) = *(bmap++);
+					*(fb++) = *(bmap++);
+				}
+				bmap += (padded_line - width);
+				fb   -= (width * 3 + lcd_line_length);
+			}
 		}
 		break;
 	case 32:
