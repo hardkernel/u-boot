@@ -83,11 +83,14 @@
 	"loadaddr=0x20000000\0"		\
 	"dtbaddr=0x1000000\0"		\
 	"fdt_high=0x20000000\0"		\
-	"hdmimode=1080p60hz\0"		\
+	"hdmimode=custombuilt\0"		\
+	"usb pwren \0"		\
+	"hdmitx edid \0"		\
 	"cecconfig=cec0xf\0"		\
 	"bootargs=root=/dev/mmcblk0p2 rw init=/init rootwait "	\
 		"console=ttyS0,115200 "				\
-		"hdmimode=1080p60hz hdmitx=cecf "		\
+		"hdmimode=custombuilt hdmitx=cecf "		\
+		"modeline=${modeline} "		\
 		"logo=osd1,loaded,0x3f800000,1080p60hz "		\
 		"androidboot.hardware=odroidc2 androidboot.serialno=${fbt_id#} "	\
 		"androidboot.selinux=disabled  \0"		\
