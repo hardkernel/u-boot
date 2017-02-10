@@ -1,8 +1,7 @@
-
 /*
  * arch/arm/cpu/armv8/gxtvbb/bl31_apis.c
  *
- * Copyright (C) 2015 Amlogic, Inc. All rights reserved.
+ * Copyright (C) 2014-2017 Amlogic, Inc. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,23 +16,18 @@
  * You should have received a copy of the GNU General Public License along
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-*/
+ */
 
 /*
  * Trustzone API
- *
- * Copyright (C) 2012 Amlogic, Inc.
- *
- * Author: Platform-BJ@amlogic.com
- *
  */
 
 #include <asm/arch/io.h>
 #include <asm/arch/efuse.h>
 #include <asm/cache.h>
-/* #include <asm/system.h> */
 #include <asm/arch/bl31_apis.h>
 #include <asm/cpu_id.h>
+#include <asm/arch/secure_apb.h>
 
 static long sharemem_input_base;
 static long sharemem_output_base;
@@ -147,11 +141,7 @@ ssize_t meson_trustzone_efuse_writepattern(const char *buf, size_t count)
 	ret = meson_trustzone_efuse(&arg);
 	return ret;
 }
-
 #endif
-
-
-
 
 uint64_t meson_trustzone_efuse_check(unsigned char *addr)
 {
@@ -192,7 +182,6 @@ void debug_efuse_cmd(unsigned long cmd)
 		"smc    #0\n"
 		: : "r" (cmd));
 }
-
 
 void bl31_debug_efuse_write_pattern(const char *buf)
 {
@@ -316,7 +305,6 @@ unsigned long aml_sec_boot_check(unsigned long nType,
 #endif
 
 	return ret;
-
 }
 
 void set_usb_boot_function(unsigned long command)
@@ -331,6 +319,7 @@ void set_usb_boot_function(unsigned long command)
 		: "+r" (x0)
 		: "r" (x1));
 }
+
 void aml_system_off(void)
 {
 	/* TODO: Add poweroff capability */
@@ -338,46 +327,57 @@ void aml_system_off(void)
 	aml_reboot(0x84000008, 0, 0, 0);
 }
 
-struct aml_cpu_info {
-	unsigned int version;
-	u8 chipid[12];
-	unsigned int  cpuid;
-	unsigned int reserved[102];
-};
-#define MAGIC_31		0xB31B31
-#define MATCH_31(magic)	(((magic >> 8) & 0xffffff) == MAGIC_31)
-void bl31_get_chipid(unsigned int *low0, unsigned int *low1,
-		unsigned int *high0, unsigned int *high1)
+int __get_chip_id(unsigned char *buff, unsigned int size)
 {
-	static int init = 1;
-	static struct aml_cpu_info cpu_info;
-	unsigned int *p;
+	if (buff == NULL || size < 16)
+		return -1;
 
+	if (!sharemem_output_base)
+		sharemem_output_base =
+			get_sharemem_info(GET_SHARE_MEM_OUTPUT_BASE);
 
-	if (init) {
-		if (!sharemem_output_base)
-			sharemem_output_base =
-				get_sharemem_info(GET_SHARE_MEM_OUTPUT_BASE);
+	if (sharemem_output_base) {
 		register long x0 asm("x0") = GET_CHIP_ID;
-		register long x1 asm("x1") = 1;
+		register long x1 asm("x1") = 2;
+
 		asm volatile(
-				__asmeq("%0", "x0")
-				__asmeq("%1", "x1")
+			__asmeq("%0", "x0")
+			__asmeq("%1", "x1")
 				"smc	#0\n"
-			: "+r" (x0) : "r" (x1));
-		memcpy((void *)&cpu_info,	(const void *)
-			sharemem_output_base,	sizeof(struct aml_cpu_info));
-		init = 1;
+			: "+r" (x0)
+			: "r" (x1));
+
+		if (x0 == 0) {
+			int version = *((unsigned int *)sharemem_output_base);
+
+			if (version == 2) {
+				memcpy(buff, (void *)sharemem_output_base + 4, 16);
+			}
+			else {
+				/**
+				 * Legacy 12-byte chip ID read out, transform data
+				 * to expected order format.
+				 */
+				uint32_t chip_info = readl(P_AO_SEC_SD_CFG8);
+				uint8_t *ch;
+				int i;
+
+				((uint32_t *)buff)[0] =
+					((chip_info & 0xff000000)	|	// Family ID
+					((chip_info << 8) & 0xff0000)	|	// Chip Revision
+					((chip_info >> 8) & 0xff00));		// Package ID
+
+				((uint32_t *)buff)[0] = htonl(((uint32_t *)buff)[0]);
+
+				/* Transform into expected order for display */
+				ch = (uint8_t *)(sharemem_output_base + 4);
+				for (i = 0; i < 12; i++)
+					buff[i + 4] = ch[11 - i];
+			}
+
+			return 0;
+		}
 	}
-	p = (unsigned int *)(cpu_info.chipid);
-	*low0 = *p;
-	*low1 = *(p+1);
-	*high0 = *(p+2);
-	if (MATCH_31(cpu_info.version) && (cpu_info.version & 0xff)) {
-		*high1 = cpu_info.cpuid;
-	} else {
-		cpu_id_t id = get_cpu_id();
-		*high1 = (id.family_id << 24) | (id.chip_rev << 16) |
-				(id.package_id << 8);
-	}
+
+	return -1;
 }

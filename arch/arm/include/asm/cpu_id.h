@@ -1,4 +1,3 @@
-
 /*
  * arch/arm/include/asm/cpu_id.h
  *
@@ -50,6 +49,22 @@ typedef struct cpu_id {
 	unsigned int chip_rev:8; //RevA/RevB etc.
 	unsigned int reserve:4;
 	unsigned int layout_ver:4;
-}cpu_id_t;
+} cpu_id_t;
+
+typedef struct chip_id {
+	unsigned int version;
+	unsigned char chipid[16];
+} chip_id_t;
 
 cpu_id_t get_cpu_id(void);
+
+extern chip_id_t aml_chip_id;
+int get_chip_id(unsigned char *buff, unsigned int size);
+
+/**
+ * TODO: Remove this API after move static system information to RO
+ * register or SRAM
+ *
+ * Should *NOT* call this API directly, always use get_chip_id()
+ */
+int __get_chip_id(unsigned char *buff, unsigned int size);
