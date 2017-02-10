@@ -51,7 +51,7 @@ static int do_rsvmem_check(cmd_tbl_t *cmdtp, int flag, int argc,
 	bl31_rsvmem_start = readl(P_AO_SEC_GP_CFG5);
 	bl32_rsvmem_start = readl(P_AO_SEC_GP_CFG4);
 
-	fdtaddr = getenv("dtb_mem_addr");
+	fdtaddr = getenv("fdtaddr");
 	if (fdtaddr == NULL) {
 		rsvmem_err("get fdtaddr NULL!\n");
 		return -1;

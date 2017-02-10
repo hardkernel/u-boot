@@ -48,6 +48,9 @@
 
 #define CONFIG_INSTABOOT
 
+/* support ext4*/
+#define CONFIG_CMD_EXT4 1
+
 #define CONFIG_CMD_SARADC 1
 
 /* SMP Definitinos */
@@ -182,7 +185,11 @@
             "\0"\
         "recovery_from_flash="\
             "setenv bootargs ${bootargs} aml_dt=${aml_dt} recovery_part={recovery_part} recovery_offset={recovery_offset};"\
-            "if imgread kernel ${recovery_part} ${loadaddr} ${recovery_offset}; then wipeisb; bootm ${loadaddr}; fi"\
+            "if itest ${upgrade_step} == 3; then "\
+                "if ext4load mmc 1:2 ${dtb_mem_addr} /recovery/dtb.img; then echo cache dtb.img loaded; fi;"\
+                "if ext4load mmc 1:2 ${loadaddr} /recovery/recovery.img; then echo cache recovery.img loaded; wipeisb; bootm ${loadaddr}; fi;"\
+            "else fi;"\
+            "if imgread kernel ${recovery_part} ${loadaddr} ${recovery_offset}; then wipeisb; bootm ${loadaddr}; fi;"\
             "\0"\
         "init_display="\
             "osd open;osd clear;imgread pic logo bootup $loadaddr;bmp display $bootup_offset;bmp scale"\
