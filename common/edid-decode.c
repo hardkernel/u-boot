@@ -134,6 +134,7 @@ struct detailed_timing_info detailed_timings[8];
 static int detailed_cnt;
 
 static unsigned int IEEEOUI;
+static unsigned int extended_tag;
 static char bestmode[20];
 static char result[120];
 static const char *c2_support_modes[] = {
@@ -1287,6 +1288,7 @@ cea_block(unsigned char *x)
 		break;
 	case 0x07:
 		DEBUGF("  Extended tag: ");
+		extended_tag = x[1];
 		switch (x[1]) {
 		case 0x00:
 			DEBUGF("video capability data block\n");
@@ -1689,6 +1691,7 @@ void parse_edid(unsigned char *edid, unsigned int blk_len)
 
 	/* Initialization */
 	IEEEOUI = 0x0; /* default DVI */
+	extended_tag = 0x0;
 	detailed_cnt = 0;
 	standard_cnt = 0;
 	established_cnt = 0;
@@ -2212,7 +2215,11 @@ char *select_best_resolution(void)
 	else
 		strcat(temp, "i");
 
-	sprintf(bestmode, "%s%dhz", temp, refresh);
+	/* YCbCr 4:2:0 */
+	if ((extended_tag == 0xf) && (width == 3840))
+		sprintf(bestmode, "%s%dhz420", temp, refresh);
+	else
+		sprintf(bestmode, "%s%dhz", temp, refresh);
 
 	/* search on c2_support_modes */
 	for (i = 0; i < ARRAY_SIZE(c2_support_modes); i++) {
