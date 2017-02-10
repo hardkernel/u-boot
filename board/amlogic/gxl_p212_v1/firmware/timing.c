@@ -542,19 +542,7 @@ ddr_set_t __ddr_setting = {
 	.t_pub_vtcr1			= 0x0fc00172,
 	.t_pub_dtar				= (0X0 | (0X0 <<12) | (0 << 28)),
 
-/* p212 4layer board ddr3
-	.t_pub_zq0pr			= 0x5d95d,   //PUB ZQ0PR
-	.t_pub_zq1pr			= 0x5d95d,   //PUB ZQ1PR
-	.t_pub_zq2pr			= 0x5d95d,   //PUB ZQ2PR
-	.t_pub_zq3pr			= 0x1dd1d,   //PUB ZQ3PR
-*/
-/* 4layer ddr4
-	.t_pub_zq0pr			= 0x0995d,   //PUB ZQ0PR
-	.t_pub_zq1pr			= 0x3f95d,   //PUB ZQ1PR
-	.t_pub_zq2pr			= 0x3f95d,   //PUB ZQ2PR
-	.t_pub_zq3pr			= 0x1dd1d,   //PUB ZQ3PR
-*/
-
+#if (CONFIG_DDR_TYPE == CONFIG_DDR_TYPE_LPDDR3)
 //lpddr3
 	.t_pub_zq0pr			= 0x0ca1c, //0x0ca1c,   //PUB ZQ0PR  //lpddr3
 	.t_pub_zq1pr			= 0x1cf3c,   //PUB ZQ1PR
@@ -566,6 +554,19 @@ ddr_set_t __ddr_setting = {
 	.t_pub_zq1pr			= 0x0006fc5d,   //PUB ZQ1PR//0x8fc5d, 0x4f95d,
 	.t_pub_zq2pr			= 0x0006fc5d,   //PUB ZQ2PR//0x3fc5d, 0x4f95d,
 */
+#elif (CONFIG_DDR_TYPE == CONFIG_DDR_TYPE_DDR4)
+/* 4layer ddr4 */
+	.t_pub_zq0pr			= 0x0995d,   //PUB ZQ0PR
+	.t_pub_zq1pr			= 0x3f95d,   //PUB ZQ1PR
+	.t_pub_zq2pr			= 0x3f95d,   //PUB ZQ2PR
+	.t_pub_zq3pr			= 0x1dd1d,   //PUB ZQ3PR
+#else // ddr3 and auto
+/* p212 4layer board ddr3 */
+	.t_pub_zq0pr			= 0x5d95d,   //PUB ZQ0PR
+	.t_pub_zq1pr			= 0x5d95d,   //PUB ZQ1PR
+	.t_pub_zq2pr			= 0x5d95d,   //PUB ZQ2PR
+	.t_pub_zq3pr			= 0x1dd1d,   //PUB ZQ3PR
+#endif
 
 	/* pctl0 defines */
 	/* pctl1 use same define as pctl0 */
@@ -603,22 +604,21 @@ ddr_set_t __ddr_setting = {
 	.t_pctl0_dfilpcfg0		= ( 1 | (3 << 4) | (1 << 8) | (13 << 12) | (7 <<16) | (1 <<24) | ( 3 << 28)),
 
 ///*lpddr3
+#if (CONFIG_DDR_TYPE == CONFIG_DDR_TYPE_LPDDR3)
 	.t_pub_acbdlr0			= 0,  //CK0 delay fine tune  TAKE CARE LPDDR3 ADD/CMD DELAY
 	.t_pub_aclcdlr			= 0,
 	.t_pub_acbdlr3			= 0x2020,//0,  //CK0 delay fine tune b-3f  //lpddr3 tianhe 2016-10-13
-
+#elif (CONFIG_DDR_TYPE == CONFIG_DDR_TYPE_DDR4)
 //2layer board DDR4
-/*
-	.t_pub_acbdlr0			= 0x3f,
-	.t_pub_aclcdlr			= 0x28,//0x18,   ///1t  ,if 2t can add some value
-	.t_pub_acbdlr3			=0x10,// 0x10,//0xa,  //cs    add 22ohm 08  0ohm 0x10
-*/
+	.t_pub_acbdlr0			= 0, //0x3f,
+	.t_pub_aclcdlr			= 0, //0x28,//0x18,   ///1t  ,if 2t can add some value
+	.t_pub_acbdlr3			= 0, //0x10,// 0x10,//0xa,  //cs    add 22ohm 08  0ohm 0x10
+#else // ddr3 and auto
 //4layer ddr3
-/*
-	.t_pub_acbdlr0		= 0x0,
-	.t_pub_aclcdlr		= 0x10,//0x18,   ///1t  ,if 2t can add some value
-	.t_pub_acbdlr3		= 0x14,//0xa,  //cs
-*/
+	.t_pub_acbdlr0			= 0,
+	.t_pub_aclcdlr			= 0,//0x18,   ///1t  ,if 2t can add some value
+	.t_pub_acbdlr3			= 0,//0xa,  //cs
+#endif
 	.t_pub_soc_vref_dram_vref =((((CONFIG_SOC_VREF<45)?(0):((((CONFIG_SOC_VREF*1000-44070)/698)>0X3F)?(0X3F):(((CONFIG_SOC_VREF*1000-44070)/698))))<<8)|(
 	(((CONFIG_DRAM_VREF))<45)?(0):((((CONFIG_DRAM_VREF))<61)?((((((CONFIG_DRAM_VREF*1000-45000)/650)>0X32)?(0X32):(((CONFIG_DRAM_VREF*1000-45000)/650)))|(1<<6))):
 	((((CONFIG_DRAM_VREF*1000-60000)/650)>0X32)?(0X32):(((CONFIG_DRAM_VREF*1000-60000)/650)))))),
