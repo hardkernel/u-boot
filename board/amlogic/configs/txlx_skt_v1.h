@@ -314,7 +314,7 @@
 
 
 /* vpu */
-//#define CONFIG_AML_VPU 1
+#define CONFIG_AML_VPU 1
 
 /* DISPLAY & HDMITX */
 //#define CONFIG_AML_HDMITX20 1

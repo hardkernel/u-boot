@@ -46,11 +46,18 @@ static int do_vpu_test(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]
 	return 0;
 }
 
+static int do_vpu_info(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+	vpu_info_print();
+	return 0;
+}
+
 static cmd_tbl_t cmd_vpu_sub[] = {
 	U_BOOT_CMD_MKENT(probe, 2, 0, do_vpu_enable, "", ""),
 	U_BOOT_CMD_MKENT(remove, 2, 0, do_vpu_disable, "", ""),
 	U_BOOT_CMD_MKENT(clk, 3, 0, do_vpu_clk, "", ""),
 	U_BOOT_CMD_MKENT(test, 2, 0, do_vpu_test, "", ""),
+	U_BOOT_CMD_MKENT(info, 2, 0, do_vpu_info, "", ""),
 };
 
 static int do_vpu(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])

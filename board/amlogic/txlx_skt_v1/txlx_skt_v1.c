@@ -395,9 +395,11 @@ int board_late_init(void){
 
 	/* load unifykey */
 	run_command("keyunify init 0x1234", 0);
+#endif
 #ifdef CONFIG_AML_VPU
 	vpu_probe();
 #endif
+#if 0
 	vpp_init();
 #ifdef CONFIG_AML_HDMITX20
 	hdmi_tx_set_hdmi_5v();

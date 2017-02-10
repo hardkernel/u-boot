@@ -29,7 +29,8 @@
 #include "aml_vpu_reg.h"
 #include "aml_vpu.h"
 
-#define VPU_VERION	"v03"
+/* v04: add txlx support */
+#define VPU_VERION	"v04"
 
 #ifndef DTB_BIND_KERNEL
 #ifdef CONFIG_OF_LIBFDT
@@ -152,6 +153,16 @@ static void vpu_chip_detect(void)
 		vpu_conf.clk_level_max = CLK_LEVEL_MAX_TXL;
 		vpu_conf.fclk_type = FCLK_TYPE_TXL;
 		break;
+	case MESON_CPU_MAJOR_ID_TXLX:
+		vpu_chip_type = VPU_CHIP_TXLX;
+#ifdef CONFIG_VPU_CLK_LEVEL_DFT
+		vpu_conf.clk_level_dft = CONFIG_VPU_CLK_LEVEL_DFT;
+#else
+		vpu_conf.clk_level_dft = CLK_LEVEL_DFT_TXLX;
+#endif
+		vpu_conf.clk_level_max = CLK_LEVEL_MAX_TXLX;
+		vpu_conf.fclk_type = FCLK_TYPE_TXLX;
+		break;
 	default:
 		vpu_chip_type = VPU_CHIP_GXBB;
 #ifdef CONFIG_VPU_CLK_LEVEL_DFT
@@ -163,14 +174,14 @@ static void vpu_chip_detect(void)
 		vpu_conf.fclk_type = FCLK_TYPE_GXBB;
 	}
 #else
-	vpu_chip_type = VPU_CHIP_GXBB;
+	vpu_chip_type = VPU_CHIP_TXLX;
 #ifdef CONFIG_VPU_CLK_LEVEL_DFT
 	vpu_conf.clk_level_dft = CONFIG_VPU_CLK_LEVEL_DFT;
 #else
-	vpu_conf.clk_level_dft = CLK_LEVEL_DFT_GXBB;
+	vpu_conf.clk_level_dft = CLK_LEVEL_DFT_TXLX;
 #endif
-	vpu_conf.clk_level_max = CLK_LEVEL_MAX_GXBB;
-	vpu_conf.fclk_type = FCLK_TYPE_GXBB;
+	vpu_conf.clk_level_max = CLK_LEVEL_MAX_TXLX;
+	vpu_conf.fclk_type = FCLK_TYPE_TXLX;
 #endif
 
 #ifdef VPU_DEBUG_PRINT
@@ -202,26 +213,12 @@ static unsigned int get_vpu_clk_level(unsigned int video_clk)
 
 static unsigned int get_vpu_clk(void)
 {
-	unsigned int reg;
 	unsigned int clk_freq;
 	unsigned int fclk, clk_source;
 	unsigned int mux, div;
 
-	switch (vpu_chip_type) {
-	case VPU_CHIP_M8:
-	case VPU_CHIP_M8B:
-	case VPU_CHIP_M8M2:
-	case VPU_CHIP_G9TV:
-	case VPU_CHIP_G9BB:
-		reg = HHI_VPU_CLK_CNTL;
-		break;
-	default:
-		reg = HHI_VPU_CLK_CNTL_GX;
-		break;
-	}
-
 	fclk = fclk_table[vpu_conf.fclk_type] * 100; /* 0.01M resolution */
-	mux = vpu_hiu_getb(reg, 9, 3);
+	mux = vpu_hiu_getb(HHI_VPU_CLK_CNTL, 9, 3);
 	switch (mux) {
 	case 0: /* fclk_div4 */
 	case 1: /* fclk_div3 */
@@ -230,7 +227,8 @@ static unsigned int get_vpu_clk(void)
 		clk_source = fclk / fclk_div_table[mux];
 		break;
 	case 7:
-		if (vpu_chip_type == VPU_CHIP_G9TV)
+		if ((vpu_chip_type == VPU_CHIP_G9TV) ||
+			(vpu_chip_type == VPU_CHIP_GXTVBB))
 			clk_source = 696 * 100; /* 0.01MHz */
 		else
 			clk_source = 0;
@@ -240,7 +238,7 @@ static unsigned int get_vpu_clk(void)
 		break;
 	}
 
-	div = vpu_hiu_getb(reg, 0, 7) + 1;
+	div = vpu_hiu_getb(HHI_VPU_CLK_CNTL, 0, 7) + 1;
 	clk_freq = (clk_source / div) * 10 * 1000; /* change to Hz */
 
 	return clk_freq;
@@ -254,26 +252,26 @@ static int switch_gp_pll_m8m2(int flag)
 	if (flag) { /* enable gp_pll */
 		/* M=182, N=3, OD=2. gp_pll=24*M/N/2^OD=364M */
 		/* set gp_pll frequency fixed to 364M */
-		vpu_cbus_write(HHI_GP_PLL_CNTL, 0x206b6);
-		vpu_cbus_setb(HHI_GP_PLL_CNTL, 1, 30, 1); /* enable */
+		vpu_hiu_write(HHI_GP0_PLL_CNTL, 0x206b6);
+		vpu_hiu_setb(HHI_GP0_PLL_CNTL, 1, 30, 1); /* enable */
 		do {
 			udelay(10);
-			vpu_cbus_setb(HHI_GP_PLL_CNTL, 1, 29, 1); /* reset */
+			vpu_hiu_setb(HHI_GP0_PLL_CNTL, 1, 29, 1); /* reset */
 			udelay(50);
 			/* release reset */
-			vpu_cbus_setb(HHI_GP_PLL_CNTL, 0, 29, 1);
+			vpu_hiu_setb(HHI_GP0_PLL_CNTL, 0, 29, 1);
 			udelay(50);
 			cnt--;
 			if (cnt == 0)
 				break;
-		} while (vpu_cbus_getb(HHI_GP_PLL_CNTL, 31, 1) == 0);
+		} while (vpu_hiu_getb(HHI_GP0_PLL_CNTL, 31, 1) == 0);
 		if (cnt == 0) {
-			ret = 1;
-			vpu_cbus_setb(HHI_GP_PLL_CNTL, 0, 30, 1);
+			ret = -1;
+			vpu_hiu_setb(HHI_GP0_PLL_CNTL, 0, 30, 1);
 			VPUERR("GP_PLL lock failed\n");
 		}
 	} else { /* disable gp_pll */
-		vpu_cbus_setb(HHI_GP_PLL_CNTL, 0, 30, 1);
+		vpu_hiu_setb(HHI_GP0_PLL_CNTL, 0, 30, 1);
 	}
 
 	return ret;
@@ -286,29 +284,29 @@ static int switch_gp1_pll_g9tv(int flag)
 
 	if (flag) { /* enable gp1_pll */
 		/* GP1 DPLL 696MHz output*/
-		vpu_cbus_write(HHI_GP1_PLL_CNTL, 0x6a01023a);
-		vpu_cbus_write(HHI_GP1_PLL_CNTL2, 0x69c80000);
-		vpu_cbus_write(HHI_GP1_PLL_CNTL3, 0x0a5590c4);
-		vpu_cbus_write(HHI_GP1_PLL_CNTL4, 0x0000500d);
-		vpu_cbus_write(HHI_GP1_PLL_CNTL, 0x4a01023a);
+		vpu_hiu_write(HHI_GP1_PLL_CNTL, 0x6a01023a);
+		vpu_hiu_write(HHI_GP1_PLL_CNTL2, 0x69c80000);
+		vpu_hiu_write(HHI_GP1_PLL_CNTL3, 0x0a5590c4);
+		vpu_hiu_write(HHI_GP1_PLL_CNTL4, 0x0000500d);
+		vpu_hiu_write(HHI_GP1_PLL_CNTL, 0x4a01023a);
 		do {
 			udelay(10);
-			vpu_cbus_setb(HHI_GP1_PLL_CNTL, 1, 29, 1); /* reset */
+			vpu_hiu_setb(HHI_GP1_PLL_CNTL, 1, 29, 1); /* reset */
 			udelay(50);
 			/* release reset */
-			vpu_cbus_setb(HHI_GP1_PLL_CNTL, 0, 29, 1);
+			vpu_hiu_setb(HHI_GP1_PLL_CNTL, 0, 29, 1);
 			udelay(50);
 			cnt--;
 			if (cnt == 0)
 				break;
-		} while (vpu_cbus_getb(HHI_GP1_PLL_CNTL, 31, 1) == 0);
+		} while (vpu_hiu_getb(HHI_GP1_PLL_CNTL, 31, 1) == 0);
 		if (cnt == 0) {
-			ret = 1;
-			vpu_cbus_setb(HHI_GP1_PLL_CNTL, 0, 30, 1);
+			ret = -1;
+			vpu_hiu_setb(HHI_GP1_PLL_CNTL, 0, 30, 1);
 			VPUERR("GP_PLL lock failed\n");
 		}
 	} else { /* disable gp1_pll */
-		vpu_cbus_setb(HHI_GP1_PLL_CNTL, 0, 30, 1);
+		vpu_hiu_setb(HHI_GP1_PLL_CNTL, 0, 30, 1);
 	}
 
 	return ret;
@@ -353,34 +351,70 @@ static int adjust_vpu_clk_m8_g9(unsigned int clk_level)
 	return ret;
 }
 
-/* unit: MHz */
-#define VPU_CLKB_MAX    350
+static int switch_gp1_pll_gxtvbb(int flag)
+{
+	int cnt = 100;
+	int ret = 0;
+
+	if (flag) { /* enable gp1_pll */
+		/* GP1 DPLL 696MHz output*/
+		vpu_hiu_write(HHI_GP1_PLL_CNTL2, 0x69c80000);
+		vpu_hiu_write(HHI_GP1_PLL_CNTL3, 0x0a5590c4);
+		vpu_hiu_write(HHI_GP1_PLL_CNTL4, 0x0000500d);
+		vpu_hiu_write(HHI_GP1_PLL_CNTL, 0x6a01023a);
+		vpu_hiu_write(HHI_GP1_PLL_CNTL, 0x4a01023a);
+		do {
+			udelay(10);
+			vpu_hiu_setb(HHI_GP1_PLL_CNTL, 1, 29, 1); /* reset */
+			udelay(50);
+			/* release reset */
+			vpu_hiu_setb(HHI_GP1_PLL_CNTL, 0, 29, 1);
+			udelay(50);
+			cnt--;
+			if (cnt == 0)
+				break;
+		} while (vpu_hiu_getb(HHI_GP1_PLL_CNTL, 31, 1) == 0);
+		if (vpu_hiu_getb(HHI_GP1_PLL_CNTL, 31, 1) == 0) {
+			ret = -1;
+			vpu_hiu_setb(HHI_GP1_PLL_CNTL, 0, 30, 1);
+			VPUERR("GP1_PLL lock failed\n");
+		}
+	} else { /* disable gp1_pll */
+		vpu_hiu_setb(HHI_GP1_PLL_CNTL, 0, 30, 1);
+	}
+
+	return ret;
+}
+
 static int adjust_vpu_clk_gx(unsigned int clk_level)
 {
 	unsigned int vpu_clk;
 	unsigned int mux, div;
 	int ret = 0;
 
+	if (vpu_chip_type == VPU_CHIP_GXTVBB) {
+		if (clk_level == 8) {
+			ret = switch_gp1_pll_gxtvbb(1);
+			if (ret)
+				clk_level = 7;
+		}
+	}
 	vpu_conf.clk_level = clk_level;
+
 	vpu_clk = vpu_clk_table[vpu_conf.fclk_type][clk_level][0];
 	mux = vpu_clk_table[vpu_conf.fclk_type][clk_level][1];
 	div = vpu_clk_table[vpu_conf.fclk_type][clk_level][2];
 
-	vpu_hiu_write(HHI_VPU_CLK_CNTL_GX, ((mux << 9) | (div << 0)));
-	vpu_hiu_setb(HHI_VPU_CLK_CNTL_GX, 1, 8, 1);
+	vpu_hiu_write(HHI_VPU_CLK_CNTL, ((mux << 9) | (div << 0)));
+	vpu_hiu_setb(HHI_VPU_CLK_CNTL, 1, 8, 1);
 
-	if (vpu_clk >= (VPU_CLKB_MAX * 1000000))
-		vpu_hiu_write(HHI_VPU_CLKB_CNTL_GX, ((1 << 8) | (1 << 0)));
-	else
-		vpu_hiu_write(HHI_VPU_CLKB_CNTL_GX, ((1 << 8) | (0 << 0)));
-
-	vpu_hiu_write(HHI_VAPBCLK_CNTL_GX, (1 << 30) | /* turn on ge2d clock */
+	vpu_hiu_write(HHI_VAPBCLK_CNTL, (1 << 30) | /* turn on ge2d clock */
 			(0 << 9)    |   /* clk_sel    //250Mhz */
 			(1 << 0));      /* clk_div */
-	vpu_hiu_setb(HHI_VAPBCLK_CNTL_GX, 1, 8, 1);
+	vpu_hiu_setb(HHI_VAPBCLK_CNTL, 1, 8, 1);
 
 	VPUPR("set clk: %uHz, readback: %uHz(0x%x)\n",
-		vpu_clk, get_vpu_clk(), (vpu_hiu_read(HHI_VPU_CLK_CNTL_GX)));
+		vpu_clk, get_vpu_clk(), (vpu_hiu_read(HHI_VPU_CLK_CNTL)));
 	return ret;
 }
 
@@ -401,15 +435,16 @@ static int set_vpu_clk(unsigned int vclk)
 	}
 
 	switch (vpu_chip_type) {
-	case VPU_CHIP_M8:
-	case VPU_CHIP_M8B:
-	case VPU_CHIP_M8M2:
-	case VPU_CHIP_G9TV:
-	case VPU_CHIP_G9BB:
-		ret = adjust_vpu_clk_m8_g9(clk_level);
+	case VPU_CHIP_GXBB:
+	case VPU_CHIP_GXTVBB:
+	case VPU_CHIP_GXL:
+	case VPU_CHIP_GXM:
+	case VPU_CHIP_TXL:
+	case VPU_CHIP_TXLX:
+		ret = adjust_vpu_clk_gx(clk_level);
 		break;
 	default:
-		ret = adjust_vpu_clk_gx(clk_level);
+		ret = adjust_vpu_clk_m8_g9(clk_level);
 		break;
 	}
 
@@ -458,48 +493,6 @@ static void vpu_power_on_m8_g9(void)
 	vpu_ao_setb(AO_RTI_GEN_PWR_SLEEP0, 0, 9, 1); /* [9] VPU_HDMI */
 }
 
-static void vpu_power_on_gx(void)
-{
-	unsigned int i;
-
-	vpu_ao_setb(AO_RTI_GEN_PWR_SLEEP0, 0, 8, 1); /* [8] power on */
-	udelay(20);
-
-	/* power up memories */
-	for (i = 0; i < 32; i+=2) {
-		vpu_hiu_setb(HHI_VPU_MEM_PD_REG0_GX, 0, i, 2);
-		udelay(5);
-	}
-	for (i = 0; i < 32; i+=2) {
-		vpu_hiu_setb(HHI_VPU_MEM_PD_REG1_GX, 0, i, 2);
-		udelay(5);
-	}
-	for (i = 8; i < 16; i++) {
-		vpu_hiu_setb(HHI_MEM_PD_REG0_GX, 0, i, 1);
-		udelay(5);
-	}
-	udelay(20);
-
-	/* Reset VIU + VENC */
-	/* Reset VENCI + VENCP + VADC + VENCL */
-	/* Reset HDMI-APB + HDMI-SYS + HDMI-TX + HDMI-CEC */
-	vpu_cbus_clr_mask(RESET0_LEVEL, ((1<<5) | (1<<10) | (1<<19) | (1<<13)));
-	vpu_cbus_clr_mask(RESET1_LEVEL, (1<<5));
-	vpu_cbus_clr_mask(RESET2_LEVEL, (1<<15));
-	vpu_cbus_clr_mask(RESET4_LEVEL, ((1<<6) | (1<<7) | (1<<13) | (1<<5) | (1<<9) | (1<<4) | (1<<12)));
-	vpu_cbus_clr_mask(RESET7_LEVEL, (1<<7));
-
-	/* Remove VPU_HDMI ISO */
-	vpu_ao_setb(AO_RTI_GEN_PWR_SLEEP0, 0, 9, 1); /* [9] VPU_HDMI */
-
-	/* release Reset */
-	vpu_cbus_set_mask(RESET0_LEVEL, ((1 << 5) | (1<<10) | (1<<19) | (1<<13)));
-	vpu_cbus_set_mask(RESET1_LEVEL, (1<<5));
-	vpu_cbus_set_mask(RESET2_LEVEL, (1<<15));
-	vpu_cbus_set_mask(RESET4_LEVEL, ((1<<6) | (1<<7) | (1<<13) | (1<<5) | (1<<9) | (1<<4) | (1<<12)));
-	vpu_cbus_set_mask(RESET7_LEVEL, (1<<7));
-}
-
 static void vpu_power_off_m8_g9(void)
 {
 	unsigned int i;
@@ -530,6 +523,48 @@ static void vpu_power_off_m8_g9(void)
 	vpu_hiu_setb(HHI_VPU_CLK_CNTL, 0, 8, 1);
 }
 
+static void vpu_power_on_gx(void)
+{
+	unsigned int i;
+
+	vpu_ao_setb(AO_RTI_GEN_PWR_SLEEP0, 0, 8, 1); /* [8] power on */
+	udelay(20);
+
+	/* power up memories */
+	for (i = 0; i < 32; i+=2) {
+		vpu_hiu_setb(HHI_VPU_MEM_PD_REG0, 0, i, 2);
+		udelay(5);
+	}
+	for (i = 0; i < 32; i+=2) {
+		vpu_hiu_setb(HHI_VPU_MEM_PD_REG1, 0, i, 2);
+		udelay(5);
+	}
+	for (i = 8; i < 16; i++) {
+		vpu_hiu_setb(HHI_MEM_PD_REG0, 0, i, 1);
+		udelay(5);
+	}
+	udelay(20);
+
+	/* Reset VIU + VENC */
+	/* Reset VENCI + VENCP + VADC + VENCL */
+	/* Reset HDMI-APB + HDMI-SYS + HDMI-TX + HDMI-CEC */
+	vpu_cbus_clr_mask(RESET0_LEVEL, ((1<<5) | (1<<10) | (1<<19) | (1<<13)));
+	vpu_cbus_clr_mask(RESET1_LEVEL, (1<<5));
+	vpu_cbus_clr_mask(RESET2_LEVEL, (1<<15));
+	vpu_cbus_clr_mask(RESET4_LEVEL, ((1<<6) | (1<<7) | (1<<13) | (1<<5) | (1<<9) | (1<<4) | (1<<12)));
+	vpu_cbus_clr_mask(RESET7_LEVEL, (1<<7));
+
+	/* Remove VPU_HDMI ISO */
+	vpu_ao_setb(AO_RTI_GEN_PWR_SLEEP0, 0, 9, 1); /* [9] VPU_HDMI */
+
+	/* release Reset */
+	vpu_cbus_set_mask(RESET0_LEVEL, ((1 << 5) | (1<<10) | (1<<19) | (1<<13)));
+	vpu_cbus_set_mask(RESET1_LEVEL, (1<<5));
+	vpu_cbus_set_mask(RESET2_LEVEL, (1<<15));
+	vpu_cbus_set_mask(RESET4_LEVEL, ((1<<6) | (1<<7) | (1<<13) | (1<<5) | (1<<9) | (1<<4) | (1<<12)));
+	vpu_cbus_set_mask(RESET7_LEVEL, (1<<7));
+}
+
 static void vpu_power_off_gx(void)
 {
 	unsigned int i;
@@ -541,15 +576,15 @@ static void vpu_power_off_gx(void)
 
 	/* power down memories */
 	for (i = 0; i < 32; i+=2) {
-		vpu_hiu_setb(HHI_VPU_MEM_PD_REG0_GX, 0x3, i, 2);
+		vpu_hiu_setb(HHI_VPU_MEM_PD_REG0, 0x3, i, 2);
 		udelay(5);
 	}
 	for (i = 0; i < 32; i+=2) {
-		vpu_hiu_setb(HHI_VPU_MEM_PD_REG1_GX, 0x3, i, 2);
+		vpu_hiu_setb(HHI_VPU_MEM_PD_REG1, 0x3, i, 2);
 		udelay(5);
 	}
 	for (i = 8; i < 16; i++) {
-		vpu_hiu_setb(HHI_MEM_PD_REG0_GX, 0x1, i, 1);
+		vpu_hiu_setb(HHI_MEM_PD_REG0, 0x1, i, 1);
 		udelay(5);
 	}
 	udelay(20);
@@ -557,23 +592,23 @@ static void vpu_power_off_gx(void)
 	/* Power down VPU domain */
 	vpu_ao_setb(AO_RTI_GEN_PWR_SLEEP0, 1, 8, 1); /* PDN */
 
-	vpu_hiu_setb(HHI_VAPBCLK_CNTL_GX, 0, 8, 1);
-	vpu_hiu_setb(HHI_VPU_CLKB_CNTL_GX, 0, 8, 1);
-	vpu_hiu_setb(HHI_VPU_CLK_CNTL_GX, 0, 8, 1);
+	vpu_hiu_setb(HHI_VAPBCLK_CNTL, 0, 8, 1);
+	vpu_hiu_setb(HHI_VPU_CLK_CNTL, 0, 8, 1);
 }
 
 static void vpu_power_on(void)
 {
 	switch (vpu_chip_type) {
-	case VPU_CHIP_M8:
-	case VPU_CHIP_M8B:
-	case VPU_CHIP_M8M2:
-	case VPU_CHIP_G9TV:
-	case VPU_CHIP_G9BB:
-		vpu_power_on_m8_g9();
+	case VPU_CHIP_GXBB:
+	case VPU_CHIP_GXTVBB:
+	case VPU_CHIP_GXL:
+	case VPU_CHIP_GXM:
+	case VPU_CHIP_TXL:
+	case VPU_CHIP_TXLX:
+		vpu_power_on_gx();
 		break;
 	default:
-		vpu_power_on_gx();
+		vpu_power_on_m8_g9();
 		break;
 	}
 }
@@ -581,15 +616,16 @@ static void vpu_power_on(void)
 static void vpu_power_off(void)
 {
 	switch (vpu_chip_type) {
-	case VPU_CHIP_M8:
-	case VPU_CHIP_M8B:
-	case VPU_CHIP_M8M2:
-	case VPU_CHIP_G9TV:
-	case VPU_CHIP_G9BB:
-		vpu_power_off_m8_g9();
+	case VPU_CHIP_GXBB:
+	case VPU_CHIP_GXTVBB:
+	case VPU_CHIP_GXL:
+	case VPU_CHIP_GXM:
+	case VPU_CHIP_TXL:
+	case VPU_CHIP_TXLX:
+		vpu_power_off_gx();
 		break;
 	default:
-		vpu_power_off_gx();
+		vpu_power_off_m8_g9();
 		break;
 	}
 }
@@ -672,36 +708,35 @@ int vpu_remove(void)
 	return 0;
 }
 
-static void vpu_clk_switch(unsigned int clk_reg)
+static void vpu_clk_switch(void)
 {
 	unsigned int mux, div;
 
 	/* step 1: switch to 2nd vpu clk patch */
 	mux = vpu_clk_table[vpu_conf.fclk_type][0][1];
-	vpu_hiu_setb(clk_reg, mux, 25, 3);
+	vpu_hiu_setb(HHI_VPU_CLK_CNTL, mux, 25, 3);
 	div = vpu_clk_table[vpu_conf.fclk_type][0][2];
-	vpu_hiu_setb(clk_reg, div, 16, 7);
-	vpu_hiu_setb(clk_reg, 1, 24, 1);
-	vpu_hiu_setb(clk_reg, 1, 31, 1);
+	vpu_hiu_setb(HHI_VPU_CLK_CNTL, div, 16, 7);
+	vpu_hiu_setb(HHI_VPU_CLK_CNTL, 1, 24, 1);
+	vpu_hiu_setb(HHI_VPU_CLK_CNTL, 1, 31, 1);
 	udelay(10);
 	/* step 2: adjust 1st vpu clk frequency */
-	vpu_hiu_setb(clk_reg, 0, 8, 1);
+	vpu_hiu_setb(HHI_VPU_CLK_CNTL, 0, 8, 1);
 	mux = vpu_clk_table[vpu_conf.fclk_type][vpu_conf.clk_level][1];
-	vpu_hiu_setb(clk_reg, mux, 9, 3);
+	vpu_hiu_setb(HHI_VPU_CLK_CNTL, mux, 9, 3);
 	div = vpu_clk_table[vpu_conf.fclk_type][vpu_conf.clk_level][2];
-	vpu_hiu_setb(clk_reg, div, 0, 7);
-	vpu_hiu_setb(clk_reg, 1, 8, 1);
+	vpu_hiu_setb(HHI_VPU_CLK_CNTL, div, 0, 7);
+	vpu_hiu_setb(HHI_VPU_CLK_CNTL, 1, 8, 1);
 	udelay(20);
 	/* step 3: switch back to 1st vpu clk patch */
-	vpu_hiu_setb(clk_reg, 0, 31, 1);
-	vpu_hiu_setb(clk_reg, 0, 24, 1);
+	vpu_hiu_setb(HHI_VPU_CLK_CNTL, 0, 31, 1);
+	vpu_hiu_setb(HHI_VPU_CLK_CNTL, 0, 24, 1);
 }
 
 int vpu_clk_change(int level)
 {
 	unsigned int vpu_clk;
 	unsigned int mux, div;
-	unsigned int reg;
 
 	if (level >= 100) /* regard as vpu_clk */
 		level = get_vpu_clk_level(level);
@@ -718,62 +753,61 @@ int vpu_clk_change(int level)
 	vpu_clk = vpu_clk_table[vpu_conf.fclk_type][vpu_conf.clk_level][0];
 
 	switch (vpu_chip_type) {
-	case VPU_CHIP_M8:
-		reg = HHI_VPU_CLK_CNTL;
-		mux = vpu_clk_table[vpu_conf.fclk_type][vpu_conf.clk_level][1];
-		div = vpu_clk_table[vpu_conf.fclk_type][vpu_conf.clk_level][2];
-		vpu_hiu_write(reg, ((mux << 9) | (div << 0) | (1<<8)));
-		break;
 	case VPU_CHIP_M8B:
 	case VPU_CHIP_M8M2:
 	case VPU_CHIP_G9TV:
 	case VPU_CHIP_G9BB:
-		reg = HHI_VPU_CLK_CNTL;
-		vpu_clk_switch(reg);
+	case VPU_CHIP_GXBB:
+	case VPU_CHIP_GXTVBB:
+	case VPU_CHIP_GXL:
+	case VPU_CHIP_GXM:
+	case VPU_CHIP_TXL:
+	case VPU_CHIP_TXLX:
+		vpu_clk_switch();
+		break;
+	case VPU_CHIP_M8:
+		mux = vpu_clk_table[vpu_conf.fclk_type][vpu_conf.clk_level][1];
+		div = vpu_clk_table[vpu_conf.fclk_type][vpu_conf.clk_level][2];
+		vpu_hiu_write(HHI_VPU_CLK_CNTL, ((mux << 9) | (div << 0) | (1<<8)));
 		break;
 	default:
-		reg = HHI_VPU_CLK_CNTL_GX;
-		vpu_clk_switch(reg);
-
-		if (vpu_clk >= (VPU_CLKB_MAX * 1000000))
-			div = 2;
-		else
-			div = 1;
-		vpu_hiu_setb(HHI_VPU_CLKB_CNTL_GX, (div - 1), 0, 8);
 		break;
 	}
 
 	VPUPR("set clk: %uHz, readback: %uHz(0x%x)\n",
-		vpu_clk, get_vpu_clk(), vpu_hiu_read(reg));
+		vpu_clk, get_vpu_clk(), vpu_hiu_read(HHI_VPU_CLK_CNTL));
 	return 0;
 }
 
 void vpu_clk_get(void)
 {
-	unsigned int reg;
-
-	switch (vpu_chip_type) {
-	case VPU_CHIP_M8:
-	case VPU_CHIP_M8B:
-	case VPU_CHIP_M8M2:
-	case VPU_CHIP_G9TV:
-	case VPU_CHIP_G9BB:
-		reg = HHI_VPU_CLK_CNTL;
-		break;
-	default:
-		reg = HHI_VPU_CLK_CNTL_GX;
-		break;
-	}
-
 	VPUPR("clk_level: %u, clk: %uHz, reg: 0x%x\n",
-		vpu_conf.clk_level, get_vpu_clk(), vpu_hiu_read(reg));
+		vpu_conf.clk_level, get_vpu_clk(),
+		vpu_hiu_read(HHI_VPU_CLK_CNTL));
+}
+
+void vpu_info_print(void)
+{
+	printf("detect chip type: %d\n", vpu_chip_type);
+	printf("clk_level:         %d(%dHz)\n"
+		"clk_level default: %d(%dHz)\n"
+		"clk_level max:     %d(%dHz)\n"
+		"fclk_type:         %d(%dHz)\n",
+		vpu_conf.clk_level,
+		vpu_clk_table[vpu_conf.fclk_type][vpu_conf.clk_level][0],
+		vpu_conf.clk_level_dft,
+		vpu_clk_table[vpu_conf.fclk_type][vpu_conf.clk_level_dft][0],
+		(vpu_conf.clk_level_max - 1),
+		vpu_clk_table[vpu_conf.fclk_type][vpu_conf.clk_level_max - 1][0],
+		vpu_conf.fclk_type,
+		(fclk_table[vpu_conf.fclk_type] * 1000000));
 }
 
 static unsigned int vcbus_reg[] = {
-	0x1d00, /* VPP_DUMMY_DATA */
-	0x1702, /* DI_POST_SIZE */
+	0x1b7f, /* VENC_VDAC_TST_VAL */
 	0x1c30, /* ENCP_DVI_HSO_BEGIN */
-	0x1b78, /* VENC_VDAC_DACSEL0 */
+	0x1d00, /* VPP_DUMMY_DATA */
+	0x2730, /* VPU_VPU_PWM_V0 */
 };
 
 void vcbus_test(void)
