@@ -215,9 +215,8 @@ void power_init(int mode)
 	reg &= ~(1 << 8);
 	reg |=  (1 << 24);
 	writel(reg, AO_GPIO_O_EN_N);
-	serial_puts("set vddee enable AO_2 to high\n ");
+	serial_puts("set vddee enable AO_2 to low\n ");
 	reg = readl(AO_GPIO_O_EN_N);
-	reg &= ~(1 << 2);
-	reg |=  (1 << 18);
+	reg &= ~((1 << 2)|(1 << 18));
 	writel(reg, AO_GPIO_O_EN_N);
 }

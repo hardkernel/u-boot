@@ -1,4 +1,3 @@
-
 /*
  * board/amlogic/configs/txl_p346_v1.h
  *
@@ -95,7 +94,7 @@
         "sdc_burning=sdc_burn ${sdcburncfg}\0"\
         "wipe_data=successful\0"\
         "wipe_cache=successful\0"\
-        "EnableSelinux=enforcing\0" \
+        "EnableSelinux=disabled\0" \
         "recovery_part=recovery\0"\
         "recovery_offset=0\0"\
         "cvbs_drv=0\0"\
