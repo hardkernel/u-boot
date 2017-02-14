@@ -319,6 +319,7 @@ static void board_mmc_register(unsigned port)
 }
 int board_mmc_init(bd_t	*bis)
 {
+	__maybe_unused struct mmc *mmc;
 #ifdef CONFIG_VLSI_EMULATOR
 	//board_mmc_register(SDIO_PORT_A);
 #else
@@ -327,6 +328,14 @@ int board_mmc_init(bd_t	*bis)
 	board_mmc_register(SDIO_PORT_B);
 	board_mmc_register(SDIO_PORT_C);
 //	board_mmc_register(SDIO_PORT_B1);
+#if defined(CONFIG_ENV_IS_NOWHERE) && defined(CONFIG_AML_SD_EMMC)
+	/* try emmc here. */
+	mmc = find_mmc_device(CONFIG_SYS_MMC_ENV_DEV);
+	if (!mmc)
+		printf("%s() %d: No MMC found\n", __func__, __LINE__);
+	else if (mmc_init(mmc))
+		printf("%s() %d: MMC init failed\n", __func__, __LINE__);
+#endif
 	return 0;
 }
 
