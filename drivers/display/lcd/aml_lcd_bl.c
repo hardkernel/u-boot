@@ -851,6 +851,8 @@ static const char *bl_pinmux_str[] = {
 	"bl_pwm_vs_on_pin",     /* 1 */
 	"bl_pwm_combo_0_on_pin",  /* 2 */
 	"bl_pwm_combo_1_on_pin",  /* 3 */
+	"bl_pwm_combo_0_vs_on_pin",  /* 4 */
+	"bl_pwm_combo_1_vs_on_pin",  /* 5 */
 };
 
 static char *bl_pwm_name[] = {
@@ -1741,68 +1743,11 @@ static int aml_bl_init_load_from_dts(char *dt_addr, struct bl_config_s *bconf)
 	case BL_CTRL_PWM_COMBO:
 		pwm_combo0 = bconf->bl_pwm_combo0;
 		pwm_combo1 = bconf->bl_pwm_combo1;
-		sprintf(propname,"/pinmux/%s", bl_pinmux_str[2]);
-		parent_offset = fdt_path_offset(dt_addr, propname);
-		if (parent_offset < 0) {
-			LCDERR("bl: not find %s node\n", propname);
-			pwm_combo0->pinmux_set[0][0] = LCD_PINMUX_END;
-			pwm_combo0->pinmux_set[0][1] = 0x0;
-			pwm_combo0->pinmux_clr[0][0] = LCD_PINMUX_END;
-			pwm_combo0->pinmux_clr[0][1] = 0x0;
-			return -1;
-		} else {
-			propdata = (char *)fdt_getprop(dt_addr, parent_offset, "amlogic,setmask", &len);
-			if (propdata == NULL) {
-				LCDERR("bl: failed to get amlogic,setmask\n");
-				pwm_combo0->pinmux_set[0][0] = LCD_PINMUX_END;
-				pwm_combo0->pinmux_set[0][1] = 0x0;
-			} else {
-				temp = len / 8;
-				for (i = 0; i < temp; i++) {
-					pwm_combo0->pinmux_set[i][0] = be32_to_cpup((((u32*)propdata)+2*i));
-					pwm_combo0->pinmux_set[i][1] = be32_to_cpup((((u32*)propdata)+2*i+1));
-				}
-				if (temp < (LCD_PINMUX_NUM - 1)) {
-					pwm_combo0->pinmux_set[temp][0] = LCD_PINMUX_END;
-					pwm_combo0->pinmux_set[temp][1] = 0x0;
-				}
-			}
-			propdata = (char *)fdt_getprop(dt_addr, parent_offset, "amlogic,clrmask", &len);
-			if (propdata == NULL) {
-				LCDERR("bl: failed to get amlogic,clrmask\n");
-				pwm_combo0->pinmux_clr[0][0] = LCD_PINMUX_END;
-				pwm_combo0->pinmux_clr[0][1] = 0x0;
-			} else {
-				temp = len / 8;
-				for (i = 0; i < temp; i++) {
-					pwm_combo0->pinmux_clr[i][0] = be32_to_cpup((((u32*)propdata)+2*i));
-					pwm_combo0->pinmux_clr[i][1] = be32_to_cpup((((u32*)propdata)+2*i+1));
-				}
-				if (temp < (LCD_PINMUX_NUM - 1)) {
-					pwm_combo0->pinmux_clr[temp][0] = LCD_PINMUX_END;
-					pwm_combo0->pinmux_clr[temp][1] = 0x0;
-				}
-			}
-			if (lcd_debug_print_flag) {
-				i = 0;
-				while (i < LCD_PINMUX_NUM) {
-					if (pwm_combo0->pinmux_set[i][0] == LCD_PINMUX_END)
-						break;
-					LCDPR("bl: pwm_combo0 pinmux_set: %d, 0x%08x\n",
-						pwm_combo0->pinmux_set[i][0], pwm_combo0->pinmux_set[i][1]);
-					i++;
-				}
-				i = 0;
-				while (i < LCD_PINMUX_NUM) {
-					if (pwm_combo0->pinmux_clr[i][0] == LCD_PINMUX_END)
-						break;
-					LCDPR("bl: pwm_combo0 pinmux_clr: %d, 0x%08x\n",
-						pwm_combo0->pinmux_clr[i][0], pwm_combo0->pinmux_clr[i][1]);
-					i++;
-				}
-			}
-		}
-		sprintf(propname,"/pinmux/%s", bl_pinmux_str[3]);
+		if (pwm_combo1->pwm_port == BL_PWM_VS)
+			sprintf(propname,"/pinmux/%s", bl_pinmux_str[5]);
+		else
+			sprintf(propname,"/pinmux/%s", bl_pinmux_str[3]);
+
 		parent_offset = fdt_path_offset(dt_addr, propname);
 		if (parent_offset < 0) {
 			LCDERR("bl: not find %s node\n", propname);
@@ -1859,6 +1804,72 @@ static int aml_bl_init_load_from_dts(char *dt_addr, struct bl_config_s *bconf)
 						break;
 					LCDPR("bl: pwm_combo1 pinmux_clr: %d, 0x%08x\n",
 						pwm_combo1->pinmux_clr[i][0], pwm_combo1->pinmux_clr[i][1]);
+					i++;
+				}
+			}
+		}
+
+		if (pwm_combo0->pwm_port == BL_PWM_VS)
+			sprintf(propname,"/pinmux/%s", bl_pinmux_str[4]);
+		else
+			sprintf(propname,"/pinmux/%s", bl_pinmux_str[2]);
+
+		parent_offset = fdt_path_offset(dt_addr, propname);
+		if (parent_offset < 0) {
+			LCDERR("bl: not find %s node\n", propname);
+			pwm_combo0->pinmux_set[0][0] = LCD_PINMUX_END;
+			pwm_combo0->pinmux_set[0][1] = 0x0;
+			pwm_combo0->pinmux_clr[0][0] = LCD_PINMUX_END;
+			pwm_combo0->pinmux_clr[0][1] = 0x0;
+			return -1;
+		} else {
+			propdata = (char *)fdt_getprop(dt_addr, parent_offset, "amlogic,setmask", &len);
+			if (propdata == NULL) {
+				LCDERR("bl: failed to get amlogic,setmask\n");
+				pwm_combo0->pinmux_set[0][0] = LCD_PINMUX_END;
+				pwm_combo0->pinmux_set[0][1] = 0x0;
+			} else {
+				temp = len / 8;
+				for (i = 0; i < temp; i++) {
+					pwm_combo0->pinmux_set[i][0] = be32_to_cpup((((u32*)propdata)+2*i));
+					pwm_combo0->pinmux_set[i][1] = be32_to_cpup((((u32*)propdata)+2*i+1));
+				}
+				if (temp < (LCD_PINMUX_NUM - 1)) {
+					pwm_combo0->pinmux_set[temp][0] = LCD_PINMUX_END;
+					pwm_combo0->pinmux_set[temp][1] = 0x0;
+				}
+			}
+			propdata = (char *)fdt_getprop(dt_addr, parent_offset, "amlogic,clrmask", &len);
+			if (propdata == NULL) {
+				LCDERR("bl: failed to get amlogic,clrmask\n");
+				pwm_combo0->pinmux_clr[0][0] = LCD_PINMUX_END;
+				pwm_combo0->pinmux_clr[0][1] = 0x0;
+			} else {
+				temp = len / 8;
+				for (i = 0; i < temp; i++) {
+					pwm_combo0->pinmux_clr[i][0] = be32_to_cpup((((u32*)propdata)+2*i));
+					pwm_combo0->pinmux_clr[i][1] = be32_to_cpup((((u32*)propdata)+2*i+1));
+				}
+				if (temp < (LCD_PINMUX_NUM - 1)) {
+					pwm_combo0->pinmux_clr[temp][0] = LCD_PINMUX_END;
+					pwm_combo0->pinmux_clr[temp][1] = 0x0;
+				}
+			}
+			if (lcd_debug_print_flag) {
+				i = 0;
+				while (i < LCD_PINMUX_NUM) {
+					if (pwm_combo0->pinmux_set[i][0] == LCD_PINMUX_END)
+						break;
+					LCDPR("bl: pwm_combo0 pinmux_set: %d, 0x%08x\n",
+						pwm_combo0->pinmux_set[i][0], pwm_combo0->pinmux_set[i][1]);
+					i++;
+				}
+				i = 0;
+				while (i < LCD_PINMUX_NUM) {
+					if (pwm_combo0->pinmux_clr[i][0] == LCD_PINMUX_END)
+						break;
+					LCDPR("bl: pwm_combo0 pinmux_clr: %d, 0x%08x\n",
+						pwm_combo0->pinmux_clr[i][0], pwm_combo0->pinmux_clr[i][1]);
 					i++;
 				}
 			}
