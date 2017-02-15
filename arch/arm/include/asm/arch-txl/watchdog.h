@@ -19,6 +19,8 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
+#include <asm/arch/secure_apb.h>
+
 #ifndef _BOOT_ROM_WATCHDOG_H
 #define _BOOT_ROM_WATCHDOG_H
 

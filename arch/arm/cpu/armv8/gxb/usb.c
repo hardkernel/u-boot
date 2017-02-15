@@ -23,7 +23,7 @@
 //#include <asm/cache.h>
 #include <asm/arch/usb.h>
 #include <asm/arch/romboot.h>
-
+#include <asm/arch/secure_apb.h>
 
 #ifdef CONFIG_USB_DWC_OTG_HCD
 static amlogic_usb_config_t * g_usb_cfg[BOARD_USB_MODE_MAX][USB_PHY_PORT_MAX];

@@ -7,6 +7,8 @@
  * Watchdog related routine defines
  */
 
+#include <asm/arch/secure_apb.h>
+
 #ifndef _BOOT_ROM_WATCHDOG_H
 #define _BOOT_ROM_WATCHDOG_H
 

@@ -20,6 +20,7 @@
 
 #include <asm/arch/timer.h>
 #include <asm/types.h>
+#include <asm/arch/secure_apb.h>
 
 #define P_EE_TIMER_E		P_ISA_TIMERE
 

@@ -24,6 +24,7 @@
 #include <asm/io.h>
 //#include <asm/arch/io.h>
 #include <asm/arch/register.h>
+#include <asm/arch/secure_apb.h>
 #include <asm/arch/clock.h>
 
 /*  !!must use nonzero value as default value. Otherwise it linked to bss segment,

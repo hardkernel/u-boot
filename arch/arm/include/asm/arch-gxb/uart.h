@@ -25,7 +25,7 @@
 #include <common.h>
 #include "register.h"
 //#include "io.h"
-
+#include <asm/arch/secure_apb.h>
 
 #ifndef CONFIG_CONS_INDEX
 #error Please define CONFIG_CONS_INDEX==[0|1]
@@ -59,7 +59,7 @@
 #define UART_CLK_SRC    CLK81
 #define UART_PORT_0     UART0_WFIFO
 #define UART_PORT_1     UART1_WFIFO
-#define UART_PORT_AO    P_AO_UART_WFIFO
+#define UART_PORT_AO    AO_UART_WFIFO
 #define UART_WFIFO      0
 #define UART_RFIFO      1
 #define UART_CONTROL    2

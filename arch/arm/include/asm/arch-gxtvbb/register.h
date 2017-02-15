@@ -32,6 +32,8 @@
 #define CBUS_REG_OFFSET(reg) ((reg) << 2)
 #define CBUS_REG_ADDR(reg)	 (IO_CBUS_BASE + CBUS_REG_OFFSET(reg))
 
+/* secure_apb.h redefined, move to asm/arch/regs.h */
+#if 0
 /* below UART0,UART1,AO_UART is m8 addr,it is placed is for compiling pass */
 /* -------------------------------
 // UART0
@@ -94,6 +96,6 @@
 #define P_AO_UART_MISC 		AOBUS_REG_ADDR(AO_UART_MISC)
 #define AO_UART_REG5 ((0x01 << 10) | (0x35 << 2)) 	///../ucode/c_always_on_pointer.h:94
 #define P_AO_UART_REG5 		AOBUS_REG_ADDR(AO_UART_REG5)
-
+#endif
 
 #endif //__REGISTER_H__

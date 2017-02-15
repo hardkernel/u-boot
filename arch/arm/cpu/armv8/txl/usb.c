@@ -23,7 +23,7 @@
 //#include <asm/cache.h>
 #include <asm/arch/usb-new.h>
 #include <asm/arch/romboot.h>
-
+#include <asm/arch/secure_apb.h>
 
 static struct amlogic_usb_config * g_usb_cfg[BOARD_USB_MODE_MAX][USB_PHY_PORT_MAX];
 

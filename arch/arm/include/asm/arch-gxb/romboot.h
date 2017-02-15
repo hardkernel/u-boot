@@ -43,6 +43,9 @@
 #define AO_SEC_GP_CFG7_W0_BIT			8
 #define AO_SEC_GP_CFG7_W0			0x100
 
+/*
+move to asm/arch/regs.h
+
 #define P_ISA_TIMERE                 (volatile uint32_t *)0xc1109988
 #define P_ASSIST_POR_CONFIG          (volatile uint32_t *)0xc1107d54
 
@@ -56,6 +59,7 @@
 #define P_SPI_FLASH_CTRL             (volatile uint32_t *)0xc1108c88
 #define P_SPI_USER_REG               (volatile uint32_t *)0xc1108c9c
 #define P_SPI_START_ADDR             (volatile uint32_t *)0xCC000000
+*/
 
 #define BOOT_ID_RESERVED	0
 #define BOOT_ID_EMMC		1

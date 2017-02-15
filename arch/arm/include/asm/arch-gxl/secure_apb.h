@@ -10,6 +10,8 @@
 // DO NOT EDIT!!!!!
 // ----------------------------------------------------------------------
 //
+#include <asm/arch/regs.h>
+
 #ifdef SECURE_APB_H
 #else
 #define SECURE_APB_H
