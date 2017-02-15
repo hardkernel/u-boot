@@ -274,4 +274,7 @@
 /* HPD Disable : Always HDMI Connect */
 #define	ODROID_DISABLE_HPD		1
 
+/* Wakeup from GPIO key */
+#define CONFIG_GPIO_WAKEUP		1
+
 #endif
