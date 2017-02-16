@@ -352,7 +352,6 @@ static void hdmi_tx_set_hdmi_5v(void)
 
 int board_init(void)
 {
-#if 0
 #ifdef CONFIG_AML_V2_FACTORY_BURN
 	aml_try_factory_usb_burning(0, gd->bd);
 #endif// #ifdef CONFIG_AML_V2_FACTORY_BURN
@@ -364,7 +363,6 @@ int board_init(void)
 #ifdef CONFIG_AML_NAND
 	extern int amlnf_init(unsigned char flag);
 	amlnf_init(0);
-#endif
 #endif
 	return 0;
 }
