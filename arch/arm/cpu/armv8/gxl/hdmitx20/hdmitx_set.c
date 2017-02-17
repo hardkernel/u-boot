@@ -191,30 +191,35 @@ static void hdmitx_hw_init(void)
 /*
  * Note: read 8 Bytes of EDID data every time
  */
-static int read_edid_8bytes(unsigned char *rx_edid, unsigned char addr)
+static int read_edid_8bytes(unsigned char *rx_edid, unsigned char addr,
+	unsigned char blk_no)
 {
 	unsigned int timeout = 0;
 	unsigned int i = 0;
 	// Program SLAVE/SEGMENT/ADDR
 	hdmitx_wr_reg(HDMITX_DWC_I2CM_SLAVE, 0x50);
 	hdmitx_wr_reg(HDMITX_DWC_I2CM_SEGADDR, 0x30);
-	hdmitx_wr_reg(HDMITX_DWC_I2CM_SEGPTR, 0);
-	hdmitx_wr_reg(HDMITX_DWC_I2CM_ADDRESS, addr & 0xff);
-	hdmitx_wr_reg(HDMITX_DWC_I2CM_OPERATION, 1 << 2);
+	hdmitx_wr_reg(HDMITX_DWC_I2CM_SEGPTR, 1);
+	hdmitx_wr_reg(HDMITX_DWC_I2CM_ADDRESS, addr);
+	if (blk_no < 2)
+		hdmitx_wr_reg(HDMITX_DWC_I2CM_OPERATION, 1 << 2);
+	else
+		hdmitx_wr_reg(HDMITX_DWC_I2CM_OPERATION, 1 << 3);
 	timeout = 0;
-	while ((!(hdmitx_rd_reg(HDMITX_DWC_IH_I2CM_STAT0) & (1 << 1))) && (timeout < 3)) {
-		_udelay(2000);
+	while ((!(hdmitx_rd_reg(HDMITX_DWC_IH_I2CM_STAT0) & (1 << 1))) && (timeout < 5)) {
+		_udelay(1000);
 		timeout ++;
 	}
-	if (timeout == 3) {
+	if (timeout == 5) {
 		printk("ddc timeout\n");
 		return 0;
 	}
+	_udelay(1000);
 	hdmitx_wr_reg(HDMITX_DWC_IH_I2CM_STAT0, 1 << 1);        // clear INT
 	// Read back 8 bytes
-	for (i = 0; i < 8; i ++) {
+	for (i = 0; i < 8; i ++)
 		rx_edid[i] = hdmitx_rd_reg(HDMITX_DWC_I2CM_READ_BUFF0 + i);
-	}
+
 	return 1;
 }
 
@@ -263,12 +268,11 @@ static void ddc_init(void)
 	hdmitx_wr_reg(HDMITX_DWC_I2CM_SCDC_UPDATE,  data32);
 }
 
-static int hdmitx_read_edid(unsigned char *buf, unsigned char addr, unsigned char size)
+static int hdmitx_read_edid(unsigned char *buf, unsigned char addr,
+	unsigned char blk_no)
 {
 	ddc_init();
-	if ((addr + size) > 256)
-		return 0;
-	return read_edid_8bytes(buf, addr);
+	return read_edid_8bytes(buf, (addr + blk_no * 128) & 0xff, blk_no);
 }
 
 static void scdc_rd_sink(unsigned char adr, unsigned char *val)

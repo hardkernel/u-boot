@@ -185,6 +185,69 @@ struct hdmi_cea_timing {
 	unsigned short v_sync_ln;
 };
 
+/* Refer CEA861-D Page 116 Table 55 */
+struct dtd {
+	unsigned short pixel_clock;
+	unsigned short h_active;
+	unsigned short h_blank;
+	unsigned short v_active;
+	unsigned short v_blank;
+	unsigned short h_sync_offset;
+	unsigned short h_sync;
+	unsigned short v_sync_offset;
+	unsigned short v_sync;
+	unsigned char h_image_size;
+	unsigned char v_image_size;
+	unsigned char h_border;
+	unsigned char v_border;
+	unsigned char flags;
+	enum hdmi_vic vic;
+};
+
+#define VIC_MAX_NUM 256
+struct rx_cap {
+	unsigned int native_Mode;
+	/*video*/
+	unsigned int VIC[VIC_MAX_NUM];
+	unsigned int VIC_count;
+	unsigned int native_VIC;
+	/*vendor*/
+	unsigned int IEEEOUI;
+	unsigned int Max_TMDS_Clock1; /* HDMI1.4b TMDS_CLK */
+	unsigned int HF_IEEEOUI;	/* For HDMI Forum */
+	unsigned int Max_TMDS_Clock2; /* HDMI2.0 TMDS_CLK */
+	/* CEA861-F, Table 56, Colorimetry Data Block */
+	unsigned int colorimetry_data;
+	unsigned int scdc_present:1;
+	unsigned int scdc_rr_capable:1; /* SCDC read request */
+	unsigned int lte_340mcsc_scramble:1;
+	unsigned int dc_y444:1;
+	unsigned int dc_30bit:1;
+	unsigned int dc_36bit:1;
+	unsigned int dc_48bit:1;
+	unsigned int dc_30bit_420:1;
+	unsigned int dc_36bit_420:1;
+	unsigned int dc_48bit_420:1;
+	unsigned char edid_version;
+	unsigned char edid_revision;
+	unsigned int ColorDeepSupport;
+	unsigned int Video_Latency;
+	unsigned int Audio_Latency;
+	unsigned int Interlaced_Video_Latency;
+	unsigned int Interlaced_Audio_Latency;
+	unsigned int threeD_present;
+	unsigned int threeD_Multi_present;
+	unsigned int hdmi_vic_LEN;
+	enum hdmi_vic preferred_mode;
+	struct dtd dtd[16];
+	unsigned char dtd_idx;
+	unsigned char flag_vfpdb;
+	unsigned char number_of_dtd;
+	unsigned char pref_colorspace;
+	/*blk0 check sum*/
+	unsigned char chksum;
+};
+
 enum hdmi_color_depth {
 	HDMI_COLOR_DEPTH_24B = 4,
 	HDMI_COLOR_DEPTH_30B = 5,
@@ -231,6 +294,8 @@ struct parse_cr {
 	const char *name;
 };
 
+#define EDID_BLK_NO	4
+#define EDID_BLK_SIZE	128
 struct hdmi_format_para {
 	enum hdmi_vic vic;
 	char *name; /* full name, 1280x720p60hz */
@@ -258,13 +323,15 @@ struct hdmitx_dev {
 	struct {
 		int (*get_hpd_state)(void);
 		int (*read_edid)(unsigned char *buf, unsigned char addr,
-				 unsigned char len);
+				 unsigned char blk_no);
 		void (*turn_off)(void);
 		void (*list_support_modes)(void);
 		void (*dump_regs)(void);
 		void (*test_bist)(unsigned int mode);
 		void (*output_blank)(unsigned int blank);
 	} HWOp;
+	unsigned char rawedid[EDID_BLK_SIZE * EDID_BLK_NO];
+	struct rx_cap RXCap;
 	struct hdmi_format_para *para;
 	enum hdmi_vic vic;
 	unsigned int frac_rate_policy;
@@ -276,6 +343,10 @@ struct hdmi_format_para *hdmi_get_fmt_paras(enum hdmi_vic vic);
 enum hdmi_vic hdmi_get_fmt_vic(char const *name);
 void hdmi_parse_attr(struct hdmi_format_para *para, char const *name);
 void hdmi_tx_set(struct hdmitx_dev *hdev);
+/* Parsing RAW EDID data from edid to pRXCap */
+unsigned int hdmi_edid_parsing(unsigned char *edid, struct rx_cap *pRXCap);
+struct hdmi_format_para *hdmi_match_dtd_paras(struct dtd *t);
+
 /*
  * Must be called at uboot
  */

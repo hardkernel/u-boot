@@ -42,12 +42,27 @@ static int do_hpd_detect(cmd_tbl_t *cmdtp, int flag, int argc,
 }
 
 static unsigned char edid_raw_buf[256] = {0};
-static void dump_edid_raw(unsigned char *buf)
+static void dump_edid_raw_8bytes(unsigned char *buf)
 {
 	int i = 0;
-	for (i = 0 ; i < 8; i++)
+	for (i = 0; i < 8; i++)
 		printf("%02x ", buf[i]);
 	printf("\n");
+}
+
+static void dump_full_edid(const unsigned char *buf)
+{
+	int i;
+	int blk_no = buf[126] + 1;
+
+	if (blk_no > 4)
+		blk_no = 4;
+	printf("Dump EDID Rawdata\n");
+	for (i = 0; i < blk_no * EDID_BLK_SIZE; i++) {
+		printk("%02x", buf[i]);
+		if (((i+1) & 0x1f) == 0)    /* print 32bytes a line */
+			printk("\n");
+	}
 }
 
 static int do_edid(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
@@ -71,7 +86,7 @@ static int do_edid(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 		printf("edid[0x%02x]: 0x%02x\n", edid_addr,
 			edid_raw_buf[edid_addr]);
 		if (0) /* Debug only */
-			dump_edid_raw(&edid_raw_buf[edid_addr & 0xf8]);
+			dump_edid_raw_8bytes(&edid_raw_buf[edid_addr & 0xf8]);
 		if (!st)
 			printf("edid read failed\n");
 	}
@@ -89,7 +104,7 @@ static int do_rx_det(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 	// current only support read 1 byte edid data
 	st = hdmitx_device.HWOp.read_edid(&edid_raw_buf[edid_addr & 0xf8], edid_addr & 0xf8, 8);
 	if (1)      // Debug only
-		dump_edid_raw(&edid_raw_buf[edid_addr & 0xf8]);
+		dump_edid_raw_8bytes(&edid_raw_buf[edid_addr & 0xf8]);
 	if (st) {
 #if 0
 		// set fake value for debug
@@ -268,6 +283,60 @@ static int do_info(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 	return 1;
 }
 
+static int do_get_preferred_mode(cmd_tbl_t * cmdtp, int flag, int argc,
+	char * const argv[])
+{
+	struct hdmitx_dev *hdev = &hdmitx_device;
+	unsigned int byte_num = 0;
+	unsigned char *edid = hdev->rawedid;
+	unsigned char blk_no = 1;
+	struct hdmi_format_para *para;
+	char pref_mode[64];
+	char color_attr[64];
+
+	memset(edid, 0, EDID_BLK_SIZE * EDID_BLK_NO);
+	memset(pref_mode, 0, sizeof(pref_mode));
+	memset(color_attr, 0, sizeof(color_attr));
+
+	/* Read complete EDID data sequentially */
+	while (byte_num < 128 * blk_no) {
+		hdmitx_device.HWOp.read_edid(&edid[byte_num], byte_num & 0x7f, byte_num / 128);
+		if (byte_num == 120) {
+			blk_no = edid[126] + 1;
+			if (blk_no > 4)
+				blk_no = 4; /* MAX Read Blocks 4 */
+		}
+		byte_num += 8;
+	}
+
+	if (hdmi_edid_parsing(hdev->rawedid, &hdev->RXCap) == 0) {
+		dump_full_edid(hdev->rawedid);
+	}
+	para = hdmi_get_fmt_paras(hdev->RXCap.preferred_mode);
+	if (para) {
+		sprintf(pref_mode, "setenv hdmimode %s", para->sname);
+		if (hdev->RXCap.pref_colorspace & (1 << 5))
+			sprintf(color_attr, "setenv colorattribute %s", "444,8bit");
+		else if (hdev->RXCap.pref_colorspace & (1 << 4))
+			sprintf(color_attr, "setenv colorattribute %s", "422,8bit");
+		else
+			sprintf(color_attr, "setenv colorattribute %s", "rgb,8bit");
+	} else { /* set default mode */
+		hdev->RXCap.preferred_mode = HDMI_720x480p60_16x9;
+		para = hdmi_get_fmt_paras(HDMI_720x480p60_16x9);
+		sprintf(pref_mode, "setenv hdmimode %s", para->sname);
+		sprintf(color_attr, "setenv colorattribute %s", "444,8bit");
+	}
+	printk("edid preferred_mode is %s[%d]\n", para->sname, hdev->RXCap.preferred_mode);
+
+	/* save to ENV */
+	run_command(pref_mode, 0);
+	run_command(color_attr, 0);
+	run_command("saveenv", 0);
+
+	return 0;
+}
+
 static cmd_tbl_t cmd_hdmi_sub[] = {
 	U_BOOT_CMD_MKENT(hpd, 1, 1, do_hpd_detect, "", ""),
 	U_BOOT_CMD_MKENT(edid, 3, 1, do_edid, "", ""),
@@ -277,6 +346,7 @@ static cmd_tbl_t cmd_hdmi_sub[] = {
 	U_BOOT_CMD_MKENT(off, 1, 1, do_off, "", ""),
 	U_BOOT_CMD_MKENT(dump, 1, 1, do_dump, "", ""),
 	U_BOOT_CMD_MKENT(info, 1, 1, do_info, "", ""),
+	U_BOOT_CMD_MKENT(get_preferred_mode, 1, 1, do_get_preferred_mode, "", ""),
 };
 
 static int do_hdmitx(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
@@ -301,6 +371,8 @@ U_BOOT_CMD(hdmitx, CONFIG_SYS_MAXARGS, 0, do_hdmitx,
 	   "HDMITX sub-system",
 	"hdmitx hpd\n"
 	"    Detect hdmi rx plug-in\n"
+	"hdmitx get_preferred_mode\n"
+	"    Read full edid data, parse edid, and get preferred mode\n"
 #if 0
 	"hdmitx edid read ADDRESS\n"
 	"    Read hdmi rx edid from ADDRESS(0x00~0xff)\n"
