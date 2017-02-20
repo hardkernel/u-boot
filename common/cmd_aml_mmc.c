@@ -1171,6 +1171,18 @@ int dtb_write(void *addr)
     return ret;
 }
 
+int renew_partition_tbl(unsigned char *buffer)
+{
+    free_partitions();
+    get_partition_from_dts(buffer);
+    if (0 == mmc_device_init(_dtb_init())) {
+        printf("partition table success\n");
+        return 0;
+    }
+    printf("partition table error\n");
+    return 1;
+}
+
 int do_amlmmc_dtb_key(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
     int dev, ret = 0;
@@ -1246,13 +1258,8 @@ int do_amlmmc_dtb_key(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
             } else if (strcmp(argv[1], "dtb_write") == 0) {
                 /* fixme, should we check the return value? */
                 ret = dtb_write(addr);
-                ret = mmc_device_init(_dtb_init());
-                if (ret == 0) {
-                    printf(" partition table success\n");
-                    return 0;
-                }
-                printf(" partition table error\n");
-                return 1;
+                ret |= renew_partition_tbl(addr);
+                return ret;
             }
             return 0;
         default:

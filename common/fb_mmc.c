@@ -16,6 +16,7 @@
 #endif
 
 extern int dtb_write(void *addr);
+extern int renew_partition_tbl(unsigned char *buffer);
 /* The 64 defined bytes plus the '\0' */
 #define RESPONSE_LEN	(64 + 1)
 
@@ -140,8 +141,12 @@ void fb_mmc_flash_write(const char *cmd, void *download_buffer,
 		ret = dtb_write(download_buffer);
 		if (ret)
 			fastboot_fail("fastboot write dtb fail");
-		else
+		else {
+			/* renew partition table @ once*/
+			if (renew_partition_tbl(download_buffer))
+				fastboot_fail("fastboot write dtb fail");
 			fastboot_okay("");
+		}
 	} else {
 		if (is_sparse_image(download_buffer))
 			write_sparse_image(dev_desc, &info, cmd, download_buffer,
