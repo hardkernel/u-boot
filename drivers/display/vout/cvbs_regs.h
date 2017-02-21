@@ -23,11 +23,7 @@
 #define BUS_TYPE_CBUS	0
 #define BUS_TYPE_HIU	1
 #define BUS_TYPE_VCBUS	2
-
-#define CBUS_BASE	0xc1100000
-#define HIU_BASE	0xc883c000
-#define VCBUS_BASE	0xd0100000
-
+#if 0/*defined in secure_apb.h*/
 #define MESON_CPU_MAJOR_ID_M6		0x16
 #define MESON_CPU_MAJOR_ID_M6TV		0x17
 #define MESON_CPU_MAJOR_ID_M6TVL	0x18
@@ -39,54 +35,30 @@
 #define MESON_CPU_MAJOR_ID_GXBB		0x1F
 #define MESON_CPU_MAJOR_ID_GXTVBB	0x20
 #define MESON_CPU_MAJOR_ID_GXL		0x21
-
+#define MESON_CPU_MAJOR_ID_GXM		0x22
+#define MESON_CPU_MAJOR_ID_TXL		0x23
+#define MESON_CPU_MAJOR_ID_TXLX     0x24
 
 #define ASSIST_HW_REV           0x1f53
+#endif
 
-#define HHI_HDMI_PLL_CNTL 		0x10c8
-#define HHI_HDMI_PLL_CNTL2		0x10c9
-#define HHI_HDMI_PLL_CNTL3		0x10ca
-#define HHI_HDMI_PLL_CNTL4		0x10cb
-#define HHI_HDMI_PLL_CNTL5		0x10cc
-#define HHI_HDMI_PLL_CNTL6		0x10cd
+#define DAC0_CLK_SEL            28
+#define DAC1_CLK_SEL            24
+#define DAC2_CLK_SEL            20
+#define VCLK2_XD_RST            17
+#define VCLK2_XD_EN             16
+#define ENCL_CLK_SEL            12
+#define VCLK2_XD                 0
 
-#define HHI_VIID_DIVIDER_CNTL	0x104c
-#define HHI_VIID_CLK_DIV		0x104a
-    #define DAC0_CLK_SEL            28
-    #define DAC1_CLK_SEL            24
-    #define DAC2_CLK_SEL            20
-    #define VCLK2_XD_RST            17
-    #define VCLK2_XD_EN             16
-    #define ENCL_CLK_SEL            12
-    #define VCLK2_XD                 0
-#define HHI_VIID_CLK_CNTL		0x104b
-	#define VCLK2_EN                19
-    #define VCLK2_CLK_IN_SEL        16
-    #define VCLK2_SOFT_RST          15
-    #define VCLK2_DIV12_EN           4
-    #define VCLK2_DIV6_EN            3
-    #define VCLK2_DIV4_EN            2
-    #define VCLK2_DIV2_EN            1
-    #define VCLK2_DIV1_EN            0
-#define HHI_VID_CLK_DIV 		0x1059
-#define HHI_VID_CLK_CNTL 		0x105f
-#define HHI_VID_CLK_CNTL2		0x1065
-#define HHI_VID_DIVIDER_CNTL 	0x1066
-#define HHI_VID_PLL_CLK_DIV  	0x1068
-
-#define HHI_VID2_PLL_CNTL 		0x10e0
-#define HHI_VID2_PLL_CNTL2 		0x10e1
-#define HHI_VID2_PLL_CNTL3 		0x10e2
-#define HHI_VID2_PLL_CNTL4 		0x10e3
-#define HHI_VID2_PLL_CNTL5 		0x10e4
-
-#define HHI_VDAC_CNTL0 			0x10bd
-#define HHI_VDAC_CNTL1 			0x10be
-
-#define HHI_GCLK_OTHER    		0x1054
-#define HHI_VID_CLK_CNTL2 		0x1065
-
-
+#define VCLK2_EN                19
+#define VCLK2_CLK_IN_SEL        16
+#define VCLK2_SOFT_RST          15
+#define VCLK2_DIV12_EN           4
+#define VCLK2_DIV6_EN            3
+#define VCLK2_DIV4_EN            2
+#define VCLK2_DIV2_EN            1
+#define VCLK2_DIV1_EN            0
+#if 0/*defined in secure_apb.h*/
 #define ENCI_VIDEO_MODE         0x1b00
 #define ENCI_VIDEO_MODE_ADV     0x1b01
 #define ENCI_VIDEO_FSC_ADJ      0x1b02
@@ -256,4 +228,5 @@
 #define VENC_VDAC_FIFO_CTRL             0x1bfc
 
 #define VPU_VIU_VENC_MUX_CTRL           0x271a
+#endif
 

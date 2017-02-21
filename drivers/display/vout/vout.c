@@ -20,7 +20,7 @@
 
 #include <common.h>
 #include <asm/arch/io.h>
-
+#include <asm/arch/secure_apb.h>
 #include <amlogic/vmode.h>
 #include <amlogic/vout.h>
 #ifdef CONFIG_AML_LCD
@@ -36,12 +36,8 @@
 			vout_log("%s:%d\n", __func__, __LINE__); \
 	} while (0)
 
-
-#define REG_BASE_VCBUS                  (0xd0100000L)
-#define VPP_POSTBLEND_H_SIZE 0x1d21
 #define REG_OFFSET_VCBUS(reg)           ((reg << 2))
 #define REG_ADDR_VCBUS(reg)             (REG_BASE_VCBUS + REG_OFFSET_VCBUS(reg))
-
 
 static int g_vmode = -1;
 

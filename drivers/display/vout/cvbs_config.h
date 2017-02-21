@@ -226,6 +226,36 @@ static const struct reg_s *tvregs_576cvbs_performance_905l[] = {
 	tvregs_576cvbs_china_mobile_905l
 };
 
+static const struct reg_s tvregs_576cvbs_china_sarft_txl[] = {
+	{ENCI_YC_DELAY,				0x333	},
+	{ENCI_VIDEO_SAT,			0xf4	},
+	{VENC_VDAC_DAC0_FILT_CTRL1,	0xfc48	},
+	{ENCI_SYNC_ADJ,				0x8c00	},
+	{MREG_END_MARKER,			0		}
+};
+
+static const struct reg_s tvregs_576cvbs_china_telecom_txl[] = {
+	{ENCI_YC_DELAY,				0x333	},
+	{ENCI_VIDEO_SAT,			0xf4	},
+	{VENC_VDAC_DAC0_FILT_CTRL1,	0xfc48	},
+	{ENCI_SYNC_ADJ,				0x8c00	},
+	{MREG_END_MARKER,			0		}
+};
+
+static const struct reg_s tvregs_576cvbs_china_mobile_txl[] = {
+	{ENCI_YC_DELAY,				0x333	},
+	{ENCI_VIDEO_SAT,			0xf4	},
+	{VENC_VDAC_DAC0_FILT_CTRL1,	0xfc48	},
+	{ENCI_SYNC_ADJ,				0x8c00	},
+	{MREG_END_MARKER,			0		}
+};
+
+static const struct reg_s *tvregs_576cvbs_performance_txl[] = {
+	tvregs_576cvbs_china_sarft_txl,
+	tvregs_576cvbs_china_telecom_txl,
+	tvregs_576cvbs_china_mobile_txl
+};
+
 #endif
 
 static const struct reg_s tvregs_576cvbs_enc[] = {
