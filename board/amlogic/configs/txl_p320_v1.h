@@ -41,6 +41,11 @@
 #define CONFIG_CEC_OSD_NAME		"AML_TV"
 #define CONFIG_CEC_WAKEUP
 
+/* config for ir power key env*/
+#define CONFIG_IR_ENV
+/* config for adc power env*/
+#define CONFIG_ADC_ENV
+
 /* SMP Definitinos */
 #define CPU_RELEASE_ADDR		secondary_boot_func
 
@@ -73,6 +78,8 @@
 #define CONFIG_EXTRA_ENV_SETTINGS \
         "firstboot=1\0"\
         "upgrade_step=0\0"\
+        "ir_power_key=0xea15fe01\0"\
+        "adc_ch_power_key=2,137\0"\
         "jtag=apao\0"\
         "loadaddr=1080000\0"\
         "panel_type=lvds_1\0" \

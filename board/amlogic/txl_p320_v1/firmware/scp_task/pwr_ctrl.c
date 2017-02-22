@@ -54,6 +54,34 @@ enum pwm_id {
 	pwm_ao_b,
 };
 
+/*add timer for adc key*/
+static unsigned char key_cnt = 0;
+static unsigned int ao_timer_ctrl;
+static unsigned int ao_timera;
+unsigned int channel;
+unsigned int keycode;
+
+static void reset_ao_timera(void)
+{
+	unsigned int val;
+	ao_timer_ctrl = readl(AO_TIMER_REG);
+	ao_timera = readl(AO_TIMERA_REG);
+/* set ao timera work mode and interrrupt time
+ * 100us resolution
+*/
+	val = (1 << 2) | (3 << 0) | (1 << 3);
+	writel(val, AO_TIMER_REG);
+/* periodic time 10m
+ */
+	writel(100,AO_TIMERA_REG);
+}
+static void restore_ao_timer(void)
+{
+	writel(ao_timer_ctrl,AO_TIMER_REG);
+	writel(ao_timera,AO_TIMERA_REG);
+}
+/*end timer for adc key*/
+
 static void power_switch_to_ee(unsigned int pwr_ctrl)
 {
 	if (pwr_ctrl == ON) {
@@ -246,6 +274,9 @@ static unsigned int detect_key(unsigned int suspend_from)
 	unsigned *irq = (unsigned *)WAKEUP_SRC_IRQ_ADDR_BASE;
 	/* unsigned *wakeup_en = (unsigned *)SECURE_TASK_RESPONSE_WAKEUP_EN; */
 
+	/* start timer and enable adc*/
+	reset_ao_timera();
+	saradc_enable();
 	/* setup wakeup resources*/
 	/*auto suspend: timerA 10ms resolution*/
 	if (time_out_ms != 0)
@@ -287,6 +318,19 @@ static unsigned int detect_key(unsigned int suspend_from)
 				exit_reason = AUTO_WAKEUP;
 			}
 		}
+		/* adc power key handle*/
+		if (irq[IRQ_AO_TIMERA] == IRQ_AO_TIMERA_NUM) {
+			irq[IRQ_AO_TIMERA] = 0xFFFFFFFF;
+			if (check_adc_key_resume()) {
+				key_cnt++;
+				if (2 == key_cnt) {/*elimination of jitte of the key*/
+					key_cnt = 0;
+					exit_reason = REMOTE_WAKEUP;
+				}
+			}
+		}
+		/* end adc power key handle*/
+
 	if (irq[IRQ_AO_IR_DEC] == IRQ_AO_IR_DEC_NUM) {
 		irq[IRQ_AO_IR_DEC] = 0xFFFFFFFF;
 			if (remote_detect_key())
@@ -302,6 +346,9 @@ static unsigned int detect_key(unsigned int suspend_from)
 			asm volatile("wfi");
 	} while (1);
 
+	/*disabled adc and set timer*/
+	saradc_disable();
+	restore_ao_timer();
 	return exit_reason;
 }
 

@@ -288,11 +288,13 @@ static int init_remote(void)
 	return 0;
 }
 unsigned int usr_pwr_key = 0xffffffff;
+unsigned int ir_pwr_key;
 
 static int remote_detect_key(void)
 {
 	unsigned power_key;
 	int j;
+
 	if (((readl(AO_MF_IR_DEC_STATUS)) >> 3) & 0x1) { /*to judge the frame whether is effective or not*/
 			if (readl(AO_MF_IR_DEC_STATUS) & 0x1) {		  /*to judge the frame whether is repeat frame or not*/
 					return 0;
@@ -304,6 +306,12 @@ static int remote_detect_key(void)
 			}
 			if ((power_key & IR_POWER_KEY_MASK) == usr_pwr_key)
 					return 2;
+			if ((power_key & IR_POWER_KEY_MASK) == ir_pwr_key) {
+					uart_puts("get env ir power key = 0x");
+					uart_put_hex(ir_pwr_key, 32);
+					uart_puts("\n");
+					return 2;
+			}
 	}
 
 #ifdef CONFIG_COMPAT_IR
@@ -318,6 +326,13 @@ static int remote_detect_key(void)
 			}
 			if ((power_key & IR_POWER_KEY_MASK) == usr_pwr_key)
 					return 2;
+			if ((power_key & IR_POWER_KEY_MASK) == ir_pwr_key) {
+					uart_puts("get env ir power key = 0x\n");
+					uart_put_hex(ir_pwr_key, 32);
+					uart_puts("\n");
+					return 2;
+			}
+
 	}
 #endif
 

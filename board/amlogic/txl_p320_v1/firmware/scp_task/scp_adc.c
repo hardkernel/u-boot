@@ -9,6 +9,11 @@
 #define FLAG_BUSY_KERNEL    (1<<14) /* for bl30 */
 #define FLAG_BUSY_BL30      (1<<15) /* for bl30 */
 
+extern unsigned int channel;
+extern unsigned int keycode;
+
+
+
 #define PP_AO_SEC_SD_CFG8           (volatile unsigned int *)(0xc8100000 + (0x88 << 2))
 #if 0  /*For Mbox Platform*/
 #define GXBB_CLK_REG                (volatile unsigned int *)0xc883c3d8
@@ -321,10 +326,22 @@ int saradc_disable(void)
 int check_adc_key_resume(void)
 {
 	int value;
+	int adc_power;
+	int adc_min = keycode - 40;
+	int adc_max = keycode + 40;
 	/*the sampling value of adc: 0-1023*/
+
+	if (adc_min < 0 )
+		adc_min = 0;
+	if (adc_max > 1023)
+		adc_max = 1023;
+
 	value = get_adc_sample_gxbb(2);
+	adc_power = get_adc_sample_gxbb(channel);
 	if ((value >= 0) && (value <= 40))
 		return 1;
+	else if ((adc_power >= adc_min) && (adc_power <= adc_max))
+			return 2;
 	else
 		return 0;
 }
