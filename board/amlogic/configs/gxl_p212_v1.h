@@ -258,7 +258,7 @@
  *    CONFIG_DDR_TYPE_DDR3     : DDR3
  *    CONFIG_DDR_TYPE_DDR4     : DDR4
  *    CONFIG_DDR_TYPE_AUTO     : DDR3/DDR4 auto detect */
-#define CONFIG_DDR_TYPE					CONFIG_DDR_TYPE_DDR3
+#define CONFIG_DDR_TYPE					CONFIG_DDR_TYPE_AUTO
 /* DDR channel setting, please refer hardware design.
  *    CONFIG_DDR0_RANK0        : DDR0 rank0
  *    CONFIG_DDR0_RANK01       : DDR0 rank0+1

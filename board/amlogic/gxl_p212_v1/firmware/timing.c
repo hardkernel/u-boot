@@ -94,11 +94,11 @@
 #define CFG_DDR_ODT  DDR4_ODT_60OHM //useless, no effect
 #endif
 
-//#define CFG_DDR4_DRV  DDR4_DRV_34OHM //ddr4 driver use this one
-//#define CFG_DDR4_ODT  DDR4_ODT_60OHM //ddr4 driver use this one
-#define CFG_DDR4_DRV  DDR4_DRV_48OHM//DDR4_DRV_48OHM //ddr4 driver use this one
-#define CFG_DDR4_ODT DDR4_ODT_48OHM// DDR4_ODT_80OHM //ddr4 driver use this one
-#if (CONFIG_DDR_TYPE == CONFIG_DDR_TYPE_DDR4)
+#define CFG_DDR4_DRV  DDR4_DRV_34OHM //ddr4 driver use this one
+#define CFG_DDR4_ODT  DDR4_ODT_60OHM //ddr4 driver use this one
+//#define CFG_DDR4_DRV  DDR4_DRV_48OHM//DDR4_DRV_48OHM //ddr4 driver use this one
+//#define CFG_DDR4_ODT DDR4_ODT_48OHM// DDR4_ODT_80OHM //ddr4 driver use this one
+#if ((CONFIG_DDR_TYPE == CONFIG_DDR_TYPE_DDR4) || (CONFIG_DDR_TYPE == CONFIG_DDR_TYPE_AUTO))
 #define CONFIG_SOC_VREF    1+ (50+((50*48)/(48+480/(6+1)))) // 880/12  //(50+((50*48)/(48+160)))  //0//50+50*drv/(drv+odt)  (738/12) //0 //0  is auto --70 ---range 44.07---88.04   %
 #define CONFIG_DRAM_VREF  1+ (50+((50*37)/(37+48)))// 860/12 // 0// (810/12) // 0 //77 //0 //0  is auto ---70 --range -- 45---92.50    %
 #elif (CONFIG_DDR_TYPE == CONFIG_DDR_TYPE_LPDDR3)
