@@ -40,13 +40,13 @@ static struct lcd_power_step_s lcd_power_off_step[] = {
 };
 static struct lcd_power_step_s lcd_power_on_step_3d_disable[] = {
 	{LCD_POWER_TYPE_CPU,   0,1,20,}, /* power on */
-	{LCD_POWER_TYPE_CPU,   1,0,10,}, /* 3d_disable */
+	{LCD_POWER_TYPE_CPU,   4,0,10,}, /* 3d_disable */
 	{LCD_POWER_TYPE_SIGNAL,0,0,0,},  /* signal */
 	{LCD_POWER_TYPE_MAX,   0,0,0,},  /* ending flag */
 };
 static struct lcd_power_step_s lcd_power_off_step_3d_disable[] = {
 	{LCD_POWER_TYPE_SIGNAL,0,0,20,},  /* signal */
-	{LCD_POWER_TYPE_CPU,   1,2,0,},   /* 3d_disable */
+	{LCD_POWER_TYPE_CPU,   4,2,0,},   /* 3d_disable */
 	{LCD_POWER_TYPE_CPU,   0,0,100,}, /* power off */
 	{LCD_POWER_TYPE_MAX,   0,0,0,},   /* ending flag */
 };

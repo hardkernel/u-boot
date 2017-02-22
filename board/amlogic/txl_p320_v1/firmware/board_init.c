@@ -62,5 +62,20 @@ void board_init(void)
 {
 	power_init(0);
 
+	//only run once before ddr inited.
+	if (!check_is_ddr_inited()) {
+		/* dram 1.5V reset */
+		serial_puts("DRAM reset...\n");
+		/* power off ddr */
+		writel((readl(P_AO_GPIO_O_EN_N) & (~((1 << 11) | (1 << 27)))),P_AO_GPIO_O_EN_N);
+		/* need delay, check hw design */
+		_udelay(100000);
+		/* power on ddr */
+		writel((readl(P_AO_GPIO_O_EN_N) | (1 << 27)),P_AO_GPIO_O_EN_N);
+
+		/* dram RC charge time, check hw design */
+		_udelay(10000);
+	}
+
 	panel_power_init();
 }

@@ -25,6 +25,7 @@
 #include <environment.h>
 #include <fdt_support.h>
 #include <libfdt.h>
+#include <asm/cpu_id.h>
 #ifdef CONFIG_SYS_I2C_AML
 #include <aml_i2c.h>
 #include <asm/arch/secure_apb.h>
@@ -44,6 +45,7 @@
 #endif
 #include <asm/arch/eth_setup.h>
 #include <phy.h>
+#include <asm-generic/gpio.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -360,13 +362,6 @@ int board_init(void)
 	board_usb_init(&g_usb_config_GXL_skt,BOARD_USB_MODE_HOST);
 #endif /*CONFIG_USB_XHCI_AMLOGIC*/
 
-/*
-AO4 -- AO10 change
-tmp for P320 5V_en
-*/
-	writel(readl(AO_GPIO_O_EN_N) & (~(0x1 << 10)), AO_GPIO_O_EN_N); //set mode: output
-	writel(readl(AO_GPIO_O_EN_N) | (0x1 << 26),AO_GPIO_O_EN_N);   //output 1
-
 #ifdef CONFIG_AML_NAND
 	extern int amlnf_init(unsigned char flag);
 	amlnf_init(0);
@@ -417,8 +412,20 @@ int board_late_init(void){
 	/*aml_try_factory_sdcard_burning(0, gd->bd);*/
 #endif// #ifdef CONFIG_AML_V2_FACTORY_BURN
 
+	//CLEAR PINMUX
+	clrbits_le32(P_AO_RTI_PIN_MUX_REG,(1<<23)|(1<<5)|(1<<1));//AO_5
+	clrbits_le32(P_PERIPHS_PIN_MUX_2, (1<<13)|(1<<5)|(1<<28));//DV_9
+	//SET GPIOAO_5 OUTPUT 1
+	clrbits_le32(P_AO_GPIO_O_EN_N, 1 << 5);
+	setbits_le32(P_AO_GPIO_O_EN_N, 1 << 21);
+	//SET GPIODV_9 OUTPUT 1
+	clrbits_le32(P_PREG_PAD_GPIO0_EN_N, 1 << 9);
+	setbits_le32(P_PREG_PAD_GPIO0_O, 1 << 9);
 	/* enable 5V for USB, panel, wifi */
-	//run_command("gpio set GPIOAO_4", 0);
+			/* set output mode for GPIOAO_10 */
+			clrbits_le32(P_AO_GPIO_O_EN_N, (1<<10));
+			/* set output level to high for GPIOAO_10 */
+			setbits_le32(P_AO_GPIO_O_EN_N, (1<<26));
 	return 0;
 }
 #endif
