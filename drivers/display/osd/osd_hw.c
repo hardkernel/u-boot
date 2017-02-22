@@ -33,7 +33,6 @@
 
 /* Local Headers */
 #include "osd_canvas.h"
-#include "osd_reg.h"
 #include "osd_log.h"
 #include "osd_io.h"
 #include "osd_hw.h"
@@ -2367,7 +2366,8 @@ void osd_init_hw(void)
 		osd_hw.free_scale_data[OSD2].y_end = 0;
 		osd_hw.free_scale_mode[OSD1] = 1;
 		osd_hw.free_scale_mode[OSD2] = 1;
-		if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_GXM)
+		if ((get_cpu_id().family_id == MESON_CPU_MAJOR_ID_GXM)
+			||(get_cpu_id().family_id == MESON_CPU_MAJOR_ID_TXLX))
 			osd_reg_write(VPP_OSD_SC_DUMMY_DATA, 0x00202000);
 		else if (get_cpu_id().family_id ==
 			MESON_CPU_MAJOR_ID_GXTVBB)

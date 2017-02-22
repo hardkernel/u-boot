@@ -18,6 +18,8 @@
 /* System Headers */
 #include <common.h>
 #include <asm/arch/io.h>
+#include <asm/arch/secure_apb.h>
+
 
 /* Amlogic Headers */
 #include <amlogic/canvas.h>

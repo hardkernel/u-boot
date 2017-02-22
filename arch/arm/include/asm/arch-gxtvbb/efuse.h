@@ -47,7 +47,7 @@ struct efuse_hal_api_arg {
 #define EFUSE_THERMAL_VERFLAG_MASK (0x1 << 18)
 #define EFUSE_ENCRYPT_MASK         (0x1 << 19)
 
-#define ASSIST_HW_REV                              0x1f53
+//#define ASSIST_HW_REV                              0x1f53
 
 int efuse_read_usr(char *buf, size_t count, loff_t *ppos);
 int efuse_write_usr(char *buf, size_t count, loff_t *ppos);

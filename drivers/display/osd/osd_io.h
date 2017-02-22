@@ -20,9 +20,9 @@
 #define _OSD_IO_H_
 
 #include <asm/arch/io.h>
+#include <asm/arch/secure_apb.h>
 
-#define REG_BASE_CBUS                   (0xc1100000L)
-#define REG_BASE_VCBUS                  (0xd0100000L)
+
 #define REG_OFFSET_CBUS(reg)            ((reg << 2))
 #define REG_OFFSET_VCBUS(reg)           ((reg << 2))
 

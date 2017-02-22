@@ -27,7 +27,6 @@
 #endif
 
 /* Local Headers */
-#include "osd_reg.h"
 #include "osd_log.h"
 #include "osd_io.h"
 #include "osd_hw.h"
