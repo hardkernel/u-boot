@@ -93,8 +93,11 @@ enum lcd_chip_e {
 	LCD_CHIP_G9TV,   /* 4 */
 	LCD_CHIP_G9BB,   /* 5 */
 	LCD_CHIP_GXTVBB, /* 6 */
-	LCD_CHIP_TXL,    /* 7 */
-	LCD_CHIP_MAX,    /* 8 */
+	LCD_CHIP_GXL,    /* 7 */
+	LCD_CHIP_GXM,    /* 8 */
+	LCD_CHIP_TXL,    /* 9 */
+	LCD_CHIP_TXLX,   /* 10 */
+	LCD_CHIP_MAX,    /* 11 */
 };
 
 enum lcd_type_e {

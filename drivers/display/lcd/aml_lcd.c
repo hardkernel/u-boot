@@ -56,8 +56,17 @@ static void lcd_chip_detect(void)
 	case MESON_CPU_MAJOR_ID_GXTVBB:
 		aml_lcd_driver.chip_type = LCD_CHIP_GXTVBB;
 		break;
+	case MESON_CPU_MAJOR_ID_GXL:
+		aml_lcd_driver.chip_type = LCD_CHIP_GXL;
+		break;
+	case MESON_CPU_MAJOR_ID_GXM:
+		aml_lcd_driver.chip_type = LCD_CHIP_GXM;
+		break;
 	case MESON_CPU_MAJOR_ID_TXL:
 		aml_lcd_driver.chip_type = LCD_CHIP_TXL;
+		break;
+	case MESON_CPU_MAJOR_ID_TXLX:
+		aml_lcd_driver.chip_type = LCD_CHIP_TXLX;
 		break;
 	default:
 		aml_lcd_driver.chip_type = LCD_CHIP_MAX;
@@ -369,12 +378,12 @@ static void lcd_info_print(void)
 }
 
 static unsigned int lcd_reg_dump_clk[] = {
-	HHI_HDMI_PLL_CNTL,
-	HHI_HDMI_PLL_CNTL2,
-	HHI_HDMI_PLL_CNTL3,
-	HHI_HDMI_PLL_CNTL4,
-	HHI_HDMI_PLL_CNTL5,
-	HHI_HDMI_PLL_CNTL6,
+	HHI_HPLL_CNTL,
+	HHI_HPLL_CNTL2,
+	HHI_HPLL_CNTL3,
+	HHI_HPLL_CNTL4,
+	HHI_HPLL_CNTL5,
+	HHI_HPLL_CNTL6,
 	HHI_VID_PLL_CLK_DIV,
 	HHI_VIID_CLK_DIV,
 	HHI_VIID_CLK_CNTL,
@@ -484,6 +493,7 @@ static void lcd_vbyone_reg_print(void)
 		reg = PERIPHS_PIN_MUX_7;
 		break;
 	case LCD_CHIP_TXL:
+	case LCD_CHIP_TXLX:
 		reg = PERIPHS_PIN_MUX_0;
 		break;
 	default:

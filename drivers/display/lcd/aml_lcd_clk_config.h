@@ -281,9 +281,74 @@ enum div_sel_e {
 #define CRT_VID_CLK_IN_MAX_GXTVBB   (3100 * 1000)
 #define ENCL_CLK_IN_MAX_GXTVBB      (620 * 1000)
 
+
+/************** GXL **************** */
+/* ******** register bit ******** */
+/* PLL_CNTL 0x10c8 */
+#define LCD_PLL_LOCK_GXL            31
+#define LCD_PLL_EN_GXL              30
+#define LCD_PLL_RST_GXL             28
+#define LCD_PLL_N_GXL               9
+#define LCD_PLL_M_GXL               0
+
+#define LCD_PLL_OD3_GXL             19
+#define LCD_PLL_OD2_GXL             23
+#define LCD_PLL_OD1_GXL             21
+
+/* ******** frequency limit (unit: kHz) ******** */
+/* pll */
+#define SS_LEVEL_MAX_GXL            5
+#define PLL_M_MIN_GXL               2
+#define PLL_M_MAX_GXL               511
+#define PLL_N_MIN_GXL               1
+#define PLL_N_MAX_GXL               1
+#define PLL_FRAC_RANGE_GXL          (1 << 10)
+#define PLL_OD_SEL_MAX_GXL          3
+#define PLL_FREF_MIN_GXL            (5 * 1000)
+#define PLL_FREF_MAX_GXL            (25 * 1000)
+#define PLL_VCO_MIN_GXL             (3000 * 1000)
+#define PLL_VCO_MAX_GXL             (6000 * 1000)
+
+/* video */
+#define CLK_DIV_IN_MAX_GXL          (3100 * 1000)
+#define CRT_VID_CLK_IN_MAX_GXL      (3100 * 1000)
+#define ENCL_CLK_IN_MAX_GXL         (620 * 1000)
+
 /* **********************************
- * TXL
+ * GXM
  * ********************************** */
+/* ******** register bit ******** */
+/* PLL_CNTL 0x10c8 */
+#define LCD_PLL_LOCK_GXM            31
+#define LCD_PLL_EN_GXM              30
+#define LCD_PLL_RST_GXM             28
+#define LCD_PLL_N_GXM               9
+#define LCD_PLL_M_GXM               0
+
+#define LCD_PLL_OD3_GXM             19
+#define LCD_PLL_OD2_GXM             23
+#define LCD_PLL_OD1_GXM             21
+
+/* ******** frequency limit (unit: kHz) ******** */
+/* pll */
+#define SS_LEVEL_MAX_GXM            5
+#define PLL_M_MIN_GXM               2
+#define PLL_M_MAX_GXM               511
+#define PLL_N_MIN_GXM               1
+#define PLL_N_MAX_GXM               1
+#define PLL_FRAC_RANGE_GXM          (1 << 10)
+#define PLL_OD_SEL_MAX_GXM          3
+#define PLL_FREF_MIN_GXM            (5 * 1000)
+#define PLL_FREF_MAX_GXM            (25 * 1000)
+#define PLL_VCO_MIN_GXM             (3000 * 1000)
+#define PLL_VCO_MAX_GXM             (6000 * 1000)
+
+/* video */
+#define CLK_DIV_IN_MAX_GXM          (3100 * 1000)
+#define CRT_VID_CLK_IN_MAX_GXM      (3100 * 1000)
+#define ENCL_CLK_IN_MAX_GXM         (620 * 1000)
+
+/*******  TXL ********************* */
 /* ******** register bit ******** */
 /* PLL_CNTL 0x10c8 */
 #define LCD_PLL_LOCK_TXL            31
