@@ -368,7 +368,7 @@ int genphy_config(struct phy_device *phydev)
 	int val;
 	u32 features;
 
-#ifdef ETHERNET_INTERNAL_PHY
+#ifdef CONFIG_INTERNAL_PHY
 	internalPhyConfig(phydev);
 #endif
 	/* For now, I'll claim that the generic driver supports
