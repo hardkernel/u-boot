@@ -213,15 +213,40 @@ static int do_lcd_test(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]
 static int do_lcd_key(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	struct aml_lcd_drv_s *lcd_drv;
+	int tmp;
+
+	if (argc == 1) {
+		return -1;
+	}
 
 	lcd_drv = aml_lcd_get_driver();
-	if (lcd_drv) {
+	if (lcd_drv == NULL) {
+		printf("no lcd driver\n");
+		return 0;
+	}
+	if (strcmp(argv[1], "flag") == 0) {
+		if (argc == 3) {
+			tmp = (int)simple_strtoul(argv[2], NULL, 10);
+			lcd_drv->unifykey_test_flag = tmp;
+			if (tmp) {
+				printf("enable lcd unifykey test\n");
+				printf("Be Careful!! This test will overwrite lcd unifykeys!!\n");
+			} else {
+				printf("disable lcd unifykey test\n");
+			}
+		} else {
+			return -1;
+		}
+	} else if (strcmp(argv[1], "test") == 0) {
 		if (lcd_drv->unifykey_test)
 			lcd_drv->unifykey_test();
 		else
 			printf("no lcd unifykey_test\n");
-	} else {
-		printf("no lcd driver\n");
+	} else if (strcmp(argv[1], "dump") == 0) {
+		if (lcd_drv->unifykey_dump)
+			lcd_drv->unifykey_dump();
+		else
+			printf("no lcd unifykey_dump\n");
 	}
 	return 0;
 }
@@ -252,7 +277,7 @@ static cmd_tbl_t cmd_lcd_sub[] = {
 	U_BOOT_CMD_MKENT(info, 2, 0, do_lcd_info, "", ""),
 	U_BOOT_CMD_MKENT(reg,  2, 0, do_lcd_reg, "", ""),
 	U_BOOT_CMD_MKENT(test, 3, 0, do_lcd_test, "", ""),
-	U_BOOT_CMD_MKENT(key,  2, 0, do_lcd_key, "", ""),
+	U_BOOT_CMD_MKENT(key,  4, 0, do_lcd_key, "", ""),
 	U_BOOT_CMD_MKENT(ext,  2, 0, do_lcd_ext, "", ""),
 };
 

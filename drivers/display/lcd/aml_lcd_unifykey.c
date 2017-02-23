@@ -24,7 +24,7 @@
 #include "aml_lcd_reg.h"
 #include "aml_lcd_common.h"
 
-/*#define LCD_UNIFYKEY_TEST*/
+#define LCD_UNIFYKEY_TEST
 #define LCDUKEY(fmt, args...)     printf("lcd ukey: "fmt"", ## args)
 #define LCDUKEYERR(fmt, args...)     printf("lcd ukey err: "fmt"", ## args)
 
@@ -167,9 +167,9 @@ int aml_lcd_unifykey_get(const char *key_name, unsigned char *buf, int *len)
 	return 0;
 }
 
-void aml_lcd_test_unifykey(void)
-{
 #ifdef LCD_UNIFYKEY_TEST
+static void aml_lcd_test_unifykey(void)
+{
 	int len;
 	unsigned char buf[150];
 	const char *str;
@@ -232,12 +232,15 @@ void aml_lcd_test_unifykey(void)
 	buf[100] = 0;  /* lvds_pn_swap bit[15:8] */
 	buf[101] = 0;  /* lvds_port_swap bit[7:0] */
 	buf[102] = 0;  /* lvds_port_swap bit[15:8] */
-	buf[103] = 0;  /* lane_reverse  */
-	buf[104] = 3;  /* phy_vswing_level bit[7:0] */
-	buf[105] = 0;  /* phy_vswing_level bit[15:8] */
-	buf[106] = 0;  /* phy_preem_level bit[7:0] */
-	buf[107] = 0;  /* phy_preem_level bit[15:8] */
-	for (i = 108; i < 115; i++)
+	buf[103] = 3;  /* phy_vswing_level bit[7:0] */
+	buf[104] = 0;  /* phy_vswing_level bit[15:8] */
+	buf[105] = 0;  /* phy_preem_level bit[7:0] */
+	buf[106] = 0;  /* phy_preem_level bit[15:8] */
+	buf[107] = 1;  /* phy_clk_vswing_level bit[7:0] */
+	buf[108] = 0;  /* phy_clk_vswing_level bit[15:8] */
+	buf[109] = 0;  /* phy_clk_preem_level bit[7:0] */
+	buf[110] = 0;  /* phy_clk_preem_level bit[15:8] */
+	for (i = 111; i < 115; i++)
 		buf[i] = 0;
 
 	/* power */
@@ -281,7 +284,7 @@ void aml_lcd_test_unifykey(void)
 	buf[4] = 150;
 	buf[5] = 0;   /* data_len */
 	buf[6] = 1;
-	buf[7] = 2;   /* version */
+	buf[7] = 0;   /* version */
 	buf[8] = 0;
 	buf[9] = 0;   /* reserved */
 	key_crc = crc32(0, &buf[4], 146); //except crc32
@@ -290,16 +293,10 @@ void aml_lcd_test_unifykey(void)
 		buf[i] = (unsigned char)((key_crc32 >> (i * 8)) & 0xff);
 
 	key_unify_write("lcd", buf, len);
-#else
-	LCDUKEY("default bypass for lcd unifykey test\n");
-	LCDUKEY("should enable macro definition: LCD_UNIFYKEY_TEST\n");
-	LCDUKEY("Be Careful!! This test will overwrite lcd unifykey!!\n");
-#endif
 }
 
-void aml_lcd_extern_test_unifykey(void)
+static void aml_lcd_extern_test_unifykey(void)
 {
-#ifdef LCD_UNIFYKEY_TEST
 	int len;
 	unsigned char buf[90];
 	const char *str;
@@ -378,20 +375,18 @@ void aml_lcd_extern_test_unifykey(void)
 		buf[i] = (unsigned char)((key_crc32 >> (i * 8)) & 0xff);
 
 	key_unify_write("lcd_extern", buf, len);
-#endif
 }
 
-void aml_bl_test_unifykey(void)
+static void aml_bl_test_unifykey(void)
 {
-#ifdef LCD_UNIFYKEY_TEST
 	int len;
-	unsigned char buf[95];
+	unsigned char buf[102];
 	const char *str;
 	int i, n;
 	uint32_t key_crc;
 	unsigned int key_crc32;
 
-	len = 92;
+	len = 102;
 
 	/* basic */
 	str = "backlight_unifykey_test";
@@ -446,23 +441,107 @@ void aml_bl_test_unifykey(void)
 	for (i = 84; i < 92; i++)  /* pwm/pwm2_level_range for pwm_combo */
 		buf[i] = 0;
 
+	/* customer */
+	for (i = 92; i < 102; i++)
+		buf[i] = 0;
+
 	/* header */
-	buf[4] = 92;
+	buf[4] = 102;
 	buf[5] = 0;   /* data_len */
-	buf[6] = 1;
+	buf[6] = 2;
 	buf[7] = 0;   /* version */
 	buf[8] = 0;
 	buf[9] = 0;   /* reserved */
-	key_crc = crc32(0, &buf[4], 88); //except crc32
+	key_crc = crc32(0, &buf[4], 98); //except crc32
 	key_crc32 = (unsigned int)key_crc;
 	for (i = 0; i < 4; i++)
 		buf[i] = (unsigned char)((key_crc32 >> (i * 8)) & 0xff);
 
 	key_unify_write("backlight", buf, len);
+}
+#endif
+
+void aml_lcd_unifykey_test(void)
+{
+#ifdef LCD_UNIFYKEY_TEST
+	LCDUKEY("Be Careful!! This test will overwrite lcd unifykeys!!\n");
+	aml_lcd_test_unifykey();
+	aml_lcd_extern_test_unifykey();
+	aml_bl_test_unifykey();
 #else
-	LCDUKEY("Be Careful!! This test will overwrite backlight unifykey!!\n");
+	LCDUKEY("default bypass for lcd unifykey test\n");
+	LCDUKEY("should enable macro definition: LCD_UNIFYKEY_TEST\n");
+	LCDUKEY("Be Careful!! This test will overwrite lcd unifykeys!!\n");
 #endif
 }
+
+void aml_lcd_unifykey_dump(void)
+{
+	unsigned char *para;
+	int key_len;
+	int ret, i;
+
+	/* dump unifykey: lcd */
+	para = (unsigned char *)malloc(sizeof(unsigned char) * LCD_UKEY_LCD_SIZE);
+	if (!para) {
+		LCDUKEYERR("%s: Not enough memory\n", __func__);
+		return;
+	}
+	key_len = LCD_UKEY_LCD_SIZE;
+	memset(para, 0, (sizeof(unsigned char) * key_len));
+	ret = aml_lcd_unifykey_get("lcd", para, &key_len);
+	if (ret == 0) {
+		printf("unifykey: lcd:");
+		for (i = 0; i < key_len; i++) {
+			if ((i % 16) == 0)
+				printf("\n%02x:", (i / 16));
+			printf(" %02x", para[i]);
+		}
+	}
+	printf("\n");
+	free(para);
+
+	/* dump unifykey: lcd_extern */
+	para = (unsigned char *)malloc(sizeof(unsigned char) * LCD_UKEY_LCD_EXT_SIZE);
+	if (!para) {
+		LCDUKEYERR("%s: Not enough memory\n", __func__);
+		return;
+	}
+	key_len = LCD_UKEY_LCD_EXT_SIZE;
+	memset(para, 0, (sizeof(unsigned char) * key_len));
+	ret = aml_lcd_unifykey_get("lcd_extern", para, &key_len);
+	if (ret == 0) {
+		printf("unifykey: lcd_extern:");
+		for (i = 0; i < key_len; i++) {
+			if ((i % 16) == 0)
+				printf("\n%02x:", (i / 16));
+			printf(" %02x", para[i]);
+		}
+	}
+	printf("\n");
+	free(para);
+
+	/* dump unifykey: backlight */
+	para = (unsigned char *)malloc(sizeof(unsigned char) * LCD_UKEY_BL_SIZE);
+	if (!para) {
+		LCDUKEYERR("%s: Not enough memory\n", __func__);
+		return;
+	}
+	key_len = LCD_UKEY_BL_SIZE;
+	memset(para, 0, (sizeof(unsigned char) * key_len));
+	ret = aml_lcd_unifykey_get("backlight", para, &key_len);
+	if (ret == 0) {
+		printf("unifykey: backlight:");
+		for (i = 0; i < key_len; i++) {
+			if ((i % 16) == 0)
+				printf("\n%02x:", (i / 16));
+			printf(" %02x", para[i]);
+		}
+	}
+	printf("\n");
+	free(para);
+}
+
 #else
 /* dummy driver */
 int aml_lcd_unifykey_len_check(int key_len, int len)
@@ -489,17 +568,12 @@ int aml_lcd_unifykey_get(const char *key_name, unsigned char *buf, int *len)
 	return -1;
 }
 
-void aml_lcd_test_unifykey(void)
+void aml_lcd_unifykey_test(void)
 {
 	LCDUKEYERR("Don't support unifykey\n");
 }
 
-void aml_lcd_extern_test_unifykey(void)
-{
-	LCDUKEYERR("Don't support unifykey\n");
-}
-
-void aml_bl_test_unifykey(void)
+void aml_lcd_unifykey_dump(void)
 {
 	LCDUKEYERR("Don't support unifykey\n");
 }

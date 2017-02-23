@@ -738,23 +738,44 @@ void aml_bl_power_ctrl(int status, int delay_flag)
 			bl_power_en_ctrl(bconf, 1);
 			break;
 		case BL_CTRL_PWM:
-			/* step 1: power on pwm */
-			bl_pwm_ctrl(bconf->bl_pwm, 1);
-			bl_pwm_pinmux_ctrl(bconf, 1);
-			if (bconf->pwm_on_delay > 0)
-				mdelay(bconf->pwm_on_delay);
-			/* step 2: power on enable */
-			bl_power_en_ctrl(bconf, 1);
+			if (bconf->pwm_en_sequence_reverse) {
+				/* step 1: power on enable */
+				bl_power_en_ctrl(bconf, 1);
+				if (bconf->pwm_on_delay > 0)
+					mdelay(bconf->pwm_on_delay);
+				/* step 2: power on pwm */
+				bl_pwm_ctrl(bconf->bl_pwm, 1);
+				bl_pwm_pinmux_ctrl(bconf, 1);
+			} else {
+				/* step 1: power on pwm */
+				bl_pwm_ctrl(bconf->bl_pwm, 1);
+				bl_pwm_pinmux_ctrl(bconf, 1);
+				if (bconf->pwm_on_delay > 0)
+					mdelay(bconf->pwm_on_delay);
+				/* step 2: power on enable */
+				bl_power_en_ctrl(bconf, 1);
+			}
 			break;
 		case BL_CTRL_PWM_COMBO:
-			/* step 1: power on pwm_combo */
-			bl_pwm_ctrl(bconf->bl_pwm_combo0, 1);
-			bl_pwm_ctrl(bconf->bl_pwm_combo1, 1);
-			bl_pwm_pinmux_ctrl(bconf, 1);
-			if (bconf->pwm_on_delay > 0)
-				mdelay(bconf->pwm_on_delay);
-			/* step 2: power on enable */
-			bl_power_en_ctrl(bconf, 1);
+			if (bconf->pwm_en_sequence_reverse) {
+				/* step 1: power on enable */
+				bl_power_en_ctrl(bconf, 1);
+				if (bconf->pwm_on_delay > 0)
+					mdelay(bconf->pwm_on_delay);
+				/* step 2: power on pwm_combo */
+				bl_pwm_ctrl(bconf->bl_pwm_combo0, 1);
+				bl_pwm_ctrl(bconf->bl_pwm_combo1, 1);
+				bl_pwm_pinmux_ctrl(bconf, 1);
+			} else {
+				/* step 1: power on pwm_combo */
+				bl_pwm_ctrl(bconf->bl_pwm_combo0, 1);
+				bl_pwm_ctrl(bconf->bl_pwm_combo1, 1);
+				bl_pwm_pinmux_ctrl(bconf, 1);
+				if (bconf->pwm_on_delay > 0)
+					mdelay(bconf->pwm_on_delay);
+				/* step 2: power on enable */
+				bl_power_en_ctrl(bconf, 1);
+			}
 			break;
 #ifdef CONFIG_AML_LOCAL_DIMMING
 		case BL_CTRL_LOCAL_DIMING:
@@ -792,23 +813,44 @@ void aml_bl_power_ctrl(int status, int delay_flag)
 			bl_power_en_ctrl(bconf, 0);
 			break;
 		case BL_CTRL_PWM:
-			/* step 1: power off enable */
-			bl_power_en_ctrl(bconf, 0);
-			/* step 2: power off pwm */
-			if (bconf->pwm_off_delay > 0)
-				mdelay(bconf->pwm_off_delay);
-			bl_pwm_ctrl(bconf->bl_pwm, 0);
-			bl_pwm_pinmux_ctrl(bconf, 0);
+			if (bconf->pwm_en_sequence_reverse) {
+				/* step 1: power off pwm */
+				bl_pwm_ctrl(bconf->bl_pwm, 0);
+				bl_pwm_pinmux_ctrl(bconf, 0);
+				if (bconf->pwm_off_delay > 0)
+					mdelay(bconf->pwm_off_delay);
+				/* step 2: power off enable */
+				bl_power_en_ctrl(bconf, 0);
+			} else {
+				/* step 1: power off enable */
+				bl_power_en_ctrl(bconf, 0);
+				/* step 2: power off pwm */
+				if (bconf->pwm_off_delay > 0)
+					mdelay(bconf->pwm_off_delay);
+				bl_pwm_ctrl(bconf->bl_pwm, 0);
+				bl_pwm_pinmux_ctrl(bconf, 0);
+			}
 			break;
 		case BL_CTRL_PWM_COMBO:
-			/* step 1: power off enable */
-			bl_power_en_ctrl(bconf, 0);
-			/* step 2: power off pwm_combo */
-			if (bconf->pwm_off_delay > 0)
-				mdelay(bconf->pwm_off_delay);
-			bl_pwm_ctrl(bconf->bl_pwm_combo0, 0);
-			bl_pwm_ctrl(bconf->bl_pwm_combo1, 0);
-			bl_pwm_pinmux_ctrl(bconf, 0);
+			if (bconf->pwm_en_sequence_reverse) {
+				/* step 1: power off pwm_combo */
+				bl_pwm_ctrl(bconf->bl_pwm_combo0, 0);
+				bl_pwm_ctrl(bconf->bl_pwm_combo1, 0);
+				bl_pwm_pinmux_ctrl(bconf, 0);
+				if (bconf->pwm_off_delay > 0)
+					mdelay(bconf->pwm_off_delay);
+				/* step 2: power off enable */
+				bl_power_en_ctrl(bconf, 0);
+			} else {
+				/* step 1: power off enable */
+				bl_power_en_ctrl(bconf, 0);
+				/* step 2: power off pwm_combo */
+				if (bconf->pwm_off_delay > 0)
+					mdelay(bconf->pwm_off_delay);
+				bl_pwm_ctrl(bconf->bl_pwm_combo0, 0);
+				bl_pwm_ctrl(bconf->bl_pwm_combo1, 0);
+				bl_pwm_pinmux_ctrl(bconf, 0);
+			}
 			break;
 #ifdef CONFIG_AML_LOCAL_DIMMING
 		case BL_CTRL_LOCAL_DIMING:
@@ -926,6 +968,7 @@ void aml_bl_config_print(void)
 		}
 		LCDPR("bl: pwm_on_delay  = %d\n", bconf->pwm_on_delay);
 		LCDPR("bl: pwm_off_delay = %d\n", bconf->pwm_off_delay);
+		LCDPR("bl: pwm_en_sequence_reverse = %d\n", bconf->pwm_en_sequence_reverse);
 		break;
 	case BL_CTRL_PWM_COMBO:
 		if (bconf->bl_pwm_combo0) {
@@ -952,6 +995,7 @@ void aml_bl_config_print(void)
 		}
 		LCDPR("bl: pwm_on_delay        = %d\n", bconf->pwm_on_delay);
 		LCDPR("bl: pwm_off_delay       = %d\n", bconf->pwm_off_delay);
+		LCDPR("bl: pwm_en_sequence_reverse = %d\n", bconf->pwm_en_sequence_reverse);
 		break;
 #ifdef CONFIG_AML_LOCAL_DIMMING
 	case BL_CTRL_LOCAL_DIMING:
@@ -1116,6 +1160,13 @@ static int aml_bl_config_load_from_dts(char *dt_addr, unsigned int index, struct
 			bconf->pwm_on_delay = be32_to_cpup((((u32*)propdata)+2));
 			bconf->pwm_off_delay = be32_to_cpup((((u32*)propdata)+3));
 		}
+		propdata = (char *)fdt_getprop(dt_addr, child_offset, "bl_pwm_en_sequence_reverse", NULL);
+		if (propdata == NULL) {
+			LCDPR("bl: don't find bl_pwm_en_sequence_reverse\n");
+			bconf->pwm_en_sequence_reverse = 0;
+		} else {
+			bconf->pwm_en_sequence_reverse = be32_to_cpup((u32*)propdata);
+		}
 
 		bl_pwm->pwm_duty = bl_pwm->pwm_duty_min;
 		/* bl_pwm_config_init(bl_pwm); */
@@ -1223,6 +1274,13 @@ static int aml_bl_config_load_from_dts(char *dt_addr, unsigned int index, struct
 			pwm_combo1->pwm_gpio_off = be32_to_cpup((((u32*)propdata)+3));
 			bconf->pwm_on_delay = be32_to_cpup((((u32*)propdata)+4));
 			bconf->pwm_off_delay = be32_to_cpup((((u32*)propdata)+5));
+		}
+		propdata = (char *)fdt_getprop(dt_addr, child_offset, "bl_pwm_en_sequence_reverse", NULL);
+		if (propdata == NULL) {
+			LCDPR("bl: don't find bl_pwm_en_sequence_reverse\n");
+			bconf->pwm_en_sequence_reverse = 0;
+		} else {
+			bconf->pwm_en_sequence_reverse = be32_to_cpup((u32*)propdata);
 		}
 
 		pwm_combo0->pwm_duty = pwm_combo0->pwm_duty_min;
@@ -1407,23 +1465,38 @@ static int aml_bl_config_load_from_unifykey(struct bl_config_s *bconf)
 		return -1;
 	}
 
-	/* check backlight unifykey length */
-	len = 10 + 30 + 12 + 8 + 32;
+	/* step 1: check header */
+	len = LCD_UKEY_HEAD_SIZE;
 	ret = aml_lcd_unifykey_len_check(key_len, len);
 	if (ret) {
-		LCDERR("bl: unifykey length is not correct\n");
+		LCDERR("unifykey header length is incorrect\n");
 		free(para);
 		return -1;
 	}
 
-	/* header: 10byte */
 	aml_lcd_unifykey_header_check(para, &bl_header);
+	LCDPR("bl: unifykey version: 0x%04x\n", bl_header.version);
+	switch (bl_header.version) {
+	case 2:
+		len = 10 + 30 + 12 + 8 + 32 + 10;
+		break;
+	default:
+		len = 10 + 30 + 12 + 8 + 32;
+		break;
+	}
 	if (lcd_debug_print_flag) {
 		LCDPR("bl: unifykey header:\n");
 		LCDPR("bl: crc32             = 0x%08x\n", bl_header.crc32);
 		LCDPR("bl: data_len          = %d\n", bl_header.data_len);
-		LCDPR("bl: version           = 0x%04x\n", bl_header.version);
 		LCDPR("bl: reserved          = 0x%04x\n", bl_header.reserved);
+	}
+
+	/* step 2: check backlight parameters */
+	ret = aml_lcd_unifykey_len_check(key_len, len);
+	if (ret) {
+		LCDERR("bl: unifykey length is incorrect\n");
+		free(para);
+		return -1;
 	}
 
 	/* basic: 30byte */
@@ -1504,7 +1577,7 @@ static int aml_bl_config_load_from_unifykey(struct bl_config_s *bconf)
 		bl_pwm->pwm_gpio_off = *p;
 		p += LCD_UKEY_BL_PWM_GPIO_OFF;
 
-		/* dummy pointer (no need)
+		/* dummy pointer */
 		p += LCD_UKEY_BL_PWM2_METHOD;
 		p += LCD_UKEY_BL_PWM2_PORT;
 		p += LCD_UKEY_BL_PWM2_FREQ;
@@ -1516,7 +1589,20 @@ static int aml_bl_config_load_from_unifykey(struct bl_config_s *bconf)
 		p += LCD_UKEY_BL_PWM_LEVEL_MAX;
 		p += LCD_UKEY_BL_PWM_LEVEL_MIN;
 		p += LCD_UKEY_BL_PWM2_LEVEL_MAX;
-		p += LCD_UKEY_BL_PWM2_LEVEL_MIN; */
+		p += LCD_UKEY_BL_PWM2_LEVEL_MIN;
+
+		if (bl_header.version == 2) {
+			bconf->pwm_en_sequence_reverse =
+				(*p | ((*(p + 1)) << 8));
+			p += LCD_UKEY_BL_CUST_VAL_0;
+			/* dummy pointer */
+			p += LCD_UKEY_BL_CUST_VAL_1;
+			p += LCD_UKEY_BL_CUST_VAL_2;
+			p += LCD_UKEY_BL_CUST_VAL_3;
+			p += LCD_UKEY_BL_CUST_VAL_4;
+		} else {
+			bconf->pwm_en_sequence_reverse = 0;
+		}
 
 		bl_pwm->pwm_duty = bl_pwm->pwm_duty_min;
 		/* bl_pwm_config_init(bl_pwm); */
@@ -1599,6 +1685,19 @@ static int aml_bl_config_load_from_unifykey(struct bl_config_s *bconf)
 		p += LCD_UKEY_BL_PWM2_LEVEL_MAX;
 		pwm_combo1->level_min = (*p | ((*(p + 1)) << 8));
 		p += LCD_UKEY_BL_PWM2_LEVEL_MIN;
+
+		if (bl_header.version == 2) {
+			bconf->pwm_en_sequence_reverse =
+				(*p | ((*(p + 1)) << 8));
+			p += LCD_UKEY_BL_CUST_VAL_0;
+			/* dummy pointer */
+			p += LCD_UKEY_BL_CUST_VAL_1;
+			p += LCD_UKEY_BL_CUST_VAL_2;
+			p += LCD_UKEY_BL_CUST_VAL_3;
+			p += LCD_UKEY_BL_CUST_VAL_4;
+		} else {
+			bconf->pwm_en_sequence_reverse = 0;
+		}
 
 		pwm_combo0->pwm_duty = pwm_combo0->pwm_duty_min;
 		pwm_combo1->pwm_duty = pwm_combo1->pwm_duty_min;

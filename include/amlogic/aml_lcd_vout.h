@@ -443,6 +443,7 @@ struct bl_config_s {
 	struct bl_pwm_config_s *bl_pwm_combo1;
 	unsigned int pwm_on_delay;
 	unsigned int pwm_off_delay;
+	unsigned int pwm_en_sequence_reverse;
 
 	char gpio_name[BL_GPIO_NUM_MAX][LCD_CPU_GPIO_NAME_MAX];
 	//unsigned pinmux_set_num;
@@ -481,7 +482,9 @@ struct aml_lcd_drv_s {
 	void (*set_bl_level)(int level);
 	int  (*get_bl_level)(void);
 	void (*bl_config_print)(void);
+	int unifykey_test_flag;
 	void (*unifykey_test)(void);
+	void (*unifykey_dump)(void);
 	void (*lcd_extern_info)(void);
 };
 

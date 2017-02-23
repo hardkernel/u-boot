@@ -1004,7 +1004,6 @@ static void aml_lcd_clk(void)
 	lcd_clk_config_print();
 }
 
-extern void lcd_unifykey_test(void);
 static void aml_lcd_info(void)
 {
 	if (lcd_check_valid())
@@ -1039,12 +1038,19 @@ static void aml_backlight_power_off(void)
 	aml_bl_power_ctrl(0, 1);
 }
 
-static void aml_lcd_unifykey_test(void)
+static void aml_lcd_key_test(void)
 {
-	aml_lcd_test_unifykey();
-	aml_lcd_extern_test_unifykey();
-	aml_bl_test_unifykey();
-	lcd_mode_probe();
+	if (aml_lcd_driver.unifykey_test_flag) {
+		aml_lcd_unifykey_test();
+		lcd_mode_probe();
+	} else {
+		printf("lcd unifykey test disabled\n");
+	}
+}
+
+static void aml_lcd_key_dump(void)
+{
+	aml_lcd_unifykey_dump();
 }
 
 static void aml_lcd_extern_info(void)
@@ -1079,7 +1085,9 @@ static struct aml_lcd_drv_s aml_lcd_driver = {
 	.set_bl_level = aml_set_backlight_level,
 	.get_bl_level = aml_get_backlight_level,
 	.bl_config_print = aml_bl_config_print,
-	.unifykey_test = aml_lcd_unifykey_test,
+	.unifykey_test_flag = 0, /* default disable unifykey test */
+	.unifykey_test = aml_lcd_key_test,
+	.unifykey_dump = aml_lcd_key_dump,
 	.lcd_extern_info = aml_lcd_extern_info,
 };
 
