@@ -1171,16 +1171,27 @@ int dtb_write(void *addr)
     return ret;
 }
 
+extern int check_valid_dts(unsigned char *buffer);
 int renew_partition_tbl(unsigned char *buffer)
 {
-    free_partitions();
-    get_partition_from_dts(buffer);
-    if (0 == mmc_device_init(_dtb_init())) {
-        printf("partition table success\n");
-        return 0;
+    int ret = 0;
+    /* todo, check new dts imcoming.... */
+    ret = check_valid_dts(buffer);
+    /* only the dts new is valid */
+    if (!ret) {
+        free_partitions();
+        get_partition_from_dts(buffer);
+        if (0 == mmc_device_init(_dtb_init())) {
+            printf("partition table success\n");
+            ret = 0;
+            goto _out;
+        }
+        printf("partition table error\n");
+        ret = 1;
     }
-    printf("partition table error\n");
-    return 1;
+
+_out:
+    return ret;
 }
 
 int do_amlmmc_dtb_key(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])

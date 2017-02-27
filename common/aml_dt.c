@@ -39,6 +39,19 @@
 //#define readl(addr) (*(volatile unsigned int*)(addr))
 extern int checkhw(char * name);
 
+/* return 1 if dtb is encrpted */
+int is_dtb_encrypt(unsigned char *buffer)
+{
+	unsigned int magic = *(unsigned int*)buffer;
+
+	printf("dtb magic %08x\n", magic);
+	if ((DT_HEADER_MAGIC == magic)
+			|| (AML_DT_HEADER_MAGIC == magic)
+			|| (IS_GZIP_FORMAT(magic)))
+		return 0;
+	return 1;
+}
+
 unsigned long get_multi_dt_entry(unsigned long fdt_addr){
 	unsigned int dt_magic = readl(fdt_addr);
 	unsigned int dt_total = 0;
