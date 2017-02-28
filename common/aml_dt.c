@@ -52,7 +52,8 @@ int is_dtb_encrypt(unsigned char *buffer)
 	return 1;
 }
 
-unsigned long get_multi_dt_entry(unsigned long fdt_addr){
+unsigned long __attribute__((unused))
+	get_multi_dt_entry(unsigned long fdt_addr){
 	unsigned int dt_magic = readl(fdt_addr);
 	unsigned int dt_total = 0;
 	unsigned int dt_tool_version = 0;
