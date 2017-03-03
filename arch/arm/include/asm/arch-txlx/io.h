@@ -25,18 +25,12 @@
 #ifndef __ASSEMBLY__
 
 #include <asm/io.h>
-#define IO_CBUS_BASE			0xc1100000L
-#define IO_AXI_BUS_BASE			0xc1300000L
-#define IO_AHB_BUS_BASE			0xc9000000L
-#define IO_APB_BUS_BASE			0xc8000000L
-#define IO_APB_HDMI_BUS_BASE    0xd0040000L
-#define IO_VPU_BUS_BASE			0xd0100000L
-
-#define MESON_PERIPHS1_VIRT_BASE	0xc1108400L
-#define MESON_PERIPHS1_PHYS_BASE	0xc1108400L
-
-#define MESON_PERIPHS1_VIRT_BASE	0xc1108400L
-#define MESON_PERIPHS1_PHYS_BASE	0xc1108400L
+#define IO_CBUS_BASE                    (0xFFD00000L)
+#define IO_AXI_BUS_BASE                 (0xFFB00000L) /* gpv */
+#define IO_AHB_BUS_BASE                 (0xFF500000L) /* usb0 */
+#define IO_APB_BUS_BASE                 (0xFFFC0000L) /* AHB SRAM, sec/sys ahb? txlx_mem_map.xlsx */
+#define IO_APB_HDMI_BUS_BASE            (0xFFE00000L) /*  */
+#define IO_VPU_BUS_BASE                 (0xFF900000L) /* VPU */
 
 #define CBUS_REG_OFFSET(reg) ((reg) << 2)
 #define CBUS_REG_ADDR(reg)	 (IO_CBUS_BASE + CBUS_REG_OFFSET(reg))
