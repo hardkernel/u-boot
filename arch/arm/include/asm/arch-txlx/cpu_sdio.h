@@ -22,9 +22,9 @@
 #ifndef __CPU_SDIO_H__
 #define __CPU_SDIO_H__
 
-#define SD_EMMC_BASE_A 0xd0070000
-#define SD_EMMC_BASE_B 0xd0072000
-#define SD_EMMC_BASE_C 0xd0074000
+#define SD_EMMC_BASE_A 0xFFE03000
+#define SD_EMMC_BASE_B 0xFFE05000
+#define SD_EMMC_BASE_C 0xFFE07000
 
 #define SDIO_PORT_A 0
 #define SDIO_PORT_B 1
