@@ -60,6 +60,13 @@
 #define     MMC_PARTITIONS_MAGIC            "MPT" // MMC Partition Table
 #define     MMC_CARD_PARTITION_NAME         "card"
 
+/* virtual partitions*/
+
+#define MMC_MBR_NAME    ("AML_MBR")
+/* offset&size of mbr will not be used */
+#define MMC_MBR_OFFSET  (0x0)
+#define MMC_MBR_SIZE    (0x200)
+
 /*
 * partition table
 * |<----partition_table---->|<----key---->|
@@ -111,6 +118,38 @@ struct virtual_partition {
 #define aml_mmc_dbg(fmt, ...)
 #define aml_mmc_msg(fmt, ...) printk( fmt "\n",  ##__VA_ARGS__)
 #endif
+
+#define DOS_MBR	0
+#define DOS_PBR	1
+
+#define DOS_PBR_FSTYPE_OFFSET	0x36
+#define DOS_PBR32_FSTYPE_OFFSET	0x52
+
+#define DOS_PART_DISKSIG_OFFSET	0x1b8
+#define DOS_PART_TBL_OFFSET	0x1be
+#define DOS_PART_MAGIC_OFFSET	0x1fe
+#define DOS_PBR_MEDIA_TYPE_OFFSET	0x15
+
+#define DOS_PARTITION_COUNT 32
+
+typedef struct dos_partition {
+	unsigned char boot_ind;		/* 0x80 - active			*/
+	unsigned char head;		/* starting head			*/
+	unsigned char sector;		/* starting sector			*/
+	unsigned char cyl;		/* starting cylinder			*/
+	unsigned char sys_ind;		/* What partition type			*/
+	unsigned char end_head;		/* end head				*/
+	unsigned char end_sector;	/* end sector				*/
+	unsigned char end_cyl;		/* end cylinder				*/
+	unsigned char start4[4];	/* starting sector counting from 0	*/
+	unsigned char size4[4];		/* nr of sectors in partition		*/
+} dos_partition_t;
+
+struct dos_mbr_or_ebr{
+	unsigned char bootstart[446];
+	struct dos_partition part_entry[4];
+	unsigned char magic[2];
+};
 
 struct mmc_partitions_fmt {
     char magic[4];

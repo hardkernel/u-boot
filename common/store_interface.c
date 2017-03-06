@@ -256,6 +256,36 @@ static int do_store_dtb_ops(cmd_tbl_t * cmdtp, int flag, int argc, char * const 
         return ret;
 }
 
+/*
+  write mbr to emmc only.
+  store mbr Addr
+ */
+extern int emmc_update_mbr(unsigned char *buffer);
+static int do_store_mbr_ops(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
+{
+    int ret = 0;
+    unsigned char *buffer;
+    cpu_id_t cpu_id = get_cpu_id();
+
+    if ((cpu_id.family_id < MESON_CPU_MAJOR_ID_GXL)
+        || (device_boot_flag != EMMC_BOOT_FLAG)) {
+        ret = -1;
+        ErrP("MBR not support, try [store dtb write Addr]\n");
+        goto _out;
+    }
+
+    if (argc < 3) return CMD_RET_USAGE;
+
+    buffer = (unsigned char *)simple_strtoul(argv[2], NULL, 0);
+    ret = emmc_update_mbr(buffer);
+    if (ret) {
+        ErrP("fail to update mbr\n");
+        goto _out;
+    }
+_out:
+    return ret;
+}
+
 static int do_store_key_ops(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 {
 	int ret = 0;
@@ -1393,6 +1423,7 @@ static cmd_tbl_t cmd_store_sub[] = {
     U_BOOT_CMD_MKENT(rom_write,     5, 0, do_store_rom_write, "", ""),
     U_BOOT_CMD_MKENT(dtb,           5, 0, do_store_dtb_ops, "", ""),
     U_BOOT_CMD_MKENT(key,           5, 0, do_store_key_ops, "", ""),
+    U_BOOT_CMD_MKENT(mbr,           3, 0, do_store_mbr_ops, "", ""),
 };
 
 static int do_store(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
@@ -1436,5 +1467,7 @@ U_BOOT_CMD(store, CONFIG_SYS_MAXARGS, 1, do_store,
 	"	read/write dtb, size is optional \n"
 	"store key read/write addr <size>\n"
 	"	read/write key, size is optional \n"
+	"store mbr addr\n"
+	"   update mbr/partition table by dtb\n"
 );
 

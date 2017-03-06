@@ -15,6 +15,10 @@
 #define CONFIG_FASTBOOT_GPT_NAME GPT_ENTRY_NAME
 #endif
 
+#ifndef CONFIG_FASTBOOT_MBR_NAME
+#define CONFIG_FASTBOOT_MBR_NAME "mbr"
+#endif
+
 extern int dtb_write(void *addr);
 extern int renew_partition_tbl(unsigned char *buffer);
 /* The 64 defined bytes plus the '\0' */
@@ -130,7 +134,18 @@ void fb_mmc_flash_write(const char *cmd, void *download_buffer,
 	}
 #endif
 
+
 #ifdef CONFIG_AML_PARTITION
+extern int emmc_update_mbr(unsigned char *buffer);
+	if (strcmp(cmd, CONFIG_FASTBOOT_MBR_NAME) == 0) {
+		printf("%s: updating MBR\n", __func__);
+		ret = emmc_update_mbr(download_buffer);
+		if (ret)
+			fastboot_fail("fastboot update mbr fail");
+		else
+			fastboot_okay("");
+		return;
+	}
 	if (get_partition_info_aml_by_name(dev_desc, cmd, &info)) {
 		error("cannot find partition: '%s'\n", cmd);
 		fastboot_fail("cannot find partition");

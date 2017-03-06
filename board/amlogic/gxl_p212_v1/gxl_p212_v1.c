@@ -50,68 +50,6 @@ DECLARE_GLOBAL_DATA_PTR;
 
 //new static eth setup
 struct eth_board_socket*  eth_board_skt;
-#ifdef DTB_BIND_KERNEL
-struct partitions board_part_table[MAX_PART_NUM]={
-		{
-			.name = "logo",
-			.size = 0x2000000,
-			.mask_flags = STORE_CODE,
-		},
-		{
-			.name = "recovery",
-			.size = 0x2000000,
-			.mask_flags = STORE_CODE,
-		},
-		{
-			.name = "rsv",
-			.size = 0x800000,
-			.mask_flags = STORE_CODE,
-		},
-		{
-			.name = "tee",
-			.size = 0x800000,
-			.mask_flags = STORE_CODE,
-		},
-		{
-			.name = "crypt",
-			.size = 0x2000000,
-			.mask_flags = STORE_CODE,
-		},
-		{
-			.name = "misc",
-			.size = 0x2000000,
-			.mask_flags = STORE_CODE,
-		},
-#ifdef CONFIG_INSTABOOT
-		{
-			.name = "instaboot",
-			.size = 0x400000,
-			.mask_flags = STORE_CODE,
-		},
-#endif
-		{
-			.name = "boot",
-			.size = 0x2000000,
-			.mask_flags = STORE_CODE,
-		},
-		{
-			.name = "system",
-			.size = 0x80000000,
-			.mask_flags = STORE_CODE,
-		},
-		{
-			.name = "cache",
-			.size = 0x20000000,
-			.mask_flags = STORE_CACHE,
-		},
-		{
-			.name = "data",
-			.size = NAND_PART_SIZE_FULL,
-			.mask_flags = STORE_DATA,
-		},
-};
-#endif
-
 
 int serial_set_pin_port(unsigned long port_base)
 {

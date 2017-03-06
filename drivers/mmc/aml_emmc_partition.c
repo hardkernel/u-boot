@@ -20,8 +20,21 @@
 #include <emmc_partitions.h>
 #include <asm/cpu_id.h>
 
-#define CONFIG_PTBL_MBR	0
-#define CONFIG_MPT_DEBUG 0
+/* using mbr*/
+#define CONFIG_PTBL_MBR		(1)
+
+#if (CONFIG_PTBL_MBR)
+	/* cmpare partition name? */
+	#define CONFIG_CMP_PARTNAME	(0)
+	/* cmpare partition mask */
+	#define CONFIG_CMP_PARTMASK	(0)
+#else
+	#define CONFIG_CMP_PARTNAME	(1)
+	#define CONFIG_CMP_PARTMASK	(1)
+#endif
+/* debug info*/
+#define CONFIG_MPT_DEBUG 	(0)
+
 
 #define apt_err(fmt, ...) printf( "%s()-%d: " fmt , \
                   __func__, __LINE__, ##__VA_ARGS__)
@@ -100,6 +113,10 @@ struct partitions emmc_partition_table[] = {
 };
 
 struct virtual_partition virtual_partition_table[] = {
+    /* fixme, is MBR virtual partition needed? */
+#if (CONFIG_PTBL_MBR)
+    VIRTUAL_PARTITION_ELEMENT(MMC_MBR_NAME, MMC_MBR_OFFSET, MMC_MBR_SIZE),
+#endif
 	VIRTUAL_PARTITION_ELEMENT(MMC_TABLE_NAME, MMC_TABLE_OFFSET, MMC_TABLE_SIZE),
 	VIRTUAL_PARTITION_ELEMENT(MMC_KEY_NAME, EMMCKEY_RESERVE_OFFSET, MMC_KEY_SIZE),
 	VIRTUAL_PARTITION_ELEMENT(MMC_PATTERN_NAME, CALI_PATTERN_OFFSET, CALI_PATTERN_SIZE),
@@ -196,6 +213,7 @@ static ulong _mmc_rsv_write(struct mmc *mmc, ulong offset, ulong size, void * bu
 static struct partitions * get_ptbl_from_dtb(struct mmc *mmc)
 {
 	struct partitions * ptbl = NULL;
+#ifndef DTB_BIND_KERNEL
 	unsigned char * buffer = NULL;
 	ulong ret, offset;
 	struct virtual_partition *vpart = aml_get_virtual_partition_by_name(MMC_DTB_NAME);
@@ -228,16 +246,20 @@ static struct partitions * get_ptbl_from_dtb(struct mmc *mmc)
 		free(buffer);
 		buffer = NULL;
 	}
+#endif
 	/* asign partition info to *ptbl */
 	ptbl = get_partitions();
 	return ptbl;
+#ifndef DTB_BIND_KERNEL
 _err1:
 	if (buffer)
 		free(buffer);
 _err:
 	free (ptbl);
 	return NULL;
+#endif
 }
+
 static struct partitions *is_prio_partition(struct _iptbl *list, struct partitions *part)
 {
 	int i;
@@ -366,33 +388,19 @@ static int _calc_iptbl_check(struct partitions * part, int count, int version)
 		return -1;
 }
 
-
-static struct _iptbl *compose_ept(struct _iptbl *dtb, struct _iptbl *inh)
+/* ept is malloced out side */
+static void compose_ept(struct _iptbl *dtb, struct _iptbl *inh,
+			struct _iptbl *ept)
 {
-	struct _iptbl *ept = NULL;
-	struct partitions *partition = NULL;
 	int i;
-	struct partitions *dst;
-	struct partitions *src;
-	struct partitions *prio;
+	struct partitions *partition = NULL;
+	struct partitions *dst, *src, *prio;
+
 	/* overide inh info by dts */
-
-	partition = malloc(sizeof(struct partitions)*MAX_PART_COUNT);
-	if (NULL == partition) {
-		apt_err("no enough memory for partitions\n");
-		goto _out;
-	}
-
-	ept = malloc(sizeof(struct _iptbl));
-	if (NULL == ept) {
-		apt_err("no enough memory for ept\n");
-		free(partition);
-		goto _out;
-	}
-	memset(ept, 0, sizeof(struct _iptbl));
-	memset(partition, 0, sizeof(struct partitions)*MAX_PART_COUNT);
-	ept->partitions = partition;
-
+	apt_info("dtb %p, inh %p, ept %p\n", dtb, inh, ept);
+	apt_info("ept->partitions %p\n", ept->partitions);
+	partition = ept->partitions;
+	apt_info("partition %p\n", partition);
 	for (i=0; i<MAX_PART_COUNT; i++) {
 		apt_info("i %d, ept->count %d\n", i, ept->count);
 		dst = &partition[ept->count];
@@ -413,34 +421,36 @@ static struct _iptbl *compose_ept(struct _iptbl *dtb, struct _iptbl *inh)
 		}
 	}
 
-_out:
-	return ept;
+	return;
 }
 
-static struct ptbl_rsv * get_ptbl_rsv(struct mmc *mmc)
+/* get ptbl from rsv area from emmc */
+static int get_ptbl_rsv(struct mmc *mmc, struct _iptbl *rsv)
 {
 	struct ptbl_rsv * ptbl_rsv = NULL;
 	uchar * buffer = NULL;
-	ulong ret, size, offset;
-	int checksum, version;
+	ulong size, offset;
+	int checksum, version, ret = 0;
 	struct virtual_partition *vpart = aml_get_virtual_partition_by_name(MMC_TABLE_NAME);
 
 	size = (sizeof(struct ptbl_rsv) + 511) / 512 * 512;
 	if (vpart->size < size) {
 		apt_err("too much partitons\n");
-		goto _err;
+		ret = -1;
+		goto _out;
 	}
 	buffer = malloc(size);
 	if (NULL == buffer) {
 		apt_err("no enough memory for ptbl rsv\n");
-		return NULL;
+		ret = -2;
+		goto _out;
 	}
 	/* read it from emmc. */
 	offset = _get_inherent_offset(MMC_RESERVED_NAME) + vpart->offset;
-	ret = _mmc_rsv_read(mmc, offset, size, buffer);
-	if (ret != size) {
+	if (size != _mmc_rsv_read(mmc, offset, size, buffer)) {
 		apt_err("read ptbl from rsv failed\n");
-		goto _err;
+		ret = -3;
+		goto _out;
 	}
 
 	ptbl_rsv = (struct ptbl_rsv *) buffer;
@@ -449,25 +459,31 @@ static struct ptbl_rsv * get_ptbl_rsv(struct mmc *mmc)
 	/* fixme, check magic ?*/
 	if (strcmp(ptbl_rsv->magic, MMC_PARTITIONS_MAGIC)) {
 		apt_err("magic faild %s, %s\n", MMC_PARTITIONS_MAGIC, ptbl_rsv->magic);
-		goto _err;
+		ret = -4;
+		goto _out;
 	}
 	/* check version*/
 	version = _get_version(ptbl_rsv->version);
 	if (version < 0) {
 		apt_err("version faild %s, %s\n", MMC_PARTITIONS_MAGIC, ptbl_rsv->magic);
-		goto _err;
+		ret = -5;
+		goto _out;
 	}
 	/* check sum */
 	checksum = _calc_iptbl_check(ptbl_rsv->partitions, ptbl_rsv->count, version);
 	if (checksum != ptbl_rsv->checksum) {
 		apt_err("checksum faild 0x%x, 0x%x\n", ptbl_rsv->checksum, checksum);
-		goto _err;
+		ret = -6;
+		goto _out;
 	}
 
-	return ptbl_rsv;
-_err:
-	free (buffer);
-	return NULL;
+	rsv->count = ptbl_rsv->count;
+	memcpy(rsv->partitions, ptbl_rsv->partitions, rsv->count * sizeof(struct partitions));
+
+_out:
+	if (buffer)
+		free (buffer);
+	return ret;
 }
 
 
@@ -515,15 +531,18 @@ _err:
 static int _cmp_partition(struct partitions *dst, struct partitions *src, int overide)
 {
 	int ret = 0;
-
+#if (CONFIG_CMP_PARTNAME)
 	if (strcmp(dst->name, src->name))
 		ret = -2;
+#endif
 	if (dst->size != src->size)
 		ret = -3;
 	if (dst->offset != src->offset)
 		ret = -4;
+#if (CONFIG_CMP_PARTMASK)
 	if (dst->mask_flags != src->mask_flags)
 		ret = -5;
+#endif
 
 	if (ret && (!overide)) {
 		apt_err("name: %s<->%s\n", dst->name, src->name);
@@ -548,7 +567,7 @@ static int _cmp_partition(struct partitions *dst, struct partitions *src, int ov
 	-3:size
 	-4:offset
 	*/
-static int _cmp_ptbl(struct _iptbl * dst, struct _iptbl * src)
+static int _cmp_iptbl(struct _iptbl * dst, struct _iptbl * src)
 {
 	int ret = 0, i = 0;
 	struct partitions *dstp;
@@ -576,21 +595,413 @@ _out:
 }
 
 
-/*  init devices for each partitions.
-	returns 0 means ok.
-			other means failure.
-	*/
+/* iptbl buffer opt. */
+static int _zalloc_iptbl(struct _iptbl **_iptbl)
+{
+	int ret = 0;
+	struct _iptbl *iptbl;
+	struct partitions *partition = NULL;
+
+	partition = malloc(sizeof(struct partitions)*MAX_PART_COUNT);
+	if (NULL == partition) {
+		ret = -1;
+		apt_err("no enough memory for partitions\n");
+		goto _out;
+	}
+
+	iptbl = malloc(sizeof(struct _iptbl));
+	if (NULL == iptbl) {
+		ret = -2;
+		apt_err("no enough memory for ept\n");
+		free(partition);
+		goto _out;
+	}
+	memset(partition, 0, sizeof(struct partitions)*MAX_PART_COUNT);
+	memset(iptbl, 0, sizeof(struct _iptbl));
+
+	iptbl->partitions = partition;
+	apt_info("iptbl %p, partition %p, iptbl->partitions %p\n",
+		iptbl, partition, iptbl->partitions);
+	*_iptbl = iptbl;
+_out:
+	return ret;
+}
+
+static void _free_iptbl(struct _iptbl *iptbl)
+{
+	if (iptbl && iptbl->partitions) {
+		free(iptbl->partitions);
+		iptbl->partitions = NULL;
+	}
+	if (iptbl) {
+		free(iptbl);
+		iptbl = NULL;
+	}
+
+	return;
+}
+/*
+ * fixme, need check space size later.
+ */
+static int _cpy_iptbl(struct _iptbl * dst, struct _iptbl * src)
+{
+	int ret = 0;
+	if (!dst || !src) {
+		apt_err("invalid arg %s\n", !dst ? "dst" : "src");
+		ret = -1;
+		goto _out;
+	}
+	if (!dst->partitions || !src->partitions) {
+		apt_err("invalid arg %s->partitions\n", !dst ? "dst" : "src");
+		ret = -2;
+		goto _out;
+	}
+
+	dst->count = src->count;
+	memcpy(dst->partitions, src->partitions, sizeof(struct partitions) * src->count);
+
+_out:
+	return ret;
+}
+
+static inline int le32_to_int(unsigned char *le32)
+{
+	return ((le32[3] << 24) +
+	    (le32[2] << 16) +
+	    (le32[1] << 8) +
+	     le32[0]
+	   );
+}
+
+static int test_block_type(unsigned char *buffer)
+{
+	int slot;
+	struct dos_partition *p;
+
+	if ((buffer[DOS_PART_MAGIC_OFFSET + 0] != 0x55) ||
+	    (buffer[DOS_PART_MAGIC_OFFSET + 1] != 0xaa) ) {
+		return (-1);
+	} /* no DOS Signature at all */
+	p = (struct dos_partition *)&buffer[DOS_PART_TBL_OFFSET];
+	for (slot = 0; slot < 3; slot++) {
+		if (p->boot_ind != 0 && p->boot_ind != 0x80) {
+			if (!slot &&
+			    (strncmp((char *)&buffer[DOS_PBR_FSTYPE_OFFSET],
+				     "FAT", 3) == 0 ||
+			     strncmp((char *)&buffer[DOS_PBR32_FSTYPE_OFFSET],
+				     "FAT32", 5) == 0)) {
+				return DOS_PBR; /* is PBR */
+			} else {
+				return -1;
+			}
+		}
+	}
+	return DOS_MBR;	    /* Is MBR */
+}
+
+//DOS_MBR OR DOS_PBR
+/*
+ * re-constructe iptbl from mbr&ebr infos.
+ * memory for  iptbl_mbr must be alloced outside.
+ *
+ */
+static void _construct_ptbl_by_mbr(struct mmc *mmc, struct _iptbl *iptbl_mbr)
+{
+	int ret,i;
+	int flag = 0;
+	lbaint_t read_offset = 0;
+	int part_num = 0;
+	int primary_num = 0;
+	uint64_t logic_start = 0;
+	uint64_t externed_start = 0;
+	struct dos_partition *pt;
+	struct partitions *partitions = iptbl_mbr->partitions;
+
+	apt_info("aml MBR&EBR debug...\n");
+	ALLOC_CACHE_ALIGN_BUFFER(unsigned char, buffer, 512);
+	for (;;) {
+		apt_info("**%02d: read_offset %016llx\n", part_num, (uint64_t)read_offset<<9);
+		ret = mmc->block_dev.block_read(mmc->block_dev.dev, read_offset, 1, buffer);
+		if (read_offset == 0)
+			flag = 1;
+		else
+			flag = 0;
+		/* debug code */
+		// print_buffer(0,buffer,1,512,16);
+		if (ret != 1) {
+			apt_err("ret %d fail to read current ebr&mbr from emmc! \n", ret);
+			break;
+		}
+		ret = test_block_type(buffer);
+		if (ret != 0 && ret != 1) {
+			apt_err("invalid magic value: 0x%02x%02x\n",
+				buffer[DOS_PART_MAGIC_OFFSET], buffer[DOS_PART_MAGIC_OFFSET + 1]);
+			break;
+		}
+
+		pt = (dos_partition_t *)(&buffer[0] + DOS_PART_TBL_OFFSET);
+		for (i = 0; i < 4; i++, pt++) {
+			if ( (pt->boot_ind == 0x00 || pt->boot_ind == 0x80) && pt->sys_ind == 0x83 ) {
+				//emmc_partition[part_num]->name = NULL;
+				partitions[part_num].offset = ((uint64_t)(le32_to_int(pt->start4)+read_offset) << 9ULL);
+				partitions[part_num].size = (uint64_t)le32_to_int(pt->size4) << 9ULL;
+				partitions[part_num].mask_flags = pt->sys_ind;
+
+				apt_info("--partition[%d]: %016llx, %016llx, 0x%08x \n",
+					part_num, partitions[part_num].offset,
+					partitions[part_num].size,
+					le32_to_int(pt->size4));
+				part_num++;
+				if ( flag )
+					primary_num++;
+			}else{/* get the next externed partition info */
+				if ( pt->boot_ind == 0x00 && pt->sys_ind == 0x05) {
+					logic_start = (uint64_t)le32_to_int (pt->start4);
+					//logic_size = (uint64_t)le32_to_int (pt->size4);
+				}
+			}
+		}
+		/* mbr & ebr debug infos */
+		apt_info("******%02d: read_offset=%016llx, logic_start=%016llx\n",
+			part_num,(uint64_t)read_offset*512ULL,logic_start*512ULL);
+
+		if (part_num == primary_num) {
+			externed_start = logic_start;
+			read_offset = externed_start;
+		}else
+			read_offset = externed_start + logic_start;
+		if (logic_start == 0)
+			break;
+		logic_start = 0;
+
+	}
+	iptbl_mbr->count = part_num;
+	apt_info("iptbl_mbr->count = %d\n", iptbl_mbr->count);
+
+	return;
+}
+
+static int _check_ptbl_mbr(struct mmc *mmc, struct _iptbl *ept)
+{
+	int ret = 0;
+	/* re-constructed by mbr */
+	struct _iptbl *iptbl_mbr = NULL;
+	struct partitions *partitions = NULL;
+
+	iptbl_mbr = malloc(sizeof(struct _iptbl));
+	if (NULL == iptbl_mbr) {
+		apt_err("no enough memory for iptbl_mbr\n");
+		return -1;
+	}
+	memset(iptbl_mbr , 0, sizeof(struct _iptbl));
+	partitions = (struct partitions *)malloc(sizeof(struct partitions) * DOS_PARTITION_COUNT);
+	if (NULL == partitions) {
+		apt_err("no enough memory for partitions\n");
+		free(iptbl_mbr);
+		return -1;
+	}
+	memset(partitions, 0, sizeof(struct partitions) * DOS_PARTITION_COUNT);
+	iptbl_mbr->partitions = partitions;
+
+	_construct_ptbl_by_mbr(mmc, iptbl_mbr);
+
+	ret = _cmp_iptbl(iptbl_mbr, ept);
+
+	if (partitions)
+		free(partitions);
+	if (iptbl_mbr)
+		free(iptbl_mbr);
+
+	apt_wrn("MBR is %s\n", ret?"Improper!":"OK!");
+	return ret;
+}
+
+/* construct a partition table entry of EBR */
+static int _construct_ebr_1st_entry(struct _iptbl *p_iptbl,struct dos_partition *p_ebr, int part_num )
+{
+	uint64_t start_offset = 0;
+	uint64_t logic_size = 0;
+
+	p_ebr->boot_ind = 0x00;
+	p_ebr->sys_ind = 0x83;
+	/* Starting = relative offset between this EBR sector and the first sector of the logical partition
+	* the gap between two partition is a fixed value of PARTITION_RESERVED ,otherwise the emmc partiton
+	* is different with reserved */
+	start_offset = PARTITION_RESERVED >> 9;
+	/* Number of sectors = total count of sectors for this logical partition */
+	// logic_size = (p_iptbl->partitions[part_num].size) >> 9ULL;
+	logic_size = lldiv(p_iptbl->partitions[part_num].size, 512);
+	apt_info("*** %02d: size 0x%016llx, logic_size 0x%016llx\n", part_num, p_iptbl->partitions[part_num].size, logic_size);
+	memcpy((unsigned char *)(p_ebr->start4), &start_offset, 4);
+	memcpy((unsigned char *)(p_ebr->size4), &logic_size, 4);
+	return 0;
+}
+
+static int _construct_ebr_2nd_entry(struct _iptbl *p_iptbl, struct dos_partition *p_ebr, int part_num)
+{
+	uint64_t start_offset = 0;
+	uint64_t logic_size = 0;
+
+	if ((part_num+2) > p_iptbl->count)
+		return 0;
+
+	p_ebr->boot_ind = 0x00;
+	p_ebr->sys_ind = 0x05;
+	/* Starting sector = LBA address of next EBR minus LBA address of extended partition's first EBR */
+	start_offset = (p_iptbl->partitions[part_num+1].offset - PARTITION_RESERVED -
+					(p_iptbl->partitions[3].offset - PARTITION_RESERVED)) >> 9;
+	/* total count of sectors for next logical partition, but count starts from the next EBR sector */
+	logic_size = (p_iptbl->partitions[part_num+1].size + PARTITION_RESERVED) >> 9;
+
+	memcpy((unsigned char *)(p_ebr->start4), &start_offset, 4);
+	memcpy((unsigned char *)(p_ebr->size4), &logic_size, 4);
+
+	return 0;
+}
+
+/* construct a partition table entry of MBR OR EBR */
+static int _construct_mbr_entry(struct _iptbl *p_iptbl, struct dos_partition *p_entry, int part_num)
+{
+	uint64_t start_offset = 0;
+	uint64_t primary_size = 0;
+	uint64_t externed_size = 0;
+	int i;
+	/* the entry is active or not */
+	if (part_num == 0 )
+		p_entry->boot_ind = 0x00;
+	else
+		p_entry->boot_ind = 0x00;
+
+	if (part_num == 3) {/* the logic partion entry */
+		/* the entry type */
+		p_entry->sys_ind = 0x05;
+		start_offset = (p_iptbl->partitions[3].offset - PARTITION_RESERVED) >> 9;
+		for ( i = 3;i< p_iptbl->count;i++)
+			externed_size = p_iptbl->partitions[i].size >> 9;
+
+		memcpy((unsigned char *)p_entry->start4, &start_offset, 4);
+		memcpy((unsigned char *)p_entry->size4, &externed_size, 4);
+	}else{/* the primary partion entry */
+		/* the entry type */
+		p_entry->sys_ind = 0x83;
+		start_offset = (p_iptbl->partitions[part_num].offset) >> 9;
+		primary_size = (p_iptbl->partitions[part_num].size)>>9;
+		memcpy((unsigned char *)p_entry->start4, &start_offset, 4);
+		memcpy((unsigned char *)p_entry->size4, &primary_size, 4);
+	}
+
+	return 0;
+}
+
+static int _construct_mbr_or_ebr(struct _iptbl *p_iptbl, struct dos_mbr_or_ebr *p_br,
+	int part_num, int type)
+{
+	int i;
+
+	if (DOS_MBR == type) {
+		/* constuct a integral MBR */
+		for (i = 0; i<4 ; i++)
+			_construct_mbr_entry(p_iptbl, &p_br->part_entry[i], i);
+
+	}else{
+		/* constuct a integral EBR */
+		p_br->bootstart[DOS_PBR32_FSTYPE_OFFSET] = 'F';
+		p_br->bootstart[DOS_PBR32_FSTYPE_OFFSET + 1] = 'A';
+		p_br->bootstart[DOS_PBR32_FSTYPE_OFFSET + 2] = 'T';
+		p_br->bootstart[DOS_PBR32_FSTYPE_OFFSET + 3] = '3';
+		p_br->bootstart[DOS_PBR32_FSTYPE_OFFSET + 4] = '2';
+
+		_construct_ebr_1st_entry(p_iptbl, &p_br->part_entry[0], part_num);
+		_construct_ebr_2nd_entry(p_iptbl, &p_br->part_entry[1], part_num);
+	}
+
+	p_br->magic[0] = 0x55 ;
+	p_br->magic[1] = 0xAA ;
+	return 0;
+}
+
+static int _update_ptbl_mbr(struct mmc *mmc, struct _iptbl *p_iptbl)
+{
+	int ret = 0, start_blk = 0, blk_cnt = 1;
+	unsigned char *src;
+	int i;
+	struct dos_mbr_or_ebr *mbr;
+	struct _iptbl *ptb ;
+
+	ptb = p_iptbl;
+	mbr = malloc(sizeof(struct dos_mbr_or_ebr));
+
+	for (i=0;i<ptb->count;i++) {
+		apt_info("-update MBR-: partition[%02d]: %016llx - %016llx\n",i,
+			ptb->partitions[i].offset, ptb->partitions[i].size);
+	}
+
+	for (i = 0;i < ptb->count;) {
+		memset(mbr ,0 ,sizeof(struct dos_mbr_or_ebr));
+		if (i == 0) {
+			_construct_mbr_or_ebr(ptb, mbr, i, 0);
+			i = i+2;
+		} else
+			_construct_mbr_or_ebr(ptb, mbr, i, 2);
+		src = (unsigned char *)mbr;
+		apt_info("--%s(): %02d(%02d), off %x\n", __func__, i, ptb->count, start_blk);
+		ret = mmc->block_dev.block_write(mmc->block_dev.dev, start_blk, blk_cnt, src);
+		i++;
+		if (ret != blk_cnt) {
+			apt_err("write current MBR failed! ret: %d != cnt: %d\n",ret,blk_cnt);
+			break;
+		}
+		start_blk = (ptb->partitions[i].offset - PARTITION_RESERVED) >> 9;
+	}
+	free(mbr);
+
+	ret = !ret;
+	if (ret)
+		apt_err("write MBR failed!\n");
+
+	return ret;
+}
+
+/***************************************************
+ *	init partition table for emmc device.
+ *	returns 0 means ok.
+ *			other means failure.
+ ***************************************************
+ *  work flows:
+ *	source of logic partition table(LPT) is from dts
+ *	no matter MACRO is on/off
+ *		1. try to get LPT from dtb
+ *			1.1 if dtb exist, compose ept by LPT&inh
+ *			1.2 if not, go ahead
+ *      2. try to get ept from emmc rsv partition
+ *			2.1 if not:
+ * 				2.1.1 when dtb exists
+ *					2.1.1.1 check ept with dtb
+ *					2.1.1.2 update rsv if needed
+ * 				2.1.1 without dtb, exit
+ *			2.2 if got:
+ *				2.2.1 try to reconstruct ept by MBR
+ *				2.2.2 check it with ept
+ *				2.2.3 update MBR if needed
+ ***************************************************
+ *	when normal boot:
+ *		without dtb, with rsv, with MBR
+ *  when blank emmc:
+ *		without dtb, without rsv, without MBR
+ *  when burning MBR on a blank emmc:
+ *		with dtb, without rsv, without MBR
+ *  when burning MBR on a emmc with rsv:
+ *		with dtb, with rsv, without MBR
+ *  when burning MBR on a emmc with rsv&MBR:
+ *		with dtb, with rsv, with MBR
+ ***************************************************/
 int mmc_device_init (struct mmc *mmc)
 {
 	int ret = 1;
-	/* partition table from dtb */
-	struct _iptbl iptbl_dtb;
-	/* partition table from emmc rsv area */
-	struct _iptbl iptbl_rsv;
-	/* partition table from code */
-	struct _iptbl iptbl_inh;
-	/* partition table stored in emmc */
-	struct ptbl_rsv *ptbl_rsv;
+	cpu_id_t cpu_id = get_cpu_id();
+	/* partition table from dtb/code/emmc rsv */
+	struct _iptbl iptbl_dtb, iptbl_inh;
+	struct _iptbl *p_iptbl_rsv = NULL;
 	int update = 1;
 
 	/* calculate inherent offset */
@@ -601,58 +1012,104 @@ int mmc_device_init (struct mmc *mmc)
 	}
 	apt_info("inh count %d\n",  iptbl_inh.count);
 #if (CONFIG_MPT_DEBUG)
+	apt_info("inherent partition table\n");
 	_dump_part_tbl(iptbl_inh.partitions, iptbl_inh.count);
 #endif
-	/* get partition table from dtb(ddr or emmc) 1st */
-	iptbl_dtb.partitions = get_ptbl_from_dtb(mmc);
-	if (NULL == iptbl_dtb.partitions) {
-		apt_err("get partition table from dtb failed\n");
-		/* fixme, yyh */
-		goto _out;
-	}
-	iptbl_dtb.count = get_partition_count();
-	apt_info("dtb %p, count %d\n", iptbl_dtb.partitions, iptbl_dtb.count);
-	if (iptbl_inh.count) {
-		p_iptbl_ept = compose_ept(&iptbl_dtb, &iptbl_inh);
-		if (NULL == p_iptbl_ept) {
-			apt_err("compose partition table failed!\n");
+	/* For re-entry */
+	if (NULL == p_iptbl_ept) {
+		ret = _zalloc_iptbl(&p_iptbl_ept);
+		if (ret)
 			goto _out;
-		}
-		/* calculate offset infos. considering GAPs */
-		if (_calculate_offset(mmc, p_iptbl_ept, 1)) {
-			free(p_iptbl_ept);
-			p_iptbl_ept = NULL;
-			goto _out;
-		}
 	} else {
-		/* report fail, because there is no reserved partitions */
-		apt_err("compose partition table failed!\n");
-		ret = -1;
-		goto _out;
+		p_iptbl_ept->count = 0;
+		memset(p_iptbl_ept->partitions, 0,
+			sizeof(struct partitions)*MAX_PART_COUNT);
 	}
 
-	/* get partiton table from emmc rsv area */
-	ptbl_rsv = get_ptbl_rsv(mmc);
-	if (ptbl_rsv) {
-		iptbl_rsv.partitions = ptbl_rsv->partitions;
-		iptbl_rsv.count = ptbl_rsv->count;
-		ret = _cmp_ptbl(p_iptbl_ept, &iptbl_rsv);
-		if (!ret) {
+	/* try to get partition table from dtb(ddr or emmc) */
+	iptbl_dtb.partitions = get_ptbl_from_dtb(mmc);
+	/* construct ept by dtb if exist */
+	if (iptbl_dtb.partitions) {
+		iptbl_dtb.count = get_partition_count();
+		apt_info("dtb %p, count %d\n", iptbl_dtb.partitions, iptbl_dtb.count);
+		/* reserved partition must exist! */
+		if (iptbl_inh.count) {
+			compose_ept(&iptbl_dtb, &iptbl_inh, p_iptbl_ept);
+			if (0 == p_iptbl_ept->count) {
+				apt_err("compose partition table failed!\n");
+				goto _out;
+			}
+			/* calculate offset infos. considering GAPs */
+			if (_calculate_offset(mmc, p_iptbl_ept, 1)) {
+				goto _out;
+			}
+		#if (CONFIG_MPT_DEBUG)
+			apt_info("ept partition table\n");
+			_dump_part_tbl(p_iptbl_ept->partitions, p_iptbl_ept->count);
+		#endif
+		} else {
+			/* report fail, because there is no reserved partitions */
+			apt_err("compose partition table failed!\n");
+			ret = -1;
+			goto _out;
+		}
+	} else
+		apt_wrn("get partition table from dtb failed\n");
+
+	/* try to get partiton table from rsv */
+	ret = _zalloc_iptbl(&p_iptbl_rsv);
+	if (ret)
+		goto _out;
+	ret = get_ptbl_rsv(mmc, p_iptbl_rsv);
+	if (p_iptbl_rsv->count) {
+		/* dtb exist, p_iptbl_ept already inited */
+		if (iptbl_dtb.partitions) {
+			ret = _cmp_iptbl(p_iptbl_ept, p_iptbl_rsv);
+			if (!ret) {
+				update = 0;
+			}
+		} else {
+			/* without dtb, update ept with rsv */
+		#if 0
+			p_iptbl_ept->count = p_iptbl_rsv->count;
+			memcpy(p_iptbl_ept->partitions, p_iptbl_rsv->partitions,
+				p_iptbl_ept->count * sizeof(struct partitions));
+		#endif
+			_cpy_iptbl(p_iptbl_ept, p_iptbl_rsv);
 			update = 0;
 		}
-		free(ptbl_rsv);
+	} else {
+		/* without dtb& rsv */
+		if (!iptbl_dtb.partitions) {
+			apt_err("dtb&rsv are not exist, no LPT source\n");
+			ret = -9;
+			goto _out;
+		}
 	}
 
-	if (update) {
+	if (update && iptbl_dtb.partitions) {
+		apt_wrn("update rsv with dtb!\n");
 		ret = update_ptbl_rsv(mmc, p_iptbl_ept);
-		/*fixme, comaptible for mbr&ebr */
-	#if (CONFIG_PTBL_MBR)
-		ret |= update_ptbl_mbr(p_iptbl_ept);
-	#endif
 	}
-	/* init part again 	*/
+	//apt_wrn("ept source is %s\n", (ept_source == p_iptbl_ept)?"ept":"rsv");
+#if (CONFIG_PTBL_MBR)
+	/* 1st sector was reserved by romboot after gxl */
+	if (cpu_id.family_id >= MESON_CPU_MAJOR_ID_GXL) {
+		if (_check_ptbl_mbr(mmc, p_iptbl_ept)) {
+			/*fixme, comaptible for mbr&ebr */
+			ret |= _update_ptbl_mbr(mmc, p_iptbl_ept);
+			apt_wrn("MBR Updated!\n");
+		}
+	}
+#endif
+
+	/* init part again */
 	init_part(&mmc->block_dev);
+
 _out:
+	if (p_iptbl_rsv)
+		_free_iptbl(p_iptbl_rsv);
+
 	return ret;
 }
 
@@ -683,7 +1140,7 @@ int find_virtual_partition_by_name (char *name, struct partitions *partition)
 
 	offset = _get_inherent_offset(MMC_RESERVED_NAME);
 	if (-1 == offset) {
-		printf("%s(), can't find %s in inherent\n", __func__, MMC_RESERVED_NAME);
+		apt_err("can't find %s in inherent\n", MMC_RESERVED_NAME);
 		return -1;
 	}
 
@@ -692,7 +1149,7 @@ int find_virtual_partition_by_name (char *name, struct partitions *partition)
 		partition->offset = offset + vpart->offset;
 		partition->size = (vpart->size * DTB_COPIES);
 	} else {
-		printf("%s(), can't find %s\n", __func__, name);
+		apt_err("can't find %s\n", name);
 		ret = -1;
 	}
 
@@ -809,7 +1266,7 @@ int get_part_info_by_name(block_dev_desc_t *dev_desc,
 		strcpy((char *)info->name, partition->name);
 	} else if (!find_virtual_partition_by_name((char *)name, &virtual)) {
 		/* try virtual partitions */
-		printf("%s(), Got %s in virtual table\n", __func__, name);
+		apt_wrn("Got %s in virtual table\n", name);
 		info->start = (lbaint_t)(virtual.offset/dev_desc->blksz);
 		info->size = (lbaint_t)(virtual.size/dev_desc->blksz);
 		info->blksz = dev_desc->blksz;

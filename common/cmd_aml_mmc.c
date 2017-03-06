@@ -1269,6 +1269,7 @@ int do_amlmmc_dtb_key(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
             } else if (strcmp(argv[1], "dtb_write") == 0) {
                 /* fixme, should we check the return value? */
                 ret = dtb_write(addr);
+
                 ret |= renew_partition_tbl(addr);
                 return ret;
             }
@@ -1277,6 +1278,28 @@ int do_amlmmc_dtb_key(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
             break;
     }
     return 1;
+}
+
+int emmc_update_mbr(unsigned char *buffer)
+{
+    int ret = 0;
+    cpu_id_t cpu_id = get_cpu_id();
+
+    if (cpu_id.family_id < MESON_CPU_MAJOR_ID_GXL) {
+        ret = -1;
+        printf("MBR not support, try dtb\n");
+        goto _out;
+    }
+    dtb_write(buffer);
+    ret = get_partition_from_dts(buffer);
+    if (ret) {
+        printf("Fail to get partition talbe from dts\n");
+        goto _out;
+    }
+    ret = mmc_device_init(_dtb_init());
+    printf("%s: update mbr %s\n", __func__, ret?"Fail":"Success");
+_out:
+    return ret;
 }
 
 U_BOOT_CMD(

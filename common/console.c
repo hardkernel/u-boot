@@ -786,7 +786,7 @@ int console_init_m(void)
 	} else {
 		memset(print_buf, 0, PRT_BUF_SIZE);
 		buf_p = 0;
-		gd->flags |= GD_FLG_SILENT;
+		//gd->flags |= GD_FLG_SILENT;
 	}
 #endif
 	return 0;
