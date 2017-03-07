@@ -112,7 +112,8 @@ static int _assert_logic_partition_cap(const char* thePartName, const uint64_t n
 
         int partIndex                   = 0;
         struct partitions * thePart     = NULL;
-
+		if (NULL == part_table)
+            return 0;
         for (thePart = part_table; partIndex < MAX_PART_NAME_LEN; ++thePart, ++partIndex)
         {
                 const uint64_t partSzInBytes = thePart->size;

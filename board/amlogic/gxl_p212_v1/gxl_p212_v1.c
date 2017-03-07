@@ -447,6 +447,7 @@ int board_late_init(void){
 #elif defined(CONFIG_DTB_MEM_ADDR)
 		{
 				char cmd[128];
+				int ret;
                 if (!getenv("dtb_mem_addr")) {
 						sprintf(cmd, "setenv dtb_mem_addr 0x%x", CONFIG_DTB_MEM_ADDR);
 						run_command(cmd, 0);

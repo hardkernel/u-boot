@@ -37,19 +37,7 @@ struct partitions *get_partitions(void)
 }
 
 
-#ifdef DTB_BIND_KERNEL
-extern struct partitions board_part_table[MAX_PART_NUM];
-int get_partition_from_dts(unsigned char * buffer)
-{
-	part_table = board_part_table;
-	return 0;
-}
-void free_partitions(void)
-{
-	part_table = NULL;
-}
 
-#else
 void free_partitions(void)
 {
 	if (part_table)
@@ -175,4 +163,3 @@ _err:
 	}
 	return ret;
 }
-#endif
