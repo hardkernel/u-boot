@@ -41,7 +41,7 @@ int do_fat_cfgload(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
 {
     unsigned char *fp;
     unsigned long filesize = 0;
-    unsigned char cmd[512], skip = 0, first = 1;
+    unsigned char cmd[1024], skip = 0, first = 1;
     unsigned int wpos = 0;
 
     fp = (char *)simple_strtoul(getenv("loadaddr"), NULL, 16);
