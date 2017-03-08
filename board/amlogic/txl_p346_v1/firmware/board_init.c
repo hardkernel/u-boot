@@ -69,7 +69,7 @@ void board_init(void)
 		/* power off ddr */
 		writel((readl(P_AO_GPIO_O_EN_N) & (~((1 << 11) | (1 << 27)))),P_AO_GPIO_O_EN_N);
 		/* need delay, check hw design */
-		_udelay(100000);
+		_udelay(400000);
 		/* power on ddr */
 		writel((readl(P_AO_GPIO_O_EN_N) | (1 << 27)),P_AO_GPIO_O_EN_N);
 
