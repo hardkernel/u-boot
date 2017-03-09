@@ -95,13 +95,13 @@ int store_write_ops(unsigned char *partition_name,unsigned char * buf, uint64_t 
                 size = ((size + MtdAlignMask)>>MtdAlignBits) << MtdAlignBits;
         }
 #if defined(UBIFS_IMG) || defined(CONFIG_CMD_UBIFS)
-        if (strcmp(_usbDownPartImgType, "ubifs")) {
-                sprintf(str, "%s  write %s 0x%llx  0x%llx  0x%llx", cmd_name, name, addr, off, size);
+        if (!strcmp(_usbDownPartImgType, "ubifs")) {//ubi part
+                sprintf(str, "%s  write 0x%llx %s 0x%llx  ", "ubi", addr, name, size);
         } else
 #endif// #if defined(UBIFS_IMG) || defined(CONFIG_CMD_UBIFS)
 #endif// #if CONFIG_AML_MTD
-        {//ubi part
-                sprintf(str, "%s  write 0x%llx %s 0x%llx  ", "ubi", addr, name, size);
+        {
+                sprintf(str, "%s  write %s 0x%llx  0x%llx  0x%llx", cmd_name, name, addr, off, size);
         }
 
         DbgP("run cmd[%s]\n", str);
