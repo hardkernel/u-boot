@@ -12,6 +12,7 @@ obj-$(CONFIG_SYSRESET_WATCHDOG) += sysreset_watchdog.o
 ifndef CONFIG_SPL_BUILD
 obj-$(CONFIG_ROCKCHIP_RK3036) += sysreset_rk3036.o
 endif
+obj-$(CONFIG_ROCKCHIP_RK3128) += sysreset_rk3128.o
 obj-$(CONFIG_ROCKCHIP_RK3188) += sysreset_rk3188.o
 obj-$(CONFIG_ROCKCHIP_RK322X) += sysreset_rk322x.o
 obj-$(CONFIG_ROCKCHIP_RK3288) += sysreset_rk3288.o
