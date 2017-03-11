@@ -146,6 +146,28 @@ void __attribute__((unused)) _dump_part_tbl(struct partitions *p, int count)
 	return;
 }
 
+static int _get_part_index_by_name(struct partitions *tbl,
+					   int cnt, const char *name)
+{
+	   int i=0;
+	   struct partitions *part = NULL;
+
+       while (i < cnt) {
+			   part = &tbl[i];
+               if (!strcmp(name, part->name)) {
+					   apt_info("find %s @ tbl[%d]\n", name, i);
+					   break;
+			   }
+			   i++;
+	   };
+       if (i == cnt) {
+			   i = -1;
+			   apt_wrn("do not find match in table %s\n", name);
+	   }
+	   return i;
+}
+
+
 static struct partitions *_find_partition_by_name(struct partitions *tbl,
 			int cnt, const char *name)
 {
@@ -1290,3 +1312,25 @@ int get_part_info_by_name(block_dev_desc_t *dev_desc,
 _out:
 	return ret;
 }
+
+
+/*
+ * get the partition number by name
+ * return value
+ *     < 0 means no partition found
+ *     >= 0 means valid partition
+ */
+__weak int get_partition_num_by_name(char *name)
+{
+	   int ret = -1;
+	   struct partitions *partition = NULL;
+
+       if (NULL == p_iptbl_ept)
+			   goto _out;
+	   partition = p_iptbl_ept->partitions;
+	   ret = _get_part_index_by_name(partition,
+					   p_iptbl_ept->count, name);
+_out:
+	   return ret;
+}
+

@@ -179,7 +179,17 @@ struct _mmc_device{
 
 extern bool is_partition_checked;
 extern struct partitions emmc_partition_table[];
+
 extern int get_emmc_partition_arraysize(void);
+
+/*
+ * get the partition number by name
+ * return value
+ *	< 0 means no partition found
+ *	>= 0 means valid partition
+ */
+extern int get_partition_num_by_name(char *name);
+
 struct partitions* find_mmc_partition_by_name (char *name);
 struct partitions *aml_get_partition_by_name(const char *name);
 struct virtual_partition *aml_get_virtual_partition_by_name(const char *name);

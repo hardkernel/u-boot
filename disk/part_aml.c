@@ -69,11 +69,10 @@ void print_part_aml(block_dev_desc_t * dev_desc)
 		return;
 	}
 	printf("Part   Start     Sect x Size Type  name\n");
-	i=1;
+	i=0;
 	do {
 		printf(" %02d " LBAFU " " LBAFU " %6ld %.32s %.32s\n",
-		       i, info.start, info.size, info.blksz, info.type, info.name);
-		i++;
+		       i++, info.start, info.size, info.blksz, info.type, info.name);
 	} while (_get_partition_info_aml(dev_desc,i,&info,0)!=-1);
 }
 #define AML_MPT_OFFSET	(73728)	/* 36M */
