@@ -103,8 +103,8 @@ config TXL_P346_V1
 	bool "Support amlogic txl t960 p346 v1 board"
 	default n
 
-config TXLX_SKT_V1
-	bool "Support amlogic txlx skt v1 board"
+config TXLX_T962X_SKT_V1
+	bool "Support amlogic txlx t962x skt v1 board"
 	default n
 
 config PXP_EMULATOR
@@ -222,8 +222,8 @@ if TXL_P346_V1
 source "board/amlogic/txl_p346_v1/Kconfig"
 endif
 
-if TXLX_SKT_V1
-source "board/amlogic/txlx_skt_v1/Kconfig"
+if TXLX_T962X_SKT_V1
+source "board/amlogic/txlx_t962x_skt_v1/Kconfig"
 endif
 
 if ODROID_C2
