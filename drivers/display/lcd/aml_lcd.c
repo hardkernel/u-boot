@@ -900,16 +900,17 @@ static char *aml_lcd_get_ss(void)
 	return str;
 }
 
-#define TV_LCD_ENC_TST_NUM_MAX    8
+#define TV_LCD_ENC_TST_NUM_MAX    9
 static char *lcd_enc_tst_str[] = {
 	"0-None",        /* 0 */
 	"1-Color Bar",   /* 1 */
 	"2-Thin Line",   /* 2 */
 	"3-Dot Grid",    /* 3 */
 	"4-Gray",        /* 4 */
-	"5-Blue",         /* 5 */
-	"6-Red",       /* 6 */
-	"7-Green",        /* 7 */
+	"5-Red",         /* 5 */
+	"6-Green",       /* 6 */
+	"7-Blue",        /* 7 */
+	"8-Black",       /* 8 */
 };
 
 static unsigned int lcd_enc_tst[][7] = {
@@ -918,10 +919,11 @@ static unsigned int lcd_enc_tst[][7] = {
 	{1,    0x200,   0x200,  0x200,   1,      0,        1},  /* 1 */
 	{2,    0x200,   0x200,  0x200,   1,      0,        1},  /* 2 */
 	{3,    0x200,   0x200,  0x200,   1,      0,        1},  /* 3 */
-	{0,    0x200,   0x200,  0x200,   1,      0,        1},  /* 4 */
-	{0,    0x130,   0x153,  0x3fd,   1,      0,        1},  /* 5 */
-	{0,    0x256,   0x0ae,  0x055,   1,      0,        1},  /* 6 */
-	{0,    0x074,   0x3fd,  0x1ad,   1,      0,        1},  /* 7 */
+	{0,    0x1ff,   0x1ff,  0x1ff,   1,      0,        3},  /* 4 */
+	{0,    0x3ff,     0x0,    0x0,   1,      0,        3},  /* 5 */
+	{0,      0x0,   0x3ff,    0x0,   1,      0,        3},  /* 6 */
+	{0,      0x0,     0x0,  0x3ff,   1,      0,        3},  /* 7 */
+	{0,      0x0,     0x0,    0x0,   1,      0,        3},  /* 8 */
 };
 
 static void lcd_test(unsigned int num)
