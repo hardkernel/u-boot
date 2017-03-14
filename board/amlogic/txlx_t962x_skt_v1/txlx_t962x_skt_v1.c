@@ -369,9 +369,6 @@ int board_init(void)
 
 #ifdef CONFIG_BOARD_LATE_INIT
 int board_late_init(void){
-#if 0
-	int ret;
-
 	//update env before anyone using it
 	run_command("get_rebootmode; echo reboot_mode=${reboot_mode}; "\
 			"if test ${reboot_mode} = factory_reset; then "\
@@ -379,6 +376,8 @@ int board_late_init(void){
 	run_command("if itest ${upgrade_step} == 1; then "\
 				"defenv_reserv; setenv upgrade_step 2; saveenv; fi;", 0);
 	/*add board late init function here*/
+#if 0
+	int ret;
 	ret = run_command("store dtb read $dtb_mem_addr", 1);
 	if (ret) {
 		printf("%s(): [store dtb read $dtb_mem_addr] fail\n", __func__);
@@ -392,15 +391,14 @@ int board_late_init(void){
 		}
 		#endif
 	}
-
+#endif
 	/* load unifykey */
 	run_command("keyunify init 0x1234", 0);
-#endif
+
 #ifdef CONFIG_AML_VPU
 	vpu_probe();
 #endif
-#if 0
-	vpp_init();
+	//vpp_init();
 #ifdef CONFIG_AML_HDMITX20
 	hdmi_tx_set_hdmi_5v();
 	hdmi_tx_init();
@@ -412,7 +410,7 @@ int board_late_init(void){
 #ifdef CONFIG_AML_V2_FACTORY_BURN
 	/*aml_try_factory_sdcard_burning(0, gd->bd);*/
 #endif// #ifdef CONFIG_AML_V2_FACTORY_BURN
-#endif
+
 	return 0;
 }
 #endif

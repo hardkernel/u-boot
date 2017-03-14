@@ -22,192 +22,28 @@
 #ifndef __VPP_REG_H__
 #define __VPP_REG_H__
 #include <asm/arch/io.h>
+#include <asm/arch/secure_apb.h>
 
 /* ********************************
  * register define
  * ********************************* */
 /* base & offset */
-#define REG_BASE_VCBUS                  (0xd0100000L)
+//#define REG_BASE_VCBUS                  (0xd0100000L)
 #define REG_OFFSET_VCBUS(reg)           ((reg) << 2)
 /* memory mapping */
 #define REG_ADDR_VCBUS(reg)             (REG_BASE_VCBUS + REG_OFFSET_VCBUS(reg))
 
+#ifdef VPP_EOTF_CTL
+#define VIU_EOTF_CTL VPP_EOTF_CTL
+#endif
 
-/* ********************************
- * Video post-processing:  VPP_VCBUS_BASE = 0x1d
- * ******************************** */
-/* Bit 31  vd1_bgosd_exchange_en for preblend
-// Bit 30  vd1_bgosd_exchange_en for postblend
-// bit 28   color management enable
-// Bit 27,  reserved
-// Bit 26:18, reserved
-// Bit 17, osd2 enable for preblend
-// Bit 16, osd1 enable for preblend
-// Bit 15, reserved
-// Bit 14, vd1 enable for preblend
-// Bit 13, osd2 enable for postblend
-// Bit 12, osd1 enable for postblend
-// Bit 11, reserved
-// Bit 10, vd1 enable for postblend
-// Bit 9,  if true, osd1 is alpha premultipiled
-// Bit 8,  if true, osd2 is alpha premultipiled
-// Bit 7,  postblend module enable
-// Bit 6,  preblend module enable
-// Bit 5,  if true, osd2 foreground compared with osd1 in preblend
-// Bit 4,  if true, osd2 foreground compared with osd1 in postblend
-// Bit 3,
-// Bit 2,  if true, disable resetting async fifo every vsync, otherwise every
-//           vsync the aync fifo will be reseted.
-// Bit 1,
-// Bit 0    if true, the output result of VPP is saturated */
-#define VPP2_MISC                                  0x1926
-/* Bit 31  vd1_bgosd_exchange_en for preblend
-// Bit 30  vd1_bgosd_exchange_en for postblend
-// Bit 28   color management enable
-// Bit 27,  if true, vd2 use viu2 output as the input, otherwise use normal
-//            vd2 from memory
-// Bit 26:18, vd2 alpha
-// Bit 17, osd2 enable for preblend
-// Bit 16, osd1 enable for preblend
-// Bit 15, vd2 enable for preblend
-// Bit 14, vd1 enable for preblend
-// Bit 13, osd2 enable for postblend
-// Bit 12, osd1 enable for postblend
-// Bit 11, vd2 enable for postblend
-// Bit 10, vd1 enable for postblend
-// Bit 9,  if true, osd1 is alpha premultipiled
-// Bit 8,  if true, osd2 is alpha premultipiled
-// Bit 7,  postblend module enable
-// Bit 6,  preblend module enable
-// Bit 5,  if true, osd2 foreground compared with osd1 in preblend
-// Bit 4,  if true, osd2 foreground compared with osd1 in postblend
-// Bit 3,
-// Bit 2,  if true, disable resetting async fifo every vsync, otherwise every
-//           vsync the aync fifo will be reseted.
-// Bit 1,
-// Bit 0	if true, the output result of VPP is saturated */
-#define VPP_MISC                                   0x1d26
+#ifdef VPP_EOTF_LUT_ADDR_PORT
+#define VIU_EOTF_LUT_ADDR_PORT VPP_EOTF_LUT_ADDR_PORT
+#endif
 
-#define VPP2_POSTBLEND_H_SIZE                      0x1921
-#define VPP_POSTBLEND_H_SIZE                       0x1d21
-/* Bit 3	minus black level enable for vadj2
- * Bit 2	Video adjustment enable for vadj2
- * Bit 1	minus black level enable for vadj1
- * Bit 0	Video adjustment enable for vadj1 */
-#define VPP_VADJ_CTRL                              0x1d40
-/* Bit 16:8  brightness, signed value
- * Bit 7:0	contrast, unsigned value, contrast from  0 <= contrast <2 */
-#define VPP_VADJ1_Y                                0x1d41
-/* cb' = cb*ma + cr*mb
- * cr' = cb*mc + cr*md
- * all are bit 9:0, signed value, -2 < ma/mb/mc/md < 2 */
-#define VPP_VADJ1_MA_MB                            0x1d42
-#define VPP_VADJ1_MC_MD                            0x1d43
-/* Bit 16:8  brightness, signed value
- * Bit 7:0   contrast, unsigned value, contrast from  0 <= contrast <2 */
-#define VPP_VADJ2_Y                                0x1d44
-/* cb' = cb*ma + cr*mb
- * cr' = cb*mc + cr*md
- * all are bit 9:0, signed value, -2 < ma/mb/mc/md < 2 */
-#define VPP_VADJ2_MA_MB                            0x1d45
-#define VPP_VADJ2_MC_MD                            0x1d46
-
-#define VPP_MATRIX_CTRL                            0x1d5f
-/* Bit 28:16 coef00 */
-/* Bit 12:0  coef01 */
-#define VPP_MATRIX_COEF00_01                       0x1d60
-/* Bit 28:16 coef02 */
-/* Bit 12:0  coef10 */
-#define VPP_MATRIX_COEF02_10                       0x1d61
-/* Bit 28:16 coef11 */
-/* Bit 12:0  coef12 */
-#define VPP_MATRIX_COEF11_12                       0x1d62
-/* Bit 28:16 coef20 */
-/* Bit 12:0  coef21 */
-#define VPP_MATRIX_COEF20_21                       0x1d63
-#define VPP_MATRIX_COEF22                          0x1d64
-/* Bit 26:16 offset0 */
-/* Bit 10:0  offset1 */
-#define VPP_MATRIX_OFFSET0_1                       0x1d65
-/* Bit 10:0  offset2 */
-#define VPP_MATRIX_OFFSET2                         0x1d66
-/* Bit 26:16 pre_offset0 */
-/* Bit 10:0  pre_offset1 */
-#define VPP_MATRIX_PRE_OFFSET0_1                   0x1d67
-/* Bit 10:0  pre_offset2 */
-#define VPP_MATRIX_PRE_OFFSET2                     0x1d68
-/* dummy data used in the VPP postblend */
-/* Bit 23:16    Y */
-/* Bit 15:8     CB */
-/* Bit 7:0      CR */
-#define VPP_DUMMY_DATA1                            0x1d69
-/* gxm has no super-core */
-#define VPP_DOLBY_CTRL 0x1d93
-#define VIU_MISC_CTRL1 0x1a07
-
-#define VIU_OSD1_MATRIX_CTRL 0x1a90
-#define VIU_OSD1_MATRIX_COEF00_01 0x1a91
-#define VIU_OSD1_MATRIX_COEF02_10 0x1a92
-#define VIU_OSD1_MATRIX_COEF11_12 0x1a93
-#define VIU_OSD1_MATRIX_COEF20_21 0x1a94
-#define VIU_OSD1_MATRIX_COLMOD_COEF42 0x1a95
-#define VIU_OSD1_MATRIX_OFFSET0_1 0x1a96
-#define VIU_OSD1_MATRIX_OFFSET2 0x1a97
-#define VIU_OSD1_MATRIX_PRE_OFFSET0_1 0x1a98
-#define VIU_OSD1_MATRIX_PRE_OFFSET2 0x1a99
-#define VIU_OSD1_MATRIX_COEF22_30 0x1a9d
-#define VIU_OSD1_MATRIX_COEF31_32 0x1a9e
-#define VIU_OSD1_MATRIX_COEF40_41 0x1a9f
-
-#define VIU_OSD2_CTRL_STAT2				0x1a4d
-
-#define XVYCC_LUT_R_ADDR_PORT	0x315e
-#define XVYCC_LUT_R_DATA_PORT	0x315f
-#define XVYCC_LUT_G_ADDR_PORT	0x3160
-#define XVYCC_LUT_G_DATA_PORT	0x3161
-#define XVYCC_LUT_B_ADDR_PORT	0x3162
-#define XVYCC_LUT_B_DATA_PORT	0x3163
-#define XVYCC_LUT_CTL			0x3165
-
-#define VIU_EOTF_CTL 0x31d0
-
-#define VIU_EOTF_LUT_ADDR_PORT 0x31d6
-#define VIU_EOTF_LUT_DATA_PORT 0x31d7
-#define VPP_MATRIX_CLIP 0x1dde
-#define VPP_CLIP_MISC1 0x1dda
-#define VPP_MATRIX_COEF13_14 0x1ddb
-#define VPP_MATRIX_COEF23_24 0x1ddc
-#define VPP_MATRIX_COEF15_25 0x1ddd
-
-
-#define VIU_OSD1_BLK0_CFG_W0 0x1a1b
-#define VIU_OSD1_MATRIX_CTRL 0x1a90
-#define VIU_OSD1_MATRIX_COEF00_01 0x1a91
-#define VIU_OSD1_MATRIX_COEF02_10 0x1a92
-#define VIU_OSD1_MATRIX_COEF11_12 0x1a93
-#define VIU_OSD1_MATRIX_COEF20_21 0x1a94
-#define VIU_OSD1_MATRIX_COLMOD_COEF42 0x1a95
-#define VIU_OSD1_MATRIX_OFFSET0_1 0x1a96
-#define VIU_OSD1_MATRIX_OFFSET2 0x1a97
-#define VIU_OSD1_MATRIX_PRE_OFFSET0_1 0x1a98
-#define VIU_OSD1_MATRIX_PRE_OFFSET2 0x1a99
-#define VIU_OSD1_MATRIX_COEF22_30 0x1a9d
-#define VIU_OSD1_MATRIX_COEF31_32 0x1a9e
-#define VIU_OSD1_MATRIX_COEF40_41 0x1a9f
-#define VIU_OSD1_EOTF_CTL 0x1ad4
-#define VIU_OSD1_EOTF_COEF00_01 0x1ad5
-#define VIU_OSD1_EOTF_COEF02_10 0x1ad6
-#define VIU_OSD1_EOTF_COEF11_12 0x1ad7
-#define VIU_OSD1_EOTF_COEF20_21 0x1ad8
-#define VIU_OSD1_EOTF_COEF22_RS 0x1ad9
-#define VIU_OSD1_EOTF_LUT_ADDR_PORT 0x1ada
-#define VIU_OSD1_EOTF_LUT_DATA_PORT 0x1adb
-#define VIU_OSD1_OETF_CTL 0x1adc
-#define VIU_OSD1_OETF_LUT_ADDR_PORT 0x1add
-#define VIU_OSD1_OETF_LUT_DATA_PORT 0x1ade
-
-#define VIU_OSD2_CTRL_STAT2 0x1a4d
-
+#ifdef VPP_EOTF_LUT_DATA_PORT
+#define VIU_EOTF_LUT_DATA_PORT VPP_EOTF_LUT_DATA_PORT
+#endif
 
 /* ********************************
  * register access api

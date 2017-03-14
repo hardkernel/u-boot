@@ -214,17 +214,15 @@
 			"fi;fi;" \
 		"fi;\0" \
 
-/*
+
 #define CONFIG_PREBOOT  \
             "run factory_reset_poweroff_protect;"\
             "run upgrade_check;"\
-            "run init_display;"\
             "run storeargs;"\
             "run switch_bootmode;"
-            */
-#define CONFIG_BOOTCOMMAND ""
+#define CONFIG_BOOTCOMMAND "run storeboot"
 
-#define CONFIG_ENV_IS_NOWHERE  1
+//#define CONFIG_ENV_IS_NOWHERE  1
 #define CONFIG_ENV_SIZE   (64*1024)
 #define CONFIG_FIT 1
 #define CONFIG_OF_LIBFDT 1
@@ -284,7 +282,7 @@
 #define 	CONFIG_SYS_NO_FLASH  1
 
 /*SPI*/
-//#define CONFIG_AMLOGIC_SPI_FLASH 1
+#define CONFIG_AMLOGIC_SPI_FLASH 1
 #ifdef 		CONFIG_AMLOGIC_SPI_FLASH
 #undef 		CONFIG_ENV_IS_NOWHERE
 //#define		CONFIG_SPI_BOOT 1
