@@ -102,6 +102,15 @@ static char *lcd_pll_ss_table_txl[] = {
 	"4, +/-1.2%",
 };
 
+static char *lcd_pll_ss_table_txlx[] = {
+	"0, disable",
+	"1, +/-0.3%",
+	"2, +/-0.5%",
+	"3, +/-1.0%",
+	"4, +/-1.5%",
+	"5, +/-3.0%",
+};
+
 static struct lcd_clk_config_s clk_conf = { /* unit: kHz */
 	/* IN-OUT parameters */
 	.fin = FIN_FREQ,
@@ -865,6 +874,99 @@ static void lcd_update_pll_frac_txl(struct lcd_clk_config_s *cConf)
 		LCDPR("%s\n", __func__);
 
 	lcd_hiu_setb(HHI_HPLL_CNTL2, cConf->pll_frac, 0, 12);
+}
+
+static void lcd_set_pll_ss_txlx(struct lcd_clk_config_s *cConf)
+{
+	unsigned int pll_ctrl3, pll_ctrl4, pll_ctrl5;
+
+	pll_ctrl3 = lcd_hiu_read(HHI_HPLL_CNTL3);
+	pll_ctrl4 = lcd_hiu_read(HHI_HPLL_CNTL4);
+	pll_ctrl5 = lcd_hiu_read(HHI_HPLL_CNTL5);
+
+	switch (cConf->ss_level) {
+	case 1: /* +/- 0.3% */
+		pll_ctrl3 &= ~((0xf << 10) | (1 << 18));
+		pll_ctrl3 |= ((1 << 14) | (0xc << 10));
+		pll_ctrl4 &= ~(0x3 << 2);
+		pll_ctrl5 &= ~(0x3 << 30);
+		break;
+	case 2: /* +/- 0.5% */
+		pll_ctrl3 &= ~((0xf << 10) | (1 << 18));
+		pll_ctrl3 |= ((1 << 14) | (0xa << 10));
+		pll_ctrl4 &= ~(0x3 << 2);
+		pll_ctrl4 |= (0x1 << 2);
+		pll_ctrl5 &= ~(0x3 << 30);
+		break;
+	case 3: /* +/- 1.0% */
+		pll_ctrl3 &= ~((0xf << 10) | (1 << 18));
+		pll_ctrl3 |= ((1 << 14) | (0xa << 10));
+		pll_ctrl4 &= ~(0x3 << 2);
+		pll_ctrl4 |= (0x3 << 2);
+		pll_ctrl5 &= ~(0x3 << 30);
+		break;
+	case 4: /* +/- 1.5% */
+		pll_ctrl3 &= ~((0xf << 10) | (1 << 18));
+		pll_ctrl3 |= ((1 << 14) | (0xa << 10));
+		pll_ctrl4 &= ~(0x3 << 2);
+		pll_ctrl4 |= (0x2 << 2);
+		pll_ctrl5 &= ~(0x3 << 30);
+		pll_ctrl5 |= (0x1 << 30);
+		break;
+	case 5: /* +/- 3.0% */
+		pll_ctrl3 &= ~((0xf << 10) | (1 << 18));
+		pll_ctrl3 |= ((1 << 14) | (0xa << 10));
+		pll_ctrl4 &= ~(0x3 << 2);
+		pll_ctrl5 &= ~(0x3 << 30);
+		pll_ctrl5 |= (0x3 << 30);
+		break;
+	default: /* disable */
+		pll_ctrl3 &= ~((0xf << 10) | (1 << 14));
+		pll_ctrl3 |= (1 << 18);
+		pll_ctrl4 &= ~(0x3 << 2);
+		pll_ctrl5 &= ~(0x3 << 30);
+		break;
+	}
+	lcd_hiu_write(HHI_HPLL_CNTL3, pll_ctrl3);
+	lcd_hiu_write(HHI_HPLL_CNTL4, pll_ctrl4);
+	lcd_hiu_write(HHI_HPLL_CNTL5, pll_ctrl5);
+
+	LCDPR("set pll spread spectrum: %s\n",
+		lcd_pll_ss_table_txlx[cConf->ss_level]);
+}
+
+static void lcd_set_pll_txlx(struct lcd_clk_config_s *cConf)
+{
+	unsigned int pll_ctrl, pll_ctrl2, pll_ctrl3;
+	int ret;
+
+	if (lcd_debug_print_flag == 2)
+		LCDPR("%s\n", __func__);
+	pll_ctrl = ((1 << LCD_PLL_EN_TXL) |
+		(cConf->pll_n << LCD_PLL_N_TXL) |
+		(cConf->pll_m << LCD_PLL_M_TXL));
+	pll_ctrl2 = 0x800ca000;
+	pll_ctrl2 |= ((1 << 12) | (cConf->pll_frac << 0));
+	pll_ctrl3 = 0xc60730c4; /* bit[30]: od_fb */
+	pll_ctrl3 |= ((cConf->pll_od3_sel << LCD_PLL_OD3_TXL) |
+		(cConf->pll_od2_sel << LCD_PLL_OD2_TXL) |
+		(cConf->pll_od1_sel << LCD_PLL_OD1_TXL));
+
+	lcd_hiu_write(HHI_HPLL_CNTL, pll_ctrl);
+	lcd_hiu_write(HHI_HPLL_CNTL2, pll_ctrl2);
+	lcd_hiu_write(HHI_HPLL_CNTL3, pll_ctrl3);
+	lcd_hiu_write(HHI_HPLL_CNTL4, 0x0c8e0000);
+	lcd_hiu_write(HHI_HPLL_CNTL5, 0x001fa729);
+	lcd_hiu_write(HHI_HPLL_CNTL6, 0x01a31500);
+	lcd_hiu_setb(HHI_HPLL_CNTL, 1, LCD_PLL_RST_TXL, 1);
+	lcd_hiu_setb(HHI_HPLL_CNTL, 0, LCD_PLL_RST_TXL, 1);
+
+	ret = lcd_pll_wait_lock(HHI_HPLL_CNTL, LCD_PLL_LOCK_TXL);
+	if (ret)
+		LCDERR("hpll lock failed\n");
+
+	if (cConf->ss_level > 0)
+		lcd_set_pll_ss_txlx(cConf);
 }
 
 static void lcd_set_clk_div_m8(int lcd_type, struct lcd_clk_config_s *cConf)
@@ -2146,8 +2248,10 @@ char *lcd_get_spread_spectrum(void)
 		ss_str = lcd_pll_ss_table_gxtvbb[ss_level];
 		break;
 	case LCD_CHIP_TXL:
-	case LCD_CHIP_TXLX:
 		ss_str = lcd_pll_ss_table_txl[ss_level];
+		break;
+	case LCD_CHIP_TXLX:
+		ss_str = lcd_pll_ss_table_txlx[ss_level];
 		break;
 	default:
 		ss_str = "unknown";
@@ -2185,8 +2289,10 @@ void lcd_set_spread_spectrum(void)
 		lcd_set_pll_ss_gxtvbb(&clk_conf);
 		break;
 	case LCD_CHIP_TXL:
-	case LCD_CHIP_TXLX:
 		lcd_set_pll_ss_txl(&clk_conf);
+		break;
+	case LCD_CHIP_TXLX:
+		lcd_set_pll_ss_txlx(&clk_conf);
 		break;
 	default:
 		break;
@@ -2267,8 +2373,11 @@ void lcd_clk_set(struct lcd_config_s *pconf)
 	case LCD_CHIP_GXL:
 	case LCD_CHIP_GXM:
 	case LCD_CHIP_TXL:
-	case LCD_CHIP_TXLX:
 		lcd_set_pll_txl(&clk_conf);
+		lcd_set_clk_div_g9_gxtvbb(&clk_conf);
+		break;
+	case LCD_CHIP_TXLX:
+		lcd_set_pll_txlx(&clk_conf);
 		lcd_set_clk_div_g9_gxtvbb(&clk_conf);
 		break;
 	default:
