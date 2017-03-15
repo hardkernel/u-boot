@@ -18,7 +18,6 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
-#include <config.h>
 #include "config.h"
 #include "data.h"
 #include "registers.h"
@@ -27,6 +26,11 @@
 #define TASK_ID_LOW_MB	3
 #define TASK_ID_HIGH_MB	4
 #define TASK_ID_SECURE_MB  5
+
+extern unsigned int usr_pwr_key;
+extern unsigned int ir_pwr_key;
+extern unsigned int channel;
+extern unsigned int keycode;
 
 enum scpi_client_id {
 	SCPI_CL_NONE,
@@ -144,15 +148,6 @@ void high_task(void)
 	}
 }
 
-extern unsigned int usr_pwr_key;
-#ifdef CONFIG_IR_ENV
-extern unsigned int ir_pwr_key;
-#endif
-#ifdef CONFIG_ADC_ENV
-extern unsigned int channel;
-extern unsigned int keycode;
-#endif
-
 void process_low_task(unsigned command)
 {
 	unsigned *pcommand =
@@ -160,9 +155,7 @@ void process_low_task(unsigned command)
 	unsigned *response =
 	    (unsigned *)(&(low_task_share_mem[TASK_RESPONSE_OFFSET]));
 	unsigned para1;
-	#ifdef CONFIG_ADC_ENV
 	unsigned adc_rec;
-	#endif
 
 	if (command == LOW_TASK_GET_DVFS_INFO) {
 		para1 = *(pcommand + 1);
@@ -173,21 +166,17 @@ void process_low_task(unsigned command)
 			usr_pwr_key = *(pcommand + 2);/*tx_size locates at *(pcommand + 1)*/
 			dbg_print("pwr_key=",usr_pwr_key);
 		}
-		#ifdef CONFIG_IR_ENV
 		else if ((command >> 16) == SCPI_CL_IR_POWER_KEY) {
 			ir_pwr_key = *(pcommand + 2);
 			dbg_print("ir_power_key  = ",ir_pwr_key);
 		}
-		#endif
-		#ifdef CONFIG_ADC_ENV
 		else if ((command >> 16) == SCPI_CL_ADC_POWER_KEY) {
 			adc_rec = *(pcommand + 2);
 			channel = adc_rec >> 16 & 0xffff;
 			keycode = adc_rec & 0xffff;
 			dbg_print("adc power key:channel  = ", channel);
-			dbg_print("adc power key:channel  = ", keycode);
+			dbg_print("adc power key:keycode  = ", keycode);
 		}
-		#endif
 	}
 }
 

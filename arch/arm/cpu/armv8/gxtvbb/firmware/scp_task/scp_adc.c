@@ -313,15 +313,21 @@ int saradc_disable(void)
 int check_adc_key_resume(void)
 {
 	int value;
-	int rang=30;
-	value = get_adc_sample_gxbb(2);
-	if ((value >= 0) && (value <= 40))
+	int min;
+	int max;
+
+	/*the sampling value of adc: 0-1023*/
+	min = CONFIG_ADC_POWER_KEY_VAL - 40;
+	if (min < 0)
+		min = 0;
+	max = CONFIG_ADC_POWER_KEY_VAL + 40;
+	if (max > 1023)
+		max = 1023;
+
+	value = get_adc_sample_gxbb(CONFIG_ADC_POWER_KEY_CHAN);
+	if ((value >= min) && (value <= max))
 		return 1;
-	else if (((value>=(217-rang)) && (value<=217+rang)) ||
-		     ((value>=(414-rang)) && (value<=414+rang)) ||
-		     ((value>=(616-rang)) && (value<=616+rang)) ||
-		     ((value>=(822-rang)) && (value<=822+rang)))
-		return 2;
 	else
 		return 0;
+
 }

@@ -56,6 +56,28 @@ enum pwm_id {
 	pwm_ao_a,
 	pwm_ao_b,
 };
+
+static unsigned int ao_timer_ctrl;
+static unsigned int ao_timera;
+
+static void reset_ao_timera(void)
+{
+	unsigned int val;
+	ao_timer_ctrl = readl(AO_TIMER_REG);
+	ao_timera = readl(AO_TIMERA_REG);
+	/* set ao timera work mode and interrrupt time 100us resolution*/
+	val = (1 << 2) | (3 << 0) | (1 << 3);
+	writel(val, AO_TIMER_REG);
+	/* periodic time 10ms */
+	writel(100,AO_TIMERA_REG);
+}
+
+static void restore_ao_timer(void)
+{
+	writel(ao_timer_ctrl,AO_TIMER_REG);
+	writel(ao_timera,AO_TIMERA_REG);
+}
+
 static void power_switch_to_ee(unsigned int pwr_ctrl)
 {
 	if (pwr_ctrl == ON) {
@@ -282,40 +304,18 @@ static void get_wakeup_source(void *response, unsigned int suspend_from)
 #endif
 
 }
-static unsigned int ao_timer_ctrl;
-static unsigned int ao_timera;
-static void reset_ao_timera(void)
-{
-	unsigned int val;
-	ao_timer_ctrl = readl(AO_TIMER_REG);
-	ao_timera = readl(AO_TIMERA_REG);
-/* set ao timera work mode and interrrupt time
- * 100us resolution
- */
-	val = (1 << 2) | (3 << 0) | (1 << 3);
-	writel(val, AO_TIMER_REG);
-
-/* 	periodic time 10m
- */
-	writel(100,AO_TIMERA_REG);
-}
-static void restore_ao_timer(void)
-{
-	writel(ao_timer_ctrl,AO_TIMER_REG);
-	writel(ao_timera,AO_TIMERA_REG);
-}
 
 static unsigned int detect_key(unsigned int suspend_from)
 {
 	int exit_reason = 0;
 	unsigned int time_out = readl(AO_DEBUG_REG2);
 	unsigned time_out_ms = time_out * 100;
+	unsigned char adc_key_cnt = 0;
 	unsigned *irq = (unsigned *)WAKEUP_SRC_IRQ_ADDR_BASE;
 	/* unsigned *wakeup_en = (unsigned *)SECURE_TASK_RESPONSE_WAKEUP_EN; */
 	uart_puts("enter detect key\n");
 
 	_udelay(10000);
-	reset_ao_timera();
 	/* setup wakeup resources */
 	/*auto suspend: timerA 10ms resolution */
 	if (time_out_ms != 0) {
@@ -331,6 +331,8 @@ static unsigned int detect_key(unsigned int suspend_from)
 			}
 		}
 	}
+	saradc_enable();
+	reset_ao_timera();
 	init_remote();
 #ifdef CONFIG_AML_LED
 	pled_suspend_init();
@@ -376,6 +378,14 @@ static unsigned int detect_key(unsigned int suspend_from)
 #ifdef CONFIG_AML_LED
 			pled_suspend_timer_proc();
 #endif
+			if (check_adc_key_resume()) {
+				adc_key_cnt++;
+				/*using variable 'adc_key_cnt' to eliminate the dithering of the key*/
+				if (2 == adc_key_cnt)
+					exit_reason = POWER_KEY_WAKEUP;
+			} else {
+				adc_key_cnt = 0;
+			}
 		}
 		if (irq[IRQ_AO_IR_DEC] == IRQ_AO_IR_DEC_NUM) {
 			irq[IRQ_AO_IR_DEC] = 0xFFFFFFFF;
@@ -414,6 +424,7 @@ static unsigned int detect_key(unsigned int suspend_from)
 	} while (1);
 	wakeup_timer_clear();
 	restore_ao_timer();
+	saradc_disable();
 	return exit_reason;
 }
 

@@ -61,6 +61,8 @@
 #define get_reg	    aml_read_reg32
 
 static int adc_type; /*1:12bit; 0:10bit*/
+unsigned int channel = 0xffff;
+unsigned int keycode;
 
 static void aml_set_reg32_bits(volatile unsigned int *_reg, const unsigned int _value, const unsigned int _start, const unsigned int _len)
 {
@@ -206,17 +208,6 @@ void saradc_enable(void)
     set_reg(PP_SAR_ADC_CHAN_10_SW, 0x8c000c);
     set_reg(PP_SAR_ADC_DETECT_IDLE_SW, 0xc000c);
 
-#if AML_ADC_SAMPLE_DEBUG
-	printf("ADCREG reg0 =%x\n",   get_reg(PP_SAR_ADC_REG0));
-	printf("ADCREG ch list =%x\n",get_reg(PP_SAR_ADC_CHAN_LIST));
-	printf("ADCREG avg  =%x\n",   get_reg(PP_SAR_ADC_AVG_CNTL));
-	printf("ADCREG reg3 =%x\n",   get_reg(PP_SAR_ADC_REG3));
-	printf("ADCREG ch72 sw =%x\n",get_reg(PP_SAR_ADC_AUX_SW));
-	printf("ADCREG ch10 sw =%x\n",get_reg(PP_SAR_ADC_CHAN_10_SW));
-	printf("ADCREG detect&idle=%x\n",get_reg(PP_SAR_ADC_DETECT_IDLE_SW));
-    printf("ADCREG GXBB_CLK_REG=%x\n",get_reg(GXBB_CLK_REG));
-#endif //AML_ADC_SAMPLE_DEBUG
-
     saradc_power_control(1);
 	if (!init_times) {
 		init_times = 1;
@@ -321,9 +312,24 @@ int saradc_disable(void)
 int check_adc_key_resume(void)
 {
 	int value;
+	int min;
+	int max;
+
+	if (channel == 0xffff) {
+		channel = CONFIG_ADC_POWER_KEY_CHAN;
+		keycode = CONFIG_ADC_POWER_KEY_VAL;
+	}
+
 	/*the sampling value of adc: 0-1023*/
-	value = get_adc_sample_gxbb(2);
-	if ((value >= 0) && (value <= 40))
+	min = keycode - 40;
+	if (min < 0)
+		min = 0;
+	max = keycode + 40;
+	if (max > 1023)
+		max = 1023;
+
+	value = get_adc_sample_gxbb(channel);
+	if ((value >= min) && (value <= max))
 		return 1;
 	else
 		return 0;

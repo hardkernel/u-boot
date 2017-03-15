@@ -68,6 +68,10 @@
 #define CONFIG_IR_REMOTE_POWER_UP_KEY_VAL8 0xFFFFFFFF
 #define CONFIG_IR_REMOTE_POWER_UP_KEY_VAL9 0xFFFFFFFF
 
+/*config the default parameters for adc power key*/
+#define CONFIG_ADC_POWER_KEY_CHAN   2  /*channel range: 0-7*/
+#define CONFIG_ADC_POWER_KEY_VAL    0  /*sample value range: 0-1023*/
+
 /* args/envs */
 #define CONFIG_SYS_MAXARGS  64
 #define CONFIG_EXTRA_ENV_SETTINGS \

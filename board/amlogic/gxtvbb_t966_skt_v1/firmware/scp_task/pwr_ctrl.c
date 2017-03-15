@@ -21,6 +21,27 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
+static unsigned int ao_timer_ctrl;
+static unsigned int ao_timera;
+
+static void reset_ao_timera(void)
+{
+	unsigned int val;
+	ao_timer_ctrl = readl(AO_TIMER_REG);
+	ao_timera = readl(AO_TIMERA_REG);
+	/* set ao timera work mode and interrrupt time 100us resolution*/
+	val = (1 << 2) | (3 << 0) | (1 << 3);
+	writel(val, AO_TIMER_REG);
+	/* periodic time 10ms */
+	writel(100,AO_TIMERA_REG);
+}
+
+static void restore_ao_timer(void)
+{
+	writel(ao_timer_ctrl,AO_TIMER_REG);
+	writel(ao_timera,AO_TIMERA_REG);
+}
+
 static void power_off_at_clk81(void)
 {
 }
@@ -81,6 +102,7 @@ static unsigned int detect_key(unsigned int suspend_from)
 	int exit_reason = 0;
 	unsigned int time_out = readl(AO_DEBUG_REG2);
 	unsigned time_out_ms = time_out*100;
+	unsigned char adc_key_cnt = 0;
 	unsigned *irq = (unsigned *)WAKEUP_SRC_IRQ_ADDR_BASE;
 	/* unsigned *wakeup_en = (unsigned *)SECURE_TASK_RESPONSE_WAKEUP_EN; */
 
@@ -88,7 +110,8 @@ static unsigned int detect_key(unsigned int suspend_from)
 	/*auto suspend: timerA 10ms resolution*/
 	if (time_out_ms != 0)
 		wakeup_timer_setup();
-
+	saradc_enable();
+	reset_ao_timera();
 	init_remote();
 #ifdef CONFIG_CEC_WAKEUP
 	if (hdmi_cec_func_config & 0x1) {
@@ -126,7 +149,17 @@ static unsigned int detect_key(unsigned int suspend_from)
 				exit_reason = AUTO_WAKEUP;
 			}
 		}
-
+		if (irq[IRQ_AO_TIMERA] == IRQ_AO_TIMERA_NUM) {
+			irq[IRQ_AO_TIMERA] = 0xFFFFFFFF;
+			if (check_adc_key_resume()) {
+				adc_key_cnt++;
+				/*using variable 'adc_key_cnt' to eliminate the dithering of the key*/
+				if (2 == adc_key_cnt)
+					exit_reason = POWER_KEY_WAKEUP;
+			} else {
+				adc_key_cnt = 0;
+			}
+		}
 		if (irq[IRQ_AO_IR_DEC] == IRQ_AO_IR_DEC_NUM) {
 			irq[IRQ_AO_IR_DEC] = 0xFFFFFFFF;
 			if (remote_detect_key())
@@ -162,8 +195,9 @@ static unsigned int detect_key(unsigned int suspend_from)
 		else
 			asm volatile("wfi");
 	} while (1);
-
 	wakeup_timer_clear();
+	restore_ao_timer();
+	saradc_disable();
 	return exit_reason;
 }
 
