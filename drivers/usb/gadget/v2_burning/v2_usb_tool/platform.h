@@ -23,19 +23,19 @@
 #define PORT_REG_OFFSET   0
 #endif
 
+#if (defined CONFIG_TXLX_USB)
+#if ((defined CONFIG_USB_XHCI))
+#define DWC_REG_BASE   0xff400000
+#else
+#define DWC_REG_BASE  (0xff500000 + PORT_REG_OFFSET)
+#endif
+#else
 #if ((defined CONFIG_USB_XHCI))
 #define DWC_REG_BASE   0xc9100000
 #else
 #define DWC_REG_BASE  (0xC9000000 + PORT_REG_OFFSET)
 #endif
-
-#define PERI_BASE_ADDR               0xc1100000
-#define ISABASE                      0x01000000
-
-#define PREI_USB_PHY_REG              0xc0000000 //0xC1108400
-
-#define PREI_USB_PHY_A_REG3           0xc0000000
-#define PREI_USB_PHY_B_REG4           0xc0000020
+#endif
 
 #define PREI_USB_PHY_A_POR      (1 << 0)
 #define PREI_USB_PHY_B_POR      (1 << 1)
@@ -58,26 +58,6 @@
 
 #define PREI_USB_PHY_B_REG4_IDDIG_OVR	(1 << 23)
 #define PREI_USB_PHY_B_REG4_IDDIG_VAL	(1 << 24)
-
-
-
-/***********************************************/
-#define WRITE_PERI_REG(reg, val) *(volatile unsigned *)(PERI_BASE_ADDR + ((reg)<<2)) = (val)
-#define READ_PERI_REG(reg) (*(volatile unsigned *)(PERI_BASE_ADDR + ((reg)<<2)))
-
-#define CLEAR_PERIPHS_REG_BITS(reg, mask) WRITE_PERI_REG(reg, (READ_PERI_REG(reg)&(~(mask))))
-#define SET_PERIPHS_REG_BITS(reg, mask)   WRITE_PERI_REG(reg, (READ_PERI_REG(reg)|(mask)))
-
-#define WRITE_ISA_REG(reg, val) *(volatile unsigned *)(ISABASE + (reg)) = (val)
-#define READ_ISA_REG(reg) (*(volatile unsigned *)(ISABASE + (reg)))
-
-#define CLEAR_ISA_REG_MASK(reg, mask) WRITE_ISA_REG(reg, (READ_ISA_REG(reg)&(~mask)))
-#define SET_ISA_REG_MASK(reg, mask)   WRITE_ISA_REG(reg, (READ_ISA_REG(reg)|(mask)))
-/***********************************************/
-
-
-
-
 
 #define IREG_TIMER_E_COUNT            0x2655
 

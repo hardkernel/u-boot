@@ -17,8 +17,13 @@
 
 
 #if (defined CONFIG_USB_XHCI)
+#if (defined CONFIG_TXLX_USB)
+#define PREI_USB_PHY_2_REG_BASE 0xffe09020
+#define PREI_USB_PHY_3_REG_BASE 0xffe09080
+#else
 #define PREI_USB_PHY_2_REG_BASE 0xd0078020
 #define PREI_USB_PHY_3_REG_BASE 0xd0078080
+#endif
 
 typedef struct u2p_aml_regs {
 	volatile uint32_t u2p_r0;

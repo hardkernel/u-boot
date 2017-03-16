@@ -14,8 +14,13 @@
 #endif
 
 #if (defined CONFIG_USB_XHCI)
+#if (defined CONFIG_TXLX_USB)
+#define PREI_USB_PHY_2_REG_BASE 0xffe09020
+#define PREI_USB_PHY_3_REG_BASE 0xffe09080
+#else
 #define PREI_USB_PHY_2_REG_BASE 0xd0078020
 #define PREI_USB_PHY_3_REG_BASE 0xd0078080
+#endif
 
 typedef struct u2p_aml_regs {
 	volatile uint32_t u2p_r0;
@@ -100,9 +105,15 @@ typedef union usb_r4 {
 	} b;
 } usb_r4_t;
 
+#if (defined CONFIG_TXLX_USB)
+#define P_RESET1_REGISTER       (volatile unsigned long *)0xffd04408
+#define P_AO_RTC_ALT_CLK_CNTL0  (volatile uint32_t *)(0xff800000 + (0x25 << 2))
+#define P_AO_RTI_PWR_CNTL_REG0  (volatile uint32_t *)(0xff800000 + (0x04 << 2))
+#else
 #define P_RESET1_REGISTER       (volatile unsigned long *)0xc1104408
 #define P_AO_RTC_ALT_CLK_CNTL0  (volatile uint32_t *)(0xc8100000 + (0x25 << 2))
 #define P_AO_RTI_PWR_CNTL_REG0  (volatile uint32_t *)(0xc8100000 + (0x04 << 2))
+#endif
 
 void f_set_usb_phy_config(void)
 {
