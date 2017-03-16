@@ -227,7 +227,7 @@ int cvbs_set_vdac(int status)
 	{
 	case 0:// close vdac
 		cvbs_write_hiu(HHI_VDAC_CNTL0, 0);
-		if (is_meson_txl_cpu())
+		if (is_equal_after_meson_cpu(MESON_CPU_MAJOR_ID_TXL))
 			cvbs_write_hiu(HHI_VDAC_CNTL1, 0);
 		else
 			cvbs_write_hiu(HHI_VDAC_CNTL1, 8);
@@ -235,15 +235,14 @@ int cvbs_set_vdac(int status)
 	case 1:// from enci to vdac
 		cvbs_set_vcbus_bits(VENC_VDAC_DACSEL0, 5, 1, 0);
 		if (is_equal_after_meson_cpu(MESON_CPU_MAJOR_ID_GXL)) {
-			if (is_meson_txl_cpu())
+			if (is_equal_after_meson_cpu(MESON_CPU_MAJOR_ID_TXL))
 				cvbs_write_hiu(HHI_VDAC_CNTL0, 0xb0201);
 			else
 				cvbs_write_hiu(HHI_VDAC_CNTL0, 0xb0001);
-		}
-		else
+		} else
 			cvbs_write_hiu(HHI_VDAC_CNTL0, 1);
 
-		if (is_meson_txl_cpu())
+		if (is_equal_after_meson_cpu(MESON_CPU_MAJOR_ID_TXL))
 			cvbs_write_hiu(HHI_VDAC_CNTL1, 8);
 		else
 			cvbs_write_hiu(HHI_VDAC_CNTL1, 0);
@@ -387,7 +386,7 @@ int cvbs_reg_debug(int argc, char* const argv[])
 				printf("cvbs read cbus[0x%.2x] = 0x%.4x\n", i, cvbs_read_cbus(i));
 		} if (type == BUS_TYPE_HIU) {
 			for (i=start; i<=end; i++)
-				printf("cvbs read hiu[0x%.2x] = 0x%.4x\n", i, cvbs_read_hiu(i));
+				printf("cvbs read hiu[0x%.2x] = 0x%.4x\n", i, cvbs_read_hiu(cvbs_get_logic_addr(BUS_TYPE_HIU, i)));
 		} else if (type == BUS_TYPE_VCBUS) {
 			for (i=start; i<=end; i++)
 				printf("cvbs read vcbus[0x%.2x] = 0x%.4x\n", i, cvbs_read_vcbus(i));
