@@ -376,7 +376,6 @@ int board_late_init(void){
 	run_command("if itest ${upgrade_step} == 1; then "\
 				"defenv_reserv; setenv upgrade_step 2; saveenv; fi;", 0);
 	/*add board late init function here*/
-#if 0
 	int ret;
 	ret = run_command("store dtb read $dtb_mem_addr", 1);
 	if (ret) {
@@ -391,14 +390,14 @@ int board_late_init(void){
 		}
 		#endif
 	}
-#endif
+
 	/* load unifykey */
 	run_command("keyunify init 0x1234", 0);
 
 #ifdef CONFIG_AML_VPU
 	vpu_probe();
 #endif
-	//vpp_init();
+	vpp_init();
 #ifdef CONFIG_AML_HDMITX20
 	hdmi_tx_set_hdmi_5v();
 	hdmi_tx_init();

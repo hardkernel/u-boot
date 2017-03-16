@@ -5,7 +5,7 @@ ENTRY(bl21_entrypoint)
 
 SECTIONS
 {
-    . = 0xd900b400;
+    . = 0xFFFCB400;
     ASSERT(. == ALIGN(1024),
            "BL21 base address is not aligned.")
 
@@ -43,5 +43,5 @@ SECTIONS
 
     __BSS_SIZE__ = SIZEOF(.bss);
 
-    ASSERT(. <= 0xd900c000, "bl21 image has exceeded its limit.")
+    ASSERT(. <= (0xFFFCB400 + 0xC00), "bl21 image has exceeded its limit.")
 }
