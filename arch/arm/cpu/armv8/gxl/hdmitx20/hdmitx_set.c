@@ -215,11 +215,13 @@ static int read_edid_8bytes(unsigned char *rx_edid, unsigned char addr,
 		return 0;
 	}
 	_udelay(1000);
+	/* add extra delay time for reading segment block */
+	if (blk_no >= 2)
+		_udelay(1000);
 	hdmitx_wr_reg(HDMITX_DWC_IH_I2CM_STAT0, 1 << 1);        // clear INT
 	// Read back 8 bytes
 	for (i = 0; i < 8; i ++)
 		rx_edid[i] = hdmitx_rd_reg(HDMITX_DWC_I2CM_READ_BUFF0 + i);
-
 	return 1;
 }
 

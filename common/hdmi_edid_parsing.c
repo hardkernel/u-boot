@@ -65,7 +65,8 @@ static int check_dvi_hdmi_edid_valid(unsigned char *buf)
 
 	if (buf[0x7e] == 0)/* check Extension flag at block 0 */
 		return 1;
-	else if (buf[0x80] != 0x2)/* check block 1 extension tag */
+	/* check block 1 extension tag */
+	else if (!((buf[0x80] == 0x2) || (buf[0x80] == 0xf0)))
 		return 0;
 
 	/* check block 1 checksum */
@@ -297,7 +298,6 @@ static int hdmitx_edid_block_parse(struct rx_cap *pRXCap,
 	 */
 	pRXCap->pref_colorspace = BlockBuf[3] & 0x30;
 
-	pRXCap->VIC_count = 0;
 	pRXCap->native_VIC = 0xff;
 
 	for (offset = 4 ; offset < End ; ) {
@@ -457,9 +457,8 @@ unsigned int hdmi_edid_parsing(unsigned char *EDID_buf, struct rx_cap *pRXCap)
 	pRXCap->IEEEOUI = 0x000c03; /* Default is HDMI device */
 
 	/* If edid data corrupted, no parse */
-	if (check_dvi_hdmi_edid_valid(EDID_buf) == 0) {
+	if (check_dvi_hdmi_edid_valid(EDID_buf) == 0)
 		return 0;
-	}
 
 	idx[0] = EDID_DETAILED_TIMING_DES_BLOCK0_POS;
 	idx[1] = EDID_DETAILED_TIMING_DES_BLOCK1_POS;
@@ -474,13 +473,8 @@ unsigned int hdmi_edid_parsing(unsigned char *EDID_buf, struct rx_cap *pRXCap)
 		pRXCap->IEEEOUI = 0;
 
 	for (i = 1 ; i <= BlockCount ; i++) {
-		if (EDID_buf[i*128+0] == 0x2) {
-			if (hdmitx_edid_block_parse(pRXCap,
-				&(EDID_buf[i*128])) >= 0) {
-				if (pRXCap->IEEEOUI == 0x0c03)
-					break;
-			}
-		}
+		if (EDID_buf[i*128+0] == 0x2)
+			hdmitx_edid_block_parse(pRXCap, &(EDID_buf[i*128]));
 	}
 
 /*
