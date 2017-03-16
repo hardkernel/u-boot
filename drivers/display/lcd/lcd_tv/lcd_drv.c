@@ -56,7 +56,10 @@ static void lcd_vbyone_pinmux_set(int status)
 			lcd_pinmux_set_mask(7, ((1 << 11) | (1 << 12)));
 			break;
 		case LCD_CHIP_TXL:
+			lcd_pinmux_set_mask(0, ((1 << 30) | (1 << 31)));
+			break;
 		case LCD_CHIP_TXLX:
+			lcd_pinmux_clr_mask(0, ((1 << 23) | (1 << 20) | (1 << 19) | (1 << 18) | (1 << 11)));
 			lcd_pinmux_set_mask(0, ((1 << 30) | (1 << 31)));
 			break;
 		default:
