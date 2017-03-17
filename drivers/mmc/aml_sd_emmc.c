@@ -45,7 +45,7 @@
 	#define emmc_debug(a...)
 #endif
 
-
+extern bool aml_is_emmc_tsd (struct mmc *mmc);
 /*
  * **********************************************************************************************
  * board relative
@@ -118,9 +118,12 @@ void aml_sd_cfg_swth(struct mmc *mmc)
 						(2 << Cfg_co_phase) |
 						(clk_src << Cfg_src) |
 						(clk_div << Cfg_div));
+
 	if (cpu_id.family_id == MESON_CPU_MAJOR_ID_TXLX) {
-		sd_emmc_clkc &= ~(3 << Cfg_co_phase);
-		sd_emmc_clkc |= (2 << Cfg_tx_phase);
+		if (aml_is_emmc_tsd(mmc)) {
+			sd_emmc_clkc &= ~(3 << Cfg_co_phase);
+			sd_emmc_clkc |= (2 << Cfg_tx_phase);
+		}
 	}
 
 	sd_emmc_reg->gclock = sd_emmc_clkc;
