@@ -79,7 +79,7 @@ void aml_sd_cfg_swth(struct mmc *mmc)
 	struct aml_card_sd_info *aml_priv = mmc->priv;
 	struct sd_emmc_global_regs *sd_emmc_reg = aml_priv->sd_emmc_reg;
 	struct sd_emmc_config* sd_emmc_cfg = (struct sd_emmc_config*)&vconf;
-
+	cpu_id_t cpu_id = get_cpu_id();
 	emmc_debug("mmc->clock=%d; clk_div=%d\n",mmc->clock ,clk_div);
 
 	/* reset gdelay , gadjust register */
@@ -118,6 +118,10 @@ void aml_sd_cfg_swth(struct mmc *mmc)
 						(2 << Cfg_co_phase) |
 						(clk_src << Cfg_src) |
 						(clk_div << Cfg_div));
+	if (cpu_id.family_id == MESON_CPU_MAJOR_ID_TXLX) {
+		sd_emmc_clkc &= ~(3 << Cfg_co_phase);
+		sd_emmc_clkc |= (2 << Cfg_tx_phase);
+	}
 
 	sd_emmc_reg->gclock = sd_emmc_clkc;
 	vconf = sd_emmc_reg->gcfg;

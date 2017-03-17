@@ -37,10 +37,10 @@
 #define	Cfg_rx_phase	12
 #define	Cfg_sram_pd		14
 #define	Cfg_tx_delay	16
-#define	Cfg_rx_delay	20
-#define	Cfg_always_on	24
-#define	Cfg_irq_sdio_sleep   25
-#define Cfg_irq_sdio_sleep_ds		26
+#define	Cfg_rx_delay	22
+#define	Cfg_always_on	28
+#define	Cfg_irq_sdio_sleep   29
+#define Cfg_irq_sdio_sleep_ds		30
 
 #define	SD_EMMC_RXD_ERROR				1
 #define	SD_EMMC_TXD_ERROR				1<<1
@@ -52,8 +52,8 @@
 struct sd_emmc_global_regs {
     volatile uint32_t gclock;     // 0x00
     volatile uint32_t gdelay;     // 0x04
-    volatile uint32_t gadjust;    // 0x08
-    volatile uint32_t reserved_0c;       // 0x0c
+	volatile uint32_t gdelay1;    //0x08
+    volatile uint32_t gadjust;    // 0x0c
     volatile uint32_t gcalout;    // 0x10
     volatile uint32_t reserved_14[11];   // 0x14~0x3c
     volatile uint32_t gstart;     // 0x40
@@ -154,25 +154,32 @@ struct sd_emmc_clock{
     uint32_t tx_phase:2;     /*[11:10]   TX clock phase. 0: 0 phase, 1: 90 phase, 2: 180 phase, 3: 270 phase.*/
     uint32_t rx_phase:2;     /*[13:12]   RX clock phase. 0: 0 phase, 1: 90 phase, 2: 180 phase, 3: 270 phase.*/
     uint32_t reserved14:2;
-    uint32_t tx_delay:4;     /*[19:16]   TX clock delay line. 0: no delay, n: delay n*200ps. Maximum delay 3ns.*/
-    uint32_t rx_delay:4;     /*[23:20]   RX clock delay line. 0: no delay, n: delay n*200ps. Maximum delay 3ns.*/
-    uint32_t always_on:1;    /*[24]      1: Keep clock always on. 0: Clock on/off controlled by activities. */
+    uint32_t tx_delay:6;     /*[21:16]   TX clock delay line. 0: no delay, n: delay n*200ps. Maximum delay 3ns.*/
+    uint32_t rx_delay:6;     /*[27:22]   RX clock delay line. 0: no delay, n: delay n*200ps. Maximum delay 3ns.*/
+    uint32_t always_on:1;    /*[28]      1: Keep clock always on. 0: Clock on/off controlled by activities. */
                             /*Any APB3 access or descriptor execution will keep clock on.*/
-    uint32_t irq_sdio_sleep:1; /*[25]    1: enable IRQ sdio when in sleep mode. */
-    uint32_t reserved26:6;
+    uint32_t irq_sdio_sleep:1; /*[29]    1: enable IRQ sdio when in sleep mode. */
+	uint32_t irq_sdio_sleep_ds:1;/*[30] 1:enable ds as irq*/
+    uint32_t reserved26:1;
 };
 
 struct sd_emmc_delay{
-    uint32_t dat0:4;         /*[3:0]       Data 0 delay line. */
-    uint32_t dat1:4;         /*[7:4]       Data 1 delay line. */
-    uint32_t dat2:4;         /*[11:8]      Data 2 delay line. */
-    uint32_t dat3:4;         /*[15:12]     Data 3 delay line. */
-    uint32_t dat4:4;         /*[19:16]     Data 4 delay line. */
-    uint32_t dat5:4;         /*[23:20]     Data 5 delay line. */
-    uint32_t dat6:4;         /*[27:24]     Data 6 delay line. */
-    uint32_t dat7:4;         /*[31:28]     Data 7 delay line. */
+    uint32_t dat0:6;         /*[3:0]       Data 0 delay line. */
+    uint32_t dat1:6;         /*[7:4]       Data 1 delay line. */
+    uint32_t dat2:6;         /*[11:8]      Data 2 delay line. */
+    uint32_t dat3:6;         /*[15:12]     Data 3 delay line. */
+    uint32_t dat4:6;         /*[19:16]     Data 4 delay line. */
+	uint32_t spare:2;
 };
 
+struct sd_emmc_delay1{
+    uint32_t dat5:6;         /*[23:20]     Data 5 delay line. */
+    uint32_t dat6:6;         /*[27:24]     Data 6 delay line. */
+    uint32_t dat7:6;         /*[31:28]     Data 7 delay line. */
+	uint32_t dat8:6;         /*[31:28]     Data 7 delay line. */
+	uint32_t dat9:6;         /*[31:28]     Data 7 delay line. */
+	uint32_t spare:2;
+};
 
 struct sd_emmc_adjust{
     uint32_t cmd_delay:4;           /*[3:0]       Command delay line. */

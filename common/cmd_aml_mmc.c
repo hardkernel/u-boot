@@ -443,7 +443,6 @@ int do_amlmmcops(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
                             printf("sd_emmc_reg->gclock = 0x%x\n", sd_emmc_reg->gclock);
                             printf("sd_emmc_reg->gdelay = 0x%x\n", sd_emmc_reg->gdelay);
                             printf("sd_emmc_reg->gadjust = 0x%x\n", sd_emmc_reg->gadjust);
-                            printf("sd_emmc_reg->reserved_0c = 0x%x\n", sd_emmc_reg->reserved_0c);
                             printf("sd_emmc_reg->gcalout = 0x%x\n", sd_emmc_reg->gcalout);
                             if (!mmc->has_init) {
                                 printf("mmc dev %d has not been initialed\n", dev);
