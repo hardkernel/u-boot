@@ -19,7 +19,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-#define SAR_ADC_BASE			0xc8100400+0x80*4
+#define SAR_ADC_BASE			0xff809000
 
 #define SAR_ADC_REG0 			SAR_ADC_BASE +(0x0*4)//0xc8100600
 #define SAR_ADC_CHAN_LIST		SAR_ADC_BASE +(0x1*4)//0xc8100604
