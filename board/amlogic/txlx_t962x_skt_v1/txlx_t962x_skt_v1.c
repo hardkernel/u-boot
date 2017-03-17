@@ -98,9 +98,7 @@ static void setup_net_chip(void)
 	eth_aml_reg0_t eth_reg0;
 
 	eth_reg0.d32 = 0;
-	eth_reg0.b.phy_intf_sel = 0;
-	eth_reg0.b.data_endian = 0;
-	eth_reg0.b.desc_endian = 0;
+	eth_reg0.b.phy_intf_sel = 4;
 	eth_reg0.b.rx_clk_rmii_invert = 0;
 	eth_reg0.b.rgmii_tx_clk_src = 0;
 	eth_reg0.b.rgmii_tx_clk_phase = 0;

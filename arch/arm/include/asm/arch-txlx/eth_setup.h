@@ -44,7 +44,7 @@ int (*eth_hw_reset)(void);
  *clock define part
  */
 
-#define ETH_BASE                                (0xC9410000)
+#define ETH_BASE                                (0xff3f0000)
 #define ETH_PLL_CNTL                            CBUS_REG_ADDR(0x2050)
  /* Ethernet ctrl */
 #define ETH_PLL_CNTL_DIVEN                      (1<<0)
@@ -88,9 +88,7 @@ typedef union eth_aml_reg0 {
     unsigned int d32;
     /** register bits */
 	struct {
-        unsigned phy_intf_sel:1;
-        unsigned data_endian:1;
-        unsigned desc_endian:1;
+        unsigned phy_intf_sel:3;
         unsigned rx_clk_rmii_invert:1;
         unsigned rgmii_tx_clk_src:1;
         unsigned rgmii_tx_clk_phase:2;
