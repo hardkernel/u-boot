@@ -42,4 +42,9 @@ extern int ldim_dev_ob3350_probe(void);
 extern int ldim_dev_ob3350_remove(void);
 #endif
 
+#ifdef CONFIG_AML_LOCAL_DIMMING_GLOBAL
+extern int ldim_dev_global_probe(void);
+extern int ldim_dev_global_remove(void);
+#endif
+
 #endif

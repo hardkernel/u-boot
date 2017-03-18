@@ -158,10 +158,7 @@ static struct aml_ldim_driver_s ldim_driver = {
 
 struct aml_ldim_driver_s *aml_ldim_get_driver(void)
 {
-	if (ldim_driver.valid_flag)
 		return &ldim_driver;
-	else
-		return NULL;
 }
 
 #ifndef DTB_BIND_KERNEL

@@ -623,6 +623,13 @@ static int ldim_dev_add_driver(struct ldim_dev_config_s *ldev_conf, int index)
 		goto ldim_dev_add_driver_next;
 	}
 
+	if (strcmp(ldev_conf->name, "global") == 0) {
+#ifdef CONFIG_AML_LOCAL_DIMMING_GLOBAL
+		ret = ldim_dev_global_probe();
+#endif
+		goto ldim_dev_add_driver_next;
+	}
+
 	LDIMERR("invalid device name: %s\n", ldev_conf->name);
 	ret = -1;
 
@@ -665,6 +672,13 @@ static int ldim_dev_remove_driver(struct ldim_dev_config_s *ldev_conf,
 	if (strcmp(ldev_conf->name, "ob3350") == 0) {
 #ifdef CONFIG_AML_LOCAL_DIMMING_OB3350
 		ret = ldim_dev_ob3350_remove();
+#endif
+		goto ldim_dev_remove_driver_next;
+	}
+
+	if (strcmp(ldev_conf->name, "global") == 0) {
+#ifdef CONFIG_AML_LOCAL_DIMMING_GLOBAL
+		ret = ldim_dev_global_remove();
 #endif
 		goto ldim_dev_remove_driver_next;
 	}
