@@ -1,0 +1,22 @@
+if TARGET_MESON_TXLX
+
+config SYS_CPU
+	string
+	default "armv8"
+
+config SYS_BOARD
+	string
+	default "txlx_t962x_r311_v1"
+
+config SYS_VENDOR
+	string
+	default "amlogic"
+
+config SYS_SOC
+	string
+	default "txlx"
+
+config SYS_CONFIG_NAME
+	default "txlx_t962x_r311_v1"
+
+endif

@@ -25,9 +25,10 @@
 #include <environment.h>
 #include <fdt_support.h>
 #include <libfdt.h>
-#include <asm/arch/secure_apb.h>
+#include <asm/cpu_id.h>
 #ifdef CONFIG_SYS_I2C_AML
 #include <aml_i2c.h>
+#include <asm/arch/secure_apb.h>
 #endif
 #ifdef CONFIG_AML_VPU
 #include <vpu.h>
@@ -44,6 +45,7 @@
 #endif
 #include <asm/arch/eth_setup.h>
 #include <phy.h>
+#include <asm-generic/gpio.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -348,6 +350,7 @@ static void hdmi_tx_set_hdmi_5v(void)
 }
 #endif
 
+
 int board_init(void)
 {
 #ifdef CONFIG_AML_V2_FACTORY_BURN
@@ -366,8 +369,11 @@ int board_init(void)
 }
 
 #ifdef CONFIG_BOARD_LATE_INIT
-int board_late_init(void){
+int board_late_init(void)
+{
 	int reg;
+	int ret;
+
 	//update env before anyone using it
 	run_command("get_rebootmode; echo reboot_mode=${reboot_mode}; "\
 			"if test ${reboot_mode} = factory_reset; then "\
@@ -375,7 +381,6 @@ int board_late_init(void){
 	run_command("if itest ${upgrade_step} == 1; then "\
 				"defenv_reserv; setenv upgrade_step 2; saveenv; fi;", 0);
 	/*add board late init function here*/
-	int ret;
 	ret = run_command("store dtb read $dtb_mem_addr", 1);
 	if (ret) {
 		printf("%s(): [store dtb read $dtb_mem_addr] fail\n", __func__);
@@ -392,7 +397,6 @@ int board_late_init(void){
 
 	/* load unifykey */
 	run_command("keyunify init 0x1234", 0);
-
 #ifdef CONFIG_AML_VPU
 	vpu_probe();
 #endif
@@ -451,3 +455,40 @@ phys_size_t get_effective_memsize(void)
 	return (((readl(AO_SEC_GP_CFG0)) & 0xFFFF0000) << 4);
 #endif
 }
+
+#ifdef CONFIG_MULTI_DTB
+int checkhw(char * name)
+{
+	/*
+	 * read board hw id
+	 * set and select the dts according the board hw id.
+	 *
+	 * hwid = 1	p321 v1
+	 * hwid = 2	p321 v2
+	 */
+	unsigned int hwid = 1;
+	char loc_name[64] = {0};
+
+	/* read hwid */
+	hwid = (readl(P_AO_SEC_GP_CFG0) >> 8) & 0xFF;
+
+	printf("checkhw:  hwid = %d\n", hwid);
+
+
+	switch (hwid) {
+		case 1:
+			strcpy(loc_name, "txl_p321_v1\0");
+			break;
+		case 2:
+			strcpy(loc_name, "txl_p321_v2\0");
+			break;
+		default:
+			strcpy(loc_name, "txl_p321_v1");
+			break;
+	}
+	strcpy(name, loc_name);
+	setenv("aml_dt", loc_name);
+	return 0;
+}
+#endif
+
