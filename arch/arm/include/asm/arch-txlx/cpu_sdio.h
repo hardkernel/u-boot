@@ -241,7 +241,9 @@ struct sd_emmc_config{
     uint32_t txd_retry:1;	/*[25]   	When TXD CRC error, host sends the block again.*/
 							/*The total number of retries of one descriptor is limited to 15, */
 							/*after 15 retries, the TXD_err is set to high.*/
-    uint32_t revd:8;	        /*[31:26]   reved*/
+    uint32_t irq_ds:1;		/*[26]  use DS pin as SDIO IRQ input if it  was set as 1 */
+	uint32_t err_abort:1;	/*[27]  abort current read/write and issue IRQ if set as 1 */
+	uint32_t revd:6;	        /*[31:28]   reved*/
 };//__attribute__((__may_alias__));
 
 

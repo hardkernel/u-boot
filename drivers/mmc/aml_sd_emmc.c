@@ -121,8 +121,8 @@ void aml_sd_cfg_swth(struct mmc *mmc)
 
 	if (cpu_id.family_id == MESON_CPU_MAJOR_ID_TXLX) {
 		if (aml_is_emmc_tsd(mmc)) {
-			sd_emmc_clkc &= ~(3 << Cfg_co_phase);
-			sd_emmc_clkc |= (2 << Cfg_tx_phase);
+			sd_emmc_clkc &= ~(3 << Cfg_co_phase);//set co-phase as 0
+			sd_emmc_clkc |= (2 << Cfg_tx_phase);//set tx-phase as 2
 		}
 	}
 
@@ -133,6 +133,7 @@ void aml_sd_cfg_swth(struct mmc *mmc)
     sd_emmc_cfg->bl_len = 9;      //512byte block length
     sd_emmc_cfg->resp_timeout = 7;      //64 CLK cycle, here 2^8 = 256 clk cycles
     sd_emmc_cfg->rc_cc = 4;      //1024 CLK cycle, Max. 100mS.
+    sd_emmc_cfg->err_abort = 1;	//abort when error happens
 #if CONFIG_EMMC_DDR52_EN
     sd_emmc_cfg->ddr = mmc->ddr_mode;
 #endif
@@ -293,13 +294,16 @@ int aml_sd_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd, struct mmc_data *data)
         u32 *write_buffer = NULL;
         struct sd_emmc_status *status_irq_reg = (void *)&status_irq;
         struct sd_emmc_start *desc_start = (struct sd_emmc_start*)&vstart;
+        u32 vclock;
+        struct sd_emmc_clock *gclk = (struct sd_emmc_clock *)&vclock;
         //struct sd_emmc_config* sd_emmc_cfg = (struct sd_emmc_config*)&vconf;
         struct aml_card_sd_info *aml_priv = mmc->priv;
         struct sd_emmc_global_regs *sd_emmc_reg = aml_priv->sd_emmc_reg;
         struct cmd_cfg *des_cmd_cur = NULL;
         struct sd_emmc_desc_info *desc_cur = (struct sd_emmc_desc_info*)aml_priv->desc_buf;
-
+        cpu_id_t cpu_id = get_cpu_id();
         //vconf = sd_emmc_reg->gcfg;
+        vclock =sd_emmc_reg->gclock;
 
         memset(desc_cur, 0, (NEWSD_MAX_DESC_MUN>>2)*sizeof(struct sd_emmc_desc_info));
 
@@ -400,6 +404,11 @@ int aml_sd_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd, struct mmc_data *data)
                 if (!mmc->refix)
                     printf("emmc/sd read error, cmd%d, status=0x%x\n",
                         cmd->cmdidx, status_irq);
+				if (cpu_id.family_id == MESON_CPU_MAJOR_ID_TXLX) {
+                    gclk->tx_phase = (gclk->tx_phase + 1)%4;
+                    printf("retry read, refix tx_phase as %u\n", gclk->tx_phase);
+                    sd_emmc_reg->gclock = vclock;
+                }
         }
         if (status_irq_reg->txd_err) {
                 ret |= SD_EMMC_TXD_ERROR;
@@ -418,6 +427,11 @@ int aml_sd_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd, struct mmc_data *data)
                 if (!mmc->refix)
                     printf("emmc/sd response crc error, cmd%d, status=0x%x\n",
                         cmd->cmdidx, status_irq);
+				if (cpu_id.family_id == MESON_CPU_MAJOR_ID_TXLX) {
+                    gclk->tx_phase = (gclk->tx_phase + 1)%4;
+                    printf("retry response, refix tx_phase as %u\n", gclk->tx_phase);
+                    sd_emmc_reg->gclock = vclock;
+                }
         }
         if (status_irq_reg->resp_timeout) {
                 ret |= SD_EMMC_RESP_TIMEOUT_ERROR;
