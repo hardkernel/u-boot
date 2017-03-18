@@ -83,7 +83,8 @@ void aml_sd_cfg_swth(struct mmc *mmc)
 	emmc_debug("mmc->clock=%d; clk_div=%d\n",mmc->clock ,clk_div);
 
 	/* reset gdelay , gadjust register */
-	sd_emmc_reg->gdelay = 0;
+	sd_emmc_reg->gdelay = 0xffffffff;
+	sd_emmc_reg->gdelay1= 0xffffffff;
 	sd_emmc_reg->gadjust = 0;
 
 	if (mmc->clock > 12000000) {
@@ -122,7 +123,7 @@ void aml_sd_cfg_swth(struct mmc *mmc)
 	if (cpu_id.family_id == MESON_CPU_MAJOR_ID_TXLX) {
 		if (aml_is_emmc_tsd(mmc)) {
 			sd_emmc_clkc &= ~(3 << Cfg_co_phase);//set co-phase as 0
-			sd_emmc_clkc |= (2 << Cfg_tx_phase);//set tx-phase as 2
+			sd_emmc_clkc |= (1 << Cfg_tx_phase);//set tx-phase as 2
 		}
 	}
 
@@ -799,7 +800,7 @@ void sd_emmc_register(struct aml_card_sd_info * aml_priv)
 			     MMC_MODE_HC;
 #endif
 	cfg->f_min = 400000;
-	cfg->f_max = 40000000;
+	cfg->f_max = 50000000;
 	cfg->part_type = PART_TYPE_AML;
 	cfg->b_max = 256;
 	mmc_create(cfg,aml_priv);
