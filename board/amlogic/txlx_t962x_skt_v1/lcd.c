@@ -43,7 +43,7 @@ static char lcd_bl_gpio[BL_GPIO_NUM_MAX][LCD_CPU_GPIO_NAME_MAX] = {
 };
 
 struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
-	{/* AOC: public Platform lvds : 1920x1080@60hz 8bit pixel clk@74.25mhz 2prot*/
+	{/* normal*/
 	"lvds_0",LCD_LVDS,8,
 	/* basic timing */
 	1920,1080,2200,1125,44,148,0,5,36,0,
@@ -61,7 +61,7 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	Rsv_val,Rsv_val,Rsv_val,Rsv_val,
 	10,10,Rsv_val},
 
-	{/*public vx1 : 3840x2160@60hz 8lane */
+	{/* public 2-region vx1 : 3840x2160@60hz 8lane */
 	"vbyone_0",LCD_VBYONE,10,
 	/* basic timing */
 	3840,2160,4400,2250,33,477,0,6,81,0,
@@ -79,7 +79,7 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	Rsv_val,Rsv_val,Rsv_val,Rsv_val,
 	10,10,Rsv_val},
 
-	{/*LG: RDL550WY: 3840x2160@60hz 8lane */
+	{/* public 1-region vx1 : 3840x2160@60hz 8lane */
 	"vbyone_1",LCD_VBYONE,10,
 	/* basic timing */
 	3840,2160,4400,2250,33,477,0,6,81,0,
@@ -186,7 +186,7 @@ struct lcd_config_s lcd_config_dft = {
 	},
 	.lcd_power = &lcd_power_ctrl,
 	.pinmux_set = {{0, 0xc0000000}, {LCD_PINMUX_END, 0x0}},
-	.pinmux_clr = {{LCD_PINMUX_END, 0x0}},
+	.pinmux_clr = {{0, 0x009c0800}, {LCD_PINMUX_END, 0x0}},
 };
 
 #ifdef CONFIG_AML_LCD_EXTERN

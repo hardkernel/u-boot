@@ -20,42 +20,47 @@
 //Rsv_val = 0xffffffff
 
 static char lcd_cpu_gpio[LCD_CPU_GPIO_NUM_MAX][LCD_CPU_GPIO_NAME_MAX] = {
-	//"GPIOX_3",
-	//"GPIOX_2",
+	"GPIOZ_13", /* PANEL_PWR */
+	"GPIOZ_8", /* SCN_EN */
+	"GPIOZ_9", /* LD_EN2 */
+	"GPIOZ_10", /* 2D_3D */
+	"GPIOH_4", /* LR_IN */
+	"GPIOH_5", /* SEL_LVDS */
 	"invalid", /* ending flag */
 };
 
 static struct lcd_power_step_s lcd_power_on_step[] = {
-	//{LCD_POWER_TYPE_CPU,   0,1,50,}, /* power on */
+	{LCD_POWER_TYPE_CPU,   0,1,50,}, /* power on */
 	{LCD_POWER_TYPE_SIGNAL,0,0,0,},  /* signal */
 	{LCD_POWER_TYPE_MAX,   0,0,0,},  /* ending flag */
 };
 static struct lcd_power_step_s lcd_power_off_step[] = {
 	{LCD_POWER_TYPE_SIGNAL,0,0,50,},  /* signal */
-	//{LCD_POWER_TYPE_CPU,   0,0,100,}, /* power off */
+	{LCD_POWER_TYPE_CPU,   0,0,100,}, /* power off */
 	{LCD_POWER_TYPE_MAX,   0,0,0,},   /* ending flag */
 };
 static struct lcd_power_step_s lcd_power_on_step_3d_disable[] = {
-	//{LCD_POWER_TYPE_CPU,   0,1,20,}, /* power on */
-	//{LCD_POWER_TYPE_CPU,   1,0,10,}, /* 3d_disable */
+	{LCD_POWER_TYPE_CPU,   0,1,20,}, /* power on */
+	{LCD_POWER_TYPE_CPU,   3,0,10,}, /* 3d_disable */
 	{LCD_POWER_TYPE_SIGNAL,0,0,0,},  /* signal */
 	{LCD_POWER_TYPE_MAX,   0,0,0,},  /* ending flag */
 };
 static struct lcd_power_step_s lcd_power_off_step_3d_disable[] = {
 	{LCD_POWER_TYPE_SIGNAL,0,0,30,},  /* signal */
-	//{LCD_POWER_TYPE_CPU,   1,2,0,},   /* 3d_disable */
-	//{LCD_POWER_TYPE_CPU,   0,0,100,}, /* power off */
+	{LCD_POWER_TYPE_CPU,   3,2,0,},   /* 3d_disable */
+	{LCD_POWER_TYPE_CPU,   0,0,100,}, /* power off */
 	{LCD_POWER_TYPE_MAX,   0,0,0,},   /* ending flag */
 };
 
 static char lcd_bl_gpio[BL_GPIO_NUM_MAX][LCD_CPU_GPIO_NAME_MAX] = {
-	//"GPIOAO_4",
-	//"GPIOY_13",
+	"GPIOZ_4", /* BL_EN */
+	"GPIOZ_6", /* BL_PWM */
+	"GPIOZ_7", /* Dimming */
 	"invalid", /* ending flag */
 };
 
 struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
-	{/* AOC: public Platform lvds : 1920x1080@60hz 8bit pixel clk@74.25mhz 2prot*/
+	{/* normal*/
 	"lvds_0",LCD_LVDS,8,
 	/* basic timing */
 	1920,1080,2200,1125,44,148,0,5,36,0,
@@ -67,18 +72,36 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	lcd_power_on_step, lcd_power_off_step,
 	/* backlight */
 	60,255,10,128,128,
-	BL_CTRL_MAX,0xff,1,0,0,0,
+	BL_CTRL_PWM,0,1,0,200,200,
 	BL_PWM_POSITIVE,BL_PWM_B,180,100,25,1,0,
 	Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
 	Rsv_val,Rsv_val,Rsv_val,Rsv_val,
 	10,10,Rsv_val},
 
-	{/*public vx1 : 3840x2160@60hz 8lane */
+	{/* for HDMI convert*/
+	"lvds_1",LCD_LVDS,8,
+	/* basic timing */
+	1920,1080,2200,1125,44,148,0,5,36,0,
+	/* clk_attr */
+	1,0,1,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	/* lvds_attr */
+	1,1,0,0,0,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	/* power step */
+	lcd_power_on_step, lcd_power_off_step,
+	/* backlight */
+	60,255,10,128,128,
+	BL_CTRL_PWM,0,1,0,200,200,
+	BL_PWM_POSITIVE,BL_PWM_B,180,100,25,1,0,
+	Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	10,10,Rsv_val},
+
+	{/*public 2-region vx1 : 3840x2160@60hz 8lane */
 	"vbyone_0",LCD_VBYONE,10,
 	/* basic timing */
 	3840,2160,4400,2250,33,477,0,6,81,0,
 	/* clk_attr */
-	0,0,1,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	2,0,1,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
 	/* vbyone_attr */
 	8,2,4,4,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
 	/* power step */
@@ -91,14 +114,14 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	Rsv_val,Rsv_val,Rsv_val,Rsv_val,
 	10,10,Rsv_val},
 
-	{/*LG: RDL550WY: 3840x2160@60hz 8lane */
+	{/*public 1-region vx1 : 3840x2160@60hz 8lane */
 	"vbyone_1",LCD_VBYONE,10,
 	/* basic timing */
 	3840,2160,4400,2250,33,477,0,6,81,0,
 	/* clk_attr */
 	2,0,1,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
 	/* vbyone_attr */
-	8,2,4,4,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	8,1,4,4,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
 	/* power step */
 	lcd_power_on_step, lcd_power_off_step,
 	/* backlight */
@@ -109,14 +132,14 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	Rsv_val,Rsv_val,Rsv_val,Rsv_val,
 	10,10,Rsv_val},
 
-	{/*INL: V580DJ2: 3840x2160@60hz 8lane */
+	{/* 2-region for HDMI convert */
 	"vbyone_2",LCD_VBYONE,10,
 	/* basic timing */
 	3840,2160,4400,2250,33,477,0,6,81,0,
 	/* clk_attr */
-	2,0,1,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	1,0,1,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
 	/* vbyone_attr */
-	8,1,4,4,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	8,2,4,4,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
 	/* power step */
 	lcd_power_on_step, lcd_power_off_step,
 	/* backlight */
@@ -167,12 +190,12 @@ static struct lvds_config_s lcd_lvds_config = {
 
 static struct lcd_power_ctrl_s lcd_power_ctrl = {
 	.power_on_step = {
-		// {
-			// .type = LCD_POWER_TYPE_CPU,
-			// .index = 0, /* point to cpu_gpio[] struct */
-			// .value = 1, /* 0=output_low, 1=output_high, 2=input */
-			// .delay = 50, /* unit: ms */
-		// },
+		{
+			.type = LCD_POWER_TYPE_CPU,
+			.index = 0, /* point to cpu_gpio[] struct */
+			.value = 1, /* 0=output_low, 1=output_high, 2=input */
+			.delay = 50, /* unit: ms */
+		},
 		{
 			.type = LCD_POWER_TYPE_SIGNAL,
 			.delay = 0, /* unit: ms */
@@ -186,12 +209,12 @@ static struct lcd_power_ctrl_s lcd_power_ctrl = {
 			.type = LCD_POWER_TYPE_SIGNAL,
 			.delay = 50, /* unit: ms */
 		},
-		// {
-			// .type = LCD_POWER_TYPE_CPU,
-			// .index = 0, /* point to cpu_gpio[] struct */
-			// .value = 0, /* 0=output_low, 1=output_high, 2=input */
-			// .delay = 100, /* unit: ms */
-		// },
+		{
+			.type = LCD_POWER_TYPE_CPU,
+			.index = 0, /* point to cpu_gpio[] struct */
+			.value = 0, /* 0=output_low, 1=output_high, 2=input */
+			.delay = 100, /* unit: ms */
+		},
 		{
 			.type = LCD_POWER_TYPE_MAX, /* ending flag */
 		},
@@ -234,7 +257,7 @@ struct lcd_config_s lcd_config_dft = {
 	},
 	.lcd_power = &lcd_power_ctrl,
 	.pinmux_set = {{0, 0xc0000000}, {LCD_PINMUX_END, 0x0}},
-	.pinmux_clr = {{LCD_PINMUX_END, 0x0}},
+	.pinmux_clr = {{0, 0x009c0800}, {LCD_PINMUX_END, 0x0}},
 };
 
 #ifdef CONFIG_AML_LCD_EXTERN
@@ -305,7 +328,7 @@ struct bl_config_s bl_config_dft = {
 	.pwm_off_delay = 10,
 
 	.pinmux_set = {{4, 0x00010000}, {LCD_PINMUX_END, 0x0}},
-	.pinmux_clr = {{4, 0x00008000}, {3, 0x00200000}, {LCD_PINMUX_END, 0x0}},
+	.pinmux_clr = {{4, 0x00008000}, {3, 0x00200000}, {10, 0x00010000}, {LCD_PINMUX_END, 0x0}},
 };
 
 void lcd_config_bsp_init(void)

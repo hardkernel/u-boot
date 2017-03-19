@@ -371,7 +371,6 @@ int board_init(void)
 #ifdef CONFIG_BOARD_LATE_INIT
 int board_late_init(void)
 {
-	int reg;
 	int ret;
 
 	//update env before anyone using it
@@ -406,15 +405,6 @@ int board_late_init(void)
 	hdmi_tx_init();
 #endif
 #ifdef CONFIG_AML_LCD
-
-	reg = readl(PREG_PAD_GPIO3_EN_N);
-	reg &= ~(1 << 13);
-	writel(reg, PREG_PAD_GPIO3_EN_N);
-
-	reg = readl(PREG_PAD_GPIO3_O);
-	reg |= (1 << 13);
-	writel(reg, PREG_PAD_GPIO3_O);
-
 	lcd_probe();
 #endif
 

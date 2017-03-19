@@ -316,7 +316,7 @@
 #define CONFIG_AML_VPU 1
 
 /* DISPLAY & HDMITX */
-#define CONFIG_AML_HDMITX20 1
+//#define CONFIG_AML_HDMITX20 1
 #define CONFIG_AML_CANVAS 1
 #define CONFIG_AML_VOUT 1
 #define CONFIG_AML_OSD 1
@@ -324,7 +324,7 @@
 #define CONFIG_CMD_BMP 1
 
 #if defined(CONFIG_AML_VOUT)
-#define CONFIG_AML_CVBS 1
+//#define CONFIG_AML_CVBS 1
 #endif
 
 #define CONFIG_AML_LCD    1
