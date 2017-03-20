@@ -26,6 +26,7 @@
 #include <mmc.h>
 #include <asm/arch/sd_emmc.h>
 #include <asm/arch/cpu_sdio.h>
+#include <asm/arch/cpu.h>
 #ifdef CONFIG_STORE_COMPATIBLE
 #include <storage.h>
 #endif
@@ -69,7 +70,32 @@ struct aml_card_sd_info * cpu_sd_emmc_get(unsigned port)
     return NULL;
 }
 
+#ifdef CONFIG_AML_MESON_TXLX
+unsigned int tx_ldy_default[5][4] = {
+    {0, 1, 0xffffffff, 0xffffffff},
+    {0, 2, 0, 0},
+    {0, 2, 0xffffffff, 0xffffffff},
+    {0, 3, 0,0},
+    {0, 3, 0xffffffff, 0xffffffff}};
 
+void set_co_tx_line_phase(struct mmc *mmc)
+{
+    struct aml_card_sd_info *aml_priv = mmc->priv;
+    struct sd_emmc_global_regs *sd_emmc_reg = aml_priv->sd_emmc_reg;
+    u32 vclock;
+    struct sd_emmc_clock *gclk = (struct sd_emmc_clock *)&vclock;
+    vclock = sd_emmc_reg->gclock;
+    mmc->co_tx_idx += 1;
+    if (mmc->co_tx_idx == 5)
+        mmc->co_tx_idx = 0;
+    gclk->core_phase = tx_ldy_default[mmc->co_tx_idx][0];
+    gclk->tx_phase = tx_ldy_default[mmc->co_tx_idx][1];
+    sd_emmc_reg->gclock = vclock;
+    sd_emmc_reg->gdelay = tx_ldy_default[mmc->co_tx_idx][2];
+    sd_emmc_reg->gdelay1 = tx_ldy_default[mmc->co_tx_idx][3];
+    return;
+}
+#endif
 void aml_sd_cfg_swth(struct mmc *mmc)
 {
 
@@ -79,12 +105,10 @@ void aml_sd_cfg_swth(struct mmc *mmc)
 	struct aml_card_sd_info *aml_priv = mmc->priv;
 	struct sd_emmc_global_regs *sd_emmc_reg = aml_priv->sd_emmc_reg;
 	struct sd_emmc_config* sd_emmc_cfg = (struct sd_emmc_config*)&vconf;
-	cpu_id_t cpu_id = get_cpu_id();
 	emmc_debug("mmc->clock=%d; clk_div=%d\n",mmc->clock ,clk_div);
 
 	/* reset gdelay , gadjust register */
-	sd_emmc_reg->gdelay = 0xffffffff;
-	sd_emmc_reg->gdelay1= 0xffffffff;
+	sd_emmc_reg->gdelay = 0;
 	sd_emmc_reg->gadjust = 0;
 
 	if (mmc->clock > 12000000) {
@@ -119,14 +143,15 @@ void aml_sd_cfg_swth(struct mmc *mmc)
 						(2 << Cfg_co_phase) |
 						(clk_src << Cfg_src) |
 						(clk_div << Cfg_div));
-
-	if (cpu_id.family_id == MESON_CPU_MAJOR_ID_TXLX) {
-		if (aml_is_emmc_tsd(mmc)) {
-			sd_emmc_clkc &= ~(3 << Cfg_co_phase);//set co-phase as 0
-			sd_emmc_clkc |= (1 << Cfg_tx_phase);//set tx-phase as 2
-		}
+#ifdef CONFIG_AML_MESON_TXLX
+	if (aml_is_emmc_tsd(mmc)) {
+		mmc->co_tx_idx = 0;
+		sd_emmc_clkc &= ~(3 << Cfg_co_phase);//set core_phase as 2
+		sd_emmc_clkc |= (1 << Cfg_tx_phase);//set tx_phase as 2
+		sd_emmc_reg->gdelay = 0xffffffff;
+		sd_emmc_reg->gdelay1 = 0xffffffff;
 	}
-
+#endif
 	sd_emmc_reg->gclock = sd_emmc_clkc;
 	vconf = sd_emmc_reg->gcfg;
 
@@ -134,7 +159,9 @@ void aml_sd_cfg_swth(struct mmc *mmc)
     sd_emmc_cfg->bl_len = 9;      //512byte block length
     sd_emmc_cfg->resp_timeout = 7;      //64 CLK cycle, here 2^8 = 256 clk cycles
     sd_emmc_cfg->rc_cc = 4;      //1024 CLK cycle, Max. 100mS.
+#ifdef CONFIG_AML_MESON_TXLX
     sd_emmc_cfg->err_abort = 1;	//abort when error happens
+#endif
 #if CONFIG_EMMC_DDR52_EN
     sd_emmc_cfg->ddr = mmc->ddr_mode;
 #endif
@@ -295,16 +322,15 @@ int aml_sd_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd, struct mmc_data *data)
         u32 *write_buffer = NULL;
         struct sd_emmc_status *status_irq_reg = (void *)&status_irq;
         struct sd_emmc_start *desc_start = (struct sd_emmc_start*)&vstart;
-        u32 vclock;
-        struct sd_emmc_clock *gclk = (struct sd_emmc_clock *)&vclock;
+        //u32 vclock;
+        //struct sd_emmc_clock *gclk = (struct sd_emmc_clock *)&vclock;
         //struct sd_emmc_config* sd_emmc_cfg = (struct sd_emmc_config*)&vconf;
         struct aml_card_sd_info *aml_priv = mmc->priv;
         struct sd_emmc_global_regs *sd_emmc_reg = aml_priv->sd_emmc_reg;
         struct cmd_cfg *des_cmd_cur = NULL;
         struct sd_emmc_desc_info *desc_cur = (struct sd_emmc_desc_info*)aml_priv->desc_buf;
-        cpu_id_t cpu_id = get_cpu_id();
         //vconf = sd_emmc_reg->gcfg;
-        vclock =sd_emmc_reg->gclock;
+        //vclock =sd_emmc_reg->gclock;
 
         memset(desc_cur, 0, (NEWSD_MAX_DESC_MUN>>2)*sizeof(struct sd_emmc_desc_info));
 
@@ -405,11 +431,10 @@ int aml_sd_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd, struct mmc_data *data)
                 if (!mmc->refix)
                     printf("emmc/sd read error, cmd%d, status=0x%x\n",
                         cmd->cmdidx, status_irq);
-				if (cpu_id.family_id == MESON_CPU_MAJOR_ID_TXLX) {
-                    gclk->tx_phase = (gclk->tx_phase + 1)%4;
-                    printf("retry read, refix tx_phase as %u\n", gclk->tx_phase);
-                    sd_emmc_reg->gclock = vclock;
-                }
+#ifdef CONFIG_AML_MESON_TXLX
+                    set_co_tx_line_phase(mmc);
+                    printf("retry read, refix phase as 0x%x\n", sd_emmc_reg->gclock);
+#endif
         }
         if (status_irq_reg->txd_err) {
                 ret |= SD_EMMC_TXD_ERROR;
@@ -428,11 +453,10 @@ int aml_sd_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd, struct mmc_data *data)
                 if (!mmc->refix)
                     printf("emmc/sd response crc error, cmd%d, status=0x%x\n",
                         cmd->cmdidx, status_irq);
-				if (cpu_id.family_id == MESON_CPU_MAJOR_ID_TXLX) {
-                    gclk->tx_phase = (gclk->tx_phase + 1)%4;
-                    printf("retry response, refix tx_phase as %u\n", gclk->tx_phase);
-                    sd_emmc_reg->gclock = vclock;
-                }
+#ifdef CONFIG_AML_MESON_TXLX
+                    set_co_tx_line_phase(mmc);
+                    printf("retry response, refix phase as 0x%x\n", sd_emmc_reg->gclock);
+#endif
         }
         if (status_irq_reg->resp_timeout) {
                 ret |= SD_EMMC_RESP_TIMEOUT_ERROR;
