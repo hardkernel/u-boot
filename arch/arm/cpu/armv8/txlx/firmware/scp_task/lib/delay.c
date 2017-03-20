@@ -19,9 +19,9 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-#define P_EE_TIMER_E		(*((volatile unsigned *)(0xc1100000 + (0x2662 << 2))))
-#define P_AO_TIMER_E		(*((volatile unsigned *)(0xc8100000 + (0x15 << 2))))
-#define P_EE_TIMER_CTRL		(*((volatile unsigned *)(0xc8100000 + (0x13 << 2))))
+#define P_EE_TIMER_E		(*((volatile unsigned *)(0xffd00000 + (0x3c62 << 2))))
+#define P_AO_TIMER_E		(*((volatile unsigned *)(0xff800000 + (0x15 << 2))))
+#define P_EE_TIMER_CTRL		(*((volatile unsigned *)(0xff800000 + (0x13 << 2))))
 unsigned int get_time(void)
 {
 	return P_AO_TIMER_E;

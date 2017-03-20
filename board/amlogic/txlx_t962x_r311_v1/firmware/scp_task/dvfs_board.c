@@ -18,38 +18,41 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
-
-static int pwm_voltage_table[][2] = {
-	{ 0x1c0000,  870},
-	{ 0x1b0001,  880},
-	{ 0x1a0002,  890},
-	{ 0x190003,  900},
-	{ 0x180004,  910},
-	{ 0x170005,  920},
-	{ 0x160006,  930},
-	{ 0x150007,  940},
-	{ 0x140008,  950},
-	{ 0x130009,  960},
-	{ 0x12000a,  970},
-	{ 0x11000b,  980},
-	{ 0x10000c,  990},
-	{ 0x0f000d, 1000},
-	{ 0x0e000e, 1010},
-	{ 0x0d000f, 1020},
-	{ 0x0c0010, 1030},
-	{ 0x0b0011, 1040},
-	{ 0x0a0012, 1050},
-	{ 0x090013, 1060},
-	{ 0x080014, 1070},
-	{ 0x070015, 1080},
-	{ 0x060016, 1090},
-	{ 0x050017, 1100},
-	{ 0x040018, 1110},
-	{ 0x030019, 1120},
-	{ 0x02001a, 1130},
-	{ 0x01001b, 1140},
-	{ 0x00001c, 1150}
+/*
+int pwm_voltage_table[ ][2] = {
+	{ 0x1c0000,  860},
+	{ 0x1b0001,  870},
+	{ 0x1a0002,  880},
+	{ 0x190003,  890},
+	{ 0x180004,  900},
+	{ 0x170005,  910},
+	{ 0x160006,  920},
+	{ 0x150007,  930},
+	{ 0x140008,  940},
+	{ 0x130009,  950},
+	{ 0x12000a,  960},
+	{ 0x11000b,  970},
+	{ 0x10000c,  980},
+	{ 0x0f000d,  990},
+	{ 0x0e000e, 1000},
+	{ 0x0d000f, 1010},
+	{ 0x0c0010, 1020},
+	{ 0x0b0011, 1030},
+	{ 0x0a0012, 1040},
+	{ 0x090013, 1050},
+	{ 0x080014, 1060},
+	{ 0x070015, 1070},
+	{ 0x060016, 1080},
+	{ 0x050017, 1090},
+	{ 0x040018, 1100},
+	{ 0x030019, 1110},
+	{ 0x02001a, 1120},
+	{ 0x01001b, 1130},
+	{ 0x00001c, 1140}
 };
+*/
+#include "pwm_ctrl.h"
+
 #define CHIP_ADJUST 20
 #define RIPPLE_ADJUST 30
 struct scpi_opp_entry cpu_dvfs_tbl[] = {
@@ -64,12 +67,12 @@ struct scpi_opp_entry cpu_dvfs_tbl[] = {
 };
 
 
+#define P_PIN_MUX_REG3		(*((volatile unsigned *)(0xff634400 + (0x2f << 2))))
+#define P_PIN_MUX_REG4		(*((volatile unsigned *)(0xff634400 + (0x30 << 2))))
+#define P_PIN_MUX_REG10		(*((volatile unsigned *)(0xff634400 + (0x36 << 2))))
 
-#define P_PIN_MUX_REG3         (*((volatile unsigned *)(0xda834400 + (0x2f << 2))))
-#define P_PIN_MUX_REG4         (*((volatile unsigned *)(0xda834400 + (0x30 << 2))))
-
-#define P_PWM_MISC_REG_AB	(*((volatile unsigned *)(0xc1100000 + (0x2156 << 2))))
-#define P_PWM_PWM_A		(*((volatile unsigned *)(0xc1100000 + (0x2154 << 2))))
+#define P_PWM_MISC_REG_AB	(*((volatile unsigned *)(0xffd1b000 + (0x02 << 2))))
+#define P_PWM_PWM_A			(*((volatile unsigned *)(0xffd1b000 + (0x0  << 2))))
 
 
 enum pwm_id {
@@ -92,9 +95,12 @@ void pwm_init(int id)
 	 */
 	P_PWM_PWM_A = pwm_voltage_table[ARRAY_SIZE(pwm_voltage_table) - 1][0];
 	reg  = P_PIN_MUX_REG3;
-	reg &= ~(1 << 21);
+	reg &= ~((1 << 21) | 1 << 12);
 	P_PIN_MUX_REG3 = reg;
 
+	reg  = P_PIN_MUX_REG10;
+	reg &= ~(1 << 16);
+	P_PIN_MUX_REG10 = reg;//clear reg10
 	reg  = P_PIN_MUX_REG4;
 	reg &= ~(1 << 26);		// clear PWM_VS
 	reg |=  (1 << 17);		// enable PWM_A
