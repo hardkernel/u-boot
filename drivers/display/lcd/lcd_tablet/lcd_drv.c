@@ -41,137 +41,56 @@ static int lcd_type_supported(struct lcd_config_s *pconf)
 	return ret;
 }
 
-static unsigned int ttl_pinmux_set_rgb_8bit[][2] = {
-	{1, 0x0000003f}, /* 8bit */
-	{LCD_PINMUX_END, 0x0},
-};
-
-static unsigned int ttl_pinmux_set_rgb_6bit[][2] = {
-	{1, 0x0000002a}, /* 6bit */
-	{LCD_PINMUX_END, 0x0},
-};
-
-static unsigned int ttl_pinmux_clr_rgb_8bit[][2] = {
-	{0, 0xf0bfffff},
-	{1, 0x00fc1c00},
-	{2, 0x1fbfffff},
-	{3, 0x2016ffff},
-	{LCD_PINMUX_END, 0x0},
-};
-
-static unsigned int ttl_pinmux_clr_rgb_6bit[][2] = {
-	{0, 0xf0b3f0fc},
-	{1, 0x003c0000},
-	{2, 0x1fb8fcfc},
-	{3, 0x2016ffcf},
-	{LCD_PINMUX_END, 0x0},
-};
-
-static unsigned int ttl_pinmux_set_de[][2] = {
-	{1, 0x00018000}, /* DE */
-	{LCD_PINMUX_END, 0x0},
-};
-
-static unsigned int ttl_pinmux_set_hvsync[][2] = {
-	{1, 0x0000e000}, /* hvsync */
-	{LCD_PINMUX_END, 0x0},
-};
-
-static unsigned int ttl_pinmux_set_de_hvsync[][2] = {
-	{1, 0x0001e000}, /* DE + hvsync */
-	{LCD_PINMUX_END, 0x0},
-};
-
-static unsigned int ttl_pinmux_clr_de[][2] = {
-	{0, 0x0c000000},
-	{1, 0x00020000},
-	{3, 0xdf000000},
-	{LCD_PINMUX_END, 0x0},
-};
-
-static unsigned int ttl_pinmux_clr_hvsync[][2] = {
-	{0, 0x07000000},
-	{1, 0x000000c0},
-	{3, 0x6fc90000},
-	{LCD_PINMUX_END, 0x0},
-};
-
-static unsigned int ttl_pinmux_clr_de_hvsync[][2] = {
-	{0, 0x0f000000},
-	{1, 0x000200c0},
-	{3, 0xffc90000},
-	{LCD_PINMUX_END, 0x0},
-};
-
-static void lcd_pinmux_set(unsigned int (*lcd_pinmux)[2], int status)
-{
-	int i = 0;
-
-	if (status) {
-		while (i < LCD_PINMUX_NUM) {
-			if (lcd_pinmux[i][0] == LCD_PINMUX_END)
-				break;
-			lcd_pinmux_set_mask(lcd_pinmux[i][0], lcd_pinmux[i][1]);
-			i++;
-		}
-	} else {
-		while (i < LCD_PINMUX_NUM) {
-			if (lcd_pinmux[i][0] == LCD_PINMUX_END)
-				break;
-			lcd_pinmux_clr_mask(lcd_pinmux[i][0], lcd_pinmux[i][1]);
-			i++;
-		}
-	}
-}
-
 static void lcd_ttl_pinmux_set(int status)
 {
 	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
 	struct lcd_config_s *pconf;
+	int i;
 
 	if (lcd_debug_print_flag)
 		LCDPR("%s: %d\n", __func__, status);
 
 	pconf = lcd_drv->lcd_config;
 	if (status) {
-		if (pconf->lcd_basic.lcd_bits == 6) {
-			lcd_pinmux_set(ttl_pinmux_clr_rgb_6bit, 0);
-			lcd_pinmux_set(ttl_pinmux_set_rgb_6bit, 1);
-		} else {
-			lcd_pinmux_set(ttl_pinmux_clr_rgb_8bit, 0);
-			lcd_pinmux_set(ttl_pinmux_set_rgb_8bit, 1);
+		i = 0;
+		while (i < LCD_PINMUX_NUM) {
+			if (pconf->pinmux_clr[i][0] == LCD_PINMUX_END)
+				break;
+			if (lcd_debug_print_flag) {
+				LCDPR("pinmux_clr: %d, 0x%08x\n",
+					pconf->pinmux_clr[i][0],
+					pconf->pinmux_clr[i][1]);
+			}
+			lcd_pinmux_clr_mask(pconf->pinmux_clr[i][0],
+				pconf->pinmux_clr[i][1]);
+			i++;
 		}
-		switch (pconf->lcd_control.ttl_config->sync_valid) {
-		case 0x1: /* hvsync */
-			lcd_pinmux_set(ttl_pinmux_clr_hvsync, 0);
-			lcd_pinmux_set(ttl_pinmux_set_hvsync, 1);
-			break;
-		case 0x2: /* de */
-			lcd_pinmux_set(ttl_pinmux_clr_de, 0);
-			lcd_pinmux_set(ttl_pinmux_set_de, 1);
-			break;
-		case 0x3: /* de + hvsync */
-		default:
-			lcd_pinmux_set(ttl_pinmux_clr_de_hvsync, 0);
-			lcd_pinmux_set(ttl_pinmux_set_de_hvsync, 1);
-			break;
+		i = 0;
+		while (i < LCD_PINMUX_NUM) {
+			if (pconf->pinmux_set[i][0] == LCD_PINMUX_END)
+				break;
+			if (lcd_debug_print_flag) {
+				LCDPR("pinmux_set: %d, 0x%08x\n",
+					pconf->pinmux_set[i][0],
+					pconf->pinmux_set[i][1]);
+			}
+			lcd_pinmux_set_mask(pconf->pinmux_set[i][0],
+				pconf->pinmux_set[i][1]);
+			i++;
 		}
 	} else {
-		if (pconf->lcd_basic.lcd_bits == 6)
-			lcd_pinmux_set(ttl_pinmux_set_rgb_6bit, 0);
-		else
-			lcd_pinmux_set(ttl_pinmux_set_rgb_8bit, 0);
-		switch (pconf->lcd_control.ttl_config->sync_valid) {
-		case 0x1: /* hvsync */
-			lcd_pinmux_set(ttl_pinmux_set_hvsync, 0);
-			break;
-		case 0x2: /* de */
-			lcd_pinmux_set(ttl_pinmux_set_de, 0);
-			break;
-		case 0x3: /* de + hvsync */
-		default:
-			lcd_pinmux_set(ttl_pinmux_set_de_hvsync, 0);
-			break;
+		i = 0;
+		while (i < LCD_PINMUX_NUM) {
+			if (pconf->pinmux_set[i][0] == LCD_PINMUX_END)
+				break;
+			if (lcd_debug_print_flag) {
+				LCDPR("pinmux_clr: %d, 0x%08x\n",
+					pconf->pinmux_set[i][0],
+					pconf->pinmux_set[i][1]);
+			}
+			lcd_pinmux_clr_mask(pconf->pinmux_set[i][0],
+				pconf->pinmux_set[i][1]);
+			i++;
 		}
 	}
 }

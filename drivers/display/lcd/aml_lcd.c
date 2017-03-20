@@ -294,6 +294,32 @@ static void lcd_power_info_print(struct lcd_config_s *pconf, int status)
 	}
 }
 
+static void lcd_pinmux_info_print(struct lcd_config_s *pconf)
+{
+	int i;
+
+	printf("pinmux:\n");
+
+	i = 0;
+	while (i < LCD_PINMUX_NUM) {
+		if (pconf->pinmux_set[i][0] == LCD_PINMUX_END)
+			break;
+		printf("pinmux_set: %d, 0x%08x\n",
+			pconf->pinmux_set[i][0], pconf->pinmux_set[i][1]);
+		i++;
+	}
+	i = 0;
+	while (i < LCD_PINMUX_NUM) {
+		if (pconf->pinmux_clr[i][0] == LCD_PINMUX_END)
+			break;
+		printf("pinmux_clr: %d, 0x%08x\n",
+			pconf->pinmux_clr[i][0], pconf->pinmux_clr[i][1]);
+		i++;
+	}
+
+	printf("\n");
+}
+
 static void lcd_info_print(void)
 {
 	unsigned int lcd_clk;
@@ -373,6 +399,7 @@ static void lcd_info_print(void)
 		break;
 	}
 
+	lcd_pinmux_info_print(pconf);
 	lcd_power_info_print(pconf, 1);
 	lcd_power_info_print(pconf, 0);
 }

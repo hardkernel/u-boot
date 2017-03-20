@@ -1622,7 +1622,7 @@ static int aml_bl_config_load_from_unifykey(struct bl_config_s *bconf)
 static int aml_bl_init_load_from_dts(char *dt_addr, struct bl_config_s *bconf)
 {
 	int parent_offset;
-	char propname[30];
+	char propname[50];
 	char *propdata;
 	char *p;
 	const char *str;

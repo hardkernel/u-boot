@@ -775,9 +775,13 @@ int get_lcd_tablet_config(char *dt_addr, int load_id)
 
 	if (load_id & 0x10) { /* unifykey */
 		ret = lcd_config_load_from_unifykey(lcd_drv->lcd_config);
+#ifdef CONFIG_OF_LIBFDT
+		ret = lcd_pinmux_load_from_dts(dt_addr, lcd_drv->lcd_config);
+#endif
 	} else if (load_id & 0x1) { /* dts */
 #ifdef CONFIG_OF_LIBFDT
 		ret = lcd_config_load_from_dts(dt_addr, lcd_drv->lcd_config);
+		ret = lcd_pinmux_load_from_dts(dt_addr, lcd_drv->lcd_config);
 #endif
 	} else { /* bsp */
 		ret = lcd_config_load_from_bsp(lcd_drv->lcd_config);

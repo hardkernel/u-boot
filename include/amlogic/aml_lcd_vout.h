@@ -69,7 +69,7 @@ extern unsigned int lcd_debug_print_flag;
 #define GAMMA_CTRL_EN               0
 
 #define LCD_PINMUX_END              0xff
-#define LCD_PINMUX_NUM              10
+#define LCD_PINMUX_NUM              15
 
 /* **********************************
  * VENC to TCON sync delay

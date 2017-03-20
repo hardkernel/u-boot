@@ -33,6 +33,9 @@ extern char *lcd_mode_mode_to_str(int mode);
 extern unsigned int lcd_lvds_channel_on_value(struct lcd_config_s *pconf);
 extern int lcd_power_load_from_unifykey(struct lcd_config_s *pconf,
 		unsigned char *buf, int key_len, int len);
+#ifdef CONFIG_OF_LIBFDT
+extern int lcd_pinmux_load_from_dts(char *dt_addr, struct lcd_config_s *pconf);
+#endif
 extern void lcd_tcon_config(struct lcd_config_s *pconf);
 extern int lcd_vmode_change(struct lcd_config_s *pconf);
 
