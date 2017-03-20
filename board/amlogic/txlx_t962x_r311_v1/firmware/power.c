@@ -131,7 +131,7 @@ void pwm_init(int id)
 		/*
 		 * default set to max voltage
 		 */
-		P_PWM_PWM_A = pwm_voltage_table[ARRAY_SIZE(pwm_voltage_table) - 1][0];
+		//P_PWM_PWM_A = pwm_voltage_table[ARRAY_SIZE(pwm_voltage_table) - 1][0];
 		reg  = P_PIN_MUX_REG3;
 		reg &= ~((1 << 21) | 1 << 12);
 		P_PIN_MUX_REG3 = reg;
@@ -153,7 +153,7 @@ void pwm_init(int id)
 		/*
 		 * default set to max voltage
 		 */
-		writel( pwm_voltage_table[ARRAY_SIZE(pwm_voltage_table) - 1][0],AO_PWM_PWM_B);
+		//writel( pwm_voltage_table[ARRAY_SIZE(pwm_voltage_table) - 1][0],AO_PWM_PWM_B);
 		reg  = AO_PIN_MUX_REG;
 		reg |= (1 << 3);
 		AO_PIN_MUX_REG = reg;
