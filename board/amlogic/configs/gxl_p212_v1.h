@@ -276,15 +276,54 @@
 
 /* storage: emmc/nand/sd */
 #define	CONFIG_STORE_COMPATIBLE 1
-#define CONFIG_AML_NAND	1
-/* env */
-#define 	CONFIG_ENV_OVERWRITE
-#define 	CONFIG_CMD_SAVEENV
-/* fixme, need fix*/
+/*
+*				storage
+*		|---------|---------|
+*		|					|
+*		emmc<--Compatible-->nand
+*					|-------|-------|
+*					|				|
+*					MTD<-Exclusive->NFTL
+*/
 
-#if (defined(CONFIG_ENV_IS_IN_AMLNAND) || defined(CONFIG_ENV_IS_IN_MMC)) && defined(CONFIG_STORE_COMPATIBLE)
-#error env in amlnand/mmc already be compatible;
+/* swither for mtd nand which is for slc only. */
+/* support for mtd */
+//#define CONFIG_AML_MTD 1
+/* support for nftl */
+#define CONFIG_AML_NAND	1
+
+#if defined(CONFIG_AML_NAND) && defined(CONFIG_AML_MTD)
+#error CONFIG_AML_NAND/CONFIG_AML_MTD can not support at the sametime;
 #endif
+
+#ifdef CONFIG_AML_MTD
+#define CONFIG_CMD_NAND 1
+#define CONFIG_MTD_DEVICE y
+/* mtd parts of ourown.*/
+#define CONFIFG_AML_MTDPART	1
+/* mtd parts by env default way.*/
+/*
+#define MTDIDS_NAME_STR		"aml_nand.0"
+#define MTDIDS_DEFAULT		"nand1=" MTDIDS_NAME_STR
+#define MTDPARTS_DEFAULT	"mtdparts=" MTDIDS_NAME_STR ":" \
+					"3M@8192K(logo),"	\
+					"10M(recovery),"	\
+					"8M(kernel),"	\
+					"40M(rootfs),"	\
+					"-(data)"
+*/
+#define CONFIG_CMD_UBI
+#define CONFIG_CMD_UBIFS
+#define CONFIG_RBTREE
+#define CONFIG_CMD_NAND_TORTURE 1
+#define CONFIG_CMD_MTDPARTS   1
+#define CONFIG_MTD_PARTITIONS 1
+#define CONFIG_SYS_MAX_NAND_DEVICE  2
+#define CONFIG_SYS_NAND_BASE_LIST   {0}
+#endif
+/* endof CONFIG_AML_MTD */
+
+
 #define CONFIG_AML_SD_EMMC 1
 #ifdef	CONFIG_AML_SD_EMMC
 	#define CONFIG_GENERIC_MMC 1
@@ -292,6 +331,20 @@
 	#define	CONFIG_SYS_MMC_ENV_DEV 1
 	#define CONFIG_EMMC_DDR52_EN 0
 	#define CONFIG_EMMC_DDR52_CLK 35000000
+#endif
+/* storage macro checks */
+#if defined(CONFIG_AML_MTD) && defined(CONFIG_AML_NAND)
+#error mtd/nftl are mutually-exclusive, only 1 nand driver can be enabled.
+#endif
+
+/* env */
+#define 	CONFIG_ENV_OVERWRITE
+#define 	CONFIG_CMD_SAVEENV
+
+
+/* env checks */
+#if (defined(CONFIG_ENV_IS_IN_AMLNAND) || defined(CONFIG_ENV_IS_IN_MMC)) && defined(CONFIG_STORE_COMPATIBLE)
+#error env in amlnand/mmc already be compatible;
 #endif
 
 #define	CONFIG_PARTITIONS 1

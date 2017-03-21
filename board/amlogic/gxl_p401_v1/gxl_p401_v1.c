@@ -42,6 +42,8 @@
 #include <asm/arch/eth_setup.h>
 #include <phy.h>
 #include <asm/cpu_id.h>
+#include <linux/mtd/partitions.h>
+#include <linux/sizes.h>
 DECLARE_GLOBAL_DATA_PTR;
 
 //new static eth setup
@@ -395,6 +397,49 @@ static void hdmi_tx_set_hdmi_5v(void)
 	clrbits_le32(P_PREG_PAD_GPIO1_O, 1 << 23);
 }
 #endif
+
+/*
+ * mtd nand partition table, only care the size!
+ * offset will be calculated by nand driver.
+ */
+#ifdef CONFIG_AML_MTD
+static struct mtd_partition normal_partition_info[] = {
+    {
+        .name = "logo",
+        .offset = 0,
+        .size = 8*SZ_1M,
+    },
+    {
+        .name = "recovery",
+        .offset = 0,
+        .size = 10*SZ_1M,
+    },
+    {
+        .name = "boot",
+        .offset = 0,
+        .size = 8*SZ_1M,
+    },
+    {
+        .name = "upgrade",
+        .offset = 0,
+        .size = 64*SZ_1M,
+    },
+	/* last partition get the rest capacity */
+    {
+        .name = "data",
+        .offset = MTDPART_OFS_APPEND,
+        .size = MTDPART_SIZ_FULL,
+    },
+};
+struct mtd_partition *get_aml_mtd_partition(void)
+{
+	return normal_partition_info;
+}
+int get_aml_partition_count(void)
+{
+	return ARRAY_SIZE(normal_partition_info);
+}
+#endif /* CONFIG_AML_MTD */
 
 int board_init(void)
 {

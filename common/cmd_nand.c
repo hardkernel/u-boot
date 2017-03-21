@@ -29,13 +29,28 @@
 #include <nand.h>
 
 #if defined(CONFIG_CMD_MTDPARTS)
-
+extern unsigned int get_mtd_size(char *name);
 /* partition handling routines */
 int mtdparts_init(void);
 int id_parse(const char *id, const char **ret_id, u8 *dev_type, u8 *dev_num);
 int find_dev_and_part(const char *id, struct mtd_device **dev,
 		      u8 *part_num, struct part_info **part);
 #endif
+
+static inline int isstring(char *p)
+{
+	char *endptr = p;
+	while (*endptr != '\0') {
+		if (!(((*endptr >= '0') && (*endptr <= '9'))
+			|| ((*endptr >= 'a') && (*endptr <= 'f'))
+			|| ((*endptr >= 'A') && (*endptr <= 'F'))
+			|| (*endptr == 'x') || (*endptr == 'X')))
+			return 1;
+		endptr++;
+	}
+
+	return 0;
+}
 
 static int nand_dump(nand_info_t *nand, ulong off, int only_oob, int repeat)
 {
@@ -133,6 +148,17 @@ static int set_dev(int dev)
 	return 0;
 }
 
+/* interface for cmd_amlmtd */
+int set_mtd_dev(int dev)
+{
+	return set_dev(dev);
+}
+
+int get_mtd_dev(void)
+{
+	return nand_curr_device;
+}
+
 static inline int str2off(const char *p, loff_t *num)
 {
 	char *endptr;
@@ -148,7 +174,7 @@ static inline int str2long(const char *p, ulong *num)
 	*num = simple_strtoul(p, &endptr, 16);
 	return *p != '\0' && *endptr == '\0';
 }
-
+#ifndef CONFIFG_AML_MTDPART
 static int get_part(const char *partname, int *idx, loff_t *off, loff_t *size,
 		loff_t *maxsize)
 {
@@ -186,7 +212,37 @@ static int get_part(const char *partname, int *idx, loff_t *off, loff_t *size,
 	return -1;
 #endif
 }
+#else
+static int get_part(const char *partname, int *idx, loff_t *off, loff_t *size,
+		loff_t *maxsize)
+{
+#ifdef CONFIG_CMD_MTDPARTS
+	struct mtd_device *dev;
+	struct part_info *part;
+	u8 pnum;
+	int ret;
 
+	mtdparts_init();
+	ret = find_dev_and_part(partname, &dev, &pnum, &part);
+	if (ret)
+		return ret;
+
+	*off = part->offset;
+	*size = part->size;
+	*maxsize = part->size;
+	*idx = 1;
+
+	ret = set_dev(*idx);
+	if (ret)
+		return ret;
+
+	return 0;
+#else
+	puts("offset is not a number\n");
+	return -1;
+#endif
+}
+#endif
 static int arg_off(const char *arg, int *idx, loff_t *off, loff_t *size,
 		loff_t *maxsize)
 {
@@ -397,7 +453,7 @@ static void nand_print_and_set_info(int idx)
 	printf("  Page size  %8d b\n", nand->writesize);
 	printf("  OOB size   %8d b\n", nand->oobsize);
 	printf("  Erase size %8d b\n", nand->erasesize);
-
+	printf("  size       %8lld b\n", nand->size);
 	/* Set geometry info */
 	setenv_hex("nand_writesize", nand->writesize);
 	setenv_hex("nand_oobsize", nand->oobsize);
@@ -490,7 +546,11 @@ static int do_nand(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	/* Only "dump" is repeatable. */
 	if (repeat && strcmp(cmd, "dump"))
 		return 0;
-
+	if (strcmp(cmd, "init") == 0) {
+		putc('\n');
+		nand_init();
+		return 0;
+	}
 	if (strcmp(cmd, "info") == 0) {
 
 		putc('\n');
@@ -538,8 +598,9 @@ static int do_nand(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 
 	if (strcmp(cmd, "bad") == 0) {
 		printf("\nDevice %d bad blocks:\n", dev);
+		printf("\nDevice %d %s\n", dev, nand->name);
 		for (off = 0; off < nand->size; off += nand->erasesize)
-			if (nand_block_isbad(nand, off))
+			if (nand_block_isbad((struct mtd_info *)nand, off))
 				printf("  %08llx\n", (unsigned long long)off);
 		return 0;
 	}
@@ -617,6 +678,7 @@ static int do_nand(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 				}
 			}
 		}
+		printf("%s(): off %lld, size %lld\n", __func__, off, size);
 		ret = nand_erase_opts(nand, &opts);
 		printf("%s\n", ret ? "ERROR" : "OK");
 
@@ -642,45 +704,65 @@ static int do_nand(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		if (argc < 4)
 			goto usage;
 
-		addr = (ulong)simple_strtoul(argv[2], NULL, 16);
+		if (isstring(argv[2])) {
+			nand = get_mtd_device_nm(argv[2]);
+			if (IS_ERR(nand))
+				goto usage;
+			addr = (ulong)simple_strtoul(argv[3], NULL, 16);
+			/* 1 = read, 0 = write */
+			read = strncmp(cmd, "read", 4) == 0;
+			printf("\nNAND %s: %s ", read ? "read" : "write", argv[2]);
+			if (argc == 4) {
+				off = 0;
+				size = get_mtd_size(argv[2]);
+			} else {
+				if (arg_off_size(argc - 4, argv + 4,
+					&dev, &off, &size, &maxsize) != 0)
+					return 1;
+			}
+			rwsize = size;
+		} else {
+			addr = (ulong)simple_strtoul(argv[2], NULL, 16);
 
-		read = strncmp(cmd, "read", 4) == 0; /* 1 = read, 0 = write */
-		printf("\nNAND %s: ", read ? "read" : "write");
+			read = strncmp(cmd, "read", 4) == 0; /* 1 = read, 0 = write */
+			printf("\nNAND %s: ", read ? "read" : "write");
 
-		s = strchr(cmd, '.');
+			s = strchr(cmd, '.');
 
-		if (s && !strcmp(s, ".raw")) {
-			raw = 1;
+			if (s && !strcmp(s, ".raw")) {
+				raw = 1;
 
-			if (arg_off(argv[3], &dev, &off, &size, &maxsize))
-				return 1;
+				if (arg_off(argv[3], &dev, &off, &size, &maxsize))
+					return 1;
+
+				nand = &nand_info[dev];
+
+				if (argc > 4 && !str2long(argv[4], &pagecount)) {
+					printf("'%s' is not a number\n", argv[4]);
+					return 1;
+				}
+
+				if (pagecount * nand->writesize > size) {
+					puts("Size exceeds partition or device limit\n");
+					return -1;
+				}
+
+				rwsize = pagecount * (nand->writesize + nand->oobsize);
+			} else {
+				if (arg_off_size(argc - 3, argv + 3, &dev,
+							&off, &size, &maxsize) != 0)
+					return 1;
+
+				/* size is unspecified */
+				if (argc < 5)
+					adjust_size_for_badblocks(&size, off, dev);
+				rwsize = size;
+			}
 
 			nand = &nand_info[dev];
-
-			if (argc > 4 && !str2long(argv[4], &pagecount)) {
-				printf("'%s' is not a number\n", argv[4]);
-				return 1;
-			}
-
-			if (pagecount * nand->writesize > size) {
-				puts("Size exceeds partition or device limit\n");
-				return -1;
-			}
-
-			rwsize = pagecount * (nand->writesize + nand->oobsize);
-		} else {
-			if (arg_off_size(argc - 3, argv + 3, &dev,
-						&off, &size, &maxsize) != 0)
-				return 1;
-
-			/* size is unspecified */
-			if (argc < 5)
-				adjust_size_for_badblocks(&size, off, dev);
-			rwsize = size;
 		}
 
-		nand = &nand_info[dev];
-
+		s = strchr(cmd, '.');
 		if (!s || !strcmp(s, ".jffs2") ||
 		    !strcmp(s, ".e") || !strcmp(s, ".i")) {
 			if (read)

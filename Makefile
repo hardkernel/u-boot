@@ -626,6 +626,7 @@ libs-y += drivers/mmc/
 libs-y += drivers/mtd/
 libs-$(CONFIG_AML_NAND) += drivers/nand/
 libs-$(CONFIG_CMD_NAND) += drivers/mtd/nand/
+libs-$(CONFIG_CMD_NAND) += drivers/mtd/nand/amlogic_mtd/
 libs-y += drivers/mtd/onenand/
 libs-$(CONFIG_CMD_UBI) += drivers/mtd/ubi/
 libs-y += drivers/mtd/spi/

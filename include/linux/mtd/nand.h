@@ -65,7 +65,7 @@ extern int nand_unlock(struct mtd_info *mtd, loff_t ofs, uint64_t len);
  * adjust this accordingly.
  */
 #define NAND_MAX_OOBSIZE       744
-//#define NAND_MAX_PAGESIZE      8192
+#define NAND_MAX_PAGESIZE      16384
 #endif
 
 /*
@@ -561,11 +561,10 @@ struct nand_buffers {
 	uint8_t *ecccalc;
 	uint8_t *ecccode;
 	uint8_t *databuf;
-//#else
-//	uint8_t	ecccalc[ALIGN(NAND_MAX_OOBSIZE, ARCH_DMA_MINALIGN)];
-//	uint8_t	ecccode[ALIGN(NAND_MAX_OOBSIZE, ARCH_DMA_MINALIGN)];
-//	uint8_t databuf[ALIGN(NAND_MAX_PAGESIZE + NAND_MAX_OOBSIZE,
-			      ARCH_DMA_MINALIGN)];
+#else
+	uint8_t	ecccalc[ALIGN(NAND_MAX_OOBSIZE, ARCH_DMA_MINALIGN)];
+	uint8_t	ecccode[ALIGN(NAND_MAX_OOBSIZE, ARCH_DMA_MINALIGN)];
+	uint8_t databuf[ALIGN(NAND_MAX_PAGESIZE + NAND_MAX_OOBSIZE, ARCH_DMA_MINALIGN)];
 #endif
 };
 
@@ -772,6 +771,8 @@ struct nand_chip {
 #define NAND_MFR_EON		0x92
 #define NAND_MFR_SANDISK	0x45
 #define NAND_MFR_INTEL		0x89
+#define NAND_ID_WINBOND		0xef
+#define NAND_ID_ESMT		0xc8
 
 /* The maximum expected count of bytes in the NAND ID sequence */
 #define NAND_MAX_ID_LEN 8

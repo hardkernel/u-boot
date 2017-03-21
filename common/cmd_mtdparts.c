@@ -108,6 +108,13 @@ DECLARE_GLOBAL_DATA_PTR;
  * field for read-only partitions */
 #define MTD_WRITEABLE_CMD		1
 
+/* overide mtd part in envs */
+#ifdef CONFIFG_AML_MTDPART
+struct part_info *amlmtd_part = NULL;
+int amlmtd_part_cnt = 0;
+extern int mtdparts_init(void);
+#endif
+
 /* default values for mtdids and mtdparts variables */
 #if defined(MTDIDS_DEFAULT)
 static const char *const mtdids_default = MTDIDS_DEFAULT;
@@ -1334,6 +1341,7 @@ static void list_partitions(void)
  * @param part pointer to requested partition (output)
  * @return 0 on success, 1 otherwise
  */
+#ifndef CONFIFG_AML_MTDPART
 int find_dev_and_part(const char *id, struct mtd_device **dev,
 		u8 *part_num, struct part_info **part)
 {
@@ -1387,6 +1395,37 @@ int find_dev_and_part(const char *id, struct mtd_device **dev,
 
 	return 0;
 }
+#else
+
+int find_dev_and_part(const char *id, struct mtd_device **dev,
+		u8 *part_num, struct part_info **part)
+{
+	int i;
+
+	*part_num = 0;
+	printk("--- find_dev_and_part ---\nid = %s\n", id);
+	if (amlmtd_part_cnt == 0) {
+		printk("%s() %d: amlmtd_part_cnt %d\n", __func__, __LINE__,
+			amlmtd_part_cnt);
+		return -1;
+	}
+
+	for (i = 0; i <amlmtd_part_cnt; i++) {
+		if (!strcmp(id, amlmtd_part[i].name)) {
+			printk("found %s @ %d/%d", id, i, amlmtd_part_cnt);
+			break;
+		}
+	}
+
+	if (i == amlmtd_part_cnt) {
+		return -1;
+	} else {
+		*part_num = i;
+		*part = &amlmtd_part[i];
+	}
+	return 0;
+}
+#endif
 
 /**
  * Find and delete partition. For partition id format see find_dev_and_part().
@@ -1522,7 +1561,7 @@ static int spread_partitions(void)
  * @param mtdparts string specifing mtd partitions
  * @return 0 on success, 1 otherwise
  */
-static int parse_mtdparts(const char *const mtdparts)
+static int __attribute__((unused))parse_mtdparts(const char *const mtdparts)
 {
 	const char *p = mtdparts;
 	struct mtd_device *dev;
@@ -1585,7 +1624,7 @@ static int parse_mtdparts(const char *const mtdparts)
  * @param ids mapping string
  * @return 0 on success, 1 otherwise
  */
-static int parse_mtdids(const char *const ids)
+static int __attribute__((unused))parse_mtdids(const char *const ids)
 {
 	const char *p = ids;
 	const char *mtd_id;
@@ -1694,6 +1733,7 @@ static int parse_mtdids(const char *const ids)
  *
  * @return 0 on success, 1 otherwise
  */
+#ifndef CONFIFG_AML_MTDPART
 int mtdparts_init(void)
 {
 	static int initialized = 0;
@@ -1834,7 +1874,7 @@ int mtdparts_init(void)
 
 	return 0;
 }
-
+#endif
 /**
  * Return pointer to the partition of a requested number from a requested
  * device.

@@ -27,7 +27,7 @@ else # not spl
 
 NORMAL_DRIVERS=y
 
-obj-y += nand.o
+#obj-y += nand.o
 obj-y += nand_bbt.o
 obj-y += nand_ids.o
 obj-y += nand_util.o

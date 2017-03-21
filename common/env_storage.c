@@ -58,7 +58,7 @@ int saveenv(void)
 
 	if (EMMC_BOOT_FLAG == device_boot_flag) {
 		ret = mmc_saveenv();
-#ifdef CONFIG_AML_NAND
+#if defined(CONFIG_AML_NAND) || defined(CONFIG_AML_MTD)
 	} else if (NAND_BOOT_FLAG == device_boot_flag) {
 		ret = amlnand_saveenv();
 #endif
@@ -79,7 +79,7 @@ void env_relocate_spec(void)
 {
 	if (EMMC_BOOT_FLAG == device_boot_flag) {
 		mmc_env_relocate_spec();
-#ifdef CONFIG_AML_NAND
+#if defined(CONFIG_AML_NAND) || defined(CONFIG_AML_MTD)
 	} else if (NAND_BOOT_FLAG == device_boot_flag) {
 		amlnand_env_relocate_spec();
 #endif

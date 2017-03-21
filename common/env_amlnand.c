@@ -23,10 +23,10 @@
 #include <search.h>
 #include <errno.h>
 
-#if defined(CONFIG_CMD_SAVEENV) && defined(CONFIG_AML_NAND)
+#if defined(CONFIG_CMD_SAVEENV) && (defined(CONFIG_AML_NAND) || defined(CONFIG_AML_MTD))
 #define CMD_SAVEENV
 #elif defined(CONFIG_ENV_OFFSET_REDUND)
-#error CONFIG_ENV_OFFSET_REDUND must have CONFIG_CMD_SAVEENV & CONFIG_AML_NAND
+#error CONFIG_ENV_OFFSET_REDUND must have CONFIG_CMD_SAVEENV & (CONFIG_AML_NAND || CONFIG_AML_MTD)
 #endif
 
 #if defined(CONFIG_ENV_SIZE_REDUND) &&	\
@@ -38,12 +38,17 @@
 #define CONFIG_ENV_RANGE	CONFIG_ENV_SIZE
 #endif
 
-#ifdef CONFIG_AML_NAND
+#if defined(CONFIG_AML_NAND) || defined(CONFIG_AML_MTD)
 extern int amlnf_env_read(u_char *buf, int len);
 extern int amlnf_env_save(u_char *buf, int len);
 
 #ifndef CONFIG_STORE_COMPATIBLE
+#if defined(CONFIG_AML_NAND)
+/* fixme, can it be aml-nftl? */
 char *env_name_spec = "aml-nand";
+#elif defined(CONFIG_AML_MTD)
+char *env_name_spec = "aml-mtd";
+#endif
 #if defined(ENV_IS_EMBEDDED)
 env_t *env_ptr = &environment;
 #elif defined(CONFIG_NAND_ENV_DST)

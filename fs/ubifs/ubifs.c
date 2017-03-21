@@ -820,7 +820,7 @@ int ubifs_load(char *filename, u32 addr, u32 size)
 	printf("Loading file '%s' to addr 0x%08x with size %d (0x%08x)...\n",
 	       filename, addr, size, size);
 
-	page.addr = (void *)addr;
+	page.addr = (void *)(unsigned long)addr;
 	page.index = 0;
 	page.inode = inode;
 	for (i = 0; i < count; i++) {
