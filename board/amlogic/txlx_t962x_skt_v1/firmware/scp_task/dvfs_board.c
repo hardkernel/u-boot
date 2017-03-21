@@ -18,7 +18,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
-
+/*
 int pwm_voltage_table[ ][2] = {
 	{ 0x1c0000,  860},
 	{ 0x1b0001,  870},
@@ -50,28 +50,26 @@ int pwm_voltage_table[ ][2] = {
 	{ 0x01001b, 1130},
 	{ 0x00001c, 1140}
 };
+*/
+#include "pwm_ctrl.h"
 
+#define CHIP_ADJUST 20
+#define RIPPLE_ADJUST 30
 struct scpi_opp_entry cpu_dvfs_tbl[] = {
-	DVFS( 100000000,  860),
-	DVFS( 250000000,  860),
-	DVFS( 500000000,  880),
-	DVFS( 667000000,  920),
-	DVFS(1000000000,  960),
-	DVFS(1200000000, 1040),
-	DVFS(1296000000, 1080),
-	DVFS(1416000000, 1110),
-	DVFS(1536000000, 1110),
-	DVFS(1752000000, 1110),
-	DVFS(2016000000, 1110)
+	DVFS( 100000000,  900+CHIP_ADJUST+RIPPLE_ADJUST),
+	DVFS( 250000000,  900+CHIP_ADJUST+RIPPLE_ADJUST),
+	DVFS( 500000000,  900+CHIP_ADJUST+RIPPLE_ADJUST),
+	DVFS( 667000000,  900+CHIP_ADJUST+RIPPLE_ADJUST),
+	DVFS(1000000000,  910+CHIP_ADJUST+RIPPLE_ADJUST),
 };
 
 
+#define P_PIN_MUX_REG3		(*((volatile unsigned *)(0xff634400 + (0x2f << 2))))
+#define P_PIN_MUX_REG4		(*((volatile unsigned *)(0xff634400 + (0x30 << 2))))
+#define P_PIN_MUX_REG10		(*((volatile unsigned *)(0xff634400 + (0x36 << 2))))
 
-#define P_PIN_MUX_REG3         (*((volatile unsigned *)(0xda834400 + (0x2f << 2))))
-#define P_PIN_MUX_REG4         (*((volatile unsigned *)(0xda834400 + (0x30 << 2))))
-
-#define P_PWM_MISC_REG_AB	(*((volatile unsigned *)(0xc1100000 + (0x2156 << 2))))
-#define P_PWM_PWM_A		(*((volatile unsigned *)(0xc1100000 + (0x2154 << 2))))
+#define P_PWM_MISC_REG_AB	(*((volatile unsigned *)(0xffd1b000 + (0x02 << 2))))
+#define P_PWM_PWM_A			(*((volatile unsigned *)(0xffd1b000 + (0x0  << 2))))
 
 
 enum pwm_id {
@@ -92,11 +90,14 @@ void pwm_init(int id)
 	/*
 	 * default set to max voltage
 	 */
-	P_PWM_PWM_A = pwm_voltage_table[ARRAY_SIZE(pwm_voltage_table) - 1][0];
+	//P_PWM_PWM_A = pwm_voltage_table[ARRAY_SIZE(pwm_voltage_table) - 1][0];
 	reg  = P_PIN_MUX_REG3;
-	reg &= ~(1 << 21);
+	reg &= ~((1 << 21) | 1 << 12);
 	P_PIN_MUX_REG3 = reg;
 
+	reg  = P_PIN_MUX_REG10;
+	reg &= ~(1 << 16);
+	P_PIN_MUX_REG10 = reg;//clear reg10
 	reg  = P_PIN_MUX_REG4;
 	reg &= ~(1 << 26);		// clear PWM_VS
 	reg |=  (1 << 17);		// enable PWM_A
