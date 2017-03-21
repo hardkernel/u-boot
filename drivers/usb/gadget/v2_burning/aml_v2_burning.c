@@ -149,13 +149,15 @@ int aml_burn_factory_producing(int flag, bd_t* bis)
 
 int aml_try_factory_usb_burning(int flag, bd_t* bis)
 {
-        if (!is_tpl_loaded_from_usb()) return 1;
+    if (!is_tpl_loaded_from_usb()) return 1;
 
+    if ( !flag ) {
 #ifdef CONFIG_GENERIC_MMC
         DWN_MSG("MMC init in usb\n");
-	mmc_initialize(bis);
+        mmc_initialize(bis);
 #endif
-        return aml_burn_usb_producing(flag, bis);
+    }
+    return aml_burn_usb_producing(flag, bis);
 }
 
 int aml_try_factory_sdcard_burning(int flag, bd_t* bis)

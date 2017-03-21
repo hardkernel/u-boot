@@ -436,10 +436,11 @@ void do_vendor_request( pcd_struct_t *_pcd, struct usb_ctrlrequest * ctrl)
 	                if (ctrl->bRequestType != (USB_DIR_IN | USB_TYPE_VENDOR |
 	                                        USB_RECIP_DEVICE))
 	                        break;
-	                value = (w_value << 16) + w_index;
-
-	                /*usb_memcpy((char *)buff,(char*)value,w_length);*/
-	                memcpy((void*)buff,(void*)value,w_length);
+	                uint64_t memAddr = w_value;//w_value is short 16, cannot left shit!!!
+	                memAddr <<= 16;
+	                memAddr += w_index;
+	                /*printf("Copy from 0x%llx to %p at len %d\n", memAddr, buff, w_length);*/
+	                memcpy((void*)buff,(char*)memAddr,w_length);
 
 	                _pcd->buf = buff;
 	                _pcd->length = w_length;
@@ -729,6 +730,7 @@ void do_vendor_in_complete( pcd_struct_t *_pcd, struct usb_ctrlrequest * ctrl)
     {
 	  case AM_REQ_IDENTIFY_HOST:
 	  case AM_REQ_TPL_STAT:
+	  case AM_REQ_READ_MEM:
           break;
 
       case USB_REQ_GET_DESCRIPTOR:
