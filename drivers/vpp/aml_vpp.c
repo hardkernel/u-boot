@@ -24,6 +24,7 @@
 #include <common.h>
 #include <vpp.h>
 #include "aml_vpp_reg.h"
+#include <asm/arch/cpu.h>
 
 #define VPP_PR(fmt, args...)     printf("vpp: "fmt"", ## args)
 
@@ -76,13 +77,19 @@ static void vpp_set_matrix_ycbcr2rgb(int vd1_or_vd2_or_post, int mode)
 
 	if (vd1_or_vd2_or_post == 0) { //vd1
 		vpp_reg_setb(VPP_MATRIX_CTRL, 1, 5, 1);
-		vpp_reg_setb(VPP_MATRIX_CTRL, 1, 8, 2);
+		vpp_reg_setb(VPP_MATRIX_CTRL, 1, 8, 3);
 	} else if (vd1_or_vd2_or_post == 1) { //vd2
 		vpp_reg_setb(VPP_MATRIX_CTRL, 1, 4, 1);
-		vpp_reg_setb(VPP_MATRIX_CTRL, 2, 8, 2);
+		vpp_reg_setb(VPP_MATRIX_CTRL, 2, 8, 3);
+	} else if (vd1_or_vd2_or_post == 3) { //osd
+		vpp_reg_setb(VPP_MATRIX_CTRL, 1, 7, 1);
+		vpp_reg_setb(VPP_MATRIX_CTRL, 4, 8, 3);
+	} else if (vd1_or_vd2_or_post == 4) { //xvycc
+		vpp_reg_setb(VPP_MATRIX_CTRL, 1, 6, 1);
+		vpp_reg_setb(VPP_MATRIX_CTRL, 3, 8, 3);
 	} else {
 		vpp_reg_setb(VPP_MATRIX_CTRL, 1, 0, 1);
-		vpp_reg_setb(VPP_MATRIX_CTRL, 0, 8, 2);
+		vpp_reg_setb(VPP_MATRIX_CTRL, 0, 8, 3);
 		if (mode == 0)
 			vpp_reg_setb(VPP_MATRIX_CTRL, 1, 1, 2);
 		else if (mode == 1)
@@ -131,21 +138,45 @@ static void vpp_set_matrix_ycbcr2rgb(int vd1_or_vd2_or_post, int mode)
 		vpp_reg_write(VPP_MATRIX_OFFSET0_1, 0x0);
 		vpp_reg_write(VPP_MATRIX_OFFSET2, 0x0);
 	} else if (mode == 3) { /* 709L to RGB */
-		vpp_reg_write(VPP_MATRIX_PRE_OFFSET0_1, 0x0FC00E00);
-		vpp_reg_write(VPP_MATRIX_PRE_OFFSET2, 0x00000E00);
-		/* ycbcr limit range, 709 to RGB */
-		/* -16      1.164  0      1.793  0 */
-		/* -128     1.164 -0.213 -0.534  0 */
-		/* -128     1.164  2.115  0      0 */
-		vpp_reg_write(VPP_MATRIX_COEF00_01, 0x04A80000);
-		vpp_reg_write(VPP_MATRIX_COEF02_10, 0x072C04A8);
-		vpp_reg_write(VPP_MATRIX_COEF11_12, 0x1F261DDD);
-		vpp_reg_write(VPP_MATRIX_COEF20_21, 0x04A80876);
-		vpp_reg_write(VPP_MATRIX_COEF22, 0x0);
-		vpp_reg_write(VPP_MATRIX_OFFSET0_1, 0x0);
-		vpp_reg_write(VPP_MATRIX_OFFSET2, 0x0);
+		if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_TXLX) {
+			vpp_reg_write(VPP_MATRIX_COEF00_01, 0x04A80000);
+			vpp_reg_write(VPP_MATRIX_COEF02_10, 0x072C04A8);
+			vpp_reg_write(VPP_MATRIX_COEF11_12, 0x1F261DDD);
+			vpp_reg_write(VPP_MATRIX_COEF20_21, 0x04A80876);
+			vpp_reg_write(VPP_MATRIX_COEF22, 0x0);
+			vpp_reg_write(VPP_MATRIX_OFFSET0_1, 0x8000800);
+			vpp_reg_write(VPP_MATRIX_OFFSET2, 0x800);
+			vpp_reg_write(VPP_MATRIX_PRE_OFFSET0_1, 0x7000000);
+			vpp_reg_write(VPP_MATRIX_PRE_OFFSET2, 0x0000);
+		} else {
+			vpp_reg_write(VPP_MATRIX_PRE_OFFSET0_1, 0x0FC00E00);
+			vpp_reg_write(VPP_MATRIX_PRE_OFFSET2, 0x00000E00);
+			/* ycbcr limit range, 709 to RGB */
+			/* -16      1.164  0      1.793  0 */
+			/* -128     1.164 -0.213 -0.534  0 */
+			/* -128     1.164  2.115  0      0 */
+			vpp_reg_write(VPP_MATRIX_COEF00_01, 0x04A80000);
+			vpp_reg_write(VPP_MATRIX_COEF02_10, 0x072C04A8);
+			vpp_reg_write(VPP_MATRIX_COEF11_12, 0x1F261DDD);
+			vpp_reg_write(VPP_MATRIX_COEF20_21, 0x04A80876);
+			vpp_reg_write(VPP_MATRIX_COEF22, 0x0);
+			vpp_reg_write(VPP_MATRIX_OFFSET0_1, 0x0);
+			vpp_reg_write(VPP_MATRIX_OFFSET2, 0x0);
+		}
 	}
 	vpp_reg_setb(VPP_MATRIX_CLIP, 0, 5, 3);
+
+	if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_TXLX) {
+	#ifdef CONFIG_AML_MESON_TXLX
+		/* u2s */
+		vpp_reg_setb(VPP_DAT_CONV_PARA1, 0x800, 16, 14);
+		/* s2u */
+		vpp_reg_setb(VPP_DAT_CONV_PARA1, 0x800, 0, 14);
+		/* skip eotf & oetf */
+		vpp_reg_setb(VPP_DOLBY_CTRL, 1, 1, 1);
+	#else
+	#endif
+	}
 }
 
 /***************************** gxl hdr ****************************/
@@ -551,43 +582,81 @@ void set_vpp_matrix(int m_select, int *s, int on)
 			m[i] = s[i];
 
 	if (m_select == VPP_MATRIX_OSD) {
-		/* osd matrix, VPP_MATRIX_0 */
-		vpp_reg_write(VIU_OSD1_MATRIX_PRE_OFFSET0_1,
-			((m[0] & 0xfff) << 16) | (m[1] & 0xfff));
-		vpp_reg_write(VIU_OSD1_MATRIX_PRE_OFFSET2,
-			m[2] & 0xfff);
-		vpp_reg_write(VIU_OSD1_MATRIX_COEF00_01,
-			((m[3] & 0x1fff) << 16) | (m[4] & 0x1fff));
-		vpp_reg_write(VIU_OSD1_MATRIX_COEF02_10,
-			((m[5] & 0x1fff) << 16) | (m[6] & 0x1fff));
-		vpp_reg_write(VIU_OSD1_MATRIX_COEF11_12,
-			((m[7] & 0x1fff) << 16) | (m[8] & 0x1fff));
-		vpp_reg_write(VIU_OSD1_MATRIX_COEF20_21,
-			((m[9] & 0x1fff) << 16) | (m[10] & 0x1fff));
-		if (m[21]) {
-			vpp_reg_write(VIU_OSD1_MATRIX_COEF22_30,
-				((m[11] & 0x1fff) << 16) | (m[12] & 0x1fff));
-			vpp_reg_write(VIU_OSD1_MATRIX_COEF31_32,
-				((m[13] & 0x1fff) << 16) | (m[14] & 0x1fff));
-			vpp_reg_write(VIU_OSD1_MATRIX_COEF40_41,
-				((m[15] & 0x1fff) << 16) | (m[16] & 0x1fff));
-			vpp_reg_write(VIU_OSD1_MATRIX_COLMOD_COEF42,
-				m[17] & 0x1fff);
+		if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_TXLX) {
+			/* osd matrix */
+			vpp_reg_setb(VPP_MATRIX_CTRL, 0, 11, 5);
+			vpp_reg_setb(VPP_MATRIX_CTRL, 1, 7, 1);
+			vpp_reg_setb(VPP_MATRIX_CTRL, 4, 8, 3);
+
+			vpp_reg_write(VPP_MATRIX_PRE_OFFSET0_1,
+				((m[0] & 0xfff) << 16) | (m[1] & 0xfff));
+			vpp_reg_write(VPP_MATRIX_PRE_OFFSET2,
+				m[2] & 0xfff);
+			vpp_reg_write(VPP_MATRIX_COEF00_01,
+				((m[3] & 0x1fff) << 16) | (m[4] & 0x1fff));
+			vpp_reg_write(VPP_MATRIX_COEF02_10,
+				((m[5]  & 0x1fff) << 16) | (m[6] & 0x1fff));
+			vpp_reg_write(VPP_MATRIX_COEF11_12,
+				((m[7] & 0x1fff) << 16) | (m[8] & 0x1fff));
+			vpp_reg_write(VPP_MATRIX_COEF20_21,
+				((m[9] & 0x1fff) << 16) | (m[10] & 0x1fff));
+			vpp_reg_write(VPP_MATRIX_COEF22,
+				m[11] & 0x1fff);
+			if (m[21]) {
+				vpp_reg_write(VPP_MATRIX_COEF13_14,
+					((m[12] & 0x1fff) << 16) | (m[13] & 0x1fff));
+				vpp_reg_write(VPP_MATRIX_COEF15_25,
+					((m[14] & 0x1fff) << 16) | (m[17] & 0x1fff));
+				vpp_reg_write(VPP_MATRIX_COEF23_24,
+					((m[15] & 0x1fff) << 16) | (m[16] & 0x1fff));
+			}
+			vpp_reg_write(VPP_MATRIX_OFFSET0_1,
+				((m[18] & 0xfff) << 16) | (m[19] & 0xfff));
+			vpp_reg_write(VPP_MATRIX_OFFSET2,
+				m[20] & 0xfff);
+			vpp_reg_setb(VPP_MATRIX_CLIP,
+				m[21], 3, 2);
+			vpp_reg_setb(VPP_MATRIX_CLIP,
+				m[22], 5, 3);
 		} else {
-			vpp_reg_write(VIU_OSD1_MATRIX_COEF22_30,
-				(m[11] & 0x1fff) << 16);
+			/* osd matrix, VPP_MATRIX_0 */
+			vpp_reg_write(VIU_OSD1_MATRIX_PRE_OFFSET0_1,
+				((m[0] & 0xfff) << 16) | (m[1] & 0xfff));
+			vpp_reg_write(VIU_OSD1_MATRIX_PRE_OFFSET2,
+				m[2] & 0xfff);
+			vpp_reg_write(VIU_OSD1_MATRIX_COEF00_01,
+				((m[3] & 0x1fff) << 16) | (m[4] & 0x1fff));
+			vpp_reg_write(VIU_OSD1_MATRIX_COEF02_10,
+				((m[5] & 0x1fff) << 16) | (m[6] & 0x1fff));
+			vpp_reg_write(VIU_OSD1_MATRIX_COEF11_12,
+				((m[7] & 0x1fff) << 16) | (m[8] & 0x1fff));
+			vpp_reg_write(VIU_OSD1_MATRIX_COEF20_21,
+				((m[9] & 0x1fff) << 16) | (m[10] & 0x1fff));
+			if (m[21]) {
+				vpp_reg_write(VIU_OSD1_MATRIX_COEF22_30,
+					((m[11] & 0x1fff) << 16) | (m[12] & 0x1fff));
+				vpp_reg_write(VIU_OSD1_MATRIX_COEF31_32,
+					((m[13] & 0x1fff) << 16) | (m[14] & 0x1fff));
+				vpp_reg_write(VIU_OSD1_MATRIX_COEF40_41,
+					((m[15] & 0x1fff) << 16) | (m[16] & 0x1fff));
+				vpp_reg_write(VIU_OSD1_MATRIX_COLMOD_COEF42,
+					m[17] & 0x1fff);
+			} else {
+				vpp_reg_write(VIU_OSD1_MATRIX_COEF22_30,
+					(m[11] & 0x1fff) << 16);
+			}
+			vpp_reg_write(VIU_OSD1_MATRIX_OFFSET0_1,
+				((m[18] & 0xfff) << 16) | (m[19] & 0xfff));
+			vpp_reg_write(VIU_OSD1_MATRIX_OFFSET2,
+				m[20] & 0xfff);
+			vpp_reg_setb(VIU_OSD1_MATRIX_COLMOD_COEF42,
+				m[21], 30, 2);
+			vpp_reg_setb(VIU_OSD1_MATRIX_COLMOD_COEF42,
+				m[22], 16, 3);
+			/* 23 reserved for clipping control */
+			vpp_reg_setb(VIU_OSD1_MATRIX_CTRL, on, 0, 1);
+			vpp_reg_setb(VIU_OSD1_MATRIX_CTRL, 0, 1, 1);
 		}
-		vpp_reg_write(VIU_OSD1_MATRIX_OFFSET0_1,
-			((m[18] & 0xfff) << 16) | (m[19] & 0xfff));
-		vpp_reg_write(VIU_OSD1_MATRIX_OFFSET2,
-			m[20] & 0xfff);
-		vpp_reg_setb(VIU_OSD1_MATRIX_COLMOD_COEF42,
-			m[21], 30, 2);
-		vpp_reg_setb(VIU_OSD1_MATRIX_COLMOD_COEF42,
-			m[22], 16, 3);
-		/* 23 reserved for clipping control */
-		vpp_reg_setb(VIU_OSD1_MATRIX_CTRL, on, 0, 1);
-		vpp_reg_setb(VIU_OSD1_MATRIX_CTRL, 0, 1, 1);
 	} else if (m_select == VPP_MATRIX_EOTF) {
 		/* eotf matrix, VPP_MATRIX_EOTF */
 		for (i = 0; i < 5; i++)
@@ -615,22 +684,22 @@ void set_vpp_matrix(int m_select, int *s, int on)
 			/* post matrix */
 			m = post_matrix_coeff;
 			vpp_reg_setb(VPP_MATRIX_CTRL, on, 0, 1);
-			vpp_reg_setb(VPP_MATRIX_CTRL, 0, 8, 2);
+			vpp_reg_setb(VPP_MATRIX_CTRL, 0, 8, 3);
 		} else if (m_select == VPP_MATRIX_VD1) {
 			/* vd1 matrix */
 			m = vd1_matrix_coeff;
 			vpp_reg_setb(VPP_MATRIX_CTRL, on, 5, 1);
-			vpp_reg_setb(VPP_MATRIX_CTRL, 1, 8, 2);
+			vpp_reg_setb(VPP_MATRIX_CTRL, 1, 8, 3);
 		} else if (m_select == VPP_MATRIX_VD2) {
 			/* vd2 matrix */
 			m = vd2_matrix_coeff;
 			vpp_reg_setb(VPP_MATRIX_CTRL, on, 4, 1);
-			vpp_reg_setb(VPP_MATRIX_CTRL, 2, 8, 2);
+			vpp_reg_setb(VPP_MATRIX_CTRL, 2, 8, 3);
 		} else if (m_select == VPP_MATRIX_XVYCC) {
 			/* xvycc matrix */
 			m = xvycc_matrix_coeff;
 			vpp_reg_setb(VPP_MATRIX_CTRL, on, 6, 1);
-			vpp_reg_setb(VPP_MATRIX_CTRL, 3, 8, 2);
+			vpp_reg_setb(VPP_MATRIX_CTRL, 3, 8, 3);
 		}
 		vpp_reg_write(VPP_MATRIX_PRE_OFFSET0_1,
 			((m[0] & 0xfff) << 16) | (m[1] & 0xfff));
@@ -850,7 +919,7 @@ static void vpp_set_post_matrix_rgb2ycbcr(int mode)
 {
 	/* enable post matrix */
 	vpp_reg_setb(VPP_MATRIX_CTRL, 1, 0, 1);
-	vpp_reg_setb(VPP_MATRIX_CTRL, 0, 8, 2);
+	vpp_reg_setb(VPP_MATRIX_CTRL, 0, 8, 3);
 	vpp_reg_setb(VPP_MATRIX_CTRL, 0, 1, 2);
 
 	if (mode  == 0) {
@@ -1044,7 +1113,16 @@ void vpp_init(void)
 		/* 709 limit to RGB */
 		vpp_set_matrix_ycbcr2rgb(2, 3);
 	#endif
-	} else {
+	} else if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_TXLX) {
+		/* set dummy data default YUV black;*/
+		vpp_reg_write(VPP_DUMMY_DATA1, 0x04080200);
+		/* osd1: rgb->yuv limit , osd2: yuv limit */
+		set_osd1_rgb2yuv(1);
+	#if (defined CONFIG_AML_LCD)
+		/* 709 limit to RGB */
+		vpp_set_matrix_ycbcr2rgb(2, 3);
+	#endif
+	}  else {
 		/* set dummy data default YUV black */
 		vpp_reg_write(VPP_DUMMY_DATA1, 0x108080);
 		/* osd1: rgb->yuv limit , osd2: yuv limit */
