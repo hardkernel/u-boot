@@ -407,22 +407,22 @@ static struct mtd_partition normal_partition_info[] = {
     {
         .name = "logo",
         .offset = 0,
-        .size = 8*SZ_1M,
+        .size = 2*SZ_1M,
     },
     {
         .name = "recovery",
         .offset = 0,
-        .size = 10*SZ_1M,
+        .size = 16*SZ_1M,
     },
     {
         .name = "boot",
         .offset = 0,
-        .size = 8*SZ_1M,
+        .size = 12*SZ_1M,
     },
     {
-        .name = "upgrade",
+        .name = "system",
         .offset = 0,
-        .size = 64*SZ_1M,
+        .size = 220*SZ_1M,
     },
 	/* last partition get the rest capacity */
     {
