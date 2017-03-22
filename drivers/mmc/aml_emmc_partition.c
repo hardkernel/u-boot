@@ -21,7 +21,7 @@
 #include <asm/cpu_id.h>
 
 /* using mbr*/
-#define CONFIG_PTBL_MBR		(1)
+#define CONFIG_PTBL_MBR	(0)
 
 #if (CONFIG_PTBL_MBR)
 	/* cmpare partition name? */
@@ -135,7 +135,7 @@ int get_emmc_virtual_partition_arraysize(void)
 
 #endif
 
-__weak void _dump_part_tbl(struct partitions *p, int count)
+void __attribute__((unused)) _dump_part_tbl(struct partitions *p, int count)
 {
 	int i = 0;
 	apt_info("count %d\n", count);
@@ -781,7 +781,7 @@ static void _construct_ptbl_by_mbr(struct mmc *mmc, struct _iptbl *iptbl_mbr)
 	return;
 }
 
-static int _check_ptbl_mbr(struct mmc *mmc, struct _iptbl *ept)
+static int __attribute__((unused)) _check_ptbl_mbr(struct mmc *mmc, struct _iptbl *ept)
 {
 	int ret = 0;
 	/* re-constructed by mbr */
@@ -920,7 +920,7 @@ static int _construct_mbr_or_ebr(struct _iptbl *p_iptbl, struct dos_mbr_or_ebr *
 	return 0;
 }
 
-static int _update_ptbl_mbr(struct mmc *mmc, struct _iptbl *p_iptbl)
+static __attribute__((unused)) int _update_ptbl_mbr(struct mmc *mmc, struct _iptbl *p_iptbl)
 {
 	int ret = 0, start_blk = 0, blk_cnt = 1;
 	unsigned char *src;
@@ -998,7 +998,9 @@ static int _update_ptbl_mbr(struct mmc *mmc, struct _iptbl *p_iptbl)
 int mmc_device_init (struct mmc *mmc)
 {
 	int ret = 1;
+#if (CONFIG_PTBL_MBR)
 	cpu_id_t cpu_id = get_cpu_id();
+#endif
 	/* partition table from dtb/code/emmc rsv */
 	struct _iptbl iptbl_dtb, iptbl_inh;
 	struct _iptbl *p_iptbl_rsv = NULL;
