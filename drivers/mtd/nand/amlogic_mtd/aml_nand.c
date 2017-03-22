@@ -1717,24 +1717,22 @@ static int aml_nand_add_partition(struct aml_nand_chip *aml_chip)
 	mini_part_size =
 (mtd->erasesize > NAND_MINI_PART_SIZE ) ? mtd->erasesize : NAND_MINI_PART_SIZE;
 	phys_erase_shift = fls(mtd->erasesize) - 1;
-	// parts = plat->platform_nand_data.chip.partitions;
-	// nr = plat->platform_nand_data.chip.nr_partitions;
-	parts = get_aml_mtd_partition();
-	nr = get_aml_partition_count();
 	if (!strncmp((char*)plat->name,
-		NAND_BOOT_NAME, strlen((const char*)NAND_BOOT_NAME))) {
-		if (nr == 0) {
-			parts = kzalloc(sizeof(struct mtd_partition),
-					GFP_KERNEL);
-			if (!parts)
-				return -ENOMEM;
-		}
+		NAND_BOOT_NAME, strlen((const char*)NAND_BOOT_NAME))) {\
+		/* boot partition must be set as this because of romboot restrict */
+		parts = kzalloc(sizeof(struct mtd_partition),
+				GFP_KERNEL);
+		if (!parts)
+			return -ENOMEM;
 		parts->name = NAND_BOOT_NAME;
 		parts->offset = 0;
 		parts->size = (mtd->writesize * 1024);
 		nr = 1;
 		nand_boot_flag = 1;
 	} else {
+		/* normal partitions */
+		parts = get_aml_mtd_partition();
+		nr = get_aml_partition_count();
 		if (nand_boot_flag)
 			adjust_offset =
 				(1024 * mtd->writesize / aml_chip->plane_num);
