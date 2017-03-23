@@ -138,42 +138,32 @@ static void vpp_set_matrix_ycbcr2rgb(int vd1_or_vd2_or_post, int mode)
 		vpp_reg_write(VPP_MATRIX_OFFSET0_1, 0x0);
 		vpp_reg_write(VPP_MATRIX_OFFSET2, 0x0);
 	} else if (mode == 3) { /* 709L to RGB */
-		if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_TXLX) {
-			vpp_reg_write(VPP_MATRIX_COEF00_01, 0x04A80000);
-			vpp_reg_write(VPP_MATRIX_COEF02_10, 0x072C04A8);
-			vpp_reg_write(VPP_MATRIX_COEF11_12, 0x1F261DDD);
-			vpp_reg_write(VPP_MATRIX_COEF20_21, 0x04A80876);
-			vpp_reg_write(VPP_MATRIX_COEF22, 0x0);
-			vpp_reg_write(VPP_MATRIX_OFFSET0_1, 0x8000800);
-			vpp_reg_write(VPP_MATRIX_OFFSET2, 0x800);
-			vpp_reg_write(VPP_MATRIX_PRE_OFFSET0_1, 0x7000000);
-			vpp_reg_write(VPP_MATRIX_PRE_OFFSET2, 0x0000);
-		} else {
-			vpp_reg_write(VPP_MATRIX_PRE_OFFSET0_1, 0x0FC00E00);
-			vpp_reg_write(VPP_MATRIX_PRE_OFFSET2, 0x00000E00);
-			/* ycbcr limit range, 709 to RGB */
-			/* -16      1.164  0      1.793  0 */
-			/* -128     1.164 -0.213 -0.534  0 */
-			/* -128     1.164  2.115  0      0 */
-			vpp_reg_write(VPP_MATRIX_COEF00_01, 0x04A80000);
-			vpp_reg_write(VPP_MATRIX_COEF02_10, 0x072C04A8);
-			vpp_reg_write(VPP_MATRIX_COEF11_12, 0x1F261DDD);
-			vpp_reg_write(VPP_MATRIX_COEF20_21, 0x04A80876);
-			vpp_reg_write(VPP_MATRIX_COEF22, 0x0);
-			vpp_reg_write(VPP_MATRIX_OFFSET0_1, 0x0);
-			vpp_reg_write(VPP_MATRIX_OFFSET2, 0x0);
-		}
+		vpp_reg_write(VPP_MATRIX_PRE_OFFSET0_1, 0x0FC00E00);
+		vpp_reg_write(VPP_MATRIX_PRE_OFFSET2, 0x00000E00);
+		/* ycbcr limit range, 709 to RGB */
+		/* -16      1.164  0      1.793  0 */
+		/* -128     1.164 -0.213 -0.534  0 */
+		/* -128     1.164  2.115  0      0 */
+		vpp_reg_write(VPP_MATRIX_COEF00_01, 0x04A80000);
+		vpp_reg_write(VPP_MATRIX_COEF02_10, 0x072C04A8);
+		vpp_reg_write(VPP_MATRIX_COEF11_12, 0x1F261DDD);
+		vpp_reg_write(VPP_MATRIX_COEF20_21, 0x04A80876);
+		vpp_reg_write(VPP_MATRIX_COEF22, 0x0);
+		vpp_reg_write(VPP_MATRIX_OFFSET0_1, 0x0);
+		vpp_reg_write(VPP_MATRIX_OFFSET2, 0x0);
 	}
 	vpp_reg_setb(VPP_MATRIX_CLIP, 0, 5, 3);
 
 	if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_TXLX) {
 	#ifdef CONFIG_AML_MESON_TXLX
-		/* u2s */
-		vpp_reg_setb(VPP_DAT_CONV_PARA1, 0x800, 16, 14);
-		/* s2u */
-		vpp_reg_setb(VPP_DAT_CONV_PARA1, 0x800, 0, 14);
-		/* skip eotf & oetf */
-		vpp_reg_setb(VPP_DOLBY_CTRL, 1, 1, 1);
+		/* set u10 path: vadj2-eotf22-xvycc matrix */
+		/*don't skip vadj2 & post_matrix & wb*/
+		vpp_reg_setb(VPP_DAT_CONV_PARA1, 0x2000, 16, 14);
+		vpp_reg_setb(VPP_DOLBY_CTRL, 0, 2, 1);
+
+		/* do not skip eotf & oetf */
+		vpp_reg_setb(VPP_DOLBY_CTRL, 0, 1, 1);
+		vpp_reg_setb(VPP_DAT_CONV_PARA1, 0, 0, 14);
 	#else
 	#endif
 	}
