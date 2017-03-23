@@ -113,7 +113,7 @@ typedef union nand_core_clk {
  */
 
 /** Register defination **/
-#define NAND_BOOT_NAME	"nandboot"
+#define NAND_BOOT_NAME	"bootloader"
 #define NAND_NORMAL_NAME "nandnormal"
 #define NAND_RESERVED_NAME "nandreserved"
 /* Max total is 1024 as romboot says so... */
