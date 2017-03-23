@@ -26,15 +26,9 @@
 #include <gpio-gxbb.h>
 #include "pwm_ctrl.h"
 
-#define P_PIN_MUX_REG3		(*((volatile unsigned *)(0xda834400 + (0x2f << 2))))
-#define P_PIN_MUX_REG7		(*((volatile unsigned *)(0xda834400 + (0x33 << 2))))
-
-#define P_PWM_MISC_REG_AB	(*((volatile unsigned *)(0xc1100000 + (0x2156 << 2))))
-#define P_PWM_PWM_B		(*((volatile unsigned *)(0xc1100000 + (0x2155 << 2))))
-#define P_PWM_MISC_REG_CD	(*((volatile unsigned *)(0xc1100000 + (0x2196 << 2))))
-#define P_PWM_PWM_D		(*((volatile unsigned *)(0xc1100000 + (0x2195 << 2))))
-#define P_AO_PWM_PWM_B1		(*((volatile unsigned *)(0xc8100400 + (0x55 << 2))))
-#define P_EE_TIMER_E		(*((volatile unsigned *)(0xc1100000 + (0x2662 << 2))))
+#define P_AO_PWM_PWM_B1			(*((volatile unsigned *)(0xff807000 + (0x01   << 2))))
+#define P_EE_TIMER_E			(*((volatile unsigned *)(0xffd00000 + (0x3c62 << 2))))
+#define P_PWM_PWM_A			(*((volatile unsigned *)(0xffd1b000 + (0x0  << 2))))
 
 #define ON 1
 #define OFF 0
@@ -103,45 +97,9 @@ static void power_switch_to_ee(unsigned int pwr_ctrl)
 	}
 }
 
-#define P_PWM_PWM_A			(*((volatile unsigned *)(0xffd1b000 + (0x0  << 2))))
-
-/*
 static void pwm_set_voltage(unsigned int id, unsigned int voltage)
 {
 	int to;
-
-	for (to = 0; to < ARRAY_SIZE(pwm_voltage_table); to++) {
-		if (pwm_voltage_table[to][1] >= voltage) {
-			break;
-		}
-	}
-	if (to >= ARRAY_SIZE(pwm_voltage_table)) {
-		to = ARRAY_SIZE(pwm_voltage_table) - 1;
-	}
-	switch (id) {
-	case pwm_a:
-		uart_puts("set vcck to 0x");
-		uart_put_hex(to, 16);
-		uart_puts("mv\n");
-		P_PWM_PWM_A = pwm_voltage_table[to][0];
-		break;
-
-	case pwm_ao_b:
-		uart_puts("set vddee to 0x");
-		uart_put_hex(to, 16);
-		uart_puts("mv\n");
-		P_AO_PWM_PWM_B1 = pwm_voltage_table[to][0];
-		break;
-	default:
-		break;
-	}
-	_udelay(200);
-}
-*/
-static void pwm_set_voltage(unsigned int id, unsigned int voltage)
-{
-	int to;
-
 	switch (id) {
 	case pwm_a:
 		for (to = 0; to < ARRAY_SIZE(pwm_voltage_table); to++) {
@@ -192,91 +150,14 @@ static void power_on_3v3_5v(void)
 
 static void power_off_usb5v(void)
 {
-	unsigned int hwid = 1;
-#if 0
-	//CLEAR PINMUX
-	aml_update_bits(AO_RTI_PIN_MUX_REG, (1<<23)|(1<<5)|(1<<1), 0); //AO_5
-	aml_update_bits(PERIPHS_PIN_MUX_2, (1<<13)|(1<<5)|(1<<28), 0); //DV_9
-	//SET GPIOAO_5 OUTPUT 0
-	aml_update_bits(AO_GPIO_O_EN_N, 1 << 5, 0);
-	aml_update_bits(AO_GPIO_O_EN_N, 1 << 21, 0);
-	//SET GPIODV_9 OUTPUT 0
-	aml_update_bits(PREG_PAD_GPIO0_EN_N, 1 << 9, 0);
-	aml_update_bits(PREG_PAD_GPIO0_O, 1 << 9, 0);
-
-	return ;
-#endif
-	#if 0
-	//v1
-	aml_update_bits(AO_GPIO_O_EN_N, 1 << 4, 0);
-	aml_update_bits(AO_GPIO_O_EN_N, 1 << 20, 0);
-	//v2
 	aml_update_bits(AO_GPIO_O_EN_N, 1 << 10, 0);
-    aml_update_bits(AO_GPIO_O_EN_N, 1 << 26, 0);
-	#endif
-
-	/* enable 5V for USB, panel, wifi */
-	hwid = (readl(P_AO_SEC_GP_CFG0) >> 8) & 0xFF;
-	switch (hwid) {
-		case 1:
-			aml_update_bits(AO_GPIO_O_EN_N, 1 << 4, 0);
-			aml_update_bits(AO_GPIO_O_EN_N, 1 << 20, 0);
-			uart_puts("poweroff 5v - hwid 1\n");
-			break;
-		case 2:
-			aml_update_bits(AO_GPIO_O_EN_N, 1 << 10, 0);
-			aml_update_bits(AO_GPIO_O_EN_N, 1 << 26, 0);
-			uart_puts("poweroff 5v - hwid 2\n");
-			break;
-		default:
-			aml_update_bits(AO_GPIO_O_EN_N, 1 << 10, 0);
-			aml_update_bits(AO_GPIO_O_EN_N, 1 << 26, 0);
-			uart_puts("poweroff 5v - invalid hwid\n");
-			break;
-	}
+	aml_update_bits(AO_GPIO_O_EN_N, 1 << 26, 0);
 }
 
 static void power_on_usb5v(void)
 {
-	unsigned int hwid = 1;
-#if 0
-	//SET GPIOAO_5 OUTPUT 1
-	aml_update_bits(AO_GPIO_O_EN_N, 1 << 5, 0);
-	aml_update_bits(AO_GPIO_O_EN_N, 1 << 21, 1 << 21);
-	//SET GPIODV_9 OUTPUT 1
-	aml_update_bits(PREG_PAD_GPIO0_EN_N, 1 << 9, 0);
-	aml_update_bits(PREG_PAD_GPIO0_O, 1 << 9, 1 << 9);
-
-	return ;
-#endif
-	#if 0
-	//v1
-	aml_update_bits(AO_GPIO_O_EN_N, 1 << 4, 0);
-	aml_update_bits(AO_GPIO_O_EN_N, 1 << 20, 1 << 20);
-	//v2
 	aml_update_bits(AO_GPIO_O_EN_N, 1 << 10, 0);
-    aml_update_bits(AO_GPIO_O_EN_N, 1 << 26, 1 << 26);
-	#endif
-
-	/* enable 5V for USB, panel, wifi */
-	hwid = (readl(P_AO_SEC_GP_CFG0) >> 8) & 0xFF;
-	switch (hwid) {
-		case 1:
-			aml_update_bits(AO_GPIO_O_EN_N, 1 << 4, 0);
-			aml_update_bits(AO_GPIO_O_EN_N, 1 << 20, 1 << 20);
-			uart_puts("poweron 5v - hwid 1\n");
-			break;
-		case 2:
-			aml_update_bits(AO_GPIO_O_EN_N, 1 << 10, 0);
-			aml_update_bits(AO_GPIO_O_EN_N, 1 << 26, 1 << 26);
-			uart_puts("poweron 5v - hwid 2\n");
-			break;
-		default:
-			aml_update_bits(AO_GPIO_O_EN_N, 1 << 10, 0);
-			aml_update_bits(AO_GPIO_O_EN_N, 1 << 26, 1 << 26);
-			uart_puts("poweron 5v - invalid hwid\n");
-			break;
-	}
+	aml_update_bits(AO_GPIO_O_EN_N, 1 << 26, 1 << 26);
 }
 
 static void power_off_at_clk81(void)
@@ -343,7 +224,7 @@ static void power_on_at_32k(unsigned int suspend_from)
 	pwm_set_voltage(pwm_ao_b, CONFIG_VDDEE_INIT_VOLTAGE);
 	_udelay(10000);
 	power_on_3v3_5v();
-	_udelay(5000);
+	_udelay(10000);
 	pwm_set_voltage(pwm_a, CONFIG_VCCK_INIT_VOLTAGE);
 	_udelay(10000);
 	_udelay(10000);
