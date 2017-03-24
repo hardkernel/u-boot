@@ -232,6 +232,7 @@ obj-$(CONFIG_CMD_DFU) += cmd_dfu.o
 obj-$(CONFIG_CMD_GPT) += cmd_gpt.o
 obj-$(CONFIG_CMD_EFUSE) += cmd_efuse.o
 obj-$(CONFIG_CMD_CPU_TEMP) += cmd_cpu_temp.o
+obj-y += cmd_clkmsr.o
 endif
 
 ifdef CONFIG_SPL_BUILD
