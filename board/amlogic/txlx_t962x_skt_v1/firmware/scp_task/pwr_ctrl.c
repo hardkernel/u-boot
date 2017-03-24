@@ -25,9 +25,10 @@
 #endif
 #include <gpio-gxbb.h>
 #include "pwm_ctrl.h"
-#define P_AO_PWM_PWM_B1                (*((volatile unsigned *)(0xff807000 + (0x01   << 2))))
-#define P_EE_TIMER_E           (*((volatile unsigned *)(0xffd00000 + (0x3c62 << 2))))
 
+#define P_AO_PWM_PWM_B1			(*((volatile unsigned *)(0xff807000 + (0x01   << 2))))
+#define P_EE_TIMER_E			(*((volatile unsigned *)(0xffd00000 + (0x3c62 << 2))))
+#define P_PWM_PWM_A			(*((volatile unsigned *)(0xffd1b000 + (0x0  << 2))))
 
 #define ON 1
 #define OFF 0
@@ -93,7 +94,7 @@ static void power_switch_to_ee(unsigned int pwr_ctrl)
 
 	}
 }
-#define P_PWM_PWM_A			(*((volatile unsigned *)(0xffd1b000 + (0x0  << 2))))
+
 static void pwm_set_voltage(unsigned int id, unsigned int voltage)
 {
 	int to;
@@ -155,31 +156,17 @@ static void power_off_usb5v(void)
 static void power_on_usb5v(void)
 {
 	aml_update_bits(AO_GPIO_O_EN_N, 1 << 10, 0);
-    aml_update_bits(AO_GPIO_O_EN_N, 1 << 26, 1 << 26);
+	aml_update_bits(AO_GPIO_O_EN_N, 1 << 26, 1 << 26);
 }
 
 static void power_off_at_clk81(void)
 {
-	power_off_3v3_5v();
-	power_off_usb5v();
-	pwm_set_voltage(pwm_ao_b, CONFIG_VDDEE_SLEEP_VOLTAGE);	/* reduce power */
+
 }
 
 static void power_on_at_clk81(unsigned int suspend_from)
 {
-	pwm_set_voltage(pwm_ao_b, CONFIG_VDDEE_INIT_VOLTAGE);
-	power_on_usb5v();
-	power_on_3v3_5v();
-	_udelay(10000);
-	_udelay(10000);
-	_udelay(10000);
-	_udelay(10000);
-	pwm_set_voltage(pwm_a, CONFIG_VCCK_INIT_VOLTAGE);
-#if 0
-	if (suspend_from == SYS_POWEROFF) {
-		power_switch_to_ee(ON);
-	}
-#endif
+
 }
 
 static void power_off_at_24M(void)
@@ -220,7 +207,11 @@ static void power_on_ee(void)
 
 static void power_off_at_32k(unsigned int suspend_from)
 {
-
+	power_off_usb5v();
+	_udelay(5000);
+	power_off_3v3_5v();
+	_udelay(5000);
+	pwm_set_voltage(pwm_ao_b, CONFIG_VDDEE_SLEEP_VOLTAGE);	/* reduce power */
 	if (suspend_from == SYS_POWEROFF) {
 		power_off_ee();
 		power_off_ddr();
@@ -229,6 +220,14 @@ static void power_off_at_32k(unsigned int suspend_from)
 
 static void power_on_at_32k(unsigned int suspend_from)
 {
+	pwm_set_voltage(pwm_ao_b, CONFIG_VDDEE_INIT_VOLTAGE);
+	_udelay(10000);
+	power_on_3v3_5v();
+	_udelay(10000);
+	pwm_set_voltage(pwm_a, CONFIG_VCCK_INIT_VOLTAGE);
+	_udelay(10000);
+	_udelay(10000);
+	power_on_usb5v();
 
 	if (suspend_from == SYS_POWEROFF) {
 		power_on_ddr();
@@ -243,21 +242,44 @@ void get_wakeup_source(void *response, unsigned int suspend_from)
 	unsigned val;
 
 	p->status = RESPONSE_OK;
-	val = REMOTE_WAKEUP_SRC | ETH_PHY_WAKEUP_SRC;
+	val = (POWER_KEY_WAKEUP_SRC | AUTO_WAKEUP_SRC | REMOTE_WAKEUP_SRC |
+	       ETH_PHY_WAKEUP_SRC | BT_WAKEUP_SRC);
 #ifdef CONFIG_CEC_WAKEUP
-	val |= CEC_WAKEUP_SRC;
+	if (suspend_from != SYS_POWEROFF)
+		val |= CEC_WAKEUP_SRC;
 #endif
 	p->sources = val;
 	p->gpio_info_count = 0;
 }
-
+void wakeup_timer_setup(void)
+{
+	/* 1ms resolution*/
+	unsigned value;
+	value = readl(P_ISA_TIMER_MUX);
+	value |= ((0x3<<0) | (0x1<<12) | (0x1<<16));
+	writel(value, P_ISA_TIMER_MUX);
+	/*10ms generate an interrupt*/
+	writel(10, P_ISA_TIMERA);
+}
+void wakeup_timer_clear(void)
+{
+	unsigned value;
+	value = readl(P_ISA_TIMER_MUX);
+	value &= ~((0x1<<12) | (0x1<<16));
+	writel(value, P_ISA_TIMER_MUX);
+}
 static unsigned int detect_key(unsigned int suspend_from)
 {
 	int exit_reason = 0;
+	unsigned int time_out = readl(AO_DEBUG_REG2);
+	unsigned time_out_ms = time_out*100;
 	unsigned *irq = (unsigned *)WAKEUP_SRC_IRQ_ADDR_BASE;
 	/* unsigned *wakeup_en = (unsigned *)SECURE_TASK_RESPONSE_WAKEUP_EN; */
 
 	/* setup wakeup resources*/
+	/*auto suspend: timerA 10ms resolution*/
+	if (time_out_ms != 0)
+		wakeup_timer_setup();
 	init_remote();
 #ifdef CONFIG_CEC_WAKEUP
 	if (hdmi_cec_func_config & 0x1) {
