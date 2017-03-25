@@ -482,6 +482,16 @@ config ANDROID_BOOTLOADER
 	  recovery mode or bootloader mode) and, if enabled, the slot to boot
 	  from in devices with multiple boot slots (A/B devices).
 
+config ANDROID_AB
+	bool "Support for Android A/B updates"
+	default n
+	help
+	  If enabled, adds support for the new Android A/B update model. This
+	  allows the bootloader to select which slot to boot from based on the
+	  information provided by userspace via the Android boot_ctrl HAL. This
+	  allows a bootloader to try a new version of the system but roll back
+	  to previous version if the new one didn't boot all the way.
+
 config ANDROID_BOOT_IMAGE
 	bool "Enable support for Android Boot Images"
 	help
