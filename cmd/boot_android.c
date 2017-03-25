@@ -14,7 +14,7 @@
  * If the partition is found, sets dev_desc and part_info accordingly with the
  * information of the partition with the given partition_name.
  *
- * @dev_iface:		Device interface. Only "mmc" is supported at the moment.
+ * @dev_iface:		Device interface.
  * @dev_part_str:	Input string argument, like "0;misc".
  * @dev_desc:		Place to put the device description pointer.
  * @part_info:		Place to put the partition information.
@@ -25,14 +25,9 @@ static int part_get_info_by_dev_and_name(const char *dev_iface,
 					 struct blk_desc **dev_desc,
 					 disk_partition_t *part_info)
 {
-#ifdef CONFIG_EFI_PARTITION
 	char *ep;
 	const char *part_str;
 	int dev_num;
-
-	/* We only support "mmc" for looking up partition names. */
-	if (strcmp(dev_iface, "mmc") != 0)
-		return -1;
 
 	part_str = strchr(dev_part_str, ';');
 	if (!part_str)
@@ -45,9 +40,9 @@ static int part_get_info_by_dev_and_name(const char *dev_iface,
 	}
 	part_str++;
 
-	*dev_desc = blk_get_dev("mmc", dev_num);
+	*dev_desc = blk_get_dev(dev_iface, dev_num);
 	if (!*dev_desc) {
-		printf("Could not find mmc %d\n", dev_num);
+		printf("Could not find %s %d\n", dev_iface, dev_num);
 		return -1;
 	}
 	if (part_get_info_by_name(*dev_desc, part_str, part_info) < 0) {
@@ -55,9 +50,6 @@ static int part_get_info_by_dev_and_name(const char *dev_iface,
 		return -1;
 	}
 	return 0;
-#else
-	return -1;
-#endif  /* CONFIG_EFI_PARTITION */
 }
 
 static int do_boot_android(cmd_tbl_t *cmdtp, int flag, int argc,
@@ -117,12 +109,7 @@ static int do_boot_android(cmd_tbl_t *cmdtp, int flag, int argc,
 U_BOOT_CMD(
 	boot_android, 5, 0, do_boot_android,
 	"Execute the Android Bootloader flow.",
-	"<interface> <dev[:part"
-#if defined(CONFIG_EFI_PARTITION)
-	/* When EFI is enabled we also support looking up a partition name. */
-	"|;part_name"
-#endif	/* CONFIG_EFI_PARTITION */
-	"]> <slot> [<kernel_addr>]\n"
+	"<interface> <dev[:part|;part_name]> <slot> [<kernel_addr>]\n"
 	"    - Load the Boot Control Block (BCB) from the partition 'part' on\n"
 	"      device type 'interface' instance 'dev' to determine the boot\n"
 	"      mode, and load and execute the appropriate kernel.\n"
@@ -133,9 +120,7 @@ U_BOOT_CMD(
 	"      On Android devices with multiple slots, the pass 'slot' is\n"
 	"      used to load the appropriate kernel. The standard slot names\n"
 	"      are 'a' and 'b'.\n"
-#if defined(CONFIG_EFI_PARTITION)
 	"    - If 'part_name' is passed, preceded with a ; instead of :, the\n"
 	"      partition name whose label is 'part_name' will be looked up in\n"
 	"      the partition table. This is commonly the \"misc\" partition.\n"
-#endif	/* CONFIG_EFI_PARTITION */
 );
