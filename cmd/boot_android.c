@@ -71,14 +71,14 @@ static int do_boot_android(cmd_tbl_t *cmdtp, int flag, int argc,
 	const char *misc_part_iface;
 	const char *misc_part_desc;
 
-	if (argc < 3)
+	if (argc < 4)
 		return CMD_RET_USAGE;
-	if (argc > 4)
+	if (argc > 5)
 		return CMD_RET_USAGE;
 
-	if (argc >= 4) {
-		load_address = simple_strtoul(argv[3], &addr_arg_endp, 16);
-		if (addr_arg_endp == argv[3] || *addr_arg_endp != '\0')
+	if (argc >= 5) {
+		load_address = simple_strtoul(argv[4], &addr_arg_endp, 16);
+		if (addr_arg_endp == argv[4] || *addr_arg_endp != '\0')
 			return CMD_RET_USAGE;
 	} else {
 		addr_str = env_get("loadaddr");
@@ -105,7 +105,8 @@ static int do_boot_android(cmd_tbl_t *cmdtp, int flag, int argc,
 		}
 	}
 
-	ret = android_bootloader_boot_flow(dev_desc, &part_info, load_address);
+	ret = android_bootloader_boot_flow(dev_desc, &part_info, argv[3],
+					   load_address);
 	if (ret < 0) {
 		printf("Android boot failed, error %d.\n", ret);
 		return CMD_RET_FAILURE;
@@ -114,14 +115,14 @@ static int do_boot_android(cmd_tbl_t *cmdtp, int flag, int argc,
 }
 
 U_BOOT_CMD(
-	boot_android, 4, 0, do_boot_android,
+	boot_android, 5, 0, do_boot_android,
 	"Execute the Android Bootloader flow.",
 	"<interface> <dev[:part"
 #if defined(CONFIG_EFI_PARTITION)
 	/* When EFI is enabled we also support looking up a partition name. */
 	"|;part_name"
 #endif	/* CONFIG_EFI_PARTITION */
-	"]> [<kernel_addr>]\n"
+	"]> <slot> [<kernel_addr>]\n"
 	"    - Load the Boot Control Block (BCB) from the partition 'part' on\n"
 	"      device type 'interface' instance 'dev' to determine the boot\n"
 	"      mode, and load and execute the appropriate kernel.\n"
@@ -129,6 +130,9 @@ U_BOOT_CMD(
 	"      the corresponding \"boot\" partition. In bootloader mode, the\n"
 	"      command defined in the \"fastbootcmd\" variable will be\n"
 	"      executed.\n"
+	"      On Android devices with multiple slots, the pass 'slot' is\n"
+	"      used to load the appropriate kernel. The standard slot names\n"
+	"      are 'a' and 'b'.\n"
 #if defined(CONFIG_EFI_PARTITION)
 	"    - If 'part_name' is passed, preceded with a ; instead of :, the\n"
 	"      partition name whose label is 'part_name' will be looked up in\n"
