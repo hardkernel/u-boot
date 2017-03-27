@@ -263,7 +263,7 @@ static void saradc_internal_cal_12bit(void)
 		aml_set_reg32_bits(P_SAR_ADC_REG13(saradc->saradc_base_addr),i,8,6);
 		udelay(5);
 		val[0] = get_adc_sample_gxbb_12bit(7);
-		abs_tmp = abs(3000 - val[0]);
+		abs_tmp = abs(2764 - val[0]);
 		if (abs_tmp < abs_val) {
 			abs_val = abs_tmp;
 			abs_num = i;
@@ -389,6 +389,7 @@ int saradc_enable(void)
 {
 	saradc_probe();
 	saradc_power_control(1);
+	udelay(10);
 	saradc_internal_cal_12bit();
 	return 0;
 }
