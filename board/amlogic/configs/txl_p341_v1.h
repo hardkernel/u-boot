@@ -35,7 +35,7 @@
 #define CONFIG_PLATFORM_POWER_INIT
 #define CONFIG_VCCK_INIT_VOLTAGE	1000
 #define CONFIG_VDDEE_INIT_VOLTAGE	1000//1070		// voltage for power up
-#define CONFIG_VDDEE_SLEEP_VOLTAGE	 850//900		// voltage for suspend
+#define CONFIG_VDDEE_SLEEP_VOLTAGE	 900//900		// voltage for suspend
 
 /* configs for CEC */
 #define CONFIG_CEC_OSD_NAME		"AML_TV"
@@ -102,7 +102,7 @@
         "sdc_burning=sdc_burn ${sdcburncfg}\0"\
         "wipe_data=successful\0"\
         "wipe_cache=successful\0"\
-        "EnableSelinux=enforcing\0" \
+        "EnableSelinux=disabled\0" \
         "recovery_part=recovery\0"\
         "recovery_offset=0\0"\
         "cvbs_drv=0\0"\
