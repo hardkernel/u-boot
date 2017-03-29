@@ -290,7 +290,7 @@ static int do_store_mbr_ops(cmd_tbl_t * cmdtp, int flag, int argc, char * const 
 
     if (argc < 3) return CMD_RET_USAGE;
 
-    buffer = (unsigned char *)simple_strtoul(argv[2], NULL, 0);
+    buffer = (unsigned char *)simple_strtoul(argv[2], NULL, 16);
     ret = emmc_update_mbr(buffer);
     if (ret) {
         ErrP("fail to update mbr\n");

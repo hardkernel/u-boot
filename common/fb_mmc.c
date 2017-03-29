@@ -153,6 +153,7 @@ extern int emmc_update_mbr(unsigned char *buffer);
 	}
 #endif
 	if (strcmp(cmd, "dtb") == 0) {
+#ifndef DTB_BIND_KERNEL
 		ret = dtb_write(download_buffer);
 		if (ret)
 			fastboot_fail("fastboot write dtb fail");
@@ -162,6 +163,7 @@ extern int emmc_update_mbr(unsigned char *buffer);
 				fastboot_fail("fastboot write dtb fail");
 			fastboot_okay("");
 		}
+#endif
 	} else {
 		if (is_sparse_image(download_buffer))
 			write_sparse_image(dev_desc, &info, cmd, download_buffer,

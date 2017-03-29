@@ -1290,7 +1290,9 @@ int emmc_update_mbr(unsigned char *buffer)
         printf("MBR not support, try dtb\n");
         goto _out;
     }
+#ifndef DTB_BIND_KERNEL
     dtb_write(buffer);
+#endif
     ret = get_partition_from_dts(buffer);
     if (ret) {
         printf("Fail to get partition talbe from dts\n");
