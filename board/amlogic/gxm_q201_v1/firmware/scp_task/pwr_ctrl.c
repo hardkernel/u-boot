@@ -181,7 +181,7 @@ void get_wakeup_source(void *response, unsigned int suspend_from)
 	gpio->gpio_out_idx = -1;
 	gpio->gpio_out_ao = -1;
 	gpio->irq = IRQ_GPIO0_NUM;
-	gpio->trig_type	= GPIO_IRQ_RISING_EDGE;
+	gpio->trig_type	= GPIO_IRQ_FALLING_EDGE;
 	p->gpio_info_count ++;
 }
 void wakeup_timer_setup(void)
@@ -203,7 +203,6 @@ void wakeup_timer_clear(void)
 }
 static unsigned int detect_key(unsigned int suspend_from)
 {
-
 	int exit_reason = 0;
 	unsigned int time_out = readl(AO_DEBUG_REG2);
 	unsigned time_out_ms = time_out*100;
@@ -270,8 +269,11 @@ static unsigned int detect_key(unsigned int suspend_from)
 		}
 		if (irq[IRQ_GPIO0] == IRQ_GPIO0_NUM) {
 		    irq[IRQ_GPIO0] = 0xFFFFFFFF;
-			if ((readl(PREG_PAD_GPIO4_I) & (0x01 << 18)))
-			    exit_reason = BT_WAKEUP;}
+			if (!(readl(PREG_PAD_GPIO4_I) & (0x01 << 18))
+				&& (readl(PREG_PAD_GPIO4_O) & (0x01 << 17))
+				&& !(readl(PREG_PAD_GPIO4_EN_N) & (0x01 << 17)))
+				exit_reason = BT_WAKEUP;
+		}
 		if (irq[IRQ_ETH_PHY] == IRQ_ETH_PHY_NUM) {
 			irq[IRQ_ETH_PHY] = 0xFFFFFFFF;
 			exit_reason = ETH_PHY_WAKEUP;
