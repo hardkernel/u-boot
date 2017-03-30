@@ -37,6 +37,8 @@ int find_dev_and_part(const char *id, struct mtd_device **dev,
 		      u8 *part_num, struct part_info **part);
 #endif
 
+#define debugP(fmt...) //printf("[Dbg nand]L%d:", __LINE__),printf(fmt)
+
 static inline int isstring(char *p)
 {
 	char *endptr = p;
@@ -289,11 +291,11 @@ static int arg_off_size(int argc, char *const argv[], int *idx,
 	}
 
 print:
-	printf("device %d ", *idx);
+	debugP("device %d ", *idx);
 	if (*size == nand_info[*idx].size)
 		puts("whole chip\n");
 	else
-		printf("offset 0x%llx, size 0x%llx\n",
+		debugP("offset 0x%llx, size 0x%llx\n",
 		       (unsigned long long)*off, (unsigned long long)*size);
 	return 0;
 }
@@ -650,7 +652,7 @@ static int do_nand(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		if (argc != o + args)
 			goto usage;
 
-		printf("\nNAND %s: ", cmd);
+		debugP("\nNAND %s: ", cmd);
 		/* skip first two or three arguments, look for offset and size */
 		if (arg_off_size(argc - o, argv + o, &dev, &off, &size,
 				 &maxsize) != 0)
@@ -711,7 +713,7 @@ static int do_nand(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 			addr = (ulong)simple_strtoul(argv[3], NULL, 16);
 			/* 1 = read, 0 = write */
 			read = strncmp(cmd, "read", 4) == 0;
-			printf("\nNAND %s: %s ", read ? "read" : "write", argv[2]);
+			debugP("\nNAND %s: %s ", read ? "read" : "write", argv[2]);
 			if (argc == 4) {
 				off = 0;
 				size = get_mtd_size(argv[2]);
@@ -812,7 +814,7 @@ static int do_nand(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 			return 1;
 		}
 
-		printf(" %zu bytes %s: %s\n", rwsize,
+		debugP(" %zu bytes %s: %s\n", rwsize,
 		       read ? "read" : "written", ret ? "ERROR" : "OK");
 
 		return ret == 0 ? 0 : 1;

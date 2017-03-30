@@ -54,7 +54,7 @@ int store_read_ops(unsigned char *partition_name,unsigned char * buf, uint64_t o
 #endif
 #endif//#if CONFIG_AML_MTD
         {// not ubi part
-                sprintf(str, "%s  read %s 0x%llx  0x%llx  0x%llx", cmd_name, name, addr, off, size);
+                sprintf(str, "%s  read %s 0x%llx  0x%llx  0x%llx factoryMode", cmd_name, name, addr, off, size);
         }
 
         DbgP("run cmd[%s]\n", str);
@@ -101,7 +101,7 @@ int store_write_ops(unsigned char *partition_name,unsigned char * buf, uint64_t 
 #endif// #if defined(UBIFS_IMG) || defined(CONFIG_CMD_UBIFS)
 #endif// #if CONFIG_AML_MTD
         {
-                sprintf(str, "%s  write %s 0x%llx  0x%llx  0x%llx", cmd_name, name, addr, off, size);
+                sprintf(str, "%s  write %s 0x%llx  0x%llx  0x%llx factoryMode", cmd_name, name, addr, off, size);
         }
 
         DbgP("run cmd[%s]\n", str);
@@ -124,34 +124,18 @@ partition_name: env / logo / recovery /boot / system /cache /media
 
 int store_get_partititon_size(unsigned char *partition_name, uint64_t *size)
 {
-        unsigned char *name;
-        char	str[128];
-        uint64_t addr;
-        int ret=0;
-        unsigned char * buf = malloc(4*sizeof(uint64_t));
+    char	str[128];
+    int ret=0;
 
-        if (!buf) {
-                store_msg("store_get_partititon_size : malloc failed");
-                return -1;
-        }
-        memset(buf,0x0,4*sizeof(uint64_t));
-        store_dbg("4*sizeof(uint64_t) =%ld",4*sizeof(uint64_t));
-        addr = (unsigned long)size;
-        name = partition_name;
-        sprintf(str, "%s  size %s 0x%llx ",cmd_name, name, addr);
-        store_dbg("command:	%s", str);
-        ret = run_command(str, 0);
-        if (ret != 0) {
-                MsgP("cmd [%s ] size failed ",cmd_name);
-                return -1;
-        }
+    sprintf(str, "%s  size %s 0x%p ",cmd_name, partition_name, size);
+    store_dbg("command:	%s", str);
+    ret = run_command(str, 0);
+    if (ret != 0) {
+        ErrP("cmd [%s] size failed ", str);
+        return -1;
+    }
 
-
-
-        if (buf) {
-                kfree(buf);
-        }
-        return 0;
+    return ret;
 }
 
 

@@ -3,7 +3,7 @@
 #include <command.h>
 #include <watchdog.h>
 #include <malloc.h>
-#if defined(CONFIG_AML_NAND)
+#if defined(CONFIG_AML_NAND) || defined (CONFIG_AML_MTD)
 #include <nand.h>
 #include <asm/arch/nand.h>
 #endif
@@ -40,6 +40,7 @@ extern int mmc_key_erase(void);
 extern int find_dev_num_by_partition_name (char *name);
 extern unsigned emmc_cur_partition;
 
+#define debugP(fmt...) //printf("Dbg[store]L%d:", __LINE__),printf(fmt)
 #define MsgP(fmt...)   printf("[store]"fmt)
 #define ErrP(fmt...)   printf("[store]Err:%s,L%d:", __func__, __LINE__),printf(fmt)
 
@@ -59,6 +60,60 @@ extern unsigned emmc_cur_partition;
 #ifdef MMC_UBOOT_CLEAR_MBR
 static char _mbrFlag[4] ;
 #endif
+
+#ifdef CONFIG_AML_MTD
+static int mtd_find_phy_off_by_lgc_off(const char* partName, const loff_t logicAddr, loff_t* phyAddr,
+        int factoryMode/*factoryMode will remember the found bad blocks to speed up*/)
+{
+    int iRet = -__LINE__;
+    nand_info_t * mtdPartInf = NULL;
+    static loff_t off = 0;
+    loff_t physicalOff = 0;
+
+    if (!(NAND_BOOT_FLAG == device_boot_flag || SPI_NAND_FLAG == device_boot_flag)) {
+        return 0;
+    }
+
+    mtdPartInf = get_mtd_device_nm(partName);
+    if (IS_ERR(mtdPartInf)) {
+        ErrP("device(%s) is err\n", partName);
+        return -__LINE__;
+    }
+    const unsigned eraseSz = mtdPartInf->erasesize;
+    const unsigned offsetInBlk = logicAddr & (eraseSz - 1);
+    const unsigned nGoodBlks = (logicAddr / eraseSz) + 1;
+
+    static unsigned traversedGodBlks = 0;
+    debugP("logicAddr=0x%08llx, off=0x%08llx, traversedGodBlks=%u\t", logicAddr, off, traversedGodBlks);
+    if (!factoryMode || !logicAddr) {//uart terminal mode
+        off = traversedGodBlks = 0;
+    }
+    if ( traversedGodBlks >= nGoodBlks ) {
+        *phyAddr = off + offsetInBlk;
+        debugP("phyAddr0=0x%llx\n", *phyAddr);
+        return 0;
+    }
+
+    if ( factoryMode ) off += eraseSz;
+    for (; off < mtdPartInf->size; off += eraseSz) {
+        if (nand_block_isbad(mtdPartInf, off)) {
+            MsgP("  %08llx\n", (unsigned long long)off);
+        } else {
+            traversedGodBlks += 1;
+            if (nGoodBlks <= traversedGodBlks) {
+                physicalOff = off + offsetInBlk;
+                debugP("LogicOffset is 0x%llx, found physical is 0x%llx\n", logicAddr, physicalOff);
+                iRet = 0;
+                break;
+            }
+        }
+    }
+
+    debugP("phyAddr1=0x%llx\n", physicalOff);
+    *phyAddr = physicalOff;
+    return iRet;
+}
+#endif// #ifdef CONFIG_AML_MTD
 
 
 /* mmcinfo 1 will clear info_disprotect before run_command("mmc erase 1") */
@@ -656,14 +711,43 @@ static int do_store_size(cmd_tbl_t * cmdtp, int flag, int argc, char * const arg
 
     s = argv[2];
     addr = (ulong)simple_strtoul(argv[3], NULL, 16);
+    if ( !addr ) {
+        ErrP("addr(%s) is invalid\n", argv[3]);
+        return CMD_RET_FAILURE;
+    }
+
     if (device_boot_flag == NAND_BOOT_FLAG) {
-        #if defined(CONFIG_AML_NAND)
+#if defined(CONFIG_AML_NAND)
         sprintf(str, "amlnf  size  %s %llx",s,addr);
         store_dbg("command:	%s", str);
         ret = run_command(str, 0);
-        #else
+#elif defined(CONFIG_AML_MTD)
+        {//get mtd part logic size (i.e, not including the bad blocks)
+            nand_info_t * mtdPartInf = NULL;
+            loff_t off = 0;
+            uint64_t partSzLgc = 0;
+            const char* partName = s;
+
+            mtdPartInf = get_mtd_device_nm(partName);
+            if (IS_ERR(mtdPartInf)) {
+                ErrP("device(%s) is err\n", partName);
+                return -__LINE__;
+            }
+            const unsigned eraseSz   = mtdPartInf->erasesize;
+            const uint64_t partSzPhy = mtdPartInf->size;
+
+            partSzLgc = partSzPhy;
+            for (; off < partSzPhy; off += eraseSz) {
+                if (nand_block_isbad(mtdPartInf, off)) {
+                    partSzLgc -= eraseSz;
+                }
+            }
+            uint64_t* pAddr = (uint64_t*)addr;
+            *pAddr = partSzLgc;
+        }
+#else
         ret = -1;
-        #endif
+#endif// #if defined(CONFIG_AML_NAND)
         if (ret != 0) {
             store_msg("nand cmd %s failed",cmd);
             return -1;
@@ -968,6 +1052,16 @@ E_SWITCH_BACK:
 			if (n)
 				return CMD_RET_FAILURE;
 		}
+		else if (NAND_BOOT_FLAG == device_boot_flag){
+#ifdef CONFIG_AML_MTD
+            if ( 4 > argc ) return CMD_RET_USAGE;
+			sprintf(str, "nand erase.part %s", argv[3]);
+			return run_command(str, 0);
+#else
+			return CMD_RET_USAGE;
+#endif//#ifdef CONFIG_AML_MTD
+		}
+		else return CMD_RET_USAGE;
 	} else
 		return CMD_RET_USAGE;
 
@@ -1326,7 +1420,15 @@ static int do_store_read(cmd_tbl_t * cmdtp, int flag, int argc, char * const arg
 #if defined(CONFIG_AML_NAND)
     sprintf(str, "amlnf  read_byte %s 0x%llx  0x%llx  0x%llx",s, addr, off, size);
 #elif defined(CONFIG_AML_MTD)
-    sprintf(str, "nand  read %s 0x%llx  0x%llx  0x%llx",s, addr, off, size);
+    {
+        int isFactoryMode = argc > 6 ? !strcmp("factoryMode", argv[6]) : 0;
+        ret =  mtd_find_phy_off_by_lgc_off(s, off, &off, isFactoryMode);
+        if (ret) {
+            ErrP("Fail in find phy addr by logic off (0x%llx),ret(%d)\n", off, ret);
+            return CMD_RET_FAILURE;
+        }
+        sprintf(str, "nand  read %s 0x%llx  0x%llx  0x%llx",s, addr, off, size);
+    }
 #endif
     store_dbg("command:	%s", str);
     ret = run_command(str, 0);
@@ -1400,8 +1502,16 @@ static int do_store_write(cmd_tbl_t * cmdtp, int flag, int argc, char * const ar
     #if defined(CONFIG_AML_NAND)
         sprintf(str, "amlnf write_byte %s 0x%llx  0x%llx  0x%llx", s, addr, off, size);
     #elif defined(CONFIG_AML_MTD)
-        sprintf(str, "nand write %s 0x%llx  0x%llx  0x%llx",s, addr, off, size);
-    #endif
+        {
+            int isFactoryMode = argc > 6 ? !strcmp("factoryMode", argv[6]) : 0;
+            /*if( argc > 6 ) MsgP("argv[6]=%s, isFactoryMode=%d\n", argv[6], isFactoryMode);*/
+            ret =  mtd_find_phy_off_by_lgc_off(s, off, &off, isFactoryMode);
+            if (ret) {
+                ErrP("Fail in find phy addr by logic off (0x%llx),ret(%d)\n", off, ret);
+            }
+            sprintf(str, "nand write %s 0x%llx  0x%llx  0x%llx",s, addr, off, size);
+        }
+   #endif
         store_dbg("command:	%s", str);
         ret = run_command(str, 0);
 #else
@@ -1464,8 +1574,8 @@ static cmd_tbl_t cmd_store_sub[] = {
     U_BOOT_CMD_MKENT(size,          5, 0, do_store_size, "", ""),
     U_BOOT_CMD_MKENT(scrub,         3, 0, do_store_scrub, "", ""),
     U_BOOT_CMD_MKENT(erase,         5, 0, do_store_erase, "", ""),
-    U_BOOT_CMD_MKENT(read,          6, 0, do_store_read, "", ""),
-    U_BOOT_CMD_MKENT(write,         6, 0, do_store_write, "", ""),
+    U_BOOT_CMD_MKENT(read,          7, 0, do_store_read, "", ""),
+    U_BOOT_CMD_MKENT(write,         7, 0, do_store_write, "", ""),
     U_BOOT_CMD_MKENT(rom_read,      5, 0, do_store_rom_read, "", ""),
     U_BOOT_CMD_MKENT(rom_write,     5, 0, do_store_rom_write, "", ""),
     U_BOOT_CMD_MKENT(dtb,           5, 0, do_store_dtb_ops, "", ""),

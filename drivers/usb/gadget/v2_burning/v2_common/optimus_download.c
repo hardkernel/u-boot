@@ -103,7 +103,10 @@ struct imgBurnInfo_bootloader{
 
 COMPILE_TIME_ASSERT(IMG_BURN_INFO_SZ == sizeof(struct ImgBurnInfo));
 
-#if defined(CONFIG_STORE_COMPATIBLE) && !defined(CONFIG_AML_MTD)
+#if defined(CONFIG_STORE_COMPATIBLE)
+#if defined(CONFIG_AML_MTD)
+#define _assert_logic_partition_cap(thePartName, nandPartCap) 0
+#else
 //asset logical partition size >= CFG size in storage.c
 //nand often make mistake this size, emmc should always ok
 static int _assert_logic_partition_cap(const char* thePartName, const uint64_t nandPartCap)
@@ -133,7 +136,8 @@ static int _assert_logic_partition_cap(const char* thePartName, const uint64_t n
         DWN_ERR("Can't find your download part(%s)\n", thePartName);
         return __LINE__;
 }
-#endif
+#endif// #if defined(CONFIG_AML_MTD)
+#endif// #if defined(CONFIG_STORE_COMPATIBLE)
 
 //return value is the actual size it write
 static int optimus_download_dtb_image(struct ImgBurnInfo* pDownInfo, u32 dataSzReceived, const u8* data)
@@ -288,6 +292,16 @@ static int optimus_storage_open(struct ImgBurnInfo* pDownInfo, const u8* data, c
     {
         DWN_MSG("Burn Start...\n");
         pDownInfo->imgBurnSta = OPTIMUS_IMG_STA_BURN_ING;
+#if defined(CONFIG_AML_MTD)
+        //Need erasing if 'Have not erasing the WHOLE chip' and 'NOT bootloader'
+        if (NAND_BOOT_FLAG == device_boot_flag || SPI_NAND_FLAG == device_boot_flag)
+            if (!(is_optimus_storage_inited()>>16) && strcmp("bootloader", partName)) {
+                char cmd[96];
+                sprintf(cmd, "store erase partition %s", partName);
+                DWN_MSG("cmd[%s]\n", cmd);
+                run_command(cmd, 0);
+            }
+#endif//#if defined(CONFIG_AML_MTD)
     }
     else if(pDownInfo->imgSzDisposed == pDownInfo->imgPktSz && OPTIMUS_IMG_STA_BURN_COMPLETE == pDownInfo->imgBurnSta)
     {
@@ -632,7 +646,6 @@ static int _parse_img_download_info(struct ImgBurnInfo* pDownInfo, const char* p
 
     if (OPTIMUS_MEDIA_TYPE_MEM > pDownInfo->storageMediaType) //if command for burning partition
     {
-#if defined(CONFIG_STORE_COMPATIBLE) && !defined(CONFIG_AML_MTD)
         if (strcmp("bootloader", partName) && strcmp("_aml_dtb", partName)) //get size if not bootloader
         {
             u64 partCap = 0;
@@ -653,7 +666,7 @@ static int _parse_img_download_info(struct ImgBurnInfo* pDownInfo, const char* p
                     return __LINE__;
             }
         }
-#elif OPTIMUS_BURN_TARGET_SUPPORT_UBIFS
+#if defined(OPTIMUS_BURN_TARGET_SUPPORT_UBIFS)
         if (IMG_TYPE_UBIFS == pDownInfo->imgType) //get size if not bootloader
         {
                 char cmd[64];
@@ -675,7 +688,6 @@ static int _parse_img_download_info(struct ImgBurnInfo* pDownInfo, const char* p
                         DWN_ERR("Fail in run cmd[%s]\n", cmd); return __LINE__;
                 }
         }
-#else
 #endif// #if CONFIG_NEXT_NAND
     }
 
@@ -739,16 +751,20 @@ int optimus_storage_init(int toErase)
         store_exit();
     }
 
+#ifndef CONFIG_AML_MTD
     if (!_dtb_is_loaded) {
         DWN_WRN("dtb is not loaded yet\n");
     }
     else{
+        //FIXME to only skip parse part table when burn target is NAND flash
+        //if (NAND_BOOT_FLAG == device_boot_flag || SPI_NAND_FLAG == device_boot_flag)
         ret = get_partition_from_dts(dtbLoadedAddr);
         if (ret) {
             DWN_ERR("Failed at get_partition_from_dts\n");
             return __LINE__;
         }
     }
+#endif// #ifndef (CONFIG_AML_MTD)
 
     switch (toErase)
     {
@@ -955,11 +971,13 @@ static int optimus_sha1sum_verify_partition(const char* partName, const u64 veri
     {
         for (; leftLen;)
         {
+            int thisReadLen = 0;
 #if defined(UBIFS_IMG) || defined(CONFIG_CMD_UBIFS)
-            int thisReadLen = leftLen;
-#else
-            int thisReadLen = (leftLen > buffSz) ? buffSz : ((u32)leftLen);
-#endif
+            if (!strcmp(_usbDownPartImgType, "ubifs")) {
+                thisReadLen = leftLen;
+            } else
+#endif// #if defined(UBIFS_IMG) || defined(CONFIG_CMD_UBIFS)
+            thisReadLen = (leftLen > buffSz) ? buffSz : ((u32)leftLen);
 
             u64 addrOffset = verifyLen - leftLen;
 
