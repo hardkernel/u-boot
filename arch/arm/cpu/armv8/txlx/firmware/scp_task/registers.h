@@ -81,6 +81,6 @@
 //48 reserve
 #define IRQ_JTGPWD_FST_NUM  49
 #define IRQ_WATCHDOG_NUM    50
-//51 reserve
+#define IRQ_AO_CECB_NUM     51
 #define IRQ_AO_TIMERA_NUM   52
 #endif				//_SCP_REGISTER_DEFINES_

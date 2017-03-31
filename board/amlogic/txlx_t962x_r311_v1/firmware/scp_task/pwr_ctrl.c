@@ -246,8 +246,7 @@ void get_wakeup_source(void *response, unsigned int suspend_from)
 	val = (POWER_KEY_WAKEUP_SRC | AUTO_WAKEUP_SRC | REMOTE_WAKEUP_SRC |
 	       ETH_PHY_WAKEUP_SRC | BT_WAKEUP_SRC);
 #ifdef CONFIG_CEC_WAKEUP
-	if (suspend_from != SYS_POWEROFF)
-		val |= CEC_WAKEUP_SRC;
+	val |= CECB_WAKEUP_SRC;
 #endif
 	p->sources = val;
 	p->gpio_info_count = 0;
@@ -292,8 +291,8 @@ static unsigned int detect_key(unsigned int suspend_from)
 	/* *wakeup_en = 1;*/
 	do {
 #ifdef CONFIG_CEC_WAKEUP
-		if (irq[IRQ_AO_CEC] == IRQ_AO_CEC_NUM) {
-			irq[IRQ_AO_CEC] = 0xFFFFFFFF;
+		if (irq[IRQ_AO_CECB] == IRQ_AO_CECB_NUM) {
+			irq[IRQ_AO_CECB] = 0xFFFFFFFF;
 //			if (suspend_from == SYS_POWEROFF)
 //				continue;
 			if (cec_msg.log_addr) {
