@@ -210,10 +210,9 @@ void power_init(int mode)
 	pwm_set_voltage(pwm_ao_b, CONFIG_VDDEE_INIT_VOLTAGE);
 	pwm_init(pwm_a);
 	pwm_init(pwm_ao_b);
-	serial_puts("set vddee enable AO_8 to high\n ");
+	serial_puts("set vddee enable AO_8 to low\n ");
 	reg = readl(AO_GPIO_O_EN_N);
-	reg &= ~(1 << 8);
-	reg |=  (1 << 24);
+	reg &= ~((1 << 8)|(1 << 24));
 	writel(reg, AO_GPIO_O_EN_N);
 	serial_puts("set vddee enable AO_2 to low\n ");
 	reg = readl(AO_GPIO_O_EN_N);
