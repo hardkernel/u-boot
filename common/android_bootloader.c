@@ -200,7 +200,8 @@ static char *strjoin(const char **chunks, char separator)
 		*current = separator;
 		current++;
 	}
-	*current = '\0';
+	/* Replace the last separator by a \0. */
+	current[-1] = '\0';
 	return ret;
 }
 

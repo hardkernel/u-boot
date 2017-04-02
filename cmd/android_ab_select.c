@@ -35,7 +35,7 @@ static int do_android_ab_select(cmd_tbl_t *cmdtp, int flag, int argc,
 	/* Android standard slot names are 'a', 'b', ... */
 	slot[0] = ANDROID_BOOT_SLOT_NAME(ret);
 	slot[1] = '\0';
-	setenv(argv[1], slot);
+	env_set(argv[1], slot);
 	printf("ANDROID: Booting slot: %s\n", slot);
 	return CMD_RET_SUCCESS;
 }
