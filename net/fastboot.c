@@ -280,19 +280,24 @@ static void fb_getvar(char *response)
 		} else {
 			write_fb_response("OKAY", "no", response);
 		}
-	} else if (!strncmp("partition-type", cmd_parameter, 14)) {
+	} else if (!strncmp("partition-type", cmd_parameter, 14) ||
+		   !strncmp("partition-size", cmd_parameter, 14)) {
 		disk_partition_t part_info;
 		struct blk_desc *dev_desc;
 		char *part_name = cmd_parameter;
+		char part_size_str[20];
 
 		cmd_parameter = strsep(&part_name, ":");
 		dev_desc = blk_get_dev("mmc", 0);
-		if (dev_desc == NULL) {
+		if (!dev_desc) {
 			write_fb_response("FAIL", "block device not found", response);
 		} else if (part_get_info_efi_by_name(dev_desc, part_name, &part_info) < 0) {
 			write_fb_response("FAIL", "partition not found", response);
-		} else {
+		} else if (!strncmp("partition-type", cmd_parameter, 14)) {
 			write_fb_response("OKAY", (char*)part_info.type, response);
+		} else if (!strncmp("partition-size", cmd_parameter, 14)) {
+			sprintf(part_size_str, "0x%016x", (int)part_info.size);
+			write_fb_response("OKAY", part_size_str, response);
 		}
 	} else {
 		printf("WARNING: unknown variable: %s\n", cmd_parameter);
