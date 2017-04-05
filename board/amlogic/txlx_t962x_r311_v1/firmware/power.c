@@ -239,9 +239,16 @@ void power_init(int mode)
 	pwm_set_voltage(pwm_ao_b, CONFIG_VDDEE_INIT_VOLTAGE);
 	pwm_init(pwm_a);
 	pwm_init(pwm_ao_b);
-	serial_puts("set vddee enable AO 2/10 to high\n ");
+	serial_puts("set AO 2/10/11 to high\n ");
 	reg = readl(AO_GPIO_O_EN_N);
-	reg &= ~((1 << 2)|(1 << 10));
-	reg |=  ((1 << 18)|(1 << 26));
+	reg &= ~((1 << 2)|(1 << 10)|(1 << 11));
+	reg |=  ((1 << 18)|(1 << 26)|(1 << 27));
+	writel(reg, AO_GPIO_O_EN_N);
+	serial_puts("set test_n to high\n ");
+	reg = readl(AO_SEC_REG0);
+	reg &= ~(1 << 0);
+	writel(reg, AO_SEC_REG0);
+	reg = readl(AO_GPIO_O_EN_N);
+	reg |=	(1 << 31);
 	writel(reg, AO_GPIO_O_EN_N);
 }
