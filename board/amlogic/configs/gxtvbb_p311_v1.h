@@ -43,6 +43,11 @@
 
 #define CONFIG_INSTABOOT
 
+/* Bootloader Control Block function
+   That is used for recovery and the bootloader to talk to each other
+  */
+#define CONFIG_BOOTLOADER_CONTROL_BLOCK
+
 /* SMP Definitinos */
 #define CPU_RELEASE_ADDR		secondary_boot_func
 
@@ -99,6 +104,8 @@
 	"wipe_cache=successful\0"\
 	"EnableSelinux=enforcing\0" \
 	"jtag=apao\0"\
+	"active_slot=_a\0"\
+	"boot_part=boot\0"\
 	"upgrade_check="\
 		"echo upgrade_step=${upgrade_step}; "\
 		"if itest ${upgrade_step} == 3; then "\
@@ -116,6 +123,7 @@
 		"jtag=${jtag} "\
 		"androidboot.firstboot=${firstboot}; "\
 		"run cmdline_keys; "\
+		"setenv bootargs ${bootargs} androidboot.slot_suffix=${active_slot};"\
 		"\0"\
 	"switch_bootmode="\
 		"get_rebootmode; "\
@@ -130,7 +138,7 @@
 		"fi;fi;fi;fi;"\
 		"\0" \
 	"storeboot="\
-		"if imgread kernel boot ${loadaddr}; then "\
+		"if imgread kernel ${boot_part} ${loadaddr}; then "\
 			"bootm ${loadaddr}; "\
 		"fi; "\
 		"run update; "\
@@ -208,6 +216,9 @@
 		"imgread pic logo bootup $loadaddr; "\
 		"bmp display $bootup_offset; bmp scale"\
 		"\0"\
+	"bcb_cmd="\
+		"get_valid_slot;"\
+		"\0"\
 	"cmdline_keys="\
 		"if keyman init 0x1234; then "\
 			"if keyman read usid ${loadaddr} str; then "\
@@ -227,6 +238,7 @@
 		"\0"\
 
 #define CONFIG_PREBOOT  \
+	"run bcb_cmd; "\
 	"run factory_reset_poweroff_protect; "\
 	"run upgrade_check; "\
 	"run init_display; "\

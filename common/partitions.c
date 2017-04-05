@@ -17,6 +17,9 @@ struct partitions_data{
 
 struct partitions *part_table = NULL;
 static int parts_total_num;
+int has_boot_slot = 0;
+int has_system_slot = 0;
+
 
 int get_partitions_table(struct partitions **table)
 {
@@ -153,6 +156,11 @@ int get_partition_from_dts(unsigned char *buffer)
 		part_table[index].size = ((unsigned long)be32_to_cpup((u32*)usize) << 32) | (unsigned long)be32_to_cpup((((u32*)usize)+1));
 		part_table[index].mask_flags = be32_to_cpup((u32*)umask);
 		printf("%02d:%10s\t%016llx %01x\n", index, uname, part_table[index].size, part_table[index].mask_flags);
+
+		if (strcmp(uname, "boot_a") == 0)
+			has_boot_slot = 1;
+		if (strcmp(uname, "system_a") == 0)
+			has_system_slot = 1;
 	}
 	return 0;
 

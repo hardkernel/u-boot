@@ -49,6 +49,11 @@
 
 #define CONFIG_INSTABOOT
 
+/* Bootloader Control Block function
+   That is used for recovery and the bootloader to talk to each other
+  */
+#define CONFIG_BOOTLOADER_CONTROL_BLOCK
+
 /* SMP Definitinos */
 #define CPU_RELEASE_ADDR		secondary_boot_func
 
@@ -107,6 +112,8 @@
 	"wipe_cache=successful\0"\
 	"EnableSelinux=enforcing\0" \
 	"jtag=apao\0"\
+	"active_slot=_a\0"\
+	"boot_part=boot\0"\
 	"upgrade_check="\
 		"echo upgrade_step=${upgrade_step}; "\
 		"if itest ${upgrade_step} == 3; then "\
@@ -127,6 +134,7 @@
 		"androidboot.firstboot=${firstboot}; "\
 		"setenv bootargs ${bootargs} androidboot.hardware=amlogic;"\
 		"run cmdline_keys; "\
+		"setenv bootargs ${bootargs} androidboot.slot_suffix=${active_slot};"\
 		"\0"\
 	"switch_bootmode="\
 		"get_rebootmode; "\
@@ -141,7 +149,7 @@
 		"fi;fi;fi;fi;"\
 		"\0" \
 	"storeboot="\
-		"if imgread kernel boot ${loadaddr}; then "\
+		"if imgread kernel ${boot_part} ${loadaddr}; then "\
 			"bootm ${loadaddr}; "\
 		"fi; "\
 		"run update; "\
@@ -240,6 +248,9 @@
 			"fi; "\
 		"fi; "\
 		"\0"\
+	"bcb_cmd="\
+		"get_valid_slot;"\
+		"\0"\
 	"upgrade_key="\
 		"if gpio input GPIOAO_3; then "\
 			"echo detect upgrade key; sleep 5; run update; "\
@@ -247,6 +258,7 @@
 		"\0"\
 
 #define CONFIG_PREBOOT  \
+	"run bcb_cmd; "\
 	"run factory_reset_poweroff_protect; "\
 	"run upgrade_check; "\
 	"run init_display; "\

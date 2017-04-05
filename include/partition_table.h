@@ -52,6 +52,9 @@ extern unsigned  device_boot_flag;
 
 extern int info_disprotect;
 
+extern int has_boot_slot;
+extern int has_system_slot;
+
 #define DISPROTECT_KEY    		1
 #define DISPROTECT_SECURE		1<<1
 #define DISPROTECT_FBBT		1<<2

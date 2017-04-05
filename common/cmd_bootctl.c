@@ -15,6 +15,7 @@
 #include <asm/byteorder.h>
 #include <config.h>
 #include <asm/arch/io.h>
+#include <partition_table.h>
 
 #ifdef CONFIG_BOOTLOADER_CONTROL_BLOCK
 extern int store_read_ops(
@@ -222,10 +223,16 @@ static int do_GetValidSlot(
     slot = info.active_slot;
     printf("active slot = %d \n", slot);
 
-    if (slot == 0)
+    if (slot == 0) {
         setenv("active_slot","_a");
-    else
+        if (has_boot_slot == 1)
+            setenv("boot_part","boot_a");
+    }
+    else {
         setenv("active_slot","_b");
+        if (has_boot_slot == 1)
+            setenv("boot_part","boot_b");
+    }
 
     return 0;
 }

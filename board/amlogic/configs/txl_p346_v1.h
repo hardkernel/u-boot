@@ -46,6 +46,11 @@
 /* config saradc*/
 #define CONFIG_CMD_SARADC 1
 
+/* Bootloader Control Block function
+   That is used for recovery and the bootloader to talk to each other
+  */
+#define CONFIG_BOOTLOADER_CONTROL_BLOCK
+
 /* Serial config */
 #define CONFIG_CONS_INDEX 2
 #define CONFIG_BAUDRATE  115200
@@ -104,6 +109,8 @@
         "cvbs_drv=0\0"\
         "osd_reverse=0\0"\
         "video_reverse=0\0"\
+        "active_slot=_a\0"\
+        "boot_part=boot\0"\
         "initargs="\
             "rootfstype=ramfs init=/init console=ttyS0,115200 no_console_suspend earlyprintk=aml-uart,0xc81004c0 ramoops.pstore_en=1 ramoops.record_size=0x8000 ramoops.console_size=0x4000 "\
             "\0"\
@@ -117,6 +124,7 @@
             "setenv bootargs ${initargs} logo=${display_layer},loaded,${fb_addr} vout=${outputmode},enable panel_type=${panel_type} osd_reverse=${osd_reverse} video_reverse=${video_reverse} androidboot.selinux=${EnableSelinux} androidboot.firstboot=${firstboot} jtag=${jtag}; "\
 	"setenv bootargs ${bootargs} androidboot.hardware=amlogic;"\
             "run cmdline_keys;"\
+            "setenv bootargs ${bootargs} androidboot.slot_suffix=${active_slot};"\
             "\0"\
         "switch_bootmode="\
             "get_rebootmode;"\
@@ -132,7 +140,7 @@
             "\0" \
         "storeboot="\
             "hdmitx output 1080p60hz;"\
-            "if imgread kernel boot ${loadaddr}; then bootm ${loadaddr}; fi;"\
+            "if imgread kernel ${boot_part} ${loadaddr}; then bootm ${loadaddr}; fi;"\
             "run update;"\
             "\0"\
         "factory_reset_poweroff_protect="\
@@ -203,6 +211,9 @@
                 "fi;"\
             "fi;"\
             "\0"\
+        "bcb_cmd="\
+            "get_valid_slot;"\
+            "\0"\
         "upgrade_key="\
             "if gpio input GPIOAO_3; then "\
                 "echo detect upgrade key; run update;"\
@@ -220,6 +231,7 @@
 
 
 #define CONFIG_PREBOOT  \
+            "run bcb_cmd; "\
             "run factory_reset_poweroff_protect;"\
             "run upgrade_check;"\
             "run init_display;"\
