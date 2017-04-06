@@ -39,7 +39,7 @@ DECLARE_GLOBAL_DATA_PTR;
 #define TX_ENDPOINT_MAXIMUM_PACKET_SIZE      (0x0040)
 
 #define DEVICE_PRODUCT	CONFIG_DEVICE_PRODUCT
-#define DEVICE_SERIAL	"0123456789"
+#define DEVICE_SERIAL	"1234567890"
 
 /* The 64 defined bytes plus \0 */
 #define RESPONSE_LEN	(64 + 1)
@@ -421,7 +421,8 @@ static void cb_getvar(struct usb_ep *ep, struct usb_request *req)
 		sprintf(str_num, "0x%08x", ddr_size_usable(CONFIG_USB_FASTBOOT_BUF_ADDR));
 		strncat(response, str_num, chars_left);
 	} else if (!strcmp_l1("serialno", cmd)) {
-		s = getenv("serial");
+		//s = getenv("serial");
+		s = get_usid_string();
 		if (s)
 			strncat(response, s, chars_left);
 		else

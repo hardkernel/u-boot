@@ -20,6 +20,7 @@
 
 #include "gadget_chips.h"
 #include "composite.c"
+#include <amlogic/amlkey_if.h>
 
 /*
  * One needs to define the following:
@@ -44,12 +45,27 @@
 static const char product[] = "USB download gadget";
 static char g_dnl_serial[MAX_STRING_SERIAL] = "1234567890";
 static const char manufacturer[] = "amlogic";
+char usid_string[MAX_STRING_SERIAL];
 
 void g_dnl_set_serialnumber(char *s)
 {
 	memset(g_dnl_serial, 0, MAX_STRING_SERIAL);
 	if (strlen(s) < MAX_STRING_SERIAL)
 		strncpy(g_dnl_serial, s, strlen(s));
+}
+
+char * get_usid_string(void)
+{
+	int ret;
+	ret = amlkey_isexsit((const uint8_t *)USID_KEY);
+	if (ret) {
+		ret = amlkey_size((const uint8_t *)USID_KEY);
+		if (ret && ret < MAX_STRING_SERIAL) {
+			amlkey_read((const uint8_t *)USID_KEY, (uint8_t *)usid_string, ret);
+			return usid_string;
+		}
+	}
+	return NULL;
 }
 
 static struct usb_device_descriptor device_desc = {
@@ -197,6 +213,7 @@ static int g_dnl_bind(struct usb_composite_dev *cdev)
 	struct usb_gadget *gadget = cdev->gadget;
 	int id, ret;
 	int gcnum;
+	char *s=NULL;
 
 	debug("%s: gadget: 0x%p cdev: 0x%p\n", __func__, gadget, cdev);
 
@@ -220,6 +237,10 @@ static int g_dnl_bind(struct usb_composite_dev *cdev)
 
 	g_dnl_string_defs[2].id = id;
 	device_desc.iSerialNumber = id;
+
+	s = get_usid_string();
+	if (s)
+		g_dnl_set_serialnumber(s);
 
 	g_dnl_bind_fixup(&device_desc, cdev->driver->name);
 	ret = g_dnl_config_register(cdev);

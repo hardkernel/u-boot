@@ -18,6 +18,7 @@
 #define CONFIG_USB_FASTBOOT_BUF_ADDR 0x10200000
 #define CONFIG_G_DNL_MANUFACTURER 0123
 #define CONFIG_G_DNL_PRODUCT_NUM 1234
+#define USID_KEY       "usid"
 
 /*
  * @usb_fname: unescaped USB function name
@@ -48,5 +49,6 @@ void g_dnl_set_serialnumber(char *);
 bool g_dnl_detach(void);
 void g_dnl_trigger_detach(void);
 void g_dnl_clear_detach(void);
+char * get_usid_string(void);
 
 #endif /* __G_DOWNLOAD_H_ */

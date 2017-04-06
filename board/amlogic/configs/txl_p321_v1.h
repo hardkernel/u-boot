@@ -130,7 +130,9 @@
                     "run update;"\
             "else if test ${reboot_mode} = cold_boot; then "\
                 /*"run try_auto_burn; "*/\
-            "fi;fi;fi;"\
+            "else if test ${reboot_mode} = fastboot; then "\
+                "fastboot;"\
+            "fi;fi;fi;fi;"\
             "\0" \
         "storeboot="\
             "hdmitx output 1080p60hz;"\

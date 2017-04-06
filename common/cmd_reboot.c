@@ -105,7 +105,7 @@ int do_get_rebootmode (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]
 #ifdef CONFIG_CMD_FASTBOOT
 	switch (reboot_mode_val) {
 		case AMLOGIC_FASTBOOT_REBOOT: {
-			run_command("fastboot", 0);
+			setenv("reboot_mode","fastboot");
 			break;
 		}
 		case AMLOGIC_BOOTLOADER_REBOOT: {
