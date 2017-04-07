@@ -259,6 +259,9 @@ void get_sys_clk_rate_mtd(struct hw_controller *controller, int *rate)
 			case 24:
 				clk = 0x80000201;
 			break;
+			case 112:
+				clk = 0x80000249;
+			break;
 			case 200:
 				clk = 0x80000245;
 			break;
@@ -306,7 +309,9 @@ static void m3_nand_adjust_timing(struct aml_nand_chip *aml_chip)
 	if (!aml_chip->T_RHOH)
 		aml_chip->T_RHOH = 15;
 
-	if (aml_chip->T_REA > 16)
+	if (aml_chip->T_REA > 30)
+		sys_clk_rate = 112;
+	else if (aml_chip->T_REA > 16)
 		sys_clk_rate = 200;
 	else
 		sys_clk_rate = 250;
