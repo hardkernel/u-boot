@@ -1626,3 +1626,8 @@
 #define VIU_OSD1_OETF_LUT_DATA_PORT 0x1ade
 
 #define VIU_OSD2_CTRL_STAT2 0x1a4d
+
+/* dolby regs(dummy, invalid) */
+#define   DOLBY_TV_CLKGATE_CTRL                    (0x33f1)
+#define   DOLBY_CORE2A_CLKGATE_CTRL                (0x3432)
+#define   DOLBY_CORE3_CLKGATE_CTRL                 (0x36f0)

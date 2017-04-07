@@ -117,6 +117,14 @@ static inline void vpu_vcbus_write(unsigned int _reg, unsigned int _value)
 	*(volatile unsigned int *)REG_ADDR_VCBUS(_reg) = (_value);
 };
 
+static inline void vpu_vcbus_setb(unsigned int _reg, unsigned int _value,
+		unsigned int _start, unsigned int _len)
+{
+	vpu_vcbus_write(_reg, ((vpu_vcbus_read(_reg) &
+			~(((1L << (_len))-1) << (_start))) |
+			(((_value)&((1L<<(_len))-1)) << (_start))));
+}
+
 static inline unsigned int vpu_cbus_read(unsigned int _reg)
 {
 	unsigned int val = 0;

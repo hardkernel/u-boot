@@ -451,6 +451,37 @@ static int set_vpu_clk(unsigned int vclk)
 	return ret;
 }
 
+static void vpu_mem_pd_init_off(void)
+{
+	return;
+#ifdef VPU_DEBUG_PRINT
+	VPUPR("%s\n", __func__);
+#endif
+}
+
+static void vpu_clk_gate_init_off(void)
+{
+	switch (vpu_chip_type) {
+	case VPU_CHIP_TXLX:
+		/* dolby core1 */
+		vpu_vcbus_setb(DOLBY_TV_CLKGATE_CTRL, 1, 10, 2);
+		vpu_vcbus_setb(DOLBY_TV_CLKGATE_CTRL, 1, 2, 2);
+		vpu_vcbus_setb(DOLBY_TV_CLKGATE_CTRL, 1, 4, 2);
+		/* dolby core2 */
+		vpu_vcbus_setb(DOLBY_CORE2A_CLKGATE_CTRL, 1, 10, 2);
+		vpu_vcbus_setb(DOLBY_CORE2A_CLKGATE_CTRL, 1, 2, 2);
+		vpu_vcbus_setb(DOLBY_CORE2A_CLKGATE_CTRL, 1, 4, 2);
+		/* dolby core3 */
+		vpu_vcbus_setb(DOLBY_CORE3_CLKGATE_CTRL, 0, 1, 1);
+		vpu_vcbus_setb(DOLBY_CORE3_CLKGATE_CTRL, 1, 2, 2);
+		break;
+	default:
+		break;
+	}
+
+	VPUPR("%s\n", __func__);
+}
+
 static void vpu_power_on_m8_g9(void)
 {
 	unsigned int i;
@@ -697,6 +728,10 @@ int vpu_probe(void)
 	vpu_power_on();
 	set_vpu_clk(vpu_conf.clk_level);
 	//vpu_power_on();
+
+	/* vpu module init off, for power save */
+	vpu_mem_pd_init_off();
+	vpu_clk_gate_init_off();
 
 	return ret;
 }
