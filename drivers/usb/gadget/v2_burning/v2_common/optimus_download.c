@@ -301,6 +301,25 @@ static int optimus_storage_open(struct ImgBurnInfo* pDownInfo, const u8* data, c
                 DWN_MSG("cmd[%s]\n", cmd);
                 run_command(cmd, 0);
             }
+#if defined(OPTIMUS_BURN_TARGET_SUPPORT_UBIFS)
+if (IMG_TYPE_UBIFS == pDownInfo->imgType) //get size if not bootloader
+{
+    char cmd[64];
+    static int _ubiDeviceIndex = 0;
+    sprintf(cmd, "ubi part %s", partName);
+    ret = run_command(cmd, 0);
+    if (ret) {
+        DWN_ERR("Fail in run cmd[%s]\n", cmd); return __LINE__;
+    }
+    sprintf(cmd, "ubi device %d", _ubiDeviceIndex++);
+    ret = run_command(cmd, 0);
+    sprintf(cmd, "ubi create %s", partName);
+    ret = run_command(cmd, 0);
+    if (ret) {
+        DWN_ERR("Fail in run cmd[%s]\n", cmd); return __LINE__;
+    }
+}
+#endif// #if defined(OPTIMUS_BURN_TARGET_SUPPORT_UBIFS)
 #endif//#if defined(CONFIG_AML_MTD)
     }
     else if(pDownInfo->imgSzDisposed == pDownInfo->imgPktSz && OPTIMUS_IMG_STA_BURN_COMPLETE == pDownInfo->imgBurnSta)
@@ -666,29 +685,6 @@ static int _parse_img_download_info(struct ImgBurnInfo* pDownInfo, const char* p
                     return __LINE__;
             }
         }
-#if defined(OPTIMUS_BURN_TARGET_SUPPORT_UBIFS)
-        if (IMG_TYPE_UBIFS == pDownInfo->imgType) //get size if not bootloader
-        {
-                char cmd[64];
-                static int _ubiDeviceIndex = 0;
-               // ret = run_command("mtdparts default", 0);
-               // if(ret){
-               //         DWN_ERR("Fail in mtd def\n"); return __LINE__;
-               // }
-                sprintf(cmd, "ubi part %s", partName);
-                ret = run_command(cmd, 0);
-                if (ret) {
-                        DWN_ERR("Fail in run cmd[%s]\n", cmd); return __LINE__;
-                }
-                sprintf(cmd, "ubi device %d", _ubiDeviceIndex++);
-                ret = run_command(cmd, 0);
-                sprintf(cmd, "ubi create %s", partName);
-                ret = run_command(cmd, 0);
-                if (ret) {
-                        DWN_ERR("Fail in run cmd[%s]\n", cmd); return __LINE__;
-                }
-        }
-#endif// #if CONFIG_NEXT_NAND
     }
 
     pDownInfo->nextMediaOffset  = pDownInfo->imgSzDisposed = 0;
