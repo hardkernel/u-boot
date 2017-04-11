@@ -241,7 +241,7 @@
 /* ddr */
 #define CONFIG_DDR_SIZE					0 //MB //0 means ddr size auto-detect
 #define CONFIG_DDR_CLK					792  //MHz, Range: 384-1200, should be multiple of 24
-#define CONFIG_DDR4_CLK					1008  //MHz, for boards which use different ddr chip
+#define CONFIG_DDR4_CLK					900  //MHz, for boards which use different ddr chip
 /* DDR type setting
  *    CONFIG_DDR_TYPE_LPDDR3   : LPDDR3
  *    CONFIG_DDR_TYPE_DDR3     : DDR3
@@ -253,7 +253,7 @@
  *    CONFIG_DDR0_RANK01       : DDR0 rank0+1
  *    CONFIG_DDR0_16BIT        : DDR0 16bit mode
  *    CONFIG_DDR_CHL_AUTO      : auto detect RANK0 / RANK0+1 */
-#define CONFIG_DDR_CHANNEL_SET			CONFIG_DDR0_RANK0
+#define CONFIG_DDR_CHANNEL_SET			CONFIG_DDR_CHL_AUTO
 #define CONFIG_DDR_FULL_TEST			0 //1 for ddr full test
 #define CONFIG_NR_DRAM_BANKS			1
 /* ddr functions */
@@ -427,6 +427,7 @@
 #define CONFIG_CMD_ITEST    1
 #define CONFIG_CMD_CPU_TEMP 1
 #define CONFIG_SYS_MEM_TOP_HIDE 0x08000000 //hide 128MB for kernel reserve
+#define CONFIG_MULTI_DTB	1
 
 /* debug mode defines */
 //#define CONFIG_DEBUG_MODE			1

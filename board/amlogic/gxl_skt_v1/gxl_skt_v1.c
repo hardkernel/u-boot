@@ -25,6 +25,7 @@
 #include <environment.h>
 #include <fdt_support.h>
 #include <libfdt.h>
+#include <asm/arch/board_id.h>
 #ifdef CONFIG_SYS_I2C_AML
 #include <aml_i2c.h>
 #include <asm/arch/secure_apb.h>
@@ -439,3 +440,37 @@ phys_size_t get_effective_memsize(void)
 	return (((readl(AO_SEC_GP_CFG0)) & 0xFFFF0000) << 4);
 #endif
 }
+
+#ifdef CONFIG_MULTI_DTB
+#define S805X_SKT_BOARD_ID		1
+#define S905X_SKT_BOARD_ID		12
+int checkhw(char * name)
+{
+	unsigned int board_id=0;
+	char loc_name[64] = {0};
+	board_id = get_board_id();
+	switch (board_id) {
+		case S805X_SKT_BOARD_ID:
+			strcpy(loc_name, "gxl_s805x_skt\0");
+			break;
+		case S905X_SKT_BOARD_ID:
+			strcpy(loc_name, "gxl_s905x_skt\0");
+			break;
+		default:
+			//printf("DDR size: 0x%x, multi-dt doesn't support\n", ddr_size);
+			strcpy(loc_name, "gxl_skt_unsupport");
+			break;
+	}
+	strcpy(name, loc_name);
+	setenv("aml_dt", loc_name);
+	return 0;
+}
+#endif
+
+const char * const _env_args_reserve_[] =
+{
+		"aml_dt",
+		"firstboot",
+
+		NULL//Keep NULL be last to tell END
+};
