@@ -7,4 +7,5 @@ obj-$(CONFIG_AML_HDMITX20) += hdmitx20/
 obj-y	+= timer.o
 obj-y	+= mailbox.o
 obj-y   += gate_init.o
+obj-y	+= board_id.o
 obj-$(CONFIG_AML_HDMITX20)	+= sound.o
