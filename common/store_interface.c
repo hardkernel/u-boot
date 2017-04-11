@@ -62,56 +62,60 @@ static char _mbrFlag[4] ;
 #endif
 
 #ifdef CONFIG_AML_MTD
-static int mtd_find_phy_off_by_lgc_off(const char* partName, const loff_t logicAddr, loff_t* phyAddr,
-        int factoryMode/*factoryMode will remember the found bad blocks to speed up*/)
+static int mtd_find_phy_off_by_lgc_off(const char* partName, const loff_t logicAddr, loff_t* phyAddr)
 {
-    int iRet = -__LINE__;
-    nand_info_t * mtdPartInf = NULL;
-    static loff_t off = 0;
-    loff_t physicalOff = 0;
+	nand_info_t * mtdPartInf = NULL;
+	loff_t off = 0;
+	static struct {
+		loff_t lastblkPhyOff;
+		loff_t lastblkLgcOff;
+		char   partName[64];
+	}_map4SpeedUp = {0};
+	int canSpeedUp = 0;
 
-    if (!(NAND_BOOT_FLAG == device_boot_flag || SPI_NAND_FLAG == device_boot_flag)) {
-        return 0;
-    }
+	if (!(NAND_BOOT_FLAG == device_boot_flag || SPI_NAND_FLAG == device_boot_flag)) {
+		return 0;
+	}
 
-    mtdPartInf = get_mtd_device_nm(partName);
-    if (IS_ERR(mtdPartInf)) {
-        ErrP("device(%s) is err\n", partName);
-        return -__LINE__;
-    }
-    const unsigned eraseSz = mtdPartInf->erasesize;
-    const unsigned offsetInBlk = logicAddr & (eraseSz - 1);
-    const unsigned nGoodBlks = (logicAddr / eraseSz) + 1;
+	mtdPartInf = get_mtd_device_nm(partName);
+	if (IS_ERR(mtdPartInf)) {
+		ErrP("device(%s) is err\n", partName);
+		return -__LINE__;
+	}
+	const unsigned eraseSz = mtdPartInf->erasesize;
+	const unsigned offsetInBlk = logicAddr & (eraseSz - 1);
 
-    static unsigned traversedGodBlks = 0;
-    debugP("logicAddr=0x%08llx, off=0x%08llx, traversedGodBlks=%u\t", logicAddr, off, traversedGodBlks);
-    if (!factoryMode || !logicAddr) {//uart terminal mode
-        off = traversedGodBlks = 0;
-    }
-    if ( traversedGodBlks >= nGoodBlks ) {
-        *phyAddr = off + offsetInBlk;
-        debugP("phyAddr0=0x%llx\n", *phyAddr);
-        return 0;
-    }
+	if ( !strcmp(partName, _map4SpeedUp.partName) && logicAddr >= _map4SpeedUp.lastblkLgcOff) {
+		canSpeedUp = 1;
+	} else {
+		_map4SpeedUp.lastblkLgcOff = _map4SpeedUp.lastblkPhyOff = 0;
+		strncpy(_map4SpeedUp.partName, partName, 63);
+	}
 
-    if ( factoryMode ) off += eraseSz;
-    for (; off < mtdPartInf->size; off += eraseSz) {
-        if (nand_block_isbad(mtdPartInf, off)) {
-            MsgP("  %08llx\n", (unsigned long long)off);
-        } else {
-            traversedGodBlks += 1;
-            if (nGoodBlks <= traversedGodBlks) {
-                physicalOff = off + offsetInBlk;
-                debugP("LogicOffset is 0x%llx, found physical is 0x%llx\n", logicAddr, physicalOff);
-                iRet = 0;
-                break;
-            }
-        }
-    }
+	if ( canSpeedUp ) {
+		if ( logicAddr >= _map4SpeedUp.lastblkLgcOff &&
+				logicAddr < _map4SpeedUp.lastblkLgcOff + eraseSz) {
+			*phyAddr = _map4SpeedUp.lastblkPhyOff + offsetInBlk;
+			return 0;
+		}
+		_map4SpeedUp.lastblkPhyOff += eraseSz;
+		_map4SpeedUp.lastblkLgcOff += eraseSz;
+		off = _map4SpeedUp.lastblkPhyOff;
+	}
+	for (; off < mtdPartInf->size; off += eraseSz, _map4SpeedUp.lastblkPhyOff += eraseSz) {
+		if (nand_block_isbad(mtdPartInf, off)) {
+			MsgP("  %08llx\n", (unsigned long long)off);
+		} else {
+			if ( logicAddr >= _map4SpeedUp.lastblkLgcOff &&
+					logicAddr < _map4SpeedUp.lastblkLgcOff + eraseSz) {
+				*phyAddr = _map4SpeedUp.lastblkPhyOff + offsetInBlk;
+				return 0;
+			}
+			_map4SpeedUp.lastblkLgcOff += eraseSz;
+		}
+	}
 
-    debugP("phyAddr1=0x%llx\n", physicalOff);
-    *phyAddr = physicalOff;
-    return iRet;
+	return __LINE__;
 }
 #endif// #ifdef CONFIG_AML_MTD
 
@@ -1421,8 +1425,7 @@ static int do_store_read(cmd_tbl_t * cmdtp, int flag, int argc, char * const arg
     sprintf(str, "amlnf  read_byte %s 0x%llx  0x%llx  0x%llx",s, addr, off, size);
 #elif defined(CONFIG_AML_MTD)
     {
-        int isFactoryMode = argc > 6 ? !strcmp("factoryMode", argv[6]) : 0;
-        ret =  mtd_find_phy_off_by_lgc_off(s, off, &off, isFactoryMode);
+        ret =  mtd_find_phy_off_by_lgc_off(s, off, &off);
         if (ret) {
             ErrP("Fail in find phy addr by logic off (0x%llx),ret(%d)\n", off, ret);
             return CMD_RET_FAILURE;
@@ -1503,9 +1506,7 @@ static int do_store_write(cmd_tbl_t * cmdtp, int flag, int argc, char * const ar
         sprintf(str, "amlnf write_byte %s 0x%llx  0x%llx  0x%llx", s, addr, off, size);
     #elif defined(CONFIG_AML_MTD)
         {
-            int isFactoryMode = argc > 6 ? !strcmp("factoryMode", argv[6]) : 0;
-            /*if( argc > 6 ) MsgP("argv[6]=%s, isFactoryMode=%d\n", argv[6], isFactoryMode);*/
-            ret =  mtd_find_phy_off_by_lgc_off(s, off, &off, isFactoryMode);
+            ret =  mtd_find_phy_off_by_lgc_off(s, off, &off);
             if (ret) {
                 ErrP("Fail in find phy addr by logic off (0x%llx),ret(%d)\n", off, ret);
             }

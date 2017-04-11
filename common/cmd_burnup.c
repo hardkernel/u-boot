@@ -54,7 +54,7 @@ int store_read_ops(unsigned char *partition_name,unsigned char * buf, uint64_t o
 #endif
 #endif//#if CONFIG_AML_MTD
         {// not ubi part
-                sprintf(str, "%s  read %s 0x%llx  0x%llx  0x%llx factoryMode", cmd_name, name, addr, off, size);
+                sprintf(str, "%s  read %s 0x%llx  0x%llx  0x%llx", cmd_name, name, addr, off, size);
         }
 
         DbgP("run cmd[%s]\n", str);
@@ -101,7 +101,7 @@ int store_write_ops(unsigned char *partition_name,unsigned char * buf, uint64_t 
 #endif// #if defined(UBIFS_IMG) || defined(CONFIG_CMD_UBIFS)
 #endif// #if CONFIG_AML_MTD
         {
-                sprintf(str, "%s  write %s 0x%llx  0x%llx  0x%llx factoryMode", cmd_name, name, addr, off, size);
+                sprintf(str, "%s  write %s 0x%llx  0x%llx  0x%llx", cmd_name, name, addr, off, size);
         }
 
         DbgP("run cmd[%s]\n", str);

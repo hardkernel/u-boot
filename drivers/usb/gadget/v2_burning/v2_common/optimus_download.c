@@ -294,7 +294,7 @@ static int optimus_storage_open(struct ImgBurnInfo* pDownInfo, const u8* data, c
         pDownInfo->imgBurnSta = OPTIMUS_IMG_STA_BURN_ING;
 #if defined(CONFIG_AML_MTD)
         //Need erasing if 'Have not erasing the WHOLE chip' and 'NOT bootloader'
-        if (NAND_BOOT_FLAG == device_boot_flag || SPI_NAND_FLAG == device_boot_flag)
+        if ( (NAND_BOOT_FLAG == device_boot_flag || SPI_NAND_FLAG == device_boot_flag) && MediaType < OPTIMUS_MEDIA_TYPE_MEM )
             if (!(is_optimus_storage_inited()>>16) && strcmp("bootloader", partName)) {
                 char cmd[96];
                 sprintf(cmd, "store erase partition %s", partName);
