@@ -260,7 +260,8 @@ static inline void lcd_pinmux_set_mask(unsigned int n, unsigned int _mask)
 {
 	unsigned int _reg = PERIPHS_PIN_MUX_0;
 
-	_reg += n;
+	_reg += (n << 2);
+	printf("pinmux %d: 0x%x\n", n, _reg);
 	lcd_periphs_write(_reg, (lcd_periphs_read(_reg) | (_mask)));
 }
 
@@ -268,7 +269,8 @@ static inline void lcd_pinmux_clr_mask(unsigned int n, unsigned int _mask)
 {
 	unsigned int _reg = PERIPHS_PIN_MUX_0;
 
-	_reg += n;
+	_reg += (n << 2);
+	printf("pinmux %d: 0x%x\n", n, _reg);
 	lcd_periphs_write(_reg, (lcd_periphs_read(_reg) & (~(_mask))));
 }
 
