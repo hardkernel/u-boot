@@ -2031,7 +2031,7 @@ retry_status:
 			}
 				status[i] = (int)chip->read_byte(mtd);
 			//printk("s:%x\n", status[i]);
-			if ((read_status++ < 3) && (status[i] != 0xe0)) {
+			if ((read_status++ < 3) && (!(status[i] & NAND_STATUS_READY))) {
 				printk("after wirte,read %d status =%d fail\n",
 					read_status,status[i]);
 				goto retry_status;
