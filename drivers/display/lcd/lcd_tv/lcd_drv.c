@@ -454,6 +454,46 @@ static void lcd_vbyone_wait_timing_stable(void)
 	mdelay(2);
 }
 
+#define VX1_LOCKN_GPIO    "GPIOH_0"
+static int lcd_vbyone_get_lockn_gpio(void)
+{
+	int ret;
+
+	lcd_periphs_setb(PREG_PAD_GPIO1_EN_N, 1, 20, 1);
+	ret =lcd_periphs_getb(PREG_PAD_GPIO1_I, 20, 1);
+	if (lcd_debug_print_flag)
+		LCDPR("gpio %s = %d\n", VX1_LOCKN_GPIO, ret);
+
+	return ret;
+}
+
+static int lcd_vbyone_sw_fliter(struct vbyone_config_s *vx1_conf)
+{
+	int i,t;
+	int lock_temp, lock_state = 1;
+
+	for (i = 0; i < vx1_conf->vx1_sw_filter_cnt; i++) {
+		for (t = 0; t < vx1_conf->vx1_sw_filter_time; t++)
+			udelay(100);
+		lock_temp = lcd_vbyone_get_lockn_gpio();
+		if (lock_temp == 0)
+			lock_state = 0;
+	}
+
+	return lock_state;
+}
+
+static void lcd_vbyone_cdr_training_hold(struct vbyone_config_s *vx1_conf, int flag)
+{
+	if (flag) {
+		LCDPR("ctrl_flag for cdr_training_hold\n");
+		lcd_vcbus_setb(VBO_FSM_HOLDER_H, 0xffff, 0, 16);
+	} else {
+		mdelay(vx1_conf->cdr_training_hold);
+		lcd_vcbus_setb(VBO_FSM_HOLDER_H, 0, 0, 16);
+	}
+}
+
 static void lcd_vbyone_control_set(struct lcd_config_s *pconf)
 {
 	int lane_count, byte_mode, region_num, hsize, vsize;
@@ -534,6 +574,15 @@ static void lcd_vbyone_control_set(struct lcd_config_s *pconf)
 		lcd_vcbus_setb(LCD_PORT_SWAP, 0, 9, 2);
 	/* lcd_vcbus_setb(LCD_PORT_SWAP, 1, 8, 1);//reverse lane output order */
 
+	if (pconf->lcd_control.vbyone_config->vx1_sw_filter_en) {
+		/* hpd */
+		/*lcd_vcbus_setb(VBO_INSGN_CTRL, 0, 3, 1);
+		lcd_vcbus_setb(VBO_INSGN_CTRL, 1, 2, 1);*/
+		/* lockn */
+		/*lcd_vcbus_setb(VBO_INSGN_CTRL, 1, 1, 1);
+		lcd_vcbus_setb(VBO_INSGN_CTRL, 1, 0, 1);*/
+	}
+
 	/* Mux pads in combo-phy: 0 for dsi; 1 for lvds or vbyone; 2 for edp */
 	lcd_hiu_write(HHI_DSI_LVDS_EDP_CNTL0, 0x1);
 	lcd_vcbus_setb(VBO_CTRL_L, 1, 0, 1);
@@ -543,39 +592,198 @@ static void lcd_vbyone_control_set(struct lcd_config_s *pconf)
 
 	lcd_vbyone_wait_timing_stable();
 	lcd_vbyone_sw_reset();
+
+	if ((pconf->lcd_control.vbyone_config->ctrl_flag) & 0x4) /* training hold */
+		lcd_vbyone_cdr_training_hold(pconf->lcd_control.vbyone_config, 1);
 }
 
 static void lcd_vbyone_disable(void)
 {
+	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
+
 	lcd_vcbus_setb(VBO_CTRL_L, 0, 0, 1);
-}
-
-static void lcd_vbyone_wait_stable(void)
-{
-	int i = 500;
-
-	while (((lcd_vcbus_read(VBO_STATUS_L) & 0x3f) != 0x20) && (i > 0)) {
-		mdelay(2);
-		i--;
+	switch (lcd_drv->chip_type) {
+	case LCD_CHIP_TXL:
+	case LCD_CHIP_TXLX:
+		lcd_vcbus_setb(VBO_INSGN_CTRL, 0, 2, 1);
+		lcd_vcbus_setb(VBO_INSGN_CTRL, 0, 0, 1);
+		break;
+	default:
+		break;
 	}
-	LCDPR("%s status: 0x%x, i=%d\n", __func__, lcd_vcbus_read(VBO_STATUS_L), (500 - i));
 }
 
-static void lcd_vx1_wait_hpd(void)
+#define VX1_LOCKN_DETECT_FSM       0
+#define VX1_LOCKN_DETECT_GPIO      1
+#define VX1_LOCKN_DETECT_METHOD    VX1_LOCKN_DETECT_FSM
+static void lcd_vbyone_wait_sw_lockn(struct vbyone_config_s *vx1_conf)
+{
+	int i = 0, j = 0;
+	int ret = 1, lockn = 0;
+
+#if (VX1_LOCKN_DETECT_METHOD == VX1_LOCKN_DETECT_FSM)
+	lcd_vcbus_setb(VBO_INSGN_CTRL, 0, 0, 1);
+#endif
+	while (i++ < vx1_conf->vx1_sw_cdr_timeout_cnt) {
+		j = 0;
+		lockn = 0;
+		while (j++ < vx1_conf->vx1_sw_cdr_detect_cnt) {
+#if (VX1_LOCKN_DETECT_METHOD == VX1_LOCKN_DETECT_FSM)
+			//ret = (lcd_vcbus_read(VBO_STATUS_L) >> 7) & 1;
+			ret = lcd_vcbus_read(VBO_STATUS_L) & 0x3f;
+			if (ret == 0x20)
+				ret = 0;
+			else
+				ret = 1;
+#else
+			ret = lcd_vbyone_get_lockn_gpio();
+#endif
+			lockn += ret;
+			udelay(vx1_conf->vx1_sw_cdr_detect_time);
+		}
+		if (lockn == 0)
+			break;
+	}
+	/* lockn */
+	lcd_vcbus_setb(VBO_INSGN_CTRL, 0, 1, 1);
+#if (VX1_LOCKN_DETECT_METHOD == VX1_LOCKN_DETECT_FSM)
+	lcd_vcbus_setb(VBO_INSGN_CTRL, 1, 0, 1);
+#endif
+	mdelay(5);
+	LCDPR("%s: %d, i=%d\n", __func__, lockn, i);
+}
+
+static void lcd_vbyone_sw_lockn(struct lcd_config_s *pconf)
+{
+	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
+	struct vbyone_config_s *vx1_conf = pconf->lcd_control.vbyone_config;
+	int i, ret;
+
+	switch (lcd_drv->chip_type) {
+	case LCD_CHIP_TXL:
+	case LCD_CHIP_TXLX:
+		/* step 1: detect training lock */
+		lcd_vbyone_wait_sw_lockn(vx1_conf);
+		mdelay(vx1_conf->vx1_sw_filter_retry_delay);
+		/* step 2: detect lockn noise */
+		for (i = 0; i < vx1_conf->vx1_sw_filter_retry_cnt; i++) {
+			ret = lcd_vbyone_sw_fliter(vx1_conf);
+			if (ret) {
+				lcd_vcbus_setb(VBO_INSGN_CTRL, ret, 1, 1);
+				if (vx1_conf->vx1_sw_filter_en == 2)
+					lcd_vbyone_sw_reset();
+				lcd_vbyone_wait_sw_lockn(vx1_conf);
+			}
+			mdelay(vx1_conf->vx1_sw_filter_retry_delay);
+		}
+		break;
+	default:
+		break;
+	}
+}
+
+#define VX1_LOCKN_WAIT_TIMEOUT    500 /* 500ms */
+static void lcd_vbyone_wait_stable(struct lcd_config_s *pconf)
 {
 	int i = 0;
-	while (lcd_vcbus_read(VBO_STATUS_L) & 0x40) {
-		if (i++ >= 10000)
-			break;
-		udelay(50);
+	int ret = 1;
+
+	if (pconf->lcd_control.vbyone_config->vx1_sw_filter_en) {
+		lcd_vbyone_sw_lockn(pconf);
+		LCDPR("%s status: 0x%x, i=%d\n", __func__, lcd_vcbus_read(VBO_STATUS_L), i);
+	} else {
+		if ((pconf->lcd_control.vbyone_config->ctrl_flag) & 0x4) /* training hold */
+			lcd_vbyone_cdr_training_hold(pconf->lcd_control.vbyone_config, 0);
+		while (i++ < VX1_LOCKN_WAIT_TIMEOUT) {
+			ret = lcd_vcbus_read(VBO_STATUS_L) & 0x3f;
+			if (ret == 0x20)
+				break;
+			mdelay(1);
+		}
+		LCDPR("%s status: 0x%x, i=%d\n", __func__, lcd_vcbus_read(VBO_STATUS_L), i);
+		if ((pconf->lcd_control.vbyone_config->ctrl_flag) & 0x1) { /* power on reset */
+			LCDPR("ctrl_flag for power on reset\n");
+			mdelay(pconf->lcd_control.vbyone_config->power_on_reset_delay);
+			lcd_vbyone_sw_reset();
+		}
 	}
-	mdelay(10); /* add 10ms delay for compatibility */
-	if (lcd_vcbus_read(VBO_STATUS_L) & 0x40)
-		LCDPR("%s: hpd=%d\n", __func__,
-			((lcd_vcbus_read(VBO_STATUS_L) >> 6) & 0x1));
-	else
-		LCDPR("%s: hpd=%d, i=%d\n", __func__,
-			((lcd_vcbus_read(VBO_STATUS_L) >> 6) & 0x1), i);
+}
+
+static void lcd_vbyone_sw_hpd(void)
+{
+	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
+
+	switch (lcd_drv->chip_type) {
+	case LCD_CHIP_TXL:
+	case LCD_CHIP_TXLX:
+		/* hpd */
+		lcd_vcbus_setb(VBO_INSGN_CTRL, 0, 3, 1);
+		lcd_vcbus_setb(VBO_INSGN_CTRL, 1, 2, 1);
+		/* lockn */
+#if (VX1_LOCKN_DETECT_METHOD == VX1_LOCKN_DETECT_GPIO)
+		lcd_vcbus_setb(VBO_INSGN_CTRL, 1, 1, 1);
+		lcd_vcbus_setb(VBO_INSGN_CTRL, 1, 0, 1);
+#endif
+		break;
+	default:
+		break;
+	}
+}
+
+#define VX1_HPD_WAIT_TIMEOUT    5000 /* 500ms */
+static void lcd_vbyone_wait_hpd(struct lcd_config_s *pconf)
+{
+	int i = 0;
+	int ret = 1;
+
+	LCDPR("%s:", __func__);
+#if 0
+	if (vx1_sw_filter_en > 0) {
+		while (i++ < VX1_HPD_WAIT_TIMEOUT) {
+			ret = lcd_vbyone_get_hpd_gpio();
+			if (ret == 0)
+				break;
+			mdelay(1);
+		}
+		if (ret)
+			LCDPR("%s: hpd=%d\n", __func__, ret);
+		else
+			LCDPR("%s: hpd=%d, i=%d\n", __func__, ret, i);
+	} else {
+		while (i++ < VX1_HPD_WAIT_TIMEOUT) {
+			ret = (lcd_vcbus_read(VBO_STATUS_L) >> 6) & 1;
+			if (ret == 0)
+				break;
+			mdelay(1);
+		}
+		if (ret)
+			LCDPR("%s: hpd=%d\n", __func__,
+				((lcd_vcbus_read(VBO_STATUS_L) >> 6) & 0x1));
+		else
+			LCDPR("%s: hpd=%d, i=%d\n", __func__,
+				((lcd_vcbus_read(VBO_STATUS_L) >> 6) & 0x1), i);
+	}
+#else
+	while (i++ < VX1_HPD_WAIT_TIMEOUT) {
+		ret = (lcd_vcbus_read(VBO_STATUS_L) >> 6) & 1;
+		if (ret == 0)
+			break;
+		udelay(100);
+	}
+	if (ret)
+		printf("hpd=%d\n", ((lcd_vcbus_read(VBO_STATUS_L) >> 6) & 1));
+	else {
+		printf("hpd=%d, i=%d\n", ((lcd_vcbus_read(VBO_STATUS_L) >> 6) & 1), i);
+		if (pconf->lcd_control.vbyone_config->vx1_sw_filter_en)
+			lcd_vbyone_sw_hpd();
+	}
+#endif
+	if ((pconf->lcd_control.vbyone_config->ctrl_flag) & 0x2) {
+		LCDPR("ctrl_flag for hpd_data delay\n");
+		mdelay(pconf->lcd_control.vbyone_config->hpd_data_delay);
+	} else {
+		mdelay(10); /* add 10ms delay for compatibility */
+	}
 }
 
 static void lcd_venc_set(struct lcd_config_s *pconf)
@@ -735,9 +943,9 @@ int lcd_tv_driver_init(void)
 	case LCD_VBYONE:
 		lcd_vbyone_pinmux_set(1);
 		lcd_vbyone_control_set(pconf);
-		lcd_vx1_wait_hpd();
+		lcd_vbyone_wait_hpd(pconf);
 		lcd_vbyone_phy_set(pconf, 1);
-		lcd_vbyone_wait_stable();
+		lcd_vbyone_wait_stable(pconf);
 		break;
 	default:
 		break;

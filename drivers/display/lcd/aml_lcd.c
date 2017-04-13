@@ -366,16 +366,54 @@ static void lcd_info_print(void)
 		   pconf->lcd_control.lvds_config->phy_clk_preem);
 		break;
 	case LCD_VBYONE:
-		printf("lane_count        %u\n"
-		   "region_num        %u\n"
-		   "byte_mode         %u\n"
-		   "phy_vswing        0x%x\n"
-		   "phy_preemphasis   0x%x\n\n",
+		printf("lane_count                 %u\n"
+		   "region_num                 %u\n"
+		   "byte_mode                  %u\n"
+		   "phy_vswing                 0x%x\n"
+		   "phy_preemphasis            0x%x\n"
+		   "ctrl_flag                  0x%x\n\n",
 		   pconf->lcd_control.vbyone_config->lane_count,
 		   pconf->lcd_control.vbyone_config->region_num,
 		   pconf->lcd_control.vbyone_config->byte_mode,
 		   pconf->lcd_control.vbyone_config->phy_vswing,
-		   pconf->lcd_control.vbyone_config->phy_preem);
+		   pconf->lcd_control.vbyone_config->phy_preem,
+		   pconf->lcd_control.vbyone_config->ctrl_flag);
+		if (pconf->lcd_control.vbyone_config->ctrl_flag & 0x1) {
+			printf("power_on_reset_en          %u\n"
+			   "power_on_reset_delay       %ums\n\n",
+			   (pconf->lcd_control.vbyone_config->ctrl_flag & 0x1),
+			   pconf->lcd_control.vbyone_config->power_on_reset_delay);
+		}
+		if (pconf->lcd_control.vbyone_config->ctrl_flag & 0x2) {
+			printf("hpd_data_delay_en          %u\n"
+			   "hpd_data_delay             %ums\n\n",
+			   ((pconf->lcd_control.vbyone_config->ctrl_flag >> 1) & 0x1),
+			   pconf->lcd_control.vbyone_config->hpd_data_delay);
+		}
+		if (pconf->lcd_control.vbyone_config->ctrl_flag & 0x4) {
+			printf("cdr_training_hold_en       %u\n"
+			   "cdr_training_hold          %ums\n\n",
+			   ((pconf->lcd_control.vbyone_config->ctrl_flag >> 2) & 0x1),
+			   pconf->lcd_control.vbyone_config->cdr_training_hold);
+		}
+		if (pconf->lcd_control.vbyone_config->vx1_sw_filter_en) {
+			printf("vx1_sw_filter_en           %u\n"
+			   "vx1_sw_filter_time         %u\n"
+			   "vx1_sw_filter_cnt          %u\n"
+			   "vx1_sw_filter_retry_cnt    %u\n"
+			   "vx1_sw_filter_retry_delay  %u\n"
+			   "vx1_sw_cdr_detect_time     %u\n"
+			   "vx1_sw_cdr_detect_cnt      %u\n"
+			   "vx1_sw_cdr_timeout_cnt     %u\n\n",
+			   pconf->lcd_control.vbyone_config->vx1_sw_filter_en,
+			   pconf->lcd_control.vbyone_config->vx1_sw_filter_time,
+			   pconf->lcd_control.vbyone_config->vx1_sw_filter_cnt,
+			   pconf->lcd_control.vbyone_config->vx1_sw_filter_retry_cnt,
+			   pconf->lcd_control.vbyone_config->vx1_sw_filter_retry_delay,
+			   pconf->lcd_control.vbyone_config->vx1_sw_cdr_detect_time,
+			   pconf->lcd_control.vbyone_config->vx1_sw_cdr_detect_cnt,
+			   pconf->lcd_control.vbyone_config->vx1_sw_cdr_timeout_cnt);
+		}
 		lcd_pinmux_info_print(pconf);
 		break;
 	case LCD_TTL:
@@ -455,37 +493,37 @@ static void lcd_ttl_reg_print(void)
 		reg, lcd_vcbus_read(reg));
 	reg = L_STH1_HE_ADDR;
 	printf("STH1_HE_ADDR        [0x%04x] = 0x%08x\n",
-		reg, lcd_hiu_read(reg));
+		reg, lcd_vcbus_read(reg));
 	reg = L_STH1_VS_ADDR;
 	printf("STH1_VS_ADDR        [0x%04x] = 0x%08x\n",
-		reg, lcd_hiu_read(reg));
+		reg, lcd_vcbus_read(reg));
 	reg = L_STH1_VE_ADDR;
 	printf("STH1_VE_ADDR        [0x%04x] = 0x%08x\n",
-		reg, lcd_hiu_read(reg));
+		reg, lcd_vcbus_read(reg));
 	reg = L_STV1_HS_ADDR;
 	printf("STV1_HS_ADDR        [0x%04x] = 0x%08x\n",
-		reg, lcd_hiu_read(reg));
+		reg, lcd_vcbus_read(reg));
 	reg = L_STV1_HE_ADDR;
 	printf("STV1_HE_ADDR        [0x%04x] = 0x%08x\n",
-		reg, lcd_hiu_read(reg));
+		reg, lcd_vcbus_read(reg));
 	reg = L_STV1_VS_ADDR;
 	printf("STV1_VS_ADDR        [0x%04x] = 0x%08x\n",
-		reg, lcd_hiu_read(reg));
+		reg, lcd_vcbus_read(reg));
 	reg = L_STV1_VE_ADDR;
 	printf("STV1_VE_ADDR        [0x%04x] = 0x%08x\n",
-		reg, lcd_hiu_read(reg));
+		reg, lcd_vcbus_read(reg));
 	reg = L_OEH_HS_ADDR;
 	printf("OEH_HS_ADDR         [0x%04x] = 0x%08x\n",
-		reg, lcd_hiu_read(reg));
+		reg, lcd_vcbus_read(reg));
 	reg = L_OEH_HE_ADDR;
 	printf("OEH_HE_ADDR         [0x%04x] = 0x%08x\n",
-		reg, lcd_hiu_read(reg));
+		reg, lcd_vcbus_read(reg));
 	reg = L_OEH_VS_ADDR;
 	printf("OEH_VS_ADDR         [0x%04x] = 0x%08x\n",
-		reg, lcd_hiu_read(reg));
+		reg, lcd_vcbus_read(reg));
 	reg = L_OEH_VE_ADDR;
 	printf("OEH_VE_ADDR         [0x%04x] = 0x%08x\n",
-		reg, lcd_hiu_read(reg));
+		reg, lcd_vcbus_read(reg));
 }
 
 static void lcd_lvds_reg_print(void)
@@ -547,6 +585,16 @@ static void lcd_vbyone_reg_print(void)
 	reg = VBO_INTR_STATE;
 	printf("VX1_INTR_STATE      [0x%04x] = 0x%08x\n",
 		reg, lcd_vcbus_read(reg));
+	switch (aml_lcd_driver.chip_type) {
+	case LCD_CHIP_TXL:
+	case LCD_CHIP_TXLX:
+		reg = VBO_INSGN_CTRL;
+		printf("VBO_INSGN_CTRL      [0x%04x] = 0x%08x\n",
+			reg, lcd_vcbus_read(reg));
+		break;
+	default:
+		break;
+	}
 	reg = HHI_LVDS_TX_PHY_CNTL0;
 	printf("VX1_PHY_CNTL0       [0x%04x] = 0x%08x\n",
 		reg, lcd_hiu_read(reg));
@@ -605,6 +653,89 @@ static void lcd_reg_print(void)
 		break;
 	default:
 		break;
+	}
+}
+
+static void lcd_vbyone_filter_flag_print(struct lcd_config_s *pconf)
+{
+	struct vbyone_config_s *vx1_conf = pconf->lcd_control.vbyone_config;
+
+	switch (aml_lcd_driver.chip_type) {
+	case LCD_CHIP_TXL:
+	case LCD_CHIP_TXLX:
+		LCDPR("vx1_sw_filter_en: %d\n", vx1_conf->vx1_sw_filter_en);
+		LCDPR("vx1_sw_filter_time: %d\n", vx1_conf->vx1_sw_filter_time);
+		LCDPR("vx1_sw_filter_cnt: %d\n", vx1_conf->vx1_sw_filter_cnt);
+		LCDPR("vx1_sw_filter_retry_cnt: %d\n", vx1_conf->vx1_sw_filter_retry_cnt);
+		LCDPR("vx1_sw_filter_retry_delay: %d\n", vx1_conf->vx1_sw_filter_retry_delay);
+		LCDPR("vx1_sw_cdr_detect_time: %d\n", vx1_conf->vx1_sw_cdr_detect_time);
+		LCDPR("vx1_sw_cdr_detect_cnt: %d\n", vx1_conf->vx1_sw_cdr_detect_cnt);
+		LCDPR("vx1_sw_cdr_timeout_cnt: %d\n", vx1_conf->vx1_sw_cdr_timeout_cnt);
+		break;
+	default:
+		break;
+	}
+}
+
+static void lcd_vbyone_filter_env_init(struct lcd_config_s *pconf)
+{
+	struct vbyone_config_s *vx1_conf = pconf->lcd_control.vbyone_config;
+	char *str;
+	unsigned int temp = 0;
+
+	str = getenv("lcd_debug_vx1_sw_filter");
+	if (str)
+		temp = simple_strtoul(str, NULL, 10);
+	if (temp == 0)
+		return;
+
+	LCDPR("%s\n", __func__);
+	str = getenv("vx1_sw_filter_en");
+	if (str) {
+		vx1_conf->vx1_sw_filter_en = simple_strtoul(str, NULL, 10);
+		LCDPR("vx1_sw_filter_en: %d\n", vx1_conf->vx1_sw_filter_en);
+	}
+
+	str = getenv("vx1_sw_filter_time"); /* 100us */
+	if (str) {
+		vx1_conf->vx1_sw_filter_time = simple_strtoul(str, NULL, 10);
+		LCDPR("vx1_sw_filter_time: %d\n", vx1_conf->vx1_sw_filter_time);
+	}
+
+	str = getenv("vx1_sw_filter_cnt");
+	if (str) {
+		vx1_conf->vx1_sw_filter_cnt = simple_strtoul(str, NULL, 10);
+		LCDPR("vx1_sw_filter_cnt: %d\n", vx1_conf->vx1_sw_filter_cnt);
+	}
+
+	str = getenv("vx1_sw_filter_retry_cnt");
+	if (str) {
+		vx1_conf->vx1_sw_filter_retry_cnt = simple_strtoul(str, NULL, 10);
+		LCDPR("vx1_sw_filter_retry_cnt: %d\n", vx1_conf->vx1_sw_filter_retry_cnt);
+	}
+
+	str = getenv("vx1_sw_filter_retry_delay"); /* ms */
+	if (str) {
+		vx1_conf->vx1_sw_filter_retry_delay = simple_strtoul(str, NULL, 10);
+		LCDPR("vx1_sw_filter_retry_delay: %d\n", vx1_conf->vx1_sw_filter_retry_delay);
+	}
+
+	str = getenv("vx1_sw_cdr_detect_time"); /* us * 100 */
+	if (str) {
+		vx1_conf->vx1_sw_cdr_detect_time = simple_strtoul(str, NULL, 10);
+		LCDPR("vx1_sw_cdr_detect_time: %d\n", vx1_conf->vx1_sw_cdr_detect_time);
+	}
+
+	str = getenv("vx1_sw_cdr_detect_cnt");
+	if (str) {
+		vx1_conf->vx1_sw_cdr_detect_cnt = simple_strtoul(str, NULL, 10);
+		LCDPR("vx1_sw_cdr_detect_cnt: %d\n", vx1_conf->vx1_sw_cdr_detect_cnt);
+	}
+
+	str = getenv("vx1_sw_cdr_timeout_cnt");
+	if (str) {
+		vx1_conf->vx1_sw_cdr_timeout_cnt = simple_strtoul(str, NULL, 10);
+		LCDPR("vx1_sw_cdr_timeout_cnt: %d\n", vx1_conf->vx1_sw_cdr_timeout_cnt);
 	}
 }
 
@@ -852,6 +983,8 @@ static int lcd_mode_probe(void)
 		LCDERR("invalid lcd config\n");
 		return -1;
 	}
+	if (aml_lcd_driver.lcd_config->lcd_basic.lcd_type == LCD_VBYONE)
+		lcd_vbyone_filter_env_init(aml_lcd_driver.lcd_config);
 
 #ifdef CONFIG_AML_LCD_EXTERN
 	lcd_extern_load_config(dt_addr, aml_lcd_driver.lcd_config);
@@ -870,6 +1003,11 @@ static int lcd_mode_probe(void)
 		load_id &= ~(0x10);
 	}
 	aml_bl_config_load(dt_addr, load_id);
+
+	if (lcd_debug_print_flag) {
+		if (aml_lcd_driver.lcd_config->lcd_basic.lcd_type == LCD_VBYONE)
+			lcd_vbyone_filter_flag_print(aml_lcd_driver.lcd_config);
+	}
 
 	return 0;
 }

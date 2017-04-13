@@ -192,7 +192,7 @@ struct lcd_timing_s {
 	unsigned short vs_vs_addr;
 	unsigned short vs_ve_addr;
 };
-
+/*
 struct lcd_effect_s {
 	unsigned int rgb_base_addr;
 	unsigned int rgb_coeff_addr;
@@ -207,7 +207,7 @@ struct lcd_effect_s {
 	unsigned short GammaTableG[256];
 	unsigned short GammaTableB[256];
 };
-
+*/
 struct ttl_config_s {
 	unsigned int clk_pol;
 	unsigned int sync_valid; /* [1]DE, [0]hvsync */
@@ -232,8 +232,21 @@ struct lvds_config_s {
 	unsigned int phy_clk_preem;
 };
 
-#define VX1_PHY_VSWING_DFT    3
-#define VX1_PHY_PREEM_DFT     0
+#define VX1_PHY_VSWING_DFT           3
+#define VX1_PHY_PREEM_DFT            0
+
+#define VX1_PWR_ON_RESET_DLY_DFT     500 /* 500ms */
+#define VX1_HPD_DATA_DELAY_DFT       10 /* 10ms */
+#define VX1_CDR_TRAINING_HOLD_DFT    200 /* 200ms */
+
+#define VX1_SW_FILTER_TIME_DFT       10 /* 10*100us=1ms */
+#define VX1_SW_FILTER_CNT_DFT        6
+#define VX1_SW_FILTER_RETRY_CNT_DFT  2
+#define VX1_SW_FILTER_RETRY_DLY_DFT  100 /* 100ms */
+#define VX1_SW_CDR_DET_TIME_DFT      20 /* 20us*100=2ms */
+#define VX1_SW_CDR_DET_CNT_DFT       100
+#define VX1_SW_CDR_TIMEOUT_CNT_DFT   100
+
 struct vbyone_config_s {
 	unsigned int lane_count;
 	unsigned int region_num;
@@ -243,6 +256,31 @@ struct vbyone_config_s {
 	unsigned int bit_rate;
 	unsigned int phy_vswing; /*[4]:ext_pullup, [3:0]vswing*/
 	unsigned int phy_preem;
+	unsigned int ctrl_flag;
+		/* bit[0]:power_on_reset_en
+		   bit[1]:hpd_data_delay_en
+		   bit[2]:cdr_training_hold_en
+		   bit[3]:hw_filter_en
+		   bit[5:4]:sw_filter */
+
+	/* ctrl timing */
+	unsigned int power_on_reset_delay; /* ms */
+	unsigned int hpd_data_delay; /* ms */
+	unsigned int cdr_training_hold; /* ms */
+	/* hw filter */
+	unsigned int hpd_hw_filter_time; /* ms */
+	unsigned int hpd_hw_filter_cnt;
+	unsigned int lockn_hw_filter_time; /* ms */
+	unsigned int lockn_hw_filter_cnt;
+	/* sw filter */
+	unsigned int vx1_sw_filter_en; /* 0=disable, 1=sw_filter, 2=sw_filter with sw_reset */
+	unsigned int vx1_sw_filter_time; /* 100us base */
+	unsigned int vx1_sw_filter_cnt;
+	unsigned int vx1_sw_filter_retry_cnt;
+	unsigned int vx1_sw_filter_retry_delay; /* ms base */
+	unsigned int vx1_sw_cdr_detect_time; /* us base * 100 times, must cover tcon lockn pulse */
+	unsigned int vx1_sw_cdr_detect_cnt;
+	unsigned int vx1_sw_cdr_timeout_cnt;
 };
 
 /* mipi-dsi config */
@@ -341,7 +379,7 @@ struct lcd_config_s {
 	unsigned int backlight_index;
 	struct lcd_basic_s lcd_basic;
 	struct lcd_timing_s lcd_timing;
-	struct lcd_effect_s lcd_effect;
+	/*struct lcd_effect_s lcd_effect;*/
 	struct lcd_ctrl_config_s lcd_control;
 	struct lcd_power_ctrl_s *lcd_power;
 	unsigned int pinmux_set[LCD_PINMUX_NUM][2];

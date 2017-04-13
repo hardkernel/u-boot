@@ -347,6 +347,8 @@
 #define VBO_TMCHK_VDE_STATE_L                      0x14f6
 #define VBO_TMCHK_VDE_STATE_H                      0x14f7
 #define VBO_INTR_STATE                             0x14f8
+#define VBO_INFILTER_CTRL                          0x14f9
+#define VBO_INSGN_CTRL                             0x14fa
 
 #define LVDS_BLANK_DATA_HI                         0x14ce
 #define LVDS_BLANK_DATA_LO                         0x14cf
