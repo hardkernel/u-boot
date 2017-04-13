@@ -231,6 +231,7 @@ obj-$(CONFIG_AML_VPU) += cmd_vpu.o
 obj-$(CONFIG_CMD_DDR_D2PLL) += cmd_d2pll.o
 obj-$(CONFIG_CMD_DDR_TEST) += cmd_ddr_test.o
 obj-$(CONFIG_CMD_DDR_DQS) += cmd_ddr_dqs.o
+obj-$(CONFIG_CMD_PLLTEST) += cmd_plltest.o
 
 # others
 obj-$(CONFIG_BOOTSTAGE) += bootstage.o

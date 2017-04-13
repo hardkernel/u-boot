@@ -503,6 +503,7 @@
 #define CONFIG_CMD_JTAG	1
 #define CONFIG_CMD_AUTOSCRIPT 1
 #define CONFIG_CMD_MISC 1
+#define CONFIG_CMD_PLLTEST 1
 
 /*file system*/
 #define CONFIG_DOS_PARTITION 1

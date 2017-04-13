@@ -406,6 +406,7 @@
 #define CONFIG_CMD_RUN
 #define CONFIG_CMD_REBOOT 1
 #define CONFIG_CMD_JTAG	1
+#define CONFIG_CMD_PLLTEST	1
 
 /*file system*/
 #define CONFIG_DOS_PARTITION 1
