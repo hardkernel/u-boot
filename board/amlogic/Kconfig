@@ -107,6 +107,10 @@ config TXLX_T962X_SKT_V1
 	bool "Support amlogic txlx t962x skt v1 board"
 	default n
 
+config TXLX_T962E_SKT_V1
+	bool "Support amlogic txlx t962e skt v1 board"
+	default n
+
 config TXLX_T962X_R311_V1
 	bool "Support amlogic txlx t962x r311 v1 board"
 	default n
@@ -228,6 +232,10 @@ endif
 
 if TXLX_T962X_SKT_V1
 source "board/amlogic/txlx_t962x_skt_v1/Kconfig"
+endif
+
+if TXLX_T962E_SKT_V1
+source "board/amlogic/txlx_t962e_skt_v1/Kconfig"
 endif
 
 if TXLX_T962X_R311_V1

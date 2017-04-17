@@ -1,0 +1,339 @@
+
+/*
+ * board/amlogic/txl_skt_v1/firmware/scp_task/pwr_ctrl.c
+ *
+ * Copyright (C) 2015 Amlogic, Inc. All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+*/
+
+
+#ifdef CONFIG_CEC_WAKEUP
+#include <cec_tx_reg.h>
+#endif
+#include <gpio-gxbb.h>
+#include "pwm_ctrl.h"
+
+#define P_AO_PWM_PWM_B1			(*((volatile unsigned *)(0xff807000 + (0x01   << 2))))
+#define P_EE_TIMER_E			(*((volatile unsigned *)(0xffd00000 + (0x3c62 << 2))))
+#define P_PWM_PWM_A			(*((volatile unsigned *)(0xffd1b000 + (0x0  << 2))))
+
+#define ON 1
+#define OFF 0
+
+static int pwm_voltage_table_ee[][2] = {
+	{ 0x1c0000,  810},
+	{ 0x1b0001,  820},
+	{ 0x1a0002,  830},
+	{ 0x190003,  840},
+	{ 0x180004,  850},
+	{ 0x170005,  860},
+	{ 0x160006,  870},
+	{ 0x150007,  880},
+	{ 0x140008,  890},
+	{ 0x130009,  900},
+	{ 0x12000a,  910},
+	{ 0x11000b,  920},
+	{ 0x10000c,  930},
+	{ 0x0f000d,  940},
+	{ 0x0e000e,  950},
+	{ 0x0d000f,  960},
+	{ 0x0c0010,  970},
+	{ 0x0b0011,  980},
+	{ 0x0a0012,  990},
+	{ 0x090013, 1000},
+	{ 0x080014, 1010},
+	{ 0x070015, 1020},
+	{ 0x060016, 1030},
+	{ 0x050017, 1040},
+	{ 0x040018, 1050},
+	{ 0x030019, 1060},
+	{ 0x02001a, 1070},
+	{ 0x01001b, 1080},
+	{ 0x00001c, 1090}
+};
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
+
+static void power_on_ddr(void);
+enum pwm_id {
+	pwm_a = 0,
+	pwm_b,
+	pwm_c,
+	pwm_d,
+	pwm_e,
+	pwm_f,
+	pwm_ao_a,
+	pwm_ao_b,
+};
+
+static void power_switch_to_ee(unsigned int pwr_ctrl)
+{
+	if (pwr_ctrl == ON) {
+		writel(readl(AO_RTI_PWR_CNTL_REG0) | (0x1 << 9), AO_RTI_PWR_CNTL_REG0);
+		_udelay(1000);
+		writel(readl(AO_RTI_PWR_CNTL_REG0)
+			& (~((0x3 << 3) | (0x1 << 1))), AO_RTI_PWR_CNTL_REG0);
+	} else {
+		writel(readl(AO_RTI_PWR_CNTL_REG0)
+		       | ((0x3 << 3) | (0x1 << 1)), AO_RTI_PWR_CNTL_REG0);
+
+		writel(readl(AO_RTI_PWR_CNTL_REG0) & (~(0x1 << 9)),
+		       AO_RTI_PWR_CNTL_REG0);
+
+	}
+}
+
+static void pwm_set_voltage(unsigned int id, unsigned int voltage)
+{
+	int to;
+
+	switch (id) {
+	case pwm_a:
+	for (to = 0; to < ARRAY_SIZE(pwm_voltage_table); to++) {
+		if (pwm_voltage_table[to][1] >= voltage) {
+			break;
+		}
+	}
+	if (to >= ARRAY_SIZE(pwm_voltage_table)) {
+		to = ARRAY_SIZE(pwm_voltage_table) - 1;
+	}
+		uart_puts("set vcck to 0x");
+		uart_put_hex(to, 16);
+		uart_puts("mv\n");
+		P_PWM_PWM_A = pwm_voltage_table[to][0];
+		break;
+
+	case pwm_ao_b:
+		for (to = 0; to < ARRAY_SIZE(pwm_voltage_table_ee); to++) {
+			if (pwm_voltage_table_ee[to][1] >= voltage) {
+				break;
+			}
+		}
+		if (to >= ARRAY_SIZE(pwm_voltage_table_ee)) {
+			to = ARRAY_SIZE(pwm_voltage_table_ee) - 1;
+		}
+		uart_puts("set vddee to 0x");
+		uart_put_hex(to, 16);
+		uart_puts("mv\n");
+		P_AO_PWM_PWM_B1 = pwm_voltage_table_ee[to][0];
+		break;
+	default:
+		break;
+	}
+	_udelay(200);
+}
+
+static void power_off_3v3_5v(void)
+{
+	aml_update_bits(AO_GPIO_O_EN_N, 1 << 2, 0);
+	aml_update_bits(AO_GPIO_O_EN_N, 1 << 18, 0);
+}
+
+static void power_on_3v3_5v(void)
+{
+	aml_update_bits(AO_GPIO_O_EN_N, 1 << 2, 0);
+	aml_update_bits(AO_GPIO_O_EN_N, 1 << 18, 1 << 18);
+}
+
+static void power_off_usb5v(void)
+{
+	aml_update_bits(AO_GPIO_O_EN_N, 1 << 10, 0);
+    aml_update_bits(AO_GPIO_O_EN_N, 1 << 26, 0);
+}
+
+static void power_on_usb5v(void)
+{
+	aml_update_bits(AO_GPIO_O_EN_N, 1 << 10, 0);
+	aml_update_bits(AO_GPIO_O_EN_N, 1 << 26, 1 << 26);
+}
+
+static void power_off_at_clk81(void)
+{
+
+}
+
+static void power_on_at_clk81(unsigned int suspend_from)
+{
+
+}
+
+static void power_off_at_24M(void)
+{
+}
+static void power_on_at_24M(void)
+{
+}
+
+static void power_off_ddr(void)
+{
+	aml_update_bits(AO_GPIO_O_EN_N, 1 << 11, 0);
+	aml_update_bits(AO_GPIO_O_EN_N, 1 << 27, 0);
+}
+
+static void power_on_ddr(void)
+{
+	aml_update_bits(AO_GPIO_O_EN_N, 1 << 11, 0);
+	aml_update_bits(AO_GPIO_O_EN_N, 1 << 27, 1 << 27);
+	_udelay(10000);
+}
+static void power_off_ee(void)
+{
+	return;
+	power_switch_to_ee(OFF);
+	aml_update_bits(AO_GPIO_O_EN_N, 1 << 8, 0);
+	aml_update_bits(AO_GPIO_O_EN_N, 1 << 24, 0);
+}
+
+static void power_on_ee(void)
+{
+	return;
+	aml_update_bits(AO_GPIO_O_EN_N, 1 << 8, 0);
+	aml_update_bits(AO_GPIO_O_EN_N, 1 << 24, 1 << 24);
+	_udelay(10000);
+	_udelay(10000);
+}
+
+static void power_off_at_32k(unsigned int suspend_from)
+{
+	power_off_usb5v();
+	_udelay(5000);
+	power_off_3v3_5v();
+	_udelay(5000);
+	pwm_set_voltage(pwm_ao_b, CONFIG_VDDEE_SLEEP_VOLTAGE);	/* reduce power */
+	if (suspend_from == SYS_POWEROFF) {
+		power_off_ee();
+		power_off_ddr();
+	}
+}
+
+static void power_on_at_32k(unsigned int suspend_from)
+{
+	pwm_set_voltage(pwm_ao_b, CONFIG_VDDEE_INIT_VOLTAGE);
+	_udelay(10000);
+	power_on_3v3_5v();
+	_udelay(10000);
+	pwm_set_voltage(pwm_a, CONFIG_VCCK_INIT_VOLTAGE);
+	_udelay(10000);
+	_udelay(10000);
+	power_on_usb5v();
+
+	if (suspend_from == SYS_POWEROFF) {
+		power_on_ddr();
+		power_on_ee();
+
+	}
+}
+
+void get_wakeup_source(void *response, unsigned int suspend_from)
+{
+	struct wakeup_info *p = (struct wakeup_info *)response;
+	unsigned val;
+
+	p->status = RESPONSE_OK;
+	val = (POWER_KEY_WAKEUP_SRC | AUTO_WAKEUP_SRC | REMOTE_WAKEUP_SRC |
+	       ETH_PHY_WAKEUP_SRC | BT_WAKEUP_SRC);
+#ifdef CONFIG_CEC_WAKEUP
+	val |= CECB_WAKEUP_SRC;
+#endif
+	p->sources = val;
+	p->gpio_info_count = 0;
+}
+void wakeup_timer_setup(void)
+{
+	/* 1ms resolution*/
+	unsigned value;
+	value = readl(P_ISA_TIMER_MUX);
+	value |= ((0x3<<0) | (0x1<<12) | (0x1<<16));
+	writel(value, P_ISA_TIMER_MUX);
+	/*10ms generate an interrupt*/
+	writel(10, P_ISA_TIMERA);
+}
+void wakeup_timer_clear(void)
+{
+	unsigned value;
+	value = readl(P_ISA_TIMER_MUX);
+	value &= ~((0x1<<12) | (0x1<<16));
+	writel(value, P_ISA_TIMER_MUX);
+}
+static unsigned int detect_key(unsigned int suspend_from)
+{
+	int exit_reason = 0;
+	unsigned int time_out = readl(AO_DEBUG_REG2);
+	unsigned time_out_ms = time_out*100;
+	unsigned *irq = (unsigned *)WAKEUP_SRC_IRQ_ADDR_BASE;
+	/* unsigned *wakeup_en = (unsigned *)SECURE_TASK_RESPONSE_WAKEUP_EN; */
+
+	/* setup wakeup resources*/
+	/*auto suspend: timerA 10ms resolution*/
+	if (time_out_ms != 0)
+		wakeup_timer_setup();
+	init_remote();
+#ifdef CONFIG_CEC_WAKEUP
+	if (hdmi_cec_func_config & 0x1) {
+		remote_cec_hw_reset();
+		cec_node_init();
+	}
+#endif
+
+	/* *wakeup_en = 1;*/
+	do {
+#ifdef CONFIG_CEC_WAKEUP
+		if (irq[IRQ_AO_CECB] == IRQ_AO_CECB_NUM) {
+			irq[IRQ_AO_CECB] = 0xFFFFFFFF;
+//			if (suspend_from == SYS_POWEROFF)
+//				continue;
+			if (cec_msg.log_addr) {
+				if (hdmi_cec_func_config & 0x1) {
+					cec_handler();
+					if (cec_msg.cec_power == 0x1) {
+						/*cec power key*/
+						exit_reason = CEC_WAKEUP;
+						break;
+					}
+				}
+			} else if (hdmi_cec_func_config & 0x1)
+				cec_node_init();
+		}
+#endif
+	if (irq[IRQ_AO_IR_DEC] == IRQ_AO_IR_DEC_NUM) {
+		irq[IRQ_AO_IR_DEC] = 0xFFFFFFFF;
+			if (remote_detect_key())
+				exit_reason = REMOTE_WAKEUP;
+	}
+		if (irq[IRQ_ETH_PHY] == IRQ_ETH_PHY_NUM) {
+			irq[IRQ_ETH_PHY] = 0xFFFFFFFF;
+				exit_reason = ETH_PHY_WAKEUP;
+		}
+		if (exit_reason)
+			break;
+		else
+			asm volatile("wfi");
+	} while (1);
+
+	return exit_reason;
+}
+
+static void pwr_op_init(struct pwr_op *pwr_op)
+{
+	pwr_op->power_off_at_clk81 = power_off_at_clk81;
+	pwr_op->power_on_at_clk81 = power_on_at_clk81;
+	pwr_op->power_off_at_24M = power_off_at_24M;
+	pwr_op->power_on_at_24M = power_on_at_24M;
+	pwr_op->power_off_at_32k = power_off_at_32k;
+	pwr_op->power_on_at_32k = power_on_at_32k;
+
+	pwr_op->detect_key = detect_key;
+	pwr_op->get_wakeup_source = get_wakeup_source;
+}
