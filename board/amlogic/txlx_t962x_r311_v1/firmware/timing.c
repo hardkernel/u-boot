@@ -23,7 +23,7 @@
 #include <asm/arch/ddr_define.h>
 
 /* DDR freq range */
-#define CONFIG_DDR_CLK_LOW  375
+#define CONFIG_DDR_CLK_LOW  20
 #define CONFIG_DDR_CLK_HIGH 1500
 /* DON'T OVER THESE RANGE */
 #if (CONFIG_DDR_CLK < CONFIG_DDR_CLK_LOW) || (CONFIG_DDR_CLK > CONFIG_DDR_CLK_HIGH)
@@ -91,13 +91,16 @@
 #define CFG_DDR_DRV  LPDDR3_DRV_48OHM
 #define CFG_DDR_ODT  LPDDR3_ODT_12OHM
 #elif (CONFIG_DDR_TYPE == CONFIG_DDR_TYPE_DDR4)
-#define CFG_DDR_DRV  DDR4_DRV_34OHM //useless, no effect
+#define CFG_DDR_DRV  DDR4_DRV_48OHM //useless, no effect
 #define CFG_DDR_ODT  DDR4_ODT_60OHM //useless, no effect
 #endif
 
-#define CFG_DDR4_DRV  DDR4_DRV_48OHM //ddr4 driver use this one
-#define CFG_DDR4_ODT  DDR4_ODT_60OHM //ddr4 driver use this one
-
+#define CFG_DDR4_DRV  DDR4_DRV_48OHM//DDR4_DRV_48OHM //ddr4 driver use this one
+#define CFG_DDR4_ODT DDR4_ODT_48OHM// DDR4_ODT_80OHM //ddr4 driver use this one
+#define CONFIG_SOC_VREF   1+ (50+((50*48)/(48+480/(6+1)))) // 880/12  //(50+((50*48)/(48+160)))  //0//50+50*drv/(drv+odt)  (738/12) //0 //0  is auto --70 ---range 44.07---88.04   %
+#define CONFIG_DRAM_VREF  1+ (50+((50*37)/(37+48)))// 860/12 // 0// (810/12) // 0 //77 //0 //0  is auto ---70 --range -- 45---92.50    %
+//#define CONFIG_ZQ_VREF   715/15//  60//0 //(50) % //tune ddr4 ,ddr3 use 0
+#define CONFIG_ZQ_VREF   51//60 //700/12//  60//0 //(50) % //tune ddr4 ,ddr3 use 0
 /*
  * these parameters are corresponding to the pcb layout,
  * please don't enable this function unless these signals
@@ -491,11 +494,16 @@ ddr_set_t __ddr_setting = {
 	//.t_pub_zq0pr			= 0x7b,   //PUB ZQ0PR
 	//.t_pub_zq1pr			= 0x7b,   //PUB ZQ1PR
 	//.t_pub_zq2pr			= 0x7b,   //PUB ZQ2PR
-	//.t_pub_zq3pr			= 0x7b,   //PUB ZQ3PR
-	.t_pub_zq0pr			= 0x59959,   //PUB ZQ0PR
-	.t_pub_zq1pr			= 0x3f95d,   //PUB ZQ1PR
-	.t_pub_zq2pr			= 0x3f95d,   //PUB ZQ2PR
+	//.t_pub_zq3pr			= 0x7b,   //PUB ZQ3PR  zqvref 0x13
+	//.t_pub_zq0pr			= 0x5aa59,   //PUB ZQ0PR, 0x5aa59,0x59959,  0x58859,  //99drriver s912 ddr4 maybe 950m is bad
+	//.t_pub_zq1pr			= 0x3f95d,   //PUB ZQ1PR//0x3f95d, 0x4f95d,
+	//.t_pub_zq2pr			= 0x3f95d,   //PUB ZQ2PR//0x3f95d, 0x4f95d,
 	.t_pub_zq3pr			= 0x1dd1d,   //PUB ZQ3PR
+
+	.t_pub_zq0pr			= 0x00007759,   //PUB ZQ0PR, 0x5aa59,0x59959,  0x58859,  //99drriver s912 ddr4 maybe 950m is bad
+	.t_pub_zq1pr			= 0x0006fc5d,   //PUB ZQ1PR//0x8fc5d, 0x4f95d,
+	.t_pub_zq2pr			= 0x0006fc5d,   //PUB ZQ2PR//0x3fc5d, 0x4f95d,
+	//.t_pub_zq3pr			= 0xf5f95d,   //PUB ZQ3PR
 
 	/* pctl0 defines */
 	/* pctl1 use same define as pctl0 */
@@ -533,6 +541,14 @@ ddr_set_t __ddr_setting = {
 	.t_pctl0_dfilpcfg0		= ( 1 | (3 << 4) | (1 << 8) | (13 << 12) | (7 <<16) | (1 <<24) | ( 3 << 28)),
 	.t_pub_acbdlr0			= 0,  //CK0 delay fine tune
 	.t_pub_aclcdlr			= 0x10,
+	.t_pub_acbdlr3			= 0x10,//0xa,  //cs
+	//.t_pub_acbdlr0		= 0x0,
+	//.t_pub_aclcdlr		= 0x10,//0x18,   ///1t  ,if 2t can add some value
+	//.t_pub_acbdlr3		= 0x14,//0xa,  //cs
+	.t_pub_soc_vref_dram_vref =((((CONFIG_SOC_VREF<45)?(0):((((CONFIG_SOC_VREF*1000-44070)/698)>0X3F)?(0X3F):(((CONFIG_SOC_VREF*1000-44070)/698))))<<8)|(
+	(((CONFIG_DRAM_VREF))<45)?(0):((((CONFIG_DRAM_VREF))<61)?((((((CONFIG_DRAM_VREF*1000-45000)/650)>0X32)?(0X32):(((CONFIG_DRAM_VREF*1000-45000)/650)))|(1<<6))):
+	((((CONFIG_DRAM_VREF*1000-60000)/650)>0X32)?(0X32):(((CONFIG_DRAM_VREF*1000-60000)/650)))))),
+	.t_pub_mr[7]	= ((CONFIG_ZQ_VREF<45)?(0):((((CONFIG_ZQ_VREF*1000-44070)/698)>0X3F)?(0X3F):(((CONFIG_ZQ_VREF*1000-44070)/698)))) ,//jiaxing use for tune zq vref 20160608
 	.ddr_func				= DDR_FUNC, /* ddr func demo 2016.01.26 */
 
 	.wr_adj_per 			= {
