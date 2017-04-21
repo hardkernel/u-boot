@@ -539,7 +539,7 @@ ddr_set_t __ddr_setting = {
 	.t_pctl0_dfiodtcfg1		= (0x0 | (0x6 << 16)),
 
 	.t_pctl0_dfilpcfg0		= ( 1 | (3 << 4) | (1 << 8) | (13 << 12) | (7 <<16) | (1 <<24) | ( 3 << 28)),
-	.t_pub_acbdlr0			= 0,  //CK0 delay fine tune
+	.t_pub_acbdlr0			= 0x10,  //CK0 delay fine tune
 	.t_pub_aclcdlr			= 0x10,
 	.t_pub_acbdlr3			= 0x10,//0xa,  //cs
 	//.t_pub_acbdlr0		= 0x0,
