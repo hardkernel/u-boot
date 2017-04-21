@@ -57,6 +57,28 @@ DECLARE_GLOBAL_DATA_PTR;
 unsigned int pmic;
 unsigned int nr_dram_banks = 0;
 
+#if defined(CONFIG_BOARD_HARDKERNEL)
+
+/* BIN1 or BIN2 */
+#define GetSocType()	(GetBits(PKG_ID, 12, 0x1))
+
+static int is_BIN2(void)
+{
+	int	ret;
+
+	/* GPX0.5 : XU3 Lite is Low */
+	GPX0CON &= ~0x00F00000;
+	/* GPX0.5 Pull-up */
+	GPX0PUD |=  0x00000C00;
+
+	ret  = (GPX0DAT & 0x20) ? 0 : 1;
+
+	ret |= GetSocType();
+
+	return	ret;
+}
+#endif
+
 static int init_nr_dram_banks(void)
 {
 	int evt_num = (GetEvtNum()<<12)|(GetEvtSubNum()<<8)|(GetPopOption()<<4)|(GetDdrType());
@@ -536,6 +558,18 @@ int board_late_init(void)
         sprintf(cmd, "%s", "reset");
         run_command(cmd, 0);
     }
+
+	/* Soc Lite Version Board check */
+	setenv("board_lite", is_BIN2() ? "true" : "false");
+	setenv("board_rev", "0");
+
+	/* board revision read (adc channel 9) */
+	/*
+		unknown : 0
+		XU3 : 350  < value < 400
+		XU4 : 1250 < value < 1300
+	*/
+	run_command("adc_read 9", 0);
 
 	return 0;
 }

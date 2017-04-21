@@ -207,6 +207,9 @@ COBJS-y += image.o
 COBJS-y += memsize.o
 COBJS-y += stdio.o
 
+ifdef CONFIG_BOARD_HARDKERNEL
+COBJS-y += cmd_adc.o
+endif
 
 COBJS	:= $(sort $(COBJS-y))
 XCOBJS	:= $(sort $(XCOBJS-y))
