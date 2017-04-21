@@ -386,6 +386,8 @@ static int switch_gp1_pll_gxtvbb(int flag)
 	return ret;
 }
 
+/* unit: MHz */
+#define VPU_CLKB_MAX    350
 static int adjust_vpu_clk_gx(unsigned int clk_level)
 {
 	unsigned int vpu_clk;
@@ -407,6 +409,21 @@ static int adjust_vpu_clk_gx(unsigned int clk_level)
 
 	vpu_hiu_write(HHI_VPU_CLK_CNTL, ((mux << 9) | (div << 0)));
 	vpu_hiu_setb(HHI_VPU_CLK_CNTL, 1, 8, 1);
+
+	switch (vpu_chip_type) {
+	case VPU_CHIP_GXBB:
+	case VPU_CHIP_GXTVBB:
+	case VPU_CHIP_GXL:
+	case VPU_CHIP_GXM:
+	case VPU_CHIP_TXL:
+		if (vpu_clk >= (VPU_CLKB_MAX * 1000000))
+			vpu_hiu_write(HHI_VPU_CLKB_CNTL, ((1 << 8) | (1 << 0)));
+		else
+			vpu_hiu_write(HHI_VPU_CLKB_CNTL, ((1 << 8) | (0 << 0)));
+		break;
+	default:
+		break;
+	}
 
 	vpu_hiu_write(HHI_VAPBCLK_CNTL, (1 << 30) | /* turn on ge2d clock */
 			(0 << 9)    |   /* clk_sel    //250Mhz */
