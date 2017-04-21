@@ -602,6 +602,19 @@ static int usb_set_address(struct usb_device *dev)
 	return res;
 }
 
+static int usb_enable_device(struct usb_device *dev)
+{
+	int res;
+
+	debug("usb enable %d\n", dev->devnum);
+	res = usb_control_msg(dev, usb_snddefctrl(dev),
+				USB_ENABLE, 0,
+				(dev->devnum), 0,
+				NULL, 0, USB_CNTL_TIMEOUT);
+	return res;
+}
+
+
 /********************************************************************
  * set interface number to interface
  */
@@ -902,11 +915,14 @@ __weak int usb_alloc_device(struct usb_device *udev)
  *
  * Returns 0 for success, != 0 for error.
  */
+
 int usb_new_device(struct usb_device *dev)
 {
 	int addr, err;
 	int tmp;
+	int retry_count = 0;
 	ALLOC_CACHE_ALIGN_BUFFER(unsigned char, tmpbuf, USB_BUFSIZ);
+retry:
 
 	/*
 	 * Allocate usb 3.0 device context.
@@ -1016,11 +1032,20 @@ int usb_new_device(struct usb_device *dev)
 	dev->devnum = addr;
 
 	err = usb_set_address(dev); /* set address */
-
 	if (err < 0) {
-		printf("\n      USB device not accepting new address " \
-			"(error=%lX)\n", dev->status);
-		return 1;
+		err = hub_port_reset(dev->parent, dev->portnr - 1, &portstatus);
+		if (err < 0) {
+			printf("\n     Couldn't reset port %i\n", dev->portnr);
+			return 1;
+		}
+		usb_enable_device(dev);
+		_mdelay(100);
+		err = hub_port_reset(dev->parent, dev->portnr - 1, &portstatus);
+		if (err < 0) {
+			printf("\n     Couldn't reset port %i\n", dev->portnr);
+			return 1;
+		}
+		usb_set_address(dev); /* set address */
 	}
 
 	_mdelay(10);	/* Let the SET_ADDRESS settle */
@@ -1030,6 +1055,11 @@ int usb_new_device(struct usb_device *dev)
 	err = usb_get_descriptor(dev, USB_DT_DEVICE, 0,
 				 tmpbuf, sizeof(dev->descriptor));
 	if (err < tmp) {
+		if (retry_count == 0) {
+			retry_count++;
+			printf("retry new usb device\n");
+			goto retry;
+		}
 		if (err < 0)
 			printf("unable to get device descriptor (error=%d)\n",
 			       err);
