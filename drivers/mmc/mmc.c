@@ -1472,7 +1472,7 @@ int mmc_register(struct mmc *mmc)
 	mmc->block_dev.removable = 1;
 	mmc->block_dev.block_read = mmc_bread;
 	mmc->block_dev.block_write = mmc_bwrite;
-#if defined(CONFIG_S5P_MSHC)
+#if !defined(CONFIG_BOARD_HARDKERNEL) && defined(CONFIG_S5P_MSHC)
 	mmc->block_dev.block_erase = mmc_erase;
 #else
 	mmc->block_dev.block_erase = mmc_berase;
