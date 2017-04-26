@@ -571,6 +571,22 @@ int board_late_init(void)
 	*/
 	run_command("adc_read 9", 0);
 
+	if(is_BIN2()) {
+		setenv("board_name", "xu3l");
+		return 0;
+	}
+	
+	int adc_value = simple_strtoul(getenv("board_rev"), NULL, 10);
+	
+	if((adc_value > 350) && (adc_value < 400)) {
+		setenv("board_name", "xu3");
+		return 0;
+	}
+	if((adc_value > 1250) && (adc_value < 1300)) {
+		setenv("board_name", "xu4");
+		return 0;
+	}
+
 	return 0;
 }
 
