@@ -55,6 +55,9 @@
 /* config saradc*/
 #define CONFIG_CMD_SARADC 1
 
+/*config irblaster*/
+#define CONFIG_CMD_IRBLASTER 1
+
 /* support ext4*/
 #define CONFIG_CMD_EXT4 1
 

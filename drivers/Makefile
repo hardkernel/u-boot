@@ -32,3 +32,4 @@ obj-y += display/
 obj-$(CONFIG_SECURE_STORAGE) += securestorage/
 obj-$(CONFIG_SECURE_STORAGE) += storagekey/
 obj-$(CONFIG_CMD_SARADC) += adc/
+obj-$(CONFIG_CMD_IRBLASTER) += irblaster/

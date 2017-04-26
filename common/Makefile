@@ -88,6 +88,7 @@ obj-$(CONFIG_DATAFLASH_MMC_SELECT) += cmd_dataflash_mmc_mux.o
 obj-$(CONFIG_CMD_DATE) += cmd_date.o
 obj-$(CONFIG_CMD_DEMO) += cmd_demo.o
 obj-$(CONFIG_CMD_SOUND) += cmd_sound.o
+obj-$(CONFIG_CMD_IRBLASTER) += cmd_irblaster.o
 ifdef CONFIG_4xx
 obj-$(CONFIG_CMD_SETGETDCR) += cmd_dcr.o
 endif
