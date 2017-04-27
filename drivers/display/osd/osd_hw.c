@@ -2260,7 +2260,7 @@ static void osd2_update_disp_3d_mode(void)
 
 void osd_init_hw(void)
 {
-	u32 group, idx, data32;
+	u32 group, idx, data32, data2;
 	char *osd_reverse;
 
 	osd_reverse = getenv("osd_reverse");
@@ -2296,8 +2296,7 @@ void osd_init_hw(void)
 		}
 		/* burst_len_sel: 3=64 */
 		data32 |= 3  << 10;
-		/* fifo_depth_val: 32*8=256 */
-		data32 |= 32 << 12;
+
 		if (get_cpu_id().family_id >= MESON_CPU_MAJOR_ID_GXBB) {
 			/*
 			 * bit 23:22, fifo_ctrl
@@ -2310,8 +2309,16 @@ void osd_init_hw(void)
 			/* bit 28:24, fifo_lim */
 			data32 |= 2 << 24;
 		}
+		data2 = data32;
+		/* fifo_depth_val: 32*8=256 */
+		if ((get_cpu_id().family_id == MESON_CPU_MAJOR_ID_TXL)
+			|| (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_TXLX))
+			data32 |= 64 << 12;
+		else
+			data32 |= 32 << 12;
+		data2 |= 32 << 12;
 		osd_reg_write(VIU_OSD1_FIFO_CTRL_STAT, data32);
-		osd_reg_write(VIU_OSD2_FIFO_CTRL_STAT, data32);
+		osd_reg_write(VIU_OSD2_FIFO_CTRL_STAT, data2);
 		osd_reg_set_mask(VPP_MISC, VPP_POSTBLEND_EN);
 		osd_reg_clr_mask(VPP_MISC, VPP_PREBLEND_EN);
 		osd_reg_clr_mask(VPP_MISC,
