@@ -328,10 +328,10 @@ int lcd_pinmux_load_from_dts(char *dt_addr, struct lcd_config_s *pconf)
 				temp = len / 8;
 				j = pinmux_set_cnt + temp;
 				if (j < LCD_PINMUX_NUM) {
-					for (i = pinmux_set_cnt; i < j; i++) {
-						pconf->pinmux_set[i][0] = be32_to_cpup((((u32*)propdata)+2*i));
-						pconf->pinmux_set[i][1] = be32_to_cpup((((u32*)propdata)+2*i+1));
-					}
+					for (i = 0; i < temp; i++) {
+						pconf->pinmux_set[i+pinmux_set_cnt][0] = be32_to_cpup((((u32*)propdata)+2*i));
+						pconf->pinmux_set[i+pinmux_set_cnt][1] = be32_to_cpup((((u32*)propdata)+2*i+1));
+						}
 					if (j < (LCD_PINMUX_NUM - 1)) {
 						pconf->pinmux_set[j][0] = LCD_PINMUX_END;
 						pconf->pinmux_set[j][1] = 0x0;
@@ -347,10 +347,10 @@ int lcd_pinmux_load_from_dts(char *dt_addr, struct lcd_config_s *pconf)
 				temp = len / 8;
 				j = pinmux_clr_cnt + temp;
 				if (j < LCD_PINMUX_NUM) {
-					for (i = pinmux_clr_cnt; i < j; i++) {
-						pconf->pinmux_clr[i][0] = be32_to_cpup((((u32*)propdata)+2*i));
-						pconf->pinmux_clr[i][1] = be32_to_cpup((((u32*)propdata)+2*i+1));
-					}
+					for (i = 0; i < temp; i++) {
+						pconf->pinmux_clr[i+pinmux_clr_cnt][0] = be32_to_cpup((((u32*)propdata)+2*i));
+						pconf->pinmux_clr[i+pinmux_clr_cnt][1] = be32_to_cpup((((u32*)propdata)+2*i+1));
+						}
 					if (j < (LCD_PINMUX_NUM - 1)) {
 						pconf->pinmux_clr[j][0] = LCD_PINMUX_END;
 						pconf->pinmux_clr[j][1] = 0x0;

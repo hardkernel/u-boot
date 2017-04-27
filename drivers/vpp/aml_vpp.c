@@ -1094,6 +1094,10 @@ void vpp_init(void)
 		vpp_reg_write(VPP_DUMMY_DATA1, 0x1020080);
 		/* osd1: rgb->yuv limit , osd2: yuv limit */
 		set_osd1_rgb2yuv(1);
+	#if (defined CONFIG_AML_LCD)
+		/* 709 limit to RGB */
+		vpp_set_matrix_ycbcr2rgb(2, 3);
+	#endif
 	} else if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_TXL) {
 		/* set dummy data default YUV black */
 		vpp_reg_write(VPP_DUMMY_DATA1, 0x108080);
@@ -1117,5 +1121,9 @@ void vpp_init(void)
 		vpp_reg_write(VPP_DUMMY_DATA1, 0x108080);
 		/* osd1: rgb->yuv limit , osd2: yuv limit */
 		set_osd1_rgb2yuv(1);
+	#if (defined CONFIG_AML_LCD)
+		/* 709 limit to RGB */
+		vpp_set_matrix_ycbcr2rgb(2, 3);
+	#endif
 	}
 }

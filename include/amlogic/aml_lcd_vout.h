@@ -341,8 +341,8 @@ struct lcd_config_s {
 	struct lcd_effect_s lcd_effect;
 	struct lcd_ctrl_config_s lcd_control;
 	struct lcd_power_ctrl_s *lcd_power;
-	unsigned int pinmux_set[10][2];
-	unsigned int pinmux_clr[10][2];
+	unsigned int pinmux_set[LCD_PINMUX_NUM][2];
+	unsigned int pinmux_clr[LCD_PINMUX_NUM][2];
 };
 
 extern struct lcd_config_s lcd_config_dft;
