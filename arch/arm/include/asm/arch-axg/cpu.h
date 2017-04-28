@@ -1,6 +1,6 @@
 
 /*
- * arch/arm/include/asm/arch-txl/cpu.h
+ * arch/arm/include/asm/arch-axg/cpu.h
  *
  * Copyright (C) 2015 Amlogic, Inc. All rights reserved.
  *
@@ -27,7 +27,7 @@
 
 #define CONFIG_AML_MESON 1
 #define CONFIG_AML_MESON_GX 1
-#define CONFIG_AML_MESON_TXLX 1
+#define CONFIG_AML_MESON_AXG 1
 
 /* Size of malloc() pool */
 #define CONFIG_SYS_MALLOC_LEN		(64*1024*1024)
@@ -49,6 +49,8 @@
 /* Generic Timer Definitions */
 #define COUNTER_FREQUENCY		(0x1800000)	/* 24MHz */
 
+/* support early init */
+#define CONFIG_BOARD_EARLY_INIT_F
 /* support board late init */
 #define CONFIG_BOARD_LATE_INIT
 /* use "hush" command parser */

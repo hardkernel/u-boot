@@ -1,6 +1,6 @@
 
 /*
- * arch/arm/cpu/armv8/txl/firmware/bl21/bl21_main.c
+ * board/amlogic/txl_skt_v1/firmware/board_init.c
  *
  * Copyright (C) 2015 Amlogic, Inc. All rights reserved.
  *
@@ -19,15 +19,10 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-#include "secure_apb.h"
-#include "serial.h" //use local serial driver
-#include "io.h"
-#include "timer.h"
-#include "board_init.c"
+#include "power.c"
 
-void bl21_main(void)
+/* bl2 customer code */
+void board_init(void)
 {
-	/* bl2 customer code */
-	board_init();
-	return;
+	power_init(0);
 }

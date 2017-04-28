@@ -123,6 +123,10 @@ config TXLX_T962E_R321_V1
 	bool "Support amlogic txlx t962e r321 v1 board"
 	default n
 
+config AXG_SKT_V1
+	bool "Support amlogic axg skt v1 board"
+	default n
+
 config PXP_EMULATOR
 	bool "Support pxp environment"
 	default n
@@ -256,6 +260,10 @@ endif
 
 if TXLX_T962E_R321_V1
 source "board/amlogic/txlx_t962e_r321_v1/Kconfig"
+endif
+
+if AXG_SKT_V1
+source "board/amlogic/axg_skt_v1/Kconfig"
 endif
 
 if ODROID_C2
