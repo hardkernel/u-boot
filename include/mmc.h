@@ -329,7 +329,6 @@ struct mmc {
 	int ddr_mode;
 	unsigned char calout[20][20];
 	int refix;
-	int co_tx_idx;
 };
 
 int mmc_register(struct mmc *mmc);
