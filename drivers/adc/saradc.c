@@ -33,12 +33,18 @@
 #define AML_ADC_SAMPLE_DEBUG 0
 #define FDT_DEFAULT_ADDRESS  0x01000000
 
-#ifdef  CONFIG_TARGET_MESON_GXTV
-#define GXBB_CLK_REG                	0xc8100090
+#if defined(CONFIG_TARGET_MESON_GXTV)
+#define SAR_ADC_CLK_REG                	0xc8100090
 #define P_SAR_ADC_BASE             		0xc8100600
+
+#elif defined(CONFIG_TARGET_MESON_TXLX)
+#define SAR_ADC_CLK_REG                	0xff63c3d8
+#define P_SAR_ADC_BASE             		0xff809000
+
 #else
-#define GXBB_CLK_REG                	0xc883c3d8
+#define SAR_ADC_CLK_REG                	0xc883c3d8
 #define P_SAR_ADC_BASE		   			0xc1108680
+
 #endif
 
 #define P_SAR_ADC_REG0(base)		    (base + (0x0))
@@ -52,7 +58,7 @@
 #define P_SAR_ADC_CHAN_10_SW(base)		(base + (0x8))
 #define P_SAR_ADC_DETECT_IDLE_SW(base)	(base + (0x9))
 #define P_SAR_ADC_DELTA_10(base)		(base + (0xa))
-#define P_SAR_ADC_DELTA_11(base)		(base + (0xb))
+#define P_SAR_ADC_REG11(base)			(base + (0xb))
 #define P_SAR_ADC_REG13(base)			(base + (0xd))
 
 #define SARADC_STATE_IDLE 0
@@ -138,16 +144,16 @@ static inline void saradc_power_control(int on)
 	saradc_info *saradc = saradc_dev_get();
 
 	if (on) {
-		aml_set_reg32_bits(P_SAR_ADC_DELTA_11(saradc->saradc_base_addr),1,13,1);
-		aml_set_reg32_bits(P_SAR_ADC_DELTA_11(saradc->saradc_base_addr),3,5,2);
+		aml_set_reg32_bits(P_SAR_ADC_REG11(saradc->saradc_base_addr),1,13,1);
+		aml_set_reg32_bits(P_SAR_ADC_REG11(saradc->saradc_base_addr),3,5,2);
 		aml_set_reg32_bits(P_SAR_ADC_REG3(saradc->saradc_base_addr),1,21,1);
 
 		udelay(5);
 		saradc_clock_switch(1);
 	}	else {
 		saradc_clock_switch(0);
-		/*aml_set_reg32_bits(PP_SAR_ADC_DELTA_11(saradc->saradc_base_addr),0,13,1);*//* disable bandgap */
-		/*aml_set_reg32_bits(P_SAR_ADC_DELTA_11(saradc->saradc_base_addr),0,5,2);*/
+		/*aml_set_reg32_bits(PP_SAR_ADC_REG11(saradc->saradc_base_addr),0,13,1);*//* disable bandgap */
+		/*aml_set_reg32_bits(P_SAR_ADC_REG11(saradc->saradc_base_addr),0,5,2);*/
 	}
 }
 
@@ -172,6 +178,10 @@ void saradc_hw_init(void)
 
 	if (saradc->adc_type)
 		aml_set_reg32_bits(P_SAR_ADC_REG3(saradc->saradc_base_addr),0x1,27,1);
+
+	/*select VDDA as ref voltage, otherwise select calibration voltage*/
+	if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_TXLX)
+		aml_set_reg32_bits(P_SAR_ADC_REG11(saradc->saradc_base_addr),0x1,0,1);
 
 	saradc_clock_set(20);
 
@@ -236,7 +246,7 @@ int saradc_probe(void)
 		saradc->saradc_base_addr = (u32 __iomem *)(temp_addr & 0xffffffff);
 #endif
 	} else {
-		saradc->saradc_clk_addr =  (u32 __iomem *)GXBB_CLK_REG;
+		saradc->saradc_clk_addr =  (u32 __iomem *)SAR_ADC_CLK_REG;
 		saradc->saradc_base_addr = (u32 __iomem *)P_SAR_ADC_BASE;
 	}
 
