@@ -195,3 +195,15 @@ int thermal_get_value(unsigned int sensor_id, unsigned int *value)
 	else
 		return 0;
 }
+
+
+void send_pwm_delt(int32_t vcck_delt, int32_t ee_delt)
+{
+	unsigned int *appayload = ap_mb_payload[LOW_PRIORITY];
+	mb_message_start(LOW_PRIORITY);
+	writel(vcck_delt, appayload);
+	writel(ee_delt, appayload+1);
+	mb_message_send(SCPI_CMD_REV_PWM_DELT, LOW_PRIORITY);
+	mb_message_wait(LOW_PRIORITY);
+	mb_message_end(LOW_PRIORITY);
+}

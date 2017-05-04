@@ -35,6 +35,8 @@
 #define SCPI_CMD_OPEN_SCP_LOG 0xC4
 #define SCPI_CMD_THERMAL_CALIB 0xC5
 
+#define SCPI_CMD_REV_PWM_DELT 0x42
+
 #define LOW_PRIORITY	0
 #define HIGH_PRIORITY 1
 
@@ -75,5 +77,6 @@ void open_scp_log(unsigned int channel);
 int thermal_calibration(unsigned int type, unsigned int data);
 int thermal_get_value(unsigned int sensor_id, unsigned int *value);
 int send_usr_data(unsigned int clinet_id, unsigned int *val, unsigned int size);
+void send_pwm_delt(int32_t vcck_delt, int32_t ee_delt);
 
  #endif

@@ -350,13 +350,14 @@ static void hdmi_tx_set_hdmi_5v(void)
 }
 #endif
 
+extern void aml_pwm_cal_init(int mode);
 
 int board_init(void)
 {
 #ifdef CONFIG_AML_V2_FACTORY_BURN
 	aml_try_factory_usb_burning(0, gd->bd);
 #endif// #ifdef CONFIG_AML_V2_FACTORY_BURN
-
+	aml_pwm_cal_init(0);
 #ifdef CONFIG_USB_XHCI_AMLOGIC_GXL
 	board_usb_init(&g_usb_config_GXL_skt,BOARD_USB_MODE_HOST);
 #endif /*CONFIG_USB_XHCI_AMLOGIC*/
