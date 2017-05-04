@@ -24,6 +24,7 @@
 #include <asm/arch/io.h>
 #include <asm/saradc.h>
 #include <asm/cpu_id.h>
+#include <asm/arch/secure_apb.h>
 #ifdef CONFIG_OF_LIBFDT
 #include <libfdt.h>
 #endif
@@ -32,20 +33,6 @@
 
 #define AML_ADC_SAMPLE_DEBUG 0
 #define FDT_DEFAULT_ADDRESS  0x01000000
-
-#if defined(CONFIG_TARGET_MESON_GXTV)
-#define SAR_ADC_CLK_REG                	0xc8100090
-#define P_SAR_ADC_BASE             		0xc8100600
-
-#elif defined(CONFIG_TARGET_MESON_TXLX)
-#define SAR_ADC_CLK_REG                	0xff63c3d8
-#define P_SAR_ADC_BASE             		0xff809000
-
-#else
-#define SAR_ADC_CLK_REG                	0xc883c3d8
-#define P_SAR_ADC_BASE		   			0xc1108680
-
-#endif
 
 #define P_SAR_ADC_REG0(base)		    (base + (0x0))
 #define P_SAR_ADC_CHAN_LIST(base)		(base + (0x1))
@@ -124,18 +111,17 @@ void saradc_clock_switch( int onoff)
 }
 
 /*
-  * description: used to set the DIV of the clock
-  */
+ * description: used to set the DIV of the clock
+ */
 void saradc_clock_set(unsigned char val)
 {
 	saradc_info *saradc = saradc_dev_get();
 
-	if (get_cpu_id().family_id >= MESON_CPU_MAJOR_ID_GXBB) { /*bit0-bit7*/
-		val = val & 0xff;
-		aml_write_reg32(saradc->saradc_clk_addr, (0<<9) | (val << 0));
-	} else {                                                 /*bit10-bit15*/
-		val = val & 0x3f;
-		aml_set_reg32_bits(P_SAR_ADC_REG3(saradc->saradc_base_addr),val,10,5);
+	if (get_cpu_id().family_id >= MESON_CPU_MAJOR_ID_GXBB) {
+		aml_set_reg32_bits(saradc->saradc_clk_addr, 0, 9, 2);  /*bit9-bit10: select clk source*/
+		aml_set_reg32_bits(saradc->saradc_clk_addr, (val & 0xff), 0, 8);/*bit0-bit7:   set clk div*/
+	} else {
+		aml_set_reg32_bits(P_SAR_ADC_REG3(saradc->saradc_base_addr), (val & 0x3f), 10, 6); /*bit10-bit15: set clk div*/
 	}
 }
 
@@ -180,7 +166,7 @@ void saradc_hw_init(void)
 		aml_set_reg32_bits(P_SAR_ADC_REG3(saradc->saradc_base_addr),0x1,27,1);
 
 	/*select VDDA as ref voltage, otherwise select calibration voltage*/
-	if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_TXLX)
+	if (get_cpu_id().family_id >= MESON_CPU_MAJOR_ID_TXLX)
 		aml_set_reg32_bits(P_SAR_ADC_REG11(saradc->saradc_base_addr),0x1,0,1);
 
 	saradc_clock_set(20);
@@ -246,8 +232,8 @@ int saradc_probe(void)
 		saradc->saradc_base_addr = (u32 __iomem *)(temp_addr & 0xffffffff);
 #endif
 	} else {
-		saradc->saradc_clk_addr =  (u32 __iomem *)SAR_ADC_CLK_REG;
-		saradc->saradc_base_addr = (u32 __iomem *)P_SAR_ADC_BASE;
+		saradc->saradc_clk_addr =  (u32 __iomem *)AO_SAR_CLK;
+		saradc->saradc_base_addr = (u32 __iomem *)AO_SAR_ADC_REG0;
 	}
 
 	saradc_hw_init();

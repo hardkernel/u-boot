@@ -37,6 +37,9 @@
 #define I2C_M_2_CONTROL_REG 					   0x21f8
 #define I2C_M_3_CONTROL_REG                        0x2348
 
+/*sar adc base register*/
+#define		AO_SAR_CLK				0xc883c3d8
+#define		AO_SAR_ADC_REG0				0xc1108680
 
 /* spi nor flash */
 #define P_SPI_FLASH_CMD     (volatile unsigned int *)0xc1108c80
