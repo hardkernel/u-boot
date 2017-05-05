@@ -173,3 +173,5 @@ then
 fi
 
 echo -e "#################### END ###################\n"
+
+exit $FAIL_COUNTER
