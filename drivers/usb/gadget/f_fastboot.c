@@ -25,6 +25,7 @@
 #include <fb_mmc.h>
 #include <fb_storage.h>
 #endif
+#include <partition_table.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -398,6 +399,8 @@ static void cb_getvar(struct usb_ep *ep, struct usb_request *req)
 	char response[RESPONSE_LEN];
 	char *s;
 	char *s1;
+	char *s2;
+	char *s3;
 	size_t chars_left;
 
 	strcpy(response, "OKAY");
@@ -430,6 +433,40 @@ static void cb_getvar(struct usb_ep *ep, struct usb_request *req)
 	} else if (!strcmp_l1("product", cmd)) {
 		s1 = DEVICE_PRODUCT;
 		strncat(response, s1, chars_left);
+	} else if (!strcmp_l1("slot-count", cmd)) {
+		strncat(response, "2", chars_left);
+	} else if (!strcmp_l1("slot-suffixes", cmd)) {
+		s2 = getenv("slot-suffixes");
+		printf("slot-suffixes: %s\n", s2);
+		if (s2)
+			strncat(response, s2, chars_left);
+		else
+			strncat(response, "0", chars_left);
+	} else if (!strcmp_l1("current-slot", cmd)) {
+		s3 = getenv("active_slot");
+		printf("active_slot: %s\n", s3);
+		strncat(response, s3, chars_left);
+	} else if (!strcmp_l1("has-slot:boot", cmd)) {
+		if (has_boot_slot == 1) {
+			printf("has boot slot\n");
+			strncat(response, "yes", chars_left);
+		} else
+			strncat(response, "no", chars_left);
+	} /*else if (!strcmp_l1("partition-type:boot", cmd)) {
+		char *s2, *s3;
+		s2 = getenv("active_slot");
+		printf("active_slot: %s\n", s2);
+		s3 = "boot";
+		printf("s3  1: %s\n", s3);
+		strcat(s3, s2);
+		printf("s3  2: %s\n", s3);
+		strncat(response, s3, chars_left);
+	} */else if (!strcmp_l1("has-slot:system", cmd)) {
+		if (has_system_slot == 1) {
+			printf("has system slot\n");
+			strncat(response, "yes", chars_left);
+		} else
+			strncat(response, "no", chars_left);
 	} else {
 		error("unknown variable: %s\n", cmd);
 		strcpy(response, "FAILVariable not implemented");
@@ -585,6 +622,31 @@ static void cb_flash(struct usb_ep *ep, struct usb_request *req)
 }
 #endif
 
+static void cb_set_active(struct usb_ep *ep, struct usb_request *req)
+{
+	char *cmd = req->buf;
+	//char response[RESPONSE_LEN];
+	int ret = 0;
+	char str[128];
+
+	printf("cmd is %s\n", cmd);
+	strsep(&cmd, ":");
+	if (!cmd) {
+		error("missing slot name\n");
+		fastboot_tx_write_str("FAILmissing slot name");
+		return;
+	}
+
+	sprintf(str, "set_active_slot %s", cmd);
+	printf("command:    %s\n", str);
+	ret = run_command(str, 0);
+	printf("ret = %d\n", ret);
+	if (ret == 0)
+		fastboot_tx_write_str("OKAY");
+	else
+		fastboot_tx_write_str("FAILset slot error");
+}
+
 static void cb_flashall(struct usb_ep *ep, struct usb_request *req)
 {
 	char response[RESPONSE_LEN];
@@ -681,6 +743,10 @@ static const struct cmd_dispatch_info cmd_dispatch_info[] = {
 	{
 		.cmd = "reboot-bootloader",
 		.cb = cb_reboot,
+	},
+	{
+		.cmd = "set_active",
+		.cb = cb_set_active,
 	},
 };
 
