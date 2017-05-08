@@ -18,6 +18,8 @@
 #include <splash.h>
 #include <video.h>
 
+extern int osd_enabled;
+
 static int bmp_info(ulong addr);
 #ifdef CONFIG_OSD_SCALE_ENABLE
 static int bmp_scale(void);
@@ -117,6 +119,10 @@ static int do_bmp_display(cmd_tbl_t *cmdtp, int flag, int argc,
 	ulong addr;
 	int x = 0, y = 0;
 
+	if (!osd_enabled) {
+		printf("osd not enabled\n");
+		return -1;
+	}
 	splash_get_pos(&x, &y);
 
 	switch (argc) {
@@ -143,6 +149,10 @@ static int do_bmp_display(cmd_tbl_t *cmdtp, int flag, int argc,
 static int do_bmp_scale(cmd_tbl_t *cmdtp, int flag, int argc,
 			char *const argv[])
 {
+	if (!osd_enabled) {
+		printf("osd not enabled\n");
+		return -1;
+	}
 #ifndef CONFIG_OSD_SCALE_ENABLE
 	ulong src_addr, dst_addr;
 	unsigned width, height;

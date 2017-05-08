@@ -21,6 +21,7 @@
 #include <stdio_dev.h>
 #include <malloc.h>
 #include <bmp_layout.h>
+#include <asm/cpu_id.h>
 
 /* Local Headers */
 #include <amlogic/fb.h>
@@ -316,8 +317,13 @@ void *video_hw_init(void)
 
 	if (strcmp(layer_str, "osd0") == 0)
 		osd_layer_init(fb_gdev, OSD1);
-	else if (strcmp(layer_str, "osd1") == 0)
+	else if (strcmp(layer_str, "osd1") == 0) {
+		if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_AXG) {
+			osd_loge("AXG not support osd2\n");
+			return NULL;
+		}
 		osd_layer_init(fb_gdev, OSD2);
+	}
 	else {
 		osd_loge("display_layer(%s) invalid\n", layer_str);
 		return NULL;

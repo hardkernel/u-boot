@@ -7,6 +7,7 @@
 #include <video_fb.h>
 #include <video.h>
 
+int osd_enabled = 0;
 /* Graphic Device */
 static GraphicDevice *gdev = NULL;
 
@@ -24,6 +25,7 @@ static int do_osd_open(cmd_tbl_t *cmdtp, int flag, int argc,
 		printf("Initialize video device failed!\n");
 		return 1;
 	}
+	osd_enabled = 1;
 	return 0;
 }
 
@@ -41,12 +43,15 @@ static int do_osd_enable(cmd_tbl_t *cmdtp, int flag, int argc,
 static int do_osd_close(cmd_tbl_t *cmdtp, int flag, int argc,
 			char *const argv[])
 {
+	if (gdev == NULL)
+		return 1;
+
 	gdev = NULL;
 	osd_enable_hw(0, 0);
 	osd_enable_hw(1, 0);
 	osd_set_free_scale_enable_hw(0, 0);
 	osd_set_free_scale_enable_hw(1, 0);
-
+	osd_enabled = 0;
 	return 0;
 }
 
@@ -110,6 +115,11 @@ static int do_osd_display(cmd_tbl_t *cmdtp, int flag, int argc,
 	int ret = 0;
 	int x = 0, y = 0;
 	ulong addr;
+
+	if (gdev == NULL) {
+		printf("do_osd_display, enable osd device first!\n");
+		return 1;
+	}
 
 	splash_get_pos(&x, &y);
 

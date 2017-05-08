@@ -547,6 +547,45 @@ void osd_update_disp_axis_hw(
 	osd_wait_vsync_hw();
 }
 
+
+/* the return stride unit is 128bit(16bytes) */
+static u32 line_stride_calc(
+		u32 fmt_mode,
+		u32 hsize,
+		u32 stride_align_32bytes)
+{
+	u32 line_stride = 0;
+
+	/* 2-bit LUT */
+	if (fmt_mode == 0)
+		line_stride = ((hsize<<1)+127)>>7;
+	/* 4-bit LUT */
+	else if (fmt_mode == 1)
+		line_stride = ((hsize<<2)+127)>>7;
+	/* 8-bit LUT */
+	else if (fmt_mode == 2)
+		line_stride = ((hsize<<3)+127)>>7;
+	/* 4:2:2, 32-bit per 2 pixels */
+	else if (fmt_mode == 3)
+		line_stride = ((((hsize+1)>>1)<<5)+127)>>7;
+	/* 16-bit LUT */
+	else if (fmt_mode == 4)
+		line_stride = ((hsize<<4)+127)>>7;
+	/* 32-bit LUT */
+	else if (fmt_mode == 5)
+		line_stride = ((hsize<<5)+127)>>7;
+	/* 24-bit LUT */
+	else if (fmt_mode == 7)
+		line_stride = ((hsize<<4)+(hsize<<3)+127)>>7;
+	/* need wr ddr is 32bytes aligned */
+	if (stride_align_32bytes)
+		line_stride = ((line_stride+1)>>1)<<1;
+	else
+		line_stride = line_stride;
+	return line_stride;
+}
+
+
 void osd_setup_hw(u32 index,
 		  u32 xoffset,
 		  u32 yoffset,
@@ -567,6 +606,12 @@ void osd_setup_hw(u32 index,
 	int update_geometry = 0;
 	u32 w = (color->bpp * xres_virtual + 7) >> 3;
 
+	if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_AXG) {
+		if (index == OSD2) {
+			osd_loge("AXG not support osd2\n");
+			return ;
+		}
+	}
 	pan_data.x_start = xoffset;
 	pan_data.y_start = yoffset;
 	disp_data.x_start = disp_start_x;
@@ -609,12 +654,29 @@ void osd_setup_hw(u32 index,
 			 index, osd_hw.fb_gem[index].width);
 		osd_logd("osd[%d] canvas.height=%d\n",
 			 index, osd_hw.fb_gem[index].height);
+		if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_AXG) {
+			u32 line_stride, fmt_mode;
+
+			fmt_mode =
+				osd_hw.color_info[index]->hw_colormat << 2;
+			line_stride = line_stride_calc(fmt_mode,
+				osd_hw.fb_gem[index].width, 1);
+			VSYNCOSD_WR_MPEG_REG(
+				VIU_OSD1_BLK1_CFG_W4,
+				osd_hw.fb_gem[index].addr);
+			VSYNCOSD_WR_MPEG_REG_BITS(
+				VIU_OSD1_BLK2_CFG_W4,
+				line_stride,
+				0, 12);
+		}
 #ifdef CONFIG_AML_CANVAS
+		else {
 		canvas_config(osd_hw.fb_gem[index].canvas_idx,
 			      osd_hw.fb_gem[index].addr,
 			      osd_hw.fb_gem[index].width,
 			      osd_hw.fb_gem[index].height,
 			      CANVAS_ADDR_NOWRAP, CANVAS_BLKMODE_LINEAR);
+		}
 #endif
 	}
 	if (color != osd_hw.color_info[index]) {
