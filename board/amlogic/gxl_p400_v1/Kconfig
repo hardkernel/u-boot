@@ -6,7 +6,7 @@ config SYS_CPU
 
 config SYS_BOARD
 	string
-	default "gxm_q200_v1"
+	default "gxl_p400_v1"
 
 config SYS_VENDOR
 	string
