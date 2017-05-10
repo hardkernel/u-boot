@@ -243,6 +243,7 @@
 #define CONFIG_CMD_ELF
 #define CONFIG_CMD_MMC
 #define CONFIG_CMD_EXT2
+#define CONFIG_CMD_EXT4
 #define CONFIG_CMD_FAT
 #define CONFIG_CMD_BOOTZ
 
