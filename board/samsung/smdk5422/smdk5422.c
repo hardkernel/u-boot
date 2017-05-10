@@ -562,6 +562,7 @@ int board_late_init(void)
 	/* Soc Lite Version Board check */
 	setenv("board_lite", is_BIN2() ? "true" : "false");
 	setenv("board_rev", "0");
+	setenv("board_name", "unknown");
 
 	/* board revision read (adc channel 9) */
 	/*
