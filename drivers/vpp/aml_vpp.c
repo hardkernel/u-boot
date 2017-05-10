@@ -1080,7 +1080,18 @@ void vpp_pq_load(void)
 
 void vpp_init(void)
 {
+	u32 data32;
 	VPP_PR("%s\n", __func__);
+
+	/* init vpu fifo control register */
+	data32 = vpp_reg_read(VPP_OFIFO_SIZE);
+	if (get_cpu_id().family_id >= MESON_CPU_MAJOR_ID_GXTVBB)
+		data32 |= 0xfff;
+	else
+		data32 |= 0x77f;
+	vpp_reg_write(VPP_OFIFO_SIZE, data32);
+	data32 = 0x08080808;
+	vpp_reg_write(VPP_HOLD_LINES, data32);
 
 	if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_GXTVBB) {
 		/* 709 limit to RGB */

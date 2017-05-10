@@ -2275,16 +2275,6 @@ void osd_init_hw(void)
 
 	/* here we will init default value ,these value only set once . */
 	if (!logo_loaded) {
-		/* init vpu fifo control register */
-		data32 = osd_reg_read(VPP_OFIFO_SIZE);
-		if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_GXTVBB)
-			data32 |= 0xfff;
-		else
-			data32 |= 0x77f;
-		osd_reg_write(VPP_OFIFO_SIZE, data32);
-		data32 = 0x08080808;
-		osd_reg_write(VPP_HOLD_LINES, data32);
-
 		/* init osd fifo control register */
 		/* set DDR request priority to be urgent */
 		data32 = 1;
