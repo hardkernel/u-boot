@@ -153,20 +153,6 @@ static void vpp_set_matrix_ycbcr2rgb(int vd1_or_vd2_or_post, int mode)
 		vpp_reg_write(VPP_MATRIX_OFFSET2, 0x0);
 	}
 	vpp_reg_setb(VPP_MATRIX_CLIP, 0, 5, 3);
-
-	if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_TXLX) {
-	#ifdef CONFIG_AML_MESON_TXLX
-		/* set u10 path: vadj2-eotf22-xvycc matrix */
-		/*don't skip vadj2 & post_matrix & wb*/
-		vpp_reg_setb(VPP_DAT_CONV_PARA1, 0x2000, 16, 14);
-		vpp_reg_setb(VPP_DOLBY_CTRL, 0, 2, 1);
-
-		/* do not skip eotf & oetf */
-		vpp_reg_setb(VPP_DOLBY_CTRL, 0, 1, 1);
-		vpp_reg_setb(VPP_DAT_CONV_PARA1, 0, 0, 14);
-	#else
-	#endif
-	}
 }
 
 /***************************** gxl hdr ****************************/
@@ -903,6 +889,26 @@ static void set_osd1_rgb2yuv(bool on)
 		CSC_ON);
 }
 
+/*
+for txlx, set vpp default data path to u10
+ */
+static void set_vpp_bitdepth(void)
+{
+	if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_TXLX) {
+	#ifdef CONFIG_AML_MESON_TXLX
+		/* set u10 path: vadj2-eotf22-xvycc matrix */
+		/*don't skip vadj2 & post_matrix & wb*/
+		vpp_reg_setb(VPP_DAT_CONV_PARA1, 0x2000, 16, 14);
+		vpp_reg_setb(VPP_DOLBY_CTRL, 0, 2, 1);
+
+		/* do not skip eotf & oetf */
+		vpp_reg_setb(VPP_DOLBY_CTRL, 0, 1, 1);
+		vpp_reg_setb(VPP_DAT_CONV_PARA1, 0, 0, 14);
+	#else
+	#endif
+	}
+}
+
 
 #if ((defined CONFIG_AML_HDMITX20) || (defined CONFIG_AML_CVBS))
 static void vpp_set_post_matrix_rgb2ycbcr(int mode)
@@ -1112,6 +1118,8 @@ void vpp_init(void)
 		vpp_reg_write(VPP_DUMMY_DATA1, 0x04080200);
 		/* osd1: rgb->yuv limit , osd2: yuv limit */
 		set_osd1_rgb2yuv(1);
+		/* set vpp data path to u10 */
+		set_vpp_bitdepth();
 	#if (defined CONFIG_AML_LCD)
 		/* 709 limit to RGB */
 		vpp_set_matrix_ycbcr2rgb(2, 3);
