@@ -54,6 +54,7 @@ static inline unsigned int vpu_hiu_read(unsigned int _reg)
 	case VPU_CHIP_GXM:
 	case VPU_CHIP_TXL:
 	case VPU_CHIP_TXLX:
+	case VPU_CHIP_AXG:
 		val = *(volatile unsigned int *)(REG_ADDR_HIU(_reg));
 		break;
 	default:
@@ -73,6 +74,7 @@ static inline void vpu_hiu_write(unsigned int _reg, unsigned int _value)
 	case VPU_CHIP_GXM:
 	case VPU_CHIP_TXL:
 	case VPU_CHIP_TXLX:
+	case VPU_CHIP_AXG:
 		*(volatile unsigned int *)REG_ADDR_HIU(_reg) = (_value);
 		break;
 	default:

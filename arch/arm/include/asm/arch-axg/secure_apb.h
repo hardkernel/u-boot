@@ -2556,4 +2556,27 @@
 // Closing file:  ./ao_rti_reg.h
 //
 
+//dummy define
+#define     HHI_GP1_PLL_CNTL                                   (0xff63c000 + (0x16 << 2))
+#define SEC_HHI_GP1_PLL_CNTL                                   (0xff63c000 + (0x16 << 2))
+#define   P_HHI_GP1_PLL_CNTL                                   (volatile uint32_t *)(0xff63c000 + (0x16 << 2))
+#define     HHI_GP1_PLL_CNTL2                                  (0xff63c000 + (0x17 << 2))
+#define SEC_HHI_GP1_PLL_CNTL2                                  (0xff63c000 + (0x17 << 2))
+#define   P_HHI_GP1_PLL_CNTL2                                  (volatile uint32_t *)(0xff63c000 + (0x17 << 2))
+#define     HHI_GP1_PLL_CNTL3                                  (0xff63c000 + (0x18 << 2))
+#define SEC_HHI_GP1_PLL_CNTL3                                  (0xff63c000 + (0x18 << 2))
+#define   P_HHI_GP1_PLL_CNTL3                                  (volatile uint32_t *)(0xff63c000 + (0x18 << 2))
+#define     HHI_GP1_PLL_CNTL4                                  (0xff63c000 + (0x19 << 2))
+#define SEC_HHI_GP1_PLL_CNTL4                                  (0xff63c000 + (0x19 << 2))
+#define   P_HHI_GP1_PLL_CNTL4                                  (volatile uint32_t *)(0xff63c000 + (0x19 << 2))
+#define     HHI_GP1_PLL_CNTL5                                  (0xff63c000 + (0x1a << 2))
+#define SEC_HHI_GP1_PLL_CNTL5                                  (0xff63c000 + (0x1a << 2))
+#define   P_HHI_GP1_PLL_CNTL5                                  (volatile uint32_t *)(0xff63c000 + (0x1a << 2))
+#define     HHI_VPU_MEM_PD_REG1                                (0xff63c000 + (0x42 << 2))
+#define SEC_HHI_VPU_MEM_PD_REG1                                (0xff63c000 + (0x42 << 2))
+#define   P_HHI_VPU_MEM_PD_REG1                                (volatile uint32_t *)(0xff63c000 + (0x42 << 2))
+#define     HHI_VPU_CLKB_CNTL                                  (0xff63c000 + (0x83 << 2))
+#define SEC_HHI_VPU_CLKB_CNTL                                  (0xff63c000 + (0x83 << 2))
+#define   P_HHI_VPU_CLKB_CNTL                                  (volatile uint32_t *)(0xff63c000 + (0x83 << 2))
+
 #endif // SECURE_APB_H
