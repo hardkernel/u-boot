@@ -73,8 +73,8 @@
         "upgrade_step=0\0"\
         "jtag=apao\0"\
         "loadaddr=1080000\0"\
-        "panel_type=lvds_0\0" \
-        "outputmode=1080p60hz\0" \
+        "panel_type=lcd_0\0" \
+        "outputmode=panel\0" \
         "hdmimode=1080p60hz\0" \
         "cvbsmode=576cvbs\0" \
         "display_width=1920\0" \
@@ -398,9 +398,9 @@
 //#define CONFIG_AML_CVBS 1
 #endif
 
-//#define CONFIG_AML_LCD    1
-//#define CONFIG_AML_LCD_TV 1
-//#define CONFIG_AML_LCD_TABLET 1
+#define CONFIG_AML_LCD    1
+/*#define CONFIG_AML_LCD_TV 1*/
+#define CONFIG_AML_LCD_TABLET 1
 
 /* USB
  * Enable CONFIG_MUSB_HCD for Host functionalities MSC, keyboard

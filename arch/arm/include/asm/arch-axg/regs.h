@@ -13,6 +13,8 @@
 #define REG_BASE_HIU                    (0xFF63C000L)
 #define REG_BASE_VCBUS                  (0xFF900000L)
 #define DMC_REG_BASE                    (0xFF638000L)
+#define REG_BASE_DSI_HOST          		(0xFFD00000L)/* 0xFFD06000L*/
+
 
 #endif /*_BASE_REGISTER*/
 

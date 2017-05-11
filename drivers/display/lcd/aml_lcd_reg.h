@@ -21,6 +21,7 @@
 #include <asm/arch/io.h>
 #include <asm/arch/secure_apb.h>
 #include <asm/arch/cpu.h>
+#include "aml_lcd_dummy_reg.h"
 
 /* ********************************
  * register define
@@ -28,12 +29,17 @@
 /* base & offset */
 #define REG_OFFSET_CBUS(reg)            ((reg) << 2)
 #define REG_OFFSET_VCBUS(reg)           ((reg) << 2)
+#define REG_OFFSET_DSI_HOST(reg)        ((reg) << 2)
+
 /* memory mapping */
 #define REG_ADDR_AOBUS(reg)             (reg + 0L)
 #define REG_ADDR_PERIPHS(reg)           (reg + 0L)
 #define REG_ADDR_CBUS(reg)              (REG_BASE_CBUS + REG_OFFSET_CBUS(reg))
 #define REG_ADDR_HIU(reg)               (reg + 0L)
 #define REG_ADDR_VCBUS(reg)             (REG_BASE_VCBUS + REG_OFFSET_VCBUS(reg))
+#define REG_ADDR_DSI_HOST(reg)          (REG_BASE_DSI_HOST + REG_OFFSET_DSI_HOST(reg))
+#define REG_ADDR_DSI_PHY(reg)           (reg + 0L)
+
 
 #if (defined(CONFIG_CHIP_AML_GXB) || \
 		defined(CONFIG_AML_MESON_GXTVBB))
@@ -277,5 +283,75 @@ static inline void lcd_pinmux_clr_mask(unsigned int n, unsigned int _mask)
 	_reg += (n << 2);
 	lcd_periphs_write(_reg, (lcd_periphs_read(_reg) & (~(_mask))));
 }
+
+static inline unsigned int dsi_host_read(unsigned int _reg)
+{
+	return *(volatile unsigned int *)(REG_ADDR_DSI_HOST(_reg));
+};
+
+static inline void dsi_host_write(unsigned int _reg, unsigned int _value)
+{
+	*(volatile unsigned int *)REG_ADDR_DSI_HOST(_reg) = (_value);
+};
+
+static inline void dsi_host_setb(unsigned int _reg, unsigned int _value,
+		unsigned int _start, unsigned int _len)
+{
+	dsi_host_write(_reg, ((dsi_host_read(_reg) &
+			~(((1L << (_len))-1) << (_start))) |
+			(((_value)&((1L<<(_len))-1)) << (_start))));
+}
+
+static inline unsigned int dsi_host_getb(unsigned int _reg,
+		unsigned int _start, unsigned int _len)
+{
+	return (dsi_host_read(_reg) >> (_start)) & ((1L << (_len)) - 1);
+}
+
+static inline void dsi_host_set_mask(unsigned int _reg, unsigned int _mask)
+{
+	dsi_host_write(_reg, (dsi_host_read(_reg) | (_mask)));
+}
+
+static inline void dsi_host_clr_mask(unsigned int _reg, unsigned int _mask)
+{
+	dsi_host_write(_reg, (dsi_host_read(_reg) & (~(_mask))));
+}
+
+static inline unsigned int dsi_phy_read(unsigned int _reg)
+{
+	return *(volatile unsigned int *)(REG_ADDR_DSI_PHY(_reg));
+};
+
+static inline void dsi_phy_write(unsigned int _reg, unsigned int _value)
+{
+	*(volatile unsigned int *)REG_ADDR_DSI_PHY(_reg) = (_value);
+};
+
+static inline void dsi_phy_setb(unsigned int _reg, unsigned int _value,
+		unsigned int _start, unsigned int _len)
+{
+	dsi_phy_write(_reg, ((dsi_phy_read(_reg) &
+			~(((1L << (_len))-1) << (_start))) |
+			(((_value)&((1L<<(_len))-1)) << (_start))));
+}
+
+static inline unsigned int dsi_phy_getb(unsigned int _reg,
+		unsigned int _start, unsigned int _len)
+{
+	return (dsi_phy_read(_reg) >> (_start)) & ((1L << (_len)) - 1);
+}
+
+static inline void dsi_phy_set_mask(unsigned int _reg, unsigned int _mask)
+{
+	dsi_phy_write(_reg, (dsi_phy_read(_reg) | (_mask)));
+}
+
+static inline void dsi_phy_clr_mask(unsigned int _reg, unsigned int _mask)
+{
+	dsi_phy_write(_reg, (dsi_phy_read(_reg) & (~(_mask))));
+}
+
+
 
 #endif

@@ -22,6 +22,8 @@
 #include "../aml_lcd_reg.h"
 #include "../aml_lcd_common.h"
 #include "lcd_tablet.h"
+#include "mipi_dsi_util.h"
+
 
 static int lcd_type_supported(struct lcd_config_s *pconf)
 {
@@ -32,6 +34,7 @@ static int lcd_type_supported(struct lcd_config_s *pconf)
 	case LCD_TTL:
 	case LCD_LVDS:
 	case LCD_VBYONE:
+	case LCD_MIPI:
 		ret = 0;
 		break;
 	default:
@@ -40,6 +43,52 @@ static int lcd_type_supported(struct lcd_config_s *pconf)
 		break;
 	}
 	return ret;
+}
+
+static void lcd_mipi_phy_set(struct lcd_config_s *pconf, int status)
+{
+	unsigned int phy_reg, phy_bit, phy_width;
+	unsigned int lane_cnt;
+
+	if (status) {
+		/* HHI_MIPI_CNTL0 */
+		/* DIF_REF_CTL1:31-16bit, DIF_REF_CTL0:15-0bit */
+		lcd_hiu_write(HHI_MIPI_CNTL0, (0xa5b8 << 16) | (0x8 << 0));
+
+		/* HHI_MIPI_CNTL1 */
+		/* DIF_REF_CTL2:15-0bit */
+		lcd_hiu_write(HHI_MIPI_CNTL1, (0x001e << 0));
+
+		/* HHI_MIPI_CNTL2 */
+		/* DIF_TX_CTL1:31-16bit, DIF_TX_CTL0:15-0bit */
+		lcd_hiu_write(HHI_MIPI_CNTL2, (0x26e0 << 16) | (0x459 << 0));
+
+		phy_reg = HHI_MIPI_CNTL2;
+		phy_bit = BIT_PHY_LANE_AXG;
+		phy_width = PHY_LANE_WIDTH_AXG;
+		switch (pconf->lcd_control.mipi_config->lane_num) {
+		case 1:
+			lane_cnt = DSI_LANE_COUNT_1;
+			break;
+		case 2:
+			lane_cnt = DSI_LANE_COUNT_2;
+			break;
+		case 3:
+			lane_cnt = DSI_LANE_COUNT_3;
+			break;
+		case 4:
+			lane_cnt = DSI_LANE_COUNT_4;
+			break;
+		default:
+			lane_cnt = 0;
+			break;
+		}
+		lcd_hiu_setb(phy_reg, lane_cnt, phy_bit, phy_width);
+	} else {
+		lcd_hiu_write(HHI_MIPI_CNTL0, 0x0);
+		lcd_hiu_write(HHI_MIPI_CNTL1, 0x6);
+		lcd_hiu_write(HHI_MIPI_CNTL2, 0x00200000);
+	}
 }
 
 static void lcd_ttl_pinmux_set(int status)
@@ -248,6 +297,11 @@ static void lcd_tcon_set(struct lcd_config_s *pconf)
 			lcd_vcbus_setb(L_POL_CNTL_ADDR, 1, 0, 1);
 		if (pconf->lcd_timing.vsync_pol)
 			lcd_vcbus_setb(L_POL_CNTL_ADDR, 1, 1, 1);
+		break;
+	case LCD_MIPI:
+		//lcd_vcbus_setb(L_POL_CNTL_ADDR, 0x3, 0, 2);
+		/*lcd_vcbus_write(L_POL_CNTL_ADDR, (lcd_vcbus_read(L_POL_CNTL_ADDR) | ((0 << 2) | (vs_pol_adj << 1) | (hs_pol_adj << 0))));*/
+		/*lcd_vcbus_write(L_POL_CNTL_ADDR, (lcd_vcbus_read(L_POL_CNTL_ADDR) | ((1 << LCD_TCON_DE_SEL) | (1 << LCD_TCON_VS_SEL) | (1 << LCD_TCON_HS_SEL))));*/
 		break;
 	default:
 		break;
@@ -848,6 +902,10 @@ int lcd_tablet_driver_init(void)
 		lcd_vbyone_phy_set(pconf, 1);
 		lcd_vbyone_wait_stable();
 		break;
+	case LCD_MIPI:
+		lcd_mipi_phy_set(pconf, 1);
+		lcd_mipi_control_set(pconf, 1);
+		break;
 	default:
 		break;
 	}
@@ -883,6 +941,11 @@ void lcd_tablet_driver_disable(void)
 		lcd_vbyone_phy_set(pconf, 0);
 		lcd_vbyone_pinmux_set(0);
 		lcd_vbyone_disable();
+		break;
+	case LCD_MIPI:
+		mipi_dsi_link_off(pconf);
+		lcd_mipi_phy_set(pconf, 0);
+		lcd_mipi_control_set(pconf, 0);
 		break;
 	default:
 		break;

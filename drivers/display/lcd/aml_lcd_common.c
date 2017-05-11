@@ -31,7 +31,6 @@ static struct lcd_type_match_s lcd_type_match_table[] = {
 	{"lvds",    LCD_LVDS},
 	{"vbyone",  LCD_VBYONE},
 	{"mipi",    LCD_MIPI},
-	{"edp",     LCD_EDP},
 	{"invalid", LCD_TYPE_MAX},
 };
 

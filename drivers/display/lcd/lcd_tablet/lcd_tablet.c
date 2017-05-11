@@ -25,6 +25,7 @@
 #include "../aml_lcd_reg.h"
 #include "../aml_lcd_common.h"
 #include "lcd_tablet.h"
+#include "mipi_dsi_util.h"
 
 static int check_lcd_output_mode(char *mode)
 {
@@ -88,6 +89,21 @@ static void lcd_config_load_print(struct lcd_config_s *pconf)
 		LCDPR("byte_mode = %d\n", pconf->lcd_control.vbyone_config->byte_mode);
 		LCDPR("region_num = %d\n", pconf->lcd_control.vbyone_config->region_num);
 		LCDPR("color_fmt = %d\n", pconf->lcd_control.vbyone_config->color_fmt);
+	} else if (pconf->lcd_basic.lcd_type == LCD_MIPI) {
+		LCDPR("lane_num = %d\n",
+			pconf->lcd_control.mipi_config->lane_num);
+		LCDPR("operation_mode = %d\n",
+			pconf->lcd_control.mipi_config->operation_mode);
+		LCDPR("transfer_ctrl = %d\n",
+			pconf->lcd_control.mipi_config->transfer_ctrl);
+		LCDPR("factor_denominator = %d\n",
+			pconf->lcd_control.mipi_config->factor_denominator);
+		LCDPR("factor_numerator = %d\n",
+			pconf->lcd_control.mipi_config->factor_numerator);
+		LCDPR("bit_rate_max = %d\n",
+			pconf->lcd_control.mipi_config->bit_rate_max);
+		LCDPR("extern_init = %d\n",
+			pconf->lcd_control.mipi_config->extern_init);
 	}
 }
 
@@ -317,6 +333,25 @@ static int lcd_config_load_from_dts(char *dt_addr, struct lcd_config_s *pconf)
 			}
 		}
 		break;
+	case LCD_MIPI:
+		propdata = (char *)fdt_getprop(dt_addr, child_offset, "mipi_attr", NULL);
+		if (propdata == NULL) {
+			LCDERR("failed to get mipi_attr\n");
+		} else {
+				pconf->lcd_control.mipi_config->lane_num = be32_to_cpup((u32*)propdata);
+				pconf->lcd_control.mipi_config->operation_mode = be32_to_cpup((((u32*)propdata)+1));
+				pconf->lcd_control.mipi_config->transfer_ctrl = be32_to_cpup((((u32*)propdata)+2));
+				pconf->lcd_control.mipi_config->factor_denominator = be32_to_cpup((((u32*)propdata)+3));
+				pconf->lcd_control.mipi_config->factor_numerator = be32_to_cpup((((u32*)propdata)+4));
+				pconf->lcd_control.mipi_config->bit_rate_max = be32_to_cpup((((u32*)propdata)+5));
+		}
+		propdata = (char *)fdt_getprop(dt_addr, child_offset, "extern_init", NULL);
+		if (propdata == NULL) {
+			LCDERR("failed to get extern_init\n");
+		} else {
+			pconf->lcd_control.mipi_config->extern_init = be32_to_cpup((u32*)propdata);
+		}
+		break;
 	default:
 		LCDERR("invalid lcd type\n");
 		break;
@@ -406,6 +441,12 @@ static int lcd_config_load_from_bsp(struct lcd_config_s *pconf)
 		pconf->lcd_timing.clk_auto = 1;
 	else
 		pconf->lcd_timing.clk_auto = (unsigned char)temp;
+	/* lcd_clk */
+	temp = ext_lcd->customer_val_3;
+	if (temp == Rsv_val)
+		pconf->lcd_timing.lcd_clk = 60;
+	else
+		pconf->lcd_timing.lcd_clk = (unsigned char)temp;
 
 	if (pconf->lcd_basic.lcd_type == LCD_TTL) {
 		pconf->lcd_control.ttl_config->clk_pol = ext_lcd->lcd_spc_val0;
@@ -732,9 +773,13 @@ static void lcd_config_init(struct lcd_config_s *pconf)
 	pconf->lcd_timing.sync_duration_num = sync_duration;
 	pconf->lcd_timing.sync_duration_den = 100;
 
+	if (pconf->lcd_basic.lcd_type == LCD_MIPI)
+		set_mipi_dsi_config_set(pconf);
+
 	lcd_tcon_config(pconf);
 	lcd_tablet_config_update(pconf);
 	lcd_clk_generate_parameter(pconf);
+
 	ss_level = pconf->lcd_timing.ss_level;
 	cconf->ss_level = (ss_level >= cconf->ss_level_max) ? 0 : ss_level;
 }
@@ -781,6 +826,7 @@ int get_lcd_tablet_config(char *dt_addr, int load_id)
 	lcd_config_load_print(lcd_drv->lcd_config);
 	lcd_config_init(lcd_drv->lcd_config);
 
+	dsi_probe(lcd_drv->lcd_config);
 	return 0;
 }
 

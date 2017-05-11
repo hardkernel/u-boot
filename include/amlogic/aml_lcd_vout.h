@@ -76,6 +76,26 @@ extern unsigned int lcd_debug_print_flag;
  * ********************************** */
 #define TTL_DELAY                   13
 
+
+/* ******** AXG ******** */
+/* bit[15:11] */
+#define BIT_PHY_LANE_AXG        11
+#define PHY_LANE_WIDTH_AXG       5
+
+/* MIPI-DSI */
+#define DSI_LANE_0              (1 << 4)
+#define DSI_LANE_1              (1 << 3)
+#define DSI_LANE_CLK            (1 << 2)
+#define DSI_LANE_2              (1 << 1)
+#define DSI_LANE_3              (1 << 0)
+#define DSI_LANE_COUNT_1        (DSI_LANE_CLK | DSI_LANE_0)
+#define DSI_LANE_COUNT_2        (DSI_LANE_CLK | DSI_LANE_0 | DSI_LANE_1)
+#define DSI_LANE_COUNT_3        (DSI_LANE_CLK | DSI_LANE_0 |\
+					DSI_LANE_1 | DSI_LANE_2)
+#define DSI_LANE_COUNT_4        (DSI_LANE_CLK | DSI_LANE_0 |\
+					DSI_LANE_1 | DSI_LANE_2 | DSI_LANE_3)
+
+
 /* **********************************
  * global control define
  * ********************************** */
@@ -86,18 +106,13 @@ enum lcd_mode_e {
 };
 
 enum lcd_chip_e {
-	LCD_CHIP_M6 = 0,
-	LCD_CHIP_M8,     /* 1 */
-	LCD_CHIP_M8B,    /* 2 */
-	LCD_CHIP_M8M2,   /* 3 */
-	LCD_CHIP_G9TV,   /* 4 */
-	LCD_CHIP_G9BB,   /* 5 */
-	LCD_CHIP_GXTVBB, /* 6 */
-	LCD_CHIP_GXL,    /* 7 */
-	LCD_CHIP_GXM,    /* 8 */
-	LCD_CHIP_TXL,    /* 9 */
-	LCD_CHIP_TXLX,   /* 10 */
-	LCD_CHIP_MAX,    /* 11 */
+	LCD_CHIP_GXTVBB = 0,
+	LCD_CHIP_GXL,     	/* 1 */
+	LCD_CHIP_GXM,     	/* 2 */
+	LCD_CHIP_TXL,     	/* 3 */
+	LCD_CHIP_TXLX,    	/* 4 */
+	LCD_CHIP_AXG, 		/* 5 */
+	LCD_CHIP_MAX,
 };
 
 enum lcd_type_e {
@@ -105,7 +120,6 @@ enum lcd_type_e {
 	LCD_LVDS,
 	LCD_VBYONE,
 	LCD_MIPI,
-	LCD_EDP,
 	LCD_TYPE_MAX,
 };
 
@@ -248,7 +262,7 @@ struct dsi_config_s {
 	unsigned int bit_rate_max; /* MHz */
 	unsigned int bit_rate_min; /* MHz*/
 	unsigned int bit_rate; /* Hz */
-	unsigned int factor_denominator;
+	unsigned int factor_denominator; //10
 	unsigned int factor_numerator;
 
 	unsigned int venc_data_width;
@@ -266,25 +280,11 @@ struct dsi_config_s {
 	unsigned char extern_init;
 };
 
-struct edp_config_s {
-	unsigned char max_lane_count;
-	unsigned char link_user;
-	unsigned char lane_count;
-	unsigned char link_rate;
-	unsigned char link_adaptive;
-	unsigned char vswing;
-	unsigned char preemphasis;
-	unsigned int bit_rate;
-	unsigned int sync_clock_mode;
-	unsigned char edid_timing_used;
-};
-
 struct lcd_ctrl_config_s {
 	struct ttl_config_s *ttl_config;
 	struct lvds_config_s *lvds_config;
 	struct vbyone_config_s *vbyone_config;
 	struct dsi_config_s *mipi_config;
-	struct edp_config_s *edp_config;
 };
 
 /* **********************************

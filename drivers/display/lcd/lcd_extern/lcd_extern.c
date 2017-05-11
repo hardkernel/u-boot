@@ -904,12 +904,17 @@ static int aml_lcd_extern_add_driver(struct lcd_extern_config_s *extconf)
 
 static int aml_lcd_extern_add_driver_default(int index, struct lcd_extern_config_s *extconf)
 {
-	int drv_index;
+	int drv_index = extconf->index;
 	int ret = -1;
 	struct aml_lcd_extern_driver_s *ext_drv;
 
-	if (index != extconf->index) {
-		EXTERR("index %d err, default config index %d\n", index, extconf->index);
+	if (index != drv_index) {
+		EXTERR("index %d err, default config index %d\n", index, drv_index);
+		return -1;
+	}
+
+	if (extconf->status == 0) {
+		EXTERR("%s(%d) is disabled\n", extconf->name, drv_index);
 		return -1;
 	}
 

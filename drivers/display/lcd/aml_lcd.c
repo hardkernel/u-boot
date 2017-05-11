@@ -41,18 +41,6 @@ static void lcd_chip_detect(void)
 
 	cpu_type = get_cpu_id().family_id;
 	switch (cpu_type) {
-	case MESON_CPU_MAJOR_ID_M8:
-		aml_lcd_driver.chip_type = LCD_CHIP_M8;
-		break;
-	case MESON_CPU_MAJOR_ID_M8B:
-		aml_lcd_driver.chip_type = LCD_CHIP_M8B;
-		break;
-	case MESON_CPU_MAJOR_ID_M8M2:
-		aml_lcd_driver.chip_type = LCD_CHIP_M8M2;
-		break;
-	case MESON_CPU_MAJOR_ID_MG9TV:
-		aml_lcd_driver.chip_type = LCD_CHIP_G9TV;
-		break;
 	case MESON_CPU_MAJOR_ID_GXTVBB:
 		aml_lcd_driver.chip_type = LCD_CHIP_GXTVBB;
 		break;
@@ -67,6 +55,9 @@ static void lcd_chip_detect(void)
 		break;
 	case MESON_CPU_MAJOR_ID_TXLX:
 		aml_lcd_driver.chip_type = LCD_CHIP_TXLX;
+		break;
+	case MESON_CPU_MAJOR_ID_AXG:
+		aml_lcd_driver.chip_type = LCD_CHIP_AXG;
 		break;
 	default:
 		aml_lcd_driver.chip_type = LCD_CHIP_MAX;
@@ -395,6 +386,25 @@ static void lcd_info_print(void)
 		   (pconf->lcd_control.ttl_config->swap_ctrl >> 0) & 1,
 		   (pconf->lcd_control.ttl_config->swap_ctrl >> 1) & 1);
 		break;
+	case LCD_MIPI:
+		printf("lane_num       %u\n"
+			"bit_rate_max      %uMHz\n"
+			"bit_rate          %u.%03uMHz\n"
+			"operation_mode    %u(%s), %u(%s)\n"
+			"transfer_ctrl     %u, %u\n\n",
+			pconf->lcd_control.mipi_config->lane_num,
+			(pconf->lcd_control.mipi_config->bit_rate_max),
+			(pconf->lcd_control.mipi_config->bit_rate / 1000000),
+			((pconf->lcd_control.mipi_config->bit_rate % 1000000) / 1000),
+			((pconf->lcd_control.mipi_config->operation_mode>>BIT_OP_MODE_INIT) & 1),
+			(((pconf->lcd_control.mipi_config->operation_mode>>BIT_OP_MODE_INIT) & 1) ?
+				"COMMAND" : "VIDEO"),
+			((pconf->lcd_control.mipi_config->operation_mode>>BIT_OP_MODE_DISP) & 1),
+			(((pconf->lcd_control.mipi_config->operation_mode>>BIT_OP_MODE_DISP) & 1) ?
+				"COMMAND" : "VIDEO"),
+			((pconf->lcd_control.mipi_config->transfer_ctrl>>BIT_TRANS_CTRL_CLK) & 1),
+			((pconf->lcd_control.mipi_config->transfer_ctrl>>BIT_TRANS_CTRL_SWITCH) & 3));
+		break;
 	default:
 		break;
 	}
@@ -603,8 +613,6 @@ static void lcd_reg_print(void)
 		break;
 	case LCD_MIPI:
 		break;
-	case LCD_EDP:
-		break;
 	default:
 		break;
 	}
@@ -615,6 +623,14 @@ static int lcd_extern_load_config(char *dt_addr, struct lcd_config_s *pconf)
 {
 	struct lcd_power_step_s *power_step;
 	int index, i;
+
+	/* mipi extern_init is special */
+	if (pconf->lcd_basic.lcd_type == LCD_MIPI) {
+		index = pconf->lcd_control.mipi_config->extern_init;
+		if (index < LCD_EXTERN_INDEX_INVALID)
+			aml_lcd_extern_probe(dt_addr, index);
+		return 0;
+	}
 
 	i = 0;
 	while (i < LCD_PWR_STEP_MAX) {
