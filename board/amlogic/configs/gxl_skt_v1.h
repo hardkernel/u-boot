@@ -458,6 +458,15 @@
 	#define CONFIG_SPL_DDR_DUMP_FLAG			0x1 //flag write in sticky reg
 #endif
 
+//2017.05.11 new compress solution, only support BL33 LZ4 compress
+//compress ratio is about 50%, BL31 will take the decompress
+//profit :
+//          size : u-boot.bin 1.2MB -> 913KB
+//          boot time decrease: SD boot: ~100ms ; eMMC boot: 50ms
+//default: enable the data compress feature
+//to disable the data compress please just define followings
+//#undef CONFIG_AML_BL33_COMPRESS_ENABLE
+
 //support secure boot
 #define CONFIG_AML_SECURE_UBOOT   1
 
