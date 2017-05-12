@@ -32,7 +32,7 @@
 #define	GPIOAO_7    7
 #define	GPIOAO_8    8
 #define	GPIOAO_9    9
-
+#define GPIOAO_12	12
 /*EE Bank*/
 #define	GPIOZ_0    0
 #define	GPIOZ_1    1
