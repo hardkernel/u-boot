@@ -36,6 +36,10 @@ struct amlogic_usb_config * board_usb_start(int mode,int index)
 
 	writel((1 << 2),P_RESET1_REGISTER);
 
+	if (mode == BOARD_USB_MODE_HOST )
+		if (g_usb_cfg[mode][index]->set_vbus_power)
+			g_usb_cfg[mode][index]->set_vbus_power(1);
+
 	return g_usb_cfg[mode][index];
 }
 

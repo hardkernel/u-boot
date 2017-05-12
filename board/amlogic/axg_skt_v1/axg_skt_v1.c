@@ -18,7 +18,6 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
-
 #include <common.h>
 #include <malloc.h>
 #include <errno.h>
@@ -331,10 +330,21 @@ int board_early_init_f(void){
 #define CONFIG_GXL_USB_U2_PORT_NUM	4
 #define CONFIG_GXL_USB_U3_PORT_NUM	0
 
+static void gpio_set_vbus_power(char is_power_on)
+{
+	if (is_power_on) {
+		clrbits_le32(P_AO_GPIO_O_EN_N, (1<<5));
+		setbits_le32(P_AO_GPIO_O_EN_N, (1<<21));
+	} else {
+		clrbits_le32(P_AO_GPIO_O_EN_N, (1<<5));
+		clrbits_le32(P_AO_GPIO_O_EN_N, (1<<21));
+	}
+}
+
 struct amlogic_usb_config g_usb_config_GXL_skt={
 	CONFIG_GXL_XHCI_BASE,
 	USB_ID_MODE_HARDWARE,
-	NULL,//gpio_set_vbus_power, //set_vbus_power
+	gpio_set_vbus_power,
 	CONFIG_GXL_USB_PHY2_BASE,
 	CONFIG_GXL_USB_PHY3_BASE,
 	CONFIG_GXL_USB_U2_PORT_NUM,
