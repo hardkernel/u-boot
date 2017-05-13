@@ -1856,9 +1856,12 @@ static void inline nand_get_chip(void )
 	/* pull up enable */
 	cpu_id_t cpu_id = get_cpu_id();
 
-	AMLNF_SET_REG_MASK(P_PAD_PULL_UP_EN_REG2, 0x87ff);
-	/* pull direction, dqs pull down */
-	AMLNF_SET_REG_MASK(P_PAD_PULL_UP_REG2, 0x8700);
+	if ((cpu_id.family_id == MESON_CPU_MAJOR_ID_GXL)
+		||(cpu_id.family_id == MESON_CPU_MAJOR_ID_GXBB)) {
+		AMLNF_SET_REG_MASK(P_PAD_PULL_UP_EN_REG2, 0x87ff);
+		/* pull direction, dqs pull down */
+		AMLNF_SET_REG_MASK(P_PAD_PULL_UP_REG2, 0x8700);
+	}
 	/* switch pinmux */
 	if (cpu_id.family_id == MESON_CPU_MAJOR_ID_GXL) {
 		AMLNF_CLEAR_REG_MASK(P_PERIPHS_PIN_MUX_7,
@@ -1872,8 +1875,18 @@ static void inline nand_get_chip(void )
 		AMLNF_CLEAR_REG_MASK(P_PERIPHS_PIN_MUX_0, (0x1 << 19));
 		AMLNF_CLEAR_REG_MASK(P_PERIPHS_PIN_MUX_4, (0x3 << 18));
 		AMLNF_CLEAR_REG_MASK(P_PERIPHS_PIN_MUX_5, (0xF));
-	} else
+	} else if (cpu_id.family_id == MESON_CPU_MAJOR_ID_AXG) {
+		/* axg */
+		AMLNF_SET_REG_MASK(P_PAD_PULL_UP_EN_REG2, 0xffff87ff);
+		AMLNF_SET_REG_MASK(P_PAD_PULL_UP_REG2, 0xffff8700);
+		AMLNF_WRITE_REG(P_PERIPHS_PIN_MUX_0, 0x11111111);
+		AMLNF_WRITE_REG(P_PERIPHS_PIN_MUX_1,
+			(AMLNF_READ_REG(P_PERIPHS_PIN_MUX_1) & 0xfff000) | 0x22222);
+	} else {
+		printk("%s() %d: cpuid 0x%x not support yet!\n",
+			__func__, __LINE__, cpu_id.family_id);
 		BUG();
+	}
 
 	return ;
 }
@@ -3689,7 +3702,7 @@ int aml_nand_init(struct aml_nand_chip *aml_chip)
 	int oobmul;
 	unsigned valid_chip_num = 0;
 	struct nand_oobfree *oobfree = NULL;
-
+	cpu_id_t cpu_id = get_cpu_id();
 	/*
 	printk("%s %d\n", __func__, __LINE__);
 	*/
@@ -3724,6 +3737,9 @@ int aml_nand_init(struct aml_nand_chip *aml_chip)
 
 	aml_chip->aml_nand_hw_init(aml_chip);
 	aml_chip->toggle_mode =0;
+	aml_chip->bch_info = NAND_ECC_BCH60_1K;
+	if (cpu_id.family_id == MESON_CPU_MAJOR_ID_AXG)
+		aml_chip->bch_info = NAND_ECC_BCH8_1K;
 	if (nand_scan(mtd, controller->chip_num) == 0) {
 		chip->options = 0;
 		chip->options |=  NAND_SKIP_BBTSCAN;

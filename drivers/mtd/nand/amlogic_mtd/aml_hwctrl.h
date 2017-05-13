@@ -3,6 +3,7 @@
 #define __AML_HWCTRL_H__
 
 #include <asm/arch/secure_apb.h>
+#include <asm/arch/cpu_sdio.h>
 #include <asm/io.h>
 #define	AML_NAND_UBOOT
 #define NAND_TWB_TIME_CYCLE	10
@@ -63,12 +64,11 @@ static inline int get_cpu_type(void)
 #define	POC_CONFIG_REG		(u32 *)(IO_CBUS_PHY_BASE + 0x7D54)
 #endif /* 0 */
 
-/* gx, for pxp and ic. */
-#define SD_EMMC_BASE_C	(0xd0074000)
+/* gxb and later, for pxp and ic. */
 #define P_NAND_BASE 	(SD_EMMC_BASE_C | (1<<11))
 #define NAND_BASE_APB	(P_NAND_BASE)
 #define NAND_CLK_CNTL	(SD_EMMC_BASE_C)
-#define	POC_CONFIG_REG	(volatile uint32_t *)(0xc1107d54)
+//#define	POC_CONFIG_REG	(volatile uint32_t *)(0xc1107d54)
 #endif /* AML_NAND_UBOOT */
 
 

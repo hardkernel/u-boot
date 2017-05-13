@@ -198,14 +198,26 @@ extern unsigned int aml_mx_get_id(void);
 
 void pinmux_select_chip_mtd(unsigned ce_enable, unsigned rb_enable)
 {
-	if (!((ce_enable >> 10) & 1))
-		AMLNF_SET_REG_MASK(P_PERIPHS_PIN_MUX_4, (1 << 26));
-	if (!((ce_enable >> 10) & 2))
-		AMLNF_SET_REG_MASK(P_PERIPHS_PIN_MUX_4, (1 << 27));
-	if (!((ce_enable >> 10) & 4))
-		AMLNF_SET_REG_MASK(P_PERIPHS_PIN_MUX_4, (1 << 28));
-	if (!((ce_enable >> 10) & 8))
-		AMLNF_SET_REG_MASK(P_PERIPHS_PIN_MUX_4, (1 << 29));
+	cpu_id_t cpu_id = get_cpu_id();
+
+	if (cpu_id.family_id == MESON_CPU_MAJOR_ID_AXG) {
+		if (!((ce_enable >> 10) & 1))
+			AMLNF_SET_REG_MASK(P_PERIPHS_PIN_MUX_1, 2);
+	} else if ((cpu_id.family_id == MESON_CPU_MAJOR_ID_GXBB) ||
+		(cpu_id.family_id == MESON_CPU_MAJOR_ID_GXL)) {
+		if (!((ce_enable >> 10) & 1))
+			AMLNF_SET_REG_MASK(P_PERIPHS_PIN_MUX_4, (1 << 26));
+		if (!((ce_enable >> 10) & 2))
+			AMLNF_SET_REG_MASK(P_PERIPHS_PIN_MUX_4, (1 << 27));
+		if (!((ce_enable >> 10) & 4))
+			AMLNF_SET_REG_MASK(P_PERIPHS_PIN_MUX_4, (1 << 28));
+		if (!((ce_enable >> 10) & 8))
+			AMLNF_SET_REG_MASK(P_PERIPHS_PIN_MUX_4, (1 << 29));
+	} else {
+		printk("%s() %d: cpuid 0x%x not support yet!\n",
+			__func__, __LINE__, cpu_id.family_id);
+		BUG();
+	}
 }
 
 static int controller_select_chip(struct hw_controller *controller,
@@ -246,29 +258,32 @@ void get_sys_clk_rate_mtd(struct hw_controller *controller, int *rate)
 {
 	int clk_freq = *rate;
 	cpu_id_t cpu_id = get_cpu_id();
-
+	unsigned int always_on = 0x1 << 24;
+	unsigned int clk;
+	/* fixme, axg clock may be the same setting with gxl/gxm */
+	if (cpu_id.family_id == MESON_CPU_MAJOR_ID_AXG)
+		always_on = 0x1 << 28;
+	printk("%s() %d, clock setting %d!\n",
+		__func__, __LINE__, clk_freq);
 	if ((cpu_id.family_id == MESON_CPU_MAJOR_ID_GXBB)
-			|| (cpu_id.family_id == MESON_CPU_MAJOR_ID_GXL)) {
-		/* basic debug code using 24Mhz, fixme. */
-		if (clk_freq == 24) {
-			/* 24Mhz/1 = 24Mhz */
-			amlnf_write_reg32(controller->nand_clk_reg, 0x81000201);
+			|| (cpu_id.family_id == MESON_CPU_MAJOR_ID_GXL)
+			|| (cpu_id.family_id == MESON_CPU_MAJOR_ID_AXG)) {
+		switch (clk_freq) {
+			case 24:
+				clk = 0x80000201;
+			break;
+			case 200:
+				clk = 0x80000245;
+			break;
+			case 250:
+				clk = 0x80000244;
+			break;
+			default:
+				clk = 0x80000245;
+			break;
 		}
-		else if (clk_freq == 200) {
-			/* 1000Mhz/5 = 200Mhz */
-			amlnf_write_reg32(controller->nand_clk_reg, 0x81000245);
-			printk("%s() %d, clock setting 200!\n", __func__, __LINE__);
-		}
-		else if (clk_freq == 250) {
-			/* 1000Mhz/4 = 250Mhz */
-			amlnf_write_reg32(controller->nand_clk_reg, 0x81000244);
-			printk("%s() %d, clock setting 250!\n", __func__, __LINE__);
-		} else {
-			/* 1000Mhz/5 = 200Mhz */
-			amlnf_write_reg32(controller->nand_clk_reg, 0x81000245);
-			printk("%s() %d, using default clock 200MHz !\n", __func__, __LINE__);
-		}
-		//printk("clk_reg 0x%x\n", AMLNF_READ_REG(controller->nand_clk_reg));
+		clk |= always_on;
+		amlnf_write_reg32(controller->nand_clk_reg, clk);
 		return;
 	} else {
 		BUG();
@@ -619,7 +634,7 @@ static int m3_nand_dma_write(struct aml_nand_chip *aml_chip,
 		NFC_SEND_CMD_M2N_RAW(controller, 0, len);
 	else
 		NFC_SEND_CMD_M2N(controller, aml_chip->ran_mode,
-		((bch_mode == NAND_ECC_BCH_SHORT)?NAND_ECC_BCH60_1K:bch_mode),
+		((bch_mode == NAND_ECC_BCH_SHORT)?aml_chip->bch_info:bch_mode),
 		((bch_mode == NAND_ECC_BCH_SHORT)?1:0), dma_unit_size, count);
 
 	ret = aml_platform_dma_waiting(aml_chip);
@@ -679,7 +694,7 @@ static int m3_nand_dma_read(struct aml_nand_chip *aml_chip,
 		NFC_SEND_CMD_N2M_RAW(controller, 0, len);
 	else
 		NFC_SEND_CMD_N2M(controller, aml_chip->ran_mode,
-		((bch_mode == NAND_ECC_BCH_SHORT)?NAND_ECC_BCH60_1K:bch_mode),
+		((bch_mode == NAND_ECC_BCH_SHORT)?aml_chip->bch_info:bch_mode),
 		((bch_mode == NAND_ECC_BCH_SHORT)?1:0), dma_unit_size, count);
 
 	ret = aml_platform_dma_waiting(aml_chip);

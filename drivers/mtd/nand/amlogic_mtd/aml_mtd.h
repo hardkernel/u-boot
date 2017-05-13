@@ -423,6 +423,8 @@ struct aml_nand_chip {
 	unsigned int rbpin_mode;
 	unsigned int rbpin_detect;
 	unsigned int short_pgsz;
+	/* bch for infopage on short mode */
+	unsigned int bch_info;
 
 	unsigned bch_mode;
 	u8 user_byte_mode;

@@ -1,6 +1,6 @@
 
 /*
- * arch/arm/include/asm/arch-txl/nand.h
+ * arch/arm/include/asm/arch-axg/nand.h
  *
  * Copyright (C) 2015 Amlogic, Inc. All rights reserved.
  *
@@ -141,7 +141,7 @@ typedef struct _nand_page0 {
 #define ERROR_NAND_UNALIGN_SRC      ERROR_MOD(2,6)      //
 
 #define NAND_SECTOR_SIZE		(512)
-#define NAND_MAX_PAGESIZE		(0x4000)	//16K
+//#define NAND_MAX_PAGESIZE		(0x4000)	//16K
 #define SRC_ALIGN_SIZE			(NAND_MAX_PAGESIZE)
 
 #define INFO_BYTE_PER_ECCPAGE	(8)
