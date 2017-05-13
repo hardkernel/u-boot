@@ -91,7 +91,7 @@ void internalPhyConfig(struct phy_device *phydev)
 	phy_write(phydev, MDIO_DEVAD_NONE, 0x14, 0x5C1C);
 }
 
-
+#ifdef CONFIG_CMD_NET
 static void setup_net_chip(void)
 {
 	eth_aml_reg0_t eth_reg0;
@@ -133,6 +133,7 @@ int board_eth_init(bd_t *bis)
 	designware_initialize(ETH_BASE, PHY_INTERFACE_MODE_RMII);
 	return 0;
 }
+#endif
 
 #if CONFIG_AML_SD_EMMC
 #include <mmc.h>
@@ -405,7 +406,7 @@ int board_late_init(void){
 #ifdef CONFIG_AML_VPU
 	vpu_probe();
 #endif
-	vpp_init();
+	//vpp_init();
 #ifdef CONFIG_AML_HDMITX20
 	hdmi_tx_set_hdmi_5v();
 	hdmi_tx_init();

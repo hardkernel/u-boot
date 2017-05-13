@@ -372,13 +372,13 @@
 #define GCLK_REG_AIU_TOP_LEVEL      (HHI_GCLK_MPEG1)
 #define GCLK_MASK_AIU_TOP_LEVEL      (1<<15)
 
-#define GCLK_NAME_PCM_MCLK       "PCM_MCLK"
-#define GCLK_REG_PCM_MCLK        (HHI_PCM_CLK_CNTL)
-#define GCLK_MASK_PCM_MCLK       (1<<9)
+//#define GCLK_NAME_PCM_MCLK       "PCM_MCLK"
+//#define GCLK_REG_PCM_MCLK        (HHI_PCM_CLK_CNTL)
+//#define GCLK_MASK_PCM_MCLK       (1<<9)
 
-#define GCLK_NAME_PCM_SCLK       "PCM_SCLK"
-#define GCLK_REG_PCM_SCLK        (HHI_PCM_CLK_CNTL)
-#define GCLK_MASK_PCM_SCLK       (1<<22)
+//#define GCLK_NAME_PCM_SCLK       "PCM_SCLK"
+//#define GCLK_REG_PCM_SCLK        (HHI_PCM_CLK_CNTL)
+//#define GCLK_MASK_PCM_SCLK       (1<<22)
 
 #define GCLK_IDX_UART1         48
 #define GCLK_NAME_UART1      "UART1"
@@ -442,9 +442,9 @@
 #define GCLK_MASK_HIU_PARSER_TOP      (1<<25)
 
 /* NEW ADD */
-#define GCLK_NAME_USB_CLK       "USB_CLK"
-#define GCLK_REG_USB_CLK        (HHI_USB_CLK_CNTL)
-#define GCLK_MASK_USB_CLK       (1<<9)
+//#define GCLK_NAME_USB_CLK       "USB_CLK"
+//#define GCLK_REG_USB_CLK        (HHI_USB_CLK_CNTL)
+//#define GCLK_MASK_USB_CLK       (1<<9)
 
 #define GCLK_IDX_USB_GENERAL         58
 #define GCLK_NAME_USB_GENERAL      "USB_GENERAL"
@@ -1012,33 +1012,33 @@
 #define GCLK_REG_HDMITX_CLK    (HHI_HDMI_CLK_CNTL)
 #define GCLK_MASK_HDMITX_CLK    (1<<8)
 
-#define GCLK_IDX_VDEC_CLK_1        144
-#define GCLK_NAME_VDEC_CLK_1      "VDEC_CLK_1"
-#define GCLK_DEV_VDEC_CLK_1       "CLKGATE_VDEC_CLK_1"
-#define GCLK_REG_VDEC_CLK_1       (HHI_VDEC_CLK_CNTL)
-#define GCLK_MASK_VDEC_CLK_1       (1<<8)
+//#define GCLK_IDX_VDEC_CLK_1        144
+//#define GCLK_NAME_VDEC_CLK_1      "VDEC_CLK_1"
+//#define GCLK_DEV_VDEC_CLK_1       "CLKGATE_VDEC_CLK_1"
+//#define GCLK_REG_VDEC_CLK_1       (HHI_VDEC_CLK_CNTL)
+//#define GCLK_MASK_VDEC_CLK_1       (1<<8)
 
-#define GCLK_NAME_VDEC_CLK_2      "VDEC_CLK_2"
-#define GCLK_REG_VDEC_CLK_2       (HHI_VDEC3_CLK_CNTL)
-#define GCLK_MASK_VDEC_CLK_2       (1<<8)
+//#define GCLK_NAME_VDEC_CLK_2      "VDEC_CLK_2"
+//#define GCLK_REG_VDEC_CLK_2       (HHI_VDEC3_CLK_CNTL)
+//#define GCLK_MASK_VDEC_CLK_2       (1<<8)
 
-#define GCLK_NAME_VDEC2_CLK_1     "VDEC2_CLK_1"
-#define GCLK_REG_VDEC2_CLK_1       (HHI_VDEC2_CLK_CNTL)
-#define GCLK_MASK_VDEC2_CLK_1       (1<<8)
+//#define GCLK_NAME_VDEC2_CLK_1     "VDEC2_CLK_1"
+//#define GCLK_REG_VDEC2_CLK_1       (HHI_VDEC2_CLK_CNTL)
+//#define GCLK_MASK_VDEC2_CLK_1       (1<<8)
 
-#define GCLK_NAME_VDEC2_CLK_2     "VDEC2_CLK_2"
-#define GCLK_REG_VDEC2_CLK_2      (HHI_VDEC4_CLK_CNTL)
-#define GCLK_MASK_VDEC2_CLK_2       (1<<8)
+//#define GCLK_NAME_VDEC2_CLK_2     "VDEC2_CLK_2"
+//#define GCLK_REG_VDEC2_CLK_2      (HHI_VDEC4_CLK_CNTL)
+//#define GCLK_MASK_VDEC2_CLK_2       (1<<8)
 
-#define GCLK_IDX_HCODEC_CLK_1        145
-#define GCLK_NAME_HCODEC_CLK_1      "HCODEC_CLK"
-#define GCLK_DEV_HCODEC_CLK_1       "CLKGATE_HCODEC_CLK"
-#define GCLK_REG_HCODEC_CLK_1       (HHI_VDEC_CLK_CNTL)
-#define GCLK_MASK_HCODEC_CLK_1       (1<<24)
+//#define GCLK_IDX_HCODEC_CLK_1        145
+//#define GCLK_NAME_HCODEC_CLK_1      "HCODEC_CLK"
+//#define GCLK_DEV_HCODEC_CLK_1       "CLKGATE_HCODEC_CLK"
+//#define GCLK_REG_HCODEC_CLK_1       (HHI_VDEC_CLK_CNTL)
+//#define GCLK_MASK_HCODEC_CLK_1       (1<<24)
 
-#define GCLK_NAME_HCODEC_CLK_2      "HCODEC_CLK_2"
-#define GCLK_REG_HCODEC_CLK_2       (HHI_VDEC3_CLK_CNTL)
-#define GCLK_MASK_HCODEC_CLK_2       (1<<24)
+//#define GCLK_NAME_HCODEC_CLK_2      "HCODEC_CLK_2"
+//#define GCLK_REG_HCODEC_CLK_2       (HHI_VDEC3_CLK_CNTL)
+//#define GCLK_MASK_HCODEC_CLK_2       (1<<24)
 
 #define GCLK_NAME_HEVC_CLK_1      "HCODEC_CLK_1"
 #define GCLK_REG_HEVC_CLK_1       (HHI_VDEC2_CLK_CNTL)

@@ -25,7 +25,7 @@
 
 void serial_set_pin_port(unsigned port_base)
 {
-    setbits_le32(AO_RTI_PIN_MUX_REG,3<<11);
+    setbits_le32(AO_RTI_PINMUX_REG0,3<<11);
 }
 
 #define UART_STP_BIT UART_CNTL_MASK_STP_1BIT
