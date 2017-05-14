@@ -21,7 +21,7 @@
 
 #include "serial.h"
 #include "io.h"
-#include "secure_apb.h"
+#include <asm/arch/secure_apb.h>
 
 void serial_set_pin_port(unsigned port_base)
 {

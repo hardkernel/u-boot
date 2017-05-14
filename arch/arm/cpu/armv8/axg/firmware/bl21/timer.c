@@ -21,8 +21,8 @@
 
 #include "io.h"
 #include "timer.h"
+#include <asm/arch/secure_apb.h>
 
-#define P_ISA_TIMERE                 (volatile unsigned int *)0xc1109988
 #define P_EE_TIMER_E		P_ISA_TIMERE
 
 unsigned int get_time(void)

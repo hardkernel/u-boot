@@ -87,33 +87,11 @@ static int pwm_voltage_table_ee[][2] = {
 	{ 0x01001b, 1080},
 	{ 0x00001c, 1090}
 };
-#define P_PIN_MUX_REG3		(*((volatile unsigned *)(0xff634400 + (0x2f << 2))))
-#define P_PIN_MUX_REG4		(*((volatile unsigned *)(0xff634400 + (0x30 << 2))))
-#define P_PIN_MUX_REG10		(*((volatile unsigned *)(0xff634400 + (0x36 << 2))))
-
-#define P_PWM_MISC_REG_AB	(*((volatile unsigned *)(0xffd1b000 + (0x02 << 2))))
-#define P_PWM_PWM_A			(*((volatile unsigned *)(0xffd1b000 + (0x0  << 2))))
-
-#define AO_PIN_MUX_REG		(*((volatile unsigned *)(0xff800000 + (0x05 << 2))))
-#define P_EE_TIMER_E		(*((volatile unsigned *)(0xffd00000 + (0x3c62 << 2))))
 
 enum pwm_id {
-    pwm_a = 0,
-    pwm_ao_b,
+	pwm_ao_b=0,
+	pwm_ao_d,
 };
-
-unsigned int _get_time(void)
-{
-	return P_EE_TIMER_E;
-}
-
-void _udelay_(unsigned int us)
-{
-	unsigned int t0 = _get_time();
-
-	while (_get_time() - t0 <= us)
-		;
-}
 
 void pwm_init(int id)
 {
@@ -124,26 +102,17 @@ void pwm_init(int id)
 	 */
 
 	switch (id) {
-	case pwm_a:
-		reg = P_PWM_MISC_REG_AB;
-		reg &= ~(0x7f << 8);
-		reg |=  ((1 << 15) | (1 << 0));
-		P_PWM_MISC_REG_AB = reg;
+	case pwm_ao_d:
+		reg = readl(AO_PWM_MISC_REG_CD);
+		reg &= ~(0x7f << 16);
+		reg |=  ((1 << 23) | (1 << 1));
+		writel(reg, AO_PWM_MISC_REG_CD);
 		/*
 		 * default set to max voltage
 		 */
-		//P_PWM_PWM_A = pwm_voltage_table[ARRAY_SIZE(pwm_voltage_table) - 1][0];
-		reg  = P_PIN_MUX_REG3;
-		reg &= ~((1 << 21) | 1 << 12);
-		P_PIN_MUX_REG3 = reg;
-		reg  = P_PIN_MUX_REG10;
-		reg &= ~(1 << 16);
-		P_PIN_MUX_REG10 = reg;//clear reg10
-
-		reg  = P_PIN_MUX_REG4;
-		reg &= ~(1 << 26);
-		reg |=  (1 << 17);		// enable PWM_A
-		P_PIN_MUX_REG4 = reg;
+		reg  = readl(AO_RTI_PINMUX_REG1);
+		reg &= ~(0xf << 4);
+		writel(reg | (0x3 << 4), AO_RTI_PINMUX_REG1);
 		break;
 
 	case pwm_ao_b:
@@ -154,63 +123,34 @@ void pwm_init(int id)
 		/*
 		 * default set to max voltage
 		 */
-		//writel( pwm_voltage_table[ARRAY_SIZE(pwm_voltage_table) - 1][0],AO_PWM_PWM_B);
-		reg  = AO_PIN_MUX_REG;
-		//reg |= (1 << 3);
-		AO_PIN_MUX_REG = reg;
-
+		reg  = readl(AO_RTI_PINMUX_REG0);
+		reg &= ~(0xf << 8);
+		writel(reg | (0x3 << 8), AO_RTI_PINMUX_REG0);
 		break;
 	default:
 		break;
 	}
 
-	_udelay_(200);
+	_udelay(200);
 }
-/*
-void pwm_set_voltage(unsigned int id, unsigned int voltage)
-{
-	int to;
 
-	for (to = 0; to < ARRAY_SIZE(pwm_voltage_table); to++) {
-		if (pwm_voltage_table[to][1] >= voltage) {
-			break;
-		}
-	}
-	if (to >= ARRAY_SIZE(pwm_voltage_table)) {
-		to = ARRAY_SIZE(pwm_voltage_table) - 1;
-	}
-	switch (id) {
-	case pwm_a:
-		P_PWM_PWM_A = pwm_voltage_table[to][0];
-		break;
-
-	case pwm_ao_b:
-		writel(pwm_voltage_table[to][0], AO_PWM_PWM_B);
-		break;
-	default:
-		break;
-	}
-	_udelay_(200);
-}
-*/
 void pwm_set_voltage(unsigned int id, unsigned int voltage)
 {
 	int to;
 
 	switch (id) {
-	case pwm_a:
-	for (to = 0; to < ARRAY_SIZE(pwm_voltage_table); to++) {
-		if (pwm_voltage_table[to][1] >= voltage) {
-			break;
-		}
-	}
-	if (to >= ARRAY_SIZE(pwm_voltage_table)) {
-		to = ARRAY_SIZE(pwm_voltage_table) - 1;
-	}
-		P_PWM_PWM_A = pwm_voltage_table[to][0];
-		break;
-
 	case pwm_ao_b:
+		for (to = 0; to < ARRAY_SIZE(pwm_voltage_table); to++) {
+			if (pwm_voltage_table[to][1] >= voltage) {
+				break;
+			}
+		}
+		if (to >= ARRAY_SIZE(pwm_voltage_table)) {
+			to = ARRAY_SIZE(pwm_voltage_table) - 1;
+		}
+		writel(pwm_voltage_table[to][0],AO_PWM_PWM_B);
+		break;
+	case pwm_ao_d:
 		for (to = 0; to < ARRAY_SIZE(pwm_voltage_table_ee); to++) {
 			if (pwm_voltage_table_ee[to][1] >= voltage) {
 				break;
@@ -219,31 +159,25 @@ void pwm_set_voltage(unsigned int id, unsigned int voltage)
 		if (to >= ARRAY_SIZE(pwm_voltage_table_ee)) {
 			to = ARRAY_SIZE(pwm_voltage_table_ee) - 1;
 		}
-		writel(pwm_voltage_table_ee[to][0],AO_PWM_PWM_B);
+		writel(pwm_voltage_table_ee[to][0],AO_PWM_PWM_D);
 		break;
 	default:
 		break;
 	}
-	_udelay_(200);
+	_udelay(200);
 }
 
 void power_init(int mode)
 {
 	unsigned int reg;
-
 	serial_puts("set vcck to ");
 	serial_put_dec(CONFIG_VCCK_INIT_VOLTAGE);
 	serial_puts(" mv\n");
-	pwm_set_voltage(pwm_a, CONFIG_VCCK_INIT_VOLTAGE);
+	pwm_set_voltage(pwm_ao_b, CONFIG_VCCK_INIT_VOLTAGE);
 	serial_puts("set vddee to ");
 	serial_put_dec(CONFIG_VDDEE_INIT_VOLTAGE);
 	serial_puts(" mv\n");
-	pwm_set_voltage(pwm_ao_b, CONFIG_VDDEE_INIT_VOLTAGE);
-	pwm_init(pwm_a);
+	pwm_set_voltage(pwm_ao_d, CONFIG_VDDEE_INIT_VOLTAGE);
 	pwm_init(pwm_ao_b);
-	serial_puts("set vddee enable AO 2/10 to high\n ");
-	reg = readl(AO_GPIO_O_EN_N);
-	reg &= ~((1 << 2)|(1 << 10));
-	reg |=  ((1 << 18)|(1 << 26));
-	writel(reg, AO_GPIO_O_EN_N);
+	pwm_init(pwm_ao_d);
 }

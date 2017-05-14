@@ -19,7 +19,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-#include "secure_apb.h"
+#include <asm/arch/secure_apb.h>
 #include "serial.h" //use local serial driver
 #include "io.h"
 #include "timer.h"
@@ -28,6 +28,6 @@
 void bl21_main(void)
 {
 	/* bl2 customer code */
-	//board_init();
+	board_init();
 	return;
 }
