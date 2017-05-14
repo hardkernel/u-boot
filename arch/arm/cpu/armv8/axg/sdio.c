@@ -1,6 +1,6 @@
 
 /*
- * arch/arm/cpu/armv8/txl/sdio.c
+ * arch/arm/cpu/armv8/axg/sdio.c
  *
  * Copyright (C) 2015 Amlogic, Inc. All rights reserved.
  *
@@ -56,22 +56,18 @@ int cpu_sd_emmc_init(unsigned port)
 	//printf("inand sdio  port:%d\n",port);
 	switch (port)
 	{
-	case SDIO_PORT_A:
-        setbits_le32(P_PERIPHS_PIN_MUX_5, (0x3f << 26) | (0x1 << 24));
-		break;
 	case SDIO_PORT_B:
 		if (sd_debug_board_1bit_flag == 1)
-			setbits_le32(P_PERIPHS_PIN_MUX_6, 0x7 << 2);
-        else {
-            clrbits_le32(P_PERIPHS_PIN_MUX_6, 0x3f << 6);
-			setbits_le32(P_PERIPHS_PIN_MUX_6, 0x3f << 0);
-        }
+			clrsetbits_le32(P_PERIPHS_PIN_MUX_4, 0xEE000E, 0x110001);
+		else
+			clrsetbits_le32(P_PERIPHS_PIN_MUX_4, 0xEEEEEE, 0x111111);
 		break;
-	case SDIO_PORT_C://SDIOC GPIOB_2~GPIOB_7
-		clrbits_le32(P_PERIPHS_PIN_MUX_7, (0x7 << 5) | (0xff << 16));
-		setbits_le32(P_PERIPHS_PIN_MUX_7, 0x7 << 29);
-        //printf("inand sdio  port:%d\n",port);
+	case SDIO_PORT_C:
+		clrsetbits_le32(P_PERIPHS_PIN_MUX_0, 0xEEEEEEEE, 0x11111111);
+		clrsetbits_le32(P_PERIPHS_PIN_MUX_1, 0xE00E0E, 0x100101);
 		break;
+	case SDIO_PORT_A:
+		//printf("no port A on axg!\n");
 	default:
 		return -1;
 	}

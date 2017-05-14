@@ -168,9 +168,12 @@ static int  sd_emmc_detect(unsigned port)
 	case SDIO_PORT_A:
 		break;
 	case SDIO_PORT_B:
-			setbits_le32(P_PREG_PAD_GPIO2_EN_N, 1 << 26);//CARD_6
-			ret = readl(P_PREG_PAD_GPIO2_I) & (1 << 26) ? 0 : 1;
+			/*axg skt using GPIOX_6 as CD, no debug board anymore*/
+			clrbits_le32(P_PERIPHS_PIN_MUX_4, 0xF000000);
+			setbits_le32(P_PREG_PAD_GPIO2_EN_N, 1 << 6);
+			ret = readl(P_PREG_PAD_GPIO2_I) & (1 << 6) ? 0 : 1;
 			printf("%s\n", ret ? "card in" : "card out");
+		#if 0 /* no default card on board. */
 			if ((readl(P_PERIPHS_PIN_MUX_6) & (3 << 8))) { //if uart pinmux set, debug board in
 				if (!(readl(P_PREG_PAD_GPIO2_I) & (1 << 24))) {
 					printf("sdio debug board detected, sd card with 1bit mode\n");
@@ -182,6 +185,7 @@ static int  sd_emmc_detect(unsigned port)
 					return 1;
 				}
 			}
+		#endif
 		break;
 	default:
 		break;
