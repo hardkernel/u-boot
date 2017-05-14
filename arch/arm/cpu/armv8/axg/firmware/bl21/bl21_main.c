@@ -28,6 +28,6 @@
 void bl21_main(void)
 {
 	/* bl2 customer code */
-	board_init();
+	//board_init();
 	return;
 }
