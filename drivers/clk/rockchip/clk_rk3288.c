@@ -517,7 +517,7 @@ static ulong rockchip_mmc_get_clk(struct rk3288_cru *cru, uint gclk_rate,
 	}
 
 	src_rate = mux == EMMC_PLL_SELECT_24MHZ ? OSC_HZ : gclk_rate;
-	return DIV_TO_RATE(src_rate, div);
+	return DIV_TO_RATE(src_rate, div) / 2;
 }
 
 static ulong rockchip_mmc_set_clk(struct rk3288_cru *cru, uint gclk_rate,
