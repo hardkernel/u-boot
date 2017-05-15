@@ -576,4 +576,12 @@ pll_set_t __pll_setting = {
 	.ddr_clk_debug			= CONFIG_DDR_CLK_DEBUG,
 	.cpu_clk_debug			= CONFIG_CPU_CLK_DEBUG,
 #endif
+	.ddr_pll_set			= {
+		/* ddr pll ssc config:
+			ppm1000: 0x00120000
+			ppm2000: 0x00140000
+			ppm3000: 0x00160000
+		*/
+		[0] = 0x00120000,
+	},
 };
