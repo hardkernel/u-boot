@@ -508,7 +508,6 @@ struct mmc {
 	u8 part_attr;
 	u8 wr_rel_set;
 	u8 part_config;
-	uint tran_speed;
 	uint read_bl_len;
 	uint write_bl_len;
 	uint erase_grp_size;	/* in 512-byte sectors */
