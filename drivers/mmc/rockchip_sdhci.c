@@ -47,10 +47,24 @@ static int arasan_sdhci_probe(struct udevice *dev)
 
 	host->name = dev->name;
 	host->ioaddr = map_sysmem(dtplat->reg[1], dtplat->reg[3]);
+	host->host_caps |= MMC_MODE_8BIT;
 	max_frequency = dtplat->max_frequency;
 	ret = clk_get_by_index_platdata(dev, 0, dtplat->clocks, &clk);
 #else
 	max_frequency = dev_read_u32_default(dev, "max-frequency", 0);
+	switch (dev_read_u32_default(dev, "bus-width", 4)) {
+	case 8:
+		host->host_caps |= MMC_MODE_8BIT;
+		break;
+	case 4:
+		host->host_caps |= MMC_MODE_4BIT;
+		break;
+	case 1:
+		break;
+	default:
+		printf("Invalid \"bus-width\" value\n");
+		return -EINVAL;
+	}
 	ret = clk_get_by_index(dev, 0, &clk);
 #endif
 	if (!ret) {
