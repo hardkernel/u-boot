@@ -194,6 +194,30 @@ struct aml_nand_flash_dev aml_nand_flash_ids[] = {
 		0,
 		(NAND_TIMING_MODE5 | NAND_ECC_BCH8_MODE )},
 
+	{"AMD/Spansion Slc NAND 2Gib S34ML02G1(MLO2G100BH1OO)",
+		{NAND_MFR_AMD, 0xda, 0x90, 0x95, 0x44,0x01},
+		2048,
+		256,
+		0x20000,
+		64,
+		1,
+		16,
+		15,
+		0,
+		(NAND_TIMING_MODE5 | NAND_ECC_BCH8_MODE )},
+
+	{"AMD/Spansion Slc NAND 2Gib S34ML02G1(MLO2G200BH1OO)",
+		{NAND_MFR_AMD, 0xda, 0x90, 0x95, 0x46,0x01},
+		2048,
+		256,
+		0x20000,
+		64,
+		1,
+		16,
+		15,
+		0,
+		(NAND_TIMING_MODE5 | NAND_ECC_BCH8_MODE )},
+
 	{"A revision NAND 1Gib W29N01GV ",
 		{NAND_ID_WINBOND, 0xf1, 0x80, 0x95, 0x00, 0x00},
 		2048,
@@ -2670,6 +2694,14 @@ static int aml_nand_scan_ident(struct mtd_info *mtd, int maxchips)
 			(aml_chip->chip_enable[1] & aml_chip->chip_enable[2]);
 		}*/
 	}
+
+	/*
+	 *fixit, Need to send dummy cmd for spansion(MLO2G100BH1OO) which is different
+	 *from others.
+	 */
+	if (aml_chip->mfr_type  == NAND_MFR_AMD )
+		chip->cmdfunc(mtd, 0x00, -1, -1);
+
 	if (aml_chip->onfi_mode) {
 		aml_nand_set_onfi_features(aml_chip,
 			(uint8_t *)(&aml_chip->onfi_mode), ONFI_TIMING_ADDR);
@@ -2718,9 +2750,10 @@ static int aml_nand_scan_ident(struct mtd_info *mtd, int maxchips)
 	mtd->size = valid_chip_num * chip->chipsize;
 
 	/* overide bootloader's size consdering info page */
+	/* fixme, need -1 for each copies? */
 	if (!strncmp((char*)plat->name,
 		NAND_BOOT_NAME, strlen((const char*)NAND_BOOT_NAME)))
-		mtd->size =  BOOT_PAGES_PER_COPY * mtd->writesize;
+		mtd->size =  BOOT_TOTAL_PAGES * mtd->writesize;
 
 	chip->cmdfunc = aml_nand_command;
 	chip->waitfunc = aml_nand_wait;

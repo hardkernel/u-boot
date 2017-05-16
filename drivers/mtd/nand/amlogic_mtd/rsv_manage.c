@@ -104,7 +104,6 @@ int aml_nand_scan_shipped_bbt(struct mtd_info *mtd)
 {
 	struct nand_chip * chip = mtd->priv;
 	struct aml_nand_chip *aml_chip = mtd_to_nand_chip(mtd);
-	struct aml_nand_platform *plat = aml_chip->platform;
 	unsigned char *data_buf;
 	int32_t read_cnt, page, pages_per_blk;
 	loff_t addr, offset;
@@ -122,33 +121,29 @@ int aml_nand_scan_shipped_bbt(struct mtd_info *mtd)
 		return -ENOMEM;
 	}
 
-	if ((strncmp((char*)plat->name,
-		NAND_BOOT_NAME, strlen((const char*)NAND_BOOT_NAME)))) {
-		memset(&aml_chip->nand_bbt_info->nand_bbt[0],
-			0, MAX_BAD_BLK_NUM);
-		if (nand_boot_flag)
-			offset = (1024 * mtd->writesize / aml_chip->plane_num);
-		else {
-			offset = 0;
-		}
-		start_blk = (int)(offset >> phys_erase_shift);
-		total_blk = (int)(mtd->size >> phys_erase_shift);
-	}
-
-	printk("scaning flash chip_num=%d %d %d %d\n",  controller->chip_num,
-		aml_chip->valid_chip[0], aml_chip->valid_chip[1],
-		aml_chip->valid_chip[2]);
+	/*need scan factory bad block in bootloader area*/
+	start_blk = 0;
+	total_blk = (int)(mtd->size >> phys_erase_shift) + 1024 / pages_per_blk;
+	/* fixme, need  check the total block number avoid mtd->size was changed outside! */
+	printk("scaning flash total block %d\n", total_blk);
 	do {
 	offset = mtd->erasesize;
 	offset *= start_blk;
 	for (i=0; i < controller->chip_num; i++) {
 	//if (aml_chip->valid_chip[i]) {
-		for (read_cnt = 0; read_cnt < 2; read_cnt++) {
-			if (aml_chip->mfr_type  == NAND_MFR_SANDISK) {
-				addr = offset + read_cnt*mtd->writesize;
-			} else
-				addr = offset +
-			(pages_per_blk - 1) * read_cnt * mtd->writesize;
+		for (read_cnt = 0; read_cnt < 3; read_cnt++) {
+			if (read_cnt == 2) {
+				if (aml_chip->mfr_type == NAND_MFR_AMD)
+					addr = offset + mtd->writesize;
+				else
+					break;
+		    } else {
+				if (aml_chip->mfr_type  == NAND_MFR_SANDISK) {
+					addr = offset + read_cnt*mtd->writesize;
+				} else
+					addr = offset +
+				(pages_per_blk - 1) * read_cnt * mtd->writesize;
+			}
 
 			realpage = (int)(addr >> chip->page_shift);
 			page = realpage & chip->pagemask;
@@ -248,6 +243,17 @@ int aml_nand_scan_shipped_bbt(struct mtd_info *mtd)
 
 	if ((aml_chip->mfr_type  == 0xC8 )) {
 		if ((col0_oob != 0xFF) || (col0_data != 0xFF)) {
+			printk("detect factory Bad block:%llx blk:%d chip:%d\n",
+				(uint64_t)addr, start_blk, i);
+			aml_chip->nand_bbt_info->nand_bbt[bad_blk_cnt++] =
+				start_blk | 0x8000;
+			aml_chip->block_status[start_blk] = NAND_FACTORY_BAD;
+			break;
+		}
+	}
+
+	if (aml_chip->mfr_type  == NAND_MFR_AMD ) {
+		if (col0_oob != 0xFF) {
 			printk("detect factory Bad block:%llx blk:%d chip:%d\n",
 				(uint64_t)addr, start_blk, i);
 			aml_chip->nand_bbt_info->nand_bbt[bad_blk_cnt++] =
@@ -498,9 +504,6 @@ static int aml_nand_write_rsv(struct mtd_info *mtd,
 	unsigned char oob_buf[sizeof(struct oobinfo_t)];
 
 	data_buf = aml_chip->rsv_data_buf;
-	//if (data_buf == NULL)
-	//	return -ENOMEM;
-
 	addr = offset;
 	printk("%s:%d,write info to %llx\n",__func__, __LINE__, addr);
 	oobinfo = (struct oobinfo_t *)oob_buf;
@@ -705,12 +708,12 @@ RE_SEARCH:
 		if (error != 0) {
 			/*
 			bad block here, need fix it
-			because of env_blk list may be include bad block,
+			because of info_blk list may be include bad block,
 			so we need check it and done here. if don't,
 			some bad blocks may be erase here
 			and env will lost or too much ecc error
 			*/
-			printk("have bad block in env_blk list!!!!\n");
+			printk("have bad block in info_blk list!!!!\n");
 			nandrsv_info->valid_node->phy_page_addr =
 				pages_per_blk - i ;
 			goto RE_SEARCH;
@@ -816,7 +819,7 @@ int aml_nand_rsv_info_init(struct mtd_info *mtd)
 {
 	struct aml_nand_chip *aml_chip = mtd_to_nand_chip(mtd);
 	struct nand_chip *chip = mtd->priv;
-	unsigned pages_per_blk_shift, bbt_start_block;
+	unsigned int pages_per_blk_shift, bbt_start_block;
 	int phys_erase_shift , i;
 
 	phys_erase_shift = fls(mtd->erasesize) - 1;
@@ -955,13 +958,6 @@ int aml_nand_scan_rsv_info(struct mtd_info *mtd,
 	int error = 0, ret = 0;
 
 	data_buf = aml_chip->rsv_data_buf;
-	/*
-	good_addr = kzalloc(256, GFP_KERNEL);
-	if (good_addr == NULL)
-		return -ENOMEM;
-	memset(good_addr, 0 , 256);
-	*/
-
 	oobinfo = (struct oobinfo_t *)oob_buf;
 
 	max_scan_blk = nandrsv_info->end_block;
@@ -999,16 +995,10 @@ RE_RSV_INFO:
 		goto RE_RSV_INFO;
 	}
 
-	//printk("%s %d\n", __func__, __LINE__);
 	nandrsv_info->init = 1;
 	if (!memcmp(oobinfo->name, nandrsv_info->name, 4)) {
-		//printk("%s %d\n", __func__, __LINE__);
 		nandrsv_info->valid = 1;
 		if (nandrsv_info->valid_node->phy_blk_addr >= 0) {
-			/*
-			free_node =
-			kzalloc(sizeof(struct free_node_t), GFP_KERNEL);
-			*/
 			free_node = get_free_node(mtd);
 			if (free_node == NULL)
 				return -ENOMEM;
@@ -1049,10 +1039,6 @@ RE_RSV_INFO:
 				oobinfo->timestamp;
 		}
 	} else {
-		/*
-		free_node =
-			kzalloc(sizeof(struct free_node_t), GFP_KERNEL);
-		*/
 		free_node = get_free_node(mtd);
 		if (free_node == NULL)
 			return -ENOMEM;
@@ -1087,7 +1073,6 @@ RE_RSV_INFO:
 	}
 
 	/*second stage*/
-
 	phys_erase_shift = fls(mtd->erasesize) - 1;
 	pages_per_blk = (1 << (phys_erase_shift - chip->page_shift));
 	page_num = nandrsv_info->size / mtd->writesize;
@@ -1214,6 +1199,7 @@ int aml_nand_dtb_check(struct mtd_info *mtd)
 int aml_nand_bbt_check(struct mtd_info *mtd)
 {
 	struct aml_nand_chip *aml_chip = mtd_to_nand_chip(mtd);
+	struct aml_nand_chip *aml_chip_boot = mtd_to_nand_chip(&nand_info[0]);
 	int phys_erase_shift;
 	int ret =0;
 	int8_t *buf = NULL;
@@ -1232,7 +1218,7 @@ int aml_nand_bbt_check(struct mtd_info *mtd)
 		printk("%s %d bbt is valid, reading.\n", __func__, __LINE__);
 		aml_nand_read_rsv_info(mtd,
 			aml_chip->aml_nandbbt_info, 0, (u_char *)buf);
-		return 0;
+		ret = 0;
 	} else {
 		printk("%s %d bbt is invalid, scanning.\n", __func__, __LINE__);
 		/*no bbt haven't been found, abnormal or clean nand! rebuild*/
@@ -1246,13 +1232,16 @@ int aml_nand_bbt_check(struct mtd_info *mtd)
 			0, (mtd->size >> phys_erase_shift));
 		aml_nand_scan_shipped_bbt(mtd);
 		aml_nand_save_bbt(mtd, (u_char *)buf);
+		if (aml_chip->nand_bbt_info)
+			kfree(aml_chip->nand_bbt_info);
 	}
+
+	/*make uboot bbt perspective the same with normal bbt*/
+	aml_chip_boot->block_status = aml_chip->block_status;
+
 exit_error:
-	if (aml_chip->nand_bbt_info)
-		kfree(aml_chip->nand_bbt_info);
 	return ret;
 }
-
 
 int aml_nand_scan_bbt(struct mtd_info *mtd)
 {

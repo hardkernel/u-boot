@@ -752,11 +752,7 @@ void aml_nand_get_read_default_value_hynix(struct mtd_info *mtd)
 		return;
 	}
 
-	if (nand_boot_flag)
-		addr = (1024 * mtd->writesize / aml_chip->plane_num);
-	else
-		addr = 0;
-
+	addr = nand_boot_flag? (1024*mtd->writesize/aml_chip->plane_num) : 0;
 	total_blk = 0;
 	aml_chip->new_nand_info.read_rety_info.default_flag = 0;
 	if (aml_chip->new_nand_info.type ==HYNIX_1YNM_8GB) {
@@ -905,11 +901,7 @@ for (j = 0; j < aml_chip->new_nand_info.read_rety_info.reg_cnt; j++)
 		return;
 	}
 
-	if (nand_boot_flag)
-		addr = (1024 * mtd->writesize / aml_chip->plane_num);
-	else
-		addr = 0;
-
+	addr = nand_boot_flag? (1024*mtd->writesize/aml_chip->plane_num) : 0;
 	total_blk = 0;
 	while (total_blk < RETRY_NAND_BLK_NUM) {
 		error = mtd->_block_isbad(mtd, addr);
@@ -1712,10 +1704,12 @@ static int aml_nand_add_partition(struct aml_nand_chip *aml_chip)
 	uint64_t last_size =0,start_blk = 0;
 	uint64_t mini_part_size;
 	int reserved_part_blk_num = RESERVED_BLOCK_NUM;
+	uint64_t fip_part_size = 0;
+	int normal_base = 0;
 	unsigned int bad_blk_addr[128];
 
 	mini_part_size =
-(mtd->erasesize > NAND_MINI_PART_SIZE ) ? mtd->erasesize : NAND_MINI_PART_SIZE;
+(mtd->erasesize > MINI_PART_SIZE ) ? mtd->erasesize : MINI_PART_SIZE;
 	phys_erase_shift = fls(mtd->erasesize) - 1;
 	if (!strncmp((char*)plat->name,
 		NAND_BOOT_NAME, strlen((const char*)NAND_BOOT_NAME))) {\
@@ -1738,6 +1732,9 @@ static int aml_nand_add_partition(struct aml_nand_chip *aml_chip)
 				(1024 * mtd->writesize / aml_chip->plane_num);
 		part_num++;
 		start_blk = 0;
+
+	#ifndef CONFIG_DISCRETE_BOOTLOADER
+		fip_part_size = 0;
 		do {
 			offset = adjust_offset + start_blk * mtd->erasesize;
 			error = mtd->_block_isbad(mtd, offset);
@@ -1750,23 +1747,36 @@ static int aml_nand_add_partition(struct aml_nand_chip *aml_chip)
 			}
 			start_blk++;
 		} while (start_blk < reserved_part_blk_num);
-		adjust_offset += reserved_part_blk_num * mtd->erasesize;
-
-		/*normal mtd device divide part from here(adjust_offset)*/
-		if (nr == 0) {
-			part_save_in_env = 0;
-			if (nand_boot_flag)
-				nr = NAND_MINI_PART_NUM + 1;
-			else
-				nr = 2;
-			parts = kzalloc((nr * sizeof(struct mtd_partition)),
-				GFP_KERNEL);
-			if (!parts)
-				return -ENOMEM;
-			mini_part_size =
-(mtd->erasesize > NAND_MINI_PART_SIZE) ? mtd->erasesize : NAND_MINI_PART_SIZE;
+	#else
+		/* reserved area size is fixed 48 blocks and
+		 * have fip between rsv and normal, so
+		 * don't skip factory bad block and set fip part size.
+		 */
+		fip_part_size = CONFIG_TPL_SIZE_PER_COPY * CONFIG_TPL_COPY_NUM;
+		/* TODO: add fip 2 partition list */
+		temp_parts = parts;
+		if (strcmp(CONFIG_TPL_PART_NAME, temp_parts->name)) {
+			printf("nand: double check your mtd partition table!\n");
+			printf("%s should be the 1st part!\n", CONFIG_TPL_PART_NAME);
+			return -ENODEV;
 		}
-		for (i = 0; i < nr; i++) {
+		if (temp_parts->size) {
+			printf("nand: size of %s should not be pre-set\n",
+				temp_parts->name);
+			printf("it's should be determined by TPL_COPY_NUM*TPL_SIZE_PER_COPY\n");
+			printf("which is %lld\n", fip_part_size);
+		}
+		temp_parts->offset = adjust_offset + reserved_part_blk_num * mtd->erasesize;
+		temp_parts->size = fip_part_size;
+		printf("%s: off %lld, size %lld\n", temp_parts->name,
+			temp_parts->offset, temp_parts->size);
+		normal_base = 1;
+	#endif /* CONFIG_DISCRETE_BOOTLOADER */
+		adjust_offset += reserved_part_blk_num * mtd->erasesize
+			+ fip_part_size;
+
+		/* normal mtd device divide part from here(adjust_offset) */
+		for (i = normal_base; i < nr; i++) {
 			temp_parts = parts + i;
 			bad_block_cnt =0;
 			memset((u8 *)bad_blk_addr, 0xff, 128 * sizeof(int));
@@ -1877,8 +1887,8 @@ static void inline nand_get_chip(void )
 		AMLNF_CLEAR_REG_MASK(P_PERIPHS_PIN_MUX_5, (0xF));
 	} else if (cpu_id.family_id == MESON_CPU_MAJOR_ID_AXG) {
 		/* axg */
-		AMLNF_SET_REG_MASK(P_PAD_PULL_UP_EN_REG2, 0xffff87ff);
-		AMLNF_SET_REG_MASK(P_PAD_PULL_UP_REG2, 0xffff8700);
+		AMLNF_WRITE_REG(P_PAD_PULL_UP_EN_REG2, 0xffff87ff);
+		AMLNF_WRITE_REG(P_PAD_PULL_UP_REG2, 0xffff8700);
 		AMLNF_WRITE_REG(P_PERIPHS_PIN_MUX_0, 0x11111111);
 		AMLNF_WRITE_REG(P_PERIPHS_PIN_MUX_1,
 			(AMLNF_READ_REG(P_PERIPHS_PIN_MUX_1) & 0xfff000) | 0x22222);

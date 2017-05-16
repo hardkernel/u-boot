@@ -313,7 +313,7 @@ int amlnf_dtb_init(struct aml_nand_chip *aml_chip)
 	u8 *dtb_buf = NULL;
 	aml_chip_dtb = aml_chip;
 
-	aml_chip->dtbsize = 0x20000; //fixit
+	//aml_chip->dtbsize = 0x20000; //fixit
 
 	dtb_buf = kzalloc(aml_chip_dtb->dtbsize, GFP_KERNEL);
 	if (dtb_buf == NULL) {

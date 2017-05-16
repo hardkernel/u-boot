@@ -285,6 +285,23 @@
 #endif
 
 #ifdef CONFIG_AML_MTD
+
+/* bootlaoder is construct by bl2 and fip
+ * when DISCRETE_BOOTLOADER is enabled, bl2 & fip
+ * will not be stored continuously, and nand layout
+ * would be bl2|rsv|fip|normal, but not
+ * bl2|fip|rsv|noraml anymore
+ */
+#define CONFIG_DISCRETE_BOOTLOADER
+
+#ifdef  CONFIG_DISCRETE_BOOTLOADER
+#define CONFIG_TPL_SIZE_PER_COPY          0x200000
+#define CONFIG_TPL_COPY_NUM               4
+#define CONFIG_TPL_PART_NAME              "tpl"
+/* for bl2, restricted by romboot */
+#define CONFIG_BL2_COPY_NUM               4
+#endif /* CONFIG_DISCRETE_BOOTLOADER */
+
 #define CONFIG_CMD_NAND 1
 #define CONFIG_MTD_DEVICE y
 /* mtd parts of ourown.*/

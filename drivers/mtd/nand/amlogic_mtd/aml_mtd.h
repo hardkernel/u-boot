@@ -69,17 +69,33 @@ typedef struct _ext_info{
 	uint32_t page_per_blk;	//pages_in_block;
 	uint32_t xlc;			//slc=1, mlc=2, tlc=3.
 	uint32_t ce_mask;
+	/* copact mode: boot means whole uboot
+	   it's easy to understood that copies of
+	   bl2 and fip are the same.
+     * discrete mode, boot means the fip only */
 	uint32_t boot_num;
 	uint32_t each_boot_pages;
-	uint32_t rsv[2];
-	/* add new below, */
+	/* for comptible reason */
+	uint32_t bbt_occupy_pages;
+	uint32_t bbt_start_block;
 } ext_info_t;
+
+#define NAND_FIPMODE_COMPACT    (0)
+#define NAND_FIPMODE_DISCRETE   (1)
+
+typedef struct _fip_info {
+    uint16_t version; //version
+    uint16_t mode;    //compact or discrete
+    uint32_t fip_start; //fip start, pages
+}fip_info_t;
 
 typedef struct _nand_page0 {
 	nand_setup_t nand_setup;		//8
 	unsigned char page_list[16]; 	//16
 	nand_cmd_t retry_usr[32];		//64 (32 cmd max I/F)
-	ext_info_t ext_info;			//64
+	ext_info_t ext_info;			//72
+	/* added for slc nand in mtd drivers 20170503*/
+	fip_info_t fip_info;
 } nand_page0_t;	//384 bytes max.
 
 
@@ -179,7 +195,7 @@ typedef union nand_core_clk {
 #define NAND_FACTORY_BAD	2
 #define BAD_BLK_LEVEL	2
 #define	FACTORY_BAD_BLOCK_ERROR	159
-#define NAND_MINI_PART_SIZE	0x100000
+#define MINI_PART_SIZE	0x100000
 #define NAND_MINI_PART_NUM	4
 #define MAX_BAD_BLK_NUM	2000
 #define MAX_MTD_PART_NUM	16
@@ -446,6 +462,7 @@ struct aml_nand_chip {
 	/*add property field for key private data*/
 	int dtbsize;
 	int keysize;
+	uint32_t boot_copy_num; /*tell how many bootloader copies*/
 
 	u8 key_protect;
 	unsigned char *rsv_data_buf;
@@ -526,7 +543,6 @@ static inline struct aml_nand_chip *mtd_to_nand_chip(struct mtd_info *mtd)
 	struct nand_chip *chip = mtd->priv;
 	return container_of(chip, struct aml_nand_chip, chip);
 }
-
 
 #ifdef CONFIG_PARAMETER_PAGE
 struct parameter_page {
@@ -735,6 +751,20 @@ void aml_nand_command(struct mtd_info *mtd,
 int aml_nand_wait(struct mtd_info *mtd, struct nand_chip *chip);
 
 void aml_nand_erase_cmd(struct mtd_info *mtd, int page);
+
+void m3_nand_boot_erase_cmd(struct mtd_info *mtd, int page);
+
+int m3_nand_boot_read_page_hwecc(struct mtd_info *mtd,
+	struct nand_chip *chip, uint8_t *buf, int oob_required, int page);
+
+int m3_nand_boot_write_page_hwecc(struct mtd_info *mtd,
+	struct nand_chip *chip, const uint8_t *buf, int oob_required);
+
+int m3_nand_boot_write_page(struct mtd_info *mtd, struct nand_chip *chip,
+	uint32_t offset, int data_len, const uint8_t *buf,
+	int oob_required, int page, int cached, int raw);
+
+int get_boot_num(struct mtd_info *mtd, size_t rwsize);
 
 #endif
 

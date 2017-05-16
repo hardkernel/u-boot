@@ -375,6 +375,18 @@ static void hdmi_tx_set_hdmi_5v(void)
  */
 #ifdef CONFIG_AML_MTD
 static struct mtd_partition normal_partition_info[] = {
+#ifdef CONFIG_DISCRETE_BOOTLOADER
+    /* MUST NOT CHANGE this part unless u know what you are doing!
+     * inherent parition for descrete bootloader to store fip
+     * size is determind by TPL_SIZE_PER_COPY*TPL_COPY_NUM
+     * name must be same with TPL_PART_NAME
+     */
+    {
+        .name = "tpl",
+        .offset = 0,
+        .size = 0,
+    },
+#endif
     {
         .name = "logo",
         .offset = 0,
