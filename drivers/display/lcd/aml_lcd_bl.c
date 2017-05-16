@@ -1945,6 +1945,7 @@ int aml_bl_config_load(char *dt_addr, int load_id)
 	unsigned int index;
 #endif
 	char *bl_off_policy_str;
+	char *bl_level_str;
 	int ret;
 
 	bl_status = 0;
@@ -2009,6 +2010,13 @@ int aml_bl_config_load(char *dt_addr, int load_id)
 		else if (strncmp(bl_off_policy_str, "once", 2) == 0)
 			bl_off_policy = BL_OFF_POLICY_ONCE;
 		LCDPR("bl: bl_off_policy: %s\n", bl_off_policy_str);
+	}
+
+	/* get bl_level */
+	bl_level_str = getenv("bl_level");
+	if (bl_level_str != NULL) {
+		lcd_drv->bl_config->level_default = (int)simple_strtoul(bl_level_str, NULL, 10);
+		LCDPR("bl: bl_level: %d\n", lcd_drv->bl_config->level_default);
 	}
 
 	return 0;
