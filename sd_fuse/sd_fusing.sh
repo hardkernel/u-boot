@@ -24,9 +24,9 @@ if [ ! -f $UBOOT ]; then
         exit 1
 fi
 
-sudo dd if=$BL1 of=$1 conv=fsync bs=1 count=442
-sudo dd if=$BL1 of=$1 conv=fsync bs=512 skip=1 seek=1
-sudo dd if=$UBOOT of=$1 conv=fsync bs=512 seek=97
+sudo dd if=$BL1 of=$1 conv=fsync,notrunc bs=1 count=442
+sudo dd if=$BL1 of=$1 conv=fsync,notrunc bs=512 skip=1 seek=1
+sudo dd if=$UBOOT of=$1 conv=fsync,notrunc bs=512 seek=97
 
 sync
 
