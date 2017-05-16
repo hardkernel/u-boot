@@ -200,7 +200,8 @@ struct pll_set{
 	unsigned short	cpu_clk_debug;
 	unsigned short	rsv_s1;
 	/* align */
-	unsigned long	rsv_l2;
+	unsigned int	ddr_pll_ssc;
+	unsigned int	rsv_i1;
 	unsigned long	rsv_l3;
 	unsigned long	rsv_l4;
 	unsigned long	rsv_l5;
