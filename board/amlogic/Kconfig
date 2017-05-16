@@ -127,6 +127,10 @@ config AXG_SKT_V1
 	bool "Support amlogic axg skt v1 board"
 	default n
 
+config AXG_S400_V1
+	bool "Support amlogic axg s400 v1 board"
+	default n
+
 config PXP_EMULATOR
 	bool "Support pxp environment"
 	default n
@@ -264,6 +268,10 @@ endif
 
 if AXG_SKT_V1
 source "board/amlogic/axg_skt_v1/Kconfig"
+endif
+
+if AXG_S400_V1
+source "board/amlogic/axg_s400_v1/Kconfig"
 endif
 
 if ODROID_C2
