@@ -675,4 +675,19 @@ pll_set_t __pll_setting = {
 	.ddr_clk_debug			= CONFIG_DDR_CLK_DEBUG,
 	.cpu_clk_debug			= CONFIG_CPU_CLK_DEBUG,
 #endif
+	/* pll ssc setting:
+
+	.ddr_pll_ssc = 0x00120000, ppm1000 center SS, boot log show: Set ddr ssc: ppm1000
+	.ddr_pll_ssc = 0x00124000, ppm1000 up SS,     boot log show: Set ddr ssc: ppm1000+
+	.ddr_pll_ssc = 0x00128000, ppm1000 down SS,   boot log show: Set ddr ssc: ppm1000-
+
+	.ddr_pll_ssc = 0x00140000, ppm2000 center SS, boot log show: Set ddr ssc: ppm2000
+	.ddr_pll_ssc = 0x00144000, ppm2000 up SS,     boot log show: Set ddr ssc: ppm2000+
+	.ddr_pll_ssc = 0x00148000, ppm2000 down SS,   boot log show: Set ddr ssc: ppm2000-
+
+	.ddr_pll_ssc = 0x00160000, ppm3000 center SS, boot log show: Set ddr ssc: ppm3000
+	.ddr_pll_ssc = 0x00164000, ppm3000 up SS,     boot log show: Set ddr ssc: ppm3000+
+	.ddr_pll_ssc = 0x00168000, ppm3000 down SS,   boot log show: Set ddr ssc: ppm3000-
+	*/
+	.ddr_pll_ssc			= 0,
 };
