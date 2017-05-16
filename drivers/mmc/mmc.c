@@ -36,7 +36,11 @@ bool emmckey_is_access_range_legal (struct mmc *mmc, ulong start, lbaint_t blkcn
 		key_start_blk = ((EMMCKEY_RESERVE_OFFSET + MMC_RESERVED_OFFSET) / MMC_BLOCK_SIZE);
 		key_end_blk = ((EMMCKEY_RESERVE_OFFSET + MMC_RESERVED_OFFSET + 256 * 1024) / MMC_BLOCK_SIZE - 1);
 		if (!(info_disprotect & DISPROTECT_KEY)) {
-			if ((key_start_blk <= (start + blkcnt -1)) && (key_end_blk >= start)) {
+			if ((key_start_blk <= (start + blkcnt -1))
+				&& (key_end_blk >= start)
+				&& (blkcnt != start)) {
+				printf("%s, keys %ld, keye %ld, start %ld, blkcnt %ld\n", __func__,
+					key_start_blk, key_end_blk, start, blkcnt);
 				printf("Emmckey: Access range is illegal!\n");
 				return 0;
 			}
