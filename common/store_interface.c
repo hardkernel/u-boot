@@ -1193,9 +1193,77 @@ static int do_store_rom_write(cmd_tbl_t * cmdtp, int flag, int argc, char * cons
 
     if (device_boot_flag == NAND_BOOT_FLAG) {
 #if defined(CONFIG_AML_NAND) || defined(CONFIG_AML_MTD)
+#ifndef CONFIG_DISCRETE_BOOTLOADER
         sprintf(str, "amlnf rom_write 0x%llx 0x%llx 0x%llx", addr, off, size);
         store_dbg("command:	%s", str);
         ret = run_command(str, 0);
+#else
+/*
+ *store rom_write addr offset size <iCopy>
+ //Used to update the whole bootloader, i.e, update 'bl2 + tpl' at the same time
+ @iCopy is optional,
+    if used, must < min(tplCpyNum, Bl2CpyNum), and update only the specified copy
+    if not used, update all the copies of bl2 and tpl
+*/
+        const int Bl2Size       = BL2_SIZE;
+        const int Bl2CpyNum     = CONFIG_BL2_COPY_NUM; //TODO: decided by efuse, no macro
+        const int tplCapSize    = CONFIG_TPL_SIZE_PER_COPY;
+        const int tplCpyNum     = CONFIG_TPL_COPY_NUM;
+        const int bootloaderMaxSz = Bl2Size + tplCapSize;
+        const int tplWriteSz     = size - Bl2Size;
+        loff_t copyOff = 0;
+        const int iCopy2Update  = argc > 5 ? simple_strtoul(argv[5], NULL, 0) : -1;
+
+        if ( bootloaderMaxSz < size || tplWriteSz <= 0 ) {
+            ErrP("bootloader sz 0x%llx invalid,  max sz %d\n", size, bootloaderMaxSz );
+            return -__LINE__;
+        }
+        if (iCopy2Update >= tplCpyNum || iCopy2Update >= Bl2CpyNum) {
+            ErrP("iCopy2Update[%s] invalid, must < min(%d, %d)\n", argv[5], tplCpyNum, Bl2CpyNum);
+            return -__LINE__;
+        }
+        for (i = 0; i < Bl2CpyNum; ++i)
+        {
+            if (iCopy2Update >= 0 && iCopy2Update != i) continue;
+
+            sprintf(str, "amlnf rom_erase %d", i);
+            ret = run_command(str, 0);
+            if (ret) {
+                ErrP("Failed at erase bl2[%d],ret=%d\n", i, ret);
+                return -__LINE__;
+            }
+
+            //copyOff = i * Bl2Size;
+            sprintf(str, "amlnf bl2_write 0x%llx %d 0x%x", addr, i, Bl2Size);
+            debugP("runCmd[%s]\n", str);
+            ret = run_command(str, 0);
+            if (ret) {
+                ErrP("Failed at pgram bl2[%d],ret=%d\n", i, ret);
+                return -__LINE__;
+            }
+        }
+        addr += Bl2Size;
+        for ( i = 0; i < tplCpyNum; ++i )
+        {
+            if (iCopy2Update >= 0 && iCopy2Update != i) continue;
+
+            sprintf(str, "amlnf fip_erase %d", i);
+            ret = run_command(str, 0);
+            if (ret) {
+                ErrP("Failed at erase tpl[%d],ret=%d\n", i, ret);
+                return -__LINE__;
+            }
+
+            copyOff = i * tplCapSize;
+            sprintf(str, "amlnf fip_write 0x%llx %llx 0x%x", addr, copyOff, tplWriteSz);
+            debugP("runCmd[%s]\n", str);
+            ret = run_command(str, 0);
+            if (ret) {
+                ErrP("Failed at pgram bl2[%d],ret=%d\n", i, ret);
+                return -__LINE__;
+            }
+        }
+#endif//#ifndef CONFIG_DISCRETE_BOOTLOADER
 #else
         ret = -1;
 #endif
@@ -1312,12 +1380,105 @@ static int do_store_rom_read(cmd_tbl_t * cmdtp, int flag, int argc, char * const
 
     if (device_boot_flag == NAND_BOOT_FLAG) {
 #if defined(CONFIG_AML_NAND) || defined(CONFIG_AML_MTD)
+#ifndef CONFIG_DISCRETE_BOOTLOADER
         sprintf(str, "amlnf rom_read 0x%llx 0x%llx 0x%llx", addr, off, size);
         store_dbg("command:	%s", str);
         ret = run_command(str, 0);
 #else
+/*
+ *store rom_read addr offset size <iCopy>
+ //Used to read the whole bootloader, i.e, update 'bl2 + tpl' at the same time
+ @iCopy is optional,
+    if used, must < min(tplCpyNum, Bl2CpyNum), and read only the specified copy
+    if not used, check if all the copies of 'bl2 + tpl' are same content
+*/
+        const int Bl2Size       = BL2_SIZE;
+        const int Bl2CpyNum     = CONFIG_BL2_COPY_NUM; //TODO: decided by efuse, no macro
+        const int tplCapSize    = CONFIG_TPL_SIZE_PER_COPY;
+        const int tplCpyNum     = CONFIG_TPL_COPY_NUM;
+        const int bootloaderMaxSz = Bl2Size + tplCapSize;
+        const int tplRealSz     = size - Bl2Size;
+        loff_t copyOff = 0;
+        const int iCopy2Update  = argc > 5 ? simple_strtoul(argv[5], NULL, 0) : -1;
+        char* tmpBuf = NULL;
+
+        if ( bootloaderMaxSz < size || tplRealSz <= 0 ) {
+            ErrP("bootloader sz 0x%llx invalid,  max sz %d\n", size, bootloaderMaxSz );
+            return -__LINE__;
+        }
+        if (iCopy2Update >= tplCpyNum || iCopy2Update >= Bl2CpyNum) {
+            ErrP("iCopy2Update[%s] invalid, must < min(%d, %d)\n", argv[5], tplCpyNum, Bl2CpyNum);
+            return -__LINE__;
+        }
+
+        tmpBuf = (char*)malloc(size * 2);
+        if ( !tmpBuf ) {
+            ErrP("Failed maloc 0x%llx bytes\n", size);
+            return -__LINE__;
+        }
+        memset(tmpBuf, 0, size * 2);
+
+        char* readBuf0 = tmpBuf;
+        char* readBuf1 = tmpBuf + size;
+        for (i = 0; i < Bl2CpyNum; ++i)
+        {
+            if (iCopy2Update >= 0 && iCopy2Update != i) continue;
+
+            char* readBuf = readBuf0;
+            if (iCopy2Update < 0 && i) readBuf = readBuf1;
+
+            sprintf(str, "amlnf bl2_read 0x%p %x 0x%x", readBuf, i, Bl2Size);
+            debugP("runCmd[%s]\n", str);
+            ret = run_command(str, 0);
+            if (ret) {
+                ErrP("Failed at pgram bl2[%d],ret=%d\n", i, ret);
+                return -__LINE__;
+            }
+            if ( iCopy2Update < 0  && i)//copy index not specified, need read all copies
+            {
+                ret = memcmp(readBuf0, readBuf1, Bl2Size);
+                if (ret) {
+                    ErrP("bl2[0] != bl2[%d]\n", i);
+                    break;
+                }
+            }
+        }
+
+        for ( i = 0; i < tplCpyNum && !ret; ++i )
+        {
+            if (iCopy2Update >= 0 && iCopy2Update != i) continue;
+
+            char* readBuf = readBuf0;
+            if (iCopy2Update < 0 && i) readBuf = readBuf1;
+            readBuf += Bl2Size;
+
+            copyOff = i * tplCapSize;
+            sprintf(str, "amlnf fip_read 0x%p %llx 0x%x", readBuf, copyOff, tplRealSz);
+            debugP("runCmd[%s]\n", str);
+            ret = run_command(str, 0);
+            if (ret) {
+                ErrP("Failed at pgram bl2[%d],ret=%d\n", i, ret);
+                return -__LINE__;
+            }
+            if ( iCopy2Update < 0  && i)//copy index not specified, need read all copies
+            {
+                ret = memcmp(readBuf0, readBuf1, tplRealSz);
+                if (ret) {
+                    ErrP("tpl[0] != tpl[%d]\n", i);
+                    break;
+                }
+            }
+        }
+
+        if ( iCopy2Update < 0  && !ret)//copy index not specified, and not error occur
+        {
+            memcpy((char*)addr, tmpBuf, size);
+        }
+        free(tmpBuf);
+#endif// #ifndef CONFIG_DISCRETE_BOOTLOADER
+#else
         ret = -1;
-#endif
+#endif// #if defined(CONFIG_AML_NAND) || defined(CONFIG_AML_MTD)
         if (ret != 0) {
             store_msg("nand cmd %s failed",cmd);
             return -1;

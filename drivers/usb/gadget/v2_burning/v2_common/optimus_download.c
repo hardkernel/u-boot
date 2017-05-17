@@ -168,6 +168,9 @@ static int optimus_verify_dtb(struct ImgBurnInfo* pDownInfo, u8* genSum)
     return ret;
 }
 
+//32k, Now nand not need align any more, but I remember spi nor flash need 32k aligh
+#define BOOTLOADER_ALIGN_BITS   15
+
 //return value is the actual size it write
 static int optimus_download_bootloader_image(struct ImgBurnInfo* pDownInfo, u32 dataSzReceived, const u8* data)
 {
@@ -179,23 +182,16 @@ static int optimus_download_bootloader_image(struct ImgBurnInfo* pDownInfo, u32 
         return 0;
     }
 
-#if 0
-    ret = _check_partition_table_consistency((unsigned)data);
-    if (ret) {
-        DWN_ERR("Fail in _check_partition_table_consistency\n");
-        return 0;
-    }
-#endif
     if (size > (2U<<20)) {
         DWN_ERR("uboot.bin size 0x%llx > 2M unsupported\n", size);
         return 0;
     }
 
-    size += (1U<<20) -1;
-    size >>= 20;
-    size <<= 20;
+    size += (1U<<BOOTLOADER_ALIGN_BITS) -1;
+    size >>= BOOTLOADER_ALIGN_BITS;
+    size <<= BOOTLOADER_ALIGN_BITS;
     ret = store_boot_write((unsigned char*)data, 0, size);
-    DWN_MSG("align bootloader sz from 0x%x to 0x%llx\n", dataSzReceived, size);
+    if (dataSzReceived != size)DWN_MSG("align bootloader sz from 0x%x to 0x%llx\n", dataSzReceived, size) ;
 
     return ret ? 0 : dataSzReceived;
 }
