@@ -35,7 +35,7 @@ struct efuse_hal_api_arg {
 };
 
 
-#define EFUSE_BYTES				512   /* (EFUSE_BITS/8) */
+#define EFUSE_BYTES				256   /* (EFUSE_BITS/8) */
 
 #define EFUSE_HAL_API_READ	0
 #define EFUSE_HAL_API_WRITE 1
