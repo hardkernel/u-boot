@@ -487,6 +487,8 @@ int board_late_init(void)
 	int ret;
 	char* env;
 	unsigned int hwid = 1;
+	unsigned int ddr_size=0;
+	int i;
 
 	/*USE_HDMI_UART_FUNC*/
 	env = getenv("hdmiuart_mode");
@@ -498,6 +500,15 @@ int board_late_init(void)
 		}
 	}
 	/*endif*/
+
+	for (i = 0; i < CONFIG_NR_DRAM_BANKS; i++) {
+		ddr_size += gd->bd->bi_dram[i].size;
+	}
+	if (ddr_size == 0x20000000) {
+		/* 512M p341 */
+		run_command("setenv display_width 1280; setenv display_height 720;", 0);
+		run_command("setenv fb_addr 0x6000000; setenv fb_width 1280; setenv fb_height 720;", 0);
+	}
 
 	//update env before anyone using it
 	run_command("get_rebootmode; echo reboot_mode=${reboot_mode}; "\

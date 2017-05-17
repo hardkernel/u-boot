@@ -89,17 +89,17 @@
         "outputmode=1080p60hz\0" \
         "hdmimode=1080p60hz\0" \
         "cvbsmode=576cvbs\0" \
-        "display_width=1280\0" \
-        "display_height=720\0" \
+        "display_width=1920\0" \
+        "display_height=1080\0" \
         "display_bpp=16\0" \
         "display_color_index=16\0" \
         "display_layer=osd1\0" \
         "display_color_fg=0xffff\0" \
         "display_color_bg=0\0" \
         "dtb_mem_addr=0x1000000\0" \
-        "fb_addr=0x6000000\0" \
-        "fb_width=1280\0" \
-        "fb_height=720\0" \
+        "fb_addr=0x3d800000\0" \
+        "fb_width=1920\0" \
+        "fb_height=1080\0" \
         "usb_burning=update 1000\0" \
         "fdt_high=0x20000000\0"\
         "try_auto_burn=update 700 750;\0"\
@@ -260,7 +260,7 @@
 #define CONFIG_CPU_CLK					1200 //MHz. Range: 600-1800, should be multiple of 24
 
 /* ddr */
-#define CONFIG_DDR_SIZE					512 //MB //0 means ddr size auto-detect
+#define CONFIG_DDR_SIZE					0 //MB //0 means ddr size auto-detect
 #define CONFIG_DDR_CLK					792  //MHz, Range: 384-1200, should be multiple of 24
 #define CONFIG_DDR4_CLK					792  //MHz, for boards which use different ddr chip
 #define CONFIG_NR_DRAM_BANKS			1
