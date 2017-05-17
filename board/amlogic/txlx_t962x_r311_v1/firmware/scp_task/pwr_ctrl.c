@@ -150,12 +150,14 @@ static void power_on_3v3_5v(void)
 
 static void power_off_usb5v(void)
 {
+	return;
 	aml_update_bits(AO_GPIO_O_EN_N, 1 << 10, 0);
 	aml_update_bits(AO_GPIO_O_EN_N, 1 << 26, 0);
 }
 
 static void power_on_usb5v(void)
 {
+	return;
 	aml_update_bits(AO_GPIO_O_EN_N, 1 << 10, 0);
 	aml_update_bits(AO_GPIO_O_EN_N, 1 << 26, 1 << 26);
 }
