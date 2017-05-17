@@ -46,6 +46,7 @@
 #include <asm/cpu_id.h>
 #include <linux/mtd/partitions.h>
 #include <linux/sizes.h>
+#include <asm/arch/clock.h>
 DECLARE_GLOBAL_DATA_PTR;
 
 //new static eth setup
@@ -467,7 +468,7 @@ int board_late_init(void){
 #ifdef CONFIG_AML_V2_FACTORY_BURN
 	/*aml_try_factory_sdcard_burning(0, gd->bd);*/
 #endif// #ifdef CONFIG_AML_V2_FACTORY_BURN
-
+	axg_pll_set();
 	return 0;
 }
 #endif

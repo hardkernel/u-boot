@@ -29,67 +29,6 @@
     but this segment not cleared to zero while running "board_init_f" */
 #define CLK_UNKNOWN (0xffffffff)
 
-#if 0
-__u32 get_rate_xtal(void)
-{
-	unsigned long clk;
-	clk = (readl(P_PREG_CTLREG0_ADDR) >> 4) & 0x3f;
-	clk = clk * 1000 * 1000;
-	return clk;
-}
-
-
-__u32 get_cpu_clk(void)
-{
-    static __u32 sys_freq=CLK_UNKNOWN;
-    if (sys_freq == CLK_UNKNOWN)
-    {
-        sys_freq=(clk_util_clk_msr(SYS_PLL_CLK)*1000000);
-    }
-    return sys_freq;
-}
-
-__u32 get_clk_ddr(void)
-{
-   static __u32 freq=CLK_UNKNOWN;
-	if (freq == CLK_UNKNOWN)
-	{
-	    freq=(clk_util_clk_msr(DDR_PLL_CLK)*1000000);
-	}
-    return freq;
-}
-
-__u32 get_clk_ethernet_pad(void)
-{
-    static __u32 freq=CLK_UNKNOWN;
-    if (freq == CLK_UNKNOWN)
-    {
-        freq=(clk_util_clk_msr(MOD_ETH_CLK50_I)*1000000);
-    }
-    return freq;
-}
-
-__u32 get_clk_cts_eth_rmii(void)
-{
-    static __u32 freq=CLK_UNKNOWN;
-    if (freq == CLK_UNKNOWN)
-    {
-        freq=(clk_util_clk_msr(CTS_ETH_RMII)*1000000);
-    }
-    return freq;
-}
-
-__u32 get_misc_pll_clk(void)
-{
-    static __u32 freq=CLK_UNKNOWN;
-    if (freq == CLK_UNKNOWN)
-    {
-        freq=(clk_util_clk_msr(MISC_PLL_CLK)*1000000);
-    }
-    return freq;
-}
-#endif
-
 __u32 get_clk81(void)
 {
     static __u32 clk81_freq=CLK_UNKNOWN;
@@ -283,4 +222,63 @@ int clk_msr(int index)
 	}
 
 	return 0;
+}
+
+int axg_pcie_set(void)
+{
+	int delay = 24000000;
+	#define BIT(nr)               (1UL << (nr))
+	#define MESON_PLL_RESET				BIT(29)
+	#define MESON_PLL_LOCK				BIT(31)
+
+	#define AXG_MIPI_CNTL0 0xa5b80000
+	#define AXG_PCIE_PLL_CNTL  0x40010242
+	#define AXG_PCIE_PLL_CNTL1 0xc084b2ab
+	#define AXG_PCIE_PLL_CNTL2 0xb75020be
+	#define AXG_PCIE_PLL_CNTL3 0x0a76ba88
+	#define AXG_PCIE_PLL_CNTL4 0xc000004d
+	#define AXG_PCIE_PLL_CNTL5 0x00078000
+	#define AXG_PCIE_PLL_CNTL6 0x003303de
+
+	/* setting AXG PCIE PLL 100M */
+	writel(AXG_MIPI_CNTL0, HHI_MIPI_CNTL0);
+	writel(AXG_PCIE_PLL_CNTL1, HHI_PCIE_PLL_CNTL1);
+	writel(AXG_PCIE_PLL_CNTL2, HHI_PCIE_PLL_CNTL2);
+	writel(AXG_PCIE_PLL_CNTL3, HHI_PCIE_PLL_CNTL3);
+	writel(AXG_PCIE_PLL_CNTL4, HHI_PCIE_PLL_CNTL4);
+	writel(AXG_PCIE_PLL_CNTL5, HHI_PCIE_PLL_CNTL5);
+	writel(AXG_PCIE_PLL_CNTL6, HHI_PCIE_PLL_CNTL6);
+
+	/* PLL reset */
+	writel(AXG_PCIE_PLL_CNTL | MESON_PLL_RESET, HHI_PCIE_PLL_CNTL);
+	udelay(10);
+	writel(readl(HHI_PCIE_PLL_CNTL) &(~ MESON_PLL_RESET), HHI_PCIE_PLL_CNTL);
+
+	while (delay > 0) {
+		/* check lock bit */
+		if (readl(HHI_PCIE_PLL_CNTL) & MESON_PLL_LOCK)
+			return 0;
+		delay--;
+	}
+
+	return -1;
+}
+void axg_pll_set(void)
+{
+	int ret;
+	int count = 3;
+
+	ret = axg_pcie_set();
+	while (count--) {
+		if (!ret) {
+			printf("%s: pcie pll lock to 100M \n",
+			__func__);
+			break;
+		}else {
+			printf("%s: pcie pll did not lock, trying to set to 100M again\n",
+			__func__);
+			ret = axg_pcie_set();
+		}
+	}
+	return;
 }
