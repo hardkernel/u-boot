@@ -140,7 +140,7 @@ struct us_data {
  */
 #define USB_MAX_XFER_BLK	65535
 #else
-#define USB_MAX_XFER_BLK	20
+#define USB_MAX_XFER_BLK	2048
 #endif
 
 static struct us_data usb_stor[USB_MAX_STOR_DEV];
