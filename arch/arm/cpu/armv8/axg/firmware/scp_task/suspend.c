@@ -28,7 +28,6 @@ unsigned int time;
 
 #include <scp_adc.c>
 #include <pwr_ctrl.c>
-#include <hdmi_cec_arc.c>
 
 static struct pwr_op pwr_op_d;
 static struct pwr_op *p_pwr_op;
@@ -116,12 +115,7 @@ void suspend_get_wakeup_source(void *response, unsigned int suspend_from)
 void enter_suspend(unsigned int suspend_from)
 {
 	int exit_reason = UDEFINED_WAKEUP;
-#ifdef CONFIG_CEC_WAKEUP
-	hdmi_cec_func_config = readl(P_AO_DEBUG_REG0) & 0xff;
-	uart_puts("CEC cfg:0x");
-	uart_put_hex(hdmi_cec_func_config, 16);
-	uart_puts("\n");
-#endif
+
 	p_pwr_op->power_off_at_clk81();
 	p_pwr_op->power_off_at_24M();
 	if (suspend_from == SYS_POWEROFF)

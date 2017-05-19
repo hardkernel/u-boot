@@ -21,22 +21,10 @@
 
 #ifndef _SCP_REGISTER_DEFINES_
 #define _SCP_REGISTER_DEFINES_
+
 #include "secure_apb.h"
 
 /* CBUS Registers */
- /*TIMER*/
-#define P_ISA_TIMER_MUX                              ISA_TIMER_MUX
-#define P_ISA_TIMERA                                 ISA_TIMERA
-#define P_ISA_TIMERB                                 ISA_TIMERB
-#define P_ISA_TIMERC                                 ISA_TIMERC
-#define P_ISA_TIMERD                                 ISA_TIMERD
-#define P_ISA_TIMERE                                 ISA_TIMERE
-#define P_ISA_TIMERE_HI                              ISA_TIMERE_HI
-#define P_ISA_TIMER_MUX1                             ISA_TIMER_MUX1
-#define P_ISA_TIMERF                                 ISA_TIMERF
-#define P_ISA_TIMERG                                 ISA_TIMERG
-#define P_ISA_TIMERH                                 ISA_TIMERH
-#define P_ISA_TIMERI                                 ISA_TIMERI
 /* 80K share SRAM base address*/
 #define P_SHARE_SRAM_BASE	0xd9000000
 /*Interrupt number list*/

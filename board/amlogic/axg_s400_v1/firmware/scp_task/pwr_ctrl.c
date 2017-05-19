@@ -19,16 +19,10 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
-#ifdef CONFIG_CEC_WAKEUP
-#include <cec_tx_reg.h>
-#endif
 #include <gpio-gxbb.h>
-#include "pwm_ctrl.h"
+//#include "pwm_ctrl.h"
 
-#define P_AO_PWM_PWM_B1			(*((volatile unsigned *)(0xff807000 + (0x01   << 2))))
-#define P_EE_TIMER_E			(*((volatile unsigned *)(0xffd00000 + (0x3c62 << 2))))
-#define P_PWM_PWM_A			(*((volatile unsigned *)(0xffd1b000 + (0x0  << 2))))
+#if 0
 
 #define ON 1
 #define OFF 0
@@ -324,9 +318,11 @@ static unsigned int detect_key(unsigned int suspend_from)
 
 	return exit_reason;
 }
-
+#endif
 static void pwr_op_init(struct pwr_op *pwr_op)
 {
+return;
+#if 0
 	pwr_op->power_off_at_clk81 = power_off_at_clk81;
 	pwr_op->power_on_at_clk81 = power_on_at_clk81;
 	pwr_op->power_off_at_24M = power_off_at_24M;
@@ -336,4 +332,5 @@ static void pwr_op_init(struct pwr_op *pwr_op)
 
 	pwr_op->detect_key = detect_key;
 	pwr_op->get_wakeup_source = get_wakeup_source;
+#endif
 }

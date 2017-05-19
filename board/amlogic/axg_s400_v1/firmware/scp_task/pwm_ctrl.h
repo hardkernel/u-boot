@@ -2,7 +2,8 @@
 *board/amlogic/txl_p321_v1/firmware/scp_task/pwm_vol_tab.h
 *table for Dynamic Voltage/Frequency Scaling
 */
-
+#ifndef __PWM_CTRL_H__
+#define __PWM_CTRL_H__
 
 static int pwm_voltage_table[][2] = {
 	{ 0x1c0000,  860},
@@ -35,3 +36,4 @@ static int pwm_voltage_table[][2] = {
 	{ 0x01001b, 1130},
 	{ 0x00001c, 1140}
 };
+#endif //__PWM_CTRL_H__

@@ -18,101 +18,51 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
-/*
-int pwm_voltage_table[ ][2] = {
-	{ 0x1c0000,  860},
-	{ 0x1b0001,  870},
-	{ 0x1a0002,  880},
-	{ 0x190003,  890},
-	{ 0x180004,  900},
-	{ 0x170005,  910},
-	{ 0x160006,  920},
-	{ 0x150007,  930},
-	{ 0x140008,  940},
-	{ 0x130009,  950},
-	{ 0x12000a,  960},
-	{ 0x11000b,  970},
-	{ 0x10000c,  980},
-	{ 0x0f000d,  990},
-	{ 0x0e000e, 1000},
-	{ 0x0d000f, 1010},
-	{ 0x0c0010, 1020},
-	{ 0x0b0011, 1030},
-	{ 0x0a0012, 1040},
-	{ 0x090013, 1050},
-	{ 0x080014, 1060},
-	{ 0x070015, 1070},
-	{ 0x060016, 1080},
-	{ 0x050017, 1090},
-	{ 0x040018, 1100},
-	{ 0x030019, 1110},
-	{ 0x02001a, 1120},
-	{ 0x01001b, 1130},
-	{ 0x00001c, 1140}
-};
-*/
+
 #include "pwm_ctrl.h"
 
 #define CHIP_ADJUST 20
 #define RIPPLE_ADJUST 30
 struct scpi_opp_entry cpu_dvfs_tbl[] = {
-	DVFS( 100000000,  900+CHIP_ADJUST+RIPPLE_ADJUST),
-	DVFS( 250000000,  900+CHIP_ADJUST+RIPPLE_ADJUST),
-	DVFS( 500000000,  900+CHIP_ADJUST+RIPPLE_ADJUST),
-	DVFS( 667000000,  900+CHIP_ADJUST+RIPPLE_ADJUST),
+	DVFS( 100000000,  860),
+	DVFS( 250000000,  860+CHIP_ADJUST),
+	DVFS( 500000000,  860+RIPPLE_ADJUST),
+	DVFS( 667000000,  860+CHIP_ADJUST+RIPPLE_ADJUST),
 	DVFS(1000000000,  910+CHIP_ADJUST+RIPPLE_ADJUST),
+	DVFS(1200000000,  940+CHIP_ADJUST+RIPPLE_ADJUST),
+	DVFS(1296000000,  980+CHIP_ADJUST+RIPPLE_ADJUST),
+	DVFS(1416000000, 1050+CHIP_ADJUST+RIPPLE_ADJUST),
 };
 
-
-#define P_PIN_MUX_REG3		(*((volatile unsigned *)(0xff634400 + (0x2f << 2))))
-#define P_PIN_MUX_REG4		(*((volatile unsigned *)(0xff634400 + (0x30 << 2))))
-#define P_PIN_MUX_REG10		(*((volatile unsigned *)(0xff634400 + (0x36 << 2))))
-
-#define P_PWM_MISC_REG_AB	(*((volatile unsigned *)(0xffd1b000 + (0x02 << 2))))
-#define P_PWM_PWM_A			(*((volatile unsigned *)(0xffd1b000 + (0x0  << 2))))
-
-
-enum pwm_id {
-	pwm_a = 0,
-};
-
-
-void pwm_init(int id)
+void pwm_init(void)
 {
-	/*
-	 * TODO: support more pwm controllers, right now only support PWM_B
-	 */
 	unsigned int reg;
-	reg = P_PWM_MISC_REG_AB;
-	reg &= ~(0x7f << 8);
-	reg |=  ((1 << 15) | (1 << 0));
-	P_PWM_MISC_REG_AB = reg;
+
+	/*
+	 * TODO: support more pwm controllers, right now only support
+	 */
+
+	reg = readl(AO_PWM_MISC_REG_AB);
+	reg &= ~(0x7f << 16);
+	reg |=  ((1 << 23) | (1 << 1));
+	writel(reg, AO_PWM_MISC_REG_AB);
 	/*
 	 * default set to max voltage
 	 */
-	//P_PWM_PWM_A = pwm_voltage_table[ARRAY_SIZE(pwm_voltage_table) - 1][0];
-	reg  = P_PIN_MUX_REG3;
-	reg &= ~((1 << 21) | 1 << 12);
-	P_PIN_MUX_REG3 = reg;
-
-	reg  = P_PIN_MUX_REG10;
-	reg &= ~(1 << 16);
-	P_PIN_MUX_REG10 = reg;//clear reg10
-	reg  = P_PIN_MUX_REG4;
-	reg &= ~(1 << 26);		// clear PWM_VS
-	reg |=  (1 << 17);		// enable PWM_A
-	P_PIN_MUX_REG4 = reg;
-
+	reg  = readl(AO_RTI_PINMUX_REG0);
+	reg &= ~(0xf << 8);
+	writel(reg | (0x3 << 8), AO_RTI_PINMUX_REG0);
 
 	_udelay(200);
 }
+
 
 int dvfs_get_voltage(void)
 {
 	int i = 0;
 	unsigned int reg_val;
 
-	reg_val = P_PWM_PWM_A;
+	reg_val = readl(AO_PWM_PWM_B);
 	for (i = 0; i < ARRAY_SIZE(pwm_voltage_table); i++) {
 		if (pwm_voltage_table[i][0] == reg_val) {
 			return i;
@@ -130,7 +80,7 @@ void set_dvfs(unsigned int domain, unsigned int index)
 	static int init_flag = 0;
 
 	if (!init_flag) {
-		pwm_init(pwm_a);
+		pwm_init();
 		init_flag = 1;
 	}
 	cur = dvfs_get_voltage();
@@ -143,7 +93,7 @@ void set_dvfs(unsigned int domain, unsigned int index)
 		to = ARRAY_SIZE(pwm_voltage_table) - 1;
 	}
 	if (cur < 0 || cur >=ARRAY_SIZE(pwm_voltage_table)) {
-		P_PWM_PWM_A = pwm_voltage_table[to][0];
+		writel(pwm_voltage_table[to][0], AO_PWM_PWM_B);
 		_udelay(200);
 		return ;
 	}
@@ -166,7 +116,7 @@ void set_dvfs(unsigned int domain, unsigned int index)
 				cur = to;
 			}
 		}
-		P_PWM_PWM_A = pwm_voltage_table[cur][0];
+		writel(pwm_voltage_table[cur][0], AO_PWM_PWM_B);
 		_udelay(100);
 	}
 	_udelay(200);

@@ -27,7 +27,7 @@
 #ifndef CONFIG_IR_REMOTE_USE_PROTOCOL
 #define CONFIG_IR_REMOTE_USE_PROTOCOL 0
 #endif
-
+#if 0
 enum {
 	DECODEMODE_NEC = 0,
 	DECODEMODE_DUOKAN = 1,
@@ -221,31 +221,10 @@ unsigned bakeuAO_IR_DEC_LDR_REPEAT;
 **
 ********************************************************************/
 #if 1
-void backuremote_register(void)
-{
-	backuAO_RTI_PIN_MUX_REG = readl(AO_RTI_PIN_MUX_REG);
-	backuAO_IR_DEC_REG0 = readl(AO_MF_IR_DEC_REG0);
-	backuAO_IR_DEC_REG1 = readl(AO_MF_IR_DEC_REG1);
-	backuAO_IR_DEC_LDR_ACTIVE = readl(AO_MF_IR_DEC_LDR_ACTIVE);
-	backuAO_IR_DEC_LDR_IDLE = readl(AO_MF_IR_DEC_LDR_IDLE);
-	backuAO_IR_DEC_BIT_0 = readl(AO_MF_IR_DEC_BIT_0);
-	bakeuAO_IR_DEC_LDR_REPEAT = readl(AO_MF_IR_DEC_LDR_REPEAT);
-}
-
-void resume_remote_register(void)
-{
-	writel(backuAO_RTI_PIN_MUX_REG, AO_RTI_PIN_MUX_REG);
-	writel(backuAO_IR_DEC_REG0, AO_MF_IR_DEC_REG0);
-	writel(backuAO_IR_DEC_REG1, AO_MF_IR_DEC_REG1);
-	writel(backuAO_IR_DEC_LDR_ACTIVE, AO_MF_IR_DEC_LDR_ACTIVE);
-	writel(backuAO_IR_DEC_LDR_IDLE, AO_MF_IR_DEC_LDR_IDLE);
-	writel(backuAO_IR_DEC_BIT_0, AO_MF_IR_DEC_BIT_0);
-	writel(bakeuAO_IR_DEC_LDR_REPEAT, AO_MF_IR_DEC_LDR_REPEAT);
-	readl(AO_MF_IR_DEC_FRAME);
-}
 
 static int ir_remote_init_32k_mode(void)
 {
+#if 0
 	//volatile unsigned int status,data_value;
 	int val = readl(AO_RTI_PIN_MUX_REG);
 	writel((val | (1 << 0)), AO_RTI_PIN_MUX_REG);
@@ -258,6 +237,7 @@ static int ir_remote_init_32k_mode(void)
 	//step 2 : request nec_remote irq  & enable it
 #if CONFIG_IR_REMOTE_USE_PROTOCOL == 3
 	writel(readl(AO_IR_DEC_REG1)&(~(1<<15)),AO_IR_DEC_REG1);
+#endif
 #endif
 	return 0;
 }
@@ -287,8 +267,9 @@ static int init_remote(void)
 	init_custom_trigger();
 	return 0;
 }
+#endif
 unsigned int usr_pwr_key = 0xffffffff;
-
+#if 0
 static int remote_detect_key(void)
 {
 	unsigned power_key;
@@ -324,3 +305,4 @@ static int remote_detect_key(void)
 	return 0;
 
 }
+#endif
