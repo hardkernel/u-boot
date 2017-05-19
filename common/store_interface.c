@@ -26,8 +26,17 @@ extern void nand_init(void);
 extern int amlnf_key_write(u8 *buf, int len, uint32_t *actual_lenth);
 extern int amlnf_key_read(u8 * buf, int len, uint32_t *actual_lenth);
 /* dtb operations of nand */
-
 #endif
+
+#if defined(CONFIG_DISCRETE_BOOTLOADER)
+#ifndef CONFIG_TPL_VAL_NUM_MIN
+#define CONFIG_TPL_VAL_NUM_MIN  (CONFIG_TPL_COPY_NUM/2)
+#endif// #ifndef CONFIG_TPL_VAL_NUM_MIN
+#ifndef CONFIG_BL2_VAL_NUM_MIN
+#define CONFIG_BL2_VAL_NUM_MIN  (CONFIG_BL2_COPY_NUM/2)
+#endif// #ifndef CONFIG_BL2_VAL_NUM_MIN
+static uint32_t _bootloaderOrgCrc[2];  //0 for bl2, 1 for tpl
+#endif// #if defined(CONFIG_DISCRETE_BOOTLOADER)
 
 extern int get_partition_from_dts(unsigned char * buffer);
 
@@ -1263,6 +1272,10 @@ static int do_store_rom_write(cmd_tbl_t * cmdtp, int flag, int argc, char * cons
                 return -__LINE__;
             }
         }
+#if CONFIG_TPL_VAL_NUM_MIN
+        _bootloaderOrgCrc[0] = crc32(0, (unsigned char*)(addr - Bl2Size), Bl2Size);
+        _bootloaderOrgCrc[1] = crc32(0, (unsigned char*)addr, tplWriteSz);
+#endif// #if CONFIG_TPL_VAL_NUM_MIN
 #endif//#ifndef CONFIG_DISCRETE_BOOTLOADER
 #else
         ret = -1;
@@ -1399,8 +1412,11 @@ static int do_store_rom_read(cmd_tbl_t * cmdtp, int flag, int argc, char * const
         const int bootloaderMaxSz = Bl2Size + tplCapSize;
         const int tplRealSz     = size - Bl2Size;
         loff_t copyOff = 0;
-        const int iCopy2Update  = argc > 5 ? simple_strtoul(argv[5], NULL, 0) : -1;
+        int iCopy2Update  = argc > 5 ? simple_strtoul(argv[5], NULL, 0) : -1;
         char* tmpBuf = NULL;
+        int okCrcNum = 0;
+        const int verifyMode = (off == (1ULL << 62) - 1) && (iCopy2Update < 0); //verify mode
+        if (!verifyMode && iCopy2Update < 0) iCopy2Update = 0; //default read copy 0 if no verify mode
 
         if ( bootloaderMaxSz < size || tplRealSz <= 0 ) {
             ErrP("bootloader sz 0x%llx invalid,  max sz %d\n", size, bootloaderMaxSz );
@@ -1411,21 +1427,18 @@ static int do_store_rom_read(cmd_tbl_t * cmdtp, int flag, int argc, char * const
             return -__LINE__;
         }
 
-        tmpBuf = (char*)malloc(size * 2);
+        tmpBuf = (char*)malloc(size);
         if ( !tmpBuf ) {
             ErrP("Failed maloc 0x%llx bytes\n", size);
             return -__LINE__;
         }
-        memset(tmpBuf, 0, size * 2);
+        memset(tmpBuf, 0, size);
 
-        char* readBuf0 = tmpBuf;
-        char* readBuf1 = tmpBuf + size;
+        char* readBuf = tmpBuf;
+        const uint32_t orgBl2Crc = _bootloaderOrgCrc[0];
         for (i = 0; i < Bl2CpyNum; ++i)
         {
             if (iCopy2Update >= 0 && iCopy2Update != i) continue;
-
-            char* readBuf = readBuf0;
-            if (iCopy2Update < 0 && i) readBuf = readBuf1;
 
             sprintf(str, "amlnf bl2_read 0x%p %x 0x%x", readBuf, i, Bl2Size);
             debugP("runCmd[%s]\n", str);
@@ -1434,23 +1447,32 @@ static int do_store_rom_read(cmd_tbl_t * cmdtp, int flag, int argc, char * const
                 ErrP("Failed at pgram bl2[%d],ret=%d\n", i, ret);
                 return -__LINE__;
             }
-            if ( iCopy2Update < 0  && i)//copy index not specified, need read all copies
+#if CONFIG_BL2_VAL_NUM_MIN
+            if (verifyMode) //copy index not specified, need read all copies
             {
-                ret = memcmp(readBuf0, readBuf1, Bl2Size);
-                if (ret) {
-                    ErrP("bl2[0] != bl2[%d]\n", i);
-                    break;
+                const uint32_t readCrc = crc32(0, (unsigned char*)readBuf, Bl2Size);
+                if (readCrc == orgBl2Crc) {
+                    okCrcNum += 1;
+                    if ( okCrcNum >= CONFIG_BL2_VAL_NUM_MIN ) {
+                        break;
+                    }
                 }
             }
+#endif//#if CONFIG_BL2_VAL_NUM_MIN
         }
+#if CONFIG_BL2_VAL_NUM_MIN
+        if (okCrcNum < CONFIG_BL2_VAL_NUM_MIN && verifyMode) {
+            ErrP("okCrcNum(%d) < CONFIG_BL2_VAL_NUM_MIN(%d)\n", okCrcNum, CONFIG_BL2_VAL_NUM_MIN);
+            return -__LINE__;
+        }
+        okCrcNum = 0;
+#endif//#if CONFIG_BL2_VAL_NUM_MIN
+        memcpy((char*)addr, readBuf, Bl2Size);
 
+        const uint32_t orgTplCrc = _bootloaderOrgCrc[1];
         for ( i = 0; i < tplCpyNum && !ret; ++i )
         {
             if (iCopy2Update >= 0 && iCopy2Update != i) continue;
-
-            char* readBuf = readBuf0;
-            if (iCopy2Update < 0 && i) readBuf = readBuf1;
-            readBuf += Bl2Size;
 
             copyOff = i * tplCapSize;
             sprintf(str, "amlnf fip_read 0x%p %llx 0x%x", readBuf, copyOff, tplRealSz);
@@ -1460,20 +1482,26 @@ static int do_store_rom_read(cmd_tbl_t * cmdtp, int flag, int argc, char * const
                 ErrP("Failed at pgram bl2[%d],ret=%d\n", i, ret);
                 return -__LINE__;
             }
-            if ( iCopy2Update < 0  && i)//copy index not specified, need read all copies
+#if CONFIG_TPL_VAL_NUM_MIN
+            if (verifyMode) //copy index not specified, need read all copies
             {
-                ret = memcmp(readBuf0, readBuf1, tplRealSz);
-                if (ret) {
-                    ErrP("tpl[0] != tpl[%d]\n", i);
-                    break;
+                const uint32_t readCrc = crc32(0, (unsigned char*)readBuf, tplRealSz);
+                if (orgTplCrc == readCrc) {
+                    okCrcNum += 1;
+                    if ( okCrcNum >= CONFIG_TPL_VAL_NUM_MIN ) {
+                        break;
+                    }
                 }
             }
+#endif//#if CONFIG_TPL_VAL_NUM_MIN
         }
-
-        if ( iCopy2Update < 0  && !ret)//copy index not specified, and not error occur
-        {
-            memcpy((char*)addr, tmpBuf, size);
+#if CONFIG_TPL_VAL_NUM_MIN
+        if (okCrcNum < CONFIG_TPL_VAL_NUM_MIN && verifyMode) {
+            ErrP("okCrcNum(%d) < CONFIG_TPL_VAL_NUM_MIN(%d)\n", okCrcNum, CONFIG_TPL_VAL_NUM_MIN);
+            return -__LINE__;
         }
+#endif//#if CONFIG_TPL_VAL_NUM_MIN
+        memcpy((char*)addr + Bl2Size, (unsigned char*)readBuf, tplRealSz);
         free(tmpBuf);
 #endif// #ifndef CONFIG_DISCRETE_BOOTLOADER
 #else
