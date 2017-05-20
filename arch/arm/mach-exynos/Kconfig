@@ -77,7 +77,11 @@ choice
 	prompt "EXYNOS5 board select"
 
 config TARGET_ODROID_XU3
-	bool "Exynos5422 Odroid board"
+	bool "Exynos5422 Odroid-XU3 board"
+	select OF_CONTROL
+
+config TARGET_ODROID_XU4
+	bool "Exynos5422 Odroid-XU4 board"
 	select OF_CONTROL
 
 config TARGET_ARNDALE

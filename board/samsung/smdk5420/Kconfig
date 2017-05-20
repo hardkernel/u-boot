@@ -11,6 +11,19 @@ config SYS_CONFIG_NAME
 
 endif
 
+if TARGET_ODROID_XU4
+
+config SYS_BOARD
+	default "smdk5420"
+
+config SYS_VENDOR
+	default "samsung"
+
+config SYS_CONFIG_NAME
+	default "odroid_xu4"
+
+endif
+
 if TARGET_PEACH_PI
 
 config SYS_BOARD
