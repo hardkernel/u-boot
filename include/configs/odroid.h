@@ -491,4 +491,6 @@
 #define WRESET			(1 << 10)
 #define SYS_WDTRESET		(1 << 9)
 
+/* DMC */
+#define CONFIG_CMD_DMC
 #endif	/* __CONFIG_H */

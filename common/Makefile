@@ -175,6 +175,7 @@ COBJS-$(CONFIG_CMD_XIMG) += cmd_ximg.o
 COBJS-$(CONFIG_YAFFS2) += cmd_yaffs2.o
 COBJS-$(CONFIG_CMD_SPL) += cmd_spl.o
 COBJS-$(CONFIG_CMD_ZFS) += cmd_zfs.o
+COBJS-$(CONFIG_CMD_DMC) += cmd_dmc.o
 
 # others
 ifdef CONFIG_DDR_SPD
