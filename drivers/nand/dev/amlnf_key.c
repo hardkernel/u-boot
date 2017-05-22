@@ -10,7 +10,7 @@ int amlnf_key_read(u8 * buf, int len, uint32_t *actual_lenth)
 {
 	struct amlnand_chip * aml_chip = aml_chip_key;
 	struct nand_menson_key *key_ptr = NULL;
-	u32 keysize = aml_chip->keysize - sizeof(u32);
+	u32 keysize = aml_chip->keysize;
 	int error = 0;
 
 	*actual_lenth = keysize;
@@ -30,7 +30,7 @@ int amlnf_key_read(u8 * buf, int len, uint32_t *actual_lenth)
 		//return -EFAULT;
 	}
 
-	key_ptr = kzalloc(aml_chip->keysize, GFP_KERNEL);
+	key_ptr = kzalloc(aml_chip->keysize + sizeof(u32), GFP_KERNEL);
 	if (key_ptr == NULL)
 		return -ENOMEM;
 
@@ -59,7 +59,7 @@ int amlnf_key_write(u8 *buf, int len, uint32_t *actual_lenth)
 {
 	struct amlnand_chip * aml_chip = aml_chip_key;
 	struct nand_menson_key *key_ptr = NULL;
-	u32 keysize = aml_chip->keysize - sizeof(u32);
+	u32 keysize = aml_chip->keysize;
 	int error = 0;
 
 	if (aml_chip == NULL) {
@@ -77,11 +77,11 @@ int amlnf_key_write(u8 *buf, int len, uint32_t *actual_lenth)
 		//return -EFAULT;
 	}
 
-	key_ptr = kzalloc(aml_chip->keysize, GFP_KERNEL);
+	key_ptr = kzalloc(aml_chip->keysize + sizeof(u32), GFP_KERNEL);
 	if (key_ptr == NULL)
 		return -ENOMEM;
 
-	memcpy(key_ptr->data + 0, buf, keysize);
+	memcpy(key_ptr->data, buf, keysize);
 
 	error = amlnand_save_info_by_name(aml_chip,
 		(u8 *)&(aml_chip->nand_key),
@@ -124,13 +124,13 @@ int aml_key_init(struct amlnand_chip *aml_chip)
 	/* avoid null */
 	aml_chip_key = aml_chip;
 
-	key_ptr = aml_nand_malloc(aml_chip->keysize);
+	key_ptr = aml_nand_malloc(aml_chip->keysize +sizeof(u32));
 	if (key_ptr == NULL) {
 		printk("nand malloc for key_ptr failed");
 		ret = -1;
 		goto exit_error0;
 	}
-	memset(key_ptr, 0x0, aml_chip->keysize);
+	memset(key_ptr, 0x0, aml_chip->keysize + sizeof(u32));
 	printk("%s probe.\n", __func__);
 
 	ret = amlnand_info_init(aml_chip,
