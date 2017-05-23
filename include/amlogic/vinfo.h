@@ -1,26 +1,24 @@
 #ifndef __VINFO_H_
 #define __VINFO_H_
 
-typedef struct vidinfo {
-	ushort	vl_col;		/* Number of columns (i.e. 160) */
-	ushort	vl_row;		/* Number of rows (i.e. 100) */
-	u_char	vl_bpix;		/* Bits per pixel, 0 = 1 */
+struct vinfo_s {
+	ushort width;  /* Number of columns (i.e. 160) */
+	ushort height; /* Number of rows (i.e. 100) */
+	ushort field_height; /* for interlace */
+	u_char vl_bpix; /* Bits per pixel, 0 = 1 */
 
-	void		*vd_base;	/* Start of framebuffer memory	*/
+	void *vd_base; /* Start of framebuffer memory */
 
-	void		*vd_console_address;	/* Start of console buffer	*/
-	short 	console_col;
-	short 	console_row;
+	void *vd_console_address; /* Start of console buffer */
+	short console_col;
+	short console_row;
 
-	int 		vd_color_fg;
-	int 		vd_color_bg;
+	int vd_color_fg;
+	int vd_color_bg;
 
-	int		max_bl_level;
-
-	ushort	*cmap;		/* Pointer to the colormap */
-	void	*priv;			/* Pointer to driver-specific data */
-
-} vidinfo_t;
+	ushort *cmap; /* Pointer to the colormap */
+	void *priv; /* Pointer to driver-specific data */
+};
 
 
 /************************************************************************/

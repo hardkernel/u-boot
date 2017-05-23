@@ -424,7 +424,7 @@ int rle8_decode(uchar *ptr, bmp_image_t *bmap_rle8, ulong width_bmp, ulong heigh
 
 int video_display_bitmap(ulong bmp_image, int x, int y)
 {
-	vidinfo_t *info = NULL;
+	struct vinfo_s *info = NULL;
 #if defined CONFIG_AML_VOUT
 	info = vout_get_current_vinfo();
 #endif
@@ -440,8 +440,8 @@ int video_display_bitmap(ulong bmp_image, int x, int y)
 	unsigned long pheight = fb_gdev.fb_height;
 	unsigned long pwidth = fb_gdev.fb_width;
 #else
-	unsigned long pheight = info->vl_row;
-	unsigned long pwidth = info->vl_col;
+	unsigned long pheight = info->width;
+	unsigned long pwidth = info->height;
 #endif
 	unsigned colors, bpix, bmp_bpix;
 	int lcd_line_length = (pwidth * NBITS(info->vl_bpix)) / 8;
