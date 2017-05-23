@@ -612,8 +612,18 @@ int checkhw(char * name)
 	 * hwid = 1	p321 v1
 	 * hwid = 2	p321 v2
 	 */
+	unsigned int ddr_size=0;
 	unsigned int hwid = 1;
 	char loc_name[64] = {0};
+	int i;
+
+	/* read ddr size */
+	for (i=0; i<CONFIG_NR_DRAM_BANKS; i++) {
+		ddr_size += gd->bd->bi_dram[i].size;
+	}
+#if defined(CONFIG_SYS_MEM_TOP_HIDE)
+	ddr_size += CONFIG_SYS_MEM_TOP_HIDE;
+#endif
 
 	/* read hwid */
 	hwid = (readl(P_AO_SEC_GP_CFG0) >> 8) & 0xFF;
@@ -626,7 +636,17 @@ int checkhw(char * name)
 			strcpy(loc_name, "txl_p321_v1\0");
 			break;
 		case 2:
-			strcpy(loc_name, "txl_p321_v2\0");
+			switch (ddr_size) {
+				case 0x80000000:
+					strcpy(loc_name, "txl_p321_v2-2g\0");
+					break;
+				case 0x40000000:
+					strcpy(loc_name, "txl_p321_v2-1g\0");
+					break;
+				default:
+					strcpy(loc_name, "txl_p321_unsupport");
+					break;
+				}
 			break;
 		default:
 			strcpy(loc_name, "txl_p321_v1");
