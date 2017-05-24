@@ -69,4 +69,8 @@
 #define CONFIG_AML_BL32_COMPRESS_DISABLE 1
 #define CONFIG_AML_BL33_COMPRESS_DISABLE 1
 
+
+//2017.05.19 AXG only support v3 format for normal & secure boot
+#define CONFIG_AML_SECURE_BOOT_V3 1
+
 #endif /* _CPU_H */
