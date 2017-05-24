@@ -1244,10 +1244,10 @@ int do_amlmmc_dtb_key(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
                         printf("not find mmc\n");
                         return 1;
                     }
-                    addr = (void *)malloc(CALI_PATTERN_SIZE);
-                    mmc_write_cali_mattern(addr);
                     vpart = aml_get_virtual_partition_by_name(MMC_PATTERN_NAME);
                     part = aml_get_partition_by_name(MMC_RESERVED_NAME);
+                    addr = (void *)malloc(vpart->size);
+                    mmc_write_cali_mattern(addr);
                     blk = (part->offset + vpart->offset) / mmc->read_bl_len;
                     cnt = vpart->size / mmc->read_bl_len;
                     if (cnt != 0)
