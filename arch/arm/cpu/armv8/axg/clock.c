@@ -235,7 +235,7 @@ int axg_pcie_set(void)
 	#define AXG_PCIE_PLL_CNTL  0x40010242
 	#define AXG_PCIE_PLL_CNTL1 0xc084b2ab
 	#define AXG_PCIE_PLL_CNTL2 0xb75020be
-	#define AXG_PCIE_PLL_CNTL3 0x0a76ba88
+	#define AXG_PCIE_PLL_CNTL3 0x0a5aaa88
 	#define AXG_PCIE_PLL_CNTL4 0xc000004d
 	#define AXG_PCIE_PLL_CNTL5 0x00078000
 	#define AXG_PCIE_PLL_CNTL6 0x003303de
