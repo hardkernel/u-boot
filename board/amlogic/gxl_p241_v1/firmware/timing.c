@@ -22,7 +22,7 @@
 #include <asm/arch/ddr_define.h>
 
 /* DDR freq range */
-#define CONFIG_DDR_CLK_LOW  375
+#define CONFIG_DDR_CLK_LOW  20
 #define CONFIG_DDR_CLK_HIGH 1500
 /* DON'T OVER THESE RANGE */
 #if (CONFIG_DDR_CLK < CONFIG_DDR_CLK_LOW) || (CONFIG_DDR_CLK > CONFIG_DDR_CLK_HIGH)
@@ -94,13 +94,14 @@
 #define CFG_DDR_ODT  DDR4_ODT_60OHM //useless, no effect
 #endif
 
-#define CFG_DDR4_DRV  DDR4_DRV_34OHM //ddr4 driver use this one
+#define CFG_DDR4_DRV  DDR4_DRV_48OHM //ddr4 driver use this one
 #define CFG_DDR4_ODT  DDR4_ODT_60OHM //ddr4 driver use this one
-//#define CFG_DDR4_DRV  DDR4_DRV_48OHM//DDR4_DRV_48OHM //ddr4 driver use this one
-//#define CFG_DDR4_ODT DDR4_ODT_48OHM// DDR4_ODT_80OHM //ddr4 driver use this one
+#define CFG_DDR4_DRV_RANK1  DDR4_DRV_48OHM//DDR4_DRV_48OHM //ddr4 driver use this one
+#define CFG_DDR4_ODT_RANK1   DDR4_ODT_48OHM//DDR4_ODT_60OHM// DDR4_ODT_80OHM //ddr4 driver use this one
+#define CONFIG_DRAM_VREF_RANK1   750/12// 1+ (50+((50*37)/(37+60/1))) //50// (810/12) // 0 //77 //0 //0  is auto ---70 --range -- 45---92.50    %
 #if ((CONFIG_DDR_TYPE == CONFIG_DDR_TYPE_DDR4) || (CONFIG_DDR_TYPE == CONFIG_DDR_TYPE_AUTO))
-#define CONFIG_SOC_VREF    1+ (50+((50*48)/(48+480/(6+1)))) // 880/12  //(50+((50*48)/(48+160)))  //0//50+50*drv/(drv+odt)  (738/12) //0 //0  is auto --70 ---range 44.07---88.04   %
-#define CONFIG_DRAM_VREF  1+ (50+((50*37)/(37+48)))// 860/12 // 0// (810/12) // 0 //77 //0 //0  is auto ---70 --range -- 45---92.50    %
+#define CONFIG_SOC_VREF      (1+ (50+((50*48)/(48+480/(6+1)))))// (738/12) //0 //0  is auto --70 ---range 44.07---88.04   %
+#define CONFIG_DRAM_VREF   (1+ (50+((50*34)/(34+60))))// (810/12) // 0 //77 //0 //0  is auto ---70 --range -- 45---92.50    %
 #elif (CONFIG_DDR_TYPE == CONFIG_DDR_TYPE_LPDDR3)
 #define CONFIG_SOC_VREF  51
 #define CONFIG_DRAM_VREF 51
@@ -376,7 +377,7 @@ ddr_timing_t __ddr_timming[] = {
 		.cfg_ddr_cwl			= 12,// (11),
 		.cfg_ddr_al				= (0),
 		.cfg_ddr_exsr			= (1024),  //597 768 1024
-		.cfg_ddr_dqs			= 9,//12,//(23),  //6 7  8 9 10 11 ok ,bit0-3 max is 15 ,why use 15 is bad 2016_11_10 jiaxing ,test should change with ddr frequency ?
+		.cfg_ddr_dqs			= (9),
 		.cfg_ddr_cksre			= (15),
 		.cfg_ddr_cksrx			= (15),
 		.cfg_ddr_zqcs			= 128,
@@ -407,7 +408,7 @@ ddr_timing_t __ddr_timming[] = {
 		.cfg_ddr_dllk			= (512),
 		.cfg_ddr_rtodt			= (0),
 		.cfg_ddr_rtw			= (7),
-		.cfg_ddr_refi			= (39-2),
+		.cfg_ddr_refi			= (39),
 		.cfg_ddr_refi_mddr3		= (0),
 		.cfg_ddr_cl				= (12),
 		.cfg_ddr_wr				= (12),
@@ -522,12 +523,12 @@ ddr_set_t __ddr_setting = {
 	.t_pub_dcr				= 0XB,     //PUB DCR
 	.t_pub_dtcr0			= 0x80003187,    //PUB DTCR //S905 use 0x800031c7
 	.t_pub_dtcr1			= 0x00010237,    //PUB DTCR
-	.t_pub_dsgcr			= 0x020641b,
+	.t_pub_dsgcr			= 0x020641b | (1<<22),
 #elif (CONFIG_DDR_TYPE == CONFIG_DDR_TYPE_DDR4)
 	.t_pub_dcr				= 0X40C,     //PUB DCR
 	.t_pub_dtcr0			= 0x800031c7,    //PUB DTCR //S905 use 0x800031c7
 	.t_pub_dtcr1			= 0x00010237,
-	.t_pub_dsgcr			= 0x020641b,
+	.t_pub_dsgcr			= 0x020641b|(1<<2)|(1<<23),
 #elif (CONFIG_DDR_TYPE == CONFIG_DDR_TYPE_LPDDR3)
 	.t_pub_dcr				= 0X89,     //PUB DCR
 	.t_pub_dtcr0			= 0x80003187,    //PUB DTCR //S905 use 0x800031c7
@@ -556,15 +557,15 @@ ddr_set_t __ddr_setting = {
 */
 #elif (CONFIG_DDR_TYPE == CONFIG_DDR_TYPE_DDR4)
 /* 4layer ddr4 */
-	.t_pub_zq0pr			= 0x0995d,   //PUB ZQ0PR
-	.t_pub_zq1pr			= 0x3f95d,   //PUB ZQ1PR
-	.t_pub_zq2pr			= 0x3f95d,   //PUB ZQ2PR
+	.t_pub_zq0pr			= 0x0775d,   //PUB ZQ0PR
+	.t_pub_zq1pr			= 0x6fc5d,   //PUB ZQ1PR
+	.t_pub_zq2pr			= 0x6fc5d,   //PUB ZQ2PR
 	.t_pub_zq3pr			= 0x1dd1d,   //PUB ZQ3PR
 #else // ddr3 and auto
 /* p212 4layer board ddr3 */
-	.t_pub_zq0pr			= 0x5d95d,   //PUB ZQ0PR
-	.t_pub_zq1pr			= 0x5d95d,   //PUB ZQ1PR
-	.t_pub_zq2pr			= 0x5d95d,   //PUB ZQ2PR
+	.t_pub_zq0pr			= 0x775d,   //PUB ZQ0PR
+	.t_pub_zq1pr			= 0x6fc5d,   //PUB ZQ1PR
+	.t_pub_zq2pr			= 0x6fc5d,   //PUB ZQ2PR
 	.t_pub_zq3pr			= 0x1dd1d,   //PUB ZQ3PR
 #endif
 
@@ -610,9 +611,9 @@ ddr_set_t __ddr_setting = {
 	.t_pub_acbdlr3			= 0x2020,//0,  //CK0 delay fine tune b-3f  //lpddr3 tianhe 2016-10-13
 #elif (CONFIG_DDR_TYPE == CONFIG_DDR_TYPE_DDR4)
 //2layer board DDR4
-	.t_pub_acbdlr0			= 0, //0x3f,
-	.t_pub_aclcdlr			= 0, //0x28,//0x18,   ///1t  ,if 2t can add some value
-	.t_pub_acbdlr3			= 0, //0x10,// 0x10,//0xa,  //cs    add 22ohm 08  0ohm 0x10
+	.t_pub_acbdlr0			= 0x3f, //0x3f,
+	.t_pub_aclcdlr			= 0x28, //0x28,//0x18,   ///1t  ,if 2t can add some value
+	.t_pub_acbdlr3			= 0x10, //0x10,// 0x10,//0xa,  //cs    add 22ohm 08  0ohm 0x10
 #else // ddr3 and auto
 //4layer ddr3
 	.t_pub_acbdlr0			= 0,
@@ -623,6 +624,15 @@ ddr_set_t __ddr_setting = {
 	(((CONFIG_DRAM_VREF))<45)?(0):((((CONFIG_DRAM_VREF))<61)?((((((CONFIG_DRAM_VREF*1000-45000)/650)>0X32)?(0X32):(((CONFIG_DRAM_VREF*1000-45000)/650)))|(1<<6))):
 	((((CONFIG_DRAM_VREF*1000-60000)/650)>0X32)?(0X32):(((CONFIG_DRAM_VREF*1000-60000)/650)))))),
 	.t_pub_mr[7]	= ((CONFIG_ZQ_VREF<45)?(0):((((CONFIG_ZQ_VREF*1000-44070)/698)>0X3F)?(0X3F):(((CONFIG_ZQ_VREF*1000-44070)/698)))) ,//jiaxing use for tune zq vref 20160608
+
+
+	.t_pub_mr[1]	= ( (0|(CFG_DDR4_DRV_RANK1<<1)|((CFG_DDR4_ODT_RANK1)<<8) |
+						(0<<7)	|
+						(0 << 3 ))) ,//jiaxing
+	.t_pub_soc_vref_dram_vref_rank1	= ((((CONFIG_SOC_VREF<45)?(0):((((CONFIG_SOC_VREF*1000-44070)/698)>0X3F)?(0X3F):(((CONFIG_SOC_VREF*1000-44070)/698))))<<8)|(
+	(((CONFIG_DRAM_VREF_RANK1))<45)?(0):((((CONFIG_DRAM_VREF_RANK1))<61)?((((((CONFIG_DRAM_VREF_RANK1*1000-45000)/650)>0X32)?(0X32):(((CONFIG_DRAM_VREF_RANK1*1000-45000)/650)))|(1<<6))):
+	((((CONFIG_DRAM_VREF_RANK1*1000-60000)/650)>0X32)?(0X32):(((CONFIG_DRAM_VREF_RANK1*1000-60000)/650)))))) ,//jiaxing
+
 	.ddr_func				= DDR_FUNC, /* ddr func demo 2016.01.26 */
 
 #if (CONFIG_DDR_TYPE == CONFIG_DDR_TYPE_LPDDR3)
@@ -655,13 +665,27 @@ ddr_set_t __ddr_setting = {
 	.rd_adj_per				= {
 							[0]=100,
 							[1]=100,
-							[2]=88,
+							[2]=95,
 							[3]=95,
 							[4]=95,
-							[5]=100,
+							[5]=95,
 							},
 #endif
-
+	.wr_adj_per_rank1 		= {
+							[0] = 100,
+							[1] = 100,
+							[2] = 95,
+							[3] = 95,
+							[4] = 95,
+							[5] = 95,
+							},
+	.rd_adj_per_rank1		= {
+							[0] = 100,
+							[1] = 100,
+							[2] = 95,
+							[3] = 95,
+							[4] = 95,
+							[5] = 95,},
 };
 
 pll_set_t __pll_setting = {
@@ -675,4 +699,19 @@ pll_set_t __pll_setting = {
 	.ddr_clk_debug			= CONFIG_DDR_CLK_DEBUG,
 	.cpu_clk_debug			= CONFIG_CPU_CLK_DEBUG,
 #endif
+	/* pll ssc setting:
+
+	.ddr_pll_ssc = 0x00120000, ppm1000 center SS, boot log show: Set ddr ssc: ppm1000
+	.ddr_pll_ssc = 0x00124000, ppm1000 up SS,     boot log show: Set ddr ssc: ppm1000+
+	.ddr_pll_ssc = 0x00128000, ppm1000 down SS,   boot log show: Set ddr ssc: ppm1000-
+
+	.ddr_pll_ssc = 0x00140000, ppm2000 center SS, boot log show: Set ddr ssc: ppm2000
+	.ddr_pll_ssc = 0x00144000, ppm2000 up SS,     boot log show: Set ddr ssc: ppm2000+
+	.ddr_pll_ssc = 0x00148000, ppm2000 down SS,   boot log show: Set ddr ssc: ppm2000-
+
+	.ddr_pll_ssc = 0x00160000, ppm3000 center SS, boot log show: Set ddr ssc: ppm3000
+	.ddr_pll_ssc = 0x00164000, ppm3000 up SS,     boot log show: Set ddr ssc: ppm3000+
+	.ddr_pll_ssc = 0x00168000, ppm3000 down SS,   boot log show: Set ddr ssc: ppm3000-
+	*/
+	.ddr_pll_ssc                    = 0x00128000,
 };
