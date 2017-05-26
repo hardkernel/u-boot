@@ -202,10 +202,6 @@ struct dsi_cmd_request_s {
 #define BIT_LP_VSA_EN             8
 #define BIT_VID_MODE_TYPE         0
 
-#define SYNC_PULSE				0x0
-#define SYNC_EVENT				0x1
-#define BURST_MODE				0x2
-
 /* For MIPI_DSI_DWC_PHY_STATUS_OS */
 #define BIT_PHY_ULPSACTIVENOT3LANE 12
 #define BIT_PHY_STOPSTATE3LANE     11
@@ -364,10 +360,6 @@ struct dsi_cmd_request_s {
 #define BIT_ACK_ERR_2               2
 #define BIT_ACK_ERR_1               1
 #define BIT_ACK_ERR_0               0
-
-/* Operation mode parameters */
-#define OPERATION_VIDEO_MODE        0
-#define OPERATION_COMMAND_MODE      1
 
 /* Command transfer type in command mode */
 #define DCS_TRANS_HS                0
@@ -535,10 +527,9 @@ struct dsi_vid_s {
 #define DSI_CMD_SIZE_MAX		2000
 /* #define DSI_CMD_READ_VALID   // DPHY don't support for M8 */
 
-extern void set_mipi_dsi_config_set(struct lcd_config_s *pConf);
+extern void mipi_dsi_print_info(struct lcd_config_s *pconf);
+extern void lcd_mipi_dsi_config_set(struct lcd_config_s *pConf);
 extern void mipi_dsi_link_off(struct lcd_config_s *pConf);
-extern void dsi_probe(struct lcd_config_s *pConf);
-extern void dsi_remove(void);
 extern void lcd_mipi_control_set(struct lcd_config_s *pConf, int status);
 
 #endif

@@ -27,6 +27,9 @@
 #endif
 #include "aml_lcd_reg.h"
 #include "aml_lcd_common.h"
+#ifdef CONFIG_AML_LCD_TABLET
+#include "lcd_tablet/mipi_dsi_util.h"
+#endif
 
 #define PANEL_NAME	"panel"
 
@@ -373,6 +376,7 @@ static void lcd_info_print(void)
 		   pconf->lcd_control.vbyone_config->byte_mode,
 		   pconf->lcd_control.lvds_config->phy_vswing,
 		   pconf->lcd_control.lvds_config->phy_preem);
+		lcd_pinmux_info_print(pconf);
 		break;
 	case LCD_TTL:
 		printf("clk_pol           %u\n"
@@ -385,31 +389,17 @@ static void lcd_info_print(void)
 		   (pconf->lcd_control.ttl_config->sync_valid >> 1) & 1,
 		   (pconf->lcd_control.ttl_config->swap_ctrl >> 0) & 1,
 		   (pconf->lcd_control.ttl_config->swap_ctrl >> 1) & 1);
+		lcd_pinmux_info_print(pconf);
 		break;
 	case LCD_MIPI:
-		printf("lane_num       %u\n"
-			"bit_rate_max      %uMHz\n"
-			"bit_rate          %u.%03uMHz\n"
-			"operation_mode    %u(%s), %u(%s)\n"
-			"transfer_ctrl     %u, %u\n\n",
-			pconf->lcd_control.mipi_config->lane_num,
-			(pconf->lcd_control.mipi_config->bit_rate_max),
-			(pconf->lcd_control.mipi_config->bit_rate / 1000000),
-			((pconf->lcd_control.mipi_config->bit_rate % 1000000) / 1000),
-			((pconf->lcd_control.mipi_config->operation_mode>>BIT_OP_MODE_INIT) & 1),
-			(((pconf->lcd_control.mipi_config->operation_mode>>BIT_OP_MODE_INIT) & 1) ?
-				"COMMAND" : "VIDEO"),
-			((pconf->lcd_control.mipi_config->operation_mode>>BIT_OP_MODE_DISP) & 1),
-			(((pconf->lcd_control.mipi_config->operation_mode>>BIT_OP_MODE_DISP) & 1) ?
-				"COMMAND" : "VIDEO"),
-			((pconf->lcd_control.mipi_config->transfer_ctrl>>BIT_TRANS_CTRL_CLK) & 1),
-			((pconf->lcd_control.mipi_config->transfer_ctrl>>BIT_TRANS_CTRL_SWITCH) & 3));
+#ifdef CONFIG_AML_LCD_TABLET
+		mipi_dsi_print_info(pconf);
+#endif
 		break;
 	default:
 		break;
 	}
 
-	lcd_pinmux_info_print(pconf);
 	lcd_power_info_print(pconf, 1);
 	lcd_power_info_print(pconf, 0);
 }

@@ -851,6 +851,9 @@ void lcd_tablet_config_update(struct lcd_config_s *pconf)
 	case LCD_VBYONE:
 		lcd_vbyone_config_set(pconf);
 		break;
+	case LCD_MIPI:
+		lcd_mipi_dsi_config_set(pconf);
+		break;
 	default:
 		break;
 	}

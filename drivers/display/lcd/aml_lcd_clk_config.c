@@ -781,15 +781,6 @@ static void lcd_set_vclk_crt(int lcd_type, struct lcd_clk_config_s *cConf)
 	lcd_hiu_setb(HHI_VID_CLK_CNTL2, 1, ENCL_GATE_VCLK, 1);
 }
 
-static void lcd_set_mipi_host_clk_axg(void)
-{
-	lcd_hiu_setb(HHI_VDIN_MEAS_CLK_CNTL, 0, 21, 3);
-	lcd_hiu_setb(HHI_VDIN_MEAS_CLK_CNTL, 0, 12, 7);
-	lcd_hiu_setb(HHI_VDIN_MEAS_CLK_CNTL, 1, 20, 1);
-
-	LCDPR("%s: dsi_meas_clk reg: 0x%08x\n", __func__, lcd_hiu_read(HHI_VDIN_MEAS_CLK_CNTL));
-}
-
 static unsigned int clk_div_calc_g9_gxtvbb(unsigned int clk,
 		unsigned int div_sel, int dir)
 {
@@ -1849,7 +1840,6 @@ void lcd_clk_set(struct lcd_config_s *pconf)
 		break;
 	case LCD_CHIP_AXG:
 		lcd_set_pll_axg(&clk_conf);
-		lcd_set_mipi_host_clk_axg();
 		break;
 	default:
 		break;

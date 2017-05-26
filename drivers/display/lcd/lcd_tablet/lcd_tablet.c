@@ -73,6 +73,7 @@ static void lcd_config_load_print(struct lcd_config_s *pconf)
 	LCDPR("fr_adjust_type = %d\n", pconf->lcd_timing.fr_adjust_type);
 	LCDPR("ss_level = %d\n", pconf->lcd_timing.ss_level);
 	LCDPR("clk_auto = %d\n", pconf->lcd_timing.clk_auto);
+	LCDPR("clk = %dHz\n", pconf->lcd_timing.lcd_clk);
 
 	if (pconf->lcd_basic.lcd_type == LCD_TTL) {
 		LCDPR("clk_pol = %d\n", pconf->lcd_control.ttl_config->clk_pol);
@@ -92,16 +93,20 @@ static void lcd_config_load_print(struct lcd_config_s *pconf)
 	} else if (pconf->lcd_basic.lcd_type == LCD_MIPI) {
 		LCDPR("lane_num = %d\n",
 			pconf->lcd_control.mipi_config->lane_num);
-		LCDPR("operation_mode = %d\n",
-			pconf->lcd_control.mipi_config->operation_mode);
-		LCDPR("transfer_ctrl = %d\n",
-			pconf->lcd_control.mipi_config->transfer_ctrl);
-		LCDPR("factor_denominator = %d\n",
-			pconf->lcd_control.mipi_config->factor_denominator);
-		LCDPR("factor_numerator = %d\n",
-			pconf->lcd_control.mipi_config->factor_numerator);
 		LCDPR("bit_rate_max = %d\n",
 			pconf->lcd_control.mipi_config->bit_rate_max);
+		LCDPR("pclk_lanebyteclk_factor = %d\n",
+			pconf->lcd_control.mipi_config->factor_numerator);
+		LCDPR("operation_mode_init = %d\n",
+			pconf->lcd_control.mipi_config->operation_mode_init);
+		LCDPR("operation_mode_disp = %d\n",
+			pconf->lcd_control.mipi_config->operation_mode_display);
+		LCDPR("video_mode_type = %d\n",
+			pconf->lcd_control.mipi_config->video_mode_type);
+		LCDPR("clk_lp_continuous = %d\n",
+			pconf->lcd_control.mipi_config->clk_lp_continuous);
+		LCDPR("phy_stop_wait = %d\n",
+			pconf->lcd_control.mipi_config->phy_stop_wait);
 		LCDPR("extern_init = %d\n",
 			pconf->lcd_control.mipi_config->extern_init);
 	}
@@ -338,12 +343,15 @@ static int lcd_config_load_from_dts(char *dt_addr, struct lcd_config_s *pconf)
 		if (propdata == NULL) {
 			LCDERR("failed to get mipi_attr\n");
 		} else {
-				pconf->lcd_control.mipi_config->lane_num = be32_to_cpup((u32*)propdata);
-				pconf->lcd_control.mipi_config->operation_mode = be32_to_cpup((((u32*)propdata)+1));
-				pconf->lcd_control.mipi_config->transfer_ctrl = be32_to_cpup((((u32*)propdata)+2));
-				pconf->lcd_control.mipi_config->factor_denominator = be32_to_cpup((((u32*)propdata)+3));
-				pconf->lcd_control.mipi_config->factor_numerator = be32_to_cpup((((u32*)propdata)+4));
-				pconf->lcd_control.mipi_config->bit_rate_max = be32_to_cpup((((u32*)propdata)+5));
+			pconf->lcd_control.mipi_config->lane_num = be32_to_cpup((u32*)propdata);
+			pconf->lcd_control.mipi_config->bit_rate_max = be32_to_cpup((((u32*)propdata)+1));
+			pconf->lcd_control.mipi_config->factor_numerator = be32_to_cpup((((u32*)propdata)+2));
+			pconf->lcd_control.mipi_config->factor_denominator = 100;
+			pconf->lcd_control.mipi_config->operation_mode_init = be32_to_cpup((((u32*)propdata)+3));
+			pconf->lcd_control.mipi_config->operation_mode_display = be32_to_cpup((((u32*)propdata)+4));
+			pconf->lcd_control.mipi_config->video_mode_type = be32_to_cpup((((u32*)propdata)+5));
+			pconf->lcd_control.mipi_config->clk_lp_continuous = be32_to_cpup((((u32*)propdata)+6));
+			pconf->lcd_control.mipi_config->phy_stop_wait = be32_to_cpup((((u32*)propdata)+7));
 		}
 		propdata = (char *)fdt_getprop(dt_addr, child_offset, "extern_init", NULL);
 		if (propdata == NULL) {
@@ -446,7 +454,7 @@ static int lcd_config_load_from_bsp(struct lcd_config_s *pconf)
 	if (temp == Rsv_val)
 		pconf->lcd_timing.lcd_clk = 60;
 	else
-		pconf->lcd_timing.lcd_clk = (unsigned char)temp;
+		pconf->lcd_timing.lcd_clk = temp;
 
 	if (pconf->lcd_basic.lcd_type == LCD_TTL) {
 		pconf->lcd_control.ttl_config->clk_pol = ext_lcd->lcd_spc_val0;
@@ -473,6 +481,16 @@ static int lcd_config_load_from_bsp(struct lcd_config_s *pconf)
 		pconf->lcd_control.vbyone_config->color_fmt  = ext_lcd->lcd_spc_val3;
 		pconf->lcd_control.vbyone_config->phy_vswing = VX1_PHY_VSWING_DFT;
 		pconf->lcd_control.vbyone_config->phy_preem  = VX1_PHY_PREEM_DFT;
+	} else if (pconf->lcd_basic.lcd_type == LCD_MIPI) {
+		pconf->lcd_control.mipi_config->lane_num = ext_lcd->lcd_spc_val0;
+		pconf->lcd_control.mipi_config->bit_rate_max   = ext_lcd->lcd_spc_val1;
+		pconf->lcd_control.mipi_config->factor_numerator = ext_lcd->lcd_spc_val2;
+		pconf->lcd_control.mipi_config->operation_mode_init     = ext_lcd->lcd_spc_val3;
+		pconf->lcd_control.mipi_config->operation_mode_display   = ext_lcd->lcd_spc_val4;
+		pconf->lcd_control.mipi_config->video_mode_type = ext_lcd->lcd_spc_val5;
+		pconf->lcd_control.mipi_config->clk_lp_continuous  = ext_lcd->lcd_spc_val6;
+		pconf->lcd_control.mipi_config->phy_stop_wait = ext_lcd->lcd_spc_val7;
+		pconf->lcd_control.mipi_config->factor_denominator = 100;
 	}
 
 	i = 0;
@@ -727,6 +745,30 @@ static int lcd_config_load_from_unifykey(struct lcd_config_s *pconf)
 		p += LCD_UKEY_IF_ATTR_7;
 		p += LCD_UKEY_IF_ATTR_8;
 		p += LCD_UKEY_IF_ATTR_9;
+	}  else if (pconf->lcd_basic.lcd_type == LCD_MIPI) {
+		pconf->lcd_control.mipi_config->lane_num = (*p | ((*(p + 1)) << 8)) & 0xff;
+		p += LCD_UKEY_IF_ATTR_0;
+		pconf->lcd_control.mipi_config->bit_rate_max = (*p | ((*(p + 1)) << 8)) & 0xff;
+		p += LCD_UKEY_IF_ATTR_1;
+		pconf->lcd_control.mipi_config->factor_numerator = (*p | ((*(p + 1)) << 8)) & 0xff;
+		p += LCD_UKEY_IF_ATTR_2;
+		pconf->lcd_control.mipi_config->factor_denominator = 100;
+		pconf->lcd_control.mipi_config->operation_mode_init  = (*p | ((*(p + 1)) << 8)) & 0xff;
+		p += LCD_UKEY_IF_ATTR_3;
+		pconf->lcd_control.mipi_config->operation_mode_display  = (*p | ((*(p + 1)) << 8)) & 0xff;
+		p += LCD_UKEY_IF_ATTR_4;
+		pconf->lcd_control.mipi_config->video_mode_type = (*p | ((*(p + 1)) << 8)) & 0xff;
+		p += LCD_UKEY_IF_ATTR_5;
+		pconf->lcd_control.mipi_config->clk_lp_continuous = (*p | ((*(p + 1)) << 8)) & 0xff;
+		p += LCD_UKEY_IF_ATTR_6;
+		pconf->lcd_control.mipi_config->phy_stop_wait = (*p | ((*(p + 1)) << 8)) & 0xff;
+		p += LCD_UKEY_IF_ATTR_7;
+		pconf->lcd_control.mipi_config->extern_init = (*p | ((*(p + 1)) << 8)) & 0xff;
+		p += LCD_UKEY_IF_ATTR_8;
+
+		/* dummy pointer */
+		p += LCD_UKEY_IF_ATTR_9;
+
 	} else {
 		LCDERR("unsupport lcd_type: %d\n", pconf->lcd_basic.lcd_type);
 		p += LCD_UKEY_IF_ATTR_0;
@@ -772,9 +814,6 @@ static void lcd_config_init(struct lcd_config_s *pconf)
 	pconf->lcd_timing.v_period_dft = pconf->lcd_basic.v_period;
 	pconf->lcd_timing.sync_duration_num = sync_duration;
 	pconf->lcd_timing.sync_duration_den = 100;
-
-	if (pconf->lcd_basic.lcd_type == LCD_MIPI)
-		set_mipi_dsi_config_set(pconf);
 
 	lcd_tcon_config(pconf);
 	lcd_tablet_config_update(pconf);
@@ -823,10 +862,9 @@ int get_lcd_tablet_config(char *dt_addr, int load_id)
 	if (ret)
 		return -1;
 
-	lcd_config_load_print(lcd_drv->lcd_config);
 	lcd_config_init(lcd_drv->lcd_config);
+	lcd_config_load_print(lcd_drv->lcd_config);
 
-	dsi_probe(lcd_drv->lcd_config);
 	return 0;
 }
 

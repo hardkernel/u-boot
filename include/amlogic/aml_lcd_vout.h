@@ -246,34 +246,36 @@ struct vbyone_config_s {
 };
 
 /* mipi-dsi config */
-/* byte[1] */
-#define DSI_CMD_INDEX             1
+/* Operation mode parameters */
+#define OPERATION_VIDEO_MODE     0
+#define OPERATION_COMMAND_MODE   1
 
-#define DSI_INIT_ON_MAX           100
-#define DSI_INIT_OFF_MAX          30
+#define SYNC_PULSE               0x0
+#define SYNC_EVENT               0x1
+#define BURST_MODE               0x2
 
-#define BIT_OP_MODE_INIT          0
-#define BIT_OP_MODE_DISP          4
-#define BIT_TRANS_CTRL_CLK        0
-/* [5:4] */
-#define BIT_TRANS_CTRL_SWITCH     4
+/* command config */
+#define DSI_CMD_INDEX            1  /* byte[1] */
+
+#define DSI_INIT_ON_MAX          100
+#define DSI_INIT_OFF_MAX         30
+
 struct dsi_config_s {
 	unsigned char lane_num;
 	unsigned int bit_rate_max; /* MHz */
 	unsigned int bit_rate_min; /* MHz*/
 	unsigned int bit_rate; /* Hz */
-	unsigned int factor_denominator; //10
 	unsigned int factor_numerator;
+	unsigned int factor_denominator; /* 100 */
+	unsigned char operation_mode_init; /* 0=video mode, 1=command mode */
+	unsigned char operation_mode_display; /* 0=video mode, 1=command mode */
+	unsigned char video_mode_type; /* 0=sync_pulse, 1=sync_event, 2=burst */
+	unsigned char clk_lp_continuous; /* 0=stop, 1=continue */
+	unsigned char phy_stop_wait; /* 0=auto, 1=standard, 2=slow */
 
 	unsigned int venc_data_width;
 	unsigned int dpi_data_format;
 	unsigned int venc_fmt;
-	/* mipi-dsi operation mode: video, command. [4]display , [0]init */
-	unsigned int operation_mode;
-	/* [0]LP mode auto stop clk lane, [5:4]phy switch between LP and HS */
-	unsigned int transfer_ctrl;
-	/* burst, non-burst(sync pulse, sync event) */
-	unsigned char video_mode_type;
 
 	unsigned char *dsi_init_on;
 	unsigned char *dsi_init_off;
