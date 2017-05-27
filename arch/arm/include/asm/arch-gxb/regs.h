@@ -1630,7 +1630,7 @@
 
 #define VIU_OSD2_CTRL_STAT2 0x1a4d
 
-/* dolby regs(dummy, invalid) */
-#define   DOLBY_TV_CLKGATE_CTRL                    (0x33f1)
-#define   DOLBY_CORE2A_CLKGATE_CTRL                (0x3432)
-#define   DOLBY_CORE3_CLKGATE_CTRL                 (0x36f0)
+#define VPU_RDARB_MODE_L1C1                        (0x2790)
+#define VPU_RDARB_MODE_L1C2                        (0x2799)
+#define VPU_RDARB_MODE_L2C1                        (0x279d)
+#define VPU_WRARB_MODE_L2C1                        (0x27a2)

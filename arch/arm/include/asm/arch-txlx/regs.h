@@ -32460,6 +32460,11 @@
 #define P_DC_CAV_LUT_RDATAH                        (volatile unsigned int *)((0x0016  << 2) + 0xff638000)
 
 
+#define VPU_RDARB_MODE_L1C1                        (0x2790)
+#define VPU_RDARB_MODE_L1C2                        (0x2799)
+#define VPU_RDARB_MODE_L2C1                        (0x279d)
+#define VPU_WRARB_MODE_L2C1                        (0x27a2)
+
 // secure_apb.h
 
 

@@ -24,6 +24,7 @@
 #include <asm/arch/io.h>
 #include <asm/arch/secure_apb.h>
 #include "aml_vpu.h"
+#include "aml_vpu_dummy_reg.h"
 
 /* ********************************
  * register define
