@@ -201,7 +201,12 @@ static int optimus_verify_bootloader(struct ImgBurnInfo* pDownInfo, u8* genSum)
     int ret = OPT_DOWN_OK;
     unsigned char* pBuf = (unsigned char*)OPTIMUS_DOWNLOAD_TRANSFER_BUF_ADDR;
     uint64_t size = 0;
-    uint64_t off  = (1ULL << 62) - 1; //verify mode
+    uint64_t off  = 0;
+
+#if defined(CONFIG_AML_MTD)
+    if ( NAND_BOOT_FLAG == device_boot_flag )
+        off  = (1ULL << 62) - 1; //verify mode for verify discrete bootloader
+#endif//#if defined(CONFIG_AML_MTD)
 
     /*size = 0x60000;////////////TODO:hardcode len!!*/
     size=pDownInfo->imgPktSz;
