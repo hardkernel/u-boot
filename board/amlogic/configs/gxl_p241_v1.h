@@ -253,8 +253,8 @@
 
 /* ddr */
 #define CONFIG_DDR_SIZE					1024 //MB //0 means ddr size auto-detect
-#define CONFIG_DDR_CLK					912  //MHz, Range: 384-1200, should be multiple of 24
-#define CONFIG_DDR4_CLK					912  //MHz, for boards which use different ddr chip
+#define CONFIG_DDR_CLK					792  //MHz, Range: 384-1200, should be multiple of 24
+#define CONFIG_DDR4_CLK					792  //MHz, for boards which use different ddr chip
 /* DDR type setting
  *    CONFIG_DDR_TYPE_LPDDR3   : LPDDR3
  *    CONFIG_DDR_TYPE_DDR3     : DDR3
