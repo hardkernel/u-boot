@@ -405,7 +405,11 @@ void hdmi_tx_set(struct hdmitx_dev *hdev)
 	ddc_init();
 	hdmitx_set_hw(hdev);
 	hdmitx_set_audmode(hdev);
+	msleep(1);
+	hdmitx_set_phy(hdev);
 	hdmitx_debug();
+	msleep(20);
+	hdmitx_wr_reg(HDMITX_DWC_FC_GCP, (1 << 0));
 	return;
 
 #if 0
@@ -864,8 +868,8 @@ static void config_hdmi20_tx ( enum hdmi_vic vic, struct hdmi_format_para *para,
 	/* write GCP packet configuration */
 	data32  = 0;
 	data32 |= (default_phase << 2);
-	data32 |= (0 << 1);
-	data32 |= (1 << 0);
+	data32 |= (1 << 1);
+	data32 |= (0 << 0);
 	hdmitx_wr_reg(HDMITX_DWC_FC_GCP, data32);
 
 	/* write AVI Infoframe packet configuration */
@@ -1289,6 +1293,21 @@ static void hdmitx_set_phy(struct hdmitx_dev *hdev)
 {
 	if (!hdev)
 		return;
+	hd_write_reg(P_HHI_HDMI_PHY_CNTL0, 0x0);
+/* P_HHI_HDMI_PHY_CNTL1	bit[1]: enable clock	bit[0]: soft reset */
+#define RESET_HDMI_PHY() \
+do { \
+	hd_set_reg_bits(P_HHI_HDMI_PHY_CNTL1, 0xf, 0, 4); \
+	mdelay(2); \
+	hd_set_reg_bits(P_HHI_HDMI_PHY_CNTL1, 0xe, 0, 4); \
+	mdelay(2); \
+} while (0)
+
+	hd_set_reg_bits(P_HHI_HDMI_PHY_CNTL1, 0x0390, 16, 16);
+	hd_set_reg_bits(P_HHI_HDMI_PHY_CNTL1, 0x0, 0, 4);
+	RESET_HDMI_PHY();
+	RESET_HDMI_PHY();
+#undef RESET_HDMI_PHY
 
 	switch (hdev->vic) {
 	case HDMI_3840x2160p50_16x9:
@@ -1333,22 +1352,6 @@ static void hdmitx_set_phy(struct hdmitx_dev *hdev)
 		set_phy_by_mode(4);
 		break;
 	}
-/* P_HHI_HDMI_PHY_CNTL1	bit[1]: enable clock	bit[0]: soft reset */
-#define RESET_HDMI_PHY() \
-do { \
-	hd_set_reg_bits(P_HHI_HDMI_PHY_CNTL1, 0xf, 0, 4); \
-	mdelay(2); \
-	hd_set_reg_bits(P_HHI_HDMI_PHY_CNTL1, 0xe, 0, 4); \
-	mdelay(2); \
-} while (0)
-
-	hd_set_reg_bits(P_HHI_HDMI_PHY_CNTL1, 0x0390, 16, 16);
-	hd_set_reg_bits(P_HHI_HDMI_PHY_CNTL1, 0x0, 0, 4);
-	RESET_HDMI_PHY();
-	RESET_HDMI_PHY();
-	RESET_HDMI_PHY();
-#undef RESET_HDMI_PHY
-
 	printk("hdmitx phy setting done\n");
 }
 
@@ -2439,7 +2442,6 @@ static void hdmitx_set_hw(struct hdmitx_dev* hdev)
 	}
 
 	hdmitx_set_pll(hdev);
-	hdmitx_set_phy(hdev);
 	hdmitx_enc(hdev->vic);
 	hdmitx_set_vdac(0);
 
