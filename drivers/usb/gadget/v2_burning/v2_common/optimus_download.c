@@ -203,7 +203,7 @@ static int optimus_verify_bootloader(struct ImgBurnInfo* pDownInfo, u8* genSum)
     uint64_t size = 0;
     uint64_t off  = 0;
 
-#if defined(CONFIG_AML_MTD)
+#if defined(CONFIG_AML_MTD) && defined(CONFIG_DISCRETE_BOOTLOADER)
     if ( NAND_BOOT_FLAG == device_boot_flag )
         off  = (1ULL << 62) - 1; //verify mode for verify discrete bootloader
 #endif//#if defined(CONFIG_AML_MTD)
@@ -297,31 +297,34 @@ static int optimus_storage_open(struct ImgBurnInfo* pDownInfo, const u8* data, c
 #if defined(CONFIG_AML_MTD)
         //Need erasing if 'Have not erasing the WHOLE chip' and 'NOT bootloader'
         if ( (NAND_BOOT_FLAG == device_boot_flag || SPI_NAND_FLAG == device_boot_flag) && MediaType < OPTIMUS_MEDIA_TYPE_MEM )
+        #if  defined(CONFIG_DISCRETE_BOOTLOADER)
+            if ( strcmp(CONFIG_TPL_PART_NAME, partName) )
+        #endif//#if  defined(CONFIG_DISCRETE_BOOTLOADER)
             if (!(is_optimus_storage_inited()>>16) && strcmp("bootloader", partName)) {
                 char cmd[96];
                 sprintf(cmd, "store erase partition %s", partName);
                 DWN_MSG("cmd[%s]\n", cmd);
                 run_command(cmd, 0);
             }
-#if defined(OPTIMUS_BURN_TARGET_SUPPORT_UBIFS)
-if (IMG_TYPE_UBIFS == pDownInfo->imgType) //get size if not bootloader
-{
-    char cmd[64];
-    static int _ubiDeviceIndex = 0;
-    sprintf(cmd, "ubi part %s", partName);
-    ret = run_command(cmd, 0);
-    if (ret) {
-        DWN_ERR("Fail in run cmd[%s]\n", cmd); return __LINE__;
-    }
-    sprintf(cmd, "ubi device %d", _ubiDeviceIndex++);
-    ret = run_command(cmd, 0);
-    sprintf(cmd, "ubi create %s", partName);
-    ret = run_command(cmd, 0);
-    if (ret) {
-        DWN_ERR("Fail in run cmd[%s]\n", cmd); return __LINE__;
-    }
-}
-#endif// #if defined(OPTIMUS_BURN_TARGET_SUPPORT_UBIFS)
+    #if defined(OPTIMUS_BURN_TARGET_SUPPORT_UBIFS)
+        if (IMG_TYPE_UBIFS == pDownInfo->imgType) //get size if not bootloader
+        {
+            char cmd[64];
+            static int _ubiDeviceIndex = 0;
+            sprintf(cmd, "ubi part %s", partName);
+            ret = run_command(cmd, 0);
+            if (ret) {
+                DWN_ERR("Fail in run cmd[%s]\n", cmd); return __LINE__;
+            }
+            sprintf(cmd, "ubi device %d", _ubiDeviceIndex++);
+            ret = run_command(cmd, 0);
+            sprintf(cmd, "ubi create %s", partName);
+            ret = run_command(cmd, 0);
+            if (ret) {
+                DWN_ERR("Fail in run cmd[%s]\n", cmd); return __LINE__;
+            }
+        }
+    #endif// #if defined(OPTIMUS_BURN_TARGET_SUPPORT_UBIFS)
 #endif//#if defined(CONFIG_AML_MTD)
     }
     else if(pDownInfo->imgSzDisposed == pDownInfo->imgPktSz && OPTIMUS_IMG_STA_BURN_COMPLETE == pDownInfo->imgBurnSta)

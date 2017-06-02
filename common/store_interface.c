@@ -1222,10 +1222,15 @@ static int do_store_rom_write(cmd_tbl_t * cmdtp, int flag, int argc, char * cons
         const int tplWriteSz     = size - Bl2Size;
         loff_t copyOff = 0;
         const int iCopy2Update  = argc > 5 ? simple_strtoul(argv[5], NULL, 0) : -1;
+        const int TPL_MIN_SZ    = (1U << 16);
+        const int updateTpl     = TPL_MIN_SZ < tplWriteSz;
 
-        if ( bootloaderMaxSz < size || tplWriteSz <= 0 ) {
-            ErrP("bootloader sz 0x%llx invalid,  max sz %d\n", size, bootloaderMaxSz );
+        if ( bootloaderMaxSz < size ) {
+            ErrP("bootloader sz 0x%llx too large,max sz 0x%x\n", size, bootloaderMaxSz );
             return -__LINE__;
+        }
+        if ( !updateTpl ) {
+            MsgP("Warnning:tplWriteSz 0x%x too small, update bl2 only but not update tpl\n", tplWriteSz);
         }
         if (iCopy2Update >= tplCpyNum || iCopy2Update >= Bl2CpyNum) {
             ErrP("iCopy2Update[%s] invalid, must < min(%d, %d)\n", argv[5], tplCpyNum, Bl2CpyNum);
@@ -1252,7 +1257,7 @@ static int do_store_rom_write(cmd_tbl_t * cmdtp, int flag, int argc, char * cons
             }
         }
         addr += Bl2Size;
-        for ( i = 0; i < tplCpyNum; ++i )
+        for ( i = 0; i < tplCpyNum && updateTpl; ++i )
         {
             if (iCopy2Update >= 0 && iCopy2Update != i) continue;
 
@@ -1418,7 +1423,7 @@ static int do_store_rom_read(cmd_tbl_t * cmdtp, int flag, int argc, char * const
         const int verifyMode = (off == (1ULL << 62) - 1) && (iCopy2Update < 0); //verify mode
         if (!verifyMode && iCopy2Update < 0) iCopy2Update = 0; //default read copy 0 if no verify mode
 
-        if ( bootloaderMaxSz < size || tplRealSz <= 0 ) {
+        if ( bootloaderMaxSz < size || tplRealSz < 0 ) {
             ErrP("bootloader sz 0x%llx invalid,  max sz %d\n", size, bootloaderMaxSz );
             return -__LINE__;
         }
@@ -1469,39 +1474,42 @@ static int do_store_rom_read(cmd_tbl_t * cmdtp, int flag, int argc, char * const
 #endif//#if CONFIG_BL2_VAL_NUM_MIN
         memcpy((char*)addr, readBuf, Bl2Size);
 
-        const uint32_t orgTplCrc = _bootloaderOrgCrc[1];
-        for ( i = 0; i < tplCpyNum && !ret; ++i )
+        if (tplRealSz > 0) // to support dump only bl2
         {
-            if (iCopy2Update >= 0 && iCopy2Update != i) continue;
-
-            copyOff = i * tplCapSize;
-            sprintf(str, "amlnf fip_read 0x%p %llx 0x%x", readBuf, copyOff, tplRealSz);
-            debugP("runCmd[%s]\n", str);
-            ret = run_command(str, 0);
-            if (ret) {
-                ErrP("Failed at pgram bl2[%d],ret=%d\n", i, ret);
-                return -__LINE__;
-            }
-#if CONFIG_TPL_VAL_NUM_MIN
-            if (verifyMode) //copy index not specified, need read all copies
+            const uint32_t orgTplCrc = _bootloaderOrgCrc[1];
+            for ( i = 0; i < tplCpyNum && !ret; ++i )
             {
-                const uint32_t readCrc = crc32(0, (unsigned char*)readBuf, tplRealSz);
-                if (orgTplCrc == readCrc) {
-                    okCrcNum += 1;
-                    if ( okCrcNum >= CONFIG_TPL_VAL_NUM_MIN ) {
-                        break;
+                if (iCopy2Update >= 0 && iCopy2Update != i) continue;
+
+                copyOff = i * tplCapSize;
+                sprintf(str, "amlnf fip_read 0x%p %llx 0x%x", readBuf, copyOff, tplRealSz);
+                debugP("runCmd[%s]\n", str);
+                ret = run_command(str, 0);
+                if (ret) {
+                    ErrP("Failed at pgram bl2[%d],ret=%d\n", i, ret);
+                    return -__LINE__;
+                }
+#if CONFIG_TPL_VAL_NUM_MIN
+                if (verifyMode) //copy index not specified, need read all copies
+                {
+                    const uint32_t readCrc = crc32(0, (unsigned char*)readBuf, tplRealSz);
+                    if (orgTplCrc == readCrc) {
+                        okCrcNum += 1;
+                        if ( okCrcNum >= CONFIG_TPL_VAL_NUM_MIN ) {
+                            break;
+                        }
                     }
                 }
+#endif//#if CONFIG_TPL_VAL_NUM_MIN
+            }
+#if CONFIG_TPL_VAL_NUM_MIN
+            if (okCrcNum < CONFIG_TPL_VAL_NUM_MIN && verifyMode) {
+                ErrP("okCrcNum(%d) < CONFIG_TPL_VAL_NUM_MIN(%d)\n", okCrcNum, CONFIG_TPL_VAL_NUM_MIN);
+                return -__LINE__;
             }
 #endif//#if CONFIG_TPL_VAL_NUM_MIN
+            memcpy((char*)addr + Bl2Size, (unsigned char*)readBuf, tplRealSz);
         }
-#if CONFIG_TPL_VAL_NUM_MIN
-        if (okCrcNum < CONFIG_TPL_VAL_NUM_MIN && verifyMode) {
-            ErrP("okCrcNum(%d) < CONFIG_TPL_VAL_NUM_MIN(%d)\n", okCrcNum, CONFIG_TPL_VAL_NUM_MIN);
-            return -__LINE__;
-        }
-#endif//#if CONFIG_TPL_VAL_NUM_MIN
-        memcpy((char*)addr + Bl2Size, (unsigned char*)readBuf, tplRealSz);
         free(tmpBuf);
 #endif// #ifndef CONFIG_DISCRETE_BOOTLOADER
 #else
@@ -1613,6 +1621,21 @@ static int do_store_read(cmd_tbl_t * cmdtp, int flag, int argc, char * const arg
 #if defined(CONFIG_AML_NAND)
     sprintf(str, "amlnf  read_byte %s 0x%llx  0x%llx  0x%llx",s, addr, off, size);
 #elif defined(CONFIG_AML_MTD)
+    #if  defined(CONFIG_DISCRETE_BOOTLOADER)
+    if ( !strcmp(CONFIG_TPL_PART_NAME, s) ) {
+        const int tplCapSize    = CONFIG_TPL_SIZE_PER_COPY;
+        const int tplCpyNum     = CONFIG_TPL_COPY_NUM;
+        const int iCopy2Update  = argc > 6 ? simple_strtoul(argv[6], NULL, 0) : 0;//0 copy at default
+
+        if (iCopy2Update >= tplCpyNum) {
+            ErrP("iCopy2Update[%s] invalid, must < max(%d)\n", argv[6], tplCpyNum);
+            return -__LINE__;
+        }
+
+        loff_t copyOff = iCopy2Update * tplCapSize;
+        sprintf(str, "amlnf fip_read 0x%llx %llx 0x%llx", addr, copyOff, size);
+    } else
+    #endif // #if  defined(CONFIG_DISCRETE_BOOTLOADER)
     {
         ret =  mtd_find_phy_off_by_lgc_off(s, off, &off);
         if (ret) {
@@ -1621,14 +1644,13 @@ static int do_store_read(cmd_tbl_t * cmdtp, int flag, int argc, char * const arg
         }
         sprintf(str, "nand  read %s 0x%llx  0x%llx  0x%llx",s, addr, off, size);
     }
-#endif
-    store_dbg("command:	%s", str);
-    ret = run_command(str, 0);
+#endif // #if defined(CONFIG_AML_NAND)
 #else
         ret = -1;
 #endif
+        ret = run_command(str, 0);
         if (ret != 0) {
-            store_msg("nand cmd %s failed ",cmd);
+            store_msg("nand cmd [%s] failed ",str);
             return -1;
         }
         return ret;
@@ -1693,17 +1715,52 @@ static int do_store_write(cmd_tbl_t * cmdtp, int flag, int argc, char * const ar
 #if defined(CONFIG_AML_NAND) || defined(CONFIG_AML_MTD)
     #if defined(CONFIG_AML_NAND)
         sprintf(str, "amlnf write_byte %s 0x%llx  0x%llx  0x%llx", s, addr, off, size);
+        ret = run_command(str, 0);
     #elif defined(CONFIG_AML_MTD)
+        #if  defined(CONFIG_DISCRETE_BOOTLOADER)
+        if ( !strcmp(CONFIG_TPL_PART_NAME, s) ) {
+            const int tplCapSize    = CONFIG_TPL_SIZE_PER_COPY;
+            const int tplCpyNum     = CONFIG_TPL_COPY_NUM;
+            const int iCopy2Update  = argc > 6 ? simple_strtoul(argv[6], NULL, 0) : -1; //only update one copy
+            int i = 0;
+
+            debugP("iCopy2Update=%d, tplCpyNum=%d\n", iCopy2Update, tplCpyNum);
+            if (iCopy2Update >= tplCpyNum) {
+                ErrP("iCopy2Update[%s] invalid, must < max(%d)\n", argv[6], tplCpyNum);
+                return -__LINE__;
+            }
+
+            for ( i = 0; i < tplCpyNum; ++i )
+            {
+                if (iCopy2Update >= 0 && iCopy2Update != i) continue;
+
+                sprintf(str, "amlnf fip_erase %d", i);
+                ret = run_command(str, 0);
+                if (ret) {
+                    ErrP("Failed at erase tpl[%d],ret=%d\n", i, ret);
+                    return -__LINE__;
+                }
+
+                loff_t copyOff = i * tplCapSize;
+                sprintf(str, "amlnf fip_write 0x%llx %llx 0x%llx", addr, copyOff, size);
+                debugP("runCmd[%s]\n", str);
+                ret = run_command(str, 0);
+                if (ret) {
+                    ErrP("Failed at pgram bl2[%d],ret=%d\n", i, ret);
+                    return -__LINE__;
+                }
+            }
+        } else
+        #endif // #if  defined(CONFIG_DISCRETE_BOOTLOADER)
         {
             ret =  mtd_find_phy_off_by_lgc_off(s, off, &off);
             if (ret) {
                 ErrP("Fail in find phy addr by logic off (0x%llx),ret(%d)\n", off, ret);
             }
             sprintf(str, "nand write %s 0x%llx  0x%llx  0x%llx",s, addr, off, size);
+            ret = run_command(str, 0);
         }
    #endif
-        store_dbg("command:	%s", str);
-        ret = run_command(str, 0);
 #else
         ret = -1;
 #endif
