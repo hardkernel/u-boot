@@ -179,6 +179,8 @@ static int  sd_emmc_detect(unsigned port)
 			setbits_le32(P_PREG_PAD_GPIO2_EN_N, 1 << 6);
 			ret = readl(P_PREG_PAD_GPIO2_I) & (1 << 6) ? 0 : 1;
 			printf("%s\n", ret ? "card in" : "card out");
+			setbits_le32(P_PAD_PULL_UP_REG2, 0x3F);
+			setbits_le32(P_PAD_PULL_UP_EN_REG2, 0x3F);
 		#if 0 /* no default card on board. */
 			if ((readl(P_PERIPHS_PIN_MUX_6) & (3 << 8))) { //if uart pinmux set, debug board in
 				if (!(readl(P_PREG_PAD_GPIO2_I) & (1 << 24))) {
