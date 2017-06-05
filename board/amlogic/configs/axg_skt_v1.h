@@ -299,7 +299,7 @@
 #define CONFIG_TPL_COPY_NUM               4
 #define CONFIG_TPL_PART_NAME              "tpl"
 /* for bl2, restricted by romboot */
-#define CONFIG_BL2_COPY_NUM               4
+#define CONFIG_BL2_COPY_NUM               8
 #endif /* CONFIG_DISCRETE_BOOTLOADER */
 
 #define CONFIG_CMD_NAND 1
