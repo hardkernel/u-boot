@@ -378,8 +378,6 @@ int board_init(void)
 	//set output 1
 	setbits_le32(PREG_PAD_GPIO0_O, (1 << 24));
 
-	/*Power on GPIOAO_2 for VCC_5V*/
-	clrbits_le32(P_AO_GPIO_O_EN_N, ((1<<2)|(1<<18)));
 #ifdef CONFIG_USB_XHCI_AMLOGIC_GXL
 	board_usb_init(&g_usb_config_GXL_skt,BOARD_USB_MODE_HOST);
 #endif /*CONFIG_USB_XHCI_AMLOGIC*/
