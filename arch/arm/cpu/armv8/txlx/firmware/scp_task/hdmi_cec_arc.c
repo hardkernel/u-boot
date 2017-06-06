@@ -17,12 +17,12 @@ static void cec_dbg_print(char *s, int v)
 {
 	uart_puts(s);
 	uart_put_hex(v,8);
-	_udelay(5000);
+	_udelay(100);
 }
 static void cec_dbg_prints(char *s)
 {
 	uart_puts(s);
-	_udelay(5000);
+	_udelay(100);
 }
 #if CEC_REG_DEBUG
 static void cec_print_reg(char *s, int v, int l)
@@ -30,7 +30,7 @@ static void cec_print_reg(char *s, int v, int l)
 	uart_puts(s);
 	uart_put_hex(v, l);
 	uart_puts("\n");
-	_udelay(10000);
+	_udelay(1000);
 }
 #endif
 #else
