@@ -86,8 +86,8 @@
         "display_color_bg=0\0" \
         "dtb_mem_addr=0x1000000\0" \
         "fb_addr=0x3d800000\0" \
-        "fb_width=1920\0" \
-        "fb_height=1080\0" \
+        "fb_width=768\0" \
+        "fb_height=1024\0" \
         "usb_burning=update 1000\0" \
         "fdt_high=0x20000000\0"\
         "try_auto_burn=update 700 750;\0"\
@@ -390,9 +390,9 @@
 //#define CONFIG_AML_HDMITX20 1
 //#define CONFIG_AML_CANVAS 1
 #define CONFIG_AML_VOUT 1
-//#define CONFIG_AML_OSD 1
-//#define CONFIG_OSD_SCALE_ENABLE 0
-//#define CONFIG_CMD_BMP 1
+#define CONFIG_AML_OSD 1
+#define CONFIG_OSD_SCALE_ENABLE 0
+#define CONFIG_CMD_BMP 1
 
 #if defined(CONFIG_AML_VOUT)
 //#define CONFIG_AML_CVBS 1

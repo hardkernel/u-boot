@@ -17557,6 +17557,12 @@
 #define P_VPP_OSDSC_DITHER_LUT_11                  (volatile uint32_t *)((0x313b  << 2) + 0xff900000)
 #define   VPP_OSDSC_DITHER_LUT_12                  (0x313c)
 #define P_VPP_OSDSC_DITHER_LUT_12                  (volatile uint32_t *)((0x313c  << 2) + 0xff900000)
+#define   VPP_OSDSC_DITHER_LUT_13                  (0x313d)
+#define P_VPP_OSDSC_DITHER_LUT_13                  (volatile unsigned int *)((0x313d  << 2) + 0xff900000)
+#define   VPP_OSDSC_DITHER_LUT_14                  (0x313e)
+#define P_VPP_OSDSC_DITHER_LUT_14                  (volatile unsigned int *)((0x313e  << 2) + 0xff900000)
+#define   VPP_OSDSC_DITHER_LUT_15                  (0x313f)
+#define P_VPP_OSDSC_DITHER_LUT_15                  (volatile unsigned int *)((0x313f  << 2) + 0xff900000)
 // synopsys translate_off
 // synopsys translate_on
 //
@@ -23501,6 +23507,23 @@
 #define   DDR0_PUB_DX3GSR5                         (0x02bd)
 #define P_DDR0_PUB_DX3GSR5                         (volatile uint32_t *)((0x02bd  << 2) + 0xff636000)
 
+/* osd super scale */
+#define OSDSR_HV_SIZEIN              VPP_OSDSC_DITHER_CTRL
+#define OSDSR_CTRL_MODE              VPP_OSDSC_DITHER_LUT_1
+#define OSDSR_ABIC_HCOEF             VPP_OSDSC_DITHER_LUT_2
+#define OSDSR_YBIC_HCOEF             VPP_OSDSC_DITHER_LUT_3
+#define OSDSR_CBIC_HCOEF             VPP_OSDSC_DITHER_LUT_4
+#define OSDSR_ABIC_VCOEF             VPP_OSDSC_DITHER_LUT_5
+#define OSDSR_YBIC_VCOEF             VPP_OSDSC_DITHER_LUT_6
+#define OSDSR_CBIC_VCOEF             VPP_OSDSC_DITHER_LUT_7
+#define OSDSR_VAR_PARA               VPP_OSDSC_DITHER_LUT_8
+#define OSDSR_CONST_PARA             VPP_OSDSC_DITHER_LUT_9
+#define OSDSR_RKE_EXTWIN             VPP_OSDSC_DITHER_LUT_10
+#define OSDSR_UK_GRAD2DDIAG_TH_RATE  VPP_OSDSC_DITHER_LUT_11
+#define OSDSR_UK_GRAD2DDIAG_LIMIT    VPP_OSDSC_DITHER_LUT_12
+#define OSDSR_UK_GRAD2DADJA_TH_RATE  VPP_OSDSC_DITHER_LUT_13
+#define OSDSR_UK_GRAD2DADJA_LIMIT    VPP_OSDSC_DITHER_LUT_14
+#define OSDSR_UK_BST_GAIN            VPP_OSDSC_DITHER_LUT_15
 
 
 //
