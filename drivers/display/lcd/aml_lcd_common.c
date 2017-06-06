@@ -463,6 +463,12 @@ int lcd_pinmux_load_from_dts(char *dt_addr, struct lcd_config_s *pconf)
 			}
 		}
 		break;
+	case LCD_MIPI:
+		pconf->pinmux_set[0][0] = LCD_PINMUX_END;
+		pconf->pinmux_set[0][1] = 0x0;
+		pconf->pinmux_clr[0][0] = LCD_PINMUX_END;
+		pconf->pinmux_clr[0][1] = 0x0;
+		break;
 	default:
 		LCDERR("invalid lcd type\n");
 		break;

@@ -227,11 +227,14 @@ int clk_msr(int index)
 int axg_pcie_set(void)
 {
 	int delay = 24000000;
+	unsigned int reg;
+
 	#define BIT(nr)               (1UL << (nr))
 	#define MESON_PLL_RESET				BIT(29)
 	#define MESON_PLL_LOCK				BIT(31)
 
-	#define AXG_MIPI_CNTL0 0xa5b80000
+	#define AXG_MIPI_CNTL0_ENABLE   BIT(29)
+	#define AXG_MIPI_CNTL0_BANDGAP  BIT(26)
 	#define AXG_PCIE_PLL_CNTL  0x40010242
 	#define AXG_PCIE_PLL_CNTL1 0xc084b2ab
 	#define AXG_PCIE_PLL_CNTL2 0xb75020be
@@ -241,7 +244,9 @@ int axg_pcie_set(void)
 	#define AXG_PCIE_PLL_CNTL6 0x003303de
 
 	/* setting AXG PCIE PLL 100M */
-	writel(AXG_MIPI_CNTL0, HHI_MIPI_CNTL0);
+	reg = readl(HHI_MIPI_CNTL0);
+	reg |= (AXG_MIPI_CNTL0_ENABLE | AXG_MIPI_CNTL0_BANDGAP);
+	writel(reg, HHI_MIPI_CNTL0);
 	writel(AXG_PCIE_PLL_CNTL1, HHI_PCIE_PLL_CNTL1);
 	writel(AXG_PCIE_PLL_CNTL2, HHI_PCIE_PLL_CNTL2);
 	writel(AXG_PCIE_PLL_CNTL3, HHI_PCIE_PLL_CNTL3);

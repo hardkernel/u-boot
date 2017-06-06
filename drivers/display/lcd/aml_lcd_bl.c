@@ -30,6 +30,7 @@ static unsigned int bl_off_policy;
 static unsigned int bl_status;
 
 static void bl_set_pwm_gpio_check(struct bl_pwm_config_s *bl_pwm);
+static int aml_bl_init_load_from_bsp(struct bl_config_s *bconf);
 
 static struct bl_config_s *bl_check_valid(void)
 {
@@ -1772,6 +1773,17 @@ static int aml_bl_init_load_from_dts(char *dt_addr, struct bl_config_s *bconf)
 	}
 
 	/* pinmux */
+	/* new kernel dts pinctrl detect */
+	propdata = (char *)fdt_getprop(dt_addr, parent_offset, "pinctrl_version", NULL);
+	if (propdata) {
+		temp = be32_to_cpup((u32*)propdata);
+		LCDPR("bl: get pinctrl_version: %d\n", temp);
+		if (temp) {
+			aml_bl_init_load_from_bsp(bconf);
+			goto bl_dts_pinmux_end;
+		}
+	}
+
 	switch (bconf->method) {
 	case BL_CTRL_PWM:
 		bl_pwm = bconf->bl_pwm;
@@ -1978,6 +1990,7 @@ static int aml_bl_init_load_from_dts(char *dt_addr, struct bl_config_s *bconf)
 		break;
 	}
 
+bl_dts_pinmux_end:
 	return 0;
 }
 #endif

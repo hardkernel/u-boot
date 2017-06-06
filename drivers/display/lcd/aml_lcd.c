@@ -745,6 +745,11 @@ static int lcd_mode_probe(void)
 {
 	int load_id = 0;
 	char *dt_addr, *str;
+#ifndef DTB_BIND_KERNEL
+#ifdef CONFIG_OF_LIBFDT
+	int parent_offset;
+#endif
+#endif
 	int ret;
 
 	dt_addr = NULL;
@@ -759,7 +764,13 @@ static int lcd_mode_probe(void)
 		LCDERR("check dts: %s, load default lcd parameters\n",
 			fdt_strerror(fdt_check_header(dt_addr)));
 	} else {
-		load_id = 0x1;
+		parent_offset = fdt_path_offset(dt_addr, "/lcd");
+		if (parent_offset < 0) {
+			LCDERR("not find /lcd node: %s\n", fdt_strerror(parent_offset));
+			load_id = 0x0;
+		} else {
+			load_id = 0x1;
+		}
 	}
 #endif
 #endif

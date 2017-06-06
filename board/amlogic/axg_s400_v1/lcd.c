@@ -82,7 +82,7 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 static struct dsi_config_s lcd_mipi_config = {
 	.lane_num = 4,
 	.bit_rate_max = 550, /* MHz */
-	.factor_numerator	= 0,
+	.factor_numerator   = 0,
 	.factor_denominator = 100,
 	.operation_mode_init = 1,    /* 0=video mode, 1=command mode */
 	.operation_mode_display = 0, /* 0=video mode, 1=command mode */
@@ -242,7 +242,7 @@ struct bl_config_s bl_config_dft = {
 	.pwm_off_delay = 10,
 
 	.pinmux_set = {{2, 0x00200000}, {LCD_PINMUX_END, 0x0}},
-	.pinmux_clr = {{2, 0x00000000}, {LCD_PINMUX_END, 0x0}},
+	.pinmux_clr = {{2, 0x00d00000}, {LCD_PINMUX_END, 0x0}},
 };
 
 void lcd_config_bsp_init(void)

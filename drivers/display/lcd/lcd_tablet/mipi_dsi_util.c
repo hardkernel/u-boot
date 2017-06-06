@@ -1365,7 +1365,7 @@ static void mipi_dsi_non_burst_chunk_config(struct lcd_config_s *pconf)
 	}
 }
 
-static void mipi_dsi_host_config_init(struct lcd_config_s *pconf)
+static void mipi_dsi_host_init(struct lcd_config_s *pconf)
 {
 	unsigned int op_mode_init;
 
@@ -1457,8 +1457,7 @@ void mipi_dsi_link_off(struct lcd_config_s *pconf)
 		} else {
 			if (lcd_ext->config->table_init_off) {
 				dsi_write_cmd(lcd_ext->config->table_init_off);
-				LCDPR("[extern]%s dsi init off\n",
-					lcd_ext->config->name);
+				LCDPR("[extern]%s dsi init off\n", lcd_ext->config->name);
 			}
 		}
 	}
@@ -1517,11 +1516,11 @@ void lcd_mipi_dsi_config_set(struct lcd_config_s *pconf)
 		LCDPR("mipi dsi bit_rate max=%dMHz\n", dconf->bit_rate_max);
 	} else { /* user define */
 		if (dconf->bit_rate_max < pll_out_fmin / 1000) {
-			LCDERR("[error]: mipi-dsi can't support bit_rate %dMHz (min=%dMHz)",
+			LCDERR("mipi-dsi can't support bit_rate %dMHz (min=%dMHz)\n",
 				dconf->bit_rate_max, (pll_out_fmin / 1000));
 		}
 		if (dconf->bit_rate_max > MIPI_PHY_CLK_MAX) {
-			LCDPR("[warning]: mipi-dsi bit_rate_max %dMHz is out of standard (%dMHz)",
+			LCDPR("[warning]: mipi-dsi bit_rate_max %dMHz is out of standard (%dMHz)\n",
 				dconf->bit_rate_max, MIPI_PHY_CLK_MAX);
 		}
 	}
@@ -1588,15 +1587,13 @@ static void mipi_dsi_host_on(struct lcd_config_s *pconf)
 {
 	dsi_meas_clk_set();
 
-	if (lcd_debug_print_flag) {
-		if (pconf->lcd_control.mipi_config)
-			mipi_dsi_print_info(pconf);
-	}
+	if (lcd_debug_print_flag)
+		mipi_dsi_print_info(pconf);
 
 	mipi_dsi_config_post(pconf);
 
 	startup_mipi_dsi_host();
-	mipi_dsi_host_config_init(pconf);
+	mipi_dsi_host_init(pconf);
 	dsi_phy_config_set(pconf);
 
 	mipi_dsi_link_on(pconf);

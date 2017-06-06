@@ -45,52 +45,6 @@ static int lcd_type_supported(struct lcd_config_s *pconf)
 	return ret;
 }
 
-static void lcd_mipi_phy_set(struct lcd_config_s *pconf, int status)
-{
-	unsigned int phy_reg, phy_bit, phy_width;
-	unsigned int lane_cnt;
-
-	if (status) {
-		/* HHI_MIPI_CNTL0 */
-		/* DIF_REF_CTL1:31-16bit, DIF_REF_CTL0:15-0bit */
-		lcd_hiu_write(HHI_MIPI_CNTL0, (0xa5b8 << 16) | (0x8 << 0));
-
-		/* HHI_MIPI_CNTL1 */
-		/* DIF_REF_CTL2:15-0bit */
-		lcd_hiu_write(HHI_MIPI_CNTL1, (0x001e << 0));
-
-		/* HHI_MIPI_CNTL2 */
-		/* DIF_TX_CTL1:31-16bit, DIF_TX_CTL0:15-0bit */
-		lcd_hiu_write(HHI_MIPI_CNTL2, (0x26e0 << 16) | (0x459 << 0));
-
-		phy_reg = HHI_MIPI_CNTL2;
-		phy_bit = BIT_PHY_LANE_AXG;
-		phy_width = PHY_LANE_WIDTH_AXG;
-		switch (pconf->lcd_control.mipi_config->lane_num) {
-		case 1:
-			lane_cnt = DSI_LANE_COUNT_1;
-			break;
-		case 2:
-			lane_cnt = DSI_LANE_COUNT_2;
-			break;
-		case 3:
-			lane_cnt = DSI_LANE_COUNT_3;
-			break;
-		case 4:
-			lane_cnt = DSI_LANE_COUNT_4;
-			break;
-		default:
-			lane_cnt = 0;
-			break;
-		}
-		lcd_hiu_setb(phy_reg, lane_cnt, phy_bit, phy_width);
-	} else {
-		lcd_hiu_write(HHI_MIPI_CNTL0, 0x0);
-		lcd_hiu_write(HHI_MIPI_CNTL1, 0x6);
-		lcd_hiu_write(HHI_MIPI_CNTL2, 0x00200000);
-	}
-}
-
 static void lcd_ttl_pinmux_set(int status)
 {
 	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
@@ -142,6 +96,58 @@ static void lcd_ttl_pinmux_set(int status)
 				pconf->pinmux_set[i][1]);
 			i++;
 		}
+	}
+}
+
+static void lcd_mipi_phy_set(struct lcd_config_s *pconf, int status)
+{
+	unsigned int phy_reg, phy_bit, phy_width;
+	unsigned int lane_cnt;
+
+	if (status) {
+		/* HHI_MIPI_CNTL0 */
+		/* DIF_REF_CTL1:31-16bit, DIF_REF_CTL0:15-0bit */
+		lcd_hiu_setb(HHI_MIPI_CNTL0, 0x1b8, 16, 10);
+		lcd_hiu_setb(HHI_MIPI_CNTL0, 1, 26, 1); /* bandgap */
+		lcd_hiu_setb(HHI_MIPI_CNTL0, 1, 29, 1); /* current */
+		lcd_hiu_setb(HHI_MIPI_CNTL0, 1, 31, 1);
+		lcd_hiu_setb(HHI_MIPI_CNTL0, 0x8, 0, 16);
+
+		/* HHI_MIPI_CNTL1 */
+		/* DIF_REF_CTL2:15-0bit */
+		lcd_hiu_write(HHI_MIPI_CNTL1, (0x001e << 0));
+
+		/* HHI_MIPI_CNTL2 */
+		/* DIF_TX_CTL1:31-16bit, DIF_TX_CTL0:15-0bit */
+		lcd_hiu_write(HHI_MIPI_CNTL2, (0x26e0 << 16) | (0x459 << 0));
+
+		phy_reg = HHI_MIPI_CNTL2;
+		phy_bit = BIT_PHY_LANE_AXG;
+		phy_width = PHY_LANE_WIDTH_AXG;
+		switch (pconf->lcd_control.mipi_config->lane_num) {
+		case 1:
+			lane_cnt = DSI_LANE_COUNT_1;
+			break;
+		case 2:
+			lane_cnt = DSI_LANE_COUNT_2;
+			break;
+		case 3:
+			lane_cnt = DSI_LANE_COUNT_3;
+			break;
+		case 4:
+			lane_cnt = DSI_LANE_COUNT_4;
+			break;
+		default:
+			lane_cnt = 0;
+			break;
+		}
+		lcd_hiu_setb(phy_reg, lane_cnt, phy_bit, phy_width);
+	} else {
+		lcd_hiu_setb(HHI_MIPI_CNTL0, 0, 16, 10);
+		lcd_hiu_setb(HHI_MIPI_CNTL0, 0, 31, 1);
+		lcd_hiu_setb(HHI_MIPI_CNTL0, 0, 0, 16);
+		lcd_hiu_write(HHI_MIPI_CNTL1, 0x6);
+		lcd_hiu_write(HHI_MIPI_CNTL2, 0x00200000);
 	}
 }
 

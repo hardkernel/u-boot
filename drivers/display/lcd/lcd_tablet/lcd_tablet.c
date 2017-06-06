@@ -176,7 +176,7 @@ static int lcd_config_load_from_dts(char *dt_addr, struct lcd_config_s *pconf)
 
 	propdata = (char *)fdt_getprop(dt_addr, child_offset, "range_setting", NULL);
 	if (propdata == NULL) {
-		LCDERR("failed to get range_setting\n");
+		LCDPR("failed to get range_setting\n");
 		pconf->lcd_basic.h_period_min = pconf->lcd_basic.h_period;
 		pconf->lcd_basic.h_period_max = pconf->lcd_basic.h_period;
 		pconf->lcd_basic.v_period_min = pconf->lcd_basic.v_period;
