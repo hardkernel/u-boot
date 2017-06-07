@@ -118,6 +118,11 @@ struct ddr_set{
 
 	/* 2016.07.07 update */
 	unsigned short  t_pub_soc_vref_dram_vref;
+
+	/* 2017.06.07 copy from gxl, support adj rank1 */
+	unsigned char  wr_adj_per_rank1[6];
+	unsigned char  rd_adj_per_rank1[6];
+
 	unsigned short  t_rsv_short_1;
 	unsigned int   t_rsv_int_1;
 	unsigned long  t_rsv_int64_2;
