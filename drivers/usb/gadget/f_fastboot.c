@@ -133,12 +133,18 @@ static struct usb_gadget_strings *fastboot_strings[] = {
 unsigned int ddr_size_usable(unsigned int addr_start)
 {
 	unsigned int ddr_size=0;
+	unsigned int free_size = 0;
 	int i;
 
 	for (i = 0; i < CONFIG_NR_DRAM_BANKS; i++)
 		ddr_size += gd->bd->bi_dram[i].size;
 
-	return (ddr_size - DRAM_UBOOT_RESERVE - addr_start - CONFIG_SYS_MALLOC_LEN - CONFIG_SYS_MEM_TOP_HIDE);
+	free_size = (ddr_size - DRAM_UBOOT_RESERVE - addr_start - CONFIG_SYS_MALLOC_LEN - CONFIG_SYS_MEM_TOP_HIDE);
+#if defined CONFIG_FASTBOOT_MAX_DOWN_SIZE
+	if (free_size > CONFIG_FASTBOOT_MAX_DOWN_SIZE)
+		free_size = CONFIG_FASTBOOT_MAX_DOWN_SIZE;
+#endif
+	return free_size;
 }
 
 static void rx_handler_command(struct usb_ep *ep, struct usb_request *req);
