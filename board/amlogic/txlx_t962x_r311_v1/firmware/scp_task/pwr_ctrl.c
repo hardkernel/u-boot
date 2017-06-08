@@ -340,7 +340,7 @@ static unsigned int detect_key(unsigned int suspend_from)
 			irq[IRQ_AO_GPIO0] = 0xFFFFFFFF;
 			if (!(readl(P_AO_GPIO_O_EN_N)
 				& (0x01 << 8)) && (readl(P_AO_GPIO_O_EN_N)
-				& (0x01 << 23)) &&
+				& (0x01 << 24)) &&
 				!(readl(P_AO_GPIO_I)
 				& (0x01 << 12)))
 				exit_reason = BT_WAKEUP;
