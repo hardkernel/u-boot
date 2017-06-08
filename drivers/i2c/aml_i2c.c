@@ -29,7 +29,7 @@
 
 #include <aml_i2c.h>
 
-
+#define HAS_AO_MODULE
 #define AML_I2C_CTRL_CLK_DELAY_MASK    (0x3FF)
 #define AML_I2C_SLAVE_ADDR_MASK        (0xFF)
 #define AML_I2C_SLAVE_ADDR_MASK_7BIT   (0x7F)
@@ -72,7 +72,7 @@ static void aml_i2c_set_clk(struct aml_i2c *i2c)
 	AML_I2C_DBG(1, "FILE:%s:%d, FUNC:%s\n", __FILE__,__LINE__,__func__);
 	unsigned int i2c_clock_set;
 	unsigned int sys_clk;
-	struct aml_i2c_reg_ctrl* ctrl;
+	volatile struct aml_i2c_reg_ctrl* ctrl;
 	//have not thought about sleep mode, sleep mode is low system clock
 	sys_clk = get_clk81();
 	AML_I2C_DBG(1, "clk81 is 0x%x\n", sys_clk);
@@ -122,6 +122,18 @@ static void aml_i2c_set_platform_data(struct aml_i2c *i2c,
 		i2c->master_pinmux.sda_reg = plat->master_b_pinmux.sda_reg;
 		i2c->master_pinmux.sda_bit = plat->master_b_pinmux.sda_bit;
 	}
+	else if(I2C_MASTER_C == i2c->master_no){
+		i2c->master_pinmux.scl_reg = plat->master_c_pinmux.scl_reg;
+		i2c->master_pinmux.scl_bit = plat->master_c_pinmux.scl_bit;
+		i2c->master_pinmux.sda_reg = plat->master_c_pinmux.sda_reg;
+		i2c->master_pinmux.sda_bit = plat->master_c_pinmux.sda_bit;
+	}
+	else if(I2C_MASTER_D == i2c->master_no){
+		i2c->master_pinmux.scl_reg = plat->master_d_pinmux.scl_reg;
+		i2c->master_pinmux.scl_bit = plat->master_d_pinmux.scl_bit;
+		i2c->master_pinmux.sda_reg = plat->master_d_pinmux.sda_reg;
+		i2c->master_pinmux.sda_bit = plat->master_d_pinmux.sda_bit;
+	}
 #ifdef HAS_AO_MODULE
 	else if(I2C_MASTER_AO == i2c->master_no){
 		i2c->master_pinmux.scl_reg = plat->master_ao_pinmux.scl_reg;
@@ -130,7 +142,6 @@ static void aml_i2c_set_platform_data(struct aml_i2c *i2c,
 		i2c->master_pinmux.sda_bit = plat->master_ao_pinmux.sda_bit;
 	}
 #endif
-
 }
 
 static void aml_i2c_pinmux_master(struct aml_i2c *i2c)
