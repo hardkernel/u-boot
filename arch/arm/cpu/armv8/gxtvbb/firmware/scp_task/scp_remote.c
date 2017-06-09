@@ -46,16 +46,17 @@ static const reg_remote RDECODEMODE_NEC[] = {
 };
 
 static const reg_remote RDECODEMODE_DUOKAN[] = {
-	{AO_MF_IR_DEC_LDR_ACTIVE, 53 << 16 | 50 << 0},
-	{AO_MF_IR_DEC_LDR_IDLE, 31 << 16 | 25 << 0},
+	{AO_MF_IR_DEC_LDR_ACTIVE, 70 << 16 | 30 << 0},
+	{AO_MF_IR_DEC_LDR_IDLE, 50 << 16 | 15 << 0},
 	{AO_MF_IR_DEC_LDR_REPEAT, 30 << 16 | 26 << 0},
-	{AO_MF_IR_DEC_BIT_0, 61 << 16 | 55 << 0},
-	{AO_MF_IR_DEC_REG0, 3 << 28 | (0x5DC << 12) | 0x13},	//body frame 30ms
-	{AO_MF_IR_DEC_STATUS, (76 << 20) | 69 << 10},
+	{AO_MF_IR_DEC_BIT_0, 66 << 16 | 40 << 0},
+	{AO_MF_IR_DEC_REG0, 3 << 28 | (0x4e2 << 12) | 0x13}, //body frame 30ms
+	{AO_MF_IR_DEC_STATUS, (80 << 20) | 66 << 10},
 	{AO_MF_IR_DEC_REG1, 0x9300},
-	{AO_MF_IR_DEC_REG2, 0x10b},
-	{AO_MF_IR_DEC_DURATN2, 91 << 16 | 79 << 0},
-	{AO_MF_IR_DEC_DURATN3, 111 << 16 | 99 << 0},
+	{AO_MF_IR_DEC_REG2, 0xb90b},
+	{AO_MF_IR_DEC_DURATN2, 97 << 16 | 80 << 0},
+	{AO_MF_IR_DEC_DURATN3, 120 << 16 | 97 << 0},
+	{AO_MF_IR_DEC_REG3, 5000 << 0},
 	{CONFIG_END, 0}
 };
 
