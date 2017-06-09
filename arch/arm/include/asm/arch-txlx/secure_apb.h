@@ -28015,6 +28015,22 @@
 // ---------------------------
 #endif // SECURE_APB_H
 
+#define P_DMA_T0   (volatile uint32_t *)0xff63e000
+#define P_DMA_T1   (volatile uint32_t *)0xff63e004
+#define P_DMA_T2   (volatile uint32_t *)0xff63e008
+#define P_DMA_T3   (volatile uint32_t *)0xff63e00c
+#define P_DMA_T4   (volatile uint32_t *)0xff63e010
+#define P_DMA_T5   (volatile uint32_t *)0xff63e014
+#define P_DMA_STS0 (volatile uint32_t *)0xff63e020
+#define P_DMA_STS1 (volatile uint32_t *)0xff63e024
+#define P_DMA_STS2 (volatile uint32_t *)0xff63e028
+#define P_DMA_STS3 (volatile uint32_t *)0xff63e02c
+#define P_DMA_STS4 (volatile uint32_t *)0xff63e030
+#define P_DMA_STS5 (volatile uint32_t *)0xff63e034
+#define P_DMA_CFG  (volatile uint32_t *)0xff63e040
+#define P_DMA_SEC  (volatile uint32_t *)0xff63e044
+
+
 #if 0
 #define NO_ENCT
 #ifdef NO_ENCT

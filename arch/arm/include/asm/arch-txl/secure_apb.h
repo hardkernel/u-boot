@@ -1944,5 +1944,15 @@
 // Closing file:  ./ao_rti_reg.h
 //
 
+#define P_DMA_T0   (volatile uint32_t *)0xc883e000
+#define P_DMA_T1   (volatile uint32_t *)0xc883e004
+#define P_DMA_T2   (volatile uint32_t *)0xc883e008
+#define P_DMA_T3   (volatile uint32_t *)0xc883e00c
+#define P_DMA_STS0 (volatile uint32_t *)0xc883e010
+#define P_DMA_STS1 (volatile uint32_t *)0xc883e014
+#define P_DMA_STS2 (volatile uint32_t *)0xc883e018
+#define P_DMA_STS3 (volatile uint32_t *)0xc883e01c
+#define P_DMA_CFG  (volatile uint32_t *)0xc883e028
+
 #endif // SECURE_APB_H
 

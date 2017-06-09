@@ -475,5 +475,8 @@
 #endif
 #define CONFIG_INTERNAL_PHY
 
+//use hardware sha2
+//#define CONFIG_AML_HW_SHA2
+
 #endif
 

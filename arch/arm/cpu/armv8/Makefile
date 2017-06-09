@@ -18,3 +18,9 @@ obj-y	+= cpu_id.o
 
 obj-$(CONFIG_FSL_LSCH3) += fsl-lsch3/
 obj-$(CONFIG_AML_MESON) += $(SOC)/
+
+
+ifdef CONFIG_AML_HW_SHA2
+obj-$(CONFIG_SUPPORT_EMMC_RPMB) += hard_sha2.o
+obj-$(CONFIG_SHA256) += hard_sha2.o
+endif
