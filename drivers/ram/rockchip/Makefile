@@ -5,3 +5,4 @@
 #
 
 obj-$(CONFIG_ROCKCHIP_RK3368) = dmc-rk3368.o
+obj-$(CONFIG_ROCKCHIP_RK322X) = sdram_rk322x.o
