@@ -423,7 +423,13 @@ int get_aml_partition_count(void)
 	return ARRAY_SIZE(normal_partition_info);
 }
 #endif /* CONFIG_AML_MTD */
-
+void power_save_pre(void)
+{
+	/*Close MIPI clock*/
+	clrbits_le32(P_HHI_MIPI_CNTL0, 0xffffffff);
+	clrbits_le32(P_HHI_MIPI_CNTL1, 0xffffffff);
+	clrbits_le32(P_HHI_MIPI_CNTL2, 0xffdfffff);
+}
 int board_init(void)
 {
 #ifdef CONFIG_AML_V2_FACTORY_BURN
@@ -438,6 +444,8 @@ int board_init(void)
 	extern int amlnf_init(unsigned char flag);
 	amlnf_init(0);
 #endif
+	if (get_cpu_id().package_id == MESON_CPU_PACKAGE_ID_A113X)
+		power_save_pre();
 	return 0;
 }
 
