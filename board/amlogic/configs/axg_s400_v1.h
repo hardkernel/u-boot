@@ -47,6 +47,9 @@
 /* config saradc*/
 #define CONFIG_CMD_SARADC 1
 
+/*config irblaster*/
+#define CONFIG_CMD_IRBLASTER 1
+
 /* Serial config */
 #define CONFIG_CONS_INDEX 2
 #define CONFIG_BAUDRATE  115200

@@ -25,17 +25,12 @@
 #include <config.h>
 #include <command.h>
 #include <amlogic/aml_irblaster.h>
+#include <asm/arch/secure_apb.h>
 
 static struct aml_irblaster_drv_s irblaster_drviver;
 const char *protocol_name[] = {
 	"NEC",
 };
-
-#define AO_RTI_GEN_CTNL_REG0 (0xc8100040)
-#define AO_IR_BLASTER_ADDR0  (0xc8100000 + (0x30 << 2))
-#define AO_IR_BLASTER_ADDR1  (0xc8100000 + (0x31 << 2))
-#define AO_IR_BLASTER_ADDR2  (0xc8100000 + (0x32 << 2))
-#define AO_RTI_PIN_MUX_REG	(0xc8100000 + (0x05 << 2))
 
 /*NEC key value*/
 #define NEC_HEADER	9000
@@ -130,9 +125,9 @@ static void send_frame(void)
 	unsigned int consumerir_cycle = 1000 / (drv->frequency / 1000);
 
 	/*reset*/
-	writel(readl(AO_RTI_GEN_CTNL_REG0) | (1 << 23), AO_IR_BLASTER_ADDR2);
+	writel(readl(AO_RTI_GEN_CNTL_REG0) | (1 << 23), AO_IR_BLASTER_ADDR2);
 	udelay(2);
-	writel(readl(AO_RTI_GEN_CTNL_REG0) & ~(1 << 23), AO_IR_BLASTER_ADDR2);
+	writel(readl(AO_RTI_GEN_CNTL_REG0) & ~(1 << 23), AO_IR_BLASTER_ADDR2);
 
 	/*
 	1. disable ir blaster
@@ -146,7 +141,8 @@ static void send_frame(void)
 	*/
 	high_ct = consumerir_cycle * drv->dutycycle/100;
 	low_ct = consumerir_cycle - high_ct;
-	writel(((high_ct - 1) << 16) | ((low_ct - 1) << 0), AO_IR_BLASTER_ADDR1);
+	writel(((high_ct - 1) << 16) | ((low_ct - 1) << 0),
+		AO_IR_BLASTER_ADDR1);
 
 	/* Setting this bit to 1 initializes the output to be high.*/
 	writel(readl(AO_IR_BLASTER_ADDR0) & ~(1 << 2), AO_IR_BLASTER_ADDR0);
@@ -165,10 +161,12 @@ static void send_frame(void)
 		while (!(readl(AO_IR_BLASTER_ADDR0) & (1<<24))) ;
 		while (readl(AO_IR_BLASTER_ADDR0) & (1<<26)) ;
 		/*reset*/
-		writel(readl(AO_RTI_GEN_CTNL_REG0) | (1 << 23), AO_RTI_GEN_CTNL_REG0);
+		writel(readl(AO_RTI_GEN_CNTL_REG0) | (1 << 23),
+			AO_RTI_GEN_CNTL_REG0);
 		udelay(2);
 		/*reset*/
-		writel(readl(AO_RTI_GEN_CTNL_REG0) & ~(1 << 23), AO_RTI_GEN_CTNL_REG0);
+		writel(readl(AO_RTI_GEN_CNTL_REG0) & ~(1 << 23),
+			AO_RTI_GEN_CNTL_REG0);
 		exp--;
 	}
 	exp = (drv->windows_num % SEND_BIT_NUM) & (~(1));
@@ -179,18 +177,7 @@ static void send_frame(void)
 	}
 }
 
-static void pinmux_config(void)
-{
-	int val;
-
-	if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_GXL) {
-		/*GPIOAO_7	| REMOTE_INPUT-ao_reg0	| REMOTE_OUTPUT-ao_reg21*/
-		val = (readl(AO_RTI_PIN_MUX_REG) & ~(1 << 0)) | (1 <<21);
-		writel(val, AO_RTI_PIN_MUX_REG);
-		printf("pinmux_config\n");
-	}
-}
-
+extern void irblaster_pinmux_config(void);
 static int open(void)
 {
 	struct aml_irblaster_drv_s *drv = aml_irblaster_get_driver();
@@ -199,7 +186,7 @@ static int open(void)
 	drv->frequency = 38000; /*freq 38k*/
 
 	/*pinmux*/
-	pinmux_config();
+	irblaster_pinmux_config();
 	drv->openflag = 1;
 	return 0;
 }

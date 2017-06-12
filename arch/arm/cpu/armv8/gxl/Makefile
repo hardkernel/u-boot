@@ -9,3 +9,4 @@ obj-y	+= mailbox.o
 obj-y   += gate_init.o
 obj-y	+= board_id.o
 obj-$(CONFIG_AML_HDMITX20)	+= sound.o
+obj-$(CONFIG_CMD_IRBLASTER)	+= irblaster.o
