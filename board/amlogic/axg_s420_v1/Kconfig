@@ -6,7 +6,7 @@ config SYS_CPU
 
 config SYS_BOARD
 	string
-	default "axg_s400_v1"
+	default "axg_s420_v1"
 
 config SYS_VENDOR
 	string
