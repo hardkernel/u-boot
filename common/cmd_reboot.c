@@ -80,6 +80,11 @@ int do_get_rebootmode (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]
 			setenv("reboot_mode","hibernate");
 			break;
 		}
+		case AMLOGIC_SHUTDOWN_REBOOT:
+		{
+			setenv("reboot_mode","shutdown_reboot");
+			break;
+		}
 		case AMLOGIC_CRASH_REBOOT:
 		{
 			setenv("reboot_mode","crash_dump");
