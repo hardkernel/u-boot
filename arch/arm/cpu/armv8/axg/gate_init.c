@@ -36,7 +36,8 @@ void save_power_post(void)
 	clrbits_le32(P_HHI_PCIE_PLL_CNTL, 0xffffffff);
 	clrbits_le32(P_HHI_PCIE_PLL_CNTL6, 0xffffffff);
 	/*Close USB*/
-	writel(0x652069,0xffe09020);
+	/*writel(0x652069,0xffe09020);*/
+	setbits_le32(0xffe09020, 1 << 22);
 }
 
 void ee_gate_off(void)
