@@ -26,8 +26,6 @@
 #define CONFIG_CEC_OSD_NAME "AML_TV"
 #endif
 
-typedef unsigned int uint32_t;
-
 /* FOR AO_CECB */
 #define DWC_CECB_CTRL                0x00
 #define DWC_CECB_INTR_MASK           0x02

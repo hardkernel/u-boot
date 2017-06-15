@@ -272,6 +272,7 @@ static unsigned int detect_key(unsigned int suspend_from)
 	int exit_reason = 0;
 	unsigned int time_out = readl(AO_DEBUG_REG2);
 	unsigned time_out_ms = time_out*100;
+	unsigned char adc_key_cnt = 0;
 	unsigned *irq = (unsigned *)WAKEUP_SRC_IRQ_ADDR_BASE;
 	/* unsigned *wakeup_en = (unsigned *)SECURE_TASK_RESPONSE_WAKEUP_EN; */
 
@@ -280,6 +281,7 @@ static unsigned int detect_key(unsigned int suspend_from)
 	if (time_out_ms != 0)
 		wakeup_timer_setup();
 	init_remote();
+	saradc_enable();
 #ifdef CONFIG_CEC_WAKEUP
 	if (hdmi_cec_func_config & 0x1) {
 		remote_cec_hw_reset();
@@ -307,11 +309,22 @@ static unsigned int detect_key(unsigned int suspend_from)
 				cec_node_init();
 		}
 #endif
-	if (irq[IRQ_AO_IR_DEC] == IRQ_AO_IR_DEC_NUM) {
-		irq[IRQ_AO_IR_DEC] = 0xFFFFFFFF;
-			if (remote_detect_key())
-				exit_reason = REMOTE_WAKEUP;
-	}
+		if (irq[IRQ_AO_TIMERA] == IRQ_AO_TIMERA_NUM) {
+			irq[IRQ_AO_TIMERA] = 0xFFFFFFFF;
+			if (check_adc_key_resume()) {
+				adc_key_cnt++;
+				/*using variable 'adc_key_cnt' to eliminate the dithering of the key*/
+				if (2 == adc_key_cnt)
+					exit_reason = POWER_KEY_WAKEUP;
+			} else {
+				adc_key_cnt = 0;
+			}
+		}
+		if (irq[IRQ_AO_IR_DEC] == IRQ_AO_IR_DEC_NUM) {
+			irq[IRQ_AO_IR_DEC] = 0xFFFFFFFF;
+				if (remote_detect_key())
+					exit_reason = REMOTE_WAKEUP;
+		}
 		if (irq[IRQ_ETH_PHY] == IRQ_ETH_PHY_NUM) {
 			irq[IRQ_ETH_PHY] = 0xFFFFFFFF;
 				exit_reason = ETH_PHY_WAKEUP;
@@ -321,6 +334,8 @@ static unsigned int detect_key(unsigned int suspend_from)
 		else
 			asm volatile("wfi");
 	} while (1);
+
+	saradc_disable();
 
 	return exit_reason;
 }
