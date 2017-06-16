@@ -36,6 +36,6 @@ int clk_get_rate(unsigned clksrc);
 unsigned long clk_util_clk_msr(unsigned long clk_mux);
 
 int clk_msr(int index);
-void axg_pll_set(void);
+/*void axg_pll_set(void);*/
 #endif /* __ARCH_ARM_MESON_CLOCK_H_U_BOOT_ */
 

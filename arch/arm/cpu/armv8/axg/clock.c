@@ -224,6 +224,7 @@ int clk_msr(int index)
 	return 0;
 }
 
+#if 0
 int axg_pcie_set(void)
 {
 	int delay = 24000000;
@@ -268,6 +269,7 @@ int axg_pcie_set(void)
 
 	return -1;
 }
+
 void axg_pll_set(void)
 {
 	int ret;
@@ -287,3 +289,4 @@ void axg_pll_set(void)
 	}
 	return;
 }
+#endif

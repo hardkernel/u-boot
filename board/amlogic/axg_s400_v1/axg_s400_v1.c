@@ -520,7 +520,6 @@ int board_late_init(void){
 	/*aml_try_factory_sdcard_burning(0, gd->bd);*/
 #endif// #ifdef CONFIG_AML_V2_FACTORY_BURN
 
-	axg_pll_set();
 	return 0;
 }
 #endif
