@@ -47,6 +47,7 @@
 #include <linux/mtd/partitions.h>
 #include <linux/sizes.h>
 #include <asm/arch/clock.h>
+#include <asm-generic/gpio.h>
 DECLARE_GLOBAL_DATA_PTR;
 
 //new static eth setup
@@ -365,6 +366,22 @@ struct amlogic_usb_config g_usb_config_GXL_skt={
 };
 #endif /*CONFIG_USB_XHCI_AMLOGIC*/
 
+#ifdef CONFIG_AML_PCIE
+static void pcie_init_reset_pin(void)
+{
+	int ret;
+
+	ret = gpio_request(CONFIG_AML_PCIEA_GPIO_RESET,
+		CONFIG_AML_PCIEA_GPIO_RESET_NAME);
+	if (ret && ret != -EBUSY) {
+		printf("gpio: requesting pin %u failed\n", CONFIG_AML_PCIEA_GPIO_RESET);
+		return;
+	}
+	gpio_direction_output(CONFIG_AML_PCIEA_GPIO_RESET, 0);
+}
+#endif
+
+
 #ifdef CONFIG_AML_HDMITX20
 static void hdmi_tx_set_hdmi_5v(void)
 {
@@ -428,6 +445,10 @@ int get_aml_partition_count(void)
 
 int board_init(void)
 {
+#ifdef CONFIG_AML_PCIE
+	pcie_init_reset_pin();
+#endif
+
 #ifdef CONFIG_AML_V2_FACTORY_BURN
 	aml_try_factory_usb_burning(0, gd->bd);
 #endif// #ifdef CONFIG_AML_V2_FACTORY_BURN

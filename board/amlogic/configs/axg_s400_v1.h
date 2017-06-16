@@ -24,7 +24,6 @@
 
 #include <asm/arch/cpu.h>
 
-
 #define CONFIG_SYS_GENERIC_BOARD  1
 #ifndef CONFIG_AML_MESON
 #warning "include warning"
@@ -402,6 +401,13 @@
 #define CONFIG_AML_LCD    1
 /*#define CONFIG_AML_LCD_TV 1*/
 #define CONFIG_AML_LCD_TABLET 1
+
+#define CONFIG_AML_PCIE
+#define CONFIG_AML_PCIEA_GPIO_RESET  PIN_GPIOX_19
+#define CONFIG_AML_PCIEB_GPIO_RESET  PIN_GPIOZ_10
+#define CONFIG_AML_PCIEA_GPIO_RESET_NAME	"GPIOX_19"
+#define CONFIG_AML_PCIEB_GPIO_RESET_NAME	"GPIOZ_10"
+
 
 /* USB
  * Enable CONFIG_MUSB_HCD for Host functionalities MSC, keyboard
