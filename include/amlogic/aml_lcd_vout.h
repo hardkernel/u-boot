@@ -452,6 +452,7 @@ struct bl_config_s {
 	unsigned int pinmux_set[10][2];
 	//unsigned pinmux_clr_num;
 	unsigned int pinmux_clr[10][2];
+	int bl_extern_index;
 };
 
 extern struct bl_config_s bl_config_dft;

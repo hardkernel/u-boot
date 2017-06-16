@@ -22,6 +22,9 @@
 #ifdef CONFIG_AML_LCD_EXTERN
 #include <amlogic/aml_lcd_extern.h>
 #endif
+#ifdef CONFIG_AML_BL_EXTERN
+#include <amlogic/aml_bl_extern.h>
+#endif
 
 #define Rsv_val 0xffffffff
 struct ext_lcd_config_s {

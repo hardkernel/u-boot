@@ -241,9 +241,23 @@ struct bl_config_s bl_config_dft = {
 	.pwm_on_delay = 10,
 	.pwm_off_delay = 10,
 
+	.bl_extern_index = 0xff,
+
 	.pinmux_set = {{2, 0x00200000}, {LCD_PINMUX_END, 0x0}},
 	.pinmux_clr = {{2, 0x00d00000}, {LCD_PINMUX_END, 0x0}},
 };
+
+#ifdef CONFIG_AML_BL_EXTERN
+struct bl_extern_config_s bl_extern_config_dtf = {
+	.index = BL_EXTERN_INDEX_INVALID,
+	.name = "none",
+	.type = BL_EXTERN_MAX,
+	.i2c_addr = 0xff,
+	.i2c_bus = BL_EXTERN_I2C_BUS_MAX,
+	.dim_min = 10,
+	.dim_max = 255,
+};
+#endif
 
 void lcd_config_bsp_init(void)
 {
