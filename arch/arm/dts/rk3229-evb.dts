@@ -68,6 +68,7 @@
 
 &emmc {
 	u-boot,dm-pre-reloc;
+	fifo-mode;
 	status = "okay";
 };
 
