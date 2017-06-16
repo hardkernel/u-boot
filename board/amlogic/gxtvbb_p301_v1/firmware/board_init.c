@@ -83,11 +83,12 @@ void board_init(void)
 		//aml_update_bits(P_AO_GPIO_O_EN_N, 1 << 19, 0);
 		writel((readl(P_AO_GPIO_O_EN_N) & (~((1 << 3) | (1 << 19)))),P_AO_GPIO_O_EN_N);
 		/* need delay */
-		_udelay(40000);
+		_udelay(200000);
 		/* power on ddr */
 		//aml_update_bits(P_AO_GPIO_O_EN_N, 1 << 3, 0);
 		//aml_update_bits(P_AO_GPIO_O_EN_N, 1 << 19, 1 << 19);
 		writel((readl(P_AO_GPIO_O_EN_N) | (1 << 19)),P_AO_GPIO_O_EN_N);
+		_udelay(40000);
 	}
 
 	panel_power_init();
