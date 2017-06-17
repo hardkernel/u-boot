@@ -72,6 +72,7 @@
         "firstboot=1\0"\
         "upgrade_step=0\0"\
         "jtag=apao\0"\
+        "i2c_auto_test=disable\0" \
         "loadaddr=1080000\0"\
         "panel_type=lcd_0\0" \
         "outputmode=panel\0" \
@@ -111,7 +112,7 @@
             "else fi;"\
             "\0"\
         "storeargs="\
-            "setenv bootargs ${initargs} logo=${display_layer},loaded,${fb_addr} vout=${outputmode},enable panel_type=${panel_type} osd_reverse=${osd_reverse} video_reverse=${video_reverse} androidboot.selinux=${EnableSelinux} androidboot.firstboot=${firstboot} jtag=${jtag}; "\
+            "setenv bootargs ${initargs} logo=${display_layer},loaded,${fb_addr} vout=${outputmode},enable panel_type=${panel_type} osd_reverse=${osd_reverse} video_reverse=${video_reverse} androidboot.selinux=${EnableSelinux} androidboot.firstboot=${firstboot} jtag=${jtag} i2c_auto_test=${i2c_auto_test}; "\
 	"setenv bootargs ${bootargs} androidboot.hardware=amlogic;"\
             "run cmdline_keys;"\
             "\0"\
