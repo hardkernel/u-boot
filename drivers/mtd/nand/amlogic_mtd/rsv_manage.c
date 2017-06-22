@@ -631,7 +631,6 @@ int aml_nand_save_rsv_info(struct mtd_info *mtd,
 	int error = 0, pages_per_blk, i = 1;
 	loff_t addr = 0;
 	struct erase_info erase_info;
-	struct aml_nand_chip *aml_chip = mtd_to_nand_chip(mtd);
 
 	pages_per_blk = mtd->erasesize / mtd->writesize;
 
@@ -640,11 +639,10 @@ int aml_nand_save_rsv_info(struct mtd_info *mtd,
 		|| (nandrsv_info->valid_node->status & ECC_ABNORMAL_FLAG))
 		nandrsv_info->valid_node->phy_page_addr = pages_per_blk;
 
-	if ((mtd->writesize < nandrsv_info->size)
-		&& (aml_chip->aml_nandenv_info->valid == 1))
+	if ((mtd->writesize < nandrsv_info->size))
 		i = (nandrsv_info->size + mtd->writesize - 1) / mtd->writesize;
-	printk("%s:%d,valid=%d, pages=%d\n",__func__, __LINE__,
-		aml_chip->aml_nandenv_info->valid, i);
+	printk("%s:%d, %s: valid=%d, pages=%d\n",__func__, __LINE__,
+		nandrsv_info->name, nandrsv_info->valid, i);
 RE_SEARCH:
 	if (nandrsv_info->valid) {
 		//printk("%s:%d,phy_page_addr=%d,pages=%d\n",__func__, __LINE__,
@@ -742,7 +740,8 @@ RE_SEARCH:
 		return 1;
 	}
 	/* update valid infos */
-	nandrsv_info->valid = 1;
+	if (!nandrsv_info->valid)
+		nandrsv_info->valid = 1;
 	/* clear status when write successfully*/
 	nandrsv_info->valid_node->status = 0;
 	return error;
