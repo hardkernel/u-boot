@@ -78,6 +78,7 @@ static void hdmi_5v_ctrl(unsigned int ctrl)
 /*GPIODV_25*/
 static void vcck_ctrl(unsigned int ctrl)
 {
+    return; //p241 don't need vcck control
 	if (ctrl == ON) {
 		aml_update_bits(PREG_PAD_GPIO0_EN_N, 1 << 25, 0);
 		aml_update_bits(PREG_PAD_GPIO0_O, 1 << 25, 1 << 25);
