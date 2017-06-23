@@ -34,6 +34,7 @@ int temp_base = 27;
 uint32_t vref_en = 0;
 uint32_t trim = 0;
 int saradc_vref = -1;
+
 #define MANUAL_POWER 1  //not use vref, use 1.8V power
 
 static int get_tsc(int temp)
@@ -69,6 +70,7 @@ static int get_tsc(int temp)
 		TS_C = 16-((vmeasure)/40);
 		break;
 	case MESON_CPU_MAJOR_ID_TXLX:
+	case MESON_CPU_MAJOR_ID_AXG:
 		/*TS_C = 16-(adc-1750)/42*/
 		vmeasure = temp-(1750+(temp_base-27)*17);
 		printf("vmeasure=%d\n", vmeasure);
@@ -118,6 +120,17 @@ static int adc_init_chan6(void)
 		writel(0x00000114, SAR_CLK_CNTL);/*Clock*/
 		break;
 	case MESON_CPU_MAJOR_ID_TXL:
+		writel(0x00000006, SAR_ADC_CHAN_LIST);/*channel 6*/
+		writel(0x00003000, SAR_ADC_AVG_CNTL);
+		writel(0xc8a8500a, SAR_ADC_REG3);/*bit27:1 disable*/
+		writel(0x010a000a, SAR_ADC_DELAY);
+		writel(0x03eb1a0c, SAR_ADC_AUX_SW);
+		writel(0x008c000c, SAR_ADC_CHAN_10_SW);
+		writel(0x030e030c, SAR_ADC_DETECT_IDLE_SW);
+		writel(0x0c00c400, SAR_ADC_DELTA_10);
+		writel(0x00000110, SAR_CLK_CNTL);/*Clock*/
+		writel(0x002c2060, SAR_ADC_REG11);/*bit20 disabled*/
+		break;
 	case MESON_CPU_MAJOR_ID_TXLX:
 		writel(0x00000006, SAR_ADC_CHAN_LIST);/*channel 6*/
 		writel(0x00003000, SAR_ADC_AVG_CNTL);
@@ -129,9 +142,26 @@ static int adc_init_chan6(void)
 		writel(0x0c00c400, SAR_ADC_DELTA_10);
 		writel(0x00000110, SAR_CLK_CNTL);/*Clock*/
 		writel(0x002c2060, SAR_ADC_REG11);/*bit20 disabled*/
-#ifdef MANUAL_POWER
-		writel(readl(SAR_ADC_REG11)|0x1, SAR_ADC_REG11);/*bit20 disabled*/
-#endif
+		#ifndef MANUAL_POWER
+		if (ver != 0xa0)
+		#endif
+		writel(readl(SAR_ADC_REG11)|0x1, SAR_ADC_REG11);/*manual trim use 1.8V*/
+		break;
+	case MESON_CPU_MAJOR_ID_AXG:
+		writel(0x00000006, SAR_ADC_CHAN_LIST);/*channel 6*/
+		writel(0x00003000, SAR_ADC_AVG_CNTL);
+		writel(0xc8a8500a, SAR_ADC_REG3);/*bit27:1 disable*/
+		writel(0x010a000a, SAR_ADC_DELAY);
+		writel(0x03eb1a0c, SAR_ADC_AUX_SW);
+		writel(0x008c000c, SAR_ADC_CHAN_10_SW);
+		writel(0x030e030c, SAR_ADC_DETECT_IDLE_SW);
+		writel(0x0c00c400, SAR_ADC_DELTA_10);
+		writel(0x00000110, SAR_CLK_CNTL);/*Clock*/
+		writel(0x002c2060, SAR_ADC_REG11);/*bit20 disabled*/
+		#ifndef MANUAL_POWER
+		if ((ver != 0x09))
+		#endif
+		writel(readl(SAR_ADC_REG11)|0x1, SAR_ADC_REG11);/*manual trim use 1.8V*/
 		break;
 	default:
 		printf("cpu family id not support!!!\n");
@@ -282,8 +312,13 @@ static unsigned do_read_calib_data(int *flag, int *temp, int *TS_C)
 	ret = readl(AO_SEC_SD_CFG12);
 	flagbuf = (ret>>24)&0xff;
 	if (((int)flagbuf != 0xA0) && ((int)flagbuf != 0x40)
-		&& ((int)flagbuf != 0xC0)) {
-		printf("thermal ver flag error!\n");
+		&& ((int)flagbuf != 0xC0)
+		&& ((int)flagbuf != 0x05) && ((int)flagbuf != 0x0d)
+		&& ((int)flagbuf != 0x07) && ((int)flagbuf != 0x0f)
+		&& ((int)flagbuf != 0x09)
+		) {
+		if (flagbuf)
+			printf("thermal ver flag error!\n");
 		printf("flagbuf is 0x%x!\n", flagbuf);
 		return 0;
 	}
@@ -403,6 +438,7 @@ static int do_write_trim(cmd_tbl_t *cmdtp, int flag1,
 		temp = temp>>2;/*efuse only 10bit adc*/
 		break;
 	case MESON_CPU_MAJOR_ID_TXLX:
+	case MESON_CPU_MAJOR_ID_AXG:
 		temp = temp - 17*(temp_base - 27);
 		temp = temp>>2;/*efuse only 10bit adc*/
 		break;
@@ -424,8 +460,7 @@ err:
 	return -1;
 }
 
-static int do_read_temp(cmd_tbl_t *cmdtp, int flag1,
-	int argc, char * const argv[])
+static int read_temp0(void)
 {
 	int temp;
 	int TS_C;
@@ -465,8 +500,12 @@ static int do_read_temp(cmd_tbl_t *cmdtp, int flag1,
 				tempa = (10*(adc-temp))/155+27;
 				break;
 			case MESON_CPU_MAJOR_ID_TXLX:
+			case MESON_CPU_MAJOR_ID_AXG:
 				tempa = (adc-temp)/17+27;
 				break;
+			default:
+				printf("cpu family id not support!!!\n");
+				return -1;
 			}
 			printf("tempa=%d\n", tempa);
 
@@ -489,6 +528,14 @@ static int do_read_temp(cmd_tbl_t *cmdtp, int flag1,
 	}
 
 	return 0;
+
+}
+
+static int do_read_temp(cmd_tbl_t *cmdtp, int flag1,
+	int argc, char * const argv[])
+{
+	read_temp0();
+	return 0;
 }
 
 static int do_write_version(cmd_tbl_t *cmdtp, int flag1,
@@ -498,6 +545,7 @@ static int do_write_version(cmd_tbl_t *cmdtp, int flag1,
 	unsigned int val = simple_strtoul(argv[1], NULL, 16);
 
 	ret = thermal_calibration(1, val);
+
 	return ret;
 }
 
@@ -513,25 +561,85 @@ static int do_set_trim_base(cmd_tbl_t *cmdtp, int flag1,
 static int do_temp_triming(cmd_tbl_t *cmdtp, int flag1,
 	int argc, char * const argv[])
 {
-	int cmd_result;
-	int temp = simple_strtoul(argv[1], NULL, 10);
+	int cmd_result = -1;
+	int temp;
+#ifdef CONFIG_AML_MESON_AXG
+	unsigned int ver;
+	int ret = -1;
+#endif
+
+	if (argc < 2)
+		return CMD_RET_USAGE;
+
+	temp = simple_strtoul(argv[1], NULL, 10);
 	temp_base = temp;
 	printf("set base temperature: %d\n", temp_base);
 
-	cmd_result = run_command("write_trim", 0);
-	if (cmd_result == CMD_RET_SUCCESS) {
+	switch (get_cpu_id().family_id) {
+	case MESON_CPU_MAJOR_ID_GXBB:
+	case MESON_CPU_MAJOR_ID_GXTVBB:
+	case MESON_CPU_MAJOR_ID_GXL:
+	case MESON_CPU_MAJOR_ID_GXM:
+	case MESON_CPU_MAJOR_ID_TXL:
+	case MESON_CPU_MAJOR_ID_TXLX:
+		cmd_result = run_command("write_trim", 0);
+		if (cmd_result == CMD_RET_SUCCESS) {
 		/*FB calibration v5: 1010 0000*/
 		/*manual calibration v2: 0100 0000*/
 		printf("manual calibration v3: 1100 0000\n");
 		cmd_result = run_command("write_version 0xc0", 0);
 		if (cmd_result != CMD_RET_SUCCESS)
 			printf("write version error!!!\n");
-	} else {
-		printf("trim FAIL!!!Please check!!!\n");
+		} else {
+			printf("trim FAIL!!!Please check!!!\n");
+			return -1;
+		}
+		run_command("read_temp", 0);
+		break;
+#ifdef CONFIG_AML_MESON_AXG
+	case MESON_CPU_MAJOR_ID_AXG:
+		if (argc <3) {
+			printf("too little args for AXG temp triming!!\n");
+			return CMD_RET_USAGE;
+		}
+		ver = simple_strtoul(argv[2], NULL, 10);
+		printf("ver: %d\n", ver);
+		switch (ver) {
+		case 0x5:
+		case 0xd: /*thermal0*/
+			cmd_result = run_command("write_trim", 0);
+			if (cmd_result != CMD_RET_SUCCESS) {
+				printf("trim FAIL!!!Please check!!!\n");
+				return -1;
+			} else
+				ret = 0;
+			break;
+		default:
+			printf("thermal version not support!!!Please check!\n");
+			return -1;
+		}
+		printf("trim thermal data ok\n");
+		if (!ret) { //write data ok
+			char str[20];
+			sprintf(str, "write_version 0x%x", ver);
+
+			cmd_result  = run_command(str, 0);
+			if (cmd_result == CMD_RET_SUCCESS)
+				printf("write thermal version ok\n");
+			else {
+				printf("trim FAIL!!!Please check version!!!\n");
+				return -1;
+			}
+		}
+		break;
+#endif
+		default:
+			printf("cpu family id not support!!!\n");
+			return -1;
 	}
-	run_command("read_temp", 0);
 	return 0;
 }
+
 
 U_BOOT_CMD(
 	write_trim,	5,	0,	do_write_trim,
@@ -551,10 +659,24 @@ U_BOOT_CMD(
 	"write_flag"
 );
 
+static char temp_trim_help_text[] =
+	"temp_triming x [ver]\n"
+	"  - for manual trimming chip\n"
+	"  - x:     [decimal]the temperature of the chip surface\n"
+	"  - [ver]: [decimal]only for AXG thermal sensor\n"
+	"           BBT: OPS socket board, which can change chips\n"
+	"						online: reference boards witch chip mounted\n"
+	"           5  (0101)b: BBT, thermal0\n"
+	"           6  (0110)b: BBT, thermal1\n"
+	"           7  (0111)b: BBT, thermal01\n"
+	"           13  (1101)b: online, thermal0\n"
+	"           14  (1110)b: online, thermal1\n"
+	"           15  (1111)b: online, thermal01\n";
+
 U_BOOT_CMD(
 	temp_triming,	5,	1,	do_temp_triming,
 	"cpu temp-system",
-	"write_trim 502 and write flag"
+	temp_trim_help_text
 );
 
 U_BOOT_CMD(
