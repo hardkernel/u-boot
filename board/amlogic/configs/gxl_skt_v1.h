@@ -274,6 +274,7 @@
 #define CONFIG_DDR_LOW_POWER			0 //0:disable, 1:enable. ddr clk gate for lp
 #define CONFIG_DDR_ZQ_PD				0 //0:disable, 1:enable. ddr zq power down
 #define CONFIG_DDR_USE_EXT_VREF			0 //0:disable, 1:enable. ddr use external vref
+#define CONFIG_DDR_FUNC_PRINT_WINDOW	1 //0:disable, 1:enable. print ddr training window
 
 /* storage: emmc/nand/sd */
 #define		CONFIG_STORE_COMPATIBLE 1
