@@ -290,7 +290,8 @@ static int remote_detect_key(void)
 
 	if (((readl(AO_MF_IR_DEC_STATUS)) >> 3) & 0x1) { /*to judge the frame whether is effective or not*/
 		if (readl(AO_MF_IR_DEC_STATUS) & 0x1) { 	  /*to judge the frame whether is repeat frame or not*/
-				return 0;
+			readl(AO_MF_IR_DEC_FRAME);
+			return 0;
 		}
 		power_key = readl(AO_MF_IR_DEC_FRAME);
 		for (j = 0; j < CONFIG_IR_REMOTE_POWER_UP_KEY_CNT; j++) {
@@ -303,6 +304,7 @@ static int remote_detect_key(void)
 
 	if (((readl(AO_IR_DEC_STATUS)) >> 3) & 0x1) { /*to judge the frame whether is effective or not*/
 		if (readl(AO_IR_DEC_STATUS) & 0x1) {	  /*to judge the frame whether is repeat frame or not*/
+			readl(AO_IR_DEC_FRAME);
 			return 0;
 		}
 		power_key = readl(AO_IR_DEC_FRAME);
