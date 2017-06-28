@@ -301,7 +301,7 @@ unsigned sec_reg_read(unsigned *addr);
 #define AIU_HDMI_CLK_DATA_CTRL 0x152a	/* register.h:2466 */
 #define P_AIU_HDMI_CLK_DATA_CTRL CBUS_REG_ADDR(AIU_HDMI_CLK_DATA_CTRL)
 
-#define ISA_DEBUG_REG0 0x2600
+#define ISA_DEBUG_REG0 0x3c00
 #define P_ISA_DEBUG_REG0 CBUS_REG_ADDR(ISA_DEBUG_REG0)
 
 #define VENC_DVI_SETTING 0x1b62	/* register.h:8014 */
