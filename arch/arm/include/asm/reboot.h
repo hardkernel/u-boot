@@ -32,7 +32,9 @@ Reboot reason AND corresponding env setting:
 5:  Suspend                   suspend_off
 6:  Hibernate                 hibernate
 7:  Fastboot Bootloader       bootloader
-8~10: reserved
+8:  Shutdown reboot           shutdown_reboot
+9:  RPMBP reboot              rpmbp
+10: reserved
 11:  Crash dump               crash_dump
 12:  Kernel panic             kernel_panic
 13:  Watchdog reboot          watchdog_reboot
@@ -47,6 +49,7 @@ Reboot reason AND corresponding env setting:
 #define AMLOGIC_HIBERNATE_REBOOT		6
 #define AMLOGIC_BOOTLOADER_REBOOT		7 /* fastboot bootloader */
 #define AMLOGIC_SHUTDOWN_REBOOT                 8
+#define AMLOGIC_RPMBP_REBOOT			9
 #define	AMLOGIC_CRASH_REBOOT			11
 #define AMLOGIC_KERNEL_PANIC			12
 #define AMLOGIC_WATCHDOG_REBOOT			13

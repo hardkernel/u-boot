@@ -100,6 +100,11 @@ int do_get_rebootmode (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]
 			setenv("reboot_mode","watchdog_reboot");
 			break;
 		}
+		case AMLOGIC_RPMBP_REBOOT:
+		{
+			setenv("reboot_mode","rpmbp");
+			break;
+		}
 		default:
 		{
 			setenv("reboot_mode","charging");
@@ -152,6 +157,8 @@ int do_reboot (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 			reboot_mode_val = AMLOGIC_CRASH_REBOOT;
 		else if (strcmp(mode, "kernel_panic") == 0)
 			reboot_mode_val = AMLOGIC_KERNEL_PANIC;
+		else if (strcmp(mode, "rpmbp") == 0)
+			reboot_mode_val = AMLOGIC_RPMBP_REBOOT;
 		else {
 			printf("Can not find match reboot mode, use normal by default\n");
 			reboot_mode_val = AMLOGIC_NORMAL_BOOT;
