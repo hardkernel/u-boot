@@ -466,7 +466,9 @@ static void init_hdmi_uart_board(void)
 int board_init(void)
 {
 #ifdef CONFIG_AML_V2_FACTORY_BURN
-	aml_try_factory_usb_burning(0, gd->bd);
+	if ((0x1b8ec003 != readl(P_PREG_STICKY_REG2)) && (0x1b8ec004 != readl(P_PREG_STICKY_REG2))) {
+		aml_try_factory_usb_burning(0, gd->bd);
+	}
 #endif// #ifdef CONFIG_AML_V2_FACTORY_BURN
 
 #ifdef CONFIG_USB_XHCI_AMLOGIC_GXL
@@ -534,6 +536,8 @@ int board_late_init(void)
 #endif
 
 #ifdef CONFIG_AML_V2_FACTORY_BURN
+	if (0x1b8ec003 == readl(P_PREG_STICKY_REG2))
+		aml_try_factory_usb_burning(1, gd->bd);
 	/*aml_try_factory_sdcard_burning(0, gd->bd);*/
 #endif// #ifdef CONFIG_AML_V2_FACTORY_BURN
 
