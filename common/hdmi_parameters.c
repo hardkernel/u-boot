@@ -33,10 +33,72 @@ static struct hdmi_format_para fmt_para_1920x1080p60_16x9 = {
 	},
 };
 
+static struct hdmi_format_para fmt_para_1920x1080p30_16x9 = {
+	.vic = HDMI_1920x1080p30_16x9,
+	.name = "1920x1080p30hz",
+	.sname = "1080p30hz",
+	.pixel_repetition_factor = 0,
+	.progress_mode = 1,
+	.scrambler_en = 0,
+	.tmds_clk_div40 = 0,
+	.tmds_clk = 74250,
+	.timing = {
+		.pixel_freq = 74250,
+		.h_freq = 67500,
+		.v_freq = 30000,
+		.vsync_polarity = 1,
+		.hsync_polarity = 1,
+		.h_active = 1920,
+		.h_total = 2200,
+		.h_blank = 280,
+		.h_front = 88,
+		.h_sync = 44,
+		.h_back = 148,
+		.v_active = 1080,
+		.v_total = 1125,
+		.v_blank = 45,
+		.v_front = 4,
+		.v_sync = 5,
+		.v_back = 36,
+		.v_sync_ln = 1,
+	},
+};
+
 static struct hdmi_format_para fmt_para_1920x1080p50_16x9 = {
 	.vic = HDMI_1920x1080p50_16x9,
 	.name = "1920x1080p50hz",
 	.sname = "1080p50hz",
+	.pixel_repetition_factor = 0,
+	.progress_mode = 1,
+	.scrambler_en = 0,
+	.tmds_clk_div40 = 0,
+	.tmds_clk = 74250,
+	.timing = {
+		.pixel_freq = 74250,
+		.h_freq = 56250,
+		.v_freq = 50000,
+		.vsync_polarity = 1,
+		.hsync_polarity = 1,
+		.h_active = 1920,
+		.h_total = 2640,
+		.h_blank = 720,
+		.h_front = 528,
+		.h_sync = 44,
+		.h_back = 148,
+		.v_active = 1080,
+		.v_total = 1125,
+		.v_blank = 45,
+		.v_front = 4,
+		.v_sync = 5,
+		.v_back = 36,
+		.v_sync_ln = 1,
+	},
+};
+
+static struct hdmi_format_para fmt_para_1920x1080p25_16x9 = {
+	.vic = HDMI_1920x1080p25_16x9,
+	.name = "1920x1080p25hz",
+	.sname = "1080p25hz",
 	.pixel_repetition_factor = 0,
 	.progress_mode = 1,
 	.scrambler_en = 0,
@@ -83,68 +145,6 @@ static struct hdmi_format_para fmt_para_1920x1080p24_16x9 = {
 		.h_total = 2750,
 		.h_blank = 830,
 		.h_front = 638,
-		.h_sync = 44,
-		.h_back = 148,
-		.v_active = 1080,
-		.v_total = 1125,
-		.v_blank = 45,
-		.v_front = 4,
-		.v_sync = 5,
-		.v_back = 36,
-		.v_sync_ln = 1,
-	},
-};
-
-static struct hdmi_format_para fmt_para_1920x1080p25_16x9 = {
-	.vic = HDMI_1920x1080p25_16x9,
-	.name = "1920x1080p25hz",
-	.sname = "1080p25hz",
-	.pixel_repetition_factor = 0,
-	.progress_mode = 1,
-	.scrambler_en = 0,
-	.tmds_clk_div40 = 0,
-	.tmds_clk = 74250,
-	.timing = {
-		.pixel_freq = 74250,
-		.h_freq = 56250,
-		.v_freq = 50000,
-		.vsync_polarity = 1,
-		.hsync_polarity = 1,
-		.h_active = 1920,
-		.h_total = 2640,
-		.h_blank = 720,
-		.h_front = 528,
-		.h_sync = 44,
-		.h_back = 148,
-		.v_active = 1080,
-		.v_total = 1125,
-		.v_blank = 45,
-		.v_front = 4,
-		.v_sync = 5,
-		.v_back = 36,
-		.v_sync_ln = 1,
-	},
-};
-
-static struct hdmi_format_para fmt_para_1920x1080p30_16x9 = {
-	.vic = HDMI_1920x1080p30_16x9,
-	.name = "1920x1080p30hz",
-	.sname = "1080p30hz",
-	.pixel_repetition_factor = 0,
-	.progress_mode = 1,
-	.scrambler_en = 0,
-	.tmds_clk_div40 = 0,
-	.tmds_clk = 74250,
-	.timing = {
-		.pixel_freq = 74250,
-		.h_freq = 67500,
-		.v_freq = 30000,
-		.vsync_polarity = 1,
-		.hsync_polarity = 1,
-		.h_active = 1920,
-		.h_total = 2200,
-		.h_blank = 280,
-		.h_front = 88,
 		.h_sync = 44,
 		.h_back = 148,
 		.v_active = 1080,
@@ -839,6 +839,796 @@ static struct hdmi_format_para fmt_para_720x576i50_16x9 = {
 	},
 };
 
+static struct hdmi_format_para fmt_para_non_hdmi_fmt = {
+	.vic = HDMI_unkown,
+	.name = "invalid",
+	.sname = "invalid",
+};
+
+static struct hdmi_format_para fmt_para_vesa_640x480p60_4x3 = {
+	.vic = HDMIV_640x480p60hz,
+	.name = "640x480p60hz",
+	.pixel_repetition_factor = 0,
+	.progress_mode = 1,
+	.scrambler_en = 0,
+	.tmds_clk_div40 = 0,
+	.tmds_clk = 25175,
+	.timing = {
+		.pixel_freq = 25175,
+		.h_freq = 26218,
+		.v_freq = 59940,
+		.vsync_polarity = 0,
+		.hsync_polarity = 0,
+		.h_active = 640,
+		.h_total = 800,
+		.h_blank = 160,
+		.h_front = 16,
+		.h_sync = 96,
+		.h_back = 48,
+		.v_active = 480,
+		.v_total = 525,
+		.v_blank = 45,
+		.v_front = 10,
+		.v_sync = 2,
+		.v_back = 33,
+		.v_sync_ln = 1,
+	},
+};
+
+static struct hdmi_format_para fmt_para_vesa_800x480p60_4x3 = {
+	.vic = HDMIV_800x480p60hz,
+	.name = "800x480p60hz",
+	.pixel_repetition_factor = 0,
+	.progress_mode = 1,
+	.scrambler_en = 0,
+	.tmds_clk_div40 = 0,
+	.tmds_clk = 29760,
+	.timing = {
+		.pixel_freq = 29760,
+		.h_freq = 30000,
+		.v_freq = 60000,
+		.vsync_polarity = 1,
+		.hsync_polarity = 1,
+		.h_active = 800,
+		.h_total = 992,
+		.h_blank = 192,
+		.h_front = 24,
+		.h_sync = 72,
+		.h_back = 96,
+		.v_active = 480,
+		.v_total = 500,
+		.v_blank = 20,
+		.v_front = 3,
+		.v_sync = 7,
+		.v_back = 10,
+		.v_sync_ln = 1,
+	},
+};
+
+static struct hdmi_format_para fmt_para_vesa_800x600p60_4x3 = {
+	.vic = HDMIV_800x600p60hz,
+	.name = "800x600p60hz",
+	.pixel_repetition_factor = 0,
+	.progress_mode = 1,
+	.scrambler_en = 0,
+	.tmds_clk_div40 = 0,
+	.tmds_clk = 40000,
+	.timing = {
+		.pixel_freq = 66666,
+		.h_freq = 37879,
+		.v_freq = 60317,
+		.vsync_polarity = 1,
+		.hsync_polarity = 1,
+		.h_active = 800,
+		.h_total = 1056,
+		.h_blank = 256,
+		.h_front = 40,
+		.h_sync = 128,
+		.h_back = 88,
+		.v_active = 600,
+		.v_total = 628,
+		.v_blank = 28,
+		.v_front = 1,
+		.v_sync = 4,
+		.v_back = 23,
+		.v_sync_ln = 1,
+	},
+};
+
+static struct hdmi_format_para fmt_para_vesa_852x480p60_213x120 = {
+	.vic = HDMIV_852x480p60hz,
+	.name = "852x480p60hz",
+	.pixel_repetition_factor = 0,
+	.progress_mode = 1,
+	.scrambler_en = 0,
+	.tmds_clk_div40 = 0,
+	.tmds_clk = 30240,
+	.timing = {
+		.pixel_freq = 30240,
+		.h_freq = 31900,
+		.v_freq = 59960,
+		.vsync_polarity = 1,
+		.hsync_polarity = 1,
+		.h_active = 852,
+		.h_total = 948,
+		.h_blank = 96,
+		.h_front = 40,
+		.h_sync = 16,
+		.h_back = 40,
+		.v_active = 480,
+		.v_total = 532,
+		.v_blank = 52,
+		.v_front = 10,
+		.v_sync = 2,
+		.v_back = 40,
+		.v_sync_ln = 1,
+	},
+};
+
+static struct hdmi_format_para fmt_para_vesa_854x480p60_427x240 = {
+	.vic = HDMIV_854x480p60hz,
+	.name = "854x480p60hz",
+	.pixel_repetition_factor = 0,
+	.progress_mode = 1,
+	.scrambler_en = 0,
+	.tmds_clk_div40 = 0,
+	.tmds_clk = 30240,
+	.timing = {
+		.pixel_freq = 30240,
+		.h_freq = 31830,
+		.v_freq = 59950,
+		.vsync_polarity = 1,
+		.hsync_polarity = 1,
+		.h_active = 854,
+		.h_total = 950,
+		.h_blank = 96,
+		.h_front = 40,
+		.h_sync = 16,
+		.h_back = 40,
+		.v_active = 480,
+		.v_total = 531,
+		.v_blank = 51,
+		.v_front = 10,
+		.v_sync = 2,
+		.v_back = 39,
+		.v_sync_ln = 1,
+	},
+};
+
+static struct hdmi_format_para fmt_para_vesa_1024x600p60_17x10 = {
+	.vic = HDMIV_1024x600p60hz,
+	.name = "1024x600p60hz",
+	.pixel_repetition_factor = 0,
+	.progress_mode = 1,
+	.scrambler_en = 0,
+	.tmds_clk_div40 = 0,
+	.tmds_clk = 50400,
+	.timing = {
+		.pixel_freq = 50400,
+		.h_freq = 38280,
+		.v_freq = 60000,
+		.vsync_polarity = 1,
+		.hsync_polarity = 1,
+		.h_active = 1024,
+		.h_total = 1344,
+		.h_blank = 320,
+		.h_front = 24,
+		.h_sync = 136,
+		.h_back = 160,
+		.v_active = 600,
+		.v_total = 638,
+		.v_blank = 38,
+		.v_front = 3,
+		.v_sync = 6,
+		.v_back = 29,
+		.v_sync_ln = 1,
+	},
+};
+
+static struct hdmi_format_para fmt_para_vesa_1024x768p60_4x3 = {
+	.vic = HDMIV_1024x768p60hz,
+	.name = "1024x768p60hz",
+	.pixel_repetition_factor = 0,
+	.progress_mode = 1,
+	.scrambler_en = 0,
+	.tmds_clk_div40 = 0,
+	.tmds_clk = 79500,
+	.timing = {
+		.pixel_freq = 79500,
+		.h_freq = 48360,
+		.v_freq = 60004,
+		.vsync_polarity = 1,
+		.hsync_polarity = 1,
+		.h_active = 1024,
+		.h_total = 1344,
+		.h_blank = 320,
+		.h_front = 24,
+		.h_sync = 136,
+		.h_back = 160,
+		.v_active = 768,
+		.v_total = 806,
+		.v_blank = 38,
+		.v_front = 3,
+		.v_sync = 6,
+		.v_back = 29,
+		.v_sync_ln = 1,
+	},
+};
+
+static struct hdmi_format_para fmt_para_vesa_1152x864p75_4x3 = {
+	.vic = HDMIV_1152x864p75hz,
+	.name = "1152x864p75hz",
+	.pixel_repetition_factor = 0,
+	.progress_mode = 1,
+	.scrambler_en = 0,
+	.tmds_clk_div40 = 0,
+	.tmds_clk = 108000,
+	.timing = {
+		.pixel_freq = 108000,
+		.h_freq = 67500,
+		.v_freq = 75000,
+		.vsync_polarity = 1,
+		.hsync_polarity = 1,
+		.h_active = 1152,
+		.h_total = 1600,
+		.h_blank = 448,
+		.h_front = 64,
+		.h_sync = 128,
+		.h_back = 256,
+		.v_active = 864,
+		.v_total = 900,
+		.v_blank = 36,
+		.v_front = 1,
+		.v_sync = 3,
+		.v_back = 32,
+	},
+};
+
+static struct hdmi_format_para fmt_para_vesa_1280x600p60_32x15 = {
+#if 0 /* TODO */
+	.vic = HDMIV_1280x600p60hz,
+	.name = "1280x600p60hz",
+	.pixel_repetition_factor = 0,
+	.progress_mode = 1,
+	.scrambler_en = 0,
+	.tmds_clk_div40 = 0,
+	.tmds_clk = ,
+	.timing = {
+		.pixel_freq = ,
+		.h_freq = ,
+		.v_freq = 60000,
+		.vsync_polarity = 1,
+		.hsync_polarity = 1,
+		.h_active = 1280,
+		.h_total = ,
+		.h_blank = ,
+		.h_front = ,
+		.h_sync = ,
+		.h_back = ,
+		.v_active = 600,
+		.v_total = ,
+		.v_blank = ,
+		.v_front = ,
+		.v_sync = ,
+		.v_back = ,
+		.v_sync_ln = 1,
+	},
+#endif
+};
+
+static struct hdmi_format_para fmt_para_vesa_1280x768p60_5x3 = {
+	.vic = HDMIV_1280x768p60hz,
+	.name = "1280x768p60hz",
+	.pixel_repetition_factor = 0,
+	.progress_mode = 1,
+	.scrambler_en = 0,
+	.tmds_clk_div40 = 0,
+	.tmds_clk = 79500,
+	.timing = {
+		.pixel_freq = 79500,
+		.h_freq = 47776,
+		.v_freq = 59870,
+		.vsync_polarity = 1,
+		.hsync_polarity = 1,
+		.h_active = 1280,
+		.h_total = 1664,
+		.h_blank = 384,
+		.h_front = 64,
+		.h_sync = 128,
+		.h_back = 192,
+		.v_active = 768,
+		.v_total = 798,
+		.v_blank = 30,
+		.v_front = 3,
+		.v_sync = 7,
+		.v_back = 20,
+	},
+};
+
+static struct hdmi_format_para fmt_para_vesa_1280x800p60_8x5 = {
+	.vic = HDMIV_1280x800p60hz,
+	.name = "1280x800p60hz",
+	.pixel_repetition_factor = 0,
+	.progress_mode = 1,
+	.scrambler_en = 0,
+	.tmds_clk_div40 = 0,
+	.tmds_clk = 83500,
+	.timing = {
+		.pixel_freq = 83500,
+		.h_freq = 49380,
+		.v_freq = 59910,
+		.vsync_polarity = 1,
+		.hsync_polarity = 1,
+		.h_active = 1280,
+		.h_total = 1440,
+		.h_blank = 160,
+		.h_front = 48,
+		.h_sync = 32,
+		.h_back = 80,
+		.v_active = 800,
+		.v_total = 823,
+		.v_blank = 23,
+		.v_front = 3,
+		.v_sync = 6,
+		.v_back = 14,
+		.v_sync_ln = 1,
+	},
+};
+
+static struct hdmi_format_para fmt_para_vesa_1280x960p60_4x3 = {
+	.vic = HDMIV_1280x960p60hz,
+	.name = "1280x960p60hz",
+	.pixel_repetition_factor = 0,
+	.progress_mode = 1,
+	.scrambler_en = 0,
+	.tmds_clk_div40 = 0,
+	.tmds_clk = 108000,
+	.timing = {
+		.pixel_freq = 108000,
+		.h_freq = 60000,
+		.v_freq = 60000,
+		.vsync_polarity = 1,
+		.hsync_polarity = 1,
+		.h_active = 1280,
+		.h_total = 1440,
+		.h_blank = 520,
+		.h_front = 96,
+		.h_sync = 112,
+		.h_back = 312,
+		.v_active = 960,
+		.v_total = 1000,
+		.v_blank = 40,
+		.v_front = 1,
+		.v_sync = 3,
+		.v_back = 36,
+	},
+};
+
+static struct hdmi_format_para fmt_para_vesa_1280x1024p60_5x4 = {
+	.vic = HDMIV_1280x1024p60hz,
+	.name = "1280x1024p60hz",
+	.pixel_repetition_factor = 0,
+	.progress_mode = 1,
+	.scrambler_en = 0,
+	.tmds_clk_div40 = 0,
+	.tmds_clk = 108000,
+	.timing = {
+		.pixel_freq = 108000,
+		.h_freq = 64080,
+		.v_freq = 60020,
+		.vsync_polarity = 1,
+		.hsync_polarity = 1,
+		.h_active = 1280,
+		.h_total = 1688,
+		.h_blank = 408,
+		.h_front = 48,
+		.h_sync = 112,
+		.h_back = 248,
+		.v_active = 1024,
+		.v_total = 1066,
+		.v_blank = 42,
+		.v_front = 1,
+		.v_sync = 3,
+		.v_back = 38,
+		.v_sync_ln = 1,
+	},
+};
+
+static struct hdmi_format_para fmt_para_vesa_1360x768p60_16x9 = {
+	.vic = HDMIV_1360x768p60hz,
+	.name = "1360x768p60hz",
+	.pixel_repetition_factor = 0,
+	.progress_mode = 1,
+	.scrambler_en = 0,
+	.tmds_clk_div40 = 0,
+	.tmds_clk = 855000,
+	.timing = {
+		.pixel_freq = 855000,
+		.h_freq = 47700,
+		.v_freq = 60015,
+		.vsync_polarity = 1,
+		.hsync_polarity = 1,
+		.h_active = 1360,
+		.h_total = 1792,
+		.h_blank = 432,
+		.h_front = 64,
+		.h_sync = 112,
+		.h_back = 256,
+		.v_active = 768,
+		.v_total = 795,
+		.v_blank = 27,
+		.v_front = 3,
+		.v_sync = 6,
+		.v_back = 18,
+		.v_sync_ln = 1,
+	},
+};
+
+static struct hdmi_format_para fmt_para_vesa_1366x768p60_16x9 = {
+	.vic = HDMIV_1366x768p60hz,
+	.name = "1366x768p60hz",
+	.pixel_repetition_factor = 0,
+	.progress_mode = 1,
+	.scrambler_en = 0,
+	.tmds_clk_div40 = 0,
+	.tmds_clk = 85500,
+	.timing = {
+		.pixel_freq = 85500,
+		.h_freq = 47880,
+		.v_freq = 59790,
+		.vsync_polarity = 1,
+		.hsync_polarity = 1,
+		.h_active = 1366,
+		.h_total = 1792,
+		.h_blank = 426,
+		.h_front = 70,
+		.h_sync = 143,
+		.h_back = 213,
+		.v_active = 768,
+		.v_total = 798,
+		.v_blank = 30,
+		.v_front = 3,
+		.v_sync = 3,
+		.v_back = 24,
+		.v_sync_ln = 1,
+	},
+};
+
+static struct hdmi_format_para fmt_para_vesa_1400x1050p60_4x3 = {
+	.vic = HDMIV_1400x1050p60hz,
+	.name = "1400x1050p60hz",
+	.pixel_repetition_factor = 0,
+	.progress_mode = 1,
+	.scrambler_en = 0,
+	.tmds_clk_div40 = 0,
+	.tmds_clk = 121750,
+	.timing = {
+		.pixel_freq = 121750,
+		.h_freq = 65317,
+		.v_freq = 59978,
+		.vsync_polarity = 1,
+		.hsync_polarity = 1,
+		.h_active = 1400,
+		.h_total = 1864,
+		.h_blank = 464,
+		.h_front = 88,
+		.h_sync = 144,
+		.h_back = 232,
+		.v_active = 1050,
+		.v_total = 1089,
+		.v_blank = 39,
+		.v_front = 3,
+		.v_sync = 4,
+		.v_back = 32,
+		.v_sync_ln = 1,
+	},
+};
+
+static struct hdmi_format_para fmt_para_vesa_1440x900p60_8x5 = {
+	.vic = HDMIV_1440x900p60hz,
+	.name = "1440x900p60hz",
+	.pixel_repetition_factor = 0,
+	.progress_mode = 1,
+	.scrambler_en = 0,
+	.tmds_clk_div40 = 0,
+	.tmds_clk = 106500,
+	.timing = {
+		.pixel_freq = 106500,
+		.h_freq = 56040,
+		.v_freq = 59887,
+		.vsync_polarity = 1,
+		.hsync_polarity = 1,
+		.h_active = 1440,
+		.h_total = 1904,
+		.h_blank = 464,
+		.h_front = 80,
+		.h_sync = 152,
+		.h_back = 232,
+		.v_active = 900,
+		.v_total = 934,
+		.v_blank = 34,
+		.v_front = 3,
+		.v_sync = 6,
+		.v_back = 25,
+		.v_sync_ln = 1,
+	},
+};
+
+static struct hdmi_format_para fmt_para_vesa_1600x900p60_16x9 = {
+	.vic = HDMIV_1600x900p60hz,
+	.name = "1600x900p60hz",
+	.pixel_repetition_factor = 0,
+	.progress_mode = 1,
+	.scrambler_en = 0,
+	.tmds_clk_div40 = 0,
+	.tmds_clk = 108000,
+	.timing = {
+		.pixel_freq = 108000,
+		.h_freq = 60000,
+		.v_freq = 60000,
+		.vsync_polarity = 1,
+		.hsync_polarity = 1,
+		.h_active = 1600,
+		.h_total = 1800,
+		.h_blank = 200,
+		.h_front = 24,
+		.h_sync = 80,
+		.h_back = 96,
+		.v_active = 900,
+		.v_total = 1000,
+		.v_blank = 100,
+		.v_front = 1,
+		.v_sync = 3,
+		.v_back = 96,
+		.v_sync_ln = 1,
+	},
+};
+
+static struct hdmi_format_para fmt_para_vesa_1600x1200p60_4x3 = {
+	.vic = HDMIV_1600x1200p60hz,
+	.name = "1600x1200p60hz",
+	.pixel_repetition_factor = 0,
+	.progress_mode = 1,
+	.scrambler_en = 0,
+	.tmds_clk_div40 = 0,
+	.tmds_clk = 162000,
+	.timing = {
+		.pixel_freq = 162000,
+		.h_freq = 75000,
+		.v_freq = 60000,
+		.vsync_polarity = 1,
+		.hsync_polarity = 1,
+		.h_active = 1600,
+		.h_total = 2160,
+		.h_blank = 560,
+		.h_front = 64,
+		.h_sync = 192,
+		.h_back = 304,
+		.v_active = 1200,
+		.v_total = 1250,
+		.v_blank = 50,
+		.v_front = 1,
+		.v_sync = 3,
+		.v_back = 46,
+		.v_sync_ln = 1,
+	},
+};
+
+static struct hdmi_format_para fmt_para_vesa_1680x1050p60_8x5 = {
+	.vic = HDMIV_1680x1050p60hz,
+	.name = "1680x1050p60hz",
+	.pixel_repetition_factor = 0,
+	.progress_mode = 1,
+	.scrambler_en = 0,
+	.tmds_clk_div40 = 0,
+	.tmds_clk = 146250,
+	.timing = {
+		.pixel_freq = 146250,
+		.h_freq = 65340,
+		.v_freq = 59954,
+		.vsync_polarity = 1,
+		.hsync_polarity = 1,
+		.h_active = 1680,
+		.h_total = 2240,
+		.h_blank = 560,
+		.h_front = 104,
+		.h_sync = 176,
+		.h_back = 280,
+		.v_active = 1050,
+		.v_total = 1089,
+		.v_blank = 39,
+		.v_front = 3,
+		.v_sync = 6,
+		.v_back = 30,
+		.v_sync_ln = 1,
+	},
+};
+
+static struct hdmi_format_para fmt_para_vesa_1920x1200p60_8x5 = {
+	.vic = HDMIV_1920x1200p60hz,
+	.name = "1920x1200p60hz",
+	.pixel_repetition_factor = 0,
+	.progress_mode = 1,
+	.scrambler_en = 0,
+	.tmds_clk_div40 = 0,
+	.tmds_clk = 193250,
+	.timing = {
+		.pixel_freq = 193250,
+		.h_freq = 74700,
+		.v_freq = 59885,
+		.vsync_polarity = 1,
+		.hsync_polarity = 1,
+		.h_active = 1920,
+		.h_total = 2592,
+		.h_blank = 672,
+		.h_front = 136,
+		.h_sync = 200,
+		.h_back = 336,
+		.v_active = 1200,
+		.v_total = 1245,
+		.v_blank = 45,
+		.v_front = 3,
+		.v_sync = 6,
+		.v_back = 36,
+		.v_sync_ln = 1,
+	},
+};
+static struct hdmi_format_para fmt_para_vesa_2160x1200p90_9x5 = {
+	.vic = HDMIV_2160x1200p90hz,
+	.name = "2160x1200p90hz",
+	.pixel_repetition_factor = 0,
+	.progress_mode = 1,
+	.scrambler_en = 0,
+	.tmds_clk_div40 = 0,
+	.tmds_clk = 268550,
+	.timing = {
+		.pixel_freq = 268550,
+		.h_freq = 109080,
+		.v_freq = 90000,
+		.vsync_polarity = 1,
+		.hsync_polarity = 1,
+		.h_active = 2160,
+		.h_total = 2462,
+		.h_blank = 302,
+		.h_front = 190,
+		.h_sync = 32,
+		.h_back = 80,
+		.v_active = 1200,
+		.v_total = 1212,
+		.v_blank = 12,
+		.v_front = 6,
+		.v_sync = 3,
+		.v_back = 3,
+		.v_sync_ln = 1,
+	},
+};
+
+static struct hdmi_format_para fmt_para_vesa_2560x1080p60_64x27 = {
+#if 0 /* TODO */
+	.vic = HDMIV_2560x1080p60hz,
+	.name = "2560x1080p60hz",
+	.pixel_repetition_factor = 0,
+	.progress_mode = 1,
+	.scrambler_en = 0,
+	.tmds_clk_div40 = 0,
+	.tmds_clk = 193250,
+	.timing = {
+		.pixel_freq = 193250,
+		.h_freq = 74700,
+		.v_freq = 60000,
+		.vsync_polarity = 1,
+		.hsync_polarity = 1,
+		.h_active = 1920,
+		.h_total = 2592,
+		.h_blank = 672,
+		.h_front = 136,
+		.h_sync = 200,
+		.h_back = 336,
+		.v_active = 1200,
+		.v_total = 1245,
+		.v_blank = 45,
+		.v_front = 3,
+		.v_sync = 6,
+		.v_back = 36,
+		.v_sync_ln = 1,
+	},
+#endif
+};
+
+static struct hdmi_format_para fmt_para_vesa_2560x1440p60_16x9 = {
+#if 0 /* TODO */
+	.vic = HDMIV_2560x1440p60hz,
+	.name = "2560x1440p60hz",
+	.pixel_repetition_factor = 0,
+	.progress_mode = 1,
+	.scrambler_en = 0,
+	.tmds_clk_div40 = 0,
+	.tmds_clk = 193250,
+	.timing = {
+		.pixel_freq = 193250,
+		.h_freq = 74700,
+		.v_freq = 60000,
+		.vsync_polarity = 1,
+		.hsync_polarity = 1,
+		.h_active = 1920,
+		.h_total = 2592,
+		.h_blank = 672,
+		.h_front = 136,
+		.h_sync = 200,
+		.h_back = 336,
+		.v_active = 1200,
+		.v_total = 1245,
+		.v_blank = 45,
+		.v_front = 3,
+		.v_sync = 6,
+		.v_back = 36,
+		.v_sync_ln = 1,
+	},
+#endif
+};
+
+static struct hdmi_format_para fmt_para_vesa_2560x1600p60_8x5 = {
+	.vic = HDMIV_2560x1600p60hz,
+	.name = "2560x1600p60hz",
+	.pixel_repetition_factor = 0,
+	.progress_mode = 1,
+	.scrambler_en = 0,
+	.tmds_clk_div40 = 0,
+	.tmds_clk = 348500,
+	.timing = {
+		.pixel_freq = 348500,
+		.h_freq = 99458,
+		.v_freq = 59987,
+		.vsync_polarity = 1,
+		.hsync_polarity = 1,
+		.h_active = 2560,
+		.h_total = 3504,
+		.h_blank = 944,
+		.h_front = 192,
+		.h_sync = 280,
+		.h_back = 472,
+		.v_active = 1600,
+		.v_total = 1658,
+		.v_blank = 58,
+		.v_front = 3,
+		.v_sync = 6,
+		.v_back = 49,
+		.v_sync_ln = 1,
+	},
+};
+
+static struct hdmi_format_para fmt_para_vesa_3440x1440p60_43x18 = {
+#if 0 /* TODO */
+	.vic = HDMIV_3440x1440p60hz,
+	.name = "3440x1440p60hz",
+	.pixel_repetition_factor = 0,
+	.progress_mode = 1,
+	.scrambler_en = 0,
+	.tmds_clk_div40 = 0,
+	.tmds_clk = 193250,
+	.timing = {
+		.pixel_freq = 193250,
+		.h_freq = 74700,
+		.v_freq = 60000,
+		.vsync_polarity = 1,
+		.hsync_polarity = 1,
+		.h_active = 1920,
+		.h_total = 2592,
+		.h_blank = 672,
+		.h_front = 136,
+		.h_sync = 200,
+		.h_back = 336,
+		.v_active = 1200,
+		.v_total = 1245,
+		.v_blank = 45,
+		.v_front = 3,
+		.v_sync = 6,
+		.v_back = 36,
+		.v_sync_ln = 1,
+	},
+#endif
+};
+
 static struct hdmi_format_para *all_fmt_paras[] = {
 	&fmt_para_3840x2160p60_y420_16x9,
 	&fmt_para_3840x2160p60_16x9,
@@ -867,13 +1657,41 @@ static struct hdmi_format_para *all_fmt_paras[] = {
 	&fmt_para_720x480i60_16x9,
 	&fmt_para_720x576p50_16x9,
 	&fmt_para_720x576i50_16x9,
+	&fmt_para_vesa_640x480p60_4x3,
+	&fmt_para_vesa_800x480p60_4x3,
+	&fmt_para_vesa_800x600p60_4x3,
+	&fmt_para_vesa_852x480p60_213x120,
+	&fmt_para_vesa_854x480p60_427x240,
+	&fmt_para_vesa_1024x600p60_17x10,
+	&fmt_para_vesa_1024x768p60_4x3,
+	&fmt_para_vesa_1152x864p75_4x3,
+	&fmt_para_vesa_1280x600p60_32x15,
+	&fmt_para_vesa_1280x768p60_5x3,
+	&fmt_para_vesa_1280x800p60_8x5,
+	&fmt_para_vesa_1280x960p60_4x3,
+	&fmt_para_vesa_1280x1024p60_5x4,
+	&fmt_para_vesa_1360x768p60_16x9,
+	&fmt_para_vesa_1366x768p60_16x9,
+	&fmt_para_vesa_1400x1050p60_4x3,
+	&fmt_para_vesa_1440x900p60_8x5,
+	&fmt_para_vesa_1600x900p60_16x9,
+	&fmt_para_vesa_1600x1200p60_4x3,
+	&fmt_para_vesa_1680x1050p60_8x5,
+	&fmt_para_vesa_1920x1200p60_8x5,
+	&fmt_para_vesa_2160x1200p90_9x5,
+	&fmt_para_vesa_2560x1080p60_64x27,
+	&fmt_para_vesa_2560x1440p60_16x9,
+	&fmt_para_vesa_2560x1600p60_8x5,
+	&fmt_para_vesa_3440x1440p60_43x18,
+	&fmt_para_non_hdmi_fmt,
+	NULL,
 };
 
 struct hdmi_format_para *hdmi_get_fmt_paras(enum hdmi_vic vic)
 {
 	int i;
 
-	for (i = 0; i < ARRAY_SIZE(all_fmt_paras); i++) {
+	for (i = 0; all_fmt_paras[i] != NULL; i++) {
 		if (vic == all_fmt_paras[i]->vic)
 			return all_fmt_paras[i];
 	}
@@ -905,33 +1723,36 @@ void hdmi_parse_attr(struct hdmi_format_para *para, char const *name)
 	int i;
 
 	/* parse color depth */
-	for (i = 0; i < ARRAY_SIZE(parse_cd_); i++) {
+	for (i = 0; i < sizeof(parse_cd_) / sizeof(struct parse_cd); i++) {
 		if (strstr(name, parse_cd_[i].name)) {
 			para->cd = parse_cd_[i].cd;
 			break;
 		}
 	}
-	if (i == ARRAY_SIZE(parse_cd_)) /* set default value */
+	/* set default value */
+	if (i == sizeof(parse_cd_) / sizeof(struct parse_cd))
 		para->cd = HDMI_COLOR_DEPTH_24B;
 
 	/* parse color space */
-	for (i = 0; i < ARRAY_SIZE(parse_cs_); i++) {
+	for (i = 0; i < sizeof(parse_cs_) / sizeof(struct parse_cs); i++) {
 		if (strstr(name, parse_cs_[i].name)) {
 			para->cs = parse_cs_[i].cs;
 			break;
 		}
 	}
-	if (i == ARRAY_SIZE(parse_cs_)) /* set default value */
+	/* set default value */
+	if (i == sizeof(parse_cs_) / sizeof(struct parse_cs))
 		para->cs = HDMI_COLOR_FORMAT_444;
 
 	/* parse color range */
-	for (i = 0; i < ARRAY_SIZE(parse_cr_); i++) {
+	for (i = 0; i < sizeof(parse_cr_) / sizeof(struct parse_cr); i++) {
 		if (strstr(name, parse_cr_[i].name)) {
 			para->cr = parse_cr_[i].cr;
 			break;
 		}
 	}
-	if (i == ARRAY_SIZE(parse_cr_)) /* set default value */
+	/* set default value */
+	if (i == sizeof(parse_cr_) / sizeof(struct parse_cr))
 		para->cr = HDMI_COLOR_RANGE_FUL;
 }
 
@@ -945,21 +1766,23 @@ enum hdmi_vic hdmi_get_fmt_vic(char const *name)
 	int i;
 	char *lname;
 	enum hdmi_vic vic = HDMI_unkown;
-	struct hdmi_format_para *para;
+	struct hdmi_format_para *para = NULL;
 
-	for (i = 0; i < ARRAY_SIZE(all_fmt_paras); i++) {
+	if (!name)
+		return HDMI_unkown;
+	for (i = 0; all_fmt_paras[i] != NULL; i++) {
 		lname = all_fmt_paras[i]->name;
-		if (strncmp(lname, name, strlen(lname)) == 0) {
+		if (lname && (strncmp(name, lname, strlen(lname)) == 0)) {
 			vic = all_fmt_paras[i]->vic;
 			break;
 		}
 		lname = all_fmt_paras[i]->sname;
-		if (strncmp(lname, name, strlen(lname)) == 0) {
+		if (lname && (strncmp(name, lname, strlen(lname)) == 0)) {
 			vic = all_fmt_paras[i]->vic;
 			break;
 		}
 	}
-	if ((vic != HDMI_unkown) && (i != ARRAY_SIZE(all_fmt_paras))) {
+	if ((vic != HDMI_unkown) && (all_fmt_paras[i] != NULL)) {
 		para = all_fmt_paras[i];
 		memset(&para->ext_name[0], 0, sizeof(para->ext_name));
 		memcpy(&para->ext_name[0], name, strlen(name));

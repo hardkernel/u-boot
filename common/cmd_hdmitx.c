@@ -186,8 +186,15 @@ static int do_output(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 	if (strcmp(argv[1], "list") == 0)
 		hdmitx_device.HWOp.list_support_modes();
 	else if (strcmp(argv[1], "bist") == 0) {
-		unsigned int mode;
-		mode = simple_strtoul(argv[2], NULL, 16);
+		unsigned int mode = 0;
+		if (strcmp(argv[2], "off") == 0)
+			mode = 0;
+		else if (strcmp(argv[2], "line") == 0)
+			mode = 2;
+		else if (strcmp(argv[2], "dot") == 0)
+			mode = 3;
+		else
+			mode = simple_strtoul(argv[2], NULL, 10);
 		hdmitx_device.HWOp.test_bist(mode);
 	} else { /* "output" */
 		hdmitx_device.vic = hdmi_get_fmt_vic(argv[1]);
@@ -239,6 +246,9 @@ static int do_output(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 				printf("set cs as %d\n", HDMI_COLOR_FORMAT_444);
 			}
 			break;
+		/* For VESA modes, should be RGB format */
+		if (hdmitx_device.vic >= HDMITX_VESA_OFFSET)
+			hdmitx_device.para->cs = HDMI_COLOR_FORMAT_RGB;
 		}
 		hdmi_tx_set(&hdmitx_device);
 	}
@@ -377,12 +387,12 @@ U_BOOT_CMD(hdmitx, CONFIG_SYS_MAXARGS, 0, do_hdmitx,
 	"hdmitx edid read ADDRESS\n"
 	"    Read hdmi rx edid from ADDRESS(0x00~0xff)\n"
 #endif
-	"hdmitx output [list | FORMAT | bist MODE]\n"
+	"hdmitx output [list | FORMAT | bist PATTERN]\n"
 	"    list: list support formats\n"
 	"    FORMAT can be 720p60/50hz, 1080i60/50hz, 1080p60hz, etc\n"
 	"       extend with 8bits/10bits, y444/y422/y420/rgb\n"
 	"       such as 2160p60hz,10bits,y420\n"
-	"    bist MODE: 1 Color bar  2 Line  3 Dots  0 default\n"
+	"    PATTERN: can be as: line, dot, off, or 1920(width)\n"
 	"hdmitx blank [0|1]\n"
 	"    1: output blank  0: output normal\n"
 	"hdmitx off\n"
