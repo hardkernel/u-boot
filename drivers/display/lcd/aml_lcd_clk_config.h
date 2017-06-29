@@ -73,6 +73,7 @@ struct lcd_clk_config_s { /* unit: kHz */
 	unsigned int div_out_fmax; /* g9tv, g9bb, gxbb */
 	unsigned int xd_out_fmax;
 	unsigned int err_fmin;
+	unsigned int pll_mode;
 };
 
 /* **********************************
