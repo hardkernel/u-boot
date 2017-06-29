@@ -32,7 +32,7 @@ void save_power_post(void)
 	clrbits_le32(P_HHI_GCLK_MPEG2, 0xbbfff7f9);
 
 	/*Close PCIE PHY and PCIE PLL*/
-	clrbits_le32(P_EE_PCIE_PHY_CTRL, 0xffffffe2);
+	setbits_le32(P_EE_PCIE_PHY_CTRL, 1 << 0);
 	clrbits_le32(P_HHI_PCIE_PLL_CNTL, 0xffffffff);
 	clrbits_le32(P_HHI_PCIE_PLL_CNTL6, 0xffffffff);
 	/*Close USB*/
