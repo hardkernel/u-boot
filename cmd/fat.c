@@ -19,6 +19,40 @@
 #include <fat.h>
 #include <fs.h>
 
+int do_fat_format(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+	int dev, part;
+	struct blk_desc *dev_desc;
+	disk_partition_t info;
+
+	if (argc < 2) {
+		printf("usage: fatformat <interface> [<dev[:part]>]\n");
+		return 0;
+	}
+
+	part = blk_get_device_part_str(argv[1], argv[2], &dev_desc, &info, 1);
+	if (part < 0)
+		return 1;
+
+	dev = dev_desc->devnum;
+
+	printf("Start format MMC %d partition %d ...\n", dev, part);
+
+	if (do_format(dev_desc, part) != 0) {
+		printf("\n** Unable to use %s %d:%d for fatformat **\n",
+			argv[1], dev, part);
+		return 1;
+	}
+	return 0;
+}
+
+U_BOOT_CMD(
+	fatformat, 3, 0, do_fat_format,
+	"fatformat - disk format by FAT32\n",
+	"<interface(only support mmc)> <dev:partition num>\n"
+	"	- format by FAT32 on 'interface'\n"
+);
+
 int do_fat_size(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	return do_size(cmdtp, flag, argc, argv, FS_TYPE_FAT);
