@@ -65,4 +65,7 @@
 //2017.05.11 new compress solution, only support BL33 LZ4 compress
 #define CONFIG_AML_BL33_COMPRESS_ENABLE 1
 
+// config BL21 T32 state
+#define CONFIG_BL21_T32		1
+
 #endif /* _CPU_H */
