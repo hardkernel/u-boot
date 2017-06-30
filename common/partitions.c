@@ -55,15 +55,15 @@ void free_partitions(void)
 */
 int check_valid_dts(unsigned char *buffer)
 {
-	int ret = 0;
+	int ret = -__LINE__;
 	char *dt_addr;
 
 	if (is_dtb_encrypt(buffer)) {
 		flush_cache((unsigned long)buffer, AML_DTB_IMG_MAX_SZ);//flush or failed in usb booting
 		ret = aml_sec_boot_check(AML_D_P_IMG_DECRYPT, (long unsigned)buffer, AML_DTB_IMG_MAX_SZ, 0);
 		if (ret) {
-			printf("Decrypt dtb: Sig Check %d\n",ret);
-			return ret;
+			printf("\nDecrypt dtb: Sig Check %d\n",ret);
+			return -__LINE__;
 		}
 	}
 #ifdef CONFIG_MULTI_DTB

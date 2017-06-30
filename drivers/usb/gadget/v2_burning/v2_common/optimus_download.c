@@ -752,20 +752,21 @@ int optimus_storage_init(int toErase)
         store_exit();
     }
 
-#ifndef CONFIG_AML_MTD
     if (!_dtb_is_loaded) {
         DWN_WRN("dtb is not loaded yet\n");
     }
     else{
-        //FIXME to only skip parse part table when burn target is NAND flash
-        //if (NAND_BOOT_FLAG == device_boot_flag || SPI_NAND_FLAG == device_boot_flag)
+#ifndef CONFIG_AML_MTD
         ret = get_partition_from_dts(dtbLoadedAddr);
+#else
+        extern int check_valid_dts(unsigned char *buffer);
+        ret =  check_valid_dts(dtbLoadedAddr);
+#endif// #ifndef (CONFIG_AML_MTD)
         if (ret) {
-            DWN_ERR("Failed at get_partition_from_dts\n");
+            DWN_ERR("Failed at check dts\n");
             return __LINE__;
         }
     }
-#endif// #ifndef (CONFIG_AML_MTD)
 
     switch (toErase)
     {
