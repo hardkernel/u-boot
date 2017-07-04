@@ -28,6 +28,9 @@
 #include "../aml_lcd_common.h"
 #include "../aml_lcd_reg.h"
 
+//#define LCD_EXT_I2C_PORT_INIT     /* no need init i2c port here */
+//#define LCD_EXT_DEBUG_INFO
+
 #ifdef CONFIG_SYS_I2C_AML
 #define LCD_EXTERN_INDEX		1
 #define LCD_EXTERN_NAME			"i2c_tc101"
@@ -36,9 +39,10 @@
 #define LCD_EXTERN_I2C_ADDR		(0xfc >> 1) //7bit address
 #define LCD_EXTERN_I2C_BUS		AML_I2C_MASTER_A
 
+#ifdef LCD_EXT_I2C_PORT_INIT
 static unsigned aml_i2c_bus_tmp;
+#endif
 static struct lcd_extern_config_s *ext_config;
-extern int aml_i2c_xfer_slow(struct i2c_msg *msgs, int num);
 
 #define INIT_LEN        3
 static unsigned char i2c_init_table[][INIT_LEN] = {
@@ -123,34 +127,7 @@ static int lcd_extern_i2c_remove(void)
 	return ret;
 }
 
-static struct aml_lcd_extern_pinmux_s aml_lcd_extern_pinmux_set[] = {
-	{.reg = 5, .mux = ((1 << 6) | (1 << 7)),},
-};
-
-static struct aml_lcd_extern_pinmux_s aml_lcd_extern_pinmux_clr[] = {
-	{.reg = 6, .mux = ((1 << 6) | (1 << 7)),},
-	{.reg = 8, .mux = ((1 << 14) | (1 << 15)),},
-};
-
-static int lcd_extern_port_init(void)
-{
-	int i;
-	unsigned pinmux_reg, pinmux_data;
-
-	for (i = 0; i < ARRAY_SIZE(aml_lcd_extern_pinmux_clr); i++) {
-		pinmux_reg = aml_lcd_extern_pinmux_clr[i].reg;
-		pinmux_data = aml_lcd_extern_pinmux_clr[i].mux;
-		lcd_pinmux_clr_mask(pinmux_reg, pinmux_data);
-	}
-	for (i = 0; i < ARRAY_SIZE(aml_lcd_extern_pinmux_set); i++) {
-		pinmux_reg = aml_lcd_extern_pinmux_set[i].reg;
-		pinmux_data = aml_lcd_extern_pinmux_set[i].mux;
-		lcd_pinmux_set_mask(pinmux_reg, pinmux_data);
-	}
-
-	return 0;
-}
-
+#ifdef LCD_EXT_I2C_PORT_INIT
 static int lcd_extern_change_i2c_bus(unsigned aml_i2c_bus)
 {
 	int ret = 0;
@@ -161,17 +138,23 @@ static int lcd_extern_change_i2c_bus(unsigned aml_i2c_bus)
 
 	return ret;
 }
+#endif
 
 static int lcd_extern_power_on(void)
 {
 	int ret = 0;
+#ifdef LCD_EXT_I2C_PORT_INIT
 	extern struct aml_i2c_platform g_aml_i2c_plat;
-	aml_i2c_bus_tmp = g_aml_i2c_plat.master_no;
+#endif
 
-	lcd_extern_port_init();
+#ifdef LCD_EXT_I2C_PORT_INIT
+	aml_i2c_bus_tmp = g_aml_i2c_plat.master_no;
 	lcd_extern_change_i2c_bus(ext_config->i2c_bus);
+#endif
 	ret = lcd_extern_i2c_init();
+#ifdef LCD_EXT_I2C_PORT_INIT
 	lcd_extern_change_i2c_bus(aml_i2c_bus_tmp);
+#endif
 
 	return ret;
 }
@@ -179,14 +162,18 @@ static int lcd_extern_power_on(void)
 static int lcd_extern_power_off(void)
 {
 	int ret = 0;
+#ifdef LCD_EXT_I2C_PORT_INIT
 	extern struct aml_i2c_platform g_aml_i2c_plat;
+#endif
 
+#ifdef LCD_EXT_I2C_PORT_INIT
 	aml_i2c_bus_tmp = g_aml_i2c_plat.master_no;
-
-	lcd_extern_port_init();
 	lcd_extern_change_i2c_bus(ext_config->i2c_bus);
+#endif
 	ret = lcd_extern_i2c_remove();
+#ifdef LCD_EXT_I2C_PORT_INIT
 	lcd_extern_change_i2c_bus(aml_i2c_bus_tmp);
+#endif
 
 	return ret;
 }

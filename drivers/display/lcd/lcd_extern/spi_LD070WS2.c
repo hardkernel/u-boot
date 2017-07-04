@@ -60,19 +60,19 @@ static unsigned char init_off_table[] = {
 
 static void lcd_extern_set_csb(unsigned v)
 {
-	aml_lcd_gpio_set(ext_config->spi_gpio_cs, v);
+	aml_lcd_extern_set_gpio(ext_config->spi_gpio_cs, v);
 	udelay(SPI_DELAY);
 }
 
 static void lcd_extern_set_scl(unsigned v)
 {
-	aml_lcd_gpio_set(ext_config->spi_gpio_clk, v);
+	aml_lcd_extern_set_gpio(ext_config->spi_gpio_clk, v);
 	udelay(SPI_DELAY);
 }
 
 static void lcd_extern_set_sda(unsigned v)
 {
-	aml_lcd_gpio_set(ext_config->spi_gpio_data, v);
+	aml_lcd_extern_set_gpio(ext_config->spi_gpio_data, v);
 	udelay(SPI_DELAY);
 }
 
@@ -133,7 +133,7 @@ static int lcd_extern_spi_write(unsigned char *buf, int len)
 
 static int lcd_extern_power_cmd(unsigned char *init_table)
 {
-	int i = 0, len, gpio;
+	int i = 0, len;
 	int ret = 0;
 
 	len = ext_config->cmd_size;
@@ -152,9 +152,7 @@ static int lcd_extern_power_cmd(unsigned char *init_table)
 		} else if (init_table[i] == LCD_EXTERN_INIT_NONE) {
 			//do nothing, only for delay
 		} else if (init_table[i] == LCD_EXTERN_INIT_GPIO) {
-			gpio = aml_lcd_extern_get_gpio(init_table[i+1]);
-			if (gpio < LCD_GPIO_MAX)
-				aml_lcd_gpio_set(gpio, init_table[i+2]);
+			aml_lcd_extern_set_gpio(init_table[i+1], init_table[i+2]);
 		} else if (init_table[i] == LCD_EXTERN_INIT_CMD) {
 			ret = lcd_extern_spi_write(&init_table[i+1], (len-2));
 		} else {

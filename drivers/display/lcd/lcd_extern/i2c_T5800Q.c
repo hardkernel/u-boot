@@ -107,7 +107,7 @@ static int lcd_extern_reg_write(unsigned char reg, unsigned char value)
 
 static int lcd_extern_power_cmd(unsigned char *init_table)
 {
-	int i = 0, gpio, len;
+	int i = 0, len;
 	int ret = 0;
 
 	len = ext_config->cmd_size;
@@ -121,9 +121,7 @@ static int lcd_extern_power_cmd(unsigned char *init_table)
 		} else if (init_table[i] == LCD_EXTERN_INIT_NONE) {
 			//do nothing, only for delay
 		} else if (init_table[i] == LCD_EXTERN_INIT_GPIO) {
-			gpio = aml_lcd_extern_get_gpio(init_table[i+1]);
-			if (gpio < LCD_GPIO_MAX)
-				aml_lcd_gpio_set(gpio, init_table[i+2]);
+			aml_lcd_extern_set_gpio(init_table[i+1], init_table[i+2]);
 		} else if (init_table[i] == LCD_EXTERN_INIT_CMD) {
 			ret = lcd_extern_i2c_write(ext_config->i2c_addr,
 				&init_table[i+1], (len-2));
