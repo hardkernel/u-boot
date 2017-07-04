@@ -48,9 +48,9 @@ void write_sparse_image(block_dev_desc_t *dev_desc,
 	lbaint_t blk;
 	lbaint_t blkcnt;
 	lbaint_t blks;
-	uint32_t bytes_written = 0;
+	uint64_t bytes_written = 0;
 	unsigned int chunk;
-	unsigned int chunk_data_sz;
+	uint64_t chunk_data_sz;
 	uint32_t *fill_buf = NULL;
 	uint32_t fill_val;
 	sparse_header_t *sparse_header;
@@ -117,7 +117,7 @@ void write_sparse_image(block_dev_desc_t *dev_desc,
 				 sizeof(chunk_header_t));
 		}
 
-		chunk_data_sz = sparse_header->blk_sz * chunk_header->chunk_sz;
+		chunk_data_sz = (uint64_t)sparse_header->blk_sz * (uint64_t)chunk_header->chunk_sz;
 		blkcnt = chunk_data_sz / info->blksz;
 		switch (chunk_header->chunk_type)
 		{
@@ -234,7 +234,7 @@ void write_sparse_image(block_dev_desc_t *dev_desc,
 
 	debug("Wrote %d blocks, expected to write %d blocks\n",
 	      total_blocks, sparse_header->total_blks);
-	printf("........ wrote %u bytes to '%s'\n", bytes_written, part_name);
+	printf("........ wrote %u bytes to '%s'\n", (int)bytes_written, part_name);
 
 	if (total_blocks != sparse_header->total_blks)
 		fastboot_fail("sparse image write failure");
