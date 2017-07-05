@@ -97,7 +97,8 @@ struct _iptbl {
 #ifdef CONFIG_AML_NAND
 unsigned device_boot_flag = (unsigned)_AML_DEVICE_BOOT_FLAG_DEFAULT;
 #else
-unsigned device_boot_flag = (unsigned)EMMC_BOOT_FLAG;
+unsigned device_boot_flag = (unsigned)_AML_DEVICE_BOOT_FLAG_DEFAULT;
+/*unsigned device_boot_flag = (unsigned)EMMC_BOOT_FLAG;*/
 #endif
 bool is_partition_checked = false;
 

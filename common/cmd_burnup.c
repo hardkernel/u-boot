@@ -42,7 +42,7 @@ int store_read_ops(unsigned char *partition_name,unsigned char * buf, uint64_t o
         addr = (unsigned long)buf;
 
 #if CONFIG_AML_MTD
-        if (size & MtdAlignMask ) {
+        if ((size & MtdAlignMask) && (NAND_BOOT_FLAG == device_boot_flag )) {
                 MsgP("Rd:Up sz 0x%llx to align 0x%x\n", size, MtdAlignSz);
                 size = ((size + MtdAlignMask)>>MtdAlignBits) << MtdAlignBits;
         }
@@ -90,7 +90,7 @@ int store_write_ops(unsigned char *partition_name,unsigned char * buf, uint64_t 
         addr = (unsigned long)buf;
 
 #if CONFIG_AML_MTD
-        if (size & MtdAlignMask ) {
+        if ((size & MtdAlignMask) && (NAND_BOOT_FLAG == device_boot_flag )) {
                 MsgP("Wr:Up sz 0x%llx to align 0x%x\n", size, MtdAlignSz);
                 size = ((size + MtdAlignMask)>>MtdAlignBits) << MtdAlignBits;
         }

@@ -3760,6 +3760,8 @@ int aml_nand_init(struct aml_nand_chip *aml_chip)
 		}
 	} else {
 		printk("pre nand scan failed\n");
+		/* set device boot flag as emmc if nand failed*/
+		device_boot_flag = EMMC_BOOT_FLAG;
 		err = -ENXIO;
 		goto exit_error;
 	}

@@ -482,7 +482,7 @@ static int do_store_init(cmd_tbl_t * cmdtp, int flag, int argc, char * const arg
 	store_dbg("init_flag %d",init_flag);
 
 #if defined(CONFIG_AML_MTD)
-	device_boot_flag = NAND_BOOT_FLAG;
+	/*device_boot_flag = NAND_BOOT_FLAG;*/
 #endif
     if (device_boot_flag == _AML_DEVICE_BOOT_FLAG_DEFAULT ) {
 		i = get_device_boot_flag();
@@ -507,24 +507,12 @@ static int do_store_init(cmd_tbl_t * cmdtp, int flag, int argc, char * const arg
 				device_boot_flag = NAND_BOOT_FLAG;
 				ret = run_command(str, 0);
                 if (ret != 0) {
-#if	0
-                    if ((ret == NAND_INIT_FAILED) && (init_flag == STORE_BOOT_ERASE_ALL)) {
-						sprintf(str, "amlnf  init  %d ",4);
-						ret = run_command(str, 0);
-					}
-                    if (ret) {
-						store_msg("nand cmd %s failed,ret=%d ",cmd,ret);
-						return -1;
-					}
-					return 0;
-#else
 					return -1;
-#endif
                 }
                 return ret;
             }
             break;
-#endif
+#endif// #if defined(CONFIG_AML_NAND)
 #ifdef	CONFIG_AML_MTD
         case NAND_BOOT_FLAG:
             {
@@ -535,8 +523,8 @@ static int do_store_init(cmd_tbl_t * cmdtp, int flag, int argc, char * const arg
                     ret |= run_command("nand erase.chip", 0);
                 }
             }
-        break;
-#endif
+            return ret;
+#endif// #ifdef	CONFIG_AML_MTD
         case EMMC_BOOT_FLAG:
             {
                 store_dbg("MMC BOOT, %s %d \n",__func__,__LINE__);

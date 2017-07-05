@@ -756,12 +756,14 @@ int optimus_storage_init(int toErase)
         DWN_WRN("dtb is not loaded yet\n");
     }
     else{
-#ifndef CONFIG_AML_MTD
+#ifdef CONFIG_AML_MTD
+        if ( NAND_BOOT_FLAG == device_boot_flag ) {
+            extern int check_valid_dts(unsigned char *buffer);
+            ret =  check_valid_dts(dtbLoadedAddr);
+        } else
+#endif // #ifdef CONFIG_AML_MTD
         ret = get_partition_from_dts(dtbLoadedAddr);
-#else
-        extern int check_valid_dts(unsigned char *buffer);
-        ret =  check_valid_dts(dtbLoadedAddr);
-#endif// #ifndef (CONFIG_AML_MTD)
+
         if (ret) {
             DWN_ERR("Failed at check dts\n");
             return __LINE__;
