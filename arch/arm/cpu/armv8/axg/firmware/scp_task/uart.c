@@ -23,10 +23,7 @@
 #include <stdint.h>
 #include "task_apis.h"
 
-/* #define P_AO_UART_WFIFO                 (0xc81004c0) */
-/* #define P_AO_RTI_PIN_MUX_REG          (0xc8100014) */
-
-#define UART_PORT_CONS AO_UART_WFIFO
+#define UART_PORT_CONS (0xff803000 + (0x000 << 2))
 
 #define UART_STP_BIT UART_MODE_MASK_STP_1BIT
 #define UART_PRTY_BIT 0

@@ -27,7 +27,7 @@
 #ifndef CONFIG_IR_REMOTE_USE_PROTOCOL
 #define CONFIG_IR_REMOTE_USE_PROTOCOL 0
 #endif
-#if 0
+#if 1
 enum {
 	DECODEMODE_NEC = 0,
 	DECODEMODE_DUOKAN = 1,
@@ -224,10 +224,9 @@ unsigned bakeuAO_IR_DEC_LDR_REPEAT;
 
 static int ir_remote_init_32k_mode(void)
 {
-#if 0
 	//volatile unsigned int status,data_value;
-	int val = readl(AO_RTI_PIN_MUX_REG);
-	writel((val | (1 << 0)), AO_RTI_PIN_MUX_REG);
+	int val = readl(AO_RTI_PINMUX_REG0);
+	writel((val | (1 << 24)), AO_RTI_PINMUX_REG0);
 	set_remote_mode(CONFIG_IR_REMOTE_USE_PROTOCOL);
 	//status = readl(AO_MF_IR_DEC_STATUS);
 	readl(AO_MF_IR_DEC_STATUS);
@@ -237,7 +236,6 @@ static int ir_remote_init_32k_mode(void)
 	//step 2 : request nec_remote irq  & enable it
 #if CONFIG_IR_REMOTE_USE_PROTOCOL == 3
 	writel(readl(AO_IR_DEC_REG1)&(~(1<<15)),AO_IR_DEC_REG1);
-#endif
 #endif
 	return 0;
 }
@@ -269,17 +267,18 @@ static int init_remote(void)
 }
 #endif
 unsigned int usr_pwr_key = 0xffffffff;
-#if 0
 static int remote_detect_key(void)
 {
 	unsigned power_key;
 	int j;
+
 	if (((readl(AO_MF_IR_DEC_STATUS)) >> 3) & 0x1) { /*to judge the frame whether is effective or not*/
 			if (readl(AO_MF_IR_DEC_STATUS) & 0x1) {		  /*to judge the frame whether is repeat frame or not*/
 				readl(AO_MF_IR_DEC_FRAME);
 				return 0;
 			}
 			power_key = readl(AO_MF_IR_DEC_FRAME);
+
 			for (j = 0; j < CONFIG_IR_REMOTE_POWER_UP_KEY_CNT; j++) {
 					if ((power_key & IR_POWER_KEY_MASK) == kk[j])
 							return 1;
@@ -307,4 +306,3 @@ static int remote_detect_key(void)
 	return 0;
 
 }
-#endif
