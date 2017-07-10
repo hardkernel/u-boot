@@ -305,7 +305,7 @@ static const vout_set_t vout_sets[] = {
 		.height            = 1200,
 	},
 	{ /* VMODE_2160x1200p90hz */
-		.name			= "1920x1200p90hz",
+		.name			= "2160x1200p90hz",
 		.mode	 		= VMODE_2160x1200p90hz,
 		.width	 		= 2160,
 		.height 		= 1200,
