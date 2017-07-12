@@ -853,3 +853,554 @@ U_BOOT_CMD(
 	"display MMC info",
 	"- display info of the current MMC device"
 );
+
+#ifdef CONFIG_SUPPORT_EMMC_BOOT
+static int do_emmc(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+	int rc = 0;
+
+	if (argc != 3)
+		return	CMD_RET_USAGE;
+
+	if (strcmp(argv[1], "open") == 0) {
+		int dev = simple_strtoul(argv[2], NULL, 10);
+		struct mmc *mmc = find_mmc_device(dev);
+
+		if (!mmc)
+			goto out;
+
+		if (IS_SD(mmc)) {
+			printf("MMC%d device is SD.!!\n", dev);
+			return	CMD_RET_FAILURE;
+		}
+
+		rc = emmc_boot_open(mmc);
+
+		if (rc == 0) {
+			printf("eMMC OPEN Success.!!\n");
+			printf("\t\t\t!!!Notice!!!\n");
+			printf("!You must close eMMC boot Partition after all image writing!\n");
+			printf("!eMMC boot partition has continuity at image writing time.!\n");
+			printf("!So, Do not close boot partition, Before, all images is written.!\n");
+		} else {
+			printf("eMMC OPEN Failed.!!\n");
+			return	CMD_RET_FAILURE;
+		}
+	} else if (strcmp(argv[1], "close") == 0) {
+		int dev = simple_strtoul(argv[2], NULL, 10);
+		struct mmc *mmc = find_mmc_device(dev);
+
+		if (!mmc)
+			goto out;
+
+		if (IS_SD(mmc)) {
+			printf("MMC%d device is SD.!!\n", dev);
+			return	CMD_RET_FAILURE;
+		}
+
+		rc = emmc_boot_close(mmc);
+
+		if (rc == 0) {
+			printf("eMMC CLOSE Success.!!\n");
+		} else {
+			printf("eMMC CLOSE Failed.!!\n");
+			return	CMD_RET_FAILURE;
+		}
+	} else {
+		goto out;
+	}
+	return	CMD_RET_SUCCESS;
+out:
+	puts("No MMC device available\n");
+	return	CMD_RET_FAILURE;
+}
+
+U_BOOT_CMD(
+	emmc, 3, 0, do_emmc,
+	"Open/Close eMMC boot partition",
+	"open <device_num> \n"
+	"emmc close <device_num> \n"
+);
+
+#endif
+
+#ifdef CONFIG_FASTBOOT
+
+#include <memalign.h>
+
+#define	CHS_MODE	0
+#define	LBA_MODE	!(CHS_MODE)
+
+typedef struct
+{
+	uint	C_start, C_end;
+	uint	H_start, H_end;
+	uint	S_start, S_end;
+
+	uint	available_block;
+	uint	unit;
+	uint	total_block_count;
+
+	/* LBA or CHS mode */
+	uint	addr_mode;
+} SDInfo;
+
+typedef struct
+{
+	uchar	bootable;
+	uchar	partitionId;
+
+	uint	C_start, C_end;
+	uint	H_start, H_end;
+	uint	S_start, S_end;
+
+	uint	block_start;
+	uint	block_count;
+	uint	block_end;
+} PartitionInfo;
+
+#define	LBA_MODE_SIZE			(1023*254*63)
+
+static uint calc_unit(uint length, SDInfo sdInfo)
+{
+	if (sdInfo.addr_mode == CHS_MODE)
+		return ( (length / MOVI_BLK_SIZE / sdInfo.unit + 1 ) * sdInfo.unit);
+	else
+		return ( (length / MOVI_BLK_SIZE) );
+}
+
+static void encode_chs(uint C, uint H, uint S, uchar *result)
+{
+	*result++ = (uchar)   H;
+	*result++ = (uchar) ( S + ((C & 0x00000300) >> 2) );
+	*result   = (uchar) ( C & 0x000000FF );
+}
+
+static void encode_partitionInfo(PartitionInfo partInfo, uchar *result)
+{
+	*result++ = partInfo.bootable;
+
+	encode_chs(partInfo.C_start, partInfo.H_start, partInfo.S_start, result);
+	result +=3;
+	*result++ = partInfo.partitionId;
+
+	encode_chs(partInfo.C_end, partInfo.H_end, partInfo.S_end, result);
+	result += 3;
+
+	memcpy(result, (uchar *)&(partInfo.block_start), 4);
+	result += 4;
+
+	memcpy(result, (uchar *)&(partInfo.block_count), 4);
+}
+
+static void decode_partitionInfo(uchar *in, PartitionInfo *partInfo)
+{
+	partInfo->bootable	= *in;
+	partInfo->partitionId	= *(in + 4);
+
+	memcpy((uchar *)&(partInfo->block_start), (in + 8), 4);
+	memcpy((uchar *)&(partInfo->block_count), (in +12), 4);
+}
+
+static void get_SDInfo(int block_count, SDInfo *sdInfo)
+{
+	uint C, H, S;
+
+	uint C_max = 1023, H_max = 255, S_max = 63;
+	uint H_start = 1, S_start = 1;
+	uint diff_min = 0, diff = 0;
+
+	if(block_count >= LBA_MODE_SIZE)
+		sdInfo->addr_mode = LBA_MODE;
+	else
+		sdInfo->addr_mode = CHS_MODE;
+
+	if (sdInfo->addr_mode == CHS_MODE) {
+		diff_min = C_max;
+
+		for (H = H_start; H <= H_max; H++) {
+			for (S  = S_start; S <= S_max; S++) {
+				C = block_count / (H * S);
+
+				if ( (C <= C_max) ) {
+					diff = C_max - C;
+					if (diff <= diff_min) {
+						diff_min = diff;
+						sdInfo->C_end = C;
+						sdInfo->H_end = H;
+						sdInfo->S_end = S;
+					}
+				}
+			}
+		}
+	} else {
+		sdInfo->C_end = 1023;
+		sdInfo->H_end = 254;
+		sdInfo->S_end = 63;
+	}
+
+	sdInfo->C_start	= 0;
+	sdInfo->H_start	= 1;
+	sdInfo->S_start	= 1;
+
+	sdInfo->total_block_count	= block_count;
+	sdInfo->available_block		= sdInfo->C_end * sdInfo->H_end * sdInfo->S_end;
+	sdInfo->unit			= sdInfo->H_end * sdInfo->S_end;
+}
+
+static void make_partitionInfo(uint LBA_start, uint count, SDInfo sdInfo, PartitionInfo *partInfo)
+{
+	int	temp = 0;
+	int	part_start_blk;
+
+	partInfo->block_start = LBA_start;
+
+	if (sdInfo.addr_mode == CHS_MODE) {
+		partInfo->C_start	= partInfo->block_start / (sdInfo.H_end * sdInfo.S_end);
+		temp			= partInfo->block_start % (sdInfo.H_end * sdInfo.S_end);
+		partInfo->H_start	= temp / sdInfo.S_end;
+		partInfo->S_start	= temp % sdInfo.S_end + 1;
+
+		if (count == MOVI_BLK_END) {
+			part_start_blk 		= calc_unit(ANDROID_PART_START, sdInfo);
+			partInfo->block_end	= sdInfo.C_end * sdInfo.H_end * sdInfo.S_end - part_start_blk - 1;
+			partInfo->block_count	= partInfo->block_end - partInfo->block_start + 1;
+
+			partInfo->C_end = partInfo->block_end / sdInfo.unit;
+			partInfo->H_end = sdInfo.H_end - 1;
+			partInfo->S_end = sdInfo.S_end;
+		} else {
+			partInfo->block_count	= count;
+
+			partInfo->block_end	= partInfo->block_start + count - 1;
+			partInfo->C_end		= partInfo->block_end / sdInfo.unit;
+
+			temp			= partInfo->block_end % sdInfo.unit;
+			partInfo->H_end		= temp / sdInfo.S_end;
+			partInfo->S_end		= temp % sdInfo.S_end + 1;
+		}
+	} else {
+		partInfo->C_start	= 0;
+		partInfo->H_start	= 1;
+		partInfo->S_start	= 1;
+
+		partInfo->C_end		= 1023;
+		partInfo->H_end		= 254;
+		partInfo->S_end		= 63;
+
+		if (count == MOVI_BLK_END) {
+			part_start_blk 		= calc_unit(ANDROID_PART_START, sdInfo);
+			partInfo->block_end	= sdInfo.total_block_count - part_start_blk - 1;
+			partInfo->block_count	= partInfo->block_end - partInfo->block_start + 1;
+		} else {
+			partInfo->block_count	= count;
+			partInfo->block_end	= partInfo->block_start + count - 1;
+		}
+	}
+}
+
+static int make_mmc_partition(int total_block_count, uchar *mbr, int flag, char * const argv[])
+{
+	int		block_start = 0, block_offset;
+
+	SDInfo		sdInfo;
+	PartitionInfo	partInfo[4];
+
+	memset((uchar *)&sdInfo, 0x00, sizeof(SDInfo));
+
+	get_SDInfo(total_block_count, &sdInfo);
+
+	block_start = calc_unit(ANDROID_PART_START, sdInfo);
+
+	if (flag)
+		block_offset = calc_unit((uint)simple_strtoul(argv[3], NULL, 0)*SZ_1M, sdInfo);
+	else
+		block_offset = calc_unit((uint)PART_SIZE_SYSTEM, sdInfo);
+
+	partInfo[0].bootable	= 0x00;
+	partInfo[0].partitionId	= 0x83;
+
+	make_partitionInfo(block_start, block_offset, sdInfo, &partInfo[0]);
+
+	block_start += block_offset;
+	if (flag)
+		block_offset = calc_unit((uint)simple_strtoul(argv[4], NULL, 0)*SZ_1M, sdInfo);
+	else
+		block_offset = calc_unit((uint)PART_SIZE_USER_DATA, sdInfo);
+
+	partInfo[1].bootable	= 0x00;
+	partInfo[1].partitionId	= 0x83;
+
+	make_partitionInfo(block_start, block_offset, sdInfo, &partInfo[1]);
+
+	block_start += block_offset;
+	if (flag)
+		block_offset = calc_unit((uint)simple_strtoul(argv[5], NULL, 0)*SZ_1M, sdInfo);
+	else
+		block_offset = calc_unit((uint)PART_SIZE_CACHE, sdInfo);
+
+	partInfo[2].bootable	= 0x00;
+	partInfo[2].partitionId	= 0x83;
+
+	make_partitionInfo(block_start, block_offset, sdInfo, &partInfo[2]);
+
+	block_start += block_offset;
+	block_offset = MOVI_BLK_END;
+
+	partInfo[3].bootable	= 0x00;
+	partInfo[3].partitionId	= 0x0C;
+
+	make_partitionInfo(block_start, block_offset, sdInfo, &partInfo[3]);
+
+	memset(mbr, 0x00, sizeof(mbr));
+	mbr[510] = 0x55; mbr[511] = 0xAA;
+
+	encode_partitionInfo(partInfo[0], &mbr[0x1CE]);
+	encode_partitionInfo(partInfo[1], &mbr[0x1DE]);
+	encode_partitionInfo(partInfo[2], &mbr[0x1EE]);
+	encode_partitionInfo(partInfo[3], &mbr[0x1BE]);
+
+	return 0;
+}
+
+static int get_mmc_block_count(char *device_name)
+{
+	struct mmc *mmc;
+	int block_count = 0;
+	int dev_num;
+
+	dev_num = simple_strtoul(device_name, NULL, 0);
+
+	mmc = find_mmc_device(dev_num);
+
+	if (!mmc || !mmc->capacity) {
+		puts("No MMC device available\n");
+		return -1;
+	}
+
+	block_count = mmc->capacity / mmc->read_bl_len;
+
+	return block_count;
+}
+
+static int get_mmc_mbr(char *device_name, uchar *mbr)
+{
+	int rv;
+	struct mmc *mmc;
+	int dev_num;
+
+	dev_num = simple_strtoul(device_name, NULL, 0);
+
+	mmc = find_mmc_device(dev_num);
+	if (!mmc || !mmc->capacity) {
+		puts("No MMC device available\n");
+		return -1;
+	}
+
+	rv = mmc->block_dev.block_read(&mmc->block_dev, 0, 1, mbr);
+
+	if(rv == 1)
+		return 0;
+	else
+		return -1;
+}
+
+static int put_mmc_mbr(uchar *mbr, char *device_name)
+{
+	int rv;
+	struct mmc *mmc;
+	int dev_num;
+
+	dev_num = simple_strtoul(device_name, NULL, 0);
+
+	mmc = find_mmc_device(dev_num);
+	if (!mmc || !mmc->capacity) {
+		puts("No MMC device available\n");
+		return	-1;
+	}
+
+	rv = mmc->block_dev.block_write(&mmc->block_dev, 0, 1, mbr);
+
+	/*
+	 * TODO : set boot partition size for emmc
+	 * mmc->ext_csd.boot_size_multi = 0;
+	 */
+	mmc = init_mmc_device(dev_num, true);
+	if (!mmc) {
+		printf("Card NOT detected or Init Failed!!\n");
+		return	-1;
+	}
+
+	if(rv == 1)
+		return	0;
+	else
+		return	-1;
+}
+
+static int get_mmc_part_info(char *device_name, int part_num,
+	uint *block_start, uint *block_count, uchar *part_Id)
+{
+	int		rv;
+	PartitionInfo	partInfo;
+	ALLOC_CACHE_ALIGN_BUFFER(uchar, mbr, 512);
+
+	rv = get_mmc_mbr(device_name, mbr);
+	if(rv !=0)
+		return -1;
+
+	switch(part_num)
+	{
+		case 1:
+			decode_partitionInfo(&mbr[0x1BE], &partInfo);
+			*block_start	= partInfo.block_start;
+			*block_count	= partInfo.block_count;
+			*part_Id 	= partInfo.partitionId;
+			break;
+		case 2:
+			decode_partitionInfo(&mbr[0x1CE], &partInfo);
+			*block_start	= partInfo.block_start;
+			*block_count	= partInfo.block_count;
+			*part_Id 	= partInfo.partitionId;
+			break;
+		case 3:
+			decode_partitionInfo(&mbr[0x1DE], &partInfo);
+			*block_start	= partInfo.block_start;
+			*block_count	= partInfo.block_count;
+			*part_Id 	= partInfo.partitionId;
+			break;
+		case 4:
+			decode_partitionInfo(&mbr[0x1EE], &partInfo);
+			*block_start	= partInfo.block_start;
+			*block_count	= partInfo.block_count;
+			*part_Id 	= partInfo.partitionId;
+			break;
+		default:
+			return -1;
+	}
+	return 0;
+}
+
+static int print_mmc_part_info(int argc, char * const argv[])
+{
+	PartitionInfo	partInfo[4];
+
+	if (get_mmc_part_info(argv[2], 1, &(partInfo[0].block_start), &(partInfo[0].block_count),
+			&(partInfo[0].partitionId) ))	return	CMD_RET_FAILURE;
+
+	if (get_mmc_part_info(argv[2], 2, &(partInfo[1].block_start), &(partInfo[1].block_count),
+			&(partInfo[1].partitionId) ))	return	CMD_RET_FAILURE;
+
+	if (get_mmc_part_info(argv[2], 3, &(partInfo[2].block_start), &(partInfo[2].block_count),
+			&(partInfo[2].partitionId) ))	return	CMD_RET_FAILURE;
+
+	if (get_mmc_part_info(argv[2], 4, &(partInfo[3].block_start), &(partInfo[3].block_count),
+			&(partInfo[3].partitionId) ))	return	CMD_RET_FAILURE;
+
+	printf("\n");
+	printf("partion #    size(MB)     block start #    block count    partition_Id \n");
+
+	if ( (partInfo[0].block_start !=0) && (partInfo[0].block_count != 0) )
+		printf("   1        %6d         %8d        %8d          0x%.2X \n",
+			(partInfo[0].block_count / 2048), partInfo[0].block_start,
+			partInfo[0].block_count, partInfo[0].partitionId);
+
+	if ( (partInfo[1].block_start !=0) && (partInfo[1].block_count != 0) )
+		printf("   2        %6d         %8d        %8d          0x%.2X \n",
+			(partInfo[1].block_count / 2048), partInfo[1].block_start,
+			partInfo[1].block_count, partInfo[1].partitionId);
+
+	if ( (partInfo[2].block_start !=0) && (partInfo[2].block_count != 0) )
+		printf("   3        %6d         %8d        %8d          0x%.2X \n",
+			(partInfo[2].block_count / 2048), partInfo[2].block_start,
+			partInfo[2].block_count, partInfo[2].partitionId);
+
+	if ( (partInfo[3].block_start !=0) && (partInfo[3].block_count != 0) )
+		printf("   4        %6d         %8d        %8d          0x%.2X \n",
+			(partInfo[3].block_count / 2048), partInfo[3].block_start,
+			partInfo[3].block_count, partInfo[3].partitionId);
+
+	return	CMD_RET_SUCCESS;
+}
+
+static int create_mmc_fdisk(int argc, char * const argv[])
+{
+	int	rv;
+	int	total_block_count;
+	ALLOC_CACHE_ALIGN_BUFFER(uchar, mbr, 512);
+
+	memset(mbr, 0x00, 512);
+
+	total_block_count = get_mmc_block_count(argv[2]);
+	if (total_block_count < 0)
+		return CMD_RET_FAILURE;
+
+	make_mmc_partition(total_block_count, mbr, (argc==6?1:0), argv);
+
+	rv = put_mmc_mbr(mbr, argv[2]);
+	if (rv != 0)
+		return CMD_RET_FAILURE;
+
+	puts("\nfdisk is completed\n");
+
+	argv[1][1] = 'p';
+	print_mmc_part_info(argc, argv);
+	return	CMD_RET_SUCCESS;
+}
+
+static int do_fdisk(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+	if ( argc == 3 || argc == 6 ) {
+		if      ( strcmp(argv[1], "-c") == 0 )
+			return	create_mmc_fdisk(argc, argv);
+
+		else if ( strcmp(argv[1], "-p") == 0 )
+			return	print_mmc_part_info(argc, argv);
+	}
+	return	CMD_RET_USAGE;
+}
+
+U_BOOT_CMD (
+	fdisk, 6, 0, do_fdisk,
+	"Create(-c) or show(-p) partitions in mmc.",
+	"-c <device_num> [<systemt size(MB)> <user data size(MB)> <cache size(MB)>]\n"
+	"fdisk -p <device_num>\n"
+);
+
+
+#define	GB_BLK_CNT	((1024*1024*1024)/(512))
+
+static int do_get_mmc_size(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+	int total_blk_cnt = 0;
+
+	if ( argc == 2 )
+	{
+		total_blk_cnt = get_mmc_block_count(argv[1]);
+
+		if 	(total_blk_cnt > (200 * GB_BLK_CNT))	setenv("mmc_size_gb", "256");
+		else if (total_blk_cnt > (100 * GB_BLK_CNT))	setenv("mmc_size_gb", "128");
+		else if (total_blk_cnt > (50  * GB_BLK_CNT))	setenv("mmc_size_gb", "64");
+		else if (total_blk_cnt > (25  * GB_BLK_CNT))	setenv("mmc_size_gb", "32");
+		else if (total_blk_cnt > (10  * GB_BLK_CNT))	setenv("mmc_size_gb", "16");
+		else if (total_blk_cnt > (5   * GB_BLK_CNT))	setenv("mmc_size_gb", "8");
+		else if (total_blk_cnt > (3   * GB_BLK_CNT))	setenv("mmc_size_gb", "4");
+		else if (total_blk_cnt > (1   * GB_BLK_CNT))	setenv("mmc_size_gb", "2");
+		else						setenv("mmc_size_gb", "1");
+
+		if (total_blk_cnt <= 0)  {
+			setenv("mmc_size_gb", "0");
+			return	CMD_RET_FAILURE;
+		}
+		return	CMD_RET_SUCCESS;
+	}
+	return	CMD_RET_USAGE;
+}
+
+U_BOOT_CMD(
+	get_mmc_size, 2, 0, do_get_mmc_size,
+	"Check mmc device size.",
+	"<device_num>\n"
+	"MMC size writes to env variable mmc_size_gb [1, 2, 4, 8, 16, 32, 64, 128]\n"
+);
+
+#endif

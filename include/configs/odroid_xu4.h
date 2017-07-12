@@ -32,12 +32,80 @@
 
 #define CONFIG_SYS_MMC_MAX_DEVICE     2
 
+#if defined(CONFIG_FASTBOOT)
+/* Fastboot SDMMC Partition Table for ODROID(Exynos5422) */
+
+/* BL1		BLK#: 1    (0x0001) ~    30 (0x001E) */
+/* BL2		BLK#: 31   (0x001F) ~    62 (0x003E) */
+/* UBOOT	BLK#: 63   (0x003F) ~  1502 (0x05DE) */
+/* TZSW		BLK#: 1503 (0x05DF) ~  2014 (0x07DE) */
+/* UBOOT ENV	BLK#: 2015 (0x07DF) ~  2046 (0x07FE) */
+
+/* Attention! : eMMC BLK MAP is BLK#-1 in SDMMC Partition Table */
+
+#define	MOVI_BLK_SIZE			(512)
+#define	MOVI_BLK_END			(-1)
+
+#define	PART_SIZE_BL1			(SZ_1K * 15)
+#define	PART_SIZE_BL2			(SZ_1K * 16)
+#define	PART_SIZE_UBOOT			(SZ_1K * 720)
+#define	PART_SIZE_TZSW			(SZ_1K * 256)
+#define	PART_SIZE_ENV			(SZ_1K * 16)
+#define	PART_SIZE_KERNEL		(SZ_1M * 8)
+
+#define	PART_BL1_ST_BLK			(1)	/* Skip for MBR */
+#define	PART_BL2_ST_BLK			(PART_BL1_ST_BLK + \
+					(PART_SIZE_BL1 / MOVI_BLK_SIZE))
+#define	PART_UBOOT_ST_BLK		(PART_BL2_ST_BLK + \
+					(PART_SIZE_BL2 / MOVI_BLK_SIZE))
+#define	PART_TZSW_ST_BLK		(PART_UBOOT_ST_BLK + \
+					(PART_SIZE_UBOOT / MOVI_BLK_SIZE))
+#define	PART_ENV_ST_BLK			(PART_TZSW_ST_BLK + \
+					(PART_SIZE_TZSW / MOVI_BLK_SIZE))
+
+/* Android Partition size for ODROID */
+#define	PART_SIZE_SYSTEM		SZ_1G
+#define	PART_SIZE_USER_DATA		SZ_2G
+#define	PART_SIZE_CACHE			SZ_256M
+#define	ANDROID_PART_START		SZ_64M
+
+#endif	/* #if defined(CONFIG_FASTBOOT) */
+
 #define CONFIG_ENV_IS_IN_MMC
 
 #undef CONFIG_ENV_SIZE
 #undef CONFIG_ENV_OFFSET
-#define CONFIG_ENV_SIZE			(SZ_1K * 16)
-#define CONFIG_ENV_OFFSET		(SZ_1K * 3136) /* ~3 MiB offset */
+
+#if defined(CONFIG_FASTBOOT)
+	#define	CONFIG_ENV_SIZE		(PART_SIZE_ENV)
+	#define	CONFIG_ENV_OFFSET	(PART_ENV_ST_BLK * MOVI_BLK_SIZE)
+#else
+	#define CONFIG_ENV_SIZE		(SZ_1K * 16)
+	#define CONFIG_ENV_OFFSET	(SZ_1K * 3136) /* ~3 MiB offset */
+#endif
+
+/* Fastboot SDMMC Partition Table for ODROID(Exynos5422) */
+
+/* BL1		BLK#: 1    (0x0001) ~    30 (0x001E) */
+/* BL2		BLK#: 31   (0x001F) ~    62 (0x003E) */
+/* UBOOT	BLK#: 63   (0x003F) ~  1502 (0x05DE) */
+/* TZSW		BLK#: 1503 (0x05DF) ~  2014 (0x07DE) */
+/* UBOOT ENV	BLK#: 2015 (0x07DF) ~  2046 (0x07FE) */
+#define	UBOOT_ENV_ERASE	\
+	"mw.l ${loadaddr} 0 4000;"	\
+	"mmc dev 0;  mmc write ${loadaddr} 0x07df 0x0020;mmc dev 0\0"
+
+#define	UBOOT_COPY_SD2EMMC	\
+	"mmc dev 0;"		\
+	"mmc read  ${loadaddr} 0x0001 0x07de;mmc dev 1;emmc open  1;"	\
+	"mmc write ${loadaddr} 0x0000 0x07de;emmc close 1;mmc dev 0;"	\
+	"mmc dev 1;  mmc write ${loadaddr} 0x07df 0x0020;mmc dev 0\0"	
+
+#define	UBOOT_COPY_EMMC2SD	\
+	"mmc dev 0;"		\
+	"emmc open 0;mmc read  ${loadaddr} 0x0000 0x07de;emmc close 0;"	\
+	"mmc dev 1;  mmc write ${loadaddr} 0x0001 0x07de;mmc dev 0;"	\
+	"mmc dev 1;  mmc write ${loadaddr} 0x07df 0x0020;mmc dev 0\0"	
 
 #define CONFIG_SYS_INIT_SP_ADDR        (CONFIG_SYS_LOAD_ADDR - 0x1000000)
 
@@ -84,15 +152,15 @@
 	"u-boot raw 0x3e 0x800 mmcpart 1;" \
 	"bl1 raw 0x0 0x1e mmcpart 1;"      \
 	"bl2 raw 0x1e 0x1d mmcpart 1;"     \
-	"tzsw raw 0x83e 0x200 mmcpart 1;"  \
-	"params.bin raw 0x1880 0x20\0"
+	"tzsw raw 0x5de 0x200 mmcpart 1;"  \
+	"params.bin raw 0x7df 0x20\0"
 
 #define CONFIG_DFU_ALT_BOOT_SD   \
 	"u-boot raw 0x3f 0x800;" \
 	"bl1 raw 0x1 0x1e;"      \
 	"bl2 raw 0x1f 0x1d;"     \
-	"tzsw raw 0x83f 0x200;"  \
-	"params.bin raw 0x1880 0x20\0"
+	"tzsw raw 0x5df 0x200;"  \
+	"params.bin raw 0x7df 0x20\0"
 
 /* Enable: board/samsung/common/misc.c to use set_dfu_alt_info() */
 #define CONFIG_MISC_COMMON
@@ -116,7 +184,7 @@
 	EXYNOS_FDTFILE_SETTING \
 	MEM_LAYOUT_ENV_SETTINGS \
 	BOOTENV \
-	"bootdelay=0\0" \
+	"bootdelay=1\0" \
 	"rootfstype=ext4\0" \
 	"console=" CONFIG_DEFAULT_CONSOLE \
 	"fdtfile=exynos5422-odroidxu4.dtb\0" \
@@ -126,6 +194,10 @@
 	"mmcbootpart=1\0" \
 	"mmcrootpart=2\0" \
 	"dfu_alt_system="CONFIG_DFU_ALT_SYSTEM \
-	"dfu_alt_info=Autoset by THOR/DFU command run.\0"
+	"dfu_alt_info=Autoset by THOR/DFU command run.\0" \
+	"loadaddr=0x50000000\0" \
+	"env_erase="UBOOT_ENV_ERASE \
+	"copy_uboot_sd2emmc="UBOOT_COPY_SD2EMMC \
+	"copy_uboot_emmc2sd="UBOOT_COPY_EMMC2SD
 
 #endif	/* __CONFIG_H */
