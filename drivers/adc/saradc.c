@@ -188,6 +188,7 @@ int saradc_probe(void)
 {
 	int ret;
 	int len;
+	int elems;
 	int parent_offset;
 	char *fdt_addr;
 	u32 *reg_addr;
@@ -226,8 +227,16 @@ int saradc_probe(void)
 		*  To avoid error "-Werror=int-to-pointer" when this code is compiled,
 		*  and use the variable of type 'unsigned long' to save the address, then cast 'unsigned long' to 'pointer' type."
 		*/
-		temp_addr = fdt32_to_cpu(reg_addr[5]); /*big-endian to little-endian*/
-		saradc->saradc_clk_addr = (u32 __iomem *)(temp_addr & 0xffffffff);
+		elems = len / sizeof(u32);
+		if (elems == 4)
+			saradc->saradc_clk_addr = (u32 __iomem *)AO_SAR_CLK;
+		else if (elems == 8) {
+			temp_addr = fdt32_to_cpu(reg_addr[5]); /*big-endian to little-endian*/
+			saradc->saradc_clk_addr = (u32 __iomem *)(temp_addr & 0xffffffff);
+		} else {
+			printf("saradc: invalid size of property 'reg'\n");
+			return -1;
+		}
 		temp_addr = fdt32_to_cpu(reg_addr[1]); /*big-endian to little-endian*/
 		saradc->saradc_base_addr = (u32 __iomem *)(temp_addr & 0xffffffff);
 #endif
