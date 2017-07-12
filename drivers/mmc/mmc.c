@@ -1841,6 +1841,24 @@ int mmc_initialize(bd_t *bis)
 	print_mmc_devices(',');
 #endif
 
+#if defined(CONFIG_TARGET_ODROID_XU3) || defined(CONFIG_TARGET_ODROID_XU4)
+	struct mmc *mmc;
+	int err, dev;
+
+	for (dev = 0; dev < CONFIG_SYS_MMC_MAX_DEVICE; dev++) {
+		mmc = find_mmc_device(dev);
+		if (mmc) {
+			err = mmc_init(mmc);
+		} else {
+			/* Can not find no more channels */
+			break;
+		}
+		if (err)
+			return err;
+		printf("MMC Device %d (%s): ", dev, IS_SD(mmc) ? " SD " : "eMMC");
+		print_size(mmc->capacity, "\n");
+	}
+#endif
 	mmc_do_preinit();
 	return 0;
 }
@@ -1877,4 +1895,50 @@ int mmc_set_bkops_enable(struct mmc *mmc)
 
 	return 0;
 }
+#endif
+
+#ifdef CONFIG_SUPPORT_EMMC_BOOT
+int emmc_boot_open(struct mmc *mmc)
+{
+	int err;
+	struct mmc_cmd cmd;
+
+	/* Boot ack enable, boot partition enable , boot partition access */
+	cmd.cmdidx = MMC_CMD_SWITCH;
+	cmd.resp_type = MMC_RSP_R1b;
+	cmd.cmdarg = ((3<<24)|(179<<16)|(((1<<6)|(1<<3)|(1<<0))<<8));
+
+	err = mmc_send_cmd(mmc, &cmd, NULL);
+	if (err)
+		return err;
+
+	/* 4bit transfer mode at booting time. */
+	cmd.cmdidx = MMC_CMD_SWITCH;
+	cmd.resp_type = MMC_RSP_R1b;
+	cmd.cmdarg = ((3<<24)|(177<<16)|((1<<0)<<8));
+
+	err = mmc_send_cmd(mmc, &cmd, NULL);
+	if (err)
+		return err;
+
+	return 0;
+}
+
+int emmc_boot_close(struct mmc *mmc)
+{
+	int err;
+	struct mmc_cmd cmd;
+
+	/* Boot ack enable, boot partition enable , boot partition access */
+	cmd.cmdidx = MMC_CMD_SWITCH;
+	cmd.resp_type = MMC_RSP_R1b;
+	cmd.cmdarg = ((3<<24)|(179<<16)|(((1<<6)|(1<<3)|(0<<0))<<8));
+
+	err = mmc_send_cmd(mmc, &cmd, NULL);
+	if (err)
+		return err;
+
+	return 0;
+}
+
 #endif
