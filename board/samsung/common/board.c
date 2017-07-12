@@ -29,6 +29,7 @@
 #include <samsung/misc.h>
 #include <dm/pinctrl.h>
 #include <dm.h>
+#include <mmc.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -350,6 +351,17 @@ void reset_misc(void)
 			"samsung,emmc-reset");
 	if (node < 0)
 		return;
+
+#if defined(CONFIG_TARGET_ODROID_XU3) || defined(CONFIG_TARGET_ODROID_XU4)
+	/* eMMC hardware reset enable */
+	{
+		struct mmc *mmc = find_mmc_device(0);
+		if (mmc) {
+			if (!mmc_init(mmc) && !IS_SD(mmc))
+				mmc_set_rst_n_function(mmc, 1);
+		}
+	}
+#endif
 
 	gpio_request_by_name_nodev(gd->fdt_blob, node, "reset-gpio", 0, &gpio,
 				   GPIOD_IS_OUT);
