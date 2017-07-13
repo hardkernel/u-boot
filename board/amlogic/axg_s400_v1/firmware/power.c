@@ -167,6 +167,28 @@ void pwm_set_voltage(unsigned int id, unsigned int voltage)
 	_udelay(200);
 }
 
+static void gpio_set_vcc5v_power(char is_power_on)
+{
+       if (is_power_on) {
+			   clrbits_le32(P_AO_GPIO_O_EN_N, (1<<13));
+			   setbits_le32(P_AO_GPIO_O_EN_N, (1<<29));
+	   } else {
+			   clrbits_le32(P_AO_GPIO_O_EN_N, (1<<13));
+			   clrbits_le32(P_AO_GPIO_O_EN_N, (1<<29));
+	   }
+}
+
+static void gpio_set_vcc3_3_power(char is_power_on)
+{
+       if (is_power_on) {
+			   clrbits_le32(P_AO_GPIO_O_EN_N, (1<<12));
+			   clrbits_le32(P_AO_GPIO_O_EN_N, (1<<28));
+	   } else {
+			   clrbits_le32(P_AO_GPIO_O_EN_N, (1<<12));
+			   setbits_le32(P_AO_GPIO_O_EN_N, (1<<28));
+	   }
+}
+
 void power_init(int mode)
 {
 	unsigned int reg;
@@ -180,4 +202,6 @@ void power_init(int mode)
 	pwm_set_voltage(pwm_ao_d, CONFIG_VDDEE_INIT_VOLTAGE);
 	pwm_init(pwm_ao_b);
 	pwm_init(pwm_ao_d);
+	gpio_set_vcc5v_power(1);
+	gpio_set_vcc3_3_power(1);
 }
