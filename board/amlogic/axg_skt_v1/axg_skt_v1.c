@@ -414,6 +414,21 @@ void amlogic_pcie_disable(void)
 #endif
 
 
+#ifdef CONFIG_AML_WIFI_EN_INIT
+static void wifi_init_enable_pin(void)
+{
+	int ret;
+
+	ret = gpio_request(CONFIG_AML_GPIO_WIFI_EN,
+		CONFIG_AML_GPIO_WIFI_EN_NAME);
+	if (ret && ret != -EBUSY) {
+		printf("gpio: requesting pin %u failed\n", CONFIG_AML_GPIO_WIFI_EN);
+		return;
+	}
+	gpio_direction_output(CONFIG_AML_GPIO_WIFI_EN, 1);
+}
+#endif
+
 #ifdef CONFIG_AML_HDMITX20
 static void hdmi_tx_set_hdmi_5v(void)
 {
@@ -479,6 +494,10 @@ int board_init(void)
 {
 #ifdef CONFIG_AML_PCIE
 	pcie_init_reset_pin();
+#endif
+
+#ifdef CONFIG_AML_WIFI_EN_INIT
+	wifi_init_enable_pin();
 #endif
 
 #ifdef CONFIG_AML_V2_FACTORY_BURN
