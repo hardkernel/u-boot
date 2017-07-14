@@ -175,6 +175,7 @@ obj-$(CONFIG_CMD_REISER) += cmd_reiser.o
 obj-$(CONFIG_SANDBOX) += cmd_sandbox.o
 obj-$(CONFIG_CMD_SATA) += cmd_sata.o
 obj-$(CONFIG_CMD_SF) += cmd_sf.o
+obj-$(CONFIG_CMD_SHA2) += cmd_sha2.o
 obj-$(CONFIG_CMD_SCSI) += cmd_scsi.o
 obj-$(CONFIG_CMD_SHA1SUM) += cmd_sha1sum.o
 obj-$(CONFIG_CMD_SETEXPR) += cmd_setexpr.o
