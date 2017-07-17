@@ -44,6 +44,9 @@ static void mmu_setup(void)
 #else
 		ulong end = bd->bi_dram[i].start + bd->bi_dram[i].size;
 #endif
+		if ((end-start) < SECTION_SIZE) {
+			end = start + SECTION_SIZE;
+		}
 		for (j = start >> SECTION_SHIFT;
 		     j < end >> SECTION_SHIFT; j++) {
 			set_pgtable_section(page_table, j, j << SECTION_SHIFT,
