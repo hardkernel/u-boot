@@ -38,7 +38,6 @@ enum CVBS_MODE_e
 
 unsigned int cvbs_mode = VMODE_MAX;
 
-static cpu_id_t cpu_id;
 /*----------------------------------------------------------------------------*/
 // interface for registers of soc
 
@@ -151,38 +150,38 @@ static int check_cpu_type(unsigned int cpu_type)
 
 static bool inline is_equal_after_meson_cpu(unsigned int id)
 {
-	return (cpu_id.family_id >= id)?1:0;
+	return (get_cpu_id().family_id >= id)?1:0;
 }
 
 static bool inline is_meson_gxl_cpu(void)
 {
-	return (cpu_id.family_id == MESON_CPU_MAJOR_ID_GXL)?
+	return (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_GXL)?
 		1:0;
 }
 
 static bool inline is_meson_txl_cpu(void)
 {
-	return (cpu_id.family_id == MESON_CPU_MAJOR_ID_TXL)?
+	return (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_TXL)?
 		1:0;
 }
 
 static bool inline is_meson_gxm_cpu(void)
 {
-	return (cpu_id.family_id == MESON_CPU_MAJOR_ID_GXM)?
+	return (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_GXM)?
 		1:0;
 
 }
 static bool inline is_meson_gxl_package_905X(void)
 {
-	return ((cpu_id.family_id == MESON_CPU_MAJOR_ID_GXL) &&
-		(cpu_id.package_id == MESON_CPU_PACKAGE_ID_905X))?
+	return ((get_cpu_id().family_id == MESON_CPU_MAJOR_ID_GXL) &&
+		(get_cpu_id().package_id == MESON_CPU_PACKAGE_ID_905X))?
 		1:0;
 }
 
 static bool inline is_meson_gxl_package_905L(void)
 {
-	return ((cpu_id.family_id == MESON_CPU_MAJOR_ID_GXL) &&
-		(cpu_id.package_id == MESON_CPU_PACKAGE_ID_905L))?
+	return ((get_cpu_id().family_id == MESON_CPU_MAJOR_ID_GXL) &&
+		(get_cpu_id().package_id == MESON_CPU_PACKAGE_ID_905L))?
 		1:0;
 }
 
@@ -700,8 +699,6 @@ void cvbs_show_valid_vmode(void)
 
 void cvbs_init(void)
 {
-	cpu_id = get_cpu_id();
-
 #ifdef CONFIG_CVBS_PERFORMANCE_COMPATIBILITY_SUPPORT
 	cvbs_performance_config();
 #endif

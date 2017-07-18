@@ -407,6 +407,9 @@ int board_late_init(void)
 	hdmi_tx_set_hdmi_5v();
 	hdmi_tx_init();
 #endif
+#ifdef CONFIG_AML_CVBS
+	run_command("cvbs init", 0);
+#endif
 #ifdef CONFIG_AML_LCD
 	lcd_probe();
 #endif
