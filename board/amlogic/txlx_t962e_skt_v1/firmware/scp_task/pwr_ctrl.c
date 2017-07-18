@@ -188,21 +188,35 @@ static void power_on_ddr(void)
 	aml_update_bits(AO_GPIO_O_EN_N, 1 << 27, 1 << 27);
 	_udelay(10000);
 }
-static void power_off_ee(void)
+
+/*timing request:
+ *poweroff vddio3.3v-->delay 20ms-->poweroff vddee
+ */
+static void power_off_vddee(void)
 {
-	return;
+	unsigned int val;
+
+	/*set test n output low level */
+	_udelay(10000);/*the other 10ms in power_off_at_32k()*/
 	power_switch_to_ee(OFF);
-	aml_update_bits(AO_GPIO_O_EN_N, 1 << 8, 0);
-	aml_update_bits(AO_GPIO_O_EN_N, 1 << 24, 0);
+	val = readl(AO_GPIO_O_EN_N);
+	val &= ~(0x1 << 31);
+	writel(val, AO_GPIO_O_EN_N);
+
 }
 
-static void power_on_ee(void)
+/*timing request:
+ *poweron vddee-->delay 20ms-->poweron vddio3.3v
+ */
+static void power_on_vddee(void)
 {
-	return;
-	aml_update_bits(AO_GPIO_O_EN_N, 1 << 8, 0);
-	aml_update_bits(AO_GPIO_O_EN_N, 1 << 24, 1 << 24);
-	_udelay(10000);
-	_udelay(10000);
+	unsigned int val;
+
+	/*set test n output high level */
+	val = readl(AO_GPIO_O_EN_N);
+	val |= 0x1 << 31;
+	writel(val, AO_GPIO_O_EN_N);
+	_udelay(10000);/*the other 10ms in power_on_at_32k()*/
 }
 
 static void power_off_at_32k(unsigned int suspend_from)
@@ -213,13 +227,15 @@ static void power_off_at_32k(unsigned int suspend_from)
 	_udelay(5000);
 	pwm_set_voltage(pwm_ao_b, CONFIG_VDDEE_SLEEP_VOLTAGE);	/* reduce power */
 	if (suspend_from == SYS_POWEROFF) {
-		power_off_ee();
+		power_off_vddee();
 		power_off_ddr();
 	}
 }
 
 static void power_on_at_32k(unsigned int suspend_from)
 {
+	if (suspend_from == SYS_POWEROFF)
+		power_on_vddee();
 	pwm_set_voltage(pwm_ao_b, CONFIG_VDDEE_INIT_VOLTAGE);
 	_udelay(10000);
 	power_on_3v3_5v();
@@ -229,11 +245,8 @@ static void power_on_at_32k(unsigned int suspend_from)
 	_udelay(10000);
 	power_on_usb5v();
 
-	if (suspend_from == SYS_POWEROFF) {
+	if (suspend_from == SYS_POWEROFF)
 		power_on_ddr();
-		power_on_ee();
-
-	}
 }
 
 void get_wakeup_source(void *response, unsigned int suspend_from)
