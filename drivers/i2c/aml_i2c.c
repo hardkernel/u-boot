@@ -19,6 +19,11 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
+#include <common.h>
+#include <dm.h>
+#include <errno.h>
+#include <fdtdec.h>
+#include <i2c.h>
 #include <linux/types.h>
 //#include <linux/mtd/compat.h>
 #include <asm-generic/errno.h>
@@ -49,7 +54,10 @@ do {												\
 		printf(fmt,##args); 				 \
 }while(0)
 
+extern struct aml_i2c_platform *g_aml_i2c_plat;
+struct aml_i2c_platform *g_i2c_ports;
 static unsigned char g_bAmlogicI2CInitialized = 0; //I2C initialized flag
+static unsigned char g_cur_bus_num = 0;
 
 static struct aml_i2c g_aml_i2c_data = {
 	.i2c_debug     = 0,
@@ -472,7 +480,7 @@ int aml_i2c_xfer(struct i2c_msg *msgs,
 
 	if (0 == g_bAmlogicI2CInitialized) {
 		return -ENXIO; //device not initialized
-		}
+	}
 
 	struct aml_i2c *i2c = &g_aml_i2c_data;
 	struct i2c_msg * p=0;
@@ -642,50 +650,50 @@ static const unsigned long g_aml_i2c_reg_start[] = {
 #endif
 };
 
-static int __i2c_init_flag = 0;
-int aml_i2c_init(void)
+int aml_i2c_init_port(struct aml_i2c_platform *plat)
 {
-	extern struct aml_i2c_platform g_aml_i2c_plat;
 
-	struct aml_i2c_platform *plat = &g_aml_i2c_plat;
 	struct aml_i2c *i2c = &g_aml_i2c_data;
-
-    if (__i2c_init_flag) {
-        return 1;
-    }
 
 	if (plat == NULL)
 	{
-	  printf("\nERROR! struct aml_i2c_platform *plat is a NULL pointer!\n");
-	  return	-1;
+		printf("\nERROR! struct aml_i2c_platform *plat is a NULL pointer!\n");
+		return	-1;
 	}
 
 	i2c->ops = &g_aml_i2c_m1_ops;
 	i2c->master_no = plat->master_no;
+
 	i2c->use_pio = plat->use_pio;
 	AML_I2C_ASSERT((i2c->master_no >= 0) && (i2c->master_no <= 4));
 
 	/*master a or master b*/
-	  if (i2c->master_no >= ARRAY_SIZE(g_aml_i2c_reg_start))
+	if (i2c->master_no >= ARRAY_SIZE(g_aml_i2c_reg_start))
 	{
-	  printf("\nERROR!	overflow: i2c->master_no = %d\n", i2c->master_no);
-	  return	-1;
+		printf("\nERROR!	overflow: i2c->master_no = %d\n", i2c->master_no);
+		return	-1;
 	}
 
+	printf("%s init regs for %d\n", __func__, i2c->master_no);
 	i2c->master_regs = (struct aml_i2c_reg_master __iomem*)(g_aml_i2c_reg_start[i2c->master_no]);
 
 	AML_I2C_ASSERT(i2c->master_regs);
 	AML_I2C_ASSERT(plat);
+
 	aml_i2c_set_platform_data(i2c, plat);
+	aml_i2c_xfer_prepare(i2c);
 
 	aml_i2c_hw_init(i2c , i2c->use_pio);
 
 	g_bAmlogicI2CInitialized = 1;
 
-   /* __i2c_init_flag = 1;*/
 	return 0;
 }
 
+int aml_i2c_init(void)
+{
+	return aml_i2c_init_port(g_i2c_ports + g_cur_bus_num);
+}
 
 /*****************************
  ** add by wch for cmd_i2c **
@@ -941,9 +949,8 @@ void i2c_init(int speed, int slaveaddr)
 {
 	#define AML_I2C_SPPED_400K 400000		 //The initial value of amlogic i2c speed
 
-	extern struct aml_i2c_platform g_aml_i2c_plat;
-    g_aml_i2c_plat.master_i2c_speed = AML_I2C_SPPED_400K;
-    aml_i2c_init();
+	/*g_aml_i2c_plat[g_cur_bus_num].master_i2c_speed = AML_I2C_SPPED_400K;*/
+	aml_i2c_init();
 }
 
 
@@ -955,8 +962,7 @@ void i2c_init(int speed, int slaveaddr)
 unsigned int i2c_get_bus_speed(void)
 {
 
-	extern struct aml_i2c_platform g_aml_i2c_plat;
-	return g_aml_i2c_plat.master_i2c_speed;
+	return g_i2c_ports[g_cur_bus_num].master_i2c_speed;
 }
 
 
@@ -974,11 +980,9 @@ int i2c_set_bus_speed(unsigned int speed)
 #define AML_I2C_SPPED_300K			300000
 #define AML_I2C_SPPED_400K			400000
 */
-	extern struct aml_i2c_platform g_aml_i2c_plat;
-
 	if ((speed == 50000) || (speed == 100000) || (speed == 200000) || (speed == 300000) || (speed == 400000))
-    {
-		g_aml_i2c_plat.master_i2c_speed = speed;
+	{
+		g_i2c_ports[g_cur_bus_num].master_i2c_speed = speed;
 		aml_i2c_init();
 		return 0;
 	}
@@ -1023,7 +1027,7 @@ int aml_i2c_transfer(int adap_num,struct i2c_msg *msgs,
 
 	if (0 == g_bAmlogicI2CInitialized) {
 		return -ENXIO; //device not initialized
-		}
+	}
 
 	g_aml_i2c_data.master_no = adap_num;
 	struct aml_i2c *i2c = &g_aml_i2c_data;
@@ -1071,4 +1075,32 @@ int aml_i2c_transfer(int adap_num,struct i2c_msg *msgs,
 		return ret;
 	}
 }
-
+unsigned int i2c_get_bus_num()
+{
+	return g_i2c_ports[g_cur_bus_num].master_no;
+}
+/*
+ * cmd: i2c dev
+ */
+int i2c_set_bus_num(unsigned int busnum)
+{
+	int i = 0;
+	for (;g_i2c_ports[i].master_i2c_speed > 0;i++) {
+		if (g_i2c_ports[i].master_no == busnum) {
+			g_cur_bus_num = i;
+			break;
+		}
+	}
+	if (g_i2c_ports[i].master_i2c_speed == 0 ) {
+		printf("%s no %d busnum enable\n", __func__, busnum);
+		return 0;
+	}
+	printf("%s i2c sel %d bus\n", __func__, busnum);
+	aml_i2c_init_port(&g_i2c_ports[i]);
+	return 0;
+}
+void aml_i2c_set_ports(struct aml_i2c_platform *i2c_plat)
+{
+	g_i2c_ports = i2c_plat;
+	aml_i2c_init();
+}

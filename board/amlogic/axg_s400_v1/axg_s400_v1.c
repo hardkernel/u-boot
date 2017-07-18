@@ -275,58 +275,54 @@ int board_mmc_init(bd_t	*bis)
 //	board_mmc_register(SDIO_PORT_B1);
 	return 0;
 }
+#endif
 
 #ifdef CONFIG_SYS_I2C_AML
-#if 0
-static void board_i2c_set_pinmux(void){
-	/*********************************************/
-	/*                | I2C_Master_AO        |I2C_Slave            |       */
-	/*********************************************/
-	/*                | I2C_SCK                | I2C_SCK_SLAVE  |      */
-	/* GPIOAO_4  | [AO_PIN_MUX: 6]     | [AO_PIN_MUX: 2]   |     */
-	/*********************************************/
-	/*                | I2C_SDA                 | I2C_SDA_SLAVE  |     */
-	/* GPIOAO_5  | [AO_PIN_MUX: 5]     | [AO_PIN_MUX: 1]   |     */
-	/*********************************************/
-
-	//disable all other pins which share with I2C_SDA_AO & I2C_SCK_AO
-	clrbits_le32(P_AO_RTI_PIN_MUX_REG, ((1<<2)|(1<<24)|(1<<1)|(1<<23)));
-	//enable I2C MASTER AO pins
-	setbits_le32(P_AO_RTI_PIN_MUX_REG,
-	(MESON_I2C_MASTER_AO_GPIOAO_4_BIT | MESON_I2C_MASTER_AO_GPIOAO_5_BIT));
-
-	udelay(10);
+struct aml_i2c_platform g_aml_i2c_plat[] = {
+	{
+		.wait_count         = 1000000,
+		.wait_ack_interval  = 5,
+		.wait_read_interval = 5,
+		.wait_xfer_interval = 5,
+		.master_no          = AML_I2C_MASTER_AO,
+		.use_pio            = 0,
+		.master_i2c_speed   = CONFIG_SYS_I2C_SPEED,
+		.master_ao_pinmux = {
+			.scl_reg    = (unsigned long)MESON_I2C_MASTER_AO_GPIOAO_10_REG,
+			.scl_bit    = MESON_I2C_MASTER_AO_GPIOAO_10_BIT,
+			.sda_reg    = (unsigned long)MESON_I2C_MASTER_AO_GPIOAO_11_REG,
+			.sda_bit    = MESON_I2C_MASTER_AO_GPIOAO_11_BIT,
+		}
+	},
+	{
+		.wait_count         = 1000000,
+		.wait_ack_interval  = 5,
+		.wait_read_interval = 5,
+		.wait_xfer_interval = 5,
+		.master_no          = AML_I2C_MASTER_B,
+		.use_pio            = 0,
+		.master_i2c_speed   = CONFIG_SYS_I2C_SPEED,
+		.master_ao_pinmux = {
+			.scl_reg    = (unsigned long)MESON_I2C_MASTER_B_GPIOZ_8_REG,
+			.scl_bit    = MESON_I2C_MASTER_B_GPIOZ_8_BIT,
+			.sda_reg    = (unsigned long)MESON_I2C_MASTER_B_GPIOZ_9_REG,
+			.sda_bit    = MESON_I2C_MASTER_B_GPIOZ_9_BIT,
+		}
+	},
+	/* sign of end */
+	{.master_i2c_speed=0},
 };
-#endif
-struct aml_i2c_platform g_aml_i2c_plat = {
-	.wait_count         = 1000000,
-	.wait_ack_interval  = 5,
-	.wait_read_interval = 5,
-	.wait_xfer_interval = 5,
-	.master_no          = AML_I2C_MASTER_AO,
-	.use_pio            = 0,
-	.master_i2c_speed   = AML_I2C_SPPED_400K,
-	.master_ao_pinmux = {
-		.scl_reg    = (unsigned long)MESON_I2C_MASTER_AO_GPIOAO_4_REG,
-		.scl_bit    = MESON_I2C_MASTER_AO_GPIOAO_4_BIT,
-		.sda_reg    = (unsigned long)MESON_I2C_MASTER_AO_GPIOAO_5_REG,
-		.sda_bit    = MESON_I2C_MASTER_AO_GPIOAO_5_BIT,
-	}
-};
-#if 0
+
 static void board_i2c_init(void)
 {
-	//set I2C pinmux with PCB board layout
-	board_i2c_set_pinmux();
-
 	//Amlogic I2C controller initialized
 	//note: it must be call before any I2C operation
-	aml_i2c_init();
+	extern void aml_i2c_set_ports(struct aml_i2c_platform *i2c_plat);
+	aml_i2c_set_ports(g_aml_i2c_plat);
 
 	udelay(10);
 }
-#endif
-#endif
+
 #endif
 
 #if defined(CONFIG_BOARD_EARLY_INIT_F)
@@ -473,6 +469,9 @@ int board_init(void)
 #ifdef CONFIG_AML_NAND
 	extern int amlnf_init(unsigned char flag);
 	amlnf_init(0);
+#endif
+#ifdef CONFIG_SYS_I2C_AML
+	board_i2c_init();
 #endif
 	if (get_cpu_id().package_id == MESON_CPU_PACKAGE_ID_A113X)
 		power_save_pre();
