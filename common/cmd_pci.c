@@ -21,6 +21,7 @@
 #include <asm/io.h>
 #include <pci.h>
 
+#ifndef CONFIG_PCIE_AMLOGIC
 /*
  * Follows routines for the output of infos about devices on PCI bus.
  */
@@ -497,3 +498,33 @@ U_BOOT_CMD(
 	pci,	5,	1,	do_pci,
 	"list and access PCI Configuration Space", pci_help_text
 );
+#else
+
+/* PCI Configuration Space access commands
+ *
+ * Syntax:
+ *	pci display[.b, .w, .l] bus.device.function} [addr] [len]
+ *	pci next[.b, .w, .l] bus.device.function [addr]
+ *      pci modify[.b, .w, .l] bus.device.function [addr]
+ *      pci write[.b, .w, .l] bus.device.function addr value
+ */
+static int do_pci(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+	switch (argv[1][0]) {
+#ifdef CONFIG_CMD_PCI_ENUM
+	case 'e':
+		pci_init_board();
+		return 0;
+#endif
+	}
+
+	return 1;
+}
+
+U_BOOT_CMD(
+	pci,	5,	1,	do_pci,
+	"list and access PCI Configuration Space",
+	"pci enum\n"
+	"    - re-enumerate PCI buses\n"
+);
+#endif

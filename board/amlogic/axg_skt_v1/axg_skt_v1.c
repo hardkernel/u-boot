@@ -367,6 +367,8 @@ struct amlogic_usb_config g_usb_config_GXL_skt={
 #endif /*CONFIG_USB_XHCI_AMLOGIC*/
 
 #ifdef CONFIG_AML_PCIE
+#include <asm/arch-axg/pci.h>
+
 static void pcie_init_reset_pin(void)
 {
 	int ret;
@@ -379,6 +381,36 @@ static void pcie_init_reset_pin(void)
 	}
 	gpio_direction_output(CONFIG_AML_PCIEA_GPIO_RESET, 0);
 }
+
+void amlogic_pcie_init_reset_pin(int pcie_dev)
+{
+	int ret;
+
+	ret = gpio_request(CONFIG_AML_PCIEA_GPIO_RESET,
+		CONFIG_AML_PCIEA_GPIO_RESET_NAME);
+	if (ret && ret != -EBUSY) {
+		printf("gpio: requesting pin %u failed\n",
+			CONFIG_AML_PCIEA_GPIO_RESET);
+		return;
+	}
+	gpio_direction_output(CONFIG_AML_PCIEA_GPIO_RESET, 1);
+}
+
+void amlogic_pcie_disable(void)
+{
+	int ret;
+
+	ret = gpio_request(CONFIG_AML_PCIEA_GPIO_RESET,
+		CONFIG_AML_PCIEA_GPIO_RESET_NAME);
+
+	if (ret && ret != -EBUSY) {
+		printf("gpio: requesting pin %u failed\n",
+			CONFIG_AML_PCIEA_GPIO_RESET);
+		return;
+	}
+	gpio_direction_output(CONFIG_AML_PCIEA_GPIO_RESET, 0);
+}
+
 #endif
 
 

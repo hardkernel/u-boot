@@ -593,25 +593,7 @@ const char * pci_class_str(u8 class)
 }
 #endif /* CONFIG_CMD_PCI || CONFIG_PCI_SCAN_SHOW */
 
-__weak int pci_skip_dev(struct pci_controller *hose, pci_dev_t dev)
-{
-	/*
-	 * Check if pci device should be skipped in configuration
-	 */
-	if (dev == PCI_BDF(hose->first_busno, 0, 0)) {
-#if defined(CONFIG_PCI_CONFIG_HOST_BRIDGE) /* don't skip host bridge */
-		/*
-		 * Only skip configuration if "pciconfighost" is not set
-		 */
-		if (getenv("pciconfighost") == NULL)
-			return 1;
-#else
-		return 1;
-#endif
-	}
 
-	return 0;
-}
 
 #ifdef CONFIG_PCI_SCAN_SHOW
 __weak int pci_print_dev(struct pci_controller *hose, pci_dev_t dev)
@@ -622,6 +604,14 @@ __weak int pci_print_dev(struct pci_controller *hose, pci_dev_t dev)
 	return 1;
 }
 #endif /* CONFIG_PCI_SCAN_SHOW */
+
+int pci_skip_dev(struct pci_controller *hose, pci_dev_t dev)
+{
+	if (PCI_BUS(dev) != 0 && PCI_DEV(dev) > 0)
+		return 1;
+
+	return 0;
+}
 
 int pci_hose_scan_bus(struct pci_controller *hose, int bus)
 {
@@ -659,11 +649,11 @@ int pci_hose_scan_bus(struct pci_controller *hose, int bus)
 		if (!PCI_FUNC(dev))
 			found_multi = header_type & 0x80;
 
-		debug("PCI Scan: Found Bus %d, Device %d, Function %d\n",
-			PCI_BUS(dev), PCI_DEV(dev), PCI_FUNC(dev));
-
 		pci_hose_read_config_word(hose, dev, PCI_DEVICE_ID, &device);
 		pci_hose_read_config_word(hose, dev, PCI_CLASS_DEVICE, &class);
+
+		if (device == 0xffff || device == 0x0000)
+			continue;
 
 #ifdef CONFIG_PCI_FIXUP_DEV
 		board_pci_fixup_dev(hose, dev, vendor, device, class);
@@ -701,6 +691,17 @@ int pci_hose_scan_bus(struct pci_controller *hose, int bus)
 
 		if (hose->fixup_irq)
 			hose->fixup_irq(hose, dev);
+
+		if ((device != 0xffff) && (device != 0x0000))
+			if (vendor != 0xffff && vendor != 0x0000) {
+				printf("PCI Scan: Found Bus %d, Device %d, Function %d\n",
+					PCI_BUS(dev), PCI_DEV(dev), PCI_FUNC(dev));
+				printf("%02x:%02x.%-*x - %04x:%04x - %s\n",
+			       PCI_BUS(dev), PCI_DEV(dev), 6 - indent, PCI_FUNC(dev),
+			       vendor, device, pci_class_str(class >> 8));
+				break;
+		}
+
 	}
 
 	return sub_bus;
@@ -740,10 +741,12 @@ int pci_hose_scan(struct pci_controller *hose)
 
 void pci_init(void)
 {
+#ifndef CONFIG_PCIE_AMLOGIC
 	hose_head = NULL;
 
 	/* now call board specific pci_init()... */
 	pci_init_board();
+#endif
 }
 
 /* Returns the address of the requested capability structure within the
