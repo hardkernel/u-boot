@@ -1,5 +1,8 @@
 #ifndef __SCP_SUSPEND_H_
 #define __SCP_SUSPEND_H_
+
+typedef unsigned int uint32_t;
+
 /* wake up reason*/
 #define	UDEFINED_WAKEUP	0
 #define	CHARGING_WAKEUP	1

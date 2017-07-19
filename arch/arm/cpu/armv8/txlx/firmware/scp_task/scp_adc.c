@@ -3,37 +3,33 @@
 #define MESON_CPU_MAJOR_ID_GXL		0x21
 #define MESON_CPU_MAJOR_ID_GXM		0x22
 #define MESON_CPU_MAJOR_ID_TXL		0x23
-#define MESON_CPU_MAJOR_ID_TXLX     0x24
-
-#define AML_ADC_SAMPLE_DEBUG 0
-
-#define FLAG_BUSY_KERNEL    (1<<14) /* for bl30 */
-#define FLAG_BUSY_BL30      (1<<15) /* for bl30 */
-
-#define set_bits	aml_set_reg32_bits
-#define get_bits	aml_get_reg32_bits
-#define set_reg	    aml_write_reg32
-#define get_reg	    aml_read_reg32
+#define MESON_CPU_MAJOR_ID_TXLX	0x24
 
 static int adc_type; /*1:12bit; 0:10bit*/
 
 static void aml_set_reg32_bits(volatile uint32_t *_reg,
-		const uint32_t _value, const uint32_t _start,
+		const uint32_t _value,
+		const uint32_t _start,
 		const uint32_t _len)
 {
-	writel(((readl((volatile unsigned int *)_reg) & ~((( 1L << (_len) )-1) << (_start))) | \
-				((unsigned)((_value)&((1L<<(_len))-1)) << (_start))), (volatile void *)_reg );
+	writel(((readl((volatile unsigned int *)_reg) & \
+		~(((1L << (_len) )-1) << (_start))) | \
+		((unsigned)((_value) & ((1L<<(_len))-1)) << (_start))),
+		(volatile void *)_reg );
 }
 
 static unsigned int aml_get_reg32_bits(volatile uint32_t *_reg,
-		const unsigned int _start, const unsigned int _len)
+		const unsigned int _start,
+		const unsigned int _len)
 {
-	return	((readl((volatile unsigned int *)_reg) >> (_start)) & (( 1L << (_len) ) - 1) );
+	return	((readl((volatile unsigned int *)_reg) >> (_start)) & \
+		((1L << (_len) ) - 1));
 }
 
-static void aml_write_reg32(volatile uint32_t *_reg, const uint32_t _value)
+static void aml_write_reg32(volatile uint32_t *_reg,
+		const uint32_t _value)
 {
-	writel(_value,(volatile unsigned int *)_reg );
+	writel(_value, (volatile unsigned int *)_reg );
 };
 
 static unsigned int aml_read_reg32(volatile uint32_t *_reg)
@@ -58,32 +54,31 @@ static void saradc_clock_switch(int onoff)
  */
 	if (onoff) {
 		if (get_cpu_family_id() >= MESON_CPU_MAJOR_ID_GXBB)
-			aml_set_reg32_bits(P_AO_SAR_CLK,1,8,1);
+			aml_set_reg32_bits(P_AO_SAR_CLK, 1, 8, 1);
 		else
-			aml_set_reg32_bits(P_AO_SAR_ADC_REG3,1,30,1);
+			aml_set_reg32_bits(P_AO_SAR_ADC_REG3, 1, 30, 1);
 	} else {
 		if (get_cpu_family_id() >= MESON_CPU_MAJOR_ID_GXBB)
-			aml_set_reg32_bits(P_AO_SAR_CLK,0,8,1);
+			aml_set_reg32_bits(P_AO_SAR_CLK, 0, 8, 1);
 		else
-			aml_set_reg32_bits(P_AO_SAR_ADC_REG3,0,30,1);
+			aml_set_reg32_bits(P_AO_SAR_ADC_REG3, 0, 30, 1);
 	}
 }
 static inline void saradc_power_control(int on)
 {
 	if (on) {
-		aml_set_reg32_bits(P_AO_SAR_ADC_REG11,1,13,1);
-		aml_set_reg32_bits(P_AO_SAR_ADC_REG11,3,5,2);
-		aml_set_reg32_bits(P_AO_SAR_ADC_REG3,1,21,1);
+		aml_set_reg32_bits(P_AO_SAR_ADC_REG11, 1, 13, 1);
+		aml_set_reg32_bits(P_AO_SAR_ADC_REG11, 3, 5, 2);
+		aml_set_reg32_bits(P_AO_SAR_ADC_REG3, 1, 21, 1);
 
 		_udelay(5);
 
 		saradc_clock_switch(1);
-
 	}	else {
 		saradc_clock_switch(0);
 
 		/*aml_set_reg32_bits(P_AO_SAR_ADC_REG11,0,13,1);*//* disable bandgap */
-		aml_set_reg32_bits(P_AO_SAR_ADC_REG11,0,5,2);
+		aml_set_reg32_bits(P_AO_SAR_ADC_REG11, 0, 5, 2);
 	}
 }
 
@@ -97,10 +92,12 @@ static void saradc_clock_set(unsigned char val)
  * the adc module register.
  */
 	if (get_cpu_family_id() >= MESON_CPU_MAJOR_ID_GXBB) {
-		aml_set_reg32_bits(P_AO_SAR_CLK, 0, 9, 2);           /*bit9-bit10: select clk source*/
-		aml_set_reg32_bits(P_AO_SAR_CLK, (val & 0xff), 0, 8);/*bit0-bit7:   set clk div*/
+		/*bit[0-7]: set clk div; bit[9-10]: select clk source*/
+		aml_set_reg32_bits(P_AO_SAR_CLK, 0, 9, 2);
+		aml_set_reg32_bits(P_AO_SAR_CLK, (val & 0xff), 0, 8);
 	} else {
-		aml_set_reg32_bits(P_AO_SAR_ADC_REG3, (val & 0x3f), 10, 6); /*bit10-bit15: set clk div*/
+		/*bit10-bit15: set clk div*/
+		aml_set_reg32_bits(P_AO_SAR_ADC_REG3, (val & 0x3f), 10, 6);
 	}
 }
 
@@ -111,29 +108,23 @@ void saradc_enable(void)
 	else
 		adc_type = 1;
 
-	set_reg(P_AO_SAR_ADC_REG0, 0x84004040);
-	set_reg(P_AO_SAR_ADC_CHAN_LIST, 0);
+	aml_write_reg32(P_AO_SAR_ADC_REG0, 0x84004040);
+	aml_write_reg32(P_AO_SAR_ADC_CHAN_LIST, 0);
 	/* REG2: all chanel set to 8-samples & median averaging mode */
-	set_reg(P_AO_SAR_ADC_AVG_CNTL, 0);
-	set_reg(P_AO_SAR_ADC_REG3, 0x9388000a);
-
-	aml_set_reg32_bits(P_AO_SAR_ADC_REG3,0x14,10,5);
+	aml_write_reg32(P_AO_SAR_ADC_AVG_CNTL, 0);
+	aml_write_reg32(P_AO_SAR_ADC_REG3, 0x9388000a);
 
 	if (adc_type)
 		aml_set_reg32_bits(P_AO_SAR_ADC_REG3,0x1,27,1);
 
-	/*select VDDA as ref voltage, otherwise select calibration voltage*/
-	if (get_cpu_family_id() >= MESON_CPU_MAJOR_ID_TXLX)
-		aml_set_reg32_bits(P_AO_SAR_ADC_REG11,0x1,0,1);
-
 	saradc_clock_set(20);
 
-	set_reg(P_AO_SAR_ADC_DELAY, 0x10a000a);
-	set_reg(P_AO_SAR_ADC_AUX_SW, 0x3eb1a0c);
-	set_reg(P_AO_SAR_ADC_CHAN_10_SW, 0x8c000c);
-	set_reg(P_AO_SAR_ADC_DETECT_IDLE_SW, 0xc000c);
+	aml_write_reg32(P_AO_SAR_ADC_DELAY, 0x10a000a);
+	aml_write_reg32(P_AO_SAR_ADC_AUX_SW, 0x3eb1a0c);
+	aml_write_reg32(P_AO_SAR_ADC_CHAN_10_SW, 0x8c000c);
+	aml_write_reg32(P_AO_SAR_ADC_DETECT_IDLE_SW, 0xc000c);
 
-    saradc_power_control(1);
+	saradc_power_control(1);
 }
 
 int get_adc_sample_gxbb(int ch)
@@ -141,32 +132,15 @@ int get_adc_sample_gxbb(int ch)
 	int value=0;
 	int count=0;
 	int sum=0;
-	//static int nn=0;
-	//unsigned long flags;
 
-	count = 0;
-	while (aml_read_reg32(P_AO_SAR_ADC_DELAY) & FLAG_BUSY_BL30) {
-		_udelay(100);
-		if (++count > 100) {
-			uart_puts(".bl30 busy error");
-			uart_puts("\n");
-			value = -1;
-			goto end1;
-		}
-	}
-	aml_set_reg32_bits(P_AO_SAR_ADC_DELAY,1,FLAG_BUSY_KERNEL,1);
-	aml_set_reg32_bits(P_AO_SAR_ADC_REG3,1,29,1);
-
-	set_reg(P_AO_SAR_ADC_CHAN_LIST, ch);
-	set_reg(P_AO_SAR_ADC_DETECT_IDLE_SW, (0xc000c | (ch<<23) | (ch<<7)));
-	aml_set_reg32_bits(P_AO_SAR_ADC_REG0, 1,0,1);
-	aml_set_reg32_bits(P_AO_SAR_ADC_REG0, 1,2,1);
+	aml_write_reg32(P_AO_SAR_ADC_CHAN_LIST, ch);
+	aml_write_reg32(P_AO_SAR_ADC_DETECT_IDLE_SW, (0xc000c | (ch<<23) | (ch<<7)));
+	aml_set_reg32_bits(P_AO_SAR_ADC_REG0, 1, 0, 1);
+	aml_set_reg32_bits(P_AO_SAR_ADC_REG0, 1, 2, 1);
 
 	count = 0;
 	do {
 		_udelay(10);
-		//nn=10000;
-		//while(nn--);
 		if (!(aml_read_reg32(P_AO_SAR_ADC_REG0) & 0x70000000))
 			break;
 		else if (++count > 10000) {
@@ -179,25 +153,17 @@ int get_adc_sample_gxbb(int ch)
 
 	count = 0;
 	sum = 0;
-	while (aml_get_reg32_bits(P_AO_SAR_ADC_REG0,21,5) && (count < 32)) {
-		if (aml_get_reg32_bits(P_AO_SAR_ADC_REG0,26,1)) {
-			uart_puts("fifo_count, but fifo empty");
-			uart_puts("\n");
-		}
+	while (aml_get_reg32_bits(P_AO_SAR_ADC_REG0, 21, 5) && (count < 32)) {
         value = aml_read_reg32(P_AO_SAR_ADC_FIFO_RD);
-		if (((value>>12) & 0x07) == ch) {
+		if (((value >> 12) & 0x07) == ch) {
 			value &= 0xffc;
 			value >>= 2;
 			sum += value;
 			count++;
-		}	else {
-			uart_puts("chanel error");
+		} else {
+			uart_puts("channel error");
 			uart_puts("\n");
 		}
-	}
-	if (!aml_get_reg32_bits(P_AO_SAR_ADC_REG0,26,1)) {
-		uart_puts("fifo_count=0, but fifo not empty");
-		uart_puts("\n");
 	}
 	if (!count) {
 		value = -1;
@@ -206,12 +172,8 @@ int get_adc_sample_gxbb(int ch)
 	value = sum / count;
 
 end:
-	aml_set_reg32_bits(P_AO_SAR_ADC_REG0,1,14,1);
-	aml_set_reg32_bits(P_AO_SAR_ADC_REG0,0,0,1);
-
-end1:
-	aml_set_reg32_bits(P_AO_SAR_ADC_REG3,0,29,1);
-	aml_set_reg32_bits(P_AO_SAR_ADC_DELAY,0,FLAG_BUSY_KERNEL,1);
+	aml_set_reg32_bits(P_AO_SAR_ADC_REG0, 1, 14, 1);
+	aml_set_reg32_bits(P_AO_SAR_ADC_REG0, 0, 0, 1);
 
 	return value;
 }

@@ -57,6 +57,11 @@ static int do_saradc_getval_12bit(cmd_tbl_t *cmdtp, int flag, int argc, char * c
 	return 0;
 }
 
+static int do_saradc_test(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+	saradc_sample_test();
+	return 0;
+}
 static int do_saradc_get_in_range(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	char value_str[10];
@@ -109,6 +114,7 @@ static cmd_tbl_t cmd_saradc_sub[] = {
 	U_BOOT_CMD_MKENT(open, 2, 0, do_saradc_open, "", ""),
 	U_BOOT_CMD_MKENT(close, 1, 0, do_saradc_close, "", ""),
 	U_BOOT_CMD_MKENT(getval, 1, 0, do_saradc_getval, "", ""),
+	U_BOOT_CMD_MKENT(test, 1, 0, do_saradc_test, "", ""),
 	U_BOOT_CMD_MKENT(get_in_range, 3, 0, do_saradc_get_in_range, "", ""),
 };
 
@@ -131,9 +137,10 @@ static int do_saradc(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 U_BOOT_CMD(
 	saradc,	8,	0,	do_saradc,
 	"saradc sub-system",
-	"saradc open <channel>		- open a SARADC channel\n"
+	"saradc open <channel>	- open a SARADC channel\n"
 	"saradc close	- close the SARADC\n"
 	"saradc getval	- get the value in current channel\n"
+	"saradc test	- test the SARADC by channel-7\n"
 	"saradc get_in_range <min> <max>	- return 0 if current value in the range of current channel\n"
 );
 
@@ -162,7 +169,7 @@ static int do_saradc_12bit(cmd_tbl_t *cmdtp, int flag, int argc, char * const ar
 U_BOOT_CMD(
 	saradc_12bit,	8,	0,	do_saradc_12bit,
 	"saradc sub-system",
-	"saradc_12bit open <channel>		- open a SARADC channel\n"
+	"saradc_12bit open <channel>	- open a SARADC channel\n"
 	"saradc_12bit close	- close the SARADC\n"
 	"saradc_12bit getval	- get the value in current channel\n"
 	"saradc_12bit get_in_range <min> <max>	- return 0 if current value in the range of current channel\n"

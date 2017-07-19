@@ -26,8 +26,6 @@
 #define CONFIG_CEC_OSD_NAME "Mbox"
 #endif
 
-typedef unsigned int uint32_t;
-
 #define IO_AOBUS_BASE		(0xC8100000)
 #define AOBUS_REG_ADDR(reg)	((IO_AOBUS_BASE << OFFSET) + reg)
 
