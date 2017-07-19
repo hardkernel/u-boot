@@ -9,13 +9,15 @@
 
 #include <configs/rk3399_common.h>
 
-#define CONFIG_SYS_MMC_ENV_DEV 1
+#define CONFIG_MMC_SDHCI_SDMA
+#define CONFIG_SYS_MMC_ENV_DEV 0
 /*
- * SPL @ 32k for ~36k
- * ENV @ 96k
- * u-boot @ 128K
+ * SPL @ 32k for ~128k
+ * ENV @ 240k
+ * u-boot @ 256K
  */
-#define CONFIG_ENV_OFFSET (96 * 1024)
+#undef CONFIG_ENV_OFFSET
+#define CONFIG_ENV_OFFSET (240 * 1024)
 
 #define SDRAM_BANK_SIZE			(2UL << 30)
 
