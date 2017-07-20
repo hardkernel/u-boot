@@ -213,6 +213,11 @@ static void set_hpll_od3_clk_div(int div_sel)
 	int shift_val = 0;
 	int shift_sel = 0;
 
+	/* When div 6.25, need to reset vid_pll_div */
+	if (div_sel == CLK_UTIL_VID_PLL_DIV_6p25) {
+		msleep(1);
+		hd_set_reg_bits(P_RESET0_REGISTER, 1, 7, 1);
+	}
 	// Disable the output clock
 	hd_set_reg_bits(P_HHI_VID_PLL_CLK_DIV, 0, 19, 1);
 	hd_set_reg_bits(P_HHI_VID_PLL_CLK_DIV, 0, 15, 1);
