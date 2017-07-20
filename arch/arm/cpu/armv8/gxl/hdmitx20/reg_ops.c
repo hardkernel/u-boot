@@ -55,21 +55,22 @@ void hd_set_reg_bits(unsigned long addr, unsigned long value,
 	hd_write_reg(addr, data);
 }
 
+#define __asmeq(x, y)  ".ifnc " x "," y " ; .err ; .endif\n\t"
+
 unsigned int hdmitx_rd_reg(unsigned int addr)
 {
-	unsigned int data = 0;
 	unsigned long offset = (addr & DWC_OFFSET_MASK) >> 24;
+	unsigned int data;
+	register long x0 asm("x0") = 0x82000018;
+	register long x1 asm("x1") = (unsigned long)addr;
 
-	if (addr & SEC_OFFSET) {
-		/* TODO */
-		/* LATER */
-	} else {
-		addr = addr & 0xffff;
-
-		hd_write_reg(P_HDMITX_ADDR_PORT + offset, addr);
-		hd_write_reg(P_HDMITX_ADDR_PORT + offset, addr);
-		data = hd_read_reg(P_HDMITX_DATA_PORT + offset);
-	}
+	asm volatile(
+		__asmeq("%0", "x0")
+		__asmeq("%1", "x1")
+		"smc #0\n"
+		: "+r"(x0) : "r"(x1)
+	);
+	data = (unsigned)(x0&0xffffffff);
 	if (dbg_en)
 		pr_info("%s rd[0x%x] 0x%x\n", offset ? "DWC" : "TOP",
 			addr, data);
@@ -79,17 +80,17 @@ unsigned int hdmitx_rd_reg(unsigned int addr)
 void hdmitx_wr_reg(unsigned int addr, unsigned int data)
 {
 	unsigned long offset = (addr & DWC_OFFSET_MASK) >> 24;
+	register long x0 asm("x0") = 0x82000019;
+	register long x1 asm("x1") = (unsigned long)addr;
+	register long x2 asm("x2") = data;
 
-	if (addr & SEC_OFFSET) {
-		/* TODO */
-		/* LATER */
-	} else {
-		addr = addr & 0xffff;
-
-		hd_write_reg(P_HDMITX_ADDR_PORT + offset, addr);
-		hd_write_reg(P_HDMITX_ADDR_PORT + offset, addr);
-		hd_write_reg(P_HDMITX_DATA_PORT + offset, data);
-	}
+	asm volatile(
+		__asmeq("%0", "x0")
+		__asmeq("%1", "x1")
+		__asmeq("%2", "x2")
+		"smc #0\n"
+		: : "r"(x0), "r"(x1), "r"(x2)
+	);
 	if (dbg_en)
 		pr_info("%s wr[0x%x] 0x%x\n", offset ? "DWC" : "TOP",
 			addr, data);
