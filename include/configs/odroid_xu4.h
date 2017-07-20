@@ -188,7 +188,7 @@
 	"rootfstype=ext4\0" \
 	"console=" CONFIG_DEFAULT_CONSOLE \
 	"fdtfile=exynos5422-odroidxu4.dtb\0" \
-	"boardname=odroidxu4\0" \
+	"board_name=xu4\0" \
 	"mmcbootdev=0\0" \
 	"mmcrootdev=0\0" \
 	"mmcbootpart=1\0" \
