@@ -24,6 +24,9 @@
 #endif
 #include <amlogic/secure_storage.h>
 
+#define CONFIG_DISABLE_USER_WP
+#define USER_WP_VALUE  ((1<<3)|(1<<4)|(1<<6))
+
 static struct list_head mmc_devices;
 static int cur_dev_num = -1;
 
@@ -510,6 +513,28 @@ static int mmc_send_ext_csd(struct mmc *mmc, u8 *ext_csd)
 	return err;
 }
 
+#ifdef CONFIG_DISABLE_USER_WP
+int mmc_switch_by_bit(struct mmc *mmc, u8 set, u8 index, u8 value)
+{
+	struct mmc_cmd cmd;
+	int timeout = 1000;
+	int ret;
+
+	cmd.cmdidx = MMC_CMD_SWITCH;
+	cmd.resp_type = MMC_RSP_R1b;
+	cmd.cmdarg = (MMC_SWITCH_MODE_SET_BITS << 24) |
+						(index << 16) |
+						(value << 8);
+
+	ret = mmc_send_cmd(mmc, &cmd, NULL);
+
+	/* Waiting for the ready status */
+	if (!ret)
+		ret = mmc_send_status(mmc, timeout);
+
+	return ret;
+}
+#endif
 
 static int mmc_switch(struct mmc *mmc, u8 set, u8 index, u8 value)
 {
@@ -896,6 +921,32 @@ static void mmc_set_bus_width(struct mmc *mmc, uint width)
 	mmc_set_ios(mmc);
 }
 
+#ifdef CONFIG_DISABLE_USER_WP
+static void mmc_disable_usr_wp(struct mmc *mmc,u8 *ext_csd)
+{
+	int err;
+	u8 cur_ext_csd_171 = 0;
+	u8 user_wp_disable = 0;
+	cur_ext_csd_171 = (u8)ext_csd[171];
+	printf("original ext_csd[171] USE_WP field value is %02x\n",cur_ext_csd_171);
+	user_wp_disable = (cur_ext_csd_171^USER_WP_VALUE)&USER_WP_VALUE;
+	if (user_wp_disable) {
+		err = mmc_switch_by_bit(mmc,MMC_SWITCH_MODE_SET_BITS,EXT_CSD_USER_WP,user_wp_disable);
+		if (err)
+		printf("mmc_switch mistake when disable user_wp, err value is %d\n",err);
+
+		err = mmc_get_ext_csd(mmc,ext_csd);
+		if (err)
+			printf("mmc get ext csd mistake in %d\n",err);
+		else
+			printf("ext_csd[171] USER_WP filed value after switch is %02x\n",ext_csd[171]);
+	}
+	else {
+		printf("Disable bits in ext_csd[171] USE_WP field has been set to \"1\"\n");
+	}
+}
+#endif
+
 static int mmc_startup(struct mmc *mmc)
 {
 	int err, i;
@@ -1175,6 +1226,10 @@ static int mmc_startup(struct mmc *mmc)
 
 	if (err)
 		return err;
+
+#ifdef CONFIG_DISABLE_USER_WP
+	mmc_disable_usr_wp(mmc,ext_csd);
+#endif
 
 	/* Restrict card's capabilities by what the host can do */
 	mmc->card_caps &= mmc->cfg->host_caps;

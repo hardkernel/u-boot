@@ -154,6 +154,7 @@
 #define EXT_CSD_PARTITIONING_SUPPORT	160	/* RO */
 #define EXT_CSD_RST_N_FUNCTION		162	/* R/W */
 #define EXT_CSD_RPMB_MULT		168	/* RO */
+#define EXT_CSD_USER_WP             171 /* R/W */
 #define EXT_CSD_ERASE_GROUP_DEF		175	/* R/W */
 #define EXT_CSD_BOOT_BUS_WIDTH		177
 #define EXT_CSD_PART_CONF		179	/* R/W */
@@ -167,7 +168,6 @@
 #define EXT_CSD_BOOT_MULT		226	/* RO */
 #define EXT_CSD_DEV_LIFETIME_EST_TYP_A	268	/* RO */
 #define EXT_CSD_DEV_LIFETIME_EST_TYP_B	269	/* RO */
-
 /*
  * EXT_CSD field definitions
  */
