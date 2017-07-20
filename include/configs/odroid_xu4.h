@@ -200,4 +200,7 @@
 	"copy_uboot_sd2emmc="UBOOT_COPY_SD2EMMC \
 	"copy_uboot_emmc2sd="UBOOT_COPY_EMMC2SD
 
+#undef CONFIG_BOOTCOMMAND
+#define CONFIG_BOOTCOMMAND "cfgload"
+
 #endif	/* __CONFIG_H */
