@@ -189,8 +189,8 @@ static char lcd_ext_gpio[LCD_EXTERN_GPIO_NUM_MAX][LCD_EXTERN_GPIO_LEN_MAX] = {
 };
 
 #define LCD_EXTERN_NAME "ext_default"
-#define LCD_EXTERN_CMD_SIZE        LCD_EXTERN_DYNAMIC_LEN
-static unsigned char init_on_table[LCD_EXTERN_INIT_TABLE_MAX] = {
+#define LCD_EXTERN_CMD_SIZE        LCD_EXTERN_CMD_SIZE_DYNAMIC
+static unsigned char init_on_table[LCD_EXTERN_INIT_ON_MAX] = {
 	0x05, 1, 0x11,
 	0xff, 150,
 	0x05, 1, 0x29,
@@ -198,7 +198,7 @@ static unsigned char init_on_table[LCD_EXTERN_INIT_TABLE_MAX] = {
 	0xff, 0xff,   //ending flag
 };
 
-static unsigned char init_off_table[LCD_EXTERN_INIT_TABLE_MAX] = {
+static unsigned char init_off_table[LCD_EXTERN_INIT_OFF_MAX] = {
 	0x05, 1, 0x28,
 	0xff, 20,
 	0x05, 1, 0x10,
