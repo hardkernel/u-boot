@@ -43,6 +43,9 @@
 /* config saradc*/
 #define CONFIG_CMD_SARADC 1
 
+/* command watchdog */
+#define CONFIG_CMD_WATCHDOG 1
+
 /*config irblaster*/
 #define CONFIG_CMD_IRBLASTER 1
 
