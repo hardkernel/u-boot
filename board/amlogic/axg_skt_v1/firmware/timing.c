@@ -23,7 +23,7 @@
 #include <asm/arch/ddr_define.h>
 
 /* DDR freq range */
-#define CONFIG_DDR_CLK_LOW  375
+#define CONFIG_DDR_CLK_LOW  20
 #define CONFIG_DDR_CLK_HIGH 1500
 /* DON'T OVER THESE RANGE */
 #if (CONFIG_DDR_CLK < CONFIG_DDR_CLK_LOW) || (CONFIG_DDR_CLK > CONFIG_DDR_CLK_HIGH)
