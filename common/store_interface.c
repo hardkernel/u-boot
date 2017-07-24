@@ -481,10 +481,8 @@ static int do_store_init(cmd_tbl_t * cmdtp, int flag, int argc, char * const arg
 	init_flag = (argc > 2) ? (int)simple_strtoul(argv[2], NULL, 16) : 0;
 	store_dbg("init_flag %d",init_flag);
 
-#if defined(CONFIG_AML_MTD)
-	/*device_boot_flag = NAND_BOOT_FLAG;*/
-#endif
-    if (device_boot_flag == _AML_DEVICE_BOOT_FLAG_DEFAULT ) {
+	//Forcing updateing device_boot_flag every time 'store init'
+    if (device_boot_flag == _AML_DEVICE_BOOT_FLAG_DEFAULT || 1) {
 		i = get_device_boot_flag();
         if (i) {
 			MsgP("ERR:FAILED in get_device_boot_flag\n");
