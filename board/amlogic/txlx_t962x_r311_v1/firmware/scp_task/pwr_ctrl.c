@@ -79,6 +79,7 @@ enum pwm_id {
 	pwm_ao_b,
 };
 
+#if 0
 static void power_switch_to_ee(unsigned int pwr_ctrl)
 {
 	if (pwr_ctrl == ON) {
@@ -95,6 +96,7 @@ static void power_switch_to_ee(unsigned int pwr_ctrl)
 
 	}
 }
+#endif
 
 static void pwm_set_voltage(unsigned int id, unsigned int voltage)
 {
@@ -200,7 +202,6 @@ static void power_off_vddee(void)
 
 	/*set test n output low level */
 	_udelay(10000);/*the other 10ms in power_off_at_32k()*/
-	power_switch_to_ee(OFF);
 	val = readl(AO_GPIO_O_EN_N);
 	val &= ~(0x1 << 31);
 	writel(val, AO_GPIO_O_EN_N);
