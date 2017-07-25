@@ -100,11 +100,11 @@ obj-y += malloc_simple.o
 endif
 endif
 obj-y += image.o
-obj-$(CONFIG_ANDROID_AB) += android_ab.o
-obj-$(CONFIG_ANDROID_BOOT_IMAGE) += image-android.o
+obj-$(CONFIG_$(SPL_TPL_)ANDROID_AB) += android_ab.o
+obj-$(CONFIG_$(SPL_TPL_)ANDROID_BOOT_IMAGE) += image-android.o
+obj-$(CONFIG_$(SPL_TPL_)ANDROID_BOOTLOADER) += android_bootloader.o
 obj-$(CONFIG_$(SPL_TPL_)OF_LIBFDT) += image-fdt.o
 obj-$(CONFIG_$(SPL_TPL_)FIT) += image-fit.o
-obj-$(CONFIG_ANDROID_BOOTLOADER) += android_bootloader.o
 obj-$(CONFIG_FIT_EMBED) += boot_fit.o common_fit.o
 obj-$(CONFIG_$(SPL_TPL_)FIT_SIGNATURE) += image-sig.o
 obj-$(CONFIG_IO_TRACE) += iotrace.o
