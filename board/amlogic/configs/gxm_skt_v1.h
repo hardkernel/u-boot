@@ -481,5 +481,8 @@
 //use sha2 command
 //#define CONFIG_CMD_SHA2
 
+//add hardware aes
+//#define CONFIG_AML_HW_AES
+
 #endif
 
