@@ -5,21 +5,6 @@
 #ifndef CONFIG_IR_REMOTE_USE_PROTOCOL
 #define CONFIG_IR_REMOTE_USE_PROTOCOL 0
 #endif
-enum {
-	DECODEMODE_NEC = 0,
-	DECODEMODE_DUOKAN = 1,
-	DECODEMODE_RCMM,
-	DECODEMODE_SONYSIRC,
-	DECODEMODE_SKIPLEADER,
-	DECODEMODE_MITSUBISHI,
-	DECODEMODE_THOMSON,
-	DECODEMODE_TOSHIBA,
-	DECODEMODE_RC5,
-	DECODEMODE_RC6,
-	DECODEMODE_COMCAST,
-	DECODEMODE_SANYO,
-	DECODEMODE_MAX
-};
 typedef struct reg_remote {
 	int reg;
 	unsigned int val;
@@ -142,6 +127,13 @@ void setremotereg(const reg_remote * r)
 int set_remote_mode(int mode)
 {
 	const reg_remote *reg;
+
+	if (mode >= sizeof(remoteregsTab)/sizeof(remoteregsTab[0])) {
+		uart_puts("invalid IR protocol: 0x");
+		uart_put_hex(mode, 16);
+		uart_puts("\n");
+		return -1;
+	}
 	reg = remoteregsTab[mode];
 	while (CONFIG_END != reg->reg)
 		setremotereg(reg++);
