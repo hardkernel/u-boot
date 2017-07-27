@@ -20,5 +20,8 @@
 #define CONFIG_ENV_OFFSET (240 * 1024)
 
 #define SDRAM_BANK_SIZE			(2UL << 30)
+#define CONFIG_MISC_INIT_R
+#define CONFIG_SERIAL_TAG
+#define CONFIG_ENV_OVERWRITE
 
 #endif
