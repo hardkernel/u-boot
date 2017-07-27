@@ -238,8 +238,14 @@
 
 /* ddr */
 #define CONFIG_DDR_SIZE					0 //MB //0 means ddr size auto-detect
-#define CONFIG_DDR_CLK					288  //MHz, Range: 192-1200, should be multiple of 24
-#define CONFIG_DDR4_CLK					396  //MHz, for boards which use different ddr chip
+
+/* IMPORTANT
+ *    DDR clk <= 400MHz, please enable CONFIG_DDR_PLL_BYPASS blow
+ *    DDR clk > 400MHz, please disable CONFIG_DDR_PLL_BYPASS blow
+ */
+#define CONFIG_DDR_CLK					288  //MHz, Range: 200-1200, should be multiple of 24
+#define CONFIG_DDR4_CLK					396  //MHz, this is for same board with DDR4 chip
+
 #define CONFIG_NR_DRAM_BANKS			1
 /* DDR type setting
  *    CONFIG_DDR_TYPE_LPDDR3   : LPDDR3
