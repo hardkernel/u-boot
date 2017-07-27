@@ -44,13 +44,16 @@ static void mmu_setup(void)
 #else
 		ulong end = bd->bi_dram[i].start + bd->bi_dram[i].size;
 #endif
-		if ((end-start) < SECTION_SIZE) {
-			end = start + SECTION_SIZE;
+		if ((end >> (SECTION_SHIFT-2)) & 1) {
+			/* odd multiple of 128MB, align to 256M */
+			end += (SECTION_SIZE>>2);
 		}
-		for (j = start >> SECTION_SHIFT;
-		     j < end >> SECTION_SHIFT; j++) {
-			set_pgtable_section(page_table, j, j << SECTION_SHIFT,
-					    MT_NORMAL);
+		if ((end >> (SECTION_SHIFT-1)) & 1) {
+			/* odd multiple of 256MB, align to 512M */
+			end += (SECTION_SIZE>>1);
+		}
+		for (j = start >> SECTION_SHIFT; j < end >> SECTION_SHIFT; j++) {
+			set_pgtable_section(page_table, j, j << SECTION_SHIFT, MT_NORMAL);
 		}
 	}
 
