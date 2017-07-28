@@ -54,7 +54,7 @@ do {												\
 		printf(fmt,##args); 				 \
 }while(0)
 
-extern struct aml_i2c_platform *g_aml_i2c_plat;
+extern struct aml_i2c_platform g_aml_i2c_plat;
 struct aml_i2c_platform *g_i2c_ports;
 static unsigned char g_bAmlogicI2CInitialized = 0; //I2C initialized flag
 static unsigned char g_cur_bus_num = 0;
@@ -949,7 +949,10 @@ void i2c_init(int speed, int slaveaddr)
 {
 	#define AML_I2C_SPPED_400K 400000		 //The initial value of amlogic i2c speed
 
-	/*g_aml_i2c_plat[g_cur_bus_num].master_i2c_speed = AML_I2C_SPPED_400K;*/
+	if (g_i2c_ports == NULL) {
+		g_i2c_ports = &g_aml_i2c_plat;
+		g_cur_bus_num = 0;
+	}
 	aml_i2c_init();
 }
 

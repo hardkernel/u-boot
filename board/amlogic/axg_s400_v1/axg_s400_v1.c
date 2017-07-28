@@ -278,7 +278,10 @@ int board_mmc_init(bd_t	*bis)
 #endif
 
 #ifdef CONFIG_SYS_I2C_AML
-struct aml_i2c_platform g_aml_i2c_plat[] = {
+struct aml_i2c_platform g_aml_i2c_plat = {
+};
+/* multi i2c bus */
+struct aml_i2c_platform g_aml_i2c_ports[] = {
 	{
 		.wait_count         = 1000000,
 		.wait_ack_interval  = 5,
@@ -302,7 +305,7 @@ struct aml_i2c_platform g_aml_i2c_plat[] = {
 		.master_no          = AML_I2C_MASTER_B,
 		.use_pio            = 0,
 		.master_i2c_speed   = CONFIG_SYS_I2C_SPEED,
-		.master_ao_pinmux = {
+		.master_b_pinmux = {
 			.scl_reg    = (unsigned long)MESON_I2C_MASTER_B_GPIOZ_8_REG,
 			.scl_bit    = MESON_I2C_MASTER_B_GPIOZ_8_BIT,
 			.sda_reg    = (unsigned long)MESON_I2C_MASTER_B_GPIOZ_9_REG,
@@ -318,7 +321,7 @@ static void board_i2c_init(void)
 	//Amlogic I2C controller initialized
 	//note: it must be call before any I2C operation
 	extern void aml_i2c_set_ports(struct aml_i2c_platform *i2c_plat);
-	aml_i2c_set_ports(g_aml_i2c_plat);
+	aml_i2c_set_ports(g_aml_i2c_ports);
 
 	udelay(10);
 }
