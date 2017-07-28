@@ -103,6 +103,18 @@ static void set_hpll_clk_out(unsigned clk)
 		WAIT_FOR_PLL_LOCKED(P_HHI_HDMI_PLL_CNTL);
 		printk("HPLL: 0x%lx\n", hd_read_reg(P_HHI_HDMI_PLL_CNTL));
 		break;
+	case 5405:
+		hd_write_reg(P_HHI_HDMI_PLL_CNTL, 0x400002e1);
+		hd_write_reg(P_HHI_HDMI_PLL_CNTL2, 0x800cb0e6);
+		hd_write_reg(P_HHI_HDMI_PLL_CNTL3, 0x860f30c4);
+		hd_write_reg(P_HHI_HDMI_PLL_CNTL4, 0x0c8e0000);
+		hd_write_reg(P_HHI_HDMI_PLL_CNTL5, 0x001fa729);
+		hd_write_reg(P_HHI_HDMI_PLL_CNTL6, 0x01a31500);
+		hd_set_reg_bits(P_HHI_HDMI_PLL_CNTL, 0x1, 28, 1);
+		hd_set_reg_bits(P_HHI_HDMI_PLL_CNTL, 0x0, 28, 1);
+		WAIT_FOR_PLL_LOCKED(P_HHI_HDMI_PLL_CNTL);
+		printk("HPLL: 0x%lx\n", hd_read_reg(P_HHI_HDMI_PLL_CNTL));
+		break;
 	case 3712:
 		hd_write_reg(P_HHI_HDMI_PLL_CNTL, 0x4000029a);
 		hd_write_reg(P_HHI_HDMI_PLL_CNTL2, 0x800cb2c0);
@@ -320,9 +332,18 @@ static struct hw_enc_clk_val_group setting_enc_clk_val[] = {
  * vid_pll_div vid_clk_div hdmi_tx_pixel_div encp_div enci_div
  */
 static struct hw_enc_clk_val_group setting_enc_clk_val_30[] = {
-	{{HDMI_1920x1080p60_16x9, HDMI_1920x1080p50_16x9,
-	GROUP_END},
+	{{HDMI_720x480i60_16x9, HDMI_720x576i50_16x9, GROUP_END},
+		1, VIU_ENCI, 5405, 4, 4, 1, CLK_UTIL_VID_PLL_DIV_6p25, 1, 2, -1, 2},
+	{{HDMI_720x576p50_16x9, HDMI_720x480p60_16x9, GROUP_END},
+		1, VIU_ENCP, 5405, 4, 4, 1, CLK_UTIL_VID_PLL_DIV_6p25, 1, 2, 1, -1},
+	{{HDMI_1280x720p50_16x9, HDMI_1280x720p60_16x9, GROUP_END},
+		1, VIU_ENCP, 3712, 4, 1, 1, CLK_UTIL_VID_PLL_DIV_6p25, 1, 2, 1, -1},
+	{{HDMI_1920x1080i60_16x9, HDMI_1920x1080i50_16x9, GROUP_END},
+		1, VIU_ENCP, 3712, 4, 1, 1, CLK_UTIL_VID_PLL_DIV_6p25, 1, 2, 1, -1},
+	{{HDMI_1920x1080p60_16x9, HDMI_1920x1080p50_16x9, GROUP_END},
 		1, VIU_ENCP, 3712, 1, 2, 2, CLK_UTIL_VID_PLL_DIV_6p25, 1, 1, 1, -1},
+	{{HDMI_1920x1080p30_16x9, HDMI_1920x1080p24_16x9, HDMI_1920x1080p25_16x9, GROUP_END},
+		1, VIU_ENCP, 3712, 2, 2, 2, CLK_UTIL_VID_PLL_DIV_6p25, 1, 1, 1, -1},
 	{{HDMI_4096x2160p60_256x135, HDMI_4096x2160p50_256x135, HDMI_3840x2160p60_16x9, HDMI_3840x2160p50_16x9,
 	GROUP_END},
 		1, VIU_ENCP, 3712, 1, 1, 1, CLK_UTIL_VID_PLL_DIV_6p25, 1, 2, 1, -1},
