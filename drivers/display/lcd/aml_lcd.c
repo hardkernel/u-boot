@@ -374,8 +374,8 @@ static void lcd_info_print(void)
 		   pconf->lcd_control.vbyone_config->lane_count,
 		   pconf->lcd_control.vbyone_config->region_num,
 		   pconf->lcd_control.vbyone_config->byte_mode,
-		   pconf->lcd_control.lvds_config->phy_vswing,
-		   pconf->lcd_control.lvds_config->phy_preem);
+		   pconf->lcd_control.vbyone_config->phy_vswing,
+		   pconf->lcd_control.vbyone_config->phy_preem);
 		lcd_pinmux_info_print(pconf);
 		break;
 	case LCD_TTL:
@@ -792,6 +792,11 @@ static int lcd_mode_probe(void)
 		ret = lcd_init_load_from_dts(dt_addr);
 		if (ret)
 			return -1;
+		if (aml_lcd_driver.unifykey_test_flag) {
+			aml_lcd_driver.bl_config->bl_key_valid = 1;
+			aml_lcd_driver.lcd_config->lcd_key_valid = 1;
+			LCDPR("force bl_key_valid & lcd_key_valid to 1\n");
+		}
 		if (aml_lcd_driver.lcd_config->lcd_key_valid) {
 			ret = aml_lcd_unifykey_check("lcd");
 			if (ret == 0) {
@@ -809,6 +814,11 @@ static int lcd_mode_probe(void)
 		ret = lcd_init_load_from_bsp();
 		if (ret)
 			return -1;
+		if (aml_lcd_driver.unifykey_test_flag) {
+			aml_lcd_driver.bl_config->bl_key_valid = 1;
+			aml_lcd_driver.lcd_config->lcd_key_valid = 1;
+			LCDPR("force bl_key_valid & lcd_key_valid to 1\n");
+		}
 		if (aml_lcd_driver.lcd_config->lcd_key_valid) {
 			ret = aml_lcd_unifykey_check("lcd");
 			if (ret == 0) {
@@ -843,6 +853,7 @@ static int lcd_mode_probe(void)
 		LCDERR("invalid lcd config\n");
 		return -1;
 	}
+
 #ifdef CONFIG_AML_LCD_EXTERN
 	lcd_extern_load_config(dt_addr, aml_lcd_driver.lcd_config);
 #endif

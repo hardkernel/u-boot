@@ -1155,6 +1155,7 @@ add_driver_default_end:
 
 int aml_lcd_extern_probe(char *dtaddr, int index)
 {
+	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
 	struct lcd_extern_config_s *ext_config;
 	int ret, load_id = 0;
 
@@ -1187,6 +1188,10 @@ int aml_lcd_extern_probe(char *dtaddr, int index)
 	switch (load_id) {
 	case 1: /* dts */
 		aml_lcd_extern_get_init_dts(dtaddr, ext_config);
+		if (lcd_drv->unifykey_test_flag) {
+			ext_config->lcd_ext_key_valid = 1;
+			LCDPR("force lcd_ext_key_valid to 1\n");
+		}
 		/* check unifykey config */
 		if (ext_config->lcd_ext_key_valid) {
 			ret = aml_lcd_unifykey_check("lcd_extern");
@@ -1204,6 +1209,10 @@ int aml_lcd_extern_probe(char *dtaddr, int index)
 		}
 		break;
 	default: /* default */
+		if (lcd_drv->unifykey_test_flag) {
+			ext_config->lcd_ext_key_valid = 1;
+			LCDPR("force lcd_ext_key_valid to 1\n");
+		}
 		if (ext_config->lcd_ext_key_valid) {
 			ret = aml_lcd_unifykey_check("lcd_extern");
 			if (ret == 0) {
