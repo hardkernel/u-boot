@@ -31,6 +31,10 @@
 #include <dm.h>
 #include <mmc.h>
 
+#if defined(CONFIG_TARGET_ODROID_XU4) || defined(CONFIG_TARGET_ODROID_XU3)
+	#include <samsung/odroid_misc.h>
+#endif
+
 DECLARE_GLOBAL_DATA_PTR;
 
 __weak int exynos_early_init_f(void)
@@ -94,6 +98,11 @@ int board_init(void)
 	gd->ram_size -= size;
 	gd->bd->bi_dram[CONFIG_NR_DRAM_BANKS - 1].size -= size;
 #endif
+
+#if defined(CONFIG_TARGET_ODROID_XU4) || defined(CONFIG_TARGET_ODROID_XU3)
+	odroid_misc_init();
+#endif
+
 	return exynos_init();
 }
 
