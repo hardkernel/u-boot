@@ -154,19 +154,19 @@ static void odroid_gpio_deinit(void)
 static void odroid_gpio_init(void)
 {
 	/* Power control button pin */
-	if (!gpio_request(GPIO_POWER_BT, "Power BT"))
+	if (gpio_request(GPIO_POWER_BT, "Power BT"))
 		goto err;
 	gpio_set_pull(GPIO_POWER_BT, S5P_GPIO_PULL_NONE);
 	gpio_direction_input(GPIO_POWER_BT);
 
 	/* FAN Full Enable */
-	if (!gpio_request(GPIO_FAN_CTL, "FAN Ctrl"))
+	if (gpio_request(GPIO_FAN_CTL, "FAN Ctrl"))
 		goto err;
 	gpio_set_pull(GPIO_FAN_CTL, S5P_GPIO_PULL_NONE);
 	gpio_direction_output(GPIO_FAN_CTL, 1);
 
 	/* LCD PWM Port High */
-	if (!gpio_request(GPIO_LCD_PWM, "LCD PWM"))
+	if (gpio_request(GPIO_LCD_PWM, "LCD PWM"))
 		goto err;
 	gpio_set_pull(GPIO_LCD_PWM, S5P_GPIO_PULL_NONE);
 	gpio_direction_output(GPIO_LCD_PWM, 1);
