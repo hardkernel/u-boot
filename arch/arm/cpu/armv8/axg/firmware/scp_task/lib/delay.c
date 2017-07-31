@@ -32,7 +32,7 @@ void _udelay(unsigned int us)
 	unsigned int t0 = get_time();
 	P_EE_TIMER_CTRL |= (0x1 << 4);
 
-	while (get_time() - t0 <= us * 24)
+	while (get_time() - t0 <= us)
 		;
 }
 
