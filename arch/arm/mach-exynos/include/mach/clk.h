@@ -60,4 +60,6 @@ int set_spi_clk(int periph_id, unsigned int rate);
  */
 unsigned long clock_get_periph_rate(int peripheral);
 
+unsigned long get_usbdrd_clk(void);
+
 #endif

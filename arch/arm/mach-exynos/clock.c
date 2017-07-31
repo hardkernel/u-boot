@@ -951,6 +951,40 @@ static unsigned long exynos4_get_lcd_clk(void)
 	return pclk;
 }
 
+/* exynos5: get the usbdrd clock */
+static unsigned long exynos5_get_usbdrd_clk(void)
+{
+	struct exynos5_clock *clk =
+		(struct exynos5_clock *)samsung_get_base_clock();
+	unsigned int addr;
+	unsigned int sel;
+	unsigned int ratio;
+	unsigned long sclk;
+
+	sel = readl(&clk->src_fsys);
+	sel = (sel >> 28) & 0xf;
+
+	sclk = 24000000;
+	/*
+	 * CLK_DIV_FSYS0
+	 * USBDRD30_RATIO[27:24], SATA_RATIO[23:20]
+	 */
+	addr = (unsigned int)&clk->div_fsys0;
+	ratio = readl(addr);
+
+	ratio = (ratio >> 24) & 0xff;
+
+	return (sclk / (ratio + 1));
+}
+
+unsigned long get_usbdrd_clk(void)
+{
+	if (cpu_is_exynos5())
+		return exynos5_get_usbdrd_clk();
+
+	return	0;
+}
+
 /* get_lcd_clk: return lcd clock frequency */
 static unsigned long exynos5_get_lcd_clk(void)
 {
