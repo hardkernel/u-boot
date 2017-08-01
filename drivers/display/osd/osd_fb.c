@@ -232,6 +232,8 @@ unsigned long get_fb_addr(void)
 {
 	char *dt_addr = NULL;
 	unsigned long fb_addr = 0;
+	static int initrd_set = 0;
+	char str_fb_addr[32];
 #ifdef CONFIG_OF_LIBFDT
 	int parent_offset;
 	char *propdata;
@@ -265,6 +267,13 @@ unsigned long get_fb_addr(void)
 		}
 	}
 #endif
+	if ((!initrd_set) && (get_cpu_id().family_id >= MESON_CPU_MAJOR_ID_AXG)) {
+		sprintf(str_fb_addr,"%lx",fb_addr);
+		setenv("initrd_high", str_fb_addr);
+		initrd_set = 1;
+		osd_logi("set initrd_high: 0x%s\n", str_fb_addr);
+	}
+
 	osd_logi("fb_addr for logo: 0x%lx\n", fb_addr);
 	return fb_addr;
 }
