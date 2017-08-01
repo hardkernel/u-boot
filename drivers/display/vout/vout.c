@@ -249,6 +249,12 @@ static const vout_set_t vout_sets[] = {
 		.width             = 640,
 		.height            = 480,
 	},
+	{ /* custombuilt */
+		.name              = "custombuilt",
+		.mode              = VMODE_CUSTOMBUILT,
+		.width             = 0,
+		.height            = 0,
+	},
 };
 
 vidinfo_t tv_info = {
@@ -296,8 +302,14 @@ static int vout_find_width_by_name(const char* name)
 
 	for (i = 0; i < sizeof(vout_sets) / sizeof(struct vout_set_s); i++) {
 		if (strncmp(name, vout_sets[i].name, strlen(vout_sets[i].name)) == 0) {
-			width = vout_sets[i].width;
-			return width;
+			/* check custombuilt */
+			if (strncmp(name, "custombuilt", 11) == 0) {
+				width = simple_strtoul(getenv("customwidth"), NULL, 0);
+				return width;
+			} else {
+				width = vout_sets[i].width;
+				return width;
+			}
 		}
 	}
 
@@ -311,8 +323,14 @@ static int vout_find_height_by_name(const char* name)
 
 	for (i = 0; i < sizeof(vout_sets) / sizeof(struct vout_set_s); i++) {
 		if (strncmp(name, vout_sets[i].name, strlen(vout_sets[i].name)) == 0) {
-			height = vout_sets[i].height;
-			return height;
+			/* check custombuilt */
+			if (strncmp(name, "custombuilt", 11) == 0) {
+				height = simple_strtoul(getenv("customheight"), NULL, 0);
+				return height;
+			} else {
+				height = vout_sets[i].height;
+				return height;
+			}
 		}
 	}
 
@@ -512,6 +530,11 @@ static int get_window_axis(int *axis)
 		axis[1] = getenv_int("640x480p_y", 0);
 		axis[2] = getenv_int("640x480p_w", 640);
 		axis[3] = getenv_int("640x480p_h", 480);
+	} else if (strncmp(mode, "custombuilt", 11) == 0) {
+		axis[0] = 0;
+		axis[1] = 0;
+		axis[2] = getenv_int("customwidth", 1920);
+		axis[3] = getenv_int("customheight", 1080);
 	} else {
 		axis[0] = getenv_int("1080p_x", 0);
 		axis[1] = getenv_int("1080p_y", 0);
