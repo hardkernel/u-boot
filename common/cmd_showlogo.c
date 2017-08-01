@@ -62,15 +62,15 @@ static int display_logo(const char* mode, const char* bmp_width, const char* bmp
 	int ret = 0;
 	int i = 0;
 
-	if (!strcmp("custombuilt", mode)) {
-		run_command("osd clear", 0);
-		return 1;
-	}
-
 	for (i = 0; i < ARRAY_SIZE(c2_res_list); ++i) {
 		if (!strcmp(c2_res_list[i].name, mode)) {
-			setenv("display_width", simple_itoa(c2_res_list[i].display_width));
-			setenv("display_height", simple_itoa(c2_res_list[i].display_height));
+			if (!strcmp(mode, "custombuilt")) {
+				setenv("display_width", getenv("customwidth"));
+				setenv("display_height", getenv("customheight"));
+			} else {
+				setenv("display_width", simple_itoa(c2_res_list[i].display_width));
+				setenv("display_height", simple_itoa(c2_res_list[i].display_height));
+			}
 			break;
 		}
 	}
