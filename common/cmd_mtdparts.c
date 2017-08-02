@@ -1241,6 +1241,7 @@ static uint64_t net_part_size(struct mtd_info *mtd, struct part_info *part)
 }
 #endif
 
+#ifndef CONFIFG_AML_MTDPART
 static void print_partition_table(void)
 {
 	struct list_head *dentry, *pentry;
@@ -1293,6 +1294,7 @@ static void print_partition_table(void)
 	if (list_empty(&devices))
 		printf("no partitions defined\n");
 }
+#endif
 
 /**
  * Format and print out a partition list for each device from global device
@@ -1300,11 +1302,11 @@ static void print_partition_table(void)
  */
 static void list_partitions(void)
 {
+	#ifndef CONFIFG_AML_MTDPART
 	struct part_info *part;
 
 	debug("\n---list_partitions---\n");
 	print_partition_table();
-
 	/* current_mtd_dev is not NULL only when we have non empty device list */
 	if (current_mtd_dev) {
 		part = mtd_part_info(current_mtd_dev, current_mtd_partnum);
@@ -1329,6 +1331,7 @@ static void list_partitions(void)
 	puts("mtdparts: ");
 	puts(mtdparts_default ? mtdparts_default : "none");
 	puts("\n");
+	#endif
 }
 
 /**
@@ -1971,6 +1974,12 @@ static int do_chpart(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 static int do_mtdparts(cmd_tbl_t *cmdtp, int flag, int argc,
 		       char * const argv[])
 {
+	#ifdef CONFIFG_AML_MTDPART
+	if (argc > 1) {
+		printf("Don't support mtdpart XXX operation\n");
+		return 0;
+	}
+	#else
 	if (argc == 2) {
 		if (strcmp(argv[1], "default") == 0) {
 			setenv("mtdids", (char *)mtdids_default);
@@ -1989,6 +1998,7 @@ static int do_mtdparts(cmd_tbl_t *cmdtp, int flag, int argc,
 			return mtd_devices_init();
 		}
 	}
+	#endif
 
 	/* make sure we are in sync with env variables */
 	if (mtdparts_init() != 0)
