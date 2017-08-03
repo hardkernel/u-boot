@@ -11,6 +11,15 @@
 #define	GPIO_FAN_CTL	EXYNOS5420_GPIO_B20
 #define	GPIO_LCD_PWM	EXYNOS5420_GPIO_B23
 
+#define	BOOT_EMMC	0x6
+#define	BOOT_EMMC_4_4	0x7
+
+/* Self update option */
+#define	OPTION_ERASE_USERDATA	0x01
+#define	OPTION_ERASE_FAT	0x02
+#define	OPTION_ERASE_ENV	0x04
+#define	OPTION_UPDATE_UBOOT	0x08
+
 enum	{
 	PART_FWBL1 = 0,
 	PART_BL2,
@@ -36,5 +45,6 @@ extern	int odroid_partition_setup	(char *dev_no);
 
 extern	void odroid_led_ctrl	(int gpio, int status);
 extern	void odroid_misc_init	(void);
+extern	void odroid_power_off	(void);
 
 #endif /* __ODROID_MISC_H__ */

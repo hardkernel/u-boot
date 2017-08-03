@@ -197,7 +197,17 @@ void odroid_led_ctrl(int gpio, int status)
 }
 
 /*---------------------------------------------------------------------------*/
-static void odroid_pmic_deinit(void)	{}
+static void odroid_pmic_deinit(void)
+{
+	struct udevice *dev;
+
+	if (pmic_get("s2mps11", &dev))	{
+		printf("%s : s2mps11 control error!\n", __func__);
+		return;
+	}
+	/* Master Reset Enable */
+	pmic_reg_write(dev, S2MPS11_REG_CTRL1, 0x0);
+}
 
 /*---------------------------------------------------------------------------*/
 static void odroid_pmic_init(void)
@@ -313,9 +323,112 @@ err:
 }
 
 /*---------------------------------------------------------------------------*/
+static int filecheck(const char *fname)
+{
+	char	cmd[64];
+	unsigned long	filesize = 0;
+
+	/* env variable init */
+	setenv("filesize", "0");
+
+	memset(cmd, 0x00, sizeof(cmd));
+	sprintf(cmd, "fatload mmc 0:1 40008000 update/%s", fname);
+	run_command(cmd, 0);
+
+	/* file size check */
+	if ((filesize = getenv_ulong("filesize", 16, 0)))
+		return  1;
+
+	printf("ERROR! update/%s File Not Found!! filesize = 0\n", fname);
+
+	/* error */
+	return  0;
+}
+
+/*---------------------------------------------------------------------------*/
+static void update_image(const char *ptn)
+{
+	char	cmd[64];
+
+	memset(cmd, 0x00, sizeof(cmd));
+	sprintf(cmd, "fastboot flash %s 40008000 0", ptn);
+	run_command(cmd, 0);
+}
+
+/*---------------------------------------------------------------------------*/
+static void update_raw_image(const char *ptn)
+{
+	struct exynos5_power *pmu =
+		(struct exynos5_power *)samsung_get_base_power;
+	int OmPin;
+
+	OmPin = pmu->inform3;
+
+	if (!strncmp(ptn, "kernel", sizeof("kernel")))
+		run_command("movi w k 0 40008000", 0);
+	else {
+		if ((OmPin == BOOT_EMMC_4_4) || (OmPin == BOOT_EMMC)) {
+			run_command("emmc open 0", 0);
+			if (!strncmp(ptn, "bootloader", sizeof("bootloader")))
+				run_command("movi w z u 0 40008000", 0);
+			if (!strncmp(ptn, "bl1", sizeof("bl1")))
+				run_command("movi w z f 0 40008000", 0);
+			if (!strncmp(ptn, "bl2", sizeof("bl2")))
+				run_command("movi w z b 0 40008000", 0);
+			if (!strncmp(ptn, "tzsw", sizeof("tzsw")))
+				run_command("movi w z t 0 40008000", 0);
+			run_command("emmc close 0", 0);
+		} else {
+			if (!strncmp(ptn, "bootloader", sizeof("bootloader")))
+				run_command("movi w u 0 40008000", 0);
+			if (!strncmp(ptn, "bl1", sizeof("bl1")))
+				run_command("movi w f 0 40008000", 0);
+			if (!strncmp(ptn, "bl2", sizeof("bl2")))
+				run_command("movi w b 0 40008000", 0);
+			if (!strncmp(ptn, "tzsw", sizeof("tzsw")))
+				run_command("movi w t 0 40008000", 0);
+		}
+	}
+}
+
+/*---------------------------------------------------------------------------*/
 /* firmware update check */
 static void odroid_fw_update(unsigned int option)
 {
+	odroid_led_ctrl(GPIO_LED_B, 1);
+
+	if (filecheck("system.img"))
+		update_image("system");
+	if (filecheck("cache.img"))
+		update_image("cache");
+
+	if (option & OPTION_ERASE_USERDATA) {
+		if (filecheck("userdata.img"))
+			update_image("userdata");
+	}
+	if (filecheck("zImage"))
+		update_raw_image("kernel");
+	else if (filecheck("zImage-dtb"))
+		update_raw_image("kernel");
+
+	if (option & OPTION_UPDATE_UBOOT) {
+		if(filecheck("u-boot.bin"))
+			update_raw_image("bootloader");
+		if(filecheck("bl1.bin"))
+			update_raw_image("bl1");
+		if(filecheck("bl2.bin"))
+			update_raw_image("bl2");
+		if(filecheck("tzsw.bin"))
+			update_raw_image("tzsw");
+	}
+
+	if (option & OPTION_ERASE_ENV)
+		run_command(UBOOT_ENV_ERASE, 0);
+
+	if (option & OPTION_ERASE_FAT)
+		run_command("fatformat mmc 0:1", 0);
+
+	odroid_led_ctrl(GPIO_LED_B, 1);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -369,6 +482,18 @@ void odroid_misc_deinit(void)
 	odroid_led_deinit();
 	odroid_gpio_deinit();
 	odroid_pmic_deinit();
+}
+
+/*---------------------------------------------------------------------------*/
+void odroid_power_off(void)
+{
+	struct exynos5_power *power =
+		(struct exynos5_power *)samsung_get_base_power();
+
+	printf("%s\n", __func__);
+	odroid_misc_deinit();
+
+	power->ps_hold_control = 0x5200;
 }
 
 /*---------------------------------------------------------------------------*/

@@ -17,10 +17,13 @@
 #include <samsung/odroid_misc.h>
 #include <mmc.h>
 
+/*---------------------------------------------------------------------------*/
 static unsigned int download_size;
 static unsigned int download_bytes;
 static unsigned int download_error;
 static int rx_handler (const unsigned char *buffer, unsigned int buffer_size);
+
+/*---------------------------------------------------------------------------*/
 static struct cmd_fastboot_interface interface =
 {
 	.rx_handler            = rx_handler,
@@ -32,6 +35,7 @@ static struct cmd_fastboot_interface interface =
 	.transfer_buffer_size  = 0,
 };
 
+/*---------------------------------------------------------------------------*/
 static int flashing_raw_data(struct partition_info *pinfo,
 	unsigned int addr, unsigned int size, unsigned int dev_no)
 {
@@ -48,11 +52,16 @@ static int flashing_raw_data(struct partition_info *pinfo,
 		run_command(cmd, 0);
 		blk_start = pinfo->blk_start -1;
 	}
-	memset(cmd, 0x00, sizeof(cmd));
-	sprintf(cmd, "mmc write %x %x %x",
-		(unsigned int)addr, blk_start, blk_cnt);
-	run_command(cmd, 0);
-	printf("%s : %s\n", __func__, cmd);
+
+	mmc->block_dev.block_write(&mmc->block_dev,
+		blk_start,
+		blk_cnt,
+		(const void *)addr);
+	printf("mmc block write, dev %d, addr 0x%x, blk start %d, blk cnt %d\n",
+		dev_no,
+		(unsigned int)addr,
+		blk_start,
+		blk_cnt);
 
 	if (!IS_SD(mmc) && pinfo->raw_en) {
 		memset(cmd, 0x00, sizeof(cmd));
@@ -62,6 +71,7 @@ static int flashing_raw_data(struct partition_info *pinfo,
 	return	0;
 }
 
+/*---------------------------------------------------------------------------*/
 static void erase_partition(struct partition_info *pinfo, unsigned int dev_no)
 {
 	#define	BLOCK_ERASE_SIZE	(512 * 1024)
@@ -99,6 +109,7 @@ static void erase_partition(struct partition_info *pinfo, unsigned int dev_no)
 	free(clrbuf);
 }
 
+/*---------------------------------------------------------------------------*/
 static int check_compress_ext4(char *img_base, unsigned long long parti_size) {
 	ext4_file_header *file_header;
 
@@ -141,6 +152,7 @@ static int check_compress_ext4(char *img_base, unsigned long long parti_size) {
 	return 0;
 }
 
+/*---------------------------------------------------------------------------*/
 static int write_compressed_ext4(char* img_base, unsigned int sector_base,
 	unsigned int dev_no)
 {
@@ -194,7 +206,8 @@ static int write_compressed_ext4(char* img_base, unsigned int sector_base,
 			break;
 		}
 		total_chunks--;
-		printf("mmc write blk = 0x%08x, size = 0x%08x, remain chunks = %d\n",
+		printf("mmc write dev %d, blk = 0x%08x, size = 0x%08x, remain chunks = %d\n",
+			dev_no,
 			sector_base,
 			sector_size,
 			total_chunks);
@@ -207,20 +220,21 @@ static int write_compressed_ext4(char* img_base, unsigned int sector_base,
 	return 0;
 }
 
+/*---------------------------------------------------------------------------*/
 static int flashing_data(struct partition_info *pinfo,
 	unsigned int addr, unsigned int size, unsigned int dev_no)
 {
 	if (check_compress_ext4((char *)addr, pinfo->size))
-		flashing_raw_data(pinfo, addr, size, dev_no);
+		flashing_raw_data(pinfo, addr, pinfo->size, dev_no);
 	else {
 		erase_partition(pinfo, dev_no);
 		write_compressed_ext4((char*)addr, pinfo->blk_start, dev_no);
 	}
 
-	run_command("mmc dev 0", 0);
 	return	0;
 }
 
+/*---------------------------------------------------------------------------*/
 static int rx_handler (const unsigned char *buffer, unsigned int buffer_size)
 {
 	int ret = 1;
@@ -421,7 +435,7 @@ static int rx_handler (const unsigned char *buffer, unsigned int buffer_size)
 			if (flashing_data(&pinfo,
 				(unsigned int)interface.transfer_buffer,
 				download_bytes, 0)) {
-				sprintf(response, "FAILfailed to flash %s partition!",
+					sprintf(response, "FAILfailed to flash %s partition!",
 					cmdbuf + 6);
 				goto send_tx_status;
 			}
@@ -438,19 +452,77 @@ send_tx_status:
 	return ret;
 }
 
+/*---------------------------------------------------------------------------*/
+static int fastboot_cmd_flash(int argc, char *const argv[])
+{
+	struct partition_info pinfo;
+	unsigned int addr, dev_no = 0;
+
+	if (odroid_get_partition_info(argv[2], &pinfo))
+		return	1;
+
+	addr = simple_strtoul(argv[3], NULL, 16);
+	if (argc == 5)
+		dev_no = simple_strtoul(argv[4], NULL, 16);
+
+	if ((dev_no != 0) && (dev_no != 1))
+		dev_no = 0;
+
+	flashing_data(&pinfo, addr, pinfo.size, dev_no);
+
+	if (dev_no)
+		run_command("mmc dev 0", 0);
+
+	return	0;
+}
+
+/*---------------------------------------------------------------------------*/
+static int fastboot_cmd_parsing(int argc, char *const argv[], int *retval)
+{
+	int	ret = 0;
+	*retval = CMD_RET_FAILURE;
+
+	switch(argc) {
+	case	2:
+		if (!strncmp(argv[1], "poweroff", sizeof("poweroff"))) {
+			odroid_power_off();
+			while(1);
+		}
+		*retval = CMD_RET_USAGE;
+		break;
+	case	5:	case	6:
+		if (argv[4] != NULL)
+			ret = odroid_partition_setup(argv[4]);
+		else
+			ret = odroid_partition_setup("0");
+
+		if (!ret)
+			ret = fastboot_cmd_flash(argc, argv);
+
+		*retval = ret ? CMD_RET_FAILURE:CMD_RET_SUCCESS;
+		break;
+	default:
+		*retval = CMD_RET_USAGE;
+		break;
+	/* normal fastboot */
+	case	1:
+		ret = odroid_partition_setup("0");
+		*retval = ret ? CMD_RET_FAILURE:CMD_RET_SUCCESS;
+		return	*retval;
+	}
+	return	1;
+}
+
+/*---------------------------------------------------------------------------*/
 static int do_fastboot(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 {
-	int continue_from_disconnect = 0, poll_status;
+	int continue_from_disconnect = 0, poll_status, retval;
 	int led_status = 0, led_blink_cnt = 0;
 	int ret = 1;
 
-	if (argv[4] != NULL)
-		ret = odroid_partition_setup(argv[4]);
-	else
-		ret = odroid_partition_setup("0");
-	if (ret)
-		return	ret;
-
+	/* fastboot command parsing */
+	if (fastboot_cmd_parsing(argc, argv, &retval))
+		return retval;
 	do
 	{
 		continue_from_disconnect = 0;
@@ -509,6 +581,9 @@ static int do_fastboot(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 U_BOOT_CMD(
 	fastboot, 5, 1, do_fastboot,
 	"use USB Fastboot protocol",
-	"<USB_controller>\n"
-	"    - run as a fastboot usb device"
+	"[ poweroff | flash [kernel|system|userdata|cache] [addr] [dev no] ]\n"
+	"[] - options for self update"
 );
+
+/*---------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------*/

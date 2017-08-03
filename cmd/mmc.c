@@ -1426,32 +1426,31 @@ static int get_partition_info(const char *ptn, struct partition_info *pinfo)
 
 static int do_movi(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 {
-	unsigned int dev_num, ret = -1, addr, offset = 0;
-	char cmd[64] = {0, };
+	unsigned int dev_no, ret = -1, addr, offset = 0;
 	struct partition_info pinfo;
 
 	switch(argc)	{
 	case	3:
 		if ('i' == argv[1][0]) {
-			dev_num = simple_strtoul(argv[2], NULL, 10);
-			if (dev_num)
+			dev_no  = simple_strtoul(argv[2], NULL, 10);
+			if (dev_no)
 				ret = run_command("mmc dev 1", 0);
 			if (!ret)
 				run_command("mmc info", 0);
-			if (dev_num && !ret)
+			if (dev_no && !ret)
 				run_command("mmc dev 0", 0);
 
 			return	ret ? CMD_RET_FAILURE:CMD_RET_SUCCESS;
 		}
 		break;
 	case	5:
-		dev_num = simple_strtoul(argv[3], NULL, 10);
-		addr	= simple_strtoul(argv[4], NULL, 10);
+		dev_no  = simple_strtoul(argv[3], NULL, 10);
+		addr	= simple_strtoul(argv[4], NULL, 16);
 		ret	= get_partition_info(argv[2], &pinfo);
 		break;
 	case	6:
-		dev_num = simple_strtoul(argv[4], NULL, 10);
-		addr	= simple_strtoul(argv[5], NULL, 10);
+		dev_no  = simple_strtoul(argv[4], NULL, 10);
+		addr	= simple_strtoul(argv[5], NULL, 16);
 		ret	= get_partition_info(argv[3], &pinfo);
 		if ((argv[2][0] == 'z') && pinfo.raw_en)
 			offset = 1;
@@ -1460,15 +1459,29 @@ static int do_movi(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 		break;
 	}
 	if (!ret) {
-		sprintf(cmd, "mmc %s %d %x %x",
+		struct mmc *mmc;
+
+		mmc = find_mmc_device(dev_no);
+
+		printf("mmc block %s, dev %d, addr 0x%x, blk start %d, blk cnt %d\n",
 			(argv[1][0] == 'w') ? "write" : "read",
-			addr,
-			pinfo.blk_start - offset,
-			pinfo.size / MOVI_BLK_SIZE);
-		run_command(cmd, 0);
+			dev_no,
+			(unsigned int)addr,
+			(pinfo.blk_start - offset),
+			(pinfo.size / MOVI_BLK_SIZE));
+
+		if (argv[1][0] == 'w')
+			mmc->block_dev.block_write(&mmc->block_dev,
+				(pinfo.blk_start - offset),
+				(pinfo.size / MOVI_BLK_SIZE),
+				(int *)addr);
+		else
+			mmc->block_dev.block_read(&mmc->block_dev,
+				(pinfo.blk_start - offset),
+				(pinfo.size / MOVI_BLK_SIZE),
+				(void *)addr);
 		return	CMD_RET_SUCCESS;
 	}
-usage:
 	return CMD_RET_USAGE;
 }
 
