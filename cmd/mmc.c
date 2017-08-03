@@ -1237,7 +1237,7 @@ static int put_mmc_mbr(uchar *mbr, char *device_name)
 		return	-1;
 }
 
-static int get_mmc_part_info(char *device_name, int part_num,
+int get_mmc_part_info(char *device_name, int part_num,
 	uint *block_start, uint *block_count, uchar *part_Id)
 {
 	int		rv;
@@ -1401,6 +1401,82 @@ U_BOOT_CMD(
 	"Check mmc device size.",
 	"<device_num>\n"
 	"MMC size writes to env variable mmc_size_gb [1, 2, 4, 8, 16, 32, 64, 128]\n"
+);
+
+#include <samsung/odroid_misc.h>
+
+static int get_partition_info(const char *ptn, struct partition_info *pinfo)
+{
+	switch(ptn[0]) {
+	case	'f':
+		return	odroid_get_partition_info("fwbl1", pinfo);
+	case	'b':
+		return	odroid_get_partition_info("bl2", pinfo);
+	case	'u':
+		return	odroid_get_partition_info("bootloader", pinfo);
+	case	't':
+		return	odroid_get_partition_info("tzsw", pinfo);
+	case	'k':
+		return	odroid_get_partition_info("kernel", pinfo);
+	default:
+		break;
+	}
+	return	-1;
+}
+
+static int do_movi(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
+{
+	unsigned int dev_num, ret = -1, addr, offset = 0;
+	char cmd[64] = {0, };
+	struct partition_info pinfo;
+
+	switch(argc)	{
+	case	3:
+		if ('i' == argv[1][0]) {
+			dev_num = simple_strtoul(argv[2], NULL, 10);
+			if (dev_num)
+				ret = run_command("mmc dev 1", 0);
+			if (!ret)
+				run_command("mmc info", 0);
+			if (dev_num && !ret)
+				run_command("mmc dev 0", 0);
+
+			return	ret ? CMD_RET_FAILURE:CMD_RET_SUCCESS;
+		}
+		break;
+	case	5:
+		dev_num = simple_strtoul(argv[3], NULL, 10);
+		addr	= simple_strtoul(argv[4], NULL, 10);
+		ret	= get_partition_info(argv[2], &pinfo);
+		break;
+	case	6:
+		dev_num = simple_strtoul(argv[4], NULL, 10);
+		addr	= simple_strtoul(argv[5], NULL, 10);
+		ret	= get_partition_info(argv[3], &pinfo);
+		if ((argv[2][0] == 'z') && pinfo.raw_en)
+			offset = 1;
+		break;
+	default	:
+		break;
+	}
+	if (!ret) {
+		sprintf(cmd, "mmc %s %d %x %x",
+			(argv[1][0] == 'w') ? "write" : "read",
+			addr,
+			pinfo.blk_start - offset,
+			pinfo.size / MOVI_BLK_SIZE);
+		run_command(cmd, 0);
+		return	CMD_RET_SUCCESS;
+	}
+usage:
+	return CMD_RET_USAGE;
+}
+
+U_BOOT_CMD(
+	movi, 7, 0, do_movi,
+	"movi emmc/sd r/w command",
+	"{read|write} [zero] {fwbl1|bl2|u-boot|tzsw|kernel} {dev no} {addr}\n"
+	"[zero] - flag for emmc raw partition"
 );
 
 #endif

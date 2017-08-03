@@ -1573,8 +1573,11 @@ write_fat(struct blk_desc *dev_desc, disk_partition_t *info, int fat_size)
 			RESERVED_CNT + i, 16, (ulong *)dummy) != 16) {
 			printf ("Can't erase FAT region~~!!!\n");
 		}
-		if((i % 160) == 0)
+		if((i % 160) == 0) {
+			if ((i % 12800) == 0)
+				printf("\n");
 			printf(".");
+		}
 	}
 	printf("\n");
 

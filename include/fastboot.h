@@ -20,12 +20,37 @@ void fastboot_fail(const char *reason);
 void fastboot_okay(const char *reason);
 
 #if defined(CONFIG_TARGET_ODROID_XU4) || defined(CONFIG_TARGET_ODROID_XU3)
-#include <common.h>
-#include <command.h>
 
-#include <asm/byteorder.h>
-#include <asm/arch/cpu.h>
-#include <asm/io.h>
+typedef struct _ext4_file_header {
+	unsigned int magic;
+	unsigned short major;
+	unsigned short minor;
+	unsigned short file_header_size;
+	unsigned short chunk_header_size;
+	unsigned int block_size;
+	unsigned int total_blocks;
+	unsigned int total_chunks;
+	unsigned int crc32;
+}	ext4_file_header;
+
+typedef struct _ext4_chunk_header {
+	unsigned short type;
+	unsigned short reserved;
+	unsigned int chunk_size;
+	unsigned int total_size;
+}	ext4_chunk_header;
+
+#define EXT4_FILE_HEADER_MAGIC	0xED26FF3A
+#define EXT4_FILE_HEADER_MAJOR	0x0001
+#define EXT4_FILE_HEADER_MINOR	0x0000
+#define EXT4_FILE_BLOCK_SIZE	0x1000
+
+#define EXT4_FILE_HEADER_SIZE	(sizeof(ext4_file_header))
+#define EXT4_CHUNK_HEADER_SIZE	(sizeof(ext4_chunk_header))
+
+#define EXT4_CHUNK_TYPE_RAW	0xCAC1
+#define EXT4_CHUNK_TYPE_FILL	0xCAC2
+#define EXT4_CHUNK_TYPE_NONE	0xCAC3
 
 /* This is the interface file between the common cmd_fastboot.c and
    the board specific support.
@@ -107,67 +132,7 @@ struct cmd_fastboot_interface
 
 	   Set by board	*/
 	unsigned int transfer_buffer_size;
-
 };
-
-/* Android-style flash naming */
-typedef struct fastboot_ptentry fastboot_ptentry;
-
-/* flash partitions are defined in terms of blocks
-** (flash erase units)
-*/
-struct fastboot_ptentry
-{
-	/* The logical name for this partition, null terminated */
-	char name[16];
-	/* The start wrt the nand part, must be multiple of nand block size */
-	unsigned long long start;
-	/* The length of the partition, must be multiple of nand block size */
-	unsigned long long length;
-	/* Controls the details of how operations are done on the partition
-	   See the FASTBOOT_PTENTRY_FLAGS_*'s defined below */
-	unsigned int flags;
-};
-
-/* Lower byte shows if the read/write/erase operation in
-   repeated.  The base address is incremented.
-   Either 0 or 1 is ok for a default */
-
-#define FASTBOOT_PTENTRY_FLAGS_REPEAT(n)              (n & 0x0f)
-#define FASTBOOT_PTENTRY_FLAGS_REPEAT_MASK            0x0000000F
-
-/* Writes happen a block at a time.
-   If the write fails, go to next block
-   NEXT_GOOD_BLOCK and CONTIGOUS_BLOCK can not both be set */
-#define FASTBOOT_PTENTRY_FLAGS_WRITE_NEXT_GOOD_BLOCK  0x00000010
-
-/* Find a contiguous block big enough for a the whole file
-   NEXT_GOOD_BLOCK and CONTIGOUS_BLOCK can not both be set */
-#define FASTBOOT_PTENTRY_FLAGS_WRITE_CONTIGUOUS_BLOCK 0x00000020
-
-/* Sets the ECC to hardware before writing
-   HW and SW ECC should not both be set. */
-#define FASTBOOT_PTENTRY_FLAGS_WRITE_HW_ECC           0x00000040
-
-/* Sets the ECC to software before writing
-   HW and SW ECC should not both be set. */
-#define FASTBOOT_PTENTRY_FLAGS_WRITE_SW_ECC           0x00000080
-
-/* Write the file with write.i */
-#define FASTBOOT_PTENTRY_FLAGS_WRITE_I                0x00000100
-
-/* Write the file with write.yaffs */
-#define FASTBOOT_PTENTRY_FLAGS_WRITE_YAFFS            0x00000200
-
-/* Write the file as a series of variable/value pairs
-   using the setenv and saveenv commands */
-#define FASTBOOT_PTENTRY_FLAGS_WRITE_ENV              0x00000400
-
-/* Use mmc command to read/write this partition */
-#define FASTBOOT_PTENTRY_FLAGS_USE_MMC_CMD            0x00010000
-
-/* Use movi command to read/write this partition */
-#define FASTBOOT_PTENTRY_FLAGS_USE_MOVI_CMD           0x00020000
 
 /* Status values */
 #define FASTBOOT_OK			0
@@ -176,41 +141,18 @@ struct fastboot_ptentry
 #define FASTBOOT_INACTIVE		2
 
 /* Magic string to enable fastboot during preboot */
-#define FASTBOOT_REBOOT_MAGIC "REBOOT-FASTBOOT"
-#define FASTBOOT_REBOOT_MAGIC_SIZE 15
+#define FASTBOOT_REBOOT_MAGIC		"REBOOT-FASTBOOT"
+#define FASTBOOT_REBOOT_MAGIC_SIZE	15
 
 /* Android bootimage file format */
 #define FASTBOOT_BOOT_MAGIC "ANDROID!"
-#define FASTBOOT_BOOT_MAGIC_SIZE 8
-#define FASTBOOT_BOOT_NAME_SIZE 16
-#define FASTBOOT_BOOT_ARGS_SIZE 512
+#define FASTBOOT_BOOT_MAGIC_SIZE	8
+#define FASTBOOT_BOOT_NAME_SIZE		16
+#define FASTBOOT_BOOT_ARGS_SIZE		512
 
 /* Input of fastboot_tx_status */
 #define FASTBOOT_TX_ASYNC		0
 #define FASTBOOT_TX_SYNC		1
-
-struct fastboot_boot_img_hdr {
-	unsigned char magic[FASTBOOT_BOOT_MAGIC_SIZE];
-
-	unsigned kernel_size;  /* size in bytes */
-	unsigned kernel_addr;  /* physical load addr */
-
-	unsigned ramdisk_size; /* size in bytes */
-	unsigned ramdisk_addr; /* physical load addr */
-
-	unsigned second_size;  /* size in bytes */
-	unsigned second_addr;  /* physical load addr */
-
-	unsigned tags_addr;    /* physical addr for kernel tags */
-	unsigned page_size;    /* flash page size we assume */
-	unsigned unused[2];    /* future expansion: should be 0 */
-
-	unsigned char name[FASTBOOT_BOOT_NAME_SIZE]; /* asciiz product name */
-
-	unsigned char cmdline[FASTBOOT_BOOT_ARGS_SIZE];
-
-	unsigned id[8]; /* timestamp / checksum / sha1 / etc */
-};
 
 #if defined(CONFIG_FASTBOOT)
 /* A board specific test if u-boot should go into the fastboot command
@@ -260,26 +202,6 @@ extern int fastboot_tx_status(const char *buffer, unsigned int buffer_size, cons
    Returns 1 on failure */
 extern int fastboot_getvar(const char *rx_buffer, char *tx_buffer);
 
-/* The Android-style flash handling */
-
-/* tools to populate and query the partition table */
-extern void fastboot_flash_add_ptn(fastboot_ptentry *ptn);
-extern fastboot_ptentry *fastboot_flash_find_ptn(const char *name);
-extern fastboot_ptentry *fastboot_flash_get_ptn(unsigned n);
-extern unsigned int fastboot_flash_get_ptn_count(void);
-extern void fastboot_flash_dump_ptn(void);
-
-extern int fastboot_flash_init(void);
-extern int fastboot_flash_erase(fastboot_ptentry *ptn);
-extern int fastboot_flash_read_ext(fastboot_ptentry *ptn,
-				   unsigned extra_per_page, unsigned offset,
-				   void *data, unsigned bytes);
-#define fastboot_flash_read(ptn, offset, data, bytes) \
-  flash_read_ext(ptn, 0, offset, data, bytes)
-extern int fastboot_flash_write(fastboot_ptentry *ptn, unsigned extra_per_page,
-				const void *data, unsigned bytes);
-
-
 #else
 
 /* Stubs for when CONFIG_FASTBOOT is not defined */
@@ -291,17 +213,6 @@ extern int fastboot_flash_write(fastboot_ptentry *ptn, unsigned extra_per_page,
 #define fastboot_fifo_size() 0
 #define fastboot_tx_status(a, b, c) 1
 #define fastboot_getvar(a,b) 1
-
-#define fastboot_flash_add_ptn(a)
-#define fastboot_flash_find_ptn(a) NULL
-#define fastboot_flash_get_ptn(a) NULL
-#define fastboot_flash_get_ptn_count() 0
-#define fastboot_flash_dump_ptn()
-#define fastboot_flash_init()
-#define fastboot_flash_erase(a) 1
-#define fastboot_flash_read_ext(a, b, c, d, e) 0
-#define fastboot_flash_read(a, b, c, d, e) 0
-#define fastboot_flash_write(a, b, c, d) 0
 
 #endif /* CONFIG_FASTBOOT */
 

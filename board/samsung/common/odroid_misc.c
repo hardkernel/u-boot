@@ -54,6 +54,142 @@ DECLARE_GLOBAL_DATA_PTR;
 #define	ODROID_MISC_DEBUG
 */
 
+/*
+	Default Partition Info for Android system
+*/
+static struct partition_info gPartInfo[PART_MAX] = {
+	[PART_FWBL1] = {
+		.name 	   = "fwbl1",
+		.blk_start = PART_BL1_ST_BLK,
+		.size 	   = PART_SIZE_BL1,
+		.raw_en    = 1,
+	},
+	[PART_BL2] = {
+		.name 	   = "bl2",
+		.blk_start = PART_BL2_ST_BLK,
+		.size 	   = PART_SIZE_BL2,
+		.raw_en    = 1,
+	},
+	[PART_BOOTLOADER] = {
+		.name 	   = "bootloader",
+		.blk_start = PART_UBOOT_ST_BLK,
+		.size 	   = PART_SIZE_UBOOT,
+		.raw_en    = 1,
+	},
+	[PART_TZSW] = {
+		.name 	   = "tzsw",
+		.blk_start = PART_TZSW_ST_BLK,
+		.size 	   = PART_SIZE_TZSW,
+		.raw_en    = 1,
+	},
+	[PART_ENV] = {
+		.name 	   = "env",
+		.blk_start = PART_ENV_ST_BLK,
+		.size 	   = PART_SIZE_ENV,
+		.raw_en    = 0,
+	},
+	[PART_KERENEL] = {
+		.name 	   = "kernel",
+		.blk_start = PART_KERNEL_ST_BLK,
+		.size 	   = PART_SIZE_KERNEL,
+		.raw_en    = 0,
+	},
+	[PART_SYSTEM] = {
+		.name 	   = "system",
+		.blk_start = 0,
+		.size 	   = 0,
+		.raw_en    = 0,
+	},
+	[PART_USERDATA] = {
+		.name 	   = "userdata",
+		.blk_start = 0,
+		.size 	   = 0,
+		.raw_en    = 0,
+	},
+	[PART_CACHE] = {
+		.name 	   = "cache",
+		.blk_start = 0,
+		.size 	   = 0,
+		.raw_en    = 0,
+	},
+};
+
+/*---------------------------------------------------------------------------*/
+/* from cmd/mmc.c */
+extern int get_mmc_part_info(char *device_name, int part_num, uint *block_start,
+	uint *block_count, uchar *part_Id);
+
+/*---------------------------------------------------------------------------*/
+static void odroid_print_part_info(char *dev_no)
+{
+	int i;
+
+	printf("\n*** Partition Information for Andorid ***");
+	printf("\nControl Device ID : %s", dev_no);
+	printf("\npNo\tStart Block\tpSize(bytes)\tpName");
+	for (i = 0; i < PART_MAX; i++) {
+		printf("\n %d \t0x%08x\t0x%08x\t%s",
+			i,
+			gPartInfo[i].blk_start,
+			gPartInfo[i].size,
+			gPartInfo[i].name);
+	}
+	printf("\n\n");
+}
+
+/*---------------------------------------------------------------------------*/
+int odroid_get_partition_info(const char *ptn, struct partition_info *pinfo)
+{
+	int i;
+
+	for (i = 0; i < PART_MAX; i++) {
+		if (!strncmp(gPartInfo[i].name, ptn, strlen(ptn)))
+			break;
+	}
+	if (PART_MAX == i)
+		return	-1;
+
+	memcpy((void *)pinfo, (void *)&gPartInfo[i],
+		sizeof(struct partition_info));
+	return	0;
+}
+
+/*---------------------------------------------------------------------------*/
+/*
+	Partition information setup for Android fastboot.
+
+	Partition 1 = fat partition
+	Partition 2 - system partition
+	Partition 3 - userdata partition
+	Partition 4 - cache partition
+*/
+/*---------------------------------------------------------------------------*/
+int odroid_partition_setup(char *dev_no)
+{
+	unsigned int blk_st, blk_cnt;
+	unsigned char pid, i;
+
+	for (i = 0; i < 3; i++)	{
+		if (get_mmc_part_info (dev_no, i + 2, &blk_st, &blk_cnt, &pid))
+			goto err;
+		if (pid != 0x83)
+			goto err;
+		gPartInfo[PART_SYSTEM+i].blk_start = blk_st;
+		gPartInfo[PART_SYSTEM+i].size = (blk_cnt * MOVI_BLK_SIZE);
+	}
+
+	odroid_print_part_info(dev_no);
+	return	0;
+err:
+	printf( "\n****************************\n" \
+		"\n***      Warning!!!      ***\n" \
+		"\n****************************\n" \
+		"\This is not an Android Partition device!" \
+		"\nIf you want Android partitioning," \
+		"use fdisk command befor fastboot command.\n\n");
+	return	-1;
+}
+
 /*---------------------------------------------------------------------------*/
 void odroid_led_ctrl(int gpio, int status)
 {
@@ -177,6 +313,40 @@ err:
 }
 
 /*---------------------------------------------------------------------------*/
+/* firmware update check */
+static void odroid_fw_update(unsigned int option)
+{
+}
+
+/*---------------------------------------------------------------------------*/
+static void odroid_magic_cmd_check(void)
+{
+	struct exynos5_power *pmu =
+		(struct exynos5_power *)samsung_get_base_power();
+
+	unsigned int	cmd, option;
+
+	cmd	= (pmu->sysip_dat0 & 0xFFFF);
+	option	= (pmu->inform0	   & 0xFFFF);
+
+#if defined(ODROID_MISC_DEBUG)
+	printf("pmu->sysip = 0x%08x, pmu->inform0 = 0x%08x\n",
+		cmd, option);
+#endif
+	pmu->sysip_dat0 = 0;	pmu->inform0 = 0;
+
+	switch(cmd) {
+	case	FASTBOOT_MAGIC_REBOOT_CMD:
+		run_command("fastboot", 0);
+		break;
+	case	FASTBOOT_MAGIC_UPDATE_CMD:
+		odroid_fw_update(option);
+		run_command("reset", 0);
+		break;
+	}
+}
+
+/*---------------------------------------------------------------------------*/
 /*
 	ODROID XU3/XU3-Lite/XU4 Hardware Init.
 	call from board/samsung/common/board.c
@@ -188,6 +358,9 @@ void odroid_misc_init(void)
 	odroid_pmic_init();
 	odroid_gpio_init();
 	odroid_led_init();
+
+	/* check Android Image update or fastboot Magic command */
+	odroid_magic_cmd_check();
 }
 
 /*---------------------------------------------------------------------------*/

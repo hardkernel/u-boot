@@ -134,7 +134,12 @@ obj-$(CONFIG_CMD_LZMADEC) += lzmadec.o
 endif
 
 obj-$(CONFIG_CMD_USB) += usb.o disk.o
+ifdef CONFIG_TARGET_ODROID_XU4
+obj-$(CONFIG_CMD_FASTBOOT) += odroid_fastboot.o
+else
 obj-$(CONFIG_CMD_FASTBOOT) += fastboot.o
+endif
+
 obj-$(CONFIG_CMD_FS_UUID) += fs_uuid.o
 
 obj-$(CONFIG_CMD_USB_MASS_STORAGE) += usb_mass_storage.o
