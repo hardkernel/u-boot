@@ -16,4 +16,14 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-unsigned int get_board_id(void);
+#include <common.h>
+#include <asm/arch/io.h>
+#include <asm/arch/board_id.h>
+#include <asm/arch/secure_apb.h>
+
+__weak unsigned int get_board_id(void)
+{
+	unsigned int board_id = 0;
+	board_id = (readl(P_AO_SEC_GP_CFG0) >> 8 ) & 0xFF;
+	return board_id;
+}
