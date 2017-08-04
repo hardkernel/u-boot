@@ -39,11 +39,9 @@
 #define SDRAM_MAX_SIZE			0x80000000
 
 #ifndef CONFIG_SPL_BUILD
-/* usb otg */
 
 /* usb mass storage */
 #define CONFIG_USB_FUNCTION_MASS_STORAGE
-#define CONFIG_CMD_USB_MASS_STORAGE
 
 /* usb host */
 #define ENV_MEM_LAYOUT_SETTINGS \
