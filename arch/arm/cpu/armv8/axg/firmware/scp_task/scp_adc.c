@@ -1,4 +1,4 @@
-#define MESON_CPU_MAJOR_ID_GXBB	0x1F
+#define MESON_CPU_MAJOR_ID_GXBB		0x1F
 #define MESON_CPU_MAJOR_ID_GXTVBB	0x20
 #define MESON_CPU_MAJOR_ID_GXL		0x21
 #define MESON_CPU_MAJOR_ID_GXM		0x22
@@ -23,7 +23,7 @@ static unsigned int aml_get_reg32_bits(volatile uint32_t *_reg,
 		const unsigned int _len)
 {
 	return	((readl((volatile unsigned int *)_reg) >> (_start)) & \
-			((1L << (_len) ) - 1));
+		((1L << (_len) ) - 1));
 }
 
 static void aml_write_reg32(volatile uint32_t *_reg,
@@ -113,7 +113,7 @@ void saradc_enable(void)
 	aml_write_reg32(P_AO_SAR_ADC_REG3, 0x9388000a);
 
 	if (adc_type)
-		aml_set_reg32_bits(P_AO_SAR_ADC_REG3, 0x1, 27, 1);
+		aml_set_reg32_bits(P_AO_SAR_ADC_REG3,0x1,27,1);
 
 	saradc_clock_set(20);
 
@@ -152,13 +152,12 @@ int get_adc_sample_gxbb(int ch)
 	count = 0;
 	sum = 0;
 	while (aml_get_reg32_bits(P_AO_SAR_ADC_REG0, 21, 5) && (count < 32)) {
-		value = aml_read_reg32(P_AO_SAR_ADC_FIFO_RD);
+        value = aml_read_reg32(P_AO_SAR_ADC_FIFO_RD);
 		if (((value >> 12) & 0x07) == ch) {
-			sum += (value & 0x3ff);
+			value &= 0xffc;
+			value >>= 2;
+			sum += value;
 			count++;
-		} else {
-			uart_puts("channel error");
-			uart_puts("\n");
 		}
 	}
 	if (!count) {

@@ -148,6 +148,7 @@ static inline void saradc_power_control(int on)
 		saradc_clock_switch(1);
 	}	else {
 		saradc_clock_switch(0);
+		aml_set_reg32_bits(P_SAR_ADC_REG3(saradc->base_addr), 0, 21, 1);
 		/*aml_set_reg32_bits(PP_SAR_ADC_REG11(saradc->base_addr),0,13,1);*/
 		/*aml_set_reg32_bits(P_SAR_ADC_REG11(saradc->base_addr),0,5,2);*/
 	}

@@ -78,8 +78,7 @@ static inline void saradc_power_control(int on)
 		saradc_clock_switch(1);
 	}	else {
 		saradc_clock_switch(0);
-		/*aml_set_reg32_bits(P_AO_SAR_ADC_REG11, 0, 13, 1);*//* disable bandgap */
-		aml_set_reg32_bits(P_AO_SAR_ADC_REG11, 0, 5, 2);
+		aml_set_reg32_bits(P_AO_SAR_ADC_REG3, 0, 21, 1);
 	}
 }
 
