@@ -1187,6 +1187,8 @@ long do_fat_fread(int fd, __u8 *buffer, unsigned long maxsize)
         fsdata* mydata = &fs_info[fd].datablock;
         struct file* pFile = files + fd;
         int ret = 0;
+        __u8* tmpbuf = NULL, *dstBuf = NULL, *alignBuf = NULL;
+        unsigned long notAlignSz = 0;
 
         if (fd < 0) {
                 FAT_ERROR("Invalid fd %d\n", fd);
@@ -1265,8 +1267,12 @@ cluster1 :   |__######|
 
         if ( (unsigned long)buffer  & ( SECTOR_SIZE - 1 ) )
         {
-                FAT_ERROR("buffer[0x%p] not align sector\n", buffer);
-                return 0;
+                FAT_MSG("buffer[0x%p] not align sector\n", buffer);
+                tmpbuf = (__u8*)malloc(actsize + SECTOR_SIZE);
+                notAlignSz = actsize;
+                dstBuf = buffer;
+                buffer = (__u8*)(((unsigned long)( tmpbuf + SECTOR_SIZE - 1 ) >> 9 ) << 9);
+                alignBuf = buffer;
         }
 
         FAT_DPRINT("while actsize=0x%lx, buffer=0x%p\n", actsize, buffer);
@@ -1336,7 +1342,10 @@ cluster1 :   |__######|
         }
 
 exit:
-
+        if ( tmpbuf ) {
+            memcpy(dstBuf, alignBuf, notAlignSz);
+            free(tmpbuf);
+        }
         pFile->offset = offset;
         pFile->curclust = curclust;
         return gotsize;
