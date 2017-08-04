@@ -48,6 +48,8 @@
 #include <linux/sizes.h>
 #include <asm/arch/clock.h>
 #include <asm-generic/gpio.h>
+#include <asm/arch/board_id.h>
+
 DECLARE_GLOBAL_DATA_PTR;
 
 //new static eth setup
@@ -611,3 +613,41 @@ phys_size_t get_effective_memsize(void)
 	return (((readl(AO_SEC_GP_CFG0)) & 0xFFFF0000) << 4);
 #endif
 }
+
+#ifdef CONFIG_MULTI_DTB
+int checkhw(char * name)
+{
+	unsigned int b_id = 0;
+	char loc_name[64] = {0};
+
+	b_id = get_board_id();
+
+	printf("%s board adc:%d\n", __func__, b_id);
+
+	switch (b_id) {
+	case 0:
+	case 1:
+	case 2:
+		strcpy(loc_name, "axg_s400_1g\0");
+		break;
+	case 3:
+		strcpy(loc_name, "axg_s400_v03\0");
+		break;
+	default:
+		strcpy(loc_name, "axg_s400_1g");
+		break;
+	}
+	if (name != NULL)
+		strcpy(name, loc_name);
+	setenv("aml_dt", loc_name);
+	return 0;
+}
+#endif
+
+const char * const _env_args_reserve_[] =
+{
+		"aml_dt",
+		"firstboot",
+
+		NULL//Keep NULL be last to tell END
+};

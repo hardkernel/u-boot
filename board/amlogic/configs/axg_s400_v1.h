@@ -522,6 +522,7 @@
 #define CONFIG_CMD_ITEST    1
 #define CONFIG_CMD_CPU_TEMP 1
 #define CONFIG_SYS_MEM_TOP_HIDE 0
+#define CONFIG_MULTI_DTB	1
 
 /* debug mode defines */
 //#define CONFIG_DEBUG_MODE			1
