@@ -20,6 +20,10 @@
 #include <memalign.h>
 #include <linux/list.h>
 #include <div64.h>
+#include <asm/gpio.h>
+#include <asm/io.h>
+#include <samsung/misc.h>
+
 #include "mmc_private.h"
 
 static const unsigned int sd_au_size[] = {
@@ -1844,6 +1848,12 @@ int mmc_initialize(bd_t *bis)
 #if defined(CONFIG_TARGET_ODROID_XU3) || defined(CONFIG_TARGET_ODROID_XU4)
 	struct mmc *mmc;
 	int err, dev;
+
+	/* eMMC reset port pull-up/down off for samsung eMMC */
+	if (!gpio_request(EXYNOS5420_GPIO_D10, "reset")) {
+		gpio_set_pull(EXYNOS5420_GPIO_D10, S5P_GPIO_PULL_NONE);
+		gpio_free(EXYNOS5420_GPIO_D10);
+	}
 
 	for (dev = 0; dev < CONFIG_SYS_MMC_MAX_DEVICE; dev++) {
 		mmc = find_mmc_device(dev);
