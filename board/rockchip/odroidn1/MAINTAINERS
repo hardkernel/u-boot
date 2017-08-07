@@ -1,0 +1,6 @@
+ODROIDN1
+M:      Mauro Ribeiro <mauro.ribeiro@hardkernel.com>
+S:      Maintained
+F:      board/rockchip/odroidn1
+F:      include/configs/odroidn1.h
+F:      configs/odroidn1_defconfig

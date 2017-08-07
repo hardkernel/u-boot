@@ -10,6 +10,11 @@ config TARGET_EVB_RK3399
 	  with full function and phisical connectors support like type-C ports,
 	  usb2.0 host ports, LVDS, JTAG, MAC, SDcard, HDMI, USB-2-serial...
 
+config TARGET_ODROIDN1
+        bool "Hardkernel ODROID-N1 board"
+        help
+	  ODROID-N1 support
+
 config TARGET_PUMA_RK3399
 	bool "Theobroma Systems RK3399-Q7 (Puma)"
 	help
@@ -37,6 +42,7 @@ config SYS_MALLOC_F_LEN
 	default 0x0800
 
 source "board/rockchip/evb_rk3399/Kconfig"
+source "board/rockchip/odroidn1/Kconfig
 source "board/theobroma-systems/puma_rk3399/Kconfig"
 
 endif
