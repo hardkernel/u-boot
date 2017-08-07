@@ -61,7 +61,13 @@ int v2_key_read(const char* keyName, u8* keyVal, const unsigned keyValLen, char*
  */
 unsigned v2_key_burn(const char* keyName, const u8* keyVal, const unsigned keyValLen, char* errInfo);
 
+#ifdef CONFIG_AML_MTD   //Assume MTD <==> small memory size
+#define DDR_MEM_ADDR_START  ( 0x010<<20 )
+#define OPTIMUS_DOWNLOAD_TRANSFER_BUF_TOTALSZ   (0X20<<20)//32M
+#else
+#define OPTIMUS_DOWNLOAD_TRANSFER_BUF_TOTALSZ   (0X40<<20)//64M
 #define DDR_MEM_ADDR_START  ( 0x073<<20 )
+#endif// #ifdef CONFIG_AML_MTD
 
 //  |<---Back 2M---->|<------------USB transfer Buf 64 ----------->|<--Backed sparse format info for verify-->|
 //      Back buf                          Transfer buf
@@ -75,7 +81,6 @@ unsigned v2_key_burn(const char* keyName, const u8* keyVal, const unsigned keyVa
 //[Buffer 2] This 64M buffer is used to cache image data received from USB download,
 //            This Buffer size  should be 64M, other size has pending bugs when sparse image is very large.
 #define OPTIMUS_DOWNLOAD_TRANSFER_BUF_ADDR      (OPTIMUS_SPARSE_IMG_LEFT_DATA_ADDR_LOW + OPTIMUS_SPARSE_IMG_LEFT_DATA_MAX_SZ)
-#define OPTIMUS_DOWNLOAD_TRANSFER_BUF_TOTALSZ   (0X40<<20)//64M
 
 #define OPTIMUS_DOWNLOAD_SLOT_SZ                (64<<10)    //64K
 #define OPTIMUS_DOWNLOAD_SLOT_SZ_SHIFT_BITS     (16)    //64K

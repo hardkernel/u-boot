@@ -30,7 +30,7 @@
 #define CONFIG_AML_MESON_AXG 1
 
 /* Size of malloc() pool */
-#define CONFIG_SYS_MALLOC_LEN		(16*1024*1024)
+#define CONFIG_SYS_MALLOC_LEN		(11*1024*1024) /* 128M ddr support max 11M malloc */
 
 /* dram */
 #define PHYS_SDRAM_1_BASE					0x00000000UL
