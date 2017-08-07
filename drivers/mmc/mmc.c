@@ -499,7 +499,6 @@ static int mmc_complete_op_cond(struct mmc *mmc)
 	return 0;
 }
 
-
 static int mmc_send_ext_csd(struct mmc *mmc, u8 *ext_csd)
 {
 	struct mmc_cmd cmd;
@@ -520,6 +519,30 @@ static int mmc_send_ext_csd(struct mmc *mmc, u8 *ext_csd)
 
 	return err;
 }
+
+#if defined(CONFIG_TARGET_ODROID_XU3) || defined(CONFIG_TARGET_ODROID_XU4)
+int mmc_rst_n_func_status(struct mmc *mmc)
+{
+	int err;
+	ALLOC_CACHE_ALIGN_BUFFER(unsigned char, ext_csd, MMC_MAX_BLOCK_LEN);
+
+	err = mmc_send_ext_csd(mmc, ext_csd);
+	if (err) {
+		puts("Could not get ext_csd register values\n");
+		return err;
+	}
+
+	printf("%s : %d\n", __func__, ext_csd[EXT_CSD_RST_N_FUNCTION]);
+	printf("%s : EXT_CSD_RST_N_FUNCTION enable!\n", __func__);
+
+	return	ext_csd[EXT_CSD_RST_N_FUNCTION];
+}
+#else
+int mmc_rst_n_func_status(struct mmc *mmc)
+{
+	return	0;
+}
+#endif
 
 int mmc_switch(struct mmc *mmc, u8 set, u8 index, u8 value)
 {
@@ -1867,6 +1890,10 @@ int mmc_initialize(bd_t *bis)
 			return err;
 		printf("MMC Device %d (%s): ", dev, IS_SD(mmc) ? " SD " : "eMMC");
 		print_size(mmc->capacity, "\n");
+
+		/* enable EXT_CSD_RST_N_FUNCTION command for hardware reset */
+		if (!IS_SD(mmc))
+			mmc_set_rst_n_function(mmc, 1);
 	}
 #endif
 	mmc_do_preinit();

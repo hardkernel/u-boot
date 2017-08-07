@@ -112,8 +112,14 @@ int mmc_set_part_conf(struct mmc *mmc, u8 ack, u8 part_num, u8 access)
  *
  * Returns 0 on success.
  */
+#include <malloc.h>
+#include <memalign.h>
+
 int mmc_set_rst_n_function(struct mmc *mmc, u8 enable)
 {
-	return mmc_switch(mmc, EXT_CSD_CMD_SET_NORMAL, EXT_CSD_RST_N_FUNCTION,
-			  enable);
+	if(!mmc_rst_n_func_status(mmc)) {
+		return mmc_switch(mmc, EXT_CSD_CMD_SET_NORMAL, EXT_CSD_RST_N_FUNCTION,
+				  enable);
+	}
+	return	0;
 }
