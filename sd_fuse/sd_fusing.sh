@@ -58,6 +58,8 @@ elif [ -f ./u-boot.bin ]; then
   uboot="./u-boot.bin"
 elif [ -f ../u-boot-dtb.bin ]; then
   uboot="../u-boot-dtb.bin"
+elif [ -f ./u-boot.bin.hardkernel ]; then
+  uboot="../u-boot.bin.hardkernel"
 else
   echo "U-Boot blob not found."
   exit
