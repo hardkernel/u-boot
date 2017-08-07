@@ -332,7 +332,7 @@ static int filecheck(const char *fname)
 	setenv("filesize", "0");
 
 	memset(cmd, 0x00, sizeof(cmd));
-	sprintf(cmd, "fatload mmc 0:1 40008000 update/%s", fname);
+	sprintf(cmd, "fatload mmc 0:1 0x50000000 update/%s", fname);
 	run_command(cmd, 0);
 
 	/* file size check */
@@ -351,7 +351,7 @@ static void update_image(const char *ptn)
 	char	cmd[64];
 
 	memset(cmd, 0x00, sizeof(cmd));
-	sprintf(cmd, "fastboot flash %s 40008000 0", ptn);
+	sprintf(cmd, "fastboot flash %s 0x50000000 0", ptn);
 	run_command(cmd, 0);
 }
 
@@ -365,28 +365,28 @@ static void update_raw_image(const char *ptn)
 	OmPin = pmu->inform3;
 
 	if (!strncmp(ptn, "kernel", sizeof("kernel")))
-		run_command("movi w k 0 40008000", 0);
+		run_command("movi w k 0 0x50000000", 0);
 	else {
 		if ((OmPin == BOOT_EMMC_4_4) || (OmPin == BOOT_EMMC)) {
 			run_command("emmc open 0", 0);
 			if (!strncmp(ptn, "bootloader", sizeof("bootloader")))
-				run_command("movi w z u 0 40008000", 0);
+				run_command("movi w z u 0 0x50000000", 0);
 			if (!strncmp(ptn, "bl1", sizeof("bl1")))
-				run_command("movi w z f 0 40008000", 0);
+				run_command("movi w z f 0 0x50000000", 0);
 			if (!strncmp(ptn, "bl2", sizeof("bl2")))
-				run_command("movi w z b 0 40008000", 0);
+				run_command("movi w z b 0 0x50000000", 0);
 			if (!strncmp(ptn, "tzsw", sizeof("tzsw")))
-				run_command("movi w z t 0 40008000", 0);
+				run_command("movi w z t 0 0x50000000", 0);
 			run_command("emmc close 0", 0);
 		} else {
 			if (!strncmp(ptn, "bootloader", sizeof("bootloader")))
-				run_command("movi w u 0 40008000", 0);
+				run_command("movi w u 0 0x50000000", 0);
 			if (!strncmp(ptn, "bl1", sizeof("bl1")))
-				run_command("movi w f 0 40008000", 0);
+				run_command("movi w f 0 0x50000000", 0);
 			if (!strncmp(ptn, "bl2", sizeof("bl2")))
-				run_command("movi w b 0 40008000", 0);
+				run_command("movi w b 0 0x50000000", 0);
 			if (!strncmp(ptn, "tzsw", sizeof("tzsw")))
-				run_command("movi w t 0 40008000", 0);
+				run_command("movi w t 0 0x50000000", 0);
 		}
 	}
 }
@@ -453,7 +453,8 @@ static void odroid_magic_cmd_check(void)
 		run_command("fastboot", 0);
 		break;
 	case	FASTBOOT_MAGIC_UPDATE_CMD:
-		odroid_fw_update(option);
+		if (!odroid_partition_setup("0"))
+			odroid_fw_update(option);
 		run_command("reset", 0);
 		break;
 	}
