@@ -531,10 +531,6 @@ int mmc_rst_n_func_status(struct mmc *mmc)
 		puts("Could not get ext_csd register values\n");
 		return err;
 	}
-
-	printf("%s : %d\n", __func__, ext_csd[EXT_CSD_RST_N_FUNCTION]);
-	printf("%s : EXT_CSD_RST_N_FUNCTION enable!\n", __func__);
-
 	return	ext_csd[EXT_CSD_RST_N_FUNCTION];
 }
 #else
@@ -1890,11 +1886,20 @@ int mmc_initialize(bd_t *bis)
 			return err;
 		printf("MMC Device %d (%s): ", dev, IS_SD(mmc) ? " SD " : "eMMC");
 		print_size(mmc->capacity, "\n");
-
-		/* enable EXT_CSD_RST_N_FUNCTION command for hardware reset */
-		if (!IS_SD(mmc))
-			mmc_set_rst_n_function(mmc, 1);
+		if (!IS_SD(mmc)) {
+			/* status read */
+			err = mmc_rst_n_func_status(mmc);
+			printf("Info eMMC rst_n_func status = %s\n",
+				err ? "enabled" : "disabled");
+			/*
+			 if h/w rst function disabled
+			 send EXT_CSD_RST_N_FUNCTION command for hardware reset
+			*/
+			if (!err)
+				mmc_set_rst_n_function(mmc, 1);
+		}
 	}
+	printf("\n");
 #endif
 	mmc_do_preinit();
 	return 0;
