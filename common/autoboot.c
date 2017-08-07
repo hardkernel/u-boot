@@ -212,13 +212,16 @@ static int __abortboot(int bootdelay)
 {
 	int abort = 0;
 	unsigned long ts;
+	int key;
+	unsigned char keycheck = 2;
 
 #ifdef CONFIG_MENUPROMPT
 	printf(CONFIG_MENUPROMPT);
 #else
-	printf("Hit any key to stop autoboot: %2d ", bootdelay);
+	printf("Press quickly 'Enter' twice to stop autoboot: %2d ", bootdelay);
 #endif
 
+#if defined CONFIG_ZERO_BOOTDELAY_CHECK
 	/*
 	 * Check if key already pressed
 	 */
@@ -227,21 +230,32 @@ static int __abortboot(int bootdelay)
 		puts("\b\b\b 0");
 		abort = 1;	/* don't auto boot	*/
 	}
+#endif
 
 	while ((bootdelay > 0) && (!abort)) {
 		--bootdelay;
 		/* delay 1000 ms */
 		ts = get_timer(0);
 		do {
-			if (tstc()) {	/* we got a key press	*/
-				abort  = 1;	/* don't auto boot	*/
-				bootdelay = 0;	/* no more delay	*/
+			if (tstc()) {
 # ifdef CONFIG_MENUKEY
 				menukey = getc();
+				key = menukey;
 # else
-				(void) getc();  /* consume input	*/
+				key = getc();
 # endif
-				break;
+				switch (key) {
+				/* Enter Key */
+				case 0x0d:
+					--keycheck;
+					if(!keycheck) {
+						abort = 1;
+						bootdelay = 0;
+					}
+					break;
+				default:
+					break;
+				}
 			}
 			udelay(10000);
 		} while (!abort && get_timer(ts) < 1000);
