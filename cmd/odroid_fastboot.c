@@ -93,6 +93,8 @@ static void erase_partition(struct partition_info *pinfo, unsigned int dev_no)
 			1024 - (blk_start & 0x3ff),
 			clrbuf);
 		printf("*** erase start block 0x%x ***\n", blk_start);
+		blk_cnt = blk_cnt - (1024 - (blk_start & 0x3FFF));
+		blk_start = (blk_start & (~0x3FFF)) + 1024;
 	}
 	if (blk_cnt & 0x3FF) {
 		mmc->block_dev.block_write(&mmc->block_dev,
@@ -100,6 +102,7 @@ static void erase_partition(struct partition_info *pinfo, unsigned int dev_no)
 			(blk_cnt & 0x3FF),
 			clrbuf);
 		printf("*** erase block length 0x%x ***\n", blk_cnt);
+		blk_cnt = blk_cnt - (blk_cnt & 0x3FFF);
 	}
 	if (blk_cnt >> 10) {
 		mmc->block_dev.block_erase(&mmc->block_dev, blk_start, blk_cnt);
@@ -231,6 +234,7 @@ static int flashing_data(struct partition_info *pinfo,
 		write_compressed_ext4((char*)addr, pinfo->blk_start, dev_no);
 	}
 
+	printf("\npartition '%s' flashed.\n\n", pinfo->name);
 	return	0;
 }
 
@@ -360,12 +364,12 @@ static int rx_handler (const unsigned char *buffer, unsigned int buffer_size)
 		if (memcmp(cmdbuf, "erase:", 6) == 0)
 		{
 			struct partition_info pinfo;
-			printf("partition '%s' erased\n", cmdbuf + 6);
 
+			ret = 0;
+			printf("partition '%s' erased\n", cmdbuf + 6);
 			if (!strncmp(cmdbuf + 6, "fat", sizeof("fat"))) {
 				run_command("fatformat mmc 0:1", 0);
 				sprintf(response, "OKAY");
-				ret = 0;
 				goto send_tx_status;
 			}
 			if (odroid_get_partition_info(&cmdbuf[6], &pinfo))
@@ -376,9 +380,8 @@ static int rx_handler (const unsigned char *buffer, unsigned int buffer_size)
 					sprintf(response, "OKAY");
 				}
 				else
-					sprintf(response, "FAILUnsupport partitiond");
+					sprintf(response, "FAILUnsupport or Unknown partitiond");
 			}
-			ret = 0;
 			goto send_tx_status;
 		}
 
