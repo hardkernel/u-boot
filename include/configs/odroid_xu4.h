@@ -241,4 +241,10 @@
 #undef CONFIG_BOOTCOMMAND
 #define CONFIG_BOOTCOMMAND "cfgload;movi r k 0 40008000;bootz 40008000"
 
+#undef CONFIG_BOOTARGS
+/* Android Default bootargs */
+#define CONFIG_BOOTARGS	"fb_x_res=1280 fb_y_res=720 vout=hdmi led_blink=1 " \
+			"hdmi_phy_res=720p60hz edid=0, hpd=1 disable_vu7=false " \
+			"touch_invert_x=false touch_invert_y=false"
+
 #endif	/* __CONFIG_H */
