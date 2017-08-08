@@ -807,7 +807,7 @@ int stm_unlock(struct spi_flash *flash, u32 ofs, size_t len)
 #endif
 
 
-#ifdef CONFIG_SPI_FLASH_MACRONIX
+#if defined(CONFIG_SPI_FLASH_MACRONIX) || defined(CONFIG_SPI_FLASH_GIGADEVICE)
 static int macronix_quad_enable(struct spi_flash *flash)
 {
 	u8 qeb_status;
@@ -892,8 +892,9 @@ static int set_quad_mode(struct spi_flash *flash,
 			 const struct spi_flash_info *info)
 {
 	switch (JEDEC_MFR(info)) {
-#ifdef CONFIG_SPI_FLASH_MACRONIX
+#if defined(CONFIG_SPI_FLASH_MACRONIX) || defined(CONFIG_SPI_FLASH_GIGADEVICE)
 	case SPI_FLASH_CFI_MFR_MACRONIX:
+	case SPI_FLASH_CIF_MFR_GIGADEVICE:
 		return macronix_quad_enable(flash);
 #endif
 #if defined(CONFIG_SPI_FLASH_SPANSION) || defined(CONFIG_SPI_FLASH_WINBOND)

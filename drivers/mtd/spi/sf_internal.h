@@ -37,6 +37,7 @@ enum spi_nor_option_flags {
 #define SPI_FLASH_CFI_MFR_SST		0xbf
 #define SPI_FLASH_CFI_MFR_WINBOND	0xef
 #define SPI_FLASH_CFI_MFR_ATMEL		0x1f
+#define SPI_FLASH_CIF_MFR_GIGADEVICE	0xc8
 
 /* Erase commands */
 #define CMD_ERASE_4K			0x20
