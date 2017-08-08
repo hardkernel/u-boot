@@ -290,6 +290,7 @@
 #define CONFIG_DDR_USE_EXT_VREF			0 //0:disable, 1:enable. ddr use external vref
 #define CONFIG_DDR4_TIMING_TEST			0 //0:disable, 1:enable. ddr4 timing test function
 #define CONFIG_DDR_PLL_BYPASS			0 //0:disable, 1:enable. ddr pll bypass function
+#define CONFIG_DDR_FUNC_PRINT_WINDOW	0 //0:disable, 1:enable. print ddr training window
 
 /* storage: emmc/nand/sd */
 #define		CONFIG_STORE_COMPATIBLE 1
