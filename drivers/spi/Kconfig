@@ -99,6 +99,14 @@ config ROCKCHIP_SPI
 	  This uses driver model and requires a device tree binding to
 	  operate.
 
+config ROCKCHIP_SFC
+	bool "Rockchip SFC driver"
+	help
+	  Enable the Rockchip SFC driver, used to access SPI NOR flash
+	  on Rockchip SoCs.
+	  This uses driver model and requires a device tree binding to
+	  operate.
+
 config SANDBOX_SPI
 	bool "Sandbox SPI driver"
 	depends on SANDBOX && DM
