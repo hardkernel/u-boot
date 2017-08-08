@@ -256,7 +256,7 @@
 #define CONFIG_CPU_CLK					1200 //MHz. Range: 600-1800, should be multiple of 24
 
 /* ddr */
-#define CONFIG_DDR_SIZE					0 //MB //0 means ddr size auto-detect
+#define CONFIG_DDR_SIZE					1024 //MB //0 means ddr size auto-detect
 #define CONFIG_DDR_CLK					792  //MHz, Range: 384-1200, should be multiple of 24
 #define CONFIG_DDR4_CLK					1008  //MHz, for boards which use different ddr chip
 #define CONFIG_NR_DRAM_BANKS			1
