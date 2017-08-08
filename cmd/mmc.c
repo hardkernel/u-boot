@@ -954,14 +954,14 @@ typedef struct
 	uint	H_start, H_end;
 	uint	S_start, S_end;
 
-	uint	block_start;
-	uint	block_count;
-	uint	block_end;
+	u64	block_start;
+	u64	block_count;
+	u64	block_end;
 } PartitionInfo;
 
-#define	LBA_MODE_SIZE			(1023*254*63)
+#define	LBA_MODE_SIZE	(1023*254*63)
 
-static uint calc_unit(uint length, SDInfo sdInfo)
+static u64 calc_unit(u64 length, SDInfo sdInfo)
 {
 	if (sdInfo.addr_mode == CHS_MODE)
 		return ( (length / MOVI_BLK_SIZE / sdInfo.unit + 1 ) * sdInfo.unit);
@@ -978,6 +978,9 @@ static void encode_chs(uint C, uint H, uint S, uchar *result)
 
 static void encode_partitionInfo(PartitionInfo partInfo, uchar *result)
 {
+	uint blk_start = partInfo.block_start;
+	uint blk_count = partInfo.block_count;
+
 	*result++ = partInfo.bootable;
 
 	encode_chs(partInfo.C_start, partInfo.H_start, partInfo.S_start, result);
@@ -987,26 +990,31 @@ static void encode_partitionInfo(PartitionInfo partInfo, uchar *result)
 	encode_chs(partInfo.C_end, partInfo.H_end, partInfo.S_end, result);
 	result += 3;
 
-	memcpy(result, (uchar *)&(partInfo.block_start), 4);
+	memcpy(result, (uchar *)&(blk_start), 4);
 	result += 4;
 
-	memcpy(result, (uchar *)&(partInfo.block_count), 4);
+	memcpy(result, (uchar *)&(blk_count), 4);
 }
 
 static void decode_partitionInfo(uchar *in, PartitionInfo *partInfo)
 {
+	uint blk_start, blk_count;
+
 	partInfo->bootable	= *in;
 	partInfo->partitionId	= *(in + 4);
 
-	memcpy((uchar *)&(partInfo->block_start), (in + 8), 4);
-	memcpy((uchar *)&(partInfo->block_count), (in +12), 4);
+	memcpy((uchar *)&(blk_start), (in + 8), 4);
+	memcpy((uchar *)&(blk_count), (in +12), 4);
+
+	partInfo->block_start = blk_start;
+	partInfo->block_count = blk_count;
 }
 
 static void get_SDInfo(int block_count, SDInfo *sdInfo)
 {
 	uint C, H, S;
 
-	uint C_max = 1023, H_max = 255, S_max = 63;
+	uint C_max = 1023, H_max = 254, S_max = 63;
 	uint H_start = 1, S_start = 1;
 	uint diff_min = 0, diff = 0;
 
@@ -1048,10 +1056,11 @@ static void get_SDInfo(int block_count, SDInfo *sdInfo)
 	sdInfo->unit			= sdInfo->H_end * sdInfo->S_end;
 }
 
-static void make_partitionInfo(uint LBA_start, uint count, SDInfo sdInfo, PartitionInfo *partInfo)
+static void make_partitionInfo(u64 LBA_start,
+	u64 count, SDInfo sdInfo, PartitionInfo *partInfo)
 {
-	int	temp = 0;
-	int	part_start_blk;
+	u64	temp = 0;
+	u64	part_start_blk;
 
 	partInfo->block_start = LBA_start;
 
@@ -1101,8 +1110,7 @@ static void make_partitionInfo(uint LBA_start, uint count, SDInfo sdInfo, Partit
 
 static int make_mmc_partition(int total_block_count, uchar *mbr, int flag, char * const argv[])
 {
-	int		block_start = 0, block_offset;
-
+	u64		block_start = 0, block_offset, temp;
 	SDInfo		sdInfo;
 	PartitionInfo	partInfo[4];
 
@@ -1111,37 +1119,39 @@ static int make_mmc_partition(int total_block_count, uchar *mbr, int flag, char 
 	get_SDInfo(total_block_count, &sdInfo);
 
 	block_start = calc_unit(ANDROID_PART_START, sdInfo);
+	if (flag) {
+		temp = simple_strtoul(argv[3], NULL, 0);
+		temp = temp * SZ_1M;
+	} else
+		temp = PART_SIZE_SYSTEM;
 
-	if (flag)
-		block_offset = calc_unit((uint)simple_strtoul(argv[3], NULL, 0)*SZ_1M, sdInfo);
-	else
-		block_offset = calc_unit((uint)PART_SIZE_SYSTEM, sdInfo);
-
+	block_offset = calc_unit(temp, sdInfo);
 	partInfo[0].bootable	= 0x00;
 	partInfo[0].partitionId	= 0x83;
-
 	make_partitionInfo(block_start, block_offset, sdInfo, &partInfo[0]);
 
 	block_start += block_offset;
-	if (flag)
-		block_offset = calc_unit((uint)simple_strtoul(argv[4], NULL, 0)*SZ_1M, sdInfo);
-	else
-		block_offset = calc_unit((uint)PART_SIZE_USER_DATA, sdInfo);
+	if (flag) {
+		temp = simple_strtoul(argv[4], NULL, 0);
+		temp = temp * SZ_1M;
+	} else
+		temp = PART_SIZE_USER_DATA;
 
+	block_offset = calc_unit(temp, sdInfo);
 	partInfo[1].bootable	= 0x00;
 	partInfo[1].partitionId	= 0x83;
-
 	make_partitionInfo(block_start, block_offset, sdInfo, &partInfo[1]);
 
 	block_start += block_offset;
-	if (flag)
-		block_offset = calc_unit((uint)simple_strtoul(argv[5], NULL, 0)*SZ_1M, sdInfo);
-	else
-		block_offset = calc_unit((uint)PART_SIZE_CACHE, sdInfo);
+	if (flag) {
+		temp = simple_strtoul(argv[5], NULL, 0);
+		temp = temp * SZ_1M;
+	} else
+		temp = PART_SIZE_CACHE;
 
+	block_offset = calc_unit(temp, sdInfo);
 	partInfo[2].bootable	= 0x00;
 	partInfo[2].partitionId	= 0x83;
-
 	make_partitionInfo(block_start, block_offset, sdInfo, &partInfo[2]);
 
 	block_start += block_offset;
@@ -1163,7 +1173,7 @@ static int make_mmc_partition(int total_block_count, uchar *mbr, int flag, char 
 	return 0;
 }
 
-static int get_mmc_block_count(char *device_name)
+static uint get_mmc_block_count(char *device_name)
 {
 	struct mmc *mmc;
 	int block_count = 0;
@@ -1238,7 +1248,7 @@ static int put_mmc_mbr(uchar *mbr, char *device_name)
 }
 
 int get_mmc_part_info(char *device_name, int part_num,
-	uint *block_start, uint *block_count, uchar *part_Id)
+	u64 *block_start, u64 *block_count, uchar *part_Id)
 {
 	int		rv;
 	PartitionInfo	partInfo;
@@ -1300,22 +1310,22 @@ static int print_mmc_part_info(int argc, char * const argv[])
 	printf("partion #    size(MB)     block start #    block count    partition_Id \n");
 
 	if ( (partInfo[0].block_start !=0) && (partInfo[0].block_count != 0) )
-		printf("   1        %6d         %8d        %8d          0x%.2X \n",
+		printf("   1        %6lld         %8lld        %8lld          0x%.2X \n",
 			(partInfo[0].block_count / 2048), partInfo[0].block_start,
 			partInfo[0].block_count, partInfo[0].partitionId);
 
 	if ( (partInfo[1].block_start !=0) && (partInfo[1].block_count != 0) )
-		printf("   2        %6d         %8d        %8d          0x%.2X \n",
+		printf("   2        %6lld         %8lld        %8lld          0x%.2X \n",
 			(partInfo[1].block_count / 2048), partInfo[1].block_start,
 			partInfo[1].block_count, partInfo[1].partitionId);
 
 	if ( (partInfo[2].block_start !=0) && (partInfo[2].block_count != 0) )
-		printf("   3        %6d         %8d        %8d          0x%.2X \n",
+		printf("   3        %6lld         %8lld        %8lld          0x%.2X \n",
 			(partInfo[2].block_count / 2048), partInfo[2].block_start,
 			partInfo[2].block_count, partInfo[2].partitionId);
 
 	if ( (partInfo[3].block_start !=0) && (partInfo[3].block_count != 0) )
-		printf("   4        %6d         %8d        %8d          0x%.2X \n",
+		printf("   4        %6lld         %8lld        %8lld          0x%.2X \n",
 			(partInfo[3].block_count / 2048), partInfo[3].block_start,
 			partInfo[3].block_count, partInfo[3].partitionId);
 
@@ -1325,7 +1335,7 @@ static int print_mmc_part_info(int argc, char * const argv[])
 static int create_mmc_fdisk(int argc, char * const argv[])
 {
 	int	rv;
-	int	total_block_count;
+	uint	total_block_count;
 	ALLOC_CACHE_ALIGN_BUFFER(uchar, mbr, 512);
 
 	memset(mbr, 0x00, 512);
