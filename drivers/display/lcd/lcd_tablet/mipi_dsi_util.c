@@ -84,13 +84,6 @@ static char *phy_stop_wait_table[] = {
 
 static struct dsi_phy_s dsi_phy_config;
 static struct dsi_vid_s dsi_vconf;
-static unsigned char dsi_init_on_table_dft[] = {
-	0x05, 1, 0x11,
-	0xff, 50,
-	0x05, 1, 0x29,
-	0xff, 20,
-	0xff, 0xff,
-};
 static unsigned short dsi_rx_n;
 
 static void mipi_dsi_init_table_print(struct dsi_config_s *dconf, int on_off)
@@ -228,6 +221,59 @@ void mipi_dsi_print_info(struct lcd_config_s *pconf)
 	printf("extern init:             %d\n\n", dconf->extern_init);
 
 	mipi_dsi_print_dphy_info(dconf);
+}
+
+int lcd_mipi_dsi_init_table_detect(char *dtaddr, int nodeoffset,
+		struct dsi_config_s *dconf, int flag)
+{
+	unsigned char cmd_size, type;
+	int i, j, max_len;
+	unsigned char *init_table;
+	char propname[20];
+	char *propdata;
+
+	if (flag) {
+		init_table = dconf->dsi_init_on;
+		max_len = DSI_INIT_ON_MAX;
+		sprintf(propname, "dsi_init_on");
+	} else {
+		init_table = dconf->dsi_init_off;
+		max_len = DSI_INIT_OFF_MAX;
+		sprintf(propname, "dsi_init_off");
+	}
+
+	i = 0;
+	propdata = (char *)fdt_getprop(dtaddr, nodeoffset, propname, NULL);
+	if (propdata == NULL) {
+		printf("get %s failed\n", propname);
+		init_table[0] = 0xff;
+		init_table[1] = 0xff;
+		return -1;
+	}
+
+	while (i < max_len) {
+		init_table[i] = (unsigned char)(be32_to_cpup((((u32*)propdata)+i)));
+		type = init_table[i];
+		if (type == 0xff) {
+			init_table[i+1] = (unsigned char)(be32_to_cpup((((u32*)propdata)+i+1)));
+			cmd_size = init_table[i+1];
+			i += 2;
+			if (cmd_size == 0xff) {
+				break;
+			}
+		} else {
+			init_table[i+1] = (unsigned char)(be32_to_cpup((((u32*)propdata)+i+1)));
+			cmd_size = init_table[i+1];
+			for (j = 0; j < cmd_size; j++)
+				init_table[i+2+j] = (unsigned char)(be32_to_cpup((((u32*)propdata)+i+2+j)));
+			i += (cmd_size + 2);
+		}
+	}
+
+	if (lcd_debug_print_flag)
+		mipi_dsi_init_table_print(dconf, flag);
+
+	return 0;
 }
 
 static void dsi_meas_clk_set(void)
@@ -1390,7 +1436,6 @@ static void mipi_dsi_link_on(struct lcd_config_s *pconf)
 #ifdef CONFIG_AML_LCD_EXTERN
 	struct aml_lcd_extern_driver_s *lcd_ext;
 #endif
-	unsigned int temp = 0;
 
 	if (lcd_debug_print_flag)
 		LCDPR("%s\n", __func__);
@@ -1406,7 +1451,7 @@ static void mipi_dsi_link_on(struct lcd_config_s *pconf)
 			LCDPR("no lcd_extern driver\n");
 		} else {
 			if (lcd_ext->config->table_init_on) {
-				temp += dsi_write_cmd(
+				dsi_write_cmd(
 					lcd_ext->config->table_init_on);
 				LCDPR("[extern]%s dsi init on\n",
 					lcd_ext->config->name);
@@ -1416,13 +1461,8 @@ static void mipi_dsi_link_on(struct lcd_config_s *pconf)
 #endif
 
 	if (dconf->dsi_init_on) {
-		temp += dsi_write_cmd(dconf->dsi_init_on);
+		dsi_write_cmd(dconf->dsi_init_on);
 		LCDPR("dsi init on\n");
-	}
-
-	if (temp == 0) {
-		LCDPR("[warning]: no init command, use default\n");
-		dsi_write_cmd(dsi_init_on_table_dft);
 	}
 
 	if (op_mode_disp != op_mode_init) {
