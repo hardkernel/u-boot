@@ -95,3 +95,17 @@ int board_late_init(void)
 
 	return 0;
 }
+
+#if defined(CONFIG_USB_FUNCTION_FASTBOOT)
+int fb_set_reboot_flag(void)
+{
+	struct rk3399_pmugrf_regs *pmugrf;
+
+	printf("Setting reboot to fastboot flag ...\n");
+	pmugrf = syscon_get_first_range(ROCKCHIP_SYSCON_PMUGRF);
+	/* Clear boot mode */
+	writel(BOOT_FASTBOOT, &pmugrf->os_reg0);
+
+	return 0;
+}
+#endif
