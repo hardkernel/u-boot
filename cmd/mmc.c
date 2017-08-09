@@ -1108,59 +1108,146 @@ static void make_partitionInfo(u64 LBA_start,
 	}
 }
 
-static int make_mmc_partition(int total_block_count, uchar *mbr, int flag, char * const argv[])
+/* partition setup info struct */
+struct psetup_info {
+	int	expand_part;
+	u64	part_size[4];
+};
+
+static int check_partition_param(int total_block_count,
+	int argc, char * const argv[],  int *expand_part, u64 *psize)
 {
-	u64		block_start = 0, block_offset, temp;
+	int	expand_part_cnt = 0, i;
+	u64	setup_block_cnt;
+
+	/* default expand partition is fat */
+	*expand_part = 3;
+
+	switch(argc) {
+	/* fdisk -c {dev} */
+	case	3:
+		/* default value setup */
+		psize[0] = PART_SIZE_SYSTEM;
+		psize[1] = PART_SIZE_USERDATA;
+		psize[2] = PART_SIZE_CACHE;
+		psize[3] = 0;
+		break;
+	/* fdisk -c {dev} {system} {userdata} {cache} */
+	case	6:
+		for (i = 0; i < 3; i++) {
+			psize[i] = simple_strtoul(argv[3 + i], NULL, 0);
+			psize[i] = psize[i] * SZ_1M;
+		}
+		psize[i] = 0;
+		break;
+	/* fdisk -c {dev} {system} {userdata} {cache} {fat} */
+	case	7:
+		for (i = 0; i < 4; i++) {
+			if ( strncmp(argv[3 + i],  "0", sizeof("0")) &&
+			     strncmp(argv[3 + i], "-1", sizeof("-1")) ) {
+				psize[i] = simple_strtoul(argv[3 + i], NULL, 0);
+				psize[i] = psize[i] * SZ_1M;
+			} else {
+				expand_part_cnt++;
+				*expand_part = i;
+				psize[i] = 0;
+			}
+		}
+		break;
+	default :
+		printf("Error : ");
+		printf("Wrong param count.(param count = %d\n",
+			argc);
+		return	-1;
+	}
+
+	if (expand_part_cnt > 1) {
+		printf("\nError : ");
+		printf("Only one partition can be expanded.(expand part = %d)\n",
+			expand_part_cnt);
+		printf("\nDefault partition setup : \n");
+		printf("System 1GB / Cache 256MB / FAT 100MB / Expand Userdata\n");
+		psize[0] = PART_SIZE_SYSTEM;
+		psize[1] = 0;
+		psize[2] = PART_SIZE_CACHE;
+		psize[3] = 100 * SZ_1M;
+		*expand_part = 1;
+	}
+
+	setup_block_cnt = psize[0] + psize[1] + psize[2] + psize[3];
+	setup_block_cnt = (setup_block_cnt / MMC_MAX_BLOCK_LEN);
+
+	if (total_block_count < setup_block_cnt) {
+		printf("Error : ");
+		printf("Block size overflow.(total_block = %d, cal block = %lld)\n",
+			total_block_count, setup_block_cnt);
+		return	-1;
+	}
+	return	0;
+}
+
+static int make_mmc_partition(int total_block_count, uchar *mbr,
+	int argc, char * const argv[])
+{
+	u64		block_start = 0, block_offset, psize[4];
+	int		expand_part;
 	SDInfo		sdInfo;
 	PartitionInfo	partInfo[4];
+
+	if(check_partition_param(total_block_count, argc, argv,
+		&expand_part, psize))
+		return	-1;
 
 	memset((uchar *)&sdInfo, 0x00, sizeof(SDInfo));
 
 	get_SDInfo(total_block_count, &sdInfo);
 
 	block_start = calc_unit(ANDROID_PART_START, sdInfo);
-	if (flag) {
-		temp = simple_strtoul(argv[3], NULL, 0);
-		temp = temp * SZ_1M;
-	} else
-		temp = PART_SIZE_SYSTEM;
 
-	block_offset = calc_unit(temp, sdInfo);
-	partInfo[0].bootable	= 0x00;
-	partInfo[0].partitionId	= 0x83;
-	make_partitionInfo(block_start, block_offset, sdInfo, &partInfo[0]);
+	/* system partition */
+	if (expand_part != 0) {
+		block_offset = calc_unit(psize[0], sdInfo);
+		partInfo[0].bootable	= 0x00;
+		partInfo[0].partitionId	= 0x83;
+		make_partitionInfo(block_start, block_offset, sdInfo, &partInfo[0]);
+		block_start += block_offset;
+	}
 
-	block_start += block_offset;
-	if (flag) {
-		temp = simple_strtoul(argv[4], NULL, 0);
-		temp = temp * SZ_1M;
-	} else
-		temp = PART_SIZE_USER_DATA;
+	/* userdata partition */
+	if (expand_part != 1) {
+		block_offset = calc_unit(psize[1], sdInfo);
+		partInfo[1].bootable	= 0x00;
+		partInfo[1].partitionId	= 0x83;
+		make_partitionInfo(block_start, block_offset, sdInfo, &partInfo[1]);
+		block_start += block_offset;
+	}
 
-	block_offset = calc_unit(temp, sdInfo);
-	partInfo[1].bootable	= 0x00;
-	partInfo[1].partitionId	= 0x83;
-	make_partitionInfo(block_start, block_offset, sdInfo, &partInfo[1]);
+	/* cache partition */
+	if (expand_part != 2) {
+		block_offset = calc_unit(psize[2], sdInfo);
+		partInfo[2].bootable	= 0x00;
+		partInfo[2].partitionId	= 0x83;
+		make_partitionInfo(block_start, block_offset, sdInfo, &partInfo[2]);
+		block_start += block_offset;
+	}
 
-	block_start += block_offset;
-	if (flag) {
-		temp = simple_strtoul(argv[5], NULL, 0);
-		temp = temp * SZ_1M;
-	} else
-		temp = PART_SIZE_CACHE;
+	/* fat partition */
+	if (expand_part != 3) {
+		block_offset = calc_unit(psize[3], sdInfo);
+		partInfo[3].bootable	= 0x00;
+		partInfo[3].partitionId	= 0x0C;
+		make_partitionInfo(block_start, block_offset, sdInfo, &partInfo[3]);
+		block_start += block_offset;
+	}
 
-	block_offset = calc_unit(temp, sdInfo);
-	partInfo[2].bootable	= 0x00;
-	partInfo[2].partitionId	= 0x83;
-	make_partitionInfo(block_start, block_offset, sdInfo, &partInfo[2]);
-
-	block_start += block_offset;
+	/* expand partition setup */
 	block_offset = MOVI_BLK_END;
 
-	partInfo[3].bootable	= 0x00;
-	partInfo[3].partitionId	= 0x0C;
+	partInfo[expand_part].bootable	= 0x00;
+	partInfo[expand_part].partitionId = expand_part != 3 ? 0x83 : 0x0C;
 
-	make_partitionInfo(block_start, block_offset, sdInfo, &partInfo[3]);
+	make_partitionInfo(block_start, block_offset, sdInfo,
+		&partInfo[expand_part]);
 
 	memset(mbr, 0x00, sizeof(mbr));
 	mbr[510] = 0x55; mbr[511] = 0xAA;
@@ -1344,7 +1431,7 @@ static int create_mmc_fdisk(int argc, char * const argv[])
 	if (total_block_count < 0)
 		return CMD_RET_FAILURE;
 
-	make_mmc_partition(total_block_count, mbr, (argc==6?1:0), argv);
+	make_mmc_partition(total_block_count, mbr, argc, argv);
 
 	rv = put_mmc_mbr(mbr, argv[2]);
 	if (rv != 0)
@@ -1352,27 +1439,36 @@ static int create_mmc_fdisk(int argc, char * const argv[])
 
 	puts("\nfdisk is completed\n");
 
-	argv[1][1] = 'p';
-	print_mmc_part_info(argc, argv);
 	return	CMD_RET_SUCCESS;
 }
 
 static int do_fdisk(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
-	if ( argc == 3 || argc == 6 ) {
-		if      ( strcmp(argv[1], "-c") == 0 )
-			return	create_mmc_fdisk(argc, argv);
+	if (argv[2][0] != '0' && argv[2][0] != '1') {
+		printf("Error :");
+		printf("Wrong device number\n");
+		return	CMD_RET_FAILURE;
+	}
 
-		else if ( strcmp(argv[1], "-p") == 0 )
-			return	print_mmc_part_info(argc, argv);
+	switch (argc) {
+	default :
+		break;
+	case	3:	case	6:	case	7:
+		if (argv[1][1] == 'c')
+			create_mmc_fdisk(argc, argv);
+		if (argv[1][1] == 'c' || argv[1][1] == 'p') {
+			argv[1][1] = 'p';
+			print_mmc_part_info(argc, argv);
+			return	CMD_RET_SUCCESS;
+		}
 	}
 	return	CMD_RET_USAGE;
 }
 
 U_BOOT_CMD (
-	fdisk, 6, 0, do_fdisk,
+	fdisk, 7, 0, do_fdisk,
 	"Create(-c) or show(-p) partitions in mmc.",
-	"-c <device_num> [<systemt size(MB)> <user data size(MB)> <cache size(MB)>]\n"
+	"-c <device_num> [<systemt size(MB)> <user data size(MB)> <cache size(MB)> [fat size(MB)]\n"
 	"fdisk -p <device_num>\n"
 );
 
@@ -1470,15 +1566,16 @@ static int do_movi(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 	}
 	if (!ret) {
 		struct mmc *mmc;
+		uint blk_start, blk_count;
+
+		blk_start = pinfo.blk_start - offset;
+		blk_count = pinfo.size / MMC_MAX_BLOCK_LEN;
 
 		mmc = find_mmc_device(dev_no);
 
 		printf("mmc block %s, dev %d, addr 0x%x, blk start %d, blk cnt %d\n",
 			(argv[1][0] == 'w') ? "write" : "read",
-			dev_no,
-			(unsigned int)addr,
-			(pinfo.blk_start - offset),
-			(pinfo.size / MOVI_BLK_SIZE));
+			dev_no, (unsigned int)addr, blk_start, blk_count);
 
 		if (argv[1][0] == 'w')
 			mmc->block_dev.block_write(&mmc->block_dev,
