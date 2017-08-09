@@ -72,6 +72,8 @@
 
 #endif
 
+#define CONFIG_PREBOOT
+
 /* enable usb config for usb ether */
 
 #endif
