@@ -340,7 +340,7 @@ static uint upload_file(const char *fname, const char *pname,
 	setenv("filesize", "0");
 
 	memset(cmd, 0x00, sizeof(cmd));
-	sprintf(cmd, "fatload mmc 0:1 %x update/%s", mem_addr, fname);
+	sprintf(cmd, "ext4load mmc 0:3 %x media/0/update/%s", mem_addr, fname);
 	run_command(cmd, 0);
 
 	/* file size check */
@@ -446,11 +446,6 @@ static void odroid_fw_update(unsigned int option)
 	upload_addr = upload_file("cache.img",
 		"cache", upload_addr, &upinfo[PART_CACHE]);
 
-	if (option & OPTION_ERASE_USERDATA) {
-		upload_addr = upload_file("userdata.img",
-			"userdata", upload_addr, &upinfo[PART_USERDATA]);
-	}
-
 	upload_addr = upload_file("zImage",
 		"kernel", upload_addr, &upinfo[PART_KERNEL]);
 
@@ -500,6 +495,9 @@ static void odroid_fw_update(unsigned int option)
 
 	if (option & OPTION_ERASE_FAT)
 		run_command("fatformat mmc 0:1", 0);
+
+	if (option & OPTION_ERASE_FAT)
+		run_command("fatformat mmc 0:3", 0);
 
 	odroid_led_ctrl(GPIO_LED_B, 1);
 }
