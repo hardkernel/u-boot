@@ -5,9 +5,13 @@
  */
 
 #include <common.h>
+#include <syscon.h>
 #include <asm/armv8/mmu.h>
-#include <asm/io.h>
+#include <asm/arch/boot_mode.h>
+#include <asm/arch/clock.h>
+#include <asm/arch/grf_rk3399.h>
 #include <asm/arch/hardware.h>
+#include <asm/io.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -52,6 +56,42 @@ int arch_cpu_init(void)
 
 	/* Emmc clock generator: disable the clock multipilier */
 	rk_clrreg(GRF_EMMCCORE_CON11, 0x0ff);
+
+	return 0;
+}
+
+static void setup_boot_mode(void)
+{
+	struct rk3399_pmugrf_regs *pmugrf;
+	int boot_mode;
+
+	pmugrf = syscon_get_first_range(ROCKCHIP_SYSCON_PMUGRF);;
+	boot_mode = readl(&pmugrf->os_reg0);
+	debug("boot mode %x\n", boot_mode);
+
+	/* Clear boot mode */
+	writel(BOOT_NORMAL, &pmugrf->os_reg0);
+
+	switch (boot_mode) {
+	case BOOT_FASTBOOT:
+		printf("enter fastboot!\n");
+		env_set("preboot", "setenv preboot; fastboot usb0");
+		break;
+	case BOOT_UMS:
+		printf("enter UMS!\n");
+		env_set("preboot", "setenv preboot; if mmc dev 0;"
+		       "then ums mmc 0; else ums mmc 1;fi");
+		break;
+	case BOOT_LOADER:
+		printf("enter Rockusb!\n");
+		env_set("preboot", "setenv preboot; rockusb 0 mmc 0");
+		break;
+	}
+}
+
+int board_late_init(void)
+{
+	setup_boot_mode();
 
 	return 0;
 }
