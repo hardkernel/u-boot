@@ -68,7 +68,7 @@
 
 /* Android Partition size for ODROID */
 #define	PART_SIZE_SYSTEM		SZ_1G
-#define	PART_SIZE_USER_DATA		SZ_2G
+#define	PART_SIZE_USERDATA		SZ_2G
 #define	PART_SIZE_CACHE			SZ_256M
 #define	ANDROID_PART_START		SZ_64M
 
@@ -89,11 +89,12 @@
 
 /* Fastboot SDMMC Partition Table for ODROID(Exynos5422) */
 
-/* BL1		BLK#: 1    (0x0001) ~    30 (0x001E) */
-/* BL2		BLK#: 31   (0x001F) ~    62 (0x003E) */
-/* UBOOT	BLK#: 63   (0x003F) ~  1502 (0x05DE) */
-/* TZSW		BLK#: 1503 (0x05DF) ~  2014 (0x07DE) */
-/* UBOOT ENV	BLK#: 2015 (0x07DF) ~  2046 (0x07FE) */
+/* BL1		BLK#: 1    (0x0001)  ~    30 (0x001E) */
+/* BL2		BLK#: 31   (0x001F)  ~    62 (0x003E) */
+/* UBOOT	BLK#: 63   (0x003F)  ~  1502 (0x05DE) */
+/* TZSW		BLK#: 1503 (0x05DF)  ~  2014 (0x07DE) */
+/* UBOOT ENV	BLK#: 2015 (0x07DF)  ~  2046 (0x07FE) */
+/* KERNEL	BLK#: 2047 (0x07DF)  ~ 18430 (0x47FE) */
 #define	UBOOT_ENV_ERASE	\
 	"mw.l ${loadaddr} 0 4000;"	\
 	"mmc dev 0;  mmc write ${loadaddr} 0x07df 0x0020;mmc dev 0\0"
@@ -159,9 +160,12 @@
 	#if defined(CONFIG_FASTBOOT)
 		#define CFG_FASTBOOT_TRANSFER_BUFFER		(0x50000000)
 
-		#define CFG_FASTBOOT_TRANSFER_BUFFER_SIZE	(0x30000000)   /* 768MB */
-		#define CFG_FASTBOOT_PAGESIZE			(2048)  // Page size of booting device
-		#define CFG_FASTBOOT_SDMMC_BLOCKSIZE		(512)   // Block size of sdmmc
+		/* Download maximum size 1024MB */
+		#define CFG_FASTBOOT_TRANSFER_BUFFER_SIZE	(0x40000000)
+		/* Page size of booting device */
+		#define CFG_FASTBOOT_PAGESIZE			(2048)
+		/* Block size of sdmmc */
+		#define CFG_FASTBOOT_SDMMC_BLOCKSIZE		(512)
 	#endif
 
 	/* cmd from kernel reboot */

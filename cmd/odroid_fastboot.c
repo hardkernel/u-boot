@@ -37,7 +37,7 @@ static struct cmd_fastboot_interface interface =
 
 /*---------------------------------------------------------------------------*/
 static int flashing_raw_data(struct partition_info *pinfo,
-	unsigned int addr, unsigned int size, unsigned int dev_no)
+	unsigned int addr, u64 size, unsigned int dev_no)
 {
 	struct mmc *mmc;
 	char cmd[64] = { 0, };
@@ -82,7 +82,7 @@ static void erase_partition(struct partition_info *pinfo, unsigned int dev_no)
 	unsigned char *clrbuf =
 		(unsigned char *)calloc(sizeof(char), BLOCK_ERASE_SIZE);
 
-	printf("Erasing partition(%s)... blk_st = 0x%08x, blk_cnt = 0x%08x\n",
+	printf("Erasing partition(%s)... blk_st = %d, blk_cnt = %d\n",
 		pinfo->name, blk_start, blk_cnt);
 
 	mmc = find_mmc_device(dev_no);
