@@ -88,10 +88,16 @@ static struct partition_info gPartInfo[PART_MAX] = {
 		.size 	   = PART_SIZE_ENV,
 		.raw_en    = 0,
 	},
-	[PART_KERENEL] = {
+	[PART_KERNEL] = {
 		.name 	   = "kernel",
 		.blk_start = PART_KERNEL_ST_BLK,
 		.size 	   = PART_SIZE_KERNEL,
+		.raw_en    = 0,
+	},
+	[PART_FAT] = {
+		.name 	   = "fat",
+		.blk_start = 0,
+		.size 	   = 0,
 		.raw_en    = 0,
 	},
 	[PART_SYSTEM] = {
@@ -116,23 +122,24 @@ static struct partition_info gPartInfo[PART_MAX] = {
 
 /*---------------------------------------------------------------------------*/
 /* from cmd/mmc.c */
-extern int get_mmc_part_info(char *device_name, int part_num, uint *block_start,
-	uint *block_count, uchar *part_Id);
+extern int get_mmc_part_info(char *device_name, int part_num,
+	u64 *block_start, u64 *block_count, uchar *part_Id);
 
 /*---------------------------------------------------------------------------*/
 static void odroid_print_part_info(char *dev_no)
 {
-	int i;
+	uint i, blk_start, blk_count, kb_size;
 
 	printf("\n*** Partition Information for Andorid ***");
 	printf("\nControl Device ID : %s", dev_no);
-	printf("\npNo\tStart Block\tpSize(bytes)\tpName");
+	printf("\npNo\tStart Block\tBlock Count\tpName");
+
 	for (i = 0; i < PART_MAX; i++) {
-		printf("\n %d \t0x%08x\t0x%08x\t%s",
-			i,
-			gPartInfo[i].blk_start,
-			gPartInfo[i].size,
-			gPartInfo[i].name);
+		blk_start = gPartInfo[i].blk_start;
+		blk_count = gPartInfo[i].size / MOVI_BLK_SIZE;
+		kb_size   = gPartInfo[i].size / SZ_1K;
+		printf("\n %d \t%8d\t%8d\t%s (%d KB)",
+			i, blk_start, blk_count, gPartInfo[i].name, kb_size);
 	}
 	printf("\n\n");
 }
@@ -166,16 +173,16 @@ int odroid_get_partition_info(const char *ptn, struct partition_info *pinfo)
 /*---------------------------------------------------------------------------*/
 int odroid_partition_setup(char *dev_no)
 {
-	unsigned int blk_st, blk_cnt;
+	u64 blk_st, blk_cnt;
 	unsigned char pid, i;
 
-	for (i = 0; i < 3; i++)	{
-		if (get_mmc_part_info (dev_no, i + 2, &blk_st, &blk_cnt, &pid))
+	for (i = 0; i < 4; i++)	{
+		if (get_mmc_part_info (dev_no, i + 1, &blk_st, &blk_cnt, &pid))
 			goto err;
-		if (pid != 0x83)
+		if (pid != 0x83 && pid != 0x0C)
 			goto err;
-		gPartInfo[PART_SYSTEM+i].blk_start = blk_st;
-		gPartInfo[PART_SYSTEM+i].size = (blk_cnt * MOVI_BLK_SIZE);
+		gPartInfo[PART_FAT+i].blk_start = blk_st;
+		gPartInfo[PART_FAT+i].size = (blk_cnt * MOVI_BLK_SIZE);
 	}
 
 	odroid_print_part_info(dev_no);
@@ -323,7 +330,8 @@ err:
 }
 
 /*---------------------------------------------------------------------------*/
-static int filecheck(const char *fname)
+static uint upload_file(const char *fname, const char *pname,
+	uint mem_addr, struct upload_info *upinfo)
 {
 	char	cmd[64];
 	unsigned long	filesize = 0;
@@ -332,62 +340,86 @@ static int filecheck(const char *fname)
 	setenv("filesize", "0");
 
 	memset(cmd, 0x00, sizeof(cmd));
-	sprintf(cmd, "fatload mmc 0:1 0x50000000 update/%s", fname);
+	sprintf(cmd, "fatload mmc 0:1 %x update/%s", mem_addr, fname);
 	run_command(cmd, 0);
 
 	/* file size check */
-	if ((filesize = getenv_ulong("filesize", 16, 0)))
-		return  1;
+	if ((filesize = getenv_ulong("filesize", 16, 0))) {
+		strncpy(upinfo->part_name, pname, strlen(pname));
+		upinfo->mem_addr = mem_addr;
+		upinfo->file_size = filesize;
+		#if defined(ODROID_MISC_DEBUG)
+			printf("%s : %s, fname = %s,  fsize = %ld, load_addr = 0x%08x\n",
+				__func__, pname, fname, filesize, mem_addr); 
+		#endif
+		return  (mem_addr + filesize + 256) & 0xFFFFFF00;
+	}
 
 	printf("ERROR! update/%s File Not Found!! filesize = 0\n", fname);
-
 	/* error */
-	return  0;
+	return  mem_addr;
 }
 
 /*---------------------------------------------------------------------------*/
-static void update_image(const char *ptn)
+static void update_raw_image(struct upload_info *upinfo)
+{
+	struct exynos5_power *pmu =
+		(struct exynos5_power *)samsung_get_base_power;
+	char cmd[64], is_emmc = 0, ptn;
+
+	memset(cmd, 0x00, sizeof(cmd));
+
+	if ((pmu->inform3 == BOOT_EMMC_4_4) ||
+	    (pmu->inform3 == BOOT_EMMC)       )	is_emmc = 1;
+
+	if (!strncmp(upinfo->part_name, "kernel", sizeof("kernel"))) {
+		sprintf(cmd, "movi w k 0 0x%08x", upinfo->mem_addr);
+		run_command(cmd, 0);
+	} else {
+		if (!strncmp(upinfo->part_name, "bootloader", sizeof("bootloader")))
+			ptn = 'u';
+		if (!strncmp(upinfo->part_name, "bl1", sizeof("bl1")))
+			ptn = 'f';
+		if (!strncmp(upinfo->part_name, "bl2", sizeof("bl2")))
+			ptn = 'b';
+		if (!strncmp(upinfo->part_name, "tzsw", sizeof("tzsw")))
+			ptn = 't';
+
+		if (is_emmc)
+			sprintf(cmd, "movi w z %c 0 0x%08x", ptn, upinfo->mem_addr);
+		else
+			sprintf(cmd, "movi w %c 0 0x%08x", ptn, upinfo->mem_addr);
+
+		if (is_emmc)
+			run_command("emmc open 0", 0);
+
+		run_command(cmd, 0);
+
+		if (is_emmc)
+			run_command("emmc close 0", 0);
+	}
+}
+
+/*---------------------------------------------------------------------------*/
+static void update_ptn_image(struct upload_info *upinfo)
 {
 	char	cmd[64];
 
 	memset(cmd, 0x00, sizeof(cmd));
-	sprintf(cmd, "fastboot flash %s 0x50000000 0", ptn);
+	sprintf(cmd, "fastboot flash %s 0x%08x 0",
+		upinfo->part_name, upinfo->mem_addr);
 	run_command(cmd, 0);
 }
 
 /*---------------------------------------------------------------------------*/
-static void update_raw_image(const char *ptn)
+static void upload_data_write(struct upload_info *upinfo, int is_raw)
 {
-	struct exynos5_power *pmu =
-		(struct exynos5_power *)samsung_get_base_power;
-	int OmPin;
-
-	OmPin = pmu->inform3;
-
-	if (!strncmp(ptn, "kernel", sizeof("kernel")))
-		run_command("movi w k 0 0x50000000", 0);
-	else {
-		if ((OmPin == BOOT_EMMC_4_4) || (OmPin == BOOT_EMMC)) {
-			run_command("emmc open 0", 0);
-			if (!strncmp(ptn, "bootloader", sizeof("bootloader")))
-				run_command("movi w z u 0 0x50000000", 0);
-			if (!strncmp(ptn, "bl1", sizeof("bl1")))
-				run_command("movi w z f 0 0x50000000", 0);
-			if (!strncmp(ptn, "bl2", sizeof("bl2")))
-				run_command("movi w z b 0 0x50000000", 0);
-			if (!strncmp(ptn, "tzsw", sizeof("tzsw")))
-				run_command("movi w z t 0 0x50000000", 0);
-			run_command("emmc close 0", 0);
-		} else {
-			if (!strncmp(ptn, "bootloader", sizeof("bootloader")))
-				run_command("movi w u 0 0x50000000", 0);
-			if (!strncmp(ptn, "bl1", sizeof("bl1")))
-				run_command("movi w f 0 0x50000000", 0);
-			if (!strncmp(ptn, "bl2", sizeof("bl2")))
-				run_command("movi w b 0 0x50000000", 0);
-			if (!strncmp(ptn, "tzsw", sizeof("tzsw")))
-				run_command("movi w t 0 0x50000000", 0);
-		}
+	if (is_raw) {
+		if (upinfo->file_size)
+			update_raw_image(upinfo);
+	} else {
+		if (upinfo->file_size)
+			update_ptn_image(upinfo);
 	}
 }
 
@@ -395,32 +427,73 @@ static void update_raw_image(const char *ptn)
 /* firmware update check */
 static void odroid_fw_update(unsigned int option)
 {
+	unsigned long		upload_addr = 0, i;
+	struct upload_info 	upinfo[PART_MAX];
+	struct exynos5_power *pmu =
+		(struct exynos5_power *)samsung_get_base_power();
+
 	odroid_led_ctrl(GPIO_LED_B, 1);
 
-	if (filecheck("system.img"))
-		update_image("system");
-	if (filecheck("cache.img"))
-		update_image("cache");
+	memset(upinfo, 0x00, sizeof(upinfo));
+
+	upload_addr = getenv_ulong("loadaddr", 16, 0);
+	if (!upload_addr)
+		upload_addr = CFG_FASTBOOT_TRANSFER_BUFFER;
+
+	upload_addr = upload_file("system.img",
+		"system", upload_addr, &upinfo[PART_SYSTEM]);
+
+	upload_addr = upload_file("cache.img",
+		"cache", upload_addr, &upinfo[PART_CACHE]);
 
 	if (option & OPTION_ERASE_USERDATA) {
-		if (filecheck("userdata.img"))
-			update_image("userdata");
+		upload_addr = upload_file("userdata.img",
+			"userdata", upload_addr, &upinfo[PART_USERDATA]);
 	}
-	if (filecheck("zImage"))
-		update_raw_image("kernel");
-	else if (filecheck("zImage-dtb"))
-		update_raw_image("kernel");
+
+	upload_addr = upload_file("zImage",
+		"kernel", upload_addr, &upinfo[PART_KERNEL]);
+
+	if (!upinfo[PART_KERNEL].file_size) {
+		upload_addr = upload_file("zImage-dtb",
+			"kernel", upload_addr, &upinfo[PART_KERNEL]);
+	}
 
 	if (option & OPTION_UPDATE_UBOOT) {
-		if(filecheck("u-boot.bin"))
-			update_raw_image("bootloader");
-		if(filecheck("bl1.bin"))
-			update_raw_image("bl1");
-		if(filecheck("bl2.bin"))
-			update_raw_image("bl2");
-		if(filecheck("tzsw.bin"))
-			update_raw_image("tzsw");
+		upload_addr = upload_file("u-boot.bin",
+			"bootloader", upload_addr, &upinfo[PART_BOOTLOADER]);
+		upload_addr = upload_file("bl1.bin",
+			"bl1", upload_addr, &upinfo[PART_FWBL1]);
+		upload_addr = upload_file("bl2.bin",
+			"bl2", upload_addr, &upinfo[PART_BL2]);
+		upload_addr = upload_file("tzsw.bin",
+			"tzsw", upload_addr, &upinfo[PART_TZSW]);
 	}
+
+	/*
+		sysip_data1(msb 16 bits) : system mb size
+		sysip_data1(lsb 16 bits) : cache mb size
+		sysip_data2		 : userdata mb size
+		sysip_data3		 : fat mb size
+
+		default : System 1G/Cache 256M/FAT 100M/expand Userdata
+			fdisk -c 0 1024 0 256 100
+	*/
+	if (option & OPTION_RESIZE_PART) {
+		char cmd[64];
+		memset(cmd, 0x00, sizeof(cmd));
+		sprintf(cmd, "fdisk -c 0 %d %d %d %d",
+			(pmu->sysip_dat1 & 0xFFFF0000) >> 16,
+			(pmu->sysip_dat2),
+			(pmu->sysip_dat1 & 0x0000FFFF),
+			(pmu->sysip_dat3));
+		pmu->sysip_dat1 = 0;	pmu->sysip_dat2 = 0;
+		pmu->sysip_dat3 = 0;
+		run_command(cmd, 0);
+	}
+
+	for (i = 0; i < PART_MAX; i++)
+		upload_data_write(&upinfo[i], i > PART_KERNEL ? 0 : 1);
 
 	if (option & OPTION_ERASE_ENV)
 		run_command(UBOOT_ENV_ERASE, 0);
@@ -445,6 +518,16 @@ static void odroid_magic_cmd_check(void)
 #if defined(ODROID_MISC_DEBUG)
 	printf("pmu->sysip = 0x%08x, pmu->inform0 = 0x%08x\n",
 		cmd, option);
+	printf("pmu->sysip1 = 0x%08x\n", pmu->sysip_dat1);
+	printf("pmu->sysip2 = 0x%08x\n", pmu->sysip_dat2);
+	printf("pmu->sysip3 = 0x%08x\n", pmu->sysip_dat3);
+
+	printf("resize part size : \n");
+	printf("system %d Mb, cache %d Mb, fat %d Mb, userdata %d Mb\n",
+		(pmu->sysip1 >> 16)	& 0xFFFF,
+		(pmu->sysip1)		& 0xFFFF,
+		(pmu->sysip2),
+		(pmu->sysip3));
 #endif
 	pmu->sysip_dat0 = 0;	pmu->inform0 = 0;
 

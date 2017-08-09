@@ -19,6 +19,7 @@
 #define	OPTION_ERASE_FAT	0x02
 #define	OPTION_ERASE_ENV	0x04
 #define	OPTION_UPDATE_UBOOT	0x08
+#define	OPTION_RESIZE_PART	0x10
 
 enum	{
 	PART_FWBL1 = 0,
@@ -26,7 +27,8 @@ enum	{
 	PART_BOOTLOADER,
 	PART_TZSW,
 	PART_ENV,
-	PART_KERENEL,
+	PART_KERNEL,
+	PART_FAT,
 	PART_SYSTEM,
 	PART_USERDATA,
 	PART_CACHE,
@@ -35,9 +37,15 @@ enum	{
 
 struct partition_info {
 	const char	name[16];	/* partition name */
-	unsigned int	blk_start;	/* start blk number */
-	unsigned int	size;		/* size in bytes */
+	u64		blk_start;	/* start blk number */
+	u64		size;		/* size in bytes */
 	unsigned int	raw_en;		/* raw access enable for emmc */
+};
+
+struct upload_info {
+	char	part_name[16];
+	uint	mem_addr;
+	uint	file_size;
 };
 
 extern	int odroid_get_partition_info	(const char *ptn, struct partition_info *pinfo);
