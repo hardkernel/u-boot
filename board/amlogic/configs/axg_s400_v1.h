@@ -247,8 +247,8 @@
  *    DDR clk <= 400MHz, please enable CONFIG_DDR_PLL_BYPASS blow
  *    DDR clk > 400MHz, please disable CONFIG_DDR_PLL_BYPASS blow
  */
-#define CONFIG_DDR_CLK					288  //MHz, Range: 200-1200, should be multiple of 24
-#define CONFIG_DDR4_CLK					396  //MHz, this is for same board with DDR4 chip
+#define CONFIG_DDR_CLK					912  //MHz, Range: 200-1200, should be multiple of 24
+#define CONFIG_DDR4_CLK					912  //MHz, this is for same board with DDR4 chip
 
 #define CONFIG_NR_DRAM_BANKS			1
 /* DDR type setting
@@ -270,7 +270,7 @@
 #define CONFIG_DDR_ZQ_PD				0 //0:disable, 1:enable. ddr zq power down
 #define CONFIG_DDR_USE_EXT_VREF			0 //0:disable, 1:enable. ddr use external vref
 #define CONFIG_DDR4_TIMING_TEST			0 //0:disable, 1:enable. ddr4 timing test function
-#define CONFIG_DDR_PLL_BYPASS			1 //0:disable, 1:enable. ddr pll bypass function
+#define CONFIG_DDR_PLL_BYPASS			0 //0:disable, 1:enable. ddr pll bypass function
 #define CONFIG_DDR_FUNC_PRINT_WINDOW	0 //0:disable, 1:enable. print ddr training window
 
 /* storage: emmc/nand/sd */
