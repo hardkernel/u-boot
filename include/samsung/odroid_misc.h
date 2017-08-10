@@ -21,6 +21,7 @@
 #define	OPTION_UPDATE_UBOOT	0x08
 #define	OPTION_RESIZE_PART	0x10
 #define	OPTION_FILELOAD_EXT4	0x20
+#define	OPTION_OLDTYPE_PART	0x40
 
 enum	{
 	PART_FWBL1 = 0,
@@ -53,6 +54,7 @@ extern	int odroid_get_partition_info	(const char *ptn, struct partition_info *pi
 extern	int odroid_partition_setup	(char *dev_no);
 
 extern	void odroid_led_ctrl	(int gpio, int status);
+extern	void odroid_self_update	(uint option);
 extern	void odroid_misc_init	(void);
 extern	void odroid_power_off	(void);
 

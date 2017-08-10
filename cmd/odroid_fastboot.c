@@ -589,4 +589,43 @@ U_BOOT_CMD(
 );
 
 /*---------------------------------------------------------------------------*/
+static int do_self_update(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
+{
+	uint	option = 0;
+
+	switch(argc) {
+	case	2:
+		if ((argv[1][0] == 'h') || (argv[1][0] == '-'))
+			return	CMD_RET_USAGE;
+
+		option = (uint)simple_strtoul(argv[1], NULL, 16);
+		printf("%s : option = 0x%x\n", __func__, option);
+		odroid_self_update(option);
+		return	CMD_RET_SUCCESS;
+
+	default :
+		return	CMD_RET_USAGE;
+	}
+}
+
+U_BOOT_CMD(
+	self_update, 2, 0, do_self_update,
+	"self update for android",
+	"[ option val ]\n\n"
+	"==== OPTION Value ====\n"
+	"-h or h : usage display\n"
+	"ERASE_USERDATA = 0x01, ERASE_FAT = 0x02, ERASE_ENV = 0x04\n"
+	"UPDATE_UBOOT = 0x08, RESIZE_PART = 0x10, FILELOAD_EXT4 = 0x20\n"
+	"OPTION_OLDTYPE_PART = 0x40\n\n"
+	"RESIZE_PART flag : expand partition for userdata\n"
+	"	--> fdisk -c 0 1024 0 256 100\n"
+	"	--> System 1G / Userdata expand / Cache 256M / Vfat 100M\n\n"
+	"FILELOAD_EXT4 flag : update file load from userdata partition(ext4)\n"
+	"	--> ext4load mmc 0:3 media/0/update\n\n"
+	"OLDTYPE_PART flag : old style partition setup\n"
+	"	--> fdisk -c 0\n"
+	"	--> System 1G / Userdata 2G / Cache 256M / Vfat expand\n\n"
+);
+
+/*---------------------------------------------------------------------------*/
 /*---------------------------------------------------------------------------*/
