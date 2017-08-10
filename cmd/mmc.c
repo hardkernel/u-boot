@@ -1444,16 +1444,15 @@ static int create_mmc_fdisk(int argc, char * const argv[])
 
 static int do_fdisk(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
-	if (argv[2][0] != '0' && argv[2][0] != '1') {
-		printf("Error :");
-		printf("Wrong device number\n");
-		return	CMD_RET_FAILURE;
-	}
-
 	switch (argc) {
 	default :
 		break;
 	case	3:	case	6:	case	7:
+		if (argv[2][0] != '0' && argv[2][0] != '1') {
+			printf("Error :");
+			printf("Wrong device number\n");
+			return	CMD_RET_FAILURE;
+		}
 		if (argv[1][1] == 'c')
 			create_mmc_fdisk(argc, argv);
 		if (argv[1][1] == 'c' || argv[1][1] == 'p') {
