@@ -334,13 +334,20 @@ static uint upload_file(const char *fname, const char *pname,
 	uint mem_addr, struct upload_info *upinfo)
 {
 	char	cmd[64];
-	unsigned long	filesize = 0;
+	unsigned long	filesize = 0, fileload_part = 0;
 
 	/* env variable init */
 	setenv("filesize", "0");
 
 	memset(cmd, 0x00, sizeof(cmd));
-	sprintf(cmd, "ext4load mmc 0:3 %x media/0/update/%s", mem_addr, fname);
+
+	/* file load from userdata area */
+	fileload_part = getenv_ulong("fileload_part", 10, 0);
+
+	if (fileload_part)
+		sprintf(cmd, "ext4load mmc 0:3 %x media/0/update/%s", mem_addr, fname);
+	else
+		sprintf(cmd, "fatload mmc 0:1 %x update/%s", mem_addr, fname);
 	run_command(cmd, 0);
 
 	/* file size check */
@@ -436,6 +443,11 @@ static void odroid_fw_update(unsigned int option)
 
 	memset(upinfo, 0x00, sizeof(upinfo));
 
+	if (option & OPTION_FILELOAD_EXT4)
+		setenv_ulong("fileload_part", 3);
+	else
+		setenv_ulong("fileload_part", 0);
+
 	upload_addr = getenv_ulong("loadaddr", 16, 0);
 	if (!upload_addr)
 		upload_addr = CFG_FASTBOOT_TRANSFER_BUFFER;
@@ -445,6 +457,13 @@ static void odroid_fw_update(unsigned int option)
 
 	upload_addr = upload_file("cache.img",
 		"cache", upload_addr, &upinfo[PART_CACHE]);
+
+	if (option & OPTION_ERASE_USERDATA) {
+		if ((option & OPTION_RESIZE_PART) == 0) {
+			upload_addr = upload_file("userdata.img",
+				"userdata", upload_addr, &upinfo[PART_USERDATA]);
+		}
+	}
 
 	upload_addr = upload_file("zImage",
 		"kernel", upload_addr, &upinfo[PART_KERNEL]);
@@ -496,10 +515,7 @@ static void odroid_fw_update(unsigned int option)
 	if (option & OPTION_ERASE_FAT)
 		run_command("fatformat mmc 0:1", 0);
 
-	if (option & OPTION_ERASE_FAT)
-		run_command("fatformat mmc 0:3", 0);
-
-	odroid_led_ctrl(GPIO_LED_B, 1);
+	odroid_led_ctrl(GPIO_LED_B, 0);
 }
 
 /*---------------------------------------------------------------------------*/
