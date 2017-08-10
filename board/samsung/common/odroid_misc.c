@@ -370,14 +370,12 @@ static uint upload_file(const char *fname, const char *pname,
 /*---------------------------------------------------------------------------*/
 static void update_raw_image(struct upload_info *upinfo)
 {
-	struct exynos5_power *pmu =
-		(struct exynos5_power *)samsung_get_base_power;
 	char cmd[64], is_emmc = 0, ptn;
 
 	memset(cmd, 0x00, sizeof(cmd));
 
-	if ((pmu->inform3 == BOOT_EMMC_4_4) ||
-	    (pmu->inform3 == BOOT_EMMC)       )	is_emmc = 1;
+	if (!strncmp(getenv("boot_device"), "eMMC", sizeof("eMMC")))
+		is_emmc = 1;
 
 	if (!strncmp(upinfo->part_name, "kernel", sizeof("kernel"))) {
 		sprintf(cmd, "movi w k 0 0x%08x", upinfo->mem_addr);
@@ -505,6 +503,8 @@ static void odroid_fw_update(unsigned int option)
 		pmu->sysip_dat3 = 0;
 		run_command(cmd, 0);
 	}
+	else if (option & OPTION_OLDTYPE_PART)
+		run_command("fdisk -c 0", 0);
 
 	for (i = 0; i < PART_MAX; i++)
 		upload_data_write(&upinfo[i], i > PART_KERNEL ? 0 : 1);
@@ -555,6 +555,18 @@ static void odroid_magic_cmd_check(void)
 		run_command("reset", 0);
 		break;
 	}
+}
+
+/*---------------------------------------------------------------------------*/
+void odroid_self_update(uint option)
+{
+	struct exynos5_power *pmu =
+		(struct exynos5_power *)samsung_get_base_power();
+
+	pmu->sysip_dat1 = 0;	pmu->sysip_dat2 = 0;	pmu->sysip_dat3 = 0;
+
+	if (!odroid_partition_setup("0"))
+		odroid_fw_update(option);
 }
 
 /*---------------------------------------------------------------------------*/
