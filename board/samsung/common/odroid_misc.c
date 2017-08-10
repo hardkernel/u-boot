@@ -457,7 +457,9 @@ static void odroid_fw_update(unsigned int option)
 		"cache", upload_addr, &upinfo[PART_CACHE]);
 
 	if (option & OPTION_ERASE_USERDATA) {
-		if ((option & OPTION_RESIZE_PART) == 0) {
+		if (option & OPTION_FILELOAD_EXT4) {\
+			run_command("fatformat mmc 0:3", 0);
+		} else if ((option & OPTION_RESIZE_PART) == 0) {
 			upload_addr = upload_file("userdata.img",
 				"userdata", upload_addr, &upinfo[PART_USERDATA]);
 		}
