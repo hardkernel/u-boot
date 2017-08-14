@@ -331,38 +331,66 @@ err:
 
 /*---------------------------------------------------------------------------*/
 static uint upload_file(const char *fname, const char *pname,
-	uint mem_addr, struct upload_info *upinfo)
+	uint mem_addr, struct upload_info *upinfo, bool is_split)
 {
-	char	cmd[64];
-	unsigned long	filesize = 0, fileload_part = 0;
-
-	/* env variable init */
-	setenv("filesize", "0");
-
-	memset(cmd, 0x00, sizeof(cmd));
+	char	cmd[64], i;
+	unsigned long	filesize, fileload_part = 0;
+	unsigned long	total_fsize = 0;
 
 	/* file load from userdata area */
 	fileload_part = getenv_ulong("fileload_part", 10, 0);
 
-	if (fileload_part)
-		sprintf(cmd, "ext4load mmc 0:3 %x media/0/update/%s", mem_addr, fname);
-	else
-		sprintf(cmd, "fatload mmc 0:1 %x update/%s", mem_addr, fname);
-	run_command(cmd, 0);
+	/* mem load start addr */
+	upinfo->mem_addr = mem_addr;
 
-	/* file size check */
-	if ((filesize = getenv_ulong("filesize", 16, 0))) {
-		strncpy(upinfo->part_name, pname, strlen(pname));
-		upinfo->mem_addr = mem_addr;
-		upinfo->file_size = filesize;
+	/*
+	 max load file size = 1.5Gb
+	 split image size = 256Mb * 6 = 1.5Gb
+	*/
+	for (i = 0; i < 6; i++) {
 		#if defined(ODROID_MISC_DEBUG)
-			printf("%s : %s, fname = %s,  fsize = %ld, load_addr = 0x%08x\n",
-				__func__, pname, fname, filesize, mem_addr); 
+			printf("%s : %s, fname = %s%c, load_addr = 0x%08x\n",
+				__func__, pname, fname,
+				is_split ? ('a'+i) : ' ',
+				mem_addr);
 		#endif
-		return  (mem_addr + filesize + 256) & 0xFFFFFF00;
+		memset(cmd, 0x00, sizeof(cmd));
+
+		if (fileload_part)
+			sprintf(cmd, "ext4load mmc 0:3 %x media/0/update/%s%c",
+				mem_addr, fname,
+				is_split ? ('a'+i) : ' ');
+		else
+			sprintf(cmd, "fatload mmc 0:1 %x update/%s%c",
+				mem_addr, fname,
+				is_split ? ('a'+i) : ' ');
+		run_command(cmd, 0);
+
+		/* env variable init */
+		setenv("filesize", "0");
+		filesize = 0;
+		/* file size check */
+		if ((filesize = getenv_ulong("filesize", 16, 0))) {
+			#if defined(ODROID_MISC_DEBUG)
+				printf("%s : filesize = %ld, total_filesize = %ld\n",
+					__func__, filesize, total_fsize);
+			#endif
+			total_fsize += filesize;
+		}
+		if (!is_split || !filesize)
+			goto out;
+
+		mem_addr += filesize;
+	}
+out:
+	if (total_fsize) {
+		strncpy(upinfo->part_name, pname, strlen(pname));
+		upinfo->file_size = total_fsize;
+		return  (mem_addr + total_fsize + 256) & 0xFFFFFF00;
 	}
 
-	printf("ERROR! update/%s File Not Found!! filesize = 0\n", fname);
+	printf("ERROR! update/%s%c File Not Found!! filesize = 0\n",
+		fname, is_split ? 'a'+i : ' ');
 	/* error */
 	return  mem_addr;
 }
@@ -451,37 +479,48 @@ static void odroid_fw_update(unsigned int option)
 		upload_addr = CFG_FASTBOOT_TRANSFER_BUFFER;
 
 	upload_addr = upload_file("system.img",
-		"system", upload_addr, &upinfo[PART_SYSTEM]);
+		"system", upload_addr, &upinfo[PART_SYSTEM], false);
+
+	if (!upinfo[PART_SYSTEM].file_size) {
+		/*
+		 If the system.img size is larger than 256MB,
+		 use 256MB divided images.
+		 max file load size is 1.5Gbytes.
+		 image name format : system_aa ... system_af(max 6 file)
+		*/
+		upload_addr = upload_file("system_a",
+			"system", upload_addr, &upinfo[PART_SYSTEM], true);
+	}
 
 	upload_addr = upload_file("cache.img",
-		"cache", upload_addr, &upinfo[PART_CACHE]);
+		"cache", upload_addr, &upinfo[PART_CACHE], false);
 
 	if (option & OPTION_ERASE_USERDATA) {
 		if (option & OPTION_FILELOAD_EXT4) {
 			run_command("fatformat mmc 0:3", 0);
 		} else if ((option & OPTION_RESIZE_PART) == 0) {
 			upload_addr = upload_file("userdata.img",
-				"userdata", upload_addr, &upinfo[PART_USERDATA]);
+				"userdata", upload_addr, &upinfo[PART_USERDATA], false);
 		}
 	}
 
 	upload_addr = upload_file("zImage",
-		"kernel", upload_addr, &upinfo[PART_KERNEL]);
+		"kernel", upload_addr, &upinfo[PART_KERNEL], false);
 
 	if (!upinfo[PART_KERNEL].file_size) {
 		upload_addr = upload_file("zImage-dtb",
-			"kernel", upload_addr, &upinfo[PART_KERNEL]);
+			"kernel", upload_addr, &upinfo[PART_KERNEL], false);
 	}
 
 	if (option & OPTION_UPDATE_UBOOT) {
 		upload_addr = upload_file("u-boot.bin",
-			"bootloader", upload_addr, &upinfo[PART_BOOTLOADER]);
+			"bootloader", upload_addr, &upinfo[PART_BOOTLOADER], false);
 		upload_addr = upload_file("bl1.bin",
-			"bl1", upload_addr, &upinfo[PART_FWBL1]);
+			"bl1", upload_addr, &upinfo[PART_FWBL1], false);
 		upload_addr = upload_file("bl2.bin",
-			"bl2", upload_addr, &upinfo[PART_BL2]);
+			"bl2", upload_addr, &upinfo[PART_BL2], false);
 		upload_addr = upload_file("tzsw.bin",
-			"tzsw", upload_addr, &upinfo[PART_TZSW]);
+			"tzsw", upload_addr, &upinfo[PART_TZSW], false);
 	}
 
 	/*
@@ -542,10 +581,10 @@ static void odroid_magic_cmd_check(void)
 
 	printf("resize part size : \n");
 	printf("system %d Mb, cache %d Mb, fat %d Mb, userdata %d Mb\n",
-		(pmu->sysip1 >> 16)	& 0xFFFF,
-		(pmu->sysip1)		& 0xFFFF,
-		(pmu->sysip2),
-		(pmu->sysip3));
+		(pmu->sysip_dat1 >> 16)	& 0xFFFF,
+		(pmu->sysip_dat1)	& 0xFFFF,
+		(pmu->sysip_dat2),
+		(pmu->sysip_dat3));
 #endif
 	pmu->sysip_dat0 = 0;	pmu->inform0 = 0;
 
