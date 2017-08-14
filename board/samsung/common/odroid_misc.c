@@ -504,6 +504,8 @@ static void odroid_fw_update(unsigned int option)
 		pmu->sysip_dat1 = 0;	pmu->sysip_dat2 = 0;
 		pmu->sysip_dat3 = 0;
 		run_command(cmd, 0);
+		if (option & OPTION_FILELOAD_EXT4)
+			run_command("fatformat mmc 0:3", 0);
 	}
 	else if (option & OPTION_OLDTYPE_PART)
 		run_command("fdisk -c 0", 0);
