@@ -354,6 +354,9 @@ static uint upload_file(const char *fname, const char *pname,
 				is_split ? ('a'+i) : ' ',
 				mem_addr);
 		#endif
+		/* env variable init */
+		setenv("filesize", "0");
+		filesize = 0;
 		memset(cmd, 0x00, sizeof(cmd));
 
 		if (fileload_part)
@@ -366,9 +369,6 @@ static uint upload_file(const char *fname, const char *pname,
 				is_split ? ('a'+i) : ' ');
 		run_command(cmd, 0);
 
-		/* env variable init */
-		setenv("filesize", "0");
-		filesize = 0;
 		/* file size check */
 		if ((filesize = getenv_ulong("filesize", 16, 0))) {
 			#if defined(ODROID_MISC_DEBUG)
