@@ -319,9 +319,11 @@ static void m3_nand_adjust_timing(struct aml_nand_chip *aml_chip)
 	get_sys_clk_rate_mtd(controller, &sys_clk_rate);
 
 	//sys_time = (10000 / sys_clk_rate);
-
 	bus_cycle  = 6;
 	bus_timing = bus_cycle + 1;
+
+	printf("%s() sys_clk_rate %d, bus_c %d, bus_t %d\n",
+		__func__, sys_clk_rate, bus_cycle, bus_timing);
 
 	NFC_SET_CFG(controller , 0);
 	NFC_SET_TIMING_ASYC(controller, bus_timing, (bus_cycle - 1));
@@ -339,6 +341,7 @@ static int m3_nand_options_confirm(struct aml_nand_chip *aml_chip)
 	unsigned int options_selected = 0, options_support = 0, options_define;
 	unsigned int eep_need_oobsize = 0, ecc_page_num = 0, ecc_bytes;
 	int error = 0, i, valid_chip_num = 0;
+	cpu_id_t cpu_id = get_cpu_id();
 
 	if (!strncmp((char*)plat->name,
 		NAND_BOOT_NAME,
@@ -392,7 +395,8 @@ static int m3_nand_options_confirm(struct aml_nand_chip *aml_chip)
 	chip->write_buf = aml_nand_dma_write_buf;
 	chip->read_buf = aml_nand_dma_read_buf;
 
-	if (mtd->writesize <= 2048)
+	if ((mtd->writesize <= 2048)
+		|| (cpu_id.family_id == MESON_CPU_MAJOR_ID_AXG))
 		options_support = NAND_ECC_BCH8_MODE;
 
 	switch (options_support) {

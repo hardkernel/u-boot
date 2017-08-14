@@ -4088,6 +4088,8 @@ int nand_scan_tail(struct mtd_info *mtd)
 			ecc->layout = &nand_oob_64;
 			break;
 		case 128:
+		/* for 256 bytes oob */
+		case 256:
 			ecc->layout = &nand_oob_128;
 			break;
 		default:
