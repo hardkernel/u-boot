@@ -37,7 +37,7 @@ typedef unsigned int uint32_t;
 #define	REMOTE_CUS_WAKEUP		9
 #define ETH_PHY_WAKEUP      10
 #define CECB_WAKEUP		11
-
+#define ETH_GPIOY_14		12
 /* wake up source*/
 #define UDEFINED_WAKEUP_SRC	(1<<0)
 #define CHARGING_WAKEUP_SRC (1<<1)

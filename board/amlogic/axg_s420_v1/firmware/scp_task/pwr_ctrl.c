@@ -19,7 +19,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-#include <gpio-gxbb.h>
+#include <gpio.h>
 
 static int pwm_voltage_table_ee[][2] = {
 	{ 0x1c0000,  810},

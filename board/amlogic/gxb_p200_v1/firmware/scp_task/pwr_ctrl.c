@@ -122,6 +122,7 @@ void get_wakeup_source(void *response, unsigned int suspend_from)
 	struct wakeup_info *p = (struct wakeup_info *)response;
 	unsigned val;
 	struct wakeup_gpio_info *gpio;
+	unsigned i = 0;
 
 	p->status = RESPONSE_OK;
 	val = (POWER_KEY_WAKEUP_SRC | AUTO_WAKEUP_SRC | REMOTE_WAKEUP_SRC);
@@ -141,7 +142,7 @@ void get_wakeup_source(void *response, unsigned int suspend_from)
 	p->sources = val;
 
 	/* Power Key: AO_GPIO[3]*/
-	gpio = &(p->gpio_info[0]);
+	gpio = &(p->gpio_info[i]);
 	gpio->wakeup_id = POWER_KEY_WAKEUP_SRC;
 	gpio->gpio_in_idx = GPIOAO_3;
 	gpio->gpio_in_ao = 1;
@@ -149,9 +150,10 @@ void get_wakeup_source(void *response, unsigned int suspend_from)
 	gpio->gpio_out_ao = -1;
 	gpio->irq = IRQ_AO_GPIO0_NUM;
 	gpio->trig_type = GPIO_IRQ_FALLING_EDGE;
+	p->gpio_info_count = ++i;
 
 	/* BT Wakeup: IN: GPIOX[21], OUT: GPIOX[20]*/
-	gpio = &(p->gpio_info[1]);
+	gpio = &(p->gpio_info[i]);
 	gpio->wakeup_id = BT_WAKEUP;
 	gpio->gpio_in_idx = GPIOX_21;
 	gpio->gpio_in_ao = 0;
@@ -159,11 +161,12 @@ void get_wakeup_source(void *response, unsigned int suspend_from)
 	gpio->gpio_out_ao = 0;
 	gpio->irq = IRQ_GPIO0_NUM;
 	gpio->trig_type = GPIO_IRQ_FALLING_EDGE;
+	p->gpio_info_count = ++i;
 
 #ifdef CONFIG_WIFI_WAKEUP
 	if (suspend_from != SYS_POWEROFF) {
 		/*WIFI Wakeup: IN: GPIOX[7], OUT: GPIOX[6]*/
-		gpio = &(p->gpio_info[2]);
+		gpio = &(p->gpio_info[i]);
 		gpio->wakeup_id = WIFI_WAKEUP;
 		gpio->gpio_in_idx = GPIOX_7;
 		gpio->gpio_in_ao = 0;
@@ -171,12 +174,9 @@ void get_wakeup_source(void *response, unsigned int suspend_from)
 		gpio->gpio_out_ao = 0;
 		gpio->irq = IRQ_GPIO1_NUM;
 		gpio->trig_type = GPIO_IRQ_FALLING_EDGE;
+		p->gpio_info_count = ++i;
 	}
 #endif
-	if (suspend_from != SYS_POWEROFF)
-		p->gpio_info_count = 3;
-	else
-		p->gpio_info_count = 2;
 }
 
 void wakeup_timer_setup(void)

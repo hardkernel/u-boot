@@ -19,7 +19,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-#include <gpio-gxbb.h>
+#include <gpio.h>
 
 static int pwm_voltage_table_ee[][2] = {
 	{ 0x1c0000,  810},
@@ -231,13 +231,30 @@ void get_wakeup_source(void *response, unsigned int suspend_from)
 {
 	struct wakeup_info *p = (struct wakeup_info *)response;
 	unsigned val;
+	struct wakeup_gpio_info *gpio;
+	unsigned i = 0;
 
 	p->status = RESPONSE_OK;
 	val = (POWER_KEY_WAKEUP_SRC | AUTO_WAKEUP_SRC | REMOTE_WAKEUP_SRC |
-	       ETH_PHY_WAKEUP_SRC | BT_WAKEUP_SRC);
+	       ETH_PHY_WAKEUP_SRC | BT_WAKEUP_SRC | ETH_PHY_WAKEUP_SRC);
+
+#ifdef CONFIG_CEC_WAKEUP
+	if (suspend_from != SYS_POWEROFF)
+		val |= CEC_WAKEUP_SRC;
+#endif
 
 	p->sources = val;
-	p->gpio_info_count = 0;
+	gpio = &(p->gpio_info[i]);
+	writel(readl(PREG_PAD_GPIO1_EN_N) | ((1 << 14)), PREG_PAD_GPIO1_EN_N);
+	writel(readl(PERIPHS_PIN_MUX_9) & ~(0xf << 24), PERIPHS_PIN_MUX_9);
+	gpio->wakeup_id = ETH_PHY_WAKEUP_SRC;
+	gpio->gpio_in_idx = GPIOY_14;
+	gpio->gpio_in_ao = 0;
+	gpio->gpio_out_idx = -1;
+	gpio->gpio_out_ao = -1;
+	gpio->irq = IRQ_GPIO0_NUM;
+	gpio->trig_type = GPIO_IRQ_FALLING_EDGE;
+	p->gpio_info_count = ++i;
 }
 /*
 static unsigned int mpeg_clk;
@@ -287,6 +304,13 @@ static unsigned int detect_key(unsigned int suspend_from)
 			irq[IRQ_AO_IR_DEC] = 0xFFFFFFFF;
 			if (remote_detect_key())
 				exit_reason = REMOTE_WAKEUP;
+		}
+
+		if (irq[IRQ_GPIO0] == IRQ_GPIO0_NUM) {
+			irq[IRQ_GPIO0] = 0xFFFFFFFF;
+			if (!(readl(PREG_PAD_GPIO1_I) & (0x01 << 14))
+				&& (readl(PREG_PAD_GPIO1_EN_N) & (0x01 << 14)))
+				exit_reason = ETH_GPIOY_14;
 		}
 
 		if (irq[IRQ_ETH_PHY] == IRQ_ETH_PHY_NUM) {

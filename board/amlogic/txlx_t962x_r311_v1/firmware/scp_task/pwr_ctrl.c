@@ -256,8 +256,10 @@ void get_wakeup_source(void *response, unsigned int suspend_from)
 {
 	struct wakeup_info *p = (struct wakeup_info *)response;
 	unsigned val;
+	unsigned i = 0;
 
 	p->status = RESPONSE_OK;
+	p->gpio_info_count = i;
 	val = (POWER_KEY_WAKEUP_SRC | AUTO_WAKEUP_SRC | REMOTE_WAKEUP_SRC |
 	       ETH_PHY_WAKEUP_SRC | BT_WAKEUP_SRC);
 #ifdef CONFIG_CEC_WAKEUP
@@ -268,7 +270,7 @@ void get_wakeup_source(void *response, unsigned int suspend_from)
 	{
 		struct wakeup_gpio_info *gpio;
 		/* BT Wakeup: IN: GPIOX[21], OUT: GPIOX[20] */
-		gpio = &(p->gpio_info[0]);
+		gpio = &(p->gpio_info[i]);
 		gpio->wakeup_id = BT_WAKEUP_SRC;
 		gpio->gpio_in_idx = GPIOAO_12;
 		gpio->gpio_in_ao = 1;
@@ -276,7 +278,7 @@ void get_wakeup_source(void *response, unsigned int suspend_from)
 		gpio->gpio_out_ao = -1;
 		gpio->irq = IRQ_AO_GPIO0_NUM;
 		gpio->trig_type = GPIO_IRQ_FALLING_EDGE;
-		p->gpio_info_count++;
+		p->gpio_info_count = ++i;
 	}
 #endif
 	p->sources = val;

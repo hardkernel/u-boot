@@ -19,7 +19,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-#include <gpio-gxbb.h>
+#include <gpio.h>
 //#include "pwm_ctrl.h"
 
 #if 0
