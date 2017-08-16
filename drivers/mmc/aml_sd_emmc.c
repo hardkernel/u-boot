@@ -121,7 +121,8 @@ void aml_sd_cfg_swth(struct mmc *mmc)
 
 	if (cpu_id.family_id >= MESON_CPU_MAJOR_ID_TXLX) {
 		if (aml_is_emmc_tsd(mmc)
-			|| (cpu_id.family_id == MESON_CPU_MAJOR_ID_AXG)) {
+			|| (cpu_id.family_id == MESON_CPU_MAJOR_ID_AXG)
+			|| (cpu_id.family_id == MESON_CPU_MAJOR_ID_GXLX)) {
 			sd_emmc_clkc &= ~(3 << Cfg_co_phase);
 			sd_emmc_clkc |= (3 << Cfg_co_phase);
 		}
