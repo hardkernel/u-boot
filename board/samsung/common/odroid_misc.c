@@ -504,9 +504,7 @@ static void odroid_fw_update(unsigned int option)
 		"cache", upload_addr, &upinfo[PART_CACHE], false);
 
 	if (option & OPTION_ERASE_USERDATA) {
-		if (option & OPTION_FILELOAD_EXT4) {
-			run_command("fatformat mmc 0:3", 0);
-		} else if ((option & OPTION_RESIZE_PART) == 0) {
+		if ((option & OPTION_RESIZE_PART) == 0) {
 			upload_addr = upload_file("userdata.img",
 				"userdata", upload_addr, &upinfo[PART_USERDATA], false);
 		}
@@ -556,6 +554,10 @@ static void odroid_fw_update(unsigned int option)
 	}
 	else if (option & OPTION_OLDTYPE_PART)
 		run_command("fdisk -c 0", 0);
+
+	if (option & OPTION_ERASE_USERDATA)
+		if (option & OPTION_FILELOAD_EXT4)
+			run_command("fatformat mmc 0:3", 0);
 
 	for (i = 0; i < PART_MAX; i++)
 		upload_data_write(&upinfo[i], i > PART_KERNEL ? 0 : 1);
