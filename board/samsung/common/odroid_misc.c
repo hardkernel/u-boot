@@ -343,11 +343,8 @@ static uint upload_file(const char *fname, const char *pname,
 	/* mem load start addr */
 	upinfo->mem_addr = mem_addr;
 
-	/*
-	 max load file size = 1.5Gb
-	 split image size = 256Mb * 6 = 1.5Gb
-	*/
-	for (i = 0; i < 6; i++) {
+	/* max load file count = 64 */
+	for(i = 0; i < 64; i++) {
 		#if defined(ODROID_MISC_DEBUG)
 			printf("%s : %s, fname = %s%c, load_addr = 0x%08x\n",
 				__func__, pname, fname,
@@ -381,6 +378,13 @@ static uint upload_file(const char *fname, const char *pname,
 			goto out;
 
 		mem_addr += filesize;
+		/* load memory overflow */
+		if (total_fsize >= (SZ_1G + SZ_512M)) {
+			printf("ERROR! Memory overflow! fcount = %d, fsize = %ld\n",
+				i, total_fsize);
+			upinfo->file_size = 0;
+			return	upinfo->mem_addr;
+		}
 	}
 out:
 	if (total_fsize) {
@@ -478,6 +482,7 @@ static void odroid_fw_update(unsigned int option)
 	if (!upload_addr)
 		upload_addr = CFG_FASTBOOT_TRANSFER_BUFFER;
 
+#if 0
 	upload_addr = upload_file("system.img",
 		"system", upload_addr, &upinfo[PART_SYSTEM], false);
 
@@ -491,6 +496,9 @@ static void odroid_fw_update(unsigned int option)
 		upload_addr = upload_file("system_a",
 			"system", upload_addr, &upinfo[PART_SYSTEM], true);
 	}
+#endif
+	upload_addr = upload_file("system_a",
+		"system", upload_addr, &upinfo[PART_SYSTEM], true);
 
 	upload_addr = upload_file("cache.img",
 		"cache", upload_addr, &upinfo[PART_CACHE], false);
