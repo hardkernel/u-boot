@@ -390,7 +390,7 @@ out:
 	if (total_fsize) {
 		strncpy(upinfo->part_name, pname, strlen(pname));
 		upinfo->file_size = total_fsize;
-		return  (mem_addr + total_fsize + 256) & 0xFFFFFF00;
+		return  (mem_addr + 256) & 0xFFFFFF00;
 	}
 
 	printf("ERROR! update/%s%c File Not Found!! filesize = 0\n",
