@@ -574,6 +574,7 @@ static int dwmci_set_ios(struct mmc *mmc)
 static int dwmci_init(struct mmc *mmc)
 {
 	struct dwmci_host *host = mmc->priv;
+	uint32_t use_dma;
 
 	if (host->board_init)
 		host->board_init(host);
@@ -583,6 +584,13 @@ static int dwmci_init(struct mmc *mmc)
 	if (!dwmci_wait_reset(host, DWMCI_RESET_ALL)) {
 		debug("%s[%d] Fail-reset!!\n", __func__, __LINE__);
 		return -EIO;
+	}
+
+	use_dma = SDMMC_GET_TRANS_MODE(dwmci_readl(host, DWMCI_HCON));
+	if (use_dma == DMA_INTERFACE_IDMA) {
+		host->fifo_mode = 0;
+	} else {
+		host->fifo_mode = 1;
 	}
 
 	/* Enumerate at 400KHz */
