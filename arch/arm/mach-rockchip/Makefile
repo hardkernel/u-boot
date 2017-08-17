@@ -11,12 +11,14 @@
 obj-spl-$(CONFIG_ROCKCHIP_BROM_HELPER) += bootrom.o save_boot_param.o
 obj-tpl-$(CONFIG_ROCKCHIP_BROM_HELPER) += bootrom.o save_boot_param.o
 
+obj-tpl-$(CONFIG_ROCKCHIP_RK3066) += rk3066-board-tpl.o
 obj-tpl-$(CONFIG_ROCKCHIP_RK3188) += rk3188-board-tpl.o
 obj-tpl-$(CONFIG_ROCKCHIP_RK3368) += rk3368-board-tpl.o
 obj-tpl-$(CONFIG_ROCKCHIP_RK322X) += rk322x-board-tpl.o
 obj-tpl-$(CONFIG_ROCKCHIP_RK3328) += rk3328-board-tpl.o
 
 obj-spl-$(CONFIG_ROCKCHIP_RK3036) += rk3036-board-spl.o
+obj-spl-$(CONFIG_ROCKCHIP_RK3066) += rk3066-board-spl.o
 obj-spl-$(CONFIG_ROCKCHIP_RK3188) += rk3188-board-spl.o
 obj-spl-$(CONFIG_ROCKCHIP_RK322X) += rk322x-board-spl.o spl-boot-order.o
 obj-spl-$(CONFIG_ROCKCHIP_RK3288) += rk3288-board-spl.o
@@ -30,6 +32,7 @@ obj-$(CONFIG_ROCKCHIP_VENDOR_PARTITION) += vendor.o
 obj-$(CONFIG_ROCKCHIP_PARAM) += rockchip_parameter.o
 obj-$(CONFIG_ROCKCHIP_RESOURCE_IMAGE) += resource_img.o
 obj-$(CONFIG_ROCKCHIP_PARTITION_BOOT) += bootrkp.o
+obj-$(CONFIG_ROCKCHIP_RK3066) += rk3066-board.o
 obj-$(CONFIG_ROCKCHIP_RK3188) += rk3188-board.o
 obj-$(CONFIG_ROCKCHIP_RK3128) += rk3128-board.o
 obj-$(CONFIG_ROCKCHIP_RK322X) += rk322x-board.o
@@ -44,6 +47,7 @@ obj-y += rk_timer.o
 endif
 
 obj-$(CONFIG_ROCKCHIP_RK3036) += rk3036/
+obj-$(CONFIG_ROCKCHIP_RK3066) += rk3066/
 obj-$(CONFIG_ROCKCHIP_RK3128) += rk3128/
 ifndef CONFIG_TPL_BUILD
 obj-$(CONFIG_ROCKCHIP_RK3188) += rk3188/
