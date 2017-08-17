@@ -5,6 +5,7 @@
 #
 
 obj-$(CONFIG_PINCTRL_ROCKCHIP_RK3036) += pinctrl_rk3036.o
+obj-$(CONFIG_PINCTRL_ROCKCHIP_RK3066) += pinctrl_rk3066.o
 obj-$(CONFIG_PINCTRL_ROCKCHIP_RK3128) += pinctrl_rk3128.o
 obj-$(CONFIG_PINCTRL_ROCKCHIP_RK3188) += pinctrl_rk3188.o
 obj-$(CONFIG_PINCTRL_ROCKCHIP_RK322X) += pinctrl_rk322x.o
