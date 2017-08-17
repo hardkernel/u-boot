@@ -50,6 +50,7 @@ static int get_tsc(int temp)
 		break;
 	case MESON_CPU_MAJOR_ID_GXL:
 	case MESON_CPU_MAJOR_ID_GXM:
+	case MESON_CPU_MAJOR_ID_GXLX:
 		if (vref_en) {
 			/*TS_C = 16-(adc-1655)/37.6*/
 			vmeasure = temp-(1655+(temp_base-27)*15.3);
@@ -108,6 +109,7 @@ static int adc_init_chan6(void)
 		break;
 	case MESON_CPU_MAJOR_ID_GXL:
 	case MESON_CPU_MAJOR_ID_GXM:
+	case MESON_CPU_MAJOR_ID_GXLX:
 		writel(0x002c2060, SAR_ADC_REG11);/*bit20 disabled*/
 		writel(0x00000006, SAR_ADC_CHAN_LIST);/*channel 6*/
 		writel(0x00003000, SAR_ADC_AVG_CNTL);
@@ -424,6 +426,7 @@ static int do_write_trim(cmd_tbl_t *cmdtp, int flag1,
 		break;
 	case MESON_CPU_MAJOR_ID_GXL:/*12bit*/
 	case MESON_CPU_MAJOR_ID_GXM:
+	case MESON_CPU_MAJOR_ID_GXLX:
 		if (vref_en) {
 			temp = temp - 15.3*(temp_base - 27);
 			temp = temp>>2;/*efuse only 10bit adc*/
@@ -491,6 +494,7 @@ static int read_temp0(void)
 				break;
 			case MESON_CPU_MAJOR_ID_GXL:
 			case MESON_CPU_MAJOR_ID_GXM:
+			case MESON_CPU_MAJOR_ID_GXLX:
 				if (vref_en)/*thermal VREF*/
 					tempa = (10*(adc-temp))/153+27;
 				else
@@ -582,6 +586,7 @@ static int do_temp_triming(cmd_tbl_t *cmdtp, int flag1,
 	case MESON_CPU_MAJOR_ID_GXM:
 	case MESON_CPU_MAJOR_ID_TXL:
 	case MESON_CPU_MAJOR_ID_TXLX:
+	case MESON_CPU_MAJOR_ID_GXLX:
 		cmd_result = run_command("write_trim", 0);
 		if (cmd_result == CMD_RET_SUCCESS) {
 		/*FB calibration v5: 1010 0000*/
