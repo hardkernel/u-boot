@@ -90,55 +90,17 @@ static struct dwc2_plat_otg_data rk3066_otg_data = {
 
 int board_usb_init(int index, enum usb_init_type init)
 {
-	int node, phy_node;
-	const char *mode;
-	bool matched = false;
-	const void *blob = gd->fdt_blob;
-	u32 grf_phy_offset;
+	ofnode otg_node;
+	u32 reg;
 
-	/* find the usb_otg node */
-	node = fdt_node_offset_by_compatible(blob, -1,
-					"rockchip,rk3066-usb");
-
-	while (node > 0) {
-		mode = fdt_getprop(blob, node, "dr_mode", NULL);
-		if (mode && strcmp(mode, "otg") == 0) {
-			matched = true;
-			break;
-		}
-
-		node = fdt_node_offset_by_compatible(blob, node,
-					"rockchip,rk3066-usb");
-	}
-	if (!matched) {
-		debug("Not found usb_otg device\n");
-		return -ENODEV;
-	}
-	rk3066_otg_data.regs_otg = fdtdec_get_addr(blob, node, "reg");
-
-	node = fdtdec_lookup_phandle(blob, node, "phys");
-	if (node <= 0) {
-		debug("Not found usb phy device\n");
+	otg_node = ofnode_path("/usb@10180000");
+	if (!ofnode_valid(otg_node)) {
+		debug("Not found usb otg device\n");
 		return -ENODEV;
 	}
 
-	phy_node = fdt_parent_offset(blob, node);
-	if (phy_node <= 0) {
-		debug("Not found usb phy device\n");
-		return -ENODEV;
-	}
-
-	rk3066_otg_data.phy_of_node = phy_node;
-	grf_phy_offset = fdtdec_get_addr(blob, node, "reg");
-
-	node = fdt_node_offset_by_compatible(blob, -1,
-					"rockchip,rk3066-grf");
-	if (node <= 0) {
-		debug("Not found grf device\n");
-		return -ENODEV;
-	}
-	rk3066_otg_data.regs_phy = grf_phy_offset +
-				fdtdec_get_addr(blob, node, "reg");
+	ofnode_read_u32(otg_node, "reg", &reg);
+	rk3066_otg_data.regs_otg = reg;
 
 	return dwc2_udc_probe(&rk3066_otg_data);
 }
