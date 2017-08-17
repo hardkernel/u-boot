@@ -17,7 +17,7 @@ struct nand_menson_key {
 int amlnf_key_read(u8 * buf, int len, uint32_t *actual_lenth)
 {
 	struct aml_nand_chip * aml_chip = aml_chip_key;
-	struct nand_menson_key *key_ptr = NULL;
+	uint8_t *key_ptr = NULL;
 	u32 keysize = aml_chip->keysize - sizeof(u32);
 	//int error = 0;
 
@@ -55,10 +55,10 @@ int amlnf_key_read(u8 * buf, int len, uint32_t *actual_lenth)
 #else
 	struct mtd_info *mtd = &aml_chip->mtd;
 	size_t offset = 0;
-	aml_nand_read_key(mtd, offset, (u8 *)key_ptr->data);
+	aml_nand_read_key(mtd, offset, key_ptr);
 #endif
 
-	memcpy(buf, key_ptr->data, keysize);
+	memcpy(buf, key_ptr, keysize);
 
 //exit:
 	kfree(key_ptr);
@@ -71,7 +71,7 @@ int amlnf_key_read(u8 * buf, int len, uint32_t *actual_lenth)
 int amlnf_key_write(u8 *buf, int len, uint32_t *actual_lenth)
 {
 	struct aml_nand_chip * aml_chip = aml_chip_key;
-	struct nand_menson_key *key_ptr = NULL;
+	uint8_t *key_ptr = NULL;
 	u32 keysize = aml_chip->keysize - sizeof(u32);
 	int error = 0;
 
@@ -94,7 +94,8 @@ int amlnf_key_write(u8 *buf, int len, uint32_t *actual_lenth)
 	if (key_ptr == NULL)
 		return -ENOMEM;
 
-	memcpy(key_ptr->data + 0, buf, keysize);
+	memset(key_ptr, 0, aml_chip->keysize);
+	memcpy(key_ptr, buf, keysize);
 #if 0 //fixit
 	error = amlnand_save_info_by_name(aml_chip,
 		(u8 *)&(aml_chip->nand_key),
@@ -108,7 +109,7 @@ int amlnf_key_write(u8 *buf, int len, uint32_t *actual_lenth)
 	}
 #else
 	struct mtd_info *mtd = &aml_chip->mtd;
-	aml_nand_save_key(mtd, buf);
+	aml_nand_save_key(mtd, key_ptr);
 #endif
 //exit:
 	kfree(key_ptr);
