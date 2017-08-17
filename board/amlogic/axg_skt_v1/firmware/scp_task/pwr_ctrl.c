@@ -121,6 +121,7 @@ void get_wakeup_source(void *response, unsigned int suspend_from)
 	p->sources = val;
 	p->gpio_info_count = 0;
 }
+extern void __switch_idle_task(void);
 
 static unsigned int detect_key(unsigned int suspend_from)
 {
@@ -141,10 +142,15 @@ static unsigned int detect_key(unsigned int suspend_from)
 			exit_reason = ETH_PHY_WAKEUP;
 		}
 
+		if (irq[IRQ_VRTC] == IRQ_VRTC_NUM) {
+			irq[IRQ_VRTC] = 0xFFFFFFFF;
+			exit_reason = RTC_WAKEUP;
+		}
+
 		if (exit_reason)
 			break;
 		else
-			asm volatile("wfi");
+			__switch_idle_task();
 	} while (1);
 
 	return exit_reason;

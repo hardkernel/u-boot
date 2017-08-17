@@ -271,6 +271,8 @@ void clk81_switch_to_24M(int flag)//for 1M
 	}
 }
 */
+extern void __switch_idle_task(void);
+
 static unsigned int detect_key(unsigned int suspend_from)
 {
 	int exit_reason = 0;
@@ -290,10 +292,15 @@ static unsigned int detect_key(unsigned int suspend_from)
 			exit_reason = ETH_PHY_WAKEUP;
 		}
 
+		if (irq[IRQ_VRTC] == IRQ_VRTC_NUM) {
+			irq[IRQ_VRTC] = 0xFFFFFFFF;
+			exit_reason = RTC_WAKEUP;
+		}
+
 		if (exit_reason)
 			break;
 		else
-			asm volatile("wfi");
+			__switch_idle_task();
 	} while (1);
 
 	return exit_reason;

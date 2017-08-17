@@ -24,6 +24,7 @@
 #include "registers.h"
 #include "task_apis.h"
 
+#define TASK_ID_IDLE 0
 #define TASK_ID_LOW_MB	3
 #define TASK_ID_HIGH_MB	4
 #define TASK_ID_SECURE_MB  5
@@ -38,6 +39,13 @@ enum scpi_client_id {
 	SCPI_MAX,
 };
 
+void __switch_idle_task(void)
+{
+	register int p0 asm("r0") = 2;
+	register int p1 asm("r1") = TASK_ID_IDLE;
+
+	asm("svc 0" :  : "r"(p0), "r"(p1));
+}
 void __switch_back_securemb(void)
 {
 	register int p0 asm("r0") = 2;
@@ -63,9 +71,9 @@ void __switch_back_lowmb(void)
 
 void secure_task(void)
 {
-	unsigned *pcommand =
+	volatile unsigned *pcommand =
 	    (unsigned *)(&(secure_task_share_mem[TASK_COMMAND_OFFSET]));
-	unsigned *response =
+	volatile unsigned *response =
 	    (unsigned *)(&(secure_task_share_mem[TASK_RESPONSE_OFFSET]));
 	unsigned command;
 	struct resume_param *presume;
