@@ -144,7 +144,7 @@ static void process_args(int argc, char **argv)
 	int opt;
 
 	while ((opt = getopt(argc, argv,
-			     "a:A:b:c:C:d:D:e:Ef:Fk:i:K:ln:N:p:O:rR:qsT:vVx")) != -1) {
+			     "a:A:b:c:C:d:D:e:Ef:Fk:i:K:ln:N:p:O:rR:qsT:vVxX:")) != -1) {
 		switch (opt) {
 		case 'a':
 			params.addr = strtoull(optarg, &ptr, 16);
@@ -278,6 +278,9 @@ static void process_args(int argc, char **argv)
 			exit(EXIT_SUCCESS);
 		case 'x':
 			params.xflag++;
+			break;
+		case 'X':
+			params.extraparams = optarg;
 			break;
 		default:
 			usage("Invalid option");
@@ -416,7 +419,8 @@ int main(int argc, char **argv)
 		exit (retval);
 	}
 
-	if ((params.type != IH_TYPE_MULTI) && (params.type != IH_TYPE_SCRIPT)) {
+	if ((params.type != IH_TYPE_MULTI) && (params.type != IH_TYPE_SCRIPT) &&
+	    (params.type != IH_TYPE_RKNAND)) {
 		dfd = open(params.datafile, O_RDONLY | O_BINARY);
 		if (dfd < 0) {
 			fprintf(stderr, "%s: Can't open %s: %s\n",

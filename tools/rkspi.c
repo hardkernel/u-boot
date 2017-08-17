@@ -25,7 +25,7 @@ static void rkspi_set_header(void *buf, struct stat *sbuf, int ifd,
 	int ret;
 
 	size = params->orig_file_size;
-	ret = rkcommon_set_header(buf, size, params);
+	ret = rkcommon_set_header(buf, size, RK_MAX_BOOT_SIZE, params);
 	debug("size %x\n", size);
 	if (ret) {
 		/* TODO(sjg@chromium.org): This method should return an error */

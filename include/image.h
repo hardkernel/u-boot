@@ -269,6 +269,7 @@ enum {
 	IH_TYPE_VYBRIDIMAGE,	/* VYBRID .vyb Image */
 	IH_TYPE_TEE,            /* Trusted Execution Environment OS Image */
 	IH_TYPE_FIRMWARE_IVT,		/* Firmware Image with HABv4 IVT */
+	IH_TYPE_RKNAND,			/* Rockchip NAND Boot Image	*/
 
 	IH_TYPE_COUNT,			/* Number of image types */
 };
