@@ -76,6 +76,12 @@ config NAND_PXA3XX
 	  This enables the driver for the NAND flash device found on
 	  PXA3xx processors (NFCv1) and also on Armada 370/XP (NFCv2).
 
+config NAND_ROCKCHIP
+	bool "Support for NAND on Rockchip SoCs"
+	select SYS_NAND_SELF_INIT
+	---help---
+	Enable support for Rockchip nand.
+
 config NAND_SUNXI
 	bool "Support for NAND on Allwinner SoCs"
 	depends on MACH_SUN4I || MACH_SUN5I || MACH_SUN7I
