@@ -26,4 +26,6 @@ config TPL_LIBCOMMON_SUPPORT
 config TPL_LIBGENERIC_SUPPORT
         default y
 
+source "board/rikomagic/mk808_rk3066/Kconfig"
+
 endif
