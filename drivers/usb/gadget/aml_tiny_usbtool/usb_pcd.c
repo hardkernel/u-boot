@@ -219,23 +219,10 @@ static unsigned int need_check_timeout;
 static unsigned int usb_timeout_type; /* 0: long, 1: short */
 static unsigned int time_start;
 static unsigned int time_out_val;
-static unsigned int need_password;/* 0: no password, 1 need check */
-static unsigned int password_ok;/* 0: not ok,  1: ok*/
-static unsigned int password_cnt;
-
 
 void usb_parameter_init(int time_out)
 {
 	usb_timeout_type = time_out;
-	/*
-	 FIXME, from efuse setting
-	 */
-	need_password = 1;
-	password_cnt = 0;
-	if (need_password == 0)
-		password_ok = 1;
-	else
-		password_ok = 0;
 
 	need_check_timeout = 1;
 	if (usb_timeout_type == TIMEOUT_LONG)
@@ -258,31 +245,6 @@ void usb_parameter_init(int time_out)
 */
 }
 
-/*
- * Return 0: password check failed
- *		  1: password check ok or no password
- */
-static int password_checked(void)
-{
-	if (need_password)
-		return password_ok;
-	else
-		return 1;
-}
-/*
- * Return 1: verify passed
- *		  0: verify failed
- */
-static int verify_password(pcd_struct_t *_pcd)
-{
-	/*
-	  FIXME
-	 */
-	if ( _pcd->length > 64 )
-		return 0;
-	else
-		return 1;
-}
 void clean_short_timeout(void)
 {
 	if (usb_timeout_type == TIMEOUT_SHORT) {
@@ -435,14 +397,9 @@ void do_vendor_request( pcd_struct_t *_pcd, struct usb_ctrlrequest * ctrl)
 		USB_DBG("--am req write memory\n");
 		value = (w_value << 16) + w_index;
 		USB_DBG("addr = 0x%08X, size = %d\n\n",value,w_length);
-		if (password_checked()) {
-			_pcd->buf = (char *)(unsigned long long)value; // copy to dst memory directly
-			_pcd->length = w_length;
-		}else{
-			USB_DBG("  password verfiy failed!\n");
-			_pcd->buf = buff;
-			_pcd->length = w_length;
-		}
+		_pcd->buf = (char *)(unsigned long long)value; // copy to dst memory directly
+		_pcd->length = w_length;
+
 		break;
 
 	  case AM_REQ_READ_MEM:
@@ -453,17 +410,11 @@ void do_vendor_request( pcd_struct_t *_pcd, struct usb_ctrlrequest * ctrl)
 		value = (w_value << 16) + w_index;
 		USB_DBG("--am req read memory\n");
 				USB_DBG("addr = 0x%08X, size = %d\n\n",value,w_length);
-		if (password_checked()) {
 			usb_memcpy((char *)buff,(char*)(unsigned long long)value,w_length);
 
 			_pcd->buf = buff;
 			_pcd->length = w_length;
-		}else{
-			USB_DBG("  password verfiy failed!\n");
-			usb_memcpy((char *)buff,"BAD PASSWORD",w_length);
-			_pcd->buf = buff;
-			_pcd->length = w_length;
-		}
+
 		break;
 /*
 	  case AM_REQ_READ_AUX:
@@ -517,8 +468,8 @@ void do_vendor_request( pcd_struct_t *_pcd, struct usb_ctrlrequest * ctrl)
 		buff[1] = USB_ROM_VER_MINOR;
 		buff[2] = USB_ROM_STAGE_MAJOR;
 		buff[3] = USB_ROM_STAGE_MINOR;
-		buff[4] = need_password;
-		buff[5] = password_ok;
+		buff[4] = 0;
+		buff[5] = 0;
 		buff[6] = 0;
 		buff[7] = 0;
 
@@ -531,11 +482,6 @@ void do_vendor_request( pcd_struct_t *_pcd, struct usb_ctrlrequest * ctrl)
 			buff[0],buff[1],buff[2],buff[3]);
 		USB_DBG("-- [4:5 6:7]      %x:%x, %x:%x\n\n",
 			buff[4],buff[5],buff[6],buff[7]);
-		break;
-	  case AM_REQ_PASSWORD:
-		_pcd->buf = buff;
-		_pcd->length = w_length;
-		password_ok = 0;
 		break;
 	  case AM_REQ_NOP:
 		_pcd->buf = buff;
@@ -584,8 +530,6 @@ void do_vendor_out_complete( pcd_struct_t *_pcd, struct usb_ctrlrequest * ctrl)
 		break;
 
 	  case AM_REQ_FILL_MEM:
-		if (!password_checked())
-			break;
 		buf = _pcd->buf;
 		unsigned long long addr,i;
 		for (i = 0; i < _pcd->length; i+=8) {
@@ -606,20 +550,13 @@ void do_vendor_out_complete( pcd_struct_t *_pcd, struct usb_ctrlrequest * ctrl)
 		break;
 */
 	  case AM_REQ_MODIFY_MEM:
-		if (password_checked())
 			do_modify_memory(w_value,_pcd->buf);
-		else
-			USB_DBG(" Fill memory password check failed!\n");
 		break;
 
 	  case AM_REQ_RUN_IN_ADDR:
 		if (ctrl->bRequestType != (USB_DIR_OUT | USB_TYPE_VENDOR |
 				USB_RECIP_DEVICE))
 				break;
-		if (!password_checked()) {
-			USB_DBG("  run in addr password check failed!\n");
-			break;
-		}
 		value = (w_value << 16) + w_index;
 		buf = _pcd->buf;
 		running_flags = *((unsigned int *)&buf[0]);
@@ -637,27 +574,9 @@ void do_vendor_out_complete( pcd_struct_t *_pcd, struct usb_ctrlrequest * ctrl)
 	  case AM_REQ_RD_LARGE_MEM:
 		_pcd->bulk_out = value; // read or write
 		_pcd->bulk_buf = (char *)(unsigned long long)_u32Buf[0];//(*(unsigned int*)buff); // board address
-		if (!password_checked())
-			_pcd->bulk_buf = buff;
 		_pcd->bulk_data_len = _u32Buf[1];//(*(unsigned int*) &buff[4]); // data length
 		start_bulk_transfer(_pcd);
 		USB_DBG("--bulk %s addr = 0x%X, size = %d\n\n",value?"write":"read",_pcd->bulk_buf,_pcd->bulk_data_len);
-		break;
-	  case AM_REQ_PASSWORD:
-		if (verify_password(_pcd)) {
-			password_ok = 1;
-			password_cnt = 0;
-		}else{
-			password_ok = 0;
-			password_cnt++;
-			if (password_cnt > 3) {
-				/*
-				  FIXME
-				*/
-				USB_ERR("password failed 3 times, reboot!\n");
-				while (1) ;
-			}
-		}
 		break;
 
 	  case AM_REQ_TPL_CMD:
