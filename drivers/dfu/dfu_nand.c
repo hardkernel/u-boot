@@ -192,8 +192,9 @@ unsigned int dfu_polltimeout_nand(struct dfu_entity *dfu)
 int dfu_fill_entity_nand(struct dfu_entity *dfu, char *devstr, char *s)
 {
 	char *st;
+#ifndef CONFIG_SPL_BUILD
 	int ret, dev, part;
-
+#endif
 	dfu->data.nand.ubi = 0;
 	dfu->dev_type = DFU_DEV_NAND;
 	st = strsep(&s, " ");
@@ -203,6 +204,7 @@ int dfu_fill_entity_nand(struct dfu_entity *dfu, char *devstr, char *s)
 		s++;
 		dfu->data.nand.size = simple_strtoul(s, &s, 16);
 	} else if ((!strcmp(st, "part")) || (!strcmp(st, "partubi"))) {
+#ifndef CONFIG_SPL_BUILD
 		char mtd_id[32];
 		struct mtd_device *mtd_dev;
 		u8 part_num;
@@ -229,6 +231,7 @@ int dfu_fill_entity_nand(struct dfu_entity *dfu, char *devstr, char *s)
 		dfu->data.nand.size = pi->size;
 		if (!strcmp(st, "partubi"))
 			dfu->data.nand.ubi = 1;
+#endif
 	} else {
 		printf("%s: Memory layout (%s) not supported!\n", __func__, st);
 		return -1;
