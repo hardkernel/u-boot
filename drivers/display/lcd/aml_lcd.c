@@ -619,7 +619,6 @@ static int lcd_extern_load_config(char *dt_addr, struct lcd_config_s *pconf)
 		index = pconf->lcd_control.mipi_config->extern_init;
 		if (index < LCD_EXTERN_INDEX_INVALID)
 			aml_lcd_extern_probe(dt_addr, index);
-		return 0;
 	}
 
 	i = 0;
