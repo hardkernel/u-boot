@@ -159,6 +159,12 @@ static bool inline is_meson_gxl_cpu(void)
 		1:0;
 }
 
+static bool inline is_meson_gxlx_cpu(void)
+{
+	return (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_GXLX)?
+		1:0;
+}
+
 static bool inline is_meson_txl_cpu(void)
 {
 	return (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_TXL)?
@@ -229,7 +235,8 @@ int cvbs_set_vdac(int status)
 	{
 	case 0:// close vdac
 		cvbs_write_hiu(HHI_VDAC_CNTL0, 0);
-		if (is_equal_after_meson_cpu(MESON_CPU_MAJOR_ID_TXL))
+		if (is_equal_after_meson_cpu(MESON_CPU_MAJOR_ID_TXL) &&
+			!is_meson_gxlx_cpu())
 			cvbs_write_hiu(HHI_VDAC_CNTL1, 0);
 		else
 			cvbs_write_hiu(HHI_VDAC_CNTL1, 8);
@@ -237,14 +244,16 @@ int cvbs_set_vdac(int status)
 	case 1:// from enci to vdac
 		cvbs_set_vcbus_bits(VENC_VDAC_DACSEL0, 5, 1, 0);
 		if (is_equal_after_meson_cpu(MESON_CPU_MAJOR_ID_GXL)) {
-			if (is_equal_after_meson_cpu(MESON_CPU_MAJOR_ID_TXL))
+			if (is_equal_after_meson_cpu(MESON_CPU_MAJOR_ID_TXL) &&
+				!is_meson_gxlx_cpu())
 				cvbs_write_hiu(HHI_VDAC_CNTL0, 0xb0201);
 			else
 				cvbs_write_hiu(HHI_VDAC_CNTL0, 0xb0001);
 		} else
 			cvbs_write_hiu(HHI_VDAC_CNTL0, 1);
 
-		if (is_equal_after_meson_cpu(MESON_CPU_MAJOR_ID_TXL))
+		if (is_equal_after_meson_cpu(MESON_CPU_MAJOR_ID_TXL) &&
+			!is_meson_gxlx_cpu())
 			cvbs_write_hiu(HHI_VDAC_CNTL1, 8);
 		else
 			cvbs_write_hiu(HHI_VDAC_CNTL1, 0);
@@ -598,6 +607,12 @@ static void cvbs_performance_enhancement(int mode)
 		index = (index >= max) ? 0 : index;
 		s = tvregs_576cvbs_performance_gxtvbb[index];
 		type = 5;
+	} else if (is_meson_gxlx_cpu()) {
+		max = sizeof(tvregs_576cvbs_performance_905l)
+			/ sizeof(struct reg_s *);
+		index = (index >= max) ? 0 : index;
+		s = tvregs_576cvbs_performance_905l[index];
+		type = 7;
 	} else if (is_equal_after_meson_cpu(MESON_CPU_MAJOR_ID_TXL)) {
 		max = sizeof(tvregs_576cvbs_performance_txl)
 			/ sizeof(struct reg_s *);
