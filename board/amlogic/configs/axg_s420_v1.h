@@ -76,21 +76,7 @@
         "upgrade_step=0\0"\
         "jtag=apao\0"\
         "loadaddr=1080000\0"\
-        "panel_type=lcd_0\0" \
-        "outputmode=panel\0" \
-        "hdmimode=1080p60hz\0" \
-        "cvbsmode=576cvbs\0" \
-        "display_width=1920\0" \
-        "display_height=1080\0" \
-        "display_bpp=16\0" \
-        "display_color_index=16\0" \
-        "display_layer=osd0\0" \
-        "display_color_fg=0xffff\0" \
-        "display_color_bg=0\0" \
         "dtb_mem_addr=0x1000000\0" \
-        "fb_addr=0x3d800000\0" \
-        "fb_width=768\0" \
-        "fb_height=1024\0" \
         "usb_burning=update 1000\0" \
         "fdt_high=0x20000000\0"\
         "try_auto_burn=update 700 750;\0"\
@@ -101,20 +87,17 @@
         "EnableSelinux=enforcing\0" \
         "recovery_part=recovery\0"\
         "recovery_offset=0\0"\
-        "cvbs_drv=0\0"\
-        "osd_reverse=0\0"\
-        "video_reverse=0\0"\
         "initargs="\
             "rootfstype=ramfs init=/init console=ttyS0,115200 no_console_suspend earlycon=aml_uart,0xff803000 ramoops.pstore_en=1 ramoops.record_size=0x8000 ramoops.console_size=0x4000 "\
             "\0"\
         "upgrade_check="\
             "echo upgrade_step=${upgrade_step}; "\
             "if itest ${upgrade_step} == 3; then "\
-                "run init_display; run storeargs; run update;"\
+                "run storeargs; run update;"\
             "else fi;"\
             "\0"\
         "storeargs="\
-            "setenv bootargs ${initargs} logo=${display_layer},loaded,${fb_addr} vout=${outputmode},enable panel_type=${panel_type} osd_reverse=${osd_reverse} video_reverse=${video_reverse} androidboot.selinux=${EnableSelinux} androidboot.firstboot=${firstboot} jtag=${jtag}; "\
+            "setenv bootargs ${initargs} logo=${display_layer},loaded,androidboot.selinux=${EnableSelinux} androidboot.firstboot=${firstboot} jtag=${jtag}; "\
 	"setenv bootargs ${bootargs} androidboot.hardware=amlogic;"\
             "run cmdline_keys;"\
             "\0"\
@@ -131,14 +114,13 @@
             "fi;fi;fi;fi;"\
             "\0" \
         "storeboot="\
-            "hdmitx output 1080p60hz;"\
             "if imgread kernel boot ${loadaddr}; then bootm ${loadaddr}; fi;"\
             "run update;"\
             "\0"\
         "factory_reset_poweroff_protect="\
             "echo wipe_data=${wipe_data}; echo wipe_cache=${wipe_cache};"\
             "if test ${wipe_data} = failed; then "\
-                "run init_display; run storeargs;"\
+                "run storeargs;"\
                 "if mmcinfo; then "\
                     "run recovery_from_sdcard;"\
                 "fi;"\
@@ -148,7 +130,7 @@
                 "run recovery_from_flash;"\
             "fi; "\
             "if test ${wipe_cache} = failed; then "\
-                "run init_display; run storeargs;"\
+                "run storeargs;"\
                 "if mmcinfo; then "\
                     "run recovery_from_sdcard;"\
                 "fi;"\
@@ -187,9 +169,6 @@
             "setenv bootargs ${bootargs} aml_dt=${aml_dt} recovery_part={recovery_part} recovery_offset={recovery_offset};"\
             "if imgread kernel ${recovery_part} ${loadaddr} ${recovery_offset}; then wipeisb; bootm ${loadaddr}; fi"\
             "\0"\
-        "init_display="\
-            "osd open;osd clear;imgread pic logo bootup $loadaddr;bmp display $bootup_offset;bmp scale;vout output ${outputmode}"\
-            "\0"\
         "cmdline_keys="\
             "if keyman init 0x1234; then "\
                 "if keyman read usid ${loadaddr} str; then "\
@@ -226,7 +205,6 @@
 #define CONFIG_PREBOOT  \
             "run factory_reset_poweroff_protect;"\
             "run upgrade_check;"\
-            "run init_display;"\
             "run storeargs;"\
             "run switch_bootmode;"
 #define CONFIG_BOOTCOMMAND "run storeboot"
@@ -411,9 +389,10 @@
 //#define CONFIG_AML_CVBS 1
 #endif
 
-#define CONFIG_AML_LCD    1
+//#define CONFIG_AML_LCD    1
+
 /*#define CONFIG_AML_LCD_TV 1*/
-#define CONFIG_AML_LCD_TABLET 1
+//#define CONFIG_AML_LCD_TABLET 1
 
 /* USB
  * Enable CONFIG_MUSB_HCD for Host functionalities MSC, keyboard
