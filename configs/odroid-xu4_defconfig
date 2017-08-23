@@ -337,6 +337,7 @@ CONFIG_CMD_MEMTEST=y
 CONFIG_CMD_MEMINFO=y
 # CONFIG_CMD_UNZIP is not set
 # CONFIG_CMD_ZIP is not set
+CONFIG_CMD_DMC=y
 
 #
 # Device access commands

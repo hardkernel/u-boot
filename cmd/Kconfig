@@ -373,6 +373,11 @@ config CMD_MEMINFO
 	help
 	  Display memory information.
 
+config CMD_DMC
+	bool "dmc - ddr_freq"
+	help
+	   Set DDR clock
+
 config CMD_UNZIP
 	bool "unzip"
 	help
