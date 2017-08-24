@@ -262,8 +262,24 @@ void get_wakeup_source(void *response, unsigned int suspend_from)
 #ifdef CONFIG_CEC_WAKEUP
 	val |= CECB_WAKEUP_SRC;
 #endif
+
+#ifdef CONFIG_BT_WAKEUP
+	{
+		struct wakeup_gpio_info *gpio;
+		/* BT Wakeup: IN: GPIOX[21], OUT: GPIOX[20] */
+		gpio = &(p->gpio_info[0]);
+		gpio->wakeup_id = BT_WAKEUP_SRC;
+		gpio->gpio_in_idx = GPIOAO_12;
+		gpio->gpio_in_ao = 1;
+		gpio->gpio_out_idx = -1;
+		gpio->gpio_out_ao = -1;
+		gpio->irq = IRQ_AO_GPIO0_NUM;
+		gpio->trig_type = GPIO_IRQ_FALLING_EDGE;
+		p->gpio_info_count++;
+	}
+#endif
 	p->sources = val;
-	p->gpio_info_count = 0;
+
 }
 void wakeup_timer_setup(void)
 {
@@ -344,6 +360,20 @@ static unsigned int detect_key(unsigned int suspend_from)
 				adc_key_cnt = 0;
 			}
 		}
+#ifdef CONFIG_BT_WAKEUP
+		if (irq[IRQ_AO_GPIO0] == IRQ_AO_GPIO0_NUM) {
+			irq[IRQ_AO_GPIO0] = 0xFFFFFFFF;
+			if (!(readl(P_AO_GPIO_O_EN_N)
+				& (0x01 << 13)) && (readl(P_AO_GPIO_O_EN_N)
+				& (0x01 << 29)) &&
+				!(readl(P_AO_GPIO_I)
+				& (0x01 << 12))){
+				uart_puts("bt wakeup pin\n");
+				exit_reason = BT_WAKEUP;
+			}
+		}
+#endif
+
 		if (irq[IRQ_AO_IR_DEC] == IRQ_AO_IR_DEC_NUM) {
 			irq[IRQ_AO_IR_DEC] = 0xFFFFFFFF;
 				if (remote_detect_key())
