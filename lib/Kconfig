@@ -271,5 +271,6 @@ source lib/efi_loader/Kconfig
 source lib/avb/rk_libavb/Kconfig
 source lib/avb/rk_libavb_ab/Kconfig
 source lib/avb/rk_libavb_atx/Kconfig
+source lib/optee_clientApi/Kconfig
 
 endmenu
