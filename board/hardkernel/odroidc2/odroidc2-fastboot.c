@@ -44,10 +44,10 @@ static struct fbt_partition {
 		.lba = bytes_to_lba(16 * SZ_1M)
 	}, {
 		.name = "recovery",		/* Recovery Image */
-		.lba = bytes_to_lba(12 * SZ_1M)
+		.lba = bytes_to_lba(13 * SZ_1M)
 	}, {
 		.name = "logo",			/* Logo */
-		.lba = bytes_to_lba(2 * SZ_1M)
+		.lba = bytes_to_lba(1 * SZ_1M)
 	}, {
 		.name = "-reserved2",			/* Reserved */
 		.lba = bytes_to_lba(SZ_RESERVED2)

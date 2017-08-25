@@ -78,21 +78,6 @@
 /* args/envs */
 #define CONFIG_SYS_MAXARGS		64
 
-#define CONFIG_EXTRA_ENV_SETTINGS	\
-	"boardname=ODROIDC2\0"		\
-	"loadaddr=0x20000000\0"		\
-	"dtbaddr=0x1000000\0"		\
-	"fdt_high=0x20000000\0"		\
-	"hdmimode=1080p60hz\0"		\
-	"cecconfig=cec0xf\0"		\
-	"bootargs=root=/dev/mmcblk0p2 rw init=/init rootwait "	\
-		"console=ttyS0,115200 "				\
-		"hdmimode=1080p60hz hdmitx=cecf "		\
-		"logo=osd1,loaded,0x3f800000,1080p60hz "		\
-		"androidboot.hardware=odroidc2 androidboot.serialno=${fbt_id#} "	\
-		"androidboot.selinux=disabled  \0"		\
-	"bootcmd=cfgload; showlogo ${hdmimode}; movi read dtb 0 ${dtbaddr}; movi read boot 0 ${loadaddr}; booti ${loadaddr} - ${dtbaddr}\0"
-
 #define CONFIG_PREBOOT
 #define CONFIG_BOOTCOMMAND
 
@@ -132,6 +117,7 @@
 #define CONFIG_CMD_USB_MASS_STORAGE	1
 #define CONFIG_CMD_FASTBOOT		1
 #define CONFIG_CMD_INI			1
+#define CONFIG_CMD_DDRCLK		1
 
 #if defined(CONFIG_CMD_USB_MASS_STORAGE)
 #define CONFIG_USB_GADGET		1
@@ -168,12 +154,35 @@
 #define CONFIG_SYS_ALT_MEMTEST	1
 #endif
 
+#define CONFIG_CMD_PXE			1
+
+#if defined(CONFIG_CMD_PXE)
+#define CONFIG_BOOTP_PXE		1
+#define CONFIG_BOOTP_PXE_CLIENTARCH	0x16
+#define CONFIG_BOOTP_GATEWAY		1
+#define CONFIG_BOOTP_HOSTNAME		1
+#define CONFIG_BOOTP_VCI_STRING		"U-Boot.armv8"
+#define CONFIG_BOOTP_BOOTPATH		1
+#define CONFIG_BOOTP_SUBNET		1
+#define CONFIG_BOOTP_DNS		1
+#define CONFIG_UDP_CHECKSUM		1
+
+#define CONFIG_MENU			1
+#define ENV_PXE_DEFAULT	\
+	"pxefile_addr_r=0x30000000\0"	\
+	"pxeuuid=HKDKS905\0"		\
+	"bootfile=zImage\0"
+#else
+#define ENV_PXE_DEFAULT
+#endif
+
 /* File systems */
 #define CONFIG_DOS_PARTITION		1
 #define CONFIG_MMC			1
 #define CONFIG_FS_FAT			1
 #define CONFIG_FS_EXT4			1
 #define CONFIG_LZO			1
+#define CONFIG_FAT_WRITE
 
 /* storage: emmc/nand/sd */
 #define CONFIG_ENV_OVERWRITE
@@ -269,5 +278,27 @@
 
 /* HPD Disable : Always HDMI Connect */
 #define	ODROID_DISABLE_HPD		1
+
+/* Wakeup from GPIO key */
+#define CONFIG_GPIO_WAKEUP		1
+
+#define CONFIG_EXTRA_ENV_SETTINGS	\
+	"boardname=ODROIDC2\0"		\
+	"loadaddr=0x20000000\0"		\
+	"dtbaddr=0x1000000\0"		\
+	"fdt_high=0x20000000\0"		\
+	"hdmimode=custombuilt\0"		\
+	"usb pwren \0"		\
+	"hdmitx edid \0"		\
+	"cecconfig=cec0xf\0"		\
+	ENV_PXE_DEFAULT			\
+	"bootargs=root=/dev/mmcblk0p2 rw init=/init rootwait "	\
+		"console=ttyS0,115200 "				\
+		"hdmimode=custombuilt hdmitx=cecf "		\
+		"modeline=${modeline} "		\
+		"logo=osd1,loaded,0x3f800000,1080p60hz "		\
+		"androidboot.hardware=odroidc2 androidboot.serialno=${fbt_id#} "	\
+		"androidboot.selinux=disabled  \0"		\
+	"bootcmd=cfgload; showlogo ${hdmimode}; movi read dtb 0 ${dtbaddr}; movi read boot 0 ${loadaddr}; booti ${loadaddr} - ${dtbaddr}\0"
 
 #endif

@@ -38,7 +38,7 @@ struct Bootp_t {
 	uchar		bp_hlen;	/* Hardware address length	*/
 # define HWL_ETHER	6
 	uchar		bp_hops;	/* Hop count (gateway thing)	*/
-	ulong		bp_id;		/* Transaction ID		*/
+	u32		bp_id;		/* Transaction ID		*/
 	ushort		bp_secs;	/* Seconds since boot		*/
 	ushort		bp_spare1;	/* Alignment			*/
 	IPaddr_t	bp_ciaddr;	/* Client IP address		*/
@@ -59,10 +59,9 @@ struct Bootp_t {
  */
 
 /* bootp.c */
-extern ulong	BootpID;		/* ID of cur BOOTP request	*/
+extern u32	BootpID;		/* ID of cur BOOTP request	*/
 extern char	BootFile[128];		/* Boot file name		*/
 extern int	BootpTry;
-
 
 /* Send a BOOTP request */
 extern void BootpReset(void);

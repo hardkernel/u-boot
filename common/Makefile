@@ -80,6 +80,7 @@ obj-$(CONFIG_CMD_BOOTSTAGE) += cmd_bootstage.o
 obj-$(CONFIG_CMD_CACHE) += cmd_cache.o
 obj-$(CONFIG_CMD_CBFS) += cmd_cbfs.o
 obj-$(CONFIG_CMD_CLK) += cmd_clk.o
+obj-$(CONFIG_CMD_DDRCLK) += cmd_ddrclk.o
 obj-$(CONFIG_CMD_CONSOLE) += cmd_console.o
 obj-$(CONFIG_CMD_SARADC) += cmd_saradc.o
 obj-$(CONFIG_CMD_CPLBINFO) += cmd_cplbinfo.o
@@ -299,7 +300,7 @@ obj-y += cmd_disk.o
 # amlogic commands
 obj-$(CONFIG_CMD_REBOOT) += cmd_reboot.o
 obj-y += cmd_scp.o
-obj-$(CONFIG_AML_HDMITX20) += hdmi_parameters.o cmd_hdmitx.o
+obj-$(CONFIG_AML_HDMITX20) += hdmi_parameters.o cmd_hdmitx.o edid-decode.o
 obj-$(CONFIG_CMD_JTAG) += cmd_jtag.o
 obj-$(CONFIG_AML_OSD) += cmd_osd.o
 obj-$(CONFIG_AML_CVBS) += cmd_cvbs.o

@@ -15,18 +15,18 @@ if [ -z $1 ]; then
 fi
 
 if [ ! -f $BL1 ]; then
-        echo "error: $BL1 is not exist"
+        echo "error: $BL1 does not exist"
         exit 1
 fi
 
 if [ ! -f $UBOOT ]; then
-        echo "error: $UBOOT is not exist"
+        echo "error: $UBOOT does not exist"
         exit 1
 fi
 
-sudo dd if=$BL1 of=$1 conv=fsync bs=1 count=442
-sudo dd if=$BL1 of=$1 conv=fsync bs=512 skip=1 seek=1
-sudo dd if=$UBOOT of=$1 conv=fsync bs=512 seek=97
+sudo dd if=$BL1 of=$1 conv=fsync,notrunc bs=1 count=442
+sudo dd if=$BL1 of=$1 conv=fsync,notrunc bs=512 skip=1 seek=1
+sudo dd if=$UBOOT of=$1 conv=fsync,notrunc bs=512 seek=97
 
 sync
 

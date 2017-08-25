@@ -90,6 +90,10 @@ U_BOOT_CMD(
 #if defined(CONFIG_CMD_DHCP)
 static int do_dhcp(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
+#if defined(CONFIG_MACH_ODROIDC2)
+	setenv("autoload", "no");
+#endif
+
 	return netboot_common(DHCP, cmdtp, argc, argv);
 }
 
