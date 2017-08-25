@@ -42,7 +42,7 @@ exit:
 	return 0;
 }
 
- int32_t nand_secure_read(struct amlnand_chip * aml_chip, char *buf,int len)
+ int32_t nand_secure_read(struct amlnand_chip * aml_chip, char *buf, unsigned int len)
 {
 	//struct amlnand_chip * aml_chip = provider->priv;
 	//secure_t *secure_ptr = NULL;
@@ -72,7 +72,7 @@ exit:
 	return error;
 }
 
-int32_t nand_secure_write(struct amlnand_chip * aml_chip, char *buf,int len)
+int32_t nand_secure_write(struct amlnand_chip * aml_chip, char *buf, unsigned int len)
 {
 	//secure_t *secure_ptr = NULL;
 	unsigned char *secure_ptr = NULL;
@@ -150,7 +150,7 @@ int secure_storage_nand_read(char *buf,unsigned int len)
 	 struct amlnand_chip *aml_chip = aml_chip_secure;
 	int ret = 0;
 
-	ret = nand_secure_read(aml_chip,buf,len);
+	ret = nand_secure_read(aml_chip, buf, len);
 	if (ret < 0) {
 		aml_nand_msg("secure storage nand read failed\n");
 	}
@@ -158,12 +158,12 @@ int secure_storage_nand_read(char *buf,unsigned int len)
 	return ret;
 }
 
-int secure_storage_nand_write(char *buf,unsigned int len)
+int secure_storage_nand_write(char *buf, unsigned int len)
 {
 	 struct amlnand_chip *aml_chip = aml_chip_secure;
 	int ret = 0;
 
-	ret = nand_secure_write(aml_chip,buf,len);
+	ret = nand_secure_write(aml_chip, buf, len);
 	if (ret < 0) {
 		aml_nand_msg("secure storage nand write failed\n");
 	}

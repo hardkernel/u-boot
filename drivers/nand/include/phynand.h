@@ -884,10 +884,10 @@ extern void pinmux_select_chip(u32 ce_enable,
 
 extern int32_t nand_secure_read(struct amlnand_chip *aml_chip,
 	char *buf,
-	int len);
+	unsigned int len);
 extern int32_t nand_secure_write(struct amlnand_chip *aml_chip,
 	char *buf,
-	int len);
+	unsigned int len);
 extern int aml_sys_info_init(struct amlnand_chip *aml_chip);
 extern void nand_boot_info_prepare(struct amlnand_phydev *phydev,
 	u8 *page0_buf);
