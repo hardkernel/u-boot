@@ -58,6 +58,10 @@
 
 #define CONFIG_CMD_SARADC 1
 
+/*a/b update */
+/*#define CONFIG_CMD_BOOTCTOL_DEFAULT 1*/
+#define CONFIG_CMD_BOOTCTOL_AVB
+
 /* SMP Definitinos */
 #define CPU_RELEASE_ADDR		secondary_boot_func
 
@@ -125,7 +129,7 @@
             "setenv bootargs ${initargs} androidboot.selinux=${EnableSelinux} logo=${display_layer},loaded,${fb_addr},${outputmode} maxcpus=${maxcpus} vout=${outputmode},enable hdmimode=${hdmimode} cvbsmode=${cvbsmode} hdmitx=${cecconfig} cvbsdrv=${cvbs_drv}  pq=${pq} androidboot.firstboot=${firstboot} jtag=${jtag}; "\
 	"setenv bootargs ${bootargs} androidboot.hardware=amlogic;"\
             "run cmdline_keys;"\
-            "setenv bootargs ${bootargs} androidboot.slot_suffix=${active_slot};"\
+            "setenv bootargs ${bootargs} androidboot.veritymode=enforcing androidboot.slot_suffix=${active_slot};"\
             "\0"\
         "switch_bootmode="\
             "get_rebootmode;"\
