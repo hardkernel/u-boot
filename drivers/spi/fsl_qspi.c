@@ -14,6 +14,7 @@
 #include <dm.h>
 #include <errno.h>
 #include <watchdog.h>
+#include <wait_bit.h>
 #include "fsl_qspi.h"
 
 DECLARE_GLOBAL_DATA_PTR;
@@ -991,7 +992,7 @@ static int fsl_qspi_probe(struct udevice *bus)
 	struct fsl_qspi_platdata *plat = dev_get_platdata(bus);
 	struct fsl_qspi_priv *priv = dev_get_priv(bus);
 	struct dm_spi_bus *dm_spi_bus;
-	int i;
+	int i, ret;
 
 	dm_spi_bus = bus->uclass_priv;
 
@@ -1168,6 +1169,7 @@ static int fsl_qspi_claim_bus(struct udevice *dev)
 	struct fsl_qspi_priv *priv;
 	struct udevice *bus;
 	struct dm_spi_slave_platdata *slave_plat = dev_get_parent_platdata(dev);
+	int ret;
 
 	bus = dev->parent;
 	priv = dev_get_priv(bus);
