@@ -2639,10 +2639,13 @@ static void hdmitx_set_hw(struct hdmitx_dev* hdev)
 		break;
 	case HDMI_3840x2160p24_16x9:
 	case HDMI_3840x2160p24_64x27:
+	case HDMI_4096x2160p24_256x135:
 	case HDMI_3840x2160p25_16x9:
 	case HDMI_3840x2160p25_64x27:
+	case HDMI_4096x2160p25_256x135:
 	case HDMI_3840x2160p30_16x9:
 	case HDMI_3840x2160p30_64x27:
+	case HDMI_4096x2160p30_256x135:
 		if ((hdev->para->cs == HDMI_COLOR_FORMAT_422)
 			|| (hdev->para->cd == HDMI_COLOR_DEPTH_24B))
 			div40 = 0;
