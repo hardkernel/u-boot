@@ -689,5 +689,5 @@ pll_set_t __pll_setting = {
 	.ddr_pll_ssc = 0x00164000, ppm3000 up SS,     boot log show: Set ddr ssc: ppm3000+
 	.ddr_pll_ssc = 0x00168000, ppm3000 down SS,   boot log show: Set ddr ssc: ppm3000-
 	*/
-	.ddr_pll_ssc			= 0,
+	.ddr_pll_ssc			= 0x00128000,
 };
