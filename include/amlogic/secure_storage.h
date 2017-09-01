@@ -7,6 +7,9 @@
 #define RET_EINVAL	2
 #define RET_EMEM	3
 
+#define RET_EUND	-1
+#define SMC_UNK		0xffffffff
+
 /* Attribute*/
 #define OBJ_ATTR_SECURE	(1<<0)
 

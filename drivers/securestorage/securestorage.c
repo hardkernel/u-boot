@@ -8,7 +8,7 @@ static uint64_t storage_share_in_base;
 static uint64_t storage_share_out_base;
 static uint64_t storage_share_block_base;
 static uint64_t storage_share_block_size;
-static uint64_t storage_init_status;
+static int32_t storage_init_status;
 
 static uint64_t bl31_storage_ops(uint64_t function_id)
 {
@@ -202,18 +202,31 @@ void secure_storage_init(void)
 				bl31_storage_ops(GET_SHARE_STORAGE_BLOCK_BASE);
 		storage_share_block_size =
 				bl31_storage_ops(GET_SHARE_STORAGE_BLOCK_SIZE);
-		storage_init_status = 1;
+
+		if (storage_share_in_base == SMC_UNK
+				|| storage_share_out_base == SMC_UNK
+				|| storage_share_block_base == SMC_UNK
+				|| storage_share_block_size == SMC_UNK)
+			storage_init_status = -1;
+		else
+			storage_init_status = 1;
 }
 
 void *secure_storage_getbuffer(uint32_t *size)
 {
-	if (!storage_init_status)
+	if (storage_init_status == 0)
 		secure_storage_init();
-	else
-		storage_share_block_size =
-			bl31_storage_ops(GET_SHARE_STORAGE_BLOCK_SIZE);
-	*size = (uint32_t)storage_share_block_size;
-	return (void *)storage_share_block_base;
+
+	if (storage_init_status == 1) {
+			storage_share_block_size =
+				bl31_storage_ops(GET_SHARE_STORAGE_BLOCK_SIZE);
+		*size = (uint32_t)storage_share_block_size;
+		return (void *)storage_share_block_base;
+	}
+	else {
+		*size = 0;
+		return NULL;
+	}
 }
 void secure_storage_notifier(void)
 {
@@ -230,9 +243,13 @@ int32_t secure_storage_write(uint8_t *keyname, uint8_t *keybuf,
 {
 	uint32_t ret;
 
-	if (!storage_init_status)
+	if (storage_init_status == 0)
 		secure_storage_init();
-	ret = bl31_storage_write(keyname, keybuf, keylen, keyattr);
+
+	if (storage_init_status == 1)
+		ret = bl31_storage_write(keyname, keybuf, keylen, keyattr);
+	else
+		ret = RET_EUND;
 	return smc_to_ns_errno(ret);
 }
 
@@ -240,9 +257,13 @@ int32_t secure_storage_read(uint8_t *keyname, uint8_t *keybuf,
 			uint32_t keylen, uint32_t *readlen)
 {
 	uint64_t ret;
-	if (!storage_init_status)
+	if (storage_init_status == 0)
 		secure_storage_init();
-	ret = bl31_storage_read(keyname, keybuf, keylen, readlen);
+
+	if (storage_init_status == 1)
+		ret = bl31_storage_read(keyname, keybuf, keylen, readlen);
+	else
+		ret = RET_EUND;
 
 	return smc_to_ns_errno(ret);
 }
@@ -250,9 +271,13 @@ int32_t secure_storage_read(uint8_t *keyname, uint8_t *keybuf,
 int32_t secure_storage_query(uint8_t *keyname, uint32_t *retval)
 {
 	uint64_t ret;
-	if (!storage_init_status)
+	if (storage_init_status == 0)
 		secure_storage_init();
-	ret = bl31_storage_query(keyname, retval);
+
+	if (storage_init_status == 1)
+		ret = bl31_storage_query(keyname, retval);
+	else
+		ret = RET_EUND;
 
 	return smc_to_ns_errno(ret);
 }
@@ -260,9 +285,13 @@ int32_t secure_storage_query(uint8_t *keyname, uint32_t *retval)
 int32_t secure_storage_status(uint8_t *keyname, uint32_t *retval)
 {
 	uint64_t ret;
-	if (!storage_init_status)
+	if (storage_init_status == 0)
 		secure_storage_init();
-	ret = bl31_storage_status(keyname, retval);
+
+	if (storage_init_status == 1)
+		ret = bl31_storage_status(keyname, retval);
+	else
+		ret = RET_EUND;
 
 	return smc_to_ns_errno(ret);
 }
@@ -270,9 +299,13 @@ int32_t secure_storage_status(uint8_t *keyname, uint32_t *retval)
 int32_t secure_storage_tell(uint8_t *keyname, uint32_t *retval)
 {
 	uint64_t ret;
-	if (!storage_init_status)
+	if (storage_init_status == 0)
 		secure_storage_init();
-	ret = bl31_storage_tell(keyname, retval);
+
+	if (storage_init_status == 1)
+		ret = bl31_storage_tell(keyname, retval);
+	else
+		ret = RET_EUND;
 
 	return smc_to_ns_errno(ret);
 }
@@ -280,9 +313,13 @@ int32_t secure_storage_tell(uint8_t *keyname, uint32_t *retval)
 int32_t secure_storage_verify(uint8_t *keyname, uint8_t *hashbuf)
 {
 	uint64_t ret;
-	if (!storage_init_status)
+	if (storage_init_status == 0)
 		secure_storage_init();
-	ret = bl31_storage_verify(keyname, hashbuf);
+
+	if (storage_init_status == 1)
+		ret = bl31_storage_verify(keyname, hashbuf);
+	else
+		ret = RET_EUND;
 
 	return smc_to_ns_errno(ret);
 }
@@ -291,9 +328,13 @@ int32_t secure_storage_list(uint8_t *listbuf,
 		uint32_t buflen, uint32_t *readlen)
 {
 	uint64_t ret;
-	if (!storage_init_status)
+	if (storage_init_status == 0)
 		secure_storage_init();
-	ret = bl31_storage_list(listbuf, buflen, readlen);
+
+	if (storage_init_status == 1)
+		ret = bl31_storage_list(listbuf, buflen, readlen);
+	else
+		ret = RET_EUND;
 
 	return smc_to_ns_errno(ret);
 }
@@ -301,9 +342,13 @@ int32_t secure_storage_list(uint8_t *listbuf,
 int32_t secure_storage_remove(uint8_t *keyname)
 {
 	uint64_t ret;
-	if (!storage_init_status)
+	if (storage_init_status == 0)
 		secure_storage_init();
-	ret = bl31_storage_remove(keyname);
+
+	if (storage_init_status == 1)
+		ret = bl31_storage_remove(keyname);
+	else
+		ret = RET_EUND;
 
 	return smc_to_ns_errno(ret);
 }
