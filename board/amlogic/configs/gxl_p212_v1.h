@@ -120,6 +120,7 @@
         "cvbs_drv=0\0"\
         "active_slot=_a\0"\
         "boot_part=boot\0"\
+        "rpmb_state=0\0"\
         "initargs="\
             "rootfstype=ramfs init=/init console=ttyS0,115200 no_console_suspend earlycon=aml_uart,0xc81004c0 ramoops.pstore_en=1 ramoops.record_size=0x8000 ramoops.console_size=0x4000 "\
             "\0"\
@@ -131,7 +132,8 @@
             "\0"\
     "storeargs="\
             "setenv bootargs ${initargs} androidboot.selinux=${EnableSelinux} logo=${display_layer},loaded,${fb_addr},${outputmode} maxcpus=${maxcpus} vout=${outputmode},enable hdmimode=${hdmimode} cvbsmode=${cvbsmode} hdmitx=${cecconfig} cvbsdrv=${cvbs_drv} androidboot.firstboot=${firstboot} jtag=${jtag}; "\
-	"setenv bootargs ${bootargs} androidboot.veritymode=enforcing androidboot.hardware=amlogic;"\
+	    "setenv bootargs ${bootargs} androidboot.veritymode=enforcing androidboot.hardware=amlogic;"\
+	    "setenv bootargs ${bootargs} androidboot.rpmb_state=${rpmb_state};"\
             "run cmdline_keys;"\
             "setenv bootargs ${bootargs} androidboot.slot_suffix=${active_slot};"\
             "\0"\
