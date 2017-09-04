@@ -185,6 +185,13 @@ config ROCKCHIP_PARAM
 	  This enable support to get partition from rockchip
 	  parameter
 
+config ROCKCHIP_RESOURCE_IMAGE
+	bool "Enable support for rockchip resource image"
+	depends on ROCKCHIP_PARAM
+	help
+	  This enables support to get dtb or logo files from
+	  rockchip resource image format partition.
+
 source "arch/arm/mach-rockchip/rk3036/Kconfig"
 source "arch/arm/mach-rockchip/rk3188/Kconfig"
 source "arch/arm/mach-rockchip/rk322x/Kconfig"
