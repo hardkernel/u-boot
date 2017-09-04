@@ -24,4 +24,8 @@
 #define CONFIG_SERIAL_TAG
 #define CONFIG_ENV_OVERWRITE
 
+#define ROCKCHIP_DEVICE_SETTINGS \
+		"stdout=serial,vidconsole\0" \
+		"stderr=serial,vidconsole\0"
+
 #endif

@@ -29,4 +29,8 @@
 #define CONFIG_BMP_24BPP
 #define CONFIG_BMP_32BPP
 
+#define ROCKCHIP_DEVICE_SETTINGS \
+		"stdout=serial,vidconsole\0" \
+		"stderr=serial,vidconsole\0"
+
 #endif
