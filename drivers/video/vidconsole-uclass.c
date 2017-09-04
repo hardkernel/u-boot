@@ -259,6 +259,7 @@ static int do_video_puts(cmd_tbl_t *cmdtp, int flag, int argc,
 		return CMD_RET_FAILURE;
 	for (s = argv[1]; *s; s++)
 		vidconsole_put_char(dev, *s);
+	video_sync(dev->parent);
 
 	return 0;
 }
