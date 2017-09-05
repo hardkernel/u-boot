@@ -466,7 +466,7 @@ static struct mtd_partition normal_partition_info[] = {
     {
         .name = "boot",
         .offset = 0,
-        .size = 12*SZ_1M,
+        .size = 15*SZ_1M,
     },
     {
         .name = "system",
