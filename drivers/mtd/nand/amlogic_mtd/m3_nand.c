@@ -206,7 +206,14 @@ void pinmux_select_chip_mtd(unsigned ce_enable, unsigned rb_enable)
 	}
 }
 #endif
+nand_info_t *get_nand_dev_by_index(int dev)
+{
+	if ((dev < 0) || (dev >= CONFIG_SYS_MAX_NAND_DEVICE) ||
+	    (nand_info[dev].name == NULL))
+		return NULL;
 
+	return &nand_info[dev];
+}
 static int controller_select_chip(struct hw_controller *controller,
 	u8 chipnr)
 {

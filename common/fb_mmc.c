@@ -11,6 +11,7 @@
 #include <aboot.h>
 #include <sparse_format.h>
 #include <mmc.h>
+#include <fb_fastboot.h>
 #ifndef CONFIG_FASTBOOT_GPT_NAME
 #define CONFIG_FASTBOOT_GPT_NAME GPT_ENTRY_NAME
 #endif
@@ -22,21 +23,9 @@
 extern int dtb_write(void *addr);
 extern int renew_partition_tbl(unsigned char *buffer);
 /* The 64 defined bytes plus the '\0' */
-#define RESPONSE_LEN	(64 + 1)
-
-static char *response_str;
-
-void fastboot_fail(const char *s)
-{
-	strncpy(response_str, "FAIL", 4);
-	strncat(response_str, s, RESPONSE_LEN - 4 - 1);
-}
-
-void fastboot_okay(const char *s)
-{
-	strncpy(response_str, "OKAY", 4);
-	strncat(response_str, s, RESPONSE_LEN - 4 - 1);
-}
+struct fb_mmc_sparse {
+	block_dev_desc_t	*dev_desc;
+};
 #ifdef CONFIG_EFI_PARTITION
 static int part_get_info_efi_by_name_or_alias(block_dev_desc_t *dev_desc,
 		const char *name, disk_partition_t *info)
@@ -60,6 +49,22 @@ static int part_get_info_efi_by_name_or_alias(block_dev_desc_t *dev_desc,
 	return ret;
 }
 #endif
+
+static lbaint_t fb_mmc_sparse_write(struct sparse_storage *info,
+		lbaint_t blk, lbaint_t blkcnt, const void *buffer)
+{
+	struct fb_mmc_sparse *sparse = info->priv;
+	block_dev_desc_t *dev_desc = sparse->dev_desc;
+
+	return dev_desc->block_write(dev_desc->dev, blk, blkcnt,
+				     buffer);
+}
+
+static lbaint_t fb_mmc_sparse_reserve(struct sparse_storage *info,
+		lbaint_t blk, lbaint_t blkcnt)
+{
+	return blkcnt;
+}
 
 static void write_raw_image(block_dev_desc_t *dev_desc, disk_partition_t *info,
 		const char *part_name, void *buffer,
@@ -94,14 +99,11 @@ static void write_raw_image(block_dev_desc_t *dev_desc, disk_partition_t *info,
 }
 
 void fb_mmc_flash_write(const char *cmd, void *download_buffer,
-			unsigned int download_bytes, char *response)
+			unsigned int download_bytes)
 {
 	block_dev_desc_t *dev_desc;
 	disk_partition_t info;
 	int ret = 0;
-
-	/* initialize the response buffer */
-	response_str = response;
 
 	dev_desc = get_dev("mmc", CONFIG_FASTBOOT_FLASH_MMC_DEV);
 	if (!dev_desc || dev_desc->type == DEV_TYPE_UNKNOWN) {
@@ -165,26 +167,37 @@ extern int emmc_update_mbr(unsigned char *buffer);
 		}
 #endif
 	} else {
-		if (is_sparse_image(download_buffer))
-			write_sparse_image(dev_desc, &info, cmd, download_buffer,
-					download_bytes);
-		else
+		if (is_sparse_image(download_buffer)) {
+			struct fb_mmc_sparse sparse_priv;
+			struct sparse_storage sparse;
+
+			sparse_priv.dev_desc = dev_desc;
+
+			sparse.blksz = info.blksz;
+			sparse.start = info.start;
+			sparse.size = info.size;
+			sparse.write = fb_mmc_sparse_write;
+			sparse.reserve = fb_mmc_sparse_reserve;
+
+			printf("Flashing sparse image at offset " LBAFU "\n",
+			       sparse.start);
+			sparse.priv = &sparse_priv;
+			write_sparse_image(&sparse, cmd, download_buffer,
+					   download_bytes);
+		} else
 			write_raw_image(dev_desc, &info, cmd, download_buffer,
-					download_bytes);
+				download_bytes);
 	}
 }
 
 
-void fb_mmc_erase_write(const char *cmd, void *download_buffer, char *response)
+void fb_mmc_erase_write(const char *cmd, void *download_buffer)
 {
 	int ret = 0;
 	block_dev_desc_t *dev_desc;
 	disk_partition_t info;
 	lbaint_t blks, blks_start, blks_size, grp_size;
 	struct mmc *mmc = find_mmc_device(CONFIG_FASTBOOT_FLASH_MMC_DEV);
-
-	/* initialize the response buffer */
-	response_str = response;
 
 	if (mmc == NULL) {
 		error("invalid mmc device");

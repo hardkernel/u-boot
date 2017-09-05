@@ -24,6 +24,10 @@
 #ifdef CONFIG_FASTBOOT_FLASH_MMC_DEV
 #include <fb_mmc.h>
 #include <fb_storage.h>
+#include <fb_fastboot.h>
+#endif
+#ifdef CONFIG_FASTBOOT_FLASH_NAND_DEV
+#include <fb_nand.h>
 #endif
 #include <partition_table.h>
 
@@ -43,7 +47,6 @@ DECLARE_GLOBAL_DATA_PTR;
 #define DEVICE_SERIAL	"1234567890"
 
 /* The 64 defined bytes plus \0 */
-#define RESPONSE_LEN	(64 + 1)
 
 #define EP_BUFFER_SIZE	4096
 
@@ -148,6 +151,20 @@ unsigned int ddr_size_usable(unsigned int addr_start)
 }
 
 static void rx_handler_command(struct usb_ep *ep, struct usb_request *req);
+
+static char *response_str;
+
+void fastboot_fail(const char *s)
+{
+	strncpy(response_str, "FAIL", 4);
+	strncat(response_str, s, RESPONSE_LEN - 4 - 1);
+}
+
+void fastboot_okay(const char *s)
+{
+	strncpy(response_str, "OKAY", 4);
+	strncat(response_str, s, RESPONSE_LEN - 4 - 1);
+}
 
 static void fastboot_complete(struct usb_ep *ep, struct usb_request *req)
 {
@@ -634,12 +651,24 @@ static void cb_flash(struct usb_ep *ep, struct usb_request *req)
 		return;
 	}
 
+	response_str = response;
 	//strcpy(response, "FAILno flash device defined");
+	if (is_mainstorage_emmc()) {
 #ifdef CONFIG_FASTBOOT_FLASH_MMC_DEV
-	fb_mmc_flash_write(cmd, (void *)CONFIG_USB_FASTBOOT_BUF_ADDR,
-			   download_bytes, response);
+		fb_mmc_flash_write(cmd, (void *)CONFIG_USB_FASTBOOT_BUF_ADDR,
+				   download_bytes);
 #endif
-
+	} else if (is_mainstorage_nand()) {
+#ifdef CONFIG_FASTBOOT_FLASH_NAND_DEV
+		fb_nand_flash_write(cmd, (void *)CONFIG_USB_FASTBOOT_BUF_ADDR,
+					download_bytes);
+#else
+		fastboot_fail("not support nftl\n");
+#endif
+	} else {
+		printf("error: no valid fastboot device\n");
+		fastboot_fail("no vaild device\n");
+	}
 	fastboot_tx_write_str(response);
 }
 #endif
@@ -676,12 +705,24 @@ static void cb_flashall(struct usb_ep *ep, struct usb_request *req)
 
 	printf("cmd is %s\n", cmd);
 
+	response_str = response;
 	//strcpy(response, "FAILno flash device defined");
-
+	if (is_mainstorage_emmc()) {
 #ifdef CONFIG_FASTBOOT_FLASH_MMC_DEV
-	fb_mmc_flash_write(cmd, (void *)CONFIG_USB_FASTBOOT_BUF_ADDR,
-			   download_bytes, response);
+		fb_mmc_flash_write(cmd, (void *)CONFIG_USB_FASTBOOT_BUF_ADDR,
+				   download_bytes);
 #endif
+	} else if (is_mainstorage_nand()) {
+#ifdef CONFIG_FASTBOOT_FLASH_NAND_DEV
+		fb_nand_flash_write(cmd, (void *)CONFIG_USB_FASTBOOT_BUF_ADDR,
+					download_bytes);
+#else
+		fastboot_fail("not support nftl\n");
+#endif
+	} else {
+		printf("error: no valid fastboot device\n");
+		fastboot_fail("no vaild device\n");
+	}
 	fastboot_tx_write_str(response);
 }
 
@@ -699,10 +740,22 @@ static void cb_erase(struct usb_ep *ep, struct usb_request *req)
 		return;
 	}
 
+	response_str = response;
 	//strcpy(response, "FAILno erase device defined");
+	if (is_mainstorage_emmc()) {
 #ifdef CONFIG_FASTBOOT_FLASH_MMC_DEV
-	fb_mmc_erase_write(cmd, (void *)CONFIG_USB_FASTBOOT_BUF_ADDR, response);
+		fb_mmc_erase_write(cmd, (void *)CONFIG_USB_FASTBOOT_BUF_ADDR);
 #endif
+	} else if (is_mainstorage_nand()) {
+#ifdef CONFIG_FASTBOOT_FLASH_NAND_DEV
+		fb_nand_erase(cmd, (void *)CONFIG_USB_FASTBOOT_BUF_ADDR);
+#else
+		fastboot_fail("not support nftl\n");
+#endif
+	} else {
+		printf("error: no valid fastboot device\n");
+		fastboot_fail("no vaild device\n");
+	}
 	fastboot_tx_write_str(response);
 }
 

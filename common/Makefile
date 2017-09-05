@@ -295,6 +295,9 @@ ifdef CONFIG_FASTBOOT_FLASH_MMC_DEV
 obj-y += aboot.o
 obj-y += fb_mmc.o
 endif
+ifdef CONFIG_FASTBOOT_FLASH_NAND_DEV
+obj-y += fb_nand.o
+endif
 
 obj-$(CONFIG_CMD_BLOB) += cmd_blob.o
 

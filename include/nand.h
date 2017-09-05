@@ -134,7 +134,6 @@ int nand_read_skip_bad(nand_info_t *nand, loff_t offset, size_t *length,
 				  * is a 'mode' meaning it cannot be mixed with
 				  * other flags */
 #define WITH_DROP_FFS	(1 << 1) /* drop trailing all-0xff pages */
-
 int nand_write_skip_bad(nand_info_t *nand, loff_t offset, size_t *length,
 			size_t *actual, loff_t lim, u_char *buffer, int flags);
 int nand_erase_opts(nand_info_t *meminfo, const nand_erase_options_t *opts);
@@ -150,7 +149,7 @@ int nand_get_lock_status(nand_info_t *meminfo, loff_t offset);
 
 int nand_spl_load_image(uint32_t offs, unsigned int size, void *dst);
 void nand_deselect(void);
-
+nand_info_t *get_nand_dev_by_index(int dev);
 #ifdef CONFIG_SYS_NAND_SELECT_DEVICE
 void board_nand_select_device(struct nand_chip *nand, int chip);
 #endif
