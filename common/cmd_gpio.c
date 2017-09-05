@@ -192,6 +192,9 @@ static int do_gpio(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	/* finally, let's do it: set direction and exec command */
 	if (sub_cmd == GPIO_INPUT) {
 		gpio_direction_input(gpio);
+#ifdef CONFIG_AML_GPIO
+		udelay(10);
+#endif
 		value = gpio_get_value(gpio);
 	} else {
 		switch (sub_cmd) {
