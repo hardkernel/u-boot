@@ -370,7 +370,8 @@ static int rk3188_pinctrl_get_periph_id(struct udevice *dev,
 	u32 cell[3];
 	int ret;
 
-	ret = dev_read_u32_array(periph, "interrupts", cell, ARRAY_SIZE(cell));
+	ret = fdtdec_get_int_array(gd->fdt_blob, dev_of_offset(periph),
+				   "interrupts", cell, ARRAY_SIZE(cell));
 	if (ret < 0)
 		return -EINVAL;
 
