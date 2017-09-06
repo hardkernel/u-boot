@@ -706,6 +706,13 @@ config SPL_ATF_TEXT_BASE
 	help
 	  This is the base address in memory for ATF BL31 text and entry point.
 
+config SPL_OPTEE_SUPPORT
+	bool "Support OP-TEE Trusted OS"
+	depends on ARM
+	help
+	  OP-TEE is an open source Trusted OS  which is loaded by SPL.
+	  More detail at: https://github.com/OP-TEE/optee_os
+
 config TPL
 	bool
 	depends on SUPPORT_TPL
