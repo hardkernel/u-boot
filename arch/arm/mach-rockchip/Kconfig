@@ -32,9 +32,18 @@ config ROCKCHIP_RK322X
 	bool "Support Rockchip RK3228/RK3229"
 	select CPU_V7
 	select SUPPORT_SPL
+	select SUPPORT_TPL
 	select SPL
+	select TPL
+	select TPL_NEEDS_SEPARATE_TEXT_BASE if SPL
+	select TPL_NEEDS_SEPARATE_STACK if TPL
+	select SPL_DRIVERS_MISC_SUPPORT
+	imply SPL_SERIAL_SUPPORT
+	imply TPL_SERIAL_SUPPORT
 	select ROCKCHIP_BROM_HELPER
 	select DEBUG_UART_BOARD_INIT
+	select TPL_LIBCOMMON_SUPPORT
+	select TPL_LIBGENERIC_SUPPORT
 	help
 	  The Rockchip RK3229 is a ARM-based SoC with a dual-core Cortex-A7
 	  including NEON and GPU, Mali-400 graphics, several DDR3 options
