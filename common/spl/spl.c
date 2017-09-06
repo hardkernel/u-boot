@@ -424,6 +424,13 @@ void board_init_r(gd_t *dummy1, ulong dummy2)
 		spl_invoke_atf(&spl_image);
 		break;
 #endif
+#if CONFIG_IS_ENABLED(OPTEE)
+	case IH_OS_OP_TEE:
+		debug("Jumping to U-Boot via OP-TEE\n");
+		spl_optee_entry(NULL, NULL, (void *)spl_image.fdt_addr,
+				(void *)spl_image.entry_point);
+		break;
+#endif
 #ifdef CONFIG_SPL_OS_BOOT
 	case IH_OS_LINUX:
 		debug("Jumping to Linux\n");
@@ -438,6 +445,8 @@ void board_init_r(gd_t *dummy1, ulong dummy2)
 	debug("SPL malloc() used %#lx bytes (%ld KB)\n", gd->malloc_ptr,
 	      gd->malloc_ptr / 1024);
 #endif
+
+	debug("loaded - jumping to U-Boot...\n");
 #ifdef CONFIG_BOOTSTAGE_STASH
 	int ret;
 
@@ -447,11 +456,6 @@ void board_init_r(gd_t *dummy1, ulong dummy2)
 	if (ret)
 		debug("Failed to stash bootstage: err=%d\n", ret);
 #endif
-
-	if (CONFIG_IS_ENABLED(OPTEE_SUPPORT)) {
-		debug("loaded - jumping to U-Boot via OP-TEE.\n");
-		spl_optee_entry(0, 0, 0, (void *)spl_image.entry_point);
-	}
 
 	debug("loaded - jumping to U-Boot...\n");
 	spl_board_prepare_for_boot();

@@ -278,10 +278,14 @@ void spl_invoke_atf(struct spl_image_info *spl_image);
 
 /**
  * spl_optee_entry - entry function for optee
- * entry arg0, pagestore
- * entry arg1, (ARMv7 standard bootarg #1)
- * entry arg2, device tree address, (ARMv7 standard bootarg #2)
- * entry arg3, non-secure entry address (ARMv7 bootarg #0)
+ *
+ * args defind in op-tee project
+ * https://github.com/OP-TEE/optee_os/
+ * core/arch/arm/kernel/generic_entry_a32.S
+ * @arg0: pagestore
+ * @arg1: (ARMv7 standard bootarg #1)
+ * @arg2: device tree address, (ARMv7 standard bootarg #2)
+ * @arg3: non-secure entry address (ARMv7 bootarg #0)
  */
 void spl_optee_entry(void *arg0, void *arg1, void *arg2, void *arg3);
 
