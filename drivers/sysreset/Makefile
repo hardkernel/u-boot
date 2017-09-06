@@ -4,7 +4,7 @@
 # SPDX-License-Identifier:	GPL-2.0+
 #
 
-obj-$(CONFIG_SYSRESET) += sysreset-uclass.o
+obj-$(CONFIG_$(SPL_TPL_)SYSRESET) += sysreset-uclass.o
 obj-$(CONFIG_SYSRESET_PSCI) += sysreset_psci.o
 obj-$(CONFIG_SYSRESET_SYSCON) += sysreset_syscon.o
 obj-$(CONFIG_SYSRESET_WATCHDOG) += sysreset_watchdog.o
