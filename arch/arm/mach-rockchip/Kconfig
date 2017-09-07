@@ -67,6 +67,7 @@ config ROCKCHIP_RK3288
 config ROCKCHIP_RK3328
 	bool "Support Rockchip RK3328"
 	select ARM64
+	select GICV2
 	help
 	  The Rockchip RK3328 is a ARM-based SoC with a quad-core Cortex-A53.
 	  including NEON and GPU, 1MB L2 cache, Mali-T7 graphics, two
