@@ -82,13 +82,13 @@ void raw_write_daif(unsigned int daif)
 	__asm__ __volatile__("msr DAIF, %0\n\t" : : "r" (daif) : "memory");
 }
 
-void bl31_entry(void)
+void spl_bl31_entry(void *entry_addr)
 {
 	struct bl31_params *bl31_params;
 	void (*entry)(struct bl31_params *params, void *plat_params) = NULL;
 
 	bl31_params = bl2_plat_get_bl31_params();
-	entry = (void *)CONFIG_SPL_ATF_TEXT_BASE;
+	entry = entry_addr;
 
 	raw_write_daif(SPSR_EXCEPTION_MASK);
 	dcache_disable();
