@@ -44,6 +44,7 @@ config ROCKCHIP_RK322X
 	select DEBUG_UART_BOARD_INIT
 	select TPL_LIBCOMMON_SUPPORT
 	select TPL_LIBGENERIC_SUPPORT
+	select GICV2
 	help
 	  The Rockchip RK3229 is a ARM-based SoC with a dual-core Cortex-A7
 	  including NEON and GPU, Mali-400 graphics, several DDR3 options

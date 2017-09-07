@@ -29,6 +29,9 @@
 #define CONFIG_TPL_STACK		0x10088000
 #define CONFIG_TPL_TEXT_BASE		0x10081004
 
+#define GICD_BASE                 	0x32011000
+#define GICC_BASE                  	0x32012000
+
 #define CONFIG_ROCKCHIP_MAX_INIT_SIZE	(28 << 10)
 #define CONFIG_ROCKCHIP_CHIP_TAG	"RK32"
 
