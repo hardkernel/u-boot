@@ -466,7 +466,7 @@
 
 //support secure boot
 #define CONFIG_AML_SECURE_UBOOT   1
-#define CONFIG_AML_SECURE_BOOT_V3 1
+//#define CONFIG_AML_SECURE_BOOT_V3 1
 
 
 #if defined(CONFIG_AML_SECURE_UBOOT)
