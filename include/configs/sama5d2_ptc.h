@@ -60,7 +60,6 @@
 #endif
 
 /* USB device */
-#define CONFIG_USBNET_MANUFACTURER      "Atmel SAMA5D2_PTC"
 
 /* Ethernet Hardware */
 #define CONFIG_MACB
