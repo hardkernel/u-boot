@@ -47,18 +47,33 @@ static int valid_command(const char* p)
  */
 static char* read_cfgload(void)
 {
-	char cmd[128];
+	char msg[128] = { 0, };
 	unsigned long filesize;
 	char *p;
 
 	p = (char *)simple_strtoul(getenv("loadaddr"), NULL, 16);
-	if (NULL == p)
+	if (NULL == p) {
 		p = (char *)CONFIG_SYS_LOAD_ADDR;
+		sprintf(msg, "%x", CONFIG_SYS_LOAD_ADDR);
+		setenv("loadaddr", msg);
+	}
 
 	setenv("filesize", "0");
+	sprintf(msg, "cfgload addr = 0x%08X, Loading boot.ini from ",
+		simple_strtoul(getenv("loadaddr"), NULL, 16));
 
-	sprintf(cmd, "fatload mmc 0:1 0x%p boot.ini", (void *)p);
-	run_command(cmd, 0);
+	setenv("msgload", msg);
+	run_command("if fatload mmc 0:1 ${loadaddr} boot.ini;" \
+		"   then echo ${msgload} FAT;" \
+		"   else if ext4load mmc 0:1 ${loadaddr} /boot.ini;" \
+		"   then echo ${msgload} ext4 0:1 /boot.ini;" \
+		"   else if ext4load mmc 0:1 ${loadaddr} /boot/boot.ini;" \
+		"   then echo ${msgload} ext4 0:1 /boot/boot.ini;" \
+		"   else if ext4load mmc 0:2 ${loadaddr} /boot/boot.ini;" \
+		"   then echo ${msgload} ext4 0:2 /boot.ini;" \
+		"   else if ext4load mmc 0:2 ${loadaddr} /boot.ini;" \
+		"   then echo ${msgload} ext4 0:2 /boot/boot.ini;" \
+		"   fi;fi;fi;fi;fi;", 0);
 
 	filesize = getenv_ulong("filesize", 16, 0);
 	if (0 == filesize) {
@@ -70,7 +85,7 @@ static char* read_cfgload(void)
 		printf("boot.ini: 'boot.ini' exceeds %d, size=%ld\n",
 				SZ_BOOTINI, filesize);
 		return NULL;
-    }
+	}
 
 	/* Terminate the read buffer with '\0' to be treated as string */
 	*(char *)(p + filesize) = '\0';
