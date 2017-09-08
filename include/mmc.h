@@ -336,6 +336,12 @@ int do_authenticatedread(struct s_rpmb *requestpackets, uint16_t block_count);
 int do_authenticatedwrite(struct s_rpmb *requestpackets);
 struct mmc *do_returnmmc(void);
 
+int read_counter(struct mmc *mmc, struct s_rpmb *requestpackets);
+int program_key(struct mmc *mmc, struct s_rpmb *requestpackets);
+int authenticated_read
+	(struct mmc *mmc, struct s_rpmb *requestpackets, uint16_t block_count);
+int authenticated_write(struct mmc *mmc, struct s_rpmb *requestpackets);
+
 /* Driver model support */
 
 /**

@@ -350,3 +350,58 @@ int mmc_rpmb_write(struct mmc *mmc, void *addr, unsigned short blk,
 		return -1;
 	return cnt;
 }
+
+int read_counter(struct mmc *mmc, struct s_rpmb *requestpackets)
+{
+	if (mmc_rpmb_request(mmc, requestpackets, 1, false))
+		return -1;
+
+	if (mmc_rpmb_response(mmc, requestpackets, RPMB_RESP_WCOUNTER, 1))
+		return -1;
+
+	return 0;
+}
+
+int program_key(struct mmc *mmc, struct s_rpmb *requestpackets)
+{
+	if (mmc_rpmb_request(mmc, requestpackets, 1, true))
+		return -1;
+
+	memset(requestpackets, 0, sizeof(struct s_rpmb));
+
+	requestpackets->request = cpu_to_be16(RPMB_REQ_STATUS);
+
+	if (mmc_rpmb_request(mmc, requestpackets, 1, false))
+		return -1;
+
+	return mmc_rpmb_response(mmc, requestpackets, RPMB_RESP_KEY, 1);
+}
+
+int authenticated_read(struct mmc *mmc,
+	struct s_rpmb *requestpackets, uint16_t block_count)
+{
+	if (mmc_rpmb_request(mmc, requestpackets, 1, false))
+		return -1;
+
+	if (mmc_rpmb_response
+		(mmc, requestpackets, RPMB_RESP_READ_DATA, block_count))
+		return -1;
+
+	return 0;
+}
+
+int authenticated_write(struct mmc *mmc, struct s_rpmb *requestpackets)
+{
+	if (mmc_rpmb_request(mmc, requestpackets, 1, true))
+		return -1;
+
+	memset(requestpackets, 0, sizeof(struct s_rpmb));
+
+	requestpackets->request = cpu_to_be16(RPMB_REQ_STATUS);
+
+	if (mmc_rpmb_request(mmc, requestpackets, 1, false))
+		return -1;
+
+	return mmc_rpmb_response(mmc, requestpackets, RPMB_RESP_WRITE_DATA, 1);
+}
+
