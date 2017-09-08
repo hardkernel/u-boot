@@ -4,11 +4,12 @@
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
-
 #include <common.h>
 #include <command.h>
 #include <console.h>
 #include <mmc.h>
+#include <optee_include/OpteeClientTest.h>
+#include <optee_include/OpteeClientApiLib.h>
 
 static int curr_device = -1;
 
@@ -123,7 +124,120 @@ static int do_mmcinfo(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	return CMD_RET_SUCCESS;
 }
 
+#ifdef CONFIG_OPTEE_CLIENT
+static int do_mmc_testrpmb(cmd_tbl_t *cmdtp,
+		int flag, int argc, char * const argv[])
+{
+	struct mmc *mmc;
+
+	if (curr_device < 0) {
+		if (get_mmc_num() > 0) {
+			puts("MMC device available\n");
+			curr_device = 0;
+		} else {
+			puts("No MMC device available\n");
+			return 1;
+		}
+	}
+
+	mmc = init_mmc_device(curr_device, false);
+	if (!mmc)
+		return CMD_RET_FAILURE;
+
+	uint64_t value;
+	trusty_write_rollback_index(0x87654321, 0x1122334455667788);
+	trusty_read_rollback_index(0x87654321, &value);
+	debug("sizeof(value) %x\n ", sizeof(value));
+	if (value == 0x1122334455667788)
+		printf("good ! value==0x1122334455667788\n ");
+	uint8_t filename[] = "testfile1";
+	uint8_t data[] = "just a data";
+	write_to_keymaster(filename, sizeof(filename), data, sizeof(data));
+	return CMD_RET_SUCCESS;
+}
+#endif
+
 #ifdef CONFIG_SUPPORT_EMMC_RPMB
+char temp_original_part;
+int init_rpmb(void)
+{
+	struct mmc *mmc;
+
+	mmc = init_mmc_device(curr_device, false);
+	if (!mmc)
+		return CMD_RET_FAILURE;
+
+	if (!(mmc->version & MMC_VERSION_MMC)) {
+		printf("It is not a EMMC device\n");
+		return CMD_RET_FAILURE;
+	}
+	if (mmc->version < MMC_VERSION_4_41) {
+		printf("RPMB not supported before version 4.41\n");
+		return CMD_RET_FAILURE;
+	}
+
+		/* Switch to the RPMB partition */
+#ifndef CONFIG_BLK
+	temp_original_part = mmc->block_dev.hwpart;
+	debug("mmc->block_dev.hwpart\n");
+#else
+	temp_original_part = mmc_get_blk_desc(mmc)->hwpart;
+	debug("mmc_get_blk_desc(mmc)->hwpart\n");
+#endif
+	debug("init_rpmb temp_original_part = 0x%X\n", temp_original_part);
+	if (blk_select_hwpart_devnum
+		(IF_TYPE_MMC, curr_device, MMC_PART_RPMB) != 0)
+		return CMD_RET_FAILURE;
+
+	return CMD_RET_SUCCESS;
+}
+
+int finish_rpmb(void)
+{
+	/* Return to original partition */
+	debug("finish_rpmb temp_original_part = 0x%X\n", temp_original_part);
+	if (blk_select_hwpart_devnum
+		(IF_TYPE_MMC, curr_device, temp_original_part) != 0)
+		return CMD_RET_FAILURE;
+
+	return CMD_RET_SUCCESS;
+}
+
+int do_readcounter(struct s_rpmb *requestpackets)
+{
+	struct mmc *mmc = find_mmc_device(curr_device);
+
+	return read_counter(mmc, requestpackets);
+}
+
+int do_programkey(struct s_rpmb *requestpackets)
+{
+	struct mmc *mmc = find_mmc_device(curr_device);
+
+	return program_key(mmc, requestpackets);
+}
+
+int do_authenticatedread(struct s_rpmb *requestpackets, uint16_t block_count)
+{
+	struct mmc *mmc = find_mmc_device(curr_device);
+
+	return authenticated_read(mmc, requestpackets, block_count);
+}
+
+int do_authenticatedwrite(struct s_rpmb *requestpackets)
+{
+	struct mmc *mmc = find_mmc_device(curr_device);
+
+	return authenticated_write(mmc, requestpackets);
+}
+
+struct mmc *do_returnmmc(void)
+{
+	struct mmc *mmc = find_mmc_device(curr_device);
+
+	return mmc;
+}
+
 static int confirm_key_prog(void)
 {
 	puts("Warning: Programming authentication key can be done only once !\n"
@@ -805,6 +919,9 @@ static cmd_tbl_t cmd_mmc[] = {
 	U_BOOT_CMD_MKENT(partconf, 5, 0, do_mmc_partconf, "", ""),
 	U_BOOT_CMD_MKENT(rst-function, 3, 0, do_mmc_rst_func, "", ""),
 #endif
+#ifdef CONFIG_OPTEE_CLIENT
+	U_BOOT_CMD_MKENT(testrpmb, 1, 0, do_mmc_testrpmb, "", ""),
+#endif
 #ifdef CONFIG_SUPPORT_EMMC_RPMB
 	U_BOOT_CMD_MKENT(rpmb, CONFIG_SYS_MAXARGS, 1, do_mmcrpmb, "", ""),
 #endif
@@ -869,6 +986,9 @@ U_BOOT_CMD(
 	" - Change the RST_n_FUNCTION field of the specified device\n"
 	"   WARNING: This is a write-once field and 0 / 1 / 2 are the only valid values.\n"
 #endif
+#ifdef CONFIG_OPTEE_CLIENT
+	"mmc testrpmb - test CA call static TA,and TA call rpmb in uboot\n"
+#endif
 #ifdef CONFIG_SUPPORT_EMMC_RPMB
 	"mmc rpmb read addr blk# cnt [address of auth-key] - block size is 256 bytes\n"
 	"mmc rpmb write addr blk# cnt <address of auth-key> - block size is 256 bytes\n"
@@ -888,3 +1008,4 @@ U_BOOT_CMD(
 	"display MMC info",
 	"- display info of the current MMC device"
 );
+
