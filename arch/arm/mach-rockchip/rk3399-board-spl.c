@@ -1,10 +1,12 @@
 /*
  * (C) Copyright 2016 Rockchip Electronics Co., Ltd
+ * (C) Copyright 2017 Theobroma Systems Design und Consulting GmbH
  *
  * SPDX-License-Identifier:     GPL-2.0+
  */
 
 #include <common.h>
+#include <asm/arch/bootrom.h>
 #include <asm/arch/clock.h>
 #include <asm/arch/grf_rk3399.h>
 #include <asm/arch/hardware.h>
@@ -19,9 +21,19 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
+void board_return_to_bootrom(void)
+{
+	back_to_bootrom(BROM_BOOT_NEXTSTAGE);
+}
+
 u32 spl_boot_device(void)
 {
-	return BOOT_DEVICE_MMC1;
+	u32 boot_device = BOOT_DEVICE_MMC1;
+
+	if (CONFIG_IS_ENABLED(ROCKCHIP_BACK_TO_BROM))
+		return BOOT_DEVICE_BOOTROM;
+
+	return boot_device;
 }
 
 u32 spl_boot_mode(const u32 boot_device)
@@ -155,9 +167,6 @@ void spl_board_init(void)
 	}
 
 	preloader_console_init();
-#if CONFIG_IS_ENABLED(ROCKCHIP_BACK_TO_BROM)
-	back_to_bootrom(BROM_BOOT_NEXTSTAGE);
-#endif
 
 	return;
 err:
