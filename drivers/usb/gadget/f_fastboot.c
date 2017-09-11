@@ -21,6 +21,7 @@
 #include <linux/compiler.h>
 #include <version.h>
 #include <g_dnl.h>
+#include <android_avb/avb_ops_user.h>
 #ifdef CONFIG_FASTBOOT_FLASH_MMC_DEV
 #include <fb_mmc.h>
 #endif
@@ -61,6 +62,9 @@ static inline struct f_fastboot *func_to_fastboot(struct usb_function *f)
 static struct f_fastboot *fastboot_func;
 static unsigned int download_size;
 static unsigned int download_bytes;
+static unsigned int upload_size;
+static unsigned int upload_bytes;
+static bool start_upload;
 
 static struct usb_endpoint_descriptor fs_ep_in = {
 	.bLength            = USB_DT_ENDPOINT_SIZE,
@@ -416,6 +420,98 @@ static void cb_getvar(struct usb_ep *ep, struct usb_request *req)
 			strncat(response, s, chars_left);
 		else
 			strcpy(response, "FAILValue not set");
+	} else if (strncmp("at-attest-dh", cmd, 12) == 0) {
+		char dh[32] = {0};
+
+		strncat(response, dh, chars_left);
+	} else if (strncmp("at-attest-uuid", cmd, 14) == 0) {
+		char uuid[32] = {0};
+
+		strncat(response, uuid, chars_left);
+	} else if (strncmp("at-vboot-state", cmd, 14) == 0) {
+		char uuid[32] = {0};
+
+		strncat(response, uuid, chars_left);
+	} else if (!strcmp_l1("slot-count", cmd)) {
+#ifdef CONFIG_AVB_LIBAVB_USER
+		char slot_count[2];
+		char temp;
+
+		slot_count[1] = '\0';
+		read_slot_count(&temp);
+		slot_count[0] = temp + 0x30;
+		strncat(response, slot_count, chars_left);
+#else
+		fastboot_tx_write_str("FAILnot implemented");
+		return;
+#endif
+	} else if (!strcmp_l1("current-slot", cmd)) {
+#ifdef CONFIG_AVB_LIBAVB_USER
+		char slot_surrent[8] = {0};
+
+		if (!get_current_slot(slot_surrent))
+			strncat(response, slot_surrent, chars_left);
+		else
+			strcpy(response, "FAILgeterror");
+#else
+		fastboot_tx_write_str("FAILnot implemented");
+		return;
+#endif
+	} else if (!strcmp_l1("slot-suffixes", cmd)) {
+#ifdef CONFIG_AVB_LIBAVB_USER
+		char slot_suffixes_temp[4];
+		char slot_suffixes[9];
+		int slot_cnt = 0;
+
+		memset(slot_suffixes_temp, 0, 4);
+		memset(slot_suffixes, 0, 9);
+		read_slot_suffixes(slot_suffixes_temp);
+		while (slot_suffixes_temp[slot_cnt] != '\0') {
+			slot_suffixes[slot_cnt * 2]
+				= slot_suffixes_temp[slot_cnt];
+			slot_suffixes[slot_cnt * 2 + 1] = ',';
+			slot_cnt++;
+		}
+		strncat(response, slot_suffixes, chars_left);
+#else
+		fastboot_tx_write_str("FAILnot implemented");
+		return;
+#endif
+	} else if (!strncmp("has-slot", cmd, 8)) {
+#ifdef CONFIG_AVB_LIBAVB_USER
+		char *part_name = cmd;
+
+		cmd = strsep(&part_name, ":");
+		if (!strcmp(part_name, "boot") ||
+		    !strcmp(part_name, "system") ||
+		    !strcmp(part_name, "boot")) {
+			strncat(response, "yes", chars_left);
+		} else {
+			strcpy(response, "FAILno");
+		}
+#else
+		fastboot_tx_write_str("FAILnot implemented");
+		return;
+#endif
+	} else if (!strncmp("partition-type", cmd, 14) ||
+		   !strncmp("partition-size", cmd, 14)) {
+		disk_partition_t part_info;
+		struct blk_desc *dev_desc;
+		char *part_name = cmd;
+		char part_size_str[20];
+
+		cmd = strsep(&part_name, ":");
+		dev_desc = blk_get_dev("mmc", 0);
+		if (!dev_desc) {
+			strcpy(response, "FAILblock device not found");
+		} else if (part_get_info_by_name(dev_desc, part_name, &part_info) < 0) {
+			strcpy(response, "FAILpartition not found");
+		} else if (!strncmp("partition-type", cmd, 14)) {
+			strncat(response, (char *)part_info.type, chars_left);
+		} else if (!strncmp("partition-size", cmd, 14)) {
+			sprintf(part_size_str, "0x%016x", (int)part_info.size);
+			strncat(response, part_size_str, chars_left);
+		}
 	} else {
 		char *envstr;
 
@@ -536,6 +632,78 @@ static void cb_download(struct usb_ep *ep, struct usb_request *req)
 		req->complete = rx_handler_dl_image;
 		req->length = rx_bytes_expected(ep);
 	}
+
+	fastboot_tx_write_str(response);
+}
+
+static void tx_handler_ul(struct usb_ep *ep, struct usb_request *req)
+{
+	unsigned int xfer_size = 0;
+	unsigned int pre_dot_num, now_dot_num;
+	unsigned int remain_size = 0;
+	unsigned int transferred_size = req->actual;
+
+	if (req->status != 0) {
+		printf("Bad status: %d\n", req->status);
+		return;
+	}
+
+	if (start_upload) {
+		pre_dot_num = upload_bytes / BYTES_PER_DOT;
+		upload_bytes += transferred_size;
+		now_dot_num = upload_bytes / BYTES_PER_DOT;
+
+		if (pre_dot_num != now_dot_num) {
+			putc('.');
+			if (!(now_dot_num % 74))
+				putc('\n');
+		}
+	}
+
+	remain_size = upload_size - upload_bytes;
+	xfer_size = (remain_size > EP_BUFFER_SIZE) ?
+		    EP_BUFFER_SIZE : remain_size;
+
+	debug("%s: remain_size=%d, transferred_size=%d",
+	      __func__, remain_size, transferred_size);
+	debug("xfer_size=%d, upload_bytes=%d, upload_size=%d!\n",
+	      xfer_size, upload_bytes, upload_size);
+
+	if (remain_size <= 0) {
+		fastboot_func->in_req->complete = fastboot_complete;
+		fastboot_tx_write_str("OKAY");
+		printf("\nuploading of %d bytes finished\n", upload_bytes);
+		upload_bytes = 0;
+		upload_size = 0;
+		start_upload = false;
+		return;
+	}
+
+	/* Remove the transfer callback which response the upload */
+	/* request from host */
+	if (!upload_bytes)
+		start_upload = true;
+
+	fastboot_tx_write((char *)(CONFIG_FASTBOOT_BUF_ADDR + upload_bytes),
+			  xfer_size);
+}
+
+static void cb_upload(struct usb_ep *ep, struct usb_request *req)
+{
+	char response[FASTBOOT_RESPONSE_LEN];
+
+	upload_size = download_bytes;
+
+	printf("Starting upload of %d bytes\n", upload_size);
+
+	if (0 == upload_size) {
+		strcpy(response, "FAILdata invalid size");
+	} else {
+		start_upload = false;
+		sprintf(response, "DATA%08x", upload_size);
+		fastboot_func->in_req->complete = tx_handler_ul;
+	}
+
 	fastboot_tx_write_str(response);
 }
 
@@ -570,6 +738,39 @@ static void cb_continue(struct usb_ep *ep, struct usb_request *req)
 	fastboot_tx_write_str("OKAY");
 }
 
+static void cb_set_active(struct usb_ep *ep, struct usb_request *req)
+{
+	char *cmd = req->buf;
+
+	debug("%s: %s\n", __func__, cmd);
+
+	strsep(&cmd, ":");
+	if (!cmd) {
+		error("missing slot name");
+		fastboot_tx_write_str("FAIL: missing slot name");
+		return;
+	}
+#ifdef CONFIG_AVB_LIBAVB_USER
+	unsigned int slot_number;
+	if (strncmp("a", cmd, 1) == 0) {
+		slot_number = 0;
+		set_slot_active(&slot_number);
+	} else if (strncmp("b", cmd, 1) == 0) {
+		slot_number = 1;
+		set_slot_active(&slot_number);
+	} else {
+		fastboot_tx_write_str("FAIL: unkown slot name");
+		return;
+	}
+
+	fastboot_tx_write_str("OKAY");
+	return;
+#else
+	fastboot_tx_write_str("FAILnot implemented");
+	return;
+#endif
+}
+
 #ifdef CONFIG_FASTBOOT_FLASH
 static void cb_flash(struct usb_ep *ep, struct usb_request *req)
 {
@@ -596,9 +797,35 @@ static void cb_flash(struct usb_ep *ep, struct usb_request *req)
 }
 #endif
 
+static void cb_flashing(struct usb_ep *ep, struct usb_request *req)
+{
+	char *cmd = req->buf;
+
+	if (strncmp("lock", cmd + 9, 4) == 0) {
+		fastboot_tx_write_str("FAILnot implemented");
+	} else if (strncmp("unlock", cmd + 9, 6) == 0) {
+		fastboot_tx_write_str("FAILnot implemented");
+	} else if (strncmp("lock_critical", cmd + 9, 12) == 0) {
+		fastboot_tx_write_str("FAILnot implemented");
+	} else if (strncmp("unlock_critical", cmd + 9, 14) == 0) {
+		fastboot_tx_write_str("FAILnot implemented");
+	} else if (strncmp("get_unlock_ability", cmd + 9, 17) == 0) {
+		fastboot_tx_write_str("FAILnot implemented");
+	} else if (strncmp("get_unlock_bootloader_nonce", cmd + 4, 27) == 0) {
+		fastboot_tx_write_str("FAILnot implemented");
+	} else if (strncmp("unlock_bootloader", cmd + 9, 17) == 0) {
+		fastboot_tx_write_str("FAILnot implemented");
+	} else if (strncmp("lock_bootloader", cmd + 9, 15) == 0) {
+		fastboot_tx_write_str("FAILnot implemented");
+	} else {
+		fastboot_tx_write_str("FAILunknown flashing command");
+	}
+}
+
 static void cb_oem(struct usb_ep *ep, struct usb_request *req)
 {
 	char *cmd = req->buf;
+
 #ifdef CONFIG_FASTBOOT_FLASH_MMC_DEV
 	if (strncmp("format", cmd + 4, 6) == 0) {
 		char cmdbuf[32];
@@ -612,8 +839,19 @@ static void cb_oem(struct usb_ep *ep, struct usb_request *req)
 #endif
 	if (strncmp("unlock", cmd + 4, 8) == 0) {
 		fastboot_tx_write_str("FAILnot implemented");
-	}
-	else {
+	} else if (strncmp("at-get-ca-request", cmd + 4, 17) == 0) {
+		fastboot_tx_write_str("OKAY");
+	} else if (strncmp("at-set-ca-response", cmd + 4, 18) == 0) {
+		fastboot_tx_write_str("OKAY");
+	} else if (strncmp("at-lock-vboot", cmd + 4, 13) == 0) {
+		fastboot_tx_write_str("FAILnot implemented");
+	} else if (strncmp("at-unlock-vboot", cmd + 4, 15) == 0) {
+		fastboot_tx_write_str("FAILnot implemented");
+	} else if (strncmp("at-disable-unlock-vboot", cmd + 4, 23) == 0) {
+		fastboot_tx_write_str("FAILnot implemented");
+	} else if (strncmp("fuse at-perm-attr", cmd + 4, 16) == 0) {
+		fastboot_tx_write_str("FAILnot implemented");
+	} else {
 		fastboot_tx_write_str("FAILunknown oem command");
 	}
 }
@@ -658,13 +896,23 @@ static const struct cmd_dispatch_info cmd_dispatch_info[] = {
 		.cmd = "download:",
 		.cb = cb_download,
 	}, {
+		.cmd = "upload",
+		.cb = cb_upload,
+	}, {
 		.cmd = "boot",
 		.cb = cb_boot,
 	}, {
 		.cmd = "continue",
 		.cb = cb_continue,
+	}, {
+		.cmd = "set_active",
+		.cb = cb_set_active,
 	},
 #ifdef CONFIG_FASTBOOT_FLASH
+	{
+		.cmd = "flashing",
+		.cb = cb_flashing,
+	},
 	{
 		.cmd = "flash",
 		.cb = cb_flash,
