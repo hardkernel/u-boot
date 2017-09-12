@@ -30,6 +30,37 @@ DECLARE_GLOBAL_DATA_PTR;
 #define MCU_EXPERI_BASE_BIT31_BIT28       ((MCU_EXPERI_BASE & GENMASK(31, 28)) >> 28)
 #define MCU_EXPERI_BASE_BIT27_BIT12       ((MCU_EXPERI_BASE & GENMASK(27, 12)) >> 12)
 
+#define DDR_LATENCY_BASE		(0xffac0000 + 0x14)
+#define DDR_READ_LATENCY_VALUE		0x34
+
+#define CPU_AXI_QOS_PRIORITY_BASE	0xffad0300
+#define CPU_AXI_QOS_PRIORITY		0x08
+#define QOS_PRIORITY_LEVEL_H		2
+#define QOS_PRIORITY_LEVEL_L		2
+
+#define ISP_R0_QOS_BASE			0xffad0080
+#define QOS_ISP_R0_PRIORITY_LEVEL_H	1
+#define QOS_ISP_R0_PRIORITY_LEVEL_L	1
+
+#define ISP_R1_QOS_BASE			0xffad0100
+#define QOS_ISP_R1_PRIORITY_LEVEL_H	1
+#define QOS_ISP_R1_PRIORITY_LEVEL_L	1
+
+#define ISP_W0_QOS_BASE			0xffad0180
+#define QOS_ISP_W0_PRIORITY_LEVEL_H	3
+#define QOS_ISP_W0_PRIORITY_LEVEL_L	3
+
+#define ISP_W1_QOS_BASE			0xffad0200
+#define QOS_ISP_W1_PRIORITY_LEVEL_H	3
+#define QOS_ISP_W1_PRIORITY_LEVEL_L	3
+
+/* cpu axi qos priority */
+#define CPU_AXI_QOS_PRIORITY_LEVEL(h, l) \
+		((((h) & 3) << 8) | (((h) & 3) << 2) | ((l) & 3))
+
+#define GRF_SOC_CON15			0xff77043c
+#define PMU_GRF_SOC_CON0		0xff738100
+
 static struct mm_region rk3368_mem_map[] = {
 	{
 		.virt = 0x0UL,
@@ -88,6 +119,56 @@ static int mcu_init(void)
 
 	 /* mcu dereset, for start running */
 	rk_clrreg(&cru->softrst_con[1], MCU_PO_SRST_MASK | MCU_SYS_SRST_MASK);
+
+	return 0;
+}
+
+static void cpu_axi_qos_prority_level_config(void)
+{
+	u32 level;
+
+	/* Set lcdc cpu axi qos priority level */
+	level = CPU_AXI_QOS_PRIORITY_LEVEL(QOS_PRIORITY_LEVEL_H,
+					   QOS_PRIORITY_LEVEL_L);
+	writel(level, CPU_AXI_QOS_PRIORITY_BASE + CPU_AXI_QOS_PRIORITY);
+
+	/* Set cpu isp r0 qos priority level */
+	level = CPU_AXI_QOS_PRIORITY_LEVEL(QOS_ISP_R0_PRIORITY_LEVEL_H,
+					   QOS_ISP_R0_PRIORITY_LEVEL_L);
+	writel(level, ISP_R0_QOS_BASE + CPU_AXI_QOS_PRIORITY);
+
+	/* Set cpu isp r1 qos priority level */
+	level = CPU_AXI_QOS_PRIORITY_LEVEL(QOS_ISP_R1_PRIORITY_LEVEL_H,
+					   QOS_ISP_R1_PRIORITY_LEVEL_L);
+	writel(level, ISP_R1_QOS_BASE + CPU_AXI_QOS_PRIORITY);
+
+	/* Set cpu isp w0 qos priority level */
+	level = CPU_AXI_QOS_PRIORITY_LEVEL(QOS_ISP_W0_PRIORITY_LEVEL_H,
+					   QOS_ISP_W0_PRIORITY_LEVEL_L);
+	writel(level, ISP_W0_QOS_BASE + CPU_AXI_QOS_PRIORITY);
+
+	/* Set cpu isp w1 qos priority level */
+	level = CPU_AXI_QOS_PRIORITY_LEVEL(QOS_ISP_W1_PRIORITY_LEVEL_H,
+					   QOS_ISP_W1_PRIORITY_LEVEL_L);
+	writel(level, ISP_W1_QOS_BASE + CPU_AXI_QOS_PRIORITY);
+}
+
+int arch_cpu_init(void)
+{
+	/* DDR read latency config */
+	writel(DDR_READ_LATENCY_VALUE, DDR_LATENCY_BASE);
+
+	/* PWMs select rkpwm clock source */
+	rk_setreg(GRF_SOC_CON15, 1 << 12);
+
+	/* PWM2 select 32KHz clock source */
+	rk_clrreg(PMU_GRF_SOC_CON0, 1 << 7);
+
+	/* Enable force jtag */
+	rk_setreg(GRF_SOC_CON15, 1 << 13);
+
+	/* Cpu axi qos config */
+	cpu_axi_qos_prority_level_config();
 
 	return 0;
 }
