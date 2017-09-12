@@ -424,6 +424,15 @@ void board_init_r(gd_t *dummy1, ulong dummy2)
 	debug("SPL malloc() used %#lx bytes (%ld KB)\n", gd->malloc_ptr,
 	      gd->malloc_ptr / 1024);
 #endif
+#ifdef CONFIG_BOOTSTAGE_STASH
+	int ret;
+
+	bootstage_mark_name(BOOTSTAGE_ID_END_SPL, "end_spl");
+	ret = bootstage_stash((void *)CONFIG_BOOTSTAGE_STASH_ADDR,
+			      CONFIG_BOOTSTAGE_STASH_SIZE);
+	if (ret)
+		debug("Failed to stash bootstage: err=%d\n", ret);
+#endif
 
 	if (CONFIG_IS_ENABLED(ATF_SUPPORT)) {
 		debug("loaded - jumping to U-Boot via ATF BL31.\n");
@@ -436,15 +445,6 @@ void board_init_r(gd_t *dummy1, ulong dummy2)
 	}
 
 	debug("loaded - jumping to U-Boot...\n");
-#ifdef CONFIG_BOOTSTAGE_STASH
-	int ret;
-
-	bootstage_mark_name(BOOTSTAGE_ID_END_SPL, "end_spl");
-	ret = bootstage_stash((void *)CONFIG_BOOTSTAGE_STASH_ADDR,
-			      CONFIG_BOOTSTAGE_STASH_SIZE);
-	if (ret)
-		debug("Failed to stash bootstage: err=%d\n", ret);
-#endif
 	spl_board_prepare_for_boot();
 	jump_to_image_no_args(&spl_image);
 }
