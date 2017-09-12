@@ -16,6 +16,7 @@
 DECLARE_GLOBAL_DATA_PTR;
 
 #define GRF_EMMCCORE_CON11 0xff77f02c
+#define PMU_GRF_SOC_CON0   0xff320180
 
 static struct mm_region rk3399_mem_map[] = {
 	{
@@ -56,6 +57,9 @@ int arch_cpu_init(void)
 
 	/* Emmc clock generator: disable the clock multipilier */
 	rk_clrreg(GRF_EMMCCORE_CON11, 0x0ff);
+
+	/* PWM3 select pwm3a io */
+	rk_clrreg(PMU_GRF_SOC_CON0, 1 << 5);
 
 	return 0;
 }
