@@ -108,6 +108,8 @@ void board_init_f(ulong dummy)
 	/*  Emmc clock generator: disable the clock multipilier */
 	rk_clrreg(GRF_EMMCCORE_CON11, 0x0ff);
 
+	secure_timer_init();
+
 	ret = spl_early_init();
 	if (ret) {
 		debug("spl_early_init() failed: %d\n", ret);
@@ -125,8 +127,6 @@ void board_init_f(ulong dummy)
 	 */
 	rk_clrsetreg(SGRF_DDR_RGN_CON16, 0x1FF, 0);
 	rk_clrreg(SGRF_SLV_SECURE_CON4, 0x2000);
-
-	secure_timer_init();
 
 	ret = uclass_get_device(UCLASS_PINCTRL, 0, &pinctrl);
 	if (ret) {
