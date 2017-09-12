@@ -62,3 +62,10 @@ unsigned long usec2ticks(unsigned long usec)
 
 	return ticks;
 }
+
+ulong timer_get_boot_us(void)
+{
+	ulong count = timer_read_counter();
+
+	return count/24;
+}
