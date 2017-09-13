@@ -403,6 +403,7 @@ static void rkclk_init(struct rk3399_cru *cru)
 	u32 hclk_div;
 	u32 pclk_div;
 
+	rk3399_configure_cpu(cru, APLL_L_600_MHZ);
 	/*
 	 * some cru registers changed by bootrom, we'd better reset them to
 	 * reset/default values described in TRM to avoid confusion in kernel.
