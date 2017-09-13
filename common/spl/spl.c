@@ -418,6 +418,12 @@ void board_init_r(gd_t *dummy1, ulong dummy2)
 	case IH_OS_U_BOOT:
 		debug("Jumping to U-Boot\n");
 		break;
+#if CONFIG_IS_ENABLED(ATF)
+	case IH_OS_ARM_TRUSTED_FIRMWARE:
+		debug("Jumping to U-Boot via ARM Trusted Firmware\n");
+		spl_invoke_atf(&spl_image);
+		break;
+#endif
 #ifdef CONFIG_SPL_OS_BOOT
 	case IH_OS_LINUX:
 		debug("Jumping to Linux\n");
@@ -441,11 +447,6 @@ void board_init_r(gd_t *dummy1, ulong dummy2)
 	if (ret)
 		debug("Failed to stash bootstage: err=%d\n", ret);
 #endif
-
-	if (CONFIG_IS_ENABLED(ATF_SUPPORT)) {
-		debug("loaded - jumping to U-Boot via ATF BL31.\n");
-		spl_bl31_entry((void *)spl_image.entry_point);
-	}
 
 	if (CONFIG_IS_ENABLED(OPTEE_SUPPORT)) {
 		debug("loaded - jumping to U-Boot via OP-TEE.\n");
