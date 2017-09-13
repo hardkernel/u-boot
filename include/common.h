@@ -98,6 +98,11 @@ void __assert_fail(const char *assertion, const char *file, unsigned line,
 			##args, __FILE__, __LINE__, __func__);		\
 } while (0)
 
+#if (__STDC_VERSION__ >= 201112L) || defined(__cplusplus)
+# undef static_assert
+# define static_assert _Static_assert
+#endif
+
 #ifndef BUG
 #define BUG() do { \
 	printf("BUG: failure at %s:%d/%s()!\n", __FILE__, __LINE__, __FUNCTION__); \
