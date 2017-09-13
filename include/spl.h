@@ -23,8 +23,8 @@
 struct spl_image_info {
 	const char *name;
 	u8 os;
-	ulong load_addr;
-	ulong entry_point;
+	uintptr_t load_addr;
+	uintptr_t entry_point;
 #if CONFIG_IS_ENABLED(LOAD_FIT)
 	void *fdt_addr;
 #endif
@@ -272,10 +272,9 @@ int spl_mmc_load_image(struct spl_image_info *spl_image,
 		       struct spl_boot_device *bootdev);
 
 /**
- * spl_bl31_entry - entry function for ATF bl31
- * @entry_addr - entry address of bl31 text
+ * spl_invoke_atf - boot using an ARM trusted firmware image
  */
-void spl_bl31_entry(void *entry_addr);
+void spl_invoke_atf(struct spl_image_info *spl_image);
 
 /**
  * spl_optee_entry - entry function for optee
