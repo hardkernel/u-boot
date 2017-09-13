@@ -34,6 +34,9 @@
 #define CONFIG_SPL_BSS_START_ADDR       0x400000
 #define CONFIG_SPL_BSS_MAX_SIZE         0x20000
 
+#define GICD_BASE			0xffB71000
+#define GICC_BASE			0xffB72000
+
 #define CONFIG_BOUNCE_BUFFER
 
 #ifndef CONFIG_SPL_BUILD
