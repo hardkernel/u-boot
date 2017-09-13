@@ -27,13 +27,21 @@
 #ifndef CONFIG_IR_REMOTE_USE_PROTOCOL
 #define CONFIG_IR_REMOTE_USE_PROTOCOL 0
 #endif
+#define CONFIG_END 0xffffffff
+#define IR_POWER_KEY_MASK 0xffffffff
 
 typedef struct reg_remote {
 	int reg;
 	unsigned int val;
 } reg_remote;
-#define CONFIG_END 0xffffffff
-#define IR_POWER_KEY_MASK 0xffffffff
+
+typedef struct remote_pwrkeys {
+	unsigned short size;
+	unsigned int *pwrkeys;
+}remote_pwrkeys_t;
+
+remote_pwrkeys_t pwr_keys_list;
+unsigned int usr_pwr_key = 0xffffffff;
 
 //24M
 static const reg_remote RDECODEMODE_NEC[] = {
@@ -280,39 +288,59 @@ static int init_remote(void)
 	init_custom_trigger();
 	return 0;
 }
-unsigned int usr_pwr_key = 0xffffffff;
+
+/*can be called in pwr_ctrl.c*/
+int remote_init_pwrkeys(int size, int *keys)
+{
+	pwr_keys_list.size = size;
+	pwr_keys_list.pwrkeys = keys;
+
+	return 0;
+}
+
+remote_pwrkeys_t *remote_get_pwrkeys(void)
+{
+	return &pwr_keys_list;
+}
 
 static int remote_detect_key(void)
 {
+	remote_pwrkeys_t *keysdat = remote_get_pwrkeys();
 	unsigned power_key;
 	int j;
+
+	if (!keysdat->size) {
+		uart_puts("customer pwrkeys for IR is NULL, use defaults!\n");
+		remote_init_pwrkeys(sizeof(kk)/sizeof(kk[0]), kk);
+	}
+
 	if (((readl(AO_MF_IR_DEC_STATUS)) >> 3) & 0x1) { /*to judge the frame whether is effective or not*/
-			if (readl(AO_MF_IR_DEC_STATUS) & 0x1) {		  /*to judge the frame whether is repeat frame or not*/
-				readl(AO_MF_IR_DEC_FRAME);
-				return 0;
-			}
-			power_key = readl(AO_MF_IR_DEC_FRAME);
-			for (j = 0; j < CONFIG_IR_REMOTE_POWER_UP_KEY_CNT; j++) {
-					if ((power_key & IR_POWER_KEY_MASK) == kk[j])
-							return 1;
-			}
-			if ((power_key & IR_POWER_KEY_MASK) == usr_pwr_key)
-					return 2;
+		if (readl(AO_MF_IR_DEC_STATUS) & 0x1) { /*to judge the frame whether is repeat frame or not*/
+			readl(AO_MF_IR_DEC_FRAME);
+			return 0;
+		}
+		power_key = readl(AO_MF_IR_DEC_FRAME);
+		for (j = 0; j < keysdat->size; j++) {
+			if ((power_key & IR_POWER_KEY_MASK) == keysdat->pwrkeys[j])
+				return 1;
+		}
+		if ((power_key & IR_POWER_KEY_MASK) == usr_pwr_key)
+			return 2;
 	}
 
 #ifdef CONFIG_COMPAT_IR
 	if (((readl(AO_IR_DEC_STATUS)) >> 3) & 0x1) { /*to judge the frame whether is effective or not*/
-			if (readl(AO_IR_DEC_STATUS) & 0x1) { 	  /*to judge the frame whether is repeat frame or not*/
-				readl(AO_IR_DEC_FRAME);
-				return 0;
-			}
-			power_key = readl(AO_IR_DEC_FRAME);
-			for (j = 0; j < CONFIG_IR_REMOTE_POWER_UP_KEY_CNT; j++) {
-					if ((power_key & IR_POWER_KEY_MASK) == kk[j])
-							return 1;
-			}
-			if ((power_key & IR_POWER_KEY_MASK) == usr_pwr_key)
-					return 2;
+		if (readl(AO_IR_DEC_STATUS) & 0x1) { /*to judge the frame whether is repeat frame or not*/
+			readl(AO_IR_DEC_FRAME);
+			return 0;
+		}
+		power_key = readl(AO_IR_DEC_FRAME);
+		for (j = 0; j < keysdat->size; j++) {
+			if ((power_key & IR_POWER_KEY_MASK) == keysdat->pwrkeys[j])
+				return 1;
+		}
+		if ((power_key & IR_POWER_KEY_MASK) == usr_pwr_key)
+			return 2;
 	}
 #endif
 
