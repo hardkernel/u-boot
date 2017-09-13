@@ -1,0 +1,7 @@
+config AVB_LIBAVB_AB
+	bool "Choose the a/b system and flow"
+	help
+	  In the android things system, there are 
+	  _a and _b or more systems. So we have to
+	  choose the _a or _b system to startup.
+	  This libavb_ab can suport these functions.

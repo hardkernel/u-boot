@@ -269,5 +269,6 @@ endmenu
 source lib/efi/Kconfig
 source lib/efi_loader/Kconfig
 source lib/avb/rk_libavb/Kconfig
+source lib/avb/rk_libavb_ab/Kconfig
 
 endmenu

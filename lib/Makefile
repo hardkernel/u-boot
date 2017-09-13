@@ -46,6 +46,7 @@ obj-y += list_sort.o
 endif
 
 obj-$(CONFIG_AVB_LIBAVB) += avb/rk_libavb/
+obj-$(CONFIG_AVB_LIBAVB_AB) += avb/rk_libavb_ab/
 
 obj-$(CONFIG_RSA) += rsa/
 obj-$(CONFIG_SHA1) += sha1.o
