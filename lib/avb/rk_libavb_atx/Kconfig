@@ -1,0 +1,6 @@
+config AVB_LIBAVB_ATX
+	bool "support vbmeta public key verify"
+	help
+	  Android Things requires specific public key
+	  metadata and verification logic to correctly
+	  verify vbmeta public keys.
