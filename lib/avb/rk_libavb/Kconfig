@@ -1,0 +1,6 @@
+config AVB_LIBAVB
+	bool "Support running U-Boot AVB"
+	help
+	  The new android bootloader need to startup
+	  with a/b and avb.This config can add the
+	  AVB functions to u-boot.
