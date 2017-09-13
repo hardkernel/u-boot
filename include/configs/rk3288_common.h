@@ -34,6 +34,9 @@
 #define CONFIG_SPL_STACK		0xff718000
 #define CONFIG_SPL_TEXT_BASE		0xff704004
 
+#define GICD_BASE			0xffc01000
+#define GICC_BASE			0xffc02000
+
 /* MMC/SD IP block */
 #define CONFIG_BOUNCE_BUFFER
 
