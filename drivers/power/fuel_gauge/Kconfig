@@ -4,3 +4,8 @@ config DM_FUEL_GAUGE
 	help
 	  This adds a simple uclass for fuel gauge.
 
+config POWER_FG_RK818
+	bool "RK818 Fuel gauge support"
+	depends on DM_FUEL_GAUGE && PMIC_RK8XX
+	help
+	  This adds support for RK818 fuel gauge support.
