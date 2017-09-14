@@ -48,6 +48,7 @@ endif
 obj-$(CONFIG_AVB_LIBAVB) += avb/rk_libavb/
 obj-$(CONFIG_AVB_LIBAVB_AB) += avb/rk_libavb_ab/
 obj-$(CONFIG_AVB_LIBAVB_ATX) += avb/rk_libavb_atx/
+obj-$(CONFIG_AVB_LIBAVB_USER) += avb/rk_libavb_user/
 
 obj-$(CONFIG_OPTEE_CLIENT) += optee_clientApi/
 
