@@ -16,6 +16,26 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
+#define TRUST_PARAMETER_OFFSET    (34 * 1024 * 1024)
+
+struct tos_parameter_t {
+	u32 version;
+	u32 checksum;
+	struct {
+		char name[8];
+		s64 phy_addr;
+		u32 size;
+		u32 flags;
+	}tee_mem;
+	struct {
+		char name[8];
+		s64 phy_addr;
+		u32 size;
+		u32 flags;
+	}drm_mem;
+	s64 reserve[8];
+};
+
 __weak int rk_board_late_init(void)
 {
 	return 0;
@@ -59,13 +79,26 @@ int board_init(void)
 
 int dram_init_banksize(void)
 {
-	gd->bd->bi_dram[0].start = CONFIG_SYS_SDRAM_BASE;
-	gd->bd->bi_dram[0].size = 0x8400000;
-	/* Reserve 32M for OPTEE with TA */
-	gd->bd->bi_dram[1].start = CONFIG_SYS_SDRAM_BASE
+	struct tos_parameter_t *tos_parameter;
+	tos_parameter = (struct tos_parameter_t *)(CONFIG_SYS_SDRAM_BASE +
+			TRUST_PARAMETER_OFFSET);
+	if (tos_parameter->tee_mem.flags == 1) {
+		gd->bd->bi_dram[0].start = CONFIG_SYS_SDRAM_BASE;
+		gd->bd->bi_dram[0].size = tos_parameter->tee_mem.phy_addr
+					- CONFIG_SYS_SDRAM_BASE;
+		gd->bd->bi_dram[1].start = tos_parameter->tee_mem.phy_addr +
+					tos_parameter->tee_mem.size;
+		gd->bd->bi_dram[1].size = gd->bd->bi_dram[0].start
+					+ gd->ram_size - gd->bd->bi_dram[1].start;
+	} else {
+		gd->bd->bi_dram[0].start = CONFIG_SYS_SDRAM_BASE;
+		gd->bd->bi_dram[0].size = 0x8400000;
+		/* Reserve 32M for OPTEE with TA */
+		gd->bd->bi_dram[1].start = CONFIG_SYS_SDRAM_BASE
 				+ gd->bd->bi_dram[0].size + 0x2000000;
-	gd->bd->bi_dram[1].size = gd->bd->bi_dram[0].start
+		gd->bd->bi_dram[1].size = gd->bd->bi_dram[0].start
 				+ gd->ram_size - gd->bd->bi_dram[1].start;
+	}
 
 	return 0;
 }
