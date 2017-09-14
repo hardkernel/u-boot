@@ -12,6 +12,9 @@
 #include <phy.h>
 #include <asm/errno.h>
 #include <amlogic/keyunify.h>
+#include <net.h>
+#include <asm/cpu_id.h>
+#include <amlogic/keyunify.h>
 #ifdef CONFIG_RANDOM_ETHADDR
 #include <asm/arch/io.h>
 #include <asm/arch/secure_apb.h>
@@ -182,7 +185,6 @@ static inline void eth_hw_addr_random(struct eth_device *dev)
 	dev->enetaddr[0] |= 0x02;
 }
 #endif
-#ifdef CONFIG_RANDOM_ETHADDR
 
 static int eth_get_efuse_mac(struct eth_device *dev)
 {
@@ -226,15 +228,12 @@ static int eth_get_efuse_mac(struct eth_device *dev)
 	return key_unify_uninit();
 #endif
 }
-#endif
 int eth_write_hwaddr(struct eth_device *dev, const char *base_name,
 		   int eth_number)
 {
 	unsigned char env_enetaddr[6];
 	int ret = 0;
-#ifdef CONFIG_RANDOM_ETHADDR
 	eth_get_efuse_mac(dev);
-#endif
 
 	if (is_valid_ether_addr(dev->enetaddr)) {
 		eth_setenv_enetaddr_by_index(base_name, eth_number,
@@ -250,6 +249,14 @@ int eth_write_hwaddr(struct eth_device *dev, const char *base_name,
 				dev->enetaddr);
 #endif
 		}
+		uint8_t buff[16];
+		if (get_chip_id(&buff[0], sizeof(buff)) == 0) {
+			sprintf((char *)&dev->enetaddr[0],"02:%02x:%02x:%02x:%02x:%02x",buff[8],
+				buff[7],buff[6],buff[5],buff[4]);
+			printf("MACADDR:%s(from chipid)\n",dev->enetaddr);
+			setenv("ethaddr",(const char *)&dev->enetaddr);
+		}
+
 		eth_getenv_enetaddr_by_index(base_name, eth_number, env_enetaddr);
 
 		if (eth_address_set(env_enetaddr)) {
