@@ -14,6 +14,7 @@
 #define CONFIG_SYS_MMC_ENV_DEV          0
 #define CONFIG_SYS_MMC_ENV_PART         0
 #define CONFIG_SYS_REDUNDAND_ENVIRONMENT
+#define CONFIG_SUPPORT_EMMC_RPMB
 
 #ifndef CONFIG_SPL_BUILD
 /* Enable gpt partition table */
