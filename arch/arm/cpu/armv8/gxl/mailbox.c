@@ -150,3 +150,12 @@ int thermal_get_value(unsigned int sensor_id, unsigned int *value)
 	else
 		return 0;
 }
+
+void set_boot_first_timeout(unsigned int command)
+{
+	mb_message_start(LOW_PRIORITY);
+	writel(0, ap_mb_payload[LOW_PRIORITY]);
+	mb_message_send(command, LOW_PRIORITY);
+	mb_message_wait(LOW_PRIORITY);
+	mb_message_end(LOW_PRIORITY);
+}

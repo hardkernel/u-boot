@@ -15,6 +15,14 @@
 #include <asm/arch/secure_apb.h>
 #include <asm/arch/bl31_apis.h>
 #include <asm/io.h>
+#include <asm/arch/mailbox.h>
+
+#define ROM_BOOT_SKIP_BOOT_ENABLED_4_USB      1//skip boot to usb supported by romboot
+#ifdef SCPI_CMD_SDCARD_BOOT
+#define ROM_BOOT_SKIP_BOOT_ENABLED_4_SDC      1//skip boot sdcard supported by romboot
+#else
+#define ROM_BOOT_SKIP_BOOT_ENABLED_4_SDC      0
+#endif//#ifdef SCPI_CMD_SDCARD_BOOT
 
 extern unsigned int get_multi_dt_entry(unsigned long fdt_addr);
 int is_optimus_storage_inited(void);
@@ -1353,14 +1361,18 @@ static int optimus_enable_romboot_skip_boot(const char* extBootDev)
     if (!strcmp("usb", extBootDev))
     {
 #if ROM_BOOT_SKIP_BOOT_ENABLED_4_USB
+#if SCPI_CMD_USB_UNBOOT
+        set_boot_first_timeout(SCPI_CMD_USB_UNBOOT);
+#else
         set_usb_boot_function(FORCE_USB_BOOT);
+#endif// #if SCPI_CMD_USB_UNBOOT
 #endif// #if ROM_BOOT_SKIP_BOOT_ENABLED_4_USB
     }
 
     if (!strcmp("sdc", extBootDev))
     {
 #if ROM_BOOT_SKIP_BOOT_ENABLED_4_SDC
-#error "undefined yet"
+        set_boot_first_timeout(SCPI_CMD_SDCARD_BOOT);
 #endif// #if ROM_BOOT_SKIP_BOOT_ENABLED_4_SDC
     }
 

@@ -189,9 +189,6 @@ int optimus_work_mode_set(int workmode);
 #define OPTIMUS_BURN_COMPLETE__REBOOT_UPDATE                (0xeb)
 #define OPTIMUS_BURN_COMPLETE__QUERY                        (0xe1)
 
-#define ROM_BOOT_SKIP_BOOT_ENABLED_4_USB      1//skip boot to usb supported by romboot
-#define ROM_BOOT_SKIP_BOOT_ENABLED_4_SDC      0//skip boot sdcard supported by romboot
-
 //ENV for auto jump into producing
 #define _ENV_TIME_OUT_TO_AUTO_BURN "identifyWaitTime"
 #define AML_SYS_RECOVERY_PART      "aml_sysrecovery"

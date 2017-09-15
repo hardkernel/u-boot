@@ -23,6 +23,11 @@
 #define SCPI_CMD_OPEN_SCP_LOG 0xC4
 #define SCPI_CMD_THERMAL_CALIB 0xC5
 
+#define SCPI_CMD_USB_BOOT 0xB0
+#define SCPI_CMD_USB_UNBOOT 0xB1
+#define SCPI_CMD_SDCARD_BOOT 0xB2
+#define SCPI_CMD_CLEAR_BOOT 0xB3
+
 #define LOW_PRIORITY	0
 #define HIGH_PRIORITY 1
 
@@ -51,5 +56,5 @@ enum scpi_error_codes {
 void open_scp_log(unsigned int channel);
 int thermal_calibration(unsigned int type, unsigned int data);
 int thermal_get_value(unsigned int sensor_id, unsigned int *value);
-
+void set_boot_first_timeout(unsigned int command);
  #endif
