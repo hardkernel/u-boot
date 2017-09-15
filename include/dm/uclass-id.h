@@ -88,6 +88,7 @@ enum uclass_id {
 	UCLASS_VIDEO,		/* Video or LCD device */
 	UCLASS_VIDEO_BRIDGE,	/* Video bridge, e.g. DisplayPort to LVDS */
 	UCLASS_VIDEO_CONSOLE,	/* Text console driver for video device */
+	UCLASS_VIDEO_CRTC,	/* Display Controller */
 	UCLASS_WDT,		/* Watchdot Timer driver */
 	UCLASS_FG,
 	UCLASS_KEY,
