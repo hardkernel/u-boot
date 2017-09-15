@@ -2,6 +2,22 @@ config AVB_LIBAVB_USER
 	bool "Android AVB read/write hardware"
 	help
 	  This config support the android things system to
-	  read/write hardware image, like vbmeta, misc, and 
+	  read/write hardware image, like vbmeta, misc, and
+	  so on. And it can provide some a/b and avb information
+	  to fastboot and kernel.
+
+config SPL_AVB_LIBAVB_USER
+	bool "Android AVB read/write hardware for spl"
+	help
+	  This config support the android things system to
+	  read/write hardware image, like vbmeta, misc, and
+	  so on. And it can provide some a/b and avb information
+	  to fastboot and kernel.
+
+config TPL_AVB_LIBAVB_USER
+	bool "Android AVB read/write hardware for tpl"
+	help
+	  This config support the android things system to
+	  read/write hardware image, like vbmeta, misc, and
 	  so on. And it can provide some a/b and avb information
 	  to fastboot and kernel.
