@@ -165,7 +165,9 @@ static AvbIOResult read_rollback_index(AvbOps *ops,
                                        uint64_t *out_rollback_index)
 {
 	if (out_rollback_index != NULL) {
+#ifdef CONFIG_OPTEE_CLIENT
 		trusty_read_rollback_index(rollback_index_location, out_rollback_index);
+#endif
 	}
 	return AVB_IO_RESULT_OK;
 }
@@ -174,14 +176,18 @@ static AvbIOResult write_rollback_index(AvbOps *ops,
                                         size_t rollback_index_location,
                                         uint64_t rollback_index)
 {
+#ifdef CONFIG_OPTEE_CLIENT
 	trusty_write_rollback_index(rollback_index_location, rollback_index);
+#endif
 	return AVB_IO_RESULT_OK;
 }
 
 static AvbIOResult read_is_device_unlocked(AvbOps *ops, bool *out_is_unlocked)
 {
 	if (out_is_unlocked != NULL) {
+#ifdef CONFIG_OPTEE_CLIENT
 		trusty_read_lock_state((uint8_t *)out_is_unlocked);
+#endif
 	}
 	return AVB_IO_RESULT_OK;
 }
@@ -189,7 +195,9 @@ static AvbIOResult read_is_device_unlocked(AvbOps *ops, bool *out_is_unlocked)
 static AvbIOResult write_is_device_unlocked(AvbOps *ops, bool *out_is_unlocked)
 {
 	if (out_is_unlocked != NULL) {
+#ifdef CONFIG_OPTEE_CLIENT
 		trusty_write_lock_state(*out_is_unlocked);
+#endif
 	}
 	return AVB_IO_RESULT_OK;
 }
