@@ -27,7 +27,7 @@ static int do_fastboot(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 
 	if (!strcmp(argv[1], "udp")) {
 #ifndef CONFIG_UDP_FUNCTION_FASTBOOT
-		error("Fastboot UDP not enabled\n");
+		pr_err("Fastboot UDP not enabled\n");
 		return -1;
 #else
 		return do_fastboot_udp(cmdtp, flag, argc, argv);
@@ -38,7 +38,7 @@ static int do_fastboot(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 		return CMD_RET_USAGE;
 
 #ifndef CONFIG_USB_FUNCTION_FASTBOOT
-	error("Fastboot USB not enabled\n");
+	pr_err("Fastboot USB not enabled\n");
 	return -1;
 #else
 	usb_controller = argv[2];
@@ -46,7 +46,7 @@ static int do_fastboot(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 
 	ret = board_usb_init(controller_index, USB_INIT_DEVICE);
 	if (ret) {
-		error("USB init failed: %d", ret);
+		pr_err("USB init failed: %d", ret);
 		return CMD_RET_FAILURE;
 	}
 

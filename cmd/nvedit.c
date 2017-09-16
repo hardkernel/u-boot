@@ -1143,7 +1143,7 @@ NXTARG:		;
 				H_MATCH_KEY | H_MATCH_IDENT,
 				&ptr, size, argc, argv);
 		if (len < 0) {
-			error("Cannot export environment: errno = %d\n", errno);
+			pr_err("Cannot export environment: errno = %d\n", errno);
 			return 1;
 		}
 		sprintf(buf, "%zX", (size_t)len);
@@ -1163,7 +1163,7 @@ NXTARG:		;
 			H_MATCH_KEY | H_MATCH_IDENT,
 			&res, ENV_SIZE, argc, argv);
 	if (len < 0) {
-		error("Cannot export environment: errno = %d\n", errno);
+		pr_err("Cannot export environment: errno = %d\n", errno);
 		return 1;
 	}
 
@@ -1298,7 +1298,7 @@ static int do_env_import(cmd_tbl_t *cmdtp, int flag,
 
 	if (himport_r(&env_htab, ptr, size, sep, del ? 0 : H_NOCLEAR,
 			crlf_is_lf, 0, NULL) == 0) {
-		error("Environment import failed: errno = %d\n", errno);
+		pr_err("Environment import failed: errno = %d\n", errno);
 		return 1;
 	}
 	gd->flags |= GD_FLG_ENV_READY;

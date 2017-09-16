@@ -41,20 +41,20 @@ static int fb_nand_lookup(const char *partname,
 
 	ret = mtdparts_init();
 	if (ret) {
-		error("Cannot initialize MTD partitions\n");
+		pr_err("Cannot initialize MTD partitions\n");
 		fastboot_fail("cannot init mtdparts", response);
 		return ret;
 	}
 
 	ret = find_dev_and_part(partname, &dev, &pnum, part);
 	if (ret) {
-		error("cannot find partition: '%s'", partname);
+		pr_err("cannot find partition: '%s'", partname);
 		fastboot_fail("cannot find partition", response);
 		return ret;
 	}
 
 	if (dev->id->type != MTD_DEV_TYPE_NAND) {
-		error("partition '%s' is not stored on a NAND device",
+		pr_err("partition '%s' is not stored on a NAND device",
 		      partname);
 		fastboot_fail("not a NAND device", response);
 		return -EINVAL;
@@ -155,7 +155,7 @@ void fb_nand_flash_write(const char *cmd, void *download_buffer,
 
 	ret = fb_nand_lookup(cmd, &mtd, &part, response);
 	if (ret) {
-		error("invalid NAND device");
+		pr_err("invalid NAND device");
 		fastboot_fail("invalid NAND device", response);
 		return;
 	}
@@ -195,7 +195,7 @@ void fb_nand_flash_write(const char *cmd, void *download_buffer,
 	}
 
 	if (ret) {
-		fastboot_fail("error writing the image", response);
+		fastboot_fail("pr_err writing the image", response);
 		return;
 	}
 
@@ -210,7 +210,7 @@ void fb_nand_erase(const char *cmd, char *response)
 
 	ret = fb_nand_lookup(cmd, &mtd, &part, response);
 	if (ret) {
-		error("invalid NAND device");
+		pr_err("invalid NAND device");
 		fastboot_fail("invalid NAND device", response);
 		return;
 	}
@@ -221,7 +221,7 @@ void fb_nand_erase(const char *cmd, char *response)
 
 	ret = _fb_nand_erase(mtd, part);
 	if (ret) {
-		error("failed erasing from device %s", mtd->name);
+		pr_err("failed erasing from device %s", mtd->name);
 		fastboot_fail("failed erasing from device", response);
 		return;
 	}

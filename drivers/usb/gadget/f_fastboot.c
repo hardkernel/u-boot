@@ -402,7 +402,7 @@ static void cb_getvar(struct usb_ep *ep, struct usb_request *req)
 
 	strsep(&cmd, ":");
 	if (!cmd) {
-		error("missing variable");
+		pr_err("missing variable");
 		fastboot_tx_write_str("FAILmissing var");
 		return;
 	}
@@ -837,7 +837,7 @@ static void cb_set_active(struct usb_ep *ep, struct usb_request *req)
 
 	strsep(&cmd, ":");
 	if (!cmd) {
-		error("missing slot name");
+		pr_err("missing slot name");
 		fastboot_tx_write_str("FAIL: missing slot name");
 		return;
 	}
@@ -883,7 +883,7 @@ static void cb_flash(struct usb_ep *ep, struct usb_request *req)
 #endif
 	strsep(&cmd, ":");
 	if (!cmd) {
-		error("missing partition name");
+		pr_err("missing partition name");
 		fastboot_tx_write_str("FAILmissing partition name");
 		return;
 	}
@@ -1100,7 +1100,7 @@ static void cb_erase(struct usb_ep *ep, struct usb_request *req)
 
 	strsep(&cmd, ":");
 	if (!cmd) {
-		error("missing partition name");
+		pr_err("missing partition name");
 		fastboot_tx_write_str("FAILmissing partition name");
 		return;
 	}
@@ -1180,7 +1180,7 @@ static void rx_handler_command(struct usb_ep *ep, struct usb_request *req)
 	}
 
 	if (!func_cb) {
-		error("unknown command: %.*s", req->actual, cmdbuf);
+		pr_err("unknown command: %.*s", req->actual, cmdbuf);
 		fastboot_tx_write_str("FAILunknown command");
 	} else {
 		if (req->actual < req->length) {
@@ -1188,7 +1188,7 @@ static void rx_handler_command(struct usb_ep *ep, struct usb_request *req)
 			buf[req->actual] = 0;
 			func_cb(ep, req);
 		} else {
-			error("buffer overflow");
+			pr_err("buffer overflow");
 			fastboot_tx_write_str("FAILbuffer overflow");
 		}
 	}
