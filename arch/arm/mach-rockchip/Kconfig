@@ -172,6 +172,12 @@ config ROCKCHIP_BROM_HELPER
 config SPL_MMC_SUPPORT
 	default y if !SPL_ROCKCHIP_BACK_TO_BROM
 
+config ROCKCHIP_BLOCK_API
+	bool "Rockchip block device api support"
+	help
+	  This enable read access to block device on
+	  rockchip platform.
+
 source "arch/arm/mach-rockchip/rk3036/Kconfig"
 source "arch/arm/mach-rockchip/rk3188/Kconfig"
 source "arch/arm/mach-rockchip/rk322x/Kconfig"
