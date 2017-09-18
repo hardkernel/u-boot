@@ -157,7 +157,7 @@ static int android_bootloader_boot_bootloader(void)
 	return -1;
 }
 
-static int android_bootloader_boot_kernel(unsigned long kernel_address)
+int android_bootloader_boot_kernel(unsigned long kernel_address)
 {
 	char kernel_addr_str[12];
 	char *fdt_addr = env_get("fdt_addr");
@@ -209,7 +209,7 @@ static char *strjoin(const char **chunks, char separator)
 /** android_assemble_cmdline - Assemble the command line to pass to the kernel
  * @return a newly allocated string
  */
-static char *android_assemble_cmdline(const char *slot_suffix,
+char *android_assemble_cmdline(const char *slot_suffix,
 				      const char *extra_args)
 {
 	const char *cmdline_chunks[16];
@@ -344,6 +344,32 @@ int android_bootloader_boot_flow(struct blk_desc *dev_desc,
 
 	debug("ANDROID: bootargs: \"%s\"\n", command_line);
 
+	android_bootloader_boot_kernel(kernel_address);
+
+	/* TODO: If the kernel doesn't boot mark the selected slot as bad. */
+	return -1;
+}
+
+int android_avb_boot_flow(char *slot_suffix, unsigned long kernel_address)
+{
+	const char *dev_iface = "mmc";
+	int dev_num = 0;
+	struct blk_desc *dev_desc;
+	disk_partition_t boot_part_info;
+	int ret;
+	dev_desc = blk_get_dev(dev_iface, dev_num);
+	if (!dev_desc) {
+		printf("Could not find %s %d\n", dev_iface, dev_num);
+		return -1;
+	}
+	/* Load the kernel from the desired "boot" partition. */
+	android_part_get_info_by_name_suffix(dev_desc,
+					     ANDROID_PARTITION_BOOT,
+					     slot_suffix, &boot_part_info);
+	ret = android_image_load(dev_desc, &boot_part_info, kernel_address,
+				 -1UL);
+	if (ret < 0)
+		return ret;
 	android_bootloader_boot_kernel(kernel_address);
 
 	/* TODO: If the kernel doesn't boot mark the selected slot as bad. */
