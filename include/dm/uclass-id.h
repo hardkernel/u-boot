@@ -90,6 +90,7 @@ enum uclass_id {
 	UCLASS_VIDEO_CONSOLE,	/* Text console driver for video device */
 	UCLASS_WDT,		/* Watchdot Timer driver */
 	UCLASS_FG,
+	UCLASS_KEY,
 
 	UCLASS_COUNT,
 	UCLASS_INVALID = -1,

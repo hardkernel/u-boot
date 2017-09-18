@@ -7,6 +7,12 @@ config DM_KEYBOARD
 	  includes methods to start/stop the device, check for available
 	  input and update LEDs if the keyboard has them.
 
+config DM_KEY
+	bool "Enable driver model key support"
+	depends on DM
+	help
+	  This adds a simple uclass for key.
+
 config CROS_EC_KEYB
 	bool "Enable Chrome OS EC keyboard support"
 	help
