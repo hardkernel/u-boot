@@ -30,3 +30,10 @@ config I8042_KEYB
 	  driver handles English and German keyboards - set the environment
 	  variable 'keymap' to "de" to select German. Keyboard repeat is
 	  handled by the keyboard itself.
+
+config RK8XX_PWRKEY
+	bool "Enable RK805/816 pwrkey support"
+	depends on DM_KEY && PMIC_RK8XX
+	default y
+	help
+	  This adds a driver for the RK805/816 pwrkey support.

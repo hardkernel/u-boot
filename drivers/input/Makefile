@@ -13,6 +13,7 @@ obj-$(CONFIG_TEGRA_KEYBOARD) += tegra-kbc.o
 obj-$(CONFIG_TWL4030_INPUT) += twl4030.o
 obj-$(CONFIG_TWL6030_INPUT) += twl6030.o
 obj-$(CONFIG_CROS_EC_KEYB) += cros_ec_keyb.o
+obj-$(CONFIG_RK8XX_PWRKEY) += rk8xx_pwrkey.o
 ifdef CONFIG_PS2KBD
 obj-y += keyboard.o pc_keyb.o
 obj-$(CONFIG_PS2MULT) += ps2mult.o ps2ser.o
