@@ -178,6 +178,13 @@ config ROCKCHIP_BLOCK_API
 	  This enable read access to block device on
 	  rockchip platform.
 
+config ROCKCHIP_PARAM
+	bool "Rockchip parameter support"
+	depends on ROCKCHIP_BLOCK_API
+	help
+	  This enable support to get partition from rockchip
+	  parameter
+
 source "arch/arm/mach-rockchip/rk3036/Kconfig"
 source "arch/arm/mach-rockchip/rk3188/Kconfig"
 source "arch/arm/mach-rockchip/rk322x/Kconfig"
