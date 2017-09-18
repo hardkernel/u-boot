@@ -1370,6 +1370,37 @@ static struct hdmi_format_para fmt_para_vesa_1440x900p60_8x5 = {
 	},
 };
 
+static struct hdmi_format_para fmt_para_vesa_1440x2560p70_9x16 = {
+	.vic = HDMIV_1440x2560p70hz,
+	.name = "1440x2560p70hz",
+	.sname = "1440x2560p70hz",
+	.pixel_repetition_factor = 0,
+	.progress_mode = 1,
+	.scrambler_en = 0,
+	.tmds_clk_div40 = 0,
+	.tmds_clk = 280000,
+	.timing = {
+		.pixel_freq = 280000,
+		.h_freq = 108500,
+		.v_freq = 180320,
+		.vsync_polarity = 1,
+		.hsync_polarity = 1,
+		.h_active = 1440,
+		.h_total = 1550,
+		.h_blank = 110,
+		.h_front = 68,
+		.h_sync = 16,
+		.h_back = 26,
+		.v_active = 2560,
+		.v_total = 2576,
+		.v_blank = 16,
+		.v_front = 6,
+		.v_sync = 6,
+		.v_back = 4,
+		.v_sync_ln = 1,
+	},
+};
+
 static struct hdmi_format_para fmt_para_vesa_1600x900p60_16x9 = {
 	.vic = HDMIV_1600x900p60hz,
 	.name = "1600x900p60hz",
@@ -1696,6 +1727,7 @@ static struct hdmi_format_para *all_fmt_paras[] = {
 	&fmt_para_vesa_1366x768p60_16x9,
 	&fmt_para_vesa_1400x1050p60_4x3,
 	&fmt_para_vesa_1440x900p60_8x5,
+	&fmt_para_vesa_1440x2560p70_9x16,
 	&fmt_para_vesa_1600x900p60_16x9,
 	&fmt_para_vesa_1600x1200p60_4x3,
 	&fmt_para_vesa_1680x1050p60_8x5,

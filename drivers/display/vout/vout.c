@@ -280,6 +280,12 @@ static const vout_set_t vout_sets[] = {
 		.width             = 1440,
 		.height            = 900,
 	},
+	{ /* VMODE_1440x2560p70hz */
+		.name              = "1440x2560p70hz",
+		.mode              = VMODE_1440x2560p70hz,
+		.width             = 1440,
+		.height            = 2560,
+	},
 	{ /* VMODE_1600x900p60hz */
 		.name              = "1600x900p60hz",
 		.mode              = VMODE_1600x900p60hz,
