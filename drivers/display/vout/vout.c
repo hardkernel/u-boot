@@ -468,14 +468,107 @@ static void vout_vmode_init(void)
 	vout_vinfo_init(width, height, field_height);
 }
 
+static int my_atoi(const char *str)
+{
+	int result = 0;
+	int signal = 1;
+
+	if ((*str >= '0' && *str <= '9') || *str == '-' || *str == '+') {
+		if (*str == '-' || *str == '+') {
+			if (*str == '-')
+				signal = -1;
+			str++;
+		}
+	} else
+		return 0;
+
+	while (*str >= '0' && *str <= '9')
+		result = result * 10 + (*str++ -'0');
+
+	return signal * result;
+}
+
+static int getenv_int(char *env, int def)
+{
+	if (getenv(env) == NULL)
+		return def;
+	else
+		return my_atoi(getenv(env));
+}
+
 static int get_window_axis(int *axis)
 {
 	int ret = 0;
+	char *mode = getenv("outputmode");
+	int def_x, def_y, def_w, def_h;
 
-	axis[0] = 0;
-	axis[1] = 0;
-	axis[2] = vout_info.width;
-	axis[3] = vout_info.height;
+	def_x = 0;
+	def_y = 0;
+	def_w = vout_info.width;
+	def_h = vout_info.height;
+
+	/* adjust reproduction ratio */
+	if (strncmp(mode, "480i", 4) == 0 || strcmp(mode, "480cvbs") == 0) {
+		axis[0] = getenv_int("480i_x", def_x);
+		axis[1] = getenv_int("480i_y", def_y);
+		axis[2] = getenv_int("480i_w", def_w);
+		axis[3] = getenv_int("480i_h", def_h);
+	} else if (strncmp(mode, "480p", 4) == 0) {
+		axis[0] = getenv_int("480p_x", def_x);
+		axis[1] = getenv_int("480p_y", def_y);
+		axis[2] = getenv_int("480p_w", def_w);
+		axis[3] = getenv_int("480p_h", def_h);
+	} else if (strncmp(mode, "576i", 4) == 0 || strcmp(mode, "576cvbs") == 0) {
+		axis[0] = getenv_int("576i_x", def_x);
+		axis[1] = getenv_int("576i_y", def_y);
+		axis[2] = getenv_int("576i_w", def_w);
+		axis[3] = getenv_int("576i_h", def_h);
+	} else if (strncmp(mode, "576p", 4) == 0) {
+		axis[0] = getenv_int("576p_x", def_x);
+		axis[1] = getenv_int("576p_y", def_y);
+		axis[2] = getenv_int("576p_w", def_w);
+		axis[3] = getenv_int("576p_h", def_h);
+	} else if (strncmp(mode, "720p", 4) == 0) {
+		axis[0] = getenv_int("720p_x", def_x);
+		axis[1] = getenv_int("720p_y", def_y);
+		axis[2] = getenv_int("720p_w", def_w);
+		axis[3] = getenv_int("720p_h", def_h);
+	} else if (strncmp(mode, "768p", 4) == 0) {
+		axis[0] = getenv_int("768p_x", def_x);
+		axis[1] = getenv_int("768p_y", def_y);
+		axis[2] = getenv_int("768p_w", def_w);
+		axis[3] = getenv_int("768p_h", def_h);
+	} else if (strncmp(mode, "1080i", 5) == 0) {
+		axis[0] = getenv_int("1080i_x", def_x);
+		axis[1] = getenv_int("1080i_y", def_y);
+		axis[2] = getenv_int("1080i_w", def_w);
+		axis[3] = getenv_int("1080i_h", def_h);
+	} else if (strncmp(mode, "1080p", 5) == 0) {
+		axis[0] = getenv_int("1080p_x", def_x);
+		axis[1] = getenv_int("1080p_y", def_y);
+		axis[2] = getenv_int("1080p_w", def_w);
+		axis[3] = getenv_int("1080p_h", def_h);
+	} else if (strncmp(mode, "2160p", 5) == 0) {
+		axis[0] = getenv_int("2160p_x", def_x);
+		axis[1] = getenv_int("2160p_y", def_y);
+		axis[2] = getenv_int("2160p_w", def_w);
+		axis[3] = getenv_int("2160p_h", def_h);
+	} else if (strncmp(mode, "smpte",5) == 0) {
+		axis[0] = getenv_int("4k2ksmpte_x", def_x);
+		axis[1] = getenv_int("4k2ksmpte_y", def_y);
+		axis[2] = getenv_int("4k2ksmpte_w", def_w);
+		axis[3] = getenv_int("4k2ksmpte_h", def_h);
+	} else if (strncmp(mode, "panel",5) == 0) {
+		axis[0] = getenv_int("panel_x", def_x);
+		axis[1] = getenv_int("panel_y", def_y);
+		axis[2] = getenv_int("panel_w", def_w);
+		axis[3] = getenv_int("panel_h", def_h);
+	} else {
+		axis[0] = getenv_int("1080p_x", def_x);
+		axis[1] = getenv_int("1080p_y", def_y);
+		axis[2] = getenv_int("1080p_w", def_w);
+		axis[3] = getenv_int("1080p_h", def_h);
+	}
 
 	return ret;
 }
