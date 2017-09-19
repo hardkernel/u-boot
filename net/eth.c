@@ -251,10 +251,10 @@ int eth_write_hwaddr(struct eth_device *dev, const char *base_name,
 		}
 		uint8_t buff[16];
 		if (get_chip_id(&buff[0], sizeof(buff)) == 0) {
-			sprintf((char *)&dev->enetaddr[0],"02:%02x:%02x:%02x:%02x:%02x",buff[8],
+			sprintf((char *)env_enetaddr,"02:%02x:%02x:%02x:%02x:%02x",buff[8],
 				buff[7],buff[6],buff[5],buff[4]);
-			printf("MACADDR:%s(from chipid)\n",dev->enetaddr);
-			setenv("ethaddr",(const char *)&dev->enetaddr);
+			printf("MACADDR:%s(from chipid)\n",env_enetaddr);
+			setenv("ethaddr",(const char *)env_enetaddr);
 		}
 
 		eth_getenv_enetaddr_by_index(base_name, eth_number, env_enetaddr);
