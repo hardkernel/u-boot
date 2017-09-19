@@ -1,0 +1,6 @@
+config DM_FUEL_GAUGE
+	bool "Enable driver model fuel gauge support"
+	depends on DM
+	help
+	  This adds a simple uclass for fuel gauge.
+
