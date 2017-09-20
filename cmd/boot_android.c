@@ -581,7 +581,7 @@ int do_avb_verify_partition(cmd_tbl_t *cmdtp, int flag,
 
 int do_avb_flow(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
-	char slot_partition[2][20];
+	char slot_partition[2][20] = {{0}, {0}};
 	unsigned long load_address;
 	AvbOps *ops;
 	const char *avb_version;
