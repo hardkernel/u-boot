@@ -413,6 +413,7 @@ static void cb_getvar(struct usb_ep *ep, struct usb_request *req)
 	chars_left = sizeof(response) - strlen(response) - 1;
 
 	strsep(&cmd, ":");
+	printf("cb_getvar: %s\n", cmd);
 	if (!cmd) {
 		error("missing variable\n");
 		fastboot_tx_write_str("FAILmissing var");
@@ -452,6 +453,9 @@ static void cb_getvar(struct usb_ep *ep, struct usb_request *req)
 		s3 = getenv("active_slot");
 		printf("active_slot: %s\n", s3);
 		strncat(response, s3, chars_left);
+	} else if (!strcmp_l1("has-slot:bootloader", cmd)) {
+		printf("do not has slot bootloader\n");
+		strncat(response, "no", chars_left);
 	} else if (!strcmp_l1("has-slot:boot", cmd)) {
 		if (has_boot_slot == 1) {
 			printf("has boot slot\n");
@@ -470,6 +474,18 @@ static void cb_getvar(struct usb_ep *ep, struct usb_request *req)
 	} */else if (!strcmp_l1("has-slot:system", cmd)) {
 		if (has_system_slot == 1) {
 			printf("has system slot\n");
+			strncat(response, "yes", chars_left);
+		} else
+			strncat(response, "no", chars_left);
+	} else if (!strcmp_l1("has-slot:vendor", cmd)) {
+		if (has_boot_slot == 1) {
+			printf("has vendor slot\n");
+			strncat(response, "yes", chars_left);
+		} else
+			strncat(response, "no", chars_left);
+	} else if (!strcmp_l1("has-slot:odm", cmd)) {
+		if (has_boot_slot == 1) {
+			printf("has odm slot\n");
 			strncat(response, "yes", chars_left);
 		} else
 			strncat(response, "no", chars_left);
