@@ -50,7 +50,7 @@ typedef unsigned int uint32_t;
 #define CEC_WAKEUP_SRC	(1<<8)
 #define ETH_PHY_WAKEUP_SRC (1<<9)
 #define CECB_WAKEUP_SRC    (1<<10)
-
+#define ETH_PHY_GPIO_SRC   (1<<12)
 struct pwr_op {
 	void (*power_off_at_24M)(unsigned int);
 	void (*power_on_at_24M)(unsigned int);

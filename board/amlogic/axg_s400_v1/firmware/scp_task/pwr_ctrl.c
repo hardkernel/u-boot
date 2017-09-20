@@ -236,7 +236,7 @@ void get_wakeup_source(void *response, unsigned int suspend_from)
 
 	p->status = RESPONSE_OK;
 	val = (POWER_KEY_WAKEUP_SRC | AUTO_WAKEUP_SRC | REMOTE_WAKEUP_SRC |
-	       ETH_PHY_WAKEUP_SRC | BT_WAKEUP_SRC | ETH_PHY_WAKEUP_SRC);
+	       ETH_PHY_WAKEUP_SRC | BT_WAKEUP_SRC | ETH_PHY_GPIO_SRC);
 
 #ifdef CONFIG_CEC_WAKEUP
 	if (suspend_from != SYS_POWEROFF)
@@ -247,7 +247,7 @@ void get_wakeup_source(void *response, unsigned int suspend_from)
 	gpio = &(p->gpio_info[i]);
 	writel(readl(PREG_PAD_GPIO1_EN_N) | ((1 << 14)), PREG_PAD_GPIO1_EN_N);
 	writel(readl(PERIPHS_PIN_MUX_9) & ~(0xf << 24), PERIPHS_PIN_MUX_9);
-	gpio->wakeup_id = ETH_PHY_WAKEUP_SRC;
+	gpio->wakeup_id = ETH_PHY_GPIO_SRC;
 	gpio->gpio_in_idx = GPIOY_14;
 	gpio->gpio_in_ao = 0;
 	gpio->gpio_out_idx = -1;
