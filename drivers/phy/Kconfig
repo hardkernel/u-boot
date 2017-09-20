@@ -59,6 +59,12 @@ config SPL_NOP_PHY
 	  This is useful when a driver uses the PHY framework but no real PHY
 	  hardware exists.
 
+config PHY_ROCKCHIP_INNO_USB2
+	bool "Support Rockchip INNO USB2PHY"
+	depends on PHY && ARCH_ROCKCHIP
+	help
+	  Support for Rockchip USB 2.0 PHY with Innosilicon IP block.
+
 config PIPE3_PHY
 	bool "Support omap's PIPE3 PHY"
 	depends on PHY && ARCH_OMAP2PLUS
