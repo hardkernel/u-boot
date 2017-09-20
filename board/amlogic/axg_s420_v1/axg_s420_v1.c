@@ -552,7 +552,7 @@ int checkhw(char * name)
 	case 0:
 	case 1:
 	case 2:
-		strcpy(loc_name, "axg_s420_1g\0");
+		strcpy(loc_name, "axg_s420_512m\0");
 		break;
 	case 3:
 		strcpy(loc_name, "axg_s420_v03\0");
