@@ -477,18 +477,18 @@ static int get_ptbl_rsv(struct mmc *mmc, struct _iptbl *rsv)
 	}
 
 	ptbl_rsv = (struct ptbl_rsv *) buffer;
-	apt_info("magic %s, version %s, checksum %x\n", ptbl_rsv->magic,
-		ptbl_rsv->version, ptbl_rsv->checksum);
+	apt_info("magic %3.3s, version %8.8s, checksum %x\n", ptbl_rsv->magic,
+			ptbl_rsv->version, ptbl_rsv->checksum);
 	/* fixme, check magic ?*/
 	if (strcmp(ptbl_rsv->magic, MMC_PARTITIONS_MAGIC)) {
-		apt_err("magic faild %s, %s\n", MMC_PARTITIONS_MAGIC, ptbl_rsv->magic);
+		apt_err("magic faild %s, %3.3s\n", MMC_PARTITIONS_MAGIC, ptbl_rsv->magic);
 		ret = -4;
 		goto _out;
 	}
 	/* check version*/
 	version = _get_version(ptbl_rsv->version);
 	if (version < 0) {
-		apt_err("version faild %s, %s\n", MMC_PARTITIONS_MAGIC, ptbl_rsv->magic);
+		apt_err("version faild %s, %3.3s\n", MMC_PARTITIONS_MAGIC, ptbl_rsv->magic);
 		ret = -5;
 		goto _out;
 	}
@@ -539,7 +539,7 @@ static int update_ptbl_rsv(struct mmc *mmc, struct _iptbl *src)
 	version = _get_version(ptbl_rsv->version);
 	ptbl_rsv->checksum = _calc_iptbl_check(src->partitions, src->count, version);
 	/* write it to emmc. */
-	apt_info("magic %s, version %s, checksum %x\n", ptbl_rsv->magic, ptbl_rsv->version, ptbl_rsv->checksum);
+	apt_info("magic %3.3s, version %8.8s, checksum %x\n", ptbl_rsv->magic, ptbl_rsv->version, ptbl_rsv->checksum);
 	offset = _get_inherent_offset(MMC_RESERVED_NAME) + vpart->offset;
 	if (_mmc_rsv_write(mmc, offset, size, buffer) != size) {
 		apt_err("write ptbl to rsv failed\n");
@@ -568,7 +568,7 @@ static int _cmp_partition(struct partitions *dst, struct partitions *src, int ov
 #endif
 
 	if (ret && (!overide)) {
-		apt_err("name: %s<->%s\n", dst->name, src->name);
+		apt_err("name: %10.10s<->%10.10s\n", dst->name, src->name);
 		apt_err("size: %llx<->%llx\n", dst->size, src->size);
 		apt_err("offset: %llx<->%llx\n", dst->offset, src->offset);
 		apt_err("mask: %08x<->%08x\n", dst->mask_flags, src->mask_flags);
@@ -1236,7 +1236,7 @@ int get_part_info_from_tbl(block_dev_desc_t *dev_desc,
 void show_partition_info(disk_partition_t *info)
 {
 	printf("----------%s----------\n", __func__);
-	printf("name %s\n", info->name);
+	printf("name %10s\n", info->name);
 	printf("blksz " LBAFU "\n", info->blksz);
 	printf("sart %ld\n", info->start);
 	printf("size %ld\n", info->size);
@@ -1263,14 +1263,14 @@ struct virtual_partition *aml_get_virtual_partition_by_name(const char *name)
 
 		part = &virtual_partition_table[i];
 		if (!strcmp(name, part->name)) {
-			apt_info("find %s @ tbl[%d]\n", name, i);
+			apt_info("find %10s @ tbl[%d]\n", name, i);
 			break;
 		}
 		i++;
 	};
 	if (i == cnt) {
 		part = NULL;
-		apt_wrn("do not find match in table %s\n", name);
+		apt_wrn("do not find match in table %10s\n", name);
 	}
 	return part;
 }
