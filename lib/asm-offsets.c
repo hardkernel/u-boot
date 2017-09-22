@@ -41,5 +41,7 @@ int main(void)
 	DEFINE(PM_CTX_SIZE, sizeof(struct pm_ctx));
 	DEFINE(PM_CTX_PHYS, offsetof(struct global_data, pm_ctx_phys));
 
+	DEFINE(GD_NEW_GD, offsetof(struct global_data, new_gd));
+
 	return 0;
 }
