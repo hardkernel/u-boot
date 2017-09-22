@@ -417,10 +417,7 @@ int board_init(void)
 	board_usb_init(&g_usb_config_GXL_skt,BOARD_USB_MODE_HOST);
 #endif /*CONFIG_USB_XHCI_AMLOGIC*/
 	canvas_init();
-#ifdef CONFIG_AML_VPU
-	vpu_probe();
-#endif
-	vpp_init();
+
 #ifndef CONFIG_AML_IRDETECT_EARLY
 #ifdef CONFIG_AML_HDMITX20
 	hdmi_tx_set_hdmi_5v();
@@ -458,11 +455,6 @@ int board_late_init(void){
 	run_command("if itest ${upgrade_step} == 1; then "\
 				"defenv_reserv; setenv upgrade_step 2; saveenv; fi;", 0);
 
-#ifndef CONFIG_AML_IRDETECT_EARLY
-	/* after  */
-	run_command("cvbs init;hdmitx hpd", 0);
-	run_command("vout output $outputmode", 0);
-#endif
 	/*add board late init function here*/
 	ret = run_command("store dtb read $dtb_mem_addr", 1);
 	if (ret) {
@@ -477,6 +469,17 @@ int board_late_init(void){
 		}
 		#endif
 	}
+
+#ifdef CONFIG_AML_VPU
+	vpu_probe();
+#endif
+	vpp_init();
+#ifndef CONFIG_AML_IRDETECT_EARLY
+	/* after  */
+	run_command("cvbs init;hdmitx hpd", 0);
+	run_command("vout output $outputmode", 0);
+#endif
+
 #ifdef CONFIG_AML_V2_FACTORY_BURN
 	aml_try_factory_sdcard_burning(0, gd->bd);
 #endif// #ifdef CONFIG_AML_V2_FACTORY_BURN

@@ -404,9 +404,7 @@ int board_init(void)
 	board_usb_init(&g_usb_config_gx_skt_h,BOARD_USB_MODE_CHARGER);
 #endif /*CONFIG_USB_DWC_OTG_HCD*/
 	canvas_init();
-#ifdef CONFIG_AML_VPU
-	vpu_probe();
-#endif
+
 #ifdef CONFIG_AML_HDMITX20
 	hdmi_tx_set_hdmi_5v();
 	hdmi_tx_init();
@@ -429,10 +427,6 @@ int board_late_init(void){
 	run_command("if itest ${upgrade_step} == 1; then "\
 			"defenv_reserv; setenv upgrade_step 2; saveenv; fi;", 0);
 
-	/* after  */
-	run_command("cvbs init;hdmitx hpd", 0);
-	run_command("vout output $outputmode", 0);
-
 	/*add board late init function here*/
 	ret = run_command("store dtb read $dtb_mem_addr", 1);
 	if (ret) {
@@ -447,6 +441,13 @@ int board_late_init(void){
 		}
 		#endif
 	}
+#ifdef CONFIG_AML_VPU
+	vpu_probe();
+#endif
+	/* after  */
+	run_command("cvbs init;hdmitx hpd", 0);
+	run_command("vout output $outputmode", 0);
+
 #ifdef CONFIG_AML_V2_FACTORY_BURN
 	aml_try_factory_sdcard_burning(0, gd->bd);
 #endif// #ifdef CONFIG_AML_V2_FACTORY_BURN
