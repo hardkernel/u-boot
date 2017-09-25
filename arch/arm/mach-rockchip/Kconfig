@@ -198,6 +198,12 @@ config ROCKCHIP_PARTITION_BOOT
 	help
 	  This enables support for bootimg system from rockchip format partition
 
+config GICV2
+	bool "ARM GICv2"
+
+config GICV3
+	bool "ARM GICv3"
+
 source "arch/arm/mach-rockchip/rk3036/Kconfig"
 source "arch/arm/mach-rockchip/rk3188/Kconfig"
 source "arch/arm/mach-rockchip/rk322x/Kconfig"
