@@ -98,6 +98,8 @@ source "drivers/video/Kconfig"
 
 source "drivers/watchdog/Kconfig"
 
+source "drivers/irq/Kconfig"
+
 config PHYS_TO_BUS
 	bool "Custom physical to bus address mapping"
 	help
