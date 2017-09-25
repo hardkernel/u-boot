@@ -26,6 +26,7 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
+#ifndef CONFIG_IRQ
 int interrupt_init (void)
 {
 	/*
@@ -44,6 +45,7 @@ int disable_interrupts (void)
 {
 	return 0;
 }
+#endif
 
 void bad_mode (void)
 {
@@ -154,6 +156,7 @@ void do_fiq (struct pt_regs *pt_regs)
 	bad_mode ();
 }
 
+#ifndef CONFIG_IRQ
 void do_irq (struct pt_regs *pt_regs)
 {
 	efi_restore_gd();
@@ -162,3 +165,4 @@ void do_irq (struct pt_regs *pt_regs)
 	show_regs (pt_regs);
 	bad_mode ();
 }
+#endif

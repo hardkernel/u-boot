@@ -131,6 +131,13 @@ IRQ_STACK_START_IN:
 	.word	0x0badc0de
 #endif
 
+#ifdef CONFIG_IRQ
+/* IRQ stack memory (calculated at run-time) */
+.globl IRQ_STACK_START
+IRQ_STACK_START:
+	.word	0x0badc0de
+#endif
+
 @
 @ IRQ stack frame.
 @
@@ -257,9 +264,16 @@ not_used:
 
 	.align	5
 irq:
+#ifdef CONFIG_IRQ
+	get_irq_stack
+	irq_save_user_regs
+	bl	do_irq
+	irq_restore_user_regs
+#else
 	get_bad_stack
 	bad_save_user_regs
 	bl	do_irq
+#endif
 
 	.align	5
 fiq:

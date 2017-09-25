@@ -246,6 +246,23 @@ WEAK(lowlevel_init)
 #endif
 #endif
 
+#if defined(CONFIG_IRQ)
+	/*
+	 * Setting HCR_EL2.TGE AMO IMO FMO for exception rounting to EL2
+	 */
+	mrs	x0, CurrentEL		/* check currentEL */
+	cmp	x0, 0x8
+	b.ne	end			/* currentEL != EL2 */
+
+	mrs	x9, hcr_el2
+	orr	x9, x9, #(7 << 3)	/* HCR_EL2.AMO IMO FMO set */
+	orr	x9, x9, #(1 << 27)	/* HCR_EL2.TGE set */
+	msr	hcr_el2, x9
+
+end:
+	nop
+#endif /* CONFIG_IRQ */
+
 #ifdef CONFIG_ARMV8_MULTIENTRY
 	branch_if_master x0, x1, 2f
 
