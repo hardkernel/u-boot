@@ -126,6 +126,29 @@
 		reg = <0x10300000 0x1000>;
 	};
 
+	u2phy: usb2-phy@10300100 {
+		compatible = "rockchip,rv1108-usb2phy";
+		reg = <0x100 0x0c>;
+		rockchip,grf = <&grf>;
+		rockchip,usbgrf = <&usbgrf>;
+		#phy-cells = <1>;
+		status = "disabled";
+
+		u2phy_otg: otg-port {
+			interrupts = <GIC_SPI 48 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-names = "otg-mux";
+			#phy-cells = <0>;
+			status = "disabled";
+		};
+
+		u2phy_host: host-port {
+			interrupts = <GIC_SPI 51 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-names = "linestate";
+			#phy-cells = <0>;
+			status = "disabled";
+		};
+	};
+
 	pmugrf: syscon@20060000 {
 		compatible = "rockchip,rv1108-pmugrf", "syscon";
 		reg = <0x20060000 0x1000>;
@@ -137,6 +160,11 @@
 		rockchip,grf = <&grf>;
 		#clock-cells = <1>;
 		#reset-cells = <1>;
+	};
+
+	usbgrf: syscon@202a0000 {
+		compatible = "rockchip,rv1108-usbgrf", "syscon";
+		reg = <0x202a0000 0x1000>;
 	};
 
 	emmc: dwmmc@30110000 {
@@ -179,6 +207,8 @@
 		compatible = "generic-ehci";
 		reg = <0x30140000 0x20000>;
 		interrupts = <GIC_SPI 15 IRQ_TYPE_LEVEL_HIGH>;
+		phys = <&u2phy 1>;
+		phy-names = "usb";
 		status = "disabled";
 	};
 
@@ -186,6 +216,8 @@
 		compatible = "generic-ohci";
 		reg = <0x30160000 0x20000>;
 		interrupts = <GIC_SPI 16 IRQ_TYPE_LEVEL_HIGH>;
+		phys = <&u2phy 1>;
+		phy-names = "usb";
 		status = "disabled";
 	};
 
@@ -196,6 +228,8 @@
 		interrupts = <GIC_SPI 18 IRQ_TYPE_LEVEL_HIGH>;
 		hnp-srp-disable;
 		dr_mode = "otg";
+		phys = <&u2phy 0>;
+		phy-names = "usb";
 		status = "disabled";
 	};
 
