@@ -11,6 +11,7 @@
 
 static const struct udevice_id rv1108_syscon_ids[] = {
 	{ .compatible = "rockchip,rv1108-grf", .data = ROCKCHIP_SYSCON_GRF },
+	{ .compatible = "rockchip,rv1108-usbgrf", .data = ROCKCHIP_SYSCON_USBGRF },
 	{ }
 };
 
