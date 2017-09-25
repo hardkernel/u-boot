@@ -24,6 +24,7 @@
 #include <asm/arch/cpu_sdio.h>
 #include <asm/arch/secure_apb.h>
 #include <asm/cpu_id.h>
+#include <common.h>
 
 void  cpu_sd_emmc_pwr_prepare(unsigned port)
 {
@@ -56,8 +57,17 @@ int cpu_sd_emmc_init(unsigned port)
         }
 		break;
 	case SDIO_PORT_C://SDIOC GPIOB_2~GPIOB_7
+		/* pull up data by default */
+		setbits_le32(P_PAD_PULL_UP_EN_REG2, 0xffff);
+		setbits_le32(P_PAD_PULL_UP_REG2, 0xffff);
+		/* set pinmux */
 		clrbits_le32(P_PERIPHS_PIN_MUX_7, (0x7 << 5) | (0xff << 16));
 		setbits_le32(P_PERIPHS_PIN_MUX_7, 0x7 << 29);
+		/* hare ware reset with pull boot9 */
+		clrbits_le32(P_PREG_PAD_GPIO2_EN_N, 1<<9);
+		clrbits_le32(P_PREG_PAD_GPIO2_O, 1<<9);
+		udelay(10);
+		setbits_le32(P_PREG_PAD_GPIO2_O, 1<<9);
 		break;
 	default:
 		return -1;
