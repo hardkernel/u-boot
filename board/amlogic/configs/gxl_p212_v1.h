@@ -528,6 +528,9 @@
 //board customer ID
 //#define CONFIG_CUSTOMER_ID  (0x6472616F624C4D41)
 
+//anti-rollback function
+//#define CONFIG_AML_ANTIROLLBACK 1
+
 #if defined(CONFIG_CUSTOMER_ID)
   #undef CONFIG_AML_CUSTOMER_ID
   #define CONFIG_AML_CUSTOMER_ID  CONFIG_CUSTOMER_ID

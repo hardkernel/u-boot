@@ -31,7 +31,16 @@ struct andr_img_hdr {
 
 	u32 tags_addr;		/* physical addr for kernel tags */
 	u32 page_size;		/* flash page size we assume */
-	u32 unused[2];		/* future expansion: should be 0 */
+
+	u32 kernel_version;	/* highest byte: 1 = boot, 2 = recovery;
+				   low three bytes: kernel version */
+
+	/* operating system version and security patch level; for
+	   * version "A.B.C" and patch level "Y-M-D":
+	   * ver = A << 14 | B << 7 | C         (7 bits for each of A, B, C)
+	   * lvl = ((Y - 2000) & 127) << 4 | M  (7 bits for Y, 4 bits for M)
+	   * os_version = ver << 11 | lvl */
+	uint32_t os_version;
 
 	char name[ANDR_BOOT_NAME_SIZE]; /* asciiz product name */
 

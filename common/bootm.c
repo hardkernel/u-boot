@@ -18,6 +18,7 @@
 #include <lzma/LzmaTypes.h>
 #include <lzma/LzmaDec.h>
 #include <lzma/LzmaTools.h>
+#include <android_image.h>
 #if defined(CONFIG_CMD_USB)
 #include <usb.h>
 #endif
@@ -28,6 +29,10 @@
 #include <command.h>
 #include <bootm.h>
 #include <image.h>
+
+#ifdef CONFIG_AML_ANTIROLLBACK
+#include "anti-rollback.h"
+#endif
 
 #ifndef CONFIG_SYS_BOOTM_LEN
 /* use 8MByte as default max gunzip size */
@@ -616,7 +621,6 @@ int do_bootm_states(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[],
 		argc = 0;	/* consume the args */
 	}
 
-
 	/* Load the OS */
 	if (!ret && (states & BOOTM_STATE_LOADOS)) {
 		ulong load_end;
@@ -630,6 +634,7 @@ int do_bootm_states(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[],
 			goto err;
 		else if (ret == BOOTM_ERR_OVERLAP)
 			ret = 0;
+
 #if defined(CONFIG_SILENT_CONSOLE) && !defined(CONFIG_SILENT_U_BOOT_ONLY)
 		if (images->os.os == IH_OS_LINUX)
 			fixup_silent_linux();
@@ -803,6 +808,11 @@ static const void *boot_get_kernel(cmd_tbl_t *cmdtp, int flag, int argc,
 	const void *buf;
 	const char	*fit_uname_config = NULL;
 	const char	*fit_uname_kernel = NULL;
+
+#ifdef CONFIG_AML_ANTIROLLBACK
+	struct andr_img_hdr **tmp_img_hdr = (struct andr_img_hdr **)&buf;
+#endif
+
 #if defined(CONFIG_FIT)
 	int		os_noffset;
 #endif
@@ -890,6 +900,14 @@ static const void *boot_get_kernel(cmd_tbl_t *cmdtp, int flag, int argc,
 		if (android_image_get_kernel(buf, images->verify,
 					     os_data, os_len))
 			return NULL;
+
+#ifdef CONFIG_AML_ANTIROLLBACK
+		if (!check_antirollback((*tmp_img_hdr)->kernel_version)) {
+			*os_len = 0;
+			return NULL;
+		}
+#endif
+
 		break;
 #endif
 	default:
