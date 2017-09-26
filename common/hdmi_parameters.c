@@ -1370,6 +1370,37 @@ static struct hdmi_format_para fmt_para_vesa_1440x900p60_8x5 = {
 	},
 };
 
+static struct hdmi_format_para fmt_para_vesa_1440x2560p60_9x16 = {
+	.vic = HDMIV_1440x2560p60hz,
+	.name = "1440x2560p60hz",
+	.sname = "1440x2560p60hz",
+	.pixel_repetition_factor = 0,
+	.progress_mode = 1,
+	.scrambler_en = 0,
+	.tmds_clk_div40 = 0,
+	.tmds_clk = 244850,
+	.timing = {
+		.pixel_freq = 244850,
+		.h_freq = 155760,
+		.v_freq = 59999,
+		.vsync_polarity = 1,
+		.hsync_polarity = 1,
+		.h_active = 1440,
+		.h_total = 1572,
+		.h_blank = 132,
+		.h_front = 64,
+		.h_sync = 4,
+		.h_back = 64,
+		.v_active = 2560,
+		.v_total = 2596,
+		.v_blank = 36,
+		.v_front = 16,
+		.v_sync = 4,
+		.v_back = 16,
+		.v_sync_ln = 1,
+	},
+};
+
 static struct hdmi_format_para fmt_para_vesa_1440x2560p70_9x16 = {
 	.vic = HDMIV_1440x2560p70hz,
 	.name = "1440x2560p70hz",
@@ -1381,8 +1412,8 @@ static struct hdmi_format_para fmt_para_vesa_1440x2560p70_9x16 = {
 	.tmds_clk = 280000,
 	.timing = {
 		.pixel_freq = 280000,
-		.h_freq = 108500,
-		.v_freq = 180320,
+		.h_freq = 180320,
+		.v_freq = 70100,
 		.vsync_polarity = 1,
 		.hsync_polarity = 1,
 		.h_active = 1440,
@@ -1727,6 +1758,7 @@ static struct hdmi_format_para *all_fmt_paras[] = {
 	&fmt_para_vesa_1366x768p60_16x9,
 	&fmt_para_vesa_1400x1050p60_4x3,
 	&fmt_para_vesa_1440x900p60_8x5,
+	&fmt_para_vesa_1440x2560p60_9x16,
 	&fmt_para_vesa_1440x2560p70_9x16,
 	&fmt_para_vesa_1600x900p60_16x9,
 	&fmt_para_vesa_1600x1200p60_4x3,

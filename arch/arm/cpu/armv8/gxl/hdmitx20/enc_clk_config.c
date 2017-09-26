@@ -429,6 +429,18 @@ static void set_hpll_clk_out(unsigned clk)
 		WAIT_FOR_PLL_LOCKED(P_HHI_HDMI_PLL_CNTL);
 		printk("HPLL: 0x%lx\n", hd_read_reg(P_HHI_HDMI_PLL_CNTL));
 		break;
+	case 4897000:
+		hd_write_reg(P_HHI_HDMI_PLL_CNTL, 0x400002cc);
+		hd_write_reg(P_HHI_HDMI_PLL_CNTL1, 0x800cb02b);
+		hd_write_reg(P_HHI_HDMI_PLL_CNTL2, 0x860f30c4);
+		hd_write_reg(P_HHI_HDMI_PLL_CNTL3, 0x0c8e0000);
+		hd_write_reg(P_HHI_HDMI_PLL_CNTL4, 0x001fa729);
+		hd_write_reg(P_HHI_HDMI_PLL_CNTL5, 0x01a31500);
+		hd_set_reg_bits(P_HHI_HDMI_PLL_CNTL, 0x1, 28, 1);
+		hd_set_reg_bits(P_HHI_HDMI_PLL_CNTL, 0x0, 28, 1);
+		WAIT_FOR_PLL_LOCKED(P_HHI_HDMI_PLL_CNTL);
+		printk("HPLL: 0x%lx\n", hd_read_reg(P_HHI_HDMI_PLL_CNTL));
+		break;
 	case 5600000:
 		hd_write_reg(P_HHI_HDMI_PLL_CNTL, 0x400002e9);
 		hd_write_reg(P_HHI_HDMI_PLL_CNTL1, 0x800cb155);
@@ -741,6 +753,9 @@ static struct hw_enc_clk_val_group setting_enc_clk_val_24[] = {
 	{{HDMIV_1440x900p60hz,
 	  GROUP_END},
 		1, VIU_ENCP, 4260000, 4, 1, 1, VID_PLL_DIV_5, 2, 1, 1, -1},
+	{{HDMIV_1440x2560p60hz,
+	  GROUP_END},
+		1, VIU_ENCP, 4897000, 2, 1, 1, VID_PLL_DIV_5, 2, 1, 1, -1},
 	{{HDMIV_1440x2560p70hz,
 	  GROUP_END},
 		1, VIU_ENCP, 5600000, 2, 1, 1, VID_PLL_DIV_5, 2, 1, 1, -1},
