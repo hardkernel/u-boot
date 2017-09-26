@@ -70,6 +70,7 @@ struct lcd_extern_config_s {
 	unsigned char table_init_loaded; /* internal use */
 	unsigned char *table_init_on;
 	unsigned char *table_init_off;
+	unsigned int table_init_on_cnt;
 	char gpio_name[LCD_EXTERN_GPIO_NUM_MAX][LCD_EXTERN_GPIO_LEN_MAX];
 };
 

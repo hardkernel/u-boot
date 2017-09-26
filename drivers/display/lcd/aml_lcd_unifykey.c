@@ -220,7 +220,7 @@ static void aml_lcd_test_unifykey(void)
 	buf[70] = 0;   /* pclk bit[31:24] */
 	for (i = 71; i < 95; i++)
 		buf[i] = 0;
-
+#if 1 /* v2 */
 	/* interface: 20byte(95~114) */
 	buf[95] = 8;  /* vx1_lane_count bit[7:0] */
 	buf[96] = 0;  /* vx1_lane_count bit[15:8] */
@@ -318,6 +318,73 @@ static void aml_lcd_test_unifykey(void)
 	buf[7] = 0;
 	buf[8] = 0;   /* reserved */
 	buf[9] = 0;
+#else  /* v1 */
+	/* interface: 20byte(95~114) */
+	buf[95] = 8;  /* vx1_lane_count bit[7:0] */
+	buf[96] = 0;  /* vx1_lane_count bit[15:8] */
+	buf[97] = 2;  /* vx1_region_num bit[7:0] */
+	buf[98] = 0;  /* vx1_region_num bit[15:8] */
+	buf[99] = 4;  /* vx1_byte_mode bit[7:0] */
+	buf[100] = 0;  /* vx1_byte_mode bit[15:8] */
+	buf[101] = 4;  /* vx1_color_fmt bit[7:0] */
+	buf[102] = 0;  /* vx1_color_fmt bit[15:8] */
+	buf[103] = 3;  /* phy_vswing_level bit[7:0] */
+	buf[104] = 0;  /* phy_vswing_level bit[15:8] */
+	buf[105] = 1;  /* phy_preem_level bit[7:0] */
+	buf[106] = 0;  /* phy_preem_level bit[15:8] */
+	buf[107] = 1;  /* vbyone_intr_en bit[7:0] */
+	buf[108] = 0;  /* vbyone_intr_en bit[15:8] */
+	buf[109] = 1;  /* vbyone_vsync_intr_en bit[7:0] */
+	buf[110] = 0;  /* vbyone_vsync_intr_en bit[15:8] */
+	for (i = 111; i < 115; i++)
+		buf[i] = 0;
+
+	/* power */
+	buf[115] = 0;	  /* power_on: type */
+	buf[116] = 0;	  /* power_on: index */
+	buf[117] = 1;	  /* power_on: val */
+	buf[118] = 20;	  /* power_on: delay bit[7:0] */
+	buf[119] = 0;	  /* power_on: delay bit[15:8] */
+	buf[120] = 2;	  /* power_on: type */
+	buf[121] = 0;	  /* power_on: index */
+	buf[122] = 0;	  /* power_on: val */
+	buf[123] = 10;	  /* power_on: delay bit[7:0] */
+	buf[124] = 0;	  /* power_on: delay bit[15:8] */
+	buf[125] = 3;	  /* power_on: type */
+	buf[126] = 0;	  /* power_on: index */
+	buf[127] = 0;	  /* power_on: val */
+	buf[128] = 10;	  /* power_on: delay bit[7:0] */
+	buf[129] = 0;	  /* power_on: delay bit[15:8] */
+	buf[130] = 0xff;  /* power_on: type */
+	buf[131] = 0;	  /* power_on: index */
+	buf[132] = 0;	  /* power_on: val */
+	buf[133] = 0;	  /* power_on: delay bit[7:0] */
+	buf[134] = 0;	  /* power_on: delay bit[15:8] */
+	buf[135] = 2;	  /* power_off: type */
+	buf[136] = 0;	  /* power_off: index */
+	buf[137] = 0;	  /* power_off: val */
+	buf[138] = 20;	  /* power_off: delay bit[7:0] */
+	buf[139] = 0;	  /* power_off: delay bit[15:8] */
+	buf[140] = 0;	  /* power_off: type */
+	buf[141] = 0;	  /* power_off: index */
+	buf[142] = 0;	  /* power_off: val */
+	buf[143] = 100;   /* power_off: delay bit[7:0] */
+	buf[144] = 0;	  /* power_off: delay bit[15:8] */
+	buf[145] = 0xff;  /* power_off: type */
+	buf[146] = 0;	  /* power_off: index */
+	buf[147] = 0;	  /* power_off: val */
+	buf[148] = 0;	  /* power_off: delay bit[7:0] */
+	buf[149] = 0;	  /* power_off: delay bit[15:8] */
+
+	len = 150;//10 + 36 + 18 + 31 + 20 + 44 + 10 + 35;
+	/* header */
+	buf[4] = (len & 0xff);	 /* data_len */
+	buf[5] = ((len >> 8) & 0xff);
+	buf[6] = 1;   /* version */
+	buf[7] = 0;
+	buf[8] = 0;   /* reserved */
+	buf[9] = 0;
+#endif
 	key_crc = crc32(0, &buf[4], (len - 4)); //except crc32
 	key_crc32 = (unsigned int)key_crc;
 	for (i = 0; i < 4; i++)
@@ -329,7 +396,7 @@ static void aml_lcd_test_unifykey(void)
 static void aml_lcd_extern_test_unifykey(void)
 {
 	int len;
-	unsigned char buf[90];
+	unsigned char buf[99];
 	const char *str;
 	int i, n;
 	uint32_t key_crc;
@@ -349,6 +416,59 @@ static void aml_lcd_extern_test_unifykey(void)
 	buf[43] = 0x1c; /* i2c_addr */
 	buf[44] = 0xff; /* i2c_second_addr */
 	buf[45] = 0x1; /* i2c_bus */
+
+#if 0 /* init_table_dynamic_size */
+	buf[46] = 0xff; /* cmd_size */
+	for (i = 47; i < 53; i++)
+		buf[i] = 0;
+
+	/* init */
+	buf[53] = 0x10;
+	buf[54] = 0x07;
+	buf[55] = 0x01;
+	buf[56] = 0x02;
+	buf[57] = 0x00;
+	buf[58] = 0x40;
+	buf[59] = 0xff;
+	buf[60] = 0x00;
+	buf[61] = 0x00;  //init step 1
+	buf[62] = 0x10;
+	buf[63] = 0x03;
+	buf[64] = 0x02;
+	buf[65] = 0x00;
+	buf[66] = 0x40;	//init step 2
+	buf[67] = 0x00;
+	buf[68] = 0x05;
+	buf[69] = 0x73;
+	buf[70] = 0x0a;
+	buf[71] = 0x01;
+	buf[72] = 0x00;
+	buf[73] = 0x00;	//init step 3
+	buf[74] = 0x00;
+	buf[75] = 0x02;
+	buf[76] = 0x06;
+	buf[77] = 0x08;	//init step 4
+	buf[78] = 0xff;
+	buf[79] = 0x00;  //init_on ending
+	buf[80] = 0x10;
+	buf[81] = 0x02;
+	buf[82] = 0x30;
+	buf[83] = 0x40;  //init_off 1
+	buf[84] = 0x10;
+	buf[85] = 0x06;
+	buf[86] = 0x70;
+	buf[87] = 0x80;
+	buf[88] = 0x90;  //init_off 2
+	buf[89] = 0xff;
+	buf[90] = 0x00;
+	buf[91] = 0x00;	//init_off 3
+	buf[92] = 0x00;
+	buf[93] = 0x02;
+	buf[94] = 0x09;
+	buf[95] = 0x0a;	//init_off 4
+	buf[96] = 0xff;
+	buf[97] = 0x00;  //init_off ending
+#else /* init_table_fixed_size */
 	buf[46] = 0x9; /* cmd_size */
 	for (i = 47; i < 53; i++)
 		buf[i] = 0;
@@ -381,17 +501,27 @@ static void aml_lcd_extern_test_unifykey(void)
 	buf[77] = 0x00;
 	buf[78] = 0x00;
 	buf[79] = 0x00;  //init_on ending
-	buf[80] = 0xff;
-	buf[81] = 0x00;
-	buf[82] = 0x00;
-	buf[83] = 0x00;
-	buf[84] = 0x00;
-	buf[85] = 0x00;
-	buf[86] = 0x00;
-	buf[87] = 0x00;
-	buf[88] = 0x00;  //init_off ending
+	buf[80] = 0x10;
+	buf[81] = 0x20;
+	buf[82] = 0x30;
+	buf[83] = 0x40;
+	buf[84] = 0x50;
+	buf[85] = 0x60;
+	buf[86] = 0x70;
+	buf[87] = 0x80;
+	buf[88] = 0x90;  //init_off
+	buf[89] = 0xff;
+	buf[90] = 0x00;
+	buf[91] = 0x00;
+	buf[92] = 0x00;
+	buf[93] = 0x00;
+	buf[94] = 0x00;
+	buf[95] = 0x00;
+	buf[96] = 0x00;
+	buf[97] = 0x00;  //init_off ending
+#endif
 
-	len = 10 + 33 + 10 + 4*9;
+	len = 10 + 33 + 10 + 5*9;
 	/* header */
 	buf[4] = (len & 0xff);   /* data_len */
 	buf[5] = ((len >> 8) & 0xff);

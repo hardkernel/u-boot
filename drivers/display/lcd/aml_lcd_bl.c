@@ -1533,39 +1533,32 @@ static int aml_bl_config_load_from_unifykey(struct bl_config_s *bconf)
 	}
 
 	/* basic: 30byte */
-	p = para + LCD_UKEY_HEAD_SIZE;
+	p = para;
 	*(p + LCD_UKEY_BL_NAME - 1) = '\0'; /* ensure string ending */
-	str = (const char *)p;
+	str = (const char *)(p + LCD_UKEY_HEAD_SIZE);
 	strcpy(bconf->name, str);
-	p += LCD_UKEY_BL_NAME;
 
 	/* level: 12byte */
-	bconf->level_default = (*p | ((*(p + 1)) << 8));
-	p += LCD_UKEY_BL_LEVEL_UBOOT;
-	p += LCD_UKEY_BL_LEVEL_KERNEL;  /* dummy pointer */
-	bconf->level_max = (*p | ((*(p + 1)) << 8));
-	p += LCD_UKEY_BL_LEVEL_MAX;
-	bconf->level_min = (*p | ((*(p + 1)) << 8));
-	p += LCD_UKEY_BL_LEVEL_MIN;
-	bconf->level_mid = (*p | ((*(p + 1)) << 8));
-	p += LCD_UKEY_BL_LEVEL_MID;
-	bconf->level_mid_mapping = (*p | ((*(p + 1)) << 8));
-	p += LCD_UKEY_BL_LEVEL_MID_MAP;
+	bconf->level_default = (*(p + LCD_UKEY_BL_LEVEL_UBOOT) |
+		 ((*(p + LCD_UKEY_BL_LEVEL_UBOOT + 1)) << 8));
+	bconf->level_max = (*(p + LCD_UKEY_BL_LEVEL_MAX) |
+		((*(p + LCD_UKEY_BL_LEVEL_MAX + 1)) << 8));
+	bconf->level_min = (*(p + LCD_UKEY_BL_LEVEL_MIN) |
+		((*(p  + LCD_UKEY_BL_LEVEL_MIN + 1)) << 8));
+	bconf->level_mid = (*(p + LCD_UKEY_BL_LEVEL_MID) |
+		((*(p + LCD_UKEY_BL_LEVEL_MID + 1)) << 8));
+	bconf->level_mid_mapping = (*(p + LCD_UKEY_BL_LEVEL_MID_MAP) |
+		((*(p + LCD_UKEY_BL_LEVEL_MID_MAP + 1)) << 8));
 
 	/* method: 8byte */
-	bconf->method = *p;
-	p += LCD_UKEY_BL_METHOD;
-
-	bconf->en_gpio = *p;
-	p += LCD_UKEY_BL_EN_GPIO;
-	bconf->en_gpio_on = *p;
-	p += LCD_UKEY_BL_EN_GPIO_ON;
-	bconf->en_gpio_off = *p;
-	p += LCD_UKEY_BL_EN_GPIO_OFF;
-	bconf->power_on_delay = (*p | ((*(p + 1)) << 8));
-	p += LCD_UKEY_BL_ON_DELAY;
-	bconf->power_off_delay = (*p | ((*(p + 1)) << 8));
-	p += LCD_UKEY_BL_OFF_DELAY;
+	bconf->method = *(p + LCD_UKEY_BL_METHOD);
+	bconf->en_gpio = *(p + LCD_UKEY_BL_EN_GPIO);
+	bconf->en_gpio_on = *(p + LCD_UKEY_BL_EN_GPIO_ON);
+	bconf->en_gpio_off = *(p + LCD_UKEY_BL_EN_GPIO_OFF);
+	bconf->power_on_delay = (*(p + LCD_UKEY_BL_ON_DELAY) |
+		((*(p + LCD_UKEY_BL_ON_DELAY + 1)) << 8));
+	bconf->power_off_delay = (*(p + LCD_UKEY_BL_OFF_DELAY) |
+		((*(p + LCD_UKEY_BL_OFF_DELAY + 1)) << 8));
 
 	/* pwm: 32byte */
 	switch (bconf->method) {
@@ -1582,15 +1575,16 @@ static int aml_bl_config_load_from_unifykey(struct bl_config_s *bconf)
 		bl_pwm->level_max = bconf->level_max;
 		bl_pwm->level_min = bconf->level_min;
 
-		bconf->pwm_on_delay = (*p | ((*(p + 1)) << 8));
-		p += LCD_UKEY_BL_PWM_ON_DELAY;
-		bconf->pwm_off_delay = (*p | ((*(p + 1)) << 8));
-		p += LCD_UKEY_BL_PWM_OFF_DELAY;
-		bl_pwm->pwm_method =  *p;
-		p += LCD_UKEY_BL_PWM_METHOD;
-		bl_pwm->pwm_port = *p;
-		p += LCD_UKEY_BL_PWM_PORT;
-		bl_pwm->pwm_freq = (*p | ((*(p + 1)) << 8) | ((*(p + 2)) << 8) | ((*(p + 3)) << 8));
+		bconf->pwm_on_delay = (*(p + LCD_UKEY_BL_PWM_ON_DELAY) |
+			((*(p + LCD_UKEY_BL_PWM_ON_DELAY + 1)) << 8));
+		bconf->pwm_off_delay = (*(p + LCD_UKEY_BL_PWM_OFF_DELAY) |
+			((*(p + LCD_UKEY_BL_PWM_OFF_DELAY + 1)) << 8));
+		bl_pwm->pwm_method =  *(p + LCD_UKEY_BL_PWM_METHOD);
+		bl_pwm->pwm_port = *(p + LCD_UKEY_BL_PWM_PORT);
+		bl_pwm->pwm_freq = (*(p + LCD_UKEY_BL_PWM_FREQ) |
+			((*(p + LCD_UKEY_BL_PWM_FREQ + 1)) << 8) |
+			((*(p + LCD_UKEY_BL_PWM_FREQ + 2)) << 8) |
+			((*(p + LCD_UKEY_BL_PWM_FREQ + 3)) << 8));
 		if (bl_pwm->pwm_port == BL_PWM_VS) {
 			if (bl_pwm->pwm_freq > 4) {
 				LCDERR("bl: bl_pwm_vs wrong freq %d\n", bl_pwm->pwm_freq);
@@ -1600,42 +1594,17 @@ static int aml_bl_config_load_from_unifykey(struct bl_config_s *bconf)
 			if (bl_pwm->pwm_freq > XTAL_HALF_FREQ_HZ)
 				bl_pwm->pwm_freq = XTAL_HALF_FREQ_HZ;
 		}
-		p += LCD_UKEY_BL_PWM_FREQ;
-		bl_pwm->pwm_duty_max = *p;
-		p += LCD_UKEY_BL_PWM_DUTY_MAX;
-		bl_pwm->pwm_duty_min = *p;
-		p += LCD_UKEY_BL_PWM_DUTY_MIN;
-		bl_pwm->pwm_gpio = *p;
-		p += LCD_UKEY_BL_PWM_GPIO;
-		bl_pwm->pwm_gpio_off = *p;
-		p += LCD_UKEY_BL_PWM_GPIO_OFF;
+		bl_pwm->pwm_duty_max = *(p + LCD_UKEY_BL_PWM_DUTY_MAX);
+		bl_pwm->pwm_duty_min = *(p + LCD_UKEY_BL_PWM_DUTY_MIN);
+		bl_pwm->pwm_gpio = *(p + LCD_UKEY_BL_PWM_GPIO);
+		bl_pwm->pwm_gpio_off = *(p + LCD_UKEY_BL_PWM_GPIO_OFF);
 
-		/* dummy pointer */
-		p += LCD_UKEY_BL_PWM2_METHOD;
-		p += LCD_UKEY_BL_PWM2_PORT;
-		p += LCD_UKEY_BL_PWM2_FREQ;
-		p += LCD_UKEY_BL_PWM2_DUTY_MAX;
-		p += LCD_UKEY_BL_PWM2_DUTY_MIN;
-		p += LCD_UKEY_BL_PWM2_GPIO;
-		p += LCD_UKEY_BL_PWM2_GPIO_OFF;
-
-		p += LCD_UKEY_BL_PWM_LEVEL_MAX;
-		p += LCD_UKEY_BL_PWM_LEVEL_MIN;
-		p += LCD_UKEY_BL_PWM2_LEVEL_MAX;
-		p += LCD_UKEY_BL_PWM2_LEVEL_MIN;
-
-		if (bl_header.version == 2) {
+		if (bl_header.version == 2)
 			bconf->pwm_en_sequence_reverse =
-				(*p | ((*(p + 1)) << 8));
-			p += LCD_UKEY_BL_CUST_VAL_0;
-			/* dummy pointer */
-			p += LCD_UKEY_BL_CUST_VAL_1;
-			p += LCD_UKEY_BL_CUST_VAL_2;
-			p += LCD_UKEY_BL_CUST_VAL_3;
-			p += LCD_UKEY_BL_CUST_VAL_4;
-		} else {
+				(*(p + LCD_UKEY_BL_CUST_VAL_0) |
+				((*(p + LCD_UKEY_BL_CUST_VAL_0 + 1)) << 8));
+		else
 			bconf->pwm_en_sequence_reverse = 0;
-		}
 
 		bl_pwm->pwm_duty = bl_pwm->pwm_duty_min;
 		/* bl_pwm_config_init(bl_pwm); */
@@ -1658,16 +1627,16 @@ static int aml_bl_config_load_from_unifykey(struct bl_config_s *bconf)
 		pwm_combo0->index = 0;
 		pwm_combo1->index = 1;
 
-		bconf->pwm_on_delay = (*p | ((*(p + 1)) << 8));
-		p += LCD_UKEY_BL_PWM_ON_DELAY;
-		bconf->pwm_off_delay = (*p | ((*(p + 1)) << 8));
-		p += LCD_UKEY_BL_PWM_OFF_DELAY;
-
-		pwm_combo0->pwm_method = *p;
-		p += LCD_UKEY_BL_PWM_METHOD;
-		pwm_combo0->pwm_port = *p;
-		p += LCD_UKEY_BL_PWM_PORT;
-		pwm_combo0->pwm_freq = (*p | ((*(p + 1)) << 8) | ((*(p + 2)) << 8) | ((*(p + 3)) << 8));
+		bconf->pwm_on_delay = (*(p + LCD_UKEY_BL_PWM_ON_DELAY) |
+			((*(p + LCD_UKEY_BL_PWM_ON_DELAY + 1)) << 8));
+		bconf->pwm_off_delay = (*(p + LCD_UKEY_BL_PWM_OFF_DELAY) |
+			((*(p + LCD_UKEY_BL_PWM_OFF_DELAY + 1)) << 8));
+		pwm_combo0->pwm_method = *(p + LCD_UKEY_BL_PWM_METHOD);
+		pwm_combo0->pwm_port = *(p + LCD_UKEY_BL_PWM_PORT);
+		pwm_combo0->pwm_freq = (*(p + LCD_UKEY_BL_PWM_FREQ) |
+			((*(p + LCD_UKEY_BL_PWM_FREQ + 1)) << 8) |
+			((*(p + LCD_UKEY_BL_PWM_FREQ + 2)) << 8) |
+			((*(p + LCD_UKEY_BL_PWM_FREQ + 3)) << 8));
 		if (pwm_combo0->pwm_port == BL_PWM_VS) {
 			if (pwm_combo0->pwm_freq > 4) {
 				LCDERR("bl: bl_pwm_vs wrong freq %d\n", pwm_combo0->pwm_freq);
@@ -1677,20 +1646,16 @@ static int aml_bl_config_load_from_unifykey(struct bl_config_s *bconf)
 			if (pwm_combo0->pwm_freq > XTAL_HALF_FREQ_HZ)
 				pwm_combo0->pwm_freq = XTAL_HALF_FREQ_HZ;
 		}
-		p += LCD_UKEY_BL_PWM_FREQ;
-		pwm_combo0->pwm_duty_max = *p;
-		p += LCD_UKEY_BL_PWM_DUTY_MAX;
-		pwm_combo0->pwm_duty_min = *p;
-		p += LCD_UKEY_BL_PWM_DUTY_MIN;
-		pwm_combo0->pwm_gpio = *p;
-		p += LCD_UKEY_BL_PWM_GPIO;
-		pwm_combo0->pwm_gpio_off = *p;
-		p += LCD_UKEY_BL_PWM_GPIO_OFF;
-		pwm_combo1->pwm_method = *p;
-		p += LCD_UKEY_BL_PWM2_METHOD;
-		pwm_combo1->pwm_port =  *p;
-		p += LCD_UKEY_BL_PWM2_PORT;
-		pwm_combo1->pwm_freq = (*p | ((*(p + 1)) << 8) | ((*(p + 2)) << 8) | ((*(p + 3)) << 8));
+		pwm_combo0->pwm_duty_max = *(p + LCD_UKEY_BL_PWM_DUTY_MAX);
+		pwm_combo0->pwm_duty_min = *(p + LCD_UKEY_BL_PWM_DUTY_MIN);
+		pwm_combo0->pwm_gpio = *(p + LCD_UKEY_BL_PWM_GPIO);
+		pwm_combo0->pwm_gpio_off = *(p + LCD_UKEY_BL_PWM_GPIO_OFF);
+		pwm_combo1->pwm_method = *(p + LCD_UKEY_BL_PWM2_METHOD);
+		pwm_combo1->pwm_port = *(p + LCD_UKEY_BL_PWM2_PORT);
+		pwm_combo1->pwm_freq = (*(p + LCD_UKEY_BL_PWM2_FREQ) |
+			((*(p + LCD_UKEY_BL_PWM2_FREQ + 1)) << 8) |
+			((*(p + LCD_UKEY_BL_PWM2_FREQ + 2)) << 8) |
+			((*(p + LCD_UKEY_BL_PWM2_FREQ + 3)) << 8));
 		if (pwm_combo1->pwm_port == BL_PWM_VS) {
 			if (pwm_combo1->pwm_freq > 4) {
 				LCDERR("bl: bl_pwm_vs wrong freq %d\n", pwm_combo1->pwm_freq);
@@ -1700,37 +1665,25 @@ static int aml_bl_config_load_from_unifykey(struct bl_config_s *bconf)
 			if (pwm_combo1->pwm_freq > XTAL_HALF_FREQ_HZ)
 				pwm_combo1->pwm_freq = XTAL_HALF_FREQ_HZ;
 		}
-		p += LCD_UKEY_BL_PWM2_FREQ;
-		pwm_combo1->pwm_duty_max = *p;
-		p += LCD_UKEY_BL_PWM2_DUTY_MAX;
-		pwm_combo1->pwm_duty_min = *p;
-		p += LCD_UKEY_BL_PWM2_DUTY_MIN;
-		pwm_combo1->pwm_gpio = *p;
-		p += LCD_UKEY_BL_PWM2_GPIO;
-		pwm_combo1->pwm_gpio_off = *p;
-		p += LCD_UKEY_BL_PWM2_GPIO_OFF;
+		pwm_combo1->pwm_duty_max = *(p + LCD_UKEY_BL_PWM2_DUTY_MAX);
+		pwm_combo1->pwm_duty_min = *p + LCD_UKEY_BL_PWM2_DUTY_MIN;
+		pwm_combo1->pwm_gpio = *(p + LCD_UKEY_BL_PWM2_GPIO);
+		pwm_combo1->pwm_gpio_off = *(p + LCD_UKEY_BL_PWM2_GPIO_OFF);
 
-		pwm_combo0->level_max = (*p | ((*(p + 1)) << 8));
-		p += LCD_UKEY_BL_PWM_LEVEL_MAX;
-		pwm_combo0->level_min = (*p | ((*(p + 1)) << 8));
-		p += LCD_UKEY_BL_PWM_LEVEL_MIN;
-		pwm_combo1->level_max = (*p | ((*(p + 1)) << 8));
-		p += LCD_UKEY_BL_PWM2_LEVEL_MAX;
-		pwm_combo1->level_min = (*p | ((*(p + 1)) << 8));
-		p += LCD_UKEY_BL_PWM2_LEVEL_MIN;
+		pwm_combo0->level_max = (*(p + LCD_UKEY_BL_PWM_LEVEL_MAX) |
+			((*(p + LCD_UKEY_BL_PWM_LEVEL_MAX + 1)) << 8));
+		pwm_combo0->level_min = (*(p + LCD_UKEY_BL_PWM_LEVEL_MIN) |
+			((*(p + LCD_UKEY_BL_PWM_LEVEL_MIN + 1)) << 8));
+		pwm_combo1->level_max = (*(p + LCD_UKEY_BL_PWM2_LEVEL_MAX) |
+			((*(p + LCD_UKEY_BL_PWM2_LEVEL_MAX + 1)) << 8));
+		pwm_combo1->level_min = (*(p + LCD_UKEY_BL_PWM2_LEVEL_MIN) |
+			((*(p + LCD_UKEY_BL_PWM2_LEVEL_MIN + 1)) << 8));
 
-		if (bl_header.version == 2) {
-			bconf->pwm_en_sequence_reverse =
-				(*p | ((*(p + 1)) << 8));
-			p += LCD_UKEY_BL_CUST_VAL_0;
-			/* dummy pointer */
-			p += LCD_UKEY_BL_CUST_VAL_1;
-			p += LCD_UKEY_BL_CUST_VAL_2;
-			p += LCD_UKEY_BL_CUST_VAL_3;
-			p += LCD_UKEY_BL_CUST_VAL_4;
-		} else {
+		if (bl_header.version == 2)
+			bconf->pwm_en_sequence_reverse = (*(p + LCD_UKEY_BL_CUST_VAL_0) |
+				((*(p + LCD_UKEY_BL_CUST_VAL_0 + 1)) << 8));
+		else
 			bconf->pwm_en_sequence_reverse = 0;
-		}
 
 		pwm_combo0->pwm_duty = pwm_combo0->pwm_duty_min;
 		pwm_combo1->pwm_duty = pwm_combo1->pwm_duty_min;
