@@ -524,6 +524,11 @@ CONFIG_CMD_FS_GENERIC=y
 # CONFIG_CMD_UBI is not set
 
 #
+# ODROID commands
+#
+CONFIG_CMD_ODROID_CFGLOAD=y
+
+#
 # Partition Types
 #
 CONFIG_PARTITIONS=y

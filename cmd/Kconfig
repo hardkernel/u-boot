@@ -1275,4 +1275,14 @@ config CMD_UBIFS
 	help
 	  UBIFS is a file system for flash devices which works on top of UBI.
 
+menu "ODROID commands"
+
+config CMD_ODROID_CFGLOAD
+	bool "cfgload command - load boot.ini from FAT partition"
+	depends on TARGET_ODROIDN1
+	help
+	  cfgload support
+
+endmenu
+
 endmenu
