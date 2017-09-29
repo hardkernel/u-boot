@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier:     GPL-2.0+
  */
+
 #include <common.h>
 #include <dm.h>
 #include <misc.h>
@@ -15,6 +16,7 @@
 #include <u-boot/sha256.h>
 #include <usb.h>
 #include <dwc3-uboot.h>
+#include <spl.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -209,3 +211,30 @@ int board_usb_init(int index, enum usb_init_type init)
 	return dwc3_uboot_init(&dwc3_device_data);
 }
 #endif
+
+void spl_board_init(void)
+{
+	struct udevice *pinctrl;
+	int ret;
+
+	ret = uclass_get_device(UCLASS_PINCTRL, 0, &pinctrl);
+	if (ret) {
+		debug("%s: Cannot find pinctrl device\n", __func__);
+		goto err;
+	}
+
+	/* Enable debug UART */
+	ret = pinctrl_request_noflags(pinctrl, PERIPH_ID_UART_DBG);
+	if (ret) {
+		debug("%s: Failed to set up console UART\n", __func__);
+		goto err;
+	}
+
+	preloader_console_init();
+	return;
+err:
+	printf("%s: Error %d\n", __func__, ret);
+
+	/* No way to report error here */
+	hang();
+}
