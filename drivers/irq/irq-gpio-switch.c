@@ -89,19 +89,25 @@ static int _irq_to_gpio(int irq)
 
 int gpio_to_irq(struct gpio_desc *gpio)
 {
-	int irq_gpio, bank;
+	int irq_gpio, bank, ret = EINVAL_GPIO;
 	bool found;
-	char *name;
+	char *name, *name_tok;
 
 	if (!gpio->dev->name) {
 		printf("can't find device name for the gpio bank\n");
 		return EINVAL_GPIO;
 	}
 
-	name = strtok((char *)gpio->dev->name, "@");
+	name_tok = strdup(gpio->dev->name);
+	if (!name_tok) {
+		printf("Error: strdup in %s failed!\n", __func__);
+		return -ENOMEM;
+	}
+
+	name = strtok(name_tok, "@");
 	if (!name) {
 		printf("can't find correct device name for the gpio bank\n");
-		return EINVAL_GPIO;
+		goto out;
 	}
 
 	for (bank = 0; bank < ARRAY_SIZE(gpio_banks); bank++) {
@@ -113,14 +119,19 @@ int gpio_to_irq(struct gpio_desc *gpio)
 
 	if (!found) {
 		printf("irq gpio framework can't find %s\n", name);
-		return EINVAL_GPIO;
+		goto out;
 	}
 
 	irq_gpio = RK_IRQ_GPIO(bank, gpio->offset);
 	if (!gpio_is_valid(irq_gpio))
-		return EINVAL_GPIO;
+		goto out;
 
+	free(name_tok);
 	return _hard_gpio_to_irq(irq_gpio);
+
+out:
+	free(name_tok);
+	return ret;
 }
 
 int hard_gpio_to_irq(u32 gpio)
