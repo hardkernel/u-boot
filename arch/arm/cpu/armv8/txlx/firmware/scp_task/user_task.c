@@ -19,6 +19,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
+#include <config.h>
 #include "config.h"
 #include "data.h"
 #include "registers.h"
@@ -142,6 +143,9 @@ void high_task(void)
 }
 
 extern unsigned int usr_pwr_key;
+#ifdef CONFIG_SUPPORT_CUSOTMER_BOARD
+extern void process_customer_low_task(unsigned int, unsigned int *, unsigned int *);
+#endif
 void process_low_task(unsigned command)
 {
 	unsigned *pcommand =
@@ -158,6 +162,10 @@ void process_low_task(unsigned command)
 		if ((command >> 16) == SCPI_CL_REMOTE) {
 			usr_pwr_key = *(pcommand + 2);/*tx_size locates at *(pcommand + 1)*/
 			dbg_print("pwr_key=",usr_pwr_key);
+		} else {
+#ifdef CONFIG_SUPPORT_CUSOTMER_BOARD
+			process_customer_low_task(command, pcommand, response);
+#endif
 		}
 	}
 }
