@@ -20,6 +20,13 @@ config DM_RC
 	  This adds a uclass for Remote Controllers. This is needed
 	  in order to support standalone IR receivers.
 
+config RK_IR
+	bool "Enable rk ir support"
+	depends on DM_RC
+	select BITREVERSE
+	help
+	  This adds a driver for the rockchip IR controller.
+
 config CROS_EC_KEYB
 	bool "Enable Chrome OS EC keyboard support"
 	help
