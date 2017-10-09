@@ -77,7 +77,7 @@ static void gpio_irq_ack(void __iomem *regbase, unsigned int bit)
 	gpio_bit_op(regbase, GPIO_PORTS_EOI, bit, 1);
 }
 
-static void generic_gpio_handle_irq(int irq)
+static void generic_gpio_handle_irq(int irq, void *data __always_unused)
 {
 	struct gpio_bank *bank = gpio_id_to_bank(irq - IRQ_GPIO0);
 	unsigned gpio_irq, pin, unmasked = 0;
@@ -104,7 +104,7 @@ static void generic_gpio_handle_irq(int irq)
 			gpio_irq_unmask(bank->regbase, offset_to_bit(pin));
 		}
 
-		_generic_gpio_handle_irq(gpio_irq + pin, NULL);
+		_generic_gpio_handle_irq(gpio_irq + pin);
 
 		isr &= ~(1 << pin);
 

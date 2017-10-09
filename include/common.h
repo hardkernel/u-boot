@@ -106,7 +106,11 @@ void __assert_fail(const char *assertion, const char *file, unsigned line,
 #define BUG_ON(condition) do { if (unlikely((condition)!=0)) BUG(); } while(0)
 #endif /* BUG */
 
+#ifndef CONFIG_IRQ
 typedef void (interrupt_handler_t)(void *);
+#else
+typedef void (interrupt_handler_t)(int, void *);
+#endif
 
 #include <asm/u-boot.h> /* boot information for Linux kernel */
 #include <asm/global_data.h>	/* global data used for startup functions */

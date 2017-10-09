@@ -78,6 +78,6 @@ int gpio_to_irq(struct gpio_desc *gpio);
 int hard_gpio_to_irq(unsigned gpio);
 
 /* only irq-gpio.c can use it */
-void _generic_gpio_handle_irq(int irq, void *data);
+void _generic_gpio_handle_irq(int irq);
 
 #endif /* _IRQ_GENERIC_H */

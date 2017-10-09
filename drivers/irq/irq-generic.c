@@ -13,7 +13,8 @@
 DECLARE_GLOBAL_DATA_PTR;
 
 struct irq_desc {
-	void (*handle_irq)(void *data);
+	interrupt_handler_t *handle_irq;
+	void *data;
 };
 
 static struct irq_desc irqs_desc[PLATFORM_MAX_IRQS_NR];
@@ -37,7 +38,7 @@ static int irq_bad(int irq)
 }
 
 /* general interrupt handler for gpio chip */
-void _generic_gpio_handle_irq(int irq, void *data)
+void _generic_gpio_handle_irq(int irq)
 {
 	if (irq_bad(irq))
 		return;
@@ -48,7 +49,7 @@ void _generic_gpio_handle_irq(int irq, void *data)
 	}
 
 	if (irqs_desc[irq].handle_irq)
-		irqs_desc[irq].handle_irq(data);
+		irqs_desc[irq].handle_irq(irq, irqs_desc[irq].data);
 }
 
 void _do_generic_irq_handler(void)
@@ -57,7 +58,7 @@ void _do_generic_irq_handler(void)
 
 	if (irq < PLATFORM_GIC_IRQS_NR) {
 		if (irqs_desc[irq].handle_irq)
-			irqs_desc[irq].handle_irq((void *)(unsigned long)irq);
+			irqs_desc[irq].handle_irq(irq, irqs_desc[irq].data);
 	}
 
 	gic_irq_chip->irq_eoi(irq);
@@ -91,8 +92,10 @@ static int _do_arch_irq_init(void)
 	 */
 	initialized = true;
 
-	for (irq = 0; irq < PLATFORM_MAX_IRQS_NR; irq++)
+	for (irq = 0; irq < PLATFORM_MAX_IRQS_NR; irq++) {
 		irqs_desc[irq].handle_irq = NULL;
+		irqs_desc[irq].data = NULL;
+	}
 
 	gic_irq_chip = arch_gic_irq_init();
 	if (chip_irq_bad(gic_irq_chip)) {
@@ -165,6 +168,7 @@ void irq_install_handler(int irq, interrupt_handler_t *handler, void *data)
 		return;
 
 	irqs_desc[irq].handle_irq = handler;
+	irqs_desc[irq].data = data;
 }
 
 void irq_free_handler(int irq)
@@ -173,6 +177,7 @@ void irq_free_handler(int irq)
 		return;
 
 	irqs_desc[irq].handle_irq = NULL;
+	irqs_desc[irq].data = NULL;
 }
 
 #ifdef CONFIG_ARM64
