@@ -16,6 +16,47 @@
 
 #define PAGE_SIZE 4096
 
+/*
+ * Currently it supports read/write up to 8*8*4 Bytes per
+ * stride as a burst mode. Please note that if you change
+ * MAX_STRIDE, you should also update dwmci_memcpy_fromio
+ * to augment the groups of {ldm, stm}.
+ */
+#define MAX_STRIDE 64
+#if CONFIG_ARM && CONFIG_CPU_V7
+void noinline dwmci_memcpy_fromio(void *buffer, void *fifo_addr)
+{
+	__asm__ __volatile__ (
+		"push {r2, r3, r4, r5, r6, r7, r8, r9}\n"
+		"ldm r1, {r2,r3,r4,r5,r6,r7,r8,r9}\n"
+		"stm r0!, {r2,r3,r4,r5,r6,r7,r8,r9}\n"
+		"ldm r1, {r2,r3,r4,r5,r6,r7,r8,r9}\n"
+		"stm r0!, {r2,r3,r4,r5,r6,r7,r8,r9}\n"
+		"ldm r1, {r2,r3,r4,r5,r6,r7,r8,r9}\n"
+		"stm r0!, {r2,r3,r4,r5,r6,r7,r8,r9}\n"
+		"ldm r1, {r2,r3,r4,r5,r6,r7,r8,r9}\n"
+		"stm r0!, {r2,r3,r4,r5,r6,r7,r8,r9}\n"
+		"ldm r1, {r2,r3,r4,r5,r6,r7,r8,r9}\n"
+		"stm r0!, {r2,r3,r4,r5,r6,r7,r8,r9}\n"
+		"ldm r1, {r2,r3,r4,r5,r6,r7,r8,r9}\n"
+		"stm r0!, {r2,r3,r4,r5,r6,r7,r8,r9}\n"
+		"ldm r1, {r2,r3,r4,r5,r6,r7,r8,r9}\n"
+		"stm r0!, {r2,r3,r4,r5,r6,r7,r8,r9}\n"
+		"ldm r1, {r2,r3,r4,r5,r6,r7,r8,r9}\n"
+		"stm r0!, {r2,r3,r4,r5,r6,r7,r8,r9}\n"
+		"pop {r2, r3, r4, r5, r6,r7,r8,r9}\n"
+		:::"memory"
+	);
+}
+
+void noinline dwmci_memcpy_toio(void *buffer, void *fifo_addr)
+{
+	dwmci_memcpy_fromio(fifo_addr, buffer);
+}
+#else
+void dwmci_memcpy_fromio(void *buffer, void *fifo_addr) {};
+void dwmci_memcpy_toio(void *buffer, void *fifo_addr) {};
+#endif
 static int dwmci_wait_reset(struct dwmci_host *host, u32 value)
 {
 	unsigned long timeout = 1000;
@@ -102,8 +143,11 @@ static int dwmci_data_transfer(struct dwmci_host *host, struct mmc_data *data)
 	ulong start = get_timer(0);
 	u32 fifo_depth = (((host->fifoth_val & RX_WMARK_MASK) >>
 			    RX_WMARK_SHIFT) + 1) * 2;
+	bool stride;
 
 	size = data->blocksize * data->blocks / 4;
+	/* Still use legacy PIO mode if size < 512(128 * 4) Bytes */
+	stride = host->stride_pio && size > 128;
 	if (data->flags == MMC_DATA_READ)
 		buf = (unsigned int *)data->dest;
 	else
@@ -144,9 +188,24 @@ static int dwmci_data_transfer(struct dwmci_host *host, struct mmc_data *data)
 					len = (len >> DWMCI_FIFO_SHIFT) &
 						    DWMCI_FIFO_MASK;
 					len = min(size, len);
-					for (i = 0; i < len; i++)
-						*buf++ =
-						dwmci_readl(host, DWMCI_DATA);
+					if (!stride) {
+						/* Legacy pio mode */
+						for (i = 0; i < len; i++)
+							*buf++ = dwmci_readl(host, DWMCI_DATA);
+						goto read_again;
+					}
+
+					/* dwmci_memcpy_fromio now bursts 256 Bytes once */
+					if (len < MAX_STRIDE)
+						continue;
+
+					for (i = 0; i < len / MAX_STRIDE; i++) {
+						dwmci_memcpy_fromio(buf, host->ioaddr + DWMCI_DATA);
+						buf += MAX_STRIDE;
+					}
+
+					len = i * MAX_STRIDE;
+read_again:
 					size = size > len ? (size - len) : 0;
 				}
 				dwmci_writel(host, DWMCI_RINTSTS,
@@ -159,9 +218,23 @@ static int dwmci_data_transfer(struct dwmci_host *host, struct mmc_data *data)
 						   DWMCI_FIFO_SHIFT) &
 						   DWMCI_FIFO_MASK);
 					len = min(size, len);
-					for (i = 0; i < len; i++)
-						dwmci_writel(host, DWMCI_DATA,
-							     *buf++);
+					if (!stride) {
+						for (i = 0; i < len; i++)
+							dwmci_writel(host, DWMCI_DATA,
+								     *buf++);
+						goto write_again;
+					}
+					/* dwmci_memcpy_toio now bursts 256 Bytes once */
+					if (len < MAX_STRIDE)
+						continue;
+
+					for (i = 0; i < len / MAX_STRIDE; i++) {
+						dwmci_memcpy_toio(buf, host->ioaddr + DWMCI_DATA);
+						buf += MAX_STRIDE;
+					}
+
+					len = i * MAX_STRIDE;
+write_again:
 					size = size > len ? (size - len) : 0;
 				}
 				dwmci_writel(host, DWMCI_RINTSTS,

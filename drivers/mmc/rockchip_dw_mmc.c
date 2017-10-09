@@ -260,6 +260,12 @@ static int rockchip_dwmmc_probe(struct udevice *dev)
 
 	host->fifo_mode = priv->fifo_mode;
 
+#ifdef CONFIG_ROCKCHIP_RK3128
+	host->stride_pio = true;
+#else
+	host->stride_pio = false;
+#endif
+
 #ifdef CONFIG_PWRSEQ
 	/* Enable power if needed */
 	ret = uclass_get_device_by_phandle(UCLASS_PWRSEQ, dev, "mmc-pwrseq",

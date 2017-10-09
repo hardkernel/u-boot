@@ -146,6 +146,7 @@
  * @fifoth_val:	Value for FIFOTH register (or 0 to leave unset)
  * @mmc:	Pointer to generic MMC structure for this device
  * @priv:	Private pointer for use by controller
+ * @stride_pio: Provide the ability of accessing fifo with burst mode
  */
 struct dwmci_host {
 	const char *name;
@@ -162,6 +163,7 @@ struct dwmci_host {
 	u32 fifoth_val;
 	struct mmc *mmc;
 	void *priv;
+	bool stride_pio;
 
 	void (*clksel)(struct dwmci_host *host);
 	void (*board_init)(struct dwmci_host *host);
