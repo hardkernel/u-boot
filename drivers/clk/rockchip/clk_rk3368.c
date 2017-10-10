@@ -526,8 +526,9 @@ static int rk3368_clk_ofdata_to_platdata(struct udevice *dev)
 static int rk3368_clk_bind(struct udevice *dev)
 {
 	int ret;
-	struct udevice *sys_child;
+	struct udevice *sys_child, *sf_child;
 	struct sysreset_reg *priv;
+	struct softreset_reg *sf_priv;
 
 	/* The reset driver does not have a device node, so bind it here */
 	ret = device_bind_driver(dev, "rockchip_sysreset", "sysreset",
@@ -541,6 +542,18 @@ static int rk3368_clk_bind(struct udevice *dev)
 		priv->glb_srst_snd_value = offsetof(struct rk3368_cru,
 						    glb_srst_snd_val);
 		sys_child->priv = priv;
+	}
+
+	ret = device_bind_driver_to_node(dev, "rockchip_reset", "reset",
+					 dev_ofnode(dev), &sf_child);
+	if (ret) {
+		debug("Warning: No rockchip reset driver: ret=%d\n", ret);
+	} else {
+		sf_priv = malloc(sizeof(struct softreset_reg));
+		sf_priv->sf_reset_offset = offsetof(struct rk3368_cru,
+						    softrst_con[0]);
+		sf_priv->sf_reset_num = 15;
+		sf_child->priv = sf_priv;
 	}
 
 	return ret;

@@ -1018,8 +1018,9 @@ static int rk3399_clk_ofdata_to_platdata(struct udevice *dev)
 static int rk3399_clk_bind(struct udevice *dev)
 {
 	int ret;
-	struct udevice *sys_child;
+	struct udevice *sys_child, *sf_child;
 	struct sysreset_reg *priv;
+	struct softreset_reg *sf_priv;
 
 	/* The reset driver does not have a device node, so bind it here */
 	ret = device_bind_driver(dev, "rockchip_sysreset", "sysreset",
@@ -1033,6 +1034,18 @@ static int rk3399_clk_bind(struct udevice *dev)
 		priv->glb_srst_snd_value = offsetof(struct rk3399_cru,
 						    glb_srst_snd_value);
 		sys_child->priv = priv;
+	}
+
+	ret = device_bind_driver_to_node(dev, "rockchip_reset", "reset",
+					 dev_ofnode(dev), &sf_child);
+	if (ret) {
+		debug("Warning: No rockchip reset driver: ret=%d\n", ret);
+	} else {
+		sf_priv = malloc(sizeof(struct softreset_reg));
+		sf_priv->sf_reset_offset = offsetof(struct rk3399_cru,
+						    softrst_con[0]);
+		sf_priv->sf_reset_num = 21;
+		sf_child->priv = sf_priv;
 	}
 
 	return 0;
@@ -1210,6 +1223,26 @@ static int rk3399_pmuclk_ofdata_to_platdata(struct udevice *dev)
 	return 0;
 }
 
+static int rk3399_pmuclk_bind(struct udevice *dev)
+{
+	int ret = 0;
+	struct udevice *sf_child;
+	struct softreset_reg *sf_priv = malloc(sizeof(struct softreset_reg));
+
+	ret = device_bind_driver_to_node(dev, "rockchip_reset",
+					 "reset", dev_ofnode(dev),
+					 &sf_child);
+	if (ret)
+		debug("Warning: No rockchip reset driver: ret=%d\n", ret);
+
+	sf_priv->sf_reset_offset = offsetof(struct rk3399_pmucru,
+					    pmucru_softrst_con[0]);
+	sf_priv->sf_reset_num = 2;
+	sf_child->priv = sf_priv;
+
+	return ret;
+}
+
 static const struct udevice_id rk3399_pmuclk_ids[] = {
 	{ .compatible = "rockchip,rk3399-pmucru" },
 	{ }
@@ -1223,6 +1256,7 @@ U_BOOT_DRIVER(rockchip_rk3399_pmuclk) = {
 	.ofdata_to_platdata = rk3399_pmuclk_ofdata_to_platdata,
 	.ops		= &rk3399_pmuclk_ops,
 	.probe		= rk3399_pmuclk_probe,
+	.bind		= rk3399_pmuclk_bind,
 #if CONFIG_IS_ENABLED(OF_PLATDATA)
 	.platdata_auto_alloc_size = sizeof(struct rk3399_pmuclk_plat),
 #endif
