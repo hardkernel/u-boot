@@ -117,4 +117,11 @@ config PARTITION_TYPE_GUID
 	  Activate the configuration of GUID type
 	  for EFI partition
 
+config PARTITION_FORMAT
+	bool "Enable support of partition format"
+	depends on PARTITIONS
+	depends on DOS_PARTITION
+	help
+	  Activate the partition format
+
 endmenu

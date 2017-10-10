@@ -1283,6 +1283,12 @@ config CMD_ODROID_CFGLOAD
 	help
 	  cfgload support
 
+config CMD_FDISK
+	bool "fdisk command - make mbr based on odroidn1-disk partitions"
+	depends on TARGET_ODROIDN1
+	help
+	  fdisk support
+
 endmenu
 
 endmenu
