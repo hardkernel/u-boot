@@ -29,6 +29,7 @@ static const struct pmic_child_info power_key_info[] = {
 
 static const struct pmic_child_info fuel_gauge_info[] = {
 	{ .prefix = "battery", .driver = "rk818_fg"},
+	{ .prefix = "battery", .driver = "rk816_fg"},
 	{ },
 };
 
