@@ -161,7 +161,7 @@ void spl_board_init(void)
 
 	preloader_console_init();
 #if CONFIG_IS_ENABLED(ROCKCHIP_BACK_TO_BROM)
-	back_to_bootrom();
+	back_to_bootrom(BROM_BOOT_NEXTSTAGE);
 #endif
 
 	return;

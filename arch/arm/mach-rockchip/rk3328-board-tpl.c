@@ -78,7 +78,7 @@ void board_debug_uart_init(void)
 
 void board_return_to_bootrom(void)
 {
-	back_to_bootrom();
+	back_to_bootrom(BROM_BOOT_NEXTSTAGE);
 }
 
 u32 spl_boot_device(void)
