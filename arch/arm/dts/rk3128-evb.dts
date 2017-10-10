@@ -59,6 +59,7 @@
 };
 
 &emmc {
+	fifo-mode;
 	status = "okay";
 };
 
