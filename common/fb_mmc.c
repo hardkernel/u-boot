@@ -12,6 +12,8 @@
 #include <sparse_format.h>
 #include <mmc.h>
 #include <fb_fastboot.h>
+#include <amlogic/aml_mmc.h>
+
 #ifndef CONFIG_FASTBOOT_GPT_NAME
 #define CONFIG_FASTBOOT_GPT_NAME GPT_ENTRY_NAME
 #endif
@@ -20,8 +22,7 @@
 #define CONFIG_FASTBOOT_MBR_NAME "mbr"
 #endif
 
-extern int dtb_write(void *addr);
-extern int renew_partition_tbl(unsigned char *buffer);
+
 /* The 64 defined bytes plus the '\0' */
 struct fb_mmc_sparse {
 	block_dev_desc_t	*dev_desc;
@@ -98,6 +99,65 @@ static void write_raw_image(block_dev_desc_t *dev_desc, disk_partition_t *info,
 	fastboot_okay("");
 }
 
+/* erase or flash, when buffer is not NULL, it's write */
+static void fb_mmc_bootloader_ops(const char *cmd,
+			block_dev_desc_t *dev_desc, void *buffer,
+			unsigned int bytes)
+{
+	char *delim = "-";
+	char *hwpart;
+	int map = 0, ret = 0;
+	char *scmd = (char *) cmd;
+	char *ops[] = {"erase", "write"};
+
+	hwpart = strchr(scmd, (int)*delim);
+
+    if (!hwpart) {
+		map = AML_BL_USER;
+	} else if (!strcmp(hwpart, "-boot0")) {
+		map = AML_BL_BOOT0;
+	} else if (!strcmp(hwpart, "-boot1")) {
+		map = AML_BL_BOOT1;
+	}
+    if (map) {
+		if (buffer)
+            ret = amlmmc_write_bootloader(CONFIG_FASTBOOT_FLASH_MMC_DEV, map,
+				bytes, buffer);
+        else
+			ret = amlmmc_erase_bootloader(CONFIG_FASTBOOT_FLASH_MMC_DEV, map);
+		if (ret) {
+			error("failed %s %s from device %d", (buffer? ops[1]: ops[0]),
+				cmd, dev_desc->dev);
+			fastboot_fail("failed bootloader operating to device");
+			return;
+		}
+		printf("........ %s  %s\n", (buffer? ops[1]: ops[0]), cmd);
+		fastboot_okay("");
+	} else
+		fastboot_fail("failed opearting from device");
+	return;
+}
+
+
+/**
+ * write bootloader on user/boot0/boot1
+ * according to bootloader name.
+ */
+static void fb_mmc_write_bootloader(const char *cmd,
+		block_dev_desc_t *dev_desc, void *buffer, unsigned int bytes)
+{
+	return fb_mmc_bootloader_ops(cmd, dev_desc, buffer, bytes);
+}
+
+/**
+ * erase bootloader on user/boot0/boot1
+ * according to bootloader name.
+ */
+static void fb_mmc_erase_bootloader(const char *cmd, block_dev_desc_t *dev_desc)
+{
+	return fb_mmc_bootloader_ops(cmd, dev_desc, NULL, 0);
+}
+
 void fb_mmc_flash_write(const char *cmd, void *download_buffer,
 			unsigned int download_bytes)
 {
@@ -136,9 +196,7 @@ void fb_mmc_flash_write(const char *cmd, void *download_buffer,
 	}
 #endif
 
-
 #ifdef CONFIG_AML_PARTITION
-extern int emmc_update_mbr(unsigned char *buffer);
 	if (strcmp(cmd, CONFIG_FASTBOOT_MBR_NAME) == 0) {
 		printf("%s: updating MBR\n", __func__);
 		ret = emmc_update_mbr(download_buffer);
@@ -166,6 +224,9 @@ extern int emmc_update_mbr(unsigned char *buffer);
 			fastboot_okay("");
 		}
 #endif
+	} else if (!strncmp(cmd, "bootloader", strlen("bootloader"))) {
+		fb_mmc_write_bootloader(cmd, dev_desc, download_buffer, download_bytes);
+		return;
 	} else {
 		if (is_sparse_image(download_buffer)) {
 			struct fb_mmc_sparse sparse_priv;
@@ -189,7 +250,6 @@ extern int emmc_update_mbr(unsigned char *buffer);
 				download_bytes);
 	}
 }
-
 
 void fb_mmc_erase_write(const char *cmd, void *download_buffer)
 {
@@ -222,27 +282,33 @@ void fb_mmc_erase_write(const char *cmd, void *download_buffer)
 		fastboot_fail("cannot find partition");
 		return;
 	}
-
-	/* Align blocks to erase group size to avoid erasing other partitions */
-	grp_size = mmc->erase_grp_size;
-	blks_start = (info.start + grp_size - 1) & ~(grp_size - 1);
-	if (info.size >= grp_size)
-		blks_size = (info.size - (blks_start - info.start)) &
-				(~(grp_size - 1));
-	else
-		blks_size = 0;
-
-	printf("Erasing blocks " LBAFU " to " LBAFU " due to alignment\n",
-	       blks_start, blks_start + blks_size);
-
-	blks = dev_desc->block_erase(dev_desc->dev, blks_start, blks_size);
-	if (blks != 0) {
-		error("failed erasing from device %d", dev_desc->dev);
-		fastboot_fail("failed erasing from device");
+	/* special operation for bootloader */
+	if (!strncmp(cmd, "bootloader", strlen("bootloader"))) {
+		fb_mmc_erase_bootloader(cmd, dev_desc);
 		return;
-	}
+	} else {
+		/* Align blocks to erase group size to avoid erasing other partitions */
+		grp_size = mmc->erase_grp_size;
+		blks_start = (info.start + grp_size - 1) & ~(grp_size - 1);
+		if (info.size >= grp_size)
+			blks_size = (info.size - (blks_start - info.start)) &
+					(~(grp_size - 1));
+		else
+			blks_size = 0;
 
-	printf("........ erased " LBAFU " bytes from '%s'\n",
-	       blks_size * info.blksz, cmd);
-	fastboot_okay("");
+		printf("Erasing blocks " LBAFU " to " LBAFU " due to alignment\n",
+		       blks_start, blks_start + blks_size);
+
+		blks = dev_desc->block_erase(dev_desc->dev, blks_start, blks_size);
+		if (blks != 0) {
+			error("failed erasing from device %d", dev_desc->dev);
+			fastboot_fail("failed erasing from device");
+			return;
+		}
+
+		printf("........ erased " LBAFU " bytes from '%s'\n",
+		       blks_size * info.blksz, cmd);
+		fastboot_okay("");
+
+	}
 }

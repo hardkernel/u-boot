@@ -114,10 +114,14 @@ struct partitions emmc_partition_table[] = {
 };
 
 struct virtual_partition virtual_partition_table[] = {
-    /* fixme, is MBR virtual partition needed? */
+    /* partition for name idx, off & size will not be used! */
 #if (CONFIG_PTBL_MBR)
     VIRTUAL_PARTITION_ELEMENT(MMC_MBR_NAME, MMC_MBR_OFFSET, MMC_MBR_SIZE),
 #endif
+    VIRTUAL_PARTITION_ELEMENT(MMC_BOOT_NAME0, 0, 0),
+    VIRTUAL_PARTITION_ELEMENT(MMC_BOOT_NAME1, 0, 0),
+
+    /* virtual partition in reserved partition, take care off and size */
 	VIRTUAL_PARTITION_ELEMENT(MMC_TABLE_NAME, MMC_TABLE_OFFSET, MMC_TABLE_SIZE),
 	VIRTUAL_PARTITION_ELEMENT(MMC_KEY_NAME, EMMCKEY_RESERVE_OFFSET, MMC_KEY_SIZE),
 	VIRTUAL_PARTITION_ELEMENT(MMC_PATTERN_NAME, CALI_PATTERN_OFFSET, CALI_PATTERN_SIZE),
@@ -1173,9 +1177,6 @@ int find_virtual_partition_by_name (char *name, struct partitions *partition)
 		strcpy(partition->name, name);
 		partition->offset = offset + vpart->offset;
 		partition->size = (vpart->size * DTB_COPIES);
-	} else {
-		apt_err("can't find %s\n", name);
-		ret = -1;
 	}
 
 	return ret;

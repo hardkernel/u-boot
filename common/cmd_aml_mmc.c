@@ -75,18 +75,21 @@ static struct aml_dtb_info dtb_infos = {{0, 0}, {0, 0}};
 
 #define GXB_START_BLK   0
 #define GXL_START_BLK   1
-#define UBOOT_SIZE  (0x1000) // uboot size  2MB
+
+/* max 2MB for emmc in blks */
+#define UBOOT_SIZE  (0x1000)
+
 int info_disprotect = 0;
+
 bool emmckey_is_protected (struct mmc *mmc)
 {
 #ifdef CONFIG_STORE_COMPATIBLE
 #ifdef CONFIG_SECURITYKEY
-    if (info_disprotect & DISPROTECT_KEY) { // disprotect
-        printf("emmckey_is_protected : disprotect\n ");
+    if (info_disprotect & DISPROTECT_KEY) {
+        printf("%s(): disprotect\n", __func__);
         return 0;
     }else{
-        printf("emmckey_is_protected : protect\n ");
-    // protect
+        printf("%s(): protect\n", __func__);
         return 1;
     }
 #else
@@ -188,17 +191,168 @@ static int get_partition_size(unsigned char* name, uint64_t* addr)
 
 static inline int isstring(char *p)
 {
-        char *endptr = p;
-        while (*endptr != '\0') {
-                if (!(((*endptr >= '0') && (*endptr <= '9'))
-                                        || ((*endptr >= 'a') && (*endptr <= 'f'))
-                                        || ((*endptr >= 'A') && (*endptr <= 'F'))
-                                        || (*endptr == 'x') || (*endptr == 'X')))
-                        return 1;
-                endptr++;
-        }
+    char *endptr = p;
+    while (*endptr != '\0') {
+        if (!(((*endptr >= '0') && (*endptr <= '9'))
+                || ((*endptr >= 'a') && (*endptr <= 'f'))
+                || ((*endptr >= 'A') && (*endptr <= 'F'))
+                || (*endptr == 'x') || (*endptr == 'X')))
+            return 1;
+        endptr++;
+    }
 
-        return 0;
+    return 0;
+}
+
+/*
+    erase bootloader on user/boot0/boot1 which indicate by map.
+    bit 0: user
+    bit 1: boot0
+    bit 2: boot1
+*/
+int amlmmc_erase_bootloader(int dev, int map)
+{
+    int ret = 0, i, count = 3;
+    int blk_shift;
+    unsigned long n;
+    char *partname[3] = {"user", "boot0", "boot1"};
+    cpu_id_t cpu_id = get_cpu_id();
+    struct mmc *mmc = find_mmc_device(dev);
+
+    /* do nothing */
+    if (0 == map)
+        goto _out;
+
+    if (!mmc) {
+        printf("%s() %d: not valid emmc %d\n", __func__, __LINE__, dev);
+        ret = -1;
+        goto _out;
+    }
+    /* make sure mmc is initilized! */
+    ret = mmc_init(mmc);
+    if (ret) {
+        printf("%s() %d: emmc %d init %d\n", __func__, __LINE__, dev, ret);
+        ret = -2;
+        goto _out;
+    }
+
+    blk_shift = ffs(mmc->read_bl_len) -1;
+    /* erase bootloader in user/boot0/boot1 */
+    for (i = 0; i < count; i++) {
+        if (map & (0x1 << i)) {
+            if (!mmc_select_hwpart(dev, i)) {
+                lbaint_t start = 0, blkcnt;
+
+                blkcnt = mmc->capacity >> blk_shift;
+                if (0 == i) {
+                    struct partitions *part_info;
+                    /* get info by partition */
+                    part_info = find_mmc_partition_by_name(MMC_BOOT_NAME);
+                    if (part_info == NULL) {
+                        printf("%s() %d: error!!\n", __func__, __LINE__);
+                        /* fixme, do somthing! */
+                        continue;
+                    } else {
+                        start = part_info->offset>> blk_shift;
+                        blkcnt = part_info->size>> blk_shift;
+                        if (cpu_id.family_id >= MESON_CPU_MAJOR_ID_GXL) {
+                            start = GXL_START_BLK;
+                            blkcnt -= GXL_START_BLK;
+                        }
+                    }
+                }
+                /* some customer may use boot1 higher 2M as private data. */
+            #ifdef CONFIG_EMMC_BOOT1_TOUCH_REGION
+                if (2 == i && CONFIG_EMMC_BOOT1_TOUCH_REGION <= mmc->capacity) {
+                    blkcnt = CONFIG_EMMC_BOOT1_TOUCH_REGION >> blk_shift;
+                }
+            #endif /* CONFIG_EMMC_BOOT1_TOUCH_REGION */
+                printf("Erasing blocks " LBAFU " to " LBAFU " @ %s\n",
+                   start, blkcnt, partname[i]);
+                n = mmc->block_dev.block_erase(dev, start, blkcnt);
+                if (n != 0) {
+                    printf("mmc erase %s failed\n", partname[i]);
+                    ret = -3;
+                    break;
+                }
+            } else
+                printf("%s() %d: switch dev %d to %s fail\n",
+                        __func__, __LINE__, dev, partname[i]);
+        }
+    }
+    /* try to switch back to user. */
+    mmc_select_hwpart(dev, 0);
+
+_out:
+    return ret;
+}
+
+/*
+    write bootloader on user/boot0/boot1 which indicate by map.
+    bit 0: user
+    bit 1: boot0
+    bit 2: boot1
+*/
+int amlmmc_write_bootloader(int dev, int map, unsigned int size, const void *src)
+{
+    int ret = 0, i, count = 3;
+    unsigned long n;
+    char *partname[3] = {"user", "boot0", "boot1"};
+    struct mmc *mmc = find_mmc_device(dev);
+    lbaint_t start = GXB_START_BLK, blkcnt;
+    cpu_id_t cpu_id = get_cpu_id();
+
+    /* do nothing */
+    if (0 == map)
+        goto _out;
+
+    if (!mmc) {
+        printf("%s() %d: not valid emmc %d\n", __func__, __LINE__, dev);
+        ret = -1;
+        goto _out;
+    }
+    /* make sure mmc is initilized! */
+    ret = mmc_init(mmc);
+    if (ret) {
+        printf("%s() %d: emmc %d init %d\n", __func__, __LINE__, dev, ret);
+        ret = -2;
+        goto _out;
+    }
+
+    if (cpu_id.family_id >= MESON_CPU_MAJOR_ID_GXL)
+        start = GXL_START_BLK;
+    blkcnt = (size + mmc->read_bl_len - 1) / mmc->read_bl_len;
+
+    /* erase bootloader in user/boot0/boot1 */
+    for (i = 0; i < count; i++) {
+        if (map & (0x1 << i)) {
+            if (!mmc_select_hwpart(dev, i)) {
+                /* some customer may use boot1 higher 2M as private data. */
+            #ifdef CONFIG_EMMC_BOOT1_TOUCH_REGION
+                if (2 == i && CONFIG_EMMC_BOOT1_TOUCH_REGION <= size) {
+                    printf("%s(), size %d exceeds TOUCH_REGION %d, skip\n",
+                        __func__, size, CONFIG_EMMC_BOOT1_TOUCH_REGION);
+                    break;
+                }
+            #endif /* CONFIG_EMMC_BOOT1_TOUCH_REGION */
+                printf("Wrting blocks " LBAFU " to " LBAFU " @ %s\n",
+                   start, blkcnt, partname[i]);
+                n = mmc->block_dev.block_write(dev, start, blkcnt, src);
+                if (n != blkcnt) {
+                    printf("mmc write %s failed\n", partname[i]);
+                    ret = -3;
+                    break;
+                }
+            } else
+                printf("%s() %d: switch dev %d to %s fail\n",
+                        __func__, __LINE__, dev, partname[i]);
+        }
+    }
+    /* try to switch back to user. */
+    mmc_select_hwpart(dev, 0);
+
+_out:
+    return ret;
 }
 
 
@@ -250,11 +404,17 @@ int do_amlmmcops(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
                                 int blk_shift;
                                 u64 cnt=0, blk =0,start_blk =0;
                                 struct partitions *part_info;
+                                int i;
+
+                                printf("%s() argc %d\n", __func__, argc);
+                                for (i = 0; i < argc; i++)
+                                    printf("%02d: %s\n", i, argv[i]);
 
                                 if (isstring(argv[2])) {
                                         if (!strcmp(argv[2], "whole")) {
                                                 name = "logo";
                                                 dev = find_dev_num_by_partition_name (name);
+                                                printf("%s() %s\n", __func__, name);
                                         }else if(!strcmp(argv[2], "non_cache")){
                                                 name = "logo";
                                                 dev = find_dev_num_by_partition_name (name);
@@ -275,7 +435,7 @@ int do_amlmmcops(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
                                         printf("Input is invalid, nothing happen.\n");
                                         return 1;
                                 }
-
+                                printf("%s() dev %d\n", __func__, dev);
                                 if (dev < 0) {
                                         printf("Cannot find dev.\n");
                                         return 1;
@@ -288,26 +448,26 @@ int do_amlmmcops(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
                                 mmc_init(mmc);
 
                                 blk_shift = ffs(mmc->read_bl_len) -1;
-                                if (is_part) { // erase only one partition
-                                        if (emmckey_is_protected(mmc)
-                                                        && (strncmp(name, MMC_RESERVED_NAME, sizeof(MMC_RESERVED_NAME)) == 0x00)) {
-                                                printf("\"%s-partition\" is been protecting and should no be erased!\n", MMC_RESERVED_NAME);
-                                                return 1;
-                                        }
+                                /* erase by partition */
+                                if (is_part) {
+                                    if ((strncmp(name, MMC_RESERVED_NAME, sizeof(MMC_RESERVED_NAME)) == 0x00)
+                                            && emmckey_is_protected(mmc)) {
+                                        printf("\"%s-partition\" is been protecting and should no be erased!\n", MMC_RESERVED_NAME);
+                                        return 1;
+                                    }
+                                    part_info = find_mmc_partition_by_name(name);
+                                    if (part_info == NULL) {
+                                        return 1;
+                                    }
 
-                                        part_info = find_mmc_partition_by_name(name);
-                                        if (part_info == NULL) {
-                                                return 1;
-                                        }
+                                    blk = part_info->offset >> blk_shift;
+                                    if (emmc_cur_partition && !strncmp(name, "bootloader", strlen("bootloader")))
+                                        cnt = mmc->boot_size >> blk_shift;
+                                    else
+                                        cnt = part_info->size >> blk_shift;
+                                    printf("%s() erase %s: blk %lld cnt %lld\n", __func__, name, blk, cnt);
+                                    n = mmc->block_dev.block_erase(dev, blk, cnt);
 
-                                        blk = part_info->offset>> blk_shift;
-                                        if (emmc_cur_partition && !strncmp(name, "bootloader", strlen("bootloader"))) {
-
-                                                cnt = mmc->boot_size>> blk_shift;
-                                        }
-                                        else
-                                                cnt = part_info->size>> blk_shift;
-                                        n = mmc->block_dev.block_erase(dev, blk, cnt);
                                 } else { // erase the whole card if possible
 
                                         if (non_loader) {
@@ -716,6 +876,7 @@ int do_amlmmcops(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 
                                 if (flag == 1) { // tsd or emmc
                                         if (strcmp(name, "bootloader") == 0) {
+                                            /* fixme, why hardcode 2M u-boot size? lasy? */
                                             cnt = UBOOT_SIZE;
                                             if (cpu_id.family_id >= MESON_CPU_MAJOR_ID_GXL) {
                                                 blk = GXL_START_BLK;
@@ -1283,7 +1444,20 @@ int do_amlmmc_dtb_key(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
     return 1;
 }
 
-int emmc_update_mbr(unsigned char *buffer)
+/* update partition table in reserved partition. */
+__weak int emmc_update_ept(unsigned char *buffer)
+{
+    int ret = 0;
+
+#ifndef DTB_BIND_KERNEL
+    dtb_write(buffer);
+#endif
+    ret = renew_partition_tbl(buffer);
+    return ret;
+}
+
+/* fixme, should use renew_partition_tbl here! */
+__weak int emmc_update_mbr(unsigned char *buffer)
 {
     int ret = 0;
     cpu_id_t cpu_id = get_cpu_id();

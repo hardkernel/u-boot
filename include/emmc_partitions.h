@@ -31,6 +31,8 @@
 #define     MMC_BOOT_PARTITION_RESERVED     (32*SZ_1M) // 32MB
 
 #define     MMC_BOOT_NAME                   "bootloader"
+#define     MMC_BOOT_NAME0                   "bootloader-boot0"
+#define     MMC_BOOT_NAME1                   "bootloader-boot1"
 #define     MMC_BOOT_DEVICE_SIZE            (0x4*SZ_1M)
 
 #define     MMC_RESERVED_NAME               "reserved"

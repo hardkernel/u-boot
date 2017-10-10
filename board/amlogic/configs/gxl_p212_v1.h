@@ -345,6 +345,12 @@
 	#define	CONFIG_SYS_MMC_ENV_DEV 1
 	#define CONFIG_EMMC_DDR52_EN 0
 	#define CONFIG_EMMC_DDR52_CLK 35000000
+    /*
+        flash/erase operation region on boot1
+        in bytes, 2M by default
+    */
+    //#define CONFIG_EMMC_BOOT1_TOUCH_REGION    (0x200000)
+
 #endif
 /* storage macro checks */
 #if defined(CONFIG_AML_MTD) && defined(CONFIG_AML_NAND)

@@ -855,8 +855,10 @@ static int do_store_erase(cmd_tbl_t * cmdtp, int flag, int argc, char * const ar
             }
 
 #ifdef MMC_BOOT_PARTITION_SUPPORT
+            printf("%s() %d\n", __func__, __LINE__);
 
             for (i=0; i<2; i++) {
+                printf("%s() %d, i = %d\n", __func__, __LINE__, i);
                 //switch to boot partition here
                 sprintf(str, "amlmmc switch 1 boot%d", i);
                 store_dbg("command: %s\n", str);
