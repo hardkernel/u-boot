@@ -63,8 +63,7 @@ static void rknand_fill_ninfo(struct image_tool_params *params)
 	ninfo.tplsize = rknand_get_file_size(ninfo.tplfile);
 	ninfo.splsize = rknand_get_file_size(ninfo.splfile);
 
-	ninfo.tplpaddedsize = ROUND(ninfo.tplsize + 
-		(rkcommon_spl_is_boot0(params) ? 0 : 4), RKNAND_SECT_LEN);
+	ninfo.tplpaddedsize = ROUND(ninfo.tplsize, RKNAND_SECT_LEN);
 
 	ninfo.splpaddedsize = ROUND(ninfo.splsize, RKNAND_SECT_LEN);
 

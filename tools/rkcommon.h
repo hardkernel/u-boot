@@ -45,14 +45,6 @@ const char *rkcommon_get_spl_hdr(struct image_tool_params *params);
 int rkcommon_get_spl_size(struct image_tool_params *params);
 
 /**
- * rkcommon_spl_is_boot0() - is magic included in spl
- *
- * Returns true if magic (for example RK30) is included in spl
- */
-
-bool rkcommon_spl_is_boot0(struct image_tool_params *params);
-
-/**
  * rkcommon_set_header() - set up the header for a Rockchip boot image
  *
  * This sets up a 2KB header which can be interpreted by the Rockchip boot ROM.
