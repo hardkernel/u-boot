@@ -13,6 +13,7 @@
 #include <common.h>
 #include <bootm.h>
 #include <command.h>
+#include <android_bootloader_message.h>
 
 static int do_boot_android(cmd_tbl_t *cmdtp, int flag, int argc,
 			   char * const argv[])
@@ -74,6 +75,60 @@ U_BOOT_CMD(
 );
 
 #ifdef CONFIG_AVB_LIBAVB_USER
+static int bootloader_message_read(struct android_bootloader_message *data)
+{
+	AvbOps *ops;
+	char requested_partitions[] = "misc";
+	size_t out_num_read;
+	char *buffer;
+
+	ops = avb_ops_user_new();
+	buffer = (char *)data;
+
+	if (ops == NULL) {
+		printf("avb_ops_user_new() failed!\n");
+		return CMD_RET_FAILURE;
+	}
+
+	if (ops->read_from_partition(ops, requested_partitions,
+				     0, 2048, buffer,
+				     &out_num_read) != 0) {
+		printf("do avb read error!\n");
+		avb_ops_user_free(ops);
+		return CMD_RET_FAILURE;
+	}
+
+	avb_ops_user_free(ops);
+
+	return CMD_RET_SUCCESS;
+}
+
+static int bootloader_message_write(struct android_bootloader_message *data)
+{
+	AvbOps *ops;
+	char requested_partitions[] = "misc";
+	char *buffer;
+
+	ops = avb_ops_user_new();
+	buffer = (char *)data;
+
+	if (ops == NULL) {
+		printf("avb_ops_user_new() failed!\n");
+		return CMD_RET_FAILURE;
+	}
+
+	if (ops->write_to_partition(ops, requested_partitions,
+				     0, 2048, buffer) != 0) {
+		printf("do avb write error!\n");
+		avb_ops_user_free(ops);
+		return CMD_RET_FAILURE;
+	}
+
+	avb_ops_user_free(ops);
+
+	return CMD_RET_SUCCESS;
+}
+
 int do_avb_init_ab_metadata(cmd_tbl_t *cmdtp, int flag,
 			    int argc, char * const argv[])
 {
@@ -592,14 +647,36 @@ int do_avb_flow(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	bool unlocked = true;
 	const char *mode_cmdline = NULL;
 	char root_data[70] = "root=PARTUUID=";
-	mode_cmdline = "skip_initramfs";
 	size_t guid_buf_size = 37;
 	char guid_buf[37];
 	char verify_flag;
 	char boot_slot_select[5];
+	struct android_bootloader_message data;
+	const char *fastboot_cmd = env_get("fastbootcmd");
 
 	if (argc != 2)
 		return CMD_RET_USAGE;
+
+	bootloader_message_read(&data);
+	if (!strcmp("bootonce-bootloader", data.command)) {
+		memset(data.command, 0, sizeof(data.command));
+		bootloader_message_write(&data);
+		if (fastboot_cmd) {
+			printf("bootonce-bootloader!\n");
+			return run_command(fastboot_cmd, CMD_FLAG_ENV);
+		} else {
+			printf("The fastbootcmd is NULL!\n");
+			return CMD_RET_SUCCESS;
+		}
+	} else if (!strcmp("boot-recovery", data.command)) {
+		printf("Enter boot-recovery!\n");
+	} else if(!strcmp("boot-normal", data.command)) {
+		printf("Enter boot-normal!\n");
+		mode_cmdline = "skip_initramfs";
+	} else {
+		mode_cmdline = "skip_initramfs";
+	}
+
 	avb_version = avb_version_string();
 	printf("Android avb version is %s.\n", avb_version);
 	ops = avb_ops_user_new();
