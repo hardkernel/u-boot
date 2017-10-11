@@ -5,4 +5,5 @@
 #
 
 obj-y	+= odroidn1.o
+obj-y	+= odroidn1-recovery.o
 obj-$(CONFIG_PARTITION_FORMAT)	+= odroidn1-disk.o

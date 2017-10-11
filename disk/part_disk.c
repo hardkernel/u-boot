@@ -155,3 +155,46 @@ int do_format(void)
 
 	return 0;
 }
+
+#define FASTBOOT_MAXPENTRY		16
+
+static disk_ptentry ptable[FASTBOOT_MAXPENTRY];
+static unsigned int pcount;
+
+void disk_flash_reset_ptn(void)
+{
+	pcount = 0;
+}
+
+void disk_flash_add_ptn(disk_ptentry *ptn)
+{
+	if (pcount < FASTBOOT_MAXPENTRY) {
+		memcpy((ptable + pcount), ptn, sizeof(*ptn));
+		pcount++;
+	}
+}
+
+disk_ptentry *disk_flash_find_ptn(const char *name)
+{
+	unsigned int n;
+
+	for (n = 0; n < pcount; n++) {
+		/* Make sure a substring is not accepted */
+		if (strlen(name) == strlen(ptable[n].name)) {
+			if (0 == strcmp(ptable[n].name, name))
+				return ptable + n;
+		}
+	}
+	return 0;
+}
+
+void disk_flash_dump_ptn(void)
+{
+	unsigned int n;
+
+	for (n = 0; n < pcount; n++) {
+		disk_ptentry *ptn = ptable + n;
+		printf("ptn %d name='%s'", n, ptn->name);
+		printf(" start=%d len=%d\n", ptn->start, ptn->length);
+	}
+}

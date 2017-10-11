@@ -147,3 +147,71 @@ char *board_dos_partition_name(int part, char* name)
 
 	return NULL;
 }
+
+/*
+ * Initiate the disk partition entries with internal system partitions and
+ * DOS partition table.
+ */
+int board_partition_init(void)
+{
+	struct mmc *mmc;
+	struct blk_desc *dev_desc;
+	disk_ptentry ptn;
+	lbaint_t next = 0;
+	lbaint_t len;
+	int n = 0;
+
+	disk_flash_reset_ptn();
+
+	mmc = find_mmc_device(CONFIG_FASTBOOT_FLASH_MMC_DEV);
+	if (!mmc) {
+		printf("no mmc device\n");
+		return -1;
+	}
+
+	dev_desc = blk_get_dev("mmc", CONFIG_FASTBOOT_FLASH_MMC_DEV);
+	if (!dev_desc) {
+		printf("invalid mmc device\n");
+		return -1;
+	}
+
+	for (n = 0 ; mmc && n < ARRAY_SIZE(partitions); n++) {
+		len = partitions[n].lba;
+
+		/* Skip to add the partition if start with '-', but move forward
+		 * to next position as much as its size
+		 */
+		if (partitions[n].name[0] == '-') {
+			next += len;
+			continue;
+		}
+
+		/* 'env' partition contains U-boot's environment fields, it
+		 * could be damaged by disk if its offset is invalid with
+		 * defined by CONFIG_ENV_OFFSET.
+		 */
+		if (!strcmp(partitions[n].name, "env") &&
+				(bytes_to_lba(CONFIG_ENV_OFFSET) != next)) {
+			printf("WARNING!!: Invalid offset of 'env' partition,"
+					" it must be " LBAFU " but " LBAFU "\n",
+					next, (lbaint_t)bytes_to_lba(CONFIG_ENV_OFFSET));
+		}
+
+		if (len == 0)
+			len = dev_desc->lba - next;
+
+		strncpy((char*)&ptn.name, partitions[n].name, sizeof(ptn.name));
+
+		ptn.start = next;
+		ptn.length = len;
+
+		/* Add the partition to disk partition entry table */
+		disk_flash_add_ptn(&ptn);
+
+		next += len;
+	}
+
+	disk_load_dos_partition();
+
+	return 0;
+}

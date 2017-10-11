@@ -15,11 +15,24 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
+extern int board_get_recovery_message(void);
+extern void board_enter_recovery_mode(void);
+extern int board_partition_init(void);
+
 #ifdef CONFIG_BOARD_LATE_INIT
 int board_late_init(void)
 {
-	/* TODO */
-	printf("board_late_init\n");
+	if (board_partition_init() != 0) {
+		printf("board: partition init fail\n");
+		return -1;
+	}
+
+	if (board_get_recovery_message() == 0) {
+		printf("board: recovery success");
+		board_enter_recovery_mode();
+	}
+
+	return 0;
 }
 #endif
 
