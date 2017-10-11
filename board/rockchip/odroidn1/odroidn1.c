@@ -15,6 +15,14 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
+#ifdef CONFIG_BOARD_LATE_INIT
+int board_late_init(void)
+{
+	/* TODO */
+	printf("board_late_init\n");
+}
+#endif
+
 int board_init(void)
 {
 	struct udevice *pinctrl, *regulator;

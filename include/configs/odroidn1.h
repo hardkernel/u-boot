@@ -43,4 +43,7 @@
 	"bootcmd=cfgload; fatload mmc 0 ${kernel_addr} Image; fatload mmc 0 ${ramdisk_addr_r} ramdisk.img; fatload mmc 0 ${fdt_addr_r} rk3399-odroidn1-rev0.dtb; booti ${kernel_addr_r} ${ramdisk_addr_r} ${fdt_addr_r}\0"
 
 #define CONFIG_FASTBOOT_FLASH_MMC_DEV   0
+
+#define CONFIG_BOARD_LATE_INIT
+
 #endif
