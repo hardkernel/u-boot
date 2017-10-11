@@ -1087,16 +1087,6 @@ static void hdmitx_set_pll(struct hdmitx_dev *hdev)
 	} else {
 		set_hdmitx_clk(hdev->vic);
 	}
-        if (hdev->para->cs == HDMI_COLOR_FORMAT_420) {
-		hd_set_reg_bits(P_HHI_HDMI_CLK_CNTL, 1, 16, 4);
-		if ((hdev->para->cd) == HDMI_COLOR_DEPTH_24B) {
-			hd_set_reg_bits(P_HHI_HDMI_PLL_CNTL3, 1, 21, 2);
-			hd_set_reg_bits(P_HHI_HDMI_PLL_CNTL3, 0, 19, 2);
-		} else {
-			hd_set_reg_bits(P_HHI_HDMI_PLL_CNTL3, 0, 21, 2);
-			hd_set_reg_bits(P_HHI_HDMI_PLL_CNTL3, 0, 19, 2);
-		}
-	}
 }
 
 static void set_phy_by_mode(unsigned int mode)
@@ -1130,9 +1120,18 @@ static void hdmitx_set_phy(struct hdmitx_dev *hdev)
 	case HDMI_4096x2160p60_256x135:
 		if ((hdev->para->cs == HDMI_COLOR_FORMAT_420)
 			&& (hdev->para->cd == HDMI_COLOR_DEPTH_24B))
-			set_phy_by_mode(1);
-		else
 			set_phy_by_mode(2);
+		else
+			set_phy_by_mode(1);
+		break;
+	case HDMI_3840x2160p50_16x9_Y420:
+	case HDMI_3840x2160p60_16x9_Y420:
+	case HDMI_4096x2160p50_256x135_Y420:
+	case HDMI_4096x2160p60_256x135_Y420:
+		if (hdev->para->cd == HDMI_COLOR_DEPTH_24B)
+			set_phy_by_mode(2);
+		else
+			set_phy_by_mode(1);
 		break;
 	case HDMI_3840x2160p24_16x9:
 	case HDMI_3840x2160p24_64x27:
@@ -1369,6 +1368,7 @@ static void hdmi_tvenc4k2k_set(enum hdmi_vic vic)
 	switch (vic) {
 	case HDMI_3840x2160p30_16x9:
 	case HDMI_3840x2160p60_16x9:
+	case HDMI_3840x2160p60_16x9_Y420:
 		INTERLACE_MODE = 0;
 		PIXEL_REPEAT_VENC = 0;
 		PIXEL_REPEAT_HDMI = 0;
@@ -1384,6 +1384,7 @@ static void hdmi_tvenc4k2k_set(enum hdmi_vic vic)
 		break;
 	case HDMI_3840x2160p25_16x9:
 	case HDMI_3840x2160p50_16x9:
+	case HDMI_3840x2160p50_16x9_Y420:
 		INTERLACE_MODE = 0;
 		PIXEL_REPEAT_VENC = 0;
 		PIXEL_REPEAT_HDMI = 0;
@@ -1427,6 +1428,7 @@ static void hdmi_tvenc4k2k_set(enum hdmi_vic vic)
 		break;
 	case HDMI_4096x2160p25_256x135:
 	case HDMI_4096x2160p50_256x135:
+	case HDMI_4096x2160p50_256x135_Y420:
 		INTERLACE_MODE = 0;
 		PIXEL_REPEAT_VENC = 0;
 		PIXEL_REPEAT_HDMI = 0;
@@ -1442,6 +1444,7 @@ static void hdmi_tvenc4k2k_set(enum hdmi_vic vic)
 		break;
 	case HDMI_4096x2160p30_256x135:
 	case HDMI_4096x2160p60_256x135:
+	case HDMI_4096x2160p60_256x135_Y420:
 		INTERLACE_MODE = 0;
 		PIXEL_REPEAT_VENC = 0;
 		PIXEL_REPEAT_HDMI = 0;
@@ -2020,6 +2023,10 @@ static void hdmi_tvenc_set(enum hdmi_vic vic)
 	case HDMI_4096x2160p60_256x135:
 	case HDMI_3840x2160p50_16x9:
 	case HDMI_3840x2160p60_16x9:
+	case HDMI_4096x2160p50_256x135_Y420:
+	case HDMI_4096x2160p60_256x135_Y420:
+	case HDMI_3840x2160p50_16x9_Y420:
+	case HDMI_3840x2160p60_16x9_Y420:
 		hdmi_tvenc4k2k_set(vic);
 		break;
 	default:
@@ -2333,10 +2340,6 @@ static void hdmitx_set_hw(struct hdmitx_dev* hdev)
 		break;
 	}
 
-	//hdmi_hw_reset(hdev, param);
-	// move hdmitx_set_pll() to the end of this function.
-	// hdmitx_set_pll(param);
-
 	if (hdev->para->cs == HDMI_COLOR_FORMAT_420)
 		mode420_half_horizontal_para();
 
@@ -2345,6 +2348,16 @@ static void hdmitx_set_hw(struct hdmitx_dev* hdev)
 	case HDMI_3840x2160p60_16x9:
 	case HDMI_4096x2160p50_256x135:
 	case HDMI_4096x2160p60_256x135:
+		if ((hdev->para->cs == HDMI_COLOR_FORMAT_420)
+		   && (hdev->para->cd == HDMI_COLOR_DEPTH_24B))
+			set_tmds_clk_div40(0);
+		else
+			set_tmds_clk_div40(1);
+		break;
+	case HDMI_3840x2160p50_16x9_Y420:
+	case HDMI_3840x2160p60_16x9_Y420:
+	case HDMI_4096x2160p50_256x135_Y420:
+	case HDMI_4096x2160p60_256x135_Y420:
 		if ((hdev->para->cs == HDMI_COLOR_FORMAT_420)
 		   && (hdev->para->cd == HDMI_COLOR_DEPTH_24B))
 			set_tmds_clk_div40(0);

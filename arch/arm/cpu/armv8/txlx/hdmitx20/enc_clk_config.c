@@ -326,6 +326,12 @@ static struct hw_enc_clk_val_group setting_enc_clk_val[] = {
 	{{HDMI_3840x2160p60_16x9, HDMI_3840x2160p50_16x9, HDMI_4096x2160p60_256x135,
 		HDMI_4096x2160p50_256x135, GROUP_END},
 		1, VIU_ENCP, 5940, 1, 1, 2, CLK_UTIL_VID_PLL_DIV_5, 1, 1, 1, -1},
+	{{HDMI_4096x2160p60_256x135_Y420,
+	  HDMI_4096x2160p50_256x135_Y420,
+	  HDMI_3840x2160p60_16x9_Y420,
+	  HDMI_3840x2160p50_16x9_Y420,
+	  GROUP_END},
+		1, VIU_ENCP, 5940, 2, 1, 1, CLK_UTIL_VID_PLL_DIV_5, 1, 2, 1, -1},
 };
 
 /* mode hpll_clk_out od1 od2(PHY) od3
@@ -351,6 +357,12 @@ static struct hw_enc_clk_val_group setting_enc_clk_val_30[] = {
 	HDMI_3840x2160p30_16x9, HDMI_3840x2160p30_64x27,
 	GROUP_END},
 		1, VIU_ENCP, 3712, 1, 1, 1, CLK_UTIL_VID_PLL_DIV_6p25, 1, 2, 2, -1},
+	{{HDMI_4096x2160p60_256x135_Y420,
+	  HDMI_4096x2160p50_256x135_Y420,
+	  HDMI_3840x2160p60_16x9_Y420,
+	  HDMI_3840x2160p50_16x9_Y420,
+	  GROUP_END},
+		1, VIU_ENCP, 3712, 1, 1, 1, CLK_UTIL_VID_PLL_DIV_6p25, 1, 2, 1, -1},
 };
 
 void set_hdmitx_clk(enum hdmi_vic vic)

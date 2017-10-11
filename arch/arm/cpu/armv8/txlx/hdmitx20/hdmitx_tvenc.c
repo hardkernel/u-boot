@@ -637,8 +637,12 @@ static struct vic_tvregs_set tvregsTab[] = {
 	{HDMI_4096x2160p30_256x135, tvregs_4k2k_smpte_30hz},
 	{HDMI_4096x2160p50_256x135, tvregs_4k2k_smpte_25hz},
 	{HDMI_4096x2160p60_256x135, tvregs_4k2k_smpte_30hz},
+	{HDMI_4096x2160p50_256x135_Y420, tvregs_4k2k_smpte_25hz},
+	{HDMI_4096x2160p60_256x135_Y420, tvregs_4k2k_smpte_30hz},
 	{HDMI_3840x2160p60_16x9, tvregs_4k2k_30hz},
 	{HDMI_3840x2160p50_16x9, tvregs_4k2k_25hz},
+	{HDMI_3840x2160p60_16x9_Y420, tvregs_4k2k_30hz},
+	{HDMI_3840x2160p50_16x9_Y420, tvregs_4k2k_25hz},
 };
 
 static inline void setreg(const struct reg_t *r)
