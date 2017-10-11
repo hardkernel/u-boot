@@ -64,35 +64,6 @@ int arch_cpu_init(void)
 	return 0;
 }
 
-static void setup_boot_mode(void)
-{
-	struct rk3399_pmugrf_regs *pmugrf;
-	int boot_mode;
-
-	pmugrf = syscon_get_first_range(ROCKCHIP_SYSCON_PMUGRF);;
-	boot_mode = readl(&pmugrf->os_reg0);
-	debug("boot mode %x\n", boot_mode);
-
-	/* Clear boot mode */
-	writel(BOOT_NORMAL, &pmugrf->os_reg0);
-
-	switch (boot_mode) {
-	case BOOT_FASTBOOT:
-		printf("enter fastboot!\n");
-		env_set("preboot", "setenv preboot; fastboot usb0");
-		break;
-	case BOOT_UMS:
-		printf("enter UMS!\n");
-		env_set("preboot", "setenv preboot; if mmc dev 0;"
-		       "then ums mmc 0; else ums mmc 1;fi");
-		break;
-	case BOOT_LOADER:
-		printf("enter Rockusb!\n");
-		env_set("preboot", "setenv preboot; rockusb 0 mmc 0");
-		break;
-	}
-}
-
 int board_late_init(void)
 {
 	setup_boot_mode();

@@ -20,34 +20,6 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
-#define PMU_BASE	0x100a0000
-
-static void setup_boot_mode(void)
-{
-	struct rk3128_pmu *const pmu = (void *)PMU_BASE;
-	int boot_mode = readl(&pmu->sys_reg[0]);
-
-	debug("boot mode %x.\n", boot_mode);
-
-	/* Clear boot mode */
-	writel(BOOT_NORMAL, &pmu->sys_reg[0]);
-
-	switch (boot_mode) {
-	case BOOT_FASTBOOT:
-		printf("enter fastboot!\n");
-		env_set("preboot", "setenv preboot; fastboot usb0");
-		break;
-	case BOOT_UMS:
-		printf("enter UMS!\n");
-		env_set("preboot", "setenv preboot; ums mmc 0");
-		break;
-	case BOOT_LOADER:
-		printf("enter Rockusb!\n");
-		env_set("preboot", "setenv preboot; rockusb 0 mmc 0");
-		break;
-	}
-}
-
 #ifdef CONFIG_CHARGE_DISPLAY
 static int charge_display(void)
 {
