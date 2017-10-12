@@ -93,6 +93,7 @@ enum uclass_id {
 	UCLASS_WDT,		/* Watchdot Timer driver */
 	UCLASS_FG,
 	UCLASS_KEY,
+	UCLASS_RC,		/* Remote Controller */
 
 	UCLASS_COUNT,
 	UCLASS_INVALID = -1,

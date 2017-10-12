@@ -13,6 +13,13 @@ config DM_KEY
 	help
 	  This adds a simple uclass for key.
 
+config DM_RC
+	bool "Enable driver model Remote Controller support"
+	depends on DM
+	help
+	  This adds a uclass for Remote Controllers. This is needed
+	  in order to support standalone IR receivers.
+
 config CROS_EC_KEYB
 	bool "Enable Chrome OS EC keyboard support"
 	help
