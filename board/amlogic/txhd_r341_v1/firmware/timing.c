@@ -47,6 +47,11 @@
 #define DDR3_ODT_20OHM		4
 #define DDR3_ODT_30OHM		5
 
+#define DDR3_WR_ODT_0OHM		0<<3
+#define DDR3_WR_ODT_60OHM		1<<3
+//#define DDR3_WR_ODT_120OHM		1<<4
+
+
 /* lpddr2 drv odt */
 #define LPDDR2_DRV_34OHM	1
 #define LPDDR2_DRV_40OHM	2
@@ -83,7 +88,9 @@
 
 #if ((CONFIG_DDR_TYPE == CONFIG_DDR_TYPE_DDR3) || (CONFIG_DDR_TYPE == CONFIG_DDR_TYPE_AUTO))
 #define CFG_DDR_DRV  DDR3_DRV_34OHM
-#define CFG_DDR_ODT  DDR3_ODT_60OHM
+//#define CFG_DDR_ODT  DDR3_ODT_120OHM  //txhd skt board
+#define CFG_DDR_ODT  DDR3_ODT_60OHM|DDR3_WR_ODT_60OHM   //TXHD R341 REF board
+//#define CFG_DDR_WR_ODT  DDR3_ODT_60OHM   //TXHD R341 REF board
 #elif (CONFIG_DDR_TYPE == CONFIG_DDR_TYPE_LPDDR2)
 #define CFG_DDR_DRV  LPDDR2_DRV_48OHM
 #define CFG_DDR_ODT  DDR3_ODT_120OHM
@@ -492,10 +499,7 @@ ddr_set_t __ddr_setting = {
 	//.t_pub_zq1pr			= 0x7b,   //PUB ZQ1PR
 	//.t_pub_zq2pr			= 0x7b,   //PUB ZQ2PR
 	//.t_pub_zq3pr			= 0x7b,   //PUB ZQ3PR
-	.t_pub_zq0pr			= 0x59959,   //PUB ZQ0PR
-	.t_pub_zq1pr			= 0x3f95d,   //PUB ZQ1PR
-	.t_pub_zq2pr			= 0x3f95d,   //PUB ZQ2PR
-	.t_pub_zq3pr			= 0x1dd1d,   //PUB ZQ3PR
+
 
 	/* pctl0 defines */
 	/* pctl1 use same define as pctl0 */
@@ -529,10 +533,25 @@ ddr_set_t __ddr_setting = {
 	//.t_pctl0_dfiodtcfg1		= ( 0x0 | (0x6 << 16) ),
 	.t_pctl0_dfiodtcfg		= (1<<3)|(1<<11),
 	.t_pctl0_dfiodtcfg1		= (0x0 | (0x6 << 16)),
-
 	.t_pctl0_dfilpcfg0		= ( 1 | (3 << 4) | (1 << 8) | (13 << 12) | (7 <<16) | (1 <<24) | ( 3 << 28)),
-	.t_pub_acbdlr0			= 0,  //CK0 delay fine tune
-	.t_pub_aclcdlr			= 0x10,
+
+/* txhd skt board
+	.t_pub_acbdlr0			= 0x0,  //CK0 delay fine tune
+	.t_pub_aclcdlr			= 0x20,
+		.t_pub_zq0pr			= 0x59959,   //PUB ZQ0PR
+	.t_pub_zq1pr			= 0x3f92d,   //PUB ZQ1PR
+	.t_pub_zq2pr			= 0x3f92d,   //PUB ZQ2PR
+	.t_pub_zq3pr			= 0x1dd1d,   //PUB ZQ3PR
+*/
+
+//txhd r341 ref board
+	.t_pub_acbdlr0			= 0x18,  //CK0 delay fine tune
+	.t_pub_aclcdlr			= 0x20,
+	.t_pub_zq0pr			= 0x59958,   //PUB ZQ0PR
+	.t_pub_zq1pr			= 0x3f95d,   //PUB ZQ1PR
+	.t_pub_zq2pr			= 0x3f95d,   //PUB ZQ2PR
+	.t_pub_zq3pr			= 0x1dd1d,   //PUB ZQ3PR
+
 	.ddr_func				= DDR_FUNC, /* ddr func demo 2016.01.26 */
 
 	.wr_adj_per 			= {

@@ -195,6 +195,7 @@ struct pll_set{
 	unsigned short	rsv_s1;
 	/* 2016.12.06, add ddr pll setting interface */
 	unsigned int	ddr_pll_set[6];
+	unsigned int	ddr_pll_ssc;
 	/* align */
 	unsigned long	rsv_l5;
 }__attribute__ ((packed));
