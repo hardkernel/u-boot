@@ -24,6 +24,7 @@ static int rockchip_param_parse(char *param)
 {
 	struct blk_part *part;
 	const char *cmdline = strstr(param, "CMDLINE:");
+	char *cmdline_end = strstr(cmdline, "\n"); /* end by '\n' */
 	const char *blkdev_parts = strstr(cmdline, "mtdparts");
 	const char *blkdev_def = strchr(blkdev_parts, ':') + 1;
 	char *next = (char *)blkdev_def;
@@ -31,9 +32,15 @@ static int rockchip_param_parse(char *param)
 	int len;
 	unsigned long size, from;
 
-	debug("%s", cmdline);
+	if (!cmdline) {
+		printf("invalid parameter\n");
+		return -EINVAL;
+	}
 
-	env_set("bootargs", cmdline);
+	*cmdline_end = '\0';
+	debug("%s", cmdline);
+	/* skip "CMDLINE:" */
+	env_update("bootargs", cmdline + strlen("CMDLINE:"));
 
 	while (*next) {
 		if (*next == '-') {
@@ -79,9 +86,8 @@ static int rockchip_init_param(void)
 
 	blkdev_read(param, RK_BLK_OFFSET, MAX_PARAM_SIZE >> 9);
 
-	rockchip_param_parse(param->params);
+	return rockchip_param_parse(param->params);
 
-	return 0;
 }
 
 struct blk_part *rockchip_get_blk_part(const char *name)
