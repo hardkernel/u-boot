@@ -379,7 +379,20 @@ int get_current_slot(char *select_slot)
 	return 0;
 }
 
+int read_permanent_attributes(uint8_t *attributes, uint32_t size)
+{
+	if(trusty_read_permanent_attributes(attributes, size) != 0) {
+		return -1;
+	}
 
+	return 0;
+}
 
+int write_permanent_attributes(uint8_t *attributes, uint32_t size)
+{
+	if(trusty_write_permanent_attributes(attributes, size) != 0) {
+		return -1;
+	}
 
-
+	return 0;
+}

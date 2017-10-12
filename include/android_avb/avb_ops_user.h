@@ -12,5 +12,7 @@ int read_slot_count(char *slot_count);
 int read_slot_suffixes(char *slot_suffixes);
 int set_slot_active(unsigned int *slot_number);
 int get_current_slot(char *select_slot);
+int read_permanent_attributes(uint8_t *attributes, uint32_t size);
+int write_permanent_attributes(uint8_t *attributes, uint32_t size);
 
 #endif
