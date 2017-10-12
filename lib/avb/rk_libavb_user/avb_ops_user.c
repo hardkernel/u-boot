@@ -396,3 +396,17 @@ int write_permanent_attributes(uint8_t *attributes, uint32_t size)
 
 	return 0;
 }
+
+int read_flash_lock_state(uint8_t *flash_lock_state)
+{
+	if (trusty_read_flash_lock_state(flash_lock_state))
+		return -1;
+	return 0;
+}
+
+int write_flash_lock_state(uint8_t flash_lock_state)
+{
+	if (trusty_write_flash_lock_state(flash_lock_state))
+		return -1;
+	return 0;
+}

@@ -14,5 +14,7 @@ int set_slot_active(unsigned int *slot_number);
 int get_current_slot(char *select_slot);
 int read_permanent_attributes(uint8_t *attributes, uint32_t size);
 int write_permanent_attributes(uint8_t *attributes, uint32_t size);
+int read_flash_lock_state(uint8_t *flash_lock_state);
+int write_flash_lock_state(uint8_t flash_lock_state);
 
 #endif
