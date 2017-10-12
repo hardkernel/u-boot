@@ -776,7 +776,18 @@ static void cb_flash(struct usb_ep *ep, struct usb_request *req)
 {
 	char *cmd = req->buf;
 	char response[FASTBOOT_RESPONSE_LEN];
+#ifdef CONFIG_AVB_LIBAVB_USER
+	uint8_t flash_lock_state;
 
+	if (read_flash_lock_state(&flash_lock_state))
+		fastboot_tx_write_str("FAIL");
+		return;
+	if (flash_lock_state == 0) {
+		fastboot_tx_write_str("FAILThe device is locked, can not flash!");
+		printf("The device is locked, can not flash!\n");
+		return;
+	}
+#endif
 	strsep(&cmd, ":");
 	if (!cmd) {
 		error("missing partition name");
@@ -802,9 +813,27 @@ static void cb_flashing(struct usb_ep *ep, struct usb_request *req)
 	char *cmd = req->buf;
 
 	if (strncmp("lock", cmd + 9, 4) == 0) {
+#ifdef CONFIG_AVB_LIBAVB_USER
+		uint8_t flash_lock_state;
+		flash_lock_state = 0;
+		if (write_flash_lock_state(flash_lock_state))
+			fastboot_tx_write_str("FAIL");
+		else
+			fastboot_tx_write_str("OKAY");
+#else
 		fastboot_tx_write_str("FAILnot implemented");
+#endif
 	} else if (strncmp("unlock", cmd + 9, 6) == 0) {
+#ifdef CONFIG_AVB_LIBAVB_USER
+		uint8_t flash_lock_state;
+		flash_lock_state = 1;
+		if (write_flash_lock_state(flash_lock_state))
+			fastboot_tx_write_str("FAIL");
+		else
+			fastboot_tx_write_str("OKAY");
+#else
 		fastboot_tx_write_str("FAILnot implemented");
+#endif
 	} else if (strncmp("lock_critical", cmd + 9, 12) == 0) {
 		fastboot_tx_write_str("FAILnot implemented");
 	} else if (strncmp("unlock_critical", cmd + 9, 14) == 0) {
