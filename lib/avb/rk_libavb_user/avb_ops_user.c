@@ -410,3 +410,17 @@ int write_flash_lock_state(uint8_t flash_lock_state)
 		return -1;
 	return 0;
 }
+
+int read_lock_state(uint8_t *lock_state)
+{
+	if (trusty_read_lock_state(lock_state))
+		return -1;
+	return 0;
+}
+
+int write_lock_state(uint8_t lock_state)
+{
+	if (trusty_write_lock_state(lock_state))
+		return -1;
+	return 0;
+}
