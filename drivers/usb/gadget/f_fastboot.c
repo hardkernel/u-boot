@@ -25,6 +25,7 @@
 #include <fb_mmc.h>
 #include <fb_storage.h>
 #include <fb_fastboot.h>
+#include <emmc_partitions.h>
 #endif
 #ifdef CONFIG_FASTBOOT_FLASH_NAND_DEV
 #include <fb_nand.h>
@@ -506,6 +507,39 @@ static void cb_getvar(struct usb_ep *ep, struct usb_request *req)
 			strncat(response, "yes", chars_left);
 		} else
 			strncat(response, "no", chars_left);
+	} else if (!strncmp("partition-size", cmd, strlen("partition-size"))) {
+		char str_num[20];
+		struct partitions *pPartition;
+		strsep(&cmd, ":");
+		printf("partition is %s\n", cmd);
+		if (strcmp(cmd, "userdata") == 0) {
+			strcpy(cmd, "data");
+			printf("partition is %s\n", cmd);
+		}
+		if (!strncmp("mbr", cmd, strlen("mbr"))) {
+			strcpy(response, "FAILVariable not implemented");
+		} else {
+			pPartition = find_mmc_partition_by_name(cmd);
+			printf("size:%016llx\n", pPartition->size);
+			sprintf(str_num, "%016llx", pPartition->size);
+			strncat(response, str_num, chars_left);
+		}
+	} else if (!strcmp_l1("partition-type:cache", cmd)) {
+		strncat(response, "ext4", chars_left);
+	} else if (!strcmp_l1("partition-type:data", cmd)) {
+		strncat(response, "ext4", chars_left);
+	} else if (!strcmp_l1("partition-type:userdata", cmd)) {
+		strncat(response, "ext4", chars_left);
+	} else if (!strcmp_l1("partition-type:system", cmd)) {
+		strncat(response, "ext4", chars_left);
+	} else if (!strcmp_l1("partition-type:vendor", cmd)) {
+		strncat(response, "ext4", chars_left);
+	} else if (!strcmp_l1("partition-type:odm", cmd)) {
+		strncat(response, "ext4", chars_left);
+	} else if (!strcmp_l1("partition-type:tee", cmd)) {
+		strncat(response, "ext4", chars_left);
+	} else if (!strncmp("partition-type", cmd, strlen("partition-type"))) {
+		strncat(response, "raw", chars_left);
 	} else {
 		error("unknown variable: %s\n", cmd);
 		strcpy(response, "FAILVariable not implemented");
@@ -642,13 +676,19 @@ static void cb_flash(struct usb_ep *ep, struct usb_request *req)
 	char *cmd = req->buf;
 	char response[RESPONSE_LEN];
 
-	printf("cmd is %s\n", cmd);
+	printf("cmd cb_flash is %s\n", cmd);
 
 	strsep(&cmd, ":");
 	if (!cmd) {
 		error("missing partition name\n");
 		fastboot_tx_write_str("FAILmissing partition name");
 		return;
+	}
+
+	printf("partition is %s\n", cmd);
+	if (strcmp(cmd, "userdata") == 0) {
+		strcpy(cmd, "data");
+		printf("partition is %s\n", cmd);
 	}
 
 	response_str = response;
@@ -703,7 +743,7 @@ static void cb_flashall(struct usb_ep *ep, struct usb_request *req)
 	char response[RESPONSE_LEN];
 	char *cmd = req->buf;
 
-	printf("cmd is %s\n", cmd);
+	printf("cmd cb_flashall is %s\n", cmd);
 
 	response_str = response;
 	//strcpy(response, "FAILno flash device defined");
@@ -740,7 +780,14 @@ static void cb_erase(struct usb_ep *ep, struct usb_request *req)
 		return;
 	}
 
+	printf("partition is %s\n", cmd);
+	if (strcmp(cmd, "userdata") == 0) {
+		strcpy(cmd, "data");
+		printf("partition is %s\n", cmd);
+	}
+
 	response_str = response;
+
 	//strcpy(response, "FAILno erase device defined");
 	if (is_mainstorage_emmc()) {
 #ifdef CONFIG_FASTBOOT_FLASH_MMC_DEV
