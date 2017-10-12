@@ -72,14 +72,12 @@ static AvbIOResult read_from_partition(AvbOps* ops,
                                        size_t* out_num_read)
 {
 	char *dev_iface = "mmc";
-	char *buffer_temp;
 	int dev_num = 0;
 	struct blk_desc *dev_desc;
 	lbaint_t offset_blk, blkcnt;
 	disk_partition_t part_info;
 
 	byte_to_block(&offset, &num_bytes, &offset_blk, &blkcnt);
-	buffer_temp = malloc(512 * blkcnt);
 	dev_desc = blk_get_dev(dev_iface, dev_num);
 	if (!dev_desc) {
 		printf("Could not find %s %d\n", dev_iface, dev_num);
@@ -95,11 +93,17 @@ static AvbIOResult read_from_partition(AvbOps* ops,
 		blk_dread(dev_desc, part_info.start + offset_blk, blkcnt, buffer);
 		*out_num_read = blkcnt * 512;
 	} else {
+		char *buffer_temp;
+		buffer_temp = malloc(512 * blkcnt);
+		if (buffer_temp == NULL) {
+			printf("malloc error!\n");
+			return -1;
+		}
 		blk_dread(dev_desc, part_info.start + offset_blk, blkcnt, buffer_temp);
 		memcpy(buffer, buffer_temp + (offset % 512), num_bytes);
 		*out_num_read = num_bytes;
+		free(buffer_temp);
 	}
-	free(buffer_temp);
 
 	return AVB_IO_RESULT_OK;
 }
@@ -119,8 +123,11 @@ static AvbIOResult write_to_partition(AvbOps* ops,
 
 	byte_to_block(&offset, &num_bytes, &offset_blk, &blkcnt);
 	buffer_temp = malloc(512 * blkcnt);
+	if (buffer_temp == NULL) {
+		printf("malloc error!\n");
+		return -1;
+	}
 	memset(buffer_temp, 0, 512 * blkcnt);
-
 	dev_desc = blk_get_dev(dev_iface, dev_num);
 	if (!dev_desc) {
 		printf("Could not find %s %d\n", dev_iface, dev_num);
@@ -135,11 +142,9 @@ static AvbIOResult write_to_partition(AvbOps* ops,
 	if ((offset % 512 != 0) && (num_bytes % 512) != 0) {
 		blk_dread(dev_desc, part_info.start + offset_blk, blkcnt, buffer_temp);
 	}
-	memcpy(buffer_temp, buffer + (offset % 512), num_bytes);
 
-	if(blk_dwrite(dev_desc, part_info.start + offset_blk, blkcnt, buffer) != 1){
-		printf("Can't write %s partition",partition);
-	}
+	memcpy(buffer_temp, buffer + (offset % 512), num_bytes);
+	blk_dwrite(dev_desc, part_info.start + offset_blk, blkcnt, buffer);
 	free(buffer_temp);
 
 	return AVB_IO_RESULT_OK;
