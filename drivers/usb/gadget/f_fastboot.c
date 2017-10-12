@@ -873,11 +873,44 @@ static void cb_oem(struct usb_ep *ep, struct usb_request *req)
 	} else if (strncmp("at-set-ca-response", cmd + 4, 18) == 0) {
 		fastboot_tx_write_str("OKAY");
 	} else if (strncmp("at-lock-vboot", cmd + 4, 13) == 0) {
+#ifdef CONFIG_AVB_LIBAVB_USER
+		uint8_t lock_state;
+		lock_state = 0;
+		if (write_lock_state(lock_state))
+			fastboot_tx_write_str("FAIL");
+		else
+			fastboot_tx_write_str("OKAY");
+#else
 		fastboot_tx_write_str("FAILnot implemented");
+#endif
 	} else if (strncmp("at-unlock-vboot", cmd + 4, 15) == 0) {
+#ifdef CONFIG_AVB_LIBAVB_USER
+		uint8_t lock_state;
+		if (read_lock_state(&lock_state))
+			fastboot_tx_write_str("FAIL");
+		if (lock_state >> 1 == 1) {
+			fastboot_tx_write_str("FAILThe vboot is disable!");
+		} else {
+			lock_state = 1;
+			if (write_lock_state(lock_state))
+				fastboot_tx_write_str("FAIL");
+			else
+				fastboot_tx_write_str("OKAY");
+		}
+#else
 		fastboot_tx_write_str("FAILnot implemented");
+#endif
 	} else if (strncmp("at-disable-unlock-vboot", cmd + 4, 23) == 0) {
+#ifdef CONFIG_AVB_LIBAVB_USER
+		uint8_t lock_state;
+		lock_state = 2;
+		if (write_lock_state(lock_state))
+			fastboot_tx_write_str("FAIL");
+		else
+			fastboot_tx_write_str("OKAY");
+#else
 		fastboot_tx_write_str("FAILnot implemented");
+#endif
 	} else if (strncmp("fuse at-perm-attr", cmd + 4, 16) == 0) {
 #ifdef CONFIG_AVB_LIBAVB_USER
 		if (write_permanent_attributes((uint8_t *)
