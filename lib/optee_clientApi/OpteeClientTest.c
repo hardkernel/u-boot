@@ -518,6 +518,143 @@ uint32_t trusty_write_lock_state(uint8_t lock_state)
 	return TeecResult;
 }
 
+uint32_t trusty_read_flash_lock_state(uint8_t *flash_lock_state)
+{
+	TEEC_Result TeecResult;
+	TEEC_Context TeecContext;
+	TEEC_Session TeecSession;
+	uint32_t ErrorOrigin;
+	TEEC_UUID tempuuid = { 0x1b484ea5, 0x698b, 0x4142,
+		{ 0x82, 0xb8, 0x3a, 0xcf, 0x16, 0xe9, 0x9e, 0x2a } };
+	TEEC_UUID *TeecUuid = &tempuuid;
+	TEEC_Operation TeecOperation = {0};
+
+	debug("testmm start\n");
+	OpteeClientApiLibInitialize();
+
+	TeecResult = TEEC_InitializeContext(NULL, &TeecContext);
+
+
+	TeecResult = TEEC_OpenSession(&TeecContext,
+				&TeecSession,
+				TeecUuid,
+				TEEC_LOGIN_PUBLIC,
+				NULL,
+				NULL,
+				&ErrorOrigin);
+
+	TEEC_SharedMemory SharedMem0 = {0};
+
+	SharedMem0.size = sizeof("flash_lock_state");
+	SharedMem0.flags = 0;
+
+	TeecResult = TEEC_AllocateSharedMemory(&TeecContext, &SharedMem0);
+
+	memcpy(SharedMem0.buffer, "flash_lock_state", SharedMem0.size);
+
+	TEEC_SharedMemory SharedMem1 = {0};
+
+	SharedMem1.size = 1;
+	SharedMem1.flags = 0;
+
+	TeecResult = TEEC_AllocateSharedMemory(&TeecContext, &SharedMem1);
+
+	TeecOperation.params[0].tmpref.buffer = SharedMem0.buffer;
+	TeecOperation.params[0].tmpref.size = SharedMem0.size;
+
+	TeecOperation.params[1].tmpref.buffer = SharedMem1.buffer;
+	TeecOperation.params[1].tmpref.size = SharedMem1.size;
+
+
+	TeecOperation.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_INPUT,
+						TEEC_MEMREF_TEMP_INOUT,
+						TEEC_NONE,
+						TEEC_NONE);
+
+	TeecResult = TEEC_InvokeCommand(&TeecSession,
+					0,
+					&TeecOperation,
+					&ErrorOrigin);
+
+	memcpy(flash_lock_state, SharedMem1.buffer, SharedMem1.size);
+	TEEC_ReleaseSharedMemory(&SharedMem0);
+	TEEC_ReleaseSharedMemory(&SharedMem1);
+	TEEC_CloseSession(&TeecSession);
+	TeecResult = TEEC_FinalizeContext(&TeecContext);
+	debug("testmm end\n");
+
+	return TeecResult;
+}
+
+
+uint32_t trusty_write_flash_lock_state(uint8_t flash_lock_state)
+{
+	TEEC_Result TeecResult;
+	TEEC_Context TeecContext;
+	TEEC_Session TeecSession;
+	uint32_t ErrorOrigin;
+	TEEC_UUID  tempuuid = { 0x1b484ea5, 0x698b, 0x4142,
+		{ 0x82, 0xb8, 0x3a, 0xcf, 0x16, 0xe9, 0x9e, 0x2a } };
+	TEEC_UUID *TeecUuid = &tempuuid;
+	TEEC_Operation TeecOperation = {0};
+
+	debug("testmm start\n");
+	OpteeClientApiLibInitialize();
+
+	TeecResult = TEEC_InitializeContext(NULL, &TeecContext);
+
+	TeecResult = TEEC_OpenSession(&TeecContext,
+				&TeecSession,
+				TeecUuid,
+				TEEC_LOGIN_PUBLIC,
+				NULL,
+				NULL,
+				&ErrorOrigin);
+
+	TEEC_SharedMemory SharedMem0 = {0};
+
+	SharedMem0.size = sizeof("flash_lock_state");
+	SharedMem0.flags = 0;
+
+	TeecResult = TEEC_AllocateSharedMemory(&TeecContext, &SharedMem0);
+
+	memcpy(SharedMem0.buffer, "flash_lock_state", SharedMem0.size);
+
+	TEEC_SharedMemory SharedMem1 = {0};
+
+	SharedMem1.size = 1;
+	SharedMem1.flags = 0;
+
+	TeecResult = TEEC_AllocateSharedMemory(&TeecContext, &SharedMem1);
+
+	memcpy(SharedMem1.buffer, &flash_lock_state, SharedMem1.size);
+
+	TeecOperation.params[0].tmpref.buffer = SharedMem0.buffer;
+	TeecOperation.params[0].tmpref.size = SharedMem0.size;
+
+	TeecOperation.params[1].tmpref.buffer = SharedMem1.buffer;
+	TeecOperation.params[1].tmpref.size = SharedMem1.size;
+
+
+	TeecOperation.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_INPUT,
+						TEEC_MEMREF_TEMP_INOUT,
+						TEEC_NONE,
+						TEEC_NONE);
+
+	TeecResult = TEEC_InvokeCommand(&TeecSession,
+					1,
+					&TeecOperation,
+					&ErrorOrigin);
+
+	TEEC_ReleaseSharedMemory(&SharedMem0);
+	TEEC_ReleaseSharedMemory(&SharedMem1);
+	TEEC_CloseSession(&TeecSession);
+	TeecResult = TEEC_FinalizeContext(&TeecContext);
+	debug("testmm end\n");
+
+	return TeecResult;
+}
+
 uint32_t write_to_keymaster(uint8_t *filename,
 		uint32_t filename_size,
 		uint8_t *data,
