@@ -850,7 +850,16 @@ static void cb_oem(struct usb_ep *ep, struct usb_request *req)
 	} else if (strncmp("at-disable-unlock-vboot", cmd + 4, 23) == 0) {
 		fastboot_tx_write_str("FAILnot implemented");
 	} else if (strncmp("fuse at-perm-attr", cmd + 4, 16) == 0) {
+#ifdef CONFIG_AVB_LIBAVB_USER
+		if (write_permanent_attributes((uint8_t *)
+					       CONFIG_FASTBOOT_BUF_ADDR,
+					       download_bytes))
+			fastboot_tx_write_str("FAIL");
+		else
+			fastboot_tx_write_str("OKAY");
+#else
 		fastboot_tx_write_str("FAILnot implemented");
+#endif
 	} else {
 		fastboot_tx_write_str("FAILunknown oem command");
 	}
