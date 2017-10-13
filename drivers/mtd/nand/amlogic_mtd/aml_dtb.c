@@ -23,7 +23,7 @@ extern int get_partition_from_dts(unsigned char * buffer);
 
 struct aml_nand_chip *aml_chip_dtb = NULL;
 
-int amlnf_dtb_save(u8 *buf, int len)
+int amlnf_dtb_save(u8 *buf, unsigned int len)
 {
 	u8 *dtb_buf = NULL;
 	int ret = 0;
@@ -135,7 +135,7 @@ int amlnf_dtb_read(u8 *buf, int len)
 #else
 	struct mtd_info *mtd = &aml_chip_dtb->mtd;
 	size_t offset = 0;
-	aml_nand_read_dtb(mtd, offset, (u8 *)dtb_buf);
+	ret = aml_nand_read_dtb(mtd, offset, (u8 *)dtb_buf);
 #endif
 	memcpy(buf, dtb_buf, len);
 exit_err:
@@ -177,7 +177,7 @@ ssize_t dtb_store(struct class *class, struct class_attribute *attr,
 		return -EFAULT;
 	}
 
-	ret = amlnf_dtb_save(dtb_ptr, aml_chip_dtb->dtbsize);
+	ret = amlnf_dtb_save(dtb_ptr, (unsigned int)aml_chip_dtb->dtbsize);
 	if (ret) {
 		printk("%s: save failed\n", __func__);
 		kfree(dtb_ptr);
@@ -279,7 +279,7 @@ ssize_t dtb_write(struct file *file,
 
 	ret = copy_from_user((dtb_ptr + *ppos), buf, write_size);
 
-	ret = amlnf_dtb_save(dtb_ptr, aml_chip_dtb->dtbsize);
+	ret = amlnf_dtb_save(dtb_ptr, (unsigned int)aml_chip_dtb->dtbsize);
 	if (ret) {
 		printk("%s: read failed\n", __func__);
 		ret = -EFAULT;

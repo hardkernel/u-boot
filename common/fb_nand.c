@@ -15,10 +15,7 @@
 #include <jffs2/jffs2.h>
 #include <nand.h>
 #include <fb_fastboot.h>
-
-#define MTD_RESERVED_BLOCK_NUM 48
-
-extern int get_boot_num(struct mtd_info *mtd, size_t rwsize);
+#include <amlogic/aml_nand.h>
 
 struct fb_nand_sparse {
 	nand_info_t	*nand;
@@ -51,6 +48,8 @@ static int fb_nand_lookup(const char *partname,
 		return ret;
 	}
 
+	if (strcmp(partname, "dtb") == 0)
+		return 0;
 	ret = find_dev_and_part(partname, &dev, &pnum, part);
 	if (ret) {
 		error("cannot find partition: '%s'", partname);
@@ -175,8 +174,8 @@ void fb_nand_flash_write(const char *cmd, void *download_buffer,
 	ret = fb_nand_lookup(cmd, &nand, &part);
 
 	if (ret) {
-		error("invalid NAND device");
-		fastboot_fail("invalid NAND device");
+		error(" invalid NAND device");
+		fastboot_fail(" invalid NAND device");
 		return;
 	}
 
@@ -195,11 +194,8 @@ void fb_nand_flash_write(const char *cmd, void *download_buffer,
 			err = nand_write_skip_bad(nand, off, &rwsize,
 						NULL, limit,
 						(u_char *)download_buffer, 0);
-			if (err) {
+			if (err)
 				error("bootloader write err,code = %d\n",err);
-				fastboot_fail("NAND write error\n");
-				return;
-			}
 			off += nand->size / copy_num;
 		}
 		fastboot_okay("write bootloader");
@@ -211,24 +207,32 @@ void fb_nand_flash_write(const char *cmd, void *download_buffer,
 		rwsize = download_bytes;
 		limit = CONFIG_TPL_SIZE_PER_COPY;
 		off = 1024 * nand->writesize +
-			MTD_RESERVED_BLOCK_NUM * nand->erasesize;
+			RESERVED_BLOCK_NUM * nand->erasesize;
 
 		for (i = 0; i < copy_num; i++) {
 			printf("off = 0x%llx,wsize = 0x%lx\n", off, rwsize);
 			err = nand_write_skip_bad(nand, off, &rwsize,
 						NULL, limit,
 						(u_char *)download_buffer, 0);
-			if (err) {
+			if (err)
 				error("tpl write err,code = %d\n",err);
-				fastboot_fail("NAND write error\n");
-				return;
-			}
 			off += nand->size / copy_num;
 		}
 		fastboot_okay("write tpl");
 		return;
 	}
 #endif
+	if (strcmp(cmd, "dtb") == 0) {
+		ret = amlnf_dtb_save((u8 *)download_buffer, download_bytes);
+		printf("Flashing dtb...len:0x%x\n", download_bytes);
+		if (ret) {
+			printf("write dtb fail,result code %d\n", ret);
+			fastboot_fail("write dtb");
+		} else {
+			fastboot_okay("write dtb");
+		}
+		return;
+	}
 	ret = board_fastboot_write_partition_setup(part->name);
 	if (ret)
 		return;
@@ -281,6 +285,17 @@ void fb_nand_erase(const char *cmd, void *download_buffer)
 	if (ret) {
 		error("invalid NAND device");
 		fastboot_fail("invalid NAND device");
+		return;
+	}
+
+	if (strcmp(cmd, "dtb") == 0) {
+		ret = amlnf_dtb_erase();
+		if (ret) {
+			printf("erase dtb fail,result code %d\n", ret);
+			fastboot_fail("erase dtb");
+		} else {
+			fastboot_okay("erase dtb");
+		}
 		return;
 	}
 

@@ -6,6 +6,7 @@
 #include <linux/mtd/partitions.h>
 #include <linux/mtd/nand_ecc.h>
 #include <nand.h>
+#include <amlogic/aml_nand.h>
 #include "aml_hwctrl.h"
 #include "partition_table.h"
 
@@ -138,7 +139,6 @@ typedef union nand_core_clk {
 #define BOOT_PAGES_PER_COPY (1024)
 #define BOOT_COPY_NUM (BOOT_TOTAL_PAGES / BOOT_PAGES_PER_COPY)
 /*it also means normal device start addrress */
-#define RESERVED_BLOCK_NUM 48
 
 #define AML_CHIP_NONE_RB	4
 #define AML_INTERLEAVING_MODE	8
@@ -766,8 +766,6 @@ int m3_nand_boot_write_page_hwecc(struct mtd_info *mtd,
 int m3_nand_boot_write_page(struct mtd_info *mtd, struct nand_chip *chip,
 	uint32_t offset, int data_len, const uint8_t *buf,
 	int oob_required, int page, int cached, int raw);
-
-int get_boot_num(struct mtd_info *mtd, size_t rwsize);
 
 #endif
 

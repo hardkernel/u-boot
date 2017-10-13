@@ -392,9 +392,7 @@ _out:
 /*
  * operations for dtb.
  */
-extern int amlnf_dtb_save(u8 *buf, int len);
 extern int amlnf_dtb_read(u8 *buf, int len);
-extern int amlnf_dtb_erase(void);
 static int do_dtb_ops(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 {
 	int ret = 0;
@@ -426,7 +424,7 @@ static int do_dtb_ops(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 		printk("%s() %s\n", __func__, sub);
 		addr = (ulong)simple_strtoul(argv[base], NULL, 16);
 		size = (ulong)simple_strtoul(argv[base + 1], NULL, 16);
-		ret = amlnf_dtb_save((u8 *)addr, (int)size);
+		ret = amlnf_dtb_save((u8 *)addr, (unsigned int)size);
 		printk("%s(): %llu bytes %s : %s\n",
 				__func__,
 				size,
