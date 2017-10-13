@@ -302,33 +302,32 @@
 #define		CONFIG_PARTITIONS 1
 #define 	CONFIG_SYS_NO_FLASH  1
 
-/*SPI*/
-#define CONFIG_AMLOGIC_SPI_FLASH 1
-#ifdef 		CONFIG_AMLOGIC_SPI_FLASH
-#undef 		CONFIG_ENV_IS_NOWHERE
-//#define		CONFIG_SPI_BOOT 1
-#define 	CONFIG_SPI_FLASH_ATMEL
-#define 	CONFIG_SPI_FLASH_EON
-#define 	CONFIG_SPI_FLASH_MACRONIX
-#define 	CONFIG_SPI_FLASH_SPANSION
-#define 	CONFIG_SPI_FLASH_SST
-#define 	CONFIG_SPI_FLASH_STMICRO
-#define 	CONFIG_SPI_FLASH_WINBOND
-#define		CONFIG_SPI_FRAM_RAMTRON
-#define		CONFIG_SPI_M95XXX
-//#define		CONFIG_SPI_FLASH_GIGADEVICE
-//#define		CONFIG_SPI_FLASH_PMDEVICE
-//#define		CONFIG_SPI_NOR_SECURE_STORAGE
-#define		CONFIG_SPI_FLASH_ESMT
-#define		CONFIG_SPI_FLASH 1
-#define 	CONFIG_CMD_SF 1
-#ifdef CONFIG_SPI_BOOT
-	#define CONFIG_ENV_OVERWRITE
-	#define CONFIG_ENV_IS_IN_SPI_FLASH
-	#define CONFIG_CMD_SAVEENV
-	#define CONFIG_ENV_SECT_SIZE		0x10000
-	#define CONFIG_ENV_OFFSET           0x1f0000
+/* meson SPI */
+#define CONFIG_AML_SPIFC
+//#define CONFIG_AML_SPICC
+#if defined CONFIG_AML_SPIFC || defined CONFIG_AML_SPICC
+	#define CONFIG_OF_SPI
+	#define CONFIG_DM_SPI
+	#define CONFIG_CMD_SPI
 #endif
+/* SPI flash config */
+#ifdef CONFIG_AML_SPIFC
+	#define CONFIG_SPIFC_COMPATIBLE_TO_APPOLO
+	#define CONFIG_SPI_FLASH
+	#define CONFIG_DM_SPI_FLASH
+	#define CONFIG_CMD_SF
+	/* SPI flash surpport list */
+	#define CONFIG_SPI_FLASH_ATMEL // to test
+	#define CONFIG_SPI_FLASH_EON // to test
+	#define CONFIG_SPI_FLASH_GIGADEVICE // to test
+	#define CONFIG_SPI_FLASH_MACRONIX
+	#define CONFIG_SPI_FLASH_SPANSION // to test
+	#define CONFIG_SPI_FLASH_STMICRO // to test
+	#define CONFIG_SPI_FLASH_SST // to test
+	#define CONFIG_SPI_FLASH_WINBOND // to test
+	#define CONFIG_SPI_FRAM_RAMTRON // to add & test
+	#define CONFIG_SPI_M95XXX // to add & test
+	#define CONFIG_SPI_FLASH_ESMT // to add & test
 #endif
 
 

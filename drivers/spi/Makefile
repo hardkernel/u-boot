@@ -50,3 +50,4 @@ obj-$(CONFIG_XILINX_SPI) += xilinx_spi.o
 obj-$(CONFIG_ZYNQ_SPI) += zynq_spi.o
 obj-$(CONFIG_FSL_QSPI) += fsl_qspi.o
 obj-$(CONFIG_AML_SPICC) += spicc.o
+obj-$(CONFIG_AML_SPIFC) += spifc.o

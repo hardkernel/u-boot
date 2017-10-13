@@ -48,6 +48,8 @@
 #include <linux/sizes.h>
 #include <asm/arch/clock.h>
 #include <asm-generic/gpio.h>
+#include <dm.h>
+#include <amlogic/spifc.h>
 DECLARE_GLOBAL_DATA_PTR;
 
 //new static eth setup
@@ -489,6 +491,51 @@ int get_aml_partition_count(void)
 	return ARRAY_SIZE(normal_partition_info);
 }
 #endif /* CONFIG_AML_MTD */
+
+
+#ifdef CONFIG_AML_SPIFC
+/*
+ * BOOT_3: NOR_HOLDn:reg0[15:12]=3
+ * BOOT_4: NOR_D:reg0[19:16]=3
+ * BOOT_5: NOR_Q:reg0[23:20]=3
+ * BOOT_6: NOR_C:reg0[27:24]=3
+ * BOOT_9: NOR_WPn:reg1[7:4]=3
+ * BOOT_14: NOR_CS:reg1[27:24]=3
+ */
+#define SPIFC_NUM_CS 1
+static int spifc_cs_gpios[SPIFC_NUM_CS] = {PIN_BOOT_14};
+
+static int spifc_pinctrl_enable(void *pinctrl, bool enable)
+{
+	unsigned int val;
+
+	val = readl(P_PERIPHS_PIN_MUX_0);
+	val &= ~(0xffff << 12);
+	if (enable)
+		val |= 0x3333 << 12;
+	writel(val, P_PERIPHS_PIN_MUX_0);
+
+	val = readl(P_PERIPHS_PIN_MUX_1);
+	val &= ~((0xf << 4) | (0xf << 24));
+	if (enable)
+		val |= 0x3 << 4;
+	writel(val, P_PERIPHS_PIN_MUX_1);
+	return 0;
+}
+
+static const struct spifc_platdata spifc_platdata = {
+	.reg = 0xffd14000,
+	.mem_map = 0xfb000000,
+	.pinctrl_enable = spifc_pinctrl_enable,
+	.num_chipselect = SPIFC_NUM_CS,
+	.cs_gpios = spifc_cs_gpios,
+};
+
+U_BOOT_DEVICE(spifc) = {
+	.name = "spifc",
+	.platdata = &spifc_platdata,
+};
+#endif /* CONFIG_AML_SPIFC */
 
 int board_init(void)
 {

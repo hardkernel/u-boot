@@ -23,6 +23,13 @@
 #define	SPI_LOOP	0x20			/* loopback mode */
 #define	SPI_SLAVE	0x40			/* slave mode */
 #define	SPI_PREAMBLE	0x80			/* Skip preamble bytes */
+#define SPI_TX_BYTE	(1<<8)			/* transmit with 1 wire byte */
+#define SPI_TX_DUAL	(1<<9)			/* transmit with 2 wires */
+#define SPI_TX_QUAD	(1<<10)			/* transmit with 4 wires */
+#define SPI_RX_SLOW	(1<<11)			/* receive with 1 wire slow */
+#define SPI_RX_DUAL	(1<<12)			/* receive with 2 wires */
+#define SPI_RX_QUAD	(1<<13)			/* receive with 4 wires */
+
 
 /* SPI transfer flags */
 #define SPI_XFER_BEGIN		0x01	/* Assert CS before transfer */
@@ -38,10 +45,11 @@
 
 /* SPI RX operation modes */
 #define SPI_OPM_RX_AS		(1 << 0)
-#define SPI_OPM_RX_DOUT	(1 << 1)
-#define SPI_OPM_RX_DIO		(1 << 2)
-#define SPI_OPM_RX_QOF		(1 << 3)
-#define SPI_OPM_RX_QIOF	(1 << 4)
+#define SPI_OPM_RX_AF		(1 << 1)
+#define SPI_OPM_RX_DOUT	(1 << 2)
+#define SPI_OPM_RX_DIO		(1 << 3)
+#define SPI_OPM_RX_QOF		(1 << 4)
+#define SPI_OPM_RX_QIOF	(1 << 5)
 #define SPI_OPM_RX_EXTN	(SPI_OPM_RX_AS | SPI_OPM_RX_DOUT | \
 				SPI_OPM_RX_DIO | SPI_OPM_RX_QOF | \
 				SPI_OPM_RX_QIOF)

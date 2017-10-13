@@ -256,41 +256,10 @@
 // -----------------------------------------------
 #define   SPI_FLASH_CMD                            (0x5000)
 #define P_SPI_FLASH_CMD                            (volatile uint32_t *)((0x5000  << 2) + 0xffd00000)
-    #define SPI_FLASH_READ    31
-    #define SPI_FLASH_WREN    30
-    #define SPI_FLASH_WRDI    29
-    #define SPI_FLASH_RDID    28
-    #define SPI_FLASH_RDSR    27
-    #define SPI_FLASH_WRSR    26
-    #define SPI_FLASH_PP      25
-    #define SPI_FLASH_SE      24
-    #define SPI_FLASH_BE      23
-    #define SPI_FLASH_CE      22
-    #define SPI_FLASH_DP      21
-    #define SPI_FLASH_RES     20
-    #define SPI_HPM           19
-    #define SPI_FLASH_USR     18
-    #define SPI_FLASH_USR_ADDR 15
-    #define SPI_FLASH_USR_DUMMY 14
-    #define SPI_FLASH_USR_DIN   13
-    #define SPI_FLASH_USR_DOUT   12
-    #define SPI_FLASH_USR_DUMMY_BLEN   10
-    #define SPI_FLASH_USR_CMD     0
 #define   SPI_FLASH_ADDR                           (0x5001)
 #define P_SPI_FLASH_ADDR                           (volatile uint32_t *)((0x5001  << 2) + 0xffd00000)
-    #define SPI_FLASH_BYTES_LEN 24
-    #define SPI_FLASH_ADDR_START 0
 #define   SPI_FLASH_CTRL                           (0x5002)
 #define P_SPI_FLASH_CTRL                           (volatile uint32_t *)((0x5002  << 2) + 0xffd00000)
-    #define SPI_ENABLE_AHB    17
-    #define SPI_SST_AAI       16
-    #define SPI_RES_RID       15
-    #define SPI_FREAD_DUAL    14
-    #define SPI_READ_READ_EN  13
-    #define SPI_CLK_DIV0      12
-    #define SPI_CLKCNT_N      8
-    #define SPI_CLKCNT_H      4
-    #define SPI_CLKCNT_L      0
 #define   SPI_FLASH_CTRL1                          (0x5003)
 #define P_SPI_FLASH_CTRL1                          (volatile uint32_t *)((0x5003  << 2) + 0xffd00000)
 #define   SPI_FLASH_STATUS                         (0x5004)

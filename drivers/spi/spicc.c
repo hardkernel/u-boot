@@ -279,3 +279,46 @@ out:
 
 	return 0;
 }
+
+#ifndef CONFIG_DM_SPI
+__attribute__((weak)) void spi_init(void){}
+__attribute__((weak)) int spi_cs_is_valid(unsigned int bus,
+		unsigned int cs){return 0;}
+
+__attribute__((weak)) void spi_cs_activate(struct spi_slave *slave)
+{
+	spicc_cs_activate(slave);
+}
+
+__attribute__((weak)) void spi_cs_deactivate(struct spi_slave *slave)
+{
+	spicc_cs_deactivate(slave);
+}
+
+struct spi_slave *spi_setup_slave(unsigned int bus, unsigned int cs,
+		unsigned int max_hz, unsigned int mode)
+{
+	return spicc_setup_slave(bus, cs, max_hz, mode);
+}
+
+void spi_free_slave(struct spi_slave *slave)
+{
+	spicc_free_slave(slave);
+}
+
+int spi_claim_bus(struct spi_slave *slave)
+{
+	return spicc_claim_bus(slave);
+}
+
+void spi_release_bus(struct spi_slave *slave)
+{
+	spicc_release_bus(slave);
+}
+
+int spi_xfer(struct spi_slave *slave, unsigned int bitlen,
+		const void *dout, void *din, unsigned long flags)
+{
+	return spicc_xfer(slave, bitlen, dout, din, flags);
+}
+#endif

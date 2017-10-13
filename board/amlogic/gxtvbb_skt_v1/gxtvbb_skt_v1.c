@@ -46,6 +46,9 @@
 #ifdef CONFIG_AML_LCD
 #include <amlogic/aml_lcd.h>
 #endif
+#include <asm-generic/gpio.h>
+#include <dm.h>
+#include <amlogic/spifc.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -537,6 +540,43 @@ static void hdmi_tx_set_hdmi_5v(void)
 {
 }
 #endif
+
+#ifdef CONFIG_AML_SPIFC
+/*
+ * BOOT_11: NOR_D:reg5[16], clr none
+ * BOOT_12: NOR_Q:reg5[17], clr none
+ * BOOT_13: NOR_C:reg5[18], clr none
+ * BOOT_18: NOR_CS:reg5[19],clr none
+ */
+#define SPIFC_NUM_CS 1
+static int spifc_cs_gpios[SPIFC_NUM_CS] = {71/*BOOT_18*/};
+
+static int spifc_pinctrl_enable(void *pinctrl, bool enable)
+{
+	unsigned int val;
+
+	val = readl(P_PERIPHS_PIN_MUX_5);
+	val &= ~((1<<19)|(1<<18)|(1<<17)|(1<<16));
+	if (enable) {
+		val |= (1<<18)|(1<<17)|(1<<16);
+	}
+	writel(val, P_PERIPHS_PIN_MUX_5);
+	return 0;
+}
+
+static const struct spifc_platdata spifc_platdata = {
+	.reg = 0xc1108c80,
+	.mem_map = 0xcc000000,
+	.pinctrl_enable = spifc_pinctrl_enable,
+	.num_chipselect = SPIFC_NUM_CS,
+	.cs_gpios = spifc_cs_gpios,
+};
+
+U_BOOT_DEVICE(spifc) = {
+	.name = "spifc",
+	.platdata = &spifc_platdata,
+};
+#endif /* CONFIG_AML_SPIFC */
 
 int board_init(void)
 {

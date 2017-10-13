@@ -23,6 +23,7 @@ static int spi_set_speed_mode(struct udevice *bus, int speed, int mode)
 	struct dm_spi_ops *ops;
 	int ret;
 
+	debug("%s: To set %dHz@mode0x%x\n", __func__, speed, mode);
 	ops = spi_get_ops(bus);
 	if (ops->set_speed)
 		ret = ops->set_speed(bus, speed);
@@ -95,7 +96,10 @@ int spi_xfer(struct spi_slave *slave, unsigned int bitlen,
 int spi_post_bind(struct udevice *dev)
 {
 	/* Scan the bus for devices */
+#ifdef CONFIG_OF_CONTROL
 	return dm_scan_fdt_node(dev, gd->fdt_blob, dev->of_offset, false);
+#endif
+	return 0;
 }
 
 int spi_post_probe(struct udevice *dev)
@@ -196,8 +200,15 @@ int spi_find_bus_and_cs(int busnum, int cs, struct udevice **busp,
 
 	ret = uclass_find_device_by_seq(UCLASS_SPI, busnum, false, &bus);
 	if (ret) {
-		debug("%s: No bus %d\n", __func__, busnum);
-		return ret;
+		for (uclass_first_device(UCLASS_SPI, &bus); bus;
+				uclass_next_device(&bus)) {
+			if (bus && (bus->seq == busnum))
+				break;
+		}
+		if (!bus) {
+			debug("%s: No bus %d\n", __func__, busnum);
+			return ret;
+		}
 	}
 	ret = spi_find_chip_select(bus, cs, &dev);
 	if (ret) {
@@ -258,6 +269,23 @@ int spi_get_bus_and_cs(int busnum, int cs, int speed, int mode,
 			goto err;
 		slave->cs = cs;
 		slave->dev = dev;
+		slave->max_hz = speed;
+		slave->mode = mode;
+
+		slave->op_mode_rx = SPI_OPM_RX_AF;
+		if (slave->mode & SPI_RX_QUAD)
+			slave->op_mode_rx |= SPI_OPM_RX_QOF;
+		else if (slave->mode & SPI_RX_DUAL)
+			slave->op_mode_rx |= SPI_OPM_RX_DOUT;
+		else if (slave->mode & SPI_RX_SLOW)
+			slave->op_mode_rx |= SPI_OPM_RX_AS;
+
+		slave->op_mode_tx = 0;
+		if (slave->mode & SPI_TX_QUAD)
+			slave->op_mode_tx = SPI_OPM_TX_QPP;
+		printf("mode=0x%x, op_mode_rx=0x%x, op_mode_tx=0x%x\n",
+				slave->mode, slave->op_mode_rx, slave->op_mode_tx);
+
 		ret = device_probe_child(dev, slave);
 		free(slave);
 		if (ret)
@@ -324,6 +352,7 @@ void spi_free_slave(struct spi_slave *slave)
 int spi_ofdata_to_platdata(const void *blob, int node,
 			   struct spi_slave *spi)
 {
+#ifdef CONFIG_OF_CONTROL
 	int mode = 0;
 
 	spi->cs = fdtdec_get_int(blob, node, "reg", -1);
@@ -337,7 +366,7 @@ int spi_ofdata_to_platdata(const void *blob, int node,
 	if (fdtdec_get_bool(blob, node, "spi-half-duplex"))
 		mode |= SPI_PREAMBLE;
 	spi->mode = mode;
-
+#endif
 	return 0;
 }
 
