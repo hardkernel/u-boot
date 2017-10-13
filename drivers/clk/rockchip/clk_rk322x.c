@@ -314,6 +314,29 @@ static int rk322x_ddr_set_clk(struct rk322x_cru *cru, unsigned int set_rate)
 
 	return set_rate;
 }
+
+static ulong rk322x_get_bus_aclk(struct rk322x_cru *cru, ulong gclk_rate)
+{
+	u32 con;
+	u32 aclk_div;
+
+	con = readl(&cru->cru_clksel_con[0]);
+	aclk_div = ((con & BUS_ACLK_DIV_MASK) >> BUS_ACLK_DIV_SHIFT) + 1;
+
+	return gclk_rate / aclk_div;
+}
+
+static ulong rk322x_get_bus_pclk(struct rk322x_cru *cru, ulong gclk_rate)
+{
+	u32 con;
+	u32 pclk_div;
+
+	con = readl(&cru->cru_clksel_con[1]);
+	pclk_div = ((con & BUS_PCLK_DIV_MASK) >> BUS_PCLK_DIV_SHIFT) + 1;
+
+	return rk322x_get_bus_aclk(cru, gclk_rate) / pclk_div;
+}
+
 static ulong rk322x_clk_get_rate(struct clk *clk)
 {
 	struct rk322x_clk_priv *priv = dev_get_priv(clk->dev);
@@ -329,6 +352,9 @@ static ulong rk322x_clk_get_rate(struct clk *clk)
 	case HCLK_SDMMC:
 	case SCLK_SDMMC:
 		rate = rockchip_mmc_get_clk(priv->cru, gclk_rate, clk->id);
+		break;
+	case PCLK_GPIO0 ... PCLK_TIMER:
+		rate = rk322x_get_bus_pclk(priv->cru, gclk_rate);
 		break;
 	default:
 		return -ENOENT;
