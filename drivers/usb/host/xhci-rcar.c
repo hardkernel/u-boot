@@ -55,18 +55,30 @@ static int xhci_rcar_download_fw(struct rcar_xhci *ctx, const u32 *fw_data,
 		setbits_le32(regs + RCAR_USB3_DL_CTRL,
 			     RCAR_USB3_DL_CTRL_FW_SET_DATA0);
 
+<<<<<<< HEAD
 		ret = wait_for_bit_le32(regs + RCAR_USB3_DL_CTRL,
 					RCAR_USB3_DL_CTRL_FW_SET_DATA0, false,
 					10, false);
+=======
+		ret = wait_for_bit("xhci-rcar", regs + RCAR_USB3_DL_CTRL,
+				   RCAR_USB3_DL_CTRL_FW_SET_DATA0, false,
+				   10, false);
+>>>>>>> e1cc60c... usb: xhci: Add Renesas R-Car xHCI driver
 		if (ret)
 			break;
 	}
 
 	clrbits_le32(regs + RCAR_USB3_DL_CTRL, RCAR_USB3_DL_CTRL_ENABLE);
 
+<<<<<<< HEAD
 	ret = wait_for_bit_le32(regs + RCAR_USB3_DL_CTRL,
 				RCAR_USB3_DL_CTRL_FW_SUCCESS, true,
 				10, false);
+=======
+	ret = wait_for_bit("xhci-rcar", regs + RCAR_USB3_DL_CTRL,
+			   RCAR_USB3_DL_CTRL_FW_SUCCESS, true,
+			   10, false);
+>>>>>>> e1cc60c... usb: xhci: Add Renesas R-Car xHCI driver
 
 	return ret;
 }

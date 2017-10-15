@@ -59,6 +59,7 @@ obj-$(CONFIG_USB_XHCI_FSL) += xhci-fsl.o
 obj-$(CONFIG_USB_XHCI_MVEBU) += xhci-mvebu.o
 obj-$(CONFIG_USB_XHCI_OMAP) += xhci-omap.o
 obj-$(CONFIG_USB_XHCI_PCI) += xhci-pci.o
+obj-$(CONFIG_USB_XHCI_RCAR) += xhci-rcar.o
 
 # designware
 obj-$(CONFIG_USB_DWC2) += dwc2.o
