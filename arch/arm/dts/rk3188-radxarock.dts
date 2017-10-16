@@ -344,6 +344,10 @@
 	};
 };
 
+&saradc {
+	status = "okay";
+};
+
 &spdif {
 	status = "okay";
 };
