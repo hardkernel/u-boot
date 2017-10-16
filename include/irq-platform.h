@@ -7,7 +7,24 @@
 #ifndef _ROCKCHIP_PLAT_IRQ_H_
 #define _ROCKCHIP_PLAT_IRQ_H_
 
-#if defined(CONFIG_ROCKCHIP_RK322X)
+#if defined(CONFIG_ROCKCHIP_RK3128)
+#define GPIO0_PHYS			0x2007C000
+#define GPIO1_PHYS			0x20080000
+#define GPIO2_PHYS			0x20084000
+#define GPIO3_PHYS			0x20088000
+
+#define GIC_IRQS_NR			(4 * 32)
+#define GPIO_IRQS_NR			(4 * 32)
+
+#define GPIO_BANK_NUM			4
+#define GPIO_BANK_PINS			32
+
+#define IRQ_GPIO0			68
+#define IRQ_GPIO1			69
+#define IRQ_GPIO2			79
+#define IRQ_GPIO3			71
+
+#elif defined(CONFIG_ROCKCHIP_RK322X)
 #define GPIO0_PHYS			0x11110000
 #define GPIO1_PHYS			0x11120000
 #define GPIO2_PHYS			0x11130000
