@@ -124,6 +124,16 @@
 		};
 	};
 
+	saradc: saradc@2006c000 {
+		compatible = "rockchip,saradc";
+		reg = <0x2006c000 0x100>;
+		interrupts = <GIC_SPI 26 IRQ_TYPE_LEVEL_HIGH>;
+		#io-channel-cells = <1>;
+		clocks = <&cru SCLK_SARADC>, <&cru PCLK_SARADC>;
+		clock-names = "saradc", "pclk_saradc";
+		status = "disabled";
+	};
+
 	usbphy: phy {
 		compatible = "rockchip,rk3188-usb-phy", "rockchip,rk3288-usb-phy";
 		rockchip,grf = <&grf>;
