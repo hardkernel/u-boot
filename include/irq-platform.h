@@ -19,6 +19,7 @@
 #define GPIO_BANK_NUM			4
 #define GPIO_BANK_PINS			32
 
+#define IRQ_TIMER1			61
 #define IRQ_GPIO0			68
 #define IRQ_GPIO1			69
 #define IRQ_GPIO2			79
@@ -36,6 +37,7 @@
 #define GPIO_BANK_NUM			4
 #define GPIO_BANK_PINS			32
 
+#define IRQ_TIMER1			76
 #define IRQ_GPIO0			83
 #define IRQ_GPIO1			84
 #define IRQ_GPIO2			85
@@ -58,6 +60,7 @@
 #define GPIO_BANK_NUM			9
 #define GPIO_BANK_PINS			32
 
+#define IRQ_TIMER1			99
 #define IRQ_GPIO0			113
 #define IRQ_GPIO1			114
 #define IRQ_GPIO2			115
@@ -80,6 +83,7 @@
 #define GPIO_BANK_NUM			4
 #define GPIO_BANK_PINS			32
 
+#define IRQ_TIMER1			76
 #define IRQ_GPIO0			83
 #define IRQ_GPIO1			84
 #define IRQ_GPIO2			85
@@ -97,6 +101,7 @@
 #define GPIO_BANK_NUM			4
 #define GPIO_BANK_PINS			32
 
+#define IRQ_TIMER1			79
 #define IRQ_GPIO0			113
 #define IRQ_GPIO1			114
 #define IRQ_GPIO2			115
@@ -114,6 +119,7 @@
 #define IRQ_GPIO2			48
 #define IRQ_GPIO3			49
 #define IRQ_GPIO4			50
+#define IRQ_TIMER1			114	/* non-secure */
 
 #define GIC_IRQS_NR			(6 * 32)
 #define GPIO_IRQS_NR			(5 * 32)
