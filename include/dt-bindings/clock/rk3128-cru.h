@@ -29,6 +29,7 @@
 #define SCLK_TIMER1		86
 #define SCLK_TIMER2		87
 #define SCLK_TIMER3		88
+#define SCLK_SARADC		91
 #define SCLK_OTGPHY0		93
 #define SCLK_LCDC		100
 #define SCLK_HDMI		109
@@ -58,6 +59,7 @@
 #define ACLK_PERI		210
 
 /* pclk gates */
+#define PCLK_SARADC		318
 #define PCLK_GPIO0		320
 #define PCLK_GPIO1		321
 #define PCLK_GPIO2		322
@@ -160,6 +162,7 @@
 #define SRST_EMMC		83
 #define SRST_SPI0		84
 #define SRST_WDT		86
+#define SRST_SARADC		87
 #define SRST_DDRPHY		88
 #define SRST_DDRPHY_P		89
 #define SRST_DDRCTRL		90

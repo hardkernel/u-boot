@@ -301,6 +301,18 @@
 		#dma-cells = <2>;
 	};
 
+	saradc: saradc@2006c000 {
+		compatible = "rockchip,saradc";
+		reg = <0x2006c000 0x100>;
+		interrupts = <GIC_SPI 17 IRQ_TYPE_LEVEL_HIGH>;
+		#io-channel-cells = <1>;
+		clocks = <&cru SCLK_SARADC>, <&cru PCLK_SARADC>;
+		clock-names = "saradc", "apb_pclk";
+		resets = <&cru SRST_SARADC>;
+		reset-names = "saradc-apb";
+		status = "disabled";
+	};
+
 	pwm0: pwm0@20050000 {
 		compatible = "rockchip,rk3128-pwm", "rockchip,rk3288-pwm";
 		reg = <0x20050000 0x10>;
