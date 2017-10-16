@@ -13,6 +13,7 @@
 #include <asm/arch/clock.h>
 #include <asm/arch/cru_rk3128.h>
 #include <asm/arch/hardware.h>
+#include <bitfield.h>
 #include <dm/lists.h>
 #include <dt-bindings/clock/rk3128-cru.h>
 #include <linux/log2.h>
@@ -317,6 +318,32 @@ static ulong rk3128_i2c_set_clk(struct rk3128_cru *cru, ulong clk_id, uint hz)
 
 	return DIV_TO_RATE(PERI_ACLK_HZ, src_clk_div);
 }
+
+static ulong rk3128_saradc_get_clk(struct rk3128_cru *cru)
+{
+	u32 div, val;
+
+	val = readl(&cru->cru_clksel_con[24]);
+	div = bitfield_extract(val, SARADC_DIV_CON_SHIFT,
+			       SARADC_DIV_CON_WIDTH);
+
+	return DIV_TO_RATE(OSC_HZ, div);
+}
+
+static ulong rk3128_saradc_set_clk(struct rk3128_cru *cru, uint hz)
+{
+	int src_clk_div;
+
+	src_clk_div = DIV_ROUND_UP(OSC_HZ, hz) - 1;
+	assert(src_clk_div < 128);
+
+	rk_clrsetreg(&cru->cru_clksel_con[24],
+		     SARADC_DIV_CON_MASK,
+		     src_clk_div << SARADC_DIV_CON_SHIFT);
+
+	return rk3128_saradc_get_clk(cru);
+}
+
 static ulong rk3128_clk_get_rate(struct clk *clk)
 {
 	struct rk3128_clk_priv *priv = dev_get_priv(clk->dev);
@@ -329,7 +356,8 @@ static ulong rk3128_clk_get_rate(struct clk *clk)
 	case PCLK_I2C2:
 	case PCLK_I2C3:
 		return rk3128_i2c_get_clk(priv->cru, clk->id);
-		break;
+	case SCLK_SARADC:
+                return rk3128_saradc_get_clk(priv->cru);
 	default:
 		return -ENOENT;
 	}
@@ -353,6 +381,9 @@ static ulong rk3128_clk_set_rate(struct clk *clk, ulong rate)
 	case PCLK_I2C2:
 	case PCLK_I2C3:
 		new_rate = rk3128_i2c_set_clk(priv->cru, clk->id, rate);
+		break;
+	case SCLK_SARADC:
+		new_rate = rk3128_saradc_set_clk(priv->cru, rate);
 		break;
 	default:
 		return -ENOENT;
