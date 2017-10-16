@@ -427,6 +427,20 @@
 		status = "disabled";
 	};
 
+	usb_host_ehci: usb@101c0000 {
+		compatible = "generic-ehci";
+		reg = <0x101c0000 0x20000>;
+		interrupts = <GIC_SPI 11 IRQ_TYPE_LEVEL_HIGH>;
+		status = "disabled";
+	};
+
+	usb_host_ohci: usb@101e0000 {
+		compatible = "generic-ohci";
+		reg = <0x101e0000 0x20000>;
+		interrupts = <GIC_SPI 32 IRQ_TYPE_LEVEL_HIGH>;
+		status = "disabled";
+	};
+
 	sdmmc: dwmmc@10214000 {
 		compatible = "rockchip,rk312x-dw-mshc", "rockchip,rk3288-dw-mshc";
 		reg = <0x10214000 0x4000>;
