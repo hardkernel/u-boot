@@ -417,26 +417,14 @@
 	};
 
 	usb_otg: usb@10180000 {
-		compatible = "rockchip,rk3288-usb", "rockchip,rk3066-usb", "snps,dwc2";
+		compatible = "rockchip,rk3128-usb", "rockchip,rk3288-usb",
+			     "snps,dwc2";
 		reg = <0x10180000 0x40000>;
 		interrupts = <GIC_SPI 10 IRQ_TYPE_LEVEL_HIGH>;
-		clocks = <&cru HCLK_OTG0>;
-		clock-names = "otg";
 		dr_mode = "otg";
-		g-np-tx-fifo-size = <16>;
-		g-rx-fifo-size = <275>;
-		g-tx-fifo-size = <256 128 128 64 64 32>;
 		g-use-dma;
-	};
-
-	usb_host: usb@101c0000 {
-		compatible = "rockchip,rk3288-usb", "rockchip,rk3066-usb",
-				"snps,dwc2";
-		reg = <0x101c0000 0x40000>;
-		interrupts = <GIC_SPI 11 IRQ_TYPE_LEVEL_HIGH>;
-		clocks = <&cru HCLK_OTG1>;
-		clock-names = "otg";
-		dr_mode = "host";
+		hnp-srp-disable;
+		status = "disabled";
 	};
 
 	sdmmc: dwmmc@10214000 {
