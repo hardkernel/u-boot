@@ -206,7 +206,12 @@ static void rk816_bat_write(u8 reg, u8 buf)
 
 static int rk816_bat_dwc_otg_check_dpdm(void)
 {
+#ifdef CONFIG_PHY_ROCKCHIP_INNO_USB2
 	return rockchip_chg_get_type();
+#else
+	BAT_INFO("rockchip_chg_get_type() is not implement\n");
+	return NO_CHARGER;
+#endif
 }
 
 static int rk816_bat_get_rsoc(struct battery_info *di)
