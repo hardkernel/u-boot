@@ -173,7 +173,7 @@ void irq_install_handler(int irq, interrupt_handler_t *handler, void *data)
 
 void irq_free_handler(int irq)
 {
-	if (irq_bad(irq))
+	if (irq_handler_disable(irq))
 		return;
 
 	irqs_desc[irq].handle_irq = NULL;
