@@ -451,34 +451,22 @@ static int rockchip_usb2phy_exit(struct phy *phy)
 static int rockchip_usb2phy_probe(struct udevice *dev)
 {
 	const struct rockchip_usb2phy_cfg *phy_cfgs;
-	struct rockchip_usb2phy *rphy;
-	struct udevice *parent;
+	struct rockchip_usb2phy *rphy = dev_get_priv(dev);
+	struct udevice *parent = dev->parent;
 	u32 reg, index;
 
-	rphy = dev_get_priv(dev);
-
-	parent = dev_get_parent(dev);
-	if (!parent) {
-		dev_dbg(dev, "could not find u2phy parent\n");
-		if (ofnode_read_bool(dev_ofnode(dev), "rockchip,grf"))
-			rphy->usbgrf_base =
-				syscon_get_first_range(ROCKCHIP_SYSCON_GRF);
-	} else {
-		rphy->grf_base =
-			(void __iomem *)((uintptr_t)dev_read_addr(parent));
-	}
+	if (!strncmp(parent->name, "root_driver", 11) &&
+	    dev_read_bool(dev, "rockchip,grf"))
+		rphy->grf_base = syscon_get_first_range(ROCKCHIP_SYSCON_GRF);
+	else
+		rphy->grf_base = (void __iomem *)dev_read_addr(parent);
 
 	if (rphy->grf_base <= 0) {
 		dev_err(dev, "get syscon grf failed\n");
 		return -EINVAL;
 	}
 
-	if (ofnode_read_u32(dev_ofnode(dev), "reg", &reg)) {
-		dev_err(dev, "could not read reg\n");
-		return -EINVAL;
-	}
-
-	if (ofnode_read_bool(dev_ofnode(dev), "rockchip,usbgrf")) {
+	if (dev_read_bool(dev, "rockchip,usbgrf")) {
 		rphy->usbgrf_base =
 			syscon_get_first_range(ROCKCHIP_SYSCON_USBGRF);
 		if (rphy->usbgrf_base <= 0) {
@@ -487,6 +475,11 @@ static int rockchip_usb2phy_probe(struct udevice *dev)
 		}
 	} else {
 		rphy->usbgrf_base = NULL;
+	}
+
+	if (ofnode_read_u32(dev_ofnode(dev), "reg", &reg)) {
+		dev_err(dev, "could not read reg\n");
+		return -EINVAL;
 	}
 
 	phy_cfgs =
