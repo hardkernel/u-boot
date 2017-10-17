@@ -171,7 +171,7 @@ static int do_bl2_ops(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[]
 	unsigned long addr;
 	int base = 2;
 	u64 off, maxsize;
-	size_t rwsize, limit;
+	size_t rwsize, limit, wsize;
 	/* fixme, using this?! */
 #if (CONFIG_AMLMTD_CURRDEV)
 	int curr_mtd_dev;
@@ -226,10 +226,13 @@ static int do_bl2_ops(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[]
 			copy_num = 1;
 		}
 		printf("%s() %d\n", __func__, copy_num);
+		wsize = rwsize;
 		for (i = 0; i < copy_num; i++) {
 			ret = nand_write_skip_bad(nand, off, &rwsize,
 						NULL, limit,
 						(u8 *)addr, 0);
+			if (ret)
+				rwsize = wsize;
 			off += nand->size/copy_num;
 		}
 	} else if (!strcmp("erase", sub)) {
@@ -284,7 +287,7 @@ static int do_fip_ops(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[]
 	int base = 2;
 	u64 off, maxsize = CONFIG_TPL_SIZE_PER_COPY*CONFIG_TPL_COPY_NUM;
 	u64 fip_base;
-	size_t rwsize;
+	size_t rwsize, wsize;
 
 	/* fixme, using this?! */
 #if (CONFIG_AMLMTD_CURRDEV)
@@ -343,11 +346,14 @@ static int do_fip_ops(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[]
 			ret = CMD_RET_USAGE;
 			goto _out;
 		}
+		wsize = rwsize;
 		/* fixme, write it once! */
 		for (i = 0; i < copy_num; i++) {
 			printk("cpy %d\n", i);
 			ret = nand_write_skip_bad(nand,
 				off, &rwsize, NULL, CONFIG_TPL_SIZE_PER_COPY, (u8 *)addr, 0);
+			if (ret)
+				rwsize = wsize;
 			off += CONFIG_TPL_SIZE_PER_COPY;
 		}
 

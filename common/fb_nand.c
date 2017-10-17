@@ -194,8 +194,10 @@ void fb_nand_flash_write(const char *cmd, void *download_buffer,
 			err = nand_write_skip_bad(nand, off, &rwsize,
 						NULL, limit,
 						(u_char *)download_buffer, 0);
-			if (err)
+			if (err) {
+				rwsize = download_bytes;
 				error("bootloader write err,code = %d\n",err);
+			}
 			off += nand->size / copy_num;
 		}
 		fastboot_okay("write bootloader");
@@ -214,9 +216,11 @@ void fb_nand_flash_write(const char *cmd, void *download_buffer,
 			err = nand_write_skip_bad(nand, off, &rwsize,
 						NULL, limit,
 						(u_char *)download_buffer, 0);
-			if (err)
+			if (err) {
+				rwsize = download_bytes;
 				error("tpl write err,code = %d\n",err);
-			off += nand->size / copy_num;
+			}
+			off += CONFIG_TPL_SIZE_PER_COPY;
 		}
 		fastboot_okay("write tpl");
 		return;
