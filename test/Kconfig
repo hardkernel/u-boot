@@ -15,6 +15,12 @@ config UT_TIME
 	  problems. But if you are having problems with udelay() and the like,
 	  this is a good place to start.
 
+config TEST_ROCKCHIP
+	bool "test Rockchip board modules"
+	depends on ARCH_ROCKCHIP
+	help
+	  This enables the test function for rockchip board modules.
+
 source "test/dm/Kconfig"
 source "test/env/Kconfig"
 source "test/overlay/Kconfig"
