@@ -831,6 +831,13 @@ config CMD_REMOTEPROC
 	help
 	  Support for Remote Processor control
 
+config CMD_RKNAND
+	bool "rknand"
+	depends on RKNAND
+	default y if RKNAND
+	help
+	  Rockchip NAND FLASH device support
+
 config CMD_ROCKUSB
 	bool "rockusb"
 	depends on USB_FUNCTION_ROCKUSB

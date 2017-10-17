@@ -1,0 +1,12 @@
+#
+# Copyright (C) (C) Copyright 2016-2017 Rockchip Electronics Co., Ltd
+#
+# SPDX-License-Identifier:	GPL-2.0+
+#
+
+config RKNAND
+	bool "Rockchip NAND FLASH device support"
+	depends on BLK
+	help
+	  This option enables support for Rockchip NAND FLASH devices.
+	  It supports block interface(with rk ftl) to read and write NAND FLASH.

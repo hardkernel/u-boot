@@ -23,6 +23,7 @@ static const char *if_typename_str[IF_TYPE_COUNT] = {
 	[IF_TYPE_HOST]		= "host",
 	[IF_TYPE_SYSTEMACE]	= "ace",
 	[IF_TYPE_NVME]		= "nvme",
+	[IF_TYPE_RKNAND]	= "rknand",
 };
 
 static enum uclass_id if_type_uclass_id[IF_TYPE_COUNT] = {
@@ -36,6 +37,7 @@ static enum uclass_id if_type_uclass_id[IF_TYPE_COUNT] = {
 	[IF_TYPE_SATA]		= UCLASS_AHCI,
 	[IF_TYPE_HOST]		= UCLASS_ROOT,
 	[IF_TYPE_NVME]		= UCLASS_NVME,
+	[IF_TYPE_RKNAND]	= UCLASS_RKNAND,
 	[IF_TYPE_SYSTEMACE]	= UCLASS_INVALID,
 };
 
