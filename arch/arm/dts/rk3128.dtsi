@@ -416,6 +416,35 @@
 		interrupts = <GIC_PPI 9 0xf04>;
 	};
 
+	u2phy: usb2-phy {
+		compatible = "rockchip,rk3128-usb2phy";
+		reg = <0x017c 0x0c>;
+		rockchip,grf = <&grf>;
+		clocks = <&cru SCLK_OTGPHY0>;
+		clock-names = "phyclk";
+		#clock-cells = <0>;
+		clock-output-names = "usb480m_phy";
+		#phy-cells = <1>;
+		status = "disabled";
+
+		u2phy_otg: otg-port {
+			#phy-cells = <0>;
+			interrupts = <GIC_SPI 35 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 51 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 52 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-names = "otg-bvalid", "otg-id",
+					  "linestate";
+			status = "disabled";
+		};
+
+		u2phy_host: host-port {
+			#phy-cells = <0>;
+			interrupts = <GIC_SPI 53 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-names = "linestate";
+			status = "disabled";
+		};
+	};
+
 	usb_otg: usb@10180000 {
 		compatible = "rockchip,rk3128-usb", "rockchip,rk3288-usb",
 			     "snps,dwc2";
@@ -424,6 +453,8 @@
 		dr_mode = "otg";
 		g-use-dma;
 		hnp-srp-disable;
+		phys = <&u2phy 0>;
+		phy-names = "usb";
 		status = "disabled";
 	};
 
@@ -431,6 +462,8 @@
 		compatible = "generic-ehci";
 		reg = <0x101c0000 0x20000>;
 		interrupts = <GIC_SPI 11 IRQ_TYPE_LEVEL_HIGH>;
+		phys = <&u2phy 1>;
+		phy-names = "usb";
 		status = "disabled";
 	};
 
@@ -438,6 +471,8 @@
 		compatible = "generic-ohci";
 		reg = <0x101e0000 0x20000>;
 		interrupts = <GIC_SPI 32 IRQ_TYPE_LEVEL_HIGH>;
+		phys = <&u2phy 1>;
+		phy-names = "usb";
 		status = "disabled";
 	};
 
