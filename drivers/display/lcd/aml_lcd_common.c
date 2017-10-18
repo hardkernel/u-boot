@@ -660,6 +660,28 @@ int lcd_vmode_change(struct lcd_config_s *pconf)
 			}
 		}
 		break;
+	case 4: /* hdmi mode */
+		if ((duration_num / duration_den) == 59) {
+			/* pixel clk adjust */
+			pclk = (h_period * v_period) / duration_den * duration_num;
+			if (pconf->lcd_timing.lcd_clk != pclk)
+				pconf->lcd_timing.clk_change = LCD_CLK_PLL_CHANGE;
+		} else {
+			/* htotal adjust */
+			h_period = ((pclk / v_period) * duration_den * 100) /
+					duration_num;
+			h_period = (h_period + 99) / 100; /* round off */
+			if (pconf->lcd_basic.h_period != h_period) {
+				/* check clk frac update */
+				pclk = (h_period * v_period) / duration_den *
+					duration_num;
+				if (pconf->lcd_timing.lcd_clk != pclk) {
+					pconf->lcd_timing.clk_change =
+						LCD_CLK_FRAC_UPDATE;
+				}
+			}
+		}
+		break;
 	case 3: /* free adjust, use min/max range to calculate */
 	default:
 		v_period = ((pclk / h_period) * duration_den * 100) /
