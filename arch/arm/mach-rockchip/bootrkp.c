@@ -5,8 +5,9 @@
  */
 
 #include <common.h>
-#include <config.h>
+#include <bootm.h>
 #include <linux/list.h>
+#include <libfdt.h>
 #include <malloc.h>
 #include <asm/arch/resource_img.h>
 #include "rockchip_parameter.h"
@@ -66,6 +67,34 @@ struct rockchip_image {
 	uint32_t crc;
 };
 
+#if !defined(CONFIG_ARM64)
+#ifdef CONFIG_LMB
+static void boot_start_lmb(bootm_headers_t *images)
+{
+	ulong		mem_start;
+	phys_size_t	mem_size;
+
+	lmb_init(&images->lmb);
+
+	mem_start = env_get_bootm_low();
+	mem_size = env_get_bootm_size();
+
+	lmb_add(&images->lmb, (phys_addr_t)mem_start, mem_size);
+
+	arch_lmb_reserve(&images->lmb);
+	board_lmb_reserve(&images->lmb);
+}
+#else
+static inline void boot_start_lmb(bootm_headers_t *images) { }
+#endif
+
+static void boot_lmb_init(bootm_headers_t *images)
+{
+	boot_start_lmb(images);
+	images->state = BOOTM_STATE_OS_GO;
+}
+#endif
+
 static int read_boot_mode_from_misc(struct blk_part *misc)
 {
 	struct bootloader_message *bmsg;
@@ -115,7 +144,7 @@ static int read_rockchip_image(struct blk_part *part, void *dst)
 	if (ret < 0)
 		goto err;
 	if (img->tag != TAG_KERNEL) {
-		printf("%s: invalid image tag\n", part->name);
+		printf("%s: invalid image tag(0x%x)\n", part->name, img->tag);
 		goto err;
 	}
 
@@ -143,12 +172,11 @@ static int do_bootrkp(cmd_tbl_t *cmdtp, int flag, int argc,
 	struct blk_part *boot;
 	struct blk_part *kernel;
 	struct blk_part *misc;
-	int ramdisk_size;
-	int kernel_size;
-	int fdt_size;
+	ulong ramdisk_size;
+	ulong kernel_size;
+	ulong fdt_size;
 	int boot_mode;
 	int ret = 0;
-	char cmdbuf[64];
 
 	misc = rockchip_get_blk_part(PART_MISC);
 	if (misc)
@@ -185,10 +213,22 @@ static int do_bootrkp(cmd_tbl_t *cmdtp, int flag, int argc,
 		goto out;
 	}
 
-	printf("kernel_size:0x%ulx ramdisk_size:0x%x\n", kernel_size, ramdisk_size);
-	sprintf(cmdbuf, "booti 0x%lx 0x%lx:0x%x 0x%lx",
+	printf("kernel   @ 0x%08lx (0x%08lx)\n", kernel_addr_r, kernel_size);
+	printf("ramdisk  @ 0x%08lx (0x%08lx)\n", ramdisk_addr_r, ramdisk_size);
+#if defined(CONFIG_ARM64)
+	char cmdbuf[64];
+	sprintf(cmdbuf, "booti 0x%lx 0x%lx:0x%lx 0x%lx",
 		kernel_addr_r, ramdisk_addr_r, ramdisk_size, fdt_addr_r);
 	run_command(cmdbuf, 0);
+#else
+	boot_lmb_init(&images);
+	images.ep = kernel_addr_r;
+	images.initrd_start = ramdisk_addr_r;
+	images.initrd_end = ramdisk_addr_r + ramdisk_size;
+	images.ft_addr = (void *)fdt_addr_r;
+	images.ft_len = fdt_totalsize(fdt_addr_r);
+	do_bootm_linux(0, 0, NULL, &images);
+#endif
 out:
 	return ret;
 }
