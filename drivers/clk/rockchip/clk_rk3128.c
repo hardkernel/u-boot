@@ -164,6 +164,12 @@ static void rkclk_init(struct rk3128_cru *cru)
 		     GPLL_MODE_MASK | APLL_MODE_MASK,
 		     GPLL_MODE_NORM << GPLL_MODE_SHIFT |
 		     APLL_MODE_NORM << APLL_MODE_SHIFT);
+
+	/*fix NAND controller  working clock max to 150Mhz */
+	rk_clrsetreg(&cru->cru_clksel_con[2],
+		     NANDC_PLL_SEL_MASK | NANDC_CLK_DIV_MASK,
+		     NANDC_PLL_SEL_GPLL << NANDC_PLL_SEL_SHIFT |
+		     3 << NANDC_CLK_DIV_SHIFT);
 }
 
 /* Get pll rate by id */
