@@ -674,7 +674,18 @@ int do_avb_flow(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		printf("Enter boot-normal!\n");
 		mode_cmdline = "skip_initramfs";
 	} else {
-		mode_cmdline = "skip_initramfs";
+		/*
+		 * Firstly, confirm if there is a command in misc partition in
+		 * previous cases, and then we need to confirm whether user has
+		 * requested to enter recovery mode by entering "reboot recovery"
+		 * command through adb or serial console.
+		 */
+		char *env_rebootmode = env_get("reboot_mode");
+
+		if (env_rebootmode && !strcmp("recovery", env_rebootmode))
+			printf("Enter recovery mode by command 'reboot recovery'!\n");
+		else
+			mode_cmdline = "skip_initramfs";
 	}
 
 	avb_version = avb_version_string();
