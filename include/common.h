@@ -391,7 +391,7 @@ int env_set(const char *varname, const char *value);
  * @valude: Value to append/replace
  * @return 0 if OK, 1 on error
  */
-int env_update(const char *varname, char *varvalue);
+int env_update(const char *varname, const char *varvalue);
 
 /**
  * env_set_ulong() - set an environment variable to an integer

@@ -399,7 +399,7 @@ static int env_replace(const char *varname, const char *substr,
 
 #define ARGS_ITEM_NUM	50
 
-int env_update(const char *varname, char *varvalue)
+int env_update(const char *varname, const char *varvalue)
 {
 	/* 'a_' means "varargs_'; 'v_' means 'varvalue_' */
 	char *varargs;
