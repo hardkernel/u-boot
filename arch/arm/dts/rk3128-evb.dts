@@ -50,7 +50,16 @@
 	};
 };
 
+&usb_host_ehci {
+	status = "okay";
+};
+
+&usb_host_ohci {
+	status = "okay";
+};
+
 &usb_otg {
+	vbus-supply = <&vcc5v0_otg>;
 	status = "okay";
 };
 
