@@ -76,6 +76,7 @@ int gpio_to_irq(struct gpio_desc *gpio);
 #define GPIO_BANK_SHIFT			8
 #define RK_IRQ_GPIO(bank, pin) 		(((bank) << GPIO_BANK_SHIFT) | (pin))
 int hard_gpio_to_irq(unsigned gpio);
+int phandle_gpio_to_irq(u32 gpio_phandle, u32 pin);
 
 /* only irq-gpio.c can use it */
 void _generic_gpio_handle_irq(int irq);

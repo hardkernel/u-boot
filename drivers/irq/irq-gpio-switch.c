@@ -8,6 +8,8 @@
 #include <irq-generic.h>
 #include "irq-gpio-switch.h"
 
+DECLARE_GLOBAL_DATA_PTR;
+
 static struct gpio_bank gpio_banks[GPIO_BANK_NUM] = {
 #if GPIO_BANK_NUM >= 1
 	GPIO_BANK_REGISTER(0, GPIO_BANK_PINS),
@@ -68,6 +70,64 @@ static int _hard_gpio_to_irq(u32 gpio)
 	}
 
 	return -EINVAL;
+}
+
+static int _phandle_gpio_to_irq(u32 gpio_phandle, u32 offset)
+{
+	int irq_gpio, bank, ret = EINVAL_GPIO;
+	bool found;
+	const char *name;
+	char *name_tok;
+	int node;
+
+	node = fdt_node_offset_by_phandle(gd->fdt_blob, gpio_phandle);
+	if (node < 0) {
+		printf("can't find node by gpio_phandle %d, ret=%d\n",
+		       gpio_phandle, node);
+		return EINVAL_GPIO;
+	}
+
+	name = fdt_get_name(gd->fdt_blob, node, NULL);
+	if (!name) {
+		printf("can't find device name for the gpio bank\n");
+		return EINVAL_GPIO;
+	}
+
+	name_tok = strdup(name);
+	if (!name_tok) {
+		printf("Error: strdup in %s failed!\n", __func__);
+		return -ENOMEM;
+	}
+
+	name = strtok(name_tok, "@");
+	if (!name) {
+		printf("can't find correct device name for the gpio bank\n");
+		goto out;
+	}
+
+	for (bank = 0; bank < ARRAY_SIZE(gpio_banks); bank++) {
+		if (!strcmp(gpio_banks[bank].name, name)) {
+			found = true;
+			break;
+		}
+	}
+
+	if (!found) {
+		printf("irq gpio framework can't find %s\n", name);
+		goto out;
+	}
+
+	debug("%s: gpio%d-%d\n", __func__, bank, offset);
+	irq_gpio = RK_IRQ_GPIO(bank, offset);
+	if (!gpio_is_valid(irq_gpio))
+		goto out;
+
+	free(name_tok);
+	return _hard_gpio_to_irq(irq_gpio);
+
+out:
+	free(name_tok);
+	return ret;
 }
 
 static int _irq_to_gpio(int irq)
@@ -140,6 +200,14 @@ int hard_gpio_to_irq(u32 gpio)
 		return EINVAL_GPIO;
 
 	return _hard_gpio_to_irq(gpio);
+}
+
+int phandle_gpio_to_irq(u32 gpio_phandle, u32 pin)
+{
+	if (gpio_phandle < 0)
+		return EINVAL_GPIO;
+
+	return _phandle_gpio_to_irq(gpio_phandle, pin);
 }
 
 int irq_to_gpio(int irq)
