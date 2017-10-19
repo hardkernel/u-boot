@@ -77,9 +77,9 @@ int dram_init_banksize(void)
 {
 	gd->bd->bi_dram[0].start = CONFIG_SYS_SDRAM_BASE;
 	gd->bd->bi_dram[0].size = 0x8400000;
-	/* Reserve 0x200000 for OPTEE */
+	/* Reserve 0xe00000(14MB) for OPTEE with TA enabled, otherwise 2MB */
 	gd->bd->bi_dram[1].start = CONFIG_SYS_SDRAM_BASE
-				+ gd->bd->bi_dram[0].size + 0x200000;
+				+ gd->bd->bi_dram[0].size + 0xe00000;
 	gd->bd->bi_dram[1].size = gd->bd->bi_dram[0].start
 				+ gd->ram_size - gd->bd->bi_dram[1].start;
 
