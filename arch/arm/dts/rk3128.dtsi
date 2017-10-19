@@ -367,6 +367,43 @@
 		#size-cells = <1>;
 	};
 
+	vop: vop@1010e000 {
+		u-boot,dm-pre-reloc;
+		compatible = "rockchip,rk3126-vop";
+		reg = <0x1010e000 0x100>, <0x1010ec00 0x400>;
+		reg-names = "regs", "gamma_lut";
+		interrupts = <GIC_SPI 9 IRQ_TYPE_LEVEL_HIGH>;
+		clocks = <&cru ACLK_VIO0>, <&cru DCLK_LCDC>, <&cru HCLK_LCDC>;
+		clock-names = "aclk_vop", "dclk_vop", "hclk_vop";
+		status = "disabled";
+
+		vop_out: port {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			vop_out_lvds: endpoint@1 {
+				reg = <1>;
+				remote-endpoint = <&lvds_in_vop>;
+			};
+		};
+	};
+
+	display_subsystem: display-subsystem {
+		u-boot,dm-pre-reloc;
+		compatible = "rockchip,display-subsystem";
+		ports = <&vop_out>;
+
+		route {
+			route_lvds: route-lvds {
+				logo,uboot = "logo.bmp";
+				logo,kernel = "logo_kernel.bmp";
+				logo,mode = "fullscreen";
+				charge_logo,mode = "center";
+				connect = <&vop_out_lvds>;
+			};
+		};
+	};
+
 	gic: interrupt-controller@10139000 {
 		compatible = "arm,gic-400";
 		interrupt-controller;
@@ -434,6 +471,27 @@
 		resets = <&cru SRST_EMMC>;
 		reset-names = "reset";
 		status = "disabled";
+	};
+
+	lvds: lvds@20038000 {
+		u-boot,dm-pre-reloc;
+		compatible = "rockchip,rk3126-lvds";
+		reg = <0x20038000 0x4000>, <0x10110000 0x100>;
+		reg-names = "mipi_lvds_phy", "mipi_lvds_ctl";
+		rockchip,grf = <&grf>;
+		status = "disabled";
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			lvds_in: port@0 {
+				reg = <0>;
+				lvds_in_vop: endpoint {
+					remote-endpoint = <&vop_out_lvds>;
+				};
+			};
+		};
 	};
 
 	i2c0: i2c0@20072000 {
