@@ -51,7 +51,27 @@ void noinline dwmci_memcpy_fromio(void *buffer, void *fifo_addr)
 
 void noinline dwmci_memcpy_toio(void *buffer, void *fifo_addr)
 {
-	dwmci_memcpy_fromio(fifo_addr, buffer);
+	__asm__ __volatile__ (
+		"push {r2, r3, r4, r5, r6, r7, r8, r9}\n"
+		"ldm r0!, {r2,r3,r4,r5,r6,r7,r8,r9}\n"
+		"stm r1, {r2,r3,r4,r5,r6,r7,r8,r9}\n"
+		"ldm r0!, {r2,r3,r4,r5,r6,r7,r8,r9}\n"
+		"stm r1, {r2,r3,r4,r5,r6,r7,r8,r9}\n"
+		"ldm r0!, {r2,r3,r4,r5,r6,r7,r8,r9}\n"
+		"stm r1, {r2,r3,r4,r5,r6,r7,r8,r9}\n"
+		"ldm r0!, {r2,r3,r4,r5,r6,r7,r8,r9}\n"
+		"stm r1, {r2,r3,r4,r5,r6,r7,r8,r9}\n"
+		"ldm r0!, {r2,r3,r4,r5,r6,r7,r8,r9}\n"
+		"stm r1, {r2,r3,r4,r5,r6,r7,r8,r9}\n"
+		"ldm r0!, {r2,r3,r4,r5,r6,r7,r8,r9}\n"
+		"stm r1, {r2,r3,r4,r5,r6,r7,r8,r9}\n"
+		"ldm r0!, {r2,r3,r4,r5,r6,r7,r8,r9}\n"
+		"stm r1, {r2,r3,r4,r5,r6,r7,r8,r9}\n"
+		"ldm r0!, {r2,r3,r4,r5,r6,r7,r8,r9}\n"
+		"stm r1, {r2,r3,r4,r5,r6,r7,r8,r9}\n"
+		"pop {r2, r3, r4, r5, r6,r7,r8,r9}\n"
+		:::"memory"
+	);
 }
 #else
 void dwmci_memcpy_fromio(void *buffer, void *fifo_addr) {};
