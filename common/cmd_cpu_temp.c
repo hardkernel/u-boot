@@ -28,6 +28,9 @@
 #include <asm/arch/thermal.h>
 #include <asm/cpu_id.h>
 
+#ifdef CONFIG_AML_MESON_TXHD
+#define NEW_THERMAL_MODE 1
+#endif
 //#define HHI_SAR_CLK_CNTL    0xc883c000+0xf6*4 //0xc883c3d8
 int temp_base = 27;
 #define NUM 30
@@ -44,38 +47,39 @@ static int get_tsc(int temp)
 	case MESON_CPU_MAJOR_ID_GXBB:
 	case MESON_CPU_MAJOR_ID_GXTVBB:
 		/*TS_C = (adc-435)/8.25+16*/
-		vmeasure = temp-(435+(temp_base-27)*3.4);
+		vmeasure = temp - (435 + (temp_base - 27) * 3.4);
 		printf("vmeasure=%d\n", vmeasure);
-		TS_C = ((vmeasure)/8.25)+16;
+		TS_C = ((vmeasure) / 8.25) + 16;
 		break;
 	case MESON_CPU_MAJOR_ID_GXL:
 	case MESON_CPU_MAJOR_ID_GXM:
 	case MESON_CPU_MAJOR_ID_GXLX:
 		if (vref_en) {
 			/*TS_C = 16-(adc-1655)/37.6*/
-			vmeasure = temp-(1655+(temp_base-27)*15.3);
+			vmeasure = temp - (1655 + (temp_base - 27) * 15.3);
 			printf("vmeasure=%d\n", vmeasure);
-			TS_C = 16-((vmeasure)/37.6);
+			TS_C = 16 - ((vmeasure) / 37.6);
 			break;
 		} else {
 			/*TS_C = 16-(adc-1778)/42*/
-			vmeasure = temp-(1778+(temp_base-27)*17);
+			vmeasure = temp - (1778 + (temp_base - 27) * 17);
 			printf("vmeasure=%d\n", vmeasure);
-			TS_C = 16-((vmeasure)/42);
+			TS_C = 16 - ((vmeasure) / 42);
 			break;
 		}
 	case MESON_CPU_MAJOR_ID_TXL:
 		/*TS_C = 16-(adc-1530)/40*/
-		vmeasure = temp-(1530+(temp_base-27)*15.5);
+		vmeasure = temp - (1530 + (temp_base - 27) * 15.5);
 		printf("vmeasure=%d\n", vmeasure);
 		TS_C = 16-((vmeasure)/40);
 		break;
 	case MESON_CPU_MAJOR_ID_TXLX:
 	case MESON_CPU_MAJOR_ID_AXG:
+	case MESON_CPU_MAJOR_ID_TXHD:
 		/*TS_C = 16-(adc-1750)/42*/
-		vmeasure = temp-(1750+(temp_base-27)*17);
+		vmeasure = temp - (1750 + (temp_base - 27) * 17);
 		printf("vmeasure=%d\n", vmeasure);
-		TS_C = 16-((vmeasure)/42);
+		TS_C = 16 - ((vmeasure) / 42);
 		break;
 	default:
 		printf("cpu family id not support!!!\n");
@@ -92,6 +96,9 @@ static int get_tsc(int temp)
 
 static int adc_init_chan6(void)
 {
+	#ifdef MANUAL_POWER
+	int ver = (readl(SEC_AO_SEC_SD_CFG12) >> 24) & 0xff;
+	#endif
 	switch (get_cpu_id().family_id) {
 	case MESON_CPU_MAJOR_ID_GXBB:
 	case MESON_CPU_MAJOR_ID_GXTVBB:
@@ -105,7 +112,7 @@ static int adc_init_chan6(void)
 		writel(0x030e030c, SAR_ADC_DETECT_IDLE_SW);
 		writel(0x0c00c400, SAR_ADC_DELTA_10);
 		writel(0x00000114, SAR_CLK_CNTL);        /* Clock */
-		writel(readl(0xc110868c)|(0x1<<28), SAR_ADC_REG3);
+		writel(readl(0xc110868c) | (0x1 << 28), SAR_ADC_REG3);
 		break;
 	case MESON_CPU_MAJOR_ID_GXL:
 	case MESON_CPU_MAJOR_ID_GXM:
@@ -147,9 +154,10 @@ static int adc_init_chan6(void)
 		#ifndef MANUAL_POWER
 		if (ver != 0xa0)
 		#endif
-		writel(readl(SAR_ADC_REG11)|0x1, SAR_ADC_REG11);/*manual trim use 1.8V*/
+		writel(readl(SAR_ADC_REG11) | 0x1, SAR_ADC_REG11);/*manual trim use 1.8V*/
 		break;
 	case MESON_CPU_MAJOR_ID_AXG:
+	case MESON_CPU_MAJOR_ID_TXHD:
 		writel(0x00000006, SAR_ADC_CHAN_LIST);/*channel 6*/
 		writel(0x00003000, SAR_ADC_AVG_CNTL);
 		writel(0xc8a8500a, SAR_ADC_REG3);/*bit27:1 disable*/
@@ -160,10 +168,10 @@ static int adc_init_chan6(void)
 		writel(0x0c00c400, SAR_ADC_DELTA_10);
 		writel(0x00000110, SAR_CLK_CNTL);/*Clock*/
 		writel(0x002c2060, SAR_ADC_REG11);/*bit20 disabled*/
-		#ifndef MANUAL_POWER
-		if ((ver != 0x09))
+		#ifdef MANUAL_POWER
+		if ((ver != 0x9) || (ver != 0xa) || (ver != 0xb))/*ft trim no use 1.8v*/
 		#endif
-		writel(readl(SAR_ADC_REG11)|0x1, SAR_ADC_REG11);/*manual trim use 1.8V*/
+		writel(readl(SAR_ADC_REG11) | 0x1, SAR_ADC_REG11);/*manual trim use 1.8V*/
 		break;
 	default:
 		printf("cpu family id not support!!!\n");
@@ -177,10 +185,10 @@ static int get_adc_sample(int chan)
 	unsigned value;
 	int count = 0;
 
-	if (!(readl(SAR_CLK_CNTL)&(1<<8)))/*check and open clk*/
-		writel(readl(SAR_CLK_CNTL)|(1<<8), SAR_CLK_CNTL);
-	if (!(readl(SAR_BUS_CLK_EN)&(1<<EN_BIT)))/*check and open clk*/
-		writel(readl(SAR_BUS_CLK_EN)|(1<<EN_BIT), HHI_GCLK_MPEG2);
+	if (!(readl(SAR_CLK_CNTL) & (1 << 8)))/*check and open clk*/
+		writel(readl(SAR_CLK_CNTL) | (1 << 8), SAR_CLK_CNTL);
+	if (!(readl(SAR_BUS_CLK_EN) & (1 << EN_BIT)))/*check and open clk*/
+		writel(readl(SAR_BUS_CLK_EN) | (1 << EN_BIT), HHI_GCLK_MPEG2);
 
 	/*adc reg4 bit14~15: read adc sample value flag*/
 	/*0x21a4: bit14: kernel  bit15: bl30*/
@@ -190,17 +198,17 @@ static int get_adc_sample(int chan)
 			return -1;
 		}
 
-		if (!((readl(SAR_ADC_DELAY)>>14)&3)) {
-			writel(readl(SAR_ADC_DELAY)|(FLAG_BUSY_BL30),
+		if (!((readl(SAR_ADC_DELAY) >> 14) & 3)) {
+			writel(readl(SAR_ADC_DELAY) | (FLAG_BUSY_BL30),
 				   SAR_ADC_DELAY);
-			if (((readl(SAR_ADC_DELAY)>>14)&3) != 0x2)
+			if (((readl(SAR_ADC_DELAY) >> 14) & 3) != 0x2)
 				/*maybe kernel set flag, try again*/
-				writel(readl(SAR_ADC_DELAY)&(~(FLAG_BUSY_BL30)),
+				writel(readl(SAR_ADC_DELAY) & (~(FLAG_BUSY_BL30)),
 				SAR_ADC_DELAY);
 			else
 				break;/*set bl30 read flag ok*/
 		} else{/*kernel set flag, clear bl30 flag and wait*/
-			writel(readl(SAR_ADC_DELAY)&(~(FLAG_BUSY_BL30)),
+			writel(readl(SAR_ADC_DELAY) & (~(FLAG_BUSY_BL30)),
 				SAR_ADC_DELAY);
 			udelay(20);
 		}
@@ -210,38 +218,38 @@ static int get_adc_sample(int chan)
 	 * and set SAR_ADC_REG13[8]:0, chipid >= GXL
 	 */
 	if (get_cpu_id().family_id >= MESON_CPU_MAJOR_ID_GXL) {
-		saradc_vref = (readl(SAR_ADC_REG13)>>8)&0x3f; /*back up SAR_ADC_REG13[13:8]*/
-		if ((readl(AO_SEC_SD_CFG12)>>19) & 0x1f) { /*thermal VREF*/
-			writel(((readl(SAR_ADC_REG13))&(~(0x3f<<8))) /*SAR_ADC_REG13[8]:0*/
-				|(((readl(AO_SEC_SD_CFG12)>>19) & 0x1f)<<9), /*SAR_ADC_REG13[13:9]*/
+		saradc_vref = (readl(SAR_ADC_REG13) >> 8) & 0x3f; /*back up SAR_ADC_REG13[13:8]*/
+		if ((readl(AO_SEC_SD_CFG12) >> 19) & 0x1f) { /*thermal VREF*/
+			writel(((readl(SAR_ADC_REG13)) & (~(0x3f << 8))) /*SAR_ADC_REG13[8]:0*/
+				|(((readl(AO_SEC_SD_CFG12) >> 19) & 0x1f) << 9), /*SAR_ADC_REG13[13:9]*/
 				SAR_ADC_REG13);
 			vref_en = 1;
 		} else if ((get_cpu_id().family_id >= MESON_CPU_MAJOR_ID_TXL)&&
 			((trim == 1)||
-			((((readl(SEC_AO_SEC_SD_CFG12))>>24)&0xff)==0xc0))) {
-			writel(((readl(SAR_ADC_REG13))&(~(0x3f<<8))) /*SAR_ADC_REG13[13:8]:0*/
-				|(0x1e<<8), /*SAR_ADC_REG13[13:8]:[0x1e]*/
+			((((readl(SEC_AO_SEC_SD_CFG12)) >> 24) & 0xff) == 0xc0))) {
+			writel(((readl(SAR_ADC_REG13)) & (~(0x3f << 8))) /*SAR_ADC_REG13[13:8]:0*/
+				| (0x1e << 8), /*SAR_ADC_REG13[13:8]:[0x1e]*/
 				SAR_ADC_REG13);
 		} else {
-			writel((readl(SAR_ADC_REG13))&(~(0x3f<<8)), SAR_ADC_REG13);
+			writel((readl(SAR_ADC_REG13)) & (~(0x3f << 8)), SAR_ADC_REG13);
 		}
 	}
 #endif
 	writel(0x00000006, SAR_ADC_CHAN_LIST);/*channel 6*/
-	writel(0xc000c|(0x6<<23)|(0x6<<7), SAR_ADC_DETECT_IDLE_SW);/*channel 6*/
+	writel(0xc000c | (0x6 << 23) | (0x6 << 7), SAR_ADC_DETECT_IDLE_SW);/*channel 6*/
 
-	writel((readl(SAR_ADC_REG0)&(~(1<<0))), SAR_ADC_REG0);
-	writel((readl(SAR_ADC_REG0)|(1<<0)), SAR_ADC_REG0);
-	writel((readl(SAR_ADC_REG0)|(1<<2)), SAR_ADC_REG0);/*start sample*/
+	writel((readl(SAR_ADC_REG0) & (~(1 << 0))), SAR_ADC_REG0);
+	writel((readl(SAR_ADC_REG0)|(1 << 0)), SAR_ADC_REG0);
+	writel((readl(SAR_ADC_REG0)|(1 << 2)), SAR_ADC_REG0);/*start sample*/
 
 	count = 0;
 	do {
 		udelay(20);
 		count++;
-	} while ((readl(SAR_ADC_REG0) & (0x7<<28))
+	} while ((readl(SAR_ADC_REG0) & (0x7 << 28))
 		&& (count < 100));/*finish sample?*/
 	if (count == 100) {
-		writel(readl(SAR_ADC_REG3)&(~(1 << 29)), SAR_ADC_REG3);
+		writel(readl(SAR_ADC_REG3) & (~(1 << 29)), SAR_ADC_REG3);
 		printf("%s: wait finish sample timeout!\n",__func__);
 		return -1;
 	}
@@ -249,17 +257,17 @@ static int get_adc_sample(int chan)
 	value = readl(SAR_ADC_FIFO_RD);
 #ifndef CONFIG_CHIP_AML_GXB
 	if (saradc_vref >= 0) /*write back SAR_ADC_REG13[13:8]*/
-		writel(((readl(SAR_ADC_REG13))&(~(0x3f<<8)))|
-				((saradc_vref & 0x3f)<<8),
+		writel(((readl(SAR_ADC_REG13)) & (~(0x3f << 8))) |
+				((saradc_vref & 0x3f) << 8),
 				SAR_ADC_REG13);
 #endif
-	writel(readl(SAR_ADC_DELAY)&(~(FLAG_BUSY_BL30)), SAR_ADC_DELAY);
-	if (((value>>12) & 0x7) == 0x6)
-		value = value&SAMPLE_BIT_MASK;
+	writel(readl(SAR_ADC_DELAY) & (~(FLAG_BUSY_BL30)), SAR_ADC_DELAY);
+	if (((value >> 12) & 0x7) == 0x6)
+		value = value & SAMPLE_BIT_MASK;
 	else{
 		value = -1;
 		printf("%s:sample value err! ch:%d, flag:%d\n", __func__,
-			((value>>12) & 0x7), ((readl(SAR_ADC_DELAY)>>14)&3));
+			((value>>12) & 0x7), ((readl(SAR_ADC_DELAY) >> 14) & 3));
 	}
 	return value;
 }
@@ -269,11 +277,11 @@ static unsigned int get_cpu_temp(int tsc, int flag)
 	unsigned value;
 	if (flag) {
 		value = readl(SAR_ADC_REG11);
-	  writel(((value&(~(0x1f<<14)))|((tsc&0x1f)<<14)), SAR_ADC_REG11);
+	  writel(((value&(~(0x1f << 14))) | ((tsc & 0x1f) << 14)), SAR_ADC_REG11);
 	  /* bit[14-18]:tsc */
 	} else{
 		value = readl(SAR_ADC_REG11);
-	  writel(((value&(~(0x1f<<14)))|(0x10<<14)), SAR_ADC_REG11);
+	  writel(((value&(~(0x1f << 14))) | (0x10 << 14)), SAR_ADC_REG11);
 	  /* bit[14-18]:0x16 */
 	}
 	return  get_adc_sample(6);
@@ -281,7 +289,7 @@ static unsigned int get_cpu_temp(int tsc, int flag)
 
 void quicksort(int a[], int numsize)
 {
-	int i = 0, j = numsize-1;
+	int i = 0, j = numsize - 1;
 	int val = a[0];
 	if (numsize > 1) {
 		while (i < j) {
@@ -298,7 +306,7 @@ void quicksort(int a[], int numsize)
 		}
 	a[i] = val;
 	quicksort(a, i);
-	quicksort(a+i+1, numsize-1-i);
+	quicksort(a + i + 1, numsize - 1 - i);
 }
 }
 
@@ -312,12 +320,14 @@ static unsigned do_read_calib_data(int *flag, int *temp, int *TS_C)
 	char flagbuf;
 
 	ret = readl(AO_SEC_SD_CFG12);
-	flagbuf = (ret>>24)&0xff;
+	flagbuf = (ret >> 24) & 0xff;
 	if (((int)flagbuf != 0xA0) && ((int)flagbuf != 0x40)
 		&& ((int)flagbuf != 0xC0)
-		&& ((int)flagbuf != 0x05) && ((int)flagbuf != 0x0d)
-		&& ((int)flagbuf != 0x07) && ((int)flagbuf != 0x0f)
-		&& ((int)flagbuf != 0x09)
+		&& ((int)flagbuf != 0x05) && ((int)flagbuf != 0x06)
+		&& ((int)flagbuf != 0x07) && ((int)flagbuf != 0x09)
+		&& ((int)flagbuf != 0x0a) && ((int)flagbuf != 0x0b)
+		&& ((int)flagbuf != 0x0d) && ((int)flagbuf != 0x0e)
+		&& ((int)flagbuf != 0x0f)
 		) {
 		if (flagbuf)
 			printf("thermal ver flag error!\n");
@@ -325,28 +335,108 @@ static unsigned do_read_calib_data(int *flag, int *temp, int *TS_C)
 		return 0;
 	}
 
-	buf[0] = (ret)&0xff;
-	buf[1] = (ret>>8)&0xff;
+	buf[0] = (ret) & 0xff;
+	buf[1] = (ret >> 8) & 0xff;
 
 	*temp = buf[1];
-	*temp = (*temp<<8)|buf[0];
-	*TS_C =  *temp&0x1f;
-	*flag = (*temp&0x8000)>>15;
-	*temp = (*temp&0x7fff)>>5;
+	*temp = (*temp << 8) | buf[0];
+	*TS_C =  *temp & 0x1f;
+	*flag = (*temp & 0x8000) >> 15;
+	*temp = (*temp & 0x7fff) >> 5;
 
 	if ((get_cpu_id().family_id == MESON_CPU_MAJOR_ID_GXBB)
 		&&(0x40 == (int)flagbuf))/*ver2*/
 		*TS_C = 16;
 
 	if (get_cpu_id().family_id >= MESON_CPU_MAJOR_ID_GXL)
-		*temp = (*temp)<<2; /*adc 12bit sample*/
+		*temp = (*temp) << 2; /*adc 12bit sample*/
 
 	printf("adc=%d,TS_C=%d,flag=%d\n", *temp, *TS_C, *flag);
 	return ret;
 }
+#if defined(NEW_THERMAL_MODE)
+static unsigned int do_read_calib_data1(unsigned int *ver, unsigned int *u_efuse)
+{
+	char buf[2];
+	unsigned ret;
+	buf[0] = 0; buf[1] = 0;
 
-static int do_write_trim(cmd_tbl_t *cmdtp, int flag1,
-	int argc, char * const argv[])
+	ret = readl(AO_SEC_GP_CFG10);
+	*ver = (ret >> 24) & 0xff;
+	if ((*ver != 0x05) && ((int)*ver != 0x06)
+		&& ((int)*ver != 0x07) && ((int)*ver != 0x0d)
+		&& ((int)*ver != 0x0e) && ((int)*ver != 0x0f)
+		&& ((int)*ver != 0x09) && ((int)*ver != 0x0a)
+		&& ((int)*ver != 0x0b)) {
+		if (ver)
+			printf("thermal ver flag error!\n");
+		printf("ver is 0x%x!\n", *ver);
+		return 0;
+	}
+
+	buf[0] = (ret) & 0xff;
+	buf[1] = (ret >> 8) & 0xff;
+
+	*u_efuse = buf[1];
+	*u_efuse = (*u_efuse << 8) | buf[0];
+	return ret;
+}
+#endif
+
+#if defined(NEW_THERMAL_MODE)
+static int write_trim1(void)
+{
+	unsigned int ret,ver, u_efuse;//, ret;
+	unsigned int signbit;
+	unsigned long value,tmp1,tmp2;
+	int family_id;
+
+	family_id = get_cpu_id().family_id;
+	switch (get_cpu_id().family_id) {
+		case MESON_CPU_MAJOR_ID_TXHD:
+			writel(1 << 7 | (0x30), HHI_TS_CLK_CNTL); /*clk:0.5M*/
+			writel(0x50ab, TS_CFG_REG);/*0x50ab is enable the new thermal mudule*/
+			break;
+		default:
+			printf("cpu xxxx family id not support!!! id: %d\n", family_id);
+			return -1;
+		}
+	mdelay(5); /*at least 4.2ms*/
+
+	ret = do_read_calib_data1(&ver, &u_efuse);
+	if (ret) {
+		printf("This chip has trimmed!!!\n");
+		return -1;
+	}
+
+	value = readl(TS_YOUT);
+	printf("value: 0x%lx\n",value);
+	value = value & (0xffff);/*maybe the value need to read more times*/
+	printf("temp_base: %d\n",temp_base);
+
+	printf("YOUT: 0x%lx\n", value);
+	if ((value < 0x18a9) || (value > 0x31c0)) { /*-20~125 ideal yout*/
+		printf("%s : YOUT: 0x%lx out of range! ERROR! \n",__func__,value);
+		return -1;
+	}
+
+	/* T = (727.8*(5.05*Yout)/((1<<16)+4.05*Yout)) - 274.7 */
+	/* u_efuse = u_ideal - u_real */
+	tmp1 = ((temp_base * 10 + 2747) * (1 << 16)) / 7278; /*ideal u*/
+	printf("%s : tmp1: 0x%lx\n", __func__, tmp1);
+	tmp2 = (505 * value * (1 << 16)) / ((1 << 16) * 100 + 405 * value);
+	printf("%s : tmp2: 0x%lx\n", __func__, tmp2);
+	signbit = ((tmp1 > tmp2) ? 0 : 1);
+	u_efuse = (tmp1 > tmp2) ? (tmp1 - tmp2) : (tmp2 - tmp1);
+	u_efuse = (signbit << 15) | u_efuse;
+	printf("%s : u_efuse: 0x%x\n", __func__, u_efuse);
+
+	ret = thermal_calibration(2, u_efuse);
+	return ret;
+}
+#endif
+
+static int write_trim0(void)
 {
 	int temp = 0;
 	int temp1[NUM];
@@ -389,9 +479,9 @@ static int do_write_trim(cmd_tbl_t *cmdtp, int flag1,
 	for (i = 0; i < NUM; i++)
 		printf("%d ", temp1[i]);
 	printf("\n");
-	for (i = 2; i < NUM-2; i++)
+	for (i = 2; i < NUM - 2; i++)
 		temp += temp1[i];
-	temp = temp/(NUM-4);
+	temp = temp / (NUM - 4);
 	printf("the adc cpu adc=%d\n", temp);
 
 /**********************************/
@@ -415,52 +505,75 @@ static int do_write_trim(cmd_tbl_t *cmdtp, int flag1,
 	printf("\n");
 	for (i = 2; i < NUM-2; i++)
 		temp += temp1[i];
-	temp = temp/(NUM-4);
+	temp = temp / (NUM - 4);
 	printf("the adc cpu adc=%d\n", temp);
 
 /**************recalculate to 27******/
 	switch (get_cpu_id().family_id) {
 	case MESON_CPU_MAJOR_ID_GXBB:
 	case MESON_CPU_MAJOR_ID_GXTVBB:
-		temp = temp - 3.4*(temp_base - 27);
+		temp = temp - 3.4 * (temp_base - 27);
 		break;
 	case MESON_CPU_MAJOR_ID_GXL:/*12bit*/
 	case MESON_CPU_MAJOR_ID_GXM:
 	case MESON_CPU_MAJOR_ID_GXLX:
 		if (vref_en) {
 			temp = temp - 15.3*(temp_base - 27);
-			temp = temp>>2;/*efuse only 10bit adc*/
+			temp = temp >> 2;/*efuse only 10bit adc*/
 			break;
 		} else {
-			temp = temp - 17*(temp_base - 27);
-			temp = temp>>2;/*efuse only 10bit adc*/
+			temp = temp - 17 * (temp_base - 27);
+			temp = temp >> 2;/*efuse only 10bit adc*/
 			break;
 		}
 	case MESON_CPU_MAJOR_ID_TXL:
-		temp = temp - 15.5*(temp_base - 27);
-		temp = temp>>2;/*efuse only 10bit adc*/
+		temp = temp - 15.5 * (temp_base - 27);
+		temp = temp >> 2;/*efuse only 10bit adc*/
 		break;
 	case MESON_CPU_MAJOR_ID_TXLX:
 	case MESON_CPU_MAJOR_ID_AXG:
-		temp = temp - 17*(temp_base - 27);
-		temp = temp>>2;/*efuse only 10bit adc*/
+	case MESON_CPU_MAJOR_ID_TXHD:
+		temp = temp - 17 * (temp_base - 27);
+		temp = temp >> 2;/*efuse only 10bit adc*/
 		break;
 	default:
-		printf("cpu family id not support!!!\n");
+		printf("cpu family id not support, thermal0!!!\n");
 		goto err;
 	}
 /**********************************/
-	temp = ((temp<<5)|(TS_C&0x1f))&0xffff;
+	temp = ((temp << 5) | (TS_C & 0x1f)) & 0xffff;
 /* write efuse tsc,flag */
-	buf[0] = (char)(temp&0xff);
-	buf[1] = (char)((temp>>8)&0xff);
+	buf[0] = (char)(temp & 0xff);
+	buf[1] = (char)((temp >> 8) & 0xff);
 	buf[1] |= 0x80;
 	printf("buf[0]=%x,buf[1]=%x\n", buf[0], buf[1]);
-	data = buf[1]<<8 | buf[0];
+	data = buf[1] << 8 | buf[0];
 	ret = thermal_calibration(0, data);
 	return ret;
 err:
 	return -1;
+}
+
+static int do_write_trim(cmd_tbl_t *cmdtp, int flag1,
+	int argc, char * const argv[])
+{
+#if defined(NEW_THERMAL_MODE)
+	unsigned int choose = simple_strtoul(argv[1], NULL, 10);
+#endif
+	int ret;
+
+#if defined(NEW_THERMAL_MODE)
+	if (choose == 1) {
+		printf("%s: will trim thermal1.....\n",__func__);
+		ret = write_trim1();
+	} else
+#endif
+	{
+		printf("%s: will trim thermal0.....\n",__func__);
+		ret = write_trim0();
+	}
+
+	return ret;
 }
 
 static int read_temp0(void)
@@ -490,22 +603,23 @@ static int read_temp0(void)
 			switch (get_cpu_id().family_id) {
 			case MESON_CPU_MAJOR_ID_GXBB:
 			case MESON_CPU_MAJOR_ID_GXTVBB:
-				tempa = (10*(adc-temp))/34+27;
+				tempa = (10 * (adc-temp)) / 34 + 27;
 				break;
 			case MESON_CPU_MAJOR_ID_GXL:
 			case MESON_CPU_MAJOR_ID_GXM:
 			case MESON_CPU_MAJOR_ID_GXLX:
 				if (vref_en)/*thermal VREF*/
-					tempa = (10*(adc-temp))/153+27;
+					tempa = (10 * (adc - temp)) / 153 + 27;
 				else
-					tempa = (10*(adc-temp))/171+27;
+					tempa = (10 * (adc - temp)) / 171 + 27;
 				break;
 			case MESON_CPU_MAJOR_ID_TXL:
-				tempa = (10*(adc-temp))/155+27;
+				tempa = (10 * (adc - temp)) / 155 + 27;
 				break;
 			case MESON_CPU_MAJOR_ID_TXLX:
 			case MESON_CPU_MAJOR_ID_AXG:
-				tempa = (adc-temp)/17+27;
+			case MESON_CPU_MAJOR_ID_TXHD:
+				tempa = (adc - temp) / 17 + 27;
 				break;
 			default:
 				printf("cpu family id not support!!!\n");
@@ -535,10 +649,60 @@ static int read_temp0(void)
 
 }
 
+#if defined(NEW_THERMAL_MODE)
+static int read_temp1(void)
+{
+	unsigned int ret;
+	unsigned long cur_temp;
+	unsigned long value,tmp;
+	unsigned int ver, u_efuse; //tmp for debug
+	int family_id;
+
+	family_id = get_cpu_id().family_id;
+	switch (get_cpu_id().family_id) {
+		case MESON_CPU_MAJOR_ID_TXHD:
+			writel(1 << 7 | (0x30), HHI_TS_CLK_CNTL); /*clk:0.5M*/
+			writel(0x50ab, TS_CFG_REG);/*0x50ab is enable the new thermal mudule*/
+			break;
+		default:
+			printf("cpu xxxx family id not support!!! id: %d\n", family_id);
+			return -1;
+		}
+	mdelay(5); /*at least 4.2ms*/
+
+	ret = do_read_calib_data1(&ver,&u_efuse);
+	if (!ret) {
+		printf("This chip is not trimmed\n");
+		return -1;
+	}
+
+	value = readl(TS_YOUT);
+	value = value & (0xffff);
+
+	printf("YOUT: 0x%lx\n", value);
+	printf("u_efuse: 0x%x\n", u_efuse);
+	/* T = 727.8*(u_real+u_efuse/(1<<16)) - 274.7 */
+	/* u_readl = (5.05*YOUT)/((1<<16)+ 4.05*YOUT) */
+	tmp = (value * 505) * (1 << 16) / (100 * (1 << 16) + 405 * value);
+
+	if (u_efuse|0x8000)
+		cur_temp = ((tmp - (u_efuse & (0x7fff))) * 7278 / (1 << 16) - 2747) / 10;
+	else
+		cur_temp = ((tmp+u_efuse) * 7278 / (1 << 16) - 2747) / 10;
+	printf("newtemp: %ld\n", cur_temp);
+
+	return cur_temp;
+}
+#endif
+
 static int do_read_temp(cmd_tbl_t *cmdtp, int flag1,
 	int argc, char * const argv[])
 {
-	read_temp0();
+#if defined(NEW_THERMAL_MODE)
+		printf("read new and old temp\n");
+		read_temp1();
+#endif
+		read_temp0();
 	return 0;
 }
 
@@ -567,9 +731,9 @@ static int do_temp_triming(cmd_tbl_t *cmdtp, int flag1,
 {
 	int cmd_result = -1;
 	int temp;
-#ifdef CONFIG_AML_MESON_AXG
-	unsigned int ver;
-	int ret = -1;
+#if defined (CONFIG_AML_MESON_AXG) || defined (CONFIG_AML_MESON_TXHD)
+		unsigned int ver;
+		int ret = -1;
 #endif
 
 	if (argc < 2)
@@ -638,6 +802,76 @@ static int do_temp_triming(cmd_tbl_t *cmdtp, int flag1,
 		}
 		break;
 #endif
+#ifdef CONFIG_AML_MESON_TXHD
+	case MESON_CPU_MAJOR_ID_TXHD:
+		if (argc <3) {
+			printf("too little args for txhd temp triming!!\n");
+			return CMD_RET_USAGE;
+		}
+		ver = simple_strtoul(argv[2], NULL, 10);
+		printf("ver: %d\n", ver);
+		switch (ver) {
+		case 0x6:
+		case 0xe: /*thermal1*/
+			if (get_cpu_id().chip_rev != 0x7) {
+				cmd_result = run_command("write_trim 1", 0);
+				if (cmd_result != CMD_RET_SUCCESS) {
+					printf("trim FAIL!!!Please check!!!\n");
+					return -1;
+				} else
+					ret = 0;
+			} else
+				printf("chip version: 0x%x not support!!!Please check!\n",
+					get_cpu_id().chip_rev);
+			break;
+		case 0x5:
+		case 0xd: /*thermal0*/
+			cmd_result = run_command("write_trim", 0);
+			if (cmd_result != CMD_RET_SUCCESS) {
+				printf("trim FAIL!!!Please check!!!\n");
+				return -1;
+			} else
+				ret = 0;
+			break;
+		case 0x7:
+		case 0xf:
+			if (get_cpu_id().chip_rev != 0x7) {
+				cmd_result = run_command("write_trim 1", 0);
+				if (cmd_result != CMD_RET_SUCCESS) {
+					printf("trim FAIL!!!Please check!!!\n");
+					return -1;
+				} else {
+					ret = 0;
+					cmd_result = run_command("write_trim", 0);
+					if (cmd_result != CMD_RET_SUCCESS) {
+						printf("trim FAIL!!!Please check!!!\n");
+						return -1;
+					} else
+						ret = 0;
+				}
+			} else
+				printf("chip version: 0x%x not support!!!Please check!\n",
+					get_cpu_id().chip_rev);
+			break;
+		default:
+			printf("thermal version not support!!!Please check!\n");
+			return -1;
+		}
+		printf("trim thermal data ok\n");
+		if (!ret) { //write data ok
+			char str[20];
+			sprintf(str, "write_version 0x%x", ver);
+
+			cmd_result  = run_command(str, 0);
+			if (cmd_result == CMD_RET_SUCCESS)
+				printf("write thermal version ok\n");
+			else {
+				printf("trim FAIL!!!Please check version!!!\n");
+				return -1;
+			}
+		}
+		break;
+#endif
 		default:
 			printf("cpu family id not support!!!\n");
 			return -1;
@@ -668,7 +902,7 @@ static char temp_trim_help_text[] =
 	"temp_triming x [ver]\n"
 	"  - for manual trimming chip\n"
 	"  - x:     [decimal]the temperature of the chip surface\n"
-	"  - [ver]: [decimal]only for AXG thermal sensor\n"
+	"  - [ver]: [decimal]only for New thermal sensor\n"
 	"           BBT: OPS socket board, which can change chips\n"
 	"						online: reference boards witch chip mounted\n"
 	"           5  (0101)b: BBT, thermal0\n"
