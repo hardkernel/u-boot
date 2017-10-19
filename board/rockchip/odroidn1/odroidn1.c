@@ -38,6 +38,7 @@ int board_init(void)
 		goto out;
 	}
 
+	/* Enable pwm2 to control regulator vdd-log */
 	ret = pinctrl_request_noflags(pinctrl, PERIPH_ID_PWM2);
 	if (ret) {
 		debug("%s PWM2 pinctrl init fail!\n", __func__);
@@ -63,6 +64,19 @@ int board_init(void)
 	ret = regulator_set_enable(regulator, true);
 	if (ret) {
 		debug("%s vcc5v0-host-en set fail!\n", __func__);
+		goto out;
+	}
+
+	/* Enable regulator vdd_log to supply LOGIC_VDD on ODROID-N1 HW */
+	ret = regulator_get_by_platname("vdd_log", &regulator);
+	if (ret) {
+		printf("%s vdd_log init fail! ret %d\n", __func__, ret);
+		goto out;
+	}
+
+	ret = regulator_set_enable(regulator, true);
+	if (ret) {
+		printf("%s vdd_log set fail!\n", __func__);
 		goto out;
 	}
 
