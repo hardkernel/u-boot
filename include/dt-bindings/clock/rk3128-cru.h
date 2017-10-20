@@ -52,8 +52,8 @@
 
 /* aclk gates */
 #define ACLK_DMAC2		194
-#define ACLK_LCDC		197
-#define ACLK_VIO		203
+#define ACLK_VIO0		197
+#define ACLK_VIO1		203
 #define ACLK_VCODEC		208
 #define ACLK_CPU		209
 #define ACLK_PERI		210
