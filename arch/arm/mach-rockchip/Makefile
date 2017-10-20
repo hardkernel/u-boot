@@ -24,6 +24,7 @@ obj-spl-$(CONFIG_ROCKCHIP_RK3399) += rk3399-board-spl.o spl-boot-order.o
 
 ifeq ($(CONFIG_SPL_BUILD)$(CONFIG_TPL_BUILD),)
 obj-$(CONFIG_ROCKCHIP_BLOCK_API) += blk.o
+obj-$(CONFIG_ROCKCHIP_VENDOR_PARTITION) += vendor.o
 obj-$(CONFIG_ROCKCHIP_PARAM) += rockchip_parameter.o
 obj-$(CONFIG_ROCKCHIP_RESOURCE_IMAGE) += resource_img.o
 obj-$(CONFIG_ROCKCHIP_PARTITION_BOOT) += bootrkp.o

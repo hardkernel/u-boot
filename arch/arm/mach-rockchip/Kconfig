@@ -213,6 +213,13 @@ config ROCKCHIP_PARTITION_BOOT
 	help
 	  This enables support for bootimg system from rockchip format partition
 
+config ROCKCHIP_VENDOR_PARTITION
+        bool "Rockchip vendor partition support"
+        depends on ROCKCHIP_BLOCK_API
+        help
+          This enable support to read/write vendor configuration data from/to
+	  this partition
+
 config GICV2
 	bool "ARM GICv2"
 
