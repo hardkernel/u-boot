@@ -27,10 +27,8 @@ int board_late_init(void)
 		return -1;
 	}
 
-	if (board_get_recovery_message() == 0) {
-		printf("board: recovery success");
+	if (board_get_recovery_message() == 0)
 		board_enter_recovery_mode();
-	}
 
 	return 0;
 }

@@ -91,7 +91,10 @@ int board_get_recovery_message(void)
 
 void board_enter_recovery_mode(void)
 {
-	/* booti kernel ramdisk dtb */
-	/* TODO */
+	run_command("movi read kernel 0 $kernel_addr_r", 0);
+	run_command("movi read recovery 0 $ramdisk_addr_r", 0);
+	run_command("movi read dtb 0 $fdt_addr_r", 0);
 
+	printf("Now, recovery routine will be started\n");
+	run_command("booti $kernel_addr_r $ramdisk_addr_r $fdt_addr_r", 0);
 }
