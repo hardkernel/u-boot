@@ -150,6 +150,7 @@ obj-$(CONFIG_CMD_BLOB) += blob.o
 
 obj-$(CONFIG_CMD_ODROID_CFGLOAD) += cfgload.o
 obj-$(CONFIG_CMD_FDISK) += fdisk.o
+obj-$(CONFIG_CMD_MOVI) += movi.o
 endif # !CONFIG_SPL_BUILD
 
 # core command

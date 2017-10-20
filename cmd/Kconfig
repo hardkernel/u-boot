@@ -1289,6 +1289,12 @@ config CMD_FDISK
 	help
 	  fdisk support
 
+config CMD_MOVI
+	bool "movi command - read/write storage data from partitions"
+	depends on TARGET_ODROIDN1
+	help
+	   movi support
+
 endmenu
 
 endmenu
