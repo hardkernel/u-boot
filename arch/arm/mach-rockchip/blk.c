@@ -77,3 +77,28 @@ int blkdev_write(void *buffer, u32 blk, u32 cnt)
 	return mmcblk_write(mmc, buffer, blk, cnt);
 }
 
+/* Gets the storage type of the current device */
+int get_bootdev_type(void)
+{
+	int type = 0;
+
+	#ifdef CONFIG_EMMC_BOOT
+		type = BOOT_FROM_EMMC;
+	#endif /* CONFIG_EMMC_BOOT */
+	#ifdef CONFIG_QSPI_BOOT
+		type = BOOT_FROM_SPI_NAND;
+	#endif /* CONFIG_QSPI_BOOT */
+	#ifdef CONFIG_NAND_BOOT
+		typpe = BOOT_FROM_FLASH;
+	#endif /* CONFIG_NAND_BOOT */
+	#ifdef CONFIG_NOR_BOOT
+		type = BOOT_FROM_SPI_NOR;
+	#endif /* CONFIG_NOR_BOOT */
+
+	/* For current use(Only EMMC support!) */
+	if (!type)
+		type = BOOT_FROM_EMMC;
+
+	return type;
+}
+
