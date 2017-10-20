@@ -52,3 +52,28 @@ int blkdev_read(void *buffer, u32 blk, u32 cnt)
 
 	return mmcblk_read(mmc, buffer, blk, cnt);
 }
+
+static int mmcblk_write(struct mmc *mmcdev, void *buffer, u32 blk, u32 cnt)
+{
+	u32 n;
+
+	debug("\nMMC write: block # 0x%x, count 0x%x  from %p... ",
+	      blk, cnt, buffer);
+
+	n = blk_dwrite(mmc_get_blk_desc(mmcdev), blk, cnt, buffer);
+	debug("%d blocks write: %s\n", n, (n == cnt) ? "OK" : "ERROR");
+
+	return (n == cnt) ? 0 : -EIO;
+}
+
+int blkdev_write(void *buffer, u32 blk, u32 cnt)
+{
+	if (!mmc) {
+		mmc = mmcblk_dev_init(env_get_ulong("mmcdev", 10, 0));
+		if (!mmc)
+			return -ENODEV;
+	}
+
+	return mmcblk_write(mmc, buffer, blk, cnt);
+}
+

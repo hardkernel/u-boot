@@ -2,5 +2,6 @@
 #define __RK_BLK_H_
 
 int blkdev_read(void *buffer, u32 blk, u32 cnt);
+int blkdev_write(void *buffer, u32 blk, u32 cnt);
 
 #endif
