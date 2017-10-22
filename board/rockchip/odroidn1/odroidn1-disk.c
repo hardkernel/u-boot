@@ -83,7 +83,7 @@ static struct dos_partition {
 	},
 };
 
-static int n = 0;
+static int dos_next = 0;
 
 static int valid_partition_number(int part)
 {
@@ -101,6 +101,9 @@ lbaint_t board_dos_partition_start(void)
 	for (n = 0 ; n < ARRAY_SIZE(partitions); n++)
 		next += partitions[n].lba;
 
+	/* init dos_next index */
+	dos_next = 0;
+
 	return next;
 }
 
@@ -110,10 +113,10 @@ lbaint_t board_dos_partition_start(void)
  */
 lbaint_t board_dos_partition_next(int *part, u8 *type)
 {
-	if (!valid_partition_number(n + 1))
+	if (!valid_partition_number(dos_next + 1))
 		return 0;
 
-	struct dos_partition *p = &dos_partitions[n++];
+	struct dos_partition *p = &dos_partitions[dos_next++];
 
 	*part = p->part;	/* partition number */
 	*type = p->type;	/* partition type */
