@@ -36,7 +36,7 @@
 
 #undef CONFIG_EXTRA_ENV_SETTINGS
 #define CONFIG_EXTRA_ENV_SETTINGS \
-	"fdt_addr_r=0x01f00000\0" \
+	"fdt_addr_r=0x04700000\0" \
 	"kernel_addr_r=0x02000000\0" \
 	"ramdisk_addr_r=0x04000000\0" \
 	"bootargs=earlycon=uart8250,mmio32,0xff1a0000 swiotlb=1 androidboot.baseband=N/A androidboot.selinux=permissive androidboot.hardware=odroidn1 androidboot.console=ttyFIQ0 init=/init\0" \
