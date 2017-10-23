@@ -8,3 +8,4 @@ obj-y += test-rockchip.o
 obj-y += test-timer.o
 obj-y += test-key.o
 obj-y += test-emmc.o
+obj-y += test-regulator.o
