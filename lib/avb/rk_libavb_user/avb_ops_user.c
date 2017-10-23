@@ -158,9 +158,20 @@ static AvbIOResult validate_vbmeta_public_key(
 	size_t public_key_metadata_length,
 	bool *out_is_trusted)
 {
+#ifdef AVB_VBMETA_PUBLIC_KEY_VALIDATE
+	if (out_is_trusted != NULL) {
+		avb_atx_validate_vbmeta_public_key(ops,
+						   public_key_data,
+						   public_key_length,
+						   public_key_metadata,
+						   public_key_metadata_length,
+						   out_is_trusted);
+	}
+#else
 	if (out_is_trusted != NULL) {
 		*out_is_trusted = true;
 	}
+#endif
 	return AVB_IO_RESULT_OK;
 }
 
@@ -293,6 +304,8 @@ AvbOps* avb_ops_user_new(void)
 	ops->ab_ops->read_ab_metadata = avb_ab_data_read;
 	ops->ab_ops->write_ab_metadata = avb_ab_data_write;
 	ops->ab_ops->init_ab_metadata = avb_ab_data_init;
+	ops->atx_ops->read_permanent_attributes = avb_read_perm_attr;
+	ops->atx_ops->read_permanent_attributes_hash = avb_read_perm_attr_hash;
 out:
 	return ops;
 }

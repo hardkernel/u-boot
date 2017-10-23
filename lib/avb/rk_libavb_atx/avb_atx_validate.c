@@ -23,11 +23,40 @@
  */
 
 #include <android_avb/avb_atx_validate.h>
-
 #include <android_avb/avb_rsa.h>
 #include <android_avb/avb_sha.h>
 #include <android_avb/avb_sysdeps.h>
 #include <android_avb/avb_util.h>
+#include <optee_include/OpteeClientInterface.h>
+
+/* read permanent attributes from rpmb */
+AvbIOResult avb_read_perm_attr(AvbAtxOps* atx_ops,
+				      AvbAtxPermanentAttributes* attributes)
+{
+	if (attributes != NULL) {
+#ifdef CONFIG_OPTEE_CLIENT
+		trusty_read_permanent_attributes((uint8_t *)attributes,
+						 sizeof(struct AvbAtxPermanentAttributes));
+		return AVB_IO_RESULT_OK;
+#endif
+	}
+
+	return -1;
+}
+
+/*read permanent attributes hash from efuse */
+AvbIOResult avb_read_perm_attr_hash(AvbAtxOps* atx_ops,
+					   uint8_t hash[AVB_SHA256_DIGEST_SIZE])
+{
+#ifdef CONFIG_OPTEE_CLIENT
+	if (trusty_read_attribute_hash((uint32_t *)hash, AVB_SHA256_DIGEST_SIZE / 4))
+		return -1;
+#else
+	avb_error("Please open the macro!\n");
+	return -1;
+#endif
+	return AVB_IO_RESULT_OK;
+}
 
 /* Computes the SHA256 |hash| of |length| bytes of |data|. */
 static void sha256(const uint8_t* data,
