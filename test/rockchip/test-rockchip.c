@@ -18,6 +18,7 @@ static board_module_t g_board_modules[] = {
 	{ .name = "key",	.test = board_key_test },
 	{ .name = "emmc",	.test = board_emmc_test },
 	{ .name = "regulator",	.test = board_regulator_test },
+	{ .name = "rknand",	.test = board_rknand_test },
 };
 
 static int do_rockchip_test(cmd_tbl_t *cmdtp, int flag,

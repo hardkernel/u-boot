@@ -11,5 +11,6 @@ int board_timer_test(int argc, char * const argv[]);
 int board_key_test(int argc, char * const argv[]);
 int board_emmc_test(int argc, char * const argv[]);
 int board_regulator_test(int argc, char * const argv[]);
+int board_rknand_test(int argc, char * const argv[]);
 
 #endif /* _TEST_ROCKCHIP_H */
