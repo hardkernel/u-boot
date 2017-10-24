@@ -12,21 +12,6 @@
 #include <malloc.h>
 #include "test-rockchip.h"
 
-static u32 atoi(const char *str)
-{
-	u32 s=0;
-
-	while(*str == ' ')
-		str++;
-
-	while(*str >= '0' && *str <= '9') {
-		s = s * 10 + *str - '0';
-		str++;
-	}
-
-	return s;
-}
-
 int board_emmc_test(int argc, char * const argv[])
 {
 	u8 *write_buffer, *read_buffer;
@@ -35,33 +20,38 @@ int board_emmc_test(int argc, char * const argv[])
 	int err = 0;
 	char cmd_mmc[512] = {0};
 
-	blocks = atoi(argv[2]);
+	blocks = simple_strtoul(argv[2], NULL, 0);
 	if (!blocks) {
 		printf("Usage: rktest emmc blocks\n");
 		printf("8129 <= blocks <= 30000\n");
 		err = -EINVAL;
 		goto err_wb;
-	} else if (blocks % 2) {
+	}
+
+	if (blocks % 2)
 		/* Round up */
 		blocks += 1;
-	} else if (blocks < 8192) {
+
+	if (blocks < 8192) {
 		printf("Round up to 8192 blocks compulsively\n");
 		blocks = 8192;
-	} else if (blocks > 30000) {
+	}
+
+	if (blocks > 30000) {
 		printf("Round down to 30000 blocks compulsively\n");
 		blocks = 30000;
 	}
 
 	/* 1. Prepare memory */
 
-	write_buffer = (u8 *)malloc(sizeof(u8) * blocks * 512);
+	write_buffer = (u8 *)kmalloc(sizeof(u8) * blocks * 512);
 	if (!write_buffer) {
 		printf("No memory for write_buffer!\n");
 		err = -ENOMEM;
 		goto err_wb;
 	}
 
-	read_buffer = (u8 *)malloc(sizeof(u8) * blocks * 512);
+	read_buffer = (u8 *)kmalloc(sizeof(u8) * blocks * 512);
 	if (!read_buffer) {
 		printf("No memory for read_buffer!\n");
 		err = -ENOMEM;
