@@ -16,6 +16,7 @@ typedef struct board_module {
 static board_module_t g_board_modules[] = {
 	{ .name = "timer",	.test = board_timer_test },
 	{ .name = "key",	.test = board_key_test },
+	{ .name = "emmc",	.test = board_emmc_test },
 };
 
 static int do_rockchip_test(cmd_tbl_t *cmdtp, int flag,
