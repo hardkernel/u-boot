@@ -26,7 +26,7 @@
 
 /* CBUS Registers */
 /* 80K share SRAM base address*/
-#define P_SHARE_SRAM_BASE	0xd9000000
+#define P_SHARE_SRAM_BASE	0xfffc0000
 /*Interrupt number list*/
 #define IRQ_TIMERC_NUM      0
 #define IRQ_TIMERA_NUM      1
