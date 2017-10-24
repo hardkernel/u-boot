@@ -401,6 +401,36 @@ void cec_set_stream_path(void)
 	}
 }
 
+void cec_routing_change(void)
+{
+	unsigned char phy_addr_ab = (readl(P_AO_DEBUG_REG1) >> 8) & 0xff;
+	unsigned char phy_addr_cd = readl(P_AO_DEBUG_REG1) & 0xff;
+
+	if ((hdmi_cec_func_config >> CEC_FUNC_MASK) & 0x1) {
+		if ((hdmi_cec_func_config >> AUTO_POWER_ON_MASK) & 0x1) {
+				/* wake up if routing destination is self */
+				if ((phy_addr_ab == cec_msg.buf[cec_msg.rx_read_pos].msg[4]) &&
+					(phy_addr_cd == cec_msg.buf[cec_msg.rx_read_pos].msg[5]))  {
+					cec_msg.cec_power = 0x1;
+				}
+		}
+	}
+}
+
+void cec_active_source(void)
+{
+	unsigned char msg[4];
+	unsigned char phy_addr_ab = (readl(P_AO_DEBUG_REG1) >> 8) & 0xff;
+	unsigned char phy_addr_cd = readl(P_AO_DEBUG_REG1) & 0xff;
+
+	msg[0] = ((cec_msg.log_addr & 0xf) << 4) | CEC_BROADCAST_ADDR;
+	msg[1] = CEC_OC_ACTIVE_SOURCE;
+	msg[2] = phy_addr_ab;
+	msg[3] = phy_addr_cd;
+
+	remote_cec_ll_tx(msg, 4);
+}
+
 void cec_device_vendor_id(void)
 {
 	unsigned char msg[5];
@@ -524,6 +554,9 @@ unsigned int cec_handle_message(void)
 			break;
 		case CEC_OC_SET_STREAM_PATH:
 			cec_set_stream_path();
+			break;
+		case CEC_OC_ROUTING_CHANGE:
+			cec_routing_change();
 			break;
 		case CEC_OC_GIVE_DEVICE_POWER_STATUS:
 			cec_report_device_power_status();
@@ -681,6 +714,8 @@ void cec_node_init(void)
 		{{CEC_PLAYBACK_DEVICE_1_ADDR, CEC_PLAYBACK_DEVICE_2_ADDR, CEC_PLAYBACK_DEVICE_3_ADDR},
 		 {CEC_PLAYBACK_DEVICE_2_ADDR, CEC_PLAYBACK_DEVICE_3_ADDR, CEC_PLAYBACK_DEVICE_1_ADDR},
 		 {CEC_PLAYBACK_DEVICE_3_ADDR, CEC_PLAYBACK_DEVICE_1_ADDR, CEC_PLAYBACK_DEVICE_2_ADDR}};
+
+	uart_puts("cec ver:2017/11/08 \n");
 
 	if (retry >= 12) {  // retry all device addr
 		cec_msg.log_addr = 0x0f;
