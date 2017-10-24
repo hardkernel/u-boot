@@ -50,13 +50,13 @@ int board_get_recovery_message(void)
 	unsigned int size;
 
 	/* get mmc device */
-	mmc = find_mmc_device(0);
+	mmc = find_mmc_device(CONFIG_FASTBOOT_FLASH_MMC_DEV);
 	if (NULL == mmc) {
 		printf("recovery: get mmc dev fail\n");
 		return -EIO;
 	}
 
-	dev_desc = blk_get_dev("mmc", 0);
+	dev_desc = blk_get_dev("mmc", CONFIG_FASTBOOT_FLASH_MMC_DEV);
 	if (!dev_desc || dev_desc->type == DEV_TYPE_UNKNOWN) {
 		error("recovery: invalid mmc device");
 		return -EIO;
