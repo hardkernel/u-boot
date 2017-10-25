@@ -231,13 +231,37 @@ void get_wakeup_source(void *response, unsigned int suspend_from)
 {
 	struct wakeup_info *p = (struct wakeup_info *)response;
 	unsigned val;
+	struct wakeup_gpio_info *gpio;
+	unsigned i = 0;
 
 	p->status = RESPONSE_OK;
 	val = (POWER_KEY_WAKEUP_SRC | AUTO_WAKEUP_SRC | REMOTE_WAKEUP_SRC |
-	       ETH_PHY_WAKEUP_SRC | BT_WAKEUP_SRC);
+	       ETH_PHY_WAKEUP_SRC | BT_WAKEUP_SRC | WIFI_WAKEUP_SRC);
 
+#ifdef CONFIG_BT_WAKEUP
+	gpio = &(p->gpio_info[0]);
+	gpio->wakeup_id = BT_WAKEUP_SRC;
+	gpio->gpio_in_idx = GPIOX_22;
+	gpio->gpio_in_ao = 0;
+	gpio->gpio_out_idx = -1;
+	gpio->gpio_out_ao = -1;
+	gpio->irq = IRQ_GPIO0_NUM;
+	gpio->trig_type = GPIO_IRQ_FALLING_EDGE;
+	p->gpio_info_count = ++i;
+#endif
+#ifdef CONFIG_WIFI_WAKEUP
+	/*WIFI Wakeup: IN: GPIOX[7], OUT: GPIOX[6]*/
+	gpio = &(p->gpio_info[1]);
+	gpio->wakeup_id = WIFI_WAKEUP_SRC;
+	gpio->gpio_in_idx = GPIOX_6;
+	gpio->gpio_in_ao = 0;
+	gpio->gpio_out_idx = -1;
+	gpio->gpio_out_ao = -1;
+	gpio->irq = IRQ_GPIO1_NUM;
+	gpio->trig_type = GPIO_IRQ_FALLING_EDGE;
+	p->gpio_info_count = ++i;
+#endif
 	p->sources = val;
-	p->gpio_info_count = 0;
 }
 /*
 static unsigned int mpeg_clk;
@@ -311,6 +335,24 @@ static unsigned int detect_key(unsigned int suspend_from)
 			}
 		}
 
+#ifdef CONFIG_BT_WAKEUP
+		if (irq[IRQ_GPIO0] == IRQ_GPIO0_NUM) {
+			irq[IRQ_GPIO0] = 0xFFFFFFFF;
+			if (!(readl(PREG_PAD_GPIO2_EN_N) & (0x01 << 21))
+				&& (readl(PREG_PAD_GPIO2_O) & (0x01 << 21))
+				&& !(readl(PREG_PAD_GPIO2_I) & (0x01 << 22)))
+				exit_reason = BT_WAKEUP;
+		}
+#endif
+#ifdef CONFIG_WIFI_WAKEUP
+		if (irq[IRQ_GPIO1] == IRQ_GPIO1_NUM) {
+			irq[IRQ_GPIO1] = 0xFFFFFFFF;
+			if (!(readl(PREG_PAD_GPIO2_EN_N) & (0x01 << 7))
+				&& (readl(PREG_PAD_GPIO2_O) & (0x01 << 7))
+				&& !(readl(PREG_PAD_GPIO2_I) & (0x01 << 6)))
+				exit_reason = WIFI_WAKEUP;
+		}
+#endif
 		if (exit_reason)
 			break;
 		else
