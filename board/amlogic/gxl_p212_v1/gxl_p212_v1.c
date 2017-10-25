@@ -525,25 +525,7 @@ int check_vref(void)
 	return 0;
 }
 
-static int do_rpmb_state(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
-{
-	uint32_t state = readl(AO_SEC_GP_CFG7);
-
-	if ((state>>22) & 0x1)
-		setenv("rpmb_state","1");
-	else
-		setenv("rpmb_state","0");
-
-	return 0;
-}
-
-U_BOOT_CMD(rpmb_state, CONFIG_SYS_MAXARGS, 0, do_rpmb_state,
-		"RPMB sub-system",
-		"RPMB state\n")
-
 int board_late_init(void){
-	//update rpmb state env
-	run_command("rpmb_state", 0);
 
 	//update env before anyone using it
 	run_command("get_rebootmode; echo reboot_mode=${reboot_mode}; "\

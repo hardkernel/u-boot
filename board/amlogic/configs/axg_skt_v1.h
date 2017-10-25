@@ -30,6 +30,8 @@
 #warning "include warning"
 #endif
 
+//#define CONFIG_AML_RPMB_DISABLE
+
 /*
  * platform power init config
  */
