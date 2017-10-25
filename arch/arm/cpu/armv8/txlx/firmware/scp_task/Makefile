@@ -87,16 +87,6 @@ $(obj)/%.o : %.c
 	@mkdir -p $(@D)
 	@$(CC) $(CFLAGS) -MD  -c $< -o $@
 
-$(obj)/misc.o:	$(obj)/misc.s
-	@echo "	CC $(subst $(obj)/,,$@)"
-	@mkdir -p $(@D)
-	@$(CC) $(CFLAGS) -MD  -c $< -o $@
-
-$(obj)/task_entry.o:	$(obj)/task_entry.s
-	@echo "	CC $(subst $(obj)/,,$@)"
-	@mkdir -p $(@D)
-	@$(CC) $(CFLAGS) -MD  -c $< -o $@
-
 $(obj)/misc.s:	misc.S
 	@mkdir -p $(@D)
 	@echo "	CPP $(subst $(obj)/,,$@)"
@@ -106,6 +96,16 @@ $(obj)/task_entry.s:  task_entry.S
 	@mkdir -p $(@D)
 	@echo "	CPP $(subst $(obj)/,,$@)"
 	@$(CPP) -D__ASSEMBLY__ -E $< -o $@
+
+$(obj)/misc.o:	$(obj)/misc.s
+	@echo "	CC $(subst $(obj)/,,$@)"
+	@mkdir -p $(@D)
+	@$(CC) $(CFLAGS) -MD  -c $< -o $@
+
+$(obj)/task_entry.o:	$(obj)/task_entry.s
+	@echo "	CC $(subst $(obj)/,,$@)"
+	@mkdir -p $(@D)
+	@$(CC) $(CFLAGS) -MD  -c $< -o $@
 
 $(obj)/user_task.lds : user_task.lds
 	@mkdir -p $(@D)
