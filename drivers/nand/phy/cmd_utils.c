@@ -60,6 +60,7 @@ int nand_read_ops(struct amlnand_phydev *phydev)
 	u64 offset , read_len;
 	u8 *buffer;
 	int ret = 0;
+	u64 nand_read_len = 0;
 
 	offset = devops->addr;
 	read_len = devops->len;
@@ -108,8 +109,9 @@ int nand_read_ops(struct amlnand_phydev *phydev)
 			aml_nand_dbg("nand read failed at %llx", devops->addr);
 
 		devops->addr +=  phydev->writesize;
+		nand_read_len +=  phydev->writesize;       //fix by liuxj
 		devops->datbuf += phydev->writesize;
-	} while (devops->addr < (offset + read_len));
+	} while (nand_read_len < ( read_len));//while (devops->addr < (offset + read_len));
 
 	return ret;
 }
@@ -121,6 +123,7 @@ int nand_write_ops(struct amlnand_phydev *phydev)
 	u64 offset , write_len;
 	u8 *buffer;
 	int ret = 0;
+	u64 nand_write_len = 0;
 
 	offset = devops->addr;
 	write_len = devops->len;
@@ -163,8 +166,11 @@ int nand_write_ops(struct amlnand_phydev *phydev)
 			aml_nand_dbg("nand write failed at %llx", devops->addr);
 
 		devops->addr +=  phydev->writesize;
+		nand_write_len +=  phydev->writesize;    //fix bug by liuxj
 		devops->datbuf	 += phydev->writesize;
-	} while (devops->addr < (offset + write_len));
+
+	} while (nand_write_len < ( write_len)); //while (devops->addr < (offset + write_len));
+
 
 	return ret;
 }

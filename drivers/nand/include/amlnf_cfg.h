@@ -8,6 +8,7 @@
 #define	AML_SLC_NAND_SUPPORT
 #define	AML_MLC_NAND_SUPPORT
 
+#define __DEBUG_L04__				(1)
 
 #define	AML_NAND_DBG				(0)
 #define	AML_CFG_INSIDE_PARTTBL		(0)
@@ -29,6 +30,15 @@
 #define	ADJUST_BLOCK_NUM	0
 #endif
 
+/* ASYNC = 0x0   NVDDR_1= 0x10     NVDDR_2 = 0x20 */
+#define NAND_OPMODE_ASYNC               0x0
+#define NAND_OPMODE_NVDDR1              0x10
+#define NAND_OPMODE_NVDDR2              0x20
+#if 1
+#define NAND_ONFI_MODE_OP               (NAND_OPMODE_ASYNC)
+#else
+#define NAND_ONFI_MODE_OP               (NAND_OPMODE_NVDDR1)
+#endif
 /*do not use rb irq under uboot*/
 /* #define AML_NAND_RB_IRQ */
 

@@ -348,6 +348,7 @@ int amlnf_phy_init(u8 flag, struct platform_device *pdev)
 			goto exit_error0;
 	}
 
+
 	//Step 4: get device configs
 	ret = amlnand_get_dev_configs(aml_chip);
 	if (ret < 0) {
@@ -373,7 +374,7 @@ int amlnf_phy_init(u8 flag, struct platform_device *pdev)
 		aml_nand_free(controller->data_buf);
 		aml_nand_free(controller->user_buf);
 #endif /* AML_NAND_UBOOT */
-		aml_nand_free(controller->page_buf);
+		//aml_nand_free(controller->page_buf);
 		aml_nand_free(controller->oob_buf);
 
 		//nand_buf_free(aml_chip);
@@ -381,6 +382,7 @@ int amlnf_phy_init(u8 flag, struct platform_device *pdev)
 		ret = -1;
 		goto exit_error1;
 	}else{
+
 		//Step 5: register nand device, and config device information
 		PHY_NAND_LINE
 		ret = amlnand_phydev_init(aml_chip);
@@ -390,12 +392,13 @@ int amlnf_phy_init(u8 flag, struct platform_device *pdev)
 			ret = -NAND_READ_FAILED;
 			goto exit_error0;
 		}
-	}
+}
 	return ret;
 
 exit_error1:
 	aml_nand_free(aml_chip);
 exit_error0:
+
 
 	return ret;
 }

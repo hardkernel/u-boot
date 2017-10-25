@@ -192,7 +192,7 @@ static int nand_read(struct amlnand_phydev *phydev)
 			ops_para->page_addr =
 				(int)(addr >> phydev->writesize_shift);
 
-		//printf("%s() page %x\n", __func__, ops_para->page_addr);
+		//aml_nand_msg("%s() page %x\n", __func__, ops_para->page_addr);
 		ret = operation->read_page(aml_chip);
 		if ((ops_para->ecc_err) || (ret < 0)) {
 			aml_nand_msg("phy read failed at devops->addr: %llx",
@@ -288,7 +288,7 @@ static int nand_write(struct amlnand_phydev *phydev)
 		else
 			ops_para->page_addr =
 				(int)(addr >> phydev->writesize_shift);
-		//printf("%s() page %x\n", __func__, ops_para->page_addr);
+		//aml_nand_msg("%s() page %x\n", __func__, ops_para->page_addr);
 		ret = operation->write_page(aml_chip);
 		if (ret < 0) {
 			aml_nand_msg("Write fail devops->addr:%llx,addr:%llx",
@@ -1271,7 +1271,6 @@ int boot_dev_init(struct amlnand_chip *aml_chip)
 	PHYDEV_LINE
 	if ((flash->option & NAND_CHIP_SLC_MODE)
 		&& (!(phydev->option & DEV_MULTI_PLANE_MODE))) {
-
 		phydev->option |= DEV_SLC_MODE;
 		phydev->erasesize >>= 1;
 		phydev->erasesize_shift = ffs(phydev->erasesize) - 1;
@@ -1416,6 +1415,13 @@ int amlnand_phydev_init(struct amlnand_chip *aml_chip)
 				phydev->erasesize <<= 1;
 				phydev->oobavail <<= 1;
 			}
+
+			if ((dev_para->option & DEV_USE_SHAREPAGE_MODE)
+				&& (flash->option & NAND_USE_SHAREPAGE_MODE)) {
+				phydev->option |= DEV_USE_SHAREPAGE_MODE;
+				phydev->writesize <<= 1;
+				phydev->oobavail <<= 1;
+			}
 			phydev->writesize_shift = ffs(phydev->writesize) - 1;
 			phydev->erasesize_shift = ffs(phydev->erasesize) - 1;
 			printk("%s,%d,phydev->offset=%llx,phydev->size=%llx\n",
@@ -1522,18 +1528,13 @@ int amlnand_phydev_init(struct amlnand_chip *aml_chip)
 				phydev->erasesize <<= 1;
 				phydev->oobavail <<= 1;
 			}
-		#if (DBG_WRITE_VERIFY)
-			/*debug code */
-			if ( NULL == glb_verify_buffer ) {
-				glb_verify_buffer = aml_nand_malloc(phydev->writesize);
-				if (glb_verify_buffer == NULL) {
-					aml_nand_msg("%s() %d, malloc glb_verify_buffer failed!\n",
-						__func__, __LINE__);
-
-				}
-
+			if ((dev_para->option & DEV_USE_SHAREPAGE_MODE)
+				&& (flash->option & NAND_USE_SHAREPAGE_MODE)) {
+				phydev->option |= DEV_USE_SHAREPAGE_MODE;
+				phydev->writesize <<= 1;
+				phydev->oobavail <<= 1;
 			}
-		#endif
+
 			phydev->writesize_shift = ffs(phydev->writesize) - 1;
 			phydev->erasesize_shift = ffs(phydev->erasesize) - 1;
 
@@ -1601,11 +1602,6 @@ int amlnand_phydev_init(struct amlnand_chip *aml_chip)
 				aml_nand_dbg("offset = %llx, %llx",
 					offset,
 					tmp_erase_shift);
-				/*
-				if (!is_phydev_off_adjust())
-					total_blk = dev_size >> tmp_erase_shift;
-				else {
-				*/
 				aml_nand_dbg("adjust phy offset: %d",
 					ADJUST_BLOCK_NUM);
 				total_blk =
@@ -1629,38 +1625,11 @@ int amlnand_phydev_init(struct amlnand_chip *aml_chip)
 					0,
 					sizeof(struct chip_ops_para));
 				ops_para->option = phydev->option;
-/*
-if (!is_phydev_off_adjust()) {
-	do {
-		ops_para->page_addr =
-		((((u32)((((u32)(offset >> tmp_erase_shift)))) /
-		chip_num) + tmp_blk - tmp_blk / chip_num) * pages_per_blk);
-		ops_para->chipnr =
-		((u32) (offset >> tmp_erase_shift))%chip_num;
-		ret = operation->block_isbad(aml_chip);
-		if (ret == NAND_BLOCK_FACTORY_BAD) {
-			offset += flash->blocksize;
-			continue;
-		}
-		start_blk++;
-		offset += flash->blocksize;
-	} while (start_blk < total_blk);
 
-	total_blk =
-	((((u32) (offset >> phydev->erasesize_shift)) - 1) / \
-		chip_num*plane_num) + 1) * (chip_num*plane_num);
-	aml_nand_dbg("total_blk =%d", total_blk);
-	phydev->size = ((u64)total_blk*(u64)phydev->erasesize);
-} else {
-*/
 				do {
 					tmp_value =
 						offset>>phydev->writesize_shift;
 					ops_para->page_addr = (u32)(tmp_value);
-					/*
-					ops_para->chipnr =
-			((u32)(offset>>phydev->erasesize_shift))%chip_num;
-					*/
 					ret = operation->block_isbad(aml_chip);
 					if (ret == NAND_BLOCK_FACTORY_BAD) {
 						offset += phydev->erasesize;
@@ -1680,9 +1649,6 @@ if (!is_phydev_off_adjust()) {
 				//printk("%s() %d, total_blk 0x%x, erase_size 0x%x\n", __func__, __LINE__, total_blk, phydev->erasesize);
 				phydev->size = ((u64)total_blk *
 					(u64)phydev->erasesize);
-				/*
-				}
-				*/
 			} else
 				phydev->size = dev_size;
 
@@ -1700,8 +1666,8 @@ if (!is_phydev_off_adjust()) {
 		phydev_pre = phydev;
 
 		if ((dev_para->option & DEV_SLC_MODE)
-&& (flash->option & NAND_CHIP_SLC_MODE)
-&& (!(phydev->option & DEV_MULTI_PLANE_MODE))) {
+			&& (flash->option & NAND_CHIP_SLC_MODE)
+			&& (!(phydev->option & DEV_MULTI_PLANE_MODE))) {
 			phydev->option |= DEV_SLC_MODE;
 			phydev->erasesize >>= 1;
 			phydev->erasesize_shift = ffs(phydev->erasesize) - 1;

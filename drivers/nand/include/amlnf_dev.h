@@ -450,6 +450,7 @@ struct amlnf_dev {
 	u32(*flush)(struct amlnf_dev *dev);
 };
 
+extern struct amlnand_phydev *phydev;
 extern struct list_head nphy_dev_list;
 extern struct list_head nf_dev_list;
 
@@ -465,6 +466,7 @@ struct aml_nand_device {
 	int nandboot;
 };
 
+extern unsigned char device_model[20];
 
 extern struct list_head nphy_dev_list;
 //extern struct partitions *part_table;

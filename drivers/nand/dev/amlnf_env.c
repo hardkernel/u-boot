@@ -21,7 +21,7 @@ struct amlnand_chip *aml_chip_env = NULL;
 int amlnf_env_save(u8 *buf, int len)
 {
 	u8 *env_buf = NULL;
-	//struct nand_flash *flash = &aml_chip_env->flash;
+	struct nand_flash *flash = &aml_chip_env->flash;
 	int ret = 0;
 
 	aml_nand_msg("uboot env amlnf_env_save : ####");
@@ -34,7 +34,7 @@ int amlnf_env_save(u8 *buf, int len)
 		aml_nand_msg("uboot env data len too much,%s", __func__);
 		return -EFAULT;
 	}
-	env_buf = aml_nand_malloc(CONFIG_ENV_SIZE);
+	env_buf = aml_nand_malloc(CONFIG_ENV_SIZE + flash->pagesize);
 	if (env_buf == NULL) {
 		aml_nand_msg("nand malloc for uboot env failed");
 		ret = -1;
@@ -379,9 +379,10 @@ int aml_nand_update_ubootenv(struct amlnand_chip *aml_chip, char *env_ptr)
 	int ret = 0;
 	char malloc_flag = 0;
 	char *env_buf = NULL;
+	struct nand_flash *flash = &aml_chip->flash;
 
 	if (env_buf == NULL) {
-		env_buf = kzalloc(CONFIG_ENV_SIZE, GFP_KERNEL);
+		env_buf = kzalloc(CONFIG_ENV_SIZE + flash->pagesize, GFP_KERNEL);
 		malloc_flag = 1;
 		if (env_buf == NULL)
 			return -ENOMEM;

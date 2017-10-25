@@ -177,6 +177,7 @@ union nand_core_clk_t {
 #define	NAND_CTRL_NONE_RB		(1<<1)
 #define	NAND_CTRL_INTERLEAVING_MODE	(1<<2)
 #define	NAND_MULTI_PLANE_MODE		(1<<3)
+#define	NAND_USE_SHAREPAGE_MODE		(1<<4)
 
 
 /***nand controller ECC options***/
@@ -295,6 +296,12 @@ union nand_core_clk_t {
 #define	NAND_CTRL_CLE	(NAND_NCE | NAND_CLE)
 #define	NAND_CTRL_ALE	(NAND_NCE | NAND_ALE)
 
+/********L04A  shared page********/
+#define NAND_PAGE_NO1  16
+#define NAND_PAGE_NO2  495
+
+#define L04A_PAGES_IN_BLK 512
+
 /*
  * Standard NAND flash commands
  */
@@ -315,6 +322,7 @@ union nand_core_clk_t {
 
 #define	NAND_CMD_ID_ADDR_NORMAL	0x00
 #define	NAND_CMD_ID_ADDR_ONFI	0x20
+#define NAND_CMD_ID_ADDR_JEDEC  0x40
 
 
 #define	NAND_CMD_NONE	-1
@@ -358,7 +366,8 @@ union nand_core_clk_t {
 #define	RETRY_NAND_BLK_NUM	2
 #define	RETRY_NAND_COPY_NUM	4
 
-#define	READ_RETRY_REG_NUM	8
+/* increase the count from 8 to 10, fix future product */
+#define	READ_RETRY_REG_NUM	10
 #define	READ_RETRY_CNT      40
 
 #define	EN_SLC_REG_NUM		8
@@ -387,6 +396,7 @@ union nand_core_clk_t {
 #define	NAND_CMD_SANDISK_DYNAMIC_DISABLE	0xD6
 #define	NAND_CMD_SANDISK_SLC			0xA2
 #define NAND_CMD_SANDISK_SET_VALUE		0XEF
+#define NAND_CMD_MICRON_GET_VALUE	0XEE
 #define	NAND_CMD_SANDISK_DSP_OFF	0x25
 #define	NAND_CMD_SANDISK_DSP_ON		0x26
 #define	NAND_CMD_SANDISK_RETRY_STA	0x5D
@@ -467,6 +477,7 @@ struct en_slc_info {
 	int (*init)(struct hw_controller *controller);
 	int (*enter)(struct hw_controller *controller);
 	int (*exit)(struct hw_controller *controller);
+	int micron_l0l3_mode; /*mark micon L0_L3 mode*/
 };
 
 #endif
@@ -538,7 +549,7 @@ struct hw_controller {
 	u8 *data_buf;
 	u32 *user_buf;
 
-	u8 *page_buf;
+	/* u8 *page_buf; */
 	u8 *oob_buf;
 
 #if (AML_CFG_NEW_NAND_SUPPORT)

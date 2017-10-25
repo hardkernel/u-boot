@@ -174,12 +174,14 @@ int amlnand_read(struct amlnf_dev *nftl_dev,
 		return ret;
 	}
 	CMD_LINE
-	ret |= nftl_dev->read_sector(nftl_dev, head_sector, 1, local_buf);
-	memcpy(buf, local_buf+head_start_bytes, head_bytes_num);
-	CMD_LINE
-	buf += head_bytes_num;
-	offset += head_bytes_num;
-	size -= head_bytes_num;
+	if ((offset % AML_NFTL_ALIGN_SIZE) != 0) {
+		ret |= nftl_dev->read_sector(nftl_dev, head_sector, 1, local_buf);
+		memcpy(buf, local_buf+head_start_bytes, head_bytes_num);
+		CMD_LINE
+		buf += head_bytes_num;
+		offset += head_bytes_num;
+		size -= head_bytes_num;
+	}
 
 	if (size > AML_NFTL_ALIGN_SIZE) {
 		mid_len = size >> AML_NFTL_ALIGN_SHIFT;
@@ -240,16 +242,19 @@ int amlnand_write(struct amlnf_dev *nftl_dev,
 		goto flush;
 	}
 	CMD_LINE
-	ret |= nftl_dev->read_sector(nftl_dev, head_sector, 1, local_buf);
-	memcpy(local_buf+head_start_bytes, buf, head_bytes_num);
-	ret |= nftl_dev->write_sector(nftl_dev, head_sector, 1, local_buf);
+
+    if ((offset % AML_NFTL_ALIGN_SIZE) != 0) {                     //sectore alignment
+	    ret |= nftl_dev->read_sector(nftl_dev, head_sector, 1, local_buf);
+	    memcpy(local_buf+head_start_bytes, buf, head_bytes_num);
+	    ret |= nftl_dev->write_sector(nftl_dev, head_sector, 1, local_buf);
 
 
-	buf += head_bytes_num;
-	offset += head_bytes_num;
-	size -= head_bytes_num;
+	    buf += head_bytes_num;
+	    offset += head_bytes_num;
+	    size -= head_bytes_num;
+	}
 
-	if (size > AML_NFTL_ALIGN_SIZE) {
+	if (size > AML_NFTL_ALIGN_SIZE) {            //why 4
 		CMD_LINE
 		mid_len = size >> AML_NFTL_ALIGN_SHIFT;
 		mid_sector = offset >> AML_NFTL_ALIGN_SHIFT;

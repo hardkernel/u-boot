@@ -61,6 +61,7 @@ int amlnf_key_write(u8 *buf, int len, uint32_t *actual_lenth)
 	struct nand_menson_key *key_ptr = NULL;
 	u32 keysize = aml_chip->keysize;
 	int error = 0;
+	struct nand_flash *flash = &aml_chip_key->flash;
 
 	if (aml_chip == NULL) {
 		printk("%s(): amlnf key not ready yet!", __func__);
@@ -77,7 +78,7 @@ int amlnf_key_write(u8 *buf, int len, uint32_t *actual_lenth)
 		//return -EFAULT;
 	}
 
-	key_ptr = kzalloc(aml_chip->keysize + sizeof(u32), GFP_KERNEL);
+	key_ptr = kzalloc(aml_chip->keysize + flash->pagesize, GFP_KERNEL);
 	if (key_ptr == NULL)
 		return -ENOMEM;
 
@@ -154,9 +155,10 @@ int aml_nand_update_key(struct amlnand_chip * aml_chip, char *key_ptr)
 	int ret = 0;
 	int malloc_flag = 0;
 	char *key_buf = NULL;
+	struct nand_flash *flash = &aml_chip->flash;
 
 	if (key_buf == NULL) {
-		key_buf = kzalloc(aml_chip->keysize, GFP_KERNEL);
+		key_buf = kzalloc(aml_chip->keysize + flash->pagesize, GFP_KERNEL);
 		malloc_flag = 1;
 		if (key_buf == NULL)
 			return -ENOMEM;

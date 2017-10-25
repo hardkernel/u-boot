@@ -303,7 +303,7 @@
 /* support for mtd */
 //#define CONFIG_AML_MTD 1
 /* support for nftl */
-//#define CONFIG_AML_NAND	1
+#define CONFIG_AML_NAND	1
 
 #if defined(CONFIG_AML_NAND) && defined(CONFIG_AML_MTD)
 #error CONFIG_AML_NAND/CONFIG_AML_MTD can not support at the sametime;
@@ -405,6 +405,7 @@
 #define CONFIG_USBDOWNLOAD_GADGET 1
 #define CONFIG_SYS_CACHELINE_SIZE 64
 #define CONFIG_FASTBOOT_MAX_DOWN_SIZE	0x8000000
+#define CONFIG_DEVICE_PRODUCT	"q200"
 
 //UBOOT Facotry usb/sdcard burning config
 #define CONFIG_AML_V2_FACTORY_BURN              1       //support facotry usb burning

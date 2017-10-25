@@ -31,10 +31,11 @@ static struct amlnand_chip *aml_chip_key = NULL;
 	int ret = 0;
 	int malloc_flag = 0;
 	char *key_buf = NULL;
+	struct nand_flash *flash = &aml_chip->flash;
 
 	if (key_buf == NULL) {
 
-		key_buf = kzalloc(CONFIG_KEYSIZE, GFP_KERNEL);
+		key_buf = kzalloc(CONFIG_KEYSIZE + flash->pagesize, GFP_KERNEL);
 		malloc_flag = 1;
 		if (key_buf == NULL)
 			return -ENOMEM;
@@ -106,13 +107,14 @@ static int nand_key_write(struct aml_keybox_provider_s * provider, u8 *buf,int l
 	struct nand_menson_key *key_ptr = NULL;
 	//int error = 0,i=0;
 	int error = 0;
+	struct nand_flash *flash = &aml_chip_key->flash;
 
 	if (len > CONFIG_KEYSIZE)
 	{
 		printk("key data len too much,%s\n",__func__);
 		return -EFAULT;
 	}
-	key_ptr = kzalloc(CONFIG_KEYSIZE, GFP_KERNEL);
+	key_ptr = kzalloc(CONFIG_KEYSIZE + flash->pagesize, GFP_KERNEL);
 	if (key_ptr == NULL)
 		return -ENOMEM;
 	memset(key_ptr,0,CONFIG_KEYSIZE);

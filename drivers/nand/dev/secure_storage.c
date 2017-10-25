@@ -80,13 +80,14 @@ int32_t nand_secure_write(struct amlnand_chip * aml_chip, char *buf, unsigned in
 	//secure_t *secure_ptr = NULL;
 	unsigned char *secure_ptr = NULL;
 	int error = 0;
+	struct nand_flash *flash = &aml_chip->flash;
 
 	if (len > CONFIG_SECURE_SIZE)
 	{
 		aml_nand_msg("key data len too much,%s\n",__func__);
 		return -EFAULT;
 	}
-	secure_ptr = kzalloc(CONFIG_SECURE_SIZE, GFP_KERNEL);
+	secure_ptr = kzalloc(CONFIG_SECURE_SIZE + flash->pagesize, GFP_KERNEL);
 	if (secure_ptr == NULL)
 		return -ENOMEM;
 	memset(secure_ptr,0,CONFIG_SECURE_SIZE);

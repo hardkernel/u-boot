@@ -20,6 +20,7 @@ struct amlnand_chip *aml_chip_dtb = NULL;
 int amlnf_dtb_save(u8 *buf, int len)
 {
 	u8 *dtb_buf = NULL;
+	struct nand_flash *flash = &aml_chip_dtb->flash;
 	int ret = 0;
 
 	aml_nand_msg("%s: ####", __func__);
@@ -33,7 +34,7 @@ int amlnf_dtb_save(u8 *buf, int len)
 		len = aml_chip_dtb->dtbsize;
 		/*return -EFAULT;*/
 	}
-	dtb_buf = aml_nand_malloc(aml_chip_dtb->dtbsize);
+	dtb_buf = aml_nand_malloc(aml_chip_dtb->dtbsize + flash->pagesize);
 	if (dtb_buf == NULL) {
 		aml_nand_msg("%s: malloc failed", __func__);
 		ret = -1;
@@ -476,9 +477,10 @@ int aml_nand_update_dtb(struct amlnand_chip *aml_chip, char *dtb_ptr)
 	int ret = 0;
 	char malloc_flag = 0;
 	char *dtb_buf = NULL;
+	struct nand_flash *flash = &aml_chip->flash;
 
 	if (dtb_buf == NULL) {
-		dtb_buf = kzalloc(aml_chip_dtb->dtbsize, GFP_KERNEL);
+		dtb_buf = kzalloc(aml_chip_dtb->dtbsize + flash->pagesize, GFP_KERNEL);
 		malloc_flag = 1;
 		if (dtb_buf == NULL)
 			return -ENOMEM;
