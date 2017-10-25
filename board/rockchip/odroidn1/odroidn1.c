@@ -17,11 +17,17 @@ DECLARE_GLOBAL_DATA_PTR;
 
 extern int board_get_recovery_message(void);
 extern void board_enter_recovery_mode(void);
+extern int board_scan_boot_storage(void);
 extern int board_partition_init(void);
 
 #ifdef CONFIG_BOARD_LATE_INIT
 int board_late_init(void)
 {
+	if (board_scan_boot_storage() != 0) {
+		printf("board: scan boot stoarge fail\n");
+		return -1;
+	}
+
 	if (board_partition_init() != 0) {
 		printf("board: partition init fail\n");
 		return -1;
