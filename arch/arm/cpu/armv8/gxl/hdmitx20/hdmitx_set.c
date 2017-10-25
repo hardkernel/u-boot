@@ -1355,6 +1355,10 @@ do { \
 		break;
 	case HDMI_1920x1080p60_16x9:
 	case HDMI_1920x1080p50_16x9:
+	case HDMI_1920x1080i100_16x9:
+	case HDMI_1920x1080i120_16x9:
+	case HDMI_1280x720p100_16x9:
+	case HDMI_1280x720p120_16x9:
 		set_phy_by_mode(3);
 		break;
 	default:
@@ -1419,7 +1423,8 @@ static void hdmi_tvenc1080i_set(enum hdmi_vic vic)
 		vs_bline_odd = 0, vs_eline_odd = 0;
 	unsigned long vso_begin_evn = 0, vso_begin_odd = 0;
 
-	if (vic == HDMI_1920x1080i60_16x9) {
+	if ((vic == HDMI_1920x1080i60_16x9) ||
+		(vic == HDMI_1920x1080i120_16x9)) {
 		INTERLACE_MODE = 1;
 		PIXEL_REPEAT_VENC = 1;
 		PIXEL_REPEAT_HDMI = 0;
@@ -1432,7 +1437,8 @@ static void hdmi_tvenc1080i_set(enum hdmi_vic vic)
 		BACK_PORCH = 148;
 		VSYNC_LINES = 5;
 		SOF_LINES = 15;
-	} else if (vic == HDMI_1920x1080i50_16x9) {
+	} else if ((vic == HDMI_1920x1080i50_16x9) ||
+		(vic == HDMI_1920x1080i100_16x9)) {
 		INTERLACE_MODE = 1;
 		PIXEL_REPEAT_VENC = 1;
 		PIXEL_REPEAT_HDMI = 0;
@@ -1930,6 +1936,7 @@ static void hdmi_tvenc_set_def(enum hdmi_vic vic)
         hdmitx_debug();
 	switch (vic) {
 	case HDMI_720x480p60_16x9:
+	case HDMI_720x480p120_16x9:
 		INTERLACE_MODE = 0;
 		PIXEL_REPEAT_VENC = 1;
 		PIXEL_REPEAT_HDMI = 0;
@@ -1944,6 +1951,7 @@ static void hdmi_tvenc_set_def(enum hdmi_vic vic)
 		SOF_LINES = 30;
 		break;
 	case HDMI_720x576p50_16x9:
+	case HDMI_720x576p100_16x9:
 		INTERLACE_MODE = 0;
 		PIXEL_REPEAT_VENC = 1;
 		PIXEL_REPEAT_HDMI = 0;
@@ -1958,6 +1966,7 @@ static void hdmi_tvenc_set_def(enum hdmi_vic vic)
 		SOF_LINES = 39;
 		break;
 	case HDMI_1280x720p60_16x9:
+	case HDMI_1280x720p120_16x9:
 		INTERLACE_MODE = 0;
 		PIXEL_REPEAT_VENC = 1;
 		PIXEL_REPEAT_HDMI = 0;
@@ -1972,6 +1981,7 @@ static void hdmi_tvenc_set_def(enum hdmi_vic vic)
 		SOF_LINES = 20;
 		break;
 	case HDMI_1280x720p50_16x9:
+	case HDMI_1280x720p100_16x9:
 		INTERLACE_MODE = 0;
 		PIXEL_REPEAT_VENC = 1;
 		PIXEL_REPEAT_HDMI = 0;
@@ -1987,6 +1997,7 @@ static void hdmi_tvenc_set_def(enum hdmi_vic vic)
 		break;
 	case HDMI_1920x1080p50_16x9:
 	case HDMI_1920x1080p25_16x9:
+	case HDMI_1920x1080p100_16x9:
 		INTERLACE_MODE	= 0;
 		PIXEL_REPEAT_VENC  = 0;
 		PIXEL_REPEAT_HDMI  = 0;
@@ -2016,6 +2027,7 @@ static void hdmi_tvenc_set_def(enum hdmi_vic vic)
 		break;
 	case HDMI_1920x1080p60_16x9:
 	case HDMI_1920x1080p30_16x9:
+	case HDMI_1920x1080p120_16x9:
 		INTERLACE_MODE	= 0;
 		PIXEL_REPEAT_VENC  = 0;
 		PIXEL_REPEAT_HDMI  = 0;
@@ -2119,6 +2131,8 @@ static void hdmi_tvenc_set_def(enum hdmi_vic vic)
 		break;
 	case HDMI_1920x1080i60_16x9:
 	case HDMI_1920x1080i50_16x9:
+	case HDMI_1920x1080i120_16x9:
+	case HDMI_1920x1080i100_16x9:
 		hd_write_reg(P_VPU_HDMI_SETTING, (0 << 0) |
 				(0 << 1) |
 				(HSYNC_POLARITY << 2) |
@@ -2154,6 +2168,8 @@ static void hdmi_tvenc_set_def(enum hdmi_vic vic)
 		break;
 	case HDMI_720x480p60_16x9:
 	case HDMI_720x576p50_16x9:
+	case HDMI_720x480p120_16x9:
+	case HDMI_720x576p100_16x9:
 		hd_write_reg(P_VPU_HDMI_SETTING, (0 << 0) |
 				(0 << 1) |
 				(0 << 2) |
@@ -2167,6 +2183,8 @@ static void hdmi_tvenc_set_def(enum hdmi_vic vic)
 		break;
 	case HDMI_1280x720p60_16x9:
 	case HDMI_1280x720p50_16x9:
+	case HDMI_1280x720p100_16x9:
+	case HDMI_1280x720p120_16x9:
 		hd_write_reg(P_VPU_HDMI_SETTING, (0 << 0) |
 				(0 << 1) |
 				(HSYNC_POLARITY << 2) |
@@ -2353,6 +2371,8 @@ static void hdmi_tvenc_set(enum hdmi_vic vic)
 		break;
 	case HDMI_1920x1080i60_16x9:
 	case HDMI_1920x1080i50_16x9:
+	case HDMI_1920x1080i100_16x9:
+	case HDMI_1920x1080i120_16x9:
 		hdmi_tvenc1080i_set(vic);
 		break;
 	case HDMI_3840x2160p30_16x9:
@@ -2400,6 +2420,8 @@ static void hdmi_tvenc_set(enum hdmi_vic vic)
 		break;
 	case HDMI_1920x1080i60_16x9:
 	case HDMI_1920x1080i50_16x9:
+	case HDMI_1920x1080i100_16x9:
+	case HDMI_1920x1080i120_16x9:
 		// Annie 01Sep2011: Register VENC_DVI_SETTING and VENC_DVI_SETTING_MORE are no long valid, use VPU_HDMI_SETTING instead.
 		hd_write_reg(P_VPU_HDMI_SETTING, (0                                 << 0) | // [    0] src_sel_enci
                              (0                                 << 1) | // [    1] src_sel_encp
@@ -2450,6 +2472,8 @@ static void hdmi_tvenc_set(enum hdmi_vic vic)
 		break;
 	case HDMI_720x480p60_16x9:
 	case HDMI_720x576p50_16x9:
+	case HDMI_720x480p120_16x9:
+	case HDMI_720x576p100_16x9:
 		// Annie 01Sep2011: Register VENC_DVI_SETTING and VENC_DVI_SETTING_MORE are no long valid, use VPU_HDMI_SETTING instead.
 		hd_write_reg(P_VPU_HDMI_SETTING, (0                                 << 0) | // [    0] src_sel_enci
                              (0                                 << 1) | // [    1] src_sel_encp
@@ -2472,6 +2496,8 @@ static void hdmi_tvenc_set(enum hdmi_vic vic)
 		break;
 	case HDMI_1280x720p60_16x9:
 	case HDMI_1280x720p50_16x9:
+	case HDMI_1280x720p100_16x9:
+	case HDMI_1280x720p120_16x9:
 		// Annie 01Sep2011: Register VENC_DVI_SETTING and VENC_DVI_SETTING_MORE are no long valid, use VPU_HDMI_SETTING instead.
 		hd_write_reg(P_VPU_HDMI_SETTING, (0                                 << 0) | // [    0] src_sel_enci
                              (0                                 << 1) | // [    1] src_sel_encp
@@ -2646,6 +2672,8 @@ static void hdmitx_set_hw(struct hdmitx_dev* hdev)
 	case HDMI_3840x2160p30_16x9:
 	case HDMI_3840x2160p30_64x27:
 	case HDMI_4096x2160p30_256x135:
+	case HDMI_1920x1080p100_16x9:
+	case HDMI_1920x1080p120_16x9:
 		if ((hdev->para->cs == HDMI_COLOR_FORMAT_422)
 			|| (hdev->para->cd == HDMI_COLOR_DEPTH_24B))
 			div40 = 0;
