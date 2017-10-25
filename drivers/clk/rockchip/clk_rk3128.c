@@ -556,11 +556,22 @@ static int rk3128_clk_probe(struct udevice *dev)
 static int rk3128_clk_bind(struct udevice *dev)
 {
 	int ret;
+	struct udevice *sys_child;
+	struct sysreset_reg *priv;
 
 	/* The reset driver does not have a device node, so bind it here */
-	ret = device_bind_driver(gd->dm_root, "rk3128_sysreset", "reset", &dev);
-	if (ret)
-		debug("Warning: No RK3128 reset driver: ret=%d\n", ret);
+	ret = device_bind_driver(dev, "rockchip_sysreset", "sysreset",
+				 &sys_child);
+	if (ret) {
+		debug("Warning: No sysreset driver: ret=%d\n", ret);
+	} else {
+		priv = malloc(sizeof(struct sysreset_reg));
+		priv->glb_srst_fst_value = offsetof(struct rk3128_cru,
+						    cru_glb_srst_fst_value);
+		priv->glb_srst_snd_value = offsetof(struct rk3128_cru,
+						    cru_glb_srst_snd_value);
+		sys_child->priv = priv;
+	}
 
 	return 0;
 }
