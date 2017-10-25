@@ -619,11 +619,15 @@ int do_avb_flow(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	verify_flag = argv[1][0];
 	if (verify_flag == 'v') {
 		debug("start with verify!\n");
-		avb_ab_flow(ops->ab_ops,
+		if (avb_ab_flow(ops->ab_ops,
 			    requested_partitions,
 			    flags,
 			    AVB_HASHTREE_ERROR_MODE_RESTART_AND_INVALIDATE,
-			    &slot_data);
+			    &slot_data)) {
+			printf("avb_ab_flow() error!\n");
+			return CMD_RET_FAILURE;
+		}
+
 		strcat(slot_partition[1], requested_partitions[1]);
 		strcat(slot_partition[1], slot_data->ab_suffix);
 		ops->get_unique_guid_for_partition(ops,
