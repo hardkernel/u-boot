@@ -14,4 +14,6 @@ obj-$(CONFIG_ARCH_SNAPDRAGON) += sysreset_snapdragon.o
 obj-$(CONFIG_ARCH_STI) += sysreset_sti.o
 obj-$(CONFIG_TARGET_XTFPGA) += sysreset_xtfpga.o
 obj-$(CONFIG_ARCH_ASPEED) += sysreset_ast.o
+ifndef CONFIG_TPL_BUILD
 obj-$(CONFIG_ARCH_ROCKCHIP) += sysreset_rockchip.o
+endif
