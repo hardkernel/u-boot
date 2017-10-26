@@ -366,6 +366,7 @@ int board_init(void)
 	extern int amlnf_init(unsigned char flag);
 	amlnf_init(0);
 #endif
+	writel(readl(P_AO_RTI_PULL_UP_REG)|(1<<12),P_AO_RTI_PULL_UP_REG);
 	return 0;
 }
 
