@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include "rk3328.dtsi"
+#include "rk3328-sdram-ddr3-666.dtsi"
 
 / {
 	model = "Rockchip RK3328 EVB";
