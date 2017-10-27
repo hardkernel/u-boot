@@ -24,7 +24,12 @@ int rockchip_sysreset_request(struct udevice *dev, enum sysreset_t type)
 
 	switch (type) {
 	case SYSRESET_WARM:
+#ifdef CONFIG_ARM64
+		/* Rockchip 64bit SOC need fst reset for cpu reset entry */
+		writel(0xfdb9, cru_base + offset->glb_srst_fst_value);
+#else
 		writel(0xeca8, cru_base + offset->glb_srst_snd_value);
+#endif
 		break;
 	case SYSRESET_COLD:
 		writel(0xfdb9, cru_base + offset->glb_srst_fst_value);
