@@ -40,7 +40,7 @@ bool fuel_gauge_get_chrg_online(struct udevice *dev)
 	return ops->get_chrg_online(dev);
 }
 
-UCLASS_DRIVER(fuelxguage) = {
+UCLASS_DRIVER(fuel_guage) = {
 	.id		= UCLASS_FG,
 	.name		= "fuel_gauge",
 };
