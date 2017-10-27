@@ -394,7 +394,7 @@ int rockchip_chg_get_type(void)
 		chg_type = POWER_SUPPLY_TYPE_USB_CDP;
 
 out:
-	printf("charger is %s\n", chg_to_string(chg_type));
+	debug("charger is %s\n", chg_to_string(chg_type));
 
 	return chg_type;
 }
