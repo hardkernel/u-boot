@@ -7,6 +7,7 @@
 #include <common.h>
 #include <dm.h>
 #include <key.h>
+#include <linux/input.h>
 #include <power/pmic.h>
 #include <power/rk8xx_pmic.h>
 
@@ -39,23 +40,14 @@ static int rk8xx_pwrkey_read(struct udevice *dev)
 		return val;
 	}
 
-	if (val & key->pwron_fall_int) {
-		/* Clear rise when detect fall */
-		ret = pmic_reg_write(dev->parent, key->int_sts_reg,
-				     key->pwron_rise_int);
-		if (ret < 0) {
-			printf("%s: i2c write failed, ret=%d\n", __func__, val);
-			return ret;
-		}
-
+	if (val & key->pwron_fall_int)
 		status = KEY_PRESS_DOWN;
-	}
 
 	/* Must check pwron rise behind of fall !! */
 	if (val & key->pwron_rise_int) {
 		/* Clear fall when detect rise */
 		ret = pmic_reg_write(dev->parent, key->int_sts_reg,
-				     key->pwron_fall_int);
+				     key->pwron_fall_int | key->pwron_rise_int);
 		if (ret < 0) {
 			printf("%s: i2c write failed, ret=%d\n", __func__, val);
 			return ret;
@@ -64,10 +56,16 @@ static int rk8xx_pwrkey_read(struct udevice *dev)
 		status = KEY_PRESS_UP;
 	}
 
+	debug("%s: int sts = 0x%x msk = 0x%x\n",
+	      __func__, pmic_reg_read(dev->parent, key->int_sts_reg),
+	      pmic_reg_read(dev->parent, key->int_msk_reg));
+
 	return status;
 }
 
 static const struct dm_key_ops key_ops = {
+	.type = KEY_POWER,
+	.name = "pmic-pwrkey",
 	.read = rk8xx_pwrkey_read,
 };
 
@@ -111,6 +109,7 @@ static int rk8xx_pwrkey_probe(struct udevice *dev)
 	}
 
 	/* enable fall and rise interrupt */
+	val = 0xff;
 	val &= ~(key->pwron_rise_int | key->pwron_fall_int);
 	ret = pmic_reg_write(dev->parent, key->int_msk_reg, val);
 	if (ret < 0) {
