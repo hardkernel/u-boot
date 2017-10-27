@@ -14,9 +14,13 @@ enum key_state {
 };
 
 struct dm_key_ops {
+	int type;
+	const char *name;
 	int (*read)(struct udevice *dev);
 };
 
 int key_read(struct udevice *dev);
+int key_type(struct udevice *dev);
+const char *key_label(struct udevice *dev);
 
 #endif
