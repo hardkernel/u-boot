@@ -43,20 +43,19 @@
 	"mtdparts=rk29xxnand:0x00040000@0x0053A800(fat),0x00300000@0x0023A800(system),"		\
 	"0x00200000@0x0003A800(cache),-@0x0057A800(userdata)"
 #define ANDROID_OPT	\
-	"androidboot.baseband=N/A androidboot.selinux=permissive androidboot.hardware=odroidn1 "	\
+	"androidboot.baseband=N/A androidboot.selinux=disabled androidboot.hardware=odroidn1 "	\
 	"androidboot.console=ttyFIQ0"
 
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	"fdt_addr_r=0x04800000\0" \
 	"kernel_addr_r=0x02000000\0" \
 	"ramdisk_addr_r=0x04000000\0" \
-	"bootargs=earlycon=uart8250,mmio32,0xff1a0000 swiotlb=1 "ANDROID_OPT" init=/init "	\
+	"bootargs=earlycon=uart8250,mmio32,0xff1a0000 swiotlb=1 "ANDROID_OPT" root=/dev/mmcblk0p2 rw rootfstype=ext4 init=/init "	\
 		MTDPARTS_BOOT" " MTDPARTS_DOS" storagemedia=emmc uboot_logo=0x02000000@0x7dc00000 "	\
 		"loader.timestamp=2017-10-12_13:49:27 SecureBootCheckOk=0\0" \
 	"bootcmd=cfgload; movi read kernel 0 ${kernel_addr_r}; "	\
-		"movi read boot 0 ${ramdisk_addr_r}; "	\
 		"movi read dtb 0 ${fdt_addr_r}; "	\
-		"booti ${kernel_addr_r} ${ramdisk_addr_r} ${fdt_addr_r}\0"
+		"booti ${kernel_addr_r} - ${fdt_addr_r}\0"
 
 #define CONFIG_FASTBOOT_FLASH_MMC_DEV   0
 
