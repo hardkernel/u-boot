@@ -4,6 +4,8 @@
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
+#ifndef _OPTEE_CLIENT_SMC_H_
+#define _OPTEE_CLIENT_SMC_H_
 
 #include <optee_include/tee_base_types.h>
 #include <optee_include/OpteeClientApiLib.h>
@@ -24,3 +26,5 @@ TEEC_Result TEEC_SMC_InvokeCommand(TEEC_Session *session,
 
 TEEC_Result TEEC_SMC_RequestCancellation(TEEC_Operation *operation,
 				uint32_t *error_origin);
+
+#endif /*_OPTEE_CLIENT_SMC_H_*/

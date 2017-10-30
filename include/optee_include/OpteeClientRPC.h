@@ -4,6 +4,9 @@
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
+#ifndef _OPTEE_CLIENT_RPC_H_
+#define _OPTEE_CLIENT_RPC_H_
+
 #include <optee_include/tee_base_types.h>
 #include <optee_include/OpteeClientApiLib.h>
 
@@ -51,3 +54,5 @@ typedef struct s_rpmb_back {
 } EFI_RK_RPMB_DATA_PACKET_BACK;
 
 TEEC_Result OpteeRpcCallback(ARM_SMC_ARGS *ArmSmcArgs);
+
+#endif /*_OPTEE_CLIENT_RPC_H_*/
