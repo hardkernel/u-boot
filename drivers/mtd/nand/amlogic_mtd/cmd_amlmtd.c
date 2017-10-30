@@ -47,7 +47,7 @@ static int do_rom_ops(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[]
 	unsigned long addr;
 	int base = 2;
 	u64 off, maxsize;
-	size_t rwsize, limit;
+	size_t rwsize, limit, wsize;
 	/* fixme, using this?! */
 #if (CONFIG_AMLMTD_CURRDEV)
 	int curr_mtd_dev;
@@ -106,10 +106,13 @@ static int do_rom_ops(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[]
 		limit = nand->size / copy_num;
 	#endif
 		printf("%s() %d\n", __func__, copy_num);
+		wsize = rwsize;
 		for (i = 0; i < copy_num; i++) {
 			ret = nand_write_skip_bad(nand, off, &rwsize,
 						NULL, limit,
 						(u8 *)addr, 0);
+			if (ret)
+				rwsize = wsize;
 			off += nand->size/copy_num;
 		}
 	} else if (!strcmp("erase", sub)) {

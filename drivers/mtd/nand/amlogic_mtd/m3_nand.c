@@ -885,8 +885,10 @@ void nand_init(void)
 	struct aml_nand_platform *plat = NULL;
 	int i, ret;
 
-	if (1 == amlmtd_init)
+	if (1 == amlmtd_init) {
+		device_boot_flag = NAND_BOOT_FLAG;
 		return;
+	}
 	controller = kzalloc(sizeof(struct hw_controller), GFP_KERNEL);
 	if (controller == NULL) {
 		printk("%s kzalloc controller failed\n", __func__);
