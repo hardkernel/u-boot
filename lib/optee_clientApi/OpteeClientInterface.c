@@ -73,12 +73,11 @@ void test_optee(void)
 
 	TEEC_CloseSession(&TeecSession);
 
-	TeecResult = TEEC_FinalizeContext(&TeecContext);
+	TEEC_FinalizeContext(&TeecContext);
 
 	debug("testmm end\n");
 	debug("TeecResult %x\n", TeecResult);
 }
-
 
 static uint8_t b2hs_add_base(uint8_t in)
 {
@@ -162,15 +161,15 @@ uint32_t trusty_read_rollback_index(uint32_t slot, uint64_t *value)
 					0,
 					&TeecOperation,
 					&ErrorOrigin);
-
-	memcpy((char *)value, SharedMem1.buffer, SharedMem1.size);
+	if (TeecResult == TEEC_SUCCESS)
+		memcpy((char *)value, SharedMem1.buffer, SharedMem1.size);
 
 	TEEC_ReleaseSharedMemory(&SharedMem0);
 	TEEC_ReleaseSharedMemory(&SharedMem1);
 
 	TEEC_CloseSession(&TeecSession);
 
-	TeecResult = TEEC_FinalizeContext(&TeecContext);
+	TEEC_FinalizeContext(&TeecContext);
 
 	debug("testmm end\n");
 	return TeecResult;
@@ -240,7 +239,7 @@ uint32_t trusty_write_rollback_index(uint32_t slot, uint64_t value)
 
 	TEEC_CloseSession(&TeecSession);
 
-	TeecResult = TEEC_FinalizeContext(&TeecContext);
+	TEEC_FinalizeContext(&TeecContext);
 
 	debug("testmm end\n");
 
@@ -253,8 +252,8 @@ uint32_t trusty_read_permanent_attributes(uint8_t *attributes, uint32_t size)
 	TEEC_Context TeecContext;
 	TEEC_Session TeecSession;
 	uint32_t ErrorOrigin;
-	TEEC_UUID tempuuid = { 0x1b484ea5, 0x698b, 0x4142,
-		{ 0x82, 0xb8, 0x3a, 0xcf, 0x16, 0xe9, 0x9e, 0x2a } };
+	TEEC_UUID tempuuid = { 0x258be795, 0xf9ca, 0x40e6,
+		{ 0xa8, 0x69, 0x9c, 0xe6, 0x88, 0x6c, 0x5d, 0x5d } };
 	TEEC_UUID *TeecUuid = &tempuuid;
 	TEEC_Operation TeecOperation = {0};
 
@@ -300,15 +299,15 @@ uint32_t trusty_read_permanent_attributes(uint8_t *attributes, uint32_t size)
 						TEEC_NONE);
 
 	TeecResult = TEEC_InvokeCommand(&TeecSession,
-					0,
+					142,
 					&TeecOperation,
 					&ErrorOrigin);
-
-	memcpy(attributes, SharedMem1.buffer, SharedMem1.size);
+	if (TeecResult == TEEC_SUCCESS)
+		memcpy(attributes, SharedMem1.buffer, SharedMem1.size);
 	TEEC_ReleaseSharedMemory(&SharedMem0);
 	TEEC_ReleaseSharedMemory(&SharedMem1);
 	TEEC_CloseSession(&TeecSession);
-	TeecResult = TEEC_FinalizeContext(&TeecContext);
+	TEEC_FinalizeContext(&TeecContext);
 	debug("testmm end\n");
 
 	return TeecResult;
@@ -320,8 +319,8 @@ uint32_t trusty_write_permanent_attributes(uint8_t *attributes, uint32_t size)
 	TEEC_Context TeecContext;
 	TEEC_Session TeecSession;
 	uint32_t ErrorOrigin;
-	TEEC_UUID tempuuid = { 0x1b484ea5, 0x698b, 0x4142,
-		{ 0x82, 0xb8, 0x3a, 0xcf, 0x16, 0xe9, 0x9e, 0x2a } };
+	TEEC_UUID tempuuid = { 0x258be795, 0xf9ca, 0x40e6,
+		{ 0xa8, 0x69, 0x9c, 0xe6, 0x88, 0x6c, 0x5d, 0x5d } };
 	TEEC_UUID *TeecUuid = &tempuuid;
 	TEEC_Operation TeecOperation = {0};
 
@@ -369,14 +368,14 @@ uint32_t trusty_write_permanent_attributes(uint8_t *attributes, uint32_t size)
 						TEEC_NONE);
 
 	TeecResult = TEEC_InvokeCommand(&TeecSession,
-					1,
+					141,
 					&TeecOperation,
 					&ErrorOrigin);
 
 	TEEC_ReleaseSharedMemory(&SharedMem0);
 	TEEC_ReleaseSharedMemory(&SharedMem1);
 	TEEC_CloseSession(&TeecSession);
-	TeecResult = TEEC_FinalizeContext(&TeecContext);
+	TEEC_FinalizeContext(&TeecContext);
 	debug("testmm end\n");
 
 	return TeecResult;
@@ -439,12 +438,12 @@ uint32_t trusty_read_lock_state(uint8_t *lock_state)
 					0,
 					&TeecOperation,
 					&ErrorOrigin);
-
-	memcpy(lock_state, SharedMem1.buffer, SharedMem1.size);
+	if (TeecResult == TEEC_SUCCESS)
+		memcpy(lock_state, SharedMem1.buffer, SharedMem1.size);
 	TEEC_ReleaseSharedMemory(&SharedMem0);
 	TEEC_ReleaseSharedMemory(&SharedMem1);
 	TEEC_CloseSession(&TeecSession);
-	TeecResult = TEEC_FinalizeContext(&TeecContext);
+	TEEC_FinalizeContext(&TeecContext);
 	debug("testmm end\n");
 
 	return TeecResult;
@@ -512,7 +511,7 @@ uint32_t trusty_write_lock_state(uint8_t lock_state)
 	TEEC_ReleaseSharedMemory(&SharedMem0);
 	TEEC_ReleaseSharedMemory(&SharedMem1);
 	TEEC_CloseSession(&TeecSession);
-	TeecResult = TEEC_FinalizeContext(&TeecContext);
+	TEEC_FinalizeContext(&TeecContext);
 	debug("testmm end\n");
 
 	return TeecResult;
@@ -575,12 +574,12 @@ uint32_t trusty_read_flash_lock_state(uint8_t *flash_lock_state)
 					0,
 					&TeecOperation,
 					&ErrorOrigin);
-
-	memcpy(flash_lock_state, SharedMem1.buffer, SharedMem1.size);
+	if (TeecResult == TEEC_SUCCESS)
+		memcpy(flash_lock_state, SharedMem1.buffer, SharedMem1.size);
 	TEEC_ReleaseSharedMemory(&SharedMem0);
 	TEEC_ReleaseSharedMemory(&SharedMem1);
 	TEEC_CloseSession(&TeecSession);
-	TeecResult = TEEC_FinalizeContext(&TeecContext);
+	TEEC_FinalizeContext(&TeecContext);
 	debug("testmm end\n");
 
 	return TeecResult;
@@ -649,7 +648,7 @@ uint32_t trusty_write_flash_lock_state(uint8_t flash_lock_state)
 	TEEC_ReleaseSharedMemory(&SharedMem0);
 	TEEC_ReleaseSharedMemory(&SharedMem1);
 	TEEC_CloseSession(&TeecSession);
-	TeecResult = TEEC_FinalizeContext(&TeecContext);
+	TEEC_FinalizeContext(&TeecContext);
 	debug("testmm end\n");
 
 	return TeecResult;
@@ -721,7 +720,7 @@ uint32_t write_to_keymaster(uint8_t *filename,
 	TEEC_ReleaseSharedMemory(&SharedMem0);
 	TEEC_ReleaseSharedMemory(&SharedMem1);
 	TEEC_CloseSession(&TeecSession);
-	TeecResult = TEEC_FinalizeContext(&TeecContext);
+	TEEC_FinalizeContext(&TeecContext);
 	debug("testmm end\n");
 	debug("TeecResult %x\n", TeecResult);
 
