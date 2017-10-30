@@ -58,6 +58,40 @@ static int pwm_backlight_enable(struct udevice *dev)
 	return 0;
 }
 
+static int pwm_backlight_disable(struct udevice *dev)
+{
+	struct pwm_backlight_priv *priv = dev_get_priv(dev);
+	struct dm_regulator_uclass_platdata *plat;
+	uint duty_cycle;
+	int ret;
+
+	duty_cycle = priv->period_ns * (priv->default_level - priv->min_level) /
+		(priv->max_level - priv->min_level + 1);
+	ret = pwm_set_config(priv->pwm, priv->channel, priv->period_ns,
+			     duty_cycle);
+	if (ret)
+		return ret;
+
+	ret = pwm_set_enable(priv->pwm, priv->channel, false);
+	if (ret)
+		return ret;
+
+	mdelay(10);
+	dm_gpio_set_value(&priv->enable, 0);
+
+	plat = dev_get_uclass_platdata(priv->reg);
+	printf("%s: Disable '%s', regulator '%s'/'%s'\n", __func__, dev->name,
+	      priv->reg->name, plat->name);
+	ret = regulator_set_enable(priv->reg, false);
+	if (ret) {
+		debug("%s: Cannot enable regulator for PWM '%s'\n", __func__,
+		      dev->name);
+	}
+	mdelay(120);
+
+	return 0;
+}
+
 static int pwm_backlight_ofdata_to_platdata(struct udevice *dev)
 {
 	struct pwm_backlight_priv *priv = dev_get_priv(dev);
@@ -118,6 +152,7 @@ static int pwm_backlight_probe(struct udevice *dev)
 
 static const struct backlight_ops pwm_backlight_ops = {
 	.enable	= pwm_backlight_enable,
+	.disable = pwm_backlight_disable,
 };
 
 static const struct udevice_id pwm_backlight_ids[] = {
