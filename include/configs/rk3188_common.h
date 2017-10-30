@@ -69,6 +69,10 @@
 #define CONFIG_SF_DEFAULT_SPEED 20000000
 
 #ifndef CONFIG_SPL_BUILD
+
+/* usb mass storage */
+#define CONFIG_USB_FUNCTION_MASS_STORAGE
+
 /* usb otg */
 #define CONFIG_ROCKCHIP_USB2_PHY
 
