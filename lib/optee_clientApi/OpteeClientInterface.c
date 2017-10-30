@@ -834,3 +834,90 @@ uint32_t trusty_write_attribute_hash(uint32_t *buf, uint32_t length)
 
 	return TeecResult;
 }
+
+uint32_t notify_optee_rpmb_ta(void)
+{
+	TEEC_Result TeecResult;
+	TEEC_Context TeecContext;
+	TEEC_Session TeecSession;
+	uint32_t ErrorOrigin;
+	TEEC_UUID  tempuuid = { 0x1b484ea5, 0x698b, 0x4142,
+		{ 0x82, 0xb8, 0x3a, 0xcf, 0x16, 0xe9, 0x9e, 0x2a } };
+	TEEC_UUID *TeecUuid = &tempuuid;
+	TEEC_Operation TeecOperation = {0};
+
+	OpteeClientApiLibInitialize();
+
+	TeecResult = TEEC_InitializeContext(NULL, &TeecContext);
+
+	TeecResult = TEEC_OpenSession(&TeecContext,
+				&TeecSession,
+				TeecUuid,
+				TEEC_LOGIN_PUBLIC,
+				NULL,
+				NULL,
+				&ErrorOrigin);
+
+	TeecOperation.paramTypes = TEEC_PARAM_TYPES(TEEC_NONE,
+						TEEC_NONE,
+						TEEC_NONE,
+						TEEC_NONE);
+
+	TeecResult = TEEC_InvokeCommand(&TeecSession,
+					2,
+					&TeecOperation,
+					&ErrorOrigin);
+
+	TEEC_CloseSession(&TeecSession);
+	TEEC_FinalizeContext(&TeecContext);
+
+	return TeecResult;
+}
+
+uint32_t notify_optee_efuse_ta(void)
+{
+	TEEC_Result TeecResult;
+	TEEC_Context TeecContext;
+	TEEC_Session TeecSession;
+	uint32_t ErrorOrigin;
+	TEEC_UUID tempuuid = { 0x2d26d8a8, 0x5134, 0x4dd8, \
+			{ 0xb3, 0x2f, 0xb3, 0x4b, 0xce, 0xeb, 0xc4, 0x71 } };
+
+	TEEC_UUID *TeecUuid = &tempuuid;
+	TEEC_Operation TeecOperation = {0};
+
+	OpteeClientApiLibInitialize();
+
+	TeecResult = TEEC_InitializeContext(NULL, &TeecContext);
+
+	TeecResult = TEEC_OpenSession(&TeecContext,
+				&TeecSession,
+				TeecUuid,
+				TEEC_LOGIN_PUBLIC,
+				NULL,
+				NULL,
+				&ErrorOrigin);
+
+	TeecOperation.paramTypes = TEEC_PARAM_TYPES(TEEC_NONE,
+						TEEC_NONE,
+						TEEC_NONE,
+						TEEC_NONE);
+
+	TeecResult = TEEC_InvokeCommand(&TeecSession,
+					2,
+					&TeecOperation,
+					&ErrorOrigin);
+
+	TEEC_CloseSession(&TeecSession);
+	TEEC_FinalizeContext(&TeecContext);
+
+	return TeecResult;
+}
+
+uint32_t trusty_notify_optee_uboot_end(void)
+{
+	TEEC_Result res;
+	res = notify_optee_rpmb_ta();
+	res |= notify_optee_efuse_ta();
+	return res;
+}

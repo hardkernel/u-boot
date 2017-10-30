@@ -21,5 +21,6 @@ uint32_t write_to_keymaster
 	uint8_t *data, uint32_t data_size);
 uint32_t trusty_read_attribute_hash(uint32_t *buf, uint32_t length);
 uint32_t trusty_write_attribute_hash(uint32_t *buf, uint32_t length);
+uint32_t trusty_notify_optee_uboot_end(void);
 
 #endif
