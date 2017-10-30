@@ -65,6 +65,44 @@ static int rk8xx_read(struct udevice *dev, uint reg, uint8_t *buff, int len)
 	return 0;
 }
 
+static int rk8xx_shutdown(struct udevice *dev)
+{
+	struct rk8xx_priv *priv = dev_get_priv(dev);
+	u8 val, dev_off;
+	int ret = 0;
+
+	switch (priv->variant) {
+	case RK808_ID:
+		dev_off = BIT(3);
+		break;
+	case RK805_ID:
+	case RK816_ID:
+	case RK818_ID:
+		dev_off = BIT(0);
+		break;
+	default:
+		printf("Unknown PMIC: RK%x\n", priv->variant);
+		return -EINVAL;
+	}
+
+	ret = dm_i2c_read(dev, REG_DEVCTRL, &val, 1);
+	if (ret) {
+		printf("read error from device: %p register: %#x!",
+		       dev, REG_DEVCTRL);
+		return ret;
+	}
+
+	val |= dev_off;
+	ret = dm_i2c_write(dev, REG_DEVCTRL, &val, 1);
+	if (ret) {
+		printf("write error to device: %p register: %#x!",
+		       dev, REG_DEVCTRL);
+		return ret;
+	}
+
+	return 0;
+}
+
 #if CONFIG_IS_ENABLED(PMIC_CHILDREN)
 static int rk8xx_bind(struct udevice *dev)
 {
@@ -115,6 +153,7 @@ static struct dm_pmic_ops rk8xx_ops = {
 	.reg_count = rk8xx_reg_count,
 	.read = rk8xx_read,
 	.write = rk8xx_write,
+	.shutdown = rk8xx_shutdown,
 };
 
 static const struct udevice_id rk8xx_ids[] = {
