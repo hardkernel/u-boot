@@ -1219,6 +1219,11 @@ config CMD_REGULATOR
 	  the limits, which are found in device-tree and are kept in regulator's
 	  uclass platdata structure.
 
+config CMD_CHARGE_DISPLAY
+	bool "Enable Driver Model Charge Display command"
+	help
+	  Support U-Boot charge display.
+
 endmenu
 
 menu "Security commands"
