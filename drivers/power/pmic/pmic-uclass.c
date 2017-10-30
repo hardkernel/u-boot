@@ -163,6 +163,17 @@ int pmic_clrsetbits(struct udevice *dev, uint reg, uint clr, uint set)
 	return pmic_reg_write(dev, reg, byte);
 }
 
+
+int pmic_shutdown(struct udevice *dev)
+{
+	const struct dm_pmic_ops *ops = dev_get_driver_ops(dev);
+
+	if (!ops || !ops->shutdown)
+		return -ENOSYS;
+
+	return ops->shutdown(dev);
+}
+
 UCLASS_DRIVER(pmic) = {
 	.id		= UCLASS_PMIC,
 	.name		= "pmic",
