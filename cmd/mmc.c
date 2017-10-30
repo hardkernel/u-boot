@@ -150,11 +150,62 @@ static int do_mmc_testrpmb(cmd_tbl_t *cmdtp,
 	debug("sizeof(value) %x\n ", sizeof(value));
 	if (value == 0x1122334455667788)
 		printf("good ! value==0x1122334455667788\n ");
-	uint8_t filename[] = "testfile1";
+	else
+		printf("error ! value!=0x1122334455667788\n ");
+
 	uint8_t data[] = "just a data";
-	write_to_keymaster(filename, sizeof(filename), data, sizeof(data));
+	uint8_t data_read[11];
+	trusty_write_permanent_attributes(data, sizeof(data));
+	trusty_read_permanent_attributes(data_read, sizeof(data));
+	printf("attribute: %s\n ", data_read);
+
+	trusty_notify_optee_uboot_end();
+	printf(" tell_optee_uboot_end \n ");
+	value = 0;
+	trusty_read_rollback_index(0x87654321, &value);
+	if (value == 0x1122334455667788)
+		printf(" value==0x1122334455667788 read still enable\n ");
+	else
+		printf(" good! value!=0x1122334455667788 read denied\n ");
 	return CMD_RET_SUCCESS;
 }
+
+static int do_mmc_testefuse(cmd_tbl_t *cmdtp,
+		int flag, int argc, char * const argv[])
+{
+	uint32_t buf32[8];
+	uint32_t outbuf32[8];
+
+	buf32[0] = 0x01020304;
+	buf32[1] = 0x05060708;
+	buf32[2] = 0x090a0b0c;
+	buf32[3] = 0x0d0e0f10;
+	buf32[4] = 0x11121314;
+	buf32[5] = 0x15161718;
+	buf32[6] = 0x191a1b1c;
+	buf32[7] = 0x1d1e1f20;
+
+	trusty_write_attribute_hash(buf32, 8);
+
+	trusty_read_attribute_hash(outbuf32, 8);
+
+	printf(" 0x%x  0x%x  0x%x  0x%x \n",
+		outbuf32[0], outbuf32[1], outbuf32[2], outbuf32[3]);
+	printf(" 0x%x  0x%x  0x%x  0x%x \n",
+		outbuf32[4], outbuf32[5], outbuf32[6], outbuf32[7]);
+
+	trusty_write_vbootkey_hash(buf32, 8);
+
+	trusty_read_vbootkey_hash(outbuf32, 8);
+
+	printf(" 0x%x  0x%x  0x%x  0x%x \n",
+		outbuf32[0], outbuf32[1], outbuf32[2], outbuf32[3]);
+	printf(" 0x%x  0x%x  0x%x  0x%x \n",
+		outbuf32[4], outbuf32[5], outbuf32[6], outbuf32[7]);
+
+	return CMD_RET_SUCCESS;
+}
+
 #endif
 
 #ifdef CONFIG_SUPPORT_EMMC_RPMB
@@ -921,6 +972,7 @@ static cmd_tbl_t cmd_mmc[] = {
 #endif
 #ifdef CONFIG_OPTEE_CLIENT
 	U_BOOT_CMD_MKENT(testrpmb, 1, 0, do_mmc_testrpmb, "", ""),
+	U_BOOT_CMD_MKENT(testefuse, 1, 0, do_mmc_testefuse, "", ""),
 #endif
 #ifdef CONFIG_SUPPORT_EMMC_RPMB
 	U_BOOT_CMD_MKENT(rpmb, CONFIG_SYS_MAXARGS, 1, do_mmcrpmb, "", ""),
@@ -988,6 +1040,7 @@ U_BOOT_CMD(
 #endif
 #ifdef CONFIG_OPTEE_CLIENT
 	"mmc testrpmb - test CA call static TA,and TA call rpmb in uboot\n"
+	"mmc testefuse - test CA call static TA,and TA read or write efuse\n"
 #endif
 #ifdef CONFIG_SUPPORT_EMMC_RPMB
 	"mmc rpmb read addr blk# cnt [address of auth-key] - block size is 256 bytes\n"
