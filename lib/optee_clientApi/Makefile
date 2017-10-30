@@ -5,7 +5,7 @@
 
 obj-y += OpteeClientMem.o
 obj-y += OpteeClientApiLib.o
-obj-y += OpteeClientTest.o
+obj-y += OpteeClientInterface.o
 obj-y += OpteeClientSMC.o
 obj-y += OpteeClientRPC.o
 obj-y += tee_smc-arm64.o

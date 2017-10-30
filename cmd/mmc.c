@@ -8,7 +8,7 @@
 #include <command.h>
 #include <console.h>
 #include <mmc.h>
-#include <optee_include/OpteeClientTest.h>
+#include <optee_include/OpteeClientInterface.h>
 #include <optee_include/OpteeClientApiLib.h>
 
 static int curr_device = -1;

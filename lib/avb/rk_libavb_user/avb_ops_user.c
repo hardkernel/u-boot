@@ -35,7 +35,7 @@
 #include <android_avb/avb_ops_user.h>
 #include <android_avb/libavb_ab.h>
 #include <android_avb/avb_atx_validate.h>
-#include <optee_include/OpteeClientTest.h>
+#include <optee_include/OpteeClientInterface.h>
 
 static void byte_to_block(int64_t *offset,
 			  size_t *num_bytes,
