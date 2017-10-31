@@ -91,8 +91,8 @@ enum uclass_id {
 	UCLASS_VIDEO_CONSOLE,	/* Text console driver for video device */
 	UCLASS_VIDEO_CRTC,	/* Display Controller */
 	UCLASS_WDT,		/* Watchdot Timer driver */
-	UCLASS_FG,
-	UCLASS_KEY,
+	UCLASS_FG,		/* Fuel gauge */
+	UCLASS_KEY,		/* Key */
 	UCLASS_RC,		/* Remote Controller */
 	UCLASS_CHARGE_DISPLAY,	/* Charge display */
 
