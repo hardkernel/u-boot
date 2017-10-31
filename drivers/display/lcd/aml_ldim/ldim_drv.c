@@ -161,7 +161,6 @@ struct aml_ldim_driver_s *aml_ldim_get_driver(void)
 		return &ldim_driver;
 }
 
-#ifndef DTB_BIND_KERNEL
 #ifdef CONFIG_OF_LIBFDT
 static int ldim_config_load_from_dts(char *dt_addr)
 {
@@ -207,7 +206,6 @@ static int ldim_config_load_from_dts(char *dt_addr)
 	return 0;
 }
 #endif
-#endif
 
 int aml_ldim_probe(char *dt_addr, int flag)
 {
@@ -219,7 +217,6 @@ int aml_ldim_probe(char *dt_addr, int flag)
 
 	switch (flag) {
 	case 0: /* dts */
-#ifndef DTB_BIND_KERNEL
 #ifdef CONFIG_OF_LIBFDT
 		if (dt_addr) {
 			if (lcd_debug_print_flag)
@@ -227,7 +224,6 @@ int aml_ldim_probe(char *dt_addr, int flag)
 			ldim_config_load_from_dts(dt_addr);
 			ret = aml_ldim_device_probe(dt_addr);
 		}
-#endif
 #endif
 		break;
 	case 1: /* bsp */

@@ -1135,7 +1135,6 @@ int aml_lcd_extern_probe(char *dtaddr, int index)
 	ext_config->table_init_loaded = 0;
 
 	/* check dts config */
-#ifndef DTB_BIND_KERNEL
 #ifdef CONFIG_OF_LIBFDT
 	if (dtaddr)
 		dt_addr = dtaddr;
@@ -1145,7 +1144,6 @@ int aml_lcd_extern_probe(char *dtaddr, int index)
 	} else {
 		load_id = 1;
 	}
-#endif
 #endif
 
 	if (lcd_debug_test)

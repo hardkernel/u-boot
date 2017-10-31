@@ -879,7 +879,6 @@ static int lcd_extern_load_config(char *dt_addr, struct lcd_config_s *pconf)
 }
 #endif
 
-#ifndef DTB_BIND_KERNEL
 #ifdef CONFIG_OF_LIBFDT
 static int lcd_init_load_from_dts(char *dt_addr)
 {
@@ -952,7 +951,6 @@ static int lcd_init_load_from_dts(char *dt_addr)
 	return 0;
 }
 #endif
-#endif
 
 static int lcd_init_load_from_bsp(void)
 {
@@ -981,15 +979,12 @@ static int lcd_mode_probe(void)
 {
 	int load_id = 0;
 	char *dt_addr, *str;
-#ifndef DTB_BIND_KERNEL
 #ifdef CONFIG_OF_LIBFDT
 	int parent_offset;
-#endif
 #endif
 	int ret;
 
 	dt_addr = NULL;
-#ifndef DTB_BIND_KERNEL
 #ifdef CONFIG_OF_LIBFDT
 #ifdef CONFIG_DTB_MEM_ADDR
 	dt_addr = (char *)CONFIG_DTB_MEM_ADDR;
@@ -1009,7 +1004,6 @@ static int lcd_mode_probe(void)
 		}
 	}
 #endif
-#endif
 
 	lcd_debug_test = 0;
 	str = getenv("lcd_debug_test");
@@ -1023,7 +1017,6 @@ static int lcd_mode_probe(void)
 	}
 
 	if (load_id & 0x1 ) {
-#ifndef DTB_BIND_KERNEL
 #ifdef CONFIG_OF_LIBFDT
 		ret = lcd_init_load_from_dts(dt_addr);
 		if (ret)
@@ -1044,7 +1037,6 @@ static int lcd_mode_probe(void)
 		} else {
 			LCDPR("load config from dts\n");
 		}
-#endif
 #endif
 	} else {
 		ret = lcd_init_load_from_bsp();

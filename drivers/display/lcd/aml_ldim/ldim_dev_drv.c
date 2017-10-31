@@ -245,7 +245,6 @@ static int ldim_pwm_pinmux_ctrl(int status)
 	return 0;
 }
 
-#ifndef DTB_BIND_KERNEL
 #ifdef CONFIG_OF_LIBFDT
 static int ldim_dev_get_config_from_dts(char *dt_addr, int index)
 {
@@ -590,7 +589,6 @@ static int ldim_dev_get_config_from_dts(char *dt_addr, int index)
 	return 0;
 }
 #endif
-#endif
 
 static int ldim_dev_add_driver(struct ldim_dev_config_s *ldev_conf, int index)
 {
@@ -706,12 +704,10 @@ int aml_ldim_device_probe(char *dt_addr)
 	ldim_drv->ldev_conf = &ldim_dev_config;
 	ldim_drv->pinmux_ctrl = ldim_pwm_pinmux_ctrl;
 
-#ifndef DTB_BIND_KERNEL
 #ifdef CONFIG_OF_LIBFDT
 	ret = ldim_dev_get_config_from_dts(dt_addr, ldim_drv->dev_index);
 	if (ret)
 		return -1;
-#endif
 #endif
 
 	/* add device driver */
