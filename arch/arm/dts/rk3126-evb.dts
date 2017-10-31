@@ -148,6 +148,14 @@
 			press-threshold-microvolt = <1650000>;
 		};
 	};
+
+	charge-animation {
+		compatible = "charge-animation";
+		screen-on-voltage-threshold = <3350>;
+		power-on-voltage-threshold = <3450>;
+		power-on-soc-threshold = <0>;
+		status = "okay";
+	};
 };
 
 &i2c1 {
