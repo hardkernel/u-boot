@@ -51,7 +51,7 @@
 	"kernel_addr_r=0x02000000\0" \
 	"ramdisk_addr_r=0x04000000\0" \
 	"bootargs=earlycon=uart8250,mmio32,0xff1a0000 swiotlb=1 "ANDROID_OPT" root=/dev/mmcblk0p2 rw rootfstype=ext4 init=/init "	\
-		MTDPARTS_BOOT" " MTDPARTS_DOS" storagemedia=emmc uboot_logo=0x02000000@0x7dc00000 "	\
+		MTDPARTS_BOOT" " MTDPARTS_DOS" uboot_logo=0x02000000@0x7dc00000 "	\
 		"loader.timestamp=2017-10-12_13:49:27 SecureBootCheckOk=0\0" \
 	"bootcmd=cfgload; movi read kernel 0 ${kernel_addr_r}; "	\
 		"movi read dtb 0 ${fdt_addr_r}; "	\

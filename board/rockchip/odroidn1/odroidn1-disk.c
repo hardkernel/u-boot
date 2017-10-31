@@ -210,6 +210,7 @@ int board_scan_boot_storage(void)
 				 * and then exit this routine.
 				 */
 				setenv("storagemedia", "emmc");
+				run_command("setenv bootargs ${bootargs} storagemedia=emmc", 0);
 				saveenv();
 
 				return 0;
@@ -226,6 +227,7 @@ int board_scan_boot_storage(void)
 		if (dev_desc) {
 			if (0 == board_check_magic(dev_desc)) {
 				setenv("storagemedia", "sd");
+				run_command("setenv bootargs ${bootargs} storagemedia=sd", 0);
 				saveenv();
 
 				return 0;
