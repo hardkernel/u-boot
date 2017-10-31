@@ -49,11 +49,9 @@
 	"bootargs=earlycon=uart8250,mmio32,0xff1a0000 swiotlb=1 "ANDROID_OPT	\
 		" root=/dev/mmcblk0p2 rw rootfstype=ext4 init=/init "	\
 		MTDPARTS_DOS" SecureBootCheckOk=0\0"	\
-	"bootcmd=cfgload; movi read kernel 0 ${kernel_addr_r}; "	\
+	"bootcmd=cfgload; mmc dev ${bootdev}; movi read kernel 0 ${kernel_addr_r}; "	\
 		"movi read dtb 0 ${fdt_addr_r}; "	\
 		"booti ${kernel_addr_r} - ${fdt_addr_r}\0"
-
-#define CONFIG_FASTBOOT_FLASH_MMC_DEV   0
 
 #define CONFIG_BOARD_LATE_INIT
 

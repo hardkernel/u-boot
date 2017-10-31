@@ -210,6 +210,7 @@ int board_scan_boot_storage(void)
 				 * and then exit this routine.
 				 */
 				setenv("storagemedia", "emmc");
+				setenv("bootdev", "0");
 				run_command("setenv bootargs ${bootargs} storagemedia=emmc", 0);
 				saveenv();
 
@@ -227,6 +228,7 @@ int board_scan_boot_storage(void)
 		if (dev_desc) {
 			if (0 == board_check_magic(dev_desc)) {
 				setenv("storagemedia", "sd");
+				setenv("bootdev", "1");
 				run_command("setenv bootargs ${bootargs} storagemedia=sd", 0);
 				saveenv();
 
@@ -250,16 +252,18 @@ int board_partition_init(void)
 	lbaint_t next = 0;
 	lbaint_t len;
 	int n = 0;
+	u32 dev_no;
 
 	disk_flash_reset_ptn();
 
-	mmc = find_mmc_device(CONFIG_FASTBOOT_FLASH_MMC_DEV);
+	dev_no = getenv_ulong("bootdev", 10, 0);
+	mmc = find_mmc_device(dev_no);
 	if (!mmc) {
 		printf("no mmc device\n");
 		return -1;
 	}
 
-	dev_desc = blk_get_dev("mmc", CONFIG_FASTBOOT_FLASH_MMC_DEV);
+	dev_desc = blk_get_dev("mmc", dev_no);
 	if (!dev_desc) {
 		printf("invalid mmc device\n");
 		return -1;

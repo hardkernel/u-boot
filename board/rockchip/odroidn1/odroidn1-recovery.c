@@ -48,15 +48,17 @@ int board_get_recovery_message(void)
 	disk_ptentry *ptn;
 	unsigned int offset;
 	unsigned int size;
+	u32 dev_no;
 
 	/* get mmc device */
-	mmc = find_mmc_device(CONFIG_FASTBOOT_FLASH_MMC_DEV);
+	dev_no = getenv_ulong("bootdev", 10, 0);
+	mmc = find_mmc_device(dev_no);
 	if (NULL == mmc) {
 		printf("recovery: get mmc dev fail\n");
 		return -EIO;
 	}
 
-	dev_desc = blk_get_dev("mmc", CONFIG_FASTBOOT_FLASH_MMC_DEV);
+	dev_desc = blk_get_dev("mmc", dev_no);
 	if (!dev_desc || dev_desc->type == DEV_TYPE_UNKNOWN) {
 		error("recovery: invalid mmc device");
 		return -EIO;
@@ -91,6 +93,13 @@ int board_get_recovery_message(void)
 
 void board_enter_recovery_mode(void)
 {
+	char cmd[128];
+	u32 dev_no;
+
+	dev_no = getenv_ulong("bootdev", 10, 0);
+	sprintf(cmd, "mmc dev %d", dev_no);
+	run_command(cmd, 0);
+
 	run_command("movi read kernel 0 $kernel_addr_r", 0);
 	run_command("movi read recovery 0 $ramdisk_addr_r", 0);
 	run_command("movi read dtb 0 $fdt_addr_r", 0);

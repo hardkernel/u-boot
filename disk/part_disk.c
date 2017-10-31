@@ -20,6 +20,7 @@
 #define NR_PARTITIONS		4
 
 static struct mmc *mmc = NULL;
+static u32 boot_devno;
 
 static void print_disk_info(struct blk_desc *dev_desc)
 {
@@ -37,14 +38,14 @@ int disk_load_dos_partition(void)
 	struct blk_desc *dev_desc;
 
 	if (mmc == NULL)
-		mmc = find_mmc_device(CONFIG_FASTBOOT_FLASH_MMC_DEV);
+		mmc = find_mmc_device(boot_devno);
 
 	if (mmc == NULL) {
-		printf("disk: no mmc device at slot %d", CONFIG_FASTBOOT_FLASH_MMC_DEV);
+		printf("disk: no mmc device at slot %d", boot_devno);
 		return -EIO;
 	}
 
-	dev_desc = blk_get_dev("mmc", CONFIG_FASTBOOT_FLASH_MMC_DEV);
+	dev_desc = blk_get_dev("mmc", boot_devno);
 	if (!dev_desc || dev_desc->type == DEV_TYPE_UNKNOWN) {
 		error("invalid mmc device");
 		return -EIO;
@@ -96,14 +97,14 @@ int do_format(void)
 	struct blk_desc *dev_desc;
 
 	if (mmc == NULL)
-		mmc = find_mmc_device(CONFIG_FASTBOOT_FLASH_MMC_DEV);
+		mmc = find_mmc_device(boot_devno);
 
 	if (mmc == NULL) {
-		printf("disk: no mmc device at slot %d\n", CONFIG_FASTBOOT_FLASH_MMC_DEV);
+		printf("disk: no mmc device at slot %d\n", boot_devno);
 		return -EIO;
 	}
 
-	dev_desc = blk_get_dev("mmc", CONFIG_FASTBOOT_FLASH_MMC_DEV);
+	dev_desc = blk_get_dev("mmc", boot_devno);
 	if (!dev_desc || dev_desc->type == DEV_TYPE_UNKNOWN) {
 		error("invalid mmc device");
 		return -EIO;
@@ -164,6 +165,9 @@ static unsigned int pcount;
 void disk_flash_reset_ptn(void)
 {
 	pcount = 0;
+
+	/* Get boot storage device number */
+	boot_devno = getenv_ulong("bootdev", 10, 0);
 }
 
 void disk_flash_add_ptn(disk_ptentry *ptn)
