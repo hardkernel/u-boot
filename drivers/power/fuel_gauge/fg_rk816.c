@@ -13,6 +13,8 @@
 #include <asm/gpio.h>
 #include <common.h>
 #include <power/pmic.h>
+#include <dm/uclass-internal.h>
+#include <power/charge_display.h>
 #include <power/fuel_gauge.h>
 #include <power/rk8xx_pmic.h>
 #include <linux/usb/phy-rockchip-inno-usb2.h>
@@ -178,9 +180,6 @@ enum dc_type {
 };
 
 static struct udevice *g_pmic_dev;
-
-/* TODO */
-#define CONFIG_SCREEN_ON_VOL_THRESD	3400
 
 static const u32 CHRG_VOL_SEL[] = {
 	4050, 4100, 4150, 4200, 4250, 4300, 4350
@@ -797,18 +796,6 @@ static bool rk816_bat_ocv_sw_reset(struct battery_info *di)
 	}
 }
 
-void rk816_bat_init_rsoc(struct battery_info *di)
-{
-	di->pwroff_min = rk816_bat_get_pwroff_min(di);
-	di->is_first_power_on = is_rk816_bat_first_poweron(di);
-	di->is_sw_reset = rk816_bat_ocv_sw_reset(di);
-
-	if (di->is_first_power_on || di->is_sw_reset)
-		rk816_bat_first_pwron(di);
-	else
-		rk816_bat_not_first_pwron(di);
-}
-
 static int rk816_bat_calc_linek(struct battery_info *di)
 {
 	int linek, diff, delta;
@@ -855,38 +842,6 @@ static void rk816_bat_init_poffset(struct battery_info *di)
 	coffset = rk816_bat_get_coffset(di);
 	ioffset = rk816_bat_get_ioffset(di);
 	di->poffset = coffset - ioffset;
-}
-
-static int rk816_fg_init(struct battery_info *di)
-{
-	rk816_bat_enable_gauge(di);
-	rk816_bat_set_vol_instant_mode(di);
-	rk816_bat_init_voltage_kb(di);
-	rk816_bat_init_poffset(di);
-	rk816_bat_clr_initialized_state(di);
-	di->dsoc = rk816_bat_get_dsoc(di);
-
-	/* it's better to init fg in kernel,
-	 * so avoid init in uboot as far as possible
-	 */
-	if (rk816_bat_get_usb_state(di) != NO_CHARGER) {
-		if (rk816_bat_get_est_voltage(di) < CONFIG_SCREEN_ON_VOL_THRESD)
-			rk816_bat_init_rsoc(di);
-#ifdef CONFIG_UBOOT_CHARGE
-		else
-			rk816_bat_init_rsoc(di);
-#endif
-	}
-
-	rk816_bat_init_chrg_config(di);
-	di->voltage_avg = rk816_bat_get_avg_voltage(di);
-	di->voltage_ocv = rk816_bat_get_ocv_voltage(di);
-	di->current_avg = rk816_bat_get_avg_current(di);
-	di->sm_linek = rk816_bat_calc_linek(di);
-	di->finish_chrg_base = get_timer(0);
-	di->pwr_vol = di->voltage_avg;
-
-	return 0;
 }
 
 static bool is_rk816_bat_exist(struct  battery_info *di)
@@ -964,6 +919,63 @@ static int rk816_bat_get_charger_type(struct battery_info *di)
 
 	/* check USB second */
 	return rk816_bat_get_usb_state(di);
+}
+
+void rk816_bat_init_rsoc(struct battery_info *di)
+{
+#ifdef CONFIG_DM_CHARGE_DISPLAY
+	struct udevice *dev;
+	int soc, voltage, est_voltage;
+	int ret;
+
+	ret = uclass_find_first_device(UCLASS_CHARGE_DISPLAY, &dev);
+	if (!ret) {
+		est_voltage = rk816_bat_get_avg_voltage(di);
+		soc = charge_display_get_power_on_soc(dev);
+		voltage = charge_display_get_power_on_voltage(dev);
+		DBG("threshold: %d%%, %dmv; now: %d%%, %dmv\n",
+		    soc, voltage, di->dsoc, est_voltage);
+		if ((di->dsoc >= soc) && (est_voltage >= voltage))
+			return;
+	}
+#endif
+
+	if (rk816_bat_get_charger_type(di) == NO_CHARGER)
+		return;
+
+	di->pwroff_min = rk816_bat_get_pwroff_min(di);
+	di->is_first_power_on = is_rk816_bat_first_poweron(di);
+	di->is_sw_reset = rk816_bat_ocv_sw_reset(di);
+
+	if (di->is_first_power_on || di->is_sw_reset)
+		rk816_bat_first_pwron(di);
+	else
+		rk816_bat_not_first_pwron(di);
+}
+
+static int rk816_fg_init(struct battery_info *di)
+{
+	rk816_bat_enable_gauge(di);
+	rk816_bat_set_vol_instant_mode(di);
+	rk816_bat_init_voltage_kb(di);
+	rk816_bat_init_poffset(di);
+	rk816_bat_clr_initialized_state(di);
+	di->dsoc = rk816_bat_get_dsoc(di);
+
+	/*
+	 * It's better to init fg in kernel,
+	 * so avoid init in uboot as far as possible.
+	 */
+	rk816_bat_init_rsoc(di);
+	rk816_bat_init_chrg_config(di);
+	di->voltage_avg = rk816_bat_get_avg_voltage(di);
+	di->voltage_ocv = rk816_bat_get_ocv_voltage(di);
+	di->current_avg = rk816_bat_get_avg_current(di);
+	di->sm_linek = rk816_bat_calc_linek(di);
+	di->finish_chrg_base = get_timer(0);
+	di->pwr_vol = di->voltage_avg;
+
+	return 0;
 }
 
 static void rk816_bat_save_dsoc(struct  battery_info *di, u8 save_soc)
@@ -1275,7 +1287,9 @@ static int rk816_bat_update_get_voltage(struct udevice *dev)
 
 static bool rk816_bat_update_get_chrg_online(struct udevice *dev)
 {
-	return rk816_bat_dwc_otg_check_dpdm();
+	struct battery_info *di = dev_get_priv(dev);
+
+	return rk816_bat_get_charger_type(di);
 }
 
 static struct dm_fuel_gauge_ops fg_ops = {
