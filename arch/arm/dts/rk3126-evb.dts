@@ -38,6 +38,14 @@
 		regulator-always-on;
 	};
 
+	vcc_backlight: vcc-backlight {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc_backlight";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		regulator-always-on;
+	};
+
 	backlight: backlight {
 		compatible = "pwm-backlight";
 		brightness-levels = <
@@ -76,6 +84,7 @@
 		default-brightness-level = <128>;
 		pwms = <&pwm0 0 1000000 1>;
 		enable-gpios = <&gpio2 RK_PB2 GPIO_ACTIVE_HIGH>;
+		power-supply = <&vcc_backlight>;
 		status = "okay";
 	};
 
