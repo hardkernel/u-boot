@@ -75,6 +75,12 @@ config SY8106A_POWER
 
 endchoice
 
+config CHARGE_ANIMATION
+	bool "Enable charge animation"
+	depends on DM_CHARGE_DISPLAY && DM_FUEL_GAUGE
+	help
+	  This adds a simple function for charge animation display.
+
 config AXP_DCDC1_VOLT
 	int "axp pmic dcdc1 voltage"
 	depends on AXP221_POWER || AXP809_POWER || AXP818_POWER
