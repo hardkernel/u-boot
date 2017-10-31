@@ -32,12 +32,7 @@
 #include <asm/arch/sd_emmc.h>
 #include <linux/sizes.h>
 #include <asm/cpu_id.h>
-
-extern int mmc_key_erase(void);
-extern int find_dev_num_by_partition_name (char *name);
-extern int mmc_get_ext_csd(struct mmc *mmc, u8 *ext_csd);
-extern int mmc_set_ext_csd(struct mmc *mmc, u8 index, u8 value);
-extern void mmc_write_cali_mattern(void *addr);
+#include <amlogic/aml_mmc.h>
 
 /* info system. */
 #define dtb_err(fmt, ...) printf( "%s()-%d: " fmt , \
@@ -51,16 +46,16 @@ extern void mmc_write_cali_mattern(void *addr);
                   __func__, __LINE__, ##__VA_ARGS__)
 
 struct aml_dtb_rsv {
-	u8 data[DTB_BLK_SIZE*DTB_BLK_CNT - 4*sizeof(u32)];
-	u32 magic;
-	u32 version;
-	u32 timestamp;
-	u32 checksum;
+    u8 data[DTB_BLK_SIZE*DTB_BLK_CNT - 4*sizeof(u32)];
+    u32 magic;
+    u32 version;
+    u32 timestamp;
+    u32 checksum;
 };
 
 struct aml_dtb_info {
-	u32 stamp[2];
-	u8 valid[2];
+    u32 stamp[2];
+    u8 valid[2];
 };
 
 #define stamp_after(a,b)   ((int)(b) - (int)(a)  < 0)
@@ -150,7 +145,6 @@ int mmc_read_status(struct mmc *mmc, int timeout)
     return 0;
 }
 
-
 static int get_off_size(struct mmc * mmc, char * name, uint64_t offset, uint64_t  size, u64 * blk, u64 * cnt, u64 * sz_byte)
 {
         struct partitions *part_info = NULL;
@@ -170,7 +164,7 @@ static int get_off_size(struct mmc * mmc, char * name, uint64_t offset, uint64_t
 
         *blk = off >>  blk_shift ;
         *cnt = size >>  blk_shift ;
-        *sz_byte = size - ((*cnt)<<blk_shift) ;
+        *sz_byte = size - ((*cnt) << blk_shift) ;
 
         // printf("get_partition_off_size : blk:0x%llx , cnt:0x%llx.\n",*blk,*cnt);
         return 0;
@@ -261,12 +255,12 @@ int amlmmc_erase_bootloader(int dev, int map)
                         }
                     }
                 }
-                /* some customer may use boot1 higher 2M as private data. */
-            #ifdef CONFIG_EMMC_BOOT1_TOUCH_REGION
+/* some customer may use boot1 higher 2M as private data. */
+#ifdef CONFIG_EMMC_BOOT1_TOUCH_REGION
                 if (2 == i && CONFIG_EMMC_BOOT1_TOUCH_REGION <= mmc->capacity) {
                     blkcnt = CONFIG_EMMC_BOOT1_TOUCH_REGION >> blk_shift;
                 }
-            #endif /* CONFIG_EMMC_BOOT1_TOUCH_REGION */
+#endif/* CONFIG_EMMC_BOOT1_TOUCH_REGION */
                 printf("Erasing blocks " LBAFU " to " LBAFU " @ %s\n",
                    start, blkcnt, partname[i]);
                 n = mmc->block_dev.block_erase(dev, start, blkcnt);
@@ -327,14 +321,14 @@ int amlmmc_write_bootloader(int dev, int map, unsigned int size, const void *src
     for (i = 0; i < count; i++) {
         if (map & (0x1 << i)) {
             if (!mmc_select_hwpart(dev, i)) {
-                /* some customer may use boot1 higher 2M as private data. */
-            #ifdef CONFIG_EMMC_BOOT1_TOUCH_REGION
+/* some customer may use boot1 higher 2M as private data. */
+#ifdef CONFIG_EMMC_BOOT1_TOUCH_REGION
                 if (2 == i && CONFIG_EMMC_BOOT1_TOUCH_REGION <= size) {
                     printf("%s(), size %d exceeds TOUCH_REGION %d, skip\n",
                         __func__, size, CONFIG_EMMC_BOOT1_TOUCH_REGION);
                     break;
                 }
-            #endif /* CONFIG_EMMC_BOOT1_TOUCH_REGION */
+#endif /* CONFIG_EMMC_BOOT1_TOUCH_REGION */
                 printf("Wrting blocks " LBAFU " to " LBAFU " @ %s\n",
                    start, blkcnt, partname[i]);
                 n = mmc->block_dev.block_write(dev, start, blkcnt, src);
@@ -355,683 +349,1155 @@ _out:
     return ret;
 }
 
-
-int do_amlmmcops(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+static int amlmmc_erase_in_dev(int argc, char *const argv[])
 {
-        int rc = 0;
-        /*printf("%s:%d\n",__func__,__LINE__);*/
-        /*printf("argc = %d\n",argc);*/
-        switch (argc) {
-                case 3:
-                        if (strcmp(argv[1], "rescan") == 0) {
-                                int dev = simple_strtoul(argv[2], NULL, 10);
-                                if (dev < 0) {
-                                        printf("Cannot find dev.\n");
-                                        return 1;
-                                }
-                                struct mmc *mmc = find_mmc_device(dev);
+    int dev = 0;
+    u64 cnt = 0, blk = 0, n = 0;
+    struct mmc *mmc;
 
-                                if (!mmc)
-                                        return 1;
+    dev = simple_strtoul(argv[2], NULL, 10);
+    blk = simple_strtoull(argv[3], NULL, 16);
+    cnt = simple_strtoull(argv[4], NULL, 16);
 
-                                return mmc_init(mmc);
-                        } else if (strncmp(argv[1], "part", 4) == 0) {
-                                int dev = simple_strtoul(argv[2], NULL, 10);
-                                block_dev_desc_t *mmc_dev;
-                                struct mmc *mmc = find_mmc_device(dev);
+    if (dev < 0) {
+        printf("Cannot find dev.\n");
+        return 1;
+    }
 
-                                if (!mmc) {
-                                        puts("no mmc devices available\n");
-                                        return 1;
-                                }
-                                mmc_init(mmc);
-                                mmc_dev = mmc_get_dev(dev);
-                                if (mmc_dev != NULL &&
-                                                mmc_dev->type != DEV_TYPE_UNKNOWN) {
-                                        print_part(mmc_dev);
-                                        return 0;
-                                }
+    mmc = find_mmc_device(dev);
 
-                                puts("get mmc type error!\n");
-                                return 1;
-                        } else if (strcmp(argv[1], "erase") == 0) {
-                                char *name = NULL;
-                                int dev;
-                                u32 n=0;
-                                bool is_part = false;//is argv[2] partition name
-                                bool protect_cache = false;
-                                bool non_loader = false;
-                                int blk_shift;
-                                u64 cnt=0, blk =0,start_blk =0;
-                                struct partitions *part_info;
-                                int i;
+    if (!mmc)
+        return 1;
 
-                                printf("%s() argc %d\n", __func__, argc);
-                                for (i = 0; i < argc; i++)
-                                    printf("%02d: %s\n", i, argv[i]);
+    printf("MMC erase: dev # %d, start_erase_address(in block) # %#llx,\
+            several blocks  # %lld will be erased ...\n ",
+            dev, blk, cnt);
 
-                                if (isstring(argv[2])) {
-                                        if (!strcmp(argv[2], "whole")) {
-                                                name = "logo";
-                                                dev = find_dev_num_by_partition_name (name);
-                                                printf("%s() %s\n", __func__, name);
-                                        }else if(!strcmp(argv[2], "non_cache")){
-                                                name = "logo";
-                                                dev = find_dev_num_by_partition_name (name);
-                                                protect_cache = true;
-                                        }
-                                        else if(!strcmp(argv[2], "non_loader")){
-                                                dev = 1;
-                                                non_loader = true;
-                                        }
-                                        else{
-                                                name = argv[2];
-                                                dev = find_dev_num_by_partition_name (name);
-                                                is_part = true;
-                                        }
-                                }else if(isdigit(argv[2][0])){
-                                        dev = simple_strtoul(argv[2], NULL, 10);
-                                }else{
-                                        printf("Input is invalid, nothing happen.\n");
-                                        return 1;
-                                }
-                                printf("%s() dev %d\n", __func__, dev);
-                                if (dev < 0) {
-                                        printf("Cannot find dev.\n");
-                                        return 1;
-                                }
-                                struct mmc *mmc = find_mmc_device(dev);
+    mmc_init(mmc);
 
-                                if (!mmc)
-                                        return 1;
+    if (cnt != 0)
+        n = mmc->block_dev.block_erase(dev, blk, cnt);
 
-                                mmc_init(mmc);
+    printf("dev # %d, %s, several blocks erased %s\n",
+                dev, " ", (n == 0) ? "OK" : "ERROR");
 
-                                blk_shift = ffs(mmc->read_bl_len) -1;
-                                /* erase by partition */
-                                if (is_part) {
-                                    if ((strncmp(name, MMC_RESERVED_NAME, sizeof(MMC_RESERVED_NAME)) == 0x00)
-                                            && emmckey_is_protected(mmc)) {
-                                        printf("\"%s-partition\" is been protecting and should no be erased!\n", MMC_RESERVED_NAME);
-                                        return 1;
-                                    }
-                                    part_info = find_mmc_partition_by_name(name);
-                                    if (part_info == NULL) {
-                                        return 1;
-                                    }
+    return (n == 0) ? 0 : 1;
+}
 
-                                    blk = part_info->offset >> blk_shift;
-                                    if (emmc_cur_partition && !strncmp(name, "bootloader", strlen("bootloader")))
-                                        cnt = mmc->boot_size >> blk_shift;
-                                    else
-                                        cnt = part_info->size >> blk_shift;
-                                    printf("%s() erase %s: blk %lld cnt %lld\n", __func__, name, blk, cnt);
-                                    n = mmc->block_dev.block_erase(dev, blk, cnt);
+static int amlmmc_erase_in_card(int argc, char *const argv[])
+{
+    int dev = 0;
+    u64 cnt = 0, blk = 0, n = 0;
+    /*sz_byte =0;*/
+    char *name = NULL;
+    u64 offset_addr = 0, size = 0;
+    struct mmc *mmc;
+    int tmp_shift;
 
-                                } else { // erase the whole card if possible
+    name = argv[2];
+    dev = find_dev_num_by_partition_name (name);
+    offset_addr = simple_strtoull(argv[3], NULL, 16);
+    size = simple_strtoull(argv[4], NULL, 16);
+    mmc = find_mmc_device(dev);
 
-                                        if (non_loader) {
-                                                part_info = find_mmc_partition_by_name(MMC_BOOT_NAME);
-                                                if (part_info == NULL) {
-                                                        start_blk = 0;
-                                                        printf("no uboot partition for eMMC boot, just erase from 0\n");
-                                                }
-                                                else{
-                                                        start_blk = (part_info->offset + part_info->size) >> blk_shift;
-                                                }
-                                        }
-                                        else{
-                                                start_blk = 0;
-                                        }
+    tmp_shift = ffs(mmc->read_bl_len) -1;
+    cnt = size >> tmp_shift;
+    blk = offset_addr >> tmp_shift;
+    /* sz_byte = size - (cnt<<tmp_shift); */
 
-                                        if (emmckey_is_protected(mmc)) {
-                                                part_info = find_mmc_partition_by_name(MMC_RESERVED_NAME);
-                                                if (part_info == NULL) {
-                                                        return 1;
-                                                }
+    if (dev < 0) {
+        printf("Cannot find dev.\n");
+        return 1;
+    }
 
-                                                blk = part_info->offset;
-                                                if (blk > 0) { // it means: there should be other partitions before reserve-partition.
-                                                        blk -= PARTITION_RESERVED;
-                                                }
-                                                blk >>= blk_shift;
-                                                blk -= start_blk;
+    mmc = find_mmc_device(dev);
 
-                                                n=0;
+    if (!mmc)
+        return 1;
 
-                                                // (1) erase all the area before reserve-partition
-                                                if (blk > 0) {
-                                                        n = mmc->block_dev.block_erase(dev, start_blk, blk);
-                                                        // printf("(1) erase blk: 0 --> %llx %s\n", blk, (n == 0) ? "OK" : "ERROR");
-                                                }
-                                                if (n == 0) { // not error
-                                                        // (2) erase all the area after reserve-partition
-                                                        if (protect_cache) {
-                                                                part_info = find_mmc_partition_by_name(MMC_CACHE_NAME);
-                                                                if (part_info == NULL) {
-                                                                        return 1;
-                                                                }
-                                                        }
-                                                        start_blk = (part_info->offset + part_info->size + PARTITION_RESERVED) >> blk_shift;
-                                                        u64 erase_cnt = (mmc->capacity >> blk_shift) - 1 - start_blk;
-                                                        n = mmc->block_dev.block_erase(dev, start_blk, erase_cnt);
-                                                        // printf("(2) erase blk: %#llx --> %#llx %s\n", start_blk, start_blk+erase_cnt, (n == 0) ? "OK" : "ERROR");
-                                                }
+    printf("MMC erase: dev # %d, start_erase_address(in block) # %#llx,\
+            several blocks  # %lld will be erased ...\n ",
+            dev, blk, cnt);
 
-                                        } else {
-                                                n = mmc->block_dev.block_erase(dev, start_blk, 0); // erase the whole card
-                                        }
+    mmc_init(mmc);
 
-                                        //erase boot partition
-                                        if (mmc->boot_size && (n == 0) && (non_loader == false)) {
+    if (cnt != 0)
+        n = mmc->block_dev.block_erase(dev, blk, cnt);
 
-                                                for (cnt=0;cnt<2;cnt++) {
-                                                        rc = mmc_switch_part(dev, cnt+1);
-                                                        if (rc != 0) {
-                                                                printf("mmc switch %s failed\n", (cnt == 0)?"boot0":"boot1");
-                                                                break;
-                                                        }
+    printf("dev # %d, %s, several blocks erased %s\n",
+                dev, argv[2], (n == 0) ? "OK" : "ERROR");
 
-                                                        n = mmc->block_dev.block_erase(dev, 0, mmc->boot_size>>blk_shift);
-                                                        if (n != 0) {
-                                                                printf("mmc erase %s failed\n", (cnt == 0)?"boot0":"boot1");
-                                                                break;
-                                                        }
-                                                }
+    return (n == 0) ? 0 : 1;
+}
 
-                                                rc = mmc_switch_part(dev, 0);
-                                                if (rc != 0) {
-                                                        printf("mmc switch back to user failed\n");
-                                                }
-                                        }
-                                }
+static int amlmmc_erase_in_part(int argc, char *const argv[])
+{
+    int dev = 0;
+    u64 cnt = 0, blk = 0, n = 0, sz_byte =0;
+    char *name = NULL;
+    u64 offset_addr = 0, size = 0;
+    struct mmc *mmc;
+    struct partitions *part_info;
 
-                                // printf("dev # %d, %s, # %#llx blocks erased %s\n",
-                                // dev, (is_part == 0) ? "card":(argv[2]) ,
-                                // (cnt == 0) ? (int)(mmc->block_dev.lba): cnt ,
-                                // (n == 0) ? "OK" : "ERROR");
-                                return (n == 0) ? 0 : 1;
-                        } else if (strcmp(argv[1], "status") == 0) {
-                            int dev = simple_strtoul(argv[2], NULL, 10);
-                            if (dev < 0) {
-                                printf("Cannot find dev.\n");
-                                return 1;
-                            }
-                            struct mmc *mmc = find_mmc_device(dev);
+    name = argv[2];
+    dev = find_dev_num_by_partition_name (name);
+    offset_addr = simple_strtoull(argv[3], NULL, 16);
+    size = simple_strtoull(argv[4], NULL, 16);
+    part_info = find_mmc_partition_by_name(name);
+    mmc = find_mmc_device(dev);
 
-                            if (!mmc)
-                                return 1;
-                            if (!mmc->has_init) {
-                                printf("mmc dev %d has not been initialed\n", dev);
-                                    return 1;
-                            }
-                            rc = mmc_read_status(mmc, 1000);
-                            if (rc)
-                                return 1;
-                            else
-                                return 0;
-                        } else if (strcmp(argv[1], "response") == 0) {
-                            int dev = simple_strtoul(argv[2], NULL, 10);
-                            if (dev < 0) {
-                                printf("Cannot find dev.\n");
-                                return 1;
-                            }
-                            struct mmc *mmc = find_mmc_device(dev);
-                            if (!mmc)
-                                return 1;
-                            if (!mmc->has_init) {
-                                printf("mmc dev %d has not been initialed\n", dev);
-                                return 1;
-                            }
-                            struct aml_card_sd_info *aml_priv = mmc->priv;
-                            struct sd_emmc_global_regs *sd_emmc_reg = aml_priv->sd_emmc_reg;
+    if (offset_addr >= part_info->size) {
+        printf("Start address out #%s# partition'address region,(addr_byte < 0x%llx)\n",
+                        name, part_info->size);
+        return 1;
+    }
+    if ((offset_addr+size) > part_info->size) {
+        printf("End address exceeds #%s# partition,(offset = 0x%llx,size = 0x%llx)\n",
+                        name, part_info->offset,part_info->size);
+        return 1;
+    }
+    get_off_size(mmc, name, offset_addr, size, &blk, &cnt, &sz_byte);
 
-                            printf("last cmd = %d, response0 = 0x%x\n",
-                                (sd_emmc_reg->gcmd_cfg & 0x3f), sd_emmc_reg->gcmd_rsp0);
-                            return 0;
-                        } else if (strcmp(argv[1], "controller") == 0) {
-                            int dev = simple_strtoul(argv[2], NULL, 10);
-                            if (dev < 0) {
-                                printf("Cannot find dev.\n");
-                                return 1;
-                            }
-                            struct mmc *mmc = find_mmc_device(dev);
-                            if (!mmc)
-                                return 1;
-                            struct aml_card_sd_info *aml_priv = mmc->priv;
-                            struct sd_emmc_global_regs *sd_emmc_reg = aml_priv->sd_emmc_reg;
-                            printf("sd_emmc_reg->gclock = 0x%x\n", sd_emmc_reg->gclock);
-                            printf("sd_emmc_reg->gdelay = 0x%x\n", sd_emmc_reg->gdelay);
-                            printf("sd_emmc_reg->gadjust = 0x%x\n", sd_emmc_reg->gadjust);
-                            printf("sd_emmc_reg->gcalout = 0x%x\n", sd_emmc_reg->gcalout);
-                            if (!mmc->has_init) {
-                                printf("mmc dev %d has not been initialed\n", dev);
-                                return 1;
-                            }
-                            printf("sd_emmc_reg->gstart = 0x%x\n", sd_emmc_reg->gstart);
-                            printf("sd_emmc_reg->gcfg = 0x%x\n", sd_emmc_reg->gcfg);
-                            printf("sd_emmc_reg->gstatus = 0x%x\n", sd_emmc_reg->gstatus);
-                            printf("sd_emmc_reg->girq_en = 0x%x\n", sd_emmc_reg->girq_en);
-                            printf("sd_emmc_reg->gcmd_cfg = 0x%x\n", sd_emmc_reg->gcmd_cfg);
-                            printf("sd_emmc_reg->gcmd_arg = 0x%x\n", sd_emmc_reg->gcmd_arg);
-                            printf("sd_emmc_reg->gcmd_dat = 0x%x\n", sd_emmc_reg->gcmd_dat);
-                            printf("sd_emmc_reg->gcmd_rsp0 = 0x%x\n", sd_emmc_reg->gcmd_rsp0);
-                            printf("sd_emmc_reg->gcmd_rsp1 = 0x%x\n", sd_emmc_reg->gcmd_rsp1);
-                            printf("sd_emmc_reg->gcmd_rsp2 = 0x%x\n", sd_emmc_reg->gcmd_rsp2);
-                            printf("sd_emmc_reg->gcmd_rsp3 = 0x%x\n", sd_emmc_reg->gcmd_rsp3);
-                            return 0;
-                        } else {
-                                return cmd_usage(cmdtp);
-                        }
+    if (dev < 0) {
+        printf("Cannot find dev.\n");
+        return 1;
+    }
 
-                case 0:
-                case 1:
-                        return CMD_RET_USAGE;
-                case 4:
-                        if (strcmp(argv[1], "switch") == 0) {
-                                int dev = simple_strtoul(argv[2], NULL, 10);
-                                struct mmc* mmc = find_mmc_device(dev);
-                                if (!mmc) {
-                                        puts("no mmc devices available\n");
-                                        return 1;
-                                }
-                                mmc_init(mmc);
-                                printf("mmc switch to ");
-                                if (strcmp(argv[3], "boot0") == 0) {
-                                        rc = mmc_switch_part(dev, 1);
-                                        if (rc == 0) {
-                                                emmc_cur_partition = 1;
-                                                printf("boot0 success\n");
-                                        } else {
-                                                printf("boot0 failed\n");
-                                        }
-                                }
-                                else if(strcmp(argv[3], "boot1") == 0) {
-                                        rc = mmc_switch_part(dev, 2);
-                                        if (rc == 0) {
-                                                emmc_cur_partition = 2;
-                                                printf("boot1 success\n");
-                                        } else {
-                                                printf("boot1 failed\n");
-                                        }
-                                }
-                                else if(strcmp(argv[3], "user") == 0) {
-                                        rc = mmc_switch_part(dev, 0);
-                                        if (rc == 0) {
-                                                emmc_cur_partition = 0;
-                                                printf("user success\n");
-                                        } else {
-                                                printf("user failed\n");
-                                       }
-                                }
+
+    if (!mmc)
+        return 1;
+
+    printf("MMC erase: dev # %d, start_erase_address(in block) # %#llx,\
+            several blocks  # %lld will be erased ...\n ",
+            dev, blk, cnt);
+
+    mmc_init(mmc);
+
+    if (cnt != 0)
+        n = mmc->block_dev.block_erase(dev, blk, cnt);
+
+    printf("dev # %d, %s, several blocks erased %s\n",
+                dev, argv[2], (n == 0) ? "OK" : "ERROR");
+
+    return (n == 0) ? 0 : 1;
+}
+
+static int amlmmc_erase_by_add(int argc, char *const argv[])
+{
+    int ret = 0;
+
+    if (argc != 5)
+        return CMD_RET_USAGE;
+
+    if (isdigit(argv[2][0]))
+        ret = amlmmc_erase_in_dev(argc, argv);
+    else if (strcmp(argv[2], "card") == 0)
+        ret = amlmmc_erase_in_card(argc, argv);
+    else if (isstring(argv[2]))
+        ret = amlmmc_erase_in_part(argc, argv);
+
+    return ret;
+}
+
+static int amlmmc_erase_non_loader(int argc, char *const argv[])
+{
+    int dev;
+    u32 n = 0;
+    int blk_shift;
+    u64 blk = 0, start_blk = 0;
+    struct partitions *part_info;
+    struct mmc *mmc;
+
+    dev = 1;
+    if (dev < 0) {
+        printf("Cannot find dev.\n");
+        return 1;
+    }
+    mmc = find_mmc_device(dev);
+
+    if (!mmc)
+        return 1;
+
+    mmc_init(mmc);
+
+    blk_shift = ffs(mmc->read_bl_len) -1;
+    part_info = find_mmc_partition_by_name(MMC_BOOT_NAME);
+
+    if (part_info == NULL) {
+        start_blk = 0;
+        printf("no uboot partition for eMMC boot, just erase from 0\n");
+    }
+    else
+        start_blk = (part_info->offset + part_info->size) >> blk_shift;
+
+    if (emmckey_is_protected(mmc)) {
+        part_info = find_mmc_partition_by_name(MMC_RESERVED_NAME);
+        if (part_info == NULL) {
+            return 1;
+        }
+        blk = part_info->offset;
+        // it means: there should be other partitions before reserve-partition.
+        if (blk > 0)
+            blk -= PARTITION_RESERVED;
+        blk >>= blk_shift;
+        blk -= start_blk;
+        // (1) erase all the area before reserve-partition
+        if (blk > 0)
+            n = mmc->block_dev.block_erase(dev, start_blk, blk);
+        if (n == 0) { // not error
+            // (2) erase all the area after reserve-partition
+            start_blk = (part_info->offset + part_info->size + PARTITION_RESERVED)
+                         >> blk_shift;
+            u64 erase_cnt = (mmc->capacity >> blk_shift) - 1 - start_blk;
+            n = mmc->block_dev.block_erase(dev, start_blk, erase_cnt);
+        }
+    } else {
+        n = mmc->block_dev.block_erase(dev, start_blk, 0); // erase the whole card
+    }
+    return (n == 0) ? 0 : 1;
+}
+
+static int amlmmc_erase_single_part(int argc, char *const argv[])
+{
+    char *name = NULL;
+    int dev;
+    u32 n = 0;
+    int blk_shift;
+    u64 cnt = 0, blk = 0;
+    struct partitions *part_info;
+    struct mmc *mmc;
+
+    name = argv[2];
+    dev = find_dev_num_by_partition_name(name);
+    if (dev < 0) {
+        printf("Cannot find dev.\n");
+        return 1;
+    }
+    mmc = find_mmc_device(dev);
+
+    if (!mmc)
+        return 1;
+
+    mmc_init(mmc);
+
+    blk_shift = ffs(mmc->read_bl_len) -1;
+    if (emmckey_is_protected(mmc)
+        && (strncmp(name, MMC_RESERVED_NAME, sizeof(MMC_RESERVED_NAME)) == 0x00)) {
+        printf("\"%s-partition\" is been protecting and should no be erased!\n",
+                MMC_RESERVED_NAME);
+        return 1;
+    }
+
+    part_info = find_mmc_partition_by_name(name);
+    if (part_info == NULL) {
+        return 1;
+    }
+
+    blk = part_info->offset >> blk_shift;
+    if (emmc_cur_partition && !strncmp(name, "bootloader", strlen("bootloader")))
+        cnt = mmc->boot_size >> blk_shift;
+    else
+        cnt = part_info->size >> blk_shift;
+    n = mmc->block_dev.block_erase(dev, blk, cnt);
+
+    return (n == 0) ? 0 : 1;
+}
+
+static int amlmmc_erase_whole(int argc, char *const argv[])
+{
+    char *name = NULL;
+    int dev;
+    u32 n = 0;
+    int blk_shift;
+    //u64 cnt = 0,
+    u64 blk = 0, start_blk = 0;
+    struct partitions *part_info;
+    struct mmc *mmc;
+    int map;
+
+    name = "logo";
+    dev = find_dev_num_by_partition_name(name);
+    if (dev < 0) {
+        printf("Cannot find dev.\n");
+        return 1;
+    }
+    mmc = find_mmc_device(dev);
+    if (!mmc)
+        return 1;
+    mmc_init(mmc);
+    blk_shift = ffs(mmc->read_bl_len) -1;
+    start_blk = 0;
+
+    if (emmckey_is_protected(mmc)) {
+        part_info = find_mmc_partition_by_name(MMC_RESERVED_NAME);
+        if (part_info == NULL) {
+            return 1;
+        }
+        blk = part_info->offset;
+        // it means: there should be other partitions before reserve-partition.
+        if (blk > 0)
+            blk -= PARTITION_RESERVED;
+        blk >>= blk_shift;
+        blk -= start_blk;
+        // (1) erase all the area before reserve-partition
+        if (blk > 0)
+            n = mmc->block_dev.block_erase(dev, start_blk, blk);
+        if (n == 0) { // not error
+            // (2) erase all the area after reserve-partition
+            start_blk = (part_info->offset + part_info->size + PARTITION_RESERVED)
+                         >> blk_shift;
+            u64 erase_cnt = (mmc->capacity >> blk_shift) - 1 - start_blk;
+            n = mmc->block_dev.block_erase(dev, start_blk, erase_cnt);
+        }
+    } else {
+        n = mmc->block_dev.block_erase(dev, start_blk, 0); // erase the whole card
+    }
+    map = AML_BL_BOOT;
+    if (n == 0)
+        n = amlmmc_erase_bootloader(dev, map);
+    if (n)
+        printf("erase bootloader in boot partition failed\n");
+    return (n == 0) ? 0 : 1;
+}
+
+static int amlmmc_erase_non_cache(int arc, char *const argv[])
+{
+    char *name = NULL;
+    int dev;
+    u32 n = 0;
+    int blk_shift;
+    u64 blk = 0, start_blk = 0;
+    struct partitions *part_info;
+    struct mmc *mmc;
+    int map;
+
+    name = "logo";
+    dev = find_dev_num_by_partition_name(name);
+    if (dev < 0) {
+         printf("Cannot find dev.\n");
+         return 1;
+     }
+     mmc = find_mmc_device(dev);
+     if (!mmc)
+         return 1;
+     mmc_init(mmc);
+     blk_shift = ffs(mmc->read_bl_len) -1;
+     if (emmckey_is_protected(mmc)) {
+         part_info = find_mmc_partition_by_name(MMC_RESERVED_NAME);
+         if (part_info == NULL) {
+             return 1;
+         }
+
+         blk = part_info->offset;
+         // it means: there should be other partitions before reserve-partition.
+        if (blk > 0) {
+            blk -= PARTITION_RESERVED;
+         }
+         blk >>= blk_shift;
+         blk -= start_blk;
+         // (1) erase all the area before reserve-partition
+         if (blk > 0) {
+             n = mmc->block_dev.block_erase(dev, start_blk, blk);
+             // printf("(1) erase blk: 0 --> %llx %s\n", blk, (n == 0) ? "OK" : "ERROR");
+         }
+         if (n == 0) { // not error
+             // (2) erase all the area after reserve-partition
+             part_info = find_mmc_partition_by_name(MMC_CACHE_NAME);
+             if (part_info == NULL) {
+                 return 1;
+             }
+             start_blk = (part_info->offset + part_info->size + PARTITION_RESERVED)
+                          >> blk_shift;
+             u64 erase_cnt = (mmc->capacity >> blk_shift) - 1 - start_blk;
+             n = mmc->block_dev.block_erase(dev, start_blk, erase_cnt);
+         }
+     } else {
+         n = mmc->block_dev.block_erase(dev, start_blk, 0); // erase the whole card
+     }
+     map = AML_BL_BOOT;
+     if (n == 0) {
+         n = amlmmc_erase_bootloader(dev, map);
+         if (n)
+             printf("erase bootloader in boot partition failed\n");
+     }
+     return (n == 0) ? 0 : 1;
+}
+
+static int amlmmc_erase_dev(int argc, char *const argv[])
+{
+    return amlmmc_erase_whole(argc, argv);
+}
+
+static int amlmmc_erase_allbootloader(int argc, char*const argv[])
+{
+    int map;
+    int rc;
+    char *name = NULL;
+    int dev;
+    map = AML_BL_ALL;
+
+    name = "bootloader";
+    dev = find_dev_num_by_partition_name(name);
+
+    if (dev < 0) {
+        printf("Cannot find dev.\n");
+        return 1;
+    }
+
+    rc = amlmmc_erase_bootloader(dev, map);
+    return rc;
+}
+
+static int amlmmc_erase_by_part(int argc, char *const argv[])
+{
+    int ret = CMD_RET_USAGE;
+
+    if (argc != 3)
+        return ret;
+
+    if (isdigit(argv[2][0]))
+        ret = amlmmc_erase_dev(argc, argv);
+    else if (strcmp(argv[2], "whole") == 0)
+        ret = amlmmc_erase_whole(argc, argv);
+    else if (strcmp(argv[2], "non_cache") == 0)
+        ret = amlmmc_erase_non_cache(argc, argv);
+    else if (strcmp(argv[2], "non_loader") == 0)
+        ret = amlmmc_erase_non_loader(argc, argv);
+    else if (strcmp(argv[2], "allbootloader") == 0)
+        ret = amlmmc_erase_allbootloader(argc, argv);
+    else
+        ret = amlmmc_erase_single_part(argc, argv);
+    return ret;
+}
+
+static int do_amlmmc_erase(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
+{
+    int ret = CMD_RET_USAGE;
+
+    if (argc == 3)
+        ret = amlmmc_erase_by_part(argc, argv);
+    else if (argc == 5)
+        ret = amlmmc_erase_by_add(argc, argv);
+
+    return ret;
+}
+
+static int amlmmc_write_in_part(int argc, char *const argv[])
+{
+    int dev;
+    void *addr = NULL;
+    u64 cnt = 0, n = 0, blk = 0, sz_byte = 0;
+    char *name = NULL;
+    u64 offset = 0, size = 0;
+    cpu_id_t cpu_id = get_cpu_id();
+    struct mmc *mmc;
+
+    name = argv[2];
+    if (strcmp(name, "bootloader") == 0)
+        dev = CONFIG_SYS_MMC_BOOT_DEV;
+    else
+        dev = find_dev_num_by_partition_name (name);
+    addr = (void *)simple_strtoul(argv[3], NULL, 16);
+    offset  = simple_strtoull(argv[4], NULL, 16);
+    size = simple_strtoull(argv[5], NULL, 16);
+    if (dev < 0) {
+        printf("Cannot find dev.\n");
+        return 1;
+    }
+    mmc = find_mmc_device(dev);
+    if (!mmc)
+        return 1;
+
+    if (strcmp(name, "bootloader") == 0) {
+        cnt = UBOOT_SIZE;
+        if (cpu_id.family_id >= MESON_CPU_MAJOR_ID_GXL) {
+            blk = GXL_START_BLK;
+            cnt -= GXL_START_BLK;
+        }
+        else
+            blk = GXB_START_BLK;
+    } else
+        get_off_size(mmc, name, offset, size, &blk, &cnt, &sz_byte);
+
+    mmc_init(mmc);
+    n = mmc->block_dev.block_write(dev, blk, cnt, addr);
+    //write sz_byte bytes
+    if ((n == cnt) && (sz_byte != 0)) {
+        // printf("sz_byte=%#llx bytes\n",sz_byte);
+        void *addr_tmp = malloc(mmc->write_bl_len);
+        void *addr_byte = (void*)(addr+cnt*(mmc->write_bl_len));
+        ulong start_blk = blk+cnt;
+
+        if (addr_tmp == NULL) {
+            printf("mmc write: malloc fail\n");
+            return 1;
+        }
+
+        if (mmc->block_dev.block_read(dev, start_blk, 1, addr_tmp) != 1) { // read 1 block
+            free(addr_tmp);
+            printf("mmc read 1 block fail\n");
+            return 1;
+        }
+
+        memcpy(addr_tmp, addr_byte, sz_byte);
+        if (mmc->block_dev.block_write(dev, start_blk, 1, addr_tmp) != 1) { // write 1 block
+            free(addr_tmp);
+            printf("mmc write 1 block fail\n");
+            return 1;
+        }
+        free(addr_tmp);
+    }
+    //printf("%#llx blocks , %#llx bytes written: %s\n", n, sz_byte, (n==cnt) ? "OK" : "ERROR");
+    return (n == cnt) ? 0 : 1;
+}
+
+static int amlmmc_write_in_card(int argc, char *const argv[])
+{
+    int dev;
+    void *addr = NULL;
+    u64 cnt = 0, n = 0, blk = 0, sz_byte = 0;
+    char *name = NULL;
+    u64 offset = 0, size = 0;
+    struct mmc *mmc;
+
+    name = argv[2];
+    dev = find_dev_num_by_partition_name (name);
+    addr = (void *)simple_strtoul(argv[3], NULL, 16);
+    offset  = simple_strtoull(argv[4], NULL, 16);
+    size = simple_strtoull(argv[5], NULL, 16);
+    if (dev < 0) {
+        printf("Cannot find dev.\n");
+        return 1;
+    }
+    mmc = find_mmc_device(dev);
+    if (!mmc)
+        return 1;
+
+    int blk_shift = ffs( mmc->read_bl_len) -1;
+    cnt = size >> blk_shift;
+    blk = offset >> blk_shift;
+    sz_byte = size - (cnt<<blk_shift);
+     mmc_init(mmc);
+
+    n = mmc->block_dev.block_write(dev, blk, cnt, addr);
+
+    //write sz_byte bytes
+    if ((n == cnt) && (sz_byte != 0)) {
+        // printf("sz_byte=%#llx bytes\n",sz_byte);
+        void *addr_tmp = malloc(mmc->write_bl_len);
+        void *addr_byte = (void*)(addr+cnt*(mmc->write_bl_len));
+        ulong start_blk = blk+cnt;
+
+        if (addr_tmp == NULL) {
+            printf("mmc write: malloc fail\n");
+            return 1;
+        }
+
+        if (mmc->block_dev.block_read(dev, start_blk, 1, addr_tmp) != 1) { // read 1 block
+            free(addr_tmp);
+            printf("mmc read 1 block fail\n");
+            return 1;
+        }
+
+        memcpy(addr_tmp, addr_byte, sz_byte);
+        if (mmc->block_dev.block_write(dev, start_blk, 1, addr_tmp) != 1) { // write 1 block
+            free(addr_tmp);
+            printf("mmc write 1 block fail\n");
+            return 1;
+        }
+        free(addr_tmp);
+    }
+    //printf("%#llx blocks , %#llx bytes written: %s\n", n, sz_byte, (n==cnt) ? "OK" : "ERROR");
+    return (n == cnt) ? 0 : 1;
+}
+
+static int amlmmc_write_in_dev(int argc, char *const argv[])
+{
+    int dev;
+    void *addr = NULL;
+    u64 cnt = 0, n = 0, blk = 0;
+    struct mmc *mmc;
+    dev = simple_strtoul(argv[2], NULL, 10);
+    addr = (void *)simple_strtoul(argv[3], NULL, 16);
+    blk = simple_strtoull(argv[4], NULL, 16);
+    cnt = simple_strtoull(argv[5], NULL, 16);
+    if (dev < 0) {
+        printf("Cannot find dev.\n");
+        return 1;
+    }
+    mmc = find_mmc_device(dev);
+    if (!mmc)
+        return 1;
+
+     //printf("MMC write: dev # %d, block # %#llx, count # %#llx ... ",
+     //dev, blk, cnt);
+
+    mmc_init(mmc);
+
+    n = mmc->block_dev.block_write(dev, blk, cnt, addr);
+    return (n == cnt) ? 0 : 1;
+}
+
+static int do_amlmmc_write(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
+{
+    int ret = 0;
+    if (argc != 6)
+        return CMD_RET_USAGE;
+
+    if (isdigit(argv[2][0]))
+        ret = amlmmc_write_in_dev(argc, argv);
+    else if (strcmp(argv[2], "card") == 0)
+        ret = amlmmc_write_in_card(argc, argv);
+    else if (isstring(argv[2]))
+        ret = amlmmc_write_in_part(argc, argv);
+
+    return ret;
+}
+
+static int amlmmc_read_in_dev(int argc, char *const argv[])
+{
+    int dev;
+    void *addr = NULL;
+    u64 cnt =0, n = 0, blk = 0;
+    struct mmc *mmc;
+
+    dev = simple_strtoul(argv[2], NULL, 10);
+    addr = (void *)simple_strtoul(argv[3], NULL, 16);
+    blk = simple_strtoull(argv[4], NULL, 16);
+    cnt = simple_strtoull(argv[5], NULL, 16);
+
+    if (dev < 0) {
+        printf("Cannot find dev.\n");
+        return 1;
+    }
+
+    mmc = find_mmc_device(dev);
+    if (!mmc)
+        return 1;
+    n = mmc->block_dev.block_read(dev, blk, cnt, addr);
+
+    return (n == cnt) ? 0 : 1;
+}
+
+static int amlmmc_read_in_card(int argc, char *const argv[])
+{
+    int dev;
+    void *addr = NULL;
+    //u32 flag =0;
+    u64 cnt =0, n = 0, blk = 0, sz_byte = 0;
+    char *name = NULL;
+    u64 offset = 0, size = 0;
+    int blk_shift;
+    struct mmc *mmc;
+    void *addr_tmp;
+    void *addr_byte;
+    ulong start_blk;
+
+    name = argv[2];
+    dev = find_dev_num_by_partition_name (name);
+    addr = (void *)simple_strtoul(argv[3], NULL, 16);
+    size = simple_strtoull(argv[5], NULL, 16);
+    offset = simple_strtoull(argv[4], NULL, 16);
+
+    if (dev < 0) {
+        printf("Cannot find dev.\n");
+        return 1;
+    }
+
+    mmc = find_mmc_device(dev);
+    if (!mmc)
+        return 1;
+
+    blk_shift = ffs( mmc->read_bl_len) - 1;
+    cnt = size >> blk_shift;
+    blk = offset >> blk_shift;
+    sz_byte = size - (cnt<<blk_shift);
+
+    mmc_init(mmc);
+    n = mmc->block_dev.block_read(dev, blk, cnt, addr);
+
+    //read sz_byte bytes
+    if ((n == cnt) && (sz_byte != 0)) {
+       addr_tmp = malloc(mmc->read_bl_len);
+       addr_byte = (void *)(addr+cnt*(mmc->read_bl_len));
+       start_blk = blk+cnt;
+       if (addr_tmp == NULL) {
+           printf("mmc read: malloc fail\n");
+           return 1;
+       }
+       if (mmc->block_dev.block_read(dev, start_blk, 1, addr_tmp) != 1) { // read 1 block
+           free(addr_tmp);
+           printf("mmc read 1 block fail\n");
+           return 1;
+       }
+       memcpy(addr_byte, addr_tmp, sz_byte);
+       free(addr_tmp);
+    }
+    return (n == cnt) ? 0 : 1;
+}
+
+static int amlmmc_read_in_part(int argc, char *const argv[])
+{
+    int dev;
+    void *addr = NULL;
+    u64 cnt = 0, n = 0, blk = 0, sz_byte = 0;
+    char *name = NULL;
+    u64 offset = 0, size = 0;
+    struct mmc *mmc;
+    void *addr_tmp;
+    void *addr_byte;
+    ulong start_blk;
+
+    name = argv[2];
+    dev = find_dev_num_by_partition_name (name);
+    addr = (void *)simple_strtoul(argv[3], NULL, 16);
+    offset = simple_strtoull(argv[4], NULL, 16);
+    size = simple_strtoull(argv[5], NULL, 16);
+
+    if (dev < 0) {
+        printf("Cannot find dev.\n");
+        return 1;
+    }
+
+    mmc = find_mmc_device(dev);
+    if (!mmc)
+        return 1;
+
+    get_off_size(mmc, name, offset, size, &blk, &cnt, &sz_byte);
+    mmc_init(mmc);
+    n = mmc->block_dev.block_read(dev, blk, cnt, addr);
+
+    //read sz_byte bytes
+    if ((n == cnt) && (sz_byte != 0)) {
+       /*printf("sz_byte=%#llx bytes\n",sz_byte);*/
+       addr_tmp = malloc(mmc->read_bl_len);
+       addr_byte = (void *)(addr+cnt*(mmc->read_bl_len));
+       start_blk = blk+cnt;
+
+       if (addr_tmp == NULL) {
+           printf("mmc read: malloc fail\n");
+           return 1;
+       }
+
+       if (mmc->block_dev.block_read(dev, start_blk, 1, addr_tmp) != 1) { // read 1 block
+           free(addr_tmp);
+           printf("mmc read 1 block fail\n");
+           return 1;
+       }
+
+       memcpy(addr_byte, addr_tmp, sz_byte);
+       free(addr_tmp);
+    }
+    return (n == cnt) ? 0 : 1;
+}
+
+static int do_amlmmc_read(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
+{
+    int ret = 0;
+
+    if (argc != 6)
+        return CMD_RET_USAGE;
+
+    if (isdigit(argv[2][0]))
+        ret = amlmmc_read_in_dev(argc, argv);
+    else if (strcmp(argv[2], "card") == 0)
+        ret = amlmmc_read_in_card(argc, argv);
+    else if (isstring(argv[2]))
+        ret = amlmmc_read_in_part(argc, argv);
+
+    return ret;
+}
+
+static int do_amlmmc_env(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
+{
+    printf("herh\n");
+    env_relocate();
+    return 0;
+}
+
+static int do_amlmmc_list(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
+{
+    print_mmc_devices('\n');
+    return 0;
+}
+
+static int do_amlmmc_size(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
+{
+    char *name;
+    uint64_t* addr = NULL;
+    int dev;
+    struct mmc *mmc = NULL;
+
+    if (argc != 4)
+        return CMD_RET_USAGE;
+
+    name = argv[2];
+    addr = (uint64_t *)simple_strtoul(argv[3], NULL, 16);
+    if (!strcmp(name, "wholeDev")) {
+        dev = CONFIG_SYS_MMC_BOOT_DEV;
+        mmc = find_mmc_device(dev);
+        if (!mmc) {
+            puts("no mmc devices available\n");
+            return 1;
+        }
+        mmc_init(mmc);
+
+        *addr = mmc->capacity >> 9; // unit: 512 bytes
+        return 0;
+    }
+    return get_partition_size((unsigned char *)name, addr);
+}
+
+static int amlmmc_get_ext_csd(int argc, char *const argv[])
+{
+    int ret= 0;
+    u8 ext_csd[512] = {0};
+    int dev, byte;
+    struct mmc *mmc;
+
+    if (argc != 4)
+        return CMD_RET_USAGE;
+
+    dev = simple_strtoul(argv[2], NULL, 10);
+    byte = simple_strtoul(argv[3], NULL, 10);
+    mmc = find_mmc_device(dev);
+
+    if (!mmc) {
+        puts("no mmc devices available\n");
+        return 1;
+    }
+    mmc_init(mmc);
+    ret = mmc_get_ext_csd(mmc, ext_csd);
+    printf("read EXT_CSD byte[%d] val[0x%x] %s\n",
+            byte, ext_csd[byte], (ret == 0) ? "ok" : "fail");
+    ret = ret || ret;
+    return ret;
+}
+
+static int amlmmc_set_ext_csd(int argc, char *const argv[])
+{
+    int ret = 0;
+    int dev, byte;
+    struct mmc *mmc;
+    int val;
+
+    if (argc != 5)
+        return CMD_RET_USAGE;
+
+    dev = simple_strtoul(argv[2], NULL, 10);
+    byte = simple_strtoul(argv[3], NULL, 10);
+    val = simple_strtoul(argv[4], NULL, 16);
+    if ((byte > 191) || (byte < 0)) {
+        printf("byte is not able to write!\n");
+        return 1;
+    }
+
+    mmc = find_mmc_device(dev);
+
+    if (!mmc) {
+        puts("no mmc devices available\n");
+        return 1;
+    }
+
+    mmc_init(mmc);
+
+    ret = mmc_set_ext_csd(mmc, byte, val);
+    printf("write EXT_CSD byte[%d] val[0x%x] %s\n",
+            byte, val, (ret == 0) ? "ok" : "fail");
+    ret =ret || ret;
+    return ret;
+}
+
+static int do_amlmmc_ext_csd(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
+{
+    int ret = CMD_RET_USAGE;
+
+    if (argc == 4)
+        ret = amlmmc_get_ext_csd(argc,argv);
+    else if (argc == 5)
+        ret = amlmmc_set_ext_csd(argc,argv);
+
+    return ret;
+}
+
+static int do_amlmmc_switch(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
+{
+    int rc = 0;
+    int dev;
+    struct mmc *mmc;
+
+    if (argc != 4)
+        return CMD_RET_USAGE;
+
+    dev = simple_strtoul(argv[2], NULL, 10);
+    mmc = find_mmc_device(dev);
+
+    if (!mmc) {
+        puts("no mmc devices available\n");
+        return 1;
+    }
+
+    mmc_init(mmc);
+    printf("mmc switch to ");
+
+    if (strcmp(argv[3], "boot0") == 0) {
+        rc = mmc_switch_part(dev, 1);
+        if (rc == 0) {
+            emmc_cur_partition = 1;
+            printf("boot0 success\n");
+        } else {
+            printf("boot0 failed\n");
+        }
+    }
+    else if(strcmp(argv[3], "boot1") == 0) {
+        rc = mmc_switch_part(dev, 2);
+        if (rc == 0) {
+            emmc_cur_partition = 2;
+            printf("boot1 success\n");
+        } else {
+            printf("boot1 failed\n");
+        }
+    }
+    else if(strcmp(argv[3], "user") == 0) {
+        rc = mmc_switch_part(dev, 0);
+        if (rc == 0) {
+            emmc_cur_partition = 0;
+            printf("user success\n");
+        } else {
+            printf("user failed\n");
+       }
+    }
 #ifdef CONFIG_SUPPORT_EMMC_RPMB
-                                else if(strcmp(argv[3], "rpmb") == 0) {
-                                        rc = mmc_switch_part(dev, 3);
-                                        if (rc == 0) {
-                                                emmc_cur_partition = 3;
-                                                printf("rpmb success\n");
-                                        } else {
-                                                printf("rpmb failed\n");
-                                        }
-                                }
+    else if(strcmp(argv[3], "rpmb") == 0) {
+        rc = mmc_switch_part(dev, 3);
+        if (rc == 0) {
+            emmc_cur_partition = 3;
+            printf("rpmb success\n");
+        } else {
+            printf("rpmb failed\n");
+        }
+    }
 #endif
-                                else
-                                        printf("%s failed\n", argv[3]);
-                                return rc;
-                        } else if (strcmp(argv[1], "ext_csd") == 0) {
-                            int ret;
-                            u8 ext_csd[512] = {0};
-                            int dev = simple_strtoul(argv[2], NULL, 10);
-                            int bit = simple_strtoul(argv[3], NULL, 10);
-                            if ((bit > 511) || (bit < 0)) {
-                                printf("bit is out of area!\n");
-                                return 1;
-                            }
-                            struct mmc* mmc = find_mmc_device(dev);
-                            if (!mmc) {
-                                puts("no mmc devices available\n");
-                                return 1;
-                            }
-                            mmc_init(mmc);
-                            ret = mmc_get_ext_csd(mmc, ext_csd);
-                            printf("read EXT_CSD bit[%d] val[0x%x] %s\n",
-                                    bit, ext_csd[bit], (ret == 0) ? "ok" : "fail");
-                            return ret;
-                        } else if (strcmp(argv[1], "size") == 0) {
-                            char *name;
-                            uint64_t* addr =NULL;
-                            name = argv[2];
-                            addr = (uint64_t *)simple_strtoul(argv[3], NULL, 16);
-                            if (!strcmp(name, "wholeDev")) {
-                                int dev = CONFIG_SYS_MMC_BOOT_DEV;
-                                struct mmc* mmc = find_mmc_device(dev);
-                                if (!mmc) {
-                                    puts("no mmc devices available\n");
-                                    return 1;
-                                }
-                                mmc_init(mmc);
+    else
+        printf("%s failed\n", argv[3]);
+    return rc;
+}
 
-                                *addr = mmc->capacity >> 9; // unit: 512 bytes
-                                return 0;
-                            }
-                            return get_partition_size((unsigned char *)name, addr);
-                        }
-                        return cmd_usage(cmdtp);
+static int do_amlmmc_controller(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
+{
+    int dev;
+    struct mmc *mmc;
+    struct aml_card_sd_info *aml_priv;
+    struct sd_emmc_global_regs *sd_emmc_reg;
 
-                case 2:
-                        if (!strcmp(argv[1], "list")) {
-                                print_mmc_devices('\n');
-                                return 0;
-                        }
+    if (argc != 3)
+        return CMD_RET_USAGE;
 
-                        if (strcmp(argv[1], "env") == 0) {
-                                printf("herh\n");
-                                env_relocate();
-                                return 0 ;
-                        }
+    dev = simple_strtoul(argv[2], NULL, 10);
+
+    if (dev < 0) {
+        printf("Cannot find dev.\n");
+        return 1;
+    }
+
+    mmc = find_mmc_device(dev);
+
+    if (!mmc)
+        return 1;
+
+    aml_priv = mmc->priv;
+    sd_emmc_reg = aml_priv->sd_emmc_reg;
+
+    printf("sd_emmc_reg->gclock = 0x%x\n", sd_emmc_reg->gclock);
+    printf("sd_emmc_reg->gdelay = 0x%x\n", sd_emmc_reg->gdelay);
+    printf("sd_emmc_reg->gadjust = 0x%x\n", sd_emmc_reg->gadjust);
+    printf("sd_emmc_reg->gcalout = 0x%x\n", sd_emmc_reg->gcalout);
+    if (!mmc->has_init) {
+        printf("mmc dev %d has not been initialed\n", dev);
+        return 1;
+    }
+    printf("sd_emmc_reg->gstart = 0x%x\n", sd_emmc_reg->gstart);
+    printf("sd_emmc_reg->gcfg = 0x%x\n", sd_emmc_reg->gcfg);
+    printf("sd_emmc_reg->gstatus = 0x%x\n", sd_emmc_reg->gstatus);
+    printf("sd_emmc_reg->girq_en = 0x%x\n", sd_emmc_reg->girq_en);
+    printf("sd_emmc_reg->gcmd_cfg = 0x%x\n", sd_emmc_reg->gcmd_cfg);
+    printf("sd_emmc_reg->gcmd_arg = 0x%x\n", sd_emmc_reg->gcmd_arg);
+    printf("sd_emmc_reg->gcmd_dat = 0x%x\n", sd_emmc_reg->gcmd_dat);
+    printf("sd_emmc_reg->gcmd_rsp0 = 0x%x\n", sd_emmc_reg->gcmd_rsp0);
+    printf("sd_emmc_reg->gcmd_rsp1 = 0x%x\n", sd_emmc_reg->gcmd_rsp1);
+    printf("sd_emmc_reg->gcmd_rsp2 = 0x%x\n", sd_emmc_reg->gcmd_rsp2);
+    printf("sd_emmc_reg->gcmd_rsp3 = 0x%x\n", sd_emmc_reg->gcmd_rsp3);
+    return 0;
+}
+
+static int do_amlmmc_response(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
+{
+    int dev;
+    struct mmc *mmc;
+    struct aml_card_sd_info *aml_priv;
+    struct sd_emmc_global_regs *sd_emmc_reg;
+
+    if (argc != 3)
+        return CMD_RET_USAGE;
+
+    dev = simple_strtoul(argv[2], NULL, 10);
+
+    if (dev < 0) {
+        printf("Cannot find dev.\n");
+        return 1;
+    }
+
+    mmc = find_mmc_device(dev);
+
+    if (!mmc)
+        return 1;
+    if (!mmc->has_init) {
+        printf("mmc dev %d has not been initialed\n", dev);
+        return 1;
+    }
+
+    aml_priv = mmc->priv;
+    sd_emmc_reg = aml_priv->sd_emmc_reg;
+
+    printf("last cmd = %d, response0 = 0x%x\n",
+        (sd_emmc_reg->gcmd_cfg & 0x3f), sd_emmc_reg->gcmd_rsp0);
+    return 0;
+}
+
+static int do_amlmmc_status(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
+{
+    int rc = 0;
+    int dev;
+    struct mmc *mmc;
+
+    if (argc != 3)
+        return CMD_RET_USAGE;
+
+    dev = simple_strtoul(argv[2], NULL, 10);
+
+    if (dev < 0) {
+        printf("Cannot find dev.\n");
+        return 1;
+    }
+    mmc = find_mmc_device(dev);
+
+    if (!mmc)
+        return 1;
+    if (!mmc->has_init) {
+        printf("mmc dev %d has not been initialed\n", dev);
+        return 1;
+    }
+    rc = mmc_read_status(mmc, 1000);
+    if (rc)
+        return 1;
+    else
+        return 0;
+}
+
+static int do_amlmmc_part(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+    int dev;
+    block_dev_desc_t *mmc_dev;
+    struct mmc *mmc;
+
+    if (argc != 3)
+        return CMD_RET_USAGE;
+
+    dev = simple_strtoul(argv[2], NULL, 10);
+    mmc = find_mmc_device(dev);
+
+    if (!mmc) {
+        puts("no mmc devices available\n");
+        return 1;
+    }
+    mmc_init(mmc);
+    mmc_dev = mmc_get_dev(dev);
+    if (mmc_dev != NULL &&
+        mmc_dev->type != DEV_TYPE_UNKNOWN) {
+        print_part(mmc_dev);
+        return 0;
+    }
+    puts("get mmc type error!\n");
+    return 1;
+}
+
+static int do_amlmmc_rescan(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+    int dev;
+    struct mmc *mmc;
+
+    if (argc != 3)
+        return CMD_RET_USAGE;
+
+    dev = simple_strtoul(argv[2], NULL, 10);
+
+    if (dev < 0) {
+        printf("Cannot find dev.\n");
+        return 1;
+    }
+
+    mmc = find_mmc_device(dev);
+
+    if (!mmc)
+            return 1;
+
+    return mmc_init(mmc);
+}
 
 #ifdef CONFIG_SECURITYKEY
-                        if (strcmp(argv[1], "key") == 0) {
-                                struct mmc* mmc;
-                                //char *name = "logo";
-                                int dev = CONFIG_SYS_MMC_BOOT_DEV;
-                                mmc = find_mmc_device(dev);
-                                if (!mmc) {
-                                        printf("device %d is invalid\n",dev);
-                                        return 1;
-                                }
-                                //mmc->key_protect = 0;
+static int do_amlmmc_key(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
+{
+    struct mmc *mmc;
+    int dev;
+
+    //char *name = "logo";
+    dev = CONFIG_SYS_MMC_BOOT_DEV;
+    mmc = find_mmc_device(dev);
+    if (!mmc) {
+        printf("device %d is invalid\n",dev);
+        return 1;
+    }
+    //mmc->key_protect = 0;
 #ifdef CONFIG_STORE_COMPATIBLE
-                                info_disprotect |= DISPROTECT_KEY;  //disprotect
-                                printf("emmc disprotect key\n");
+    info_disprotect |= DISPROTECT_KEY;  //disprotect
+    printf("emmc disprotect key\n");
 #endif
-                                return 0;
-                        }
+    return 0;
+}
 #endif
-                        return cmd_usage(cmdtp);
 
-                default: /* at least 5 args */
-                        if (strcmp(argv[1], "read") == 0) {
-                                int dev;
-                                void *addr =NULL;
-                                u32 flag =0;
-                                u64 cnt =0,n =0, blk =0, sz_byte =0;
-                                char *name=NULL;
-                                u64 offset =0,size =0;
+static cmd_tbl_t cmd_amlmmc[] = {
+    U_BOOT_CMD_MKENT(read,          6, 0, do_amlmmc_read,       "", ""),
+    U_BOOT_CMD_MKENT(write,         6, 0, do_amlmmc_write,      "", ""),
+    U_BOOT_CMD_MKENT(erase,         5, 0, do_amlmmc_erase,      "", ""),
+    U_BOOT_CMD_MKENT(rescan,        3, 0, do_amlmmc_rescan,     "", ""),
+    U_BOOT_CMD_MKENT(part,          3, 0, do_amlmmc_part,       "", ""),
+    U_BOOT_CMD_MKENT(list,          2, 0, do_amlmmc_list,       "", ""),
+    U_BOOT_CMD_MKENT(switch,        4, 0, do_amlmmc_switch,     "", ""),
+    U_BOOT_CMD_MKENT(status,        3, 0, do_amlmmc_status,     "", ""),
+    U_BOOT_CMD_MKENT(ext_csd,       5, 0, do_amlmmc_ext_csd,    "", ""),
+    U_BOOT_CMD_MKENT(response,      3, 0, do_amlmmc_response,   "", ""),
+    U_BOOT_CMD_MKENT(controller,    3, 0, do_amlmmc_controller, "", ""),
+    U_BOOT_CMD_MKENT(size,          4, 0, do_amlmmc_size,       "", ""),
+    U_BOOT_CMD_MKENT(env,           2, 0, do_amlmmc_env,        "", ""),
+#ifdef CONFIG_SECURITYKEY
+    U_BOOT_CMD_MKENT(key,           2, 0, do_amlmmc_key,        "", ""),
+#endif
+};
 
-                                if (argc != 6) {
-                                        printf("Input is invalid, nothing happen.\n");
-                                        return 1;
-                                }
+static int do_amlmmcops(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+    cmd_tbl_t *cp;
 
-                                if (isstring(argv[2])) {
-                                        name = argv[2];
-                                        dev = find_dev_num_by_partition_name (name);
-                                        addr = (void *)simple_strtoul(argv[3], NULL, 16);
-                                        size = simple_strtoull(argv[5], NULL, 16);
-                                        offset  = simple_strtoull(argv[4], NULL, 16);
-                                        /*printf("offset %llx size %llx\n",offset,size);*/
-                                        flag = 1;
-                                        if ((strcmp(argv[2], "card") == 0)) {
-                                                flag = 2;
-                                        }
-                                }else{
-                                        dev = simple_strtoul(argv[2], NULL, 10);
-                                        addr = (void *)simple_strtoul(argv[3], NULL, 16);
-                                        cnt = simple_strtoull(argv[5], NULL, 16);
-                                        blk = simple_strtoull(argv[4], NULL, 16);
-                                }
-                                if (dev < 0) {
-                                        printf("Cannot find dev.\n");
-                                        return 1;
-                                }
-                                struct mmc *mmc = find_mmc_device(dev);
-                                if (!mmc) {
-                                        printf("dev = %d;, no mmc device found",dev);
-                                        return 1;
-                                }
+    cp = find_cmd_tbl(argv[1], cmd_amlmmc, ARRAY_SIZE(cmd_amlmmc));
 
-                                if (flag == 1) { // emmc or tsd
-                                        /*printf("offset %#llx size %#llx\n",offset,size);*/
-                                        get_off_size(mmc, name, offset, size, &blk, &cnt, &sz_byte);
-                                }
-                                else if(flag == 2){ // card
-                                        int blk_shift = ffs( mmc->read_bl_len) -1;
-                                        cnt = size >> blk_shift;
-                                        blk = offset >> blk_shift;
-                                        sz_byte = size - (cnt<<blk_shift);
-                                }
+    if (cp == NULL || argc > cp->maxargs)
+        return CMD_RET_USAGE;
 
+    if (flag == CMD_FLAG_REPEAT && !cp->repeatable)
+        return CMD_RET_SUCCESS;
 
-                                /*printf("MMC read: dev # %d, block # %#llx, count # %#llx ...\n",*/
-                                                /*dev, blk, cnt);*/
-                                mmc_init(mmc);
-
-                                n = mmc->block_dev.block_read(dev, blk, cnt, addr);
-                                //read sz_byte bytes
-                                if ((n == cnt) && (sz_byte != 0)) {
-                                        /*printf("sz_byte=%#llx bytes\n",sz_byte);*/
-                                        void *addr_tmp = malloc(mmc->read_bl_len);
-                                        void *addr_byte = (void *)(addr+cnt*(mmc->read_bl_len));
-                                        ulong start_blk = blk+cnt;
-
-                                        if (addr_tmp == NULL) {
-                                                printf("mmc read: malloc fail\n");
-                                                return 1;
-                                        }
-
-                                        if (mmc->block_dev.block_read(dev, start_blk, 1, addr_tmp) != 1) { // read 1 block
-                                                free(addr_tmp);
-                                                printf("mmc read 1 block fail\n");
-                                                return 1;
-                                        }
-
-                                        memcpy(addr_byte, addr_tmp, sz_byte);
-                                        free(addr_tmp);
-                                }
-
-                                /* flush cache after read */
-                                //flush_cache((ulong)addr, cnt * 512); /* FIXME */
-
-                                //printf("MMC read: dev # %d, block # %#llx, count # %#llx, byte_size # %#llx %s!\n",
-                                //                        dev, blk, cnt, sz_byte, (n==cnt) ? "OK" : "ERROR");
-                                return (n == cnt) ? 0 : 1;
-                        } else if (strcmp(argv[1], "write") == 0) {
-                                int dev;
-                                void *addr =NULL;
-                                u32 flag =0;
-                                u64 cnt =0,n =0, blk =0,sz_byte =0;
-                                char *name=NULL;
-                                u64 offset =0,size =0;
-                                cpu_id_t cpu_id = get_cpu_id();
-                                if (argc != 6) {
-                                        printf("Input is invalid, nothing happen.\n");
-                                        return 1;
-                                }
-
-                                if (isstring(argv[2])) {
-                                        name = argv[2];
-                                        if (strcmp(name, "bootloader") == 0)
-                                            dev = CONFIG_SYS_MMC_BOOT_DEV;
-                                        else
-                                            dev = find_dev_num_by_partition_name (name);
-                                        addr = (void *)simple_strtoul(argv[3], NULL, 16);
-                                        offset  = simple_strtoull(argv[4], NULL, 16);
-                                        size = simple_strtoull(argv[5], NULL, 16);
-                                        flag = 1;
-                                        if ((strcmp(argv[2], "card") == 0)) {
-                                            flag = 2;
-                                        }
-                                }else{
-                                        dev = simple_strtoul(argv[2], NULL, 10);
-                                        addr = (void *)simple_strtoul(argv[3], NULL, 16);
-                                        blk = simple_strtoull(argv[4], NULL, 16);
-                                        cnt = simple_strtoull(argv[5], NULL, 16);
-                                }
-                                if (dev < 0) {
-                                        printf("Cannot find dev.\n");
-                                        return 1;
-                                }
-                                struct mmc *mmc = find_mmc_device(dev);
-
-                                if (flag == 1) { // tsd or emmc
-                                        if (strcmp(name, "bootloader") == 0) {
-                                            /* fixme, why hardcode 2M u-boot size? lasy? */
-                                            cnt = UBOOT_SIZE;
-                                            if (cpu_id.family_id >= MESON_CPU_MAJOR_ID_GXL) {
-                                                blk = GXL_START_BLK;
-                                                cnt -= GXL_START_BLK;
-                                            }
-                                            else
-                                                blk = GXB_START_BLK;
-                                            sz_byte = 0;
-                                        } else
-                                            get_off_size(mmc, name, offset, size, &blk, &cnt, &sz_byte);
-                                }
-                                else if(flag == 2){ // card
-                                        int blk_shift = ffs( mmc->read_bl_len) -1;
-                                        cnt = size >> blk_shift;
-                                        blk = offset >> blk_shift;
-                                        sz_byte = size - (cnt<<blk_shift);
-                                }
-
-                                if (!mmc)
-                                        return 1;
-
-                                 //printf("MMC write: dev # %d, block # %#llx, count # %#llx ... ",
-                                 //dev, blk, cnt);
-
-                                mmc_init(mmc);
-
-                                n = mmc->block_dev.block_write(dev, blk, cnt, addr);
-
-                                //write sz_byte bytes
-                                if ((n == cnt) && (sz_byte != 0)) {
-                                        // printf("sz_byte=%#llx bytes\n",sz_byte);
-                                        void *addr_tmp = malloc(mmc->write_bl_len);
-                                        void *addr_byte = (void*)(addr+cnt*(mmc->write_bl_len));
-                                        ulong start_blk = blk+cnt;
-
-                                        if (addr_tmp == NULL) {
-                                                printf("mmc write: malloc fail\n");
-                                                return 1;
-                                        }
-
-                                        if (mmc->block_dev.block_read(dev, start_blk, 1, addr_tmp) != 1) { // read 1 block
-                                                free(addr_tmp);
-                                                printf("mmc read 1 block fail\n");
-                                                return 1;
-                                        }
-
-                                        memcpy(addr_tmp, addr_byte, sz_byte);
-                                        if (mmc->block_dev.block_write(dev, start_blk, 1, addr_tmp) != 1) { // write 1 block
-                                                free(addr_tmp);
-                                                printf("mmc write 1 block fail\n");
-                                                return 1;
-                                        }
-                                        free(addr_tmp);
-                                }
-                                //printf("%#llx blocks , %#llx bytes written: %s\n", n, sz_byte, (n==cnt) ? "OK" : "ERROR");
-                                return (n == cnt) ? 0 : 1;
-                        }
-                        else if (strcmp(argv[1], "erase") == 0) {
-
-                                int dev=0;
-                                u32 flag=0;
-                                u64 cnt = 0, blk = 0, n = 0, sz_byte =0;
-                                char *name=NULL;
-                                u64 offset_addr =0, size=0;
-
-                                if (argc != 5) {
-                                        printf("Input is invalid, nothing happen.\n");
-                                        return 1;
-                                }
-
-                                if (isstring(argv[2])) {
-                                        name = argv[2];
-                                        dev = find_dev_num_by_partition_name (name);
-                                        offset_addr = simple_strtoull(argv[3], NULL, 16);
-                                        size = simple_strtoull(argv[4], NULL, 16);
-                                        flag = 1;
-                                        if ((strcmp(argv[2], "card") == 0)) {
-                                                flag = 2;
-                                        }
-                                }else if(isdigit(argv[2][0])){
-                                        dev = simple_strtoul(argv[2], NULL, 10);
-                                        blk = simple_strtoull(argv[3], NULL, 16);
-                                        cnt = simple_strtoull(argv[4], NULL, 16);
-                                }
-
-                                if (dev < 0) {
-                                        printf("Cannot find dev.\n");
-                                        return 1;
-                                }
-
-                                struct mmc *mmc = find_mmc_device(dev);
-
-                                if (flag == 1) { // mmc write logo add offset size
-                                        struct partitions *part_info  = find_mmc_partition_by_name(name);
-
-                                        if (offset_addr >= part_info->size) {
-                                                printf("Start address out #%s# partition'address region,(addr_byte < 0x%llx)\n",
-                                                                name, part_info->size);
-                                                return 1;
-                                        }
-                                        if ((offset_addr+size) > part_info->size) {
-                                                printf("End address exceeds #%s# partition,(offset = 0x%llx,size = 0x%llx)\n",
-                                                                name, part_info->offset,part_info->size);
-                                                return 1;
-                                        }
-                                        get_off_size(mmc, name, offset_addr, size, &blk, &cnt, &sz_byte);
-                                }
-                                else if(flag == 2){
-                                        int tmp_shift = ffs( mmc->read_bl_len) -1;
-                                        cnt = size >> tmp_shift;
-                                        blk = offset_addr >> tmp_shift;
-                                        sz_byte = size - (cnt<<tmp_shift);
-                                }
-
-                                if (!mmc)
-                                        return 1;
-
-                                printf("MMC erase: dev # %d, start_erase_address(in block) # %#llx, several blocks  # %lld will be erased ...\n ",
-                                                dev, blk, cnt);
-
-                                mmc_init(mmc);
-
-                                if (cnt != 0)
-                                        n = mmc->block_dev.block_erase(dev, blk, cnt);
-
-                                printf("dev # %d, %s, several blocks erased %s\n",
-                                                dev, (flag == 0) ? " ":(argv[2]),(n == 0) ? "OK" : "ERROR");
-
-                                return (n == 0) ? 0 : 1;
-
-                        } else if (strcmp(argv[1], "ext_csd") == 0) {
-                            int ret;
-                            int dev = simple_strtoul(argv[2], NULL, 10);
-                            int bit = simple_strtoul(argv[3], NULL, 10);
-                            int val = simple_strtoul(argv[4], NULL, 16);
-                            if ((bit > 191) || (bit < 0)) {
-                                printf("bit is not able to write!\n");
-                                return 1;
-                            }
-                            struct mmc* mmc = find_mmc_device(dev);
-                            if (!mmc) {
-                                puts("no mmc devices available\n");
-                                return 1;
-                            }
-                            mmc_init(mmc);
-                            ret = mmc_set_ext_csd(mmc, bit, val);
-                            printf("write EXT_CSD bit[%d] val[0x%x] %s\n",
-                                    bit, val, (ret == 0) ? "ok" : "fail");
-                            return ret;
-
-                        } else
-                                rc = cmd_usage(cmdtp);
-
-                        return rc;
-        }
+    return cp->cmd(cmdtp, flag, argc, argv);
 }
 
 U_BOOT_CMD(
@@ -1044,11 +1510,19 @@ U_BOOT_CMD(
     "amlmmc rescan <device_num>\n"
     "amlmmc part <device_num> - show partition infomation of mmc\n"
     "amlmmc list - lists available devices\n"
+    "amlmmc env -  display env partition offset\n"
     "amlmmc switch <device_num> <part name> - part name : boot0, boot1, user\n"
     "amlmmc status <device_num> - read sd/emmc device status\n"
-    "amlmmc ext_csd <bit> <value> - read/write sd/emmc device EXT_CSD [bit] value\n"
+    "amlmmc ext_csd <device_num> <byte> - read sd/emmc device EXT_CSD [byte]\n"
+    "amlmmc ext_csd <device_num> <byte> <value> - write sd/emmc device EXT_CSD [byte] value\n"
     "amlmmc response <device_num> - read sd/emmc last command response\n"
-    "amlmmc controller <device_num> - read sd/emmc controller register\n");
+    "amlmmc controller <device_num> - read sd/emmc controller register\n"
+#ifdef CONFIG_SECURITYKEY
+    "amlmmc key - disprotect key partition\n"
+#endif
+);
+
+
 
 /* dtb read&write operation with backup updates */
 static u32 _calc_dtb_checksum(struct aml_dtb_rsv * dtb)
@@ -1058,13 +1532,13 @@ static u32 _calc_dtb_checksum(struct aml_dtb_rsv * dtb)
     u32 * buffer;
     u32 checksum = 0;
 
-	if ((u64)dtb % 4 != 0) {
+    if ((u64)dtb % 4 != 0) {
         BUG();
     }
 
     size = size >> 2;
     buffer = (u32*) dtb;
-	while (i < size)
+    while (i < size)
         checksum += buffer[i++];
 
     return checksum;
@@ -1085,19 +1559,20 @@ static int _dtb_read(struct mmc *mmc, u64 blk, u64 cnt, void * addr)
     int dev = EMMC_DTB_DEV;
     u64 n;
     n = mmc->block_dev.block_read(dev, blk, cnt, addr);
-	if (n != cnt) {
+    if (n != cnt) {
         dtb_err("%s: dev # %d, block # %#llx, count # %#llx ERROR!\n",
                 __func__, dev, blk, cnt);
     }
 
     return (n != cnt);
 }
+
 static int _dtb_write(struct mmc *mmc, u64 blk, u64 cnt, void * addr)
 {
     int dev = EMMC_DTB_DEV;
     u64 n;
     n = mmc->block_dev.block_write(dev, blk, cnt, addr);
-	if (n != cnt) {
+    if (n != cnt) {
         dtb_err("%s: dev # %d, block # %#llx, count # %#llx ERROR!\n",
                 __func__, dev, blk, cnt);
     }
@@ -1108,16 +1583,15 @@ static int _dtb_write(struct mmc *mmc, u64 blk, u64 cnt, void * addr)
 static struct mmc *_dtb_init(void)
 {
     struct mmc *mmc = find_mmc_device(EMMC_DTB_DEV);
-	if (!mmc) {
+    if (!mmc) {
         dtb_err("not find mmc\n");
         return NULL;
     }
 
-	if (mmc_init(mmc)) {
+    if (mmc_init(mmc)) {
         dtb_err("mmc init failed\n");
         return NULL;
     }
-
     return mmc;
 }
 
@@ -1132,62 +1606,53 @@ static int dtb_read_shortcut(struct mmc * mmc, void *addr)
     part = aml_get_partition_by_name(MMC_RESERVED_NAME);
     dtb_glb_offset = part->offset + vpart->offset;
     /* short cut */
-	if (info->valid[0]) {
+    if (info->valid[0]) {
         dtb_info("short cut in...\n");
         blk = dtb_glb_offset / mmc->read_bl_len;
         cnt = vpart->size / mmc->read_bl_len;
-		if (_dtb_read(mmc, blk, cnt, addr)) {
+        if (_dtb_read(mmc, blk, cnt, addr)) {
             dtb_err("%s: dev # %d, block # %#llx,cnt # %#llx ERROR!\n",
                     __func__, dev, blk, cnt);
             /*try dtb2 if it's valid */
-			if (info->valid[1]) {
-				blk = (dtb_glb_offset + vpart->size) / mmc->read_bl_len;
-				cnt = vpart->size / mmc->read_bl_len;
-				if (_dtb_read(mmc, blk, cnt, addr)) {
-					dtb_err("%s: dev # %d, block # %#llx, cnt # %#llx ERROR!\n",
-						__func__, dev, blk, cnt);
+            if (info->valid[1]) {
+                blk = (dtb_glb_offset + vpart->size) / mmc->read_bl_len;
+                cnt = vpart->size / mmc->read_bl_len;
+                if (_dtb_read(mmc, blk, cnt, addr)) {
+                    dtb_err("%s: dev # %d, block # %#llx, cnt # %#llx ERROR!\n",
+                        __func__, dev, blk, cnt);
                     return -1;
                 }
             }
         }
         return 0;
     }
-
     return -2;
 }
 
-int dtb_read(void *addr)
+static int update_dtb_info(struct mmc *mmc, void *addr)
 {
     int ret = 0, dev = EMMC_DTB_DEV;
     u64 blk, cnt, dtb_glb_offset;
     struct aml_dtb_rsv * dtb = (struct aml_dtb_rsv *) addr;
     struct aml_dtb_info *info = &dtb_infos;
     int cpy = 1, valid = 0;
-    struct mmc * mmc;
     struct partitions * part = NULL;
     struct virtual_partition *vpart = NULL;
     vpart = aml_get_virtual_partition_by_name(MMC_DTB_NAME);
     part = aml_get_partition_by_name(MMC_RESERVED_NAME);
     dtb_glb_offset = part->offset + vpart->offset;
 
-    mmc = _dtb_init();
-	if (NULL == mmc)
-        return -10;
-
-	if (0 == dtb_read_shortcut(mmc, addr))
-        return ret;
-
-    /* read dtb2 1st, for compatibility without checksum. */
-	while (cpy >= 0) {
-		blk = (dtb_glb_offset + cpy * (vpart->size)) / mmc->read_bl_len;
-		cnt = vpart->size / mmc->read_bl_len;
-		if (_dtb_read(mmc, blk, cnt, addr)) {
-			dtb_err("%s: dev # %d, block # %#llx, cnt # %#llx ERROR!\n",
-				__func__, dev, blk, cnt);
+    while (cpy >= 0) {
+        blk = (dtb_glb_offset + cpy * (vpart->size)) / mmc->read_bl_len;
+        cnt = vpart->size / mmc->read_bl_len;
+        ret = _dtb_read(mmc, blk, cnt, addr);
+        if (ret) {
+            dtb_err("%s: dev # %d, block # %#llx, cnt # %#llx ERROR!\n",
+                __func__, dev, blk, cnt);
         } else {
             ret = _verify_dtb_checksum(dtb);
             /* check magic avoid whole 0 issue */
-			if (!ret && (dtb->magic != 0)) {
+            if (!ret && (dtb->magic != 0)) {
                 info->stamp[cpy] = dtb->timestamp;
                 info->valid[cpy] = 1;
             }
@@ -1197,9 +1662,113 @@ int dtb_read(void *addr)
         valid += info->valid[cpy];
         cpy --;
     }
+    return valid;
+}
+
+static int update_invalid_dtb(struct mmc *mmc, void *addr)
+{
+    int ret = 0, dev = EMMC_DTB_DEV;
+    u64 blk, cnt, dtb_glb_offset;
+    struct aml_dtb_rsv * dtb = (struct aml_dtb_rsv *) addr;
+    struct aml_dtb_info *info = &dtb_infos;
+    struct partitions * part = NULL;
+    struct virtual_partition *vpart = NULL;
+    vpart = aml_get_virtual_partition_by_name(MMC_DTB_NAME);
+    part = aml_get_partition_by_name(MMC_RESERVED_NAME);
+    dtb_glb_offset = part->offset + vpart->offset;
+    cnt = vpart->size / mmc->read_bl_len;
+
+    if (info->valid[1]) {
+        blk = (dtb_glb_offset + vpart->size) / mmc->read_bl_len;
+        if (_dtb_read(mmc, blk, cnt, addr)) {
+        dtb_err("%s: dev # %d, block # %#llx,cnt # %#llx ERROR!\n",
+                __func__, dev, blk, cnt);
+            ret = -2;
+        }
+        /* fixme, update the invalid one - dtb1 */
+        blk = (dtb_glb_offset) / mmc->read_bl_len;
+        if (_dtb_write(mmc, blk, cnt, addr)) {
+            dtb_err("%s: dev # %d, block # %#llx,cnt # %#llx ERROR!\n",
+                __func__, dev, blk, cnt);
+            ret = -4;
+        }
+        info->valid[0] = 1;
+        info->stamp[0] = dtb->timestamp;
+        ret = 0;
+    } else {
+        dtb_info("update dtb2");
+        blk = (dtb_glb_offset + vpart->size) / mmc->read_bl_len;
+        if (_dtb_write(mmc, blk, cnt, addr)) {
+            dtb_err("%s: dev # %d, block # %#llx,cnt # %#llx ERROR!\n",
+                __func__, dev, blk, cnt);
+            ret = -2;
+        }
+        info->valid[1] = 1;
+        info->stamp[1] = dtb->timestamp;
+    }
+    return ret;
+}
+
+int update_old_dtb(struct mmc *mmc, void *addr)
+{
+    int ret = 0, dev = EMMC_DTB_DEV;
+    u64 blk, cnt, dtb_glb_offset;
+    struct aml_dtb_rsv * dtb = (struct aml_dtb_rsv *) addr;
+    struct aml_dtb_info *info = &dtb_infos;
+    struct partitions * part = NULL;
+    struct virtual_partition *vpart = NULL;
+    vpart = aml_get_virtual_partition_by_name(MMC_DTB_NAME);
+    part = aml_get_partition_by_name(MMC_RESERVED_NAME);
+    dtb_glb_offset = part->offset + vpart->offset;
+    cnt = vpart->size / mmc->read_bl_len;
+    if (stamp_after(info->stamp[1], info->stamp[0])) {
+        blk = (dtb_glb_offset + vpart->size) / mmc->read_bl_len;
+        if (_dtb_read(mmc, blk, cnt, addr)) {
+            dtb_err("%s: dev # %d, block # %#llx,cnt # %#llx ERROR!\n",
+                    __func__, dev, blk, cnt);
+            ret = -3;
+        }
+        /*update dtb1*/
+        blk = dtb_glb_offset / mmc->read_bl_len;
+        if (_dtb_write(mmc, blk, cnt, addr)) {
+            dtb_err("%s: dev # %d, block # %#llx,cnt # %#llx ERROR!\n",
+                    __func__, dev, blk, cnt);
+            ret = -3;
+        }
+        info->stamp[0] = dtb->timestamp;
+        ret = 0;
+    } else if (stamp_after(info->stamp[0], info->stamp[1])) {
+        /*update dtb2*/
+        blk = (dtb_glb_offset + vpart->size) / mmc->read_bl_len;
+        if (_dtb_write(mmc, blk, cnt, addr)) {
+            dtb_err("%s: dev # %d, block # %#llx,cnt # %#llx ERROR!\n",
+                    __func__, dev, blk, cnt);
+            ret = -3;
+        }
+        info->stamp[1] = dtb->timestamp;
+    } else {
+        dtb_info("do nothing\n");
+    }
+    return ret;
+}
+
+int dtb_read(void *addr)
+{
+    int ret = 0;
+    int valid = 0;
+    struct mmc *mmc;
+
+    mmc = _dtb_init();
+    if (mmc == NULL)
+        return -10;
+
+    if (dtb_read_shortcut(mmc, addr) == 0)
+        return ret;
+
+    valid = update_dtb_info(mmc, addr);
     dtb_info("total valid %d\n", valid);
     /* check valid */
-	switch (valid) {
+    switch (valid) {
         /* none is valid, using the 1st one for compatibility*/
         case 0:
             ret = -1;
@@ -1207,72 +1776,17 @@ int dtb_read(void *addr)
         break;
         /* only 1 is valid, using the valid one */
         case 1:
-			if (info->valid[1]) {
-				blk = (dtb_glb_offset + vpart->size) / mmc->read_bl_len;
-				if (_dtb_read(mmc, blk, cnt, addr)) {
-				dtb_err("%s: dev # %d, block # %#llx,cnt # %#llx ERROR!\n",
-						__func__, dev, blk, cnt);
-                    ret = -2;
-                }
-                /* fixme, update the invalid one - dtb1 */
-                blk = (dtb_glb_offset) / mmc->read_bl_len;
-				if (_dtb_write(mmc, blk, cnt, addr)) {
-                    dtb_err("%s: dev # %d, block # %#llx,cnt # %#llx ERROR!\n",
-                        __func__, dev, blk, cnt);
-                    ret = -4;
-                }
-                info->valid[0] = 1;
-                info->stamp[0] = dtb->timestamp;
-                ret = 0;
-            } else {
-                dtb_info("update dtb2");
-                blk = (dtb_glb_offset + vpart->size) / mmc->read_bl_len;
-				if (_dtb_write(mmc, blk, cnt, addr)) {
-                    dtb_err("%s: dev # %d, block # %#llx,cnt # %#llx ERROR!\n",
-                        __func__, dev, blk, cnt);
-                    ret = -2;
-                }
-                info->valid[1] = 1;
-                info->stamp[1] = dtb->timestamp;
-            }
+            update_invalid_dtb(mmc, addr);
         break;
         /* both are valid, pickup new one. */
         case 2:
-			if (stamp_after(info->stamp[1], info->stamp[0])) {
-				blk = (dtb_glb_offset + vpart->size) / mmc->read_bl_len;
-				if (_dtb_read(mmc, blk, cnt, addr)) {
-					dtb_err("%s: dev # %d, block # %#llx,cnt # %#llx ERROR!\n",
-							__func__, dev, blk, cnt);
-                    ret = -3;
-                }
-                /*update dtb1*/
-                blk = dtb_glb_offset / mmc->read_bl_len;
-				if (_dtb_write(mmc, blk, cnt, addr)) {
-                    dtb_err("%s: dev # %d, block # %#llx,cnt # %#llx ERROR!\n",
-                            __func__, dev, blk, cnt);
-                    ret = -3;
-                }
-                info->stamp[0] = dtb->timestamp;
-                ret = 0;
-            } else if (stamp_after(info->stamp[0], info->stamp[1])) {
-                /*update dtb2*/
-                blk = (dtb_glb_offset + vpart->size) / mmc->read_bl_len;
-				if (_dtb_write(mmc, blk, cnt, addr)) {
-                    dtb_err("%s: dev # %d, block # %#llx,cnt # %#llx ERROR!\n",
-                            __func__, dev, blk, cnt);
-                    ret = -3;
-                }
-                info->stamp[1] = dtb->timestamp;
-            } else {
-                dtb_info("do nothing\n");
-            }
+            update_old_dtb(mmc, addr);
         break;
         default:
             dtb_err("impossble valid values.\n");
             BUG();
         break;
     }
-
 _out:
     return ret;
 }
@@ -1293,19 +1807,19 @@ int dtb_write(void *addr)
     dtb_glb_offset = part->offset + vpart->offset;
 
     mmc = _dtb_init();
-	if (NULL == mmc)
+    if (NULL == mmc)
         return -10;
 
     /* stamp */
     valid = info->valid[0] + info->valid[1];
     dtb_info("valid %d\n", valid);
-	if (0 == valid)
+    if (0 == valid)
         dtb->timestamp = 0;
     else if (1 == valid) {
         dtb->timestamp = 1 + info->stamp[info->valid[0]?0:1];
     } else {
         /* both are valid */
-		if (info->stamp[0] != info->stamp[1]) {
+        if (info->stamp[0] != info->stamp[1]) {
             dtb_wrn("timestamp are not same %d:%d\n",
                 info->stamp[0], info->stamp[1]);
             dtb->timestamp = 1 + stamp_after(info->stamp[1], info->stamp[0])?
@@ -1320,10 +1834,10 @@ int dtb_write(void *addr)
     dtb_info("new stamp %d, checksum 0x%x, version %d, magic %s\n",
         dtb->timestamp, dtb->checksum, dtb->version, (char *)&dtb->magic);
 
-	for (cpy = 0; cpy < DTB_COPIES; cpy++) {
-		blk = (dtb_glb_offset + cpy * (vpart->size)) / mmc->read_bl_len;
-		cnt = vpart->size / mmc->read_bl_len;
-		ret |= _dtb_write(mmc, blk, cnt, addr);
+    for (cpy = 0; cpy < DTB_COPIES; cpy++) {
+        blk = (dtb_glb_offset + cpy * (vpart->size)) / mmc->read_bl_len;
+        cnt = vpart->size / mmc->read_bl_len;
+        ret |= _dtb_write(mmc, blk, cnt, addr);
         info->valid[cpy] = 1;
         info->stamp[cpy] = dtb->timestamp;
     }
@@ -1354,94 +1868,6 @@ _out:
     return ret;
 }
 
-int do_amlmmc_dtb_key(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
-{
-    int dev, ret = 0;
-    void *addr = NULL;
-    u64 cnt = 0, n = 0, blk = 0;
-    //u64 size;
-    struct partitions *part = NULL;
-    struct virtual_partition *vpart = NULL;
-    vpart = aml_get_virtual_partition_by_name(MMC_DTB_NAME);
-    part = aml_get_partition_by_name(MMC_RESERVED_NAME);
-
-    switch (argc) {
-        case 3:
-            if (strcmp(argv[1], "erase") == 0) {
-                if (strcmp(argv[2], "dtb") == 0) {
-                    printf("start erase dtb......\n");
-                    dev = EMMC_DTB_DEV;
-                    struct mmc *mmc = find_mmc_device(dev);
-                    if (!mmc) {
-                        printf("not find mmc\n");
-                        return 1;
-                    }
-                    blk = (part->offset + vpart->offset) / mmc->read_bl_len;
-                    cnt = (vpart->size * 2) / mmc->read_bl_len;
-                    if (cnt != 0)
-                        n = mmc->block_dev.block_erase(dev, blk, cnt);
-                    printf("dev # %d, %s, several blocks erased %s\n",
-                            dev, (flag == 0) ? " ":(argv[2]),(n == 0) ? "OK" : "ERROR");
-                    return (n == 0) ? 0 : 1;
-                }else if (strcmp(argv[2], "key") == 0){
-                    printf("start erase key......\n");
-                    dev = 1;
-                    struct mmc *mmc = find_mmc_device(dev);
-                    if (!mmc) {
-                        printf("not find mmc\n");
-                        return 1;
-                    }
-                    n = mmc_key_erase();
-                    printf("dev # %d, %s, several blocks erased %s\n",
-                            dev, (flag == 0) ? " ":(argv[2]),(n == 0) ? "OK" : "ERROR");
-                    return (n == 0) ? 0 : 1;
-                }
-            } else if (strcmp(argv[1], "cali_pattern") == 0) {
-
-				if (strcmp(argv[2], "write") == 0) {
-                    dev = EMMC_DTB_DEV;
-                    struct mmc *mmc = find_mmc_device(dev);
-                    if (!mmc) {
-                        printf("not find mmc\n");
-                        return 1;
-                    }
-                    vpart = aml_get_virtual_partition_by_name(MMC_PATTERN_NAME);
-                    part = aml_get_partition_by_name(MMC_RESERVED_NAME);
-                    addr = (void *)malloc(vpart->size);
-                    if (addr == NULL) {
-                        printf("cali_pattern malloc fail\n");
-                        return 1;
-                    }
-                    mmc_write_cali_mattern(addr);
-                    blk = (part->offset + vpart->offset) / mmc->read_bl_len;
-                    cnt = vpart->size / mmc->read_bl_len;
-                    if (cnt != 0)
-                        n = mmc->block_dev.block_write(dev, blk, cnt, addr);
-                    printf("dev # %d, %s, several calibration pattern blocks write %s\n",
-                            dev, (flag == 0) ? " ":(argv[2]),(n == cnt) ? "OK" : "ERROR");
-                    free(addr);
-                    return (n == cnt) ? 0 : 1;
-                }
-            }
-        case 4:
-            addr = (void *)simple_strtoul(argv[2], NULL, 16);
-            if (strcmp(argv[1], "dtb_read") == 0) {
-                /* fixme, */
-                ret = dtb_read(addr);
-                return 0;
-
-            } else if (strcmp(argv[1], "dtb_write") == 0) {
-                /* fixme, should we check the return value? */
-                ret = dtb_write(addr);
-                ret |= renew_partition_tbl(addr);
-                return ret;
-            }
-            return 0;
-        default:
-            break;
-    }
-    return 1;
-}
 
 /* update partition table in reserved partition. */
 __weak int emmc_update_ept(unsigned char *buffer)
@@ -1480,10 +1906,100 @@ _out:
     return ret;
 }
 
+int do_emmc_erase(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+    int dev;
+    u64 cnt = 0, n = 0, blk = 0;
+    //u64 size;
+    struct partitions *part = NULL;
+    struct virtual_partition *vpart = NULL;
+    struct mmc *mmc;
+    if (argc != 3)
+        return CMD_RET_USAGE;
+
+    vpart = aml_get_virtual_partition_by_name(MMC_DTB_NAME);
+    part = aml_get_partition_by_name(MMC_RESERVED_NAME);
+    if (strcmp(argv[2], "dtb") == 0) {
+        printf("start erase dtb......\n");
+        dev = EMMC_DTB_DEV;
+        mmc = find_mmc_device(dev);
+        if (!mmc) {
+            printf("not find mmc\n");
+            return 1;
+        }
+        blk = (part->offset + vpart->offset) / mmc->read_bl_len;
+        cnt = (vpart->size * 2) / mmc->read_bl_len;
+        if (cnt != 0)
+            n = mmc->block_dev.block_erase(dev, blk, cnt);
+        printf("dev # %d, %s, several blocks erased %s\n",
+                dev, (flag == 0) ? " ":(argv[2]),(n == 0) ? "OK" : "ERROR");
+        return (n == 0) ? 0 : 1;
+    } else if (strcmp(argv[2], "key") == 0) {
+        printf("start erase key......\n");
+        dev = 1;
+        mmc = find_mmc_device(dev);
+        if (!mmc) {
+            printf("not find mmc\n");
+            return 1;
+        }
+        n = mmc_key_erase();
+        printf("dev # %d, %s, several blocks erased %s\n",
+                dev, (flag == 0) ? " ":(argv[2]),(n == 0) ? "OK" : "ERROR");
+        return (n == 0) ? 0 : 1;
+    }
+    return 1;
+}
+
+int do_emmc_dtb_read(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+    int ret = 0;
+    void *addr = NULL;
+
+    if (argc != 4)
+        return CMD_RET_USAGE;
+
+    addr = (void *)simple_strtoul(argv[2], NULL, 16);
+    ret = dtb_read(addr);
+    return ret;
+}
+
+int do_emmc_dtb_write(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+    int ret = 0;
+    void *addr = NULL;
+
+    if (argc != 4)
+        return CMD_RET_USAGE;
+
+    addr = (void *)simple_strtoul(argv[2], NULL, 16);
+    ret = dtb_write(addr);
+    ret |= renew_partition_tbl(addr);
+    return ret;
+}
+
+static cmd_tbl_t cmd_emmc[] = {
+    U_BOOT_CMD_MKENT(dtb_read,  4, 0, do_emmc_dtb_read,  "", ""),
+    U_BOOT_CMD_MKENT(dtb_write, 4, 0, do_emmc_dtb_write, "", ""),
+    U_BOOT_CMD_MKENT(erase,     3, 0, do_emmc_erase,     "", ""),
+};
+
+static int do_emmc_dtb_key(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+    cmd_tbl_t *cp;
+
+    cp = find_cmd_tbl(argv[1], cmd_emmc, ARRAY_SIZE(cmd_emmc));
+
+    if (cp == NULL || argc > cp->maxargs)
+        return CMD_RET_USAGE;
+    if (flag == CMD_FLAG_REPEAT && !cp->repeatable)
+        return CMD_RET_SUCCESS;
+    return cp->cmd(cmdtp, flag, argc, argv);
+}
+
 U_BOOT_CMD(
-    emmc, 4, 1, do_amlmmc_dtb_key,
+    emmc, 4, 1, do_emmc_dtb_key,
     "EMMC sub system",
-    "emmc dtb_read addr size\n"
+    "dtb_read addr size\n"
     "emmc dtb_write addr size\n"
     "emmc erase dtb\n"
     "emmc erase key\n");

@@ -758,27 +758,27 @@ static int do_mmc_test(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]
 
 
 static cmd_tbl_t cmd_mmc[] = {
-	U_BOOT_CMD_MKENT(info, 1, 0, do_mmcinfo, "", ""),
-	U_BOOT_CMD_MKENT(read, 4, 1, do_mmc_read, "", ""),
-	U_BOOT_CMD_MKENT(write, 4, 0, do_mmc_write, "", ""),
-	U_BOOT_CMD_MKENT(erase, 3, 0, do_mmc_erase, "", ""),
-	U_BOOT_CMD_MKENT(rescan, 1, 1, do_mmc_rescan, "", ""),
-	U_BOOT_CMD_MKENT(part, 1, 1, do_mmc_part, "", ""),
-	U_BOOT_CMD_MKENT(dev, 3, 0, do_mmc_dev, "", ""),
-	U_BOOT_CMD_MKENT(list, 1, 1, do_mmc_list, "", ""),
+	U_BOOT_CMD_MKENT(info,     1, 0, do_mmcinfo,      "", ""),
+	U_BOOT_CMD_MKENT(read,     4, 1, do_mmc_read,     "", ""),
+	U_BOOT_CMD_MKENT(write,    4, 0, do_mmc_write,    "", ""),
+	U_BOOT_CMD_MKENT(erase,    3, 0, do_mmc_erase,    "", ""),
+	U_BOOT_CMD_MKENT(rescan,   1, 1, do_mmc_rescan,   "", ""),
+	U_BOOT_CMD_MKENT(part,     1, 1, do_mmc_part,     "", ""),
+	U_BOOT_CMD_MKENT(dev,      3, 0, do_mmc_dev,      "", ""),
+	U_BOOT_CMD_MKENT(list,     1, 1, do_mmc_list,     "", ""),
 	U_BOOT_CMD_MKENT(lifetime, 1, 1, do_mmc_lifetime, "", ""),
-	U_BOOT_CMD_MKENT(ext_csd, 3, 0, do_mmc_ext_csd, "", ""),
+	U_BOOT_CMD_MKENT(ext_csd,  3, 0, do_mmc_ext_csd,  "", ""),
 #ifdef CONFIG_SUPPORT_EMMC_BOOT
-	U_BOOT_CMD_MKENT(bootbus, 5, 0, do_mmc_bootbus, "", ""),
+	U_BOOT_CMD_MKENT(bootbus,         5, 0, do_mmc_bootbus,     "", ""),
 	U_BOOT_CMD_MKENT(bootpart-resize, 4, 0, do_mmc_boot_resize, "", ""),
-	U_BOOT_CMD_MKENT(partconf, 5, 0, do_mmc_partconf, "", ""),
-	U_BOOT_CMD_MKENT(rst-function, 3, 0, do_mmc_rst_func, "", ""),
+	U_BOOT_CMD_MKENT(partconf,        5, 0, do_mmc_partconf,    "", ""),
+	U_BOOT_CMD_MKENT(rst-function,    3, 0, do_mmc_rst_func,    "", ""),
 #endif
 #ifdef CONFIG_SUPPORT_EMMC_RPMB
 	U_BOOT_CMD_MKENT(rpmb, CONFIG_SYS_MAXARGS, 1, do_mmcrpmb, "", ""),
 #endif
 	U_BOOT_CMD_MKENT(setdsr, 2, 0, do_mmc_setdsr, "", ""),
-	U_BOOT_CMD_MKENT(test, 5, 0, do_mmc_test, "", ""),
+	U_BOOT_CMD_MKENT(test,   5, 0, do_mmc_test,   "", ""),
 };
 
 static int do_mmcops(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
@@ -819,7 +819,7 @@ U_BOOT_CMD(
 	"mmc dev [dev] [part] - show or set current mmc device [partition]\n"
 	"mmc list - lists available devices\n"
 	"mmc lifetime - show dev life time estimate type A/B\n"
-	"mmc ext_csd [bit] <val> - read/write ext_csd [bit] value\n"
+	"mmc ext_csd [byte] <val> - read/write ext_csd [byte] value\n"
 #ifdef CONFIG_SUPPORT_EMMC_BOOT
 	"mmc bootbus dev boot_bus_width reset_boot_bus_width boot_mode\n"
 	" - Set the BOOT_BUS_WIDTH field of the specified device\n"

@@ -1836,7 +1836,7 @@ static int do_store(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 
 U_BOOT_CMD(store, CONFIG_SYS_MAXARGS, 1, do_store,
 	"STORE sub-system",
-	"store init flag\n"
+	"init flag\n"
 	"store read name addr off|partition size\n"
 	"    read 'size' bytes starting at offset 'off'\n"
 	"    to/from memory address 'addr', skipping bad blocks.\n"

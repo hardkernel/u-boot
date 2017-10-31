@@ -24,6 +24,7 @@
 #define AML_BL_USER		(0x1 << 0)
 #define AML_BL_BOOT0	(0x1 << 1)
 #define AML_BL_BOOT1	(0x1 << 2)
+#define AML_BL_BOOT     (0x6)
 #define AML_BL_ALL		(0x7)
 
 int amlmmc_write_bootloader(int dev, int map,
@@ -51,6 +52,11 @@ int find_dev_num_by_partition_name (char *name);
 #ifdef CONFIG_AML_PARTITION
 int emmc_update_mbr(unsigned char *buffer);
 #endif
+
+/*mmc ext_csd register operation*/
+int mmc_get_ext_csd(struct mmc *mmc, u8 *ext_csd);
+int mmc_set_ext_csd(struct mmc *mmc, u8 index, u8 value);
+
 
 
 #endif /* __AML_MMC_H__ */
