@@ -94,6 +94,7 @@ enum uclass_id {
 	UCLASS_FG,
 	UCLASS_KEY,
 	UCLASS_RC,		/* Remote Controller */
+	UCLASS_CHARGE_DISPLAY,	/* Charge display */
 
 	UCLASS_COUNT,
 	UCLASS_INVALID = -1,

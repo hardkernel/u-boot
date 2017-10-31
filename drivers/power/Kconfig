@@ -8,6 +8,12 @@ source "drivers/power/pmic/Kconfig"
 
 source "drivers/power/regulator/Kconfig"
 
+config DM_CHARGE_DISPLAY
+	bool "Enable driver model for charge display support"
+	depends on DM
+	help
+	  This adds a simple uclass for charge display.
+
 choice
 	prompt "Select Sunxi PMIC Variant"
 	depends on ARCH_SUNXI
