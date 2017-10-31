@@ -35,10 +35,6 @@
 #define CONFIG_ENV_VARS_UBOOT_CONFIG
 
 #undef CONFIG_EXTRA_ENV_SETTINGS
-#define MTDPARTS_BOOT	\
-	"mtdparts_boot=rk29xxnand:0x00002000@0x00002000(uboot),0x00002000@0x00004000(trust),"		\
-	"0x00000008@0x00006000(bcb),0x00008000@0x00006008(resource),0x0000C000@0x0000E008(kernel),"	\
-	"0x00010000@0x0001A008(boot),0x00010000@0x0002A008(recovery),0x000007F8@0x0003A008(reserved)"
 #define MTDPARTS_DOS	\
 	"mtdparts=rk29xxnand:0x00040000@0x0053A800(fat),0x00300000@0x0023A800(system),"		\
 	"0x00200000@0x0003A800(cache),-@0x0057A800(userdata)"
@@ -50,9 +46,9 @@
 	"fdt_addr_r=0x04800000\0" \
 	"kernel_addr_r=0x02000000\0" \
 	"ramdisk_addr_r=0x04000000\0" \
-	"bootargs=earlycon=uart8250,mmio32,0xff1a0000 swiotlb=1 "ANDROID_OPT" root=/dev/mmcblk0p2 rw rootfstype=ext4 init=/init "	\
-		MTDPARTS_BOOT" " MTDPARTS_DOS" uboot_logo=0x02000000@0x7dc00000 "	\
-		"loader.timestamp=2017-10-12_13:49:27 SecureBootCheckOk=0\0" \
+	"bootargs=earlycon=uart8250,mmio32,0xff1a0000 swiotlb=1 "ANDROID_OPT	\
+		" root=/dev/mmcblk0p2 rw rootfstype=ext4 init=/init "	\
+		MTDPARTS_DOS" SecureBootCheckOk=0\0"	\
 	"bootcmd=cfgload; movi read kernel 0 ${kernel_addr_r}; "	\
 		"movi read dtb 0 ${fdt_addr_r}; "	\
 		"booti ${kernel_addr_r} - ${fdt_addr_r}\0"
