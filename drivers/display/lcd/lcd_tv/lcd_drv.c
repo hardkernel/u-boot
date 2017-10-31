@@ -585,6 +585,11 @@ static void lcd_vbyone_control_set(struct lcd_config_s *pconf)
 
 	/* Mux pads in combo-phy: 0 for dsi; 1 for lvds or vbyone; 2 for edp */
 	lcd_hiu_write(HHI_DSI_LVDS_EDP_CNTL0, 0x1);
+
+	/* set hpd & lockn hw filter */
+	lcd_vcbus_write(VBO_INFILTER_CTRL, 0xff77);
+	lcd_vcbus_setb(VBO_INSGN_CTRL, 0, 2, 2);
+
 	lcd_vcbus_setb(VBO_CTRL_L, 1, 0, 1);
 
 	/*force vencl clk enable, otherwise, it might auto turn off by mipi DSI
@@ -778,6 +783,9 @@ static void lcd_vbyone_wait_hpd(struct lcd_config_s *pconf)
 			lcd_vbyone_sw_hpd();
 	}
 #endif
+	/* musk htpd */
+	lcd_vcbus_setb(VBO_INSGN_CTRL, 1, 2, 2);
+
 	if ((pconf->lcd_control.vbyone_config->ctrl_flag) & 0x2) {
 		LCDPR("ctrl_flag for hpd_data delay\n");
 		mdelay(pconf->lcd_control.vbyone_config->hpd_data_delay);
