@@ -240,7 +240,6 @@
             "run bcb_cmd; "\
             "run factory_reset_poweroff_protect;"\
             "run upgrade_check;"\
-            "run init_display;"\
             "run storeargs;"\
             "run switch_bootmode;"
 #define CONFIG_BOOTCOMMAND "run storeboot"
@@ -266,14 +265,14 @@
  *    CONFIG_DDR_TYPE_DDR3     : DDR3
  *    CONFIG_DDR_TYPE_DDR4     : DDR4
  *    CONFIG_DDR_TYPE_AUTO     : DDR3/DDR4 auto detect */
-#define CONFIG_DDR_TYPE					CONFIG_DDR_TYPE_AUTO
+#define CONFIG_DDR_TYPE					CONFIG_DDR_TYPE_DDR3
 /* DDR channel setting, please refer hardware design.
  *    CONFIG_DDR0_RANK0        : DDR0 rank0
  *    CONFIG_DDR0_RANK01       : DDR0 rank0+1
  *    CONFIG_DDR0_16BIT        : DDR0 16bit mode
  *    CONFIG_DDR0_16BIT_2      : DDR0 16bit mode, 2ranks
  *    CONFIG_DDR_CHL_AUTO      : auto detect RANK0 / RANK0+1 */
-#define CONFIG_DDR_CHANNEL_SET			CONFIG_DDR0_RANK0
+#define CONFIG_DDR_CHANNEL_SET			CONFIG_DDR0_16BIT
 /* ddr functions */
 #define CONFIG_DDR_FULL_TEST			0 //0:disable, 1:enable. ddr full test
 #define CONFIG_CMD_DDR_D2PLL			0 //0:disable, 1:enable. d2pll cmd
@@ -307,7 +306,7 @@
 
 
 /* vpu */
-#define CONFIG_AML_VPU 1
+//#define CONFIG_AML_VPU 1
 
 /* DISPLAY & HDMITX */
 //#define CONFIG_AML_HDMITX20 1
@@ -362,7 +361,7 @@
 #define CONFIG_UNIFY_KEY_MANAGE                 1
 
 /* net */
-#define CONFIG_CMD_NET   1
+//#define CONFIG_CMD_NET   1
 #if defined(CONFIG_CMD_NET)
 	#define CONFIG_DESIGNWARE_ETH 1
 	#define CONFIG_PHYLIB	1

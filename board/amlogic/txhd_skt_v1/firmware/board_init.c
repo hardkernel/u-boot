@@ -24,5 +24,7 @@
 /* bl2 customer code */
 void board_init(void)
 {
+#ifndef CONFIG_PXP_EMULATOR
 	power_init(0);
+#endif
 }
