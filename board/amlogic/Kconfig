@@ -147,6 +147,10 @@ config TXHD_SKT_V1
 	bool "Support amlogic txhd socket v1 board"
 	default n
 
+config TXHD_R341_V1
+	bool "Support amlogic txhd r341 v1 board"
+	default n
+
 config PXP_EMULATOR
 	bool "Support pxp environment"
 	default n
@@ -304,6 +308,10 @@ endif
 
 if TXHD_SKT_V1
 source "board/amlogic/txhd_skt_v1/Kconfig"
+endif
+
+if TXHD_R341_V1
+source "board/amlogic/txhd_r341_v1/Kconfig"
 endif
 
 if ODROID_C2
