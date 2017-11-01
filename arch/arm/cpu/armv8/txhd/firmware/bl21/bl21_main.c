@@ -21,9 +21,7 @@
 
 void bl21_main(void)
 {
-	serial_puts("bl21 start\n");
 	/* bl2 customer code */
 	board_init();
-	serial_puts("bl21 end\n");
 	return;
 }
