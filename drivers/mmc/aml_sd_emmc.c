@@ -231,23 +231,23 @@ extern unsigned sd_debug_board_1bit_flag;
 static int sd_inand_staff_init(struct mmc *mmc)
 {
 	struct aml_card_sd_info * sdio=mmc->priv;
-    unsigned base;
+	//unsigned base;
 
 	sd_debug("");
     sdio->sd_emmc_pwr_prepare(sdio->sd_emmc_port);
 	sd_debug("power off");
 	sdio->sd_emmc_pwr_off(sdio->sd_emmc_port);
-
 	//try to init mmc controller clock firstly
 	mmc->clock = 400000;
 	aml_sd_cfg_swth(mmc);
 
 	if (sdio->sd_emmc_port == SDIO_PORT_B) {  //only power ctrl for external tf card
-        base=get_timer(0);
+		printf("[%s][%d], debug\n", __func__, __LINE__);
+		//base=get_timer(0);
 #if defined(CONFIG_VLSI_EMULATOR)
-	    while (get_timer(base)<1) ;
+	    //while (get_timer(base)<1) ;
 #else
-        while (get_timer(base)<200) ;
+		//while (get_timer(base)<200) ;
 #endif
     }
     sdio->sd_emmc_pwr_on(sdio->sd_emmc_port);
@@ -260,11 +260,11 @@ static int sd_inand_staff_init(struct mmc *mmc)
     }
 
     if (sdio->sd_emmc_port == SDIO_PORT_B) {   //only power ctrl for external tf card
-        base=get_timer(0);
+        //base=get_timer(0);
 #if defined(CONFIG_VLSI_EMULATOR)
-	    while (get_timer(base)<1) ;
+        //while (get_timer(base)<1) ;
 #else
-        while (get_timer(base)<200) ;
+        //while (get_timer(base)<200) ;
 #endif
     }
     if (!sdio->inited_flag)

@@ -168,10 +168,10 @@ static int  sd_emmc_detect(unsigned port)
 	case SDIO_PORT_A:
 		break;
 	case SDIO_PORT_B:
-			setbits_le32(P_PREG_PAD_GPIO2_EN_N, 1 << 26);//CARD_6
-			ret = readl(P_PREG_PAD_GPIO2_I) & (1 << 26) ? 0 : 1;
+			setbits_le32(P_PREG_PAD_GPIO2_EN_N, 1 << 22);//CARD_6
+			ret = readl(P_PREG_PAD_GPIO2_I) & (1 << 22) ? 0 : 1;
 			printf("%s\n", ret ? "card in" : "card out");
-			if ((readl(P_PERIPHS_PIN_MUX_6) & (3 << 8))) { //if uart pinmux set, debug board in
+			/*if ((readl(P_PERIPHS_PIN_MUX_6) & (3 << 8))) { //if uart pinmux set, debug board in
 				if (!(readl(P_PREG_PAD_GPIO2_I) & (1 << 24))) {
 					printf("sdio debug board detected, sd card with 1bit mode\n");
 					sd_debug_board_1bit_flag = 1;
@@ -181,7 +181,7 @@ static int  sd_emmc_detect(unsigned port)
 					sd_debug_board_1bit_flag = 0;
 					return 1;
 				}
-			}
+			}*/
 		break;
 	default:
 		break;

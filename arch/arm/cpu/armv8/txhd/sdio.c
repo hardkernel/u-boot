@@ -51,14 +51,13 @@ int cpu_sd_emmc_init(unsigned port)
 	switch (port)
 	{
 	case SDIO_PORT_A:
-        setbits_le32(P_PERIPHS_PIN_MUX_5, (0x3f << 26) | (0x1 << 24));
+		//setbits_le32(P_PERIPHS_PIN_MUX_5, (0x3f << 26) | (0x1 << 24));
 		break;
 	case SDIO_PORT_B:
 		if (sd_debug_board_1bit_flag == 1)
-			setbits_le32(P_PERIPHS_PIN_MUX_6, 0x7 << 2);
+			setbits_le32(P_PERIPHS_PIN_MUX_9, 0x110001);
         else {
-            clrbits_le32(P_PERIPHS_PIN_MUX_6, 0x3f << 6);
-			setbits_le32(P_PERIPHS_PIN_MUX_6, 0x3f << 0);
+            setbits_le32(P_PERIPHS_PIN_MUX_9, 0x111111);
         }
 		break;
 	case SDIO_PORT_C://SDIOC GPIOB_2~GPIOB_7
