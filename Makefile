@@ -1438,7 +1438,7 @@ System.map:	u-boot
 
 TOOLS_DIR := $(srctree)/tools/rk_tools
 
-build_img:	u-boot
+build_img:	u-boot $(srctree)/u-boot-dtb.bin
 	$(TOOLS_DIR)/bin/loaderimage --pack --uboot $(srctree)/u-boot-dtb.bin uboot.img
 	$(TOOLS_DIR)/bin/trust_merger $(TOOLS_DIR)/trust.ini
 	$(Q)cp uboot.img $(srctree)/sd_fuse/
