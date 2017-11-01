@@ -1,4 +1,4 @@
-if TARGET_MESON_TXLX
+if TARGET_MESON_TXHD
 
 config SYS_CPU
 	string
@@ -14,7 +14,7 @@ config SYS_VENDOR
 
 config SYS_SOC
 	string
-	default "txlx"
+	default "txhd"
 
 config SYS_CONFIG_NAME
 	default "txhd_skt_v1"
