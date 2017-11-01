@@ -380,7 +380,8 @@
 
 
 /* vpu */
-//#define CONFIG_AML_VPU 1
+#define CONFIG_AML_VPU 1
+#define CONFIG_VPU_CLK_LEVEL_DFT 5
 
 /* DISPLAY & HDMITX */
 //#define CONFIG_AML_HDMITX20 1

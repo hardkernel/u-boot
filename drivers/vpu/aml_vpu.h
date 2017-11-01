@@ -28,17 +28,18 @@
 
 enum vpu_chip_e {
 	VPU_CHIP_M8 = 0,
-	VPU_CHIP_M8B,
-	VPU_CHIP_M8M2,
-	VPU_CHIP_G9TV,
-	VPU_CHIP_G9BB,
-	VPU_CHIP_GXBB,
-	VPU_CHIP_GXTVBB,
-	VPU_CHIP_GXL,
-	VPU_CHIP_GXM,
-	VPU_CHIP_TXL,
-	VPU_CHIP_TXLX,
-	VPU_CHIP_AXG,
+	VPU_CHIP_M8B, /* 1 */
+	VPU_CHIP_M8M2, /* 2 */
+	VPU_CHIP_G9TV, /* 3 */
+	VPU_CHIP_G9BB, /* 4 */
+	VPU_CHIP_GXBB, /* 5 */
+	VPU_CHIP_GXTVBB, /* 6 */
+	VPU_CHIP_GXL, /* 7 */
+	VPU_CHIP_GXM, /* 8 */
+	VPU_CHIP_TXL, /* 9 */
+	VPU_CHIP_TXLX, /* 10 */
+	VPU_CHIP_AXG, /* 11 */
+	VPU_CHIP_TXHD, /* 12 */
 	VPU_CHIP_MAX,
 };
 
@@ -127,6 +128,12 @@ static unsigned int fclk_table[] = { /* unit: MHz */
 #define CLK_LEVEL_DFT_AXG      3
 #define CLK_LEVEL_MAX_AXG      4
 #define FCLK_TYPE_AXG          FCLK_2000M
+
+/* TXHD */
+/* freq max=400M, default=400M */
+#define CLK_LEVEL_DFT_TXHD     5
+#define CLK_LEVEL_MAX_TXHD     6
+#define FCLK_TYPE_TXHD         FCLK_2000M
 
 /* vpu clk setting */
 enum vpu_mux_e {

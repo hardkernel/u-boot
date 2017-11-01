@@ -42,24 +42,22 @@
 /* ********************************
  * register access api
  * ********************************* */
-enum vpu_chip_e vpu_chip_type;
+extern enum vpu_chip_e vpu_chip_type;
 
 static inline unsigned int vpu_hiu_read(unsigned int _reg)
 {
 	unsigned int val = 0;
 
 	switch (vpu_chip_type) {
-	case VPU_CHIP_GXBB:
-	case VPU_CHIP_GXTVBB:
-	case VPU_CHIP_GXL:
-	case VPU_CHIP_GXM:
-	case VPU_CHIP_TXL:
-	case VPU_CHIP_TXLX:
-	case VPU_CHIP_AXG:
-		val = *(volatile unsigned int *)(REG_ADDR_HIU(_reg));
+	case VPU_CHIP_M8:
+	case VPU_CHIP_M8B:
+	case VPU_CHIP_M8M2:
+	case VPU_CHIP_G9TV:
+	case VPU_CHIP_G9BB:
+		val = *(volatile unsigned int *)(REG_ADDR_CBUS(_reg));
 		break;
 	default:
-		val = *(volatile unsigned int *)(REG_ADDR_CBUS(_reg));
+		val = *(volatile unsigned int *)(REG_ADDR_HIU(_reg));
 		break;
 	}
 
@@ -69,17 +67,15 @@ static inline unsigned int vpu_hiu_read(unsigned int _reg)
 static inline void vpu_hiu_write(unsigned int _reg, unsigned int _value)
 {
 	switch (vpu_chip_type) {
-	case VPU_CHIP_GXBB:
-	case VPU_CHIP_GXTVBB:
-	case VPU_CHIP_GXL:
-	case VPU_CHIP_GXM:
-	case VPU_CHIP_TXL:
-	case VPU_CHIP_TXLX:
-	case VPU_CHIP_AXG:
-		*(volatile unsigned int *)REG_ADDR_HIU(_reg) = (_value);
+	case VPU_CHIP_M8:
+	case VPU_CHIP_M8B:
+	case VPU_CHIP_M8M2:
+	case VPU_CHIP_G9TV:
+	case VPU_CHIP_G9BB:
+		*(volatile unsigned int *)REG_ADDR_CBUS(_reg) = (_value);
 		break;
 	default:
-		*(volatile unsigned int *)REG_ADDR_CBUS(_reg) = (_value);
+		*(volatile unsigned int *)REG_ADDR_HIU(_reg) = (_value);
 		break;
 	}
 };

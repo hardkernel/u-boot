@@ -39,6 +39,9 @@ static char *dt_addr;
 #endif
 #endif
 static int dts_ready = 0;
+enum vpu_chip_e vpu_chip_type = VPU_CHIP_MAX;
+
+//#define VPU_DEBUG_PRINT
 
 static struct vpu_conf_s vpu_conf = {
 	.clk_level_dft = 0,
@@ -174,6 +177,16 @@ static void vpu_chip_detect(void)
 		vpu_conf.clk_level_max = CLK_LEVEL_MAX_AXG;
 		vpu_conf.fclk_type = FCLK_TYPE_AXG;
 		break;
+	case MESON_CPU_MAJOR_ID_TXHD:
+		vpu_chip_type = VPU_CHIP_TXHD;
+#ifdef CONFIG_VPU_CLK_LEVEL_DFT
+		vpu_conf.clk_level_dft = CONFIG_VPU_CLK_LEVEL_DFT;
+#else
+		vpu_conf.clk_level_dft = CLK_LEVEL_DFT_TXHD;
+#endif
+		vpu_conf.clk_level_max = CLK_LEVEL_MAX_TXHD;
+		vpu_conf.fclk_type = FCLK_TYPE_TXHD;
+		break;
 	default:
 		vpu_chip_type = VPU_CHIP_GXBB;
 #ifdef CONFIG_VPU_CLK_LEVEL_DFT
@@ -203,6 +216,34 @@ static void vpu_chip_detect(void)
 		vpu_conf.clk_level_max,
 		vpu_clk_table[vpu_conf.fclk_type][vpu_conf.clk_level_max][0]);
 #endif
+}
+
+static int vpu_check(void)
+{
+	int ret = -1;
+
+	switch (vpu_chip_type) {
+	case VPU_CHIP_M8:
+	case VPU_CHIP_M8B:
+	case VPU_CHIP_M8M2:
+	case VPU_CHIP_G9TV:
+	case VPU_CHIP_G9BB:
+	case VPU_CHIP_GXBB:
+	case VPU_CHIP_GXTVBB:
+	case VPU_CHIP_GXL:
+	case VPU_CHIP_GXM:
+	case VPU_CHIP_TXL:
+	case VPU_CHIP_TXLX:
+	case VPU_CHIP_AXG:
+	case VPU_CHIP_TXHD:
+		ret = 0;
+		break;
+	default:
+		VPUERR("invalid vpu for current chip\n");
+		break;
+	}
+
+	return ret;
 }
 
 static unsigned int get_vpu_clk_level(unsigned int video_clk)
@@ -472,6 +513,10 @@ static int set_vpu_clk(unsigned int vclk)
 	int ret = 0;
 	unsigned int clk_level;
 
+#ifdef VPU_DEBUG_PRINT
+	VPUPR("%s\n", __func__);
+#endif
+
 	if (vclk >= 100) /* regard as vpu_clk */
 		clk_level = get_vpu_clk_level(vclk);
 	else /* regard as clk_level */
@@ -484,19 +529,21 @@ static int set_vpu_clk(unsigned int vclk)
 	}
 
 	switch (vpu_chip_type) {
-	case VPU_CHIP_GXBB:
-	case VPU_CHIP_GXTVBB:
-	case VPU_CHIP_GXL:
-	case VPU_CHIP_GXM:
-	case VPU_CHIP_TXL:
-	case VPU_CHIP_TXLX:
-	case VPU_CHIP_AXG:
-		ret = adjust_vpu_clk_gx(clk_level);
-		break;
-	default:
+	case VPU_CHIP_M8:
+	case VPU_CHIP_M8B:
+	case VPU_CHIP_M8M2:
+	case VPU_CHIP_G9TV:
+	case VPU_CHIP_G9BB:
 		ret = adjust_vpu_clk_m8_g9(clk_level);
 		break;
+	default:
+		ret = adjust_vpu_clk_gx(clk_level);
+		break;
 	}
+
+#ifdef VPU_DEBUG_PRINT
+	VPUPR("%s finish\n", __func__);
+#endif
 
 	return ret;
 }
@@ -511,6 +558,10 @@ static void vpu_mem_pd_init_off(void)
 
 static void vpu_clk_gate_init_off(void)
 {
+#ifdef VPU_DEBUG_PRINT
+	VPUPR("%s\n", __func__);
+#endif
+
 	switch (vpu_chip_type) {
 	case VPU_CHIP_TXLX:
 		/* dolby core1 */
@@ -529,16 +580,24 @@ static void vpu_clk_gate_init_off(void)
 		break;
 	}
 
-	VPUPR("%s\n", __func__);
+	VPUPR("%s finish\n", __func__);
 }
 
 static void vpu_module_init_config(void)
 {
+#ifdef VPU_DEBUG_PRINT
+	VPUPR("%s\n", __func__);
+#endif
+
 	/* dmc_arb_config */
 	vpu_vcbus_write(VPU_RDARB_MODE_L1C1, 0x210000);
 	vpu_vcbus_write(VPU_RDARB_MODE_L1C2, 0x10000);
 	vpu_vcbus_write(VPU_RDARB_MODE_L2C1, 0x900000);
 	vpu_vcbus_write(VPU_WRARB_MODE_L2C1, 0x20000);
+
+#ifdef VPU_DEBUG_PRINT
+	VPUPR("%s finish\n", __func__);
+#endif
 }
 
 static void vpu_power_on_m8_g9(void)
@@ -617,6 +676,10 @@ static void vpu_power_on_gx(void)
 {
 	unsigned int i;
 
+#ifdef VPU_DEBUG_PRINT
+	VPUPR("%s\n", __func__);
+#endif
+
 	vpu_ao_setb(AO_RTI_GEN_PWR_SLEEP0, 0, 8, 1); /* [8] power on */
 	udelay(20);
 
@@ -653,6 +716,10 @@ static void vpu_power_on_gx(void)
 	vpu_cbus_set_mask(RESET2_LEVEL, (1<<15));
 	vpu_cbus_set_mask(RESET4_LEVEL, ((1<<6) | (1<<7) | (1<<13) | (1<<5) | (1<<9) | (1<<4) | (1<<12)));
 	vpu_cbus_set_mask(RESET7_LEVEL, (1<<7));
+
+#ifdef VPU_DEBUG_PRINT
+	VPUPR("%s finish\n", __func__);
+#endif
 }
 
 static void vpu_power_off_gx(void)
@@ -752,42 +819,56 @@ static void vpu_power_off_axg(void)
 
 static void vpu_power_on(void)
 {
+#ifdef VPU_DEBUG_PRINT
+	VPUPR("%s\n", __func__);
+#endif
+
 	switch (vpu_chip_type) {
-	case VPU_CHIP_GXBB:
-	case VPU_CHIP_GXTVBB:
-	case VPU_CHIP_GXL:
-	case VPU_CHIP_GXM:
-	case VPU_CHIP_TXL:
-	case VPU_CHIP_TXLX:
-		vpu_power_on_gx();
+	case VPU_CHIP_M8:
+	case VPU_CHIP_M8B:
+	case VPU_CHIP_M8M2:
+	case VPU_CHIP_G9TV:
+	case VPU_CHIP_G9BB:
+		vpu_power_on_m8_g9();
 		break;
 	case VPU_CHIP_AXG:
 		vpu_power_on_axg();
 		break;
 	default:
-		vpu_power_on_m8_g9();
+		vpu_power_on_gx();
 		break;
 	}
+
+#ifdef VPU_DEBUG_PRINT
+	VPUPR("%s finish\n", __func__);
+#endif
 }
 
 static void vpu_power_off(void)
 {
+#ifdef VPU_DEBUG_PRINT
+	VPUPR("%s\n", __func__);
+#endif
+
 	switch (vpu_chip_type) {
-	case VPU_CHIP_GXBB:
-	case VPU_CHIP_GXTVBB:
-	case VPU_CHIP_GXL:
-	case VPU_CHIP_GXM:
-	case VPU_CHIP_TXL:
-	case VPU_CHIP_TXLX:
-		vpu_power_off_gx();
+	case VPU_CHIP_M8:
+	case VPU_CHIP_M8B:
+	case VPU_CHIP_M8M2:
+	case VPU_CHIP_G9TV:
+	case VPU_CHIP_G9BB:
+		vpu_power_off_m8_g9();
 		break;
 	case VPU_CHIP_AXG:
 		vpu_power_off_axg();
 		break;
 	default:
-		vpu_power_off_m8_g9();
+		vpu_power_off_gx();
 		break;
 	}
+
+#ifdef VPU_DEBUG_PRINT
+	VPUPR("%s finish\n", __func__);
+#endif
 }
 
 static int get_vpu_config(void)
@@ -853,6 +934,9 @@ int vpu_probe(void)
 #endif
 
 	vpu_chip_detect();
+	if (vpu_check())
+		return -1;
+
 	ret = get_vpu_config();
 	vpu_power_on();
 	set_vpu_clk(vpu_conf.clk_level);
@@ -870,6 +954,9 @@ int vpu_probe(void)
 
 int vpu_remove(void)
 {
+	if (vpu_check())
+		return -1;
+
 	VPUPR("vpu remove\n");
 	vpu_power_off();
 	return 0;
@@ -905,6 +992,9 @@ int vpu_clk_change(int level)
 	unsigned int vpu_clk;
 	unsigned int mux, div;
 
+	if (vpu_check())
+		return -1;
+
 	if (level >= 100) /* regard as vpu_clk */
 		level = get_vpu_clk_level(level);
 
@@ -920,25 +1010,13 @@ int vpu_clk_change(int level)
 	vpu_clk = vpu_clk_table[vpu_conf.fclk_type][vpu_conf.clk_level][0];
 
 	switch (vpu_chip_type) {
-	case VPU_CHIP_M8B:
-	case VPU_CHIP_M8M2:
-	case VPU_CHIP_G9TV:
-	case VPU_CHIP_G9BB:
-	case VPU_CHIP_GXBB:
-	case VPU_CHIP_GXTVBB:
-	case VPU_CHIP_GXL:
-	case VPU_CHIP_GXM:
-	case VPU_CHIP_TXL:
-	case VPU_CHIP_TXLX:
-	case VPU_CHIP_AXG:
-		vpu_clk_switch();
-		break;
 	case VPU_CHIP_M8:
 		mux = vpu_clk_table[vpu_conf.fclk_type][vpu_conf.clk_level][1];
 		div = vpu_clk_table[vpu_conf.fclk_type][vpu_conf.clk_level][2];
 		vpu_hiu_write(HHI_VPU_CLK_CNTL, ((mux << 9) | (div << 0) | (1<<8)));
 		break;
 	default:
+		vpu_clk_switch();
 		break;
 	}
 
@@ -949,6 +1027,9 @@ int vpu_clk_change(int level)
 
 void vpu_clk_get(void)
 {
+	if (vpu_check())
+		return;
+
 	VPUPR("clk_level: %u, clk: %uHz, reg: 0x%x\n",
 		vpu_conf.clk_level, get_vpu_clk(),
 		vpu_hiu_read(HHI_VPU_CLK_CNTL));
@@ -956,6 +1037,9 @@ void vpu_clk_get(void)
 
 void vpu_info_print(void)
 {
+	if (vpu_check())
+		return;
+
 	printf("detect chip type: %d\n", vpu_chip_type);
 	printf("clk_level:         %d(%dHz)\n"
 		"clk_level default: %d(%dHz)\n"
@@ -983,6 +1067,9 @@ void vcbus_test(void)
 	unsigned int val;
 	unsigned int temp;
 	int i,j;
+
+	if (vpu_check())
+		return;
 
 	VPUPR("vcbus test:\n");
 	for (i = 0; i < ARRAY_SIZE(vcbus_reg); i++) {
