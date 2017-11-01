@@ -1085,7 +1085,8 @@ void vpp_init(void)
 
 	/* init vpu fifo control register */
 	data32 = vpp_reg_read(VPP_OFIFO_SIZE);
-	if (get_cpu_id().family_id >= MESON_CPU_MAJOR_ID_GXTVBB)
+	if ((get_cpu_id().family_id >= MESON_CPU_MAJOR_ID_GXTVBB) &&
+		(get_cpu_id().family_id != MESON_CPU_MAJOR_ID_TXHD))
 		data32 |= 0xfff;
 	else
 		data32 |= 0x77f;
