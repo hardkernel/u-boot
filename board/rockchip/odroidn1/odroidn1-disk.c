@@ -209,10 +209,12 @@ int board_scan_boot_storage(void)
 				 * on eMMC, so related env is set
 				 * and then exit this routine.
 				 */
-				setenv("storagemedia", "emmc");
-				setenv("bootdev", "0");
-				run_command("setenv bootargs ${bootargs} storagemedia=emmc", 0);
-				saveenv();
+				char *s = getenv("storagemedia");
+				if ((s == 0) || (strcmp(s, "emmc") != 0)) {
+					setenv("storagemedia", "emmc");
+					setenv("bootdev", "0");
+					saveenv();
+				}
 
 				return 0;
 			}
@@ -227,10 +229,12 @@ int board_scan_boot_storage(void)
 		dev_desc = blk_get_dev("mmc", MMC_DEV_DWMMC);
 		if (dev_desc) {
 			if (0 == board_check_magic(dev_desc)) {
-				setenv("storagemedia", "sd");
-				setenv("bootdev", "1");
-				run_command("setenv bootargs ${bootargs} storagemedia=sd", 0);
-				saveenv();
+				char *s = getenv("storagemedia");
+				if ((s == 0) || (strcmp(s, "sd") != 0)) {
+					setenv("storagemedia", "sd");
+					setenv("bootdev", "1");
+					saveenv();
+				}
 
 				return 0;
 			}
