@@ -30,6 +30,8 @@ extern char *lcd_type_type_to_str(int type);
 extern int lcd_mode_str_to_mode(const char *str);
 extern char *lcd_mode_mode_to_str(int mode);
 
+extern void lcd_pinmux_set(int status);
+
 extern unsigned int lcd_lvds_channel_on_value(struct lcd_config_s *pconf);
 extern int lcd_power_load_from_dts(struct lcd_config_s *pconf,
 		char *dt_addr, int child_offset);
@@ -38,8 +40,16 @@ extern int lcd_power_load_from_unifykey(struct lcd_config_s *pconf,
 #ifdef CONFIG_OF_LIBFDT
 extern int lcd_pinmux_load_from_dts(char *dt_addr, struct lcd_config_s *pconf);
 #endif
-extern void lcd_tcon_config(struct lcd_config_s *pconf);
+extern void lcd_timing_init_config(struct lcd_config_s *pconf);
 extern int lcd_vmode_change(struct lcd_config_s *pconf);
+
+/* lcd tcon */
+extern void lcd_tcon_regs_table_print(struct tcon_config_s *tconf);
+extern void lcd_tcon_regs_readback_print(void);
+extern int lcd_tcon_regs_update(unsigned char *table, int len);
+extern int lcd_tcon_init(struct tcon_config_s *tconf);
+extern void lcd_tcon_disable(void);
+extern int lcd_tcon_probe(char *dt_addr, struct aml_lcd_drv_s *lcd_drv, int load_id);
 
 /* lcd gpio */
 extern int aml_lcd_gpio_name_map_num(const char *name);

@@ -30,6 +30,7 @@
 #define REG_OFFSET_CBUS(reg)            ((reg) << 2)
 #define REG_OFFSET_VCBUS(reg)           ((reg) << 2)
 #define REG_OFFSET_DSI_HOST(reg)        ((reg) << 2)
+#define REG_OFFSET_TCON_APB(reg)        ((reg) << 2)
 
 /* memory mapping */
 #define REG_ADDR_AOBUS(reg)             (reg + 0L)
@@ -39,6 +40,7 @@
 #define REG_ADDR_VCBUS(reg)             (REG_BASE_VCBUS + REG_OFFSET_VCBUS(reg))
 #define REG_ADDR_DSI_HOST(reg)          (REG_BASE_DSI_HOST + REG_OFFSET_DSI_HOST(reg))
 #define REG_ADDR_DSI_PHY(reg)           (reg + 0L)
+#define REG_ADDR_TCON_APB(reg)          (REG_TCON_APB_BASE + REG_OFFSET_TCON_APB(reg))
 
 
 #if (defined(CONFIG_CHIP_AML_GXB) || \
@@ -357,6 +359,38 @@ static inline void dsi_phy_clr_mask(unsigned int _reg, unsigned int _mask)
 	dsi_phy_write(_reg, (dsi_phy_read(_reg) & (~(_mask))));
 }
 
+static inline unsigned int lcd_tcon_read(unsigned int _reg)
+{
+	return *(volatile unsigned int *)(REG_ADDR_TCON_APB(_reg));
+};
 
+static inline void lcd_tcon_write(unsigned int _reg, unsigned int _value)
+{
+	*(volatile unsigned int *)REG_ADDR_TCON_APB(_reg) = (_value);
+};
+
+static inline void lcd_tcon_setb(unsigned int _reg, unsigned int _value,
+		unsigned int _start, unsigned int _len)
+{
+	lcd_tcon_write(_reg, ((lcd_tcon_read(_reg) &
+			~(((1L << (_len))-1) << (_start))) |
+			(((_value)&((1L<<(_len))-1)) << (_start))));
+}
+
+static inline unsigned int lcd_tcon_getb(unsigned int _reg,
+		unsigned int _start, unsigned int _len)
+{
+	return (lcd_tcon_read(_reg) >> (_start)) & ((1L << (_len)) - 1);
+}
+
+static inline void lcd_tcon_set_mask(unsigned int _reg, unsigned int _mask)
+{
+	lcd_tcon_write(_reg, (lcd_tcon_read(_reg) | (_mask)));
+}
+
+static inline void lcd_tcon_clr_mask(unsigned int _reg, unsigned int _mask)
+{
+	lcd_tcon_write(_reg, (lcd_tcon_read(_reg) & (~(_mask))));
+}
 
 #endif

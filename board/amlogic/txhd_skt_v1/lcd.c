@@ -62,7 +62,7 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	10,10,Rsv_val},
 
 	{/* 1366*768 */
-	"lvds_1",LCD_LVDS,8,
+	"lvds_1",LCD_MLVDS,8,
 	/* basic timing */
 	1366,768,1560,806,56,64,0,3,28,0,
 	/* clk_attr */
@@ -89,6 +89,26 @@ static struct lvds_config_s lcd_lvds_config = {
 	.pn_swap      = 0, //0=normal,      1=swap
 	.port_swap    = 0, //0=normal,      1=swap
 	.lane_reverse = 0, //0=normal,      1=swap
+};
+
+static struct mlvds_config_s lcd_mlvds_config = {
+	.lvds_vswing = 1,
+	.lvds_repack = 1,
+	.dual_port = 1,
+	.pn_swap = 0,
+	.port_swap = 0,
+	.lane_reverse = 0,
+	.port_sel = 0,
+	.phy_vswing = LVDS_PHY_VSWING_DFT,
+	.phy_preem = LVDS_PHY_PREEM_DFT,
+};
+
+static struct tcon_config_s lcd_tcon_config = {
+	.tcon_flag = 0,
+	.tcon_enable = 0,
+	.reg_table_len = 0,
+	.reg_table = NULL,
+	.fb_addr = 0,
 };
 
 static struct lcd_power_ctrl_s lcd_power_ctrl = {
@@ -156,10 +176,12 @@ struct lcd_config_s lcd_config_dft = {
 
 	.lcd_control = {
 		.lvds_config   = &lcd_lvds_config,
+		.mlvds_config   = &lcd_mlvds_config,
+		.tcon_config   = &lcd_tcon_config,
 	},
 	.lcd_power = &lcd_power_ctrl,
-	.pinmux_set = {{0, 0xc0000000}, {LCD_PINMUX_END, 0x0}},
-	.pinmux_clr = {{0, 0x009c0800}, {LCD_PINMUX_END, 0x0}},
+	.pinmux_set = {{4, 0x11111111}, {5, 0x11111111}, {LCD_PINMUX_END, 0x0}},
+	.pinmux_clr = {{4, 0xffffffff}, {5, 0xffffffff}, {LCD_PINMUX_END, 0x0}},
 };
 
 #ifdef CONFIG_AML_LCD_EXTERN

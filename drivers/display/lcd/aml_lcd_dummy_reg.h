@@ -291,5 +291,12 @@
 #ifndef HHI_DIF_TCON_CNTL2
 #define HHI_DIF_TCON_CNTL2                           (0xff63c000 + (0x3e << 2))
 #endif
+#ifndef HHI_TCON_CLK_CNTL
+#define HHI_TCON_CLK_CNTL                            (0xff63c000 + (0xf0 << 2))
+#endif
+
+#ifndef REG_TCON_APB_BASE
+#define REG_TCON_APB_BASE                            (0xFF600000L)
+#endif
 
 

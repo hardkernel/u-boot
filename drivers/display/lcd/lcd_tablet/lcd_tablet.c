@@ -804,7 +804,7 @@ static void lcd_config_init(struct lcd_config_s *pconf)
 	pconf->lcd_timing.sync_duration_num = sync_duration;
 	pconf->lcd_timing.sync_duration_den = 100;
 
-	lcd_tcon_config(pconf);
+	lcd_timing_init_config(pconf);
 	lcd_tablet_config_update(pconf);
 	lcd_clk_generate_parameter(pconf);
 

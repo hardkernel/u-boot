@@ -92,6 +92,7 @@
         "outputmode=1080p60hz\0" \
         "hdmimode=1080p60hz\0" \
         "cvbsmode=576cvbs\0" \
+        "tcon_fb_addr=0x3de05c00\0" \
         "display_width=1920\0" \
         "display_height=1080\0" \
         "display_bpp=16\0" \

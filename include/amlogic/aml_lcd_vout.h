@@ -121,6 +121,7 @@ enum lcd_type_e {
 	LCD_LVDS,
 	LCD_VBYONE,
 	LCD_MIPI,
+	LCD_MLVDS,
 	LCD_TYPE_MAX,
 };
 
@@ -322,11 +323,36 @@ struct dsi_config_s {
 	unsigned char extern_init;
 };
 
+struct mlvds_config_s {
+	unsigned int lvds_vswing;
+	unsigned int lvds_repack;
+	unsigned int dual_port;
+	unsigned int pn_swap;
+	unsigned int port_swap;
+	unsigned int lane_reverse;
+	unsigned int port_sel;
+	unsigned int phy_vswing;
+	unsigned int phy_preem;
+	unsigned int phy_clk_vswing;
+	unsigned int phy_clk_preem;
+};
+
+#define LCD_TCON_TABLE_MAX    4096
+struct tcon_config_s {
+	unsigned char tcon_flag;
+	unsigned char tcon_enable;
+	unsigned short reg_table_len;
+	unsigned char *reg_table;
+	unsigned int fb_addr;
+};
+
 struct lcd_ctrl_config_s {
 	struct ttl_config_s *ttl_config;
 	struct lvds_config_s *lvds_config;
 	struct vbyone_config_s *vbyone_config;
 	struct dsi_config_s *mipi_config;
+	struct mlvds_config_s *mlvds_config;
+	struct tcon_config_s *tcon_config;
 };
 
 /* **********************************

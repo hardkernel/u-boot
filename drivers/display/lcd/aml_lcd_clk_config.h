@@ -350,7 +350,7 @@ enum div_sel_e {
 /* video */
 #define CLK_DIV_IN_MAX_TXHD          (3100 * 1000)
 #define CRT_VID_CLK_IN_MAX_TXHD      (3100 * 1000)
-#define ENCL_CLK_IN_MAX_TXHD         (620 * 1000)
+#define ENCL_CLK_IN_MAX_TXHD         (400 * 1000)
 
 
 extern int meson_clk_measure(unsigned int clk_mux);

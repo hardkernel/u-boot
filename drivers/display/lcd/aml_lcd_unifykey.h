@@ -220,6 +220,11 @@ struct aml_lcd_unifykey_header_s {
 #define LCD_UKEY_BL_CUST_VAL_3      (LCD_UKEY_BL_NAME + 88)
 #define LCD_UKEY_BL_CUST_VAL_4      (LCD_UKEY_BL_NAME + 90)
 
+/* ********************************
+ * tcon
+ * ********************************* */
+#define LCD_UKEY_TCON_SIZE          4096
+
 
 /* ********************************
  * API

@@ -31,6 +31,7 @@ static struct lcd_type_match_s lcd_type_match_table[] = {
 	{"lvds",    LCD_LVDS},
 	{"vbyone",  LCD_VBYONE},
 	{"mipi",    LCD_MIPI},
+	{"minilvds", LCD_MLVDS},
 	{"invalid", LCD_TYPE_MAX},
 };
 
@@ -148,6 +149,60 @@ unsigned int lcd_lvds_channel_on_value(struct lcd_config_s *pconf)
 		}
 	}
 	return channel_on;
+}
+
+void lcd_pinmux_set(int status)
+{
+	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
+	struct lcd_config_s *pconf;
+	int i;
+
+	if (lcd_debug_print_flag)
+		LCDPR("%s: %d\n", __func__, status);
+
+	pconf = lcd_drv->lcd_config;
+	if (status) {
+		i = 0;
+		while (i < LCD_PINMUX_NUM) {
+			if (pconf->pinmux_clr[i][0] == LCD_PINMUX_END)
+				break;
+			if (lcd_debug_print_flag) {
+				LCDPR("pinmux_clr: %d, 0x%08x\n",
+					pconf->pinmux_clr[i][0],
+					pconf->pinmux_clr[i][1]);
+			}
+			lcd_pinmux_clr_mask(pconf->pinmux_clr[i][0],
+				pconf->pinmux_clr[i][1]);
+			i++;
+		}
+		i = 0;
+		while (i < LCD_PINMUX_NUM) {
+			if (pconf->pinmux_set[i][0] == LCD_PINMUX_END)
+				break;
+			if (lcd_debug_print_flag) {
+				LCDPR("pinmux_set: %d, 0x%08x\n",
+					pconf->pinmux_set[i][0],
+					pconf->pinmux_set[i][1]);
+			}
+			lcd_pinmux_set_mask(pconf->pinmux_set[i][0],
+				pconf->pinmux_set[i][1]);
+			i++;
+		}
+	} else {
+		i = 0;
+		while (i < LCD_PINMUX_NUM) {
+			if (pconf->pinmux_set[i][0] == LCD_PINMUX_END)
+				break;
+			if (lcd_debug_print_flag) {
+				LCDPR("pinmux_clr: %d, 0x%08x\n",
+					pconf->pinmux_set[i][0],
+					pconf->pinmux_set[i][1]);
+			}
+			lcd_pinmux_clr_mask(pconf->pinmux_set[i][0],
+				pconf->pinmux_set[i][1]);
+			i++;
+		}
+	}
 }
 
 int lcd_power_load_from_dts(struct lcd_config_s *pconf, char *dt_addr, int child_offset)
@@ -496,7 +551,7 @@ int lcd_pinmux_load_from_dts(char *dt_addr, struct lcd_config_s *pconf)
 }
 #endif
 
-void lcd_tcon_config(struct lcd_config_s *pconf)
+void lcd_timing_init_config(struct lcd_config_s *pconf)
 {
 	unsigned short h_period, v_period, h_active, v_active;
 	unsigned short hsync_bp, hsync_width, vsync_bp, vsync_width;

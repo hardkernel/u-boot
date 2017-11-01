@@ -432,6 +432,11 @@ static void lcd_info_print(void)
 		   (pconf->lcd_control.ttl_config->swap_ctrl >> 1) & 1);
 		lcd_pinmux_info_print(pconf);
 		break;
+	case LCD_MLVDS:
+		printf("tcon_fb_addr      0x%08x\n\n",
+			pconf->lcd_control.tcon_config->fb_addr);
+		lcd_pinmux_info_print(pconf);
+		break;
 	case LCD_MIPI:
 #ifdef CONFIG_AML_LCD_TABLET
 		mipi_dsi_print_info(pconf);
@@ -551,6 +556,60 @@ static void lcd_lvds_reg_print(void)
 		reg, lcd_hiu_read(reg));
 }
 
+static void lcd_mlvds_reg_print(void)
+{
+	unsigned int reg;
+
+	reg = PERIPHS_PIN_MUX_4;
+	printf("\nPERIPHS_PIN_MUX_4   [0x%08x] = 0x%08x\n",
+		reg, lcd_periphs_read(reg));
+	reg = PERIPHS_PIN_MUX_5;
+	printf("PERIPHS_PIN_MUX_5   [0x%08x] = 0x%08x\n",
+		reg, lcd_periphs_read(reg));
+
+	printf("\ntcon clk registers:\n");
+	reg = HHI_TCON_CLK_CNTL;
+	printf("HHI_TCON_CLK_CNTL   [0x%08x] = 0x%08x\n",
+		reg, lcd_hiu_read(reg));
+	reg = HHI_HPLL_CNTL6;
+	printf("HHI_HPLL_CNTL6      [0x%08x] = 0x%08x\n",
+		reg, lcd_hiu_read(reg));
+	reg = HHI_DIF_TCON_CNTL0;
+	printf("HHI_DIF_TCON_CNTL0  [0x%08x] = 0x%08x\n",
+		reg, lcd_hiu_read(reg));
+	reg = HHI_DIF_TCON_CNTL1;
+	printf("HHI_DIF_TCON_CNTL1  [0x%08x] = 0x%08x\n",
+		reg, lcd_hiu_read(reg));
+	reg = HHI_DIF_TCON_CNTL2;
+	printf("HHI_DIF_TCON_CNTL2  [0x%08x] = 0x%08x\n",
+		reg, lcd_hiu_read(reg));
+
+	lcd_lvds_reg_print();
+
+	printf("\ntcon top registers:\n");
+	reg = 0x1000;
+	printf("TCON_TOP_CTRL       [0x%04x] = 0x%08x\n",
+		reg, lcd_tcon_read(reg));
+	reg = 0x1002;
+	printf("TCON_OUT_CH_SEL0    [0x%04x] = 0x%08x\n",
+		reg, lcd_tcon_read(reg));
+	reg = 0x1003;
+	printf("TCON_OUT_CH_SEL1    [0x%04x] = 0x%08x\n",
+		reg, lcd_tcon_read(reg));
+	reg = 0x1009;
+	printf("TCON_PLLLOCK_CNTL   [0x%04x] = 0x%08x\n",
+		reg, lcd_tcon_read(reg));
+	reg = 0x100b;
+	printf("TCON_RST_CTRL       [0x%04x] = 0x%08x\n",
+		reg, lcd_tcon_read(reg));
+	reg = 0x100e;
+	printf("TCON_CLK_CTRL       [0x%04x] = 0x%08x\n",
+		reg, lcd_tcon_read(reg));
+
+	printf("\ntcon ip registers:\n");
+	lcd_tcon_regs_readback_print();
+}
+
 static void lcd_vbyone_reg_print(void)
 {
 	unsigned int reg;
@@ -568,7 +627,7 @@ static void lcd_vbyone_reg_print(void)
 		reg = PERIPHS_PIN_MUX_0;
 		break;
 	}
-	printf("VX1_PINMUX          [0x%04x] = 0x%08x\n",
+	printf("VX1_PINMUX          [0x%08x] = 0x%08x\n",
 		reg, lcd_periphs_read(reg));
 	reg = VBO_STATUS_L;
 	printf("VX1_STATUS          [0x%04x] = 0x%08x\n",
@@ -609,13 +668,13 @@ static void lcd_phy_analog_reg_print(void)
 
 	printf("\nphy analog registers:\n");
 	reg = HHI_DIF_CSI_PHY_CNTL1;
-	printf("PHY_CNTL1           [0x%04x] = 0x%08x\n",
+	printf("PHY_CNTL1           [0x%08x] = 0x%08x\n",
 		reg, lcd_hiu_read(reg));
 	reg = HHI_DIF_CSI_PHY_CNTL2;
-	printf("PHY_CNTL2           [0x%04x] = 0x%08x\n",
+	printf("PHY_CNTL2           [0x%08x] = 0x%08x\n",
 		reg, lcd_hiu_read(reg));
 	reg = HHI_DIF_CSI_PHY_CNTL3;
-	printf("PHY_CNTL3           [0x%04x] = 0x%08x\n",
+	printf("PHY_CNTL3           [0x%08x] = 0x%08x\n",
 		reg, lcd_hiu_read(reg));
 }
 
@@ -650,6 +709,10 @@ static void lcd_reg_print(void)
 		break;
 	case LCD_VBYONE:
 		lcd_vbyone_reg_print();
+		lcd_phy_analog_reg_print();
+		break;
+	case LCD_MLVDS:
+		lcd_mlvds_reg_print();
 		lcd_phy_analog_reg_print();
 		break;
 	case LCD_MIPI:
@@ -919,6 +982,9 @@ static int lcd_mode_probe(void)
 		LCDPR("lcd_debug_test flag: %d\n", lcd_debug_test);
 	}
 
+	if (aml_lcd_driver.chip_type == LCD_CHIP_TXHD)
+		aml_lcd_driver.lcd_config->lcd_control.tcon_config->tcon_flag = 1;
+
 	if (load_id & 0x1 ) {
 #ifndef DTB_BIND_KERNEL
 #ifdef CONFIG_OF_LIBFDT
@@ -988,6 +1054,8 @@ static int lcd_mode_probe(void)
 	}
 	if (aml_lcd_driver.lcd_config->lcd_basic.lcd_type == LCD_VBYONE)
 		lcd_vbyone_filter_env_init(aml_lcd_driver.lcd_config);
+
+	lcd_tcon_probe(dt_addr, &aml_lcd_driver, load_id);
 
 #ifdef CONFIG_AML_LCD_EXTERN
 	lcd_extern_load_config(dt_addr, aml_lcd_driver.lcd_config);
@@ -1170,6 +1238,7 @@ static void aml_lcd_clk(void)
 	if (lcd_check_valid())
 		return;
 	lcd_clk_config_print();
+	lcd_tcon_init(aml_lcd_driver.lcd_config->lcd_control.tcon_config);
 }
 
 static void aml_lcd_info(void)

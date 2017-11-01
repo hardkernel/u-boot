@@ -21,6 +21,7 @@
 #define REG_BASE_HIU                    (0xFF63C000L)
 #define REG_BASE_VCBUS                  (0xFF900000L)
 #define DMC_REG_BASE                    (0xFF638000L)
+#define REG_TCON_APB_BASE               (0xFF600000L)
 
 #endif /*_BASE_REGISTER*/
 

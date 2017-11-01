@@ -910,6 +910,33 @@ static void lcd_set_vclk_crt(int lcd_type, struct lcd_clk_config_s *cConf)
 	lcd_hiu_setb(HHI_VID_CLK_CNTL2, 1, ENCL_GATE_VCLK, 1);
 }
 
+static void lcd_set_tcon_clk(struct lcd_config_s *pconf)
+{
+	switch (pconf->lcd_basic.lcd_type) {
+	case LCD_LVDS:
+		lcd_hiu_write(HHI_DIF_TCON_CNTL0, 0x0);
+		lcd_hiu_write(HHI_DIF_TCON_CNTL0, 0x80000000);
+		lcd_hiu_write(HHI_DIF_TCON_CNTL1, 0x0);
+		lcd_hiu_write(HHI_DIF_TCON_CNTL2, 0x0);
+		break;
+	case LCD_MLVDS:
+		lcd_hiu_write(HHI_DIF_TCON_CNTL0, 0x88000);
+		lcd_hiu_write(HHI_DIF_TCON_CNTL0, 0x80088000);
+		lcd_hiu_write(HHI_DIF_TCON_CNTL1, 0x0);
+		lcd_hiu_write(HHI_DIF_TCON_CNTL2, 0x0);
+
+		lcd_hiu_setb(HHI_HPLL_CNTL6, 1, 30, 1);
+
+		if (pconf->lcd_control.tcon_config->tcon_enable) {
+			lcd_hiu_write(HHI_TCON_CLK_CNTL,
+				(1 << 7) | (1 << 6) | (7 << 0));
+		}
+		break;
+	default:
+		break;
+	}
+}
+
 static unsigned int clk_div_calc_g9_gxtvbb(unsigned int clk,
 		unsigned int div_sel, int dir)
 {
@@ -1491,6 +1518,32 @@ static void lcd_clk_generate_txl(struct lcd_config_s *pconf)
 		}
 		done = check_pll_txl(cConf, pll_fout);
 		break;
+	case LCD_MLVDS:
+		clk_div_sel = CLK_DIV_SEL_1;
+		xd = 8;
+		clk_div_out = cConf->fout * xd;
+		if (clk_div_out > cConf->div_out_fmax)
+			goto generate_clk_done_txl;
+		if (lcd_debug_print_flag == 2) {
+			LCDPR("fout=%d, xd=%d, clk_div_out=%d\n",
+				cConf->fout, xd, clk_div_out);
+		}
+		clk_div_in = clk_div_calc_g9_gxtvbb(clk_div_out,
+				clk_div_sel, CLK_DIV_O2I);
+		if (clk_div_in > cConf->div_in_fmax)
+			goto generate_clk_done_txl;
+		cConf->xd = xd;
+		cConf->div_sel = clk_div_sel;
+		pll_fout = clk_div_in;
+		if (lcd_debug_print_flag == 2) {
+			LCDPR("clk_div_sel=%s(index %d), pll_fout=%d\n",
+				lcd_clk_div_sel_table[clk_div_sel],
+				clk_div_sel, pll_fout);
+		}
+		done = check_pll_txl(cConf, pll_fout);
+		if (done)
+			goto generate_clk_done_txl;
+		break;
 	default:
 		break;
 	}
@@ -1984,6 +2037,7 @@ void lcd_clk_set(struct lcd_config_s *pconf)
 	case LCD_CHIP_TXHD:
 		lcd_set_pll_txhd(&clk_conf);
 		lcd_set_clk_div_g9_gxtvbb(&clk_conf);
+		lcd_set_tcon_clk(pconf);
 		break;
 	case LCD_CHIP_AXG:
 		lcd_set_pll_axg(&clk_conf);
