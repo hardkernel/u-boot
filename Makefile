@@ -760,7 +760,7 @@ DO_STATIC_RELA =
 endif
 
 # Always append ALL so that arch config.mk's can add custom ones
-ALL-y += u-boot.srec u-boot.bin u-boot.sym System.map binary_size_check
+ALL-y += u-boot.srec u-boot.bin u-boot.sym System.map binary_size_check build_img
 
 ALL-$(CONFIG_ONENAND_U_BOOT) += u-boot-onenand.bin
 ifeq ($(CONFIG_SPL_FSL_PBL),y)
@@ -1436,6 +1436,14 @@ SYSTEM_MAP = \
 System.map:	u-boot
 		@$(call SYSTEM_MAP,$<) > $@
 
+TOOLS_DIR := $(srctree)/tools/rk_tools
+
+build_img:	u-boot
+	$(TOOLS_DIR)/bin/loaderimage --pack --uboot $(srctree)/u-boot-dtb.bin uboot.img
+	$(TOOLS_DIR)/bin/trust_merger $(TOOLS_DIR)/trust.ini
+	$(Q)cp uboot.img $(srctree)/sd_fuse/
+	$(Q)cp trust.img $(srctree)/sd_fuse/
+
 checkdtc:
 	@if test $(call dtc-version) -lt 0104; then \
 		echo '*** Your dtc is too old, please upgrade to dtc 1.4 or newer'; \
@@ -1548,6 +1556,7 @@ distclean: mrproper
 		-o -name '*.pyc' \) \
 		-type f -print | xargs rm -f
 	@rm -f boards.cfg
+	@rm -f uboot.img trust.img
 
 backup:
 	F=`basename $(srctree)` ; cd .. ; \
