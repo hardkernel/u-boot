@@ -692,6 +692,14 @@ static void vpu_power_on_gx(void)
 		vpu_hiu_setb(HHI_VPU_MEM_PD_REG1, 0, i, 2);
 		udelay(5);
 	}
+	switch (vpu_chip_type) {
+	case VPU_CHIP_TXHD:
+		vpu_hiu_setb(HHI_VPU_MEM_PD_REG2, 0, 2, 2);
+		udelay(5);
+		break;
+	default:
+		break;
+	}
 	for (i = 8; i < 16; i++) {
 		vpu_hiu_setb(HHI_MEM_PD_REG0, 0, i, 1);
 		udelay(5);
