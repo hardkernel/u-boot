@@ -78,6 +78,77 @@
 
 /* args/envs */
 #define CONFIG_SYS_MAXARGS  64
+
+
+
+#ifdef CONFIG_PXP_EMULATOR
+
+#define CONFIG_EXTRA_ENV_SETTINGS \
+        "firstboot=1\0"\
+        "upgrade_step=0\0"\
+        "jtag=apao\0"\
+        "loadaddr=1080000\0"\
+        "panel_type=lvds_0\0" \
+        "outputmode=1080p60hz\0" \
+        "hdmimode=1080p60hz\0" \
+        "cvbsmode=576cvbs\0" \
+        "display_width=1920\0" \
+        "display_height=1080\0" \
+        "display_bpp=16\0" \
+        "display_color_index=16\0" \
+        "display_layer=osd1\0" \
+        "display_color_fg=0xffff\0" \
+        "display_color_bg=0\0" \
+        "dtb_mem_addr=0x6000000\0" \
+        "fb_addr=0x3d800000\0" \
+        "fb_width=1920\0" \
+        "fb_height=1080\0" \
+        "usb_burning=update 1000\0" \
+        "fdt_high=0x20000000\0"\
+        "try_auto_burn=update 700 750;\0"\
+        "sdcburncfg=aml_sdc_burn.ini\0"\
+        "sdc_burning=sdc_burn ${sdcburncfg}\0"\
+        "wipe_data=successful\0"\
+        "wipe_cache=successful\0"\
+        "EnableSelinux=permissive\0" \
+        "recovery_part=recovery\0"\
+        "recovery_offset=0\0"\
+        "cvbs_drv=0\0"\
+        "osd_reverse=0\0"\
+        "video_reverse=0\0"\
+        "active_slot=_a\0"\
+        "boot_part=boot\0"\
+        "initargs=rootfstype=ramfs "\
+                "init=/init console=ttyS0,115200 no_console_suspend "\
+                "earlyprintk=aml-uart,0xff803000 "\
+                "ramoops.pstore_en=1 "\
+                "ramoops.record_size=0x8000 "\
+                "ramoops.console_size=0x4000 "\
+                "\0"\
+        "storeargs=setenv bootargs ${initargs} "\
+                "logo=${display_layer},loaded,${fb_addr} "\
+                "vout=${outputmode},enable "\
+                "panel_type=${panel_type} "\
+                "osd_reverse=${osd_reverse} "\
+                "video_reverse=${video_reverse} "\
+                "jtag=${jtag} "\
+                "androidboot.selinux=${EnableSelinux} "\
+                "androidboot.firstboot=${firstboot} "\
+                "androidboot.slot_suffix=${active_slot} "\
+                "androidboot.hardware=amlogic "\
+                "\0"\
+        "boot_kernel_from_ddr=fdt addr ${dtb_mem_addr}; "\
+                "booti 0x8000000 - 0x6000000; "\
+                "\0"\
+        "storeboot=run boot_kernel_from_ddr;"\
+                "\0"\
+
+#define CONFIG_PREBOOT  \
+            "run bcb_cmd; "\
+            "run storeargs;"\
+
+#else
+
 #define CONFIG_EXTRA_ENV_SETTINGS \
         "firstboot=1\0"\
         "upgrade_step=0\0"\
@@ -242,6 +313,9 @@
             "run upgrade_check;"\
             "run storeargs;"\
             "run switch_bootmode;"
+
+#endif
+
 #define CONFIG_BOOTCOMMAND "run storeboot"
 
 //#define CONFIG_ENV_IS_NOWHERE  1
