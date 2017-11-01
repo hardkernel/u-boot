@@ -282,5 +282,14 @@
 #define   P_HHI_LVDS_TX_PHY_CNTL1                              (volatile uint32_t *)(0xff63c000 + (0xdf << 2))
 #endif
 
+#ifndef HHI_DIF_TCON_CNTL0
+#define HHI_DIF_TCON_CNTL0                           (0xff63c000 + (0x3c << 2))
+#endif
+#ifndef HHI_DIF_TCON_CNTL1
+#define HHI_DIF_TCON_CNTL1                           (0xff63c000 + (0x3d << 2))
+#endif
+#ifndef HHI_DIF_TCON_CNTL2
+#define HHI_DIF_TCON_CNTL2                           (0xff63c000 + (0x3e << 2))
+#endif
 
 

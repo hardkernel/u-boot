@@ -58,6 +58,11 @@
 #define HHI_HPLL_CNTL6                          HHI_HDMI_PLL_CNTL5
 #endif
 
+#define LVDS_CH_SWAP0                           LVDS_PHY_CNTL0
+#define LVDS_CH_SWAP1                           LVDS_PHY_CNTL1
+#define LVDS_CH_SWAP2                           LVDS_PHY_CNTL2
+#define LVDS_CH_SWAP3                           LVDS_PHY_CNTL3
+
 /*#define HHI_VIID_CLK_DIV     	0x4a*/
 #define DAC0_CLK_SEL           28
 #define DAC1_CLK_SEL           24

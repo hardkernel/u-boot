@@ -43,7 +43,7 @@ static char lcd_bl_gpio[BL_GPIO_NUM_MAX][LCD_CPU_GPIO_NAME_MAX] = {
 };
 
 struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
-	{/* normal*/
+	{/* 1920*1080 */
 	"lvds_0",LCD_LVDS,8,
 	/* basic timing */
 	1920,1080,2200,1125,44,148,0,5,36,0,
@@ -61,32 +61,14 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	Rsv_val,Rsv_val,Rsv_val,Rsv_val,
 	10,10,Rsv_val},
 
-	{/* public 2-region vx1 : 3840x2160@60hz 8lane */
-	"vbyone_0",LCD_VBYONE,10,
+	{/* 1366*768 */
+	"lvds_1",LCD_LVDS,8,
 	/* basic timing */
-	3840,2160,4400,2250,33,477,0,6,81,0,
+	1366,768,1560,806,56,64,0,3,28,0,
 	/* clk_attr */
 	2,0,1,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
-	/* vbyone_attr */
-	8,2,4,4,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
-	/* power step */
-	lcd_power_on_step, lcd_power_off_step,
-	/* backlight */
-	60,255,10,128,128,
-	BL_CTRL_MAX,0,1,0,200,200,
-	BL_PWM_POSITIVE,BL_PWM_B,180,100,25,1,0,
-	Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
-	Rsv_val,Rsv_val,Rsv_val,Rsv_val,
-	10,10,Rsv_val},
-
-	{/* public 1-region vx1 : 3840x2160@60hz 8lane */
-	"vbyone_1",LCD_VBYONE,10,
-	/* basic timing */
-	3840,2160,4400,2250,33,477,0,6,81,0,
-	/* clk_attr */
-	2,0,1,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
-	/* vbyone_attr */
-	8,1,4,4,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	/* lvds_attr */
+	1,0,0,0,0,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
 	/* power step */
 	lcd_power_on_step, lcd_power_off_step,
 	/* backlight */
@@ -98,14 +80,6 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	10,10,Rsv_val},
 
 	{.panel_type = "invalid"},
-};
-
-//**** Special parameters just for Vbyone ***//
-static struct vbyone_config_s lcd_vbyone_config = {
-	.lane_count   = 8,
-	.byte_mode    = 4,
-	.region_num   = 2,
-	.color_fmt    = 4,
 };
 
 //**** Special parameters just for lvds ***//
@@ -182,7 +156,6 @@ struct lcd_config_s lcd_config_dft = {
 
 	.lcd_control = {
 		.lvds_config   = &lcd_lvds_config,
-		.vbyone_config = &lcd_vbyone_config,
 	},
 	.lcd_power = &lcd_power_ctrl,
 	.pinmux_set = {{0, 0xc0000000}, {LCD_PINMUX_END, 0x0}},

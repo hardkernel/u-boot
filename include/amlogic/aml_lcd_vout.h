@@ -112,6 +112,7 @@ enum lcd_chip_e {
 	LCD_CHIP_TXL,     	/* 3 */
 	LCD_CHIP_TXLX,    	/* 4 */
 	LCD_CHIP_AXG, 		/* 5 */
+	LCD_CHIP_TXHD, 		/* 6 */
 	LCD_CHIP_MAX,
 };
 

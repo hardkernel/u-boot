@@ -136,13 +136,16 @@ static void lcd_vbyone_phy_set(struct lcd_config_s *pconf, int status)
 
 static void lcd_lvds_phy_set(struct lcd_config_s *pconf, int status)
 {
+#if 0
 	unsigned int vswing, preem, clk_vswing, clk_preem, channel_on;
 	unsigned int data32;
+#endif
 
 	if (lcd_debug_print_flag)
 		LCDPR("%s: %d\n", __func__, status);
 
 	if (status) {
+#if 0
 		vswing = pconf->lcd_control.lvds_config->phy_vswing;
 		preem = pconf->lcd_control.lvds_config->phy_preem;
 		clk_vswing = pconf->lcd_control.lvds_config->phy_clk_vswing;
@@ -177,6 +180,15 @@ static void lcd_lvds_phy_set(struct lcd_config_s *pconf, int status)
 			(clk_vswing << 8) | (clk_preem << 5); /* DIF_TX_CTL4 */
 		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL3, data32);
 		/*lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL3, 0x0fff0800);*/
+#else
+		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL1, 0x6c62ca9b);
+		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL2, 0x60);
+		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL3, 0x03ff0c00);
+		lcd_hiu_write(HHI_DIF_TCON_CNTL0, 0x0);
+		lcd_hiu_write(HHI_DIF_TCON_CNTL0, 0x80000000);
+		lcd_hiu_write(HHI_DIF_TCON_CNTL1, 0x0);
+		lcd_hiu_write(HHI_DIF_TCON_CNTL2, 0x0);
+#endif
 	} else {
 		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL1, 0x0);
 		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL2, 0x0);
@@ -297,6 +309,10 @@ static void lcd_lvds_control_set(struct lcd_config_s *pconf)
 	lcd_vcbus_setb(LCD_PORT_SWAP, port_swap, 12, 1);
 	if (lane_reverse)
 		lcd_vcbus_setb(LVDS_GEN_CNTL, 0x03, 13, 2);
+
+	lcd_vcbus_write(LVDS_CH_SWAP0, 0x3210);
+	lcd_vcbus_write(LVDS_CH_SWAP1, 0x8764);
+	lcd_vcbus_write(LVDS_CH_SWAP2, 0x00a9);
 
 	lcd_vcbus_write(LVDS_GEN_CNTL, (lcd_vcbus_read(LVDS_GEN_CNTL) | (1 << 4) | (fifo_mode << 0)));
 	lcd_vcbus_setb(LVDS_GEN_CNTL, 1, 3, 1);

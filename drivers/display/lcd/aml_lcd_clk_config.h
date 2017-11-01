@@ -317,6 +317,42 @@ enum div_sel_e {
 #define CRT_VID_CLK_IN_MAX_AXG      (1632 * 1000)
 #define ENCL_CLK_IN_MAX_AXG         (200 * 1000)
 
+/* **********************************
+ * TXHD
+ * ********************************** */
+/* ******** register bit ******** */
+/* PLL_CNTL 0x10c8 */
+#define LCD_PLL_LOCK_TXHD            31
+#define LCD_PLL_EN_TXHD              30
+#define LCD_PLL_RST_TXHD             28
+#define LCD_PLL_N_TXHD               9
+#define LCD_PLL_M_TXHD               0
+
+#define LCD_PLL_OD3_TXHD             19
+#define LCD_PLL_OD2_TXHD             23
+#define LCD_PLL_OD1_TXHD             21
+
+/* ******** frequency limit (unit: kHz) ******** */
+/* pll */
+#define PLL_FRAC_OD_FB_TXHD          0
+#define SS_LEVEL_MAX_TXHD            6
+#define PLL_M_MIN_TXHD               2
+#define PLL_M_MAX_TXHD               511
+#define PLL_N_MIN_TXHD               1
+#define PLL_N_MAX_TXHD               1
+#define PLL_FRAC_RANGE_TXHD          (1 << 10)
+#define PLL_OD_SEL_MAX_TXHD          3
+#define PLL_FREF_MIN_TXHD            (5 * 1000)
+#define PLL_FREF_MAX_TXHD            (25 * 1000)
+#define PLL_VCO_MIN_TXHD             (3000 * 1000)
+#define PLL_VCO_MAX_TXHD             (6000 * 1000)
+
+/* video */
+#define CLK_DIV_IN_MAX_TXHD          (3100 * 1000)
+#define CRT_VID_CLK_IN_MAX_TXHD      (3100 * 1000)
+#define ENCL_CLK_IN_MAX_TXHD         (620 * 1000)
+
+
 extern int meson_clk_measure(unsigned int clk_mux);
 
 extern struct lcd_clk_config_s *get_lcd_clk_config(void);
