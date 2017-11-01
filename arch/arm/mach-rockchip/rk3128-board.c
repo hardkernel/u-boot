@@ -14,7 +14,9 @@
 #include <asm/arch/grf_rk3128.h>
 #include <asm/arch/boot_mode.h>
 #include <asm/arch/timer.h>
+#include <power/charge_display.h>
 #include <power/regulator.h>
+#include <video_rockchip.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -46,6 +48,25 @@ static void setup_boot_mode(void)
 	}
 }
 
+#ifdef CONFIG_CHARGE_DISPLAY
+static int charge_display(void)
+{
+	int ret;
+	struct udevice *dev;
+
+	ret = uclass_get_device(UCLASS_CHARGE_DISPLAY, 0, &dev);
+	if (ret) {
+		if (ret != -ENODEV) {
+			printf("Get UCLASS CHARGE DISPLAY failed: %d\n", ret);
+			return ret;
+		}
+		return 0;
+	}
+
+	return charge_display_show(dev);
+}
+#endif
+
 __weak int rk_board_late_init(void)
 {
 	return 0;
@@ -54,6 +75,14 @@ __weak int rk_board_late_init(void)
 int board_late_init(void)
 {
 	setup_boot_mode();
+
+#ifdef CONFIG_CHARGE_DISPLAY
+	charge_display();
+#endif
+
+#ifdef CONFIG_DRM_ROCKCHIP
+	rockchip_show_logo();
+#endif
 
 	return rk_board_late_init();
 }
