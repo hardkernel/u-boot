@@ -143,6 +143,10 @@ config AXG_S420_V1
 	bool "Support amlogic axg s420 v1 board"
 	default n
 
+config TXHD_SKT_V1
+	bool "Support amlogic txhd socket v1 board"
+	default n
+
 config PXP_EMULATOR
 	bool "Support pxp environment"
 	default n
@@ -296,6 +300,10 @@ endif
 
 if AXG_S420_V1
 source "board/amlogic/axg_s420_v1/Kconfig"
+endif
+
+if TXHD_SKT_V1
+source "board/amlogic/txhd_skt_v1/Kconfig"
 endif
 
 if ODROID_C2
