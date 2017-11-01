@@ -22,6 +22,9 @@
 #include "config.h"
 #include <serial.h>
 //#include <stdio.h>
+#include <asm/arch/secure_apb.h>
+
+#define P_EE_TIMER_E		(P_ISA_TIMERE)
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
@@ -87,15 +90,6 @@ static int pwm_voltage_table_ee[][2] = {
 	{ 0x01001b, 1080},
 	{ 0x00001c, 1090}
 };
-#define P_PIN_MUX_REG3		(*((volatile unsigned *)(0xff634400 + (0x2f << 2))))
-#define P_PIN_MUX_REG4		(*((volatile unsigned *)(0xff634400 + (0x30 << 2))))
-#define P_PIN_MUX_REG10		(*((volatile unsigned *)(0xff634400 + (0x36 << 2))))
-
-#define P_PWM_MISC_REG_AB	(*((volatile unsigned *)(0xffd1b000 + (0x02 << 2))))
-#define P_PWM_PWM_A			(*((volatile unsigned *)(0xffd1b000 + (0x0  << 2))))
-
-#define AO_PIN_MUX_REG		(*((volatile unsigned *)(0xff800000 + (0x05 << 2))))
-#define P_EE_TIMER_E		(*((volatile unsigned *)(0xffd00000 + (0x3c62 << 2))))
 
 enum pwm_id {
     pwm_a = 0,
@@ -104,7 +98,7 @@ enum pwm_id {
 
 unsigned int _get_time(void)
 {
-	return P_EE_TIMER_E;
+    return readl(P_EE_TIMER_E);
 }
 
 void _udelay_(unsigned int us)
@@ -125,41 +119,29 @@ void pwm_init(int id)
 
 	switch (id) {
 	case pwm_a:
-		reg = P_PWM_MISC_REG_AB;
+		reg = readl(P_PWM_MISC_REG_AB);
 		reg &= ~(0x7f << 8);
 		reg |=  ((1 << 15) | (1 << 0));
-		P_PWM_MISC_REG_AB = reg;
-		/*
-		 * default set to max voltage
-		 */
-		//P_PWM_PWM_A = pwm_voltage_table[ARRAY_SIZE(pwm_voltage_table) - 1][0];
-		reg  = P_PIN_MUX_REG3;
-		reg &= ~((1 << 21) | 1 << 12);
-		P_PIN_MUX_REG3 = reg;
-		reg  = P_PIN_MUX_REG10;
-		reg &= ~(1 << 16);
-		P_PIN_MUX_REG10 = reg;//clear reg10
+		writel(reg, P_PWM_MISC_REG_AB);
 
-		reg  = P_PIN_MUX_REG4;
-		reg &= ~(1 << 26);
-		reg |=  (1 << 17);		// enable PWM_A
-		P_PIN_MUX_REG4 = reg;
+		/* set PWM_A pinmux */
+		reg  = readl(P_PERIPHS_PIN_MUX_2);
+		reg |= ((1 & 0xf) << 20);
+		writel(reg, P_PERIPHS_PIN_MUX_2);
 		break;
 
 	case pwm_ao_b:
-		reg = readl(AO_PWM_MISC_REG_AB);
+		reg  = readl(P_AO_PWM_MISC_REG_AB);
 		reg &= ~(0x7f << 16);
 		reg |=  ((1 << 23) | (1 << 1));
-		writel(reg, AO_PWM_MISC_REG_AB);
-		/*
-		 * default set to max voltage
-		 */
-		//writel( pwm_voltage_table[ARRAY_SIZE(pwm_voltage_table) - 1][0],AO_PWM_PWM_B);
-		reg  = AO_PIN_MUX_REG;
-		reg |= (1 << 3);
-		AO_PIN_MUX_REG = reg;
+		writel(reg, P_AO_PWM_MISC_REG_AB);
 
+		/* set PWM_AO_B pinmux */
+		reg  = readl(P_AO_RTI_PIN_MUX_REG2);;
+		reg |= ((4 & 0xf) << 4);
+		writel(reg, P_AO_RTI_PIN_MUX_REG2);
 		break;
+
 	default:
 		break;
 	}
@@ -195,19 +177,20 @@ void pwm_set_voltage(unsigned int id, unsigned int voltage)
 */
 void pwm_set_voltage(unsigned int id, unsigned int voltage)
 {
+	serial_puts("enter pwm_set_voltage\n");
 	int to;
 
 	switch (id) {
 	case pwm_a:
-	for (to = 0; to < ARRAY_SIZE(pwm_voltage_table); to++) {
-		if (pwm_voltage_table[to][1] >= voltage) {
-			break;
+		for (to = 0; to < ARRAY_SIZE(pwm_voltage_table); to++) {
+			if (pwm_voltage_table[to][1] >= voltage) {
+				break;
+			}
 		}
-	}
-	if (to >= ARRAY_SIZE(pwm_voltage_table)) {
-		to = ARRAY_SIZE(pwm_voltage_table) - 1;
-	}
-		P_PWM_PWM_A = pwm_voltage_table[to][0];
+		if (to >= ARRAY_SIZE(pwm_voltage_table)) {
+			to = ARRAY_SIZE(pwm_voltage_table) - 1;
+		}
+		writel(pwm_voltage_table[to][0], P_PWM_PWM_A);
 		break;
 
 	case pwm_ao_b:
@@ -219,8 +202,9 @@ void pwm_set_voltage(unsigned int id, unsigned int voltage)
 		if (to >= ARRAY_SIZE(pwm_voltage_table_ee)) {
 			to = ARRAY_SIZE(pwm_voltage_table_ee) - 1;
 		}
-		writel(pwm_voltage_table_ee[to][0],AO_PWM_PWM_B);
+		writel(pwm_voltage_table_ee[to][0], P_AO_PWM_PWM_B);
 		break;
+
 	default:
 		break;
 	}

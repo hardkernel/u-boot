@@ -13,7 +13,7 @@
  *
  */
 
-#include "secure_apb.h"
+//#include "secure_apb.h"
 #include "serial.h" //use local serial driver
 #include "io.h"
 #include "timer.h"
