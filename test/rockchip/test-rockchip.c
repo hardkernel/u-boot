@@ -31,6 +31,7 @@ static int do_rockchip_test(cmd_tbl_t *cmdtp, int flag,
 	board_module_t *module = NULL;
 	char *module_name = NULL;
 	int index = 0, err = 0;
+	bool found = false;
 
 	if (argc >= 2) {
 		module_name = argv[1];
@@ -42,13 +43,16 @@ static int do_rockchip_test(cmd_tbl_t *cmdtp, int flag,
 	if (!module_name)
 		return 0;
 
-	printf("***********************************************************\n");
-	printf("Rockchip Board Module [%s] Test start.\n", module_name);
-	printf("***********************************************************\n");
 
 	for (index = 0; index < ARRAY_SIZE(g_board_modules); index++) {
 		module = &g_board_modules[index];
 		if (module && !strcmp(module->name, module_name)) {
+			found = true;
+
+			printf("***********************************************************\n");
+			printf("Rockchip Board Module [%s] Test start.\n", module_name);
+			printf("***********************************************************\n");
+
 			ms_start = get_timer(0);
 
 			err = module->test(argc, argv);
@@ -58,13 +62,17 @@ static int do_rockchip_test(cmd_tbl_t *cmdtp, int flag,
 				sec = ms / 1000;
 				ms = ms % 1000;
 			}
+
+			printf("-----------------------------------------------------------\n");
+			printf("Rockchip Board Module [%s] Test end <%s>.. Total: %lu.%lus\n",
+			       module->name, err ? "FAILED" : "PASS", sec, ms);
+			printf("-----------------------------------------------------------\n\n\n");
 		}
 	}
 
-	printf("-----------------------------------------------------------\n");
-	printf("Rockchip Board Module [%s] Test end <%s>.. Total: %lu.%lus\n",
-	       module->name, err ? "FAILED" : "PASS", sec, ms);
-	printf("-----------------------------------------------------------\n\n\n");
+	if (!found)
+		printf("Rockchip Board Module [%s] is not support !\n",
+		       module_name);
 
 	return 0;
 }
