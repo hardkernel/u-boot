@@ -922,6 +922,23 @@ static void cb_oem(struct usb_ep *ep, struct usb_request *req)
 #else
 		fastboot_tx_write_str("FAILnot implemented");
 #endif
+	} else if (strncmp("fuse at-bootloader-vboot-key", cmd + 4, 27) == 0) {
+#ifdef CONFIG_AVB_LIBAVB_USER
+		if (download_bytes != VBOOT_KEY_HASH_SIZE) {
+			fastboot_tx_write_str("FAIL");
+			printf("The vboot key size error!\n");
+		}
+
+		if (avb_write_vbootkey_hash((uint8_t *)
+					    CONFIG_FASTBOOT_BUF_ADDR,
+					    VBOOT_KEY_HASH_SIZE)) {
+			fastboot_tx_write_str("FAIL");
+			return;
+		}
+		fastboot_tx_write_str("OKAY");
+#else
+		fastboot_tx_write_str("FAILnot implemented");
+#endif
 	} else {
 		fastboot_tx_write_str("FAILunknown oem command");
 	}
