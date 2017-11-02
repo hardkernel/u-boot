@@ -30,6 +30,7 @@
 
 #define PERM_ATTR_DIGEST_SIZE 32
 #define PERM_ATTR_TOTAL_SIZE  1084
+#define VBOOT_KEY_HASH_SIZE   32
 
 /* Allocates an AvbOps instance suitable for use in Android userspace
  * on the device. Returns NULL on OOM.
@@ -187,5 +188,31 @@ int avb_read_perm_attr_flag(uint8_t *flag);
  * @return 0 if the command succeeded, -1 if it failed
  */
 int avb_write_perm_attr_flag(uint8_t flag);
+
+/**
+ * The android things require the soc-v key hash to be flashed
+ * using the fastboot. So the function can be used in fastboot
+ * to flash the key hash.
+ *
+ * @param buf    The vboot key hash data.
+ *
+ * @param length The length of key hash.
+ *
+ * @return 0 if the command succeeded, -1 if it failed
+ */
+int avb_read_vbootkey_hash(uint8_t *buf, uint8_t length);
+
+/**
+ * The android things require the soc-v key hash to be flashed
+ * using the fastboot. So the function can be used in fastboot
+ * to flash the key hash.
+ *
+ * @param buf    The vboot key hash data.
+ *
+ * @param length The length of key hash.
+ *
+ * @return 0 if the command succeeded, -1 if it failed
+ */
+int avb_write_vbootkey_hash(uint8_t *buf, uint8_t length);
 
 #endif

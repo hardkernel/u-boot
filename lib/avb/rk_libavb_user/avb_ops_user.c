@@ -443,3 +443,19 @@ int avb_write_perm_attr_flag(uint8_t flag)
 		return -1;
 	return 0;
 }
+
+int avb_read_vbootkey_hash(uint8_t *buf, uint8_t length)
+{
+	if (trusty_read_vbootkey_hash((uint32_t *)buf,
+				      (uint32_t)length / sizeof(uint32_t)))
+		return -1;
+	return 0;
+}
+
+int avb_write_vbootkey_hash(uint8_t *buf, uint8_t length)
+{
+	if (trusty_write_vbootkey_hash((uint32_t *)buf,
+				       (uint32_t)length / sizeof(uint32_t)))
+		return -1;
+	return 0;
+}
