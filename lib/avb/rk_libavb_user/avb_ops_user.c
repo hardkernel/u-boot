@@ -459,3 +459,10 @@ int avb_write_vbootkey_hash(uint8_t *buf, uint8_t length)
 		return -1;
 	return 0;
 }
+
+int avb_close_optee_client(void)
+{
+	if(trusty_notify_optee_uboot_end())
+		return -1;
+	return 0;
+}

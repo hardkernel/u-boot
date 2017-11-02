@@ -215,4 +215,13 @@ int avb_read_vbootkey_hash(uint8_t *buf, uint8_t length);
  */
 int avb_write_vbootkey_hash(uint8_t *buf, uint8_t length);
 
+/**
+ * U-boot close the optee client when start kernel
+ * to prevent the optee client being invoking by other
+ * program.
+ *
+ * @return 0 if the command succeeded, -1 if it failed
+ */
+int avb_close_optee_client(void);
+
 #endif
