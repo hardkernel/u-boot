@@ -767,5 +767,9 @@ int m3_nand_boot_write_page(struct mtd_info *mtd, struct nand_chip *chip,
 	uint32_t offset, int data_len, const uint8_t *buf,
 	int oob_required, int page, int cached, int raw);
 
+int aml_nand_get_fbb_issue(void);
+
+void aml_nand_check_fbb_issue(u8 *dev_id);
+
 #endif
 
