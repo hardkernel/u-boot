@@ -104,6 +104,8 @@ void board_enter_recovery_mode(void)
 	run_command("movi read recovery 0 $ramdisk_addr_r", 0);
 	run_command("movi read dtb 0 $fdt_addr_r", 0);
 
+	run_command("run setbootargs", 0);
+
 	printf("Now, recovery routine will be started\n");
 	run_command("booti $kernel_addr_r $ramdisk_addr_r $fdt_addr_r", 0);
 }

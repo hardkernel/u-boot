@@ -46,10 +46,12 @@
 	"fdt_addr_r=0x04800000\0" \
 	"kernel_addr_r=0x02000000\0" \
 	"ramdisk_addr_r=0x04000000\0" \
-	"bootargs=earlycon=uart8250,mmio32,0xff1a0000 swiotlb=1 "ANDROID_OPT	\
+	"storagemedia=na\0" \
+	"setbootargs=setenv bootargs earlycon=uart8250,mmio32,0xff1a0000 swiotlb=1"	\
+		" storagemedia=${storagemedia} "ANDROID_OPT	\
 		" root=/dev/mmcblk0p2 rw rootfstype=ext4 init=/init "	\
 		MTDPARTS_DOS" SecureBootCheckOk=0\0"	\
-	"bootcmd=cfgload; mmc dev ${bootdev}; movi read kernel 0 ${kernel_addr_r}; "	\
+	"bootcmd=cfgload; run setbootargs; mmc dev ${bootdev}; movi read kernel 0 ${kernel_addr_r}; "	\
 		"movi read dtb 0 ${fdt_addr_r}; "	\
 		"booti ${kernel_addr_r} - ${fdt_addr_r}\0"
 
