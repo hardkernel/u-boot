@@ -17,8 +17,8 @@
 #define bytes_to_lba(x)		((x) / 512)
 #define gbytes_to_lba(x)	((x) * 1024 * 1024 * 2)
 
-#define SZ_RESERVED		(8 * SZ_1M)	/* MBR + idbloader */
-#define SZ_RESERVED2		(1020 * SZ_1K)	/* Start offset of cache is 121MB */
+#define SZ_RESERVED		(7 * SZ_1M)	/* MBR + idbloader */
+#define SZ_RESERVED2		(508 * SZ_1K)	/* Start offset of cache is 43MB */
 
 static struct fbt_partition {
 	const char *name;
@@ -27,6 +27,9 @@ static struct fbt_partition {
 	{
 		.name = "-reserved",
 		.lba = bytes_to_lba(SZ_RESERVED)
+	}, {
+		.name = "logo",
+		.lba = bytes_to_lba(SZ_1M)
 	}, {
 		.name = "uboot",
 		.lba = bytes_to_lba(4 * SZ_1M)
@@ -38,16 +41,13 @@ static struct fbt_partition {
 		.lba = bytes_to_lba(4 * SZ_1K)
 	}, {
 		.name = "dtb",			/* Device Tree */
-		.lba = bytes_to_lba(16 * SZ_1M)
+		.lba = bytes_to_lba(512 * SZ_1K)
 	}, {
 		.name = "kernel",		/* kernel image */
-		.lba = bytes_to_lba(24 * SZ_1M)
-	}, {
-		.name = "boot",		/* ramdisk image */
-		.lba = bytes_to_lba(32 * SZ_1M)
+		.lba = bytes_to_lba(18 * SZ_1M)
 	}, {
 		.name = "recovery",		/* Recovery Image */
-		.lba = bytes_to_lba(32 * SZ_1M)
+		.lba = bytes_to_lba(8 * SZ_1M)
 	}, {
 		.name = "-reserved2",			/* Reserved */
 		.lba = bytes_to_lba(SZ_RESERVED2)

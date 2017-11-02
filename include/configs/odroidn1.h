@@ -36,8 +36,8 @@
 
 #undef CONFIG_EXTRA_ENV_SETTINGS
 #define MTDPARTS_DOS	\
-	"mtdparts=rk29xxnand:0x00040000@0x0053A800(fat),0x00300000@0x0023A800(system),"		\
-	"0x00200000@0x0003A800(cache),-@0x0057A800(userdata)"
+	"mtdparts=rk29xxnand:0x00040000@0x00513800(fat),0x00300000@0x00213800(system),"		\
+	"0x00200000@0x00013800(cache),-@0x00553800(userdata)"
 #define ANDROID_OPT	\
 	"androidboot.baseband=N/A androidboot.selinux=disabled androidboot.hardware=odroidn1 "	\
 	"androidboot.console=ttyFIQ0"
