@@ -7,6 +7,7 @@
 #include <asm/io.h>
 #include <adc.h>
 #include <common.h>
+#include <console.h>
 #include <dm.h>
 #include <errno.h>
 #include <fdtdec.h>
@@ -298,17 +299,14 @@ static int key_test(struct key_info *keys)
 	unsigned int adcval;
 	int adc_h, adc_l;
 	int err, i;
-	ulong start;
 
 	if (g_key_count == 0) {
 		printf("Find total 0 keys, finish test\n");
 		goto out;
 	}
 
-	printf("\nYou have 30s to test keys, press or release them, start!\n");
-
-	start = get_timer(0);
-	while (get_timer(start) <= 30000) {
+	printf("\nPress or release keys(Exit test by 'ctrl + c').. Start!\n");
+	while (!ctrlc()) {
 		mdelay(100);
 		for (i = 0, key = keys; i < g_key_count; i++, key++) {
 			if (key->type == ADC_KEY) {
