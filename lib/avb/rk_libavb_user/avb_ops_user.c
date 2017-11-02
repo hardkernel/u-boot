@@ -429,3 +429,17 @@ int avb_write_lock_state(uint8_t lock_state)
 		return -1;
 	return 0;
 }
+
+int avb_read_perm_attr_flag(uint8_t *flag)
+{
+	if (trusty_read_permanent_attributes_flag(flag))
+		return -1;
+	return 0;
+}
+
+int avb_write_perm_attr_flag(uint8_t flag)
+{
+	if (trusty_write_permanent_attributes_flag(flag))
+		return -1;
+	return 0;
+}

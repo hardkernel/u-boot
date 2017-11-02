@@ -28,6 +28,9 @@
 #include <android_avb/libavb.h>
 #include <android_avb/avb_ab_flow.h>
 
+#define PERM_ATTR_DIGEST_SIZE 32
+#define PERM_ATTR_TOTAL_SIZE  1084
+
 /* Allocates an AvbOps instance suitable for use in Android userspace
  * on the device. Returns NULL on OOM.
  *
@@ -161,5 +164,28 @@ int avb_read_lock_state(uint8_t *lock_state);
  * @return 0 if the command succeeded, -1 if it failed
  */
 int avb_write_lock_state(uint8_t lock_state);
+
+/**
+ * The android things uses fastboot to flash the permanent attributes.
+ * And if them were written, there must have a flag to indicate.
+ *
+ * @param flag   indicate the permanent attributes have been written
+ *               or not.
+ *
+ * @return 0 if the command succeeded, -1 if it failed
+ */
+int avb_read_perm_attr_flag(uint8_t *flag);
+
+/**
+ * The android things uses fastboot to flash the permanent attributes.
+ * And if them were written, there must have a flag to indicate.
+ *
+ * @param flag   We can call this function to write the flag '1'
+ *               to indicate the permanent attributes has been
+ *               written.
+ *
+ * @return 0 if the command succeeded, -1 if it failed
+ */
+int avb_write_perm_attr_flag(uint8_t flag);
 
 #endif
