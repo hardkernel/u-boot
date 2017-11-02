@@ -25,6 +25,9 @@
 /easylogo/easylogo
 /gdb/gdbcont
 /gdb/gdbsend
+libfdt.py
+libfdt_wrap.c
+_libfdt.so
 
 /lib/
 /common/
