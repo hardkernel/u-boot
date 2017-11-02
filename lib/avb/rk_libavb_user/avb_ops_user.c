@@ -305,7 +305,7 @@ void avb_ops_user_free(AvbOps *ops)
 }
 
 
-int read_slot_count(char *slot_count)
+int avb_read_slot_count(char *slot_count)
 {
 	AvbOps* ops;
 	AvbABData ab_data;
@@ -326,7 +326,7 @@ int read_slot_count(char *slot_count)
 	return 0;
 }
 
-int read_slot_suffixes(char *slot_suffixes)
+int avb_read_slot_suffixes(char *slot_suffixes)
 {
 	AvbOps* ops;
 	AvbABData ab_data;
@@ -347,7 +347,7 @@ int read_slot_suffixes(char *slot_suffixes)
 	return 0;
 }
 
-int set_slot_active(unsigned int *slot_number)
+int avb_set_slot_active(unsigned int *slot_number)
 {
 	AvbOps* ops;
 	ops = avb_ops_user_new();
@@ -366,7 +366,7 @@ int set_slot_active(unsigned int *slot_number)
 	return 0;
 }
 
-int get_current_slot(char *select_slot)
+int avb_get_current_slot(char *select_slot)
 {
 	AvbOps* ops;
 	ops = avb_ops_user_new();
@@ -384,7 +384,7 @@ int get_current_slot(char *select_slot)
 	return 0;
 }
 
-int read_permanent_attributes(uint8_t *attributes, uint32_t size)
+int avb_read_permanent_attributes(uint8_t *attributes, uint32_t size)
 {
 	if(trusty_read_permanent_attributes(attributes, size) != 0) {
 		return -1;
@@ -393,7 +393,7 @@ int read_permanent_attributes(uint8_t *attributes, uint32_t size)
 	return 0;
 }
 
-int write_permanent_attributes(uint8_t *attributes, uint32_t size)
+int avb_write_permanent_attributes(uint8_t *attributes, uint32_t size)
 {
 	if(trusty_write_permanent_attributes(attributes, size) != 0) {
 		return -1;
@@ -402,28 +402,28 @@ int write_permanent_attributes(uint8_t *attributes, uint32_t size)
 	return 0;
 }
 
-int read_flash_lock_state(uint8_t *flash_lock_state)
+int avb_read_flash_lock_state(uint8_t *flash_lock_state)
 {
 	if (trusty_read_flash_lock_state(flash_lock_state))
 		return -1;
 	return 0;
 }
 
-int write_flash_lock_state(uint8_t flash_lock_state)
+int avb_write_flash_lock_state(uint8_t flash_lock_state)
 {
 	if (trusty_write_flash_lock_state(flash_lock_state))
 		return -1;
 	return 0;
 }
 
-int read_lock_state(uint8_t *lock_state)
+int avb_read_lock_state(uint8_t *lock_state)
 {
 	if (trusty_read_lock_state(lock_state))
 		return -1;
 	return 0;
 }
 
-int write_lock_state(uint8_t lock_state)
+int avb_write_lock_state(uint8_t lock_state)
 {
 	if (trusty_write_lock_state(lock_state))
 		return -1;
