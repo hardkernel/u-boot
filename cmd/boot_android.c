@@ -641,6 +641,9 @@ int do_avb_flow(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		strcat(root_data, command_line);
 		env_set("bootargs", root_data);
 		load_address = CONFIG_SYS_LOAD_ADDR;
+		if (avb_close_optee_client())
+			printf("Can not close optee client!\n");
+
 		memcpy((uint8_t*)load_address,
 		       slot_data->loaded_partitions->data,
 		       slot_data->loaded_partitions->data_size);
