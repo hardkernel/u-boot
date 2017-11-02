@@ -620,10 +620,12 @@ int do_avb_flow(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	if (verify_flag == 'v') {
 		debug("start with verify!\n");
 		if (avb_ab_flow(ops->ab_ops,
-			    requested_partitions,
-			    flags,
-			    AVB_HASHTREE_ERROR_MODE_RESTART_AND_INVALIDATE,
-			    &slot_data)) {
+				requested_partitions,
+				flags,
+				AVB_HASHTREE_ERROR_MODE_RESTART_AND_INVALIDATE,
+				&slot_data)) {
+			avb_slot_verify_data_free(slot_data);
+			avb_ops_user_free(ops);
 			printf("avb_ab_flow() error!\n");
 			return CMD_RET_FAILURE;
 		}
@@ -648,8 +650,6 @@ int do_avb_flow(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		       slot_data->loaded_partitions->data,
 		       slot_data->loaded_partitions->data_size);
 		android_bootloader_boot_kernel(load_address);
-		avb_slot_verify_data_free(slot_data);
-		avb_ops_user_free(ops);
 	} else if (verify_flag == 'n') {
 		load_address = CONFIG_SYS_LOAD_ADDR;
 		avb_ab_slot_select(ops->ab_ops, boot_slot_select);
