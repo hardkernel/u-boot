@@ -116,44 +116,53 @@ static void lcd_lvds_phy_set(struct lcd_config_s *pconf, int status)
 				__func__, vswing);
 			vswing = LVDS_PHY_VSWING_DFT;
 		}
-		if (preem > 7) {
-			LCDERR("%s: wrong preemphasis_level=0x%x, use default\n",
-				__func__, preem);
-			preem = LVDS_PHY_PREEM_DFT;
-		}
-		if (clk_vswing > 7) {
-			LCDERR("%s: wrong clk_vswing_level=0x%x, use default\n",
-				__func__, clk_vswing);
-			clk_vswing = LVDS_PHY_CLK_VSWING_DFT;
-		}
-		if (clk_preem > 7) {
-			LCDERR("%s: wrong clk_preem_level=0x%x, use default\n",
-				__func__, clk_preem);
-			clk_preem = LVDS_PHY_CLK_PREEM_DFT;
-		}
 		channel_on = lcd_lvds_channel_on_value(pconf);
-
-		data32 = 0x606cca80 | (vswing << 26) | (preem << 0);
-		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL1, data32);
-		/*lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL1, 0x6c6cca80);*/
-		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL2, 0x0000006c);
-		data32 = (channel_on << 16) | 0x0800 | /* DIF_TX_CTL5 */
-			(clk_vswing << 8) | (clk_preem << 5); /* DIF_TX_CTL4 */
-		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL3, data32);
-		/*lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL3, 0x0fff0800);*/
 
 		switch (lcd_drv->chip_type) {
 		case LCD_CHIP_TXHD:
-			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL1, 0x6c62ca9b);
-			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL2, 0x60);
-			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL3, 0x03ff0c00);
+			if (preem > 3) {
+				LCDERR("%s: wrong preemphasis_level=0x%x, use default\n",
+					__func__, preem);
+				preem = LVDS_PHY_PREEM_DFT;
+			}
+
+			data32 = LVDS_PHY_CNTL1_TXHD |
+				(vswing << 3) | (vswing << 0) | (preem << 23);
+			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL1, data32);
+			data32 = LVDS_PHY_CNTL2_TXHD |
+				(preem << 14) | (preem << 12) |
+				(preem << 26) | (preem << 24);
+			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL2, data32);
+			data32 = LVDS_PHY_CNTL3_TXHD |
+				(preem << 6) | (preem << 4) |
+				(preem << 2) | (preem << 0) | (preem << 30);
+			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL3, data32);
 			break;
 		default:
-			data32 = 0x606cca80 | (vswing << 26) | (preem << 0);
+			if (preem > 7) {
+				LCDERR("%s: wrong preemphasis_level=0x%x, use default\n",
+					__func__, preem);
+				preem = LVDS_PHY_PREEM_DFT;
+			}
+			if (clk_vswing > 3) {
+				LCDERR("%s: wrong clk_vswing_level=0x%x, use default\n",
+					__func__, clk_vswing);
+				clk_vswing = LVDS_PHY_CLK_VSWING_DFT;
+			}
+			if (clk_preem > 7) {
+				LCDERR("%s: wrong clk_preem_level=0x%x, use default\n",
+					__func__, clk_preem);
+				clk_preem = LVDS_PHY_CLK_PREEM_DFT;
+			}
+
+			data32 = LVDS_PHY_CNTL1_G9TV |
+				(vswing << 26) | (preem << 0);
 			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL1, data32);
 			/*lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL1, 0x6c6cca80);*/
-			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL2, 0x0000006c);
-			data32 = (channel_on << 16) | 0x0800 | /* DIF_TX_CTL5 */
+			data32 = LVDS_PHY_CNTL2_G9TV;
+			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL2, data32);
+			data32 = LVDS_PHY_CNTL3_G9TV |
+				(channel_on << 16) | /* DIF_TX_CTL5 */
 				(clk_vswing << 8) | (clk_preem << 5); /* DIF_TX_CTL4 */
 			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL3, data32);
 			/*lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL3, 0x0fff0800);*/
@@ -188,14 +197,16 @@ static void lcd_vbyone_phy_set(struct lcd_config_s *pconf, int status)
 				__func__, preem);
 			preem = VX1_PHY_PREEM_DFT;
 		}
-		data32 = 0x6e0ec900 | (vswing << 3) | (ext_pullup << 10);
+		data32 = VX1_PHY_CNTL1_G9TV |
+			(vswing << 3) | (ext_pullup << 10);
 		if (ext_pullup)
 			data32 &= ~(1 << 15);
 		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL1, data32);
-		data32 = 0x00000a7c | (preem << 20);
+		data32 = VX1_PHY_CNTL2_G9TV | (preem << 20);
 		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL2, data32);
 		/*lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL1, 0x6e0ec918);
 		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL2, 0x00000a7c);*/
+		data32 = VX1_PHY_CNTL3_G9TV;
 		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL3, 0x00ff0800);
 	} else {
 		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL1, 0x0);
@@ -383,6 +394,7 @@ static void lcd_lvds_control_set(struct lcd_config_s *pconf)
 	unsigned int pn_swap, port_swap, lane_reverse;
 	unsigned int dual_port, fifo_mode;
 	unsigned int lvds_repack = 1;
+	unsigned int ch_swap0, ch_swap1, ch_swap2, temp0, temp1;
 	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
 
 	if (lcd_debug_print_flag)
@@ -433,9 +445,52 @@ static void lcd_lvds_control_set(struct lcd_config_s *pconf)
 	/* lvsd swap */
 	switch (lcd_drv->chip_type) {
 	case LCD_CHIP_TXHD:
-		lcd_vcbus_write(LVDS_CH_SWAP0, 0x3210);
-		lcd_vcbus_write(LVDS_CH_SWAP1, 0x8764);
-		lcd_vcbus_write(LVDS_CH_SWAP2, 0x00a9);
+		/* lvds channel:    //tx 10 channels
+		 *    0: d0_a
+		 *    1: d1_a
+		 *    2: d2_a
+		 *    3: clk_a
+		 *    4: d3_a
+		 *    5: d4_a
+		 *    6: d0_b
+		 *    7: d1_b
+		 *    8: d2_b
+		 *    9: clk_b
+		 *    a: d3_b
+		 *    b: d4_b */
+		ch_swap0 = 0x3210;
+		ch_swap1 = 0x8764;
+		ch_swap2 = 0x00a9;
+		if (port_swap) {
+			temp0 = ((ch_swap1 << 16) | ch_swap0) & 0xfffff;
+			temp1 = ((ch_swap2 << 12) | (ch_swap1 >> 4)) & 0xfffff;
+			/* ch_swap0: temp1[15:0]
+			 * ch_swap1: temp0[11:0], temp1[19:16]
+			 * ch_swap2: temp0[19:12] */
+			ch_swap0 = temp1 & 0xffff;
+			ch_swap1 = ((temp0 << 4) | ((temp1 >> 16) & 0xf)) & 0xffff;
+			ch_swap2 = (temp0 >> 12) & 0xff;
+		}
+		if (lane_reverse) {
+			temp0 = ((ch_swap1 << 16) | ch_swap0) & 0xfffff;
+			temp1 = ((ch_swap2 << 12) | (ch_swap1 >> 4)) & 0xfffff;
+			/* ch_swap0: temp0[7:4], temp0[11:8], temp0[15:12], temp0[19:16]
+			 * ch_swap1: temp1[11:8], temp1[15:12], temp1[19:16], temp0[3:0]
+			 * ch_swap2: temp1[3:0], temp1[7:4] */
+			ch_swap0 = (((temp0 >> 4) & 0xf) << 12) |
+				(((temp0 >> 8) & 0xf) << 8) |
+				(((temp0 >> 12) & 0xf) << 4) |
+				(((temp0 >> 16) & 0xf) << 0);
+			ch_swap1 = (((temp1 >> 8) & 0xf) << 12) |
+				(((temp1 >> 12) & 0xf) << 8) |
+				(((temp1 >> 16) & 0xf) << 4) |
+				(((temp0 >> 0) & 0xf) << 0);
+			ch_swap2 = (((temp1 >> 0) & 0xf) << 4) |
+				(((temp1 >> 4) & 0xf) << 0);
+		}
+		lcd_vcbus_write(LVDS_CH_SWAP0, ch_swap0);
+		lcd_vcbus_write(LVDS_CH_SWAP1, ch_swap1);
+		lcd_vcbus_write(LVDS_CH_SWAP2, ch_swap2);
 		break;
 	default:
 		lcd_vcbus_setb(LCD_PORT_SWAP, port_swap, 12, 1);

@@ -17517,6 +17517,49 @@
 //===============================================================
 //
 // Closing file:  lcd_regs.h
+/* ********************************
+ * LCD TCON_APB BASE: 0xff600000
+ * ******************************** */
+#define TCON_SYS_REG_START                         (0x0000)
+#define P_TCON_SYS_REG_START                       (volatile unsigned int *)((0x0000 << 2) + 0xff600000)
+
+#define TCON_TOP_CTRL                              0x1000
+#define P_TCON_TOP_CTRL                            (volatile unsigned int *)((0x1000 << 2) + 0xff600000)
+#define TCON_RGB_IN_MUX                            0x1001
+#define P_TCON_RGB_IN_MUX                          (volatile unsigned int *)((0x1001 << 2) + 0xff600000)
+#define TCON_OUT_CH_SEL0                           0x1002
+#define P_TCON_OUT_CH_SEL0                         (volatile unsigned int *)((0x1002 << 2) + 0xff600000)
+#define TCON_OUT_CH_SEL1                           0x1003
+#define P_TCON_OUT_CH_SEL1                         (volatile unsigned int *)((0x1003 << 2) + 0xff600000)
+#define TCON_I2C_DEGLITCH_CNTL                     0x1004
+#define P_TCON_I2C_DEGLITCH_CNTL                   (volatile unsigned int *)((0x1004 << 2) + 0xff600000)
+#define TCON_STATUS0                               0x1008 /* read only */
+#define P_TCON_STATUS0                             (volatile unsigned int *)((0x1008 << 2) + 0xff600000)
+#define TCON_PLLLOCK_CNTL                          0x1009
+#define P_TCON_PLLLOCK_CNTL                        (volatile unsigned int *)((0x1009 << 2) + 0xff600000)
+#define TCON_PLLLCK_RST_CNT                        0x100a
+#define P_TCON_PLLLCK_RST_CNT                      (volatile unsigned int *)((0x100a << 2) + 0xff600000)
+#define TCON_RST_CTRL                              0x100b
+#define P_TCON_RST_CTRL                            (volatile unsigned int *)((0x100b << 2) + 0xff600000)
+#define TCON_AXI_OFST                              0x100c
+#define P_TCON_AXI_OFST                            (volatile unsigned int *)((0x100c << 2) + 0xff600000)
+#define TCON_DDRIF_CTRL0                           0x100d
+#define P_TCON_DDRIF_CTRL0                         (volatile unsigned int *)((0x100d << 2) + 0xff600000)
+#define TCON_CLK_CTRL                              0x100e
+#define P_TCON_CLK_CTRL                            (volatile unsigned int *)((0x100e << 2) + 0xff600000)
+#define TCON_DDRIF_CTRL1                           0x100f
+#define P_TCON_DDRIF_CTRL1                         (volatile unsigned int *)((0x100f << 2) + 0xff600000)
+#define TCON_STATUS1                               0x1010 /* read only */
+#define P_TCON_STATUS1                             (volatile unsigned int *)((0x1010 << 2) + 0xff600000)
+#define TCON_DDRIF_CTRL2                           0x1011
+#define P_TCON_DDRIF_CTRL2                         (volatile unsigned int *)((0x1011 << 2) + 0xff600000)
+#define TCON_INTR_MASKN                            0x1022
+#define P_TCON_INTR_MASKN                          (volatile unsigned int *)((0x1022 << 2) + 0xff600000)
+#define TCON_INTR                                  0x1023 /* read only */
+#define P_TCON_INTR                                (volatile unsigned int *)((0x1023 << 2) + 0xff600000)
+//===============================================================
+//LCD TCON_APB BASE   END
+//===============================================================
 //
 //`define MAD_VCBUS_BASE               8'h17
 //

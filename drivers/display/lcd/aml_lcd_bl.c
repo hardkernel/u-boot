@@ -33,7 +33,6 @@ static unsigned int bl_off_policy;
 static unsigned int bl_status;
 
 static void bl_set_pwm_gpio_check(struct bl_pwm_config_s *bl_pwm);
-static int aml_bl_init_load_from_bsp(struct bl_config_s *bconf);
 
 static struct bl_config_s *bl_check_valid(void)
 {
@@ -892,15 +891,6 @@ void aml_bl_power_ctrl(int status, int delay_flag)
 }
 
 #ifdef CONFIG_OF_LIBFDT
-static const char *bl_pinmux_str[] = {
-	"bl_pwm_on_pin",        /* 0 */
-	"bl_pwm_vs_on_pin",     /* 1 */
-	"bl_pwm_combo_0_on_pin",  /* 2 */
-	"bl_pwm_combo_1_on_pin",  /* 3 */
-	"bl_pwm_combo_0_vs_on_pin",  /* 4 */
-	"bl_pwm_combo_1_vs_on_pin",  /* 5 */
-};
-
 static char *bl_pwm_name[] = {
 	"PWM_A",
 	"PWM_B",
@@ -1703,71 +1693,27 @@ static int aml_bl_config_load_from_unifykey(struct bl_config_s *bconf)
 	return 0;
 }
 
+static const char *bl_pinmux_str[] = {
+	"bl_pwm_on_pin",        /* 0 */
+	"bl_pwm_vs_on_pin",     /* 1 */
+	"bl_pwm_combo_0_on_pin",  /* 2 */
+	"bl_pwm_combo_1_on_pin",  /* 3 */
+	"bl_pwm_combo_0_vs_on_pin",  /* 4 */
+	"bl_pwm_combo_1_vs_on_pin",  /* 5 */
+};
+
 #ifdef CONFIG_OF_LIBFDT
-static int aml_bl_init_load_from_dts(char *dt_addr, struct bl_config_s *bconf)
+static int aml_bl_pinmux_load_from_dts(char *dt_addr, struct bl_config_s *bconf)
 {
 	int parent_offset;
 	char propname[50];
 	char *propdata;
-	char *p;
-	const char *str;
 	unsigned int temp;
 	int len = 0;
 	struct bl_pwm_config_s *bl_pwm;
 	struct bl_pwm_config_s *pwm_combo0, *pwm_combo1;
 	int pinmux_index = 0;
-	int i, j;
-
-	parent_offset = fdt_path_offset(dt_addr, "/backlight");
-	if (parent_offset < 0) {
-		LCDPR("bl: not find /backlight node %s\n", fdt_strerror(parent_offset));
-		return -1;
-	}
-	propdata = (char *)fdt_getprop(dt_addr, parent_offset, "status", NULL);
-	if (propdata == NULL) {
-		LCDPR("bl: not find status, default to disabled\n");
-		return -1;
-	} else {
-		if (strncmp(propdata, "okay", 2)) {
-			LCDPR("bl: status disabled\n");
-			return -1;
-		}
-	}
-
-	/* gpio */
-	i = 0;
-	propdata = (char *)fdt_getprop(dt_addr, parent_offset, "bl_gpio_names", NULL);
-	if (propdata == NULL) {
-		LCDERR("bl: failed to get bl_gpio_names\n");
-	} else {
-		p = propdata;
-		while (i < BL_GPIO_NUM_MAX) {
-			if (i > 0)
-				p += strlen(p) + 1;
-			str = p;
-			if (strlen(str) == 0)
-				break;
-			strcpy(bconf->gpio_name[i], str);
-			if (lcd_debug_print_flag)
-				LCDPR("bl: i=%d, gpio=%s\n", i, bconf->gpio_name[i]);
-			i++;
-		}
-	}
-	for (j = i; j < BL_GPIO_NUM_MAX; j++) {
-		strcpy(bconf->gpio_name[j], "invalid");
-	}
-
-	/* pinmux */
-	/* new kernel dts pinctrl detect */
-	propdata = (char *)fdt_getprop(dt_addr, parent_offset, "pinctrl_version", NULL);
-	if (propdata) {
-		temp = be32_to_cpup((u32*)propdata);
-		LCDPR("bl: get pinctrl_version: %d\n", temp);
-		if (temp) {
-			aml_bl_init_load_from_bsp(bconf);
-			goto bl_dts_pinmux_end;
-		}
-	}
+	int i;
 
 	switch (bconf->method) {
 	case BL_CTRL_PWM:
@@ -1975,12 +1921,207 @@ static int aml_bl_init_load_from_dts(char *dt_addr, struct bl_config_s *bconf)
 		break;
 	}
 
-bl_dts_pinmux_end:
 	return 0;
 }
 #endif
 
-static int aml_bl_init_load_from_bsp(struct bl_config_s *bconf)
+static int aml_bl_pinmux_load_from_bsp(struct bl_config_s *bconf)
+{
+	char propname[50];
+	struct lcd_pinmux_ctrl_s *pinmux;
+	unsigned int i, j;
+	int pinmux_index = 0, set_cnt = 0, clr_cnt = 0;
+	struct bl_pwm_config_s *bl_pwm;
+	struct bl_pwm_config_s *pwm_combo0, *pwm_combo1;
+
+	if (bconf->bl_pinmux == NULL) {
+		LCDERR("bl: %s: bl_pinmux is NULL for lcd.c\n", __func__);
+		return -1;
+	}
+
+	switch (bconf->method) {
+	case BL_CTRL_PWM:
+		bl_pwm = bconf->bl_pwm;
+		if (bl_pwm->pwm_port == BL_PWM_VS)
+			pinmux_index = 1;
+		else
+			pinmux_index = 0;
+		sprintf(propname,"%s", bl_pinmux_str[pinmux_index]);
+		pinmux = bconf->bl_pinmux;
+		for (i = 0; i < LCD_PINMX_MAX; i++) {
+			pinmux += i;
+			if (strncmp(pinmux->name, "invalid", 7) == 0)
+				break;
+			if (strncmp(pinmux->name, propname, strlen(propname)) == 0) {
+				for (j = 0; j < LCD_PINMUX_NUM; j++ ) {
+					if (pinmux->pinmux_set[j][0] == LCD_PINMUX_END)
+						break;
+					bl_pwm->pinmux_set[j][0] = pinmux->pinmux_set[j][0];
+					bl_pwm->pinmux_set[j][1] = pinmux->pinmux_set[j][1];
+					set_cnt++;
+				}
+				for (j = 0; j < LCD_PINMUX_NUM; j++ ) {
+					if (pinmux->pinmux_clr[j][0] == LCD_PINMUX_END)
+						break;
+					bl_pwm->pinmux_clr[j][0] = pinmux->pinmux_clr[j][0];
+					bl_pwm->pinmux_clr[j][1] = pinmux->pinmux_clr[j][1];
+					clr_cnt++;
+				}
+				break;
+			}
+		}
+		if (set_cnt < LCD_PINMUX_NUM) {
+			bl_pwm->pinmux_set[set_cnt][0] = LCD_PINMUX_END;
+			bl_pwm->pinmux_set[set_cnt][1] = 0x0;
+		}
+		if (clr_cnt < LCD_PINMUX_NUM) {
+			bl_pwm->pinmux_clr[clr_cnt][0] = LCD_PINMUX_END;
+			bl_pwm->pinmux_clr[clr_cnt][1] = 0x0;
+		}
+
+		if (lcd_debug_print_flag) {
+			i = 0;
+			while (i < LCD_PINMUX_NUM) {
+				if (bl_pwm->pinmux_set[i][0] == LCD_PINMUX_END)
+					break;
+				LCDPR("bl: bl_pinmux set: %d, 0x%08x\n",
+					bl_pwm->pinmux_set[i][0], bl_pwm->pinmux_set[i][1]);
+				i++;
+			}
+			i = 0;
+			while (i < LCD_PINMUX_NUM) {
+				if (bl_pwm->pinmux_clr[i][0] == LCD_PINMUX_END)
+					break;
+				LCDPR("bl: bl_pinmux clr: %d, 0x%08x\n",
+					bl_pwm->pinmux_clr[i][0], bl_pwm->pinmux_clr[i][1]);
+				i++;
+			}
+		}
+		break;
+	case BL_CTRL_PWM_COMBO:
+		pwm_combo0 = bconf->bl_pwm_combo0;
+		pwm_combo1 = bconf->bl_pwm_combo1;
+		if (pwm_combo0->pwm_port == BL_PWM_VS)
+			sprintf(propname,"%s", bl_pinmux_str[4]);
+		else
+			sprintf(propname,"%s", bl_pinmux_str[2]);
+
+		pinmux = bconf->bl_pinmux;
+		for (i = 0; i < LCD_PINMX_MAX; i++) {
+			pinmux += i;
+			if (strncmp(pinmux->name, "invalid", 7) == 0)
+				break;
+			if (strncmp(pinmux->name, propname, strlen(propname)) == 0) {
+				for (j = 0; j < LCD_PINMUX_NUM; j++ ) {
+					if (pinmux->pinmux_set[j][0] == LCD_PINMUX_END)
+						break;
+					pwm_combo0->pinmux_set[j][0] = pinmux->pinmux_set[j][0];
+					pwm_combo0->pinmux_set[j][1] = pinmux->pinmux_set[j][1];
+					set_cnt++;
+				}
+				for (j = 0; j < LCD_PINMUX_NUM; j++ ) {
+					if (pinmux->pinmux_clr[j][0] == LCD_PINMUX_END)
+						break;
+					pwm_combo0->pinmux_clr[j][0] = pinmux->pinmux_clr[j][0];
+					pwm_combo0->pinmux_clr[j][1] = pinmux->pinmux_clr[j][1];
+					clr_cnt++;
+				}
+				break;
+			}
+		}
+		if (set_cnt < LCD_PINMUX_NUM) {
+			pwm_combo0->pinmux_set[set_cnt][0] = LCD_PINMUX_END;
+			pwm_combo0->pinmux_set[set_cnt][1] = 0x0;
+		}
+		if (clr_cnt < LCD_PINMUX_NUM) {
+			pwm_combo0->pinmux_clr[clr_cnt][0] = LCD_PINMUX_END;
+			pwm_combo0->pinmux_clr[clr_cnt][1] = 0x0;
+		}
+
+		if (lcd_debug_print_flag) {
+			i = 0;
+			while (i < LCD_PINMUX_NUM) {
+				if (pwm_combo0->pinmux_set[i][0] == LCD_PINMUX_END)
+					break;
+				LCDPR("bl: pwm_combo0 pinmux_set: %d, 0x%08x\n",
+					pwm_combo0->pinmux_set[i][0], pwm_combo0->pinmux_set[i][1]);
+				i++;
+			}
+			i = 0;
+			while (i < LCD_PINMUX_NUM) {
+				if (pwm_combo0->pinmux_clr[i][0] == LCD_PINMUX_END)
+					break;
+				LCDPR("bl: pwm_combo0 pinmux_clr: %d, 0x%08x\n",
+					pwm_combo0->pinmux_clr[i][0], pwm_combo0->pinmux_clr[i][1]);
+				i++;
+			}
+		}
+
+		if (pwm_combo1->pwm_port == BL_PWM_VS)
+			sprintf(propname,"%s", bl_pinmux_str[5]);
+		else
+			sprintf(propname,"%s", bl_pinmux_str[3]);
+
+		pinmux = bconf->bl_pinmux;
+		set_cnt = 0;
+		clr_cnt = 0;
+		for (i = 0; i < LCD_PINMX_MAX; i++) {
+			pinmux += i;
+			if (strncmp(pinmux->name, "invalid", 7) == 0)
+				break;
+			if (strncmp(pinmux->name, propname, strlen(propname)) == 0) {
+				for (j = 0; j < LCD_PINMUX_NUM; j++ ) {
+					if (pinmux->pinmux_set[j][0] == LCD_PINMUX_END)
+						break;
+					pwm_combo1->pinmux_set[j][0] = pinmux->pinmux_set[j][0];
+					pwm_combo1->pinmux_set[j][1] = pinmux->pinmux_set[j][1];
+					set_cnt++;
+				}
+				for (j = 0; j < LCD_PINMUX_NUM; j++ ) {
+					if (pinmux->pinmux_clr[j][0] == LCD_PINMUX_END)
+						break;
+					pwm_combo1->pinmux_clr[j][0] = pinmux->pinmux_clr[j][0];
+					pwm_combo1->pinmux_clr[j][1] = pinmux->pinmux_clr[j][1];
+					clr_cnt++;
+				}
+				break;
+			}
+		}
+		if (set_cnt < LCD_PINMUX_NUM) {
+			pwm_combo1->pinmux_set[set_cnt][0] = LCD_PINMUX_END;
+			pwm_combo1->pinmux_set[set_cnt][1] = 0x0;
+		}
+		if (clr_cnt < LCD_PINMUX_NUM) {
+			pwm_combo1->pinmux_clr[clr_cnt][0] = LCD_PINMUX_END;
+			pwm_combo1->pinmux_clr[clr_cnt][1] = 0x0;
+		}
+		if (lcd_debug_print_flag) {
+			i = 0;
+			while (i < LCD_PINMUX_NUM) {
+				if (pwm_combo1->pinmux_set[i][0] == LCD_PINMUX_END)
+					break;
+				LCDPR("bl: pwm_combo1 pinmux_set: %d, 0x%08x\n",
+					pwm_combo1->pinmux_set[i][0], pwm_combo1->pinmux_set[i][1]);
+				i++;
+			}
+			i = 0;
+			while (i < LCD_PINMUX_NUM) {
+				if (pwm_combo1->pinmux_clr[i][0] == LCD_PINMUX_END)
+					break;
+				LCDPR("bl: pwm_combo1 pinmux_clr: %d, 0x%08x\n",
+					pwm_combo1->pinmux_clr[i][0], pwm_combo1->pinmux_clr[i][1]);
+				i++;
+			}
+		}
+		break;
+	default:
+		break;
+	}
+
+	return 0;
+}
+
+static int aml_bl_pinmux_load_default(struct bl_config_s *bconf)
 {
 	struct bl_pwm_config_s *bl_pwm;
 	struct bl_pwm_config_s *pwm_combo0, *pwm_combo1;
@@ -2033,6 +2174,88 @@ static int aml_bl_init_load_from_bsp(struct bl_config_s *bconf)
 	}
 
 	return 0;
+}
+
+#ifdef CONFIG_OF_LIBFDT
+static int aml_bl_init_load_from_dts(char *dt_addr, struct bl_config_s *bconf)
+{
+	int parent_offset;
+	char *propdata;
+	char *p;
+	const char *str;
+	int i, j;
+	int ret = 0;
+
+	parent_offset = fdt_path_offset(dt_addr, "/backlight");
+	if (parent_offset < 0) {
+		LCDPR("bl: not find /backlight node %s\n", fdt_strerror(parent_offset));
+		return -1;
+	}
+	propdata = (char *)fdt_getprop(dt_addr, parent_offset, "status", NULL);
+	if (propdata == NULL) {
+		LCDPR("bl: not find status, default to disabled\n");
+		return -1;
+	} else {
+		if (strncmp(propdata, "okay", 2)) {
+			LCDPR("bl: status disabled\n");
+			return -1;
+		}
+	}
+
+	/* gpio */
+	i = 0;
+	propdata = (char *)fdt_getprop(dt_addr, parent_offset, "bl_gpio_names", NULL);
+	if (propdata == NULL) {
+		LCDERR("bl: failed to get bl_gpio_names\n");
+	} else {
+		p = propdata;
+		while (i < BL_GPIO_NUM_MAX) {
+			if (i > 0)
+				p += strlen(p) + 1;
+			str = p;
+			if (strlen(str) == 0)
+				break;
+			strcpy(bconf->gpio_name[i], str);
+			if (lcd_debug_print_flag)
+				LCDPR("bl: i=%d, gpio=%s\n", i, bconf->gpio_name[i]);
+			i++;
+		}
+	}
+	for (j = i; j < BL_GPIO_NUM_MAX; j++) {
+		strcpy(bconf->gpio_name[j], "invalid");
+	}
+
+	/* pinmux */
+	/* new kernel dts pinctrl detect */
+	propdata = (char *)fdt_getprop(dt_addr, parent_offset, "pinctrl_version", NULL);
+	if (propdata)
+		bconf->pinctrl_ver = (unsigned char)(be32_to_cpup((u32*)propdata));
+	LCDPR("bl: pinctrl_version: %d\n", bconf->pinctrl_ver);
+
+	switch (bconf->pinctrl_ver) {
+	case 0:
+		ret = aml_bl_pinmux_load_from_dts(dt_addr, bconf);
+		break;
+	case 2:
+		ret = aml_bl_pinmux_load_from_bsp(bconf);
+		break;
+	case 1:
+	default:
+		ret = aml_bl_pinmux_load_default(bconf);
+		break;
+	}
+
+	return ret;
+}
+#endif
+
+static int aml_bl_init_load_from_bsp(struct bl_config_s *bconf)
+{
+	int ret = 0;
+
+	ret = aml_bl_pinmux_load_default(bconf);
+
+	return ret;
 }
 
 int aml_bl_config_load(char *dt_addr, int load_id)

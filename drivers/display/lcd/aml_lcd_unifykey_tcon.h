@@ -1,5 +1,5 @@
 /*
- * drivers/display/lcd/aml_lcd_tcon.c
+ * driver/display/lcd/aml_lcd_unifykey_tcon.h
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -13,12 +13,8 @@
  *
  */
 
-#include <common.h>
-#include <malloc.h>
-#include <asm/arch/io.h>
-#include <amlogic/aml_lcd.h>
-#include "aml_lcd_reg.h"
-#include "aml_lcd_common.h"
+#ifndef _AML_LCD_UNIFYKEY_TCON_H
+#define _AML_LCD_UNIFYKEY_TCON_H
 
 static unsigned char tcon_boe_hd_hsd_n56[LCD_TCON_TABLE_MAX] = {
 0x40,
@@ -113,7 +109,7 @@ static unsigned char tcon_boe_hd_hsd_n56[LCD_TCON_TABLE_MAX] = {
 0x00,
 0x00,
 0x00,
-0x40, /* 0x05c //0x00 --> 0x40  //[6]:od_en */
+0x00,
 0x00,
 0x04,
 0x00,
@@ -296,7 +292,7 @@ static unsigned char tcon_boe_hd_hsd_n56[LCD_TCON_TABLE_MAX] = {
 0x0A,
 0x00,
 0x00,
-0x20, /* 0x113: 0x00 --> 0x20, bit[5] */
+0x00,
 0xAB,
 0x42,
 0x00,
@@ -710,11 +706,11 @@ static unsigned char tcon_boe_hd_hsd_n56[LCD_TCON_TABLE_MAX] = {
 0x60,
 0x08,
 0x80,
-0x00, /* 0x2b1: 0x00 */
-0x08, /* 0x2b2: 0x08 */
-0x05, /* 0x2b3: 0x00 --> 0x05 */
-0x58, /* 0x2b4: 0x08 --> 0x58 */
-0x05, /* 0x2b5: 0x05 */
+0x00,
+0x08,
+0x00,
+0x08,
+0x05,
 0x58,
 0x02,
 0x00,
@@ -802,9 +798,9 @@ static unsigned char tcon_boe_hd_hsd_n56[LCD_TCON_TABLE_MAX] = {
 0x87,
 0x88,
 0x4F,
-0xA5, /* 0x30d: 0xa5 */
-0xD7, /* 0x30e: 0x09 --> 0xd7 */
-0x80, /* 0x30f: 0x60 --> 0x80 */
+0xA5,
+0x09,
+0x60,
 0x00,
 0x00,
 0x00,
@@ -4117,7 +4113,7 @@ static unsigned char tcon_boe_hd_hsd_n56[LCD_TCON_TABLE_MAX] = {
 0x00,
 0x24,
 0xD5,
-};/*end of boe hd hsd n56*/
+};//end of boe hd hsd n56
 
 static unsigned char tcon_boe_fhd_goa_n10[LCD_TCON_TABLE_MAX] = {
 0x40,
@@ -4139,7 +4135,7 @@ static unsigned char tcon_boe_fhd_goa_n10[LCD_TCON_TABLE_MAX] = {
 0xE4,
 0x1B,
 0x00,
-0x20,  /* 0x013  //0x00 --> 0x20 */
+0x20,  //0x013  //0x00 --> 0x20
 0x0F,
 0xC8,
 0x00,
@@ -4212,7 +4208,7 @@ static unsigned char tcon_boe_fhd_goa_n10[LCD_TCON_TABLE_MAX] = {
 0x00,
 0x00,
 0x00,
-0x40, /* 0x05c //0x00 --> 0x40  //[6]:od_en */
+0x00,  //0x05c //0x00 --> 0x40  //[6]:od_en
 0x00,
 0x04,
 0x00,
@@ -4395,7 +4391,7 @@ static unsigned char tcon_boe_fhd_goa_n10[LCD_TCON_TABLE_MAX] = {
 0x38,
 0x11,
 0x11,
-0x20, /* 0x113: 0x00 --> 0x20, bit[5] */
+0x00, //0x113
 0x80,
 0x37,
 0x00,
@@ -4406,14 +4402,14 @@ static unsigned char tcon_boe_fhd_goa_n10[LCD_TCON_TABLE_MAX] = {
 0x01,
 0x10,
 0x3C,
-0x82, /* 0x11e  //0xc0 --> 0x82 */
-0x27, /* 0x11f  //0x03 --> 0x27 */
-0x3C, /* 0x120  //0x1e --> 0x3c */
+0x82, //0x11e  //0xc0 --> 0x82
+0x27, //0x11f  //0x03 --> 0x27
+0x3C, //0x120  //0x1e --> 0x3c
 0x0C,
 0x20,
 0x00,
 0x18,
-0x0F, /* 0x125 //0x0b --> 0x0f */
+0x0F, //0x125 //0x0b --> 0x0f
 0x00,
 0x64,
 0xC8,
@@ -4811,8 +4807,8 @@ static unsigned char tcon_boe_fhd_goa_n10[LCD_TCON_TABLE_MAX] = {
 0x80,
 0x00,
 0x08,
-0x07,  /* 0x2b3  //0x00 --> 0x07 */
-0x80,  /* 0x2b4  //0x08 --> 0x80 */
+0x07,  //0x2b3  //0x00 --> 0x07
+0x80,  //0x2b4  //0x08 --> 0x80
 0x07,
 0x80,
 0x02,
@@ -8216,252 +8212,7 @@ static unsigned char tcon_boe_fhd_goa_n10[LCD_TCON_TABLE_MAX] = {
 0x00,
 0x43,
 0xE3,
-};/*end of boe fhd goa n10*/
+};//end of boe fhd goa n10
 
-#define PR_BUF_MAX    100
-void lcd_tcon_regs_table_print(struct mlvds_config_s *mlvds_conf)
-{
-	int i, j, n;
-	char *buf;
-
-	if (mlvds_conf == NULL)
-		return;
-	if (mlvds_conf->tcon_enable == 0) {
-		LCDERR("%s: invalid tcon\n", __func__);
-		return;
-	}
-	if (mlvds_conf->reg_table == NULL) {
-		LCDERR("%s: invalid table\n", __func__);
-		return;
-	}
-
-	buf = (char *)malloc(PR_BUF_MAX * sizeof(char));
-	if (buf == NULL) {
-		LCDERR("%s: buf malloc error\n", __func__);
-		return;
-	}
-
-	LCDPR("%s:\n", __func__);
-	for (i = 0; i < 256; i++) {
-		n = snprintf(buf, PR_BUF_MAX, "0x%03x: ", (i * 16));
-		for (j = 0; j < 16; j++) {
-			n += snprintf(buf+n, PR_BUF_MAX, " 0x%02x",
-					mlvds_conf->reg_table[i*16+j]);
-		}
-		buf[n] = '\0';
-		printf("%s\n", buf);
-	}
-	free(buf);
-}
-
-void lcd_tcon_regs_readback_print(struct mlvds_config_s *mlvds_conf)
-{
-	int i, j, n;
-	char *buf;
-
-	if (mlvds_conf == NULL)
-		return;
-	if (mlvds_conf->tcon_enable == 0) {
-		LCDERR("%s: invalid tcon\n", __func__);
-		return;
-	}
-
-	buf = (char *)malloc(PR_BUF_MAX * sizeof(char));
-	if (buf == NULL) {
-		LCDERR("%s: buf malloc error\n", __func__);
-		return;
-	}
-
-	LCDPR("%s:\n", __func__);
-	for (i = 0; i < 256; i++) {
-		n = snprintf(buf, PR_BUF_MAX, "0x%03x: ", (i * 16));
-		for (j = 0; j < 16; j++) {
-			n += snprintf(buf+n, PR_BUF_MAX, " 0x%02x",
-					lcd_tcon_read(i*16+j));
-		}
-		buf[n] = '\0';
-		printf("%s\n", buf);
-	}
-	free(buf);
-}
-
-static void lcd_tcon_od_check(unsigned char *table)
-{
-	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
-
-	/* 0x05c[6] */
-	if (((table[92] >> 6) & 1) == 0)
-		return;
-
-	if (lcd_drv->lcd_config->lcd_control.mlvds_config->fb_addr == 0) {
-		table[92] &= ~(1 << 6);
-		LCDPR("%s: invalid fb, disable od function\n", __func__);
-	}
-}
-
-int lcd_tcon_sys_regs_update(unsigned char *table, int len)
-{
-	int i;
-	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
-
-	if (lcd_drv->lcd_config->lcd_control.mlvds_config == NULL)
-		return -1;
-	if (lcd_drv->lcd_config->lcd_control.mlvds_config->tcon_enable == 0) {
-		LCDERR("%s: invalid tcon\n", __func__);
-		return -1;
-	}
-
-	if (table == NULL) {
-		LCDERR("%s: table is NULL\n", __func__);
-		return -1;
-	}
-	if (len > LCD_TCON_TABLE_MAX) {
-		LCDERR("%s: invalid table len %d\n", __func__, len);
-		return -1;
-	}
-
-	lcd_tcon_od_check(table);
-	for (i = 0; i < len; i++)
-		lcd_tcon_write((i + TCON_SYS_REG_START), table[i]);
-
-	LCDPR("%s: finished\n", __func__);
-
-	return 0;
-}
-
-static void lcd_tcon_top_output_set(struct mlvds_config_s *mlvds_conf)
-{
-	lcd_tcon_write(TCON_OUT_CH_SEL0, mlvds_conf->channel_sel0);
-	lcd_tcon_write(TCON_OUT_CH_SEL1, mlvds_conf->channel_sel1);
-	LCDPR("set tcon ch_sel: 0x%08x, 0x%08x\n",
-		mlvds_conf->channel_sel0, mlvds_conf->channel_sel1);
-}
-
-static int lcd_tcon_top_set(struct mlvds_config_s *mlvds_conf)
-{
-	LCDPR("%s\n", __func__);
-
-	if (mlvds_conf->fb_addr == 0) {
-		LCDERR("%s: invalid address: 0x%08x\n",
-			__func__, mlvds_conf->fb_addr);
-	} else {
-		lcd_tcon_write(TCON_AXI_OFST, mlvds_conf->fb_addr);
-		LCDPR("set tcon fb_addr: 0x%08x\n", mlvds_conf->fb_addr);
-	}
-
-	lcd_tcon_write(TCON_CLK_CTRL, 0x001f);
-	lcd_tcon_write(TCON_TOP_CTRL, 0x0199);
-	lcd_tcon_write(TCON_RGB_IN_MUX, 0x24);
-	lcd_tcon_write(TCON_PLLLOCK_CNTL, 0x0037);
-	lcd_tcon_write(TCON_RST_CTRL, 0x003f);
-	lcd_tcon_write(TCON_RST_CTRL, 0x0000);
-
-	return 0;
-}
-
-int lcd_tcon_init(struct lcd_config_s *pconf)
-{
-	struct mlvds_config_s *mlvds_conf;
-
-	mlvds_conf = pconf->lcd_control.mlvds_config;
-	if (mlvds_conf == NULL)
-		return -1;
-	if (mlvds_conf->tcon_enable == 0) {
-		LCDERR("%s: invalid tcon\n", __func__);
-		return -1;
-	}
-
-	lcd_tcon_top_set(mlvds_conf);
-	lcd_tcon_sys_regs_update(mlvds_conf->reg_table, LCD_TCON_TABLE_MAX);
-
-	lcd_tcon_top_output_set(mlvds_conf);
-
-	return 0;
-}
-
-void lcd_tcon_disable(void)
-{
-	LCDPR("%s\n", __func__);
-	lcd_tcon_write((0x05c + TCON_SYS_REG_START), 0);
-	mdelay(100);
-	lcd_tcon_setb(TCON_TOP_CTRL, 0, 4, 1);
-}
-
-int lcd_tcon_probe(char *dt_addr, struct lcd_config_s *pconf, int load_id)
-{
-	int ret = 0;
-	unsigned char *para;
-	int key_len;
-	char *str;
-	int parent_offset;
-	char *propdata;
-	struct mlvds_config_s *mlvds_conf;
-
-	mlvds_conf = pconf->lcd_control.mlvds_config;
-	if (pconf->lcd_basic.lcd_type == LCD_MLVDS)
-		mlvds_conf->tcon_enable = 1;
-	else
-		return -1;
-
-	mlvds_conf->fb_addr = 0;
-	if (load_id & 0x1) {
-		parent_offset = fdt_path_offset(dt_addr, "/lcd");
-		if (parent_offset < 0) {
-			LCDERR("can't find /lcd node: %s\n", fdt_strerror(parent_offset));
-			str = getenv("tcon_fb_addr");
-			if (str)
-				mlvds_conf->fb_addr = simple_strtoul(str, NULL, 16);
-		} else {
-			propdata = (char *)fdt_getprop(dt_addr, parent_offset, "tcon_fb_addr", NULL);
-			if (propdata == NULL) {
-				LCDERR("failed to get tcon_fb_addr from dts\n");
-				str = getenv("tcon_fb_addr");
-				if (str)
-					mlvds_conf->fb_addr = simple_strtoul(str, NULL, 16);
-			} else {
-				mlvds_conf->fb_addr = be32_to_cpup((u32*)propdata);
-			}
-		}
-	} else {
-		str = getenv("tcon_fb_addr");
-		if (str)
-			mlvds_conf->fb_addr = simple_strtoul(str, NULL, 16);
-	}
-	LCDPR("tcon fb_addr = 0x%08x\n", mlvds_conf->fb_addr);
-
-	switch (pconf->lcd_basic.v_active) {
-	case 768:
-		mlvds_conf->reg_table = &tcon_boe_hd_hsd_n56[0];
-		LCDPR("tcon sys table select: n56\n");
-		break;
-	case 1080:
-		mlvds_conf->reg_table = &tcon_boe_fhd_goa_n10[0];
-		LCDPR("tcon sys table select: n10\n");
-		break;
-	default:
-		mlvds_conf->reg_table = &tcon_boe_hd_hsd_n56[0];
-		LCDPR("tcon sys table select: invalid\n");
-		break;
-	}
-
-	para = (unsigned char *)malloc(sizeof(unsigned char) * LCD_UKEY_TCON_SIZE);
-	if (!para) {
-		LCDERR("%s: Not enough memory\n", __func__);
-		return -1;
-	}
-	key_len = LCD_UKEY_TCON_SIZE;
-	memset(para, 0, (sizeof(unsigned char) * key_len));
-	ret = aml_lcd_unifykey_get_no_header("lcd_tcon", para, &key_len);
-	if (ret) {
-		free(para);
-		LCDERR("%s: !!!!!!!!!!!!tcon unifykey load error!!!!!!!!!!!!\n",
-			__func__);
-		return -1;
-	}
-	memcpy(mlvds_conf->reg_table, para, (sizeof(unsigned char) * LCD_UKEY_TCON_SIZE));
-	free(para);
-	LCDPR("tcon: load key len: %d\n", key_len);
-
-	return 0;
-}
+#endif
 

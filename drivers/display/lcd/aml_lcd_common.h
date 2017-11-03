@@ -21,6 +21,34 @@
 
 #define VPP_OUT_SATURATE            (1 << 0)
 
+/* -------------------------- */
+/* lvsd phy parameters define */
+/* -------------------------- */
+#define LVDS_PHY_CNTL1_G9TV    0x606cca80
+#define LVDS_PHY_CNTL2_G9TV    0x0000006c
+#define LVDS_PHY_CNTL3_G9TV    0x00000800
+
+#define LVDS_PHY_CNTL1_TXHD    0x6c60ca80
+#define LVDS_PHY_CNTL2_TXHD    0x00000070
+#define LVDS_PHY_CNTL3_TXHD    0x03ff0c00
+/* -------------------------- */
+
+/* -------------------------- */
+/* vbyone phy parameters define */
+/* -------------------------- */
+#define VX1_PHY_CNTL1_G9TV     0x6e0ec900
+#define VX1_PHY_CNTL2_G9TV     0x00000a7c
+#define VX1_PHY_CNTL3_G9TV     0x00ff0800
+/* -------------------------- */
+
+/* -------------------------- */
+/* minilvsd phy parameters define */
+/* -------------------------- */
+#define MLVDS_PHY_CNTL1_TXHD   0x6c60ca80
+#define MLVDS_PHY_CNTL2_TXHD   0x00000070
+#define MLVDS_PHY_CNTL3_TXHD   0x03ff0c00
+/* -------------------------- */
+
 extern void mdelay(unsigned long n);
 extern unsigned int lcd_debug_test;
 
@@ -37,19 +65,17 @@ extern int lcd_power_load_from_dts(struct lcd_config_s *pconf,
 		char *dt_addr, int child_offset);
 extern int lcd_power_load_from_unifykey(struct lcd_config_s *pconf,
 		unsigned char *buf, int key_len, int len);
-#ifdef CONFIG_OF_LIBFDT
-extern int lcd_pinmux_load_from_dts(char *dt_addr, struct lcd_config_s *pconf);
-#endif
+extern int lcd_pinmux_load_config(char *dt_addr, struct lcd_config_s *pconf);
 extern void lcd_timing_init_config(struct lcd_config_s *pconf);
 extern int lcd_vmode_change(struct lcd_config_s *pconf);
 
 /* lcd tcon */
-extern void lcd_tcon_regs_table_print(struct tcon_config_s *tconf);
-extern void lcd_tcon_regs_readback_print(void);
+extern void lcd_tcon_regs_table_print(struct mlvds_config_s *mlvds_conf);
+extern void lcd_tcon_regs_readback_print(struct mlvds_config_s *mlvds_conf);
 extern int lcd_tcon_regs_update(unsigned char *table, int len);
-extern int lcd_tcon_init(struct tcon_config_s *tconf);
+extern int lcd_tcon_init(struct lcd_config_s *pconf);
 extern void lcd_tcon_disable(void);
-extern int lcd_tcon_probe(char *dt_addr, struct aml_lcd_drv_s *lcd_drv, int load_id);
+extern int lcd_tcon_probe(char *dt_addr, struct lcd_config_s *pconf, int load_id);
 
 /* lcd gpio */
 extern int aml_lcd_gpio_name_map_num(const char *name);

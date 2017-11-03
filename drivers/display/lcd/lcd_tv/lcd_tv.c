@@ -259,12 +259,21 @@ static int lcd_config_load_from_dts(char *dt_addr, struct lcd_config_s *pconf)
 	int len;
 	struct lvds_config_s *lvds_conf;
 	struct vbyone_config_s *vx1_conf;
+	struct mlvds_config_s *mlvds_conf;
 
 	parent_offset = fdt_path_offset(dt_addr, "/lcd");
 	if (parent_offset < 0) {
 		LCDERR("not find /lcd node: %s\n",fdt_strerror(parent_offset));
 		return -1;
 	}
+
+	propdata = (char *)fdt_getprop(dt_addr, parent_offset, "pinctrl_version", NULL);
+	if (propdata) {
+		pconf->pinctrl_ver = (unsigned char)(be32_to_cpup((u32*)propdata));
+	} else {
+		pconf->pinctrl_ver = 0;
+	}
+	LCDPR("pinctrl_version: %d\n", pconf->pinctrl_ver);
 
 	/* check panel_type */
 	char *panel_type = getenv("panel_type");
@@ -412,6 +421,34 @@ static int lcd_config_load_from_dts(char *dt_addr, struct lcd_config_s *pconf)
 				}
 			} else {
 				LCDERR("invalid phy_attr parameters cnt: %d\n", len);
+			}
+		}
+		break;
+	case LCD_MLVDS:
+		mlvds_conf = pconf->lcd_control.mlvds_config;
+		propdata = (char *)fdt_getprop(dt_addr, child_offset, "minilvds_attr", &len);
+		if (propdata == NULL) {
+			LCDERR("failed to get minilvds_attr\n");
+		} else {
+			mlvds_conf->channel_sel0 = be32_to_cpup((u32*)propdata);
+			mlvds_conf->channel_sel1 = be32_to_cpup((((u32*)propdata)+1));
+			mlvds_conf->clk_phase    = be32_to_cpup((((u32*)propdata)+2));
+			mlvds_conf->pn_swap      = be32_to_cpup((((u32*)propdata)+3));
+			mlvds_conf->bit_swap     = be32_to_cpup((((u32*)propdata)+4));
+		}
+
+		propdata = (char *)fdt_getprop(dt_addr, child_offset, "phy_attr", &len);
+		if (propdata == NULL) {
+			if (lcd_debug_print_flag)
+				LCDPR("failed to get phy_attr\n");
+			mlvds_conf->phy_vswing = LVDS_PHY_VSWING_DFT;
+			mlvds_conf->phy_preem  = LVDS_PHY_PREEM_DFT;
+		} else {
+			mlvds_conf->phy_vswing = be32_to_cpup((u32*)propdata);
+			mlvds_conf->phy_preem  = be32_to_cpup((((u32*)propdata)+1));
+			if (lcd_debug_print_flag) {
+				LCDPR("set phy vswing=0x%x, preemphasis=0x%x\n",
+					mlvds_conf->phy_vswing, mlvds_conf->phy_preem);
 			}
 		}
 		break;
@@ -626,11 +663,20 @@ static int lcd_config_load_from_bsp(struct lcd_config_s *pconf)
 		pconf->lcd_control.lvds_config->dual_port   = ext_lcd->lcd_spc_val1;
 		pconf->lcd_control.lvds_config->pn_swap     = ext_lcd->lcd_spc_val2;
 		pconf->lcd_control.lvds_config->port_swap   = ext_lcd->lcd_spc_val3;
-		pconf->lcd_control.lvds_config->lane_reverse= ext_lcd->lcd_spc_val4;
+		pconf->lcd_control.lvds_config->lane_reverse = ext_lcd->lcd_spc_val4;
 		pconf->lcd_control.lvds_config->phy_vswing = LVDS_PHY_VSWING_DFT;
 		pconf->lcd_control.lvds_config->phy_preem  = LVDS_PHY_PREEM_DFT;
 		pconf->lcd_control.lvds_config->phy_clk_vswing = LVDS_PHY_CLK_VSWING_DFT;
 		pconf->lcd_control.lvds_config->phy_clk_preem  = LVDS_PHY_CLK_PREEM_DFT;
+	} else if (pconf->lcd_basic.lcd_type == LCD_MLVDS) {
+		pconf->lcd_control.mlvds_config->channel_num = ext_lcd->lcd_spc_val0;
+		pconf->lcd_control.mlvds_config->channel_sel0 = ext_lcd->lcd_spc_val1;
+		pconf->lcd_control.mlvds_config->channel_sel1 = ext_lcd->lcd_spc_val2;
+		pconf->lcd_control.mlvds_config->clk_phase  = ext_lcd->lcd_spc_val3;
+		pconf->lcd_control.mlvds_config->pn_swap    = ext_lcd->lcd_spc_val4;
+		pconf->lcd_control.mlvds_config->bit_swap   = ext_lcd->lcd_spc_val5;
+		pconf->lcd_control.mlvds_config->phy_vswing = LVDS_PHY_VSWING_DFT;
+		pconf->lcd_control.mlvds_config->phy_preem  = LVDS_PHY_PREEM_DFT;
 	} else if (pconf->lcd_basic.lcd_type == LCD_TTL) {
 		LCDERR("unsupport lcd_type: %d\n", pconf->lcd_basic.lcd_type);
 	}
@@ -684,6 +730,7 @@ static int lcd_config_load_from_unifykey(struct lcd_config_s *pconf)
 	int ret;
 	struct lvds_config_s *lvdsconf = pconf->lcd_control.lvds_config;
 	struct vbyone_config_s *vx1_conf = pconf->lcd_control.vbyone_config;
+	struct mlvds_config_s *mlvds_conf = pconf->lcd_control.mlvds_config;
 
 	para = (unsigned char *)malloc(sizeof(unsigned char) * LCD_UKEY_LCD_SIZE);
 	if (!para) {
@@ -768,6 +815,22 @@ static int lcd_config_load_from_unifykey(struct lcd_config_s *pconf)
 	pconf->lcd_timing.fr_adjust_type = *(p + LCD_UKEY_FR_ADJ_TYPE);
 	pconf->lcd_timing.ss_level = *(p + LCD_UKEY_SS_LEVEL);
 	pconf->lcd_timing.clk_auto = *(p + LCD_UKEY_CLK_AUTO_GEN);
+	pconf->lcd_basic.h_period_min = (*(p + LCD_UKEY_H_PERIOD_MIN) |
+		((*(p + LCD_UKEY_H_PERIOD_MIN + 1)) << 8));
+	pconf->lcd_basic.h_period_max = (*(p + LCD_UKEY_H_PERIOD_MAX) |
+		((*(p + LCD_UKEY_H_PERIOD_MAX + 1)) << 8));
+	pconf->lcd_basic.v_period_min = (*(p + LCD_UKEY_V_PERIOD_MIN) |
+		((*(p + LCD_UKEY_V_PERIOD_MIN + 1)) << 8));
+	pconf->lcd_basic.v_period_max = (*(p + LCD_UKEY_V_PERIOD_MAX) |
+		((*(p + LCD_UKEY_V_PERIOD_MAX + 1)) << 8));
+	pconf->lcd_basic.lcd_clk_min = (*(p + LCD_UKEY_PCLK_MIN) |
+		((*(p + LCD_UKEY_PCLK_MIN + 1)) << 8) |
+		((*(p + LCD_UKEY_PCLK_MIN + 2)) << 16) |
+		((*(p + LCD_UKEY_PCLK_MIN + 3)) << 24));
+	pconf->lcd_basic.lcd_clk_max = (*(p + LCD_UKEY_PCLK_MAX) |
+		((*(p + LCD_UKEY_PCLK_MAX + 1)) << 8) |
+		((*(p + LCD_UKEY_PCLK_MAX + 2)) << 16) |
+		((*(p + LCD_UKEY_PCLK_MAX + 3)) << 24));
 
 	/* interface: 20byte */
 	if (pconf->lcd_basic.lcd_type == LCD_VBYONE) {
@@ -826,6 +889,46 @@ static int lcd_config_load_from_unifykey(struct lcd_config_s *pconf)
 
 			lvdsconf->lane_reverse = 0;
 		}
+	} else if (pconf->lcd_basic.lcd_type == LCD_MLVDS) {
+		if (lcd_header.version == 2) {
+			mlvds_conf->channel_num = (*(p + LCD_UKEY_IF_ATTR_0) |
+				((*(p + LCD_UKEY_IF_ATTR_0 + 1)) << 8)) & 0xff;
+			mlvds_conf->channel_sel0 = (*(p + LCD_UKEY_IF_ATTR_1) |
+				((*(p + LCD_UKEY_IF_ATTR_1 + 1)) << 8) |
+				((*(p + LCD_UKEY_IF_ATTR_2)) << 16) |
+				((*(p + LCD_UKEY_IF_ATTR_2 + 1)) << 24));
+			mlvds_conf->channel_sel1 = (*(p + LCD_UKEY_IF_ATTR_3) |
+				((*(p + LCD_UKEY_IF_ATTR_3 + 1)) << 8) |
+				((*(p + LCD_UKEY_IF_ATTR_4)) << 16) |
+				((*(p + LCD_UKEY_IF_ATTR_4 + 1)) << 24));
+			mlvds_conf->clk_phase = (*(p + LCD_UKEY_IF_ATTR_5) |
+				((*(p + LCD_UKEY_IF_ATTR_5 + 1)) << 8)) & 0xff;
+			mlvds_conf->pn_swap = (*(p + LCD_UKEY_IF_ATTR_6) |
+				((*(p + LCD_UKEY_IF_ATTR_6 + 1)) << 8)) & 0xff;
+			mlvds_conf->bit_swap = (*(p + LCD_UKEY_IF_ATTR_7) |
+				((*(p + LCD_UKEY_IF_ATTR_7 + 1)) << 8)) & 0xff;
+		} else if (lcd_header.version == 1) {
+			mlvds_conf->channel_num = (*(p + LCD_UKEY_IF_ATTR_0) |
+				((*(p + LCD_UKEY_IF_ATTR_0 + 1)) << 8)) & 0xff;
+			mlvds_conf->channel_sel0 = (*(p + LCD_UKEY_IF_ATTR_1) |
+				((*(p + LCD_UKEY_IF_ATTR_1 + 1)) << 8) |
+				((*(p + LCD_UKEY_IF_ATTR_2)) << 16) |
+				((*(p + LCD_UKEY_IF_ATTR_2 + 1)) << 24));
+			mlvds_conf->channel_sel1 = (*(p + LCD_UKEY_IF_ATTR_3) |
+				((*(p + LCD_UKEY_IF_ATTR_3 + 1)) << 8) |
+				((*(p + LCD_UKEY_IF_ATTR_4)) << 16) |
+				((*(p + LCD_UKEY_IF_ATTR_4 + 1)) << 24));
+			mlvds_conf->clk_phase = (*(p + LCD_UKEY_IF_ATTR_5) |
+				((*(p + LCD_UKEY_IF_ATTR_5 + 1)) << 8)) & 0xff;
+			mlvds_conf->pn_swap = (*(p + LCD_UKEY_IF_ATTR_6) |
+				((*(p + LCD_UKEY_IF_ATTR_6 + 1)) << 8)) & 0xff;
+			mlvds_conf->bit_swap = (*(p + LCD_UKEY_IF_ATTR_7) |
+				((*(p + LCD_UKEY_IF_ATTR_7 + 1)) << 8)) & 0xff;
+			mlvds_conf->phy_vswing = (*(p + LCD_UKEY_IF_ATTR_8) |
+				((*(p + LCD_UKEY_IF_ATTR_8 + 1)) << 8)) & 0xff;
+			mlvds_conf->phy_preem = (*(p + LCD_UKEY_IF_ATTR_9) |
+				((*(p + LCD_UKEY_IF_ATTR_9 + 1)) << 8)) & 0xff;
+		}
 	} else
 		LCDERR("unsupport lcd_type: %d\n", pconf->lcd_basic.lcd_type);
 
@@ -842,6 +945,22 @@ static int lcd_config_load_from_unifykey(struct lcd_config_s *pconf)
 				((*(p  + LCD_UKEY_CTRL_ATTR_1 + 1)) << 8));
 			vx1_conf->cdr_training_hold = (*(p + LCD_UKEY_CTRL_ATTR_2) |
 				((*(p + LCD_UKEY_CTRL_ATTR_2 + 1)) << 8));
+
+			vx1_conf->vx1_sw_filter_en = (vx1_conf->ctrl_flag >> 4) & 0x3;
+			vx1_conf->vx1_sw_filter_time = (*(p + LCD_UKEY_CTRL_ATTR_7) |
+				((*(p + LCD_UKEY_CTRL_ATTR_7 + 1)) << 8)) & 0xff;
+			vx1_conf->vx1_sw_filter_cnt = (*(p + LCD_UKEY_CTRL_ATTR_8) |
+				((*(p + LCD_UKEY_CTRL_ATTR_8 + 1)) << 8)) & 0xff;
+			vx1_conf->vx1_sw_filter_retry_cnt = (*(p + LCD_UKEY_CTRL_ATTR_9) |
+				((*(p + LCD_UKEY_CTRL_ATTR_9 + 1)) << 8)) & 0xff;
+			vx1_conf->vx1_sw_filter_retry_delay = (*(p + LCD_UKEY_CTRL_ATTR_10) |
+				((*(p + LCD_UKEY_CTRL_ATTR_10 + 1)) << 8)) & 0xff;
+			vx1_conf->vx1_sw_cdr_detect_time = (*(p + LCD_UKEY_CTRL_ATTR_11) |
+				((*(p + LCD_UKEY_CTRL_ATTR_11 + 1)) << 8)) & 0xff;
+			vx1_conf->vx1_sw_cdr_detect_cnt = (*(p + LCD_UKEY_CTRL_ATTR_12) |
+				((*(p + LCD_UKEY_CTRL_ATTR_12 + 1)) << 8)) & 0xff;
+			vx1_conf->vx1_sw_cdr_timeout_cnt = (*(p + LCD_UKEY_CTRL_ATTR_13) |
+				((*(p + LCD_UKEY_CTRL_ATTR_13 + 1)) << 8)) & 0xff;
 		}
 
 		/* phy: 10byte */ /* v2 */
@@ -853,6 +972,24 @@ static int lcd_config_load_from_unifykey(struct lcd_config_s *pconf)
 			lvdsconf->phy_preem = *(p + LCD_UKEY_PHY_ATTR_1);
 			lvdsconf->phy_clk_vswing = *(p + LCD_UKEY_PHY_ATTR_2);
 			lvdsconf->phy_clk_preem = *(p + LCD_UKEY_PHY_ATTR_3);
+		} else if (pconf->lcd_basic.lcd_type == LCD_MLVDS) {
+			mlvds_conf->phy_vswing = *(p + LCD_UKEY_PHY_ATTR_0);
+			mlvds_conf->phy_preem = *(p + LCD_UKEY_PHY_ATTR_1);
+		}
+	} else if (lcd_header.version == 1) {
+		if (pconf->lcd_basic.lcd_type == LCD_VBYONE) {
+			vx1_conf->ctrl_flag = 0;
+			vx1_conf->power_on_reset_delay = VX1_PWR_ON_RESET_DLY_DFT;
+			vx1_conf->hpd_data_delay = VX1_HPD_DATA_DELAY_DFT;
+			vx1_conf->cdr_training_hold = VX1_CDR_TRAINING_HOLD_DFT;
+			vx1_conf->vx1_sw_filter_en = 0;
+			vx1_conf->vx1_sw_filter_time = VX1_SW_FILTER_TIME_DFT;
+			vx1_conf->vx1_sw_filter_cnt = VX1_SW_FILTER_CNT_DFT;
+			vx1_conf->vx1_sw_filter_retry_cnt = VX1_SW_FILTER_RETRY_CNT_DFT;
+			vx1_conf->vx1_sw_filter_retry_delay = VX1_SW_FILTER_RETRY_DLY_DFT;
+			vx1_conf->vx1_sw_cdr_detect_time = VX1_SW_CDR_DET_TIME_DFT;
+			vx1_conf->vx1_sw_cdr_detect_cnt = VX1_SW_CDR_DET_CNT_DFT;
+			vx1_conf->vx1_sw_cdr_timeout_cnt = VX1_SW_CDR_TIMEOUT_CNT_DFT;
 		}
 	}
 
@@ -919,14 +1056,12 @@ int get_lcd_tv_config(char *dt_addr, int load_id)
 
 	if (load_id & 0x10) { /* unifykey */
 		ret = lcd_config_load_from_unifykey(lcd_drv->lcd_config);
-#ifdef CONFIG_OF_LIBFDT
-		ret = lcd_pinmux_load_from_dts(dt_addr, lcd_drv->lcd_config);
-#endif
+		ret = lcd_pinmux_load_config(dt_addr, lcd_drv->lcd_config);
 	} else if (load_id & 0x1) { /* dts */
 #ifdef CONFIG_OF_LIBFDT
 		ret = lcd_config_load_from_dts(dt_addr, lcd_drv->lcd_config);
-		ret = lcd_pinmux_load_from_dts(dt_addr, lcd_drv->lcd_config);
 #endif
+		ret = lcd_pinmux_load_config(dt_addr, lcd_drv->lcd_config);
 	} else { /* bsp */
 		ret = lcd_config_load_from_bsp(lcd_drv->lcd_config);
 	}

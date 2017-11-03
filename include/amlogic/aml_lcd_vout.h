@@ -221,7 +221,6 @@ struct ttl_config_s {
 #define LVDS_PHY_CLK_VSWING_DFT    0
 #define LVDS_PHY_CLK_PREEM_DFT     0
 struct lvds_config_s {
-	unsigned int lvds_vswing;
 	unsigned int lvds_repack;
 	unsigned int dual_port;
 	unsigned int pn_swap;
@@ -323,23 +322,20 @@ struct dsi_config_s {
 	unsigned char extern_init;
 };
 
+#define LCD_TCON_TABLE_MAX    4096
 struct mlvds_config_s {
-	unsigned int lvds_vswing;
-	unsigned int lvds_repack;
-	unsigned int dual_port;
+	unsigned int channel_num;
+	unsigned int channel_sel0;
+	unsigned int channel_sel1;
+	unsigned int clk_phase; /* [13:12]=clk01_sel, [11:8]=pi2, [7:4]=pi1, [3:0]=pi0 */
 	unsigned int pn_swap;
-	unsigned int port_swap;
-	unsigned int lane_reverse;
-	unsigned int port_sel;
+	unsigned int bit_swap; /* MSB/LSB reverse */
 	unsigned int phy_vswing;
 	unsigned int phy_preem;
-	unsigned int phy_clk_vswing;
-	unsigned int phy_clk_preem;
-};
 
-#define LCD_TCON_TABLE_MAX    4096
-struct tcon_config_s {
-	unsigned char tcon_flag;
+	/* internal used */
+	unsigned int pi_clk_sel; /* bit[9:0] */
+	unsigned int bit_rate; /* Hz */
 	unsigned char tcon_enable;
 	unsigned short reg_table_len;
 	unsigned char *reg_table;
@@ -352,7 +348,6 @@ struct lcd_ctrl_config_s {
 	struct vbyone_config_s *vbyone_config;
 	struct dsi_config_s *mipi_config;
 	struct mlvds_config_s *mlvds_config;
-	struct tcon_config_s *tcon_config;
 };
 
 /* **********************************
@@ -400,6 +395,15 @@ struct lcd_power_ctrl_s {
 	struct lcd_power_step_s power_off_step[LCD_PWR_STEP_MAX];
 };
 
+#define LCD_PINMX_MAX              20
+#define BL_PINMUX_MAX              20
+#define LCD_PINMUX_NAME_LEN_MAX    30
+struct lcd_pinmux_ctrl_s {
+	char *name;
+	unsigned int pinmux_set[LCD_PINMUX_NUM][2];
+	unsigned int pinmux_clr[LCD_PINMUX_NUM][2];
+};
+
 struct lcd_config_s {
 	unsigned char lcd_mode;
 	unsigned char lcd_key_valid;
@@ -409,6 +413,8 @@ struct lcd_config_s {
 	/*struct lcd_effect_s lcd_effect;*/
 	struct lcd_ctrl_config_s lcd_control;
 	struct lcd_power_ctrl_s *lcd_power;
+	unsigned char pinctrl_ver;
+	struct lcd_pinmux_ctrl_s *lcd_pinmux;
 	unsigned int pinmux_set[LCD_PINMUX_NUM][2];
 	unsigned int pinmux_clr[LCD_PINMUX_NUM][2];
 };
@@ -514,9 +520,9 @@ struct bl_config_s {
 	unsigned int pwm_en_sequence_reverse;
 
 	char gpio_name[BL_GPIO_NUM_MAX][LCD_CPU_GPIO_NAME_MAX];
-	//unsigned pinmux_set_num;
+	unsigned char pinctrl_ver;
+	struct lcd_pinmux_ctrl_s *bl_pinmux;
 	unsigned int pinmux_set[10][2];
-	//unsigned pinmux_clr_num;
 	unsigned int pinmux_clr[10][2];
 	int bl_extern_index;
 };
@@ -546,6 +552,8 @@ struct aml_lcd_drv_s {
 	void (*lcd_clk)(void);
 	void (*lcd_info)(void);
 	void (*lcd_reg)(void);
+	void (*lcd_tcon_reg)(void);
+	void (*lcd_tcon_table)(void);
 	void (*bl_on)(void);
 	void (*bl_off)(void);
 	void (*set_bl_level)(int level);
@@ -553,6 +561,7 @@ struct aml_lcd_drv_s {
 	void (*bl_config_print)(void);
 	int unifykey_test_flag;
 	void (*unifykey_test)(void);
+	void (*unifykey_tcon_test)(void);
 	void (*unifykey_dump)(void);
 	void (*lcd_extern_info)(void);
 };

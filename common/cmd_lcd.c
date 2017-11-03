@@ -174,6 +174,36 @@ static int do_lcd_info(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]
 	return 0;
 }
 
+static int do_lcd_tcon(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+	struct aml_lcd_drv_s *lcd_drv;
+	int ret = 0;
+
+	if (argc == 1) {
+		return -1;
+	}
+
+	lcd_drv = aml_lcd_get_driver();
+	if (lcd_drv == NULL) {
+		printf("no lcd driver\n");
+		return ret;
+	}
+	if (strcmp(argv[1], "reg") == 0) {
+		if (lcd_drv->lcd_tcon_reg)
+			lcd_drv->lcd_tcon_reg();
+		else
+			printf("no lcd tcon_reg\n");
+	} else if (strcmp(argv[1], "table") == 0) {
+		if (lcd_drv->lcd_tcon_table)
+			lcd_drv->lcd_tcon_table();
+		else
+			printf("no lcd tcon_table\n");
+	} else {
+		ret = -1;
+	}
+	return ret;
+}
+
 static int do_lcd_reg(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	struct aml_lcd_drv_s *lcd_drv;
@@ -242,6 +272,11 @@ static int do_lcd_key(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 			lcd_drv->unifykey_test();
 		else
 			printf("no lcd unifykey_test\n");
+	} else if (strcmp(argv[1], "tcon") == 0) {
+		if (lcd_drv->unifykey_tcon_test)
+			lcd_drv->unifykey_tcon_test();
+		else
+			printf("no lcd unifykey_dump\n");
 	} else if (strcmp(argv[1], "dump") == 0) {
 		if (lcd_drv->unifykey_dump)
 			lcd_drv->unifykey_dump();
@@ -275,6 +310,7 @@ static cmd_tbl_t cmd_lcd_sub[] = {
 	U_BOOT_CMD_MKENT(bl,   4, 0, do_lcd_bl,   "", ""),
 	U_BOOT_CMD_MKENT(clk , 2, 0, do_lcd_clk, "", ""),
 	U_BOOT_CMD_MKENT(info, 2, 0, do_lcd_info, "", ""),
+	U_BOOT_CMD_MKENT(tcon, 3, 0, do_lcd_tcon, "", ""),
 	U_BOOT_CMD_MKENT(reg,  2, 0, do_lcd_reg, "", ""),
 	U_BOOT_CMD_MKENT(test, 3, 0, do_lcd_test, "", ""),
 	U_BOOT_CMD_MKENT(key,  4, 0, do_lcd_key, "", ""),
@@ -309,6 +345,7 @@ U_BOOT_CMD(
 	"lcd bl           - lcd backlight operation\n"
 	"lcd clk          - show lcd pll & clk parameters\n"
 	"lcd info         - show lcd parameters\n"
+	"lcd tcon         - show lcd unifykey test\n"
 	"lcd reg          - dump lcd registers\n"
 	"lcd test         - show lcd bist pattern\n"
 	"lcd key          - show lcd unifykey test\n"

@@ -2,14 +2,9 @@
 /*******  dummy register *********/
 
 
-#if (defined(CONFIG_CHIP_AML_GXB) || \
-		defined(CONFIG_AML_MESON_GXTVBB) || \
-		defined(CONFIG_AML_MESON_GXL) || \
-		defined(CONFIG_AML_MESON_GXM) || \
-		defined(CONFIG_AML_MESON_TXL) || \
-		defined(CONFIG_AML_MESON_TXLX))
+#ifndef CONFIG_AML_MESON_AXG
 
-#define REG_BASE_DSI_HOST          		(0xFFD00000L)
+#define REG_BASE_DSI_HOST                          (0xFFD00000L)
 
 /* ********  mipi_dsi_host = 0xffD06000(0xffD06000 - 0xffD06fff) *********/
 #define		MIPI_DSI_DWC_VERSION_OS                (0x1800)
@@ -209,8 +204,6 @@
 #define   P_HHI_GP0_PLL_CNTL1                                  (volatile uint32_t *)(0xc883c000 + (0x15 << 2))
 #endif
 
-
-
 #if (defined(CONFIG_AML_MESON_AXG))
 #define PWM_PWM_E                                  ((0x6400  << 2) + 0xffd00000)
 #define PWM_PWM_F                                  ((0x6401  << 2) + 0xffd00000)
@@ -282,21 +275,43 @@
 #define   P_HHI_LVDS_TX_PHY_CNTL1                              (volatile uint32_t *)(0xff63c000 + (0xdf << 2))
 #endif
 
+#ifndef CONFIG_AML_MESON_TXHD
+#define TCON_SYS_REG_START                         0x0000
+
+#define TCON_TOP_CTRL                              0x1000
+#define TCON_RGB_IN_MUX                            0x1001
+#define TCON_OUT_CH_SEL0                           0x1002
+#define TCON_OUT_CH_SEL1                           0x1003
+#define TCON_I2C_DEGLITCH_CNTL                     0x1004
+#define TCON_STATUS0                               0x1008 /* read only */
+#define TCON_PLLLOCK_CNTL                          0x1009
+#define TCON_PLLLCK_RST_CNT                        0x100a
+#define TCON_RST_CTRL                              0x100b
+#define TCON_AXI_OFST                              0x100c
+#define TCON_DDRIF_CTRL0                           0x100d
+#define TCON_CLK_CTRL                              0x100e
+#define TCON_DDRIF_CTRL1                           0x100f
+#define TCON_STATUS1                               0x1010 /* read only */
+#define TCON_DDRIF_CTRL2                           0x1011
+#define TCON_INTR_MASKN                            0x1022
+#define TCON_INTR                                  0x1023 /* read only */
+#endif
+
 #ifndef HHI_DIF_TCON_CNTL0
-#define HHI_DIF_TCON_CNTL0                           (0xff63c000 + (0x3c << 2))
+#define HHI_DIF_TCON_CNTL0                         (0xff63c000 + (0x3c << 2))
 #endif
 #ifndef HHI_DIF_TCON_CNTL1
-#define HHI_DIF_TCON_CNTL1                           (0xff63c000 + (0x3d << 2))
+#define HHI_DIF_TCON_CNTL1                         (0xff63c000 + (0x3d << 2))
 #endif
 #ifndef HHI_DIF_TCON_CNTL2
-#define HHI_DIF_TCON_CNTL2                           (0xff63c000 + (0x3e << 2))
+#define HHI_DIF_TCON_CNTL2                         (0xff63c000 + (0x3e << 2))
 #endif
 #ifndef HHI_TCON_CLK_CNTL
-#define HHI_TCON_CLK_CNTL                            (0xff63c000 + (0xf0 << 2))
+#define HHI_TCON_CLK_CNTL                          (0xff63c000 + (0xf0 << 2))
 #endif
 
 #ifndef REG_TCON_APB_BASE
-#define REG_TCON_APB_BASE                            (0xFF600000L)
+#define REG_TCON_APB_BASE                          (0xFF600000L)
 #endif
 
 

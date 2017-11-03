@@ -368,6 +368,31 @@ static void lcd_info_print(void)
 		   pconf->lcd_control.lvds_config->phy_clk_vswing,
 		   pconf->lcd_control.lvds_config->phy_clk_preem);
 		break;
+	case LCD_MLVDS:
+		printf("channel_num       %d\n"
+		   "channel_sel1      0x%08x\n"
+		   "channel_sel1      0x%08x\n"
+		   "clk_phase         0x%04x\n"
+		   "pn_swap           %u\n"
+		   "bit_swap          %u\n"
+		   "phy_vswing        0x%x\n"
+		   "phy_preem         0x%x\n"
+		   "bit_rate          %dHz\n"
+		   "pi_clk_sel        0x%03x\n"
+		   "tcon_fb_addr      0x%08x\n\n",
+		   pconf->lcd_control.mlvds_config->channel_num,
+		   pconf->lcd_control.mlvds_config->channel_sel0,
+		   pconf->lcd_control.mlvds_config->channel_sel1,
+		   pconf->lcd_control.mlvds_config->clk_phase,
+		   pconf->lcd_control.mlvds_config->pn_swap,
+		   pconf->lcd_control.mlvds_config->bit_swap,
+		   pconf->lcd_control.mlvds_config->phy_vswing,
+		   pconf->lcd_control.mlvds_config->phy_preem,
+		   pconf->lcd_control.mlvds_config->bit_rate,
+		   pconf->lcd_control.mlvds_config->pi_clk_sel,
+		   pconf->lcd_control.mlvds_config->fb_addr);
+		lcd_pinmux_info_print(pconf);
+		break;
 	case LCD_VBYONE:
 		printf("lane_count                 %u\n"
 		   "region_num                 %u\n"
@@ -430,11 +455,6 @@ static void lcd_info_print(void)
 		   (pconf->lcd_control.ttl_config->sync_valid >> 1) & 1,
 		   (pconf->lcd_control.ttl_config->swap_ctrl >> 0) & 1,
 		   (pconf->lcd_control.ttl_config->swap_ctrl >> 1) & 1);
-		lcd_pinmux_info_print(pconf);
-		break;
-	case LCD_MLVDS:
-		printf("tcon_fb_addr      0x%08x\n\n",
-			pconf->lcd_control.tcon_config->fb_addr);
 		lcd_pinmux_info_print(pconf);
 		break;
 	case LCD_MIPI:
@@ -537,6 +557,7 @@ static void lcd_ttl_reg_print(void)
 static void lcd_lvds_reg_print(void)
 {
 	unsigned int reg;
+	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
 
 	printf("\nlvds registers:\n");
 	reg = LVDS_PACK_CNTL_ADDR;
@@ -554,6 +575,22 @@ static void lcd_lvds_reg_print(void)
 	reg = HHI_LVDS_TX_PHY_CNTL1;
 	printf("LVDS_PHY_CNTL1      [0x%04x] = 0x%08x\n",
 		reg, lcd_hiu_read(reg));
+
+	switch (lcd_drv->chip_type) {
+	case LCD_CHIP_TXHD:
+		reg = LVDS_CH_SWAP0;
+		printf("LVDS_CH_SWAP0       [0x%04x] = 0x%08x\n",
+			reg, lcd_vcbus_read(reg));
+		reg = LVDS_CH_SWAP1;
+		printf("LVDS_CH_SWAP1       [0x%04x] = 0x%08x\n",
+			reg, lcd_vcbus_read(reg));
+		reg = LVDS_CH_SWAP2;
+		printf("LVDS_CH_SWAP2       [0x%04x] = 0x%08x\n",
+			reg, lcd_vcbus_read(reg));
+		break;
+	default:
+		break;
+	}
 }
 
 static void lcd_mlvds_reg_print(void)
@@ -566,6 +603,8 @@ static void lcd_mlvds_reg_print(void)
 	reg = PERIPHS_PIN_MUX_5;
 	printf("PERIPHS_PIN_MUX_5   [0x%08x] = 0x%08x\n",
 		reg, lcd_periphs_read(reg));
+
+	lcd_lvds_reg_print();
 
 	printf("\ntcon clk registers:\n");
 	reg = HHI_TCON_CLK_CNTL;
@@ -584,30 +623,31 @@ static void lcd_mlvds_reg_print(void)
 	printf("HHI_DIF_TCON_CNTL2  [0x%08x] = 0x%08x\n",
 		reg, lcd_hiu_read(reg));
 
-	lcd_lvds_reg_print();
-
 	printf("\ntcon top registers:\n");
-	reg = 0x1000;
+	reg = TCON_TOP_CTRL;
 	printf("TCON_TOP_CTRL       [0x%04x] = 0x%08x\n",
 		reg, lcd_tcon_read(reg));
-	reg = 0x1002;
+	reg = TCON_OUT_CH_SEL0;
 	printf("TCON_OUT_CH_SEL0    [0x%04x] = 0x%08x\n",
 		reg, lcd_tcon_read(reg));
-	reg = 0x1003;
+	reg = TCON_OUT_CH_SEL1;
 	printf("TCON_OUT_CH_SEL1    [0x%04x] = 0x%08x\n",
 		reg, lcd_tcon_read(reg));
-	reg = 0x1009;
+	reg = TCON_STATUS0;
+	printf("TCON_STATUS0        [0x%04x] = 0x%08x\n",
+		reg, lcd_tcon_read(reg));
+	reg = TCON_PLLLOCK_CNTL;
 	printf("TCON_PLLLOCK_CNTL   [0x%04x] = 0x%08x\n",
 		reg, lcd_tcon_read(reg));
-	reg = 0x100b;
+	reg = TCON_RST_CTRL;
 	printf("TCON_RST_CTRL       [0x%04x] = 0x%08x\n",
 		reg, lcd_tcon_read(reg));
-	reg = 0x100e;
+	reg = TCON_CLK_CTRL;
 	printf("TCON_CLK_CTRL       [0x%04x] = 0x%08x\n",
 		reg, lcd_tcon_read(reg));
-
-	printf("\ntcon ip registers:\n");
-	lcd_tcon_regs_readback_print();
+	reg = TCON_STATUS1;
+	printf("TCON_STATUS1        [0x%04x] = 0x%08x\n",
+		reg, lcd_tcon_read(reg));
 }
 
 static void lcd_vbyone_reg_print(void)
@@ -982,9 +1022,6 @@ static int lcd_mode_probe(void)
 		LCDPR("lcd_debug_test flag: %d\n", lcd_debug_test);
 	}
 
-	if (aml_lcd_driver.chip_type == LCD_CHIP_TXHD)
-		aml_lcd_driver.lcd_config->lcd_control.tcon_config->tcon_flag = 1;
-
 	if (load_id & 0x1 ) {
 #ifndef DTB_BIND_KERNEL
 #ifdef CONFIG_OF_LIBFDT
@@ -1054,8 +1091,8 @@ static int lcd_mode_probe(void)
 	}
 	if (aml_lcd_driver.lcd_config->lcd_basic.lcd_type == LCD_VBYONE)
 		lcd_vbyone_filter_env_init(aml_lcd_driver.lcd_config);
-
-	lcd_tcon_probe(dt_addr, &aml_lcd_driver, load_id);
+	if (aml_lcd_driver.chip_type == LCD_CHIP_TXHD)
+		lcd_tcon_probe(dt_addr, aml_lcd_driver.lcd_config, load_id);
 
 #ifdef CONFIG_AML_LCD_EXTERN
 	lcd_extern_load_config(dt_addr, aml_lcd_driver.lcd_config);
@@ -1238,7 +1275,6 @@ static void aml_lcd_clk(void)
 	if (lcd_check_valid())
 		return;
 	lcd_clk_config_print();
-	lcd_tcon_init(aml_lcd_driver.lcd_config->lcd_control.tcon_config);
 }
 
 static void aml_lcd_info(void)
@@ -1253,6 +1289,20 @@ static void aml_lcd_reg(void)
 	if (lcd_check_valid())
 		return;
 	lcd_reg_print();
+}
+
+static void aml_lcd_tcon_reg(void)
+{
+	if (lcd_check_valid())
+		return;
+	lcd_tcon_regs_readback_print(aml_lcd_driver.lcd_config->lcd_control.mlvds_config);
+}
+
+static void aml_lcd_tcon_table(void)
+{
+	if (lcd_check_valid())
+		return;
+	lcd_tcon_regs_table_print(aml_lcd_driver.lcd_config->lcd_control.mlvds_config);
 }
 
 static void aml_set_backlight_level(int level)
@@ -1279,6 +1329,16 @@ static void aml_lcd_key_test(void)
 {
 	if (aml_lcd_driver.unifykey_test_flag) {
 		aml_lcd_unifykey_test();
+		lcd_mode_probe();
+	} else {
+		printf("lcd unifykey test disabled\n");
+	}
+}
+
+static void aml_lcd_key_tcon_test(void)
+{
+	if (aml_lcd_driver.unifykey_test_flag) {
+		aml_lcd_unifykey_tcon_test(1080);
 		lcd_mode_probe();
 	} else {
 		printf("lcd unifykey test disabled\n");
@@ -1317,6 +1377,8 @@ static struct aml_lcd_drv_s aml_lcd_driver = {
 	.lcd_clk = aml_lcd_clk,
 	.lcd_info = aml_lcd_info,
 	.lcd_reg = aml_lcd_reg,
+	.lcd_tcon_reg = aml_lcd_tcon_reg,
+	.lcd_tcon_table = aml_lcd_tcon_table,
 	.bl_on = aml_backlight_power_on,
 	.bl_off = aml_backlight_power_off,
 	.set_bl_level = aml_set_backlight_level,
@@ -1324,6 +1386,7 @@ static struct aml_lcd_drv_s aml_lcd_driver = {
 	.bl_config_print = aml_bl_config_print,
 	.unifykey_test_flag = 0, /* default disable unifykey test */
 	.unifykey_test = aml_lcd_key_test,
+	.unifykey_tcon_test = aml_lcd_key_tcon_test,
 	.unifykey_dump = aml_lcd_key_dump,
 	.lcd_extern_info = aml_lcd_extern_info,
 };

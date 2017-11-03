@@ -230,11 +230,14 @@ struct aml_lcd_unifykey_header_s {
  * API
  * ********************************* */
 extern int aml_lcd_unifykey_len_check(int key_len, int len);
-extern int aml_lcd_unifykey_check(const char *key_name);
 extern int aml_lcd_unifykey_header_check(unsigned char *buf, struct aml_lcd_unifykey_header_s *header);
+extern int aml_lcd_unifykey_check(const char *key_name);
 extern int aml_lcd_unifykey_get(const char *key_name, unsigned char *buf, int *len);
+extern int aml_lcd_unifykey_check_no_header(const char *key_name);
+extern int aml_lcd_unifykey_get_no_header(const char *key_name, unsigned char *buf, int *len);
 
 extern void aml_lcd_unifykey_test(void);
+extern void aml_lcd_unifykey_tcon_test(int n);
 extern void aml_lcd_unifykey_dump(void);
 
 #endif
