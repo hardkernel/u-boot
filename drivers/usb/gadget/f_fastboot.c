@@ -779,9 +779,11 @@ static void cb_flash(struct usb_ep *ep, struct usb_request *req)
 #ifdef CONFIG_AVB_LIBAVB_USER
 	uint8_t flash_lock_state;
 
-	if (avb_read_flash_lock_state(&flash_lock_state))
+	if (avb_read_flash_lock_state(&flash_lock_state)) {
 		fastboot_tx_write_str("FAIL");
 		return;
+	}
+
 	if (flash_lock_state == 0) {
 		fastboot_tx_write_str("FAILThe device is locked, can not flash!");
 		printf("The device is locked, can not flash!\n");
