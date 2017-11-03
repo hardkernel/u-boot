@@ -985,12 +985,35 @@ static void cb_oem(struct usb_ep *ep, struct usb_request *req)
 #endif
 	} else if (strncmp("fuse at-perm-attr", cmd + 4, 16) == 0) {
 #ifdef CONFIG_AVB_LIBAVB_USER
-		if (avb_write_permanent_attributes((uint8_t *)
-						   CONFIG_FASTBOOT_BUF_ADDR,
-						   download_bytes))
+		if (PERM_ATTR_TOTAL_SIZE != download_bytes) {
+			printf("Permanent attribute size is not equal!\n");
 			fastboot_tx_write_str("FAIL");
-		else
-			fastboot_tx_write_str("OKAY");
+			return;
+		}
+
+		if (avb_write_permanent_attributes((uint8_t *)
+					       CONFIG_FASTBOOT_BUF_ADDR,
+					       download_bytes
+					       - PERM_ATTR_DIGEST_SIZE)) {
+			fastboot_tx_write_str("FAIL");
+			return;
+		}
+
+		if (avb_write_attribute_hash((uint8_t *)
+					     (CONFIG_FASTBOOT_BUF_ADDR
+					     + download_bytes
+					     - PERM_ATTR_DIGEST_SIZE),
+					     PERM_ATTR_DIGEST_SIZE)) {
+			fastboot_tx_write_str("FAIL");
+			return;
+		}
+
+		if (avb_write_perm_attr_flag(1)) {
+			fastboot_tx_write_str("FAIL");
+			return;
+		}
+
+		fastboot_tx_write_str("OKAY");
 #else
 		fastboot_tx_write_str("FAILnot implemented");
 #endif
