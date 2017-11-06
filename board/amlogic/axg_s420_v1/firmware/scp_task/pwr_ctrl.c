@@ -110,11 +110,6 @@ static void power_off_at_24M(unsigned int suspend_from)
 	/*power off VDDCPU*/
 	writel(readl(AO_GPIO_O_EN_N) & (~(1 << 31)), AO_GPIO_O_EN_N);
 
-	/*pull down BT_EN*/
-	writel(readl(PREG_PAD_GPIO2_O) & (~(1<<21)), PREG_PAD_GPIO2_O);
-	writel(readl(PREG_PAD_GPIO2_EN_N) & (~(1<<21)), PREG_PAD_GPIO2_EN_N);
-	writel(readl(PERIPHS_PIN_MUX_6) & (~(0xf<<20)),PERIPHS_PIN_MUX_6);
-
 	/*step down ee voltage*/
 	set_vddee_voltage(CONFIG_VDDEE_SLEEP_VOLTAGE);
 
