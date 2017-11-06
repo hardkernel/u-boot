@@ -619,7 +619,7 @@ static int do_mmc_setdsr(cmd_tbl_t *cmdtp, int flag,
 
 	if (argc != 2)
 		return CMD_RET_USAGE;
-	val = simple_strtoul(argv[2], NULL, 16);
+	val = simple_strtoul(argv[1], NULL, 16);
 
 	mmc = find_mmc_device(curr_device);
 	if (!mmc) {
@@ -838,6 +838,8 @@ U_BOOT_CMD(
 	"mmc rpmb counter - read the value of the write counter\n"
 #endif
 	"mmc setdsr <value> - set DSR register value\n"
+	"mmc test <blk_start> <blk_size> <times> - erase, read and write appointed\n"
+	" - Position and size multiple times\n"
 	);
 
 /* Old command kept for compatibility. Same as 'mmc info' */
