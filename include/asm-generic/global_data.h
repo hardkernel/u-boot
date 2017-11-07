@@ -24,6 +24,13 @@
 #include <membuff.h>
 #include <linux/list.h>
 
+/* Never change the sequence of members !!! */
+struct pm_ctx {
+	unsigned long sp;
+	phys_addr_t cpu_resume_addr;
+	unsigned long suspend_regs[15];
+};
+
 typedef struct global_data {
 	bd_t *bd;
 	unsigned long flags;
@@ -114,6 +121,7 @@ typedef struct global_data {
 	struct bootstage_data *bootstage;	/* Bootstage information */
 	struct bootstage_data *new_bootstage;	/* Relocated bootstage info */
 #endif
+	phys_addr_t pm_ctx_phys;
 } gd_t;
 #endif
 

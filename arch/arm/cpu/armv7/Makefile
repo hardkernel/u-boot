@@ -12,6 +12,11 @@ obj-y	+= cache_v7.o cache_v7_asm.o
 obj-y	+= cpu.o cp15.o
 obj-y	+= syslib.o
 
+ifeq ($(CONFIG_SPL_BUILD)$(CONFIG_TPL_BUILD),)
+obj-y	+= suspend.o
+obj-y	+= sleep.o
+endif
+
 ifneq ($(CONFIG_SKIP_LOWLEVEL_INIT),y)
 obj-y	+= lowlevel_init.o
 endif

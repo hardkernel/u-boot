@@ -38,5 +38,8 @@ int main(void)
 
 	DEFINE(GD_START_ADDR_SP, offsetof(struct global_data, start_addr_sp));
 
+	DEFINE(PM_CTX_SIZE, sizeof(struct pm_ctx));
+	DEFINE(PM_CTX_PHYS, offsetof(struct global_data, pm_ctx_phys));
+
 	return 0;
 }
