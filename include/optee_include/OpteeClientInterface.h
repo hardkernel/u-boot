@@ -27,5 +27,10 @@ uint32_t trusty_write_vbootkey_hash(uint32_t *buf, uint32_t length);
 uint32_t trusty_read_vbootkey_enable_flag(uint8_t *flag);
 uint32_t trusty_read_permanent_attributes_flag(uint8_t *attributes);
 uint32_t trusty_write_permanent_attributes_flag(uint8_t attributes);
-
+uint32_t trusty_attest_dh(uint8_t *dh, uint32_t *dh_size);
+uint32_t trusty_attest_uuid(uint8_t *uuid, uint32_t *uuid_size);
+uint32_t trusty_attest_get_ca
+	(uint8_t *operation_start, uint32_t *operation_size,
+	 uint8_t *out, uint32_t *out_len);
+uint32_t trusty_attest_set_ca(uint8_t *ca_response, uint32_t *ca_response_size);
 #endif
