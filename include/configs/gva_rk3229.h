@@ -9,6 +9,10 @@
 
 #include <configs/rk322x_common.h>
 
+/* Read CPUID and set "serial#" env. */
+#define CONFIG_MISC_INIT_R
+#define CONFIG_SERIAL_TAG
+#define CONFIG_ENV_OVERWRITE
 
 /* Store env in emmc */
 #undef CONFIG_ENV_SIZE
