@@ -430,11 +430,12 @@ static int lcd_config_load_from_dts(char *dt_addr, struct lcd_config_s *pconf)
 		if (propdata == NULL) {
 			LCDERR("failed to get minilvds_attr\n");
 		} else {
-			mlvds_conf->channel_sel0 = be32_to_cpup((u32*)propdata);
-			mlvds_conf->channel_sel1 = be32_to_cpup((((u32*)propdata)+1));
-			mlvds_conf->clk_phase    = be32_to_cpup((((u32*)propdata)+2));
-			mlvds_conf->pn_swap      = be32_to_cpup((((u32*)propdata)+3));
-			mlvds_conf->bit_swap     = be32_to_cpup((((u32*)propdata)+4));
+			mlvds_conf->channel_num  = be32_to_cpup((u32*)propdata);
+			mlvds_conf->channel_sel0 = be32_to_cpup((((u32*)propdata)+1));
+			mlvds_conf->channel_sel1 = be32_to_cpup((((u32*)propdata)+2));
+			mlvds_conf->clk_phase    = be32_to_cpup((((u32*)propdata)+3));
+			mlvds_conf->pn_swap      = be32_to_cpup((((u32*)propdata)+4));
+			mlvds_conf->bit_swap     = be32_to_cpup((((u32*)propdata)+5));
 		}
 
 		propdata = (char *)fdt_getprop(dt_addr, child_offset, "phy_attr", &len);

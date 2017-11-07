@@ -81,7 +81,7 @@ static char *lcd_pll_ss_table_txhd[] = {
 	"1, +/-0.3%",
 	"2, +/-0.5%",
 	"3, +/-1.0%",
-	"4, +/-1.6%",
+	"4, +/-2.0%",
 	"5, +/-3.0%",
 };
 
@@ -230,7 +230,7 @@ void lcd_clk_config_print(void)
 			"pll_od1:        %d\n"
 			"pll_od2:        %d\n"
 			"pll_od3:        %d\n"
-			"pll_pi_div_Sel: %d\n"
+			"pll_pi_div_sel: %d\n"
 			"pll_out:        %dkHz\n"
 			"div_sel:        %s(index %d)\n"
 			"xd:             %d\n"
@@ -728,6 +728,7 @@ static void lcd_set_pll_txlx(struct lcd_clk_config_s *cConf)
 static void lcd_set_pll_ss_txhd(struct lcd_clk_config_s *cConf)
 {
 	unsigned int pll_ctrl3, pll_ctrl4, pll_ctrl5;
+	unsigned int dep_sel = 0, str_m = 0;
 
 	pll_ctrl3 = lcd_hiu_read(HHI_HPLL_CNTL3);
 	pll_ctrl4 = lcd_hiu_read(HHI_HPLL_CNTL4);
@@ -735,41 +736,59 @@ static void lcd_set_pll_ss_txhd(struct lcd_clk_config_s *cConf)
 
 	switch (cConf->ss_level) {
 	case 1: /* +/- 0.3% */
+		/* 6 * 500ppm * 1 */
+		dep_sel = 6;
+		str_m = 1;
 		pll_ctrl3 &= ~((0xf << 10) | (1 << 18));
-		pll_ctrl3 |= ((1 << 14) | (0x6 << 10));
+		pll_ctrl3 |= ((1 << 14) | ((dep_sel & 0xf) << 10));
 		pll_ctrl4 &= ~(0x3 << 2);
-		pll_ctrl4 |= (0x1 << 2);
+		pll_ctrl4 |= (((str_m >> 0) & 0x3) << 2);
 		pll_ctrl5 &= ~(0x3 << 30);
+		pll_ctrl5 |= (((str_m >> 2) & 0x3) << 30);
 		break;
 	case 2: /* +/- 0.5% */
+		/* 10 * 500ppm * 2 */
+		dep_sel = 10;
+		str_m = 2;
 		pll_ctrl3 &= ~((0xf << 10) | (1 << 18));
-		pll_ctrl3 |= ((1 << 14) | (0xa << 10));
+		pll_ctrl3 |= ((1 << 14) | ((dep_sel & 0xf) << 10));
 		pll_ctrl4 &= ~(0x3 << 2);
-		pll_ctrl4 |= (0x1 << 2);
+		pll_ctrl4 |= (((str_m >> 0) & 0x3) << 2);
 		pll_ctrl5 &= ~(0x3 << 30);
+		pll_ctrl5 |= (((str_m >> 2) & 0x3) << 30);
 		break;
 	case 3: /* +/- 1.0% */
+		/* 10 * 500ppm * 4 */
+		dep_sel = 10;
+		str_m = 4;
 		pll_ctrl3 &= ~((0xf << 10) | (1 << 18));
-		pll_ctrl3 |= ((1 << 14) | (0xa << 10));
+		pll_ctrl3 |= ((1 << 14) | ((dep_sel & 0xf) << 10));
 		pll_ctrl4 &= ~(0x3 << 2);
-		pll_ctrl4 |= (0x3 << 2);
+		pll_ctrl4 |= (((str_m >> 0) & 0x3) << 2);
 		pll_ctrl5 &= ~(0x3 << 30);
+		pll_ctrl5 |= (((str_m >> 2) & 0x3) << 30);
 		break;
-	case 4: /* +/- 1.6% */
+	case 4: /* +/- 2% */
+		/* 10 * 500ppm * 8 */
+		dep_sel = 8;
+		str_m = 8;
 		pll_ctrl3 &= ~((0xf << 10) | (1 << 18));
-		pll_ctrl3 |= ((1 << 14) | (0x8 << 10));
+		pll_ctrl3 |= ((1 << 14) | ((dep_sel & 0xf) << 10));
 		pll_ctrl4 &= ~(0x3 << 2);
-		pll_ctrl4 |= (0x3 << 2);
+		pll_ctrl4 |= (((str_m >> 0) & 0x3) << 2);
 		pll_ctrl5 &= ~(0x3 << 30);
-		pll_ctrl5 |= (0x1 << 30);
+		pll_ctrl5 |= (((str_m >> 2) & 0x3) << 30);
 		break;
 	case 5: /* +/- 3.0% */
+		/* 12 * 500ppm * 10 */
+		dep_sel = 12;
+		str_m = 10;
 		pll_ctrl3 &= ~((0xf << 10) | (1 << 18));
-		pll_ctrl3 |= ((1 << 14) | (0xa << 10));
+		pll_ctrl3 |= ((1 << 14) | ((dep_sel & 0xf) << 10));
 		pll_ctrl4 &= ~(0x3 << 2);
-		pll_ctrl4 |= (0x3 << 2);
+		pll_ctrl4 |= (((str_m >> 0) & 0x3) << 2);
 		pll_ctrl5 &= ~(0x3 << 30);
-		pll_ctrl5 |= (0x2 << 30);
+		pll_ctrl5 |= (((str_m >> 2) & 0x3) << 30);
 		break;
 	default: /* disable */
 		pll_ctrl3 &= ~((0xf << 10) | (1 << 14));
@@ -783,7 +802,7 @@ static void lcd_set_pll_ss_txhd(struct lcd_clk_config_s *cConf)
 	lcd_hiu_write(HHI_HPLL_CNTL5, pll_ctrl5);
 
 	LCDPR("set pll spread spectrum: %s\n",
-		lcd_pll_ss_table_txlx[cConf->ss_level]);
+		lcd_pll_ss_table_txhd[cConf->ss_level]);
 }
 
 static void lcd_set_pll_txhd(struct lcd_clk_config_s *cConf)
@@ -810,7 +829,7 @@ static void lcd_set_pll_txhd(struct lcd_clk_config_s *cConf)
 	lcd_hiu_write(HHI_HPLL_CNTL, pll_ctrl);
 	lcd_hiu_write(HHI_HPLL_CNTL2, pll_ctrl2);
 	lcd_hiu_write(HHI_HPLL_CNTL3, pll_ctrl3);
-	lcd_hiu_write(HHI_HPLL_CNTL4, 0x0c8e0000);
+	lcd_hiu_write(HHI_HPLL_CNTL4, 0x0a960000); /* 0x0c8e0000 */
 	lcd_hiu_write(HHI_HPLL_CNTL5, 0x001fa729);
 	lcd_hiu_write(HHI_HPLL_CNTL6, pll_ctrl6);
 	lcd_hiu_setb(HHI_HPLL_CNTL, 1, LCD_PLL_RST_TXHD, 1);

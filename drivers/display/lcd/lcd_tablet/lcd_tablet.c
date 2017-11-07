@@ -128,6 +128,14 @@ static int lcd_config_load_from_dts(char *dt_addr, struct lcd_config_s *pconf)
 		return -1;
 	}
 
+	propdata = (char *)fdt_getprop(dt_addr, parent_offset, "pinctrl_version", NULL);
+	if (propdata) {
+		pconf->pinctrl_ver = (unsigned char)(be32_to_cpup((u32*)propdata));
+	} else {
+		pconf->pinctrl_ver = 0;
+	}
+	LCDPR("pinctrl_version: %d\n", pconf->pinctrl_ver);
+
 	/* check panel_type */
 	char *panel_type = getenv("panel_type");
 	if (panel_type == NULL) {
