@@ -18,6 +18,12 @@ obj-y	+= tlb.o
 obj-y	+= transition.o
 obj-y	+= fwcall.o
 obj-y	+= cpu-dt.o
+
+ifeq ($(CONFIG_SPL_BUILD)$(CONFIG_TPL_BUILD),)
+obj-y	+= ../armv7/suspend.o
+obj-y	+= sleep.o
+endif
+
 obj-$(CONFIG_ARM_SMCCC)		+= smccc-call.o
 
 ifndef CONFIG_SPL_BUILD
