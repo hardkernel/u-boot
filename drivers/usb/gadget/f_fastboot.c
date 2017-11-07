@@ -28,6 +28,9 @@
 #ifdef CONFIG_FASTBOOT_FLASH_NAND_DEV
 #include <fb_nand.h>
 #endif
+#ifdef CONFIG_OPTEE_CLIENT
+#include <optee_include/OpteeClientInterface.h>
+#endif
 
 #define FASTBOOT_VERSION		"0.4"
 
@@ -435,13 +438,31 @@ static void cb_getvar(struct usb_ep *ep, struct usb_request *req)
 		else
 			strcpy(response, "FAILValue not set");
 	} else if (strncmp("at-attest-dh", cmd, 12) == 0) {
-		char dh[32] = {0};
-
-		strncat(response, dh, chars_left);
+#ifdef CONFIG_OPTEE_CLIENT
+		char dhbuf[8];
+		uint32_t dh_len = 8;
+		uint32_t res = trusty_attest_dh((uint8_t *)dhbuf, &dh_len);
+		if (res)
+			strcpy(response, "FAILdh not set");
+		else
+			strncat(response, dhbuf, chars_left);
+#else
+		fastboot_tx_write_str("FAILnot implemented");
+		return;
+#endif
 	} else if (strncmp("at-attest-uuid", cmd, 14) == 0) {
+#ifdef CONFIG_OPTEE_CLIENT
 		char uuid[32] = {0};
-
-		strncat(response, uuid, chars_left);
+		uint32_t uuid_len = 32;
+		uint32_t res = trusty_attest_uuid((uint8_t *)uuid, &uuid_len);
+		if (res)
+			strcpy(response, "FAILuuid not set");
+		else
+			strncat(response, uuid, chars_left);
+#else
+		fastboot_tx_write_str("FAILnot implemented");
+		return;
+#endif
 	} else if (strncmp("at-vboot-state", cmd, 14) == 0) {
 		char uuid[32] = {0};
 
@@ -762,7 +783,7 @@ static void cb_upload(struct usb_ep *ep, struct usb_request *req)
 {
 	char response[FASTBOOT_RESPONSE_LEN];
 
-	upload_size = download_bytes;
+
 
 	printf("Starting upload of %d bytes\n", upload_size);
 
@@ -941,9 +962,41 @@ static void cb_oem(struct usb_ep *ep, struct usb_request *req)
 	if (strncmp("unlock", cmd + 4, 8) == 0) {
 		fastboot_tx_write_str("FAILnot implemented");
 	} else if (strncmp("at-get-ca-request", cmd + 4, 17) == 0) {
+#ifdef CONFIG_OPTEE_CLIENT
+		uint8_t operation_start[128];
+		uint8_t out[256];
+		uint32_t operation_size = download_bytes;
+		uint32_t out_len = 256;
+		uint32_t res = 0;
+		memcpy(operation_start, (void *)CONFIG_FASTBOOT_BUF_ADDR, download_bytes);
+		res = trusty_attest_get_ca(operation_start, &operation_size, out, &out_len);
+		if (res) {
+			fastboot_tx_write_str("FAILtrusty_attest_get_ca failed");
+			return;
+		}
+		upload_size = out_len;
+		memcpy((void *)CONFIG_FASTBOOT_BUF_ADDR, out, out_len);
 		fastboot_tx_write_str("OKAY");
+#else
+		fastboot_tx_write_str("FAILnot implemented");
+		return;
+#endif
 	} else if (strncmp("at-set-ca-response", cmd + 4, 18) == 0) {
-		fastboot_tx_write_str("OKAY");
+#ifdef CONFIG_OPTEE_CLIENT
+		uint8_t ca_response[8*1024];
+		uint32_t ca_response_size = download_bytes;
+		uint32_t res = 0;
+		memcpy(ca_response, (void *)CONFIG_FASTBOOT_BUF_ADDR, download_bytes);
+		res = trusty_attest_set_ca(ca_response, &ca_response_size);
+		if (res) {
+			fastboot_tx_write_str("FAILtrusty_attest_set_ca failed");
+		} else {
+			fastboot_tx_write_str("OKAY");
+		}
+#else
+		fastboot_tx_write_str("FAILnot implemented");
+		return;
+#endif
 	} else if (strncmp("at-lock-vboot", cmd + 4, 13) == 0) {
 #ifdef CONFIG_AVB_LIBAVB_USER
 		uint8_t lock_state;
