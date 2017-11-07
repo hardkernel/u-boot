@@ -408,6 +408,20 @@ static void cb_getvar(struct usb_ep *ep, struct usb_request *req)
 		strncat(response, FASTBOOT_VERSION, chars_left);
 	} else if (!strcmp_l1("bootloader-version", cmd)) {
 		strncat(response, U_BOOT_VERSION, chars_left);
+	} else if (!strcmp_l1("product", cmd)) {
+		strncat(response, CONFIG_SYS_BOARD, chars_left);
+	} else if (!strcmp_l1("variant", cmd)) {
+		strncat(response, "userdebug", chars_left);
+	} else if (!strcmp_l1("secure", cmd)) {
+		strncat(response, "no", chars_left);
+	} else if (!strcmp_l1("unlocked", cmd)) {
+		strncat(response, "yes", chars_left);
+	} else if (!strcmp_l1("off-mode-charge", cmd)) {
+		strncat(response, "0", chars_left);
+	} else if (!strcmp_l1("battery-voltage", cmd)) {
+		strncat(response, "7.4", chars_left);
+	} else if (!strcmp_l1("battery-soc-ok", cmd)) {
+		strncat(response, "yes", chars_left);
 	} else if (!strcmp_l1("downloadsize", cmd) ||
 		!strcmp_l1("max-download-size", cmd)) {
 		char str_num[12];
@@ -450,7 +464,7 @@ static void cb_getvar(struct usb_ep *ep, struct usb_request *req)
 		char slot_surrent[8] = {0};
 
 		if (!avb_get_current_slot(slot_surrent))
-			strncat(response, slot_surrent, chars_left);
+			strncat(response, slot_surrent+1, chars_left);
 		else
 			strcpy(response, "FAILgeterror");
 #else
@@ -484,8 +498,64 @@ static void cb_getvar(struct usb_ep *ep, struct usb_request *req)
 		cmd = strsep(&part_name, ":");
 		if (!strcmp(part_name, "boot") ||
 		    !strcmp(part_name, "system") ||
-		    !strcmp(part_name, "boot")) {
+		    !strcmp(part_name, "vendor") ||
+		    !strcmp(part_name, "vbmeta") ||
+		    !strcmp(part_name, "oem")) {
 			strncat(response, "yes", chars_left);
+		} else {
+			strcpy(response, "FAILno");
+		}
+#else
+		fastboot_tx_write_str("FAILnot implemented");
+		return;
+#endif
+	} else if (!strncmp("slot-unbootable", cmd, 15)) {
+#ifdef CONFIG_AVB_LIBAVB_USER
+		char *slot_name = cmd;
+
+		cmd = strsep(&slot_name, ":");
+		if (!strcmp(slot_name, "a") ||
+		    !strcmp(slot_name, "b")) {
+			strncat(response, "no", chars_left);
+		} else {
+			strcpy(response, "FAILno");
+		}
+#else
+		fastboot_tx_write_str("FAILnot implemented");
+		return;
+#endif
+	} else if (!strncmp("slot-successful", cmd, 15)) {
+#ifdef CONFIG_AVB_LIBAVB_USER
+		char *slot_name = cmd;
+
+		cmd = strsep(&slot_name, ":");
+		if (!strcmp(slot_name, "a") ||
+		    !strcmp(slot_name, "b")) {
+			strncat(response, "no", chars_left);
+		} else {
+			strcpy(response, "FAILno");
+		}
+#else
+		fastboot_tx_write_str("FAILnot implemented");
+		return;
+#endif
+	} else if (!strncmp("slot-retry-count", cmd, 16)) {
+#ifdef CONFIG_AVB_LIBAVB_USER
+		char *slot_name = cmd;
+		char count[10] = {0};
+		static int cnt[2] = {0};
+
+		cmd = strsep(&slot_name, ":");
+		if (!strcmp(slot_name, "a")) {
+			sprintf(count, "%c", 0x30+cnt[0]);
+			strncat(response, count, chars_left);
+			if (cnt[0] > 0)
+				cnt[0]--;
+		} else if (!strcmp(slot_name, "b")) {
+			sprintf(count, "%c", 0x30+cnt[1]);
+			strncat(response, count, chars_left);
+			if (cnt[1] > 0)
+				cnt[1]--;
 		} else {
 			strcpy(response, "FAILno");
 		}
@@ -775,7 +845,7 @@ static void cb_set_active(struct usb_ep *ep, struct usb_request *req)
 static void cb_flash(struct usb_ep *ep, struct usb_request *req)
 {
 	char *cmd = req->buf;
-	char response[FASTBOOT_RESPONSE_LEN];
+	char response[FASTBOOT_RESPONSE_LEN] = {0};
 #ifdef CONFIG_AVB_LIBAVB_USER
 	uint8_t flash_lock_state;
 
