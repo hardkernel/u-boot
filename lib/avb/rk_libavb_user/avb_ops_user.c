@@ -466,3 +466,11 @@ int avb_close_optee_client(void)
 		return -1;
 	return 0;
 }
+
+int avb_write_attribute_hash(uint8_t *buf, uint8_t length)
+{
+	if (trusty_write_attribute_hash((uint32_t *)buf,
+	    (uint32_t)(length/sizeof(uint32_t))))
+		return -1;
+	return 0;
+}

@@ -224,4 +224,15 @@ int avb_write_vbootkey_hash(uint8_t *buf, uint8_t length);
  */
 int avb_close_optee_client(void);
 
+/**
+ * Write the permanent attributes hash.
+ *
+ * @param buf    The permanent attributes hash data.
+ *
+ * @param length The length of permanent attributes hash.
+ *
+ * @return 0 if the command succeeded, -1 if it failed
+ */
+int avb_write_attribute_hash(uint8_t *buf, uint8_t length);
+
 #endif
