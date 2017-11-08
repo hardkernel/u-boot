@@ -9,6 +9,9 @@
 #include <asm/io.h>
 #include <asm/arch/boot_mode.h>
 #include <dm.h>
+#include <fdtdec.h>
+
+DECLARE_GLOBAL_DATA_PTR;
 
 void set_back_to_bootrom_dnl_flag(void)
 {
@@ -27,9 +30,19 @@ void set_back_to_bootrom_dnl_flag(void)
 
 __weak int rockchip_dnl_key_pressed(void)
 {
+	const void *blob = gd->fdt_blob;
 	unsigned int val;
+	int channel = 1;
+	int node;
+	u32 chns[2];
 
-	if (adc_channel_single_shot("saradc", 1, &val)) {
+	node = fdt_node_offset_by_compatible(blob, 0, "adc-keys");
+	if (node >= 0) {
+	       if (!fdtdec_get_int_array(blob, node, "io-channels", chns, 2))
+		       channel = chns[1];
+	}
+
+	if (adc_channel_single_shot("saradc", channel, &val)) {
 		printf("%s adc_channel_single_shot fail!\n", __func__);
 		return false;
 	}
