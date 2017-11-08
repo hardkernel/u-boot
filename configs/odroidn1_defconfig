@@ -703,7 +703,10 @@ CONFIG_SYS_I2C_ROCKCHIP=y
 #
 # Multifunction device drivers
 #
-# CONFIG_MISC is not set
+CONFIG_MISC=y
+# CONFIG_ALTERA_SYSID is not set
+# CONFIG_ATSHA204A is not set
+CONFIG_ROCKCHIP_EFUSE=y
 # CONFIG_CROS_EC is not set
 # CONFIG_DS4510 is not set
 # CONFIG_FSL_SEC_MON is not set
@@ -712,6 +715,7 @@ CONFIG_SYS_I2C_ROCKCHIP=y
 # CONFIG_PWRSEQ is not set
 # CONFIG_PCA9551_LED is not set
 # CONFIG_WINBOND_W83627 is not set
+# CONFIG_I2C_EEPROM is not set
 
 #
 # MMC Host controller Support
