@@ -162,6 +162,10 @@ static void setup_serial(void)
 	u64 serialno;
 	char serialno_str[16];
 
+	/* needs to be done only once */
+	if (getenv("serial#"))
+		return;
+
 	/* retrieve the device */
 	ret = uclass_get_device_by_driver(UCLASS_MISC,
 					  DM_GET_DRIVER(rockchip_efuse), &dev);
