@@ -9,24 +9,27 @@
 #include <common.h>
 #include <irq-generic.h>
 #include <irq-platform.h>
+#include <linux/compat.h>
 #include <malloc.h>
 #include "test-rockchip.h"
 
 int board_emmc_test(int argc, char * const argv[])
 {
 	u8 *write_buffer, *read_buffer;
-	u32 i, blocks = 0;
+	u32 i, blocks = 0, lba;
 	unsigned long ts;
 	int err = 0;
 	char cmd_mmc[512] = {0};
 
-	blocks = simple_strtoul(argv[2], NULL, 0);
-	if (!blocks) {
-		printf("Usage: rktest emmc blocks\n");
-		printf("8129 <= blocks <= 30000\n");
+	if (argc < 4) {
+		printf("Usage: rktest emmc start_lba blocks\n");
+		printf("blocks should be from 8129 to 30000\n");
 		err = -EINVAL;
 		goto err_wb;
 	}
+
+	lba = simple_strtoul(argv[2], NULL, 0);
+	blocks = simple_strtoul(argv[3], NULL, 0);
 
 	if (blocks % 2)
 		/* Round up */
@@ -44,14 +47,14 @@ int board_emmc_test(int argc, char * const argv[])
 
 	/* 1. Prepare memory */
 
-	write_buffer = (u8 *)kmalloc(sizeof(u8) * blocks * 512);
+	write_buffer = (u8 *)kmalloc(sizeof(u8) * blocks * 512, GFP_KERNEL);
 	if (!write_buffer) {
 		printf("No memory for write_buffer!\n");
 		err = -ENOMEM;
 		goto err_wb;
 	}
 
-	read_buffer = (u8 *)kmalloc(sizeof(u8) * blocks * 512);
+	read_buffer = (u8 *)kmalloc(sizeof(u8) * blocks * 512, GFP_KERNEL);
 	if (!read_buffer) {
 		printf("No memory for read_buffer!\n");
 		err = -ENOMEM;
@@ -65,8 +68,8 @@ int board_emmc_test(int argc, char * const argv[])
 
 	/* 2. Prepare and start cli command */
 
-	snprintf(cmd_mmc, sizeof(cmd_mmc), "mmc write 0x%x 0x1000 0x%x",
-		 (u32)write_buffer, blocks);
+	snprintf(cmd_mmc, sizeof(cmd_mmc), "mmc write 0x%x 0x%x 0x%x",
+		 (u32)write_buffer, lba, blocks);
 	ts = get_timer(0);
 	err = cli_simple_run_command(cmd_mmc, 0);
 	ts = get_timer(0) - ts;
@@ -76,8 +79,8 @@ int board_emmc_test(int argc, char * const argv[])
 	printf("eMMC write: size %dMB, used %ldms, speed %ldMB/s\n",
 		blocks / 2048, ts, (blocks >> 1) / ts);
 
-	snprintf(cmd_mmc, sizeof(cmd_mmc), "mmc read 0x%x 0x1000 0x%x",
-		 (u32)read_buffer, blocks);
+	snprintf(cmd_mmc, sizeof(cmd_mmc), "mmc read 0x%x 0x%x 0x%x",
+		 (u32)read_buffer, lba, blocks);
 	ts = get_timer(0);
 	err = cli_simple_run_command(cmd_mmc, 0);
 	ts = get_timer(0) - ts;
@@ -99,10 +102,10 @@ int board_emmc_test(int argc, char * const argv[])
 	}
 
 err_mw:
-	free(read_buffer);
+	kfree(read_buffer);
 	read_buffer = NULL;
 err_rb:
-	free(write_buffer);
+	kfree(write_buffer);
 	write_buffer = NULL;
 err_wb:
 	return err;
