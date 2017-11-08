@@ -169,6 +169,7 @@ static void udc_disable(struct dwc2_udc *dev)
 	dev->ep0state = WAIT_FOR_SETUP;
 	dev->gadget.speed = USB_SPEED_UNKNOWN;
 	dev->usb_address = 0;
+	dev->connected = 0;
 
 	otg_phy_off(dev);
 }

@@ -86,6 +86,7 @@ struct dwc2_udc {
 	unsigned char usb_address;
 
 	unsigned req_pending:1, req_std:1;
+	unsigned connected:1;
 };
 
 #define ep_is_in(EP) (((EP)->bEndpointAddress&USB_DIR_IN) == USB_DIR_IN)

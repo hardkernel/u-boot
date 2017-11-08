@@ -544,6 +544,9 @@ static int dwc2_udc_irq(int irq, void *_dev)
 	}
 
 	if (intr_status & INT_RESET) {
+		u32 temp;
+		u32 connected = dev->connected;
+
 		usb_status = readl(&reg->gotgctl);
 		debug_cond(DEBUG_ISR,
 			"\tReset interrupt - (GOTGCTL):0x%x\n", usb_status);
@@ -554,7 +557,15 @@ static int dwc2_udc_irq(int irq, void *_dev)
 				debug_cond(DEBUG_ISR,
 					"\t\tOTG core got reset (%d)!!\n",
 					reset_available);
-				reconfig_usbd(dev);
+				/* Reset device address to zero */
+				temp = readl(&reg->dcfg);
+				temp &= ~DCFG_DEVADDR_MASK;
+				writel(temp, &reg->dcfg);
+
+				/* Soft reset the core if connected */
+				if (connected)
+					reconfig_usbd(dev);
+
 				dev->ep0state = WAIT_FOR_SETUP;
 				reset_available = 0;
 				dwc2_udc_pre_setup();
@@ -1348,7 +1359,7 @@ static void dwc2_ep0_setup(struct dwc2_udc *dev)
 			if (usb_ctrl->bRequestType
 				!= (USB_TYPE_STANDARD | USB_RECIP_DEVICE))
 				break;
-
+			dev->connected = 1;
 			udc_set_address(dev, usb_ctrl->wValue);
 			return;
 

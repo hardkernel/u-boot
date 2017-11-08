@@ -238,6 +238,7 @@ struct dwc2_usbotg_reg {
 #define DEV_SPEED_FULL_SPEED_11         (0x3 << 0)
 #define EP_MISS_CNT(x)                  (x << 18)
 #define DEVICE_ADDRESS(x)               (x << 4)
+#define DCFG_DEVADDR_MASK		(0x7f << 4)
 
 /* Core Reset Register (GRSTCTL) */
 #define TX_FIFO_FLUSH                   (0x1 << 5)
