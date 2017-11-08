@@ -29,13 +29,11 @@ struct mmc *mmcblk_dev_init(int dev)
 static int mmcblk_read(struct mmc *mmcdev, void *buffer, u32 blk, u32 cnt)
 {
 	u32 n;
-	ulong start = (ulong)buffer;
 
 	debug("\nMMC read: block # 0x%x, count 0x%x  to %p... ", blk, cnt, buffer);
 
 	n = blk_dread(mmc_get_blk_desc(mmcdev), blk, cnt, buffer);
-	/* invalidate cache after read via dma */
-	invalidate_dcache_range(start, start + cnt * 512);
+
 	debug("%d blocks read: %s\n", n, (n == cnt) ? "OK" : "ERROR");
 
 	return (n == cnt) ? 0 : -EIO;
