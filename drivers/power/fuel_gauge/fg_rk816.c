@@ -921,30 +921,45 @@ static int rk816_bat_get_charger_type(struct battery_info *di)
 	return rk816_bat_get_usb_state(di);
 }
 
-void rk816_bat_init_rsoc(struct battery_info *di)
+static bool rk816_bat_is_under_threshold(struct battery_info *di)
 {
+	bool initialize = false;
 #ifdef CONFIG_DM_CHARGE_DISPLAY
 	struct udevice *dev;
 	int soc, voltage, est_voltage;
-	int ret;
+	int err;
 
-	ret = uclass_find_first_device(UCLASS_CHARGE_DISPLAY, &dev);
-	if (!ret) {
+	err = uclass_find_first_device(UCLASS_CHARGE_DISPLAY, &dev);
+	if (!err) {
 		est_voltage = rk816_bat_get_avg_voltage(di);
 		soc = charge_display_get_power_on_soc(dev);
 		voltage = charge_display_get_power_on_voltage(dev);
 		DBG("threshold: %d%%, %dmv; now: %d%%, %dmv\n",
 		    soc, voltage, di->dsoc, est_voltage);
-		if ((di->dsoc >= soc) && (est_voltage >= voltage))
-			return;
+		if ((di->dsoc <= soc) || (est_voltage <= voltage))
+			initialize = true;
 	}
 #endif
 
-	if (rk816_bat_get_charger_type(di) == NO_CHARGER)
+	return initialize;
+}
+
+void rk816_bat_init_rsoc(struct battery_info *di)
+{
+	bool initialize = false;
+
+	di->is_first_power_on = is_rk816_bat_first_poweron(di);
+	/* If first power on, we must do initialization */
+	if (di->is_first_power_on)
+		initialize = true;
+	/* Only charger online and under threshold, we do initialization */
+	else if (rk816_bat_get_charger_type(di) != NO_CHARGER)
+		initialize = rk816_bat_is_under_threshold(di);
+
+	if (!initialize)
 		return;
 
 	di->pwroff_min = rk816_bat_get_pwroff_min(di);
-	di->is_first_power_on = is_rk816_bat_first_poweron(di);
 	di->is_sw_reset = rk816_bat_ocv_sw_reset(di);
 
 	if (di->is_first_power_on || di->is_sw_reset)
@@ -974,6 +989,8 @@ static int rk816_fg_init(struct battery_info *di)
 	di->sm_linek = rk816_bat_calc_linek(di);
 	di->finish_chrg_base = get_timer(0);
 	di->pwr_vol = di->voltage_avg;
+
+	printf("Battery: soc=%d%%, voltage=%dmv\n", di->dsoc, di->voltage_avg);
 
 	return 0;
 }
