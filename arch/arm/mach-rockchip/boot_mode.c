@@ -8,6 +8,7 @@
 #include <adc.h>
 #include <asm/io.h>
 #include <asm/arch/boot_mode.h>
+#include <cli.h>
 #include <dm.h>
 #include <fdtdec.h>
 
@@ -56,7 +57,9 @@ __weak int rockchip_dnl_key_pressed(void)
 void rockchip_dnl_mode_check(void)
 {
 	if (rockchip_dnl_key_pressed()) {
-		printf("download key pressed, entering download mode...");
+		printf("download key pressed, entering download mode...\n");
+		/* If failed, we fall back to bootrom download mode */
+		cli_simple_run_command("rockusb 0 mmc 0", 0);
 		set_back_to_bootrom_dnl_flag();
 		do_reset(NULL, 0, 0, NULL);
 	}
