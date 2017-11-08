@@ -12,7 +12,9 @@ int board_key_test(int argc, char * const argv[]);
 int board_emmc_test(int argc, char * const argv[]);
 int board_regulator_test(int argc, char * const argv[]);
 int board_rknand_test(int argc, char * const argv[]);
-
+#if defined(CONFIG_GMAC_ROCKCHIP)
+int board_eth_test(int argc, char * const argv[]);
+#endif
 #if defined(CONFIG_RK_IR)
 int board_ir_test(int argc, char * const argv[]);
 #endif

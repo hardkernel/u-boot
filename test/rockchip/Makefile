@@ -10,4 +10,5 @@ obj-y += test-key.o
 obj-y += test-emmc.o
 obj-y += test-regulator.o
 obj-y += test-rknand.o
+obj-$(CONFIG_GMAC_ROCKCHIP) += test-eth.o
 obj-$(CONFIG_RK_IR) += test-ir.o
