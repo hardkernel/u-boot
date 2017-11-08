@@ -31,6 +31,9 @@
 #ifndef DOLBY_TV_CLKGATE_CTRL
 #define DOLBY_TV_CLKGATE_CTRL                      (0x33f1)
 #endif
+#ifndef DOLBY_CORE1_CLKGATE_CTRL
+#define DOLBY_CORE1_CLKGATE_CTRL                   (0x33f2)
+#endif
 #ifndef DOLBY_CORE2A_CLKGATE_CTRL
 #define DOLBY_CORE2A_CLKGATE_CTRL                  (0x3432)
 #endif

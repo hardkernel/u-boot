@@ -1637,3 +1637,7 @@
 #define VPU_RDARB_MODE_L2C1                        (0x279d)
 #define VPU_WRARB_MODE_L2C1                        (0x27a2)
 
+#define DOLBY_CORE1_CLKGATE_CTRL                   (0x33f2)
+#define DOLBY_CORE2A_CLKGATE_CTRL                  (0x3432)
+#define DOLBY_CORE3_CLKGATE_CTRL                   (0x36f0)
+
