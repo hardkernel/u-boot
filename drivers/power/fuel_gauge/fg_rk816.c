@@ -983,12 +983,14 @@ static int rk816_fg_init(struct battery_info *di)
 	 */
 	rk816_bat_init_rsoc(di);
 	rk816_bat_init_chrg_config(di);
+	di->chrg_type = rk816_bat_get_charger_type(di);
 	di->voltage_avg = rk816_bat_get_avg_voltage(di);
 	di->voltage_ocv = rk816_bat_get_ocv_voltage(di);
 	di->current_avg = rk816_bat_get_avg_current(di);
 	di->sm_linek = rk816_bat_calc_linek(di);
 	di->finish_chrg_base = get_timer(0);
 	di->pwr_vol = di->voltage_avg;
+	rk816_bat_charger_setting(di, di->chrg_type);
 
 	printf("Battery: soc=%d%%, voltage=%dmv\n", di->dsoc, di->voltage_avg);
 
