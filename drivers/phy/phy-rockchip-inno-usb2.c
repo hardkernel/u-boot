@@ -4,12 +4,12 @@
  * SPDX-License-Identifier:    GPL-2.0+
  */
 
-#include <asm/io.h>
-#include <asm/arch/clock.h>
 #include <common.h>
 #include <dm.h>
 #include <generic-phy.h>
 #include <syscon.h>
+#include <asm/io.h>
+#include <asm/arch/clock.h>
 
 #define U2PHY_BIT_WRITEABLE_SHIFT	16
 #define CHG_DCD_MAX_RETRIES		6
