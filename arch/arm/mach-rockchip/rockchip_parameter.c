@@ -61,7 +61,7 @@ static int rockchip_param_parse(char *param)
 			printf("out of memory\n");
 			break;
 		}
-		part->from = from + RK_BLK_OFFSET;
+		part->from = from;
 		part->size = size;
 		strncpy(part->name, next, len);
 		part->name[len] = '\0';
@@ -84,7 +84,7 @@ static int rockchip_init_param(void)
 		return -ENOMEM;
 	}
 
-	blkdev_read(param, RK_BLK_OFFSET, MAX_PARAM_SIZE >> 9);
+	blkdev_read(param, RK_PARAM_OFFSET, MAX_PARAM_SIZE >> 9);
 
 	return rockchip_param_parse(param->params);
 

@@ -9,7 +9,7 @@
 
 #include <linux/list.h>
 
-#define RK_BLK_OFFSET			0x2000
+#define RK_PARAM_OFFSET			0x2000
 #define PART_NAME_SIZE			32
 #define RK_BLK_SIZE			(1 << 9)
 
