@@ -97,6 +97,10 @@ int setup_boot_mode(void)
 		printf("enter Rockusb!\n");
 		env_set("preboot", "setenv preboot; rockusb 0 mmc 0");
 		break;
+	case BOOT_CHARGING:
+		printf("enter charging!\n");
+		env_set("preboot", "setenv preboot; charge");
+		break;
 	}
 
 	return 0;
