@@ -20,7 +20,7 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
-#ifdef CONFIG_CHARGE_DISPLAY
+#ifdef CONFIG_DM_CHARGE_DISPLAY
 static int charge_display(void)
 {
 	int ret;
@@ -48,7 +48,7 @@ int board_late_init(void)
 {
 	setup_boot_mode();
 
-#ifdef CONFIG_CHARGE_DISPLAY
+#ifdef CONFIG_DM_CHARGE_DISPLAY
 	charge_display();
 #endif
 
