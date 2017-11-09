@@ -183,6 +183,7 @@ static int charge_animation_show(struct udevice *dev)
 	struct udevice *pwrkey = priv->pwrkey;
 	struct udevice *pmic = priv->pmic;
 	struct udevice *fg = priv->fg;
+	const char *preboot = env_get("preboot");
 	int image_num = priv->image_num;
 	bool ever_lowpower_screen_off = false;
 	bool screen_on = true;
@@ -191,6 +192,12 @@ static int charge_animation_show(struct udevice *dev)
 	int start_idx = 0, show_idx = -1;
 	int soc, voltage, key_state;
 	int i, charging = 1;
+
+	/* If there is preboot command, exit */
+	if (preboot) {
+		debug("preboot: %s\n", preboot);
+		return 0;
+	}
 
 	/* Not charger online, exit */
 	charging = fuel_gauge_get_chrg_online(fg);
