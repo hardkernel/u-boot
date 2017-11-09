@@ -1227,20 +1227,22 @@ static int rk3399_pmuclk_bind(struct udevice *dev)
 {
 	int ret = 0;
 	struct udevice *sf_child;
-	struct softreset_reg *sf_priv = malloc(sizeof(struct softreset_reg));
+	struct softreset_reg *sf_priv;
 
 	ret = device_bind_driver_to_node(dev, "rockchip_reset",
 					 "reset", dev_ofnode(dev),
 					 &sf_child);
-	if (ret)
+	if (ret) {
 		debug("Warning: No rockchip reset driver: ret=%d\n", ret);
+	} else {
+		sf_priv = malloc(sizeof(struct softreset_reg));
+		sf_priv->sf_reset_offset = offsetof(struct rk3399_pmucru,
+						    pmucru_softrst_con[0]);
+		sf_priv->sf_reset_num = 2;
+		sf_child->priv = sf_priv;
+	}
 
-	sf_priv->sf_reset_offset = offsetof(struct rk3399_pmucru,
-					    pmucru_softrst_con[0]);
-	sf_priv->sf_reset_num = 2;
-	sf_child->priv = sf_priv;
-
-	return ret;
+	return 0;
 }
 
 static const struct udevice_id rk3399_pmuclk_ids[] = {
