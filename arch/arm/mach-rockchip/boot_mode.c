@@ -84,7 +84,7 @@ int setup_boot_mode(void)
 	switch (boot_mode) {
 	case BOOT_FASTBOOT:
 		printf("enter fastboot!\n");
-		env_set("preboot", "setenv preboot; fastboot usb0");
+		env_set("preboot", "setenv preboot; fastboot usb 0");
 		break;
 	case BOOT_UMS:
 		printf("enter UMS!\n");
