@@ -510,6 +510,7 @@ static void cb_getvar(struct usb_ep *ep, struct usb_request *req)
 	} else if (!strncmp("partition-size", cmd, strlen("partition-size"))) {
 		char str_num[20];
 		struct partitions *pPartition;
+		uint64_t sz;
 		strsep(&cmd, ":");
 		printf("partition is %s\n", cmd);
 		if (strcmp(cmd, "userdata") == 0) {
@@ -519,9 +520,21 @@ static void cb_getvar(struct usb_ep *ep, struct usb_request *req)
 		if (!strncmp("mbr", cmd, strlen("mbr"))) {
 			strcpy(response, "FAILVariable not implemented");
 		} else {
-			pPartition = find_mmc_partition_by_name(cmd);
-			printf("size:%016llx\n", pPartition->size);
-			sprintf(str_num, "%016llx", pPartition->size);
+			if (!strncmp("bootloader-", cmd, strlen("bootloader-"))) {
+				strsep(&cmd, "-");
+				mmc_boot_size(cmd, &sz);
+				printf("size:%016llx\n", sz);
+				sprintf(str_num, "%016llx", sz);
+			} else {
+				pPartition = find_mmc_partition_by_name(cmd);
+				if (pPartition) {
+					printf("size:%016llx\n", pPartition->size);
+					sprintf(str_num, "%016llx", pPartition->size);
+				} else {
+					printf("find_mmc_partition_by_name fail\n");
+					sprintf(str_num, "get fail");
+				}
+			}
 			strncat(response, str_num, chars_left);
 		}
 	} else if (!strcmp_l1("partition-type:cache", cmd)) {

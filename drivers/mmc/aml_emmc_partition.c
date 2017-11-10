@@ -1245,6 +1245,11 @@ void show_partition_info(disk_partition_t *info)
 }
 #endif
 
+int mmc_boot_size(char *name, uint64_t* size)
+{
+	return get_boot_size(name, size);
+}
+
 struct partitions *aml_get_partition_by_name(const char *name)
 {
 	struct partitions *partition = NULL;

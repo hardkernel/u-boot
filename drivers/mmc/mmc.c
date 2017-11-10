@@ -1654,6 +1654,35 @@ int mmc_init(struct mmc *mmc)
 	return err;
 }
 
+int get_boot_size(char *name, uint64_t* size)
+{
+	int ret = 0;
+	struct mmc *mmc = find_mmc_device(1);
+
+	/* do nothing */
+	if (!name)
+		goto _out;
+
+	if (!mmc) {
+		printf("%s() %d: not valid emmc\n", __func__, __LINE__);
+		ret = -1;
+		goto _out;
+	}
+	/* make sure mmc is initilized! */
+	ret = mmc_init(mmc);
+	if (ret) {
+		printf("%s() %d: emmc init %d\n", __func__, __LINE__, ret);
+		ret = -2;
+		goto _out;
+	}
+
+	if (!strcmp(name, "boot0") || !strcmp(name, "boot1"))
+		*size = mmc->capacity_boot;
+
+_out:
+	return ret;
+}
+
 int mmc_set_dsr(struct mmc *mmc, u16 val)
 {
 	mmc->dsr = val;
