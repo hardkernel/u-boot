@@ -16,6 +16,7 @@
 
 #define ANDROID_ARG_SLOT_SUFFIX "androidboot.slot_suffix="
 #define ANDROID_ARG_ROOT "root="
+#define ANDROID_ARG_SERIALNO "androidboot.serialno="
 
 static int android_bootloader_message_load(
 	struct blk_desc *dev_desc,
@@ -214,8 +215,9 @@ char *android_assemble_cmdline(const char *slot_suffix,
 {
 	const char *cmdline_chunks[16];
 	const char **current_chunk = cmdline_chunks;
-	char *env_cmdline, *cmdline, *rootdev_input;
+	char *env_cmdline, *cmdline, *rootdev_input, *serialno;
 	char *allocated_suffix = NULL;
+	char *allocated_serialno = NULL;
 	char *allocated_rootdev = NULL;
 	unsigned long rootdev_len;
 
@@ -232,6 +234,17 @@ char *android_assemble_cmdline(const char *slot_suffix,
 		strcpy(allocated_suffix, ANDROID_ARG_SLOT_SUFFIX);
 		strcat(allocated_suffix, slot_suffix);
 		*(current_chunk++) = allocated_suffix;
+	}
+
+	serialno = env_get("serial#");
+	if (serialno) {
+		allocated_serialno = malloc(strlen(ANDROID_ARG_SERIALNO) +
+					  strlen(serialno) + 1);
+		memset(allocated_serialno, 0, strlen(ANDROID_ARG_SERIALNO) +
+				strlen(serialno) + 1);
+		strcpy(allocated_serialno, ANDROID_ARG_SERIALNO);
+		strcat(allocated_serialno, serialno);
+		*(current_chunk++) = allocated_serialno;
 	}
 
 	rootdev_input = env_get("android_rootdev");
