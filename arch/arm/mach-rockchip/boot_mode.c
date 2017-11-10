@@ -72,10 +72,7 @@ int setup_boot_mode(void)
 
 	rockchip_dnl_mode_check();
 
-	if (of_machine_is_compatible("rockchip,rk3128"))
-		reg = (void *)0x100a0038;
-	else
-		reg = (void *)CONFIG_ROCKCHIP_BOOT_MODE_REG;
+	reg = (void *)CONFIG_ROCKCHIP_BOOT_MODE_REG;
 
 	boot_mode = readl(reg);
 

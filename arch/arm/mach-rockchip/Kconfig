@@ -223,7 +223,7 @@ config TPL_ROCKCHIP_BACK_TO_BROM
 config ROCKCHIP_BOOT_MODE_REG
 	hex "Rockchip boot mode flag register address"
 	default 0x200081c8 if ROCKCHIP_RK3036
-	default 0x200081c8 if ROCKCHIP_RK3128
+	default 0x100a0038 if ROCKCHIP_RK3128
 	default 0x20004040 if ROCKCHIP_RK3188
 	default 0x110005c8 if ROCKCHIP_RK322X
 	default 0xff730094 if ROCKCHIP_RK3288
