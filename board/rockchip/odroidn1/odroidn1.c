@@ -15,6 +15,7 @@
 #include <u-boot/sha256.h>
 #include <usb.h>
 #include <dwc3-uboot.h>
+#include <crc.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -115,36 +116,66 @@ out:
 	return 0;
 }
 
+/*
+ * basic rule of mac generation
+ * fixed pattern : first 3bytes and 4bit msb of 4rd byte
+ *    00:1e:06:xx:xx:xx
+ */
 static void setup_macaddr(void)
 {
 #if CONFIG_IS_ENABLED(CMD_NET)
-	int ret;
-	const char *cpuid = getenv("cpuid#");
-	u8 hash[SHA256_SUM_LEN];
-	int size = sizeof(hash);
 	u8 mac_addr[6];
+	u64 temp;
+	u8 cpuid[RK3399_CPUID_LEN];
+	u8 low[RK3399_CPUID_LEN/2], high[RK3399_CPUID_LEN/2];
+	int ret, i;
+	struct udevice *dev;
 
 	/* Only generate a MAC address, if none is set in the environment */
 	if (getenv("ethaddr"))
 		return;
 
-	if (!cpuid) {
-		debug("%s: could not retrieve 'cpuid#'\n", __func__);
-		return;
-	}
-
-	ret = hash_block("sha256", (void *)cpuid, strlen(cpuid), hash, &size);
+	/* retrieve the device */
+	ret = uclass_get_device_by_driver(UCLASS_MISC,
+					  DM_GET_DRIVER(rockchip_efuse), &dev);
 	if (ret) {
-		debug("%s: failed to calculate SHA256\n", __func__);
+		printf("%s: could not find efuse device\n", __func__);
 		return;
 	}
 
-	/* Copy 6 bytes of the hash to base the MAC address on */
-	memcpy(mac_addr, hash, 6);
+	/* read the cpu_id range from the efuses */
+	ret = misc_read(dev, RK3399_CPUID_OFF, &cpuid, sizeof(cpuid));
+	if (ret) {
+		printf("%s: reading cpuid from the efuses failed\n",
+		      __func__);
+		return;
+	}
 
-	/* Make this a valid MAC address and set it */
-	mac_addr[0] &= 0xfe;  /* clear multicast bit */
-	mac_addr[0] |= 0x02;  /* set local assignment bit (IEEE802) */
+	temp = 0ul;
+
+	/* rearrange cpuid as 8bytes unit */
+	for (i = 0; i < 8; i++) {
+		low[i] = cpuid[1 + (i << 1)];
+		high[i] = cpuid[i << 1];
+	}
+
+	/* calculate crc16 using low : 8byte input -> 2byte output */
+	temp = crc16_ccitt(0, low, 8);
+
+	/* calculate crc8 using high : 8byte input -> 1byte output */
+	temp |= (u64)crc8(temp, high, 8) << 16;
+
+	/* fixed pattern */
+	mac_addr[0] = 0x00;
+	mac_addr[1] = 0x1e;
+	mac_addr[2] = 0x06;
+
+	/* unique pattern */
+	mac_addr[3] = (char)(0xff & (temp >> 16));
+	mac_addr[4] = (char)(0xff & (temp >> 8));
+	mac_addr[5] = (char)(0xff & temp);
+
+	/* save env */
 	eth_setenv_enetaddr("ethaddr", mac_addr);
 #endif
 
