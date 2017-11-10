@@ -40,6 +40,17 @@ struct rk_gmac_ops {
 	void (*set_to_rgmii)(struct gmac_rockchip_platdata *pdata);
 };
 
+void gmac_set_rgmii(struct udevice *dev, u32 tx_delay, u32 rx_delay)
+{
+	struct gmac_rockchip_platdata *pdata = dev_get_platdata(dev);
+	struct rk_gmac_ops *ops =
+		(struct rk_gmac_ops *)dev_get_driver_data(dev);
+
+	pdata->tx_delay = tx_delay;
+	pdata->rx_delay = rx_delay;
+
+	ops->set_to_rgmii(pdata);
+}
 
 static int gmac_rockchip_ofdata_to_platdata(struct udevice *dev)
 {
