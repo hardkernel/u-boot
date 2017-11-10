@@ -231,7 +231,7 @@ ENDPROC(apply_core_errata)
 WEAK(lowlevel_init)
 	mov	x29, lr			/* Save LR */
 
-#if defined(CONFIG_GICV2) || defined(CONFIG_GICV3)
+#if !defined(CONFIG_SPL_BUILD) && defined(CONFIG_IRQ)
 	branch_if_slave x0, 1f
 	ldr	x0, =GICD_BASE
 	bl	gic_init_secure
@@ -246,7 +246,7 @@ WEAK(lowlevel_init)
 #endif
 #endif
 
-#if defined(CONFIG_IRQ)
+#if !defined(CONFIG_SPL_BUILD) && defined(CONFIG_IRQ)
 	/*
 	 * Setting HCR_EL2.TGE AMO IMO FMO for exception rounting to EL2
 	 */

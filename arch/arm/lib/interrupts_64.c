@@ -9,7 +9,7 @@
 #include <linux/compiler.h>
 #include <efi_loader.h>
 
-#ifndef CONFIG_IRQ
+#if defined(CONFIG_SPL_BUILD) || !defined(CONFIG_IRQ)
 int interrupt_init(void)
 {
 	return 0;
@@ -93,7 +93,7 @@ void do_sync(struct pt_regs *pt_regs, unsigned int esr)
 	panic("Resetting CPU ...\n");
 }
 
-#ifndef CONFIG_IRQ
+#if defined(CONFIG_SPL_BUILD) || !defined(CONFIG_IRQ)
 /*
  * do_irq handles the Irq exception.
  */
