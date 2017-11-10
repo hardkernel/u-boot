@@ -26,7 +26,6 @@
 	 */
 	b 1f	 /* if overwritten, entry-address is at the next word */
 1:
-#endif
 #if CONFIG_IS_ENABLED(ROCKCHIP_EARLYRETURN_TO_BROM)
 	adr     r3, entry_counter
 	ldr	r0, [r3]
@@ -40,6 +39,15 @@ entry_counter:
 	.word   0
 #endif
 	b reset
+
+#if defined(CONFIG_ROCKCHIP_RK3399)
+	.space CONFIG_ROCKCHIP_SPL_RESERVE_IRAM	/* space for the ATF data */
+#endif
+
+#elif defined(CONFIG_ARM64) /* U-Boot for arm64 */
+	b reset
+#endif
+
 #if !defined(CONFIG_ARM64)
 	/*
 	 * For armv7, the addr '_start' will used as vector start address
@@ -48,8 +56,4 @@ entry_counter:
 	.align(5), 0x0
 _start:
 	ARM_VECTORS
-#endif
-
-#if defined(CONFIG_ROCKCHIP_RK3399) && defined(CONFIG_SPL_BUILD)
-	.space CONFIG_ROCKCHIP_SPL_RESERVE_IRAM	/* space for the ATF data */
 #endif
