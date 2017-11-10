@@ -9,6 +9,7 @@
 #include <linux/list.h>
 #include <libfdt.h>
 #include <malloc.h>
+#include <asm/arch/bootrkp.h>
 #include <asm/arch/resource_img.h>
 #include "rockchip_parameter.h"
 #include "rockchip_blk.h"
@@ -24,24 +25,6 @@
 
 #define BOOTLOADER_MESSAGE_OFFSET_IN_MISC	(16 * 1024)
 #define BOOTLOADER_MESSAGE_BLK_OFFSET		(BOOTLOADER_MESSAGE_OFFSET_IN_MISC >> 9)
-
-enum android_boot_mode {
-	ANDROID_BOOT_MODE_NORMAL = 0,
-
-	/* "recovery" mode is triggered by the "reboot recovery" command or
-	 * equivalent adb/fastboot command. It can also be triggered by writing
-	 * "boot-recovery" in the BCB message. This mode should boot the
-	 * recovery kernel.
-	 */
-	ANDROID_BOOT_MODE_RECOVERY,
-
-	/* "bootloader" mode is triggered by the "reboot bootloader" command or
-	 * equivalent adb/fastboot command. It can also be triggered by writing
-	 * "bootonce-bootloader" in the BCB message. This mode should boot into
-	 * fastboot.
-	 */
-	ANDROID_BOOT_MODE_BOOTLOADER,
-};
 
 struct bootloader_message {
 	char command[32];
@@ -163,6 +146,20 @@ err:
 	return ret;
 }
 
+int rockchip_get_boot_mode(void)
+{
+	struct blk_part *misc;
+	int boot_mode;
+
+	misc = rockchip_get_blk_part(PART_MISC);
+	if (misc)
+		boot_mode = read_boot_mode_from_misc(misc);
+	else
+		boot_mode = ANDROID_BOOT_MODE_RECOVERY;
+
+	return boot_mode;
+}
+
 static int do_bootrkp(cmd_tbl_t *cmdtp, int flag, int argc,
 		      char * const argv[])
 {
@@ -171,18 +168,13 @@ static int do_bootrkp(cmd_tbl_t *cmdtp, int flag, int argc,
 	ulong kernel_addr_r = env_get_ulong("kernel_addr_r", 16, 0x480000);
 	struct blk_part *boot;
 	struct blk_part *kernel;
-	struct blk_part *misc;
 	ulong ramdisk_size;
 	ulong kernel_size;
 	ulong fdt_size;
 	int boot_mode;
 	int ret = 0;
 
-	misc = rockchip_get_blk_part(PART_MISC);
-	if (misc)
-		boot_mode = read_boot_mode_from_misc(misc);
-	else
-		boot_mode = ANDROID_BOOT_MODE_RECOVERY;
+	boot_mode = rockchip_get_boot_mode();
 
 	if (boot_mode == ANDROID_BOOT_MODE_RECOVERY)
 		boot = rockchip_get_blk_part(PART_RECOVERY);
