@@ -14,11 +14,13 @@
 #include <fs.h>
 
 #define ANDROID_PARTITION_BOOT "boot"
+#define ANDROID_PARTITION_OEM  "oem"
 #define ANDROID_PARTITION_SYSTEM "system"
 
 #define ANDROID_ARG_SLOT_SUFFIX "androidboot.slot_suffix="
 #define ANDROID_ARG_ROOT "root="
 #define ANDROID_ARG_SERIALNO "androidboot.serialno="
+#define ANDROID_ARG_FDT_FILENAME "kernel.dtb"
 
 static int android_bootloader_message_load(
 	struct blk_desc *dev_desc,
@@ -226,6 +228,12 @@ int android_bootloader_boot_kernel(unsigned long kernel_address)
 	char *fdt_addr = env_get("fdt_addr");
 	char *bootm_args[] = {
 		"bootm", kernel_addr_str, kernel_addr_str, fdt_addr, NULL };
+
+	if (!android_bootloader_get_fdt(ANDROID_PARTITION_OEM,
+					ANDROID_ARG_FDT_FILENAME)) {
+		fdt_addr = env_get("fdt_addr_r");
+		bootm_args[3] = fdt_addr;
+	}
 
 	sprintf(kernel_addr_str, "0x%lx", kernel_address);
 
