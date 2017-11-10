@@ -4,6 +4,7 @@
  * SPDX-License-Identifier:     GPL-2.0+
  */
 
+#include <asm/arch/bootrkp.h>
 #include <common.h>
 #include <dm.h>
 #include <errno.h>
@@ -192,6 +193,7 @@ static int charge_animation_show(struct udevice *dev)
 	int start_idx = 0, show_idx = -1;
 	int soc, voltage, key_state;
 	int i, charging = 1;
+	int boot_mode;
 
 	/* If there is preboot command, exit */
 	if (preboot) {
@@ -199,6 +201,13 @@ static int charge_animation_show(struct udevice *dev)
 		return 0;
 	}
 
+#ifdef CONFIG_ROCKCHIP_PARTITION_BOOT
+	boot_mode = rockchip_get_boot_mode();
+	if (boot_mode != ANDROID_BOOT_MODE_NORMAL) {
+		debug("exit charge, due to boot mode: %d\n", boot_mode);
+		return 0;
+	}
+#endif
 	/* Not charger online, exit */
 	charging = fuel_gauge_get_chrg_online(fg);
 	if (charging <= 0)
