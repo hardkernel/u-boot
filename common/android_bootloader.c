@@ -6,10 +6,12 @@
 
 #include <android_bootloader.h>
 #include <android_bootloader_message.h>
+#include <android_avb/avb_ops_user.h>
 
 #include <cli.h>
 #include <common.h>
 #include <malloc.h>
+#include <fs.h>
 
 #define ANDROID_PARTITION_BOOT "boot"
 #define ANDROID_PARTITION_SYSTEM "system"
@@ -156,6 +158,66 @@ static int android_bootloader_boot_bootloader(void)
 	if (fastboot_cmd)
 		return run_command(fastboot_cmd, CMD_FLAG_ENV);
 	return -1;
+}
+
+static int android_bootloader_get_fdt(const char *part_name,
+		const char *load_file_name)
+{
+	const char *dev_iface = "mmc";
+	struct blk_desc *dev_desc;
+	disk_partition_t boot_part_info;
+	char *fdt_addr = NULL;
+	char slot_suffix[5] = {0};
+	char dev_part[3] = {0};
+	loff_t bytes = 0;
+	loff_t pos = 0;
+	loff_t len_read;
+	unsigned long addr = 0;
+	int part_num = -1;
+	int dev_num = 0;
+	int ret;
+
+	dev_desc = blk_get_dev(dev_iface, dev_num);
+	if (!dev_desc) {
+		printf("Could not find %s %d\n", dev_iface, dev_num);
+		return -1;
+	}
+
+	memset(&boot_part_info, 0, sizeof(boot_part_info));
+
+#ifdef CONFIG_AVB_LIBAVB_USER
+	if (avb_get_current_slot(slot_suffix)) {
+		printf("ANDROID: Get Current Slot error.\n");
+		return -1;
+	}
+
+	part_num = android_part_get_info_by_name_suffix(dev_desc,
+					     part_name,
+					     slot_suffix, &boot_part_info);
+#else
+	part_num = part_get_info_by_name(dev_desc, part_name, &boot_part_info);
+	if (part_num < 0) {
+		printf("ANDROID: Could not find partition \"%s\"\n", part_name);
+		return -1;
+	}
+#endif
+
+	snprintf(dev_part, ARRAY_SIZE(dev_part), ":%x", part_num);
+	if (fs_set_blk_dev(dev_iface, dev_part, FS_TYPE_EXT))
+		return -1;
+
+	fdt_addr = env_get("fdt_addr_r");
+	if (!fdt_addr) {
+		printf("ANDROID: No Found FDT Load Address.\n");
+		return -1;
+	}
+	addr = simple_strtoul(fdt_addr, NULL, 16);
+
+	ret = fs_read(load_file_name, addr, pos, bytes, &len_read);
+	if (ret < 0)
+		return -1;
+
+	return 0;
 }
 
 int android_bootloader_boot_kernel(unsigned long kernel_address)
