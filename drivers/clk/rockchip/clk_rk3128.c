@@ -347,7 +347,7 @@ static ulong rockchip_mmc_set_clk(struct rk3128_cru *cru, uint clk_general_rate,
 	return rockchip_mmc_get_clk(cru, clk_general_rate, periph);
 }
 
-static ulong rk3128_i2c_get_clk(struct rk3128_cru *cru, ulong clk_id)
+static ulong rk3128_peri_get_pclk(struct rk3128_cru *cru, ulong clk_id)
 {
 	u32 div, con;
 
@@ -356,18 +356,19 @@ static ulong rk3128_i2c_get_clk(struct rk3128_cru *cru, ulong clk_id)
 	case PCLK_I2C1:
 	case PCLK_I2C2:
 	case PCLK_I2C3:
+	case PCLK_PWM:
 		con = readl(&cru->cru_clksel_con[10]);
 		div = con >> 12 & 0x3;
 		break;
 	default:
-		printf("do not support this i2c bus\n");
+		printf("do not support this peripheral bus\n");
 		return -EINVAL;
 	}
 
 	return DIV_TO_RATE(PERI_ACLK_HZ, div);
 }
 
-static ulong rk3128_i2c_set_clk(struct rk3128_cru *cru, ulong clk_id, uint hz)
+static ulong rk3128_peri_set_pclk(struct rk3128_cru *cru, ulong clk_id, uint hz)
 {
 	int src_clk_div;
 
@@ -379,11 +380,12 @@ static ulong rk3128_i2c_set_clk(struct rk3128_cru *cru, ulong clk_id, uint hz)
 	case PCLK_I2C1:
 	case PCLK_I2C2:
 	case PCLK_I2C3:
+	case PCLK_PWM:
 		rk_setreg(&cru->cru_clksel_con[10],
 			  ((src_clk_div - 1) << 12));
 		break;
 	default:
-		printf("do not support this i2c bus\n");
+		printf("do not support this peripheral bus\n");
 		return -EINVAL;
 	}
 
@@ -491,7 +493,8 @@ static ulong rk3128_clk_get_rate(struct clk *clk)
 	case PCLK_I2C1:
 	case PCLK_I2C2:
 	case PCLK_I2C3:
-		return rk3128_i2c_get_clk(priv->cru, clk->id);
+	case PCLK_PWM:
+		return rk3128_peri_get_pclk(priv->cru, clk->id);
 	case SCLK_SARADC:
                 return rk3128_saradc_get_clk(priv->cru);
 	case DCLK_LCDC:
@@ -526,7 +529,8 @@ static ulong rk3128_clk_set_rate(struct clk *clk, ulong rate)
 	case PCLK_I2C1:
 	case PCLK_I2C2:
 	case PCLK_I2C3:
-		new_rate = rk3128_i2c_set_clk(priv->cru, clk->id, rate);
+	case PCLK_PWM:
+		new_rate = rk3128_peri_set_pclk(priv->cru, clk->id, rate);
 		break;
 	case SCLK_SARADC:
 		new_rate = rk3128_saradc_set_clk(priv->cru, rate);
