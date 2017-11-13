@@ -25,6 +25,7 @@ static board_module_t g_board_modules[] = {
 #if defined(CONFIG_RK_IR)
 	{ .name = "ir",		.test = board_ir_test },
 #endif
+	{ .name = "brom_dnl",	.test = board_brom_dnl_test}
 };
 
 static int do_rockchip_test(cmd_tbl_t *cmdtp, int flag,

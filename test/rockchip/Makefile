@@ -12,3 +12,4 @@ obj-y += test-regulator.o
 obj-y += test-rknand.o
 obj-$(CONFIG_GMAC_ROCKCHIP) += test-eth.o
 obj-$(CONFIG_RK_IR) += test-ir.o
+obj-y += test-brom-dnl.o

@@ -19,4 +19,6 @@ int board_eth_test(int argc, char * const argv[]);
 int board_ir_test(int argc, char * const argv[]);
 #endif
 
+int board_brom_dnl_test(int argc, char * const argv[]);
+
 #endif /* _TEST_ROCKCHIP_H */
