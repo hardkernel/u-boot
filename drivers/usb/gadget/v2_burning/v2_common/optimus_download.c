@@ -80,7 +80,8 @@ struct ImgBurnInfo{
     u8  verifyAlgorithm;//0--sha1sum, 1--crc32, 2--addsum
     u8  imgBurnSta;//
     u8  storageMediaType;//NAND default,
-    u8  resrv4Align[4];
+    u8  isDumpMode; //if dump mode
+    u8  resrv4Align[3];
 
     u64 nextMediaOffset;//image size already  received
     u64 imgPktSz;//total size of the file image
@@ -94,7 +95,7 @@ struct ImgBurnInfo{
 };
 
 static struct ImgBurnInfo OptimusImgBurnInfo = {0};
-const char*   _usbDownPartImgType = "";
+extern const char*   _usbDownPartImgType ;
 
 struct imgBurnInfo_sparse{
 
@@ -177,7 +178,7 @@ static int optimus_verify_dtb(struct ImgBurnInfo* pDownInfo, u8* genSum)
 }
 
 //32k, Now nand not need align any more, but I remember spi nor flash need 32k aligh
-#define BOOTLOADER_ALIGN_BITS   15
+#define BOOTLOADER_ALIGN_BITS   0//15
 
 //return value is the actual size it write
 static int optimus_download_bootloader_image(struct ImgBurnInfo* pDownInfo, u32 dataSzReceived, const u8* data)
@@ -195,9 +196,11 @@ static int optimus_download_bootloader_image(struct ImgBurnInfo* pDownInfo, u32 
         return 0;
     }
 
+#if BOOTLOADER_ALIGN_BITS
     size += (1U<<BOOTLOADER_ALIGN_BITS) -1;
     size >>= BOOTLOADER_ALIGN_BITS;
     size <<= BOOTLOADER_ALIGN_BITS;
+#endif// #if BOOTLOADER_ALIGN_BITS
     ret = store_boot_write((unsigned char*)data, 0, size);
     if (dataSzReceived != size)DWN_MSG("align bootloader sz from 0x%x to 0x%llx\n", dataSzReceived, size) ;
 
@@ -216,8 +219,12 @@ static int optimus_verify_bootloader(struct ImgBurnInfo* pDownInfo, u8* genSum)
         off  = (1ULL << 62) - 1; //verify mode for verify discrete bootloader
 #endif//#if defined(CONFIG_AML_MTD)
 
-    /*size = 0x60000;////////////TODO:hardcode len!!*/
     size=pDownInfo->imgPktSz;
+#if BOOTLOADER_ALIGN_BITS
+    size += (1U<<BOOTLOADER_ALIGN_BITS) -1;
+    size >>= BOOTLOADER_ALIGN_BITS;
+    size <<= BOOTLOADER_ALIGN_BITS;
+#endif// #if BOOTLOADER_ALIGN_BITS
     ret = store_boot_read(pBuf, off, size);
     if (ret) {
         DWN_ERR("Fail to read bootloader\n");
@@ -308,7 +315,7 @@ static int optimus_storage_open(struct ImgBurnInfo* pDownInfo, const u8* data, c
         #if  defined(CONFIG_DISCRETE_BOOTLOADER)
             if ( strcmp(CONFIG_TPL_PART_NAME, partName) )
         #endif//#if  defined(CONFIG_DISCRETE_BOOTLOADER)
-            if (!(is_optimus_storage_inited()>>16) && strcmp("bootloader", partName)) {
+            if (!pDownInfo->isDumpMode && !(is_optimus_storage_inited()>>16) && strcmp("bootloader", partName)) {
                 char cmd[96];
                 sprintf(cmd, "store erase partition %s", partName);
                 DWN_MSG("cmd[%s]\n", cmd);
@@ -1148,6 +1155,7 @@ u32 optimus_dump_storage_data(u8* pBuf, const u32 wantSz, char* errInfo)
 
     DWN_DBG("pBuf=0x%p, wantSz=0x%x, nextMediaOffset=%x\n", pBuf, wantSz, (u32)nextMediaOffset);
 
+    pDownInfo->isDumpMode = 1; //do not do any erase in dump mode
     ret = optimus_storage_open(pDownInfo, pBuf, wantSz);
     if (OPT_DOWN_OK != ret) {
         sprintf(errInfo, "Fail to open stoarge\n");

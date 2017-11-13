@@ -89,7 +89,7 @@ static int mtd_find_phy_off_by_lgc_off(const char* partName, const loff_t logicA
 	mtdPartInf = get_mtd_device_nm(partName);
 	if (IS_ERR(mtdPartInf)) {
 		ErrP("device(%s) is err\n", partName);
-		return -__LINE__;
+		return CMD_RET_FAILURE;
 	}
 	const unsigned eraseSz = mtdPartInf->erasesize;
 	const unsigned offsetInBlk = logicAddr & (eraseSz - 1);
@@ -730,7 +730,7 @@ static int do_store_size(cmd_tbl_t * cmdtp, int flag, int argc, char * const arg
             mtdPartInf = get_mtd_device_nm(partName);
             if (IS_ERR(mtdPartInf)) {
                 ErrP("device(%s) is err\n", partName);
-                return -__LINE__;
+                return CMD_RET_FAILURE;
             }
             const unsigned eraseSz   = mtdPartInf->erasesize;
             const uint64_t partSzPhy = mtdPartInf->size;
@@ -1215,14 +1215,14 @@ static int do_store_rom_write(cmd_tbl_t * cmdtp, int flag, int argc, char * cons
 
         if ( bootloaderMaxSz < size ) {
             ErrP("bootloader sz 0x%llx too large,max sz 0x%x\n", size, bootloaderMaxSz );
-            return -__LINE__;
+            return CMD_RET_FAILURE;
         }
         if ( !updateTpl ) {
             MsgP("Warnning:tplWriteSz 0x%x too small, update bl2 only but not update tpl\n", tplWriteSz);
         }
         if (iCopy2Update >= tplCpyNum || iCopy2Update >= Bl2CpyNum) {
             ErrP("iCopy2Update[%s] invalid, must < min(%d, %d)\n", argv[5], tplCpyNum, Bl2CpyNum);
-            return -__LINE__;
+            return CMD_RET_FAILURE;
         }
         for (i = 0; i < Bl2CpyNum; ++i)
         {
@@ -1232,7 +1232,7 @@ static int do_store_rom_write(cmd_tbl_t * cmdtp, int flag, int argc, char * cons
             ret = run_command(str, 0);
             if (ret) {
                 ErrP("Failed at erase bl2[%d],ret=%d\n", i, ret);
-                return -__LINE__;
+                return CMD_RET_FAILURE;
             }
 
             //copyOff = i * Bl2Size;
@@ -1241,7 +1241,7 @@ static int do_store_rom_write(cmd_tbl_t * cmdtp, int flag, int argc, char * cons
             ret = run_command(str, 0);
             if (ret) {
                 ErrP("Failed at pgram bl2[%d],ret=%d\n", i, ret);
-                return -__LINE__;
+                return CMD_RET_FAILURE;
             }
         }
         addr += Bl2Size;
@@ -1253,7 +1253,7 @@ static int do_store_rom_write(cmd_tbl_t * cmdtp, int flag, int argc, char * cons
             ret = run_command(str, 0);
             if (ret) {
                 ErrP("Failed at erase tpl[%d],ret=%d\n", i, ret);
-                return -__LINE__;
+                return CMD_RET_FAILURE;
             }
 
             copyOff = i * tplCapSize;
@@ -1262,7 +1262,7 @@ static int do_store_rom_write(cmd_tbl_t * cmdtp, int flag, int argc, char * cons
             ret = run_command(str, 0);
             if (ret) {
                 ErrP("Failed at pgram bl2[%d],ret=%d\n", i, ret);
-                return -__LINE__;
+                return CMD_RET_FAILURE;
             }
         }
 #if CONFIG_TPL_VAL_NUM_MIN
@@ -1413,17 +1413,17 @@ static int do_store_rom_read(cmd_tbl_t * cmdtp, int flag, int argc, char * const
 
         if ( bootloaderMaxSz < size || tplRealSz < 0 ) {
             ErrP("bootloader sz 0x%llx invalid,  max sz %d\n", size, bootloaderMaxSz );
-            return -__LINE__;
+            return CMD_RET_FAILURE;
         }
         if (iCopy2Update >= tplCpyNum || iCopy2Update >= Bl2CpyNum) {
             ErrP("iCopy2Update[%s] invalid, must < min(%d, %d)\n", argv[5], tplCpyNum, Bl2CpyNum);
-            return -__LINE__;
+            return CMD_RET_FAILURE;
         }
 
         tmpBuf = (char*)malloc(size);
         if ( !tmpBuf ) {
             ErrP("Failed maloc 0x%llx bytes\n", size);
-            return -__LINE__;
+            return CMD_RET_FAILURE;
         }
         memset(tmpBuf, 0, size);
 
@@ -1438,7 +1438,7 @@ static int do_store_rom_read(cmd_tbl_t * cmdtp, int flag, int argc, char * const
             ret = run_command(str, 0);
             if (ret) {
                 ErrP("Failed at pgram bl2[%d],ret=%d\n", i, ret);
-                return -__LINE__;
+                return CMD_RET_FAILURE;
             }
 #if CONFIG_BL2_VAL_NUM_MIN
             if (verifyMode) //copy index not specified, need read all copies
@@ -1456,7 +1456,7 @@ static int do_store_rom_read(cmd_tbl_t * cmdtp, int flag, int argc, char * const
 #if CONFIG_BL2_VAL_NUM_MIN
         if (okCrcNum < CONFIG_BL2_VAL_NUM_MIN && verifyMode) {
             ErrP("okCrcNum(%d) < CONFIG_BL2_VAL_NUM_MIN(%d)\n", okCrcNum, CONFIG_BL2_VAL_NUM_MIN);
-            return -__LINE__;
+            return CMD_RET_FAILURE;
         }
         okCrcNum = 0;
 #endif//#if CONFIG_BL2_VAL_NUM_MIN
@@ -1475,7 +1475,7 @@ static int do_store_rom_read(cmd_tbl_t * cmdtp, int flag, int argc, char * const
                 ret = run_command(str, 0);
                 if (ret) {
                     ErrP("Failed at pgram bl2[%d],ret=%d\n", i, ret);
-                    return -__LINE__;
+                    return CMD_RET_FAILURE;
                 }
 #if CONFIG_TPL_VAL_NUM_MIN
                 if (verifyMode) //copy index not specified, need read all copies
@@ -1493,7 +1493,7 @@ static int do_store_rom_read(cmd_tbl_t * cmdtp, int flag, int argc, char * const
 #if CONFIG_TPL_VAL_NUM_MIN
             if (okCrcNum < CONFIG_TPL_VAL_NUM_MIN && verifyMode) {
                 ErrP("okCrcNum(%d) < CONFIG_TPL_VAL_NUM_MIN(%d)\n", okCrcNum, CONFIG_TPL_VAL_NUM_MIN);
-                return -__LINE__;
+                return CMD_RET_FAILURE;
             }
 #endif//#if CONFIG_TPL_VAL_NUM_MIN
             memcpy((char*)addr + Bl2Size, (unsigned char*)readBuf, tplRealSz);
@@ -1617,7 +1617,7 @@ static int do_store_read(cmd_tbl_t * cmdtp, int flag, int argc, char * const arg
 
         if (iCopy2Update >= tplCpyNum) {
             ErrP("iCopy2Update[%s] invalid, must < max(%d)\n", argv[6], tplCpyNum);
-            return -__LINE__;
+            return CMD_RET_FAILURE;
         }
 
         loff_t copyOff = iCopy2Update * tplCapSize;
@@ -1715,7 +1715,7 @@ static int do_store_write(cmd_tbl_t * cmdtp, int flag, int argc, char * const ar
             debugP("iCopy2Update=%d, tplCpyNum=%d\n", iCopy2Update, tplCpyNum);
             if (iCopy2Update >= tplCpyNum) {
                 ErrP("iCopy2Update[%s] invalid, must < max(%d)\n", argv[6], tplCpyNum);
-                return -__LINE__;
+                return CMD_RET_FAILURE;
             }
 
             for ( i = 0; i < tplCpyNum; ++i )
@@ -1726,7 +1726,7 @@ static int do_store_write(cmd_tbl_t * cmdtp, int flag, int argc, char * const ar
                 ret = run_command(str, 0);
                 if (ret) {
                     ErrP("Failed at erase tpl[%d],ret=%d\n", i, ret);
-                    return -__LINE__;
+                    return CMD_RET_FAILURE;
                 }
 
                 loff_t copyOff = i * tplCapSize;
@@ -1735,7 +1735,7 @@ static int do_store_write(cmd_tbl_t * cmdtp, int flag, int argc, char * const ar
                 ret = run_command(str, 0);
                 if (ret) {
                     ErrP("Failed at pgram bl2[%d],ret=%d\n", i, ret);
-                    return -__LINE__;
+                    return CMD_RET_FAILURE;
                 }
             }
         } else

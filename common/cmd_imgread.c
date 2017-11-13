@@ -487,9 +487,10 @@ static int do_image_read_pic(cmd_tbl_t *cmdtp, int flag, int argc, char * const 
 
                     if (pItem->start + itemSz > flashReadOff)
                     {
-                        //emmc read can't support offset not align 512
-                        rc = store_read_ops((unsigned char*)partName, (unsigned char *)((picLoadAddr>>9)<<9),
-                                ((pItem->start>>9)<<9), itemSz + (picLoadAddr & 0x1ff));
+                        unsigned long rdOff = pItem->start;
+                        unsigned long rdOffAlign = (rdOff >> 11) << 11;//align 2k page for mtd nand, 512 for emmc
+                        rc = store_read_ops((unsigned char*)partName, (unsigned char *)((picLoadAddr>>11)<<11),
+                                rdOffAlign, itemSz + (rdOff & 0x7ff) );
                         if (rc) {
                             errorP("Fail to read pic at offset 0x%x\n", pItem->start);
                             return __LINE__;

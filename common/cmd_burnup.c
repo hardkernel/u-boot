@@ -13,7 +13,7 @@
 #define ErrP(fmt...)   printf("[burnup]Err:%s,L%d:", __func__, __LINE__),printf(fmt)
 
 static unsigned char *cmd_name = (unsigned char *)("store");
-extern const char*   _usbDownPartImgType;
+const char*   _usbDownPartImgType = "";
 
 #define MtdAlignBits    (12) //32k
 #define MtdAlignSz      (1U << MtdAlignBits)
