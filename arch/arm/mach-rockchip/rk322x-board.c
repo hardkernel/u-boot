@@ -9,6 +9,7 @@
 #include <ram.h>
 #include <syscon.h>
 #include <asm/io.h>
+#include <asm/gpio.h>
 #include <asm/arch/clock.h>
 #include <asm/arch/periph.h>
 #include <asm/arch/grf_rk322x.h>
@@ -36,6 +37,14 @@ struct tos_parameter_t {
 	s64 reserve[8];
 };
 
+#define FASTBOOT_KEY_GPIO 116 /* GPIO3_C4 */
+static int fastboot_key_pressed(void)
+{
+	gpio_request(FASTBOOT_KEY_GPIO, "fastboot_key");
+	gpio_direction_input(FASTBOOT_KEY_GPIO);
+	return !gpio_get_value(FASTBOOT_KEY_GPIO);
+}
+
 __weak int rk_board_late_init(void)
 {
 	return 0;
@@ -44,6 +53,11 @@ __weak int rk_board_late_init(void)
 int board_late_init(void)
 {
 	setup_boot_mode();
+
+	if (fastboot_key_pressed()) {
+		printf("fastboot key pressed!\n");
+		env_set("preboot", "setenv preboot; fastboot usb 0");
+	}
 
 	return rk_board_late_init();
 }
