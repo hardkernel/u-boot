@@ -96,14 +96,9 @@ static int rkusb_init(const char *devtype, const char *devnums_part_str)
 		g_rkusb->ums = ums_new;
 		cnt = g_rkusb->ums_cnt;
 
-		/* if partnum = 0, expose all partitions */
-		if (partnum == 0) {
-			g_rkusb->ums[cnt].start_sector = 0;
-			g_rkusb->ums[cnt].num_sectors = block_dev->lba;
-		} else {
-			g_rkusb->ums[cnt].start_sector = info.start;
-			g_rkusb->ums[cnt].num_sectors = info.size;
-		}
+		/* Expose all partitions for rockusb command */
+		g_rkusb->ums[cnt].start_sector = 0;
+		g_rkusb->ums[cnt].num_sectors = block_dev->lba;
 
 		g_rkusb->ums[cnt].read_sector = rkusb_read_sector;
 		g_rkusb->ums[cnt].write_sector = rkusb_write_sector;
