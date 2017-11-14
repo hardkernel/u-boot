@@ -37,7 +37,7 @@ struct tos_parameter_t {
 	s64 reserve[8];
 };
 
-#define FASTBOOT_KEY_GPIO 116 /* GPIO3_C4 */
+#define FASTBOOT_KEY_GPIO 43 /* GPIO1_B3 */
 static int fastboot_key_pressed(void)
 {
 	gpio_request(FASTBOOT_KEY_GPIO, "fastboot_key");
