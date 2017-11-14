@@ -12,6 +12,9 @@
 #include <command.h>
 #include <environment.h>
 #include <malloc.h>
+#ifdef CONFIG_AML_MTD
+#include <linux/mtd/mtd.h>
+#endif
 #include <asm/byteorder.h>
 #include <config.h>
 #include <asm/arch/io.h>
@@ -208,6 +211,16 @@ bool boot_info_save(BrilloBootInfo *info, char *miscbuf)
     printf("save boot-info \n");
     memcpy(miscbuf+BOOTINFO_OFFSET, info, SLOTBUF_SIZE);
     dump_boot_info(info);
+#ifdef CONFIG_AML_MTD
+    if (NAND_BOOT_FLAG == device_boot_flag || SPI_NAND_FLAG == device_boot_flag) {
+        int ret = 0;
+        ret = run_command("store erase partition misc", 0);
+        if (ret != 0) {
+            printf("erase partition misc failed!\n");
+            return false;
+        }
+    }
+#endif
     store_write_ops((unsigned char *)partition, (unsigned char *)miscbuf, 0, MISCBUF_SIZE);
     return true;
 }
@@ -218,23 +231,46 @@ static int do_GetValidSlot(
     int argc,
     char * const argv[])
 {
-    char miscbuf[MISCBUF_SIZE] = {0};
+    //char miscbuf[MISCBUF_SIZE] = {0};
+    char *miscbuf = malloc(4*1024);
     BrilloBootInfo info;
     int attemp_times;
     int slot;
+    int ret = 0;
 
     if (argc != 1) {
         return cmd_usage(cmdtp);
     }
 
-    boot_info_open_partition(miscbuf);
+    memset(miscbuf, 0, 4*1024);
+    ret = boot_info_open_partition(miscbuf);
+    if (ret != 0) {
+        return -1;
+    }
     boot_info_load(&info, miscbuf);
+
+#ifndef CONFIG_AB_SYSTEM
+    char command[32];
+    memcpy(command, miscbuf, 32);
+    if (!memcmp(command, "boot-recovery", strlen("boot-recovery"))) {
+        run_command("run init_display", 0);
+        run_command("run storeargs", 0);
+        if (run_command("run recovery_from_flash", 0) < 0) {
+            printf("run_command for cmd:run recovery_from_flash failed.\n");
+            return -1;
+        }
+        printf("run command:run recovery_from_flash successful.\n");
+        return 0;
+    }
+#endif
 
     if (!boot_info_validate(&info)) {
         printf("boot-info is invalid. Resetting.\n");
         boot_info_reset(&info);
         boot_info_save(&info, miscbuf);
     }
+    free(miscbuf);
+    miscbuf = NULL;
 
     attemp_times = boot_info_get_attemp_times(&info);
     printf("attemp_times = %d \n", attemp_times);
@@ -246,6 +282,17 @@ static int do_GetValidSlot(
     //slot = boot_info_get_online_slot(&info);
     slot = info.active_slot;
     printf("active slot = %d \n", slot);
+
+#ifdef CONFIG_AML_MTD
+    //check if boot_a/b on nand
+    if (device_boot_flag == NAND_BOOT_FLAG) {
+        struct mtd_info *nand;
+        nand = get_mtd_device_nm("boot_a");
+        if (!IS_ERR(nand)) {
+            has_boot_slot = 1;
+        }
+    }
+#endif
 
     if (slot == 0) {
         setenv("active_slot","_a");
@@ -271,9 +318,11 @@ static int do_SetActiveSlot(
     int argc,
     char * const argv[])
 {
-    char miscbuf[MISCBUF_SIZE] = {0};
+    //char miscbuf[MISCBUF_SIZE] = {0};
+    char *miscbuf = malloc(4*1024);
     BrilloBootInfo info;
     int i;
+    int ret = 0;
 
     for (i = 0; i < argc; i++)
         printf("%s ", argv[i]);
@@ -284,7 +333,11 @@ static int do_SetActiveSlot(
         return cmd_usage(cmdtp);
     }
 
-    boot_info_open_partition(miscbuf);
+    memset(miscbuf, 0, 4*1024);
+    ret = boot_info_open_partition(miscbuf);
+    if (ret != 0) {
+        return -1;
+    }
     boot_info_load(&info, miscbuf);
 
     if (!boot_info_validate(&info)) {
@@ -305,10 +358,14 @@ static int do_SetActiveSlot(
         boot_info_set_active_slot(&info, 1);
     } else {
         printf("error input slot\n");
+        free(miscbuf);
+        miscbuf = NULL;
         return -1;
     }
 
     boot_info_save(&info, miscbuf);
+    free(miscbuf);
+    miscbuf = NULL;
 
     return 0;
 }

@@ -389,10 +389,37 @@ static struct mtd_partition normal_partition_info[] = {
     },
 #endif
     {
+        .name = "misc",
+        .offset = 0,
+        .size = 2*SZ_1M,
+    },
+    {
         .name = "logo",
         .offset = 0,
         .size = 2*SZ_1M,
     },
+#ifdef CONFIG_AB_SYSTEM
+    {
+        .name = "boot_a",
+        .offset = 0,
+        .size = 15*SZ_1M,
+    },
+    {
+        .name = "boot_b",
+        .offset = 0,
+        .size = 15*SZ_1M,
+    },
+    {
+        .name = "system_a",
+        .offset = 0,
+        .size = 150*SZ_1M,
+    },
+    {
+        .name = "system_b",
+        .offset = 0,
+        .size = 150*SZ_1M,
+    },
+ #else
     {
         .name = "recovery",
         .offset = 0,
@@ -408,6 +435,7 @@ static struct mtd_partition normal_partition_info[] = {
         .offset = 0,
         .size = 280*SZ_1M,
     },
+#endif
 	/* last partition get the rest capacity */
     {
         .name = "data",
