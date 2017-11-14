@@ -647,6 +647,7 @@ int do_avb_flow(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	bool unlocked = true;
 	const char *mode_cmdline = NULL;
 	char root_data[70] = "root=PARTUUID=";
+	char avb_root_data[2000] = {0};
 	size_t guid_buf_size = 37;
 	char guid_buf[37];
 	char verify_flag;
@@ -718,18 +719,13 @@ int do_avb_flow(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 			return CMD_RET_FAILURE;
 		}
 
-		strcat(slot_partition[1], requested_partitions[1]);
-		strcat(slot_partition[1], slot_data->ab_suffix);
-		ops->get_unique_guid_for_partition(ops,
-						   slot_partition[1],
-						   guid_buf,
-						   guid_buf_size);
-		strcat(root_data, guid_buf);
 		command_line = android_assemble_cmdline(slot_data->ab_suffix,
 							mode_cmdline);
-		strcat(root_data, " ");
-		strcat(root_data, command_line);
-		env_set("bootargs", root_data);
+		strcat(avb_root_data, " ");
+		strcat(avb_root_data, command_line);
+		strcat(avb_root_data, " ");
+		strcat(avb_root_data, slot_data->cmdline);
+		env_set("bootargs", avb_root_data);
 		load_address = CONFIG_SYS_LOAD_ADDR;
 		if (avb_close_optee_client())
 			printf("Can not close optee client!\n");
