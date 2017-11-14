@@ -6,6 +6,7 @@
 
 #include <asm/arch/bootrkp.h>
 #include <common.h>
+#include <console.h>
 #include <dm.h>
 #include <errno.h>
 #include <key.h>
@@ -51,7 +52,7 @@ struct charge_animation_pdata {
 	bool auto_start_kernel;
 };
 
-static int charge_animation_threshold_soc(struct udevice *dev)
+static int charge_animation_get_power_on_soc(struct udevice *dev)
 {
 	struct charge_animation_pdata *pdata = dev_get_platdata(dev);
 
@@ -61,7 +62,7 @@ static int charge_animation_threshold_soc(struct udevice *dev)
 	return pdata->power_on_soc_threshold;
 }
 
-static int charge_animation_threshold_voltage(struct udevice *dev)
+static int charge_animation_get_power_on_voltage(struct udevice *dev)
 {
 	struct charge_animation_pdata *pdata = dev_get_platdata(dev);
 
@@ -69,6 +70,52 @@ static int charge_animation_threshold_voltage(struct udevice *dev)
 		return -ENOSYS;
 
 	return pdata->power_on_voltage_threshold;
+}
+
+static int charge_animation_get_screen_on_voltage(struct udevice *dev)
+{
+	struct charge_animation_pdata *pdata = dev_get_platdata(dev);
+
+	if (!pdata)
+		return -ENOSYS;
+
+	return pdata->screen_on_voltage_threshold;
+}
+
+static int charge_animation_set_power_on_soc(struct udevice *dev, int val)
+{
+	struct charge_animation_pdata *pdata = dev_get_platdata(dev);
+
+	if (!pdata)
+		return -ENOSYS;
+
+	pdata->power_on_soc_threshold = val;
+
+	return 0;
+}
+
+static int charge_animation_set_power_on_voltage(struct udevice *dev, int val)
+{
+	struct charge_animation_pdata *pdata = dev_get_platdata(dev);
+
+	if (!pdata)
+		return -ENOSYS;
+
+	pdata->power_on_voltage_threshold = val;
+
+	return 0;
+}
+
+static int charge_animation_set_screen_on_voltage(struct udevice *dev, int val)
+{
+	struct charge_animation_pdata *pdata = dev_get_platdata(dev);
+
+	if (!pdata)
+		return -ENOSYS;
+
+	pdata->screen_on_voltage_threshold = val;
+
+	return 0;
 }
 
 /*
@@ -435,6 +482,14 @@ static int charge_animation_show(struct udevice *dev)
 				break;
 			}
 		}
+
+		/* Step6: Exit by ctrl+c */
+		if (ctrlc()) {
+			if (voltage >= pdata->screen_on_voltage_threshold)
+				rockchip_show_logo();
+			printf("Exit charge, due to ctrl+c\n");
+			break;
+		}
 	}
 
 	ms = get_timer(charge_start);
@@ -450,8 +505,12 @@ static int charge_animation_show(struct udevice *dev)
 }
 
 static const struct dm_charge_display_ops charge_animation_ops = {
-	.get_power_on_soc = charge_animation_threshold_soc,
-	.get_power_on_voltage = charge_animation_threshold_voltage,
+	.get_power_on_soc = charge_animation_get_power_on_soc,
+	.get_power_on_voltage = charge_animation_get_power_on_voltage,
+	.get_screen_on_voltage = charge_animation_get_screen_on_voltage,
+	.set_power_on_soc = charge_animation_set_power_on_soc,
+	.set_power_on_voltage = charge_animation_set_power_on_voltage,
+	.set_screen_on_voltage = charge_animation_set_screen_on_voltage,
 	.show = charge_animation_show,
 };
 
