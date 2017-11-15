@@ -71,6 +71,24 @@ struct matrix_s {
 
 /* OSD csc defines end */
 
+static void vpp_set_matrix_default_init(void)
+{
+	switch (get_cpu_id().family_id) {
+	case MESON_CPU_MAJOR_ID_GXBB:
+	case MESON_CPU_MAJOR_ID_GXTVBB:
+	case MESON_CPU_MAJOR_ID_GXL:
+	case MESON_CPU_MAJOR_ID_GXM:
+	case MESON_CPU_MAJOR_ID_TXL:
+		/* default probe_sel, for highlight en */
+		vpp_reg_setb(VPP_MATRIX_CTRL, 0x7, 12, 3);
+		break;
+	default:
+		/* default probe_sel, for highlight en */
+		vpp_reg_setb(VPP_MATRIX_CTRL, 0xf, 11, 4);
+		break;
+	}
+}
+
 static void vpp_set_matrix_ycbcr2rgb(int vd1_or_vd2_or_post, int mode)
 {
 	//VPP_PR("%s: %d, %d\n", __func__, vd1_or_vd2_or_post, mode);
@@ -561,7 +579,7 @@ void set_vpp_matrix(int m_select, int *s, int on)
 		if ((get_cpu_id().family_id == MESON_CPU_MAJOR_ID_TXLX)
 		|| (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_TXHD)) {
 			/* osd matrix */
-			vpp_reg_setb(VPP_MATRIX_CTRL, 0, 11, 5);
+			vpp_reg_setb(VPP_MATRIX_CTRL, 0, 15, 1);
 			vpp_reg_setb(VPP_MATRIX_CTRL, on, 7, 1);
 			vpp_reg_setb(VPP_MATRIX_CTRL, 4, 8, 3);
 
@@ -1112,6 +1130,8 @@ void vpp_init(void)
 	vpp_reg_write(VPP_OFIFO_SIZE, data32);
 	data32 = 0x08080808;
 	vpp_reg_write(VPP_HOLD_LINES, data32);
+
+	vpp_set_matrix_default_init();
 
 	if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_GXTVBB) {
 		/* 709 limit to RGB */
