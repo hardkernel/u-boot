@@ -69,6 +69,7 @@ int setup_boot_mode(void)
 {
 	void *reg;
 	int boot_mode;
+	char env_preboot[256] = {0};
 
 	rockchip_dnl_mode_check();
 
@@ -84,7 +85,15 @@ int setup_boot_mode(void)
 	switch (boot_mode) {
 	case BOOT_FASTBOOT:
 		printf("enter fastboot!\n");
-		env_set("preboot", "setenv preboot; fastboot usb 0");
+#if defined(CONFIG_FASTBOOT_FLASH_MMC_DEV)
+		snprintf(env_preboot, 256,
+				"setenv preboot; mmc dev %x; fastboot usb 0; ",
+				CONFIG_FASTBOOT_FLASH_MMC_DEV);
+#elif defined(CONFIG_FASTBOOT_FLASH_NAND_DEV)
+		snprintf(env_preboot, 256,
+				"setenv preboot; fastboot usb 0; ");
+#endif
+		env_set("preboot", env_preboot);
 		break;
 	case BOOT_UMS:
 		printf("enter UMS!\n");
