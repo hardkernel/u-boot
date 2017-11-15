@@ -52,12 +52,12 @@ __weak int rk_board_late_init(void)
 
 int board_late_init(void)
 {
-	setup_boot_mode();
-
 	if (fastboot_key_pressed()) {
 		printf("fastboot key pressed!\n");
-		env_set("preboot", "setenv preboot; fastboot usb 0");
+		fb_set_reboot_flag();
 	}
+
+	setup_boot_mode();
 
 	return rk_board_late_init();
 }
