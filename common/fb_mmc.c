@@ -293,6 +293,10 @@ void fb_mmc_flash_write(const char *cmd, void *download_buffer,
 {
 	struct blk_desc *dev_desc;
 	disk_partition_t info;
+#if CONFIG_IS_ENABLED(EFI_PARTITION)
+	u64 disksize = 0;
+	char reason[128] = {0};
+#endif
 
 	dev_desc = blk_get_dev("mmc", CONFIG_FASTBOOT_FLASH_MMC_DEV);
 	if (!dev_desc || dev_desc->type == DEV_TYPE_UNKNOWN) {
@@ -308,7 +312,14 @@ void fb_mmc_flash_write(const char *cmd, void *download_buffer,
 		if (is_valid_gpt_buf(dev_desc, download_buffer)) {
 			printf("%s: invalid GPT - refusing to write to flash\n",
 			       __func__);
-			fastboot_fail("invalid GPT partition", response);
+			disksize = dev_desc->blksz * cpu_to_le64(dev_desc->lba);
+			snprintf(reason, ARRAY_SIZE(reason),
+				 "%s - %s '%lld.%lld MiB')",
+					"invalid GPT partition",
+					"Actual Disk Size",
+					disksize/0x100000,
+					disksize%0x100000);
+			fastboot_fail(reason, response);
 			return;
 		}
 		if (write_mbr_and_gpt_partitions(dev_desc, download_buffer)) {
