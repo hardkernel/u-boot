@@ -4,6 +4,13 @@ config DM_FUEL_GAUGE
 	help
 	  This adds a simple uclass for fuel gauge.
 
+config POWER_FG_CW201X
+	bool "CW201X Fuel gauge support"
+	depends on DM_FUEL_GAUGE
+	default y
+	help
+	  This adds support for CW201X fuel gauge support.
+
 config POWER_FG_RK818
 	bool "RK818 Fuel gauge support"
 	depends on DM_FUEL_GAUGE && PMIC_RK8XX
