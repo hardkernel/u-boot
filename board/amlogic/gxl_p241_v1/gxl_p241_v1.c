@@ -484,6 +484,15 @@ phys_size_t get_effective_memsize(void)
 #ifdef CONFIG_MULTI_DTB
 int checkhw(char * name)
 {
+	/*
+	 * read board hw id
+	 * set and select the dts according the board hw id.
+	 *
+	 * hwid = 7  p241 v1
+	 * hwid = 11 p241 v2
+	 */
+	unsigned int hwid = 7;
+
 	unsigned int ddr_size=0;
 	char loc_name[64] = {0};
 	int i;
@@ -493,19 +502,35 @@ int checkhw(char * name)
 #if defined(CONFIG_SYS_MEM_TOP_HIDE)
 	ddr_size += CONFIG_SYS_MEM_TOP_HIDE;
 #endif
-	switch (ddr_size) {
-		case 0x80000000:
-			strcpy(loc_name, "gxl_p241_2g\0");
+
+	/* read hwid */
+	hwid = (readl(P_AO_SEC_GP_CFG0) >> 8) & 0xFF;
+	printf("checkhw:  hwid = %d\n", hwid);
+
+	switch (hwid) {
+		case 7:
+			printf("checkhw -> 7\n");
+			switch (ddr_size) {
+				case 0x80000000:
+					strcpy(loc_name, "gxl_p241_2g\0");
+					break;
+				case 0x40000000:
+					strcpy(loc_name, "gxl_p241_1g\0");
+					break;
+				case 0x2000000:
+					strcpy(loc_name, "gxl_p241_512m\0");
+					break;
+				default:
+					//printf("DDR size: 0x%x, multi-dt doesn't support\n", ddr_size);
+					strcpy(loc_name, "gxl_p241_unsupport\0");
+					break;
+			}
 			break;
-		case 0x40000000:
-			strcpy(loc_name, "gxl_p241_1g\0");
-			break;
-		case 0x2000000:
-			strcpy(loc_name, "gxl_p241_512m\0");
+		case 11:
+			strcpy(loc_name, "gxl_p241_v2-1g\0");
 			break;
 		default:
-			//printf("DDR size: 0x%x, multi-dt doesn't support\n", ddr_size);
-			strcpy(loc_name, "gxl_p241_unsupport");
+			strcpy(loc_name, "gxl_p241_unsupport\0");
 			break;
 	}
 	strcpy(name, loc_name);
