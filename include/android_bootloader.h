@@ -73,4 +73,12 @@ char *android_assemble_cmdline(const char *slot_suffix,
  */
 int android_bootloader_boot_kernel(unsigned long kernel_address);
 
+/** android_bootloader_boot_kernel- Load and execute the kernel boot.
+ *
+ * @kernel_address:	address where to load the kernel if needed.
+ *
+ * @return a negative number in case of error, otherwise it doesn't return.
+ */
+int android_boot_flow(unsigned long kernel_address);
+
 #endif  /* __ANDROID_BOOTLOADER_H */

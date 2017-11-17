@@ -388,3 +388,27 @@ int android_avb_boot_flow(char *slot_suffix, unsigned long kernel_address)
 	/* TODO: If the kernel doesn't boot mark the selected slot as bad. */
 	return -1;
 }
+
+int android_boot_flow(unsigned long kernel_address)
+{
+	const char *dev_iface = "mmc";
+	int dev_num = 0;
+	struct blk_desc *dev_desc;
+	disk_partition_t boot_part_info;
+	int ret;
+	dev_desc = blk_get_dev(dev_iface, dev_num);
+	if (!dev_desc) {
+		printf("Could not find %s %d\n", dev_iface, dev_num);
+		return -1;
+	}
+	/* Load the kernel from the desired "boot" partition. */
+	part_get_info_by_name(dev_desc, ANDROID_PARTITION_BOOT, &boot_part_info);
+	ret = android_image_load(dev_desc, &boot_part_info, kernel_address,
+				 -1UL);
+	if (ret < 0)
+		return ret;
+	android_bootloader_boot_kernel(kernel_address);
+
+	/* TODO: If the kernel doesn't boot mark the selected slot as bad. */
+	return -1;
+}
