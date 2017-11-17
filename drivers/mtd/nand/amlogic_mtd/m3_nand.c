@@ -879,6 +879,23 @@ int nand_register(int devnum)
 }
 #endif /* do not using nand_register */
 
+void nand_hw_init(struct aml_nand_platform *plat)
+{
+	struct aml_nand_chip *aml_chip = NULL;
+
+	if (!plat) {
+		printf("no platform specific information\n");
+		return;
+	}
+
+	aml_chip = plat->aml_chip;
+
+	aml_chip->aml_nand_hw_init(aml_chip);
+	if (aml_chip->aml_nand_adjust_timing)
+		aml_chip->aml_nand_adjust_timing(aml_chip);
+	aml_chip->aml_nand_select_chip(aml_chip, 0);
+}
+
 void nand_init(void)
 {
 	static int amlmtd_init = 0;
@@ -886,9 +903,11 @@ void nand_init(void)
 	int i, ret;
 
 	if (1 == amlmtd_init) {
+		nand_hw_init(&aml_nand_mid_device.aml_nand_platform[0]);
 		device_boot_flag = NAND_BOOT_FLAG;
 		return;
 	}
+
 	controller = kzalloc(sizeof(struct hw_controller), GFP_KERNEL);
 	if (controller == NULL) {
 		printk("%s kzalloc controller failed\n", __func__);
