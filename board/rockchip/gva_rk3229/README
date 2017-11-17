@@ -1,8 +1,8 @@
 Get the Source and prebuild binary
 ==================================
 
-  > mkdir ~/evb_rk3229
-  > cd ~/evb_rk3229
+  > mkdir ~/gva_rk3229
+  > cd ~/gva_rk3229
   > git clone git://git.denx.de/u-boot.git
   > git clone https://github.com/OP-TEE/optee_os.git
   > git clone https://github.com/rockchip-linux/rkbin.git
@@ -23,11 +23,10 @@ Compile the U-Boot
   > cd ../u-boot
   > export CROSS_COMPILE=arm-linux-gnueabihf-
   > export ARCH=arm
-  > make evb-rk3229_defconfig
-  > make
-  > make u-boot.itb
+  > make gva-rk3229_defconfig
+  > make u-boot-dtb.bin
 
-  Get tpl/u-boot-tpl.bin, spl/u-boot-spl.bin and u-boot.itb in this step.
+  Get u-boot-dtb.bin in this step.
 
 Compile the rkdeveloptool
 =======================
@@ -47,24 +46,17 @@ Package the image
 =================
 
   > cd ../u-boot
-  > tools/mkimage -n rk322x -T rksd -d tpl/u-boot-spl.bin idbloader.img
-  > cat spl/u-boot-spl.bin >> idbloader.img
+  > rkbin/tools/loaderimage --pack --uboot u-boot-dtb.bin uboot.img
 
-  Get idbloader.img in this step.
+  Get uboot.img in this step.
 
 Flash the image to eMMC
 =======================
 Power on(or reset with RESET KEY) with MASKROM KEY preesed, and then:
   > cd ..
   > rkdeveloptool db rkbin/rk32/rk322x_loader_v1.04.232.bin
-  > rkdeveloptool wl 64 u-boot/idbloader.img
-  > rkdeveloptool wl 0x4000 u-boot/u-boot.itb
+  > rkdeveloptool wl 0x4000 uboot.img
   > rkdeveloptool rd
-
-Flash the image to SD card
-==========================
-  > dd if=u-boot/idbloader.img of=/dev/sdb seek=64
-  > dd if=u-boot/u-boot.itb of=/dev/sdb seek=16384
 
 You should be able to get U-Boot log message with OP-TEE boot info.
 

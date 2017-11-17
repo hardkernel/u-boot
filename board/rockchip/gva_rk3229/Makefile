@@ -1,7 +1,7 @@
 #
-# (C) Copyright 2015 Google, Inc
+# Copyright (C) 2017 Rockchip Electronic Co.,Ltd
 #
 # SPDX-License-Identifier:     GPL-2.0+
 #
 
-obj-y	+= evb_rk3229.o
+obj-y	+= gva_rk3229.o

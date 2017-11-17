@@ -23,10 +23,10 @@
 #undef PARTS_DEFAULT
 #define PARTS_DEFAULT \
 	"uuid_disk=${uuid_gpt_disk};" \
-	"name=loader_a,start=4M,size=4M,uuid=${uuid_gpt_loader};" \
-	"name=loader_b,size=4M,uuid=${uuid_gpt_reserved};" \
-	"name=trust_a,size=4M,uuid=${uuid_gpt_reserved};" \
-	"name=trust_b,size=4M,uuid=${uuid_gpt_reserved};" \
+	"name=bootloader_a,start=4M,size=4M,uuid=${uuid_gpt_loader};" \
+	"name=bootloader_b,size=4M,uuid=${uuid_gpt_reserved};" \
+	"name=tos_a,size=4M,uuid=${uuid_gpt_reserved};" \
+	"name=tos_b,size=4M,uuid=${uuid_gpt_reserved};" \
 	"name=misc,size=4M,uuid=${uuid_gpt_misc};" \
 	"name=metadata,size=16M,uuid=${uuid_gpt_metadata};" \
 	"name=boot_a,size=32M,uuid=${uuid_gpt_boot_a};" \
@@ -35,6 +35,8 @@
 	"name=system_b,size=512M,uuid=${uuid_gpt_system_b};" \
 	"name=vendor_a,size=50M,uuid=${uuid_gpt_vendor_a};" \
 	"name=vendor_b,size=50M,uuid=${uuid_gpt_vendor_b};" \
+	"name=oem_a,size=32M,uuid=${uuid_gpt_oem_a};" \
+	"name=oem_b,size=32M,uuid=${uuid_gpt_oem_b};" \
 	"name=cache,size=100M,uuid=${uuid_gpt_cache};" \
 	"name=persist,size=4M,uuid=${uuid_gpt_persist};" \
 	"name=userdata,size=-,uuid=${uuid_gpt_userdata};\0" \
@@ -50,7 +52,7 @@
 #define CONFIG_SYS_BOOT_RAMDISK_HIGH
 #undef CONFIG_BOOTCOMMAND
 #define CONFIG_BOOTCOMMAND \
-	"boot_android mmc 0:7 a;" \
+	"bootavb flow v; " \
 
 /* Enable atags */
 #define CONFIG_SYS_BOOTPARAMS_LEN	(64*1024)
