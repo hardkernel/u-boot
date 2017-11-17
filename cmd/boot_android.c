@@ -751,6 +751,20 @@ int do_avb_flow(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		strcat(root_data, command_line);
 		env_set("bootargs", root_data);
 		android_avb_boot_flow(boot_slot_select, load_address);
+	} else if (verify_flag == 'o') {
+		load_address = CONFIG_SYS_LOAD_ADDR;
+		strcat(slot_partition[1], requested_partitions[1]);
+		ops->get_unique_guid_for_partition(ops,
+						   slot_partition[1],
+						   guid_buf,
+						   guid_buf_size);
+		strcat(root_data, guid_buf);
+		command_line = android_assemble_cmdline(boot_slot_select,
+							mode_cmdline);
+		strcat(root_data, " ");
+		strcat(root_data, command_line);
+		env_set("bootargs", root_data);
+		android_boot_flow(load_address);
 	} else {
 		return CMD_RET_USAGE;
 	}
