@@ -251,6 +251,8 @@ obj-$(CONFIG_CMD_DFU) += cmd_dfu.o
 obj-$(CONFIG_CMD_EFUSE) += cmd_efuse.o
 obj-$(CONFIG_CMD_CPU_TEMP) += cmd_cpu_temp.o
 obj-y += cmd_clkmsr.o
+obj-$(CONFIG_CMD_CEC) += cmd_cec.o
+obj-$(CONFIG_CMD_HDMIRX) += cmd_hdmirx.o
 ifndef CONFIG_AML_RPMB_DISABLE
 obj-y += cmd_rpmb.o
 endif

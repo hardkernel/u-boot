@@ -9,3 +9,5 @@ obj-y	+= mailbox.o
 obj-y   += gate_init.o
 obj-y   += power_cal.o
 obj-$(CONFIG_CMD_AML_MTEST) += core.o
+obj-$(CONFIG_CMD_CEC) += cec/
+obj-$(CONFIG_CMD_HDMIRX) += hdmirx/

@@ -18,7 +18,6 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
-
 #include "config.h"
 #include "registers.h"
 #include "task_apis.h"
@@ -121,7 +120,9 @@ void enter_suspend(unsigned int suspend_from)
 	uart_puts(CEC_VERSION);
 	uart_puts("\n");
 	uart_puts("CEC cfg:0x");
-	uart_put_hex(hdmi_cec_func_config, 16);
+	uart_put_hex(hdmi_cec_func_config, 8);
+	uart_puts("--suspend from:0x");
+	uart_put_hex(suspend_from, 32);
 	uart_puts("\n");
 #endif
 	p_pwr_op->power_off_at_clk81();

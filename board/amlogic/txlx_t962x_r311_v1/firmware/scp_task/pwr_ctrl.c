@@ -21,7 +21,8 @@
 
 
 #ifdef CONFIG_CEC_WAKEUP
-#include <cec_tx_reg.h>
+#include <asm/arch/cec_tx_reg.h>
+#include <hdmi_cec_arc.h>
 #endif
 #include <gpio-gxbb.h>
 #include "pwm_ctrl.h"
@@ -306,6 +307,7 @@ static unsigned int detect_key(unsigned int suspend_from)
 	int exit_reason = 0;
 	unsigned int time_out = readl(AO_DEBUG_REG2);
 	unsigned time_out_ms = time_out*100;
+	unsigned int cec_wait_addr = 0;
 	unsigned char adc_key_cnt = 0;
 	unsigned *irq = (unsigned *)WAKEUP_SRC_IRQ_ADDR_BASE;
 	/* unsigned *wakeup_en = (unsigned *)SECURE_TASK_RESPONSE_WAKEUP_EN; */
@@ -318,25 +320,44 @@ static unsigned int detect_key(unsigned int suspend_from)
 	saradc_enable();
 #ifdef CONFIG_CEC_WAKEUP
 	if (hdmi_cec_func_config & 0x1) {
-		remote_cec_hw_reset();
+		cec_hw_reset();
 		cec_node_init();
+		/*if (suspend_from == SYS_SUSPEND)
+			check_standby();*/
 	}
 #endif
 
 	/* *wakeup_en = 1;*/
 	do {
 #ifdef CONFIG_CEC_WAKEUP
+		/*if receive wake up message, wait for the port*/
+		if ((cec_msg.cec_power == 0x1) &&
+		    (hdmi_cec_func_config & 0x1)) {
+			if (cec_wait_addr++ < 100) {
+				if (cec_msg.active_source) {
+					cec_save_port_id();
+					exit_reason = CEC_WAKEUP;
+					uart_puts("check wakeup\n");
+				}
+			} else {
+				exit_reason = CEC_WAKEUP;
+				uart_puts("timeout wakeup\n");
+			}
+		}
 		if (irq[IRQ_AO_CECB] == IRQ_AO_CECB_NUM) {
 			irq[IRQ_AO_CECB] = 0xFFFFFFFF;
-//			if (suspend_from == SYS_POWEROFF)
-//				continue;
+			/* if (suspend_from == SYS_POWEROFF) */
+			/* continue; */
 			if (cec_msg.log_addr) {
 				if (hdmi_cec_func_config & 0x1) {
 					cec_handler();
 					if (cec_msg.cec_power == 0x1) {
-						/*cec power key*/
-						exit_reason = CEC_WAKEUP;
-						break;
+						if (cec_msg.active_source) {
+							cec_save_port_id();
+							/*cec power key*/
+							exit_reason = CEC_WAKEUP;
+							uart_puts("message wakeup\n");
+						}
 					}
 				}
 			} else if (hdmi_cec_func_config & 0x1)
@@ -385,9 +406,10 @@ static unsigned int detect_key(unsigned int suspend_from)
 			irq[IRQ_ETH_PHY] = 0xFFFFFFFF;
 				exit_reason = ETH_PHY_WAKEUP;
 		}
-		if (exit_reason)
+		if (exit_reason) {
+			set_cec_val2(exit_reason);
 			break;
-		else
+		} else
 			asm volatile("wfi");
 	} while (1);
 
