@@ -56,7 +56,6 @@ size_t avb_strlen(const char* str) {
 
 void avb_abort(void) {
   abort();
-return;
 }
 
 void avb_print(const char* message) {
