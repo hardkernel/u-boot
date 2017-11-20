@@ -209,19 +209,19 @@ static int rockchip_efuse_ofdata_to_platdata(struct udevice *dev)
 static const struct udevice_id rockchip_efuse_ids[] = {
 	{
 		.compatible = "rockchip,rockchip-efuse",
-		.data = (void *)&rockchip_rk3288_efuse_read,
+		.data = (ulong)&rockchip_rk3288_efuse_read,
 	},
 	{
 		.compatible = "rockchip,rk3066a-efuse",
-		.data = (void *)&rockchip_rk3288_efuse_read,
+		.data = (ulong)&rockchip_rk3288_efuse_read,
 	},
 	{
 		.compatible = "rockchip,rk3188-efuse",
-		.data = (void *)&rockchip_rk3288_efuse_read,
+		.data = (ulong)&rockchip_rk3288_efuse_read,
 	},
 	{
 		.compatible = "rockchip,rk322x-efuse",
-		.data = (void *)&rockchip_rk3288_efuse_read,
+		.data = (ulong)&rockchip_rk3288_efuse_read,
 	},
 	{
 		.compatible = "rockchip,rk3399-efuse",
