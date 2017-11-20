@@ -12,6 +12,7 @@
 #include <asm/gpio.h>
 #include <asm/arch/clock.h>
 #include <asm/arch/periph.h>
+#include <asm/arch/timer.h>
 #include <asm/arch/grf_rk322x.h>
 #include <asm/arch/boot_mode.h>
 
@@ -37,6 +38,19 @@ struct tos_parameter_t {
 	s64 reserve[8];
 };
 
+#if defined(CONFIG_USB_FUNCTION_FASTBOOT)
+int fb_set_reboot_flag(void)
+{
+	struct rk322x_grf *grf;
+
+	printf("Setting reboot to fastboot flag ...\n");
+	grf = syscon_get_first_range(ROCKCHIP_SYSCON_GRF);
+	/* Set boot mode to fastboot */
+	writel(BOOT_FASTBOOT, &grf->os_reg[0]);
+
+	return 0;
+}
+
 #define FASTBOOT_KEY_GPIO 43 /* GPIO1_B3 */
 static int fastboot_key_pressed(void)
 {
@@ -44,6 +58,7 @@ static int fastboot_key_pressed(void)
 	gpio_direction_input(FASTBOOT_KEY_GPIO);
 	return !gpio_get_value(FASTBOOT_KEY_GPIO);
 }
+#endif
 
 __weak int rk_board_late_init(void)
 {
@@ -52,10 +67,12 @@ __weak int rk_board_late_init(void)
 
 int board_late_init(void)
 {
+#if defined(CONFIG_USB_FUNCTION_FASTBOOT)
 	if (fastboot_key_pressed()) {
 		printf("fastboot key pressed!\n");
 		fb_set_reboot_flag();
 	}
+#endif
 
 	setup_boot_mode();
 
@@ -171,16 +188,3 @@ int board_usb_cleanup(int index, enum usb_init_type init)
 }
 #endif
 
-#if defined(CONFIG_USB_FUNCTION_FASTBOOT)
-int fb_set_reboot_flag(void)
-{
-	struct rk322x_grf *grf;
-
-	printf("Setting reboot to fastboot flag ...\n");
-	grf = syscon_get_first_range(ROCKCHIP_SYSCON_GRF);
-	/* Set boot mode to fastboot */
-	writel(BOOT_FASTBOOT, &grf->os_reg[0]);
-
-	return 0;
-}
-#endif
