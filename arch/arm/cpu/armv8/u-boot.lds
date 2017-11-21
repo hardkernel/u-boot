@@ -80,6 +80,8 @@ SECTIONS
 		KEEP(*(.__bss_end));
 	}
 
+	ASSERT(_end <= 0x01200000, "bl33 image has exceeded its limit.")
+
 	/DISCARD/ : { *(.dynsym) }
 	/DISCARD/ : { *(.dynstr*) }
 	/DISCARD/ : { *(.dynamic*) }
