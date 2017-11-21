@@ -123,10 +123,11 @@ static void mipi_dsi_init_table_print(struct dsi_config_s *dconf, int on_off)
 				on_off ? "on" : "off", dsi_table[i]);
 			break;
 		} else {
-			n = (DSI_CMD_INDEX + 1) + dsi_table[i+DSI_CMD_INDEX];
+			n = (DSI_CMD_SIZE_INDEX + 1) +
+				dsi_table[i+DSI_CMD_SIZE_INDEX];
 			printf("  ");
 			for (j = 0; j < n; j++) {
-				if (j == DSI_CMD_INDEX)
+				if (j == DSI_CMD_SIZE_INDEX)
 					printf("%d,", dsi_table[i+j]);
 				else
 					printf("0x%02x,", dsi_table[i+j]);
@@ -276,17 +277,30 @@ int lcd_mipi_dsi_init_table_detect(char *dtaddr, int nodeoffset,
 		init_table[i] = (unsigned char)(be32_to_cpup((((u32*)propdata)+i)));
 		type = init_table[i];
 		if (type == 0xff) {
-			init_table[i+1] = (unsigned char)(be32_to_cpup((((u32*)propdata)+i+1)));
+			init_table[i+1] =
+				(unsigned char)(be32_to_cpup((((u32*)propdata)+i+1)));
 			cmd_size = init_table[i+1];
 			i += 2;
 			if (cmd_size == 0xff) {
 				break;
 			}
+		} else if (type == 0xf0) {
+			init_table[i+DSI_CMD_SIZE_INDEX] =
+				(unsigned char)(be32_to_cpup((((u32*)propdata)+i+1)));
+			cmd_size = init_table[i+DSI_CMD_SIZE_INDEX];
+			if (cmd_size < 3) {
+				LCDERR("get %s wrong cmd_size %d for gpio\n",
+					propname, cmd_size);
+				break;
+			}
 		} else {
-			init_table[i+1] = (unsigned char)(be32_to_cpup((((u32*)propdata)+i+1)));
-			cmd_size = init_table[i+1];
-			for (j = 0; j < cmd_size; j++)
-				init_table[i+2+j] = (unsigned char)(be32_to_cpup((((u32*)propdata)+i+2+j)));
+			init_table[i+DSI_CMD_SIZE_INDEX] =
+				(unsigned char)(be32_to_cpup((((u32*)propdata)+i+1)));
+			cmd_size = init_table[i+DSI_CMD_SIZE_INDEX];
+			for (j = 0; j < cmd_size; j++) {
+				init_table[i+2+j] =
+					(unsigned char)(be32_to_cpup((((u32*)propdata)+i+2+j)));
+			}
 			i += (cmd_size + 2);
 		}
 	}
@@ -1036,7 +1050,7 @@ static void dsi_write_long_packet(struct dsi_cmd_request_s *req)
 	unsigned int i, j, data_index, n, temp;
 
 	/* payload[2] start (payload[0]: data_type, payload[1]: data_cnt) */
-	data_index = DSI_CMD_INDEX + 1;
+	data_index = DSI_CMD_SIZE_INDEX + 1;
 	d_command = ((unsigned int)req->payload[data_index]) & 0xff;
 
 	/* Write Payload Register First */
@@ -1118,11 +1132,18 @@ int dsi_write_cmd(unsigned char *payload)
 	struct dsi_cmd_request_s dsi_cmd_req;
 	unsigned char vc_id = MIPI_DSI_VIRTUAL_CHAN_ID;
 	unsigned int req_ack = MIPI_DSI_DCS_ACK_TYPE;
+	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
+	struct lcd_power_ctrl_s *lcd_power;
+	char *str;
+	int gpio;
 
 	/* mipi command(payload) */
-	/* format:  data_type, num, data.... */
+	/* format:  data_type, cmd_size, data.... */
 	/* special: data_type=0xff,
-	 *	    num<0xff means delay ms, num=0xff means ending.
+	 *		cmd_size<0xff means delay ms,
+	 *		cmd_size=0xff means ending.
+	 *	    data_type=0xf0,
+	 *		data0=gpio_index, data1=gpio_value, data2=delay.
 	 */
 	while (i < DSI_CMD_SIZE_MAX) {
 		if (payload[i] == 0xff) {
@@ -1131,16 +1152,31 @@ int dsi_write_cmd(unsigned char *payload)
 				break;
 			else
 				mdelay(payload[i+1]);
+		} else if (payload[i] == 0xf0) {
+			j = (DSI_CMD_SIZE_INDEX + 1) +
+				payload[i+DSI_CMD_SIZE_INDEX];
+			if (payload[i+DSI_CMD_SIZE_INDEX] < 3) {
+				LCDERR("wrong cmd_size %d for gpio\n",
+					payload[i+DSI_CMD_SIZE_INDEX]);
+				break;
+			}
+			lcd_power = lcd_drv->lcd_config->lcd_power;
+			str = lcd_power->cpu_gpio[payload[i+DSI_GPIO_INDEX]];
+			gpio = aml_lcd_gpio_name_map_num(str);
+			aml_lcd_gpio_set(gpio, payload[i+DSI_GPIO_INDEX+1]);
+			if (payload[i+DSI_GPIO_INDEX+2])
+				mdelay(payload[i+DSI_GPIO_INDEX+2]);
 		} else if ((payload[i] & 0xf) == 0x0) {
 				LCDERR("data_type: 0x%02x\n", payload[i]);
 				break;
 		} else {
-			/* payload[i+DSI_CMD_INDEX] is data count */
-			j = (DSI_CMD_INDEX + 1) + payload[i+DSI_CMD_INDEX];
+			/* payload[i+DSI_CMD_SIZE_INDEX] is data count */
+			j = (DSI_CMD_SIZE_INDEX + 1) +
+				payload[i+DSI_CMD_SIZE_INDEX];
 			dsi_cmd_req.data_type = payload[i];
 			dsi_cmd_req.vc_id = (vc_id & 0x3);
 			dsi_cmd_req.payload = &payload[i];
-			dsi_cmd_req.pld_count = payload[i+DSI_CMD_INDEX];
+			dsi_cmd_req.pld_count = payload[i+DSI_CMD_SIZE_INDEX];
 			dsi_cmd_req.req_ack = req_ack;
 			switch (dsi_cmd_req.data_type) {/* analysis data_type */
 			case DT_GEN_SHORT_WR_0:
@@ -1249,7 +1285,7 @@ int dsi_read_single(unsigned char *payload, unsigned char *rd_data,
 	dsi_cmd_req.data_type = payload[0];
 	dsi_cmd_req.vc_id = (vc_id & 0x3);
 	dsi_cmd_req.payload = &payload[0];
-	dsi_cmd_req.pld_count = payload[DSI_CMD_INDEX];
+	dsi_cmd_req.pld_count = payload[DSI_CMD_SIZE_INDEX];
 	dsi_cmd_req.req_ack = req_ack;
 	switch (dsi_cmd_req.data_type) {/* analysis data_type */
 	case DT_GEN_RD_0:
