@@ -595,6 +595,7 @@ static int rk3128_clk_bind(struct udevice *dev)
 
 static const struct udevice_id rk3128_clk_ids[] = {
 	{ .compatible = "rockchip,rk3128-cru" },
+	{ .compatible = "rockchip,rk3126-cru" },
 	{ }
 };
 
