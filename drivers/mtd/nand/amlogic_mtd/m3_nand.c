@@ -189,6 +189,9 @@ void pinmux_select_chip_mtd(unsigned ce_enable, unsigned rb_enable)
 	if (cpu_id.family_id == MESON_CPU_MAJOR_ID_AXG) {
 		if (!((ce_enable >> 10) & 1))
 			AMLNF_SET_REG_MASK(P_PERIPHS_PIN_MUX_1, 2);
+	} else if (cpu_id.family_id == MESON_CPU_MAJOR_ID_TXHD) {
+		if (!((ce_enable >> 10) & 1))
+			AMLNF_SET_REG_MASK(P_PERIPHS_PIN_MUX_1, (2 << 16));
 	} else if ((cpu_id.family_id == MESON_CPU_MAJOR_ID_GXBB) ||
 		(cpu_id.family_id == MESON_CPU_MAJOR_ID_GXL)) {
 		if (!((ce_enable >> 10) & 1))
@@ -255,13 +258,17 @@ void get_sys_clk_rate_mtd(struct hw_controller *controller, int *rate)
 	unsigned int always_on = 0x1 << 24;
 	unsigned int clk;
 	/* fixme, axg clock may be the same setting with gxl/gxm */
-	if (cpu_id.family_id == MESON_CPU_MAJOR_ID_AXG)
+
+	if ((cpu_id.family_id == MESON_CPU_MAJOR_ID_AXG) ||
+	    (cpu_id.family_id == MESON_CPU_MAJOR_ID_TXHD))
 		always_on = 0x1 << 28;
+
 	printk("%s() %d, clock setting %d!\n",
 		__func__, __LINE__, clk_freq);
-	if ((cpu_id.family_id == MESON_CPU_MAJOR_ID_GXBB)
-			|| (cpu_id.family_id == MESON_CPU_MAJOR_ID_GXL)
-			|| (cpu_id.family_id == MESON_CPU_MAJOR_ID_AXG)) {
+	if ((cpu_id.family_id == MESON_CPU_MAJOR_ID_GXBB) ||
+	    (cpu_id.family_id == MESON_CPU_MAJOR_ID_GXL) ||
+	    (cpu_id.family_id == MESON_CPU_MAJOR_ID_AXG) ||
+	    (cpu_id.family_id == MESON_CPU_MAJOR_ID_TXHD)) {
 		switch (clk_freq) {
 			case 24:
 				clk = 0x80000201;
@@ -402,8 +409,9 @@ static int m3_nand_options_confirm(struct aml_nand_chip *aml_chip)
 	chip->write_buf = aml_nand_dma_write_buf;
 	chip->read_buf = aml_nand_dma_read_buf;
 
-	if ((mtd->writesize <= 2048)
-		|| (cpu_id.family_id == MESON_CPU_MAJOR_ID_AXG))
+	if ((mtd->writesize <= 2048) ||
+	    (cpu_id.family_id == MESON_CPU_MAJOR_ID_AXG) ||
+	    (cpu_id.family_id == MESON_CPU_MAJOR_ID_TXHD))
 		options_support = NAND_ECC_BCH8_MODE;
 
 	switch (options_support) {

@@ -44,6 +44,12 @@
 #endif
 #include <asm/arch/eth_setup.h>
 #include <phy.h>
+#include <asm/cpu_id.h>
+#include <linux/mtd/partitions.h>
+#include <linux/sizes.h>
+#include <asm/arch/clock.h>
+#include <asm-generic/gpio.h>
+#include <asm/arch/board_id.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -349,6 +355,60 @@ static void hdmi_tx_set_hdmi_5v(void)
 #endif
 
 extern void aml_pwm_cal_init(int mode);
+/*
+ * mtd nand partition table, only care the size!
+ * offset will be calculated by nand driver.
+ */
+#ifdef CONFIG_AML_MTD
+static struct mtd_partition normal_partition_info[] = {
+#ifdef CONFIG_DISCRETE_BOOTLOADER
+	/* MUST NOT CHANGE this part unless u know what you are doing!
+	 * inherent parition for descrete bootloader to store fip
+	 * size is determind by TPL_SIZE_PER_COPY*TPL_COPY_NUM
+	 * name must be same with TPL_PART_NAME
+	 */
+	{
+		.name = "tpl",
+		.offset = 0,
+		.size = 0,
+	},
+#endif
+	{
+		.name = "logo",
+		.offset = 0,
+		.size = 2*SZ_1M,
+	},
+	{
+		.name = "recovery",
+		.offset = 0,
+		.size = 16*SZ_1M,
+	},
+	{
+		.name = "boot",
+		.offset = 0,
+		.size = 15*SZ_1M,
+	},
+	{
+		.name = "system",
+		.offset = 0,
+		.size = 64*SZ_1M,
+	},
+	/* last partition get the rest capacity */
+	{
+		.name = "data",
+		.offset = MTDPART_OFS_APPEND,
+		.size = MTDPART_SIZ_FULL,
+	},
+};
+struct mtd_partition *get_aml_mtd_partition(void)
+{
+	return normal_partition_info;
+}
+int get_aml_partition_count(void)
+{
+	return ARRAY_SIZE(normal_partition_info);
+}
+#endif /* CONFIG_AML_MTD */
 
 int board_init(void)
 {

@@ -1892,6 +1892,13 @@ static void inline nand_get_chip(void )
 		AMLNF_WRITE_REG(P_PERIPHS_PIN_MUX_0, 0x11111111);
 		AMLNF_WRITE_REG(P_PERIPHS_PIN_MUX_1,
 			(AMLNF_READ_REG(P_PERIPHS_PIN_MUX_1) & 0xfff000) | 0x22222);
+	} else if (cpu_id.family_id == MESON_CPU_MAJOR_ID_TXHD) {
+		AMLNF_SET_REG_MASK(P_PAD_PULL_UP_EN_REG2, 0x3f10ff);
+		AMLNF_SET_REG_MASK(P_PAD_PULL_UP_REG2, 0x3f1000);
+		AMLNF_WRITE_REG(P_PERIPHS_PIN_MUX_0, 0x11111111);
+		AMLNF_WRITE_REG(P_PERIPHS_PIN_MUX_1,
+				(AMLNF_READ_REG(P_PERIPHS_PIN_MUX_1) &
+				0xfff00000) | 0x22222);
 	} else {
 		printk("%s() %d: cpuid 0x%x not support yet!\n",
 			__func__, __LINE__, cpu_id.family_id);
@@ -3748,7 +3755,8 @@ int aml_nand_init(struct aml_nand_chip *aml_chip)
 	aml_chip->aml_nand_hw_init(aml_chip);
 	aml_chip->toggle_mode =0;
 	aml_chip->bch_info = NAND_ECC_BCH60_1K;
-	if (cpu_id.family_id == MESON_CPU_MAJOR_ID_AXG)
+	if ((cpu_id.family_id == MESON_CPU_MAJOR_ID_AXG) ||
+	    (cpu_id.family_id == MESON_CPU_MAJOR_ID_TXHD))
 		aml_chip->bch_info = NAND_ECC_BCH8_1K;
 	if (nand_scan(mtd, controller->chip_num) == 0) {
 		chip->options = 0;
