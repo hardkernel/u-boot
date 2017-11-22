@@ -114,7 +114,7 @@ int board_usb_init(int index, enum usb_init_type init)
 
 	/* find the usb_otg node */
 	node = fdt_node_offset_by_compatible(blob, -1,
-					"rockchip,rk3288-usb");
+					"rockchip,rk3128-usb");
 
 	while (node > 0) {
 		mode = fdt_getprop(blob, node, "dr_mode", NULL);
