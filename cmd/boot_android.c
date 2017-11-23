@@ -22,9 +22,8 @@ static int do_boot_android(cmd_tbl_t *cmdtp, int flag, int argc,
 	int ret = CMD_RET_SUCCESS;
 	char *addr_arg_endp, *addr_str;
 	struct blk_desc *dev_desc;
-	disk_partition_t part_info;
 
-	if (argc < 4)
+	if (argc < 3)
 		return CMD_RET_USAGE;
 	if (argc > 5)
 		return CMD_RET_USAGE;
@@ -34,20 +33,20 @@ static int do_boot_android(cmd_tbl_t *cmdtp, int flag, int argc,
 		if (addr_arg_endp == argv[4] || *addr_arg_endp != '\0')
 			return CMD_RET_USAGE;
 	} else {
-		addr_str = env_get("loadaddr");
+		addr_str = env_get("kernel_addr_r");
 		if (addr_str)
 			load_address = simple_strtoul(addr_str, NULL, 16);
 		else
 			load_address = CONFIG_SYS_LOAD_ADDR;
 	}
 
-	if (part_get_info_by_dev_and_name_or_num(argv[1], argv[2],
-						 &dev_desc, &part_info) < 0) {
+	dev_desc = blk_get_dev(argv[1], simple_strtoul(argv[2], NULL, 16));
+	if (!dev_desc) {
+		printf("Could not get %s %s\n", argv[1], argv[2]);
 		return CMD_RET_FAILURE;
 	}
 
-	ret = android_bootloader_boot_flow(dev_desc, &part_info, argv[3],
-					   load_address);
+	ret = android_bootloader_boot_flow(dev_desc, load_address);
 	if (ret < 0) {
 		printf("Android boot failed, error %d.\n", ret);
 		return CMD_RET_FAILURE;

@@ -12,17 +12,26 @@
 #include <common.h>
 #include <malloc.h>
 #include <fs.h>
+#include <boot_rkimg.h>
 
 #define ANDROID_PARTITION_BOOT "boot"
+#define ANDROID_PARTITION_MISC "misc"
 #define ANDROID_PARTITION_OEM  "oem"
+#define ANDROID_PARTITION_RECOVERY  "recovery"
 #define ANDROID_PARTITION_SYSTEM "system"
 
 #define ANDROID_ARG_SLOT_SUFFIX "androidboot.slot_suffix="
 #define ANDROID_ARG_ROOT "root="
 #define ANDROID_ARG_SERIALNO "androidboot.serialno="
+#ifdef CONFIG_ROCKCHIP_RESOURCE_IMAGE
+#define ANDROID_ARG_FDT_FILENAME "rk-kernel.dtb"
+#define BOOTLOADER_MESSAGE_OFFSET_IN_MISC	(16 * 1024)
+#define BOOTLOADER_MESSAGE_BLK_OFFSET	(BOOTLOADER_MESSAGE_OFFSET_IN_MISC >> 9)
+#else
 #define ANDROID_ARG_FDT_FILENAME "kernel.dtb"
+#endif
 
-static int android_bootloader_message_load(
+int android_bootloader_message_load(
 	struct blk_desc *dev_desc,
 	const disk_partition_t *part_info,
 	struct android_bootloader_message *message)
@@ -34,7 +43,12 @@ static int android_bootloader_message_load(
 		return -1;
 	}
 
+#ifdef CONFIG_ROCKCHIP_BOOTLOADER
+	if (blk_dread(dev_desc, part_info->start + BOOTLOADER_MESSAGE_BLK_OFFSET,
+	     message_blocks, message) !=
+#else
 	if (blk_dread(dev_desc, part_info->start, message_blocks, message) !=
+#endif
 	    message_blocks) {
 		printf("Could not read from misc partition\n");
 		return -1;
@@ -140,7 +154,7 @@ static int android_part_get_info_by_name_suffix(struct blk_desc *dev_desc,
 	if (!part_name)
 		return -1;
 	strcpy(part_name, base_name);
-	if (slot_suffix)
+	if (slot_suffix && (slot_suffix[0] != '\0'))
 		strcat(part_name, slot_suffix);
 
 	part_num = part_get_info_by_name(dev_desc, part_name, part_info);
@@ -162,6 +176,7 @@ static int android_bootloader_boot_bootloader(void)
 	return -1;
 }
 
+#ifdef CONFIG_SUPPORT_OEM_DTB
 static int android_bootloader_get_fdt(const char *part_name,
 		const char *load_file_name)
 {
@@ -221,6 +236,7 @@ static int android_bootloader_get_fdt(const char *part_name,
 
 	return 0;
 }
+#endif
 
 int android_bootloader_boot_kernel(unsigned long kernel_address)
 {
@@ -228,12 +244,6 @@ int android_bootloader_boot_kernel(unsigned long kernel_address)
 	char *fdt_addr = env_get("fdt_addr");
 	char *bootm_args[] = {
 		"bootm", kernel_addr_str, kernel_addr_str, fdt_addr, NULL };
-
-	if (!android_bootloader_get_fdt(ANDROID_PARTITION_OEM,
-					ANDROID_ARG_FDT_FILENAME)) {
-		fdt_addr = env_get("fdt_addr_r");
-		bootm_args[3] = fdt_addr;
-	}
 
 	sprintf(kernel_addr_str, "0x%lx", kernel_address);
 
@@ -344,23 +354,28 @@ char *android_assemble_cmdline(const char *slot_suffix,
 }
 
 int android_bootloader_boot_flow(struct blk_desc *dev_desc,
-				 const disk_partition_t *misc_part_info,
-				 const char *slot,
-				 unsigned long kernel_address)
+				 unsigned long load_address)
 {
 	enum android_boot_mode mode;
 	disk_partition_t boot_part_info;
-	disk_partition_t system_part_info;
-	int boot_part_num, system_part_num;
+	disk_partition_t misc_part_info;
+	int part_num;
 	int ret;
 	char *command_line;
 	char slot_suffix[3];
 	const char *mode_cmdline = NULL;
+	char *boot_partname = ANDROID_PARTITION_BOOT;
+	ulong fdt_addr;
 
-	/* Determine the boot mode and clear its value for the next boot if
-	 * needed.
+	/*
+	 * 1. Load MISC partition and determine the boot mode
+	 *   clear its value for the next boot if needed.
 	 */
-	mode = android_bootloader_load_and_clear_mode(dev_desc, misc_part_info);
+	part_num = part_get_info_by_name(dev_desc, ANDROID_PARTITION_MISC,
+					 &misc_part_info);
+	if (part_num < 0)
+		printf("%s Could not find misc partition\n", __func__);
+	mode = android_bootloader_load_and_clear_mode(dev_desc, &misc_part_info);
 	printf("ANDROID: reboot reason: \"%s\"\n", android_boot_mode_str(mode));
 
 	switch (mode) {
@@ -375,6 +390,9 @@ int android_bootloader_boot_flow(struct blk_desc *dev_desc,
 		/* In recovery mode we still boot the kernel from "boot" but
 		 * don't skip the initramfs so it boots to recovery.
 		 */
+#ifndef CONFIG_AVB_LIBAVB_USER
+		boot_partname = ANDROID_PARTITION_RECOVERY;
+#endif
 		break;
 	case ANDROID_BOOT_MODE_BOOTLOADER:
 		/* Bootloader mode enters fastboot. If this operation fails we
@@ -385,40 +403,38 @@ int android_bootloader_boot_flow(struct blk_desc *dev_desc,
 	}
 
 	slot_suffix[0] = '\0';
-	if (slot && slot[0]) {
-		slot_suffix[0] = '_';
-		slot_suffix[1] = slot[0];
-		slot_suffix[2] = '\0';
-	}
+#ifdef CONFIG_AVB_LIBAVB_USER
+	/*TODO: get from pre-loader or misc partition*/
+	slot_suffix[0] = '_';
+	slot_suffix[1] = 'a';
+	slot_suffix[2] = '\0';
+#endif
 
-	/* Load the kernel from the desired "boot" partition. */
-	boot_part_num =
+	/*
+	 * 2. Load the boot/recovery from the desired "boot" partition.
+	 * Determine if this is an AOSP image.
+	 */
+	part_num =
 	    android_part_get_info_by_name_suffix(dev_desc,
-						 ANDROID_PARTITION_BOOT,
+						 boot_partname,
 						 slot_suffix, &boot_part_info);
-	if (boot_part_num < 0)
+	if (part_num < 0) {
+		printf("%s Could not found bootable partition %s\n", __func__,
+		       boot_partname);
 		return -1;
+	}
 	debug("ANDROID: Loading kernel from \"%s\", partition %d.\n",
-	      boot_part_info.name, boot_part_num);
+	      boot_part_info.name, part_num);
 
-	system_part_num =
-	    android_part_get_info_by_name_suffix(dev_desc,
-						 ANDROID_PARTITION_SYSTEM,
-						 slot_suffix,
-						 &system_part_info);
-	if (system_part_num < 0)
-		return -1;
-	debug("ANDROID: Using system image from \"%s\", partition %d.\n",
-	      system_part_info.name, system_part_num);
-
-	ret = android_image_load(dev_desc, &boot_part_info, kernel_address,
+	ret = android_image_load(dev_desc, &boot_part_info, load_address,
 				 -1UL);
-	if (ret < 0)
+	if (ret < 0) {
+		printf("%s %s part load fail\n", __func__, boot_part_info.name);
 		return ret;
+	}
 
 	/* Set Android root variables. */
 	env_set_ulong("android_root_devnum", dev_desc->devnum);
-	env_set_ulong("android_root_partnum", system_part_num);
 	env_set("android_slotsufix", slot_suffix);
 
 	/* Assemble the command line */
@@ -427,7 +443,17 @@ int android_bootloader_boot_flow(struct blk_desc *dev_desc,
 
 	debug("ANDROID: bootargs: \"%s\"\n", command_line);
 
-	android_bootloader_boot_kernel(kernel_address);
+#ifdef CONFIG_SUPPORT_OEM_DTB
+	if (android_bootloader_get_fdt(ANDROID_PARTITION_OEM,
+				       ANDROID_ARG_FDT_FILENAME)) {
+		printf("Can not get the fdt data from oem!\n");
+	}
+#else
+	ret = android_image_get_fdt((void *)load_address, &fdt_addr);
+	if (!ret)
+		env_set_ulong("fdt_addr", fdt_addr);
+#endif
+	android_bootloader_boot_kernel(load_address);
 
 	/* TODO: If the kernel doesn't boot mark the selected slot as bad. */
 	return -1;

@@ -34,16 +34,12 @@ enum android_boot_mode {
  * Message. On success it doesn't return.
  *
  * @dev_desc:		device where to load the kernel and system to boot from.
- * @misc_part_info:	the "misc" partition descriptor in 'dev_desc'.
- * @slot:		the boot slot to boot from.
- * @kernel_address:	address where to load the kernel if needed.
+ * @load_address:	address where to load the boot img if needed.
  *
  * @return a negative number in case of error, otherwise it doesn't return.
  */
 int android_bootloader_boot_flow(struct blk_desc *dev_desc,
-				 const disk_partition_t *misc_part_info,
-				 const char *slot,
-				 unsigned long kernel_address);
+				 unsigned long load_address);
 
 /** android_avb_boot_flow - Execute the Android Bootloader Flow.
  * This fuction use to select and boot kernel through ab_suffix.
