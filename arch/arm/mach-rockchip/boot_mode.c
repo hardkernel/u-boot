@@ -15,6 +15,15 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
+#if (CONFIG_ROCKCHIP_BOOT_MODE_REG == 0)
+
+int setup_boot_mode(void)
+{
+	return 0;
+}
+
+#else
+
 void set_back_to_bootrom_dnl_flag(void)
 {
 	writel(BOOT_BROM_DOWNLOAD, CONFIG_ROCKCHIP_BOOT_MODE_REG);
@@ -119,3 +128,5 @@ int setup_boot_mode(void)
 
 	return 0;
 }
+
+#endif
