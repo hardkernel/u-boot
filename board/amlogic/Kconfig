@@ -151,6 +151,10 @@ config TXHD_R341_V1
 	bool "Support amlogic txhd r341 v1 board"
 	default n
 
+config g12a_SKT_V1
+	bool "Support amlogic g12a skt v1 board"
+	default n
+
 config PXP_EMULATOR
 	bool "Support pxp environment"
 	default n
@@ -312,6 +316,10 @@ endif
 
 if TXHD_R341_V1
 source "board/amlogic/txhd_r341_v1/Kconfig"
+endif
+
+if g12a_SKT_V1
+source "board/amlogic/g12a_skt_v1/Kconfig"
 endif
 
 if ODROID_C2
