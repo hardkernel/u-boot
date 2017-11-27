@@ -5,10 +5,23 @@
  */
 
 #include <common.h>
+#include <blk.h>
+#include <dm.h>
 #include <mmc.h>
+#include <rknand.h>
+#include <spi.h>
+#include <spi_flash.h>
 #include "rockchip_blk.h"
 
-static struct mmc *mmc;
+struct blkdev {
+	int if_type;
+	int devnum;
+	ulong (*write)(struct blkdev *blkdev, lbaint_t start, lbaint_t blkcnt, const void *buffer);
+	ulong (*read)(struct blkdev *blkdev, lbaint_t start, lbaint_t blkcnt, void *buffer);
+	void *priv;
+};
+
+static struct blkdev *blkdev;
 
 struct mmc *mmcblk_dev_init(int dev)
 {
@@ -26,53 +39,146 @@ struct mmc *mmcblk_dev_init(int dev)
 	return mmcdev;
 }
 
-static int mmcblk_read(struct mmc *mmcdev, void *buffer, u32 blk, u32 cnt)
+static struct spi_flash *spi_flash_init(int dev)
 {
-	u32 n;
+	struct spi_flash *flash;
+	struct udevice *udev;
+	int ret;
 
-	debug("\nMMC read: block # 0x%x, count 0x%x  to %p... ", blk, cnt, buffer);
+	ret = spi_flash_probe_bus_cs(0, 0, 0, 0, &udev);
+	if (ret) {
+		printf("Failed to initialize SPI flash(error %d)\n", ret);
+		return NULL;
+	}
 
-	n = blk_dread(mmc_get_blk_desc(mmcdev), blk, cnt, buffer);
+	flash = dev_get_uclass_priv(udev);
 
-	debug("%d blocks read: %s\n", n, (n == cnt) ? "OK" : "ERROR");
-
-	return (n == cnt) ? 0 : -EIO;
+	return flash;
 }
 
+ulong blk_read(struct blkdev* blkdev, lbaint_t start, lbaint_t blkcnt, void *buffer)
+{
+	struct blk_desc *desc;
+	const char *if_name;
+	ulong n;
+
+	if_name = blk_get_if_type_name(blkdev->if_type);
+	desc = blk_get_dev(if_name, blkdev->devnum);
+	n = blk_dread(desc, start, blkcnt, buffer);
+
+	return n == blkcnt ? 0 : 1;
+}
+
+ulong blk_write(struct blkdev *blkdev, lbaint_t start, lbaint_t blkcnt, const void *buffer)
+{
+	struct blk_desc *desc;
+	const char *if_name;
+	ulong n;
+
+	if_name = blk_get_if_type_name(blkdev->if_type);
+	desc = blk_get_dev(if_name, blkdev->devnum);
+	n = blk_dwrite(desc, start, blkcnt, buffer);
+
+	return n == blkcnt ? 0 : 1;
+}
+
+ulong sf_read(struct blkdev *blkdev, lbaint_t start, lbaint_t blkcnt, void *buffer)
+{
+	struct spi_flash *flash = (struct spi_flash *)blkdev->priv;
+	u32 offset = start << 9;
+	size_t len = blkcnt << 9;
+
+	return spi_flash_read(flash, offset, len, buffer);
+}
+
+ulong sf_write(struct blkdev *blkdev, lbaint_t start, lbaint_t blkcnt, const void *buffer)
+{
+	struct spi_flash *flash = (struct spi_flash *)blkdev->priv;
+	u32 offset = start << 9;
+	size_t len = blkcnt << 9;
+
+	return spi_flash_write(flash, offset, len, buffer);
+}
+
+static int get_bootdev_if_type(int dev)
+{
+	int if_type;
+
+	switch (dev) {
+	case BOOT_FROM_EMMC:
+		if_type = IF_TYPE_MMC;
+		break;
+	case BOOT_FROM_FLASH:
+		if_type = IF_TYPE_RKNAND;
+		break;
+	default:
+		if_type = dev;
+		break;
+	}
+
+	return if_type;
+}
+
+static struct blkdev *blkdev_init(void)
+{
+	struct blkdev *blkdev;
+	int dev;
+	int if_type;
+	void *priv;
+
+
+	dev = get_bootdev_type();
+	if_type = get_bootdev_if_type(dev);
+
+	if (if_type == IF_TYPE_MMC) {
+		priv = mmcblk_dev_init(0);
+	} else if (if_type == IF_TYPE_RKNAND) {
+		priv = (void *)rknand_scan_namespace();
+	} else if (if_type == BOOT_FROM_SPI_NOR) {
+		priv = spi_flash_init(0);
+	}
+
+	blkdev = malloc(sizeof(*blkdev));
+	if (!blkdev) {
+		printf("out of memory for blkdev\n");
+		return NULL;
+	}
+
+	blkdev->if_type = if_type;
+	blkdev->devnum = 0;
+	blkdev ->priv = priv;
+	if ((if_type == IF_TYPE_MMC) || (if_type == IF_TYPE_RKNAND)) {
+		blkdev->read = blk_read;
+		blkdev->write = blk_write;
+	} else if (if_type == BOOT_FROM_SPI_NOR) {
+		blkdev->read = sf_read;
+		blkdev->write = sf_write;
+	}
+
+	return blkdev;
+}
 
 int blkdev_read(void *buffer, u32 blk, u32 cnt)
 {
-	if (!mmc) {
-		mmc = mmcblk_dev_init(env_get_ulong("mmcdev", 10, 0));
-		if (!mmc)
+	if (!blkdev) {
+		blkdev = blkdev_init();
+		if (!blkdev)
 			return -ENODEV;
 	}
 
-	return mmcblk_read(mmc, buffer, blk, cnt);
+	return blkdev->read(blkdev, blk, cnt, buffer);
 }
 
-static int mmcblk_write(struct mmc *mmcdev, void *buffer, u32 blk, u32 cnt)
-{
-	u32 n;
-
-	debug("\nMMC write: block # 0x%x, count 0x%x  from %p... ",
-	      blk, cnt, buffer);
-
-	n = blk_dwrite(mmc_get_blk_desc(mmcdev), blk, cnt, buffer);
-	debug("%d blocks write: %s\n", n, (n == cnt) ? "OK" : "ERROR");
-
-	return (n == cnt) ? 0 : -EIO;
-}
 
 int blkdev_write(void *buffer, u32 blk, u32 cnt)
 {
-	if (!mmc) {
-		mmc = mmcblk_dev_init(env_get_ulong("mmcdev", 10, 0));
-		if (!mmc)
+	if (!blkdev) {
+		blkdev = blkdev_init();
+		if (!blkdev)
 			return -ENODEV;
 	}
 
-	return mmcblk_write(mmc, buffer, blk, cnt);
+	return blkdev->write(blkdev, blk, cnt, buffer);
 }
 
 /* Gets the storage type of the current device */
@@ -99,4 +205,3 @@ int get_bootdev_type(void)
 
 	return type;
 }
-
