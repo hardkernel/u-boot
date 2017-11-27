@@ -87,7 +87,7 @@ int get_bootdev_type(void)
 		type = BOOT_FROM_SPI_NAND;
 	#endif /* CONFIG_QSPI_BOOT */
 	#ifdef CONFIG_NAND_BOOT
-		typpe = BOOT_FROM_FLASH;
+		type = BOOT_FROM_FLASH;
 	#endif /* CONFIG_NAND_BOOT */
 	#ifdef CONFIG_NOR_BOOT
 		type = BOOT_FROM_SPI_NOR;
