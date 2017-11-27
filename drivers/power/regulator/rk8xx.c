@@ -33,73 +33,73 @@
 #define RK818_USB_ILIM_SEL_MASK		0x0f
 #define RK818_USB_CHG_SD_VSEL_MASK	0x70
 
-
 struct rk8xx_reg_info {
 	uint min_uv;
 	uint step_uv;
 	s8 vsel_reg;
+	s8 vsel_sleep_reg;
 	u8 vsel_mask;
 };
 
 static const struct rk8xx_reg_info rk808_buck[] = {
-	{ 712500, 12500, REG_BUCK1_ON_VSEL, RK808_BUCK_VSEL_MASK, },
-	{ 712500, 12500, REG_BUCK2_ON_VSEL, RK808_BUCK_VSEL_MASK, },
-	{ 712500, 12500, -1, RK808_BUCK_VSEL_MASK, },
-	{ 1800000, 100000, REG_BUCK4_ON_VSEL, RK808_BUCK4_VSEL_MASK, },
+	{ 712500,   12500, REG_BUCK1_ON_VSEL, REG_BUCK1_SLP_VSEL, RK808_BUCK_VSEL_MASK, },
+	{ 712500,   12500, REG_BUCK2_ON_VSEL, REG_BUCK2_SLP_VSEL, RK808_BUCK_VSEL_MASK, },
+	{ 712500,   12500, -1, -1, RK808_BUCK_VSEL_MASK, },
+	{ 1800000, 100000, REG_BUCK4_ON_VSEL, REG_BUCK4_SLP_VSEL, RK808_BUCK4_VSEL_MASK, },
 };
 
 static const struct rk8xx_reg_info rk816_buck[] = {
 	/* buck 1 */
-	{ 712500, 12500, REG_BUCK1_ON_VSEL, RK818_BUCK_VSEL_MASK, },
-	{ 1800000, 200000, REG_BUCK1_ON_VSEL, RK818_BUCK_VSEL_MASK, },
-	{ 2300000, 0, REG_BUCK1_ON_VSEL, RK818_BUCK_VSEL_MASK, },
+	{  712500,  12500, REG_BUCK1_ON_VSEL, REG_BUCK1_SLP_VSEL, RK818_BUCK_VSEL_MASK, },
+	{ 1800000, 200000, REG_BUCK1_ON_VSEL, REG_BUCK1_SLP_VSEL, RK818_BUCK_VSEL_MASK, },
+	{ 2300000,      0, REG_BUCK1_ON_VSEL, REG_BUCK1_SLP_VSEL, RK818_BUCK_VSEL_MASK, },
 	/* buck 2 */
-	{ 712500, 12500, REG_BUCK2_ON_VSEL, RK818_BUCK_VSEL_MASK, },
-	{ 1800000, 200000, REG_BUCK2_ON_VSEL, RK818_BUCK_VSEL_MASK, },
-	{ 2300000, 0, REG_BUCK2_ON_VSEL, RK818_BUCK_VSEL_MASK, },
+	{  712500,  12500, REG_BUCK2_ON_VSEL, REG_BUCK2_SLP_VSEL, RK818_BUCK_VSEL_MASK, },
+	{ 1800000, 200000, REG_BUCK2_ON_VSEL, REG_BUCK2_SLP_VSEL, RK818_BUCK_VSEL_MASK, },
+	{ 2300000,      0, REG_BUCK2_ON_VSEL, REG_BUCK2_SLP_VSEL, RK818_BUCK_VSEL_MASK, },
 	/* buck 3 */
-	{ 712500, 12500, -1, RK818_BUCK_VSEL_MASK, },
+	{ 712500, 12500, -1, -1, RK818_BUCK_VSEL_MASK, },
 	/* buck 4 */
-	{ 800000, 100000, REG_BUCK4_ON_VSEL, RK818_BUCK4_VSEL_MASK, },
+	{  800000, 100000, REG_BUCK4_ON_VSEL, REG_BUCK4_SLP_VSEL, RK818_BUCK4_VSEL_MASK, },
 };
 
 static const struct rk8xx_reg_info rk818_buck[] = {
-	{ 712500, 12500, REG_BUCK1_ON_VSEL, RK818_BUCK_VSEL_MASK, },
-	{ 712500, 12500, REG_BUCK2_ON_VSEL, RK818_BUCK_VSEL_MASK, },
-	{ 712500, 12500, -1, RK818_BUCK_VSEL_MASK, },
-	{ 1800000, 100000, REG_BUCK4_ON_VSEL, RK818_BUCK4_VSEL_MASK, },
+	{ 712500,   12500, REG_BUCK1_ON_VSEL, REG_BUCK1_SLP_VSEL, RK818_BUCK_VSEL_MASK, },
+	{ 712500,   12500, REG_BUCK2_ON_VSEL, REG_BUCK2_SLP_VSEL, RK818_BUCK_VSEL_MASK, },
+	{ 712500,   12500, -1, -1, RK818_BUCK_VSEL_MASK, },
+	{ 1800000, 100000, REG_BUCK4_ON_VSEL, REG_BUCK4_SLP_VSEL, RK818_BUCK4_VSEL_MASK, },
 };
 
 #ifdef ENABLE_DRIVER
 static const struct rk8xx_reg_info rk808_ldo[] = {
-	{ 1800000, 100000, REG_LDO1_ON_VSEL, RK808_LDO_VSEL_MASK, },
-	{ 1800000, 100000, REG_LDO2_ON_VSEL, RK808_LDO_VSEL_MASK, },
-	{ 800000, 100000, REG_LDO3_ON_VSEL, RK808_BUCK4_VSEL_MASK, },
-	{ 1800000, 100000, REG_LDO4_ON_VSEL, RK808_LDO_VSEL_MASK, },
-	{ 1800000, 100000, REG_LDO5_ON_VSEL, RK808_LDO_VSEL_MASK, },
-	{ 800000, 100000, REG_LDO6_ON_VSEL, RK808_LDO_VSEL_MASK, },
-	{ 800000, 100000, REG_LDO7_ON_VSEL, RK808_LDO_VSEL_MASK, },
-	{ 1800000, 100000, REG_LDO8_ON_VSEL, RK808_LDO_VSEL_MASK, },
+	{ 1800000, 100000, REG_LDO1_ON_VSEL, REG_LDO1_SLP_VSEL, RK808_LDO_VSEL_MASK, },
+	{ 1800000, 100000, REG_LDO2_ON_VSEL, REG_LDO2_SLP_VSEL, RK808_LDO_VSEL_MASK, },
+	{  800000, 100000, REG_LDO3_ON_VSEL, REG_LDO3_SLP_VSEL, RK808_BUCK4_VSEL_MASK, },
+	{ 1800000, 100000, REG_LDO4_ON_VSEL, REG_LDO4_SLP_VSEL, RK808_LDO_VSEL_MASK, },
+	{ 1800000, 100000, REG_LDO5_ON_VSEL, REG_LDO5_SLP_VSEL, RK808_LDO_VSEL_MASK, },
+	{  800000, 100000, REG_LDO6_ON_VSEL, REG_LDO6_SLP_VSEL, RK808_LDO_VSEL_MASK, },
+	{  800000, 100000, REG_LDO7_ON_VSEL, REG_LDO7_SLP_VSEL, RK808_LDO_VSEL_MASK, },
+	{ 1800000, 100000, REG_LDO8_ON_VSEL, REG_LDO8_SLP_VSEL, RK808_LDO_VSEL_MASK, },
 };
 
 static const struct rk8xx_reg_info rk816_ldo[] = {
-	{ 800000, 100000, REG_LDO1_ON_VSEL, RK818_LDO_VSEL_MASK, },
-	{ 800000, 100000, REG_LDO2_ON_VSEL, RK818_LDO_VSEL_MASK, },
-	{ 800000, 100000, REG_LDO3_ON_VSEL, RK818_LDO_VSEL_MASK, },
-	{ 800000, 100000, REG_LDO4_ON_VSEL, RK818_LDO_VSEL_MASK, },
-	{ 800000, 100000, REG_LDO5_ON_VSEL, RK818_LDO_VSEL_MASK, },
-	{ 800000, 100000, REG_LDO6_ON_VSEL, RK818_LDO_VSEL_MASK, },
+	{ 800000, 100000, REG_LDO1_ON_VSEL, REG_LDO1_SLP_VSEL, RK818_LDO_VSEL_MASK, },
+	{ 800000, 100000, REG_LDO2_ON_VSEL, REG_LDO2_SLP_VSEL, RK818_LDO_VSEL_MASK, },
+	{ 800000, 100000, REG_LDO3_ON_VSEL, REG_LDO3_SLP_VSEL, RK818_LDO_VSEL_MASK, },
+	{ 800000, 100000, REG_LDO4_ON_VSEL, REG_LDO4_SLP_VSEL, RK818_LDO_VSEL_MASK, },
+	{ 800000, 100000, REG_LDO5_ON_VSEL, REG_LDO5_SLP_VSEL, RK818_LDO_VSEL_MASK, },
+	{ 800000, 100000, REG_LDO6_ON_VSEL, REG_LDO6_SLP_VSEL, RK818_LDO_VSEL_MASK, },
 };
 
 static const struct rk8xx_reg_info rk818_ldo[] = {
-	{ 1800000, 100000, REG_LDO1_ON_VSEL, RK818_LDO_VSEL_MASK, },
-	{ 1800000, 100000, REG_LDO2_ON_VSEL, RK818_LDO_VSEL_MASK, },
-	{ 800000, 100000, REG_LDO3_ON_VSEL, RK818_LDO3_ON_VSEL_MASK, },
-	{ 1800000, 100000, REG_LDO4_ON_VSEL, RK818_LDO_VSEL_MASK, },
-	{ 1800000, 100000, REG_LDO5_ON_VSEL, RK818_LDO_VSEL_MASK, },
-	{ 800000, 100000, REG_LDO6_ON_VSEL, RK818_LDO_VSEL_MASK, },
-	{ 800000, 100000, REG_LDO7_ON_VSEL, RK818_LDO_VSEL_MASK, },
-	{ 1800000, 100000, REG_LDO8_ON_VSEL, RK818_LDO_VSEL_MASK, },
+	{ 1800000, 100000, REG_LDO1_ON_VSEL, REG_LDO1_SLP_VSEL, RK818_LDO_VSEL_MASK, },
+	{ 1800000, 100000, REG_LDO2_ON_VSEL, REG_LDO2_SLP_VSEL, RK818_LDO_VSEL_MASK, },
+	{  800000, 100000, REG_LDO3_ON_VSEL, REG_LDO3_SLP_VSEL, RK818_LDO3_ON_VSEL_MASK, },
+	{ 1800000, 100000, REG_LDO4_ON_VSEL, REG_LDO4_SLP_VSEL, RK818_LDO_VSEL_MASK, },
+	{ 1800000, 100000, REG_LDO5_ON_VSEL, REG_LDO5_SLP_VSEL, RK818_LDO_VSEL_MASK, },
+	{  800000, 100000, REG_LDO6_ON_VSEL, REG_LDO6_SLP_VSEL, RK818_LDO_VSEL_MASK, },
+	{  800000, 100000, REG_LDO7_ON_VSEL, REG_LDO7_SLP_VSEL, RK818_LDO_VSEL_MASK, },
+	{ 1800000, 100000, REG_LDO8_ON_VSEL, REG_LDO8_SLP_VSEL, RK818_LDO_VSEL_MASK, },
 };
 #endif
 
@@ -153,6 +153,21 @@ static int _buck_set_value(struct udevice *pmic, int buck, int uvolt)
 	return pmic_clrsetbits(pmic, info->vsel_reg, mask, val);
 }
 
+static int _buck_set_suspend_value(struct udevice *pmic, int buck, int uvolt)
+{
+	const struct rk8xx_reg_info *info = get_buck_reg(pmic, buck, uvolt);
+	int mask = info->vsel_mask;
+	int val;
+
+	if (info->vsel_sleep_reg == -1)
+		return -ENOSYS;
+	val = (uvolt - info->min_uv) / info->step_uv;
+	debug("%s: reg=%x, mask=%x, val=%x\n", __func__, info->vsel_sleep_reg, mask,
+	      val);
+
+	return pmic_clrsetbits(pmic, info->vsel_sleep_reg, mask, val);
+}
+
 static int _buck_get_enable(struct udevice *pmic, int buck)
 {
 	struct rk8xx_priv *priv = dev_get_priv(pmic);
@@ -180,7 +195,6 @@ static int _buck_get_enable(struct udevice *pmic, int buck)
 	}
 	return ret & mask ? true : false;
 }
-
 
 static int _buck_set_enable(struct udevice *pmic, int buck, bool enable)
 {
@@ -219,6 +233,33 @@ static int _buck_set_enable(struct udevice *pmic, int buck, bool enable)
 		}
 		ret = pmic_clrsetbits(pmic, REG_DCDC_EN, mask,
 				      enable ? mask : 0);
+		break;
+	default:
+		ret = -EINVAL;
+	}
+
+	return ret;
+}
+
+static int _buck_set_suspend_enable(struct udevice *pmic, int buck, bool enable)
+{
+	uint mask;
+	int ret;
+	struct rk8xx_priv *priv = dev_get_priv(pmic);
+
+	switch (priv->variant) {
+	case RK805_ID:
+	case RK816_ID:
+		mask = 1 << buck;
+		ret = pmic_clrsetbits(pmic, RK816_REG_DCDC_SLP_EN, mask,
+				      enable ? mask : 0);
+		break;
+
+	case RK808_ID:
+	case RK818_ID:
+		mask = 1 << buck;
+		ret = pmic_clrsetbits(pmic, REG_SLEEP_SET_OFF1, mask,
+				      enable ? 0 : mask);
 		break;
 	default:
 		ret = -EINVAL;
@@ -272,7 +313,6 @@ static int _ldo_get_enable(struct udevice *pmic, int ldo)
 	return ret & mask ? true : false;
 }
 
-
 static int _ldo_set_enable(struct udevice *pmic, int ldo, bool enable)
 {
 	struct rk8xx_priv *priv = dev_get_priv(pmic);
@@ -306,6 +346,30 @@ static int _ldo_set_enable(struct udevice *pmic, int ldo, bool enable)
 	return ret;
 }
 
+static int _ldo_set_suspend_enable(struct udevice *pmic, int ldo, bool enable)
+{
+	struct rk8xx_priv *priv = dev_get_priv(pmic);
+	uint mask;
+	int ret = 0;
+
+	switch (priv->variant) {
+	case RK805_ID:
+	case RK816_ID:
+		mask = 1 << ldo;
+		ret = pmic_clrsetbits(pmic, RK816_REG_LDO_SLP_EN, mask,
+				      enable ? mask : 0);
+		break;
+	case RK808_ID:
+	case RK818_ID:
+		mask = 1 << ldo;
+		ret = pmic_clrsetbits(pmic, REG_SLEEP_SET_OFF2, mask,
+				      enable ? 0 : mask);
+		break;
+	}
+
+	return ret;
+}
+
 static int buck_get_value(struct udevice *dev)
 {
 	int buck = dev->driver_data - 1;
@@ -330,11 +394,25 @@ static int buck_set_value(struct udevice *dev, int uvolt)
 	return _buck_set_value(dev->parent, buck, uvolt);
 }
 
+static int buck_set_suspend_value(struct udevice *dev, int uvolt)
+{
+	int buck = dev->driver_data - 1;
+
+	return _buck_set_suspend_value(dev->parent, buck, uvolt);
+}
+
 static int buck_set_enable(struct udevice *dev, bool enable)
 {
 	int buck = dev->driver_data - 1;
 
 	return _buck_set_enable(dev->parent, buck, enable);
+}
+
+static int buck_set_suspend_enable(struct udevice *dev, bool enable)
+{
+	int buck = dev->driver_data - 1;
+
+	return _buck_set_suspend_enable(dev->parent, buck, enable);
 }
 
 static int buck_get_enable(struct udevice *dev)
@@ -377,11 +455,34 @@ static int ldo_set_value(struct udevice *dev, int uvolt)
 	return pmic_clrsetbits(dev->parent, info->vsel_reg, mask, val);
 }
 
+static int ldo_set_suspend_value(struct udevice *dev, int uvolt)
+{
+	int ldo = dev->driver_data - 1;
+	const struct rk8xx_reg_info *info = get_ldo_reg(dev->parent, ldo);
+	int mask = info->vsel_mask;
+	int val;
+
+	if (info->vsel_sleep_reg == -1)
+		return -ENOSYS;
+	val = (uvolt - info->min_uv) / info->step_uv;
+	debug("%s: reg=%x, mask=%x, val=%x\n", __func__, info->vsel_sleep_reg, mask,
+	      val);
+
+	return pmic_clrsetbits(dev->parent, info->vsel_sleep_reg, mask, val);
+}
+
 static int ldo_set_enable(struct udevice *dev, bool enable)
 {
 	int ldo = dev->driver_data - 1;
 
 	return _ldo_set_enable(dev->parent, ldo, enable);
+}
+
+static int ldo_set_suspend_enable(struct udevice *dev, bool enable)
+{
+	int ldo = dev->driver_data - 1;
+
+	return _ldo_set_suspend_enable(dev->parent, ldo, enable);
 }
 
 static int ldo_get_enable(struct udevice *dev)
@@ -456,15 +557,19 @@ static int rk8xx_switch_probe(struct udevice *dev)
 static const struct dm_regulator_ops rk8xx_buck_ops = {
 	.get_value  = buck_get_value,
 	.set_value  = buck_set_value,
+	.set_suspend_value = buck_set_suspend_value,
 	.get_enable = buck_get_enable,
 	.set_enable = buck_set_enable,
+	.set_suspend_enable = buck_set_suspend_enable,
 };
 
 static const struct dm_regulator_ops rk8xx_ldo_ops = {
 	.get_value  = ldo_get_value,
 	.set_value  = ldo_set_value,
+	.set_suspend_value = ldo_set_suspend_value,
 	.get_enable = ldo_get_enable,
 	.set_enable = ldo_set_enable,
+	.set_suspend_enable = ldo_set_suspend_enable,
 };
 
 static const struct dm_regulator_ops rk8xx_switch_ops = {
