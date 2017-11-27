@@ -310,6 +310,12 @@ config ROCKCHIP_VENDOR_PARTITION
           This enable support to read/write vendor configuration data from/to
 	  this partition
 
+config ROCKCHIP_SMCCC
+	bool "Rockchip SMCCC"
+	default y if ARM_SMCCC
+	help
+	  This enable support for Rockchip SMC calls
+
 config GICV2
 	bool "ARM GICv2"
 
