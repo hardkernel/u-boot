@@ -55,6 +55,23 @@ int regulator_set_value(struct udevice *dev, int uV)
 	return ops->set_value(dev, uV);
 }
 
+int regulator_set_suspend_value(struct udevice *dev, int uV)
+{
+	const struct dm_regulator_ops *ops = dev_get_driver_ops(dev);
+	struct dm_regulator_uclass_platdata *uc_pdata;
+
+	uc_pdata = dev_get_uclass_platdata(dev);
+	if (uc_pdata->min_uV != -ENODATA && uV < uc_pdata->min_uV)
+		return -EINVAL;
+	if (uc_pdata->max_uV != -ENODATA && uV > uc_pdata->max_uV)
+		return -EINVAL;
+
+	if (!ops || !ops->set_suspend_value)
+		return -ENOSYS;
+
+	return ops->set_suspend_value(dev, uV);
+}
+
 /*
  * To be called with at most caution as there is no check
  * before setting the actual voltage value.
@@ -114,6 +131,16 @@ int regulator_set_enable(struct udevice *dev, bool enable)
 		return -ENOSYS;
 
 	return ops->set_enable(dev, enable);
+}
+
+int regulator_set_suspend_enable(struct udevice *dev, bool enable)
+{
+	const struct dm_regulator_ops *ops = dev_get_driver_ops(dev);
+
+	if (!ops || !ops->set_suspend_enable)
+		return -ENOSYS;
+
+	return ops->set_suspend_enable(dev, enable);
 }
 
 int regulator_get_mode(struct udevice *dev)
@@ -181,6 +208,11 @@ int regulator_autoset(struct udevice *dev)
 	int ret = 0;
 
 	uc_pdata = dev_get_uclass_platdata(dev);
+
+	ret = regulator_set_suspend_enable(dev, uc_pdata->suspend_on);
+	if (!ret && uc_pdata->suspend_on)
+		ret = regulator_set_suspend_value(dev, uc_pdata->suspend_uV);
+
 	if (!uc_pdata->always_on && !uc_pdata->boot_on)
 		return -EMEDIUMTYPE;
 
@@ -306,6 +338,7 @@ static int regulator_post_bind(struct udevice *dev)
 static int regulator_pre_probe(struct udevice *dev)
 {
 	struct dm_regulator_uclass_platdata *uc_pdata;
+	ofnode node;
 
 	uc_pdata = dev_get_uclass_platdata(dev);
 	if (!uc_pdata)
@@ -322,6 +355,16 @@ static int regulator_pre_probe(struct udevice *dev)
 						-ENODATA);
 	uc_pdata->always_on = dev_read_bool(dev, "regulator-always-on");
 	uc_pdata->boot_on = dev_read_bool(dev, "regulator-boot-on");
+
+	node = dev_read_subnode(dev, "regulator-state-mem");
+	if (ofnode_valid(node)) {
+		uc_pdata->suspend_on = !ofnode_read_bool(node, "regulator-off-in-suspend");
+		if (ofnode_read_u32(node, "regulator-suspend-microvolt", &uc_pdata->suspend_uV))
+			uc_pdata->suspend_uV = uc_pdata->max_uA;
+	} else {
+		uc_pdata->suspend_on = true;
+		uc_pdata->suspend_uV = uc_pdata->max_uA;
+	}
 
 	/* Those values are optional (-ENODATA if unset) */
 	if ((uc_pdata->min_uV != -ENODATA) &&
