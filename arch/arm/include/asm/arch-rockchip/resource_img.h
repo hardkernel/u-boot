@@ -16,4 +16,6 @@
  */
 int rockchip_read_resource_file(void *buf, const char *name,
 				int offset, int len);
+int rockchip_get_resource_file(void *buf, const char *name);
+
 #endif

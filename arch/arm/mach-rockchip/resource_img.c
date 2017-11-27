@@ -7,8 +7,11 @@
 #include <malloc.h>
 #include <linux/list.h>
 #include <asm/arch/resource_img.h>
-#include "rockchip_parameter.h"
-#include "rockchip_blk.h"
+#include <boot_rkimg.h>
+#ifdef CONFIG_ANDROID_BOOT_IMAGE
+#include <android_bootloader.h>
+#include <android_image.h>
+#endif
 
 #define PART_RESOURCE			"resource"
 #define RESOURCE_MAGIC			"RSCE"
@@ -90,9 +93,8 @@ struct resource_file {
 	uint32_t	f_offset;
 	uint32_t	f_size;
 	struct list_head link;
+	uint32_t 	rsce_base;	/* Base addr of resource */
 };
-
-static struct blk_part *rsce_blk;
 
 static LIST_HEAD(entrys_head);
 
@@ -117,7 +119,7 @@ static int resource_image_check_header(const struct resource_img_hdr *hdr)
 	return ret;
 }
 
-static int add_file_to_list(struct resource_entry *entry)
+static int add_file_to_list(struct resource_entry *entry, int rsce_base)
 {
 	struct resource_file *file;
 
@@ -131,6 +133,7 @@ static int add_file_to_list(struct resource_entry *entry)
 		return -ENOMEM;
 	}
 	strcpy(file->name, entry->name);
+	file->rsce_base = rsce_base;
 	file->f_offset = entry->f_offset;
 	file->f_size = entry->f_size;
 	list_add_tail(&file->link, &entrys_head);
@@ -140,28 +143,72 @@ static int add_file_to_list(struct resource_entry *entry)
 	return 0;
 }
 
-static int read_file_info_from_blk_dev(void)
+static int init_resource_list(struct resource_img_hdr *hdr)
 {
-	struct resource_img_hdr *hdr;
 	struct resource_entry *entry;
 	void *content;
 	int size;
 	int ret;
 	int e_num;
+	int offset = 0;
+	int mode = 0;
+	struct blk_desc *dev_desc;
+	struct andr_img_hdr *andr_hdr;
+	disk_partition_t part_info;
+	char *boot_partname = PART_BOOT;
 
-	rsce_blk = rockchip_get_blk_part(PART_RESOURCE);
-	if (!rsce_blk) {
-		printf("no resource partition found\n");
-		return  -ENODEV;
+	if (hdr) {
+		content = (void *)(hdr + hdr->c_offset);
+		goto init_list;
 	}
 
+	dev_desc = rockchip_get_bootdev();
 	hdr = memalign(ARCH_DMA_MINALIGN, RK_BLK_SIZE);
 	if (!hdr) {
-		printf("out of memory!\n");
+		printf("%s out of memory!\n", __func__);
 		return -ENOMEM;
 	}
 
-	ret = blkdev_read(hdr, rsce_blk->from, 1);
+#ifdef CONFIG_ANDROID_BOOT_IMAGE
+	/* Get boot mode from misc */
+	mode = rockchip_get_boot_mode();
+	if (mode == BOOT_MODE_RECOVERY)
+		boot_partname = PART_RECOVERY;
+	/* Read boot/recovery and chenc if this is an AOSP img */
+	ret = part_get_info_by_name(dev_desc, boot_partname,
+					 &part_info);
+	if (ret < 0)
+		printf("fail to get %s part\n", boot_partname);
+	andr_hdr = (void *)hdr;
+	ret = blk_dread(dev_desc, part_info.start, 1, andr_hdr);
+	if (ret != 1)
+		printf("%s read fail\n", __func__);
+	ret = android_image_check_header(andr_hdr);
+	if (!ret) {
+		debug("%s Load resource from %s senond pos\n",
+		      __func__, part_info.name);
+		/* Read resource from second offset */
+		offset = part_info.start;
+		offset += andr_hdr->page_size;
+		offset += ALIGN(andr_hdr->kernel_size, andr_hdr->page_size);
+		offset += ALIGN(andr_hdr->ramdisk_size, andr_hdr->page_size);
+	} else {
+		/* Set mode to 0 in for recovery is not valid AOSP img */
+		mode = 0;
+	}
+#endif
+	if (!mode) {
+		/* Read resource from Rockchip Resource partition */
+		ret = part_get_info_by_name(dev_desc, PART_RESOURCE,
+					 &part_info);
+		if (ret < 0)
+			printf("fail to get %s part\n", PART_RESOURCE);
+		offset = part_info.start;
+		debug("%s Load resource from %s\n", __func__, part_info.name);
+	}
+
+	hdr = (void *)andr_hdr;
+	ret = blk_dread(dev_desc, offset, 1, hdr);
 	if (ret < 0)
 		goto out;
 	ret = resource_image_check_header(hdr);
@@ -173,15 +220,16 @@ static int read_file_info_from_blk_dev(void)
 		printf("alloc memory for content failed\n");
 		goto out;
 	}
-	ret = blkdev_read(content, rsce_blk->from + hdr->c_offset,
-			  hdr->e_blks * hdr->e_nums);
+	ret = blk_dread(dev_desc, offset + hdr->c_offset,
+			hdr->e_blks * hdr->e_nums, content);
 	if (ret < 0)
 		goto err;
 
+init_list:
 	for (e_num = 0; e_num < hdr->e_nums; e_num++) {
 		size = e_num * hdr->e_blks * RK_BLK_SIZE;
 		entry = (struct resource_entry *)(content + size);
-		add_file_to_list(entry);
+		add_file_to_list(entry, offset);
 	}
 
 err:
@@ -193,14 +241,13 @@ out:
 }
 
 static struct resource_file *get_file_info(struct resource_img_hdr *hdr,
-					   const void *content,
 					   const char *name)
 {
 	struct resource_file *file;
 	struct list_head *node;
 
 	if (list_empty(&entrys_head))
-		read_file_info_from_blk_dev();
+		init_resource_list(hdr);
 
 	list_for_each(node, &entrys_head) {
 		file = list_entry(node, struct resource_file, link);
@@ -209,6 +256,15 @@ static struct resource_file *get_file_info(struct resource_img_hdr *hdr,
 	}
 
 	return NULL;
+}
+
+int rockchip_get_resource_file(void *buf, const char *name)
+{
+	struct resource_file *file;
+
+	file = get_file_info(buf, name);
+
+	return file->f_offset;
 }
 
 /*
@@ -224,8 +280,9 @@ int rockchip_read_resource_file(void *buf, const char *name,
 	struct resource_file *file;
 	int ret = 0;
 	int blks;
+	struct blk_desc *dev_desc;
 
-	file = get_file_info(NULL, NULL, name);
+	file = get_file_info(NULL, name);
 	if (!file) {
 		printf("Can't find file:%s\n", name);
 		return -ENOENT;
@@ -234,7 +291,9 @@ int rockchip_read_resource_file(void *buf, const char *name,
 	if (len <= 0 || len > file->f_size)
 		len = file->f_size;
 	blks = DIV_ROUND_UP(len, RK_BLK_SIZE);
-	ret = blkdev_read(buf, rsce_blk->from + file->f_offset + offset, blks);
+	dev_desc = rockchip_get_bootdev();
+	ret = blk_dread(dev_desc, file->rsce_base + file->f_offset + offset,
+			blks, buf);
 	if (!ret)
 		ret = len;
 

@@ -313,7 +313,7 @@ config ROCKCHIP_PARAM
 
 config ROCKCHIP_RESOURCE_IMAGE
 	bool "Enable support for rockchip resource image"
-	depends on ROCKCHIP_PARAM
+	depends on RKIMG_BOOTLOADER
 	help
 	  This enables support to get dtb or logo files from
 	  rockchip resource image format partition.
