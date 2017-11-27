@@ -47,6 +47,8 @@ enum {
 struct irq_chip {
 	const char	*name;
 	int		(*irq_init)(void);
+	int		(*irq_suspend)(void);
+	int		(*irq_resume)(void);
 	int		(*irq_get)(void);
 	int		(*irq_enable)(int irq);
 	int		(*irq_disable)(int irq);
@@ -61,6 +63,8 @@ void irq_free_handler(int irq);
 int irq_set_irq_type(int irq, unsigned int type);
 int irq_handler_enable(int irq);
 int irq_handler_disable(int irq);
+int irqs_suspend(void);
+int irqs_resume(void);
 int gpio_to_irq(struct gpio_desc *gpio);
 
 /*

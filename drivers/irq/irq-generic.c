@@ -180,6 +180,32 @@ void irq_free_handler(int irq)
 	irqs_desc[irq].data = NULL;
 }
 
+int irqs_suspend(void)
+{
+	int err;
+
+	err = gic_irq_chip->irq_suspend();
+	if (err) {
+		printf("ERROR: irqs suspend failed\n");
+		return err;
+	}
+
+	return 0;
+}
+
+int irqs_resume(void)
+{
+	int err;
+
+	err = gic_irq_chip->irq_resume();
+	if (err) {
+		printf("ERROR: irqs resume failed\n");
+		return err;
+	}
+
+	return 0;
+}
+
 #ifdef CONFIG_ARM64
 static void cpu_local_irq_enable(void)
 {

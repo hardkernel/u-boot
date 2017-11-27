@@ -10,6 +10,11 @@
 #include <irq-generic.h>
 #include "irq-gic.h"
 
+#define gicd_readl(offset)	readl(GICD_BASE + (offset))
+#define gicc_readl(offset)	readl(GICC_BASE + (offset))
+#define gicd_writel(v, offset)	writel(v, GICD_BASE + (offset))
+#define gicc_writel(v, offset)	writel(v, GICC_BASE + (offset))
+
 typedef enum INT_TRIG {
 	INT_LEVEL_TRIGGER,
 	INT_EDGE_TRIGGER
@@ -243,6 +248,112 @@ static int gic_irq_get(void)
 #endif
 }
 
+struct gic_dist_data {
+	uint32_t ctlr;
+	uint32_t icfgr[DIV_ROUND_UP(1020, 16)];
+	uint32_t itargetsr[DIV_ROUND_UP(1020, 4)];
+	uint32_t ipriorityr[DIV_ROUND_UP(1020, 4)];
+	uint32_t igroupr[DIV_ROUND_UP(1020, 32)];
+	uint32_t ispendr[DIV_ROUND_UP(1020, 32)];
+	uint32_t isenabler[DIV_ROUND_UP(1020, 32)];
+};
+
+struct gic_cpu_data {
+	uint32_t ctlr;
+	uint32_t pmr;
+};
+
+static struct gic_dist_data gicd_save;
+static struct gic_cpu_data gicc_save;
+
+#define IRQ_REG_X4(irq)		(4 * ((irq) / 4))
+#define IRQ_REG_X16(irq)	(4 * ((irq) / 16))
+#define IRQ_REG_X32(irq)	(4 * ((irq) / 32))
+
+static int gic_irq_suspend(void)
+{
+	int irq_nr, i, irq;
+
+	/* irq nr */
+	irq_nr = ((gicd_readl(GICD_TYPER) & 0x1f) + 1) * 32;
+	if (irq_nr > 1020)
+		irq_nr = 1020;
+
+	/* GICC save */
+	gicc_save.ctlr = gicc_readl(GICC_CTLR);
+	gicc_save.pmr = gicc_readl(GICC_PMR);
+
+	/* GICD save */
+	gicd_save.ctlr = gicd_readl(GICD_CTLR);
+
+	for (i = 0, irq = 0; irq < irq_nr; irq += 16)
+		gicd_save.icfgr[i++] = gicd_readl(GICD_ICFGR + IRQ_REG_X16(irq));
+
+	for (i = 0, irq = 0; irq < irq_nr; irq += 4)
+		gicd_save.itargetsr[i++] = gicd_readl(GICD_ITARGETSRn + IRQ_REG_X4(irq));
+
+	for (i = 0, irq = 0; irq < irq_nr; irq += 4)
+		gicd_save.ipriorityr[i++] = gicd_readl(GICD_IPRIORITYRn + IRQ_REG_X4(irq));
+
+	for (i = 0, irq = 0; irq < irq_nr; irq += 32)
+		gicd_save.igroupr[i++] = gicd_readl(GICD_IGROUPRn + IRQ_REG_X32(irq));
+
+	for (i = 0, irq = 0; irq < irq_nr; irq += 32)
+		gicd_save.ispendr[i++] = gicd_readl(GICD_ISPENDRn + IRQ_REG_X32(irq));
+
+	for (i = 0, irq = 0; irq < irq_nr; irq += 32)
+		gicd_save.isenabler[i++] = gicd_readl(GICD_ISENABLERn + IRQ_REG_X32(irq));
+
+	dsb();
+
+	return 0;
+}
+
+static int gic_irq_resume(void)
+{
+	int irq_nr, i, irq;
+
+	irq_nr = ((gicd_readl(GICD_TYPER) & 0x1f) + 1) * 32;
+	if (irq_nr > 1020)
+		irq_nr = 1020;
+
+	/* Disable ctrl register */
+	gicc_writel(0, GICC_CTLR);
+	gicd_writel(0, GICD_CTLR);
+	dsb();
+
+	/* Clear all interrupt */
+	for (i = 0, irq = 0; irq < irq_nr; irq += 32)
+		gicd_writel(0xffffffff, GICD_ICENABLERn + IRQ_REG_X32(irq));
+
+	for (i = 0, irq = 0; irq < irq_nr; irq += 16)
+		gicd_writel(gicd_save.icfgr[i++], GICD_ICFGR + IRQ_REG_X16(irq));
+
+	for (i = 0, irq = 0; irq < irq_nr; irq += 4)
+		gicd_writel(gicd_save.itargetsr[i++], GICD_ITARGETSRn + IRQ_REG_X4(irq));
+
+	for (i = 0, irq = 0; irq < irq_nr; irq += 4)
+		gicd_writel(gicd_save.ipriorityr[i++], GICD_IPRIORITYRn + IRQ_REG_X4(irq));
+
+	for (i = 0, irq = 0; irq < irq_nr; irq += 32)
+		gicd_writel(gicd_save.igroupr[i++], GICD_IGROUPRn + IRQ_REG_X32(irq));
+
+	for (i = 0, irq = 0; irq < irq_nr; irq += 32)
+		gicd_writel(gicd_save.isenabler[i++], GICD_ISENABLERn + IRQ_REG_X32(irq));
+
+	for (i = 0, irq = 0; irq < irq_nr; irq += 32)
+		gicd_writel(gicd_save.ispendr[i++], GICD_ISPENDRn + IRQ_REG_X32(irq));
+	dsb();
+
+	gicc_writel(gicc_save.pmr, GICC_PMR);
+	gicc_writel(gicc_save.ctlr, GICC_CTLR);
+	gicd_writel(gicd_save.ctlr, GICD_CTLR);
+	dsb();
+
+	return 0;
+}
+
+/**************************************regs save and resume**************************/
 static int gic_irq_init(void)
 {
 	/* GICV3 done in: arch/arm/cpu/armv8/start.S */
@@ -276,6 +387,8 @@ static int gic_irq_init(void)
 static struct irq_chip gic_irq_chip = {
 	.name		= "gic-irq-chip",
 	.irq_init	= gic_irq_init,
+	.irq_suspend	= gic_irq_suspend,
+	.irq_resume	= gic_irq_resume,
 	.irq_get	= gic_irq_get,
 	.irq_enable	= gic_irq_enable,
 	.irq_disable	= gic_irq_disable,
