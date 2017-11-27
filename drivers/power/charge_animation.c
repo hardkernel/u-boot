@@ -4,12 +4,15 @@
  * SPDX-License-Identifier:     GPL-2.0+
  */
 
+#include <asm/suspend.h>
+#include <asm/arch/rockchip_smccc.h>
 #include <asm/arch/bootrkp.h>
 #include <common.h>
 #include <console.h>
 #include <dm.h>
 #include <errno.h>
 #include <key.h>
+#include <irq-generic.h>
 #include <linux/input.h>
 #include <pwm.h>
 #include <power/charge_display.h>
@@ -21,14 +24,7 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
-#define LONG_PRESSED_TIME			2000 /* 2s */
 #define IMAGE_SHOW_RESET			-1
-
-enum key_event {
-	KEY_NOT_PRESSED = 0,
-	KEY_SHORT_PRESSED,
-	KEY_LONG_PRESSED,
-};
 
 struct charge_image {
 	const char *name;
@@ -167,60 +163,61 @@ static int charge_animation_ofdata_to_platdata(struct udevice *dev)
 	return 0;
 }
 
-static int check_key_press(struct udevice *dev, bool restar_time)
+static int check_key_press(struct udevice *dev)
 {
-	static unsigned long pressed_time;
-	static int old_state;
-	int report = KEY_NOT_PRESSED;
-	int state;
-
-	/* just for restart time */
-	if (restar_time) {
-		pressed_time = get_timer(0);
-		goto out;
-	}
+	u32 state;
 
 	state = key_read(dev);
-	if (state < 0) {
+	if (state < 0)
 		printf("read power key failed: %d\n", state);
-		goto out;
-	}
 
-	/* Start time is not initialized, let's do it */
-	if (!pressed_time && (state == KEY_PRESS_DOWN)) {
-		pressed_time = get_timer(0);
-		return KEY_NOT_PRESSED;
-	} else {
-		debug("key state = %d\n", state);
+	if (state == KEY_PRESS_LONG_DOWN)
+		printf("power key long pressed...\n");
+	else if (state == KEY_PRESS_DOWN)
+		printf("power key short pressed...\n");
 
-		if (state == KEY_PRESS_DOWN) {
-			if (get_timer(pressed_time) >= LONG_PRESSED_TIME) {
-				report = KEY_LONG_PRESSED;
-				pressed_time = 0;
-				old_state = KEY_LONG_PRESSED;
-				printf("power key long pressed...\n");
-			}
+	return state;
+}
+
+static int system_suspend_enter(void)
+{
+	/*
+	 * TODO: enter low power mode:
+	 * 3. auto turn off screen when timout;
+	 * 4. power key wakeup;
+	 * 5. timer period wakeup for pmic fg ?
+	 */
+	if (IS_ENABLED(CONFIG_ARM_SMCCC)) {
+		printf("\nSystem suspend: ");
+		putc('1');
+		local_irq_disable();
+		putc('2');
+		irqs_suspend();
+		putc('3');
+		putc('\n');
+
+		/* Trap into ATF for low power mode */
+		cpu_suspend(0, psci_system_suspend);
+
+		putc('\n');
+		putc('3');
+		irqs_resume();
+		putc('2');
+		local_irq_enable();
+		putc('1');
+		putc('\n');
+
 		/*
-		 * If you don't check 'old_state != KEY_LONG_PRESSED', it will
-		 * treat 'key long pressed' release as a 'short key pressed'
-		 * release.
+		 * We must wait for key release event finish, otherwise
+		 * we may read key state too early.
 		 */
-		} else if ((state == KEY_PRESS_UP) &&
-			   (old_state != KEY_LONG_PRESSED)) {
-			report = KEY_SHORT_PRESSED;
-			old_state = report;
-			pressed_time = 0;
-			printf("power key short pressed...\n");
-		} else {
-			report = KEY_NOT_PRESSED;
-			old_state = report;
-			pressed_time = 0;
-			debug("power key Not pressed...\n");
-		}
+		mdelay(300);
+	} else {
+		printf("\nWfi\n");
+		wfi();
 	}
 
-out:
-	return report;
+	return 0;
 }
 
 static int charge_animation_show(struct udevice *dev)
@@ -379,15 +376,7 @@ static int charge_animation_show(struct udevice *dev)
 			debug("SHOW: %s\n", image[show_idx].name);
 			rockchip_show_bmp(image[show_idx].name);
 		} else {
-			/*
-			 * TODO: enter low power mode:
-			 *
-			 * 1. cut off some regualtors;
-			 * 2. set 24MHZ for some PLLs;
-			 * 3. auto turn off screen when timout;
-			 * 4. power key wakeup;
-			 * 5. timer period wakeup for pmic fg ?
-			 */
+			system_suspend_enter();
 		}
 
 		mdelay(5);
@@ -409,8 +398,8 @@ static int charge_animation_show(struct udevice *dev)
 		 * Short key event: turn on/off screen;
 		 * Long key event: show logo and boot system or still charging.
 		 */
-		key_state = check_key_press(pwrkey, false);
-		if (key_state == KEY_SHORT_PRESSED) {
+		key_state = check_key_press(pwrkey);
+		if (key_state == KEY_PRESS_DOWN) {
 			/* NULL means show nothing, ie. turn off screen */
 			if (screen_on)
 				rockchip_show_bmp(NULL);
@@ -435,7 +424,7 @@ static int charge_animation_show(struct udevice *dev)
 				screen_on = false;
 			else
 				screen_on = true;
-		} else if (key_state == KEY_LONG_PRESSED) {
+		} else if (key_state == KEY_PRESS_LONG_DOWN) {
 			/* Only long pressed while screen off needs screen_on true */
 			if (!screen_on)
 				screen_on = true;
@@ -445,8 +434,6 @@ static int charge_animation_show(struct udevice *dev)
 				printf("soc=%d%%, threshold soc=%d%%\n",
 				       soc, pdata->power_on_soc_threshold);
 				printf("Low power, unable to boot, charging...\n");
-				/* 'true': just for clear time of check key */
-				check_key_press(pwrkey, true);
 				show_idx = image_num - 1;
 				continue;
 			}
@@ -455,8 +442,6 @@ static int charge_animation_show(struct udevice *dev)
 				printf("voltage=%dmv, threshold voltage=%dmv\n",
 				       voltage, pdata->power_on_voltage_threshold);
 				printf("Low power, unable to boot, charging...\n");
-				/* 'true': just for clear time of check key */
-				check_key_press(pwrkey, true);
 				show_idx = image_num - 1;
 				continue;
 			}
