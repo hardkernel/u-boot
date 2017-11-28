@@ -7,10 +7,13 @@
 #ifndef _KEY_H_
 #define _KEY_H_
 
+#define KEY_LONG_DOWN_MS	2000
+
 enum key_state {
 	KEY_PRESS_NONE,
 	KEY_PRESS_UP,
 	KEY_PRESS_DOWN,
+	KEY_PRESS_LONG_DOWN,
 };
 
 struct dm_key_ops {
