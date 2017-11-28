@@ -556,7 +556,7 @@ static int rk3368_clk_bind(struct udevice *dev)
 		sf_child->priv = sf_priv;
 	}
 
-	return ret;
+	return 0;
 }
 
 static const struct udevice_id rk3368_clk_ids[] = {
