@@ -24,7 +24,26 @@ select_toolchain()
 	fi
 	echo toolchain: ${TOOLCHAIN}
 }
+
+pack_images()
+{
+	local sys_text_base dst
+
+	dst=../rkbin/tools
+	if [ -d ${dst} ]; then
+		path=$(cd `dirname ${dst}`; pwd)
+	else
+		echo "Can't find '../rkbin/' or '../rkbin/tools/' Responsity, please download it before pack image!"
+		exit 1
+	fi
+
+	sys_text_base=`sed -n "/CONFIG_SYS_TEXT_BASE=/s/CONFIG_SYS_TEXT_BASE=//p" ${DSTDIR}/out/include/autoconf.mk|tr -d '\r'`
+	echo U-Boot entry point address: ${sys_text_base}
+	${path}/tools/loaderimage --pack --uboot ${DSTDIR}/out/u-boot.bin uboot.img ${sys_text_base}
+}
+
 echo "make for ${BOARD}_defconfig by -j${JOB}"
 make ${BOARD}_defconfig O=${DSTDIR}/out
 select_toolchain
 make CROSS_COMPILE=${TOOLCHAIN}  all --jobs=${JOB} O=${DSTDIR}/out
+pack_images
