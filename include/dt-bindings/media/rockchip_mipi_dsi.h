@@ -7,6 +7,8 @@
 #ifndef __ROCKCHIP_MIPI_DSI_H__
 #define __ROCKCHIP_MIPI_DSI_H__
 
+#define BIT(nr)			(1UL << (nr))
+
 /* request ACK from peripheral */
 #define MIPI_DSI_MSG_REQ_ACK	BIT(0)
 /* use Low Power Mode to transmit message */
@@ -39,10 +41,15 @@
 /* transmit data in low power */
 #define MIPI_DSI_MODE_LPM		BIT(11)
 
-#define MIPI_DSI_DCS_POWER_MODE_DISPLAY (1 << 2)
-#define MIPI_DSI_DCS_POWER_MODE_NORMAL  (1 << 3)
-#define MIPI_DSI_DCS_POWER_MODE_SLEEP   (1 << 4)
-#define MIPI_DSI_DCS_POWER_MODE_PARTIAL (1 << 5)
-#define MIPI_DSI_DCS_POWER_MODE_IDLE    (1 << 6)
+#define MIPI_DSI_DCS_POWER_MODE_DISPLAY	BIT(2)
+#define MIPI_DSI_DCS_POWER_MODE_NORMAL	BIT(3)
+#define MIPI_DSI_DCS_POWER_MODE_SLEEP	BIT(4)
+#define MIPI_DSI_DCS_POWER_MODE_PARTIAL	BIT(5)
+#define MIPI_DSI_DCS_POWER_MODE_IDLE	BIT(6)
+
+#define MIPI_DSI_FMT_RGB888		0
+#define MIPI_DSI_FMT_RGB666		1
+#define MIPI_DSI_FMT_RGB666_PACKED	2
+#define MIPI_DSI_FMT_RGB565		3
 
 #endif /* __ROCKCHIP_MIPI_DSI__ */
