@@ -22,6 +22,16 @@ config ROCKCHIP_RK3128
 	  and video codec support. Peripherals include Gigabit Ethernet,
 	  USB2 host and OTG, SDIO, I2S, UART, SPI, I2C and PWMs.
 
+if ROCKCHIP_RK3128
+
+config ROCKCHIP_RK3126
+	bool "Support Rockchip RK3126 "
+	help
+	  RK3126 can use most code from RK3128, but at some situations we have
+	  to distinguish between RK3126 and RK3128, so this macro gives help.
+	  It is usually selected in rk3126 board defconfig.
+endif
+
 config ROCKCHIP_RK3066
 	bool "Support Rockchip RK3066"
 	select CPU_V7
