@@ -298,31 +298,12 @@ config RKIMG_BOOTLOADER
 	  with dtb and uboot/kernel logo bmp, vendor storage for custom info
 	  like SN and MAC address.
 
-config ROCKCHIP_BLOCK_API
-	bool "Rockchip block device api support"
-	help
-	  This enable read access to block device on
-	  rockchip platform.
-
-config ROCKCHIP_PARAM
-	bool "Rockchip parameter support"
-	depends on ROCKCHIP_BLOCK_API
-	help
-	  This enable support to get partition from rockchip
-	  parameter
-
 config ROCKCHIP_RESOURCE_IMAGE
 	bool "Enable support for rockchip resource image"
 	depends on RKIMG_BOOTLOADER
 	help
 	  This enables support to get dtb or logo files from
 	  rockchip resource image format partition.
-
-config ROCKCHIP_PARTITION_BOOT
-	bool "Enable support for booting system from rockchip format partition"
-	depends on ROCKCHIP_RESOURCE_IMAGE
-	help
-	  This enables support for bootimg system from rockchip format partition
 
 config ROCKCHIP_VENDOR_PARTITION
 	bool "Rockchip vendor storage partition support"

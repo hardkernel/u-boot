@@ -32,12 +32,8 @@ obj-y += boot_mode.o
 endif
 
 obj-$(CONFIG_ROCKCHIP_SMCCC) += rockchip_smccc.o
-
-obj-$(CONFIG_ROCKCHIP_BLOCK_API) += blk.o
 obj-$(CONFIG_ROCKCHIP_VENDOR_PARTITION) += vendor.o
-obj-$(CONFIG_ROCKCHIP_PARAM) += rockchip_parameter.o
 obj-$(CONFIG_ROCKCHIP_RESOURCE_IMAGE) += resource_img.o
-obj-$(CONFIG_ROCKCHIP_PARTITION_BOOT) += bootrkp.o
 obj-$(CONFIG_ROCKCHIP_RK3066) += rk3066-board.o
 obj-$(CONFIG_ROCKCHIP_RK3188) += rk3188-board.o
 obj-$(CONFIG_ROCKCHIP_RK3128) += rk3128-board.o
