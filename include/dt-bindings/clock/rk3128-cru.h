@@ -44,6 +44,7 @@
 #define SCLK_PVTM_CORE          123
 #define SCLK_PVTM_GPU           124
 #define SCLK_PVTM_VIDEO         125
+#define SCLK_MIPI_24M           148
 #define SCLK_MAC		151
 #define SCLK_MACREF		152
 #define SCLK_SFC		160
@@ -64,6 +65,7 @@
 #define PCLK_GPIO1		321
 #define PCLK_GPIO2		322
 #define PCLK_GPIO3		323
+#define PCLK_MIPI               325
 #define PCLK_GRF		329
 #define PCLK_I2C0		332
 #define PCLK_I2C1		333
@@ -80,6 +82,7 @@
 #define PCLK_PERI		363
 #define PCLK_DDRUPCTL		364
 #define PCLK_WDT		368
+#define PCLK_MIPIPHY            370
 
 /* hclk gates */
 #define HCLK_OTG0		449
@@ -91,6 +94,7 @@
 #define HCLK_I2S		462
 #define HCLK_LCDC		465
 #define HCLK_ROM		467
+#define HCLK_VIO_H2P            469
 #define HCLK_VIO_BUS		472
 #define HCLK_VCODEC		476
 #define HCLK_CPU		477
@@ -129,6 +133,7 @@
 #define SRST_GPIO0		32
 #define SRST_GPIO1		33
 #define SRST_GPIO2		34
+#define SRST_MIPIPHY_P          36
 #define SRST_UART0		39
 #define SRST_UART1		40
 #define SRST_UART2		41
@@ -186,5 +191,6 @@
 #define SRST_GPU_NIU_A		122
 
 #define SRST_DBG_P		131
+#define SRST_VIO_MIPI_DSI       137
 
 #endif
