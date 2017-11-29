@@ -146,7 +146,7 @@ static int rknand_blk_probe(struct udevice *udev)
 	sprintf(desc->vendor, "0x%.4x", 0x2207);
 	memcpy(desc->product, "rknand", sizeof("rknand"));
 	memcpy(desc->revision, "V1.00", sizeof("V1.00"));
-	/* part_init(desc); */
+	part_init(desc);
 	return 0;
 }
 
