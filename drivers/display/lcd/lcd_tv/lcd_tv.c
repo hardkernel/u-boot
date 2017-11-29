@@ -358,10 +358,12 @@ static int lcd_config_load_from_dts(char *dt_addr, struct lcd_config_s *pconf)
 		pconf->lcd_timing.fr_adjust_type = 0;
 		pconf->lcd_timing.ss_level = 0;
 		pconf->lcd_timing.clk_auto = 1;
+		pconf->lcd_timing.lcd_clk = 60;
 	} else {
 		pconf->lcd_timing.fr_adjust_type = (unsigned char)(be32_to_cpup((u32*)propdata));
 		pconf->lcd_timing.ss_level = (unsigned char)(be32_to_cpup((((u32*)propdata)+1)));
 		pconf->lcd_timing.clk_auto = (unsigned char)(be32_to_cpup((((u32*)propdata)+2)));
+		pconf->lcd_timing.lcd_clk = (unsigned char)(be32_to_cpup((((u32*)propdata)+3)));
 	}
 
 	switch (pconf->lcd_basic.lcd_type) {
@@ -816,6 +818,10 @@ static int lcd_config_load_from_unifykey(struct lcd_config_s *pconf)
 	pconf->lcd_timing.fr_adjust_type = *(p + LCD_UKEY_FR_ADJ_TYPE);
 	pconf->lcd_timing.ss_level = *(p + LCD_UKEY_SS_LEVEL);
 	pconf->lcd_timing.clk_auto = *(p + LCD_UKEY_CLK_AUTO_GEN);
+	pconf->lcd_timing.lcd_clk = (*(p + LCD_UKEY_PCLK) |
+		((*(p + LCD_UKEY_PCLK + 1)) << 8) |
+		((*(p + LCD_UKEY_PCLK + 2)) << 16) |
+		((*(p + LCD_UKEY_PCLK + 3)) << 24));
 	pconf->lcd_basic.h_period_min = (*(p + LCD_UKEY_H_PERIOD_MIN) |
 		((*(p + LCD_UKEY_H_PERIOD_MIN + 1)) << 8));
 	pconf->lcd_basic.h_period_max = (*(p + LCD_UKEY_H_PERIOD_MAX) |
@@ -1011,13 +1017,21 @@ static void lcd_config_init(struct lcd_config_s *pconf)
 	unsigned int ss_level;
 	unsigned int clk;
 
-	clk = pconf->lcd_basic.h_period * pconf->lcd_basic.v_period * 60;
-	pconf->lcd_timing.lcd_clk = clk;
+	if (pconf->lcd_timing.lcd_clk == 0) /* default 0 for 60hz */
+		pconf->lcd_timing.lcd_clk = 60;
+	else
+		LCDPR("custome clk: %d\n", pconf->lcd_timing.lcd_clk);
+	clk = pconf->lcd_timing.lcd_clk;
+	if (clk < 200) { /* regard as frame_rate */
+		pconf->lcd_timing.lcd_clk = clk * pconf->lcd_basic.h_period *
+			pconf->lcd_basic.v_period;
+	} else /* regard as pixel clock */
+		pconf->lcd_timing.lcd_clk = clk;
 	pconf->lcd_timing.lcd_clk_dft = pconf->lcd_timing.lcd_clk;
 	pconf->lcd_timing.h_period_dft = pconf->lcd_basic.h_period;
 	pconf->lcd_timing.v_period_dft = pconf->lcd_basic.v_period;
-	pconf->lcd_timing.sync_duration_num = 60;
-	pconf->lcd_timing.sync_duration_den = 1;
+	pconf->lcd_timing.sync_duration_num = ((pconf->lcd_timing.lcd_clk / pconf->lcd_basic.h_period) * 100) / pconf->lcd_basic.v_period;
+	pconf->lcd_timing.sync_duration_den = 100;
 
 	lcd_timing_init_config(pconf);
 	ss_level = pconf->lcd_timing.ss_level;
