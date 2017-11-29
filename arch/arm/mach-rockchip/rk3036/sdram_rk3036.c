@@ -34,12 +34,12 @@ struct rk3036_sdram_priv {
 	struct rk3036_ddr_config ddr_config;
 };
 
-/* use integer mode, 396MHz dpll setting
+/* use integer mode, 800MHz dpll setting
  * refdiv, fbdiv, postdiv1, postdiv2
  */
-const struct pll_div dpll_init_cfg = {1, 66, 2, 1};
+const struct pll_div dpll_init_cfg = {1, 100, 3, 1};
 
-/* 396Mhz ddr timing */
+/* 400Mhz ddr timing */
 const struct rk3036_ddr_timing ddr_timing = {0x18c,
 	{0x18c, 0xc8, 0x1f4, 0x27, 0x4e,
 	0x4, 0x8b, 0x06, 0x03, 0x0, 0x06, 0x05, 0x0f, 0x15, 0x06, 0x04, 0x04,
