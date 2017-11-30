@@ -1433,7 +1433,6 @@ int do_amlmmc_dtb_key(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
             } else if (strcmp(argv[1], "dtb_write") == 0) {
                 /* fixme, should we check the return value? */
                 ret = dtb_write(addr);
-
                 ret |= renew_partition_tbl(addr);
                 return ret;
             }

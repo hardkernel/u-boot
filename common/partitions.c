@@ -57,14 +57,18 @@ int check_valid_dts(unsigned char *buffer)
 {
 	int ret = -__LINE__;
 	char *dt_addr;
+	/* fixme, a work around way */
+	unsigned char *sbuffer = (unsigned char *)0x1000000;
 
 	if (is_dtb_encrypt(buffer)) {
-		flush_cache((unsigned long)buffer, AML_DTB_IMG_MAX_SZ);//flush or failed in usb booting
-		ret = aml_sec_boot_check(AML_D_P_IMG_DECRYPT, (long unsigned)buffer, AML_DTB_IMG_MAX_SZ, 0);
+		memcpy(sbuffer, buffer, AML_DTB_IMG_MAX_SZ);
+		flush_cache((unsigned long)sbuffer, AML_DTB_IMG_MAX_SZ);
+		ret = aml_sec_boot_check(AML_D_P_IMG_DECRYPT, (long unsigned)sbuffer, AML_DTB_IMG_MAX_SZ, 0);
 		if (ret) {
-			printf("\nDecrypt dtb: Sig Check %d\n",ret);
+			printf("\n %s() %d: Decrypt dtb: Sig Check %d\n", __func__, __LINE__, ret);
 			return -__LINE__;
 		}
+		memcpy(buffer, sbuffer, AML_DTB_IMG_MAX_SZ);
 	}
 #ifdef CONFIG_MULTI_DTB
 	dt_addr = (char *)get_multi_dt_entry((unsigned long)buffer);
@@ -96,9 +100,10 @@ int get_partition_from_dts(unsigned char *buffer)
 		goto _err;
 
 	ret = check_valid_dts(buffer);
+	printf("%s() %d: ret %d\n",__func__, __LINE__, ret);
 	if ( ret < 0 )
 	{
-		printf("%s: %d\n",__func__, ret);
+		printf("%s() %d: ret %d\n",__func__, __LINE__, ret);
 		goto _err;
 	}
 #ifdef CONFIG_MULTI_DTB

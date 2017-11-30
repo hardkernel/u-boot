@@ -46,7 +46,6 @@ int is_dtb_encrypt(unsigned char *buffer)
 #if 0
 	unsigned int magic = *(unsigned int*)buffer;
 
-	printf("dtb magic %08x\n", magic);
 	if ((DT_HEADER_MAGIC == magic)
 			|| (AML_DT_HEADER_MAGIC == magic)
 			|| (IS_GZIP_FORMAT(magic)))
