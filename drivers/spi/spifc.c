@@ -351,16 +351,6 @@ static void spifc_chipselect(struct udevice *dev, bool select)
 	}
 }
 
-static void spi_cs_activate(struct udevice *dev)
-{
-	spifc_chipselect(dev, 1);
-}
-
-static void spi_cs_deactivate(struct udevice *dev)
-{
-	spifc_chipselect(dev, 0);
-}
-
 static int spifc_set_speed(
 		struct udevice *bus,
 		uint hz)
@@ -457,7 +447,7 @@ static int spifc_xfer(
 	spifc_set_speed(bus, slave->max_hz);
 	spifc_set_mode(bus, slave->mode);
 	if (flags & SPI_XFER_BEGIN) {
-		spi_cs_activate(dev);
+		spifc_chipselect(dev, 1);
 		buf = (u8 *)dout;
 		if (!buf || (len > 5)) {
 			printf("%s: error command\n", __func__);
@@ -495,7 +485,7 @@ static int spifc_xfer(
 	}
 
 	if (ret || flags & SPI_XFER_END) {
-		spi_cs_deactivate(dev);
+		spifc_chipselect(dev, 0);
 		priv->cmd = 0;
 	}
 
@@ -544,7 +534,6 @@ static const struct udevice_id spifc_ids[] = {
 static const struct dm_spi_ops spifc_ops = {
 	.claim_bus = spifc_claim_bus,
 	.release_bus = spifc_release_bus,
-	.set_wordlen = spifc_set_wordlen,
 	.xfer = spifc_xfer,
 	.set_speed = spifc_set_speed,
 	.set_mode = spifc_set_mode,

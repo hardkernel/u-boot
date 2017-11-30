@@ -126,6 +126,82 @@ free_dat:
 	return ret;
 }
 
+/* BL2 SPL size */
+#define BL2_SIZE			(48 * 1024)
+#define ROMBOOT_SPINAND_PAGE_SIZE (2 * 1024)
+/* There are 8 bl2 scopy in first 4M, 512K per scopy */
+#define BL2_OFF 0
+#define BL2_SCOPY_SIZE (512 * 1024)
+#define BL2_SCOPY_NUM 8
+#define BL3_OFF (BL2_OFF + BL2_SCOPY_SIZE * BL2_SCOPY_NUM) //0x400000
+
+static int spinand_update(
+		nand_info_t *nand,
+		u_char *buf, /* mem address */
+		loff_t off,  /* storage offset */
+		size_t len,
+		size_t max)
+{
+	u_char *_buf;
+	loff_t _off;
+	size_t _len;
+	size_t ps = nand->writesize;
+	int i, ret = -1;
+
+	if (ps < ROMBOOT_SPINAND_PAGE_SIZE) {
+		printf("error page size\n");
+		return -1;
+	}
+
+	/* update bl3 */
+	_buf = buf + BL2_SIZE;
+	_len = len - BL2_SIZE;
+	_off = off + BL3_OFF;
+	printf("bl3: buf=%p, off=0x%x, len=0x%x\n",
+			_buf, (u32)_off, (u32)_len);
+	ret = nand_write_skip_bad(nand, _off, &_len,
+				NULL, max, (u_char *)_buf, 0);
+	if (ret)
+		return ret;
+
+	/* update bl2 */
+	if (ps == ROMBOOT_SPINAND_PAGE_SIZE)
+		len = BL2_SIZE;
+	else {
+		/* example for ps=4K & ROMBOOT_SPINAND_PAGE_SIZE=2K,
+		 * romboot only reads first 2K though in a 4K page.
+		 */
+		int pages = BL2_SIZE / ROMBOOT_SPINAND_PAGE_SIZE;
+		u_char *new_buf;
+		len = ps / ROMBOOT_SPINAND_PAGE_SIZE;
+		if (ps % ROMBOOT_SPINAND_PAGE_SIZE)
+			len++;
+		len *= BL2_SIZE;
+		_buf = buf;
+		new_buf = buf = (u_char *)malloc(len);
+		printf("new_buf=%p, size=0x%x, pages=%d\n", buf, (u32)len, pages);
+		for (i=0; i<pages; i++) {
+			memcpy((void *)new_buf, (void *)_buf, ROMBOOT_SPINAND_PAGE_SIZE);
+			new_buf += ps;
+			_buf += ROMBOOT_SPINAND_PAGE_SIZE;
+		}
+	}
+
+	_off = off + BL2_OFF;
+	for (i = 0; i < BL2_SCOPY_NUM; i++) {
+		_buf = buf;
+		_len = len;
+		printf("bl2 scopy %d: buf=%p, off=0x%x, len=0x%x\n",
+				i, _buf, (u32)_off, (u32)_len);
+		ret = nand_write_skip_bad(nand, _off, &_len,
+				NULL, max, (u_char *)_buf, 0);
+		if (ret)
+			break;
+		_off += BL2_SCOPY_SIZE;
+	}
+
+	return ret;
+}
 /* ------------------------------------------------------------------------- */
 
 static int set_dev(int dev)
@@ -697,7 +773,9 @@ static int do_nand(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		return ret == 0 ? 1 : 0;
 	}
 
-	if (strncmp(cmd, "read", 4) == 0 || strncmp(cmd, "write", 5) == 0) {
+	if ((strncmp(cmd, "read", 4) == 0) ||
+			(strncmp(cmd, "write", 5) == 0) ||
+			(strncmp(cmd, "spinand_update", 14) == 0)) {
 		size_t rwsize;
 		ulong pagecount = 1;
 		int read;
@@ -706,14 +784,18 @@ static int do_nand(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		if (argc < 4)
 			goto usage;
 
+		#define SPINAND_UPDATE_FLAG (1<<2)
+		read = strncmp(cmd, "read", 4) == 0;
+		if (strncmp(cmd, "spinand_update", 14) == 0)
+			read |= SPINAND_UPDATE_FLAG;
+		printf("\nNAND %s ...\n", cmd);
+
 		if (isstring(argv[2])) {
 			nand = get_mtd_device_nm(argv[2]);
 			if (IS_ERR(nand))
 				goto usage;
 			addr = (ulong)simple_strtoul(argv[3], NULL, 16);
 			/* 1 = read, 0 = write */
-			read = strncmp(cmd, "read", 4) == 0;
-			debugP("\nNAND %s: %s ", read ? "read" : "write", argv[2]);
 			if (argc == 4) {
 				off = 0;
 				size = get_mtd_size(argv[2]);
@@ -725,10 +807,6 @@ static int do_nand(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 			rwsize = size;
 		} else {
 			addr = (ulong)simple_strtoul(argv[2], NULL, 16);
-
-			read = strncmp(cmd, "read", 4) == 0; /* 1 = read, 0 = write */
-			printf("\nNAND %s: ", read ? "read" : "write");
-
 			s = strchr(cmd, '.');
 
 			if (s && !strcmp(s, ".raw")) {
@@ -767,7 +845,10 @@ static int do_nand(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		s = strchr(cmd, '.');
 		if (!s || !strcmp(s, ".jffs2") ||
 		    !strcmp(s, ".e") || !strcmp(s, ".i")) {
-			if (read)
+		  if (read & SPINAND_UPDATE_FLAG)
+				ret = spinand_update(nand, (u_char *)addr,
+						0, rwsize, maxsize);
+			else if (read)
 				ret = nand_read_skip_bad(nand, off, &rwsize,
 							 NULL, maxsize,
 							 (u_char *)addr);

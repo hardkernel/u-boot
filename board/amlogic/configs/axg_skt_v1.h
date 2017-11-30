@@ -393,6 +393,7 @@
 	#define CONFIG_SPI_FRAM_RAMTRON // to add & test
 	#define CONFIG_SPI_M95XXX // to add & test
 	#define CONFIG_SPI_FLASH_ESMT // to add & test
+	#define CONFIG_SPI_NAND
 #endif
 
 

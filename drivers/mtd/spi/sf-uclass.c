@@ -44,8 +44,11 @@ int spi_flash_probe_bus_cs(unsigned int busnum, unsigned int cs,
 	str = strdup(name);
 	ret = spi_get_bus_and_cs(busnum, cs, max_hz, spi_mode,
 				  "spi_flash_std", str, &bus, &slave);
-	if (ret)
+	if (ret) {
+		spi_get_bus_and_cs(busnum, cs, max_hz, spi_mode,
+				  "spinand", str, &bus, &slave);
 		return ret;
+	}
 
 	*devp = slave->dev;
 	return 0;

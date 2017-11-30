@@ -23,7 +23,6 @@ static int spi_set_speed_mode(struct udevice *bus, int speed, int mode)
 	struct dm_spi_ops *ops;
 	int ret;
 
-	debug("%s: To set %dHz@mode0x%x\n", __func__, speed, mode);
 	ops = spi_get_ops(bus);
 	if (ops->set_speed)
 		ret = ops->set_speed(bus, speed);
@@ -93,11 +92,15 @@ int spi_xfer(struct spi_slave *slave, unsigned int bitlen,
 	return spi_get_ops(bus)->xfer(dev, bitlen, dout, din, flags);
 }
 
+static int spi_req_seq = 0;
 int spi_post_bind(struct udevice *dev)
 {
 	/* Scan the bus for devices */
 #ifdef CONFIG_OF_CONTROL
 	return dm_scan_fdt_node(dev, gd->fdt_blob, dev->of_offset, false);
+#else
+	dev->req_seq = spi_req_seq++;
+	printf("%s(%s): req_seq = %d\n", __func__, dev->name, dev->req_seq);
 #endif
 	return 0;
 }
@@ -200,15 +203,8 @@ int spi_find_bus_and_cs(int busnum, int cs, struct udevice **busp,
 
 	ret = uclass_find_device_by_seq(UCLASS_SPI, busnum, false, &bus);
 	if (ret) {
-		for (uclass_first_device(UCLASS_SPI, &bus); bus;
-				uclass_next_device(&bus)) {
-			if (bus && (bus->seq == busnum))
-				break;
-		}
-		if (!bus) {
-			debug("%s: No bus %d\n", __func__, busnum);
-			return ret;
-		}
+		debug("%s: No bus %d\n", __func__, busnum);
+		return ret;
 	}
 	ret = spi_find_chip_select(bus, cs, &dev);
 	if (ret) {
@@ -283,8 +279,6 @@ int spi_get_bus_and_cs(int busnum, int cs, int speed, int mode,
 		slave->op_mode_tx = 0;
 		if (slave->mode & SPI_TX_QUAD)
 			slave->op_mode_tx = SPI_OPM_TX_QPP;
-		printf("mode=0x%x, op_mode_rx=0x%x, op_mode_tx=0x%x\n",
-				slave->mode, slave->op_mode_rx, slave->op_mode_tx);
 
 		ret = device_probe_child(dev, slave);
 		free(slave);
