@@ -59,6 +59,8 @@ int check_valid_dts(unsigned char *buffer)
 	char *dt_addr;
 	/* fixme, a work around way */
 	unsigned char *sbuffer = (unsigned char *)getenv_hex("loadaddr", CONFIG_DTB_MEM_ADDR + 0x100000);
+	/* g12a merge to trunk, use trunk code */
+	//unsigned char *sbuffer = (unsigned char *)0x1000000;
 
 	if (is_dtb_encrypt(buffer)) {
 		memcpy(sbuffer, buffer, AML_DTB_IMG_MAX_SZ);

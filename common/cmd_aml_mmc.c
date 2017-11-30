@@ -3070,6 +3070,94 @@ _out:
     return ret;
 }
 
+int do_amlmmc_dtb_key(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+    int dev, ret = 0;
+    void *addr = NULL;
+    u64 cnt = 0, n = 0, blk = 0;
+    //u64 size;
+    struct partitions *part = NULL;
+    struct virtual_partition *vpart = NULL;
+    vpart = aml_get_virtual_partition_by_name(MMC_DTB_NAME);
+    part = aml_get_partition_by_name(MMC_RESERVED_NAME);
+
+    switch (argc) {
+        case 3:
+            if (strcmp(argv[1], "erase") == 0) {
+                if (strcmp(argv[2], "dtb") == 0) {
+                    printf("start erase dtb......\n");
+                    dev = EMMC_DTB_DEV;
+                    struct mmc *mmc = find_mmc_device(dev);
+                    if (!mmc) {
+                        printf("not find mmc\n");
+                        return 1;
+                    }
+                    blk = (part->offset + vpart->offset) / mmc->read_bl_len;
+                    cnt = (vpart->size * 2) / mmc->read_bl_len;
+                    if (cnt != 0)
+                        n = mmc->block_dev.block_erase(dev, blk, cnt);
+                    printf("dev # %d, %s, several blocks erased %s\n",
+                            dev, (flag == 0) ? " ":(argv[2]),(n == 0) ? "OK" : "ERROR");
+                    return (n == 0) ? 0 : 1;
+                }else if (strcmp(argv[2], "key") == 0){
+                    printf("start erase key......\n");
+                    dev = 1;
+                    struct mmc *mmc = find_mmc_device(dev);
+                    if (!mmc) {
+                        printf("not find mmc\n");
+                        return 1;
+                    }
+                    n = mmc_key_erase();
+                    printf("dev # %d, %s, several blocks erased %s\n",
+                            dev, (flag == 0) ? " ":(argv[2]),(n == 0) ? "OK" : "ERROR");
+                    return (n == 0) ? 0 : 1;
+                }
+            } else if (strcmp(argv[1], "cali_pattern") == 0) {
+
+				if (strcmp(argv[2], "write") == 0) {
+                    dev = EMMC_DTB_DEV;
+                    struct mmc *mmc = find_mmc_device(dev);
+                    if (!mmc) {
+                        printf("not find mmc\n");
+                        return 1;
+                    }
+                    vpart = aml_get_virtual_partition_by_name(MMC_PATTERN_NAME);
+                    part = aml_get_partition_by_name(MMC_RESERVED_NAME);
+                    addr = (void *)malloc(vpart->size);
+                    if (addr == NULL) {
+                        printf("cali_pattern malloc fail\n");
+                        return 1;
+                    }
+                    mmc_write_cali_mattern(addr);
+                    blk = (part->offset + vpart->offset) / mmc->read_bl_len;
+                    cnt = vpart->size / mmc->read_bl_len;
+                    if (cnt != 0)
+                        n = mmc->block_dev.block_write(dev, blk, cnt, addr);
+                    printf("dev # %d, %s, several calibration pattern blocks write %s\n",
+                            dev, (flag == 0) ? " ":(argv[2]),(n == cnt) ? "OK" : "ERROR");
+                    free(addr);
+                    return (n == cnt) ? 0 : 1;
+                }
+            }
+        case 4:
+            addr = (void *)simple_strtoul(argv[2], NULL, 16);
+            if (strcmp(argv[1], "dtb_read") == 0) {
+                /* fixme, */
+                ret = dtb_read(addr);
+                return 0;
+
+            } else if (strcmp(argv[1], "dtb_write") == 0) {
+                /* fixme, should we check the return value? */
+                ret = dtb_write(addr);
+                ret |= renew_partition_tbl(addr);
+                return ret;
+            }
+            return 0;
+        default:
+            break;
+    }
+    return 1;
+}
 
 /* update partition table in reserved partition. */
 __weak int emmc_update_ept(unsigned char *buffer)
