@@ -128,6 +128,7 @@ static int read_rockchip_image(struct blk_part *part, void *dst)
 		goto err;
 	if (img->tag != TAG_KERNEL) {
 		printf("%s: invalid image tag(0x%x)\n", part->name, img->tag);
+		ret = -ENODEV;
 		goto err;
 	}
 
