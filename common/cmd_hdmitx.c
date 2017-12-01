@@ -29,7 +29,7 @@
 
 #undef DEBUG_DUMPEDID
 
-extern void parse_edid(unsigned char *edid, unsigned int blk_len);
+extern int parse_edid(unsigned char *edid, unsigned int blk_len, unsigned char count);
 extern char *select_best_resolution(void);
 
 static int do_hpd_detect(cmd_tbl_t *cmdtp, int flag, int argc,
@@ -60,12 +60,17 @@ static void dump_edid_raw(unsigned char *buf, unsigned int blk_len)
 }
 #endif
 
+/* 500ms for each retry, total 5 retry */
+#define EDID_RETRY_WAITTIME	500
 static int do_edid(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 {
 	unsigned int blk_len = 0;
+	unsigned char count = 0;
 	memset(edid_raw_buf, 0, ARRAY_SIZE(edid_raw_buf));
 	if (argc < 1)
 		return cmd_usage(cmdtp);
+
+READ_EDID:
 	/* read edid raw data */
 	blk_len = hdmitx_device.HWOp.read_edid(edid_raw_buf);
 
@@ -77,7 +82,12 @@ static int do_edid(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 		dump_edid_raw(edid_raw_buf, blk_len);
 #endif
 		/* parsing edid data */
-		parse_edid(edid_raw_buf, blk_len);
+		if (-1 == parse_edid(edid_raw_buf, blk_len, count)) {
+			printf("hdmitx: read edid fails.. retry..\n");
+			mdelay(EDID_RETRY_WAITTIME);
+			count++;
+			goto READ_EDID;
+		}
 		/* select best resolution */
 		setenv("m", select_best_resolution());
 		setenv("hdmimode", getenv("m"));
