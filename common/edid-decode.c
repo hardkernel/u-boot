@@ -1682,7 +1682,8 @@ void dump_breakdown(unsigned char *edid)
 }
 #endif
 
-void parse_edid(unsigned char *edid, unsigned int blk_len)
+#define EDID_RETRY_COUNT	3
+int parse_edid(unsigned char *edid, unsigned int blk_len, unsigned char count)
 {
 	unsigned char *x;
 	int analog, i;
@@ -1717,8 +1718,13 @@ void parse_edid(unsigned char *edid, unsigned int blk_len)
 
 
 	if (!edid || memcmp(edid, "\x00\xFF\xFF\xFF\xFF\xFF\xFF\x00", 8)) {
-		printf("No header found\n");
-		/* return 1; */
+		/*
+		 * If edid data is invalid, read it again after 200ms.
+		 * This situation can be occured when a monitor need a long standby time
+		 * after powering up.
+		 */
+		printf("No header found - count %d\n", count);
+		if (count < EDID_RETRY_COUNT)	return -1;
 	}
 
 	/* set edid_lines */
@@ -2052,6 +2058,8 @@ void parse_edid(unsigned char *edid, unsigned int blk_len)
 	if (warning_zero_preferred_refresh)
 		printf("Warning: CVT block does not set preferred refresh rate\n");
 #endif
+
+	return 0;
 }
 
 #ifdef DEBUG_EDID
