@@ -788,7 +788,7 @@ static int do_nand(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		read = strncmp(cmd, "read", 4) == 0;
 		if (strncmp(cmd, "spinand_update", 14) == 0)
 			read |= SPINAND_UPDATE_FLAG;
-		printf("\nNAND %s ...\n", cmd);
+		debugP("\nNAND %s ...\n", cmd);
 
 		if (isstring(argv[2])) {
 			nand = get_mtd_device_nm(argv[2]);
@@ -845,7 +845,7 @@ static int do_nand(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		s = strchr(cmd, '.');
 		if (!s || !strcmp(s, ".jffs2") ||
 		    !strcmp(s, ".e") || !strcmp(s, ".i")) {
-		  if (read & SPINAND_UPDATE_FLAG)
+			if (read & SPINAND_UPDATE_FLAG)
 				ret = spinand_update(nand, (u_char *)addr,
 						0, rwsize, maxsize);
 			else if (read)
