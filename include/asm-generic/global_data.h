@@ -122,6 +122,11 @@ typedef struct global_data {
 	struct bootstage_data *new_bootstage;	/* Relocated bootstage info */
 #endif
 	phys_addr_t pm_ctx_phys;
+#ifdef CONFIG_LOG
+	int log_drop_count;		/* Number of dropped log messages */
+	int default_log_level;		/* For devices with no filters */
+	struct list_head log_head;	/* List of struct log_device */
+#endif
 } gd_t;
 #endif
 
