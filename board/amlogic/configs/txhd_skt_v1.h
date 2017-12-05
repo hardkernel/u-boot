@@ -380,6 +380,32 @@
 #define		CONFIG_PARTITIONS 1
 #define 	CONFIG_SYS_NO_FLASH  1
 
+/* meson SPI */
+#define CONFIG_AML_SPIFC
+//#define CONFIG_AML_SPICC
+#if defined CONFIG_AML_SPIFC || defined CONFIG_AML_SPICC
+	#define CONFIG_OF_SPI
+	#define CONFIG_DM_SPI
+	#define CONFIG_CMD_SPI
+#endif
+/* SPI flash config */
+#ifdef CONFIG_AML_SPIFC
+	#define CONFIG_SPI_FLASH
+	#define CONFIG_DM_SPI_FLASH
+	#define CONFIG_CMD_SF
+	/* SPI flash surpport list */
+	#define CONFIG_SPI_FLASH_ATMEL
+	#define CONFIG_SPI_FLASH_EON
+	#define CONFIG_SPI_FLASH_GIGADEVICE
+	#define CONFIG_SPI_FLASH_MACRONIX
+	#define CONFIG_SPI_FLASH_SPANSION
+	#define CONFIG_SPI_FLASH_STMICRO
+	#define CONFIG_SPI_FLASH_SST
+	#define CONFIG_SPI_FLASH_WINBOND
+	#define CONFIG_SPI_FRAM_RAMTRON
+	#define CONFIG_SPI_M95XXX
+	#define CONFIG_SPI_FLASH_ESMT
+#endif
 
 /* vpu */
 #define CONFIG_AML_VPU 1

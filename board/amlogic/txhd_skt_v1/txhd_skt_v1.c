@@ -50,6 +50,8 @@
 #include <asm/arch/clock.h>
 #include <asm-generic/gpio.h>
 #include <asm/arch/board_id.h>
+#include <dm.h>
+#include <amlogic/spifc.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -353,6 +355,50 @@ static void hdmi_tx_set_hdmi_5v(void)
 {
 }
 #endif
+
+#ifdef CONFIG_AML_SPIFC
+/*
+ * BOOT_3: NOR_HOLDn:reg0[15:12]=3
+ * BOOT_4: NOR_D:reg0[19:16]=3
+ * BOOT_5: NOR_Q:reg0[23:20]=3
+ * BOOT_6: NOR_C:reg0[27:24]=3
+ * BOOT_9: NOR_WPn:reg1[7:4]=3
+ * BOOT_12: NOR_CS:reg1[19:16]=3
+ */
+#define SPIFC_NUM_CS 1
+static int spifc_cs_gpios[SPIFC_NUM_CS] = {50};
+
+static int spifc_pinctrl_enable(void *pinctrl, bool enable)
+{
+	unsigned int val;
+
+	val = readl(P_PERIPHS_PIN_MUX_0);
+	val &= ~(0xffff << 12);
+	if (enable)
+		val |= 0x3333 << 12;
+	writel(val, P_PERIPHS_PIN_MUX_0);
+
+	val = readl(P_PERIPHS_PIN_MUX_1);
+	val &= ~((0xf << 4) | (0xf << 16));
+	if (enable)
+		val |= 0x3 << 4; //BOOT_12 work in gpio
+	writel(val, P_PERIPHS_PIN_MUX_1);
+	return 0;
+}
+
+static const struct spifc_platdata spifc_platdata = {
+	.reg = 0xffd14000,
+	.mem_map = 0xfb000000,
+	.pinctrl_enable = spifc_pinctrl_enable,
+	.num_chipselect = SPIFC_NUM_CS,
+	.cs_gpios = spifc_cs_gpios,
+};
+
+U_BOOT_DEVICE(spifc) = {
+	.name = "spifc",
+	.platdata = &spifc_platdata,
+};
+#endif /* CONFIG_AML_SPIFC */
 
 extern void aml_pwm_cal_init(int mode);
 /*
