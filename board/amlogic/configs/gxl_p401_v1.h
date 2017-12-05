@@ -113,7 +113,7 @@
         "active_slot=_a\0"\
         "boot_part=boot\0"\
         "initargs="\
-            "rootfstype=ramfs init=/init console=ttyS0,115200 no_console_suspend earlyprintk=aml-uart,0xc81004c0 ramoops.pstore_en=1 ramoops.record_size=0x8000 ramoops.console_size=0x4000 "\
+            "rootfstype=ramfs init=/init console=ttyS0,115200 no_console_suspend earlycon=aml_uart,0xc81004c0 ramoops.pstore_en=1 ramoops.record_size=0x8000 ramoops.console_size=0x4000 "\
             "\0"\
         "upgrade_check="\
             "echo upgrade_step=${upgrade_step}; "\
@@ -391,6 +391,23 @@
 #define CONFIG_CMD_FASTBOOT 1
 #define CONFIG_FASTBOOT_FLASH_MMC_DEV 1
 #ifdef CONFIG_AML_MTD
+
+/* bootlaoder is construct by bl2 and fip
+ * when DISCRETE_BOOTLOADER is enabled, bl2 & fip
+ * will not be stored continuously, and nand layout
+ * would be bl2|rsv|fip|normal, but not
+ * bl2|fip|rsv|noraml anymore
+ */
+#define CONFIG_DISCRETE_BOOTLOADER
+
+#ifdef  CONFIG_DISCRETE_BOOTLOADER
+#define CONFIG_TPL_SIZE_PER_COPY          0x200000
+#define CONFIG_TPL_COPY_NUM               4
+#define CONFIG_TPL_PART_NAME              "tpl"
+/* for bl2, restricted by romboot */
+#define CONFIG_BL2_COPY_NUM               8
+#endif /* CONFIG_DISCRETE_BOOTLOADER */
+
 #define CONFIG_FASTBOOT_FLASH_NAND_DEV 1
 #endif
 #define CONFIG_FASTBOOT_FLASH 1
