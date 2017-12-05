@@ -631,51 +631,122 @@ static void lcd_update_pll_frac_txl(struct lcd_clk_config_s *cConf)
 	lcd_hiu_setb(HHI_HPLL_CNTL2, cConf->pll_frac, 0, 12);
 }
 
-static void lcd_set_pll_ss_txlx(struct lcd_clk_config_s *cConf)
+static void lcd_set_pll_ss_custom_txlx(struct lcd_clk_config_s *cConf)
 {
 	unsigned int pll_ctrl3, pll_ctrl4, pll_ctrl5;
+	unsigned int dep_sel = 0, str_m = 0, m = 0, n = 0, temp;
 
 	pll_ctrl3 = lcd_hiu_read(HHI_HPLL_CNTL3);
 	pll_ctrl4 = lcd_hiu_read(HHI_HPLL_CNTL4);
 	pll_ctrl5 = lcd_hiu_read(HHI_HPLL_CNTL5);
 
+	if (cConf->ss_level > 60000)
+		goto lcd_ss_txlx_custom;
+
+	m = cConf->ss_level / LCD_SS_STEP_BASE;
+	for (str_m = 0; str_m < 15; str_m += 2) {
+		temp = ((str_m == 0) ? 1 : str_m);
+		for (dep_sel = 1; dep_sel <= 15; dep_sel++) {
+			if ((temp * dep_sel) == m) {
+				n = 1;
+				goto lcd_ss_txlx_custom;
+			}
+		}
+	}
+lcd_ss_txlx_custom:
+	if (n == 0) {
+		LCDERR("custom ss %dppm invalid, default disable\n",
+			cConf->ss_level);
+		cConf->ss_level = 0;
+		pll_ctrl3 &= ~((0xf << 10) | (1 << 14));
+		pll_ctrl4 &= ~(0x3 << 2);
+		pll_ctrl5 &= ~(0x3 << 30);
+	} else {
+		LCDPR("set pll spread spectrum: %dppm\n", cConf->ss_level);
+		pll_ctrl3 &= ~(0xf << 10);
+		pll_ctrl3 |= ((1 << 14) | ((dep_sel & 0xf) << 10));
+		pll_ctrl4 &= ~(0x3 << 2);
+		pll_ctrl4 |= (((str_m >> 0) & 0x3) << 2);
+		pll_ctrl5 &= ~(0x3 << 30);
+		pll_ctrl5 |= (((str_m >> 2) & 0x3) << 30);
+	}
+
+	lcd_hiu_write(HHI_HPLL_CNTL3, pll_ctrl3);
+	lcd_hiu_write(HHI_HPLL_CNTL4, pll_ctrl4);
+	lcd_hiu_write(HHI_HPLL_CNTL5, pll_ctrl5);
+}
+
+static void lcd_set_pll_ss_txlx(struct lcd_clk_config_s *cConf)
+{
+	unsigned int pll_ctrl3, pll_ctrl4, pll_ctrl5;
+	unsigned int dep_sel = 0, str_m = 0;
+
+	if (cConf->ss_level >= 1000) { /* custom */
+		lcd_set_pll_ss_custom_txlx(cConf);
+		return;
+	}
+
+	pll_ctrl3 = lcd_hiu_read(HHI_HPLL_CNTL3);
+	pll_ctrl4 = lcd_hiu_read(HHI_HPLL_CNTL4);
+	pll_ctrl5 = lcd_hiu_read(HHI_HPLL_CNTL5);
+
+	cConf->ss_level = (cConf->ss_level >= cConf->ss_level_max) ?
+		0 : cConf->ss_level;
 	switch (cConf->ss_level) {
 	case 1: /* +/- 0.3% */
+		/* 12 * 500ppm * 1 */
+		dep_sel = 12;
+		str_m = 0;
 		pll_ctrl3 &= ~(0xf << 10);
-		pll_ctrl3 |= ((1 << 14) | (0x6 << 10));
+		pll_ctrl3 |= ((1 << 14) | ((dep_sel & 0xf) << 10));
 		pll_ctrl4 &= ~(0x3 << 2);
-		pll_ctrl4 |= (0x1 << 2);
+		pll_ctrl4 |= (((str_m >> 0) & 0x3) << 2);
 		pll_ctrl5 &= ~(0x3 << 30);
+		pll_ctrl5 |= (((str_m >> 2) & 0x3) << 30);
 		break;
 	case 2: /* +/- 0.5% */
+		/* 10 * 500ppm * 2 */
+		dep_sel = 10;
+		str_m = 2;
 		pll_ctrl3 &= ~(0xf << 10);
-		pll_ctrl3 |= ((1 << 14) | (0xa << 10));
+		pll_ctrl3 |= ((1 << 14) | ((dep_sel & 0xf) << 10));
 		pll_ctrl4 &= ~(0x3 << 2);
-		pll_ctrl4 |= (0x1 << 2);
+		pll_ctrl4 |= (((str_m >> 0) & 0x3) << 2);
 		pll_ctrl5 &= ~(0x3 << 30);
+		pll_ctrl5 |= (((str_m >> 2) & 0x3) << 30);
 		break;
 	case 3: /* +/- 1.0% */
+		/* 10 * 500ppm * 4 */
+		dep_sel = 10;
+		str_m = 4;
 		pll_ctrl3 &= ~(0xf << 10);
-		pll_ctrl3 |= ((1 << 14) | (0xa << 10));
+		pll_ctrl3 |= ((1 << 14) | ((dep_sel & 0xf) << 10));
 		pll_ctrl4 &= ~(0x3 << 2);
-		pll_ctrl4 |= (0x3 << 2);
+		pll_ctrl4 |= (((str_m >> 0) & 0x3) << 2);
 		pll_ctrl5 &= ~(0x3 << 30);
+		pll_ctrl5 |= (((str_m >> 2) & 0x3) << 30);
 		break;
 	case 4: /* +/- 1.6% */
+		/* 8 * 500ppm * 8 */
+		dep_sel = 8;
+		str_m = 8;
 		pll_ctrl3 &= ~(0xf << 10);
-		pll_ctrl3 |= ((1 << 14) | (0x8 << 10));
+		pll_ctrl3 |= ((1 << 14) | ((dep_sel & 0xf) << 10));
 		pll_ctrl4 &= ~(0x3 << 2);
-		pll_ctrl4 |= (0x3 << 2);
+		pll_ctrl4 |= (((str_m >> 0) & 0x3) << 2);
 		pll_ctrl5 &= ~(0x3 << 30);
-		pll_ctrl5 |= (0x1 << 30);
+		pll_ctrl5 |= (((str_m >> 2) & 0x3) << 30);
 		break;
 	case 5: /* +/- 3.0% */
+		/* 12 * 500ppm * 10 */
+		dep_sel = 12;
+		str_m = 10;
 		pll_ctrl3 &= ~(0xf << 10);
-		pll_ctrl3 |= ((1 << 14) | (0xa << 10));
+		pll_ctrl3 |= ((1 << 14) | ((dep_sel & 0xf) << 10));
 		pll_ctrl4 &= ~(0x3 << 2);
-		pll_ctrl4 |= (0x3 << 2);
+		pll_ctrl4 |= (((str_m >> 0) & 0x3) << 2);
 		pll_ctrl5 &= ~(0x3 << 30);
-		pll_ctrl5 |= (0x2 << 30);
+		pll_ctrl5 |= (((str_m >> 2) & 0x3) << 30);
 		break;
 	default: /* disable */
 		pll_ctrl3 &= ~((0xf << 10) | (1 << 14));
@@ -2052,33 +2123,45 @@ void lcd_clk_generate_parameter(struct lcd_config_s *pconf)
 	}
 }
 
+static char lcd_ss_str[20] = {
+	'u', 'n', 'k', 'n', 'o', 'w', '\0',
+};
 char *lcd_get_spread_spectrum(void)
 {
-	char *ss_str;
 	int ss_level;
 	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
 
 	ss_level = lcd_drv->lcd_config->lcd_timing.ss_level;
-	ss_level = (ss_level >= clk_conf.ss_level_max) ? 0 : ss_level;
 	switch (lcd_drv->chip_type) {
 	case LCD_CHIP_GXTVBB:
-		ss_str = lcd_pll_ss_table_gxtvbb[ss_level];
+		ss_level = (ss_level >= clk_conf.ss_level_max) ? 0 : ss_level;
+		sprintf(lcd_ss_str, "%s", lcd_pll_ss_table_gxtvbb[ss_level]);
 		break;
 	case LCD_CHIP_TXL:
-		ss_str = lcd_pll_ss_table_txl[ss_level];
+		ss_level = (ss_level >= clk_conf.ss_level_max) ? 0 : ss_level;
+		sprintf(lcd_ss_str, "%s", lcd_pll_ss_table_txl[ss_level]);
 		break;
 	case LCD_CHIP_TXLX:
-		ss_str = lcd_pll_ss_table_txlx[ss_level];
+		if (ss_level >= 1000) {
+			if (ss_level > 60000)
+				sprintf(lcd_ss_str, "invalid");
+			else
+				sprintf(lcd_ss_str, "%dppm", ss_level);
+		} else {
+			ss_level = (ss_level >= clk_conf.ss_level_max) ? 0 : ss_level;
+			sprintf(lcd_ss_str, "%s", lcd_pll_ss_table_txlx[ss_level]);
+		}
 		break;
 	case LCD_CHIP_TXHD:
-		ss_str = lcd_pll_ss_table_txhd[ss_level];
+		ss_level = (ss_level >= clk_conf.ss_level_max) ? 0 : ss_level;
+		sprintf(lcd_ss_str, "%s", lcd_pll_ss_table_txhd[ss_level]);
 		break;
 	default:
-		ss_str = "unknown";
+		sprintf(lcd_ss_str, "unknown");
 		break;
 	}
 
-	return ss_str;
+	return lcd_ss_str;
 }
 
 void lcd_set_spread_spectrum(void)
@@ -2090,18 +2173,21 @@ void lcd_set_spread_spectrum(void)
 		LCDPR("%s\n", __func__);
 
 	ss_level = lcd_drv->lcd_config->lcd_timing.ss_level;
-	clk_conf.ss_level = (ss_level >= clk_conf.ss_level_max) ? 0 : ss_level;
 	switch (lcd_drv->chip_type) {
 	case LCD_CHIP_GXTVBB:
+		clk_conf.ss_level = (ss_level >= clk_conf.ss_level_max) ? 0 : ss_level;
 		lcd_set_pll_ss_gxtvbb(&clk_conf);
 		break;
 	case LCD_CHIP_TXL:
+		clk_conf.ss_level = (ss_level >= clk_conf.ss_level_max) ? 0 : ss_level;
 		lcd_set_pll_ss_txl(&clk_conf);
 		break;
 	case LCD_CHIP_TXLX:
+		clk_conf.ss_level = ss_level;
 		lcd_set_pll_ss_txlx(&clk_conf);
 		break;
 	case LCD_CHIP_TXHD:
+		clk_conf.ss_level = (ss_level >= clk_conf.ss_level_max) ? 0 : ss_level;
 		lcd_set_pll_ss_txhd(&clk_conf);
 		break;
 	default:

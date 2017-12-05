@@ -77,6 +77,8 @@ struct lcd_clk_config_s { /* unit: kHz */
 	unsigned int err_fmin;
 };
 
+#define LCD_SS_STEP_BASE            500 /* ppm */
+
 /* **********************************
  * pll & clk parameter
  * ********************************** */
