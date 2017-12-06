@@ -233,13 +233,16 @@
 		"fi;\0" \
 
 
-#define CONFIG_PREBOOT  \
+#define CONFIG_PREBOOT  ""
+/*
+            \
             "run bcb_cmd; "\
             "run factory_reset_poweroff_protect;"\
             "run upgrade_check;"\
             "run init_display;"\
             "run storeargs;"\
             "run switch_bootmode;"
+*/
 #define CONFIG_BOOTCOMMAND "run storeboot"
 
 //#define CONFIG_ENV_IS_NOWHERE  1
@@ -254,7 +257,7 @@
 #define CONFIG_CPU_CLK					1200 //MHz. Range: 600-1800, should be multiple of 24
 
 /* ddr */
-#define CONFIG_DDR_SIZE					512 //MB //0 means ddr size auto-detect
+#define CONFIG_DDR_SIZE					1024 //MB //0 means ddr size auto-detect
 #define CONFIG_DDR_CLK					912  //MHz, Range: 384-1200, should be multiple of 24
 #define CONFIG_DDR4_CLK					1008  //MHz, for boards which use different ddr chip
 #define CONFIG_NR_DRAM_BANKS			1
@@ -304,15 +307,15 @@
 
 
 /* vpu */
-#define CONFIG_AML_VPU 1
+//#define CONFIG_AML_VPU 1
 
 /* DISPLAY & HDMITX */
-#define CONFIG_AML_HDMITX20 1
-#define CONFIG_AML_CANVAS 1
-#define CONFIG_AML_VOUT 1
-#define CONFIG_AML_OSD 1
-#define CONFIG_OSD_SCALE_ENABLE 1
-#define CONFIG_CMD_BMP 1
+//#define CONFIG_AML_HDMITX20 1
+//#define CONFIG_AML_CANVAS 1
+//#define CONFIG_AML_VOUT 1
+//#define CONFIG_AML_OSD 1
+//#define CONFIG_OSD_SCALE_ENABLE 1
+//#define CONFIG_CMD_BMP 1
 
 #if defined(CONFIG_AML_VOUT)
 #define CONFIG_AML_CVBS 1
@@ -358,7 +361,7 @@
 #define CONFIG_UNIFY_KEY_MANAGE                 1
 
 /* net */
-#define CONFIG_CMD_NET   1
+//#define CONFIG_CMD_NET   1
 #if defined(CONFIG_CMD_NET)
 	#define CONFIG_DESIGNWARE_ETH 1
 	#define CONFIG_PHYLIB	1
@@ -412,12 +415,13 @@
 #define CONFIG_NEED_BL32	1
 #define CONFIG_CMD_RSVMEM	1
 #define CONFIG_FIP_IMG_SUPPORT	1
-#define CONFIG_BOOTDELAY	1
+#define CONFIG_BOOTDELAY	-1
 #define CONFIG_SYS_LONGHELP 1
 #define CONFIG_CMD_MISC     1
 #define CONFIG_CMD_ITEST    1
 #define CONFIG_CMD_CPU_TEMP 1
 #define CONFIG_SYS_MEM_TOP_HIDE 0x08000000 //hide 128MB for kernel reserve
+#define CONFIG_CMD_LOADB    1
 
 //#define CONFIG_MULTI_DTB    1
 

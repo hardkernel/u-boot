@@ -294,10 +294,13 @@
 #define GCLK_REG_ETHERNET      (HHI_GCLK_MPEG1)
 #define GCLK_MASK_ETHERNET      (1<<3)
 
+/* g12a no reg */
+#if 0
 #define GCLK_IDX_ETH_CLK     145
 #define GCLK_NAME_ETH_CLK    "ETH_CLK"
 #define GCLK_REG_ETH_CLK     (HHI_MPLL_CNTL10)
 #define GCLK_MASK_ETH_CLK      (1<<3)
+#endif
 
 #define GCLK_IDX_DEMUX         36
 #define GCLK_NAME_DEMUX      "DEMUX"
@@ -372,6 +375,8 @@
 #define GCLK_REG_AIU_TOP_LEVEL      (HHI_GCLK_MPEG1)
 #define GCLK_MASK_AIU_TOP_LEVEL      (1<<15)
 
+//g12a no reg
+#if 0
 #define GCLK_NAME_PCM_MCLK       "PCM_MCLK"
 #define GCLK_REG_PCM_MCLK        (HHI_PCM_CLK_CNTL)
 #define GCLK_MASK_PCM_MCLK       (1<<9)
@@ -379,6 +384,7 @@
 #define GCLK_NAME_PCM_SCLK       "PCM_SCLK"
 #define GCLK_REG_PCM_SCLK        (HHI_PCM_CLK_CNTL)
 #define GCLK_MASK_PCM_SCLK       (1<<22)
+#endif
 
 #define GCLK_IDX_UART1         48
 #define GCLK_NAME_UART1      "UART1"
@@ -442,9 +448,13 @@
 #define GCLK_MASK_HIU_PARSER_TOP      (1<<25)
 
 /* NEW ADD */
+
+/* g12a no reg */
+#if 0
 #define GCLK_NAME_USB_CLK       "USB_CLK"
 #define GCLK_REG_USB_CLK        (HHI_USB_CLK_CNTL)
 #define GCLK_MASK_USB_CLK       (1<<9)
+#endif
 
 #define GCLK_IDX_USB_GENERAL         58
 #define GCLK_NAME_USB_GENERAL      "USB_GENERAL"
@@ -556,6 +566,8 @@
 #define GCLK_REG_MMC_PCLK      (HHI_GCLK_MPEG2)
 #define GCLK_MASK_MMC_PCLK      (1<<11)
 
+//g12a no reg
+#if 0
 #define GCLK_NAME_MMC_A_PCLK     "MMC_A_PCLK"
 #define GCLK_REG_MMC_A_PCLK      (HHI_MPLL_CNTL10)
 #define GCLK_MASK_MMC_A_PCLK      (1<<2)
@@ -567,6 +579,7 @@
 #define GCLK_NAME_MMC_C_PCLK     "MMC_C_PCLK"
 #define GCLK_REG_MMC_C_PCLK      (HHI_MPLL_CNTL10)
 #define GCLK_MASK_MMC_C_PCLK      (1<<0)
+#endif
 
 #define GCLK_NAME_EMMC_A_CLK      "EMMC_A_CLK"
 #define GCLK_REG_EMMC_A_CLK      (HHI_SD_EMMC_CLK_CNTL)

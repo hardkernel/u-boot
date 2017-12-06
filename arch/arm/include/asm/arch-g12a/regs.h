@@ -13995,6 +13995,9 @@
 // -----------------------------------------------
 // CBUS_BASE:  AED_CBUS_BASE = 0x10
 // -----------------------------------------------
+
+/* defined in g12a secure_apb.h */
+#if 0
 #define   AED_EQ_CH1_COEF00                        (0x1000)
 #define P_AED_EQ_CH1_COEF00                        (volatile unsigned int *)((0x1000  << 2) + 0xffd00000)
 #define   AED_EQ_CH1_COEF01                        (0x1001)
@@ -14257,6 +14260,8 @@
 #define P_AED_DEBUG6                               (volatile unsigned int *)((0x1089  << 2) + 0xffd00000)
 #define   AED_TOP_CTL                              (0x1090)
 #define P_AED_TOP_CTL                              (volatile unsigned int *)((0x1090  << 2) + 0xffd00000)
+#endif
+
 //
 // Closing file:  audio_eq_drc.h
 //

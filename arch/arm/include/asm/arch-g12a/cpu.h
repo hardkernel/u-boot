@@ -27,7 +27,7 @@
 
 #define CONFIG_AML_MESON 1
 #define CONFIG_AML_MESON_GX 1
-#define CONFIG_AML_MESON_TXLX 1
+#define CONFIG_AML_MESON_G12A 1
 
 /* Size of malloc() pool */
 #define CONFIG_SYS_MALLOC_LEN		(64*1024*1024)
@@ -63,7 +63,7 @@
 #define CONFIG_SILENT_U_BOOT_ONLY
 
 //2017.05.11 new compress solution, only support BL33 LZ4 compress
-#define CONFIG_AML_BL33_COMPRESS_ENABLE 1
+//#define CONFIG_AML_BL33_COMPRESS_ENABLE 1
 
 //2017.10.19 TXLX only support v3 format for normal & secure boot
 #define CONFIG_AML_SECURE_BOOT_V3 1
