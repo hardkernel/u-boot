@@ -19,7 +19,7 @@
 	""
 #define CONFIG_BOOTCOMMAND						\
 	"sf probe;"							\
-	"sf read 0x62000000 0x140800 0x500000;"				\
+	"sf read 0x62000000 0xc0000 0x500000;"				\
 	"dcache off;"							\
 	"go 0x62000000"
 
