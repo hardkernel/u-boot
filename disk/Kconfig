@@ -117,4 +117,14 @@ config PARTITION_TYPE_GUID
 	  Activate the configuration of GUID type
 	  for EFI partition
 
+config RKPARM_PARTITION
+	bool "Enable Rockchip parameter partition table"
+	depends on PARTITIONS
+	help
+	  Say Y here if you would like to use device under U-Boot which
+	  were partitioned using Rockchip parameter.
+
+config SPL_ROCKCHIP_PARTITION
+	bool "Enable Rockchip partition table for SPL"
+
 endmenu
