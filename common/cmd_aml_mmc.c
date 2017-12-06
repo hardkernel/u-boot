@@ -566,7 +566,6 @@ static int amlmmc_erase_single_part(int argc, char *const argv[])
     u64 cnt = 0, blk = 0;
     struct partitions *part_info;
     struct mmc *mmc;
-
     name = argv[2];
     dev = find_dev_num_by_partition_name(name);
     if (dev < 0) {
@@ -773,6 +772,8 @@ static int amlmmc_erase_by_part(int argc, char *const argv[])
 static int do_amlmmc_erase(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 {
     int ret = CMD_RET_USAGE;
+    if (argc != 3 || argc != 5)
+        return ret;
 
     if (argc == 3)
         ret = amlmmc_erase_by_part(argc, argv);
@@ -975,7 +976,6 @@ static int amlmmc_read_in_dev(int argc, char *const argv[])
     if (!mmc)
         return 1;
     n = mmc->block_dev.block_read(dev, blk, cnt, addr);
-
     return (n == cnt) ? 0 : 1;
 }
 
@@ -1466,22 +1466,1074 @@ static int do_amlmmc_key(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[
 }
 #endif
 
+static int set_write_prot(struct mmc *mmc, u64 start)
+{
+    struct mmc_cmd cmd;
+    int err;
+
+    cmd.cmdidx = MMC_CMD_SET_WRITE_PROTECT;
+    cmd.cmdarg = start;
+    cmd.resp_type = MMC_RSP_R1b;
+
+    err = mmc_send_cmd(mmc, &cmd, NULL);
+    if (err)
+        goto err_out;
+
+    return 0;
+
+err_out:
+    puts("Failed: mmc write protect failed\n");
+    return err;
+}
+
+static int set_us_wp_en(struct mmc *mmc, u8 *ext_csd, u8 wp_enable_type)
+{
+    u8 index = EXT_CSD_USER_WP;
+    u8 user_wp = ext_csd[index];
+    user_wp = user_wp & (~WP_ENABLE_MASK);
+    user_wp = user_wp | wp_enable_type;
+    int err = 0;
+    err = mmc_set_ext_csd(mmc, index, user_wp);
+    if (err)
+        printf("Failed: set write protect enable failed\n");
+    return err;
+}
+
+static int mmc_set_us_perm_wp_dis(struct mmc *mmc, u8 *ext_csd)
+{
+    u8 usr_wp = ext_csd[EXT_CSD_USER_WP];
+    u8 perm_disable_bit = US_PERM_WP_DIS_BIT;
+
+    int err;
+    if (usr_wp & perm_disable_bit)
+        return 0;
+
+    usr_wp = usr_wp | perm_disable_bit;
+    err = mmc_set_ext_csd(mmc, EXT_CSD_USER_WP, usr_wp);
+    if (err) {
+        printf("Failed: set permanent write protect disable failed\n");
+        return 1;
+    }
+    return 0;
+}
+
+static int mmc_is_us_pwr_wp_dis(u8 user_wp)
+{
+   return user_wp & US_PWR_WP_DIS_BIT;
+}
+
+static int mmc_is_us_perm_wp_dis(u8 user_wp)
+{
+   return user_wp & US_PERM_WP_DIS_BIT;
+}
+
+static int check_wp_type(u8 *addr, u8 wp_type, u64 set_protect_cnt)
+{
+    u8 type_mask = WP_TYPE_MASK;
+    u64 cnt = set_protect_cnt;
+    u8 times = 0;
+    u8 index = 7;
+    u8 cur_group_wp_type = addr[index];
+
+    while (cnt != 0) {
+        if (wp_type != ((type_mask)&(cur_group_wp_type))) {
+            return 1;
+        }
+        if (times == 3) {
+            times = 0;
+            index--;
+            cur_group_wp_type = addr[index];
+        }
+        else {
+            cur_group_wp_type = cur_group_wp_type >> 2;
+            times++;
+        }
+        cnt--;
+    }
+    return 0;
+}
+
+static int set_register_to_temporary(struct mmc *mmc, u8 *ext_csd)
+{
+    int err;
+    u8 wp_enable_type = WP_TEMPORARY_EN_BIT;
+    err = set_us_wp_en(mmc, ext_csd, wp_enable_type);
+    if (err)
+        printf("Failed: set temporary write protect failed\n");
+    return err;
+}
+
+static int set_register_to_pwr(struct mmc *mmc, u8 *ext_csd)
+{
+    int err;
+    u8 user_wp = ext_csd[EXT_CSD_USER_WP];
+    u8 wp_enable_type = WP_POWER_ON_EN_BIT;
+    if (mmc_is_us_pwr_wp_dis(user_wp)) {
+        printf("Failed: power on protection had been disabled\n");
+        return 1;
+    }
+
+    err = mmc_set_us_perm_wp_dis(mmc, ext_csd);
+    if (err) {
+        printf("Failed: set permanent protection diable failed\n");
+        return 1;
+    }
+
+    err = set_us_wp_en(mmc, ext_csd, wp_enable_type);
+    if (err) {
+        printf("Failed: set power on write protect enable failed\n");
+        return 1;
+    }
+    return 0;
+}
+
+static int set_register_to_perm(struct mmc *mmc, u8 *ext_csd)
+{
+    int err;
+    u8 wp_enable_type = WP_PERM_EN_BIT;
+    u8 user_wp = ext_csd[EXT_CSD_USER_WP];
+
+    if (mmc_is_us_perm_wp_dis(user_wp)) {
+        printf("Failed: Permanent protection had been disabled\n");
+        return 1;
+    }
+
+    err = set_us_wp_en(mmc, ext_csd, wp_enable_type);
+    if (err) {
+        printf("Failed: set permanent write protect enable failed\n");
+        return 1;
+    }
+    return 0;
+}
+
+static int set_wp_register(struct mmc *mmc, u8 *ext_csd, u8 wp_type)
+{
+    int ret = 1;
+    if (wp_type == WP_POWER_ON_TYPE)
+        ret = set_register_to_pwr(mmc, ext_csd);
+    else if (wp_type == WP_PERMANENT_TYPE)
+        ret = set_register_to_perm(mmc, ext_csd);
+    else if (wp_type == WP_TEMPORARY_TYPE)
+        ret = set_register_to_temporary(mmc, ext_csd);
+    return ret;
+}
+
+static u64 write_protect_group_size(struct mmc *mmc, u8 *ext_csd)
+{
+    int erase_group_def = ext_csd[EXT_CSD_ERASE_GROUP_DEF];
+    u64 write_protect_group_size;
+    int wp_grp_size = mmc->csd[2] & WP_GRP_SIZE_MASK;
+    int hc_wp_grp_size = ext_csd[EXT_CSD_HC_WP_GRP_SIZE];
+
+    if (erase_group_def == 0)
+        write_protect_group_size = (wp_grp_size + 1) * mmc->erase_grp_size;
+    else
+        write_protect_group_size =  hc_wp_grp_size * mmc->erase_grp_size;
+
+    return write_protect_group_size;
+}
+
+int is_write_protect_valid(u8 *ext_csd)
+{
+    u8 class_6_ctrl = ext_csd[EXT_CSD_CLASS_6_CTRL];
+    if (class_6_ctrl == 0)
+        return 1;
+    return 0;
+}
+
+static int compute_write_protect_range(struct mmc *mmc, char *name,
+        u8 *ext_csd, u64 *wp_grp_size_addr, u64 *start_addr, u64 *end)
+{
+    int blk_shift;
+    struct partitions *part_info;
+    u64 cnt;
+    u64 start = *start_addr;
+    u64 align_start = *start_addr;
+    u64 wp_grp_size = *wp_grp_size_addr;
+    u64 group_num ;
+    u64 partition_end;
+
+    wp_grp_size = write_protect_group_size(mmc, ext_csd);
+
+    blk_shift = ffs(mmc->read_bl_len) -1;
+
+    part_info = find_mmc_partition_by_name(name);
+    if (part_info == NULL)
+        return 1;
+
+    start = part_info->offset >> blk_shift;
+    if ((start % wp_grp_size)) {
+        align_start = (start + wp_grp_size - 1) / wp_grp_size * wp_grp_size;
+        printf("Caution! The partition start address isn't' aligned"
+                "to group size\n"
+               "the start address is change from 0x%llx to 0x%llx\n",
+               start, align_start);
+    }
+
+    if (emmc_cur_partition && !strncmp(name, "bootloader", strlen("bootloader")))
+        cnt = mmc->boot_size >> blk_shift;
+    else
+        cnt = part_info->size >> blk_shift;
+    if (cnt < wp_grp_size) {
+        printf("Caution: The partition size is 0x%llx sector smaller than "
+                "the group size 0x%llx sector, \n"
+                "so the partition can't be protect\n", cnt, wp_grp_size);
+        return 1;
+    }
+
+    *start_addr = align_start;
+    *wp_grp_size_addr = wp_grp_size;
+    partition_end = start + cnt - 1;
+    group_num = (cnt - (align_start - start)) / wp_grp_size;
+    *end = align_start + group_num * wp_grp_size - 1;
+
+    if (partition_end != *end) {
+        printf("Caution! The boundary of partition isn't aligned with write "
+                "protected group,\n"
+                "so the write protected boundry of the "
+                "partition is 0x%llx, rather than 0x%llx\n",
+                *end, partition_end);
+    }
+
+    printf("write_protect group size is 0x%llx sector\n", wp_grp_size);
+    printf("The %s partition write protect group number is %lld\n", name, group_num);
+#ifdef WP_DEBUG
+    printf("the start address is 0x%llx, group size is 0x%llx, end is 0x%llx\n",
+           *start_addr, *wp_grp_size_addr, *end);
+#endif
+    return 0;
+}
+
+static int send_wp_prot_type(struct mmc *mmc, void *dst, u64 blk)
+{
+    struct mmc_cmd cmd;
+    int err;
+    struct mmc_data data;
+
+    cmd.cmdidx = MMC_CMD_SEND_WRITE_PROT_TYPE;
+    cmd.cmdarg = blk;
+    cmd.resp_type = MMC_RSP_R1;
+
+    data.dest = dst;
+    data.blocks = 1;
+    data.blocksize = 8;
+    data.flags = MMC_DATA_READ;
+
+    err = mmc_send_cmd(mmc, &cmd, &data);
+    if (err)
+        goto err_out;
+
+    return 0;
+
+err_out:
+    puts("Failed: mmc send write protect type failed\n");
+    return err;
+}
+
+static int is_wp_set_failed(struct mmc *mmc, u8 wp_type, u64 start, u64 group_cnt)
+{
+    u8 *addr = NULL;
+    u8 err = 0;
+
+    addr = malloc(sizeof(u64));
+    if (addr == NULL) {
+        printf("Failed: malloc failed\n");
+        return 1;
+    }
+
+    err = send_wp_prot_type(mmc, addr, start);
+    if (err)
+        goto err_out;
+
+#ifdef WP_DEBUG
+    int  i;
+    for (i = 0; i < 8; i++)
+        printf("write_protect status is %x\n", ((u8 *)addr)[i]);
+#endif
+    if (check_wp_type(addr, wp_type, group_cnt)) {
+        printf("Failed: Write Protection set failed\n");
+        goto err_out;
+    }
+    return 0;
+
+err_out:
+    free(addr);
+    return 1;
+}
+
+static int send_part_wp_type(struct mmc *mmc, char *name)
+{
+    int err = 0;
+    u8 ext_csd[512] = {0};
+    u64 wp_grp_size, start, part_end;
+    u64 group_start;
+    void *addr = NULL;
+    int i;
+    int ret;
+
+    ret = mmc_get_ext_csd(mmc, ext_csd);
+    if (ret) {
+        printf("Failed: get ext_csd failed\n");
+        return 1;
+    }
+
+    if (!is_write_protect_valid(ext_csd)) {
+        printf("Failed: CLASS_6_CTRL isn't '0' "
+                "write protect process is invalid\n");
+        return 1;
+    }
+
+    addr = malloc(sizeof(u64));
+    if (addr == NULL) {
+        printf("Failed: malloc failed\n");
+        return 1;
+    }
+
+    err = compute_write_protect_range(mmc, name, ext_csd,
+            &wp_grp_size, &start, &part_end);
+    if (err)
+        return 1;
+
+    group_start = start;
+
+    while ((group_start + wp_grp_size - 1) <= part_end) {
+        err = send_wp_prot_type(mmc, addr, group_start);
+        if (err)
+            return 1;
+        printf("The write protect type for the 32 groups after 0x%llx is: \n0x",
+                group_start);
+        for (i = 0; i < 8; i++)
+            printf("%02x", ((u8*)addr)[i]);
+        printf("\n");
+        group_start += 32 * wp_grp_size;
+    }
+    return 0;
+}
+
+static int send_add_wp_type(struct mmc *mmc, u64 start, u64 cnt)
+{
+    u8 ext_csd[512] = {0};
+    u64 wp_grp_size = 0;
+    u64 part_end = 0;
+    u64 group_start;
+    u64 mmc_boundary;
+    int blk_shift;
+    void *addr = NULL;
+    int i;
+    int ret;
+
+    ret = mmc_get_ext_csd(mmc, ext_csd);
+    if (ret) {
+        printf("Failed: get ext_csd failed\n");
+        return 1;
+    }
+
+    if (!is_write_protect_valid(ext_csd)) {
+        printf("Failed: CLASS_6_CTRL isn't '0' "
+                "write protect process is invalid\n");
+        return 1;
+    }
+
+    addr = malloc(sizeof(u64));
+    if (addr == NULL) {
+        printf("Failed: malloc failed\n");
+        return 1;
+    }
+
+    wp_grp_size = write_protect_group_size(mmc, ext_csd);
+
+   if ((start % wp_grp_size)) {
+        group_start = (start + wp_grp_size - 1) / wp_grp_size * wp_grp_size;
+        printf("Caution! The partition start address isn't' aligned"
+                "to group size\n"
+               "the start address is change from 0x%llx to 0x%llx\n",
+               start, group_start);
+        part_end = group_start + (cnt - 1) * wp_grp_size - 1;
+        printf("The write protect group number is 0x%llx, rather than 0x%lld\n",
+                cnt - 1, cnt);
+    } else {
+        group_start = start;
+        part_end = group_start + cnt * wp_grp_size - 1;
+    }
+
+    blk_shift = ffs(mmc->read_bl_len) - 1;
+    mmc_boundary = mmc->capacity>>blk_shift;
+
+    if ((part_end + 1) > mmc_boundary) {
+        printf("Error: the operation cross the boundary of mmc\n");
+        return 1;
+    }
+
+    while ((group_start + wp_grp_size - 1) <= part_end) {
+        ret = send_wp_prot_type(mmc, addr, group_start);
+        if (ret)
+            return 1;
+        printf("The write protect type for the 32 groups after 0x%llx is: \n0x",
+                group_start);
+        for (i = 0; i < 8; i++)
+            printf("%02x", ((u8*)addr)[i]);
+        printf("\n");
+        group_start += 32 * wp_grp_size;
+    }
+    return 0;
+}
+
+static int set_part_write_protect(struct mmc *mmc, u8 wp_type, char *name)
+{
+    int err = 0;
+    u8 ext_csd[512] = {0};
+    u8 group_num  = 32;
+    u64 wp_grp_size, start, part_end;
+    u64 group_start;
+    u64 check_group_start;
+    u64 set_protect_cnt = 0;
+
+    err = mmc_get_ext_csd(mmc, ext_csd);
+    if (err) {
+        printf("Failed: get ext_csd failed\n");
+        return 1;
+    }
+
+    if (!is_write_protect_valid(ext_csd)) {
+        printf("Failed: CLASS_6_CTRL isn't '0' "
+                "write protect process is invalid\n");
+        return 1;
+    }
+
+    err = compute_write_protect_range(mmc, name, ext_csd,
+            &wp_grp_size, &start, &part_end);
+    if (err)
+        return 1;
+
+    group_start = start;
+    err = set_wp_register(mmc, ext_csd, wp_type);
+    if (err)
+        return 1;
+    while ((group_start + wp_grp_size - 1) <= part_end) {
+        err = set_write_prot(mmc, group_start);
+        if (err)
+            return 1;
+        group_start += wp_grp_size;
+        set_protect_cnt++;
+//check write protect type every 32 group
+        if (set_protect_cnt % 32 == 0) {
+            check_group_start = group_start -  group_num * wp_grp_size;
+            err = is_wp_set_failed(mmc, wp_type, check_group_start, group_num);
+            if (err)
+                return 1;
+        }
+    }
+
+    group_num = set_protect_cnt % 32;
+    check_group_start = group_start - group_num * wp_grp_size;
+
+    if (group_num) {
+        err = is_wp_set_failed(mmc, wp_type, check_group_start, group_num);
+        if (err)
+            return 1;
+    }
+
+    return 0;
+}
+
+static int set_add_write_protect(struct mmc *mmc, u8 wp_type, u64 start, u64 cnt)
+{
+    int err = 0;
+    u8 ext_csd[512] = {0};
+    int group_num = 32;
+    u64 wp_grp_size, part_end;
+    u64 group_start;
+    u64 check_group_start;
+    u64 set_protect_cnt = 0;
+    u64 mmc_boundary = 0;
+    int blk_shift;
+    err = mmc_get_ext_csd(mmc, ext_csd);
+
+    if (err) {
+        printf("Failed: get ext_csd failed\n");
+        return 1;
+    }
+
+    if (!is_write_protect_valid(ext_csd)) {
+        printf("Failed: CLASS_6_CTRL isn't '0' "
+                "write protect process is invalid\n");
+        return 1;
+    }
+
+    if (err)
+        return 1;
+
+    wp_grp_size = write_protect_group_size(mmc, ext_csd);
+
+    if ((start % wp_grp_size)) {
+      group_start = (start + wp_grp_size - 1) / wp_grp_size * wp_grp_size;
+      printf("Caution! The partition start address isn't' aligned"
+              "to group size\n"
+             "the start address is change from 0x%llx to 0x%llx\n",
+             start, group_start);
+      part_end = group_start + (cnt - 1) * wp_grp_size - 1;
+      printf("The write protect group number is 0x%llx, rather than 0x%lld\n",
+              cnt - 1, cnt);
+    } else {
+      group_start = start;
+      part_end = group_start + cnt * wp_grp_size - 1;
+    }
+
+    blk_shift = ffs(mmc->read_bl_len) - 1;
+    mmc_boundary = mmc->capacity>>blk_shift;
+
+    if ((part_end + 1) > mmc_boundary) {
+        printf("Error: the operation cross the boundary of mmc\n");
+        return 1;
+    }
+
+    err = set_wp_register(mmc, ext_csd, wp_type);
+    if (err)
+        return 1;
+
+    while ((group_start + wp_grp_size - 1) <= part_end) {
+        err = set_write_prot(mmc, group_start);
+        if (err)
+            return 1;
+        group_start += wp_grp_size;
+        set_protect_cnt++;
+//check write protect type every 32 group
+        if (set_protect_cnt % 32 == 0) {
+            check_group_start = group_start -  group_num * wp_grp_size;
+            err = is_wp_set_failed(mmc, wp_type, check_group_start, group_num);
+            if (err)
+                return 1;
+        }
+    }
+
+    group_num = set_protect_cnt % 32;
+    check_group_start = group_start - group_num * wp_grp_size;
+
+    if (group_num) {
+        err = is_wp_set_failed(mmc, wp_type, check_group_start, group_num);
+        if (err)
+            return 1;
+    }
+
+    return 0;
+}
+
+static int do_amlmmc_write_protect(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
+{
+    int ret = CMD_RET_USAGE;
+    struct mmc *mmc;
+    int dev = 1;
+    char *name = NULL;
+    char *wp_type_str = NULL;
+    u8 write_protect_type;
+    u64 start, cnt;
+
+    if (argc > 5 || argc < 4)
+        return ret;
+    if (argc == 4) {
+        name = argv[2];
+        wp_type_str = argv[3];
+        dev = find_dev_num_by_partition_name(name);
+        if (dev < 0) {
+            printf("Error: Cannot find dev.\n");
+            return CMD_RET_USAGE;
+        }
+    } else {
+        start = simple_strtoull(argv[2], NULL, 16);
+        cnt = simple_strtoull(argv[3], NULL, 0);
+        wp_type_str = argv[4];
+    }
+
+    mmc = find_mmc_device(dev);
+
+    if (IS_SD(mmc)) {
+        mmc = find_mmc_device(~dev);
+        if (IS_SD(mmc)) {
+            printf("SD card can not be write protect\n");
+            return 1;
+        }
+    }
+
+    if (!mmc)
+        return 1;
+
+    mmc_init(mmc);
+    if (!mmc)
+        return 1;
+
+    if (strcmp(wp_type_str, "temporary") == 0)
+        write_protect_type = WP_TEMPORARY_TYPE;
+    else if (strcmp(wp_type_str, "power_on") == 0 )
+        write_protect_type = WP_POWER_ON_TYPE;
+    else if (strcmp(wp_type_str, "permanent") == 0)
+        write_protect_type = WP_PERMANENT_TYPE;
+    else
+        return ret;
+
+    if (argc == 4)
+        ret = set_part_write_protect(mmc, write_protect_type, name);
+    else
+        ret = set_add_write_protect(mmc, write_protect_type, start, cnt);
+
+    return ret;
+}
+
+static int clear_write_prot_per_group(struct mmc *mmc, u64 blk)
+{
+    struct mmc_cmd cmd;
+    int err;
+
+    cmd.cmdidx = MMC_CMD_CLR_WRITE_PROT;
+    cmd.cmdarg = blk;
+    cmd.resp_type = MMC_RSP_R1b;
+
+    err = mmc_send_cmd(mmc, &cmd, NULL);
+
+    return err;
+}
+
+static int set_part_clear_wp(struct mmc *mmc, char *name)
+{
+    int err = 0;
+    u8 ext_csd[512] = {0};
+    u8 group_num  = 32;
+    u64 wp_grp_size, start, part_end;
+    u64 group_start;
+    u64 check_group_start;
+    u64 set_protect_cnt = 0;
+    u8 wp_type = WP_CLEAR_TYPE;
+
+    err = mmc_get_ext_csd(mmc, ext_csd);
+    if (err) {
+        printf("get ext_csd failed\n");
+        return 1;
+    }
+
+    if (!is_write_protect_valid(ext_csd)) {
+        printf("CLASS_6_CTRL isn't '0' write protect process is invalid\n");
+        return 1;
+    }
+
+    err = compute_write_protect_range(mmc, name, ext_csd,
+            &wp_grp_size, &start, &part_end);
+    if (err)
+        return 1;
+
+    group_start = start;
+/*
+    if (!is_wp_type_temporary(ext_csd)) {
+        printf("The write protect can't be clear\n");
+        return 1;
+    }
+*/
+    while ((group_start + wp_grp_size - 1) <= part_end) {
+        err = clear_write_prot_per_group(mmc, group_start);
+        if (err) {
+            printf("Error: The write protect can't be clear\n");
+            return 1;
+        }
+        group_start += wp_grp_size;
+        set_protect_cnt++;
+//check write protect type every 32 group
+        if (set_protect_cnt % 32 == 0) {
+            check_group_start = group_start -  group_num * wp_grp_size;
+            err = is_wp_set_failed(mmc, wp_type, check_group_start, group_num);
+            if (err)
+                return 1;
+        }
+    }
+
+    group_num = set_protect_cnt % 32;
+    check_group_start = group_start - group_num * wp_grp_size;
+
+    if (group_num) {
+        err = is_wp_set_failed(mmc, wp_type, check_group_start, group_num);
+        if (err)
+            return 1;
+    }
+
+    return 0;
+}
+
+static int set_add_clear_wp(struct mmc *mmc, u64 start, u64 cnt)
+{
+    int err = 0;
+    u8 ext_csd[512] = {0};
+    u8 group_num  = 32;
+    u64 wp_grp_size, part_end;
+    u64 group_start;
+    u64 check_group_start;
+    u64 set_protect_cnt = 0;
+    u8 wp_type = WP_CLEAR_TYPE;
+    int blk_shift;
+    u64 mmc_boundary;
+
+    err = mmc_get_ext_csd(mmc, ext_csd);
+    if (err) {
+        printf("get ext_csd failed\n");
+        return 1;
+    }
+
+    if (!is_write_protect_valid(ext_csd)) {
+        printf("CLASS_6_CTRL isn't '0' write protect process is invalid\n");
+        return 1;
+    }
+
+    wp_grp_size = write_protect_group_size(mmc, ext_csd);
+
+    if ((start % wp_grp_size)) {
+         group_start = (start + wp_grp_size - 1) / wp_grp_size * wp_grp_size;
+         printf("Caution! The partition start address isn't' aligned"
+                 "to group size\n"
+                "the start address is change from 0x%llx to 0x%llx\n",
+                start, group_start);
+         part_end = group_start + (cnt - 1) * wp_grp_size - 1;
+         printf("The write protect group number is 0x%llx, rather than 0x%lld\n",
+                 cnt - 1, cnt);
+     } else {
+         group_start = start;
+         part_end = group_start + cnt * wp_grp_size - 1;
+     }
+
+     blk_shift = ffs(mmc->read_bl_len) - 1;
+     mmc_boundary = mmc->capacity>>blk_shift;
+
+     if ((part_end + 1) > mmc_boundary) {
+         printf("Error: the operation cross the boundary of mmc\n");
+         return 1;
+     }
+
+    while ((group_start + wp_grp_size - 1) <= part_end) {
+        err = clear_write_prot_per_group(mmc, group_start);
+        if (err) {
+            printf("Error: The write protect can't be clear\n");
+            return 1;
+        }
+        group_start += wp_grp_size;
+        set_protect_cnt++;
+//check write protect type every 32 group
+        if (set_protect_cnt % 32 == 0) {
+            check_group_start = group_start -  group_num * wp_grp_size;
+            err = is_wp_set_failed(mmc, wp_type, check_group_start, group_num);
+            if (err)
+                return 1;
+        }
+    }
+
+    group_num = set_protect_cnt % 32;
+    check_group_start = group_start - group_num * wp_grp_size;
+
+    if (group_num) {
+        err = is_wp_set_failed(mmc, wp_type, check_group_start, group_num);
+        if (err)
+            return 1;
+    }
+
+    return 0;
+}
+
+static int do_amlmmc_clear_wp(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
+{
+    int ret = CMD_RET_USAGE;
+    struct mmc *mmc;
+    int dev = 1;
+    char *name = NULL;
+    u64 start, cnt;
+
+    if (argc < 3 || argc > 4)
+        return ret;
+
+    if (argc == 3) {
+         name = argv[2];
+         dev = find_dev_num_by_partition_name(name);
+         if (dev < 0) {
+             printf("Error: Cannot find dev.\n");
+             return CMD_RET_USAGE;
+         }
+     } else {
+         start = simple_strtoull(argv[2], NULL, 16);
+         cnt = simple_strtoull(argv[3], NULL, 10);
+     }
+
+    mmc = find_mmc_device(dev);
+    if (!mmc)
+        return 1;
+
+    if (IS_SD(mmc)) {
+        mmc = find_mmc_device(~dev);
+        if (IS_SD(mmc)) {
+            printf("SD card can not be write protect\n");
+            return 1;
+        }
+    }
+
+    mmc_init(mmc);
+    if (!mmc)
+        return 1;
+
+    if (argc == 3)
+        ret = set_part_clear_wp(mmc, name);
+    else
+        ret = set_add_clear_wp(mmc, start, cnt);
+
+    return ret;
+}
+
+static int send_write_prot_status_group(struct mmc *mmc, u64 blk)
+{
+    struct mmc_cmd cmd;
+    struct mmc_data data;
+    int err;
+    void *addr = NULL;
+    int i = 0;
+    addr = malloc(4*sizeof(u8));
+
+    if (addr == NULL) {
+        printf("Failed: malloc failed\n");
+        return 1;
+    }
+
+    cmd.cmdidx = MMC_CMD_SEND_WRITE_PROT;
+    cmd.cmdarg = blk;
+    cmd.resp_type = MMC_RSP_R1;
+
+    data.dest = addr;
+    data.blocks = 1;
+    data.blocksize = 4;
+    data.flags = MMC_DATA_READ;
+
+    err = mmc_send_cmd(mmc, &cmd, &data);
+    if (err)
+        goto err_out;
+
+    printf("The write protect type for the 32 groups after 0x%llx is:\n0x",
+            blk);
+    for (i = 0 ; i < 4; i++)
+        printf("%02x", ((u8 *)addr)[i]);
+    printf("\n");
+
+    free(addr);
+    return 0;
+err_out:
+    free(addr);
+    return 1;
+}
+
+static int send_part_wp_status(struct mmc *mmc, char *name)
+{
+    int err = 0;
+    u8 ext_csd[512] = {0};
+    u64 wp_grp_size, start, part_end;
+    u64 group_start;
+
+    err = mmc_get_ext_csd(mmc, ext_csd);
+    if (err) {
+        printf("Failed: get ext_csd failed\n");
+        return 1;
+    }
+
+    if (!is_write_protect_valid(ext_csd)) {
+        printf("Failed: CLASS_6_CTRL isn't '0' "
+                "write protect process is invalid\n");
+        return 1;
+    }
+
+    err = compute_write_protect_range(mmc, name, ext_csd,
+            &wp_grp_size, &start, &part_end);
+    if (err)
+        return 1;
+
+    group_start = start;
+
+    while ((group_start + wp_grp_size - 1) <= part_end) {
+        err = send_write_prot_status_group(mmc, group_start);
+        if (err)
+            return 1;
+        group_start += 32 * wp_grp_size;
+    }
+
+    return 0;
+}
+
+static int send_add_wp_status(struct mmc *mmc, u64 start, u64 cnt)
+{
+    int err = 0;
+    u8 ext_csd[512] = {0};
+    u64 wp_grp_size, part_end;
+    u64 group_start;
+    int blk_shift;
+    u64 mmc_boundary;
+    err = mmc_get_ext_csd(mmc, ext_csd);
+    if (err) {
+        printf("Failed: get ext_csd failed\n");
+        return 1;
+    }
+
+    if (!is_write_protect_valid(ext_csd)) {
+        printf("Failed: CLASS_6_CTRL isn't '0' "
+                "write protect process is invalid\n");
+        return 1;
+    }
+
+    wp_grp_size = write_protect_group_size(mmc, ext_csd);
+
+    if ((start % wp_grp_size)) {
+         group_start = (start + wp_grp_size - 1) / wp_grp_size * wp_grp_size;
+         printf("Caution! The partition start address isn't' aligned"
+                 "to group size\n"
+                "the start address is change from 0x%llx to 0x%llx\n",
+                start, group_start);
+         part_end = group_start + (cnt - 1) * wp_grp_size - 1;
+         printf("The write protect group number is 0x%llx, rather than 0x%lld\n",
+                 cnt - 1, cnt);
+     } else {
+         group_start = start;
+         part_end = group_start + cnt * wp_grp_size - 1;
+     }
+
+    blk_shift = ffs(mmc->read_bl_len) - 1;
+    mmc_boundary = mmc->capacity>>blk_shift;
+
+    if ((part_end + 1) > mmc_boundary) {
+        printf("Error: the operation cross the boundary of mmc\n");
+        return 1;
+    }
+
+    while ((group_start + wp_grp_size - 1) <= part_end) {
+        err = send_write_prot_status_group(mmc, group_start);
+        if (err)
+            return 1;
+        group_start += 32 * wp_grp_size;
+    }
+
+    return 0;
+}
+
+static int do_amlmmc_send_wp_status(cmd_tbl_t *cmdtp,
+        int flag, int argc, char *const argv[])
+{
+    int ret = CMD_RET_USAGE;
+    struct mmc *mmc;
+    int dev = 1;
+    char *name = NULL;
+    u64 start, cnt;
+
+    if (argc < 3 || argc > 4)
+        return ret;
+
+    if (argc == 3) {
+        name = argv[2];
+        dev = find_dev_num_by_partition_name(name);
+        if (dev < 0) {
+            printf("Error: Cannot find dev.\n");
+            return 1;
+        }
+    } else {
+        start = simple_strtoull(argv[2], NULL, 16);
+        cnt = simple_strtoull(argv[3], NULL, 0);
+    }
+
+    mmc = find_mmc_device(dev);
+
+    if (IS_SD(mmc)) {
+        mmc = find_mmc_device(~dev);
+        if (IS_SD(mmc)) {
+            printf("SD card can not be write protect\n");
+            return 1;
+        }
+    }
+
+    if (!mmc)
+        return 1;
+
+    mmc_init(mmc);
+    if (!mmc)
+        return 1;
+
+    if (argc == 3)
+        ret = send_part_wp_status(mmc, name);
+    else
+        ret = send_add_wp_status(mmc, start, cnt);
+
+    if (ret) {
+        printf("Failed: send partition write protect status failed\n");
+    }
+
+    return ret;
+}
+
+static int do_amlmmc_send_wp_type(cmd_tbl_t *cmdtp,
+        int flag, int argc, char *const argv[])
+{
+    int ret = CMD_RET_USAGE;
+    struct mmc *mmc;
+    int dev = 1;
+    char *name = NULL;
+    u64 start, cnt;
+
+    if (argc < 3 || argc > 4)
+        return ret;
+
+    if (argc == 3) {
+        name = argv[2];
+        dev = find_dev_num_by_partition_name(name);
+        if (dev < 0) {
+            printf("Error: Cannot find dev.\n");
+            return 1;
+        }
+    } else {
+        start = simple_strtoull(argv[2], NULL, 16);
+        cnt = simple_strtoull(argv[3], NULL, 0);
+    }
+
+    mmc = find_mmc_device(dev);
+
+    if (!mmc)
+        return 1;
+
+    if (IS_SD(mmc)) {
+        mmc = find_mmc_device(~dev);
+        if (IS_SD(mmc)) {
+            printf("SD card can not be write protect\n");
+            return 1;
+        }
+    }
+
+    mmc_init(mmc);
+    if (!mmc)
+        return 1;
+    if (argc == 3)
+        ret = send_part_wp_type(mmc, name);
+    else
+        ret = send_add_wp_type(mmc, start, cnt);
+
+    if (ret) {
+        printf("Failed: send parittion write protect type failed\n");
+    }
+
+    return ret;
+}
+
 static cmd_tbl_t cmd_amlmmc[] = {
-    U_BOOT_CMD_MKENT(read,          6, 0, do_amlmmc_read,       "", ""),
-    U_BOOT_CMD_MKENT(write,         6, 0, do_amlmmc_write,      "", ""),
-    U_BOOT_CMD_MKENT(erase,         5, 0, do_amlmmc_erase,      "", ""),
-    U_BOOT_CMD_MKENT(rescan,        3, 0, do_amlmmc_rescan,     "", ""),
-    U_BOOT_CMD_MKENT(part,          3, 0, do_amlmmc_part,       "", ""),
-    U_BOOT_CMD_MKENT(list,          2, 0, do_amlmmc_list,       "", ""),
-    U_BOOT_CMD_MKENT(switch,        4, 0, do_amlmmc_switch,     "", ""),
-    U_BOOT_CMD_MKENT(status,        3, 0, do_amlmmc_status,     "", ""),
-    U_BOOT_CMD_MKENT(ext_csd,       5, 0, do_amlmmc_ext_csd,    "", ""),
-    U_BOOT_CMD_MKENT(response,      3, 0, do_amlmmc_response,   "", ""),
-    U_BOOT_CMD_MKENT(controller,    3, 0, do_amlmmc_controller, "", ""),
-    U_BOOT_CMD_MKENT(size,          4, 0, do_amlmmc_size,       "", ""),
-    U_BOOT_CMD_MKENT(env,           2, 0, do_amlmmc_env,        "", ""),
+    U_BOOT_CMD_MKENT(read,          6, 0, do_amlmmc_read,          "", ""),
+    U_BOOT_CMD_MKENT(write,         6, 0, do_amlmmc_write,         "", ""),
+    U_BOOT_CMD_MKENT(erase,         5, 0, do_amlmmc_erase,         "", ""),
+    U_BOOT_CMD_MKENT(rescan,        3, 0, do_amlmmc_rescan,        "", ""),
+    U_BOOT_CMD_MKENT(part,          3, 0, do_amlmmc_part,          "", ""),
+    U_BOOT_CMD_MKENT(list,          2, 0, do_amlmmc_list,          "", ""),
+    U_BOOT_CMD_MKENT(switch,        4, 0, do_amlmmc_switch,        "", ""),
+    U_BOOT_CMD_MKENT(status,        3, 0, do_amlmmc_status,        "", ""),
+    U_BOOT_CMD_MKENT(ext_csd,       5, 0, do_amlmmc_ext_csd,       "", ""),
+    U_BOOT_CMD_MKENT(response,      3, 0, do_amlmmc_response,      "", ""),
+    U_BOOT_CMD_MKENT(controller,    3, 0, do_amlmmc_controller,    "", ""),
+    U_BOOT_CMD_MKENT(size,          4, 0, do_amlmmc_size,          "", ""),
+    U_BOOT_CMD_MKENT(env,           2, 0, do_amlmmc_env,           "", ""),
+    U_BOOT_CMD_MKENT(write_protect, 5, 0, do_amlmmc_write_protect,  "", ""),
+    U_BOOT_CMD_MKENT(send_wp_status, 4, 0, do_amlmmc_send_wp_status, "", ""),
+    U_BOOT_CMD_MKENT(send_wp_type,   4, 0, do_amlmmc_send_wp_type, "", ""),
+    U_BOOT_CMD_MKENT(clear_wp,      4, 0, do_amlmmc_clear_wp,      "", ""),
 #ifdef CONFIG_SECURITYKEY
-    U_BOOT_CMD_MKENT(key,           2, 0, do_amlmmc_key,        "", ""),
+    U_BOOT_CMD_MKENT(key,           2, 0, do_amlmmc_key,           "", ""),
 #endif
 };
 
@@ -1517,12 +2569,20 @@ U_BOOT_CMD(
     "amlmmc ext_csd <device_num> <byte> <value> - write sd/emmc device EXT_CSD [byte] value\n"
     "amlmmc response <device_num> - read sd/emmc last command response\n"
     "amlmmc controller <device_num> - read sd/emmc controller register\n"
+    "amlmmc write_protect <partition_name> <write_protect_type>\n"
+    "        - set write protect on partition through power_on or temporary\n"
+    "amlmmc write_protect <addr_base16> <cnt_base10> <write_protect_type>\n"
+    "        - set write protect on specified address through power_on or temporary\n"
+    "amlmmc send_wp_status <partition_name> send protect status of partition\n"
+    "amlmmc send_wp_status <addr_base16> <cnt_base10> send protect status on specified address\n"
+    "amlmmc send_wp_type <partition_name> send protect type of partition\n"
+    "amlmmc send_wp_type <addr_base16> <cnt_base10> send protect type on specified address\n"
+    "amlmmc clear_wp <partition_name> clear write protect of partition\n"
+    "amlmmc clear_wp <addr_base16> <cnt_base10> clear write protect on specified addresst\n"
 #ifdef CONFIG_SECURITYKEY
     "amlmmc key - disprotect key partition\n"
 #endif
 );
-
-
 
 /* dtb read&write operation with backup updates */
 static u32 _calc_dtb_checksum(struct aml_dtb_rsv * dtb)

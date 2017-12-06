@@ -25,8 +25,9 @@
 #include <amlogic/secure_storage.h>
 
 #define CONFIG_DISABLE_USER_WP
-#define USER_WP_VALUE  ((1<<3)|(1<<4)|(1<<6))
-
+#define CONFIG_DISABLE_PERM_USER_WP 1
+#define USER_WP_VALUE  ((1<<4)|(1<<6))
+//#define CONFIG_MMC_TRACE 1
 static struct list_head mmc_devices;
 static int cur_dev_num = -1;
 
@@ -126,6 +127,7 @@ int mmc_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd, struct mmc_data *data)
 				ptr = (u8 *)&cmd->response[i];
 				ptr += 3;
 				for (j = 0; j < 4; j++)
+
 					printf("%02X ", *ptr--);
 				printf("\n");
 			}
@@ -563,6 +565,7 @@ u8 ext_csd_w[] = {191, 187, 185, 183, 179, 178, 177, 175,
 					161, 156, 155, 143, 140, 136, 134, 133,
 					132, 131, 62, 59, 56, 52, 37, 34,
 					33, 32, 31, 30, 29, 22, 17, 16, 15};
+
 int mmc_set_ext_csd(struct mmc *mmc, u8 index, u8 value)
 {
 	int ret = SWITCH_ERR, i;
@@ -663,7 +666,7 @@ int mmc_select_hwpart(int dev_num, int hwpart)
 {
 	struct mmc *mmc = find_mmc_device(dev_num);
 	int ret;
-
+//
 	if (!mmc)
 		return -ENODEV;
 
@@ -921,19 +924,20 @@ static void mmc_set_bus_width(struct mmc *mmc, uint width)
 	mmc_set_ios(mmc);
 }
 
-#ifdef CONFIG_DISABLE_USER_WP
-static void mmc_disable_usr_wp(struct mmc *mmc,u8 *ext_csd)
+//#ifdef CONFIG_DISABLE_USER_WP
+int mmc_disable_usr_wp(struct mmc *mmc, u8 *ext_csd)
 {
-	int err;
+	int err= 0;
 	u8 cur_ext_csd_171 = 0;
 	u8 user_wp_disable = 0;
 	cur_ext_csd_171 = (u8)ext_csd[171];
 	printf("original ext_csd[171] USE_WP field value is %02x\n",cur_ext_csd_171);
 	user_wp_disable = (cur_ext_csd_171^USER_WP_VALUE)&USER_WP_VALUE;
+	printf("user_wp_disable is %d\n",user_wp_disable);
 	if (user_wp_disable) {
 		err = mmc_switch_by_bit(mmc,MMC_SWITCH_MODE_SET_BITS,EXT_CSD_USER_WP,user_wp_disable);
 		if (err)
-		printf("mmc_switch mistake when disable user_wp, err value is %d\n",err);
+		    printf("mmc_switch mistake when disable user_wp, err value is %d\n",err);
 
 		err = mmc_get_ext_csd(mmc,ext_csd);
 		if (err)
@@ -944,8 +948,9 @@ static void mmc_disable_usr_wp(struct mmc *mmc,u8 *ext_csd)
 	else {
 		printf("Disable bits in ext_csd[171] USE_WP field has been set to \"1\"\n");
 	}
+	return err;
 }
-#endif
+//#endif
 
 static int mmc_startup(struct mmc *mmc)
 {
@@ -1228,7 +1233,7 @@ static int mmc_startup(struct mmc *mmc)
 		return err;
 
 #ifdef CONFIG_DISABLE_USER_WP
-	mmc_disable_usr_wp(mmc,ext_csd);
+//	mmc_disable_usr_wp(mmc,ext_csd);
 #endif
 
 	/* Restrict card's capabilities by what the host can do */

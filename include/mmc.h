@@ -74,6 +74,10 @@
 #define MMC_CMD_SET_BLOCK_COUNT         23
 #define MMC_CMD_WRITE_SINGLE_BLOCK	24
 #define MMC_CMD_WRITE_MULTIPLE_BLOCK	25
+#define MMC_CMD_SET_WRITE_PROTECT       28
+#define MMC_CMD_CLR_WRITE_PROT          29
+#define MMC_CMD_SEND_WRITE_PROT         30
+#define MMC_CMD_SEND_WRITE_PROT_TYPE    31
 #define MMC_CMD_ERASE_GROUP_START	35
 #define MMC_CMD_ERASE_GROUP_END		36
 #define MMC_CMD_ERASE			38
@@ -148,6 +152,7 @@
 /*
  * EXT_CSD fields
  */
+#define EXT_CSD_CLASS_6_CTRL        59  /*R/W/E_P*/
 #define EXT_CSD_GP_SIZE_MULT		143	/* R/W */
 #define EXT_CSD_PARTITION_SETTING	155	/* R/W */
 #define EXT_CSD_PARTITIONS_ATTRIBUTE	156	/* R/W */
@@ -237,6 +242,20 @@
  */
 #define MMC_NUM_BOOT_PARTITION	2
 #define MMC_PART_RPMB           3       /* RPMB partition number */
+
+/*write protect*/
+#define US_PWR_WP_DIS_BIT      1<<3
+#define US_PERM_WP_DIS_BIT     1<<4
+#define WP_CLEAR_TYPE          0
+#define WP_POWER_ON_TYPE       (1<<1)
+#define WP_TEMPORARY_TYPE      1
+#define WP_PERMANENT_TYPE      ((1<<0)|(1<<1))
+#define WP_TYPE_MASK           3
+#define WP_ENABLE_MASK         7
+#define WP_TEMPORARY_EN_BIT    0
+#define WP_POWER_ON_EN_BIT     (1<<0)
+#define WP_PERM_EN_BIT         (1<<2)
+#define WP_GRP_SIZE_MASK       31
 
 struct mmc_cid {
 	unsigned long psn;
