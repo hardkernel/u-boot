@@ -39,6 +39,17 @@ config TARGET_EVB_RK3288
 	  also includes on-board eMMC and 2GB of SDRAM. Expansion connectors
 	  provide access to display pins, I2C, SPI, UART and GPIOs.
 
+config TARGET_EVB_RK3288_RK1608
+	bool "Evb-RK3288-RK1608"
+	select BOARD_LATE_INIT
+	help
+	  The EVB-RK3288-RK1608 includes a Host AP RK3288 and a DSP coprocessor
+	  RK1608. The EVB can help us to develop the RK1608 easily through a
+	  good RK3288 host environment. On the RK3288 side, there are 2 USB
+	  ports, MIPI, micro-SD card, WiFi and Gigabit Ethernet, It also
+	  includes on-board eMMC and 2GB of DDR3. Expansion connectors provide
+	  access to display pins, I2C, SPI, UART and GPIOs.
+
 config TARGET_FENNEC_RK3288
 	bool "Fennec-RK3288"
 	select BOARD_LATE_INIT
@@ -150,6 +161,8 @@ source "board/phytec/phycore_rk3288/Kconfig"
 source "board/radxa/rock2/Kconfig"
 
 source "board/rockchip/evb_rk3288/Kconfig"
+
+source "board/rockchip/evb_rk3288_rk1608/Kconfig"
 
 source "board/rockchip/fennec_rk3288/Kconfig"
 
