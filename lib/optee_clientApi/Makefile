@@ -13,4 +13,4 @@ obj-y += 258be795-f9ca-40e6-a8699ce6886c5d5d.o
 
 lib/optee_clientApi/258be795-f9ca-40e6-a8699ce6886c5d5d.o: lib/optee_clientApi/258be795-f9ca-40e6-a8699ce6886c5d5d.c
 lib/optee_clientApi/258be795-f9ca-40e6-a8699ce6886c5d5d.c: lib/optee_clientApi/258be795-f9ca-40e6-a8699ce6886c5d5d.ta
-	$(q)lib/optee_clientApi/tabinary_to_cfile.py --prefix keymaster --TA $< --out $@
+	$(srctree)/lib/optee_clientApi/tabinary_to_cfile.py --prefix keymaster --TA $< --out $@
