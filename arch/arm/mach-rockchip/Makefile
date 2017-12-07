@@ -31,6 +31,7 @@ ifneq ($(CONFIG_ROCKCHIP_BOOT_MODE_REG),0)
 obj-y += boot_mode.o
 endif
 
+obj-$(CONFIG_ROCKCHIP_CRC) += rockchip_crc.o
 obj-$(CONFIG_ROCKCHIP_SMCCC) += rockchip_smccc.o
 obj-$(CONFIG_ROCKCHIP_VENDOR_PARTITION) += vendor.o
 obj-$(CONFIG_ROCKCHIP_RESOURCE_IMAGE) += resource_img.o
