@@ -4,17 +4,17 @@
  * SPDX-License-Identifier:     GPL-2.0+
  */
 
-#include <asm/suspend.h>
-#include <asm/arch/rockchip_smccc.h>
-#include <asm/arch/bootrkp.h>
 #include <common.h>
+#include <boot_rkimg.h>
 #include <console.h>
 #include <dm.h>
 #include <errno.h>
 #include <key.h>
-#include <irq-generic.h>
-#include <linux/input.h>
 #include <pwm.h>
+#include <irq-generic.h>
+#include <asm/arch/rockchip_smccc.h>
+#include <asm/suspend.h>
+#include <linux/input.h>
 #include <power/charge_display.h>
 #include <power/fuel_gauge.h>
 #include <power/pmic.h>
@@ -245,9 +245,9 @@ static int charge_animation_show(struct udevice *dev)
 		return 0;
 	}
 
-#ifdef CONFIG_ROCKCHIP_PARTITION_BOOT
+#ifdef CONFIG_RKIMG_BOOTLOADER
 	boot_mode = rockchip_get_boot_mode();
-	if (boot_mode != ANDROID_BOOT_MODE_NORMAL) {
+	if (boot_mode != BOOT_MODE_NORMAL) {
 		debug("exit charge, due to boot mode: %d\n", boot_mode);
 		return 0;
 	}
