@@ -33,7 +33,11 @@ pack_images()
 	if [ -d ${dst} ]; then
 		path=$(cd `dirname ${dst}`; pwd)
 	else
-		echo "Can't find '../rkbin/' or '../rkbin/tools/' Responsity, please download it before pack image!"
+		echo "\nCan't find '../rkbin/' or '../rkbin/tools/' Responsity, please download it before pack image!"
+		echo "How to obtain, 3 ways:"
+		echo "	1. Login your gerrit account: \"Projects\" -> \"List\" -> search rkbin Responsity"
+		echo "	2. Github Responsity: https://github.com/rockchip-linux/rkbin"
+		echo "	3. Download full release SDK Responsity\n"
 		exit 1
 	fi
 
