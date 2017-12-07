@@ -110,7 +110,7 @@ obj-$(CONFIG_$(SPL_TPL_)FIT_SIGNATURE) += image-sig.o
 obj-$(CONFIG_IO_TRACE) += iotrace.o
 obj-y += memsize.o
 obj-y += stdio.o
-
+obj-$(CONFIG_RKIMG_BOOTLOADER) += boot_rkimg.o
 # This option is not just y/n - it can have a numeric value
 ifdef CONFIG_FASTBOOT_FLASH
 obj-y += image-sparse.o
