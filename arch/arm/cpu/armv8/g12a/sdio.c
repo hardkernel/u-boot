@@ -23,6 +23,8 @@
 #include <asm/arch/io.h>
 #include <asm/arch/cpu_sdio.h>
 #include <asm/arch/secure_apb.h>
+#include <asm/cpu_id.h>
+#include <common.h>
 
 void  cpu_sd_emmc_pwr_prepare(unsigned port)
 {
@@ -53,25 +55,35 @@ unsigned sd_debug_board_1bit_flag = 0;
 int cpu_sd_emmc_init(unsigned port)
 {
 
-	//printf("inand sdio  port:%d\n",port);
 	switch (port)
 	{
 	case SDIO_PORT_A:
-        setbits_le32(P_PERIPHS_PIN_MUX_5, (0x3f << 26) | (0x1 << 24));
+		clrsetbits_le32(P_PERIPHS_PIN_MUX_3,
+						0xFFFFFF, 0x111111);
 		break;
 	case SDIO_PORT_B:
 		clrsetbits_le32(P_PAD_DS_REG1A, 0xFFFF, 0x5555);
 		if (sd_debug_board_1bit_flag == 1)
-			setbits_le32(P_PERIPHS_PIN_MUX_6, 0x7 << 2);
-        else {
-            clrbits_le32(P_PERIPHS_PIN_MUX_6, 0x3f << 6);
-			setbits_le32(P_PERIPHS_PIN_MUX_6, 0x3f << 0);
-        }
+			clrsetbits_le32(P_PERIPHS_PIN_MUX_9,
+						((0xFF << 16) | 0xF), ((0x11 << 16) | 0x1));
+		else
+			clrsetbits_le32(P_PERIPHS_PIN_MUX_9,
+						0xFFFFFF, 0x111111);
 		break;
-	case SDIO_PORT_C://SDIOC GPIOB_2~GPIOB_7
-		clrbits_le32(P_PERIPHS_PIN_MUX_7, (0x7 << 5) | (0xff << 16));
-		setbits_le32(P_PERIPHS_PIN_MUX_7, 0x7 << 29);
-        //printf("inand sdio  port:%d\n",port);
+	case SDIO_PORT_C:
+		/* pull up data by default */
+		setbits_le32(P_PAD_PULL_UP_EN_REG0, 0x35ff);
+		setbits_le32(P_PAD_PULL_UP_REG0, 0x35ff);
+		/* set pinmux */
+		writel(0x11111111, P_PERIPHS_PIN_MUX_0);
+		clrsetbits_le32(P_PERIPHS_PIN_MUX_1,
+						((0xFF << 16) | (0xF << 8) | 0xF),
+						((0x1 << 20) | (0x1 << 8) | 0x1));
+		/* hardware reset with pull boot12 */
+		clrbits_le32(P_PREG_PAD_GPIO0_EN_N, 1<<12);
+		clrbits_le32(P_PREG_PAD_GPIO0_O, 1<<12);
+		udelay(10);
+		setbits_le32(P_PREG_PAD_GPIO0_O, 1<<12);
 		break;
 	default:
 		return -1;
