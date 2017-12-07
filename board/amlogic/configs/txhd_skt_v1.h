@@ -405,6 +405,19 @@
 	#define CONFIG_SPI_FRAM_RAMTRON
 	#define CONFIG_SPI_M95XXX
 	#define CONFIG_SPI_FLASH_ESMT
+	/* SPI nand flash support */
+	#define CONFIG_SPI_NAND
+#endif
+
+#if defined CONFIG_AML_MTD || defined CONFIG_SPI_NAND
+	#define CONFIG_CMD_NAND 1
+	#define CONFIG_MTD_DEVICE y
+	#define CONFIG_RBTREE
+	#define CONFIG_CMD_NAND_TORTURE 1
+	#define CONFIG_CMD_MTDPARTS   1
+	#define CONFIG_MTD_PARTITIONS 1
+	#define CONFIG_SYS_MAX_NAND_DEVICE  2
+	#define CONFIG_SYS_NAND_BASE_LIST   {0}
 #endif
 
 /* vpu */

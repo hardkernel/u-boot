@@ -161,6 +161,14 @@ struct spinand_info {
   uint32_t                  status;
 };
 
+#ifndef CONFIG_AML_MTD
+int nand_curr_device = -1;
+struct mtd_info nand_info[CONFIG_SYS_MAX_NAND_DEVICE];
+void nand_init(void)
+{
+}
+#endif
+
 #ifdef __UBOOT__
 static inline int
 spi_write(struct spi_slave *spi, const void *buf, size_t len)
@@ -2112,6 +2120,7 @@ static int spinand_probe(struct udevice *dev)
 	 * container_of(mtd->priv, struct spinand_info, chip)
 	 */
 	nand_info[SPINAND_INFO_ID] = *mtd;
+	nand_curr_device = SPINAND_INFO_ID;
   pr_debug("chip_ops = %x, bbt_ops = %x\n",
             chip->options, chip->bbt_options);
 
