@@ -594,7 +594,7 @@ static void vpu_module_init_config(void)
 #endif
 
 	/* dmc_arb_config */
-	vpu_vcbus_write(VPU_RDARB_MODE_L1C1, 0x210000);
+	vpu_vcbus_write(VPU_RDARB_MODE_L1C1, 0x0); //0x210000
 	vpu_vcbus_write(VPU_RDARB_MODE_L1C2, 0x10000);
 	vpu_vcbus_write(VPU_RDARB_MODE_L2C1, 0x900000);
 	vpu_vcbus_write(VPU_WRARB_MODE_L2C1, 0x20000);

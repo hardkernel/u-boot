@@ -8357,6 +8357,7 @@ static int lcd_tcon_top_set(struct mlvds_config_s *mlvds_conf)
 	lcd_tcon_write(TCON_TOP_CTRL, 0x0199);
 	lcd_tcon_write(TCON_RGB_IN_MUX, 0x24);
 	lcd_tcon_write(TCON_PLLLOCK_CNTL, 0x0037);
+	lcd_tcon_write(TCON_DDRIF_CTRL0, 0x33ff0004);
 	lcd_tcon_write(TCON_RST_CTRL, 0x003f);
 	lcd_tcon_write(TCON_RST_CTRL, 0x0000);
 
