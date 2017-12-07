@@ -147,6 +147,28 @@ int android_image_get_ramdisk(const struct andr_img_hdr *hdr,
 	return 0;
 }
 
+int android_image_get_fdt(const struct andr_img_hdr *hdr,
+			      ulong *rd_data)
+{
+	if (!hdr->second_size) {
+		*rd_data = 0;
+		return -1;
+	}
+
+	printf("FDT load addr 0x%08x size %u KiB\n",
+	       hdr->second_addr, DIV_ROUND_UP(hdr->second_size, 1024));
+
+	*rd_data = (unsigned long)hdr;
+	*rd_data += hdr->page_size;
+	*rd_data += ALIGN(hdr->kernel_size, hdr->page_size);
+	*rd_data += ALIGN(hdr->ramdisk_size, hdr->page_size);
+
+#ifdef CONFIG_ROCKCHIP_BOOTLOADER
+	rockchip_get_resource_file(rd_data, "rk-kernel.dtb");
+#endif
+	return 0;
+}
+
 long android_image_load(struct blk_desc *dev_desc,
 			const disk_partition_t *part_info,
 			unsigned long load_address,
