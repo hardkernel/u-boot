@@ -773,6 +773,16 @@ config CMD_ANDROID_AB_SELECT
 	  is used by the new A/B update model where one slot is updated in the
 	  background while running from the other slot.
 
+config CMD_BOOT_ROCKCHIP
+	bool "boot_rockchip"
+	default n
+	depends on RKIMG_BOOTLOADER
+	help
+	  Performs the Rockchip Bootloader boot flow, loading the appropriate
+	  Rockchip image (normal kernel, boot, resource and revocery)
+	  and booting it. The boot mode is determined by the contents of the
+	  Rockchip bootloader helper.
+
 config CMD_MMC
 	bool "mmc"
 	help
