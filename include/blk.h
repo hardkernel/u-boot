@@ -33,6 +33,8 @@ enum if_type {
 	IF_TYPE_SYSTEMACE,
 	IF_TYPE_NVME,
 	IF_TYPE_RKNAND,
+	IF_TYPE_SPINAND,
+	IF_TYPE_SPINOR,
 
 	IF_TYPE_COUNT,			/* Number of interface types */
 };

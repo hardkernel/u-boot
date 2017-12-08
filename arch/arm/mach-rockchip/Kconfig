@@ -325,11 +325,11 @@ config ROCKCHIP_PARTITION_BOOT
 	  This enables support for bootimg system from rockchip format partition
 
 config ROCKCHIP_VENDOR_PARTITION
-        bool "Rockchip vendor partition support"
-        depends on ROCKCHIP_BLOCK_API
-        help
-          This enable support to read/write vendor configuration data from/to
-	  this partition
+	bool "Rockchip vendor storage partition support"
+	depends on RKIMG_BOOTLOADER
+	help
+	  This enable support to read/write vendor configuration data from/to
+	  this partition.
 
 config ROCKCHIP_SMCCC
 	bool "Rockchip SMCCC"

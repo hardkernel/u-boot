@@ -7,8 +7,7 @@
 #include <common.h>
 #include <malloc.h>
 #include <asm/arch/vendor.h>
-
-#include "rockchip_blk.h"
+#include <boot_rkimg.h>
 
 /* tag for vendor check */
 #define VENDOR_TAG		0x524B5644
@@ -107,12 +106,14 @@ static int bootdev_type;
 /**********************************************************/
 static int vendor_ops(u8 *buffer, u32 addr, u32 n_sec, int write)
 {
+	struct blk_desc *dev_desc;
 	unsigned int lba = 0;
 	int ret = 0;
 
+	dev_desc = rockchip_get_bootdev();
 	/* Get the offset address according to the device type */
-	switch (bootdev_type) {
-	case BOOT_FROM_EMMC:
+	switch (dev_desc->if_type) {
+	case IF_TYPE_MMC:
 		/*
 		 * The location of VendorStorage in Flash is shown in the
 		 * following figure. The starting address of the VendorStorage
@@ -125,9 +126,9 @@ static int vendor_ops(u8 *buffer, u32 addr, u32 n_sec, int write)
 		lba = EMMC_VENDOR_PART_OFFSET;
 		debug("[Vednor INFO]:VendorStorage offset address=0x%x\n", lba);
 		break;
-	case BOOT_FROM_FLASH:
-	case BOOT_FROM_SPI_NOR:
-	case BOOT_FROM_SPI_NAND:
+	case IF_TYPE_RKNAND:
+	case IF_TYPE_SPINOR:
+	case IF_TYPE_SPINAND:
 		/*
 		 * The location of VendorStorage in Flash is shown in the
 		 * following figure. The starting address of the VendorStorage
@@ -147,9 +148,9 @@ static int vendor_ops(u8 *buffer, u32 addr, u32 n_sec, int write)
 	}
 	if (!ret) {
 		if (write)
-			ret = blkdev_write(buffer, lba + addr, n_sec);
+			ret = blk_dwrite(dev_desc, lba + addr, n_sec, buffer);
 		else
-			ret = blkdev_read(buffer, lba + addr, n_sec);
+			ret = blk_dread(dev_desc, lba + addr, n_sec, buffer);
 	}
 	debug("[Vednor INFO]:op=%s, ret=%d\n", write ? "write" : "read", ret);
 
@@ -180,25 +181,26 @@ int vendor_storage_init(void)
 	u32 max_index = 0;
 	u16 data_offset, hash_offset;
 	u16 version2_offset, part_size;
+	struct blk_desc *dev_desc;
 
-	bootdev_type = get_bootdev_type();
-	if (!bootdev_type) {
+	dev_desc = rockchip_get_bootdev();
+	if (!dev_desc) {
 		printf("[Vednor ERROR]:Invalid boot device type(%d)\n",
 		       bootdev_type);
 		return -ENODEV;
 	}
 
-	switch (bootdev_type) {
-	case BOOT_FROM_EMMC:
+	switch (dev_desc->if_type) {
+	case IF_TYPE_MMC:
 		size = EMMC_VENDOR_INFO_SIZE;
 		part_size = EMMC_VENDOR_PART_BLKS;
 		data_offset = EMMC_VENDOR_DATA_OFFSET;
 		hash_offset = EMMC_VENDOR_HASH_OFFSET;
 		version2_offset = EMMC_VENDOR_VERSION2_OFFSET;
 		break;
-	case BOOT_FROM_FLASH:
-	case BOOT_FROM_SPI_NOR:
-	case BOOT_FROM_SPI_NAND:
+	case IF_TYPE_RKNAND:
+	case IF_TYPE_SPINOR:
+	case IF_TYPE_SPINAND:
 		size = FLASH_VENDOR_INFO_SIZE;
 		part_size = FLASH_VENDOR_PART_BLKS;
 		data_offset = FLASH_VENDOR_DATA_OFFSET;
@@ -313,13 +315,13 @@ int vendor_storage_write(u16 id, void *pbuf, u16 size)
 	}
 
 	switch (bootdev_type) {
-	case BOOT_FROM_EMMC:
+	case IF_TYPE_MMC:
 		part_size = EMMC_VENDOR_PART_BLKS;
 		max_item_num = EMMC_VENDOR_ITEM_NUM;
 		break;
-	case BOOT_FROM_FLASH:
-	case BOOT_FROM_SPI_NOR:
-	case BOOT_FROM_SPI_NAND:
+	case IF_TYPE_RKNAND:
+	case IF_TYPE_SPINOR:
+	case IF_TYPE_SPINAND:
 		part_size = FLASH_VENDOR_PART_BLKS;
 		max_item_num = FLASH_VENDOR_ITEM_NUM;
 		break;
@@ -393,13 +395,13 @@ void vendor_test_reset(void)
 	u32 size;
 
 	switch (bootdev_type) {
-	case BOOT_FROM_EMMC:
+	case IF_TYPE_MMC:
 		size = EMMC_VENDOR_INFO_SIZE;
 		part_size = EMMC_VENDOR_PART_BLKS;
 		break;
-	case BOOT_FROM_FLASH:
-	case BOOT_FROM_SPI_NOR:
-	case BOOT_FROM_SPI_NAND:
+	case IF_TYPE_RKNAND:
+	case IF_TYPE_SPINOR:
+	case IF_TYPE_SPINAND:
 		size = FLASH_VENDOR_INFO_SIZE;
 		part_size = FLASH_VENDOR_PART_BLKS;
 		break;
@@ -443,14 +445,14 @@ int vendor_storage_test(void)
 	 * allocable memory for each item.
 	 */
 	switch (bootdev_type) {
-	case BOOT_FROM_EMMC:
+	case IF_TYPE_MMC:
 		item_num = EMMC_VENDOR_ITEM_NUM;
 		total_size = (u32)vendor_info.hash - (u32)vendor_info.data;
 		size = total_size/item_num;
 		break;
-	case BOOT_FROM_FLASH:
-	case BOOT_FROM_SPI_NOR:
-	case BOOT_FROM_SPI_NAND:
+	case IF_TYPE_RKNAND:
+	case IF_TYPE_SPINOR:
+	case IF_TYPE_SPINAND:
 		item_num = FLASH_VENDOR_ITEM_NUM;
 		total_size = (u32)vendor_info.hash - (u32)vendor_info.data;
 		size = total_size/item_num;
