@@ -12,6 +12,8 @@
 #include <asm/arch/resource_img.h>
 #include <asm/arch/rockchip_crc.h>
 #include <boot_rkimg.h>
+#include <asm/arch/boot_mode.h>
+#include <asm/io.h>
 
 #define TAG_KERNEL			0x4C4E524B
 
@@ -186,6 +188,7 @@ int rockchip_get_boot_mode(void)
 	int size = DIV_ROUND_UP(sizeof(struct bootloader_message), RK_BLK_SIZE)
 		   * RK_BLK_SIZE;
 	int ret;
+	uint32_t reg_boot_mode;
 
 	if (boot_mode != -1)
 		return boot_mode;
@@ -201,22 +204,50 @@ int rockchip_get_boot_mode(void)
 			part_info.start + BOOTLOADER_MESSAGE_BLK_OFFSET,
 			size >> 9, bmsg);
 	if (ret != (size >> 9)) {
-		ret = -EIO;
-		goto err;
+		free(bmsg);
+		return -EIO;
 	}
 
+	/* Mode from misc partition */
 	if (!strcmp(bmsg->command, "boot-recovery")) {
-		printf("boot mode: recovery\n");
-		ret = BOOT_MODE_RECOVERY;
+		boot_mode = BOOT_MODE_RECOVERY;
 	} else {
-		printf("boot mode: normal\n");
-		ret = BOOT_MODE_NORMAL;
-	}
-	boot_mode = ret;
-err:
-	free(bmsg);
+		/* Mode from boot mode register */
+		reg_boot_mode = readl((void *)CONFIG_ROCKCHIP_BOOT_MODE_REG);
+		writel(BOOT_NORMAL, (void *)CONFIG_ROCKCHIP_BOOT_MODE_REG);
 
-	return ret;
+		switch (reg_boot_mode) {
+		case BOOT_NORMAL:
+			printf("boot mode: normal\n");
+			boot_mode = BOOT_MODE_NORMAL;
+			break;
+		case BOOT_FASTBOOT:
+			printf("boot mode: bootloader\n");
+			boot_mode = BOOT_MODE_BOOTLOADER;
+			break;
+		case BOOT_LOADER:
+			printf("boot mode: loader\n");
+			boot_mode = BOOT_MODE_LOADER;
+			break;
+		case BOOT_RECOVERY:
+			/* printf("boot mode: recovery\n"); */
+			boot_mode = BOOT_MODE_RECOVERY;
+			break;
+		case BOOT_UMS:
+			printf("boot mode: ums\n");
+			boot_mode = BOOT_MODE_UMS;
+			break;
+		case BOOT_CHARGING:
+			printf("boot mode: charging\n");
+			boot_mode = BOOT_MODE_CHARGING;
+			break;
+		default:
+			printf("boot mode: None\n");
+			boot_mode = BOOT_MODE_UNDEFINE;
+		}
+	}
+
+	return boot_mode;
 }
 
 int boot_rockchip_image(struct blk_desc *dev_desc, disk_partition_t *boot_part)

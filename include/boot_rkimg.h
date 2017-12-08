@@ -11,9 +11,13 @@
 enum _boot_mode {
 	BOOT_MODE_NORMAL = 0,
 	BOOT_MODE_RECOVERY,
-	BOOT_MODE_BOOTLOADER,
+	BOOT_MODE_BOOTLOADER,	/* Android: Fastboot mode */
+	BOOT_MODE_LOADER,	/* Rockchip: Rockusb download mode */
+	BOOT_MODE_CHARGING,
+	BOOT_MODE_UMS,
+	BOOT_MODE_BROM_DOWNLOAD,
+	BOOT_MODE_UNDEFINE,
 };
-
 
 #define PART_MISC			"misc"
 #define PART_KERNEL			"kernel"

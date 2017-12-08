@@ -11,6 +11,7 @@
 #include <cli.h>
 #include <dm.h>
 #include <fdtdec.h>
+#include <boot_rkimg.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -67,23 +68,15 @@ void rockchip_dnl_mode_check(void)
 
 int setup_boot_mode(void)
 {
-	void *reg;
-	int boot_mode;
+	int boot_mode = BOOT_MODE_NORMAL;
 	char env_preboot[256] = {0};
 
 	rockchip_dnl_mode_check();
-
-	reg = (void *)CONFIG_ROCKCHIP_BOOT_MODE_REG;
-
-	boot_mode = readl(reg);
-
-	debug("boot mode %x.\n", boot_mode);
-
-	/* Clear boot mode */
-	writel(BOOT_NORMAL, reg);
-
+#ifdef CONFIG_RKIMG_BOOTLOADER
+	boot_mode = rockchip_get_boot_mode();
+#endif
 	switch (boot_mode) {
-	case BOOT_FASTBOOT:
+	case BOOT_MODE_BOOTLOADER:
 		printf("enter fastboot!\n");
 #if defined(CONFIG_FASTBOOT_FLASH_MMC_DEV)
 		snprintf(env_preboot, 256,
@@ -95,19 +88,19 @@ int setup_boot_mode(void)
 #endif
 		env_set("preboot", env_preboot);
 		break;
-	case BOOT_UMS:
+	case BOOT_MODE_UMS:
 		printf("enter UMS!\n");
 		env_set("preboot", "setenv preboot; ums mmc 0");
 		break;
-	case BOOT_LOADER:
+	case BOOT_MODE_LOADER:
 		printf("enter Rockusb!\n");
 		env_set("preboot", "setenv preboot; rockusb 0 mmc 0");
 		break;
-	case BOOT_CHARGING:
+	case BOOT_MODE_CHARGING:
 		printf("enter charging!\n");
 		env_set("preboot", "setenv preboot; charge");
 		break;
-	case BOOT_RECOVERY:
+	case BOOT_MODE_RECOVERY:
 		printf("enter Recovery mode!\n");
 		env_set("reboot_mode", "recovery");
 		break;
