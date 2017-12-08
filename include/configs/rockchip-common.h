@@ -42,6 +42,25 @@
 	"name=boot,size=112M,bootable,uuid=${uuid_gpt_boot};" \
 	"name=rootfs,size=-,uuid="ROOT_UUID
 
+#define PARTS_RKIMG \
+	"uuid_disk=${uuid_gpt_disk};" \
+	"name=uboot,start=8MB,size=4MB,uuid=${uuid_gpt_loader2};" \
+	"name=trust,size=4M,uuid=${uuid_gpt_atf};" \
+	"name=misc,size=4MB,uuid=${uuid_gpt_misc};" \
+	"name=resource,size=16MB,uuid=${uuid_gpt_resource};" \
+	"name=kernel,size=32M,uuid=${uuid_gpt_kernel};" \
+	"name=boot,size=32M,bootable,uuid=${uuid_gpt_boot};" \
+	"name=recovery,size=32M,uuid=${uuid_gpt_recovery};" \
+	"name=backup,size=112M,uuid=${uuid_gpt_backup};" \
+	"name=cache,size=512M,uuid=${uuid_gpt_cache};" \
+	"name=system,size=2048M,uuid=${uuid_gpt_system};" \
+	"name=metadata,size=16M,uuid=${uuid_gpt_metadata};" \
+	"name=vendor,size=32M,uuid=${uuid_gpt_vendor};" \
+	"name=oem,size=32M,uuid=${uuid_gpt_oem};" \
+	"name=frp,size=512K,uuid=${uuid_gpt_frp};" \
+	"name=security,size=2M,uuid=${uuid_gpt_security};" \
+	"name=userdata,size=-,uuid=${uuid_gpt_userdata};"
+
 #endif
 
 /*
