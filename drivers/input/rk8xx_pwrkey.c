@@ -139,13 +139,13 @@ static void pwrkey_irq_handler(int irq, void *data)
 	/* fall event */
 	if (val & key->pwron_fall_int) {
 		key->key_down_t = get_ms(0);
-		printf("%s: key down: %llu ms\n", __func__, key->key_down_t);
+		debug("%s: key down: %llu ms\n", __func__, key->key_down_t);
 	}
 
 	/* rise event */
 	if (val & key->pwron_rise_int) {
 		key->key_up_t = get_ms(0);
-		printf("%s: key up: %llu ms\n", __func__, key->key_up_t);
+		debug("%s: key up: %llu ms\n", __func__, key->key_up_t);
 	}
 
 	/* clear intertup */
