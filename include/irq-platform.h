@@ -22,7 +22,7 @@
 #define IRQ_TIMER1			61
 #define IRQ_GPIO0			68
 #define IRQ_GPIO1			69
-#define IRQ_GPIO2			79
+#define IRQ_GPIO2			70
 #define IRQ_GPIO3			71
 
 #elif defined(CONFIG_ROCKCHIP_RK322X)
