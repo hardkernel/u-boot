@@ -44,7 +44,9 @@ DECLARE_GLOBAL_DATA_PTR;
 #define RX_ENDPOINT_MAXIMUM_PACKET_SIZE_1_1  (0x0040)
 #define TX_ENDPOINT_MAXIMUM_PACKET_SIZE      (0x0040)
 
+#ifdef CONFIG_DEVICE_PRODUCT
 #define DEVICE_PRODUCT	CONFIG_DEVICE_PRODUCT
+#endif
 #define DEVICE_SERIAL	"1234567890"
 
 /* The 64 defined bytes plus \0 */
@@ -456,7 +458,13 @@ static void cb_getvar(struct usb_ep *ep, struct usb_request *req)
 		else
 			strncat(response, DEVICE_SERIAL, chars_left);
 	} else if (!strcmp_l1("product", cmd)) {
+#ifdef DEVICE_PRODUCT
 		s1 = DEVICE_PRODUCT;
+		printf("DEVICE_PRODUCT: %s\n", s1);
+#else
+		s1 = getenv("device_product");
+		printf("device_product: %s\n", s1);
+#endif
 		strncat(response, s1, chars_left);
 	} else if (!strcmp_l1("slot-count", cmd)) {
 		strncat(response, "2", chars_left);

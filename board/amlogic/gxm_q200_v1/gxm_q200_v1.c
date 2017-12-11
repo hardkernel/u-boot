@@ -489,9 +489,11 @@ int board_late_init(void){
 #endif// #ifdef CONFIG_AML_V2_FACTORY_BURN
 	if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_GXL) {
 		setenv("maxcpus","4");
+		setenv("device_product","p230");
 	}
 	if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_GXM) {
 		setenv("maxcpus","8");
+		setenv("device_product","q200");
 	}
 
 	/* load uboot pq value */
