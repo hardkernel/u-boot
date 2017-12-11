@@ -24,6 +24,23 @@
 #include <asm/arch/io.h>
 #include <asm/arch/secure_apb.h>
 
+#ifndef HHI_GP_PLL_CNTL
+#define HHI_GP_PLL_CNTL                            (0xc1100000 + (0x1010 << 2))
+#endif
+
+#ifndef HHI_GP1_PLL_CNTL
+#define HHI_GP1_PLL_CNTL                           (0xc883c000 + (0x16 << 2))
+#endif
+#ifndef HHI_GP1_PLL_CNTL2
+#define HHI_GP1_PLL_CNTL2                          (0xc883c000 + (0x17 << 2))
+#endif
+#ifndef HHI_GP1_PLL_CNTL3
+#define HHI_GP1_PLL_CNTL3                          (0xc883c000 + (0x18 << 2))
+#endif
+#ifndef HHI_GP1_PLL_CNTL4
+#define HHI_GP1_PLL_CNTL4                          (0xc883c000 + (0x19 << 2))
+#endif
+
 #ifndef HHI_VPU_MEM_PD_REG2
 #define HHI_VPU_MEM_PD_REG2                        (0xff63c000 + (0x4d << 2))
 #endif

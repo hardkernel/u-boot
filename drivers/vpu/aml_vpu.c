@@ -31,6 +31,7 @@
 
 /* v04: add txlx support */
 /* v05: add axg support */
+/* v06: add g12a support */
 #define VPU_VERION	"v05"
 
 #ifdef CONFIG_OF_LIBFDT
@@ -51,7 +52,7 @@ static struct vpu_conf_s vpu_conf = {
 
 static void vpu_chip_detect(void)
 {
-#if 1
+#if 0
 	unsigned int cpu_type;
 
 	cpu_type = get_cpu_id().family_id;
@@ -186,6 +187,16 @@ static void vpu_chip_detect(void)
 		vpu_conf.clk_level_max = CLK_LEVEL_MAX_TXHD;
 		vpu_conf.fclk_type = FCLK_TYPE_TXHD;
 		break;
+	case MESON_CPU_MAJOR_ID_G12A:
+		vpu_chip_type = VPU_CHIP_G12A;
+#ifdef CONFIG_VPU_CLK_LEVEL_DFT
+		vpu_conf.clk_level_dft = CONFIG_VPU_CLK_LEVEL_DFT;
+#else
+		vpu_conf.clk_level_dft = CLK_LEVEL_DFT_G12A;
+#endif
+		vpu_conf.clk_level_max = CLK_LEVEL_MAX_G12A;
+		vpu_conf.fclk_type = FCLK_TYPE_G12A;
+		break;
 	default:
 		vpu_chip_type = VPU_CHIP_GXBB;
 #ifdef CONFIG_VPU_CLK_LEVEL_DFT
@@ -197,14 +208,14 @@ static void vpu_chip_detect(void)
 		vpu_conf.fclk_type = FCLK_TYPE_GXBB;
 	}
 #else
-	vpu_chip_type = VPU_CHIP_TXLX;
+	vpu_chip_type = VPU_CHIP_G12A;
 #ifdef CONFIG_VPU_CLK_LEVEL_DFT
 	vpu_conf.clk_level_dft = CONFIG_VPU_CLK_LEVEL_DFT;
 #else
-	vpu_conf.clk_level_dft = CLK_LEVEL_DFT_TXLX;
+	vpu_conf.clk_level_dft = CLK_LEVEL_DFT_G12A;
 #endif
-	vpu_conf.clk_level_max = CLK_LEVEL_MAX_TXLX;
-	vpu_conf.fclk_type = FCLK_TYPE_TXLX;
+	vpu_conf.clk_level_max = CLK_LEVEL_MAX_G12A;
+	vpu_conf.fclk_type = FCLK_TYPE_G12A;
 #endif
 
 #ifdef VPU_DEBUG_PRINT
@@ -235,6 +246,7 @@ static int vpu_check(void)
 	case VPU_CHIP_TXLX:
 	case VPU_CHIP_AXG:
 	case VPU_CHIP_TXHD:
+	case VPU_CHIP_G12A:
 		ret = 0;
 		break;
 	default:
@@ -303,26 +315,26 @@ static int switch_gp_pll_m8m2(int flag)
 	if (flag) { /* enable gp_pll */
 		/* M=182, N=3, OD=2. gp_pll=24*M/N/2^OD=364M */
 		/* set gp_pll frequency fixed to 364M */
-		vpu_hiu_write(HHI_GP0_PLL_CNTL, 0x206b6);
-		vpu_hiu_setb(HHI_GP0_PLL_CNTL, 1, 30, 1); /* enable */
+		vpu_hiu_write(HHI_GP_PLL_CNTL, 0x206b6);
+		vpu_hiu_setb(HHI_GP_PLL_CNTL, 1, 30, 1); /* enable */
 		do {
 			udelay(10);
-			vpu_hiu_setb(HHI_GP0_PLL_CNTL, 1, 29, 1); /* reset */
+			vpu_hiu_setb(HHI_GP_PLL_CNTL, 1, 29, 1); /* reset */
 			udelay(50);
 			/* release reset */
-			vpu_hiu_setb(HHI_GP0_PLL_CNTL, 0, 29, 1);
+			vpu_hiu_setb(HHI_GP_PLL_CNTL, 0, 29, 1);
 			udelay(50);
 			cnt--;
 			if (cnt == 0)
 				break;
-		} while (vpu_hiu_getb(HHI_GP0_PLL_CNTL, 31, 1) == 0);
+		} while (vpu_hiu_getb(HHI_GP_PLL_CNTL, 31, 1) == 0);
 		if (cnt == 0) {
 			ret = -1;
-			vpu_hiu_setb(HHI_GP0_PLL_CNTL, 0, 30, 1);
+			vpu_hiu_setb(HHI_GP_PLL_CNTL, 0, 30, 1);
 			VPUERR("GP_PLL lock failed\n");
 		}
 	} else { /* disable gp_pll */
-		vpu_hiu_setb(HHI_GP0_PLL_CNTL, 0, 30, 1);
+		vpu_hiu_setb(HHI_GP_PLL_CNTL, 0, 30, 1);
 	}
 
 	return ret;
@@ -360,45 +372,6 @@ static int switch_gp1_pll_g9tv(int flag)
 		vpu_hiu_setb(HHI_GP1_PLL_CNTL, 0, 30, 1);
 	}
 
-	return ret;
-}
-
-static int adjust_vpu_clk_m8_g9(unsigned int clk_level)
-{
-	unsigned int mux, div;
-	int ret = 0;
-
-	switch (vpu_chip_type) {
-	case VPU_CHIP_M8M2:
-		if (clk_level == (CLK_LEVEL_MAX_M8M2 - 1)) {
-			ret = switch_gp_pll_m8m2(1);
-			if (ret)
-				clk_level = CLK_LEVEL_MAX_M8M2 - 2;
-		} else {
-			ret = switch_gp_pll_m8m2(0);
-		}
-		break;
-	case VPU_CHIP_G9TV:
-		if (clk_level == (CLK_LEVEL_MAX_G9TV - 1)) {
-			ret = switch_gp1_pll_g9tv(1);
-			if (ret)
-				clk_level = CLK_LEVEL_MAX_G9TV - 2;
-		} else {
-			ret = switch_gp1_pll_g9tv(0);
-		}
-		break;
-	default:
-		break;
-	}
-	vpu_conf.clk_level = clk_level;
-
-	mux = vpu_clk_table[vpu_conf.fclk_type][clk_level][1];
-	div = vpu_clk_table[vpu_conf.fclk_type][clk_level][2];
-	vpu_hiu_write(HHI_VPU_CLK_CNTL, ((mux << 9) | (div << 0) | (1<<8)));
-
-	VPUPR("set clk: %uHz, readback: %uHz(0x%x)\n",
-		vpu_clk_table[vpu_conf.fclk_type][clk_level][0],
-		get_vpu_clk(), (vpu_hiu_read(HHI_VPU_CLK_CNTL)));
 	return ret;
 }
 
@@ -442,6 +415,12 @@ static int switch_gp_pll(int flag)
 	int ret = 0;
 
 	switch (vpu_chip_type) {
+	case VPU_CHIP_M8M2:
+		ret = switch_gp_pll_m8m2(flag);
+		break;
+	case VPU_CHIP_G9TV:
+		ret = switch_gp1_pll_g9tv(flag);
+		break;
 	case VPU_CHIP_GXTVBB:
 		ret = switch_gp1_pll_gxtvbb(flag);
 		break;
@@ -450,6 +429,31 @@ static int switch_gp_pll(int flag)
 		break;
 	}
 
+	return ret;
+}
+
+static int adjust_vpu_clk_m8_g9(unsigned int clk_level)
+{
+	unsigned int mux, div;
+	int ret = 0;
+
+	mux = vpu_clk_table[vpu_conf.fclk_type][clk_level][1];
+	if (mux == GPLL_CLK) {
+		ret = switch_gp_pll(1);
+		if (ret) {
+			clk_level = vpu_conf.clk_level_dft;
+			VPUERR("adjust_vpu_clk: gp pll error, use default clk\n");
+		}
+	}
+	vpu_conf.clk_level = clk_level;
+
+	mux = vpu_clk_table[vpu_conf.fclk_type][clk_level][1];
+	div = vpu_clk_table[vpu_conf.fclk_type][clk_level][2];
+	vpu_hiu_write(HHI_VPU_CLK_CNTL, ((mux << 9) | (div << 0) | (1<<8)));
+
+	VPUPR("set clk: %uHz, readback: %uHz(0x%x)\n",
+		vpu_clk_table[vpu_conf.fclk_type][clk_level][0],
+		get_vpu_clk(), (vpu_hiu_read(HHI_VPU_CLK_CNTL)));
 	return ret;
 }
 
@@ -464,8 +468,10 @@ static int adjust_vpu_clk_gx(unsigned int clk_level)
 	mux = vpu_clk_table[vpu_conf.fclk_type][clk_level][1];
 	if (mux == GPLL_CLK) {
 		ret = switch_gp_pll(1);
-		if (ret)
-			clk_level = 7;
+		if (ret) {
+			clk_level = vpu_conf.clk_level_dft;
+			VPUERR("adjust_vpu_clk: gp pll error, use default clk\n");
+		}
 	}
 	vpu_conf.clk_level = clk_level;
 
