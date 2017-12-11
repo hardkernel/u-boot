@@ -247,11 +247,13 @@ static int charge_animation_show(struct udevice *dev)
 
 #ifdef CONFIG_RKIMG_BOOTLOADER
 	boot_mode = rockchip_get_boot_mode();
-	if (boot_mode != BOOT_MODE_NORMAL) {
+	if ((boot_mode != BOOT_MODE_CHARGING) &&
+	    (boot_mode != BOOT_MODE_UNDEFINE)) {
 		debug("exit charge, due to boot mode: %d\n", boot_mode);
 		return 0;
 	}
 #endif
+
 	/* Not charger online, exit */
 	charging = fuel_gauge_get_chrg_online(fg);
 	if (charging <= 0)
