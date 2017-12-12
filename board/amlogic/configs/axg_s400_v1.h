@@ -246,6 +246,7 @@
             "run bcb_cmd; "\
             "run factory_reset_poweroff_protect;"\
             "run upgrade_check;"\
+	    "i2c mw 1f 3.1 0 2;i2c mw 1f 1.1 fc 2;"\
             "run init_display;"\
             "run storeargs;"\
             "run switch_bootmode;"

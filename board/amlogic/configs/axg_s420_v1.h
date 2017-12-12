@@ -223,6 +223,7 @@
             "run bcb_cmd; "\
             "run factory_reset_poweroff_protect;"\
             "run upgrade_check;"\
+	    "i2c mw 1f 3.1 0 2;i2c mw 1f 1.1 fc 2;"\
             "run storeargs;"\
             "run switch_bootmode;"
 #define CONFIG_BOOTCOMMAND "run storeboot"
@@ -443,6 +444,7 @@
 #define CONFIG_EFUSE 1
 #define CONFIG_SYS_I2C_AML 1
 #define CONFIG_SYS_I2C_SPEED     400000
+#define CONFIG_I2C_MULTI_BUS 1
 
 /* commands */
 #define CONFIG_CMD_CACHE 1
