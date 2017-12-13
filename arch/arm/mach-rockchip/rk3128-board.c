@@ -13,7 +13,6 @@
 #include <asm/arch/periph.h>
 #include <asm/arch/grf_rk3128.h>
 #include <asm/arch/boot_mode.h>
-#include <asm/arch/timer.h>
 #include <power/charge_display.h>
 #include <power/regulator.h>
 #include <video_rockchip.h>
@@ -62,8 +61,6 @@ int board_late_init(void)
 int board_init(void)
 {
 	int ret = 0;
-
-	rockchip_timer_init();
 
 	ret = regulators_enable_boot_on(false);
 	if (ret) {
