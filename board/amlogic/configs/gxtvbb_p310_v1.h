@@ -122,6 +122,7 @@
 		"osd_reverse=${osd_reverse} video_reverse=${video_reverse} "\
 		"jtag=${jtag} "\
 		"androidboot.firstboot=${firstboot}; "\
+		"setenv bootargs ${bootargs} androidboot.hardware=amlogic;"\
 		"run cmdline_keys; "\
 		"setenv bootargs ${bootargs} androidboot.slot_suffix=${active_slot};"\
 		"\0"\
