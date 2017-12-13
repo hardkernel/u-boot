@@ -156,6 +156,11 @@ static void hdmitx_hw_init(void)
 	/* .clk2 ( fclk_div3 ), */
 	/* .clk3 ( fclk_div5 ), */
 	hd_set_reg_bits(P_HHI_HDMI_CLK_CNTL, 0x0100, 0, 16);
+	/*VPU_CNTL should be configurated in VPU init*/
+	hd_set_reg_bits(P_HHI_VPU_CLK_CNTL, 0x0300, 0, 16);
+	hd_set_reg_bits(P_HHI_VAPBCLK_CNTL, 0x1, 30, 1);
+	hd_set_reg_bits(P_HHI_VAPBCLK_CNTL, 0x1, 8, 1);
+	hd_set_reg_bits(P_HHI_VAPBCLK_CNTL, 0x1, 0, 1);
 
 	/* Enable clk81_hdmitx_pclk */
 	hd_set_reg_bits(P_HHI_GCLK_MPEG2, 1, 4, 1);
@@ -167,17 +172,18 @@ static void hdmitx_hw_init(void)
 	/* Bring HDMITX MEM output of power down */
 	hd_set_reg_bits(P_HHI_MEM_PD_REG0, 0, 8, 8);
 	/* reset HDMITX APB & TX & PHY */
-	hd_set_reg_bits(P_RESET0_REGISTER, 1, 19, 1);
-	hd_set_reg_bits(P_RESET2_REGISTER, 1, 15, 1);
-	hd_set_reg_bits(P_RESET2_REGISTER, 1,  2, 1);
+	//hd_set_reg_bits(P_RESET0_REGISTER, 1, 19, 1);
+	//hd_set_reg_bits(P_RESET2_REGISTER, 1, 15, 1);
+	//hd_set_reg_bits(P_RESET2_REGISTER, 1,  2, 1);
 	// Enable APB3 fail on error
-	hd_set_reg_bits(P_HDMITX_CTRL_PORT, 1, 15, 1);
-	hd_set_reg_bits((P_HDMITX_CTRL_PORT + 0x10), 1, 15, 1);
+	//hd_set_reg_bits(P_HDMITX_CTRL_PORT, 1, 15, 1);
+	//hd_set_reg_bits((P_HDMITX_CTRL_PORT + 0x10), 1, 15, 1);
 	/* Bring out of reset */
 	hdmitx_wr_reg(HDMITX_TOP_SW_RESET,  0);
 	_udelay(200);
 	/* Enable internal pixclk, tmds_clk, spdif_clk, i2s_clk, cecclk */
 	hdmitx_wr_reg(HDMITX_TOP_CLK_CNTL,  0x000000ff);
+
 	hdmitx_wr_reg(HDMITX_DWC_MC_LOCKONCLOCK, 0xff);
 
 	hdmitx_wr_reg(HDMITX_DWC_MC_CLKDIS, 0x00);
@@ -306,7 +312,7 @@ static void hdmitx_turnoff(void)
         hd_write_reg(P_HHI_HDMI_PHY_CNTL0, 0);
         hd_write_reg(P_HHI_HDMI_PHY_CNTL3, 0);
         /* Disable HPLL */
-        hd_write_reg(P_HHI_HDMI_PLL_CNTL, 0);
+        hd_write_reg(P_HHI_HDMI_PLL_CNTL0, 0);
 }
 
 static struct hdmi_support_mode gxbb_modes[] = {
@@ -2288,7 +2294,6 @@ static void hdmitx_set_hw(struct hdmitx_dev* hdev)
 		printk("error at %s[%d]\n", __func__, __LINE__);
 		return;
 	}
-
 	hdmitx_set_pll(hdev);
 	hdmitx_set_phy(hdev);
 	hdmitx_enc(hdev->vic);

@@ -26,11 +26,16 @@
 #include "hdmitx_reg.h"
 #include <amlogic/hdmi.h>
 
+
 static int dbg_en;
 
 void hd_write_reg(unsigned long addr, unsigned long val)
 {
-	writel(val, addr);
+	if ((addr >= HDMITX_DWC_BASE_OFFSET) &&
+		(addr <=HDMITX_TOP_BASE_OFFSET))
+		writeb(val & 0xff, addr);
+	else
+		writel(val, addr);
 	if (dbg_en)
 		printk("W: 0x%08lx  0x%08lx %s 0x%08lx\n", addr, val, (val == hd_read_reg(addr)) ? "==" : "!=", hd_read_reg(addr));
 }
@@ -38,7 +43,12 @@ void hd_write_reg(unsigned long addr, unsigned long val)
 unsigned long hd_read_reg(unsigned long addr)
 {
 	unsigned long val = 0;
-	val = readl(addr);
+
+	if ((addr >= HDMITX_DWC_BASE_OFFSET) &&
+		(addr <=HDMITX_TOP_BASE_OFFSET))
+		val = readb(addr);
+	else
+		val = readl(addr);
 	if (dbg_en)
 		printk("R: 0x%08lx   0x%08lx\n", addr, val);
 	return val;
@@ -59,40 +69,38 @@ void hd_set_reg_bits(unsigned long addr, unsigned long value,
 
 unsigned int hdmitx_rd_reg(unsigned int addr)
 {
-	unsigned long offset = (addr & DWC_OFFSET_MASK) >> 24;
+	unsigned int large_offset = addr >> 24;
+	unsigned int small_offset = addr & ((1 << 24)  - 1);
 	unsigned int data;
-	register long x0 asm("x0") = 0x82000018;
-	register long x1 asm("x1") = (unsigned long)addr;
 
-	asm volatile(
-		__asmeq("%0", "x0")
-		__asmeq("%1", "x1")
-		"smc #0\n"
-		: "+r"(x0) : "r"(x1)
-	);
-	data = (unsigned)(x0&0xffffffff);
+	if (large_offset == 0x10)
+		large_offset = HDMITX_DWC_BASE_OFFSET;
+	else {
+		large_offset = HDMITX_TOP_BASE_OFFSET;
+		small_offset = small_offset << 2;
+	}
+	data = hd_read_reg(large_offset + small_offset);
 	if (dbg_en)
-		pr_info("%s rd[0x%x] 0x%x\n", offset ? "DWC" : "TOP",
+		pr_info("%s wr[0x%x] 0x%x\n", large_offset ? "DWC" : "TOP",
 			addr, data);
 	return data;
 }
 
 void hdmitx_wr_reg(unsigned int addr, unsigned int data)
 {
-	unsigned long offset = (addr & DWC_OFFSET_MASK) >> 24;
-	register long x0 asm("x0") = 0x82000019;
-	register long x1 asm("x1") = (unsigned long)addr;
-	register long x2 asm("x2") = data;
+	unsigned int large_offset = addr >> 24;
+	unsigned int small_offset = addr & ((1 << 24)  - 1);
 
-	asm volatile(
-		__asmeq("%0", "x0")
-		__asmeq("%1", "x1")
-		__asmeq("%2", "x2")
-		"smc #0\n"
-		: : "r"(x0), "r"(x1), "r"(x2)
-	);
+	if (large_offset == 0x10)
+		large_offset = HDMITX_DWC_BASE_OFFSET;
+	else {
+		large_offset = HDMITX_TOP_BASE_OFFSET;
+		small_offset = small_offset << 2;
+	}
+	hd_write_reg(large_offset + small_offset, data);
+
 	if (dbg_en)
-		pr_info("%s wr[0x%x] 0x%x\n", offset ? "DWC" : "TOP",
+		pr_info("%s wr[0x%x] 0x%x\n", large_offset ? "DWC" : "TOP",
 			addr, data);
 }
 

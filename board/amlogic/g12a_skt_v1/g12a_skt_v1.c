@@ -376,6 +376,10 @@ int board_init(void)
 int board_late_init(void)
 {
 	int ret;
+#ifdef CONFIG_AML_HDMITX20
+	hdmi_tx_set_hdmi_5v();
+	hdmi_tx_init();
+#endif
 	return 0;
 	//update env before anyone using it
 	run_command("get_rebootmode; echo reboot_mode=${reboot_mode}; "\
