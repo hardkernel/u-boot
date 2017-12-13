@@ -171,6 +171,52 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	{.panel_type = "invalid"},
 };
 
+static struct lcd_pinmux_ctrl_s lcd_pinmux_ctrl[LCD_PINMX_MAX] = {
+	{
+		.name = "lcd_vbyone_pin", //GPIOH_0/1
+		.pinmux_set = {{0, 0xc0000000}, {LCD_PINMUX_END, 0x0}},
+		.pinmux_clr = {{0, 0x009c0800}, {LCD_PINMUX_END, 0x0}},
+	},
+	{
+		.name = "invalid",
+	},
+};
+static struct lcd_pinmux_ctrl_s bl_pinmux_ctrl[BL_PINMUX_MAX] = {
+	{
+		.name = "bl_pwm_on_pin", //GPIOZ_6
+		.pinmux_set = {{4, 0x00010000}, {LCD_PINMUX_END, 0x0}},
+		.pinmux_clr = {{4, 0x00008000}, {3, 0x00200000}, {10, 0x00010000}, {LCD_PINMUX_END, 0x0}},
+	},
+	{
+		.name = "bl_pwm_vs_on_pin", //GPIOZ_6
+		.pinmux_set = {{4, 0x00008000}, {LCD_PINMUX_END, 0x0}},
+		.pinmux_clr = {{4, 0x00010000}, {3, 0x00200000}, {10, 0x00010000}, {LCD_PINMUX_END, 0x0}},
+	},
+	{
+		.name = "bl_pwm_combo_0_on_pin", //GPIOZ_6
+		.pinmux_set = {{4, 0x00010000}, {LCD_PINMUX_END, 0x0}},
+		.pinmux_clr = {{4, 0x00008000}, {3, 0x00200000}, {10, 0x00010000}, {LCD_PINMUX_END, 0x0}},
+	},
+	{
+		.name = "bl_pwm_combo_1_on_pin", //GPIOZ_7
+		.pinmux_set = {{4, 0x00004000}, {LCD_PINMUX_END, 0x0}},
+		.pinmux_clr = {{4, 0x00002000}, {3, 0x00200000}, {10, 0x00010000}, {LCD_PINMUX_END, 0x0}},
+	},
+	{
+		.name = "bl_pwm_combo_0_vs_on_pin", //GPIOZ_6
+		.pinmux_set = {{4, 0x00008000}, {LCD_PINMUX_END, 0x0}},
+		.pinmux_clr = {{4, 0x00010000}, {3, 0x00200000}, {10, 0x00010000}, {LCD_PINMUX_END, 0x0}},
+	},
+	{
+		.name = "bl_pwm_combo_1_vs_on_pin", //GPIOZ_7
+		.pinmux_set = {{4, 0x00002000}, {LCD_PINMUX_END, 0x0}},
+		.pinmux_clr = {{4, 0x00004000}, {3, 0x00200000}, {10, 0x00010000}, {LCD_PINMUX_END, 0x0}},
+	},
+	{
+		.name = "invalid",
+	},
+};
+
 //**** Special parameters just for Vbyone ***//
 static struct vbyone_config_s lcd_vbyone_config = {
 	.lane_count   = 8,
@@ -256,6 +302,8 @@ struct lcd_config_s lcd_config_dft = {
 		.vbyone_config = &lcd_vbyone_config,
 	},
 	.lcd_power = &lcd_power_ctrl,
+	.pinctrl_ver = 2,
+	.lcd_pinmux = lcd_pinmux_ctrl,
 	.pinmux_set = {{0, 0xc0000000}, {LCD_PINMUX_END, 0x0}},
 	.pinmux_clr = {{0, 0x009c0800}, {LCD_PINMUX_END, 0x0}},
 };
@@ -327,6 +375,8 @@ struct bl_config_s bl_config_dft = {
 	.pwm_on_delay = 10,
 	.pwm_off_delay = 10,
 
+	.pinctrl_ver = 2,
+	.bl_pinmux = bl_pinmux_ctrl,
 	.pinmux_set = {{4, 0x00010000}, {LCD_PINMUX_END, 0x0}},
 	.pinmux_clr = {{4, 0x00008000}, {3, 0x00200000}, {10, 0x00010000}, {LCD_PINMUX_END, 0x0}},
 };
