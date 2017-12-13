@@ -264,13 +264,6 @@ ssize_t uboot_env_write(struct file *file,
 	}
 	amlnand_get_device(aml_chip_env, CHIP_WRITING);
 
-	ret = amlnf_env_read((u8 *)env_ptr, CONFIG_ENV_SIZE);
-	if (ret) {
-		aml_nand_msg("nand_env_read: nand env read failed");
-		ret = -EFAULT;
-		goto exit;
-	}
-
 	if ((*ppos + count) > CONFIG_ENV_SIZE)
 		write_size = CONFIG_ENV_SIZE - *ppos;
 	else

@@ -383,7 +383,7 @@ int aml_nand_read_rsv_info (struct mtd_info *mtd,
 {
 	struct aml_nand_chip *aml_chip = mtd_to_nand_chip(mtd);
 	struct oobinfo_t *oobinfo;
-	int error = 0;
+	int error = 0, ret = 0;
 	loff_t addr = 0;
 	size_t amount_loaded = 0;
 	size_t len;
@@ -391,6 +391,7 @@ int aml_nand_read_rsv_info (struct mtd_info *mtd,
 	unsigned char *data_buf;
 	unsigned char oob_buf[sizeof(struct oobinfo_t)];
 
+READ_RSV_AGAIN:
 	addr = nandrsv_info->valid_node->phy_blk_addr;
 	addr *= mtd->erasesize;
 	addr += nandrsv_info->valid_node->phy_page_addr * mtd->writesize;
@@ -417,7 +418,11 @@ int aml_nand_read_rsv_info (struct mtd_info *mtd,
 		if ((error != 0) && (error != -EUCLEAN)) {
 			printk("blk good but read failed: %llx, %d\n",
 				(uint64_t)addr, error);
-			return 1;
+			ret = aml_nand_scan_rsv_info(mtd, nandrsv_info);
+			if (ret == -1)
+				return 1;
+			else
+				goto READ_RSV_AGAIN;
 		}
 
 		if (memcmp(oobinfo->name, nandrsv_info->name, 4))
@@ -430,6 +435,7 @@ int aml_nand_read_rsv_info (struct mtd_info *mtd,
 		memcpy(buf + amount_loaded, data_buf, len);
 		amount_loaded += mtd->writesize;
 	}
+
 	if (amount_loaded < nandrsv_info->size)
 		return 1;
 #if 0
@@ -951,6 +957,44 @@ int aml_nand_rsv_info_init(struct mtd_info *mtd)
 	return 0;
 }
 
+int aml_nand_free_rsv_info(struct mtd_info *mtd,
+	struct aml_nandrsv_info_t *nandrsv_info)
+{
+	struct free_node_t *tmp_node, *next_node = NULL;
+	int error = 0;
+	loff_t addr = 0;
+	struct erase_info erase_info;
+
+	pr_info("free %s\n", nandrsv_info->name);
+
+	if (nandrsv_info->valid) {
+		addr = nandrsv_info->valid_node->phy_blk_addr;
+		addr *= mtd->erasesize;
+		memset(&erase_info, 0, sizeof(struct erase_info));
+		erase_info.mtd = mtd;
+		erase_info.addr = addr;
+		erase_info.len = mtd->erasesize;
+		_aml_rsv_disprotect();
+		error = mtd->_erase(mtd, &erase_info);
+		_aml_rsv_protect();
+		pr_info("erasing valid info block: %llx\n", addr);
+		nandrsv_info->valid_node->phy_blk_addr = -1;
+		nandrsv_info->valid_node->ec = -1;
+		nandrsv_info->valid_node->phy_page_addr = 0;
+		nandrsv_info->valid_node->timestamp = 0;
+		nandrsv_info->valid_node->status = 0;
+		nandrsv_info->valid = 0;
+	}
+	tmp_node = nandrsv_info->free_node;
+	while (tmp_node != NULL) {
+		next_node = tmp_node->next;
+		release_free_node(mtd, tmp_node);
+		tmp_node = next_node;
+	}
+	nandrsv_info->free_node = NULL;
+
+	return error;
+}
 int aml_nand_scan_rsv_info(struct mtd_info *mtd,
 	struct aml_nandrsv_info_t *nandrsv_info)
 {
@@ -969,6 +1013,8 @@ int aml_nand_scan_rsv_info(struct mtd_info *mtd,
 	data_buf = aml_chip->rsv_data_buf;
 	oobinfo = (struct oobinfo_t *)oob_buf;
 
+RE_RSV_INFO_EXT:
+	memset(good_addr, 0 , 256);
 	max_scan_blk = nandrsv_info->end_block;
 	start_blk = nandrsv_info->start_block;
 	printk("%s: info size=0x%x max_scan_blk=%d, start_blk=%d\n",
@@ -1119,8 +1165,6 @@ RE_RSV_INFO:
 		}
 
 		if (!memcmp(oobinfo->name, nandrsv_info->name, 4)) {
-			//printk("%d page find info:%llx\n",
-			//	i, (uint64_t)offset);
 			good_addr[i] = 1;
 			nandrsv_info->valid_node->phy_page_addr = i;
 		} else
@@ -1152,9 +1196,17 @@ RE_RSV_INFO:
 				}
 			}
 		}
+		if (ret == -1) {
+			nandrsv_info->valid_node->status = 0;
+			aml_nand_free_rsv_info(mtd, nandrsv_info);
+			goto RE_RSV_INFO_EXT;
+		}
 		i = (nandrsv_info->size + mtd->writesize - 1) / mtd->writesize;
 		nandrsv_info->valid_node->phy_page_addr -= (i - 1);
 	}
+
+	if (nandrsv_info->valid != 1)
+		ret = -1;
 
 	offset = nandrsv_info->valid_node->phy_blk_addr;
 	offset *= mtd->erasesize;
@@ -1221,16 +1273,16 @@ int aml_nand_bbt_check(struct mtd_info *mtd)
 	ret = aml_nand_scan_rsv_info(mtd, aml_chip->aml_nandbbt_info);
 	if ((ret !=0) && ((ret != (-1)))) {
 		printk("%s %d\n", __func__, __LINE__);
-		return ret;
+		goto exit_error;
 	}
 
+	ret = 0;
 	buf = aml_chip->block_status;
 	if (aml_chip->aml_nandbbt_info->valid == 1) {
 		/*read bbt*/
 		printk("%s %d bbt is valid, reading.\n", __func__, __LINE__);
 		aml_nand_read_rsv_info(mtd,
 			aml_chip->aml_nandbbt_info, 0, (u_char *)buf);
-		ret = 0;
 	} else {
 		printk("%s %d bbt is invalid, scanning.\n", __func__, __LINE__);
 		/*no bbt haven't been found, abnormal or clean nand! rebuild*/
@@ -1250,7 +1302,6 @@ int aml_nand_bbt_check(struct mtd_info *mtd)
 
 	/*make uboot bbt perspective the same with normal bbt*/
 	aml_chip_boot->block_status = aml_chip->block_status;
-
 exit_error:
 	return ret;
 }
