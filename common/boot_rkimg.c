@@ -158,7 +158,8 @@ int rockchip_get_boot_mode(void)
 	struct blk_desc *dev_desc;
 	disk_partition_t part_info;
 	struct bootloader_message *bmsg;
-	int size = DIV_ROUND_UP(sizeof(struct bootloader_message), RK_BLK_SIZE);
+	int size = DIV_ROUND_UP(sizeof(struct bootloader_message), RK_BLK_SIZE)
+		   * RK_BLK_SIZE;
 	int ret;
 
 	if (boot_mode != -1)
@@ -173,7 +174,7 @@ int rockchip_get_boot_mode(void)
 	bmsg = memalign(ARCH_DMA_MINALIGN, size);
 	ret = blk_dread(dev_desc,
 			part_info.start + BOOTLOADER_MESSAGE_BLK_OFFSET,
-			size, bmsg);
+			size >> 9, bmsg);
 	if (ret < 0)
 		goto err;
 
