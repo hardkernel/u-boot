@@ -638,26 +638,23 @@ cleanup:
 int part_get_info_by_name(struct blk_desc *dev_desc, const char *name,
 	disk_partition_t *info)
 {
-	struct part_driver *first_drv =
-		ll_entry_start(struct part_driver, part_driver);
-	const int n_drvs = ll_entry_count(struct part_driver, part_driver);
 	struct part_driver *part_drv;
+	int ret;
+	int i;
 
-	for (part_drv = first_drv; part_drv != first_drv + n_drvs; part_drv++) {
-		int ret;
-		int i;
-		for (i = 1; i < part_drv->max_entries; i++) {
-			ret = part_drv->get_info(dev_desc, i, info);
-			if (ret != 0) {
-				/* no more entries in table */
-				break;
-			}
-			if (strcmp(name, (const char *)info->name) == 0) {
-				/* matched */
-				return i;
-			}
+	part_drv = part_driver_lookup_type(dev_desc);
+	for (i = 1; i < part_drv->max_entries; i++) {
+		ret = part_drv->get_info(dev_desc, i, info);
+		if (ret != 0) {
+			/* no more entries in table */
+			break;
+		}
+		if (strcmp(name, (const char *)info->name) == 0) {
+			/* matched */
+			return i;
 		}
 	}
+
 	return -1;
 }
 
