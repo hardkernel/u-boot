@@ -4,8 +4,8 @@
  * SPDX-License-Identifier:     GPL-2.0+
  */
 
-#ifndef __CONFIG_H
-#define __CONFIG_H
+#ifndef __RK322X_CONFIG_H
+#define __RK322X_CONFIG_H
 
 #include <configs/rk322x_common.h>
 
