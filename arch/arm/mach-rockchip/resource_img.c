@@ -177,12 +177,16 @@ static int init_resource_list(struct resource_img_hdr *hdr)
 	/* Read boot/recovery and chenc if this is an AOSP img */
 	ret = part_get_info_by_name(dev_desc, boot_partname,
 					 &part_info);
-	if (ret < 0)
+	if (ret < 0) {
 		printf("fail to get %s part\n", boot_partname);
+		goto out;
+	}
 	andr_hdr = (void *)hdr;
 	ret = blk_dread(dev_desc, part_info.start, 1, andr_hdr);
-	if (ret != 1)
+	if (ret != 1) {
 		printf("%s read fail\n", __func__);
+		goto out;
+	}
 	ret = android_image_check_header(andr_hdr);
 	if (!ret) {
 		debug("%s Load resource from %s senond pos\n",
@@ -201,8 +205,10 @@ static int init_resource_list(struct resource_img_hdr *hdr)
 		/* Read resource from Rockchip Resource partition */
 		ret = part_get_info_by_name(dev_desc, PART_RESOURCE,
 					 &part_info);
-		if (ret < 0)
+		if (ret < 0) {
 			printf("fail to get %s part\n", PART_RESOURCE);
+			goto out;
+		}
 		offset = part_info.start;
 		debug("%s Load resource from %s\n", __func__, part_info.name);
 	}
