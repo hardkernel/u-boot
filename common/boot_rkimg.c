@@ -10,6 +10,7 @@
 #include <libfdt.h>
 #include <malloc.h>
 #include <asm/arch/resource_img.h>
+#include <asm/arch/rockchip_crc.h>
 #include <boot_rkimg.h>
 
 #define TAG_KERNEL			0x4C4E524B
@@ -84,6 +85,9 @@ static int read_rockchip_image(struct blk_desc *dev_desc,
 	int header_len = 8;
 	int cnt;
 	int ret;
+#ifdef CONFIG_ROCKCHIP_CRC
+	u32 crc32;
+#endif
 
 	img = memalign(ARCH_DMA_MINALIGN, RK_BLK_SIZE);
 	if (!img) {
@@ -111,6 +115,19 @@ static int read_rockchip_image(struct blk_desc *dev_desc,
 			dst + RK_BLK_SIZE - header_len);
 	if (!ret)
 		ret = img->size;
+
+#ifdef CONFIG_ROCKCHIP_CRC
+	printf("%s image CRC32 verify... ", part->name);
+	crc32 = rockchip_crc_verify((unsigned char *)(unsigned long)dst,
+				  img->size + 4);
+	if (!crc32) {
+		printf("fail!\n");
+		ret = -EINVAL;
+	} else {
+		printf("okay.\n");
+	}
+#endif
+
 err:
 	free(img);
 	return ret;
