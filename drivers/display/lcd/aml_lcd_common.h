@@ -36,9 +36,10 @@
 /* -------------------------- */
 /* vbyone phy parameters define */
 /* -------------------------- */
-#define VX1_PHY_CNTL1_G9TV     0x6e0ec900
-#define VX1_PHY_CNTL2_G9TV     0x00000a7c
-#define VX1_PHY_CNTL3_G9TV     0x00ff0800
+#define VX1_PHY_CNTL1_G9TV            0x6e0ec900
+#define VX1_PHY_CNTL1_G9TV_PULLUP     0x6e0f4d00
+#define VX1_PHY_CNTL2_G9TV            0x0000007c
+#define VX1_PHY_CNTL3_G9TV            0x00ff0800
 /* -------------------------- */
 
 /* -------------------------- */

@@ -255,7 +255,7 @@ struct vbyone_config_s {
 	unsigned int color_fmt;
 	unsigned int phy_div;
 	unsigned int bit_rate;
-	unsigned int phy_vswing; /*[4]:ext_pullup, [3:0]vswing*/
+	unsigned int phy_vswing; /*[5:4]:ext_pullup, [3:0]vswing*/
 	unsigned int phy_preem;
 	unsigned int ctrl_flag;
 		/* bit[0]:power_on_reset_en

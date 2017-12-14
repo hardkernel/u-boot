@@ -46,33 +46,33 @@ static void lcd_vbyone_phy_set(struct lcd_config_s *pconf, int status)
 {
 	unsigned int vswing, preem, ext_pullup;
 	unsigned int data32;
+	unsigned int rinner_table[] = {0xa, 0xa, 0x6, 0x4};
 
 	if (lcd_debug_print_flag)
 		LCDPR("%s: %d\n", __func__, status);
 
 	if (status) {
-		ext_pullup = (pconf->lcd_control.vbyone_config->phy_vswing >> 4) & 1;
+		ext_pullup = (pconf->lcd_control.vbyone_config->phy_vswing >> 4) & 0x3;
 		vswing = pconf->lcd_control.vbyone_config->phy_vswing & 0xf;
 		preem = pconf->lcd_control.vbyone_config->phy_preem;
 		if (vswing > 7) {
-			LCDERR("%s: wrong vswing_level=0x%x, use default\n",
+			LCDERR("%s: wrong vswing_level=%d, use default\n",
 				__func__, vswing);
 			vswing = VX1_PHY_VSWING_DFT;
 		}
 		if (preem > 7) {
-			LCDERR("%s: wrong preemphasis_level=0x%x, use default\n",
+			LCDERR("%s: wrong preemphasis_level=%d, use default\n",
 				__func__, preem);
 			preem = VX1_PHY_PREEM_DFT;
 		}
-		data32 = VX1_PHY_CNTL1_G9TV |
-			(vswing << 3) | (ext_pullup << 10);
 		if (ext_pullup)
-			data32 &= ~(1 << 15);
+			data32 = VX1_PHY_CNTL1_G9TV_PULLUP | (vswing << 3);
+		else
+			data32 = VX1_PHY_CNTL1_G9TV | (vswing << 3);
 		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL1, data32);
-		data32 = VX1_PHY_CNTL2_G9TV | (preem << 20);
+		data32 = VX1_PHY_CNTL2_G9TV | (preem << 20) |
+			(rinner_table[ext_pullup] << 8);
 		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL2, data32);
-		/*lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL1, 0x6e0ec918);
-		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL2, 0x00000a7c);*/
 		data32 = VX1_PHY_CNTL3_G9TV;
 		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL3, data32);
 	} else {
@@ -97,7 +97,7 @@ static void lcd_lvds_phy_set(struct lcd_config_s *pconf, int status)
 		clk_vswing = pconf->lcd_control.lvds_config->phy_clk_vswing;
 		clk_preem = pconf->lcd_control.lvds_config->phy_clk_preem;
 		if (vswing > 7) {
-			LCDERR("%s: wrong vswing_level=0x%x, use default\n",
+			LCDERR("%s: wrong vswing_level=%d, use default\n",
 				__func__, vswing);
 			vswing = LVDS_PHY_VSWING_DFT;
 		}
@@ -106,7 +106,7 @@ static void lcd_lvds_phy_set(struct lcd_config_s *pconf, int status)
 		switch (lcd_drv->chip_type) {
 		case LCD_CHIP_TXHD:
 			if (preem > 3) {
-				LCDERR("%s: wrong preemphasis_level=0x%x, use default\n",
+				LCDERR("%s: wrong preemphasis_level=%d, use default\n",
 					__func__, preem);
 				preem = LVDS_PHY_PREEM_DFT;
 			}
@@ -125,17 +125,17 @@ static void lcd_lvds_phy_set(struct lcd_config_s *pconf, int status)
 			break;
 		default:
 			if (preem > 7) {
-				LCDERR("%s: wrong preemphasis_level=0x%x, use default\n",
+				LCDERR("%s: wrong preemphasis_level=%d, use default\n",
 					__func__, preem);
 				preem = LVDS_PHY_PREEM_DFT;
 			}
 			if (clk_vswing > 3) {
-				LCDERR("%s: wrong clk_vswing_level=0x%x, use default\n",
+				LCDERR("%s: wrong clk_vswing_level=%d, use default\n",
 					__func__, clk_vswing);
 				clk_vswing = LVDS_PHY_CLK_VSWING_DFT;
 			}
 			if (clk_preem > 7) {
-				LCDERR("%s: wrong clk_preem_level=0x%x, use default\n",
+				LCDERR("%s: wrong clk_preem_level=%d, use default\n",
 					__func__, clk_preem);
 				clk_preem = LVDS_PHY_CLK_PREEM_DFT;
 			}
@@ -172,12 +172,12 @@ static void lcd_mlvds_phy_set(struct lcd_config_s *pconf, int status)
 		vswing = pconf->lcd_control.mlvds_config->phy_vswing;
 		preem = pconf->lcd_control.mlvds_config->phy_preem;
 		if (vswing > 7) {
-			LCDERR("%s: wrong vswing_level=0x%x, use default\n",
+			LCDERR("%s: wrong vswing_level=%d, use default\n",
 				__func__, vswing);
 			vswing = LVDS_PHY_VSWING_DFT;
 		}
 		if (preem > 3) {
-			LCDERR("%s: wrong preemphasis_level=0x%x, use default\n",
+			LCDERR("%s: wrong preemphasis_level=%d, use default\n",
 				__func__, preem);
 			preem = LVDS_PHY_PREEM_DFT;
 		}
