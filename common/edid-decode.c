@@ -2247,7 +2247,7 @@ DONE:
 	printf("bestmode is %s, IEEEOUI 0x%06x\n", bestmode, IEEEOUI);
 
 	/* set vout mode */
-	if (IEEEOUI == 0x000c03) {
+	if ((IEEEOUI == 0x000c03) || (config == false) ) {
 		printf("HDMI Mode\n");
 
 		setenv("vout", "hdmi");
