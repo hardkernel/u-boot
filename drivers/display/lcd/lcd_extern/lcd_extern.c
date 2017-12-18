@@ -1111,6 +1111,13 @@ static int aml_lcd_extern_add_driver_default(int index, struct lcd_extern_config
 		goto add_driver_default_end;
 	}
 #endif
+#ifdef CONFIG_AML_LCD_EXTERN_MIPI_TV070WSM
+	drv_index = aml_lcd_extern_mipi_TV070WSM_get_default_index();
+	if (drv_index == index) {
+		ret = aml_lcd_extern_mipi_TV070WSM_probe(ext_drv);
+		goto add_driver_default_end;
+	}
+#endif
 
 add_driver_default_end:
 	if (ret) {

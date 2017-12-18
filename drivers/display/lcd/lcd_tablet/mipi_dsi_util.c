@@ -281,9 +281,8 @@ int lcd_mipi_dsi_init_table_detect(char *dtaddr, int nodeoffset,
 				(unsigned char)(be32_to_cpup((((u32*)propdata)+i+1)));
 			cmd_size = init_table[i+1];
 			i += 2;
-			if (cmd_size == 0xff) {
+			if (cmd_size == 0xff)
 				break;
-			}
 		} else if (type == 0xf0) {
 			init_table[i+DSI_CMD_SIZE_INDEX] =
 				(unsigned char)(be32_to_cpup((((u32*)propdata)+i+1)));
@@ -293,6 +292,11 @@ int lcd_mipi_dsi_init_table_detect(char *dtaddr, int nodeoffset,
 					propname, cmd_size);
 				break;
 			}
+			for (j = 0; j < cmd_size; j++) {
+				init_table[i+2+j] =
+					(unsigned char)(be32_to_cpup((((u32*)propdata)+i+2+j)));
+			}
+			i += (cmd_size + 2);
 		} else {
 			init_table[i+DSI_CMD_SIZE_INDEX] =
 				(unsigned char)(be32_to_cpup((((u32*)propdata)+i+1)));
