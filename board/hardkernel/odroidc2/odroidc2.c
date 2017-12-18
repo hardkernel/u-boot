@@ -457,7 +457,17 @@ int board_late_init(void)
 	board_get_mmc_size();
 
 #ifdef CONFIG_DISPLAY_LOGO
-	run_command("showlogo 1080p60hz", 0);
+	/*
+	 * The env to define display mode is defined differently
+	 * on Ubuntu and Android.
+	 * To distinguish os system, an env "androidopt" will be used.
+	 */
+	if ((NULL == getenv("m")) && (NULL == getenv("hdmimode")))
+		run_command("showlogo 1080p60hz", 0);
+	else if (NULL == getenv("androidopt"))
+		run_command("showlogo ${m}", 0); /* Ubuntu */
+	else
+		run_command("showlogo ${hdmimode}", 0); /* Android */
 #endif
 
 	board_identity();
