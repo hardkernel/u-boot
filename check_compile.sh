@@ -86,6 +86,10 @@ declare -i FAIL_COUNTER=0
 declare -i BAR_TOTAL=30
 declare -i BAR_LOOP
 
+# trying fix scp task compile failure misreport issue
+declare -i BUILD_COUNTER=3
+declare -i BUILD_RESULT=0
+
 RESULT=$RESULT"########### Compile Check Result ###########\n"
 
 if [ "$1" != "cus" ]
@@ -118,12 +122,23 @@ then
       for tmp in `seq $BAR_LOOP`;do RESULT=$RESULT'-';done
     fi
     # compile
-    make distclean
-    make $cfg'_defconfig'
-    make -j
-    # check last 'make -j' result
-    if [ $? != 0 ]
-    then
+    BUILD_COUNTER=3
+    BUILD_RESULT=0
+    while [ "${BUILD_COUNTER}" -gt "0" ]; do
+      BUILD_COUNTER=$((BUILD_COUNTER - 1))
+      make distclean
+      make $cfg'_defconfig'
+      make -j
+      # check last 'make -j' result
+      if [ $? != 0 ]; then
+        BUILD_RESULT=$((BUILD_RESULT + 1))
+      else
+        BUILD_RESULT=0
+        BUILD_COUNTER=0
+      fi
+    done
+    # check compile result
+    if [ ${BUILD_RESULT} != 0 ]; then
       RESULT=$RESULT'- failed\n'
       FAIL_COUNTER=$FAIL_COUNTER+1
     else
