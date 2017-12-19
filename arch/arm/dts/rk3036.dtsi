@@ -109,6 +109,11 @@
 		assigned-clock-rates = <594000000>;
 	};
 
+	dmc: dmc@20004000 {
+		compatible = "rockchip,rk3036-dmc", "syscon";
+		reg = <0x0 0x20004000 0x0 0x1000>;
+	};
+
 	uart0: serial@20060000 {
 		compatible = "rockchip,rk3036-uart", "snps,dw-apb-uart";
 		reg = <0x20060000 0x100>;
