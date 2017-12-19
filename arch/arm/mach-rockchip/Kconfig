@@ -25,7 +25,14 @@ config ROCKCHIP_RK3036
 	bool "Support Rockchip RK3036"
 	select CPU_V7
 	select SUPPORT_SPL
+	select SUPPORT_TPL
 	select SPL
+	select TPL
+	select BOARD_LATE_INIT
+	select ROCKCHIP_BROM_HELPER
+	select TPL_NEEDS_SEPARATE_TEXT_BASE if TPL
+	select TPL_NEEDS_SEPARATE_STACK if TPL
+	select DEBUG_UART_BOARD_INIT
 	help
 	  The Rockchip RK3036 is a ARM-based SoC with a dual-core Cortex-A7
 	  including NEON and GPU, Mali-400 graphics, several DDR3 options
