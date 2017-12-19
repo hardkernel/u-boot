@@ -64,12 +64,18 @@ static int rkclk_set_pll(struct rk3036_cru *cru, enum rk_clk_id clk_id,
 	/* use integer mode */
 	rk_setreg(&pll->con1, 1 << PLL_DSMPD_SHIFT);
 
+	/* Power down */
+	rk_setreg(&pll->con1, 1 << PLL_PD_SHIFT);
+
 	rk_clrsetreg(&pll->con0,
 		     PLL_POSTDIV1_MASK | PLL_FBDIV_MASK,
 		     (div->postdiv1 << PLL_POSTDIV1_SHIFT) | div->fbdiv);
 	rk_clrsetreg(&pll->con1, PLL_POSTDIV2_MASK | PLL_REFDIV_MASK,
 		     (div->postdiv2 << PLL_POSTDIV2_SHIFT |
 		     div->refdiv << PLL_REFDIV_SHIFT));
+
+	/* Power Up */
+	rk_clrreg(&pll->con1, 1 << PLL_PD_SHIFT);
 
 	/* waiting for pll lock */
 	while (readl(&pll->con1) & (1 << PLL_LOCK_STATUS_SHIFT))
