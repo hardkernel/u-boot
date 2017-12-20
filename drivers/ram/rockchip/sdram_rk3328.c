@@ -992,6 +992,9 @@ static int rk3328_dmc_probe(struct udevice *dev)
 	priv->info.base = CONFIG_SYS_SDRAM_BASE;
 	priv->info.size = rockchip_sdram_size(
 				(phys_addr_t)&priv->grf->os_reg[2]);
+#ifdef CONFIG_SPL_BUILD
+	rockchip_setup_ddr_param(&priv->info);
+#endif
 #endif
 	return 0;
 }
