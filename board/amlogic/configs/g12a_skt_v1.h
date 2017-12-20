@@ -293,6 +293,70 @@
 #if (defined(CONFIG_ENV_IS_IN_AMLNAND) || defined(CONFIG_ENV_IS_IN_MMC)) && defined(CONFIG_STORE_COMPATIBLE)
 #error env in amlnand/mmc already be compatible;
 #endif
+
+/*
+*				storage
+*		|---------|---------|
+*		|					|
+*		emmc<--Compatible-->nand
+*					|-------|-------|
+*					|				|
+*					MTD<-Exclusive->NFTL
+*/
+/* axg only support slc nand */
+/* swither for mtd nand which is for slc only. */
+/* support for mtd */
+//#define CONFIG_AML_MTD 1
+/* support for nftl */
+//#define CONFIG_AML_NAND	1
+
+#if defined(CONFIG_AML_NAND) && defined(CONFIG_AML_MTD)
+#error CONFIG_AML_NAND/CONFIG_AML_MTD can not support at the sametime;
+#endif
+
+#ifdef CONFIG_AML_MTD
+
+/* bootlaoder is construct by bl2 and fip
+ * when DISCRETE_BOOTLOADER is enabled, bl2 & fip
+ * will not be stored continuously, and nand layout
+ * would be bl2|rsv|fip|normal, but not
+ * bl2|fip|rsv|noraml anymore
+ */
+#define CONFIG_DISCRETE_BOOTLOADER
+
+#ifdef  CONFIG_DISCRETE_BOOTLOADER
+#define CONFIG_TPL_SIZE_PER_COPY          0x200000
+#define CONFIG_TPL_COPY_NUM               4
+#define CONFIG_TPL_PART_NAME              "tpl"
+/* for bl2, restricted by romboot */
+#define CONFIG_BL2_COPY_NUM               8
+#endif /* CONFIG_DISCRETE_BOOTLOADER */
+
+#define CONFIG_CMD_NAND 1
+#define CONFIG_MTD_DEVICE y
+/* mtd parts of ourown.*/
+#define CONFIFG_AML_MTDPART	1
+/* mtd parts by env default way.*/
+/*
+#define MTDIDS_NAME_STR		"aml_nand.0"
+#define MTDIDS_DEFAULT		"nand1=" MTDIDS_NAME_STR
+#define MTDPARTS_DEFAULT	"mtdparts=" MTDIDS_NAME_STR ":" \
+					"3M@8192K(logo),"	\
+					"10M(recovery),"	\
+					"8M(kernel),"	\
+					"40M(rootfs),"	\
+					"-(data)"
+*/
+#define CONFIG_CMD_UBI
+#define CONFIG_CMD_UBIFS
+#define CONFIG_RBTREE
+#define CONFIG_CMD_NAND_TORTURE 1
+#define CONFIG_CMD_MTDPARTS   1
+#define CONFIG_MTD_PARTITIONS 1
+#define CONFIG_SYS_MAX_NAND_DEVICE  2
+#define CONFIG_SYS_NAND_BASE_LIST   {0}
+#endif
+/* endof CONFIG_AML_MTD */
 #define		CONFIG_AML_SD_EMMC 1
 #ifdef		CONFIG_AML_SD_EMMC
 	#define 	CONFIG_GENERIC_MMC 1

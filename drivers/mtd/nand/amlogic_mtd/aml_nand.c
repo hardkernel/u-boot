@@ -1863,12 +1863,11 @@ static int aml_nand_add_partition(struct aml_nand_chip *aml_chip)
 #endif
 }
 
-
-
 static void inline nand_get_chip(void )
 {
 	/* fixme, */
 	/* pull up enable */
+#if 0
 	cpu_id_t cpu_id = get_cpu_id();
 
 	if ((cpu_id.family_id == MESON_CPU_MAJOR_ID_GXL)
@@ -1909,6 +1908,17 @@ static void inline nand_get_chip(void )
 			__func__, __LINE__, cpu_id.family_id);
 		BUG();
 	}
+#endif
+
+
+	/* Todo: need confirm cpu id for G12A */
+	//AMLNF_SET_REG_MASK(P_PAD_PULL_UP_EN_REG4, 0x1FFF);
+	//AMLNF_SET_REG_MASK(P_PAD_PULL_UP_REG4, 0x1F00);
+
+	AMLNF_WRITE_REG(P_PAD_PULL_UP_EN_REG4, 0x1FFF);
+	AMLNF_WRITE_REG(P_PAD_PULL_UP_REG4, 0x1F00);
+	AMLNF_WRITE_REG(P_PERIPHS_PIN_MUX_0, 0x11111111);
+	AMLNF_WRITE_REG(P_PERIPHS_PIN_MUX_1, 0x22122222);
 
 	return ;
 }
@@ -3698,7 +3708,7 @@ static uint8_t aml_platform_read_byte(struct mtd_info *mtd)
 {
 	//struct nand_chip *chip = mtd->priv;
 	//struct aml_nand_chip *aml_chip = mtd_to_nand_chip(mtd);
-    uint8_t status;
+	uint8_t status;
 
 	NFC_SEND_CMD_DRD(controller, controller->chip_selected, 0);
 	NFC_SEND_CMD_IDLE(controller, NAND_TWB_TIME_CYCLE);
@@ -3708,8 +3718,7 @@ static uint8_t aml_platform_read_byte(struct mtd_info *mtd)
 
 	while (NFC_CMDFIFO_SIZE(controller) > 0) ;
 	status = amlnf_read_reg32(controller->reg_base + P_NAND_BUF);
-    //printk("rd:%x\n", status);
-    return status;
+	return status;
 }
 
 void aml_platform_write_byte(struct aml_nand_chip *aml_chip, uint8_t data)
@@ -3735,9 +3744,6 @@ int aml_nand_init(struct aml_nand_chip *aml_chip)
 	unsigned valid_chip_num = 0;
 	struct nand_oobfree *oobfree = NULL;
 	cpu_id_t cpu_id = get_cpu_id();
-	/*
-	printk("%s %d\n", __func__, __LINE__);
-	*/
 
 	chip->IO_ADDR_R = chip->IO_ADDR_W =
 		(void __iomem *)((volatile u32 *)(NAND_BASE_APB + P_NAND_BUF));
@@ -3745,11 +3751,7 @@ int aml_nand_init(struct aml_nand_chip *aml_chip)
 	chip->options |= NAND_SKIP_BBTSCAN;
 	chip->options |= NAND_NO_SUBPAGE_WRITE;
 
-	if (chip->ecc.mode != NAND_ECC_SOFT) {
-		if (aml_chip->user_byte_mode == 2)
-			chip->ecc.layout = &aml_nand_oob_64;
-	}
-
+	chip->ecc.layout = &aml_nand_oob_64;
 	chip->select_chip = aml_nand_select_chip;
 	chip->cmd_ctrl = aml_nand_cmd_ctrl;
 	chip->read_byte = aml_platform_read_byte;
@@ -3773,21 +3775,15 @@ int aml_nand_init(struct aml_nand_chip *aml_chip)
 	if ((cpu_id.family_id == MESON_CPU_MAJOR_ID_AXG) ||
 	    (cpu_id.family_id == MESON_CPU_MAJOR_ID_TXHD))
 		aml_chip->bch_info = NAND_ECC_BCH8_1K;
-	if (nand_scan(mtd, controller->chip_num) == 0) {
-		chip->options = 0;
-		chip->options |=  NAND_SKIP_BBTSCAN;
-		chip->options |= NAND_NO_SUBPAGE_WRITE;
-		if (aml_nand_scan(mtd, controller->chip_num)) {
-			err = -ENXIO;
-			goto exit_error;
-		}
-	} else {
-		printk("pre nand scan failed\n");
-		/* set device boot flag as emmc if nand failed*/
-		device_boot_flag = EMMC_BOOT_FLAG;
+
+	chip->options = 0;
+	chip->options |=  NAND_SKIP_BBTSCAN;
+	chip->options |= NAND_NO_SUBPAGE_WRITE;
+	if (aml_nand_scan(mtd, controller->chip_num)) {
 		err = -ENXIO;
 		goto exit_error;
 	}
+
 	valid_chip_num = 0;
 	for (i=0; i < controller->chip_num; i++) {
 		if (aml_chip->valid_chip[i])
@@ -3928,17 +3924,6 @@ int aml_nand_init(struct aml_nand_chip *aml_chip)
 		err = -ENOMEM;
 		goto exit_error;
 	}
-
-	/*
-	if (chip->buffers)
-		kfree(chip->buffers);
-	if (mtd->oobsize >= NAND_MAX_OOBSIZE)
-		chip->buffers =
-		kzalloc((mtd->writesize + 3 * mtd->oobsize), GFP_KERNEL);
-	else
-		chip->buffers =
-		kzalloc((mtd->writesize + 3 * NAND_MAX_OOBSIZE), GFP_KERNEL);
-	*/
 
 	if (chip->buffers == NULL) {
 		printk("no memory for flash data buf\n");

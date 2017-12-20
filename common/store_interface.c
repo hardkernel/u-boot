@@ -5,7 +5,6 @@
 #include <malloc.h>
 #if defined(CONFIG_AML_NAND) || defined (CONFIG_AML_MTD)
 #include <nand.h>
-#include <asm/arch/nand.h>
 #endif
 #include <mmc.h>
 #include <linux/ctype.h>
@@ -18,6 +17,7 @@
 #include <linux/string.h>
 #include <asm/cpu_id.h>
 #include <asm/arch/bl31_apis.h>
+#include <asm/arch/cpu_config.h>
 
 #if defined(CONFIG_AML_NAND) || defined (CONFIG_AML_MTD)
 /* key opeartions of nand */

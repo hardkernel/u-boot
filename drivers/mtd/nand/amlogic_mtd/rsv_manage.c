@@ -1270,6 +1270,22 @@ int aml_nand_bbt_check(struct mtd_info *mtd)
 
 	phys_erase_shift = fls(mtd->erasesize) - 1;
 
+#ifdef __PXP__
+	int i = 0;
+	struct erase_info erase_info;
+	loff_t addr = 0;
+	while (i++ < 200) {
+		addr = i * mtd->erasesize;
+		memset(&erase_info, 0, sizeof(struct erase_info));
+		erase_info.mtd = mtd;
+		erase_info.addr = addr;
+		erase_info.len = mtd->erasesize;
+		ret = mtd->_erase(mtd, &erase_info);
+		printk("erasing block: %llx %d %d\n",
+			addr, ret, i);
+	}
+#endif
+
 	ret = aml_nand_scan_rsv_info(mtd, aml_chip->aml_nandbbt_info);
 	if ((ret !=0) && ((ret != (-1)))) {
 		printk("%s %d\n", __func__, __LINE__);
@@ -1294,7 +1310,16 @@ int aml_nand_bbt_check(struct mtd_info *mtd)
 		}
 		memset(aml_chip->block_status,
 			0, (mtd->size >> phys_erase_shift));
+#ifndef __PXP__
+		/*
+		 * 1. NAND data pattern may be not all 0xff in pxp, so there will be
+		 * so long time spent because of ecc checking failure. Skipping it
+		 * will lead to no factory bad block scanning, so we can modify
+		 * the block status for verification.
+		 * 2. OF cource we can add erase all block here for getting clean nand.
+		 */
 		aml_nand_scan_shipped_bbt(mtd);
+#endif
 		aml_nand_save_bbt(mtd, (u_char *)buf);
 		if (aml_chip->nand_bbt_info)
 			kfree(aml_chip->nand_bbt_info);

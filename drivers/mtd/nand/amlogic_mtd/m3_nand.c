@@ -177,13 +177,14 @@ unsigned char pagelist_1ynm_hynix256_mtd[128] = {
 	0xEf, 0xf1, 0xF3, 0xF5, 0xF7, 0xF9, 0xFb, 0xFd,
 };
 
-#ifndef CONFIG_M3
-extern unsigned int aml_mx_get_id(void);
-#endif
-
 #ifdef AML_NAND_UBOOT
 void pinmux_select_chip_mtd(unsigned ce_enable, unsigned rb_enable)
 {
+	/* Todo: confirm cpu id for G12A*/
+#ifdef	__PXP__
+	if (!((ce_enable >> 10) & 1))
+		AMLNF_SET_REG_MASK(P_PERIPHS_PIN_MUX_1, 2);
+#else
 	cpu_id_t cpu_id = get_cpu_id();
 
 	if (cpu_id.family_id == MESON_CPU_MAJOR_ID_AXG) {
@@ -207,8 +208,10 @@ void pinmux_select_chip_mtd(unsigned ce_enable, unsigned rb_enable)
 			__func__, __LINE__, cpu_id.family_id);
 		BUG();
 	}
+#endif
 }
 #endif
+
 nand_info_t *get_nand_dev_by_index(int dev)
 {
 	if ((dev < 0) || (dev >= CONFIG_SYS_MAX_NAND_DEVICE) ||
@@ -217,6 +220,7 @@ nand_info_t *get_nand_dev_by_index(int dev)
 
 	return &nand_info[dev];
 }
+
 static int controller_select_chip(struct hw_controller *controller,
 	u8 chipnr)
 {
@@ -260,7 +264,8 @@ void get_sys_clk_rate_mtd(struct hw_controller *controller, int *rate)
 	/* fixme, axg clock may be the same setting with gxl/gxm */
 
 	if ((cpu_id.family_id == MESON_CPU_MAJOR_ID_AXG) ||
-	    (cpu_id.family_id == MESON_CPU_MAJOR_ID_TXHD))
+	    (cpu_id.family_id == MESON_CPU_MAJOR_ID_TXHD) ||
+		(cpu_id.family_id == MESON_CPU_MAJOR_ID_G12A))
 		always_on = 0x1 << 28;
 
 	printk("%s() %d, clock setting %d!\n",
@@ -268,7 +273,8 @@ void get_sys_clk_rate_mtd(struct hw_controller *controller, int *rate)
 	if ((cpu_id.family_id == MESON_CPU_MAJOR_ID_GXBB) ||
 	    (cpu_id.family_id == MESON_CPU_MAJOR_ID_GXL) ||
 	    (cpu_id.family_id == MESON_CPU_MAJOR_ID_AXG) ||
-	    (cpu_id.family_id == MESON_CPU_MAJOR_ID_TXHD)) {
+	    (cpu_id.family_id == MESON_CPU_MAJOR_ID_TXHD) ||
+		(cpu_id.family_id == MESON_CPU_MAJOR_ID_G12A)) {
 		switch (clk_freq) {
 			case 24:
 				clk = 0x80000201;
@@ -292,25 +298,34 @@ void get_sys_clk_rate_mtd(struct hw_controller *controller, int *rate)
 	} else {
 		BUG();
 	}
+
 	return;
 }
 
+
+
 static void m3_nand_hw_init(struct aml_nand_chip *aml_chip)
 {
+	int sys_clk_rate, bus_cycle, bus_timing;
 
-    int sys_clk_rate, bus_cycle, bus_timing;
-
+#ifdef __PXP__
 	sys_clk_rate = 200;
+#else
+	sys_clk_rate = 200;
+#endif
 	get_sys_clk_rate_mtd(controller, &sys_clk_rate);
 
-	//sys_time = (10000 / sys_clk_rate);
-
 	bus_cycle  = 6;
-	bus_timing = bus_cycle + 1;
+#ifdef __PXP__
+	bus_timing = 2;
+#else
+	bus_timing = 7;
+#endif
 
-	NFC_SET_CFG(controller , 0);
+	NFC_SET_CFG(controller, 0);
 	NFC_SET_TIMING_ASYC(controller, bus_timing, (bus_cycle - 1));
 	NFC_SEND_CMD(controller, 1<<31);
+
 	return;
 }
 
@@ -330,11 +345,17 @@ static void m3_nand_adjust_timing(struct aml_nand_chip *aml_chip)
 	else
 		sys_clk_rate = 250;
 
+#ifdef __PXP__
+	sys_clk_rate = 200;
+#endif
 	get_sys_clk_rate_mtd(controller, &sys_clk_rate);
 
-	//sys_time = (10000 / sys_clk_rate);
 	bus_cycle  = 6;
-	bus_timing = bus_cycle + 1;
+#ifdef __PXP__
+	bus_timing = 2;
+#else
+	bus_timing = 7;
+#endif
 
 	printf("%s() sys_clk_rate %d, bus_c %d, bus_t %d\n",
 		__func__, sys_clk_rate, bus_cycle, bus_timing);
@@ -921,7 +942,7 @@ void nand_init(void)
 
 	/* set nf controller register base and nand clk base */
 	controller->reg_base = (void *)(volatile uint32_t *)NAND_BASE_APB;
-	controller->nand_clk_reg = (void *)(volatile uint32_t *)NAND_CLK_CNTL;
+	controller->nand_clk_reg = (void *)(volatile uint32_t *)NAND_CLK_REG;
 
 	/*
 	printk("nand register base %p, nand clock register %p\n",

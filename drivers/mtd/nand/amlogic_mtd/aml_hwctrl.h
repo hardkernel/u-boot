@@ -56,18 +56,10 @@ static inline int get_cpu_type(void)
 #define	NAND_CYCLE_DELAY ((get_cpu_type() >= MESON_CPU_MAJOR_ID_M8)?(84) : (90))
 
 #ifdef AML_NAND_UBOOT
-/* m8baby, debug on m201... just for porting*/
-#if  0
-#define NAND_BASE_APB 	(u32 *)0xd0048600
-#define IO_CBUS_PHY_BASE	(0xc1100000)
-#define NAND_CLK_CNTL		(u32 *)(IO_CBUS_PHY_BASE + 0x425C)
-#define	POC_CONFIG_REG		(u32 *)(IO_CBUS_PHY_BASE + 0x7D54)
-#endif /* 0 */
-
 /* gxb and later, for pxp and ic. */
 #define P_NAND_BASE 	(SD_EMMC_BASE_C | (1<<11))
 #define NAND_BASE_APB	(P_NAND_BASE)
-#define NAND_CLK_CNTL	(SD_EMMC_BASE_C)
+#define NAND_CLK_REG	(SD_EMMC_BASE_C)
 //#define	POC_CONFIG_REG	(volatile uint32_t *)(0xc1107d54)
 #endif /* AML_NAND_UBOOT */
 

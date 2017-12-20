@@ -519,6 +519,18 @@ struct aml_nand_flash_dev aml_nand_flash_ids[] = {
 		0,
 		(NAND_TIMING_MODE5 | NAND_ECC_BCH12_MODE )},
 
+	{"A revision NAND 2GiB MT29F16G08ABABA",
+		{NAND_MFR_MICRON, 0x48, 0x00, 0x26, 0x89},
+		4096,
+		2048,
+		0x80000,
+		224,
+		1,
+		20,
+		15,
+		0,
+		(NAND_TIMING_MODE4 | NAND_ECC_BCH8_MODE)},
+
 	{"A revision NAND 4GiB MT29F32G-A",
 		{NAND_MFR_MICRON, 0xd7, 0x94, 0x3e, 0x84},
 		4096,
@@ -2826,6 +2838,11 @@ static int aml_nand_scan_ident(struct mtd_info *mtd, int maxchips)
 	u8 dev_id[MAX_ID_LEN], onfi_features[4];
 	unsigned temp_chip_shift;
 
+	chip->cmdfunc = aml_nand_command;
+	chip->waitfunc = aml_nand_wait;
+	chip->erase_cmd = aml_nand_erase_cmd;
+	chip->write_page = aml_nand_write_page;
+
 	/* Get buswidth to select the correct functions */
 	busw = chip->options & NAND_BUSWIDTH_16;
 
@@ -2958,11 +2975,6 @@ static int aml_nand_scan_ident(struct mtd_info *mtd, int maxchips)
 	if (!strncmp((char*)plat->name,
 		NAND_BOOT_NAME, strlen((const char*)NAND_BOOT_NAME)))
 		mtd->size =  BOOT_TOTAL_PAGES * mtd->writesize;
-
-	chip->cmdfunc = aml_nand_command;
-	chip->waitfunc = aml_nand_wait;
-	chip->erase_cmd = aml_nand_erase_cmd;
-	chip->write_page = aml_nand_write_page;
 
 	return 0;
 }
