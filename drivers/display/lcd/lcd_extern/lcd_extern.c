@@ -964,6 +964,10 @@ static int aml_lcd_extern_add_mipi(struct aml_lcd_extern_driver_s *ext_drv)
 #ifdef CONFIG_AML_LCD_EXTERN_MIPI_TV070WSM
 		ret = aml_lcd_extern_mipi_TV070WSM_probe(ext_drv);
 #endif
+	} else if (strcmp(ext_drv->config->name, "mipi_ST7701") == 0) {
+#ifdef CONFIG_AML_LCD_EXTERN_MIPI_ST7701
+		ret = aml_lcd_extern_mipi_st7701_probe(ext_drv);
+#endif
 	} else {
 		EXTERR("invalid driver name: %s\n", ext_drv->config->name);
 		ret = -1;
@@ -1115,6 +1119,13 @@ static int aml_lcd_extern_add_driver_default(int index, struct lcd_extern_config
 	drv_index = aml_lcd_extern_mipi_TV070WSM_get_default_index();
 	if (drv_index == index) {
 		ret = aml_lcd_extern_mipi_TV070WSM_probe(ext_drv);
+		goto add_driver_default_end;
+	}
+#endif
+#ifdef CONFIG_AML_LCD_EXTERN_MIPI_ST7701
+	drv_index = aml_lcd_extern_mipi_st7701_get_default_index();
+	if (drv_index == index) {
+		ret = aml_lcd_extern_mipi_st7701_probe(ext_drv);
 		goto add_driver_default_end;
 	}
 #endif

@@ -79,5 +79,9 @@ extern int aml_lcd_extern_mipi_TV070WSM_probe(struct aml_lcd_extern_driver_s *ex
 extern int aml_lcd_extern_i2c_DLPC3439_get_default_index(void);
 extern int aml_lcd_extern_i2c_DLPC3439_probe(struct aml_lcd_extern_driver_s *ext_drv);
 #endif
+#ifdef CONFIG_AML_LCD_EXTERN_MIPI_ST7701
+extern int aml_lcd_extern_mipi_st7701_get_default_index(void);
+extern int aml_lcd_extern_mipi_st7701_probe(struct aml_lcd_extern_driver_s *ext_drv);
+#endif
 #endif
 
