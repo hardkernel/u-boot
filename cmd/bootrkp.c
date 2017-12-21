@@ -30,7 +30,9 @@ static int do_boot_rockchip(cmd_tbl_t *cmdtp, int flag, int argc,
 }
 
 U_BOOT_CMD(
-	boot_rockchip,  CONFIG_SYS_MAXARGS,     1,      do_boot_rockchip,
-	"boot Linux Image image from rockchip partition storage",
-	""
+	bootrkp,  CONFIG_SYS_MAXARGS,     1,      do_boot_rockchip,
+	"Boot Linux Image from rockchip image type",
+	"kernel.img: zImage/Image\n"
+	"boot.img: ramdisk\n"
+	"resource.img: dtb, u-boot logo, kernel logo"
 );
