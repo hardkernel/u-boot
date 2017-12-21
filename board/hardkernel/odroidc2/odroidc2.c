@@ -416,6 +416,14 @@ static void board_run_fastboot(void)
 
 static void board_run_recovery(void)
 {
+	/*
+	 * In case of recovery mode,
+	 * bootargs should be updated with new modeline
+	 */
+	run_command("usb pwren", 0);
+	run_command("hdmitx edid", 0);
+	run_command("setenv bootargs ${bootargs} modeline=${modeline}", 0);
+
 	run_command("movi read dtb 0 ${dtb_mem_addr}", 0);
 	run_command("movi read recovery 0 ${loadaddr}", 0);
 	run_command("bootm ${load_addr}", 0);
