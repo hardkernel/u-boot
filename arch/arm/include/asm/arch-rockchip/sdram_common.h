@@ -55,4 +55,8 @@ size_t rockchip_sdram_size(phys_addr_t reg);
 
 /* Called by U-Boot board_init_r for Rockchip SoCs */
 int dram_init(void);
+
+/* Write ddr param to a known place for trustos */
+int rockchip_setup_ddr_param(struct ram_info *info);
+
 #endif

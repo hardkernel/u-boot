@@ -12,6 +12,14 @@
 #include <dm/uclass-internal.h>
 
 DECLARE_GLOBAL_DATA_PTR;
+struct ddr_param{
+	u32 count;
+	u32 reserved;
+	u64 bank_addr;
+	u64 bank_size;
+};
+#define PARAM_DRAM_INFO_OFFSET 0x2000000
+
 size_t rockchip_sdram_size(phys_addr_t reg)
 {
 	u32 rank, col, bk, cs0_row, cs1_row, bw, row_3_4;
@@ -80,4 +88,15 @@ ulong board_get_usable_ram_top(ulong total_size)
 	unsigned long top = CONFIG_SYS_SDRAM_BASE + SDRAM_MAX_SIZE;
 
 	return (gd->ram_top > top) ? top : gd->ram_top;
+}
+
+int rockchip_setup_ddr_param(struct ram_info *info)
+{
+	struct ddr_param *dinfo = (struct ddr_param *)PARAM_DRAM_INFO_OFFSET;
+
+	dinfo->count = 1;
+	dinfo->bank_addr = info->base;
+	dinfo->bank_size = info->size;
+
+	return 0;
 }
