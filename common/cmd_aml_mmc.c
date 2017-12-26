@@ -772,8 +772,6 @@ static int amlmmc_erase_by_part(int argc, char *const argv[])
 static int do_amlmmc_erase(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 {
     int ret = CMD_RET_USAGE;
-    if (argc != 3 || argc != 5)
-        return ret;
 
     if (argc == 3)
         ret = amlmmc_erase_by_part(argc, argv);
