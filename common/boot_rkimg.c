@@ -117,7 +117,7 @@ static int read_rockchip_image(struct blk_desc *dev_desc,
 		ret = img->size;
 
 #ifdef CONFIG_ROCKCHIP_CRC
-	printf("%s image CRC32 verify... ", part->name);
+	printf("%s image CRC32 verify... ", part_info->name);
 	crc32 = rockchip_crc_verify((unsigned char *)(unsigned long)dst,
 				  img->size + 4);
 	if (!crc32) {
