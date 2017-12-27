@@ -97,8 +97,11 @@ static int read_rockchip_image(struct blk_desc *dev_desc,
 
 	/* read first block with header imformation */
 	ret = blk_dread(dev_desc, part_info->start, 1, img);
-	if (ret < 0)
+	if (ret != 1) {
+		ret = -EIO;
 		goto err;
+	}
+
 	if (img->tag != TAG_KERNEL) {
 		printf("%s: invalid image tag(0x%x)\n", part_info->name, img->tag);
 		ret = -EINVAL;
@@ -113,8 +116,13 @@ static int read_rockchip_image(struct blk_desc *dev_desc,
 	cnt = DIV_ROUND_UP(img->size + 8 + 4, RK_BLK_SIZE);
 	ret = blk_dread(dev_desc, part_info->start + 1, cnt - 1,
 			dst + RK_BLK_SIZE - header_len);
-	if (!ret)
+	if (ret != (cnt - 1)) {
+		printf("%s try to read %d blocks failed, only read %d blocks\n",
+		       part_info->name, cnt - 1, ret);
+		ret = -EIO;
+	} else {
 		ret = img->size;
+	}
 
 #ifdef CONFIG_ROCKCHIP_CRC
 	printf("%s image CRC32 verify... ", part_info->name);
@@ -192,8 +200,10 @@ int rockchip_get_boot_mode(void)
 	ret = blk_dread(dev_desc,
 			part_info.start + BOOTLOADER_MESSAGE_BLK_OFFSET,
 			size >> 9, bmsg);
-	if (ret < 0)
+	if (ret != (size >> 9)) {
+		ret = -EIO;
 		goto err;
+	}
 
 	if (!strcmp(bmsg->command, "boot-recovery")) {
 		printf("boot mode: recovery\n");

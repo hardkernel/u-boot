@@ -94,7 +94,7 @@ static int rkparm_init_param(struct blk_desc *dev_desc,
 
 	ret = blk_dread(dev_desc, RK_PARAM_OFFSET, MAX_PARAM_SIZE >> 9,
 			(ulong *)param);
-	if (ret < 0) {
+	if (ret != (MAX_PARAM_SIZE >> 9)) {
 		printf("%s param read fail\n", __func__);
 		return -EINVAL;
 	}

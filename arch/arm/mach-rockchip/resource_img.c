@@ -215,7 +215,7 @@ static int init_resource_list(struct resource_img_hdr *hdr)
 
 	hdr = (void *)andr_hdr;
 	ret = blk_dread(dev_desc, offset, 1, hdr);
-	if (ret < 0)
+	if (ret != 1)
 		goto out;
 	ret = resource_image_check_header(hdr);
 	if (ret < 0)
@@ -228,7 +228,7 @@ static int init_resource_list(struct resource_img_hdr *hdr)
 	}
 	ret = blk_dread(dev_desc, offset + hdr->c_offset,
 			hdr->e_blks * hdr->e_nums, content);
-	if (ret < 0)
+	if (ret != (hdr->e_blks * hdr->e_nums))
 		goto err;
 
 init_list:
@@ -300,7 +300,9 @@ int rockchip_read_resource_file(void *buf, const char *name,
 	dev_desc = rockchip_get_bootdev();
 	ret = blk_dread(dev_desc, file->rsce_base + file->f_offset + offset,
 			blks, buf);
-	if (!ret)
+	if (ret != blks)
+		ret = -EIO;
+	else
 		ret = len;
 
 	return ret;
