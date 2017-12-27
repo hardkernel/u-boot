@@ -36,10 +36,16 @@
 
 #undef CONFIG_EXTRA_ENV_SETTINGS
 #define CONFIG_EXTRA_ENV_SETTINGS	\
-	"bootargs=earlyprintk swiotlb=1 console=ttyFIQ0,115200n8 "	\
-		"rw root=/dev/mmcblk1p2 rootfstype=ext4 rootwait\0"	\
-	"bootcmd=cfgload; load mmc 0 0x02000000 Image; "		\
-		"load mmc 0 0x04000000 uInitrd; "			\
-		"load mmc 0 0x01f00000 rk3399-odroidn1-linux.dtb; "	\
+	"setbootargs=setenv bootargs earlyprintk swiotlb=1 "		\
+		"console=ttyFIQ0,115200n8 "				\
+		"rw root=/dev/mmcblk1p2 rootfstype=ext4 rootwait "	\
+		"storagemedia=${storagemedia}\0"			\
+	"bootcmd=cfgload; run setbootargs; mmc dev ${bootdev}; "	\
+		"load mmc ${bootdev} 0x02000000 Image; "		\
+		"load mmc ${bootdev} 0x04000000 uInitrd; "		\
+		"load mmc ${bootdev} 0x01f00000 rk3399-odroidn1-linux.dtb; "	\
 		"booti 0x02000000 - 0x01f00000\0"
+
+#define CONFIG_BOARD_LATE_INIT
+
 #endif

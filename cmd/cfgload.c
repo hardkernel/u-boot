@@ -51,6 +51,7 @@ static char* read_cfgload(void)
 	unsigned long filesize;
 	char *p;
 	char *tmp;
+	u32 dev_no;
 
 	tmp = getenv("loadaddr");
 	if (NULL == tmp)
@@ -60,7 +61,9 @@ static char* read_cfgload(void)
 
 	setenv("filesize", "0");
 
-	sprintf(cmd, "fatload mmc 0:1 0x%p boot.ini", (void *)p);
+	dev_no = getenv_ulong("bootdev", 10, 0);
+
+	sprintf(cmd, "fatload mmc %d:1 0x%p boot.ini", dev_no, (void *)p);
 	run_command(cmd, 0);
 
 	filesize = getenv_ulong("filesize", 16, 0);

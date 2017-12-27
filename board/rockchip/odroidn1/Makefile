@@ -5,3 +5,4 @@
 #
 
 obj-y	+= odroidn1.o
+obj-y	+= odroidn1-disk.o

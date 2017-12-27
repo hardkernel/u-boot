@@ -287,7 +287,16 @@ static int mmc_blk_probe(struct udevice *dev)
 	ret = mmc_init(mmc);
 	if (ret) {
 		debug("%s: mmc_init() failed (err=%d)\n", __func__, ret);
+#ifndef CONFIG_TARGET_ODROIDN1
+		/* In case of rk3399 platform, there is no way to detect
+		 * boot storage from chip side, so mmc orders are fixed.
+		 * If first boot storage gets fail, this routine blocks
+		 * trying next mmc list. So just as a workaround, this
+		 * will be blocked until we find a better solution
+		 * to handle a flexible boot order assignment.
+		 */
 		return ret;
+#endif
 	}
 
 	return 0;

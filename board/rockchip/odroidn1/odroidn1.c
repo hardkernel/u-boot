@@ -15,6 +15,20 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
+extern int board_scan_boot_storage(void);
+
+#ifdef CONFIG_BOARD_LATE_INIT
+int board_late_init(void)
+{
+	if (board_scan_boot_storage() != 0) {
+		printf("board: scan boot stoarge fail\n");
+		return -1;
+	}
+
+	return 0;
+}
+#endif
+
 int board_init(void)
 {
 	struct udevice *pinctrl, *regulator;
