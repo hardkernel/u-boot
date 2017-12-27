@@ -226,7 +226,7 @@ int boot_rockchip_image(struct blk_desc *dev_desc, disk_partition_t *boot_part)
 					 &kernel_part);
 
 	if (part_num < 0 || !boot_part) {
-		printf("%s krenel or boot part info error\n", __func__);
+		printf("%s kernel or boot part info error\n", __func__);
 		ret = -EINVAL;
 		goto out;
 	}
@@ -234,7 +234,7 @@ int boot_rockchip_image(struct blk_desc *dev_desc, disk_partition_t *boot_part)
 	kernel_size = read_rockchip_image(dev_desc, &kernel_part,
 					  (void *)kernel_addr_r);
 	if (kernel_size < 0) {
-		printf("%s krenel part read error\n", __func__);
+		printf("%s kernel part read error\n", __func__);
 		ret = -EINVAL;
 		goto out;
 	}
