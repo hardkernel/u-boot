@@ -68,7 +68,7 @@ int cpu_sd_emmc_init(unsigned port)
 		/*set pinmux*/
 		clrbits_le32(P_PERIPHS_PIN_MUX_0, 0xffffffff);
 		setbits_le32(P_PERIPHS_PIN_MUX_0, 0x11111111);
-		clrbits_le32(P_PERIPHS_PIN_MUX_1, 0xff0f);
+		clrbits_le32(P_PERIPHS_PIN_MUX_1, 0xfffff);
 		setbits_le32(P_PERIPHS_PIN_MUX_1, 0x1101);
 		/*HW reset*/
 		clrbits_le32(P_PREG_PAD_GPIO2_EN_N, (1<<9));

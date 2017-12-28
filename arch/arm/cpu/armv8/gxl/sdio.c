@@ -61,7 +61,7 @@ int cpu_sd_emmc_init(unsigned port)
 		setbits_le32(P_PAD_PULL_UP_EN_REG2, 0xffff);
 		setbits_le32(P_PAD_PULL_UP_REG2, 0xffff);
 		/* set pinmux */
-		clrbits_le32(P_PERIPHS_PIN_MUX_7, (0x7 << 5) | (0xff << 16));
+		clrbits_le32(P_PERIPHS_PIN_MUX_7, 0xff | (0xff << 16));
 		setbits_le32(P_PERIPHS_PIN_MUX_7, 0x7 << 29);
 		/* hare ware reset with pull boot9 */
 		clrbits_le32(P_PREG_PAD_GPIO2_EN_N, 1<<9);

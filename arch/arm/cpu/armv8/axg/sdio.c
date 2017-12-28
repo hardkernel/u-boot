@@ -63,8 +63,12 @@ int cpu_sd_emmc_init(unsigned port)
 			clrsetbits_le32(P_PERIPHS_PIN_MUX_4, 0xEEEEEE, 0x111111);
 		break;
 	case SDIO_PORT_C:
+		writel(0x0fffffff, P_PAD_PULL_UP_EN_REG2);
+		writel(0x0fffffff, P_PAD_PULL_UP_REG2);
 		clrsetbits_le32(P_PERIPHS_PIN_MUX_0, 0xEEEEEEEE, 0x11111111);
-		clrsetbits_le32(P_PERIPHS_PIN_MUX_1, 0xE00E0E, 0x100101);
+		clrsetbits_le32(P_PERIPHS_PIN_MUX_1, 0xEFFEFE, 0x100101);
+		/* fixme, need a hardware reset ? */
+
 		break;
 	case SDIO_PORT_A:
 		//printf("no port A on axg!\n");
