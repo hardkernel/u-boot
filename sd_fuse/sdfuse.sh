@@ -1,7 +1,23 @@
 #!/bin/bash
 
+#
+# initial fusing script for ODROID-N1 with Rockchip RK3399
+#
 
-sudo dd if=./idbloader.img of=/dev/sdd conv=fsync bs=512 seek=64
-sudo dd if=./uboot.img of=/dev/sdd conv=fsync bs=512 seek=16384
-sudo dd if=./trust.img of=/dev/sdd conv=fsync bs=512 seek=24576
+IDBLOADER=idbloader.img
+UBOOT=uboot.img
+TRUST=trust.img
 
+if [ -z $1 ]; then
+        echo "Usage ./sd_fusing.sh <SD card reader's device>"
+        exit 1
+fi
+
+sudo dd if=$IDBLOADER of=$1 conv=fsync bs=512 seek=64
+sudo dd if=$UBOOT of=$1 conv=fsync bs=512 seek=16384
+sudo dd if=$TRUST of=$1 conv=fsync bs=512 seek=24576
+
+sync
+
+sudo eject $1
+echo finished
