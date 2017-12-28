@@ -57,10 +57,15 @@ __weak int rockchip_dnl_key_pressed(void)
 
 void rockchip_dnl_mode_check(void)
 {
+	const char *rockusb_cmd =
+	"if mmc dev 0; then setenv devtype mmc; setenv devnum 0;"
+	"else if rknand dev 0; then setenv devtype rknand; setenv devnum 0; fi;"
+	"fi; rockusb 0 ${devtype} ${devnum};";
+
 	if (rockchip_dnl_key_pressed()) {
 		printf("download key pressed, entering download mode...\n");
 		/* If failed, we fall back to bootrom download mode */
-		cli_simple_run_command("rockusb 0 mmc 0", 0);
+		run_command_list(rockusb_cmd, -1, 0);
 		set_back_to_bootrom_dnl_flag();
 		do_reset(NULL, 0, 0, NULL);
 	}
