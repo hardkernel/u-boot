@@ -31,6 +31,8 @@
 #include <fb_nand.h>
 #endif
 #include <partition_table.h>
+#include <android_image.h>
+#include <image.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -399,7 +401,7 @@ static void cb_reboot(struct usb_ep *ep, struct usb_request *req)
 {
 	char *cmd = req->buf;
 
-	printf("cmd is %s\n", cmd);
+	printf("cmd cb_reboot is %s\n", cmd);
 
 	strsep(&cmd, "-");
 	if (!cmd) {
@@ -561,6 +563,9 @@ static void cb_getvar(struct usb_ep *ep, struct usb_request *req)
 		strncat(response, "ext4", chars_left);
 	} else if (!strncmp("partition-type", cmd, strlen("partition-type"))) {
 		strncat(response, "raw", chars_left);
+	} else if (!strcmp_l1("erase-block-size", cmd) ||
+		!strcmp_l1("logical-block-size", cmd)) {
+		strncat(response, "2000", chars_left);
 	} else {
 		error("unknown variable: %s\n", cmd);
 		strcpy(response, "FAILVariable not implemented");
@@ -637,7 +642,7 @@ static void cb_download(struct usb_ep *ep, struct usb_request *req)
 	char *cmd = req->buf;
 	char response[RESPONSE_LEN];
 
-	printf("cmd is %s\n", cmd);
+	printf("cmd cb_download is %s\n", cmd);
 
 	strsep(&cmd, ":");
 	download_size = simple_strtoul(cmd, NULL, 16);
@@ -660,15 +665,46 @@ static void cb_download(struct usb_ep *ep, struct usb_request *req)
 	fastboot_tx_write_str(response);
 }
 
+typedef struct andr_img_hdr boot_img_hdr;
+
 static void do_bootm_on_complete(struct usb_ep *ep, struct usb_request *req)
 {
 	char boot_addr_start[12];
-	char *bootm_args[] = { "bootm", boot_addr_start, NULL };
+	unsigned    kernel_size;
+	unsigned    ramdisk_size;
+	boot_img_hdr *hdr_addr = NULL;
+	int genFmt = 0;
+	unsigned actualBootImgSz = 0;
+	unsigned dtbSz = 0;
+	unsigned char* loadaddr = 0;
 
-	puts("Booting kernel..\n");
+	puts("Booting kernel...\n");
 
-	sprintf(boot_addr_start, "0x%lx", load_addr);
-	do_bootm(NULL, 0, 2, bootm_args);
+	sprintf(boot_addr_start, "bootm 0x%lx", load_addr);
+	printf("boot_addr_start %s\n", boot_addr_start);
+
+	loadaddr = (unsigned char*)CONFIG_USB_FASTBOOT_BUF_ADDR;
+	hdr_addr = (boot_img_hdr*)loadaddr;
+
+	genFmt = genimg_get_format(hdr_addr);
+	if (IMAGE_FORMAT_ANDROID != genFmt) {
+		printf("Fmt unsupported!genFmt 0x%x != 0x%x\n", genFmt, IMAGE_FORMAT_ANDROID);
+		return;
+	}
+
+	kernel_size     =(hdr_addr->kernel_size + (hdr_addr->page_size-1)+hdr_addr->page_size)&(~(hdr_addr->page_size -1));
+	ramdisk_size    =(hdr_addr->ramdisk_size + (hdr_addr->page_size-1))&(~(hdr_addr->page_size -1));
+	dtbSz           = hdr_addr->second_size;
+	actualBootImgSz = kernel_size + ramdisk_size + dtbSz;
+	printf("kernel_size 0x%x, page_size 0x%x, totalSz 0x%x\n", hdr_addr->kernel_size, hdr_addr->page_size, kernel_size);
+	printf("ramdisk_size 0x%x, totalSz 0x%x\n", hdr_addr->ramdisk_size, ramdisk_size);
+	printf("dtbSz 0x%x, Total actualBootImgSz 0x%x\n", dtbSz, actualBootImgSz);
+
+	memcpy((void *)load_addr, (void *)CONFIG_USB_FASTBOOT_BUF_ADDR, actualBootImgSz);
+
+	flush_cache(load_addr,(unsigned long)actualBootImgSz);
+
+	run_command(boot_addr_start, 0);
 
 	/* This only happens if image is somehow faulty so we start over */
 	do_reset(NULL, 0, 0, NULL);
@@ -682,8 +718,13 @@ static void cb_boot(struct usb_ep *ep, struct usb_request *req)
 
 static void do_exit_on_complete(struct usb_ep *ep, struct usb_request *req)
 {
-	g_dnl_trigger_detach();
+	puts("Booting kernel..\n");
+	run_command("run storeboot", 0);
+
+	/* This only happens if image is somehow faulty so we start over */
+	do_reset(NULL, 0, 0, NULL);
 }
+
 
 static void cb_continue(struct usb_ep *ep, struct usb_request *req)
 {
@@ -741,7 +782,7 @@ static void cb_set_active(struct usb_ep *ep, struct usb_request *req)
 	int ret = 0;
 	char str[128];
 
-	printf("cmd is %s\n", cmd);
+	printf("cmd cb_set_active is %s\n", cmd);
 	strsep(&cmd, ":");
 	if (!cmd) {
 		error("missing slot name\n");
@@ -792,7 +833,7 @@ static void cb_erase(struct usb_ep *ep, struct usb_request *req)
 	char response[RESPONSE_LEN];
 	char *cmd = req->buf;
 
-	printf("cmd is %s\n", cmd);
+	printf("cmd cb_erase is %s\n", cmd);
 
 	strsep(&cmd, ":");
 	if (!cmd) {
