@@ -62,6 +62,11 @@ switch_to_hypervisor_ret:
 	orr	r0, r0, #0xc0		@ disable FIQ and IRQ
 	msr	cpsr,r0
 
+	/* Enable ACTLR.SMP bit */
+	mrc	p15, 0, r0, c1, c0, 1
+	orr	r0, r0, #(1 << 6)	@ Enable ACTLR.SMP bit
+	mcr	p15, 0, r0, c1, c0, 1
+
 /*
  * Setup vector:
  * (OMAP4 spl TEXT_BASE is not 32 byte aligned.
