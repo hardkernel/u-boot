@@ -490,6 +490,29 @@ static int do_mmc_ext_csd(cmd_tbl_t *cmdtp, int flag,
 	return (ret == 0) ? CMD_RET_SUCCESS : CMD_RET_FAILURE;
 }
 
+static int do_mmc_ffu(cmd_tbl_t *cmdtp, int flag,
+			int argc, char * const argv[])
+{
+	struct mmc *mmc;
+	u64 ver, cnt;
+	int ret;
+	void *addr;
+
+	if (argc != 4)
+		return CMD_RET_USAGE;
+
+	ver = simple_strtoul(argv[1], NULL, 16);
+	addr = (void *)simple_strtoul(argv[2], NULL, 16);
+	cnt = simple_strtoul(argv[3], NULL, 16);
+
+	mmc = init_mmc_device(curr_device, false);
+	if (!mmc)
+		return CMD_RET_FAILURE;
+
+	ret = mmc_ffu_op(curr_device, ver, addr, cnt);
+	return (ret == 0) ? CMD_RET_SUCCESS : CMD_RET_FAILURE;
+}
+
 #ifdef CONFIG_SUPPORT_EMMC_BOOT
 static int do_mmc_bootbus(cmd_tbl_t *cmdtp, int flag,
 			  int argc, char * const argv[])
@@ -768,6 +791,7 @@ static cmd_tbl_t cmd_mmc[] = {
 	U_BOOT_CMD_MKENT(list,     1, 1, do_mmc_list,     "", ""),
 	U_BOOT_CMD_MKENT(lifetime, 1, 1, do_mmc_lifetime, "", ""),
 	U_BOOT_CMD_MKENT(ext_csd,  3, 0, do_mmc_ext_csd,  "", ""),
+	U_BOOT_CMD_MKENT(ffu,      4, 0, do_mmc_ffu,      "", ""),
 #ifdef CONFIG_SUPPORT_EMMC_BOOT
 	U_BOOT_CMD_MKENT(bootbus,         5, 0, do_mmc_bootbus,     "", ""),
 	U_BOOT_CMD_MKENT(bootpart-resize, 4, 0, do_mmc_boot_resize, "", ""),
@@ -820,6 +844,7 @@ U_BOOT_CMD(
 	"mmc list - lists available devices\n"
 	"mmc lifetime - show dev life time estimate type A/B\n"
 	"mmc ext_csd [byte] <val> - read/write ext_csd [byte] value\n"
+	"mmc ffu ver addr cnt - update ffu fw\n"
 #ifdef CONFIG_SUPPORT_EMMC_BOOT
 	"mmc bootbus dev boot_bus_width reset_boot_bus_width boot_mode\n"
 	" - Set the BOOT_BUS_WIDTH field of the specified device\n"

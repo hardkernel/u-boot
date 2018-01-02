@@ -16,6 +16,8 @@ extern int mmc_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd,
 			struct mmc_data *data);
 extern int mmc_send_status(struct mmc *mmc, int timeout);
 extern int mmc_set_blocklen(struct mmc *mmc, int len);
+extern ulong mmc_ffu_write(int dev_num, lbaint_t start, lbaint_t blkcnt,
+		const void *src);
 
 #ifndef CONFIG_SPL_BUILD
 

@@ -1659,6 +1659,81 @@ int mmc_init(struct mmc *mmc)
 	return err;
 }
 
+int mmc_ffu_op(int dev, u64 ffu_ver, void *addr, u64 cnt)
+{
+	int err, i, supported_modes, fw_cfg, ffu_status;
+	u64 fw_ver = 0, n;
+	u8 ext_csd_ffu[512] = {0};
+
+	struct mmc *mmc = find_mmc_device(dev);
+	if (!mmc)
+		return -ENODEV;
+
+	printf("ffu update start\n");
+	/* check MID SamSung */
+	if ((mmc->cid[0] >> 24) != 0x15)
+		return -1;
+
+	/*
+	 * check FFU Supportability
+	 * check FFU Prohibited or not
+	 * check current firmware version
+	 */
+	memset(ext_csd_ffu, 0, 512);
+	err = mmc_get_ext_csd(mmc, ext_csd_ffu);
+	if (err)
+		return err;
+	supported_modes = ext_csd_ffu[EXT_CSD_SUPPORTED_MODES] & 0x1;
+	fw_cfg = ext_csd_ffu[EXT_CSD_FW_CFG] & 0x1;
+	for (i = 0; i < 8; i++)
+		fw_ver |= (ext_csd_ffu[EXT_CSD_FW_VERSION + i] << (i * 8));
+	printf("old fw_ver = %llx\n", fw_ver);
+	if (!supported_modes || fw_cfg || (fw_ver >= ffu_ver))
+		return -1;
+
+	/* Set FFU Mode */
+	err = mmc_switch(mmc, EXT_CSD_CMD_SET_NORMAL, EXT_CSD_MODE_CFG, 1);
+	if (err)
+		return err;
+
+	/* Write patch file at one write command */
+	n = mmc_ffu_write(dev, 0xc7810000, cnt, addr);
+	if (n != cnt)
+		return -1;
+
+	/* Set Normal Mode */
+	err = mmc_switch(mmc, EXT_CSD_CMD_SET_NORMAL, EXT_CSD_MODE_CFG, 0);
+	if (err)
+		return err;
+
+	/* reset devices */
+	err = mmc_go_idle(mmc);
+	if (err)
+		return err;
+
+	/* Initialization */
+	mmc->has_init = 0;
+	err = mmc_init(mmc);
+	if (err)
+		return err;
+
+	/* Read ffu_status, check ffu_version */
+	memset(ext_csd_ffu, 0, 512);
+	err = mmc_get_ext_csd(mmc, ext_csd_ffu);
+	if (err)
+		return err;
+	ffu_status = ext_csd_ffu[EXT_CSD_FFU_STATUS] & 0xff;
+	fw_ver = 0;
+	for (i = 0; i < 8; i++)
+		fw_ver |= (ext_csd_ffu[EXT_CSD_FW_VERSION + i] << (i * 8));
+	printf("new fw_ver = %llx\n", fw_ver);
+	if (ffu_status || (fw_ver != ffu_ver))
+		return ffu_status;
+
+	printf("FFU update ok!\n");
+	return 0;
+}
+
 int get_boot_size(char *name, uint64_t* size)
 {
 	int ret = 0;

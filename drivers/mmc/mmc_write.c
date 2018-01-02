@@ -192,3 +192,47 @@ ulong mmc_bwrite(int dev_num, lbaint_t start, lbaint_t blkcnt, const void *src)
 
 	return blkcnt;
 }
+
+extern int aml_sd_send_cmd_ffu(struct mmc *mmc, struct mmc_cmd *cmd, struct mmc_data *data);
+ulong mmc_ffu_write(int dev_num, lbaint_t start, lbaint_t blkcnt, const void *src)
+{
+	struct mmc_cmd cmd;
+	struct mmc_data data;
+	int ret, timeout = 1000;
+	struct mmc *mmc = find_mmc_device(dev_num);
+
+	if (!mmc || !blkcnt)
+		return 0;
+
+	printf("mmc ffu start = %lx, cnt = %lx, addr = %p\n", start, blkcnt, src);
+
+	cmd.cmdidx = MMC_CMD_SET_BLOCK_COUNT;
+	cmd.cmdarg = blkcnt & 0xFFFF;
+	cmd.resp_type = MMC_RSP_R1;
+	ret = mmc_send_cmd(mmc, &cmd, NULL);
+	if (ret) {
+		printf("mmc set blkcnt failed\n");
+		return 0;
+	}
+
+	cmd.cmdidx = MMC_CMD_WRITE_MULTIPLE_BLOCK;
+	cmd.cmdarg = start;
+	cmd.resp_type = MMC_RSP_R1b;
+
+	data.src = src;
+	data.blocks = blkcnt;
+	data.blocksize = mmc->write_bl_len;
+	data.flags = MMC_DATA_WRITE;
+
+	ret = aml_sd_send_cmd_ffu(mmc, &cmd, &data);
+	if (ret) {
+		printf("mmc write failed\n");
+		return 0;
+	}
+
+	/* Waiting for the ready status */
+	if (mmc_send_status(mmc, timeout))
+		return 0;
+
+	return blkcnt;
+}

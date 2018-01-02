@@ -173,6 +173,13 @@
 #define EXT_CSD_BOOT_MULT		226	/* RO */
 #define EXT_CSD_DEV_LIFETIME_EST_TYP_A	268	/* RO */
 #define EXT_CSD_DEV_LIFETIME_EST_TYP_B	269	/* RO */
+
+#define EXT_CSD_SUPPORTED_MODES	493 /* RO */
+#define EXT_CSD_FW_VERSION	254 /* RO, 261:254 */
+#define EXT_CSD_FW_CFG	169 /* R/W */
+#define EXT_CSD_MODE_CFG	30 /* R/W */
+#define EXT_CSD_FFU_STATUS	26 /* RO */
+
 /*
  * EXT_CSD field definitions
  */
@@ -427,6 +434,7 @@ int board_mmc_init(bd_t *bis);
 int cpu_mmc_init(bd_t *bis);
 int mmc_get_env_addr(struct mmc *mmc, int copy, u32 *env_addr);
 int mmc_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd, struct mmc_data *data);
+int mmc_ffu_op(int dev, u64 ffu_ver, void *addr, u64 cnt);
 /* Set block count limit because of 16 bit register limit on some hardware*/
 #ifndef CONFIG_SYS_MMC_MAX_BLK_COUNT
 #define CONFIG_SYS_MMC_MAX_BLK_COUNT 65535
