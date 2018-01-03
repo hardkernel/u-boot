@@ -22,112 +22,111 @@
 #ifndef __AML_TIMING_H_
 #define __AML_TIMING_H_
 
-struct ddr_set{
-	/* common and function defines */
-	unsigned char  ddr_channel_set;
-	unsigned char  ddr_type;
-	unsigned char  ddr_2t_mode;
-	unsigned char  ddr_full_test;
-	unsigned char  ddr_size_detect;
-	unsigned char  ddr_drv;
-	unsigned char  ddr_odt;
-	unsigned char  ddr_timing_ind;
-	unsigned short ddr_size; //define in header file
-	unsigned short ddr_clk;
-	unsigned int   ddr_base_addr;
-	unsigned int   ddr_start_offset;
-	unsigned int   ddr_pll_ctrl;
-	unsigned int   ddr_dmc_ctrl;
-	unsigned int   ddr0_addrmap[5];
-	unsigned int   ddr1_addrmap[5];
+#include <asm/arch/ddr_define.h>
+#include <asm/arch/types.h>
+#include <asm/arch/mnPmuSramMsgBlock_ddr3.h>
+#include <asm/arch/mnPmuSramMsgBlock_ddr4.h>
+#include <asm/arch/mnPmuSramMsgBlock_ddr4_2d.h>
+#include <asm/arch/mnPmuSramMsgBlock_lpddr3.h>
+#include <asm/arch/mnPmuSramMsgBlock_lpddr4.h>
+#include <asm/arch/mnPmuSramMsgBlock_lpddr4_2d.h>
 
-	/* pub defines */
-	unsigned int   t_pub_ptr[5];  //PUB PTR0-3
-	unsigned short t_pub_mr[8];   //PUB MR0-3
-	unsigned int   t_pub_odtcr;
-	unsigned int   t_pub_dtpr[8]; //PUB DTPR0-3
-	unsigned int   t_pub_pgcr0;   //PUB PGCR0
-	unsigned int   t_pub_pgcr1;   //PUB PGCR1
-	unsigned int   t_pub_pgcr2;   //PUB PGCR2
-	unsigned int   t_pub_pgcr3;   //PUB PGCR3
-	unsigned int   t_pub_dxccr;   //PUB DXCCR
-	unsigned int   t_pub_dtcr0;    //PUB DTCR
-	unsigned int   t_pub_dtcr1;    //PUB DTCR
-	unsigned int   t_pub_aciocr[5];  //PUB ACIOCRx
-	unsigned int   t_pub_dx0gcr[3];  //PUB DX0GCRx
-	unsigned int   t_pub_dx1gcr[3];  //PUB DX1GCRx
-	unsigned int   t_pub_dx2gcr[3];  //PUB DX2GCRx
-	unsigned int   t_pub_dx3gcr[3];  //PUB DX3GCRx
-	unsigned int   t_pub_dcr;     //PUB DCR
-	unsigned int   t_pub_dtar;
-	unsigned int   t_pub_dsgcr;   //PUB DSGCR
-	unsigned int   t_pub_zq0pr;   //PUB ZQ0PR
-	unsigned int   t_pub_zq1pr;   //PUB ZQ1PR
-	unsigned int   t_pub_zq2pr;   //PUB ZQ2PR
-	unsigned int   t_pub_zq3pr;   //PUB ZQ3PR
-	unsigned int   t_pub_vtcr1;
+typedef struct bl2_reg {
+	unsigned int	reg;
+	unsigned int	value;
+	unsigned int	mask;
+	unsigned short	udelay;
+	unsigned char	flag;
+	unsigned char	rsv_0;
+}__attribute__ ((packed)) bl2_reg_t;
 
-	/* pctl0 defines */
-	unsigned short t_pctl0_1us_pck;   //PCTL TOGCNT1U
-	unsigned short t_pctl0_100ns_pck; //PCTL TOGCNT100N
-	unsigned short t_pctl0_init_us;   //PCTL TINIT
-	unsigned short t_pctl0_rsth_us;   //PCTL TRSTH
-	unsigned int   t_pctl0_mcfg;   //PCTL MCFG
-	unsigned int   t_pctl0_mcfg1;  //PCTL MCFG1
-	unsigned short t_pctl0_scfg;   //PCTL SCFG
-	unsigned short t_pctl0_sctl;   //PCTL SCTL
-	unsigned int   t_pctl0_ppcfg;
-	unsigned short t_pctl0_dfistcfg0;
-	unsigned short t_pctl0_dfistcfg1;
-	unsigned short t_pctl0_dfitctrldelay;
-	unsigned short t_pctl0_dfitphywrdata;
-	unsigned short t_pctl0_dfitphywrlta;
-	unsigned short t_pctl0_dfitrddataen;
-	unsigned short t_pctl0_dfitphyrdlat;
-	unsigned short t_pctl0_dfitdramclkdis;
-	unsigned short t_pctl0_dfitdramclken;
-	unsigned short t_pctl0_dfitphyupdtype0;
-	unsigned short t_pctl0_dfitphyupdtype1;
-	unsigned short t_pctl0_dfitctrlupdmin;
-	unsigned short t_pctl0_dfitctrlupdmax; //TODO - check 16/32
-	unsigned short t_pctl0_dfiupdcfg; //TODO - check 16/32
-	unsigned short t_pctl0_cmdtstaten;
-	unsigned short t_ddr_align;
-	unsigned int   t_pctl0_dfiodtcfg;
-	unsigned int   t_pctl0_dfiodtcfg1;
-	unsigned int   t_pctl0_dfilpcfg0;
+typedef struct ddr_reg {
+	unsigned int	reg;
+	unsigned int	value;
+	unsigned int	mask;
+	unsigned short	udelay;
+	unsigned char	flag;
+	unsigned char	rsv_0;
+}__attribute__ ((packed)) ddr_reg_t;
 
-	//PUB CLK fine tune
-	unsigned int   t_pub_acbdlr0; //2015.09.21 CK0 delay for different board PCB design
-	unsigned int   t_pub_aclcdlr;
+typedef struct ddr_set{ //total 34 short
+	unsigned	char	board_id;
+	unsigned	char	version;
+	unsigned	char	DramType;
+	unsigned	char	DisabledDbyte;
+	unsigned	char	Is2Ttiming;
+	unsigned	char	HdtCtrl;
+	unsigned	char	dram_rank_config;
+	unsigned	char	rsv_char0;
+	/* imem/dmem define */
+	unsigned	int		imem_load_addr;
+	unsigned	int		dmem_load_addr;
+	unsigned	short	imem_load_size;
+	unsigned	short	dmem_load_size;
+	unsigned	int		ddr_base_addr;
+	unsigned	int		ddr_start_offset;
 
-	/* ddr functions */
-	unsigned int   ddr_func;
-	/* dqs correction */
-	unsigned char  wr_adj_per[6];
-	unsigned char  rd_adj_per[6];
+	unsigned	short	dram_cs0_size_MB;
+	unsigned	short	dram_cs1_size_MB;
+	/* align8 */
 
-	/* aligned */
-	/* 2016.04.12 update */
-	unsigned short ddr4_clk; //2016.05.13 add
-	unsigned char  ddr4_drv; //2016.05.13 add
-	unsigned char  ddr4_odt; //2016.05.13 add
+	unsigned	short	training_SequenceCtrl[2];
+	unsigned	char	phy_odt_config_rank[4];
+	unsigned	int		dfi_odt_config;
+	unsigned	short	DRAMFreq[4];
+	unsigned	char	PllBypassEn;
+	unsigned	char	ddr_rdbi_wr_enable;
+	unsigned	char	ddr_rfc_type;
+	unsigned	char	reverse_3;
+	/* align8 */
 
-	/* 2016.05.24 update */
-	unsigned int  t_pub_acbdlr3;
+	unsigned	int		pll_ssc_mode;
+	unsigned	short	clk_drv_ohm;
+	unsigned	short	cs_drv_ohm;
+	unsigned	short	ac_drv_ohm;
+	unsigned	short	soc_data_drv_ohm_p;
+	unsigned	short	soc_data_drv_ohm_n;
+	unsigned	short	soc_data_odt_ohm_p;
+	unsigned	short	soc_data_odt_ohm_n;
+	unsigned	short	dram_data_drv_ohm;
+	unsigned	short	dram_data_odt_ohm;
+	unsigned	short	dram_ac_odt_ohm;
 
-	/* 2016.07.07 update */
-	unsigned short  t_pub_soc_vref_dram_vref;
-	unsigned short  t_rsv_short_1;
+	unsigned	short	soc_clk_slew_rate;
+	unsigned	short	soc_cs_slew_rate;
+	unsigned	short	soc_ac_slew_rate;
+	unsigned	short	soc_data_slew_rate;
+	unsigned	short	vref_output_permil; //phy
+	unsigned	short	vref_receiver_permil; //soc
 
-	/* 2017.07.27 add rank1 dqs calibration */
-	unsigned char  wr_adj_per_rank1[6];
-	unsigned char  rd_adj_per_rank1[6];
-}__attribute__ ((packed));
+	unsigned	short	vref_dram_permil;
+	unsigned	short	vref_reverse;
+	/* align8 */
 
-struct ddr_timing{
+	unsigned	char	ac_trace_delay[12];
+	unsigned	char	ac_pinmux[DWC_AC_PINMUX_TOTAL];
+	unsigned	char	dfi_pinmux[DWC_DFI_PINMUX_TOTAL];
+	unsigned	char	rsv_char1[6];
+	/* align8 */
+
+	unsigned	int		ddr_dmc_remap[5];
+	unsigned	char	ddr_lpddr34_ca_remap[4];
+	/* align8 */
+
+	unsigned	char	ddr_lpddr34_dq_remap[16];
+	unsigned	int		dram_rtt_nom_wr_park[2];
+	unsigned	int		ddr_func;
+	/* align8 */
+
+	/* v1 end */
+
+	/* v2 start */
+
+}__attribute__ ((packed)) ddr_set_t;
+
+typedef struct ddr_timing{
 	//Identifier
-	unsigned char  identifier; //refer ddr.h
+	unsigned char  identifier;
 
 	//DTPR0
 	unsigned char  cfg_ddr_rtp;
@@ -173,8 +172,6 @@ struct ddr_timing{
 	unsigned short cfg_ddr_zqcl;
 	unsigned short cfg_ddr_zqcsi;
 
-	/* aligned */
-	/* 2016.04.12 update */
 	unsigned char  cfg_ddr_tccdl;
 	unsigned char  cfg_ddr_tdqsck;
 	unsigned char  cfg_ddr_tdqsckmax;
@@ -182,29 +179,35 @@ struct ddr_timing{
 
 	/* reserved */
 	unsigned int   rsv_int;
-}__attribute__ ((packed));
+}__attribute__ ((packed)) ddr_timing_t;
 
-typedef struct ddr_set ddr_set_t;
-typedef struct ddr_timing ddr_timing_t;
+typedef struct pll_set{
+	unsigned short    cpu_clk;
+	unsigned short    pxp;
+	unsigned int      spi_ctrl;
+	unsigned short    vddee;
+	unsigned short    vcck;
+	unsigned char     szPad[4];
 
-struct pll_set{
-	unsigned short cpu_clk;
-	unsigned short pxp;
-	unsigned int spi_ctrl;
-	unsigned short vddee;
-	unsigned short vcck;
-	unsigned char szPad[4];
-	unsigned long  lCustomerID;
-	unsigned short	debug_mode;
-	unsigned short	ddr_clk_debug;
-	unsigned short	cpu_clk_debug;
-	unsigned short	rsv_s1;
-	/* 2016.12.06, add ddr pll setting interface */
-	unsigned int	ddr_pll_set[6];
-	/* align */
-	unsigned long	rsv_l5;
-}__attribute__ ((packed));
+	unsigned long     lCustomerID;
+	unsigned short    debug_mode;
+	unsigned short    rsv1;
+	unsigned short    rsv2;
+	unsigned short    rsv3;
+	/* align 8Byte */
 
-typedef struct pll_set pll_set_t;
+	unsigned int      sys_pll_cntl[8];
+	unsigned int      ddr_pll_cntl[8];
+	unsigned int      fix_pll_cntl[8];
+}__attribute__ ((packed)) pll_set_t;
+
+typedef struct dmem_cfg {
+	PMU_SMB_DDR3U_1D_t ddr3u;
+	PMU_SMB_DDR4U_1D_t ddr4u;
+	PMU_SMB_DDR4U_2D_t ddr4u_2d;
+	PMU_SMB_LPDDR3_1D_t lpddr3u;
+	PMU_SMB_LPDDR4_1D_t lpddr4u;
+	PMU_SMB_LPDDR4_2D_t lpddr4u_2d;
+} dmem_cfg_t;
 
 #endif //__AML_TIMING_H_

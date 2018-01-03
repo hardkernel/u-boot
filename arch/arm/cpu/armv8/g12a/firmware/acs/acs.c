@@ -24,24 +24,39 @@
 #include "timing.c"
 
 //main acs struct
-struct acs_setting __acs_set={
+acs_set_t __acs_set={
 					.acs_magic		= "acs__",
-					.chip_type		= 0x24,
+					.chip_type		= 0x0,
 					.version 		= 1,
 					.acs_set_length	= sizeof(__acs_set),
 
 					.ddr_magic		= "ddrs_",
-					.ddr_set_version= 2, //2016.01.15 update to v2, add dqs gate tuning
-					.ddr_set_length	= sizeof(ddr_set_t),
+					.ddr_set_version= 1,
+					.ddr_set_length	= sizeof(__ddr_setting),
 					.ddr_set_addr	= (unsigned long)(&__ddr_setting),
 
-					.ddrt_magic		= "ddrt_",
-					.ddrt_set_version= 1,
-					.ddrt_set_length= sizeof(__ddr_timming),
-					.ddrt_set_addr	= (unsigned long)(&__ddr_timming),
+					.ddr_reg_magic	= "ddrr_",
+					.ddr_reg_version= 1,
+					.ddr_reg_length	= sizeof(__ddr_reg),
+					.ddr_reg_addr	= (unsigned long)(&__ddr_reg),
 
 					.pll_magic		= "pll__",
 					.pll_set_version= 1,
 					.pll_set_length	= sizeof(__pll_setting),
 					.pll_set_addr	= (unsigned long)(&__pll_setting),
+
+					.sto_magic		= "store",
+					.sto_set_version= 1,
+					.sto_set_length	= 0,
+					.sto_set_addr	= 0,
+
+					.bl2_regs_magic	= "bl2r_",
+					.bl2_regs_version = 1,
+					.bl2_regs_length = sizeof(__bl2_reg),
+					.bl2_regs_addr	= (unsigned long)(&__bl2_reg),
+
+					.rsv_magic		= "rsv0_",
+					.rsv_set_version= 1,
+					.rsv_set_length	= 0,
+					.rsv_set_addr	= 0,
 };

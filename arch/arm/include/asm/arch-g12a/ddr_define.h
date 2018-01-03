@@ -32,6 +32,12 @@
 #define CONFIG_DDR0_16BIT_2					4
 /* CONFIG_DDR_CHL_AUTO mode support RANK0 and RANK0+1 mode auto detect */
 #define CONFIG_DDR_CHL_AUTO					0xF
+#define CONFIG_DDR0_16BIT_CH0				0x1
+#define CONFIG_DDR0_16BIT_RANK01_CH0		0x4
+#define CONFIG_DDR0_32BIT_RANK0_CH0			0x2
+#define CONFIG_DDR0_32BIT_RANK01_CH01		0x3
+#define CONFIG_DDR0_32BIT_16BIT_RANK0_CH0	0x5
+#define CONFIG_DDR0_32BIT_16BIT_RANK01_CH0	0x6
 
 #define CFG_DDR_BASE_ADDR					0X0
 #define CFG_DDR_START_OFFSET				0X00000000 //TXLX SKIP 0MB
@@ -219,3 +225,36 @@
 											DDR_FUNC_LPDDR3_SOC_ODT_ONLY_UP	| \
 											(1 << 31) 						\
 											)
+
+
+
+
+/* bl2 reg override stages define */
+#define BL2_INIT_STAGE_0							0
+#define BL2_INIT_STAGE_1							1
+#define BL2_INIT_STAGE_2							2
+#define BL2_INIT_STAGE_3							3
+#define BL2_INIT_STAGE_4							4
+#define BL2_INIT_STAGE_5							5
+#define BL2_INIT_STAGE_6							6
+#define BL2_INIT_STAGE_7							7
+#define BL2_INIT_STAGE_8							8
+#define BL2_INIT_STAGE_9							9
+
+
+/* ddr reg override stages define */
+#define DDR_OVERRIDE_STAGE_DDR3_PRE_INIT			0x10
+#define DDR_OVERRIDE_STAGE_DDR3_DMC_INIT			0x11
+
+#define DDR_OVERRIDE_STAGE_DDR4_PRE_INIT			0x20
+#define DDR_OVERRIDE_STAGE_DDR4_DMC_INIT			0x21
+
+#define DDR_OVERRIDE_STAGE_LPDDR3_PRE_INIT			0x30
+#define DDR_OVERRIDE_STAGE_LPDDR3_DMC_INIT			0x31
+
+#define DDR_OVERRIDE_STAGE_LPDDR4_PRE_INIT			0x40
+#define DDR_OVERRIDE_STAGE_LPDDR4_DMC_INIT			0x41
+
+
+#define DWC_AC_PINMUX_TOTAL						28
+#define DWC_DFI_PINMUX_TOTAL					26
