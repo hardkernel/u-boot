@@ -147,23 +147,35 @@ err:
 int get_bootdev_type(void)
 {
 	int type = 0;
+	char *boot_media = NULL;
+	static int appended;
 
 	#ifdef CONFIG_EMMC_BOOT
 		type = IF_TYPE_MMC;
+		boot_media = "storagemedia=emmc";
 	#endif /* CONFIG_EMMC_BOOT */
 	#ifdef CONFIG_QSPI_BOOT
 		type = IF_TYPE_SPI_NAND;
+		boot_media = "storagemedia=nand";
 	#endif /* CONFIG_QSPI_BOOT */
 	#ifdef CONFIG_NAND_BOOT
 		type = IF_TYPE_RKNAND;
+		boot_media = "storagemedia=nand";
 	#endif /* CONFIG_NAND_BOOT */
 	#ifdef CONFIG_NOR_BOOT
 		type = IF_TYPE_SPI_NOR;
 	#endif /* CONFIG_NOR_BOOT */
 
 	/* For current use(Only EMMC support!) */
-	if (!type)
+	if (!type) {
 		type = IF_TYPE_MMC;
+		boot_media = "storagemedia=emmc";
+	}
+
+	if (!appended && boot_media) {
+		appended = 1;
+		env_update("bootargs", boot_media);
+	}
 
 	return type;
 }
