@@ -47,15 +47,18 @@ static struct vpu_conf_s vpu_conf = {
 	.clk_level_dft = 0,
 	.clk_level_max = 1,
 	.clk_level = 0,
-	.fclk_type = 0,
+	.fclk_freq = 0,
+	.fclk_div_table = NULL,
+	.vpu_clk_table = NULL,
 };
 
 static void vpu_chip_detect(void)
 {
-#if 0
+#if 1
 	unsigned int cpu_type;
 
 	cpu_type = get_cpu_id().family_id;
+	cpu_type = 0xffff;
 	switch (cpu_type) {
 	case MESON_CPU_MAJOR_ID_M8:
 		vpu_chip_type = VPU_CHIP_M8;
@@ -65,7 +68,9 @@ static void vpu_chip_detect(void)
 		vpu_conf.clk_level_dft = CLK_LEVEL_DFT_M8;
 #endif
 		vpu_conf.clk_level_max = CLK_LEVEL_MAX_M8;
-		vpu_conf.fclk_type = FCLK_TYPE_M8;
+		vpu_conf.fclk_freq = FCLK_TYPE_M8;
+		vpu_conf.fclk_div_table = fclk_div_table_gxb;
+		vpu_conf.vpu_clk_table = vpu_clk_table_m8;
 		break;
 	case MESON_CPU_MAJOR_ID_M8B:
 		vpu_chip_type = VPU_CHIP_M8B;
@@ -75,7 +80,9 @@ static void vpu_chip_detect(void)
 		vpu_conf.clk_level_dft = CLK_LEVEL_DFT_M8B;
 #endif
 		vpu_conf.clk_level_max = CLK_LEVEL_MAX_M8B;
-		vpu_conf.fclk_type = FCLK_TYPE_M8B;
+		vpu_conf.fclk_freq = FCLK_TYPE_M8B;
+		vpu_conf.fclk_div_table = fclk_div_table_gxb;
+		vpu_conf.vpu_clk_table = vpu_clk_table_m8;
 		break;
 	case MESON_CPU_MAJOR_ID_M8M2:
 		vpu_chip_type = VPU_CHIP_M8M2;
@@ -85,7 +92,9 @@ static void vpu_chip_detect(void)
 		vpu_conf.clk_level_dft = CLK_LEVEL_DFT_M8M2;
 #endif
 		vpu_conf.clk_level_max = CLK_LEVEL_MAX_M8M2;
-		vpu_conf.fclk_type = FCLK_TYPE_M8M2;
+		vpu_conf.fclk_freq = FCLK_TYPE_M8M2;
+		vpu_conf.fclk_div_table = fclk_div_table_gxb;
+		vpu_conf.vpu_clk_table = vpu_clk_table_m8;
 		break;
 	case MESON_CPU_MAJOR_ID_MG9TV:
 		vpu_chip_type = VPU_CHIP_G9TV;
@@ -95,7 +104,9 @@ static void vpu_chip_detect(void)
 		vpu_conf.clk_level_dft = CLK_LEVEL_DFT_G9TV;
 #endif
 		vpu_conf.clk_level_max = CLK_LEVEL_MAX_G9TV;
-		vpu_conf.fclk_type = FCLK_TYPE_G9TV;
+		vpu_conf.fclk_freq = FCLK_TYPE_G9TV;
+		vpu_conf.fclk_div_table = fclk_div_table_gxb;
+		vpu_conf.vpu_clk_table = vpu_clk_table_m8;
 		break;
 	/* case MESON_CPU_MAJOR_ID_MG9BB:
 		vpu_chip_type = VPU_CHIP_G9BB;
@@ -105,7 +116,9 @@ static void vpu_chip_detect(void)
 		vpu_conf.clk_level_dft = CLK_LEVEL_DFT_G9BB;
 #endif
 		vpu_conf.clk_level_max = CLK_LEVEL_MAX_G9BB;
-		vpu_conf.fclk_type = FCLK_TYPE_G9BB;
+		vpu_conf.fclk_freq = FCLK_TYPE_G9BB;
+		vpu_conf.fclk_div_table = fclk_div_table_gxb;
+		vpu_conf.vpu_clk_table = vpu_clk_table_m8;
 		break; */
 	case MESON_CPU_MAJOR_ID_GXBB:
 		vpu_chip_type = VPU_CHIP_GXBB;
@@ -115,7 +128,9 @@ static void vpu_chip_detect(void)
 		vpu_conf.clk_level_dft = CLK_LEVEL_DFT_GXBB;
 #endif
 		vpu_conf.clk_level_max = CLK_LEVEL_MAX_GXBB;
-		vpu_conf.fclk_type = FCLK_TYPE_GXBB;
+		vpu_conf.fclk_freq = FCLK_TYPE_GXBB;
+		vpu_conf.fclk_div_table = fclk_div_table_gxb;
+		vpu_conf.vpu_clk_table = vpu_clk_table_gxb;
 		break;
 	case MESON_CPU_MAJOR_ID_GXTVBB:
 		vpu_chip_type = VPU_CHIP_GXTVBB;
@@ -125,7 +140,9 @@ static void vpu_chip_detect(void)
 		vpu_conf.clk_level_dft = CLK_LEVEL_DFT_GXTVBB;
 #endif
 		vpu_conf.clk_level_max = CLK_LEVEL_MAX_GXTVBB;
-		vpu_conf.fclk_type = FCLK_TYPE_GXTVBB;
+		vpu_conf.fclk_freq = FCLK_TYPE_GXTVBB;
+		vpu_conf.fclk_div_table = fclk_div_table_gxb;
+		vpu_conf.vpu_clk_table = vpu_clk_table_gxb;
 		break;
 	case MESON_CPU_MAJOR_ID_GXL:
 		vpu_chip_type = VPU_CHIP_GXL;
@@ -135,7 +152,9 @@ static void vpu_chip_detect(void)
 		vpu_conf.clk_level_dft = CLK_LEVEL_DFT_GXL;
 #endif
 		vpu_conf.clk_level_max = CLK_LEVEL_MAX_GXL;
-		vpu_conf.fclk_type = FCLK_TYPE_GXL;
+		vpu_conf.fclk_freq = FCLK_TYPE_GXL;
+		vpu_conf.fclk_div_table = fclk_div_table_gxb;
+		vpu_conf.vpu_clk_table = vpu_clk_table_gxb;
 		break;
 	case MESON_CPU_MAJOR_ID_GXM:
 		vpu_chip_type = VPU_CHIP_GXM;
@@ -145,7 +164,9 @@ static void vpu_chip_detect(void)
 		vpu_conf.clk_level_dft = CLK_LEVEL_DFT_GXM;
 #endif
 		vpu_conf.clk_level_max = CLK_LEVEL_MAX_GXM;
-		vpu_conf.fclk_type = FCLK_TYPE_GXM;
+		vpu_conf.fclk_freq = FCLK_TYPE_GXM;
+		vpu_conf.fclk_div_table = fclk_div_table_gxb;
+		vpu_conf.vpu_clk_table = vpu_clk_table_gxb;
 		break;
 	case MESON_CPU_MAJOR_ID_TXL:
 		vpu_chip_type = VPU_CHIP_TXL;
@@ -155,7 +176,9 @@ static void vpu_chip_detect(void)
 		vpu_conf.clk_level_dft = CLK_LEVEL_DFT_TXL;
 #endif
 		vpu_conf.clk_level_max = CLK_LEVEL_MAX_TXL;
-		vpu_conf.fclk_type = FCLK_TYPE_TXL;
+		vpu_conf.fclk_freq = FCLK_TYPE_TXL;
+		vpu_conf.fclk_div_table = fclk_div_table_gxb;
+		vpu_conf.vpu_clk_table = vpu_clk_table_gxb;
 		break;
 	case MESON_CPU_MAJOR_ID_TXLX:
 		vpu_chip_type = VPU_CHIP_TXLX;
@@ -165,7 +188,9 @@ static void vpu_chip_detect(void)
 		vpu_conf.clk_level_dft = CLK_LEVEL_DFT_TXLX;
 #endif
 		vpu_conf.clk_level_max = CLK_LEVEL_MAX_TXLX;
-		vpu_conf.fclk_type = FCLK_TYPE_TXLX;
+		vpu_conf.fclk_freq = FCLK_TYPE_TXLX;
+		vpu_conf.fclk_div_table = fclk_div_table_gxb;
+		vpu_conf.vpu_clk_table = vpu_clk_table_gxb;
 		break;
 	case MESON_CPU_MAJOR_ID_AXG:
 		vpu_chip_type = VPU_CHIP_AXG;
@@ -175,7 +200,9 @@ static void vpu_chip_detect(void)
 		vpu_conf.clk_level_dft = CLK_LEVEL_DFT_AXG;
 #endif
 		vpu_conf.clk_level_max = CLK_LEVEL_MAX_AXG;
-		vpu_conf.fclk_type = FCLK_TYPE_AXG;
+		vpu_conf.fclk_freq = FCLK_TYPE_AXG;
+		vpu_conf.fclk_div_table = fclk_div_table_gxb;
+		vpu_conf.vpu_clk_table = vpu_clk_table_gxb;
 		break;
 	case MESON_CPU_MAJOR_ID_TXHD:
 		vpu_chip_type = VPU_CHIP_TXHD;
@@ -185,9 +212,11 @@ static void vpu_chip_detect(void)
 		vpu_conf.clk_level_dft = CLK_LEVEL_DFT_TXHD;
 #endif
 		vpu_conf.clk_level_max = CLK_LEVEL_MAX_TXHD;
-		vpu_conf.fclk_type = FCLK_TYPE_TXHD;
+		vpu_conf.fclk_freq = FCLK_TYPE_TXHD;
+		vpu_conf.fclk_div_table = fclk_div_table_gxb;
+		vpu_conf.vpu_clk_table = vpu_clk_table_gxb;
 		break;
-	case MESON_CPU_MAJOR_ID_G12A:
+	/*case MESON_CPU_MAJOR_ID_G12A:
 		vpu_chip_type = VPU_CHIP_G12A;
 #ifdef CONFIG_VPU_CLK_LEVEL_DFT
 		vpu_conf.clk_level_dft = CONFIG_VPU_CLK_LEVEL_DFT;
@@ -195,17 +224,21 @@ static void vpu_chip_detect(void)
 		vpu_conf.clk_level_dft = CLK_LEVEL_DFT_G12A;
 #endif
 		vpu_conf.clk_level_max = CLK_LEVEL_MAX_G12A;
-		vpu_conf.fclk_type = FCLK_TYPE_G12A;
-		break;
+		vpu_conf.fclk_freq = FCLK_TYPE_G12A;
+		vpu_conf.fclk_div_table = fclk_div_table_g12a;
+		vpu_conf.vpu_clk_table = vpu_clk_table_gxb;
+		break;*/
 	default:
-		vpu_chip_type = VPU_CHIP_GXBB;
+		vpu_chip_type = VPU_CHIP_G12A;
 #ifdef CONFIG_VPU_CLK_LEVEL_DFT
 		vpu_conf.clk_level_dft = CONFIG_VPU_CLK_LEVEL_DFT;
 #else
-		vpu_conf.clk_level_dft = CLK_LEVEL_DFT_GXBB;
+		vpu_conf.clk_level_dft = CLK_LEVEL_DFT_G12A;
 #endif
-		vpu_conf.clk_level_max = CLK_LEVEL_MAX_GXBB;
-		vpu_conf.fclk_type = FCLK_TYPE_GXBB;
+		vpu_conf.clk_level_max = CLK_LEVEL_MAX_G12A;
+		vpu_conf.fclk_freq = FCLK_TYPE_G12A;
+		vpu_conf.fclk_div_table = fclk_div_table_g12a;
+		vpu_conf.vpu_clk_table = vpu_clk_table_gxb;
 	}
 #else
 	vpu_chip_type = VPU_CHIP_G12A;
@@ -215,16 +248,18 @@ static void vpu_chip_detect(void)
 	vpu_conf.clk_level_dft = CLK_LEVEL_DFT_G12A;
 #endif
 	vpu_conf.clk_level_max = CLK_LEVEL_MAX_G12A;
-	vpu_conf.fclk_type = FCLK_TYPE_G12A;
+	vpu_conf.fclk_freq = FCLK_TYPE_G12A;
+	vpu_conf.fclk_div_table = fclk_div_table_g12a;
+	vpu_conf.vpu_clk_table = vpu_clk_table_gxb;
 #endif
 
 #ifdef VPU_DEBUG_PRINT
 	VPUPR("detect chip type: %d\n", vpu_chip_type);
 	VPUPR("clk_level default: %d(%dHz), max: %d(%dHz)\n",
 		vpu_conf.clk_level_dft,
-		vpu_clk_table[vpu_conf.fclk_type][vpu_conf.clk_level_dft][0],
-		vpu_conf.clk_level_max,
-		vpu_clk_table[vpu_conf.fclk_type][vpu_conf.clk_level_max][0]);
+		(vpu_conf.vpu_clk_table + vpu_conf.clk_level_dft)->freq,
+		(vpu_conf.clk_level_max - 1),
+		(vpu_conf.vpu_clk_table + (vpu_conf.clk_level_max - 1))->freq);
 #endif
 }
 
@@ -247,7 +282,12 @@ static int vpu_check(void)
 	case VPU_CHIP_AXG:
 	case VPU_CHIP_TXHD:
 	case VPU_CHIP_G12A:
-		ret = 0;
+		if ((vpu_conf.fclk_div_table == NULL) ||
+			(vpu_conf.vpu_clk_table == NULL)) {
+			VPUERR("invalid vpu table\n");
+		} else {
+			ret = 0;
+		}
 		break;
 	default:
 		VPUERR("invalid vpu for current chip\n");
@@ -259,14 +299,11 @@ static int vpu_check(void)
 
 static unsigned int get_vpu_clk_level(unsigned int video_clk)
 {
-	unsigned int video_bw;
 	unsigned clk_level;
 	int i;
 
-	video_bw = video_clk + 1000000;
-
 	for (i = 0; i < vpu_conf.clk_level_max; i++) {
-		if (video_bw <= vpu_clk_table[vpu_conf.fclk_type][i][0])
+		if (video_clk <= (vpu_conf.vpu_clk_table + i)->freq)
 			break;
 	}
 	clk_level = i;
@@ -274,27 +311,83 @@ static unsigned int get_vpu_clk_level(unsigned int video_clk)
 	return clk_level;
 }
 
+static unsigned long get_fclk_div_freq(unsigned int mux_id)
+{
+	struct fclk_div_s *fclk_div;
+	unsigned long fclk, div, clk_source = 0;
+	unsigned int i;
+
+	fclk = vpu_conf.fclk_freq * 1000000;
+
+	for (i = 0; i < FCLK_DIV_MAX; i++) {
+		fclk_div = vpu_conf.fclk_div_table + i;
+		if (fclk_div->fclk_id == mux_id) {
+			div = fclk_div->fclk_div;
+			clk_source = ((fclk * 100 / div) + 99) / 100;
+			break;
+		}
+		if (fclk_div->fclk_id == FCLK_DIV_MAX)
+			break;
+	}
+
+	return clk_source;
+}
+
+static unsigned int get_vpu_clk_mux_id(void)
+{
+	struct fclk_div_s *fclk_div;
+	unsigned int i, mux, mux_id;
+
+	mux = vpu_hiu_getb(HHI_VPU_CLK_CNTL, 9, 3);
+	mux_id = mux;
+	for (i = 0; i < FCLK_DIV_MAX; i++) {
+		fclk_div = vpu_conf.fclk_div_table + i;
+		if (fclk_div->fclk_mux == mux) {
+			mux_id = fclk_div->fclk_id;
+			break;
+		}
+		if (fclk_div->fclk_id == FCLK_DIV_MAX)
+			break;
+	}
+
+	return mux_id;
+}
+
+static unsigned int get_vpu_clk_mux(unsigned int mux_id)
+{
+	struct fclk_div_s *fclk_div;
+	unsigned int i, mux;
+
+	mux = mux_id;
+	for (i = 0; i < FCLK_DIV_MAX; i++) {
+		fclk_div = vpu_conf.fclk_div_table + i;
+		if (fclk_div->fclk_id == mux_id) {
+			mux = fclk_div->fclk_mux;
+			break;
+		}
+		if (fclk_div->fclk_id == FCLK_DIV_MAX)
+			break;
+	}
+
+	return mux;
+}
+
 static unsigned int get_vpu_clk(void)
 {
-	unsigned int clk_freq;
-	unsigned int fclk, clk_source;
-	unsigned int mux, div;
+	unsigned long clk_freq;
+	unsigned long clk_source, div;
+	unsigned int mux_id;
 
-	fclk = fclk_table[vpu_conf.fclk_type] * 100; /* 0.01M resolution */
-	mux = vpu_hiu_getb(HHI_VPU_CLK_CNTL, 9, 3);
-	switch (mux) {
-	case 0: /* fclk_div4 */
-	case 1: /* fclk_div3 */
-	case 2: /* fclk_div5 */
-	case 3: /* fclk_div7, m8m2 gp_pll = fclk_div7 */
-		clk_source = fclk / fclk_div_table[mux];
+	mux_id = get_vpu_clk_mux_id();
+	switch (mux_id) {
+	case FCLK_DIV4:
+	case FCLK_DIV3:
+	case FCLK_DIV5:
+	case FCLK_DIV7:
+		clk_source = get_fclk_div_freq(mux_id);
 		break;
-	case 7:
-		if ((vpu_chip_type == VPU_CHIP_G9TV) ||
-			(vpu_chip_type == VPU_CHIP_GXTVBB))
-			clk_source = 696 * 100; /* 0.01MHz */
-		else
-			clk_source = 0;
+	case GPLL_CLK:
+		clk_source = (vpu_conf.vpu_clk_table + 8)->freq;
 		break;
 	default:
 		clk_source = 0;
@@ -302,9 +395,9 @@ static unsigned int get_vpu_clk(void)
 	}
 
 	div = vpu_hiu_getb(HHI_VPU_CLK_CNTL, 0, 7) + 1;
-	clk_freq = (clk_source / div) * 10 * 1000; /* change to Hz */
+	clk_freq = ((clk_source * 100 / div) + 99) / 100;
 
-	return clk_freq;
+	return (unsigned int)clk_freq;
 }
 
 static int switch_gp_pll_m8m2(int flag)
@@ -434,10 +527,12 @@ static int switch_gp_pll(int flag)
 
 static int adjust_vpu_clk_m8_g9(unsigned int clk_level)
 {
+	struct vpu_clk_s *clk_table;
 	unsigned int mux, div;
 	int ret = 0;
 
-	mux = vpu_clk_table[vpu_conf.fclk_type][clk_level][1];
+	clk_table = vpu_conf.vpu_clk_table + clk_level;
+	mux = clk_table->mux;
 	if (mux == GPLL_CLK) {
 		ret = switch_gp_pll(1);
 		if (ret) {
@@ -446,14 +541,15 @@ static int adjust_vpu_clk_m8_g9(unsigned int clk_level)
 		}
 	}
 	vpu_conf.clk_level = clk_level;
+	clk_table = vpu_conf.vpu_clk_table + clk_level;
 
-	mux = vpu_clk_table[vpu_conf.fclk_type][clk_level][1];
-	div = vpu_clk_table[vpu_conf.fclk_type][clk_level][2];
+	mux = clk_table->mux;
+	div = clk_table->div;
 	vpu_hiu_write(HHI_VPU_CLK_CNTL, ((mux << 9) | (div << 0) | (1<<8)));
 
 	VPUPR("set clk: %uHz, readback: %uHz(0x%x)\n",
-		vpu_clk_table[vpu_conf.fclk_type][clk_level][0],
-		get_vpu_clk(), (vpu_hiu_read(HHI_VPU_CLK_CNTL)));
+		clk_table->freq, get_vpu_clk(),
+		(vpu_hiu_read(HHI_VPU_CLK_CNTL)));
 	return ret;
 }
 
@@ -461,11 +557,13 @@ static int adjust_vpu_clk_m8_g9(unsigned int clk_level)
 #define VPU_CLKB_MAX    350
 static int adjust_vpu_clk_gx(unsigned int clk_level)
 {
+	struct vpu_clk_s *clk_table;
 	unsigned int vpu_clk;
 	unsigned int mux, div;
 	int ret = 0;
 
-	mux = vpu_clk_table[vpu_conf.fclk_type][clk_level][1];
+	clk_table = vpu_conf.vpu_clk_table + clk_level;
+	mux = get_vpu_clk_mux(clk_table->mux);
 	if (mux == GPLL_CLK) {
 		ret = switch_gp_pll(1);
 		if (ret) {
@@ -474,10 +572,11 @@ static int adjust_vpu_clk_gx(unsigned int clk_level)
 		}
 	}
 	vpu_conf.clk_level = clk_level;
+	clk_table = vpu_conf.vpu_clk_table + clk_level;
 
-	vpu_clk = vpu_clk_table[vpu_conf.fclk_type][clk_level][0];
-	mux = vpu_clk_table[vpu_conf.fclk_type][clk_level][1];
-	div = vpu_clk_table[vpu_conf.fclk_type][clk_level][2];
+	vpu_clk = clk_table->freq;
+	mux = get_vpu_clk_mux(clk_table->mux);
+	div = clk_table->div;
 
 	vpu_hiu_write(HHI_VPU_CLK_CNTL, ((mux << 9) | (div << 0)));
 	vpu_hiu_setb(HHI_VPU_CLK_CNTL, 1, 8, 1);
@@ -990,21 +1089,24 @@ int vpu_remove(void)
 
 static void vpu_clk_switch(void)
 {
+	struct vpu_clk_s *clk_table;
 	unsigned int mux, div;
 
 	/* step 1: switch to 2nd vpu clk patch */
-	mux = vpu_clk_table[vpu_conf.fclk_type][0][1];
+	clk_table = vpu_conf.vpu_clk_table + vpu_conf.clk_level_dft;
+	mux = get_vpu_clk_mux(clk_table->mux);
 	vpu_hiu_setb(HHI_VPU_CLK_CNTL, mux, 25, 3);
-	div = vpu_clk_table[vpu_conf.fclk_type][0][2];
+	div = clk_table->div;
 	vpu_hiu_setb(HHI_VPU_CLK_CNTL, div, 16, 7);
 	vpu_hiu_setb(HHI_VPU_CLK_CNTL, 1, 24, 1);
 	vpu_hiu_setb(HHI_VPU_CLK_CNTL, 1, 31, 1);
 	udelay(10);
 	/* step 2: adjust 1st vpu clk frequency */
+	clk_table = vpu_conf.vpu_clk_table + vpu_conf.clk_level;
 	vpu_hiu_setb(HHI_VPU_CLK_CNTL, 0, 8, 1);
-	mux = vpu_clk_table[vpu_conf.fclk_type][vpu_conf.clk_level][1];
+	mux = get_vpu_clk_mux(clk_table->mux);
 	vpu_hiu_setb(HHI_VPU_CLK_CNTL, mux, 9, 3);
-	div = vpu_clk_table[vpu_conf.fclk_type][vpu_conf.clk_level][2];
+	div = clk_table->div;
 	vpu_hiu_setb(HHI_VPU_CLK_CNTL, div, 0, 7);
 	vpu_hiu_setb(HHI_VPU_CLK_CNTL, 1, 8, 1);
 	udelay(20);
@@ -1015,6 +1117,7 @@ static void vpu_clk_switch(void)
 
 int vpu_clk_change(int level)
 {
+	struct vpu_clk_s *clk_table;
 	unsigned int vpu_clk;
 	unsigned int mux, div;
 
@@ -1025,20 +1128,22 @@ int vpu_clk_change(int level)
 		level = get_vpu_clk_level(level);
 
 	if (level >= vpu_conf.clk_level_max) {
+		clk_table = vpu_conf.vpu_clk_table + (vpu_conf.clk_level_max - 1);
 		VPUPR("clk out of supported range\n");
 		VPUPR("clk max level: %u(&uHz)\n",
-			vpu_conf.clk_level_max,
-			vpu_clk_table[vpu_conf.fclk_type][vpu_conf.clk_level_max][0]);
+			(vpu_conf.clk_level_max - 1),
+			clk_table->freq);
 		return -1;
 	}
 
 	vpu_conf.clk_level = level;
-	vpu_clk = vpu_clk_table[vpu_conf.fclk_type][vpu_conf.clk_level][0];
+	clk_table = vpu_conf.vpu_clk_table + vpu_conf.clk_level;
+	vpu_clk = clk_table->freq;
 
 	switch (vpu_chip_type) {
 	case VPU_CHIP_M8:
-		mux = vpu_clk_table[vpu_conf.fclk_type][vpu_conf.clk_level][1];
-		div = vpu_clk_table[vpu_conf.fclk_type][vpu_conf.clk_level][2];
+		mux = get_vpu_clk_mux(clk_table->mux);
+		div = clk_table->div;
 		vpu_hiu_write(HHI_VPU_CLK_CNTL, ((mux << 9) | (div << 0) | (1<<8)));
 		break;
 	default:
@@ -1070,15 +1175,14 @@ void vpu_info_print(void)
 	printf("clk_level:         %d(%dHz)\n"
 		"clk_level default: %d(%dHz)\n"
 		"clk_level max:     %d(%dHz)\n"
-		"fclk_type:         %d(%dHz)\n",
+		"fclk_freq:         %dHz\n",
 		vpu_conf.clk_level,
-		vpu_clk_table[vpu_conf.fclk_type][vpu_conf.clk_level][0],
+		(vpu_conf.vpu_clk_table + vpu_conf.clk_level)->freq,
 		vpu_conf.clk_level_dft,
-		vpu_clk_table[vpu_conf.fclk_type][vpu_conf.clk_level_dft][0],
+		(vpu_conf.vpu_clk_table + vpu_conf.clk_level_dft)->freq,
 		(vpu_conf.clk_level_max - 1),
-		vpu_clk_table[vpu_conf.fclk_type][vpu_conf.clk_level_max - 1][0],
-		vpu_conf.fclk_type,
-		(fclk_table[vpu_conf.fclk_type] * 1000000));
+		(vpu_conf.vpu_clk_table + (vpu_conf.clk_level_max - 1))->freq,
+		(vpu_conf.fclk_freq * 1000000));
 }
 
 static unsigned int vcbus_reg[] = {

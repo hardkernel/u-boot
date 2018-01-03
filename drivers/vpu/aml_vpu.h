@@ -44,11 +44,25 @@ enum vpu_chip_e {
 	VPU_CHIP_MAX,
 };
 
+struct fclk_div_s {
+	unsigned int fclk_id;
+	unsigned int fclk_mux;
+	unsigned int fclk_div;
+};
+
+struct vpu_clk_s {
+	unsigned int freq;
+	unsigned int mux;
+	unsigned int div;
+};
+
 struct vpu_conf_s {
-	unsigned int     clk_level_dft;
-	unsigned int     clk_level_max;
-	unsigned int     clk_level;
-	unsigned int     fclk_type;
+	unsigned int clk_level_dft;
+	unsigned int clk_level_max;
+	unsigned int clk_level;
+	unsigned int fclk_freq; /* unit: MHz */
+	struct fclk_div_s *fclk_div_table;
+	struct vpu_clk_s  *vpu_clk_table;
 };
 
 /* #define LIMIT_VPU_CLK_LOW */
@@ -57,15 +71,8 @@ struct vpu_conf_s {
 /* VPU frequency table, important. DO NOT modify!! */
 /* ************************************************ */
 /* fixed pll frequency */
-enum fclk_type_e {
-	FCLK_2550M = 0,
-	FCLK_2000M,
-	FCLK_MAX,
-};
-static unsigned int fclk_table[] = { /* unit: MHz */
-	2550,
-	2000,
-};
+#define FCLK_2550M    2550 /* unit: MHz */
+#define FCLK_2000M    2000 /* unit: MHz */
 
 /* M8: */
 /* freq Max=364M, default=255M */
@@ -152,43 +159,55 @@ enum vpu_mux_e {
 	VID_PLL_CLK,
 	VID2_PLL_CLK,
 	GPLL_CLK,
+	FCLK_DIV_MAX,
 };
 
-static unsigned int fclk_div_table[] = {
-	4, /* mux 0 */
-	3, /* mux 1 */
-	5, /* mux 2 */
-	7, /* mux 3 */
-	2, /* invalid */
+static struct fclk_div_s fclk_div_table_gxb[] = {
+	/* id,         mux,  div */
+	{FCLK_DIV4,    0,    4},
+	{FCLK_DIV3,    1,    3},
+	{FCLK_DIV5,    2,    5},
+	{FCLK_DIV7,    3,    7},
+	{FCLK_DIV_MAX, 8,    1},
 };
 
-static unsigned int vpu_clk_table[2][12][3] = {/* compatible for all chip */
-	{ /* m8, m8m2, g9tv, g9bb, fpll=2550M */
-		/* frequency   clk_mux       div */
-		{106250000,    FCLK_DIV3,    7}, /* 0 */
-		{159375000,    FCLK_DIV4,    3}, /* 1 */
-		{212500000,    FCLK_DIV3,    3}, /* 2 */
-		{255000000,    FCLK_DIV5,    1}, /* 3 */
-		{364300000,    FCLK_DIV7,    0}, /* 4 */ /* M8M2 use gp_pll */
-		{425000000,    FCLK_DIV3,    1}, /* 5 */
-		{510000000,    FCLK_DIV5,    0}, /* 6 */
-		{637500000,    FCLK_DIV4,    0}, /* 7 */
-		{696000000,    GPLL_CLK,     0}, /* 8 */ /* G9TV use gp1_pll */
-		{850000000,    FCLK_DIV3,    0}, /* 9 */
-	},
-	{ /* gxbb, gxtvbb, gxl, txl, txlx, axg fpll=2000M */
-		/* frequency   clk_mux       div */
-		{100000000,    FCLK_DIV5,    3}, /* 0 */
-		{166667000,    FCLK_DIV3,    3}, /* 1 */
-		{200000000,    FCLK_DIV5,    1}, /* 2 */
-		{250000000,    FCLK_DIV4,    1}, /* 3 */
-		{333333000,    FCLK_DIV3,    1}, /* 4 */
-		{400000000,    FCLK_DIV5,    0}, /* 5 */
-		{500000000,    FCLK_DIV4,    0}, /* 6 */
-		{666667000,    FCLK_DIV3,    0}, /* 7 */
-		{696000000,    GPLL_CLK,     0}, /* 8 */ /* invalid */
-		{850000000,    GPLL_CLK,     0}, /* 9 */ /* invalid */
-	},
+static struct fclk_div_s fclk_div_table_g12a[] = {
+	/* id,         mux,  div */
+	{FCLK_DIV3,    0,    3},
+	{FCLK_DIV4,    1,    4},
+	{FCLK_DIV5,    2,    5},
+	{FCLK_DIV7,    3,    7},
+	{FCLK_DIV_MAX, 8,    1},
+};
+
+static struct vpu_clk_s vpu_clk_table_m8[] = {
+	/* m8, m8m2, g9tv, g9bb, fpll=2550M */
+	/* frequency   clk_mux       div */
+	{106250000,    FCLK_DIV3,    7}, /* 0 */
+	{159375000,    FCLK_DIV4,    3}, /* 1 */
+	{212500000,    FCLK_DIV3,    3}, /* 2 */
+	{255000000,    FCLK_DIV5,    1}, /* 3 */
+	{364300000,    FCLK_DIV7,    0}, /* 4 */ /* M8M2 use gp_pll */
+	{425000000,    FCLK_DIV3,    1}, /* 5 */
+	{510000000,    FCLK_DIV5,    0}, /* 6 */
+	{637500000,    FCLK_DIV4,    0}, /* 7 */
+	{696000000,    GPLL_CLK,     0}, /* 8 */ /* G9TV use gp1_pll */
+	{850000000,    FCLK_DIV3,    0}, /* 9 */
+};
+
+static struct vpu_clk_s vpu_clk_table_gxb[] = {
+	/* gxbb, gxtvbb, gxl, txl, txlx, axg fpll=2000M */
+	/* frequency   clk_mux       div */
+	{100000000,    FCLK_DIV5,    3}, /* 0 */
+	{166667000,    FCLK_DIV3,    3}, /* 1 */
+	{200000000,    FCLK_DIV5,    1}, /* 2 */
+	{250000000,    FCLK_DIV4,    1}, /* 3 */
+	{333333000,    FCLK_DIV3,    1}, /* 4 */
+	{400000000,    FCLK_DIV5,    0}, /* 5 */
+	{500000000,    FCLK_DIV4,    0}, /* 6 */
+	{666667000,    FCLK_DIV3,    0}, /* 7 */
+	{696000000,    GPLL_CLK,     0}, /* 8 */ /* invalid */
+	{850000000,    GPLL_CLK,     0}, /* 9 */ /* invalid */
 };
 
 /* ************************************************ */
