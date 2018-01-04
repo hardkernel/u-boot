@@ -40,7 +40,7 @@ ulong mmc_bread_prepare(struct blk_desc *block_dev, lbaint_t start, lbaint_t blk
 #endif
 #endif
 
-#if !(defined(CONFIG_SPL_BUILD) && !defined(CONFIG_SPL_SAVEENV))
+#if CONFIG_IS_ENABLED(MMC_WRITE)
 
 #if CONFIG_IS_ENABLED(BLK)
 ulong mmc_bwrite(struct udevice *dev, lbaint_t start, lbaint_t blkcnt,
@@ -52,7 +52,7 @@ ulong mmc_bwrite(struct blk_desc *block_dev, lbaint_t start, lbaint_t blkcnt,
 ulong mmc_berase(struct blk_desc *block_dev, lbaint_t start, lbaint_t blkcnt);
 #endif
 
-#else /* CONFIG_SPL_BUILD and CONFIG_SPL_SAVEENV is not defined */
+#else /* CONFIG_SPL_MMC_WRITE is not defined */
 
 /* declare dummies to reduce code size. */
 
