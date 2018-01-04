@@ -256,6 +256,10 @@ static void amlogic_pcie_init_PLL(e_pcieDev pcie_dev)
 		*PCIE_CTRL_6 = 0x002323c6;
 		mdelay(1);
 
+		writel(readl(PCIE_CTRL_0) | 1<<29, PCIE_CTRL_0);
+		mdelay(1);
+		writel(readl(PCIE_CTRL_0) & ~(1<<29), PCIE_CTRL_0);
+
 		*P_RESET0_LEVEL |=	  (0x3<<6);
 		mdelay(1);
 
