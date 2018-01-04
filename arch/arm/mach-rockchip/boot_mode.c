@@ -55,17 +55,22 @@ __weak int rockchip_dnl_key_pressed(void)
 		return false;
 }
 
-void rockchip_dnl_mode_check(void)
+static void devtype_num_envset(void)
 {
-	const char *rockusb_cmd =
+	const char *devtype_num_set =
 	"if mmc dev 0; then setenv devtype mmc; setenv devnum 0;"
 	"else if rknand dev 0; then setenv devtype rknand; setenv devnum 0; fi;"
-	"fi; rockusb 0 ${devtype} ${devnum};";
+	"fi;";
 
+	run_command_list(devtype_num_set, -1, 0);
+}
+
+void rockchip_dnl_mode_check(void)
+{
 	if (rockchip_dnl_key_pressed()) {
 		printf("download key pressed, entering download mode...\n");
 		/* If failed, we fall back to bootrom download mode */
-		run_command_list(rockusb_cmd, -1, 0);
+		run_command_list("rockusb 0 ${devtype} ${devnum}", -1, 0);
 		set_back_to_bootrom_dnl_flag();
 		do_reset(NULL, 0, 0, NULL);
 	}
@@ -76,6 +81,7 @@ int setup_boot_mode(void)
 	int boot_mode = BOOT_MODE_NORMAL;
 	char env_preboot[256] = {0};
 
+	devtype_num_envset();
 	rockchip_dnl_mode_check();
 #ifdef CONFIG_RKIMG_BOOTLOADER
 	boot_mode = rockchip_get_boot_mode();
@@ -99,7 +105,7 @@ int setup_boot_mode(void)
 		break;
 	case BOOT_MODE_LOADER:
 		printf("enter Rockusb!\n");
-		env_set("preboot", "setenv preboot; rockusb 0 mmc 0");
+		env_set("preboot", "setenv preboot; rockusb 0 ${devtype} ${devnum}");
 		break;
 	case BOOT_MODE_CHARGING:
 		printf("enter charging!\n");
