@@ -158,8 +158,14 @@ static int init_resource_list(struct resource_img_hdr *hdr)
 	char *boot_partname = PART_BOOT;
 
 	if (hdr) {
-		content = (void *)(hdr + hdr->c_offset);
-		goto init_list;
+		content = (void *)((char *)hdr
+				   + (hdr->c_offset) * RK_BLK_SIZE);
+		for (e_num = 0; e_num < hdr->e_nums; e_num++) {
+			size = e_num * hdr->e_blks * RK_BLK_SIZE;
+			entry = (struct resource_entry *)(content + size);
+			add_file_to_list(entry, offset);
+		}
+		return 0;
 	}
 
 	dev_desc = rockchip_get_bootdev();
@@ -192,10 +198,11 @@ static int init_resource_list(struct resource_img_hdr *hdr)
 		debug("%s Load resource from %s senond pos\n",
 		      __func__, part_info.name);
 		/* Read resource from second offset */
-		offset = part_info.start;
+		offset = part_info.start * RK_BLK_SIZE;
 		offset += andr_hdr->page_size;
 		offset += ALIGN(andr_hdr->kernel_size, andr_hdr->page_size);
 		offset += ALIGN(andr_hdr->ramdisk_size, andr_hdr->page_size);
+		offset = offset / RK_BLK_SIZE;
 	} else {
 		/* Set mode to 0 in for recovery is not valid AOSP img */
 		mode = 0;
@@ -231,7 +238,6 @@ static int init_resource_list(struct resource_img_hdr *hdr)
 	if (ret != (hdr->e_blks * hdr->e_nums))
 		goto err;
 
-init_list:
 	for (e_num = 0; e_num < hdr->e_nums; e_num++) {
 		size = e_num * hdr->e_blks * RK_BLK_SIZE;
 		entry = (struct resource_entry *)(content + size);
