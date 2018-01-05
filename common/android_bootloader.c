@@ -451,7 +451,7 @@ int android_bootloader_boot_flow(struct blk_desc *dev_desc,
 #else
 	ret = android_image_get_fdt((void *)load_address, &fdt_addr);
 	if (!ret)
-		env_set_ulong("fdt_addr", fdt_addr);
+		env_set_hex("fdt_addr", fdt_addr);
 #endif
 	android_bootloader_boot_kernel(load_address);
 
