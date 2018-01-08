@@ -91,8 +91,10 @@ void aml_set_voltage(unsigned int id, unsigned int voltage, int delt)
 			to = pwm_cal_voltage_table_size - 1;
 		}
 		/*vcck volt set by dvfs and avs*/
-		//writel(pwm_voltage_table[to][0], PWM_PWM_A_ADRESS);
-		_udelay_(200);
+		/*
+		writel(pwm_voltage_table[to][0], PWM_PWM_A_ADRESS);
+		*_udelay_(200);
+		*/
 		break;
 
 	case pwm_ee:
@@ -107,8 +109,10 @@ void aml_set_voltage(unsigned int id, unsigned int voltage, int delt)
 		}
 		printf("aml pwm cal before ee_address: %x, ee_voltage: %x\n",
 				AO_PWM_PWM_B, readl(AO_PWM_PWM_B));
+		/*
 		writel(pwm_cal_voltage_table_ee[to][0],AO_PWM_PWM_B);
-		_udelay_(1000);
+		*_udelay_(1000);
+		*/
 		printf("aml pwm cal after ee_address: %x, ee_voltage: %x\n",
 				AO_PWM_PWM_B, readl(AO_PWM_PWM_B));
 		break;
@@ -128,8 +132,10 @@ void aml_cal_pwm(unsigned int ee_voltage, unsigned int vcck_voltage)
 	vcck_delt = aml_delt_get(vcck_val, vcck_voltage);
 	ee_delt = aml_delt_get(ee_val, ee_voltage);
 	send_pwm_delt(vcck_delt, ee_delt);
-	aml_set_voltage(pwm_ee, CONFIG_VDDEE_INIT_VOLTAGE, ee_delt);
-	//aml_set_voltage(pwm_vcck, CONFIG_VCCK_INIT_VOLTAGE, vcck_delt);
+	/* disable calibration vcck and ee
+	*aml_set_voltage(pwm_ee, CONFIG_VDDEE_INIT_VOLTAGE, ee_delt);
+	*aml_set_voltage(pwm_vcck, CONFIG_VCCK_INIT_VOLTAGE, vcck_delt);
+	*/
 	printf("aml board pwm vcck: %x, ee: %x\n", vcck_delt, ee_delt);
 }
 
