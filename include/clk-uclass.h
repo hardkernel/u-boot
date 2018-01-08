@@ -95,6 +95,14 @@ struct clk_ops {
 	 */
 	int (*set_phase)(struct clk *clk, int degrees);
 	/**
+	 * set_parent() - Set current clock parent
+	 *
+	 * @clk:        The clock to manipulate.
+	 * @parent:     New clock parent.
+	 * @return zero on success, or -ve error code.
+	 */
+	int (*set_parent)(struct clk *clk, struct clk *parent);
+	/**
 	 * enable() - Enable a clock.
 	 *
 	 * @clk:	The clock to manipulate.

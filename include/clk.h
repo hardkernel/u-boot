@@ -198,6 +198,17 @@ int clk_get_phase(struct clk *clk);
 int clk_set_phase(struct clk *clk, int degrees);
 
 /**
+ * clk_set_parent() - Set current clock parent.
+ *
+ * @clk:	A clock struct that was previously successfully requested by
+ *		clk_request/get_by_*().
+ * @parent:	A clock struct that was previously successfully requested by
+ *		clk_request/get_by_*().
+ * @return new rate, or -ve error code.
+ */
+int clk_set_parent(struct clk *clk, struct clk *parent);
+
+/**
  * clk_enable() - Enable (turn on) a clock.
  *
  * @clk:	A clock struct that was previously successfully requested by
