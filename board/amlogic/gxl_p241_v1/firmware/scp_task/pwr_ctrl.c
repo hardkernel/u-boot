@@ -64,15 +64,16 @@ void pwm_set_voltage(unsigned int id, unsigned int voltage)
 	}
 	_udelay(200);
 }
-/*GPIOH_3*/
+/*GPIOAO_9*/
 static void hdmi_5v_ctrl(unsigned int ctrl)
 {
+	aml_update_bits(AO_GPIO_O_EN_N, 1 << 9, 0);
 	if (ctrl == ON) {
-		/* VCC5V ON GPIOH_3 output mode*/
-		aml_update_bits(PREG_PAD_GPIO1_EN_N, 1 << 23, 0);
+		/* VCC5V ON GPIOAO_9 output mode*/
+		aml_update_bits(AO_GPIO_O_EN_N, 1 << 25, 1 << 25);
 	} else {
-		/* VCC5V OFF GPIOH_3 input mode*/
-		aml_update_bits(PREG_PAD_GPIO1_EN_N, 1 << 23, 1 << 23);
+		/* VCC5V OFF GPIOAO_9 input mode*/
+		aml_update_bits(AO_GPIO_O_EN_N, 1 << 25, 0);
 	}
 }
 /*GPIODV_25*/
