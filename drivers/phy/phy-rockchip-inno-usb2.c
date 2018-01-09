@@ -238,16 +238,19 @@ static bool rockchip_chg_primary_det_retry(struct rockchip_usb2phy *rphy)
 			break;
 	}
 
+	rockchip_chg_enable_primary_det(rphy, false);
 	return vout;
 }
 
 int rockchip_chg_get_type(void)
 {
+	const struct rockchip_usb2phy_port_cfg *port_cfg;
 	const struct rockchip_usb2phy_cfg *phy_cfgs;
 	enum power_supply_type chg_type;
 	struct rockchip_usb2phy rphy;
 	struct udevice *dev;
 	ofnode u2phy_node, grf_node;
+	void __iomem *base;
 	fdt_size_t size;
 	u32 reg, index;
 	bool is_dcd, vout;
@@ -330,6 +333,13 @@ int rockchip_chg_get_type(void)
 		return -EINVAL;
 	}
 
+	base = get_reg_base(&rphy);
+	port_cfg = &rphy.phy_cfg->port_cfgs[USB2PHY_PORT_OTG];
+
+	/* Suspend USB-PHY and put the controller in non-driving mode */
+	property_enable(base, &port_cfg->phy_sus, true);
+	property_enable(base, &rphy.phy_cfg->chg_det.opmode, false);
+
 	rphy.dcd_retries = CHG_DCD_MAX_RETRIES;
 	rphy.primary_retries = CHG_PRI_MAX_RETRIES;
 
@@ -394,6 +404,10 @@ int rockchip_chg_get_type(void)
 		chg_type = POWER_SUPPLY_TYPE_USB_CDP;
 
 out:
+	/* Resume USB-PHY and put the controller in normal mode */
+	property_enable(base, &rphy.phy_cfg->chg_det.opmode, true);
+	property_enable(base, &port_cfg->phy_sus, false);
+
 	debug("charger is %s\n", chg_to_string(chg_type));
 
 	return chg_type;
