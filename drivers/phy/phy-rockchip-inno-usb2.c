@@ -11,6 +11,8 @@
 #include <asm/io.h>
 #include <asm/arch/clock.h>
 
+#include "../usb/gadget/dwc2_udc_otg_priv.h"
+
 #define U2PHY_BIT_WRITEABLE_SHIFT	16
 #define CHG_DCD_MAX_RETRIES		6
 #define CHG_PRI_MAX_RETRIES		2
@@ -181,6 +183,87 @@ static inline bool property_enabled(void __iomem *base,
 	return tmp == reg->enable;
 }
 
+static int rockchip_usb2phy_parse(struct rockchip_usb2phy *rphy)
+{
+	const struct rockchip_usb2phy_cfg *phy_cfgs;
+	ofnode u2phy_node = ofnode_null();
+	ofnode grf_node = ofnode_null();
+	void __iomem *usbgrf_base = NULL;
+	void __iomem *grf_base = NULL;
+	struct udevice *udev;
+	fdt_size_t size;
+	u32 reg, index;
+	int ret;
+
+	memset((void *)rphy, 0, sizeof(struct rockchip_usb2phy));
+
+	u2phy_node = ofnode_path("/usb2-phy");
+	if (ofnode_valid(u2phy_node)) {
+		if (ofnode_read_bool(u2phy_node, "rockchip,grf"))
+			grf_base = syscon_get_first_range(ROCKCHIP_SYSCON_GRF);
+
+		if (ofnode_read_bool(u2phy_node, "rockchip,usbgrf"))
+			usbgrf_base =
+				syscon_get_first_range(ROCKCHIP_SYSCON_USBGRF);
+		else
+			usbgrf_base = NULL;
+	} else {
+		grf_node = ofnode_path("/syscon-usb");
+		if (ofnode_valid(grf_node))
+			grf_base = (void __iomem *)
+				ofnode_get_addr_size(grf_node, "reg", &size);
+			u2phy_node = ofnode_find_subnode(grf_node, "usb2-phy");
+	}
+
+	if (!grf_base && !usbgrf_base) {
+		error("%s: get grf/usbgrf node failed\n", __func__);
+		return -EINVAL;
+	}
+
+	if (!ofnode_valid(u2phy_node)) {
+		error("%s: missing u2phy node\n", __func__);
+		return -EINVAL;
+	}
+
+	if (ofnode_read_u32(u2phy_node, "reg", &reg)) {
+		error("%s: could not read reg from u2phy node\n", __func__);
+		return -EINVAL;
+	}
+
+	ret = uclass_get_device_by_ofnode(UCLASS_PHY, u2phy_node, &udev);
+	if (ret) {
+		error("%s: get u2phy node failed: %d\n", __func__, ret);
+		return -ENODEV;
+	}
+
+	phy_cfgs =
+		(const struct rockchip_usb2phy_cfg *)dev_get_driver_data(udev);
+	if (!phy_cfgs) {
+		error("%s: unable to get phy_cfgs\n", __func__);
+		return -EINVAL;
+	}
+
+	/* find out a proper config which can be matched with dt. */
+	index = 0;
+	while (phy_cfgs[index].reg) {
+		if (phy_cfgs[index].reg == reg) {
+			rphy->phy_cfg = &phy_cfgs[index];
+			break;
+		}
+		++index;
+	}
+
+	if (!rphy->phy_cfg) {
+		error("%s: no phy-config can be matched\n", __func__);
+		return -EINVAL;
+	}
+
+	rphy->grf_base = grf_base;
+	rphy->usbgrf_base = usbgrf_base;
+
+	return 0;
+}
+
 static const char *chg_to_string(enum power_supply_type chg_type)
 {
 	switch (chg_type) {
@@ -245,92 +328,16 @@ static bool rockchip_chg_primary_det_retry(struct rockchip_usb2phy *rphy)
 int rockchip_chg_get_type(void)
 {
 	const struct rockchip_usb2phy_port_cfg *port_cfg;
-	const struct rockchip_usb2phy_cfg *phy_cfgs;
 	enum power_supply_type chg_type;
 	struct rockchip_usb2phy rphy;
-	struct udevice *dev;
-	ofnode u2phy_node, grf_node;
 	void __iomem *base;
-	fdt_size_t size;
-	u32 reg, index;
 	bool is_dcd, vout;
 	int ret;
 
-	u2phy_node = ofnode_null();
-	grf_node = ofnode_null();
-
-	u2phy_node = ofnode_path("/usb2-phy");
-
-	if (!ofnode_valid(u2phy_node)) {
-		grf_node = ofnode_path("/syscon-usb");
-		if (ofnode_valid(grf_node))
-			u2phy_node = ofnode_find_subnode(grf_node,
-							 "usb2-phy");
-	}
-
-	if (!ofnode_valid(u2phy_node)) {
-		printf("%s: missing u2phy node\n", __func__);
-		return -EINVAL;
-	}
-
-	if (ofnode_valid(grf_node)) {
-		rphy.grf_base =
-			(void __iomem *)ofnode_get_addr_size(grf_node,
-							     "reg", &size);
-	} else {
-		if (ofnode_read_bool(u2phy_node, "rockchip,grf"))
-			rphy.grf_base =
-				syscon_get_first_range(ROCKCHIP_SYSCON_GRF);
-	}
-
-	if (rphy.grf_base <= 0) {
-		dev_err(dev, "get syscon grf failed\n");
-		return -EINVAL;
-	}
-
-	if (ofnode_read_u32(u2phy_node, "reg", &reg)) {
-		printf("%s: could not read reg\n", __func__);
-		return -EINVAL;
-	}
-
-	if (ofnode_read_bool(u2phy_node, "rockchip,usbgrf")) {
-		rphy.usbgrf_base =
-			syscon_get_first_range(ROCKCHIP_SYSCON_USBGRF);
-		if (rphy.usbgrf_base <= 0) {
-			dev_err(dev, "get syscon usbgrf failed\n");
-			return -EINVAL;
-		}
-	} else {
-		rphy.usbgrf_base = NULL;
-	}
-
-	ret = uclass_get_device_by_ofnode(UCLASS_PHY, u2phy_node, &dev);
+	ret = rockchip_usb2phy_parse(&rphy);
 	if (ret) {
-		printf("%s: uclass_get_device_by_ofnode failed: %d\n",
-		       __func__, ret);
+		error("%s: parse usb2phy failed %d\n", __func__, ret);
 		return ret;
-	}
-
-	phy_cfgs =
-		(const struct rockchip_usb2phy_cfg *)dev_get_driver_data(dev);
-	if (!phy_cfgs) {
-		printf("%s: unable to get phy_cfgs\n", __func__);
-		return -EINVAL;
-	}
-
-	/* find out a proper config which can be matched with dt. */
-	index = 0;
-	while (phy_cfgs[index].reg) {
-		if (phy_cfgs[index].reg == reg) {
-			rphy.phy_cfg = &phy_cfgs[index];
-			break;
-		}
-		++index;
-	}
-
-	if (!rphy.phy_cfg) {
-		printf("%s: no phy-config can be matched\n", __func__);
-		return -EINVAL;
 	}
 
 	base = get_reg_base(&rphy);
@@ -411,6 +418,32 @@ out:
 	debug("charger is %s\n", chg_to_string(chg_type));
 
 	return chg_type;
+}
+
+void otg_phy_init(struct dwc2_udc *dev)
+{
+	const struct rockchip_usb2phy_port_cfg *port_cfg;
+	struct rockchip_usb2phy rphy;
+	void __iomem *base;
+	int ret;
+
+	ret = rockchip_usb2phy_parse(&rphy);
+	if (ret) {
+		error("%s: parse usb2phy failed %d\n", __func__, ret);
+		return;
+	}
+
+	base = get_reg_base(&rphy);
+	port_cfg = &rphy.phy_cfg->port_cfgs[USB2PHY_PORT_OTG];
+
+	/* Set the USB-PHY COMMONONN to 1'b0 to ensure USB's clocks */
+	property_enable(base, &rphy.phy_cfg->clkout_ctl, false);
+
+	/* Reset USB-PHY */
+	property_enable(base, &port_cfg->phy_sus, true);
+	udelay(20);
+	property_enable(base, &port_cfg->phy_sus, false);
+	mdelay(2);
 }
 
 static int rockchip_usb2phy_init(struct phy *phy)
