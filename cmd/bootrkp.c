@@ -19,8 +19,10 @@ static int do_boot_rockchip(cmd_tbl_t *cmdtp, int flag, int argc,
 
 	dev_desc = rockchip_get_bootdev();
 	mode = rockchip_get_boot_mode();
-	if (mode == BOOT_MODE_RECOVERY)
+	if (mode == BOOT_MODE_RECOVERY) {
 		boot_partname = PART_RECOVERY;
+		printf("%s boot from Recovery partition!\n", __func__);
+	}
 	ret = part_get_info_by_name(dev_desc, boot_partname, &part_info);
 
 	if(boot_rockchip_image(dev_desc, &part_info))
