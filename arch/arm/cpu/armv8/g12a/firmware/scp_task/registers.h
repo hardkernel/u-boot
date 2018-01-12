@@ -37,8 +37,8 @@
 #define P_ISA_TIMERG                                 ISA_TIMERG
 #define P_ISA_TIMERH                                 ISA_TIMERH
 #define P_ISA_TIMERI                                 ISA_TIMERI
-/* 80K share SRAM base address*/
-#define P_SHARE_SRAM_BASE	0xfffc0000
+/* 80K share SRAM base address, g12 is not 80k*/
+#define P_SHARE_SRAM_BASE	0xfffa0000
 /*Interrupt number list*/
 #define IRQ_TIMERC_NUM      0
 #define IRQ_TIMERA_NUM      1

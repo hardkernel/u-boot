@@ -31,6 +31,11 @@
 #ifdef CONFIG_AML_MESON_TXHD
 #define NEW_THERMAL_MODE 1
 #endif
+
+#ifdef CONFIG_AML_MESON_G12A
+#define R1P1_TSENSOR_MODE 1
+#endif
+
 //#define HHI_SAR_CLK_CNTL    0xc883c000+0xf6*4 //0xc883c3d8
 int temp_base = 27;
 #define NUM 30
@@ -39,6 +44,9 @@ uint32_t trim = 0;
 int saradc_vref = -1;
 
 #define MANUAL_POWER 1  //not use vref, use 1.8V power
+
+int r1p1_read_entry(void);
+int r1p1_trim_entry(int tempbase, int tempver);
 
 static int get_tsc(int temp)
 {
@@ -653,10 +661,10 @@ static int read_temp0(void)
 static int read_temp1(void)
 {
 	unsigned int ret;
-	unsigned long cur_temp;
 	unsigned long value,tmp;
 	unsigned int ver, u_efuse; //tmp for debug
 	int family_id;
+	int cur_temp;
 
 	family_id = get_cpu_id().family_id;
 	switch (get_cpu_id().family_id) {
@@ -689,7 +697,7 @@ static int read_temp1(void)
 		cur_temp = ((tmp - (u_efuse & (0x7fff))) * 7278 / (1 << 16) - 2747) / 10;
 	else
 		cur_temp = ((tmp + u_efuse) * 7278 / (1 << 16) - 2747) / 10;
-	printf("newtemp: %ld\n", cur_temp);
+	printf("newtemp: %d\n", cur_temp);
 
 	return cur_temp;
 }
@@ -698,6 +706,12 @@ static int read_temp1(void)
 static int do_read_temp(cmd_tbl_t *cmdtp, int flag1,
 	int argc, char * const argv[])
 {
+#if defined(R1P1_TSENSOR_MODE)
+		printf("read temp\n");
+		r1p1_read_entry();
+		return 0;
+#endif
+
 #if defined(NEW_THERMAL_MODE)
 		printf("read new and old temp\n");
 		read_temp1();
@@ -731,9 +745,10 @@ static int do_temp_triming(cmd_tbl_t *cmdtp, int flag1,
 {
 	int cmd_result = -1;
 	int temp;
-#if defined (CONFIG_AML_MESON_AXG) || defined (CONFIG_AML_MESON_TXHD)
-		unsigned int ver;
-		int ret = -1;
+
+#if defined (CONFIG_AML_MESON_AXG) || defined (CONFIG_AML_MESON_TXHD) || (R1P1_TSENSOR_MODE)
+	unsigned int ver;
+	int ret = -1;
 #endif
 
 	if (argc < 2)
@@ -872,6 +887,19 @@ static int do_temp_triming(cmd_tbl_t *cmdtp, int flag1,
 		}
 		break;
 #endif
+
+#if defined(R1P1_TSENSOR_MODE)
+			case MESON_CPU_MAJOR_ID_G12A:
+				if (argc <3) {
+					printf("too little args for txhd temp triming!!\n");
+					return CMD_RET_USAGE;
+				}
+				ver = simple_strtoul(argv[2], NULL, 16);
+				ret = r1p1_trim_entry(temp_base, ver);
+				return ret;
+				break;
+#endif
+
 		default:
 			printf("cpu family id not support!!!\n");
 			return -1;
@@ -879,6 +907,320 @@ static int do_temp_triming(cmd_tbl_t *cmdtp, int flag1,
 	return 0;
 }
 
+#ifdef R1P1_TSENSOR_MODE
+int r1p1_codetotemp(unsigned long value, unsigned int u_efuse,
+			int ts_b, int ts_a, int ts_m, int ts_n)
+{
+	unsigned long tmp;
+	int cur_temp;
+
+	/* T = 727.8*(u_real+u_efuse/(1<<16)) - 274.7 */
+	/* u_readl = (5.05*YOUT)/((1<<16)+ 4.05*YOUT) */
+	tmp = (value * ts_m) * (1 << 16) / (100 * (1 << 16) + ts_n * value);
+	printf("u_efuse 0x%x, tmp: %ld\n", u_efuse, tmp);
+	if (u_efuse & 0x8000) {
+		cur_temp = ((tmp - (u_efuse & (0x7fff))) * ts_a / (1 << 16) - ts_b) / 10;
+	} else {
+		cur_temp = ((tmp + u_efuse) * ts_a / (1 << 16) - ts_b) / 10;
+	}
+	return cur_temp;
+}
+
+int r1p1_temp_read(int type)
+{
+	unsigned int ret, u_efuse, regdata;//, ret;
+	unsigned int value_ts, value_all_ts;
+	int family_id;
+	int tmp;
+	int i, ts_a, ts_b, ts_m, ts_n, cnt;
+	char buf[2];
+
+	family_id = get_cpu_id().family_id;
+	switch (family_id) {
+		case MESON_CPU_MAJOR_ID_G12A:
+			ts_b = 3159;
+			ts_a = 9411;
+			ts_m = 424;
+			ts_n = 324;
+			switch (type) {
+				case 1:
+					/*enable thermal1*/
+					regdata = 0x62b;/*enable control*/
+					writel(regdata, TS_PLL_CFG_REG1);
+					regdata = 0x130;/*enable tsclk*/
+					writel(regdata, HHI_TS_CLK_CNTL);
+					ret = readl(AO_SEC_GP_CFG10);/*thermal1 cali data in reg CFG10*/
+					mdelay(5);
+					buf[0] = (ret) & 0xff;
+					buf[1] = (ret >> 8) & 0xff;
+					u_efuse = buf[1];
+					u_efuse = (u_efuse << 8) | buf[0];
+					value_ts = 0;
+					value_all_ts = 0;
+					cnt = 0;
+					for (i = 0; i <= 10; i ++) {
+						udelay(50);
+						value_ts = readl(TS_PLL_STAT0) & 0xffff;
+					}
+					for (i = 0; i <= NUM; i ++) {
+						udelay(5000);
+						value_ts = readl(TS_PLL_STAT0) & 0xffff;
+						if ((value_ts >= 0x18a9) && (value_ts <= 0x32a6))
+							value_all_ts += value_ts;
+							cnt ++;
+						}
+					value_ts =  value_all_ts / cnt;
+					printf("pll tsensor avg: 0x%x\n", value_ts);
+					if (value_ts == 0) {
+						printf("tsensor read temp is zero\n");
+						return -1;
+					}
+					tmp = r1p1_codetotemp(value_ts, u_efuse, ts_b, ts_a, ts_m, ts_n);
+					printf("temp1: %d\n", tmp);
+					break;
+				case 2:
+					/*enable thermal2*/
+					regdata = 0x62b;/*enable control*/
+					writel(regdata,TS_DDR_CFG_REG1);
+					regdata = 0x130;/*enable tsclk*/
+					writel(regdata,HHI_TS_CLK_CNTL);
+					mdelay(5);
+					ret = readl(AO_SEC_SD_CFG12);/*thermal1 cali data in reg CFG10*/
+					buf[0] = (ret) & 0xff;
+					buf[1] = (ret >> 8) & 0xff;
+					u_efuse = buf[1];
+					u_efuse = (u_efuse << 8) | buf[0];
+					value_ts = 0;
+					value_all_ts = 0;
+					cnt = 0;
+					for (i = 0; i <= 10; i ++) {
+						udelay(50);
+						value_ts = readl(TS_DDR_STAT0) & 0xffff;
+					}
+					for (i = 0; i <= NUM; i ++) {
+						udelay(5000);
+						value_ts = readl(TS_DDR_STAT0) & 0xffff;
+						if ((value_ts >= 0x18a9) && (value_ts <= 0x32a6))
+							value_all_ts += value_ts;
+							cnt ++;
+						}
+					value_ts =  value_all_ts / cnt;
+					printf("ddr tsensor avg: 0x%x\n", value_ts);
+					if (value_ts == 0) {
+						printf("tsensor read temp is zero\n");
+						return -1;
+					}
+					tmp = r1p1_codetotemp(value_ts, u_efuse, ts_b, ts_a, ts_m, ts_n);
+					printf("temp2: %d\n", tmp);
+					break;
+				default:
+					printf("r1p1 tsensor trim type not support\n");
+			}
+	}
+	return 0;
+}
+
+
+int r1p1_read_entry(void)
+{
+	unsigned int ret, ver;//, ret;
+	int family_id;
+
+	family_id = get_cpu_id().family_id;
+	switch (family_id) {
+		case MESON_CPU_MAJOR_ID_G12A:
+			ret = readl(AO_SEC_GP_CFG10);
+			ver = (ret >> 24) & 0xff;
+			if ((ver & 0x80) == 0) {
+				printf("tsensor no trimmed, ver:0x%x\n", ver);
+				return -1;
+			}
+			ver = (ver & 0xf) >> 2;
+			switch (ver) {
+				case 0x2:
+					r1p1_temp_read(1);
+					r1p1_temp_read(2);
+					printf("read the thermal1 and thermal2\n");
+				break;
+				case 0x0:
+				case 0x1:
+				case 0x3:
+					printf("temp type no support\n");
+				break;
+				default:
+					printf("thermal version not support!!!Please check!\n");
+					return -1;
+				}
+		}
+	return 0;
+}
+
+unsigned int r1p1_temptocode(unsigned long value, int tempbase,
+			int ts_b, int ts_a, int ts_m, int ts_n)
+{
+	unsigned long tmp1, tmp2, u_efuse, signbit;
+	/* T = (727.8*(5.05*Yout)/((1<<16)+4.05*Yout)) - 274.7 */
+	/* u_efuse = u_ideal - u_real */
+	printf("a b m n: %d, %d, %d, %d\n", ts_a, ts_b, ts_m, ts_n);
+	tmp1 = ((tempbase * 10 + ts_b) * (1 << 16)) / ts_a; /*ideal u*/
+	printf("%s : tmp1: 0x%lx\n", __func__, tmp1);
+	tmp2 = (ts_m * value * (1 << 16)) / ((1 << 16) * 100 + ts_n * value);
+	printf("%s : tmp2: 0x%lx\n", __func__, tmp2);
+	signbit = ((tmp1 > tmp2) ? 0 : 1);
+	u_efuse = (tmp1 > tmp2) ? (tmp1 - tmp2) : (tmp2 - tmp1);
+	u_efuse = (signbit << 15) | u_efuse;
+	return u_efuse;
+}
+
+int r1p1_temp_trim(int tempbase, int tempver, int type)
+{
+	unsigned int u_efuse, regdata, index_ts, index_ver;//, ret;
+	unsigned int value_ts, value_all_ts;
+	int family_id;
+	int i, ts_a, ts_b, ts_m, ts_n, cnt;
+
+	family_id = get_cpu_id().family_id;
+	printf("r1p1 temp trim type: 0x%x, familyid: %d\n", type, family_id);
+	switch (family_id) {
+		case MESON_CPU_MAJOR_ID_G12A:
+			ts_b = 3159;
+			ts_a = 9411;
+			ts_m = 424;
+			ts_n = 324;
+			switch (type) {
+				case 0:
+					index_ver = 5;
+					if (thermal_calibration(index_ver, tempver) < 0)
+						printf("version tsensor thermal_calibration send error\n");
+				break;
+				case 1:
+					value_ts = 0;
+					value_all_ts = 0;
+					index_ts = 6;
+					cnt = 0;
+
+					/*enable thermal1*/
+					regdata = 0x62b;/*enable control*/
+					writel(regdata, TS_PLL_CFG_REG1);
+					regdata = 0x130;/*enable tsclk*/
+					writel(regdata, HHI_TS_CLK_CNTL);
+					for (i = 0; i <= 10; i ++) {
+						udelay(50);
+						value_ts = readl(TS_PLL_STAT0) & 0xffff;
+					}
+					for (i = 0; i <= NUM; i ++) {
+						udelay(5000);
+						value_ts = readl(TS_PLL_STAT0) & 0xffff;
+						printf("pll tsensor read: 0x%x\n", value_ts);
+						if ((value_ts >= 0x18a9) && (value_ts <= 0x32a6))
+							value_all_ts += value_ts;
+							cnt ++;
+						}
+					value_ts =  value_all_ts / cnt;
+					printf("pll tsensor avg: 0x%x\n", value_ts);
+					if (value_ts == 0) {
+						printf("pll tsensor read temp is zero\n");
+						return -1;
+					}
+					u_efuse = r1p1_temptocode(value_ts, tempbase, ts_b, ts_a, ts_m, ts_n);
+					printf("pll ts efuse:%d\n", u_efuse);
+					printf("pll ts efuse:0x%x, index: %d\n", u_efuse, index_ts);
+					if (thermal_calibration(index_ts, u_efuse) < 0) {
+						printf("pll tsensor thermal_calibration send error\n");
+						return -1;
+						}
+					break;
+				case 2:
+					value_ts = 0;
+					value_all_ts = 0;
+					index_ts = 7;
+					cnt = 0;
+
+					/*enable thermal2*/
+					regdata = 0x62b;/*enable control*/
+					writel(regdata, TS_DDR_CFG_REG1);
+					regdata = 0x130;/*enable tsclk*/
+					writel(regdata, HHI_TS_CLK_CNTL);
+					for (i = 0; i <= 10; i ++) {
+						udelay(50);
+						value_ts = readl(TS_DDR_STAT0) & 0xffff;
+					}
+					for (i = 0; i <= NUM; i ++) {
+						udelay(5000);
+						value_ts = readl(TS_DDR_STAT0) & 0xffff;
+						printf("ddr tsensor read: 0x%x\n", value_ts);
+						if ((value_ts >= 0x18a9) && (value_ts <= 0x32a6))
+							value_all_ts += value_ts;
+							cnt ++;
+						}
+					value_ts =  value_all_ts / cnt;
+					printf("ddr tsensor avg: 0x%x\n", value_ts);
+					if (value_ts == 0) {
+						printf("ddr tsensor read temp is zero\n");
+						return -1;
+					}
+					u_efuse = r1p1_temptocode(value_ts, tempbase, ts_b, ts_a, ts_m, ts_n);
+					printf("pll ts efuse:%d\n", u_efuse);
+					printf("pll ts efuse:0x%x, index: %d\n", u_efuse, index_ts);
+					if (thermal_calibration(index_ts, u_efuse) < 0) {
+						printf("ddr tsensor thermal_calibration send error\n");
+						return -1;
+					}
+					break;
+				default:
+					printf("r1p1 tsensor trim type not support\n");
+					return -1;
+				break;
+			}
+	}
+	return 0;
+}
+
+int r1p1_trim_entry(int tempbase, int tempver)
+{
+	unsigned int ret, ver;
+	int family_id;
+
+	family_id = get_cpu_id().family_id;
+	switch (family_id) {
+		case MESON_CPU_MAJOR_ID_G12A:
+			ret = readl(AO_SEC_GP_CFG10);
+			ver = (ret >> 24) & 0xff;
+			if (ver & 0x80) {
+				printf("tsensor has trimmed, ver:0x%x\n", ver);
+				printf("tsensor cali data: 0x%x, 0x%x\n",
+					readl(AO_SEC_GP_CFG10), readl(AO_SEC_SD_CFG12));
+				return -1;
+			}
+			printf("tsensor input trim tempver, tempver:0x%x\n", tempver);
+			switch (tempver) {
+				case 0x88:
+					r1p1_temp_trim(tempbase, tempver, 1);
+					r1p1_temp_trim(tempbase, tempver, 2);
+					r1p1_temp_trim(tempbase, tempver, 0);
+					printf("triming the thermal1 and thermal2 by sw\n");
+				break;
+				case 0x89:
+					r1p1_temp_trim(tempbase, tempver, 1);
+					r1p1_temp_trim(tempbase, tempver, 2);
+					r1p1_temp_trim(tempbase, tempver, 0);
+					printf("triming the thermal1 and thermal2 by sw\n");
+				break;
+				case 0x8b:
+					r1p1_temp_trim(tempbase, tempver, 1);
+					r1p1_temp_trim(tempbase, tempver, 2);
+					r1p1_temp_trim(tempbase, tempver, 0);
+					printf("triming the thermal1 and thermal2 by slt\n");
+				break;
+				default:
+					printf("thermal version not support!!!Please check!\n");
+					return -1;
+				}
+		}
+	return 0;
+
+}
+#endif
 
 U_BOOT_CMD(
 	write_trim,	5,	0,	do_write_trim,
@@ -904,13 +1246,18 @@ static char temp_trim_help_text[] =
 	"  - x:     [decimal]the temperature of the chip surface\n"
 	"  - [ver]: [decimal]only for New thermal sensor\n"
 	"           BBT: OPS socket board, which can change chips\n"
-	"						online: reference boards witch chip mounted\n"
+	"	    online: reference boards witch chip mounted\n"
+	"	AXG or TXHD:\n"
 	"           5  (0101)b: BBT, thermal0\n"
 	"           6  (0110)b: BBT, thermal1\n"
 	"           7  (0111)b: BBT, thermal01\n"
 	"           13  (1101)b: online, thermal0\n"
 	"           14  (1110)b: online, thermal1\n"
-	"           15  (1111)b: online, thermal01\n";
+	"           15  (1111)b: online, thermal01\n"
+	" 	G12A:\n"
+	"	    88	(10001000)b: BBT-SW, thermal1 thermal2, valid thermal cali data\n"
+	"	    89	(10001001)b: BBT-OPS, thermal1 thermal2, valid thermal cali data\n"
+	"	    8b	(10001001)b: SLT, thermal1 thermal2, valid thermal cali data\n";
 
 U_BOOT_CMD(
 	temp_triming,	5,	1,	do_temp_triming,
