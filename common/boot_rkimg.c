@@ -208,8 +208,10 @@ int rockchip_get_boot_mode(void)
 	dev_desc = rockchip_get_bootdev();
 	ret = part_get_info_by_name(dev_desc, PART_MISC,
 			&part_info);
-	if (ret < 0)
+	if (ret < 0) {
 		printf("get part %s fail %d\n", PART_MISC, ret);
+		return -EIO;
+	}
 
 	bmsg = memalign(ARCH_DMA_MINALIGN, size);
 	ret = blk_dread(dev_desc,
@@ -268,9 +270,9 @@ int boot_rockchip_image(struct blk_desc *dev_desc, disk_partition_t *boot_part)
 	ulong ramdisk_addr_r = env_get_ulong("ramdisk_addr_r", 16, 0);
 	ulong kernel_addr_r = env_get_ulong("kernel_addr_r", 16, 0x480000);
 	disk_partition_t kernel_part;
-	ulong ramdisk_size;
-	ulong kernel_size;
-	ulong fdt_size;
+	int ramdisk_size;
+	int kernel_size;
+	int fdt_size;
 	int ret = 0;
 	int part_num;
 
@@ -295,7 +297,8 @@ int boot_rockchip_image(struct blk_desc *dev_desc, disk_partition_t *boot_part)
 	ramdisk_size = read_rockchip_image(dev_desc, boot_part,
 					   (void *)ramdisk_addr_r);
 	if (ramdisk_size < 0) {
-		printf("%s ramdisk part read error\n", __func__);
+		printf("%s ramdisk part %s read error\n", __func__,
+		       boot_part->name);
 		ret = -EINVAL;
 		goto out;
 	}
