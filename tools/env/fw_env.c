@@ -1030,6 +1030,9 @@ static int flash_write (int fd_current, int fd_target, int dev_target)
 		DEVOFFSET (dev_target), DEVNAME (dev_target));
 #endif
 
+	/* Amlogic Add */
+	DEVTYPE(dev_target) = MTD_ABSENT;
+
 	rc = flash_write_buf(dev_target, fd_target, environment.image,
 			      CUR_ENVSIZE, DEVOFFSET(dev_target),
 			      DEVTYPE(dev_target));
@@ -1051,11 +1054,12 @@ static int flash_write (int fd_current, int fd_target, int dev_target)
 	return 0;
 }
 
+
 static int flash_read (int fd)
 {
 	struct mtd_info_user mtdinfo;
-	struct stat st;
 	int rc;
+	struct stat st;
 
 	rc = fstat(fd, &st);
 	if (rc < 0) {
@@ -1064,25 +1068,13 @@ static int flash_read (int fd)
 		return -1;
 	}
 
-	if (S_ISCHR(st.st_mode)) {
-		rc = ioctl(fd, MEMGETINFO, &mtdinfo);
-		if (rc < 0) {
-			fprintf(stderr, "Cannot get MTD information for %s\n",
-				DEVNAME(dev_current));
-			return -1;
-		}
-		if (mtdinfo.type != MTD_NORFLASH &&
-		    mtdinfo.type != MTD_NANDFLASH &&
-		    mtdinfo.type != MTD_DATAFLASH &&
-		    mtdinfo.type != MTD_UBIVOLUME) {
-			fprintf (stderr, "Unsupported flash type %u on %s\n",
-				 mtdinfo.type, DEVNAME(dev_current));
-			return -1;
-		}
-	} else {
-		memset(&mtdinfo, 0, sizeof(mtdinfo));
-		mtdinfo.type = MTD_ABSENT;
-	}
+	/*
+	 * Never use mtd part as env in amlogic case;
+	 * For Nand/Emmc base, we use chardev '/dev/nand_env',
+	 * and /dev/block/env.
+	 */
+	memset(&mtdinfo, 0, sizeof(mtdinfo));
+	mtdinfo.type = MTD_ABSENT;
 
 	DEVTYPE(dev_current) = mtdinfo.type;
 
@@ -1455,6 +1447,7 @@ static int get_config (char *fname)
 
 		i++;
 	}
+
 	fclose (fp);
 
 	HaveRedundEnv = i - 1;
