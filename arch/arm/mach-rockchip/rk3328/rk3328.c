@@ -72,6 +72,21 @@ void board_debug_uart_init(void)
 #ifdef CONFIG_TPL_BUILD
 	struct rk3328_grf_regs * const grf = (void *)GRF_BASE;
 	struct rk_uart * const uart = (void *)UART2_BASE;
+	enum{
+		GPIO2A0_SEL_SHIFT       = 0,
+		GPIO2A0_SEL_MASK        = 3 << GPIO2A0_SEL_SHIFT,
+		GPIO2A0_UART2_TX_M1     = 1,
+
+		GPIO2A1_SEL_SHIFT       = 2,
+		GPIO2A1_SEL_MASK        = 3 << GPIO2A1_SEL_SHIFT,
+		GPIO2A1_UART2_RX_M1     = 1,
+	};
+	enum {
+		IOMUX_SEL_UART2_SHIFT   = 0,
+		IOMUX_SEL_UART2_MASK    = 3 << IOMUX_SEL_UART2_SHIFT,
+		IOMUX_SEL_UART2_M0      = 0,
+		IOMUX_SEL_UART2_M1,
+	};
 
 	/* uart_sel_clk default select 24MHz */
 	writel((3 << (8 + 16)) | (2 << 8), CRU_BASE + 0x148);
