@@ -17,6 +17,7 @@ obj-$(CONFIG_SPL_NAND_SIMPLE) += nand_spl_simple.o
 obj-$(CONFIG_SPL_NAND_LOAD) += nand_spl_load.o
 obj-$(CONFIG_SPL_NAND_ECC) += nand_ecc.o
 obj-$(CONFIG_SPL_NAND_BASE) += nand_base.o
+obj-$(CONFIG_SPL_NAND_IDENT) += nand_ids.o nand_timings.o
 obj-$(CONFIG_SPL_NAND_INIT) += nand.o
 obj-$(CONFIG_SPL_NAND_BBT) += nand_bbt.o
 obj-$(CONFIG_SPL_NAND_IDS) += nand_ids.o
