@@ -25,9 +25,6 @@
 #define CONFIG_SYS_LOAD_ADDR		0x61800800
 #define CONFIG_SPL_TEXT_BASE		0x60000000
 
-#define CONFIG_TPL_STACK		0x10088000
-#define CONFIG_TPL_TEXT_BASE		0x10081004
-
 #define GICD_BASE                 	0x32011000
 #define GICC_BASE                  	0x32012000
 
