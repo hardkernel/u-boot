@@ -24,13 +24,12 @@ u32 spl_boot_device(void)
 DECLARE_GLOBAL_DATA_PTR;
 
 #define GRF_BASE	0x11000000
-#define SGRF_BASE	0x10140000
-
-#define DEBUG_UART_BASE	0x11030000
+#define SECURE_TIMER_BASE	0x110d0020
+#define SGRF_DDR_CON0 0x10150000
 
 void board_debug_uart_init(void)
 {
-static struct rk322x_grf * const grf = (void *)GRF_BASE;
+	static struct rk322x_grf * const grf = (void *)GRF_BASE;
 	/* Enable early UART2 channel 1 on the RK322x */
 	rk_clrsetreg(&grf->gpio1b_iomux,
 		     GPIO1B1_MASK | GPIO1B2_MASK,
@@ -42,7 +41,14 @@ static struct rk322x_grf * const grf = (void *)GRF_BASE;
 		     CON_IOMUX_UART2SEL_21 << CON_IOMUX_UART2SEL_SHIFT);
 }
 
-#define SGRF_DDR_CON0 0x10150000
+void secure_timer_init(void)
+{
+	writel(0, SECURE_TIMER_BASE + 0x10);
+	writel(0xffffffff, SECURE_TIMER_BASE);
+	writel(0xffffffff, SECURE_TIMER_BASE + 4);
+	writel(1, SECURE_TIMER_BASE + 0x10);
+}
+
 void board_init_f(ulong dummy)
 {
 	struct udevice *dev;
@@ -65,8 +71,9 @@ void board_init_f(ulong dummy)
 		hang();
 	}
 
+	secure_timer_init();
+	/* TODO: use arm generic timer instead for armv7 */
 	rockchip_timer_init();
-	printf("timer init done\n");
 	ret = uclass_get_device(UCLASS_RAM, 0, &dev);
 	if (ret) {
 		printf("DRAM init failed: %d\n", ret);
