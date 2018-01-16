@@ -312,8 +312,11 @@ static int env_append(const char *varname, const char *varvalue)
 	if (oldvalue) {
 		len += strlen(oldvalue);
 		/* Exist ! */
-		if (strstr(oldvalue, varvalue))
+		if (strstr(oldvalue, varvalue)) {
+			debug("%s: '%s' is already exist in '%s'\n",
+			      __func__, varvalue, varname);
 			return 0;
+		}
 	}
 
 	newvalue = malloc(len + 2);
@@ -499,9 +502,11 @@ int env_update(const char *varname, const char *varvalue)
 		}
 
 		/* Not find, just append */
-		if (!match)
+		if (!match) {
+			debug("%s: append '%s' to the '%s' end\n",
+			      __func__, v_item, varname);
 			env_append(varname, v_item);
-
+		}
 		match = false;
 		free(v_item_tok);
 	}
