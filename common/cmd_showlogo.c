@@ -66,10 +66,6 @@ static int display_logo(const char* mode, const char* bmp_width, const char* bmp
 	for (i = 0; i < ARRAY_SIZE(c2_res_list); ++i) {
 		if (!strcmp(c2_res_list[i].name, mode)) {
 			if (!strcmp(mode, "custombuilt")) {
-				if (NULL == getenv("customwidth")) {
-					setenv("customwidth", "1920");
-					setenv("customheight", "1080");
-				}
 				setenv("display_width", getenv("customwidth"));
 				setenv("display_height", getenv("customheight"));
 			} else {
@@ -120,24 +116,11 @@ display_logo:
 	setenv("fb_width", bmp_width);
 	setenv("fb_height", bmp_height);
 
-	run_command("hdmitx hpd; osd open; osd clear", 0);
-	run_command("vout output ${outputmode}", 0);
-	/*
-	 * The env parameter to switch hdmi or dvi is defined differently
-	 * on Ubuntu and Android.
-	 * To distinguish os system, an env "androidopt" will be used.
-	 */
-	if ((NULL == getenv("vout")) && (NULL == getenv("vout_mode")))
-		run_command("hdmitx mode hdmi", 0);
-	else if (NULL == getenv("androidopt"))
-		run_command("hdmitx mode ${vout}", 0); /* Ubuntu */
-	else
-		run_command("hdmitx mode ${vout_mode}", 0); /* Android */
+	if (NULL == getenv("vout_mode"))
+		setenv("vout_mode", "hdmi");
 
-	if (!strcmp(mode, "custombuilt"))
-		run_command("hdmitx output 1080p60hz", 0);
-	else
-		run_command("hdmitx output ${outputmode}", 0);
+	run_command("hdmitx hpd; osd open; osd clear", 0);
+	run_command("vout output ${outputmode}; hdmitx mode ${vout_mode}; hdmitx output ${outputmode}", 0);
 	run_command("bmp display ${bootlogo_addr}", 0);
 	run_command("bmp scale", 0);
 	run_command("setenv logoopt ${display_layer},loaded,${fb_addr},${hdmimode}", 0);
