@@ -317,7 +317,7 @@
 	pwm0: pwm0@20050000 {
 		compatible = "rockchip,rk3128-pwm", "rockchip,rk3288-pwm";
 		reg = <0x20050000 0x10>;
-		#pwm-cells = <2>;
+		#pwm-cells = <3>;
 		pinctrl-names = "default";
 		pinctrl-0 = <&pwm0_pin>;
 		clocks = <&cru PCLK_PWM>;
