@@ -216,30 +216,30 @@ static int rockchip_usb2phy_parse(struct rockchip_usb2phy *rphy)
 	}
 
 	if (!grf_base && !usbgrf_base) {
-		error("%s: get grf/usbgrf node failed\n", __func__);
+		pr_err("%s: get grf/usbgrf node failed\n", __func__);
 		return -EINVAL;
 	}
 
 	if (!ofnode_valid(u2phy_node)) {
-		error("%s: missing u2phy node\n", __func__);
+		pr_err("%s: missing u2phy node\n", __func__);
 		return -EINVAL;
 	}
 
 	if (ofnode_read_u32(u2phy_node, "reg", &reg)) {
-		error("%s: could not read reg from u2phy node\n", __func__);
+		pr_err("%s: could not read reg from u2phy node\n", __func__);
 		return -EINVAL;
 	}
 
 	ret = uclass_get_device_by_ofnode(UCLASS_PHY, u2phy_node, &udev);
 	if (ret) {
-		error("%s: get u2phy node failed: %d\n", __func__, ret);
+		pr_err("%s: get u2phy node failed: %d\n", __func__, ret);
 		return -ENODEV;
 	}
 
 	phy_cfgs =
 		(const struct rockchip_usb2phy_cfg *)dev_get_driver_data(udev);
 	if (!phy_cfgs) {
-		error("%s: unable to get phy_cfgs\n", __func__);
+		pr_err("%s: unable to get phy_cfgs\n", __func__);
 		return -EINVAL;
 	}
 
@@ -254,7 +254,7 @@ static int rockchip_usb2phy_parse(struct rockchip_usb2phy *rphy)
 	}
 
 	if (!rphy->phy_cfg) {
-		error("%s: no phy-config can be matched\n", __func__);
+		pr_err("%s: no phy-config can be matched\n", __func__);
 		return -EINVAL;
 	}
 
@@ -336,7 +336,7 @@ int rockchip_chg_get_type(void)
 
 	ret = rockchip_usb2phy_parse(&rphy);
 	if (ret) {
-		error("%s: parse usb2phy failed %d\n", __func__, ret);
+		pr_err("%s: parse usb2phy failed %d\n", __func__, ret);
 		return ret;
 	}
 
@@ -429,7 +429,7 @@ void otg_phy_init(struct dwc2_udc *dev)
 
 	ret = rockchip_usb2phy_parse(&rphy);
 	if (ret) {
-		error("%s: parse usb2phy failed %d\n", __func__, ret);
+		pr_err("%s: parse usb2phy failed %d\n", __func__, ret);
 		return;
 	}
 
