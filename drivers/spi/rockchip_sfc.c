@@ -116,6 +116,34 @@ static int rockchip_sfc_reset(struct rockchip_sfc *sfc)
 	return ret;
 }
 
+/* The SFC_CTRL register is a global control register,
+ * when the controller is in busy state(SFC_SR),
+ * SFC_CTRL cannot be set.
+ */
+static int rockchip_sfc_wait_idle(struct rockchip_sfc *sfc,
+                                  u32 timeout_ms)
+{
+	struct rockchip_sfc_reg *regs = sfc->regbase;
+	unsigned long tbase = get_timer(0);
+	u32 sr, fsr;
+
+	while (1) {
+		sr = readl(&regs->sr);
+		fsr = readl(&regs->fsr);
+		if ((fsr & SFC_TX_EMPTY) && (fsr & SFC_RX_EMPTY) && !(sr & SFC_BUSY))
+			break;
+		if (get_timer(tbase) > timeout_ms) {
+			printf("waite sfc idle timeout(sr:0x%08x fsr:0x%08x)\n",
+				sr, fsr);
+			rockchip_sfc_reset(sfc);
+			return -ETIMEDOUT;
+		}
+		udelay(100);
+	}
+
+	return 0;
+}
+
 static u8 rockchip_sfc_get_if_type(struct rockchip_sfc *sfc)
 {
 	int type = IF_TYPE_STD;
@@ -143,17 +171,14 @@ static void rockchip_sfc_setup_xfer(struct rockchip_sfc *sfc)
 {
 	struct rockchip_sfc_reg *regs = sfc->regbase;
 	u32 val = 0x02;
-	u32 fsr = readl(&regs->fsr);
-	u32 sr = readl(&regs->sr);
 	u8 data_width = IF_TYPE_STD;
-
-	if (!(fsr & SFC_TX_EMPTY) || !(fsr & SFC_RX_EMPTY) || (sr & SFC_BUSY))
-		rockchip_sfc_reset(sfc);
 
 	if (sfc->cmd & SFC_ADDR_XBITS)
 		data_width = rockchip_sfc_get_if_type(sfc);
 
 	val |= (data_width << SFC_DATA_WIDTH_SHIFT);
+
+	rockchip_sfc_wait_idle(sfc, 10);
 
 	writel(val, &regs->ctrl);
 	writel(sfc->cmd, &regs->cmd);
@@ -239,7 +264,7 @@ static int rockchip_sfc_write(struct rockchip_sfc *sfc, u32 *buf, u32 len)
 	struct rockchip_sfc_reg *regs = sfc->regbase;
 	u32 bytes = len & 0x3;
 	u32 words = len >> 2;
-	u32 tx_level = 0;
+	int tx_level = 0;
 	u32 val = 0;
 	u8 count;
 
@@ -247,7 +272,7 @@ static int rockchip_sfc_write(struct rockchip_sfc *sfc, u32 *buf, u32 len)
 		tx_level = rockchip_sfc_wait_fifo_ready(sfc, 1, 1000);
 		if (tx_level <= 0)
 			return tx_level;
-		count = min(words, tx_level);
+		count = min(words, (u32)tx_level);
 		writesl(&regs->data, buf, count);
 		buf += count;
 		words -= count;
@@ -270,7 +295,7 @@ static int rockchip_sfc_read(struct rockchip_sfc *sfc, u32 *buf, u32 len)
 	struct rockchip_sfc_reg *regs = sfc->regbase;
 	u32 bytes = len & 0x3;
 	u32 words = len >> 2;
-	u32 rx_level = 0;
+	int rx_level = 0;
 	u32 count;
 	u32 val;
 
@@ -278,7 +303,7 @@ static int rockchip_sfc_read(struct rockchip_sfc *sfc, u32 *buf, u32 len)
 		rx_level = rockchip_sfc_wait_fifo_ready(sfc, 0, 1000);
 		if (rx_level <= 0)
 			return rx_level;
-		count = min(words, rx_level);
+		count = min(words, (u32)rx_level);
 		readsl(&regs->data, buf, count);
 		buf += count;
 		words -= count;
