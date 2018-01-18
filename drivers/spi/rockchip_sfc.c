@@ -199,6 +199,7 @@ static int rockchip_sfc_dma_xfer(struct rockchip_sfc *sfc, u32 *buf, u32 len)
 
 	while (len) {
 		trb = min(len, (u32)SFC_MAX_TRB);
+		sfc->cmd &= ~SFC_TRB_MASK;
 		sfc->cmd |= (trb << SFC_TRB_SHIFT);
 		ret = rockchip_sfc_do_dma_xfer(sfc, p32_data);
 		if (ret < 0)
@@ -300,9 +301,9 @@ static int rockchip_sfc_pio_xfer(struct rockchip_sfc *sfc, u32 *buf, u32 len)
 	int ret = 0;
 	int rw = sfc->cmd & SFC_WR;
 
+	sfc->cmd &= ~SFC_TRB_MASK;
 	sfc->cmd |= (len << SFC_TRB_SHIFT);
 	rockchip_sfc_setup_xfer(sfc);
-
 	if (len) {
 		if (rw)
 			ret = rockchip_sfc_write(sfc, buf, len);
@@ -316,11 +317,28 @@ static int rockchip_sfc_pio_xfer(struct rockchip_sfc *sfc, u32 *buf, u32 len)
 static int rockchip_sfc_do_xfer(struct rockchip_sfc *sfc, u32 *buf, u32 len)
 {
 	int ret = 0;
+	u32 bytes = len & 0x3;
+	u32 dma_trans;
 
-	if (!(len & 0x03) && (len >= 4))
-		ret = rockchip_sfc_dma_xfer(sfc, buf, len);
-	else
-		ret = rockchip_sfc_pio_xfer(sfc, buf, len);
+	if (len >= SFC_MAX_TRB) {
+		dma_trans = len - bytes;
+	} else {
+		dma_trans = 0;
+		bytes = len;
+	}
+
+	if (dma_trans) {
+		ret = rockchip_sfc_dma_xfer(sfc, buf, dma_trans);
+		buf += (dma_trans  >> 2);
+	}
+
+	/*
+	 * transfer the last non 4 bytes anligned byte by pio mode
+	 * there are also some commands like WREN(0x06) that execute
+	 * whth no data, we also need to handle it here.
+	 */
+	if (bytes || (!bytes && !dma_trans))
+		ret = rockchip_sfc_pio_xfer(sfc, buf, bytes);
 
 	return ret;
 }
@@ -346,7 +364,7 @@ static int rockchip_sfc_xfer(struct udevice *dev, unsigned int bitlen,
 		len = 0;
 
 	if (flags & SPI_XFER_END) {
-		if (dout && len)
+		if (dout)
 			sfc->cmd |= SFC_WR;
 
 		if (din)
