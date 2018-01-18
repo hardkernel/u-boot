@@ -10,6 +10,7 @@
  */
 
 #include <common.h>
+#include <fdtdec.h>
 #include <fdt_support.h>
 #include <errno.h>
 #include <image.h>
@@ -78,9 +79,16 @@ void boot_fdt_add_mem_rsv_regions(struct lmb *lmb, void *fdt_blob)
 {
 	uint64_t addr, size;
 	int i, total;
+	int rsv_offset, offset;
+	fdt_size_t rsv_size;
+	fdt_addr_t rsv_addr;
+	/* we needn't repeat do reserve, do_bootm_linux would call this again */
+	static int rsv_done;
 
-	if (fdt_check_header(fdt_blob) != 0)
+	if (fdt_check_header(fdt_blob) != 0 || rsv_done)
 		return;
+
+	rsv_done = 1;
 
 	total = fdt_num_mem_rsv(fdt_blob);
 	for (i = 0; i < total; i++) {
@@ -89,6 +97,23 @@ void boot_fdt_add_mem_rsv_regions(struct lmb *lmb, void *fdt_blob)
 		printf("   reserving fdt memory region: addr=%llx size=%llx\n",
 		       (unsigned long long)addr, (unsigned long long)size);
 		lmb_reserve(lmb, addr, size);
+	}
+
+	rsv_offset = fdt_subnode_offset(fdt_blob, 0, "reserved-memory");
+	if (rsv_offset == -FDT_ERR_NOTFOUND)
+		return;
+
+	for (offset = fdt_first_subnode(fdt_blob, rsv_offset);
+	     offset >= 0;
+	     offset = fdt_next_subnode(fdt_blob, offset)) {
+		rsv_addr = fdtdec_get_addr_size_auto_noparent(fdt_blob, offset,
+							      "reg", 0,
+							      &rsv_size, false);
+		if (rsv_addr == FDT_ADDR_T_NONE || !rsv_size)
+			continue;
+		printf("  'reserved-memory' region: addr=%llx size=%llx\n",
+			(unsigned long long)rsv_addr, (unsigned long long)rsv_size);
+		lmb_reserve(lmb, rsv_addr, rsv_size);
 	}
 }
 
