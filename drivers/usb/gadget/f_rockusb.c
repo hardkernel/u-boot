@@ -232,12 +232,16 @@ static int rkusb_do_read_capacity(struct fsg_common *common,
 {
 	u8 *buf = (u8 *)bh->buf;
 	u32 len = common->data_size;
+	enum if_type type = ums[common->lun].block_dev.if_type;
 
 	/*
 	 * bit[0]: Direct LBA, 0: Disabled;
-	 * bit[1:63}: Reserved.
+	 * bit[1]: Vendor Storage API, 0: default;
+	 * bit[2]: First 4M Access, 0: Disabled;
+	 * bit[3:63}: Reserved.
 	 */
 	memset((void *)&buf[0], 0, len);
+	buf[0] = (type == IF_TYPE_MMC) ? (BIT(2) | BIT(0)) : BIT(0);
 
 	/* Set data xfer size */
 	common->residue = common->data_size_from_cmnd = len;
