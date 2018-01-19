@@ -28,7 +28,8 @@ struct rkparm_part {
 
 static LIST_HEAD(parts_head);
 
-static int rkparm_param_parse(char *param, struct list_head *parts_head)
+static int rkparm_param_parse(char *param, struct list_head *parts_head,
+			      struct blk_desc *dev_desc)
 {
 	struct rkparm_part *part;
 	const char *cmdline = strstr(param, "CMDLINE:");
@@ -37,7 +38,7 @@ static int rkparm_param_parse(char *param, struct list_head *parts_head)
 	const char *blkdev_def = strchr(blkdev_parts, ':') + 1;
 	char *next = (char *)blkdev_def;
 	char *pend;
-	int len;
+	int len, offset = 0;
 	unsigned long size, start;
 
 	if (!cmdline) {
@@ -68,7 +69,9 @@ static int rkparm_param_parse(char *param, struct list_head *parts_head)
 			printf("out of memory\n");
 			break;
 		}
-		part->start = start;
+		if (dev_desc->if_type != IF_TYPE_RKNAND)
+			offset = RK_PARAM_OFFSET;
+		part->start = start + offset;
 		part->size = size;
 		strncpy(part->name, next, len);
 		part->name[len] = '\0';
@@ -84,6 +87,7 @@ static int rkparm_init_param(struct blk_desc *dev_desc,
 				struct list_head *parts_head)
 {
 	struct rkparm_param *param;
+	int offset = 0;
 	int ret;
 
 	param = memalign(ARCH_DMA_MINALIGN, MAX_PARAM_SIZE);
@@ -92,14 +96,16 @@ static int rkparm_init_param(struct blk_desc *dev_desc,
 		return -ENOMEM;
 	}
 
-	ret = blk_dread(dev_desc, RK_PARAM_OFFSET, MAX_PARAM_SIZE >> 9,
-			(ulong *)param);
+	if (dev_desc->if_type != IF_TYPE_RKNAND)
+		offset = RK_PARAM_OFFSET;
+
+	ret = blk_dread(dev_desc, offset, MAX_PARAM_SIZE >> 9, (ulong *)param);
 	if (ret != (MAX_PARAM_SIZE >> 9)) {
 		printf("%s param read fail\n", __func__);
 		return -EINVAL;
 	}
 
-	return rkparm_param_parse(param->params, parts_head);
+	return rkparm_param_parse(param->params, parts_head, dev_desc);
 
 }
 
