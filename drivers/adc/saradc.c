@@ -141,7 +141,10 @@ static inline void saradc_power_control(int on)
 
 	if (on) {
 		aml_set_reg32_bits(P_SAR_ADC_REG11(saradc->base_addr), 1, 13, 1);
-		aml_set_reg32_bits(P_SAR_ADC_REG11(saradc->base_addr), 3, 5, 2);
+		if (get_cpu_id().family_id >= MESON_CPU_MAJOR_ID_G12A)
+			aml_set_reg32_bits(P_SAR_ADC_REG11(saradc->base_addr), 0, 5, 2);
+		else
+			aml_set_reg32_bits(P_SAR_ADC_REG11(saradc->base_addr), 3, 5, 2);
 		aml_set_reg32_bits(P_SAR_ADC_REG3(saradc->base_addr), 1, 21, 1);
 
 		udelay(5);
