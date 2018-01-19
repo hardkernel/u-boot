@@ -48,6 +48,9 @@
 #include <linux/sizes.h>
 #include <asm/arch/clock.h>
 #include <asm/arch/board_id.h>
+#ifdef CONFIG_SYS_I2C_AML_IS31F123XX
+#include <amlogic/aml_is31fl32xx.h>
+#endif
 DECLARE_GLOBAL_DATA_PTR;
 
 //new static eth setup
@@ -476,7 +479,10 @@ int board_init(void)
 		board_i2c_init();
 		//led_extern_change_i2c_bus(g_aml_i2c_ports[0].master_no);
 #endif
-
+#ifdef CONFIG_SYS_I2C_AML_IS31F123XX
+	board_is31fl32xx_init();
+	board_is31fl32xx_light_on();
+#endif
 	if (get_cpu_id().package_id == MESON_CPU_PACKAGE_ID_A113X)
 		power_save_pre();
 	return 0;

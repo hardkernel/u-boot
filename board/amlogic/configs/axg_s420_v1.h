@@ -443,6 +443,7 @@
 /* other devices */
 #define CONFIG_EFUSE 1
 #define CONFIG_SYS_I2C_AML 1
+/* #define CONFIG_SYS_I2C_AML_IS31F123XX 1 */
 #define CONFIG_SYS_I2C_SPEED     400000
 #define CONFIG_I2C_MULTI_BUS 1
 
