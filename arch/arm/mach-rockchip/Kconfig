@@ -263,6 +263,23 @@ config ROCKCHIP_STIMER_BASE
 	  The secure timer inited in SPL/TPL in secure word, ARM generic timer
 	  works after this timer work.
 
+config ROCKCHIP_IRAM_START_ADDR
+	hex "Rockchip Secure timer base address"
+	default 0xff0e0000 if ROCKCHIP_PX30
+	default 0x10080000 if ROCKCHIP_RK3036
+	default 0x10080000 if ROCKCHIP_RK3128
+	default 0x10080000 if ROCKCHIP_RK3188
+	default 0x10080000 if ROCKCHIP_RK322X
+	default 0xff700000 if ROCKCHIP_RK3288
+	default 0xff091000 if ROCKCHIP_RK3328
+	default 0xff8c0000 if ROCKCHIP_RK3368
+	default 0xff8c0000 if ROCKCHIP_RK3399
+	default 0x10080000 if ROCKCHIP_RV1108
+	default 0
+	help
+	  The IRAM start addr is to locate variant of the boot device from
+	  bootrom.
+
 config ROCKCHIP_SPL_RESERVE_IRAM
 	hex "Size of IRAM reserved in SPL"
 	default 0
