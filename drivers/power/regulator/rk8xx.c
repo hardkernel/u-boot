@@ -153,49 +153,6 @@ static int _buck_set_value(struct udevice *pmic, int buck, int uvolt)
 	return pmic_clrsetbits(pmic, info->vsel_reg, mask, val);
 }
 
-static int _buck_set_suspend_value(struct udevice *pmic, int buck, int uvolt)
-{
-	const struct rk8xx_reg_info *info = get_buck_reg(pmic, buck, uvolt);
-	int mask = info->vsel_mask;
-	int val;
-
-	if (info->vsel_sleep_reg == -1)
-		return -ENOSYS;
-	val = (uvolt - info->min_uv) / info->step_uv;
-	debug("%s: reg=%x, mask=%x, val=%x\n", __func__, info->vsel_sleep_reg, mask,
-	      val);
-
-	return pmic_clrsetbits(pmic, info->vsel_sleep_reg, mask, val);
-}
-
-static int _buck_get_enable(struct udevice *pmic, int buck)
-{
-	struct rk8xx_priv *priv = dev_get_priv(pmic);
-	uint mask = 0;
-	int ret = 0;
-
-	switch (priv->variant) {
-	case RK805_ID:
-	case RK816_ID:
-		if (buck >= 4) {
-			mask = 1 << (buck - 4);
-			ret = pmic_reg_read(pmic, RK816_REG_DCDC_EN2);
-		} else {
-			mask = 1 << buck;
-			ret = pmic_reg_read(pmic, RK816_REG_DCDC_EN1);
-		}
-		break;
-	case RK808_ID:
-	case RK818_ID:
-		mask = 1 << buck;
-		ret = pmic_reg_read(pmic, REG_DCDC_EN);
-		if (ret < 0)
-			return ret;
-		break;
-	}
-	return ret & mask ? true : false;
-}
-
 static int _buck_set_enable(struct udevice *pmic, int buck, bool enable)
 {
 	uint mask, value, en_reg;
@@ -241,6 +198,50 @@ static int _buck_set_enable(struct udevice *pmic, int buck, bool enable)
 	return ret;
 }
 
+#ifdef ENABLE_DRIVER
+static int _buck_set_suspend_value(struct udevice *pmic, int buck, int uvolt)
+{
+	const struct rk8xx_reg_info *info = get_buck_reg(pmic, buck, uvolt);
+	int mask = info->vsel_mask;
+	int val;
+
+	if (info->vsel_sleep_reg == -1)
+		return -ENOSYS;
+	val = (uvolt - info->min_uv) / info->step_uv;
+	debug("%s: reg=%x, mask=%x, val=%x\n", __func__, info->vsel_sleep_reg, mask,
+	      val);
+
+	return pmic_clrsetbits(pmic, info->vsel_sleep_reg, mask, val);
+}
+
+static int _buck_get_enable(struct udevice *pmic, int buck)
+{
+	struct rk8xx_priv *priv = dev_get_priv(pmic);
+	uint mask = 0;
+	int ret = 0;
+
+	switch (priv->variant) {
+	case RK805_ID:
+	case RK816_ID:
+		if (buck >= 4) {
+			mask = 1 << (buck - 4);
+			ret = pmic_reg_read(pmic, RK816_REG_DCDC_EN2);
+		} else {
+			mask = 1 << buck;
+			ret = pmic_reg_read(pmic, RK816_REG_DCDC_EN1);
+		}
+		break;
+	case RK808_ID:
+	case RK818_ID:
+		mask = 1 << buck;
+		ret = pmic_reg_read(pmic, REG_DCDC_EN);
+		if (ret < 0)
+			return ret;
+		break;
+	}
+	return ret & mask ? true : false;
+}
+
 static int _buck_set_suspend_enable(struct udevice *pmic, int buck, bool enable)
 {
 	uint mask;
@@ -268,7 +269,6 @@ static int _buck_set_suspend_enable(struct udevice *pmic, int buck, bool enable)
 	return ret;
 }
 
-#ifdef ENABLE_DRIVER
 static const struct rk8xx_reg_info *get_ldo_reg(struct udevice *pmic,
 					     int num)
 {
