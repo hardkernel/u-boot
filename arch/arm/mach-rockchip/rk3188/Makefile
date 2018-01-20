@@ -5,6 +5,7 @@
 #
 
 ifndef CONFIG_TPL_BUILD
+obj-y += rk3188.o
 obj-y += clk_rk3188.o
 obj-y += syscon_rk3188.o
 endif
