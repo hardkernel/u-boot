@@ -244,6 +244,25 @@ config ROCKCHIP_BOOT_MODE_REG
 	  The Soc will enter to different boot mode(defined in asm/arch/boot_mode.h)
 	  according to the value from this register.
 
+config ROCKCHIP_STIMER_BASE
+	hex "Rockchip Secure timer base address"
+	default 0xff220020 if ROCKCHIP_PX30
+	default 0x200440a0 if ROCKCHIP_RK3036
+	default 0x2000e000 if ROCKCHIP_RK3066
+	default 0x20018020 if ROCKCHIP_RK3126
+	default 0x200440a0 if ROCKCHIP_RK3128
+	default 0x2000e000 if ROCKCHIP_RK3188
+	default 0x110d0020 if ROCKCHIP_RK322X
+	default 0xff810020 if ROCKCHIP_RK3288
+	default 0xff1d0020 if ROCKCHIP_RK3328
+	default 0xff830020 if ROCKCHIP_RK3368
+	default 0xff8680a0 if ROCKCHIP_RK3399
+	default 0x10350020 if ROCKCHIP_RV1108
+	default 0
+	help
+	  The secure timer inited in SPL/TPL in secure word, ARM generic timer
+	  works after this timer work.
+
 config ROCKCHIP_SPL_RESERVE_IRAM
 	hex "Size of IRAM reserved in SPL"
 	default 0
