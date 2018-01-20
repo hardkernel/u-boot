@@ -5,7 +5,6 @@
  */
 #include <asm/io.h>
 #include <asm/arch/hardware.h>
-#include <asm/arch/timer.h>
 
 #define GRF_GPIO1C_IOMUX		0x200080c0
 #define SDMMC_INTMASK			0x10214024
@@ -35,7 +34,6 @@ int arch_cpu_init(void)
 	 */
 	writel(0, SDMMC_INTMASK);
 #endif
-	rockchip_timer_init();
 
 	return 0;
 }
