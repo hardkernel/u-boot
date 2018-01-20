@@ -11,6 +11,7 @@
 #include <asm/arch/hardware.h>
 #include <asm/arch/sdram_rk3036.h>
 #include <asm/arch/uart.h>
+DECLARE_GLOBAL_DATA_PTR;
 
 /*
  * we can not fit the code to access the device tree in SPL
@@ -763,3 +764,16 @@ void sdram_init(void)
 	move_to_access_state(&sdram_priv);
 	dram_cfg_rbc(&sdram_priv);
 }
+
+#if !CONFIG_IS_ENABLED(RAM)
+/*
+ * When CONFIG_RAM is enabled, the dram_init() function is implemented
+ * in sdram_common.c.
+ */
+int dram_init(void)
+{
+	gd->ram_size = sdram_size();
+
+	return 0;
+}
+#endif
