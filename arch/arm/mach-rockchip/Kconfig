@@ -120,7 +120,6 @@ config ROCKCHIP_RK3328
 	imply TPL_SERIAL_SUPPORT
 	imply SPL_SEPARATE_BSS
 	select DEBUG_UART_BOARD_INIT
-	select SYS_NS16550
 	help
 	  The Rockchip RK3328 is a ARM-based SoC with a quad-core Cortex-A53.
 	  including NEON and GPU, 1MB L2 cache, Mali-T7 graphics, two
@@ -155,7 +154,6 @@ config ROCKCHIP_RK3368
 	imply SPL_SERIAL_SUPPORT
 	imply TPL_SERIAL_SUPPORT
 	select DEBUG_UART_BOARD_INIT
-	select SYS_NS16550
 	select GICV2
 	help
 	  The Rockchip RK3368 is a ARM-based SoC with a octa-core (organised
