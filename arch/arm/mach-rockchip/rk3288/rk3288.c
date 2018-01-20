@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier:     GPL-2.0+
  */
+#include <asm/armv7.h>
 #include <asm/io.h>
 #include <asm/arch/hardware.h>
 
@@ -20,10 +21,33 @@
 #define CPU_AXI_QOS_PRIORITY_LEVEL(h, l) \
 	((((h) & 3) << 8) | (((h) & 3) << 2) | ((l) & 3))
 
+#ifdef CONFIG_SPL_BUILD
+static void configure_l2ctlr(void)
+{
+	uint32_t l2ctlr;
+
+	l2ctlr = read_l2ctlr();
+	l2ctlr &= 0xfffc0000; /* clear bit0~bit17 */
+
+	/*
+	* Data RAM write latency: 2 cycles
+	* Data RAM read latency: 2 cycles
+	* Data RAM setup latency: 1 cycle
+	* Tag RAM write latency: 1 cycle
+	* Tag RAM read latency: 1 cycle
+	* Tag RAM setup latency: 1 cycle
+	*/
+	l2ctlr |= (1 << 3 | 1 << 0);
+	write_l2ctlr(l2ctlr);
+}
+#endif
+
 int arch_cpu_init(void)
 {
 	/* We do some SoC one time setting here. */
-
+#ifdef CONFIG_SPL_BUILD
+	configure_l2ctlr();
+#else
 	/* Use rkpwm by default */
 	rk_setreg(GRF_SOC_CON2, 1 << 0);
 
@@ -40,6 +64,7 @@ int arch_cpu_init(void)
 	/* Set vop qos to highest priority */
 	writel(CPU_AXI_QOS_PRIORITY_LEVEL(2, 2), VIO0_VOP_QOS_BASE);
 	writel(CPU_AXI_QOS_PRIORITY_LEVEL(2, 2), VIO1_VOP_QOS_BASE);
+#endif
 
 	return 0;
 }
