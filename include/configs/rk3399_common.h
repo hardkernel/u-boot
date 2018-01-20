@@ -18,8 +18,6 @@
 #define CONFIG_SPL_SPI_LOAD
 #endif
 
-#define COUNTER_FREQUENCY               24000000
-
 #define CONFIG_SYS_NS16550_MEM32
 
 #define CONFIG_SYS_TEXT_BASE		0x00200000

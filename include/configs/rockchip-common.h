@@ -8,6 +8,10 @@
 #define _ROCKCHIP_COMMON_H_
 #include <linux/sizes.h>
 
+#define COUNTER_FREQUENCY               24000000
+#define CONFIG_SYS_ARCH_TIMER
+#define CONFIG_SYS_HZ_CLOCK	24000000
+
 #ifndef CONFIG_SPL_BUILD
 #include <config_distro_defaults.h>
 
