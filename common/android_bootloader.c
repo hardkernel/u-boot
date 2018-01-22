@@ -384,7 +384,9 @@ int android_bootloader_boot_flow(struct blk_desc *dev_desc,
 		 * "skip_initramfs" to the cmdline to make it ignore the
 		 * recovery initramfs in the boot partition.
 		 */
+#ifdef CONFIG_ANDROID_AB
 		mode_cmdline = "skip_initramfs";
+#endif
 		break;
 	case ANDROID_BOOT_MODE_RECOVERY:
 		/* In recovery mode we still boot the kernel from "boot" but
