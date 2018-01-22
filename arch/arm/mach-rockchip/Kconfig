@@ -385,6 +385,7 @@ config GICV2
 config GICV3
 	bool "ARM GICv3"
 
+source "arch/arm/mach-rockchip/px30/Kconfig"
 source "arch/arm/mach-rockchip/rk3036/Kconfig"
 source "arch/arm/mach-rockchip/rk3066/Kconfig"
 source "arch/arm/mach-rockchip/rk3128/Kconfig"
