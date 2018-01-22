@@ -15,10 +15,6 @@
 #define CONFIG_SYS_MALLOC_LEN		(32 << 20)
 #define CONFIG_SYS_CBSIZE		1024
 
-#define CONFIG_SYS_TIMER_RATE		(24 * 1000 * 1000)
-#define	CONFIG_SYS_TIMER_BASE		0xff810020 /* TIMER7 */
-#define CONFIG_SYS_TIMER_COUNTER	(CONFIG_SYS_TIMER_BASE + 8)
-
 #define CONFIG_SPL_FRAMEWORK
 #ifdef CONFIG_SPL_ROCKCHIP_BACK_TO_BROM
 /* Bootrom will load u-boot binary to 0x0 once return from SPL */
