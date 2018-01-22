@@ -153,9 +153,11 @@ static int init_resource_list(struct resource_img_hdr *hdr)
 	int offset = 0;
 	int mode = 0;
 	struct blk_desc *dev_desc;
-	struct andr_img_hdr *andr_hdr;
 	disk_partition_t part_info;
+#ifdef CONFIG_ANDROID_BOOT_IMAGE
+	struct andr_img_hdr *andr_hdr;
 	char *boot_partname = PART_BOOT;
+#endif
 
 	if (hdr) {
 		content = (void *)((char *)hdr
