@@ -1,0 +1,39 @@
+/*
+ * (C) Copyright 2017 Rockchip Electronics Co., Ltd
+ *
+ * SPDX-License-Identifier:     GPL-2.0+
+ */
+
+/dts-v1/;
+#include "px30.dtsi"
+#include "px30-u-boot.dtsi"
+
+/ {
+	model = "Rockchip PX30 EVB";
+	compatible = "rockchip,px30-evb", "rockchip,px30";
+
+	chosen {
+		stdout-path = &uart2;
+	};
+
+	dmc: dmc@20004000 {
+		u-boot,dm-pre-reloc;
+		compatible = "rockchip,px30-dmc", "syscon";
+		reg = <0x0 0xff2a0000 0x0 0x1000>;
+	};
+};
+
+
+&emmc {
+	u-boot,dm-pre-reloc;
+	fifo-mode;
+	bus-width = <8>;
+	cap-mmc-highspeed;
+	supports-emmc;
+	disable-wp;
+	non-removable;
+	num-slots = <1>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&emmc_clk &emmc_cmd &emmc_bus8>;
+	status = "okay";
+};
