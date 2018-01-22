@@ -23,7 +23,7 @@ DECLARE_GLOBAL_DATA_PTR;
 #define RK3399_CPUID_OFF  0x7
 #define RK3399_CPUID_LEN  0x10
 
-int board_init(void)
+int rk_board_init(void)
 {
 	struct udevice *pinctrl, *regulator;
 	int ret;
@@ -57,10 +57,6 @@ int board_init(void)
 		debug("%s PWM3 pinctrl init fail!\n", __func__);
 		goto out;
 	}
-
-	ret = regulators_enable_boot_on(false);
-	if (ret)
-		debug("%s: Cannot enable boot on regulator\n", __func__);
 
 	ret = regulator_get_by_platname("vcc5v0_host", &regulator);
 	if (ret) {
@@ -211,30 +207,3 @@ int board_usb_init(int index, enum usb_init_type init)
 	return dwc3_uboot_init(&dwc3_device_data);
 }
 #endif
-
-void spl_board_init(void)
-{
-	struct udevice *pinctrl;
-	int ret;
-
-	ret = uclass_get_device(UCLASS_PINCTRL, 0, &pinctrl);
-	if (ret) {
-		debug("%s: Cannot find pinctrl device\n", __func__);
-		goto err;
-	}
-
-	/* Enable debug UART */
-	ret = pinctrl_request_noflags(pinctrl, PERIPH_ID_UART_DBG);
-	if (ret) {
-		debug("%s: Failed to set up console UART\n", __func__);
-		goto err;
-	}
-
-	preloader_console_init();
-	return;
-err:
-	printf("%s: Error %d\n", __func__, ret);
-
-	/* No way to report error here */
-	hang();
-}

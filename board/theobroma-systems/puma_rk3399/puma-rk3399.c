@@ -25,21 +25,6 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
-int board_init(void)
-{
-	int ret;
-
-	/*
-	 * We need to call into regulators_enable_boot_on() again, as the call
-	 * during SPL may have not included all regulators.
-	 */
-	ret = regulators_enable_boot_on(false);
-	if (ret)
-		debug("%s: Cannot enable boot on regulator\n", __func__);
-
-	return 0;
-}
-
 static void rk3399_force_power_on_reset(void)
 {
 	ofnode node;
@@ -62,7 +47,7 @@ static void rk3399_force_power_on_reset(void)
 	dm_gpio_set_value(&sysreset_gpio, 1);
 }
 
-void spl_board_init(void)
+void rk_spl_board_init(void)
 {
 	int  ret;
 	struct rk3399_cru *cru = rockchip_get_cru();
