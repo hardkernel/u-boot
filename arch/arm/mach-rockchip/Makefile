@@ -11,20 +11,8 @@
 obj-spl-$(CONFIG_ROCKCHIP_BROM_HELPER) += bootrom.o
 obj-tpl-$(CONFIG_ROCKCHIP_BROM_HELPER) += bootrom.o
 
-obj-tpl-$(CONFIG_ROCKCHIP_RK3066) += rk3066-board-tpl.o
-obj-tpl-$(CONFIG_ROCKCHIP_RK3288) += rk3288-board-tpl.o
-obj-tpl-$(CONFIG_ROCKCHIP_RK3368) += rk3368-board-tpl.o
-obj-tpl-$(CONFIG_ROCKCHIP_RK322X) += rk322x-board-tpl.o
-obj-tpl-$(CONFIG_ROCKCHIP_RK3328) += rk3328-board-tpl.o
-
-obj-spl-$(CONFIG_ROCKCHIP_RK3036) += rk3036-board-spl.o
-obj-spl-$(CONFIG_ROCKCHIP_RK3066) += rk3066-board-spl.o
-obj-spl-$(CONFIG_ROCKCHIP_RK3188) += rk3188-board-spl.o
-obj-spl-$(CONFIG_ROCKCHIP_RK322X) += rk322x-board-spl.o spl-boot-order.o
-obj-spl-$(CONFIG_ROCKCHIP_RK3288) += rk3288-board-spl.o
-obj-spl-$(CONFIG_ROCKCHIP_RK3328) += rk3328-board-spl.o
-obj-spl-$(CONFIG_ROCKCHIP_RK3368) += rk3368-board-spl.o spl-boot-order.o
-obj-spl-$(CONFIG_ROCKCHIP_RK3399) += rk3399-board-spl.o spl-boot-order.o
+obj-tpl-y += tpl.o
+obj-spl-y += spl.o spl-boot-order.o
 
 ifeq ($(CONFIG_SPL_BUILD)$(CONFIG_TPL_BUILD),)
 
@@ -33,24 +21,15 @@ ifeq ($(CONFIG_SPL_BUILD)$(CONFIG_TPL_BUILD),)
 # we can have the preprocessor correctly recognise both 0x0 and 0
 # meaning "turn it off".
 obj-y += boot_mode.o
+obj-y += board.o
 
 obj-$(CONFIG_ROCKCHIP_CRC) += rockchip_crc.o
 obj-$(CONFIG_ROCKCHIP_SMCCC) += rockchip_smccc.o
 obj-$(CONFIG_ROCKCHIP_VENDOR_PARTITION) += vendor.o
 obj-$(CONFIG_ROCKCHIP_RESOURCE_IMAGE) += resource_img.o
-obj-$(CONFIG_ROCKCHIP_RK3066) += rk3066-board.o
-obj-$(CONFIG_ROCKCHIP_RK3188) += rk3188-board.o
-obj-$(CONFIG_ROCKCHIP_RK3128) += rk3128-board.o
-obj-$(CONFIG_ROCKCHIP_RK322X) += rk322x-board.o
-obj-$(CONFIG_ROCKCHIP_RK3288) += rk3288-board.o
-obj-$(CONFIG_ROCKCHIP_RK3036) += rk3036-board.o
 endif
 
 obj-$(CONFIG_$(SPL_TPL_)RAM) += sdram_common.o
-
-ifndef CONFIG_ARM64
-obj-y += rk_timer.o
-endif
 
 obj-$(CONFIG_ROCKCHIP_RK3036) += rk3036/
 obj-$(CONFIG_ROCKCHIP_RK3066) += rk3066/
