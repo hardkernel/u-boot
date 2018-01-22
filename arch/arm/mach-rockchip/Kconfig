@@ -1,5 +1,14 @@
 if ARCH_ROCKCHIP
 
+config ROCKCHIP_PX30
+	bool "Support Rockchip PX30"
+	select ARM64
+	help
+	  The Rockchip PX30 is a ARM-based SoC with a quad-core Cortex-A35
+	  including NEON and GPU, Mali-400 graphics, several DDR3 options
+	  and video codec support. Peripherals include Gigabit Ethernet,
+	  USB2 host and OTG, SDIO, I2S, UART, SPI, I2C and PWMs.
+
 config ROCKCHIP_RK3036
 	bool "Support Rockchip RK3036"
 	select CPU_V7
@@ -231,6 +240,7 @@ config TPL_ROCKCHIP_BACK_TO_BROM
 
 config ROCKCHIP_BOOT_MODE_REG
 	hex "Rockchip boot mode flag register address"
+	default 0xff010200 if ROCKCHIP_PX30
 	default 0x200081c8 if ROCKCHIP_RK3036
 	default 0x100a0038 if ROCKCHIP_RK3128
 	default 0x20004040 if ROCKCHIP_RK3188

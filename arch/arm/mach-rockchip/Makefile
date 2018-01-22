@@ -32,6 +32,7 @@ endif
 
 obj-$(CONFIG_$(SPL_TPL_)RAM) += sdram_common.o
 
+obj-$(CONFIG_ROCKCHIP_PX30) += px30/
 obj-$(CONFIG_ROCKCHIP_RK3036) += rk3036/
 obj-$(CONFIG_ROCKCHIP_RK3066) += rk3066/
 obj-$(CONFIG_ROCKCHIP_RK3128) += rk3128/
