@@ -10,4 +10,4 @@
 #undef CONFIG_SPL_MAX_SIZE
 #define CONFIG_SPL_MAX_SIZE CONFIG_TPL_MAX_SIZE
 
-#include "../../cpu/u-boot-spl.lds"
+#include "../cpu/u-boot-spl.lds"
