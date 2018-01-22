@@ -209,10 +209,11 @@ static int rockchip_usb2phy_parse(struct rockchip_usb2phy *rphy)
 			usbgrf_base = NULL;
 	} else {
 		grf_node = ofnode_path("/syscon-usb");
-		if (ofnode_valid(grf_node))
+		if (ofnode_valid(grf_node)) {
 			grf_base = (void __iomem *)
 				ofnode_get_addr_size(grf_node, "reg", &size);
 			u2phy_node = ofnode_find_subnode(grf_node, "usb2-phy");
+		}
 	}
 
 	if (!grf_base && !usbgrf_base) {
