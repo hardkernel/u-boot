@@ -899,7 +899,6 @@ static void cb_flash(struct usb_ep *ep, struct usb_request *req)
 #endif
 	fastboot_tx_write_str(response);
 }
-#endif
 
 static void cb_flashing(struct usb_ep *ep, struct usb_request *req)
 {
@@ -943,6 +942,7 @@ static void cb_flashing(struct usb_ep *ep, struct usb_request *req)
 		fastboot_tx_write_str("FAILunknown flashing command");
 	}
 }
+#endif
 
 static void cb_oem(struct usb_ep *ep, struct usb_request *req)
 {
