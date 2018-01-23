@@ -337,6 +337,7 @@ config RKIMG_BOOTLOADER
 config ROCKCHIP_RESOURCE_IMAGE
 	bool "Enable support for rockchip resource image"
 	depends on RKIMG_BOOTLOADER
+	default y
 	help
 	  This enables support to get dtb or logo files from
 	  rockchip resource image format partition.
