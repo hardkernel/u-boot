@@ -326,6 +326,7 @@
 #ifdef		CONFIG_AML_SD_EMMC
 	#define 	CONFIG_GENERIC_MMC 1
 	#define 	CONFIG_CMD_MMC 1
+    #define CONFIG_CMD_GPT 1
 	#define CONFIG_EMMC_DDR52_EN 0
 	#define CONFIG_EMMC_DDR52_CLK 52000000
 #endif

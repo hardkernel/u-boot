@@ -48,6 +48,9 @@
 #define PARTITION_BASIC_DATA_GUID \
 	EFI_GUID( 0xEBD0A0A2, 0xB9E5, 0x4433, \
 		0x87, 0xC0, 0x68, 0xB6, 0xB7, 0x26, 0x99, 0xC7)
+#define PARTITION_LINUX_FILE_SYSTEM_DATA_GUID \
+	EFI_GUID(0x0FC63DAF, 0x8483, 0x4772, \
+		0x8E, 0x79, 0x3D, 0x69, 0xD8, 0x47, 0x7D, 0xE4)
 #define PARTITION_LINUX_RAID_GUID \
 	EFI_GUID( 0xa19d880f, 0x05fc, 0x4d3b, \
 		0xa0, 0x06, 0x74, 0x3f, 0x0f, 0x84, 0x91, 0x1e)
@@ -96,6 +99,9 @@ typedef struct _gpt_header {
 	__le32 sizeof_partition_entry;
 	__le32 partition_entry_array_crc32;
 } __packed gpt_header;
+int gpt_restore(block_dev_desc_t *dev_desc, char *str_disk_guid,
+		disk_partition_t *partitions, const int parts_count);
+
 
 typedef union _gpt_entry_attributes {
 	struct {

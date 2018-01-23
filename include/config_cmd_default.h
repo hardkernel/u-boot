@@ -24,6 +24,7 @@
 #define CONFIG_CMD_FPGA		/* FPGA configuration Support	*/
 #define CONFIG_CMD_IMI		/* iminfo			*/
 #define CONFIG_CMD_ITEST	/* Integer (and string) test	*/
+#define CONFIG_CMD_GPT
 #ifndef CONFIG_SYS_NO_FLASH
 #define CONFIG_CMD_FLASH	/* flinfo, erase, protect	*/
 #define CONFIG_CMD_IMLS		/* List all found images	*/

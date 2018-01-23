@@ -18,8 +18,19 @@
 #include <malloc.h>
 #include <part_efi.h>
 #include <linux/ctype.h>
+#include <uuid.h>
+#include <fdtdec.h>
+#include <ide.h>
+#include <inttypes.h>
+#include <malloc.h>
+#include <part_efi.h>
+#include <linux/compiler.h>
 
 DECLARE_GLOBAL_DATA_PTR;
+#define HAVE_BLOCK_DEVICE
+#define CONFIG_RANDOM_UUID
+#define CONFIG_PARTITION_UUIDS
+#define CONFIG_EFI_PARTITION
 
 #ifdef HAVE_BLOCK_DEVICE
 /**
@@ -174,6 +185,37 @@ static void prepare_backup_gpt_header(gpt_header *gpt_h)
 /*
  * Public Functions (include/part.h)
  */
+
+/*
+ * UUID is displayed as 32 hexadecimal digits, in 5 groups,
+ * separated by hyphens, in the form 8-4-4-4-12 for a total of 36 characters
+ */
+int get_disk_guid(block_dev_desc_t *dev_desc, char *guid)
+{
+	ALLOC_CACHE_ALIGN_BUFFER_PAD(gpt_header, gpt_head, 1, dev_desc->blksz);
+	gpt_entry *gpt_pte = NULL;
+	unsigned char *guid_bin;
+
+	/* This function validates AND fills in the GPT header and PTE */
+	if (is_gpt_valid(dev_desc, GPT_PRIMARY_PARTITION_TABLE_LBA,
+			 gpt_head, &gpt_pte) != 1) {
+		printf("%s: *** ERROR: Invalid GPT ***\n", __func__);
+		if (is_gpt_valid(dev_desc, dev_desc->lba - 1,
+				 gpt_head, &gpt_pte) != 1) {
+			printf("%s: *** ERROR: Invalid Backup GPT ***\n",
+			       __func__);
+			return -EINVAL;
+		} else {
+			printf("%s: ***        Using Backup GPT ***\n",
+			       __func__);
+		}
+	}
+
+	guid_bin = gpt_head->disk_guid.b;
+	uuid_bin_to_str(guid_bin, guid, UUID_STR_FORMAT_GUID);
+
+	return 0;
+}
 
 void print_part_efi(block_dev_desc_t * dev_desc)
 {
@@ -405,11 +447,11 @@ int write_gpt_table(block_dev_desc_t *dev_desc,
 	return -1;
 }
 
-int gpt_fill_pte(gpt_header *gpt_h, gpt_entry *gpt_e,
-		disk_partition_t *partitions, int parts)
+int gpt_fill_pte(block_dev_desc_t *dev_desc,
+		 gpt_header *gpt_h, gpt_entry *gpt_e,
+		 disk_partition_t *partitions, int parts)
 {
 	lbaint_t offset = (lbaint_t)le64_to_cpu(gpt_h->first_usable_lba);
-	lbaint_t start;
 	lbaint_t last_usable_lba = (lbaint_t)
 			le64_to_cpu(gpt_h->last_usable_lba);
 	int i, k;
@@ -418,41 +460,79 @@ int gpt_fill_pte(gpt_header *gpt_h, gpt_entry *gpt_e,
 	char *str_uuid;
 	unsigned char *bin_uuid;
 #endif
+#ifdef CONFIG_PARTITION_TYPE_GUID
+	char *str_type_guid;
+	unsigned char *bin_type_guid;
+#endif
+	size_t hdr_start = gpt_h->my_lba;
+	size_t hdr_end = hdr_start + 1;
+
+	size_t pte_start = gpt_h->partition_entry_lba;
+	size_t pte_end = pte_start +
+		gpt_h->num_partition_entries * gpt_h->sizeof_partition_entry /
+		dev_desc->blksz;
 
 	for (i = 0; i < parts; i++) {
 		/* partition starting lba */
-		start = partitions[i].start;
-		if (start && (start < offset)) {
+		lbaint_t start = partitions[i].start;
+		lbaint_t size = partitions[i].size;
+
+		if (start) {
+			offset = start + size;
+		} else {
+			start = offset;
+			offset += size;
+		}
+
+		/*
+		 * If our partition overlaps with either the GPT
+		 * header, or the partition entry, reject it.
+		 */
+		if (((start < hdr_end && hdr_start < (start + size)) ||
+		     (start < pte_end && pte_start < (start + size)))) {
 			printf("Partition overlap\n");
 			return -1;
 		}
-		if (start) {
-			gpt_e[i].starting_lba = cpu_to_le64(start);
-			offset = start + partitions[i].size;
-		} else {
-			gpt_e[i].starting_lba = cpu_to_le64(offset);
-			offset += partitions[i].size;
-		}
-		if (offset >= last_usable_lba) {
+
+		gpt_e[i].starting_lba = cpu_to_le64(start);
+
+		if (offset > (last_usable_lba + 1)) {
 			printf("Partitions layout exceds disk size\n");
 			return -1;
 		}
 		/* partition ending lba */
-		if ((i == parts - 1) && (partitions[i].size == 0))
+		if ((i == parts - 1) && (size == 0))
 			/* extend the last partition to maximuim */
 			gpt_e[i].ending_lba = gpt_h->last_usable_lba;
 		else
 			gpt_e[i].ending_lba = cpu_to_le64(offset - 1);
 
+#ifdef CONFIG_PARTITION_TYPE_GUID
+		str_type_guid = partitions[i].type_guid;
+		bin_type_guid = gpt_e[i].partition_type_guid.b;
+		if (strlen(str_type_guid)) {
+			if (uuid_str_to_bin(str_type_guid, bin_type_guid,
+					    UUID_STR_FORMAT_GUID)) {
+				printf("Partition no. %d: invalid type guid: %s\n",
+				       i, str_type_guid);
+				return -1;
+			}
+		} else {
+			/* default partition type GUID */
+			memcpy(bin_type_guid,
+			       &PARTITION_BASIC_DATA_GUID, 16);
+		}
+#else
 		/* partition type GUID */
 		memcpy(gpt_e[i].partition_type_guid.b,
 			&PARTITION_BASIC_DATA_GUID, 16);
+#endif
 
 #ifdef CONFIG_PARTITION_UUIDS
 		str_uuid = partitions[i].uuid;
 		bin_uuid = gpt_e[i].unique_partition_guid.b;
 
-		if (uuid_str_to_bin(str_uuid, bin_uuid, UUID_STR_FORMAT_STD)) {
+		if (uuid_str_to_bin(str_uuid, bin_uuid, UUID_STR_FORMAT_GUID)) {
 			printf("Partition no. %d: invalid guid: %s\n",
 				i, str_uuid);
 			return -1;
@@ -462,6 +542,9 @@ int gpt_fill_pte(gpt_header *gpt_h, gpt_entry *gpt_e,
 		/* partition attributes */
 		memset(&gpt_e[i].attributes, 0,
 		       sizeof(gpt_entry_attributes));
+
+		if (partitions[i].bootable)
+			gpt_e[i].attributes.fields.legacy_bios_bootable = 1;
 
 		/* partition name */
 		efiname_len = sizeof(gpt_e[i].partition_name)
@@ -478,7 +561,7 @@ int gpt_fill_pte(gpt_header *gpt_h, gpt_entry *gpt_e,
 		debug("%s: name: %s offset[%d]: 0x" LBAF
 		      " size[%d]: 0x" LBAF "\n",
 		      __func__, partitions[i].name, i,
-		      offset, i, partitions[i].size);
+		      offset, i, size);
 	}
 
 	return 0;
@@ -499,10 +582,8 @@ int gpt_fill_header(block_dev_desc_t *dev_desc, gpt_header *gpt_h,
 	gpt_h->sizeof_partition_entry = cpu_to_le32(sizeof(gpt_entry));
 	gpt_h->header_crc32 = 0;
 	gpt_h->partition_entry_array_crc32 = 0;
-
 	if (uuid_str_to_bin(str_guid, gpt_h->disk_guid.b, UUID_STR_FORMAT_GUID))
 		return -1;
-
 	return 0;
 }
 
@@ -528,24 +609,139 @@ int gpt_restore(block_dev_desc_t *dev_desc, char *str_disk_guid,
 		free(gpt_h);
 		return -1;
 	}
-
 	/* Generate Primary GPT header (LBA1) */
 	ret = gpt_fill_header(dev_desc, gpt_h, str_disk_guid, parts_count);
 	if (ret)
 		goto err;
 
 	/* Generate partition entries */
-	ret = gpt_fill_pte(gpt_h, gpt_e, partitions, parts_count);
+	ret = gpt_fill_pte(dev_desc, gpt_h, gpt_e, partitions, parts_count);
 	if (ret)
 		goto err;
 
 	/* Write GPT partition table */
 	ret = write_gpt_table(dev_desc, gpt_h, gpt_e);
-
 err:
 	free(gpt_e);
 	free(gpt_h);
 	return ret;
+}
+
+static void gpt_convert_efi_name_to_char(char *s, efi_char16_t *es, int n)
+{
+	char *ess = (char *)es;
+	int i, j;
+
+	memset(s, '\0', n);
+
+	for (i = 0, j = 0; j < n; i += 2, j++) {
+		s[j] = ess[i];
+		if (!ess[i])
+			return;
+	}
+}
+
+int gpt_verify_headers(block_dev_desc_t *dev_desc, gpt_header *gpt_head,
+		       gpt_entry **gpt_pte)
+{
+	/*
+	 * This function validates AND
+	 * fills in the GPT header and PTE
+	 */
+
+	if (is_gpt_valid(dev_desc,
+			 GPT_PRIMARY_PARTITION_TABLE_LBA,
+			 gpt_head, gpt_pte) != 1) {
+		printf("%s: *** ERROR: Invalid GPT ***\n",
+		       __func__);
+		return -1;
+	}
+	if (is_gpt_valid(dev_desc, (dev_desc->lba - 1),
+			 gpt_head, gpt_pte) != 1) {
+		printf("%s: *** ERROR: Invalid Backup GPT ***\n",
+		       __func__);
+		return -1;
+	}
+
+	return 0;
+}
+
+int gpt_verify_partitions(block_dev_desc_t *dev_desc,
+			  disk_partition_t *partitions, int parts,
+			  gpt_header *gpt_head, gpt_entry **gpt_pte)
+{
+	char efi_str[PARTNAME_SZ + 1];
+	u64 gpt_part_size;
+	gpt_entry *gpt_e;
+	int ret, i;
+
+	ret = gpt_verify_headers(dev_desc, gpt_head, gpt_pte);
+	if (ret)
+		return ret;
+
+	gpt_e = *gpt_pte;
+
+	for (i = 0; i < parts; i++) {
+		if (i == gpt_head->num_partition_entries) {
+			printf("More partitions than allowed!\n");
+			return -1;
+		}
+
+		/* Check if GPT and ENV partition names match */
+		gpt_convert_efi_name_to_char(efi_str, gpt_e[i].partition_name,
+					     PARTNAME_SZ + 1);
+
+		debug("%s: part: %2d name - GPT: %16s, ENV: %16s ",
+		      __func__, i, efi_str, partitions[i].name);
+
+		if (strncmp(efi_str, (char *)partitions[i].name,
+			    sizeof(partitions->name))) {
+			printf("Partition name: %s does not match %s!\n",
+			       efi_str, (char *)partitions[i].name);
+			return -1;
+		}
+
+		/* Check if GPT and ENV sizes match */
+		gpt_part_size = le64_to_cpu(gpt_e[i].ending_lba) -
+			le64_to_cpu(gpt_e[i].starting_lba) + 1;
+		debug("size(LBA) - GPT: %8llu, ENV: %8llu ",
+		      (unsigned long long)gpt_part_size,
+		      (unsigned long long)partitions[i].size);
+
+		if (le64_to_cpu(gpt_part_size) != partitions[i].size) {
+			/* We do not check the extend partition size */
+			if ((i == parts - 1) && (partitions[i].size == 0))
+				continue;
+
+			printf("Partition %s size: %llu does not match %llu!\n",
+			       efi_str, (unsigned long long)gpt_part_size,
+			       (unsigned long long)partitions[i].size);
+			return -1;
+		}
+
+		/*
+		 * Start address is optional - check only if provided
+		 * in '$partition' variable
+		 */
+		if (!partitions[i].start) {
+			debug("\n");
+			continue;
+		}
+
+		/* Check if GPT and ENV start LBAs match */
+		debug("start LBA - GPT: %8llu, ENV: %8llu\n",
+		      le64_to_cpu(gpt_e[i].starting_lba),
+		      (unsigned long long)partitions[i].start);
+
+		if (le64_to_cpu(gpt_e[i].starting_lba) != partitions[i].start) {
+			printf("Partition %s start: %llu does not match %llu!\n",
+			       efi_str, le64_to_cpu(gpt_e[i].starting_lba),
+			       (unsigned long long)partitions[i].start);
+			return -1;
+		}
+	}
+
+	return 0;
 }
 
 int is_valid_gpt_buf(block_dev_desc_t *dev_desc, void *buf)
@@ -658,8 +854,7 @@ static int pmbr_part_valid(struct partition *part)
 	return 0;
 }
 
-/*
- * is_pmbr_valid(): test Protective MBR for validity
+/*  is_pmbr_valic(): test Protective MBR for validity
  *
  * Returns: 1 if PMBR is valid, 0 otherwise.
  * Validity depends on two things:

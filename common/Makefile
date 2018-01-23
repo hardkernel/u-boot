@@ -156,6 +156,8 @@ obj-$(CONFIG_CMD_MII) += cmd_mdio.o
 endif
 obj-$(CONFIG_CMD_MISC) += cmd_misc.o
 obj-$(CONFIG_CMD_MMC) += cmd_mmc.o
+obj-$(CONFIG_CMD_UUID) += cmd_uuid.o
+obj-$(CONFIG_CMD_GPT) += cmd_gpt.o
 obj-$(CONFIG_CMD_MMC) += cmd_aml_mmc.o
 obj-$(CONFIG_STORE_COMPATIBLE) += store_interface.o cmd_burnup.o
 obj-$(CONFIG_STORE_COMPATIBLE) += cmd_imgread.o
@@ -235,7 +237,6 @@ obj-$(CONFIG_MODEM_SUPPORT) += modem.o
 obj-$(CONFIG_UPDATE_TFTP) += update.o
 obj-$(CONFIG_USB_KEYBOARD) += usb_kbd.o
 obj-$(CONFIG_CMD_DFU) += cmd_dfu.o
-obj-$(CONFIG_CMD_GPT) += cmd_gpt.o
 obj-$(CONFIG_CMD_EFUSE) += cmd_efuse.o
 obj-$(CONFIG_CMD_CPU_TEMP) += cmd_cpu_temp.o
 obj-y += cmd_clkmsr.o

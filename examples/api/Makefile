@@ -27,6 +27,7 @@ EXT_COBJ-y += lib/div64.o
 EXT_COBJ-y += lib/string.o
 EXT_COBJ-y += lib/time.o
 EXT_COBJ-y += lib/vsprintf.o
+EXT_COBJ-$(CONFIG_LIB_UUID) += lib/uuid.o
 EXT_SOBJ-$(CONFIG_PPC) += arch/powerpc/lib/ppcstring.o
 
 # Create a list of object files to be compiled

@@ -16,6 +16,7 @@
 #include <linux/string.h>
 #include <linux/ctype.h>
 #include <errno.h>
+#include <uuid.h>
 
 #include <common.h>
 #if !defined(CONFIG_PANIC_HANG)

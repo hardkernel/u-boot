@@ -10,6 +10,9 @@
 #include <ide.h>
 #include <malloc.h>
 #include <part.h>
+#include <ubifs_uboot.h>
+#include <errno.h>
+#include <ubifs_uboot.h>
 
 #undef	PART_DEBUG
 
@@ -18,7 +21,7 @@
 #else
 #define PRINTF(fmt,args...)
 #endif
-
+#define CONFIG_CMD_UUID
 struct block_drvr {
 	char *name;
 	block_dev_desc_t* (*get_dev)(int dev);
@@ -522,7 +525,6 @@ cleanup:
 
 #define PART_UNSPECIFIED -2
 #define PART_AUTO -1
-#define MAX_SEARCH_PARTITIONS 16
 int get_device_and_partition(const char *ifname, const char *dev_part_str,
 			     block_dev_desc_t **dev_desc,
 			     disk_partition_t *info, int allow_whole_dev)
