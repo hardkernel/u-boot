@@ -16,6 +16,8 @@
 #ifndef _INC_AML_LCD_EXTERN_H_
 #define _INC_AML_LCD_EXTERN_H_
 
+#include <amlogic/aml_lcd_vout.h>
+
 enum lcd_extern_type_e {
 	LCD_EXTERN_I2C = 0,
 	LCD_EXTERN_SPI,
@@ -52,6 +54,9 @@ enum lcd_extern_i2c_bus_e {
 #define LCD_EXTERN_GPIO_LEN_MAX       10
 #define LCD_EXTERN_INDEX_INVALID      0xff
 #define LCD_EXTERN_NAME_LEN_MAX       30
+
+
+
 struct lcd_extern_config_s {
 	unsigned char lcd_ext_key_valid;
 	unsigned char index;
@@ -61,6 +66,10 @@ struct lcd_extern_config_s {
 	unsigned char i2c_addr;
 	unsigned char i2c_addr2;
 	unsigned char i2c_bus;
+	unsigned char i2c_sck_gpio;
+	unsigned char i2c_sck_gpio_off;
+	unsigned char i2c_sda_gpio;
+	unsigned char i2c_sda_gpio_off;
 	unsigned char spi_gpio_cs;
 	unsigned char spi_gpio_clk;
 	unsigned char spi_gpio_data;
@@ -72,6 +81,8 @@ struct lcd_extern_config_s {
 	unsigned char *table_init_off;
 	unsigned int table_init_on_cnt;
 	char gpio_name[LCD_EXTERN_GPIO_NUM_MAX][LCD_EXTERN_GPIO_LEN_MAX];
+	unsigned int pinmux_set[LCD_PINMUX_NUM][2];
+	unsigned int pinmux_clr[LCD_PINMUX_NUM][2];
 };
 
 //global API

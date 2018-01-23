@@ -140,7 +140,7 @@ static unsigned char bl_extern_get_i2c_bus_str(const char *str)
 	else if (strncmp(str, "i2c_bus_d", 9) == 0)
 		i2c_bus = AML_I2C_MASTER_D;
 	else {
-		i2c_bus = AML_I2C_MASTER_A;
+		i2c_bus = BL_EXTERN_I2C_BUS_INVALID;
 		BLEXERR("invalid i2c_bus: %s\n", str);
 	}
 
@@ -155,6 +155,7 @@ static int bl_extern_config_from_dts(char *dtaddr, int index)
 	char propname[30];
 	char *propdata;
 	struct aml_bl_extern_driver_s *bl_extern = aml_bl_extern_get_driver();
+	unsigned char bl_ext_i2c_bus = BL_EXTERN_I2C_BUS_INVALID;
 
 	parent_offset = fdt_path_offset(dtaddr, "/bl_extern");
 	if (parent_offset < 0) {
@@ -171,6 +172,12 @@ static int bl_extern_config_from_dts(char *dtaddr, int index)
 			return -1;
 		}
 	}
+
+	propdata = (char *)fdt_getprop(dtaddr, parent_offset, "i2c_bus", NULL);
+	if (propdata == NULL)
+		bl_ext_i2c_bus = BL_EXTERN_I2C_BUS_INVALID;
+	else
+		bl_ext_i2c_bus = bl_extern_get_i2c_bus_str(propdata);
 
 	sprintf(propname,"/bl_extern/extern_%d", index);
 	child_offset = fdt_path_offset(dtaddr, propname);
@@ -192,7 +199,7 @@ static int bl_extern_config_from_dts(char *dtaddr, int index)
 	}
 	propdata = (char *)fdt_getprop(dtaddr, child_offset, "extern_name", NULL);
 	if (propdata == NULL) {
-		LCDERR("bl: failed to get extern_name\n");
+		BLEXERR("failed to get extern_name\n");
 		sprintf(bl_extern->config->name, "extern_%d", index);
 	} else {
 		strcpy(bl_extern->config->name, propdata);
@@ -207,7 +214,7 @@ static int bl_extern_config_from_dts(char *dtaddr, int index)
 	}
 	propdata = (char *)fdt_getprop(dtaddr, child_offset, "dim_max_min", NULL);
 	if (propdata == NULL) {
-		LCDERR("bl: failed to get bl_level_attr\n");
+		BLEXERR("failed to get bl_level_attr\n");
 	} else {
 		bl_extern->config->dim_max = be32_to_cpup((u32*)propdata);
 		bl_extern->config->dim_min = be32_to_cpup((((u32*)propdata)+1));
@@ -224,14 +231,20 @@ static int bl_extern_config_from_dts(char *dtaddr, int index)
 		} else {
 			bl_extern->config->i2c_addr = (unsigned char)(be32_to_cpup((u32*)propdata));
 		}
-		propdata = (char *)fdt_getprop(dtaddr, child_offset, "i2c_bus", NULL);
-		if (propdata == NULL) {
-			BLEXERR("get %s i2c_bus failed, exit\n", bl_extern->config->name);
-			bl_extern->config->i2c_bus = AML_I2C_MASTER_A;
-			return -1;
+		if (bl_ext_i2c_bus == BL_EXTERN_I2C_BUS_INVALID) { /* compatible for kernel3.14 */
+			propdata = (char *)fdt_getprop(dtaddr, child_offset, "i2c_bus", NULL);
+			if (propdata == NULL) {
+				BLEXERR("get %s i2c_bus failed, exit\n", bl_extern->config->name);
+				bl_extern->config->i2c_bus = BL_EXTERN_I2C_BUS_INVALID;
+				return -1;
+			} else {
+				bl_extern->config->i2c_bus = bl_extern_get_i2c_bus_str(propdata);
+			}
 		} else {
-			bl_extern->config->i2c_bus = bl_extern_get_i2c_bus_str(propdata);
+			bl_extern->config->i2c_bus = bl_ext_i2c_bus;
 		}
+		if (lcd_debug_print_flag)
+			BLEX("%s: i2c_bus= %d\n", bl_extern->config->name, bl_extern->config->i2c_bus);
 #else
 		BLEXERR("system has no i2c support\n");
 #endif

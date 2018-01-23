@@ -18,9 +18,6 @@
 
 #include <common.h>
 #include <linux/list.h>
-#ifdef CONFIG_AML_LCD_EXTERN
-#include <amlogic/aml_lcd_extern.h>
-#endif
 
 /* **********************************
  * debug print define

@@ -43,6 +43,7 @@ extern int aml_lcd_extern_get_dts_child(int index);
 
 extern int aml_lcd_extern_get_gpio(unsigned char index);
 extern int aml_lcd_extern_set_gpio(unsigned char index, int value);
+extern void lcd_extern_pinmux_set(int status);
 
 extern int aml_lcd_extern_default_probe(struct aml_lcd_extern_driver_s *ext_drv);
 #ifdef CONFIG_SYS_I2C_AML

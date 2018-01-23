@@ -168,6 +168,10 @@ static int lcd_extern_change_i2c_bus(unsigned aml_i2c_bus)
 	int ret = 0;
 	extern struct aml_i2c_platform g_aml_i2c_plat;
 
+	if (aml_i2c_bus == LCD_EXTERN_I2C_BUS_INVALID) {
+		EXTERR("%s: invalid i2c_bus\n", __func__);
+		return -1;
+	}
 	g_aml_i2c_plat.master_no = aml_i2c_bus;
 	ret = aml_i2c_init();
 
@@ -209,6 +213,7 @@ static int lcd_extern_power_on(void)
 {
 	int ret;
 
+	lcd_extern_pinmux_set(1);
 	ret = lcd_extern_power_ctrl(1);
 	return ret;
 }
@@ -218,6 +223,8 @@ static int lcd_extern_power_off(void)
 	int ret;
 
 	ret = lcd_extern_power_ctrl(0);
+	lcd_extern_pinmux_set(0);
+
 	return ret;
 }
 

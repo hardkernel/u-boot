@@ -338,7 +338,7 @@ struct lcd_extern_config_s ext_config_dtf = {
 	.status = 0, /* 0=disable, 1=enable */
 	.i2c_addr = 0x1c, /* 7bit i2c address */
 	.i2c_addr2 = 0xff, /* 7bit i2c address, 0xff for none */
-	.i2c_bus = LCD_EXTERN_I2C_BUS_D, /* LCD_EXTERN_I2C_BUS_AO, LCD_EXTERN_I2C_BUS_A/B/C/D */
+	.i2c_bus = LCD_EXTERN_I2C_BUS_C, /* LCD_EXTERN_I2C_BUS_AO, LCD_EXTERN_I2C_BUS_A/B/C/D */
 	.spi_gpio_cs = 0,
 	.spi_gpio_clk = 1,
 	.spi_gpio_data = 2,
@@ -347,6 +347,8 @@ struct lcd_extern_config_s ext_config_dtf = {
 	.cmd_size = LCD_EXTERN_CMD_SIZE,
 	.table_init_on = init_on_table,
 	.table_init_off = init_off_table,
+	.pinmux_set = {{0, 0x30000000}, {LCD_PINMUX_END, 0x0}},
+	.pinmux_clr = {{0, 0x00600006}, {LCD_PINMUX_END, 0x0}},
 };
 #endif
 

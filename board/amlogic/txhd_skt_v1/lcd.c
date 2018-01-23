@@ -261,6 +261,8 @@ struct lcd_extern_config_s ext_config_dtf = {
 	.cmd_size = LCD_EXTERN_CMD_SIZE,
 	.table_init_on = init_on_table,
 	.table_init_off = init_off_table,
+	.pinmux_set = {{LCD_PINMUX_END, 0x0}},
+	.pinmux_clr = {{LCD_PINMUX_END, 0x0}},
 };
 #endif
 

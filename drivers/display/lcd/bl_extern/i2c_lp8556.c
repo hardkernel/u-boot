@@ -126,6 +126,10 @@ static int bl_extern_change_i2c_bus(unsigned aml_i2c_bus)
 	int ret = 0;
 	extern struct aml_i2c_platform g_aml_i2c_plat;
 
+	if (aml_i2c_bus == BL_EXTERN_I2C_BUS_INVALID) {
+		BLEXERR("%s: invalid i2c_bus\n", __func__);
+		return -1;
+	}
 	g_aml_i2c_plat.master_no = aml_i2c_bus;
 	ret = aml_i2c_init();
 
