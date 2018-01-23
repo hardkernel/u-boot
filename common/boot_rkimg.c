@@ -314,7 +314,7 @@ int boot_rockchip_image(struct blk_desc *dev_desc, disk_partition_t *boot_part)
 	printf("ramdisk  @ 0x%08lx (0x%08x)\n", ramdisk_addr_r, ramdisk_size);
 #if defined(CONFIG_ARM64)
 	char cmdbuf[64];
-	sprintf(cmdbuf, "booti 0x%lx 0x%lx:0x%lx 0x%lx",
+	sprintf(cmdbuf, "booti 0x%lx 0x%lx:0x%x 0x%lx",
 		kernel_addr_r, ramdisk_addr_r, ramdisk_size, fdt_addr_r);
 	run_command(cmdbuf, 0);
 #else

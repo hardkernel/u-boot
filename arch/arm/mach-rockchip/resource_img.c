@@ -222,7 +222,6 @@ static int init_resource_list(struct resource_img_hdr *hdr)
 		debug("%s Load resource from %s\n", __func__, part_info.name);
 	}
 
-	hdr = (void *)andr_hdr;
 	ret = blk_dread(dev_desc, offset, 1, hdr);
 	if (ret != 1)
 		goto out;
