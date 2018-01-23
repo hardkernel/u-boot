@@ -5,6 +5,8 @@
  * SPDX-License-Identifier:	GPL-2.0+
  */
 
+#include <asm/io.h>
+#include <asm/arch/boot_mode.h>
 #include <rockusb.h>
 
 #define ROCKUSB_INTERFACE_CLASS	0xff
@@ -109,6 +111,8 @@ static int rkusb_check_lun(struct fsg_common *common)
 
 static void __do_reset(struct usb_ep *ep, struct usb_request *req)
 {
+	writel(BOOT_NORMAL, (void *)CONFIG_ROCKCHIP_BOOT_MODE_REG);
+
 	do_reset(NULL, 0, 0, NULL);
 }
 
