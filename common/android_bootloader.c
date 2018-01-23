@@ -43,7 +43,7 @@ int android_bootloader_message_load(
 		return -1;
 	}
 
-#ifdef CONFIG_ROCKCHIP_BOOTLOADER
+#ifdef CONFIG_RKIMG_BOOTLOADER
 	if (blk_dread(dev_desc, part_info->start + BOOTLOADER_MESSAGE_BLK_OFFSET,
 	     message_blocks, message) !=
 #else
