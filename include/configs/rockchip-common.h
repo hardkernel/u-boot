@@ -80,7 +80,7 @@
 	"name=oem,size=32M,uuid=${uuid_gpt_oem};" \
 	"name=frp,size=512K,uuid=${uuid_gpt_frp};" \
 	"name=security,size=2M,uuid=${uuid_gpt_security};" \
-	"name=userdata,size=-,uuid=${uuid_gpt_userdata};"
+	"name=userdata,size=-,uuid=${uuid_gpt_userdata};\0"
 
 #define RKIMG_BOOTCOMMAND \
 	"if mmc dev 0; then setenv devtype mmc; setenv devnum 0;" \
