@@ -464,6 +464,8 @@ static inline fdt_addr_t dev_read_addr_size(struct udevice *dev,
 
 static inline const char *dev_read_name(struct udevice *dev)
 {
+	if (!dev_of_valid(dev))
+		return NULL;
 	return ofnode_get_name(dev_ofnode(dev));
 }
 
@@ -545,6 +547,8 @@ static inline int dev_read_alias_seq(struct udevice *dev, int *devnump)
 static inline int dev_read_u32_array(struct udevice *dev, const char *propname,
 				     u32 *out_values, size_t sz)
 {
+	if (!dev_of_valid(dev))
+		return -EINVAL;
 	return ofnode_read_u32_array(dev_ofnode(dev), propname, out_values, sz);
 }
 
