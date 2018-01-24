@@ -306,8 +306,20 @@ int dm_scan_fdt(const void *blob, bool pre_reloc_only)
 {
 #if CONFIG_IS_ENABLED(OF_LIVE)
 	if (of_live_active())
+#ifndef CONFIG_USING_KERNEL_DTB
 		return dm_scan_fdt_live(gd->dm_root, gd->of_root,
 					pre_reloc_only);
+#else
+	{
+		dm_scan_fdt_live(gd->dm_root, gd->of_root,
+					pre_reloc_only);
+		if (!gd->kernel_of_root)
+			return 0;
+
+		return dm_scan_fdt_live(gd->dm_root, gd->kernel_of_root,
+					pre_reloc_only);
+	}
+#endif
 	else
 #endif
 	return dm_scan_fdt_node(gd->dm_root, blob, 0, pre_reloc_only);

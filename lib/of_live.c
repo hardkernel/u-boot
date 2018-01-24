@@ -332,6 +332,15 @@ int of_live_build(const void *fdt_blob, struct device_node **rootp)
 		debug("Failed to scan live tree aliases: err=%d\n", ret);
 		return ret;
 	}
+#ifdef CONFIG_USING_KERNEL_DTB
+	ret = unflatten_device_tree(gd->kernel_fdt,
+				    (struct device_node **)&gd->kernel_of_root);
+	if (ret) {
+		printf("%s fail to build live dt from kernel dtb.\n", __func__);
+		return 0;
+	}
+	gd->fdt_blob = gd->kernel_fdt;
+#endif
 	debug("%s: stop\n", __func__);
 
 	return ret;
