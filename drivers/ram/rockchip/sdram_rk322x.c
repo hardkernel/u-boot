@@ -716,27 +716,25 @@ static int rk322x_dmc_ofdata_to_platdata(struct udevice *dev)
 {
 #if !CONFIG_IS_ENABLED(OF_PLATDATA)
 	struct rk322x_sdram_params *params = dev_get_platdata(dev);
-	const void *blob = gd->fdt_blob;
-	int node = dev_of_offset(dev);
 	int ret;
 
 	params->num_channels = 1;
 
-	ret = fdtdec_get_int_array(blob, node, "rockchip,pctl-timing",
+	ret = dev_read_u32_array(dev, "rockchip,pctl-timing",
 				   (u32 *)&params->pctl_timing,
 				   sizeof(params->pctl_timing) / sizeof(u32));
 	if (ret) {
 		printf("%s: Cannot read rockchip,pctl-timing\n", __func__);
 		return -EINVAL;
 	}
-	ret = fdtdec_get_int_array(blob, node, "rockchip,phy-timing",
+	ret = dev_read_u32_array(dev, "rockchip,phy-timing",
 				   (u32 *)&params->phy_timing,
 				   sizeof(params->phy_timing) / sizeof(u32));
 	if (ret) {
 		printf("%s: Cannot read rockchip,phy-timing\n", __func__);
 		return -EINVAL;
 	}
-	ret = fdtdec_get_int_array(blob, node, "rockchip,sdram-params",
+	ret = dev_read_u32_array(dev, "rockchip,sdram-params",
 				   (u32 *)&params->base,
 				   sizeof(params->base) / sizeof(u32));
 	if (ret) {
