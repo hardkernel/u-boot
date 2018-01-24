@@ -638,8 +638,10 @@ int do_bootm_states(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[],
 	}
 
 	/* Resever memory before any lmb_alloc, as early as possible */
-	boot_fdt_add_mem_rsv_regions(&images->lmb, images->ft_addr);
-
+#if IMAGE_ENABLE_OF_LIBFDT && defined(CONFIG_LMB)
+	if (!ret && (states & BOOTM_STATE_FDT))
+		boot_fdt_add_mem_rsv_regions(&images->lmb, images->ft_addr);
+#endif
 	/* Relocate the ramdisk */
 #ifdef CONFIG_SYS_BOOT_RAMDISK_HIGH
 	if (!ret && (states & BOOTM_STATE_RAMDISK)) {
