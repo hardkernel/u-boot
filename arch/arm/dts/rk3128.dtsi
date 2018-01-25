@@ -241,13 +241,11 @@
 	};
 
 	dmc: dmc@20004000 {
-		u-boot,dm-pre-reloc;
 		compatible = "rockchip,rk3128-dmc", "syscon";
 		reg = <0x0 0x20004000 0x0 0x1000>;
 	};
 
 	cru: clock-controller@20000000 {
-		u-boot,dm-pre-reloc;
 		compatible = "rockchip,rk3128-cru";
 		reg = <0x20000000 0x1000>;
 		rockchip,grf = <&grf>;
@@ -369,7 +367,6 @@
 	};
 
 	vop: vop@1010e000 {
-		u-boot,dm-pre-reloc;
 		compatible = "rockchip,rk3126-vop";
 		reg = <0x1010e000 0x100>, <0x1010ec00 0x400>;
 		reg-names = "regs", "gamma_lut";
@@ -419,7 +416,6 @@
 	};
 
 	display_subsystem: display-subsystem {
-		u-boot,dm-pre-reloc;
 		compatible = "rockchip,display-subsystem";
 		ports = <&vop_out>;
 
@@ -562,7 +558,6 @@
 	};
 
 	lvds: lvds@20038000 {
-		u-boot,dm-pre-reloc;
 		compatible = "rockchip,rk3126-lvds";
 		reg = <0x20038000 0x4000>, <0x10110000 0x100>;
 		reg-names = "mipi_lvds_phy", "mipi_lvds_ctl";
@@ -648,7 +643,6 @@
 	};
 
 	grf: syscon@20008000 {
-		u-boot,dm-pre-reloc;
 		compatible = "rockchip,rk3128-grf", "syscon";
 		reg = <0x20008000 0x1000>;
 	};

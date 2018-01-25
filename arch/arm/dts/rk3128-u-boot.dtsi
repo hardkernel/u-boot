@@ -1,0 +1,40 @@
+/*
+ * (C) Copyright 2018 Rockchip Electronics Co., Ltd
+ *
+ * SPDX-License-Identifier:     GPL-2.0+
+ */
+
+
+&dmc {
+	u-boot,dm-pre-reloc;
+};
+
+&uart2 {
+	clock-frequency = <24000000>;
+	u-boot,dm-pre-reloc;
+	status = "okay";
+};
+
+&emmc {
+	u-boot,dm-pre-reloc;
+};
+
+&grf {
+	u-boot,dm-pre-reloc;
+};
+
+&lvds {
+	u-boot,dm-pre-reloc;
+};
+
+&display_subsystem {
+	u-boot,dm-pre-reloc;
+};
+
+&vop {
+	u-boot,dm-pre-reloc;
+};
+
+&cru {
+	u-boot,dm-pre-reloc;
+};
