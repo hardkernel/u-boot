@@ -100,7 +100,7 @@ void avb_print(const char* message);
 void avb_printv(const char* message, ...) AVB_ATTR_SENTINEL;
 
 /* Aborts the program or reboots the device. */
-void avb_abort(void) AVB_ATTR_NO_RETURN;
+void avb_abort(void);
 
 /* Allocates |size| bytes. Returns NULL if no memory is available,
  * otherwise a pointer to the allocated memory.
@@ -118,6 +118,10 @@ void avb_free(void* ptr);
 
 /* Returns the lenght of |str|, excluding the terminating NUL-byte. */
 size_t avb_strlen(const char* str) AVB_ATTR_WARN_UNUSED_RESULT;
+
+/* Divide the |dividend| by 10 and saves back to the pointer. Return the
+ * remainder. */
+uint32_t avb_div_by_10(uint64_t* dividend);
 
 #ifdef __cplusplus
 }

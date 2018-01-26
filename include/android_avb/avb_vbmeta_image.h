@@ -37,8 +37,8 @@
 extern "C" {
 #endif
 
-#include <android_avb/avb_crypto.h>
-#include <android_avb/avb_descriptor.h>
+#include "avb_crypto.h"
+#include "avb_descriptor.h"
 
 /* Size of the vbmeta image header. */
 #define AVB_VBMETA_IMAGE_HEADER_SIZE 256
@@ -54,6 +54,9 @@ extern "C" {
  *
  * AVB_VBMETA_IMAGE_FLAGS_HASHTREE_DISABLED: If this flag is set,
  * hashtree image verification will be disabled.
+ *
+ * AVB_VBMETA_IMAGE_FLAGS_VERIFICATION_DISABLED: If this flag is set,
+ * verification will be disabled and descriptors will not be parsed.
  */
 typedef enum {
   AVB_VBMETA_IMAGE_FLAGS_HASHTREE_DISABLED = (1 << 0),

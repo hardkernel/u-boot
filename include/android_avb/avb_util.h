@@ -33,6 +33,121 @@
 
 #include <android_avb/avb_sysdeps.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#define AVB_STRINGIFY(x) #x
+#define AVB_TO_STRING(x) AVB_STRINGIFY(x)
+
+#ifdef AVB_ENABLE_DEBUG
+/* Aborts the program if |expr| is false.
+ *
+ * This has no effect unless AVB_ENABLE_DEBUG is defined.
+ */
+#define avb_assert(expr)                     \
+  do {                                       \
+    if (!(expr)) {                           \
+      avb_fatal("assert fail: " #expr "\n"); \
+    }                                        \
+  } while (0)
+#else
+#define avb_assert(expr)
+#endif
+
+/* Aborts the program if reached.
+ *
+ * This has no effect unless AVB_ENABLE_DEBUG is defined.
+ */
+#ifdef AVB_ENABLE_DEBUG
+#define avb_assert_not_reached()         \
+  do {                                   \
+    avb_fatal("assert_not_reached()\n"); \
+  } while (0)
+#else
+#define avb_assert_not_reached()
+#endif
+
+/* Aborts the program if |addr| is not word-aligned.
+ *
+ * This has no effect unless AVB_ENABLE_DEBUG is defined.
+ */
+#define avb_assert_aligned(addr) \
+  avb_assert((((uintptr_t)addr) & (AVB_ALIGNMENT_SIZE - 1)) == 0)
+
+#ifdef AVB_ENABLE_DEBUG
+/* Print functions, used for diagnostics.
+ *
+ * These have no effect unless AVB_ENABLE_DEBUG is defined.
+ */
+#define avb_debug(message)              \
+  do {                                  \
+    avb_printv(avb_basename(__FILE__),  \
+               ":",                     \
+               AVB_TO_STRING(__LINE__), \
+               ": DEBUG: ",             \
+               message,                 \
+               NULL);                   \
+  } while (0)
+#define avb_debugv(message, ...)        \
+  do {                                  \
+    avb_printv(avb_basename(__FILE__),  \
+               ":",                     \
+               AVB_TO_STRING(__LINE__), \
+               ": DEBUG: ",             \
+               message,                 \
+               ##__VA_ARGS__);          \
+  } while (0)
+#else
+#define avb_debug(message)
+#define avb_debugv(message, ...)
+#endif
+
+/* Prints out a message. This is typically used if a runtime-error
+ * occurs.
+ */
+#define avb_error(message)              \
+  do {                                  \
+    avb_printv(avb_basename(__FILE__),  \
+               ":",                     \
+               AVB_TO_STRING(__LINE__), \
+               ": ERROR: ",             \
+               message,                 \
+               NULL);                   \
+  } while (0)
+#define avb_errorv(message, ...)        \
+  do {                                  \
+    avb_printv(avb_basename(__FILE__),  \
+               ":",                     \
+               AVB_TO_STRING(__LINE__), \
+               ": ERROR: ",             \
+               message,                 \
+               ##__VA_ARGS__);          \
+  } while (0)
+
+/* Prints out a message and calls avb_abort().
+ */
+#define avb_fatal(message)              \
+  do {                                  \
+    avb_printv(avb_basename(__FILE__),  \
+               ":",                     \
+               AVB_TO_STRING(__LINE__), \
+               ": FATAL: ",             \
+               message,                 \
+               NULL);                   \
+    avb_abort();                        \
+  } while (0)
+#define avb_fatalv(message, ...)        \
+  do {                                  \
+    avb_printv(avb_basename(__FILE__),  \
+               ":",                     \
+               AVB_TO_STRING(__LINE__), \
+               ": FATAL: ",             \
+               message,                 \
+               ##__VA_ARGS__);          \
+    avb_abort();                        \
+  } while (0)
+
 /* Converts a 32-bit unsigned integer from big-endian to host byte order. */
 uint32_t avb_be32toh(uint32_t in) AVB_ATTR_WARN_UNUSED_RESULT;
 
@@ -155,119 +270,10 @@ uint32_t avb_crc32(const uint8_t* buf, size_t buf_size);
  * component, assuming the normal POSIX separator '/'. If there are no
  * separators, returns |str|.
  */
-const char *avb_basename(const char* str);
+const char* avb_basename(const char* str);
 
-
-
-#define AVB_STRINGIFY(x) #x
-#define AVB_TO_STRING(x) AVB_STRINGIFY(x)
-
-#ifdef AVB_ENABLE_DEBUG
-/* Aborts the program if |expr| is false.
- *
- * This has no effect unless AVB_ENABLE_DEBUG is defined.
- */
-#define avb_assert(expr)                     \
-  do {                                       \
-    if (!(expr)) {                           \
-      avb_fatal("assert fail: " #expr "\n"); \
-    }                                        \
-  } while (0)
-#else
-#define avb_assert(expr)
+#ifdef __cplusplus
+}
 #endif
-
-/* Aborts the program if reached.
- *
- * This has no effect unless AVB_ENABLE_DEBUG is defined.
- */
-#ifdef AVB_ENABLE_DEBUG
-#define avb_assert_not_reached()         \
-  do {                                   \
-    avb_fatal("assert_not_reached()\n"); \
-  } while (0)
-#else
-#define avb_assert_not_reached()
-#endif
-
-/* Aborts the program if |addr| is not word-aligned.
- *
- * This has no effect unless AVB_ENABLE_DEBUG is defined.
- */
-#define avb_assert_aligned(addr) \
-  avb_assert((((uintptr_t)addr) & (AVB_ALIGNMENT_SIZE - 1)) == 0)
-
-#ifdef AVB_ENABLE_DEBUG
-/* Print functions, used for diagnostics.
- *
- * These have no effect unless AVB_ENABLE_DEBUG is defined.
- */
-#define avb_debug(message)              \
-  do {                                  \
-    avb_printv(avb_basename(__FILE__),  \
-               ":",                     \
-               AVB_TO_STRING(__LINE__), \
-               ": DEBUG: ",             \
-               message,                 \
-               NULL);                   \
-  } while (0)
-#define avb_debugv(message, ...)        \
-  do {                                  \
-    avb_printv(avb_basename(__FILE__),  \
-               ":",                     \
-               AVB_TO_STRING(__LINE__), \
-               ": DEBUG: ",             \
-               message,                 \
-               ##__VA_ARGS__);          \
-  } while (0)
-#else
-#define avb_debug(message)
-#define avb_debugv(message, ...)
-#endif
-
-/* Prints out a message. This is typically used if a runtime-error
- * occurs.
- */
-#define avb_error(message)              \
-  do {                                  \
-    avb_printv(avb_basename(__FILE__),  \
-               ":",                     \
-               AVB_TO_STRING(__LINE__), \
-               ": ERROR: ",             \
-               message,                 \
-               NULL);                   \
-  } while (0)
-#define avb_errorv(message, ...)        \
-  do {                                  \
-    avb_printv(avb_basename(__FILE__),  \
-               ":",                     \
-               AVB_TO_STRING(__LINE__), \
-               ": ERROR: ",             \
-               message,                 \
-               ##__VA_ARGS__);          \
-  } while (0)
-
-/* Prints out a message and calls avb_abort().
- */
-#define avb_fatal(message)              \
-  do {                                  \
-    avb_printv(avb_basename(__FILE__),  \
-               ":",                     \
-               AVB_TO_STRING(__LINE__), \
-               ": FATAL: ",             \
-               message,                 \
-               NULL);                   \
-    avb_abort();                        \
-  } while (0)
-#define avb_fatalv(message, ...)        \
-  do {                                  \
-    avb_printv(avb_basename(__FILE__),  \
-               ":",                     \
-               AVB_TO_STRING(__LINE__), \
-               ": FATAL: ",             \
-               message,                 \
-               ##__VA_ARGS__);          \
-    avb_abort();                        \
-  } while (0)
 
 #endif /* AVB_UTIL_H_ */

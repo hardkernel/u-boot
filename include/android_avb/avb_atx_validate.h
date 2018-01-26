@@ -43,31 +43,6 @@ extern "C" {
 #define AVB_ATX_PIK_VERSION_LOCATION 0x1000
 #define AVB_ATX_PSK_VERSION_LOCATION 0x1001
 
-/**
- * read permanent attributes from rpmb
- *
- * @param atx_ops
- *
- * @param attributes The attributes inclue psk_public product id,
- * 		     ref:AvbAtxPermanentAttributes.
- *
- * @return AvbIOResult
- */
-AvbIOResult avb_read_perm_attr(AvbAtxOps* atx_ops,
-				      AvbAtxPermanentAttributes* attributes);
-
-/**
- * read permanent attributes hash from efuse
- *
- * @param atx_ops
- *
- * @param attributes The attributes inclue psk_public product id,
- * 		     ref:AvbAtxPermanentAttributes.
- *
- * @return AvbIOResult
- */
-AvbIOResult avb_read_perm_attr_hash(AvbAtxOps* atx_ops,
-					   uint8_t hash[AVB_SHA256_DIGEST_SIZE]);
 /* An implementation of validate_vbmeta_public_key for Android Things. See
  * libavb/avb_ops.h for details on validate_vbmeta_public_key in general. This
  * implementation uses the metadata expected with Android Things vbmeta images

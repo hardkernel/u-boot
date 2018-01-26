@@ -55,11 +55,11 @@ extern "C" {
  * of the partition.
  */
 typedef enum {
-	AVB_IO_RESULT_OK,
-	AVB_IO_RESULT_ERROR_OOM,
-	AVB_IO_RESULT_ERROR_IO,
-	AVB_IO_RESULT_ERROR_NO_SUCH_PARTITION,
-	AVB_IO_RESULT_ERROR_RANGE_OUTSIDE_PARTITION
+  AVB_IO_RESULT_OK,
+  AVB_IO_RESULT_ERROR_OOM,
+  AVB_IO_RESULT_ERROR_IO,
+  AVB_IO_RESULT_ERROR_NO_SUCH_PARTITION,
+  AVB_IO_RESULT_ERROR_RANGE_OUTSIDE_PARTITION
 } AvbIOResult;
 
 struct AvbOps;
@@ -79,149 +79,174 @@ struct AvbAtxOps;
  * ensure that unimplemented operations are set to NULL.
  */
 struct AvbOps {
-	/* This pointer can be used by the application/bootloader using
-	 * libavb and is typically used in each operation to get a pointer
-	 * to platform-specific resources. It cannot be used by libraries.
-	 */
-	void* user_data;
+  /* This pointer can be used by the application/bootloader using
+   * libavb and is typically used in each operation to get a pointer
+   * to platform-specific resources. It cannot be used by libraries.
+   */
+  void* user_data;
 
-	/* If libavb_ab is used, this should point to the
-	 * AvbABOps. Otherwise it must be set to NULL.
-	 */
-	struct AvbABOps* ab_ops;
+  /* If libavb_ab is used, this should point to the
+   * AvbABOps. Otherwise it must be set to NULL.
+   */
+  struct AvbABOps* ab_ops;
 
-	/* If libavb_atx is used, this should point to the
-	 * AvbAtxOps. Otherwise it must be set to NULL.
-	 */
-	struct AvbAtxOps* atx_ops;
+  /* If libavb_atx is used, this should point to the
+   * AvbAtxOps. Otherwise it must be set to NULL.
+   */
+  struct AvbAtxOps* atx_ops;
 
-	/* Reads |num_bytes| from offset |offset| from partition with name
-	 * |partition| (NUL-terminated UTF-8 string). If |offset| is
-	 * negative, its absolute value should be interpreted as the number
-	 * of bytes from the end of the partition.
-	 *
-	 * This function returns AVB_IO_RESULT_ERROR_NO_SUCH_PARTITION if
-	 * there is no partition with the given name,
-	 * AVB_IO_RESULT_ERROR_RANGE_OUTSIDE_PARTITION if the requested
-	 * |offset| is outside the partition, and AVB_IO_RESULT_ERROR_IO if
-	 * there was an I/O error from the underlying I/O subsystem.  If the
-	 * operation succeeds as requested AVB_IO_RESULT_OK is returned and
-	 * the data is available in |buffer|.
-	 *
-	 * The only time partial I/O may occur is if reading beyond the end
-	 * of the partition. In this case the value returned in
-	 * |out_num_read| may be smaller than |num_bytes|.
-	 */
-	AvbIOResult (*read_from_partition)(AvbOps* ops,
+  /* Reads |num_bytes| from offset |offset| from partition with name
+   * |partition| (NUL-terminated UTF-8 string). If |offset| is
+   * negative, its absolute value should be interpreted as the number
+   * of bytes from the end of the partition.
+   *
+   * This function returns AVB_IO_RESULT_ERROR_NO_SUCH_PARTITION if
+   * there is no partition with the given name,
+   * AVB_IO_RESULT_ERROR_RANGE_OUTSIDE_PARTITION if the requested
+   * |offset| is outside the partition, and AVB_IO_RESULT_ERROR_IO if
+   * there was an I/O error from the underlying I/O subsystem.  If the
+   * operation succeeds as requested AVB_IO_RESULT_OK is returned and
+   * the data is available in |buffer|.
+   *
+   * The only time partial I/O may occur is if reading beyond the end
+   * of the partition. In this case the value returned in
+   * |out_num_read| may be smaller than |num_bytes|.
+   */
+  AvbIOResult (*read_from_partition)(AvbOps* ops,
+                                     const char* partition,
+                                     int64_t offset,
+                                     size_t num_bytes,
+                                     void* buffer,
+                                     size_t* out_num_read);
+
+  /* Gets the starting pointer of a partition that is pre-loaded in memory, and
+   * save it to |out_pointer|. The preloaded partition is expected to be
+   * |num_bytes|, where the actual preloaded byte count is returned in
+   * |out_num_bytes_preloaded|. |out_num_bytes_preloaded| must be no larger than
+   * |num_bytes|.
+   *
+   * This provides an alternative way to access a partition that is preloaded
+   * into memory without a full memory copy. When this function pointer is not
+   * set (has value NULL), or when the |out_pointer| is set to NULL as a result,
+   * |read_from_partition| will be used as the fallback. This function is mainly
+   * used for accessing the entire partition content to calculate its hash.
+   *
+   * Preloaded partition data must outlive the lifespan of the
+   * |AvbSlotVerifyData| structure that |avb_slot_verify| outputs.
+   */
+  AvbIOResult (*get_preloaded_partition)(AvbOps* ops,
+                                         const char* partition,
+                                         size_t num_bytes,
+                                         uint8_t** out_pointer,
+                                         size_t* out_num_bytes_preloaded);
+
+  /* Writes |num_bytes| from |bffer| at offset |offset| to partition
+   * with name |partition| (NUL-terminated UTF-8 string). If |offset|
+   * is negative, its absolute value should be interpreted as the
+   * number of bytes from the end of the partition.
+   *
+   * This function returns AVB_IO_RESULT_ERROR_NO_SUCH_PARTITION if
+   * there is no partition with the given name,
+   * AVB_IO_RESULT_ERROR_RANGE_OUTSIDE_PARTITION if the requested
+   * byterange goes outside the partition, and AVB_IO_RESULT_ERROR_IO
+   * if there was an I/O error from the underlying I/O subsystem.  If
+   * the operation succeeds as requested AVB_IO_RESULT_OK is
+   * returned.
+   *
+   * This function never does any partial I/O, it either transfers all
+   * of the requested bytes or returns an error.
+   */
+  AvbIOResult (*write_to_partition)(AvbOps* ops,
+                                    const char* partition,
+                                    int64_t offset,
+                                    size_t num_bytes,
+                                    const void* buffer);
+
+  /* Checks if the given public key used to sign the 'vbmeta'
+   * partition is trusted. Boot loaders typically compare this with
+   * embedded key material generated with 'avbtool
+   * extract_public_key'.
+   *
+   * The public key is in the array pointed to by |public_key_data|
+   * and is of |public_key_length| bytes.
+   *
+   * If there is no public key metadata (set with the avbtool option
+   * --public_key_metadata) then |public_key_metadata| will be set to
+   * NULL. Otherwise this field points to the data which is
+   * |public_key_metadata_length| bytes long.
+   *
+   * If AVB_IO_RESULT_OK is returned then |out_is_trusted| is set -
+   * true if trusted or false if untrusted.
+   */
+  AvbIOResult (*validate_vbmeta_public_key)(AvbOps* ops,
+                                            const uint8_t* public_key_data,
+                                            size_t public_key_length,
+                                            const uint8_t* public_key_metadata,
+                                            size_t public_key_metadata_length,
+                                            bool* out_is_trusted);
+
+  /* Gets the rollback index corresponding to the location given by
+   * |rollback_index_location|. The value is returned in
+   * |out_rollback_index|. Returns AVB_IO_RESULT_OK if the rollback
+   * index was retrieved, otherwise an error code.
+   *
+   * A device may have a limited amount of rollback index locations (say,
+   * one or four) so may error out if |rollback_index_location| exceeds
+   * this number.
+   */
+  AvbIOResult (*read_rollback_index)(AvbOps* ops,
+                                     size_t rollback_index_location,
+                                     uint64_t* out_rollback_index);
+
+  /* Sets the rollback index corresponding to the location given by
+   * |rollback_index_location| to |rollback_index|. Returns
+   * AVB_IO_RESULT_OK if the rollback index was set, otherwise an
+   * error code.
+   *
+   * A device may have a limited amount of rollback index locations (say,
+   * one or four) so may error out if |rollback_index_location| exceeds
+   * this number.
+   */
+  AvbIOResult (*write_rollback_index)(AvbOps* ops,
+                                      size_t rollback_index_location,
+                                      uint64_t rollback_index);
+
+  /* Gets whether the device is unlocked. The value is returned in
+   * |out_is_unlocked| (true if unlocked, false otherwise). Returns
+   * AVB_IO_RESULT_OK if the state was retrieved, otherwise an error
+   * code.
+   */
+  AvbIOResult (*read_is_device_unlocked)(AvbOps* ops, bool* out_is_unlocked);
+
+  /* write the device lock flag. Returns
+   * AVB_IO_RESULT_OK if the state was retrieved, otherwise an error
+   * code.
+   */
+  AvbIOResult (*write_is_device_unlocked)(AvbOps* ops, bool* out_is_unlocked);
+  /* Gets the unique partition GUID for a partition with name in
+   * |partition| (NUL-terminated UTF-8 string). The GUID is copied as
+   * a string into |guid_buf| of size |guid_buf_size| and will be NUL
+   * terminated. The string must be lower-case and properly
+   * hyphenated. For example:
+   *
+   *  527c1c6d-6361-4593-8842-3c78fcd39219
+   *
+   * Returns AVB_IO_RESULT_OK on success, otherwise an error code.
+   */
+  AvbIOResult (*get_unique_guid_for_partition)(AvbOps* ops,
+                                               const char* partition,
+                                               char* guid_buf,
+                                               size_t guid_buf_size);
+
+  /* Gets the size of a partition with the name in |partition|
+   * (NUL-terminated UTF-8 string). Returns the value in
+   * |out_size_num_bytes|.
+   *
+   * Returns AVB_IO_RESULT_OK on success, otherwise an error code.
+   */
+  AvbIOResult (*get_size_of_partition)(AvbOps* ops,
                                        const char* partition,
-                                       int64_t offset,
-                                       size_t num_bytes,
-                                       void* buffer,
-                                       size_t* out_num_read);
-
-	/* Writes |num_bytes| from |bffer| at offset |offset| to partition
-	 * with name |partition| (NUL-terminated UTF-8 string). If |offset|
-	 * is negative, its absolute value should be interpreted as the
-	 * number of bytes from the end of the partition.
-	 *
-	 * This function returns AVB_IO_RESULT_ERROR_NO_SUCH_PARTITION if
-	 * there is no partition with the given name,
-	 * AVB_IO_RESULT_ERROR_RANGE_OUTSIDE_PARTITION if the requested
-	 * byterange goes outside the partition, and AVB_IO_RESULT_ERROR_IO
-	 * if there was an I/O error from the underlying I/O subsystem.  If
-	 * the operation succeeds as requested AVB_IO_RESULT_OK is
-	 * returned.
-	 *
-	 * This function never does any partial I/O, it either transfers all
-	 * of the requested bytes or returns an error.
-	 */
-	AvbIOResult (*write_to_partition)(AvbOps* ops,
-                                      const char* partition,
-                                      int64_t offset,
-                                      size_t num_bytes,
-                                      const void* buffer);
-
-	/* Checks if the given public key used to sign the 'vbmeta'
-	 * partition is trusted. Boot loaders typically compare this with
-	 * embedded key material generated with 'avbtool
-	 * extract_public_key'.
-	 *
-	 * The public key is in the array pointed to by |public_key_data|
-	 * and is of |public_key_length| bytes.
-	 *
-	 * If there is no public key metadata (set with the avbtool option
-	 * --public_key_metadata) then |public_key_metadata| will be set to
-	 * NULL. Otherwise this field points to the data which is
-	 * |public_key_metadata_length| bytes long.
-	 *
-	 * If AVB_IO_RESULT_OK is returned then |out_is_trusted| is set -
-	 * true if trusted or false if untrusted.
-	 */
-	AvbIOResult (*validate_vbmeta_public_key)(AvbOps* ops,
-                                            	  const uint8_t* public_key_data,
-                                            	  size_t public_key_length,
-                                            	  const uint8_t* public_key_metadata,
-                                            	  size_t public_key_metadata_length,
-                                            	  bool* out_is_trusted);
-
-	/* Gets the rollback index corresponding to the location given by
-	 * |rollback_index_location|. The value is returned in
-	 * |out_rollback_index|. Returns AVB_IO_RESULT_OK if the rollback
-	 * index was retrieved, otherwise an error code.
-	 *
-	 * A device may have a limited amount of rollback index locations (say,
-	 * one or four) so may error out if |rollback_index_location| exceeds
-	 * this number.
-	 */
-	AvbIOResult (*read_rollback_index)(AvbOps* ops,
-                                     	   size_t rollback_index_location,
-                                     	   uint64_t* out_rollback_index);
-
-	/* Sets the rollback index corresponding to the location given by
-	 * |rollback_index_location| to |rollback_index|. Returns
-	 * AVB_IO_RESULT_OK if the rollback index was set, otherwise an
-	 * error code.
-	 *
-	 * A device may have a limited amount of rollback index locations (say,
-	 * one or four) so may error out if |rollback_index_location| exceeds
-	 * this number.
-	 */
-	AvbIOResult (*write_rollback_index)(AvbOps* ops,
-                                      	    size_t rollback_index_location,
-                                      	    uint64_t rollback_index);
-
-	/* Gets whether the device is unlocked. The value is returned in
-	 * |out_is_unlocked| (true if unlocked, false otherwise). Returns
-	 * AVB_IO_RESULT_OK if the state was retrieved, otherwise an error
-	 * code.
-	 */
-	AvbIOResult (*read_is_device_unlocked)(AvbOps* ops, bool* out_is_unlocked);
-	AvbIOResult (*write_is_device_unlocked)(AvbOps* ops, bool* out_is_unlocked);
-
-	/* Gets the unique partition GUID for a partition with name in
-	 * |partition| (NUL-terminated UTF-8 string). The GUID is copied as
-	 * a string into |guid_buf| of size |guid_buf_size| and will be NUL
-	 * terminated. The string must be lower-case and properly
-	 * hyphenated. For example:
-	 *
-	 *  527c1c6d-6361-4593-8842-3c78fcd39219
-	 *
-	 * Returns AVB_IO_RESULT_OK on success, otherwise an error code.
-	 */
-	 AvbIOResult (*get_unique_guid_for_partition)(AvbOps* ops,
-                                                      const char* partition,
-                                                      char* guid_buf,
-                                                      size_t guid_buf_size);
-
-	/* Gets the size of a partition with the name in |partition|
-	 * (NUL-terminated UTF-8 string). Returns the value in
-	 * |out_size_num_bytes|.
-	 *
-	 * Returns AVB_IO_RESULT_OK on success, otherwise an error code.
-	 */
-	AvbIOResult (*get_size_of_partition)(AvbOps* ops,
-                                       	     const char* partition,
-                                             uint64_t* out_size_num_bytes);
+                                       uint64_t* out_size_num_bytes);
 };
 
 #ifdef __cplusplus

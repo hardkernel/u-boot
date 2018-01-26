@@ -22,29 +22,37 @@
  * SOFTWARE.
  */
 
-#ifndef LIBAVB_H_
-#define LIBAVB_H_
-
-/* The AVB_INSIDE_LIBAVB_H preprocessor symbol is used to enforce
- * library users to include only this file. All public interfaces, and
- * only public interfaces, must be included here.
- */
-
-#define AVB_INSIDE_LIBAVB_H
-#include <android_avb/avb_chain_partition_descriptor.h>
-#include <android_avb/avb_crypto.h>
-#include <android_avb/avb_descriptor.h>
-#include <android_avb/avb_footer.h>
-#include <android_avb/avb_hash_descriptor.h>
-#include <android_avb/avb_hashtree_descriptor.h>
 #include <android_avb/avb_kernel_cmdline_descriptor.h>
-#include <android_avb/avb_ops.h>
-#include <android_avb/avb_property_descriptor.h>
-#include <android_avb/avb_slot_verify.h>
-#include <android_avb/avb_sysdeps.h>
 #include <android_avb/avb_util.h>
-#include <android_avb/avb_vbmeta_image.h>
-#include <android_avb/avb_version.h>
-#undef AVB_INSIDE_LIBAVB_H
 
-#endif /* LIBAVB_H_ */
+bool avb_kernel_cmdline_descriptor_validate_and_byteswap(
+    const AvbKernelCmdlineDescriptor* src, AvbKernelCmdlineDescriptor* dest) {
+  uint64_t expected_size;
+
+  avb_memcpy(dest, src, sizeof(AvbKernelCmdlineDescriptor));
+
+  if (!avb_descriptor_validate_and_byteswap((const AvbDescriptor*)src,
+                                            (AvbDescriptor*)dest))
+    return false;
+
+  if (dest->parent_descriptor.tag != AVB_DESCRIPTOR_TAG_KERNEL_CMDLINE) {
+    avb_error("Invalid tag for kernel cmdline descriptor.\n");
+    return false;
+  }
+
+  dest->flags = avb_be32toh(dest->flags);
+  dest->kernel_cmdline_length = avb_be32toh(dest->kernel_cmdline_length);
+
+  /* Check that kernel_cmdline is fully contained. */
+  expected_size = sizeof(AvbKernelCmdlineDescriptor) - sizeof(AvbDescriptor);
+  if (!avb_safe_add_to(&expected_size, dest->kernel_cmdline_length)) {
+    avb_error("Overflow while adding up sizes.\n");
+    return false;
+  }
+  if (expected_size > dest->parent_descriptor.num_bytes_following) {
+    avb_error("Descriptor payload size overflow.\n");
+    return false;
+  }
+
+  return true;
+}

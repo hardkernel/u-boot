@@ -47,31 +47,31 @@ struct AvbABData;
  * dependent.
  */
 struct AvbABOps {
-	/* Operations from libavb. */
-	AvbOps* ops;
+  /* Operations from libavb. */
+  AvbOps* ops;
 
-	/* Reads A/B metadata from persistent storage. Returned data is
-	 * properly byteswapped. Returns AVB_IO_RESULT_OK on success, error
-	 * code otherwise.
-	 *
-	 * If the data read is invalid (e.g. wrong magic or CRC checksum
-	 * failure), the metadata shoule be reset using avb_ab_data_init()
-	 * and then written to persistent storage.
-	 *
-	 * Implementations will typically want to use avb_ab_data_read()
-	 * here to use the 'misc' partition for persistent storage.
-	 */
-	AvbIOResult (*read_ab_metadata)(AvbABOps *ab_ops, struct AvbABData *data);
+  /* Reads A/B metadata from persistent storage. Returned data is
+   * properly byteswapped. Returns AVB_IO_RESULT_OK on success, error
+   * code otherwise.
+   *
+   * If the data read is invalid (e.g. wrong magic or CRC checksum
+   * failure), the metadata shoule be reset using avb_ab_data_init()
+   * and then written to persistent storage.
+   *
+   * Implementations will typically want to use avb_ab_data_read()
+   * here to use the 'misc' partition for persistent storage.
+   */
+  AvbIOResult (*read_ab_metadata)(AvbABOps* ab_ops, struct AvbABData* data);
 
-	/* Writes A/B metadata to persistent storage. This will byteswap and
-	 * update the CRC as needed. Returns AVB_IO_RESULT_OK on success,
-	 * error code otherwise.
-	 *
-	 * Implementations will typically want to use avb_ab_data_write()
-	 * here to use the 'misc' partition for persistent storage.
-	 */
-	AvbIOResult (*write_ab_metadata)(AvbABOps *ab_ops, const struct AvbABData *data);
-	void (*init_ab_metadata)(struct AvbABData *data);
+  /* Writes A/B metadata to persistent storage. This will byteswap and
+   * update the CRC as needed. Returns AVB_IO_RESULT_OK on success,
+   * error code otherwise.
+   *
+   * Implementations will typically want to use avb_ab_data_write()
+   * here to use the 'misc' partition for persistent storage.
+   */
+  AvbIOResult (*write_ab_metadata)(AvbABOps* ab_ops,
+                                   const struct AvbABData* data);
 };
 
 #ifdef __cplusplus

@@ -1,4 +1,5 @@
 obj-y	+= avb_chain_partition_descriptor.o
+obj-y	+= avb_cmdline.o
 obj-y	+= avb_crc32.o
 obj-y	+= avb_crypto.o
 obj-y	+= avb_descriptor.o

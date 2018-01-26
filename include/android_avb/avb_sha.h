@@ -22,11 +22,11 @@
  * SOFTWARE.
  */
 
+/*
 #ifdef AVB_INSIDE_LIBAVB_H
 #error "You can't include avb_sha.h in the public header libavb.h."
 #endif
 
-/*
 #ifndef AVB_COMPILATION
 #error "Never include this file, it may only be used from internal avb code."
 #endif

@@ -21,6 +21,7 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+
 /*
 #if !defined(AVB_INSIDE_LIBAVB_AB_H) && !defined(AVB_COMPILATION)
 #error \
@@ -46,7 +47,7 @@ extern "C" {
 #define AVB_AB_MINOR_VERSION 0
 
 /* Size of AvbABData struct. */
-#define AVB_AB_DATA_SIZE 512
+#define AVB_AB_DATA_SIZE 32
 
 /* Maximum values for slot data */
 #define AVB_AB_MAX_PRIORITY 15
@@ -62,53 +63,43 @@ typedef struct AvbABSlotData {
    * being the highest. The special value 0 is used to indicate the
    * slot is unbootable.
    */
-  uint8_t priority : 4;
+  uint8_t priority;
 
   /* Number of times left attempting to boot this slot ranging from 0
    * to AVB_AB_MAX_TRIES_REMAINING.
    */
-  uint8_t tries_remaining : 3;
+  uint8_t tries_remaining;
 
   /* Non-zero if this slot has booted successfully, 0 otherwise. */
-  uint8_t successful_boot : 1;
-    /* 1 if this slot is corrupted from a dm-verity corruption, 0 */
-    /* otherwise. */
-    uint8_t verity_corrupted : 1;
+  uint8_t successful_boot;
+
   /* Reserved for future use. */
-  uint8_t reserved : 7;
+  uint8_t reserved[1];
 } AVB_ATTR_PACKED AvbABSlotData;
 
 /* Struct used for recording A/B metadata.
  *
  * When serialized, data is stored in network byte-order.
  */
-typedef struct AvbABData
-{
-	/* NUL terminated active slot suffix. */
-	char slot_suffix[4];
-	/* Magic number used for identification - see AVB_AB_MAGIC. */
-	uint8_t magic[AVB_AB_MAGIC_LEN];
+typedef struct AvbABData {
+  /* Magic number used for identification - see AVB_AB_MAGIC. */
+  uint8_t magic[AVB_AB_MAGIC_LEN];
 
-	/* Version of on-disk struct - see AVB_AB_{MAJOR,MINOR}_VERSION. */
-	uint8_t version_major;
+  /* Version of on-disk struct - see AVB_AB_{MAJOR,MINOR}_VERSION. */
+  uint8_t version_major;
+  uint8_t version_minor;
 
-	/* Number of slots being managed. */
-	uint8_t nb_slot : 3;
-	/* Number of times left attempting to boot recovery. */
-	uint8_t recovery_tries_remaining : 3;
-	/* Padding to ensure |slots| field start eight bytes in. */
-	uint8_t reserved1[2];
+  /* Padding to ensure |slots| field start eight bytes in. */
+  uint8_t reserved1[2];
 
-	/* Per-slot metadata. */
-	AvbABSlotData slots[4];
+  /* Per-slot metadata. */
+  AvbABSlotData slots[2];
 
-	/* Reserved for future use. */
-	uint8_t reserved2[8];
-	//uint8_t reserved3[480];
+  /* Reserved for future use. */
+  uint8_t reserved2[12];
 
-	/* CRC32 of all 28 bytes preceding this field. */
-	uint32_t crc32;
-	uint8_t version_minor;
+  /* CRC32 of all 28 bytes preceding this field. */
+  uint32_t crc32;
 } AVB_ATTR_PACKED AvbABData;
 
 /* Copies |src| to |dest|, byte-swapping fields in the
@@ -136,11 +127,6 @@ void avb_ab_data_init(AvbABData* data);
  * avb_ab_data_init() and then written to disk.
  */
 AvbIOResult avb_ab_data_read(AvbABOps* ab_ops, AvbABData* data);
-
-/* Load A/B metadata, like function avb_ab_data_read*/
-AvbIOResult load_metadata(AvbABOps* ab_ops,
-                                 AvbABData* ab_data,
-                                 AvbABData* ab_data_orig);
 
 /* Writes A/B metadata to the 'misc' partition using |ops|. This will
  * byteswap and update the CRC as needed. Returns AVB_IO_RESULT_OK on
@@ -238,8 +224,6 @@ AvbABFlowResult avb_ab_flow(AvbABOps* ab_ops,
                             AvbSlotVerifyFlags flags,
                             AvbHashtreeErrorMode hashtree_error_mode,
                             AvbSlotVerifyData** out_data);
-
-AvbABFlowResult avb_ab_slot_select(AvbABOps* ab_ops,char select_slot[]);
 
 /* Marks the slot with the given slot number as active. Returns
  * AVB_IO_RESULT_OK on success, error code otherwise.

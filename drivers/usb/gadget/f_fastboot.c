@@ -22,6 +22,7 @@
 #include <version.h>
 #include <g_dnl.h>
 #include <android_avb/avb_ops_user.h>
+#include <android_avb/rk_avb_ops_user.h>
 #ifdef CONFIG_FASTBOOT_FLASH_MMC_DEV
 #include <fb_mmc.h>
 #endif
@@ -468,12 +469,12 @@ static void cb_getvar(struct usb_ep *ep, struct usb_request *req)
 
 		strncat(response, uuid, chars_left);
 	} else if (!strcmp_l1("slot-count", cmd)) {
-#ifdef CONFIG_AVB_LIBAVB_USER
+#ifdef CONFIG_RK_AVB_LIBAVB_USER
 		char slot_count[2];
 		char temp;
 
 		slot_count[1] = '\0';
-		avb_read_slot_count(&temp);
+		rk_avb_read_slot_count(&temp);
 		slot_count[0] = temp + 0x30;
 		strncat(response, slot_count, chars_left);
 #else
@@ -481,10 +482,10 @@ static void cb_getvar(struct usb_ep *ep, struct usb_request *req)
 		return;
 #endif
 	} else if (!strcmp_l1("current-slot", cmd)) {
-#ifdef CONFIG_AVB_LIBAVB_USER
+#ifdef CONFIG_RK_AVB_LIBAVB_USER
 		char slot_surrent[8] = {0};
 
-		if (!avb_get_current_slot(slot_surrent))
+		if (!rk_avb_get_current_slot(slot_surrent))
 			strncat(response, slot_surrent+1, chars_left);
 		else
 			strcpy(response, "FAILgeterror");
@@ -493,14 +494,14 @@ static void cb_getvar(struct usb_ep *ep, struct usb_request *req)
 		return;
 #endif
 	} else if (!strcmp_l1("slot-suffixes", cmd)) {
-#ifdef CONFIG_AVB_LIBAVB_USER
+#ifdef CONFIG_RK_AVB_LIBAVB_USER
 		char slot_suffixes_temp[4];
 		char slot_suffixes[9];
 		int slot_cnt = 0;
 
 		memset(slot_suffixes_temp, 0, 4);
 		memset(slot_suffixes, 0, 9);
-		avb_read_slot_suffixes(slot_suffixes_temp);
+		rk_avb_read_slot_suffixes(slot_suffixes_temp);
 		while (slot_suffixes_temp[slot_cnt] != '\0') {
 			slot_suffixes[slot_cnt * 2]
 				= slot_suffixes_temp[slot_cnt];
@@ -513,7 +514,7 @@ static void cb_getvar(struct usb_ep *ep, struct usb_request *req)
 		return;
 #endif
 	} else if (!strncmp("has-slot", cmd, 8)) {
-#ifdef CONFIG_AVB_LIBAVB_USER
+#ifdef CONFIG_RK_AVB_LIBAVB_USER
 		char *part_name = cmd;
 
 		cmd = strsep(&part_name, ":");
@@ -531,7 +532,7 @@ static void cb_getvar(struct usb_ep *ep, struct usb_request *req)
 		return;
 #endif
 	} else if (!strncmp("slot-unbootable", cmd, 15)) {
-#ifdef CONFIG_AVB_LIBAVB_USER
+#ifdef CONFIG_RK_AVB_LIBAVB_USER
 		char *slot_name = cmd;
 
 		cmd = strsep(&slot_name, ":");
@@ -546,7 +547,7 @@ static void cb_getvar(struct usb_ep *ep, struct usb_request *req)
 		return;
 #endif
 	} else if (!strncmp("slot-successful", cmd, 15)) {
-#ifdef CONFIG_AVB_LIBAVB_USER
+#ifdef CONFIG_RK_AVB_LIBAVB_USER
 		char *slot_name = cmd;
 
 		cmd = strsep(&slot_name, ":");
@@ -561,7 +562,7 @@ static void cb_getvar(struct usb_ep *ep, struct usb_request *req)
 		return;
 #endif
 	} else if (!strncmp("slot-retry-count", cmd, 16)) {
-#ifdef CONFIG_AVB_LIBAVB_USER
+#ifdef CONFIG_RK_AVB_LIBAVB_USER
 		char *slot_name = cmd;
 		char count[10] = {0};
 		static int cnt[2] = {0};
@@ -841,14 +842,14 @@ static void cb_set_active(struct usb_ep *ep, struct usb_request *req)
 		fastboot_tx_write_str("FAIL: missing slot name");
 		return;
 	}
-#ifdef CONFIG_AVB_LIBAVB_USER
+#ifdef CONFIG_RK_AVB_LIBAVB_USER
 	unsigned int slot_number;
 	if (strncmp("a", cmd, 1) == 0) {
 		slot_number = 0;
-		avb_set_slot_active(&slot_number);
+		rk_avb_set_slot_active(&slot_number);
 	} else if (strncmp("b", cmd, 1) == 0) {
 		slot_number = 1;
-		avb_set_slot_active(&slot_number);
+		rk_avb_set_slot_active(&slot_number);
 	} else {
 		fastboot_tx_write_str("FAIL: unkown slot name");
 		return;
@@ -867,10 +868,10 @@ static void cb_flash(struct usb_ep *ep, struct usb_request *req)
 {
 	char *cmd = req->buf;
 	char response[FASTBOOT_RESPONSE_LEN] = {0};
-#ifdef CONFIG_AVB_LIBAVB_USER
+#ifdef CONFIG_RK_AVB_LIBAVB_USER
 	uint8_t flash_lock_state;
 
-	if (avb_read_flash_lock_state(&flash_lock_state)) {
+	if (rk_avb_read_flash_lock_state(&flash_lock_state)) {
 		fastboot_tx_write_str("FAIL");
 		return;
 	}
@@ -905,10 +906,10 @@ static void cb_flashing(struct usb_ep *ep, struct usb_request *req)
 	char *cmd = req->buf;
 
 	if (strncmp("lock", cmd + 9, 4) == 0) {
-#ifdef CONFIG_AVB_LIBAVB_USER
+#ifdef CONFIG_RK_AVB_LIBAVB_USER
 		uint8_t flash_lock_state;
 		flash_lock_state = 0;
-		if (avb_write_flash_lock_state(flash_lock_state))
+		if (rk_avb_write_flash_lock_state(flash_lock_state))
 			fastboot_tx_write_str("FAIL");
 		else
 			fastboot_tx_write_str("OKAY");
@@ -916,10 +917,10 @@ static void cb_flashing(struct usb_ep *ep, struct usb_request *req)
 		fastboot_tx_write_str("FAILnot implemented");
 #endif
 	} else if (strncmp("unlock", cmd + 9, 6) == 0) {
-#ifdef CONFIG_AVB_LIBAVB_USER
+#ifdef CONFIG_RK_AVB_LIBAVB_USER
 		uint8_t flash_lock_state;
 		flash_lock_state = 1;
-		if (avb_write_flash_lock_state(flash_lock_state))
+		if (rk_avb_write_flash_lock_state(flash_lock_state))
 			fastboot_tx_write_str("FAIL");
 		else
 			fastboot_tx_write_str("OKAY");
@@ -998,10 +999,10 @@ static void cb_oem(struct usb_ep *ep, struct usb_request *req)
 		return;
 #endif
 	} else if (strncmp("at-lock-vboot", cmd + 4, 13) == 0) {
-#ifdef CONFIG_AVB_LIBAVB_USER
+#ifdef CONFIG_RK_AVB_LIBAVB_USER
 		uint8_t lock_state;
 		lock_state = 0;
-		if (avb_write_lock_state(lock_state))
+		if (rk_avb_write_lock_state(lock_state))
 			fastboot_tx_write_str("FAIL");
 		else
 			fastboot_tx_write_str("OKAY");
@@ -1009,15 +1010,15 @@ static void cb_oem(struct usb_ep *ep, struct usb_request *req)
 		fastboot_tx_write_str("FAILnot implemented");
 #endif
 	} else if (strncmp("at-unlock-vboot", cmd + 4, 15) == 0) {
-#ifdef CONFIG_AVB_LIBAVB_USER
+#ifdef CONFIG_RK_AVB_LIBAVB_USER
 		uint8_t lock_state;
-		if (avb_read_lock_state(&lock_state))
+		if (rk_avb_read_lock_state(&lock_state))
 			fastboot_tx_write_str("FAIL");
 		if (lock_state >> 1 == 1) {
 			fastboot_tx_write_str("FAILThe vboot is disable!");
 		} else {
 			lock_state = 1;
-			if (avb_write_lock_state(lock_state))
+			if (rk_avb_write_lock_state(lock_state))
 				fastboot_tx_write_str("FAIL");
 			else
 				fastboot_tx_write_str("OKAY");
@@ -1026,10 +1027,10 @@ static void cb_oem(struct usb_ep *ep, struct usb_request *req)
 		fastboot_tx_write_str("FAILnot implemented");
 #endif
 	} else if (strncmp("at-disable-unlock-vboot", cmd + 4, 23) == 0) {
-#ifdef CONFIG_AVB_LIBAVB_USER
+#ifdef CONFIG_RK_AVB_LIBAVB_USER
 		uint8_t lock_state;
 		lock_state = 2;
-		if (avb_write_lock_state(lock_state))
+		if (rk_avb_write_lock_state(lock_state))
 			fastboot_tx_write_str("FAIL");
 		else
 			fastboot_tx_write_str("OKAY");
@@ -1037,14 +1038,14 @@ static void cb_oem(struct usb_ep *ep, struct usb_request *req)
 		fastboot_tx_write_str("FAILnot implemented");
 #endif
 	} else if (strncmp("fuse at-perm-attr", cmd + 4, 16) == 0) {
-#ifdef CONFIG_AVB_LIBAVB_USER
+#ifdef CONFIG_RK_AVB_LIBAVB_USER
 		if (PERM_ATTR_TOTAL_SIZE != download_bytes) {
 			printf("Permanent attribute size is not equal!\n");
 			fastboot_tx_write_str("FAIL");
 			return;
 		}
 
-		if (avb_write_permanent_attributes((uint8_t *)
+		if (rk_avb_write_permanent_attributes((uint8_t *)
 					       CONFIG_FASTBOOT_BUF_ADDR,
 					       download_bytes
 					       - PERM_ATTR_DIGEST_SIZE)) {
@@ -1052,7 +1053,7 @@ static void cb_oem(struct usb_ep *ep, struct usb_request *req)
 			return;
 		}
 
-		if (avb_write_attribute_hash((uint8_t *)
+		if (rk_avb_write_attribute_hash((uint8_t *)
 					     (CONFIG_FASTBOOT_BUF_ADDR
 					     + download_bytes
 					     - PERM_ATTR_DIGEST_SIZE),
@@ -1061,7 +1062,7 @@ static void cb_oem(struct usb_ep *ep, struct usb_request *req)
 			return;
 		}
 
-		if (avb_write_perm_attr_flag(1)) {
+		if (rk_avb_write_perm_attr_flag(1)) {
 			fastboot_tx_write_str("FAIL");
 			return;
 		}
@@ -1071,13 +1072,13 @@ static void cb_oem(struct usb_ep *ep, struct usb_request *req)
 		fastboot_tx_write_str("FAILnot implemented");
 #endif
 	} else if (strncmp("fuse at-bootloader-vboot-key", cmd + 4, 27) == 0) {
-#ifdef CONFIG_AVB_LIBAVB_USER
+#ifdef CONFIG_RK_AVB_LIBAVB_USER
 		if (download_bytes != VBOOT_KEY_HASH_SIZE) {
 			fastboot_tx_write_str("FAIL");
 			printf("The vboot key size error!\n");
 		}
 
-		if (avb_write_vbootkey_hash((uint8_t *)
+		if (rk_avb_write_vbootkey_hash((uint8_t *)
 					    CONFIG_FASTBOOT_BUF_ADDR,
 					    VBOOT_KEY_HASH_SIZE)) {
 			fastboot_tx_write_str("FAIL");

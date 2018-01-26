@@ -7,6 +7,7 @@
 #include <android_bootloader.h>
 #include <android_bootloader_message.h>
 #include <android_avb/avb_ops_user.h>
+#include <android_avb/rk_avb_ops_user.h>
 
 #include <cli.h>
 #include <common.h>
@@ -202,8 +203,8 @@ static int android_bootloader_get_fdt(const char *part_name,
 
 	memset(&boot_part_info, 0, sizeof(boot_part_info));
 
-#ifdef CONFIG_AVB_LIBAVB_USER
-	if (avb_get_current_slot(slot_suffix)) {
+#ifdef CONFIG_RK_AVB_LIBAVB_USER
+	if (rk_avb_get_current_slot(slot_suffix)) {
 		printf("ANDROID: Get Current Slot error.\n");
 		return -1;
 	}
@@ -392,7 +393,7 @@ int android_bootloader_boot_flow(struct blk_desc *dev_desc,
 		/* In recovery mode we still boot the kernel from "boot" but
 		 * don't skip the initramfs so it boots to recovery.
 		 */
-#ifndef CONFIG_AVB_LIBAVB_USER
+#ifndef CONFIG_RK_AVB_LIBAVB_USER
 		boot_partname = ANDROID_PARTITION_RECOVERY;
 #endif
 		break;
@@ -404,9 +405,9 @@ int android_bootloader_boot_flow(struct blk_desc *dev_desc,
 		return android_bootloader_boot_bootloader();
 	}
 
-#ifdef CONFIG_AVB_LIBAVB_USER
+#ifdef CONFIG_RK_AVB_LIBAVB_USER
 	/*TODO: get from pre-loader or misc partition*/
-	if (avb_get_current_slot(slot_suffix))
+	if (rk_avb_get_current_slot(slot_suffix))
 		return -1;
 #endif
 

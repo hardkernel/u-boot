@@ -27,6 +27,20 @@
 
 #include <android_avb/libavb.h>
 
+/* The libavb_ab/ and boot_control/ code has been marked for some time
+ * as experimental in anticipation of being removed in the future. It
+ * is now deprecated and to continue using it you must define
+ * AVB_AB_I_UNDERSTAND_LIBAVB_AB_IS_DEPRECATED. It will be removed Jun
+ * 1 2018.
+ */
+
+/*
+#ifndef AVB_AB_I_UNDERSTAND_LIBAVB_AB_IS_DEPRECATED
+#error \
+    "You must define AVB_AB_I_UNDERSTAND_LIBAVB_AB_IS_DEPRECATED to use this library."
+#endif
+*/
+
 /* The AVB_INSIDE_LIBAVB_AB_H preprocessor symbol is used to enforce
  * library users to include only this file. All public interfaces, and
  * only public interfaces, must be included here.

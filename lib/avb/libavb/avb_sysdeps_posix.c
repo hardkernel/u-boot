@@ -22,29 +22,66 @@
  * SOFTWARE.
  */
 
-#ifndef LIBAVB_H_
-#define LIBAVB_H_
+#include <common.h>
+#include <stdarg.h>
+#include <stdlib.h>
+#include <malloc.h>
+#include <errno.h>
+#include <asm/io.h>
 
-/* The AVB_INSIDE_LIBAVB_H preprocessor symbol is used to enforce
- * library users to include only this file. All public interfaces, and
- * only public interfaces, must be included here.
- */
-
-#define AVB_INSIDE_LIBAVB_H
-#include <android_avb/avb_chain_partition_descriptor.h>
-#include <android_avb/avb_crypto.h>
-#include <android_avb/avb_descriptor.h>
-#include <android_avb/avb_footer.h>
-#include <android_avb/avb_hash_descriptor.h>
-#include <android_avb/avb_hashtree_descriptor.h>
-#include <android_avb/avb_kernel_cmdline_descriptor.h>
-#include <android_avb/avb_ops.h>
-#include <android_avb/avb_property_descriptor.h>
-#include <android_avb/avb_slot_verify.h>
 #include <android_avb/avb_sysdeps.h>
-#include <android_avb/avb_util.h>
-#include <android_avb/avb_vbmeta_image.h>
-#include <android_avb/avb_version.h>
-#undef AVB_INSIDE_LIBAVB_H
 
-#endif /* LIBAVB_H_ */
+void abort(void);
+
+int avb_memcmp(const void* src1, const void* src2, size_t n) {
+  return memcmp(src1, src2, n);
+}
+
+void* avb_memcpy(void* dest, const void* src, size_t n) {
+  return memcpy(dest, src, n);
+}
+
+void* avb_memset(void* dest, const int c, size_t n) {
+  return memset(dest, c, n);
+}
+
+int avb_strcmp(const char* s1, const char* s2) {
+  return strcmp(s1, s2);
+}
+
+size_t avb_strlen(const char* str) {
+  return strlen(str);
+}
+
+void avb_abort(void) {
+  abort();
+}
+
+void avb_print(const char* message) {
+  fprintf(stderr, "%s", message);
+}
+
+void avb_printv(const char* message, ...) {
+  va_list ap;
+  const char* m;
+
+  va_start(ap, message);
+  for (m = message; m != NULL; m = va_arg(ap, const char*)) {
+    fprintf(stderr, "%s", m);
+  }
+  va_end(ap);
+}
+
+void* avb_malloc_(size_t size) {
+  return malloc(size);
+}
+
+void avb_free(void* ptr) {
+  free(ptr);
+}
+
+uint32_t avb_div_by_10(uint64_t* dividend) {
+  uint32_t rem = (uint32_t)(*dividend % 10);
+  *dividend /= 10;
+  return rem;
+}

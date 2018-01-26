@@ -22,29 +22,33 @@
  * SOFTWARE.
  */
 
-#ifndef LIBAVB_H_
-#define LIBAVB_H_
-
-/* The AVB_INSIDE_LIBAVB_H preprocessor symbol is used to enforce
- * library users to include only this file. All public interfaces, and
- * only public interfaces, must be included here.
- */
-
-#define AVB_INSIDE_LIBAVB_H
-#include <android_avb/avb_chain_partition_descriptor.h>
-#include <android_avb/avb_crypto.h>
-#include <android_avb/avb_descriptor.h>
 #include <android_avb/avb_footer.h>
-#include <android_avb/avb_hash_descriptor.h>
-#include <android_avb/avb_hashtree_descriptor.h>
-#include <android_avb/avb_kernel_cmdline_descriptor.h>
-#include <android_avb/avb_ops.h>
-#include <android_avb/avb_property_descriptor.h>
-#include <android_avb/avb_slot_verify.h>
-#include <android_avb/avb_sysdeps.h>
 #include <android_avb/avb_util.h>
-#include <android_avb/avb_vbmeta_image.h>
-#include <android_avb/avb_version.h>
-#undef AVB_INSIDE_LIBAVB_H
 
-#endif /* LIBAVB_H_ */
+bool avb_footer_validate_and_byteswap(const AvbFooter* src, AvbFooter* dest) {
+  avb_memcpy(dest, src, sizeof(AvbFooter));
+
+  dest->version_major = avb_be32toh(dest->version_major);
+  dest->version_minor = avb_be32toh(dest->version_minor);
+
+  dest->original_image_size = avb_be64toh(dest->original_image_size);
+  dest->vbmeta_offset = avb_be64toh(dest->vbmeta_offset);
+  dest->vbmeta_size = avb_be64toh(dest->vbmeta_size);
+
+  /* Check that magic is correct. */
+  if (avb_safe_memcmp(dest->magic, AVB_FOOTER_MAGIC, AVB_FOOTER_MAGIC_LEN) !=
+      0) {
+    avb_error("Footer magic is incorrect.\n");
+    return false;
+  }
+
+  /* Ensure we don't attempt to access any fields if the footer major
+   * version is not supported.
+   */
+  if (dest->version_major > AVB_FOOTER_VERSION_MAJOR) {
+    avb_error("No support for footer version.\n");
+    return false;
+  }
+
+  return true;
+}

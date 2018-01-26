@@ -27,9 +27,11 @@
  * found in the LICENSE file.
  */
 
+/*
 #ifdef AVB_INSIDE_LIBAVB_H
 #error "You can't include avb_rsa.h in the public header libavb.h."
 #endif
+*/
 
 /*
 #ifndef AVB_COMPILATION
