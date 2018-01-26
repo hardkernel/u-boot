@@ -393,7 +393,7 @@ int android_bootloader_boot_flow(struct blk_desc *dev_desc,
 		/* In recovery mode we still boot the kernel from "boot" but
 		 * don't skip the initramfs so it boots to recovery.
 		 */
-#ifndef CONFIG_RK_AVB_LIBAVB_USER
+#ifndef CONFIG_ANDROID_AB
 		boot_partname = ANDROID_PARTITION_RECOVERY;
 #endif
 		break;
@@ -405,10 +405,15 @@ int android_bootloader_boot_flow(struct blk_desc *dev_desc,
 		return android_bootloader_boot_bootloader();
 	}
 
-#ifdef CONFIG_RK_AVB_LIBAVB_USER
+#ifdef CONFIG_ANDROID_AB
 	/*TODO: get from pre-loader or misc partition*/
 	if (rk_avb_get_current_slot(slot_suffix))
 		return -1;
+
+	if (slot_suffix[0] != '_') {
+		printf("There is no bootable slot!\n");
+		return -1;
+	}
 #endif
 
 	/*
