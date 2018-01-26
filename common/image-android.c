@@ -10,6 +10,9 @@
 #include <malloc.h>
 #include <mapmem.h>
 #include <errno.h>
+#ifdef CONFIG_RKIMG_BOOTLOADER
+#include <asm/arch/resource_img.h>
+#endif
 
 #define ANDROID_IMAGE_DEFAULT_KERNEL_ADDR	0x10008000
 #define ANDROID_ARG_FDT_FILENAME "rk-kernel.dtb"
@@ -164,7 +167,8 @@ int android_image_get_fdt(const struct andr_img_hdr *hdr,
 	*rd_data += ALIGN(hdr->kernel_size, hdr->page_size);
 	*rd_data += ALIGN(hdr->ramdisk_size, hdr->page_size);
 #ifdef CONFIG_RKIMG_BOOTLOADER
-	*rd_data += (rockchip_get_resource_file(*rd_data, ANDROID_ARG_FDT_FILENAME))
+	*rd_data += (rockchip_get_resource_file((void *)*rd_data,
+		     ANDROID_ARG_FDT_FILENAME))
 			* 512;
 #endif
 	return 0;
