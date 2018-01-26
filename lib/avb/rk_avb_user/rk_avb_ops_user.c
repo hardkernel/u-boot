@@ -23,6 +23,7 @@
 #include <android_avb/avb_vbmeta_image.h>
 #include <android_avb/avb_atx_validate.h>
 #include <android_avb/rk_avb_ops_user.h>
+#include <boot_rkimg.h>
 
 /* rk used */
 int rk_avb_read_slot_count(char *slot_count)
@@ -634,14 +635,12 @@ int rk_avb_get_part_has_slot_info(const char *base_name)
 	int part_num;
 	size_t part_name_len;
 	disk_partition_t part_info;
-	const char *dev_iface = "mmc";
 	struct blk_desc *dev_desc;
-	int dev_num = 0;
 	const char *slot_suffix = "_a";
 
-	dev_desc = blk_get_dev(dev_iface, dev_num);
+	dev_desc = rockchip_get_bootdev();
 	if (!dev_desc) {
-		printf("Could not find %s %d\n", dev_iface, dev_num);
+		printf("%s: Could not find device!\n", __func__);
 		return -1;
 	}
 

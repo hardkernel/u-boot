@@ -40,6 +40,7 @@
 #include <optee_include/tee_api_defines.h>
 #include <android_avb/avb_vbmeta_image.h>
 #include <android_avb/avb_atx_validate.h>
+#include <boot_rkimg.h>
 
 static void byte_to_block(int64_t *offset,
 			  size_t *num_bytes,
@@ -74,16 +75,14 @@ static AvbIOResult read_from_partition(AvbOps* ops,
                                        void* buffer,
                                        size_t* out_num_read)
 {
-	char *dev_iface = "mmc";
-	int dev_num = 0;
 	struct blk_desc *dev_desc;
 	lbaint_t offset_blk, blkcnt;
 	disk_partition_t part_info;
 
 	byte_to_block(&offset, &num_bytes, &offset_blk, &blkcnt);
-	dev_desc = blk_get_dev(dev_iface, dev_num);
+	dev_desc = rockchip_get_bootdev();
 	if (!dev_desc) {
-		printf("Could not find %s %d\n", dev_iface, dev_num);
+		printf("%s: Could not find device\n", __func__);
 		return AVB_IO_RESULT_ERROR_NO_SUCH_PARTITION;
 	}
 
@@ -117,8 +116,6 @@ static AvbIOResult write_to_partition(AvbOps* ops,
                                       size_t num_bytes,
                                       const void* buffer)
 {
-	const char *dev_iface = "mmc";
-	int dev_num = 0;
 	struct blk_desc *dev_desc;
 	char *buffer_temp;
 	disk_partition_t part_info;
@@ -131,9 +128,9 @@ static AvbIOResult write_to_partition(AvbOps* ops,
 		return AVB_IO_RESULT_ERROR_OOM;
 	}
 	memset(buffer_temp, 0, 512 * blkcnt);
-	dev_desc = blk_get_dev(dev_iface, dev_num);
+	dev_desc = rockchip_get_bootdev();
 	if (!dev_desc) {
-		printf("Could not find %s %d\n", dev_iface, dev_num);
+		printf("%s: Could not find device\n", __func__);
 		return AVB_IO_RESULT_ERROR_NO_SUCH_PARTITION;
 	}
 
@@ -270,14 +267,12 @@ static AvbIOResult get_size_of_partition(AvbOps *ops,
                                          const char *partition,
                                          uint64_t *out_size_in_bytes)
 {
-	const char *dev_iface = "mmc";
-	int dev_num = 0;
 	struct blk_desc *dev_desc;
 	disk_partition_t part_info;
 
-	dev_desc = blk_get_dev(dev_iface, dev_num);
+	dev_desc = rockchip_get_bootdev();
 	if (!dev_desc) {
-		printf("Could not find %s %d\n", dev_iface, dev_num);
+		printf("%s: Could not find device\n", __func__);
 		return AVB_IO_RESULT_ERROR_NO_SUCH_PARTITION;
 	}
 
@@ -294,13 +289,11 @@ static AvbIOResult get_unique_guid_for_partition(AvbOps *ops,
                                                  char *guid_buf,
                                                  size_t guid_buf_size)
 {
-	const char *dev_iface = "mmc";
-	int dev_num = 0;
 	struct blk_desc *dev_desc;
 	disk_partition_t part_info;
-	dev_desc = blk_get_dev(dev_iface, dev_num);
+	dev_desc = rockchip_get_bootdev();
 	if (!dev_desc) {
-		printf("Could not find %s %d\n", dev_iface, dev_num);
+		printf("%s: Could not find device\n", __func__);
 		return AVB_IO_RESULT_ERROR_NO_SUCH_PARTITION;
 	}
 
