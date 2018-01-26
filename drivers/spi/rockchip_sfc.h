@@ -37,16 +37,21 @@ check_member(rockchip_sfc_reg, data, 0x108);
 #define SFC_DATA_WIDTH_MASK	GENMASK(13, 12)
 #define SFC_ADDR_WIDTH_SHIFT	10
 #define SFC_ADDR_WIDTH_MASK	GENMASK(11, 10)
-#define SFC_CMD_WIDTH_SHIT	8
+#define SFC_CMD_WIDTH_SHIFT	8
 #define SFC_CMD_WIDTH_MASK	GENMASK(9, 8)
 #define SFC_DATA_SHIFT_NEGETIVE	BIT(1)
 
 /*SFC_CMD*/
-#define SFC_WR			BIT(12)
-#define SFC_ADDR_0BITS		(0 << 14)
-#define SFC_ADDR_24BITS		(1 << 14)
-#define SFC_ADDR_32BITS		(2 << 14)
-#define SFC_ADDR_XBITS		(3 << 14)
+#define SFC_DUMMY_BITS_SHIFT	8
+#define SFC_RW_SHIFT		12
+#define SFC_WR			1
+#define SFC_RD			0
+#define SFC_ADDR_BITS_SHIFT	14
+#define SFC_ADDR_BITS_MASK	GENMASK(15, 14)
+#define SFC_ADDR_0BITS		0
+#define SFC_ADDR_24BITS		1
+#define SFC_ADDR_32BITS		2
+#define SFC_ADDR_XBITS		3
 #define SFC_TRB_SHIFT		(16)
 #define SFC_TRB_MASK		GENMASK(29, 16)
 

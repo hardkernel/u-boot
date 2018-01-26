@@ -41,6 +41,10 @@ struct rockchip_sfc {
 	unsigned int speed_hz;
 	u32 cmd;
 	u32 addr;
+	u8 addr_bits;
+	u8 dummy_bits;
+	u8 rw;
+	u32 trb;
 };
 
 static int rockchip_sfc_ofdata_to_platdata(struct udevice *bus)
@@ -148,7 +152,7 @@ static u8 rockchip_sfc_get_if_type(struct rockchip_sfc *sfc)
 {
 	int type = IF_TYPE_STD;
 
-	if (sfc->cmd & SFC_WR) {
+	if (sfc->rw == SFC_WR) {
 		if (sfc->mode & SPI_TX_QUAD)
 			type = IF_TYPE_QUAD;
 		else if (sfc->mode & SPI_TX_DUAL)
@@ -167,13 +171,13 @@ static u8 rockchip_sfc_get_if_type(struct rockchip_sfc *sfc)
 	return type;
 }
 
-static void rockchip_sfc_setup_xfer(struct rockchip_sfc *sfc)
+static void rockchip_sfc_setup_xfer(struct rockchip_sfc *sfc, u32 trb)
 {
 	struct rockchip_sfc_reg *regs = sfc->regbase;
 	u32 val = 0x02;
 	u8 data_width = IF_TYPE_STD;
 
-	if (sfc->cmd & SFC_ADDR_XBITS)
+	if (sfc->addr_bits & SFC_ADDR_XBITS)
 		data_width = rockchip_sfc_get_if_type(sfc);
 
 	val |= (data_width << SFC_DATA_WIDTH_SHIFT);
@@ -181,12 +185,20 @@ static void rockchip_sfc_setup_xfer(struct rockchip_sfc *sfc)
 	rockchip_sfc_wait_idle(sfc, 10);
 
 	writel(val, &regs->ctrl);
-	writel(sfc->cmd, &regs->cmd);
-	if (sfc->cmd & SFC_ADDR_XBITS)
+
+	val = sfc->cmd;
+	val |= trb << SFC_TRB_SHIFT;
+	val |= sfc->rw << SFC_RW_SHIFT;
+	val |= sfc->addr_bits << SFC_ADDR_BITS_SHIFT;
+	val |= sfc->dummy_bits << SFC_DUMMY_BITS_SHIFT;
+
+	writel(val, &regs->cmd);
+
+	if (sfc->addr_bits & SFC_ADDR_XBITS)
 		writel(sfc->addr, &regs->addr);
 }
 
-static int rockchip_sfc_do_dma_xfer(struct rockchip_sfc *sfc, u32 *buffer)
+static int rockchip_sfc_do_dma_xfer(struct rockchip_sfc *sfc, u32 *buffer, u32 trb)
 {
 	struct rockchip_sfc_reg *regs = sfc->regbase;
 	int timeout = 1000;
@@ -194,7 +206,7 @@ static int rockchip_sfc_do_dma_xfer(struct rockchip_sfc *sfc, u32 *buffer)
 	int risr;
 	unsigned long tbase;
 
-	rockchip_sfc_setup_xfer(sfc);
+	rockchip_sfc_setup_xfer(sfc, trb);
 
 	writel(0xFFFFFFFF, &regs->iclr);
 	writel((u32)buffer, &regs->dmaaddr);
@@ -219,25 +231,22 @@ static int rockchip_sfc_do_dma_xfer(struct rockchip_sfc *sfc, u32 *buffer)
 static int rockchip_sfc_dma_xfer(struct rockchip_sfc *sfc, u32 *buf, u32 len)
 {
 	u32 trb;
-	u32 *p32_data = buf;
 	int ret = 0;
 
 	while (len) {
 		trb = min(len, (u32)SFC_MAX_TRB);
-		sfc->cmd &= ~SFC_TRB_MASK;
-		sfc->cmd |= (trb << SFC_TRB_SHIFT);
-		ret = rockchip_sfc_do_dma_xfer(sfc, p32_data);
+		ret = rockchip_sfc_do_dma_xfer(sfc, buf, trb);
 		if (ret < 0)
 			break;
 		len -= trb;
 		sfc->addr += trb;
-		p32_data += (trb >> 2);
+		buf += (trb >> 2);
 	}
 
 	return ret;
 }
 
-static int rockchip_sfc_wait_fifo_ready(struct rockchip_sfc *sfc, int wr,
+static int rockchip_sfc_wait_fifo_ready(struct rockchip_sfc *sfc, int rw,
 					u32 timeout)
 {
 	struct rockchip_sfc_reg *regs = sfc->regbase;
@@ -247,7 +256,7 @@ static int rockchip_sfc_wait_fifo_ready(struct rockchip_sfc *sfc, int wr,
 
 	do {
 		fsr = readl(&regs->fsr);
-		if (wr)
+		if (rw == SFC_WR)
 			level = (fsr & SFC_TXLV_MASK) >> SFC_TXLV_SHIFT;
 		else
 			level = (fsr & SFC_RXLV_MASK) >> SFC_RXLV_SHIFT;
@@ -259,7 +268,7 @@ static int rockchip_sfc_wait_fifo_ready(struct rockchip_sfc *sfc, int wr,
 	return level;
 }
 
-static int rockchip_sfc_write(struct rockchip_sfc *sfc, u32 *buf, u32 len)
+static int rockchip_sfc_write_fifo(struct rockchip_sfc *sfc, u32 *buf, u32 len)
 {
 	struct rockchip_sfc_reg *regs = sfc->regbase;
 	u32 bytes = len & 0x3;
@@ -269,7 +278,7 @@ static int rockchip_sfc_write(struct rockchip_sfc *sfc, u32 *buf, u32 len)
 	u8 count;
 
 	while (words) {
-		tx_level = rockchip_sfc_wait_fifo_ready(sfc, 1, 1000);
+		tx_level = rockchip_sfc_wait_fifo_ready(sfc, SFC_WR, 1000);
 		if (tx_level <= 0)
 			return tx_level;
 		count = min(words, (u32)tx_level);
@@ -278,9 +287,9 @@ static int rockchip_sfc_write(struct rockchip_sfc *sfc, u32 *buf, u32 len)
 		words -= count;
 	}
 
-	/* handle the last none word aligned bytes */
+	/* handle the last non 4byte aligned bytes */
 	if (bytes) {
-		tx_level = rockchip_sfc_wait_fifo_ready(sfc, 1, 1000);
+		tx_level = rockchip_sfc_wait_fifo_ready(sfc, SFC_WR, 1000);
 		if (tx_level <= 0)
 			return tx_level;
 		memcpy(&val, buf, bytes);
@@ -290,7 +299,7 @@ static int rockchip_sfc_write(struct rockchip_sfc *sfc, u32 *buf, u32 len)
 	return 0;
 }
 
-static int rockchip_sfc_read(struct rockchip_sfc *sfc, u32 *buf, u32 len)
+static int rockchip_sfc_read_fifo(struct rockchip_sfc *sfc, u32 *buf, u32 len)
 {
 	struct rockchip_sfc_reg *regs = sfc->regbase;
 	u32 bytes = len & 0x3;
@@ -300,7 +309,7 @@ static int rockchip_sfc_read(struct rockchip_sfc *sfc, u32 *buf, u32 len)
 	u32 val;
 
 	while (words) {
-		rx_level = rockchip_sfc_wait_fifo_ready(sfc, 0, 1000);
+		rx_level = rockchip_sfc_wait_fifo_ready(sfc, SFC_RD, 1000);
 		if (rx_level <= 0)
 			return rx_level;
 		count = min(words, (u32)rx_level);
@@ -309,9 +318,9 @@ static int rockchip_sfc_read(struct rockchip_sfc *sfc, u32 *buf, u32 len)
 		words -= count;
 	}
 
-	/* handle the last none word aligned bytes */
+	/* handle the last non 4 bytes aligned bytes */
 	if (bytes) {
-		rx_level = rockchip_sfc_wait_fifo_ready(sfc, 0, 1000);
+		rx_level = rockchip_sfc_wait_fifo_ready(sfc, SFC_RD, 1000);
 		if (rx_level <= 0)
 			return rx_level;
 		val = readl(&regs->data);
@@ -324,16 +333,13 @@ static int rockchip_sfc_read(struct rockchip_sfc *sfc, u32 *buf, u32 len)
 static int rockchip_sfc_pio_xfer(struct rockchip_sfc *sfc, u32 *buf, u32 len)
 {
 	int ret = 0;
-	int rw = sfc->cmd & SFC_WR;
 
-	sfc->cmd &= ~SFC_TRB_MASK;
-	sfc->cmd |= (len << SFC_TRB_SHIFT);
-	rockchip_sfc_setup_xfer(sfc);
+	rockchip_sfc_setup_xfer(sfc, len);
 	if (len) {
-		if (rw)
-			ret = rockchip_sfc_write(sfc, buf, len);
+		if (sfc->rw == SFC_WR)
+			ret = rockchip_sfc_write_fifo(sfc, buf, len);
 		else
-			ret = rockchip_sfc_read(sfc, buf, len);
+			ret = rockchip_sfc_read_fifo(sfc, buf, len);
 	}
 
 	return ret;
@@ -380,8 +386,13 @@ static int rockchip_sfc_xfer(struct udevice *dev, unsigned int bitlen,
 	if (flags & SPI_XFER_BEGIN) {
 		sfc->cmd = pcmd[0];
 		if (len >= 4) {
-			sfc->cmd |= SFC_ADDR_24BITS | (((len - 4) * 8) << 8);
+			sfc->addr_bits = SFC_ADDR_24BITS;
+			sfc->dummy_bits = (len - 4) << 3;
 			sfc->addr = pcmd[3] | (pcmd[2] << 8) | (pcmd[1] << 16);
+		} else {
+			sfc->addr_bits = 0;
+			sfc->dummy_bits = 0;
+			sfc->addr = 0;
 		}
 	}
 
@@ -389,13 +400,14 @@ static int rockchip_sfc_xfer(struct udevice *dev, unsigned int bitlen,
 		len = 0;
 
 	if (flags & SPI_XFER_END) {
-		if (dout)
-			sfc->cmd |= SFC_WR;
 
-		if (din)
+		if (din) {
+			sfc->rw = SFC_RD;
 			ret = rockchip_sfc_do_xfer(sfc, (u32 *)din, len);
-		else if (dout)
+		} else if (dout) {
+			sfc->rw = SFC_WR;
 			ret = rockchip_sfc_do_xfer(sfc, (u32 *)dout, len);
+		}
 	}
 
 	return ret;
