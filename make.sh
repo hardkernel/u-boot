@@ -71,7 +71,7 @@ pack_uboot_image()
 pack_loader_image()
 {
 	cd ${RKBIN}
-	${RKTOOLS}/boot_merger ${RKBIN}/RKBOOT/${RKCHIP}MINIALL.ini
+	${RKTOOLS}/boot_merger --replace tools/rk_tools/ ./ ${RKBIN}/RKBOOT/${RKCHIP}MINIALL.ini
 	cd -
 	mv ${RKBIN}/*_loader_*.bin ./
 }
@@ -83,7 +83,7 @@ pack_trust_image()
 	# ARM64 uses trust_merger
 	if grep  -q '^CONFIG_ARM64=y' ${DSTDIR}/out/.config ; then
 		cd ${RKBIN}
-		${RKTOOLS}/trust_merger ${RKBIN}/RKTRUST/${RKCHIP}TRUST.ini
+		${RKTOOLS}/trust_merger --replace tools/rk_tools/ ./ ${RKBIN}/RKTRUST/${RKCHIP}TRUST.ini
 		cd -
 		mv ${RKBIN}/trust.img ./trust.img
 	# ARM uses loaderimage
@@ -95,8 +95,13 @@ pack_trust_image()
 		# Convert Dec to Hex
 		TEE_LOAD_ADDR=$(echo "obase=16;${TEE_LOAD_ADDR}"|bc)
 
+		# Parse orignal path
 		TOS=`sed -n "/TOS=/s/TOS=//p" ${RKBIN}/RKTRUST/${RKCHIP}TOS.ini|tr -d '\r'`
 		TOS_TA=`sed -n "/TOSTA=/s/TOSTA=//p" ${RKBIN}/RKTRUST/${RKCHIP}TOS.ini|tr -d '\r'`
+
+		# replace "./tools/rk_tools/" with "./" to compatible legacy ini content of rkdevelop branch
+		TOS=$(echo ${TOS} | sed "s/tools\/rk_tools\//\.\//g")
+		TOS_TA=$(echo ${TOS_TA} | sed "s/tools\/rk_tools\//\.\//g")
 
 		if [ $TOS_TA -a $TOS ]; then
 			${RKTOOLS}/loaderimage --pack --trustos ${RKBIN}/${TOS} ./trust.img ${TEE_LOAD_ADDR}
