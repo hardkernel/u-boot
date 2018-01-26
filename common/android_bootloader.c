@@ -362,7 +362,7 @@ int android_bootloader_boot_flow(struct blk_desc *dev_desc,
 	int part_num;
 	int ret;
 	char *command_line;
-	char slot_suffix[3];
+	char slot_suffix[3] = {0};
 	const char *mode_cmdline = NULL;
 	char *boot_partname = ANDROID_PARTITION_BOOT;
 	ulong fdt_addr;
@@ -404,12 +404,10 @@ int android_bootloader_boot_flow(struct blk_desc *dev_desc,
 		return android_bootloader_boot_bootloader();
 	}
 
-	slot_suffix[0] = '\0';
 #ifdef CONFIG_AVB_LIBAVB_USER
 	/*TODO: get from pre-loader or misc partition*/
-	slot_suffix[0] = '_';
-	slot_suffix[1] = 'a';
-	slot_suffix[2] = '\0';
+	if (avb_get_current_slot(slot_suffix))
+		return -1;
 #endif
 
 	/*
