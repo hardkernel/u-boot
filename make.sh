@@ -1,20 +1,33 @@
 #!/bin/sh
 set -e
 BOARD=$1
-DIR=${BOARD#*-}
-DSTDIR=rockdev/${DIR}
-RKCHIP=$(echo $DIR | tr '[a-z]' '[A-Z]')
-TOOLCHAIN=arm-linux-gnueabi-
+RKCHIP=${BOARD##*-}
+DSTDIR=rockdev/${RKCHIP}
+RKCHIP=$(echo ${RKCHIP} | tr '[a-z]' '[A-Z]')
 JOB=`sed -n "N;/processor/p" /proc/cpuinfo|wc -l`
+
+# Declare global rkbin tools and rkbin Responsity path, updated in prepare()
+TOOLCHAIN_RKBIN=./
+RKBIN=./
+# RKTOOL path
+RKBIN_TOOLS=../rkbin/tools
+
+# Declare global toolchain path for CROSS_COMPILE, updated in select_toolchain()
+TOOLCHAIN_GCC=./
+# GCC toolchain
+GCC_ARM32=arm-linux-androideabi-
+GCC_ARM64=aarch64-linux-android-
+TOOLCHAIN_ARM32=../prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9/bin
+TOOLCHAIN_ARM64=../prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin
 
 prepare()
 {
-	local dst
+	local absolute_path
 
 	# Check invaid args and help
-	if [ "$BOARD" = '--help' -o "$BOARD" = '-h' -o "$BOARD" = '--h' ]; then
+	if [ "$BOARD" = '--help' -o "$BOARD" = '-h' -o "$BOARD" = '--h' -o "$BOARD" = '' ]; then
 		echo
-		echo "Usage: ./make.sh board"
+		echo "Usage: ./make.sh [board]"
 		echo "Example:"
 		echo "./make.sh evb-rk3399     ---- build for evb-rk3399_defconfig"
 		echo "./make.sh firefly-rk3288 ---- build for firefly-rk3288_defconfig"
@@ -24,11 +37,11 @@ prepare()
 		exit 1
 	fi
 
-	# Initialize RKBIN and RKTOOLS
-	dst=../rkbin/tools
-	if [ -d ${dst} ]; then
-		RKBIN=$(cd `dirname ${dst}`; pwd)
-		RKTOOLS=${RKBIN}/tools
+	# Initialize RKBIN and TOOLCHAIN_RKBIN
+	if [ -d ${RKBIN_TOOLS} ]; then
+		absolute_path=$(cd `dirname ${RKBIN_TOOLS}`; pwd)
+		RKBIN=${absolute_path}
+		TOOLCHAIN_RKBIN=${absolute_path}/tools
 	else
 		echo
 		echo "Can't find '../rkbin/' Responsity, please download it before pack image!"
@@ -42,22 +55,34 @@ prepare()
 
 select_toolchain()
 {
-	local dst path
+	local absolute_path
+
 	if grep  -q '^CONFIG_ARM64=y' ${DSTDIR}/out/.config ; then
-        	TOOLCHAIN=aarch64-linux-gnu-
-		dst=../prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin
-		if [ -d ${dst} ]; then
-			path=$(cd `dirname ${dst}`; pwd)
-			TOOLCHAIN=${path}/bin/aarch64-linux-android-
+		if [ -d ${TOOLCHAIN_ARM64} ]; then
+			absolute_path=$(cd `dirname ${TOOLCHAIN_ARM64}`; pwd)
+			TOOLCHAIN_GCC=${absolute_path}/bin/${GCC_ARM64}
+		else
+			echo "Can't find toolchain: ${TOOLCHAIN_GCC}"
+			exit 1
 		fi
 	else
-		dst=../prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9/bin
-		if [ -d ${dst} ]; then
-			path=$(cd `dirname ${dst}`; pwd)
-			TOOLCHAIN=${path}/bin/arm-linux-androideabi-
+		if [ -d ${TOOLCHAIN_ARM32} ]; then
+			absolute_path=$(cd `dirname ${TOOLCHAIN_ARM32}`; pwd)
+			TOOLCHAIN_GCC=${absolute_path}/bin/${GCC_ARM32}
+		else
+			echo "Can't find toolchain: ${TOOLCHAIN_GCC}"
+			exit 1
 		fi
 	fi
-	echo toolchain: ${TOOLCHAIN}
+
+	echo "toolchain: ${TOOLCHAIN_GCC}"
+}
+
+fixup_chip_name()
+{
+	if [ "$RKCHIP" = 'RK3228' -o "$RKCHIP" = 'RK3229' ]; then
+		RKCHIP=RK322X
+	fi
 }
 
 pack_uboot_image()
@@ -65,13 +90,13 @@ pack_uboot_image()
 	local UBOOT_LOAD_ADDR
 
 	UBOOT_LOAD_ADDR=`sed -n "/CONFIG_SYS_TEXT_BASE=/s/CONFIG_SYS_TEXT_BASE=//p" ${DSTDIR}/out/include/autoconf.mk|tr -d '\r'`
-	${RKTOOLS}/loaderimage --pack --uboot ${DSTDIR}/out/u-boot.bin uboot.img ${UBOOT_LOAD_ADDR}
+	${TOOLCHAIN_RKBIN}/loaderimage --pack --uboot ${DSTDIR}/out/u-boot.bin uboot.img ${UBOOT_LOAD_ADDR}
 }
 
 pack_loader_image()
 {
 	cd ${RKBIN}
-	${RKTOOLS}/boot_merger --replace tools/rk_tools/ ./ ${RKBIN}/RKBOOT/${RKCHIP}MINIALL.ini
+	${TOOLCHAIN_RKBIN}/boot_merger --replace tools/rk_tools/ ./ ${RKBIN}/RKBOOT/${RKCHIP}MINIALL.ini
 	cd -
 	mv ${RKBIN}/*_loader_*.bin ./
 }
@@ -83,7 +108,7 @@ pack_trust_image()
 	# ARM64 uses trust_merger
 	if grep  -q '^CONFIG_ARM64=y' ${DSTDIR}/out/.config ; then
 		cd ${RKBIN}
-		${RKTOOLS}/trust_merger --replace tools/rk_tools/ ./ ${RKBIN}/RKTRUST/${RKCHIP}TRUST.ini
+		${TOOLCHAIN_RKBIN}/trust_merger --replace tools/rk_tools/ ./ ${RKBIN}/RKTRUST/${RKCHIP}TRUST.ini
 		cd -
 		mv ${RKBIN}/trust.img ./trust.img
 	# ARM uses loaderimage
@@ -104,14 +129,14 @@ pack_trust_image()
 		TOS_TA=$(echo ${TOS_TA} | sed "s/tools\/rk_tools\//\.\//g")
 
 		if [ $TOS_TA -a $TOS ]; then
-			${RKTOOLS}/loaderimage --pack --trustos ${RKBIN}/${TOS} ./trust.img ${TEE_LOAD_ADDR}
-			${RKTOOLS}/loaderimage --pack --trustos ${RKBIN}/${TOS_TA} ./trust_with_ta.img ${TEE_LOAD_ADDR}
+			${TOOLCHAIN_RKBIN}/loaderimage --pack --trustos ${RKBIN}/${TOS} ./trust.img ${TEE_LOAD_ADDR}
+			${TOOLCHAIN_RKBIN}/loaderimage --pack --trustos ${RKBIN}/${TOS_TA} ./trust_with_ta.img ${TEE_LOAD_ADDR}
 			echo "Both trust.img and trust_with_ta.img are ready"
 		elif [ $TOS ]; then
-			${RKTOOLS}/loaderimage --pack --trustos ${RKBIN}/${TOS} ./trust.img ${TEE_LOAD_ADDR}
+			${TOOLCHAIN_RKBIN}/loaderimage --pack --trustos ${RKBIN}/${TOS} ./trust.img ${TEE_LOAD_ADDR}
 			echo "trust.img is ready"
 		elif [ $TOS_TA ]; then
-			${RKTOOLS}/loaderimage --pack --trustos ${RKBIN}/${TOS_TA} ./trust.img ${TEE_LOAD_ADDR}
+			${TOOLCHAIN_RKBIN}/loaderimage --pack --trustos ${RKBIN}/${TOS_TA} ./trust.img ${TEE_LOAD_ADDR}
 			echo "trust.img with ta is ready"
 		else
 			echo "Can't find any tee bin"
@@ -121,11 +146,11 @@ pack_trust_image()
 }
 
 prepare
+select_toolchain
 echo "make for ${BOARD}_defconfig by -j${JOB}"
 make ${BOARD}_defconfig O=${DSTDIR}/out
-select_toolchain
-make CROSS_COMPILE=${TOOLCHAIN}  all --jobs=${JOB} O=${DSTDIR}/out
+make CROSS_COMPILE=${TOOLCHAIN_GCC}  all --jobs=${JOB} O=${DSTDIR}/out
+fixup_chip_name
 pack_loader_image
 pack_uboot_image
 pack_trust_image
-
