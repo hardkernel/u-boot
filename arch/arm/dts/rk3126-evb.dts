@@ -151,10 +151,9 @@
 	};
 
 	charge-animation {
-		compatible = "charge-animation";
-		screen-on-voltage-threshold = <3350>;
-		power-on-voltage-threshold = <3450>;
-		power-on-soc-threshold = <0>;
+		compatible = "rockchip,uboot-charge";
+		rockchip,uboot-charge-on = <0>;
+		rockchip,android-charge-on = <1>;
 		status = "okay";
 	};
 };
