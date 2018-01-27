@@ -147,20 +147,21 @@ err:
 int get_bootdev_type(void)
 {
 	int type = 0;
-	char *boot_media = NULL;
+	char *boot_media = NULL, *boot_mode = NULL;
+	char boot_options[128] = {0};
 	static int appended;
 
 	#ifdef CONFIG_EMMC_BOOT
 		type = IF_TYPE_MMC;
-		boot_media = "storagemedia=emmc";
+		boot_media = "emmc";
 	#endif /* CONFIG_EMMC_BOOT */
 	#ifdef CONFIG_QSPI_BOOT
 		type = IF_TYPE_SPI_NAND;
-		boot_media = "storagemedia=nand";
+		boot_media = "nand";
 	#endif /* CONFIG_QSPI_BOOT */
 	#ifdef CONFIG_NAND_BOOT
 		type = IF_TYPE_RKNAND;
-		boot_media = "storagemedia=nand";
+		boot_media = "nand";
 	#endif /* CONFIG_NAND_BOOT */
 	#ifdef CONFIG_NOR_BOOT
 		type = IF_TYPE_SPI_NOR;
@@ -169,12 +170,24 @@ int get_bootdev_type(void)
 	/* For current use(Only EMMC support!) */
 	if (!type) {
 		type = IF_TYPE_MMC;
-		boot_media = "storagemedia=emmc";
+		boot_media = "emmc";
 	}
 
 	if (!appended && boot_media) {
 		appended = 1;
-		env_update("bootargs", boot_media);
+		/*
+		 * 1. androidboot.mode=charger has higher priority, not override;
+		 * 2. rknand doesn't need "androidboot.mode=";
+		 */
+		if (env_exist("bootargs", "androidboot.mode=charger") ||
+		    (type == IF_TYPE_RKNAND))
+			snprintf(boot_options, sizeof(boot_options),
+				 "storagemedia=%s", boot_media);
+		else
+			snprintf(boot_options, sizeof(boot_options),
+				 "storagemedia=%s androidboot.mode=%s",
+				 boot_media, boot_media);
+		env_update("bootargs", boot_options);
 	}
 
 	return type;
