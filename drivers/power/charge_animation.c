@@ -41,11 +41,15 @@ struct charge_animation_priv {
 };
 
 struct charge_animation_pdata {
-	int screen_on_voltage_threshold;
-	int power_on_voltage_threshold;
-	int power_on_soc_threshold;
-	bool suspend_to_sram;
-	bool auto_start_kernel;
+	int android_charge;
+	int uboot_charge;
+
+	int screen_on_voltage;
+	int exit_charge_voltage;
+
+	int exit_charge_level;
+	int low_power_level;
+
 };
 
 static int charge_animation_get_power_on_soc(struct udevice *dev)
@@ -55,7 +59,7 @@ static int charge_animation_get_power_on_soc(struct udevice *dev)
 	if (!pdata)
 		return -ENOSYS;
 
-	return pdata->power_on_soc_threshold;
+	return pdata->exit_charge_level;
 }
 
 static int charge_animation_get_power_on_voltage(struct udevice *dev)
@@ -65,7 +69,7 @@ static int charge_animation_get_power_on_voltage(struct udevice *dev)
 	if (!pdata)
 		return -ENOSYS;
 
-	return pdata->power_on_voltage_threshold;
+	return pdata->exit_charge_voltage;
 }
 
 static int charge_animation_get_screen_on_voltage(struct udevice *dev)
@@ -75,7 +79,7 @@ static int charge_animation_get_screen_on_voltage(struct udevice *dev)
 	if (!pdata)
 		return -ENOSYS;
 
-	return pdata->screen_on_voltage_threshold;
+	return pdata->screen_on_voltage;
 }
 
 static int charge_animation_set_power_on_soc(struct udevice *dev, int val)
@@ -85,7 +89,7 @@ static int charge_animation_set_power_on_soc(struct udevice *dev, int val)
 	if (!pdata)
 		return -ENOSYS;
 
-	pdata->power_on_soc_threshold = val;
+	pdata->exit_charge_level = val;
 
 	return 0;
 }
@@ -97,7 +101,7 @@ static int charge_animation_set_power_on_voltage(struct udevice *dev, int val)
 	if (!pdata)
 		return -ENOSYS;
 
-	pdata->power_on_voltage_threshold = val;
+	pdata->exit_charge_voltage = val;
 
 	return 0;
 }
@@ -109,7 +113,7 @@ static int charge_animation_set_screen_on_voltage(struct udevice *dev, int val)
 	if (!pdata)
 		return -ENOSYS;
 
-	pdata->screen_on_voltage_threshold = val;
+	pdata->screen_on_voltage = val;
 
 	return 0;
 }
@@ -134,31 +138,34 @@ static int charge_animation_ofdata_to_platdata(struct udevice *dev)
 {
 	struct charge_animation_pdata *pdata = dev_get_platdata(dev);
 
-	if (dev_read_bool(dev, "charge,suspend-to-sram"))
-		pdata->suspend_to_sram = true;
-	else
-		pdata->suspend_to_sram = false;
+	/* charge mode */
+	pdata->uboot_charge =
+		dev_read_u32_default(dev, "rockchip,uboot-charge-on", 0);
+	pdata->android_charge =
+		dev_read_u32_default(dev, "rockchip,android-charge-on", 0);
 
-	if (dev_read_bool(dev, "charge,auto-start-kernel"))
-		pdata->auto_start_kernel = true;
-	else
-		pdata->auto_start_kernel = false;
+	/* level */
+	pdata->exit_charge_level =
+		dev_read_u32_default(dev, "rockchip,uboot-exit-charge-level", 0);
+	pdata->low_power_level =
+		dev_read_u32_default(dev, "rockchip,uboot-low-power-level", 0);
 
-	pdata->power_on_soc_threshold =
-		dev_read_u32_default(dev, "power-on-soc-threshold", 0);
-	pdata->power_on_voltage_threshold =
-		dev_read_u32_default(dev, "power-on-voltage-threshold", 0);
-	pdata->screen_on_voltage_threshold =
-		dev_read_u32_default(dev, "screen-on-voltage-threshold", 0);
+	/* voltage */
+	pdata->exit_charge_voltage =
+		dev_read_u32_default(dev, "rockchip,uboot-exit-charge-voltage", 0);
+	pdata->screen_on_voltage =
+		dev_read_u32_default(dev, "rockchip,screen-on-voltage", 0);
 
-	if (pdata->screen_on_voltage_threshold >
-	    pdata->power_on_voltage_threshold)
-		pdata->screen_on_voltage_threshold =
-					pdata->power_on_voltage_threshold;
+	if (pdata->screen_on_voltage >
+	    pdata->exit_charge_voltage)
+		pdata->screen_on_voltage =
+					pdata->exit_charge_voltage;
 
-	debug("threshold soc=%d%%, voltage=%dmv, screen_on=%dmv, suspend=%d\n",
-	      pdata->power_on_soc_threshold, pdata->power_on_voltage_threshold,
-	      pdata->screen_on_voltage_threshold, pdata->suspend_to_sram);
+	debug("mode: uboot=%d, android=%d; exit: soc=%d%%, voltage=%dmv;\n"
+	      "lp_soc=%d%%, screen_on=%dmv\n",
+	      pdata->uboot_charge, pdata->android_charge,
+	      pdata->exit_charge_level, pdata->exit_charge_voltage,
+	      pdata->low_power_level, pdata->screen_on_voltage);
 
 	return 0;
 }
@@ -235,7 +242,7 @@ static int charge_animation_show(struct udevice *dev)
 	ulong show_start = 0, charge_start = 0, debug_start = 0;
 	ulong ms = 0, sec = 0;
 	int start_idx = 0, show_idx = -1;
-	int soc, voltage, key_state;
+	int soc, voltage, current, key_state;
 	int i, charging = 1;
 	int boot_mode;
 
@@ -254,6 +261,16 @@ static int charge_animation_show(struct udevice *dev)
 	}
 #endif
 
+	/* Enter android charge */
+	if (pdata->android_charge) {
+		env_update("bootargs", "androidboot.mode=charger");
+		printf("Android charge mode\n");
+		return 0;
+	}
+
+	if (!pdata->uboot_charge)
+		return 0;
+
 	/* Not charger online, exit */
 	charging = fuel_gauge_get_chrg_online(fg);
 	if (charging <= 0)
@@ -266,14 +283,15 @@ static int charge_animation_show(struct udevice *dev)
 	}
 
 	/* If low power, turn off screen */
-	if (voltage <= pdata->screen_on_voltage_threshold + 50) {
+	if (voltage <= pdata->screen_on_voltage + 50) {
 		screen_on = false;
 		ever_lowpower_screen_off = true;
 		rockchip_show_bmp(NULL);
 	}
 
-	charge_start = get_timer(0);
+	printf("Enter U-Boot charging mode\n");
 
+	charge_start = get_timer(0);
 	/* Charging ! */
 	while (1) {
 		debug("step1 (%d)... \n", screen_on);
@@ -309,6 +327,12 @@ static int charge_animation_show(struct udevice *dev)
 			continue;
 		}
 
+		current = fuel_gauge_get_current(fg);
+		if (current == -ENOSYS) {
+			printf("get current failed: %d\n", current);
+			continue;
+		}
+
 		/*
 		 * Just for debug, otherwise there will be nothing output which
 		 * is not good to know what happen.
@@ -317,9 +341,9 @@ static int charge_animation_show(struct udevice *dev)
 			debug_start = get_timer(0);
 		if (get_timer(debug_start) > 20000) {
 			debug_start = get_timer(0);
-			printf("soc=%d, vol=%d, online=%d, screen_on=%d, show_idx=%d, ever_off=%d\n",
-			       soc, voltage, charging, screen_on, show_idx,
-			       ever_lowpower_screen_off);
+			printf("[%8ld]: soc=%d%%, vol=%dmv, c=%dma, online=%d, screen_on=%d\n",
+			       get_timer(0)/1000, soc, voltage,
+			       current, charging, screen_on);
 		}
 
 		/*
@@ -336,7 +360,7 @@ static int charge_animation_show(struct udevice *dev)
 		 * screen off.
 		 */
 		if ((ever_lowpower_screen_off) &&
-		    (voltage > pdata->screen_on_voltage_threshold)) {
+		    (voltage > pdata->screen_on_voltage)) {
 			ever_lowpower_screen_off = false;
 			screen_on = true;
 			show_idx = IMAGE_SHOW_RESET;
@@ -432,17 +456,17 @@ static int charge_animation_show(struct udevice *dev)
 				screen_on = true;
 
 			/* Is able to boot now ? */
-			if (soc < pdata->power_on_soc_threshold) {
+			if (soc < pdata->exit_charge_level) {
 				printf("soc=%d%%, threshold soc=%d%%\n",
-				       soc, pdata->power_on_soc_threshold);
+				       soc, pdata->exit_charge_level);
 				printf("Low power, unable to boot, charging...\n");
 				show_idx = image_num - 1;
 				continue;
 			}
 
-			if (voltage < pdata->power_on_voltage_threshold) {
+			if (voltage < pdata->exit_charge_voltage) {
 				printf("voltage=%dmv, threshold voltage=%dmv\n",
-				       voltage, pdata->power_on_voltage_threshold);
+				       voltage, pdata->exit_charge_voltage);
 				printf("Low power, unable to boot, charging...\n");
 				show_idx = image_num - 1;
 				continue;
@@ -458,21 +482,9 @@ static int charge_animation_show(struct udevice *dev)
 
 		debug("step5 (%d)... \n", screen_on);
 
-		/*
-		 * Step5: Check auto start kernel
-		 */
-		if (pdata->auto_start_kernel) {
-			if ((voltage >= pdata->power_on_voltage_threshold) &&
-			    (soc >= pdata->power_on_soc_threshold)) {
-				printf("Auto start, exit charge animation..\n");
-				rockchip_show_logo();
-				break;
-			}
-		}
-
-		/* Step6: Exit by ctrl+c */
+		/* Step5: Exit by ctrl+c */
 		if (ctrlc()) {
-			if (voltage >= pdata->screen_on_voltage_threshold)
+			if (voltage >= pdata->screen_on_voltage)
 				rockchip_show_logo();
 			printf("Exit charge, due to ctrl+c\n");
 			break;
@@ -547,7 +559,7 @@ static int charge_animation_probe(struct udevice *dev)
 }
 
 static const struct udevice_id charge_animation_ids[] = {
-	{ .compatible = "charge-animation" },
+	{ .compatible = "rockchip,uboot-charge" },
 	{ },
 };
 
