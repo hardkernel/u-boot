@@ -341,6 +341,15 @@ int env_set(const char *varname, const char *value);
 int env_update(const char *varname, const char *varvalue);
 
 /**
+ * env_exist() - check sub value of an environment variable is exist or not
+ *
+ * @varname: Variable to look up
+ * @value: Value to check
+ * @return 1 if exist, 0 on error
+ */
+int env_exist(const char *varname, const char *varvalue);
+
+/**
  * env_set_ulong() - set an environment variable to an integer
  *
  * @varname: Variable to adjust

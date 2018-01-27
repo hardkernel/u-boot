@@ -517,6 +517,22 @@ int env_update(const char *varname, const char *varvalue)
 	return 0;
 }
 
+int env_exist(const char *varname, const char *varvalue)
+{
+	char *value;
+	int ret = 0;
+
+	/* before import into hashtable */
+	if (!(gd->flags & GD_FLG_ENV_READY) || !varname)
+		return 1;
+
+	value = env_get(varname);
+	if (value)
+		ret = strstr(value, varvalue) ? 1 : 0;
+
+	return ret;
+}
+
 /**
  * Set an environment variable to an integer value
  *
