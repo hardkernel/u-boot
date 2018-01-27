@@ -94,6 +94,7 @@ static int dbg_enable = 0;
 #define FINISH_CALI_CURR	1500
 #define TERM_CALI_CURR		600
 #define	VIRTUAL_POWER_VOL	4200
+#define	VIRTUAL_POWER_CUR	1000
 #define	VIRTUAL_POWER_SOC	66
 #define SECONDS(n)		((n) * 1000)
 
@@ -1304,6 +1305,16 @@ static int rk816_bat_update_get_voltage(struct udevice *dev)
 		return VIRTUAL_POWER_VOL;
 }
 
+static int rk816_bat_update_get_current(struct udevice *dev)
+{
+	struct battery_info *di = dev_get_priv(dev);
+
+	if (!di->virtual_power && di->voltage_k)
+		return rk816_bat_get_avg_current(di);
+	else
+		return VIRTUAL_POWER_CUR;
+}
+
 static bool rk816_bat_update_get_chrg_online(struct udevice *dev)
 {
 	struct battery_info *di = dev_get_priv(dev);
@@ -1314,6 +1325,7 @@ static bool rk816_bat_update_get_chrg_online(struct udevice *dev)
 static struct dm_fuel_gauge_ops fg_ops = {
 	.get_soc = rk816_bat_update_get_soc,
 	.get_voltage = rk816_bat_update_get_voltage,
+	.get_current = rk816_bat_update_get_current,
 	.get_chrg_online = rk816_bat_update_get_chrg_online,
 };
 
