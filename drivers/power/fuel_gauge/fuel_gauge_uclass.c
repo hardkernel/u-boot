@@ -10,6 +10,16 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
+int fuel_gauge_get_current(struct udevice *dev)
+{
+	const struct dm_fuel_gauge_ops *ops = dev_get_driver_ops(dev);
+
+	if (!ops || !ops->get_current)
+		return -ENOSYS;
+
+	return ops->get_current(dev);
+}
+
 int fuel_gauge_get_voltage(struct udevice *dev)
 {
 	const struct dm_fuel_gauge_ops *ops = dev_get_driver_ops(dev);
