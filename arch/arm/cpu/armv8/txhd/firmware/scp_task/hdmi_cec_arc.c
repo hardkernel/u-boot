@@ -26,15 +26,16 @@
 #ifdef CEC_DBG_PRINT
 static void cec_dbg_print(char *s, int v)
 {
-	uart_puts(s);
-	uart_put_hex(v,8);
-	_udelay(100);
+       uart_puts(s);
+       uart_put_hex(v,8);
+       _udelay(100);
 }
 static void cec_dbg_prints(char *s)
 {
-	uart_puts(s);
-	_udelay(100);
+       uart_puts(s);
+       _udelay(100);
 }
+
 #if CEC_REG_DEBUG
 static void cec_print_reg(char *s, int v, int l)
 {
@@ -234,10 +235,9 @@ void remote_cec_hw_reset(void)
 	cec_set_reg_bits(AO_CECB_GEN_CNTL, 0, 0, 1);
 
 	/* set up pinmux */
-	writel(readl(AO_RTI_PIN_MUX_REG) & (~(1 << 14 | 1 << 15 | 1 << 17)),
+	writel(((readl(AO_RTI_PIN_MUX_REG) & (~(0xF << 28))) | (2 << 28)) ,
 	       AO_RTI_PIN_MUX_REG);
 	writel(readl(AO_RTI_PULL_UP_REG) & (~(1 << 7)), AO_RTI_PULL_UP_REG);
-	writel(readl(AO_RTI_PIN_MUX_REG2) | (1 << 13), AO_RTI_PIN_MUX_REG2);
 }
 
 static unsigned char remote_cec_ll_rx(void)
