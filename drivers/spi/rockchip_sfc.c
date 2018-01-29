@@ -8,6 +8,7 @@
  */
 
 #include <common.h>
+#include <bouncebuf.h>
 #include <clk.h>
 #include <dm.h>
 #include <dt-structs.h>
@@ -201,15 +202,25 @@ static void rockchip_sfc_setup_xfer(struct rockchip_sfc *sfc, u32 trb)
 static int rockchip_sfc_do_dma_xfer(struct rockchip_sfc *sfc, u32 *buffer, u32 trb)
 {
 	struct rockchip_sfc_reg *regs = sfc->regbase;
+	struct bounce_buffer bb;
+	unsigned int bb_flags;
 	int timeout = 1000;
 	int ret = 0;
 	int risr;
 	unsigned long tbase;
 
-	rockchip_sfc_setup_xfer(sfc, trb);
+	if (sfc->rw == SFC_WR)
+		bb_flags = GEN_BB_READ;
+	else
+		bb_flags = GEN_BB_WRITE;
+
+	ret = bounce_buffer_start(&bb, (void *)buffer, trb, bb_flags);
+	if (ret)
+		return ret;
+	rockchip_sfc_setup_xfer(sfc, bb.len_aligned);
 
 	writel(0xFFFFFFFF, &regs->iclr);
-	writel((u32)buffer, &regs->dmaaddr);
+	writel((u32)bb.bounce_buffer, &regs->dmaaddr);
 	writel(SFC_DMA_START, &regs->dmatr);
 
 	tbase = get_timer(0);
@@ -224,6 +235,8 @@ static int rockchip_sfc_do_dma_xfer(struct rockchip_sfc *sfc, u32 *buffer, u32 t
 	} while (!(risr & TRANS_FINISH_INT));
 
 	writel(0xFFFFFFFF, &regs->iclr);
+
+	bounce_buffer_stop(&bb);
 
 	return ret;
 }
@@ -351,7 +364,7 @@ static int rockchip_sfc_do_xfer(struct rockchip_sfc *sfc, u32 *buf, u32 len)
 	u32 bytes = len & 0x3;
 	u32 dma_trans;
 
-	if (len >= SFC_MAX_TRB) {
+	if (len >= ARCH_DMA_MINALIGN) {
 		dma_trans = len - bytes;
 	} else {
 		dma_trans = 0;

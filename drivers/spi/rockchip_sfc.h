@@ -82,6 +82,6 @@ check_member(rockchip_sfc_reg, data, 0x108);
 #define RX_UF_INT		BIT(1)        /* Rx fifo underflow interrupt */
 #define RX_FULL_INT		BIT(0)        /* Rx fifo full interrupt */
 
-#define SFC_MAX_TRB		(1024 << 3)
+#define SFC_MAX_TRB		(512 * 31)
 
 #endif
