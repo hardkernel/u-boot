@@ -168,7 +168,7 @@ static const char* slot_suffixes[2] = {"_a", "_b"};
 /* Helper function to load metadata - returns AVB_IO_RESULT_OK on
  * success, error code otherwise.
  */
-static AvbIOResult load_metadata(AvbABOps* ab_ops,
+AvbIOResult load_metadata(AvbABOps* ab_ops,
                                  AvbABData* ab_data,
                                  AvbABData* ab_data_orig) {
   AvbIOResult io_ret;
@@ -192,7 +192,7 @@ static AvbIOResult load_metadata(AvbABOps* ab_ops,
 /* Writes A/B metadata to disk only if it has changed - returns
  * AVB_IO_RESULT_OK on success, error code otherwise.
  */
-static AvbIOResult save_metadata_if_changed(AvbABOps* ab_ops,
+AvbIOResult save_metadata_if_changed(AvbABOps* ab_ops,
                                             AvbABData* ab_data,
                                             AvbABData* ab_data_orig) {
   if (avb_safe_memcmp(ab_data, ab_data_orig, sizeof(AvbABData)) != 0) {

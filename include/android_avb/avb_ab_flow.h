@@ -256,6 +256,20 @@ AvbIOResult avb_ab_mark_slot_unbootable(AvbABOps* ab_ops,
 AvbIOResult avb_ab_mark_slot_successful(AvbABOps* ab_ops,
                                         unsigned int slot_number);
 
+/*
+ * Load metadata.
+ */
+AvbIOResult load_metadata(AvbABOps* ab_ops,
+			  AvbABData* ab_data,
+			  AvbABData* ab_data_orig);
+
+/* Writes A/B metadata to disk only if it has changed - returns
+ * AVB_IO_RESULT_OK on success, error code otherwise.
+ */
+AvbIOResult save_metadata_if_changed(AvbABOps* ab_ops,
+				     AvbABData* ab_data,
+				     AvbABData* ab_data_orig);
+
 #ifdef __cplusplus
 }
 #endif
