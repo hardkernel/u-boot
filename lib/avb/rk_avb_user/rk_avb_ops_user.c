@@ -167,8 +167,8 @@ int rk_avb_read_flash_lock_state(uint8_t *flash_lock_state)
 		}
 
 		ret = trusty_read_flash_lock_state(flash_lock_state);
-		if (ret == 0)
-			return 0;
+
+		return ret;
 	} else if (ret == 0) {
 		return 0;
 	} else {
@@ -222,8 +222,8 @@ int rk_avb_read_lock_state(uint8_t *lock_state)
 		}
 
 		ret = trusty_read_lock_state(lock_state);
-		if (ret == 0)
-			return 0;
+
+		return ret;
 	} else if (ret == 0) {
 		return 0;
 	} else {
@@ -263,8 +263,8 @@ int rk_avb_read_perm_attr_flag(uint8_t *flag)
 		}
 
 		ret = trusty_read_permanent_attributes_flag(flag);
-		if (ret == 0)
-			return 0;
+
+		return ret;
 	} else if (ret == 0) {
 		return 0;
 	} else {
