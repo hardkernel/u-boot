@@ -21,6 +21,8 @@
 
 #define CONFIG_ROCKUSB_G_DNL_PID	0x110A
 
+#define CONFIG_BOUNCE_BUFFER
+
 /* usb mass storage */
 #define CONFIG_USB_FUNCTION_MASS_STORAGE
 
