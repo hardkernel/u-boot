@@ -6,6 +6,7 @@
 
 #include <android_bootloader.h>
 #include <android_bootloader_message.h>
+#include <android_avb/avb_slot_verify.h>
 #include <android_avb/avb_ops_user.h>
 #include <android_avb/rk_avb_ops_user.h>
 
@@ -354,11 +355,96 @@ char *android_assemble_cmdline(const char *slot_suffix,
 	return cmdline;
 }
 
+static void slot_set_unbootable(AvbABSlotData* slot)
+{
+	slot->priority = 0;
+	slot->tries_remaining = 0;
+	slot->successful_boot = 0;
+}
+
+#ifdef CONFIG_ANDROID_AVB
+static AvbSlotVerifyResult android_slot_verify(char *boot_partname,
+			       unsigned long load_address,
+			       char *slot_suffix)
+{
+	const char *requested_partitions[1] = {NULL};
+	uint8_t unlocked = true;
+	AvbOps *ops;
+	AvbSlotVerifyFlags flags;
+	AvbSlotVerifyData *slot_data[1] = {NULL};
+	AvbSlotVerifyResult verify_result;
+	AvbABData ab_data, ab_data_orig;
+	size_t slot_index_to_boot = 0;
+
+	requested_partitions[0] = boot_partname;
+	ops = avb_ops_user_new();
+	if (ops == NULL) {
+		printf("avb_ops_user_new() failed!\n");
+		return AVB_SLOT_VERIFY_RESULT_ERROR_OOM;
+	}
+
+	if (ops->read_is_device_unlocked(ops, (bool *)&unlocked) != AVB_IO_RESULT_OK)
+		printf("Error determining whether device is unlocked.\n");
+
+	printf("read_is_device_unlocked() ops returned that device is %s\n",
+	       (unlocked & LOCK_MASK)? "UNLOCKED" : "LOCKED");
+
+	flags = AVB_SLOT_VERIFY_FLAGS_NONE;
+	if (unlocked & LOCK_MASK)
+		flags |= AVB_SLOT_VERIFY_FLAGS_ALLOW_VERIFICATION_ERROR;
+
+	if(load_metadata(ops->ab_ops, &ab_data, &ab_data_orig)) {
+		printf("Can not load metadata\n");
+		return AVB_SLOT_VERIFY_RESULT_ERROR_IO;
+	}
+
+	if (strncmp(slot_suffix, "_a", 2))
+		slot_index_to_boot = 0;
+	else if(strncmp(slot_suffix, "_b", 2))
+		slot_index_to_boot = 1;
+	else
+		slot_index_to_boot = 0;
+
+	verify_result =
+	avb_slot_verify(ops,
+			requested_partitions,
+			slot_suffix,
+			flags,
+			AVB_HASHTREE_ERROR_MODE_RESTART_AND_INVALIDATE,
+			&slot_data[0]);
+
+	if (verify_result != AVB_SLOT_VERIFY_RESULT_OK) {
+		slot_set_unbootable(&ab_data.slots[slot_index_to_boot]);
+		goto out;
+	}
+
+	memcpy((uint8_t*)load_address,
+	       slot_data[0]->loaded_partitions->data,
+	       slot_data[0]->loaded_partitions->data_size);
+	env_set("bootargs", slot_data[0]->cmdline);
+
+	/* ... and decrement tries remaining, if applicable. */
+	if (!ab_data.slots[slot_index_to_boot].successful_boot &&
+		ab_data.slots[slot_index_to_boot].tries_remaining > 0) {
+		ab_data.slots[slot_index_to_boot].tries_remaining -= 1;
+	}
+out:
+	if (save_metadata_if_changed(ops->ab_ops, &ab_data, &ab_data_orig)) {
+		printf("Can not save metadata\n");
+		verify_result = AVB_SLOT_VERIFY_RESULT_ERROR_IO;
+	}
+
+	if (slot_data[0] != NULL)
+		avb_slot_verify_data_free(slot_data[0]);
+
+	return verify_result;
+}
+#endif
+
 int android_bootloader_boot_flow(struct blk_desc *dev_desc,
 				 unsigned long load_address)
 {
 	enum android_boot_mode mode;
-	disk_partition_t boot_part_info;
 	disk_partition_t misc_part_info;
 	int part_num;
 	int ret;
@@ -416,10 +502,15 @@ int android_bootloader_boot_flow(struct blk_desc *dev_desc,
 	}
 #endif
 
+#ifdef CONFIG_ANDROID_AVB
+	if (android_slot_verify(boot_partname, load_address, slot_suffix))
+		return -1;
+#else
 	/*
 	 * 2. Load the boot/recovery from the desired "boot" partition.
 	 * Determine if this is an AOSP image.
 	 */
+	disk_partition_t boot_part_info;
 	part_num =
 	    android_part_get_info_by_name_suffix(dev_desc,
 						 boot_partname,
@@ -438,6 +529,7 @@ int android_bootloader_boot_flow(struct blk_desc *dev_desc,
 		printf("%s %s part load fail\n", __func__, boot_part_info.name);
 		return ret;
 	}
+#endif
 
 	/* Set Android root variables. */
 	env_set_ulong("android_root_devnum", dev_desc->devnum);
@@ -445,7 +537,7 @@ int android_bootloader_boot_flow(struct blk_desc *dev_desc,
 
 	/* Assemble the command line */
 	command_line = android_assemble_cmdline(slot_suffix, mode_cmdline);
-	env_set("bootargs", command_line);
+	env_update("bootargs", command_line);
 
 	debug("ANDROID: bootargs: \"%s\"\n", command_line);
 

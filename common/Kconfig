@@ -583,6 +583,15 @@ config ANDROID_AB
 	  allows a bootloader to try a new version of the system but roll back
 	  to previous version if the new one didn't boot all the way.
 
+config ANDROID_AVB
+	bool"Support Android Verified Boot"
+	default n
+	help
+	  If enabled, adds support the android verified boot. The avb get the
+	  digital signature and key from vemeta. Then use the RSA2048 and sha256
+	  to verify the boot images. The vbmeta must be matched with images,
+	  if not, verify failed.
+
 config ANDROID_BOOT_IMAGE
 	bool "Enable support for Android Boot Images"
 	help
