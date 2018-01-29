@@ -38,6 +38,9 @@
 #define CONFIG_VDDEE_INIT_VOLTAGE	950		// voltage for power up
 #define CONFIG_VDDEE_SLEEP_VOLTAGE	 810		// voltage for suspend
 
+#define CONFIG_CMDLINE_EDITING
+#define CONFIG_AUTO_COMPLETE
+
 /* SMP Definitinos */
 #define CPU_RELEASE_ADDR		secondary_boot_func
 
