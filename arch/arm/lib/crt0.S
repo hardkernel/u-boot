@@ -121,7 +121,7 @@ here:
 
 	bl	c_runtime_cpu_setup	/* we still call old routine here */
 #endif
-#if !defined(CONFIG_SPL_BUILD) || defined(CONFIG_SPL_FRAMEWORK)
+#if !defined(CONFIG_SPL_BUILD) || (defined(CONFIG_SPL_FRAMEWORK) && !defined(CONFIG_TPL_BUILD))
 # ifdef CONFIG_SPL_BUILD
 	/* Use a DRAM stack for the rest of SPL, if requested */
 	bl	spl_relocate_stack_gd

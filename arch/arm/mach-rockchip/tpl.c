@@ -14,6 +14,7 @@
 #include <asm/io.h>
 #include <asm/arch/bootrom.h>
 #include <asm/arch/uart.h>
+#include <asm/arch-rockchip/sys_proto.h>
 
 #ifndef CONFIG_TPL_LIBCOMMON_SUPPORT
 #define CONFIG_SYS_NS16550_COM1 CONFIG_DEBUG_UART_BASE
@@ -70,8 +71,10 @@ __weak int arch_cpu_init(void)
 
 void board_init_f(ulong dummy)
 {
+#if defined(CONFIG_SPL_FRAMEWORK) && !defined(CONFIG_TINY_TPL)
 	struct udevice *dev;
 	int ret;
+#endif
 
 	rockchip_stimer_init();
 	arch_cpu_init();
@@ -88,28 +91,35 @@ void board_init_f(ulong dummy)
 	debug_uart_init();
 	printascii("\nU-Boot TPL " PLAIN_VERSION " (" U_BOOT_DATE " - " \
 				U_BOOT_TIME ")\n");
-
 #endif
+
+#if defined(CONFIG_SPL_FRAMEWORK) && !defined(CONFIG_TINY_TPL)
 	ret = spl_early_init();
 	if (ret) {
 		debug("spl_early_init() failed: %d\n", ret);
 		hang();
 	}
+#endif
 
 	/* Init ARM arch timer */
 	timer_init();
+
+#if defined(CONFIG_SPL_FRAMEWORK) && !defined(CONFIG_TINY_TPL)
 	ret = uclass_get_device(UCLASS_RAM, 0, &dev);
 	if (ret) {
 		printf("DRAM init failed: %d\n", ret);
 		return;
 	}
+#else
+	sdram_init();
+#endif
 
 #if defined(CONFIG_TPL_ROCKCHIP_BACK_TO_BROM) && !defined(CONFIG_TPL_BOARD_INIT)
 	back_to_bootrom(BROM_BOOT_NEXTSTAGE);
 #endif
 }
 
-#ifndef CONFIG_SPL_FRAMEWORK
+#if !(defined(CONFIG_SPL_FRAMEWORK) && !defined(CONFIG_TINY_TPL))
 /* Place Holders */
 void board_init_r(gd_t *id, ulong dest_addr)
 {

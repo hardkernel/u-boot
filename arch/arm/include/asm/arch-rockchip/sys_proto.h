@@ -7,7 +7,7 @@
 #ifndef _ASM_ARCH_SYS_PROTO_H
 #define _ASM_ARCH_SYS_PROTO_H
 
-#ifndef CONFIG_SPL_FRAMEWORK
+#if !defined(CONFIG_SPL_FRAMEWORK) || defined(CONFIG_TINY_TPL)
 void sdram_init(void);
 #endif
 

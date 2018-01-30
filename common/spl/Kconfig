@@ -852,6 +852,11 @@ config TPL_LIBGENERIC_SUPPORT
 	  Enable support for generic U-Boot libraries within TPL. See
 	  SPL_LIBGENERIC_SUPPORT for details.
 
+config TINY_TPL
+	bool "Support not to use spl framework in TPL"
+	help
+	  Enable support for not using spl framework in TPL, to reduce the TPL size.
+
 config TPL_MPC8XXX_INIT_DDR_SUPPORT
 	bool "Support MPC8XXX DDR init"
 	help
