@@ -35,7 +35,6 @@ struct charge_image {
 struct charge_animation_priv {
 	struct udevice *pmic;
 	struct udevice *fg;
-	struct udevice *pwrkey;
 	const struct charge_image *image;
 	int image_num;
 };
@@ -170,11 +169,11 @@ static int charge_animation_ofdata_to_platdata(struct udevice *dev)
 	return 0;
 }
 
-static int check_key_press(struct udevice *dev)
+static int check_key_press(void)
 {
 	u32 state;
 
-	state = key_read(dev);
+	state = platform_key_read(KEY_POWER);
 	if (state < 0)
 		printf("read power key failed: %d\n", state);
 
@@ -232,7 +231,6 @@ static int charge_animation_show(struct udevice *dev)
 	struct charge_animation_pdata *pdata = dev_get_platdata(dev);
 	struct charge_animation_priv *priv = dev_get_priv(dev);
 	const struct charge_image *image = priv->image;
-	struct udevice *pwrkey = priv->pwrkey;
 	struct udevice *pmic = priv->pmic;
 	struct udevice *fg = priv->fg;
 	const char *preboot = env_get("preboot");
@@ -424,7 +422,7 @@ static int charge_animation_show(struct udevice *dev)
 		 * Short key event: turn on/off screen;
 		 * Long key event: show logo and boot system or still charging.
 		 */
-		key_state = check_key_press(pwrkey);
+		key_state = check_key_press();
 		if (key_state == KEY_PRESS_DOWN) {
 			/* NULL means show nothing, ie. turn off screen */
 			if (screen_on)
@@ -516,7 +514,7 @@ static const struct dm_charge_display_ops charge_animation_ops = {
 static int charge_animation_probe(struct udevice *dev)
 {
 	struct charge_animation_priv *priv = dev_get_priv(dev);
-	struct udevice *pwrkey, *fg, *pmic;
+	struct udevice *fg, *pmic;
 	int ret;
 
 	/* Get PMIC */
@@ -526,20 +524,6 @@ static int charge_animation_probe(struct udevice *dev)
 		return ret;
 	}
 	priv->pmic = pmic;
-
-	/* Get power key */
-	for (uclass_first_device(UCLASS_KEY, &pwrkey);
-	     pwrkey;
-	     uclass_next_device(&pwrkey)) {
-		if (key_type(pwrkey) == KEY_POWER) {
-			priv->pwrkey = pwrkey;
-			break;
-		}
-	}
-	if (!priv->pwrkey) {
-		printf("Can't find any power key\n");
-		return -ENOSYS;
-	}
 
 	/* Get fuel gauge */
 	ret = uclass_get_device(UCLASS_FG, 0, &fg);
