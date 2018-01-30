@@ -15,7 +15,8 @@
 #include <asm/arch/bootrom.h>
 #include <asm/arch/uart.h>
 
-#ifndef CONFIG_SPL_LIBCOMMON_SUPPORT
+#ifndef CONFIG_TPL_LIBCOMMON_SUPPORT
+#define CONFIG_SYS_NS16550_COM1 CONFIG_DEBUG_UART_BASE
 void puts(const char *str)
 {
 	while (*str)
@@ -29,7 +30,7 @@ void putc(char c)
 
 	NS16550_putc((NS16550_t)(CONFIG_SYS_NS16550_COM1), c);
 }
-#endif /* CONFIG_SPL_LIBCOMMON_SUPPORT */
+#endif /* CONFIG_TPL_LIBCOMMON_SUPPORT */
 
 u32 spl_boot_device(void)
 {
