@@ -28,7 +28,12 @@
 #define RK805_PWRON_RISE_INT	(1 << 0)
 #define RK805_PWRON_FALL_INT	(1 << 7)
 
-struct key_data {
+struct reg_data {
+	u8 reg;
+	u8 val;
+};
+
+struct rk8xx_key_priv {
 	u8 int_sts_reg;
 	u8 int_msk_reg;
 	u8 pwron_rise_int;
@@ -37,13 +42,6 @@ struct key_data {
 	u32 init_reg_num;
 	struct reg_data *irq_reg;
 	u32 irq_reg_num;
-	uint64_t key_down_t;
-	uint64_t key_up_t;
-};
-
-struct reg_data {
-	u8 reg;
-	u8 val;
 };
 
 static struct reg_data rk816_init_reg[] = {
@@ -76,92 +74,84 @@ static struct reg_data rk805_init_reg[] = {
 	{ RK805_INT_STS_REG, 0xff },
 };
 
-static inline uint64_t arch_counter_get_cntpct(void)
+static int rk8xx_pwrkey_read(struct udevice *dev, int code)
 {
-	uint64_t cval = 0;
+	struct input_key *key = dev_get_platdata(dev);
+	u32 report = KEY_NOT_EXIST;
 
-	isb();
-#ifdef CONFIG_ARM64
-	asm volatile("mrs %0, cntpct_el0" : "=r" (cval));
-#else
-	asm volatile ("mrrc p15, 0, %Q0, %R0, c14" : "=r" (cval));
-#endif
-	return cval;
-}
+	if (key->code != code)
+		goto out;
 
-static uint64_t get_ms(uint64_t base)
-{
-	return (arch_counter_get_cntpct() / 24000UL) - base;
-}
+	debug("%s: long key ms: %llu\n",
+	      __func__, key->up_t - key->down_t);
 
-static int rk8xx_pwrkey_read(struct udevice *dev)
-{
-	struct key_data *key = dev_get_priv(dev);
-	u32 report = KEY_PRESS_NONE;
-
-	if ((key->key_up_t > key->key_down_t) &&
-	    (key->key_up_t - key->key_down_t) >= KEY_LONG_DOWN_MS) {
-		debug("%s: long key ms: %llu\n", __func__, key->key_up_t - key->key_down_t);
-		key->key_up_t = 0;
-		key->key_down_t = 0;
+	if ((key->up_t > key->down_t) &&
+	    (key->up_t - key->down_t) >= KEY_LONG_DOWN_MS) {
+		key->up_t = 0;
+		key->down_t = 0;
 		report = KEY_PRESS_LONG_DOWN;
-	} else if (key->key_down_t && get_ms(key->key_down_t) >= KEY_LONG_DOWN_MS) {
-		debug("%s: long key (hold) ms: %llu\n", __func__, key->key_up_t - key->key_down_t);
-		key->key_up_t = 0;
-		key->key_down_t = 0;
+		printf("'%s' key long pressed down\n", key->name);
+	} else if (key->down_t &&
+		   key_get_timer(key->down_t) >= KEY_LONG_DOWN_MS) {
+		key->up_t = 0;
+		key->down_t = 0;
 		report = KEY_PRESS_LONG_DOWN;
-	} else if ((key->key_up_t > key->key_down_t) &&
-		   (key->key_up_t - key->key_down_t) < KEY_LONG_DOWN_MS) {
-		debug("%s: short key ms: %llu\n", __func__, key->key_up_t - key->key_down_t);
-		key->key_up_t = 0;
-		key->key_down_t = 0;
+		printf("'%s' key long pressed down(hold)\n", key->name);
+	} else if ((key->up_t > key->down_t) &&
+		   (key->up_t - key->down_t) < KEY_LONG_DOWN_MS) {
+		key->up_t = 0;
+		key->down_t = 0;
 		report = KEY_PRESS_DOWN;
+		printf("'%s' key pressed down\n", key->name);
 	} else {
-		debug("%s: key up: %llu, down: %llu\n", __func__, key->key_up_t, key->key_down_t);
+		report = KEY_PRESS_NONE;
 	}
 
+out:
 	return report;
 }
 
 static void pwrkey_irq_handler(int irq, void *data)
 {
 	struct udevice *dev = data;
-	struct key_data *key = dev_get_priv(dev);
+	struct rk8xx_key_priv *priv = dev_get_priv(dev);
+	struct input_key *key = dev_get_platdata(dev);
 	int ret, val, i;
 
 	/* read status */
-	val = pmic_reg_read(dev->parent, key->int_sts_reg);
+	val = pmic_reg_read(dev->parent, priv->int_sts_reg);
 	if (val < 0) {
 		printf("%s: i2c read failed, ret=%d\n", __func__, val);
 		return;
 	}
 
 	/* fall event */
-	if (val & key->pwron_fall_int) {
-		key->key_down_t = get_ms(0);
-		debug("%s: key down: %llu ms\n", __func__, key->key_down_t);
+	if (val & priv->pwron_fall_int) {
+		key->down_t = key_get_timer(0);
+		debug("%s: key down: %llu ms\n", __func__, key->down_t);
 	}
 
 	/* rise event */
-	if (val & key->pwron_rise_int) {
-		key->key_up_t = get_ms(0);
-		debug("%s: key up: %llu ms\n", __func__, key->key_up_t);
+	if (val & priv->pwron_rise_int) {
+		key->up_t = key_get_timer(0);
+		debug("%s: key up: %llu ms\n", __func__, key->up_t);
 	}
 
 	/* clear intertup */
-	for (i = 0; i < key->irq_reg_num; i++) {
+	for (i = 0; i < priv->irq_reg_num; i++) {
 		ret = pmic_reg_write(dev->parent,
-				     key->irq_reg[i].reg,
-				     key->irq_reg[i].val);
+				     priv->irq_reg[i].reg,
+				     priv->irq_reg[i].val);
 		if (ret < 0) {
 			printf("%s: i2c write reg 0x%x failed, ret=%d\n",
-			       __func__, key->irq_reg[i].reg, ret);
+			       __func__, priv->irq_reg[i].reg, ret);
 		}
 	}
 }
 
 static int pwrkey_interrupt_init(struct udevice *dev)
 {
+	struct input_key *key = dev_get_platdata(dev);
 	u32 interrupt[2], phandle;
 	int irq, ret;
 
@@ -177,6 +167,8 @@ static int pwrkey_interrupt_init(struct udevice *dev)
 		return ret;
 	}
 
+	key->name = "pwrkey";
+	key->code = KEY_POWER;
 	irq = phandle_gpio_to_irq(phandle, interrupt[0]);
 	irq_install_handler(irq, pwrkey_irq_handler, dev);
 	irq_set_irq_type(irq, IRQ_TYPE_EDGE_FALLING);
@@ -186,38 +178,37 @@ static int pwrkey_interrupt_init(struct udevice *dev)
 }
 
 static const struct dm_key_ops key_ops = {
-	.type = KEY_POWER,
-	.name = "pmic-pwrkey",
+	.name = "rk8xx-pwrkey",
 	.read = rk8xx_pwrkey_read,
 };
 
 static int rk8xx_pwrkey_probe(struct udevice *dev)
 {
 	struct rk8xx_priv *rk8xx = dev_get_priv(dev->parent);
-	struct key_data *key = dev_get_priv(dev);
+	struct rk8xx_key_priv *priv = dev_get_priv(dev);
 	int ret, i;
 
 	switch (rk8xx->variant) {
 	case RK805_ID:
-		key->int_sts_reg = RK805_INT_STS_REG;
-		key->int_msk_reg = RK805_INT_MSK_REG;
-		key->pwron_rise_int = RK805_PWRON_RISE_INT;
-		key->pwron_fall_int = RK805_PWRON_FALL_INT;
-		key->init_reg = rk805_init_reg;
-		key->init_reg_num = ARRAY_SIZE(rk805_init_reg);
-		key->irq_reg = rk805_irq_reg;
-		key->irq_reg_num = ARRAY_SIZE(rk805_irq_reg);
+		priv->int_sts_reg = RK805_INT_STS_REG;
+		priv->int_msk_reg = RK805_INT_MSK_REG;
+		priv->pwron_rise_int = RK805_PWRON_RISE_INT;
+		priv->pwron_fall_int = RK805_PWRON_FALL_INT;
+		priv->init_reg = rk805_init_reg;
+		priv->init_reg_num = ARRAY_SIZE(rk805_init_reg);
+		priv->irq_reg = rk805_irq_reg;
+		priv->irq_reg_num = ARRAY_SIZE(rk805_irq_reg);
 		break;
 
 	case RK816_ID:
-		key->int_sts_reg = RK816_INT_STS_REG1;
-		key->int_msk_reg = RK816_INT_MSK_REG1;
-		key->pwron_rise_int = RK816_PWRON_RISE_INT;
-		key->pwron_fall_int = RK816_PWRON_FALL_INT;
-		key->init_reg = rk816_init_reg;
-		key->init_reg_num = ARRAY_SIZE(rk816_init_reg);
-		key->irq_reg = rk816_irq_reg;
-		key->irq_reg_num = ARRAY_SIZE(rk816_irq_reg);
+		priv->int_sts_reg = RK816_INT_STS_REG1;
+		priv->int_msk_reg = RK816_INT_MSK_REG1;
+		priv->pwron_rise_int = RK816_PWRON_RISE_INT;
+		priv->pwron_fall_int = RK816_PWRON_FALL_INT;
+		priv->init_reg = rk816_init_reg;
+		priv->init_reg_num = ARRAY_SIZE(rk816_init_reg);
+		priv->irq_reg = rk816_irq_reg;
+		priv->irq_reg_num = ARRAY_SIZE(rk816_irq_reg);
 		break;
 
 	default:
@@ -225,13 +216,13 @@ static int rk8xx_pwrkey_probe(struct udevice *dev)
 	}
 
 	/* mask and clear intertup */
-	for (i = 0; i < key->init_reg_num; i++) {
+	for (i = 0; i < priv->init_reg_num; i++) {
 		ret = pmic_reg_write(dev->parent,
-				     key->init_reg[i].reg,
-				     key->init_reg[i].val);
+				     priv->init_reg[i].reg,
+				     priv->init_reg[i].val);
 		if (ret < 0) {
 			printf("%s: i2c write reg 0x%x failed, ret=%d\n",
-			       __func__, key->init_reg[i].reg, ret);
+			       __func__, priv->init_reg[i].reg, ret);
 			return ret;
 		}
 	}
@@ -242,7 +233,8 @@ static int rk8xx_pwrkey_probe(struct udevice *dev)
 U_BOOT_DRIVER(rk8xx_pwrkey) = {
 	.name   = "rk8xx_pwrkey",
 	.id     = UCLASS_KEY,
-	.probe  = rk8xx_pwrkey_probe,
 	.ops	= &key_ops,
-	.priv_auto_alloc_size = sizeof(struct key_data),
+	.probe  = rk8xx_pwrkey_probe,
+	.platdata_auto_alloc_size = sizeof(struct input_key),
+	.priv_auto_alloc_size = sizeof(struct rk8xx_key_priv),
 };
