@@ -58,3 +58,10 @@ config ADC_KEY
 	default y
 	help
 	  This adds a driver for the adc keys support.
+
+config GPIO_KEY
+	bool "Enable gpio keys support"
+	depends on DM_KEY
+	default y
+	help
+	  This adds a driver for the gpio keys support.
