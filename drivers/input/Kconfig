@@ -51,3 +51,10 @@ config RK8XX_PWRKEY
 	default y
 	help
 	  This adds a driver for the RK805/816 pwrkey support.
+
+config ADC_KEY
+	bool "Enable adc keys support"
+	depends on DM_KEY
+	default y
+	help
+	  This adds a driver for the adc keys support.
