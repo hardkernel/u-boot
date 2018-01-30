@@ -14,16 +14,31 @@ enum key_state {
 	KEY_PRESS_UP,
 	KEY_PRESS_DOWN,
 	KEY_PRESS_LONG_DOWN,
+	KEY_NOT_EXIST,
 };
 
 struct dm_key_ops {
 	int type;
 	const char *name;
-	int (*read)(struct udevice *dev);
+	int (*read)(struct udevice *dev, int code);
+	int (*exist)(struct udevice *dev, int code);
 };
 
-int key_read(struct udevice *dev);
-int key_type(struct udevice *dev);
-const char *key_label(struct udevice *dev);
+struct input_key {
+	const char *name;
+	u32 code;
+	u32 channel;
+	u32 value;
+	u32 margin;
+	u32 vref;
+	int flag;
+
+	u32 irq;
+	u64 up_t;
+	u64 down_t;
+};
+
+uint64_t key_get_timer(uint64_t base);
+int platform_key_read(int code);
 
 #endif
