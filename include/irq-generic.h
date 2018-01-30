@@ -55,14 +55,18 @@ struct irq_chip {
 	void		(*irq_ack)(int irq);
 	void		(*irq_eoi)(int irq);
 	int		(*irq_set_type)(int irq, unsigned int flow_type);
+	int		(*irq_revert_type)(int irq);
+	int		(*irq_get_gpio_level)(int irq);
 };
 
 /* APIs for irqs */
 void irq_install_handler(int irq, interrupt_handler_t *handler, void *data);
 void irq_free_handler(int irq);
 int irq_set_irq_type(int irq, unsigned int type);
+int irq_revert_irq_type(int irq);
 int irq_handler_enable(int irq);
 int irq_handler_disable(int irq);
+int irq_get_gpio_level(int irq);
 int irqs_suspend(void);
 int irqs_resume(void);
 int gpio_to_irq(struct gpio_desc *gpio);

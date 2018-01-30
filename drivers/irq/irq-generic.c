@@ -162,6 +162,28 @@ int irq_set_irq_type(int irq, unsigned int type)
 		return gpio_irq_chip->irq_set_type(irq, type);
 }
 
+int irq_revert_irq_type(int irq)
+{
+	if (irq_bad(irq))
+		return -EINVAL;
+
+	if (irq < PLATFORM_GIC_IRQS_NR)
+		return 0;
+	else
+		return gpio_irq_chip->irq_revert_type(irq);
+}
+
+int irq_get_gpio_level(int irq)
+{
+	if (irq_bad(irq))
+		return -EINVAL;
+
+	if (irq < PLATFORM_GIC_IRQS_NR)
+		return 0;
+	else
+		return gpio_irq_chip->irq_get_gpio_level(irq);
+}
+
 void irq_install_handler(int irq, interrupt_handler_t *handler, void *data)
 {
 	if (irq_bad(irq))
