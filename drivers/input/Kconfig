@@ -65,3 +65,10 @@ config GPIO_KEY
 	default y
 	help
 	  This adds a driver for the gpio keys support.
+
+config RK_KEY
+	bool "Enable rk keys support"
+	depends on DM_KEY
+	default y
+	help
+	  This adds a driver for the rk keys support.

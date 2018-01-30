@@ -24,3 +24,4 @@ obj-y += input.o
 obj-$(CONFIG_$(SPL_)OF_CONTROL) += key_matrix.o
 obj-$(CONFIG_ADC_KEY) += adc_key.o
 obj-$(CONFIG_GPIO_KEY) += gpio_key.o
+obj-$(CONFIG_RK_KEY) += rk_key.o
