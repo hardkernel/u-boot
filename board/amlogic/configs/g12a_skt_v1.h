@@ -81,7 +81,7 @@
         "upgrade_step=0\0"\
         "jtag=disable\0"\
         "loadaddr=1080000\0"\
-        "panel_type=lvds_1\0" \
+        "panel_type=lcd_1\0" \
         "outputmode=1080p60hz\0" \
         "hdmimode=1080p60hz\0" \
         "cvbsmode=576cvbs\0" \
@@ -397,9 +397,11 @@
 #define CONFIG_AML_CVBS 1
 #endif
 
-//#define CONFIG_AML_LCD    1
-//#define CONFIG_AML_LCD_TV 1
-//#define CONFIG_AML_LCD_TABLET 1
+// #define CONFIG_AML_LCD    1
+// #define CONFIG_AML_LCD_TABLET 1
+// #define CONFIG_AML_LCD_EXTERN 1
+// #define CONFIG_AML_LCD_EXTERN_MIPI_TV070WSM 1
+// #define CONFIG_AML_LCD_EXTERN_MIPI_P070ACB 1
 
 /* USB
  * Enable CONFIG_MUSB_HCD for Host functionalities MSC, keyboard

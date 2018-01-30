@@ -74,10 +74,10 @@ extern unsigned int lcd_debug_print_flag;
 #define TTL_DELAY                   13
 
 
-/* ******** AXG ******** */
+/* ******** MIPI_DSI_PHY ******** */
 /* bit[15:11] */
-#define BIT_PHY_LANE_AXG        11
-#define PHY_LANE_WIDTH_AXG       5
+#define MIPI_PHY_LANE_BIT        11
+#define MIPI_PHY_LANE_WIDTH      5
 
 /* MIPI-DSI */
 #define DSI_LANE_0              (1 << 4)
@@ -110,6 +110,7 @@ enum lcd_chip_e {
 	LCD_CHIP_TXLX,    	/* 4 */
 	LCD_CHIP_AXG, 		/* 5 */
 	LCD_CHIP_TXHD, 		/* 6 */
+	LCD_CHIP_G12A, 		/* 7 */
 	LCD_CHIP_MAX,
 };
 

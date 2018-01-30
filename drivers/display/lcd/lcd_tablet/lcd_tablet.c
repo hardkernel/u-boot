@@ -503,6 +503,11 @@ static int lcd_config_load_from_bsp(struct lcd_config_s *pconf)
 		pconf->lcd_control.mipi_config->clk_lp_continuous  = ext_lcd->lcd_spc_val6;
 		pconf->lcd_control.mipi_config->phy_stop_wait = ext_lcd->lcd_spc_val7;
 		pconf->lcd_control.mipi_config->factor_denominator = 100;
+
+		if (ext_lcd->lcd_spc_val9 == Rsv_val)
+			pconf->lcd_control.mipi_config->extern_init = 0xff;
+		else
+			pconf->lcd_control.mipi_config->extern_init = ext_lcd->lcd_spc_val9;
 	}
 
 	i = 0;

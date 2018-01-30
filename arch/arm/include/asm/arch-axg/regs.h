@@ -15,7 +15,6 @@
 #define DMC_REG_BASE                    (0xFF638000L)
 #define REG_BASE_DSI_HOST          		(0xFFD00000L)/* 0xFFD06000L*/
 
-
 #endif /*_BASE_REGISTER*/
 
 
@@ -3743,6 +3742,7 @@
 // -----------------------------------------------
 // CBUS_BASE:  DSI_CBUS_BASE = 0x18
 // -----------------------------------------------
+#define MIPI_DSI_REGISTER
 //------------------------------------------------------------------------------
 // DWC IP registers: Synopsys IP, please refer to MIPI DSI HOST Databook
 //------------------------------------------------------------------------------

@@ -24,8 +24,8 @@
 
 static const unsigned int od_fb_table[2] = {1, 2};
 
-static const unsigned int od_table[4] = {
-	1, 2, 4, 8
+static const unsigned int od_table[6] = {
+	1, 2, 4, 8, 16, 32
 };
 static const unsigned int div_pre_table[6] = {
 	1, 2, 3, 4, 5, 6
@@ -143,7 +143,8 @@ static void lcd_clk_config_init_print(void)
 	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
 
 	switch (lcd_drv->chip_type) {
-		case LCD_CHIP_AXG:
+	case LCD_CHIP_AXG:
+	case LCD_CHIP_G12A:
 		LCDPR("lcd clk config init:\n"
 			"pll_m_max:         %d\n"
 			"pll_m_min:         %d\n"
@@ -204,7 +205,8 @@ void lcd_clk_config_print(void)
 	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
 
 	switch (lcd_drv->chip_type) {
-		case LCD_CHIP_AXG:
+	case LCD_CHIP_AXG:
+	case LCD_CHIP_G12A:
 		LCDPR("lcd clk config:\n"
 			"pll_m:        %d\n"
 			"pll_n:        %d\n"
@@ -387,6 +389,24 @@ static void lcd_clk_config_chip_init(void)
 		cConf->div_in_fmax = CLK_DIV_IN_MAX_TXHD;
 		cConf->div_out_fmax = CRT_VID_CLK_IN_MAX_TXHD;
 		cConf->xd_out_fmax = ENCL_CLK_IN_MAX_TXHD;
+		break;
+	case LCD_CHIP_G12A:
+		cConf->ss_level_max = SS_LEVEL_MAX_G12A;
+		cConf->pll_m_max = PLL_M_MAX_G12A;
+		cConf->pll_m_min = PLL_M_MIN_G12A;
+		cConf->pll_n_max = PLL_N_MAX_G12A;
+		cConf->pll_n_min = PLL_N_MIN_G12A;
+		cConf->pll_frac_range = PLL_FRAC_RANGE_G12A;
+		cConf->pll_od_sel_max = PLL_OD_SEL_MAX_G12A;
+		cConf->pll_ref_fmax = PLL_FREF_MAX_G12A;
+		cConf->pll_ref_fmin = PLL_FREF_MIN_G12A;
+		cConf->pll_vco_fmax = PLL_VCO_MAX_G12A;
+		cConf->pll_vco_fmin = PLL_VCO_MIN_G12A;
+		cConf->pll_out_fmax = CRT_VID_CLK_IN_MAX_G12A;
+		cConf->pll_out_fmin = cConf->pll_vco_fmin /
+			od_table[cConf->pll_od_sel_max - 1];
+		cConf->div_post_out_fmax = CRT_VID_CLK_IN_MAX_G12A;
+		cConf->xd_out_fmax = ENCL_CLK_IN_MAX_G12A;
 		break;
 	default:
 		LCDPR("%s invalid chip type\n", __func__);
@@ -914,6 +934,105 @@ static void lcd_set_pll_txhd(struct lcd_clk_config_s *cConf)
 		lcd_set_pll_ss_txhd(cConf);
 }
 
+/*GP0_PLL_CNTL	= 0x40010250  ********Enable PLL
+  GP0_PLL_CNTL1 = 0xc084a000  ********Set PLL parameter
+  GP0_PLL_CNTL2 = 0xb75020be  ********Set PLL parameter
+  GP0_PLL_CNTL3 = 0x0a59a288  ********Set PLL parameter
+  GP0_PLL_CNTL4 = 0xc000004d  ********Set PLL parameter
+  GP0_PLL_CNTL5 = 0x00058000  ********Set PLL parameter
+  GP0_PLL_CNTL	= 0x60010250  ********Enable PLL and Reset
+  GP0_PLL_CNTL	= 0x40010250  ********Get rid of Reset*/
+static void lcd_set_pll_axg(struct lcd_clk_config_s *cConf)
+{
+	unsigned int pll_ctrl, pll_ctrl1, pll_ctrl2;
+	int ret;
+
+	if (lcd_debug_print_flag == 2)
+		LCDPR("%s\n", __func__);
+
+	pll_ctrl = ((1 << LCD_PLL_EN_AXG) |
+		(cConf->pll_n << LCD_PLL_N_AXG) |
+		(cConf->pll_m << LCD_PLL_M_AXG) |
+		(cConf->pll_od1_sel << LCD_PLL_OD_AXG));
+	pll_ctrl1 = 0xc084a000;
+	pll_ctrl1 |= ((1 << 12) | (cConf->pll_frac << 0));
+	pll_ctrl2 = 0xb75020be | (cConf->od_fb << 19);
+
+	lcd_hiu_write(HHI_GP0_PLL_CNTL, pll_ctrl);
+	lcd_hiu_write(HHI_GP0_PLL_CNTL1, pll_ctrl1);
+	lcd_hiu_write(HHI_GP0_PLL_CNTL2, pll_ctrl2);
+	lcd_hiu_write(HHI_GP0_PLL_CNTL3, 0x0a59a288);
+	lcd_hiu_write(HHI_GP0_PLL_CNTL4, 0xc000004d);
+	lcd_hiu_write(HHI_GP0_PLL_CNTL5, 0x00078000);
+	lcd_hiu_setb(HHI_GP0_PLL_CNTL, 1, LCD_PLL_RST_AXG, 1);
+	lcd_hiu_setb(HHI_GP0_PLL_CNTL, 0, LCD_PLL_RST_AXG, 1);
+
+	ret = lcd_pll_wait_lock(HHI_GP0_PLL_CNTL, LCD_PLL_LOCK_AXG);
+	if (ret)
+		LCDERR("gp0_pll lock failed\n");
+
+}
+
+static void lcd_update_pll_frac_axg(struct lcd_clk_config_s *cConf)
+{
+	if (lcd_debug_print_flag == 2)
+		LCDPR("%s\n", __func__);
+
+	lcd_hiu_setb(HHI_GP0_PLL_CNTL1, cConf->pll_frac, 0, 12);
+}
+
+/*3.3	GP0 DPLL
+For example:
+Set DCO = 5592M
+N=1 M=233 24*233=5592M OD<2:0>=100, GP0_CLK_OUT=5592/16= 349.5MHz
+
+GP0_PLL_CNTL= 0x380404e9        ********Enable PLL
+GP0_PLL_CNTL1 =0x0  ********Set PLL parameter
+GP0_PLL_CNTL2 =0x0?    ********Set PLL parameter
+GP0_PLL_CNTL3 =0x08691c00    ********Set PLL parameter
+GP0_PLL_CNTL4=0x33771291       ********Set PLL parameter
+GP0_PLL_CNTL5 =0x39270000    ********Set PLL parameter
+GP0_PLL_CNTL6= 0x50540000;
+GP0_PLL_CNTL = 0x180404e9     ********Enable PLL and Reset(M value is depended on application)*/
+static void lcd_set_pll_g12a(struct lcd_clk_config_s *cConf)
+{
+	unsigned int pll_ctrl, pll_ctrl1;
+	int ret;
+
+	if (lcd_debug_print_flag == 2)
+		LCDPR("%s\n", __func__);
+
+	pll_ctrl = ((1 << LCD_PLL_EN_G12A) |
+		(1 << LCD_PLL_RST_G12A) |
+		(cConf->pll_n << LCD_PLL_N_G12A) |
+		(cConf->pll_m << LCD_PLL_M_G12A) |
+		(cConf->pll_od1_sel << LCD_PLL_OD_G12A));
+	pll_ctrl1 = 0x00;
+	//pll_ctrl1 |= ((1 << 19) | (cConf->pll_frac << 0));
+
+	lcd_hiu_write(HHI_GP0_PLL_CNTL0, pll_ctrl);
+	lcd_hiu_write(HHI_GP0_PLL_CNTL1, pll_ctrl1);
+	lcd_hiu_write(HHI_GP0_PLL_CNTL2, 0x00);
+	lcd_hiu_write(HHI_GP0_PLL_CNTL3, 0x08691c00);
+	lcd_hiu_write(HHI_GP0_PLL_CNTL4, 0x33771291);
+	lcd_hiu_write(HHI_GP0_PLL_CNTL5, 0x39270000);
+	lcd_hiu_write(HHI_GP0_PLL_CNTL6, 0x50540000);
+	//lcd_hiu_setb(HHI_GP0_PLL_CNTL0, 1, LCD_PLL_RST_G12A, 1);
+	lcd_hiu_setb(HHI_GP0_PLL_CNTL0, 0, LCD_PLL_RST_G12A, 1);
+
+	ret = lcd_pll_wait_lock(HHI_GP0_PLL_CNTL0, LCD_PLL_LOCK_G12A);
+	if (ret)
+		LCDERR("gp0_pll lock failed\n");
+}
+
+static void lcd_update_pll_frac_g12a(struct lcd_clk_config_s *cConf)
+{
+	if (lcd_debug_print_flag == 2)
+		LCDPR("%s\n", __func__);
+
+	lcd_hiu_setb(HHI_GP0_PLL_CNTL1, cConf->pll_frac, 0, 19);
+}
+
 static unsigned int lcd_clk_div_g9_gxtvbb[][3] = {
 	/* divider,        shift_val,  shift_sel */
 	{CLK_DIV_SEL_1,    0xffff,     0,},
@@ -979,6 +1098,8 @@ static void lcd_set_clk_div_g9_gxtvbb(struct lcd_clk_config_s *cConf)
 
 static void lcd_set_vclk_crt(int lcd_type, struct lcd_clk_config_s *cConf)
 {
+	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
+
 	if (lcd_debug_print_flag == 2)
 		LCDPR("%s\n", __func__);
 
@@ -987,7 +1108,14 @@ static void lcd_set_vclk_crt(int lcd_type, struct lcd_clk_config_s *cConf)
 	udelay(5);
 
 	/* select vid_pll_clk */
-	lcd_hiu_setb(HHI_VIID_CLK_CNTL, 0, VCLK2_CLK_IN_SEL, 3);
+	switch (lcd_drv->chip_type) {
+	case LCD_CHIP_G12A:
+		lcd_hiu_setb(HHI_VIID_CLK_CNTL, 1, VCLK2_CLK_IN_SEL, 3);
+		break;
+	default:
+		lcd_hiu_setb(HHI_VIID_CLK_CNTL, 0, VCLK2_CLK_IN_SEL, 3);
+		break;
+	}
 	lcd_hiu_setb(HHI_VIID_CLK_CNTL, 1, VCLK2_EN, 1);
 	udelay(2);
 
@@ -1005,6 +1133,22 @@ static void lcd_set_vclk_crt(int lcd_type, struct lcd_clk_config_s *cConf)
 
 	/* enable CTS_ENCL clk gate */
 	lcd_hiu_setb(HHI_VID_CLK_CNTL2, 1, ENCL_GATE_VCLK, 1);
+}
+
+static void lcd_set_dsi_meas_clk(void)
+{
+	lcd_hiu_setb(HHI_VDIN_MEAS_CLK_CNTL, 0, 21, 3);
+	lcd_hiu_setb(HHI_VDIN_MEAS_CLK_CNTL, 0, 12, 7);
+	lcd_hiu_setb(HHI_VDIN_MEAS_CLK_CNTL, 1, 20, 1);
+}
+
+static void lcd_set_dsi_phy_clk(void)
+{
+	lcd_hiu_setb(HHI_MIPIDSI_PHY_CLK_CNTL, 0, 14, 1);
+	lcd_hiu_setb(HHI_MIPIDSI_PHY_CLK_CNTL, 0, 13, 1);
+	lcd_hiu_setb(HHI_MIPIDSI_PHY_CLK_CNTL, 1, 12, 1);
+	lcd_hiu_setb(HHI_MIPIDSI_PHY_CLK_CNTL, 1, 8, 1);
+	lcd_hiu_setb(HHI_MIPIDSI_PHY_CLK_CNTL, 0, 0, 7);
 }
 
 static void lcd_set_tcon_clk(struct lcd_config_s *pconf)
@@ -1988,45 +2132,6 @@ generate_clk_done_axg:
 	}
 }
 
-/*GP0_PLL_CNTL	= 0x40010250  ********Enable PLL
-  GP0_PLL_CNTL1 = 0xc084a000  ********Set PLL parameter
-  GP0_PLL_CNTL2 = 0xb75020be  ********Set PLL parameter
-  GP0_PLL_CNTL3 = 0x0a59a288  ********Set PLL parameter
-  GP0_PLL_CNTL4 = 0xc000004d  ********Set PLL parameter
-  GP0_PLL_CNTL5 = 0x00058000  ********Set PLL parameter
-  GP0_PLL_CNTL	= 0x60010250  ********Enable PLL and Reset
-  GP0_PLL_CNTL	= 0x40010250  ********Get rid of Reset*/
-static void lcd_set_pll_axg(struct lcd_clk_config_s *cConf)
-{
-	unsigned int pll_ctrl, pll_ctrl1, pll_ctrl2;
-	int ret;
-
-	if (lcd_debug_print_flag == 2)
-		LCDPR("%s\n", __func__);
-
-	pll_ctrl = ((1 << LCD_PLL_EN_AXG) |
-		(cConf->pll_n << LCD_PLL_N_AXG) |
-		(cConf->pll_m << LCD_PLL_M_AXG) |
-		(cConf->pll_od1_sel << LCD_PLL_OD_AXG));
-	pll_ctrl1 = 0xc084a000;
-	pll_ctrl1 |= ((1 << 12) | (cConf->pll_frac << 0));
-	pll_ctrl2 = 0xb75020be | (cConf->od_fb << 19);
-
-	lcd_hiu_write(HHI_GP0_PLL_CNTL, pll_ctrl);
-	lcd_hiu_write(HHI_GP0_PLL_CNTL1, pll_ctrl1);
-	lcd_hiu_write(HHI_GP0_PLL_CNTL2, pll_ctrl2);
-	lcd_hiu_write(HHI_GP0_PLL_CNTL3, 0x0a59a288);
-	lcd_hiu_write(HHI_GP0_PLL_CNTL4, 0xc000004d);
-	lcd_hiu_write(HHI_GP0_PLL_CNTL5, 0x00078000);
-	lcd_hiu_setb(HHI_GP0_PLL_CNTL, 1, LCD_PLL_RST_AXG, 1);
-	lcd_hiu_setb(HHI_GP0_PLL_CNTL, 0, LCD_PLL_RST_AXG, 1);
-
-	ret = lcd_pll_wait_lock(HHI_GP0_PLL_CNTL, LCD_PLL_LOCK_AXG);
-	if (ret)
-		LCDERR("gp0_pll lock failed\n");
-
-}
-
 static void lcd_pll_frac_generate_axg(struct lcd_config_s *pconf)
 {
 	unsigned int pll_fout;
@@ -2092,14 +2197,6 @@ static void lcd_pll_frac_generate_axg(struct lcd_config_s *pconf)
 		LCDPR("lcd_pll_frac_generate: frac=0x%x\n", frac);
 }
 
-static void lcd_update_pll_frac_axg(struct lcd_clk_config_s *cConf)
-{
-	if (lcd_debug_print_flag == 2)
-		LCDPR("%s\n", __func__);
-
-	lcd_hiu_setb(HHI_GP0_PLL_CNTL1, cConf->pll_frac, 0, 12);
-}
-
 void lcd_clk_generate_parameter(struct lcd_config_s *pconf)
 {
 	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
@@ -2116,6 +2213,7 @@ void lcd_clk_generate_parameter(struct lcd_config_s *pconf)
 		lcd_clk_generate_txl(pconf);
 		break;
 	case LCD_CHIP_AXG:
+	case LCD_CHIP_G12A:
 		lcd_clk_generate_axg(pconf);
 		break;
 	default:
@@ -2219,6 +2317,10 @@ void lcd_clk_update(struct lcd_config_s *pconf)
 		lcd_pll_frac_generate_axg(pconf);
 		lcd_update_pll_frac_axg(&clk_conf);
 		break;
+	case LCD_CHIP_G12A:
+		lcd_pll_frac_generate_axg(pconf);
+		lcd_update_pll_frac_g12a(&clk_conf);
+		break;
 	default:
 		break;
 	}
@@ -2254,6 +2356,12 @@ void lcd_clk_set(struct lcd_config_s *pconf)
 		break;
 	case LCD_CHIP_AXG:
 		lcd_set_pll_axg(&clk_conf);
+		lcd_set_dsi_meas_clk();
+		break;
+	case LCD_CHIP_G12A:
+		lcd_set_pll_g12a(&clk_conf);
+		lcd_set_dsi_meas_clk();
+		lcd_set_dsi_phy_clk();
 		break;
 	default:
 		break;
@@ -2278,6 +2386,7 @@ void lcd_clk_disable(void)
 	case LCD_CHIP_TXLX:
 	case LCD_CHIP_AXG:
 	case LCD_CHIP_TXHD:
+	case LCD_CHIP_G12A:
 		lcd_hiu_setb(HHI_VID_CLK_CNTL2, 0, ENCL_GATE_VCLK, 1);
 		break;
 	default:
@@ -2287,9 +2396,6 @@ void lcd_clk_disable(void)
 	/* close vclk2_div gate: 0x104b[4:0] */
 	lcd_hiu_setb(HHI_VIID_CLK_CNTL, 0, 0, 5);
 	lcd_hiu_setb(HHI_VIID_CLK_CNTL, 0, VCLK2_EN, 1);
-
-	/* close vid2_pll gate: 0x104c[16] */
-	lcd_hiu_setb(HHI_VIID_DIVIDER_CNTL, 0, DIV_CLK_IN_EN, 1);
 
 	/* disable pll */
 	switch (lcd_drv->chip_type) {
@@ -2310,6 +2416,11 @@ void lcd_clk_disable(void)
 		/* disable hdmi_pll: 0x10c8[30] */
 		lcd_hiu_setb(HHI_GP0_PLL_CNTL, 0, LCD_PLL_EN_AXG, 1);
 		break;
+	case LCD_CHIP_G12A:
+		/* disable hdmi_pll: 0x10c8[28] */
+		lcd_hiu_setb(HHI_GP0_PLL_CNTL0, 0, LCD_PLL_EN_G12A, 1);
+		break;
+
 	default:
 		break;
 	}

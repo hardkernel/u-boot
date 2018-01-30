@@ -315,13 +315,6 @@ int lcd_mipi_dsi_init_table_detect(char *dtaddr, int nodeoffset,
 	return 0;
 }
 
-static void dsi_meas_clk_set(void)
-{
-	lcd_hiu_setb(HHI_VDIN_MEAS_CLK_CNTL, 0, 21, 3);
-	lcd_hiu_setb(HHI_VDIN_MEAS_CLK_CNTL, 0, 12, 7);
-	lcd_hiu_setb(HHI_VDIN_MEAS_CLK_CNTL, 1, 20, 1);
-}
-
 /* *************************************************************
  * Function: mipi_dcs_set
  * Configure relative registers in command mode
@@ -1772,8 +1765,6 @@ static void mipi_dsi_config_post(struct lcd_config_s *pconf)
 
 static void mipi_dsi_host_on(struct lcd_config_s *pconf)
 {
-	dsi_meas_clk_set();
-
 	mipi_dsi_config_post(pconf);
 
 	startup_mipi_dsi_host();

@@ -1353,12 +1353,10 @@ static int aml_bl_config_load_from_bsp(struct bl_config_s *bconf)
 
 	bconf->method          = ext_lcd->bl_method;
 
-	if (ext_lcd->bl_en_gpio >= BL_GPIO_NUM_MAX) {
+	if (ext_lcd->bl_en_gpio >= BL_GPIO_NUM_MAX)
 		bconf->en_gpio    = LCD_GPIO_MAX;
-	} else {
-		str = bconf->gpio_name[ext_lcd->bl_en_gpio];
-		bconf->en_gpio    = aml_lcd_gpio_name_map_num(str);
-	}
+	else
+		bconf->en_gpio    = ext_lcd->bl_en_gpio;
 	bconf->en_gpio_on      = ext_lcd->bl_en_gpio_on;
 	bconf->en_gpio_off     = ext_lcd->bl_en_gpio_off;
 	bconf->power_on_delay  = ext_lcd->bl_power_on_delay;

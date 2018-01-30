@@ -39,7 +39,7 @@ static struct aml_lcd_drv_s aml_lcd_driver;
 
 static void lcd_chip_detect(void)
 {
-#if 1
+#if 0
 	unsigned int cpu_type;
 
 	cpu_type = get_cpu_id().family_id;
@@ -65,11 +65,14 @@ static void lcd_chip_detect(void)
 	case MESON_CPU_MAJOR_ID_TXHD:
 		aml_lcd_driver.chip_type = LCD_CHIP_TXHD;
 		break;
+	case MESON_CPU_MAJOR_ID_G12A:
+		aml_lcd_driver.chip_type = LCD_CHIP_G12A;
+		break;
 	default:
 		aml_lcd_driver.chip_type = LCD_CHIP_MAX;
 	}
 #else
-	aml_lcd_driver.chip_type = LCD_CHIP_TXL;
+	aml_lcd_driver.chip_type = LCD_CHIP_G12A;
 #endif
 	if (lcd_debug_print_flag)
 		LCDPR("check chip: %d\n", aml_lcd_driver.chip_type);

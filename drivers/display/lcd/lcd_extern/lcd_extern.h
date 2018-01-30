@@ -59,11 +59,17 @@ extern int aml_lcd_extern_i2c_tc101_probe(struct aml_lcd_extern_driver_s *ext_dr
 extern int aml_lcd_extern_i2c_anx6345_get_default_index(void);
 extern int aml_lcd_extern_i2c_anx6345_probe(struct aml_lcd_extern_driver_s *ext_drv);
 #endif
+#ifdef CONFIG_AML_LCD_EXTERN_I2C_DLPC3439
+extern int aml_lcd_extern_i2c_DLPC3439_get_default_index(void);
+extern int aml_lcd_extern_i2c_DLPC3439_probe(struct aml_lcd_extern_driver_s *ext_drv);
 #endif
+#endif
+
 #ifdef CONFIG_AML_LCD_EXTERN_SPI_LD070WS2
 extern int aml_lcd_extern_spi_LD070WS2_get_default_index(void);
 extern int aml_lcd_extern_spi_LD070WS2_probe(struct aml_lcd_extern_driver_s *ext_drv);
 #endif
+
 #ifdef CONFIG_AML_LCD_EXTERN_MIPI_N070ICN
 extern int aml_lcd_extern_mipi_N070ICN_get_default_index(void);
 extern int aml_lcd_extern_mipi_N070ICN_probe(struct aml_lcd_extern_driver_s *ext_drv);
@@ -76,10 +82,7 @@ extern int aml_lcd_extern_mipi_KD080D13_probe(struct aml_lcd_extern_driver_s *ex
 extern int aml_lcd_extern_mipi_TV070WSM_get_default_index(void);
 extern int aml_lcd_extern_mipi_TV070WSM_probe(struct aml_lcd_extern_driver_s *ext_drv);
 #endif
-#ifdef CONFIG_AML_LCD_EXTERN_I2C_DLPC3439
-extern int aml_lcd_extern_i2c_DLPC3439_get_default_index(void);
-extern int aml_lcd_extern_i2c_DLPC3439_probe(struct aml_lcd_extern_driver_s *ext_drv);
-#endif
+
 #ifdef CONFIG_AML_LCD_EXTERN_MIPI_ST7701
 extern int aml_lcd_extern_mipi_st7701_get_default_index(void);
 extern int aml_lcd_extern_mipi_st7701_probe(struct aml_lcd_extern_driver_s *ext_drv);
