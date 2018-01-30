@@ -32,6 +32,20 @@ void putc(char c)
 }
 #endif /* CONFIG_TPL_LIBCOMMON_SUPPORT */
 
+#ifndef CONFIG_TPL_LIBGENERIC_SUPPORT
+void udelay(unsigned long usec)
+{
+	__udelay(usec);
+}
+
+void hang(void)
+{
+        bootstage_error(BOOTSTAGE_ID_NEED_RESET);
+        for (;;)
+                ;
+}
+#endif
+
 u32 spl_boot_device(void)
 {
 	return BOOT_DEVICE_BOOTROM;
