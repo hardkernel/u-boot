@@ -10,6 +10,9 @@
 #include <stdio_dev.h>
 #include <video.h>
 #include <video_console.h>
+#ifdef CONFIG_DRM_ROCKCHIP
+#include <video_rockchip.h>
+#endif
 #include <dm/lists.h>
 #include <dm/device-internal.h>
 #include <dm/uclass-internal.h>
@@ -73,6 +76,11 @@ int video_reserve(ulong *addrp)
 	ulong size;
 
 	gd->video_top = *addrp;
+#ifdef CONFIG_DRM_ROCKCHIP
+	size = DRM_ROCKCHIP_FB_SIZE + MEMORY_POOL_SIZE;
+	*addrp = *addrp - size;
+	*addrp &= ~((1 << 20) - 1);
+#else
 	for (uclass_find_first_device(UCLASS_VIDEO, &dev);
 	     dev;
 	     uclass_find_next_device(&dev)) {
@@ -80,6 +88,7 @@ int video_reserve(ulong *addrp)
 		debug("%s: Reserving %lx bytes at %lx for video device '%s'\n",
 		      __func__, size, *addrp, dev->name);
 	}
+#endif
 	gd->video_bottom = *addrp;
 	debug("Video frame buffers from %lx to %lx\n", gd->video_bottom,
 	      gd->video_top);
