@@ -350,6 +350,15 @@ int env_update(const char *varname, const char *varvalue);
 int env_exist(const char *varname, const char *varvalue);
 
 /**
+ * env_delete() - delete sub value of an environment variable
+ *
+ * @varname: Variable to look up
+ * @value: Item head of value to delete
+ * @return 0 if ok, 1 on error
+ */
+int env_delete(const char *varname, const char *varvalue);
+
+/**
  * env_set_ulong() - set an environment variable to an integer
  *
  * @varname: Variable to adjust

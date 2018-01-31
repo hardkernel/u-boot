@@ -533,6 +533,37 @@ int env_exist(const char *varname, const char *varvalue)
 	return ret;
 }
 
+int env_delete(const char *varname, const char *varvalue)
+{
+	const char *str;
+	char *value, *start;
+
+	/* before import into hashtable */
+	if (!(gd->flags & GD_FLG_ENV_READY) || !varname)
+		return 1;
+
+	value = env_get(varname);
+	if (value) {
+		start = strstr(value, varvalue);
+		if (start) {
+			/* varvalue is not the last property */
+			str = strstr(start, " ");
+			if (str) {
+				/* Terminate, so cmdline can be dest for strcat() */
+				*start = '\0';
+				/* +1 to skip white space */
+				strcat((char *)value, (str + 1));
+			/* varvalue is the last property */
+			} else {
+				/* skip white space */
+				*(start - 1) = '\0';
+			}
+		}
+	}
+
+	return 0;
+}
+
 /**
  * Set an environment variable to an integer value
  *
