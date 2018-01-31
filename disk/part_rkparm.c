@@ -50,6 +50,12 @@ static int rkparm_param_parse(char *param, struct list_head *parts_head,
 	/* skip "CMDLINE:" */
 	env_update("bootargs", cmdline + strlen("CMDLINE:"));
 
+	/*
+	 * Initrd fixup: remove unused "initrd=0x...,0x...", this for
+	 * compatible with legacy parameter.txt
+	 */
+	env_delete("bootargs", "initrd=");
+
 	while (*next) {
 		if (*next == '-') {
 			size = (~0UL);
