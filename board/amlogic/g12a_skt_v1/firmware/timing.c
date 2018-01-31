@@ -161,14 +161,6 @@ ddr_reg_t __ddr_reg[] = {
 	{0, 0, 0, 0, 0, 0},
 };
 
-bl2_reg_t __bl2_reg[] = {
-	/* demo, user defined override register */
-	/* eg: PWM init */
-	{0xabcdef12, 0, 0, 0, 0, 0},
-	{0xfedcba00, 0, 0, 0, 0, 0},
-	{0, 0, 0, 0, 0, 0},
-};
-
 ddr_set_t __ddr_setting[] = {
 {
 	/* common and function defines */
@@ -249,3 +241,83 @@ pll_set_t __pll_setting = {
 };
 
 
+
+/* PWM table */
+#if 0
+/* vcck */
+static int pwm_voltage_table_vcck[][2] = {
+	{ 0x00150007, 800},
+	{ 0x00140008, 810},
+	{ 0x00130009, 820},
+	{ 0x0012000a, 830},
+	{ 0x0011000b, 840},
+	{ 0x0010000c, 850},
+	{ 0x000f000d, 860},
+	{ 0x000e000e, 870},
+	{ 0x000d000f, 880},
+	{ 0x000c0010, 890},
+	{ 0x000b0011, 900},
+	{ 0x000a0012, 910},
+	{ 0x00090013, 920},
+	{ 0x00080014, 930},
+	{ 0x00070015, 940},
+	{ 0x00060016, 950},
+	{ 0x00050017, 960},
+	{ 0x00040018, 970},
+	{ 0x00030019, 980},
+	{ 0x0002001a, 990},
+	{ 0x0001001b, 1000},
+	{ 0x0000001c, 1010},
+};
+
+/* vddee */
+static int pwm_voltage_table_vddee[][2] = {
+	{ 0x0010000c, 800},
+	{ 0x000f000d, 810},
+	{ 0x000e000e, 820},
+	{ 0x000d000f, 830},
+	{ 0x000c0010, 840},
+	{ 0x000b0011, 850},
+	{ 0x000a0012, 860},
+	{ 0x00090013, 870},
+	{ 0x00080014, 880},
+	{ 0x00070015, 890},
+	{ 0x00060016, 900},
+	{ 0x00050017, 910},
+	{ 0x00040018, 920},
+	{ 0x00030019, 930},
+	{ 0x0002001a, 940},
+	{ 0x0001001b, 950},
+	{ 0x0000001c, 960},
+};
+#endif
+
+/* for PWM use */
+/* PWM driver check http://scgit.amlogic.com:8080/#/c/38093/ */
+#define GPIO_O_EN_N_REG3	((0xff634400 + (0x19 << 2)))
+#define GPIO_O_REG3		((0xff634400 + (0x1a << 2)))
+#define GPIO_I_REG3		((0xff634400 + (0x1b << 2)))
+#define AO_PIN_MUX_REG0	((0xff800000 + (0x05 << 2)))
+#define AO_PIN_MUX_REG1	((0xff800000 + (0x06 << 2)))
+
+bl2_reg_t __bl2_reg[] = {
+	/* demo, user defined override register */
+	/* eg: PWM init */
+
+	/* PWM_AO_D */
+	/* 0x000b0011: vcck 0.9V, please check PWM table */
+	{AO_PWM_PWM_D,        0x000b0011,                0xffffffff,   0, BL2_INIT_STAGE_1, 0},
+	{AO_PWM_MISC_REG_CD,  ((1 << 23) | (1 << 1)),  (0x7f << 16), 0, BL2_INIT_STAGE_1, 0},
+	{AO_PIN_MUX_REG1,     (3 << 20),               (0xF << 20),  0, BL2_INIT_STAGE_1, 0},
+	/* PWM_AO_B */
+	/* 0x000e000e: vddee 0.82V, please check PWM table */
+	{AO_PWM_PWM_B,        0x000e000e,              (0x7f << 16), 0, BL2_INIT_STAGE_1, 0},
+	{AO_PWM_MISC_REG_AB,  ((1 << 23) | (1 << 1)),  (0x7f << 16), 0, BL2_INIT_STAGE_1, 0},
+	{AO_PIN_MUX_REG1,     (3 << 16),               (0xF << 16),  0, BL2_INIT_STAGE_1, 0},
+	/* Enable VDDEE */
+	{GPIO_O_EN_N_REG3,    0,                       (1 << 8),     0, BL2_INIT_STAGE_1, 0},
+	{GPIO_O_REG3,         (1 << 8),                0xffffffff,   0, BL2_INIT_STAGE_1, 0},
+	/* Enable VCCK */
+	{AO_SEC_REG0,         (1 << 0),                0xffffffff,   0, BL2_INIT_STAGE_1, 0},
+	{AO_GPIO_O,           (1 << 31),               0xffffffff,   0, BL2_INIT_STAGE_1, 0},
+};

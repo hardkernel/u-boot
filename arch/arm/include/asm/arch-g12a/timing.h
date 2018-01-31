@@ -31,6 +31,17 @@
 #include <asm/arch/mnPmuSramMsgBlock_lpddr4.h>
 #include <asm/arch/mnPmuSramMsgBlock_lpddr4_2d.h>
 
+#define BL2_INIT_STAGE_0			0
+#define BL2_INIT_STAGE_1			1
+#define BL2_INIT_STAGE_2			2
+#define BL2_INIT_STAGE_3			3
+#define BL2_INIT_STAGE_4			4
+#define BL2_INIT_STAGE_5			5
+#define BL2_INIT_STAGE_6			6
+#define BL2_INIT_STAGE_7			7
+#define BL2_INIT_STAGE_8			8
+#define BL2_INIT_STAGE_9			9
+
 typedef struct bl2_reg {
 	unsigned int	reg;
 	unsigned int	value;
