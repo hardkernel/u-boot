@@ -23,18 +23,6 @@
 	u-boot,dm-pre-reloc;
 };
 
-&lvds {
-	u-boot,dm-pre-reloc;
-};
-
-&display_subsystem {
-	u-boot,dm-pre-reloc;
-};
-
-&vop {
-	u-boot,dm-pre-reloc;
-};
-
 &cru {
 	u-boot,dm-pre-reloc;
 };

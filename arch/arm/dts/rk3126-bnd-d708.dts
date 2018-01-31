@@ -116,7 +116,6 @@
 	status = "okay";
 
 	panel@0 {
-		u-boot,dm-pre-reloc;
 		compatible = "simple-panel-dsi";
 		reg = <0>;
 		backlight = <&backlight>;
