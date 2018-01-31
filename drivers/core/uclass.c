@@ -34,6 +34,9 @@ struct uclass *uclass_find(enum uclass_id key)
 	list_for_each_entry(uc, &gd->uclass_root, sibling_node) {
 		if (uc->uc_drv->id == key)
 			return uc;
+
+		if (uc->uc_drv->id == UCLASS_ROOT)
+			break;
 	}
 
 	return NULL;
