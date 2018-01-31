@@ -291,7 +291,21 @@ int fdt_chosen(void *fdt)
 
 	str = env_get("bootargs");
 	if (str) {
-#ifndef CONFIG_ARCH_ROCKCHIP
+#ifdef CONFIG_ARCH_ROCKCHIP
+		const char *bootargs;
+
+		bootargs = fdt_getprop(fdt, nodeoffset, "bootargs", NULL);
+		if (bootargs) {
+			/* Append kernel bootargs */
+			env_update("bootargs", bootargs);
+			/*
+			 * Initrd fixup: remove unused "initrd=0x...,0x...",
+			 * this for compatible with legacy parameter.txt
+			 */
+			env_delete("bootargs", "initrd=");
+			str = env_get("bootargs");
+		}
+#endif
 		err = fdt_setprop(fdt, nodeoffset, "bootargs", str,
 				  strlen(str) + 1);
 		if (err < 0) {
@@ -299,31 +313,6 @@ int fdt_chosen(void *fdt)
 			       fdt_strerror(err));
 			return err;
 		}
-#else
-		const char *bootargs = NULL;
-		char buf[2048];
-
-		bootargs = fdt_getprop(fdt, nodeoffset, "bootargs", NULL);
-		if (bootargs) {
-			memset(buf, 0, sizeof(buf));
-			snprintf(buf, sizeof(buf), "%s %s", bootargs, str);
-			err = fdt_setprop(fdt, nodeoffset, "bootargs", buf,
-					  strlen(buf) + 1);
-			if (err < 0) {
-				printf("WARNING: could not set bootargs %s.\n",
-				       fdt_strerror(err));
-				return err;
-			}
-		} else {
-			err = fdt_setprop(fdt, nodeoffset, "bootargs", str,
-					  strlen(str) + 1);
-			if (err < 0) {
-				printf("WARNING: could not set bootargs %s.\n",
-				       fdt_strerror(err));
-				return err;
-			}
-		}
-#endif
 	}
 
 	return fdt_fixup_stdout(fdt, nodeoffset);
