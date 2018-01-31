@@ -40,8 +40,6 @@ static int rkparm_param_parse(char *param, struct list_head *parts_head,
 	char *pend;
 	int len, offset = 0;
 	unsigned long size, start;
-	char *initrd;
-	const char *str;
 
 	if (!cmdline) {
 		printf("invalid parameter\n");
@@ -49,20 +47,6 @@ static int rkparm_param_parse(char *param, struct list_head *parts_head,
 	}
 
 	*cmdline_end = '\0';
-
-	/*
-	 * Initrd fixup: remove unused "initrd=0x...,0x...", this for
-	 * compatible with legacy parameter.txt
-	 */
-	initrd = strstr(cmdline, "initrd=");
-	if (initrd) {
-		str = strstr(initrd, " ");
-		/* Terminate, so cmdline can be dest for strcat() */
-		*initrd = '\0';
-		/* +1 to skip current white space */
-		strcat((char *)cmdline, (str + 1));
-	}
-
 	/* skip "CMDLINE:" */
 	env_update("bootargs", cmdline + strlen("CMDLINE:"));
 
