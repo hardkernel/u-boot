@@ -258,7 +258,7 @@
 
 /* ddr */
 #define CONFIG_DDR_SIZE					1024 //MB //0 means ddr size auto-detect
-#define CONFIG_DDR_CLK					{1200, 0, 0, 0}  //MHz, Range: 384-1200, should be multiple of 24
+#define CONFIG_DDR_CLK					{300, 0, 0, 0}  //MHz, Range: 384-1200, should be multiple of 24
 #define CONFIG_DDR4_CLK					1008  //MHz, for boards which use different ddr chip
 #define CONFIG_NR_DRAM_BANKS			1
 /* DDR type setting
@@ -273,7 +273,7 @@
  *    CONFIG_DDR0_16BIT        : DDR0 16bit mode
  *    CONFIG_DDR0_16BIT_2      : DDR0 16bit mode, 2ranks
  *    CONFIG_DDR_CHL_AUTO      : auto detect RANK0 / RANK0+1 */
-#define CONFIG_DDR_CHANNEL_SET			CONFIG_DDR0_16BIT_RANK01_CH0
+#define CONFIG_DDR_CHANNEL_SET			CONFIG_DDR0_32BIT_RANK0_CH0
 /* ddr functions */
 #define CONFIG_DDR_FULL_TEST			0 //0:disable, 1:enable. ddr full test
 #define CONFIG_CMD_DDR_D2PLL			0 //0:disable, 1:enable. d2pll cmd
