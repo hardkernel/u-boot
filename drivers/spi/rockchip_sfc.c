@@ -199,7 +199,7 @@ static void rockchip_sfc_setup_xfer(struct rockchip_sfc *sfc, u32 trb)
 		writel(sfc->addr, &regs->addr);
 }
 
-static int rockchip_sfc_do_dma_xfer(struct rockchip_sfc *sfc, u32 *buffer, u32 trb)
+static int rockchip_sfc_dma_xfer(struct rockchip_sfc *sfc, void *buffer, size_t trb)
 {
 	struct rockchip_sfc_reg *regs = sfc->regbase;
 	struct bounce_buffer bb;
@@ -214,9 +214,10 @@ static int rockchip_sfc_do_dma_xfer(struct rockchip_sfc *sfc, u32 *buffer, u32 t
 	else
 		bb_flags = GEN_BB_WRITE;
 
-	ret = bounce_buffer_start(&bb, (void *)buffer, trb, bb_flags);
+	ret = bounce_buffer_start(&bb, buffer, trb, bb_flags);
 	if (ret)
 		return ret;
+
 	rockchip_sfc_setup_xfer(sfc, bb.len_aligned);
 
 	writel(0xFFFFFFFF, &regs->iclr);
@@ -237,24 +238,6 @@ static int rockchip_sfc_do_dma_xfer(struct rockchip_sfc *sfc, u32 *buffer, u32 t
 	writel(0xFFFFFFFF, &regs->iclr);
 
 	bounce_buffer_stop(&bb);
-
-	return ret;
-}
-
-static int rockchip_sfc_dma_xfer(struct rockchip_sfc *sfc, u32 *buf, u32 len)
-{
-	u32 trb;
-	int ret = 0;
-
-	while (len) {
-		trb = min(len, (u32)SFC_MAX_TRB);
-		ret = rockchip_sfc_do_dma_xfer(sfc, buf, trb);
-		if (ret < 0)
-			break;
-		len -= trb;
-		sfc->addr += trb;
-		buf += (trb >> 2);
-	}
 
 	return ret;
 }
@@ -343,48 +326,81 @@ static int rockchip_sfc_read_fifo(struct rockchip_sfc *sfc, u32 *buf, u32 len)
 	return 0;
 }
 
-static int rockchip_sfc_pio_xfer(struct rockchip_sfc *sfc, u32 *buf, u32 len)
+static int rockchip_sfc_pio_xfer(struct rockchip_sfc *sfc, void *buf, u32 len)
 {
 	int ret = 0;
 
 	rockchip_sfc_setup_xfer(sfc, len);
+
 	if (len) {
 		if (sfc->rw == SFC_WR)
-			ret = rockchip_sfc_write_fifo(sfc, buf, len);
+			ret = rockchip_sfc_write_fifo(sfc, (u32 *)buf, len);
 		else
-			ret = rockchip_sfc_read_fifo(sfc, buf, len);
+			ret = rockchip_sfc_read_fifo(sfc, (u32 *)buf, len);
 	}
 
 	return ret;
 }
 
-static int rockchip_sfc_do_xfer(struct rockchip_sfc *sfc, u32 *buf, u32 len)
+static int rockchip_sfc_read(struct rockchip_sfc *sfc, u32 offset,
+                             void *buf, size_t len)
 {
-	int ret = 0;
-	u32 bytes = len & 0x3;
 	u32 dma_trans;
+	u32 trb;
+	u8 bytes;
+	int ret;
 
 	if (len >= ARCH_DMA_MINALIGN) {
+		bytes = len & (ARCH_DMA_MINALIGN - 1);
 		dma_trans = len - bytes;
 	} else {
 		dma_trans = 0;
 		bytes = len;
 	}
 
-	if (dma_trans) {
-		ret = rockchip_sfc_dma_xfer(sfc, buf, dma_trans);
-		buf += (dma_trans  >> 2);
+	while (dma_trans) {
+		trb = min_t(size_t, dma_trans, SFC_MAX_TRB);
+		ret = rockchip_sfc_dma_xfer(sfc, buf, trb);
+		if (ret < 0)
+			return ret;
+		dma_trans -= trb;
+		sfc->addr += trb;
+		buf += trb;
 	}
 
 	/*
-	 * transfer the last non 4 bytes anligned byte by pio mode
-	 * there are also some commands like WREN(0x06) that execute
-	 * whth no data, we also need to handle it here.
+	 * transfer the last non dma anligned byte by pio mode
 	 */
-	if (bytes || (!bytes && !dma_trans))
+	if (bytes)
 		ret = rockchip_sfc_pio_xfer(sfc, buf, bytes);
 
-	return ret;
+	return 0;
+}
+
+static int rockchip_sfc_write(struct rockchip_sfc *sfc, u32 offset,
+                              void *buf, size_t len)
+{
+
+	if (len > SFC_MAX_TRB) {
+		printf("out of the max sfc trb");
+		return -EINVAL;
+	}
+
+	if (len && !(len & (ARCH_DMA_MINALIGN - 1)))
+		return rockchip_sfc_dma_xfer(sfc, buf, len);
+	else
+		return rockchip_sfc_pio_xfer(sfc, buf,len);
+
+	return 0;
+}
+
+static int rockchip_sfc_do_xfer(struct rockchip_sfc *sfc, void *buf, size_t len)
+{
+
+	if (sfc->rw)
+		return rockchip_sfc_write(sfc, sfc->addr, buf, len);
+	else
+		return rockchip_sfc_read(sfc, sfc->addr, buf, len);
 }
 
 static int rockchip_sfc_xfer(struct udevice *dev, unsigned int bitlen,
@@ -394,6 +410,7 @@ static int rockchip_sfc_xfer(struct udevice *dev, unsigned int bitlen,
 	struct rockchip_sfc *sfc = dev_get_priv(bus);
 	int len = bitlen >> 3;
 	u8 *pcmd = (u8 *)dout;
+	void *data_buf;
 	int ret = 0;
 
 	if (flags & SPI_XFER_BEGIN) {
@@ -409,18 +426,22 @@ static int rockchip_sfc_xfer(struct udevice *dev, unsigned int bitlen,
 		}
 	}
 
-	if (flags == (SPI_XFER_BEGIN | SPI_XFER_END))
-		len = 0;
-
 	if (flags & SPI_XFER_END) {
 
 		if (din) {
 			sfc->rw = SFC_RD;
-			ret = rockchip_sfc_do_xfer(sfc, (u32 *)din, len);
-		} else if (dout) {
+			data_buf = din;
+		} else {
 			sfc->rw = SFC_WR;
-			ret = rockchip_sfc_do_xfer(sfc, (u32 *)dout, len);
+			data_buf = (void *)dout;
 		}
+
+		if (flags == (SPI_XFER_BEGIN | SPI_XFER_END)) {
+			len = 0;
+			data_buf = NULL;
+		}
+
+		ret = rockchip_sfc_do_xfer(sfc, data_buf, len);
 	}
 
 	return ret;
