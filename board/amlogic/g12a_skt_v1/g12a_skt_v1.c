@@ -105,14 +105,17 @@ static void setup_net_chip(void)
 {
 	eth_aml_reg0_t eth_reg0;
 
+	writel(0x11111111, P_PERIPHS_PIN_MUX_6);
+	writel(0x111111, P_PERIPHS_PIN_MUX_7);
+
 	eth_reg0.d32 = 0;
-	eth_reg0.b.phy_intf_sel = 4;
+	eth_reg0.b.phy_intf_sel = 1;
 	eth_reg0.b.rx_clk_rmii_invert = 0;
 	eth_reg0.b.rgmii_tx_clk_src = 0;
-	eth_reg0.b.rgmii_tx_clk_phase = 0;
-	eth_reg0.b.rgmii_tx_clk_ratio = 0;
-	eth_reg0.b.phy_ref_clk_enable = 0;
-	eth_reg0.b.clk_rmii_i_invert = 1;
+	eth_reg0.b.rgmii_tx_clk_phase = 1;
+	eth_reg0.b.rgmii_tx_clk_ratio = 4;
+	eth_reg0.b.phy_ref_clk_enable = 1;
+	eth_reg0.b.clk_rmii_i_invert = 0;
 	eth_reg0.b.clk_en = 1;
 	eth_reg0.b.adj_enable = 0;
 	eth_reg0.b.adj_setup = 0;
@@ -124,12 +127,10 @@ static void setup_net_chip(void)
 	eth_reg0.b.rgmii_rx_reuse = 0;
 	eth_reg0.b.eth_urgent = 0;
 	setbits_le32(P_PREG_ETH_REG0, eth_reg0.d32);// rmii mode
-	*P_PREG_ETH_REG2 = 0x10110181;
-	*P_PREG_ETH_REG3 = 0xe409087f;
-	setbits_le32(HHI_GCLK_MPEG1,1<<3);
+
+	setbits_le32(HHI_GCLK_MPEG1, 0x1 << 3);
 	/* power on memory */
 	clrbits_le32(HHI_MEM_PD_REG0, (1 << 3) | (1<<2));
-
 }
 
 extern struct eth_board_socket* eth_board_setup(char *name);
