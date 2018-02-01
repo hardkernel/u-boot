@@ -10,6 +10,7 @@
 #include <ram.h>
 #include <spl.h>
 #include <asm/arch/bootrom.h>
+#include <asm/arch-rockchip/sys_proto.h>
 #include <asm/io.h>
 
 DECLARE_GLOBAL_DATA_PTR;

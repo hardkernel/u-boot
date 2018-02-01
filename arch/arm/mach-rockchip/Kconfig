@@ -214,6 +214,8 @@ config ROCKCHIP_RK3399
 config ROCKCHIP_RV1108
 	bool "Support Rockchip RV1108"
 	select CPU_V7
+	select SUPPORT_SPL
+	select SPL
 	help
 	  The Rockchip RV1108 is a ARM-based SoC with a single-core Cortex-A7
 	  and a DSP.

@@ -40,6 +40,7 @@ struct tos_parameter_t {
 	s64 reserve[8];
 };
 
+#if defined(CONFIG_SPL_FRAMEWORK) || !defined(CONFIG_SPL_OF_PLATDATA)
 int dram_init_banksize(void)
 {
 	size_t top = min((unsigned long)(gd->ram_size + CONFIG_SYS_SDRAM_BASE),
@@ -66,6 +67,7 @@ int dram_init_banksize(void)
 
 	return 0;
 }
+#endif
 
 size_t rockchip_sdram_size(phys_addr_t reg)
 {
@@ -107,6 +109,7 @@ size_t rockchip_sdram_size(phys_addr_t reg)
 	return (size_t)size_mb << 20;
 }
 
+#if defined(CONFIG_SPL_FRAMEWORK) || !defined(CONFIG_SPL_OF_PLATDATA)
 int dram_init(void)
 {
 	struct ram_info ram;
@@ -129,6 +132,7 @@ int dram_init(void)
 
 	return 0;
 }
+#endif
 
 ulong board_get_usable_ram_top(ulong total_size)
 {
