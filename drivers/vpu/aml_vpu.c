@@ -58,7 +58,6 @@ static void vpu_chip_detect(void)
 	unsigned int cpu_type;
 
 	cpu_type = get_cpu_id().family_id;
-	cpu_type = 0xffff;
 	switch (cpu_type) {
 	case MESON_CPU_MAJOR_ID_M8:
 		vpu_chip_type = VPU_CHIP_M8;
@@ -216,7 +215,7 @@ static void vpu_chip_detect(void)
 		vpu_conf.fclk_div_table = fclk_div_table_gxb;
 		vpu_conf.vpu_clk_table = vpu_clk_table_gxb;
 		break;
-	/*case MESON_CPU_MAJOR_ID_G12A:
+	case MESON_CPU_MAJOR_ID_G12A:
 		vpu_chip_type = VPU_CHIP_G12A;
 #ifdef CONFIG_VPU_CLK_LEVEL_DFT
 		vpu_conf.clk_level_dft = CONFIG_VPU_CLK_LEVEL_DFT;
@@ -227,7 +226,7 @@ static void vpu_chip_detect(void)
 		vpu_conf.fclk_freq = FCLK_TYPE_G12A;
 		vpu_conf.fclk_div_table = fclk_div_table_g12a;
 		vpu_conf.vpu_clk_table = vpu_clk_table_gxb;
-		break;*/
+		break;
 	default:
 		vpu_chip_type = VPU_CHIP_G12A;
 #ifdef CONFIG_VPU_CLK_LEVEL_DFT
@@ -562,6 +561,7 @@ static int adjust_vpu_clk_gx(unsigned int clk_level)
 	unsigned int mux, div;
 	int ret = 0;
 
+	/* vpu clk */
 	clk_table = vpu_conf.vpu_clk_table + clk_level;
 	mux = get_vpu_clk_mux(clk_table->mux);
 	if (mux == GPLL_CLK) {
@@ -581,6 +581,7 @@ static int adjust_vpu_clk_gx(unsigned int clk_level)
 	vpu_hiu_write(HHI_VPU_CLK_CNTL, ((mux << 9) | (div << 0)));
 	vpu_hiu_setb(HHI_VPU_CLK_CNTL, 1, 8, 1);
 
+	/* vpu clkb if needed */
 	switch (vpu_chip_type) {
 	case VPU_CHIP_GXBB:
 	case VPU_CHIP_GXTVBB:
@@ -596,13 +597,14 @@ static int adjust_vpu_clk_gx(unsigned int clk_level)
 		break;
 	}
 
+	/* vapb clk */
 	if (vpu_clk >= 250000000) {
 		vpu_hiu_write(HHI_VAPBCLK_CNTL, (1 << 30) | /* turn on ge2d clock */
 						(0 << 9)  | /* clk_sel    //250Mhz */
 						(1 << 0));  /* clk_div */
 	} else {
 		vpu_hiu_write(HHI_VAPBCLK_CNTL, (1 << 30) | /* turn on ge2d clock */
-						(mux << 9)  | /* clk_sel */
+						(clk_table->mux << 9)  | /* clk_sel */
 						(div << 0));  /* clk_div */
 	}
 	vpu_hiu_setb(HHI_VAPBCLK_CNTL, 1, 8, 1);
@@ -806,6 +808,16 @@ static void vpu_power_on_gx(void)
 		vpu_hiu_setb(HHI_VPU_MEM_PD_REG2, 0, 2, 2);
 		udelay(5);
 		break;
+	case VPU_CHIP_G12A:
+		vpu_hiu_setb(HHI_VPU_MEM_PD_REG2, 0, 0, 2);
+		udelay(5);
+		for (i = 4; i < 18; i+=2) {
+			vpu_hiu_setb(HHI_VPU_MEM_PD_REG2, 0, i, 2);
+			udelay(5);
+		}
+		vpu_hiu_setb(HHI_VPU_MEM_PD_REG2, 0, 30, 2);
+		udelay(5);
+		break;
 	default:
 		break;
 	}
@@ -870,6 +882,24 @@ static void vpu_power_off_gx(void)
 	for (i = 0; i < 32; i+=2) {
 		vpu_hiu_setb(HHI_VPU_MEM_PD_REG1, 0x3, i, 2);
 		udelay(5);
+	}
+	switch (vpu_chip_type) {
+	case VPU_CHIP_TXHD:
+		vpu_hiu_setb(HHI_VPU_MEM_PD_REG2, 0x3, 2, 2);
+		udelay(5);
+		break;
+	case VPU_CHIP_G12A:
+		vpu_hiu_setb(HHI_VPU_MEM_PD_REG2, 0x3, 0, 2);
+		udelay(5);
+		for (i = 4; i < 18; i+=2) {
+			vpu_hiu_setb(HHI_VPU_MEM_PD_REG2, 0x3, i, 2);
+			udelay(5);
+		}
+		vpu_hiu_setb(HHI_VPU_MEM_PD_REG2, 0x3, 30, 2);
+		udelay(5);
+		break;
+	default:
+		break;
 	}
 	for (i = 8; i < 16; i++) {
 		vpu_hiu_setb(HHI_MEM_PD_REG0, 0x1, i, 1);
