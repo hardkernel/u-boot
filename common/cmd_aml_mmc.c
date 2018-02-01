@@ -45,6 +45,9 @@
 #define dtb_info(fmt, ...) printf( "%s()-%d: " fmt , \
                   __func__, __LINE__, ##__VA_ARGS__)
 
+#define fb_err(fmt, ...)   printf("%s()-%d: " fmt , \
+                __func__, __LINE__, ##__VA_ARGS__)
+
 struct aml_dtb_rsv {
     u8 data[DTB_BLK_SIZE*DTB_BLK_CNT - 4*sizeof(u32)];
     u32 magic;
@@ -3035,10 +3038,151 @@ int do_emmc_dtb_write(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
     return ret;
 }
 
+static int _fastboot_context_read(struct mmc *mmc, u64 blk,
+        u64 cnt, void *addr)
+{
+    int dev = EMMC_FASTBOOT_CONTEXT_DEV;
+    u64 n;
+
+    n = mmc->block_dev.block_read(dev, blk, cnt, addr);
+    if (n != cnt) {
+        fb_err("%s: dev # %d, block # %#llx, count # %#llx ERROR!\n",
+            __func__, dev, blk, cnt);
+    }
+
+    return n != cnt;
+}
+
+int fastboot_context_read(void *buf, size_t size)
+{
+    uint32_t crc_result;
+    struct mmc *mmc;
+    struct FastbootContext *fb_cont;
+    int fb_size = sizeof(struct FastbootContext);
+    u64 blk, cnt, fb_glb_offset;
+    int dev = EMMC_FASTBOOT_CONTEXT_DEV;
+    struct partitions *part = NULL;
+    struct virtual_partition *vpart = NULL;
+
+    mmc = find_mmc_device(dev);
+    if (!mmc) {
+        puts("no mmc devices available\n");
+        return 1;
+    }
+
+    if (mmc_init(mmc)) {
+        printf("%s() %d: emmc init failed\n", __func__, __LINE__);
+        return 1;
+    }
+
+    vpart = aml_get_virtual_partition_by_name(MMC_FASTBOOT_CONTEXT_NAME);
+    part = aml_get_partition_by_name(MMC_RESERVED_NAME);
+    fb_glb_offset = part->offset + vpart->offset;
+
+    blk = fb_glb_offset / mmc->read_bl_len;
+    cnt = size / mmc->read_bl_len;
+
+    if (_fastboot_context_read(mmc, blk, cnt, buf))
+        return 1;
+
+    fb_cont = (struct FastbootContext *)buf;
+    crc_result = crc32(0, buf, fb_size - 4);
+
+    if (crc_result != fb_cont->crc32) {
+        printf("%s %d: crc checksum ERROR!\n", __func__, __LINE__);
+        return 1;
+    }
+    return 0;
+}
+
+
+int do_emmc_fb_read(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+    int ret = 0;
+    void *addr = NULL;
+    u64 size;
+
+    if (argc != 4)
+        return CMD_RET_USAGE;
+
+    addr = (void *)simple_strtoul(argv[2], NULL, 16);
+    size = simple_strtoull(argv[3], NULL, 16);
+    ret = fastboot_context_read(addr, size);
+    return ret;
+}
+
+static int _fastboot_context_write(struct mmc *mmc, u64 blk,
+        u64 cnt, void *addr)
+{
+    int dev = EMMC_FASTBOOT_CONTEXT_DEV;
+    int n;
+
+    n = mmc->block_dev.block_write(dev, blk, cnt, addr);
+
+    if (n != cnt) {
+        fb_err("%s: dev # %d, block # %#llx,cnt # %#llx ERROR!\n",
+            __func__, dev, blk, cnt);
+    }
+
+    return n != cnt;
+}
+
+int fastboot_context_write(void *buf, size_t size)
+{
+    int ret = 0;
+    struct FastbootContext *fb_cont = (struct FastbootContext *)buf;
+    u64 blk, cnt, fb_glb_offset;
+    struct mmc *mmc;
+    struct partitions *part = NULL;
+    struct virtual_partition *vpart = NULL;
+    int dev = EMMC_FASTBOOT_CONTEXT_DEV;
+    int fb_size = sizeof(struct FastbootContext);
+
+    mmc = find_mmc_device(dev);
+    if (!mmc) {
+        puts("no mmc devices available\n");
+        return 1;
+    }
+
+    ret = mmc_init(mmc);
+    if (ret) {
+        printf("%s() %d: emmc init failed\n", __func__, __LINE__);
+        return 1;
+    }
+
+    vpart = aml_get_virtual_partition_by_name(MMC_FASTBOOT_CONTEXT_NAME);
+    part = aml_get_partition_by_name(MMC_RESERVED_NAME);
+    fb_glb_offset = part->offset + vpart->offset;
+    fb_cont->crc32 = crc32(0, buf, fb_size - 4);
+    blk = fb_glb_offset / mmc->read_bl_len;
+    cnt = size / mmc->read_bl_len;
+    ret = _fastboot_context_write(mmc, blk, cnt, buf);
+
+    return ret;
+}
+
+int do_emmc_fb_write(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+    int ret = 0;
+    void *addr = NULL;
+    u64 size;
+
+    if (argc != 4)
+        return CMD_RET_USAGE;
+
+    addr = (void *)simple_strtoul(argv[2], NULL, 16);
+    size = simple_strtoull(argv[3], NULL, 16);
+    ret = fastboot_context_write(addr, size);
+    return ret;
+}
+
+
 static cmd_tbl_t cmd_emmc[] = {
     U_BOOT_CMD_MKENT(dtb_read,  4, 0, do_emmc_dtb_read,  "", ""),
     U_BOOT_CMD_MKENT(dtb_write, 4, 0, do_emmc_dtb_write, "", ""),
     U_BOOT_CMD_MKENT(erase,     3, 0, do_emmc_erase,     "", ""),
+    U_BOOT_CMD_MKENT(fastboot_read, 4, 0, do_emmc_fb_read, "", ""),
+    U_BOOT_CMD_MKENT(fastboot_write, 4, 0, do_emmc_fb_write, "", ""),
 };
 
 static int do_emmc_dtb_key(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
@@ -3054,10 +3198,14 @@ static int do_emmc_dtb_key(cmd_tbl_t *cmdtp, int flag, int argc, char * const ar
     return cp->cmd(cmdtp, flag, argc, argv);
 }
 
+
 U_BOOT_CMD(
     emmc, 4, 1, do_emmc_dtb_key,
     "EMMC sub system",
     "dtb_read addr size\n"
     "emmc dtb_write addr size\n"
     "emmc erase dtb\n"
-    "emmc erase key\n");
+    "emmc erase key\n"
+    "emmc fastboot_read addr size\n"
+    "emmc fastboot_write addr size\n");
+
