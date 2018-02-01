@@ -1080,8 +1080,12 @@ int usb_lowlevel_init(int index, enum usb_init_type init, void **controller)
 		return -ENOMEM;
 
 	reg = xhci_readl(&hccr->cr_hcsparams1);
+#ifdef CONFIG_USB_XHCI_AMLOGIC_V2
+	descriptor.hub.bNbrPorts = 2;
+#else
 	descriptor.hub.bNbrPorts = ((reg & HCS_MAX_PORTS_MASK) >>
 						HCS_MAX_PORTS_SHIFT);
+#endif
 	printf("Register %x NbrPorts %d\n", reg, descriptor.hub.bNbrPorts);
 
 	/* Port Indicators */

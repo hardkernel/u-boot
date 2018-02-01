@@ -177,6 +177,7 @@ struct dwc3 {					/* offset: 0xC100 */
 /* Global USB2 PHY Configuration Register */
 #define DWC3_GUSB2PHYCFG_PHYSOFTRST		(1 << 31)
 #define DWC3_GUSB2PHYCFG_SUSPHY			(1 << 6)
+#define DWC3_GUSB2PHYCFG_PHYIF			(1 << 3)
 
 /* Global USB3 PIPE Control Register */
 #define DWC3_GUSB3PIPECTL_PHYSOFTRST		(1 << 31)
@@ -191,4 +192,9 @@ struct dwc3 {					/* offset: 0xC100 */
 #define DWC3_DCTL_CSFTRST			(1 << 30)
 #define DWC3_DCTL_LSFTRST			(1 << 29)
 
+#define DWC3_GFLADJ           0xb010c630
+#define DWC3_GFLADJ_30MHZ_SDBND_SEL           (1 << 7)
+#define DWC3_GFLADJ_30MHZ_MASK                        0x3f
+/* Global User Control Register */
+#define DWC3_GUCTL_USBHSTINAUTORETRYEN (1 << 14)
 #endif /* __DWC3_H_ */

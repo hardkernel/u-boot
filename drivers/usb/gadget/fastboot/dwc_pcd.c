@@ -139,6 +139,11 @@ int f_dwc_core_init()
 	*/
 	usbcfg.d32 = dwc_read_reg32(DWC_REG_GUSBCFG);
 	usbcfg.b.force_dev_mode = 1;
+#if (defined CONFIG_USB_DEVICE_V2)
+	usbcfg.b.usbtrdtim = 9;
+#else
+	usbcfg.b.usbtrdtim = 5;
+#endif
 	dwc_write_reg32(DWC_REG_GUSBCFG, usbcfg.d32);
 
 	ahbcfg.b.dmaenable = 0;

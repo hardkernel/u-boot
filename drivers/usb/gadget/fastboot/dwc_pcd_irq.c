@@ -664,6 +664,9 @@ static void dwc_otg_pcd_handle_enum_done_intr(void)
 	depctl_data_t diepctl;
 	depctl_data_t doepctl;
 	dctl_data_t dctl = {0};
+#if (defined CONFIG_USB_DEVICE_V2)
+		depctl_data_t depctl;
+#endif
 
 	printf("SPEED ENUM\n");
 
@@ -679,12 +682,39 @@ static void dwc_otg_pcd_handle_enum_done_intr(void)
 	doepctl.b.epena = 1;
 	dwc_write_reg32(DWC_REG_OUT_EP_REG(0), doepctl.d32);
 
+#if (defined CONFIG_USB_DEVICE_V2)
+	depctl.d32 = dwc_read_reg32(DWC_REG_IN_EP_REG(1));
+	if (!depctl.b.usbactep) {
+		depctl.b.mps = BULK_EP_MPS;
+		depctl.b.eptype = 2;//BULK_STYLE
+		depctl.b.setd0pid = 1;
+		depctl.b.txfnum = 0;   //Non-Periodic TxFIFO
+		depctl.b.usbactep = 1;
+		dwc_write_reg32(DWC_REG_IN_EP_REG(1), depctl.d32);
+	}
+
+	depctl.d32 = dwc_read_reg32(DWC_REG_OUT_EP_REG(2));
+	if (!depctl.b.usbactep) {
+		depctl.b.mps = BULK_EP_MPS;
+		depctl.b.eptype = 2;//BULK_STYLE
+		depctl.b.setd0pid = 1;
+		depctl.b.txfnum = 0;   //Non-Periodic TxFIFO
+		depctl.b.usbactep = 1;
+		dwc_write_reg32(DWC_REG_OUT_EP_REG(2), depctl.d32);
+	}
+#endif
+
+
 	dctl.b.cgnpinnak = 1;
 	dwc_modify_reg32(DWC_REG_DCTL, dctl.d32, dctl.d32);
 
 	/* high speed */
 	gusbcfg.d32 = dwc_read_reg32(DWC_REG_GUSBCFG);
+#if (defined CONFIG_USB_DEVICE_V2)
+	gusbcfg.b.usbtrdtim = 9;
+#else
 	gusbcfg.b.usbtrdtim = 5;
+#endif
 	dwc_write_reg32(DWC_REG_GUSBCFG, gusbcfg.d32);
 
 	/* Clear interrupt */
@@ -734,8 +764,15 @@ static void dwc_otg_pcd_handle_out_ep_intr(void)
 				/* Clear the bit in DOEPINTn for this interrupt */
 				CLEAR_OUT_EP_INTR(epnum, xfercompl);
 				if (0 == epnum) {
+#if (defined CONFIG_USB_DEVICE_V2)
+					if (doepint.b.setup) {
+						CLEAR_OUT_EP_INTR(epnum,setup);
+						doepint.b.setup = 0;
+					}
+#else
 					CLEAR_OUT_EP_INTR(epnum, setup);
 					doepint.b.setup = 0;
+#endif
 					handle_ep0();
 				} else {
 					complete_ep(epnum, 0);
@@ -752,6 +789,9 @@ static void dwc_otg_pcd_handle_out_ep_intr(void)
 			}
 			/* Setup Phase Done (contorl EPs) */
 			if (doepint.b.setup) {
+#if (defined CONFIG_USB_DEVICE_V2)
+				handle_ep0();
+#endif
 				CLEAR_OUT_EP_INTR(epnum, setup);
 			}
 		}

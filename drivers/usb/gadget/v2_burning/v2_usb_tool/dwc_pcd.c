@@ -101,7 +101,12 @@ static void dwc_otg_core_init() //Elvis Fool, add 'static'
 	*/
 	dwc_otg_core_reset();
 
-		usbcfg.d32 = dwc_read_reg32(DWC_REG_GUSBCFG);
+	usbcfg.d32 = dwc_read_reg32(DWC_REG_GUSBCFG);
+#if (defined CONFIG_USB_DEVICE_V2)
+	usbcfg.b.usbtrdtim = 9;
+#else
+	usbcfg.b.usbtrdtim = 5;
+#endif
 	usbcfg.b.srpcap = 0;
 	usbcfg.b.hnpcap = 0;
 #ifdef USE_FULL_SPEED

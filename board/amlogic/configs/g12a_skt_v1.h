@@ -426,12 +426,18 @@
 	#define CONFIG_GXL_XHCI_BASE            0xff500000
 	#define CONFIG_GXL_USB_PHY2_BASE        0xffe09000
 	#define CONFIG_GXL_USB_PHY3_BASE        0xffe09080
+	#define CONFIG_USB_PHY_20				0xff636000
+	#define CONFIG_USB_PHY_21				0xff63A000
 	#define CONFIG_USB_STORAGE      1
 	#define CONFIG_USB_XHCI		1
-	#define CONFIG_USB_XHCI_AMLOGIC_GXL 1
+	#define CONFIG_USB_XHCI_AMLOGIC_V2 1
+	#define CONFIG_USB_GPIO_PWR  			PIN_GPIOH_6
+	#define CONFIG_USB_GPIO_PWR_NAME		"GPIOH_6"
+	//#define CONFIG_USB_XHCI_AMLOGIC_USB3_V2		1
 #endif //#if defined(CONFIG_CMD_USB)
 
 #define CONFIG_TXLX_USB        1
+#define CONFIG_USB_DEVICE_V2    1
 //UBOOT fastboot config
 #define CONFIG_CMD_FASTBOOT 1
 #define CONFIG_FASTBOOT_FLASH_MMC_DEV 1
@@ -440,7 +446,7 @@
 #define CONFIG_USBDOWNLOAD_GADGET 1
 #define CONFIG_SYS_CACHELINE_SIZE 64
 #define CONFIG_FASTBOOT_MAX_DOWN_SIZE	0x8000000
-#define CONFIG_DEVICE_PRODUCT	"txlx_skt"
+#define CONFIG_DEVICE_PRODUCT	"g12a_skt"
 
 //UBOOT Facotry usb/sdcard burning config
 #define CONFIG_AML_V2_FACTORY_BURN              1       //support facotry usb burning

@@ -777,6 +777,9 @@ int32_t dwc_otg_pcd_handle_enum_done_intr(void)
 	depctl_data_t diepctl;
 	depctl_data_t doepctl;
 	dctl_data_t dctl ={0};
+#if (defined CONFIG_USB_DEVICE_V2)
+	depctl_data_t depctl;
+#endif
 
 	DBG("SPEED ENUM\n");
 
@@ -788,6 +791,28 @@ int32_t dwc_otg_pcd_handle_enum_done_intr(void)
 	/* Set the MPS of the IN EP based on the enumeration speed */
 	diepctl.b.mps = DWC_DEP0CTL_MPS_64;
 	dwc_write_reg32(DWC_REG_IN_EP_REG(0) , diepctl.d32);
+
+#if (defined CONFIG_USB_DEVICE_V2)
+	depctl.d32 = dwc_read_reg32(DWC_REG_IN_EP_REG(1));
+	if (!depctl.b.usbactep) {
+		depctl.b.mps = BULK_EP_MPS;
+		depctl.b.eptype = 2;//BULK_STYLE
+		depctl.b.setd0pid = 1;
+		depctl.b.txfnum = 0;   //Non-Periodic TxFIFO
+		depctl.b.usbactep = 1;
+		dwc_write_reg32(DWC_REG_IN_EP_REG(1), depctl.d32);
+	}
+
+	depctl.d32 = dwc_read_reg32(DWC_REG_OUT_EP_REG(2));
+	if (!depctl.b.usbactep) {
+		depctl.b.mps = BULK_EP_MPS;
+		depctl.b.eptype = 2;//BULK_STYLE
+		depctl.b.setd0pid = 1;
+		depctl.b.txfnum = 0;   //Non-Periodic TxFIFO
+		depctl.b.usbactep = 1;
+		dwc_write_reg32(DWC_REG_OUT_EP_REG(2), depctl.d32);
+	}
+#endif
 
 	/* Enable OUT EP for receive */
 	doepctl.b.epena = 1;
@@ -841,7 +866,11 @@ int32_t dwc_otg_pcd_handle_enum_done_intr(void)
 	}
 #else
 	/* Full or low speed */
+#if (defined CONFIG_USB_DEVICE_V2)
+	gusbcfg.b.usbtrdtim = 9;
+#else
 	gusbcfg.b.usbtrdtim = 5;
+#endif
 #endif
 	dwc_write_reg32(DWC_REG_GUSBCFG, gusbcfg.d32);
 
@@ -1287,6 +1316,3 @@ int dwc_pcd_irq(void)
     flush_cpu_cache();
 	return 0;
 }
-
-
-

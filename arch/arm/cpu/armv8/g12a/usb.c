@@ -19,9 +19,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-//#include <common.h>
-//#include <asm/cache.h>
-#include <asm/arch/usb-new.h>
+#include <asm/arch/usb-v2.h>
 #include <asm/arch/romboot.h>
 
 
@@ -34,7 +32,11 @@ struct amlogic_usb_config * board_usb_start(int mode,int index)
 	if (mode < 0 || mode >= BOARD_USB_MODE_MAX||!g_usb_cfg[mode][index])
 		return 0;
 
-	writel((1 << 2),P_RESET1_REGISTER);
+	writel((1 << 2), P_RESET1_REGISTER);
+
+	if (mode == BOARD_USB_MODE_HOST )
+		if (g_usb_cfg[mode][index]->set_vbus_power)
+			g_usb_cfg[mode][index]->set_vbus_power(1);
 
 	return g_usb_cfg[mode][index];
 }
@@ -65,4 +67,30 @@ void board_usb_init(struct amlogic_usb_config * usb_cfg,int mode)
 int get_usb_count(void)
 {
     return  usb_index;
+}
+
+void set_usb_pll(uint32_t volatile *phy2_pll_base)
+{
+    (*(volatile uint32_t *)(unsigned long)(phy2_pll_base + 0x40))
+        = (USB_PHY2_PLL_PARAMETER_1 | USB_PHY2_RESET | USB_PHY2_ENABLE);
+    (*(volatile uint32_t *)(unsigned long)(phy2_pll_base + 0x44)) =
+        USB_PHY2_PLL_PARAMETER_2;
+    (*(volatile uint32_t *)(unsigned long)(phy2_pll_base + 0x48)) =
+        USB_PHY2_PLL_PARAMETER_3;
+    udelay(100);
+    (*(volatile uint32_t *)(unsigned long)(phy2_pll_base + 0x40))
+        = (((USB_PHY2_PLL_PARAMETER_1) | (USB_PHY2_ENABLE))
+        & (~(USB_PHY2_RESET)));
+}
+
+void board_usb_pll_disable(struct amlogic_usb_config *cfg)
+{
+    int i = 0;
+
+    for (i = 0; i < cfg->u2_port_num; i++) {
+        (*(volatile uint32_t *)(unsigned long)
+            (cfg->usb_phy2_pll_base_addr[i] + 0x40))
+            = ((USB_PHY2_PLL_PARAMETER_1 | USB_PHY2_RESET)
+            & (~(USB_PHY2_ENABLE)));
+    }
 }
