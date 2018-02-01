@@ -48,6 +48,8 @@ struct rk_flash_info {
 	u8	flash_mask;
 } __packed;
 
+static int rkusb_rst_code; /* The subcode in reset command (0xFF) */
+
 int g_dnl_bind_fixup(struct usb_device_descriptor *dev, const char *name)
 {
 	if (IS_RKUSB_UMS_DNL(name)) {
@@ -111,7 +113,13 @@ static int rkusb_check_lun(struct fsg_common *common)
 
 static void __do_reset(struct usb_ep *ep, struct usb_request *req)
 {
-	writel(BOOT_NORMAL, (void *)CONFIG_ROCKCHIP_BOOT_MODE_REG);
+	u32 boot_flag = BOOT_NORMAL;
+
+	if (rkusb_rst_code == 0x03)
+		boot_flag = BOOT_BROM_DOWNLOAD;
+
+	rkusb_rst_code = 0; /* restore to default */
+	writel(boot_flag, (void *)CONFIG_ROCKCHIP_BOOT_MODE_REG);
 
 	do_reset(NULL, 0, 0, NULL);
 }
@@ -124,6 +132,7 @@ static int rkusb_do_reset(struct fsg_common *common,
 	bh->inreq->complete = __do_reset;
 	bh->state = BUF_STATE_EMPTY;
 
+	rkusb_rst_code = !common->cmnd[1] ? 0xff : common->cmnd[1];
 	return 0;
 }
 
