@@ -1,8 +1,9 @@
 /*
- * (C) Copyright 2016 Rockchip Electronics Co., Ltd
- *
- * SPDX-License-Identifier:     GPL-2.0+
+ * Copyright (C) 2018 Rockchip Electronics Co., Ltd
+ * Author: Zhihuan He <huan.he@rock-chips.com>
+ * SPDX-License-Identifier:	GPL-2.0+
  */
+
 #ifndef _ASM_ARCH_GRF_RV1108_H
 #define _ASM_ARCH_GRF_RV1108_H
 
@@ -108,6 +109,43 @@ struct rv1108_grf {
 };
 check_member(rv1108_grf, chip_id, 0xf90);
 
+struct rv1108_pmu_grf {
+	u32 gpioa_iomux;
+	u32 gpiob_iomux;
+	u32 gpioc_iomux;
+	u32 reserved1;
+	u32 gpioa_p;
+	u32 gpiob_p;
+	u32 gpioc_p;
+	u32 reserved2;
+	u32 gpioa_e;
+	u32 gpiob_e;
+	u32 gpioc_e;
+	u32 reserved3;
+	u32 gpioa_smt;
+	u32 gpiob_smt;
+	u32 gpioc_smt;
+	u32 reserved4;
+	u32 gpio0a_sr;
+	u32 gpio0b_sr;
+	u32 gpio0c_sr;
+	u32 reserved5[(0x100-0x4c)/4];
+	u32 soc_con[4];
+	u32 reserved6[(0x180-0x110)/4];
+	u32 dll_con[2];
+	u32 reserved7[2];
+	u32 dll_status[2];
+	u32 reserved8[(0x200-0x198)/4];
+	u32 os_reg[4];
+	u32 reserved9[(0x300-0x210)/4];
+	u32 fast_boot_addr;
+	u32 reserved10[(0x380-0x304)/4];
+	u32 a7_jtag_mask;
+	u32 reserved11[(0x388-0x384)/4];
+	u32 ceva_jtag_mask;
+};
+check_member(rv1108_pmu_grf, ceva_jtag_mask, 0x388);
+
 /* GRF_GPIO1B_IOMUX */
 enum {
 	GPIO1B7_SHIFT		= 14,
@@ -211,7 +249,7 @@ enum {
 	GPIO1C1_I2S_SDI_M0,
 	GPIO1C1_PWM4,
 
-	GPIO1C0_SHIFT           = 0,
+	GPIO1C0_SHIFT		= 0,
 	GPIO1C0_MASK		= 3,
 	GPIO1C0_GPIO		= 0,
 	GPIO1C0_LCDC_D11,
@@ -285,48 +323,48 @@ enum {
 	GPIO2A6_FLASH_D6,
 	GPIO2A6_EMMC_D6,
 
-	GPIO2A5_SHIFT           = 10,
-	GPIO2A5_MASK            = 3 << GPIO2A5_SHIFT,
-	GPIO2A5_GPIO            = 0,
+	GPIO2A5_SHIFT		= 10,
+	GPIO2A5_MASK		= 3 << GPIO2A5_SHIFT,
+	GPIO2A5_GPIO		= 0,
 	GPIO2A5_FLASH_D5,
 	GPIO2A5_EMMC_D5,
 
-	GPIO2A4_SHIFT           = 8,
-	GPIO2A4_MASK            = 3 << GPIO2A4_SHIFT,
-	GPIO2A4_GPIO            = 0,
+	GPIO2A4_SHIFT		= 8,
+	GPIO2A4_MASK		= 3 << GPIO2A4_SHIFT,
+	GPIO2A4_GPIO		= 0,
 	GPIO2A4_FLASH_D4,
 	GPIO2A4_EMMC_D4,
 
-	GPIO2A3_SHIFT           = 6,
-	GPIO2A3_MASK            = 3 << GPIO2A3_SHIFT,
-	GPIO2A3_GPIO            = 0,
+	GPIO2A3_SHIFT		= 6,
+	GPIO2A3_MASK		= 3 << GPIO2A3_SHIFT,
+	GPIO2A3_GPIO		= 0,
 	GPIO2A3_FLASH_D3,
 	GPIO2A3_EMMC_D3,
 	GPIO2A3_SFC_HOLD_IO3,
 
-	GPIO2A2_SHIFT           = 4,
-	GPIO2A2_MASK            = 3 << GPIO2A2_SHIFT,
-	GPIO2A2_GPIO            = 0,
+	GPIO2A2_SHIFT		= 4,
+	GPIO2A2_MASK		= 3 << GPIO2A2_SHIFT,
+	GPIO2A2_GPIO		= 0,
 	GPIO2A2_FLASH_D2,
 	GPIO2A2_EMMC_D2,
 	GPIO2A2_SFC_WP_IO2,
 
-	GPIO2A1_SHIFT           = 2,
-	GPIO2A1_MASK            = 3 << GPIO2A1_SHIFT,
-	GPIO2A1_GPIO            = 0,
+	GPIO2A1_SHIFT		= 2,
+	GPIO2A1_MASK		= 3 << GPIO2A1_SHIFT,
+	GPIO2A1_GPIO		= 0,
 	GPIO2A1_FLASH_D1,
 	GPIO2A1_EMMC_D1,
 	GPIO2A1_SFC_SO_IO1,
 
-	GPIO2A0_SHIFT           = 0,
-	GPIO2A0_MASK            = 3 << GPIO2A0_SHIFT,
-	GPIO2A0_GPIO            = 0,
+	GPIO2A0_SHIFT		= 0,
+	GPIO2A0_MASK		= 3 << GPIO2A0_SHIFT,
+	GPIO2A0_GPIO		= 0,
 	GPIO2A0_FLASH_D0,
 	GPIO2A0_EMMC_D0,
 	GPIO2A0_SFC_SI_IO0,
 };
 
-/* GRF_GPIO2D_IOMUX */
+/* GRF_GPIO2B_IOMUX */
 enum {
 	GPIO2B7_SHIFT		= 14,
 	GPIO2B7_MASK		= 3 << GPIO2B7_SHIFT,
@@ -334,41 +372,41 @@ enum {
 	GPIO2B7_FLASH_CS1,
 	GPIO2B7_SFC_CLK,
 
-	GPIO2B6_SHIFT           = 12,
-	GPIO2B6_MASK            = 1 << GPIO2B6_SHIFT,
-	GPIO2B6_GPIO            = 0,
+	GPIO2B6_SHIFT		= 12,
+	GPIO2B6_MASK		= 1 << GPIO2B6_SHIFT,
+	GPIO2B6_GPIO		= 0,
 	GPIO2B6_EMMC_CLKO,
 
-	GPIO2B5_SHIFT           = 10,
-	GPIO2B5_MASK            = 1 << GPIO2B5_SHIFT,
-	GPIO2B5_GPIO            = 0,
+	GPIO2B5_SHIFT		= 10,
+	GPIO2B5_MASK		= 1 << GPIO2B5_SHIFT,
+	GPIO2B5_GPIO		= 0,
 	GPIO2B5_FLASH_CS0,
 
-	GPIO2B4_SHIFT           = 8,
-	GPIO2B4_MASK            = 3 << GPIO2B4_SHIFT,
-	GPIO2B4_GPIO            = 0,
+	GPIO2B4_SHIFT		= 8,
+	GPIO2B4_MASK		= 3 << GPIO2B4_SHIFT,
+	GPIO2B4_GPIO		= 0,
 	GPIO2B4_FLASH_RDY,
 	GPIO2B4_EMMC_CMD,
 	GPIO2B4_SFC_CSN0,
 
-	GPIO2B3_SHIFT           = 6,
-	GPIO2B3_MASK            = 1 << GPIO2B3_SHIFT,
-	GPIO2B3_GPIO            = 0,
+	GPIO2B3_SHIFT		= 6,
+	GPIO2B3_MASK		= 1 << GPIO2B3_SHIFT,
+	GPIO2B3_GPIO		= 0,
 	GPIO2B3_FLASH_RDN,
 
-	GPIO2B2_SHIFT           = 4,
-	GPIO2B2_MASK            = 1 << GPIO2B2_SHIFT,
-	GPIO2B2_GPIO            = 0,
+	GPIO2B2_SHIFT		= 4,
+	GPIO2B2_MASK		= 1 << GPIO2B2_SHIFT,
+	GPIO2B2_GPIO		= 0,
 	GPIO2B2_FLASH_WRN,
 
-	GPIO2B1_SHIFT           = 2,
-	GPIO2B1_MASK            = 1 << GPIO2B1_SHIFT,
-	GPIO2B1_GPIO            = 0,
+	GPIO2B1_SHIFT		= 2,
+	GPIO2B1_MASK		= 1 << GPIO2B1_SHIFT,
+	GPIO2B1_GPIO		= 0,
 	GPIO2B1_FLASH_CLE,
 
-	GPIO2B0_SHIFT           = 0,
-	GPIO2B0_MASK            = 1 << GPIO2B0_SHIFT,
-	GPIO2B0_GPIO            = 0,
+	GPIO2B0_SHIFT		= 0,
+	GPIO2B0_MASK		= 1 << GPIO2B0_SHIFT,
+	GPIO2B0_GPIO		= 0,
 	GPIO2B0_FLASH_ALE,
 };
 
@@ -427,12 +465,12 @@ enum {
 	GPIO3A7_GPIO		= 0,
 
 	GPIO3A6_SHIFT		= 12,
-	GPIO3A6_MASK		= 1 << GPIO3A6_SHIFT,
+	GPIO3A6_MASK		= 3 << GPIO3A6_SHIFT,
 	GPIO3A6_GPIO		= 0,
 	GPIO3A6_UART1_SOUT,
 
 	GPIO3A5_SHIFT		= 10,
-	GPIO3A5_MASK		= 1 << GPIO3A5_SHIFT,
+	GPIO3A5_MASK		= 3 << GPIO3A5_SHIFT,
 	GPIO3A5_GPIO		= 0,
 	GPIO3A5_UART1_SIN,
 
@@ -505,5 +543,21 @@ enum {
 	GPIOC0_MASK		= 1,
 	GPIO3C0_GPIO		= 0,
 	GPIO3C0_SDMMC_D3,
+};
+
+enum {
+	/* GRF_SOC_CON0 */
+	MSCH_MAINDDR3_SHIFT		= 4,
+	MSCH_MAINDDR3			= 1 << MSCH_MAINDDR3_SHIFT,
+	MSCH_MAINPARTIALPOP_SHIFT	= 5,
+	MSCH_MAINPARTIALPOP		= 1 << MSCH_MAINPARTIALPOP_SHIFT,
+	MSCH_MAINPARTIALPOP_MASK	= 1 << MSCH_MAINPARTIALPOP_SHIFT,
+};
+
+enum {
+	/* PMU_GRF_SOC_CON0 */
+	DDRPHY_BUFFEREN_CORE_SHIFT	= 2,
+	DDRPHY_BUFFEREN_CORE_MASK	= 1 << DDRPHY_BUFFEREN_CORE_SHIFT,
+	DDRPHY_BUFFEREN_CORE_EN		= 1 << DDRPHY_BUFFEREN_CORE_SHIFT,
 };
 #endif
