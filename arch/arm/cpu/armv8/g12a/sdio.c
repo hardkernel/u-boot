@@ -60,6 +60,7 @@ int cpu_sd_emmc_init(unsigned port)
         setbits_le32(P_PERIPHS_PIN_MUX_5, (0x3f << 26) | (0x1 << 24));
 		break;
 	case SDIO_PORT_B:
+		clrsetbits_le32(P_PAD_DS_REG1A, 0xFFFF, 0x5555);
 		if (sd_debug_board_1bit_flag == 1)
 			setbits_le32(P_PERIPHS_PIN_MUX_6, 0x7 << 2);
         else {
