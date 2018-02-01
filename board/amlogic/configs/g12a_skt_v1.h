@@ -306,7 +306,7 @@
 /* axg only support slc nand */
 /* swither for mtd nand which is for slc only. */
 /* support for mtd */
-//#define CONFIG_AML_MTD 1
+#define CONFIG_AML_MTD 1
 /* support for nftl */
 //#define CONFIG_AML_NAND	1
 

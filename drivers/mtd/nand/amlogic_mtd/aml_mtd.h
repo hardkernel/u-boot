@@ -12,9 +12,6 @@
 
 #define CONFIG_MTD_PARTITIONS 1
 
-
-#define __PXP__
-
 /*
  ** Max page list cnt for usrdef mode
   */

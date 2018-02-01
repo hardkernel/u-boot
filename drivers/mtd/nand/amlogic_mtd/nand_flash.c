@@ -12,8 +12,25 @@
 #include "aml_mtd.h"
 
 extern struct hw_controller *controller;
+
+#if 0
+extern void test_timing(struct mtd_info *mtd, struct nand_chip *chip);
+#endif
+
 int nand_fbb_issue_flag;
 struct aml_nand_flash_dev aml_nand_flash_ids[] = {
+	{"B revision NAND 8GiB MT29F64G08CBABA",
+		{NAND_MFR_MICRON, 0x64, 0x44, 0x4B, 0xA9},
+		8192,
+		8192,
+		0x200000,
+		744,
+		1,
+		16,
+		15,
+		5,
+		(NAND_TIMING_MODE5 | NAND_ECC_BCH16_MODE )},
+
 	{"A revision NAND 2GiB H27UAG8T2A",
 		{NAND_MFR_HYNIX, 0xd5, 0x94, 0x25, 0x44, 0x41},
 		4096,
@@ -1279,6 +1296,9 @@ static struct aml_nand_flash_dev *aml_nand_get_flash_type(struct mtd_info *mtd,
 	printk("NAND device id: %x %x %x %x %x %x \n",
 	dev_id[0], dev_id[1], dev_id[2], dev_id[3], dev_id[4], dev_id[5]);
 
+#if 0
+	test_timing(mtd, chip);
+#endif
 	/* Lookup the flash id */
 	for (i = 0; aml_nand_flash_ids[i].name != NULL; i++) {
 		if (!strncmp((char*) aml_nand_flash_ids[i].id,

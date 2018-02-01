@@ -180,14 +180,10 @@ unsigned char pagelist_1ynm_hynix256_mtd[128] = {
 #ifdef AML_NAND_UBOOT
 void pinmux_select_chip_mtd(unsigned ce_enable, unsigned rb_enable)
 {
-	/* Todo: confirm cpu id for G12A*/
-#ifdef	__PXP__
-	if (!((ce_enable >> 10) & 1))
-		AMLNF_SET_REG_MASK(P_PERIPHS_PIN_MUX_1, 2);
-#else
 	cpu_id_t cpu_id = get_cpu_id();
 
-	if (cpu_id.family_id == MESON_CPU_MAJOR_ID_AXG) {
+	if ((cpu_id.family_id == MESON_CPU_MAJOR_ID_AXG)
+		|| (cpu_id.family_id == MESON_CPU_MAJOR_ID_G12A)) {
 		if (!((ce_enable >> 10) & 1))
 			AMLNF_SET_REG_MASK(P_PERIPHS_PIN_MUX_1, 2);
 	} else if (cpu_id.family_id == MESON_CPU_MAJOR_ID_TXHD) {
@@ -208,7 +204,6 @@ void pinmux_select_chip_mtd(unsigned ce_enable, unsigned rb_enable)
 			__func__, __LINE__, cpu_id.family_id);
 		BUG();
 	}
-#endif
 }
 #endif
 
@@ -262,7 +257,6 @@ void get_sys_clk_rate_mtd(struct hw_controller *controller, int *rate)
 	unsigned int always_on = 0x1 << 24;
 	unsigned int clk;
 	/* fixme, axg clock may be the same setting with gxl/gxm */
-
 	if ((cpu_id.family_id == MESON_CPU_MAJOR_ID_AXG) ||
 	    (cpu_id.family_id == MESON_CPU_MAJOR_ID_TXHD) ||
 		(cpu_id.family_id == MESON_CPU_MAJOR_ID_G12A))
@@ -270,6 +264,7 @@ void get_sys_clk_rate_mtd(struct hw_controller *controller, int *rate)
 
 	printk("%s() %d, clock setting %d!\n",
 		__func__, __LINE__, clk_freq);
+
 	if ((cpu_id.family_id == MESON_CPU_MAJOR_ID_GXBB) ||
 	    (cpu_id.family_id == MESON_CPU_MAJOR_ID_GXL) ||
 	    (cpu_id.family_id == MESON_CPU_MAJOR_ID_AXG) ||
@@ -302,25 +297,21 @@ void get_sys_clk_rate_mtd(struct hw_controller *controller, int *rate)
 	return;
 }
 
-
-
 static void m3_nand_hw_init(struct aml_nand_chip *aml_chip)
 {
 	int sys_clk_rate, bus_cycle, bus_timing;
+	cpu_id_t cpu_id = get_cpu_id();
 
-#ifdef __PXP__
-	sys_clk_rate = 200;
-#else
-	sys_clk_rate = 200;
-#endif
+	if (cpu_id.family_id == MESON_CPU_MAJOR_ID_G12A) {
+		sys_clk_rate = 24;
+		bus_cycle  = 4;
+		bus_timing = 3;
+	} else {
+		sys_clk_rate = 200;
+		bus_cycle  = 6;
+		bus_timing = bus_cycle + 1;
+	}
 	get_sys_clk_rate_mtd(controller, &sys_clk_rate);
-
-	bus_cycle  = 6;
-#ifdef __PXP__
-	bus_timing = 2;
-#else
-	bus_timing = 7;
-#endif
 
 	NFC_SET_CFG(controller, 0);
 	NFC_SET_TIMING_ASYC(controller, bus_timing, (bus_cycle - 1));
@@ -332,6 +323,7 @@ static void m3_nand_hw_init(struct aml_nand_chip *aml_chip)
 static void m3_nand_adjust_timing(struct aml_nand_chip *aml_chip)
 {
 	int sys_clk_rate, bus_cycle, bus_timing;
+	cpu_id_t cpu_id = get_cpu_id();
 
 	if (!aml_chip->T_REA)
 		aml_chip->T_REA = 20;
@@ -345,17 +337,16 @@ static void m3_nand_adjust_timing(struct aml_nand_chip *aml_chip)
 	else
 		sys_clk_rate = 250;
 
-#ifdef __PXP__
-	sys_clk_rate = 200;
-#endif
+	if (cpu_id.family_id == MESON_CPU_MAJOR_ID_G12A) {
+		sys_clk_rate = 24;
+		bus_cycle  = 4;
+		bus_timing = 3;
+	} else {
+		bus_cycle  = 6;
+		bus_timing = bus_cycle + 1;
+	}
 	get_sys_clk_rate_mtd(controller, &sys_clk_rate);
 
-	bus_cycle  = 6;
-#ifdef __PXP__
-	bus_timing = 2;
-#else
-	bus_timing = 7;
-#endif
 
 	printf("%s() sys_clk_rate %d, bus_c %d, bus_t %d\n",
 		__func__, sys_clk_rate, bus_cycle, bus_timing);
@@ -914,17 +905,45 @@ void nand_hw_init(struct aml_nand_platform *plat)
 	aml_chip->aml_nand_select_chip(aml_chip, 0);
 }
 
+#if 0
+void test_timing(struct mtd_info *mtd, struct nand_chip *chip)
+{
+	int sys_clk_rate, bus_cycle, bus_timing;
+	u8 dev_id[8], i;
+
+	sys_clk_rate = 200;
+	get_sys_clk_rate_mtd(controller, &sys_clk_rate);
+	bus_cycle  = 6;
+
+	for (bus_timing = 2; bus_timing <= 12; bus_timing++) {
+		NFC_SET_CFG(controller, 0);
+		NFC_SET_TIMING_ASYC(controller, bus_timing, (bus_cycle - 1));
+		NFC_SEND_CMD(controller, 1<<31);
+
+		/* Send the command for reading device ID */
+		chip->cmdfunc(mtd, NAND_CMD_READID, 0x00, -1);
+
+		/* Read manufacturer and device IDs */
+		for (i=0; i<6; i++) {
+			dev_id[i] = chip->read_byte(mtd);
+		}
+		printk("NAND device id: %x %x %x %x %x %x \n",
+		dev_id[0], dev_id[1], dev_id[2], dev_id[3], dev_id[4], dev_id[5]);
+	}
+}
+#endif
+
 void nand_init(void)
 {
-	static int amlmtd_init = 0;
+	//static int amlmtd_init = 0;
 	struct aml_nand_platform *plat = NULL;
 	int i, ret;
 
-	if (1 == amlmtd_init) {
-		nand_hw_init(&aml_nand_mid_device.aml_nand_platform[0]);
-		device_boot_flag = NAND_BOOT_FLAG;
-		return;
-	}
+	//if (1 == amlmtd_init) {
+		//nand_hw_init(&aml_nand_mid_device.aml_nand_platform[0]);
+		//device_boot_flag = NAND_BOOT_FLAG;
+		//return;
+	//}
 
 	controller = kzalloc(sizeof(struct hw_controller), GFP_KERNEL);
 	if (controller == NULL) {
@@ -965,6 +984,6 @@ void nand_init(void)
 		// nand_register(i);
 	}
 	nand_curr_device = 1; //fixit
-	amlmtd_init = 1;
+	//amlmtd_init = 1;
 	return;
 }
