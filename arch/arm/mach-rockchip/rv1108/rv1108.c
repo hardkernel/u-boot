@@ -6,6 +6,8 @@
 
 #include <common.h>
 #include <asm/io.h>
+#include <ram.h>
+#include <asm/arch/sdram_common.h>
 #include <asm/arch/hardware.h>
 #include <asm/arch/grf_rv1108.h>
 
@@ -30,5 +32,25 @@ void board_debug_uart_init(void)
 		     GPIO2D1_UART2_SIN_M0 << GPIO2D1_SHIFT);
 #endif
 #endif /*CONFIG_SPL_BUILD*/
+}
+
+int dram_init(void)
+{
+	struct rv1108_grf *grf = (void *)GRF_BASE;
+
+	gd->ram_size = rockchip_sdram_size((phys_addr_t)&grf->os_reg2);
+
+	return 0;
+}
+
+int dram_init_banksize(void)
+{
+	size_t max_size = min((unsigned long)(gd->ram_size +
+			      CONFIG_SYS_SDRAM_BASE), gd->ram_top);
+
+	gd->bd->bi_dram[0].start = CONFIG_SYS_SDRAM_BASE;
+	gd->bd->bi_dram[0].size = max_size - gd->bd->bi_dram[0].start;
+
+	return 0;
 }
 
