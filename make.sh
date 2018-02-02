@@ -158,6 +158,6 @@ make ${BOARD}_defconfig O=${DSTDIR}/out
 select_toolchain
 make CROSS_COMPILE=${TOOLCHAIN_GCC}  all --jobs=${JOB} O=${DSTDIR}/out
 fixup_chip_name
-pack_loader_image
 pack_uboot_image
+pack_loader_image
 pack_trust_image
