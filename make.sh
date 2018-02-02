@@ -51,6 +51,13 @@ prepare()
 		echo "	3. Download full release SDK Responsity"
 		exit 1
 	fi
+
+	# Clean! We assume that ./u-boot.map indicates U-Boot project is not clean,
+	# maybe git checkout from rkdevelop.
+	if [ -f ./u-boot.map ]; then
+		make mrproper
+		echo "auto \"make mrproper\" done..."
+	fi
 }
 
 select_toolchain()
@@ -146,9 +153,9 @@ pack_trust_image()
 }
 
 prepare
-select_toolchain
 echo "make for ${BOARD}_defconfig by -j${JOB}"
 make ${BOARD}_defconfig O=${DSTDIR}/out
+select_toolchain
 make CROSS_COMPILE=${TOOLCHAIN_GCC}  all --jobs=${JOB} O=${DSTDIR}/out
 fixup_chip_name
 pack_loader_image
