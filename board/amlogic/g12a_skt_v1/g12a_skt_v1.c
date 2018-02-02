@@ -491,17 +491,19 @@ extern void aml_pwm_cal_init(int mode);
 
 int board_init(void)
 {
-#ifdef CONFIG_USB_XHCI_AMLOGIC_V2
-	board_usb_pll_disable(&g_usb_config_GXL_skt);
-	board_usb_init(&g_usb_config_GXL_skt,BOARD_USB_MODE_HOST);
-#endif /*CONFIG_USB_XHCI_AMLOGIC*/
-
-	return 0;
+    //Please keep CONFIG_AML_V2_FACTORY_BURN at first place of board_init
+    //As NOT NEED other board init If USB BOOT MODE
 #ifdef CONFIG_AML_V2_FACTORY_BURN
 	if ((0x1b8ec003 != readl(P_PREG_STICKY_REG2)) && (0x1b8ec004 != readl(P_PREG_STICKY_REG2))) {
 		aml_try_factory_usb_burning(0, gd->bd);
 	}
 #endif// #ifdef CONFIG_AML_V2_FACTORY_BURN
+#ifdef CONFIG_USB_XHCI_AMLOGIC_V2
+	board_usb_pll_disable(&g_usb_config_GXL_skt);
+	board_usb_init(&g_usb_config_GXL_skt,BOARD_USB_MODE_HOST);
+#endif /*CONFIG_USB_XHCI_AMLOGIC*/
+
+return 0;
 	aml_pwm_cal_init(0);
 
 #ifdef CONFIG_AML_NAND
