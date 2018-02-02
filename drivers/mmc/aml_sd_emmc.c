@@ -120,7 +120,8 @@ void aml_sd_cfg_swth(struct mmc *mmc)
 						(clk_div << Cfg_div));
 
 	if ((cpu_id.family_id >= MESON_CPU_MAJOR_ID_TXLX)
-			&& (cpu_id.family_id != MESON_CPU_MAJOR_ID_TXHD)) {
+			&& (cpu_id.family_id != MESON_CPU_MAJOR_ID_TXHD)
+			&& (cpu_id.family_id != MESON_CPU_MAJOR_ID_G12A)) {
 		if (aml_is_emmc_tsd(mmc)
 			|| (cpu_id.family_id == MESON_CPU_MAJOR_ID_AXG)
 			|| (cpu_id.family_id == MESON_CPU_MAJOR_ID_GXLX)) {
@@ -128,7 +129,7 @@ void aml_sd_cfg_swth(struct mmc *mmc)
 			sd_emmc_clkc |= (3 << Cfg_co_phase);
 		}
 	}
-
+	printf(">>>>sd_emmc_clkc co-phase 0x%x\n", (sd_emmc_clkc >> Cfg_co_phase) & 3);
 	sd_emmc_reg->gclock = sd_emmc_clkc;
 	vconf = sd_emmc_reg->gcfg;
 
