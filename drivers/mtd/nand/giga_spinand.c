@@ -161,6 +161,8 @@ struct spinand_info {
   uint32_t                  status;
 };
 
+extern struct nand_flash_dev spi_nand_flash_ids[];
+
 #ifndef CONFIG_AML_MTD
 int nand_curr_device = -1;
 struct mtd_info nand_info[CONFIG_SYS_MAX_NAND_DEVICE];
@@ -631,11 +633,7 @@ static uint8_t spinand_read_byte(struct mtd_info *mtd)
   retval = spi_write_then_read(info->pdev, info->cmd, info->cmd_len, &val, 1);
 
   if (retval < 0)
-    {
-		spinand_dbg("%s: mtd=%p, info=%p, slave=%p, cmd=%p\n",
-		__func__, mtd, info, info->pdev, info->cmd);
     dev_err(&info->pdev->dev, "error %d reading byte\n", (int) retval);
-    }
 
   return val;
 }
@@ -1648,8 +1646,8 @@ static struct nand_flash_dev *spinand_get_flash_type(struct mtd_info *mtd,
 		*dev_id = id_data[1];
 	}
 
-  if (!type)
-    type = nand_flash_ids;
+	if (!type)
+		type = spi_nand_flash_ids;
 
   for (; type->name != NULL; type++) {
       if (!strncmp((const char *)type->id, (const char *)id_data, type->id_len)) {
@@ -2124,11 +2122,10 @@ static int spinand_probe(struct udevice *dev)
   pr_debug("chip_ops = %x, bbt_ops = %x\n",
             chip->options, chip->bbt_options);
 
-	printf("%s: probe ok\n", __func__);
   return retval;
 
 exit_error3: kfree(info->chip.buffers);
-exit_error2: kfree(info);
+exit_error2: //kfree(info);
 #ifdef CONFIG_OF
 	of_spinand_free_data(data);
 #endif

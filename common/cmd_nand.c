@@ -126,14 +126,28 @@ free_dat:
 	return ret;
 }
 
-/* BL2 SPL size */
-#define BL2_SIZE			(48 * 1024)
-#define ROMBOOT_SPINAND_PAGE_SIZE (2 * 1024)
 /* There are 8 bl2 scopy in first 4M, 512K per scopy */
-#define BL2_OFF 0
-#define BL2_SCOPY_SIZE (512 * 1024)
-#define BL2_SCOPY_NUM 8
-#define BL3_OFF (BL2_OFF + BL2_SCOPY_SIZE * BL2_SCOPY_NUM) //0x400000
+#ifndef CONFIG_BL2_OFF
+#define CONFIG_BL2_OFF 0
+#endif
+
+#ifndef CONFIG_BL2_SIZE
+#define CONFIG_BL2_SIZE (48 * 1024)
+#endif
+
+#ifndef CONFIG_BL2_SCOPY_SIZE
+#define CONFIG_BL2_SCOPY_SIZE (512 * 1024)
+#endif
+
+#ifndef CONFIG_BL2_SCOPY_NUM
+#define CONFIG_BL2_SCOPY_NUM 8
+#endif
+
+#ifndef CONFIG_SPINAND_RB_PAGE_SIZE
+#define CONFIG_SPINAND_RB_PAGE_SIZE (2 * 1024)
+#endif
+
+#define BL3_OFF (CONFIG_BL2_OFF + CONFIG_BL2_SCOPY_SIZE * CONFIG_BL2_SCOPY_NUM) //0x400000
 
 static int spinand_update(
 		nand_info_t *nand,
@@ -148,14 +162,14 @@ static int spinand_update(
 	size_t ps = nand->writesize;
 	int i, ret = -1;
 
-	if (ps < ROMBOOT_SPINAND_PAGE_SIZE) {
+	if (ps < CONFIG_SPINAND_RB_PAGE_SIZE) {
 		printf("error page size\n");
 		return -1;
 	}
 
 	/* update bl3 */
-	_buf = buf + BL2_SIZE;
-	_len = len - BL2_SIZE;
+	_buf = buf + CONFIG_BL2_SIZE;
+	_len = len - CONFIG_BL2_SIZE;
 	_off = off + BL3_OFF;
 	printf("bl3: buf=%p, off=0x%x, len=0x%x\n",
 			_buf, (u32)_off, (u32)_len);
@@ -165,30 +179,30 @@ static int spinand_update(
 		return ret;
 
 	/* update bl2 */
-	if (ps == ROMBOOT_SPINAND_PAGE_SIZE)
-		len = BL2_SIZE;
+	if (ps == CONFIG_SPINAND_RB_PAGE_SIZE)
+		len = CONFIG_BL2_SIZE;
 	else {
-		/* example for ps=4K & ROMBOOT_SPINAND_PAGE_SIZE=2K,
+		/* example for ps=4K & CONFIG_SPINAND_RB_PAGE_SIZE=2K,
 		 * romboot only reads first 2K though in a 4K page.
 		 */
-		int pages = BL2_SIZE / ROMBOOT_SPINAND_PAGE_SIZE;
+		int pages = CONFIG_BL2_SIZE / CONFIG_SPINAND_RB_PAGE_SIZE;
 		u_char *new_buf;
-		len = ps / ROMBOOT_SPINAND_PAGE_SIZE;
-		if (ps % ROMBOOT_SPINAND_PAGE_SIZE)
+		len = ps / CONFIG_SPINAND_RB_PAGE_SIZE;
+		if (ps % CONFIG_SPINAND_RB_PAGE_SIZE)
 			len++;
-		len *= BL2_SIZE;
+		len *= CONFIG_BL2_SIZE;
 		_buf = buf;
 		new_buf = buf = (u_char *)malloc(len);
 		printf("new_buf=%p, size=0x%x, pages=%d\n", buf, (u32)len, pages);
 		for (i=0; i<pages; i++) {
-			memcpy((void *)new_buf, (void *)_buf, ROMBOOT_SPINAND_PAGE_SIZE);
+			memcpy((void *)new_buf, (void *)_buf, CONFIG_SPINAND_RB_PAGE_SIZE);
 			new_buf += ps;
-			_buf += ROMBOOT_SPINAND_PAGE_SIZE;
+			_buf += CONFIG_SPINAND_RB_PAGE_SIZE;
 		}
 	}
 
-	_off = off + BL2_OFF;
-	for (i = 0; i < BL2_SCOPY_NUM; i++) {
+	_off = off + CONFIG_BL2_OFF;
+	for (i = 0; i < CONFIG_BL2_SCOPY_NUM; i++) {
 		_buf = buf;
 		_len = len;
 		printf("bl2 scopy %d: buf=%p, off=0x%x, len=0x%x\n",
@@ -197,7 +211,7 @@ static int spinand_update(
 				NULL, max, (u_char *)_buf, 0);
 		if (ret)
 			break;
-		_off += BL2_SCOPY_SIZE;
+		_off += CONFIG_BL2_SCOPY_SIZE;
 	}
 
 	return ret;
