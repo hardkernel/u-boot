@@ -43,12 +43,13 @@ struct charge_animation_pdata {
 	int android_charge;
 	int uboot_charge;
 
-	int screen_on_voltage;
 	int exit_charge_voltage;
-
 	int exit_charge_level;
-	int low_power_level;
 
+	int low_power_voltage;
+
+	int screen_on_voltage;
+	int system_suspend;
 };
 
 static int charge_animation_get_power_on_soc(struct udevice *dev)
@@ -143,28 +144,27 @@ static int charge_animation_ofdata_to_platdata(struct udevice *dev)
 	pdata->android_charge =
 		dev_read_u32_default(dev, "rockchip,android-charge-on", 0);
 
-	/* level */
 	pdata->exit_charge_level =
 		dev_read_u32_default(dev, "rockchip,uboot-exit-charge-level", 0);
-	pdata->low_power_level =
-		dev_read_u32_default(dev, "rockchip,uboot-low-power-level", 0);
-
-	/* voltage */
 	pdata->exit_charge_voltage =
 		dev_read_u32_default(dev, "rockchip,uboot-exit-charge-voltage", 0);
+
+	pdata->low_power_voltage =
+		dev_read_u32_default(dev, "rockchip,uboot-low-power-voltage", 0);
+
 	pdata->screen_on_voltage =
 		dev_read_u32_default(dev, "rockchip,screen-on-voltage", 0);
+	pdata->system_suspend =
+		dev_read_u32_default(dev, "rockchip,system-suspend", 0);
 
-	if (pdata->screen_on_voltage >
-	    pdata->exit_charge_voltage)
-		pdata->screen_on_voltage =
-					pdata->exit_charge_voltage;
+	if (pdata->screen_on_voltage > pdata->exit_charge_voltage)
+		pdata->screen_on_voltage = pdata->exit_charge_voltage;
 
 	debug("mode: uboot=%d, android=%d; exit: soc=%d%%, voltage=%dmv;\n"
-	      "lp_soc=%d%%, screen_on=%dmv\n",
+	      "lp_voltage=%d%%, screen_on=%dmv\n",
 	      pdata->uboot_charge, pdata->android_charge,
 	      pdata->exit_charge_level, pdata->exit_charge_voltage,
-	      pdata->low_power_level, pdata->screen_on_voltage);
+	      pdata->low_power_voltage, pdata->screen_on_voltage);
 
 	return 0;
 }
@@ -185,15 +185,15 @@ static int check_key_press(void)
 	return state;
 }
 
-static int system_suspend_enter(void)
+static int system_suspend_enter(struct charge_animation_pdata *pdata)
 {
 	/*
 	 * TODO: enter low power mode:
 	 * 3. auto turn off screen when timout;
 	 * 4. power key wakeup;
-	 * 5. timer period wakeup for pmic fg ?
+	 * 5. timer period wakeup for pmic fg
 	 */
-	if (IS_ENABLED(CONFIG_ARM_SMCCC)) {
+	if (pdata->system_suspend && IS_ENABLED(CONFIG_ARM_SMCCC)) {
 		printf("\nSystem suspend: ");
 		putc('1');
 		local_irq_disable();
@@ -226,6 +226,75 @@ static int system_suspend_enter(void)
 	return 0;
 }
 
+#ifdef CONFIG_DRM_ROCKCHIP
+static void charge_show_bmp(const char *name)
+{
+	rockchip_show_bmp(name);
+}
+
+static void charge_show_logo(void)
+{
+	rockchip_show_logo();
+}
+#else
+static void charge_show_bmp(const char *name) {}
+static void charge_show_logo(void) {}
+#endif
+
+static int charge_extrem_low_power(struct udevice *dev)
+{
+	struct charge_animation_pdata *pdata = dev_get_platdata(dev);
+	struct charge_animation_priv *priv = dev_get_priv(dev);
+	struct udevice *pmic = priv->pmic;
+	struct udevice *fg = priv->fg;
+	int voltage, soc, charging = 1;
+
+	voltage = fuel_gauge_get_voltage(fg);
+	if (voltage < 0)
+		return -EINVAL;
+
+	while (voltage < pdata->low_power_voltage + 50) {
+		/* Check charger online */
+		charging = fuel_gauge_get_chrg_online(fg);
+		if (charging <= 0) {
+			printf("Not charging, online=%d. Shutdown...\n",
+			       charging);
+			/* wait uart flush before shutdown */
+			mdelay(500);
+			/* PMIC shutdown */
+			pmic_shutdown(pmic);
+
+			printf("Cpu should never reach here, shutdown failed !\n");
+			continue;
+		}
+
+		/*
+		 * Just for fuel gauge to update something important,
+		 * including charge current, coulometer or other.
+		 */
+		soc = fuel_gauge_get_soc(fg);
+		if (soc < 0 || soc > 100) {
+			printf("get soc failed: %d\n", soc);
+			continue;
+		}
+
+		printf("Extrem low power, force charging... threshold=%dmv, now=%dmv\n",
+		       pdata->low_power_voltage, voltage);
+
+		/* System suspend */
+		system_suspend_enter(pdata);
+
+		/* Update voltage */
+		voltage = fuel_gauge_get_voltage(fg);
+		if (voltage < 0) {
+			printf("get voltage failed: %d\n", voltage);
+			continue;
+		}
+	}
+
+	return 0;
+}
+
 static int charge_animation_show(struct udevice *dev)
 {
 	struct charge_animation_pdata *pdata = dev_get_platdata(dev);
@@ -241,8 +310,26 @@ static int charge_animation_show(struct udevice *dev)
 	ulong ms = 0, sec = 0;
 	int start_idx = 0, show_idx = -1;
 	int soc, voltage, current, key_state;
-	int i, charging = 1;
+	int i, charging = 1, ret;
 	int boot_mode;
+
+/*
+ * Check sequence:
+ *
+ * 1. Extrem low power charge?
+ * 2. Preboot cmd?
+ * 3. Valid boot mode?
+ * 4. U-Boot charge enabled by dts config?
+ * 5. Screen off before charge?
+ * 6. Enter charge !
+ *
+ */
+	/* Extrem low power charge */
+	ret = charge_extrem_low_power(dev);
+	if (ret < 0) {
+		printf("extrem low power charge failed, ret=%d\n", ret);
+		return ret;
+	}
 
 	/* If there is preboot command, exit */
 	if (preboot) {
@@ -250,6 +337,7 @@ static int charge_animation_show(struct udevice *dev)
 		return 0;
 	}
 
+	/* Not valid charge mode, exit */
 #ifdef CONFIG_RKIMG_BOOTLOADER
 	boot_mode = rockchip_get_boot_mode();
 	if ((boot_mode != BOOT_MODE_CHARGING) &&
@@ -259,13 +347,13 @@ static int charge_animation_show(struct udevice *dev)
 	}
 #endif
 
-	/* Enter android charge */
+	/* Enter android charge, set property for kernel */
 	if (pdata->android_charge) {
 		env_update("bootargs", "androidboot.mode=charger");
 		printf("Android charge mode\n");
-		return 0;
 	}
 
+	/* Not enable U-Boot charge, exit */
 	if (!pdata->uboot_charge)
 		return 0;
 
@@ -284,7 +372,7 @@ static int charge_animation_show(struct udevice *dev)
 	if (voltage <= pdata->screen_on_voltage + 50) {
 		screen_on = false;
 		ever_lowpower_screen_off = true;
-		rockchip_show_bmp(NULL);
+		charge_show_bmp(NULL);
 	}
 
 	printf("Enter U-Boot charging mode\n");
@@ -345,7 +433,7 @@ static int charge_animation_show(struct udevice *dev)
 		}
 
 		/*
-		 * If ever lowpower screen off, force screen on false, which
+		 * If ever lowpower screen off, force screen_on=false, which
 		 * means key event can't modify screen_on, only voltage higher
 		 * then threshold can update screen_on=true;
 		 */
@@ -398,9 +486,9 @@ static int charge_animation_show(struct udevice *dev)
 		/* Step3: show images */
 		if (screen_on) {
 			debug("SHOW: %s\n", image[show_idx].name);
-			rockchip_show_bmp(image[show_idx].name);
+			charge_show_bmp(image[show_idx].name);
 		} else {
-			system_suspend_enter();
+			system_suspend_enter(pdata);
 		}
 
 		mdelay(5);
@@ -426,7 +514,7 @@ static int charge_animation_show(struct udevice *dev)
 		if (key_state == KEY_PRESS_DOWN) {
 			/* NULL means show nothing, ie. turn off screen */
 			if (screen_on)
-				rockchip_show_bmp(NULL);
+				charge_show_bmp(NULL);
 
 			/*
 			 * Clear current image index, and show image
@@ -435,7 +523,7 @@ static int charge_animation_show(struct udevice *dev)
 			show_idx = IMAGE_SHOW_RESET;
 
 			/*
-			 * We turn off screen by rockchip_show_bmp(NULL), so we
+			 * We turn off screen by charge_show_bmp(NULL), so we
 			 * should tell while loop to stop show images any more.
 			 *
 			 * If screen_on=false, means this short key pressed
@@ -472,7 +560,7 @@ static int charge_animation_show(struct udevice *dev)
 
 			/* Success exit charging */
 			printf("Exit charge animation...\n");
-			rockchip_show_logo();
+			charge_show_logo();
 			break;
 		} else {
 			/* Do nothing */
@@ -483,7 +571,7 @@ static int charge_animation_show(struct udevice *dev)
 		/* Step5: Exit by ctrl+c */
 		if (ctrlc()) {
 			if (voltage >= pdata->screen_on_voltage)
-				rockchip_show_logo();
+				charge_show_logo();
 			printf("Exit charge, due to ctrl+c\n");
 			break;
 		}
@@ -515,9 +603,9 @@ static int charge_animation_probe(struct udevice *dev)
 {
 	struct charge_animation_priv *priv = dev_get_priv(dev);
 	struct udevice *fg, *pmic;
-	int ret;
+	int ret, soc;
 
-	/* Get PMIC */
+	/* Get PMIC: used for power off system  */
 	ret = uclass_get_device(UCLASS_PMIC, 0, &pmic);
 	if (ret) {
 		printf("Get UCLASS PMIC failed: %d\n", ret);
@@ -525,7 +613,7 @@ static int charge_animation_probe(struct udevice *dev)
 	}
 	priv->pmic = pmic;
 
-	/* Get fuel gauge */
+	/* Get fuel gauge: used for charging */
 	ret = uclass_get_device(UCLASS_FG, 0, &fg);
 	if (ret) {
 		printf("Get UCLASS FG failed: %d\n", ret);
@@ -533,7 +621,21 @@ static int charge_animation_probe(struct udevice *dev)
 	}
 	priv->fg = fg;
 
-	/* Get image */
+	/* Get PWRKEY: used for wakeup and trun off/on LCD */
+	ret = platform_key_read(KEY_POWER);
+	if (ret == KEY_NOT_EXIST) {
+		printf("Can't find power key\n");
+		return -EINVAL;
+	}
+
+	/* Initialize charge current */
+	soc = fuel_gauge_get_soc(fg);
+	if (soc < 0 || soc > 100) {
+		printf("get soc failed: %d\n", soc);
+		return -EINVAL;
+	}
+
+	/* Get charge images */
 	priv->image = image;
 	priv->image_num = ARRAY_SIZE(image);
 
