@@ -64,6 +64,7 @@ static int dbg_enable = 0;
 #define BAT_CON			(1 << 4)
 #define VOL_INSTANT		(1 << 0)
 #define VOL_AVG			(0 << 0)
+#define VOL_AVG_MASK		(1 << 0)
 
 /* TS_CTRL_REG */
 #define GG_EN			(1 << 7)
@@ -116,7 +117,8 @@ static int dbg_enable = 0;
 #define DIV(x)			((x) ? (x) : 1)
 
 /***********************************************************/
-struct battery_info {
+struct battery_priv {
+	struct udevice *dev;
 	int		chrg_type;
 	int		poffset;
 	int		bat_res;
@@ -128,9 +130,9 @@ struct battery_info {
 	int		dsoc;
 	int		rsoc;
 	int		fcc;
-	int		qmax;
+	u32		qmax;
 	int		remain_cap;
-	int		design_cap;
+	u32		design_cap;
 	int		nac;
 	u32		*ocv_table;
 	u32		ocv_size;
@@ -180,8 +182,6 @@ enum dc_type {
 	DC_TYPE_OF_ADC,
 };
 
-static struct udevice *g_pmic_dev;
-
 static const u32 CHRG_VOL_SEL[] = {
 	4050, 4100, 4150, 4200, 4250, 4300, 4350
 };
@@ -194,14 +194,14 @@ static const u32 CHRG_CUR_INPUT[] = {
 	450, 800, 850, 1000, 1250, 1500, 1750, 2000
 };
 
-static int rk816_bat_read(u8 reg)
+static int rk816_bat_read(struct battery_priv *di, u8 reg)
 {
-	return pmic_reg_read(g_pmic_dev, reg);
+	return pmic_reg_read(di->dev->parent, reg);
 }
 
-static void rk816_bat_write(u8 reg, u8 buf)
+static void rk816_bat_write(struct battery_priv *di, u8 reg, u8 buf)
 {
-	pmic_reg_write(g_pmic_dev, reg, buf);
+	pmic_reg_write(di->dev->parent, reg, buf);
 }
 
 static int rk816_bat_dwc_otg_check_dpdm(void)
@@ -214,88 +214,85 @@ static int rk816_bat_dwc_otg_check_dpdm(void)
 #endif
 }
 
-static int rk816_bat_get_rsoc(struct battery_info *di)
+static int rk816_bat_get_rsoc(struct battery_priv *di)
 {
 	return (di->remain_cap + di->fcc / 200) * 100 / DIV(di->fcc);
 }
 
-static int rk816_bat_get_dsoc(struct  battery_info *di)
+static int rk816_bat_get_dsoc(struct  battery_priv *di)
 {
-	return rk816_bat_read(SOC_REG);
+	return rk816_bat_read(di, SOC_REG);
 }
 
-static void rk816_bat_enable_gauge(struct battery_info *di)
+static void rk816_bat_enable_gauge(struct battery_priv *di)
 {
 	u8 val;
 
-	val = rk816_bat_read(TS_CTRL_REG);
+	val = rk816_bat_read(di, TS_CTRL_REG);
 	val |= GG_EN;
-	rk816_bat_write(TS_CTRL_REG, val);
+	rk816_bat_write(di, TS_CTRL_REG, val);
 }
 
-static void rk816_bat_set_vol_instant_mode(struct battery_info *di)
+static void rk816_bat_set_vol_instant_mode(struct battery_priv *di)
 {
 	u8 val;
 
-	val = rk816_bat_read(GGSTS_REG);
+	val = rk816_bat_read(di, GGSTS_REG);
 	val |= VOL_INSTANT;
-	rk816_bat_write(GGSTS_REG, val);
+	rk816_bat_write(di, GGSTS_REG, val);
 }
 
-static void rk816_bat_set_vol_avg_mode(struct battery_info *di)
+static void rk816_bat_set_vol_avg_mode(struct battery_priv *di)
 {
 	u8 val;
 
-	val = rk816_bat_read(GGSTS_REG);
-	val &= ~0x01;
+	val = rk816_bat_read(di, GGSTS_REG);
+	val &= ~VOL_AVG_MASK;
 	val |= VOL_AVG;
-	rk816_bat_write(GGSTS_REG, val);
+	rk816_bat_write(di, GGSTS_REG, val);
 }
 
-static int rk816_bat_get_vcalib0(struct battery_info *di)
+static int rk816_bat_get_vcalib0(struct battery_priv *di)
 {
 	int val = 0;
 
-	val |= rk816_bat_read(VCALIB0_REGL) << 0;
-	val |= rk816_bat_read(VCALIB0_REGH) << 8;
+	val |= rk816_bat_read(di, VCALIB0_REGL) << 0;
+	val |= rk816_bat_read(di, VCALIB0_REGH) << 8;
 
 	return val;
 }
 
-static int rk816_bat_get_vcalib1(struct battery_info *di)
+static int rk816_bat_get_vcalib1(struct battery_priv *di)
 {
 	int val = 0;
 
-	val |= rk816_bat_read(VCALIB1_REGL) << 0;
-	val |= rk816_bat_read(VCALIB1_REGH) << 8;
+	val |= rk816_bat_read(di, VCALIB1_REGL) << 0;
+	val |= rk816_bat_read(di, VCALIB1_REGH) << 8;
 
-	DBG("<%s>. coffset: 0x%x\n", __func__, val);
 	return val;
 }
 
-static void rk816_bat_set_coffset(struct battery_info *di, int val)
+static void rk816_bat_set_coffset(struct battery_priv *di, int val)
 {
 	u8 buf;
 
 	buf = (val >> 0) & 0xff;
-	rk816_bat_write(CAL_OFFSET_REGL, buf);
+	rk816_bat_write(di, CAL_OFFSET_REGL, buf);
 	buf = (val >> 8) & 0xff;
-	rk816_bat_write(CAL_OFFSET_REGH, buf);
-
-	DBG("<%s>. set coffset: 0x%x\n", __func__, val);
+	rk816_bat_write(di, CAL_OFFSET_REGH, buf);
 }
 
-static int rk816_bat_get_ioffset(struct battery_info *di)
+static int rk816_bat_get_ioffset(struct battery_priv *di)
 {
 	int val = 0;
 
-	val |= rk816_bat_read(IOFFSET_REGL) << 0;
-	val |= rk816_bat_read(IOFFSET_REGH) << 8;
+	val |= rk816_bat_read(di, IOFFSET_REGL) << 0;
+	val |= rk816_bat_read(di, IOFFSET_REGH) << 8;
 
 	return val;
 }
 
-static void rk816_bat_init_voltage_kb(struct battery_info *di)
+static void rk816_bat_init_voltage_kb(struct battery_priv *di)
 {
 	int vcalib0, vcalib1;
 
@@ -306,24 +303,24 @@ static void rk816_bat_init_voltage_kb(struct battery_info *di)
 	DBG("%s. vk=%d, vb=%d\n", __func__, di->voltage_k, di->voltage_b);
 }
 
-static int rk816_bat_get_ocv_voltage(struct battery_info *di)
+static int rk816_bat_get_ocv_voltage(struct battery_priv *di)
 {
 	int vol, val = 0;
 
-	val |= rk816_bat_read(BAT_OCV_REGL) << 0;
-	val |= rk816_bat_read(BAT_OCV_REGH) << 8;
+	val |= rk816_bat_read(di, BAT_OCV_REGL) << 0;
+	val |= rk816_bat_read(di, BAT_OCV_REGH) << 8;
 	vol = di->voltage_k * val / 1000 + di->voltage_b;
 	vol = vol * 1100 / 1000;
 
 	return vol;
 }
 
-static int rk816_bat_get_avg_current(struct battery_info *di)
+static int rk816_bat_get_avg_current(struct battery_priv *di)
 {
 	int val = 0;
 
-	val |= rk816_bat_read(BAT_CUR_AVG_REGL) << 0;
-	val |= rk816_bat_read(BAT_CUR_AVG_REGH) << 8;
+	val |= rk816_bat_read(di, BAT_CUR_AVG_REGL) << 0;
+	val |= rk816_bat_read(di, BAT_CUR_AVG_REGH) << 8;
 
 	if (val & 0x800)
 		val -= 4096;
@@ -332,19 +329,19 @@ static int rk816_bat_get_avg_current(struct battery_info *di)
 	return val;
 }
 
-static int rk816_bat_get_avg_voltage(struct battery_info *di)
+static int rk816_bat_get_avg_voltage(struct battery_priv *di)
 {
 	int vol, val = 0;
 
-	val |= rk816_bat_read(BAT_VOL_REGL) << 0;
-	val |= rk816_bat_read(BAT_VOL_REGH) << 8;
+	val |= rk816_bat_read(di, BAT_VOL_REGL) << 0;
+	val |= rk816_bat_read(di, BAT_VOL_REGH) << 8;
 	vol = di->voltage_k * val / 1000 + di->voltage_b;
 	vol = vol * 1100 / 1000;
 
 	return vol;
 }
 
-static int rk816_bat_get_est_voltage(struct battery_info *di)
+static int rk816_bat_get_est_voltage(struct battery_priv *di)
 {
 	int est_vol, vol, curr;
 
@@ -371,7 +368,7 @@ static u8 rk816_bat_finish_ma(int fcc)
 	return ma;
 }
 
-static void rk816_bat_select_chrg_cv(struct battery_info *di)
+static void rk816_bat_select_chrg_cv(struct battery_priv *di)
 {
 	int index, chrg_vol_sel, chrg_cur_sel, chrg_cur_input;
 
@@ -401,7 +398,7 @@ static void rk816_bat_select_chrg_cv(struct battery_info *di)
 	    __func__, di->chrg_vol_sel, di->chrg_cur_input, di->chrg_cur_sel);
 }
 
-static void rk816_bat_init_chrg_config(struct battery_info *di)
+static void rk816_bat_init_chrg_config(struct battery_priv *di)
 {
 	u8 chrg_ctrl1, usb_ctrl, chrg_ctrl2, chrg_ctrl3;
 	u8 sup_sts, ggcon, thermal, finish_ma;
@@ -409,12 +406,12 @@ static void rk816_bat_init_chrg_config(struct battery_info *di)
 	rk816_bat_select_chrg_cv(di);
 	finish_ma = rk816_bat_finish_ma(di->fcc);
 
-	ggcon = rk816_bat_read(GGCON_REG);
-	sup_sts = rk816_bat_read(SUP_STS_REG);
-	usb_ctrl = rk816_bat_read(USB_CTRL_REG);
-	thermal = rk816_bat_read(THERMAL_REG);
-	chrg_ctrl2 = rk816_bat_read(CHRG_CTRL_REG2);
-	chrg_ctrl3 = rk816_bat_read(CHRG_CTRL_REG3);
+	ggcon = rk816_bat_read(di, GGCON_REG);
+	sup_sts = rk816_bat_read(di, SUP_STS_REG);
+	usb_ctrl = rk816_bat_read(di, USB_CTRL_REG);
+	thermal = rk816_bat_read(di, THERMAL_REG);
+	chrg_ctrl2 = rk816_bat_read(di, CHRG_CTRL_REG2);
+	chrg_ctrl3 = rk816_bat_read(di, CHRG_CTRL_REG3);
 
 	/* set charge current and voltage */
 	usb_ctrl &= ~INPUT_CUR_MSK;
@@ -441,13 +438,13 @@ static void rk816_bat_init_chrg_config(struct battery_info *di)
 	/* adc current mode */
 	ggcon |= ADC_CUR_MODE;
 
-	rk816_bat_write(GGCON_REG, ggcon);
-	rk816_bat_write(SUP_STS_REG, sup_sts);
-	rk816_bat_write(USB_CTRL_REG, usb_ctrl);
-	rk816_bat_write(THERMAL_REG, thermal);
-	rk816_bat_write(CHRG_CTRL_REG1, chrg_ctrl1);
-	rk816_bat_write(CHRG_CTRL_REG2, chrg_ctrl2);
-	rk816_bat_write(CHRG_CTRL_REG3, chrg_ctrl3);
+	rk816_bat_write(di, GGCON_REG, ggcon);
+	rk816_bat_write(di, SUP_STS_REG, sup_sts);
+	rk816_bat_write(di, USB_CTRL_REG, usb_ctrl);
+	rk816_bat_write(di, THERMAL_REG, thermal);
+	rk816_bat_write(di, CHRG_CTRL_REG1, chrg_ctrl1);
+	rk816_bat_write(di, CHRG_CTRL_REG2, chrg_ctrl2);
+	rk816_bat_write(di, CHRG_CTRL_REG3, chrg_ctrl3);
 }
 
 static u32 interpolate(int value, u32 *table, int size)
@@ -497,7 +494,7 @@ static int32_t ab_div_c(u32 a, u32 b, u32 c)
 	return ans;
 }
 
-static int rk816_bat_vol_to_cap(struct battery_info *di, int voltage)
+static int rk816_bat_vol_to_cap(struct battery_priv *di, int voltage)
 {
 	u32 *ocv_table, tmp;
 	int ocv_size, ocv_cap;
@@ -510,7 +507,7 @@ static int rk816_bat_vol_to_cap(struct battery_info *di, int voltage)
 	return ocv_cap;
 }
 
-static int rk816_bat_vol_to_soc(struct battery_info *di, int voltage)
+static int rk816_bat_vol_to_soc(struct battery_priv *di, int voltage)
 {
 	u32 *ocv_table, tmp;
 	int ocv_size, ocv_soc;
@@ -523,40 +520,40 @@ static int rk816_bat_vol_to_soc(struct battery_info *di, int voltage)
 	return ocv_soc;
 }
 
-static int rk816_bat_get_prev_cap(struct battery_info *di)
+static int rk816_bat_get_prev_cap(struct battery_priv *di)
 {
 	int val = 0;
 
-	val |= rk816_bat_read(REMAIN_CAP_REG3) << 24;
-	val |= rk816_bat_read(REMAIN_CAP_REG2) << 16;
-	val |= rk816_bat_read(REMAIN_CAP_REG1) << 8;
-	val |= rk816_bat_read(REMAIN_CAP_REG0) << 0;
+	val |= rk816_bat_read(di, REMAIN_CAP_REG3) << 24;
+	val |= rk816_bat_read(di, REMAIN_CAP_REG2) << 16;
+	val |= rk816_bat_read(di, REMAIN_CAP_REG1) << 8;
+	val |= rk816_bat_read(di, REMAIN_CAP_REG0) << 0;
 
 	return val;
 }
 
-static void rk816_bat_save_fcc(struct battery_info *di, u32 cap)
+static void rk816_bat_save_fcc(struct battery_priv *di, u32 cap)
 {
 	u8 buf;
 
 	buf = (cap >> 24) & 0xff;
-	rk816_bat_write(NEW_FCC_REG3, buf);
+	rk816_bat_write(di, NEW_FCC_REG3, buf);
 	buf = (cap >> 16) & 0xff;
-	rk816_bat_write(NEW_FCC_REG2, buf);
+	rk816_bat_write(di, NEW_FCC_REG2, buf);
 	buf = (cap >> 8) & 0xff;
-	rk816_bat_write(NEW_FCC_REG1, buf);
+	rk816_bat_write(di, NEW_FCC_REG1, buf);
 	buf = (cap >> 0) & 0xff;
-	rk816_bat_write(NEW_FCC_REG0, buf);
+	rk816_bat_write(di, NEW_FCC_REG0, buf);
 }
 
-static int rk816_bat_get_fcc(struct battery_info *di)
+static int rk816_bat_get_fcc(struct battery_priv *di)
 {
 	int val = 0;
 
-	val |= rk816_bat_read(NEW_FCC_REG3) << 24;
-	val |= rk816_bat_read(NEW_FCC_REG2) << 16;
-	val |= rk816_bat_read(NEW_FCC_REG1) << 8;
-	val |= rk816_bat_read(NEW_FCC_REG0) << 0;
+	val |= rk816_bat_read(di, NEW_FCC_REG3) << 24;
+	val |= rk816_bat_read(di, NEW_FCC_REG2) << 16;
+	val |= rk816_bat_read(di, NEW_FCC_REG1) << 8;
+	val |= rk816_bat_read(di, NEW_FCC_REG0) << 0;
 
 	if (val < MIN_FCC)
 		val = di->design_cap;
@@ -566,31 +563,31 @@ static int rk816_bat_get_fcc(struct battery_info *di)
 	return val;
 }
 
-static u8 rk816_bat_get_pwroff_min(struct battery_info *di)
+static u8 rk816_bat_get_pwroff_min(struct battery_priv *di)
 {
 	u8 cur, last;
 
-	cur = rk816_bat_read(NON_ACT_TIMER_CNT_REG);
-	last = rk816_bat_read(NON_ACT_TIMER_CNT_SAVE_REG);
-	rk816_bat_write(NON_ACT_TIMER_CNT_SAVE_REG, cur);
+	cur = rk816_bat_read(di, NON_ACT_TIMER_CNT_REG);
+	last = rk816_bat_read(di, NON_ACT_TIMER_CNT_SAVE_REG);
+	rk816_bat_write(di, NON_ACT_TIMER_CNT_SAVE_REG, cur);
 
 	return (cur != last) ? cur : 0;
 }
 
-static int rk816_bat_get_coulomb_cap(struct battery_info *di)
+static int rk816_bat_get_coulomb_cap(struct battery_priv *di)
 {
 	int val = 0;
 
-	val |= rk816_bat_read(GASCNT_REG3) << 24;
-	val |= rk816_bat_read(GASCNT_REG2) << 16;
-	val |= rk816_bat_read(GASCNT_REG1) << 8;
-	val |= rk816_bat_read(GASCNT_REG0) << 0;
+	val |= rk816_bat_read(di, GASCNT_REG3) << 24;
+	val |= rk816_bat_read(di, GASCNT_REG2) << 16;
+	val |= rk816_bat_read(di, GASCNT_REG1) << 8;
+	val |= rk816_bat_read(di, GASCNT_REG0) << 0;
 	val /= 2390;
 
 	return val;
 }
 
-static void rk816_bat_init_capacity(struct battery_info *di, u32 capacity)
+static void rk816_bat_init_capacity(struct battery_priv *di, u32 capacity)
 {
 	u8 buf;
 	u32 cap;
@@ -602,30 +599,30 @@ static void rk816_bat_init_capacity(struct battery_info *di, u32 capacity)
 
 	cap = capacity * 2390;
 	buf = (cap >> 24) & 0xff;
-	rk816_bat_write(GASCNT_CAL_REG3, buf);
+	rk816_bat_write(di, GASCNT_CAL_REG3, buf);
 	buf = (cap >> 16) & 0xff;
-	rk816_bat_write(GASCNT_CAL_REG2, buf);
+	rk816_bat_write(di, GASCNT_CAL_REG2, buf);
 	buf = (cap >> 8) & 0xff;
-	rk816_bat_write(GASCNT_CAL_REG1, buf);
+	rk816_bat_write(di, GASCNT_CAL_REG1, buf);
 	buf = (cap >> 0) & 0xff;
-	rk816_bat_write(GASCNT_CAL_REG0, buf);
+	rk816_bat_write(di, GASCNT_CAL_REG0, buf);
 
 	di->remain_cap = rk816_bat_get_coulomb_cap(di);
 	di->rsoc = rk816_bat_get_rsoc(di);
 }
 
-static bool is_rk816_bat_ocv_valid(struct battery_info *di)
+static bool is_rk816_bat_ocv_valid(struct battery_priv *di)
 {
 	return di->pwroff_min >= 30 ? true : false;
 }
 
-static int rk816_bat_get_usb_state(struct battery_info *di)
+static int rk816_bat_get_usb_state(struct battery_priv *di)
 {
 	int charger_type;
 
 	switch (rk816_bat_dwc_otg_check_dpdm()) {
 	case 0:
-		if ((rk816_bat_read(VB_MON_REG) & PLUG_IN_STS) != 0)
+		if ((rk816_bat_read(di, VB_MON_REG) & PLUG_IN_STS) != 0)
 			charger_type = DC_CHARGER;
 		else
 			charger_type = NO_CHARGER;
@@ -644,35 +641,35 @@ static int rk816_bat_get_usb_state(struct battery_info *di)
 	return charger_type;
 }
 
-static void rk816_bat_clr_initialized_state(struct battery_info *di)
+static void rk816_bat_clr_initialized_state(struct battery_priv *di)
 {
 	u8 val;
 
-	val = rk816_bat_read(MISC_MARK_REG);
+	val = rk816_bat_read(di, MISC_MARK_REG);
 	val &= ~FG_INIT;
-	rk816_bat_write(MISC_MARK_REG, val);
+	rk816_bat_write(di, MISC_MARK_REG, val);
 }
 
-static bool rk816_bat_is_initialized(struct battery_info *di)
+static bool rk816_bat_is_initialized(struct battery_priv *di)
 {
-	return (rk816_bat_read(MISC_MARK_REG) & FG_INIT) ? true : false;
+	return (rk816_bat_read(di, MISC_MARK_REG) & FG_INIT) ? true : false;
 }
 
-static void rk816_bat_set_initialized_state(struct battery_info *di)
+static void rk816_bat_set_initialized_state(struct battery_priv *di)
 {
 	u8 val;
 
-	val = rk816_bat_read(MISC_MARK_REG);
+	val = rk816_bat_read(di, MISC_MARK_REG);
 	if (rk816_bat_get_usb_state(di) != NO_CHARGER) {
 		val |= FG_INIT;
-		rk816_bat_write(MISC_MARK_REG, val);
+		rk816_bat_write(di, MISC_MARK_REG, val);
 		BAT_INFO("fuel gauge initialized... estv=%d, ch=%d\n",
 			 rk816_bat_get_est_voltage(di),
 			 rk816_bat_get_usb_state(di));
 	}
 }
 
-static void rk816_bat_first_pwron(struct battery_info *di)
+static void rk816_bat_first_pwron(struct battery_priv *di)
 {
 	int ocv_vol;
 
@@ -688,20 +685,20 @@ static void rk816_bat_first_pwron(struct battery_info *di)
 	BAT_INFO("first power on: soc=%d\n", di->dsoc);
 }
 
-static u8 rk816_bat_get_halt_cnt(struct battery_info *di)
+static u8 rk816_bat_get_halt_cnt(struct battery_priv *di)
 {
-	return rk816_bat_read(HALT_CNT_REG);
+	return rk816_bat_read(di, HALT_CNT_REG);
 }
 
-static void rk816_bat_inc_halt_cnt(struct battery_info *di)
+static void rk816_bat_inc_halt_cnt(struct battery_priv *di)
 {
 	u8 cnt;
 
-	cnt = rk816_bat_read(HALT_CNT_REG);
-	rk816_bat_write(HALT_CNT_REG, ++cnt);
+	cnt = rk816_bat_read(di, HALT_CNT_REG);
+	rk816_bat_write(di, HALT_CNT_REG, ++cnt);
 }
 
-static bool is_rk816_bat_last_halt(struct battery_info *di)
+static bool is_rk816_bat_last_halt(struct battery_priv *di)
 {
 	int pre_cap = rk816_bat_get_prev_cap(di);
 	int now_cap = rk816_bat_get_coulomb_cap(di);
@@ -715,7 +712,7 @@ static bool is_rk816_bat_last_halt(struct battery_info *di)
 	}
 }
 
-static void rk816_bat_not_first_pwron(struct battery_info *di)
+static void rk816_bat_not_first_pwron(struct battery_priv *di)
 {
 	int pre_soc, pre_cap, ocv_cap, ocv_soc, ocv_vol, now_cap;
 
@@ -766,30 +763,30 @@ finish:
 		 );
 }
 
-static bool is_rk816_bat_first_poweron(struct battery_info *di)
+static bool is_rk816_bat_first_poweron(struct battery_priv *di)
 {
 	u8 buf;
 
-	buf = rk816_bat_read(GGSTS_REG);
+	buf = rk816_bat_read(di, GGSTS_REG);
 	if (buf & BAT_CON) {
 		buf &= ~BAT_CON;
-		rk816_bat_write(GGSTS_REG, buf);
+		rk816_bat_write(di, GGSTS_REG, buf);
 		return true;
 	}
 
 	return false;
 }
 
-static bool rk816_bat_ocv_sw_reset(struct battery_info *di)
+static bool rk816_bat_ocv_sw_reset(struct battery_priv *di)
 {
 	u8 buf;
 
-	buf = rk816_bat_read(MISC_MARK_REG);
+	buf = rk816_bat_read(di, MISC_MARK_REG);
 	if (((buf & FG_RESET_LATE) && di->pwroff_min >= 30) ||
 	    (buf & FG_RESET_NOW)) {
 		buf &= ~FG_RESET_LATE;
 		buf &= ~FG_RESET_NOW;
-		rk816_bat_write(MISC_MARK_REG, buf);
+		rk816_bat_write(di, MISC_MARK_REG, buf);
 		BAT_INFO("manual reset fuel gauge\n");
 		return true;
 	} else {
@@ -797,7 +794,7 @@ static bool rk816_bat_ocv_sw_reset(struct battery_info *di)
 	}
 }
 
-static int rk816_bat_calc_linek(struct battery_info *di)
+static int rk816_bat_calc_linek(struct battery_priv *di)
 {
 	int linek, diff, delta;
 
@@ -826,17 +823,17 @@ static int rk816_bat_calc_linek(struct battery_info *di)
 	return linek;
 }
 
-static int rk816_bat_get_coffset(struct battery_info *di)
+static int rk816_bat_get_coffset(struct battery_priv *di)
 {
 	int val = 0;
 
-	val |= rk816_bat_read(CAL_OFFSET_REGL) << 0;
-	val |= rk816_bat_read(CAL_OFFSET_REGH) << 8;
+	val |= rk816_bat_read(di, CAL_OFFSET_REGL) << 0;
+	val |= rk816_bat_read(di, CAL_OFFSET_REGH) << 8;
 
 	return val;
 }
 
-static void rk816_bat_init_poffset(struct battery_info *di)
+static void rk816_bat_init_poffset(struct battery_priv *di)
 {
 	int coffset, ioffset;
 
@@ -845,33 +842,33 @@ static void rk816_bat_init_poffset(struct battery_info *di)
 	di->poffset = coffset - ioffset;
 }
 
-static bool is_rk816_bat_exist(struct  battery_info *di)
+static bool is_rk816_bat_exist(struct  battery_priv *di)
 {
-	return (rk816_bat_read(SUP_STS_REG) & BAT_EXS) ? true : false;
+	return (rk816_bat_read(di, SUP_STS_REG) & BAT_EXS) ? true : false;
 }
 
-static void rk816_bat_set_current(int input_current)
+static void rk816_bat_set_current(struct battery_priv *di, int input_current)
 {
 	u8 usb_ctrl;
 
-	usb_ctrl = rk816_bat_read(USB_CTRL_REG);
+	usb_ctrl = rk816_bat_read(di, USB_CTRL_REG);
 	usb_ctrl &= ~INPUT_CUR_MSK;
 	usb_ctrl |= (input_current);
-	rk816_bat_write(USB_CTRL_REG, usb_ctrl);
+	rk816_bat_write(di, USB_CTRL_REG, usb_ctrl);
 }
 
-static void rk816_bat_charger_setting(struct battery_info *di, int charger)
+static void rk816_bat_charger_setting(struct battery_priv *di, int charger)
 {
 	static u8 old_charger = UNDEF_CHARGER;
 
 	/*charger changed*/
 	if (old_charger != charger) {
 		if (charger == NO_CHARGER)
-			rk816_bat_set_current(ILIM_450MA);
+			rk816_bat_set_current(di, ILIM_450MA);
 		else if (charger == USB_CHARGER)
-			rk816_bat_set_current(ILIM_450MA);
+			rk816_bat_set_current(di, ILIM_450MA);
 		else if (charger == DC_CHARGER || charger == AC_CHARGER)
-			rk816_bat_set_current(di->chrg_cur_input);
+			rk816_bat_set_current(di, di->chrg_cur_input);
 		else
 			BAT_INFO("charger setting error %d\n", charger);
 
@@ -879,7 +876,7 @@ static void rk816_bat_charger_setting(struct battery_info *di, int charger)
 	}
 }
 
-static int rk816_bat_get_dc_state(struct battery_info *di)
+static int rk816_bat_get_dc_state(struct battery_priv *di)
 {
 	/* struct adc_channel val; */
 
@@ -901,12 +898,12 @@ static int rk816_bat_get_dc_state(struct battery_info *di)
 	}
 }
 
-static int rk816_bat_get_charger_type(struct battery_info *di)
+static int rk816_bat_get_charger_type(struct battery_priv *di)
 {
 	int charger_type = NO_CHARGER;
 
 	/* check by ic hardware: this check make check work safer */
-	if ((rk816_bat_read(VB_MON_REG) & PLUG_IN_STS) == 0)
+	if ((rk816_bat_read(di, VB_MON_REG) & PLUG_IN_STS) == 0)
 		return NO_CHARGER;
 
 	/* virtual or bat not exist */
@@ -922,7 +919,7 @@ static int rk816_bat_get_charger_type(struct battery_info *di)
 	return rk816_bat_get_usb_state(di);
 }
 
-static bool rk816_bat_is_under_threshold(struct battery_info *di)
+static bool rk816_bat_is_under_threshold(struct battery_priv *di)
 {
 	bool initialize = false;
 #ifdef CONFIG_DM_CHARGE_DISPLAY
@@ -945,7 +942,7 @@ static bool rk816_bat_is_under_threshold(struct battery_info *di)
 	return initialize;
 }
 
-void rk816_bat_init_rsoc(struct battery_info *di)
+void rk816_bat_init_rsoc(struct battery_priv *di)
 {
 	bool initialize = false;
 
@@ -969,7 +966,7 @@ void rk816_bat_init_rsoc(struct battery_info *di)
 		rk816_bat_not_first_pwron(di);
 }
 
-static int rk816_fg_init(struct battery_info *di)
+static int rk816_fg_init(struct battery_priv *di)
 {
 	rk816_bat_enable_gauge(di);
 	rk816_bat_set_vol_instant_mode(di);
@@ -998,17 +995,17 @@ static int rk816_fg_init(struct battery_info *di)
 	return 0;
 }
 
-static void rk816_bat_save_dsoc(struct  battery_info *di, u8 save_soc)
+static void rk816_bat_save_dsoc(struct  battery_priv *di, u8 save_soc)
 {
 	static int old_soc = -1;
 
 	if (old_soc != save_soc) {
 		old_soc = save_soc;
-		rk816_bat_write(SOC_REG, save_soc);
+		rk816_bat_write(di, SOC_REG, save_soc);
 	}
 }
 
-static void rk816_bat_save_cap(struct battery_info *di, int cap)
+static void rk816_bat_save_cap(struct battery_priv *di, int cap)
 {
 	u8 buf;
 	static int old_cap;
@@ -1021,20 +1018,20 @@ static void rk816_bat_save_cap(struct battery_info *di, int cap)
 
 	old_cap = cap;
 	buf = (cap >> 24) & 0xff;
-	rk816_bat_write(REMAIN_CAP_REG3, buf);
+	rk816_bat_write(di, REMAIN_CAP_REG3, buf);
 	buf = (cap >> 16) & 0xff;
-	rk816_bat_write(REMAIN_CAP_REG2, buf);
+	rk816_bat_write(di, REMAIN_CAP_REG2, buf);
 	buf = (cap >> 8) & 0xff;
-	rk816_bat_write(REMAIN_CAP_REG1, buf);
+	rk816_bat_write(di, REMAIN_CAP_REG1, buf);
 	buf = (cap >> 0) & 0xff;
-	rk816_bat_write(REMAIN_CAP_REG0, buf);
+	rk816_bat_write(di, REMAIN_CAP_REG0, buf);
 }
 
-static u8 rk816_bat_get_chrg_status(struct battery_info *di)
+static u8 rk816_bat_get_chrg_status(struct battery_priv *di)
 {
 	u8 status;
 
-	status = rk816_bat_read(SUP_STS_REG) & BAT_STATUS_MSK;
+	status = rk816_bat_read(di, SUP_STS_REG) & BAT_STATUS_MSK;
 	switch (status) {
 	case CHARGE_OFF:
 		DBG("CHARGE-OFF...\n");
@@ -1073,7 +1070,7 @@ static u8 rk816_bat_get_chrg_status(struct battery_info *di)
 	return status;
 }
 
-static void rk816_bat_finish_chrg(struct battery_info *di)
+static void rk816_bat_finish_chrg(struct battery_priv *di)
 {
 	u32 tgt_sec = 0;
 
@@ -1088,7 +1085,7 @@ static void rk816_bat_finish_chrg(struct battery_info *di)
 	    get_timer(di->finish_chrg_base));
 }
 
-static void rk816_bat_debug_info(struct battery_info *di)
+static void rk816_bat_debug_info(struct battery_priv *di)
 {
 	u8 sup_sts, ggcon, ggsts, vb_mod, rtc, thermal, misc;
 	u8 usb_ctrl, chrg_ctrl1, chrg_ctrl2, chrg_ctrl3;
@@ -1096,17 +1093,17 @@ static void rk816_bat_debug_info(struct battery_info *di)
 
 	if (!dbg_enable)
 		return;
-	ggcon = rk816_bat_read(GGCON_REG);
-	ggsts = rk816_bat_read(GGSTS_REG);
-	sup_sts = rk816_bat_read(SUP_STS_REG);
-	usb_ctrl = rk816_bat_read(USB_CTRL_REG);
-	thermal = rk816_bat_read(THERMAL_REG);
-	vb_mod = rk816_bat_read(VB_MON_REG);
-	misc = rk816_bat_read(MISC_MARK_REG);
-	rtc = rk816_bat_read(SECONDS_REG);
-	chrg_ctrl1 = rk816_bat_read(CHRG_CTRL_REG1);
-	chrg_ctrl2 = rk816_bat_read(CHRG_CTRL_REG2);
-	chrg_ctrl3 = rk816_bat_read(CHRG_CTRL_REG3);
+	ggcon = rk816_bat_read(di, GGCON_REG);
+	ggsts = rk816_bat_read(di, GGSTS_REG);
+	sup_sts = rk816_bat_read(di, SUP_STS_REG);
+	usb_ctrl = rk816_bat_read(di, USB_CTRL_REG);
+	thermal = rk816_bat_read(di, THERMAL_REG);
+	vb_mod = rk816_bat_read(di, VB_MON_REG);
+	misc = rk816_bat_read(di, MISC_MARK_REG);
+	rtc = rk816_bat_read(di, SECONDS_REG);
+	chrg_ctrl1 = rk816_bat_read(di, CHRG_CTRL_REG1);
+	chrg_ctrl2 = rk816_bat_read(di, CHRG_CTRL_REG2);
+	chrg_ctrl3 = rk816_bat_read(di, CHRG_CTRL_REG3);
 
 	DBG("\n---------------------- DEBUG REGS ------------------------\n"
 	    "GGCON=0x%2x, GGSTS=0x%2x, RTC=0x%2x, SUP_STS= 0x%2x\n"
@@ -1138,7 +1135,7 @@ static void rk816_bat_debug_info(struct battery_info *di)
 	DBG("###########################################################\n");
 }
 
-static void rk816_bat_linek_algorithm(struct battery_info *di)
+static void rk816_bat_linek_algorithm(struct battery_priv *di)
 {
 	int delta_cap, ydsoc, tmp;
 	u8 chg_st = rk816_bat_get_chrg_status(di);
@@ -1176,19 +1173,19 @@ static void rk816_bat_linek_algorithm(struct battery_info *di)
 	    di->calc_dsoc, di->calc_rsoc, di->sm_meet_soc);
 }
 
-static int rk816_bat_get_iadc(struct battery_info *di)
+static int rk816_bat_get_iadc(struct battery_priv *di)
 {
 	int val = 0;
 
-	val |= rk816_bat_read(BAT_CUR_AVG_REGL) << 0;
-	val |= rk816_bat_read(BAT_CUR_AVG_REGH) << 8;
+	val |= rk816_bat_read(di, BAT_CUR_AVG_REGL) << 0;
+	val |= rk816_bat_read(di, BAT_CUR_AVG_REGH) << 8;
 	if (val > 2047)
 		val -= 4096;
 
 	return val;
 }
 
-static bool rk816_bat_adc_calib(struct battery_info *di)
+static bool rk816_bat_adc_calib(struct battery_priv *di)
 {
 	int i, ioffset, coffset, adc;
 
@@ -1205,7 +1202,7 @@ static bool rk816_bat_adc_calib(struct battery_info *di)
 			coffset = rk816_bat_get_coffset(di);
 			ioffset = rk816_bat_get_ioffset(di);
 			di->poffset = coffset - ioffset;
-			rk816_bat_write(POFFSET_REG, di->poffset);
+			rk816_bat_write(di, POFFSET_REG, di->poffset);
 			BAT_INFO("new offset:c=0x%x, i=0x%x, p=0x%x\n",
 				 coffset, ioffset, di->poffset);
 			return true;
@@ -1219,7 +1216,7 @@ static bool rk816_bat_adc_calib(struct battery_info *di)
 	return false;
 }
 
-static void rk816_bat_smooth_charge(struct battery_info *di)
+static void rk816_bat_smooth_charge(struct battery_priv *di)
 {
 	u8 chg_st = rk816_bat_get_chrg_status(di);
 
@@ -1272,7 +1269,7 @@ out:
 
 static int rk816_bat_update_get_soc(struct udevice *dev)
 {
-	struct battery_info *di = dev_get_priv(dev);
+	struct battery_priv *di = dev_get_priv(dev);
 	static ulong seconds;
 
 	/* set charge current */
@@ -1297,7 +1294,7 @@ static int rk816_bat_update_get_soc(struct udevice *dev)
 
 static int rk816_bat_update_get_voltage(struct udevice *dev)
 {
-	struct battery_info *di = dev_get_priv(dev);
+	struct battery_priv *di = dev_get_priv(dev);
 
 	if (!di->virtual_power && di->voltage_k)
 		return rk816_bat_get_est_voltage(di);
@@ -1307,7 +1304,7 @@ static int rk816_bat_update_get_voltage(struct udevice *dev)
 
 static int rk816_bat_update_get_current(struct udevice *dev)
 {
-	struct battery_info *di = dev_get_priv(dev);
+	struct battery_priv *di = dev_get_priv(dev);
 
 	if (!di->virtual_power && di->voltage_k)
 		return rk816_bat_get_avg_current(di);
@@ -1317,7 +1314,7 @@ static int rk816_bat_update_get_current(struct udevice *dev)
 
 static bool rk816_bat_update_get_chrg_online(struct udevice *dev)
 {
-	struct battery_info *di = dev_get_priv(dev);
+	struct battery_priv *di = dev_get_priv(dev);
 
 	return rk816_bat_get_charger_type(di);
 }
@@ -1329,30 +1326,23 @@ static struct dm_fuel_gauge_ops fg_ops = {
 	.get_chrg_online = rk816_bat_update_get_chrg_online,
 };
 
-static int rk816_bat_parse_dt(struct battery_info *di, void const *blob)
+static int rk816_fg_ofdata_to_platdata(struct udevice *dev)
 {
-	int node, parent, len, err;
+	struct rk8xx_priv *rk8xx = dev_get_priv(dev->parent);
+	struct battery_priv *di = dev_get_priv(dev);
 	const char *prop;
+	int len;
 
-	parent = fdt_node_offset_by_compatible(blob, 0, "rockchip,rk816");
-	if (parent < 0) {
-		printf("can't find rockchip,rk816 node\n");
-		return -ENODEV;
-	}
-
-	if (!fdtdec_get_is_enabled(blob, parent)) {
-		DBG("rk816 node disabled\n");
-		return -ENODEV;
-	}
-
-	node = fdt_subnode_offset_namelen(blob, parent, "battery", 7);
-	if (node < 0) {
-		debug("can't find battery node\n");
-		di->chrg_cur_input = ILIM_2000MA;
+	if (rk8xx->variant != 0x8160) {
+		debug("%s: Not support pmic variant: rk%x\n",
+			__func__, rk8xx->variant);
 		return -EINVAL;
+	} else {
+		di->dev = dev;
 	}
 
-	prop = fdt_getprop(blob, node, "ocv_table", &len);
+	/* Parse ocv table */
+	prop = dev_read_prop(dev, "ocv_table", &len);
 	if (!prop) {
 		printf("can't find ocv_table prop\n");
 		return -EINVAL;
@@ -1365,37 +1355,38 @@ static int rk816_bat_parse_dt(struct battery_info *di, void const *blob)
 	}
 
 	di->ocv_size = len / 4;
-	err = fdtdec_get_int_array(blob, node, "ocv_table",
-				   di->ocv_table, di->ocv_size);
-	if (err < 0) {
-		printf("read ocv_table error\n");
+	if (dev_read_u32_array(dev, "ocv_table",
+			       di->ocv_table, di->ocv_size)) {
+		printf("can't read ocv_table\n");
 		free(di->ocv_table);
 		return -EINVAL;
 	}
 
-	di->design_cap = fdtdec_get_int(blob, node, "design_capacity", -1);
+	/* Parse neccessay */
+	di->design_cap = dev_read_u32_default(dev, "design_capacity", -1);
 	if (di->design_cap < 0) {
-		printf("read design_capacity error\n");
+		printf("can't read design_capacity\n");
 		return -EINVAL;
 	}
 
-	di->qmax = fdtdec_get_int(blob, node, "design_qmax", -1);
+	di->qmax = dev_read_u32_default(dev, "design_qmax", -1);
 	if (di->qmax < 0) {
-		printf("read design_qmax error\n");
+		printf("can't read design_qmax\n");
 		return -EINVAL;
 	}
 
-	di->dts_vol_sel = fdtdec_get_int(blob, node, "max_chrg_voltage", 4200);
-	di->dts_cur_input = fdtdec_get_int(blob, node,
-					   "max_input_current", 2000);
-	di->dts_cur_sel = fdtdec_get_int(blob, node, "max_chrg_current", 1200);
-	di->max_soc_offset = fdtdec_get_int(blob, node, "max_soc_offset", 70);
-	di->virtual_power = fdtdec_get_int(blob, node, "virtual_power", 0);
-	di->bat_res = fdtdec_get_int(blob, node, "bat_res", 135);
-	di->dc_det_adc = fdtdec_get_int(blob, node, "dc_det_adc", 0);
+	/* Parse un-neccessay */
+	di->dts_vol_sel = dev_read_u32_default(dev, "max_chrg_voltage", 4200);
+	di->dts_cur_input = dev_read_u32_default(dev, "max_input_current", 2000);
+	di->dts_cur_sel = dev_read_u32_default(dev, "max_chrg_current", 1200);
+	di->max_soc_offset = dev_read_u32_default(dev, "max_soc_offset", 70);
+	di->virtual_power = dev_read_u32_default(dev, "virtual_power", 0);
+	di->bat_res = dev_read_u32_default(dev, "bat_res", 135);
+
+	/* Parse dc type */
+	di->dc_det_adc = dev_read_u32_default(dev, "dc_det_adc", 0);
 	if (di->dc_det_adc <= 0) {
-		if (!gpio_request_by_name_nodev(offset_to_ofnode(node),
-						"dc_det_gpio",
+		if (!gpio_request_by_name_nodev(dev_ofnode(dev), "dc_det_gpio",
 						0, di->dc_det, GPIOD_IS_IN)) {
 			di->dc_type = DC_TYPE_OF_GPIO;
 		} else {
@@ -1405,6 +1396,7 @@ static int rk816_bat_parse_dt(struct battery_info *di, void const *blob)
 		di->dc_type = DC_TYPE_OF_ADC;
 	}
 
+	/* Is battery attached */
 	if (!is_rk816_bat_exist(di))
 		di->virtual_power = 1;
 
@@ -1422,19 +1414,13 @@ static int rk816_bat_parse_dt(struct battery_info *di, void const *blob)
 
 static int rk816_fg_probe(struct udevice *dev)
 {
-	struct rk8xx_priv *priv = dev_get_priv(dev->parent);
-	struct battery_info *di = dev_get_priv(dev);
-	int ret;
+	struct rk8xx_priv *rk8xx = dev_get_priv(dev->parent);
+	struct battery_priv *di = dev_get_priv(dev);
 
-	if (priv->variant != 0x8160) {
-		debug("Not support pmic variant: rk%x\n", priv->variant);
+	if (rk8xx->variant != 0x8160) {
+		printf("Not support pmic variant: rk%x\n", rk8xx->variant);
 		return -EINVAL;
 	}
-
-	g_pmic_dev = dev->parent;
-	ret = rk816_bat_parse_dt(di, gd->fdt_blob);
-	if (ret)
-		return ret;
 
 	return rk816_fg_init(di);
 }
@@ -1444,6 +1430,6 @@ U_BOOT_DRIVER(rk816_fg) = {
 	.id = UCLASS_FG,
 	.probe = rk816_fg_probe,
 	.ops = &fg_ops,
-	.priv_auto_alloc_size = sizeof(struct battery_info),
+	.ofdata_to_platdata = rk816_fg_ofdata_to_platdata,
+	.priv_auto_alloc_size = sizeof(struct battery_priv),
 };
-
