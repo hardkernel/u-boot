@@ -52,9 +52,9 @@ prepare()
 		exit 1
 	fi
 
-	# Clean! We assume that ./u-boot.map indicates U-Boot project is not clean,
+	# Clean! We assume that ./u-boot.map, u-boot.cfg or u-boot.lds indicates U-Boot project is not clean,
 	# maybe git checkout from rkdevelop.
-	if [ -f ./u-boot.map ]; then
+	if [ -f ./u-boot.map -o -f ./u-boot.cfg -o -f ./u-boot.lds ]; then
 		make mrproper
 		echo "auto \"make mrproper\" done..."
 	fi
@@ -98,14 +98,21 @@ pack_uboot_image()
 
 	UBOOT_LOAD_ADDR=`sed -n "/CONFIG_SYS_TEXT_BASE=/s/CONFIG_SYS_TEXT_BASE=//p" ${DSTDIR}/out/include/autoconf.mk|tr -d '\r'`
 	${TOOLCHAIN_RKBIN}/loaderimage --pack --uboot ${DSTDIR}/out/u-boot.bin uboot.img ${UBOOT_LOAD_ADDR}
+	echo "pack uboot okay! Input: ${DSTDIR}/out/u-boot.bin"
 }
 
 pack_loader_image()
 {
+	if [ ! -f ${RKBIN}/RKBOOT/${RKCHIP}MINIALL.ini ]; then
+		echo "pack loader failed! Can't find: ${RKBIN}/RKBOOT/${RKCHIP}MINIALL.ini"
+		return
+	fi
+
 	cd ${RKBIN}
 	${TOOLCHAIN_RKBIN}/boot_merger --replace tools/rk_tools/ ./ ${RKBIN}/RKBOOT/${RKCHIP}MINIALL.ini
 	cd -
 	mv ${RKBIN}/*_loader_*.bin ./
+	echo "pack loader okay! Input: ${RKBIN}/RKBOOT/${RKCHIP}MINIALL.ini"
 }
 
 pack_trust_image()
@@ -114,12 +121,23 @@ pack_trust_image()
 
 	# ARM64 uses trust_merger
 	if grep  -q '^CONFIG_ARM64=y' ${DSTDIR}/out/.config ; then
+		if [ ! -f ${RKBIN}/RKTRUST/${RKCHIP}TRUST.ini ]; then
+			echo "pack trust failed! Can't find: ${RKBIN}/RKRUST/${RKCHIP}TRUST.ini"
+			return
+		fi
+
 		cd ${RKBIN}
 		${TOOLCHAIN_RKBIN}/trust_merger --replace tools/rk_tools/ ./ ${RKBIN}/RKTRUST/${RKCHIP}TRUST.ini
 		cd -
 		mv ${RKBIN}/trust.img ./trust.img
+		echo "pack trust okay! Input: ${RKBIN}/RKRUST/${RKCHIP}TRUST.ini"
 	# ARM uses loaderimage
 	else
+		if [ ! -f ${RKBIN}/RKTRUST/${RKCHIP}TOS.ini ]; then
+			echo "pack trust failed! Can't find: ${RKBIN}/RKTRUST/${RKCHIP}TOS.ini"
+			return
+		fi
+
 		# OP-TEE is 132M(0x8400000) offset from DRAM base.
 		DARM_BASE=`sed -n "/CONFIG_SYS_SDRAM_BASE=/s/CONFIG_SYS_SDRAM_BASE=//p" ${DSTDIR}/out/include/autoconf.mk|tr -d '\r'`
 		TEE_LOAD_ADDR=$((DARM_BASE+TEE_OFFSET))
@@ -149,6 +167,8 @@ pack_trust_image()
 			echo "Can't find any tee bin"
 			exit 1
 		fi
+
+		echo "pack trust okay! Input: ${RKBIN}/RKTRUST/${RKCHIP}TOS.ini"
 	fi
 }
 
