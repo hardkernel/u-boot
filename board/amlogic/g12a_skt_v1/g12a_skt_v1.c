@@ -503,9 +503,9 @@ int board_init(void)
 	board_usb_init(&g_usb_config_GXL_skt,BOARD_USB_MODE_HOST);
 #endif /*CONFIG_USB_XHCI_AMLOGIC*/
 
-return 0;
+#if 0
 	aml_pwm_cal_init(0);
-
+#endif//
 #ifdef CONFIG_AML_NAND
 	extern int amlnf_init(unsigned char flag);
 	amlnf_init(0);
