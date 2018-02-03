@@ -16,6 +16,7 @@
 #include <asm/suspend.h>
 #include <linux/input.h>
 #include <power/charge_display.h>
+#include <power/charge_animation.h>
 #include <power/fuel_gauge.h>
 #include <power/pmic.h>
 #include <power/rk8xx_pmic.h>
@@ -38,85 +39,6 @@ struct charge_animation_priv {
 	const struct charge_image *image;
 	int image_num;
 };
-
-struct charge_animation_pdata {
-	int android_charge;
-	int uboot_charge;
-
-	int exit_charge_voltage;
-	int exit_charge_level;
-
-	int low_power_voltage;
-
-	int screen_on_voltage;
-	int system_suspend;
-};
-
-static int charge_animation_get_power_on_soc(struct udevice *dev)
-{
-	struct charge_animation_pdata *pdata = dev_get_platdata(dev);
-
-	if (!pdata)
-		return -ENOSYS;
-
-	return pdata->exit_charge_level;
-}
-
-static int charge_animation_get_power_on_voltage(struct udevice *dev)
-{
-	struct charge_animation_pdata *pdata = dev_get_platdata(dev);
-
-	if (!pdata)
-		return -ENOSYS;
-
-	return pdata->exit_charge_voltage;
-}
-
-static int charge_animation_get_screen_on_voltage(struct udevice *dev)
-{
-	struct charge_animation_pdata *pdata = dev_get_platdata(dev);
-
-	if (!pdata)
-		return -ENOSYS;
-
-	return pdata->screen_on_voltage;
-}
-
-static int charge_animation_set_power_on_soc(struct udevice *dev, int val)
-{
-	struct charge_animation_pdata *pdata = dev_get_platdata(dev);
-
-	if (!pdata)
-		return -ENOSYS;
-
-	pdata->exit_charge_level = val;
-
-	return 0;
-}
-
-static int charge_animation_set_power_on_voltage(struct udevice *dev, int val)
-{
-	struct charge_animation_pdata *pdata = dev_get_platdata(dev);
-
-	if (!pdata)
-		return -ENOSYS;
-
-	pdata->exit_charge_voltage = val;
-
-	return 0;
-}
-
-static int charge_animation_set_screen_on_voltage(struct udevice *dev, int val)
-{
-	struct charge_animation_pdata *pdata = dev_get_platdata(dev);
-
-	if (!pdata)
-		return -ENOSYS;
-
-	pdata->screen_on_voltage = val;
-
-	return 0;
-}
 
 /*
  * IF you want to use your own charge images, please:
@@ -590,12 +512,6 @@ static int charge_animation_show(struct udevice *dev)
 }
 
 static const struct dm_charge_display_ops charge_animation_ops = {
-	.get_power_on_soc = charge_animation_get_power_on_soc,
-	.get_power_on_voltage = charge_animation_get_power_on_voltage,
-	.get_screen_on_voltage = charge_animation_get_screen_on_voltage,
-	.set_power_on_soc = charge_animation_set_power_on_soc,
-	.set_power_on_voltage = charge_animation_set_power_on_voltage,
-	.set_screen_on_voltage = charge_animation_set_screen_on_voltage,
 	.show = charge_animation_show,
 };
 

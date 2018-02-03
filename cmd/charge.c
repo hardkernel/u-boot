@@ -8,6 +8,7 @@
 #include <command.h>
 #include <dm.h>
 #include <power/charge_display.h>
+#include <power/charge_animation.h>
 
 static int charge_display(cmd_tbl_t *cmdtp, int flag, int argc,
 			  char *const argv[])
@@ -15,6 +16,7 @@ static int charge_display(cmd_tbl_t *cmdtp, int flag, int argc,
 	int on_soc, on_voltage, screen_voltage;
 	int ret, save[3];
 	struct udevice *dev;
+	struct charge_animation_pdata *pdata;
 
 	if (argc != 4 && argc != 1)
 		return CMD_RET_USAGE;
@@ -30,9 +32,10 @@ static int charge_display(cmd_tbl_t *cmdtp, int flag, int argc,
 	}
 
 	if (argc == 4) {
-		save[0] = charge_display_get_power_on_soc(dev);
-		save[1] = charge_display_get_power_on_voltage(dev);
-		save[2] = charge_display_get_screen_on_voltage(dev);
+		pdata = dev_get_platdata(dev);
+		save[0] = pdata->exit_charge_level;
+		save[1] = pdata->exit_charge_voltage;
+		save[2] = pdata->screen_on_voltage;
 
 		on_soc = simple_strtoul(argv[1], NULL, 0);
 		on_voltage = simple_strtoul(argv[2], NULL, 0);
@@ -40,16 +43,15 @@ static int charge_display(cmd_tbl_t *cmdtp, int flag, int argc,
 		debug("new: on_soc=%d, on_voltage=%d, screen_voltage=%d\n",
 		      on_soc, on_voltage, screen_voltage);
 
-		charge_display_set_power_on_soc(dev, on_soc);
-		charge_display_set_power_on_voltage(dev, on_voltage);
-		charge_display_set_screen_on_voltage(dev, screen_voltage);
+		pdata->exit_charge_level = on_soc;
+		pdata->exit_charge_voltage = on_voltage;
+		pdata->screen_on_voltage = screen_voltage;
 
 		charge_display_show(dev);
 
-		charge_display_set_power_on_soc(dev, save[0]);
-		charge_display_set_power_on_voltage(dev, save[1]);
-		charge_display_set_screen_on_voltage(dev, save[2]);
-
+		pdata->exit_charge_level = save[0];
+		pdata->exit_charge_voltage = save[1];
+		pdata->screen_on_voltage = save[2];
 	} else if (argc == 1) {
 		charge_display_show(dev);
 	} else {

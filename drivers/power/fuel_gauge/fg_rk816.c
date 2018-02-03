@@ -15,6 +15,7 @@
 #include <power/pmic.h>
 #include <dm/uclass-internal.h>
 #include <power/charge_display.h>
+#include <power/charge_animation.h>
 #include <power/fuel_gauge.h>
 #include <power/rk8xx_pmic.h>
 #include <linux/usb/phy-rockchip-inno-usb2.h>
@@ -919,22 +920,19 @@ static int rk816_bat_get_charger_type(struct battery_priv *di)
 	return rk816_bat_get_usb_state(di);
 }
 
-static bool rk816_bat_is_under_threshold(struct battery_priv *di)
+static bool rk816_bat_need_initialize(struct battery_priv *di)
 {
+	struct charge_animation_pdata *pdata;
 	bool initialize = false;
 #ifdef CONFIG_DM_CHARGE_DISPLAY
 	struct udevice *dev;
-	int soc, voltage, est_voltage;
-	int err;
+	int est_voltage;
 
-	err = uclass_find_first_device(UCLASS_CHARGE_DISPLAY, &dev);
-	if (!err) {
+	if (!uclass_find_first_device(UCLASS_CHARGE_DISPLAY, &dev)) {
+		pdata = dev_get_platdata(dev);
 		est_voltage = rk816_bat_get_avg_voltage(di);
-		soc = charge_display_get_power_on_soc(dev);
-		voltage = charge_display_get_power_on_voltage(dev);
-		DBG("threshold: %d%%, %dmv; now: %d%%, %dmv\n",
-		    soc, voltage, di->dsoc, est_voltage);
-		if ((di->dsoc <= soc) || (est_voltage <= voltage))
+		if ((pdata->uboot_charge) ||
+		    (pdata->low_power_voltage >= est_voltage))
 			initialize = true;
 	}
 #endif
@@ -952,7 +950,9 @@ void rk816_bat_init_rsoc(struct battery_priv *di)
 		initialize = true;
 	/* Only charger online and under threshold, we do initialization */
 	else if (rk816_bat_get_charger_type(di) != NO_CHARGER)
-		initialize = rk816_bat_is_under_threshold(di);
+		initialize = rk816_bat_need_initialize(di);
+
+	printf("Fuel gauge initialize = %d\n", initialize);
 
 	if (!initialize)
 		return;
