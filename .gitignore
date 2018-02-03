@@ -20,13 +20,14 @@
 *.bin
 *.patch
 *.cfgtmp
+*.img
 
 # host programs on Cygwin
 *.exe
 
 # Build tree
 /build-*
-
+/rockdev
 #
 # Top-level generic files
 #
