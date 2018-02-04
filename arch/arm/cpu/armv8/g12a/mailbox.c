@@ -207,3 +207,12 @@ void send_pwm_delt(int32_t vcck_delt, int32_t ee_delt)
 	mb_message_wait(LOW_PRIORITY);
 	mb_message_end(LOW_PRIORITY);
 }
+
+void set_boot_first_timeout(unsigned int command)
+{
+	mb_message_start(LOW_PRIORITY);
+	writel(0, ap_mb_payload[LOW_PRIORITY]);
+	mb_message_send(command, LOW_PRIORITY);
+	mb_message_wait(LOW_PRIORITY);
+	mb_message_end(LOW_PRIORITY);
+}
