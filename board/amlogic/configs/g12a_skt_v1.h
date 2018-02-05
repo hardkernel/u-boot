@@ -252,26 +252,12 @@
 #define CONFIG_SYS_BOOTM_LEN (64<<20) /* Increase max gunzip size*/
 
 /* cpu */
-#define CONFIG_CPU_CLK					1200 //MHz. Range: 600-1800, should be multiple of 24
+#define CONFIG_CPU_CLK					1200 //MHz. Range: 360-2000, should be multiple of 24
 
-/* ddr */
-#define CONFIG_DDR_SIZE					1024 //MB //0 means ddr size auto-detect
-#define CONFIG_DDR_CLK					{912, 0, 0, 0}  //MHz, Range: 384-1200, should be multiple of 24
-#define CONFIG_DDR4_CLK					1008  //MHz, for boards which use different ddr chip
+/* ATTENTION */
+/* DDR configs move to board/amlogic/[board]/firmware/timing.c */
+
 #define CONFIG_NR_DRAM_BANKS			1
-/* DDR type setting
- *    CONFIG_DDR_TYPE_LPDDR3   : LPDDR3
- *    CONFIG_DDR_TYPE_DDR3     : DDR3
- *    CONFIG_DDR_TYPE_DDR4     : DDR4
- *    CONFIG_DDR_TYPE_AUTO     : DDR3/DDR4 auto detect */
-#define CONFIG_DDR_TYPE					CONFIG_DDR_TYPE_DDR4
-/* DDR channel setting, please refer hardware design.
- *    CONFIG_DDR0_RANK0        : DDR0 rank0
- *    CONFIG_DDR0_RANK01       : DDR0 rank0+1
- *    CONFIG_DDR0_16BIT        : DDR0 16bit mode
- *    CONFIG_DDR0_16BIT_2      : DDR0 16bit mode, 2ranks
- *    CONFIG_DDR_CHL_AUTO      : auto detect RANK0 / RANK0+1 */
-#define CONFIG_DDR_CHANNEL_SET			CONFIG_DDR0_32BIT_RANK0_CH0
 /* ddr functions */
 #define CONFIG_DDR_FULL_TEST			0 //0:disable, 1:enable. ddr full test
 #define CONFIG_CMD_DDR_D2PLL			0 //0:disable, 1:enable. d2pll cmd
