@@ -7,6 +7,7 @@
 
 #include <asm/io.h>
 #include <asm/arch/boot_mode.h>
+#include <asm/arch/chip_info.h>
 #include <rockusb.h>
 
 #define ROCKUSB_INTERFACE_CLASS	0xff
@@ -207,6 +208,25 @@ static int rkusb_do_read_flash_info(struct fsg_common *common,
 	return len;
 }
 
+static int rkusb_do_get_chip_info(struct fsg_common *common,
+				  struct fsg_buffhd *bh)
+{
+	u8 *buf = (u8 *)bh->buf;
+	u32 len = common->data_size;
+	u32 chip_info[4];
+
+	memset((void *)chip_info, 0, sizeof(chip_info));
+	rockchip_rockusb_get_chip_info(chip_info);
+
+	memset((void *)&buf[0], 0, len);
+	memcpy((void *)&buf[0], (void *)chip_info, len);
+
+	/* Set data xfer size */
+	common->residue = common->data_size_from_cmnd = len;
+
+	return len;
+}
+
 static int rkusb_do_lba_erase(struct fsg_common *common,
 			      struct fsg_buffhd *bh)
 {
@@ -315,6 +335,11 @@ static int rkusb_cmd_process(struct fsg_common *common,
 		rc = RKUSB_RC_FINISHED;
 		break;
 
+	case RKUSB_GET_CHIP_VER:
+		*reply = rkusb_do_get_chip_info(common, bh);
+		rc = RKUSB_RC_FINISHED;
+		break;
+
 	case RKUSB_LBA_ERASE:
 		*reply = rkusb_do_lba_erase(common, bh);
 		rc = RKUSB_RC_FINISHED;
@@ -342,7 +367,6 @@ static int rkusb_cmd_process(struct fsg_common *common,
 	case RKUSB_SDRAM_READ_10:
 	case RKUSB_SDRAM_WRITE_10:
 	case RKUSB_SDRAM_EXECUTE:
-	case RKUSB_GET_CHIP_VER:
 	case RKUSB_LOW_FORMAT:
 	case RKUSB_SET_RESET_FLAG:
 	case RKUSB_SPI_READ_10:
