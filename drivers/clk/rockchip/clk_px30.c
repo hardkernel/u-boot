@@ -173,12 +173,20 @@ static ulong px30_i2c_get_clk(struct px30_cru *cru, ulong clk_id)
 
 	switch (clk_id) {
 	case SCLK_I2C0:
+		con = readl(&cru->clksel_con[49]);
+		div = con >> CLK_I2C0_DIV_CON_SHIFT & CLK_I2C_DIV_CON_MASK;
 		break;
 	case SCLK_I2C1:
+		con = readl(&cru->clksel_con[49]);
+		div = con >> CLK_I2C1_DIV_CON_SHIFT & CLK_I2C_DIV_CON_MASK;
 		break;
 	case SCLK_I2C2:
+		con = readl(&cru->clksel_con[50]);
+		div = con >> CLK_I2C2_DIV_CON_SHIFT & CLK_I2C_DIV_CON_MASK;
 		break;
 	case SCLK_I2C3:
+		con = readl(&cru->clksel_con[50]);
+		div = con >> CLK_I2C3_DIV_CON_SHIFT & CLK_I2C_DIV_CON_MASK;
 		break;
 	default:
 		printf("do not support this i2c bus\n");
@@ -197,12 +205,32 @@ static ulong px30_i2c_set_clk(struct px30_cru *cru, ulong clk_id, uint hz)
 
 	switch (clk_id) {
 	case SCLK_I2C0:
+		rk_clrsetreg(&cru->clksel_con[49],
+			     CLK_I2C_DIV_CON_MASK << CLK_I2C0_DIV_CON_SHIFT |
+			     CLK_I2C_PLL_SEL_MASK << CLK_I2C0_PLL_SEL_SHIFT,
+			     (src_clk_div - 1) << CLK_I2C0_DIV_CON_SHIFT |
+			     CLK_I2C_PLL_SEL_GPLL << CLK_I2C0_PLL_SEL_SHIFT);
 		break;
 	case SCLK_I2C1:
+		rk_clrsetreg(&cru->clksel_con[49],
+			     CLK_I2C_DIV_CON_MASK << CLK_I2C1_DIV_CON_SHIFT |
+			     CLK_I2C_PLL_SEL_MASK << CLK_I2C1_PLL_SEL_SHIFT,
+			     (src_clk_div - 1) << CLK_I2C1_DIV_CON_SHIFT |
+			     CLK_I2C_PLL_SEL_GPLL << CLK_I2C1_PLL_SEL_SHIFT);
 		break;
 	case SCLK_I2C2:
+		rk_clrsetreg(&cru->clksel_con[50],
+			     CLK_I2C_DIV_CON_MASK << CLK_I2C2_DIV_CON_SHIFT |
+			     CLK_I2C_PLL_SEL_MASK << CLK_I2C2_PLL_SEL_SHIFT,
+			     (src_clk_div - 1) << CLK_I2C2_DIV_CON_SHIFT |
+			     CLK_I2C_PLL_SEL_GPLL << CLK_I2C2_PLL_SEL_SHIFT);
 		break;
 	case SCLK_I2C3:
+		rk_clrsetreg(&cru->clksel_con[50],
+			     CLK_I2C_DIV_CON_MASK << CLK_I2C3_DIV_CON_SHIFT |
+			     CLK_I2C_PLL_SEL_MASK << CLK_I2C3_PLL_SEL_SHIFT,
+			     (src_clk_div - 1) << CLK_I2C3_DIV_CON_SHIFT |
+			     CLK_I2C_PLL_SEL_GPLL << CLK_I2C3_PLL_SEL_SHIFT);
 		break;
 	default:
 		printf("do not support this i2c bus\n");
@@ -282,23 +310,63 @@ static ulong px30_mmc_set_clk(struct px30_cru *cru,
 	return px30_mmc_get_clk(cru, clk_id);
 }
 
-static ulong px30_pwm_get_clk(struct px30_cru *cru)
+static ulong px30_pwm_get_clk(struct px30_cru *cru, ulong clk_id)
 {
 	u32 div, con;
+
+	switch (clk_id) {
+	case SCLK_PWM0:
+		con = readl(&cru->clksel_con[52]);
+		div = con >> CLK_PWM0_DIV_CON_SHIFT & CLK_PWM_DIV_CON_MASK;
+		break;
+	case SCLK_PWM1:
+		con = readl(&cru->clksel_con[52]);
+		div = con >> CLK_PWM1_DIV_CON_SHIFT & CLK_PWM_DIV_CON_MASK;
+		break;
+	default:
+		printf("do not support this pwm bus\n");
+		return -EINVAL;
+	}
 
 	return DIV_TO_RATE(GPLL_HZ, div);
 }
 
-static ulong px30_pwm_set_clk(struct px30_cru *cru, uint hz)
+static ulong px30_pwm_set_clk(struct px30_cru *cru, ulong clk_id, uint hz)
 {
-	u32 div = GPLL_HZ / hz;
+	int src_clk_div;
 
-	return DIV_TO_RATE(GPLL_HZ, div);
+	src_clk_div = GPLL_HZ / hz;
+	assert(src_clk_div - 1 < 127);
+
+	switch (clk_id) {
+	case SCLK_PWM0:
+		rk_clrsetreg(&cru->clksel_con[52],
+			     CLK_PWM_DIV_CON_MASK << CLK_PWM0_DIV_CON_SHIFT |
+			     CLK_PWM_PLL_SEL_MASK << CLK_PWM0_PLL_SEL_SHIFT,
+			     (src_clk_div - 1) << CLK_PWM0_DIV_CON_SHIFT |
+			     CLK_PWM_PLL_SEL_GPLL << CLK_PWM0_PLL_SEL_SHIFT);
+		break;
+	case SCLK_PWM1:
+		rk_clrsetreg(&cru->clksel_con[52],
+			     CLK_PWM_DIV_CON_MASK << CLK_PWM1_DIV_CON_SHIFT |
+			     CLK_PWM_PLL_SEL_MASK << CLK_PWM1_PLL_SEL_SHIFT,
+			     (src_clk_div - 1) << CLK_PWM1_DIV_CON_SHIFT |
+			     CLK_PWM_PLL_SEL_GPLL << CLK_PWM1_PLL_SEL_SHIFT);
+		break;
+	default:
+		printf("do not support this pwm bus\n");
+		return -EINVAL;
+	}
+
+	return DIV_TO_RATE(GPLL_HZ, src_clk_div);
 }
 
 static ulong px30_saradc_get_clk(struct px30_cru *cru)
 {
-	u32 div, val;
+	u32 div, con;
+
+	con = readl(&cru->clksel_con[55]);
+	div = con >> CLK_SARADC_DIV_CON_SHIFT & CLK_PWM_DIV_CON_MASK;
 
 	return DIV_TO_RATE(OSC_HZ, div);
 }
@@ -307,9 +375,65 @@ static ulong px30_saradc_set_clk(struct px30_cru *cru, uint hz)
 {
 	int src_clk_div;
 
-	src_clk_div = DIV_ROUND_UP(OSC_HZ, hz) - 1;
+	src_clk_div = OSC_HZ / hz;
+	assert(src_clk_div - 1 < 2047);
 
-	return px30_saradc_get_clk(cru);
+	rk_clrsetreg(&cru->clksel_con[55],
+		     CLK_SARADC_DIV_CON_MASK,
+		     src_clk_div << CLK_SARADC_DIV_CON_SHIFT);
+
+	return DIV_TO_RATE(OSC_HZ, src_clk_div);
+}
+
+static ulong px30_spi_get_clk(struct px30_cru *cru, ulong clk_id)
+{
+	u32 div, con;
+
+	switch (clk_id) {
+	case SCLK_PWM0:
+		con = readl(&cru->clksel_con[53]);
+		div = con >> CLK_SPI0_DIV_CON_SHIFT & CLK_SPI_DIV_CON_MASK;
+		break;
+	case SCLK_PWM1:
+		con = readl(&cru->clksel_con[53]);
+		div = con >> CLK_SPI1_DIV_CON_SHIFT & CLK_SPI_DIV_CON_MASK;
+		break;
+	default:
+		printf("do not support this pwm bus\n");
+		return -EINVAL;
+	}
+
+	return DIV_TO_RATE(GPLL_HZ, div);
+}
+
+static ulong px30_spi_set_clk(struct px30_cru *cru, ulong clk_id, uint hz)
+{
+	int src_clk_div;
+
+	src_clk_div = GPLL_HZ / hz;
+	assert(src_clk_div - 1 < 127);
+
+	switch (clk_id) {
+	case SCLK_SPI0:
+		rk_clrsetreg(&cru->clksel_con[53],
+			     CLK_SPI_DIV_CON_MASK << CLK_SPI0_DIV_CON_SHIFT |
+			     CLK_SPI_PLL_SEL_MASK << CLK_SPI0_PLL_SEL_SHIFT,
+			     (src_clk_div - 1) << CLK_SPI0_DIV_CON_SHIFT |
+			     CLK_SPI_PLL_SEL_GPLL << CLK_SPI0_PLL_SEL_SHIFT);
+		break;
+	case SCLK_SPI1:
+		rk_clrsetreg(&cru->clksel_con[53],
+			     CLK_SPI_DIV_CON_MASK << CLK_SPI1_DIV_CON_SHIFT |
+			     CLK_SPI_PLL_SEL_MASK << CLK_SPI1_PLL_SEL_SHIFT,
+			     (src_clk_div - 1) << CLK_SPI1_DIV_CON_SHIFT |
+			     CLK_SPI_PLL_SEL_GPLL << CLK_SPI1_PLL_SEL_SHIFT);
+		break;
+	default:
+		printf("do not support this pwm bus\n");
+		return -EINVAL;
+	}
+
+	return DIV_TO_RATE(GPLL_HZ, src_clk_div);
 }
 
 static ulong px30_clk_get_rate(struct clk *clk)
@@ -333,10 +457,14 @@ static ulong px30_clk_get_rate(struct clk *clk)
 		rate = px30_i2c_get_clk(priv->cru, clk->id);
 		break;
 	case SCLK_PWM0:
-		rate = px30_pwm_get_clk(priv->cru);
+		rate = px30_pwm_get_clk(priv->cru, clk->id);
 		break;
 	case SCLK_SARADC:
 		rate = px30_saradc_get_clk(priv->cru);
+		break;
+	case SCLK_SPI0:
+	case SCLK_SPI1:
+		rate = px30_spi_get_clk(priv->cru, clk->id);
 		break;
 	default:
 		return -ENOENT;
@@ -367,10 +495,15 @@ static ulong px30_clk_set_rate(struct clk *clk, ulong rate)
 		ret = px30_i2c_set_clk(priv->cru, clk->id, rate);
 		break;
 	case SCLK_PWM0:
-		ret = px30_pwm_set_clk(priv->cru, rate);
+	case SCLK_PWM1:
+		ret = px30_pwm_set_clk(priv->cru, clk->id, rate);
 		break;
 	case SCLK_SARADC:
 		ret = px30_saradc_set_clk(priv->cru, rate);
+		break;
+	case SCLK_SPI0:
+	case SCLK_SPI1:
+		ret = px30_spi_set_clk(priv->cru, clk->id, rate);
 		break;
 	default:
 		return -ENOENT;
