@@ -703,12 +703,8 @@
 			#interrupt-cells = <2>;
 		};
 
-		pcfg_pull_up: pcfg-pull-up {
-			bias-pull-up;
-		};
-
-		pcfg_pull_down: pcfg-pull-down {
-			bias-pull-down;
+		pcfg_pull_default: pcfg_pull_default {
+			bias-pull-pin-default;
 		};
 
 		pcfg_pull_none: pcfg-pull-none {
@@ -716,34 +712,45 @@
 		};
 
 		emmc {
-			/*
-			 * We run eMMC at max speed; bump up drive strength.
-			 * We also have external pulls, so disable the internal ones.
-			 */
-
 			emmc_clk: emmc-clk {
-				rockchip,pins = <2 7 RK_FUNC_2 &pcfg_pull_none>;
+				rockchip,pins = <2 RK_PA7 2 &pcfg_pull_none>;
 			};
 
 			emmc_cmd: emmc-cmd {
-				rockchip,pins = <2 4 RK_FUNC_2 &pcfg_pull_none>;
+				rockchip,pins = <1 RK_PC6 2 &pcfg_pull_default>;
 			};
 
-			emmc_pwren: emmc-pwren {
-				rockchip,pins = <2 5 RK_FUNC_2 &pcfg_pull_none>;
+			emmc_cmd1: emmc-cmd1 {
+				rockchip,pins = <2 RK_PA4 2 &pcfg_pull_default>;
+			};
+
+			emmc_pwr: emmc-pwr {
+				rockchip,pins = <2 RK_PA5 2 &pcfg_pull_default>;
+			};
+
+			emmc_bus1: emmc-bus1 {
+				rockchip,pins = <1 RK_PD0 2 &pcfg_pull_default>;
+			};
+
+			emmc_bus4: emmc-bus4 {
+				rockchip,pins = <1 RK_PD0 2 &pcfg_pull_default>,
+						<1 RK_PD1 2 &pcfg_pull_default>,
+						<1 RK_PD2 2 &pcfg_pull_default>,
+						<1 RK_PD3 2 &pcfg_pull_default>;
 			};
 
 			emmc_bus8: emmc-bus8 {
-				rockchip,pins = <1 24 RK_FUNC_2 &pcfg_pull_none>,
-						<1 25 RK_FUNC_2 &pcfg_pull_none>,
-						<1 26 RK_FUNC_2 &pcfg_pull_none>,
-						<1 27 RK_FUNC_2 &pcfg_pull_none>,
-						<1 28 RK_FUNC_2 &pcfg_pull_none>,
-						<1 29 RK_FUNC_2 &pcfg_pull_none>,
-						<1 30 RK_FUNC_2 &pcfg_pull_none>,
-						<1 31 RK_FUNC_2 &pcfg_pull_none>;
+				rockchip,pins = <1 RK_PD0 2 &pcfg_pull_default>,
+						<1 RK_PD1 2 &pcfg_pull_default>,
+						<1 RK_PD2 2 &pcfg_pull_default>,
+						<1 RK_PD3 2 &pcfg_pull_default>,
+						<1 RK_PD4 2 &pcfg_pull_default>,
+						<1 RK_PD5 2 &pcfg_pull_default>,
+						<1 RK_PD6 2 &pcfg_pull_default>,
+						<1 RK_PD7 2 &pcfg_pull_default>;
 			};
 		};
+
 
 		nandc{
 			nandc_ale:nandc-ale {
@@ -811,22 +818,22 @@
 			};
 
 			sdmmc_cmd: sdmmc-cmd {
-				rockchip,pins = <1 RK_PC1 1 &pcfg_pull_up>;
+				rockchip,pins = <1 RK_PC1 1 &pcfg_pull_default>;
 			};
 
 			sdmmc_wp: sdmmc-wp {
-				rockchip,pins = <1 RK_PA7 1 &pcfg_pull_up>;
+				rockchip,pins = <1 RK_PA7 1 &pcfg_pull_default>;
 			};
 
 			sdmmc_pwren: sdmmc-pwren {
-				rockchip,pins = <1 RK_PB6 1 &pcfg_pull_up>;
+				rockchip,pins = <1 RK_PB6 1 &pcfg_pull_default>;
 			};
 
 			sdmmc_bus4: sdmmc-bus4 {
-				rockchip,pins = <1 RK_PC2 1 &pcfg_pull_up>,
-						<1 RK_PC3 1 &pcfg_pull_up>,
-						<1 RK_PC4 1 &pcfg_pull_up>,
-						<1 RK_PC5 1 &pcfg_pull_up>;
+				rockchip,pins = <1 RK_PC2 1 &pcfg_pull_default>,
+						<1 RK_PC3 1 &pcfg_pull_default>,
+						<1 RK_PC4 1 &pcfg_pull_default>,
+						<1 RK_PC5 1 &pcfg_pull_default>;
 			};
 		};
 
