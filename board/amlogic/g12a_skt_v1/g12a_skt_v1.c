@@ -495,7 +495,7 @@ int board_init(void)
     //As NOT NEED other board init If USB BOOT MODE
 #ifdef CONFIG_AML_V2_FACTORY_BURN
 	if ((0x1b8ec003 != readl(P_PREG_STICKY_REG2)) && (0x1b8ec004 != readl(P_PREG_STICKY_REG2))) {
-		aml_try_factory_usb_burning(0, gd->bd);
+				aml_try_factory_usb_burning(0, gd->bd);
 	}
 #endif// #ifdef CONFIG_AML_V2_FACTORY_BURN
 #ifdef CONFIG_USB_XHCI_AMLOGIC_V2
@@ -516,34 +516,46 @@ int board_init(void)
 #ifdef CONFIG_BOARD_LATE_INIT
 int board_late_init(void)
 {
-	//int ret;
-
-#if 0
-	return 0;
-	//update env before anyone using it
-	run_command("get_rebootmode; echo reboot_mode=${reboot_mode}; "\
-			"if test ${reboot_mode} = factory_reset; then "\
-			"defenv_reserv aml_dt;setenv upgrade_step 2;save; fi;", 0);
-	run_command("if itest ${upgrade_step} == 1; then "\
-				"defenv_reserv; setenv upgrade_step 2; saveenv; fi;", 0);
-	/*add board late init function here*/
-	ret = run_command("store dtb read $dtb_mem_addr", 1);
-	if (ret) {
-		printf("%s(): [store dtb read $dtb_mem_addr] fail\n", __func__);
-		#ifdef CONFIG_DTB_MEM_ADDR
-		char cmd[64];
-		printf("load dtb to %x\n", CONFIG_DTB_MEM_ADDR);
-		sprintf(cmd, "store dtb read %x", CONFIG_DTB_MEM_ADDR);
-		ret = run_command(cmd, 1);
-		if (ret) {
-			printf("%s(): %s fail\n", __func__, cmd);
-		}
-		#endif
-	}
-
-	/* load unifykey */
-	run_command("keyunify init 0x1234", 0);
+		//update env before anyone using it
+		run_command("get_rebootmode; echo reboot_mode=${reboot_mode}; "\
+						"if test ${reboot_mode} = factory_reset; then "\
+						"defenv_reserv aml_dt;setenv upgrade_step 2;save; fi;", 0);
+		run_command("if itest ${upgrade_step} == 1; then "\
+						"defenv_reserv; setenv upgrade_step 2; saveenv; fi;", 0);
+		/*add board late init function here*/
+#ifndef DTB_BIND_KERNEL
+		int ret;
+		ret = run_command("store dtb read $dtb_mem_addr", 1);
+        if (ret) {
+				printf("%s(): [store dtb read $dtb_mem_addr] fail\n", __func__);
+#ifdef CONFIG_DTB_MEM_ADDR
+				char cmd[64];
+				printf("load dtb to %x\n", CONFIG_DTB_MEM_ADDR);
+				sprintf(cmd, "store dtb read %x", CONFIG_DTB_MEM_ADDR);
+				ret = run_command(cmd, 1);
+                if (ret) {
+						printf("%s(): %s fail\n", __func__, cmd);
+				}
 #endif
+		}
+#elif defined(CONFIG_DTB_MEM_ADDR)
+		{
+				char cmd[128];
+				int ret;
+                if (!getenv("dtb_mem_addr")) {
+						sprintf(cmd, "setenv dtb_mem_addr 0x%x", CONFIG_DTB_MEM_ADDR);
+						run_command(cmd, 0);
+				}
+				sprintf(cmd, "imgread dtb boot ${dtb_mem_addr}");
+				ret = run_command(cmd, 0);
+                if (ret) {
+						printf("%s(): cmd[%s] fail, ret=%d\n", __func__, cmd, ret);
+				}
+		}
+#endif// #ifndef DTB_BIND_KERNEL
+
+		/* load unifykey */
+		run_command("keyunify init 0x1234", 0);
 #ifdef CONFIG_AML_VPU
 	vpu_probe();
 #endif
@@ -558,12 +570,11 @@ int board_late_init(void)
 #ifdef CONFIG_AML_LCD
 	lcd_probe();
 #endif
-	return 0;
 
 #ifdef CONFIG_AML_V2_FACTORY_BURN
 	if (0x1b8ec003 == readl(P_PREG_STICKY_REG2))
 		aml_try_factory_usb_burning(1, gd->bd);
-	/*aml_try_factory_sdcard_burning(0, gd->bd);*/
+		aml_try_factory_sdcard_burning(0, gd->bd);
 #endif// #ifdef CONFIG_AML_V2_FACTORY_BURN
 
 	return 0;

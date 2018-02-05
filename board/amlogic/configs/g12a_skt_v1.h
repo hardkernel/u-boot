@@ -233,16 +233,14 @@
 		"fi;\0" \
 
 
-#define CONFIG_PREBOOT  ""
-/*
-            \
+#define CONFIG_PREBOOT  \
             "run bcb_cmd; "\
             "run factory_reset_poweroff_protect;"\
             "run upgrade_check;"\
             "run init_display;"\
             "run storeargs;"\
             "run switch_bootmode;"
-*/
+
 #define CONFIG_BOOTCOMMAND "run storeboot"
 
 //#define CONFIG_ENV_IS_NOWHERE  1
@@ -405,9 +403,9 @@
 #define CONFIG_AML_HDMITX20 1
 //#define CONFIG_AML_CANVAS 1
 #define CONFIG_AML_VOUT 1
-//#define CONFIG_AML_OSD 1
-//#define CONFIG_OSD_SCALE_ENABLE 1
-//#define CONFIG_CMD_BMP 1
+#define CONFIG_AML_OSD 1
+#define CONFIG_OSD_SCALE_ENABLE 1
+#define CONFIG_CMD_BMP 1
 
 #if defined(CONFIG_AML_VOUT)
 #define CONFIG_AML_CVBS 1
@@ -513,7 +511,7 @@
 #define CONFIG_NEED_BL32	1
 #define CONFIG_CMD_RSVMEM	1
 #define CONFIG_FIP_IMG_SUPPORT	1
-#define CONFIG_BOOTDELAY	-1
+#define CONFIG_BOOTDELAY	1 //delay 1s
 #define CONFIG_SYS_LONGHELP 1
 #define CONFIG_CMD_MISC     1
 #define CONFIG_CMD_ITEST    1
