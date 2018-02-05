@@ -549,7 +549,11 @@
   #undef CONFIG_AML_CUSTOMER_ID
   #define CONFIG_AML_CUSTOMER_ID  CONFIG_CUSTOMER_ID
 #endif
+
+/* Choose One of Ethernet Type */
+#undef CONFIG_ETHERNET_NONE
 #define ETHERNET_INTERNAL_PHY
+#undef ETHERNET_EXTERNAL_PHY
 
 #endif
 

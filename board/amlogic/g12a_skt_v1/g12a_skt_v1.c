@@ -100,26 +100,58 @@ void internalPhyConfig(struct phy_device *phydev)
 	phy_write(phydev, MDIO_DEVAD_NONE, 0x14, 0x5C1C);
 }
 
+static int dwmac_meson_cfg_pll(void)
+{
+	writel(0x19C0040A, P_ETH_PLL_CTL0);
+	writel(0x927E0000, P_ETH_PLL_CTL1);
+	writel(0x705B49e5, P_ETH_PLL_CTL2);
+	writel(0x00000000, P_ETH_PLL_CTL3);
+	udelay(200);
+	writel(0x19C0040A, P_ETH_PLL_CTL0);
+	return 0;
+}
+
+static int dwmac_meson_cfg_analog(void)
+{
+	/*Analog*/
+	writel(0x20200000, P_ETH_PLL_CTL5);
+	writel(0x0000c002, P_ETH_PLL_CTL6);
+	writel(0x00000023, P_ETH_PLL_CTL7);
+
+	return 0;
+}
+
+static int dwmac_meson_cfg_ctrl(void)
+{
+	/*config phyid should between  a 0~0xffffffff*/
+	/*please don't use 44000181, this has been used by internal phy*/
+	writel(0x33000180, P_ETH_PHY_CNTL0);
+
+	/*use_phy_smi | use_phy_ip | co_clkin from eth_phy_top*/
+	writel(0x260, P_ETH_PHY_CNTL2);
+
+	writel(0x74043, P_ETH_PHY_CNTL1);
+	writel(0x34043, P_ETH_PHY_CNTL1);
+	writel(0x74043, P_ETH_PHY_CNTL1);
+	return 0;
+}
 
 static void setup_net_chip(void)
 {
 	eth_aml_reg0_t eth_reg0;
 
-	writel(0x11111111, P_PERIPHS_PIN_MUX_6);
-	writel(0x111111, P_PERIPHS_PIN_MUX_7);
-
 	eth_reg0.d32 = 0;
-	eth_reg0.b.phy_intf_sel = 1;
+	eth_reg0.b.phy_intf_sel = 4;
 	eth_reg0.b.rx_clk_rmii_invert = 0;
 	eth_reg0.b.rgmii_tx_clk_src = 0;
-	eth_reg0.b.rgmii_tx_clk_phase = 1;
+	eth_reg0.b.rgmii_tx_clk_phase = 0;
 	eth_reg0.b.rgmii_tx_clk_ratio = 4;
 	eth_reg0.b.phy_ref_clk_enable = 1;
-	eth_reg0.b.clk_rmii_i_invert = 0;
+	eth_reg0.b.clk_rmii_i_invert = 1;
 	eth_reg0.b.clk_en = 1;
-	eth_reg0.b.adj_enable = 0;
+	eth_reg0.b.adj_enable = 1;
 	eth_reg0.b.adj_setup = 0;
-	eth_reg0.b.adj_delay = 0;
+	eth_reg0.b.adj_delay = 9;
 	eth_reg0.b.adj_skew = 0;
 	eth_reg0.b.cali_start = 0;
 	eth_reg0.b.cali_rise = 0;
@@ -128,7 +160,18 @@ static void setup_net_chip(void)
 	eth_reg0.b.eth_urgent = 0;
 	setbits_le32(P_PREG_ETH_REG0, eth_reg0.d32);// rmii mode
 
-	setbits_le32(HHI_GCLK_MPEG1, 0x1 << 3);
+	dwmac_meson_cfg_pll();
+	dwmac_meson_cfg_analog();
+	dwmac_meson_cfg_ctrl();
+
+	/* eth core clock */
+	setbits_le32(HHI_GCLK_MPEG1, (0x1 << 3));
+	/* eth phy clock */
+	setbits_le32(HHI_GCLK_MPEG0, (0x1 << 4));
+
+	/* eth phy pll, clk50m */
+	setbits_le32(HHI_FIX_PLL_CNTL3, (0x1 << 5));
+
 	/* power on memory */
 	clrbits_le32(HHI_MEM_PD_REG0, (1 << 3) | (1<<2));
 }
@@ -138,6 +181,9 @@ extern int designware_initialize(ulong base_addr, u32 interface);
 
 int board_eth_init(bd_t *bis)
 {
+#ifdef CONFIG_ETHERNET_NONE
+	return 0;
+#endif
 	setup_net_chip();
 	udelay(1000);
 	designware_initialize(ETH_BASE, PHY_INTERFACE_MODE_RMII);
