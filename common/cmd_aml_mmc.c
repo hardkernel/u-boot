@@ -2515,6 +2515,145 @@ static int do_amlmmc_send_wp_type(cmd_tbl_t *cmdtp,
     return ret;
 }
 
+static int set_driver_strength(struct mmc *mmc, int strength)
+{
+    int ret = 0;
+    u8 ext_csd[512] = {0};
+    u8 strength_type = 0;
+    u8 driver_strength;
+    u8 hs_timing = 0;
+    ret = mmc_get_ext_csd(mmc, ext_csd);
+    if (ret) {
+        printf("get ext_csd failed\n");
+        return ret;
+    }
+    strength_type = 1 << strength;
+    driver_strength = ext_csd[EXT_CSD_DRIVER_STRENGTH];
+    if (0 == (strength_type & driver_strength)) {
+        printf("Failed: This device didn't support strength type %d\n", strength);
+        return 1;
+    }
+
+    hs_timing = ext_csd[EXT_CSD_HS_TIMING];
+    if ((hs_timing >> 4) > 0) {
+        printf("Failed: The driver strength has been set already, \
+              please reset the device\n");
+        return 1;
+    }
+
+    hs_timing = hs_timing | (strength << 4);
+
+    ret = mmc_set_ext_csd(mmc, EXT_CSD_HS_TIMING, hs_timing);
+    if (ret) {
+        printf("set ext_csd hs_timing field failed\n");
+        return ret;
+    }
+    ret = mmc_get_ext_csd(mmc, ext_csd);
+    if (ret) {
+        printf("get ext_csd failed\n");
+        return ret;
+    }
+    printf("The ext_csd[HS_TIMING] has been set to 0x%x\n",
+          ext_csd[EXT_CSD_HS_TIMING]);
+    return ret;
+}
+
+static int get_driver_strength(struct mmc *mmc)
+{
+    int ret = 0;
+    u8 ext_csd[512] = {0};
+    u8 support_ds_type = 0;
+    u8 cur_driver_strength;
+    u8 hs_timing = 0;
+    ret = mmc_get_ext_csd(mmc, ext_csd);
+    if (ret) {
+        printf("get ext_csd failed\n");
+        return ret;
+    }
+
+    support_ds_type = ext_csd[EXT_CSD_DRIVER_STRENGTH];
+
+    hs_timing = ext_csd[EXT_CSD_HS_TIMING];
+    cur_driver_strength = hs_timing >> 4;
+
+    printf("current strength type is: ");
+    int strength_type = 0;
+    while (support_ds_type) {
+        if (support_ds_type & 1) {
+            if (cur_driver_strength == strength_type)
+                printf("[%d] ", strength_type);
+            else
+                printf("%d ", strength_type);
+        }
+        strength_type++;
+        support_ds_type = support_ds_type >> 1;
+    }
+    printf("\n");
+    return ret;
+}
+
+static int amlmmc_set_driver_strength(int argc, char *const argv[])
+{
+    int ret = CMD_RET_USAGE;
+    int dev, strength;
+    struct mmc *mmc;
+
+    if (argc != 4)
+        return CMD_RET_USAGE;
+
+    dev = simple_strtoul(argv[2], NULL, 10);
+    strength = simple_strtoul(argv[3], NULL, 10);
+    mmc = find_mmc_device(dev);
+    if (!mmc) {
+        puts("no mmc devices available\n");
+        return 1;
+    }
+    mmc_init(mmc);
+    if (!mmc)
+        return 1;
+
+    ret = set_driver_strength(mmc, strength);
+
+    return ret;
+}
+
+static int amlmmc_get_driver_strength(int argc, char *const argv[])
+{
+    int ret = CMD_RET_USAGE;
+    int dev;
+    struct mmc *mmc;
+
+    if (argc != 3)
+        return CMD_RET_USAGE;
+
+    dev = simple_strtoul(argv[2], NULL, 10);
+    mmc = find_mmc_device(dev);
+    if (!mmc) {
+        puts("no mmc devices available\n");
+        return 1;
+    }
+    mmc_init(mmc);
+    if (!mmc)
+        return 1;
+
+    ret = get_driver_strength(mmc);
+
+    return ret;
+}
+
+static int do_amlmmc_driver_strength(cmd_tbl_t *cmdtp,
+        int flag, int argc, char *const argv[])
+{
+    int ret = CMD_RET_USAGE;
+
+    if (argc == 3)
+        ret = amlmmc_get_driver_strength(argc,argv);
+    else if (argc == 4)
+        ret = amlmmc_set_driver_strength(argc,argv);
+
+    return ret;
+}
+
 static cmd_tbl_t cmd_amlmmc[] = {
     U_BOOT_CMD_MKENT(read,          6, 0, do_amlmmc_read,          "", ""),
     U_BOOT_CMD_MKENT(write,         6, 0, do_amlmmc_write,         "", ""),
@@ -2533,6 +2672,7 @@ static cmd_tbl_t cmd_amlmmc[] = {
     U_BOOT_CMD_MKENT(send_wp_status, 4, 0, do_amlmmc_send_wp_status, "", ""),
     U_BOOT_CMD_MKENT(send_wp_type,   4, 0, do_amlmmc_send_wp_type, "", ""),
     U_BOOT_CMD_MKENT(clear_wp,      4, 0, do_amlmmc_clear_wp,      "", ""),
+    U_BOOT_CMD_MKENT(ds,            4, 0, do_amlmmc_driver_strength, "", ""),
 #ifdef CONFIG_SECURITYKEY
     U_BOOT_CMD_MKENT(key,           2, 0, do_amlmmc_key,           "", ""),
 #endif
@@ -2580,6 +2720,7 @@ U_BOOT_CMD(
     "amlmmc send_wp_type <addr_base16> <cnt_base10> send protect type on specified address\n"
     "amlmmc clear_wp <partition_name> clear write protect of partition\n"
     "amlmmc clear_wp <addr_base16> <cnt_base10> clear write protect on specified addresst\n"
+    "amlmmc ds <dev_num> <val> set driver strength\n"
 #ifdef CONFIG_SECURITYKEY
     "amlmmc key - disprotect key partition\n"
 #endif
