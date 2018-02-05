@@ -155,7 +155,7 @@ static int rockchip_nand_probe(struct udevice *udev)
 	int ret;
 	struct rknand_dev *ndev = dev_get_priv(udev);
 
-	ndev->ioaddr = (void *)devfdt_get_addr(udev);
+	ndev->ioaddr = dev_read_addr_ptr(udev);
 	ret = rk_ftl_init(ndev->ioaddr);
 	if (!ret) {
 		ndev->density = ftl_get_density(0);
