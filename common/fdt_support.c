@@ -315,6 +315,8 @@ int fdt_chosen(void *fdt)
 		}
 	}
 
+	debug("bootargs = %s\n", env_get("bootargs"));
+
 	return fdt_fixup_stdout(fdt, nodeoffset);
 }
 
