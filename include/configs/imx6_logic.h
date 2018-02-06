@@ -159,9 +159,6 @@
 					"1m(env),16m(kernel),1m(dtb),-(fs)"
 
 /* DMA stuff, needed for GPMI/MXS NAND support */
-#define CONFIG_APBH_DMA
-#define CONFIG_APBH_DMA_BURST
-#define CONFIG_APBH_DMA_BURST8
 
 /* EEPROM  contains serial no, MAC addr and other Logic PD info */
 #define CONFIG_I2C_EEPROM
