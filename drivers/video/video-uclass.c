@@ -72,7 +72,9 @@ static ulong alloc_fb(struct udevice *dev, ulong *addrp)
 
 int video_reserve(ulong *addrp)
 {
+#ifndef CONFIG_DRM_ROCKCHIP
 	struct udevice *dev;
+#endif
 	ulong size;
 
 	gd->video_top = *addrp;
