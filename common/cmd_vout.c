@@ -88,7 +88,6 @@ static int do_vout_output(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv
 	memset(mode, 0, sizeof(mode));
 	sprintf(mode, "hdmitx output %s", argv[1]);
 	run_command(mode, 0);
-	return CMD_RET_SUCCESS;
 #endif
 
 #ifdef CONFIG_AML_LCD

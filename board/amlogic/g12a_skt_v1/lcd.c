@@ -33,27 +33,39 @@ static unsigned char mipi_init_off_table[] = {//table size < 50
 };
 
 static char lcd_cpu_gpio[LCD_CPU_GPIO_NUM_MAX][LCD_CPU_GPIO_NAME_MAX] = {
-	"GPIOZ_8", /* panel power */
 	"GPIOZ_9", /* panel rst */
+	"GPIOZ_8", /* panel power */
 	"invalid", /* ending flag */
 };
 
+static struct lcd_power_step_s lcd_power_on_step_B080XAN01[] = {
+	{LCD_POWER_TYPE_CPU,   1,0,100,}, /* lcd power */
+	{LCD_POWER_TYPE_CPU,   0,0,10,}, /* lcd_reset */
+	{LCD_POWER_TYPE_CPU,   0,1,20,}, /* lcd_reset */
+	{LCD_POWER_TYPE_SIGNAL,0,0,0,},  /* signal */
+	{LCD_POWER_TYPE_MAX,   0,0,0,},  /* ending flag */
+};
+static struct lcd_power_step_s lcd_power_off_step_B080XAN01[] = {
+	{LCD_POWER_TYPE_SIGNAL,0,0,0,},  /* signal */
+	{LCD_POWER_TYPE_CPU,   0,0,10,}, /* lcd_reset */
+	{LCD_POWER_TYPE_CPU,   1,1,100,}, /* power off */
+	{LCD_POWER_TYPE_MAX,   0,0,0,},   /* ending flag */
+};
+
 static struct lcd_power_step_s lcd_power_on_step[] = {
-	{LCD_POWER_TYPE_CPU,   0,0,200,}, /* lcd power */
+	{LCD_POWER_TYPE_CPU,   1,0,200,}, /* lcd power */
 #if 0
-	{LCD_POWER_TYPE_CPU,   1,1,10,}, /* lcd_reset */
-	{LCD_POWER_TYPE_CPU,   1,0,20,}, /* lcd_reset */
-	{LCD_POWER_TYPE_CPU,   1,1,20,}, /* lcd_reset */
+	{LCD_POWER_TYPE_CPU,   0,1,10,}, /* lcd_reset */
+	{LCD_POWER_TYPE_CPU,   0,0,20,}, /* lcd_reset */
+	{LCD_POWER_TYPE_CPU,   0,1,20,}, /* lcd_reset */
 #endif
 	{LCD_POWER_TYPE_SIGNAL,0,0,0,},  /* signal */
 	{LCD_POWER_TYPE_MAX,   0,0,0,},  /* ending flag */
 };
 static struct lcd_power_step_s lcd_power_off_step[] = {
 	{LCD_POWER_TYPE_SIGNAL,0,0,0,},  /* signal */
-#if 0
-	{LCD_POWER_TYPE_CPU,   1,0,10,}, /* lcd_reset */
-#endif
-	{LCD_POWER_TYPE_CPU,   0,1,100,}, /* power off */
+	{LCD_POWER_TYPE_CPU,   0,0,10,}, /* lcd_reset */
+	{LCD_POWER_TYPE_CPU,   1,1,100,}, /* power off */
 	{LCD_POWER_TYPE_MAX,   0,0,0,},   /* ending flag */
 };
 
@@ -73,7 +85,7 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	/* mipi_attr */
 	4,550,0,1,0,2,1,0,Rsv_val,Rsv_val,
 	/* power step */
-	lcd_power_on_step, lcd_power_off_step,
+	lcd_power_on_step_B080XAN01, lcd_power_off_step_B080XAN01,
 	/* backlight */
 	100,255,10,128,128,
 	BL_CTRL_PWM,0,1,0,200,200,
@@ -119,6 +131,17 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	10,10,Rsv_val},
 
 	{.panel_type = "invalid"},
+};
+
+static struct lcd_pinmux_ctrl_s lcd_pinmux_ctrl[LCD_PINMX_MAX] = {
+	{
+		.name = "lcd_pin",
+		.pinmux_set = {{LCD_PINMUX_END, 0x0}},
+		.pinmux_clr = {{LCD_PINMUX_END, 0x0}},
+	},
+	{
+		.name = "invalid",
+	},
 };
 
 static struct lcd_pinmux_ctrl_s bl_pinmux_ctrl[BL_PINMUX_MAX] = {
@@ -230,6 +253,9 @@ struct lcd_config_s lcd_config_dft = {
 		.mipi_config= &lcd_mipi_config,
 	},
 	.lcd_power = &lcd_power_ctrl,
+
+	.pinctrl_ver = 2,
+	.lcd_pinmux = lcd_pinmux_ctrl,
 	.pinmux_set = {{LCD_PINMUX_END, 0x0}},
 	.pinmux_clr = {{LCD_PINMUX_END, 0x0}},
 };
@@ -285,9 +311,9 @@ struct bl_config_s bl_config_dft = {
 	.bl_pwm_combo1 = NULL,
 	.pwm_on_delay = 10,
 	.pwm_off_delay = 10,
+
 	.pinctrl_ver = 2,
 	.bl_pinmux = bl_pinmux_ctrl,
-
 	.pinmux_set = {{11, 0x00400000}, {LCD_PINMUX_END, 0x0}},
 	.pinmux_clr = {{11, 0x00f00000}, {LCD_PINMUX_END, 0x0}},
 };

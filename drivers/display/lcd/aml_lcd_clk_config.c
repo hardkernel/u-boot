@@ -391,6 +391,7 @@ static void lcd_clk_config_chip_init(void)
 		cConf->xd_out_fmax = ENCL_CLK_IN_MAX_TXHD;
 		break;
 	case LCD_CHIP_G12A:
+		cConf->od_fb = PLL_FRAC_OD_FB_G12A;
 		cConf->ss_level_max = SS_LEVEL_MAX_G12A;
 		cConf->pll_m_max = PLL_M_MAX_G12A;
 		cConf->pll_m_min = PLL_M_MIN_G12A;
@@ -996,28 +997,37 @@ GP0_PLL_CNTL6= 0x50540000;
 GP0_PLL_CNTL = 0x180404e9     ********Enable PLL and Reset(M value is depended on application)*/
 static void lcd_set_pll_g12a(struct lcd_clk_config_s *cConf)
 {
-	unsigned int pll_ctrl, pll_ctrl1;
+	unsigned int pll_ctrl, pll_ctrl1, pll_ctrl3, pll_ctrl4, pll_ctrl6;
 	int ret;
 
 	if (lcd_debug_print_flag == 2)
 		LCDPR("%s\n", __func__);
 
 	pll_ctrl = ((1 << LCD_PLL_EN_G12A) |
-		(1 << LCD_PLL_RST_G12A) |
 		(cConf->pll_n << LCD_PLL_N_G12A) |
 		(cConf->pll_m << LCD_PLL_M_G12A) |
 		(cConf->pll_od1_sel << LCD_PLL_OD_G12A));
-	pll_ctrl1 = 0x00;
-	//pll_ctrl1 |= ((1 << 19) | (cConf->pll_frac << 0));
+	pll_ctrl1 = (cConf->pll_frac << 0);
+	if (cConf->pll_frac) {
+		pll_ctrl |= (1 << 27);
+		pll_ctrl3 = 0x6a295c00;
+		pll_ctrl4 = 0x65771290;
+		pll_ctrl6 = 0x54540000;
+	} else {
+		pll_ctrl3 = 0x08691c00;
+		pll_ctrl4 = 0x33771290;
+		pll_ctrl6 = 0x50540000;
+	}
 
 	lcd_hiu_write(HHI_GP0_PLL_CNTL0, pll_ctrl);
 	lcd_hiu_write(HHI_GP0_PLL_CNTL1, pll_ctrl1);
 	lcd_hiu_write(HHI_GP0_PLL_CNTL2, 0x00);
-	lcd_hiu_write(HHI_GP0_PLL_CNTL3, 0x08691c00);
-	lcd_hiu_write(HHI_GP0_PLL_CNTL4, 0x33771291);
-	lcd_hiu_write(HHI_GP0_PLL_CNTL5, 0x39270000);
-	lcd_hiu_write(HHI_GP0_PLL_CNTL6, 0x50540000);
-	//lcd_hiu_setb(HHI_GP0_PLL_CNTL0, 1, LCD_PLL_RST_G12A, 1);
+	lcd_hiu_write(HHI_GP0_PLL_CNTL3, pll_ctrl3);
+	lcd_hiu_write(HHI_GP0_PLL_CNTL4, pll_ctrl4);
+	lcd_hiu_write(HHI_GP0_PLL_CNTL5, 0x39272000);
+	lcd_hiu_write(HHI_GP0_PLL_CNTL6, pll_ctrl6);
+	lcd_hiu_setb(HHI_GP0_PLL_CNTL0, 1, LCD_PLL_RST_G12A, 1);
+	udelay(100);
 	lcd_hiu_setb(HHI_GP0_PLL_CNTL0, 0, LCD_PLL_RST_G12A, 1);
 
 	ret = lcd_pll_wait_lock(HHI_GP0_PLL_CNTL0, LCD_PLL_LOCK_G12A);

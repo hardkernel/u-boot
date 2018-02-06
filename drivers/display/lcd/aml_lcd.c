@@ -39,7 +39,7 @@ static struct aml_lcd_drv_s aml_lcd_driver;
 
 static void lcd_chip_detect(void)
 {
-#if 0
+#if 1
 	unsigned int cpu_type;
 
 	cpu_type = get_cpu_id().family_id;
@@ -486,6 +486,31 @@ static unsigned int lcd_reg_dump_clk[] = {
 	HHI_VID_CLK_CNTL2,
 };
 
+static unsigned int lcd_reg_dump_clk_axg[] = {
+	HHI_GP0_PLL_CNTL,
+	HHI_GP0_PLL_CNTL1,
+	HHI_GP0_PLL_CNTL2,
+	HHI_GP0_PLL_CNTL3,
+	HHI_GP0_PLL_CNTL4,
+	HHI_GP0_PLL_CNTL5,
+	HHI_VIID_CLK_DIV,
+	HHI_VIID_CLK_CNTL,
+	HHI_VID_CLK_CNTL2,
+};
+
+static unsigned int lcd_reg_dump_clk_g12a[] = {
+	HHI_GP0_PLL_CNTL0,
+	HHI_GP0_PLL_CNTL1,
+	HHI_GP0_PLL_CNTL2,
+	HHI_GP0_PLL_CNTL3,
+	HHI_GP0_PLL_CNTL4,
+	HHI_GP0_PLL_CNTL5,
+	HHI_GP0_PLL_CNTL6,
+	HHI_VIID_CLK_DIV,
+	HHI_VIID_CLK_CNTL,
+	HHI_VID_CLK_CNTL2,
+};
+
 static unsigned int lcd_reg_dump_encl[] = {
 	VPU_VIU_VENC_MUX_CTRL,
 	ENCL_VIDEO_EN,
@@ -729,10 +754,28 @@ static void lcd_reg_print(void)
 
 	pconf = lcd_drv->lcd_config;
 	printf("clk registers:\n");
-	for (i = 0; i < ARRAY_SIZE(lcd_reg_dump_clk); i++) {
-		printf("hiu     [0x%04x] = 0x%08x\n",
-			lcd_reg_dump_clk[i],
-			lcd_hiu_read(lcd_reg_dump_clk[i]));
+	switch (aml_lcd_driver.chip_type) {
+	case LCD_CHIP_G12A:
+		for (i = 0; i < ARRAY_SIZE(lcd_reg_dump_clk_g12a); i++) {
+			printf("hiu     [0x%08x] = 0x%08x\n",
+				lcd_reg_dump_clk_g12a[i],
+				lcd_hiu_read(lcd_reg_dump_clk_g12a[i]));
+		}
+		break;
+	case LCD_CHIP_AXG:
+		for (i = 0; i < ARRAY_SIZE(lcd_reg_dump_clk_axg); i++) {
+			printf("hiu     [0x%08x] = 0x%08x\n",
+				lcd_reg_dump_clk_axg[i],
+				lcd_hiu_read(lcd_reg_dump_clk_axg[i]));
+		}
+		break;
+	default:
+		for (i = 0; i < ARRAY_SIZE(lcd_reg_dump_clk); i++) {
+			printf("hiu     [0x%08x] = 0x%08x\n",
+				lcd_reg_dump_clk[i],
+				lcd_hiu_read(lcd_reg_dump_clk[i]));
+		}
+		break;
 	}
 
 	printf("\nencl registers:\n");

@@ -367,6 +367,7 @@ enum div_sel_e {
 
 /* ******** frequency limit (unit: kHz) ******** */
 /* pll */
+#define PLL_FRAC_OD_FB_G12A          0
 #define SS_LEVEL_MAX_G12A            5
 #define PLL_M_MIN_G12A               2
 #define PLL_M_MAX_G12A               511
