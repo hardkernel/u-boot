@@ -246,7 +246,7 @@ static ulong px30_mmc_set_clk(struct px30_cru *cru,
 	int src_clk_div;
 	u32 con_id;
 
-	printf("%s %d %d\n", __func__, clk_id, set_rate);
+	debug("%s %d %d\n", __func__, clk_id, set_rate);
 	switch (clk_id) {
 	case HCLK_SDMMC:
 	case SCLK_SDMMC:
@@ -350,7 +350,7 @@ static ulong px30_clk_set_rate(struct clk *clk, ulong rate)
 	struct px30_clk_priv *priv = dev_get_priv(clk->dev);
 	ulong ret = 0;
 
-	printf("%s %d %d\n", __func__, clk->id, rate);
+	debug("%s %d %d\n", __func__, clk->id, rate);
 	switch (clk->id) {
 	case 0 ... 15:
 		return 0;
@@ -376,7 +376,7 @@ static ulong px30_clk_set_rate(struct clk *clk, ulong rate)
 		return -ENOENT;
 	}
 
-	printf("%s %d\n", __func__, ret);
+	debug("%s %d\n", __func__, ret);
 	return ret;
 }
 
