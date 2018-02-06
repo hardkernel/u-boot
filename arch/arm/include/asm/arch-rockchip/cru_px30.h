@@ -12,7 +12,7 @@
 #define OSC_HZ		(24 * MHz)
 
 #define APLL_HZ		(816 * MHz)
-#define GPLL_HZ		(1200 * MHz)
+#define GPLL_HZ		(600 * MHz)
 #define CPLL_HZ		(594 * MHz)
 
 #define CORE_PERI_HZ	204000000

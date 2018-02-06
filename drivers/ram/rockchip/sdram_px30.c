@@ -22,7 +22,7 @@ static int px30_dmc_probe(struct udevice *dev)
 {
 	struct dram_info *priv = dev_get_priv(dev);
 
-	priv->pmugrf = syscon_get_first_range(ROCKCHIP_SYSCON_GRF);
+	priv->pmugrf = syscon_get_first_range(ROCKCHIP_SYSCON_PMUGRF);
 	debug("%s: pmugrf=%p\n", __func__, priv->pmugrf);
 	priv->info.base = CONFIG_SYS_SDRAM_BASE;
 	priv->info.size = rockchip_sdram_size(
