@@ -48,27 +48,23 @@ config I8042_KEYB
 config RK8XX_PWRKEY
 	bool "Enable RK805/816 pwrkey support"
 	depends on DM_KEY && PMIC_RK8XX
-	default y
 	help
 	  This adds a driver for the RK805/816 pwrkey support.
 
 config ADC_KEY
 	bool "Enable adc keys support"
 	depends on DM_KEY
-	default y
 	help
 	  This adds a driver for the adc keys support.
 
 config GPIO_KEY
 	bool "Enable gpio keys support"
 	depends on DM_KEY
-	default y
 	help
 	  This adds a driver for the gpio keys support.
 
 config RK_KEY
 	bool "Enable rk keys support"
 	depends on DM_KEY
-	default y
 	help
 	  This adds a driver for the rk keys support.
