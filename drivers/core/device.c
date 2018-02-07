@@ -48,6 +48,15 @@ static int device_bind_common(struct udevice *parent, const struct driver *drv,
 		return ret;
 	}
 
+	list_for_each_entry(dev, &uc->dev_head, uclass_node) {
+		if (!strcmp(name, dev->name)){
+			debug("%s do not bind dev already in list %s\n",
+			        __func__, name);
+			dev->node = node;
+			return 0;
+		}
+	}
+
 	dev = calloc(1, sizeof(struct udevice));
 	if (!dev)
 		return -ENOMEM;
