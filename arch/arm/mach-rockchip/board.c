@@ -22,6 +22,9 @@
 #ifdef CONFIG_DRM_ROCKCHIP
 #include <video_rockchip.h>
 #endif
+#include <mmc.h>
+#include <of_live.h>
+#include <dm/root.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -97,10 +100,66 @@ int board_late_init(void)
 	return rk_board_late_init();
 }
 
+#ifdef CONFIG_USING_KERNEL_DTB
+#include <asm/arch/resource_img.h>
+#define DTB_FILE                        "rk-kernel.dtb"
+int init_kernel_dtb(void)
+{
+	int ret = 0;
+	struct mmc *mmc;
+	struct udevice *dev;
+	ulong fdt_addr = 0;
+
+	ret = mmc_initialize(gd->bd);
+	if (ret)
+		goto scan_nand;
+	mmc = find_mmc_device(0);
+	if (!mmc) {
+		printf("no mmc device at slot 0\n");
+		goto scan_nand;
+	}
+	ret = mmc_init(mmc);
+	if (!ret)
+		goto init_dtb;
+	printf("%s mmc init fail %d\n", __func__, ret);
+scan_nand:
+	ret = uclass_get_device(UCLASS_RKNAND, 0, &dev);
+	if (ret) {
+		printf("%s: Cannot find rknand device\n", __func__);
+		return -1;
+	}
+
+init_dtb:
+	fdt_addr = env_get_ulong("fdt_addr_r", 16, 0);
+	if (!fdt_addr) {
+		printf("No Found FDT Load Address.\n");
+		return -1;
+	}
+
+	ret = rockchip_read_resource_file((void *)fdt_addr, DTB_FILE, 0, 0);
+	if (ret < 0) {
+		printf("%s dtb in resource read fail\n", __func__);
+		return 0;
+	}
+
+	of_live_build((void *)fdt_addr, (struct device_node **)&gd->of_root);
+
+	dm_scan_fdt((void *)fdt_addr, false);
+
+	gd->fdt_blob = (void *)fdt_addr;
+
+	return 0;
+}
+#endif
+
+
 int board_init(void)
 {
 	int ret;
 
+#ifdef CONFIG_USING_KERNEL_DTB
+	init_kernel_dtb();
+#endif
 #ifdef CONFIG_DM_REGULATOR
 	ret = regulators_enable_boot_on(false);
 	if (ret)

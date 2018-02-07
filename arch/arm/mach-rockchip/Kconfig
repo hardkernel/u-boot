@@ -361,6 +361,15 @@ config ROCKCHIP_VENDOR_PARTITION
 	  This enable support to read/write vendor configuration data from/to
 	  this partition.
 
+config USING_KERNEL_DTB
+	bool "Using dtb from Kernel/resource for U-Boot"
+	depends on RKIMG_BOOTLOADER && OF_LIVE
+	default y
+	help
+	  This enable support to read dtb from resource and use it for U-Boot,
+	  the uart and emmc will still using U-Boot dtb, but other devices like
+	  regulator/pmic, display, usb will use dts node from kernel.
+
 config ROCKCHIP_CRC
 	bool "Rockchip CRC verify images"
 	help
