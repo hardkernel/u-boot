@@ -7,6 +7,7 @@
 #include <common.h>
 #include <dm.h>
 #include <dm/pinctrl.h>
+#include <dm/ofnode.h>
 #include <regmap.h>
 #include <syscon.h>
 
@@ -1823,21 +1824,29 @@ static int rockchip_pinctrl_set_state(struct udevice *dev,
 {
 	struct rockchip_pinctrl_priv *priv = dev_get_priv(dev);
 	struct rockchip_pin_ctrl *ctrl = priv->ctrl;
-	const void *blob = gd->fdt_blob;
-	int node = dev_of_offset(config);
 	u32 cells[MAX_ROCKCHIP_PINS_ENTRIES * 4];
 	u32 bank, pin, mux, conf, arg, default_val;
 	int ret, count, i;
 	const char *prop_name;
-	int pcfg_node, property_offset, prop_len, param;
 	const void *value;
-
-	count = fdtdec_get_int_array_count(blob, node, "rockchip,pins",
-					   cells, ARRAY_SIZE(cells));
+	int prop_len, param;
+	const u32 *data;
+	ofnode node;
+#ifdef CONFIG_OF_LIVE
+	const struct device_node *np;
+	struct property *pp;
+#else
+	int property_offset, pcfg_node;
+	const void *blob = gd->fdt_blob;
+#endif
+	data = dev_read_prop(config, "rockchip,pins", &count);
 	if (count < 0) {
 		debug("%s: bad array %d\n", __func__, count);
 		return -EINVAL;
 	}
+	count /= sizeof(u32);
+	for (i = 0; i < count; i++)
+		cells[i] = fdt32_to_cpu(data[i]);
 
 	if (count > MAX_ROCKCHIP_PINS_ENTRIES * 4) {
 		debug("%s: unsupported pins array count %d\n",
@@ -1859,16 +1868,23 @@ static int rockchip_pinctrl_set_state(struct udevice *dev,
 		if (ret)
 			return ret;
 
-		pcfg_node = fdt_node_offset_by_phandle(blob, conf);
-		if (pcfg_node < 0)
+		node = ofnode_get_by_phandle(conf);
+		if (!ofnode_valid(node))
 			return -ENODEV;
-
+#ifdef CONFIG_OF_LIVE
+		np = ofnode_to_np(node);
+		for (pp = np->properties; pp; pp = pp->next) {
+			prop_name = pp->name;
+			prop_len = pp->length;
+			value = pp->value;
+#else
+		pcfg_node = ofnode_to_offset(node);
 		fdt_for_each_property_offset(property_offset, blob, pcfg_node) {
 			value = fdt_getprop_by_offset(blob, property_offset,
 						      &prop_name, &prop_len);
 			if (!value)
 				return -ENOENT;
-
+#endif
 			param = rockchip_pinconf_prop_name_to_param(prop_name,
 								    &default_val);
 			if (param < 0)
