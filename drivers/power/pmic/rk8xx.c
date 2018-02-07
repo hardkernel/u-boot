@@ -27,6 +27,7 @@ static const struct pmic_child_info power_key_info[] = {
 
 static const struct pmic_child_info fuel_gauge_info[] = {
 	{ .prefix = "battery", .driver = "rk818_fg"},
+	{ .prefix = "battery", .driver = "rk817_fg"},
 	{ .prefix = "battery", .driver = "rk816_fg"},
 	{ },
 };
@@ -66,16 +67,22 @@ static int rk8xx_read(struct udevice *dev, uint reg, uint8_t *buff, int len)
 static int rk8xx_shutdown(struct udevice *dev)
 {
 	struct rk8xx_priv *priv = dev_get_priv(dev);
-	u8 val, dev_off;
+	u8 val, dev_off, devctrl_reg;
 	int ret = 0;
 
 	switch (priv->variant) {
 	case RK808_ID:
+		devctrl_reg = REG_DEVCTRL;
 		dev_off = BIT(3);
 		break;
 	case RK805_ID:
 	case RK816_ID:
 	case RK818_ID:
+		devctrl_reg = REG_DEVCTRL;
+		dev_off = BIT(0);
+		break;
+	case RK817_ID:
+		devctrl_reg = RK817_REG_SYS_CFG3;
 		dev_off = BIT(0);
 		break;
 	default:
@@ -83,18 +90,18 @@ static int rk8xx_shutdown(struct udevice *dev)
 		return -EINVAL;
 	}
 
-	ret = dm_i2c_read(dev, REG_DEVCTRL, &val, 1);
+	ret = dm_i2c_read(dev, devctrl_reg, &val, 1);
 	if (ret) {
 		printf("read error from device: %p register: %#x!",
-		       dev, REG_DEVCTRL);
+		       dev, devctrl_reg);
 		return ret;
 	}
 
 	val |= dev_off;
-	ret = dm_i2c_write(dev, REG_DEVCTRL, &val, 1);
+	ret = dm_i2c_write(dev, devctrl_reg, &val, 1);
 	if (ret) {
 		printf("write error to device: %p register: %#x!",
-		       dev, REG_DEVCTRL);
+		       dev, devctrl_reg);
 		return ret;
 	}
 
@@ -136,13 +143,23 @@ static int rk8xx_bind(struct udevice *dev)
 static int rk8xx_probe(struct udevice *dev)
 {
 	struct rk8xx_priv *priv = dev_get_priv(dev);
-	uint8_t msb, lsb;
+	uint8_t msb, lsb, id_msb, id_lsb;
 
 	/* read Chip variant */
-	rk8xx_read(dev, ID_MSB, &msb, 1);
-	rk8xx_read(dev, ID_LSB, &lsb, 1);
+	if (device_is_compatible(dev, "rockchip,rk817")) {
+		id_msb = RK817_ID_MSB;
+		id_lsb = RK817_ID_LSB;
+	} else {
+		id_msb = ID_MSB;
+		id_lsb = ID_LSB;
+	}
+
+	rk8xx_read(dev, id_msb, &msb, 1);
+	rk8xx_read(dev, id_lsb, &lsb, 1);
 
 	priv->variant = ((msb << 8) | lsb) & RK8XX_ID_MSK;
+
+	printf("PMIC:  RK%x\n", priv->variant);
 
 	return 0;
 }
@@ -158,6 +175,7 @@ static const struct udevice_id rk8xx_ids[] = {
 	{ .compatible = "rockchip,rk805" },
 	{ .compatible = "rockchip,rk808" },
 	{ .compatible = "rockchip,rk816" },
+	{ .compatible = "rockchip,rk817" },
 	{ .compatible = "rockchip,rk818" },
 	{ }
 };

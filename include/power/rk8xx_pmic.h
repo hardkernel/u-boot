@@ -171,6 +171,10 @@ enum {
 };
 
 enum {
+	RK817_REG_SYS_CFG3 = 0xf4,
+};
+
+enum {
 	RK816_REG_DCDC_EN1 = 0x23,
 	RK816_REG_DCDC_EN2,
 	RK816_REG_DCDC_SLP_EN,
@@ -183,9 +187,12 @@ enum {
 	RK805_ID = 0x8050,
 	RK808_ID = 0x0000,
 	RK816_ID = 0x8160,
+	RK817_ID = 0x8170,
 	RK818_ID = 0x8180,
 };
 
+#define RK817_ID_MSB	0xed
+#define RK817_ID_LSB	0xee
 #define RK8XX_ID_MSK	0xfff0
 
 struct rk8xx_reg_table {

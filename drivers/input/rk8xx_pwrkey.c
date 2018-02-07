@@ -14,6 +14,17 @@
 #include <asm/arch/periph.h>
 #include <dm/pinctrl.h>
 
+#define RK817_GPIO_INT_CFG	0xfe
+#define	RK817_INT_STS_REG0	0xf8
+#define	RK817_INT_MSK_REG0	0xf9
+#define	RK817_INT_STS_REG1	0xfa
+#define	RK817_INT_MSK_REG1	0xfb
+#define	RK817_INT_STS_REG2	0xfc
+#define	RK817_INT_MSK_REG2	0xfd
+#define RK817_PWRON_RISE_INT	(1 << 1)
+#define RK817_PWRON_FALL_INT	(1 << 0)
+#define RK817_INT_POL_MSK	BIT(1)
+
 #define	RK816_INT_STS_REG1	0x49
 #define	RK816_INT_MSK_REG1	0x4a
 #define	RK816_INT_STS_REG2	0x4c
@@ -42,6 +53,26 @@ struct rk8xx_key_priv {
 	u32 init_reg_num;
 	struct reg_data *irq_reg;
 	u32 irq_reg_num;
+};
+
+static struct reg_data rk817_init_reg[] = {
+	/* only enable rise/fall interrupt */
+	{ RK817_INT_MSK_REG0, 0xfc },
+	{ RK817_INT_MSK_REG1, 0xff },
+	{ RK817_INT_MSK_REG2, 0xff },
+	/* clear all interrupt states */
+	{ RK817_INT_STS_REG0, 0xff },
+	{ RK817_INT_STS_REG1, 0xff },
+	{ RK817_INT_STS_REG2, 0xff },
+	/* pmic_int active low */
+	{ RK817_GPIO_INT_CFG, 0x20 },
+};
+
+static struct reg_data rk817_irq_reg[] = {
+	/* clear all interrupt states */
+	{ RK817_INT_STS_REG0, 0xff },
+	{ RK817_INT_STS_REG1, 0xff },
+	{ RK817_INT_STS_REG2, 0xff },
 };
 
 static struct reg_data rk816_init_reg[] = {
@@ -118,6 +149,8 @@ static void pwrkey_irq_handler(int irq, void *data)
 	struct input_key *key = dev_get_platdata(dev);
 	int ret, val, i;
 
+	debug("%s: irq = %d\n", __func__, irq);
+
 	/* read status */
 	val = pmic_reg_read(dev->parent, priv->int_sts_reg);
 	if (val < 0) {
@@ -146,6 +179,9 @@ static void pwrkey_irq_handler(int irq, void *data)
 			printf("%s: i2c write reg 0x%x failed, ret=%d\n",
 			       __func__, priv->irq_reg[i].reg, ret);
 		}
+
+		debug("%s: reg[0x%x] = 0x%x\n", __func__, priv->irq_reg[i].reg,
+		      pmic_reg_read(dev->parent, priv->irq_reg[i].reg));
 	}
 }
 
@@ -210,7 +246,16 @@ static int rk8xx_pwrkey_probe(struct udevice *dev)
 		priv->irq_reg = rk816_irq_reg;
 		priv->irq_reg_num = ARRAY_SIZE(rk816_irq_reg);
 		break;
-
+	case RK817_ID:
+		priv->int_sts_reg = RK817_INT_STS_REG0;
+		priv->int_msk_reg = RK817_INT_MSK_REG0;
+		priv->pwron_rise_int = RK817_PWRON_RISE_INT;
+		priv->pwron_fall_int = RK817_PWRON_FALL_INT;
+		priv->init_reg = rk817_init_reg;
+		priv->init_reg_num = ARRAY_SIZE(rk817_init_reg);
+		priv->irq_reg = rk817_irq_reg;
+		priv->irq_reg_num = ARRAY_SIZE(rk817_irq_reg);
+		break;
 	default:
 		return -EINVAL;
 	}
@@ -225,6 +270,9 @@ static int rk8xx_pwrkey_probe(struct udevice *dev)
 			       __func__, priv->init_reg[i].reg, ret);
 			return ret;
 		}
+
+		debug("%s: reg[%x] = 0x%x\n", __func__, priv->init_reg[i].reg,
+		      pmic_reg_read(dev->parent, priv->init_reg[i].reg));
 	}
 
 	return pwrkey_interrupt_init(dev);
