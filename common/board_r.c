@@ -103,41 +103,6 @@ static int initr_reloc(void)
 
 	return 0;
 }
-#ifdef CONFIG_USING_KERNEL_DTB
-#include <asm/arch/resource_img.h>
-#define DTB_FILE                        "rk-kernel.dtb"
-int get_fdt_from_resource(void)
-{
-	int ret = 0;
-	struct mmc *mmc;
-	ulong fdt_addr = 0;
-
-	mmc_initialize(gd->bd);
-	mmc = find_mmc_device(0);
-	if (!mmc) {
-		printf("no mmc device at slot 0\n");
-		return -1;
-	}
-	ret = mmc_init(mmc);
-	if (ret)
-		printf("%s mmc init fail %d\n", __func__, ret);
-
-	fdt_addr = env_get_ulong("fdt_addr_r", 16, 0);
-	if (!fdt_addr) {
-		printf("No Found FDT Load Address.\n");
-		return -1;
-	}
-
-	ret = rockchip_read_resource_file((void *)fdt_addr, DTB_FILE, 0, 0);
-	if (ret < 0) {
-		printf("%s dtb in resource read fail\n", __func__);
-		return 0;
-	}
-	gd->kernel_fdt = (void *)fdt_addr;
-
-	return 0;
-}
-#endif
 
 #ifdef CONFIG_ARM
 /*
@@ -733,9 +698,6 @@ static init_fnc_t init_sequence_r[] = {
 	initr_noncached,
 #endif
 	bootstage_relocate,
-#ifdef CONFIG_USING_KERNEL_DTB
-	get_fdt_from_resource,
-#endif
 #ifdef CONFIG_OF_LIVE
 	initr_of_live,
 #endif
