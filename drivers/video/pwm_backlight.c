@@ -135,6 +135,9 @@ static int pwm_backlight_ofdata_to_platdata(struct udevice *dev)
 	if (cell && count > index) {
 		priv->default_level = fdt32_to_cpu(cell[index]);
 		priv->max_level = fdt32_to_cpu(cell[count - 1]);
+		/* Rockchip dts may use a invert sequence level array */
+		if(fdt32_to_cpu(cell[0]) > priv->max_level)
+			priv->max_level = fdt32_to_cpu(cell[0]);
 	} else {
 		priv->default_level = index;
 		priv->max_level = 255;
