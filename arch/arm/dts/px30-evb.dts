@@ -116,6 +116,10 @@
 			function = "gpio";
 		};
 
+		pwrkey {
+			status = "okay";
+		};
+
 		regulators {
 			vdd_arm: DCDC_REG1 {
 				regulator-always-on;
