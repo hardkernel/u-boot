@@ -58,13 +58,6 @@ int regulator_set_value(struct udevice *dev, int uV)
 int regulator_set_suspend_value(struct udevice *dev, int uV)
 {
 	const struct dm_regulator_ops *ops = dev_get_driver_ops(dev);
-	struct dm_regulator_uclass_platdata *uc_pdata;
-
-	uc_pdata = dev_get_uclass_platdata(dev);
-	if (uc_pdata->min_uV != -ENODATA && uV < uc_pdata->min_uV)
-		return -EINVAL;
-	if (uc_pdata->max_uV != -ENODATA && uV > uc_pdata->max_uV)
-		return -EINVAL;
 
 	if (!ops || !ops->set_suspend_value)
 		return -ENOSYS;
@@ -377,6 +370,11 @@ static int regulator_pre_probe(struct udevice *dev)
 	    (uc_pdata->max_uA != -ENODATA) &&
 	    (uc_pdata->min_uA == uc_pdata->max_uA))
 		uc_pdata->flags |= REGULATOR_FLAG_AUTOSET_UA;
+
+	debug("dev.name=%s: min_uV=%d, max_uV=%d, boot-on=%d, always-on=%d, "
+	      "off-in-suspend=%d, suspend_volt=%d\n",
+	      dev->name, uc_pdata->min_uV, uc_pdata->max_uV, uc_pdata->boot_on,
+	      uc_pdata->always_on, !uc_pdata->suspend_on, uc_pdata->suspend_uV);
 
 	return 0;
 }
