@@ -147,7 +147,7 @@ err:
 int get_bootdev_type(void)
 {
 	int type = 0;
-	char *boot_media = NULL, *boot_mode = NULL;
+	char *boot_media = NULL;
 	char boot_options[128] = {0};
 	static int appended;
 
