@@ -446,6 +446,34 @@ int uclass_get_device_by_ofnode(enum uclass_id id, ofnode node,
 }
 
 #if CONFIG_IS_ENABLED(OF_CONTROL)
+int uclass_get_device_by_phandle_id(enum uclass_id id, int phandle_id,
+				    struct udevice **devp)
+{
+	struct udevice *dev;
+	struct uclass *uc;
+	int ret;
+
+	*devp = NULL;
+	ret = uclass_get(id, &uc);
+	if (ret)
+		return ret;
+
+	ret = -ENODEV;
+	list_for_each_entry(dev, &uc->dev_head, uclass_node) {
+		uint phandle;
+
+		phandle = dev_read_phandle(dev);
+
+		if (phandle == phandle_id) {
+			*devp = dev;
+			ret = 0;
+			break;
+		}
+	}
+
+	return uclass_get_device_tail(dev, ret, devp);
+}
+
 int uclass_get_device_by_phandle(enum uclass_id id, struct udevice *parent,
 				 const char *name, struct udevice **devp)
 {
