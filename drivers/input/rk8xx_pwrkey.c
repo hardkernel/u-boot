@@ -23,6 +23,7 @@
 #define	RK817_INT_MSK_REG2	0xfd
 #define RK817_PWRON_RISE_INT	(1 << 1)
 #define RK817_PWRON_FALL_INT	(1 << 0)
+#define RK817_PLUG_OUT_INT	(1 << 1)
 #define RK817_INT_POL_MSK	BIT(1)
 
 #define	RK816_INT_STS_REG1	0x49
@@ -33,6 +34,7 @@
 #define	RK816_INT_MSK_REG3	0x4f
 #define RK816_PWRON_RISE_INT	(1 << 6)
 #define RK816_PWRON_FALL_INT	(1 << 5)
+#define RK816_PLUG_OUT_INT	(1 << 1)
 
 #define	RK805_INT_STS_REG	0x4c
 #define	RK805_INT_MSK_REG	0x4d
@@ -45,10 +47,13 @@ struct reg_data {
 };
 
 struct rk8xx_key_priv {
-	u8 int_sts_reg;
-	u8 int_msk_reg;
+	u8 key_int_sts_reg;
+	u8 key_int_msk_reg;
+	u8 plug_int_sts_reg;
+	u8 plug_int_msk_reg;
 	u8 pwron_rise_int;
 	u8 pwron_fall_int;
+	u8 plug_out_int;
 	struct reg_data *init_reg;
 	u32 init_reg_num;
 	struct reg_data *irq_reg;
@@ -56,9 +61,9 @@ struct rk8xx_key_priv {
 };
 
 static struct reg_data rk817_init_reg[] = {
-	/* only enable rise/fall interrupt */
+	/* only enable rise/fall interrupt, plugout */
 	{ RK817_INT_MSK_REG0, 0xfc },
-	{ RK817_INT_MSK_REG1, 0xff },
+	{ RK817_INT_MSK_REG1, 0xfd },
 	{ RK817_INT_MSK_REG2, 0xff },
 	/* clear all interrupt states */
 	{ RK817_INT_STS_REG0, 0xff },
@@ -76,10 +81,10 @@ static struct reg_data rk817_irq_reg[] = {
 };
 
 static struct reg_data rk816_init_reg[] = {
-	/* only enable rise/fall interrupt */
+	/* only enable rise/fall interrupt, plugout */
 	{ RK816_INT_MSK_REG1, 0x9f },
 	{ RK816_INT_MSK_REG2, 0xff },
-	{ RK816_INT_MSK_REG3, 0xff },
+	{ RK816_INT_MSK_REG3, 0xfd },
 	/* clear all interrupt states */
 	{ RK816_INT_STS_REG1, 0xff },
 	{ RK816_INT_STS_REG2, 0xff },
@@ -151,8 +156,24 @@ static void pwrkey_irq_handler(int irq, void *data)
 
 	debug("%s: irq = %d\n", __func__, irq);
 
-	/* read status */
-	val = pmic_reg_read(dev->parent, priv->int_sts_reg);
+	/*
+	 * This plug out interrupt only used to wakeup cpu while U-Boot
+	 * charging and system suspend. Because we need to detect charger
+	 * plug out event and then shutdown system.
+	 */
+	if (priv->plug_int_sts_reg) {
+		val = pmic_reg_read(dev->parent, priv->plug_int_sts_reg);
+		if (val < 0) {
+			printf("%s: i2c read failed, ret=%d\n", __func__, val);
+			return;
+		}
+
+		if (val & priv->plug_out_int)
+			printf("Plug out interrupt\n");
+	}
+
+	/* read key status */
+	val = pmic_reg_read(dev->parent, priv->key_int_sts_reg);
 	if (val < 0) {
 		printf("%s: i2c read failed, ret=%d\n", __func__, val);
 		return;
@@ -226,8 +247,8 @@ static int rk8xx_pwrkey_probe(struct udevice *dev)
 
 	switch (rk8xx->variant) {
 	case RK805_ID:
-		priv->int_sts_reg = RK805_INT_STS_REG;
-		priv->int_msk_reg = RK805_INT_MSK_REG;
+		priv->key_int_sts_reg = RK805_INT_STS_REG;
+		priv->key_int_msk_reg = RK805_INT_MSK_REG;
 		priv->pwron_rise_int = RK805_PWRON_RISE_INT;
 		priv->pwron_fall_int = RK805_PWRON_FALL_INT;
 		priv->init_reg = rk805_init_reg;
@@ -237,20 +258,26 @@ static int rk8xx_pwrkey_probe(struct udevice *dev)
 		break;
 
 	case RK816_ID:
-		priv->int_sts_reg = RK816_INT_STS_REG1;
-		priv->int_msk_reg = RK816_INT_MSK_REG1;
+		priv->key_int_sts_reg = RK816_INT_STS_REG1;
+		priv->key_int_msk_reg = RK816_INT_MSK_REG1;
+		priv->plug_int_sts_reg = RK816_INT_STS_REG3;
+		priv->plug_int_msk_reg = RK816_INT_MSK_REG3;
 		priv->pwron_rise_int = RK816_PWRON_RISE_INT;
 		priv->pwron_fall_int = RK816_PWRON_FALL_INT;
+		priv->plug_out_int = RK816_PLUG_OUT_INT;
 		priv->init_reg = rk816_init_reg;
 		priv->init_reg_num = ARRAY_SIZE(rk816_init_reg);
 		priv->irq_reg = rk816_irq_reg;
 		priv->irq_reg_num = ARRAY_SIZE(rk816_irq_reg);
 		break;
 	case RK817_ID:
-		priv->int_sts_reg = RK817_INT_STS_REG0;
-		priv->int_msk_reg = RK817_INT_MSK_REG0;
+		priv->key_int_sts_reg = RK817_INT_STS_REG0;
+		priv->key_int_msk_reg = RK817_INT_MSK_REG0;
+		priv->plug_int_sts_reg = RK817_INT_STS_REG1;
+		priv->plug_int_msk_reg = RK817_INT_MSK_REG1;
 		priv->pwron_rise_int = RK817_PWRON_RISE_INT;
 		priv->pwron_fall_int = RK817_PWRON_FALL_INT;
+		priv->plug_out_int = RK817_PLUG_OUT_INT;
 		priv->init_reg = rk817_init_reg;
 		priv->init_reg_num = ARRAY_SIZE(rk817_init_reg);
 		priv->irq_reg = rk817_irq_reg;
@@ -260,7 +287,7 @@ static int rk8xx_pwrkey_probe(struct udevice *dev)
 		return -EINVAL;
 	}
 
-	/* mask and clear intertup */
+	/* mask and clear interrupt */
 	for (i = 0; i < priv->init_reg_num; i++) {
 		ret = pmic_reg_write(dev->parent,
 				     priv->init_reg[i].reg,
