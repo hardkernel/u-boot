@@ -685,10 +685,10 @@ static int read_temp1(void)
 	/* u_readl = (5.05*YOUT)/((1<<16)+ 4.05*YOUT) */
 	tmp = (value * 505) * (1 << 16) / (100 * (1 << 16) + 405 * value);
 
-	if (u_efuse|0x8000)
+	if (u_efuse & 0x8000)
 		cur_temp = ((tmp - (u_efuse & (0x7fff))) * 7278 / (1 << 16) - 2747) / 10;
 	else
-		cur_temp = ((tmp+u_efuse) * 7278 / (1 << 16) - 2747) / 10;
+		cur_temp = ((tmp + u_efuse) * 7278 / (1 << 16) - 2747) / 10;
 	printf("newtemp: %ld\n", cur_temp);
 
 	return cur_temp;
