@@ -41,7 +41,7 @@
 #define CONFIG_NR_DRAM_BANKS		2
 #define SDRAM_MAX_SIZE			0xff000000
 #define SDRAM_BANK_SIZE			(2UL << 30)
-
+#define CONFIG_PREBOOT
 
 #ifndef CONFIG_SPL_BUILD
 
