@@ -1,6 +1,7 @@
 #!/bin/sh
 set -e
 BOARD=$1
+SUBCMD=$2
 RKCHIP=${BOARD##*-}
 DSTDIR=rockdev/${RKCHIP}
 RKCHIP=$(echo ${RKCHIP} | tr '[a-z]' '[A-Z]')
@@ -14,11 +15,15 @@ RKBIN_TOOLS=../rkbin/tools
 
 # Declare global toolchain path for CROSS_COMPILE, updated in select_toolchain()
 TOOLCHAIN_GCC=./
+TOOLCHAIN_OBJDUMP=./
 # GCC toolchain
 GCC_ARM32=arm-linux-androideabi-
 GCC_ARM64=aarch64-linux-android-
 TOOLCHAIN_ARM32=../prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9/bin
 TOOLCHAIN_ARM64=../prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin
+# OBJDMP
+OBJ_ARM32=arm-linux-androideabi-objdump
+OBJ_ARM64=aarch64-linux-android-objdump
 
 prepare()
 {
@@ -68,6 +73,7 @@ select_toolchain()
 		if [ -d ${TOOLCHAIN_ARM64} ]; then
 			absolute_path=$(cd `dirname ${TOOLCHAIN_ARM64}`; pwd)
 			TOOLCHAIN_GCC=${absolute_path}/bin/${GCC_ARM64}
+			TOOLCHAIN_OBJDUMP=${absolute_path}/bin/${OBJ_ARM64}
 		else
 			echo "Can't find toolchain: ${TOOLCHAIN_GCC}"
 			exit 1
@@ -76,6 +82,7 @@ select_toolchain()
 		if [ -d ${TOOLCHAIN_ARM32} ]; then
 			absolute_path=$(cd `dirname ${TOOLCHAIN_ARM32}`; pwd)
 			TOOLCHAIN_GCC=${absolute_path}/bin/${GCC_ARM32}
+			TOOLCHAIN_OBJDUMP=${absolute_path}/bin/${OBJ_ARM32}
 		else
 			echo "Can't find toolchain: ${TOOLCHAIN_GCC}"
 			exit 1
@@ -83,6 +90,30 @@ select_toolchain()
 	fi
 
 	echo "toolchain: ${TOOLCHAIN_GCC}"
+}
+
+sub_commands()
+{
+	local elf=${SUBCMD%-*} opt=${SUBCMD#*-}
+
+	# Make clean, distclean and mrproper
+	if [ "$SUBCMD" = 'clean' -o "$SUBCMD" = 'distclean' -o "$SUBCMD" = 'mrproper' ]; then
+		make $SUBCMD O=${DSTDIR}/out
+		exit 0
+	elif [ ${elf} = 'elf' ]; then
+		if [ ! -f ${DSTDIR}/out/u-boot ]; then
+			echo "Can't find elf file: ${DSTDIR}/out/u-boot"
+			exit 1
+		else
+			# default 'elf' without option, use '-D'
+			if [ "${elf}" = 'elf' -a "${opt}" = 'elf' ]; then
+				opt=D
+			fi
+
+			${TOOLCHAIN_OBJDUMP} -${opt} ${DSTDIR}/out/u-boot | less
+			exit 0
+		fi
+	fi
 }
 
 fixup_chip_name()
@@ -176,6 +207,7 @@ prepare
 echo "make for ${BOARD}_defconfig by -j${JOB}"
 make ${BOARD}_defconfig O=${DSTDIR}/out
 select_toolchain
+sub_commands
 make CROSS_COMPILE=${TOOLCHAIN_GCC}  all --jobs=${JOB} O=${DSTDIR}/out
 fixup_chip_name
 pack_uboot_image
