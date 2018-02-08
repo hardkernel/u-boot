@@ -4,6 +4,7 @@ config ROCKCHIP_PX30
 	bool "Support Rockchip PX30"
 	select ARM64
 	select GICV2
+	select ARM_SMCCC
 	help
 	  The Rockchip PX30 is a ARM-based SoC with a quad-core Cortex-A35
 	  including NEON and GPU, Mali-400 graphics, several DDR3 options
