@@ -183,88 +183,6 @@ static inline bool property_enabled(void __iomem *base,
 	return tmp == reg->enable;
 }
 
-static int rockchip_usb2phy_parse(struct rockchip_usb2phy *rphy)
-{
-	const struct rockchip_usb2phy_cfg *phy_cfgs;
-	ofnode u2phy_node = ofnode_null();
-	ofnode grf_node = ofnode_null();
-	void __iomem *usbgrf_base = NULL;
-	void __iomem *grf_base = NULL;
-	struct udevice *udev;
-	fdt_size_t size;
-	u32 reg, index;
-	int ret;
-
-	memset((void *)rphy, 0, sizeof(struct rockchip_usb2phy));
-
-	u2phy_node = ofnode_path("/usb2-phy");
-	if (ofnode_valid(u2phy_node)) {
-		if (ofnode_read_bool(u2phy_node, "rockchip,grf"))
-			grf_base = syscon_get_first_range(ROCKCHIP_SYSCON_GRF);
-
-		if (ofnode_read_bool(u2phy_node, "rockchip,usbgrf"))
-			usbgrf_base =
-				syscon_get_first_range(ROCKCHIP_SYSCON_USBGRF);
-		else
-			usbgrf_base = NULL;
-	} else {
-		grf_node = ofnode_path("/syscon-usb");
-		if (ofnode_valid(grf_node)) {
-			grf_base = (void __iomem *)
-				ofnode_get_addr_size(grf_node, "reg", &size);
-			u2phy_node = ofnode_find_subnode(grf_node, "usb2-phy");
-		}
-	}
-
-	if (!grf_base && !usbgrf_base) {
-		pr_err("%s: get grf/usbgrf node failed\n", __func__);
-		return -EINVAL;
-	}
-
-	if (!ofnode_valid(u2phy_node)) {
-		pr_err("%s: missing u2phy node\n", __func__);
-		return -EINVAL;
-	}
-
-	if (ofnode_read_u32(u2phy_node, "reg", &reg)) {
-		pr_err("%s: could not read reg from u2phy node\n", __func__);
-		return -EINVAL;
-	}
-
-	ret = uclass_get_device_by_ofnode(UCLASS_PHY, u2phy_node, &udev);
-	if (ret) {
-		pr_err("%s: get u2phy node failed: %d\n", __func__, ret);
-		return -ENODEV;
-	}
-
-	phy_cfgs =
-		(const struct rockchip_usb2phy_cfg *)dev_get_driver_data(udev);
-	if (!phy_cfgs) {
-		pr_err("%s: unable to get phy_cfgs\n", __func__);
-		return -EINVAL;
-	}
-
-	/* find out a proper config which can be matched with dt. */
-	index = 0;
-	while (phy_cfgs[index].reg) {
-		if (phy_cfgs[index].reg == reg) {
-			rphy->phy_cfg = &phy_cfgs[index];
-			break;
-		}
-		++index;
-	}
-
-	if (!rphy->phy_cfg) {
-		pr_err("%s: no phy-config can be matched\n", __func__);
-		return -EINVAL;
-	}
-
-	rphy->grf_base = grf_base;
-	rphy->usbgrf_base = usbgrf_base;
-
-	return 0;
-}
-
 static const char *chg_to_string(enum power_supply_type chg_type)
 {
 	switch (chg_type) {
@@ -330,57 +248,59 @@ int rockchip_chg_get_type(void)
 {
 	const struct rockchip_usb2phy_port_cfg *port_cfg;
 	enum power_supply_type chg_type;
-	struct rockchip_usb2phy rphy;
+	struct rockchip_usb2phy *rphy;
+	struct udevice *udev;
 	void __iomem *base;
 	bool is_dcd, vout;
 	int ret;
 
-	ret = rockchip_usb2phy_parse(&rphy);
-	if (ret) {
-		pr_err("%s: parse usb2phy failed %d\n", __func__, ret);
+	ret = uclass_get_device(UCLASS_PHY, 0, &udev);
+	if (ret == -ENODEV) {
+		pr_err("%s: get u2phy node failed: %d\n", __func__, ret);
 		return ret;
 	}
 
-	base = get_reg_base(&rphy);
-	port_cfg = &rphy.phy_cfg->port_cfgs[USB2PHY_PORT_OTG];
+	rphy = dev_get_priv(udev);
+	base = get_reg_base(rphy);
+	port_cfg = &rphy->phy_cfg->port_cfgs[USB2PHY_PORT_OTG];
 
 	/* Suspend USB-PHY and put the controller in non-driving mode */
 	property_enable(base, &port_cfg->phy_sus, true);
-	property_enable(base, &rphy.phy_cfg->chg_det.opmode, false);
+	property_enable(base, &rphy->phy_cfg->chg_det.opmode, false);
 
-	rphy.dcd_retries = CHG_DCD_MAX_RETRIES;
-	rphy.primary_retries = CHG_PRI_MAX_RETRIES;
+	rphy->dcd_retries = CHG_DCD_MAX_RETRIES;
+	rphy->primary_retries = CHG_PRI_MAX_RETRIES;
 
 	/* stage 1, start DCD processing stage */
-	rockchip_chg_enable_dcd(&rphy, true);
+	rockchip_chg_enable_dcd(rphy, true);
 
-	while (rphy.dcd_retries--) {
+	while (rphy->dcd_retries--) {
 		mdelay(CHG_DCD_POLL_TIME);
 
 		/* get data contact detection status */
-		is_dcd = property_enabled(rphy.grf_base,
-					  &rphy.phy_cfg->chg_det.dp_det);
+		is_dcd = property_enabled(rphy->grf_base,
+					  &rphy->phy_cfg->chg_det.dp_det);
 
-		if (is_dcd || !rphy.dcd_retries) {
+		if (is_dcd || !rphy->dcd_retries) {
 			/*
 			 * stage 2, turn off DCD circuitry, then
 			 * voltage source on DP, probe on DM.
 			 */
-			rockchip_chg_enable_dcd(&rphy, false);
-			rockchip_chg_enable_primary_det(&rphy, true);
+			rockchip_chg_enable_dcd(rphy, false);
+			rockchip_chg_enable_primary_det(rphy, true);
 			break;
 		}
 	}
 
 	mdelay(CHG_PRIMARY_DET_TIME);
-	vout = property_enabled(rphy.grf_base,
-				&rphy.phy_cfg->chg_det.cp_det);
-	rockchip_chg_enable_primary_det(&rphy, false);
+	vout = property_enabled(rphy->grf_base,
+				&rphy->phy_cfg->chg_det.cp_det);
+	rockchip_chg_enable_primary_det(rphy, false);
 	if (vout) {
 		/* stage 3, voltage source on DM, probe on DP */
-		rockchip_chg_enable_secondary_det(&rphy, true);
+		rockchip_chg_enable_secondary_det(rphy, true);
 	} else {
-		if (!rphy.dcd_retries) {
+		if (!rphy->dcd_retries) {
 			/* floating charger found */
 			chg_type = POWER_SUPPLY_TYPE_USB_FLOATING;
 			goto out;
@@ -389,10 +309,10 @@ int rockchip_chg_get_type(void)
 			 * Retry some times to make sure that it's
 			 * really a USB SDP charger.
 			 */
-			vout = rockchip_chg_primary_det_retry(&rphy);
+			vout = rockchip_chg_primary_det_retry(rphy);
 			if (vout) {
 				/* stage 3, voltage source on DM, probe on DP */
-				rockchip_chg_enable_secondary_det(&rphy, true);
+				rockchip_chg_enable_secondary_det(rphy, true);
 			} else {
 				/* USB SDP charger found */
 				chg_type = POWER_SUPPLY_TYPE_USB;
@@ -402,10 +322,10 @@ int rockchip_chg_get_type(void)
 	}
 
 	mdelay(CHG_SECONDARY_DET_TIME);
-	vout = property_enabled(rphy.grf_base,
-				&rphy.phy_cfg->chg_det.dcp_det);
+	vout = property_enabled(rphy->grf_base,
+				&rphy->phy_cfg->chg_det.dcp_det);
 	/* stage 4, turn off voltage source */
-	rockchip_chg_enable_secondary_det(&rphy, false);
+	rockchip_chg_enable_secondary_det(rphy, false);
 	if (vout)
 		chg_type = POWER_SUPPLY_TYPE_USB_DCP;
 	else
@@ -413,7 +333,7 @@ int rockchip_chg_get_type(void)
 
 out:
 	/* Resume USB-PHY and put the controller in normal mode */
-	property_enable(base, &rphy.phy_cfg->chg_det.opmode, true);
+	property_enable(base, &rphy->phy_cfg->chg_det.opmode, true);
 	property_enable(base, &port_cfg->phy_sus, false);
 
 	debug("charger is %s\n", chg_to_string(chg_type));
@@ -424,21 +344,23 @@ out:
 void otg_phy_init(struct dwc2_udc *dev)
 {
 	const struct rockchip_usb2phy_port_cfg *port_cfg;
-	struct rockchip_usb2phy rphy;
+	struct rockchip_usb2phy *rphy;
+	struct udevice *udev;
 	void __iomem *base;
 	int ret;
 
-	ret = rockchip_usb2phy_parse(&rphy);
-	if (ret) {
-		pr_err("%s: parse usb2phy failed %d\n", __func__, ret);
+	ret = uclass_get_device(UCLASS_PHY, 0, &udev);
+	if (ret == -ENODEV) {
+		pr_err("%s: get u2phy node failed: %d\n", __func__, ret);
 		return;
 	}
 
-	base = get_reg_base(&rphy);
-	port_cfg = &rphy.phy_cfg->port_cfgs[USB2PHY_PORT_OTG];
+	rphy = dev_get_priv(udev);
+	base = get_reg_base(rphy);
+	port_cfg = &rphy->phy_cfg->port_cfgs[USB2PHY_PORT_OTG];
 
 	/* Set the USB-PHY COMMONONN to 1'b0 to ensure USB's clocks */
-	property_enable(base, &rphy.phy_cfg->clkout_ctl, false);
+	property_enable(base, &rphy->phy_cfg->clkout_ctl, false);
 
 	/* Reset USB-PHY */
 	property_enable(base, &port_cfg->phy_sus, true);
