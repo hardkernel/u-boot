@@ -95,7 +95,10 @@ static void amlogic_usb2_phy_init(struct u2p_aml_regs *phy)
 				udelay(5);
 			}
 		}
-		/* step 7: pll setting */
+	}
+
+	for (i = 0; i < amlogic.u2_port_num; i++) {
+		printf("------set usb pll\n");
 		set_usb_pll(amlogic.phy_2[i]);
 	}
 	return;

@@ -71,14 +71,14 @@ int get_usb_count(void)
 
 void set_usb_pll(uint32_t volatile *phy2_pll_base)
 {
-    (*(volatile uint32_t *)(unsigned long)(phy2_pll_base + 0x40))
+    (*(volatile uint32_t *)((unsigned long)phy2_pll_base + 0x40))
         = (USB_PHY2_PLL_PARAMETER_1 | USB_PHY2_RESET | USB_PHY2_ENABLE);
-    (*(volatile uint32_t *)(unsigned long)(phy2_pll_base + 0x44)) =
+    (*(volatile uint32_t *)((unsigned long)phy2_pll_base + 0x44)) =
         USB_PHY2_PLL_PARAMETER_2;
-    (*(volatile uint32_t *)(unsigned long)(phy2_pll_base + 0x48)) =
+    (*(volatile uint32_t *)((unsigned long)phy2_pll_base + 0x48)) =
         USB_PHY2_PLL_PARAMETER_3;
     udelay(100);
-    (*(volatile uint32_t *)(unsigned long)(phy2_pll_base + 0x40))
+    (*(volatile uint32_t *)(unsigned long)((unsigned long)phy2_pll_base + 0x40))
         = (((USB_PHY2_PLL_PARAMETER_1) | (USB_PHY2_ENABLE))
         & (~(USB_PHY2_RESET)));
 }
