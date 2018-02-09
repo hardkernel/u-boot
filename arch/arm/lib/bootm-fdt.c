@@ -42,10 +42,10 @@ int arch_fixup_fdt(void *blob)
 	u64 size[CONFIG_NR_DRAM_BANKS];
 
 	for (bank = 0; bank < CONFIG_NR_DRAM_BANKS; bank++) {
-		if (size[bank] == 0)
-			continue;
 		start[bank] = bd->bi_dram[bank].start;
 		size[bank] = bd->bi_dram[bank].size;
+		if (size[bank] == 0)
+			continue;
 		printf("Adding bank: start=0x%08lx, size=0x%08lx\n",
 		       gd->bd->bi_dram[bank].start, gd->bd->bi_dram[bank].size);
 
