@@ -717,7 +717,14 @@ static void vpu_power_on_gx(void)
 	vpu_cbus_clr_mask(RESET1_LEVEL, (1<<5));
 	vpu_cbus_clr_mask(RESET2_LEVEL, (1<<15));
 	vpu_cbus_clr_mask(RESET4_LEVEL, ((1<<6) | (1<<7) | (1<<13) | (1<<5) | (1<<9) | (1<<4) | (1<<12)));
-	vpu_cbus_clr_mask(RESET7_LEVEL, (1<<7));
+	switch (vpu_chip_type) {
+	case VPU_CHIP_TXHD:
+		vpu_cbus_clr_mask(RESET7_LEVEL, ((1<<7) | (1<<12)));
+		break;
+	default:
+		vpu_cbus_clr_mask(RESET7_LEVEL, (1<<7));
+		break;
+	}
 
 	/* Remove VPU_HDMI ISO */
 	vpu_ao_setb(AO_RTI_GEN_PWR_SLEEP0, 0, 9, 1); /* [9] VPU_HDMI */
@@ -727,7 +734,14 @@ static void vpu_power_on_gx(void)
 	vpu_cbus_set_mask(RESET1_LEVEL, (1<<5));
 	vpu_cbus_set_mask(RESET2_LEVEL, (1<<15));
 	vpu_cbus_set_mask(RESET4_LEVEL, ((1<<6) | (1<<7) | (1<<13) | (1<<5) | (1<<9) | (1<<4) | (1<<12)));
-	vpu_cbus_set_mask(RESET7_LEVEL, (1<<7));
+	switch (vpu_chip_type) {
+	case VPU_CHIP_TXHD:
+		vpu_cbus_set_mask(RESET7_LEVEL, ((1<<7) | (1<<12)));
+		break;
+	default:
+		vpu_cbus_set_mask(RESET7_LEVEL, (1<<7));
+		break;
+	}
 
 #ifdef VPU_DEBUG_PRINT
 	VPUPR("%s finish\n", __func__);
