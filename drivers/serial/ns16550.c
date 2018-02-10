@@ -443,6 +443,10 @@ int ns16550_serial_ofdata_to_platdata(struct udevice *dev)
 			plat->clock = err;
 	} else if (err != -ENOENT && err != -ENODEV && err != -ENOSYS) {
 		debug("ns16550 failed to get clock\n");
+#ifdef CONFIG_USING_KERNEL_DTB
+/* With kernel dtb support, serial ofnode not able to get cru phandle */
+		if(err != -EINVAL)
+#endif
 		return err;
 	}
 
