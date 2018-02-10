@@ -649,7 +649,7 @@ static int px30_clk_ofdata_to_platdata(struct udevice *dev)
 {
 	struct px30_clk_priv *priv = dev_get_priv(dev);
 
-	priv->cru = (struct px30_cru *)devfdt_get_addr(dev);
+	priv->cru = dev_read_addr_ptr(dev);
 
 	return 0;
 }
