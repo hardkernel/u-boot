@@ -18,3 +18,7 @@
 &pmugrf {
 	u-boot,dm-pre-reloc;
 };
+
+&cru {
+	u-boot,dm-pre-reloc;
+};
