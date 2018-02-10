@@ -32,9 +32,7 @@ enum {
 	.refdiv = _refdiv,\
 	.fbdiv = (u32)((u64)hz * _refdiv * _postdiv1 * _postdiv2 / OSC_HZ),\
 	.postdiv1 = _postdiv1, .postdiv2 = _postdiv2};
-static const struct pll_div apll_init_cfg = PLL_DIVISORS(APLL_HZ, 1, 3, 1);
 static const struct pll_div gpll_init_cfg = PLL_DIVISORS(GPLL_HZ, 1, 4, 1);
-static const struct pll_div cpll_init_cfg = PLL_DIVISORS(CPLL_HZ, 2, 2, 1);
 
 static const struct pll_div apll_816_cfg = PLL_DIVISORS(816 * MHz, 1, 2, 1);
 static const struct pll_div apll_600_cfg = PLL_DIVISORS(600 * MHz, 1, 3, 1);
@@ -113,7 +111,7 @@ static void rkclk_init(struct px30_cru *cru)
 		     PLLMUX_FROM_XIN24M << GPLL_MODE_SHIFT);
 
 	/* init pll */
-	rkclk_set_pll(&cru->pll[0] , &apll_816_cfg);
+	rkclk_set_pll(&cru->pll[0] , apll_cfgs[APLL_816_MHZ]);
 	rkclk_set_pll(&cru->gpll, &gpll_init_cfg);
 
 	/*
@@ -274,7 +272,7 @@ static ulong px30_mmc_set_clk(struct px30_cru *cru,
 	int src_clk_div;
 	u32 con_id;
 
-	debug("%s %d %d\n", __func__, clk_id, set_rate);
+	debug("%s %ld %ld\n", __func__, clk_id, set_rate);
 	switch (clk_id) {
 	case HCLK_SDMMC:
 	case SCLK_SDMMC:
@@ -478,7 +476,7 @@ static ulong px30_clk_set_rate(struct clk *clk, ulong rate)
 	struct px30_clk_priv *priv = dev_get_priv(clk->dev);
 	ulong ret = 0;
 
-	debug("%s %d %d\n", __func__, clk->id, rate);
+	debug("%s %ld %ld\n", __func__, clk->id, rate);
 	switch (clk->id) {
 	case 0 ... 15:
 		return 0;
@@ -509,7 +507,6 @@ static ulong px30_clk_set_rate(struct clk *clk, ulong rate)
 		return -ENOENT;
 	}
 
-	debug("%s %d\n", __func__, ret);
 	return ret;
 }
 
