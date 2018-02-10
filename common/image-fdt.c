@@ -111,7 +111,8 @@ void boot_fdt_add_mem_rsv_regions(struct lmb *lmb, void *fdt_blob)
 							      &rsv_size, false);
 		if (rsv_addr == FDT_ADDR_T_NONE || !rsv_size)
 			continue;
-		printf("  'reserved-memory' region: addr=%llx size=%llx\n",
+		printf("  'reserved-memory' %s: addr=%llx size=%llx\n",
+			fdt_get_name(fdt_blob, offset, NULL),
 			(unsigned long long)rsv_addr, (unsigned long long)rsv_size);
 		lmb_reserve(lmb, rsv_addr, rsv_size);
 	}
