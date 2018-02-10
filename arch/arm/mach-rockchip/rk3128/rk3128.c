@@ -37,3 +37,7 @@ int arch_cpu_init(void)
 
 	return 0;
 }
+
+void board_debug_uart_init(void)
+{
+}
