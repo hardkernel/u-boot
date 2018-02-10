@@ -6,6 +6,7 @@
 #include <common.h>
 #include <clk.h>
 #include <dm.h>
+#include <debug_uart.h>
 #include <ram.h>
 #include <syscon.h>
 #include <asm/io.h>
@@ -157,6 +158,9 @@ int board_init(void)
 {
 	int ret;
 
+#if !defined(CONFIG_SUPPORT_SPL)
+	board_debug_uart_init();
+#endif
 #ifdef CONFIG_USING_KERNEL_DTB
 	init_kernel_dtb();
 #endif
