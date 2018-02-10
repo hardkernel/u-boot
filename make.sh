@@ -100,7 +100,7 @@ sub_commands()
 	if [ "$SUBCMD" = 'clean' -o "$SUBCMD" = 'distclean' -o "$SUBCMD" = 'mrproper' ]; then
 		make $SUBCMD O=${DSTDIR}/out
 		exit 0
-	elif [ ${elf} = 'elf' ]; then
+	elif [ "$elf" = 'elf' ]; then
 		if [ ! -f ${DSTDIR}/out/u-boot ]; then
 			echo "Can't find elf file: ${DSTDIR}/out/u-boot"
 			exit 1
@@ -111,6 +111,22 @@ sub_commands()
 			fi
 
 			${TOOLCHAIN_OBJDUMP} -${opt} ${DSTDIR}/out/u-boot | less
+			exit 0
+		fi
+	elif [ "$SUBCMD" = 'map' ]; then
+		if [ ! -f ${DSTDIR}/out/System.map ]; then
+			echo "Can't find map file: ${DSTDIR}/out/System.map"
+			exit 1
+		else
+			vim ${DSTDIR}/out/System.map
+			exit 0
+		fi
+	elif [ "$SUBCMD" = '.config' ]; then
+		if [ ! -f ${DSTDIR}/out/.config ]; then
+			echo "Can't find .config file: ${DSTDIR}/out/.config"
+			exit 1
+		else
+			vim ${DSTDIR}/out/.config
 			exit 0
 		fi
 	fi
