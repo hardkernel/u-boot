@@ -31,18 +31,15 @@ static struct mm_region px30_mem_map[] = {
 
 struct mm_region *mem_map = px30_mem_map;
 
-#define SGRF_DDR_CON0 0x10150000
-
 int arch_cpu_init(void)
 {
 #ifdef CONFIG_SPL_BUILD
 	/* We do some SoC one time setting here. */
 	/* Disable the ddr secure region setting to make it non-secure */
-	rk_clrreg(SGRF_DDR_CON0, 0x4000);
 #endif
 	return 0;
 }
-#define GRF_BASE	0x11000000
+#define GRF_BASE	0xff140000
 void board_debug_uart_init(void)
 {
 static struct px30_grf * const grf = (void *)GRF_BASE;
