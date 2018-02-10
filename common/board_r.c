@@ -704,6 +704,9 @@ static init_fnc_t init_sequence_r[] = {
 #ifdef CONFIG_DM
 	initr_dm,
 #endif
+#ifdef CONFIG_USING_KERNEL_DTB
+	initr_env,
+#endif
 #if defined(CONFIG_ARM) || defined(CONFIG_NDS32)
 	board_init,	/* Setup chipselects */
 #endif
@@ -771,7 +774,9 @@ static init_fnc_t init_sequence_r[] = {
 #ifdef CONFIG_MMC
 	initr_mmc,
 #endif
+#ifndef CONFIG_USING_KERNEL_DTB
 	initr_env,
+#endif
 #ifdef CONFIG_SYS_BOOTPARAMS_LEN
 	initr_malloc_bootparams,
 #endif
