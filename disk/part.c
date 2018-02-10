@@ -650,6 +650,8 @@ int part_get_info_by_name(struct blk_desc *dev_desc, const char *name,
 	int i;
 
 	part_drv = part_driver_lookup_type(dev_desc);
+	if (!part_drv)
+		return -1;
 	for (i = 1; i < part_drv->max_entries; i++) {
 		ret = part_drv->get_info(dev_desc, i, info);
 		if (ret != 0) {
