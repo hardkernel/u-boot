@@ -52,17 +52,9 @@ typedef unsigned int uint32_t;
 #define CECB_WAKEUP_SRC    (1<<10)
 
 struct pwr_op {
-	void (*power_off_at_clk81)(void);
-	void (*power_on_at_clk81)(unsigned int);
-
-	void (*power_off_at_24M)(void);
-	void (*power_on_at_24M)(void);
-
-	void (*power_off_at_32k)(unsigned int);
-	void (*power_on_at_32k)(unsigned int);
-
+	void (*power_off_at_24M)(unsigned int);
+	void (*power_on_at_24M)(unsigned int);
 	void (*shut_down)(void);
-
 	unsigned int (*detect_key)(unsigned int);
 	void (*get_wakeup_source)(void *, unsigned int);
 };

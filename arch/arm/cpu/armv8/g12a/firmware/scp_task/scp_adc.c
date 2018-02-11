@@ -105,6 +105,7 @@ static void saradc_clock_set(unsigned char val)
 
 void saradc_enable(void)
 {
+	return;
 	if (get_cpu_family_id() <= MESON_CPU_MAJOR_ID_GXTVBB)
 		adc_type = 0;
 	else

@@ -62,7 +62,6 @@ OBJS += user_task.o
 OBJS += misc.o
 OBJS += uart.o
 OBJS += suspend.o
-OBJS += dvfs.o
 OBJS += lib/string.o
 OBJS += lib/delay.o
 

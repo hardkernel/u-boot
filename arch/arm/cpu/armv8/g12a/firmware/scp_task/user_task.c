@@ -19,12 +19,12 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-#include <config.h>
 #include "config.h"
 #include "data.h"
 #include "registers.h"
 #include "task_apis.h"
 
+#define TASK_ID_IDLE 0
 #define TASK_ID_LOW_MB	3
 #define TASK_ID_HIGH_MB	4
 #define TASK_ID_SECURE_MB  5
@@ -39,6 +39,13 @@ enum scpi_client_id {
 	SCPI_MAX,
 };
 
+void __switch_idle_task(void)
+{
+	register int p0 asm("r0") = 2;
+	register int p1 asm("r1") = TASK_ID_IDLE;
+
+	asm("svc 0" :  : "r"(p0), "r"(p1));
+}
 void __switch_back_securemb(void)
 {
 	register int p0 asm("r0") = 2;
@@ -64,9 +71,9 @@ void __switch_back_lowmb(void)
 
 void secure_task(void)
 {
-	unsigned *pcommand =
+	volatile unsigned *pcommand =
 	    (unsigned *)(&(secure_task_share_mem[TASK_COMMAND_OFFSET]));
-	unsigned *response =
+	volatile unsigned *response =
 	    (unsigned *)(&(secure_task_share_mem[TASK_RESPONSE_OFFSET]));
 	unsigned command;
 	struct resume_param *presume;
@@ -109,13 +116,9 @@ void set_wakeup_method(unsigned int method)
 
 void process_high_task(unsigned command)
 {
-	unsigned *pcommand =
-	    (unsigned *)(&(high_task_share_mem[TASK_COMMAND_OFFSET]));
-/*	unsigned *response =
-	    (unsigned *)(&(high_task_share_mem[TASK_RESPONSE_OFFSET]));
-*/
-	if (command == HIGH_TASK_SET_DVFS)
-		set_dvfs(*(pcommand + 1), *(pcommand + 2));
+	return;
+	/*unsigned *pcommand =
+	    (unsigned *)(&(high_task_share_mem[TASK_COMMAND_OFFSET]));*/
 }
 
 void high_task(void)
@@ -143,29 +146,17 @@ void high_task(void)
 }
 
 extern unsigned int usr_pwr_key;
-#ifdef CONFIG_SUPPORT_CUSOTMER_BOARD
-extern void process_customer_low_task(unsigned int, unsigned int *, unsigned int *);
-#endif
 void process_low_task(unsigned command)
 {
 	unsigned *pcommand =
 	    (unsigned *)(&(low_task_share_mem[TASK_COMMAND_OFFSET]));
-	unsigned *response =
-	    (unsigned *)(&(low_task_share_mem[TASK_RESPONSE_OFFSET]));
-	unsigned para1;
+	/*unsigned *response =
+	    (unsigned *)(&(low_task_share_mem[TASK_RESPONSE_OFFSET]));*/
 
-	if (command == LOW_TASK_GET_DVFS_INFO) {
-		para1 = *(pcommand + 1);
-		get_dvfs_info(para1,
-			(unsigned char *)(response+2), (response+1));
-	} else if ((command & 0xffff) == LOW_TASK_USR_DATA) {/*0-15bit: comd; 16-31bit: client_id*/
+	if ((command & 0xffff) == LOW_TASK_USR_DATA) {/*0-15bit: comd; 16-31bit: client_id*/
 		if ((command >> 16) == SCPI_CL_REMOTE) {
 			usr_pwr_key = *(pcommand + 2);/*tx_size locates at *(pcommand + 1)*/
 			dbg_print("pwr_key=",usr_pwr_key);
-		} else {
-#ifdef CONFIG_SUPPORT_CUSOTMER_BOARD
-			process_customer_low_task(command, pcommand, response);
-#endif
 		}
 	}
 }
