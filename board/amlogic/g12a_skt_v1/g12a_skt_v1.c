@@ -102,9 +102,9 @@ void internalPhyConfig(struct phy_device *phydev)
 
 static int dwmac_meson_cfg_pll(void)
 {
-	writel(0x19C0040A, P_ETH_PLL_CTL0);
+	writel(0x39C0040A, P_ETH_PLL_CTL0);
 	writel(0x927E0000, P_ETH_PLL_CTL1);
-	writel(0x705B49e5, P_ETH_PLL_CTL2);
+	writel(0xAC5F49E5, P_ETH_PLL_CTL2);
 	writel(0x00000000, P_ETH_PLL_CTL3);
 	udelay(200);
 	writel(0x19C0040A, P_ETH_PLL_CTL0);
