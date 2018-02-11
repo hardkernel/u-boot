@@ -776,7 +776,8 @@ static void tx_handler_ul(struct usb_ep *ep, struct usb_request *req)
 	if (!upload_bytes)
 		start_upload = true;
 
-	fastboot_tx_write((char *)(CONFIG_FASTBOOT_BUF_ADDR + upload_bytes),
+	fastboot_tx_write((char *)((phys_addr_t)CONFIG_FASTBOOT_BUF_ADDR + \
+			  upload_bytes),
 			  xfer_size);
 }
 
