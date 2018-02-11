@@ -11,6 +11,7 @@ config RKNAND
 	help
 	  This option enables support for Rockchip NAND FLASH devices.
 	  It supports block interface(with rk ftl) to read and write NAND FLASH.
+
 config ZFTL
 	bool "Rockchip ZFTL for rkpx30/rk3326 to support 3D/2D TLC/MLC"
 	depends on RKNAND && (ROCKCHIP_PX30)
