@@ -273,12 +273,20 @@ static int count_configs(struct usb_composite_dev *cdev, unsigned type)
 
 static int bos_desc(struct usb_composite_dev *cdev)
 {
+	struct usb_dev_cap_header	*cap;
 	struct usb_bos_descriptor	*bos = cdev->req->buf;
 
 	bos->bLength = USB_DT_BOS_SIZE;
 	bos->bDescriptorType = USB_DT_BOS;
 	bos->wTotalLength = cpu_to_le16(USB_DT_BOS_SIZE);
 	bos->bNumDeviceCaps = 0;
+
+	cap = cdev->req->buf + le16_to_cpu(bos->wTotalLength);
+	bos->bNumDeviceCaps++;
+	bos->wTotalLength = cpu_to_le16(bos->wTotalLength + sizeof(*cap));
+	cap->bLength = sizeof(*cap);
+	cap->bDescriptorType = USB_DT_DEVICE_CAPABILITY;
+	cap->bDevCapabilityType = 0;
 
 	return le16_to_cpu(bos->wTotalLength);
 }
