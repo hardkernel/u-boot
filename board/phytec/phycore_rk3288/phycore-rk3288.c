@@ -12,6 +12,7 @@
 #include <i2c_eeprom.h>
 #include <netdev.h>
 #include "som.h"
+#include <power/rk8xx_pmic.h>
 
 static int valid_rk3288_som(struct rk3288_som *som)
 {
