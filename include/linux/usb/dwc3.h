@@ -192,7 +192,7 @@ struct dwc3 {					/* offset: 0xC100 */
 #define DWC3_DCTL_CSFTRST			(1 << 30)
 #define DWC3_DCTL_LSFTRST			(1 << 29)
 
-#define DWC3_GFLADJ           0xb010c630
+#define DWC3_GFLADJ           0xff50c630
 #define DWC3_GFLADJ_30MHZ_SDBND_SEL           (1 << 7)
 #define DWC3_GFLADJ_30MHZ_MASK                        0x3f
 /* Global User Control Register */

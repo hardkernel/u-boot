@@ -226,7 +226,6 @@ void cr_bus_write (u32 addr, u32 data)
 
 static void amlogic_usb3_phy_init(struct usb_aml_regs *phy)
 {
-#ifdef CONFIG_USB_XHCI_AMLOGIC_USB3_V2
 	usb_r1_t r1 = {.d32 = 0};
 	usb_r2_t r2 = {.d32 = 0};
 	usb_r3_t r3 = {.d32 = 0};
@@ -234,6 +233,15 @@ static void amlogic_usb3_phy_init(struct usb_aml_regs *phy)
 #if 0
 	u32 data = 0;
 #endif
+
+	if (amlogic.u3_port_num == 0) {
+		usb_aml_reg = (struct usb_aml_regs *)((ulong)phy);
+		r1.d32 = usb_aml_reg->usb_r1;
+		usb_aml_reg->usb_r2 = r1.d32;
+		r1.b.u3h_fladj_30mhz_reg = 0x26;
+		usb_aml_reg->usb_r2 = r1.d32;
+		udelay(100);
+	}
 
 	for (i = 0; i < amlogic.u3_port_num; i++) {
 		usb_aml_reg = (struct usb_aml_regs *)((ulong)phy+i*PHY_REGISTER_SIZE);
@@ -332,7 +340,7 @@ static void amlogic_usb3_phy_init(struct usb_aml_regs *phy)
 		usb_aml_reg->usb_r3 = r3.d32;
 #endif
 	}
-#endif
+
 	return;
 }
 
@@ -443,6 +451,11 @@ static int dwc3_core_init(struct dwc3 *dwc3_reg)
 	reg = xhci_readl(&dwc3_reg->g_uctl);
 	reg |= DWC3_GUCTL_USBHSTINAUTORETRYEN;
 	xhci_writel(&dwc3_reg->g_uctl, reg);
+
+	reg = xhci_readl((uint32_t volatile *)DWC3_GFLADJ);
+	reg &= ~DWC3_GFLADJ_30MHZ_MASK;
+	reg |= DWC3_GFLADJ_30MHZ_SDBND_SEL | 0x26;
+	xhci_writel((uint32_t volatile *)DWC3_GFLADJ, reg);
 
 	dwc3_hwparams1 = xhci_readl(&dwc3_reg->g_hwparams1);
 
