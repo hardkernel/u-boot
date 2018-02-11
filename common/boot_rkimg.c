@@ -312,8 +312,7 @@ int boot_rockchip_image(struct blk_desc *dev_desc, disk_partition_t *boot_part)
 	if (ramdisk_size < 0) {
 		printf("%s ramdisk part %s read error\n", __func__,
 		       boot_part->name);
-		ret = -EINVAL;
-		goto out;
+		ramdisk_size = 0;
 	}
 
 	fdt_size = rockchip_read_resource_file((void *)fdt_addr_r, DTB_FILE, 0, 0);
