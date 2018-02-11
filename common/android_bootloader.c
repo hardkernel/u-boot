@@ -355,6 +355,7 @@ char *android_assemble_cmdline(const char *slot_suffix,
 	return cmdline;
 }
 
+#ifdef CONFIG_ANDROID_AVB
 static void slot_set_unbootable(AvbABSlotData* slot)
 {
 	slot->priority = 0;
@@ -362,7 +363,6 @@ static void slot_set_unbootable(AvbABSlotData* slot)
 	slot->successful_boot = 0;
 }
 
-#ifdef CONFIG_ANDROID_AVB
 static AvbSlotVerifyResult android_slot_verify(char *boot_partname,
 			       unsigned long load_address,
 			       char *slot_suffix)
