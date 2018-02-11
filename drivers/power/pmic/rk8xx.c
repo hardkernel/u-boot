@@ -158,6 +158,14 @@ static int rk8xx_probe(struct udevice *dev)
 	rk8xx_read(dev, id_lsb, &lsb, 1);
 
 	priv->variant = ((msb << 8) | lsb) & RK8XX_ID_MSK;
+	if ((priv->variant != RK808_ID) &&
+	    (priv->variant != RK805_ID) &&
+	    (priv->variant != RK816_ID) &&
+	    (priv->variant != RK817_ID) &&
+	    (priv->variant != RK818_ID)) {
+		printf("Unknown PMIC: RK%x!!\n", priv->variant);
+		return -EINVAL;
+	}
 
 	printf("PMIC:  RK%x\n", priv->variant);
 
