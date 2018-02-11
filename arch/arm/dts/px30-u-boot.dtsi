@@ -11,6 +11,11 @@
 	status = "okay";
 };
 
+&nandc0 {
+	u-boot,dm-pre-reloc;
+	status = "okay";
+};
+
 &emmc {
 	u-boot,dm-pre-reloc;
 };
