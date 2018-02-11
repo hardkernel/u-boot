@@ -136,6 +136,8 @@ fixup_chip_name()
 {
 	if [ "$RKCHIP" = 'RK3228' -o "$RKCHIP" = 'RK3229' ]; then
 		RKCHIP=RK322X
+	elif [ "$RKCHIP" = 'PX30' ]; then
+		RKCHIP=RK3326
 	fi
 }
 
