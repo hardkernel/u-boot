@@ -1863,6 +1863,9 @@ static int aml_nand_add_partition(struct aml_nand_chip *aml_chip)
 #endif
 }
 
+#ifndef P_PAD_DS_REG0A
+#define P_PAD_DS_REG0A (volatile uint32_t *)(0xff634400 + (0x0d0 << 2))
+#endif
 static void inline nand_get_chip(void )
 {
 	/* fixme, */

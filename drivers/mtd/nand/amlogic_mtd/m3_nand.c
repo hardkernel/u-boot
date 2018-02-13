@@ -300,6 +300,8 @@ void get_sys_clk_rate_mtd(struct hw_controller *controller, int *rate)
 static void m3_nand_hw_init(struct aml_nand_chip *aml_chip)
 {
 	int sys_clk_rate, bus_cycle, bus_timing;
+
+	/*
 	cpu_id_t cpu_id = get_cpu_id();
 
 	if (cpu_id.family_id == MESON_CPU_MAJOR_ID_G12A) {
@@ -311,6 +313,11 @@ static void m3_nand_hw_init(struct aml_nand_chip *aml_chip)
 		bus_cycle  = 6;
 		bus_timing = bus_cycle + 1;
 	}
+	*/
+
+	sys_clk_rate = 200;
+	bus_cycle  = 6;
+	bus_timing = bus_cycle + 1;
 	get_sys_clk_rate_mtd(controller, &sys_clk_rate);
 
 	NFC_SET_CFG(controller, 0);
@@ -323,7 +330,7 @@ static void m3_nand_hw_init(struct aml_nand_chip *aml_chip)
 static void m3_nand_adjust_timing(struct aml_nand_chip *aml_chip)
 {
 	int sys_clk_rate, bus_cycle, bus_timing;
-	cpu_id_t cpu_id = get_cpu_id();
+	/* cpu_id_t cpu_id = get_cpu_id(); */
 
 	if (!aml_chip->T_REA)
 		aml_chip->T_REA = 20;
@@ -337,6 +344,7 @@ static void m3_nand_adjust_timing(struct aml_nand_chip *aml_chip)
 	else
 		sys_clk_rate = 250;
 
+	/*
 	if (cpu_id.family_id == MESON_CPU_MAJOR_ID_G12A) {
 		sys_clk_rate = 24;
 		bus_cycle  = 4;
@@ -345,6 +353,9 @@ static void m3_nand_adjust_timing(struct aml_nand_chip *aml_chip)
 		bus_cycle  = 6;
 		bus_timing = bus_cycle + 1;
 	}
+	*/
+	bus_cycle  = 6;
+	bus_timing = bus_cycle + 1;
 	get_sys_clk_rate_mtd(controller, &sys_clk_rate);
 
 
