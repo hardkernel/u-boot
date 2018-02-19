@@ -42,7 +42,6 @@ endif
 # could get pulled in from firmware tree.
 INCLUDE_PATHS = -I.
 
-CC := gcc
 RM := rm -rf
 
 .PHONY: all clean
@@ -50,12 +49,12 @@ RM := rm -rf
 all: ${PROJECT}
 
 ${PROJECT}: ${OBJECTS} Makefile
-	@echo "  LD      $@"
-	${Q}${CC} ${OBJECTS} -o $@
+	@echo "  HOSTLD      $@"
+	${Q}${HOSTCC} ${OBJECTS} -o $@
 
 %.o: %.c %.h Makefile
-	@echo "  CC      $<"
-	${Q}${CC} -c ${CFLAGS} ${INCLUDE_PATHS} $< -o $@
+	@echo "  HOSTCC      $<"
+	${Q}${HOSTCC} -c ${CFLAGS} ${INCLUDE_PATHS} $< -o $@
 
 clean:
 	${Q}${RM} ${PROJECT}
