@@ -9,6 +9,7 @@
 #include <asm/psci.h>
 #include <asm/suspend.h>
 #include <linux/arm-smccc.h>
+#include <linux/io.h>
 
 #ifdef CONFIG_ARM64
 #define ARM_PSCI_1_0_SYSTEM_SUSPEND	ARM_PSCI_1_0_FN64_SYSTEM_SUSPEND
@@ -16,8 +17,7 @@
 #define ARM_PSCI_1_0_SYSTEM_SUSPEND	ARM_PSCI_1_0_FN_SYSTEM_SUSPEND
 #endif
 
-/* Rockchip platform SiP call ID */
-#define SIP_SUSPEND_MODE		0x82000003
+#define SIZE_PAGE(n)	((n) << 12)
 
 static struct arm_smccc_res __invoke_sip_fn_smc(unsigned long function_id,
 						unsigned long arg0,
@@ -47,4 +47,53 @@ int sip_smc_set_suspend_mode(unsigned long ctrl,
 
 	res = __invoke_sip_fn_smc(SIP_SUSPEND_MODE, ctrl, config1, config2);
 	return res.a0;
+}
+
+struct arm_smccc_res sip_smc_dram(unsigned long arg0,
+				  unsigned long arg1,
+				  unsigned long arg2)
+{
+	return __invoke_sip_fn_smc(SIP_DRAM_CONFIG, arg0, arg1, arg2);
+}
+
+struct arm_smccc_res sip_smc_request_share_mem(unsigned long page_num,
+					       share_page_type_t page_type)
+{
+	struct arm_smccc_res res;
+	unsigned long share_mem_phy;
+
+	res = __invoke_sip_fn_smc(SIP_SHARE_MEM, page_num, page_type, 0);
+	if (IS_SIP_ERROR(res.a0))
+		goto error;
+
+	share_mem_phy = res.a1;
+	res.a1 = (unsigned long)ioremap(share_mem_phy, SIZE_PAGE(page_num));
+
+error:
+	return res;
+}
+
+struct arm_smccc_res sip_smc_get_sip_version(void)
+{
+	return __invoke_sip_fn_smc(SIP_SIP_VERSION, 0, 0, 0);
+}
+
+/*
+ * OP-TEE works both for kernel 3.10 and 4.4, and these two kernels have
+ * different sip implement that 3.10 uses SIP_IMPLEMENT_V1 and 4.4 uses
+ * SIP_IMPLEMENT_V2. So we should tell OP-TEE the current rockchip sip
+ * version(default SIP_IMPLEMENT_V1) before use.
+ */
+int sip_smc_set_sip_version(unsigned long version)
+{
+	struct arm_smccc_res res;
+
+	res = __invoke_sip_fn_smc(SIP_SIP_VERSION, version, SECURE_REG_WR, 0);
+	if (IS_SIP_ERROR(res.a0)) {
+		printf("%s: set rockchip sip version v%ld failed\n",
+		       __func__, version);
+		return res.a0;
+	}
+
+	return 0;
 }
