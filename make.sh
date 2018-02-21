@@ -3,9 +3,12 @@ set -e
 BOARD=$1
 SUBCMD=$2
 RKCHIP=${BOARD##*-}
-DSTDIR=rockdev/${RKCHIP}
 RKCHIP=$(echo ${RKCHIP} | tr '[a-z]' '[A-Z]')
 JOB=`sed -n "N;/processor/p" /proc/cpuinfo|wc -l`
+
+# Declare global default output dir and cmd, update in prepare()
+OUTDIR=.
+OUTOPT=
 
 # Declare global rkbin tools and rkbin Responsity path, updated in prepare()
 TOOLCHAIN_RKBIN=./
@@ -27,7 +30,7 @@ OBJ_ARM64=aarch64-linux-gnu-objdump
 
 prepare()
 {
-	local absolute_path
+	local absolute_path cmd
 
 	# Check invaid args and help
 	if [ "$BOARD" = '--help' -o "$BOARD" = '-h' -o "$BOARD" = '--h' -o "$BOARD" = '' ]; then
@@ -57,11 +60,11 @@ prepare()
 		exit 1
 	fi
 
-	# Clean! We assume that ./u-boot.map, u-boot.cfg or u-boot.lds indicates U-Boot project is not clean,
-	# maybe git checkout from rkdevelop.
-	if [ -f ./u-boot.map -o -f ./u-boot.cfg -o -f ./u-boot.lds ]; then
-		make mrproper
-		echo "auto \"make mrproper\" done..."
+	# Assign output directory
+	cmd=${SUBCMD%=*}
+	if [ "${cmd}" = 'O' ]; then
+		OUTDIR=${SUBCMD#*=}
+		OUTOPT=O=${OUTDIR}
 	fi
 }
 
@@ -69,13 +72,13 @@ select_toolchain()
 {
 	local absolute_path
 
-	if grep  -q '^CONFIG_ARM64=y' ${DSTDIR}/out/.config ; then
+	if grep  -q '^CONFIG_ARM64=y' ${OUTDIR}/.config ; then
 		if [ -d ${TOOLCHAIN_ARM64} ]; then
 			absolute_path=$(cd `dirname ${TOOLCHAIN_ARM64}`; pwd)
 			TOOLCHAIN_GCC=${absolute_path}/bin/${GCC_ARM64}
 			TOOLCHAIN_OBJDUMP=${absolute_path}/bin/${OBJ_ARM64}
 		else
-			echo "Can't find toolchain: ${TOOLCHAIN_GCC}"
+			echo "Can't find toolchain: ${TOOLCHAIN_ARM64}"
 			exit 1
 		fi
 	else
@@ -84,7 +87,7 @@ select_toolchain()
 			TOOLCHAIN_GCC=${absolute_path}/bin/${GCC_ARM32}
 			TOOLCHAIN_OBJDUMP=${absolute_path}/bin/${OBJ_ARM32}
 		else
-			echo "Can't find toolchain: ${TOOLCHAIN_GCC}"
+			echo "Can't find toolchain: ${TOOLCHAIN_ARM32}"
 			exit 1
 		fi
 	fi
@@ -96,13 +99,9 @@ sub_commands()
 {
 	local elf=${SUBCMD%-*} opt=${SUBCMD#*-}
 
-	# Make clean, distclean and mrproper
-	if [ "$SUBCMD" = 'clean' -o "$SUBCMD" = 'distclean' -o "$SUBCMD" = 'mrproper' ]; then
-		make $SUBCMD O=${DSTDIR}/out
-		exit 0
-	elif [ "$elf" = 'elf' ]; then
-		if [ ! -f ${DSTDIR}/out/u-boot ]; then
-			echo "Can't find elf file: ${DSTDIR}/out/u-boot"
+	if [ "$elf" = 'elf' ]; then
+		if [ ! -f ${OUTDIR}/u-boot ]; then
+			echo "Can't find elf file: ${OUTDIR}/u-boot"
 			exit 1
 		else
 			# default 'elf' without option, use '-D'
@@ -110,23 +109,7 @@ sub_commands()
 				opt=D
 			fi
 
-			${TOOLCHAIN_OBJDUMP} -${opt} ${DSTDIR}/out/u-boot | less
-			exit 0
-		fi
-	elif [ "$SUBCMD" = 'map' ]; then
-		if [ ! -f ${DSTDIR}/out/System.map ]; then
-			echo "Can't find map file: ${DSTDIR}/out/System.map"
-			exit 1
-		else
-			vim ${DSTDIR}/out/System.map
-			exit 0
-		fi
-	elif [ "$SUBCMD" = '.config' ]; then
-		if [ ! -f ${DSTDIR}/out/.config ]; then
-			echo "Can't find .config file: ${DSTDIR}/out/.config"
-			exit 1
-		else
-			vim ${DSTDIR}/out/.config
+			${TOOLCHAIN_OBJDUMP} -${opt} ${OUTDIR}/u-boot | less
 			exit 0
 		fi
 	fi
@@ -145,9 +128,9 @@ pack_uboot_image()
 {
 	local UBOOT_LOAD_ADDR
 
-	UBOOT_LOAD_ADDR=`sed -n "/CONFIG_SYS_TEXT_BASE=/s/CONFIG_SYS_TEXT_BASE=//p" ${DSTDIR}/out/include/autoconf.mk|tr -d '\r'`
-	${TOOLCHAIN_RKBIN}/loaderimage --pack --uboot ${DSTDIR}/out/u-boot.bin uboot.img ${UBOOT_LOAD_ADDR}
-	echo "pack uboot okay! Input: ${DSTDIR}/out/u-boot.bin"
+	UBOOT_LOAD_ADDR=`sed -n "/CONFIG_SYS_TEXT_BASE=/s/CONFIG_SYS_TEXT_BASE=//p" ${OUTDIR}/include/autoconf.mk|tr -d '\r'`
+	${TOOLCHAIN_RKBIN}/loaderimage --pack --uboot ${OUTDIR}/u-boot.bin uboot.img ${UBOOT_LOAD_ADDR}
+	echo "pack uboot okay! Input: ${OUTDIR}/u-boot.bin"
 }
 
 pack_loader_image()
@@ -169,7 +152,7 @@ pack_trust_image()
 	local TOS TOS_TA DARM_BASE TEE_LOAD_ADDR TEE_OFFSET=0x8400000
 
 	# ARM64 uses trust_merger
-	if grep  -q '^CONFIG_ARM64=y' ${DSTDIR}/out/.config ; then
+	if grep  -q '^CONFIG_ARM64=y' ${OUTDIR}/.config ; then
 		if [ ! -f ${RKBIN}/RKTRUST/${RKCHIP}TRUST.ini ]; then
 			echo "pack trust failed! Can't find: ${RKBIN}/RKRUST/${RKCHIP}TRUST.ini"
 			return
@@ -188,7 +171,7 @@ pack_trust_image()
 		fi
 
 		# OP-TEE is 132M(0x8400000) offset from DRAM base.
-		DARM_BASE=`sed -n "/CONFIG_SYS_SDRAM_BASE=/s/CONFIG_SYS_SDRAM_BASE=//p" ${DSTDIR}/out/include/autoconf.mk|tr -d '\r'`
+		DARM_BASE=`sed -n "/CONFIG_SYS_SDRAM_BASE=/s/CONFIG_SYS_SDRAM_BASE=//p" ${OUTDIR}/include/autoconf.mk|tr -d '\r'`
 		TEE_LOAD_ADDR=$((DARM_BASE+TEE_OFFSET))
 
 		# Convert Dec to Hex
@@ -223,10 +206,10 @@ pack_trust_image()
 
 prepare
 echo "make for ${BOARD}_defconfig by -j${JOB}"
-make ${BOARD}_defconfig O=${DSTDIR}/out
+make ${BOARD}_defconfig ${OUTOPT}
 select_toolchain
 sub_commands
-make CROSS_COMPILE=${TOOLCHAIN_GCC}  all --jobs=${JOB} O=${DSTDIR}/out
+make CROSS_COMPILE=${TOOLCHAIN_GCC}  all --jobs=${JOB} ${OUTOPT}
 fixup_chip_name
 pack_uboot_image
 pack_loader_image
