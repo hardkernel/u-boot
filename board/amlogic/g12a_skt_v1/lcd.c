@@ -1,5 +1,5 @@
 /*
- * AMLOGIC TV LCD panel driver.
+ * AMLOGIC LCD panel driver.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -81,7 +81,9 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	/* basic timing */
 	768,1024,948,1140,64,56,0,50,30,0,
 	/* clk_attr */
-	0,0,1,64843200,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	0,0,1,64843200,Rsv_val,Rsv_val,Rsv_val,
+	/* custome */
+	Rsv_val,Rsv_val,Rsv_val,
 	/* mipi_attr */
 	4,550,0,1,0,2,1,0,Rsv_val,Rsv_val,
 	/* power step */
@@ -99,7 +101,9 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	/* basic timing */
 	600,1024,700,1053,24,36,0,2,8,0,
 	/* clk_attr */
-	0,0,1,44250000,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	0,0,1,44250000,Rsv_val,Rsv_val,Rsv_val,
+	/* custome */
+	Rsv_val,0x04,3,
 	/* mipi_attr */
 	4,360,0,1,0,2,1,0,Rsv_val,2,
 	/* power step */
@@ -117,7 +121,9 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	/* basic timing */
 	600,1024,680,1194,24,36,0,10,80,0,
 	/* clk_attr */
-	0,0,1,48715200,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	0,0,1,48715200,Rsv_val,Rsv_val,Rsv_val,
+	/* custome */
+	Rsv_val,0x04,3,
 	/* mipi_attr */
 	4,300,0,1,0,2,1,0,Rsv_val,3,
 	/* power step */
@@ -168,6 +174,8 @@ static struct dsi_config_s lcd_mipi_config = {
 	.dsi_init_on  = &mipi_init_on_table[0],
 	.dsi_init_off = &mipi_init_off_table[0],
 	.extern_init = 2, /* ext_index if needed, must match ext_config_dtf.index;*/
+	.check_en = 0,
+	.check_state = 0,
 };
 
 static struct lcd_power_ctrl_s lcd_power_ctrl = {
@@ -267,7 +275,7 @@ static char lcd_ext_gpio[LCD_EXTERN_GPIO_NUM_MAX][LCD_EXTERN_GPIO_LEN_MAX] = {
 
 #define LCD_EXTERN_NAME "mipi_TV070WSM"  //index 2
 //#define LCD_EXTERN_NAME "mipi_P070ACB"   //index 3
-
+#define LCD_EXTERN_INDEX           2
 #define LCD_EXTERN_CMD_SIZE        LCD_EXTERN_CMD_SIZE_DYNAMIC
 static unsigned char init_on_table[LCD_EXTERN_INIT_ON_MAX] = {
 	0xff, 0xff,   //ending flag
@@ -279,9 +287,10 @@ static unsigned char init_off_table[LCD_EXTERN_INIT_OFF_MAX] = {
 
 struct lcd_extern_config_s ext_config_dtf = {
 	.lcd_ext_key_valid = 0,
-	.index = 2,
+	.index = LCD_EXTERN_INDEX,
 	.type = LCD_EXTERN_MIPI, /* LCD_EXTERN_I2C, LCD_EXTERN_SPI, LCD_EXTERN_MIPI, LCD_EXTERN_MAX */
 	.status = 1, /* 0=disable, 1=enable */
+	.cmd_size = LCD_EXTERN_CMD_SIZE,
 	.table_init_on = init_on_table,
 	.table_init_off = init_off_table,
 };
@@ -312,11 +321,25 @@ struct bl_config_s bl_config_dft = {
 	.pwm_on_delay = 10,
 	.pwm_off_delay = 10,
 
+	.bl_extern_index = 0xff,
+
 	.pinctrl_ver = 2,
 	.bl_pinmux = bl_pinmux_ctrl,
 	.pinmux_set = {{11, 0x00400000}, {LCD_PINMUX_END, 0x0}},
 	.pinmux_clr = {{11, 0x00f00000}, {LCD_PINMUX_END, 0x0}},
 };
+
+#ifdef CONFIG_AML_BL_EXTERN
+struct bl_extern_config_s bl_extern_config_dtf = {
+	.index = BL_EXTERN_INDEX_INVALID,
+	.name = "none",
+	.type = BL_EXTERN_MAX,
+	.i2c_addr = 0xff,
+	.i2c_bus = BL_EXTERN_I2C_BUS_MAX,
+	.dim_min = 10,
+	.dim_max = 255,
+};
+#endif
 
 void lcd_config_bsp_init(void)
 {

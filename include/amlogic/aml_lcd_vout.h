@@ -318,6 +318,11 @@ struct dsi_config_s {
 	unsigned char *dsi_init_on;
 	unsigned char *dsi_init_off;
 	unsigned char extern_init;
+
+	unsigned char check_en;
+	unsigned char check_reg;
+	unsigned char check_cnt;
+	unsigned char check_state;
 };
 
 #define LCD_TCON_TABLE_MAX    4096

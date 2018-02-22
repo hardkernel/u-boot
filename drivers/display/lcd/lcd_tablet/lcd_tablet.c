@@ -91,6 +91,12 @@ static void lcd_config_load_print(struct lcd_config_s *pconf)
 		LCDPR("region_num = %d\n", pconf->lcd_control.vbyone_config->region_num);
 		LCDPR("color_fmt = %d\n", pconf->lcd_control.vbyone_config->color_fmt);
 	} else if (pconf->lcd_basic.lcd_type == LCD_MIPI) {
+		if (pconf->lcd_control.mipi_config->check_en) {
+			LCDPR("check_reg = 0x%02x\n",
+				pconf->lcd_control.mipi_config->check_reg);
+			LCDPR("check_cnt = %d\n",
+				pconf->lcd_control.mipi_config->check_cnt);
+		}
 		LCDPR("lane_num = %d\n",
 			pconf->lcd_control.mipi_config->lane_num);
 		LCDPR("bit_rate_max = %d\n",
@@ -347,6 +353,17 @@ static int lcd_config_load_from_dts(char *dt_addr, struct lcd_config_s *pconf)
 		}
 		break;
 	case LCD_MIPI:
+		propdata = (char *)fdt_getprop(dt_addr, child_offset, "check_state", NULL);
+		if (propdata == NULL) {
+			if (lcd_debug_print_flag)
+				LCDPR("failed to get check_state\n");
+			pconf->lcd_control.mipi_config->check_en = 0;
+		} else {
+			pconf->lcd_control.mipi_config->check_en = 1;
+			pconf->lcd_control.mipi_config->check_reg = (unsigned char)(be32_to_cpup((u32*)propdata));
+			pconf->lcd_control.mipi_config->check_cnt = (unsigned char)(be32_to_cpup((((u32*)propdata)+1)));
+		}
+
 		propdata = (char *)fdt_getprop(dt_addr, child_offset, "mipi_attr", NULL);
 		if (propdata == NULL) {
 			LCDERR("failed to get mipi_attr\n");
@@ -494,6 +511,20 @@ static int lcd_config_load_from_bsp(struct lcd_config_s *pconf)
 		pconf->lcd_control.vbyone_config->phy_vswing = VX1_PHY_VSWING_DFT;
 		pconf->lcd_control.vbyone_config->phy_preem  = VX1_PHY_PREEM_DFT;
 	} else if (pconf->lcd_basic.lcd_type == LCD_MIPI) {
+		/* custome */
+		temp = ext_lcd->customer_val_8;
+		if (temp == Rsv_val) {
+			pconf->lcd_control.mipi_config->check_en = 0;
+		} else {
+			pconf->lcd_control.mipi_config->check_en = 1;
+			pconf->lcd_control.mipi_config->check_reg = (unsigned char)temp;
+		}
+		temp = ext_lcd->customer_val_9;
+		if (temp == Rsv_val)
+			pconf->lcd_control.mipi_config->check_en = 0;
+		else
+			pconf->lcd_control.mipi_config->check_cnt = (unsigned char)temp;
+
 		pconf->lcd_control.mipi_config->lane_num = ext_lcd->lcd_spc_val0;
 		pconf->lcd_control.mipi_config->bit_rate_max   = ext_lcd->lcd_spc_val1;
 		pconf->lcd_control.mipi_config->factor_numerator = ext_lcd->lcd_spc_val2;

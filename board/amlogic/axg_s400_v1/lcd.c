@@ -1,5 +1,5 @@
 /*
- * AMLOGIC TV LCD panel driver.
+ * AMLOGIC LCD panel driver.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -65,7 +65,9 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	/* basic timing */
 	768,1024,948,1140,64,56,0,50,30,0,
 	/* clk_attr */
-	0,0,1,64843200,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	0,0,1,64843200,Rsv_val,Rsv_val,Rsv_val,
+	/* custome */
+	Rsv_val,Rsv_val,Rsv_val,
 	/* MIPI_attr: lane_num, bit_rate_max, factor, operation_mode_init, operation_mode_display, video_mode_type, clk_lp_continuous, phy_stop_wait */
 	4,550,0,1,0,2,1,0,Rsv_val,Rsv_val,
 	/* power step */
@@ -77,6 +79,8 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
 	Rsv_val,Rsv_val,Rsv_val,Rsv_val,
 	10,10,Rsv_val},
+
+	{.panel_type = "invalid"},
 };
 
 static struct dsi_config_s lcd_mipi_config = {
@@ -94,6 +98,8 @@ static struct dsi_config_s lcd_mipi_config = {
 	.dsi_init_off = &mipi_init_off_table[0],
 	.extern_init = 0xff, /* ext_index if needed, must match ext_config_dtf.index;
 				0xff for invalid */
+	.check_en = 0,
+	.check_state = 0,
 };
 
 static struct lcd_power_ctrl_s lcd_power_ctrl = {
@@ -179,6 +185,8 @@ struct lcd_config_s lcd_config_dft = {
 		.mipi_config= &lcd_mipi_config,
 	},
 	.lcd_power = &lcd_power_ctrl,
+
+	.pinctrl_ver = 1,
 	.pinmux_set = {{LCD_PINMUX_END, 0x0}},
 	.pinmux_clr = {{LCD_PINMUX_END, 0x0}},
 };
@@ -245,6 +253,7 @@ struct bl_config_s bl_config_dft = {
 
 	.bl_extern_index = 0xff,
 
+	.pinctrl_ver = 1,
 	.pinmux_set = {{2, 0x00200000}, {LCD_PINMUX_END, 0x0}},
 	.pinmux_clr = {{2, 0x00d00000}, {LCD_PINMUX_END, 0x0}},
 };

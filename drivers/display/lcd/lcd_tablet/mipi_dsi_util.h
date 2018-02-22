@@ -530,7 +530,7 @@ struct dsi_vid_s {
 };
 
 #define DSI_CMD_SIZE_MAX		2000
-/* #define DSI_CMD_READ_VALID   // DPHY don't support for M8 */
+#define DSI_CMD_READ_VALID
 
 extern void mipi_dsi_print_info(struct lcd_config_s *pconf);
 extern void lcd_mipi_dsi_config_set(struct lcd_config_s *pConf);
