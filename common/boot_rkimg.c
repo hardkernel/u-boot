@@ -21,6 +21,7 @@
 
 #define BOOTLOADER_MESSAGE_OFFSET_IN_MISC	(16 * 1024)
 #define BOOTLOADER_MESSAGE_BLK_OFFSET		(BOOTLOADER_MESSAGE_OFFSET_IN_MISC >> 9)
+DECLARE_GLOBAL_DATA_PTR;
 
 struct bootloader_message {
 	char command[32];
@@ -315,11 +316,14 @@ int boot_rockchip_image(struct blk_desc *dev_desc, disk_partition_t *boot_part)
 		ramdisk_size = 0;
 	}
 
-	fdt_size = rockchip_read_resource_file((void *)fdt_addr_r, DTB_FILE, 0, 0);
-	if (fdt_size < 0) {
-		printf("%s fdt read error\n", __func__);
-		ret = -EINVAL;
-		goto out;
+	if (gd->fdt_blob != (void *)fdt_addr_r) {
+		fdt_size = rockchip_read_resource_file((void *)fdt_addr_r,
+						       DTB_FILE, 0, 0);
+		if (fdt_size < 0) {
+			printf("%s fdt read error\n", __func__);
+			ret = -EINVAL;
+			goto out;
+		}
 	}
 
 	printf("kernel   @ 0x%08lx (0x%08x)\n", kernel_addr_r, kernel_size);
