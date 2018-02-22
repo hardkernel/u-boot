@@ -33,6 +33,10 @@
 #define RK818_USB_ILIM_SEL_MASK		0x0f
 #define RK818_USB_CHG_SD_VSEL_MASK	0x70
 
+/* RK809 BUCK5 */
+#define RK809_BUCK5_CONFIG(n)		(0xde + (n) * 1)
+#define RK809_BUCK5_VSEL_MASK		0x07
+
 /* RK817 BUCK */
 #define RK817_BUCK_ON_VSEL(n)		(0xbb + 3 * (n - 1))
 #define RK817_BUCK_SLP_VSEL(n)		(0xbc + 3 * (n - 1))
@@ -76,6 +80,14 @@ static const struct rk8xx_reg_info rk816_buck[] = {
 	{ 712500, 12500, -1, -1, RK818_BUCK_VSEL_MASK, },
 	/* buck 4 */
 	{  800000, 100000, REG_BUCK4_ON_VSEL, REG_BUCK4_SLP_VSEL, RK818_BUCK4_VSEL_MASK, },
+};
+
+static const struct rk8xx_reg_info rk809_buck5[] = {
+	/* buck 5 */
+	{ 1500000,	0, RK809_BUCK5_CONFIG(0), RK809_BUCK5_CONFIG(1), RK809_BUCK5_VSEL_MASK, 0x00, },
+	{ 1800000, 200000, RK809_BUCK5_CONFIG(0), RK809_BUCK5_CONFIG(1), RK809_BUCK5_VSEL_MASK, 0x01, },
+	{ 2800000, 200000, RK809_BUCK5_CONFIG(0), RK809_BUCK5_CONFIG(1), RK809_BUCK5_VSEL_MASK, 0x04, },
+	{ 3300000, 300000, RK809_BUCK5_CONFIG(0), RK809_BUCK5_CONFIG(1), RK809_BUCK5_VSEL_MASK, 0x06, },
 };
 
 static const struct rk8xx_reg_info rk817_buck[] = {
@@ -196,6 +208,7 @@ static const struct rk8xx_reg_info *get_buck_reg(struct udevice *pmic,
 			return &rk816_buck[num + 4];
 		}
 
+	case RK809_ID:
 	case RK817_ID:
 		switch (num) {
 		case 0 ... 2:
@@ -205,13 +218,23 @@ static const struct rk8xx_reg_info *get_buck_reg(struct udevice *pmic,
 				return &rk817_buck[num * 3 + 1];
 			else
 				return &rk817_buck[num * 3 + 2];
-		default:
+		case 3:
 			if (uvolt < 1500000)
 				return &rk817_buck[num * 3 + 0];
 			else if (uvolt < 3400000)
 				return &rk817_buck[num * 3 + 1];
 			else
 				return &rk817_buck[num * 3 + 2];
+		/* BUCK5 for RK809 */
+		default:
+			if (uvolt < 1800000)
+				return &rk809_buck5[0];
+			else if (uvolt < 2800000)
+				return &rk809_buck5[1];
+			else if (uvolt < 3300000)
+				return &rk809_buck5[2];
+			else
+				return &rk809_buck5[3];
 		}
 	case RK818_ID:
 		return &rk818_buck[num];
@@ -278,12 +301,22 @@ static int _buck_set_enable(struct udevice *pmic, int buck, bool enable)
 		ret = pmic_clrsetbits(pmic, REG_DCDC_EN, mask,
 				      enable ? mask : 0);
 		break;
+	case RK809_ID:
 	case RK817_ID:
-		if (enable)
-			value = ((1 << buck) | (1 << (buck + 4)));
-		else
-			value = ((0 << buck) | (1 << (buck + 4)));
-		ret = pmic_reg_write(pmic, RK817_POWER_EN(0), value);
+		if (buck < 4) {
+			if (enable)
+				value = ((1 << buck) | (1 << (buck + 4)));
+			else
+				value = ((0 << buck) | (1 << (buck + 4)));
+			ret = pmic_reg_write(pmic, RK817_POWER_EN(0), value);
+		/* BUCK5 for RK809 */
+		} else {
+			if (enable)
+				value = ((1 << 1) | (1 << 5));
+			else
+				value = ((0 << 1) | (1 << 5));
+			ret = pmic_reg_write(pmic, RK817_POWER_EN(3), value);
+		}
 		break;
 	default:
 		ret = -EINVAL;
@@ -337,12 +370,22 @@ static int _buck_get_enable(struct udevice *pmic, int buck)
 		if (ret < 0)
 			return ret;
 		break;
+	case RK809_ID:
 	case RK817_ID:
-		mask = 1 << buck;
-		ret = pmic_reg_read(pmic, RK817_POWER_EN(0));
-			debug("%s: %s, buck=%d, en=%x\n", __func__, pmic->name, buck, ret);
+		if (buck < 4) {
+			mask = 1 << buck;
+			ret = pmic_reg_read(pmic, RK817_POWER_EN(0));
+		/* BUCK5 for RK809 */
+		} else {
+			mask = 1 << 1;
+			ret = pmic_reg_read(pmic, RK817_POWER_EN(3));
+		}
 		break;
 	}
+
+	if (ret < 0)
+		return ret;
+
 	return ret & mask ? true : false;
 }
 
@@ -359,15 +402,18 @@ static int _buck_set_suspend_enable(struct udevice *pmic, int buck, bool enable)
 		ret = pmic_clrsetbits(pmic, RK816_REG_DCDC_SLP_EN, mask,
 				      enable ? mask : 0);
 		break;
-
 	case RK808_ID:
 	case RK818_ID:
 		mask = 1 << buck;
 		ret = pmic_clrsetbits(pmic, REG_SLEEP_SET_OFF1, mask,
 				      enable ? 0 : mask);
 		break;
+	case RK809_ID:
 	case RK817_ID:
-		mask = 1 << buck;
+		if (buck < 4)
+			mask = 1 << buck;
+		else
+			mask = 1 << 5;	/* BUCK5 for RK809 */
 		ret = pmic_clrsetbits(pmic, RK817_POWER_SLP_EN(0), mask,
 				      enable ? mask : 0);
 		break;
@@ -387,6 +433,7 @@ static const struct rk8xx_reg_info *get_ldo_reg(struct udevice *pmic,
 	case RK805_ID:
 	case RK816_ID:
 		return &rk816_ldo[num];
+	case RK809_ID:
 	case RK817_ID:
 		if (uvolt < 3400000)
 			return &rk817_ldo[num * 2 + 0];
@@ -423,6 +470,7 @@ static int _ldo_get_enable(struct udevice *pmic, int ldo)
 		if (ret < 0)
 			return ret;
 		break;
+	case RK809_ID:
 	case RK817_ID:
 		if (ldo < 4) {
 			mask = 1 << ldo;
@@ -438,6 +486,10 @@ static int _ldo_get_enable(struct udevice *pmic, int ldo)
 		}
 		break;
 	}
+
+	if (ret < 0)
+		return ret;
+
 	return ret & mask ? true : false;
 }
 
@@ -469,6 +521,7 @@ static int _ldo_set_enable(struct udevice *pmic, int ldo, bool enable)
 		ret = pmic_clrsetbits(pmic, REG_LDO_EN, mask,
 				       enable ? mask : 0);
 		break;
+	case RK809_ID:
 	case RK817_ID:
 		if (ldo < 4) {
 			en_reg = RK817_POWER_EN(1);
@@ -511,6 +564,7 @@ static int _ldo_set_suspend_enable(struct udevice *pmic, int ldo, bool enable)
 		ret = pmic_clrsetbits(pmic, REG_SLEEP_SET_OFF2, mask,
 				      enable ? 0 : mask);
 		break;
+	case RK809_ID:
 	case RK817_ID:
 		if (ldo == 8) {
 			mask = 1 << 4;	/* LDO9 */
@@ -663,28 +717,94 @@ static int ldo_get_enable(struct udevice *dev)
 
 static int switch_set_enable(struct udevice *dev, bool enable)
 {
-	int sw = dev->driver_data - 1;
-	uint mask;
+	struct rk8xx_priv *priv = dev_get_priv(dev->parent);
+	int ret = 0, sw = dev->driver_data - 1;
+	uint mask = 0;
 
-	mask = 1 << (sw + 5);
+	switch (priv->variant) {
+	case RK808_ID:
+		mask = 1 << (sw + 5);
+		ret = pmic_clrsetbits(dev->parent, REG_DCDC_EN, mask,
+				      enable ? mask : 0);
+		break;
+	case RK809_ID:
+		mask = (1 << (sw + 2)) | (1 << (sw + 6));
+		ret = pmic_clrsetbits(dev->parent, RK817_POWER_EN(3), mask,
+				      enable ? mask : 0);
+		break;
+	case RK818_ID:
+		mask = 1 << 6;
+		ret = pmic_clrsetbits(dev->parent, REG_DCDC_EN, mask,
+				      enable ? mask : 0);
+		break;
+	}
 
-	return pmic_clrsetbits(dev->parent, REG_DCDC_EN, mask,
-			       enable ? mask : 0);
+	debug("%s: switch%d, enable=%d, mask=0x%x\n",
+	      __func__, sw + 1, enable, mask);
+
+	return ret;
 }
 
 static int switch_get_enable(struct udevice *dev)
 {
-	int sw = dev->driver_data - 1;
-	int ret;
-	uint mask;
+	struct rk8xx_priv *priv = dev_get_priv(dev->parent);
+	int ret = 0, sw = dev->driver_data - 1;
+	uint mask = 0;
 
-	mask = 1 << (sw + 5);
+	switch (priv->variant) {
+	case RK808_ID:
+		mask = 1 << (sw + 5);
+		ret = pmic_reg_read(dev->parent, REG_DCDC_EN);
+		break;
+	case RK809_ID:
+		mask = 1 << (sw + 2);
+		ret = pmic_reg_read(dev->parent, RK817_POWER_EN(3));
+		break;
+	case RK818_ID:
+		mask = 1 << 6;
+		ret = pmic_reg_read(dev->parent, REG_DCDC_EN);
+		break;
+	}
 
-	ret = pmic_reg_read(dev->parent, REG_DCDC_EN);
 	if (ret < 0)
 		return ret;
 
 	return ret & mask ? true : false;
+}
+
+static int switch_set_suspend_value(struct udevice *dev, int uvolt)
+{
+	return 0;
+}
+
+static int switch_set_suspend_enable(struct udevice *dev, bool enable)
+{
+	struct rk8xx_priv *priv = dev_get_priv(dev->parent);
+	int ret = 0, sw = dev->driver_data - 1;
+	uint mask = 0;
+
+	switch (priv->variant) {
+	case RK808_ID:
+		mask = 1 << (sw + 5);
+		ret = pmic_clrsetbits(dev->parent, REG_SLEEP_SET_OFF1, mask,
+				      enable ? 0 : mask);
+		break;
+	case RK809_ID:
+		mask = 1 << (sw + 6);
+		ret = pmic_clrsetbits(dev->parent, RK817_POWER_SLP_EN(0), mask,
+				      enable ? mask : 0);
+		break;
+	case RK818_ID:
+		mask = 1 << 6;
+		ret = pmic_clrsetbits(dev->parent, REG_SLEEP_SET_OFF1, mask,
+				      enable ? 0 : mask);
+		break;
+	}
+
+	debug("%s: switch%d, enable=%d, mask=0x%x\n",
+	      __func__, sw + 1, enable, mask);
+
+	return ret;
 }
 
 static int rk8xx_buck_probe(struct udevice *dev)
@@ -744,6 +864,8 @@ static const struct dm_regulator_ops rk8xx_ldo_ops = {
 static const struct dm_regulator_ops rk8xx_switch_ops = {
 	.get_enable = switch_get_enable,
 	.set_enable = switch_set_enable,
+	.set_suspend_enable = switch_set_suspend_enable,
+	.set_suspend_value = switch_set_suspend_value,
 };
 
 U_BOOT_DRIVER(rk8xx_buck) = {

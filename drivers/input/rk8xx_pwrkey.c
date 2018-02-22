@@ -14,7 +14,6 @@
 #include <asm/arch/periph.h>
 #include <dm/pinctrl.h>
 
-#define RK817_GPIO_INT_CFG	0xfe
 #define	RK817_INT_STS_REG0	0xf8
 #define	RK817_INT_MSK_REG0	0xf9
 #define	RK817_INT_STS_REG1	0xfa
@@ -24,7 +23,6 @@
 #define RK817_PWRON_RISE_INT	(1 << 1)
 #define RK817_PWRON_FALL_INT	(1 << 0)
 #define RK817_PLUG_OUT_INT	(1 << 1)
-#define RK817_INT_POL_MSK	BIT(1)
 
 #define	RK816_INT_STS_REG1	0x49
 #define	RK816_INT_MSK_REG1	0x4a
@@ -64,8 +62,6 @@ static struct reg_data rk817_init_reg[] = {
 	{ RK817_INT_STS_REG0, 0xff },
 	{ RK817_INT_STS_REG1, 0xff },
 	{ RK817_INT_STS_REG2, 0xff },
-	/* pmic_int active low */
-	{ RK817_GPIO_INT_CFG, 0x20 },
 };
 
 static struct reg_data rk817_irq_reg[] = {
@@ -265,6 +261,7 @@ static int rk8xx_pwrkey_probe(struct udevice *dev)
 		priv->irq_reg = rk816_irq_reg;
 		priv->irq_reg_num = ARRAY_SIZE(rk816_irq_reg);
 		break;
+	case RK809_ID:
 	case RK817_ID:
 		priv->key_int_sts_reg = RK817_INT_STS_REG0;
 		priv->key_int_msk_reg = RK817_INT_MSK_REG0;

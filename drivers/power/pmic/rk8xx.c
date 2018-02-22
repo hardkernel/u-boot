@@ -93,6 +93,7 @@ static int rk8xx_shutdown(struct udevice *dev)
 		devctrl_reg = REG_DEVCTRL;
 		dev_off = BIT(0);
 		break;
+	case RK809_ID:
 	case RK817_ID:
 		devctrl_reg = RK817_REG_SYS_CFG3;
 		dev_off = BIT(0);
@@ -161,7 +162,8 @@ static int rk8xx_probe(struct udevice *dev)
 	uint8_t msb, lsb, id_msb, id_lsb;
 
 	/* read Chip variant */
-	if (device_is_compatible(dev, "rockchip,rk817")) {
+	if (device_is_compatible(dev, "rockchip,rk817") ||
+	    device_is_compatible(dev, "rockchip,rk809")) {
 		id_msb = RK817_ID_MSB;
 		id_lsb = RK817_ID_LSB;
 	} else {
@@ -179,6 +181,7 @@ static int rk8xx_probe(struct udevice *dev)
 	case RK816_ID:
 	case RK818_ID:
 		break;
+	case RK809_ID:
 	case RK817_ID:
 #ifdef CONFIG_DM_CHARGE_DISPLAY
 		init_data = rk817_init_reg;
@@ -219,6 +222,7 @@ static struct dm_pmic_ops rk8xx_ops = {
 static const struct udevice_id rk8xx_ids[] = {
 	{ .compatible = "rockchip,rk805" },
 	{ .compatible = "rockchip,rk808" },
+	{ .compatible = "rockchip,rk809" },
 	{ .compatible = "rockchip,rk816" },
 	{ .compatible = "rockchip,rk817" },
 	{ .compatible = "rockchip,rk818" },
