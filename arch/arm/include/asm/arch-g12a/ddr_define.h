@@ -21,9 +21,10 @@
 
 #define CONFIG_DDR_TYPE_DDR3				0
 #define CONFIG_DDR_TYPE_DDR4				1
-#define CONFIG_DDR_TYPE_LPDDR3				2
-#define CONFIG_DDR_TYPE_LPDDR2				3
-#define CONFIG_DDR_TYPE_AUTO				0xf /* support ddr3/ddr4 */
+#define CONFIG_DDR_TYPE_LPDDR4				2
+#define CONFIG_DDR_TYPE_LPDDR3				3
+#define CONFIG_DDR_TYPE_LPDDR2				4
+#define CONFIG_DDR_TYPE_AUTO				0xf
 
 /* ddr channel defines */
 #define CONFIG_DDR0_16BIT					1
@@ -38,6 +39,8 @@
 #define CONFIG_DDR0_32BIT_RANK01_CH01		0x3
 #define CONFIG_DDR0_32BIT_16BIT_RANK0_CH0	0x5
 #define CONFIG_DDR0_32BIT_16BIT_RANK01_CH0	0x6
+#define CONFIG_DDR0_32BIT_RANK01_CH0		0x7
+#define CONFIG_DDR0_32BIT_RANK0_CH01		0x8
 
 #define CFG_DDR_BASE_ADDR					0X0
 #define CFG_DDR_START_OFFSET				0X00000000 //TXLX SKIP 0MB
@@ -87,6 +90,9 @@
 
 #define DDR_RANK1_SIZE_CTRL					(3)
 #define DDR_RANK0_SIZE_CTRL					(0)
+
+/* dram cfg magic */
+#define DRAM_CFG_MAGIC							0x2e676663
 
 /* lpddr3 defines */
 #ifndef CONFIG_LPDDR_REMAP_SET
@@ -267,3 +273,4 @@
 
 #define DWC_AC_PINMUX_TOTAL						28
 #define DWC_DFI_PINMUX_TOTAL					26
+#define DWC_DQ_PINMUX_TOTAL						32
