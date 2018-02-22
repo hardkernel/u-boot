@@ -103,6 +103,8 @@ static inline int fdt_fixup_memory_banks(void *blob, u64 start[], u64 size[],
 }
 #endif
 
+int fdt_update_reserved_memory(void *blob, char *name, u64 start, u64 size);
+
 void fdt_fixup_ethernet(void *fdt);
 int fdt_find_and_setprop(void *fdt, const char *node, const char *prop,
 			 const void *val, int len, int create);
