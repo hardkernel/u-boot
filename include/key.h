@@ -7,6 +7,8 @@
 #ifndef _KEY_H_
 #define _KEY_H_
 
+#include <linux/input.h>
+
 #define KEY_LONG_DOWN_MS	2000
 
 enum key_state {
@@ -18,10 +20,8 @@ enum key_state {
 };
 
 struct dm_key_ops {
-	int type;
 	const char *name;
 	int (*read)(struct udevice *dev, int code);
-	int (*exist)(struct udevice *dev, int code);
 };
 
 struct input_key {
