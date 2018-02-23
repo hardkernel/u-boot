@@ -127,6 +127,116 @@ static void rkclk_set_pll(struct px30_cru *cru, enum px30_pll_id pll_id,
 	return;
 }
 
+static uint32_t rkclk_pll_get_rate(struct px30_cru *cru,
+				   enum px30_pll_id pll_id)
+{
+	u32 refdiv, fbdiv, postdiv1, postdiv2;
+	u32 con;
+	struct px30_pll *pll;
+	static u8 clk_shift[PLL_COUNT] = {
+		APLL_MODE_SHIFT, DPLL_MODE_SHIFT, CPLL_MODE_SHIFT,
+		NPLL_MODE_SHIFT, GPLL_MODE_SHIFT
+	};
+	static u32 clk_mask[PLL_COUNT] = {
+		APLL_MODE_MASK, DPLL_MODE_MASK, CPLL_MODE_MASK,
+		NPLL_MODE_MASK, GPLL_MODE_MASK
+	};
+	uint shift;
+	uint mask;
+
+	if (pll_id == GPLL) {
+		pll = &cru->gpll;
+		con = readl(&cru->pmu_mode);
+	} else {
+		pll = &cru->pll[pll_id];
+		con = readl(&cru->mode);
+	}
+
+	shift = clk_shift[pll_id];
+	mask = clk_mask[pll_id];
+
+	switch ((con & mask) >> shift) {
+	case PLLMUX_FROM_XIN24M:
+		return OSC_HZ;
+	case PLLMUX_FROM_PLL:
+		/* normal mode */
+		con = readl(&pll->con0);
+		postdiv1 = (con & PLL_POSTDIV1_MASK) >> PLL_POSTDIV1_SHIFT;
+		fbdiv = (con & PLL_FBDIV_MASK) >> PLL_FBDIV_SHIFT;
+		con = readl(&pll->con1);
+		postdiv2 = (con & PLL_POSTDIV2_MASK) >> PLL_POSTDIV2_SHIFT;
+		refdiv = (con & PLL_REFDIV_MASK) >> PLL_REFDIV_SHIFT;
+		return (24 * fbdiv / (refdiv * postdiv1 * postdiv2)) * 1000000;
+	case PLLMUX_FROM_RTC32K:
+	default:
+		return 32768;
+	}
+}
+
+static int pll_para_config(u32 freq_hz, struct pll_div *div)
+{
+	u32 ref_khz = OSC_HZ / KHz, refdiv, fbdiv = 0;
+	u32 postdiv1, postdiv2 = 1;
+	u32 fref_khz;
+	u32 diff_khz, best_diff_khz;
+	const u32 max_refdiv = 63, max_fbdiv = 3200, min_fbdiv = 16;
+	const u32 max_postdiv1 = 7, max_postdiv2 = 7;
+	u32 vco_khz;
+	u32 freq_khz = freq_hz / KHz;
+
+	if (!freq_hz) {
+		printf("%s: the frequency can't be 0 Hz\n", __func__);
+		return -1;
+	}
+
+	postdiv1 = DIV_ROUND_UP(VCO_MIN_HZ / 1000, freq_khz);
+	if (postdiv1 > max_postdiv1) {
+		postdiv2 = DIV_ROUND_UP(postdiv1, max_postdiv1);
+		postdiv1 = DIV_ROUND_UP(postdiv1, postdiv2);
+	}
+
+	vco_khz = freq_khz * postdiv1 * postdiv2;
+
+	if (vco_khz < (VCO_MIN_HZ / KHz) || vco_khz > (VCO_MAX_HZ / KHz) ||
+	    postdiv2 > max_postdiv2) {
+		printf("%s: Cannot find out a supported VCO for Freq (%uHz)\n",
+		       __func__, freq_hz);
+		return -1;
+	}
+
+	div->postdiv1 = postdiv1;
+	div->postdiv2 = postdiv2;
+
+	best_diff_khz = vco_khz;
+	for (refdiv = 1; refdiv < max_refdiv && best_diff_khz; refdiv++) {
+		fref_khz = ref_khz / refdiv;
+
+		fbdiv = vco_khz / fref_khz;
+		if ((fbdiv >= max_fbdiv) || (fbdiv <= min_fbdiv))
+			continue;
+		diff_khz = vco_khz - fbdiv * fref_khz;
+		if (fbdiv + 1 < max_fbdiv && diff_khz > fref_khz / 2) {
+			fbdiv++;
+			diff_khz = fref_khz - diff_khz;
+		}
+
+		if (diff_khz >= best_diff_khz)
+			continue;
+
+		best_diff_khz = diff_khz;
+		div->refdiv = refdiv;
+		div->fbdiv = fbdiv;
+	}
+
+	if (best_diff_khz > 4 * (MHz / KHz)) {
+		printf("%s: Failed to match output frequency %u bestis %u Hz\n",
+		       __func__, freq_hz,
+		       best_diff_khz * KHz);
+		return -1;
+	}
+	return 0;
+}
+
 static void rkclk_init(struct px30_cru *cru)
 {
 	u32 aclk_div;
@@ -452,6 +562,67 @@ static ulong px30_spi_set_clk(struct px30_cru *cru, ulong clk_id, uint hz)
 	return DIV_TO_RATE(GPLL_HZ, src_clk_div);
 }
 
+static ulong px30_vop_get_clk(struct px30_cru *cru, ulong clk_id)
+{
+	u32 div, con, parent;
+
+	switch (clk_id) {
+	case ACLK_VOPB:
+		con = readl(&cru->clksel_con[3]);
+		div = con & ACLK_VO_DIV_MASK;
+		parent = GPLL_HZ;
+		break;
+	case DCLK_VOPB:
+		con = readl(&cru->clksel_con[5]);
+		div = con & DCLK_VOPB_DIV_MASK;
+		parent = rkclk_pll_get_rate(cru, CPLL);
+		break;
+	default:
+		return -ENOENT;
+	}
+
+	return DIV_TO_RATE(parent, div);
+}
+
+static ulong px30_vop_set_clk(struct px30_cru *cru, ulong clk_id, uint hz)
+{
+	int src_clk_div;
+	struct pll_div cpll_config = {0};
+
+	src_clk_div = GPLL_HZ / hz;
+	assert(src_clk_div - 1 < 31);
+
+	switch (clk_id) {
+	case ACLK_VOPB:
+		rk_clrsetreg(&cru->clksel_con[3],
+			     ACLK_VO_PLL_MASK | ACLK_VO_DIV_MASK,
+			     ACLK_VO_SEL_GPLL << ACLK_VO_PLL_SHIFT |
+			     (src_clk_div - 1) << ACLK_VO_DIV_SHIFT);
+		break;
+	case DCLK_VOPB:
+		/*
+		 * vopb dclk source from cpll, and equals to
+		 * cpll(means div == 1)
+		 */
+		if (pll_para_config(hz, &cpll_config))
+			return -1;
+		rkclk_set_pll(cru, CPLL, &cpll_config);
+
+		rk_clrsetreg(&cru->clksel_con[5],
+			     DCLK_VOPB_SEL_MASK | DCLK_VOPB_PLL_SEL_MASK |
+			     DCLK_VOPB_DIV_MASK,
+			     DCLK_VOPB_SEL_DIVOUT << DCLK_VOPB_SEL_SHIFT |
+			     DCLK_VOPB_PLL_SEL_CPLL << DCLK_VOPB_PLL_SEL_SHIFT |
+			     (1 - 1) << DCLK_VOPB_DIV_SHIFT);
+		break;
+	default:
+		printf("do not support this vop freq\n");
+		return -EINVAL;
+	}
+
+	return hz;
+}
+
 static ulong px30_clk_get_rate(struct clk *clk)
 {
 	struct px30_clk_priv *priv = dev_get_priv(clk->dev);
@@ -481,6 +652,10 @@ static ulong px30_clk_get_rate(struct clk *clk)
 	case SCLK_SPI0:
 	case SCLK_SPI1:
 		rate = px30_spi_get_clk(priv->cru, clk->id);
+		break;
+	case ACLK_VOPB:
+	case DCLK_VOPB:
+		rate = px30_vop_get_clk(priv->cru, clk->id);
 		break;
 	default:
 		return -ENOENT;
@@ -520,6 +695,10 @@ static ulong px30_clk_set_rate(struct clk *clk, ulong rate)
 	case SCLK_SPI0:
 	case SCLK_SPI1:
 		ret = px30_spi_set_clk(priv->cru, clk->id, rate);
+		break;
+	case ACLK_VOPB:
+	case DCLK_VOPB:
+		ret = px30_vop_set_clk(priv->cru, clk->id, rate);
 		break;
 	default:
 		return -ENOENT;
