@@ -4,6 +4,7 @@
  * SPDX-License-Identifier:	GPL-2.0+
  */
 
+#include <asm/io.h>
 #include <common.h>
 #include <clk.h>
 #include <dm.h>
@@ -27,7 +28,7 @@ struct generic_ohci {
 
 static int ohci_usb_probe(struct udevice *dev)
 {
-	struct ohci_regs *regs = (struct ohci_regs *)devfdt_get_addr(dev);
+	struct ohci_regs *regs;
 	struct generic_ohci *priv = dev_get_priv(dev);
 	int i, err, ret, clock_nb, reset_nb;
 
@@ -100,6 +101,7 @@ static int ohci_usb_probe(struct udevice *dev)
 		}
 	}
 
+	regs = map_physmem(dev_read_addr(dev), 0x100, MAP_NOCACHE);
 	err = ohci_register(dev, regs);
 	if (err)
 		goto phy_err;
