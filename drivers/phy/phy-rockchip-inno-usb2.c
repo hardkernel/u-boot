@@ -6,6 +6,7 @@
 
 #include <common.h>
 #include <dm.h>
+#include <dm/lists.h>
 #include <generic-phy.h>
 #include <syscon.h>
 #include <asm/io.h>
@@ -371,12 +372,10 @@ void otg_phy_init(struct dwc2_udc *dev)
 
 static int rockchip_usb2phy_init(struct phy *phy)
 {
-	struct rockchip_usb2phy *rphy;
+	struct udevice *parent = phy->dev->parent;
+	struct rockchip_usb2phy *rphy = dev_get_priv(parent);
 	const struct rockchip_usb2phy_port_cfg *port_cfg;
-	void __iomem *base;
-
-	rphy = dev_get_priv(phy->dev);
-	base = get_reg_base(rphy);
+	void __iomem *base = get_reg_base(rphy);
 
 	if (phy->id == USB2PHY_PORT_OTG) {
 		port_cfg = &rphy->phy_cfg->port_cfgs[USB2PHY_PORT_OTG];
@@ -397,12 +396,10 @@ static int rockchip_usb2phy_init(struct phy *phy)
 
 static int rockchip_usb2phy_exit(struct phy *phy)
 {
-	struct rockchip_usb2phy *rphy;
+	struct udevice *parent = phy->dev->parent;
+	struct rockchip_usb2phy *rphy = dev_get_priv(parent);
 	const struct rockchip_usb2phy_port_cfg *port_cfg;
-	void __iomem *base;
-
-	rphy = dev_get_priv(phy->dev);
-	base = get_reg_base(rphy);
+	void __iomem *base = get_reg_base(rphy);
 
 	if (phy->id == USB2PHY_PORT_OTG) {
 		port_cfg = &rphy->phy_cfg->port_cfgs[USB2PHY_PORT_OTG];
@@ -414,6 +411,51 @@ static int rockchip_usb2phy_exit(struct phy *phy)
 	}
 
 	property_enable(base, &port_cfg->phy_sus, true);
+
+	return 0;
+}
+
+static int rockchip_usb2phy_of_xlate(struct phy *phy,
+				     struct ofnode_phandle_args *args)
+{
+	const char *dev_name = phy->dev->name;
+
+	if (!strcasecmp(dev_name, "host-port")) {
+		phy->id = USB2PHY_PORT_HOST;
+	} else if (!strcasecmp(dev_name, "otg-port")) {
+		phy->id = USB2PHY_PORT_OTG;
+	} else {
+		pr_err("%s: invalid dev name\n", __func__);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static int rockchip_usb2phy_bind(struct udevice *dev)
+{
+	struct udevice *child;
+	ofnode subnode;
+	const char *node_name;
+	int ret;
+
+	dev_for_each_subnode(subnode, dev) {
+		if (!ofnode_valid(subnode)) {
+			debug("%s: %s subnode not found", __func__, dev->name);
+			return -ENXIO;
+		}
+
+		node_name = ofnode_get_name(subnode);
+		debug("%s: subnode %s\n", __func__, node_name);
+
+		ret = device_bind_driver_to_node(dev, "rockchip_usb2phy_port",
+						 node_name, subnode, &child);
+		if (ret) {
+			pr_err("%s: '%s' cannot bind 'rockchip_usb2phy_port'\n",
+			       __func__, node_name);
+			return ret;
+		}
+	}
 
 	return 0;
 }
@@ -480,6 +522,7 @@ static int rockchip_usb2phy_probe(struct udevice *dev)
 static struct phy_ops rockchip_usb2phy_ops = {
 	.init = rockchip_usb2phy_init,
 	.exit = rockchip_usb2phy_exit,
+	.of_xlate = rockchip_usb2phy_of_xlate,
 };
 
 static const struct rockchip_usb2phy_cfg rk312x_phy_cfgs[] = {
@@ -633,11 +676,17 @@ static const struct udevice_id rockchip_usb2phy_ids[] = {
 	{ }
 };
 
+U_BOOT_DRIVER(rockchip_usb2phy_port) = {
+	.name		= "rockchip_usb2phy_port",
+	.id		= UCLASS_PHY,
+	.ops		= &rockchip_usb2phy_ops,
+};
+
 U_BOOT_DRIVER(rockchip_usb2phy) = {
 	.name		= "rockchip_usb2phy",
 	.id		= UCLASS_PHY,
 	.of_match	= rockchip_usb2phy_ids,
-	.ops		= &rockchip_usb2phy_ops,
 	.probe		= rockchip_usb2phy_probe,
+	.bind		= rockchip_usb2phy_bind,
 	.priv_auto_alloc_size = sizeof(struct rockchip_usb2phy),
 };
