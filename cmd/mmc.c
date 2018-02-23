@@ -147,7 +147,7 @@ static int do_mmc_testrpmb(cmd_tbl_t *cmdtp,
 	uint64_t value;
 	trusty_write_rollback_index(0x87654321, 0x1122334455667788);
 	trusty_read_rollback_index(0x87654321, &value);
-	debug("sizeof(value) %x\n ", sizeof(value));
+	debug("sizeof(value) %zu\n ", sizeof(value));
 	if (value == 0x1122334455667788)
 		printf("good ! value==0x1122334455667788\n ");
 	else
