@@ -39,5 +39,4 @@
 #define TEE_WAIT_MUTEX_DELETE	2
 #define TEE_RPC_WAIT		0x30000000
 
-
 #endif

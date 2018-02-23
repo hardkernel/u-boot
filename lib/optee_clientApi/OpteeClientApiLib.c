@@ -8,6 +8,7 @@
 #include <optee_include/OpteeClientApiLib.h>
 #include <optee_include/OpteeClientMem.h>
 #include <optee_include/OpteeClientSMC.h>
+#include <optee_include/OpteeClientRkFs.h>
 
 /*
  * Initlialize the library
@@ -17,6 +18,8 @@ TEEC_Result OpteeClientApiLibInitialize(void)
 	TEEC_Result status = TEEC_SUCCESS;
 
 	OpteeClientMemInit();
+
+	OpteeClientRkFsInit();
 
 	return status;
 }
@@ -64,8 +67,8 @@ exit:
  */
 TEEC_Result TEEC_FinalizeContext(TEEC_Context *context)
 {
-	debug("TEEC_FinalizeContext Enter-Exit: context=0x%X\n",
-		(unsigned int)context);
+	debug("TEEC_FinalizeContext Enter-Exit: context=0x%zu\n",
+		(size_t)context);
 	return TEEC_SUCCESS;
 }
 
@@ -81,7 +84,7 @@ TEEC_Result TEEC_AllocateSharedMemory(TEEC_Context *context,
 {
 	TEEC_Result TeecResult = TEEC_SUCCESS;
 
-	debug("TEEC_AllocateSharedMemory Enter: context=%s 0x%X, shared_memory=0x%X\n",
+	debug("TEEC_AllocateSharedMemory Enter: context=%s 0x%X, shared_memory=0x%zu\n",
 		context->devname, context->fd, shared_memory->size);
 
 	if ((context == NULL) || (shared_memory == NULL)) {
@@ -97,7 +100,7 @@ TEEC_Result TEEC_AllocateSharedMemory(TEEC_Context *context,
 	shared_memory->buffer = NULL;
 	shared_memory->alloc_buffer = 0;
 
-	debug("TEEC_AllocateSharedMemory: size=0x%X, flags=0x%X\n",
+	debug("TEEC_AllocateSharedMemory: size=0x%zu, flags=0x%X\n",
 			shared_memory->size, shared_memory->flags);
 
 	shared_memory->buffer = OpteeClientMemAlloc(shared_memory->size);
@@ -121,7 +124,7 @@ Exit:
  */
 void TEEC_ReleaseSharedMemory(TEEC_SharedMemory *shared_memory)
 {
-	debug("TEEC_ReleaseSharedMemory Enter: shared_memory=0x%X\n",
+	debug("TEEC_ReleaseSharedMemory Enter: shared_memory=0x%zu\n",
 				shared_memory->size);
 
 	if (shared_memory == NULL)

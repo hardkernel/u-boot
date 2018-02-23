@@ -713,7 +713,7 @@ uint32_t write_to_keymaster(uint8_t *filename,
 						TEEC_NONE);
 
 	TeecResult = TEEC_InvokeCommand(&TeecSession,
-					139,
+					141,
 					&TeecOperation,
 					&ErrorOrigin);
 
