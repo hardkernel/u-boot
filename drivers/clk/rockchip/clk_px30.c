@@ -64,18 +64,43 @@ static const struct pll_div *apll_cfgs[] = {
  * FBDIV = Integer value programmed into feedback divide
  *
  */
-static void rkclk_set_pll(void *pll_base, const struct pll_div *div)
+static void rkclk_set_pll(struct px30_cru *cru, enum px30_pll_id pll_id,
+			  const struct pll_div *div)
 {
-	struct px30_pll *pll = (struct px30_pll *)pll_base;
+	struct px30_pll *pll;
+	unsigned int *mode;
 	/* All PLLs have same VCO and output frequency range restrictions. */
 	uint vco_hz = OSC_HZ / 1000 * div->fbdiv / div->refdiv * 1000;
 	uint output_hz = vco_hz / div->postdiv1 / div->postdiv2;
+	static u8 mode_shift[PLL_COUNT] = {
+		APLL_MODE_SHIFT, DPLL_MODE_SHIFT, CPLL_MODE_SHIFT,
+		NPLL_MODE_SHIFT, GPLL_MODE_SHIFT
+	};
+	static u32 mode_mask[PLL_COUNT] = {
+		APLL_MODE_MASK, DPLL_MODE_MASK, CPLL_MODE_MASK,
+		NPLL_MODE_MASK, GPLL_MODE_MASK
+	};
+
+	if (pll_id == GPLL) {
+		pll = &cru->gpll;
+		mode = &cru->pmu_mode;
+	} else {
+		pll = &cru->pll[pll_id];
+		mode = &cru->mode;
+	};
 
 	debug("PLL at %p: fb=%d, ref=%d, pst1=%d, pst2=%d, vco=%u Hz, output=%u Hz\n",
 	      pll, div->fbdiv, div->refdiv, div->postdiv1,
 	      div->postdiv2, vco_hz, output_hz);
 	assert(vco_hz >= VCO_MIN_HZ && vco_hz <= VCO_MAX_HZ &&
 	       output_hz >= OUTPUT_MIN_HZ && output_hz <= OUTPUT_MAX_HZ);
+
+	/*
+	 * When power on or changing PLL setting,
+	 * we must force PLL into slow mode to ensure output stable clock.
+	 */
+	rk_clrsetreg(mode, mode_mask[pll_id],
+		     PLLMUX_FROM_XIN24M << mode_shift[pll_id]);
 
 	/* use integer mode */
 	rk_setreg(&pll->con1, 1 << PLL_DSMPD_SHIFT);
@@ -96,6 +121,9 @@ static void rkclk_set_pll(void *pll_base, const struct pll_div *div)
 	while (readl(&pll->con1) & (1 << PLL_LOCK_STATUS_SHIFT))
 		udelay(1);
 
+	rk_clrsetreg(mode, mode_mask[pll_id],
+		     PLLMUX_FROM_PLL << mode_shift[pll_id]);
+
 	return;
 }
 
@@ -105,14 +133,9 @@ static void rkclk_init(struct px30_cru *cru)
 	u32 hclk_div;
 	u32 pclk_div;
 
-	rk_clrsetreg(&cru->mode, APLL_MODE_MASK,
-		     PLLMUX_FROM_XIN24M << APLL_MODE_SHIFT);
-	rk_clrsetreg(&cru->pmu_mode, GPLL_MODE_MASK,
-		     PLLMUX_FROM_XIN24M << GPLL_MODE_SHIFT);
-
 	/* init pll */
-	rkclk_set_pll(&cru->pll[0] , apll_cfgs[APLL_816_MHZ]);
-	rkclk_set_pll(&cru->gpll, &gpll_init_cfg);
+	rkclk_set_pll(cru, APLL, apll_cfgs[APLL_816_MHZ]);
+	rkclk_set_pll(cru, GPLL, &gpll_init_cfg);
 
 	/*
 	 * select apll as cpu/core clock pll source and
@@ -158,11 +181,6 @@ static void rkclk_init(struct px30_cru *cru)
 		     PERI_PLL_GPLL << PERI_PLL_SEL_SHIFT |
 		     hclk_div << PERI_HCLK_DIV_SHIFT |
 		     aclk_div << PERI_ACLK_DIV_SHIFT);
-
-	rk_clrsetreg(&cru->mode, APLL_MODE_MASK,
-		     PLLMUX_FROM_PLL << APLL_MODE_SHIFT);
-	rk_clrsetreg(&cru->pmu_mode, GPLL_MODE_MASK,
-		     PLLMUX_FROM_PLL << GPLL_MODE_SHIFT);
 }
 
 static ulong px30_i2c_get_clk(struct px30_cru *cru, ulong clk_id)

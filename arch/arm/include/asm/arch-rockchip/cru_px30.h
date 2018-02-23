@@ -37,6 +37,16 @@ struct px30_clk_priv {
 	ulong rate;
 };
 
+/* PX30 pll id */
+enum px30_pll_id {
+	APLL,
+	DPLL,
+	CPLL,
+	NPLL,
+	GPLL,
+	PLL_COUNT,
+};
+
 struct px30_cru {
 	struct px30_pll {
 		unsigned int con0;
