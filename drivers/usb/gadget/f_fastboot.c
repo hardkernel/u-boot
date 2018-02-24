@@ -1046,7 +1046,7 @@ static void cb_oem(struct usb_ep *ep, struct usb_request *req)
 			return;
 		}
 
-		if (rk_avb_write_permanent_attributes((uint8_t *)
+		if (rk_avb_write_permanent_attributes((uint8_t *)(size_t)
 					       CONFIG_FASTBOOT_BUF_ADDR,
 					       download_bytes
 					       - PERM_ATTR_DIGEST_SIZE)) {
@@ -1054,7 +1054,7 @@ static void cb_oem(struct usb_ep *ep, struct usb_request *req)
 			return;
 		}
 
-		if (rk_avb_write_attribute_hash((uint8_t *)
+		if (rk_avb_write_attribute_hash((uint8_t *)(size_t)
 					     (CONFIG_FASTBOOT_BUF_ADDR
 					     + download_bytes
 					     - PERM_ATTR_DIGEST_SIZE),
