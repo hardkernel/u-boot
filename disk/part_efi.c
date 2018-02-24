@@ -269,8 +269,15 @@ void part_print_efi(struct blk_desc *dev_desc)
 int part_get_info_efi(struct blk_desc *dev_desc, int part,
 		      disk_partition_t *info)
 {
-	ALLOC_CACHE_ALIGN_BUFFER_PAD(gpt_header, gpt_head, 1, dev_desc->blksz);
-	gpt_entry *gpt_pte = NULL;
+	static gpt_entry *gpt_pte = NULL;
+	static gpt_header *gpt_head = NULL;
+
+	if (!gpt_head)
+		gpt_head = memalign(ARCH_DMA_MINALIGN, dev_desc->blksz);
+
+	/* We suppose different dev have different size, eg. emmc vs sd */
+	if (!gpt_head && (gpt_head->last_usable_lba + 0x22) != dev_desc->lba)
+		gpt_pte = NULL;
 
 	/* "part" argument must be at least 1 */
 	if (part < 1) {
@@ -297,7 +304,6 @@ int part_get_info_efi(struct blk_desc *dev_desc, int part,
 	    !is_pte_valid(&gpt_pte[part - 1])) {
 		debug("%s: *** ERROR: Invalid partition number %d ***\n",
 			__func__, part);
-		free(gpt_pte);
 		return -1;
 	}
 
@@ -324,8 +330,6 @@ int part_get_info_efi(struct blk_desc *dev_desc, int part,
 	debug("%s: start 0x" LBAF ", size 0x" LBAF ", name %s\n", __func__,
 	      info->start, info->size, info->name);
 
-	/* Remember to free pte */
-	free(gpt_pte);
 	return 0;
 }
 
@@ -938,6 +942,10 @@ static int is_gpt_valid(struct blk_desc *dev_desc, u64 lba,
 		printf("%s: Invalid Argument(s)\n", __func__);
 		return 0;
 	}
+
+	/* Re-use pte if it's not NULL */
+	if (*pgpt_pte)
+		return 1;
 
 	ALLOC_CACHE_ALIGN_BUFFER(legacy_mbr, mbr, dev_desc->blksz);
 
