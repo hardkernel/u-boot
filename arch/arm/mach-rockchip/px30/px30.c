@@ -9,6 +9,8 @@
 #include <asm/arch/hardware.h>
 #include <asm/armv8/mmu.h>
 
+#define PMU_PWRDN_CON	0xff000018
+
 static struct mm_region px30_mem_map[] = {
 	{
 		.virt = 0x0UL,
@@ -37,6 +39,9 @@ int arch_cpu_init(void)
 	/* We do some SoC one time setting here. */
 	/* Disable the ddr secure region setting to make it non-secure */
 #endif
+	/* Enable PD_VO (default disable at reset) */
+	rk_clrreg(PMU_PWRDN_CON, 13);
+
 	return 0;
 }
 #define GRF_BASE	0xff140000
