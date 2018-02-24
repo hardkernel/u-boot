@@ -1263,6 +1263,10 @@ static int dwc2_usb_probe(struct udevice *dev)
 
 	bus_priv->desc_before_addr = true;
 
+#ifdef CONFIG_ARCH_ROCKCHIP
+	priv->hnp_srp_disable = true;
+#endif
+
 	return dwc2_init_common(dev, priv);
 }
 
