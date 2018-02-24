@@ -691,6 +691,8 @@ static void vpu_clk_gate_init_off(void)
 		break;
 	}
 
+	vpu_hiu_setb(HHI_VID_CLK_CNTL2, 0, 0, 8);
+
 	VPUPR("%s finish\n", __func__);
 }
 
