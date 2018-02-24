@@ -48,8 +48,16 @@ int rockchip_get_chip_info(unsigned int chip_info[])
 #elif defined(CONFIG_ROCKCHIP_RK3399)
 	chip_info[0] = 0x33333043;
 	chip_info[3] = 0x56313030;
+
+/*
+ * Must check CONFIG_ROCKCHIP_RK3326 first! Because RK3326 board defconfig
+ * will contains both CONFIG_ROCKCHIP_RK3326 and CONFIG_ROCKCHIP_PX30, we
+ * would like treat the board as RK3326.
+ */
+#elif defined(CONFIG_ROCKCHIP_RK3326)
+	chip_info[0] = 0x33333236;
 #elif defined(CONFIG_ROCKCHIP_PX30)
-	chip_info[0] = 0x33333044;
+	chip_info[0] = 0x50583330;
 #endif
 
 	return 0;
@@ -73,8 +81,6 @@ int rockchip_rockusb_get_chip_info(unsigned int chip_info[])
 		chip_info[0] = 0x33323248;
 #elif defined(CONFIG_ROCKCHIP_RK3399)
 		chip_info[0] = 0x33333043;
-#elif defined(CONFIG_ROCKCHIP_PX30)
-		chip_info[0] = 0x33333236;
 #endif
 	}
 
