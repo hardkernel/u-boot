@@ -106,6 +106,7 @@ static const struct pwm_ops rk_pwm_ops = {
 
 static const struct udevice_id rk_pwm_ids[] = {
 	{ .compatible = "rockchip,rk3288-pwm" },
+	{ .compatible = "rockchip,rk3328-pwm" },
 	{ }
 };
 
