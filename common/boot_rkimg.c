@@ -148,30 +148,28 @@ err:
 int get_bootdev_type(void)
 {
 	int type = 0;
-	char *boot_media = NULL;
+	char *boot_media = NULL, *devtype = NULL;
 	char boot_options[128] = {0};
 	static int appended;
 
-	#ifdef CONFIG_EMMC_BOOT
+	devtype_num_envset();
+	devtype = env_get("devtype");
+
+	if (!strcmp(devtype, "mmc")) {
 		type = IF_TYPE_MMC;
 		boot_media = "emmc";
-	#endif /* CONFIG_EMMC_BOOT */
-	#ifdef CONFIG_QSPI_BOOT
-		type = IF_TYPE_SPI_NAND;
-		boot_media = "nand";
-	#endif /* CONFIG_QSPI_BOOT */
-	#ifdef CONFIG_NAND_BOOT
+	} else if (!strcmp(devtype, "rknand")) {
 		type = IF_TYPE_RKNAND;
 		boot_media = "nand";
-	#endif /* CONFIG_NAND_BOOT */
-	#ifdef CONFIG_NOR_BOOT
-		type = IF_TYPE_SPI_NOR;
-	#endif /* CONFIG_NOR_BOOT */
+	} else {
+		/* Add new to support */
+	}
 
 	/* For current use(Only EMMC support!) */
 	if (!type) {
 		type = IF_TYPE_MMC;
 		boot_media = "emmc";
+		printf("Use emmc as default boot media\n");
 	}
 
 	if (!appended && boot_media) {

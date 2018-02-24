@@ -64,14 +64,20 @@ __weak int rockchip_dnl_key_pressed(void)
 		return false;
 }
 
-static void devtype_num_envset(void)
+void devtype_num_envset(void)
 {
+	static int done = 0;
+
+	if (done)
+		return;
+
 	const char *devtype_num_set =
 	"if mmc dev 0; then setenv devtype mmc; setenv devnum 0;"
 	"else if rknand dev 0; then setenv devtype rknand; setenv devnum 0; fi;"
 	"fi;";
 
 	run_command_list(devtype_num_set, -1, 0);
+	done = 1;
 }
 
 void rockchip_dnl_mode_check(void)
