@@ -235,7 +235,9 @@ static int ir_remote_init_32k_mode(void)
 {
 	//volatile unsigned int status,data_value;
 	int val = readl(AO_RTI_PIN_MUX_REG);
-	writel((val | (1 << 0)), AO_RTI_PIN_MUX_REG);
+	val &= ~(0xF << 24);
+	val |= 1 << 24;
+	writel(val, AO_RTI_PIN_MUX_REG);
 	set_remote_mode(CONFIG_IR_REMOTE_USE_PROTOCOL);
 	//status = readl(AO_MF_IR_DEC_STATUS);
 	readl(AO_MF_IR_DEC_STATUS);
