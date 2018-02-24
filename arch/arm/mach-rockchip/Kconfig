@@ -11,6 +11,16 @@ config ROCKCHIP_PX30
 	  and video codec support. Peripherals include Gigabit Ethernet,
 	  USB2 host and OTG, SDIO, I2S, UART, SPI, I2C and PWMs.
 
+if ROCKCHIP_PX30
+
+config ROCKCHIP_RK3326
+	bool "Support Rockchip RK3326 "
+	help
+	  RK3326 can use most code from PX30, but at some situations we have
+	  to distinguish between RK3326 and PX30, so this macro gives help.
+	  It is usually selected in rk3326 board defconfig.
+endif
+
 config ROCKCHIP_RK3036
 	bool "Support Rockchip RK3036"
 	select CPU_V7
