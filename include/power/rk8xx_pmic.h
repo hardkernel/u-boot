@@ -195,6 +195,15 @@ enum {
 #define RK817_ID_LSB	0xee
 #define RK8XX_ID_MSK	0xfff0
 
+#define RK817_PMIC_SYS_CFG3	0xf4
+#define RK817_GPIO_INT_CFG	0xfe
+
+struct reg_data {
+	u8 reg;
+	u8 val;
+	u8 mask;
+};
+
 struct rk8xx_reg_table {
 	char *name;
 	u8 reg_ctl;

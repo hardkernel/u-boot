@@ -41,11 +41,6 @@
 #define RK805_PWRON_RISE_INT	(1 << 0)
 #define RK805_PWRON_FALL_INT	(1 << 7)
 
-struct reg_data {
-	u8 reg;
-	u8 val;
-};
-
 struct rk8xx_key_priv {
 	u8 key_int_sts_reg;
 	u8 key_int_msk_reg;

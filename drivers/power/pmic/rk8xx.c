@@ -13,6 +13,18 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
+/*
+ * Only when system suspend while U-Boot charge needs this config support
+ */
+#ifdef CONFIG_DM_CHARGE_DISPLAY
+static struct reg_data rk817_init_reg[] = {
+	/* Set pmic_sleep as sleep function */
+	{ RK817_PMIC_SYS_CFG3, 0x08, 0x18 },
+	/* Set pmic_int active low */
+	{ RK817_GPIO_INT_CFG,  0x00, 0x02 },
+};
+#endif
+
 static const struct pmic_child_info pmic_children_info[] = {
 	{ .prefix = "DCDC_REG", .driver = "rk8xx_buck"},
 	{ .prefix = "LDO_REG", .driver = "rk8xx_ldo"},
@@ -143,6 +155,9 @@ static int rk8xx_bind(struct udevice *dev)
 static int rk8xx_probe(struct udevice *dev)
 {
 	struct rk8xx_priv *priv = dev_get_priv(dev);
+	struct reg_data *init_data = NULL;
+	int init_data_num = 0;
+	int ret = 0, i;
 	uint8_t msb, lsb, id_msb, id_lsb;
 
 	/* read Chip variant */
@@ -158,13 +173,35 @@ static int rk8xx_probe(struct udevice *dev)
 	rk8xx_read(dev, id_lsb, &lsb, 1);
 
 	priv->variant = ((msb << 8) | lsb) & RK8XX_ID_MSK;
-	if ((priv->variant != RK808_ID) &&
-	    (priv->variant != RK805_ID) &&
-	    (priv->variant != RK816_ID) &&
-	    (priv->variant != RK817_ID) &&
-	    (priv->variant != RK818_ID)) {
+	switch (priv->variant) {
+	case RK805_ID:
+	case RK808_ID:
+	case RK816_ID:
+	case RK818_ID:
+		break;
+	case RK817_ID:
+#ifdef CONFIG_DM_CHARGE_DISPLAY
+		init_data = rk817_init_reg;
+		init_data_num = ARRAY_SIZE(rk817_init_reg);
+#endif
+		break;
+	default:
 		printf("Unknown PMIC: RK%x!!\n", priv->variant);
 		return -EINVAL;
+	}
+
+	for (i = 0; i < init_data_num; i++) {
+		ret = pmic_clrsetbits(dev,
+				      init_data[i].reg,
+				      init_data[i].mask,
+				      init_data[i].val);
+		if (ret < 0) {
+			printf("%s: i2c set reg 0x%x failed, ret=%d\n",
+			       __func__, init_data[i].reg, ret);
+		}
+
+		debug("%s: reg[0x%x] = 0x%x\n", __func__, init_data[i].reg,
+		      pmic_reg_read(dev, init_data[i].reg));
 	}
 
 	printf("PMIC:  RK%x\n", priv->variant);
