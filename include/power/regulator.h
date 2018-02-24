@@ -168,6 +168,7 @@ struct dm_regulator_uclass_platdata {
 	int mode_count;
 	int min_uV;
 	int max_uV;
+	int init_uV;
 	int min_uA;
 	int max_uA;
 	bool always_on;

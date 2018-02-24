@@ -211,6 +211,8 @@ int regulator_autoset(struct udevice *dev)
 
 	if (uc_pdata->flags & REGULATOR_FLAG_AUTOSET_UV)
 		ret = regulator_set_value(dev, uc_pdata->min_uV);
+	if (uc_pdata->init_uV > 0)
+		ret = regulator_set_value(dev, uc_pdata->init_uV);
 	if (!ret && (uc_pdata->flags & REGULATOR_FLAG_AUTOSET_UA))
 		ret = regulator_set_current(dev, uc_pdata->min_uA);
 
@@ -341,6 +343,8 @@ static int regulator_pre_probe(struct udevice *dev)
 	uc_pdata->min_uV = dev_read_u32_default(dev, "regulator-min-microvolt",
 						-ENODATA);
 	uc_pdata->max_uV = dev_read_u32_default(dev, "regulator-max-microvolt",
+						-ENODATA);
+	uc_pdata->init_uV = dev_read_u32_default(dev, "regulator-init-microvolt",
 						-ENODATA);
 	uc_pdata->min_uA = dev_read_u32_default(dev, "regulator-min-microamp",
 						-ENODATA);
