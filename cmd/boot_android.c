@@ -141,7 +141,7 @@ int do_avb_init_ab_metadata(cmd_tbl_t *cmdtp, int flag,
 	AvbABData ab_data;
 
 	memset(&ab_data, 0, sizeof(AvbABData));
-	debug("sizeof(AvbABData) = %d\n", sizeof(AvbABData));
+	debug("sizeof(AvbABData) = %d\n", (int)(size_t)sizeof(AvbABData));
 	if (argc != 1)
 		return CMD_RET_USAGE;
 
