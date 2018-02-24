@@ -427,7 +427,7 @@ int rk_avb_read_all_rollback_index(char *buffer)
 		}
 	}
 	debug("partition_name = %s\n", slot_data[0]->vbmeta_images->partition_name);
-	debug("vbmeta_size = %d\n", slot_data[0]->vbmeta_images->vbmeta_size);
+	debug("vbmeta_size = %d\n", (int)(size_t)slot_data[0]->vbmeta_images->vbmeta_size);
 
 	for (n = 0; n < AVB_MAX_NUMBER_OF_ROLLBACK_INDEX_LOCATIONS; n++) {
 		uint64_t rollback_index_value = 0;
