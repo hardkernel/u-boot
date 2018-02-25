@@ -40,7 +40,7 @@ int arch_cpu_init(void)
 	/* Disable the ddr secure region setting to make it non-secure */
 #endif
 	/* Enable PD_VO (default disable at reset) */
-	rk_clrreg(PMU_PWRDN_CON, 13);
+	rk_clrreg(PMU_PWRDN_CON, 1 << 13);
 
 	return 0;
 }
