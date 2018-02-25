@@ -136,15 +136,15 @@ TEEC_Result OpteeRpcCmdLoadV2Ta(t_teesmc32_arg *TeeSmc32Arg)
 
 	memcpy(uuid, (void *)&TeeSmc32Param[0].u.value, 16);
 	for (i = 0; i < 16; i++)
-		printf("uuid 0x%x", uuid[i]);
+		debug("uuid 0x%x", uuid[i]);
 
 	if (TeeSmc32Param[1].u.memref.buf_ptr == 0) {
-		printf("return size of TA, keymaster_size = 0x%x", keymaster_size);
+		debug("return size of TA, keymaster_size = 0x%x", keymaster_size);
 		TeeSmc32Param[1].u.memref.size = keymaster_size;
 	} else {
 		memcpy((void *)TeeSmc32Param[1].u.memref.buf_ptr,
 			(void *)keymaster_data, TeeSmc32Param[1].u.memref.size);
-		printf("memref.buf_ptr = 0x%llx; memref.size = 0x%llx",
+		debug("memref.buf_ptr = 0x%llx; memref.size = 0x%llx",
 			TeeSmc32Param[1].u.memref.buf_ptr,
 			TeeSmc32Param[1].u.memref.size);
 	}
@@ -520,7 +520,7 @@ TEEC_Result OpteeRpcCallback(ARM_SMC_ARGS *ArmSmcArgs)
 		TeecResult = OpteeRpcAlloc(ArmSmcArgs->Arg1, &ArmSmcArgs->Arg1);
 #endif
 #ifdef CONFIG_OPTEE_V2
-		printf("ArmSmcArgs->Arg1 = 0x%x", ArmSmcArgs->Arg1);
+		debug("ArmSmcArgs->Arg1 = 0x%x", ArmSmcArgs->Arg1);
 		TeecResult = OpteeRpcAlloc(ArmSmcArgs->Arg1, &ArmSmcArgs->Arg2);
 		ArmSmcArgs->Arg5 = ArmSmcArgs->Arg2;
 		ArmSmcArgs->Arg1 = 0;
@@ -561,7 +561,7 @@ TEEC_Result OpteeRpcCallback(ARM_SMC_ARGS *ArmSmcArgs)
 #ifdef CONFIG_OPTEE_V2
 		t_teesmc32_arg *TeeSmc32Arg =
 			(t_teesmc32_arg *)((size_t)ArmSmcArgs->Arg1 << 32 | ArmSmcArgs->Arg2);
-		printf("TeeSmc32Arg->cmd = 0x%x", TeeSmc32Arg->cmd);
+		debug("TeeSmc32Arg->cmd = 0x%x", TeeSmc32Arg->cmd);
 #endif
 		switch (TeeSmc32Arg->cmd) {
 #ifdef CONFIG_OPTEE_V1
@@ -601,7 +601,7 @@ TEEC_Result OpteeRpcCallback(ARM_SMC_ARGS *ArmSmcArgs)
 			uint32_t tempaddr;
 			uint32_t allocsize = TeeSmc32Arg->params[0].u.value.b;
 			TeecResult = OpteeRpcAlloc(allocsize, &tempaddr);
-			printf("allocsize = 0x%x tempaddr = 0x%x", allocsize, tempaddr);
+			debug("allocsize = 0x%x tempaddr = 0x%x", allocsize, tempaddr);
 			TeeSmc32Arg->params[0].attr = OPTEE_MSG_ATTR_TYPE_TMEM_OUTPUT_V2;
 			TeeSmc32Arg->params[0].u.memref.buf_ptr = tempaddr;
 			TeeSmc32Arg->params[0].u.memref.size = allocsize;

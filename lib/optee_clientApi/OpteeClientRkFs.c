@@ -169,12 +169,12 @@ static int rkss_read_section(struct rk_secure_storage *rkss)
 
 	dev_desc = rockchip_get_bootdev();
 	if (!dev_desc) {
-		printf("%s: Could not find device\n", __func__);
+		debug("%s: Could not find device\n", __func__);
 		return -1;
 	}
 
 	if (part_get_info_by_name(dev_desc, "security", &part_info) < 0) {
-		printf("Could not find security partition\n");
+		debug("Could not find security partition\n");
 		return -1;
 	}
 	ret = blk_dread(dev_desc, part_info.start + rkss->index, 1, rkss->data);
@@ -1199,7 +1199,7 @@ int tee_supp_rk_fs_init(void)
 		int ret = rkss_read_section(&rkss);
 		if (ret < 0)
 		{
-			printf("rkss_read_section fail ! ret: %d.", ret);
+			debug("rkss_read_section fail ! ret: %d.", ret);
 			return -1;
 		}
 		if (rkss_verify_ptable(&rkss) < 0)
