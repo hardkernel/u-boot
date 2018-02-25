@@ -184,7 +184,7 @@ static AvbIOResult read_rollback_index(AvbOps *ops,
 		int ret;
 		ret = trusty_read_rollback_index(rollback_index_location,
 						 out_rollback_index);
-		if (ret == TEE_ERROR_GENERIC) {
+		if (ret == TEE_ERROR_ITEM_NOT_FOUND) {
 			*out_rollback_index = 0;
 			ret = trusty_write_rollback_index(rollback_index_location,
 							  *out_rollback_index);
@@ -228,7 +228,7 @@ static AvbIOResult read_is_device_unlocked(AvbOps *ops, bool *out_is_unlocked)
 		int ret;
 
 		ret = trusty_read_lock_state((uint8_t *)out_is_unlocked);
-		if (ret == TEE_ERROR_GENERIC) {
+		if (ret == TEE_ERROR_ITEM_NOT_FOUND) {
 			*out_is_unlocked = 1;
 			if (trusty_write_lock_state(*out_is_unlocked)) {
 				printf("%s: init lock state error\n", __FILE__);

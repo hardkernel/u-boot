@@ -159,7 +159,7 @@ int rk_avb_read_flash_lock_state(uint8_t *flash_lock_state)
 	int ret;
 
 	ret = trusty_read_flash_lock_state(flash_lock_state);
-	if (ret == TEE_ERROR_GENERIC) {
+	if (ret == TEE_ERROR_ITEM_NOT_FOUND) {
 		*flash_lock_state = 1;
 		if (trusty_write_flash_lock_state(*flash_lock_state)) {
 			printf("trusty_write_flash_lock_state error!\n");
@@ -214,7 +214,7 @@ int rk_avb_read_lock_state(uint8_t *lock_state)
 	int ret;
 
 	ret = trusty_read_lock_state(lock_state);
-	if (ret == TEE_ERROR_GENERIC) {
+	if (ret == TEE_ERROR_ITEM_NOT_FOUND) {
 		*lock_state = 1;
 		if (rk_avb_write_lock_state(*lock_state)) {
 			printf("avb_write_lock_state error!\n");
