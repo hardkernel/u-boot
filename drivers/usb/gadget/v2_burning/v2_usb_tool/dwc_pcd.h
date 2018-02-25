@@ -10,7 +10,9 @@
 #ifndef __DWC_PCD_H__
 #define __DWC_PCD_H__
 
-//#define USE_FULL_SPEED
+#if CONFIG_AML_USB_BURN_FULL_SPPED
+#define USE_FULL_SPEED
+#endif// #if CONFIG_AML_USB_BURN_FULL_SPPED
 
 #define NUM_EP	4
 

@@ -17,9 +17,17 @@
 
 static int do_bulk_cmd(char* cmd);
 
-#define DWC_BLK_MAX_LEN         0X1000
-#define DWC_BLK_LEN(leftSz)     ((leftSz) >= DWC_BLK_MAX_LEN ? DWC_BLK_MAX_LEN : (leftSz >= BULK_EP_MPS ? BULK_EP_MPS : leftSz))//FIXME:block length 4K, can be 64K ???
-#define DWC_BLK_NUM(totalTransLen)  ( (totalTransLen/DWC_BLK_MAX_LEN) + ( (totalTransLen & (DWC_BLK_MAX_LEN - 1)) + (BULK_EP_MPS - 1) )/BULK_EP_MPS )
+//one DWC_BLK_MAX_LEN <==> one dwc_otg_ep_req_start
+#ifdef USE_FULL_SPEED
+#define DWC_BLK_MAX_LEN         (6*BULK_EP_MPS)
+#else
+#define DWC_BLK_MAX_LEN         (8*BULK_EP_MPS)
+#endif// #ifdef USE_FULL_SPEED
+#define DWC_BLK_LEN(leftSz)     ((leftSz) >= DWC_BLK_MAX_LEN ? DWC_BLK_MAX_LEN : \
+                                (leftSz >= BULK_EP_MPS ? ((leftSz/BULK_EP_MPS)*BULK_EP_MPS): leftSz))
+#define DWC_BLK_NUM(totalTransLen)  ( (totalTransLen/DWC_BLK_MAX_LEN) + \
+                                    ( (totalTransLen & (DWC_BLK_MAX_LEN-1)) >= BULK_EP_MPS ? 1 : 0 ) +\
+                                    ( (totalTransLen & (BULK_EP_MPS-1)) ? 1 : 0 ) )
 
 #define DRIVER_VENDOR_ID	0x1B8E  //Amlogic's VerdorID
 #define DRIVER_PRODUCT_ID	0xC003
@@ -861,16 +869,6 @@ void do_bulk_complete( pcd_struct_t *_pcd)
         //Transfer NEXT block (at most 4K)
         switch (bRequest)
         {
-                case AM_REQ_BULKCMD:
-                        {
-                                if (leftDataLen) {
-                                        DWN_DBG("BULKCMD:total 0x%x != tranferred 0x%x, xfer_len=0x%x\n",
-                                                        _pcd->bulk_data_len, _pcd->bulk_xfer_len, _pcd->xfer_len);
-                                }
-                                return ;//not need reply
-                        }
-                        break;
-
                 case AM_REQ_DOWNLOAD :
                         {
                                 //called after xferNeedReply
@@ -879,7 +877,9 @@ void do_bulk_complete( pcd_struct_t *_pcd)
                 case AM_REQ_UPLOAD :
                 case AM_REQ_WR_LARGE_MEM:
                 case AM_REQ_RD_LARGE_MEM:
+                case AM_REQ_BULKCMD://Need start transfer more than once when full-speed mode
                         {
+                            /*if ( !_pcd->bulk_out)printf("leftDataLen 0x%x\n", leftDataLen);*/
                                 if (leftDataLen) //if earlier packet length is 0, no next xfer here!!
                                 {
                                         if (leftDataLen < 0) {
@@ -912,6 +912,8 @@ void do_bulk_complete( pcd_struct_t *_pcd)
                                 optimus_buf_manager_report_transfer_complete(_pcd->bulk_xfer_len, NULL);
                                 break;
 
+                        case AM_REQ_BULKCMD://Need start transfer more than once when full-speed mode
+                                break;
                         default:
                                 DWN_WRN("Unhandled xferNeedReply for bulk bRequest 0x%x\n", bRequest);
                 }
@@ -930,8 +932,9 @@ static int bulk_cmd_reply(const char* replyBuf)
     pcd_struct_t* pcd = &this_pcd[BULK_IN_EP_NUM];
     //PCD fields needed for reply
     //see implementation of dwc_otg_ep_req_start
-    pcd->bulk_len      = AM_BULK_REPLY_LEN;
-    pcd->bulk_data_len = pcd->bulk_len;///
+    pcd->bulk_data_len = AM_BULK_REPLY_LEN;///
+    pcd->bulk_len      = DWC_BLK_LEN(pcd->bulk_data_len);
+    pcd->bulk_num      = DWC_BLK_NUM(pcd->bulk_data_len);
     pcd->bulk_xfer_len = 0;
     pcd->bulk_buf      = _bulk_replyBuf;
     pcd->bulk_out = 0;//////////////////////////////
