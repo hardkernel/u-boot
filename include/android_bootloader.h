@@ -77,4 +77,13 @@ int android_bootloader_boot_kernel(unsigned long kernel_address);
  */
 int android_boot_flow(unsigned long kernel_address);
 
+/** str_append- add str to tail.
+ *
+ * @base_name:	base name address.
+ * @slot_suffix: suffix.
+ *
+ * @return (base name + suffix)address.
+ */
+char *android_str_append(char *base_name, char *slot_suffix);
+
 #endif  /* __ANDROID_BOOTLOADER_H */

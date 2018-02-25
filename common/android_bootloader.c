@@ -33,6 +33,24 @@
 #define ANDROID_ARG_FDT_FILENAME "kernel.dtb"
 #endif
 
+char *android_str_append(char *base_name, char *slot_suffix)
+{
+	char *part_name;
+	size_t part_name_len;
+
+	part_name_len = strlen(base_name) + 1;
+	if (slot_suffix)
+		part_name_len += strlen(slot_suffix);
+	part_name = malloc(part_name_len);
+	if (!part_name)
+		return NULL;
+	strcpy(part_name, base_name);
+	if (slot_suffix && (slot_suffix[0] != '\0'))
+		strcat(part_name, slot_suffix);
+
+	return part_name;
+}
+
 int android_bootloader_message_load(
 	struct blk_desc *dev_desc,
 	const disk_partition_t *part_info,

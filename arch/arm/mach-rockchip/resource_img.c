@@ -8,6 +8,10 @@
 #include <linux/list.h>
 #include <asm/arch/resource_img.h>
 #include <boot_rkimg.h>
+#ifdef CONFIG_ANDROID_AB
+#include <android_avb/libavb_ab.h>
+#include <android_avb/rk_avb_ops_user.h>
+#endif
 #ifdef CONFIG_ANDROID_BOOT_IMAGE
 #include <android_bootloader.h>
 #include <android_image.h>
@@ -183,6 +187,15 @@ static int init_resource_list(struct resource_img_hdr *hdr)
 	if (mode == BOOT_MODE_RECOVERY)
 		boot_partname = PART_RECOVERY;
 	/* Read boot/recovery and chenc if this is an AOSP img */
+#ifdef CONFIG_ANDROID_AB
+	char slot_suffix[3] = {0};
+
+	if (rk_avb_get_current_slot(slot_suffix))
+		goto out;
+	boot_partname = android_str_append(boot_partname, slot_suffix);
+	if (boot_partname == NULL)
+		goto out;
+#endif
 	ret = part_get_info_by_name(dev_desc, boot_partname,
 					 &part_info);
 	if (ret < 0) {
