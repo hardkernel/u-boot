@@ -407,7 +407,7 @@ int device_probe(struct udevice *dev)
 	/* Process 'assigned-{clocks/clock-parents/clock-rates}' properties */
 	ret = clk_set_defaults(dev);
 	if (ret)
-		goto fail;
+		debug("%s clk_set_defaults failed %d\n", __func__, ret);
 
 	if (drv->probe) {
 		ret = drv->probe(dev);
