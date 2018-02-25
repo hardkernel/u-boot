@@ -50,6 +50,9 @@ static int device_bind_common(struct udevice *parent, const struct driver *drv,
 		return ret;
 	}
 
+#ifdef CONFIG_USING_KERNEL_DTB
+	/* Do not use mmc node from kernel dtb */
+	if(drv->id == UCLASS_MMC)
 	list_for_each_entry(dev, &uc->dev_head, uclass_node) {
 		if (!strcmp(name, dev->name)){
 			debug("%s do not bind dev already in list %s\n",
@@ -58,7 +61,7 @@ static int device_bind_common(struct udevice *parent, const struct driver *drv,
 			return 0;
 		}
 	}
-
+#endif
 	dev = calloc(1, sizeof(struct udevice));
 	if (!dev)
 		return -ENOMEM;
