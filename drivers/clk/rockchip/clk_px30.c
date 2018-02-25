@@ -32,7 +32,7 @@ enum {
 	.refdiv = _refdiv,\
 	.fbdiv = (u32)((u64)hz * _refdiv * _postdiv1 * _postdiv2 / OSC_HZ),\
 	.postdiv1 = _postdiv1, .postdiv2 = _postdiv2};
-static const struct pll_div gpll_init_cfg = PLL_DIVISORS(GPLL_HZ, 1, 4, 1);
+static const struct pll_div gpll_init_cfg = PLL_DIVISORS(GPLL_HZ, 1, 1, 1);
 
 static const struct pll_div apll_816_cfg = PLL_DIVISORS(816 * MHz, 1, 2, 1);
 static const struct pll_div apll_600_cfg = PLL_DIVISORS(600 * MHz, 1, 3, 1);
