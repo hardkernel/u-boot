@@ -40,6 +40,9 @@
 #elif defined(CONFIG_ROCKCHIP_RK3399)
 #define TIMER_BASE		(0xFF850000 + 0x20)	/* TIMER 1 */
 #define TIMER_IRQ		IRQ_TIMER1
+#elif defined(CONFIG_ROCKCHIP_PX30)
+#define TIMER_BASE		(0xFF210000 + 0x20)	/* TIMER 1 */
+#define TIMER_IRQ		IRQ_TIMER1
 #else
 "Missing definitions of timer module test"
 #endif
@@ -93,7 +96,11 @@ static inline uint64_t arch_counter_get_cntpct(void)
 	uint64_t cval;
 
 	isb();
+#ifdef CONFIG_ARM64
+	asm volatile("mrs %0, cntpct_el0" : "=r" (cval));
+#else
 	asm volatile("mrrc p15, 0, %Q0, %R0, c14" : "=r" (cval));
+#endif
 	return cval;
 }
 
