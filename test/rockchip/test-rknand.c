@@ -76,7 +76,7 @@ int board_rknand_test(int argc, char * const argv[])
 
 	snprintf(cmd_rknand, sizeof(cmd_rknand),
 		 "rknand write 0x%x 0x1000 0x%x",
-		 (u32)write_buffer, blocks);
+		 (u32)(ulong)write_buffer, blocks);
 	ts = get_timer(0);
 	err = cli_simple_run_command(cmd_rknand, 0);
 	ts = get_timer(0) - ts;
@@ -88,7 +88,7 @@ int board_rknand_test(int argc, char * const argv[])
 
 	snprintf(cmd_rknand, sizeof(cmd_rknand),
 		 "rknand read 0x%x 0x1000 0x%x",
-		 (u32)read_buffer, blocks);
+		 (u32)(ulong)read_buffer, blocks);
 	ts = get_timer(0);
 	err = cli_simple_run_command(cmd_rknand, 0);
 	ts = get_timer(0) - ts;
