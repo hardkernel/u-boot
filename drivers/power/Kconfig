@@ -81,6 +81,14 @@ config CHARGE_ANIMATION
 	help
 	  This adds a simple function for charge animation display.
 
+config ROCKCHIP_PM
+	bool "Enable Rockchip power manager for charge animation"
+	depends on CHARGE_ANIMATION
+	default y
+	help
+	  This adds power manage control of devices for low power
+	  during system suspend in charge animation.
+
 config AXP_DCDC1_VOLT
 	int "axp pmic dcdc1 voltage"
 	depends on AXP221_POWER || AXP809_POWER || AXP818_POWER

@@ -17,6 +17,7 @@
 #include <linux/input.h>
 #include <power/charge_display.h>
 #include <power/charge_animation.h>
+#include <power/rockchip_pm.h>
 #include <power/fuel_gauge.h>
 #include <power/pmic.h>
 #include <power/rk8xx_pmic.h>
@@ -122,12 +123,16 @@ static int system_suspend_enter(struct charge_animation_pdata *pdata)
 		putc('2');
 		irqs_suspend();
 		putc('3');
+		device_suspend();
+		putc('4');
 		putc('\n');
 
 		/* Trap into ATF for low power mode */
 		cpu_suspend(0, psci_system_suspend);
 
 		putc('\n');
+		putc('4');
+		device_resume();
 		putc('3');
 		irqs_resume();
 		putc('2');
