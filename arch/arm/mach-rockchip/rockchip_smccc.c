@@ -13,8 +13,10 @@
 
 #ifdef CONFIG_ARM64
 #define ARM_PSCI_1_0_SYSTEM_SUSPEND	ARM_PSCI_1_0_FN64_SYSTEM_SUSPEND
+#define ARM_PSCI_0_2_CPU_ON		ARM_PSCI_0_2_FN64_CPU_ON
 #else
 #define ARM_PSCI_1_0_SYSTEM_SUSPEND	ARM_PSCI_1_0_FN_SYSTEM_SUSPEND
+#define ARM_PSCI_0_2_CPU_ON		ARM_PSCI_0_2_FN_CPU_ON
 #endif
 
 #define SIZE_PAGE(n)	((n) << 12)
@@ -28,6 +30,15 @@ static struct arm_smccc_res __invoke_sip_fn_smc(unsigned long function_id,
 
 	arm_smccc_smc(function_id, arg0, arg1, arg2, 0, 0, 0, 0, &res);
 	return res;
+}
+
+int psci_cpu_on(unsigned long cpuid, unsigned long entry_point)
+{
+	struct arm_smccc_res res;
+
+	res = __invoke_sip_fn_smc(ARM_PSCI_0_2_CPU_ON, cpuid, entry_point, 0);
+
+	return res.a0;
 }
 
 int psci_system_suspend(unsigned long unused)

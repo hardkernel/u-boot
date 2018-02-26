@@ -67,5 +67,6 @@ struct arm_smccc_res sip_smc_request_share_mem(unsigned long page_num,
 
 int sip_smc_set_sip_version(unsigned long version);
 struct arm_smccc_res sip_smc_get_sip_version(void);
+int psci_cpu_on(unsigned long cpuid, unsigned long entry_point);
 
 #endif
