@@ -1,5 +1,5 @@
 /*
- * AMLOGIC TV LCD panel driver.
+ * AMLOGIC LCD panel driver.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -40,14 +40,38 @@ static char lcd_cpu_gpio[LCD_CPU_GPIO_NUM_MAX][LCD_CPU_GPIO_NAME_MAX] = {
 	"invalid", /* ending flag */
 };
 
-static struct lcd_power_step_s lcd_power_on_step[] = {
+static struct lcd_power_step_s lcd_power_on_step_dft[] = {
+	{LCD_POWER_TYPE_CPU,   0,0,10,}, /* lcd_reset */
+	{LCD_POWER_TYPE_CPU,   0,1,20,}, /* lcd_reset */
+	{LCD_POWER_TYPE_SIGNAL,0,0,0,},  /* signal */
+	{LCD_POWER_TYPE_MAX,   0,0,0,},  /* ending flag */
+};
+static struct lcd_power_step_s lcd_power_off_step_dft[] = {
+	{LCD_POWER_TYPE_SIGNAL,0,0,0,},  /* signal */
+	{LCD_POWER_TYPE_CPU,   0,0,10,}, /* lcd_reset */
+	{LCD_POWER_TYPE_MAX,   0,0,0,},   /* ending flag */
+};
+static struct lcd_power_step_s lcd_power_on_step_TV070WSM[] = {
+#if 0 /* reset in init_cmd */
 	{LCD_POWER_TYPE_CPU,   0,1,10,}, /* lcd_reset */
 	{LCD_POWER_TYPE_CPU,   0,0,20,}, /* lcd_reset */
 	{LCD_POWER_TYPE_CPU,   0,1,20,}, /* lcd_reset */
-	{LCD_POWER_TYPE_SIGNAL,0,1,0,},  /* signal */
+#endif
+	{LCD_POWER_TYPE_SIGNAL,0,0,0,},  /* signal */
 	{LCD_POWER_TYPE_MAX,   0,0,0,},  /* ending flag */
 };
-static struct lcd_power_step_s lcd_power_off_step[] = {
+static struct lcd_power_step_s lcd_power_off_step_TV070WSM[] = {
+	{LCD_POWER_TYPE_SIGNAL,0,0,100,},  /* signal */
+	{LCD_POWER_TYPE_CPU,   0,0,100,}, /* lcd_reset */
+	{LCD_POWER_TYPE_MAX,   0,0,0,},   /* ending flag */
+};
+static struct lcd_power_step_s lcd_power_on_step_P070ACB[] = {
+	{LCD_POWER_TYPE_CPU,   0,0,10,}, /* lcd_reset */
+	{LCD_POWER_TYPE_CPU,   0,1,20,}, /* lcd_reset */
+	{LCD_POWER_TYPE_SIGNAL,0,0,0,},  /* signal */
+	{LCD_POWER_TYPE_MAX,   0,0,0,},  /* ending flag */
+};
+static struct lcd_power_step_s lcd_power_off_step_P070ACB[] = {
 	{LCD_POWER_TYPE_SIGNAL,0,0,50,},  /* signal */
 	{LCD_POWER_TYPE_CPU,   0,0,100,}, /* lcd_reset */
 	{LCD_POWER_TYPE_MAX,   0,0,0,},   /* ending flag */
@@ -60,8 +84,8 @@ static char lcd_bl_gpio[BL_GPIO_NUM_MAX][LCD_CPU_GPIO_NAME_MAX] = {
 };
 
 struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
-	{
-	"lcd_0",LCD_MIPI,6,
+	{/* B080XAN01*/
+	"lcd_0",LCD_MIPI,8,
 	/* basic timing */
 	768,1024,948,1140,64,56,0,50,30,0,
 	/* clk_attr */
@@ -71,7 +95,47 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	/* MIPI_attr: lane_num, bit_rate_max, factor, operation_mode_init, operation_mode_display, video_mode_type, clk_lp_continuous, phy_stop_wait */
 	4,550,0,1,0,2,1,0,Rsv_val,Rsv_val,
 	/* power step */
-	lcd_power_on_step, lcd_power_off_step,
+	lcd_power_on_step_dft, lcd_power_off_step_dft,
+	/* backlight */
+	100,255,10,128,128,
+	BL_CTRL_PWM,0,1,0,200,200,
+	BL_PWM_NEGATIVE,BL_PWM_A,180,100,25,1,0,
+	Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	10,10,Rsv_val},
+
+	{/* TV070WSM*/
+	"lcd_1",LCD_MIPI,8,
+	/* basic timing */
+	600,1024,700,1053,24,36,0,2,8,0,
+	/* clk_attr */
+	0,0,1,44250000,Rsv_val,Rsv_val,Rsv_val,
+	/* custome */
+	Rsv_val,0x04,3,
+	/* mipi_attr */
+	4,360,0,1,0,2,1,0,Rsv_val,2,
+	/* power step */
+	lcd_power_on_step_TV070WSM, lcd_power_off_step_TV070WSM,
+	/* backlight */
+	100,255,10,128,128,
+	BL_CTRL_PWM,0,1,0,200,200,
+	BL_PWM_NEGATIVE,BL_PWM_A,180,100,25,1,0,
+	Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	10,10,Rsv_val},
+
+	{/* P070ACB*/
+	"lcd_2",LCD_MIPI,8,
+	/* basic timing */
+	600,1024,680,1194,24,36,0,10,80,0,
+	/* clk_attr */
+	0,0,1,48715200,Rsv_val,Rsv_val,Rsv_val,
+	/* custome */
+	Rsv_val,0x04,3,
+	/* mipi_attr */
+	4,300,0,1,0,2,1,0,Rsv_val,3,
+	/* power step */
+	lcd_power_on_step_P070ACB, lcd_power_off_step_P070ACB,
 	/* backlight */
 	100,255,10,128,128,
 	BL_CTRL_PWM,0,1,0,200,200,
@@ -83,10 +147,32 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	{.panel_type = "invalid"},
 };
 
+static struct lcd_pinmux_ctrl_s lcd_pinmux_ctrl[LCD_PINMX_MAX] = {
+	{
+		.name = "lcd_pin",
+		.pinmux_set = {{LCD_PINMUX_END, 0x0}},
+		.pinmux_clr = {{LCD_PINMUX_END, 0x0}},
+	},
+	{
+		.name = "invalid",
+	},
+};
+
+static struct lcd_pinmux_ctrl_s bl_pinmux_ctrl[BL_PINMUX_MAX] = {
+	{
+		.name = "bl_pwm_on_pin", //GPIOZ_5
+		.pinmux_set = {{2, 0x00200000}, {LCD_PINMUX_END, 0x0}},
+		.pinmux_clr = {{2, 0x00d00000}, {LCD_PINMUX_END, 0x0}},
+	},
+	{
+		.name = "invalid",
+	},
+};
+
 static struct dsi_config_s lcd_mipi_config = {
 	.lane_num = 4,
 	.bit_rate_max = 550, /* MHz */
-	.factor_numerator	= 0,
+	.factor_numerator   = 0,
 	.factor_denominator = 100,
 	.operation_mode_init = 1,    /* 0=video mode, 1=command mode */
 	.operation_mode_display = 0, /* 0=video mode, 1=command mode */
@@ -186,7 +272,8 @@ struct lcd_config_s lcd_config_dft = {
 	},
 	.lcd_power = &lcd_power_ctrl,
 
-	.pinctrl_ver = 1,
+	.pinctrl_ver = 2,
+	.lcd_pinmux = lcd_pinmux_ctrl,
 	.pinmux_set = {{LCD_PINMUX_END, 0x0}},
 	.pinmux_clr = {{LCD_PINMUX_END, 0x0}},
 };
@@ -196,33 +283,64 @@ static char lcd_ext_gpio[LCD_EXTERN_GPIO_NUM_MAX][LCD_EXTERN_GPIO_LEN_MAX] = {
 	"invalid", /* ending flag */
 };
 
-#define LCD_EXTERN_NAME "ext_default"
-#define LCD_EXTERN_CMD_SIZE        LCD_EXTERN_CMD_SIZE_DYNAMIC
 static unsigned char init_on_table[LCD_EXTERN_INIT_ON_MAX] = {
-	0x05, 1, 0x11,
-	0xff, 150,
-	0x05, 1, 0x29,
-	0xff, 20,
 	0xff, 0xff,   //ending flag
 };
 
 static unsigned char init_off_table[LCD_EXTERN_INIT_OFF_MAX] = {
-	0x05, 1, 0x28,
-	0xff, 20,
-	0x05, 1, 0x10,
 	0xff,0xff,   //ending flag
 };
 
-struct lcd_extern_config_s ext_config_dtf = {
+struct lcd_extern_common_s ext_common_dft = {
 	.lcd_ext_key_valid = 0,
-	.index = LCD_EXTERN_INDEX_INVALID,
-	.type = LCD_EXTERN_MIPI, /* LCD_EXTERN_I2C, LCD_EXTERN_SPI, LCD_EXTERN_MIPI, LCD_EXTERN_MAX */
-	.status = 0, /* 0=disable, 1=enable */
-	.cmd_size = LCD_EXTERN_CMD_SIZE,
-	.table_init_on = init_on_table,
-	.table_init_off = init_off_table,
+	.lcd_ext_num = 4,
 	.pinmux_set = {{LCD_PINMUX_END, 0x0}},
 	.pinmux_clr = {{LCD_PINMUX_END, 0x0}},
+};
+
+struct lcd_extern_config_s ext_config_dtf[LCD_EXTERN_NUM_MAX] = {
+	{
+		.index = 0,
+		.name = "ext_default",
+		.type = LCD_EXTERN_I2C, /* LCD_EXTERN_I2C, LCD_EXTERN_SPI, LCD_EXTERN_MIPI, LCD_EXTERN_MAX */
+		.status = 0, /* 0=disable, 1=enable */
+		.i2c_addr = 0x1c, /* 7bit i2c address */
+		.i2c_addr2 = 0xff, /* 7bit i2c address, 0xff for none */
+		.i2c_bus = LCD_EXTERN_I2C_BUS_C, /* LCD_EXTERN_I2C_BUS_AO, LCD_EXTERN_I2C_BUS_A/B/C/D */
+		.cmd_size = 9,
+		.table_init_on = init_on_table,
+		.table_init_off = init_off_table,
+	},
+	{
+		.index = 1,
+		.name = "mipi_KD080D13",
+		.type = LCD_EXTERN_MIPI, /* LCD_EXTERN_I2C, LCD_EXTERN_SPI, LCD_EXTERN_MIPI, LCD_EXTERN_MAX */
+		.status = 0, /* 0=disable, 1=enable */
+		.cmd_size = LCD_EXTERN_CMD_SIZE_DYNAMIC,
+		.table_init_on = init_on_table,
+		.table_init_off = init_off_table,
+	},
+	{
+		.index = 2,
+		.name = "mipi_TV070WSM",
+		.type = LCD_EXTERN_MIPI, /* LCD_EXTERN_I2C, LCD_EXTERN_SPI, LCD_EXTERN_MIPI, LCD_EXTERN_MAX */
+		.status = 1, /* 0=disable, 1=enable */
+		.cmd_size = LCD_EXTERN_CMD_SIZE_DYNAMIC,
+		.table_init_on = init_on_table,
+		.table_init_off = init_off_table,
+	},
+	{
+		.index = 3,
+		.name = "mipi_P070ACB",
+		.type = LCD_EXTERN_MIPI, /* LCD_EXTERN_I2C, LCD_EXTERN_SPI, LCD_EXTERN_MIPI, LCD_EXTERN_MAX */
+		.status = 1, /* 0=disable, 1=enable */
+		.cmd_size = LCD_EXTERN_CMD_SIZE_DYNAMIC,
+		.table_init_on = init_on_table,
+		.table_init_off = init_off_table,
+	},
+	{
+		.index = LCD_EXTERN_INDEX_INVALID,
+	},
 };
 #endif
 
@@ -253,9 +371,10 @@ struct bl_config_s bl_config_dft = {
 
 	.bl_extern_index = 0xff,
 
-	.pinctrl_ver = 1,
+	.pinctrl_ver = 2,
+	.bl_pinmux = bl_pinmux_ctrl,
 	.pinmux_set = {{2, 0x00200000}, {LCD_PINMUX_END, 0x0}},
-	.pinmux_clr = {{2, 0x00000000}, {LCD_PINMUX_END, 0x0}},
+	.pinmux_clr = {{2, 0x00d00000}, {LCD_PINMUX_END, 0x0}},
 };
 
 #ifdef CONFIG_AML_BL_EXTERN
@@ -290,14 +409,19 @@ void lcd_config_bsp_init(void)
 		strcpy(bl_config_dft.gpio_name[j], "invalid");
 
 #ifdef CONFIG_AML_LCD_EXTERN
+	for (i = 0; i < LCD_EXTERN_NUM_MAX; i++) {
+		if (ext_config_dtf[i].index == LCD_EXTERN_INDEX_INVALID)
+			break;
+	}
+	ext_common_dft.lcd_ext_num = i;
+
 	for (i = 0; i < LCD_EXTERN_GPIO_NUM_MAX; i++) {
 		if (strcmp(lcd_ext_gpio[i], "invalid") == 0)
 			break;
-		strcpy(ext_config_dtf.gpio_name[i], lcd_ext_gpio[i]);
+		strcpy(ext_common_dft.gpio_name[i], lcd_ext_gpio[i]);
 	}
 	for (j = i; j < LCD_EXTERN_GPIO_NUM_MAX; j++)
-		strcpy(ext_config_dtf.gpio_name[j], "invalid");
+		strcpy(ext_common_dft.gpio_name[j], "invalid");
 
-	strcpy(ext_config_dtf.name, LCD_EXTERN_NAME);
 #endif
 }

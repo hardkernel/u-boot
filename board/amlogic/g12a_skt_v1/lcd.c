@@ -152,7 +152,7 @@ static struct lcd_pinmux_ctrl_s lcd_pinmux_ctrl[LCD_PINMX_MAX] = {
 
 static struct lcd_pinmux_ctrl_s bl_pinmux_ctrl[BL_PINMUX_MAX] = {
 	{
-		.name = "bl_pwm_on_pin", //GPIOZ_5
+		.name = "bl_pwm_on_pin", //GPIOH_5
 		.pinmux_set = {{11, 0x00400000}, {LCD_PINMUX_END, 0x0}},
 		.pinmux_clr = {{11, 0x00f00000}, {LCD_PINMUX_END, 0x0}},
 	},
@@ -171,6 +171,7 @@ static struct dsi_config_s lcd_mipi_config = {
 	.video_mode_type = 2, /* 0=sync_pulse, 1=sync_event, 2=burst */
 	.clk_lp_continuous = 1, /* 0=stop, 1=continue */
 	.phy_stop_wait = 0,   /* 0=auto, 1=standard, 2=slow */
+
 	.dsi_init_on  = &mipi_init_on_table[0],
 	.dsi_init_off = &mipi_init_off_table[0],
 	.extern_init = 2, /* ext_index if needed, must match ext_config_dtf.index;*/
@@ -274,10 +275,6 @@ static char lcd_ext_gpio[LCD_EXTERN_GPIO_NUM_MAX][LCD_EXTERN_GPIO_LEN_MAX] = {
 	"invalid", /* ending flag */
 };
 
-#define LCD_EXTERN_NAME "mipi_TV070WSM"  //index 2
-//#define LCD_EXTERN_NAME "mipi_P070ACB"   //index 3
-#define LCD_EXTERN_INDEX           2
-#define LCD_EXTERN_CMD_SIZE        LCD_EXTERN_CMD_SIZE_DYNAMIC
 static unsigned char init_on_table[LCD_EXTERN_INIT_ON_MAX] = {
 	0xff, 0xff,   //ending flag
 };
@@ -286,14 +283,56 @@ static unsigned char init_off_table[LCD_EXTERN_INIT_OFF_MAX] = {
 	0xff,0xff,   //ending flag
 };
 
-struct lcd_extern_config_s ext_config_dtf = {
+struct lcd_extern_common_s ext_common_dft = {
 	.lcd_ext_key_valid = 0,
-	.index = LCD_EXTERN_INDEX,
-	.type = LCD_EXTERN_MIPI, /* LCD_EXTERN_I2C, LCD_EXTERN_SPI, LCD_EXTERN_MIPI, LCD_EXTERN_MAX */
-	.status = 1, /* 0=disable, 1=enable */
-	.cmd_size = LCD_EXTERN_CMD_SIZE,
-	.table_init_on = init_on_table,
-	.table_init_off = init_off_table,
+	.lcd_ext_num = 4,
+	.pinmux_set = {{LCD_PINMUX_END, 0x0}},
+	.pinmux_clr = {{LCD_PINMUX_END, 0x0}},
+};
+
+struct lcd_extern_config_s ext_config_dtf[LCD_EXTERN_NUM_MAX] = {
+	{
+		.index = 0,
+		.name = "ext_default",
+		.type = LCD_EXTERN_I2C, /* LCD_EXTERN_I2C, LCD_EXTERN_SPI, LCD_EXTERN_MIPI, LCD_EXTERN_MAX */
+		.status = 0, /* 0=disable, 1=enable */
+		.i2c_addr = 0x1c, /* 7bit i2c address */
+		.i2c_addr2 = 0xff, /* 7bit i2c address, 0xff for none */
+		.i2c_bus = LCD_EXTERN_I2C_BUS_C, /* LCD_EXTERN_I2C_BUS_AO, LCD_EXTERN_I2C_BUS_A/B/C/D */
+		.cmd_size = 9,
+		.table_init_on = init_on_table,
+		.table_init_off = init_off_table,
+	},
+	{
+		.index = 1,
+		.name = "mipi_KD080D13",
+		.type = LCD_EXTERN_MIPI, /* LCD_EXTERN_I2C, LCD_EXTERN_SPI, LCD_EXTERN_MIPI, LCD_EXTERN_MAX */
+		.status = 0, /* 0=disable, 1=enable */
+		.cmd_size = LCD_EXTERN_CMD_SIZE_DYNAMIC,
+		.table_init_on = init_on_table,
+		.table_init_off = init_off_table,
+	},
+	{
+		.index = 2,
+		.name = "mipi_TV070WSM",
+		.type = LCD_EXTERN_MIPI, /* LCD_EXTERN_I2C, LCD_EXTERN_SPI, LCD_EXTERN_MIPI, LCD_EXTERN_MAX */
+		.status = 1, /* 0=disable, 1=enable */
+		.cmd_size = LCD_EXTERN_CMD_SIZE_DYNAMIC,
+		.table_init_on = init_on_table,
+		.table_init_off = init_off_table,
+	},
+	{
+		.index = 3,
+		.name = "mipi_P070ACB",
+		.type = LCD_EXTERN_MIPI, /* LCD_EXTERN_I2C, LCD_EXTERN_SPI, LCD_EXTERN_MIPI, LCD_EXTERN_MAX */
+		.status = 1, /* 0=disable, 1=enable */
+		.cmd_size = LCD_EXTERN_CMD_SIZE_DYNAMIC,
+		.table_init_on = init_on_table,
+		.table_init_off = init_off_table,
+	},
+	{
+		.index = LCD_EXTERN_INDEX_INVALID,
+	},
 };
 #endif
 
@@ -362,14 +401,19 @@ void lcd_config_bsp_init(void)
 		strcpy(bl_config_dft.gpio_name[j], "invalid");
 
 #ifdef CONFIG_AML_LCD_EXTERN
+	for (i = 0; i < LCD_EXTERN_NUM_MAX; i++) {
+		if (ext_config_dtf[i].index == LCD_EXTERN_INDEX_INVALID)
+			break;
+	}
+	ext_common_dft.lcd_ext_num = i;
+
 	for (i = 0; i < LCD_EXTERN_GPIO_NUM_MAX; i++) {
 		if (strcmp(lcd_ext_gpio[i], "invalid") == 0)
 			break;
-		strcpy(ext_config_dtf.gpio_name[i], lcd_ext_gpio[i]);
+		strcpy(ext_common_dft.gpio_name[i], lcd_ext_gpio[i]);
 	}
 	for (j = i; j < LCD_EXTERN_GPIO_NUM_MAX; j++)
-		strcpy(ext_config_dtf.gpio_name[j], "invalid");
+		strcpy(ext_common_dft.gpio_name[j], "invalid");
 
-	strcpy(ext_config_dtf.name, LCD_EXTERN_NAME);
 #endif
 }

@@ -55,10 +55,9 @@ enum lcd_extern_i2c_bus_e {
 #define LCD_EXTERN_INDEX_INVALID      0xff
 #define LCD_EXTERN_NAME_LEN_MAX       30
 
-
+#define LCD_EXTERN_NUM_MAX            20
 
 struct lcd_extern_config_s {
-	unsigned char lcd_ext_key_valid;
 	unsigned char index;
 	char name[LCD_EXTERN_NAME_LEN_MAX];
 	enum lcd_extern_type_e type;
@@ -80,7 +79,17 @@ struct lcd_extern_config_s {
 	unsigned char *table_init_on;
 	unsigned char *table_init_off;
 	unsigned int table_init_on_cnt;
+};
+
+struct lcd_extern_common_s {
+	unsigned char lcd_ext_key_valid;
 	char gpio_name[LCD_EXTERN_GPIO_NUM_MAX][LCD_EXTERN_GPIO_LEN_MAX];
+	unsigned int lcd_ext_num;
+
+	unsigned char i2c_sck_gpio;
+	unsigned char i2c_sck_gpio_off;
+	unsigned char i2c_sda_gpio;
+	unsigned char i2c_sda_gpio_off;
 	unsigned int pinmux_set[LCD_PINMUX_NUM][2];
 	unsigned int pinmux_clr[LCD_PINMUX_NUM][2];
 };
@@ -88,6 +97,7 @@ struct lcd_extern_config_s {
 //global API
 struct aml_lcd_extern_driver_s {
 	struct lcd_extern_config_s *config;
+	struct lcd_extern_common_s *common;
 	int (*reg_read)  (unsigned char reg, unsigned char *buf);
 	int (*reg_write) (unsigned char reg, unsigned char value);
 	int (*power_on)(void);
@@ -99,7 +109,8 @@ extern struct aml_lcd_extern_driver_s *aml_lcd_extern_get_driver(void);
 extern int aml_lcd_extern_probe(char *dtaddr, int index);
 extern int aml_lcd_extern_remove(void);
 
-extern struct lcd_extern_config_s ext_config_dtf;
+extern struct lcd_extern_config_s ext_config_dtf[LCD_EXTERN_NUM_MAX];
+extern struct lcd_extern_common_s ext_common_dft;
 
 #endif
 
