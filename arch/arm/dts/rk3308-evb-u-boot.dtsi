@@ -1,0 +1,18 @@
+/*
+ * (C) Copyright 2018 Rockchip Electronics Co., Ltd
+ *
+ * SPDX-License-Identifier:     GPL-2.0+
+ */
+
+/ {
+	dmc: dmc@20004000 {
+		u-boot,dm-pre-reloc;
+		compatible = "rockchip,rk3308-dmc";
+		reg = <0x0 0xff010000 0x0 0x10000>;
+	};
+};
+
+&grf {
+	u-boot,dm-pre-reloc;
+};
+
