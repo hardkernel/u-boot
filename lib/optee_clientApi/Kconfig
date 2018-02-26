@@ -5,3 +5,20 @@ config OPTEE_CLIENT
 	  the config is enable. This function can
 	  be use in android bootloader a/b and avb
 	  step.
+
+config OPTEE_V1
+	bool "Support OPTEE version 1.0"
+	help
+	  U-boot can communicate with trust if
+	  the config is enable. This function can
+	  be use in android bootloader a/b and avb
+	  step.
+
+config OPTEE_V2
+	bool "Support OPTEE version 2.0"
+	help
+	  U-boot can communicate with trust if
+	  the config is enable. This function can
+	  be use in android bootloader a/b and avb
+	  step.
+
