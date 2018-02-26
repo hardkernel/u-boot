@@ -13,7 +13,7 @@
 
 #define MAX_ROCKCHIP_GPIO_PER_BANK	32
 #define RK_FUNC_GPIO			0
-#define MAX_ROCKCHIP_PINS_ENTRIES	20
+#define MAX_ROCKCHIP_PINS_ENTRIES	30
 
 enum rockchip_pinctrl_type {
 	PX30,
@@ -1841,18 +1841,19 @@ static int rockchip_pinctrl_set_state(struct udevice *dev,
 #endif
 	data = dev_read_prop(config, "rockchip,pins", &count);
 	if (count < 0) {
-		debug("%s: bad array %d\n", __func__, count);
+		debug("%s: bad array size %d\n", __func__, count);
 		return -EINVAL;
 	}
-	count /= sizeof(u32);
-	for (i = 0; i < count; i++)
-		cells[i] = fdt32_to_cpu(data[i]);
 
+	count /= sizeof(u32);
 	if (count > MAX_ROCKCHIP_PINS_ENTRIES * 4) {
 		debug("%s: unsupported pins array count %d\n",
 		      __func__, count);
 		return -EINVAL;
 	}
+
+	for (i = 0; i < count; i++)
+		cells[i] = fdt32_to_cpu(data[i]);
 
 	for (i = 0; i < (count >> 2); i++) {
 		bank = cells[4 * i + 0];
