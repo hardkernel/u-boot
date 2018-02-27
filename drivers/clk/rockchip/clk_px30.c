@@ -42,6 +42,15 @@ static const struct pll_div *apll_cfgs[] = {
 	[APLL_600_MHZ] = &apll_600_cfg,
 };
 
+static u8 pll_mode_shift[PLL_COUNT] = {
+	APLL_MODE_SHIFT, DPLL_MODE_SHIFT, CPLL_MODE_SHIFT,
+	NPLL_MODE_SHIFT, GPLL_MODE_SHIFT
+};
+static u32 pll_mode_mask[PLL_COUNT] = {
+	APLL_MODE_MASK, DPLL_MODE_MASK, CPLL_MODE_MASK,
+	NPLL_MODE_MASK, GPLL_MODE_MASK
+};
+
 /*
  *  the div restructions of pll in integer mode, these are defined in
  *  * CRU_*PLL_CON0 or PMUCRU_*PLL_CON0
@@ -72,14 +81,6 @@ static void rkclk_set_pll(struct px30_cru *cru, enum px30_pll_id pll_id,
 	/* All PLLs have same VCO and output frequency range restrictions. */
 	uint vco_hz = OSC_HZ / 1000 * div->fbdiv / div->refdiv * 1000;
 	uint output_hz = vco_hz / div->postdiv1 / div->postdiv2;
-	static u8 mode_shift[PLL_COUNT] = {
-		APLL_MODE_SHIFT, DPLL_MODE_SHIFT, CPLL_MODE_SHIFT,
-		NPLL_MODE_SHIFT, GPLL_MODE_SHIFT
-	};
-	static u32 mode_mask[PLL_COUNT] = {
-		APLL_MODE_MASK, DPLL_MODE_MASK, CPLL_MODE_MASK,
-		NPLL_MODE_MASK, GPLL_MODE_MASK
-	};
 
 	if (pll_id == GPLL) {
 		pll = &cru->gpll;
@@ -99,8 +100,8 @@ static void rkclk_set_pll(struct px30_cru *cru, enum px30_pll_id pll_id,
 	 * When power on or changing PLL setting,
 	 * we must force PLL into slow mode to ensure output stable clock.
 	 */
-	rk_clrsetreg(mode, mode_mask[pll_id],
-		     PLLMUX_FROM_XIN24M << mode_shift[pll_id]);
+	rk_clrsetreg(mode, pll_mode_mask[pll_id],
+		     PLLMUX_FROM_XIN24M << pll_mode_shift[pll_id]);
 
 	/* use integer mode */
 	rk_setreg(&pll->con1, 1 << PLL_DSMPD_SHIFT);
@@ -121,8 +122,8 @@ static void rkclk_set_pll(struct px30_cru *cru, enum px30_pll_id pll_id,
 	while (readl(&pll->con1) & (1 << PLL_LOCK_STATUS_SHIFT))
 		udelay(1);
 
-	rk_clrsetreg(mode, mode_mask[pll_id],
-		     PLLMUX_FROM_PLL << mode_shift[pll_id]);
+	rk_clrsetreg(mode, pll_mode_mask[pll_id],
+		     PLLMUX_FROM_PLL << pll_mode_shift[pll_id]);
 
 	return;
 }
@@ -133,14 +134,6 @@ static uint32_t rkclk_pll_get_rate(struct px30_cru *cru,
 	u32 refdiv, fbdiv, postdiv1, postdiv2;
 	u32 con;
 	struct px30_pll *pll;
-	static u8 clk_shift[PLL_COUNT] = {
-		APLL_MODE_SHIFT, DPLL_MODE_SHIFT, CPLL_MODE_SHIFT,
-		NPLL_MODE_SHIFT, GPLL_MODE_SHIFT
-	};
-	static u32 clk_mask[PLL_COUNT] = {
-		APLL_MODE_MASK, DPLL_MODE_MASK, CPLL_MODE_MASK,
-		NPLL_MODE_MASK, GPLL_MODE_MASK
-	};
 	uint shift;
 	uint mask;
 
@@ -152,8 +145,8 @@ static uint32_t rkclk_pll_get_rate(struct px30_cru *cru,
 		con = readl(&cru->mode);
 	}
 
-	shift = clk_shift[pll_id];
-	mask = clk_mask[pll_id];
+	shift = pll_mode_shift[pll_id];
+	mask = pll_mode_mask[pll_id];
 
 	switch ((con & mask) >> shift) {
 	case PLLMUX_FROM_XIN24M:
