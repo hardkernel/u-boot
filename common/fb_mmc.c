@@ -15,7 +15,9 @@
 #include <div64.h>
 #include <linux/compat.h>
 #include <android_image.h>
-
+#ifdef CONFIG_RKIMG_BOOTLOADER
+#include <boot_rkimg.h>
+#endif
 /*
  * FIXME: Ensure we always set these names via Kconfig once xxx_PARTITION is
  * migrated
@@ -297,8 +299,11 @@ void fb_mmc_flash_write(const char *cmd, void *download_buffer,
 	u64 disksize = 0;
 	char reason[128] = {0};
 #endif
-
+#ifdef CONFIG_RKIMG_BOOTLOADER
+	dev_desc = rockchip_get_bootdev();
+#else
 	dev_desc = blk_get_dev("mmc", CONFIG_FASTBOOT_FLASH_MMC_DEV);
+#endif
 	if (!dev_desc || dev_desc->type == DEV_TYPE_UNKNOWN) {
 		pr_err("invalid mmc device\n");
 		fastboot_fail("invalid mmc device", response);
@@ -405,7 +410,11 @@ void fb_mmc_erase(const char *cmd, char *response)
 		return;
 	}
 
+#ifdef CONFIG_RKIMG_BOOTLOADER
+	dev_desc = rockchip_get_bootdev();
+#else
 	dev_desc = blk_get_dev("mmc", CONFIG_FASTBOOT_FLASH_MMC_DEV);
+#endif
 	if (!dev_desc || dev_desc->type == DEV_TYPE_UNKNOWN) {
 		pr_err("invalid mmc device");
 		fastboot_fail("invalid mmc device", response);
