@@ -12,6 +12,7 @@
 #include <dm.h>
 #include <fdtdec.h>
 #include <boot_rkimg.h>
+#include <linux/usb/phy-rockchip-inno-usb2.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -82,7 +83,7 @@ void devtype_num_envset(void)
 
 void rockchip_dnl_mode_check(void)
 {
-	if (rockchip_dnl_key_pressed()) {
+	if (rockchip_dnl_key_pressed() && rockchip_u2phy_vbus_detect()) {
 		printf("download key pressed, entering download mode...\n");
 		/* If failed, we fall back to bootrom download mode */
 		run_command_list("rockusb 0 ${devtype} ${devnum}", -1, 0);

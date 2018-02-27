@@ -342,6 +342,11 @@ out:
 	return chg_type;
 }
 
+int rockchip_u2phy_vbus_detect(void)
+{
+	return (rockchip_chg_get_type() == POWER_SUPPLY_TYPE_USB) ? 1 : 0;
+}
+
 void otg_phy_init(struct dwc2_udc *dev)
 {
 	const struct rockchip_usb2phy_port_cfg *port_cfg;
