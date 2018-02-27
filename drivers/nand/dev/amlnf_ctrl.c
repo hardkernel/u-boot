@@ -341,6 +341,10 @@ void amlnand_release_device(struct amlnand_chip *aml_chip)
 
 #else /* AML_NAND_UBOOT, uboot ways below */
 
+#ifndef P_PAD_DS_REG0A
+#define P_PAD_DS_REG0A (volatile uint32_t *)(0xff634400 + (0x0d0 << 2))
+#endif
+
 void nand_get_chip(void *chip)
 {
 	/* fixme, */
@@ -349,21 +353,29 @@ void nand_get_chip(void *chip)
 	/* pull up enable */
 	aml_nand_dbg("PAD_PULL_UP_EN_REG2 0x%x, PAD_PULL_UP_REG2 0x%x, PERIPHS_PIN_MUX_4 0x%x", P_PAD_PULL_UP_EN_REG2, P_PAD_PULL_UP_REG2, P_PERIPHS_PIN_MUX_4);
 
-	AMLNF_SET_REG_MASK(P_PAD_PULL_UP_EN_REG2, 0x87ff);
-	/* pull direction, dqs pull down */
-	AMLNF_SET_REG_MASK(P_PAD_PULL_UP_REG2, 0x8700);
-	/* switch pinmux */
-	if (cpu_id.family_id >= MESON_CPU_MAJOR_ID_GXL) {
-		AMLNF_CLEAR_REG_MASK(P_PERIPHS_PIN_MUX_7,
-			((0x7 << 28) | (0x1FF << 15) | (0xF << 10)));
-		AMLNF_SET_REG_MASK(P_PERIPHS_PIN_MUX_7, ((0x1<<31) | 0xff));
-	} else if (cpu_id.family_id == MESON_CPU_MAJOR_ID_GXBB) {
-		AMLNF_SET_REG_MASK(P_PERIPHS_PIN_MUX_4, ((0x1<<30) | (0x3ff<<20)));
-		AMLNF_CLEAR_REG_MASK(P_PERIPHS_PIN_MUX_0, (0x1 << 19));
-		AMLNF_CLEAR_REG_MASK(P_PERIPHS_PIN_MUX_4, (0x3 << 18));
-		AMLNF_CLEAR_REG_MASK(P_PERIPHS_PIN_MUX_5, (0xF));
+	if (cpu_id.family_id == MESON_CPU_MAJOR_ID_G12A) {
+		AMLNF_SET_REG_MASK(P_PAD_PULL_UP_EN_REG4, 0x1FFF);
+		AMLNF_SET_REG_MASK(P_PAD_PULL_UP_REG4, 0x1F00);
+		AMLNF_WRITE_REG(P_PERIPHS_PIN_MUX_0, 0x11111111);
+		AMLNF_WRITE_REG(P_PERIPHS_PIN_MUX_1, 0x22122222);
+		writel(0x55555555, P_PAD_DS_REG0A);
+	} else {
+		AMLNF_SET_REG_MASK(P_PAD_PULL_UP_EN_REG2, 0x87ff);
+			/* pull direction, dqs pull down */
+		AMLNF_SET_REG_MASK(P_PAD_PULL_UP_REG2, 0x8700);
+			/* switch pinmux */
+		if (cpu_id.family_id >= MESON_CPU_MAJOR_ID_GXL) {
+			AMLNF_CLEAR_REG_MASK(P_PERIPHS_PIN_MUX_7,
+				((0x7 << 28) | (0x1FF << 15) | (0xF << 10)));
+			AMLNF_SET_REG_MASK(P_PERIPHS_PIN_MUX_7, ((0x1<<31) | 0xff));
+		} else if (cpu_id.family_id == MESON_CPU_MAJOR_ID_GXBB) {
+			AMLNF_SET_REG_MASK(P_PERIPHS_PIN_MUX_4, ((0x1<<30) | (0x3ff<<20)));
+			AMLNF_CLEAR_REG_MASK(P_PERIPHS_PIN_MUX_0, (0x1 << 19));
+			AMLNF_CLEAR_REG_MASK(P_PERIPHS_PIN_MUX_4, (0x3 << 18));
+			AMLNF_CLEAR_REG_MASK(P_PERIPHS_PIN_MUX_5, (0xF));
+		}
+		aml_nand_dbg("PAD_PULL_UP_EN_REG2 0x%x, PAD_PULL_UP_REG2 0x%x, PERIPHS_PIN_MUX_4 0x%x", AMLNF_READ_REG(P_PAD_PULL_UP_EN_REG2), AMLNF_READ_REG(P_PAD_PULL_UP_REG2), AMLNF_READ_REG(P_PERIPHS_PIN_MUX_4));
 	}
-	aml_nand_dbg("PAD_PULL_UP_EN_REG2 0x%x, PAD_PULL_UP_REG2 0x%x, PERIPHS_PIN_MUX_4 0x%x", AMLNF_READ_REG(P_PAD_PULL_UP_EN_REG2), AMLNF_READ_REG(P_PAD_PULL_UP_REG2), AMLNF_READ_REG(P_PERIPHS_PIN_MUX_4));
 	return ;
 }
 
@@ -419,7 +431,8 @@ void pinmux_select_chip(unsigned ce_enable, unsigned rb_enable, unsigned flag)
 
 void set_nand_core_clk(struct hw_controller *controller, int clk_freq)
 {
-	if (get_cpu_type() == MESON_CPU_MAJOR_ID_GX) {
+	cpu_id_t cpu_id = get_cpu_id();
+	if ((cpu_id.family_id >=  MESON_CPU_MAJOR_ID_GXBB)) {
 		/* basic test code for gxb using 24Mhz, fixme. */
 		//amlnf_write_reg32(controller->nand_clk_reg, 0x81000201); //24Mhz/1
 		if (clk_freq == 200) {

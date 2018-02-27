@@ -6,6 +6,9 @@
 #include "amlnf_ctrl.h"
 #include "amlnf_cfg.h"
 #include "partition_table.h"
+#include <asm/arch/secure_apb.h>
+#include <asm/arch/cpu_sdio.h>
+#include <asm/io.h>
 
 #ifndef AML_NAND_UBOOT
 #include <linux/types.h>

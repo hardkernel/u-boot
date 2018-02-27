@@ -27,39 +27,13 @@ static inline int get_cpu_type(void)
 	return MESON_CPU_MAJOR_ID_GX;
 }
 #endif /* AML_NAND_UBOOT */
-/*
-#define	NAND_CYCLE_DELAY_M8	84
-*/
-/*
-#define	NAND_CYCLE_DELAY	90
-*/
+
 #define	NAND_CYCLE_DELAY ((get_cpu_type() >= MESON_CPU_MAJOR_ID_M8)?(84) : (90))
 
-/* Nand Flash Controller CLK register address */
-/*
-#define NAND_CLK_CNTL		0xc110425c
-*/
-/* Amlogic Nand Flash Controller register address */
-/* #define P_NAND_BASE_APB	0xd0048600 */
-/* #define P_NAND_BASE_CBUS	0xc1108600 */
-/* #define RESOURCE_SIZE	0x40 */
-
 #ifdef AML_NAND_UBOOT
-/* m8baby, debug on m201... just for porting*/
-#if  0
-#define NAND_BASE_APB 	(u32 *)0xd0048600
-#define IO_CBUS_PHY_BASE	(0xc1100000)
-#define NAND_CLK_CNTL		(u32 *)(IO_CBUS_PHY_BASE + 0x425C)
-#define	POC_CONFIG_REG		(u32 *)(IO_CBUS_PHY_BASE + 0x7D54)
-#endif /* 0 */
-
-/* gx, for pxp and ic. */
-//#define SD_EMMC_BASE_C	(volatile uint32_t *)(0xd0074000)
-#define SD_EMMC_BASE_C	(0xd0074000)
 #define P_NAND_BASE 	(SD_EMMC_BASE_C | (1<<11))
 #define NAND_BASE_APB	(P_NAND_BASE)
 #define NAND_CLK_CNTL	(SD_EMMC_BASE_C)	//fixme, need update the clock calculation.
-#define	POC_CONFIG_REG	(volatile uint32_t *)(0xc1107d54) //fixme, need check definition.
 #endif /* AML_NAND_UBOOT */
 
 

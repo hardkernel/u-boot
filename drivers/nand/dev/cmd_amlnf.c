@@ -357,6 +357,8 @@ static int do_amlnfphy(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]
 		/* flag = 0, indicate normal boot; */
 		/* flag = 1, indicate update, with data; */
 		/* flag = 2, indicate need erase */
+
+		aml_nand_msg("init_flag:%x",init_flag);
 		ret = amlnf_init(init_flag);
 		if (ret) {
 			aml_nand_msg("nand_init failed ret:%x", ret);

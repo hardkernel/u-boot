@@ -714,7 +714,7 @@ static int amlnf_get_resource(struct platform_device *pdev)
 		return -ENOMEM;
 	}
 	aml_nand_dbg("nand io resources:\n");
-	aml_nand_dev->platform_data->poc_reg = (volatile uint32_t *)POC_CONFIG_REG;
+	aml_nand_dev->platform_data->poc_reg = (volatile uint32_t *)P_ASSIST_POR_CONFIG;
 	aml_nand_dbg("poc_reg = %p\n",
 		aml_nand_dev->platform_data->poc_reg);
 
