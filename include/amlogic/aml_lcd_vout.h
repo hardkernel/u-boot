@@ -42,31 +42,13 @@ extern unsigned int lcd_debug_print_flag;
 /* ******** div_ctrl ******** */
 #define DIV_CTRL_EDP_DIV1           24 /* [26:24] */
 #define DIV_CTRL_EDP_DIV0           20 /* [23:20] */
-#define DIV_CTRL_DIV_POST           12 /* [14:12] */
-#define DIV_CTRL_DIV_PRE            8 /* [10:8] */
 #define DIV_CTRL_DIV_SEL            8 /* [15:8] */
 #define DIV_CTRL_XD                 0 /* [7:0] */
 
 /* ******** clk_ctrl ******** */
-#define CLK_CTRL_LEVEL              12 /* [14:12] */
-#define CLK_CTRL_FRAC               0  /* [11:0] */
+#define CLK_CTRL_LEVEL              28 /* [30:28] */
+#define CLK_CTRL_FRAC               0  /* [18:0] */
 
-/* **********************************
- * other parameter bit define
- * pol_ctrl, gamma_ctrl
- * ********************************** */
-/* pol_ctrl */
-#define POL_CTRL_CLK                3
-#define POL_CTRL_DE                 2
-#define POL_CTRL_VS                 1
-#define POL_CTRL_HS                 0
-
-/* gamma_ctrl */
-#define GAMMA_CTRL_REV              1
-#define GAMMA_CTRL_EN               0
-
-#define LCD_PINMUX_END              0xff
-#define LCD_PINMUX_NUM              15
 
 /* **********************************
  * VENC to TCON sync delay
@@ -92,6 +74,8 @@ extern unsigned int lcd_debug_print_flag;
 #define DSI_LANE_COUNT_4        (DSI_LANE_CLK | DSI_LANE_0 |\
 					DSI_LANE_1 | DSI_LANE_2 | DSI_LANE_3)
 
+#define LCD_PINMUX_END          0xff
+#define LCD_PINMUX_NUM          15
 
 /* **********************************
  * global control define
@@ -410,6 +394,7 @@ struct lcd_pinmux_ctrl_s {
 struct lcd_config_s {
 	unsigned char lcd_mode;
 	unsigned char lcd_key_valid;
+	unsigned char lcd_clk_path; /* 0=hpll, 1=gp0_pll */
 	unsigned int backlight_index;
 	struct lcd_basic_s lcd_basic;
 	struct lcd_timing_s lcd_timing;

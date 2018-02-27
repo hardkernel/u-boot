@@ -498,7 +498,7 @@ static unsigned int lcd_reg_dump_clk_axg[] = {
 	HHI_VID_CLK_CNTL2,
 };
 
-static unsigned int lcd_reg_dump_clk_g12a[] = {
+static unsigned int lcd_reg_dump_clk_gp0_g12a[] = {
 	HHI_GP0_PLL_CNTL0,
 	HHI_GP0_PLL_CNTL1,
 	HHI_GP0_PLL_CNTL2,
@@ -509,6 +509,22 @@ static unsigned int lcd_reg_dump_clk_g12a[] = {
 	HHI_VIID_CLK_DIV,
 	HHI_VIID_CLK_CNTL,
 	HHI_VID_CLK_CNTL2,
+	HHI_MIPIDSI_PHY_CLK_CNTL,
+};
+
+static unsigned int lcd_reg_dump_clk_hpll_g12a[] = {
+	HHI_HDMI_PLL_CNTL0,
+	HHI_HDMI_PLL_CNTL1,
+	HHI_HDMI_PLL_CNTL2,
+	HHI_HDMI_PLL_CNTL3,
+	HHI_HDMI_PLL_CNTL4,
+	HHI_HDMI_PLL_CNTL5,
+	HHI_HDMI_PLL_CNTL6,
+	HHI_VID_PLL_CLK_DIV,
+	HHI_VIID_CLK_DIV,
+	HHI_VIID_CLK_CNTL,
+	HHI_VID_CLK_CNTL2,
+	HHI_MIPIDSI_PHY_CLK_CNTL,
 };
 
 static unsigned int lcd_reg_dump_encl[] = {
@@ -756,10 +772,18 @@ static void lcd_reg_print(void)
 	printf("clk registers:\n");
 	switch (aml_lcd_driver.chip_type) {
 	case LCD_CHIP_G12A:
-		for (i = 0; i < ARRAY_SIZE(lcd_reg_dump_clk_g12a); i++) {
-			printf("hiu     [0x%08x] = 0x%08x\n",
-				lcd_reg_dump_clk_g12a[i],
-				lcd_hiu_read(lcd_reg_dump_clk_g12a[i]));
+		if (lcd_drv->lcd_config->lcd_clk_path) {
+			for (i = 0; i < ARRAY_SIZE(lcd_reg_dump_clk_gp0_g12a); i++) {
+				printf("hiu     [0x%08x] = 0x%08x\n",
+					lcd_reg_dump_clk_gp0_g12a[i],
+					lcd_hiu_read(lcd_reg_dump_clk_gp0_g12a[i]));
+			}
+		} else {
+			for (i = 0; i < ARRAY_SIZE(lcd_reg_dump_clk_hpll_g12a); i++) {
+				printf("hiu     [0x%08x] = 0x%08x\n",
+					lcd_reg_dump_clk_hpll_g12a[i],
+					lcd_hiu_read(lcd_reg_dump_clk_hpll_g12a[i]));
+			}
 		}
 		break;
 	case LCD_CHIP_AXG:
@@ -972,6 +996,17 @@ static int lcd_init_load_from_dts(char *dt_addr)
 	}
 	LCDPR("detect mode: %s, key_valid: %d\n", str, pconf->lcd_key_valid);
 
+	/* check lcd_clk_path */
+	propdata = (char *)fdt_getprop(dt_addr, parent_offset, "clk_path", NULL);
+	if (propdata == NULL) {
+		if (lcd_debug_print_flag)
+			LCDPR("failed to get clk_path\n");
+		pconf->lcd_clk_path = 0;
+	} else {
+		pconf->lcd_clk_path = (unsigned char)(be32_to_cpup((u32*)propdata));
+		LCDPR("detect lcd_clk_path: %d\n", pconf->lcd_clk_path);
+	}
+
 	i = 0;
 	propdata = (char *)fdt_getprop(dt_addr, parent_offset, "lcd_cpu_gpio_names", NULL);
 	if (propdata == NULL) {
@@ -1021,7 +1056,7 @@ static int lcd_init_load_from_bsp(void)
 	return 0;
 }
 
-static int lcd_mode_probe(void)
+static int lcd_config_probe(void)
 {
 	int load_id = 0;
 	char *dt_addr, *str;
@@ -1106,6 +1141,8 @@ static int lcd_mode_probe(void)
 		}
 	}
 
+	lcd_clk_config_probe();
+
 	/* load lcd config */
 	switch (aml_lcd_driver.lcd_config->lcd_mode) {
 #ifdef CONFIG_AML_LCD_TV
@@ -1177,8 +1214,7 @@ int lcd_probe(void)
 
 	lcd_chip_detect();
 	lcd_config_bsp_init();
-	lcd_clk_config_probe();
-	ret = lcd_mode_probe();
+	ret = lcd_config_probe();
 	if (ret)
 		return 0;
 
@@ -1367,7 +1403,7 @@ static void aml_lcd_key_test(void)
 {
 	if (aml_lcd_driver.unifykey_test_flag) {
 		aml_lcd_unifykey_test();
-		lcd_mode_probe();
+		lcd_config_probe();
 	} else {
 		printf("lcd unifykey test disabled\n");
 	}
@@ -1377,7 +1413,7 @@ static void aml_lcd_key_tcon_test(void)
 {
 	if (aml_lcd_driver.unifykey_test_flag) {
 		aml_lcd_unifykey_tcon_test(1080);
-		lcd_mode_probe();
+		lcd_config_probe();
 	} else {
 		printf("lcd unifykey test disabled\n");
 	}
