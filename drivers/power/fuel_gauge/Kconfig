@@ -17,6 +17,12 @@ config POWER_FG_RK818
 	help
 	  This adds support for RK818 fuel gauge support.
 
+config POWER_FG_RK817
+	bool "RK817 Fuel gauge support"
+	depends on DM_FUEL_GAUGE && PMIC_RK8XX
+	help
+	  This adds support for RK817 fuel gauge support.
+
 config POWER_FG_RK816
 	bool "RK816 Fuel gauge support"
 	depends on DM_FUEL_GAUGE && PMIC_RK8XX
