@@ -370,6 +370,7 @@ static ulong px30_mmc_get_clk(struct px30_cru *cru, uint clk_id)
 		break;
 	case HCLK_EMMC:
 	case SCLK_EMMC:
+	case SCLK_EMMC_SAMPLE:
 		con_id = 20;
 		break;
 	default:
@@ -628,6 +629,7 @@ static ulong px30_clk_get_rate(struct clk *clk)
 	case HCLK_EMMC:
 	case SCLK_SDMMC:
 	case SCLK_EMMC:
+	case SCLK_EMMC_SAMPLE:
 		rate = px30_mmc_get_clk(priv->cru, clk->id);
 		break;
 	case SCLK_I2C0:
@@ -730,6 +732,7 @@ int rockchip_mmc_get_phase(struct clk *clk)
 	else
 		raw_value = readl(&cru->sdmmc_con[1]);
 
+	raw_value >>= 1;
 	degrees = (raw_value & ROCKCHIP_MMC_DEGREE_MASK) * 90;
 
 	if (raw_value & ROCKCHIP_MMC_DELAY_SEL) {
@@ -776,6 +779,7 @@ int rockchip_mmc_set_phase(struct clk *clk, u32 degrees)
 	raw_value |= delay_num << ROCKCHIP_MMC_DELAYNUM_OFFSET;
 	raw_value |= nineties;
 
+	raw_value <<= 1;
 	if (clk->id == SCLK_EMMC_SAMPLE)
 		writel(raw_value | 0xffff0000, &cru->emmc_con[1]);
 	else
