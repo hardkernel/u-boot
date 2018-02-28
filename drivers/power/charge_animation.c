@@ -100,11 +100,6 @@ static int check_key_press(void)
 	if (state < 0)
 		printf("read power key failed: %d\n", state);
 
-	if (state == KEY_PRESS_LONG_DOWN)
-		printf("power key long pressed...\n");
-	else if (state == KEY_PRESS_DOWN)
-		printf("power key short pressed...\n");
-
 	return state;
 }
 
@@ -139,16 +134,16 @@ static int system_suspend_enter(struct charge_animation_pdata *pdata)
 		local_irq_enable();
 		putc('1');
 		putc('\n');
-
-		/*
-		 * We must wait for key release event finish, otherwise
-		 * we may read key state too early.
-		 */
-		mdelay(300);
 	} else {
 		printf("\nWfi\n");
 		wfi();
 	}
+
+	/*
+	 * We must wait for key release event finish, otherwise
+	 * we may read key state too early.
+	 */
+	mdelay(300);
 
 	return 0;
 }
