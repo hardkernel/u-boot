@@ -149,52 +149,12 @@ static int rk_keys_read(struct udevice *dev, int code)
 				printf("%s: failed to read saradc\n",
 				       key[i].name);
 			} else {
-				/* Get min, max */
-				max = key[i].value + key[i].margin;
-				if (key[i].value > key[i].margin)
-					min = key[i].value - key[i].margin;
-				else
-					min = key[i].value;
-
-				/* Check */
-				if ((adcval <= max) && (adcval >= min)) {
-					report = KEY_PRESS_DOWN;
-					printf("'%s' key pressed down\n",
-					       key[i].name);
-				} else {
-					report = KEY_PRESS_NONE;
-				}
+				report = key_parse_adc_event(key[i], adcval);
 			}
-			break;
 		} else {
-			debug("%s: ms: %llu, up=%llu, down=%llu\n",
-			      key[i].name, key[i].up_t - key[i].down_t,
-			      key[i].up_t, key[i].down_t);
-
-			if (key[i].down_t && (key[i].up_t > key[i].down_t) &&
-			    (key[i].up_t - key[i].down_t) >= KEY_LONG_DOWN_MS) {
-				key[i].up_t = 0;
-				key[i].down_t = 0;
-				report = KEY_PRESS_LONG_DOWN;
-				printf("'%s' key long pressed down\n",
-				       key[i].name);
-			} else if (key[i].down_t && key_get_timer(key[i].down_t) >=
-				   KEY_LONG_DOWN_MS) {
-				key[i].up_t = 0;
-				key[i].down_t = 0;
-				report = KEY_PRESS_LONG_DOWN;
-				printf("'%s' key long pressed down(hold)\n",
-				       key[i].name);
-			} else if ((key[i].up_t > key[i].down_t) &&
-				   (key[i].up_t - key[i].down_t) < KEY_LONG_DOWN_MS) {
-				key[i].up_t = 0;
-				key[i].down_t = 0;
-				report = KEY_PRESS_DOWN;
-				printf("'%s' key pressed down\n", key[i].name);
-			} else {
-				report = KEY_PRESS_NONE;
-			}
+			report = key_parse_gpio_event(key[i]);
 		}
+		break;
 	}
 
 	return report;
