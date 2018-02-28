@@ -265,6 +265,12 @@ int rockchip_chg_get_type(void)
 	base = get_reg_base(rphy);
 	port_cfg = &rphy->phy_cfg->port_cfgs[USB2PHY_PORT_OTG];
 
+	/* Check USB-Vbus status first */
+	if (!property_enabled(base, &port_cfg->utmi_bvalid)) {
+		pr_info("%s: no charger found\n", __func__);
+		return POWER_SUPPLY_TYPE_UNKNOWN;
+	}
+
 	/* Suspend USB-PHY and put the controller in non-driving mode */
 	property_enable(base, &port_cfg->phy_sus, true);
 	property_enable(base, &rphy->phy_cfg->chg_det.opmode, false);
