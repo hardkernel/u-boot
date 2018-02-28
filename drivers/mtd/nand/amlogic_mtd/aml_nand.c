@@ -2197,11 +2197,13 @@ void aml_nand_base_command(struct aml_nand_chip *aml_chip,
 			/* Serially input address */
 			if (column != -1) {
 				/* Adjust columns for 16 bit buswidth */
-				if (chip->options & NAND_BUSWIDTH_16)
+				if (chip->options & NAND_BUSWIDTH_16 &&
+				    !nand_opcode_8bits(command))
 					column >>= 1;
 				chip->cmd_ctrl(mtd, column, ctrl);
 				ctrl &= ~NAND_CTRL_CHANGE;
-				chip->cmd_ctrl(mtd, column >> 8, ctrl);
+				if (!nand_opcode_8bits(command))
+					chip->cmd_ctrl(mtd, column >> 8, ctrl);
 			}
 			if (page_addr != -1) {
 				chip->cmd_ctrl(mtd, plane_page_addr, ctrl);
@@ -2301,11 +2303,13 @@ void aml_nand_base_command(struct aml_nand_chip *aml_chip,
 			/* Serially input address */
 			if (column != -1) {
 				/* Adjust columns for 16 bit buswidth */
-				if (chip->options & NAND_BUSWIDTH_16)
+				if (chip->options & NAND_BUSWIDTH_16 &&
+				    !nand_opcode_8bits(command))
 					column >>= 1;
 				chip->cmd_ctrl(mtd, column, ctrl);
 				ctrl &= ~NAND_CTRL_CHANGE;
-				chip->cmd_ctrl(mtd, column >> 8, ctrl);
+				if (!nand_opcode_8bits(command))
+					chip->cmd_ctrl(mtd, column >> 8, ctrl);
 			}
 			if (page_addr != -1) {
 				//plane_page_addr |=
@@ -2361,11 +2365,16 @@ void aml_nand_base_command(struct aml_nand_chip *aml_chip,
 			/* Serially input address */
 			if (column != -1) {
 				/* Adjust columns for 16 bit buswidth */
-				if (chip->options & NAND_BUSWIDTH_16)
+				if (chip->options & NAND_BUSWIDTH_16 &&
+				    !nand_opcode_8bits(command))
 					column >>= 1;
 				chip->cmd_ctrl(mtd, column, ctrl);
 				ctrl &= ~NAND_CTRL_CHANGE;
-				chip->cmd_ctrl(mtd, column >> 8, ctrl);
+				/* Only output a single addr
+				 * cycle for 8bits opcodes.
+				 */
+				if (!nand_opcode_8bits(command))
+					chip->cmd_ctrl(mtd, column >> 8, ctrl);
 			}
 			if (page_addr != -1) {
 
@@ -2461,7 +2470,8 @@ void aml_nand_command(struct mtd_info *mtd,
 		aml_chip->page_addr |=
 		(1 << aml_chip->internal_chip_shift)*aml_chip->internal_chipnr;
 	}
-	}
+	} else
+		aml_chip->page_addr = page_addr;
 
 	/* Emulate NAND_CMD_READOOB */
 	if (command == NAND_CMD_READOOB) {
