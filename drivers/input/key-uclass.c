@@ -45,6 +45,72 @@ static int key_read(struct udevice *dev, int code)
 	return ops->read(dev, code);
 }
 
+int key_parse_adc_event(struct input_key *key, unsigned int adcval)
+{
+	int report = KEY_NOT_EXIST;
+	int max, min;
+
+	debug("%s: %s: max=%d, min=%d, adcval=%d\n",
+	      __func__, key->name, max, min, adcval);
+
+	/* Get min, max */
+	max = key->value + key->margin;
+	if (key->value > key->margin)
+		min = key->value - key->margin;
+	else
+		min = key->value;
+
+	/* Check */
+	if ((adcval <= max) && (adcval >= min)) {
+		report = KEY_PRESS_DOWN;
+		printf("%s key pressed..\n", key->name);
+	} else {
+		report = KEY_PRESS_NONE;
+	}
+
+	return report;
+}
+
+int key_parse_gpio_event(struct input_key *key)
+{
+	u32 report = KEY_NOT_EXIST;
+
+	debug("%s: %s: up=%llu, down=%llu, delta=%llu\n",
+	      __func__, key->name, key->up_t, key->down_t,
+	      key->up_t - key->down_t);
+
+	/* Possible this is machine power-on long pressed, so ignore this */
+	if (key->down_t == 0 && key->up_t != 0) {
+		report = KEY_PRESS_NONE;
+		goto out;
+	}
+
+	if ((key->up_t > key->down_t) &&
+	    (key->up_t - key->down_t) >= KEY_LONG_DOWN_MS) {
+		key->up_t = 0;
+		key->down_t = 0;
+		report = KEY_PRESS_LONG_DOWN;
+		printf("%s key long pressed(hold)..\n", key->name);
+	} else if (key->down_t &&
+		   key_get_timer(key->down_t) >= KEY_LONG_DOWN_MS) {
+		key->up_t = 0;
+		key->down_t = 0;
+		report = KEY_PRESS_LONG_DOWN;
+		printf("%s key long pressed..\n", key->name);
+	} else if ((key->up_t > key->down_t) &&
+		   (key->up_t - key->down_t) < KEY_LONG_DOWN_MS) {
+		key->up_t = 0;
+		key->down_t = 0;
+		report = KEY_PRESS_DOWN;
+		printf("%s key short pressed..\n", key->name);
+	} else {
+		report = KEY_PRESS_NONE;
+	}
+
+out:
+	return report;
+}
+
 int platform_key_read(int code)
 {
 	struct udevice *dev;

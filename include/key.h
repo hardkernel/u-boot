@@ -41,4 +41,8 @@ struct input_key {
 uint64_t key_get_timer(uint64_t base);
 int platform_key_read(int code);
 
+/* General interface for adc or gpio interrupt key event parse */
+int key_parse_gpio_event(struct input_key *key);
+int key_parse_adc_event(struct input_key *key, unsigned int adcval);
+
 #endif
