@@ -12,6 +12,7 @@
  */
 #include <config.h>
 #include <common.h>
+#include <console.h>
 #include <errno.h>
 #include <fastboot.h>
 #include <malloc.h>
@@ -19,10 +20,14 @@
 #include <linux/usb/gadget.h>
 #include <linux/usb/composite.h>
 #include <linux/compiler.h>
+#include <u-boot/sha256.h>
 #include <version.h>
 #include <g_dnl.h>
+#include <fs.h>
 #include <android_avb/avb_ops_user.h>
 #include <android_avb/rk_avb_ops_user.h>
+#include <dm/uclass.h>
+#include <power/fuel_gauge.h>
 #ifdef CONFIG_FASTBOOT_FLASH_MMC_DEV
 #include <fb_mmc.h>
 #endif
@@ -785,8 +790,6 @@ static void cb_upload(struct usb_ep *ep, struct usb_request *req)
 {
 	char response[FASTBOOT_RESPONSE_LEN];
 
-
-
 	printf("Starting upload of %d bytes\n", upload_size);
 
 	if (0 == upload_size) {
@@ -840,7 +843,7 @@ static void cb_set_active(struct usb_ep *ep, struct usb_request *req)
 	strsep(&cmd, ":");
 	if (!cmd) {
 		pr_err("missing slot name");
-		fastboot_tx_write_str("FAIL: missing slot name");
+		fastboot_tx_write_str("FAILmissing slot name");
 		return;
 	}
 #ifdef CONFIG_RK_AVB_LIBAVB_USER
@@ -852,7 +855,7 @@ static void cb_set_active(struct usb_ep *ep, struct usb_request *req)
 		slot_number = 1;
 		rk_avb_set_slot_active(&slot_number);
 	} else {
-		fastboot_tx_write_str("FAIL: unkown slot name");
+		fastboot_tx_write_str("FAILunkown slot name");
 		return;
 	}
 
@@ -873,8 +876,15 @@ static void cb_flash(struct usb_ep *ep, struct usb_request *req)
 	uint8_t flash_lock_state;
 
 	if (rk_avb_read_flash_lock_state(&flash_lock_state)) {
-		fastboot_tx_write_str("FAIL");
-		return;
+		/* write the device flashing unlock when first read */
+		if (rk_avb_write_flash_lock_state(1)) {
+			fastboot_tx_write_str("FAILflash lock state write failure");
+			return;
+		}
+		if (rk_avb_read_flash_lock_state(&flash_lock_state)) {
+			fastboot_tx_write_str("FAILflash lock state read failure");
+			return;
+		}
 	}
 
 	if (flash_lock_state == 0) {
@@ -911,7 +921,8 @@ static void cb_flashing(struct usb_ep *ep, struct usb_request *req)
 		uint8_t flash_lock_state;
 		flash_lock_state = 0;
 		if (rk_avb_write_flash_lock_state(flash_lock_state))
-			fastboot_tx_write_str("FAIL");
+			fastboot_tx_write_str("FAILflash lock state"
+					      " write failure");
 		else
 			fastboot_tx_write_str("OKAY");
 #else
@@ -922,7 +933,8 @@ static void cb_flashing(struct usb_ep *ep, struct usb_request *req)
 		uint8_t flash_lock_state;
 		flash_lock_state = 1;
 		if (rk_avb_write_flash_lock_state(flash_lock_state))
-			fastboot_tx_write_str("FAIL");
+			fastboot_tx_write_str("FAILflash lock state"
+					      " write failure");
 		else
 			fastboot_tx_write_str("OKAY");
 #else
@@ -946,6 +958,108 @@ static void cb_flashing(struct usb_ep *ep, struct usb_request *req)
 }
 #endif
 
+static void cb_oem_perm_attr(void)
+{
+#ifdef CONFIG_RK_AVB_LIBAVB_USER
+	sha256_context ctx;
+	uint8_t digest[SHA256_SUM_LEN] = {0};
+	uint8_t digest_temp[SHA256_SUM_LEN] = {0};
+	uint8_t perm_attr_temp[PERM_ATTR_TOTAL_SIZE] = {0};
+	uint8_t flag = 0;
+
+	if (PERM_ATTR_TOTAL_SIZE != download_bytes) {
+		printf("Permanent attribute size is not equal!\n");
+		fastboot_tx_write_str("FAILincorrect perm attribute size");
+		return;
+	}
+
+	if (rk_avb_read_perm_attr_flag(&flag)) {
+		printf("rk_avb_read_perm_attr_flag error!\n");
+		fastboot_tx_write_str("FAILperm attr read failed");
+		return;
+	}
+
+	if (flag == PERM_ATTR_SUCCESS_FLAG) {
+		if (rk_avb_read_attribute_hash(digest_temp,
+					       SHA256_SUM_LEN)) {
+			printf("The efuse IO can not be used!\n");
+			fastboot_tx_write_str("FAILefuse IO can not be used");
+			return;
+		}
+
+		if (memcmp(digest, digest_temp, SHA256_SUM_LEN) != 0) {
+			if (rk_avb_read_permanent_attributes(perm_attr_temp,
+							     PERM_ATTR_TOTAL_SIZE)) {
+				printf("rk_avb_write_permanent_attributes error!\n");
+				fastboot_tx_write_str("FAILread perm attr error");
+				return;
+			}
+
+			sha256_starts(&ctx);
+			sha256_update(&ctx,
+				      (const uint8_t *)perm_attr_temp,
+				      PERM_ATTR_TOTAL_SIZE);
+			sha256_finish(&ctx, digest);
+			if (memcmp(digest, digest_temp, SHA256_SUM_LEN) == 0) {
+				printf("The hash has been written!\n");
+				fastboot_tx_write_str("OKAY");
+				return;
+			}
+		}
+
+		if (rk_avb_write_perm_attr_flag(0)) {
+			fastboot_tx_write_str("FAILperm attr flag write failure");
+			return;
+		}
+	}
+
+	if (rk_avb_write_permanent_attributes((uint8_t *)
+					      CONFIG_FASTBOOT_BUF_ADDR,
+					      download_bytes)) {
+		if (rk_avb_write_perm_attr_flag(0)) {
+			fastboot_tx_write_str("FAILperm attr flag write failure");
+			return;
+		}
+		fastboot_tx_write_str("FAILperm attr write failed");
+		return;
+	}
+
+	memset(digest, 0, SHA256_SUM_LEN);
+	sha256_starts(&ctx);
+	sha256_update(&ctx, (const uint8_t *)CONFIG_FASTBOOT_BUF_ADDR,
+		      PERM_ATTR_TOTAL_SIZE);
+	sha256_finish(&ctx, digest);
+
+	if (rk_avb_write_attribute_hash((uint8_t *)digest,
+					SHA256_SUM_LEN)) {
+		if (rk_avb_read_attribute_hash(digest_temp,
+						SHA256_SUM_LEN)) {
+			printf("The efuse IO can not be used!\n");
+			fastboot_tx_write_str("FAILefuse IO can not be used");
+			return;
+		}
+		if (memcmp(digest, digest_temp, SHA256_SUM_LEN) != 0) {
+			if (rk_avb_write_perm_attr_flag(0)) {
+				fastboot_tx_write_str("FAILperm attr flag write failure");
+				return;
+			}
+			printf("The hash has been written, but is different!\n");
+			fastboot_tx_write_str("FAILhash comparison failure");
+			return;
+		}
+	}
+
+	if (rk_avb_write_perm_attr_flag(PERM_ATTR_SUCCESS_FLAG)) {
+		fastboot_tx_write_str("FAILperm attr flag write failure");
+		return;
+	}
+
+	fastboot_tx_write_str("OKAY");
+#else
+	fastboot_tx_write_str("FAILnot implemented");
+#endif
+}
+
 static void cb_oem(struct usb_ep *ep, struct usb_request *req)
 {
 	char *cmd = req->buf;
@@ -956,7 +1070,7 @@ static void cb_oem(struct usb_ep *ep, struct usb_request *req)
                 sprintf(cmdbuf, "gpt write mmc %x $partitions",
 			CONFIG_FASTBOOT_FLASH_MMC_DEV);
                 if (run_command(cmdbuf, 0))
-			fastboot_tx_write_str("FAIL");
+			fastboot_tx_write_str("FAILmmc write failure");
                 else
 			fastboot_tx_write_str("OKAY");
 	} else
@@ -965,13 +1079,13 @@ static void cb_oem(struct usb_ep *ep, struct usb_request *req)
 		fastboot_tx_write_str("FAILnot implemented");
 	} else if (strncmp("at-get-ca-request", cmd + 4, 17) == 0) {
 #ifdef CONFIG_OPTEE_CLIENT
-		uint8_t operation_start[128];
-		uint8_t out[256];
+		uint8_t out[ATTEST_CA_OUT_SIZE];
 		uint32_t operation_size = download_bytes;
-		uint32_t out_len = 256;
+		uint32_t out_len = ATTEST_CA_OUT_SIZE;
 		uint32_t res = 0;
-		memcpy(operation_start, (void *)CONFIG_FASTBOOT_BUF_ADDR, download_bytes);
-		res = trusty_attest_get_ca(operation_start, &operation_size, out, &out_len);
+
+		res = trusty_attest_get_ca((uint8_t *)CONFIG_FASTBOOT_BUF_ADDR,
+					   &operation_size, out, &out_len);
 		if (res) {
 			fastboot_tx_write_str("FAILtrusty_attest_get_ca failed");
 			return;
@@ -985,16 +1099,15 @@ static void cb_oem(struct usb_ep *ep, struct usb_request *req)
 #endif
 	} else if (strncmp("at-set-ca-response", cmd + 4, 18) == 0) {
 #ifdef CONFIG_OPTEE_CLIENT
-		uint8_t ca_response[8*1024];
 		uint32_t ca_response_size = download_bytes;
 		uint32_t res = 0;
-		memcpy(ca_response, (void *)CONFIG_FASTBOOT_BUF_ADDR, download_bytes);
-		res = trusty_attest_set_ca(ca_response, &ca_response_size);
-		if (res) {
+
+		res = trusty_attest_set_ca((uint8_t *)CONFIG_FASTBOOT_BUF_ADDR,
+					   &ca_response_size);
+		if (res)
 			fastboot_tx_write_str("FAILtrusty_attest_set_ca failed");
-		} else {
+		else
 			fastboot_tx_write_str("OKAY");
-		}
 #else
 		fastboot_tx_write_str("FAILnot implemented");
 		return;
@@ -1004,7 +1117,7 @@ static void cb_oem(struct usb_ep *ep, struct usb_request *req)
 		uint8_t lock_state;
 		lock_state = 0;
 		if (rk_avb_write_lock_state(lock_state))
-			fastboot_tx_write_str("FAIL");
+			fastboot_tx_write_str("FAILwrite lock state failed");
 		else
 			fastboot_tx_write_str("OKAY");
 #else
@@ -1014,13 +1127,13 @@ static void cb_oem(struct usb_ep *ep, struct usb_request *req)
 #ifdef CONFIG_RK_AVB_LIBAVB_USER
 		uint8_t lock_state;
 		if (rk_avb_read_lock_state(&lock_state))
-			fastboot_tx_write_str("FAIL");
+			fastboot_tx_write_str("FAILlock sate read failure");
 		if (lock_state >> 1 == 1) {
 			fastboot_tx_write_str("FAILThe vboot is disable!");
 		} else {
 			lock_state = 1;
 			if (rk_avb_write_lock_state(lock_state))
-				fastboot_tx_write_str("FAIL");
+				fastboot_tx_write_str("FAILwrite lock state failed");
 			else
 				fastboot_tx_write_str("OKAY");
 		}
@@ -1032,57 +1145,33 @@ static void cb_oem(struct usb_ep *ep, struct usb_request *req)
 		uint8_t lock_state;
 		lock_state = 2;
 		if (rk_avb_write_lock_state(lock_state))
-			fastboot_tx_write_str("FAIL");
+			fastboot_tx_write_str("FAILwrite lock state failed");
 		else
 			fastboot_tx_write_str("OKAY");
 #else
 		fastboot_tx_write_str("FAILnot implemented");
 #endif
 	} else if (strncmp("fuse at-perm-attr", cmd + 4, 16) == 0) {
-#ifdef CONFIG_RK_AVB_LIBAVB_USER
-		if (PERM_ATTR_TOTAL_SIZE != download_bytes) {
-			printf("Permanent attribute size is not equal!\n");
-			fastboot_tx_write_str("FAIL");
-			return;
-		}
-
-		if (rk_avb_write_permanent_attributes((uint8_t *)(size_t)
-					       CONFIG_FASTBOOT_BUF_ADDR,
-					       download_bytes
-					       - PERM_ATTR_DIGEST_SIZE)) {
-			fastboot_tx_write_str("FAIL");
-			return;
-		}
-
-		if (rk_avb_write_attribute_hash((uint8_t *)(size_t)
-					     (CONFIG_FASTBOOT_BUF_ADDR
-					     + download_bytes
-					     - PERM_ATTR_DIGEST_SIZE),
-					     PERM_ATTR_DIGEST_SIZE)) {
-			fastboot_tx_write_str("FAIL");
-			return;
-		}
-
-		if (rk_avb_write_perm_attr_flag(1)) {
-			fastboot_tx_write_str("FAIL");
-			return;
-		}
-
-		fastboot_tx_write_str("OKAY");
-#else
-		fastboot_tx_write_str("FAILnot implemented");
-#endif
+		cb_oem_perm_attr();
 	} else if (strncmp("fuse at-bootloader-vboot-key", cmd + 4, 27) == 0) {
 #ifdef CONFIG_RK_AVB_LIBAVB_USER
+		sha256_context ctx;
+		uint8_t digest[SHA256_SUM_LEN];
+
 		if (download_bytes != VBOOT_KEY_HASH_SIZE) {
-			fastboot_tx_write_str("FAIL");
+			fastboot_tx_write_str("FAILinvalid vboot key length");
 			printf("The vboot key size error!\n");
+			return;
 		}
 
-		if (rk_avb_write_vbootkey_hash((uint8_t *)
-					    CONFIG_FASTBOOT_BUF_ADDR,
-					    VBOOT_KEY_HASH_SIZE)) {
-			fastboot_tx_write_str("FAIL");
+		sha256_starts(&ctx);
+		sha256_update(&ctx, (const uint8_t *)CONFIG_FASTBOOT_BUF_ADDR,
+			      VBOOT_KEY_SIZE);
+		sha256_finish(&ctx, digest);
+
+		if (rk_avb_write_vbootkey_hash((uint8_t *)digest,
+					       SHA256_SUM_LEN)) {
+			fastboot_tx_write_str("FAILvbootkey hash write failure");
 			return;
 		}
 		fastboot_tx_write_str("OKAY");

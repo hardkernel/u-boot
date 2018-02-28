@@ -7,6 +7,11 @@
 #ifndef _OPTEECLIENTTEST_H_
 #define _OPTEECLIENTTEST_H_
 
+#define ATAP_HEX_UUID_LEN 32
+#define ATTEST_DH_SIZE     8
+#define ATTEST_UUID_SIZE     (ATAP_HEX_UUID_LEN+1)
+#define ATTEST_CA_OUT_SIZE     256
+
 void test_optee(void);
 uint32_t trusty_read_rollback_index(uint32_t slot, uint64_t *value);
 uint32_t trusty_write_rollback_index(uint32_t slot, uint64_t value);
