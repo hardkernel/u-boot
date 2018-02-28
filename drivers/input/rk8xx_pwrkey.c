@@ -104,38 +104,11 @@ static struct reg_data rk805_init_reg[] = {
 static int rk8xx_pwrkey_read(struct udevice *dev, int code)
 {
 	struct input_key *key = dev_get_platdata(dev);
-	u32 report = KEY_NOT_EXIST;
 
 	if (key->code != code)
-		goto out;
+		return KEY_NOT_EXIST;
 
-	debug("%s: long key ms: %llu\n",
-	      __func__, key->up_t - key->down_t);
-
-	if ((key->up_t > key->down_t) &&
-	    (key->up_t - key->down_t) >= KEY_LONG_DOWN_MS) {
-		key->up_t = 0;
-		key->down_t = 0;
-		report = KEY_PRESS_LONG_DOWN;
-		printf("'%s' key long pressed down\n", key->name);
-	} else if (key->down_t &&
-		   key_get_timer(key->down_t) >= KEY_LONG_DOWN_MS) {
-		key->up_t = 0;
-		key->down_t = 0;
-		report = KEY_PRESS_LONG_DOWN;
-		printf("'%s' key long pressed down(hold)\n", key->name);
-	} else if ((key->up_t > key->down_t) &&
-		   (key->up_t - key->down_t) < KEY_LONG_DOWN_MS) {
-		key->up_t = 0;
-		key->down_t = 0;
-		report = KEY_PRESS_DOWN;
-		printf("'%s' key pressed down\n", key->name);
-	} else {
-		report = KEY_PRESS_NONE;
-	}
-
-out:
-	return report;
+	return key_parse_gpio_event(key);
 }
 
 static void pwrkey_irq_handler(int irq, void *data)
@@ -215,7 +188,7 @@ static int pwrkey_interrupt_init(struct udevice *dev)
 		return ret;
 	}
 
-	key->name = "pwrkey";
+	key->name = "power";
 	key->code = KEY_POWER;
 	irq = phandle_gpio_to_irq(phandle, interrupt[0]);
 	irq_install_handler(irq, pwrkey_irq_handler, dev);
