@@ -110,33 +110,8 @@ static int gpio_key_read(struct udevice *dev, int code)
 	for (i = 0; i < priv->key_nr; i++) {
 		if (key[i].code != code)
 			continue;
-
-		debug("%s: long key ms: %llu, up=%llu, down=%llu\n",
-		      key[i].name, key[i].up_t - key[i].down_t,
-		      key[i].up_t, key[i].down_t);
-
-		if (key[i].down_t && (key[i].up_t > key[i].down_t) &&
-		    (key[i].up_t - key[i].down_t) >= KEY_LONG_DOWN_MS) {
-			key[i].up_t = 0;
-			key[i].down_t = 0;
-			report = KEY_PRESS_LONG_DOWN;
-			printf("'%s' key long pressed down\n", key[i].name);
-		} else if (key[i].down_t && key_get_timer(key[i].down_t) >=
-			   KEY_LONG_DOWN_MS) {
-			key[i].up_t = 0;
-			key[i].down_t = 0;
-			report = KEY_PRESS_LONG_DOWN;
-			printf("'%s' key long pressed down(hold)\n",
-			       key[i].name);
-		} else if ((key[i].up_t > key[i].down_t) &&
-			   (key[i].up_t - key[i].down_t) < KEY_LONG_DOWN_MS) {
-			key[i].up_t = 0;
-			key[i].down_t = 0;
-			report = KEY_PRESS_DOWN;
-			printf("'%s' key pressed down\n", key[i].name);
-		} else {
-			report = KEY_PRESS_NONE;
-		}
+		report = key_parse_gpio_event(key[i]);
+		break;
 	}
 
 	return report;
