@@ -63,6 +63,10 @@ extern int aml_lcd_extern_i2c_anx6345_probe(struct aml_lcd_extern_driver_s *ext_
 extern int aml_lcd_extern_i2c_DLPC3439_get_default_index(void);
 extern int aml_lcd_extern_i2c_DLPC3439_probe(struct aml_lcd_extern_driver_s *ext_drv);
 #endif
+#ifdef CONFIG_AML_LCD_EXTERN_I2C_RT6947
+extern int aml_lcd_extern_i2c_RT6947_get_default_index(void);
+extern int aml_lcd_extern_i2c_RT6947_probe(struct aml_lcd_extern_driver_s *ext_drv);
+#endif
 #endif
 
 #ifdef CONFIG_AML_LCD_EXTERN_SPI_LD070WS2

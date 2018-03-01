@@ -36,6 +36,13 @@ static struct lcd_power_step_s lcd_power_off_step[] = {
 	{LCD_POWER_TYPE_MAX,   0,0,0,},   /* ending flag */
 };
 
+static struct lcd_power_step_s lcd_power_on_step_gamma_init[] = {
+	{LCD_POWER_TYPE_CPU,   0,1,50,}, /* power on */
+	{LCD_POWER_TYPE_EXTERN,1,0,50,}, /* extern gamma init */
+	{LCD_POWER_TYPE_SIGNAL,0,0,0,},  /* signal */
+	{LCD_POWER_TYPE_MAX,   0,0,0,},  /* ending flag */
+};
+
 static char lcd_bl_gpio[BL_GPIO_NUM_MAX][LCD_CPU_GPIO_NAME_MAX] = {
 	//"GPIOAO_4",
 	//"GPIOY_13",
@@ -110,6 +117,24 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	/* backlight */
 	60,255,10,128,128,
 	BL_CTRL_MAX,0,1,0,200,200,
+	BL_PWM_POSITIVE,BL_PWM_B,180,100,25,1,0,
+	Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	10,10,Rsv_val},
+
+	{/* 1920*1080 */
+	"mlvds_2",LCD_MLVDS,8,
+	/* basic timing */
+	1920,1080,2200,1125,44,148,0,5,36,0,
+	/* clk_attr */
+	0,0,1,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	/* minilvds_attr */
+	6,0x12304567,0x0,0x110,0,0,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	/* power step */
+	lcd_power_on_step_gamma_init, lcd_power_off_step,
+	/* backlight */
+	60,255,10,128,128,
+	BL_CTRL_MAX,0xff,1,0,0,0,
 	BL_PWM_POSITIVE,BL_PWM_B,180,100,25,1,0,
 	Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
 	Rsv_val,Rsv_val,Rsv_val,Rsv_val,
@@ -264,24 +289,27 @@ static char lcd_ext_gpio[LCD_EXTERN_GPIO_NUM_MAX][LCD_EXTERN_GPIO_LEN_MAX] = {
 };
 
 static unsigned char init_on_table[LCD_EXTERN_INIT_ON_MAX] = {
-	0x00, 0x20, 0x01, 0x02, 0x00, 0x40, 0xFF, 0x00, 0x00,
-	0x00, 0x80, 0x02, 0x00, 0x40, 0x62, 0x51, 0x73, 0x00,
-	0x00, 0x61, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0xC1, 0x05, 0x0F, 0x00, 0x08, 0x70, 0x00, 0x00,
-	0x00, 0x13, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x3D, 0x02, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0xED, 0x0D, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x23, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0A,  /* delay 10ms */
-	0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  /* ending */
+	0x00, 89,
+	0x00,
+	0xA2,0xD0,0x80,0x00,0x10,0x10,0x59,0x19,0x4B,0x0B,
+	0x3A,0x13,0x27,0x2F,0xC2,0xC9,0x29,0xD2,0x7A,0x20,
+	0xA1,0xC0,0x15,0x01,0x36,0x10,0x10,0xCB,0x0A,0x10,
+	0x2C,0x1C,0xA0,0xFF,0x00,0x00,0x0B,0x02,0x00,0x00,
+	0xFF,0xFF,0x00,0x00,0x00,0x00,0x00,0x00,0x20,0x10,
+	0x80,0x00,0x60,0x00,0x00,0x00,0x0D,0x0D,0x20,0x02,
+	0x00,0x20,0x02,0x00,0x20,0x02,0x00,0x20,0x02,0x00,
+	0x20,0x02,0x00,0x20,0x02,0x00,0x20,0x02,0x00,0x20,
+	0x00,0xFF,0x00,0x00,0x0B,0x02,0x00,0x00,
+	0xff, 0,  /* ending */
 };
 
 static unsigned char init_off_table[LCD_EXTERN_INIT_OFF_MAX] = {
-	0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  /* ending */
+	0xff, 0,  /* ending */
 };
 
 struct lcd_extern_common_s ext_common_dft = {
 	.lcd_ext_key_valid = 0,
-	.lcd_ext_num = 1,
+	.lcd_ext_num = 2,
 	.pinmux_set = {{LCD_PINMUX_END, 0x0}},
 	.pinmux_clr = {{LCD_PINMUX_END, 0x0}},
 };
@@ -290,16 +318,28 @@ struct lcd_extern_config_s ext_config_dtf[LCD_EXTERN_NUM_MAX] = {
 		.index = 0,
 		.name = "ext_default",
 		.type = LCD_EXTERN_I2C, /* LCD_EXTERN_I2C, LCD_EXTERN_SPI, LCD_EXTERN_MAX */
-		.status = 1, /* 0=disable, 1=enable */
+		.status = 0, /* 0=disable, 1=enable */
 		.i2c_addr = 0x1c, /* 7bit i2c address */
 		.i2c_addr2 = 0xff, /* 7bit i2c address, 0xff for none */
-		.i2c_bus = LCD_EXTERN_I2C_BUS_C, /* LCD_EXTERN_I2C_BUS_AO, LCD_EXTERN_I2C_BUS_A/B/C/D */
+		.i2c_bus = LCD_EXTERN_I2C_BUS_D, /* LCD_EXTERN_I2C_BUS_AO, LCD_EXTERN_I2C_BUS_A/B/C/D */
 		.spi_gpio_cs = 0,
 		.spi_gpio_clk = 1,
 		.spi_gpio_data = 2,
 		.spi_clk_freq = 0, /* hz */
 		.spi_clk_pol = 0,
 		.cmd_size = 9,
+		.table_init_on = init_on_table,
+		.table_init_off = init_off_table,
+	},
+	{
+		.index = 1,
+		.name = "i2c_RT6947",
+		.type = LCD_EXTERN_I2C, /* LCD_EXTERN_I2C, LCD_EXTERN_SPI, LCD_EXTERN_MAX */
+		.status = 1, /* 0=disable, 1=enable */
+		.i2c_addr = 0x33, /* 7bit i2c address */
+		.i2c_addr2 = 0xff, /* 7bit i2c address, 0xff for none */
+		.i2c_bus = LCD_EXTERN_I2C_BUS_D, /* LCD_EXTERN_I2C_BUS_AO, LCD_EXTERN_I2C_BUS_A/B/C/D */
+		.cmd_size = LCD_EXTERN_CMD_SIZE_DYNAMIC,
 		.table_init_on = init_on_table,
 		.table_init_off = init_off_table,
 	},

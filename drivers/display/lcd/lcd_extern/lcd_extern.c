@@ -1122,6 +1122,10 @@ static int aml_lcd_extern_add_i2c(struct aml_lcd_extern_driver_s *ext_drv)
 #ifdef CONFIG_AML_LCD_EXTERN_I2C_DLPC3439
 		ret = aml_lcd_extern_i2c_DLPC3439_probe(ext_drv);
 #endif
+	} else if (strcmp(ext_drv->config->name, "i2c_RT6947") == 0) {
+#ifdef CONFIG_AML_LCD_EXTERN_I2C_RT6947
+		ret = aml_lcd_extern_i2c_RT6947_probe(ext_drv);
+#endif
 	} else {
 		EXTERR("invalid driver name: %s\n", ext_drv->config->name);
 		ret = -1;
@@ -1282,72 +1286,101 @@ static int aml_lcd_extern_add_driver_default(int index, struct lcd_extern_config
 #ifdef CONFIG_AML_LCD_EXTERN_I2C_T5800Q
 	drv_index = aml_lcd_extern_i2c_T5800Q_get_default_index();
 	if (drv_index == index) {
-		ret = aml_lcd_extern_i2c_T5800Q_probe(ext_drv);
-		goto add_driver_default_end;
+		if (strcmp(ext_drv->config->name, "i2c_T5800Q") == 0) {
+			ret = aml_lcd_extern_i2c_T5800Q_probe(ext_drv);
+			goto add_driver_default_end;
+		}
 	}
 #endif
 #ifdef CONFIG_AML_LCD_EXTERN_I2C_TC101
 	drv_index = aml_lcd_extern_i2c_tc101_get_default_index();
 	if (drv_index == index) {
-		ret = aml_lcd_extern_i2c_tc101_probe(ext_drv);
-		goto add_driver_default_end;
+		if (strcmp(ext_drv->config->name, "i2c_tc101") == 0) {
+			ret = aml_lcd_extern_i2c_tc101_probe(ext_drv);
+			goto add_driver_default_end;
+		}
 	}
 #endif
 #ifdef CONFIG_AML_LCD_EXTERN_I2C_ANX6345
 	drv_index = aml_lcd_extern_i2c_anx6345_get_default_index();
 	if (drv_index == index) {
-		ret = aml_lcd_extern_i2c_anx6345_probe(ext_drv);
-		goto add_driver_default_end;
+		if (strcmp(ext_drv->config->name, "i2c_anx6345") == 0) {
+			ret = aml_lcd_extern_i2c_anx6345_probe(ext_drv);
+			goto add_driver_default_end;
+		}
 	}
 #endif
 #ifdef CONFIG_AML_LCD_EXTERN_I2C_DLPC3439
 	drv_index = aml_lcd_extern_i2c_DLPC3439_get_default_index();
 	if (drv_index == index) {
-		ret = aml_lcd_extern_i2c_DLPC3439_probe(ext_drv);
-		goto add_driver_default_end;
+		if (strcmp(ext_drv->config->name, "i2c_DLPC3439") == 0) {
+			ret = aml_lcd_extern_i2c_DLPC3439_probe(ext_drv);
+			goto add_driver_default_end;
+		}
+	}
+#endif
+#ifdef CONFIG_AML_LCD_EXTERN_I2C_RT6947
+	drv_index = aml_lcd_extern_i2c_RT6947_get_default_index();
+	if (drv_index == index) {
+		if (strcmp(ext_drv->config->name, "i2c_RT6947") == 0) {
+			ret = aml_lcd_extern_i2c_RT6947_probe(ext_drv);
+			goto add_driver_default_end;
+		}
 	}
 #endif
 #endif
 #ifdef CONFIG_AML_LCD_EXTERN_SPI_LD070WS2
 	drv_index = aml_lcd_extern_spi_LD070WS2_get_default_index();
 	if (drv_index == index) {
-		ret = aml_lcd_extern_spi_LD070WS2_probe(ext_drv);
-		goto add_driver_default_end;
+		if (strcmp(ext_drv->config->name, "spi_LD070WS2") == 0) {
+			ret = aml_lcd_extern_spi_LD070WS2_probe(ext_drv);
+			goto add_driver_default_end;
+		}
 	}
 #endif
 #ifdef CONFIG_AML_LCD_EXTERN_MIPI_N070ICN
 	drv_index = aml_lcd_extern_mipi_N070ICN_get_default_index();
 	if (drv_index == index) {
-		ret = aml_lcd_extern_mipi_N070ICN_probe(ext_drv);
-		goto add_driver_default_end;
+		if (strcmp(ext_drv->config->name, "mipi_N070ICN") == 0) {
+			ret = aml_lcd_extern_mipi_N070ICN_probe(ext_drv);
+			goto add_driver_default_end;
+		}
 	}
 #endif
 #ifdef CONFIG_AML_LCD_EXTERN_MIPI_KD080D13
 	drv_index = aml_lcd_extern_mipi_KD080D13_get_default_index();
 	if (drv_index == index) {
-		ret = aml_lcd_extern_mipi_KD080D13_probe(ext_drv);
-		goto add_driver_default_end;
+		if (strcmp(ext_drv->config->name, "mipi_KD080D13") == 0) {
+			ret = aml_lcd_extern_mipi_KD080D13_probe(ext_drv);
+			goto add_driver_default_end;
+		}
 	}
 #endif
 #ifdef CONFIG_AML_LCD_EXTERN_MIPI_TV070WSM
 	drv_index = aml_lcd_extern_mipi_TV070WSM_get_default_index();
 	if (drv_index == index) {
-		ret = aml_lcd_extern_mipi_TV070WSM_probe(ext_drv);
-		goto add_driver_default_end;
+		if (strcmp(ext_drv->config->name, "mipi_TV070WSM") == 0) {
+			ret = aml_lcd_extern_mipi_TV070WSM_probe(ext_drv);
+			goto add_driver_default_end;
+		}
 	}
 #endif
 #ifdef CONFIG_AML_LCD_EXTERN_MIPI_ST7701
 	drv_index = aml_lcd_extern_mipi_st7701_get_default_index();
 	if (drv_index == index) {
-		ret = aml_lcd_extern_mipi_st7701_probe(ext_drv);
-		goto add_driver_default_end;
+		if (strcmp(ext_drv->config->name, "mipi_ST7701") == 0) {
+			ret = aml_lcd_extern_mipi_st7701_probe(ext_drv);
+			goto add_driver_default_end;
+		}
 	}
 #endif
 #ifdef CONFIG_AML_LCD_EXTERN_MIPI_P070ACB
 	drv_index = aml_lcd_extern_mipi_p070acb_get_default_index();
 	if (drv_index == index) {
-		ret = aml_lcd_extern_mipi_p070acb_probe(ext_drv);
-		goto add_driver_default_end;
+		if (strcmp(ext_drv->config->name, "mipi_P070ACB") == 0) {
+			ret = aml_lcd_extern_mipi_p070acb_probe(ext_drv);
+			goto add_driver_default_end;
+		}
 	}
 #endif
 
@@ -1374,15 +1407,8 @@ int aml_lcd_extern_probe(char *dtaddr, int index)
 		return -1;
 	}
 
-	if (index >= ext_common_dft.lcd_ext_num) {
-		EXTERR("invalid index %d, %s exit\n", index, __func__);
-		return -1;
-	}
-
 	dt_addr = NULL;
 	ext_common = &ext_common_dft;
-	ext_config = &ext_config_dtf[index];
-	ext_config->table_init_loaded = 0;
 
 	/* check dts config */
 #ifdef CONFIG_OF_LIBFDT
@@ -1401,6 +1427,9 @@ int aml_lcd_extern_probe(char *dtaddr, int index)
 
 	switch (load_id) {
 	case 1: /* dts */
+		ext_config = &ext_config_dtf[0];
+		ext_config->table_init_loaded = 0;
+
 		aml_lcd_extern_get_init_dts(dtaddr, ext_common);
 		if (lcd_drv->unifykey_test_flag) {
 			ext_common->lcd_ext_key_valid = 1;
@@ -1423,6 +1452,13 @@ int aml_lcd_extern_probe(char *dtaddr, int index)
 		}
 		break;
 	default: /* default */
+		if (index >= ext_common_dft.lcd_ext_num) {
+			EXTERR("invalid index %d, %s exit\n", index, __func__);
+			return -1;
+		}
+		ext_config = &ext_config_dtf[index];
+		ext_config->table_init_loaded = 0;
+
 		if (lcd_drv->unifykey_test_flag) {
 			ext_common->lcd_ext_key_valid = 1;
 			LCDPR("force lcd_ext_key_valid to 1\n");
