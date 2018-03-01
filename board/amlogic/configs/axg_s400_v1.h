@@ -67,7 +67,7 @@
 #define CONFIG_SERIAL_MULTI		1
 
 #define CONFIG_BT_WAKEUP
-#define CONFIG_WIFI_WAKEUP
+//#define CONFIG_WIFI_WAKEUP
 
 //Enable ir remote wake up for bl30
 #define CONFIG_IR_REMOTE_POWER_UP_KEY_CNT 5
