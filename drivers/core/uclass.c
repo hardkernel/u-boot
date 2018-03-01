@@ -260,7 +260,7 @@ int uclass_find_device_by_seq(enum uclass_id id, int seq_or_req_seq,
 	int ret;
 
 	*devp = NULL;
-	debug("%s: %d %d\n", __func__, find_req_seq, seq_or_req_seq);
+	pr_debug("%s: %d %d\n", __func__, find_req_seq, seq_or_req_seq);
 	if (seq_or_req_seq == -1)
 		return -ENODEV;
 	ret = uclass_get(id, &uc);
@@ -268,15 +268,15 @@ int uclass_find_device_by_seq(enum uclass_id id, int seq_or_req_seq,
 		return ret;
 
 	list_for_each_entry(dev, &uc->dev_head, uclass_node) {
-		debug("   - %d %d '%s'\n", dev->req_seq, dev->seq, dev->name);
+		pr_debug("   - %d %d '%s'\n", dev->req_seq, dev->seq, dev->name);
 		if ((find_req_seq ? dev->req_seq : dev->seq) ==
 				seq_or_req_seq) {
 			*devp = dev;
-			debug("   - found\n");
+			pr_debug("   - found\n");
 			return 0;
 		}
 	}
-	debug("   - not found\n");
+	pr_debug("   - not found\n");
 
 	return -ENODEV;
 }
