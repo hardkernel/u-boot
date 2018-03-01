@@ -19104,6 +19104,53 @@
 #define   DI_CHAN2_FMT_W                           (0x17b9)
 #define P_DI_CHAN2_FMT_W                           (volatile unsigned int *)((0x17b9  << 2) + 0xff900000)
 //
+#define DOLBY_PATH_CTRL                            0x1a0c
+
+#define VPP_POST2_MATRIX_COEF00_01                 0x39a0
+#define VPP_POST2_MATRIX_COEF02_10                 0x39a1
+#define VPP_POST2_MATRIX_COEF11_12                 0x39a2
+#define VPP_POST2_MATRIX_COEF20_21                 0x39a3
+#define VPP_POST2_MATRIX_COEF22                    0x39a4
+#define VPP_POST2_MATRIX_COEF13_14                 0x39a5
+#define VPP_POST2_MATRIX_COEF23_24                 0x39a6
+#define VPP_POST2_MATRIX_COEF15_25                 0x39a7
+#define VPP_POST2_MATRIX_CLIP                      0x39a8
+#define VPP_POST2_MATRIX_OFFSET0_1                 0x39a9
+#define VPP_POST2_MATRIX_OFFSET2                   0x39aa
+#define VPP_POST2_MATRIX_PRE_OFFSET0_1             0x39ab
+#define VPP_POST2_MATRIX_PRE_OFFSET2               0x39ac
+#define VPP_POST2_MATRIX_EN_CTRL                   0x39ad
+
+#define VPP_WRAP_OSD1_MATRIX_COEF00_01             0x3d60
+#define VPP_WRAP_OSD1_MATRIX_COEF02_10             0x3d61
+#define VPP_WRAP_OSD1_MATRIX_COEF11_12             0x3d62
+#define VPP_WRAP_OSD1_MATRIX_COEF20_21             0x3d63
+#define VPP_WRAP_OSD1_MATRIX_COEF22                0x3d64
+#define VPP_WRAP_OSD1_MATRIX_COEF13_14             0x3d65
+#define VPP_WRAP_OSD1_MATRIX_COEF23_24             0x3d66
+#define VPP_WRAP_OSD1_MATRIX_COEF15_25             0x3d67
+#define VPP_WRAP_OSD1_MATRIX_CLIP                  0x3d68
+#define VPP_WRAP_OSD1_MATRIX_OFFSET0_1             0x3d69
+#define VPP_WRAP_OSD1_MATRIX_OFFSET2               0x3d6a
+#define VPP_WRAP_OSD1_MATRIX_PRE_OFFSET0_1         0x3d6b
+#define VPP_WRAP_OSD1_MATRIX_PRE_OFFSET2           0x3d6c
+#define VPP_WRAP_OSD1_MATRIX_EN_CTRL               0x3d6d
+
+#define VPP_WRAP_OSD2_MATRIX_COEF00_01             0x3d70
+#define VPP_WRAP_OSD2_MATRIX_COEF02_10             0x3d71
+#define VPP_WRAP_OSD2_MATRIX_COEF11_12             0x3d72
+#define VPP_WRAP_OSD2_MATRIX_COEF20_21             0x3d73
+#define VPP_WRAP_OSD2_MATRIX_COEF22                0x3d74
+#define VPP_WRAP_OSD2_MATRIX_COEF13_14             0x3d75
+#define VPP_WRAP_OSD2_MATRIX_COEF23_24             0x3d76
+#define VPP_WRAP_OSD2_MATRIX_COEF15_25             0x3d77
+#define VPP_WRAP_OSD2_MATRIX_CLIP                  0x3d78
+#define VPP_WRAP_OSD2_MATRIX_OFFSET0_1             0x3d79
+#define VPP_WRAP_OSD2_MATRIX_OFFSET2               0x3d7a
+#define VPP_WRAP_OSD2_MATRIX_PRE_OFFSET0_1         0x3d7b
+#define VPP_WRAP_OSD2_MATRIX_PRE_OFFSET2           0x3d7c
+#define VPP_WRAP_OSD2_MATRIX_EN_CTRL               0x3d7d
+
 // Closing file:  mad_regs.h
 //
 //`define VPP2_VCBUS_BASE              8'h19

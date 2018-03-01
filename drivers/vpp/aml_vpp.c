@@ -69,110 +69,6 @@ struct matrix_s {
 	u16 right_shift;
 };
 
-/* OSD csc defines end */
-
-static void vpp_set_matrix_default_init(void)
-{
-	switch (get_cpu_id().family_id) {
-	case MESON_CPU_MAJOR_ID_GXBB:
-	case MESON_CPU_MAJOR_ID_GXTVBB:
-	case MESON_CPU_MAJOR_ID_GXL:
-	case MESON_CPU_MAJOR_ID_GXM:
-	case MESON_CPU_MAJOR_ID_TXL:
-		/* default probe_sel, for highlight en */
-		vpp_reg_setb(VPP_MATRIX_CTRL, 0x7, 12, 3);
-		break;
-	default:
-		/* default probe_sel, for highlight en */
-		vpp_reg_setb(VPP_MATRIX_CTRL, 0xf, 11, 4);
-		break;
-	}
-}
-
-static void vpp_set_matrix_ycbcr2rgb(int vd1_or_vd2_or_post, int mode)
-{
-	//VPP_PR("%s: %d, %d\n", __func__, vd1_or_vd2_or_post, mode);
-
-	if (vd1_or_vd2_or_post == 0) { //vd1
-		vpp_reg_setb(VPP_MATRIX_CTRL, 1, 5, 1);
-		vpp_reg_setb(VPP_MATRIX_CTRL, 1, 8, 3);
-	} else if (vd1_or_vd2_or_post == 1) { //vd2
-		vpp_reg_setb(VPP_MATRIX_CTRL, 1, 4, 1);
-		vpp_reg_setb(VPP_MATRIX_CTRL, 2, 8, 3);
-	} else if (vd1_or_vd2_or_post == 3) { //osd
-		vpp_reg_setb(VPP_MATRIX_CTRL, 1, 7, 1);
-		vpp_reg_setb(VPP_MATRIX_CTRL, 4, 8, 3);
-	} else if (vd1_or_vd2_or_post == 4) { //xvycc
-		vpp_reg_setb(VPP_MATRIX_CTRL, 1, 6, 1);
-		vpp_reg_setb(VPP_MATRIX_CTRL, 3, 8, 3);
-	} else {
-		vpp_reg_setb(VPP_MATRIX_CTRL, 1, 0, 1);
-		vpp_reg_setb(VPP_MATRIX_CTRL, 0, 8, 3);
-		if (mode == 0)
-			vpp_reg_setb(VPP_MATRIX_CTRL, 1, 1, 2);
-		else if (mode == 1)
-			vpp_reg_setb(VPP_MATRIX_CTRL, 0, 1, 2);
-	}
-
-	if (mode == 0) { /* 601 limit to RGB */
-		vpp_reg_write(VPP_MATRIX_PRE_OFFSET0_1, 0x0064C8FF);
-		vpp_reg_write(VPP_MATRIX_PRE_OFFSET2, 0x006400C8);
-		//1.164     0       1.596
-		//1.164   -0.392    -0.813
-		//1.164   2.017     0
-		vpp_reg_write(VPP_MATRIX_COEF00_01, 0x04A80000);
-		vpp_reg_write(VPP_MATRIX_COEF02_10, 0x066204A8);
-		vpp_reg_write(VPP_MATRIX_COEF11_12, 0x1e701cbf);
-		vpp_reg_write(VPP_MATRIX_COEF20_21, 0x04A80812);
-		vpp_reg_write(VPP_MATRIX_COEF22, 0x00000000);
-		vpp_reg_write(VPP_MATRIX_OFFSET0_1, 0x00000000);
-		vpp_reg_write(VPP_MATRIX_OFFSET2, 0x00000000);
-		vpp_reg_write(VPP_MATRIX_PRE_OFFSET0_1, 0x0FC00E00);
-		vpp_reg_write(VPP_MATRIX_PRE_OFFSET2, 0x00000E00);
-	} else if (mode == 1) { /* 601 limit to RGB  */
-		vpp_reg_write(VPP_MATRIX_PRE_OFFSET0_1, 0x0000E00);
-		vpp_reg_write(VPP_MATRIX_PRE_OFFSET2, 0x0E00);
-		//	1	0			1.402
-		//	1	-0.34414	-0.71414
-		//	1	1.772		0
-		vpp_reg_write(VPP_MATRIX_COEF00_01, (0x400 << 16) |0);
-		vpp_reg_write(VPP_MATRIX_COEF02_10, (0x59c << 16) |0x400);
-		vpp_reg_write(VPP_MATRIX_COEF11_12, (0x1ea0 << 16) |0x1d24);
-		vpp_reg_write(VPP_MATRIX_COEF20_21, (0x400 << 16) |0x718);
-		vpp_reg_write(VPP_MATRIX_COEF22, 0x0);
-		vpp_reg_write(VPP_MATRIX_OFFSET0_1, 0x0);
-		vpp_reg_write(VPP_MATRIX_OFFSET2, 0x0);
-	} else if (mode == 2) { /* 709F to RGB */
-		vpp_reg_write(VPP_MATRIX_PRE_OFFSET0_1, 0x0000E00);
-		vpp_reg_write(VPP_MATRIX_PRE_OFFSET2, 0x0E00);
-		//	1	0			1.402
-		//	1	-0.34414	-0.71414
-		//	1	1.772		0
-		vpp_reg_write(VPP_MATRIX_COEF00_01, 0x04000000);
-		vpp_reg_write(VPP_MATRIX_COEF02_10, 0x064D0400);
-		vpp_reg_write(VPP_MATRIX_COEF11_12, 0x1F411E21);
-		vpp_reg_write(VPP_MATRIX_COEF20_21, 0x0400076D);
-		vpp_reg_write(VPP_MATRIX_COEF22, 0x0);
-		vpp_reg_write(VPP_MATRIX_OFFSET0_1, 0x0);
-		vpp_reg_write(VPP_MATRIX_OFFSET2, 0x0);
-	} else if (mode == 3) { /* 709L to RGB */
-		vpp_reg_write(VPP_MATRIX_PRE_OFFSET0_1, 0x0FC00E00);
-		vpp_reg_write(VPP_MATRIX_PRE_OFFSET2, 0x00000E00);
-		/* ycbcr limit range, 709 to RGB */
-		/* -16      1.164  0      1.793  0 */
-		/* -128     1.164 -0.213 -0.534  0 */
-		/* -128     1.164  2.115  0      0 */
-		vpp_reg_write(VPP_MATRIX_COEF00_01, 0x04A80000);
-		vpp_reg_write(VPP_MATRIX_COEF02_10, 0x072C04A8);
-		vpp_reg_write(VPP_MATRIX_COEF11_12, 0x1F261DDD);
-		vpp_reg_write(VPP_MATRIX_COEF20_21, 0x04A80876);
-		vpp_reg_write(VPP_MATRIX_COEF22, 0x0);
-		vpp_reg_write(VPP_MATRIX_OFFSET0_1, 0x0);
-		vpp_reg_write(VPP_MATRIX_OFFSET2, 0x0);
-	}
-	vpp_reg_setb(VPP_MATRIX_CLIP, 0, 5, 3);
-}
-
 /***************************** gxl hdr ****************************/
 
 #define EOTF_LUT_SIZE 33
@@ -431,6 +327,8 @@ static unsigned int video_oetf_b_mapping[VIDEO_OETF_LUT_SIZE] = {
 };
 
 #define COEFF_NORM(a) ((int)((((a) * 2048.0) + 1) / 2))
+#define COEFF_NORM12(a) ((int)((((a) * 8192.0) + 1) / 2))
+
 #define MATRIX_5x3_COEF_SIZE 24
 /******* osd1 matrix0 *******/
 /* default rgb to yuv_limit */
@@ -536,10 +434,172 @@ static unsigned int oetf_41_linear_mapping[OSD_OETF_LUT_SIZE] = {
 	1023
 };
 
+/*static int YUV709l_to_RGB709_coeff[MATRIX_5x3_COEF_SIZE] = { */
+/*	-64, -512, -512,  pre offset */
+/*	COEFF_NORM(1.16895),	COEFF_NORM(0.00000),	COEFF_NORM(1.79977), */
+/*	COEFF_NORM(1.16895),	COEFF_NORM(-0.21408),	COEFF_NORM(-0.53500), */
+/*	COEFF_NORM(1.16895),	COEFF_NORM(2.12069),	COEFF_NORM(0.00000), */
+/*	0, 0, 0,  30/31/32 */
+/*	0, 0, 0,  40/41/42 */
+/*	0, 0, 0,  offset */
+/*	0, 0, 0  mode, right_shift, clip_en */
+/*}; */
+
+#ifdef CONFIG_AML_MESON_G12A
+static int YUV709l_to_RGB709_coeff12[MATRIX_5x3_COEF_SIZE] = {
+	-256, -2048, -2048, /* pre offset */
+	COEFF_NORM12(1.16895),	COEFF_NORM12(0.00000),	COEFF_NORM12(1.79977),
+	COEFF_NORM12(1.16895),	COEFF_NORM12(-0.21408),	COEFF_NORM12(-0.53500),
+	COEFF_NORM12(1.16895),	COEFF_NORM12(2.12069),	COEFF_NORM12(0.00000),
+	0, 0, 0, /* 30/31/32 */
+	0, 0, 0, /* 40/41/42 */
+	0, 0, 0, /* offset */
+	0, 0, 0 /* mode, right_shift, clip_en */
+};
+#endif
+
 #define SIGN(a) ((a < 0) ? "-" : "+")
 #define DECI(a) ((a) / 1024)
 #define FRAC(a) ((((a) >= 0) ? \
 	((a) & 0x3ff) : ((~(a) + 1) & 0x3ff)) * 10000 / 1024)
+
+
+/* OSD csc defines end */
+
+static void vpp_set_matrix_default_init(void)
+{
+	switch (get_cpu_id().family_id) {
+	case MESON_CPU_MAJOR_ID_GXBB:
+	case MESON_CPU_MAJOR_ID_GXTVBB:
+	case MESON_CPU_MAJOR_ID_GXL:
+	case MESON_CPU_MAJOR_ID_GXM:
+	case MESON_CPU_MAJOR_ID_TXL:
+		/* default probe_sel, for highlight en */
+		vpp_reg_setb(VPP_MATRIX_CTRL, 0x7, 12, 3);
+		break;
+	default:
+		/* default probe_sel, for highlight en */
+		vpp_reg_setb(VPP_MATRIX_CTRL, 0xf, 11, 4);
+		break;
+	}
+}
+
+static void vpp_set_matrix_ycbcr2rgb(int vd1_or_vd2_or_post, int mode)
+{
+	//VPP_PR("%s: %d, %d\n", __func__, vd1_or_vd2_or_post, mode);
+#ifdef CONFIG_AML_MESON_G12A
+	int *m = NULL;
+
+	if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_G12A) {
+		/* POST2 matrix: YUV limit -> RGB  default is 12bit*/
+		m = YUV709l_to_RGB709_coeff12;
+		/* VPP WRAP POST2 matrix */
+		vpp_reg_write(VPP_POST2_MATRIX_PRE_OFFSET0_1,
+			((m[0] & 0xfff) << 16) | (m[1] & 0xfff));
+		vpp_reg_write(VPP_POST2_MATRIX_PRE_OFFSET2,
+			m[2] & 0xfff);
+		vpp_reg_write(VPP_POST2_MATRIX_COEF00_01,
+			((m[3] & 0x1fff) << 16) | (m[4] & 0x1fff));
+		vpp_reg_write(VPP_POST2_MATRIX_COEF02_10,
+			((m[5]  & 0x1fff) << 16) | (m[6] & 0x1fff));
+		vpp_reg_write(VPP_POST2_MATRIX_COEF11_12,
+			((m[7] & 0x1fff) << 16) | (m[8] & 0x1fff));
+		vpp_reg_write(VPP_POST2_MATRIX_COEF20_21,
+			((m[9] & 0x1fff) << 16) | (m[10] & 0x1fff));
+		vpp_reg_write(VPP_POST2_MATRIX_COEF22,
+			m[11] & 0x1fff);
+
+		vpp_reg_write(VPP_POST2_MATRIX_OFFSET0_1,
+			((m[18] & 0xfff) << 16) | (m[19] & 0xfff));
+		vpp_reg_write(VPP_POST2_MATRIX_OFFSET2,
+			m[20] & 0xfff);
+
+		vpp_reg_setb(VPP_POST2_MATRIX_EN_CTRL, 1, 0, 1);
+
+		VPP_PR("g12a post2(bit12) matrix: YUV limit -> RGB ..............\n");
+		return;
+	}
+#endif
+	if (vd1_or_vd2_or_post == 0) { //vd1
+		vpp_reg_setb(VPP_MATRIX_CTRL, 1, 5, 1);
+		vpp_reg_setb(VPP_MATRIX_CTRL, 1, 8, 3);
+	} else if (vd1_or_vd2_or_post == 1) { //vd2
+		vpp_reg_setb(VPP_MATRIX_CTRL, 1, 4, 1);
+		vpp_reg_setb(VPP_MATRIX_CTRL, 2, 8, 3);
+	} else if (vd1_or_vd2_or_post == 3) { //osd
+		vpp_reg_setb(VPP_MATRIX_CTRL, 1, 7, 1);
+		vpp_reg_setb(VPP_MATRIX_CTRL, 4, 8, 3);
+	} else if (vd1_or_vd2_or_post == 4) { //xvycc
+		vpp_reg_setb(VPP_MATRIX_CTRL, 1, 6, 1);
+		vpp_reg_setb(VPP_MATRIX_CTRL, 3, 8, 3);
+	} else {
+		vpp_reg_setb(VPP_MATRIX_CTRL, 1, 0, 1);
+		vpp_reg_setb(VPP_MATRIX_CTRL, 0, 8, 3);
+		if (mode == 0)
+			vpp_reg_setb(VPP_MATRIX_CTRL, 1, 1, 2);
+		else if (mode == 1)
+			vpp_reg_setb(VPP_MATRIX_CTRL, 0, 1, 2);
+	}
+
+	if (mode == 0) { /* 601 limit to RGB */
+		vpp_reg_write(VPP_MATRIX_PRE_OFFSET0_1, 0x0064C8FF);
+		vpp_reg_write(VPP_MATRIX_PRE_OFFSET2, 0x006400C8);
+		//1.164     0       1.596
+		//1.164   -0.392    -0.813
+		//1.164   2.017     0
+		vpp_reg_write(VPP_MATRIX_COEF00_01, 0x04A80000);
+		vpp_reg_write(VPP_MATRIX_COEF02_10, 0x066204A8);
+		vpp_reg_write(VPP_MATRIX_COEF11_12, 0x1e701cbf);
+		vpp_reg_write(VPP_MATRIX_COEF20_21, 0x04A80812);
+		vpp_reg_write(VPP_MATRIX_COEF22, 0x00000000);
+		vpp_reg_write(VPP_MATRIX_OFFSET0_1, 0x00000000);
+		vpp_reg_write(VPP_MATRIX_OFFSET2, 0x00000000);
+		vpp_reg_write(VPP_MATRIX_PRE_OFFSET0_1, 0x0FC00E00);
+		vpp_reg_write(VPP_MATRIX_PRE_OFFSET2, 0x00000E00);
+	} else if (mode == 1) { /* 601 limit to RGB  */
+		vpp_reg_write(VPP_MATRIX_PRE_OFFSET0_1, 0x0000E00);
+		vpp_reg_write(VPP_MATRIX_PRE_OFFSET2, 0x0E00);
+		//	1	0			1.402
+		//	1	-0.34414	-0.71414
+		//	1	1.772		0
+		vpp_reg_write(VPP_MATRIX_COEF00_01, (0x400 << 16) |0);
+		vpp_reg_write(VPP_MATRIX_COEF02_10, (0x59c << 16) |0x400);
+		vpp_reg_write(VPP_MATRIX_COEF11_12, (0x1ea0 << 16) |0x1d24);
+		vpp_reg_write(VPP_MATRIX_COEF20_21, (0x400 << 16) |0x718);
+		vpp_reg_write(VPP_MATRIX_COEF22, 0x0);
+		vpp_reg_write(VPP_MATRIX_OFFSET0_1, 0x0);
+		vpp_reg_write(VPP_MATRIX_OFFSET2, 0x0);
+	} else if (mode == 2) { /* 709F to RGB */
+		vpp_reg_write(VPP_MATRIX_PRE_OFFSET0_1, 0x0000E00);
+		vpp_reg_write(VPP_MATRIX_PRE_OFFSET2, 0x0E00);
+		//	1	0			1.402
+		//	1	-0.34414	-0.71414
+		//	1	1.772		0
+		vpp_reg_write(VPP_MATRIX_COEF00_01, 0x04000000);
+		vpp_reg_write(VPP_MATRIX_COEF02_10, 0x064D0400);
+		vpp_reg_write(VPP_MATRIX_COEF11_12, 0x1F411E21);
+		vpp_reg_write(VPP_MATRIX_COEF20_21, 0x0400076D);
+		vpp_reg_write(VPP_MATRIX_COEF22, 0x0);
+		vpp_reg_write(VPP_MATRIX_OFFSET0_1, 0x0);
+		vpp_reg_write(VPP_MATRIX_OFFSET2, 0x0);
+	} else if (mode == 3) { /* 709L to RGB */
+		vpp_reg_write(VPP_MATRIX_PRE_OFFSET0_1, 0x0FC00E00);
+		vpp_reg_write(VPP_MATRIX_PRE_OFFSET2, 0x00000E00);
+		/* ycbcr limit range, 709 to RGB */
+		/* -16      1.164  0      1.793  0 */
+		/* -128     1.164 -0.213 -0.534  0 */
+		/* -128     1.164  2.115  0      0 */
+		vpp_reg_write(VPP_MATRIX_COEF00_01, 0x04A80000);
+		vpp_reg_write(VPP_MATRIX_COEF02_10, 0x072C04A8);
+		vpp_reg_write(VPP_MATRIX_COEF11_12, 0x1F261DDD);
+		vpp_reg_write(VPP_MATRIX_COEF20_21, 0x04A80876);
+		vpp_reg_write(VPP_MATRIX_COEF22, 0x0);
+		vpp_reg_write(VPP_MATRIX_OFFSET0_1, 0x0);
+		vpp_reg_write(VPP_MATRIX_OFFSET2, 0x0);
+	}
+	vpp_reg_setb(VPP_MATRIX_CLIP, 0, 5, 3);
+}
+
 
 void set_vpp_matrix(int m_select, int *s, int on)
 {
@@ -896,34 +956,107 @@ void set_vpp_lut(
 	}
 }
 
-static void set_osd1_rgb2yuv(bool on)
-{
-	/* set osd1 csc: RGB */
-	vpp_reg_setb(VIU_OSD1_BLK0_CFG_W0, 0, 7, 1);
+ /*
+for G12A, set osd2 matrix(10bit) RGB2YUV
+ */
+ static void set_osd1_rgb2yuv(bool on)
+ {
+#ifdef CONFIG_AML_MESON_G12A
+	int *m = NULL;
 
-	/* set osd2 luma range: Full */
-	/* vpp_reg_setb(VIU_OSD2_CTRL_STAT2, 1, 3, 1); */
+	if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_G12A) {
+		/* RGB -> 709 limit */
+		m = RGB709_to_YUV709l_coeff;
 
-	/* eotf lut bypass */
-	set_vpp_lut(VPP_LUT_OSD_EOTF,
-		eotf_33_linear_mapping, /* R */
-		eotf_33_linear_mapping, /* G */
-		eotf_33_linear_mapping, /* B */
-		CSC_OFF);
-	/* eotf matrix bypass */
-	set_vpp_matrix(VPP_MATRIX_OSD_EOTF,
-		eotf_bypass_coeff,
-		CSC_OFF);
-	/* oetf lut bypass */
-	set_vpp_lut(VPP_LUT_OSD_OETF,
-		oetf_41_linear_mapping, /* R */
-		oetf_41_linear_mapping, /* G */
-		oetf_41_linear_mapping, /* B */
-		CSC_OFF);
-	/* osd matrix RGB709 to YUV709 limit */
-	set_vpp_matrix(VPP_MATRIX_OSD,
-		RGB709_to_YUV709l_coeff,
-		CSC_ON);
+		/* VPP WRAP OSD1 matrix */
+		vpp_reg_write(VPP_WRAP_OSD1_MATRIX_PRE_OFFSET0_1,
+			((m[0] & 0xfff) << 16) | (m[1] & 0xfff));
+		vpp_reg_write(VPP_WRAP_OSD1_MATRIX_PRE_OFFSET2,
+			m[2] & 0xfff);
+		vpp_reg_write(VPP_WRAP_OSD1_MATRIX_COEF00_01,
+			((m[3] & 0x1fff) << 16) | (m[4] & 0x1fff));
+		vpp_reg_write(VPP_WRAP_OSD1_MATRIX_COEF02_10,
+			((m[5]  & 0x1fff) << 16) | (m[6] & 0x1fff));
+		vpp_reg_write(VPP_WRAP_OSD1_MATRIX_COEF11_12,
+			((m[7] & 0x1fff) << 16) | (m[8] & 0x1fff));
+		vpp_reg_write(VPP_WRAP_OSD1_MATRIX_COEF20_21,
+			((m[9] & 0x1fff) << 16) | (m[10] & 0x1fff));
+		vpp_reg_write(VPP_WRAP_OSD1_MATRIX_COEF22,
+			m[11] & 0x1fff);
+
+		vpp_reg_write(VPP_WRAP_OSD1_MATRIX_OFFSET0_1,
+			((m[18] & 0xfff) << 16) | (m[19] & 0xfff));
+		vpp_reg_write(VPP_WRAP_OSD1_MATRIX_OFFSET2,
+			m[20] & 0xfff);
+
+		vpp_reg_setb(VPP_WRAP_OSD1_MATRIX_EN_CTRL, on, 0, 1);
+
+		VPP_PR("g12a osd1 matrix rgb2yuv ..............\n");
+	} else
+#endif
+	{
+		vpp_reg_setb(VIU_OSD1_BLK0_CFG_W0, 0, 7, 1);
+		/* eotf lut bypass */
+		set_vpp_lut(VPP_LUT_OSD_EOTF,
+			eotf_33_linear_mapping, /* R */
+			eotf_33_linear_mapping, /* G */
+			eotf_33_linear_mapping, /* B */
+			CSC_OFF);
+		/* eotf matrix bypass */
+		set_vpp_matrix(VPP_MATRIX_OSD_EOTF,
+			eotf_bypass_coeff,
+			CSC_OFF);
+		/* oetf lut bypass */
+		set_vpp_lut(VPP_LUT_OSD_OETF,
+			oetf_41_linear_mapping, /* R */
+			oetf_41_linear_mapping, /* G */
+			oetf_41_linear_mapping, /* B */
+			CSC_OFF);
+		/* osd matrix RGB709 to YUV709 limit */
+		set_vpp_matrix(VPP_MATRIX_OSD,
+			RGB709_to_YUV709l_coeff,
+			CSC_ON);
+	}
+ }
+
+ /*
+for G12A, set osd2 matrix(10bit) RGB2YUV
+ */
+ static void set_osd2_rgb2yuv(bool on)
+ {
+#ifdef CONFIG_AML_MESON_G12A
+	int *m = NULL;
+
+	if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_G12A) {
+		/* RGB -> 709 limit */
+		m = RGB709_to_YUV709l_coeff;
+
+		/* VPP WRAP OSD2 matrix */
+		vpp_reg_write(VPP_WRAP_OSD2_MATRIX_PRE_OFFSET0_1,
+			((m[0] & 0xfff) << 16) | (m[1] & 0xfff));
+		vpp_reg_write(VPP_WRAP_OSD2_MATRIX_PRE_OFFSET2,
+			m[2] & 0xfff);
+		vpp_reg_write(VPP_WRAP_OSD2_MATRIX_COEF00_01,
+			((m[3] & 0x1fff) << 16) | (m[4] & 0x1fff));
+		vpp_reg_write(VPP_WRAP_OSD2_MATRIX_COEF02_10,
+			((m[5]  & 0x1fff) << 16) | (m[6] & 0x1fff));
+		vpp_reg_write(VPP_WRAP_OSD2_MATRIX_COEF11_12,
+			((m[7] & 0x1fff) << 16) | (m[8] & 0x1fff));
+		vpp_reg_write(VPP_WRAP_OSD2_MATRIX_COEF20_21,
+			((m[9] & 0x1fff) << 16) | (m[10] & 0x1fff));
+		vpp_reg_write(VPP_WRAP_OSD2_MATRIX_COEF22,
+			m[11] & 0x1fff);
+
+		vpp_reg_write(VPP_WRAP_OSD2_MATRIX_OFFSET0_1,
+			((m[18] & 0xfff) << 16) | (m[19] & 0xfff));
+		vpp_reg_write(VPP_WRAP_OSD2_MATRIX_OFFSET2,
+			m[20] & 0xfff);
+
+		vpp_reg_setb(VPP_WRAP_OSD2_MATRIX_EN_CTRL, on, 0, 1);
+
+		VPP_PR("g12a osd2 matrix rgb2yuv..............\n");
+	}
+#endif
 }
 
 /*
@@ -943,9 +1076,13 @@ static void set_vpp_bitdepth(void)
 		vpp_reg_setb(VPP_DAT_CONV_PARA1, 0, 0, 14);
 	#else
 	#endif
+	} else if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_G12A) {
+		/*after this step vd1 output data is U12,*/
+	#ifdef CONFIG_AML_MESON_G12A
+		vpp_reg_write(DOLBY_PATH_CTRL, 0xf);
+	#endif
 	}
 }
-
 
 #if ((defined CONFIG_AML_HDMITX20) || (defined CONFIG_AML_CVBS))
 static void vpp_set_post_matrix_rgb2ycbcr(int mode)
@@ -1186,7 +1323,18 @@ void vpp_init(void)
 		/* 709 limit to RGB */
 		vpp_set_matrix_ycbcr2rgb(2, 3);
 	#endif
-	}  else {
+	} else if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_G12A) {
+		/* osd1: rgb->yuv limit,osd2: rgb2yuv limit,osd3: rgb2yuv limit*/
+		set_osd1_rgb2yuv(1);
+		set_osd2_rgb2yuv(1);
+
+		/* set vpp data path to u12 */
+		set_vpp_bitdepth();
+	#if (defined CONFIG_AML_LCD)
+		/* 709 limit to RGB */
+		vpp_set_matrix_ycbcr2rgb(2, 3);
+	#endif
+	} else {
 		/* set dummy data default YUV black */
 		vpp_reg_write(VPP_DUMMY_DATA1, 0x108080);
 		/* osd1: rgb->yuv limit , osd2: yuv limit */
