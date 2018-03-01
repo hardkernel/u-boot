@@ -622,7 +622,6 @@ int board_late_init(void)
 		aml_try_factory_usb_burning(1, gd->bd);
 		aml_try_factory_sdcard_burning(0, gd->bd);
 #endif// #ifdef CONFIG_AML_V2_FACTORY_BURN
-
 	return 0;
 }
 #endif

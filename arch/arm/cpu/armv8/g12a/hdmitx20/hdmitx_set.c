@@ -68,10 +68,10 @@ static int hdmitx_get_hpd_state(void)
 
 static void ddc_pinmux_init(void)
 {
-	hd_set_reg_bits(P_PAD_PULL_UP_EN_REG1, 0, 22, 2);    // Disable GPIOH_1/2 pull-up/down
-	hd_set_reg_bits(P_PAD_PULL_UP_REG1, 0, 22, 2);
-	hd_set_reg_bits(P_PREG_PAD_GPIO1_EN_N, 3, 22, 2);     // GPIOH_1/2 input
-	hd_set_reg_bits(P_PERIPHS_PIN_MUX_0, 3, 21, 2);      // Mux DDC SDA/SCL
+	hd_set_reg_bits(P_PAD_PULL_UP_EN_REG3, 0, 0, 2);    // Disable GPIOH_1/2 pull-up/down
+	hd_set_reg_bits(P_PAD_PULL_UP_REG3, 0, 0, 2);
+	hd_set_reg_bits(P_PREG_PAD_GPIO3_EN_N, 3, 0, 2);     // GPIOH_1/2 input
+	hd_set_reg_bits(P_PERIPHS_PIN_MUX_B, 0x11, 0, 8);      // Mux DDC SDA/SCL
 }
 
 static void hdelay(int us)
@@ -311,6 +311,7 @@ static void hdmitx_turnoff(void)
         /* Close HDMITX PHY */
         hd_write_reg(P_HHI_HDMI_PHY_CNTL0, 0);
         hd_write_reg(P_HHI_HDMI_PHY_CNTL3, 0);
+        hd_write_reg(P_HHI_HDMI_PHY_CNTL5, 0);
         /* Disable HPLL */
         hd_write_reg(P_HHI_HDMI_PLL_CNTL0, 0);
 }
@@ -389,6 +390,8 @@ void hdmi_tx_init(void)
 	hdmitx_device.HWOp.dump_regs = dump_regs;
 	hdmitx_device.HWOp.test_bist = hdmitx_test_bist;
 	hdmitx_device.HWOp.output_blank = hdmitx_output_blank;
+	/*open 5V */
+	hd_set_reg_bits(P_PREG_PAD_GPIO4_O, 1, 8, 1);
 }
 
 void hdmi_tx_set(struct hdmitx_dev *hdev)
@@ -1099,17 +1102,20 @@ static void set_phy_by_mode(unsigned int mode)
 {
 	switch (mode) {
 	case 1: /* 5.94Gbps, 3.7125Gbsp */
-		hd_write_reg(P_HHI_HDMI_PHY_CNTL0, 0x333d3282);
-		hd_write_reg(P_HHI_HDMI_PHY_CNTL3, 0x2136315b);
+		hd_write_reg(P_HHI_HDMI_PHY_CNTL0, 0x37eb8282);
+		hd_write_reg(P_HHI_HDMI_PHY_CNTL3, 0x28b0ff3b);
+		hd_write_reg(P_HHI_HDMI_PHY_CNTL5, 0x0800);
 		break;
 	case 2: /* 2.97Gbps */
-		hd_write_reg(P_HHI_HDMI_PHY_CNTL0, 0x33303382);
-		hd_write_reg(P_HHI_HDMI_PHY_CNTL3, 0x2036315b);
+		hd_write_reg(P_HHI_HDMI_PHY_CNTL0, 0x37eb8282);
+		hd_write_reg(P_HHI_HDMI_PHY_CNTL3, 0x28b0ff3b);
+		hd_write_reg(P_HHI_HDMI_PHY_CNTL5, 0x0800);
 		break;
 	case 3: /* 1.485Gbps, and below */
 	default:
-		hd_write_reg(P_HHI_HDMI_PHY_CNTL0, 0x33303362);
-		hd_write_reg(P_HHI_HDMI_PHY_CNTL3, 0x2016315b);
+		hd_write_reg(P_HHI_HDMI_PHY_CNTL0, 0x37eb8282);
+		hd_write_reg(P_HHI_HDMI_PHY_CNTL3, 0x28b0ff3b);
+		hd_write_reg(P_HHI_HDMI_PHY_CNTL5, 0);
 		break;
 	}
 }
