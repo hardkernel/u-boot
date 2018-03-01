@@ -946,15 +946,15 @@ void test_timing(struct mtd_info *mtd, struct nand_chip *chip)
 
 void nand_init(void)
 {
-	//static int amlmtd_init = 0;
+	static int amlmtd_init = 0;
 	struct aml_nand_platform *plat = NULL;
-	int i, ret;
+	int i, ret = 0;
 
-	//if (1 == amlmtd_init) {
-		//nand_hw_init(&aml_nand_mid_device.aml_nand_platform[0]);
-		//device_boot_flag = NAND_BOOT_FLAG;
-		//return;
-	//}
+	if (1 == amlmtd_init) {
+		nand_hw_init(&aml_nand_mid_device.aml_nand_platform[0]);
+		device_boot_flag = NAND_BOOT_FLAG;
+		return;
+	}
 
 	controller = kzalloc(sizeof(struct hw_controller), GFP_KERNEL);
 	if (controller == NULL) {
@@ -988,13 +988,15 @@ void nand_init(void)
 		}
 
 		ret = m3_nand_probe(plat, i);
-		if (ret) {
-			printk("nand init faile: %d\n", ret);
-			continue;
-		}
+		if (ret)
+			printk("nand init failed: %d\n", ret);
 		// nand_register(i);
 	}
+
 	nand_curr_device = 1; //fixit
-	//amlmtd_init = 1;
+	amlmtd_init = 1;
+	if (ret)
+		free(controller);
+
 	return;
 }

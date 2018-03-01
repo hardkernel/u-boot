@@ -1870,7 +1870,6 @@ static void inline nand_get_chip(void )
 {
 	/* fixme, */
 	/* pull up enable */
-#if 0
 	cpu_id_t cpu_id = get_cpu_id();
 
 	if ((cpu_id.family_id == MESON_CPU_MAJOR_ID_GXL)
@@ -1906,22 +1905,17 @@ static void inline nand_get_chip(void )
 		AMLNF_WRITE_REG(P_PERIPHS_PIN_MUX_1,
 				(AMLNF_READ_REG(P_PERIPHS_PIN_MUX_1) &
 				0xfff00000) | 0x22222);
+	} else if(cpu_id.family_id >= MESON_CPU_MAJOR_ID_G12A) {
+		AMLNF_SET_REG_MASK(P_PAD_PULL_UP_EN_REG4, 0x1FFF);
+		AMLNF_SET_REG_MASK(P_PAD_PULL_UP_REG4, 0x1F00);
+		AMLNF_WRITE_REG(P_PERIPHS_PIN_MUX_0, 0x11111111);
+		AMLNF_WRITE_REG(P_PERIPHS_PIN_MUX_1, 0x22122222);
+		writel(0x55555555, P_PAD_DS_REG0A);
 	} else {
 		printk("%s() %d: cpuid 0x%x not support yet!\n",
 			__func__, __LINE__, cpu_id.family_id);
 		BUG();
 	}
-#endif
-
-
-	/* Todo: need confirm cpu id for G12A */
-	//AMLNF_SET_REG_MASK(P_PAD_PULL_UP_EN_REG4, 0x1FFF);
-	//AMLNF_SET_REG_MASK(P_PAD_PULL_UP_REG4, 0x1F00);
-
-	AMLNF_WRITE_REG(P_PAD_PULL_UP_EN_REG4, 0x1FFF);
-	AMLNF_WRITE_REG(P_PAD_PULL_UP_REG4, 0x1F00);
-	AMLNF_WRITE_REG(P_PERIPHS_PIN_MUX_0, 0x11111111);
-	AMLNF_WRITE_REG(P_PERIPHS_PIN_MUX_1, 0x22122222);
 
 	return ;
 }
@@ -3991,10 +3985,6 @@ exit_error:
 	if (chip->buffers) {
 		kfree(chip->buffers);
 		chip->buffers = NULL;
-	}
-	if (chip->ecc.layout) {
-		kfree(chip->ecc.layout);
-		chip->ecc.layout = NULL;
 	}
 	if (aml_chip->aml_nand_data_buf) {
 		kfree(aml_chip->aml_nand_data_buf);
