@@ -37,6 +37,13 @@ enum CVBS_MODE_e
 };
 
 unsigned int cvbs_mode = VMODE_MAX;
+/*bit[0]: 0=vid_pll, 1=gp0_pll*/
+/*bit[1]: 0=vid2_clk, 1=vid1_clk*/
+/*path 0:vid_pll vid2_clk*/
+/*path 1:gp0_pll vid2_clk*/
+/*path 2:vid_pll vid1_clk*/
+/*path 3:gp0_pll vid1_clk*/
+static unsigned int s_enci_clk_path = 0;
 
 /*----------------------------------------------------------------------------*/
 // interface for registers of soc
@@ -113,7 +120,7 @@ static int cvbs_set_vcbus_bits(unsigned int addr_offset, unsigned int value, uns
 {
 	cvbs_write_vcbus(addr_offset, ((cvbs_read_vcbus(addr_offset) &
 		~(((1L << (len))-1) << (start))) |
-		(((start)&((1L<<(len))-1)) << (start))));
+		(((value)&((1L<<(len))-1)) << (start))));
 	return 0;
 }
 #if 0
@@ -230,7 +237,7 @@ int cvbs_set_vdac(int status)
 			cvbs_write_hiu(HHI_VDAC_CNTL1, 8);
 		break;
 	case 1:// from enci to vdac
-		cvbs_set_vcbus_bits(VENC_VDAC_DACSEL0, 5, 1, 0);
+		cvbs_set_vcbus_bits(VENC_VDAC_DACSEL0, 0, 5, 1);
 		if (is_meson_g12a_cpu())
 			cvbs_write_hiu(HHI_VDAC_CNTL0, 0x906001);
 		else if (is_equal_after_meson_cpu(MESON_CPU_MAJOR_ID_GXL)) {
@@ -249,7 +256,7 @@ int cvbs_set_vdac(int status)
 			cvbs_write_hiu(HHI_VDAC_CNTL1, 0);
 		break;
 	case 2:// from atv to vdac
-		cvbs_set_vcbus_bits(VENC_VDAC_DACSEL0, 5, 1, 1);
+		cvbs_set_vcbus_bits(VENC_VDAC_DACSEL0, 1, 5, 1);
 		cvbs_write_hiu(HHI_VDAC_CNTL0, 1);
 		cvbs_write_hiu(HHI_VDAC_CNTL1, 0);
 		break;
@@ -407,6 +414,26 @@ int cvbs_reg_debug(int argc, char* const argv[])
 			goto fail_cmd;
 
 		cvbs_dump_cvbs_regs();
+	} else if (!strcmp(argv[1], "set_clkpath")) {
+		if (argc != 3)
+			goto fail_cmd;
+		value = simple_strtoul(argv[2], NULL, 0);
+		if (check_cpu_type(MESON_CPU_MAJOR_ID_G12A)) {
+			if (value == 1 || value == 2 ||
+				value == 3 || value == 0) {
+				s_enci_clk_path = value;
+				printf("path 0:vid_pll vid2_clk\n");
+				printf("path 1:gp0_pll vid2_clk\n");
+				printf("path 2:vid_pll vid1_clk\n");
+				printf("path 3:gp0_pll vid1_clk\n");
+				printf("you select path %d\n", s_enci_clk_path);
+			} else {
+				printf("invalid value, only 0/1/2/3\n");
+				printf("bit[0]: 0=vid_pll, 1=gp0_pll\n");
+				printf("bit[1]: 0=vid2_clk, 1=vid1_clk\n");
+			}
+		} else
+			printf("only support G12A chip");
 	}
 
 	return 0;
@@ -418,19 +445,16 @@ fail_cmd:
 /*----------------------------------------------------------------------------*/
 // configuration for clock
 #define WAIT_FOR_PLL_LOCKED(reg)                \
-	do {                                        \
-		unsigned int cnt = 10;                  \
-		unsigned int time_out = 0;              \
-		while (cnt --) {                        \
-		time_out = 0;                           \
-		while (!cvbs_get_hiu_bits(reg, 31, 1)	\
-			& (time_out < 10000)) {               \
-			time_out ++;                        \
-			udelay(20);                    \
-			}                              \
-		}                                       \
-		if (cnt < 9)                            \
-			printf("pll[0x%x] reset %d times\n", reg, 9 - cnt);\
+	do {                                    \
+		unsigned int pll_lock;          \
+		unsigned int time_out = 0;      \
+		do {                            \
+			udelay(20);             \
+			pll_lock = cvbs_get_hiu_bits(reg, 31, 1);  \
+			time_out ++;                               \
+		} while ((pll_lock == 0) && (time_out < 10000));   \
+		if (pll_lock == 0)                                 \
+			printf("[error]: cvbs pll lock failed\n"); \
 	} while(0);
 
 static void cvbs_config_hdmipll_gxb(void)
@@ -491,57 +515,114 @@ static void cvbs_config_hdmipll_g12a(void)
 {
 #if (defined(CONFIG_AML_MESON_G12A))
 	printf("%s\n", __func__);
-	cvbs_write_hiu(HHI_HDMI_PLL_CNTL0,	0x3b00047b);
-	cvbs_write_hiu(HHI_HDMI_PLL_CNTL1,	0x00018000);
+	cvbs_write_hiu(HHI_HDMI_PLL_CNTL0,	0x1a0504f7);
+	cvbs_write_hiu(HHI_HDMI_PLL_CNTL1,	0x00010000);
 	cvbs_write_hiu(HHI_HDMI_PLL_CNTL2,	0x00000000);
-	cvbs_write_hiu(HHI_HDMI_PLL_CNTL3,	0x0a691c00);
-	cvbs_write_hiu(HHI_HDMI_PLL_CNTL4,	0x33771290);
-	cvbs_write_hiu(HHI_HDMI_PLL_CNTL5,	0x39270000);
-	cvbs_write_hiu(HHI_HDMI_PLL_CNTL6,	0x50540000);
-	cvbs_write_hiu(HHI_HDMI_PLL_CNTL0,	0x1b00047b);
+	cvbs_write_hiu(HHI_HDMI_PLL_CNTL3,	0x6a28dc00);
+	cvbs_write_hiu(HHI_HDMI_PLL_CNTL4,	0x65771290);
+	cvbs_write_hiu(HHI_HDMI_PLL_CNTL5,	0x39272000);
+	cvbs_write_hiu(HHI_HDMI_PLL_CNTL6,	0x56540000);
+	cvbs_write_hiu(HHI_HDMI_PLL_CNTL0,	0x3a0504f7);
+	udelay(100);
+	cvbs_write_hiu(HHI_HDMI_PLL_CNTL0,	0x1a0504f7);
 	WAIT_FOR_PLL_LOCKED(HHI_HDMI_PLL_CNTL0);
-	mdelay(200);
-	cvbs_write_hiu(HHI_HDMI_PLL_CNTL0,	0x1b01047b);
 #endif
 	return;
 }
 
-static int cvbs_config_clock(void)
+static void cvbs_config_gp0pll_g12a(void)
 {
-	/* pll output 1485M */
-	if (check_cpu_type(MESON_CPU_MAJOR_ID_GXBB))
-		cvbs_config_hdmipll_gxb();
-	else if (check_cpu_type(MESON_CPU_MAJOR_ID_GXTVBB))
-		cvbs_config_hdmipll_gxtvbb();
-	else if (check_cpu_type(MESON_CPU_MAJOR_ID_G12A))
-		cvbs_config_hdmipll_g12a();
-	else if (is_equal_after_meson_cpu(MESON_CPU_MAJOR_ID_GXL))
-		cvbs_config_hdmipll_gxl();
+#if (defined(CONFIG_AML_MESON_G12A))
+	printf("%s\n", __func__);
+	cvbs_write_hiu(HHI_GP0_PLL_CNTL0,	0x180204f7);
+	cvbs_write_hiu(HHI_GP0_PLL_CNTL1,	0x00010000);
+	cvbs_write_hiu(HHI_GP0_PLL_CNTL2,	0x00000000);
+	cvbs_write_hiu(HHI_GP0_PLL_CNTL3,	0x6a28dc00);
+	cvbs_write_hiu(HHI_GP0_PLL_CNTL4,	0x65771290);
+	cvbs_write_hiu(HHI_GP0_PLL_CNTL5,	0x39272000);
+	cvbs_write_hiu(HHI_GP0_PLL_CNTL6,	0x56540000);
+	cvbs_write_hiu(HHI_GP0_PLL_CNTL0,	0x380204f7);
+	udelay(100);
+	cvbs_write_hiu(HHI_GP0_PLL_CNTL0,	0x180204f7);
+	WAIT_FOR_PLL_LOCKED(HHI_GP0_PLL_CNTL0);
+#endif
+	return;
+}
 
-	cvbs_set_hiu_bits(HHI_VIID_CLK_CNTL, 0, VCLK2_EN, 1);
+static void cvbs_set_vid1_clk(unsigned int src_pll)
+{
+	int sel = 0;
+
+	printf("%s\n", __func__);
+	if (src_pll == 0) { /* hpll */
+		/* divider: 1 */
+		/* Disable the div output clock */
+		cvbs_set_hiu_bits(HHI_VID_PLL_CLK_DIV, 0, 19, 1);
+		cvbs_set_hiu_bits(HHI_VID_PLL_CLK_DIV, 0, 15, 1);
+
+		cvbs_set_hiu_bits(HHI_VID_PLL_CLK_DIV, 1, 18, 1);
+		/* Enable the final output clock */
+		cvbs_set_hiu_bits(HHI_VID_PLL_CLK_DIV, 1, 19, 1);
+		sel = 0;
+	} else { /* gp0_pll */
+		sel = 1;
+	}
+
+	/* xd: 55 */
+	/* setup the XD divider value */
+	cvbs_set_hiu_bits(HHI_VID_CLK_DIV, (55 - 1), VCLK_XD0, 8);
+	//udelay(5);
+	/*0x59[16]/0x5f[19]/0x5f[20]*/
+	cvbs_set_hiu_bits(HHI_VID_CLK_CNTL, sel, VCLK_CLK_IN_SEL, 3);
+	cvbs_set_hiu_bits(HHI_VID_CLK_CNTL, 1, VCLK_EN0, 1);
+	//udelay(2);
+
+	/* vclk: 27M */
+	/* [31:28]=0 enci_clk_sel, select vclk_div1 */
+	cvbs_set_hiu_bits(HHI_VID_CLK_DIV, 0, 28, 4);
+	cvbs_set_hiu_bits(HHI_VIID_CLK_DIV, 0, 28, 4);
+	/* release vclk_div_reset and enable vclk_div */
+	cvbs_set_hiu_bits(HHI_VID_CLK_DIV, 1, VCLK_XD_EN, 2);
 	//udelay(5);
 
-	/* divider: 1 */
-	/* Disable the div output clock */
-	cvbs_set_hiu_bits(HHI_VID_PLL_CLK_DIV, 0, 19, 1);
-	cvbs_set_hiu_bits(HHI_VID_PLL_CLK_DIV, 0, 15, 1);
+	cvbs_set_hiu_bits(HHI_VID_CLK_CNTL, 1, VCLK_DIV1_EN, 1);
 
-	cvbs_set_hiu_bits(HHI_VID_PLL_CLK_DIV, 1, 18, 1);
-	/* Enable the final output clock */
-	cvbs_set_hiu_bits(HHI_VID_PLL_CLK_DIV, 1, 19, 1);
+	cvbs_set_hiu_bits(HHI_VID_CLK_CNTL, 1, VCLK_SOFT_RST, 1);
+	//udelay(10);
+	cvbs_set_hiu_bits(HHI_VID_CLK_CNTL, 0, VCLK_SOFT_RST, 1);
+	//udelay(5);
+}
+
+static void cvbs_set_vid2_clk(unsigned int src_pll)
+{
+	int sel = 0;
+
+	printf("%s\n", __func__);
+	if (src_pll == 0) { /* hpll */
+		/* divider: 1 */
+		/* Disable the div output clock */
+		cvbs_set_hiu_bits(HHI_VID_PLL_CLK_DIV, 0, 19, 1);
+		cvbs_set_hiu_bits(HHI_VID_PLL_CLK_DIV, 0, 15, 1);
+
+		cvbs_set_hiu_bits(HHI_VID_PLL_CLK_DIV, 1, 18, 1);
+		/* Enable the final output clock */
+		cvbs_set_hiu_bits(HHI_VID_PLL_CLK_DIV, 1, 19, 1);
+		sel = 0;
+	} else { /* gp0_pll */
+		sel = 1;
+	}
 
 	/* xd: 55 */
 	/* setup the XD divider value */
 	cvbs_set_hiu_bits(HHI_VIID_CLK_DIV, (55 - 1), VCLK2_XD, 8);
 	//udelay(5);
 	/* Bit[18:16] - v2_cntl_clk_in_sel: vid_pll */
-	/*after g12a must set 0, before g12a set 4 and 0 both ok*/
-	cvbs_set_hiu_bits(HHI_VIID_CLK_CNTL, 0, VCLK2_CLK_IN_SEL, 3);
+	cvbs_set_hiu_bits(HHI_VIID_CLK_CNTL, sel, VCLK2_CLK_IN_SEL, 3);
 	cvbs_set_hiu_bits(HHI_VIID_CLK_CNTL, 1, VCLK2_EN, 1);
 	//udelay(2);
 
 	/* vclk: 27M */
-	/* [15:12] encl_clk_sel, select vclk2_div1 */
+	/* [31:28]=8 enci_clk_sel, select vclk2_div1 */
 	cvbs_set_hiu_bits(HHI_VID_CLK_DIV, 8, 28, 4);
 	cvbs_set_hiu_bits(HHI_VIID_CLK_DIV, 8, 28, 4);
 	/* release vclk2_div_reset and enable vclk2_div */
@@ -553,6 +634,32 @@ static int cvbs_config_clock(void)
 	//udelay(10);
 	cvbs_set_hiu_bits(HHI_VIID_CLK_CNTL, 0, VCLK2_SOFT_RST, 1);
 	//udelay(5);
+}
+
+static int cvbs_config_clock(void)
+{
+	/* pll output 1485M */
+	if (check_cpu_type(MESON_CPU_MAJOR_ID_GXBB))
+		cvbs_config_hdmipll_gxb();
+	else if (check_cpu_type(MESON_CPU_MAJOR_ID_GXTVBB))
+		cvbs_config_hdmipll_gxtvbb();
+	else if (check_cpu_type(MESON_CPU_MAJOR_ID_G12A)) {
+		if (s_enci_clk_path & 0x1)
+			cvbs_config_gp0pll_g12a();
+		else
+			cvbs_config_hdmipll_g12a();
+	}
+	else if (is_equal_after_meson_cpu(MESON_CPU_MAJOR_ID_GXL))
+		cvbs_config_hdmipll_gxl();
+
+	if (check_cpu_type(MESON_CPU_MAJOR_ID_G12A)) {
+		if (s_enci_clk_path & 0x2)
+			cvbs_set_vid1_clk(s_enci_clk_path & 0x1);
+		else
+			cvbs_set_vid2_clk(s_enci_clk_path & 0x1);
+	} else {
+		cvbs_set_vid2_clk(0);
+	}
 
 	cvbs_set_hiu_bits(HHI_VID_CLK_CNTL2, 1, 0, 1);
 	cvbs_set_hiu_bits(HHI_VID_CLK_CNTL2, 1, 4, 1);

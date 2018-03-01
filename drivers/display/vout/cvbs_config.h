@@ -196,15 +196,17 @@ static const struct reg_s *tvregs_576cvbs_performance_905x[] = {
 };
 
 static const struct reg_s tvregs_576cvbs_china_sarft_905l[] = {
-	{VENC_VDAC_DAC0_GAINCTRL,	0x9  },
-	{ENCI_YC_DELAY,				0x343},
-	{ENCI_VIDEO_SAT,			0x9	 },
-	{MREG_END_MARKER,			0    }
+	{VENC_VDAC_DAC0_GAINCTRL,	0x9		},
+	{ENCI_YC_DELAY,				0x343	},
+	{ENCI_SYNC_ADJ,				0x0		},
+	{ENCI_VIDEO_SAT,			0x9		},
+	{VENC_VDAC_DAC0_FILT_CTRL1,	0xfc48	},
+	{MREG_END_MARKER,			0    	}
 };
 
 static const struct reg_s tvregs_576cvbs_china_telecom_905l[] = {
 	{VENC_VDAC_DAC0_GAINCTRL,	0x9		},
-	{ENCI_YC_DELAY,				0x343   },
+	{ENCI_YC_DELAY,				0x333   },
 	{ENCI_SYNC_ADJ,				0x8080	},
 	{ENCI_VIDEO_SAT,			0xfd	},
 	{VENC_VDAC_DAC0_FILT_CTRL1,	0xf850	},
@@ -304,6 +306,7 @@ static const struct reg_s tvregs_576cvbs_enc[] = {
 	{VENC_VDAC_DAC0_FILT_CTRL0,       0x1        },
 	{VENC_VDAC_DAC0_FILT_CTRL1,       0xfc48     },
 	{ENCI_MACV_N0,                    0x0        },
+	{ENCI_VIDEO_CONT,                 0x0        },
 	{MREG_END_MARKER,                 0          }
 };
 
@@ -455,6 +458,7 @@ static const struct reg_s tvregs_pal_n_enc[] = {
 	{VENC_VDAC_DAC0_FILT_CTRL0,       0x1        },
 	{VENC_VDAC_DAC0_FILT_CTRL1,       0xfc48     },
 	{ENCI_MACV_N0,                    0x0        },
+	{ENCI_VIDEO_CONT,                 0x0        },
 	{MREG_END_MARKER,                 0          }
 };
 

@@ -49,6 +49,12 @@
 #define VCLK2_XD_EN             16
 #define ENCL_CLK_SEL            12
 #define VCLK2_XD                 0
+#define VCLK_XD0                 0
+#define VCLK_CLK_IN_SEL			16
+#define VCLK_EN0				19
+#define VCLK_XD_EN				16
+#define VCLK_DIV1_EN            0
+#define VCLK_SOFT_RST          15
 
 #define VCLK2_EN                19
 #define VCLK2_CLK_IN_SEL        16
