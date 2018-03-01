@@ -155,6 +155,12 @@ int get_bootdev_type(void)
 	devtype_num_envset();
 	devtype = env_get("devtype");
 
+	/* For current use(Only EMMC support!) */
+	if (!devtype) {
+		devtype = "mmc";
+		printf("Use emmc as default boot media\n");
+	}
+
 	if (!strcmp(devtype, "mmc")) {
 		type = IF_TYPE_MMC;
 		boot_media = "emmc";
@@ -163,13 +169,6 @@ int get_bootdev_type(void)
 		boot_media = "nand";
 	} else {
 		/* Add new to support */
-	}
-
-	/* For current use(Only EMMC support!) */
-	if (!type) {
-		type = IF_TYPE_MMC;
-		boot_media = "emmc";
-		printf("Use emmc as default boot media\n");
 	}
 
 	if (!appended && boot_media) {
