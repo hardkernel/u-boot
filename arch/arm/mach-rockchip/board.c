@@ -96,7 +96,6 @@ int board_late_init(void)
 
 #ifdef CONFIG_DRM_ROCKCHIP
 	rockchip_show_logo();
-	rockchip_display_fixup((void *)gd->fdt_blob);
 #endif
 
 	return rk_board_late_init();
