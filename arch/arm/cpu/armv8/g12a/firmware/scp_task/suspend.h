@@ -67,14 +67,6 @@ static void inline aml_update_bits(unsigned int  reg, unsigned int mask, unsigne
 	writel(tmp, reg);
 }
 
-#define IRQ_TIMERA_NUM      1
-#define IRQ_GPIO0_NUM       8
-#define IRQ_GPIO1_NUM       9
-#define IRQ_AO_IR_DEC_NUM   42
-#define IRQ_AO_CEC_NUM      45
-#define IRQ_AO_GPIO0_NUM    46
-#define IRQ_ETH_PHY_NUM     23
-#define IRQ_AO_CECB_NUM     51
 /* GPIO trigger type*/
 #define GPIO_IRQ_LOW_LEVEL		0
 #define GPIO_IRQ_HIGH_LEVEL		1
