@@ -646,7 +646,7 @@ static void aml_bl_test_unifykey(void)
 	buf[49] = 0;
 	buf[50] = 128; /* level mid mapping */
 	buf[51] = 0;
-
+#if 1
 	/* method: 8byte(52~59) */
 	buf[52] = 1;   /* bl method */
 	buf[53] = 0;   /* bl enable gpio */
@@ -678,7 +678,54 @@ static void aml_bl_test_unifykey(void)
 
 	for (i = 84; i < 92; i++)  /* pwm/pwm2_level_range for pwm_combo */
 		buf[i] = 0;
+#else
+	/* method: 8byte(52~59) */
+	buf[52] = 2;   /* bl method */
+	buf[53] = 0;   /* bl enable gpio */
+	buf[54] = 1;   /* bl enable gpio on */
+	buf[55] = 0;   /* bl enable gpio off */
+	buf[56] = 0xf2; /* power on delay bit[7:0] */
+	buf[57] = 0x03;   /* power on delay bit[15:8] */
+	buf[58] = 0x6e;  /* power off delay bit[7:0] */
+	buf[59] = 0;   /* power off delay bit[15:8] */
 
+	/* pwm: 32byte(60~91) */
+	buf[60] = 10;  /* pwm on delay bit[15:8] */
+	buf[61] = 0;   /* pwm on delay bit[15:8] */
+	buf[62] = 10;  /* pwm off delay bit[15:8] */
+	buf[63] = 0;   /* pwm off delay bit[15:8] */
+
+	buf[64] = 1;   /* pwm method */
+	buf[65] = 1;   /* pwm port */
+	buf[66] = 180; /* pwm freq bit[7:0] */
+	buf[67] = 0;   /* pwm freq bit[15:8] */
+	buf[68] = 0;   /* pwm freq bit[23:16] */
+	buf[69] = 0;   /* pwm freq bit[31:24] */
+	buf[70] = 100; /* pwm duty max */
+	buf[71] = 25;  /* pwm duty min */
+	buf[72] = 1;   /* pwm gpio */
+	buf[73] = 0;   /* pwm gpio off */
+
+	buf[74] = 1;   /* pwm2 method */
+	buf[75] = 2;   /* pwm2 port */
+	buf[76] = 0x50; /* pwm2 freq bit[7:0] */
+	buf[77] = 0x46;   /* pwm2 freq bit[15:8] */
+	buf[78] = 0;   /* pwm2 freq bit[23:16] */
+	buf[79] = 0;   /* pwm2 freq bit[31:24] */
+	buf[80] = 100; /* pwm2 duty max */
+	buf[81] = 20;  /* pwm2 duty min */
+	buf[82] = 2;   /* pwm2 gpio */
+	buf[83] = 0;   /* pwm2 gpio off */
+
+	buf[84] = 50;
+	buf[85] = 0;
+	buf[86] = 10;
+	buf[87] = 0;
+	buf[88] = 255;
+	buf[89] = 0;
+	buf[90] = 50;
+	buf[91] = 0;
+#endif
 	/* customer: 10byte(92~101) */
 	for (i = 92; i < 102; i++)
 		buf[i] = 0;
