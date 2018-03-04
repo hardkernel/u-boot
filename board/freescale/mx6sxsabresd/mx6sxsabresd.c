@@ -548,7 +548,7 @@ int checkboard(void)
 }
 
 #ifdef CONFIG_SPL_BUILD
-#include <libfdt.h>
+#include <linux/libfdt.h>
 #include <spl.h>
 #include <asm/arch/mx6-ddr.h>
 

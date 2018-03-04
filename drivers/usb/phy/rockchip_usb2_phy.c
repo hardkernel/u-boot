@@ -8,7 +8,6 @@
 #include <asm/arch/clock.h>
 #include <asm/io.h>
 #include <fdtdec.h>
-#include <libfdt.h>
 #include <syscon.h>
 
 #include "../gadget/dwc2_udc_otg_priv.h"

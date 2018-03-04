@@ -7,7 +7,7 @@
 #include <common.h>
 #include <bootm.h>
 #include <linux/list.h>
-#include <libfdt.h>
+#include <linux/libfdt.h>
 #include <malloc.h>
 #include <asm/arch/resource_img.h>
 #include <asm/arch/rockchip_crc.h>

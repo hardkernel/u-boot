@@ -11,8 +11,8 @@
 #include <dm.h>
 #include <efi_loader.h>
 #include <errno.h>
-#include <libfdt.h>
-#include <libfdt_env.h>
+#include <linux/libfdt.h>
+#include <linux/libfdt_env.h>
 #include <memalign.h>
 #include <asm/global_data.h>
 #include <asm-generic/sections.h>

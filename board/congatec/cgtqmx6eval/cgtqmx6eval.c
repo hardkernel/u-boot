@@ -766,7 +766,7 @@ int board_late_init(void)
 #ifdef CONFIG_SPL_BUILD
 #include <asm/arch/mx6-ddr.h>
 #include <spl.h>
-#include <libfdt.h>
+#include <linux/libfdt.h>
 #include <spi_flash.h>
 #include <spi.h>
 

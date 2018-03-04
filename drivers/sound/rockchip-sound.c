@@ -7,7 +7,7 @@
 #include <malloc.h>
 #include <common.h>
 #include <asm/io.h>
-#include <libfdt.h>
+#include <linux/libfdt.h>
 #include <fdtdec.h>
 #include <i2s.h>
 #include <sound.h>
