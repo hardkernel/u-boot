@@ -11,6 +11,7 @@
 #include <fdtdec.h>
 #include <fdt_support.h>
 #include <syscon.h>
+#include <linux/libfdt.h>
 
 #include "../gadget/dwc2_udc_otg_priv.h"
 

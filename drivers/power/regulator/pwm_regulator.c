@@ -13,6 +13,9 @@
 #include <errno.h>
 #include <pwm.h>
 #include <power/regulator.h>
+#include <linux/libfdt.h>
+#include <fdt_support.h>
+#include <fdtdec.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
