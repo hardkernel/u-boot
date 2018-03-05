@@ -21,6 +21,7 @@
 #include <common.h>
 #include <asm/arch/io.h>
 #include <asm/cpu_id.h>
+#include <asm/arch/cpu.h>
 
 /* Local Headers */
 #include <amlogic/vmode.h>
@@ -274,7 +275,7 @@ static void osd_check_scan_mode(void)
 	vmode = vout_get_current_vmode();
 #endif
 	switch (vmode) {
-	case VMODE_LCD:
+	/* case VMODE_LCD:*/
 	case VMODE_480I:
 	case VMODE_480CVBS:
 	case VMODE_576I:
@@ -360,7 +361,7 @@ int osd_set_scan_mode(u32 index)
 	osd_hw.scan_mode = SCAN_MODE_PROGRESSIVE;
 	osd_hw.scale_workaround = 0;
 	switch (vmode) {
-	case VMODE_LCD:
+	/* case VMODE_LCD: */
 	case VMODE_480I:
 	case VMODE_480CVBS:
 	case VMODE_576I:
@@ -609,6 +610,102 @@ static u32 line_stride_calc(
 	return line_stride;
 }
 
+#ifdef CONFIG_AML_MESON_G12A
+/* only one layer */
+static void osd_setting_default_hwc(u32 index, struct pandata_s *disp_data)
+{
+	u32 width, height;
+	u32 blend2_premult_en = 0, din_premult_en = 0;
+	u32 blend_din_en = 0x1;
+	/* blend_din0 input to blend0 */
+	u32 din0_byp_blend = 1;
+	/* blend1_dout to blend2 */
+	u32 din2_osd_sel = 0;
+	/* blend1_din3 input to blend1 */
+	u32 din3_osd_sel = 0;
+	u32 din_reoder_sel = 0x1;
+	u32 postbld_src3_sel = 3, postbld_src4_sel = 0;
+	u32 postbld_osd1_premult = 0, postbld_osd2_premult = 0;
+	u32 reg_offset = 2;
+
+	if (index == OSD1)
+		din_reoder_sel = 1;
+	else if (index == OSD2)
+		din_reoder_sel = 2;
+	/* depend on din0_premult_en */
+	postbld_osd1_premult = 0;
+	/* depend on din_premult_en bit 4 */
+	postbld_osd2_premult = 0;
+	/* osd blend ctrl */
+	osd_reg_write(VIU_OSD_BLEND_CTRL,
+		4				  << 29|
+		blend2_premult_en << 27|
+		din0_byp_blend	  << 26|
+		din2_osd_sel	  << 25|
+		din3_osd_sel	  << 24|
+		blend_din_en	  << 20|
+		din_premult_en	  << 16|
+		din_reoder_sel);
+	/* vpp osd1 blend ctrl */
+	osd_reg_write(OSD1_BLEND_SRC_CTRL,
+		(0 & 0xf) << 0 |
+		(0 & 0x1) << 4 |
+		(postbld_src3_sel & 0xf) << 8 |
+		(postbld_osd1_premult & 0x1) << 16|
+		(1 & 0x1) << 20);
+	/* vpp osd2 blend ctrl */
+	osd_reg_write(OSD2_BLEND_SRC_CTRL,
+		(0 & 0xf) << 0 |
+		(0 & 0x1) << 4 |
+		(postbld_src4_sel & 0xf) << 8 |
+		(postbld_osd2_premult & 0x1) << 16 |
+		(1 & 0x1) << 20);
+
+	/* Do later: different format select different dummy_data */
+	/* used default dummy data */
+	osd_reg_write(VIU_OSD_BLEND_DUMMY_DATA0,
+		0x0 << 16 |
+		0x0 << 8 |
+		0x0);
+	/* used default dummy alpha data */
+	osd_reg_write(VIU_OSD_BLEND_DUMMY_ALPHA,
+		0x0  << 20 |
+		0x0  << 11 |
+		0x0);
+
+	width = disp_data->x_end - disp_data->x_start + 1;
+	height = disp_data->y_end - disp_data->y_start + 1;
+
+	/* it is setting for osdx */
+	osd_reg_write(
+		VIU_OSD_BLEND_DIN0_SCOPE_H + reg_offset * index,
+		disp_data->x_end << 16 |
+		disp_data->x_start);
+	osd_reg_write(
+		VIU_OSD_BLEND_DIN0_SCOPE_V + reg_offset * index,
+		disp_data->y_end << 16 |
+		disp_data->y_start);
+	osd_reg_write(VIU_OSD_BLEND_BLEND0_SIZE,
+		height << 16 |
+		width);
+	osd_reg_write(VIU_OSD_BLEND_BLEND1_SIZE,
+		height  << 16 |
+		width);
+	osd_reg_set_bits(DOLBY_PATH_CTRL,
+		0x3, 2, 2);
+
+	osd_reg_write(VPP_OSD1_IN_SIZE,
+		height << 16 | width);
+
+	/* setting blend scope */
+	osd_reg_write(VPP_OSD1_BLD_H_SCOPE,
+		disp_data->x_start << 16 | disp_data->x_end);
+	osd_reg_write(VPP_OSD1_BLD_V_SCOPE,
+		disp_data->y_start << 16 | disp_data->y_end);
+	osd_reg_write(VPP_POSTBLEND_H_SIZE,
+		height << 16 | width);
+}
+#endif
 
 void osd_setup_hw(u32 index,
 		  u32 xoffset,
@@ -730,6 +827,10 @@ void osd_setup_hw(u32 index,
 	if (update_geometry)
 		add_to_update_list(index, DISP_GEOMETRY);
 	add_to_update_list(index, DISP_OSD_REVERSE);
+#ifdef CONFIG_AML_MESON_G12A
+	if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_G12A)
+		osd_setting_default_hwc(index, &disp_data);
+#endif
 	osd_wait_vsync_hw();
 }
 
@@ -996,7 +1097,7 @@ void osd_get_window_axis_hw(u32 index, s32 *x0, s32 *y0, s32 *x1, s32 *y1)
 	vmode = vout_get_current_vmode();
 #endif
 	switch (vmode) {
-	case VMODE_LCD:
+	/*case VMODE_LCD:*/
 	case VMODE_480I:
 	case VMODE_480CVBS:
 	case VMODE_576I:
@@ -1021,11 +1122,12 @@ void osd_get_window_axis_hw(u32 index, s32 *x0, s32 *y0, s32 *x1, s32 *y1)
 void osd_set_window_axis_hw(u32 index, s32 x0, s32 y0, s32 x1, s32 y1)
 {
 	int vmode = -1;
+
 #ifdef CONFIG_AML_VOUT
 	vmode = vout_get_current_vmode();
 #endif
 	switch (vmode) {
-	case VMODE_LCD:
+	/* case VMODE_LCD: */
 	case VMODE_480I:
 	case VMODE_480CVBS:
 	case VMODE_576I:
@@ -1726,15 +1828,17 @@ static void osd1_update_enable(void)
 
 	if (osd_hw.free_scale_mode[OSD1]) {
 		if (osd_hw.enable[OSD1] == ENABLE) {
+			if (get_cpu_id().family_id != MESON_CPU_MAJOR_ID_G12A)
 			VSYNCOSD_SET_MPEG_REG_MASK(VPP_MISC,
 						   VPP_OSD1_POSTBLEND | VPP_POSTBLEND_EN);
 			VSYNCOSD_SET_MPEG_REG_MASK(VIU_OSD1_CTRL_STAT, 1 << 21);
 		} else {
 			VSYNCOSD_CLR_MPEG_REG_MASK(VIU_OSD1_CTRL_STAT, 1 << 21);
+			if (get_cpu_id().family_id != MESON_CPU_MAJOR_ID_G12A)
 			VSYNCOSD_CLR_MPEG_REG_MASK(VPP_MISC,
 						   VPP_OSD1_POSTBLEND);
 		}
-	} else {
+	} else if (get_cpu_id().family_id != MESON_CPU_MAJOR_ID_G12A){
 		video_enable |= VSYNCOSD_RD_MPEG_REG(VPP_MISC)&VPP_VD1_PREBLEND;
 		if (osd_hw.enable[OSD1] == ENABLE) {
 			if (osd_hw.free_scale_enable[OSD1]) {
@@ -1772,6 +1876,7 @@ static void osd2_update_enable(void)
 	if (osd_hw.free_scale_mode[OSD2]) {
 		if (osd_hw.enable[OSD2] == ENABLE) {
 			if (osd_hw.free_scale_enable[OSD2]) {
+				if (get_cpu_id().family_id != MESON_CPU_MAJOR_ID_G12A)
 				VSYNCOSD_SET_MPEG_REG_MASK(VPP_MISC,
 							   VPP_OSD1_POSTBLEND
 							   | VPP_POSTBLEND_EN);
@@ -1786,6 +1891,7 @@ static void osd2_update_enable(void)
 						VPP_OSD1_POSTBLEND);
 				*/
 #endif
+				if (get_cpu_id().family_id != MESON_CPU_MAJOR_ID_G12A)
 				VSYNCOSD_SET_MPEG_REG_MASK(VPP_MISC,
 							   VPP_OSD2_POSTBLEND
 							   | VPP_POSTBLEND_EN);
@@ -1799,7 +1905,7 @@ static void osd2_update_enable(void)
 							   VPP_OSD1_POSTBLEND
 							   | VPP_OSD2_POSTBLEND);
 		}
-	} else {
+	} else if (get_cpu_id().family_id != MESON_CPU_MAJOR_ID_G12A){
 		video_enable |= VSYNCOSD_RD_MPEG_REG(VPP_MISC)&VPP_VD1_PREBLEND;
 		if (osd_hw.enable[OSD2] == ENABLE) {
 			if (osd_hw.free_scale_enable[OSD2]) {
@@ -2361,6 +2467,15 @@ void osd_init_hw(void)
 
 	/* here we will init default value ,these value only set once . */
 	if (!logo_loaded) {
+		/* init vpu fifo control register */
+		data32 = osd_reg_read(VPP_OFIFO_SIZE);
+		osd_logi("VPP_OFIFO_SIZE:0x%x\n", data32);
+		if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_G12A) {
+			data32 = 0xfff << 20;
+			data32 |= (0xfff + 1);
+			osd_reg_write(VPP_OFIFO_SIZE, data32);
+		}
+
 		/* init osd fifo control register */
 		/* set DDR request priority to be urgent */
 		data32 = 1;
@@ -2371,7 +2486,11 @@ void osd_init_hw(void)
 			data32 |= 4 << 5;  /* hold_fifo_lines */
 		}
 		/* burst_len_sel: 3=64 */
-		data32 |= 3  << 10;
+		if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_G12A) {
+			data32 |= 1 << 10;
+			data32 |= 1 << 31;
+		} else
+			data32 |= 3  << 10;
 
 		if (get_cpu_id().family_id >= MESON_CPU_MAJOR_ID_GXBB) {
 			/*
@@ -2397,8 +2516,9 @@ void osd_init_hw(void)
 		osd_reg_write(VIU_OSD2_FIFO_CTRL_STAT, data2);
 		osd_reg_set_mask(VPP_MISC, VPP_POSTBLEND_EN);
 		osd_reg_clr_mask(VPP_MISC, VPP_PREBLEND_EN);
-		osd_reg_clr_mask(VPP_MISC,
-				 VPP_OSD1_POSTBLEND | VPP_OSD2_POSTBLEND | VPP_VD1_POSTBLEND);
+		if (get_cpu_id().family_id != MESON_CPU_MAJOR_ID_G12A)
+			osd_reg_clr_mask(VPP_MISC,
+				VPP_OSD1_POSTBLEND | VPP_OSD2_POSTBLEND | VPP_VD1_POSTBLEND);
 		/* just disable osd to avoid booting hang up */
 		if ((get_cpu_id().family_id == MESON_CPU_MAJOR_ID_M6TV)
 		    || (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_MTVD)) {
@@ -2410,7 +2530,8 @@ void osd_init_hw(void)
 		osd_reg_write(VIU_OSD1_CTRL_STAT , data32);
 		osd_reg_write(VIU_OSD2_CTRL_STAT , data32);
 	}
-	osd_reg_clr_mask(VPP_MISC, VPP_POST_FG_OSD2 | VPP_PRE_FG_OSD2);
+	if (get_cpu_id().family_id != MESON_CPU_MAJOR_ID_G12A)
+		osd_reg_clr_mask(VPP_MISC, VPP_POST_FG_OSD2 | VPP_PRE_FG_OSD2);
 	osd_hw.order = OSD_ORDER_01;
 	osd_hw.enable[OSD2] = osd_hw.enable[OSD1] = DISABLE;
 	osd_hw.fb_gem[OSD1].canvas_idx = OSD1_CANVAS_INDEX;

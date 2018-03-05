@@ -20,6 +20,8 @@
 #include <common.h>
 #include <malloc.h>
 #include <asm/arch/io.h>
+#include <asm/cpu_id.h>
+#include <asm/arch/cpu.h>
 
 /* Local Headers */
 #ifdef CONFIG_AML_CANVAS
@@ -114,6 +116,57 @@ static void osd_debug_dump_register_all(void)
 	osd_logi("reg[0x%x]: 0x%08x\n", reg, osd_reg_read(reg));
 	reg = VPP_HOLD_LINES;
 	osd_logi("reg[0x%x]: 0x%08x\n", reg, osd_reg_read(reg));
+	if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_G12A) {
+#ifdef CONFIG_AML_MESON_G12A
+		reg = OSD_PATH_MISC_CTRL;
+		osd_logi("reg[0x%x]: 0x%08x\n", reg, osd_reg_read(reg));
+		reg = VIU_OSD_BLEND_CTRL;
+		osd_logi("reg[0x%x]: 0x%08x\n", reg, osd_reg_read(reg));
+		reg = VIU_OSD_BLEND_DIN0_SCOPE_H;
+		osd_logi("reg[0x%x]: 0x%08x\n", reg, osd_reg_read(reg));
+		reg = VIU_OSD_BLEND_DIN0_SCOPE_V;
+		osd_logi("reg[0x%x]: 0x%08x\n", reg, osd_reg_read(reg));
+		reg = VIU_OSD_BLEND_DIN1_SCOPE_H;
+		osd_logi("reg[0x%x]: 0x%08x\n", reg, osd_reg_read(reg));
+		reg = VIU_OSD_BLEND_DIN1_SCOPE_V;
+		osd_logi("reg[0x%x]: 0x%08x\n", reg, osd_reg_read(reg));
+		reg = VIU_OSD_BLEND_DIN2_SCOPE_H;
+		osd_logi("reg[0x%x]: 0x%08x\n", reg, osd_reg_read(reg));
+		reg = VIU_OSD_BLEND_DIN2_SCOPE_V;
+		osd_logi("reg[0x%x]: 0x%08x\n", reg, osd_reg_read(reg));
+		reg = VIU_OSD_BLEND_DIN3_SCOPE_H;
+		osd_logi("reg[0x%x]: 0x%08x\n", reg, osd_reg_read(reg));
+		reg = VIU_OSD_BLEND_DIN3_SCOPE_V;
+		osd_logi("reg[0x%x]: 0x%08x\n", reg, osd_reg_read(reg));
+		reg = VIU_OSD_BLEND_DUMMY_DATA0;
+		osd_logi("reg[0x%x]: 0x%08x\n", reg, osd_reg_read(reg));
+		reg = VIU_OSD_BLEND_DUMMY_ALPHA;
+		osd_logi("reg[0x%x]: 0x%08x\n", reg, osd_reg_read(reg));
+		reg = VIU_OSD_BLEND_BLEND0_SIZE;
+		osd_logi("reg[0x%x]: 0x%08x\n", reg, osd_reg_read(reg));
+		reg = VIU_OSD_BLEND_BLEND1_SIZE;
+		osd_logi("reg[0x%x]: 0x%08x\n", reg, osd_reg_read(reg));
+
+		reg = VPP_OSD1_IN_SIZE;
+		osd_logi("reg[0x%x]: 0x%08x\n", reg, osd_reg_read(reg));
+		reg = VPP_OSD1_BLD_H_SCOPE;
+		osd_logi("reg[0x%x]: 0x%08x\n", reg, osd_reg_read(reg));
+		reg = VPP_OSD1_BLD_V_SCOPE;
+		osd_logi("reg[0x%x]: 0x%08x\n", reg, osd_reg_read(reg));
+		reg = VPP_OSD2_BLD_H_SCOPE;
+		osd_logi("reg[0x%x]: 0x%08x\n", reg, osd_reg_read(reg));
+		reg = VPP_OSD2_BLD_V_SCOPE;
+		osd_logi("reg[0x%x]: 0x%08x\n", reg, osd_reg_read(reg));
+		reg = OSD1_BLEND_SRC_CTRL;
+		osd_logi("reg[0x%x]: 0x%08x\n", reg, osd_reg_read(reg));
+		reg = OSD2_BLEND_SRC_CTRL;
+		osd_logi("reg[0x%x]: 0x%08x\n", reg, osd_reg_read(reg));
+		reg = VPP_POSTBLEND_H_SIZE;
+		osd_logi("reg[0x%x]: 0x%08x\n", reg, osd_reg_read(reg));
+		reg = VPP_OUT_H_V_SIZE;
+		osd_logi("reg[0x%x]: 0x%08x\n", reg, osd_reg_read(reg));
+#endif
+	}
 	reg = VPP_OSD_SC_CTRL0;
 	osd_logi("reg[0x%x]: 0x%08x\n", reg, osd_reg_read(reg));
 	reg = VPP_OSD_SCI_WH_M1;
@@ -124,7 +177,6 @@ static void osd_debug_dump_register_all(void)
 	osd_logi("reg[0x%x]: 0x%08x\n\n", reg, osd_reg_read(reg));
 	reg = VPP_POSTBLEND_H_SIZE;
 	osd_logi("reg[0x%x]: 0x%08x\n\n", reg, osd_reg_read(reg));
-
 	for (index = 0; index < 2; index++) {
 		if (index == 1)
 			offset = REG_OFFSET;
@@ -190,22 +242,38 @@ static void osd_test_dummydata(void)
 	dummy_data = osd_reg_read(VPP_DUMMY_DATA1);
 	osd_reset();
 	osd_logi("--- OSD TEST DUMMYDATA ---\n");
-#ifdef CONFIG_AML_MESON_GXTVBB
-	osd_reg_write(VPP_DUMMY_DATA1, 0xFF0000); /* R */
-	msleep(OSD_TEST_DURATION);
-	osd_reg_write(VPP_DUMMY_DATA1, 0xFF00); /* G */
-	msleep(OSD_TEST_DURATION);
-	osd_reg_write(VPP_DUMMY_DATA1, 0xFF); /* B */
-	msleep(OSD_TEST_DURATION);
-#else
-	osd_reg_write(VPP_DUMMY_DATA1, 0xFF);
-	msleep(OSD_TEST_DURATION);
-	osd_reg_write(VPP_DUMMY_DATA1, 0);
-	msleep(OSD_TEST_DURATION);
-	osd_reg_write(VPP_DUMMY_DATA1, 0xFF00);
-	msleep(OSD_TEST_DURATION);
+	if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_G12A) {
+#ifdef CONFIG_AML_MESON_G12A
+		osd_reg_write(VPP_POST_BLEND_BLEND_DUMMY_DATA, 0xff);
+		msleep(OSD_TEST_DURATION);
+		osd_reg_write(VPP_POST_BLEND_BLEND_DUMMY_DATA, 0xff00);
+		msleep(OSD_TEST_DURATION);
+		osd_reg_write(VPP_POST_BLEND_BLEND_DUMMY_DATA, 0xff0000);
+		msleep(OSD_TEST_DURATION);
+		osd_reg_write(VPP_POST_BLEND_BLEND_DUMMY_DATA, dummy_data);
+		msleep(OSD_TEST_DURATION);
 #endif
-	osd_reg_write(VPP_DUMMY_DATA1, dummy_data);
+	} else if (get_cpu_id().family_id ==
+		MESON_CPU_MAJOR_ID_GXTVBB) {
+		osd_reg_write(VPP_DUMMY_DATA1, 0xFF0000); /* R */
+		msleep(OSD_TEST_DURATION);
+		osd_reg_write(VPP_DUMMY_DATA1, 0xFF00); /* G */
+		msleep(OSD_TEST_DURATION);
+		osd_reg_write(VPP_DUMMY_DATA1, 0xFF); /* B */
+		msleep(OSD_TEST_DURATION);
+		osd_reg_write(VPP_DUMMY_DATA1, dummy_data);
+		msleep(OSD_TEST_DURATION);
+
+	} else {
+		osd_reg_write(VPP_DUMMY_DATA1, 0xFF);
+		msleep(OSD_TEST_DURATION);
+		osd_reg_write(VPP_DUMMY_DATA1, 0);
+		msleep(OSD_TEST_DURATION);
+		osd_reg_write(VPP_DUMMY_DATA1, 0xFF00);
+		msleep(OSD_TEST_DURATION);
+		osd_reg_write(VPP_DUMMY_DATA1, dummy_data);
+		msleep(OSD_TEST_DURATION);
+	}
 }
 
 static void osd_debug_auto_test(void)

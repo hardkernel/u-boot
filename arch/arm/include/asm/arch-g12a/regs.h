@@ -19105,6 +19105,42 @@
 #define P_DI_CHAN2_FMT_W                           (volatile unsigned int *)((0x17b9  << 2) + 0xff900000)
 //
 #define DOLBY_PATH_CTRL                            0x1a0c
+#define OSD_PATH_MISC_CTRL                         0x1a0e
+#define MALI_AFBCD_TOP_CTRL                        0x1a0f
+
+#define VPP_VD2_HDR_IN_SIZE                        0x1df0
+#define VPP_OSD1_IN_SIZE                           0x1df1
+#define VPP_GCLK_CTRL2                             0x1df2
+#define VD2_PPS_DUMMY_DATA                         0x1df4
+#define VPP_OSD1_BLD_H_SCOPE                       0x1df5
+#define VPP_OSD1_BLD_V_SCOPE                       0x1df6
+#define VPP_OSD2_BLD_H_SCOPE                       0x1df7
+#define VPP_OSD2_BLD_V_SCOPE                       0x1df8
+#define VPP_WRBAK_CTRL                             0x1df9
+#define VPP_SLEEP_CTRL                             0x1dfa
+#define VD1_BLEND_SRC_CTRL                         0x1dfb
+#define VD2_BLEND_SRC_CTRL                         0x1dfc
+#define OSD1_BLEND_SRC_CTRL                        0x1dfd
+#define OSD2_BLEND_SRC_CTRL                        0x1dfe
+
+#define VIU_OSD_BLEND_CTRL                         0x39b0
+#define VIU_OSD_BLEND_CTRL1                        0x39c0
+#define VIU_OSD_BLEND_DIN0_SCOPE_H                 0x39b1
+#define VIU_OSD_BLEND_DIN0_SCOPE_V                 0x39b2
+#define VIU_OSD_BLEND_DIN1_SCOPE_H                 0x39b3
+#define VIU_OSD_BLEND_DIN1_SCOPE_V                 0x39b4
+#define VIU_OSD_BLEND_DIN2_SCOPE_H                 0x39b5
+#define VIU_OSD_BLEND_DIN2_SCOPE_V                 0x39b6
+#define VIU_OSD_BLEND_DIN3_SCOPE_H                 0x39b7
+#define VIU_OSD_BLEND_DIN3_SCOPE_V                 0x39b8
+#define VIU_OSD_BLEND_DUMMY_DATA0                  0x39b9
+#define VIU_OSD_BLEND_DUMMY_ALPHA                  0x39ba
+#define VIU_OSD_BLEND_BLEND0_SIZE                  0x39bb
+#define VIU_OSD_BLEND_BLEND1_SIZE                  0x39bc
+#define VIU_OSD_BLEND_RO_CURRENT_XY                0x39bf
+#define VPP_POST_BLEND_BLEND_DUMMY_DATA            0x3968
+#define VPP_POST_BLEND_DUMMY_ALPHA                 0x3969
+
 
 #define VPP_POST2_MATRIX_COEF00_01                 0x39a0
 #define VPP_POST2_MATRIX_COEF02_10                 0x39a1
