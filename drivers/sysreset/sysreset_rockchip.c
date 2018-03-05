@@ -10,14 +10,12 @@
 #include <sysreset.h>
 #include <asm/io.h>
 #include <asm/arch/clock.h>
-#include <asm/arch/cru_rk3328.h>
-#include <asm/arch/hardware.h>
 #include <linux/err.h>
 
 int rockchip_sysreset_request(struct udevice *dev, enum sysreset_t type)
 {
 	struct sysreset_reg *offset = dev_get_priv(dev);
-	unsigned long cru_base = (unsigned long)rockchip_get_cru();
+	unsigned long cru_base = (unsigned long)dev_read_addr_ptr(dev->parent);
 
 	if (IS_ERR_VALUE(cru_base))
 		return (int)cru_base;
