@@ -317,6 +317,25 @@ int fs_set_blk_dev_with_part(struct blk_desc *desc, int part)
 	return -1;
 }
 
+int fs_get_fstype(const char **fstype_name)
+{
+	struct fstype_info *info;
+
+	if (fstype_name == NULL) {
+		printf("** parameter error **\n");
+		return -1;
+	}
+
+	info = fs_get_info(fs_type);
+	if (info->fstype == FS_TYPE_ANY) {
+		printf("** not match any filesystem type **\n");
+		return -1;
+	}
+
+	*fstype_name = info->name;
+	return 0;
+}
+
 static void fs_close(void)
 {
 	struct fstype_info *info = fs_get_info(fs_type);

@@ -27,6 +27,15 @@
 int fs_set_blk_dev(const char *ifname, const char *dev_part_str, int fstype);
 
 /*
+ * fs_get_fstype - Get filesystem type on the partition previously
+ * set by fs_set_blk_dev()
+ *
+ * @fstype_name: The return the name of filesystem type
+ * @return 0 if ok with valid *fstype_name, -1 on error conditions
+ */
+int fs_get_fstype(const char **fstype_name);
+
+/*
  * fs_set_blk_dev_with_part - Set current block device + partition
  *
  * Similar to fs_set_blk_dev(), but useful for cases where you already
