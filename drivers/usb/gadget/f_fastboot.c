@@ -52,6 +52,9 @@
 
 #define EP_BUFFER_SIZE			4096
 #define SLEEP_COUNT 20000
+#define MAX_PART_NUM_STR_SIZE 4
+#define PARTITION_TYPE_STRINGS "partition-type"
+
 /*
  * EP_BUFFER_SIZE must always be an integral multiple of maxpacket size
  * (64 or 512 or 1024), else we break on certain controllers like DWC3
@@ -197,6 +200,22 @@ static void busy_indicator(void)
 	}
 	if (state++ == 8)
 		state = 0;
+}
+
+static int fb_get_fstype(const char *ifname, const int part_num,
+			 const char **fs_type)
+{
+	char part_num_str[MAX_PART_NUM_STR_SIZE] = {0};
+
+	snprintf(part_num_str, ARRAY_SIZE(part_num_str), ":%x", part_num);
+
+	if (fs_set_blk_dev(ifname, part_num_str, FS_TYPE_ANY))
+		return -1;
+
+	if (fs_get_fstype(fs_type))
+		return -1;
+
+	return 0;
 }
 
 static int sleep_thread(void)
@@ -474,15 +493,823 @@ static int strcmp_l1(const char *s1, const char *s2)
 	return strncmp(s1, s2, strlen(s1));
 }
 
+struct name_string {
+	const char *str;
+	int expects_args;
+	char delim;
+};
+
+#define NAME_NO_ARGS(s)	{.str = s, .expects_args = 0}
+#define NAME_ARGS(s, d)	{.str = s, .expects_args = 1, .delim = d}
+
+static size_t name_check_match(const char *str, size_t len,
+			       const struct name_string *name)
+{
+	size_t str_len = strlen(name->str);
+
+	/* If name len is greater than input, return 0. */
+	if (str_len > len)
+		return 0;
+
+	/* If name str does not match input string, return 0. */
+	if (memcmp(name->str, str, str_len))
+		return 0;
+
+	if (name->expects_args) {
+		/* string should have space for delim */
+		if (len == str_len)
+			return 0;
+
+		/* Check delim match */
+		if (name->delim != str[str_len])
+			return 0;
+	} else {
+		/* Name str len should match input len */
+		if (str_len != len)
+			return 0;
+	}
+
+	return str_len + name->expects_args;
+}
+
+static void fb_add_string(char *dst, size_t chars_left,
+			  const char *str, const char *args)
+{
+	if (!str)
+		return;
+
+	int ret = snprintf(dst, chars_left, str, args);
+
+	if (ret < 0)
+		pr_err("snprintf is error!");
+}
+
+static void fb_add_number(char *dst, size_t chars_left,
+			  const char *format, size_t num)
+{
+	if (!format)
+		return;
+
+	int ret = snprintf(dst, chars_left, format, num);
+
+	if (ret > chars_left)
+		pr_err("snprintf is error!");
+}
+
+static int fb_read_var(char *cmd, char *response,
+		       fb_getvar_t var, size_t chars_left)
+{
+	const char *s;
+	int ret = 0;
+
+	switch (var) {
+	case FB_VERSION:
+		fb_add_string(response, chars_left, FASTBOOT_VERSION, NULL);
+		break;
+	case FB_BOOTLOADER_VERSION:
+		fb_add_string(response, chars_left, U_BOOT_VERSION, NULL);
+		break;
+	case FB_BASEBAND_VERSION:
+		fb_add_string(response, chars_left, "N/A", NULL);
+		break;
+	case FB_PRODUCT:
+		fb_add_string(response, chars_left, CONFIG_SYS_BOARD, NULL);
+		break;
+	case FB_SERIAL_NO:
+		s = env_get("serial#");
+		if (s)
+			fb_add_string(response, chars_left, s, NULL);
+		else
+			ret = -1;
+		break;
+	case FB_SECURE:
+		fb_add_string(response, chars_left, "yes", NULL);
+		break;
+	case FB_VARIANT:
+		fb_add_string(response, chars_left, "userdebug", NULL);
+		break;
+	case FB_DWNLD_SIZE:
+		fb_add_number(response, chars_left, "0x%08x",
+			      CONFIG_FASTBOOT_BUF_SIZE);
+		break;
+	case FB_PART_SIZE:
+	case FB_PART_TYPE: {
+		char *part_name = cmd;
+
+		cmd = strsep(&part_name, ":");
+		if (!cmd || !part_name) {
+			fb_add_string(response, chars_left,
+				      "argument Invalid!", NULL);
+			ret = -1;
+			break;
+		}
+
+#ifdef CONFIG_FASTBOOT_FLASH_MMC_DEV
+		disk_partition_t part_info;
+		struct blk_desc *dev_desc;
+		int part_num = -1;
+		const char *fs_type = NULL;
+
+#ifdef CONFIG_RKIMG_BOOTLOADER
+		dev_desc = rockchip_get_bootdev();
+#else
+		dev_desc = NULL;
+#endif
+		if (!dev_desc) {
+			fb_add_string(response, chars_left,
+				      "block device not found", NULL);
+			ret = -1;
+			break;
+		}
+
+		part_num = part_get_info_by_name(dev_desc, part_name,
+						 &part_info);
+		if (part_num < 0) {
+			fb_add_string(response, chars_left,
+				      "partition not found", NULL);
+			ret = -1;
+		} else if (!strncmp(PARTITION_TYPE_STRINGS, cmd,
+					strlen(PARTITION_TYPE_STRINGS))) {
+			if (fb_get_fstype("mmc", part_num, &fs_type)) {
+				fb_add_string(response, chars_left,
+					      (char *)part_info.type, NULL);
+			} else {
+				fb_add_string(response, chars_left,
+					      fs_type, NULL);
+			}
+		} else if (!strncmp("partition-size", cmd, 14)) {
+			u64 part_size;
+
+			part_size = (uint64_t)part_info.size;
+			snprintf(response, chars_left, "0x%llx",
+				 part_size * dev_desc->blksz);
+		}
+#else
+		fb_add_string(response, chars_left, "not implemented", NULL);
+		ret = -1;
+#endif
+		break;
+	}
+	case FB_BLK_SIZE: {
+#ifdef CONFIG_FASTBOOT_FLASH_MMC_DEV
+		struct blk_desc *dev_desc;
+
+#ifdef CONFIG_RKIMG_BOOTLOADER
+		dev_desc = rockchip_get_bootdev();
+#else
+		dev_desc = NULL;
+#endif
+		if (!dev_desc) {
+			fb_add_string(response, chars_left,
+				      "block device not found", NULL);
+			ret = -1;
+		} else {
+			fb_add_number(response, chars_left,
+				      "0x%lx", dev_desc->blksz);
+		}
+#else
+		fb_add_string(response, chars_left, "not implemented", NULL);
+		ret = -1;
+#endif
+		break;
+	}
+	case FB_ERASE_SIZE: {
+#ifdef CONFIG_FASTBOOT_FLASH_MMC_DEV
+		lbaint_t erase_grp_size;
+
+		erase_grp_size = fb_mmc_get_erase_grp_size();
+		if (erase_grp_size < 0) {
+			fb_add_string(response, chars_left,
+				      "block device not found", NULL);
+			ret = -1;
+		} else {
+			fb_add_number(response, chars_left, "0x"LBAF"",
+				      erase_grp_size);
+		}
+#else
+		fb_add_string(response, chars_left, "not implemented", NULL);
+		ret = -1;
+#endif
+		break;
+	}
+	case FB_UNLOCKED: {
+#ifdef CONFIG_RK_AVB_LIBAVB_USER
+		uint8_t flash_lock_state = 0;
+
+		if (rk_avb_read_flash_lock_state(&flash_lock_state))
+			fb_add_string(response, chars_left, "yes", NULL);
+		else
+			fb_add_string(response, chars_left, "no", NULL);
+#else
+		fb_add_string(response, chars_left, "not implemented", NULL);
+		ret = -1;
+#endif
+		break;
+	}
+	case  FB_OFF_MODE_CHARGE: {
+		fb_add_string(response, chars_left, "not implemented", NULL);
+		break;
+	}
+	case FB_BATT_VOLTAGE: {
+		fb_add_string(response, chars_left, "not implemented", NULL);
+		break;
+	}
+	case FB_BATT_SOC_OK: {
+		fb_add_string(response, chars_left, "no", NULL);
+		break;
+	}
+#ifdef CONFIG_RK_AVB_LIBAVB_USER
+	case FB_HAS_COUNT: {
+		char slot_count[2];
+		char temp;
+
+		slot_count[1] = '\0';
+		if (rk_avb_read_slot_count(&temp) < 0) {
+			fb_add_number(response, chars_left, "%d", 0);
+			ret = -1;
+			break;
+		}
+		slot_count[0] = temp + 0x30;
+		fb_add_string(response, chars_left, slot_count, NULL);
+		break;
+	}
+	case FB_HAS_SLOT: {
+		char *part_name = cmd;
+		int has_slot = -1;
+
+		cmd = strsep(&part_name, ":");
+		if (!cmd || !part_name) {
+			fb_add_string(response, chars_left,
+				      "argument Invalid!", NULL);
+			ret = -1;
+			break;
+		}
+
+		has_slot = rk_avb_get_part_has_slot_info(part_name);
+		if (has_slot < 0)
+			fb_add_string(response, chars_left, "no", NULL);
+		else
+			fb_add_string(response, chars_left, "yes", NULL);
+		break;
+	}
+	case FB_CURR_SLOT: {
+		char slot_surrent[8] = {0};
+
+		if (!rk_avb_get_current_slot(slot_surrent)) {
+			fb_add_string(response, chars_left,
+				      slot_surrent + 1, NULL);
+		} else {
+			fb_add_string(response, chars_left, "get error", NULL);
+			ret = -1;
+		}
+		break;
+	}
+	case FB_SLOT_SUFFIXES: {
+		char slot_suffixes_temp[4] = {0};
+		char slot_suffixes[9] = {0};
+		int slot_cnt = 0;
+
+		rk_avb_read_slot_suffixes(slot_suffixes_temp);
+		while (slot_suffixes_temp[slot_cnt] != '\0') {
+			slot_suffixes[slot_cnt * 2]
+				= slot_suffixes_temp[slot_cnt];
+			slot_suffixes[slot_cnt * 2 + 1] = ',';
+			slot_cnt++;
+		}
+
+		slot_suffixes[(slot_cnt - 1) * 2 + 1] = '\0';
+		fb_add_string(response, chars_left, slot_suffixes, NULL);
+		break;
+	}
+	case FB_SLOT_SUCCESSFUL:{
+		char *slot_name = cmd;
+		AvbABData ab_info;
+
+		cmd = strsep(&slot_name, ":");
+		if (!cmd || !slot_name) {
+			fb_add_string(response, chars_left,
+				      "argument Invalid!", NULL);
+			ret = -1;
+			break;
+		}
+
+		if (rk_avb_get_ab_info(&ab_info) < 0) {
+			fb_add_string(response, chars_left,
+				      "get ab info failed!", NULL);
+			ret = -1;
+			break;
+		}
+
+		if (!strcmp(slot_name, "a")) {
+			if (ab_info.slots[0].successful_boot)
+				fb_add_string(response, chars_left,
+					      "yes", NULL);
+			else
+				fb_add_string(response, chars_left,
+					      "no", NULL);
+		} else if (!strcmp(slot_name, "b")) {
+			if (ab_info.slots[1].successful_boot)
+				fb_add_string(response, chars_left,
+					      "yes", NULL);
+			else
+				fb_add_string(response, chars_left,
+					      "no", NULL);
+		} else {
+			fb_add_string(response, chars_left, "no", NULL);
+		}
+		break;
+	}
+	case FB_SLOT_UNBOOTABLE: {
+		char *slot_name = cmd;
+		AvbABData ab_info;
+
+		cmd = strsep(&slot_name, ":");
+
+		if (!cmd || !slot_name) {
+			fb_add_string(response, chars_left,
+				      "argument Invalid!", NULL);
+			ret = -1;
+			break;
+		}
+
+		if (rk_avb_get_ab_info(&ab_info) < 0) {
+			fb_add_string(response, chars_left,
+				      "get ab info failed!", NULL);
+			ret = -1;
+			break;
+		}
+
+		if (!strcmp(slot_name, "a")) {
+			if (!ab_info.slots[0].successful_boot &&
+			    !ab_info.slots[0].tries_remaining &&
+			    !ab_info.slots[0].priority)
+				fb_add_string(response, chars_left,
+					      "yes", NULL);
+			else
+				fb_add_string(response, chars_left, "no", NULL);
+		} else if (!strcmp(slot_name, "b")) {
+			if (!ab_info.slots[1].successful_boot &&
+			    !ab_info.slots[1].tries_remaining &&
+			    !ab_info.slots[1].priority)
+				fb_add_string(response, chars_left,
+					      "yes", NULL);
+			else
+				fb_add_string(response, chars_left, "no", NULL);
+		} else {
+			fb_add_string(response, chars_left, "no", NULL);
+		}
+		break;
+	}
+	case FB_SLOT_RETRY_COUNT: {
+		char *slot_name = cmd;
+		AvbABData ab_info;
+
+		cmd = strsep(&slot_name, ":");
+		if (!cmd || !slot_name) {
+			fb_add_string(response, chars_left,
+				      "argument Invalid!", NULL);
+			ret = -1;
+			break;
+		}
+
+		if (rk_avb_get_ab_info(&ab_info) < 0) {
+			fb_add_string(response, chars_left,
+				      "get ab info failed!", NULL);
+			ret = -1;
+			break;
+		}
+
+		if (!strcmp(slot_name, "a")) {
+			fb_add_number(response, chars_left,
+				      "%d", ab_info.slots[0].tries_remaining);
+		} else if (!strcmp(slot_name, "b")) {
+			fb_add_number(response, chars_left, "%d",
+				      ab_info.slots[1].tries_remaining);
+
+		} else {
+			strcpy(response, "FAILno");
+		}
+		break;
+	}
+	case FB_AT_VBST: {
+		char vbst[VBOOT_STATE_SIZE] = {0};
+		char *p_vbst;
+
+		strcpy(response, "INFO");
+		rk_avb_get_at_vboot_state(vbst);
+		p_vbst = vbst;
+		do {
+			cmd = strsep(&p_vbst, "\n");
+			if (strlen(cmd) > 0) {
+				memcpy(&response[4], cmd, chars_left);
+				fastboot_tx_write_str(response);
+			}
+		} while (strlen(cmd));
+		break;
+	}
+#endif
+#ifdef CONFIG_OPTEE_CLIENT
+	case FB_AT_DH: {
+		char dhbuf[ATTEST_DH_SIZE];
+		uint32_t dh_len = ATTEST_DH_SIZE;
+		uint32_t res = trusty_attest_dh((uint8_t *)dhbuf, &dh_len);
+
+		if (res) {
+			fb_add_string(response, chars_left, "dh not set", NULL);
+			ret = -1;
+		} else {
+			fb_add_string(response, chars_left, dhbuf, NULL);
+		}
+		break;
+	}
+	case FB_AT_UUID: {
+		char uuid[ATTEST_UUID_SIZE] = {0};
+		uint32_t uuid_len = ATTEST_UUID_SIZE;
+		uint32_t res = trusty_attest_uuid((uint8_t *)uuid, &uuid_len);
+
+		uuid[ATTEST_UUID_SIZE - 1] = 0;
+		if (res) {
+			fb_add_string(response, chars_left, "dh not set", NULL);
+			ret = -1;
+		} else {
+			fb_add_string(response, chars_left, uuid, NULL);
+		}
+		break;
+	}
+#endif
+	default: {
+			char *envstr;
+
+			envstr = malloc(strlen("fastboot.") + strlen(cmd) + 1);
+			if (!envstr) {
+				fb_add_string(response, chars_left,
+					      "malloc error", NULL);
+				ret = -1;
+				break;
+			}
+
+			sprintf(envstr, "fastboot.%s", cmd);
+			s = env_get(envstr);
+			if (s) {
+				strncat(response, s, chars_left);
+			} else {
+				printf("WARNING: unknown variable: %s\n", cmd);
+				fb_add_string(response, chars_left,
+					      "not implemented", NULL);
+			}
+
+			free(envstr);
+			break;
+		}
+	}
+
+	return ret;
+}
+
+static const struct {
+	/*
+	 *any changes to this array require an update to the corresponding
+	 *enum in fastboot.h
+	 */
+	struct name_string name;
+	fb_getvar_t var;
+} getvar_table[] = {
+	{ NAME_NO_ARGS("version"), FB_VERSION},
+	{ NAME_NO_ARGS("version-bootloader"), FB_BOOTLOADER_VERSION},
+	{ NAME_NO_ARGS("version-baseband"), FB_BASEBAND_VERSION},
+	{ NAME_NO_ARGS("product"), FB_PRODUCT},
+	{ NAME_NO_ARGS("serialno"), FB_SERIAL_NO},
+	{ NAME_NO_ARGS("secure"), FB_SECURE},
+	{ NAME_NO_ARGS("max-download-size"), FB_DWNLD_SIZE},
+	{ NAME_NO_ARGS("logical-block-size"), FB_BLK_SIZE},
+	{ NAME_NO_ARGS("erase-block-size"), FB_ERASE_SIZE},
+	{ NAME_ARGS("partition-type", ':'), FB_PART_TYPE},
+	{ NAME_ARGS("partition-size", ':'), FB_PART_SIZE},
+	{ NAME_NO_ARGS("unlocked"), FB_UNLOCKED},
+	{ NAME_NO_ARGS("off-mode-charge"), FB_OFF_MODE_CHARGE},
+	{ NAME_NO_ARGS("battery-voltage"), FB_BATT_VOLTAGE},
+	{ NAME_NO_ARGS("variant"), FB_VARIANT},
+	{ NAME_NO_ARGS("battery-soc-ok"), FB_BATT_SOC_OK},
+#ifdef CONFIG_RK_AVB_LIBAVB_USER
+	/* Slots related */
+	{ NAME_NO_ARGS("slot-count"), FB_HAS_COUNT},
+	{ NAME_ARGS("has-slot", ':'), FB_HAS_SLOT},
+	{ NAME_NO_ARGS("current-slot"), FB_CURR_SLOT},
+	{ NAME_NO_ARGS("slot-suffixes"), FB_SLOT_SUFFIXES},
+	{ NAME_ARGS("slot-successful", ':'), FB_SLOT_SUCCESSFUL},
+	{ NAME_ARGS("slot-unbootable", ':'), FB_SLOT_UNBOOTABLE},
+	{ NAME_ARGS("slot-retry-count", ':'), FB_SLOT_RETRY_COUNT},
+	{ NAME_NO_ARGS("at-vboot-state"), FB_AT_VBST},
+#endif
+	/*
+	 * OEM specific :
+	 * Spec says names starting with lowercase letter are reserved.
+	 */
+#ifdef CONFIG_OPTEE_CLIENT
+	{ NAME_NO_ARGS("at-attest-dh"), FB_AT_DH},
+	{ NAME_NO_ARGS("at-attest-uuid"), FB_AT_UUID},
+#endif
+};
+
+static int fb_getvar_single(char *cmd, char *response, size_t chars_left)
+{
+	int i;
+	size_t match_len = 0;
+	size_t len = strlen(cmd);
+
+	for (i = 0; i < ARRAY_SIZE(getvar_table); i++) {
+		match_len = name_check_match(cmd, len, &getvar_table[i].name);
+		if (match_len)
+			break;
+	}
+
+	if (match_len == 0) {
+		fb_add_string(response, chars_left, "unknown variable", NULL);
+		return -1;
+	}
+
+	if (fb_read_var(cmd, response, getvar_table[i].var, chars_left) < 0)
+		return -1;
+
+	return 0;
+}
+
+static void fb_getvar_all(void)
+{
+	char response[FASTBOOT_RESPONSE_LEN] = {0};
+	char resp_tmp[FASTBOOT_RESPONSE_LEN] = {0};
+	char *actual_resp;
+	size_t chars_left;
+	int i, p;
+	disk_partition_t part_info;
+	struct blk_desc *dev_desc;
+
+	strcpy(response, "INFO");
+	chars_left = sizeof(response) - strlen(response) - 1;
+	actual_resp = response + strlen(response);
+
+	for (i = 0; i < ARRAY_SIZE(getvar_table); i++) {
+		fb_getvar_t var = getvar_table[i].var;
+
+		switch (var) {
+		case FB_PART_TYPE:
+		case FB_PART_SIZE: {
+			const char *fs_type = NULL;
+#ifdef CONFIG_RKIMG_BOOTLOADER
+			dev_desc = rockchip_get_bootdev();
+#else
+			dev_desc = NULL;
+#endif
+			if (!dev_desc) {
+				fb_add_string(actual_resp, chars_left,
+					      "%s:block device not found",
+					      getvar_table[i].name.str);
+				fastboot_tx_write_str(response);
+				break;
+			}
+
+			for (p = 1; p <= MAX_SEARCH_PARTITIONS; p++) {
+				if (part_get_info(dev_desc, p,
+						  &part_info) < 0) {
+					break;
+				}
+
+				if (var == FB_PART_TYPE) {
+					fs_type = NULL;
+					if (fb_get_fstype("mmc", p,
+							  &fs_type)) {
+						fb_add_string(
+							resp_tmp,
+							FASTBOOT_RESPONSE_LEN,
+							(char *)part_info.type,
+							NULL);
+					} else {
+						fb_add_string(
+							resp_tmp,
+							FASTBOOT_RESPONSE_LEN,
+							fs_type,
+							NULL);
+					}
+
+					snprintf(actual_resp,
+						 chars_left,
+						 "%s:%s:%s",
+						 getvar_table[i].name.str,
+						 part_info.name,
+						 resp_tmp);
+				} else {
+					uint64_t part_size;
+
+					part_size = (uint64_t)part_info.size;
+					snprintf(actual_resp,
+						 chars_left,
+						 "%s:%s:0x%llx",
+						 getvar_table[i].name.str,
+						 part_info.name,
+						 part_size * dev_desc->blksz);
+				}
+				fastboot_tx_write_str(response);
+			}
+			break;
+		}
+#ifdef CONFIG_RK_AVB_LIBAVB_USER
+		case FB_HAS_SLOT: {
+			uchar *ptr_name_tmp;
+			char c = '_';
+			int has_slot = -1;
+
+#ifdef CONFIG_RKIMG_BOOTLOADER
+			dev_desc = rockchip_get_bootdev();
+#else
+			dev_desc = NULL;
+#endif
+			if (!dev_desc) {
+				fb_add_string(actual_resp, chars_left,
+					      "%s:block device not found",
+					      getvar_table[i].name.str);
+				fastboot_tx_write_str(response);
+				break;
+			}
+
+			for (p = 1; p <= MAX_SEARCH_PARTITIONS; p++) {
+				if (part_get_info(dev_desc, p,
+						  &part_info) < 0) {
+					break;
+				} else {
+					ptr_name_tmp = (uchar *)strrchr(
+						(char *)part_info.name, c);
+					if (ptr_name_tmp &&
+					    part_info.name[ptr_name_tmp -
+						part_info.name + 2] == '\0')
+						fb_add_string(
+							resp_tmp,
+							ptr_name_tmp -
+							part_info.name + 1,
+							(char *)part_info.name,
+							NULL);
+					else
+						strcpy(resp_tmp,
+						       (char *)part_info.name);
+
+					has_slot = rk_avb_get_part_has_slot_info(
+						resp_tmp);
+					if (has_slot < 0) {
+						snprintf(actual_resp,
+							 chars_left,
+							 "%s:%s:no",
+							 getvar_table[i].name.str,
+							 resp_tmp);
+					} else {
+						snprintf(actual_resp,
+							 chars_left,
+							 "%s:%s:yes",
+							 getvar_table[i].name.str,
+							 resp_tmp);
+						p++;
+					}
+
+					fastboot_tx_write_str(response);
+				}
+			}
+			break;
+		}
+
+		case FB_SLOT_SUCCESSFUL: {
+#ifdef CONFIG_RK_AVB_LIBAVB_USER
+			AvbABData ab_info;
+
+			if (rk_avb_get_ab_info(&ab_info) < 0) {
+				fb_add_string(actual_resp,
+					      chars_left,
+					      "%s:get ab info failed!",
+					      getvar_table[i].name.str);
+				fastboot_tx_write_str(response);
+				break;
+			}
+
+			if (ab_info.slots[0].successful_boot)
+				fb_add_string(actual_resp, chars_left,
+					      "%s:a:yes",
+					      getvar_table[i].name.str);
+			else
+				fb_add_string(actual_resp, chars_left,
+					      "%s:a:no",
+					      getvar_table[i].name.str);
+			fastboot_tx_write_str(response);
+
+			if (ab_info.slots[1].successful_boot)
+				fb_add_string(actual_resp, chars_left,
+					      "%s:b:yes",
+					      getvar_table[i].name.str);
+			else
+				fb_add_string(actual_resp, chars_left,
+					      "%s:b:no",
+					      getvar_table[i].name.str);
+			fastboot_tx_write_str(response);
+#else
+			fb_add_string(actual_resp, chars_left,
+				      "%s:not find ab info!",
+				      getvar_table[i].name.str);
+			fastboot_tx_write_str(response);
+#endif
+			break;
+		}
+
+		case FB_SLOT_UNBOOTABLE: {
+#ifdef CONFIG_RK_AVB_LIBAVB_USER
+			AvbABData ab_info;
+
+			if (rk_avb_get_ab_info(&ab_info) < 0) {
+				fb_add_string(actual_resp, chars_left,
+					      "%s:not find ab info!",
+					      getvar_table[i].name.str);
+				fastboot_tx_write_str(response);
+				break;
+			}
+
+			if (!ab_info.slots[0].successful_boot &&
+			    !ab_info.slots[0].tries_remaining &&
+			    !ab_info.slots[0].priority)
+				fb_add_string(actual_resp, chars_left,
+					      "%s:a:yes",
+					      getvar_table[i].name.str);
+			else
+				fb_add_string(actual_resp, chars_left,
+					      "%s:a:no",
+					      getvar_table[i].name.str);
+			fastboot_tx_write_str(response);
+
+			if (!ab_info.slots[1].successful_boot &&
+			    !ab_info.slots[1].tries_remaining &&
+			    !ab_info.slots[1].priority)
+				fb_add_string(actual_resp, chars_left,
+					      "%s:b:yes",
+					      getvar_table[i].name.str);
+			else
+				fb_add_string(actual_resp, chars_left,
+					      "%s:b:no",
+					      getvar_table[i].name.str);
+
+			fastboot_tx_write_str(response);
+#else
+			fb_add_string(actual_resp, chars_left,
+				      "%s:not find ab info!",
+				      getvar_table[i].name.str);
+			fastboot_tx_write_str(response);
+#endif
+			break;
+		}
+
+		case FB_SLOT_RETRY_COUNT: {
+#ifdef CONFIG_RK_AVB_LIBAVB_USER
+			AvbABData ab_info;
+
+			if (rk_avb_get_ab_info(&ab_info) < 0) {
+				fb_add_string(actual_resp, chars_left,
+					      "%s:not find ab info!",
+					      getvar_table[i].name.str);
+				fastboot_tx_write_str(response);
+				break;
+			}
+
+			snprintf(actual_resp, chars_left, "%s:a:%d",
+				 getvar_table[i].name.str,
+				 ab_info.slots[1].tries_remaining);
+			fastboot_tx_write_str(response);
+			snprintf(actual_resp, chars_left, "%s:b:%d",
+				 getvar_table[i].name.str,
+				 ab_info.slots[1].tries_remaining);
+			fastboot_tx_write_str(response);
+#else
+			fb_add_string(actual_resp, chars_left,
+				      "%s:not find ab info!",
+				      getvar_table[i].name.str);
+			fastboot_tx_write_str(response);
+#endif
+			break;
+		}
+#endif
+#ifdef CONFIG_RK_AVB_LIBAVB_USER
+		case FB_AT_VBST:
+			break;
+#endif
+		default:
+			fb_getvar_single((char *)getvar_table[i].name.str,
+					 resp_tmp, FASTBOOT_RESPONSE_LEN);
+			snprintf(actual_resp, chars_left, "%s:%s",
+				 getvar_table[i].name.str, resp_tmp);
+			fastboot_tx_write_str(response);
+		}
+	}
+}
+
 static void cb_getvar(struct usb_ep *ep, struct usb_request *req)
 {
 	char *cmd = req->buf;
-	char response[FASTBOOT_RESPONSE_LEN];
-	const char *s;
+	char response[FASTBOOT_RESPONSE_LEN] = {0};
+	const char *str_read_all = "all";
+	size_t len = 0;
 	size_t chars_left;
-
-	strcpy(response, "OKAY");
-	chars_left = sizeof(response) - strlen(response) - 1;
 
 	strsep(&cmd, ":");
 	if (!cmd) {
@@ -491,250 +1318,26 @@ static void cb_getvar(struct usb_ep *ep, struct usb_request *req)
 		return;
 	}
 
-	if (!strcmp_l1("version", cmd)) {
-		strncat(response, FASTBOOT_VERSION, chars_left);
-	} else if (!strcmp_l1("bootloader-version", cmd)) {
-		strncat(response, U_BOOT_VERSION, chars_left);
-	} else if (!strcmp_l1("product", cmd)) {
-		strncat(response, CONFIG_SYS_BOARD, chars_left);
-	} else if (!strcmp_l1("variant", cmd)) {
-		strncat(response, "userdebug", chars_left);
-	} else if (!strcmp_l1("secure", cmd)) {
-		strncat(response, "no", chars_left);
-	} else if (!strcmp_l1("unlocked", cmd)) {
-		strncat(response, "yes", chars_left);
-	} else if (!strcmp_l1("off-mode-charge", cmd)) {
-		strncat(response, "0", chars_left);
-	} else if (!strcmp_l1("battery-voltage", cmd)) {
-		strncat(response, "7.4", chars_left);
-	} else if (!strcmp_l1("battery-soc-ok", cmd)) {
-		strncat(response, "yes", chars_left);
-	} else if (!strcmp_l1("downloadsize", cmd) ||
-		!strcmp_l1("max-download-size", cmd)) {
-		char str_num[12];
-
-		sprintf(str_num, "0x%08x", CONFIG_FASTBOOT_BUF_SIZE);
-		strncat(response, str_num, chars_left);
-	} else if (!strcmp_l1("serialno", cmd)) {
-		s = env_get("serial#");
-		if (s)
-			strncat(response, s, chars_left);
-		else
-			strcpy(response, "FAILValue not set");
-	} else if (strncmp("at-attest-dh", cmd, 12) == 0) {
-#ifdef CONFIG_OPTEE_CLIENT
-		char dhbuf[8];
-		uint32_t dh_len = 8;
-		uint32_t res = trusty_attest_dh((uint8_t *)dhbuf, &dh_len);
-		if (res)
-			strcpy(response, "FAILdh not set");
-		else
-			strncat(response, dhbuf, chars_left);
-#else
-		fastboot_tx_write_str("FAILnot implemented");
-		return;
-#endif
-	} else if (strncmp("at-attest-uuid", cmd, 14) == 0) {
-#ifdef CONFIG_OPTEE_CLIENT
-		char uuid[32] = {0};
-		uint32_t uuid_len = 32;
-		uint32_t res = trusty_attest_uuid((uint8_t *)uuid, &uuid_len);
-		if (res)
-			strcpy(response, "FAILuuid not set");
-		else
-			strncat(response, uuid, chars_left);
-#else
-		fastboot_tx_write_str("FAILnot implemented");
-		return;
-#endif
-	} else if (strncmp("at-vboot-state", cmd, 14) == 0) {
-		char uuid[32] = {0};
-
-		strncat(response, uuid, chars_left);
-	} else if (!strcmp_l1("slot-count", cmd)) {
-#ifdef CONFIG_RK_AVB_LIBAVB_USER
-		char slot_count[2];
-		char temp;
-
-		slot_count[1] = '\0';
-		rk_avb_read_slot_count(&temp);
-		slot_count[0] = temp + 0x30;
-		strncat(response, slot_count, chars_left);
-#else
-		fastboot_tx_write_str("FAILnot implemented");
-		return;
-#endif
-	} else if (!strcmp_l1("current-slot", cmd)) {
-#ifdef CONFIG_RK_AVB_LIBAVB_USER
-		char slot_surrent[8] = {0};
-
-		if (!rk_avb_get_current_slot(slot_surrent))
-			strncat(response, slot_surrent+1, chars_left);
-		else
-			strcpy(response, "FAILgeterror");
-#else
-		fastboot_tx_write_str("FAILnot implemented");
-		return;
-#endif
-	} else if (!strcmp_l1("slot-suffixes", cmd)) {
-#ifdef CONFIG_RK_AVB_LIBAVB_USER
-		char slot_suffixes_temp[4];
-		char slot_suffixes[9];
-		int slot_cnt = 0;
-
-		memset(slot_suffixes_temp, 0, 4);
-		memset(slot_suffixes, 0, 9);
-		rk_avb_read_slot_suffixes(slot_suffixes_temp);
-		while (slot_suffixes_temp[slot_cnt] != '\0') {
-			slot_suffixes[slot_cnt * 2]
-				= slot_suffixes_temp[slot_cnt];
-			slot_suffixes[slot_cnt * 2 + 1] = ',';
-			slot_cnt++;
-		}
-		strncat(response, slot_suffixes, chars_left);
-#else
-		fastboot_tx_write_str("FAILnot implemented");
-		return;
-#endif
-	} else if (!strncmp("has-slot", cmd, 8)) {
-#ifdef CONFIG_RK_AVB_LIBAVB_USER
-		char *part_name = cmd;
-
-		cmd = strsep(&part_name, ":");
-		if (!strcmp(part_name, "boot") ||
-		    !strcmp(part_name, "system") ||
-		    !strcmp(part_name, "vendor") ||
-		    !strcmp(part_name, "vbmeta") ||
-		    !strcmp(part_name, "oem")) {
-			strncat(response, "yes", chars_left);
-		} else {
-			strcpy(response, "FAILno");
-		}
-#else
-		fastboot_tx_write_str("FAILnot implemented");
-		return;
-#endif
-	} else if (!strncmp("slot-unbootable", cmd, 15)) {
-#ifdef CONFIG_RK_AVB_LIBAVB_USER
-		char *slot_name = cmd;
-
-		cmd = strsep(&slot_name, ":");
-		if (!strcmp(slot_name, "a") ||
-		    !strcmp(slot_name, "b")) {
-			strncat(response, "no", chars_left);
-		} else {
-			strcpy(response, "FAILno");
-		}
-#else
-		fastboot_tx_write_str("FAILnot implemented");
-		return;
-#endif
-	} else if (!strncmp("slot-successful", cmd, 15)) {
-#ifdef CONFIG_RK_AVB_LIBAVB_USER
-		char *slot_name = cmd;
-
-		cmd = strsep(&slot_name, ":");
-		if (!strcmp(slot_name, "a") ||
-		    !strcmp(slot_name, "b")) {
-			strncat(response, "no", chars_left);
-		} else {
-			strcpy(response, "FAILno");
-		}
-#else
-		fastboot_tx_write_str("FAILnot implemented");
-		return;
-#endif
-	} else if (!strncmp("slot-retry-count", cmd, 16)) {
-#ifdef CONFIG_RK_AVB_LIBAVB_USER
-		char *slot_name = cmd;
-		char count[10] = {0};
-		static int cnt[2] = {0};
-
-		cmd = strsep(&slot_name, ":");
-		if (!strcmp(slot_name, "a")) {
-			sprintf(count, "%c", 0x30+cnt[0]);
-			strncat(response, count, chars_left);
-			if (cnt[0] > 0)
-				cnt[0]--;
-		} else if (!strcmp(slot_name, "b")) {
-			sprintf(count, "%c", 0x30+cnt[1]);
-			strncat(response, count, chars_left);
-			if (cnt[1] > 0)
-				cnt[1]--;
-		} else {
-			strcpy(response, "FAILno");
-		}
-#else
-		fastboot_tx_write_str("FAILnot implemented");
-		return;
-#endif
-	} else if (!strncmp("partition-type", cmd, 14) ||
-		   !strncmp("partition-size", cmd, 14)) {
-		disk_partition_t part_info;
-		struct blk_desc *dev_desc;
-		char *part_name = cmd;
-		char part_size_str[20];
-
-		cmd = strsep(&part_name, ":");
-		dev_desc = blk_get_dev("mmc", 0);
-		if (!dev_desc) {
-			strcpy(response, "FAILblock device not found");
-		} else if (part_get_info_by_name(dev_desc, part_name, &part_info) < 0) {
-			strcpy(response, "FAILpartition not found");
-		} else if (!strncmp("partition-type", cmd, 14)) {
-			strncat(response, (char *)part_info.type, chars_left);
-		} else if (!strncmp("partition-size", cmd, 14)) {
-			sprintf(part_size_str, "0x%016x", (int)part_info.size);
-			strncat(response, part_size_str, chars_left);
-		}
-	} else if (!strncmp("oem-unlock", cmd, 10)) {
-#ifdef CONFIG_FASTBOOT_OEM_UNLOCK
-#ifdef CONFIG_RK_AVB_LIBAVB_USER
-		fastboot_tx_write_str("FAILnot implemented");
-		return;
-#else
-
-		char msg[50] = {0};
-		uint8_t unlock = 0;
-		TEEC_Result result;
-
-		result = trusty_read_oem_unlock(&unlock);
-		if (result) {
-			printf("read oem unlock status with error : 0x%x\n", result);
-			fastboot_tx_write_str("FAILRead oem unlock status failed");
-			return;
-		}
-		sprintf(msg, "Device is %s, Status Code: %d\n",
-			unlock == 0 ? "LOCKED" : "UNLOCKED", unlock);
-
-		printf(msg);
-		strncat(response, msg, chars_left);
-#endif
-#else
-		fastboot_tx_write_str("FAILnot implemented");
-		return;
-#endif
+	len = strlen(cmd);
+	if (len == strlen(str_read_all) &&
+	    (strncmp(cmd, str_read_all, len) == 0)) {
+		fb_getvar_all();
+		fastboot_tx_write_str("OKAYDone!");
 	} else {
-		char *envstr;
+		strcpy(response, "OKAY");
+		chars_left = sizeof(response) - strlen(response) - 1;
 
-		envstr = malloc(strlen("fastboot.") + strlen(cmd) + 1);
-		if (!envstr) {
-			fastboot_tx_write_str("FAILmalloc error");
+		if (fb_getvar_single(cmd, &response[strlen(response)],
+				     chars_left) < 0) {
+			strcpy(cmd, "FAILunknown variable");
+			strncat(cmd, &response[strlen(response)], chars_left);
+			fastboot_tx_write_str(cmd);
 			return;
 		}
-
-		sprintf(envstr, "fastboot.%s", cmd);
-		s = env_get(envstr);
-		if (s) {
-			strncat(response, s, chars_left);
-		} else {
-			printf("WARNING: unknown variable: %s\n", cmd);
-			strcpy(response, "FAILVariable not implemented");
-		}
-
-		free(envstr);
+		fastboot_tx_write_str(response);
 	}
-	fastboot_tx_write_str(response);
+
+	return;
 }
 
 static unsigned int rx_bytes_expected(struct usb_ep *ep)
