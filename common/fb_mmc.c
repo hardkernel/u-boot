@@ -459,3 +459,19 @@ void fb_mmc_erase(const char *cmd, char *response)
 	       blks_size * info.blksz, cmd);
 	fastboot_okay("", response);
 }
+
+lbaint_t fb_mmc_get_erase_grp_size(void)
+{
+	lbaint_t grp_size;
+
+	struct mmc *mmc = find_mmc_device(CONFIG_FASTBOOT_FLASH_MMC_DEV);
+
+	if (!mmc) {
+		pr_err("invalid mmc device");
+		return -1;
+	}
+
+	grp_size = mmc->erase_grp_size << 9;
+
+	return  grp_size;
+}
