@@ -579,6 +579,7 @@ void rk_avb_get_at_vboot_state(char *buf)
 	}
 	sprintf(buf, "%s%s%s%s", buf, avb_perm_attr_set, perm_attr_flag, crlf);
 
+	temp_flag = 0;
 	if (rk_avb_read_lock_state((uint8_t *)&temp_flag)) {
 		printf("Can not read lock state!\n");
 		lock_val = "";
@@ -590,6 +591,7 @@ void rk_avb_get_at_vboot_state(char *buf)
 	sprintf(buf, "%s%s%s%s%s%s%s", buf, avb_lock, lock_val, crlf,
 		avb_unlock_dis, unlocK_dis_val, crlf);
 
+	temp_flag = 0;
 	if (rk_avb_read_bootloader_locked_flag((uint8_t *)&temp_flag)) {
 		printf("Can not read bootloader locked flag!\n");
 		bootloader_locked_flag = "";
