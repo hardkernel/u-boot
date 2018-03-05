@@ -49,6 +49,7 @@
 #define TX_ENDPOINT_MAXIMUM_PACKET_SIZE      (0x0040)
 
 #define EP_BUFFER_SIZE			4096
+#define SLEEP_COUNT 20000
 /*
  * EP_BUFFER_SIZE must always be an integral multiple of maxpacket size
  * (64 or 512 or 1024), else we break on certain controllers like DWC3
@@ -74,6 +75,7 @@ static unsigned int download_bytes;
 static unsigned int upload_size;
 static unsigned int upload_bytes;
 static bool start_upload;
+static unsigned intthread_wakeup_needed;
 
 static struct usb_endpoint_descriptor fs_ep_in = {
 	.bLength            = USB_DT_ENDPOINT_SIZE,
@@ -162,10 +164,78 @@ static struct usb_gadget_strings *fastboot_strings[] = {
 
 static void rx_handler_command(struct usb_ep *ep, struct usb_request *req);
 static int strcmp_l1(const char *s1, const char *s2);
+static void wakeup_thread(void)
+{
+	intthread_wakeup_needed = false;
+}
+
+static void busy_indicator(void)
+{
+	static int state;
+
+	switch (state) {
+	case 0:
+		puts("\r|"); break;
+	case 1:
+		puts("\r/"); break;
+	case 2:
+		puts("\r-"); break;
+	case 3:
+		puts("\r\\"); break;
+	case 4:
+		puts("\r|"); break;
+	case 5:
+		puts("\r/"); break;
+	case 6:
+		puts("\r-"); break;
+	case 7:
+		puts("\r\\"); break;
+	default:
+		state = 0;
+	}
+	if (state++ == 8)
+		state = 0;
+}
+
+static int sleep_thread(void)
+{
+	int rc = 0;
+	int i = 0, k = 0;
+
+	/* Wait until a signal arrives or we are woken up */
+	for (;;) {
+		if (!intthread_wakeup_needed)
+			break;
+
+		if (++i == SLEEP_COUNT) {
+			busy_indicator();
+			i = 0;
+			k++;
+		}
+
+		if (k == 10) {
+			/* Handle CTRL+C */
+			if (ctrlc())
+				return -EPIPE;
+
+			/* Check cable connection */
+			if (!g_dnl_board_usb_cable_connected())
+				return -EIO;
+
+			k = 0;
+		}
+
+		usb_gadget_handle_interrupts(0);
+	}
+	intthread_wakeup_needed = true;
+	return rc;
+}
 
 static void fastboot_complete(struct usb_ep *ep, struct usb_request *req)
 {
 	int status = req->status;
+
+	wakeup_thread();
 	if (!status)
 		return;
 	printf("status: %d ep '%s' trans: %d\n", status, ep->name, req->actual);
@@ -363,6 +433,12 @@ static int fastboot_tx_write(const char *buffer, unsigned int buffer_size)
 
 static int fastboot_tx_write_str(const char *buffer)
 {
+	int ret;
+
+	ret = sleep_thread();
+	if (ret < 0)
+		printf("warning: 0x%x, usb transmission is abnormal!\n", ret);
+
 	return fastboot_tx_write(buffer, strlen(buffer));
 }
 
