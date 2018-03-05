@@ -94,9 +94,14 @@ check_member(rk3399_cru, sdio1_con[1], 0x594);
 
 #define PWM_CLOCK_HZ    PMU_PCLK_HZ
 
-enum apll_l_frequencies {
-	APLL_L_1600_MHZ,
-	APLL_L_600_MHZ,
+enum apll_frequencies {
+	APLL_1600_MHZ,
+	APLL_600_MHZ,
+};
+
+enum cpu_cluster {
+	CPU_CLUSTER_LITTLE,
+	CPU_CLUSTER_BIG,
 };
 
 #endif	/* __ASM_ARCH_CRU_RK3399_H_ */
