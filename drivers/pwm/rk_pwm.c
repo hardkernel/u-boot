@@ -44,12 +44,16 @@ static int rk_pwm_set_config(struct udevice *dev, uint channel, uint period_ns,
 	struct rk_pwm_priv *priv = dev_get_priv(dev);
 	struct rk3288_pwm *regs = priv->regs;
 	unsigned long period, duty;
+	uint32_t ctrl;
 
 	debug("%s: period_ns=%u, duty_ns=%u\n", __func__, period_ns, duty_ns);
-	writel(PWM_SEL_SRC_CLK | PWM_OUTPUT_LEFT | PWM_LP_DISABLE |
-		PWM_CONTINUOUS | priv->enable_conf |
-		RK_PWM_DISABLE,
-		&regs->ctrl);
+
+	ctrl = readl(&regs->ctrl);
+	/* Ignore bit0: RK_PWM_ENABLE */
+	ctrl &= ~0xfffe;
+	ctrl |= PWM_SEL_SRC_CLK | PWM_OUTPUT_LEFT | PWM_LP_DISABLE |
+		PWM_CONTINUOUS | priv->enable_conf;
+	writel(ctrl, &regs->ctrl);
 
 	period = lldiv((uint64_t)(priv->freq / 1000) * period_ns, 1000000);
 	duty = lldiv((uint64_t)(priv->freq / 1000) * duty_ns, 1000000);
