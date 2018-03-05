@@ -152,7 +152,7 @@ pack_trust_image()
 	# ARM64 uses trust_merger
 	if grep  -q '^CONFIG_ARM64=y' ${OUTDIR}/.config ; then
 		if [ ! -f ${RKBIN}/RKTRUST/${RKCHIP}TRUST.ini ]; then
-			echo "pack trust failed! Can't find: ${RKBIN}/RKRUST/${RKCHIP}TRUST.ini"
+			echo "pack trust failed! Can't find: ${RKBIN}/RKTRUST/${RKCHIP}TRUST.ini"
 			return
 		fi
 
@@ -160,7 +160,7 @@ pack_trust_image()
 		${TOOLCHAIN_RKBIN}/trust_merger --replace tools/rk_tools/ ./ ${RKBIN}/RKTRUST/${RKCHIP}TRUST.ini
 		cd -
 		mv ${RKBIN}/trust.img ./trust.img
-		echo "pack trust okay! Input: ${RKBIN}/RKRUST/${RKCHIP}TRUST.ini"
+		echo "pack trust okay! Input: ${RKBIN}/RKTRUST/${RKCHIP}TRUST.ini"
 	# ARM uses loaderimage
 	else
 		if [ ! -f ${RKBIN}/RKTRUST/${RKCHIP}TOS.ini ]; then
