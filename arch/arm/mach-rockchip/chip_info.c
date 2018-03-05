@@ -23,6 +23,7 @@
  * rk3399 chip info:	{0x33333043, 0x32303136, 0x30313138, 0x56313030} - 330B20160118V100
  * rk322xh chip info:	{0x33323043, 0x32303136, 0x31313031, 0x56313030} - 320C20161101V100
  * rk3326 chip info:	{0x33333044, 0x32303137, 0x31323134, 0x56313030} - 330D20171214V100
+ * rk3308 chip info:	{0x33333045, 0x32303138, 0x30323033, 0x56313030} - 330E20180203V100
  */
 int rockchip_get_chip_info(unsigned int chip_info[])
 {
@@ -39,6 +40,8 @@ int rockchip_get_chip_info(unsigned int chip_info[])
 	chip_info[0] = 0x33323042;
 #elif defined(CONFIG_ROCKCHIP_RK3288)
 	chip_info[0] = 0x33323041;
+#elif defined(CONFIG_ROCKCHIP_RK3308)
+	chip_info[0] = 0x33333045;
 #elif defined(CONFIG_ROCKCHIP_RK3328)
 	chip_info[0] = 0x33323043;
 	chip_info[3] = 0x56313030;
