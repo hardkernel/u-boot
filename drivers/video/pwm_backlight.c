@@ -55,7 +55,9 @@ static int pwm_backlight_enable(struct udevice *dev)
 	if (ret)
 		return ret;
 	mdelay(10);
-	dm_gpio_set_value(&priv->enable, 1);
+
+	if (dm_gpio_is_valid(&priv->enable))
+		dm_gpio_set_value(&priv->enable, 1);
 
 	return 0;
 }
@@ -64,22 +66,26 @@ static int pwm_backlight_disable(struct udevice *dev)
 {
 	struct pwm_backlight_priv *priv = dev_get_priv(dev);
 	struct dm_regulator_uclass_platdata *plat;
-	uint duty_cycle;
 	int ret;
 
-	duty_cycle = priv->period_ns * (priv->default_level - priv->min_level) /
-		(priv->max_level - priv->min_level + 1);
-	ret = pwm_set_config(priv->pwm, priv->channel, priv->period_ns,
-			     duty_cycle);
+	ret = pwm_set_config(priv->pwm, priv->channel, priv->period_ns, 0);
 	if (ret)
 		return ret;
 
-	ret = pwm_set_enable(priv->pwm, priv->channel, false);
-	if (ret)
-		return ret;
+	/*
+	 * Sometimes there is not "enable-gpios", we have to set pwm output
+	 * 0% or 100% duty to play role like "enable-gpios", so we should not
+	 * disable pwm, let's keep it enabled.
+	 */
+	if (dm_gpio_is_valid(&priv->enable)) {
+		ret = pwm_set_enable(priv->pwm, priv->channel, false);
+		if (ret)
+			return ret;
+	}
 
 	mdelay(10);
-	dm_gpio_set_value(&priv->enable, 0);
+	if (dm_gpio_is_valid(&priv->enable))
+		dm_gpio_set_value(&priv->enable, 0);
 
 	if (priv->reg) {
 		plat = dev_get_uclass_platdata(priv->reg);
