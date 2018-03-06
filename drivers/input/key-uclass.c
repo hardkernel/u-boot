@@ -50,15 +50,15 @@ int key_parse_adc_event(struct input_key *key, unsigned int adcval)
 	int report = KEY_NOT_EXIST;
 	int max, min;
 
-	debug("%s: %s: max=%d, min=%d, adcval=%d\n",
-	      __func__, key->name, max, min, adcval);
-
 	/* Get min, max */
 	max = key->value + key->margin;
 	if (key->value > key->margin)
 		min = key->value - key->margin;
 	else
 		min = key->value;
+
+	debug("%s: %s: max=%d, min=%d, adcval=%d\n",
+	      __func__, key->name, max, min, adcval);
 
 	/* Check */
 	if ((adcval <= max) && (adcval >= min)) {
