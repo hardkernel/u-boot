@@ -7,7 +7,7 @@
 #ifndef _KEY_H_
 #define _KEY_H_
 
-#include <linux/input.h>
+#include <dt-bindings/input/linux-event-codes.h>
 
 #define KEY_LONG_DOWN_MS	2000
 
