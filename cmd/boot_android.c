@@ -15,6 +15,7 @@
 #include <command.h>
 #include <android_bootloader_message.h>
 #include <android_avb/rk_avb_ops_user.h>
+#include <android_avb/avb_atx_ops.h>
 
 static int do_boot_android(cmd_tbl_t *cmdtp, int flag, int argc,
 			   char * const argv[])
@@ -340,7 +341,7 @@ int do_avb_read_is_device_unlocked(cmd_tbl_t *cmdtp, int flag,
 		return CMD_RET_FAILURE;
 	}
 
-	debug("out_is_unlocked = %d\n", out_is_unlocked);
+	printf("out_is_unlocked = %d\n", out_is_unlocked);
 	avb_ops_user_free(ops);
 
 	return CMD_RET_SUCCESS;
@@ -566,6 +567,39 @@ int do_avb_write_ab_metadata(cmd_tbl_t *cmdtp, int flag,
 		printf("do_avb_write_ab_metadata error!\n");
 		avb_ops_user_free(ops);
 		return CMD_RET_FAILURE;
+	}
+
+	avb_ops_user_free(ops);
+
+	return CMD_RET_SUCCESS;
+}
+
+int do_perm_attr_test(cmd_tbl_t *cmdtp, int flag,
+		      int argc, char * const argv[])
+{
+	AvbOps *ops;
+	int i;
+	uint8_t hash[AVB_SHA256_DIGEST_SIZE];
+
+	if (argc != 1)
+		return CMD_RET_USAGE;
+
+	ops = avb_ops_user_new();
+	if (ops == NULL) {
+		printf("avb_ops_user_new() failed!\n");
+		return CMD_RET_FAILURE;
+	}
+
+	if (ops->atx_ops->read_permanent_attributes_hash(ops->atx_ops, hash) != 0) {
+		printf("read_permanent_attributes_hash error!\n");
+		avb_ops_user_free(ops);
+		return CMD_RET_FAILURE;
+	}
+
+	for (i = 0; i < AVB_SHA256_DIGEST_SIZE; i++) {
+		if (i % 4 == 0)
+			printf("\n");
+		printf("0x%x  ", hash[i]);
 	}
 
 	avb_ops_user_free(ops);
@@ -813,6 +847,7 @@ static cmd_tbl_t cmd_avb[] = {
 	U_BOOT_CMD_MKENT(write, 4, 1, do_avb_write, "", ""),
 	U_BOOT_CMD_MKENT(readabmisc, 1, 1, do_avb_read_ab_metadata, "", ""),
 	U_BOOT_CMD_MKENT(writeabmisc, 1, 1, do_avb_write_ab_metadata, "", ""),
+	U_BOOT_CMD_MKENT(perm_attr_test, 1, 1, do_perm_attr_test, "", ""),
 	U_BOOT_CMD_MKENT(verify, 3, 1, do_avb_verify_partition, "", ""),
 	U_BOOT_CMD_MKENT(flow, 2, 1, do_avb_flow, "", "")
 };
@@ -855,6 +890,7 @@ U_BOOT_CMD(
 	"bootavb write partition offset_blk cnt\n"
 	"bootavb readabmisc\n"
 	"bootavb writeabmisc\n"
+	"bootavb perm_attr_test\n"
 	"bootavb verify partition slot_cnt;partion name without '_a' or '_b'\n"
 	"bootavb flow v/n\n"
 );
