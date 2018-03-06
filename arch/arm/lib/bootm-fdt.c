@@ -79,7 +79,7 @@ int arch_fixup_fdt(void *blob)
 #endif
 #endif
 #ifdef CONFIG_DRM_ROCKCHIP
-	rockchip_display_fixup((void *)gd->fdt_blob);
+	rockchip_display_fixup(blob);
 #endif
 #ifdef CONFIG_FMAN_ENET
 	ret = fdt_update_ethernet_dt(blob);
