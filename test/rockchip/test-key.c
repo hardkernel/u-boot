@@ -11,16 +11,17 @@
 #include <key.h>
 #include <linux/input.h>
 #include "test-rockchip.h"
-	
+
 int board_key_test(int argc, char * const argv[])
 {
 	while (!ctrlc()) {
-		mdelay(50);
+		mdelay(100);
 		platform_key_read(KEY_VOLUMEUP);
-		mdelay(50);
 		platform_key_read(KEY_VOLUMEDOWN);
-		mdelay(50);
 		platform_key_read(KEY_POWER);
+		platform_key_read(KEY_HOME);
+		platform_key_read(KEY_MENU);
+		platform_key_read(KEY_ESC);
 	}
 
 	return 0;
