@@ -49,7 +49,7 @@ const char * const boot_devices[BROM_LAST_BOOTSOURCE + 1] = {
 };
 int arch_cpu_init(void)
 {
-#ifdef CONFIG_TPL_BUILD
+#ifdef CONFIG_SPL_BUILD
 	struct rk3328_grf_regs * const grf = (void *)GRF_BASE;
 	/* We do some SoC one time setting here. */
 
