@@ -90,7 +90,7 @@ check_member(rk3399_cru, sdio1_con[1], 0x594);
 #define PERILP0_PCLK_HZ	(49500*KHz)
 
 #define PERILP1_HCLK_HZ	(99000*KHz)
-#define PERILP1_PCLK_HZ	(49500*KHz)
+#define PERILP1_PCLK_HZ	(99000*KHz)
 
 #define PWM_CLOCK_HZ    PMU_PCLK_HZ
 

@@ -1080,9 +1080,9 @@ static void rkclk_init(struct rk3399_cru *cru)
 	assert((hclk_div + 1) * PERILP1_HCLK_HZ ==
 	       GPLL_HZ && (hclk_div < 0x1f));
 
-	pclk_div = PERILP1_HCLK_HZ / PERILP1_HCLK_HZ - 1;
-	assert((pclk_div + 1) * PERILP1_HCLK_HZ ==
-	       PERILP1_HCLK_HZ && (hclk_div < 0x7));
+	pclk_div = PERILP1_HCLK_HZ / PERILP1_PCLK_HZ - 1;
+	assert((pclk_div + 1) * PERILP1_PCLK_HZ ==
+	       PERILP1_HCLK_HZ && (pclk_div < 0x7));
 
 	rk_clrsetreg(&cru->clksel_con[25],
 		     PCLK_PERILP1_DIV_CON_MASK | HCLK_PERILP1_DIV_CON_MASK |
