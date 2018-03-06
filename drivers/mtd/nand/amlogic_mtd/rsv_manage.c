@@ -846,7 +846,7 @@ int aml_nand_rsv_info_init(struct mtd_info *mtd)
 
 	/*bootloader occupy 1024 pages*/
 	bbt_start_block = BOOT_TOTAL_PAGES >> pages_per_blk_shift;
-	bbt_start_block += 4; /*gap occupy 4 blocks*/
+	bbt_start_block += NAND_GAP_BLOCK_NUM; /*gap occupy 4 blocks*/
 	/* fixme, avoid dma occpied data buffer*/
 	aml_chip->rsv_data_buf = kzalloc(2 * mtd->writesize, GFP_KERNEL);
 
@@ -875,7 +875,7 @@ int aml_nand_rsv_info_init(struct mtd_info *mtd)
 	aml_chip->aml_nandbbt_info->valid_node->phy_blk_addr = -1;
 	aml_chip->aml_nandbbt_info->start_block = bbt_start_block;
 	aml_chip->aml_nandbbt_info->end_block =
-		aml_chip->aml_nandbbt_info->start_block + 4;
+		aml_chip->aml_nandbbt_info->start_block + NAND_BBT_BLOCK_NUM;
 	aml_chip->aml_nandbbt_info->size = mtd->size >> phys_erase_shift;
 	memcpy(aml_chip->aml_nandbbt_info->name, BBT_NAND_MAGIC, 4);
 
@@ -904,7 +904,7 @@ int aml_nand_rsv_info_init(struct mtd_info *mtd)
 	aml_chip->aml_nandenv_info->start_block =
 		aml_chip->aml_nandbbt_info->end_block;
 	aml_chip->aml_nandenv_info->end_block =
-		aml_chip->aml_nandbbt_info->end_block + 8;
+		aml_chip->aml_nandbbt_info->end_block + NAND_ENV_BLOCK_NUM;
 	aml_chip->aml_nandenv_info->size = CONFIG_ENV_SIZE;
 	memcpy(aml_chip->aml_nandenv_info->name, ENV_NAND_MAGIC, 4);
 
@@ -924,7 +924,7 @@ int aml_nand_rsv_info_init(struct mtd_info *mtd)
 	aml_chip->aml_nandkey_info->start_block =
 		aml_chip->aml_nandenv_info->end_block;
 	aml_chip->aml_nandkey_info->end_block =
-		aml_chip->aml_nandenv_info->end_block + 8;
+		aml_chip->aml_nandenv_info->end_block + NAND_KEY_BLOCK_NUM;
 	aml_chip->aml_nandkey_info->size = aml_chip->keysize;
 	memcpy(aml_chip->aml_nandkey_info->name, KEY_NAND_MAGIC, 4);
 
@@ -944,7 +944,7 @@ int aml_nand_rsv_info_init(struct mtd_info *mtd)
 	aml_chip->aml_nanddtb_info->start_block =
 		aml_chip->aml_nandkey_info->end_block;
 	aml_chip->aml_nanddtb_info->end_block =
-		aml_chip->aml_nandkey_info->end_block + 4;
+		aml_chip->aml_nandkey_info->end_block + NAND_DTB_BLOCK_NUM;
 	aml_chip->aml_nanddtb_info->size = aml_chip->dtbsize;
 	memcpy(aml_chip->aml_nanddtb_info->name, DTB_NAND_MAGIC, 4);
 

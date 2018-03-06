@@ -142,7 +142,7 @@ void nand_info_page_prepare(struct aml_nand_chip *aml_chip, u8 *page0_buf)
 	(bbt_size + mtd->writesize - 1) / mtd->writesize;
 	p_ext_info->bbt_occupy_pages = bbt_pages;
 	p_ext_info->bbt_start_block =
-		(BOOT_TOTAL_PAGES >> pages_per_blk_shift) + 4;
+		(BOOT_TOTAL_PAGES >> pages_per_blk_shift) + NAND_GAP_BLOCK_NUM;
 #ifdef CONFIG_DISCRETE_BOOTLOADER
 	p_fip_info = &p_nand_page0->fip_info;
 	p_fip_info->version = 1;
