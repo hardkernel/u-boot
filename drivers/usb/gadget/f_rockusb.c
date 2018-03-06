@@ -54,12 +54,16 @@ static int rkusb_rst_code; /* The subcode in reset command (0xFF) */
 int g_dnl_bind_fixup(struct usb_device_descriptor *dev, const char *name)
 {
 	if (IS_RKUSB_UMS_DNL(name)) {
-		/* Fix to Rockchip VID and PID */
+		/* Fix to Rockchip's VID and PID */
 		dev->idVendor  = __constant_cpu_to_le16(0x2207);
 		dev->idProduct = __constant_cpu_to_le16(CONFIG_ROCKUSB_G_DNL_PID);
 
 		/* Enumerate as a loader device */
 		dev->bcdUSB = cpu_to_le16(0x0201);
+	} else if (!strncmp(name, "usb_dnl_fastboot", 16)) {
+		/* Fix to Google's VID and PID */
+		dev->idVendor  = __constant_cpu_to_le16(0x18d1);
+		dev->idProduct = __constant_cpu_to_le16(0xd00d);
 	}
 
 	return 0;
