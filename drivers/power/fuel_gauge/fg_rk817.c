@@ -20,7 +20,7 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
-static int dbg_enable;
+static int dbg_enable = 1;
 #define DBG(args...) \
 	do { \
 		if (dbg_enable) { \
@@ -166,6 +166,7 @@ static int dbg_enable;
 
 #define CHRG_CT_EN		BIT(1)
 #define MIN_FCC			500
+#define CAP_INVALID		BIT(7)
 
 /* USB_CTRL_REG */
 #define INPUT_CUR_MSK		0x0f
@@ -219,8 +220,8 @@ struct rk817_battery_device {
 	int				pwron_voltage;
 	int				sm_linek;
 	int				sm_old_cap;
-	u8				calc_dsoc;
-	u8				calc_rsoc;
+	int				calc_dsoc;
+	int				calc_rsoc;
 	int				sm_chrg_dsoc;
 	u8				halt_cnt;
 	bool				is_halt;
@@ -236,7 +237,6 @@ struct rk817_battery_device {
 	u32				*ocv_table;
 	int				ocv_size;
 	u32				design_capacity;
-	u32				design_qmax;
 	u32				max_soc_offset;
 	u32				virtual_power;
 	u32				chrg_type;
@@ -428,33 +428,6 @@ static void rk817_bat_calibration(struct rk817_battery_device *battery)
 	}
 }
 
-static u32 rk817_bat_get_capacity_uah(struct rk817_battery_device *battery)
-{
-	u32 val = 0, capacity;
-
-	val = rk817_bat_read(battery, Q_PRES_H3) << 24;
-	val |= rk817_bat_read(battery, Q_PRES_H2) << 16;
-	val |= rk817_bat_read(battery, Q_PRES_L1) << 8;
-	val |= rk817_bat_read(battery, Q_PRES_L0) << 0;
-
-	capacity = ADC_TO_CAPACITY_UAH(val, battery->res_div);
-	return  capacity;
-}
-
-static u32 rk817_bat_get_capacity_mah(struct rk817_battery_device *battery)
-{
-	u32 val, capacity;
-
-	val = rk817_bat_read(battery, Q_PRES_H3) << 24;
-	val |= rk817_bat_read(battery, Q_PRES_H2) << 16;
-	val |= rk817_bat_read(battery, Q_PRES_L1) << 8;
-	val |= rk817_bat_read(battery, Q_PRES_L0) << 0;
-
-	capacity = ADC_TO_CAPACITY(val, battery->res_div);
-
-	return  capacity;
-}
-
 static void rk817_bat_init_coulomb_cap(struct rk817_battery_device *battery,
 				       u32 capacity)
 {
@@ -473,6 +446,47 @@ static void rk817_bat_init_coulomb_cap(struct rk817_battery_device *battery,
 
 	battery->rsoc = capacity * 1000 * 100 / battery->fcc;
 	battery->remain_cap = capacity * 1000;
+}
+
+static bool rk817_bat_remain_cap_is_valid(struct rk817_battery_device *battery)
+{
+	return !(rk817_bat_read(battery, Q_PRES_H3) & CAP_INVALID);
+}
+
+static u32 rk817_bat_get_capacity_uah(struct rk817_battery_device *battery)
+{
+	u32 val = 0, capacity = 0;
+
+	if (rk817_bat_remain_cap_is_valid(battery)) {
+		val = rk817_bat_read(battery, Q_PRES_H3) << 24;
+		val |= rk817_bat_read(battery, Q_PRES_H2) << 16;
+		val |= rk817_bat_read(battery, Q_PRES_L1) << 8;
+		val |= rk817_bat_read(battery, Q_PRES_L0) << 0;
+
+		capacity = ADC_TO_CAPACITY_UAH(val, battery->res_div);
+	} else {
+		rk817_bat_init_coulomb_cap(battery, 0);
+	}
+
+	return  capacity;
+}
+
+static u32 rk817_bat_get_capacity_mah(struct rk817_battery_device *battery)
+{
+	u32 val, capacity = 0;
+
+	if (rk817_bat_remain_cap_is_valid(battery)) {
+		val = rk817_bat_read(battery, Q_PRES_H3) << 24;
+		val |= rk817_bat_read(battery, Q_PRES_H2) << 16;
+		val |= rk817_bat_read(battery, Q_PRES_L1) << 8;
+		val |= rk817_bat_read(battery, Q_PRES_L0) << 0;
+
+		capacity = ADC_TO_CAPACITY(val, battery->res_div);
+	} else {
+		rk817_bat_init_coulomb_cap(battery, 0);
+	}
+
+	return  capacity;
 }
 
 static void rk817_bat_save_cap(struct rk817_battery_device *battery,
@@ -643,7 +657,7 @@ static int rk817_bat_get_fcc(struct rk817_battery_device *battery)
 {
 	u32 fcc = 0;
 
-	fcc |= rk817_bat_read(battery, NEW_FCC_REG2) << 16;
+	fcc = rk817_bat_read(battery, NEW_FCC_REG2) << 16;
 	fcc |= rk817_bat_read(battery, NEW_FCC_REG1) << 8;
 	fcc |= rk817_bat_read(battery, NEW_FCC_REG0) << 0;
 
@@ -651,9 +665,9 @@ static int rk817_bat_get_fcc(struct rk817_battery_device *battery)
 		DBG("invalid fcc(%d), use design cap", fcc);
 		fcc = battery->design_capacity;
 		rk817_bat_save_fcc(battery, fcc);
-	} else if (fcc > battery->design_qmax) {
+	} else if (fcc > battery->qmax) {
 		DBG("invalid fcc(%d), use qmax", fcc);
-		fcc = battery->design_qmax;
+		fcc = battery->qmax;
 		rk817_bat_save_fcc(battery, fcc);
 	}
 
@@ -977,6 +991,7 @@ static void rk817_bat_debug_info(struct rk817_battery_device *battery)
 	DBG("k = %d, b = %d\n", battery->voltage_k, battery->voltage_b);
 	DBG("battery: %d\n", rk817_bat_get_battery_voltage(battery));
 	DBG("voltage_sys = %d\n", rk817_bat_get_sys_voltage(battery));
+	DBG("voltage_usb = %d\n", rk817_bat_get_USB_voltage(battery));
 	DBG("current_avg = %d\n", rk817_bat_get_avg_current(battery));
 	DBG("dsoc = %d\n", battery->dsoc);
 	DBG("rsoc = %d\n", rk817_bat_get_rsoc(battery));
@@ -1043,6 +1058,7 @@ static int rk817_bat_update_get_soc(struct udevice *dev)
 	struct rk817_battery_device *battery = dev_get_priv(dev);
 	static ulong seconds;
 
+	rk817_bat_debug_info(battery);
 	/* set charge current */
 	battery->chrg_type =
 		rk817_bat_get_charger_type(battery);
@@ -1150,8 +1166,6 @@ static int rk817_fg_init(struct rk817_battery_device *battery)
 	rk817_bat_rsoc_init(battery);
 	rk817_bat_init_coulomb_cap(battery, battery->nac);
 	rk817_bat_set_initialized_flag(battery);
-	battery->remain_cap = rk817_bat_get_capacity_uah(battery);
-	rk817_bat_calc_linek(battery);
 
 	battery->voltage_avg = rk817_bat_get_battery_voltage(battery);
 	battery->voltage_sys = rk817_bat_get_sys_voltage(battery);
@@ -1161,6 +1175,7 @@ static int rk817_fg_init(struct rk817_battery_device *battery)
 	battery->remain_cap = rk817_bat_get_capacity_uah(battery);
 	battery->rsoc = rk817_bat_get_rsoc(battery);
 	battery->sm_linek = rk817_bat_calc_linek(battery);
+	battery->chrg_type = rk817_bat_get_charger_type(battery);
 	battery->finish_chrg_base = get_timer(0);
 	battery->term_sig_base = get_timer(0);
 
@@ -1168,9 +1183,7 @@ static int rk817_fg_init(struct rk817_battery_device *battery)
 	battery->dbg_pwr_rsoc = battery->rsoc;
 	battery->dbg_pwr_vol = battery->voltage_avg;
 
-	DBG("chrg onle: %d\n", rk817_bat_dwc_otg_check_dpdm());
-	DBG("chrg onle: %d\n", rk817_bat_dwc_otg_check_dpdm());
-	DBG("chrg onle: %d\n", rk817_bat_dwc_otg_check_dpdm());
+	rk817_bat_charger_setting(battery, battery->chrg_type);
 
 	DBG("voltage_k = %d, voltage_b = %d\n",
 	    battery->voltage_k, battery->voltage_b);
@@ -1184,6 +1197,7 @@ static int rk817_fg_init(struct rk817_battery_device *battery)
 	DBG("qmax = %d\n", battery->qmax);
 	DBG("dsoc = %d\n", battery->dsoc);
 	DBG("rsoc = %d\n", battery->rsoc);
+	DBG("charge type: %d\n", battery->chrg_type);
 
 	return 0;
 }
