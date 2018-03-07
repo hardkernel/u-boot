@@ -539,7 +539,14 @@ static void cb_getvar(struct usb_ep *ep, struct usb_request *req)
 				pPartition = find_mmc_partition_by_name(cmd);
 				if (pPartition) {
 					printf("size:%016llx\n", pPartition->size);
-					sprintf(str_num, "%016llx", pPartition->size);
+					if (strcmp(cmd, "data") == 0) {
+						printf("reserve 0x4000 for fde data\n");
+						sz = pPartition->size - 0x4000;
+						printf("data size :%016llx\n", sz);
+						sprintf(str_num, "%016llx", sz);
+					} else {
+						sprintf(str_num, "%016llx", pPartition->size);
+					}
 				} else {
 					printf("find_mmc_partition_by_name fail\n");
 					sprintf(str_num, "get fail");
