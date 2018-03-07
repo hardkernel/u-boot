@@ -336,6 +336,17 @@ AvbIOResult avb_read_perm_attr_hash(AvbAtxOps* atx_ops,
 	return AVB_IO_RESULT_OK;
 }
 
+static void avb_set_key_version(AvbAtxOps* atx_ops,
+                        size_t rollback_index_location,
+                        uint64_t key_version)
+{
+#ifdef CONFIG_OPTEE_CLIENT
+	if (trusty_write_rollback_index(rollback_index_location, key_version)) {
+		printf("%s: Fail to write rollback index\n", __FILE__);
+	}
+#endif
+}
+
 AvbOps* avb_ops_user_new(void) {
   AvbOps* ops;
 
@@ -375,6 +386,7 @@ AvbOps* avb_ops_user_new(void) {
   ops->ab_ops->write_ab_metadata = avb_ab_data_write;
   ops->atx_ops->read_permanent_attributes = avb_read_perm_attr;
   ops->atx_ops->read_permanent_attributes_hash = avb_read_perm_attr_hash;
+  ops->atx_ops->set_key_version = avb_set_key_version;
 
 out:
   return ops;
