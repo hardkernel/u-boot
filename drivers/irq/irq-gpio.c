@@ -165,6 +165,8 @@ static int gpio_get_intr_type(void __iomem *regbase,
 	case 0x03:
 		type = GPIOEdgelRising;
 		break;
+	default:
+		type = -EINVAL;
 	}
 
 	return type;
