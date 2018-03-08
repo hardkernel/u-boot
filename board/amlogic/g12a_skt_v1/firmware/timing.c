@@ -77,7 +77,7 @@
 ddr_set_t __ddr_setting[] = {
 {
 	/* g12a skt (u209) ddr4 */
-	.board_id				= 1,
+	.board_id				= CONFIG_BOARD_ID_MASK,
 	.version				= 1,
 	.dram_rank_config		= CONFIG_DDR0_32BIT_RANK0_CH0,
 	.DramType				= CONFIG_DDR_TYPE_DDR4,
@@ -135,7 +135,7 @@ ddr_set_t __ddr_setting[] = {
 },
 {
 	/* g12a skt (u209) ddr3 */
-	.board_id				= 1,
+	.board_id				= CONFIG_BOARD_ID_MASK,
 	.version				= 1,
 	.dram_rank_config		= CONFIG_DDR0_16BIT_RANK01_CH0,
 	.DramType				= CONFIG_DDR_TYPE_DDR3,
@@ -192,7 +192,7 @@ ddr_set_t __ddr_setting[] = {
 },
 {
 	/* g12a skt (u209) lpddr4 */
-	.board_id				= 1,
+	.board_id				= CONFIG_BOARD_ID_MASK,
 	.version				= 1,
 	//.dram_rank_config		= CONFIG_DDR0_32BIT_RANK01_CH0,
 	.dram_rank_config		= CONFIG_DDR0_32BIT_RANK01_CH01,

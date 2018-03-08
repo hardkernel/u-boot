@@ -19,6 +19,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
+#define CONFIG_BOARD_ID_MASK				0xFF
 #define CONFIG_DDR_TYPE_DDR3				0
 #define CONFIG_DDR_TYPE_DDR4				1
 #define CONFIG_DDR_TYPE_LPDDR4				2
