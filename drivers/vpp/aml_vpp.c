@@ -493,26 +493,27 @@ static void vpp_set_matrix_ycbcr2rgb(int vd1_or_vd2_or_post, int mode)
 	if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_G12A) {
 		/* POST2 matrix: YUV limit -> RGB  default is 12bit*/
 		m = YUV709l_to_RGB709_coeff12;
+
 		/* VPP WRAP POST2 matrix */
 		vpp_reg_write(VPP_POST2_MATRIX_PRE_OFFSET0_1,
-			((m[0] & 0xfff) << 16) | (m[1] & 0xfff));
+			(((m[0] >> 2) & 0xfff) << 16) | ((m[1] >> 2) & 0xfff));
 		vpp_reg_write(VPP_POST2_MATRIX_PRE_OFFSET2,
-			m[2] & 0xfff);
+			(m[2] >> 2) & 0xfff);
 		vpp_reg_write(VPP_POST2_MATRIX_COEF00_01,
-			((m[3] & 0x1fff) << 16) | (m[4] & 0x1fff));
+			(((m[3] >> 2) & 0x1fff) << 16) | ((m[4] >> 2) & 0x1fff));
 		vpp_reg_write(VPP_POST2_MATRIX_COEF02_10,
-			((m[5]  & 0x1fff) << 16) | (m[6] & 0x1fff));
+			(((m[5] >> 2) & 0x1fff) << 16) | ((m[6] >> 2) & 0x1fff));
 		vpp_reg_write(VPP_POST2_MATRIX_COEF11_12,
-			((m[7] & 0x1fff) << 16) | (m[8] & 0x1fff));
+			(((m[7] >> 2) & 0x1fff) << 16) | ((m[8] >> 2) & 0x1fff));
 		vpp_reg_write(VPP_POST2_MATRIX_COEF20_21,
-			((m[9] & 0x1fff) << 16) | (m[10] & 0x1fff));
+			(((m[9] >> 2) & 0x1fff) << 16) | ((m[10] >> 2) & 0x1fff));
 		vpp_reg_write(VPP_POST2_MATRIX_COEF22,
-			m[11] & 0x1fff);
+			(m[11] >> 2) & 0x1fff);
 
 		vpp_reg_write(VPP_POST2_MATRIX_OFFSET0_1,
-			((m[18] & 0xfff) << 16) | (m[19] & 0xfff));
+			(((m[18] >> 2) & 0xfff) << 16) | ((m[19] >> 2) & 0xfff));
 		vpp_reg_write(VPP_POST2_MATRIX_OFFSET2,
-			m[20] & 0xfff);
+			(m[20] >> 2) & 0xfff);
 
 		vpp_reg_setb(VPP_POST2_MATRIX_EN_CTRL, 1, 0, 1);
 
