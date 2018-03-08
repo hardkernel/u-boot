@@ -63,7 +63,7 @@ typedef struct{
     unsigned enci_div;
 }hw_enc_clk_val_t;
 
-#define GROUP_MAX	8
+#define GROUP_MAX	10
 #define GROUP_END	-1
 struct hw_enc_clk_val_group {
     enum hdmi_vic group[GROUP_MAX];
@@ -80,8 +80,7 @@ struct hw_enc_clk_val_group {
     unsigned enci_div;
 };
 
-void set_hdmitx_clk(enum hdmi_vic vic);
-void hdmitx_set_clk_30b(enum hdmi_vic vic);
+void hdmitx_set_clk(struct hdmitx_dev *hdev);
 void set_hdmitx_clk_420(void);
 
 #endif

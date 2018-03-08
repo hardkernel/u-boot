@@ -1083,19 +1083,7 @@ static void hdmitx_enc(enum hdmi_vic vic)
 
 static void hdmitx_set_pll(struct hdmitx_dev *hdev)
 {
-	if (hdev->para->cs != HDMI_COLOR_FORMAT_422) {
-		switch (hdev->para->cd) {
-		case HDMI_COLOR_DEPTH_30B:
-			hdmitx_set_clk_30b(hdev->vic);
-			break;
-		case HDMI_COLOR_DEPTH_24B:
-		default:
-			set_hdmitx_clk(hdev->vic);
-			break;
-		}
-	} else {
-		set_hdmitx_clk(hdev->vic);
-	}
+	hdmitx_set_clk(hdev);
 }
 
 static void set_phy_by_mode(unsigned int mode)
