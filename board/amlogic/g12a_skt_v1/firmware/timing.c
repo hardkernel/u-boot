@@ -247,6 +247,7 @@ ddr_set_t __ddr_setting[] = {
 	.dram_rtt_nom_wr_park	= {00,00},
 	.ddr_func				= DDR_FUNC,
 	.magic					= DRAM_CFG_MAGIC,
+	.diagnose				= CONFIG_DIAGNOSE_DISABLE,
 },
 {
 	/* g12a Y2 dongle */

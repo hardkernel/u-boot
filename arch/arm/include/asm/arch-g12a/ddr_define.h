@@ -275,3 +275,9 @@
 #define DWC_AC_PINMUX_TOTAL						28
 #define DWC_DFI_PINMUX_TOTAL					26
 #define DWC_DQ_PINMUX_TOTAL						32
+
+/* diagnose function defines */
+#define CONFIG_DIAGNOSE_DISABLE					0x0
+#define CONFIG_DIAGNOSE_1D						0x1
+#define CONFIG_DIAGNOSE_2D						0x2
+#define CONFIG_DIAGNOSE_1D_2D					0x3

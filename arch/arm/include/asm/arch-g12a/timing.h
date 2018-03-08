@@ -94,8 +94,10 @@ typedef struct ddr_set{
 	//#define CONFIG_DDR0_32BIT_16BIT_RANK01_CH0	0x6   //dram total bus width 32bit  use cs0 cs1,but cs1 use 16bit mode ,current phy not support reserve
 	//#define CONFIG_DDR0_32BIT_RANK01_CH0		0x7       //dram total bus width 32bit  use cs0 cs1
 	//#define CONFIG_DDR0_32BIT_RANK0_CH01		0x8     //only for lpddr4,dram total bus width 32bit  use chanel a cs0  chanel b cs0
-	unsigned	char	rsv_char0;
-	//system reserve,do not modify
+
+	/* rsv_char0. update for diagnose type define */
+	unsigned	char	diagnose;
+
 	/* imem/dmem define */
 	unsigned	int		imem_load_addr;
 	//system reserve,do not modify
