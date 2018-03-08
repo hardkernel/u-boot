@@ -18,6 +18,7 @@
 #include <command.h>
 #include <environment.h>
 #include <linux/stddef.h>
+#include <jffs2/jffs2.h>
 #include <malloc.h>
 #include <nand.h>
 #include <search.h>
@@ -38,6 +39,8 @@
 #define CONFIG_ENV_RANGE	CONFIG_ENV_SIZE
 #endif
 
+#ifndef CONFIG_STORE_COMPATIBLE
+
 char *env_name_spec = "NAND";
 
 #if defined(ENV_IS_EMBEDDED)
@@ -47,6 +50,7 @@ env_t *env_ptr = (env_t *)CONFIG_NAND_ENV_DST;
 #else /* ! ENV_IS_EMBEDDED */
 env_t *env_ptr;
 #endif /* ENV_IS_EMBEDDED */
+#endif
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -62,7 +66,11 @@ DECLARE_GLOBAL_DATA_PTR;
  * This way the SPL loads not only the U-Boot image from NAND but
  * also the environment.
  */
+#ifdef CONFIG_STORE_COMPATIBLE
+int amlnand_env_int(void)
+#else
 int env_init(void)
+#endif
 {
 #if defined(ENV_IS_EMBEDDED) || defined(CONFIG_NAND_ENV_DST)
 	int crc1_ok = 0, crc2_ok = 0;
@@ -79,46 +87,81 @@ int env_init(void)
 
 	if (!crc1_ok && !crc2_ok) {
 		gd->env_addr	= 0;
-		gd->env_valid	= 0;
+		gd->env_valid	= ENV_INVALID;
 
 		return 0;
 	} else if (crc1_ok && !crc2_ok) {
-		gd->env_valid = 1;
+		gd->env_valid = ENV_VALID;
 	}
 #ifdef CONFIG_ENV_OFFSET_REDUND
 	else if (!crc1_ok && crc2_ok) {
-		gd->env_valid = 2;
+		gd->env_valid = ENV_REDUND;
 	} else {
 		/* both ok - check serial */
 		if (tmp_env1->flags == 255 && tmp_env2->flags == 0)
-			gd->env_valid = 2;
+			gd->env_valid = ENV_REDUND;
 		else if (tmp_env2->flags == 255 && tmp_env1->flags == 0)
-			gd->env_valid = 1;
+			gd->env_valid = ENV_VALID;
 		else if (tmp_env1->flags > tmp_env2->flags)
-			gd->env_valid = 1;
+			gd->env_valid = ENV_VALID;
 		else if (tmp_env2->flags > tmp_env1->flags)
-			gd->env_valid = 2;
+			gd->env_valid = ENV_REDUND;
 		else /* flags are equal - almost impossible */
-			gd->env_valid = 1;
+			gd->env_valid = ENV_VALID;
 	}
 
-	if (gd->env_valid == 2)
+	if (gd->env_valid == ENV_REDUND)
 		env_ptr = tmp_env2;
 	else
 #endif
-	if (gd->env_valid == 1)
+	if (gd->env_valid == ENV_VALID)
 		env_ptr = tmp_env1;
 
 	gd->env_addr = (ulong)env_ptr->data;
 
 #else /* ENV_IS_EMBEDDED || CONFIG_NAND_ENV_DST */
 	gd->env_addr	= (ulong)&default_environment[0];
-	gd->env_valid	= 1;
+	gd->env_valid	= ENV_VALID;
 #endif /* ENV_IS_EMBEDDED || CONFIG_NAND_ENV_DST */
 
 	return 0;
 }
+static int env_nand_lookup(const char *partname,
+			  nand_info_t **nand,
+			  struct part_info **part)
+{
+#ifdef CONFIG_CMD_MTDPARTS
+	struct mtd_device *dev;
+	int ret;
+	u8 pnum;
 
+	ret = mtdparts_init();
+	if (ret) {
+		error("Cannot initialize MTD partitions\n");
+		return ret;
+	}
+
+	ret = find_dev_and_part(partname, &dev, &pnum, part);
+	if (ret) {
+		error("cannot find partition: '%s'", partname);
+		return ret;
+	}
+#ifndef CONFIFG_AML_MTDPART
+	if (dev->id->type != MTD_DEV_TYPE_NAND) {
+		error("partition '%s' is not stored on a NAND device",
+		      partname);
+		return -EINVAL;
+	}
+	*nand = get_nand_dev_by_index(dev->id->num);
+#else
+	*nand = get_nand_dev_by_index(1);
+#endif
+	return 0;
+#else
+	error("%s,\n");
+	return -1;
+#endif
+}
 #ifdef CMD_SAVEENV
 /*
  * The legacy NAND code saved the environment in the first NAND device i.e.,
@@ -131,15 +174,15 @@ static int writeenv(size_t offset, u_char *buf)
 	size_t blocksize, len;
 	u_char *char_ptr;
 
-	blocksize = nand_info[0].erasesize;
+	blocksize = nand_info[1].erasesize;
 	len = min(blocksize, (size_t)CONFIG_ENV_SIZE);
 
 	while (amount_saved < CONFIG_ENV_SIZE && offset < end) {
-		if (nand_block_isbad(&nand_info[0], offset)) {
+		if (nand_block_isbad(&nand_info[1], offset)) {
 			offset += blocksize;
 		} else {
 			char_ptr = &buf[amount_saved];
-			if (nand_write(&nand_info[0], offset, &len, char_ptr))
+			if (nand_write(&nand_info[1], offset, &len, char_ptr))
 				return 1;
 
 			offset += blocksize;
@@ -153,8 +196,27 @@ static int writeenv(size_t offset, u_char *buf)
 }
 
 struct env_location {
-	const char *name;
-	const nand_erase_options_t erase_opts;
+	char *name;
+	nand_erase_options_t erase_opts;
+};
+
+static struct env_location location_table[] = {
+	{
+		.name = "NAND",
+		.erase_opts = {
+			.length = CONFIG_ENV_RANGE,
+			.offset = CONFIG_ENV_OFFSET,
+		},
+	},
+#ifdef CONFIG_ENV_OFFSET_REDUND
+	{
+		.name = "redundant NAND",
+		.erase_opts = {
+			.length = CONFIG_ENV_RANGE,
+			.offset = CONFIG_ENV_OFFSET + CONFIG_ENV_RANGE,
+		},
+	},
+#endif
 };
 
 static int erase_and_write_env(const struct env_location *location,
@@ -163,7 +225,7 @@ static int erase_and_write_env(const struct env_location *location,
 	int ret = 0;
 
 	printf("Erasing %s...\n", location->name);
-	if (nand_erase_opts(&nand_info[0], &location->erase_opts))
+	if (nand_erase_opts(&nand_info[1], &location->erase_opts))
 		return 1;
 
 	printf("Writing to %s... ", location->name);
@@ -177,30 +239,35 @@ static int erase_and_write_env(const struct env_location *location,
 static unsigned char env_flags;
 #endif
 
+#ifdef CONFIG_STORE_COMPATIBLE
+int amlnand_saveenv(void)
+#else
 int saveenv(void)
+#endif
 {
 	int	ret = 0;
 	ALLOC_CACHE_ALIGN_BUFFER(env_t, env_new, 1);
 	int	env_idx = 0;
-	static const struct env_location location[] = {
-		{
-			.name = "NAND",
-			.erase_opts = {
-				.length = CONFIG_ENV_RANGE,
-				.offset = CONFIG_ENV_OFFSET,
-			},
-		},
-#ifdef CONFIG_ENV_OFFSET_REDUND
-		{
-			.name = "redundant NAND",
-			.erase_opts = {
-				.length = CONFIG_ENV_RANGE,
-				.offset = CONFIG_ENV_OFFSET_REDUND,
-			},
-		},
-#endif
-	};
+	const char *name = "environment";
+	struct part_info *part;
+	nand_info_t *nand = NULL;
 
+	ret = env_nand_lookup(name, &nand, &part);
+	if (ret) {
+		printf("Error: can't find env part! %s %d",
+		       __func__, __LINE__);
+		return ret;
+	}
+	if (location_table[0].erase_opts.offset ==
+			CONFIG_ENV_OFFSET)
+		location_table[0].erase_opts.offset =
+			part->offset;
+#ifdef CONFIG_ENV_OFFSET_REDUND
+	if (location_table[1].erase_opts.offset ==
+			CONFIG_ENV_OFFSET + CONFIG_ENV_RANGE)
+		location_table[1].erase_opts.offset =
+			part->offset + CONFIG_ENV_RANGE;
+#endif
 
 	if (CONFIG_ENV_RANGE < CONFIG_ENV_SIZE)
 		return 1;
@@ -211,19 +278,20 @@ int saveenv(void)
 
 #ifdef CONFIG_ENV_OFFSET_REDUND
 	env_new->flags = ++env_flags; /* increase the serial */
-	env_idx = (gd->env_valid == 1);
+	env_idx = (gd->env_valid == ENV_VALID);
 #endif
 
-	ret = erase_and_write_env(&location[env_idx], (u_char *)env_new);
+	ret = erase_and_write_env(&location_table[env_idx], (u_char *)env_new);
 #ifdef CONFIG_ENV_OFFSET_REDUND
 	if (!ret) {
 		/* preset other copy for next write */
-		gd->env_valid = gd->env_valid == 2 ? 1 : 2;
+		gd->env_valid = gd->env_valid == ENV_REDUND ? ENV_VALID :
+				ENV_REDUND;
 		return ret;
 	}
 
 	env_idx = (env_idx + 1) & 1;
-	ret = erase_and_write_env(&location[env_idx], (u_char *)env_new);
+	ret = erase_and_write_env(&location_table[env_idx], (u_char *)env_new);
 	if (!ret)
 		printf("Warning: primary env write failed,"
 				" redundancy is lost!\n");
@@ -240,20 +308,20 @@ static int readenv(size_t offset, u_char *buf)
 	size_t blocksize, len;
 	u_char *char_ptr;
 
-	blocksize = nand_info[0].erasesize;
+	blocksize = nand_info[1].erasesize;
 	if (!blocksize)
 		return 1;
 
 	len = min(blocksize, (size_t)CONFIG_ENV_SIZE);
 
 	while (amount_loaded < CONFIG_ENV_SIZE && offset < end) {
-		if (nand_block_isbad(&nand_info[0], offset)) {
+		if (nand_block_isbad(&nand_info[1], offset)) {
 			offset += blocksize;
 		} else {
 			char_ptr = &buf[amount_loaded];
-			if (nand_read_skip_bad(&nand_info[0], offset,
+			if (nand_read_skip_bad(&nand_info[1], offset,
 					       &len, NULL,
-					       nand_info[0].size, char_ptr))
+					       nand_info[1].size, char_ptr))
 				return 1;
 
 			offset += blocksize;
@@ -300,13 +368,40 @@ int get_nand_env_oob(nand_info_t *nand, unsigned long *result)
 #endif
 
 #ifdef CONFIG_ENV_OFFSET_REDUND
+#ifdef CONFIG_STORE_COMPATIBLE
+void amlnand_env_relocate_spec(void)
+#else
 void env_relocate_spec(void)
+#endif
 {
-#if !defined(ENV_IS_EMBEDDED)
+#if defined(ENV_IS_EMBEDDED)
+	return;
+#else
 	int read1_fail = 0, read2_fail = 0;
 	int crc1_ok = 0, crc2_ok = 0;
+	int ret = 0;
 	env_t *ep, *tmp_env1, *tmp_env2;
+	const char *name = "environment";
+	struct part_info *part;
+	nand_info_t *nand = NULL;
 
+	ret = env_nand_lookup(name, &nand, &part);
+	if (ret) {
+		printf("Error: can't find env part! %s %d",
+		       __func__, __LINE__);
+		return;
+	}
+
+	if (location_table[0].erase_opts.offset ==
+			CONFIG_ENV_OFFSET)
+		location_table[0].erase_opts.offset =
+			part->offset;
+#ifdef CONFIG_ENV_OFFSET_REDUND
+	if (location_table[1].erase_opts.offset ==
+			CONFIG_ENV_OFFSET + CONFIG_ENV_RANGE)
+		location_table[1].erase_opts.offset =
+			part->offset + CONFIG_ENV_RANGE;
+#endif
 	tmp_env1 = (env_t *)malloc(CONFIG_ENV_SIZE);
 	tmp_env2 = (env_t *)malloc(CONFIG_ENV_SIZE);
 	if (tmp_env1 == NULL || tmp_env2 == NULL) {
@@ -315,8 +410,9 @@ void env_relocate_spec(void)
 		goto done;
 	}
 
-	read1_fail = readenv(CONFIG_ENV_OFFSET, (u_char *) tmp_env1);
-	read2_fail = readenv(CONFIG_ENV_OFFSET_REDUND, (u_char *) tmp_env2);
+	read1_fail = readenv(part->offset, (u_char *)tmp_env1);
+	read2_fail = readenv(part->offset + CONFIG_ENV_RANGE,
+						(u_char *)tmp_env2);
 
 	if (read1_fail && read2_fail)
 		puts("*** Error - No Valid Environment Area found\n");
@@ -330,35 +426,35 @@ void env_relocate_spec(void)
 		(crc32(0, tmp_env2->data, ENV_SIZE) == tmp_env2->crc);
 
 	if (!crc1_ok && !crc2_ok) {
-		set_default_env("!bad CRC");
-		goto done;
+		/* we will save a default env into */
+		gd->env_valid = ENV_REDUND;
 	} else if (crc1_ok && !crc2_ok) {
-		gd->env_valid = 1;
+		gd->env_valid = ENV_VALID;
 	} else if (!crc1_ok && crc2_ok) {
-		gd->env_valid = 2;
+		gd->env_valid = ENV_REDUND;
 	} else {
 		/* both ok - check serial */
 		if (tmp_env1->flags == 255 && tmp_env2->flags == 0)
-			gd->env_valid = 2;
+			gd->env_valid = ENV_REDUND;
 		else if (tmp_env2->flags == 255 && tmp_env1->flags == 0)
-			gd->env_valid = 1;
+			gd->env_valid = ENV_VALID;
 		else if (tmp_env1->flags > tmp_env2->flags)
-			gd->env_valid = 1;
+			gd->env_valid = ENV_VALID;
 		else if (tmp_env2->flags > tmp_env1->flags)
-			gd->env_valid = 2;
+			gd->env_valid = ENV_REDUND;
 		else /* flags are equal - almost impossible */
-			gd->env_valid = 1;
+			gd->env_valid = ENV_VALID;
 	}
 
 	free(env_ptr);
 
-	if (gd->env_valid == 1)
+	if (gd->env_valid == ENV_VALID)
 		ep = tmp_env1;
 	else
 		ep = tmp_env2;
 
 	env_flags = ep->flags;
-	env_import((char *)ep, 0);
+	env_import((char *)ep, 1);
 
 done:
 	free(tmp_env1);
@@ -372,14 +468,39 @@ done:
  * device i.e., nand_dev_desc + 0. This is also the behaviour using
  * the new NAND code.
  */
+#ifdef CONFIG_STORE_COMPATIBLE
+void amlnand_env_relocate_spec(void)
+#else
 void env_relocate_spec(void)
+#endif
 {
 #if !defined(ENV_IS_EMBEDDED)
 	int ret;
+	const char *name = "environment";
+	struct part_info *part;
+	nand_info_t *nand = NULL;
+
+	ret = env_nand_lookup(name, &nand, &part);
+	if (ret) {
+		printf("Error: can't find env part! %s %d",
+		       __func__, __LINE__);
+		return;
+	}
 	ALLOC_CACHE_ALIGN_BUFFER(char, buf, CONFIG_ENV_SIZE);
 
+	if (location_table[0].erase_opts.offset ==
+			CONFIG_ENV_OFFSET)
+		location_table[0].erase_opts.offset =
+			part->offset;
+#ifdef CONFIG_ENV_OFFSET_REDUND
+	if (location_table[1].erase_opts.offset ==
+			CONFIG_ENV_OFFSET + CONFIG_ENV_RANGE)
+		location_table[1].erase_opts.offset =
+			part->offset + CONFIG_ENV_RANGE;
+#endif
+
 #if defined(CONFIG_ENV_OFFSET_OOB)
-	ret = get_nand_env_oob(&nand_info[0], &nand_env_oob_offset);
+	ret = get_nand_env_oob(&nand_info[1], &nand_env_oob_offset);
 	/*
 	 * If unable to read environment offset from NAND OOB then fall through
 	 * to the normal environment reading code below
@@ -392,7 +513,7 @@ void env_relocate_spec(void)
 	}
 #endif
 
-	ret = readenv(CONFIG_ENV_OFFSET, (u_char *)buf);
+	ret = readenv(part->offset, (u_char *)buf);
 	if (ret) {
 		set_default_env("!readenv() failed");
 		return;

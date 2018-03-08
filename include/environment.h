@@ -165,6 +165,11 @@ typedef struct environment_s {
 __attribute__((aligned(16)))
 #endif
 ;
+enum env_valid {
+	ENV_INVALID,	/* No valid environment */
+	ENV_VALID,	/* First or only environment is valid */
+	ENV_REDUND,	/* Redundant environment is valid */
+};
 
 #ifdef ENV_IS_EMBEDDED
 extern env_t environment;

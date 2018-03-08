@@ -375,6 +375,13 @@ static struct mtd_partition normal_partition_info[] = {
         .size = 0,
     },
 #endif
+#ifdef CONFIG_ENV_IS_IN_NAND
+    {
+        .name = "environment",
+        .offset = 0,
+        .size = 2*SZ_1M,
+    },
+#endif
     {
         .name = "misc",
         .offset = 0,

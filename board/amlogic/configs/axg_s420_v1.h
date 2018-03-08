@@ -299,6 +299,21 @@
 
 #ifdef CONFIG_AML_MTD
 
+/* #define CONFIG_ENV_IS_IN_NAND 1 */
+#ifdef CONFIG_ENV_IS_IN_NAND
+#define CONFIG_ENV_OFFSET 0
+#ifdef CONFIG_ENV_SIZE
+#undef CONFIG_ENV_SIZE
+/*
+ *The env size must be an integer
+ *multiple of the block size
+ */
+#define CONFIG_ENV_SIZE (128*1024)
+#endif
+#endif
+
+
+
 /* bootlaoder is construct by bl2 and fip
  * when DISCRETE_BOOTLOADER is enabled, bl2 & fip
  * will not be stored continuously, and nand layout
@@ -361,6 +376,10 @@
 
 #if (defined(CONFIG_ENV_IS_IN_AMLNAND) || defined(CONFIG_ENV_IS_IN_MMC)) && defined(CONFIG_STORE_COMPATIBLE)
 #error env in amlnand/mmc already be compatible;
+#endif
+
+#if defined(CONFIG_ENV_IS_IN_AMLNAND) && defined(CONFIG_ENV_IS_IN_NAND)
+#error CONFIG_ENV_IS_IN_AMLNAND and CONFIG_ENV_IS_IN_NAND are not compatibility
 #endif
 
 #define		CONFIG_PARTITIONS 1
