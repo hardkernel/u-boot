@@ -82,6 +82,7 @@ int video_reserve(ulong *addrp)
 	size = DRM_ROCKCHIP_FB_SIZE + MEMORY_POOL_SIZE;
 	*addrp = *addrp - size;
 	*addrp &= ~((1 << 20) - 1);
+	debug("Reserving %lx Bytes for video at: %lx\n", size, *addrp);
 #else
 	for (uclass_find_first_device(UCLASS_VIDEO, &dev);
 	     dev;
