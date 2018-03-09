@@ -89,6 +89,9 @@ void board_init_f(ulong dummy)
 #endif
 #endif
 
+#if !defined(CONFIG_SUPPORT_TPL)
+	arch_cpu_init();
+#endif
 #define EARLY_UART
 #if defined(EARLY_UART) && defined(CONFIG_DEBUG_UART)
 	/*
@@ -103,7 +106,6 @@ void board_init_f(ulong dummy)
 	printascii("U-Boot SPL board init");
 #endif
 
-	arch_cpu_init();
 	rockchip_stimer_init();
 #ifdef CONFIG_SPL_FRAMEWORK
 	ret = spl_early_init();
