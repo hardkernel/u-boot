@@ -151,8 +151,20 @@ config TXHD_R341_V1
 	bool "Support amlogic txhd r341 v1 board"
 	default n
 
-config g12a_SKT_V1
+config G12A_SKT_V1
 	bool "Support amlogic g12a skt v1 board"
+	default n
+
+config G12A_U200_V1
+	bool "Support amlogic g12a u200 v1 board"
+	default n
+
+config G12A_U211_V1
+	bool "Support amlogic g12a u211 v1 board"
+	default n
+
+config G12A_U221_V1
+	bool "Support amlogic g12a u221 v1 board"
 	default n
 
 config PXP_EMULATOR
@@ -318,8 +330,20 @@ if TXHD_R341_V1
 source "board/amlogic/txhd_r341_v1/Kconfig"
 endif
 
-if g12a_SKT_V1
+if G12A_SKT_V1
 source "board/amlogic/g12a_skt_v1/Kconfig"
+endif
+
+if G12A_U200_V1
+source "board/amlogic/g12a_u200_v1/Kconfig"
+endif
+
+if G12A_U211_V1
+source "board/amlogic/g12a_u211_v1/Kconfig"
+endif
+
+if G12A_U221_V1
+source "board/amlogic/g12a_u221_v1/Kconfig"
 endif
 
 if ODROID_C2

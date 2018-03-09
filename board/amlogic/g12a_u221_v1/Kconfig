@@ -6,7 +6,7 @@ config SYS_CPU
 
 config SYS_BOARD
 	string
-	default "g12a_skt_v1"
+	default "g12a_u221_v1"
 
 config SYS_VENDOR
 	string
@@ -17,6 +17,6 @@ config SYS_SOC
 	default "g12a"
 
 config SYS_CONFIG_NAME
-	default "g12a_skt_v1"
+	default "g12a_u221_v1"
 
 endif
