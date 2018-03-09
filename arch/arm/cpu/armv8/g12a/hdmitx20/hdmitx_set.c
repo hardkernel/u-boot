@@ -390,8 +390,6 @@ void hdmi_tx_init(void)
 	hdmitx_device.HWOp.dump_regs = dump_regs;
 	hdmitx_device.HWOp.test_bist = hdmitx_test_bist;
 	hdmitx_device.HWOp.output_blank = hdmitx_output_blank;
-	/*open 5V */
-	hd_set_reg_bits(P_PREG_PAD_GPIO4_O, 1, 8, 1);
 }
 
 void hdmi_tx_set(struct hdmitx_dev *hdev)
