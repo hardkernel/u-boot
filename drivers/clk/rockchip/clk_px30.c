@@ -829,8 +829,12 @@ static struct clk_ops px30_clk_ops = {
 static int px30_clk_probe(struct udevice *dev)
 {
 	struct px30_clk_priv *priv = dev_get_priv(dev);
+	u32 reg = readl(&priv->cru->clksel_con[23]);
 
-	rkclk_init(priv->cru);
+	/* Only do the rkclk_init() one time for boot up */
+	if (((reg & BUS_ACLK_DIV_MASK) >> BUS_ACLK_DIV_SHIFT) !=
+	    (GPLL_HZ / BUS_ACLK_HZ - 1))
+		rkclk_init(priv->cru);
 
 	return 0;
 }
