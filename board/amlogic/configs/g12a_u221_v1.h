@@ -89,7 +89,7 @@
         "display_height=1080\0" \
         "display_bpp=16\0" \
         "display_color_index=16\0" \
-        "display_layer=osd1\0" \
+        "display_layer=osd0\0" \
         "display_color_fg=0xffff\0" \
         "display_color_bg=0\0" \
         "dtb_mem_addr=0x1000000\0" \
@@ -401,7 +401,7 @@
 
 /* DISPLAY & HDMITX */
 #define CONFIG_AML_HDMITX20 1
-//#define CONFIG_AML_CANVAS 1
+#define CONFIG_AML_CANVAS 1
 #define CONFIG_AML_VOUT 1
 #define CONFIG_AML_OSD 1
 #define CONFIG_OSD_SCALE_ENABLE 1
