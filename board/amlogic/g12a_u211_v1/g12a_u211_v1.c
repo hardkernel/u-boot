@@ -79,25 +79,9 @@ int dram_init(void)
 void secondary_boot_func(void)
 {
 }
+#ifdef  ETHERNET_INTERNAL_PHY
 void internalPhyConfig(struct phy_device *phydev)
 {
-	/*Enable Analog and DSP register Bank access by*/
-	phy_write(phydev, MDIO_DEVAD_NONE, 0x14, 0x0000);
-	phy_write(phydev, MDIO_DEVAD_NONE, 0x14, 0x0400);
-	phy_write(phydev, MDIO_DEVAD_NONE, 0x14, 0x0000);
-	phy_write(phydev, MDIO_DEVAD_NONE, 0x14, 0x0400);
-	/*Write Analog register 23*/
-	phy_write(phydev, MDIO_DEVAD_NONE, 0x17, 0x8E0D);
-	phy_write(phydev, MDIO_DEVAD_NONE, 0x14, 0x4417);
-	/*Enable fractional PLL*/
-	phy_write(phydev, MDIO_DEVAD_NONE, 0x17, 0x0005);
-	phy_write(phydev, MDIO_DEVAD_NONE, 0x14, 0x5C1B);
-	//Programme fraction FR_PLL_DIV1
-	phy_write(phydev, MDIO_DEVAD_NONE, 0x17, 0x029A);
-	phy_write(phydev, MDIO_DEVAD_NONE, 0x14, 0x5C1D);
-	//## programme fraction FR_PLL_DiV1
-	phy_write(phydev, MDIO_DEVAD_NONE, 0x17, 0xAAAA);
-	phy_write(phydev, MDIO_DEVAD_NONE, 0x14, 0x5C1C);
 }
 
 static int dwmac_meson_cfg_pll(void)
@@ -175,7 +159,47 @@ static void setup_net_chip(void)
 	/* power on memory */
 	clrbits_le32(HHI_MEM_PD_REG0, (1 << 3) | (1<<2));
 }
+#endif
 
+#ifdef ETHERNET_EXTERNAL_PHY
+
+static int dwmac_meson_cfg_drive_strength(void)
+{
+	writel(0xaaaaaaa5, P_PAD_DS_REG4A);
+	return 0;
+}
+
+static void setup_net_chip_ext(void)
+{
+	eth_aml_reg0_t eth_reg0;
+	writel(0x11111111, P_PERIPHS_PIN_MUX_6);
+	writel(0x111111, P_PERIPHS_PIN_MUX_7);
+
+	eth_reg0.d32 = 0;
+	eth_reg0.b.phy_intf_sel = 1;
+	eth_reg0.b.rx_clk_rmii_invert = 0;
+	eth_reg0.b.rgmii_tx_clk_src = 0;
+	eth_reg0.b.rgmii_tx_clk_phase = 1;
+	eth_reg0.b.rgmii_tx_clk_ratio = 4;
+	eth_reg0.b.phy_ref_clk_enable = 1;
+	eth_reg0.b.clk_rmii_i_invert = 0;
+	eth_reg0.b.clk_en = 1;
+	eth_reg0.b.adj_enable = 0;
+	eth_reg0.b.adj_setup = 0;
+	eth_reg0.b.adj_delay = 0;
+	eth_reg0.b.adj_skew = 0;
+	eth_reg0.b.cali_start = 0;
+	eth_reg0.b.cali_rise = 0;
+	eth_reg0.b.cali_sel = 0;
+	eth_reg0.b.rgmii_rx_reuse = 0;
+	eth_reg0.b.eth_urgent = 0;
+	setbits_le32(P_PREG_ETH_REG0, eth_reg0.d32);// rmii mode
+
+	setbits_le32(HHI_GCLK_MPEG1, 0x1 << 3);
+	/* power on memory */
+	clrbits_le32(HHI_MEM_PD_REG0, (1 << 3) | (1<<2));
+}
+#endif
 extern struct eth_board_socket* eth_board_setup(char *name);
 extern int designware_initialize(ulong base_addr, u32 interface);
 
@@ -184,7 +208,14 @@ int board_eth_init(bd_t *bis)
 #ifdef CONFIG_ETHERNET_NONE
 	return 0;
 #endif
+
+#ifdef ETHERNET_EXTERNAL_PHY
+	dwmac_meson_cfg_drive_strength();
+	setup_net_chip_ext();
+#endif
+#ifdef ETHERNET_INTERNAL_PHY
 	setup_net_chip();
+#endif
 	udelay(1000);
 	designware_initialize(ETH_BASE, PHY_INTERFACE_MODE_RMII);
 	return 0;

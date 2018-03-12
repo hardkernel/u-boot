@@ -568,8 +568,8 @@
 
 /* Choose One of Ethernet Type */
 #undef CONFIG_ETHERNET_NONE
-#define ETHERNET_INTERNAL_PHY
-#undef ETHERNET_EXTERNAL_PHY
+#undef ETHERNET_INTERNAL_PHY
+#define ETHERNET_EXTERNAL_PHY
 
 #endif
 
