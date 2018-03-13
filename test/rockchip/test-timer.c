@@ -74,11 +74,16 @@ static void timer_irq_handler(int irq, void *data)
 
 static int soc_timer_irq_test_init(void)
 {
+	/* Disable before config */
+	writel(0, TIMER_BASE + TIMER_CTRL);
+
+	/* Config */
 	writel(SYS_COUNTER_FREQ0, TIMER_BASE + TIMER_LOAD_COUNT0);
 	writel(SYS_COUNTER_FREQ1, TIMER_BASE + TIMER_LOAD_COUNT1);
 	writel(TIMER_CLR_INT, TIMER_BASE + TIMER_INTSTATUS);
 	writel(TIMER_EN | TIMER_INT_EN, TIMER_BASE + TIMER_CTRL);
 
+	/* Request irq */
 	irq_install_handler(TIMER_IRQ, timer_irq_handler, NULL);
 	irq_handler_enable(TIMER_IRQ);
 
