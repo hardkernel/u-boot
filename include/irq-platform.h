@@ -144,6 +144,7 @@
 #define IRQ_GPIO3			38
 #define IRQ_PWM0			56
 #define IRQ_PWM1			57
+#define IRQ_TIMER0			62	/* non-secure */
 #define IRQ_TIMER1			63	/* non-secure */
 
 #define GIC_IRQS_NR			(4 * 32)
