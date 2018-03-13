@@ -20,7 +20,7 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
-static int dbg_enable = 1;
+static int dbg_enable = 0;
 #define DBG(args...) \
 	do { \
 		if (dbg_enable) { \
