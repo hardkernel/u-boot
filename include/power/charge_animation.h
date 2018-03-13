@@ -17,6 +17,9 @@ struct charge_animation_pdata {
 	int screen_on_voltage;
 
 	int system_suspend;
+	int auto_wakeup_interval;
+	int auto_wakeup_screen_invert;
+	int auto_off_screen_interval;
 };
 
 #endif

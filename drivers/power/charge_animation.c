@@ -4,6 +4,7 @@
  * SPDX-License-Identifier:     GPL-2.0+
  */
 
+#include <asm/io.h>
 #include <common.h>
 #include <boot_rkimg.h>
 #include <console.h>
@@ -22,6 +23,7 @@
 #include <power/pmic.h>
 #include <power/rk8xx_pmic.h>
 #include <power/regulator.h>
+#include <rk_timer_irq.h>
 #include <video_rockchip.h>
 
 DECLARE_GLOBAL_DATA_PTR;
@@ -39,6 +41,9 @@ struct charge_animation_priv {
 	struct udevice *fg;
 	const struct charge_image *image;
 	int image_num;
+
+	int auto_wakeup_key_state;
+	ulong auto_screen_off_timeout;
 };
 
 /*
@@ -80,6 +85,14 @@ static int charge_animation_ofdata_to_platdata(struct udevice *dev)
 	pdata->system_suspend =
 		dev_read_u32_default(dev, "rockchip,system-suspend", 0);
 
+	pdata->auto_wakeup_interval =
+		dev_read_u32_default(dev, "rockchip,auto-wakeup-interval", 0);
+	pdata->auto_wakeup_screen_invert =
+		dev_read_u32_default(dev, "rockchip,auto-wakeup-screen-invert", 0);
+
+	pdata->auto_off_screen_interval =
+		dev_read_u32_default(dev, "rockchip,auto-off-screen-interval", 15);
+
 	if (pdata->screen_on_voltage > pdata->exit_charge_voltage)
 		pdata->screen_on_voltage = pdata->exit_charge_voltage;
 
@@ -92,13 +105,32 @@ static int charge_animation_ofdata_to_platdata(struct udevice *dev)
 	return 0;
 }
 
-static int check_key_press(void)
+static int check_key_press(struct udevice *dev)
 {
+	struct charge_animation_pdata *pdata = dev_get_platdata(dev);
+	struct charge_animation_priv *priv = dev_get_priv(dev);
 	u32 state;
 
 	state = platform_key_read(KEY_POWER);
 	if (state < 0)
 		printf("read power key failed: %d\n", state);
+
+	/* Fixup key state for following cases */
+	if (pdata->auto_wakeup_interval) {
+		if  (pdata->auto_wakeup_screen_invert) {
+			if (priv->auto_wakeup_key_state == KEY_PRESS_DOWN) {
+				/* Value is updated in timer interrupt */
+				priv->auto_wakeup_key_state = KEY_PRESS_NONE;
+				state = KEY_PRESS_DOWN;
+			}
+		}
+	} else if (pdata->auto_off_screen_interval) {
+		if (get_timer(priv->auto_screen_off_timeout) >
+		    pdata->auto_off_screen_interval * 1000) {	/* 1000ms */
+			state = KEY_PRESS_DOWN;
+			printf("Auto screen off\n");
+		}
+	}
 
 	return state;
 }
@@ -217,6 +249,42 @@ static int charge_extrem_low_power(struct udevice *dev)
 	return 0;
 }
 
+static void timer_irq_handler(int irq, void *data)
+{
+	struct udevice *dev = data;
+	struct charge_animation_priv *priv = dev_get_priv(dev);
+	static long long count;
+
+	writel(TIMER_CLR_INT, TIMER_BASE + TIMER_INTSTATUS);
+
+	priv->auto_wakeup_key_state = KEY_PRESS_DOWN;
+	printf("auto wakeup count: %lld\n", ++count);
+}
+
+static void autowakeup_timer_init(struct udevice *dev)
+{
+	struct charge_animation_pdata *pdata = dev_get_platdata(dev);
+	uint64_t period = 24000000ULL * (pdata->auto_wakeup_interval);
+
+	/* Disable before conifg */
+	writel(0, TIMER_BASE + TIMER_CTRL);
+
+	/* Config */
+	writel((uint32_t)period, TIMER_BASE + TIMER_LOAD_COUNT0);
+	writel((uint32_t)(period >> 32), TIMER_BASE + TIMER_LOAD_COUNT1);
+	writel(TIMER_CLR_INT, TIMER_BASE + TIMER_INTSTATUS);
+	writel(TIMER_EN | TIMER_INT_EN, TIMER_BASE + TIMER_CTRL);
+
+	/* IRQ */
+	irq_install_handler(TIMER_IRQ, timer_irq_handler, dev);
+	irq_handler_enable(TIMER_IRQ);
+}
+
+static void autowakeup_timer_uninit(void)
+{
+	irq_free_handler(TIMER_IRQ);
+}
+
 static int charge_animation_show(struct udevice *dev)
 {
 	struct charge_animation_pdata *pdata = dev_get_platdata(dev);
@@ -297,9 +365,16 @@ static int charge_animation_show(struct udevice *dev)
 		charge_show_bmp(NULL);
 	}
 
+	/* Auto wakeup */
+	if (pdata->auto_wakeup_interval) {
+		printf("Auto wakeup: %dS\n", pdata->auto_wakeup_interval);
+		autowakeup_timer_init(dev);
+	}
+
 	printf("Enter U-Boot charging mode\n");
 
 	charge_start = get_timer(0);
+
 	/* Charging ! */
 	while (1) {
 		debug("step1 (%d)... \n", screen_on);
@@ -409,7 +484,13 @@ static int charge_animation_show(struct udevice *dev)
 		if (screen_on) {
 			debug("SHOW: %s\n", image[show_idx].name);
 			charge_show_bmp(image[show_idx].name);
+
+			/* Re calculate timeout to off screen */
+			if (priv->auto_screen_off_timeout == 0)
+				priv->auto_screen_off_timeout = get_timer(0);
 		} else {
+			priv->auto_screen_off_timeout = 0;
+
 			system_suspend_enter(pdata);
 		}
 
@@ -432,7 +513,7 @@ static int charge_animation_show(struct udevice *dev)
 		 * Short key event: turn on/off screen;
 		 * Long key event: show logo and boot system or still charging.
 		 */
-		key_state = check_key_press();
+		key_state = check_key_press(dev);
 		if (key_state == KEY_PRESS_DOWN) {
 			/* NULL means show nothing, ie. turn off screen */
 			if (screen_on)
@@ -498,6 +579,9 @@ static int charge_animation_show(struct udevice *dev)
 			break;
 		}
 	}
+
+	if (pdata->auto_wakeup_interval)
+		autowakeup_timer_uninit();
 
 	ms = get_timer(charge_start);
 	if (ms >= 1000) {
