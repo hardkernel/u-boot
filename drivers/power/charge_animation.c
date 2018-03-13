@@ -269,6 +269,11 @@ static int charge_animation_show(struct udevice *dev)
 	}
 #endif
 
+	/* Not charger online, exit */
+	charging = fuel_gauge_get_chrg_online(fg);
+	if (charging <= 0)
+		return 0;
+
 	/* Enter android charge, set property for kernel */
 	if (pdata->android_charge) {
 		env_update("bootargs", "androidboot.mode=charger");
@@ -277,11 +282,6 @@ static int charge_animation_show(struct udevice *dev)
 
 	/* Not enable U-Boot charge, exit */
 	if (!pdata->uboot_charge)
-		return 0;
-
-	/* Not charger online, exit */
-	charging = fuel_gauge_get_chrg_online(fg);
-	if (charging <= 0)
 		return 0;
 
 	voltage = fuel_gauge_get_voltage(fg);
