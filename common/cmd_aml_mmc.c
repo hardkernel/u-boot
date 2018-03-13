@@ -1669,8 +1669,9 @@ static int compute_write_protect_range(struct mmc *mmc, char *name,
                 "to group size\n"
                "the start address is change from 0x%llx to 0x%llx\n",
                start, align_start);
+    } else {
+        align_start = start;
     }
-
     if (emmc_cur_partition && !strncmp(name, "bootloader", strlen("bootloader")))
         cnt = mmc->boot_size >> blk_shift;
     else
