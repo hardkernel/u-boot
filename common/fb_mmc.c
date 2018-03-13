@@ -172,44 +172,48 @@ void fb_mmc_flash_write(const char *cmd, void *download_buffer,
 		return;
 	}
 #ifdef CONFIG_EFI_PARTITION
-	if (strcmp(cmd, CONFIG_FASTBOOT_GPT_NAME) == 0) {
-		printf("%s: updating MBR, Primary and Backup GPT(s)\n",
-		       __func__);
-		if (is_valid_gpt_buf(dev_desc, download_buffer)) {
-			printf("%s: invalid GPT - refusing to write to flash\n",
+	if (dev_desc->part_type == PART_TYPE_EFI) {
+		if (strcmp(cmd, CONFIG_FASTBOOT_GPT_NAME) == 0) {
+			printf("%s: updating MBR, Primary and Backup GPT(s)\n",
 			       __func__);
-			fastboot_fail("invalid GPT partition");
+			if (is_valid_gpt_buf(dev_desc, download_buffer)) {
+				printf("%s: invalid GPT - refusing to write to flash\n",
+				       __func__);
+				fastboot_fail("invalid GPT partition");
+				return;
+			}
+			if (write_mbr_and_gpt_partitions(dev_desc, download_buffer)) {
+				printf("%s: writing GPT partitions failed\n", __func__);
+				fastboot_fail("writing GPT partitions failed");
+				return;
+			}
+			printf("........ success\n");
+			fastboot_okay("");
+			return;
+		} else if (get_partition_info_efi_by_name(dev_desc, cmd, &info)) {
+			error("cannot find partition: '%s'\n", cmd);
+			fastboot_fail("cannot find partition");
 			return;
 		}
-		if (write_mbr_and_gpt_partitions(dev_desc, download_buffer)) {
-			printf("%s: writing GPT partitions failed\n", __func__);
-			fastboot_fail("writing GPT partitions failed");
-			return;
-		}
-		printf("........ success\n");
-		fastboot_okay("");
-		return;
-	} else if (get_partition_info_efi_by_name(dev_desc, cmd, &info)) {
-		error("cannot find partition: '%s'\n", cmd);
-		fastboot_fail("cannot find partition");
-		return;
 	}
 #endif
 
 #ifdef CONFIG_AML_PARTITION
-	if (strcmp(cmd, CONFIG_FASTBOOT_MBR_NAME) == 0) {
-		printf("%s: updating MBR\n", __func__);
-		ret = emmc_update_mbr(download_buffer);
-		if (ret)
-			fastboot_fail("fastboot update mbr fail");
-		else
-			fastboot_okay("");
-		return;
-	}
-	if (get_partition_info_aml_by_name(dev_desc, cmd, &info)) {
-		error("cannot find partition: '%s'\n", cmd);
-		fastboot_fail("cannot find partition");
-		return;
+	if (dev_desc->part_type == PART_TYPE_AML) {
+		if (strcmp(cmd, CONFIG_FASTBOOT_MBR_NAME) == 0) {
+			printf("%s: updating MBR\n", __func__);
+			ret = emmc_update_mbr(download_buffer);
+			if (ret)
+				fastboot_fail("fastboot update mbr fail");
+			else
+				fastboot_okay("");
+			return;
+		}
+		if (get_partition_info_aml_by_name(dev_desc, cmd, &info)) {
+			error("cannot find partition: '%s'\n", cmd);
+			fastboot_fail("cannot find partition");
+			return;
+		}
 	}
 #endif
 	if (strcmp(cmd, "dtb") == 0) {
@@ -272,10 +276,12 @@ void fb_mmc_erase_write(const char *cmd, void *download_buffer)
 		return;
 	}
 #ifdef CONFIG_EFI_PARTITION
-	ret = part_get_info_efi_by_name_or_alias(dev_desc, cmd, &info);
+	if (dev_desc->part_type == PART_TYPE_EFI)
+		ret = part_get_info_efi_by_name_or_alias(dev_desc, cmd, &info);
 #endif
 #ifdef CONFIG_AML_PARTITION
-	ret = get_partition_info_aml_by_name(dev_desc, cmd, &info);
+	if (dev_desc->part_type == PART_TYPE_AML)
+		ret = get_partition_info_aml_by_name(dev_desc, cmd, &info);
 #endif
 	if (ret) {
 		error("cannot find partition: '%s'", cmd);
