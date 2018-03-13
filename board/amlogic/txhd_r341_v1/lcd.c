@@ -146,8 +146,8 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 static struct lcd_pinmux_ctrl_s lcd_pinmux_ctrl[LCD_PINMX_MAX] = {
 	{
 		.name = "lcd_minilvds_pin", //GPIOH_0~15
-		.pinmux_set = {{4, 0x11111111}, {5, 0x11111111}, {LCD_PINMUX_END, 0x0}},
-		.pinmux_clr = {{4, 0xffffffff}, {5, 0xffffffff}, {LCD_PINMUX_END, 0x0}},
+		.pinmux_set = {{4, 0x11111111}, {5, 0x00110001}, {LCD_PINMUX_END, 0x0}},
+		.pinmux_clr = {{4, 0xffffffff}, {5, 0x00ff000f}, {LCD_PINMUX_END, 0x0}},
 	},
 	{
 		.name = "invalid",
@@ -279,8 +279,8 @@ struct lcd_config_s lcd_config_dft = {
 
 	.pinctrl_ver = 2,
 	.lcd_pinmux = lcd_pinmux_ctrl,
-	.pinmux_set = {{4, 0x11111111}, {5, 0x11111111}, {LCD_PINMUX_END, 0x0}},
-	.pinmux_clr = {{4, 0xffffffff}, {5, 0xffffffff}, {LCD_PINMUX_END, 0x0}},
+	.pinmux_set = {{4, 0x11111111}, {5, 0x00110001}, {LCD_PINMUX_END, 0x0}},
+	.pinmux_clr = {{4, 0xffffffff}, {5, 0x00ff000f}, {LCD_PINMUX_END, 0x0}},
 };
 
 #ifdef CONFIG_AML_LCD_EXTERN

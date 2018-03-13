@@ -865,7 +865,7 @@ void aml_lcd_unifykey_dump(void)
 	}
 	key_len = LCD_UKEY_TCON_SIZE;
 	memset(para, 0, (sizeof(unsigned char) * key_len));
-	ret = aml_lcd_unifykey_get("lcd_tcon", para, &key_len);
+	ret = aml_lcd_unifykey_get_no_header("lcd_tcon", para, &key_len);
 	if (ret == 0) {
 		printf("unifykey: lcd_tcon:");
 		for (i = 0; i < key_len; i++) {
