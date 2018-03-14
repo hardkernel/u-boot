@@ -51,19 +51,24 @@
 		break;\
 	}
 
-#define WAIT_FOR_PLL_LOCKED(reg)                        \
-	do {                                                \
-		unsigned int cnt = 10;                          \
-		unsigned int time_out = 0;                      \
-		while (cnt --) {                                 \
-		time_out = 0;                               \
-		while ((!(hd_read_reg(reg) & (1 << 31)))\
-			& (time_out < 10000))               \
-			time_out ++;                            \
-		}                                               \
-		if (cnt < 9)                                     \
+#define WAIT_FOR_PLL_LOCKED(reg) \
+	do { \
+		unsigned int st = 0; \
+		int cnt = 10; \
+		while (cnt--) { \
+			udelay(50); \
+			st = (((hd_read_reg(reg) >> 30) & 0x3) == 3); \
+			if (st) \
+				break; \
+			else { \
+				/* reset hpll */ \
+				hd_set_reg_bits(reg, 1, 29, 1); \
+				hd_set_reg_bits(reg, 0, 29, 1); \
+			} \
+		} \
+		if (cnt < 9) \
 			printk("pll[0x%x] reset %d times\n", reg, 9 - cnt);\
-	} while(0);
+	} while (0)
 
 // viu_channel_sel: 1 or 2
 // viu_type_sel: 0: 0=ENCL, 1=ENCI, 2=ENCP, 3=ENCT.
@@ -86,25 +91,89 @@ static void set_hdmitx_sys_clk(void)
 	hd_set_reg_bits(P_HHI_HDMI_CLK_CNTL, 1, 8, 1);
 }
 
+/*
+ * When VCO outputs 6.0 GHz, if VCO unlock with default v1
+ * steps, then need reset with v2 or v3
+ */
+static bool set_hpll_hclk_v1(unsigned int m, unsigned int frac_val)
+{
+	int ret = 0;
+
+	hd_write_reg(P_HHI_HDMI_PLL_CNTL0, 0x3b3a0400 | (m & 0xff));
+	hd_write_reg(P_HHI_HDMI_PLL_CNTL1, frac_val);
+	hd_write_reg(P_HHI_HDMI_PLL_CNTL2, 0x00000000);
+	hd_write_reg(P_HHI_HDMI_PLL_CNTL3, 0x2a29dc00);
+	hd_write_reg(P_HHI_HDMI_PLL_CNTL4, 0x65771290);
+	hd_write_reg(P_HHI_HDMI_PLL_CNTL5, 0x39272000);
+	hd_write_reg(P_HHI_HDMI_PLL_CNTL6, 0x50540000);
+	printk("HPLL: 0x%lx\n", hd_read_reg(P_HHI_HDMI_PLL_CNTL0));
+	hd_set_reg_bits(P_HHI_HDMI_PLL_CNTL0, 0x0, 29, 1);
+	printk("HPLL: 0x%lx\n", hd_read_reg(P_HHI_HDMI_PLL_CNTL0));
+	WAIT_FOR_PLL_LOCKED(P_HHI_HDMI_PLL_CNTL0);
+	printk("HPLLv1: 0x%lx\n", hd_read_reg(P_HHI_HDMI_PLL_CNTL0));
+
+	ret = (((hd_read_reg(P_HHI_HDMI_PLL_CNTL0) >> 30) & 0x3) == 0x3);
+	return ret; /* return hpll locked status */
+}
+
+static bool set_hpll_hclk_v2(unsigned int m, unsigned int frac_val)
+{
+	int ret = 0;
+
+	hd_write_reg(P_HHI_HDMI_PLL_CNTL0, 0x3b3a0400 | (m & 0xff));
+	hd_write_reg(P_HHI_HDMI_PLL_CNTL1, frac_val);
+	hd_write_reg(P_HHI_HDMI_PLL_CNTL2, 0x00000000);
+	hd_write_reg(P_HHI_HDMI_PLL_CNTL3, 0xeaa9dc00);
+	hd_write_reg(P_HHI_HDMI_PLL_CNTL4, 0x95771290);
+	hd_write_reg(P_HHI_HDMI_PLL_CNTL5, 0x39272000);
+	hd_write_reg(P_HHI_HDMI_PLL_CNTL6, 0x55540028);
+	printk("HPLL: 0x%lx\n", hd_read_reg(P_HHI_HDMI_PLL_CNTL0));
+	hd_set_reg_bits(P_HHI_HDMI_PLL_CNTL0, 0x0, 29, 1);
+	printk("HPLL: 0x%lx\n", hd_read_reg(P_HHI_HDMI_PLL_CNTL0));
+	WAIT_FOR_PLL_LOCKED(P_HHI_HDMI_PLL_CNTL0);
+	printk("HPLLv2: 0x%lx\n", hd_read_reg(P_HHI_HDMI_PLL_CNTL0));
+
+	ret = (((hd_read_reg(P_HHI_HDMI_PLL_CNTL0) >> 30) & 0x3) == 0x3);
+	return ret; /* return hpll locked status */
+}
+
+static bool set_hpll_hclk_v3(unsigned int m, unsigned int frac_val)
+{
+	int ret = 0;
+
+	hd_write_reg(P_HHI_HDMI_PLL_CNTL0, 0x3b3a0400 | (m & 0xff));
+	hd_write_reg(P_HHI_HDMI_PLL_CNTL1, frac_val);
+	hd_write_reg(P_HHI_HDMI_PLL_CNTL2, 0x00000000);
+	hd_write_reg(P_HHI_HDMI_PLL_CNTL3, 0xea29dc00);
+	hd_write_reg(P_HHI_HDMI_PLL_CNTL4, 0x65771290);
+	hd_write_reg(P_HHI_HDMI_PLL_CNTL5, 0x39272000);
+	hd_write_reg(P_HHI_HDMI_PLL_CNTL6, 0x55540000);
+	printk("HPLL: 0x%lx\n", hd_read_reg(P_HHI_HDMI_PLL_CNTL0));
+	hd_set_reg_bits(P_HHI_HDMI_PLL_CNTL0, 0x0, 29, 1);
+	printk("HPLL: 0x%lx\n", hd_read_reg(P_HHI_HDMI_PLL_CNTL0));
+	WAIT_FOR_PLL_LOCKED(P_HHI_HDMI_PLL_CNTL0);
+	printk("HPLLv3: 0x%lx\n", hd_read_reg(P_HHI_HDMI_PLL_CNTL0));
+
+	ret = (((hd_read_reg(P_HHI_HDMI_PLL_CNTL0) >> 30) & 0x3) == 0x3);
+	return ret; /* return hpll locked status */
+}
+
 static void set_hpll_clk_out(unsigned clk)
 {
+	unsigned int frac_rate = 0;
 	check_clk_config(clk);
 	printk("config HPLL = %d\n", clk);
 
 	switch (clk) {
 	case 5940000:
-		hd_write_reg(P_HHI_HDMI_PLL_CNTL0, 0x3b3a04f7);
-		hd_write_reg(P_HHI_HDMI_PLL_CNTL1, 0x00010000);
-		hd_write_reg(P_HHI_HDMI_PLL_CNTL2, 0x00000000);
-		hd_write_reg(P_HHI_HDMI_PLL_CNTL3, 0x2a29dc00);
-		hd_write_reg(P_HHI_HDMI_PLL_CNTL4, 0x65771290);
-		hd_write_reg(P_HHI_HDMI_PLL_CNTL5, 0x39270000);
-		hd_write_reg(P_HHI_HDMI_PLL_CNTL6, 0x50540000);
-		printk("HPLL: 0x%lx\n", hd_read_reg(P_HHI_HDMI_PLL_CNTL0));
-		hd_set_reg_bits(P_HHI_HDMI_PLL_CNTL0, 0x0, 29, 1);
-		printk("HPLL: 0x%lx\n", hd_read_reg(P_HHI_HDMI_PLL_CNTL0));
-		WAIT_FOR_PLL_LOCKED(P_HHI_HDMI_PLL_CNTL0);
-		printk("HPLL: 0x%lx\n", hd_read_reg(P_HHI_HDMI_PLL_CNTL0));
+		if (set_hpll_hclk_v1(0xf7, frac_rate ? 0x8168 : 0x10000))
+			break;
+		else if (set_hpll_hclk_v2(0x7b, frac_rate ? 0x140b4 : 0x18000))
+			break;
+		else if (set_hpll_hclk_v3(0xf7, frac_rate ? 0x8168 : 0x10000))
+			break;
+		else
+			break;
 		break;
 	case 5405400:
 		hd_write_reg(P_HHI_HDMI_PLL_CNTL0, 0x3b0004e1);
@@ -128,7 +197,9 @@ static void set_hpll_clk_out(unsigned clk)
 		hd_write_reg(P_HHI_HDMI_PLL_CNTL4, 0x33771290);
 		hd_write_reg(P_HHI_HDMI_PLL_CNTL5, 0x39270000);
 		hd_write_reg(P_HHI_HDMI_PLL_CNTL6, 0x50540000);
+		printk("HPLL: 0x%lx\n", hd_read_reg(P_HHI_HDMI_PLL_CNTL0));
 		hd_set_reg_bits(P_HHI_HDMI_PLL_CNTL0, 0x0, 29, 1);
+		printk("HPLL: 0x%lx\n", hd_read_reg(P_HHI_HDMI_PLL_CNTL0));
 		WAIT_FOR_PLL_LOCKED(P_HHI_HDMI_PLL_CNTL0);
 		printk("HPLL: 0x%lx\n", hd_read_reg(P_HHI_HDMI_PLL_CNTL0));
 		break;
@@ -297,6 +368,7 @@ static void set_hpll_od3_clk_div(int div_sel)
 	case CLK_UTIL_VID_PLL_DIV_14:     shift_val = 0x3f80; shift_sel = 1; break;
 	case CLK_UTIL_VID_PLL_DIV_15:     shift_val = 0x7f80; shift_sel = 2; break;
 	case CLK_UTIL_VID_PLL_DIV_2p5:    shift_val = 0x5294; shift_sel = 2; break;
+	case CLK_UTIL_VID_PLL_DIV_3p25:   shift_val = 0x66cc; shift_sel = 2; break;
 	default:
 		printk("Error: clocks_set_vid_clk_div:  Invalid parameter\n");
 		break;
@@ -379,13 +451,13 @@ static struct hw_enc_clk_val_group setting_enc_clk_val_24[] = {
 		{
 			HDMI_1280x720p50_16x9, HDMI_1280x720p60_16x9, GROUP_END
 		},
-		1, VIU_ENCP, 2970000, 4, 1, 1, CLK_UTIL_VID_PLL_DIV_5, 1, 2, 1, -1
+		1, VIU_ENCP, 5940000, 4, 2, 1, CLK_UTIL_VID_PLL_DIV_5, 1, 2, 1, -1
 	},
 	{
 		{
 			HDMI_1920x1080i60_16x9, HDMI_1920x1080i50_16x9, GROUP_END
 		},
-		1, VIU_ENCP, 2970000, 4, 1, 1, CLK_UTIL_VID_PLL_DIV_5, 1, 2, 1, -1
+		1, VIU_ENCP, 5940000, 4, 2, 1, CLK_UTIL_VID_PLL_DIV_5, 1, 2, 1, -1
 	},
 	{
 		{
@@ -393,20 +465,20 @@ static struct hw_enc_clk_val_group setting_enc_clk_val_24[] = {
 			HDMI_1280x720p100_16x9, HDMI_1280x720p120_16x9,
 			GROUP_END
 		},
-		1, VIU_ENCP, 2970000, 2, 1, 1, CLK_UTIL_VID_PLL_DIV_5, 1, 2, 1, -1
+		1, VIU_ENCP, 5940000, 4, 1, 1, CLK_UTIL_VID_PLL_DIV_5, 1, 2, 1, -1
 	},
 	{
 		{
 			HDMI_1920x1080p60_16x9, HDMI_1920x1080p50_16x9, GROUP_END
 		},
-		1, VIU_ENCP, 2970000, 1, 2, 2, CLK_UTIL_VID_PLL_DIV_5, 1, 1, 1, -1
+		1, VIU_ENCP, 5940000, 2, 2, 2, CLK_UTIL_VID_PLL_DIV_5, 1, 1, 1, -1
 	},
 	{
 		{
 			HDMI_1920x1080p30_16x9, HDMI_1920x1080p24_16x9,
 			HDMI_1920x1080p25_16x9, GROUP_END
 		},
-		1, VIU_ENCP, 2970000, 2, 2, 2, CLK_UTIL_VID_PLL_DIV_5, 1, 1, 1, -1
+		1, VIU_ENCP, 5940000, 4, 2, 2, CLK_UTIL_VID_PLL_DIV_5, 1, 1, 1, -1
 	},
 	{
 		{
@@ -416,7 +488,7 @@ static struct hw_enc_clk_val_group setting_enc_clk_val_24[] = {
 			HDMI_1920x1080p100_16x9, HDMI_1920x1080p120_16x9,
 			GROUP_END
 		},
-		1, VIU_ENCP, 2970000, 1, 1, 1, CLK_UTIL_VID_PLL_DIV_5, 2, 1, 1, -1
+		1, VIU_ENCP, 5940000, 2, 1, 1, CLK_UTIL_VID_PLL_DIV_5, 2, 1, 1, -1
 	},
 	{
 		{
@@ -681,7 +753,7 @@ static struct hw_enc_clk_val_group setting_enc_clk_val_36[] = {
 		{
 			HDMI_1920x1080p120_16x9, HDMI_1920x1080p100_16x9, GROUP_END
 		},
-		1, VIU_ENCP, 4455000, 1, 1, 1, CLK_UTIL_VID_PLL_DIV_7p5, 1, 2, 2, -1
+		1, VIU_ENCP, 4455000, 1, 1, 2, CLK_UTIL_VID_PLL_DIV_3p25, 1, 2, 2, -1
 	},
 	{
 		{
@@ -698,7 +770,7 @@ static struct hw_enc_clk_val_group setting_enc_clk_val_36[] = {
 			HDMI_3840x2160p50_16x9_Y420,
 			GROUP_END
 		},
-		1, VIU_ENCP, 4455000, 1, 1, 1, CLK_UTIL_VID_PLL_DIV_7p5, 1, 2, 1, -1
+		1, VIU_ENCP, 4455000, 1, 1, 2, CLK_UTIL_VID_PLL_DIV_3p25, 1, 2, 1, -1
 	},
 	{
 		{
@@ -710,7 +782,7 @@ static struct hw_enc_clk_val_group setting_enc_clk_val_36[] = {
 			HDMI_4096x2160p30_256x135,
 			GROUP_END
 		},
-		1, VIU_ENCP, 4455000, 1, 1, 1, CLK_UTIL_VID_PLL_DIV_7p5, 1, 2, 2, -1
+		1, VIU_ENCP, 4455000, 1, 1, 2, CLK_UTIL_VID_PLL_DIV_3p25, 1, 2, 2, -1
 	},
 };
 
