@@ -7,45 +7,8 @@
 #include <asm/io.h>
 #include <common.h>
 #include <irq-generic.h>
-#include <irq-platform.h>
+#include <rk_timer_irq.h>
 #include "test-rockchip.h"
-
-#define TIMER_LOAD_COUNT0	0x00
-#define TIMER_LOAD_COUNT1	0x04
-#define TIMER_CTRL		0x10
-#define TIMER_INTSTATUS		0x18
-
-#define SYS_COUNTER_FREQ0	24000000
-#define SYS_COUNTER_FREQ1	0
-
-#define TIMER_EN		BIT(0)
-#define TIMER_INT_EN		BIT(2)
-#define TIMER_CLR_INT		BIT(0)
-
-#if defined(CONFIG_ROCKCHIP_RK3128)
-#define TIMER_BASE		(0x20044000 + 0x20)	/* TIMER 1 */
-#define TIMER_IRQ		IRQ_TIMER1
-#elif defined(CONFIG_ROCKCHIP_RK322X)
-#define TIMER_BASE		(0x110C0000 + 0x20)	/* TIMER 1 */
-#define TIMER_IRQ		IRQ_TIMER1
-#elif defined(CONFIG_ROCKCHIP_RK3288)
-#define TIMER_BASE		(0xFF6B0000 + 0x20)	/* TIMER 1 */
-#define TIMER_IRQ		IRQ_TIMER1
-#elif defined(CONFIG_ROCKCHIP_RK3328)
-#define TIMER_BASE		(0xFF1C0000 + 0x20)	/* TIMER 1 */
-#define TIMER_IRQ		IRQ_TIMER1
-#elif defined(CONFIG_ROCKCHIP_RK3368)
-#define TIMER_BASE		(0xFF810000 + 0x20)	/* TIMER 1 */
-#define TIMER_IRQ		IRQ_TIMER1
-#elif defined(CONFIG_ROCKCHIP_RK3399)
-#define TIMER_BASE		(0xFF850000 + 0x20)	/* TIMER 1 */
-#define TIMER_IRQ		IRQ_TIMER1
-#elif defined(CONFIG_ROCKCHIP_PX30)
-#define TIMER_BASE		(0xFF210000 + 0x20)	/* TIMER 1 */
-#define TIMER_IRQ		IRQ_TIMER1
-#else
-"Missing definitions of timer module test"
-#endif
 
 /*************************** timer irq test ***********************************/
 static ulong seconds;
@@ -78,8 +41,8 @@ static int soc_timer_irq_test_init(void)
 	writel(0, TIMER_BASE + TIMER_CTRL);
 
 	/* Config */
-	writel(SYS_COUNTER_FREQ0, TIMER_BASE + TIMER_LOAD_COUNT0);
-	writel(SYS_COUNTER_FREQ1, TIMER_BASE + TIMER_LOAD_COUNT1);
+	writel(COUNTER_FREQUENCY, TIMER_BASE + TIMER_LOAD_COUNT0);
+	writel(0, TIMER_BASE + TIMER_LOAD_COUNT1);
 	writel(TIMER_CLR_INT, TIMER_BASE + TIMER_INTSTATUS);
 	writel(TIMER_EN | TIMER_INT_EN, TIMER_BASE + TIMER_CTRL);
 
