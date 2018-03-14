@@ -1,8 +1,8 @@
 
 /*
- * arch/arm/include/asm/arch-txl/cpu.h
+ * arch/arm/include/asm/arch-g12a/cpu.h
  *
- * Copyright (C) 2015 Amlogic, Inc. All rights reserved.
+ * Copyright (C) 2018 Amlogic, Inc. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -65,10 +65,10 @@
 #define CONFIG_SILENT_CONSOLE_UPDATE_ON_RELOC
 #define CONFIG_SILENT_U_BOOT_ONLY
 
-//2017.05.11 new compress solution, only support BL33 LZ4 compress
-//#define CONFIG_AML_BL33_COMPRESS_ENABLE 1
+//2018.03.19 new compress solution, only support BL33 LZ4 compress
+#define CONFIG_AML_BL33_COMPRESS_ENABLE 1
 
-//2017.10.19 TXLX only support v3 format for normal & secure boot
+//2018.03.19 G12A only support v3 format for normal & secure boot
 #define CONFIG_AML_SECURE_BOOT_V3 1
 
 #endif /* _CPU_H */
