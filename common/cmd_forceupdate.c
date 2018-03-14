@@ -3,6 +3,10 @@
 #include <environment.h>
 #include <asm/saradc.h>
 
+#ifndef CONFIG_SARADC_CH
+#define CONFIG_SARADC_CH  2
+#endif
+
 inline int get_source_key(int channel)
 {
 	int adc_chan = channel;
@@ -17,7 +21,7 @@ static void check_auto_update(void)
 	int times=40;
 	while (times--) {
 		udelay(100000);
-		source_key_value = get_source_key(0);
+		source_key_value = get_source_key(CONFIG_SARADC_CH);
 		if ((source_key_value >= 0) && (source_key_value < 40)) {
 			//printk("press update key!\n");
 		} else {

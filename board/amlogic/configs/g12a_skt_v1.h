@@ -47,6 +47,7 @@
 
 /* config saradc*/
 #define CONFIG_CMD_SARADC 1
+#define CONFIG_SARADC_CH  2
 
 /* Bootloader Control Block function
    That is used for recovery and the bootloader to talk to each other
@@ -239,6 +240,7 @@
             "run upgrade_check;"\
             "run init_display;"\
             "run storeargs;"\
+            "forceupdate;" \
             "run switch_bootmode;"
 
 #define CONFIG_BOOTCOMMAND "run storeboot"

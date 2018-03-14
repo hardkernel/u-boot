@@ -57,6 +57,7 @@
 #define CONFIG_BOOTLOADER_CONTROL_BLOCK
 
 #define CONFIG_CMD_SARADC 1
+#define CONFIG_SARADC_CH  0
 
 /*a/b update */
 /*#define CONFIG_CMD_BOOTCTOL_DEFAULT 1*/
