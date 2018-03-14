@@ -356,7 +356,7 @@ static ulong px30_i2c_set_clk(struct px30_cru *cru, ulong clk_id, uint hz)
 		return -EINVAL;
 	}
 
-	return DIV_TO_RATE(GPLL_HZ, src_clk_div);
+	return px30_i2c_get_clk(cru, clk_id);
 }
 
 static ulong px30_mmc_get_clk(struct px30_cru *cru, uint clk_id)
@@ -478,7 +478,7 @@ static ulong px30_pwm_set_clk(struct px30_cru *cru, ulong clk_id, uint hz)
 		return -EINVAL;
 	}
 
-	return DIV_TO_RATE(GPLL_HZ, src_clk_div);
+	return px30_pwm_get_clk(cru, clk_id);
 }
 
 static ulong px30_saradc_get_clk(struct px30_cru *cru)
@@ -500,9 +500,9 @@ static ulong px30_saradc_set_clk(struct px30_cru *cru, uint hz)
 
 	rk_clrsetreg(&cru->clksel_con[55],
 		     CLK_SARADC_DIV_CON_MASK,
-		     src_clk_div << CLK_SARADC_DIV_CON_SHIFT);
+		     (src_clk_div - 1) << CLK_SARADC_DIV_CON_SHIFT);
 
-	return DIV_TO_RATE(OSC_HZ, src_clk_div);
+	return px30_saradc_get_clk(cru);
 }
 
 static ulong px30_spi_get_clk(struct px30_cru *cru, ulong clk_id)
@@ -510,11 +510,11 @@ static ulong px30_spi_get_clk(struct px30_cru *cru, ulong clk_id)
 	u32 div, con;
 
 	switch (clk_id) {
-	case SCLK_PWM0:
+	case SCLK_SPI0:
 		con = readl(&cru->clksel_con[53]);
 		div = con >> CLK_SPI0_DIV_CON_SHIFT & CLK_SPI_DIV_CON_MASK;
 		break;
-	case SCLK_PWM1:
+	case SCLK_SPI1:
 		con = readl(&cru->clksel_con[53]);
 		div = con >> CLK_SPI1_DIV_CON_SHIFT & CLK_SPI_DIV_CON_MASK;
 		break;
@@ -553,7 +553,7 @@ static ulong px30_spi_set_clk(struct px30_cru *cru, ulong clk_id, uint hz)
 		return -EINVAL;
 	}
 
-	return DIV_TO_RATE(GPLL_HZ, src_clk_div);
+	return px30_spi_get_clk(cru, clk_id);
 }
 
 static ulong px30_vop_get_clk(struct px30_cru *cru, ulong clk_id)
@@ -639,6 +639,7 @@ static ulong px30_clk_get_rate(struct clk *clk)
 		rate = px30_i2c_get_clk(priv->cru, clk->id);
 		break;
 	case SCLK_PWM0:
+	case SCLK_PWM1:
 		rate = px30_pwm_get_clk(priv->cru, clk->id);
 		break;
 	case SCLK_SARADC:
