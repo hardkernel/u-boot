@@ -119,7 +119,7 @@ static void rkclk_set_pll(struct px30_cru *cru, enum px30_pll_id pll_id,
 	rk_clrreg(&pll->con1, 1 << PLL_PD_SHIFT);
 
 	/* waiting for pll lock */
-	while (readl(&pll->con1) & (1 << PLL_LOCK_STATUS_SHIFT))
+	while (!(readl(&pll->con1) & (1 << PLL_LOCK_STATUS_SHIFT)))
 		udelay(1);
 
 	rk_clrsetreg(mode, pll_mode_mask[pll_id],
