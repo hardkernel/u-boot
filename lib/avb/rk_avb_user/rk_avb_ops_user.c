@@ -428,6 +428,88 @@ int rk_avb_read_bootloader_locked_flag(uint8_t *flag)
 #endif
 }
 
+#ifdef CONFIG_SUPPORT_EMMC_RPMB
+static int curr_device = -1;
+
+int rk_bootloader_rollback_index_read(uint32_t offset, uint32_t bytes,
+				      void *rb_index)
+{
+
+	struct mmc *mmc;
+	uint8_t rpmb_buf[256] = {0};
+	uint32_t n;
+	char original_part;
+
+	if ((offset + bytes) > 256)
+		return -1;
+
+	if (curr_device < 0) {
+		if (get_mmc_num() > 0)
+			curr_device = 0;
+		else {
+			avb_error("No MMC device available");
+			return -1;
+		}
+	}
+
+	mmc = find_mmc_device(curr_device);
+	/* Switch to the RPMB partition */
+#ifndef CONFIG_BLK
+	original_part = mmc->block_dev.hwpart;
+#else
+	original_part = mmc_get_blk_desc(mmc)->hwpart;
+#endif
+	if (blk_select_hwpart_devnum(IF_TYPE_MMC, curr_device, MMC_PART_RPMB) !=
+	    0)
+		return -1;
+
+	n =  mmc_rpmb_read(mmc, rpmb_buf, RPMB_BASE_ADDR, 1, NULL);
+	if (n != 1)
+		return -1;
+
+	/* Return to original partition */
+	if (blk_select_hwpart_devnum(IF_TYPE_MMC, curr_device, original_part) !=
+	    0)
+		return -1;
+
+	memcpy(rb_index, (void*)&rpmb_buf[offset], bytes);
+
+	return 0;
+}
+
+int rk_avb_get_bootloader_min_version(char *buffer)
+{
+	uint32_t rb_index;
+	char temp[ROLLBACK_MAX_SIZE] = {0};
+
+	if (rk_bootloader_rollback_index_read(UBOOT_RB_INDEX_OFFSET,
+					      sizeof(uint32_t), &rb_index)) {
+		avb_error("Can not read uboot rollback index");
+		return -1;
+	}
+	snprintf(temp, sizeof(int) + 1, "%d", 0);
+	strncat(buffer, temp, ROLLBACK_MAX_SIZE);
+	strncat(buffer, ":", 1);
+	snprintf(temp, sizeof(uint32_t) + 1, "%d", rb_index);
+	strncat(buffer, temp, ROLLBACK_MAX_SIZE);
+	strncat(buffer, ",", 1);
+
+	if (rk_bootloader_rollback_index_read(TRUST_RB_INDEX_OFFSET,
+					      sizeof(uint32_t), &rb_index)) {
+		avb_error("Can not read trust rollback index");
+		return -1;
+	}
+
+	snprintf(temp, sizeof(int) + 1, "%d", 1);
+	strncat(buffer, temp, ROLLBACK_MAX_SIZE);
+	strncat(buffer, ":", 1);
+	snprintf(temp, sizeof(uint32_t) + 1, "%d", rb_index);
+	strncat(buffer, temp, ROLLBACK_MAX_SIZE);
+
+	return 0;
+}
+#endif
+
 void rk_avb_get_at_vboot_state(char *buf)
 {
 	char temp_buffer[200] = {0};
@@ -477,8 +559,15 @@ void rk_avb_get_at_vboot_state(char *buf)
 		printf("Can not avb_min_ver!\n");
 	sprintf(buf, "%s%s%s%s", buf, avb_min_ver, temp_buffer, crlf);
 
-	/* miniloader is not ready, bootloader-min-versions=-1 */
-	sprintf(buf, "%s%s%d%s", buf, btld_min_ver, -1, crlf);
+	/* bootloader-min-versions */
+	memset(temp_buffer, 0, 200);
+#ifdef CONFIG_SUPPORT_EMMC_RPMB
+	if (rk_avb_get_bootloader_min_version(temp_buffer))
+		avb_error("Call rk_avb_get_bootloader_min_version error!");
+#else
+	memcpy(temp_buffer, "-1", strlen("-1"));
+#endif
+	sprintf(buf, "%s%s%s%s", buf, btld_min_ver, temp_buffer, crlf);
 }
 
 int rk_avb_get_ab_info(AvbABData* ab_data)

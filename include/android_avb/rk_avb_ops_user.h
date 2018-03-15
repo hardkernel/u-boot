@@ -27,6 +27,9 @@ extern "C" {
 #define PERM_ATTR_SUCCESS_FLAG 1
 /* soc-v use the rsa2048 */
 #define VBOOT_KEY_SIZE   256
+#define RPMB_BASE_ADDR		(64*1024/256)
+#define UBOOT_RB_INDEX_OFFSET 24
+#define TRUST_RB_INDEX_OFFSET 28
 
 /**
  * Provided to fastboot to read how many slot in this system.
