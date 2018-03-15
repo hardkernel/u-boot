@@ -58,6 +58,7 @@ void board_init_f(ulong dummy)
 	struct udevice *dev;
 	int ret;
 
+	rockchip_stimer_init();
 	arch_cpu_init();
 #define EARLY_DEBUG
 #ifdef EARLY_DEBUG
@@ -80,7 +81,6 @@ void board_init_f(ulong dummy)
 		hang();
 	}
 
-	rockchip_stimer_init();
 	/* Init ARM arch timer */
 	timer_init();
 	ret = uclass_get_device(UCLASS_RAM, 0, &dev);

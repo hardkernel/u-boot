@@ -64,6 +64,10 @@ u32 spl_boot_mode(const u32 boot_device)
 
 __weak void rockchip_stimer_init(void)
 {
+#ifndef CONFIG_ARM64
+	asm volatile("mcr p15, 0, %0, c14, c0, 0"
+		     : : "r"(COUNTER_FREQUENCY));
+#endif
 	writel(0, CONFIG_ROCKCHIP_STIMER_BASE + 0x10);
 	writel(0xffffffff, CONFIG_ROCKCHIP_STIMER_BASE);
 	writel(0xffffffff, CONFIG_ROCKCHIP_STIMER_BASE + 4);
@@ -90,6 +94,7 @@ void board_init_f(ulong dummy)
 #endif
 
 #if !defined(CONFIG_SUPPORT_TPL)
+	rockchip_stimer_init();
 	arch_cpu_init();
 #endif
 #define EARLY_UART
@@ -106,7 +111,6 @@ void board_init_f(ulong dummy)
 	printascii("U-Boot SPL board init");
 #endif
 
-	rockchip_stimer_init();
 #ifdef CONFIG_SPL_FRAMEWORK
 	ret = spl_early_init();
 	if (ret) {
