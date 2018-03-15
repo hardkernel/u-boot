@@ -38,21 +38,21 @@ static char lcd_cpu_gpio[LCD_CPU_GPIO_NUM_MAX][LCD_CPU_GPIO_NAME_MAX] = {
 	"invalid", /* ending flag */
 };
 
-static struct lcd_power_step_s lcd_power_on_step_B080XAN01[] = {
+static struct lcd_power_step_s lcd_power_on_step[] = {
 	{LCD_POWER_TYPE_CPU,   1,0,100,}, /* lcd power */
 	{LCD_POWER_TYPE_CPU,   0,0,10,}, /* lcd_reset */
 	{LCD_POWER_TYPE_CPU,   0,1,20,}, /* lcd_reset */
 	{LCD_POWER_TYPE_SIGNAL,0,0,0,},  /* signal */
 	{LCD_POWER_TYPE_MAX,   0,0,0,},  /* ending flag */
 };
-static struct lcd_power_step_s lcd_power_off_step_B080XAN01[] = {
-	{LCD_POWER_TYPE_SIGNAL,0,0,0,},  /* signal */
+static struct lcd_power_step_s lcd_power_off_step[] = {
+	{LCD_POWER_TYPE_SIGNAL,0,0,50,},  /* signal */
 	{LCD_POWER_TYPE_CPU,   0,0,10,}, /* lcd_reset */
 	{LCD_POWER_TYPE_CPU,   1,1,100,}, /* power off */
 	{LCD_POWER_TYPE_MAX,   0,0,0,},   /* ending flag */
 };
 
-static struct lcd_power_step_s lcd_power_on_step[] = {
+static struct lcd_power_step_s lcd_power_on_step_TV070WSM[] = {
 	{LCD_POWER_TYPE_CPU,   1,0,200,}, /* lcd power */
 #if 0
 	{LCD_POWER_TYPE_CPU,   0,1,10,}, /* lcd_reset */
@@ -62,9 +62,24 @@ static struct lcd_power_step_s lcd_power_on_step[] = {
 	{LCD_POWER_TYPE_SIGNAL,0,0,0,},  /* signal */
 	{LCD_POWER_TYPE_MAX,   0,0,0,},  /* ending flag */
 };
-static struct lcd_power_step_s lcd_power_off_step[] = {
+static struct lcd_power_step_s lcd_power_off_step_TV070WSM[] = {
 	{LCD_POWER_TYPE_SIGNAL,0,0,0,},  /* signal */
+	{LCD_POWER_TYPE_CPU,   0,0,20,}, /* lcd_reset */
+	{LCD_POWER_TYPE_CPU,   1,1,100,}, /* power off */
+	{LCD_POWER_TYPE_MAX,   0,0,0,},   /* ending flag */
+};
+
+static struct lcd_power_step_s lcd_power_on_step_P070ACB[] = {
+	{LCD_POWER_TYPE_CPU,   1,0,200,}, /* lcd power */
+	{LCD_POWER_TYPE_CPU,   0,1,20,}, /* lcd_reset */
 	{LCD_POWER_TYPE_CPU,   0,0,10,}, /* lcd_reset */
+	{LCD_POWER_TYPE_CPU,   0,1,20,}, /* lcd_reset */
+	{LCD_POWER_TYPE_SIGNAL,0,0,0,},  /* signal */
+	{LCD_POWER_TYPE_MAX,   0,0,0,},  /* ending flag */
+};
+static struct lcd_power_step_s lcd_power_off_step_P070ACB[] = {
+	{LCD_POWER_TYPE_SIGNAL,0,0,0,},  /* signal */
+	{LCD_POWER_TYPE_CPU,   0,0,20,}, /* lcd_reset */
 	{LCD_POWER_TYPE_CPU,   1,1,100,}, /* power off */
 	{LCD_POWER_TYPE_MAX,   0,0,0,},   /* ending flag */
 };
@@ -87,7 +102,7 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	/* mipi_attr */
 	4,550,0,1,0,2,1,0,Rsv_val,Rsv_val,
 	/* power step */
-	lcd_power_on_step_B080XAN01, lcd_power_off_step_B080XAN01,
+	lcd_power_on_step, lcd_power_off_step,
 	/* backlight */
 	100,255,10,128,128,
 	BL_CTRL_PWM,0,1,0,200,200,
@@ -105,9 +120,9 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	/* custome */
 	Rsv_val,0x04,3,
 	/* mipi_attr */
-	4,360,0,1,0,2,1,0,Rsv_val,2,
+	4,360,0,1,0,2,1,0,Rsv_val,1,
 	/* power step */
-	lcd_power_on_step, lcd_power_off_step,
+	lcd_power_on_step_TV070WSM, lcd_power_off_step_TV070WSM,
 	/* backlight */
 	100,255,10,128,128,
 	BL_CTRL_PWM,0,1,0,200,200,
@@ -125,9 +140,9 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	/* custome */
 	Rsv_val,0x04,3,
 	/* mipi_attr */
-	4,300,0,1,0,2,1,0,Rsv_val,3,
+	4,400,0,1,0,2,1,0,Rsv_val,2,
 	/* power step */
-	lcd_power_on_step, lcd_power_off_step,
+	lcd_power_on_step_P070ACB, lcd_power_off_step_P070ACB,
 	/* backlight */
 	100,255,10,128,128,
 	BL_CTRL_PWM,0,1,0,200,200,
@@ -285,7 +300,7 @@ static unsigned char init_off_table[LCD_EXTERN_INIT_OFF_MAX] = {
 
 struct lcd_extern_common_s ext_common_dft = {
 	.lcd_ext_key_valid = 0,
-	.lcd_ext_num = 4,
+	.lcd_ext_num = 3,
 	.pinmux_set = {{LCD_PINMUX_END, 0x0}},
 	.pinmux_clr = {{LCD_PINMUX_END, 0x0}},
 };
@@ -305,15 +320,6 @@ struct lcd_extern_config_s ext_config_dtf[LCD_EXTERN_NUM_MAX] = {
 	},
 	{
 		.index = 1,
-		.name = "mipi_KD080D13",
-		.type = LCD_EXTERN_MIPI, /* LCD_EXTERN_I2C, LCD_EXTERN_SPI, LCD_EXTERN_MIPI, LCD_EXTERN_MAX */
-		.status = 0, /* 0=disable, 1=enable */
-		.cmd_size = LCD_EXTERN_CMD_SIZE_DYNAMIC,
-		.table_init_on = init_on_table,
-		.table_init_off = init_off_table,
-	},
-	{
-		.index = 2,
 		.name = "mipi_TV070WSM",
 		.type = LCD_EXTERN_MIPI, /* LCD_EXTERN_I2C, LCD_EXTERN_SPI, LCD_EXTERN_MIPI, LCD_EXTERN_MAX */
 		.status = 1, /* 0=disable, 1=enable */
@@ -322,7 +328,7 @@ struct lcd_extern_config_s ext_config_dtf[LCD_EXTERN_NUM_MAX] = {
 		.table_init_off = init_off_table,
 	},
 	{
-		.index = 3,
+		.index = 2,
 		.name = "mipi_P070ACB",
 		.type = LCD_EXTERN_MIPI, /* LCD_EXTERN_I2C, LCD_EXTERN_SPI, LCD_EXTERN_MIPI, LCD_EXTERN_MAX */
 		.status = 1, /* 0=disable, 1=enable */

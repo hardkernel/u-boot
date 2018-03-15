@@ -956,7 +956,7 @@ static int lcd_init_load_from_dts(char *dt_addr)
 	int parent_offset;
 	char *propdata, *p;
 	const char *str;
-	int i, j;
+	int i, j, temp;
 
 	/* check bl_key_valid */
 	parent_offset = fdt_path_offset(dt_addr, "/backlight");
@@ -1006,6 +1006,15 @@ static int lcd_init_load_from_dts(char *dt_addr)
 		pconf->lcd_clk_path = (unsigned char)(be32_to_cpup((u32*)propdata));
 		LCDPR("detect lcd_clk_path: %d\n", pconf->lcd_clk_path);
 	}
+	str = getenv("lcd_clk_path");
+	if (str) {
+		temp = simple_strtoul(str, NULL, 10);
+		if (temp)
+			pconf->lcd_clk_path = 1;
+		else
+			pconf->lcd_clk_path = 0;
+		LCDPR("lcd_clk_path flag set clk_path: %d\n", pconf->lcd_clk_path);
+	}
 
 	i = 0;
 	propdata = (char *)fdt_getprop(dt_addr, parent_offset, "lcd_cpu_gpio_names", NULL);
@@ -1036,7 +1045,8 @@ static int lcd_init_load_from_dts(char *dt_addr)
 static int lcd_init_load_from_bsp(void)
 {
 	struct lcd_config_s *pconf = aml_lcd_driver.lcd_config;
-	int i, j;
+	int i, j, temp;
+	char *str;
 
 	/*pconf->lcd_key_valid = 0;
 	aml_lcd_driver.bl_config->bl_key_valid = 0;*/
@@ -1051,6 +1061,16 @@ static int lcd_init_load_from_bsp(void)
 	}
 	for (j = i; j < LCD_CPU_GPIO_NUM_MAX; j++) {
 		strcpy(pconf->lcd_power->cpu_gpio[j], "invalid");
+	}
+
+	str = getenv("lcd_clk_path");
+	if (str) {
+		temp = simple_strtoul(str, NULL, 10);
+		if (temp)
+			pconf->lcd_clk_path = 1;
+		else
+			pconf->lcd_clk_path = 0;
+		LCDPR("lcd_clk_path flag set clk_path: %d\n", pconf->lcd_clk_path);
 	}
 
 	return 0;

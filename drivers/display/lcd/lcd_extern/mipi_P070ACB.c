@@ -23,7 +23,7 @@
 #include <amlogic/aml_lcd_extern.h>
 #include "lcd_extern.h"
 
-#define LCD_EXTERN_INDEX		3
+#define LCD_EXTERN_INDEX		2
 #define LCD_EXTERN_NAME			"mipi_P070ACB"
 #define LCD_EXTERN_TYPE			LCD_EXTERN_MIPI
 

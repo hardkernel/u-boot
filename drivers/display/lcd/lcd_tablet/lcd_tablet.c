@@ -127,6 +127,7 @@ static int lcd_config_load_from_dts(char *dt_addr, struct lcd_config_s *pconf)
 	char *propdata;
 	unsigned int temp;
 	int len;
+	char *str;
 
 	parent_offset = fdt_path_offset(dt_addr, "/lcd");
 	if (parent_offset < 0) {
@@ -359,9 +360,23 @@ static int lcd_config_load_from_dts(char *dt_addr, struct lcd_config_s *pconf)
 				LCDPR("failed to get check_state\n");
 			pconf->lcd_control.mipi_config->check_en = 0;
 		} else {
-			pconf->lcd_control.mipi_config->check_en = 1;
-			pconf->lcd_control.mipi_config->check_reg = (unsigned char)(be32_to_cpup((u32*)propdata));
-			pconf->lcd_control.mipi_config->check_cnt = (unsigned char)(be32_to_cpup((((u32*)propdata)+1)));
+			if ((be32_to_cpup((u32*)propdata)) == 0xffff) {
+				pconf->lcd_control.mipi_config->check_en = 0;
+			} else {
+				pconf->lcd_control.mipi_config->check_en = 1;
+				pconf->lcd_control.mipi_config->check_reg = (unsigned char)(be32_to_cpup((u32*)propdata));
+				pconf->lcd_control.mipi_config->check_cnt = (unsigned char)(be32_to_cpup((((u32*)propdata)+1)));
+			}
+		}
+		if (pconf->lcd_control.mipi_config->check_en) {
+			str = getenv("lcd_mipi_check");
+			if (str) {
+				temp = simple_strtoul(str, NULL, 10);
+				if (temp == 0) {
+					pconf->lcd_control.mipi_config->check_en = 0;
+					LCDPR("lcd_mipi_check flag disable check_state\n");
+				}
+			}
 		}
 
 		propdata = (char *)fdt_getprop(dt_addr, child_offset, "mipi_attr", NULL);
@@ -417,6 +432,7 @@ static int lcd_config_load_from_bsp(struct lcd_config_s *pconf)
 	unsigned int i, j;
 	unsigned int temp;
 	struct lcd_power_step_s *power_step;
+	char *str;
 
 	if (panel_type == NULL) {
 		LCDERR("no panel_type, use default lcd config\n ");
@@ -524,6 +540,16 @@ static int lcd_config_load_from_bsp(struct lcd_config_s *pconf)
 			pconf->lcd_control.mipi_config->check_en = 0;
 		else
 			pconf->lcd_control.mipi_config->check_cnt = (unsigned char)temp;
+		if (pconf->lcd_control.mipi_config->check_en) {
+			str = getenv("lcd_mipi_check");
+			if (str) {
+				temp = simple_strtoul(str, NULL, 10);
+				if (temp == 0) {
+					pconf->lcd_control.mipi_config->check_en = 0;
+					LCDPR("lcd_mipi_check flag disable check_state\n");
+				}
+			}
+		}
 
 		pconf->lcd_control.mipi_config->lane_num = ext_lcd->lcd_spc_val0;
 		pconf->lcd_control.mipi_config->bit_rate_max   = ext_lcd->lcd_spc_val1;
