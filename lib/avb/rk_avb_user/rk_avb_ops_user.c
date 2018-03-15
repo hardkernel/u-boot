@@ -350,24 +350,13 @@ int rk_avb_write_attribute_hash(uint8_t *buf, uint8_t length)
 #endif
 }
 
-static const char* slot_suffixes[2] = {"_a", "_b"};
-
 int rk_avb_read_all_rollback_index(char *buffer)
 {
 	AvbOps* ops;
-	AvbVBMetaImageHeader vbmeta_header;
 	uint64_t stored_rollback_index = 0;
-	uint64_t pik_rollback_index = 0;
-	uint64_t psk_rollback_index = 0;
-	AvbSlotVerifyFlags flags;
 	AvbIOResult io_ret;
 	char temp[ROLLBACK_MAX_SIZE] = {0};
-	AvbAtxPublicKeyMetadata *metadata;
 	int n;
-	bool unlocked;
-	AvbSlotVerifyResult verify_result;
-	AvbSlotVerifyData *slot_data[SLOT_NUM] = {NULL, NULL};
-	const char *requested_partitions[1] = {"vbmeta"};
 
 	ops = avb_ops_user_new();
 	if (ops == NULL) {
@@ -375,125 +364,20 @@ int rk_avb_read_all_rollback_index(char *buffer)
 		return -1;
 	}
 
-	if (ops->read_is_device_unlocked(ops, &unlocked) != 0) {
-		printf("Error determining whether device is unlocked.\n");
-		unlocked = ANDROID_VBOOT_UNLOCK;
-		if (ops->write_is_device_unlocked(ops, &unlocked) != 0) {
-			printf("Can not write lock state!\n");
-			unlocked = ANDROID_VBOOT_LOCK;
-		}
-		if (ops->read_is_device_unlocked(ops, &unlocked) != 0) {
-			printf("Can not read lock state!\n");
-			unlocked = ANDROID_VBOOT_LOCK;
-		}
-	}
-
-	flags = AVB_SLOT_VERIFY_FLAGS_NONE;
-	if (unlocked)
-		flags |= AVB_SLOT_VERIFY_FLAGS_ALLOW_VERIFICATION_ERROR;
-
-	for (n = 0; n < SLOT_NUM; n++) {
-		verify_result = avb_slot_verify(ops,
-						requested_partitions,
-						slot_suffixes[n],
-						flags,
-						AVB_HASHTREE_ERROR_MODE_RESTART_AND_INVALIDATE,
-						&slot_data[n]);
-		switch (verify_result) {
-		case AVB_SLOT_VERIFY_RESULT_OK:
-			break;
-
-		case AVB_SLOT_VERIFY_RESULT_ERROR_INVALID_METADATA:
-		case AVB_SLOT_VERIFY_RESULT_ERROR_UNSUPPORTED_VERSION:
-		/* Even with AVB_SLOT_VERIFY_FLAGS_ALLOW_VERIFICATION_ERROR
-		 * these mean game over.
-		 */
-			printf("Invalid metadata!\n");
-			goto out;
-
-		/* explicit fallthrough. */
-		case AVB_SLOT_VERIFY_RESULT_ERROR_VERIFICATION:
-			printf("Error verify!\n");
-			goto out;
-		case AVB_SLOT_VERIFY_RESULT_ERROR_ROLLBACK_INDEX:
-			printf("error rollback index!\n");
-			goto out;
-		case AVB_SLOT_VERIFY_RESULT_ERROR_PUBLIC_KEY_REJECTED:
-			printf("error key!\n");
-			goto out;
-		default:
-			printf("Some abnormal condition occur!\n");
-			goto out;
-		}
-	}
-	debug("partition_name = %s\n", slot_data[0]->vbmeta_images->partition_name);
-	debug("vbmeta_size = %d\n", (int)(size_t)slot_data[0]->vbmeta_images->vbmeta_size);
-
 	for (n = 0; n < AVB_MAX_NUMBER_OF_ROLLBACK_INDEX_LOCATIONS; n++) {
-		uint64_t rollback_index_value = 0;
-		if (slot_data[0] != NULL && slot_data[1] != NULL) {
-			uint64_t a_rollback_index = slot_data[0]->rollback_indexes[n];
-			uint64_t b_rollback_index = slot_data[1]->rollback_indexes[n];
-			rollback_index_value =
-				(a_rollback_index < b_rollback_index ? a_rollback_index
-								: b_rollback_index);
-		} else if (slot_data[0] != NULL) {
-			rollback_index_value = slot_data[0]->rollback_indexes[n];
-		} else if (slot_data[1] != NULL) {
-			rollback_index_value = slot_data[1]->rollback_indexes[n];
-		}
-
 		io_ret = ops->read_rollback_index(
 			ops, n, &stored_rollback_index);
 		if (io_ret != AVB_IO_RESULT_OK)
 			goto out;
-		snprintf(temp, sizeof(uint64_t) + 1, "%lld",
-			 stored_rollback_index);
+		snprintf(temp, sizeof(int) + 1, "%d", n);
 		strncat(buffer, temp, ROLLBACK_MAX_SIZE);
 		strncat(buffer, ":", 1);
 		snprintf(temp, sizeof(uint64_t) + 1, "%lld",
-			 rollback_index_value);
+			 stored_rollback_index);
 		strncat(buffer, temp, ROLLBACK_MAX_SIZE);
 		strncat(buffer, ",", 1);
 	}
 
-	for (n = 0; n < SLOT_NUM; n++) {
-		avb_vbmeta_image_header_to_host_byte_order((AvbVBMetaImageHeader *)
-							   slot_data[n]->vbmeta_images->\
-							   vbmeta_data,
-							   &vbmeta_header);
-		if (vbmeta_header.public_key_metadata_size > 0) {
-			metadata = (AvbAtxPublicKeyMetadata *)(slot_data[n]->\
-				vbmeta_images->vbmeta_data +
-			   	sizeof(AvbVBMetaImageHeader) +
-			   	vbmeta_header.authentication_data_block_size +
-			   	vbmeta_header.public_key_metadata_offset);
-			if (n == 0) {
-				pik_rollback_index =
-					metadata->product_intermediate_key_certificate.\
-					signed_data.key_version;
-				psk_rollback_index =
-					metadata->product_signing_key_certificate.\
-					signed_data.key_version;
-			}
-
-			if (pik_rollback_index > metadata->\
-				product_intermediate_key_certificate.\
-				signed_data.key_version) {
-				pik_rollback_index = metadata->\
-				product_intermediate_key_certificate.\
-				signed_data.key_version;
-			}
-
-			if (psk_rollback_index > metadata->\
-				product_signing_key_certificate.\
-				signed_data.key_version) {
-				psk_rollback_index = metadata->\
-				product_signing_key_certificate.\
-				signed_data.key_version;
-			}
-		}
-	}
 	io_ret =
 		ops->read_rollback_index(ops,
 					 AVB_ATX_PIK_VERSION_LOCATION,
@@ -503,10 +387,10 @@ int rk_avb_read_all_rollback_index(char *buffer)
 		goto out;
 	}
 	/* PIK rollback index */
-	snprintf(temp, sizeof(uint64_t) + 1, "%lld", stored_rollback_index);
+	snprintf(temp, sizeof(int) + 1, "%d", AVB_ATX_PIK_VERSION_LOCATION);
 	strncat(buffer, temp, ROLLBACK_MAX_SIZE);
 	strncat(buffer, ":", 1);
-	snprintf(temp, sizeof(uint64_t) + 1, "%lld", pik_rollback_index);
+	snprintf(temp, sizeof(uint64_t) + 1, "%lld", stored_rollback_index);
 	strncat(buffer, temp, ROLLBACK_MAX_SIZE);
 	strncat(buffer, ",", 1);
 	io_ret = ops->read_rollback_index(ops,
@@ -517,27 +401,16 @@ int rk_avb_read_all_rollback_index(char *buffer)
 		goto out;
 	}
 	/* PSK rollback index */
-	snprintf(temp, sizeof(uint64_t) + 1, "%lld", stored_rollback_index);
+	snprintf(temp, sizeof(int) + 1, "%d", AVB_ATX_PSK_VERSION_LOCATION);
 	strncat(buffer, temp, ROLLBACK_MAX_SIZE);
 	strncat(buffer, ":", 1);
-	snprintf(temp, sizeof(uint64_t) + 1, "%lld", psk_rollback_index);
+	snprintf(temp, sizeof(uint64_t) + 1, "%lld", stored_rollback_index);
 	strncat(buffer, temp, ROLLBACK_MAX_SIZE);
 	debug("%s\n", buffer);
-
-	for (n = 0; n < SLOT_NUM; n++) {
-		if (slot_data[n] != NULL) {
-			avb_slot_verify_data_free(slot_data[n]);
-		}
-	}
 	avb_ops_user_free(ops);
 
 	return 0;
 out:
-	for (n = 0; n < SLOT_NUM; n++) {
-		if (slot_data[n] != NULL) {
-			avb_slot_verify_data_free(slot_data[n]);
-		}
-	}
 	avb_ops_user_free(ops);
 
 	return -1;
@@ -557,7 +430,7 @@ int rk_avb_read_bootloader_locked_flag(uint8_t *flag)
 
 void rk_avb_get_at_vboot_state(char *buf)
 {
-	char temp_buffer[150] = {0};
+	char temp_buffer[200] = {0};
 	char temp_flag = 0;
 	char crlf[2] = {'\n', 0};
 	char *lock_val = NULL;
