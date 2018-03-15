@@ -951,6 +951,9 @@ unknown:
 			ctrl->bRequestType, ctrl->bRequest,
 			w_value, w_index, w_length);
 
+		if (!cdev->config)
+			goto done;
+
 		/*
 		 * functions always handle their interfaces and endpoints...
 		 * punt other recipients (other, WUSB, ...) to the current
@@ -1001,7 +1004,7 @@ unknown:
 			value = f->setup(f, ctrl);
 		else {
 			c = cdev->config;
-			if (c && c->setup)
+			if (c->setup)
 				value = c->setup(c, ctrl);
 		}
 
