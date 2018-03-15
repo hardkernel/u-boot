@@ -41,14 +41,34 @@ struct tos_parameter_t {
 };
 
 #if defined(CONFIG_SPL_FRAMEWORK) || !defined(CONFIG_SPL_OF_PLATDATA)
+static uint16_t trust_checksum(const uint8_t *buf, uint16_t len)
+{
+	uint16_t i;
+	uint16_t checksum = 0;
+
+	for (i = 0; i < len; i++) {
+		if (i % 2)
+			checksum += buf[i] << 8;
+		else
+			checksum += buf[i];
+	}
+	checksum = ~checksum;
+
+	return checksum;
+}
+
 int dram_init_banksize(void)
 {
 	size_t top = min((unsigned long)(gd->ram_size + CONFIG_SYS_SDRAM_BASE),
 			 gd->ram_top);
 	struct tos_parameter_t *tos_parameter;
+	u32 checksum;
+
 	tos_parameter = (struct tos_parameter_t *)(CONFIG_SYS_SDRAM_BASE +
 			TRUST_PARAMETER_OFFSET);
 
+	checksum = trust_checksum((uint8_t *)(unsigned long)tos_parameter + 8,
+				  sizeof(struct tos_parameter_t) - 8);
 #ifdef CONFIG_ARM64
 	/* Reserve 0x200000 for ATF bl31 */
 	gd->bd->bi_dram[0].start = CONFIG_SYS_SDRAM_BASE + 0x200000;
@@ -57,7 +77,8 @@ int dram_init_banksize(void)
 	gd->bd->bi_dram[0].start = CONFIG_SYS_SDRAM_BASE;
 	gd->bd->bi_dram[0].size = top - gd->bd->bi_dram[0].start;
 #endif
-	if (tos_parameter->tee_mem.flags == 1) {
+	if ((checksum == tos_parameter->checksum) &&
+	    (tos_parameter->tee_mem.flags == 1)) {
 		gd->bd->bi_dram[0].size = tos_parameter->tee_mem.phy_addr
 					- gd->bd->bi_dram[0].start;
 		gd->bd->bi_dram[1].start = tos_parameter->tee_mem.phy_addr +
