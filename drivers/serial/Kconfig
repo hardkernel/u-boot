@@ -531,7 +531,7 @@ config STM32X7_SERIAL
 
 config MPC8XX_CONS
 	bool "Console driver for MPC8XX"
-	depends on 8xx
+	depends on MPC8xx
 	default y
 
 choice
