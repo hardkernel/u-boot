@@ -9,6 +9,7 @@
 #include <clk.h>
 #include <div64.h>
 #include <dm.h>
+#include <dm/pinctrl.h>
 #include <pwm.h>
 #include <regmap.h>
 #include <syscon.h>
@@ -127,6 +128,9 @@ static int rk_pwm_set_enable(struct udevice *dev, uint channel, bool enable)
 	writel(ctrl, priv->base + regs->ctrl);
 	if (priv->data->vop_pwm)
 		priv->vop_pwm_en = enable;
+
+	if (enable)
+		pinctrl_select_state(dev, "active");
 
 	return 0;
 }
