@@ -20,6 +20,7 @@ struct pwm_backlight_priv {
 	struct udevice *pwm;
 	uint channel;
 	uint period_ns;
+	bool polarity;
 	uint default_level;
 	uint min_level;
 	uint max_level;
@@ -43,6 +44,12 @@ static int pwm_backlight_enable(struct udevice *dev)
 			return ret;
 		}
 		mdelay(120);
+	}
+
+	ret = pwm_set_invert(priv->pwm, priv->channel, priv->polarity);
+	if (ret) {
+		dev_err(dev, "Failed to invert PWM\n");
+		return ret;
 	}
 
 	duty_cycle = priv->period_ns * (priv->default_level - priv->min_level) /
@@ -136,6 +143,7 @@ static int pwm_backlight_ofdata_to_platdata(struct udevice *dev)
 	}
 	priv->channel = args.args[0];
 	priv->period_ns = args.args[1];
+	priv->polarity = args.args[2];
 
 	index = dev_read_u32_default(dev, "default-brightness-level", 255);
 	cell = dev_read_prop(dev, "brightness-levels", &len);
