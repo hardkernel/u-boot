@@ -6,6 +6,7 @@
 
 #include <common.h>
 #include <android_bootloader.h>
+#include <attestation_key.h>
 #include <boot_rkimg.h>
 
 static int do_boot_rockchip(cmd_tbl_t *cmdtp, int flag, int argc,
@@ -18,6 +19,19 @@ static int do_boot_rockchip(cmd_tbl_t *cmdtp, int flag, int argc,
 	int ret = 0;
 
 	dev_desc = rockchip_get_bootdev();
+
+#ifdef CONFIG_OPTEE_CLIENT
+	disk_partition_t misc_part_info;
+
+	/* load attestation key from misc partition. */
+	ret = part_get_info_by_name(dev_desc, "misc",
+				    &misc_part_info);
+	if (ret < 0)
+		printf("%s Could not find misc partition\n", __func__);
+	else
+		load_attestation_key(dev_desc, &misc_part_info);
+#endif
+
 	mode = rockchip_get_boot_mode();
 	if (mode == BOOT_MODE_RECOVERY) {
 		boot_partname = PART_RECOVERY;
