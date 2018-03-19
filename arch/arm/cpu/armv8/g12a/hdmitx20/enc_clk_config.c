@@ -279,6 +279,36 @@ static void set_hpll_clk_out(unsigned clk)
 	printk("config HPLL done\n");
 }
 
+/* HERE MUST BE BIT OPERATION!!! */
+static void set_hpll_sspll(struct hdmitx_dev *hdev)
+{
+	enum hdmi_vic vic = hdev->vic;
+
+	switch (vic) {
+	case HDMI_1920x1080p60_16x9:
+	case HDMI_1920x1080p50_16x9:
+	case HDMI_1280x720p60_16x9:
+	case HDMI_1280x720p50_16x9:
+	case HDMI_1920x1080i60_16x9:
+	case HDMI_1920x1080i50_16x9:
+		hd_set_reg_bits(P_HHI_HDMI_PLL_CNTL0, 1, 29, 1);
+		/* bit[22:20] hdmi_dpll_fref_sel
+		 * bit[8] hdmi_dpll_ssc_en
+		 * bit[7:4] hdmi_dpll_ssc_dep_sel
+		 */
+		hd_set_reg_bits(P_HHI_HDMI_PLL_CNTL2, 1, 20, 3);
+		hd_set_reg_bits(P_HHI_HDMI_PLL_CNTL2, 1, 8, 1);
+		/* 2: 1000ppm  1: 500ppm */
+		hd_set_reg_bits(P_HHI_HDMI_PLL_CNTL2, 2, 4, 4);
+		/* bit[15] hdmi_dpll_sdmnc_en */
+		hd_set_reg_bits(P_HHI_HDMI_PLL_CNTL3, 0, 15, 1);
+		hd_set_reg_bits(P_HHI_HDMI_PLL_CNTL0, 0, 29, 1);
+		break;
+	default:
+		break;
+	}
+}
+
 static void set_hpll_od1(unsigned div)
 {
 	switch (div) {
@@ -856,6 +886,8 @@ next:
 	set_viu_path(p_enc[j].viu_path, p_enc[j].viu_type);
 	set_hdmitx_sys_clk();
 	set_hpll_clk_out(p_enc[j].hpll_clk_out);
+	if (!getenv("sspll_dis"))
+		set_hpll_sspll(hdev);
 	set_hpll_od1(p_enc[j].od1);
 	set_hpll_od2(p_enc[j].od2);
 	set_hpll_od3(p_enc[j].od3);
