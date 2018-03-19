@@ -8,6 +8,7 @@
 #include <common.h>
 #include <optee_include/OpteeClientApiLib.h>
 #include <optee_include/tee_client_api.h>
+#include <boot_rkimg.h>
 
 void test_optee(void)
 {
@@ -19,18 +20,35 @@ void test_optee(void)
 		{ 0x82, 0xb8, 0x3a, 0xcf, 0x16, 0xe9, 0x9e, 0x2a } };
 	TEEC_UUID *TeecUuid = &tempuuid;
 	TEEC_Operation TeecOperation = {0};
+	struct blk_desc *dev_desc;
+	dev_desc = rockchip_get_bootdev();
 
 	debug("testmm start\n");
 	OpteeClientApiLibInitialize();
 
 	TeecResult = TEEC_InitializeContext(NULL, &TeecContext);
 
+	TeecOperation.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT,
+						TEEC_NONE,
+						TEEC_NONE,
+						TEEC_NONE);
+	/*0 nand or emmc "security" partition , 1 rpmb*/
+	TeecOperation.params[0].value.a = (dev_desc->if_type == IF_TYPE_MMC) ? 1 : 0;
+#ifdef CONFIG_OPTEE_ALWAYS_USE_SECURITY_PARTITION
+	TeecOperation.params[0].value.a = 0;
+#endif
+
 	TeecResult = TEEC_OpenSession(&TeecContext,
 				&TeecSession,
 				TeecUuid,
 				TEEC_LOGIN_PUBLIC,
 				NULL,
+#ifdef CONFIG_OPTEE_V1
 				NULL,
+#endif
+#ifdef CONFIG_OPTEE_V2
+				&TeecOperation,
+#endif
 				&ErrorOrigin);
 
 	TEEC_SharedMemory SharedMem0 = {0};
@@ -116,18 +134,36 @@ uint32_t trusty_read_rollback_index(uint32_t slot, uint64_t *value)
 	TEEC_Operation TeecOperation = {0};
 	uint8_t hs[9];
 
+	struct blk_desc *dev_desc;
+	dev_desc = rockchip_get_bootdev();
+
 	b2hs((uint8_t *)&slot, hs, 4, 9);
 	debug("testmm start\n");
 	OpteeClientApiLibInitialize();
 
 	TeecResult = TEEC_InitializeContext(NULL, &TeecContext);
 
+	TeecOperation.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT,
+						TEEC_NONE,
+						TEEC_NONE,
+						TEEC_NONE);
+	/*0 nand or emmc "security" partition , 1 rpmb*/
+	TeecOperation.params[0].value.a = (dev_desc->if_type == IF_TYPE_MMC) ? 1 : 0;
+#ifdef CONFIG_OPTEE_ALWAYS_USE_SECURITY_PARTITION
+	TeecOperation.params[0].value.a = 0;
+#endif
+
 	TeecResult = TEEC_OpenSession(&TeecContext,
 				&TeecSession,
 				TeecUuid,
 				TEEC_LOGIN_PUBLIC,
 				NULL,
+#ifdef CONFIG_OPTEE_V1
 				NULL,
+#endif
+#ifdef CONFIG_OPTEE_V2
+				&TeecOperation,
+#endif
 				&ErrorOrigin);
 
 	TEEC_SharedMemory SharedMem0 = {0};
@@ -186,17 +222,35 @@ uint32_t trusty_write_rollback_index(uint32_t slot, uint64_t value)
 	TEEC_UUID *TeecUuid = &tempuuid;
 	TEEC_Operation TeecOperation = {0};
 	uint8_t hs[9];
+	struct blk_desc *dev_desc;
+	dev_desc = rockchip_get_bootdev();
+
 	b2hs((uint8_t *)&slot, hs, 4, 9);
 	OpteeClientApiLibInitialize();
 
 	TeecResult = TEEC_InitializeContext(NULL, &TeecContext);
+
+	TeecOperation.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT,
+						TEEC_NONE,
+						TEEC_NONE,
+						TEEC_NONE);
+	/*0 nand or emmc "security" partition , 1 rpmb*/
+	TeecOperation.params[0].value.a = (dev_desc->if_type == IF_TYPE_MMC) ? 1 : 0;
+#ifdef CONFIG_OPTEE_ALWAYS_USE_SECURITY_PARTITION
+	TeecOperation.params[0].value.a = 0;
+#endif
 
 	TeecResult = TEEC_OpenSession(&TeecContext,
 				&TeecSession,
 				TeecUuid,
 				TEEC_LOGIN_PUBLIC,
 				NULL,
+#ifdef CONFIG_OPTEE_V1
 				NULL,
+#endif
+#ifdef CONFIG_OPTEE_V2
+				&TeecOperation,
+#endif
 				&ErrorOrigin);
 
 	TEEC_SharedMemory SharedMem0 = {0};
@@ -256,18 +310,35 @@ uint32_t trusty_read_permanent_attributes(uint8_t *attributes, uint32_t size)
 		{ 0xa8, 0x69, 0x9c, 0xe6, 0x88, 0x6c, 0x5d, 0x5d } };
 	TEEC_UUID *TeecUuid = &tempuuid;
 	TEEC_Operation TeecOperation = {0};
+	struct blk_desc *dev_desc;
+	dev_desc = rockchip_get_bootdev();
 
 	debug("testmm start\n");
 	OpteeClientApiLibInitialize();
 
 	TeecResult = TEEC_InitializeContext(NULL, &TeecContext);
 
+	TeecOperation.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT,
+						TEEC_NONE,
+						TEEC_NONE,
+						TEEC_NONE);
+	/*0 nand or emmc "security" partition , 1 rpmb*/
+	TeecOperation.params[0].value.a = (dev_desc->if_type == IF_TYPE_MMC) ? 1 : 0;
+#ifdef CONFIG_OPTEE_ALWAYS_USE_SECURITY_PARTITION
+	TeecOperation.params[0].value.a = 0;
+#endif
+
 	TeecResult = TEEC_OpenSession(&TeecContext,
 				&TeecSession,
 				TeecUuid,
 				TEEC_LOGIN_PUBLIC,
 				NULL,
+#ifdef CONFIG_OPTEE_V1
 				NULL,
+#endif
+#ifdef CONFIG_OPTEE_V2
+				&TeecOperation,
+#endif
 				&ErrorOrigin);
 
 	TEEC_SharedMemory SharedMem0 = {0};
@@ -323,18 +394,35 @@ uint32_t trusty_write_permanent_attributes(uint8_t *attributes, uint32_t size)
 		{ 0xa8, 0x69, 0x9c, 0xe6, 0x88, 0x6c, 0x5d, 0x5d } };
 	TEEC_UUID *TeecUuid = &tempuuid;
 	TEEC_Operation TeecOperation = {0};
+	struct blk_desc *dev_desc;
+	dev_desc = rockchip_get_bootdev();
 
 	debug("testmm start\n");
 	OpteeClientApiLibInitialize();
 
 	TeecResult = TEEC_InitializeContext(NULL, &TeecContext);
 
+	TeecOperation.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT,
+						TEEC_NONE,
+						TEEC_NONE,
+						TEEC_NONE);
+	/*0 nand or emmc "security" partition , 1 rpmb*/
+	TeecOperation.params[0].value.a = (dev_desc->if_type == IF_TYPE_MMC) ? 1 : 0;
+#ifdef CONFIG_OPTEE_ALWAYS_USE_SECURITY_PARTITION
+	TeecOperation.params[0].value.a = 0;
+#endif
+
 	TeecResult = TEEC_OpenSession(&TeecContext,
 				&TeecSession,
 				TeecUuid,
 				TEEC_LOGIN_PUBLIC,
 				NULL,
+#ifdef CONFIG_OPTEE_V1
 				NULL,
+#endif
+#ifdef CONFIG_OPTEE_V2
+				&TeecOperation,
+#endif
 				&ErrorOrigin);
 
 	TEEC_SharedMemory SharedMem0 = {0};
@@ -391,19 +479,35 @@ uint32_t trusty_read_lock_state(uint8_t *lock_state)
 		{ 0x82, 0xb8, 0x3a, 0xcf, 0x16, 0xe9, 0x9e, 0x2a } };
 	TEEC_UUID *TeecUuid = &tempuuid;
 	TEEC_Operation TeecOperation = {0};
+	struct blk_desc *dev_desc;
+	dev_desc = rockchip_get_bootdev();
 
 	debug("testmm start\n");
 	OpteeClientApiLibInitialize();
 
 	TeecResult = TEEC_InitializeContext(NULL, &TeecContext);
 
+	TeecOperation.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT,
+						TEEC_NONE,
+						TEEC_NONE,
+						TEEC_NONE);
+	/*0 nand or emmc "security" partition , 1 rpmb*/
+	TeecOperation.params[0].value.a = (dev_desc->if_type == IF_TYPE_MMC) ? 1 : 0;
+#ifdef CONFIG_OPTEE_ALWAYS_USE_SECURITY_PARTITION
+	TeecOperation.params[0].value.a = 0;
+#endif
 
 	TeecResult = TEEC_OpenSession(&TeecContext,
 				&TeecSession,
 				TeecUuid,
 				TEEC_LOGIN_PUBLIC,
 				NULL,
+#ifdef CONFIG_OPTEE_V1
 				NULL,
+#endif
+#ifdef CONFIG_OPTEE_V2
+				&TeecOperation,
+#endif
 				&ErrorOrigin);
 
 	TEEC_SharedMemory SharedMem0 = {0};
@@ -459,18 +563,35 @@ uint32_t trusty_write_lock_state(uint8_t lock_state)
 		{ 0x82, 0xb8, 0x3a, 0xcf, 0x16, 0xe9, 0x9e, 0x2a } };
 	TEEC_UUID *TeecUuid = &tempuuid;
 	TEEC_Operation TeecOperation = {0};
+	struct blk_desc *dev_desc;
+	dev_desc = rockchip_get_bootdev();
 
 	debug("testmm start\n");
 	OpteeClientApiLibInitialize();
 
 	TeecResult = TEEC_InitializeContext(NULL, &TeecContext);
 
+	TeecOperation.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT,
+						TEEC_NONE,
+						TEEC_NONE,
+						TEEC_NONE);
+	/*0 nand or emmc "security" partition , 1 rpmb*/
+	TeecOperation.params[0].value.a = (dev_desc->if_type == IF_TYPE_MMC) ? 1 : 0;
+#ifdef CONFIG_OPTEE_ALWAYS_USE_SECURITY_PARTITION
+	TeecOperation.params[0].value.a = 0;
+#endif
+
 	TeecResult = TEEC_OpenSession(&TeecContext,
 				&TeecSession,
 				TeecUuid,
 				TEEC_LOGIN_PUBLIC,
 				NULL,
+#ifdef CONFIG_OPTEE_V1
 				NULL,
+#endif
+#ifdef CONFIG_OPTEE_V2
+				&TeecOperation,
+#endif
 				&ErrorOrigin);
 
 	TEEC_SharedMemory SharedMem0 = {0};
@@ -527,19 +648,35 @@ uint32_t trusty_read_flash_lock_state(uint8_t *flash_lock_state)
 		{ 0x82, 0xb8, 0x3a, 0xcf, 0x16, 0xe9, 0x9e, 0x2a } };
 	TEEC_UUID *TeecUuid = &tempuuid;
 	TEEC_Operation TeecOperation = {0};
+	struct blk_desc *dev_desc;
+	dev_desc = rockchip_get_bootdev();
 
 	debug("testmm start\n");
 	OpteeClientApiLibInitialize();
 
 	TeecResult = TEEC_InitializeContext(NULL, &TeecContext);
 
+	TeecOperation.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT,
+						TEEC_NONE,
+						TEEC_NONE,
+						TEEC_NONE);
+	/*0 nand or emmc "security" partition , 1 rpmb*/
+	TeecOperation.params[0].value.a = (dev_desc->if_type == IF_TYPE_MMC) ? 1 : 0;
+#ifdef CONFIG_OPTEE_ALWAYS_USE_SECURITY_PARTITION
+	TeecOperation.params[0].value.a = 0;
+#endif
 
 	TeecResult = TEEC_OpenSession(&TeecContext,
 				&TeecSession,
 				TeecUuid,
 				TEEC_LOGIN_PUBLIC,
 				NULL,
+#ifdef CONFIG_OPTEE_V1
 				NULL,
+#endif
+#ifdef CONFIG_OPTEE_V2
+				&TeecOperation,
+#endif
 				&ErrorOrigin);
 
 	TEEC_SharedMemory SharedMem0 = {0};
@@ -596,18 +733,35 @@ uint32_t trusty_write_flash_lock_state(uint8_t flash_lock_state)
 		{ 0x82, 0xb8, 0x3a, 0xcf, 0x16, 0xe9, 0x9e, 0x2a } };
 	TEEC_UUID *TeecUuid = &tempuuid;
 	TEEC_Operation TeecOperation = {0};
+	struct blk_desc *dev_desc;
+	dev_desc = rockchip_get_bootdev();
 
 	debug("testmm start\n");
 	OpteeClientApiLibInitialize();
 
 	TeecResult = TEEC_InitializeContext(NULL, &TeecContext);
 
+	TeecOperation.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT,
+						TEEC_NONE,
+						TEEC_NONE,
+						TEEC_NONE);
+	/*0 nand or emmc "security" partition , 1 rpmb*/
+	TeecOperation.params[0].value.a = (dev_desc->if_type == IF_TYPE_MMC) ? 1 : 0;
+#ifdef CONFIG_OPTEE_ALWAYS_USE_SECURITY_PARTITION
+	TeecOperation.params[0].value.a = 0;
+#endif
+
 	TeecResult = TEEC_OpenSession(&TeecContext,
 				&TeecSession,
 				TeecUuid,
 				TEEC_LOGIN_PUBLIC,
 				NULL,
+#ifdef CONFIG_OPTEE_V1
 				NULL,
+#endif
+#ifdef CONFIG_OPTEE_V2
+				&TeecOperation,
+#endif
 				&ErrorOrigin);
 
 	TEEC_SharedMemory SharedMem0 = {0};
@@ -668,18 +822,35 @@ uint32_t write_to_keymaster(uint8_t *filename,
 		{ 0xa8, 0x69, 0x9c, 0xe6, 0x88, 0x6c, 0x5d, 0x5d } };
 	TEEC_UUID *TeecUuid = &tempuuid;
 	TEEC_Operation TeecOperation = {0};
+	struct blk_desc *dev_desc;
+	dev_desc = rockchip_get_bootdev();
 
 	debug("write_to_keymaster\n");
 	OpteeClientApiLibInitialize();
 
 	TeecResult = TEEC_InitializeContext(NULL, &TeecContext);
 
+	TeecOperation.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT,
+						TEEC_NONE,
+						TEEC_NONE,
+						TEEC_NONE);
+	/*0 nand or emmc "security" partition , 1 rpmb*/
+	TeecOperation.params[0].value.a = (dev_desc->if_type == IF_TYPE_MMC) ? 1 : 0;
+#ifdef CONFIG_OPTEE_ALWAYS_USE_SECURITY_PARTITION
+	TeecOperation.params[0].value.a = 0;
+#endif
+
 	TeecResult = TEEC_OpenSession(&TeecContext,
 				&TeecSession,
 				TeecUuid,
 				TEEC_LOGIN_PUBLIC,
 				NULL,
+#ifdef CONFIG_OPTEE_V1
 				NULL,
+#endif
+#ifdef CONFIG_OPTEE_V2
+				&TeecOperation,
+#endif
 				&ErrorOrigin);
 
 	TEEC_SharedMemory SharedMem0 = {0};
@@ -1095,18 +1266,35 @@ uint32_t trusty_read_permanent_attributes_flag(uint8_t *attributes)
 		{ 0xa8, 0x69, 0x9c, 0xe6, 0x88, 0x6c, 0x5d, 0x5d } };
 	TEEC_UUID *TeecUuid = &tempuuid;
 	TEEC_Operation TeecOperation = {0};
+	struct blk_desc *dev_desc;
+	dev_desc = rockchip_get_bootdev();
 
 	debug("testmm start\n");
 	OpteeClientApiLibInitialize();
 
 	TeecResult = TEEC_InitializeContext(NULL, &TeecContext);
 
+	TeecOperation.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT,
+						TEEC_NONE,
+						TEEC_NONE,
+						TEEC_NONE);
+	/*0 nand or emmc "security" partition , 1 rpmb*/
+	TeecOperation.params[0].value.a = (dev_desc->if_type == IF_TYPE_MMC) ? 1 : 0;
+#ifdef CONFIG_OPTEE_ALWAYS_USE_SECURITY_PARTITION
+	TeecOperation.params[0].value.a = 0;
+#endif
+
 	TeecResult = TEEC_OpenSession(&TeecContext,
 				&TeecSession,
 				TeecUuid,
 				TEEC_LOGIN_PUBLIC,
 				NULL,
+#ifdef CONFIG_OPTEE_V1
 				NULL,
+#endif
+#ifdef CONFIG_OPTEE_V2
+				&TeecOperation,
+#endif
 				&ErrorOrigin);
 
 	TEEC_SharedMemory SharedMem0 = {0};
@@ -1161,18 +1349,35 @@ uint32_t trusty_write_permanent_attributes_flag(uint8_t attributes)
 		{ 0xa8, 0x69, 0x9c, 0xe6, 0x88, 0x6c, 0x5d, 0x5d } };
 	TEEC_UUID *TeecUuid = &tempuuid;
 	TEEC_Operation TeecOperation = {0};
+	struct blk_desc *dev_desc;
+	dev_desc = rockchip_get_bootdev();
 
 	debug("testmm start\n");
 	OpteeClientApiLibInitialize();
 
 	TeecResult = TEEC_InitializeContext(NULL, &TeecContext);
 
+	TeecOperation.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT,
+						TEEC_NONE,
+						TEEC_NONE,
+						TEEC_NONE);
+	/*0 nand or emmc "security" partition , 1 rpmb*/
+	TeecOperation.params[0].value.a = (dev_desc->if_type == IF_TYPE_MMC) ? 1 : 0;
+#ifdef CONFIG_OPTEE_ALWAYS_USE_SECURITY_PARTITION
+	TeecOperation.params[0].value.a = 0;
+#endif
+
 	TeecResult = TEEC_OpenSession(&TeecContext,
 				&TeecSession,
 				TeecUuid,
 				TEEC_LOGIN_PUBLIC,
 				NULL,
+#ifdef CONFIG_OPTEE_V1
 				NULL,
+#endif
+#ifdef CONFIG_OPTEE_V2
+				&TeecOperation,
+#endif
 				&ErrorOrigin);
 
 	TEEC_SharedMemory SharedMem0 = {0};
@@ -1231,17 +1436,34 @@ uint32_t trusty_attest_dh(uint8_t *dh, uint32_t *dh_size)
 			     };
 	TEEC_UUID *TeecUuid = &tempuuid;
 	TEEC_Operation TeecOperation = {0};
+	struct blk_desc *dev_desc;
+	dev_desc = rockchip_get_bootdev();
 
 	OpteeClientApiLibInitialize();
 
 	TeecResult = TEEC_InitializeContext(NULL, &TeecContext);
+
+	TeecOperation.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT,
+						TEEC_NONE,
+						TEEC_NONE,
+						TEEC_NONE);
+	/*0 nand or emmc "security" partition , 1 rpmb*/
+	TeecOperation.params[0].value.a = (dev_desc->if_type == IF_TYPE_MMC) ? 1 : 0;
+#ifdef CONFIG_OPTEE_ALWAYS_USE_SECURITY_PARTITION
+	TeecOperation.params[0].value.a = 0;
+#endif
 
 	TeecResult = TEEC_OpenSession(&TeecContext,
 				      &TeecSession,
 				      TeecUuid,
 				      TEEC_LOGIN_PUBLIC,
 				      NULL,
-				      NULL,
+#ifdef CONFIG_OPTEE_V1
+					NULL,
+#endif
+#ifdef CONFIG_OPTEE_V2
+					&TeecOperation,
+#endif
 				      &ErrorOrigin);
 
 	TEEC_SharedMemory SharedMem0 = {0};
@@ -1288,17 +1510,34 @@ uint32_t trusty_attest_uuid(uint8_t *uuid, uint32_t *uuid_size)
 			     };
 	TEEC_UUID *TeecUuid = &tempuuid;
 	TEEC_Operation TeecOperation = {0};
+	struct blk_desc *dev_desc;
+	dev_desc = rockchip_get_bootdev();
 
 	OpteeClientApiLibInitialize();
 
 	TeecResult = TEEC_InitializeContext(NULL, &TeecContext);
+
+	TeecOperation.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT,
+						TEEC_NONE,
+						TEEC_NONE,
+						TEEC_NONE);
+	/*0 nand or emmc "security" partition , 1 rpmb*/
+	TeecOperation.params[0].value.a = (dev_desc->if_type == IF_TYPE_MMC) ? 1 : 0;
+#ifdef CONFIG_OPTEE_ALWAYS_USE_SECURITY_PARTITION
+	TeecOperation.params[0].value.a = 0;
+#endif
 
 	TeecResult = TEEC_OpenSession(&TeecContext,
 				      &TeecSession,
 				      TeecUuid,
 				      TEEC_LOGIN_PUBLIC,
 				      NULL,
-				      NULL,
+#ifdef CONFIG_OPTEE_V1
+					NULL,
+#endif
+#ifdef CONFIG_OPTEE_V2
+					&TeecOperation,
+#endif
 				      &ErrorOrigin);
 
 	TEEC_SharedMemory SharedMem0 = {0};
@@ -1352,17 +1591,34 @@ uint32_t trusty_attest_get_ca(uint8_t *operation_start,
 
 	TEEC_UUID *TeecUuid = &tempuuid;
 	TEEC_Operation TeecOperation = {0};
+	struct blk_desc *dev_desc;
+	dev_desc = rockchip_get_bootdev();
 
 	OpteeClientApiLibInitialize();
 
 	TeecResult = TEEC_InitializeContext(NULL, &TeecContext);
+
+	TeecOperation.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT,
+						TEEC_NONE,
+						TEEC_NONE,
+						TEEC_NONE);
+	/*0 nand or emmc "security" partition , 1 rpmb*/
+	TeecOperation.params[0].value.a = (dev_desc->if_type == IF_TYPE_MMC) ? 1 : 0;
+#ifdef CONFIG_OPTEE_ALWAYS_USE_SECURITY_PARTITION
+	TeecOperation.params[0].value.a = 0;
+#endif
 
 	TeecResult = TEEC_OpenSession(&TeecContext,
 				      &TeecSession,
 				      TeecUuid,
 				      TEEC_LOGIN_PUBLIC,
 				      NULL,
-				      NULL,
+#ifdef CONFIG_OPTEE_V1
+					NULL,
+#endif
+#ifdef CONFIG_OPTEE_V2
+					&TeecOperation,
+#endif
 				      &ErrorOrigin);
 
 	TEEC_SharedMemory SharedMem0 = {0};
@@ -1418,16 +1674,33 @@ uint32_t trusty_attest_set_ca(uint8_t *ca_response, uint32_t *ca_response_size)
 			     };
 	TEEC_UUID *TeecUuid = &tempuuid;
 	TEEC_Operation TeecOperation = {0};
+	struct blk_desc *dev_desc;
+	dev_desc = rockchip_get_bootdev();
 
 	TeecResult = TEEC_InitializeContext(NULL, &TeecContext);
 
+	TeecOperation.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT,
+						TEEC_NONE,
+						TEEC_NONE,
+						TEEC_NONE);
+	/*0 nand or emmc "security" partition , 1 rpmb*/
+	TeecOperation.params[0].value.a = (dev_desc->if_type == IF_TYPE_MMC) ? 1 : 0;
+#ifdef CONFIG_OPTEE_ALWAYS_USE_SECURITY_PARTITION
+	TeecOperation.params[0].value.a = 0;
+#endif
+
 	TeecResult = TEEC_OpenSession(&TeecContext,
-				      &TeecSession,
-				      TeecUuid,
-				      TEEC_LOGIN_PUBLIC,
-				      NULL,
-				      NULL,
-				      &ErrorOrigin);
+					&TeecSession,
+					TeecUuid,
+					TEEC_LOGIN_PUBLIC,
+					NULL,
+#ifdef CONFIG_OPTEE_V1
+					NULL,
+#endif
+#ifdef CONFIG_OPTEE_V2
+					&TeecOperation,
+#endif
+					&ErrorOrigin);
 
 	TEEC_SharedMemory SharedMem0 = {0};
 
