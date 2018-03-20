@@ -12,9 +12,8 @@
 #define KEY_LONG_DOWN_MS	2000
 
 enum key_state {
-	KEY_PRESS_NONE,
-	KEY_PRESS_UP,
-	KEY_PRESS_DOWN,
+	KEY_PRESS_NONE,	/* press without release */
+	KEY_PRESS_DOWN,	/* press -> release */
 	KEY_PRESS_LONG_DOWN,
 	KEY_NOT_EXIST,
 };
