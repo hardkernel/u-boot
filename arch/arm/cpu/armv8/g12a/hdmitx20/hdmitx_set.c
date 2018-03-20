@@ -1069,6 +1069,11 @@ static void config_hdmi20_tx ( enum hdmi_vic vic, struct hdmi_format_para *para,
 	hdmitx_wr_reg(HDMITX_DWC_FC_VSYNCINWIDTH,
 		hdmitx_rd_reg(HDMITX_DWC_FC_VSYNCINWIDTH));
 
+	mdelay(1);
+	hdmitx_wr_reg(HDMITX_DWC_MC_SWRSTZREQ, 0);
+	hdmitx_wr_reg(HDMITX_DWC_FC_VSYNCINWIDTH,
+		hdmitx_rd_reg(HDMITX_DWC_FC_VSYNCINWIDTH));
+
 } /* config_hdmi20_tx */
 
 /* Set TV encoder for HDMI */
