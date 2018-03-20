@@ -151,6 +151,8 @@ static void aml_lcd_extern_info_print(void)
 			ecommon->i2c_sda_gpio,
 			ecommon->i2c_sda_gpio_off,
 			econf->table_init_loaded);
+		if (econf->cmd_size == 0)
+			break;
 		if (econf->cmd_size == LCD_EXTERN_CMD_SIZE_DYNAMIC) {
 			aml_lcd_extern_init_table_dynamic_size_print(econf, 1);
 			aml_lcd_extern_init_table_dynamic_size_print(econf, 0);
@@ -171,6 +173,8 @@ static void aml_lcd_extern_info_print(void)
 			econf->spi_gpio_clk, econf->spi_gpio_data,
 			econf->spi_clk_freq, econf->spi_clk_pol,
 			econf->table_init_loaded);
+		if (econf->cmd_size == 0)
+			break;
 		if (econf->cmd_size == LCD_EXTERN_CMD_SIZE_DYNAMIC) {
 			aml_lcd_extern_init_table_dynamic_size_print(econf, 1);
 			aml_lcd_extern_init_table_dynamic_size_print(econf, 0);
@@ -414,7 +418,8 @@ static int aml_lcd_extern_get_init_dts(char *dtaddr, struct lcd_extern_common_s 
 	/* get pinmux */
 	propdata = (char *)fdt_getprop(dtaddr, parent_offset, "pinctrl_names_uboot", NULL);
 	if (propdata == NULL) {
-		EXTERR("get pinctrl_names_uboot failed, exit\n");
+		EXTPR("no pinctrl_names_uboot\n");
+		return 0;
 	}
 	sprintf(propname, "/pinmux/%s", propdata);
 	parent_offset = fdt_path_offset(dt_addr, propname);
@@ -1183,6 +1188,10 @@ static int aml_lcd_extern_add_mipi(struct aml_lcd_extern_driver_s *ext_drv)
 #ifdef CONFIG_AML_LCD_EXTERN_MIPI_P070ACB
 		ret = aml_lcd_extern_mipi_p070acb_probe(ext_drv);
 #endif
+	} else if (strcmp(ext_drv->config->name, "mipi_TL050FHV02CT") == 0) {
+#ifdef CONFIG_AML_LCD_EXTERN_MIPI_TL050FHV02CT
+		ret = aml_lcd_extern_mipi_tl050fhv02ct_probe(ext_drv);
+#endif
 	} else {
 		EXTERR("invalid driver name: %s\n", ext_drv->config->name);
 		ret = -1;
@@ -1346,6 +1355,12 @@ static int aml_lcd_extern_add_driver_default(int index, struct lcd_extern_config
 #ifdef CONFIG_AML_LCD_EXTERN_MIPI_P070ACB
 	if (strcmp(ext_drv->config->name, "mipi_P070ACB") == 0) {
 		ret = aml_lcd_extern_mipi_p070acb_probe(ext_drv);
+		goto add_driver_default_end;
+	}
+#endif
+#ifdef CONFIG_AML_LCD_EXTERN_MIPI_TL050FHV02CT
+	if (strcmp(ext_drv->config->name, "mipi_TL050FHV02CT") == 0) {
+		ret = aml_lcd_extern_mipi_tl050fhv02ct_probe(ext_drv);
 		goto add_driver_default_end;
 	}
 #endif

@@ -118,6 +118,17 @@ static void mipi_dsi_init_table_print(struct dsi_config_s *dconf, int on_off)
 				printf("  0x%02x,%d,\n",
 					dsi_table[i], dsi_table[i+1]);
 			}
+		} else if (dsi_table[i] == 0xf0) {
+			n = (DSI_CMD_SIZE_INDEX + 1) +
+				dsi_table[i+DSI_CMD_SIZE_INDEX];
+			printf("  ");
+			for (j = 0; j < n; j++) {
+				if (j == 0)
+					printf("0x%02x,", dsi_table[i+j]);
+				else
+					printf("%d,", dsi_table[i+j]);
+			}
+			printf("\n");
 		} else if ((dsi_table[i] & 0xf) == 0x0) {
 			printf("dsi_init_%s wrong data_type: 0x%02x\n",
 				on_off ? "on" : "off", dsi_table[i]);
@@ -1661,7 +1672,7 @@ static void mipi_dsi_check_state(struct dsi_config_s *dconf,
 
 static void mipi_dsi_link_on(struct lcd_config_s *pconf)
 {
-	unsigned int op_mode_init, op_mode_disp, init_done;
+	unsigned int op_mode_init, op_mode_disp;
 	struct dsi_config_s *dconf;
 #ifdef CONFIG_AML_LCD_EXTERN
 	struct aml_lcd_extern_driver_s *lcd_ext;
@@ -1673,10 +1684,14 @@ static void mipi_dsi_link_on(struct lcd_config_s *pconf)
 	dconf = pconf->lcd_control.mipi_config;
 	op_mode_init = dconf->operation_mode_init;
 	op_mode_disp = dconf->operation_mode_display;
-	init_done = 0;
 
 	if (dconf->check_en)
 		mipi_dsi_check_state(dconf, dconf->check_reg, dconf->check_cnt);
+
+	if (dconf->dsi_init_on) {
+		dsi_write_cmd(dconf->dsi_init_on);
+		LCDPR("dsi init on\n");
+	}
 
 #ifdef CONFIG_AML_LCD_EXTERN
 	if (dconf->extern_init < LCD_EXTERN_INDEX_INVALID) {
@@ -1685,23 +1700,13 @@ static void mipi_dsi_link_on(struct lcd_config_s *pconf)
 			LCDPR("no lcd_extern driver\n");
 		} else {
 			if (lcd_ext->config->table_init_on) {
-				dsi_write_cmd(
-					lcd_ext->config->table_init_on);
+				dsi_write_cmd(lcd_ext->config->table_init_on);
 				LCDPR("[extern]%s dsi init on\n",
 					lcd_ext->config->name);
-				init_done = 1;
 			}
 		}
 	}
 #endif
-
-	if (init_done == 0) {
-		if (dconf->dsi_init_on) {
-			dsi_write_cmd(dconf->dsi_init_on);
-			LCDPR("dsi init on\n");
-			init_done = 1;
-		}
-	}
 
 	if (op_mode_disp != op_mode_init) {
 		set_mipi_dsi_host(MIPI_DSI_VIRTUAL_CHAN_ID,

@@ -18,20 +18,6 @@
 #include <asm/arch/gpio.h>
 
 
-static unsigned char mipi_init_on_table[] = {//table size < 100
-	0x05, 1, 0x11,
-	0xff, 20,
-	0x05, 1, 0x29,
-	0xff, 20,
-	0xff, 0xff,   //ending flag
-};
-static unsigned char mipi_init_off_table[] = {//table size < 50
-	0x05, 1, 0x28,
-	0xff, 10,
-	0x05, 1, 0x10,
-	0xff, 10,
-	0xff,0xff,   //ending flag
-};
 
 
 //Rsv_val = 0xffffffff
@@ -169,6 +155,36 @@ static struct lcd_pinmux_ctrl_s bl_pinmux_ctrl[BL_PINMUX_MAX] = {
 	},
 };
 
+static unsigned char mipi_init_on_table[] = {//table size < 100
+	0x05, 1, 0x11,
+	0xff, 20,
+	0x05, 1, 0x29,
+	0xff, 20,
+	0xff, 0xff,   //ending flag
+};
+static unsigned char mipi_init_off_table[] = {//table size < 50
+	0x05, 1, 0x28,
+	0xff, 10,
+	0x05, 1, 0x10,
+	0xff, 10,
+	0xff,0xff,   //ending flag
+};
+static unsigned char mipi_init_on_table_TV070WSM[] = {//table size < 100
+	0xf0, 3, 0, 1, 30, /* reset high, delay 30ms */
+	0xf0, 3, 0, 0, 10, /* reset low, delay 10ms */
+	0xf0, 3, 0, 1, 30, /* reset high, delay 30ms */
+	0xff, 100,   /* delay */
+	0xff, 0xff,   //ending flag
+};
+static unsigned char mipi_init_off_table_TV070WSM[] = {//table size < 50
+	0xff,0xff,   //ending flag
+};
+static unsigned char mipi_init_on_table_P070ACB[] = {//table size < 100
+	0xff, 0xff,   //ending flag
+};
+static unsigned char mipi_init_off_table_P070ACB[] = {//table size < 50
+	0xff,0xff,   //ending flag
+};
 static struct dsi_config_s lcd_mipi_config = {
 	.lane_num = 4,
 	.bit_rate_max = 550, /* MHz */
@@ -392,6 +408,32 @@ struct bl_extern_config_s bl_extern_config_dtf = {
 void lcd_config_bsp_init(void)
 {
 	int i, j;
+	char *str;
+	struct ext_lcd_config_s *ext_lcd = NULL;
+	str = getenv("panel_type");
+	if (str) {
+		for (i = 0 ; i < LCD_NUM_MAX ; i++) {
+			ext_lcd = &ext_lcd_config[i];
+			if (strcmp(ext_lcd->panel_type, str) == 0) {
+				switch (i) {
+				case 1:
+					lcd_mipi_config.dsi_init_on = mipi_init_on_table_TV070WSM;
+					lcd_mipi_config.dsi_init_off = mipi_init_off_table_TV070WSM;
+					break;
+				case 2:
+					lcd_mipi_config.dsi_init_on = mipi_init_on_table_P070ACB;
+					lcd_mipi_config.dsi_init_off = mipi_init_off_table_P070ACB;
+					break;
+				case 0:
+				default:
+					lcd_mipi_config.dsi_init_on = mipi_init_on_table;
+					lcd_mipi_config.dsi_init_off = mipi_init_off_table;
+					break;
+				}
+				break;
+			}
+		}
+	}
 
 	for (i = 0; i < LCD_CPU_GPIO_NUM_MAX; i++) {
 		if (strcmp(lcd_cpu_gpio[i], "invalid") == 0)
