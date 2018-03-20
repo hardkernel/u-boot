@@ -180,6 +180,41 @@ static int system_suspend_enter(struct charge_animation_pdata *pdata)
 	return 0;
 }
 
+static void timer_irq_handler(int irq, void *data)
+{
+	struct udevice *dev = data;
+	struct charge_animation_priv *priv = dev_get_priv(dev);
+	static long long count;
+
+	writel(TIMER_CLR_INT, TIMER_BASE + TIMER_INTSTATUS);
+
+	priv->auto_wakeup_key_state = KEY_PRESS_DOWN;
+	printf("auto wakeup count: %lld\n", ++count);
+}
+
+static void autowakeup_timer_init(struct udevice *dev, uint32_t seconds)
+{
+	uint64_t period = 24000000ULL * seconds;
+
+	/* Disable before conifg */
+	writel(0, TIMER_BASE + TIMER_CTRL);
+
+	/* Config */
+	writel((uint32_t)period, TIMER_BASE + TIMER_LOAD_COUNT0);
+	writel((uint32_t)(period >> 32), TIMER_BASE + TIMER_LOAD_COUNT1);
+	writel(TIMER_CLR_INT, TIMER_BASE + TIMER_INTSTATUS);
+	writel(TIMER_EN | TIMER_INT_EN, TIMER_BASE + TIMER_CTRL);
+
+	/* IRQ */
+	irq_install_handler(TIMER_IRQ, timer_irq_handler, dev);
+	irq_handler_enable(TIMER_IRQ);
+}
+
+static void autowakeup_timer_uninit(void)
+{
+	irq_free_handler(TIMER_IRQ);
+}
+
 #ifdef CONFIG_DRM_ROCKCHIP
 static void charge_show_bmp(const char *name)
 {
@@ -202,6 +237,7 @@ static int charge_extrem_low_power(struct udevice *dev)
 	struct udevice *pmic = priv->pmic;
 	struct udevice *fg = priv->fg;
 	int voltage, soc, charging = 1;
+	static int timer_initialized;
 
 	voltage = fuel_gauge_get_voltage(fg);
 	if (voltage < 0)
@@ -211,15 +247,21 @@ static int charge_extrem_low_power(struct udevice *dev)
 		/* Check charger online */
 		charging = fuel_gauge_get_chrg_online(fg);
 		if (charging <= 0) {
-			printf("Not charging, online=%d. Shutdown...\n",
-			       charging);
+			printf("%s: Not charging, online=%d. Shutdown...\n",
+			       __func__, charging);
 			/* wait uart flush before shutdown */
-			mdelay(500);
+			mdelay(5);
 			/* PMIC shutdown */
 			pmic_shutdown(pmic);
 
 			printf("Cpu should never reach here, shutdown failed !\n");
 			continue;
+		}
+
+		/* Enable auto wakeup */
+		if (!timer_initialized) {
+			timer_initialized = 1;
+			autowakeup_timer_init(dev, 5);
 		}
 
 		/*
@@ -246,43 +288,9 @@ static int charge_extrem_low_power(struct udevice *dev)
 		}
 	}
 
+	autowakeup_timer_uninit();
+
 	return 0;
-}
-
-static void timer_irq_handler(int irq, void *data)
-{
-	struct udevice *dev = data;
-	struct charge_animation_priv *priv = dev_get_priv(dev);
-	static long long count;
-
-	writel(TIMER_CLR_INT, TIMER_BASE + TIMER_INTSTATUS);
-
-	priv->auto_wakeup_key_state = KEY_PRESS_DOWN;
-	printf("auto wakeup count: %lld\n", ++count);
-}
-
-static void autowakeup_timer_init(struct udevice *dev)
-{
-	struct charge_animation_pdata *pdata = dev_get_platdata(dev);
-	uint64_t period = 24000000ULL * (pdata->auto_wakeup_interval);
-
-	/* Disable before conifg */
-	writel(0, TIMER_BASE + TIMER_CTRL);
-
-	/* Config */
-	writel((uint32_t)period, TIMER_BASE + TIMER_LOAD_COUNT0);
-	writel((uint32_t)(period >> 32), TIMER_BASE + TIMER_LOAD_COUNT1);
-	writel(TIMER_CLR_INT, TIMER_BASE + TIMER_INTSTATUS);
-	writel(TIMER_EN | TIMER_INT_EN, TIMER_BASE + TIMER_CTRL);
-
-	/* IRQ */
-	irq_install_handler(TIMER_IRQ, timer_irq_handler, dev);
-	irq_handler_enable(TIMER_IRQ);
-}
-
-static void autowakeup_timer_uninit(void)
-{
-	irq_free_handler(TIMER_IRQ);
 }
 
 static int charge_animation_show(struct udevice *dev)
@@ -368,7 +376,7 @@ static int charge_animation_show(struct udevice *dev)
 	/* Auto wakeup */
 	if (pdata->auto_wakeup_interval) {
 		printf("Auto wakeup: %dS\n", pdata->auto_wakeup_interval);
-		autowakeup_timer_init(dev);
+		autowakeup_timer_init(dev, pdata->auto_wakeup_interval);
 	}
 
 	printf("Enter U-Boot charging mode\n");
@@ -386,7 +394,7 @@ static int charge_animation_show(struct udevice *dev)
 			       charging);
 
 			/* wait uart flush before shutdown */
-			mdelay(500);
+			mdelay(5);
 
 			/* PMIC shutdown */
 			pmic_shutdown(pmic);
@@ -621,7 +629,7 @@ static int charge_animation_probe(struct udevice *dev)
 	}
 	priv->fg = fg;
 
-	/* Get PWRKEY: used for wakeup and trun off/on LCD */
+	/* Get PWRKEY: used for wakeup and turn off/on LCD */
 	ret = platform_key_read(KEY_POWER);
 	if (ret == KEY_NOT_EXIST) {
 		printf("Can't find power key\n");
