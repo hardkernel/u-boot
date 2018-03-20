@@ -190,7 +190,7 @@ static int clk_set_default_rates(struct udevice *dev)
 		if (ret < 0) {
 			debug("%s: failed to set rate on clock %d for %s\n",
 			      __func__, index, dev_read_name(dev));
-			break;
+			continue;
 		}
 	}
 
