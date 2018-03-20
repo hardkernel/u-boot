@@ -167,7 +167,7 @@ void wakeup_timer_setup(void)
 	value |= ((0x3<<0) | (0x1<<12) | (0x1<<16));
 	writel(value, P_ISA_TIMER_MUX);
 	/*10ms generate an interrupt*/
-	writel(10, P_ISA_TIMERA);
+	writel(9, P_ISA_TIMERA);
 }
 void wakeup_timer_clear(void)
 {

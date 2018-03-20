@@ -230,7 +230,7 @@ static void wakeup_timer_setup(void)
 	value = readl(P_ISA_TIMER_MUX);
 	value |= ((0x3<<0) | (0x1<<12) | (0x1<<16));
 	writel(value, P_ISA_TIMER_MUX);
-	writel(10, P_ISA_TIMERA);
+	writel(9, P_ISA_TIMERA);
 }
 static void wakeup_timer_clear(void)
 {
