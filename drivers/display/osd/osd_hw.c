@@ -612,7 +612,7 @@ static u32 line_stride_calc(
 
 #ifdef CONFIG_AML_MESON_G12A
 /* only one layer */
-static void osd_setting_default_hwc(u32 index, struct pandata_s *disp_data)
+void osd_setting_default_hwc(u32 index, struct pandata_s *disp_data)
 {
 	u32 width, height;
 	u32 blend2_premult_en = 0, din_premult_en = 0;
@@ -675,7 +675,6 @@ static void osd_setting_default_hwc(u32 index, struct pandata_s *disp_data)
 
 	width = disp_data->x_end - disp_data->x_start + 1;
 	height = disp_data->y_end - disp_data->y_start + 1;
-
 	/* it is setting for osdx */
 	osd_reg_write(
 		VIU_OSD_BLEND_DIN0_SCOPE_H + reg_offset * index,
@@ -704,6 +703,26 @@ static void osd_setting_default_hwc(u32 index, struct pandata_s *disp_data)
 		disp_data->y_start << 16 | disp_data->y_end);
 	osd_reg_write(VPP_POSTBLEND_H_SIZE,
 		height << 16 | width);
+}
+
+
+void osd_update_blend(struct pandata_s *disp_data)
+{
+	u32 width, height;
+
+	width = disp_data->x_end - disp_data->x_start + 1;
+	height = disp_data->y_end - disp_data->y_start + 1;
+
+	/* setting blend scope */
+	osd_reg_write(VPP_OSD1_BLD_H_SCOPE,
+		disp_data->x_start << 16 | disp_data->x_end);
+	osd_reg_write(VPP_OSD1_BLD_V_SCOPE,
+		disp_data->y_start << 16 | disp_data->y_end);
+	osd_reg_write(VPP_POSTBLEND_H_SIZE,
+		height << 16 | width);
+	osd_reg_write(VPP_OUT_H_V_SIZE,
+			width << 16 | height);
+
 }
 #endif
 
@@ -1147,6 +1166,7 @@ void osd_set_window_axis_hw(u32 index, s32 x0, s32 y0, s32 x1, s32 y1)
 	}
 	osd_hw.free_dst_data[index].x_start = x0;
 	osd_hw.free_dst_data[index].x_end = x1;
+	osd_logi("osd_hw.free_dst_data: %d,%d,%d,%d\n",x0,x1,y0,y1);
 #if defined(CONFIG_FB_OSD2_CURSOR)
 	osd_hw.cursor_dispdata[index].x_start = x0;
 	osd_hw.cursor_dispdata[index].x_end = x1;
@@ -1477,6 +1497,7 @@ static void osd1_update_disp_freescale_enable(void)
 	int vf_bank_len = 0;
 	u32 data32 = 0x0;
 
+	osd_logi("osd1_update_disp_freescale_enable\n");
 	if (osd_hw.scale_workaround)
 		vf_bank_len = 2;
 	else

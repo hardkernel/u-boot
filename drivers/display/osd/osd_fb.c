@@ -22,6 +22,7 @@
 #include <malloc.h>
 #include <bmp_layout.h>
 #include <asm/cpu_id.h>
+#include <asm/arch/cpu.h>
 
 /* Local Headers */
 #include <amlogic/fb.h>
@@ -194,7 +195,6 @@ static void osd_layer_init(GraphicDevice gdev, int layer)
 	disp_end_x = gdev.winSizeX - 1;
 	disp_end_y = gdev.winSizeY - 1;
 #endif
-
 	osd_init_hw();
 	osd_setup_hw(index,
 		     xoffset,
@@ -654,6 +654,9 @@ int video_scale_bitmap(void)
 	char *layer_str = NULL;
 	int osd_index = -1;
 	int axis[4] = {};
+#ifdef CONFIG_AML_MESON_G12A
+	struct pandata_s disp_data;
+#endif
 
 	osd_logd2("video_scale_bitmap src w=%d, h=%d, dst w=%d, dst h=%d\n",
 		fb_gdev.fb_width, fb_gdev.fb_height, fb_gdev.winSizeX, fb_gdev.winSizeY);
@@ -679,6 +682,14 @@ int video_scale_bitmap(void)
 	osd_set_window_axis_hw(osd_index, axis[0], axis[1], axis[0] + axis[2] - 1,
 			       axis[1] + axis[3] - 1);
 	osd_set_free_scale_enable_hw(osd_index, 0x10001);
+#ifdef CONFIG_AML_MESON_G12A
+	disp_data.x_start = axis[0];
+	disp_data.y_start = axis[1];
+	disp_data.x_end = axis[0] + axis[2] - 1;
+	disp_data.y_end = axis[1] + axis[3] - 1;
+	if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_G12A)
+		osd_update_blend(&disp_data);
+#endif
 	osd_enable_hw(osd_index, 1);
 
 	return (1);

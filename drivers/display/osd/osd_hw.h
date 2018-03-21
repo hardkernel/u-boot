@@ -109,5 +109,6 @@ extern void osd_enable_hw(u32 index, u32 enable);
 extern void osd_pan_display_hw(u32 index, unsigned int xoffset,
 			       unsigned int yoffset);
 extern void osd_get_hw_para(struct hw_para_s **para);
+extern void osd_update_blend(struct pandata_s *disp_data);
 
 #endif
