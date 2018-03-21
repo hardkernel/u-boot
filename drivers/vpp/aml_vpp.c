@@ -1060,6 +1060,46 @@ for G12A, set osd2 matrix(10bit) RGB2YUV
 #endif
 }
 
+ /*
+for G12A, set osd3 matrix(10bit) RGB2YUV
+ */
+ static void set_osd3_rgb2yuv(bool on)
+ {
+#ifdef CONFIG_AML_MESON_G12A
+	int *m = NULL;
+
+	if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_G12A) {
+		/* RGB -> 709 limit */
+		m = RGB709_to_YUV709l_coeff;
+
+		/* VPP WRAP OSD3 matrix */
+		vpp_reg_write(VPP_WRAP_OSD3_MATRIX_PRE_OFFSET0_1,
+			((m[0] & 0xfff) << 16) | (m[1] & 0xfff));
+		vpp_reg_write(VPP_WRAP_OSD3_MATRIX_PRE_OFFSET2,
+			m[2] & 0xfff);
+		vpp_reg_write(VPP_WRAP_OSD3_MATRIX_COEF00_01,
+			((m[3] & 0x1fff) << 16) | (m[4] & 0x1fff));
+		vpp_reg_write(VPP_WRAP_OSD3_MATRIX_COEF02_10,
+			((m[5]  & 0x1fff) << 16) | (m[6] & 0x1fff));
+		vpp_reg_write(VPP_WRAP_OSD3_MATRIX_COEF11_12,
+			((m[7] & 0x1fff) << 16) | (m[8] & 0x1fff));
+		vpp_reg_write(VPP_WRAP_OSD3_MATRIX_COEF20_21,
+			((m[9] & 0x1fff) << 16) | (m[10] & 0x1fff));
+		vpp_reg_write(VPP_WRAP_OSD3_MATRIX_COEF22,
+			m[11] & 0x1fff);
+
+		vpp_reg_write(VPP_WRAP_OSD3_MATRIX_OFFSET0_1,
+			((m[18] & 0xfff) << 16) | (m[19] & 0xfff));
+		vpp_reg_write(VPP_WRAP_OSD3_MATRIX_OFFSET2,
+			m[20] & 0xfff);
+
+		vpp_reg_setb(VPP_WRAP_OSD3_MATRIX_EN_CTRL, on, 0, 1);
+
+		VPP_PR("g12a osd3 matrix rgb2yuv..............\n");
+	}
+#endif
+}
+
 /*
 for txlx, set vpp default data path to u10
  */
@@ -1328,6 +1368,7 @@ void vpp_init(void)
 		/* osd1: rgb->yuv limit,osd2: rgb2yuv limit,osd3: rgb2yuv limit*/
 		set_osd1_rgb2yuv(1);
 		set_osd2_rgb2yuv(1);
+		set_osd3_rgb2yuv(1);
 
 		/* set vpp data path to u12 */
 		set_vpp_bitdepth();
