@@ -22,9 +22,6 @@
 #include <gpio.h>
 #include "pwm_ctrl.h"
 
-#define ON 1
-#define OFF 0
-
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
 static void set_vddee_voltage(unsigned int target_voltage)
@@ -41,18 +38,39 @@ static void set_vddee_voltage(unsigned int target_voltage)
 		to = ARRAY_SIZE(pwm_voltage_table_ee) - 1;
 	}
 
-	writel(pwm_voltage_table_ee[to][0],AO_PWM_PWM_D);
+	writel(pwm_voltage_table_ee[to][0],AO_PWM_PWM_B);
 }
 
 static void power_off_at_24M(unsigned int suspend_from)
 {
-	return;
+	/*set gpioH_8 low to power off vcc 5v*/
+	writel(readl(PREG_PAD_GPIO3_EN_N) & (~(1 << 8)), PREG_PAD_GPIO3_EN_N);
+	writel(readl(PERIPHS_PIN_MUX_C) & (~(0xf)), PERIPHS_PIN_MUX_C);
+
+	/*set test_n low to power off vcck & vcc 3.3v*/
+	writel(readl(AO_GPIO_O) & (~(1 << 31)), AO_GPIO_O);
+	writel(readl(AO_GPIO_O_EN_N) & (~(1 << 31)), AO_GPIO_O_EN_N);
+	writel(readl(AO_RTI_PIN_MUX_REG1) & (~(0xf << 28)), AO_RTI_PIN_MUX_REG1);
+
+	/*step down ee voltage*/
+	set_vddee_voltage(CONFIG_VDDEE_SLEEP_VOLTAGE);
 }
 
 static void power_on_at_24M(unsigned int suspend_from)
 {
-	return;
+	/*step up ee voltage*/
 	set_vddee_voltage(CONFIG_VDDEE_INIT_VOLTAGE);
+
+	/*set test_n low to power on vcck & vcc 3.3v*/
+	writel(readl(AO_GPIO_O) | (1 << 31), AO_GPIO_O);
+	writel(readl(AO_GPIO_O_EN_N) & (~(1 << 31)), AO_GPIO_O_EN_N);
+	writel(readl(AO_RTI_PIN_MUX_REG1) & (~(0xf << 28)), AO_RTI_PIN_MUX_REG1);
+	_udelay(100);
+
+	/*set gpioH_8 low to power on vcc 5v*/
+	writel(readl(PREG_PAD_GPIO3_EN_N) | (1 << 8), PREG_PAD_GPIO3_EN_N);
+	writel(readl(PERIPHS_PIN_MUX_C) & (~(0xf)), PERIPHS_PIN_MUX_C);
+	_udelay(10000);
 }
 
 void get_wakeup_source(void *response, unsigned int suspend_from)

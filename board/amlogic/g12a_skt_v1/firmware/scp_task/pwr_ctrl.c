@@ -49,7 +49,7 @@ static void power_off_at_24M(unsigned int suspend_from)
 	/*set test_n low to power off vcck & vcc 3.3v*/
 	writel(readl(AO_GPIO_O) & (~(1 << 31)), AO_GPIO_O);
 	writel(readl(AO_GPIO_O_EN_N) & (~(1 << 31)), AO_GPIO_O_EN_N);
-	writel(readl(AO_RTI_PIN_MUX_REG1) & (~(0x3 << 28)), AO_RTI_PIN_MUX_REG1);
+	writel(readl(AO_RTI_PIN_MUX_REG1) & (~(0xf << 28)), AO_RTI_PIN_MUX_REG1);
 
 	/*step down ee voltage*/
 	set_vddee_voltage(CONFIG_VDDEE_SLEEP_VOLTAGE);
@@ -63,7 +63,7 @@ static void power_on_at_24M(unsigned int suspend_from)
 	/*set test_n low to power on vcck & vcc 3.3v*/
 	writel(readl(AO_GPIO_O) | (1 << 31), AO_GPIO_O);
 	writel(readl(AO_GPIO_O_EN_N) & (~(1 << 31)), AO_GPIO_O_EN_N);
-	writel(readl(AO_RTI_PIN_MUX_REG1) & (~(0x3 << 28)), AO_RTI_PIN_MUX_REG1);
+	writel(readl(AO_RTI_PIN_MUX_REG1) & (~(0xf << 28)), AO_RTI_PIN_MUX_REG1);
 	_udelay(100);
 
 	/*set gpioH_8 low to power on vcc 5v*/
