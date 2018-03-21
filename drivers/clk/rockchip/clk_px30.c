@@ -486,7 +486,7 @@ static ulong px30_saradc_get_clk(struct px30_cru *cru)
 	u32 div, con;
 
 	con = readl(&cru->clksel_con[55]);
-	div = con >> CLK_SARADC_DIV_CON_SHIFT & CLK_PWM_DIV_CON_MASK;
+	div = con >> CLK_SARADC_DIV_CON_SHIFT & CLK_SARADC_DIV_CON_MASK;
 
 	return DIV_TO_RATE(OSC_HZ, div);
 }
