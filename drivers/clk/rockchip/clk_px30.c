@@ -233,8 +233,6 @@ static int pll_para_config(u32 freq_hz, struct pll_div *div)
 static void rkclk_init(struct px30_cru *cru)
 {
 	u32 aclk_div;
-	u32 hclk_div;
-	u32 pclk_div;
 
 	/* init pll */
 	rkclk_set_pll(cru, APLL, apll_cfgs[APLL_816_MHZ]);
@@ -252,38 +250,6 @@ static void rkclk_init(struct px30_cru *cru)
 		     aclk_div << CORE_ACLK_DIV_SHIFT |
 		     CORE_CLK_PLL_SEL_APLL << CORE_CLK_PLL_SEL_SHIFT |
 		     0 << CORE_DIV_CON_SHIFT);
-
-	/*
-	 * select gpll as pd_bus bus clock source and
-	 * set up dependent divisors for PCLK/HCLK and ACLK clocks.
-	 */
-	aclk_div = GPLL_HZ / BUS_ACLK_HZ - 1;
-	hclk_div = GPLL_HZ / BUS_HCLK_HZ - 1;
-	pclk_div = BUS_ACLK_HZ / BUS_PCLK_HZ - 1;
-
-	rk_clrsetreg(&cru->clksel_con[23],
-		     BUS_PLL_SEL_MASK | BUS_ACLK_DIV_MASK,
-		     BUS_PLL_SEL_GPLL << BUS_PLL_SEL_SHIFT |
-		     aclk_div << BUS_ACLK_DIV_SHIFT);
-
-	rk_clrsetreg(&cru->clksel_con[24],
-		     BUS_PCLK_DIV_MASK | BUS_HCLK_DIV_MASK,
-		     pclk_div << BUS_PCLK_DIV_SHIFT |
-		     hclk_div << BUS_HCLK_DIV_SHIFT);
-
-	/*
-	 * select gpll as pd_peri bus clock source and
-	 * set up dependent divisors for PCLK/HCLK and ACLK clocks.
-	 */
-	aclk_div = GPLL_HZ / PERI_ACLK_HZ - 1;
-	hclk_div = GPLL_HZ / PERI_HCLK_HZ - 1;
-
-	rk_clrsetreg(&cru->clksel_con[14],
-		     PERI_PLL_SEL_MASK |
-		     PERI_HCLK_DIV_MASK | PERI_ACLK_DIV_MASK,
-		     PERI_PLL_GPLL << PERI_PLL_SEL_SHIFT |
-		     hclk_div << PERI_HCLK_DIV_SHIFT |
-		     aclk_div << PERI_ACLK_DIV_SHIFT);
 }
 
 static ulong px30_i2c_get_clk(struct px30_cru *cru, ulong clk_id)
@@ -617,6 +583,127 @@ static ulong px30_vop_set_clk(struct px30_cru *cru, ulong clk_id, uint hz)
 	return hz;
 }
 
+static ulong px30_bus_get_clk(struct px30_cru *cru, ulong clk_id)
+{
+	u32 div, con, parent;
+
+	switch (clk_id) {
+	case ACLK_BUS_PRE:
+		con = readl(&cru->clksel_con[23]);
+		div = (con & BUS_ACLK_DIV_MASK) >> BUS_ACLK_DIV_SHIFT;
+		parent = GPLL_HZ;
+		break;
+	case HCLK_BUS_PRE:
+		con = readl(&cru->clksel_con[24]);
+		div = (con & BUS_HCLK_DIV_MASK) >> BUS_HCLK_DIV_SHIFT;
+		parent = GPLL_HZ;
+		break;
+	case PCLK_BUS_PRE:
+		parent = px30_bus_get_clk(cru, ACLK_BUS_PRE);
+		con = readl(&cru->clksel_con[24]);
+		div = (con & BUS_PCLK_DIV_MASK) >> BUS_PCLK_DIV_SHIFT;
+		break;
+	default:
+		return -ENOENT;
+	}
+
+	return DIV_TO_RATE(parent, div);
+}
+
+static ulong px30_bus_set_clk(struct px30_cru *cru, ulong clk_id, ulong hz)
+{
+	int src_clk_div;
+
+	/*
+	 * select gpll as pd_bus bus clock source and
+	 * set up dependent divisors for PCLK/HCLK and ACLK clocks.
+	 */
+	switch (clk_id) {
+	case ACLK_BUS_PRE:
+		src_clk_div = GPLL_HZ / hz;
+		assert(src_clk_div - 1 < 31);
+		rk_clrsetreg(&cru->clksel_con[23],
+			     BUS_PLL_SEL_MASK | BUS_ACLK_DIV_MASK,
+			     BUS_PLL_SEL_GPLL << BUS_PLL_SEL_SHIFT |
+			     (src_clk_div - 1) << BUS_ACLK_DIV_SHIFT);
+		break;
+	case HCLK_BUS_PRE:
+		src_clk_div = GPLL_HZ / hz;
+		assert(src_clk_div - 1 < 31);
+		rk_clrsetreg(&cru->clksel_con[24],
+			     BUS_PLL_SEL_MASK | BUS_HCLK_DIV_MASK,
+			     BUS_PLL_SEL_GPLL << BUS_PLL_SEL_SHIFT |
+			     (src_clk_div - 1) << BUS_HCLK_DIV_SHIFT);
+		break;
+	case PCLK_BUS_PRE:
+		src_clk_div = px30_bus_get_clk(cru, ACLK_BUS_PRE) / hz;
+		assert(src_clk_div - 1 < 3);
+		rk_clrsetreg(&cru->clksel_con[24],
+			     BUS_PCLK_DIV_MASK,
+			     (src_clk_div - 1) << BUS_PCLK_DIV_SHIFT);
+		break;
+	default:
+		printf("do not support this bus freq\n");
+		return -EINVAL;
+	}
+
+	return px30_bus_get_clk(cru, clk_id);
+}
+
+static ulong px30_peri_get_clk(struct px30_cru *cru, ulong clk_id)
+{
+	u32 div, con, parent;
+
+	switch (clk_id) {
+	case ACLK_PERI_PRE:
+		con = readl(&cru->clksel_con[14]);
+		div = (con & PERI_ACLK_DIV_MASK) >> PERI_ACLK_DIV_SHIFT;
+		parent = GPLL_HZ;
+		break;
+	case HCLK_PERI_PRE:
+		con = readl(&cru->clksel_con[14]);
+		div = (con & PERI_HCLK_DIV_MASK) >> PERI_HCLK_DIV_SHIFT;
+		parent = GPLL_HZ;
+		break;
+	default:
+		return -ENOENT;
+	}
+
+	return DIV_TO_RATE(parent, div);
+}
+
+static ulong px30_peri_set_clk(struct px30_cru *cru, ulong clk_id, ulong hz)
+{
+	int src_clk_div;
+
+	src_clk_div = GPLL_HZ / hz;
+	assert(src_clk_div - 1 < 31);
+
+	/*
+	 * select gpll as pd_peri bus clock source and
+	 * set up dependent divisors for HCLK and ACLK clocks.
+	 */
+	switch (clk_id) {
+	case ACLK_PERI_PRE:
+		rk_clrsetreg(&cru->clksel_con[14],
+			     PERI_PLL_SEL_MASK | PERI_ACLK_DIV_MASK,
+			     PERI_PLL_GPLL << PERI_PLL_SEL_SHIFT |
+			     (src_clk_div - 1) << PERI_ACLK_DIV_SHIFT);
+		break;
+	case HCLK_PERI_PRE:
+		rk_clrsetreg(&cru->clksel_con[14],
+			     PERI_PLL_SEL_MASK | PERI_HCLK_DIV_MASK,
+			     PERI_PLL_GPLL << PERI_PLL_SEL_SHIFT |
+			     (src_clk_div - 1) << PERI_HCLK_DIV_SHIFT);
+		break;
+	default:
+		printf("do not support this peri freq\n");
+		return -EINVAL;
+	}
+
+	return px30_peri_get_clk(cru, clk_id);
+}
+
 static ulong px30_clk_get_rate(struct clk *clk)
 {
 	struct px30_clk_priv *priv = dev_get_priv(clk->dev);
@@ -652,6 +739,15 @@ static ulong px30_clk_get_rate(struct clk *clk)
 	case ACLK_VOPB:
 	case DCLK_VOPB:
 		rate = px30_vop_get_clk(priv->cru, clk->id);
+		break;
+	case ACLK_BUS_PRE:
+	case HCLK_BUS_PRE:
+	case PCLK_BUS_PRE:
+		rate = px30_bus_get_clk(priv->cru, clk->id);
+		break;
+	case ACLK_PERI_PRE:
+	case HCLK_PERI_PRE:
+		rate = px30_peri_get_clk(priv->cru, clk->id);
 		break;
 	default:
 		return -ENOENT;
@@ -695,6 +791,15 @@ static ulong px30_clk_set_rate(struct clk *clk, ulong rate)
 	case ACLK_VOPB:
 	case DCLK_VOPB:
 		ret = px30_vop_set_clk(priv->cru, clk->id, rate);
+		break;
+	case ACLK_BUS_PRE:
+	case HCLK_BUS_PRE:
+	case PCLK_BUS_PRE:
+		ret = px30_bus_set_clk(priv->cru, clk->id, rate);
+		break;
+	case ACLK_PERI_PRE:
+	case HCLK_PERI_PRE:
+		ret = px30_peri_set_clk(priv->cru, clk->id, rate);
 		break;
 	default:
 		return -ENOENT;
