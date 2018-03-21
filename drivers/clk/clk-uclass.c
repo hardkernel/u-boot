@@ -11,6 +11,7 @@
 #include <clk.h>
 #include <clk-uclass.h>
 #include <dm.h>
+#include <dm/device-internal.h>
 #include <dm/read.h>
 #include <dt-structs.h>
 #include <errno.h>
@@ -366,6 +367,25 @@ int clk_disable(struct clk *clk)
 		return -ENOSYS;
 
 	return ops->disable(clk);
+}
+
+int clks_probe(void)
+{
+	struct udevice *dev;
+	struct uclass *uc;
+	int ret;
+
+	ret = uclass_get(UCLASS_CLK, &uc);
+	if (ret)
+		return ret;
+
+	uclass_foreach_dev(dev, uc) {
+		ret = device_probe(dev);
+		if (ret)
+			printf("%s - probe failed: %d\n", dev->name, ret);
+	}
+
+	return 0;
 }
 
 UCLASS_DRIVER(clk) = {

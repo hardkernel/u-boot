@@ -245,4 +245,6 @@ int clk_disable(struct clk *clk);
 
 int soc_clk_dump(void);
 
+int clks_probe(void);
+
 #endif

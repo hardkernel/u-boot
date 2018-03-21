@@ -164,6 +164,11 @@ int board_init(void)
 #ifdef CONFIG_USING_KERNEL_DTB
 	init_kernel_dtb();
 #endif
+	/*
+	 * pmucru isn't referenced on some platforms, so pmucru driver can't
+	 * probe that the "assigned-clocks" is unused.
+	 */
+	clks_probe();
 #ifdef CONFIG_DM_REGULATOR
 	ret = regulators_enable_boot_on(false);
 	if (ret)
