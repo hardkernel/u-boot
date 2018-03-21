@@ -76,6 +76,7 @@ static void power_on_at_24M(unsigned int suspend_from)
 void get_wakeup_source(void *response, unsigned int suspend_from)
 {
 	struct wakeup_info *p = (struct wakeup_info *)response;
+	struct wakeup_gpio_info *gpio;
 	unsigned val;
 	unsigned i = 0;
 
@@ -84,7 +85,17 @@ void get_wakeup_source(void *response, unsigned int suspend_from)
 	       ETH_PHY_WAKEUP_SRC | BT_WAKEUP_SRC);
 
 	p->sources = val;
-	p->gpio_info_count = i;
+
+	/* Power Key: AO_GPIO[3]*/
+	gpio = &(p->gpio_info[i]);
+	gpio->wakeup_id = POWER_KEY_WAKEUP_SRC;
+	gpio->gpio_in_idx = GPIOAO_3;
+	gpio->gpio_in_ao = 1;
+	gpio->gpio_out_idx = -1;
+	gpio->gpio_out_ao = -1;
+	gpio->irq = IRQ_AO_GPIO0_NUM;
+	gpio->trig_type = GPIO_IRQ_FALLING_EDGE;
+	p->gpio_info_count = ++i;
 
 }
 extern void __switch_idle_task(void);
@@ -114,6 +125,12 @@ static unsigned int detect_key(unsigned int suspend_from)
 			} else {
 				adc_key_cnt = 0;
 			}
+		}
+
+		if (irq[IRQ_AO_GPIO0] == IRQ_AO_GPIO0_NUM) {
+			irq[IRQ_AO_GPIO0] = 0xFFFFFFFF;
+			if ((readl(AO_GPIO_I) & (1<<3)) == 0)
+				exit_reason = POWER_KEY_WAKEUP;
 		}
 
 		if (exit_reason)
