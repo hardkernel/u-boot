@@ -758,6 +758,14 @@ static int px30_clk_get_gpll_rate(ulong *rate)
 	return 0;
 }
 
+static ulong px30_clk_get_pll_rate(struct px30_clk_priv *priv,
+				   enum px30_pll_id pll_id)
+{
+	struct px30_cru *cru = priv->cru;
+
+	return rkclk_pll_get_rate(&cru->pll[pll_id], &cru->mode, pll_id);
+}
+
 static ulong px30_clk_get_rate(struct clk *clk)
 {
 	struct px30_clk_priv *priv = dev_get_priv(clk->dev);
@@ -775,8 +783,18 @@ static ulong px30_clk_get_rate(struct clk *clk)
 
 	debug("%s %ld\n", __func__, clk->id);
 	switch (clk->id) {
-	case 0 ... 15:
-		return 0;
+	case PLL_APLL:
+		rate = px30_clk_get_pll_rate(priv, APLL);
+		break;
+	case PLL_DPLL:
+		rate = px30_clk_get_pll_rate(priv, DPLL);
+		break;
+	case PLL_CPLL:
+		rate = px30_clk_get_pll_rate(priv, CPLL);
+		break;
+	case PLL_NPLL:
+		rate = px30_clk_get_pll_rate(priv, NPLL);
+		break;
 	case HCLK_SDMMC:
 	case HCLK_EMMC:
 	case SCLK_SDMMC:
