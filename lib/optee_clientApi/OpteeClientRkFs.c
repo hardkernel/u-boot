@@ -284,7 +284,7 @@ static int rkss_verify_ptable(struct rk_secure_storage* rkss)
 			|| verify->checkstr != RKSS_CHECK_STR)
 	{
 		debug("verify [%lu] fail, cleanning ....", rkss->index);
-		memset(rkss->data, 0, sizeof(RKSS_DATA_LEN));
+		memset(rkss->data, 0, RKSS_DATA_LEN);
 		verify->checkstr = RKSS_CHECK_STR;
 		verify->version = RKSS_VERSION;
 		int ret = rkss_write_section(rkss);
@@ -1184,6 +1184,7 @@ int tee_supp_rk_fs_init(void)
 	for (i = 0; i < RKSS_DATA_SECTION_COUNT; i++)
 	{
 		struct rk_secure_storage rkss = {0};
+		memset(rkss.data, 0, RKSS_DATA_LEN);
 		rkss.index = i;
 		rkss_write_section(&rkss);
 		printf("cleaned [%d]", i);

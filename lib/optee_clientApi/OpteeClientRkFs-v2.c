@@ -298,7 +298,7 @@ static int rkss_verify_ptable(struct rk_secure_storage *rkss)
 	if (verify->version != RKSS_VERSION
 			|| verify->checkstr != RKSS_CHECK_STR) {
 		printf("verify [%lu] fail, cleanning ....", rkss->index);
-		memset(rkss->data, 0, sizeof(RKSS_DATA_LEN));
+		memset(rkss->data, 0, RKSS_DATA_LEN);
 		verify->checkstr = RKSS_CHECK_STR;
 		verify->version = RKSS_VERSION;
 		ret = rkss_write_section(rkss);
@@ -769,7 +769,7 @@ static TEEC_Result ree_fs_new_create(size_t num_params,
 
 	debug("ree_fs_new_create create file: %s, len: %lu \n", filename, strlen(filename));
 	fd = rkss_get_fileinfo_by_name(filename, &p);
-	if (fd > 0) {
+	if (fd >= 0) {
 		debug("ree_fs_new_create : file exist, clear it. %s", filename);
 		/* decrease ref from usedflags */
 		num = p.size / RKSS_DATA_LEN + 1;
@@ -1211,6 +1211,7 @@ int tee_supp_rk_fs_init(void)
 	/* clean secure storage*/
 #ifdef DEBUG_CLEAN_RKSS
 	for (i = 0; i < RKSS_DATA_SECTION_COUNT; i++) {
+		memset(rkss.data, 0, RKSS_DATA_LEN);
 		rkss.index = i;
 		rkss_write_section(&rkss);
 		printf("cleaned [%d]", i);
