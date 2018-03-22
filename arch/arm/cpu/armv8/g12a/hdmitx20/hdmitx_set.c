@@ -156,11 +156,6 @@ static void hdmitx_hw_init(void)
 	/* .clk2 ( fclk_div3 ), */
 	/* .clk3 ( fclk_div5 ), */
 	hd_set_reg_bits(P_HHI_HDMI_CLK_CNTL, 0x0100, 0, 16);
-	/*VPU_CNTL should be configurated in VPU init*/
-	hd_set_reg_bits(P_HHI_VPU_CLK_CNTL, 0x0300, 0, 16);
-	hd_set_reg_bits(P_HHI_VAPBCLK_CNTL, 0x1, 30, 1);
-	hd_set_reg_bits(P_HHI_VAPBCLK_CNTL, 0x1, 8, 1);
-	hd_set_reg_bits(P_HHI_VAPBCLK_CNTL, 0x1, 0, 1);
 
 	/* Enable clk81_hdmitx_pclk */
 	hd_set_reg_bits(P_HHI_GCLK_MPEG2, 1, 4, 1);
