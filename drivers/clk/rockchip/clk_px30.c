@@ -40,6 +40,13 @@ enum {
 
 #define DIV_TO_RATE(input_rate, div)    ((input_rate) / ((div) + 1))
 
+#define PX30_CLK_DUMP(_id, _name, _iscru)	\
+{						\
+	.id = _id,				\
+	.name = _name,				\
+	.is_cru = _iscru,			\
+}
+
 static struct pll_rate_table px30_pll_rates[] = {
 	/* _mhz, _refdiv, _fbdiv, _postdiv1, _postdiv2, _dsmpd, _frac */
 	PX30_PLL_RATE(1200000000, 1, 50, 1, 1, 1, 0),
@@ -47,6 +54,20 @@ static struct pll_rate_table px30_pll_rates[] = {
 	PX30_PLL_RATE(1100000000, 12, 550, 1, 1, 1, 0),
 	PX30_PLL_RATE(1000000000, 6, 500, 2, 1, 1, 0),
 	PX30_PLL_RATE(816000000, 1, 68, 2, 1, 1, 0),
+};
+
+static const struct px30_clk_info clks_dump[] = {
+	PX30_CLK_DUMP(PLL_APLL, "apll", true),
+	PX30_CLK_DUMP(PLL_DPLL, "dpll", true),
+	PX30_CLK_DUMP(PLL_CPLL, "cpll", true),
+	PX30_CLK_DUMP(PLL_NPLL, "npll", true),
+	PX30_CLK_DUMP(PLL_GPLL, "gpll", false),
+	PX30_CLK_DUMP(ACLK_BUS_PRE, "aclk_bus", true),
+	PX30_CLK_DUMP(HCLK_BUS_PRE, "hclk_bus", true),
+	PX30_CLK_DUMP(PCLK_BUS_PRE, "pclk_bus", true),
+	PX30_CLK_DUMP(ACLK_PERI_PRE, "aclk_peri", true),
+	PX30_CLK_DUMP(HCLK_PERI_PRE, "hclk_peri", true),
+	PX30_CLK_DUMP(PCLK_PMU_PRE, "pclk_pmu", false),
 };
 
 static u8 pll_mode_shift[PLL_COUNT] = {
@@ -1281,3 +1302,69 @@ U_BOOT_DRIVER(rockchip_px30_pmucru) = {
 	.ops		= &px30_pmuclk_ops,
 	.probe		= px30_pmuclk_probe,
 };
+
+/**
+ * soc_clk_dump() - Print clock frequencies
+ * Returns zero on success
+ *
+ * Implementation for the clk dump command.
+ */
+int soc_clk_dump(void)
+{
+	struct udevice *cru_dev, *pmucru_dev;
+	const struct px30_clk_info *clk_dump;
+	struct clk clk;
+	unsigned long clk_count = ARRAY_SIZE(clks_dump);
+	unsigned long rate;
+	int i, ret;
+
+	ret = uclass_get_device_by_driver(UCLASS_CLK,
+					  DM_GET_DRIVER(rockchip_px30_cru),
+					  &cru_dev);
+	if (ret) {
+		printf("%s failed to get cru device\n", __func__);
+		return ret;
+	}
+
+	ret = uclass_get_device_by_driver(UCLASS_CLK,
+					  DM_GET_DRIVER(rockchip_px30_pmucru),
+					  &pmucru_dev);
+	if (ret) {
+		printf("%s failed to get pmucru device\n", __func__);
+		return ret;
+	}
+
+	printf("CLK:");
+	for (i = 0; i < clk_count; i++) {
+		clk_dump = &clks_dump[i];
+		if (clk_dump->name) {
+			clk.id = clk_dump->id;
+			if (clk_dump->is_cru)
+				ret = clk_request(cru_dev, &clk);
+			else
+				ret = clk_request(pmucru_dev, &clk);
+			if (ret < 0)
+				return ret;
+
+			rate = clk_get_rate(&clk);
+			clk_free(&clk);
+			if (i == 0) {
+				if (rate < 0)
+					printf("%10s%20s\n", clk_dump->name,
+					       "unknown");
+				else
+					printf("%10s%20lu Hz\n", clk_dump->name,
+					       rate);
+			} else {
+				if (rate < 0)
+					printf("%14s%20s\n", clk_dump->name,
+					       "unknown");
+				else
+					printf("%14s%20lu Hz\n", clk_dump->name,
+					       rate);
+			}
+		}
+	}
+
+	return 0;
+}

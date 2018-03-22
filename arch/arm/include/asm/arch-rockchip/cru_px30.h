@@ -27,6 +27,12 @@ enum px30_pll_id {
 	PLL_COUNT,
 };
 
+struct px30_clk_info {
+	unsigned long id;
+	char *name;
+	bool is_cru;
+};
+
 /* Private data for the clock driver - used by rockchip_get_cru() */
 struct px30_clk_priv {
 	struct px30_cru *cru;
