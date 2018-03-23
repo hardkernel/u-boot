@@ -156,14 +156,14 @@ static void rkclk_init(struct rk3308_cru *cru)
 	 * set up dependent divisors for PCLK and ACLK clocks.
 	 * core hz : apll = 1:1
 	 */
-	apll_hz = rkclk_pll_get_rate(cru, DPLL);
+	apll_hz = rkclk_pll_get_rate(cru, APLL);
 	aclk_div = apll_hz / CORE_ACLK_HZ - 1;
 	pclk_div = apll_hz / CORE_DBG_HZ - 1;
 	rk_clrsetreg(&cru->clksel_con[0],
 		     CORE_ACLK_DIV_MASK | CORE_DBG_DIV_MASK |
 		     CORE_CLK_PLL_SEL_MASK | CORE_DIV_CON_MASK,
 		     aclk_div << CORE_ACLK_DIV_SHIFT |
-		     pclk_div << CORE_DIV_CON_SHIFT |
+		     pclk_div << CORE_DBG_DIV_SHIFT |
 		     CORE_CLK_PLL_SEL_APLL << CORE_CLK_PLL_SEL_SHIFT |
 		     0 << CORE_DIV_CON_SHIFT);
 
