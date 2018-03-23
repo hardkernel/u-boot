@@ -19,6 +19,7 @@
 #include "mmc_private.h"
 #include <emmc_partitions.h>
 #include <asm/cpu_id.h>
+#include <part_efi.h>
 
 /* using mbr*/
 #define CONFIG_PTBL_MBR	(0)
@@ -34,6 +35,7 @@
 #endif
 /* debug info*/
 #define CONFIG_MPT_DEBUG 	(0)
+#define CONFIG_CONSTRUCT_GPT (0)
 
 
 #define apt_err(fmt, ...) printf( "%s()-%d: " fmt , \
@@ -991,6 +993,283 @@ static __attribute__((unused)) int _update_ptbl_mbr(struct mmc *mmc, struct _ipt
 	return ret;
 }
 
+#if (CONFIG_CONSTRUCT_GPT)
+static inline u32 efi_crc32(const void *buf, u32 len)
+{
+	return crc32(0, buf, len);
+}
+
+static int set_protective_mbr(block_dev_desc_t *dev_desc)
+{
+	/* Setup the Protective MBR */
+	ALLOC_CACHE_ALIGN_BUFFER(legacy_mbr, p_mbr, 1);
+	memset(p_mbr, 0, sizeof(*p_mbr));
+
+	if (!p_mbr) {
+		printf("%s: calloc failed!\n", __func__);
+		return -1;
+	}
+	/* Append signature */
+	p_mbr->signature = MSDOS_MBR_SIGNATURE;
+	p_mbr->partition_record[0].sys_ind = EFI_PMBR_OSTYPE_EFI_GPT;
+	p_mbr->partition_record[0].start_sect = 1;
+	p_mbr->partition_record[0].nr_sects = (u32)dev_desc->lba - 1;
+	/* Write MBR sector to the MMC device */
+	if (dev_desc->block_write(dev_desc->dev, 0, 1, p_mbr) != 1) {
+		printf("** Can't write to device %d **\n",
+		       dev_desc->dev);
+		return -1;
+	}
+
+	return 0;
+}
+
+void set_partition_type_guid(gpt_entry *gpt_e, char *partition_name)
+{
+	if (!strcmp(partition_name, "bootloader"))
+		memcpy(gpt_e->partition_type_guid.b,
+		       &PARTITION_ANDROID_BOOTLOADER_GUID, 16);
+	else if (!strcmp(partition_name, "recovery"))
+		memcpy(gpt_e->partition_type_guid.b,
+		       &PARTITION_ANDROID_RECOVERY_GUID, 16);
+	else if (!strcmp(partition_name, "misc"))
+		memcpy(gpt_e->partition_type_guid.b,
+		       &PARTITION_ANDROID_MISC_GUID, 16);
+	else if (!strcmp(partition_name, "system"))
+		memcpy(gpt_e->partition_type_guid.b,
+		       &PARTITION_ANDROID_SYSTEM_GUID, 16);
+	else if (!strcmp(partition_name, "cache"))
+		memcpy(gpt_e->partition_type_guid.b,
+		       &PARTITION_ANDROID_CACHE_GUID, 16);
+	else if (!strcmp(partition_name, "data"))
+		memcpy(gpt_e->partition_type_guid.b,
+		       &PARTITION_ANDROID_DATA_GUID, 16);
+	else
+		memcpy(gpt_e->partition_type_guid.b,
+		       &PARTITION_LINUX_DEFAULT_GUID, 16);
+		return;
+}
+
+static uint64_t fill_gpt_entry(gpt_entry *gpt_e, struct _iptbl *p_iptbl_ept)
+{
+	u64 next_usable_lba;
+	u64 last_usable_lba = 0;
+	int i, k;
+	size_t efiname_len, dosname_len;
+	struct _iptbl *ept = p_iptbl_ept;
+	struct partitions *partitions = ept->partitions;
+	int parts_num = ept->count;
+
+	for (i = 0; i < parts_num; i++) {
+		gpt_e[i].starting_lba = cpu_to_le64(partitions[i].offset >>
+							9ULL);
+		next_usable_lba = (partitions[i].offset +
+				partitions[i].size) >> 9ULL;
+		gpt_e[i].ending_lba = cpu_to_le64(next_usable_lba - 1);
+
+		if (i == parts_num - 1)
+			last_usable_lba = gpt_e[i].ending_lba;
+
+		/* partition type GUID */
+		set_partition_type_guid(&gpt_e[i], partitions[i].name);
+
+		/* partition attributes */
+		memset(&gpt_e[i].attributes, 0,
+		       sizeof(gpt_entry_attributes));
+
+		/* partition name */
+		efiname_len = sizeof(gpt_e[i].partition_name)
+			/ sizeof(efi_char16_t);
+		dosname_len = sizeof(partitions[i].name);
+
+		memset(gpt_e[i].partition_name, 0,
+		       sizeof(gpt_e[i].partition_name));
+
+		for (k = 0; k < min(dosname_len, efiname_len); k++)
+			gpt_e[i].partition_name[k] =
+				(efi_char16_t)(partitions[i].name[k]);
+	}
+
+	return last_usable_lba;
+}
+
+static int fill_gpt_header(lbaint_t last_usable_lba, gpt_header *gpt_h)
+{
+	gpt_h->signature = cpu_to_le64(GPT_HEADER_SIGNATURE);
+	gpt_h->revision = cpu_to_le32(GPT_HEADER_REVISION_V1);
+	gpt_h->header_size = cpu_to_le32(sizeof(gpt_header));
+	gpt_h->my_lba = cpu_to_le64(1);
+	gpt_h->first_usable_lba = cpu_to_le64(34);
+	gpt_h->last_usable_lba = cpu_to_le64(last_usable_lba);
+	gpt_h->partition_entry_lba = cpu_to_le64(2);
+	gpt_h->num_partition_entries = cpu_to_le32(GPT_ENTRY_NUMBERS);
+	gpt_h->sizeof_partition_entry = cpu_to_le32(sizeof(gpt_entry));
+	gpt_h->header_crc32 = 0;
+	gpt_h->partition_entry_array_crc32 = 0;
+
+	return 0;
+}
+
+static int write_gpt(
+		block_dev_desc_t *dev_desc, gpt_header *gpt_h, gpt_entry *gpt_e)
+{
+	const int pte_blk_cnt = BLOCK_CNT((gpt_h->num_partition_entries *
+				sizeof(gpt_entry)), dev_desc);
+	u32 calc_crc32;
+
+	debug("max lba: %x\n", (u32)dev_desc->lba);
+	/* Setup the Protective MBR */
+	if (set_protective_mbr(dev_desc) < 0)
+		goto err;
+
+	/* Generate CRC for the Primary GPT Header */
+	calc_crc32 = efi_crc32(
+			(const unsigned char *)gpt_e,
+			le32_to_cpu(gpt_h->num_partition_entries) *
+			le32_to_cpu(gpt_h->sizeof_partition_entry));
+	gpt_h->partition_entry_array_crc32 = cpu_to_le32(calc_crc32);
+
+	calc_crc32 = efi_crc32((const unsigned char *)gpt_h,
+			       le32_to_cpu(gpt_h->header_size));
+	gpt_h->header_crc32 = cpu_to_le32(calc_crc32);
+
+	/* Write the First GPT to the block right after the Legacy MBR */
+	if (dev_desc->block_write(dev_desc->dev, 1, 1, gpt_h) != 1)
+		goto err;
+
+	if (dev_desc->block_write(dev_desc->dev, 2, pte_blk_cnt, gpt_e)
+	    != pte_blk_cnt)
+		goto err;
+
+	debug("GPT successfully written to block device!\n");
+	return 0;
+
+ err:
+	printf("** Can't write to device %d **\n", dev_desc->dev);
+	return -1;
+}
+
+static int _cmp_gpt_e(struct _iptbl *iptbl_mbr, struct _gpt_entry *gpt_ent)
+{
+	int ret = 0, i = 0;
+	struct partitions *mbrp;
+	u64 size;
+	u64 offset;
+
+	while (i < iptbl_mbr->count) {
+		mbrp = &iptbl_mbr->partitions[i];
+		size = (le64_to_cpu(gpt_ent[i].ending_lba) -
+			le64_to_cpu(gpt_ent[i].starting_lba) + 1) << 9ULL;
+
+		if (mbrp->size != size) {
+			apt_err("Error: partition size is different\n");
+			ret = -3;
+			goto _out;
+		}
+
+		offset = le64_to_cpu(gpt_ent[i].starting_lba) << 9ULL;
+		if (mbrp->offset != offset) {
+			apt_err("Error: partition offset is different\n");
+			ret = -4;
+			goto _out;
+		}
+		i++;
+	}
+_out:
+	return ret;
+}
+
+static int __attribute__((unused)) check_gpt_mbr(
+		struct mmc *mmc, struct _gpt_entry *gpt_e)
+{
+	int ret = 0;
+	/* re-constructed by mbr */
+	struct _iptbl *iptbl_mbr = NULL;
+	struct partitions *partitions = NULL;
+
+	iptbl_mbr = malloc(sizeof(struct _iptbl));
+	if (!iptbl_mbr) {
+		apt_err("no enough memory for iptbl_mbr\n");
+		return -1;
+	}
+	memset(iptbl_mbr, 0, sizeof(struct _iptbl));
+	partitions = (struct partitions *)malloc(sizeof(struct partitions) *
+				DOS_PARTITION_COUNT);
+	if (!partitions) {
+		apt_err("no enough memory for partitions\n");
+		free(iptbl_mbr);
+		return -1;
+	}
+	memset(partitions, 0, sizeof(struct partitions) * DOS_PARTITION_COUNT);
+	iptbl_mbr->partitions = partitions;
+
+	_construct_ptbl_by_mbr(mmc, iptbl_mbr);
+
+	ret = _cmp_gpt_e(iptbl_mbr, gpt_e);
+
+	if (partitions)
+		free(partitions);
+	if (iptbl_mbr)
+		free(iptbl_mbr);
+
+	apt_wrn("gpt is %s\n", ret ? "Improper!" : "OK!");
+	return ret;
+}
+
+static int gpt_restore_by_ept(
+		struct mmc *mmc, struct _iptbl *p_iptbl_ept)
+{
+	int ret = 0;
+	u64 last_usable_lba = 0;
+	block_dev_desc_t *dev_desc = &mmc->block_dev;
+	gpt_header *gpt_h = calloc(1, PAD_TO_BLOCKSIZE(sizeof(gpt_header),
+						       dev_desc));
+	gpt_entry *gpt_e;
+
+	if (!gpt_h) {
+		printf("%s: calloc failed!\n", __func__);
+		return -1;
+	}
+
+	gpt_e = calloc(1, PAD_TO_BLOCKSIZE(GPT_ENTRY_NUMBERS
+					       * sizeof(gpt_entry),
+					       dev_desc));
+	if (!gpt_e) {
+		printf("%s: calloc failed!\n", __func__);
+		free(gpt_h);
+		return -1;
+	}
+
+	/* Generate partition entries */
+	last_usable_lba = fill_gpt_entry(gpt_e, p_iptbl_ept);
+	if (!last_usable_lba)
+		goto err;
+
+	/* Generate Primary GPT header (LBA1) */
+	fill_gpt_header(last_usable_lba, gpt_h);
+
+	/* Write GPT partition table */
+	ret = write_gpt(dev_desc, gpt_h, gpt_e);
+	if (ret) {
+		printf("write gpt failed\n");
+		goto err;
+	}
+
+	/* Check gpt */
+	ret = check_gpt_mbr(mmc, gpt_e);
+	if (ret) {
+		printf("gpt and mbr improper\n");
+		goto err;
+	}
+
+err:
+	free(gpt_e);
+	free(gpt_h);
+	return ret;
+}
+#endif
+
+
 /***************************************************
  *	init partition table for emmc device.
  *	returns 0 means ok.
@@ -1132,6 +1411,11 @@ int mmc_device_init (struct mmc *mmc)
 			apt_wrn("MBR Updated!\n");
 		}
 	}
+#endif
+
+#if (CONFIG_CONSTRUCT_GPT)
+	ret = gpt_restore_by_ept(mmc, p_iptbl_ept);
+	apt_wrn("GPT IS RESTORED %s\n", ret ? "Failed!" : "OK!");
 #endif
 
 	/* init part again */

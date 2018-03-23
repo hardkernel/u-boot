@@ -271,6 +271,7 @@ void init_part(block_dev_desc_t *dev_desc)
 /* must be placed before DOS partition detection */
 #ifdef CONFIG_EFI_PARTITION
 	if (test_part_efi(dev_desc) == 0) {
+		printf("%s() %d: PART_TYPE_EFI\n", __func__, __LINE__);
 		dev_desc->part_type = PART_TYPE_EFI;
 		return;
 	}

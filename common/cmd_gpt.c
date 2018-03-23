@@ -27,7 +27,6 @@
 #include <linux/kernel.h>
 #define CONFIG_PARTITION_TYPE_GUID
 #define CONFIG_RANDOM_UUID
-#define CONFIG_EFI_PARTITION
 #define CONFIG_CMD_GPT_RENAME
 
 static LIST_HEAD(disk_partitions);

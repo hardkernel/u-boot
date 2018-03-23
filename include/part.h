@@ -18,7 +18,7 @@
 
 #define CONFIG_PARTITION_UUIDS
 #define CONFIG_PARTITION_TYPE_GUID
-#define CONFIG_EFI_PARTITION
+//#define CONFIG_EFI_PARTITION
 
 typedef struct block_dev_desc {
 	int		if_type;	/* type of the interface */
