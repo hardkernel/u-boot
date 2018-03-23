@@ -54,6 +54,18 @@
 		};
 	};
 
+	vdd_log: vdd_core: vdd-core {
+		compatible = "pwm-regulator";
+		pwms = <&pwm0 0 5000 1>;
+		regulator-name = "vdd_core";
+		regulator-min-microvolt = <847000>;
+		regulator-max-microvolt = <1366000>;
+		regulator-init-microvolt  = <1044000>;
+		regulator-always-on;
+		regulator-boot-on;
+		status = "okay";
+	};
+
 };
 
 &emmc {
@@ -62,6 +74,10 @@
 	supports-emmc;
 	non-removable;
 	num-slots = <1>;
+	status = "okay";
+};
+
+&pwm0 {
 	status = "okay";
 };
 
