@@ -38,6 +38,13 @@ enum {
 	.frac = _frac,						\
 }
 
+#define PX30_CPUCLK_RATE(_rate, _aclk_div, _pclk_div)		\
+{								\
+	.rate	= _rate##U,					\
+	.aclk_div = _aclk_div,					\
+	.pclk_div = _pclk_div,					\
+}
+
 #define DIV_TO_RATE(input_rate, div)    ((input_rate) / ((div) + 1))
 
 #define PX30_CLK_DUMP(_id, _name, _iscru)	\
@@ -52,6 +59,7 @@ static struct pll_rate_table px30_pll_rates[] = {
 	PX30_PLL_RATE(1200000000, 1, 50, 1, 1, 1, 0),
 	PX30_PLL_RATE(1188000000, 2, 99, 1, 1, 1, 0),
 	PX30_PLL_RATE(1100000000, 12, 550, 1, 1, 1, 0),
+	PX30_PLL_RATE(1008000000, 1, 84, 2, 1, 1, 0),
 	PX30_PLL_RATE(1000000000, 6, 500, 2, 1, 1, 0),
 	PX30_PLL_RATE(816000000, 1, 68, 2, 1, 1, 0),
 	PX30_PLL_RATE(600000000, 1, 75, 3, 1, 1, 0),
@@ -69,6 +77,13 @@ static const struct px30_clk_info clks_dump[] = {
 	PX30_CLK_DUMP(ACLK_PERI_PRE, "aclk_peri", true),
 	PX30_CLK_DUMP(HCLK_PERI_PRE, "hclk_peri", true),
 	PX30_CLK_DUMP(PCLK_PMU_PRE, "pclk_pmu", false),
+};
+
+static struct cpu_rate_table px30_cpu_rates[] = {
+	PX30_CPUCLK_RATE(1200000000, 1, 5),
+	PX30_CPUCLK_RATE(1008000000, 1, 5),
+	PX30_CPUCLK_RATE(816000000, 1, 3),
+	PX30_CPUCLK_RATE(600000000, 1, 3),
 };
 
 static u8 pll_mode_shift[PLL_COUNT] = {
@@ -159,6 +174,19 @@ static const struct pll_rate_table *get_pll_settings(unsigned long rate)
 	}
 
 	return pll_clk_set_by_auto(rate);
+}
+
+static const struct cpu_rate_table *get_cpu_settings(unsigned long rate)
+{
+	unsigned int rate_count = ARRAY_SIZE(px30_cpu_rates);
+	int i;
+
+	for (i = 0; i < rate_count; i++) {
+		if (rate == px30_cpu_rates[i].rate)
+			return &px30_cpu_rates[i];
+	}
+
+	return NULL;
 }
 
 /*
@@ -788,6 +816,49 @@ static ulong px30_clk_get_pll_rate(struct px30_clk_priv *priv,
 	return rkclk_pll_get_rate(&cru->pll[pll_id], &cru->mode, pll_id);
 }
 
+static ulong px30_armclk_set_clk(struct px30_clk_priv *priv, ulong hz)
+{
+	struct px30_cru *cru = priv->cru;
+	const struct cpu_rate_table *rate;
+	ulong old_rate;
+
+	rate = get_cpu_settings(hz);
+	if (!rate) {
+		printf("%s unsupport rate\n", __func__);
+		return -EINVAL;
+	}
+
+	/*
+	 * select apll as cpu/core clock pll source and
+	 * set up dependent divisors for PERI and ACLK clocks.
+	 * core hz : apll = 1:1
+	 */
+	old_rate = px30_clk_get_pll_rate(priv, APLL);
+	if (old_rate > hz) {
+		if (rkclk_set_pll(&cru->pll[APLL], &cru->mode, APLL, hz))
+			return -EINVAL;
+		rk_clrsetreg(&cru->clksel_con[0],
+			     CORE_CLK_PLL_SEL_MASK | CORE_DIV_CON_MASK |
+			     CORE_ACLK_DIV_MASK | CORE_DBG_DIV_MASK,
+			     rate->aclk_div << CORE_ACLK_DIV_SHIFT |
+			     rate->pclk_div << CORE_DBG_DIV_SHIFT |
+			     CORE_CLK_PLL_SEL_APLL << CORE_CLK_PLL_SEL_SHIFT |
+			     0 << CORE_DIV_CON_SHIFT);
+	} else if (old_rate < hz) {
+		rk_clrsetreg(&cru->clksel_con[0],
+			     CORE_CLK_PLL_SEL_MASK | CORE_DIV_CON_MASK |
+			     CORE_ACLK_DIV_MASK | CORE_DBG_DIV_MASK,
+			     rate->aclk_div << CORE_ACLK_DIV_SHIFT |
+			     rate->pclk_div << CORE_DBG_DIV_SHIFT |
+			     CORE_CLK_PLL_SEL_APLL << CORE_CLK_PLL_SEL_SHIFT |
+			     0 << CORE_DIV_CON_SHIFT);
+		if (rkclk_set_pll(&cru->pll[APLL], &cru->mode, APLL, hz))
+			return -EINVAL;
+	}
+
+	return px30_clk_get_pll_rate(priv, APLL);
+}
+
 static ulong px30_clk_get_rate(struct clk *clk)
 {
 	struct px30_clk_priv *priv = dev_get_priv(clk->dev);
@@ -816,6 +887,9 @@ static ulong px30_clk_get_rate(struct clk *clk)
 		break;
 	case PLL_NPLL:
 		rate = px30_clk_get_pll_rate(priv, NPLL);
+		break;
+	case ARMCLK:
+		rate = px30_clk_get_pll_rate(priv, APLL);
 		break;
 	case HCLK_SDMMC:
 	case HCLK_EMMC:
@@ -877,8 +951,11 @@ static ulong px30_clk_set_rate(struct clk *clk, ulong rate)
 
 	debug("%s %ld %ld\n", __func__, clk->id, rate);
 	switch (clk->id) {
-	case 0 ... 15:
-		return 0;
+	case ARMCLK:
+		if (priv->armclk_hz)
+			px30_armclk_set_clk(priv, rate);
+		priv->armclk_hz = rate;
+		break;
 	case HCLK_SDMMC:
 	case HCLK_EMMC:
 	case SCLK_SDMMC:
@@ -1054,26 +1131,12 @@ static struct clk_ops px30_clk_ops = {
 static int px30_clk_probe(struct udevice *dev)
 {
 	struct px30_clk_priv *priv = dev_get_priv(dev);
-	struct px30_cru *cru = priv->cru;
-	u32 aclk_div, pclk_div;
 
-	/* init pll */
-	rkclk_set_pll(&cru->pll[APLL], &cru->mode, APLL, APLL_HZ);
-	/*
-	 * select apll as cpu/core clock pll source and
-	 * set up dependent divisors for PERI and ACLK clocks.
-	 * core hz : apll = 1:1
-	 */
-	aclk_div = APLL_HZ / CORE_ACLK_HZ - 1;
-	pclk_div = APLL_HZ / CORE_DBG_HZ - 1;
+	if (px30_clk_get_pll_rate(priv, APLL) == APLL_HZ)
+		return 0;
 
-	rk_clrsetreg(&cru->clksel_con[0],
-		     CORE_ACLK_DIV_MASK | CORE_DBG_DIV_MASK |
-		     CORE_CLK_PLL_SEL_MASK | CORE_DIV_CON_MASK,
-		     aclk_div << CORE_ACLK_DIV_SHIFT |
-		     pclk_div << CORE_DBG_DIV_SHIFT |
-		     CORE_CLK_PLL_SEL_APLL << CORE_CLK_PLL_SEL_SHIFT |
-		     0 << CORE_DIV_CON_SHIFT);
+	if (px30_armclk_set_clk(priv, APLL_HZ))
+		return -EINVAL;
 
 	return 0;
 }

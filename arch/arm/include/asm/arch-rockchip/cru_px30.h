@@ -14,9 +14,6 @@
 
 #define APLL_HZ		(600 * MHz)
 
-#define CORE_ACLK_HZ	(APLL_HZ / 2)
-#define CORE_DBG_HZ	(APLL_HZ / 4)
-
 /* PX30 pll id */
 enum px30_pll_id {
 	APLL,
@@ -37,6 +34,7 @@ struct px30_clk_info {
 struct px30_clk_priv {
 	struct px30_cru *cru;
 	ulong gpll_hz;
+	ulong armclk_hz;
 };
 
 struct px30_pmuclk_priv {
@@ -110,6 +108,12 @@ struct pll_rate_table {
 	unsigned int postdiv2;
 	unsigned int dsmpd;
 	unsigned int frac;
+};
+
+struct cpu_rate_table {
+	unsigned long rate;
+	unsigned int aclk_div;
+	unsigned int pclk_div;
 };
 
 enum {
