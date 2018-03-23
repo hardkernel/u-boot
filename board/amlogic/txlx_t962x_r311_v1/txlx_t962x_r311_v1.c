@@ -28,8 +28,8 @@
 #include <asm/cpu_id.h>
 #ifdef CONFIG_SYS_I2C_AML
 #include <aml_i2c.h>
-#include <asm/arch/secure_apb.h>
 #endif
+#include <asm/arch/secure_apb.h>
 #ifdef CONFIG_AML_VPU
 #include <vpu.h>
 #endif
@@ -43,6 +43,10 @@
 #ifdef CONFIG_AML_LCD
 #include <amlogic/aml_lcd.h>
 #endif
+#ifdef CONFIG_SYS_I2C_MESON
+#include <amlogic/i2c.h>
+#endif
+#include <dm/platdata.h>
 #include <asm/arch/eth_setup.h>
 #include <phy.h>
 #include <asm-generic/gpio.h>
@@ -362,6 +366,37 @@ U_BOOT_DEVICE(spicc0) = {
 };
 #endif /* CONFIG_AML_SPICC */
 
+#ifdef CONFIG_SYS_I2C_MESON
+static const struct meson_i2c_platdata i2c_data[] = {
+	{ 0, 0xffd1f000, 166666666, 3, 15, 100000 },
+	{ 1, 0xffd1e000, 166666666, 3, 15, 100000 },
+	{ 2, 0xffd1d000, 166666666, 3, 15, 100000 },
+	{ 3, 0xffd1c000, 166666666, 3, 15, 100000 },
+	{ 4, 0xff805000, 166666666, 3, 15, 100000 },
+};
+
+U_BOOT_DEVICES(meson_i2cs) = {
+	{ "i2c_meson", &i2c_data[0] },
+	{ "i2c_meson", &i2c_data[1] },
+	{ "i2c_meson", &i2c_data[2] },
+	{ "i2c_meson", &i2c_data[3] },
+	{ "i2c_meson", &i2c_data[4] },
+};
+
+/*
+ *GPIODV_0//I2C_SDA_B
+ *GPIODV_1//I2C_SCK_B
+ *pinmux configuration seperated with i2c controller configuration
+ * config it when you use
+ */
+void set_i2c1_pinmux(void)
+{
+	clrbits_le32(P_PERIPHS_PIN_MUX_9, 1 << 16 | 1 << 17);
+	clrbits_le32(P_PERIPHS_PIN_MUX_2, 1 << 31);
+	setbits_le32(P_PERIPHS_PIN_MUX_2, 1 << 24 | 1 << 25);
+}
+#endif /*end CONFIG_SYS_I2C_MESON*/
+
 extern void aml_pwm_cal_init(int mode);
 
 int board_init(void)
@@ -428,7 +463,9 @@ int board_late_init(void)
 #ifdef CONFIG_AML_LCD
 	lcd_probe();
 #endif
-
+#ifdef CONFIG_SYS_I2C_MESON
+	set_i2c1_pinmux();
+#endif
 #ifdef CONFIG_AML_V2_FACTORY_BURN
 	/*aml_try_factory_sdcard_burning(0, gd->bd);*/
 #endif// #ifdef CONFIG_AML_V2_FACTORY_BURN

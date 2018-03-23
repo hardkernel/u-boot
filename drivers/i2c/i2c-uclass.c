@@ -441,11 +441,20 @@ static int i2c_post_probe(struct udevice *dev)
 	return i2c_set_bus_speed(dev, i2c->speed_hz);
 }
 
+static unsigned int i2c_req_seq = 0;
+
 int i2c_post_bind(struct udevice *dev)
 {
+#ifdef CONFIG_OF_CONTROL
 	/* Scan the bus for devices */
 	return dm_scan_fdt_node(dev, gd->fdt_blob, dev->of_offset, false);
+#else
+	dev->req_seq = i2c_req_seq++;
+	return 0;
+#endif
+
 }
+
 
 UCLASS_DRIVER(i2c) = {
 	.id		= UCLASS_I2C,
