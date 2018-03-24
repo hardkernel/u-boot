@@ -4,10 +4,15 @@
  * SPDX-License-Identifier:     GPL-2.0+
  */
 #include <common.h>
+#include <clk.h>
+#include <dm.h>
 #include <asm/io.h>
 #include <asm/arch/grf_px30.h>
 #include <asm/arch/hardware.h>
 #include <asm/armv8/mmu.h>
+#include <asm/arch/clock.h>
+#include <asm/arch/cru_px30.h>
+#include <dt-bindings/clock/px30-cru.h>
 
 #define PMU_PWRDN_CON	0xff000018
 
@@ -60,4 +65,26 @@ static struct px30_grf * const grf = (void *)GRF_BASE;
 	rk_clrsetreg(&grf->iofunc_con0,
 		     CON_IOMUX_UART2SEL_MASK,
 		     CON_IOMUX_UART2SEL_M0 << CON_IOMUX_UART2SEL_SHIFT);
+}
+
+int set_armclk_rate(void)
+{
+	struct px30_clk_priv *priv;
+	struct clk clk;
+	int ret;
+
+	ret = rockchip_get_clk(&clk.dev);
+	if (ret) {
+		printf("Failed to get clk dev\n");
+		return ret;
+	}
+	clk.id = ARMCLK;
+	priv = dev_get_priv(clk.dev);
+	ret = clk_set_rate(&clk, priv->armclk_hz);
+	if (ret < 0) {
+		printf("Failed to set armclk %lu\n", priv->armclk_hz);
+		return ret;
+	}
+
+	return 0;
 }

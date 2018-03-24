@@ -140,6 +140,11 @@ __weak int soc_clk_dump(void)
 	return 0;
 }
 
+__weak int set_armclk_rate(void)
+{
+	return 0;
+}
+
 int board_late_init(void)
 {
 #if (CONFIG_ROCKCHIP_BOOT_MODE_REG > 0)
@@ -233,6 +238,7 @@ int board_init(void)
 	if (ret)
 		debug("%s: Cannot enable boot on regulator\n", __func__);
 #endif
+	set_armclk_rate();
 
 	return rk_board_init();
 }
