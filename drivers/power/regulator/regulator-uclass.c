@@ -42,6 +42,8 @@ int regulator_set_value(struct udevice *dev, int uV)
 {
 	const struct dm_regulator_ops *ops = dev_get_driver_ops(dev);
 	struct dm_regulator_uclass_platdata *uc_pdata;
+	u32 old_uV = -ENODATA, us;
+	int ret;
 
 	uc_pdata = dev_get_uclass_platdata(dev);
 	if (uc_pdata->min_uV != -ENODATA && uV < uc_pdata->min_uV)
@@ -52,7 +54,24 @@ int regulator_set_value(struct udevice *dev, int uV)
 	if (!ops || !ops->set_value)
 		return -ENOSYS;
 
-	return ops->set_value(dev, uV);
+	if (uc_pdata->ramp_delay != -ENODATA) {
+		if (!ops->get_value)
+			return -ENOSYS;
+		old_uV = ops->get_value(dev);
+		if (old_uV < 0)
+			return -EINVAL;
+	}
+
+	ret = ops->set_value(dev, uV);
+
+	if (!ret && (old_uV != -ENODATA) && (old_uV != uV)) {
+		us = DIV_ROUND_UP(abs(uV - old_uV), uc_pdata->ramp_delay);
+		udelay(us);
+		debug("%s: ramp=%d, old_uV=%d, uV=%d, us=%d\n",
+		      uc_pdata->name, uc_pdata->ramp_delay, old_uV, uV, us);
+	}
+
+	return ret;
 }
 
 int regulator_set_suspend_value(struct udevice *dev, int uV)
@@ -136,6 +155,16 @@ int regulator_set_suspend_enable(struct udevice *dev, bool enable)
 	return ops->set_suspend_enable(dev, enable);
 }
 
+int regulator_set_ramp_delay(struct udevice *dev, u32 ramp_delay)
+{
+	const struct dm_regulator_ops *ops = dev_get_driver_ops(dev);
+
+	if (!ops || !ops->set_ramp_delay)
+		return -ENOSYS;
+
+	return ops->set_ramp_delay(dev, ramp_delay);
+}
+
 int regulator_get_mode(struct udevice *dev)
 {
 	const struct dm_regulator_ops *ops = dev_get_driver_ops(dev);
@@ -201,6 +230,9 @@ int regulator_autoset(struct udevice *dev)
 	int ret = 0;
 
 	uc_pdata = dev_get_uclass_platdata(dev);
+
+	if (uc_pdata->ramp_delay != -ENODATA)
+		regulator_set_ramp_delay(dev, uc_pdata->ramp_delay);
 
 	ret = regulator_set_suspend_enable(dev, uc_pdata->suspend_on);
 	if (!ret && uc_pdata->suspend_on)
@@ -352,7 +384,8 @@ static int regulator_pre_probe(struct udevice *dev)
 						-ENODATA);
 	uc_pdata->always_on = dev_read_bool(dev, "regulator-always-on");
 	uc_pdata->boot_on = dev_read_bool(dev, "regulator-boot-on");
-
+	uc_pdata->ramp_delay = dev_read_u32_default(dev, "regulator-ramp-delay",
+						    -ENODATA);
 	node = dev_read_subnode(dev, "regulator-state-mem");
 	if (ofnode_valid(node)) {
 		uc_pdata->suspend_on = !ofnode_read_bool(node, "regulator-off-in-suspend");

@@ -179,6 +179,7 @@ struct dm_regulator_uclass_platdata {
 	u8 volt_reg;
 	bool suspend_on;
 	u32 suspend_uV;
+	u32 ramp_delay;
 };
 
 /* Regulator device operations */
@@ -237,6 +238,15 @@ struct dm_regulator_ops {
 	 */
 	int (*get_mode)(struct udevice *dev);
 	int (*set_mode)(struct udevice *dev, int mode_id);
+
+	/**
+	 * The regulator voltage set ramp delay
+	 *
+	 * @dev            - regulator device
+	 * @ramp_delay     - ramp delay [uV/uS]
+	 * @return zero on success and other failed.
+	 */
+	int (*set_ramp_delay)(struct udevice *dev, u32 ramp_delay);
 };
 
 /**
