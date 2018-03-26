@@ -76,11 +76,7 @@ static void ddc_pinmux_init(void)
 
 static void hdelay(int us)
 {
-	int i;
-	while (us--) {
-		i = 10000;
-		while (i--) ;
-	}
+	_udelay(us * 1000);
 }
 
 #define mdelay(i)   hdelay(i)
@@ -351,6 +347,8 @@ static void hdmitx_list_support_modes(void)
 
 static void hdmitx_test_bist(unsigned int mode)
 {
+	unsigned int i;
+
 	switch (mode) {
 	case 1:
 	case 2:
@@ -358,6 +356,21 @@ static void hdmitx_test_bist(unsigned int mode)
 		hd_set_reg_bits(P_ENCP_VIDEO_MODE_ADV, 0, 3, 1);
 		hd_write_reg(P_VENC_VIDEO_TST_EN, 1);
 		hd_write_reg(P_VENC_VIDEO_TST_MDSEL, mode);
+		break;
+	/* prbs test */
+	case 10:
+		for (i = 0; i < 4; i ++) {
+			hd_write_reg(P_HHI_HDMI_PHY_CNTL1, 0x0390000f);
+			hd_write_reg(P_HHI_HDMI_PHY_CNTL1, 0x0390000e);
+			hd_write_reg(P_HHI_HDMI_PHY_CNTL1, 0x03904002);
+			hd_write_reg(P_HHI_HDMI_PHY_CNTL4, 0x0001efff | (i << 20));
+			hd_write_reg(P_HHI_HDMI_PHY_CNTL1, 0xef904002);
+			mdelay(10);
+			if (i > 0)
+				pr_info("prbs D[%d]:%lx\n", i -1, hd_read_reg(P_HHI_HDMI_PHY_STATUS));
+			else
+				pr_info("prbs clk :%lx\n",hd_read_reg(P_HHI_HDMI_PHY_STATUS));
+		}
 		break;
 	case 0:
 	default:

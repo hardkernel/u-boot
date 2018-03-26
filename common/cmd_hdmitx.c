@@ -196,6 +196,12 @@ static int do_output(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 		else
 			mode = simple_strtoul(argv[2], NULL, 10);
 		hdmitx_device.HWOp.test_bist(mode);
+	} else if (strcmp(argv[1], "prbs") == 0) {
+		hdmitx_device.para->cs = HDMI_COLOR_FORMAT_RGB;
+		hdmitx_device.para->cd = HDMI_COLOR_DEPTH_24B;
+		hdmitx_device.vic = HDMI_1920x1080p60_16x9;
+		hdmi_tx_set(&hdmitx_device);
+		hdmitx_device.HWOp.test_bist(10);
 	} else { /* "output" */
 		hdmitx_device.vic = hdmi_get_fmt_vic(argv[1]);
 		hdmitx_device.para = hdmi_get_fmt_paras(hdmitx_device.vic);
