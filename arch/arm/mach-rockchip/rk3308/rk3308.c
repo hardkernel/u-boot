@@ -71,15 +71,6 @@ enum {
 	UART2_IO_SEL_USB,
 };
 
-int arch_cpu_init(void)
-{
-	debug_uart_init();
-
-	printascii("U-Boot rk3308\n");
-
-	return 0;
-}
-
 void board_debug_uart_init(void)
 {
 	static struct rk3308_grf * const grf = (void *)GRF_BASE;
