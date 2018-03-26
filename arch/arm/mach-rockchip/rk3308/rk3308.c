@@ -87,9 +87,6 @@ void board_debug_uart_init(void)
 	/* Enable early UART2 channel m1 on the rk3308 */
 	rk_clrsetreg(&grf->soc_con5, UART2_IO_SEL_MASK,
 		     UART2_IO_SEL_M1 << UART2_IO_SEL_SHIFT);
-	rk_clrsetreg(&grf->gpio1ch_iomux, GPIO1C7_MASK | GPIO1C6_MASK,
-		      GPIO1C7_GPIO << GPIO1C7_SHIFT |
-		      GPIO1C6_GPIO << GPIO1C6_SHIFT);
 	rk_clrsetreg(&grf->gpio4d_iomux,
 		     GPIO4D3_MASK | GPIO4D2_MASK,
 		     GPIO4D2_UART2_RX_M1 << GPIO4D2_SHIFT |
