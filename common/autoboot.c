@@ -219,10 +219,14 @@ static int __abortboot(int bootdelay)
 	printf("Hit any key to stop autoboot: %2d ", bootdelay);
 #endif
 
+#ifdef CONFIG_ARCH_ROCKCHIP
+	if (ctrlc()) {	/* we press ctrl+c ? */
+#else
 	/*
 	 * Check if key already pressed
 	 */
 	if (tstc()) {	/* we got a key press	*/
+#endif
 		(void) getc();  /* consume input	*/
 		puts("\b\b\b 0");
 		abort = 1;	/* don't auto boot	*/
