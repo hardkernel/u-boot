@@ -83,9 +83,7 @@
 	"name=userdata,size=-,uuid=${uuid_gpt_userdata};\0"
 
 #define RKIMG_BOOTCOMMAND \
-	"if mmc dev 0; then setenv devtype mmc; setenv devnum 0;" \
-	"else if rknand dev 0; then setenv devtype rknand; setenv devnum 0; fi;" \
-	"fi; boot_android ${devtype} ${devnum};" \
+	"boot_android ${devtype} ${devnum};" \
 	"bootrkp;"
 
 #endif
