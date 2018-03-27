@@ -44,7 +44,7 @@ static u32 pll_mode_mask[PLL_COUNT] = {
 	VPLL1_MODE_MASK
 };
 
-static ulong apll_hz, dpll_hz, vpll0_hz;
+static ulong apll_hz, dpll_hz, vpll0_hz, vpll1_hz;
 
 /*
  * How to calculate the PLL:
@@ -200,6 +200,7 @@ static void rkclk_init(struct rk3308_cru *cru)
 		     hclk_div << PERI_HCLK_DIV_SHIFT);
 
 	vpll0_hz = rkclk_pll_get_rate(cru, VPLL0);
+	vpll1_hz = rkclk_pll_get_rate(cru, VPLL1);
 }
 
 static ulong rk3308_i2c_get_clk(struct rk3308_cru *cru, ulong clk_id)
@@ -437,6 +438,93 @@ static ulong rk3308_pwm_set_clk(struct rk3308_cru *cru, uint hz)
 	return rk3308_pwm_get_clk(cru);
 }
 
+static ulong rk3308_vop_get_clk(struct rk3308_cru *cru)
+{
+	u32 div, pll_sel, vol_sel, con, parent;
+
+	con = readl(&cru->clksel_con[8]);
+	vol_sel = (con & DCLK_VOP_SEL_MASK) >> DCLK_VOP_SEL_SHIFT;
+	pll_sel = (con & DCLK_VOP_PLL_SEL_MASK) >> DCLK_VOP_PLL_SEL_SHIFT;
+	div = con & DCLK_VOP_DIV_MASK;
+
+	if (vol_sel == DCLK_VOP_SEL_24M) {
+		parent = OSC_HZ;
+	} else if (vol_sel == DCLK_VOP_SEL_DIVOUT) {
+		switch (pll_sel) {
+		case DCLK_VOP_PLL_SEL_DPLL:
+			parent = rkclk_pll_get_rate(cru, DPLL);
+			break;
+		case DCLK_VOP_PLL_SEL_VPLL0:
+			parent = rkclk_pll_get_rate(cru, VPLL0);
+			break;
+		case DCLK_VOP_PLL_SEL_VPLL1:
+			parent = rkclk_pll_get_rate(cru, VPLL1);
+			break;
+		default:
+			printf("do not support this vop pll sel\n");
+			return -EINVAL;
+		}
+	} else {
+		printf("do not support this vop sel\n");
+		return -EINVAL;
+	}
+
+	return DIV_TO_RATE(parent, div);
+}
+
+static ulong rk3308_vop_set_clk(struct rk3308_cru *cru, ulong hz)
+{
+	ulong pll_rate, now, best_rate = 0;
+	u32 i, div, best_div = 0, best_sel = 0;
+
+	for (i = 0; i <= DCLK_VOP_PLL_SEL_VPLL1; i++) {
+		switch (i) {
+		case DCLK_VOP_PLL_SEL_DPLL:
+			pll_rate = dpll_hz;
+			break;
+		case DCLK_VOP_PLL_SEL_VPLL0:
+			pll_rate = vpll0_hz;
+			break;
+		case DCLK_VOP_PLL_SEL_VPLL1:
+			pll_rate = vpll1_hz;
+			break;
+		default:
+			printf("do not support this vop pll sel\n");
+			return -EINVAL;
+		}
+
+		div = DIV_ROUND_UP(pll_rate, hz);
+		if (div > 255)
+			continue;
+		now = pll_rate / div;
+		if (abs(hz - now) < abs(hz - best_rate)) {
+			best_rate = now;
+			best_div = div;
+			best_sel = i;
+		}
+		debug("pll_rate=%lu, best_rate=%lu, best_div=%u, best_sel=%u\n",
+		      pll_rate, best_rate, best_div, best_sel);
+	}
+
+	if (best_rate != hz && hz == OSC_HZ) {
+		rk_clrsetreg(&cru->clksel_con[8],
+			     DCLK_VOP_SEL_MASK,
+			     DCLK_VOP_SEL_24M << DCLK_VOP_SEL_SHIFT);
+	} else if (best_rate) {
+		rk_clrsetreg(&cru->clksel_con[8],
+			     DCLK_VOP_SEL_MASK | DCLK_VOP_PLL_SEL_MASK |
+			     DCLK_VOP_DIV_MASK,
+			     DCLK_VOP_SEL_DIVOUT << DCLK_VOP_SEL_SHIFT |
+			     best_sel << DCLK_VOP_PLL_SEL_SHIFT |
+			     (best_div - 1) << DCLK_VOP_DIV_SHIFT);
+	} else {
+		printf("do not support this vop freq\n");
+		return -EINVAL;
+	}
+
+	return rk3308_vop_get_clk(cru);
+}
+
 static ulong rk3308_clk_get_rate(struct clk *clk)
 {
 	struct rk3308_clk_priv *priv = dev_get_priv(clk->dev);
@@ -469,6 +557,9 @@ static ulong rk3308_clk_get_rate(struct clk *clk)
 		break;
 	case SCLK_PWM:
 		rate = rk3308_pwm_get_clk(priv->cru);
+		break;
+	case DCLK_VOP:
+		rate = rk3308_vop_get_clk(priv->cru);
 		break;
 	default:
 		return -ENOENT;
@@ -507,6 +598,9 @@ static ulong rk3308_clk_set_rate(struct clk *clk, ulong rate)
 		break;
 	case SCLK_PWM:
 		ret = rk3308_pwm_set_clk(priv->cru, rate);
+		break;
+	case DCLK_VOP:
+		ret = rk3308_vop_set_clk(priv->cru, rate);
 		break;
 	default:
 		return -ENOENT;
