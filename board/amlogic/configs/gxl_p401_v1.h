@@ -107,6 +107,7 @@
         "sdc_burning=sdc_burn ${sdcburncfg}\0"\
         "wipe_data=successful\0"\
         "wipe_cache=successful\0"\
+        "lock=10001000\0"\
         "EnableSelinux=enforcing\0"\
         "recovery_part=recovery\0"\
         "recovery_offset=0\0"\

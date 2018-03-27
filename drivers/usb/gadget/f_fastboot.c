@@ -51,6 +51,13 @@ DECLARE_GLOBAL_DATA_PTR;
 #endif
 #define DEVICE_SERIAL	"1234567890"
 
+#define FB_ERR(fmt ...) printf("[ERR]%sL%d:", __func__, __LINE__),printf(fmt)
+#define FB_MSG(fmt ...) printf("[MSG]"fmt)
+#define FB_WRN(fmt ...) printf("[WRN]"fmt)
+#define FB_DBG(...)
+#define FB_HERE()    printf("f(%s)L%d\n", __func__, __LINE__)
+
+
 /* The 64 defined bytes plus \0 */
 
 #define EP_BUFFER_SIZE	4096
@@ -71,6 +78,7 @@ static inline struct f_fastboot *func_to_fastboot(struct usb_function *f)
 static struct f_fastboot *fastboot_func;
 static unsigned int download_size;
 static unsigned int download_bytes;
+
 
 static struct usb_endpoint_descriptor fs_ep_in = {
 	.bLength            = USB_DT_ENDPOINT_SIZE,
@@ -157,24 +165,41 @@ unsigned int ddr_size_usable(unsigned int addr_start)
 
 static void rx_handler_command(struct usb_ep *ep, struct usb_request *req);
 
-static char *response_str;
+static char response_str[RESPONSE_LEN + 1];
 
 void fastboot_fail(const char *s)
 {
 	strncpy(response_str, "FAIL", 4);
-	strncat(response_str, s, RESPONSE_LEN - 4 - 1);
+	if (s)strncat(response_str, s, RESPONSE_LEN - 4 - 1) ;
 }
 
 void fastboot_okay(const char *s)
 {
 	strncpy(response_str, "OKAY", 4);
-	strncat(response_str, s, RESPONSE_LEN - 4 - 1);
+	if (s)strncat(response_str, s, RESPONSE_LEN - 4 - 1) ;
 }
 
+void fastboot_busy(const char* s)
+{
+	strncpy(response_str, "INFO", 4 + 1);//add terminated 0
+	if (s)strncat(response_str, s, RESPONSE_LEN - 4 - 1) ;
+}
+int fastboot_is_busy(void)
+{
+	return !strncmp("INFO", response_str, strlen("INFO"));
+}
+
+//cb for bulk in_req->complete
 static void fastboot_complete(struct usb_ep *ep, struct usb_request *req)
 {
 	int status = req->status;
 
+	if ( fastboot_is_busy() && fastboot_func) {
+		struct usb_ep* out_ep = fastboot_func->out_ep;
+		struct usb_request* out_req = fastboot_func->out_req;
+		rx_handler_command(out_ep, out_req);
+		return;
+	}
 	if (!status)
 		return;
 	printf("status: %d ep '%s' trans: %d\n", status, ep->name, req->actual);
@@ -421,10 +446,67 @@ static int strcmp_l1(const char *s1, const char *s2)
 	return strncmp(s1, s2, strlen(s1));
 }
 
+void dump_lock_info(LockData_t* info)
+{
+	printf("info->version_major = %d\n", info->version_major);
+	printf("info->version_minor = %d\n", info->version_minor);
+	printf("info->lock_state = %d\n", info->lock_state);
+	printf("info->lock_critical_state = %d\n", info->lock_critical_state);
+	printf("info->lock_bootloader = %d\n", info->lock_bootloader);
+}
+
+
+static int check_lock(void)
+{
+	char *lock_s;
+	LockData_t* info;
+
+	lock_s = getenv("lock");
+	printf("lock state: %s\n", lock_s);
+
+	info = (LockData_t*)malloc(sizeof(struct LockData));
+	memset(info,0,LOCK_DATA_SIZE);
+	info->version_major = (int)(lock_s[0] - '0');
+	info->version_minor = (int)(lock_s[1] - '0');
+	info->lock_state = (int)(lock_s[4] - '0');
+	info->lock_critical_state = (int)(lock_s[5] - '0');
+	info->lock_bootloader = (int)(lock_s[6] - '0');
+
+	dump_lock_info(info);
+
+	if (( info->lock_state == 1 ) || ( info->lock_critical_state == 1 ))
+		return 1;
+	else
+		return 0;
+}
+
+static const char* getvar_list[] = {
+	"version-baseband", "version-bootloader", "version", "max-download-size",
+	"serialno", "product", "off-mode-charge", "variant", "battery-soc-ok",
+	"battery-voltage", "partition-type:boot", "partition-size:boot",
+	"partition-type:system", "partition-size:system", "partition-type:vendor", "partition-size:vendor",
+	"partition-type:odm", "partition-size:odm", "partition-type:data", "partition-size:data",
+	"erase-block-size", "logical-block-size", "secure", "unlocked",
+};
+static const char* getvar_list_ab[] = {
+	"version-baseband", "version-bootloader", "version", "max-download-size",
+	"serialno", "product", "off-mode-charge", "variant", "battery-soc-ok",
+	"battery-voltage", "partition-type:boot", "partition-size:boot",
+	"partition-type:system", "partition-size:system", "partition-type:vendor", "partition-size:vendor",
+	"partition-type:odm", "partition-size:odm", "partition-type:data", "partition-size:data",
+	"partition-type:cache", "partition-size:cache",
+	"erase-block-size", "logical-block-size", "secure", "unlocked",
+	"slot-count", "slot-suffixes","current-slot", "has-slot:bootloader", "has-slot:boot",
+	"has-slot:system", "has-slot:vendor", "has-slot:odm",
+	"slot-successful:a", "slot-unbootable:a", "slot-retry-count:a",
+	"slot-successful:b", "slot-unbootable:b", "slot-retry-count:b",
+};
+
 static void cb_getvar(struct usb_ep *ep, struct usb_request *req)
 {
 	char *cmd = req->buf;
-	char response[RESPONSE_LEN];
+	char cmdBuf[RESPONSE_LEN];
+	char* response = response_str;
 	char *s;
 	char *s1;
 	char *s2;
@@ -432,8 +514,10 @@ static void cb_getvar(struct usb_ep *ep, struct usb_request *req)
 	size_t chars_left;
 
 	strcpy(response, "OKAY");
-	chars_left = sizeof(response) - strlen(response) - 1;
+	chars_left = sizeof(response_str) - strlen(response) - 1;
 
+	memcpy(cmdBuf, cmd, strnlen(cmd, RESPONSE_LEN-1)+1);
+	cmd = cmdBuf;
 	strsep(&cmd, ":");
 	printf("cb_getvar: %s\n", cmd);
 	if (!cmd) {
@@ -441,11 +525,41 @@ static void cb_getvar(struct usb_ep *ep, struct usb_request *req)
 		fastboot_tx_write_str("FAILmissing var");
 		return;
 	}
+	if (!strncmp(cmd, "all", 3)) {
+		static int cmdIndex = 0;
+		int getvar_num;
+		if (has_boot_slot == 1) {
+			strcpy(cmd, getvar_list_ab[cmdIndex]);
+			getvar_num = (sizeof(getvar_list_ab) / sizeof(getvar_list_ab[0]));
+		} else {
+			strcpy(cmd, getvar_list[cmdIndex]);//only support no-arg cmd
+			getvar_num = (sizeof(getvar_list) / sizeof(getvar_list[0]));
+		}
+		printf("getvar_num: %d\n", getvar_num);
+		if ( ++cmdIndex >= getvar_num) cmdIndex = 0;
+		else fastboot_busy(NULL);
+		FB_MSG("all cmd:%s\n", cmd);
+		strncat(response, cmd, chars_left);
+		strncat(response, ":", 1);
+		chars_left -= strlen(cmd) + 1;
+	}
 
-	if (!strcmp_l1("version", cmd)) {
+	if (!strcmp_l1("version-baseband", cmd)) {
+		strncat(response, "N/A", chars_left);
+	} else if (!strcmp_l1("version-bootloader", cmd)) {
+		strncat(response, U_BOOT_VERSION, chars_left);
+	} else if (!strcmp_l1("version", cmd)) {
 		strncat(response, FASTBOOT_VERSION, chars_left);
 	} else if (!strcmp_l1("bootloader-version", cmd)) {
 		strncat(response, U_BOOT_VERSION, chars_left);
+	} else if (!strcmp_l1("off-mode-charge", cmd)) {
+		strncat(response, "0", chars_left);
+	} else if (!strcmp_l1("variant", cmd)) {
+		strncat(response, "US", chars_left);
+	} else if (!strcmp_l1("battery-soc-ok", cmd)) {
+		strncat(response, "no", chars_left);
+	} else if (!strcmp_l1("battery-voltage", cmd)) {
+		strncat(response, "0", chars_left);
 	} else if (!strcmp_l1("downloadsize", cmd) ||
 		!strcmp_l1("max-download-size", cmd)) {
 		char str_num[12];
@@ -490,16 +604,7 @@ static void cb_getvar(struct usb_ep *ep, struct usb_request *req)
 			strncat(response, "yes", chars_left);
 		} else
 			strncat(response, "no", chars_left);
-	} /*else if (!strcmp_l1("partition-type:boot", cmd)) {
-		char *s2, *s3;
-		s2 = getenv("active_slot");
-		printf("active_slot: %s\n", s2);
-		s3 = "boot";
-		printf("s3  1: %s\n", s3);
-		strcat(s3, s2);
-		printf("s3  2: %s\n", s3);
-		strncat(response, s3, chars_left);
-	} */else if (!strcmp_l1("has-slot:system", cmd)) {
+	} else if (!strcmp_l1("has-slot:system", cmd)) {
 		if (has_system_slot == 1) {
 			printf("has system slot\n");
 			strncat(response, "yes", chars_left);
@@ -573,10 +678,73 @@ static void cb_getvar(struct usb_ep *ep, struct usb_request *req)
 	} else if (!strcmp_l1("erase-block-size", cmd) ||
 		!strcmp_l1("logical-block-size", cmd)) {
 		strncat(response, "2000", chars_left);
+	} else if (!strcmp_l1("secure", cmd)) {
+		if (check_lock()) {
+			strncat(response, "no", chars_left);
+		} else {
+			strncat(response, "yes", chars_left);
+		}
+	} else if (!strcmp_l1("unlocked", cmd)) {
+		if (check_lock()) {
+			strncat(response, "yes", chars_left);
+		} else {
+			strncat(response, "no", chars_left);
+		}
+	} else if (!strcmp_l1("slot-successful", cmd)) {
+		char str[128];
+		strsep(&cmd, ":");
+		printf("cmd is %s\n", cmd);
+		int ret;
+		if (has_boot_slot == 1) {
+			printf("has boot slot\n");
+			sprintf(str, "get_slot_state %s successful", cmd);
+			printf("command:    %s\n", str);
+			ret = run_command(str, 0);
+			printf("ret = %d\n", ret);
+			if (ret == 0)
+				strncat(response, "no", chars_left);
+			else
+				strncat(response, "yes", chars_left);
+		} else
+			strcpy(response, "FAILVariable not implemented in non ab mode");
+	} else if (!strcmp_l1("slot-unbootable", cmd)) {
+		char str[128];
+		strsep(&cmd, ":");
+		printf("cmd is %s\n", cmd);
+		int ret;
+		if (has_boot_slot == 1) {
+			printf("has boot slot\n");
+			sprintf(str, "get_slot_state %s unbootable", cmd);
+			printf("command:    %s\n", str);
+			ret = run_command(str, 0);
+			printf("ret = %d\n", ret);
+			if (ret == 0)
+				strncat(response, "yes", chars_left);
+			else
+				strncat(response, "no", chars_left);
+		} else
+			strcpy(response, "FAILVariable not implemented in non ab mode");
+	} else if (!strcmp_l1("slot-retry-count", cmd)) {
+		char str[128];
+		strsep(&cmd, ":");
+		printf("cmd is %s\n", cmd);
+		int ret;
+		if (has_boot_slot == 1) {
+			char str_num[12];
+			printf("has boot slot\n");
+			sprintf(str, "get_slot_state %s retry-count", cmd);
+			printf("command:    %s\n", str);
+			ret = run_command(str, 0);
+			printf("ret = %d\n", ret);
+			sprintf(str_num, "%d", ret);
+			strncat(response, str_num, chars_left);
+		} else
+			strcpy(response, "FAILVariable not implemented in non ab mode");
 	} else {
 		error("unknown variable: %s\n", cmd);
 		strcpy(response, "FAILVariable not implemented");
 	}
+
 	fastboot_tx_write_str(response);
 }
 
@@ -739,11 +907,110 @@ static void cb_continue(struct usb_ep *ep, struct usb_request *req)
 	fastboot_tx_write_str("OKAY");
 }
 
+static void cb_flashing(struct usb_ep *ep, struct usb_request *req)
+{
+	char *cmd;
+	char* response = response_str;
+	char *lock_s;
+	LockData_t* info;
+	size_t chars_left;
+	char lock_d[LOCK_DATA_SIZE];
+	static int cmd_index = -1;
+
+	lock_s = getenv("lock");
+	printf("lock state: %s\n", lock_s);
+	strcpy(lock_d, lock_s);
+
+	info = (LockData_t*)malloc(sizeof(struct LockData));
+	memset(info,0,LOCK_DATA_SIZE);
+	info->version_major = (int)(lock_s[0] - '0');
+	info->version_minor = (int)(lock_s[1] - '0');
+	info->lock_state = (int)(lock_s[4] - '0');
+	info->lock_critical_state = (int)(lock_s[5] - '0');
+	info->lock_bootloader = (int)(lock_s[6] - '0');
+	dump_lock_info(info);
+
+	strcpy(response, "OKAY");
+	chars_left = sizeof(response) - strlen(response) - 1;
+	cmd = req->buf;
+	strsep(&cmd, " ");
+	printf("cb_flashing: %s\n", cmd);
+	if (!cmd) {
+		if ( cmd_index == -1 ) {
+			error("missing variable\n");
+			fastboot_tx_write_str("FAILmissing var");
+			return;
+		} else {
+			fastboot_tx_write_str(response);
+			return;
+		}
+	}
+
+	if (!strncmp(cmd, "get_unlock_ability", 18)) {
+		cmd_index = 0;
+		strcpy(cmd, "get_unlock_ability");
+		if ( ++cmd_index >= 2) cmd_index = 0;
+		else fastboot_busy(NULL);
+		FB_MSG("flashing cmd:%s\n", cmd);
+		chars_left = sizeof(response_str) - strlen(response) - 1;
+		strncat(response, cmd, chars_left);
+		strncat(response, ":", 1);
+		chars_left -= strlen(cmd) + 1;
+	}
+
+	if (!strncmp(cmd, "get_unlock_bootloader_nonce", 27)) {
+		cmd_index = 0;
+		strcpy(cmd, "get_unlock_bootloader_nonce");
+		if ( ++cmd_index >= 2) cmd_index = 0;
+		else fastboot_busy(NULL);
+		FB_MSG("flashing cmd:%s\n", cmd);
+		chars_left = sizeof(response_str) - strlen(response) - 1;
+		strncat(response, cmd, chars_left);
+		strncat(response, ":", 1);
+		chars_left -= strlen(cmd) + 1;
+	}
+
+	if (!strcmp_l1("unlock_critical", cmd)) {
+		info->lock_critical_state = 0;
+	} else if (!strcmp_l1("lock_critical", cmd)) {
+		info->lock_critical_state = 1;
+	} else if (!strcmp_l1("get_unlock_ability", cmd)) {
+		char str_num[1];
+		sprintf(str_num, "%d", info->lock_state);
+		strncat(response, str_num, chars_left);
+	} else if (!strcmp_l1("get_unlock_bootloader_nonce", cmd)) {
+		char str_num[1];
+		sprintf(str_num, "%d", info->lock_critical_state);
+		strncat(response, str_num, chars_left);
+	} else if (!strcmp_l1("unlock_bootloader", cmd)) {
+		strncat(response, "please run flashing unlock & flashing unlock_critical before write", chars_left);
+	} else if (!strcmp_l1("lock_bootloader", cmd)) {
+		info->lock_bootloader = 1;
+	} else if (!strcmp_l1("unlock", cmd)) {
+		info->lock_state = 0;
+	} else if (!strcmp_l1("lock", cmd)) {
+		info->lock_state = 1;
+	} else {
+		error("unknown variable: %s\n", cmd);
+		strcpy(response, "FAILVariable not implemented");
+	}
+
+	dump_lock_info(info);
+	sprintf(lock_d, "%d%d00%d%d%d0", info->version_major, info->version_minor, info->lock_state, info->lock_critical_state, info->lock_bootloader);
+	printf("lock_d state: %s\n", lock_d);
+	setenv("lock", lock_d);
+	saveenv();
+	printf("response: %s\n", response);
+
+	fastboot_tx_write_str(response);
+}
+
+
 #ifdef CONFIG_FASTBOOT_FLASH
 static void cb_flash(struct usb_ep *ep, struct usb_request *req)
 {
 	char *cmd = req->buf;
-	char response[RESPONSE_LEN];
+	char* response = response_str;
 
 	printf("cmd cb_flash is %s\n", cmd);
 
@@ -754,13 +1021,18 @@ static void cb_flash(struct usb_ep *ep, struct usb_request *req)
 		return;
 	}
 
+	if (check_lock()) {
+		error("device is locked, can not run this cmd.Please flashing unlock & flashing unlock_critical\n");
+		fastboot_tx_write_str("FAILlocked device");
+		return;
+	}
+
 	printf("partition is %s\n", cmd);
 	if (strcmp(cmd, "userdata") == 0) {
 		strcpy(cmd, "data");
 		printf("partition is %s\n", cmd);
 	}
 
-	response_str = response;
 	//strcpy(response, "FAILno flash device defined");
 	if (is_mainstorage_emmc()) {
 #ifdef CONFIG_FASTBOOT_FLASH_MMC_DEV
@@ -797,6 +1069,12 @@ static void cb_set_active(struct usb_ep *ep, struct usb_request *req)
 		return;
 	}
 
+	if (check_lock()) {
+		error("device is locked, can not run this cmd.Please flashing unlock & flashing unlock_critical\n");
+		fastboot_tx_write_str("FAILlocked device");
+		return;
+	}
+
 	sprintf(str, "set_active_slot %s", cmd);
 	printf("command:    %s\n", str);
 	ret = run_command(str, 0);
@@ -809,12 +1087,17 @@ static void cb_set_active(struct usb_ep *ep, struct usb_request *req)
 
 static void cb_flashall(struct usb_ep *ep, struct usb_request *req)
 {
-	char response[RESPONSE_LEN];
+	char* response = response_str;
 	char *cmd = req->buf;
 
 	printf("cmd cb_flashall is %s\n", cmd);
 
-	response_str = response;
+	if (check_lock()) {
+		error("device is locked, can not run this cmd.Please flashing unlock & flashing unlock_critical\n");
+		fastboot_tx_write_str("FAILlocked device");
+		return;
+	}
+
 	//strcpy(response, "FAILno flash device defined");
 	if (is_mainstorage_emmc()) {
 #ifdef CONFIG_FASTBOOT_FLASH_MMC_DEV
@@ -837,7 +1120,7 @@ static void cb_flashall(struct usb_ep *ep, struct usb_request *req)
 
 static void cb_erase(struct usb_ep *ep, struct usb_request *req)
 {
-	char response[RESPONSE_LEN];
+	char* response = response_str;
 	char *cmd = req->buf;
 
 	printf("cmd cb_erase is %s\n", cmd);
@@ -849,13 +1132,17 @@ static void cb_erase(struct usb_ep *ep, struct usb_request *req)
 		return;
 	}
 
+	if (check_lock()) {
+		error("device is locked, can not run this cmd.Please flashing unlock & flashing unlock_critical\n");
+		fastboot_tx_write_str("FAILlocked device");
+		return;
+	}
+
 	printf("partition is %s\n", cmd);
 	if (strcmp(cmd, "userdata") == 0) {
 		strcpy(cmd, "data");
 		printf("partition is %s\n", cmd);
 	}
-
-	response_str = response;
 
 	//strcpy(response, "FAILno erase device defined");
 	if (is_mainstorage_emmc()) {
@@ -887,6 +1174,26 @@ static void cb_devices(struct usb_ep *ep, struct usb_request *req)
 	fastboot_tx_write_str(response);
 }
 
+static void cb_oem_cmd(struct usb_ep *ep, struct usb_request *req)
+{
+	char response[RESPONSE_LEN/2 + 1];
+	char* cmd = req->buf;
+	printf("oem cmd[%s]\n", cmd);
+	static int i = 0;
+
+	memcpy(response, cmd, strnlen(cmd, RESPONSE_LEN/2)+1);//+1 to terminate str
+	cmd = response;
+	strsep(&cmd, " ");
+	FB_MSG("To run cmd[%s]\n", cmd);
+	run_command(cmd, 0);
+
+    if (++i > 3) i = 0;
+
+	i ? fastboot_busy("AMLOGIC") : fastboot_okay(response);
+	fastboot_tx_write_str(response_str);
+	return ;
+}
+
 struct cmd_dispatch_info {
 	char *cmd;
 	void (*cb)(struct usb_ep *ep, struct usb_request *req);
@@ -908,6 +1215,9 @@ static const struct cmd_dispatch_info cmd_dispatch_info[] = {
 	}, {
 		.cmd = "continue",
 		.cb = cb_continue,
+	}, {
+		.cmd = "flashing",
+		.cb = cb_flashing,
 	},
 #ifdef CONFIG_FASTBOOT_FLASH
 	{
@@ -939,8 +1249,13 @@ static const struct cmd_dispatch_info cmd_dispatch_info[] = {
 		.cmd = "set_active",
 		.cb = cb_set_active,
 	},
+	{
+		.cmd = "oem",
+		.cb  = cb_oem_cmd,
+	}
 };
 
+//cb for out_req->complete
 static void rx_handler_command(struct usb_ep *ep, struct usb_request *req)
 {
 	char *cmdbuf = req->buf;
@@ -968,7 +1283,7 @@ static void rx_handler_command(struct usb_ep *ep, struct usb_request *req)
 		}
 	}
 
-	if (req->status == 0) {
+	if (req->status == 0 && !fastboot_is_busy()) {
 		*cmdbuf = '\0';
 		req->actual = 0;
 		usb_ep_queue(ep, req, 0);

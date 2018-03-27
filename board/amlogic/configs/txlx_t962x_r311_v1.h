@@ -109,6 +109,7 @@
         "cvbs_drv=0\0"\
         "page_trace=on\0"\
         "osd_reverse=0\0"\
+        "lock=10001000\0"\
         "video_reverse=0\0"\
         "active_slot=_a\0"\
         "boot_part=boot\0"\

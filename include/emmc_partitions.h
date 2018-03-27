@@ -184,15 +184,12 @@ struct _mmc_device{
 };
 */
 
-#define LOCK_MAGIC "LOCK"
-#define LOCK_MAGIC_LEN 4
-
 #define LOCK_MAJOR_VERSION 1
 #define LOCK_MINOR_VERSION 0
 
-typedef struct LockData {
-	uint8_t magic[LOCK_MAGIC_LEN];
+#define LOCK_DATA_SIZE 8
 
+typedef struct LockData {
 	uint8_t version_major;
 	uint8_t version_minor;
 
@@ -205,25 +202,16 @@ typedef struct LockData {
 	/* 0: unlock    1: lock*/
 	uint8_t lock_critical_state;
 
-	/* 0：enable bootloader version rollback
-	 * 1: prevent bootloader version rollback
-	 */
+	/* 0: enable bootloader version rollback 1: prevent bootloader version rollback*/
 	uint8_t lock_bootloader;
-
 	uint8_t reserved2[1];
-
-	/* Reserved for future use. */
-	uint8_t reserved3[12];
-
-	/* CRC32 of all 28 bytes preceding this field. */
-	uint32_t crc32;
 } LockData_t;
 
 /*512Bytes*/
 typedef struct FastbootContext {
 	/* locks */
 	LockData_t lock;
-	uint8_t rsv[224];
+	uint8_t rsv[248];
 	/* checksum, storage driver care */
 	uint32_t crc32;
 } FastbootContext_t;

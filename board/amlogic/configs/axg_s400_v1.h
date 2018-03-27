@@ -107,6 +107,7 @@
         "fb_addr=0x3d800000\0" \
         "fb_width=768\0" \
         "fb_height=1024\0" \
+        "lock=10001000\0"\
         "usb_burning=update 1000\0" \
         "fdt_high=0x20000000\0"\
         "try_auto_burn=update 700 750;\0"\

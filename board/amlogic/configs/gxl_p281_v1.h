@@ -114,6 +114,7 @@
         "wipe_cache=successful\0"\
         "EnableSelinux=enforcing\0"\
         "recovery_part=recovery\0"\
+        "lock=10001000\0"\
         "recovery_offset=0\0"\
         "cvbs_drv=0\0"\
         "active_slot=_a\0"\
