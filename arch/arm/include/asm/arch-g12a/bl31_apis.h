@@ -91,6 +91,8 @@
 #define SECURITY_KEY_GET_ENCTYPE	0x8200006B
 #define SECURITY_KEY_VERSION		0x8200006C
 
+/*viu probe en*/
+#define VIU_PREOBE_EN		0x82000080
 /* Secure HAL APIs */
 #define TRUSTZONE_HAL_API_SRAM                  0x400
 
@@ -143,4 +145,5 @@ void aml_system_off(void);
 
 void bl31_get_chipid(unsigned int *, unsigned int *,
 	unsigned int *, unsigned int *);
+void set_viu_probe_enable(void);
 #endif

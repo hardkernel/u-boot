@@ -28,6 +28,8 @@
 #define CONFIG_AML_MESON 1
 #define CONFIG_AML_MESON_GX 1
 #define CONFIG_AML_MESON_TXLX 1
+/*enable viu probe*/
+#define CONFIG_CMD_VIU_PROBE    1
 
 /* Size of malloc() pool */
 #define CONFIG_SYS_MALLOC_LEN		(64*1024*1024)

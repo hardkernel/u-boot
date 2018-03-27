@@ -234,6 +234,15 @@ unsigned aml_get_reboot_reason(void)
 		return reason;
 }
 
+void set_viu_probe_enable(void)
+{
+	register uint64_t x0 asm("x0") = VIU_PREOBE_EN;
+
+	asm volatile(
+			__asmeq("%0", "x0")
+			"smc #0\n"
+			:"+r"(x0));
+}
 unsigned aml_reboot(uint64_t function_id, uint64_t arg0, uint64_t arg1, uint64_t arg2)
 {
 	register long x0 asm("x0") = function_id;
