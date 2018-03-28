@@ -17,6 +17,7 @@ static int do_boot_rockchip(cmd_tbl_t *cmdtp, int flag, int argc,
 	int mode = 0;
 	char *boot_partname = PART_BOOT;
 	int ret = 0;
+	int i = 0;
 
 	dev_desc = rockchip_get_bootdev();
 
@@ -37,6 +38,15 @@ static int do_boot_rockchip(cmd_tbl_t *cmdtp, int flag, int argc,
 		boot_partname = PART_RECOVERY;
 		printf("%s boot from Recovery partition!\n", __func__);
 	}
+
+	for (i = 0; i < argc; i++) {
+		if (!strcmp(argv[i], "boot-recovery")) {
+			boot_partname = PART_RECOVERY;
+			printf("%s argv%d:%s boot from Recovery partition!\n",
+				__func__, i, argv[i]);
+		}
+	}
+
 	ret = part_get_info_by_name(dev_desc, boot_partname, &part_info);
 
 	if(boot_rockchip_image(dev_desc, &part_info))

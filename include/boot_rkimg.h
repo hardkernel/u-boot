@@ -30,4 +30,14 @@ int rockchip_get_boot_mode(void);
 int boot_rockchip_image(struct blk_desc *dev, disk_partition_t *boot_part);
 struct blk_desc *rockchip_get_bootdev(void);
 
+/*
+ * reboot into recovery and wipe data
+ */
+void board_run_recovery_wipe_data(void);
+
+/*
+ * reboot into recovery
+ */
+void board_run_recovery(void);
+
 #endif

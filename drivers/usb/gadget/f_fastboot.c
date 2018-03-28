@@ -37,6 +37,8 @@
 #ifdef CONFIG_OPTEE_CLIENT
 #include <optee_include/OpteeClientInterface.h>
 #endif
+#include <boot_rkimg.h>
+#include <optee_include/tee_client_api.h>
 
 #define FASTBOOT_VERSION		"0.4"
 
@@ -685,6 +687,33 @@ static void cb_getvar(struct usb_ep *ep, struct usb_request *req)
 			sprintf(part_size_str, "0x%016x", (int)part_info.size);
 			strncat(response, part_size_str, chars_left);
 		}
+	} else if (!strncmp("oem-unlock", cmd, 10)) {
+#ifdef CONFIG_OPTEE_CLIENT
+#ifdef CONFIG_RK_AVB_LIBAVB_USER
+		fastboot_tx_write_str("FAILnot implemented");
+		return;
+#else
+
+		char msg[50] = {0};
+		uint8_t unlock = 0;
+		TEEC_Result result;
+
+		result = trusty_read_oem_unlock(&unlock);
+		if (result) {
+			printf("read oem unlock status with error : 0x%x\n", result);
+			fastboot_tx_write_str("FAILRead oem unlock status failed");
+			return;
+		}
+		sprintf(msg, "Device is %s, Status Code: %d\n",
+			unlock == 0 ? "LOCKED" : "UNLOCKED", unlock);
+
+		printf(msg);
+		strncat(response, msg, chars_left);
+#endif
+#else
+		fastboot_tx_write_str("FAILnot implemented");
+		return;
+#endif
 	} else {
 		char *envstr;
 
@@ -1143,16 +1172,126 @@ static void cb_oem(struct usb_ep *ep, struct usb_request *req)
 #ifdef CONFIG_FASTBOOT_FLASH_MMC_DEV
 	if (strncmp("format", cmd + 4, 6) == 0) {
 		char cmdbuf[32];
-                sprintf(cmdbuf, "gpt write mmc %x $partitions",
+		sprintf(cmdbuf, "gpt write mmc %x $partitions",
 			CONFIG_FASTBOOT_FLASH_MMC_DEV);
-                if (run_command(cmdbuf, 0))
+		if (run_command(cmdbuf, 0))
 			fastboot_tx_write_str("FAILmmc write failure");
-                else
+		else
 			fastboot_tx_write_str("OKAY");
 	} else
 #endif
 	if (strncmp("unlock", cmd + 4, 8) == 0) {
+#ifdef CONFIG_OPTEE_CLIENT
+#ifdef CONFIG_RK_AVB_LIBAVB_USER
 		fastboot_tx_write_str("FAILnot implemented");
+		return;
+#else
+		uint8_t unlock = 0;
+		TEEC_Result result;
+		debug("oem unlock\n");
+		result = trusty_read_oem_unlock(&unlock);
+		if (result) {
+			printf("read oem unlock status with error : 0x%x\n", result);
+			fastboot_tx_write_str("FAILRead oem unlock status failed");
+			return;
+		}
+		if (unlock) {
+			printf("oem unlock ignored, device already unlocked\n");
+			fastboot_tx_write_str("FAILalready unlocked");
+			return;
+		}
+		printf("oem unlock requested:\n");
+		printf("\tUnlocking forces a factory reset and could\n");
+		printf("\topen your device up to a world of hurt.  If you\n");
+		printf("\tare sure you know what you're doing, then accept\n");
+		printf("\tvia 'fastboot oem unlock_accept'.\n");
+		env_set("unlock", "unlock");
+		fastboot_tx_write_str("OKAY");
+#endif
+#else
+		fastboot_tx_write_str("FAILnot implemented");
+		return;
+#endif
+	} else if (strncmp("unlock_accept", cmd + 4, 13) == 0) {
+#ifdef CONFIG_OPTEE_CLIENT
+#ifdef CONFIG_RK_AVB_LIBAVB_USER
+		fastboot_tx_write_str("FAILnot implemented");
+		return;
+#else
+		char *unlock = env_get("unlock");
+		TEEC_Result result;
+		debug("oem unlock_accept\n");
+		if (unlock == NULL || strncmp("unlock", unlock, 6) != 0) {
+			printf("oem unlock_accept ignored, not pending\n");
+			fastboot_tx_write_str("FAILoem unlock not requested");
+			return;
+		}
+		env_set("unlock", "");
+		printf("Erasing userdata partition\n");
+		struct blk_desc *dev_desc;
+		disk_partition_t part_info;
+		dev_desc = rockchip_get_bootdev();
+		int ret = part_get_info_by_name(dev_desc, "userdata",
+				&part_info);
+		if (ret < 0) {
+			printf("not found userdata partition");
+			printf("Erase failed with error %d\n", ret);
+			fastboot_tx_write_str("FAILErasing userdata failed");
+			return;
+		}
+		ret = blk_derase(dev_desc, part_info.start, part_info.size);
+		if (ret != part_info.size) {
+			printf("Erase failed with error %d\n", ret);
+			fastboot_tx_write_str("FAILErasing userdata failed");
+			return;
+		}
+		printf("Erasing succeeded\n");
+
+		result = trusty_write_oem_unlock(1);
+		if (result) {
+			printf("write oem unlock status with error : 0x%x\n", result);
+			fastboot_tx_write_str("FAILWrite oem unlock status failed");
+			return;
+		}
+		fastboot_tx_write_str("OKAY");
+
+		/*
+		 * now reboot into recovery to do a format of the
+		 * userdata partition so it's ready to use on next boot
+		 */
+		board_run_recovery_wipe_data();
+#endif
+#else
+		fastboot_tx_write_str("FAILnot implemented");
+		return;
+#endif
+	} else if (strncmp("lock", cmd + 4, 8) == 0) {
+#ifdef CONFIG_OPTEE_CLIENT
+#ifdef CONFIG_RK_AVB_LIBAVB_USER
+		fastboot_tx_write_str("FAILnot implemented");
+		return;
+#else
+		TEEC_Result result;
+		uint8_t unlock = 0;
+		trusty_read_oem_unlock(&unlock);
+		if (!unlock) {
+			printf("oem lock ignored, already locked\n");
+			fastboot_tx_write_str("FAILalready locked");
+			return;
+		}
+
+		result = trusty_write_oem_unlock(0);
+		if (result) {
+			printf("write oem unlock status with error : 0x%x\n", result);
+			fastboot_tx_write_str("FAILWrite oem unlock status failed");
+			return;
+		}
+		fastboot_tx_write_str("OKAY");
+#endif
+#else
+		fastboot_tx_write_str("FAILnot implemented");
+		return;
+#endif
 	} else if (strncmp("at-get-ca-request", cmd + 4, 17) == 0) {
 #ifdef CONFIG_OPTEE_CLIENT
 		uint8_t out[ATTEST_CA_OUT_SIZE];

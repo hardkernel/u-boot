@@ -29,12 +29,12 @@ struct bootloader_message {
 	char recovery[768];
 
 	/*
-         * The 'recovery' field used to be 1024 bytes.  It has only ever
+	 * The 'recovery' field used to be 1024 bytes.  It has only ever
 	 * been used to store the recovery command line, so 768 bytes
 	 * should be plenty.  We carve off the last 256 bytes to store the
 	 * stage string (for multistage packages) and possible future
 	 * expansion.
-         */
+	 */
 	char stage[32];
 	char slot_suffix[32];
 	char reserved[192];
@@ -203,6 +203,66 @@ struct blk_desc *rockchip_get_bootdev(void)
 }
 
 static int boot_mode = -1;
+
+static void rkloader_set_bootloader_msg(struct bootloader_message *bmsg)
+{
+	struct blk_desc *dev_desc;
+	disk_partition_t part_info;
+
+	dev_desc = rockchip_get_bootdev();
+	int ret = part_get_info_by_name(dev_desc, PART_MISC,
+			&part_info);
+	if (ret < 0) {
+		printf("not found misc partition.\n");
+		return;
+	}
+	int size = DIV_ROUND_UP(sizeof(struct bootloader_message), RK_BLK_SIZE)
+			* RK_BLK_SIZE;
+	ret = blk_dwrite(dev_desc, part_info.start + BOOTLOADER_MESSAGE_BLK_OFFSET,
+			size >> 9, bmsg);
+	if (ret != (size >> 9)) {
+		printf("wape data failed!");
+	}
+}
+
+void board_run_recovery(void)
+{
+	char *const boot_recovery_cmd[] = {"run", "boot_recovery_cmd", NULL};
+
+	env_set("boot_recovery_cmd", "bootrkp boot-recovery");
+
+	do_run(NULL, 0, ARRAY_SIZE(boot_recovery_cmd), boot_recovery_cmd);
+}
+
+void board_run_recovery_wipe_data(void)
+{
+	struct bootloader_message bmsg;
+	struct blk_desc *dev_desc;
+	disk_partition_t part_info;
+
+	printf("Rebooting into recovery to do wipe_data\n");
+	dev_desc = rockchip_get_bootdev();
+	int ret;
+
+	ret = part_get_info_by_name(dev_desc, PART_MISC,
+		&part_info);
+
+	if (ret < 0) {
+		printf("not found misc partition, just run recovery.\n");
+		board_run_recovery();
+	}
+
+	memset((char *)&bmsg, 0, sizeof(struct bootloader_message));
+	strcpy(bmsg.command, "boot-recovery");
+	bmsg.status[0] = 0;
+	strcpy(bmsg.recovery, "recovery\n--wipe_data");
+
+	rkloader_set_bootloader_msg(&bmsg);
+
+	/* now reboot to recovery */
+	board_run_recovery();
+}
+
 int rockchip_get_boot_mode(void)
 {
 	struct blk_desc *dev_desc;
