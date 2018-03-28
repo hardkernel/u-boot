@@ -56,9 +56,6 @@ static struct lcd_power_step_s lcd_power_off_step_TV070WSM[] = {
 
 static struct lcd_power_step_s lcd_power_on_step_P070ACB[] = {
 	{LCD_POWER_TYPE_CPU,   1,0,200,}, /* lcd power */
-	{LCD_POWER_TYPE_CPU,   0,1,20,}, /* lcd_reset */
-	{LCD_POWER_TYPE_CPU,   0,0,10,}, /* lcd_reset */
-	{LCD_POWER_TYPE_CPU,   0,1,20,}, /* lcd_reset */
 	{LCD_POWER_TYPE_SIGNAL,0,0,0,},  /* signal */
 	{LCD_POWER_TYPE_MAX,   0,0,0,},  /* ending flag */
 };
@@ -81,9 +78,7 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	/* basic timing */
 	768,1024,948,1140,64,56,0,50,30,0,
 	/* clk_attr */
-	0,0,1,64843200,Rsv_val,Rsv_val,Rsv_val,
-	/* custome */
-	Rsv_val,Rsv_val,Rsv_val,
+	0,0,1,64843200,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
 	/* mipi_attr */
 	4,550,0,1,0,2,1,0,Rsv_val,Rsv_val,
 	/* power step */
@@ -101,9 +96,7 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	/* basic timing */
 	600,1024,700,1053,24,36,0,2,8,0,
 	/* clk_attr */
-	0,0,1,44250000,Rsv_val,Rsv_val,Rsv_val,
-	/* custome */
-	Rsv_val,0x04,3,
+	0,0,1,44250000,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
 	/* mipi_attr */
 	4,360,0,1,0,2,1,0,Rsv_val,1,
 	/* power step */
@@ -121,9 +114,7 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	/* basic timing */
 	600,1024,680,1194,24,36,0,10,80,0,
 	/* clk_attr */
-	0,0,1,48715200,Rsv_val,Rsv_val,Rsv_val,
-	/* custome */
-	Rsv_val,0x04,3,
+	0,0,1,48715200,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
 	/* mipi_attr */
 	4,400,0,1,0,2,1,0,Rsv_val,2,
 	/* power step */
@@ -177,9 +168,11 @@ static unsigned char mipi_init_off_table[] = {//table size < 50
 };
 
 static unsigned char mipi_init_on_table_TV070WSM[] = {//table size < 100
+	0xff, 10,
 	0xf0, 3, 0, 1, 30, /* reset high, delay 30ms */
 	0xf0, 3, 0, 0, 10, /* reset low, delay 10ms */
 	0xf0, 3, 0, 1, 30, /* reset high, delay 30ms */
+	0xfc, 2, 0x04, 3,  /* check_reg, check_cnt */
 	0xff, 100,   /* delay */
 	0xff, 0xff,   //ending flag
 };
@@ -188,6 +181,11 @@ static unsigned char mipi_init_off_table_TV070WSM[] = {//table size < 50
 };
 
 static unsigned char mipi_init_on_table_P070ACB[] = {//table size < 100
+	0xff, 10,
+	0xf0, 3, 0, 1, 30, /* reset high, delay 30ms */
+	0xf0, 3, 0, 0, 10, /* reset low, delay 10ms */
+	0xf0, 3, 0, 1, 30, /* reset high, delay 30ms */
+	0xfc, 2, 0x04, 3,  /* check_reg, check_cnt */
 	0xff, 0xff,   //ending flag
 };
 static unsigned char mipi_init_off_table_P070ACB[] = {//table size < 50

@@ -108,7 +108,7 @@ static void mipi_dsi_init_table_print(struct dsi_config_s *dconf, int on_off)
 	i = 0;
 	n = 0;
 	while (i < n_max) {
-		if (dsi_table[i] == 0xff) {
+		if (dsi_table[i] == 0xff) { /* ctrl flag */
 			n = 2;
 			if (dsi_table[i+1] == 0xff) {
 				printf("  0x%02x,0x%02x,\n",
@@ -118,7 +118,7 @@ static void mipi_dsi_init_table_print(struct dsi_config_s *dconf, int on_off)
 				printf("  0x%02x,%d,\n",
 					dsi_table[i], dsi_table[i+1]);
 			}
-		} else if (dsi_table[i] == 0xf0) {
+		} else if (dsi_table[i] == 0xf0) { /* gpio */
 			n = (DSI_CMD_SIZE_INDEX + 1) +
 				dsi_table[i+DSI_CMD_SIZE_INDEX];
 			printf("  ");
@@ -127,6 +127,17 @@ static void mipi_dsi_init_table_print(struct dsi_config_s *dconf, int on_off)
 					printf("0x%02x,", dsi_table[i+j]);
 				else
 					printf("%d,", dsi_table[i+j]);
+			}
+			printf("\n");
+		} else if (dsi_table[i] == 0xfc) { /* check state */
+			n = (DSI_CMD_SIZE_INDEX + 1) +
+				dsi_table[i+DSI_CMD_SIZE_INDEX];
+			printf("  ");
+			for (j = 0; j < n; j++) {
+				if (j == DSI_CMD_SIZE_INDEX)
+					printf("%d,", dsi_table[i+j]);
+				else
+					printf("0x%02x,", dsi_table[i+j]);
 			}
 			printf("\n");
 		} else if ((dsi_table[i] & 0xf) == 0x0) {
@@ -272,10 +283,10 @@ int lcd_mipi_dsi_init_table_detect(char *dtaddr, int nodeoffset,
 		struct dsi_config_s *dconf, int flag)
 {
 	unsigned char cmd_size, type;
-	int i, j, max_len;
+	int i, j, max_len, temp;
 	unsigned char *init_table;
 	char propname[20];
-	char *propdata;
+	char *propdata, *str;
 
 	if (flag) {
 		init_table = dconf->dsi_init_on;
@@ -306,7 +317,7 @@ int lcd_mipi_dsi_init_table_detect(char *dtaddr, int nodeoffset,
 			i += 2;
 			if (cmd_size == 0xff)
 				break;
-		} else if (type == 0xf0) {
+		} else if (type == 0xf0) { /* gpio */
 			init_table[i+DSI_CMD_SIZE_INDEX] =
 				(unsigned char)(be32_to_cpup((((u32*)propdata)+i+1)));
 			cmd_size = init_table[i+DSI_CMD_SIZE_INDEX];
@@ -320,6 +331,31 @@ int lcd_mipi_dsi_init_table_detect(char *dtaddr, int nodeoffset,
 					(unsigned char)(be32_to_cpup((((u32*)propdata)+i+2+j)));
 			}
 			i += (cmd_size + 2);
+		} else if (type == 0xfc) { /* check state */
+			init_table[i+DSI_CMD_SIZE_INDEX] =
+				(unsigned char)(be32_to_cpup((((u32*)propdata)+i+1)));
+			cmd_size = init_table[i+DSI_CMD_SIZE_INDEX];
+			for (j = 0; j < cmd_size; j++) {
+				init_table[i+2+j] =
+					(unsigned char)(be32_to_cpup((((u32*)propdata)+i+2+j)));
+			}
+			dconf->check_reg = init_table[i+2];
+			dconf->check_cnt = init_table[i+3];
+			if (dconf->check_cnt > 0)
+				dconf->check_en = 1;
+
+			if (dconf->check_en) {
+				str = getenv("lcd_mipi_check");
+				if (str) {
+					temp = simple_strtoul(str, NULL, 10);
+					if (temp == 0) {
+						dconf->check_en = 0;
+						LCDPR("lcd_mipi_check flag disable check_state\n");
+					}
+				}
+			}
+
+			i += (cmd_size + 2);
 		} else {
 			init_table[i+DSI_CMD_SIZE_INDEX] =
 				(unsigned char)(be32_to_cpup((((u32*)propdata)+i+1)));
@@ -328,6 +364,68 @@ int lcd_mipi_dsi_init_table_detect(char *dtaddr, int nodeoffset,
 				init_table[i+2+j] =
 					(unsigned char)(be32_to_cpup((((u32*)propdata)+i+2+j)));
 			}
+			i += (cmd_size + 2);
+		}
+	}
+
+	if (lcd_debug_print_flag)
+		mipi_dsi_init_table_print(dconf, flag);
+
+	return 0;
+}
+
+int lcd_mipi_dsi_init_table_check_bsp(struct dsi_config_s *dconf, int flag)
+{
+	unsigned char cmd_size, type;
+	int i, max_len, temp;
+	unsigned char *init_table;
+	char propname[20];
+	char *str;
+
+	if (flag) {
+		init_table = dconf->dsi_init_on;
+		max_len = DSI_INIT_ON_MAX;
+		sprintf(propname, "dsi_init_on");
+	} else {
+		init_table = dconf->dsi_init_off;
+		max_len = DSI_INIT_OFF_MAX;
+		sprintf(propname, "dsi_init_off");
+	}
+
+	i = 0;
+	while (i < max_len) {
+		type = init_table[i];
+		cmd_size = init_table[i+DSI_CMD_SIZE_INDEX];
+		if (type == 0xff) {
+			i += 2;
+			if (cmd_size == 0xff)
+				break;
+		} else if (type == 0xf0) { /* gpio */
+			if (cmd_size < 3) {
+				LCDERR("get %s wrong cmd_size %d for gpio\n",
+					propname, cmd_size);
+				break;
+			}
+			i += (cmd_size + 2);
+		} else if (type == 0xfc) { /* check state */
+			dconf->check_reg = init_table[i+2];
+			dconf->check_cnt = init_table[i+3];
+			if (dconf->check_cnt > 0)
+				dconf->check_en = 1;
+
+			if (dconf->check_en) {
+				str = getenv("lcd_mipi_check");
+				if (str) {
+					temp = simple_strtoul(str, NULL, 10);
+					if (temp == 0) {
+						dconf->check_en = 0;
+						LCDPR("lcd_mipi_check flag disable check_state\n");
+					}
+				}
+			}
+
+			i += (cmd_size + 2);
+		} else {
 			i += (cmd_size + 2);
 		}
 	}
@@ -376,7 +474,7 @@ static void mipi_dcs_set(int trans_type, int req_ack, int tear_en)
 	dsi_host_write(MIPI_DSI_DWC_PCKHDL_CFG_OS,
 		(1 << BIT_CRC_RX_EN)  |
 		(1 << BIT_ECC_RX_EN)  |
-		(0 << BIT_BTA_EN)     |
+		(req_ack << BIT_BTA_EN)     |
 		(0 << BIT_EOTP_RX_EN) |
 		(0 << BIT_EOTP_TX_EN));
 }
@@ -1150,6 +1248,117 @@ static void dsi_write_long_packet(struct dsi_cmd_request_s *req)
 		wait_cmd_fifo_empty();
 }
 
+#ifdef DSI_CMD_READ_VALID
+/* *************************************************************
+ * Function: dsi_read_single
+ * Supported Data Type: DT_GEN_RD_0, DT_GEN_RD_1, DT_GEN_RD_2,
+ *		DT_DCS_RD_0
+ * Return:              data count, -1 for error
+ */
+int dsi_read_single(unsigned char *payload, unsigned char *rd_data,
+		unsigned int rd_byte_len)
+{
+	int num = 0;
+	unsigned char temp[4];
+	unsigned char vc_id = MIPI_DSI_VIRTUAL_CHAN_ID;
+	unsigned int req_ack;
+	struct dsi_cmd_request_s dsi_cmd_req;
+
+	req_ack = MIPI_DSI_DCS_ACK_TYPE;
+	dsi_cmd_req.data_type = DT_SET_MAX_RET_PKT_SIZE;
+	dsi_cmd_req.vc_id = (vc_id & 0x3);
+	temp[0] = dsi_cmd_req.data_type;
+	temp[1] = 2;
+	temp[2] = (unsigned char)((rd_byte_len >> 0) & 0xff);
+	temp[3] = (unsigned char)((rd_byte_len >> 8) & 0xff);
+	dsi_cmd_req.payload = &temp[0];
+	dsi_cmd_req.pld_count = 2;
+	dsi_cmd_req.req_ack = req_ack;
+	dsi_set_max_return_pkt_size(&dsi_cmd_req);
+
+	/* payload struct: */
+	/* data_type, data_cnt, command, parameters... */
+	req_ack = MIPI_DSI_DCS_REQ_ACK; /* need BTA ack */
+	dsi_cmd_req.data_type = payload[0];
+	dsi_cmd_req.vc_id = (vc_id & 0x3);
+	dsi_cmd_req.payload = &payload[0];
+	dsi_cmd_req.pld_count = payload[DSI_CMD_SIZE_INDEX];
+	dsi_cmd_req.req_ack = req_ack;
+	switch (dsi_cmd_req.data_type) {/* analysis data_type */
+	case DT_GEN_RD_0:
+	case DT_GEN_RD_1:
+	case DT_GEN_RD_2:
+		num = dsi_generic_read_packet(&dsi_cmd_req, rd_data);
+		break;
+	case DT_DCS_RD_0:
+		num = dsi_dcs_read_packet(&dsi_cmd_req, rd_data);
+		break;
+	default:
+		LCDPR("read un-support data_type: 0x%02x\n",
+			dsi_cmd_req.data_type);
+		break;
+	}
+
+	if (num < 0)
+		LCDERR("mipi-dsi read error\n");
+
+	return num;
+}
+#else
+int dsi_read_single(unsigned char *payload, unsigned char *rd_data,
+		unsigned int rd_byte_len)
+{
+	LCDPR("Don't support mipi-dsi read command\n");
+	return -1;
+}
+#endif
+
+static void mipi_dsi_check_state(unsigned char reg, unsigned char cnt)
+{
+	int ret = 0, i;
+	unsigned char *rd_data;
+	unsigned char payload[3] = {DT_GEN_RD_1, 1, 0x04};
+	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
+
+	if (lcd_drv->lcd_config->lcd_control.mipi_config->check_en == 0)
+		return;
+	LCDPR("%s\n", __func__);
+
+	lcd_drv->lcd_config->lcd_control.mipi_config->check_state = 0;
+	rd_data = (unsigned char *)malloc(sizeof(unsigned char) * cnt);
+	if (rd_data == NULL) {
+		LCDERR("%s: rd_data malloc error\n", __func__);
+		return;
+	}
+
+	payload[2] = reg;
+	ret = dsi_read_single(payload, rd_data, cnt);
+	if (ret < 0) {
+		lcd_drv->lcd_config->lcd_control.mipi_config->check_state = 0;
+		lcd_vcbus_setb(L_VCOM_VS_ADDR, 0, 12, 1);
+		free(rd_data);
+		return;
+	}
+	if (ret > cnt) {
+		LCDERR("%s: read back cnt is wrong\n", __func__);
+		free(rd_data);
+		return;
+	}
+
+	lcd_drv->lcd_config->lcd_control.mipi_config->check_state = 1;
+	lcd_vcbus_setb(L_VCOM_VS_ADDR, 1, 12, 1);
+	printf("read reg 0x%02x: ", reg);
+	for (i = 0; i < ret; i++) {
+		if (i == 0)
+			printf("0x%02x", rd_data[i]);
+		else
+			printf(",0x%02x", rd_data[i]);
+	}
+	printf("\n");
+
+	free(rd_data);
+}
+
 /* *************************************************************
  * Function: dsi_write_cmd
  * Supported Data Type: DT_GEN_SHORT_WR_0, DT_GEN_SHORT_WR_1, DT_GEN_SHORT_WR_2,
@@ -1190,7 +1399,7 @@ int dsi_write_cmd(unsigned char *payload)
 				break;
 			else
 				mdelay(payload[i+1]);
-		} else if (payload[i] == 0xf0) {
+		} else if (payload[i] == 0xf0) { /* gpio */
 			j = (DSI_CMD_SIZE_INDEX + 1) +
 				payload[i+DSI_CMD_SIZE_INDEX];
 			if (payload[i+DSI_CMD_SIZE_INDEX] < 3) {
@@ -1204,6 +1413,19 @@ int dsi_write_cmd(unsigned char *payload)
 			aml_lcd_gpio_set(gpio, payload[i+DSI_GPIO_INDEX+1]);
 			if (payload[i+DSI_GPIO_INDEX+2])
 				mdelay(payload[i+DSI_GPIO_INDEX+2]);
+		} else if (payload[i] == 0xfc) { /* check state */
+			j = (DSI_CMD_SIZE_INDEX + 1) +
+				payload[i+DSI_CMD_SIZE_INDEX];
+			if (payload[i+DSI_CMD_SIZE_INDEX] < 2) {
+				LCDERR("wrong cmd_size %d for check state\n",
+					payload[i+DSI_CMD_SIZE_INDEX]);
+				break;
+			}
+			if (payload[i+DSI_GPIO_INDEX+2] > 0) {
+				mipi_dsi_check_state(
+					payload[i+DSI_GPIO_INDEX],
+					payload[i+DSI_GPIO_INDEX+1]);
+			}
 		} else if ((payload[i] & 0xf) == 0x0) {
 				LCDERR("data_type: 0x%02x\n", payload[i]);
 				break;
@@ -1288,71 +1510,6 @@ int dsi_write_cmd(unsigned char *payload)
 
 	return num;
 }
-
-#ifdef DSI_CMD_READ_VALID
-/* *************************************************************
- * Function: dsi_read_single
- * Supported Data Type: DT_GEN_RD_0, DT_GEN_RD_1, DT_GEN_RD_2,
- *		DT_DCS_RD_0
- * Return:              data count, -1 for error
- */
-int dsi_read_single(unsigned char *payload, unsigned char *rd_data,
-		unsigned int rd_byte_len)
-{
-	int num = 0;
-	unsigned char temp[4];
-	unsigned char vc_id = MIPI_DSI_VIRTUAL_CHAN_ID;
-	unsigned int req_ack;
-	struct dsi_cmd_request_s dsi_cmd_req;
-
-	req_ack = MIPI_DSI_DCS_ACK_TYPE;
-	dsi_cmd_req.data_type = DT_SET_MAX_RET_PKT_SIZE;
-	dsi_cmd_req.vc_id = (vc_id & 0x3);
-	temp[0] = dsi_cmd_req.data_type;
-	temp[1] = 2;
-	temp[2] = (unsigned char)((rd_byte_len >> 0) & 0xff);
-	temp[3] = (unsigned char)((rd_byte_len >> 8) & 0xff);
-	dsi_cmd_req.payload = &temp[0];
-	dsi_cmd_req.pld_count = 2;
-	dsi_cmd_req.req_ack = req_ack;
-	dsi_set_max_return_pkt_size(&dsi_cmd_req);
-
-	/* payload struct: */
-	/* data_type, data_cnt, command, parameters... */
-	req_ack = MIPI_DSI_DCS_REQ_ACK; /* need BTA ack */
-	dsi_cmd_req.data_type = payload[0];
-	dsi_cmd_req.vc_id = (vc_id & 0x3);
-	dsi_cmd_req.payload = &payload[0];
-	dsi_cmd_req.pld_count = payload[DSI_CMD_SIZE_INDEX];
-	dsi_cmd_req.req_ack = req_ack;
-	switch (dsi_cmd_req.data_type) {/* analysis data_type */
-	case DT_GEN_RD_0:
-	case DT_GEN_RD_1:
-	case DT_GEN_RD_2:
-		num = dsi_generic_read_packet(&dsi_cmd_req, rd_data);
-		break;
-	case DT_DCS_RD_0:
-		num = dsi_dcs_read_packet(&dsi_cmd_req, rd_data);
-		break;
-	default:
-		LCDPR("read un-support data_type: 0x%02x\n",
-			dsi_cmd_req.data_type);
-		break;
-	}
-
-	if (num < 0)
-		LCDERR("mipi-dsi read error\n");
-
-	return num;
-}
-#else
-int dsi_read_single(unsigned char *payload, unsigned char *rd_data,
-		unsigned int rd_byte_len)
-{
-	LCDPR("Don't support mipi-dsi read command\n");
-	return -1;
-}
-#endif
 
 static void mipi_dsi_phy_config(struct dsi_phy_s *dphy, unsigned int dsi_ui)
 {
@@ -1689,45 +1846,6 @@ static void mipi_dsi_host_init(struct lcd_config_s *pconf)
 		pconf);
 }
 
-static void mipi_dsi_check_state(struct dsi_config_s *dconf,
-		unsigned char reg, unsigned char cnt)
-{
-	int ret = 0, i;
-	unsigned char *rd_data;
-	unsigned char payload[3] = {DT_GEN_RD_1, 1, 0x04};
-
-	LCDPR("%s\n", __func__);
-
-	dconf->check_state = 0;
-	rd_data = (unsigned char *)malloc(sizeof(unsigned char) * cnt);
-	if (rd_data == NULL) {
-		LCDERR("%s: rd_data malloc error\n", __func__);
-		return;
-	}
-
-	payload[2] = reg;
-	ret = dsi_read_single(payload, rd_data, cnt);
-	if (ret < 0) {
-		dconf->check_state = 0;
-		lcd_vcbus_setb(L_VCOM_VS_ADDR, 0, 12, 1);
-		free(rd_data);
-		return;
-	}
-
-	dconf->check_state = 1;
-	lcd_vcbus_setb(L_VCOM_VS_ADDR, 1, 12, 1);
-	printf("read reg 0x%02x: ", reg);
-	for (i = 0; i < ret; i++) {
-		if (i == 0)
-			printf("0x%02x", rd_data[i]);
-		else
-			printf(",0x%02x", rd_data[i]);
-	}
-	printf("\n");
-
-	free(rd_data);
-}
-
 static void mipi_dsi_link_on(struct lcd_config_s *pconf)
 {
 	unsigned int op_mode_init, op_mode_disp;
@@ -1742,9 +1860,6 @@ static void mipi_dsi_link_on(struct lcd_config_s *pconf)
 	dconf = pconf->lcd_control.mipi_config;
 	op_mode_init = dconf->operation_mode_init;
 	op_mode_disp = dconf->operation_mode_display;
-
-	if (dconf->check_en)
-		mipi_dsi_check_state(dconf, dconf->check_reg, dconf->check_cnt);
 
 	if (dconf->dsi_init_on) {
 		dsi_write_cmd(dconf->dsi_init_on);
@@ -1778,6 +1893,7 @@ static void mipi_dsi_link_on(struct lcd_config_s *pconf)
 
 void mipi_dsi_link_off(struct lcd_config_s *pconf)
 {
+	struct dsi_config_s *dconf;
 #ifdef CONFIG_AML_LCD_EXTERN
 	struct aml_lcd_extern_driver_s *lcd_ext;
 #endif
@@ -1785,13 +1901,10 @@ void mipi_dsi_link_off(struct lcd_config_s *pconf)
 	if (lcd_debug_print_flag)
 		LCDPR("%s\n", __func__);
 
-	if (pconf->lcd_control.mipi_config->dsi_init_off) {
-		dsi_write_cmd(pconf->lcd_control.mipi_config->dsi_init_off);
-		LCDPR("dsi init off\n");
-	}
+	dconf = pconf->lcd_control.mipi_config;
 
 #ifdef CONFIG_AML_LCD_EXTERN
-	if (pconf->lcd_control.mipi_config->extern_init < LCD_EXTERN_INDEX_INVALID) {
+	if (dconf->extern_init < LCD_EXTERN_INDEX_INVALID) {
 		lcd_ext = aml_lcd_extern_get_driver();
 		if (lcd_ext == NULL) {
 			LCDPR("no lcd_extern driver\n");
@@ -1803,6 +1916,11 @@ void mipi_dsi_link_off(struct lcd_config_s *pconf)
 		}
 	}
 #endif
+
+	if (dconf->dsi_init_off) {
+		dsi_write_cmd(dconf->dsi_init_off);
+		LCDPR("dsi init off\n");
+	}
 }
 
 void lcd_mipi_dsi_config_set(struct lcd_config_s *pconf)
