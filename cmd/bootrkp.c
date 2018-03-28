@@ -8,6 +8,9 @@
 #include <android_bootloader.h>
 #include <attestation_key.h>
 #include <boot_rkimg.h>
+#include <optee_include/OpteeClientInterface.h>
+
+#define OEM_UNLOCK_ARG_SIZE 30
 
 static int do_boot_rockchip(cmd_tbl_t *cmdtp, int flag, int argc,
 		      char * const argv[])
@@ -31,6 +34,20 @@ static int do_boot_rockchip(cmd_tbl_t *cmdtp, int flag, int argc,
 		printf("%s Could not find misc partition\n", __func__);
 	else
 		load_attestation_key(dev_desc, &misc_part_info);
+#endif
+
+#ifdef CONFIG_OPTEE_CLIENT
+	/* read oem unlock status and attach to bootargs */
+	uint8_t unlock = 0;
+	TEEC_Result result;
+	char oem_unlock[OEM_UNLOCK_ARG_SIZE] = {0};
+	result = trusty_read_oem_unlock(&unlock);
+	if (result) {
+		printf("read oem unlock status with error : 0x%x\n", result);
+	} else {
+		snprintf(oem_unlock, OEM_UNLOCK_ARG_SIZE, "androidboot.oem_unlocked=%d", unlock);
+		env_update("bootargs", oem_unlock);
+	}
 #endif
 
 	mode = rockchip_get_boot_mode();

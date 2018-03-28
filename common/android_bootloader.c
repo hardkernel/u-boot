@@ -16,6 +16,7 @@
 #include <fs.h>
 #include <boot_rkimg.h>
 #include <attestation_key.h>
+#include <optee_include/OpteeClientInterface.h>
 
 #define ANDROID_PARTITION_BOOT "boot"
 #define ANDROID_PARTITION_MISC "misc"
@@ -33,6 +34,7 @@
 #else
 #define ANDROID_ARG_FDT_FILENAME "kernel.dtb"
 #endif
+#define OEM_UNLOCK_ARG_SIZE 30
 
 char *android_str_append(char *base_name, char *slot_suffix)
 {
@@ -561,6 +563,20 @@ int android_bootloader_boot_flow(struct blk_desc *dev_desc,
 	/* Set Android root variables. */
 	env_set_ulong("android_root_devnum", dev_desc->devnum);
 	env_set("android_slotsufix", slot_suffix);
+
+#ifdef CONFIG_OPTEE_CLIENT
+	/* read oem unlock status and attach to bootargs */
+	uint8_t unlock = 0;
+	TEEC_Result result;
+	char oem_unlock[OEM_UNLOCK_ARG_SIZE] = {0};
+	result = trusty_read_oem_unlock(&unlock);
+	if (result) {
+		printf("read oem unlock status with error : 0x%x\n", result);
+	} else {
+		snprintf(oem_unlock, OEM_UNLOCK_ARG_SIZE, "androidboot.oem_unlocked=%d", unlock);
+		env_update("bootargs", oem_unlock);
+	}
+#endif
 
 	/* Assemble the command line */
 	command_line = android_assemble_cmdline(slot_suffix, mode_cmdline);
