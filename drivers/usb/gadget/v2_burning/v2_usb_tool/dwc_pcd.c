@@ -637,5 +637,10 @@ int dwc_otg_bulk_ep_enable(int is_in)
 
 void dwc_otg_power_off_phy(void)
 {
+#if (defined CONFIG_USB_DEVICE_V2)
+    return;
+#else
+    //cause DWC_REG_GSNPSID value 0 after call this when g12
 	dwc_write_reg32(DWC_REG_PCGCCTL, 0xF);
+#endif//#if (defined CONFIG_USB_DEVICE_V2)
 }
