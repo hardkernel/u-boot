@@ -1355,7 +1355,8 @@ int amlnand_phydev_init(struct amlnand_chip *aml_chip)
 	u32 tmp_offset = 0, tmp_blk = 0, pages_per_blk;
 	u8 boot_flag = 0, plane_num = 1, chip_num;
 	int i, j, k, ret = 0;
-	u32 tmp_value, adjust_blk = 0, cpu_type;
+	u32 adjust_blk = 0, cpu_type;
+	u64 tmp_value;
 #if 0
 	/*when opened , need be free bad_blk; */
 	u64 *bad_blk = NULL;
@@ -1550,7 +1551,7 @@ int amlnand_phydev_init(struct amlnand_chip *aml_chip)
 					tmp_value /= chip_num;
 					tmp_value += tmp_blk - tmp_blk/chip_num;
 					tmp_value *= pages_per_blk;
-					ops_para->page_addr = tmp_value;
+					ops_para->page_addr = (u32)tmp_value;
 					ret = operation->block_isbad(aml_chip);
 					if (ret == NAND_BLOCK_FACTORY_BAD) {
 						offset += flash->blocksize;
@@ -1559,7 +1560,7 @@ int amlnand_phydev_init(struct amlnand_chip *aml_chip)
 					start_blk++;
 					offset += flash->blocksize;
 				} while (start_blk < total_blk);
-				tmp_value = (u32)(offset>>tmp_erase_shift) - 1;
+				tmp_value = (offset>>tmp_erase_shift) - 1;
 				tmp_value /= chip_num*plane_num;
 				tmp_value += 1;
 				total_blk = tmp_value * chip_num * plane_num;
@@ -1671,7 +1672,7 @@ if (!is_phydev_off_adjust()) {
 
 				tmp_value = offset - tmp_offset;
 				tmp_value =
-				(u32)(tmp_value >> phydev->erasesize_shift);
+				(tmp_value >> phydev->erasesize_shift);
 				tmp_value -= 1;
 				tmp_value /= chip_num * plane_num;
 				tmp_value += 1;

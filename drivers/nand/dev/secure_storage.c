@@ -11,10 +11,13 @@ int aml_nand_update_secure(struct amlnand_chip * aml_chip, char *secure_ptr)
 	int ret = 0;
 	char malloc_flag = 0;
 	unsigned char *secure_buf = NULL;
+	struct nand_flash *flash = &aml_chip->flash;
 
 	if (secure_buf == NULL) {
 
-		secure_buf = kzalloc(CONFIG_SECURE_SIZE, GFP_KERNEL);
+		secure_buf = kzalloc(CONFIG_SECURE_SIZE + flash->pagesize,
+		GFP_KERNEL);
+		malloc_flag = 1;
 		if (secure_buf == NULL)
 			return -ENOMEM;
 		memset(secure_buf,0,CONFIG_SECURE_SIZE);
