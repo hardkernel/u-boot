@@ -46,15 +46,20 @@ struct aml_lcd_extern_driver_s *aml_lcd_extern_get_driver(void)
 	return lcd_ext_driver;
 }
 
-#define EXT_LEN_MAX   200
+#define EXT_LEN_MAX   2000
 static void aml_lcd_extern_init_table_dynamic_size_print(
 		struct lcd_extern_config_s *econf, int flag)
 {
 	int i, j, k, max_len;
 	unsigned char cmd_size;
-	char str[EXT_LEN_MAX];
+	char *str;
 	unsigned char *init_table;
 
+	str = (char *)malloc(EXT_LEN_MAX * sizeof(char));
+	if (str == NULL) {
+		EXTERR("lcd_extern_dynamic_size str malloc error\n");
+		return;
+	}
 	if (flag) {
 		printf("power on:\n");
 		init_table = econf->table_init_on;
@@ -63,6 +68,11 @@ static void aml_lcd_extern_init_table_dynamic_size_print(
 		printf("power off:\n");
 		init_table = econf->table_init_off;
 		max_len = LCD_EXTERN_INIT_OFF_MAX;
+	}
+	if (init_table == NULL) {
+		EXTERR("init_table %d is NULL\n", flag);
+		free(str);
+		return;
 	}
 	i = 0;
 	while (i < max_len) {
@@ -78,6 +88,7 @@ static void aml_lcd_extern_init_table_dynamic_size_print(
 		printf("%s\n", str);
 		i += (cmd_size + 2);
 	}
+	free(str);
 }
 
 static void aml_lcd_extern_init_table_fixed_size_print(
@@ -85,9 +96,14 @@ static void aml_lcd_extern_init_table_fixed_size_print(
 {
 	int i, j, k, max_len;
 	unsigned char cmd_size;
-	char str[EXT_LEN_MAX];
+	char *str;
 	unsigned char *init_table;
 
+	str = (char *)malloc(EXT_LEN_MAX * sizeof(char));
+	if (str == NULL) {
+		EXTERR("lcd_extern_fixed_size str malloc error\n");
+		return;
+	}
 	cmd_size = econf->cmd_size;
 	if (flag) {
 		printf("power on:\n");
@@ -97,6 +113,11 @@ static void aml_lcd_extern_init_table_fixed_size_print(
 		printf("power off:\n");
 		init_table = econf->table_init_off;
 		max_len = LCD_EXTERN_INIT_OFF_MAX;
+	}
+	if (init_table == NULL) {
+		EXTERR("init_table %d is NULL\n", flag);
+		free(str);
+		return;
 	}
 
 	i = 0;
@@ -111,6 +132,7 @@ static void aml_lcd_extern_init_table_fixed_size_print(
 		printf("%s\n", str);
 		i += cmd_size;
 	}
+	free(str);
 }
 
 static void aml_lcd_extern_info_print(void)
@@ -410,18 +432,18 @@ static int aml_lcd_extern_get_init_dts(char *dtaddr, struct lcd_extern_common_s 
 	propdata = (char *)fdt_getprop(dtaddr, parent_offset, "pinctrl_version", NULL);
 	if (propdata) {
 		lcd_ext_pinctrl_ver = (unsigned char)(be32_to_cpup((u32*)propdata));
-		EXTPR("lcd_ext_pinctrl_ver: %d\n", lcd_ext_pinctrl_ver);
+		EXTPR("pinctrl_version: %d\n", lcd_ext_pinctrl_ver);
 	}
 	if (lcd_ext_pinctrl_ver) /*use lcd.c config, not read dts*/
 		return 0;
 
 	/* get pinmux */
 	propdata = (char *)fdt_getprop(dtaddr, parent_offset, "pinctrl_names_uboot", NULL);
-	if (propdata == NULL) {
-		EXTPR("no pinctrl_names_uboot\n");
+	if (propdata == NULL)
 		return 0;
-	}
+
 	sprintf(propname, "/pinmux/%s", propdata);
+	EXTPR("find pinctrl_names_uboot: %s\n", propname);
 	parent_offset = fdt_path_offset(dt_addr, propname);
 	if (parent_offset < 0) {
 		EXTPR("no pinmux extern_pins\n");
@@ -506,6 +528,10 @@ static int aml_lcd_extern_init_table_dynamic_size_load_dts(
 		max_len = LCD_EXTERN_INIT_OFF_MAX;
 		sprintf(propname, "init_off");
 	}
+	if (init_table == NULL) {
+		   EXTPR("%s table is null\n", propname);
+		   return 0;
+	}
 
 	i = 0;
 	propdata = (char *)fdt_getprop(dtaddr, nodeoffset, propname, NULL);
@@ -556,6 +582,10 @@ static int aml_lcd_extern_init_table_fixed_size_load_dts(
 		init_table = extconf->table_init_off;
 		max_len = LCD_EXTERN_INIT_OFF_MAX;
 		sprintf(propname, "init_off");
+	}
+	if (init_table == NULL) {
+		   EXTPR("%s table is null\n", propname);
+		   return 0;
 	}
 
 	i = 0;
@@ -860,6 +890,10 @@ static int aml_lcd_extern_init_table_dynamic_size_load_unifykey(
 		sprintf(propname, "init_off");
 		buf = p + extconf->table_init_on_cnt;
 	}
+	if (init_table == NULL) {
+		   EXTPR("%s table is null\n", propname);
+		   return 0;
+	}
 
 	i = 0;
 	while (i < max_len) {
@@ -902,8 +936,6 @@ static int aml_lcd_extern_init_table_dynamic_size_load_unifykey(
 		}
 		for (j = 0; j < cmd_size; j++)
 			init_table[i+2+j] = *(buf + LCD_UKEY_EXT_INIT + i + 2 + j);
-		if (init_table[i] == LCD_EXTERN_INIT_END)
-			break;
 
 		i += (cmd_size + 2);
 	}
@@ -934,6 +966,10 @@ static int aml_lcd_extern_init_table_fixed_size_load_unifykey(
 		max_len = LCD_EXTERN_INIT_OFF_MAX;
 		sprintf(propname, "init_off");
 		buf = p + extconf->table_init_on_cnt;
+	}
+	if (init_table == NULL) {
+		   EXTPR("%s table is null\n", propname);
+		   return 0;
 	}
 
 	i = 0;

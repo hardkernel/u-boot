@@ -227,6 +227,12 @@ struct aml_lcd_unifykey_header_s {
 
 
 /* ********************************
+ * debug flag
+ * ********************************* */
+#define LCD_UKEY_DEBUG_NORMAL          (1 << 0)
+#define LCD_UKEY_DEBUG_TCON            (1 << 1)
+
+/* ********************************
  * API
  * ********************************* */
 extern int aml_lcd_unifykey_len_check(int key_len, int len);
@@ -238,6 +244,6 @@ extern int aml_lcd_unifykey_get_no_header(const char *key_name, unsigned char *b
 
 extern void aml_lcd_unifykey_test(void);
 extern void aml_lcd_unifykey_tcon_test(int n);
-extern void aml_lcd_unifykey_dump(void);
+extern void aml_lcd_unifykey_dump(int flag);
 
 #endif

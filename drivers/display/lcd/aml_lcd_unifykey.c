@@ -791,7 +791,7 @@ void aml_lcd_unifykey_tcon_test(int n)
 #endif
 }
 
-void aml_lcd_unifykey_dump(void)
+void aml_lcd_unifykey_dump(int flag)
 {
 	unsigned char *para;
 	int key_len;
@@ -857,6 +857,8 @@ void aml_lcd_unifykey_dump(void)
 	printf("\n");
 	free(para);
 
+	if ((flag & LCD_UKEY_DEBUG_TCON) == 0)
+		return;
 	/* dump unifykey: lcd_tcon */
 	para = (unsigned char *)malloc(sizeof(unsigned char) * LCD_UKEY_TCON_SIZE);
 	if (!para) {
@@ -926,7 +928,7 @@ void aml_lcd_unifykey_tcon_test(int n)
 	LCDUKEYERR("Don't support unifykey\n");
 }
 
-void aml_lcd_unifykey_dump(void)
+void aml_lcd_unifykey_dump(int flag)
 {
 	LCDUKEYERR("Don't support unifykey\n");
 }

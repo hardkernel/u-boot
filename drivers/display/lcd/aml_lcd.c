@@ -1441,7 +1441,16 @@ static void aml_lcd_key_tcon_test(void)
 
 static void aml_lcd_key_dump(void)
 {
-	aml_lcd_unifykey_dump();
+	int flag = LCD_UKEY_DEBUG_NORMAL;
+
+	switch (aml_lcd_driver.chip_type) {
+	case LCD_CHIP_TXHD:
+		flag |= LCD_UKEY_DEBUG_TCON;
+		break;
+	default:
+		break;
+	}
+	aml_lcd_unifykey_dump(flag);
 }
 
 static void aml_lcd_extern_info(void)
