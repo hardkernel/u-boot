@@ -14,6 +14,8 @@
 
 #define CONFIG_SYS_NS16550_MEM32
 
+#define CONFIG_NR_DRAM_BANKS		2
+
 #ifndef CONFIG_SPL_BUILD
 #include <config_distro_defaults.h>
 
