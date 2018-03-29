@@ -129,7 +129,21 @@ void aml_sd_cfg_swth(struct mmc *mmc)
 			sd_emmc_clkc |= (3 << Cfg_co_phase);
 		}
 	}
-	printf(">>>>sd_emmc_clkc co-phase 0x%x\n", (sd_emmc_clkc >> Cfg_co_phase) & 3);
+
+	/* for g12a revB only*/
+	//if (aml_is_emmc_tsd(mmc)
+	//	&& (cpu_id.family_id == MESON_CPU_MAJOR_ID_G12A)
+	if ((cpu_id.family_id == MESON_CPU_MAJOR_ID_G12A)
+		&& (cpu_id.chip_rev == 0xB)) {
+		sd_emmc_clkc &= ~(3 << Cfg_co_phase);
+		sd_emmc_clkc |= (3 << Cfg_co_phase);
+		sd_emmc_clkc |= (0 << Cfg_tx_delay);
+	}
+
+	printf("co-phase 0x%x, tx-dly %d\n",
+		(sd_emmc_clkc >> Cfg_co_phase) & 3,
+		(sd_emmc_clkc >> Cfg_tx_delay) & 0x3f);
+
 	sd_emmc_reg->gclock = sd_emmc_clkc;
 	vconf = sd_emmc_reg->gcfg;
 
@@ -242,9 +256,8 @@ static int sd_inand_staff_init(struct mmc *mmc)
 	//try to init mmc controller clock firstly
 	mmc->clock = 400000;
 	aml_sd_cfg_swth(mmc);
-
-	if (sdio->sd_emmc_port == SDIO_PORT_B) {  //only power ctrl for external tf card
-		printf("[%s][%d], debug\n", __func__, __LINE__);
+	//only power ctrl for external tf card
+	if (sdio->sd_emmc_port == SDIO_PORT_B) {
 		//base=get_timer(0);
 #if defined(CONFIG_VLSI_EMULATOR)
 	    //while (get_timer(base)<1) ;
@@ -260,8 +273,8 @@ static int sd_inand_staff_init(struct mmc *mmc)
         cfg->host_caps = MMC_MODE_HS;
         mmc->cfg = cfg;
     }
-
-    if (sdio->sd_emmc_port == SDIO_PORT_B) {   //only power ctrl for external tf card
+    //only power ctrl for external tf card
+    if (sdio->sd_emmc_port == SDIO_PORT_B) {
         //base=get_timer(0);
 #if defined(CONFIG_VLSI_EMULATOR)
         //while (get_timer(base)<1) ;
@@ -540,6 +553,7 @@ int aml_sd_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd, struct mmc_data *data)
                         desc_cur->data_addr = (unsigned long)sd_emmc_reg->gping;
                         desc_cur->data_addr |= 1<<0;
                 }
+                //des_cmd_cur->timeout = 7;
         }
         /*Prepare desc for config register*/
         des_cmd_cur->owner = 1;
