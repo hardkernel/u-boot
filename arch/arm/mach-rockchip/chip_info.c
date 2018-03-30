@@ -41,7 +41,7 @@ int rockchip_get_chip_info(unsigned int chip_info[])
 #elif defined(CONFIG_ROCKCHIP_RK3288)
 	chip_info[0] = 0x33323041;
 #elif defined(CONFIG_ROCKCHIP_RK3308)
-	chip_info[0] = 0x33333045;
+	chip_info[0] = 0x33333038;
 #elif defined(CONFIG_ROCKCHIP_RK3328)
 	chip_info[0] = 0x33323043;
 	chip_info[3] = 0x56313030;
