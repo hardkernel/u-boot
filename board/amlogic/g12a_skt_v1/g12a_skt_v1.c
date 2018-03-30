@@ -48,9 +48,12 @@
 #include <linux/mtd/partitions.h>
 #include <linux/sizes.h>
 #include <asm-generic/gpio.h>
-#ifdef CONFIG_AML_SPIFC
 #include <dm.h>
+#ifdef CONFIG_AML_SPIFC
 #include <amlogic/spifc.h>
+#endif
+#ifdef CONFIG_AML_SPICC
+#include <amlogic/spicc.h>
 #endif
 
 DECLARE_GLOBAL_DATA_PTR;
@@ -536,6 +539,29 @@ U_BOOT_DEVICE(spifc) = {
 	.platdata = &spifc_platdata,
 };
 #endif /* CONFIG_AML_SPIFC */
+
+#ifdef CONFIG_AML_SPICC
+/* generic config in arch gpio/clock.c */
+extern int spicc1_clk_set_rate(int rate);
+extern int spicc1_clk_enable(bool enable);
+extern int spicc1_pinctrl_enable(bool enable);
+
+static const struct spicc_platdata spicc1_platdata = {
+	.compatible = "amlogic,meson-g12a-spicc",
+	.reg = (void __iomem *)0xffd15000,
+	.clk_rate = 666666666,
+	.clk_set_rate = spicc1_clk_set_rate,
+	.clk_enable = spicc1_clk_enable,
+	.pinctrl_enable = spicc1_pinctrl_enable,
+	/* case one slave without cs: {"no_cs", 0} */
+	.cs_gpio_names = {"GPIOH_6", 0},
+};
+
+U_BOOT_DEVICE(spicc1) = {
+	.name = "spicc",
+	.platdata = &spicc1_platdata,
+};
+#endif /* CONFIG_AML_SPICC */
 
 extern void aml_pwm_cal_init(int mode);
 

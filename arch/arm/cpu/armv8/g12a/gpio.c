@@ -216,3 +216,24 @@ int clear_pinmux(unsigned int pin)
 
 	return 0;
 }
+
+#ifdef CONFIG_AML_SPICC
+#include <asm/arch/secure_apb.h>
+/* generic pins control for spicc1.
+ * if deleted, you have to add it into all g12a board files as necessary.
+ * GPIOH_4: MOSI:regB[19:16]=3
+ * GPIOH_5: MISO:regB[23:20]=3
+ * GPIOH_7: CLK:regB[31:28]=3
+ */
+int spicc1_pinctrl_enable(bool enable)
+{
+	unsigned int val;
+
+	val = readl(P_PERIPHS_PIN_MUX_B);
+	val &= ~(0xf0ff << 16);
+	if (enable)
+		val |= 0x3033 << 16;
+	writel(val, P_PERIPHS_PIN_MUX_B);
+	return 0;
+}
+#endif /* CONFIG_AML_SPICC */
