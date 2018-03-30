@@ -331,7 +331,9 @@ char *android_assemble_cmdline(const char *slot_suffix,
 	 */
 	if (slot_suffix) {
 		allocated_suffix = malloc(strlen(ANDROID_ARG_SLOT_SUFFIX) +
-					  strlen(slot_suffix));
+					  strlen(slot_suffix) + 1);
+		memset(allocated_suffix, 0, strlen(ANDROID_ARG_SLOT_SUFFIX)
+		       + strlen(slot_suffix) + 1);
 		strcpy(allocated_suffix, ANDROID_ARG_SLOT_SUFFIX);
 		strcat(allocated_suffix, slot_suffix);
 		*(current_chunk++) = allocated_suffix;
