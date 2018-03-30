@@ -88,8 +88,14 @@
 #define CONFIG_STATUS_LED
 #define CONFIG_BOARD_SPECIFIC_LED
 
+/* meson SPI */
+//#define CONFIG_AML_SPIFC
 #define CONFIG_AML_SPICC
-#define CONFIG_CMD_SPI
+#if defined CONFIG_AML_SPIFC || defined CONFIG_AML_SPICC
+	#define CONFIG_OF_SPI
+	#define CONFIG_DM_SPI
+	#define CONFIG_CMD_SPI
+#endif
 
 /* args/envs */
 #define CONFIG_SYS_MAXARGS  64

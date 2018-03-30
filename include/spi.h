@@ -264,7 +264,10 @@ int  spi_xfer(struct spi_slave *slave, unsigned int bitlen, const void *dout,
  */
 int spi_cs_is_valid(unsigned int bus, unsigned int cs);
 
-#ifndef CONFIG_DM_SPI
+/**
+ * We have to define spi_cs_activate/deactivate for those tranditional
+ * driver though in DM.
+ */
 /**
  * Activate a SPI chipselect.
  * This function is provided by the board code when using a driver
@@ -283,6 +286,7 @@ void spi_cs_activate(struct spi_slave *slave);
  */
 void spi_cs_deactivate(struct spi_slave *slave);
 
+#ifndef CONFIG_DM_SPI
 /**
  * Set transfer speed.
  * This sets a new speed to be applied for next spi_xfer().

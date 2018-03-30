@@ -37,7 +37,14 @@
 #define CONFIG_VDDEE_INIT_VOLTAGE	1100		// voltage for power up
 #define CONFIG_VDDEE_SLEEP_VOLTAGE	 850		// voltage for suspend
 
+/* meson SPI */
+//#define CONFIG_AML_SPIFC
 #define CONFIG_AML_SPICC
+#if defined CONFIG_AML_SPIFC || defined CONFIG_AML_SPICC
+	#define CONFIG_OF_SPI
+	#define CONFIG_DM_SPI
+	#define CONFIG_CMD_SPI
+#endif
 /*#define CONFIG_AML_LOCAL_DIMMING*/
 /*#define CONFIG_AML_LOCAL_DIMMING_IW7019*/
 /*#define CONFIG_AML_LOCAL_DIMMING_OB3350*/
