@@ -184,21 +184,22 @@ static void rkclk_init(struct rk3308_cru *cru)
 		     hclk_div << BUS_HCLK_DIV_SHIFT);
 
 	/*
-	 * select vpll0 as pd_peri bus clock source and
+	 * select dpll as pd_peri bus clock source and
 	 * set up dependent divisors for PCLK/HCLK and ACLK clocks.
 	 */
-	vpll0_hz = rkclk_pll_get_rate(cru, VPLL0);
-	aclk_div = vpll0_hz / PERI_ACLK_HZ - 1;
-	hclk_div = vpll0_hz / PERI_HCLK_HZ - 1;
-	pclk_div = vpll0_hz / PERI_PCLK_HZ - 1;
+	aclk_div = dpll_hz / PERI_ACLK_HZ - 1;
+	hclk_div = dpll_hz / PERI_HCLK_HZ - 1;
+	pclk_div = dpll_hz / PERI_PCLK_HZ - 1;
 	rk_clrsetreg(&cru->clksel_con[36],
 		     PERI_PLL_SEL_MASK | PERI_ACLK_DIV_MASK,
-		     PERI_PLL_VPLL0 << PERI_PLL_SEL_SHIFT |
+		     BUS_PLL_SEL_DPLL << PERI_PLL_SEL_SHIFT |
 		     aclk_div << PERI_ACLK_DIV_SHIFT);
 	rk_clrsetreg(&cru->clksel_con[37],
 		     PERI_PCLK_DIV_MASK | PERI_HCLK_DIV_MASK,
 		     pclk_div << PERI_PCLK_DIV_SHIFT |
 		     hclk_div << PERI_HCLK_DIV_SHIFT);
+
+	vpll0_hz = rkclk_pll_get_rate(cru, VPLL0);
 }
 
 static ulong rk3308_i2c_get_clk(struct rk3308_cru *cru, ulong clk_id)
