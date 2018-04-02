@@ -37,6 +37,7 @@ enum rockchip_pinctrl_type {
 #define IOMUX_UNROUTED		BIT(3)
 #define IOMUX_WIDTH_3BIT	BIT(4)
 #define IOMUX_8WIDTH_2BIT	BIT(5)
+#define IOMUX_UNMASKED		BIT(6)
 
 /**
  * @type: iomux variant using IOMUX_* constants
@@ -1113,7 +1114,11 @@ static int rockchip_set_mux(struct rockchip_pin_bank *bank, int pin, int mux)
 		}
 	}
 
-	data = (mask << (bit + 16));
+	if (mux_type & IOMUX_UNMASKED)
+		regmap_read(regmap, reg, &data);
+	else
+		data = (mask << (bit + 16));
+
 	data |= (mux & mask) << bit;
 	ret = regmap_write(regmap, reg, data);
 
@@ -2407,9 +2412,9 @@ static struct rockchip_pin_ctrl rk3228_pin_ctrl = {
 };
 
 static struct rockchip_pin_bank rk3288_pin_banks[] = {
-	PIN_BANK_IOMUX_FLAGS(0, 24, "gpio0", IOMUX_SOURCE_PMU,
-					     IOMUX_SOURCE_PMU,
-					     IOMUX_SOURCE_PMU,
+	PIN_BANK_IOMUX_FLAGS(0, 24, "gpio0", IOMUX_SOURCE_PMU | IOMUX_UNMASKED,
+					     IOMUX_SOURCE_PMU | IOMUX_UNMASKED,
+					     IOMUX_SOURCE_PMU | IOMUX_UNMASKED,
 					     IOMUX_UNROUTED
 			    ),
 	PIN_BANK_IOMUX_FLAGS(1, 32, "gpio1", IOMUX_UNROUTED,
