@@ -577,3 +577,12 @@ phys_size_t get_effective_memsize(void)
 	return (((readl(AO_SEC_GP_CFG0)) & 0xFFFF0000) << 4);
 #endif
 }
+
+void sd_emmc_para_config(unsigned int *reg, unsigned int port)
+{
+	if (port == 1) {
+		*reg &= ~(3 << Cfg_co_phase);
+		*reg |= (3 << Cfg_co_phase);
+	}
+	return;
+}

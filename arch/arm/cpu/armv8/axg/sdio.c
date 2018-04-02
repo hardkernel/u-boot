@@ -77,3 +77,12 @@ int cpu_sd_emmc_init(unsigned port)
 	}
 	return 0;
 }
+
+__weak void sd_emmc_para_config(unsigned int *reg, unsigned int port)
+{
+	if ((port == 1) || (port == 0)) {
+		*reg &= ~(3 << Cfg_co_phase);
+		*reg |= (3 << Cfg_co_phase);
+	}
+	return;
+}
