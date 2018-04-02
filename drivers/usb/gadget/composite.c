@@ -903,10 +903,12 @@ unknown:
 		 * special non-standard request.
 		 */
 		case USB_RECIP_DEVICE:
-			debug("cdev->config->next_interface_id: %d intf: %d\n",
-			       cdev->config->next_interface_id, intf);
-			if (cdev->config->next_interface_id == 1)
-				f = cdev->config->interface[intf];
+			if (cdev->config) {
+				debug("cdev->config->next_interface_id: %d intf: %d\n",
+				      cdev->config->next_interface_id, intf);
+				if (cdev->config->next_interface_id == 1)
+					f = cdev->config->interface[intf];
+			}
 			break;
 		}
 
