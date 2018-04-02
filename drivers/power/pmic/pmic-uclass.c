@@ -13,6 +13,7 @@
 #include <dm/lists.h>
 #include <dm/device-internal.h>
 #include <dm/uclass-internal.h>
+#include <dm/of_access.h>
 #include <power/pmic.h>
 #include <linux/ctype.h>
 
@@ -31,6 +32,7 @@ int pmic_bind_children(struct udevice *pmic, ofnode parent,
 	ofnode node;
 	int prefix_len;
 	int ret;
+	bool enable;
 
 	debug("%s for '%s' at node offset: %d\n", __func__, pmic->name,
 	      dev_of_offset(pmic));
@@ -39,6 +41,16 @@ int pmic_bind_children(struct udevice *pmic, ofnode parent,
 		node_name = ofnode_get_name(node);
 
 		debug("* Found child node: '%s'\n", node_name);
+
+		if (ofnode_is_np(node))
+			enable = of_device_is_available(ofnode_to_np(node));
+		else
+			enable = fdtdec_get_is_enabled(gd->fdt_blob,
+						       ofnode_to_offset(node));
+		if (!enable) {
+			debug("* But '%s' is disabled\n", node_name);
+			continue;
+		}
 
 		child = NULL;
 		for (info = child_info; info->prefix && info->driver; info++) {
