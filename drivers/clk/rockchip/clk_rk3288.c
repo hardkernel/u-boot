@@ -1059,10 +1059,12 @@ static int rk3288_clk_probe(struct udevice *dev)
 		 * Init clocks in U-Boot proper if the NPLL is runnning. This
 		 * indicates that a previous boot loader set up the clocks, so
 		 * we need to redo it. U-Boot's SPL does not set this clock.
+		 * Or if the CPLL is not init, we need to redo the clk_init.
 		 */
 		reg = readl(&priv->cru->cru_mode_con);
-		if (((reg & NPLL_MODE_MASK) >> NPLL_MODE_SHIFT) ==
-				NPLL_MODE_NORMAL)
+		if ((((reg & NPLL_MODE_MASK) >> NPLL_MODE_SHIFT) ==
+				NPLL_MODE_NORMAL) ||
+		    !(reg & CPLL_MODE_MASK))
 			init_clocks = true;
 	}
 
