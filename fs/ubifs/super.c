@@ -1751,7 +1751,9 @@ void ubifs_umount(struct ubifs_info *c)
 	/* Finally free U-Boot's global copy of superblock */
 	if (ubifs_sb != NULL) {
 		free(ubifs_sb->s_fs_info);
+		ubifs_sb->s_fs_info = NULL;
 		free(ubifs_sb);
+		ubifs_sb = NULL;
 	}
 #endif
 }
@@ -2443,7 +2445,7 @@ static struct dentry *ubifs_mount(struct file_system_type *fs_type, int flags,
 {
 	struct ubi_volume_desc *ubi;
 	struct ubifs_info *c;
-	struct super_block *sb;
+	struct super_block *sb = NULL;
 	int err;
 
 	dbg_gen("name %s, flags %#x", name, flags);
@@ -2471,6 +2473,7 @@ static struct dentry *ubifs_mount(struct file_system_type *fs_type, int flags,
 	sb = sget(fs_type, sb_test, sb_set, flags, c);
 	if (IS_ERR(sb)) {
 		err = PTR_ERR(sb);
+		sb = NULL;
 		kfree(c);
 		goto out_close;
 	}
@@ -2486,8 +2489,10 @@ static struct dentry *ubifs_mount(struct file_system_type *fs_type, int flags,
 		}
 	} else {
 		err = ubifs_fill_super(sb, data, flags & MS_SILENT ? 1 : 0);
-		if (err)
+		if (err) {
+			kfree(c);
 			goto out_deact;
+		}
 		/* We do not support atime */
 		sb->s_flags |= MS_ACTIVE | MS_NOATIME;
 	}
@@ -2507,6 +2512,7 @@ out_deact:
 	deactivate_locked_super(sb);
 #endif
 out_close:
+	kfree(sb);
 	ubi_close_volume(ubi);
 	return ERR_PTR(err);
 }

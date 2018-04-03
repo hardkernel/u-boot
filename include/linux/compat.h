@@ -48,8 +48,8 @@ struct kmem_cache { int sz; };
 struct kmem_cache *get_mem(int element_sz);
 #define kmem_cache_create(a, sz, c, d, e)	get_mem(sz)
 void *kmem_cache_alloc(struct kmem_cache *obj, int flag);
-#define kmem_cache_free(obj, size)	free(size)
-#define kmem_cache_destroy(obj)		free(obj)
+#define kmem_cache_free(obj, size)	do {free(size); size = NULL; } while (0)
+#define kmem_cache_destroy(obj)		do {free(obj); obj = NULL; } while (0)
 
 #define DECLARE_WAITQUEUE(...)	do { } while (0)
 #define add_wait_queue(...)	do { } while (0)

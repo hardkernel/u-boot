@@ -34,7 +34,9 @@ static int do_ubifs_mount(cmd_tbl_t *cmdtp, int flag, int argc,
 	debug("Using volume %s\n", vol_name);
 
 	if (ubifs_initialized == 0) {
-		ubifs_init();
+		ret = ubifs_init();
+		if (ret)
+			return ret;
 		ubifs_initialized = 1;
 	}
 
@@ -61,7 +63,6 @@ void cmd_ubifs_umount(void)
 		ubifs_umount(ubifs_sb->s_fs_info);
 	}
 
-	ubifs_sb = NULL;
 	ubifs_mounted = 0;
 	ubifs_initialized = 0;
 }

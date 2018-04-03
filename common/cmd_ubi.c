@@ -482,6 +482,7 @@ int ubi_part(char *part_name, const char *vid_header_offset)
 	if (ubi_initialized) {
 		ubi_exit();
 		del_mtd_partitions(ubi_dev.mtd_info);
+		ubi_initialized = 0;
 	}
 
 	/*

@@ -1567,6 +1567,8 @@ out_unlock:
 	return ret;
 
 err:
+	for (i = 0; i < UBI_FM_MAX_BLOCKS; i++)
+		kfree(new_fm->e[i]);
 	kfree(new_fm);
 
 	ubi_warn("Unable to write new fastmap, err=%i", ret);
