@@ -682,6 +682,7 @@ static const struct rockchip_usb2phy_cfg rv1108_phy_cfgs[] = {
 
 static const struct udevice_id rockchip_usb2phy_ids[] = {
 	{ .compatible = "rockchip,rk3128-usb2phy", .data = (ulong)&rk312x_phy_cfgs },
+	{ .compatible = "rockchip,rk3308-usb2phy", .data = (ulong)&rk3328_phy_cfgs },
 	{ .compatible = "rockchip,rk3328-usb2phy", .data = (ulong)&rk3328_phy_cfgs },
 	{ .compatible = "rockchip,rv1108-usb2phy", .data = (ulong)&rv1108_phy_cfgs },
 	{ }
