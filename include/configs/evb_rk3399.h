@@ -9,6 +9,11 @@
 
 #include <configs/rk3399_common.h>
 
+#ifndef CONFIG_SPL_BUILD
+#undef CONFIG_BOOTCOMMAND
+#define CONFIG_BOOTCOMMAND RKIMG_BOOTCOMMAND
+#endif
+
 #define CONFIG_MMC_SDHCI_SDMA
 #define CONFIG_SYS_MMC_ENV_DEV 0
 
