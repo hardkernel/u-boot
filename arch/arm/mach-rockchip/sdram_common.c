@@ -127,6 +127,10 @@ size_t rockchip_sdram_size(phys_addr_t reg)
 		      rank, col, bk, cs0_row, bw, row_3_4);
 	}
 
+	/* Handle 4GB size, or else size will be 0 after <<20 in 32bit system */
+	if (size_mb > (SDRAM_MAX_SIZE >> 20))
+		size_mb = (SDRAM_MAX_SIZE >> 20);
+
 	return (size_t)size_mb << 20;
 }
 
