@@ -701,8 +701,6 @@ void osd_setting_default_hwc(u32 index, struct pandata_s *disp_data)
 		disp_data->x_start << 16 | disp_data->x_end);
 	osd_reg_write(VPP_OSD1_BLD_V_SCOPE,
 		disp_data->y_start << 16 | disp_data->y_end);
-	osd_reg_write(VPP_POSTBLEND_H_SIZE,
-		height << 16 | width);
 }
 
 
@@ -718,8 +716,6 @@ void osd_update_blend(struct pandata_s *disp_data)
 		disp_data->x_start << 16 | disp_data->x_end);
 	osd_reg_write(VPP_OSD1_BLD_V_SCOPE,
 		disp_data->y_start << 16 | disp_data->y_end);
-	osd_reg_write(VPP_POSTBLEND_H_SIZE,
-		height << 16 | width);
 	osd_reg_write(VPP_OUT_H_V_SIZE,
 			width << 16 | height);
 
