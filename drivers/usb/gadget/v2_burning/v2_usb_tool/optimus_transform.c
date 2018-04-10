@@ -2,6 +2,7 @@
 #include "usb_pcd.h"
 #include "platform.h"
 #include <partition_table.h>
+#include <asm/cpu_id.h>
 
 #define MYDBG(fmt ...) printf("OPT]"fmt)
 
@@ -382,6 +383,23 @@ static int _cpu_temp_in_valid_range(int argc, char* argv[], char* errInfo)
         return ret;
 }
 
+static int _get_chipid(char* buff)
+{
+    int i = 0;
+    unsigned char chipid[16];
+    int ret = get_chip_id(chipid, 16);
+    if ( ret ) {
+        DWN_ERR("_get_chipid %d", ret);
+        return ret;
+    }
+
+    buff[0] = ':', buff[1]='\0';
+    for (; i < 12; ++i) {
+        sprintf(buff, "%s%02x", buff, chipid[15-i]);
+    }
+    return 0;
+}
+
 int optimus_working (const char *cmd, char* buff)
 {
         static char cmdBuf[CMD_BUFF_SIZE] = {0};
@@ -488,6 +506,10 @@ int optimus_working (const char *cmd, char* buff)
         else if(!strcmp(optCmd, "tempcontrol"))
         {
                 ret = _cpu_temp_in_valid_range(argc, argv, buff + 7);
+        }
+        else if(!strcmp(optCmd, "get_chipid"))
+        {
+                ret = _get_chipid(buff + 7);
         }
         else
         {
