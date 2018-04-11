@@ -290,3 +290,22 @@ void axg_pll_set(void)
 	return;
 }
 #endif
+
+#ifdef CONFIG_AML_SPICC
+/* generic clock control for spicc0.
+ * if deleted, you have to add it into all axg board files as necessary.
+ */
+int spicc0_clk_enable(bool enable)
+{
+	u32 regv;
+
+	regv = readl(P_HHI_GCLK_MPEG0);
+	if (enable)
+		regv |= 1 << 8;
+	else
+		regv &= ~ (1 << 8);
+	writel(regv, P_HHI_GCLK_MPEG0);
+
+	return 0;
+}
+#endif /* CONFIG_AML_SPICC */

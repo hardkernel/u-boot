@@ -210,3 +210,26 @@ int clear_pinmux(unsigned int pin)
 
 	return 0;
 }
+
+#ifdef CONFIG_AML_SPICC
+#include <asm/arch/secure_apb.h>
+/* generic pins control for spicc0.
+ * if deleted, you have to add it into all axg board files as necessary.
+ * 		 SPI mux	other mux
+ * GPIOZ_0(CLK ) reg2[3:0]=1
+ * GPIOZ_1(MOSI) reg2[7:4]=1
+ * GPIOZ_2(MISO) reg2[11:8]=1
+ */
+int spicc0_pinctrl_enable(bool enable)
+{
+	u32 regv;
+
+	regv = readl(P_PERIPHS_PIN_MUX_2);
+	regv &= ~(0xfff << 0);
+	if (enable)
+		regv |= 0x111 << 0;
+	writel(regv, P_PERIPHS_PIN_MUX_2);
+
+	return 0;
+}
+#endif /* CONFIG_AML_SPICC */
