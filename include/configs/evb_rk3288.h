@@ -7,6 +7,11 @@
 #ifndef __CONFIG_H
 #define __CONFIG_H
 
+#ifndef CONFIG_SPL_BUILD
+#undef CONFIG_BOOTCOMMAND
+#define CONFIG_BOOTCOMMAND RKIMG_BOOTCOMMAND
+#endif
+
 #define ROCKCHIP_DEVICE_SETTINGS
 #include <configs/rk3288_common.h>
 
