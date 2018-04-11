@@ -132,6 +132,7 @@ static int dbg_enable = 0;
 #define CUR_ADC_K2		0x00ae
 #define CUR_ADC_K1		0x00af
 #define CUR_ADC_K0		0x00b0
+#define BAT_DISCHRG		0x00ec
 #define BAT_CON			BIT(4)
 #define SOC_REG			0xa5
 
@@ -167,6 +168,7 @@ static int dbg_enable = 0;
 #define CHRG_CT_EN		BIT(1)
 #define MIN_FCC			500
 #define CAP_INVALID		BIT(7)
+#define DIS_ILIM_EN		BIT(3)
 
 /* USB_CTRL_REG */
 #define INPUT_CUR_MSK		0x0f
@@ -1159,6 +1161,8 @@ static int rk817_fg_init(struct rk817_battery_device *battery)
 
 	value = rk817_bat_read(battery, GG_CON);
 	rk817_bat_write(battery, GG_CON, value | VOL_OUPUT_INSTANT_MODE);
+	value =  rk817_bat_read(battery, BAT_DISCHRG);
+	rk817_bat_write(battery, GG_CON, value & (~DIS_ILIM_EN));
 
 	rk817_bat_gas_gaugle_enable(battery);
 	rk817_bat_init_voltage_kb(battery);
