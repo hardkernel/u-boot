@@ -68,6 +68,7 @@ static void inline aml_update_bits(unsigned int  reg, unsigned int mask, unsigne
 	writel(tmp, reg);
 }
 
+#define IRQ_VRTC_NUM		127
 /* GPIO trigger type*/
 #define GPIO_IRQ_LOW_LEVEL		0
 #define GPIO_IRQ_HIGH_LEVEL		1
@@ -87,6 +88,7 @@ enum {
 	IRQ_AO_TIMERA,
 	IRQ_ETH_PHY,
 	IRQ_AO_CECB,
+	IRQ_VRTC = 31,
 	WAKE_UP_MAX = 32,
 };
 
