@@ -168,8 +168,9 @@ struct aml_card_sd_info
 };
 
 extern struct aml_card_sd_info * cpu_sd_emmc_get(unsigned port);
-extern int                cpu_sd_emmc_init(unsigned port);
-extern void               cpu_sd_emmc_pwr_prepare(unsigned port);
+extern int cpu_sd_emmc_init(unsigned port);
+extern void cpu_sd_emmc_pwr_prepare(unsigned port);
 struct mmc;//mmc is struct mmc , to avoid include mmc.h , declare it
-extern void               sd_emmc_register(struct aml_card_sd_info *);
+extern void sd_emmc_register(struct aml_card_sd_info *);
+int sd_emmc_detect(unsigned port);
 #endif

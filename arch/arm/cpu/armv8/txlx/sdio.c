@@ -18,7 +18,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
-
+#include <common.h>
 #include <config.h>
 #include <asm/arch/io.h>
 #include <asm/arch/cpu_sdio.h>
@@ -50,6 +50,38 @@ void  cpu_sd_emmc_pwr_prepare(unsigned port)
     */
 }
 unsigned sd_debug_board_1bit_flag = 0;
+
+__weak int sd_emmc_detect(unsigned port)
+{
+    int ret;
+    switch (port) {
+
+    case SDIO_PORT_A:
+        break;
+
+    case SDIO_PORT_B:
+        /* set CD pin as input */
+        setbits_le32(P_PREG_PAD_GPIO1_EN_N, 0x1 << 30);
+        ret = readl(P_PREG_PAD_GPIO1_I) & (1 << 30) ? 0 : 1;
+        printf("%s\n", ret ? "card in" : "card out");
+		if ((readl(P_PERIPHS_PIN_MUX_6) & (3 << 8))) { //if uart pinmux set, debug board in
+			if (!(readl(P_PREG_PAD_GPIO2_I) & (1 << 24))) {
+                printf("sdio debug board detected, sd card with 1bit mode\n");
+                sd_debug_board_1bit_flag = 1;
+            } else {
+                printf("sdio debug board detected, no sd card in\n");
+                sd_debug_board_1bit_flag = 0;
+                return 1;
+            }
+        }
+        break;
+
+    default:
+        break;
+    }
+    return 0;
+}
+
 int cpu_sd_emmc_init(unsigned port)
 {
 
