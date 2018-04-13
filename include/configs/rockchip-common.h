@@ -86,7 +86,8 @@
 
 #define RKIMG_BOOTCOMMAND \
 	"boot_android ${devtype} ${devnum};" \
-	"bootrkp;"
+	"bootrkp;" \
+	"run distro_bootcmd;"
 
 #endif
 
