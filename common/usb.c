@@ -40,6 +40,10 @@
 #include <asm/4xx_pci.h>
 #endif
 
+#ifdef CONFIG_USB_DEVICE_V2
+extern void set_usb_phy_tuning_1(int port);
+#endif
+
 #define USB_BUFSIZ	512
 
 static struct usb_device usb_dev[USB_MAX_DEVICE];
@@ -1010,6 +1014,12 @@ retry:
 			printf("\n     Couldn't reset port %i\n", dev->portnr);
 			return 1;
 		}
+
+#ifdef CONFIG_USB_DEVICE_V2
+		if (parent->parent == NULL) {
+			set_usb_phy_tuning_1(dev->portnr - 1);
+		}
+#endif
 	}
 #endif
 

@@ -783,6 +783,10 @@ int32_t dwc_otg_pcd_handle_enum_done_intr(void)
 
 	DBG("SPEED ENUM\n");
 
+#ifdef CONFIG_USB_DEVICE_V2
+	set_usb_phy21_tuning_update();
+#endif
+
 	/* Read the Device Status and Endpoint 0 Control registers */
 	/*dsts.d32 = dwc_read_reg32(DWC_REG_DSTS);*/
 	diepctl.d32 = dwc_read_reg32(DWC_REG_IN_EP_REG(0) );

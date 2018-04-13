@@ -258,4 +258,8 @@ void board_usb_init(struct amlogic_usb_config * usb_cfg,int mode);
 int get_usb_count(void);
 void set_usb_pll(uint32_t volatile *phy2_pll_base);
 void board_usb_pll_disable(struct amlogic_usb_config *cfg);
+#ifdef CONFIG_USB_DEVICE_V2
+void set_usb_phy_tuning_1(int port);
+#endif
+
 #endif

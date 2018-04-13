@@ -669,6 +669,9 @@ static void dwc_otg_pcd_handle_enum_done_intr(void)
 #endif
 
 	printf("SPEED ENUM\n");
+#ifdef CONFIG_USB_DEVICE_V2
+	set_usb_phy21_tuning_fb();
+#endif
 
 	gadget_wrapper.pcd.ep0state = EP0_IDLE;
 

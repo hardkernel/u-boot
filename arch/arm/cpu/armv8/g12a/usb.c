@@ -94,3 +94,27 @@ void board_usb_pll_disable(struct amlogic_usb_config *cfg)
             & (~(USB_PHY2_ENABLE)));
     }
 }
+
+#ifdef CONFIG_USB_DEVICE_V2
+#define USB_REG_A 0xFF636000
+#define USB_REG_B 0xFF63A000
+
+void set_usb_phy_tuning_1(int port)
+{
+	unsigned long phy_reg_base;
+
+	if (port > 2)
+		return;
+
+	if (port == 0 )
+		phy_reg_base = USB_REG_A;
+	else
+		phy_reg_base = USB_REG_B;
+
+	(*(volatile uint32_t *)(phy_reg_base + 0x10)) = 0xfff;
+	(*(volatile uint32_t *)(phy_reg_base + 0x50)) = 0xfe18;
+	(*(volatile uint32_t *)(phy_reg_base + 0x38)) = 0xe0004;
+	(*(volatile uint32_t *)(phy_reg_base + 0x34)) = 0xc8000;
+}
+#endif
+

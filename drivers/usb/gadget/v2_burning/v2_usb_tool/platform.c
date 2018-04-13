@@ -178,6 +178,20 @@ static void set_usb_phy21_pll(void)
 		& (~(USB_PHY2_RESET)));
 }
 
+#ifdef CONFIG_USB_DEVICE_V2
+#define USB_REG_B 0xFF63A000
+
+void set_usb_phy21_tuning_update(void)
+{
+	unsigned long phy_reg_base = USB_REG_B;
+
+	(*(volatile uint32_t *)(phy_reg_base + 0x10)) = 0xfff;
+	(*(volatile uint32_t *)(phy_reg_base + 0x50)) = 0xfe18;
+	(*(volatile uint32_t *)(phy_reg_base + 0x38)) = 0xe000c;
+	(*(volatile uint32_t *)(phy_reg_base + 0x34)) = 0xc8000;
+}
+#endif
+
 #if 0
 void usb_phy21_pll_disable(void)
 {

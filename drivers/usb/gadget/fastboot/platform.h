@@ -97,6 +97,10 @@
 
 
 void f_set_usb_phy_config(void);
+#ifdef CONFIG_USB_DEVICE_V2
+void set_usb_phy21_tuning_fb(void);
+#endif
+
 void usb_parameter_init(int timeout);
 int chip_utimer_set(int val);
 int chip_watchdog(void);

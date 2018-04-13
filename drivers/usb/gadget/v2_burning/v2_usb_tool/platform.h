@@ -125,6 +125,9 @@
 
 
 void set_usb_phy_config(int cfg);
+#ifdef CONFIG_USB_DEVICE_V2
+void set_usb_phy21_tuning_update(void);
+#endif
 void close_usb_phy_clock(int cfg);
 void usb_parameter_init(int timeout);
 int chip_utimer_set(int val);
