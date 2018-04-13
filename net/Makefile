@@ -13,13 +13,13 @@ obj-$(CONFIG_CMD_NET)  += bootp.o
 obj-$(CONFIG_CMD_CDP)  += cdp.o
 obj-$(CONFIG_CMD_DNS)  += dns.o
 ifdef CONFIG_DM_ETH
-obj-$(CONFIG_CMD_NET)  += eth-uclass.o
+obj-$(CONFIG_NET)      += eth-uclass.o
 else
-obj-$(CONFIG_CMD_NET)  += eth_legacy.o
+obj-$(CONFIG_NET)      += eth_legacy.o
 endif
-obj-$(CONFIG_CMD_NET)  += eth_common.o
+obj-$(CONFIG_NET)      += eth_common.o
 obj-$(CONFIG_CMD_LINK_LOCAL) += link_local.o
-obj-$(CONFIG_CMD_NET)  += net.o
+obj-$(CONFIG_NET)      += net.o
 obj-$(CONFIG_CMD_NFS)  += nfs.o
 obj-$(CONFIG_CMD_PING) += ping.o
 obj-$(CONFIG_CMD_RARP) += rarp.o
