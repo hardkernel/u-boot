@@ -46,8 +46,6 @@
 #define CONFIG_SYS_SDRAM_BASE		0
 #define SDRAM_MAX_SIZE			0xff000000
 
-#define CONFIG_SPI
-
 #ifndef CONFIG_SPL_BUILD
 
 /* usb mass storage */

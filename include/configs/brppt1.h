@@ -227,7 +227,6 @@ MMCARGS
 
 #if defined(CONFIG_SPI_BOOT)
 /* McSPI IP block */
-#define CONFIG_SPI
 #define CONFIG_SF_DEFAULT_SPEED		24000000
 
 #define CONFIG_SPL_SPI_LOAD
