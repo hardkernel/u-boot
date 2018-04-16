@@ -36,6 +36,7 @@ if SYSRESET
 config SYSRESET_PSCI
 	bool "Enable support for PSCI System Reset"
 	depends on ARM_PSCI_FW
+	default y if ARCH_ROCKCHIP
 	help
 	  Enable PSCI SYSTEM_RESET function call.  To use this, PSCI firmware
 	  must be running on your system.
