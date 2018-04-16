@@ -234,4 +234,30 @@ int  clear_pinmux(unsigned int pin)
 
 }
 
+#ifdef CONFIG_AML_SPICC
+#include <asm/arch/secure_apb.h>
+/* generic pins control for spicc.
+ * if deleted, you have to add it into all gxl board files as necessary.
+ * 		 SPI mux	other mux
+ * GPIOX_8(MOSI) reg5[ 3]	reg5[23][13]	 reg6[ 3]
+ * GPIOX_9(MISO) reg5[ 2]	reg5[22][12]	 reg6[ 2]
+ * GPIOX_11(CLK) reg5[ 0]	reg5[20][10][ 4] reg6[ 0]
+ */
+int spicc_pinctrl_enable(bool enable)
+{
+	u32 regv;
+
+	regv = readl(P_PERIPHS_PIN_MUX_6);
+	regv &= ~(0xd << 0);
+	writel(regv, P_PERIPHS_PIN_MUX_6);
+
+	regv = readl(P_PERIPHS_PIN_MUX_5);
+	regv &= ~((0xd << 20) | (0xd << 10) | (0xd << 0) | (1 << 4));
+	if (enable)
+		regv |= 0xd << 0;
+	writel(regv, P_PERIPHS_PIN_MUX_5);
+
+	return 0;
+}
+#endif /* CONFIG_AML_SPICC */
 
