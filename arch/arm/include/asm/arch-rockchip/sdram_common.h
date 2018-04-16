@@ -14,19 +14,27 @@
  * [27]		rank_ch1
  * [26:25]	col_ch1
  * [24]		bk_ch1
- * [23:22]	cs0_row_ch1
- * [21:20]	cs1_row_ch1
+ * [23:22]	low bits of cs0_row_ch1
+ * [21:20]	low bits of cs1_row_ch1
  * [19:18]	bw_ch1
  * [17:16]	dbw_ch1;
  * [15:13]	ddrtype
  * [12]		channelnum
  * [11]		rank_ch0
- * [10:9]	col_ch0
+ * [10:9]	col_ch0,
  * [8]		bk_ch0
- * [7:6]	cs0_row_ch0
- * [5:4]	cs1_row_ch0
+ * [7:6]	low bits of cs0_row_ch0
+ * [5:4]	low bits of cs1_row_ch0
  * [3:2]	bw_ch0
  * [1:0]	dbw_ch0
+ *
+ * sys_reg1 bitfield struct
+ * [7]		high bit of cs0_row_ch1
+ * [6]		high bit of cs1_row_ch1
+ * [5]		high bit of cs0_row_ch0
+ * [4]		high bit of cs1_row_ch0
+ * [3:2]	cs1_col_ch1
+ * [1:0]	cs1_col_ch0
 */
 #define SYS_REG_DDRTYPE_SHIFT		13
 #define SYS_REG_DDRTYPE_MASK		7
@@ -49,6 +57,15 @@
 #define SYS_REG_BW_MASK			3
 #define SYS_REG_DBW_SHIFT(ch)		((ch) * 16)
 #define SYS_REG_DBW_MASK		3
+
+#define SYS_REG1_VERSION_SHIFT			28
+#define SYS_REG1_VERSION_MASK			0xf
+#define SYS_REG1_EXTEND_CS0_ROW_SHIFT(ch)	(5 + (ch) * 2)
+#define SYS_REG1_EXTEND_CS0_ROW_MASK		1
+#define SYS_REG1_EXTEND_CS1_ROW_SHIFT(ch)	(4 + (ch) * 2)
+#define SYS_REG1_EXTEND_CS1_ROW_MASK		1
+#define SYS_REG1_CS1_COL_SHIFT(ch)		(0 + (ch) * 2)
+#define SYS_REG1_CS1_COL_MASK			3
 
 /* Get sdram size decode from reg */
 size_t rockchip_sdram_size(phys_addr_t reg);
