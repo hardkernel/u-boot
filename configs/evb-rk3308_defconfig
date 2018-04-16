@@ -20,7 +20,6 @@ CONFIG_CMD_GPT=y
 CONFIG_CMD_BOOT_ROCKCHIP=y
 CONFIG_CMD_MMC=y
 # CONFIG_CMD_SETEXPR is not set
-CONFIG_RKPARM_PARTITION=y
 CONFIG_OF_LIVE=y
 CONFIG_OF_SPL_REMOVE_PROPS="pinctrl-0 pinctrl-names clock-names interrupt-parent assigned-clocks assigned-clock-rates assigned-clock-parents"
 CONFIG_REGMAP=y
