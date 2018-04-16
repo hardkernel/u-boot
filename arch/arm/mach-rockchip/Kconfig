@@ -33,6 +33,7 @@ config ROCKCHIP_RK3036
 	select TPL_NEEDS_SEPARATE_TEXT_BASE if TPL
 	select TPL_NEEDS_SEPARATE_STACK if TPL
 	select DEBUG_UART_BOARD_INIT
+	select ARM_SMCCC
 	help
 	  The Rockchip RK3036 is a ARM-based SoC with a dual-core Cortex-A7
 	  including NEON and GPU, Mali-400 graphics, several DDR3 options
@@ -114,6 +115,7 @@ config ROCKCHIP_RK322X
 	select TPL_LIBCOMMON_SUPPORT
 	select TPL_LIBGENERIC_SUPPORT
 	select GICV2
+	select ARM_SMCCC
 	help
 	  The Rockchip RK3229 is a ARM-based SoC with a dual-core Cortex-A7
 	  including NEON and GPU, Mali-400 graphics, several DDR3 options
@@ -127,6 +129,7 @@ config ROCKCHIP_RK3288
 	select SUPPORT_SPL
 	select SPL
 	select GICV2
+	select ARM_SMCCC
 	help
 	  The Rockchip RK3288 is a ARM-based SoC with a quad-core Cortex-A17
 	  including NEON and GPU, 1MB L2 cache, Mali-T7 graphics, two
@@ -138,6 +141,7 @@ config ROCKCHIP_RK3308
 	bool "Support Rockchip RK3308"
 	select ARM64
 	select DEBUG_UART_BOARD_INIT
+	select ARM_SMCCC
 	help
 	  The Rockchip RK3308 is a ARM-based Soc which embeded with quad
 	  Cortex-A35 and highly integrated audio interfaces.
@@ -156,6 +160,7 @@ config ROCKCHIP_RK3328
 	imply TPL_SERIAL_SUPPORT
 	imply SPL_SEPARATE_BSS
 	select DEBUG_UART_BOARD_INIT
+	select ARM_SMCCC
 	help
 	  The Rockchip RK3328 is a ARM-based SoC with a quad-core Cortex-A53.
 	  including NEON and GPU, 1MB L2 cache, Mali-T7 graphics, two
@@ -191,6 +196,7 @@ config ROCKCHIP_RK3368
 	imply TPL_SERIAL_SUPPORT
 	select DEBUG_UART_BOARD_INIT
 	select GICV2
+	select ARM_SMCCC
 	help
 	  The Rockchip RK3368 is a ARM-based SoC with a octa-core (organised
 	  into a big and little cluster with 4 cores each) Cortex-A53 including
@@ -230,6 +236,7 @@ config ROCKCHIP_RK3399
 	select GICV3
 	select BOARD_LATE_INIT
 	select ROCKCHIP_BROM_HELPER
+	select ARM_SMCCC
 	help
 	  The Rockchip RK3399 is a ARM-based SoC with a dual-core Cortex-A72
 	  and quad-core Cortex-A53.
