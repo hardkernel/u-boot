@@ -104,7 +104,7 @@ void get_wakeup_source(void *response, unsigned int suspend_from)
 	gpio->gpio_in_ao = 0;
 	gpio->gpio_out_idx = -1;
 	gpio->gpio_out_ao = -1;
-	gpio->irq = IRQ_GPIO0_NUM;
+	gpio->irq = IRQ_GPIO1_NUM;
 	gpio->trig_type = GPIO_IRQ_FALLING_EDGE;
 	p->gpio_info_count = ++i;
 
@@ -143,14 +143,14 @@ static unsigned int detect_key(unsigned int suspend_from)
 			if ((readl(AO_GPIO_I) & (1<<3)) == 0)
 				exit_reason = POWER_KEY_WAKEUP;
 		}
-
-		if (irq[IRQ_GPIO0] == IRQ_GPIO0_NUM) {
-			irq[IRQ_GPIO0] = 0xFFFFFFFF;
+#if 0
+		if (irq[IRQ_GPIO1] == IRQ_GPIO1_NUM) {
+			irq[IRQ_GPIO1] = 0xFFFFFFFF;
 			if (!(readl(PREG_PAD_GPIO4_I) & (0x01 << 14))
 					&& (readl(PREG_PAD_GPIO4_EN_N) & (0x01 << 14)))
 				exit_reason = ETH_PHY_GPIO;
 		}
-
+#endif
 		if (exit_reason)
 			break;
 		else
