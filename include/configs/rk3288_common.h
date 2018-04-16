@@ -10,6 +10,11 @@
 #include <asm/arch/hardware.h>
 #include "rockchip-common.h"
 
+#ifndef CONFIG_SPL_BUILD
+#undef CONFIG_BOOTCOMMAND
+#define CONFIG_BOOTCOMMAND RKIMG_BOOTCOMMAND
+#endif
+
 #define CONFIG_SKIP_LOWLEVEL_INIT_ONLY
 #define CONFIG_SYS_MALLOC_LEN		(32 << 20)
 #define CONFIG_SYS_CBSIZE		1024
