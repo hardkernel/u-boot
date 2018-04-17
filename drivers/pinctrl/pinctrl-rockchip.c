@@ -50,6 +50,9 @@ struct rockchip_iomux {
 	int				offset;
 };
 
+#define DRV_TYPE_IO_MASK		GENMASK(31, 16)
+#define DRV_TYPE_WRITABLE_32BIT		BIT(31)
+
 /**
  * enum type index corresponding to rockchip_perpin_drv_list arrays index.
  */
@@ -61,6 +64,9 @@ enum rockchip_pin_drv_type {
 	DRV_TYPE_IO_3V3_ONLY,
 	DRV_TYPE_MAX
 };
+
+#define PULL_TYPE_IO_MASK		GENMASK(31, 16)
+#define PULL_TYPE_WRITABLE_32BIT	BIT(31)
 
 /**
  * enum type index corresponding to rockchip_pull_list arrays index.
@@ -199,6 +205,32 @@ struct rockchip_pin_bank {
 			{ .drv_type = drv2, .offset = offset2 },	\
 			{ .drv_type = drv3, .offset = offset3 },	\
 		},							\
+	}
+
+#define PIN_BANK_IOMUX_DRV_PULL_FLAGS(id, pins, label, iom0, iom1,	\
+				      iom2, iom3, drv0, drv1, drv2,	\
+				      drv3, pull0, pull1, pull2,	\
+				      pull3)				\
+	{								\
+		.bank_num	= id,					\
+		.nr_pins	= pins,					\
+		.name		= label,				\
+		.iomux		= {					\
+			{ .type = iom0, .offset = -1 },			\
+			{ .type = iom1, .offset = -1 },			\
+			{ .type = iom2, .offset = -1 },			\
+			{ .type = iom3, .offset = -1 },			\
+		},							\
+		.drv		= {					\
+			{ .drv_type = drv0, .offset = -1 },		\
+			{ .drv_type = drv1, .offset = -1 },		\
+			{ .drv_type = drv2, .offset = -1 },		\
+			{ .drv_type = drv3, .offset = -1 },		\
+		},							\
+		.pull_type[0] = pull0,					\
+		.pull_type[1] = pull1,					\
+		.pull_type[2] = pull2,					\
+		.pull_type[3] = pull3,					\
 	}
 
 #define PIN_BANK_IOMUX_FLAGS_DRV_FLAGS_OFFSET_PULL_FLAGS(id, pins,	\
@@ -1665,7 +1697,7 @@ static int rockchip_set_drive_perpin(struct rockchip_pin_bank *bank,
 	int reg, ret, i;
 	u32 data, rmask_bits, temp;
 	u8 bit;
-	int drv_type = bank->drv[pin_num / 8].drv_type;
+	int drv_type = bank->drv[pin_num / 8].drv_type & DRV_TYPE_IO_MASK;
 
 	debug("setting drive of GPIO%d-%d to %d\n", bank->bank_num,
 	      pin_num, strength);
@@ -1737,10 +1769,15 @@ static int rockchip_set_drive_perpin(struct rockchip_pin_bank *bank,
 		return -EINVAL;
 	}
 
-	/* enable the write to the equivalent lower bits */
-	data = ((1 << rmask_bits) - 1) << (bit + 16);
-	data |= (ret << bit);
+	if (bank->drv[pin_num / 8].drv_type & DRV_TYPE_WRITABLE_32BIT) {
+		regmap_read(regmap, reg, &data);
+		data &= ~(((1 << rmask_bits) - 1) << bit);
+	} else {
+		/* enable the write to the equivalent lower bits */
+		data = ((1 << rmask_bits) - 1) << (bit + 16);
+	}
 
+	data |= (ret << bit);
 	ret = regmap_write(regmap, reg, data);
 	return ret;
 }
@@ -1794,7 +1831,7 @@ static int rockchip_set_pull(struct rockchip_pin_bank *bank,
 	case RK3308:
 	case RK3368:
 	case RK3399:
-		pull_type = bank->pull_type[pin_num / 8];
+		pull_type = bank->pull_type[pin_num / 8] & PULL_TYPE_IO_MASK;
 		ret = -EINVAL;
 		for (i = 0; i < ARRAY_SIZE(rockchip_pull_list[pull_type]);
 			i++) {
@@ -1809,10 +1846,15 @@ static int rockchip_set_pull(struct rockchip_pin_bank *bank,
 			return ret;
 		}
 
-		/* enable the write to the equivalent lower bits */
-		data = ((1 << RK3188_PULL_BITS_PER_PIN) - 1) << (bit + 16);
-		data |= (ret << bit);
+		if (bank->pull_type[pin_num / 8] & PULL_TYPE_WRITABLE_32BIT) {
+			regmap_read(regmap, reg, &data);
+			data &= ~(((1 << RK3188_PULL_BITS_PER_PIN) - 1) << bit);
+		} else {
+			/* enable the write to the equivalent lower bits */
+			data = ((1 << RK3188_PULL_BITS_PER_PIN) - 1) << (bit + 16);
+		}
 
+		data |= (ret << bit);
 		ret = regmap_write(regmap, reg, data);
 		break;
 	default:
@@ -2414,10 +2456,19 @@ static struct rockchip_pin_ctrl rk3228_pin_ctrl = {
 };
 
 static struct rockchip_pin_bank rk3288_pin_banks[] = {
-	PIN_BANK_IOMUX_FLAGS(0, 24, "gpio0", IOMUX_SOURCE_PMU | IOMUX_WRITABLE_32BIT,
-					     IOMUX_SOURCE_PMU | IOMUX_WRITABLE_32BIT,
-					     IOMUX_SOURCE_PMU | IOMUX_WRITABLE_32BIT,
-					     IOMUX_UNROUTED
+	PIN_BANK_IOMUX_DRV_PULL_FLAGS(0, 24, "gpio0",
+				      IOMUX_SOURCE_PMU | IOMUX_WRITABLE_32BIT,
+				      IOMUX_SOURCE_PMU | IOMUX_WRITABLE_32BIT,
+				      IOMUX_SOURCE_PMU | IOMUX_WRITABLE_32BIT,
+				      IOMUX_UNROUTED,
+				      DRV_TYPE_WRITABLE_32BIT,
+				      DRV_TYPE_WRITABLE_32BIT,
+				      DRV_TYPE_WRITABLE_32BIT,
+				      0,
+				      PULL_TYPE_WRITABLE_32BIT,
+				      PULL_TYPE_WRITABLE_32BIT,
+				      PULL_TYPE_WRITABLE_32BIT,
+				      0
 			    ),
 	PIN_BANK_IOMUX_FLAGS(1, 32, "gpio1", IOMUX_UNROUTED,
 					     IOMUX_UNROUTED,
