@@ -217,4 +217,29 @@ int  clear_pinmux(unsigned int pin)
 
 }
 
+#ifdef CONFIG_AML_SPICC
+#include <asm/arch/secure_apb.h>
+/* generic pins control for txlx spicc.
+ * if deleted, you have to add it into all txl board files as necessary.
+ * 		 SPI mux	other mux
+ * GPIOZ_0(MOSI) reg4[31]	reg4[25]     reg3[21][16]
+ * GPIOZ_1(MISO) reg4[30]	reg4[24]     reg3[21][15]
+ * GPIOZ_2(CLK ) reg4[29]	reg4[23][21] reg3[21][14]
+ */
+int spicc_pinctrl_enable(void *pinctrl, bool enable)
+{
+	u32 regv;
 
+	regv = readl(P_PERIPHS_PIN_MUX_3);
+	regv &= ~((1 << 21) | (0x7 << 14));
+	writel(regv, P_PERIPHS_PIN_MUX_3);
+
+	regv = readl(P_PERIPHS_PIN_MUX_4);
+	regv &= ~((0x7 << 29) | (0x7 << 23) | (1 << 21));
+	if (enable)
+		regv |= 0x7 << 29;
+	writel(regv, P_PERIPHS_PIN_MUX_4);
+
+	return 0;
+}
+#endif /* CONFIG_AML_SPICC */

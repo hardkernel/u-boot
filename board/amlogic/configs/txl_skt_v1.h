@@ -315,7 +315,7 @@
 
 /* meson SPI */
 #define CONFIG_AML_SPIFC
-//#define CONFIG_AML_SPICC
+#define CONFIG_AML_SPICC
 #if defined CONFIG_AML_SPIFC || defined CONFIG_AML_SPICC
 	#define CONFIG_OF_SPI
 	#define CONFIG_DM_SPI

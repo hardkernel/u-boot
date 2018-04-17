@@ -263,3 +263,21 @@ int clk_msr(int index)
 
 	return 0;
 }
+
+#ifdef CONFIG_AML_SPICC
+/* generic clock control for spicc.
+ * if deleted, you have to add it into all txl board files as necessary.
+ */
+int spicc_clk_enable(bool enable)
+{
+	u32 regv;
+
+	regv = readl(P_HHI_GCLK_MPEG0);
+	if (enable)
+		regv |= 1 << 8;
+	else
+		regv &= ~(1 << 8);
+	writel(regv, P_HHI_GCLK_MPEG0);
+	return 0;
+}
+#endif /* CONFIG_AML_SPICC */
