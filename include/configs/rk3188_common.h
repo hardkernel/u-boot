@@ -17,6 +17,8 @@
 #define CONFIG_SYS_CBSIZE		1024
 
 #define CONFIG_SYS_TIMER_COUNTS_DOWN
+/* RK3188 do not have a ARMv7 ARCH timer */
+#undef CONFIG_SYS_ARCH_TIMER
 
 #ifdef CONFIG_SPL_ROCKCHIP_BACK_TO_BROM
 /* Bootrom will load u-boot binary to 0x60000000 once return from SPL */
