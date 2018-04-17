@@ -199,3 +199,31 @@ int clear_pinmux(unsigned int pin)
 
 	return 0;
 }
+
+#ifdef CONFIG_AML_SPICC
+#include <asm/arch/secure_apb.h>
+/* generic pins control for spicc.
+ * if deleted, you have to add it into all txhd board files as necessary.
+ * GPIODV_8: MOSI:reg8[3:0]=3
+ * GPIODV_7: MISO:reg7[31:28]=3
+ * GPIODV_9: CLK :reg8[7:4]=3
+ */
+int spicc_pinctrl_enable(bool enable)
+{
+	unsigned int val;
+
+	val = readl(P_PERIPHS_PIN_MUX_8);
+	val &= ~(0xff << 0);
+	if (enable)
+		val |= 0x33 << 0;
+	writel(val, P_PERIPHS_PIN_MUX_8);
+
+	val = readl(P_PERIPHS_PIN_MUX_7);
+	val &= ~(0xf << 28);
+	if (enable)
+		val |= 0x3 << 28;
+	writel(val, P_PERIPHS_PIN_MUX_7);
+
+	return 0;
+}
+#endif /* CONFIG_AML_SPICC */

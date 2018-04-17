@@ -51,7 +51,12 @@
 #include <asm-generic/gpio.h>
 #include <asm/arch/board_id.h>
 #include <dm.h>
+#ifdef CONFIG_AML_SPIFC
 #include <amlogic/spifc.h>
+#endif
+#ifdef CONFIG_AML_SPICC
+#include <amlogic/spicc.h>
+#endif
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -399,6 +404,29 @@ U_BOOT_DEVICE(spifc) = {
 	.platdata = &spifc_platdata,
 };
 #endif /* CONFIG_AML_SPIFC */
+
+#ifdef CONFIG_AML_SPICC
+/* generic config in arch gpio/clock.c */
+extern int spicc_clk_set_rate(int rate);
+extern int spicc_clk_enable(bool enable);
+extern int spicc_pinctrl_enable(bool enable);
+
+static const struct spicc_platdata spicc_platdata = {
+	.compatible = "amlogic,meson-txhd-spicc",
+	.reg = (void __iomem *)0xffd13000,
+	.clk_rate = 666666666,
+	.clk_set_rate = spicc_clk_set_rate,
+	.clk_enable = spicc_clk_enable,
+	.pinctrl_enable = spicc_pinctrl_enable,
+	/* case one slave without cs: {"no_cs", 0} */
+	.cs_gpio_names = {"GPIODV_6", 0},
+};
+
+U_BOOT_DEVICE(spicc) = {
+	.name = "spicc",
+	.platdata = &spicc_platdata,
+};
+#endif /* CONFIG_AML_SPICC */
 
 extern void aml_pwm_cal_init(int mode);
 /*

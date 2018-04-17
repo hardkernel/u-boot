@@ -278,3 +278,52 @@ int clk_msr(int index)
 
 	return 0;
 }
+
+#ifdef CONFIG_AML_SPICC
+/* generic clock control for spicc.
+ * if deleted, you have to add it into all txhd board files as necessary.
+ */
+static int spicc_clk_rate[] = {
+	24000000,	/* XTAL */
+	166666666,	/* CLK81 */
+	500000000,	/* FCLK_DIV4 */
+	666666666,	/* FCLK_DIV3 */
+	1000000000,	/* FCLK_DIV2 */
+	400000000,	/* FCLK_DIV5 */
+	285700000,	/* FCLK_DIV7 */
+};
+
+int spicc_clk_set_rate(int rate)
+{
+	u32 regv;
+	u8 mux, div = 0;
+
+	for (mux = 0; mux < ARRAY_SIZE(spicc_clk_rate); mux++)
+		if (rate == spicc_clk_rate[mux])
+			break;
+	if (mux == ARRAY_SIZE(spicc_clk_rate))
+		return -EINVAL;
+
+	regv = readl(P_HHI_SPICC_CLK_CNTL);
+	/* mux[9:7], gate[6], div[5:0] */
+	regv &= ~((0x7 << 7) | (1 << 6) | (0x3f << 0));
+	regv |= (mux << 7) | (1 << 6) | (div << 0);
+	writel(regv, P_HHI_SPICC_CLK_CNTL);
+
+	return 0;
+}
+
+int spicc_clk_enable(bool enable)
+{
+	u32 regv;
+
+	regv = readl(P_HHI_GCLK_MPEG0);
+	if (enable)
+		regv |= 1 << 8;
+	else
+		regv &= ~(1 << 8);
+	writel(regv, P_HHI_GCLK_MPEG0);
+
+	return 0;
+}
+#endif /* CONFIG_AML_SPICC */
