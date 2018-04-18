@@ -321,6 +321,11 @@ static int remote_detect_key(void)
 			return 0;
 		}
 		power_key = readl(AO_MF_IR_DEC_FRAME);
+
+		uart_puts("customer pwrkeys for IR is 0x");
+		uart_put_hex(power_key, 32);
+		uart_puts("\n");
+
 		for (j = 0; j < keysdat->size; j++) {
 			if ((power_key & IR_POWER_KEY_MASK) == keysdat->pwrkeys[j])
 				return 1;
@@ -336,6 +341,11 @@ static int remote_detect_key(void)
 			return 0;
 		}
 		power_key = readl(AO_IR_DEC_FRAME);
+
+		uart_puts("customer pwrkeys for IR is 0x");
+		uart_put_hex(power_key, 32);
+		uart_puts("\n");
+
 		for (j = 0; j < keysdat->size; j++) {
 			if ((power_key & IR_POWER_KEY_MASK) == keysdat->pwrkeys[j])
 				return 1;
