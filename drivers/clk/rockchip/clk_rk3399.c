@@ -50,13 +50,11 @@ struct pll_div {
 	.fbdiv = (u32)((u64)hz * _refdiv * _postdiv1 * _postdiv2 / OSC_HZ),\
 	.postdiv1 = _postdiv1, .postdiv2 = _postdiv2, .freq = hz};
 
-#if defined(CONFIG_SPL_BUILD)
 static const struct pll_div gpll_init_cfg = PLL_DIVISORS(GPLL_HZ, 2, 2, 1);
 static const struct pll_div cpll_init_cfg = PLL_DIVISORS(CPLL_HZ, 1, 2, 2);
-#else
+#if !defined(CONFIG_SPL_BUILD)
 static const struct pll_div ppll_init_cfg = PLL_DIVISORS(PPLL_HZ, 2, 2, 1);
 #endif
-
 static const struct pll_div apll_1600_cfg = PLL_DIVISORS(1600*MHz, 3, 1, 1);
 static const struct pll_div apll_600_cfg = PLL_DIVISORS(600*MHz, 1, 2, 1);
 
@@ -1033,7 +1031,6 @@ static struct clk_ops rk3399_clk_ops = {
 	.enable = rk3399_clk_enable,
 };
 
-#ifdef CONFIG_SPL_BUILD
 static void rkclk_init(struct rk3399_cru *cru)
 {
 	u32 aclk_div;
@@ -1111,11 +1108,9 @@ static void rkclk_init(struct rk3399_cru *cru)
 		     hclk_div << HCLK_PERILP1_DIV_CON_SHIFT |
 		     HCLK_PERILP1_PLL_SEL_GPLL << HCLK_PERILP1_PLL_SEL_SHIFT);
 }
-#endif
 
 static int rk3399_clk_probe(struct udevice *dev)
 {
-#ifdef CONFIG_SPL_BUILD
 	struct rk3399_clk_priv *priv = dev_get_priv(dev);
 
 #if CONFIG_IS_ENABLED(OF_PLATDATA)
@@ -1124,7 +1119,6 @@ static int rk3399_clk_probe(struct udevice *dev)
 	priv->cru = map_sysmem(plat->dtd.reg[0], plat->dtd.reg[1]);
 #endif
 	rkclk_init(priv->cru);
-#endif
 	return 0;
 }
 
