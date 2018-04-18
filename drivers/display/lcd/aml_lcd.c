@@ -781,6 +781,9 @@ static void lcd_mipi_reg_print(void)
 	reg = MIPI_DSI_DWC_INT_ST0_OS;
 	printf("MIPI_DSI_DWC_INT_ST0_OS      [0x%04x] = 0x%08x\n",
 		reg, dsi_host_read(reg));
+	reg = MIPI_DSI_DWC_INT_ST1_OS;
+	printf("MIPI_DSI_DWC_INT_ST1_OS      [0x%04x] = 0x%08x\n",
+		reg, dsi_host_read(reg));
 	reg = MIPI_DSI_TOP_STAT;
 	printf("MIPI_DSI_TOP_STAT            [0x%04x] = 0x%08x\n",
 		reg, dsi_host_read(reg));

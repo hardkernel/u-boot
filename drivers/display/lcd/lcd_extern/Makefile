@@ -1,4 +1,4 @@
-obj-$(CONFIG_AML_LCD_EXTERN) += lcd_extern.o ext_default.o
+obj-$(CONFIG_AML_LCD_EXTERN) += lcd_extern.o ext_default.o mipi_default.o
 obj-$(CONFIG_AML_LCD_EXTERN_I2C_T5800Q)    += i2c_T5800Q.o
 obj-$(CONFIG_AML_LCD_EXTERN_I2C_ANX6345)   += i2c_anx6345.o
 obj-$(CONFIG_AML_LCD_EXTERN_I2C_TC101)     += i2c_tc101.o

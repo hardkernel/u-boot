@@ -414,9 +414,6 @@
 // #define CONFIG_AML_LCD    1
 // #define CONFIG_AML_LCD_TABLET 1
 // #define CONFIG_AML_LCD_EXTERN 1
-// #define CONFIG_AML_LCD_EXTERN_MIPI_TV070WSM 1
-// #define CONFIG_AML_LCD_EXTERN_MIPI_P070ACB 1
-// #define CONFIG_AML_LCD_EXTERN_MIPI_TL050FHV02CT 1
 
 /* USB
  * Enable CONFIG_MUSB_HCD for Host functionalities MSC, keyboard

@@ -99,6 +99,7 @@ extern int aml_lcd_extern_mipi_p070acb_probe(struct aml_lcd_extern_driver_s *ext
 extern int aml_lcd_extern_mipi_tl050fhv02ct_get_default_index(void);
 extern int aml_lcd_extern_mipi_tl050fhv02ct_probe(struct aml_lcd_extern_driver_s *ext_drv);
 #endif
+extern int aml_lcd_extern_mipi_default_probe(struct aml_lcd_extern_driver_s *ext_drv);
 
 #endif
 

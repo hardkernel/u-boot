@@ -107,9 +107,9 @@ static void mipi_dsi_init_table_print(struct dsi_config_s *dconf, int on_off)
 	}
 	i = 0;
 	n = 0;
-	while (i < n_max) {
+	while ((i + 1) < n_max) {
 		if (dsi_table[i] == 0xff) { /* ctrl flag */
-			n = 2;
+			n = 0;
 			if (dsi_table[i+1] == 0xff) {
 				printf("  0x%02x,0x%02x,\n",
 					dsi_table[i], dsi_table[i+1]);
@@ -119,44 +119,23 @@ static void mipi_dsi_init_table_print(struct dsi_config_s *dconf, int on_off)
 					dsi_table[i], dsi_table[i+1]);
 			}
 		} else if (dsi_table[i] == 0xf0) { /* gpio */
-			n = (DSI_CMD_SIZE_INDEX + 1) +
-				dsi_table[i+DSI_CMD_SIZE_INDEX];
-			printf("  ");
-			for (j = 0; j < n; j++) {
-				if (j == 0)
-					printf("0x%02x,", dsi_table[i]);
-				else
-					printf("%d,", dsi_table[i+j]);
-			}
-			printf("\n");
-		} else if (dsi_table[i] == 0xfc) { /* check state */
-			n = (DSI_CMD_SIZE_INDEX + 1) +
-				dsi_table[i+DSI_CMD_SIZE_INDEX];
-			printf("  ");
-			for (j = 0; j < n; j++) {
-				if (j == DSI_CMD_SIZE_INDEX)
-					printf("%d,", dsi_table[i+j]);
-				else
-					printf("0x%02x,", dsi_table[i+j]);
-			}
+			n = dsi_table[i+DSI_CMD_SIZE_INDEX];
+			printf("  0x%02x,%d,", dsi_table[i], n);
+			for (j = 0; j < n; j++)
+				printf("%d,", dsi_table[i+2+j]);
 			printf("\n");
 		} else if ((dsi_table[i] & 0xf) == 0x0) {
 			printf("dsi_init_%s wrong data_type: 0x%02x\n",
 				on_off ? "on" : "off", dsi_table[i]);
 			break;
 		} else {
-			n = (DSI_CMD_SIZE_INDEX + 1) +
-				dsi_table[i+DSI_CMD_SIZE_INDEX];
-			printf("  ");
-			for (j = 0; j < n; j++) {
-				if (j == DSI_CMD_SIZE_INDEX)
-					printf("%d,", dsi_table[i+j]);
-				else
-					printf("0x%02x,", dsi_table[i+j]);
-			}
+			n = dsi_table[i+DSI_CMD_SIZE_INDEX];
+			printf("  0x%02x,%d,", dsi_table[i], n);
+			for (j = 0; j < n; j++)
+				printf("0x%02x,", dsi_table[i+2+j]);
 			printf("\n");
 		}
-		i += n;
+		i += (n + 2);
 	}
 }
 
@@ -307,16 +286,16 @@ int lcd_mipi_dsi_init_table_detect(char *dtaddr, int nodeoffset,
 		return -1;
 	}
 
-	while (i < max_len) {
+	while ((i + 1) < max_len) {
 		init_table[i] = (unsigned char)(be32_to_cpup((((u32*)propdata)+i)));
 		type = init_table[i];
 		if (type == 0xff) {
 			init_table[i+1] =
 				(unsigned char)(be32_to_cpup((((u32*)propdata)+i+1)));
 			cmd_size = init_table[i+1];
-			i += 2;
 			if (cmd_size == 0xff)
 				break;
+			i += 2;
 		} else if (type == 0xf0) { /* gpio */
 			init_table[i+DSI_CMD_SIZE_INDEX] =
 				(unsigned char)(be32_to_cpup((((u32*)propdata)+i+1)));
@@ -324,6 +303,12 @@ int lcd_mipi_dsi_init_table_detect(char *dtaddr, int nodeoffset,
 			if (cmd_size < 3) {
 				LCDERR("get %s wrong cmd_size %d for gpio\n",
 					propname, cmd_size);
+				break;
+			}
+			if ((i + 2 + cmd_size) >= max_len) {
+				LCDERR("get %s cmd_size out of max\n", propname);
+				init_table[i] = 0xff;
+				init_table[i+1] = 0xff;
 				break;
 			}
 			for (j = 0; j < cmd_size; j++) {
@@ -335,6 +320,12 @@ int lcd_mipi_dsi_init_table_detect(char *dtaddr, int nodeoffset,
 			init_table[i+DSI_CMD_SIZE_INDEX] =
 				(unsigned char)(be32_to_cpup((((u32*)propdata)+i+1)));
 			cmd_size = init_table[i+DSI_CMD_SIZE_INDEX];
+			if ((i + 2 + cmd_size) >= max_len) {
+				LCDERR("get %s cmd_size out of max\n", propname);
+				init_table[i] = 0xff;
+				init_table[i+1] = 0xff;
+				break;
+			}
 			for (j = 0; j < cmd_size; j++) {
 				init_table[i+2+j] =
 					(unsigned char)(be32_to_cpup((((u32*)propdata)+i+2+j)));
@@ -360,6 +351,16 @@ int lcd_mipi_dsi_init_table_detect(char *dtaddr, int nodeoffset,
 			init_table[i+DSI_CMD_SIZE_INDEX] =
 				(unsigned char)(be32_to_cpup((((u32*)propdata)+i+1)));
 			cmd_size = init_table[i+DSI_CMD_SIZE_INDEX];
+			if (cmd_size == 0) {
+				i += 2;
+				continue;
+			}
+			if ((i + 2 + cmd_size) >= max_len) {
+				LCDERR("get %s cmd_size out of max\n", propname);
+				init_table[i] = 0xff;
+				init_table[i+1] = 0xff;
+				break;
+			}
 			for (j = 0; j < cmd_size; j++) {
 				init_table[i+2+j] =
 					(unsigned char)(be32_to_cpup((((u32*)propdata)+i+2+j)));
@@ -393,13 +394,13 @@ int lcd_mipi_dsi_init_table_check_bsp(struct dsi_config_s *dconf, int flag)
 	}
 
 	i = 0;
-	while (i < max_len) {
+	while ((i + 1) < max_len) {
 		type = init_table[i];
 		cmd_size = init_table[i+DSI_CMD_SIZE_INDEX];
 		if (type == 0xff) {
-			i += 2;
 			if (cmd_size == 0xff)
 				break;
+			i += 2;
 		} else if (type == 0xf0) { /* gpio */
 			if (cmd_size < 3) {
 				LCDERR("get %s wrong cmd_size %d for gpio\n",
@@ -408,6 +409,11 @@ int lcd_mipi_dsi_init_table_check_bsp(struct dsi_config_s *dconf, int flag)
 			}
 			i += (cmd_size + 2);
 		} else if (type == 0xfc) { /* check state */
+			if ((i + 2 + cmd_size) >= max_len) {
+				LCDERR("get %s wrong cmd_size %d for check state\n",
+					propname, cmd_size);
+				break;
+			}
 			dconf->check_reg = init_table[i+2];
 			dconf->check_cnt = init_table[i+3];
 			if (dconf->check_cnt > 0)

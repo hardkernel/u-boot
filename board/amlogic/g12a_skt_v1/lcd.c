@@ -17,6 +17,10 @@
 #include <amlogic/aml_lcd.h>
 #include <asm/arch/gpio.h>
 
+#ifdef CONFIG_AML_LCD_EXTERN
+#include "lcd_extern.h"
+#endif
+
 static char lcd_cpu_gpio[LCD_CPU_GPIO_NUM_MAX][LCD_CPU_GPIO_NAME_MAX] = {
 	"GPIOZ_9", /* panel rst */
 	"GPIOZ_8", /* panel power */
@@ -39,10 +43,10 @@ static struct lcd_power_step_s lcd_power_off_step[] = {
 
 static struct lcd_power_step_s lcd_power_on_step_TV070WSM[] = {
 	{LCD_POWER_TYPE_CPU,   1,0,200,}, /* lcd power */
-#if 1
-	{LCD_POWER_TYPE_CPU,   0,1,30,}, /* lcd_reset */
-	{LCD_POWER_TYPE_CPU,   0,0,10,}, /* lcd_reset */
-	{LCD_POWER_TYPE_CPU,   0,1,30,}, /* lcd_reset */
+#if 0
+	{LCD_POWER_TYPE_CPU,   0,1,10,}, /* lcd_reset */
+	{LCD_POWER_TYPE_CPU,   0,0,20,}, /* lcd_reset */
+	{LCD_POWER_TYPE_CPU,   0,1,20,}, /* lcd_reset */
 #endif
 	{LCD_POWER_TYPE_SIGNAL,0,0,0,},  /* signal */
 	{LCD_POWER_TYPE_MAX,   0,0,0,},  /* ending flag */
@@ -56,15 +60,41 @@ static struct lcd_power_step_s lcd_power_off_step_TV070WSM[] = {
 
 static struct lcd_power_step_s lcd_power_on_step_P070ACB[] = {
 	{LCD_POWER_TYPE_CPU,   1,0,200,}, /* lcd power */
-	{LCD_POWER_TYPE_CPU,   0,1,30,}, /* lcd_reset */
-	{LCD_POWER_TYPE_CPU,   0,0,10,}, /* lcd_reset */
-	{LCD_POWER_TYPE_CPU,   0,1,30,}, /* lcd_reset */
 	{LCD_POWER_TYPE_SIGNAL,0,0,0,},  /* signal */
 	{LCD_POWER_TYPE_MAX,   0,0,0,},  /* ending flag */
 };
 static struct lcd_power_step_s lcd_power_off_step_P070ACB[] = {
 	{LCD_POWER_TYPE_SIGNAL,0,0,0,},  /* signal */
 	{LCD_POWER_TYPE_CPU,   0,0,20,}, /* lcd_reset */
+	{LCD_POWER_TYPE_CPU,   1,1,100,}, /* power off */
+	{LCD_POWER_TYPE_MAX,   0,0,0,},   /* ending flag */
+};
+
+static struct lcd_power_step_s lcd_power_on_step_TL050FHV02CT[] = {
+	{LCD_POWER_TYPE_CPU,   1,0,200,}, /* lcd power */
+	{LCD_POWER_TYPE_CPU,   0,1,20,}, /* lcd reset: 1 */
+	{LCD_POWER_TYPE_CPU,   0,0,10,}, /* lcd reset: 0 */
+	{LCD_POWER_TYPE_CPU,   0,1,20,}, /* lcd reset: 1 */
+	{LCD_POWER_TYPE_SIGNAL,0,0,0,},  /* signal */
+	{LCD_POWER_TYPE_MAX,   0,0,0,},  /* ending flag */
+};
+static struct lcd_power_step_s lcd_power_off_step_TL050FHV02CT[] = {
+	{LCD_POWER_TYPE_SIGNAL,0,0,0,},  /* signal */
+	{LCD_POWER_TYPE_CPU,   0,0,20,}, /* lcd_reset */
+	{LCD_POWER_TYPE_CPU,   1,1,100,}, /* power off */
+	{LCD_POWER_TYPE_MAX,   0,0,0,},   /* ending flag */
+};
+
+static struct lcd_power_step_s lcd_power_on_step_TL070WSH27[] = {
+	{LCD_POWER_TYPE_CPU,   1,0,100,}, /* lcd power */
+	{LCD_POWER_TYPE_CPU,   0,0,10,}, /* lcd reset: 0 */
+	{LCD_POWER_TYPE_CPU,   0,1,20,}, /* lcd reset: 1 */
+	{LCD_POWER_TYPE_SIGNAL,0,0,0,},  /* signal */
+	{LCD_POWER_TYPE_MAX,   0,0,0,},  /* ending flag */
+};
+static struct lcd_power_step_s lcd_power_off_step_TL070WSH27[] = {
+	{LCD_POWER_TYPE_SIGNAL,0,0,10,},  /* signal */
+	{LCD_POWER_TYPE_CPU,   0,0,10,}, /* lcd_reset */
 	{LCD_POWER_TYPE_CPU,   1,1,100,}, /* power off */
 	{LCD_POWER_TYPE_MAX,   0,0,0,},   /* ending flag */
 };
@@ -130,6 +160,42 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	Rsv_val,Rsv_val,Rsv_val,Rsv_val,
 	10,10,Rsv_val},
 
+	{/* TL050FHV02CT*/
+	"lcd_3",LCD_MIPI,8,
+	/* basic timing */
+	1080,1920,1125,2100,5,30,0,44,108,0,
+	/* clk_attr */
+	0,0,1,118125000,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	/* mipi_attr */
+	4,960,0,1,0,2,1,0,Rsv_val,3,
+	/* power step */
+	lcd_power_on_step_TL050FHV02CT, lcd_power_off_step_TL050FHV02CT,
+	/* backlight */
+	100,255,10,128,128,
+	BL_CTRL_PWM,0,1,0,200,200,
+	BL_PWM_NEGATIVE,BL_PWM_F,180,100,25,1,1,
+	Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	10,10,Rsv_val},
+
+	{/* TL070WSH27*/
+	"lcd_4",LCD_MIPI,8,
+	/* basic timing */
+	1024,600,1250,630,80,100,0,5,20,0,
+	/* clk_attr */
+	0,0,1,47250000,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	/* mipi_attr */
+	4,300,0,1,0,2,1,0,Rsv_val,Rsv_val,
+	/* power step */
+	lcd_power_on_step_TL070WSH27, lcd_power_off_step_TL070WSH27,
+	/* backlight */
+	100,255,10,128,128,
+	BL_CTRL_PWM,0,1,0,200,200,
+	BL_PWM_NEGATIVE,BL_PWM_F,180,100,25,1,1,
+	Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	10,10,Rsv_val},
+
 	{.panel_type = "invalid"},
 };
 
@@ -155,14 +221,14 @@ static struct lcd_pinmux_ctrl_s bl_pinmux_ctrl[BL_PINMUX_MAX] = {
 	},
 };
 
-static unsigned char mipi_init_on_table[] = {//table size < 100
+static unsigned char mipi_init_on_table[DSI_INIT_ON_MAX] = {//table size < 100
 	0x05, 1, 0x11,
 	0xff, 20,
 	0x05, 1, 0x29,
 	0xff, 20,
 	0xff, 0xff,   //ending flag
 };
-static unsigned char mipi_init_off_table[] = {//table size < 50
+static unsigned char mipi_init_off_table[DSI_INIT_OFF_MAX] = {//table size < 50
 	0x05, 1, 0x28,
 	0xff, 10,
 	0x05, 1, 0x10,
@@ -170,18 +236,51 @@ static unsigned char mipi_init_off_table[] = {//table size < 50
 	0xff,0xff,   //ending flag
 };
 
-static unsigned char mipi_init_on_table_TV070WSM[] = {//table size < 100
+static unsigned char mipi_init_on_table_TV070WSM[DSI_INIT_ON_MAX] = {//table size < 100
+	0xff, 10,
+	0xf0, 3, 0, 1, 30, /* reset high, delay 30ms */
+	0xf0, 3, 0, 0, 10, /* reset low, delay 10ms */
+	0xf0, 3, 0, 1, 30, /* reset high, delay 30ms */
+	0xfc, 2, 0x04, 3,  /* check_reg, check_cnt */
+	0xff, 100,   /* delay */
 	0xff, 0xff,   //ending flag
 };
-static unsigned char mipi_init_off_table_TV070WSM[] = {//table size < 50
+static unsigned char mipi_init_off_table_TV070WSM[DSI_INIT_OFF_MAX] = {//table size < 50
 	0xff,0xff,   //ending flag
 };
 
-static unsigned char mipi_init_on_table_P070ACB[] = {//table size < 100
+static unsigned char mipi_init_on_table_P070ACB[DSI_INIT_ON_MAX] = {//table size < 100
+	0xff, 10,
+	0xf0, 3, 0, 1, 30, /* reset high, delay 30ms */
+	0xf0, 3, 0, 0, 10, /* reset low, delay 10ms */
+	0xf0, 3, 0, 1, 30, /* reset high, delay 30ms */
+	0xfc, 2, 0x04, 3,  /* check_reg, check_cnt */
 	0xff, 0xff,   //ending flag
 };
-static unsigned char mipi_init_off_table_P070ACB[] = {//table size < 50
+static unsigned char mipi_init_off_table_P070ACB[DSI_INIT_OFF_MAX] = {//table size < 50
 	0xff,0xff,   //ending flag
+};
+
+static unsigned char mipi_init_on_table_TL050FHV02CT[DSI_INIT_ON_MAX] = {//table size < 100
+	0xff,0xff,   //ending flag
+};
+static unsigned char mipi_init_off_table_TL050FHV02CT[DSI_INIT_OFF_MAX] = {//table size < 50
+	0xff,0xff,   //ending flag
+};
+
+static unsigned char mipi_init_on_table_TL070WSH27[DSI_INIT_ON_MAX] = {//table size < 100
+	0x05, 1, 0x11,
+	0xff, 100,
+	0x05, 1, 0x29,
+	0xff, 20,
+	0xff, 0xff,   //ending flag
+};
+static unsigned char mipi_init_off_table_TL070WSH27[DSI_INIT_OFF_MAX] = {//table size < 50
+	0x05, 1, 0x28,
+	0xff, 100,
+	0x05, 1, 0x10,
+	0xff, 10,
+	0xff, 0xff,   //ending flag
 };
 
 static struct dsi_config_s lcd_mipi_config = {
@@ -197,7 +296,7 @@ static struct dsi_config_s lcd_mipi_config = {
 
 	.dsi_init_on  = &mipi_init_on_table[0],
 	.dsi_init_off = &mipi_init_off_table[0],
-	.extern_init = 2, /* ext_index if needed, must match ext_config_dtf.index;*/
+	.extern_init = 0xff, /* ext_index if needed, 0xff for invalid */
 	.check_en = 0,
 	.check_state = 0,
 };
@@ -298,17 +397,17 @@ static char lcd_ext_gpio[LCD_EXTERN_GPIO_NUM_MAX][LCD_EXTERN_GPIO_LEN_MAX] = {
 	"invalid", /* ending flag */
 };
 
-static unsigned char init_on_table[LCD_EXTERN_INIT_ON_MAX] = {
+static unsigned char ext_init_on_table[LCD_EXTERN_INIT_ON_MAX] = {
 	0xff, 0xff,   //ending flag
 };
 
-static unsigned char init_off_table[LCD_EXTERN_INIT_OFF_MAX] = {
+static unsigned char ext_init_off_table[LCD_EXTERN_INIT_OFF_MAX] = {
 	0xff,0xff,   //ending flag
 };
 
 struct lcd_extern_common_s ext_common_dft = {
 	.lcd_ext_key_valid = 0,
-	.lcd_ext_num = 3,
+	.lcd_ext_num = 4,
 	.pinmux_set = {{LCD_PINMUX_END, 0x0}},
 	.pinmux_clr = {{LCD_PINMUX_END, 0x0}},
 };
@@ -323,26 +422,35 @@ struct lcd_extern_config_s ext_config_dtf[LCD_EXTERN_NUM_MAX] = {
 		.i2c_addr2 = 0xff, /* 7bit i2c address, 0xff for none */
 		.i2c_bus = LCD_EXTERN_I2C_BUS_C, /* LCD_EXTERN_I2C_BUS_AO, LCD_EXTERN_I2C_BUS_A/B/C/D */
 		.cmd_size = 9,
-		.table_init_on = init_on_table,
-		.table_init_off = init_off_table,
+		.table_init_on = ext_init_on_table,
+		.table_init_off = ext_init_off_table,
 	},
 	{
 		.index = 1,
-		.name = "mipi_TV070WSM",
+		.name = "mipi_default",
 		.type = LCD_EXTERN_MIPI, /* LCD_EXTERN_I2C, LCD_EXTERN_SPI, LCD_EXTERN_MIPI, LCD_EXTERN_MAX */
 		.status = 1, /* 0=disable, 1=enable */
 		.cmd_size = LCD_EXTERN_CMD_SIZE_DYNAMIC,
-		.table_init_on = init_on_table,
-		.table_init_off = init_off_table,
+		.table_init_on = ext_init_on_table_TV070WSM,
+		.table_init_off = ext_init_off_table_TV070WSM,
 	},
 	{
 		.index = 2,
-		.name = "mipi_P070ACB",
+		.name = "mipi_default",
 		.type = LCD_EXTERN_MIPI, /* LCD_EXTERN_I2C, LCD_EXTERN_SPI, LCD_EXTERN_MIPI, LCD_EXTERN_MAX */
 		.status = 1, /* 0=disable, 1=enable */
 		.cmd_size = LCD_EXTERN_CMD_SIZE_DYNAMIC,
-		.table_init_on = init_on_table,
-		.table_init_off = init_off_table,
+		.table_init_on = ext_init_on_table_P070ACB,
+		.table_init_off = ext_init_off_table_P070ACB,
+	},
+	{
+		.index = 3,
+		.name = "mipi_default",
+		.type = LCD_EXTERN_MIPI, /* LCD_EXTERN_I2C, LCD_EXTERN_SPI, LCD_EXTERN_MIPI, LCD_EXTERN_MAX */
+		.status = 1, /* 0=disable, 1=enable */
+		.cmd_size = LCD_EXTERN_CMD_SIZE_DYNAMIC,
+		.table_init_on = ext_init_on_table_TL050FHV02CT,
+		.table_init_off = ext_init_off_table_TL050FHV02CT,
 	},
 	{
 		.index = LCD_EXTERN_INDEX_INVALID,
@@ -414,6 +522,14 @@ void lcd_config_bsp_init(void)
 				case 2:
 					lcd_mipi_config.dsi_init_on = mipi_init_on_table_P070ACB;
 					lcd_mipi_config.dsi_init_off = mipi_init_off_table_P070ACB;
+					break;
+				case 3:
+					lcd_mipi_config.dsi_init_on = mipi_init_on_table_TL050FHV02CT;
+					lcd_mipi_config.dsi_init_off = mipi_init_off_table_TL050FHV02CT;
+					break;
+				case 4:
+					lcd_mipi_config.dsi_init_on = mipi_init_on_table_TL070WSH27;
+					lcd_mipi_config.dsi_init_off = mipi_init_off_table_TL070WSH27;
 					break;
 				case 0:
 				default:
