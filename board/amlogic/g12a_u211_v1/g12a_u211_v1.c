@@ -573,6 +573,9 @@ void aml_config_dtb(void)
 	if (cpuid.chip_rev == 0xA) {
 		printf("%s %d\n", __func__, __LINE__);
 		run_command("fdt set /emmc/emmc co_phase <0x2>", 0);
+		run_command("fdt rm /emmc/emmc caps2", 0);
+		run_command("fdt set /emmc/emmc f_max <0x02625a00>", 0);
+
 		run_command("fdt set /sdio status okay", 0);
 		run_command("fdt set /sd1 status okay", 0);
 		run_command("fdt set /pinctrl@ff634480/sd_clk_cmd_pins/mux drive-strength <1>", 0);
@@ -583,6 +586,9 @@ void aml_config_dtb(void)
 		run_command("fdt set /pinctrl@ff634480/sdio_all_pins/mux drive-strength <1>", 0);
 		/* debug */
 		run_command("fdt print /emmc/emmc co_phase", 0);
+		run_command("fdt print /emmc/emmc caps2", 0);
+		run_command("fdt print /emmc/emmc f_max", 0);
+
 		run_command("fdt print /sdio status", 0);
 		run_command("fdt print /sd1 status ", 0);
 		run_command("fdt print /pinctrl@ff634480/sd_clk_cmd_pins/mux drive-strength", 0);
@@ -599,6 +605,8 @@ void aml_config_dtb(void)
 		run_command("fdt set /sd2 status okay", 0);
 		/* debug */
 		run_command("fdt print /emmc/emmc co_phase", 0);
+		run_command("fdt print /emmc/emmc caps2", 0);
+		run_command("fdt print /emmc/emmc f_max", 0);
 		run_command("fdt print /sdio status", 0);
 		run_command("fdt print /sd2 status", 0);
 	}
