@@ -228,15 +228,42 @@ static unsigned long env_strtoul(const char *name, int base)
 	return ret;
 }
 
+static int get_dts_node(char *dt_addr, char *dtb_node)
+{
+#ifdef CONFIG_OF_LIBFDT
+	int parent_offset = 0;
+	char *propdata = NULL;
+#endif
+
+	parent_offset = fdt_path_offset(dt_addr, dtb_node);
+	if (parent_offset < 0) {
+		/* not found */
+		return -1;
+	} else {
+		propdata = (char *)fdt_getprop(dt_addr, parent_offset, "status", NULL);
+		if (propdata == NULL) {
+			osd_logi("not find status, default to disabled\n");
+			return -1;
+		} else {
+			if (strncmp(propdata, "okay", 2)) {
+				osd_logi("status disabled\n");
+				return -1;
+			}
+		}
+	}
+	return parent_offset;
+}
+
 unsigned long get_fb_addr(void)
 {
 	char *dt_addr = NULL;
 	unsigned long fb_addr = 0;
 	static int initrd_set = 0;
 	char str_fb_addr[32];
+	char fdt_node[32];
 #ifdef CONFIG_OF_LIBFDT
-	int parent_offset;
-	char *propdata;
+	int parent_offset = 0;
+	char *propdata = NULL;
 #endif
 
 	fb_addr = env_strtoul("fb_addr", 16);
@@ -250,11 +277,26 @@ unsigned long get_fb_addr(void)
 		osd_logi("check dts: %s, load default fb_addr parameters\n",
 			fdt_strerror(fdt_check_header(dt_addr)));
 	} else {
-		osd_logi("load fb addr from dts\n");
-		parent_offset = fdt_path_offset(dt_addr, "/meson-fb");
+		strcpy(fdt_node, "/meson-fb");
+		osd_logi("load fb addr from dts:%s\n", fdt_node);
+		parent_offset = get_dts_node(dt_addr, fdt_node);
 		if (parent_offset < 0) {
-			osd_logi("not find /meson-fb node: %s\n",fdt_strerror(parent_offset));
-			osd_logi("use default fb_addr parameters\n");
+			strcpy(fdt_node, "/drm-vpu");
+			osd_logi("load fb addr from dts:%s\n", fdt_node);
+			parent_offset = get_dts_node(dt_addr, fdt_node);
+			if (parent_offset < 0) {
+				osd_logi("not find node: %s\n",fdt_strerror(parent_offset));
+				osd_logi("use default fb_addr parameters\n");
+			} else {
+				/* check fb_addr */
+				propdata = (char *)fdt_getprop(dt_addr, parent_offset, "logo_addr", NULL);
+				if (propdata == NULL) {
+					osd_logi("failed to get fb addr for logo\n");
+					osd_logi("use default fb_addr parameters\n");
+				} else {
+					fb_addr = simple_strtoul(propdata, NULL, 16);
+				}
+			}
 		} else {
 			/* check fb_addr */
 			propdata = (char *)fdt_getprop(dt_addr, parent_offset, "logo_addr", NULL);
