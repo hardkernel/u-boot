@@ -20,7 +20,7 @@
 #define CONFIG_CEC_OSD_NAME "AML_TV"
 #endif
 
-#define CEC_VERSION "cec ver:2018/02/22"
+#define CEC_VERSION "cec ver:2018/04/19"
 
 /* FOR AO_CECB */
 #define DWC_CECB_CTRL                0x00

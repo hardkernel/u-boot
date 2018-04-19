@@ -26,6 +26,8 @@
 #define CONFIG_CEC_OSD_NAME "AML_TV"
 #endif
 
+#define CEC_VERSION "cec ver:2018/04/19"
+
 /* FOR AO_CECB */
 #define DWC_CECB_CTRL                0x00
 #define DWC_CECB_INTR_MASK           0x02
@@ -220,6 +222,7 @@ unsigned int cec_handler(void);
 void remote_cec_hw_reset(void);
 //void cec_give_device_power_status(void);
 extern void udelay(int i);
+int cec_power_on_check(void);
 
 #endif  // _HDMI_RX_REG_H
 

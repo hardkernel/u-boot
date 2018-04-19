@@ -21,6 +21,10 @@
 
 #include <gpio.h>
 #include "pwm_ctrl.h"
+#ifdef CONFIG_CEC_WAKEUP
+#include <cec_tx_reg.h>
+#endif
+
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
 static void set_vddee_voltage(unsigned int target_voltage)
@@ -96,8 +100,21 @@ static unsigned int detect_key(unsigned int suspend_from)
 	unsigned char adc_key_cnt = 0;
 	init_remote();
 	saradc_enable();
+#ifdef CONFIG_CEC_WAKEUP
+		if (hdmi_cec_func_config & 0x1) {
+			remote_cec_hw_reset();
+			cec_node_init();
+		}
+#endif
 
 	do {
+		#ifdef CONFIG_CEC_WAKEUP
+		if (irq[IRQ_AO_CECB] == IRQ_AO_CEC2_NUM) {
+			irq[IRQ_AO_CECB] = 0xFFFFFFFF;
+			if (cec_power_on_check())
+				exit_reason = CEC_WAKEUP;
+		}
+		#endif
 		if (irq[IRQ_AO_IR_DEC] == IRQ_AO_IR_DEC_NUM) {
 			irq[IRQ_AO_IR_DEC] = 0xFFFFFFFF;
 			if (remote_detect_key())

@@ -204,7 +204,7 @@ void remote_cec_hw_reset(void)
 	writel(reg, AO_CECB_CLK_CNTL_REG0);
 
 	reg = readl(AO_RTI_PWR_CNTL_REG0);
-	reg |=  (0x01 << 6);	/* xtal gate */
+	reg |=  (0x01 << 14);	/* xtal gate */
 	writel(reg, AO_RTI_PWR_CNTL_REG0);
 
 	data32  = 0;
@@ -221,12 +221,14 @@ void remote_cec_hw_reset(void)
 	cec_set_reg_bits(AO_CECB_GEN_CNTL, 1, 1, 1);
 	/* Release SW reset */
 	cec_set_reg_bits(AO_CECB_GEN_CNTL, 0, 0, 1);
-
 	/* set up pinmux */
-	writel(readl(AO_RTI_PIN_MUX_REG) & (~(1 << 14 | 1 << 15 | 1 << 17)),
-	       AO_RTI_PIN_MUX_REG);
-	writel(readl(AO_RTI_PULL_UP_REG) & (~(1 << 7)), AO_RTI_PULL_UP_REG);
-	writel(readl(AO_RTI_PIN_MUX_REG2) | (1 << 13), AO_RTI_PIN_MUX_REG2);
+	writel(((readl(PERIPHS_PIN_MUX_B) & (~(0xF << 12))) | (5 << 12)),
+		PERIPHS_PIN_MUX_B);
+	/*enable the interrupt*/
+	writel(CECB_IRQ_EN_MASK, AO_CECB_INTR_MASKN);
+	cec_wr_reg(DWC_CECB_WAKEUPCTRL, 0);
+	cec_dbg_print("Set cec pinmux:0x", readl(PERIPHS_PIN_MUX_B));
+	cec_dbg_prints("\n");
 }
 
 static unsigned char remote_cec_ll_rx(void)
@@ -475,7 +477,7 @@ static void cec_give_deck_status(int dst)
 	remote_cec_ll_tx(msg, 3);
 }
 
-static void cec_standby(void)
+/*static void cec_standby(void)
 {
 	unsigned char msg[2];
 
@@ -483,7 +485,7 @@ static void cec_standby(void)
 	msg[1] = CEC_OC_STANDBY;
 
 	remote_cec_ll_tx(msg, 2);
-}
+}*/
 
 static void cec_set_osd_name(int dst)
 {
@@ -738,16 +740,14 @@ unsigned int cec_handler(void)
 	return 0;
 }
 
-static void check_standby(void)
+/*static void check_standby(void)
 {
 	if (((cec_msg.log_addr & 0xf) == 0) &&
 	    ((hdmi_cec_func_config >> CEC_FUNC_MASK) & 0x1) &&
 	    ((hdmi_cec_func_config >> ONE_TOUCH_STANDBY_MASK) & 0x1)) {
 		cec_standby();
 	}
-}
-
-
+}*/
 
 void cec_node_init(void)
 {
@@ -802,7 +802,7 @@ void cec_node_init(void)
 			regist_devs = 0;
 			i = 0;
 			retry = 0;
-			check_standby();
+			/*check_standby();*/
 			return ;
 		}
 		for (i = 0; i < 3; i++) {
@@ -832,6 +832,7 @@ void cec_node_init(void)
 	} else if (tx_stat == TX_ERROR) {
 		_udelay(100);
 		cec_msg.log_addr = probe[i];
+		cec_set_log_addr(cec_msg.log_addr);
 		cec_dbg_print("Set cec log_addr:0x", cec_msg.log_addr);
 		cec_dbg_print(", ADDR0:", cec_get_log_addr());
 		uart_puts("\n");
@@ -839,6 +840,7 @@ void cec_node_init(void)
 		regist_devs = 0;
 		i = 0;
 		retry = 0;
+		dump_cecb_reg();
 		return ;
 	} else if (tx_stat == TX_DONE) {
 		cec_dbg_print("sombody takes cec log_addr:0x", probe[i]);
@@ -858,4 +860,21 @@ void cec_node_init(void)
 	}
 }
 
+int cec_power_on_check(void)
+{
+	//if (suspend_from == SYS_POWEROFF)
+	//	continue;
+	if (hdmi_cec_func_config & 0x1) {
+		if (cec_msg.log_addr) {
+			cec_handler();
+			if (cec_msg.cec_power == 0x1) {
+				/*cec power key*/
+				return 1;
+			}
+		} else
+			cec_node_init();
+	}
+
+	return 0;
+}
 #endif
