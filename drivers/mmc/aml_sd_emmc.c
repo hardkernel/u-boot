@@ -119,10 +119,11 @@ void aml_sd_cfg_swth(struct mmc *mmc)
 						(clk_src << Cfg_src) |
 						(clk_div << Cfg_div));
 
-	if ((cpu_id.family_id >= MESON_CPU_MAJOR_ID_TXLX)
+	if (((cpu_id.family_id >= MESON_CPU_MAJOR_ID_TXLX)
 			&& (cpu_id.family_id != MESON_CPU_MAJOR_ID_TXHD)
-			&& (cpu_id.family_id == MESON_CPU_MAJOR_ID_G12A)
-			&& (cpu_id.chip_rev == 0xB)) {
+			&& (cpu_id.family_id != MESON_CPU_MAJOR_ID_G12A))
+			|| ((cpu_id.family_id == MESON_CPU_MAJOR_ID_G12A)
+			&& (cpu_id.chip_rev == 0xB))) {
 		if (aml_is_emmc_tsd(mmc)
 			|| (cpu_id.family_id == MESON_CPU_MAJOR_ID_AXG)
 			|| (cpu_id.family_id == MESON_CPU_MAJOR_ID_GXLX)) {
