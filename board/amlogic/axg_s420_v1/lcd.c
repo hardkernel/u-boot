@@ -78,7 +78,7 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	0,0,1,64843200,Rsv_val,Rsv_val,Rsv_val,
 	/* custome */
 	Rsv_val,Rsv_val,Rsv_val,
-	/* MIPI_attr: lane_num, bit_rate_max, factor, operation_mode_init, operation_mode_display, video_mode_type, clk_lp_continuous, phy_stop_wait */
+	/* MIPI_attr: lane_num, bit_rate_max, factor, operation_mode_init, operation_mode_display, video_mode_type, clk_always_hs, phy_stop_wait */
 	4,550,0,1,0,2,1,0,Rsv_val,Rsv_val,
 	/* power step */
 	lcd_power_on_step_dft, lcd_power_off_step_dft,
@@ -95,11 +95,9 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	/* basic timing */
 	600,1024,700,1053,24,36,0,2,8,0,
 	/* clk_attr */
-	0,0,1,44250000,Rsv_val,Rsv_val,Rsv_val,
-	/* custome */
-	Rsv_val,0x04,3,
+	0,0,1,44250000,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
 	/* mipi_attr */
-	4,360,0,1,0,2,1,0,Rsv_val,2,
+	4,360,0,1,0,2,0,0,Rsv_val,2,
 	/* power step */
 	lcd_power_on_step_TV070WSM, lcd_power_off_step_TV070WSM,
 	/* backlight */
@@ -115,11 +113,9 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	/* basic timing */
 	600,1024,680,1194,24,36,0,10,80,0,
 	/* clk_attr */
-	0,0,1,48715200,Rsv_val,Rsv_val,Rsv_val,
-	/* custome */
-	Rsv_val,0x04,3,
+	0,0,1,48715200,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
 	/* mipi_attr */
-	4,300,0,1,0,2,1,0,Rsv_val,3,
+	4,400,0,1,0,2,0,0,Rsv_val,3,
 	/* power step */
 	lcd_power_on_step_P070ACB, lcd_power_off_step_P070ACB,
 	/* backlight */
@@ -193,8 +189,8 @@ static struct dsi_config_s lcd_mipi_config = {
 	.operation_mode_init = 1,    /* 0=video mode, 1=command mode */
 	.operation_mode_display = 0, /* 0=video mode, 1=command mode */
 	.video_mode_type = 2, /* 0=sync_pulse, 1=sync_event, 2=burst */
-	.clk_lp_continuous = 1, /* 0=stop, 1=continue */
-	.phy_stop_wait = 0,   /* 0=auto, 1=standard, 2=slow */
+	.clk_always_hs = 1, /* 0=disable, 1=enable */
+	.phy_switch = 0,   /* 0=auto, 1=standard, 2=slow */
 
 	.dsi_init_on  = &mipi_init_on_table[0],
 	.dsi_init_off = &mipi_init_off_table[0],

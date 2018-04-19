@@ -746,6 +746,52 @@ static void lcd_vbyone_reg_print(void)
 		reg, lcd_hiu_read(reg));
 }
 
+static void lcd_mipi_reg_print(void)
+{
+	unsigned int reg;
+
+	printf("\nmipi_dsi registers:\n");
+	reg = MIPI_DSI_TOP_CNTL;
+	printf("MIPI_DSI_TOP_CNTL            [0x%04x] = 0x%08x\n",
+		reg, dsi_host_read(reg));
+	reg = MIPI_DSI_TOP_CLK_CNTL;
+	printf("MIPI_DSI_TOP_CLK_CNTL        [0x%04x] = 0x%08x\n",
+		reg, dsi_host_read(reg));
+	reg = MIPI_DSI_DWC_PWR_UP_OS;
+	printf("MIPI_DSI_DWC_PWR_UP_OS       [0x%04x] = 0x%08x\n",
+		reg, dsi_host_read(reg));
+	reg = MIPI_DSI_DWC_PCKHDL_CFG_OS;
+	printf("MIPI_DSI_DWC_PCKHDL_CFG_OS   [0x%04x] = 0x%08x\n",
+		reg, dsi_host_read(reg));
+	reg = MIPI_DSI_DWC_LPCLK_CTRL_OS;
+	printf("MIPI_DSI_DWC_LPCLK_CTRL_OS   [0x%04x] = 0x%08x\n",
+		reg, dsi_host_read(reg));
+	reg = MIPI_DSI_DWC_CMD_MODE_CFG_OS;
+	printf("MIPI_DSI_DWC_CMD_MODE_CFG_OS [0x%04x] = 0x%08x\n",
+		reg, dsi_host_read(reg));
+	reg = MIPI_DSI_DWC_VID_MODE_CFG_OS;
+	printf("MIPI_DSI_DWC_VID_MODE_CFG_OS [0x%04x] = 0x%08x\n",
+		reg, dsi_host_read(reg));
+	reg = MIPI_DSI_DWC_MODE_CFG_OS;
+	printf("MIPI_DSI_DWC_MODE_CFG_OS     [0x%04x] = 0x%08x\n",
+		reg, dsi_host_read(reg));
+	reg = MIPI_DSI_DWC_PHY_STATUS_OS;
+	printf("MIPI_DSI_DWC_PHY_STATUS_OS   [0x%04x] = 0x%08x\n",
+		reg, dsi_host_read(reg));
+	reg = MIPI_DSI_DWC_INT_ST0_OS;
+	printf("MIPI_DSI_DWC_INT_ST0_OS      [0x%04x] = 0x%08x\n",
+		reg, dsi_host_read(reg));
+	reg = MIPI_DSI_TOP_STAT;
+	printf("MIPI_DSI_TOP_STAT            [0x%04x] = 0x%08x\n",
+		reg, dsi_host_read(reg));
+	reg = MIPI_DSI_TOP_INTR_CNTL_STAT;
+	printf("MIPI_DSI_TOP_INTR_CNTL_STAT  [0x%04x] = 0x%08x\n",
+		reg, dsi_host_read(reg));
+	reg = MIPI_DSI_TOP_MEM_PD;
+	printf("MIPI_DSI_TOP_MEM_PD          [0x%04x] = 0x%08x\n",
+		reg, dsi_host_read(reg));
+}
+
 static void lcd_phy_analog_reg_print(void)
 {
 	unsigned int reg;
@@ -759,6 +805,22 @@ static void lcd_phy_analog_reg_print(void)
 		reg, lcd_hiu_read(reg));
 	reg = HHI_DIF_CSI_PHY_CNTL3;
 	printf("PHY_CNTL3           [0x%08x] = 0x%08x\n",
+		reg, lcd_hiu_read(reg));
+}
+
+static void lcd_mipi_phy_analog_reg_print(void)
+{
+	unsigned int reg;
+
+	printf("\nphy analog registers:\n");
+	reg = HHI_MIPI_CNTL0;
+	printf("PHY_CNTL1   [0x%08x] = 0x%08x\n",
+		reg, lcd_hiu_read(reg));
+	reg = HHI_MIPI_CNTL1;
+	printf("PHY_CNTL2   [0x%08x] = 0x%08x\n",
+		reg, lcd_hiu_read(reg));
+	reg = HHI_MIPI_CNTL2;
+	printf("PHY_CNTL3   [0x%08x] = 0x%08x\n",
 		reg, lcd_hiu_read(reg));
 }
 
@@ -826,6 +888,8 @@ static void lcd_reg_print(void)
 		lcd_phy_analog_reg_print();
 		break;
 	case LCD_MIPI:
+		lcd_mipi_reg_print();
+		lcd_mipi_phy_analog_reg_print();
 		break;
 	default:
 		break;

@@ -109,10 +109,10 @@ static void lcd_config_load_print(struct lcd_config_s *pconf)
 			pconf->lcd_control.mipi_config->operation_mode_display);
 		LCDPR("video_mode_type = %d\n",
 			pconf->lcd_control.mipi_config->video_mode_type);
-		LCDPR("clk_lp_continuous = %d\n",
-			pconf->lcd_control.mipi_config->clk_lp_continuous);
-		LCDPR("phy_stop_wait = %d\n",
-			pconf->lcd_control.mipi_config->phy_stop_wait);
+		LCDPR("clk_always_hs = %d\n",
+			pconf->lcd_control.mipi_config->clk_always_hs);
+		LCDPR("phy_switch = %d\n",
+			pconf->lcd_control.mipi_config->phy_switch);
 		LCDPR("extern_init = %d\n",
 			pconf->lcd_control.mipi_config->extern_init);
 	}
@@ -363,8 +363,8 @@ static int lcd_config_load_from_dts(char *dt_addr, struct lcd_config_s *pconf)
 			pconf->lcd_control.mipi_config->operation_mode_init = be32_to_cpup((((u32*)propdata)+3));
 			pconf->lcd_control.mipi_config->operation_mode_display = be32_to_cpup((((u32*)propdata)+4));
 			pconf->lcd_control.mipi_config->video_mode_type = be32_to_cpup((((u32*)propdata)+5));
-			pconf->lcd_control.mipi_config->clk_lp_continuous = be32_to_cpup((((u32*)propdata)+6));
-			pconf->lcd_control.mipi_config->phy_stop_wait = be32_to_cpup((((u32*)propdata)+7));
+			pconf->lcd_control.mipi_config->clk_always_hs = be32_to_cpup((((u32*)propdata)+6));
+			pconf->lcd_control.mipi_config->phy_switch = be32_to_cpup((((u32*)propdata)+7));
 		}
 
 		lcd_mipi_dsi_init_table_detect(dt_addr, child_offset, pconf->lcd_control.mipi_config, 1);
@@ -505,8 +505,8 @@ static int lcd_config_load_from_bsp(struct lcd_config_s *pconf)
 		pconf->lcd_control.mipi_config->operation_mode_init     = ext_lcd->lcd_spc_val3;
 		pconf->lcd_control.mipi_config->operation_mode_display   = ext_lcd->lcd_spc_val4;
 		pconf->lcd_control.mipi_config->video_mode_type = ext_lcd->lcd_spc_val5;
-		pconf->lcd_control.mipi_config->clk_lp_continuous  = ext_lcd->lcd_spc_val6;
-		pconf->lcd_control.mipi_config->phy_stop_wait = ext_lcd->lcd_spc_val7;
+		pconf->lcd_control.mipi_config->clk_always_hs  = ext_lcd->lcd_spc_val6;
+		pconf->lcd_control.mipi_config->phy_switch = ext_lcd->lcd_spc_val7;
 		pconf->lcd_control.mipi_config->factor_denominator = 100;
 
 		lcd_mipi_dsi_init_table_check_bsp(pconf->lcd_control.mipi_config, 1);
