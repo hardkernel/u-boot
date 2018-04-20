@@ -308,6 +308,15 @@
 #define		CONFIG_PARTITIONS 1
 #define 	CONFIG_SYS_NO_FLASH  1
 
+/* meson SPI */
+//#define CONFIG_AML_SPIFC
+#define CONFIG_AML_SPICC
+#if defined CONFIG_AML_SPIFC || defined CONFIG_AML_SPICC
+	#define CONFIG_OF_SPI
+	#define CONFIG_DM_SPI
+	#define CONFIG_CMD_SPI
+#endif
+
 
 /* vpu */
 #define CONFIG_AML_VPU 1

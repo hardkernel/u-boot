@@ -46,6 +46,10 @@
 #include <asm/arch/eth_setup.h>
 #include <phy.h>
 #include <asm-generic/gpio.h>
+#ifdef CONFIG_AML_SPICC
+#include <dm.h>
+#include <amlogic/spicc.h>
+#endif
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -349,6 +353,27 @@ static void hdmi_tx_set_hdmi_5v(void)
 {
 }
 #endif
+
+#ifdef CONFIG_AML_SPICC
+/* generic config in arch gpio/clock.c */
+extern int spicc0_clk_enable(bool enable);
+extern int spicc0_pinctrl_enable(bool enable);
+
+static const struct spicc_platdata spicc0_platdata = {
+	.compatible = "amlogic,meson-txl-spicc",
+	.reg = (void __iomem *)0xffd13000,
+	.clk_rate = 166666666,
+	.clk_enable = spicc0_clk_enable,
+	.pinctrl_enable = spicc0_pinctrl_enable,
+	/* case one slave without cs: {"no_cs", 0} */
+	.cs_gpio_names = {"GPIOZ_3", 0},
+};
+
+U_BOOT_DEVICE(spicc0) = {
+	.name = "spicc",
+	.platdata = &spicc0_platdata,
+};
+#endif /* CONFIG_AML_SPICC */
 
 extern void aml_pwm_cal_init(int mode);
 
