@@ -128,7 +128,12 @@ obj-$(CONFIG_CMD_IOTRACE) += cmd_iotrace.o
 obj-$(CONFIG_CMD_HASH) += cmd_hash.o
 obj-$(CONFIG_CMD_IDE) += cmd_ide.o
 obj-$(CONFIG_CMD_IMMAP) += cmd_immap.o
+
+ifdef CONFIG_CMD_INI
+obj-y += ini/model.o ini/ini_proxy.o ini/UnifyKey.o ini/ini_platform.o ini/ini_io.o ini/ini_handler.o ini/ini_core.o ini/ini_log.o
+endif
 obj-$(CONFIG_CMD_INI) += cmd_ini.o
+
 obj-$(CONFIG_CMD_IRQ) += cmd_irq.o
 obj-$(CONFIG_CMD_ITEST) += cmd_itest.o
 obj-$(CONFIG_CMD_JFFS2) += cmd_jffs2.o

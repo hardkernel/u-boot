@@ -113,7 +113,7 @@
         "video_reverse=0\0"\
         "active_slot=_a\0"\
         "boot_part=boot\0"\
-        "model_name=t962x_r311_lvds\0" \
+        "model_name=t962x_r311_FHD\0" \
         "ui_mode=720p\0" \
         "initargs="\
             "rootfstype=ramfs init=/init console=ttyS0,115200 no_console_suspend earlyprintk=aml-uart,0xff803000 ramoops.pstore_en=1 ramoops.record_size=0x8000 ramoops.console_size=0x4000 "\
@@ -414,6 +414,7 @@
 #define CONFIG_CMD_JTAG	1
 #define CONFIG_CMD_AUTOSCRIPT 1
 #define CONFIG_CMD_MISC 1
+#define CONFIG_CMD_INI 1
 
 /*file system*/
 #define CONFIG_DOS_PARTITION 1
@@ -423,6 +424,7 @@
 #define CONFIG_FS_FAT 1
 #define CONFIG_FS_EXT4 1
 #define CONFIG_LZO 1
+#define CONFIG_CMD_EXT4 1
 
 /* Cache Definitions */
 //#define CONFIG_SYS_DCACHE_OFF
