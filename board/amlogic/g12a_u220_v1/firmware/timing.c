@@ -130,6 +130,19 @@ ddr_set_t __ddr_setting[] = {
 	.ddr_lpddr34_dq_remap	= {00,00},
 	.dram_rtt_nom_wr_park	= {00,00},
 
+	/* pll ssc config:
+	 *
+	 *   pll_ssc_mode = (1<<20) | (1<<8) | ([strength] << 4) | [mode],
+	 *      ppm = strength * 500
+	 *      mode: 0=center, 1=up, 2=down
+	 *
+	 *   eg:
+	 *     1. config 1000ppm center ss. then mode=0, strength=2
+	 *        .pll_ssc_mode = (1<<20) | (1<<8) | (2 << 4) | 0,
+	 *     2. config 3000ppm down ss. then mode=2, strength=6
+	 *        .pll_ssc_mode = (1<<20) | (1<<8) | (6 << 4) | 2,
+	 */
+	.pll_ssc_mode			= 0,
 	.ddr_func				= DDR_FUNC,
 	.magic					= DRAM_CFG_MAGIC,
 },
