@@ -112,6 +112,12 @@ sub_commands()
 			${TOOLCHAIN_OBJDUMP} -${opt} ${OUTDIR}/u-boot | less
 			exit 0
 		fi
+	elif [ "$SUBCMD" = 'trust' ]; then
+		pack_trust_image
+		exit 0
+	elif [ "$SUBCMD" = 'loader' ]; then
+		pack_loader_image
+		exit 0
 	fi
 }
 
@@ -207,9 +213,9 @@ prepare
 echo "make for ${BOARD}_defconfig by -j${JOB}"
 make ${BOARD}_defconfig ${OUTOPT}
 select_toolchain
+fixup_chip_name
 sub_commands
 make CROSS_COMPILE=${TOOLCHAIN_GCC}  all --jobs=${JOB} ${OUTOPT}
-fixup_chip_name
 pack_uboot_image
 pack_loader_image
 pack_trust_image
