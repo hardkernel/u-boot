@@ -154,6 +154,7 @@
 
 #ifndef CONFIG_AML_MESON_TXHD
 #define TCON_SYS_REG_START                         0x0000
+#define TCON_CTRL_TIMING_BASE                      0x01b0
 #define TCON_TOP_CTRL                              0x1000
 #define TCON_RGB_IN_MUX                            0x1001
 #define TCON_OUT_CH_SEL0                           0x1002

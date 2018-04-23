@@ -17522,6 +17522,8 @@
  * ******************************** */
 #define TCON_SYS_REG_START                         (0x0000)
 #define P_TCON_SYS_REG_START                       (volatile unsigned int *)((0x0000 << 2) + 0xff600000)
+#define TCON_CTRL_TIMING_BASE                      (0x01b0)
+#define P_TCON_CTRL_TIMING_BASE                    (volatile unsigned int *)((0x01b0 << 2) + 0xff600000)
 
 #define TCON_TOP_CTRL                              0x1000
 #define P_TCON_TOP_CTRL                            (volatile unsigned int *)((0x1000 << 2) + 0xff600000)

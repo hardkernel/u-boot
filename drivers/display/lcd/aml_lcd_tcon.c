@@ -8388,11 +8388,20 @@ int lcd_tcon_init(struct lcd_config_s *pconf)
 	return 0;
 }
 
+#define TCON_CTRL_TIMING_OFFSET    12
 void lcd_tcon_disable(void)
 {
+	unsigned int reg, i;
+
 	LCDPR("%s\n", __func__);
 	lcd_tcon_write((0x05c + TCON_SYS_REG_START), 0);
 	mdelay(100);
+
+	/* disable all ctrl signal */
+	for (i = 0; i < 16; i++) {
+		reg = TCON_CTRL_TIMING_BASE + (i * TCON_CTRL_TIMING_OFFSET);
+		lcd_tcon_setb(reg, 1, 3, 1);
+	}
 	lcd_tcon_setb(TCON_TOP_CTRL, 0, 4, 1);
 }
 

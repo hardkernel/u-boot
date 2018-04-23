@@ -1203,8 +1203,9 @@ void lcd_tv_driver_disable(void)
 		lcd_vbyone_disable();
 		break;
 	case LCD_MLVDS:
-		lcd_mlvds_phy_set(pconf, 0);
 		lcd_mlvds_disable();
+		lcd_mlvds_phy_set(pconf, 0);
+		lcd_pinmux_set(0);
 		break;
 	default:
 		break;
