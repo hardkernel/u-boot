@@ -5,7 +5,7 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- * date: 2018-04-11
+ * date: 2018-04-23
  */
 	.arch armv8-a
 	.file	"rk_zftl_arm_v8.S"
@@ -2825,7 +2825,7 @@ ftl_read_buf:
 	bhi	.L525
 	adrp	x1, .LANCHOR55
 	adrp	x0, .LC0
-	mov	w2, 887
+	mov	w2, 888
 	add	x1, x1, :lo12:.LANCHOR55
 	add	x0, x0, :lo12:.LC0
 	bl	printf
@@ -15687,7 +15687,7 @@ ftl_read_ahead:
 	cmn	w23, #1
 	bne	.L2504
 .L2503:
-	mov	w2, 874
+	mov	w2, 875
 	adrp	x1, .LANCHOR191
 	adrp	x0, .LC0
 	add	x1, x1, :lo12:.LANCHOR191
@@ -17522,7 +17522,7 @@ zftl_read:
 .L2772:
 	ldr	x1, [x29, 112]
 	adrp	x0, .LC0
-	mov	w2, 1030
+	mov	w2, 1031
 	add	x0, x0, :lo12:.LC0
 	bl	printf
 .L2773:
@@ -17770,7 +17770,7 @@ vpn_check:
 	bhi	.L2798
 	adrp	x1, .LANCHOR198
 	adrp	x0, .LC0
-	mov	w2, 1266
+	mov	w2, 1267
 	add	x1, x1, :lo12:.LANCHOR198
 	add	x0, x0, :lo12:.LC0
 	bl	printf
@@ -17793,7 +17793,7 @@ vpn_check:
 	ldrh	w1, [x24, #:lo12:.LANCHOR2]
 	cmp	w1, w0, uxth
 	bhi	.L2796
-	mov	w2, 1256
+	mov	w2, 1257
 	adrp	x1, .LANCHOR198
 	adrp	x0, .LC0
 	add	x1, x1, :lo12:.LANCHOR198
@@ -17887,7 +17887,7 @@ vpn_check:
 	add	x0, x20, :lo12:check_vpc_tbl
 	ldrh	w0, [x0, x27, lsl 1]
 	cbz	w0, .L2808
-	mov	w2, 1298
+	mov	w2, 1299
 	mov	x1, x24
 	mov	x0, x25
 	bl	printf
@@ -19710,7 +19710,7 @@ zftl_discard:
 	bcc	.L3093
 	adrp	x1, .LANCHOR206
 	adrp	x0, .LC0
-	mov	w2, 1177
+	mov	w2, 1178
 	add	x1, x1, :lo12:.LANCHOR206
 	add	x0, x0, :lo12:.LC0
 	bl	printf
@@ -20723,6 +20723,7 @@ zftl_write:
 	add	x20, x20, :lo12:.LANCHOR89
 	add	x19, x19, :lo12:.LANCHOR93
 	bl	ftl_write_commit
+	bl	ftl_flush
 	mov	w1, 1
 	mov	w0, 0
 	bl	zftl_do_gc
