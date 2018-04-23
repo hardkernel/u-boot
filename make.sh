@@ -5,6 +5,7 @@ SUBCMD=$2
 RKCHIP=${BOARD##*-}
 RKCHIP=$(echo ${RKCHIP} | tr '[a-z]' '[A-Z]')
 JOB=`sed -n "N;/processor/p" /proc/cpuinfo|wc -l`
+SUPPROT_LIST=`ls configs/*-r[v,k][0-9][0-9][0-9][0-9]_defconfig`
 
 # Declare global default output dir and cmd, update in prepare()
 OUTDIR=.
@@ -42,6 +43,11 @@ prepare()
 		exit 1
 	elif [ ! -f configs/${BOARD}_defconfig ]; then
 		echo "Can't find: configs/${BOARD}_defconfig"
+		echo
+		echo "*************** Support list ***************"
+		echo "$SUPPROT_LIST"
+		echo "********************************************"
+		echo
 		exit 1
 	fi
 
@@ -134,7 +140,15 @@ pack_uboot_image()
 
 	UBOOT_LOAD_ADDR=`sed -n "/CONFIG_SYS_TEXT_BASE=/s/CONFIG_SYS_TEXT_BASE=//p" ${OUTDIR}/include/autoconf.mk|tr -d '\r'`
 	${TOOLCHAIN_RKBIN}/loaderimage --pack --uboot ${OUTDIR}/u-boot.bin uboot.img ${UBOOT_LOAD_ADDR}
-	rm ${OUTDIR}/u-boot.img ${OUTDIR}/u-boot-dtb.img
+
+	if [ -f ${OUTDIR}/u-boot.img ]; then
+		rm ${OUTDIR}/u-boot.img
+	fi
+
+	if [ -f ${OUTDIR}/u-boot-dtb.img ]; then
+		rm ${OUTDIR}/u-boot-dtb.img
+	fi
+
 	echo "pack uboot okay! Input: ${OUTDIR}/u-boot.bin"
 }
 
