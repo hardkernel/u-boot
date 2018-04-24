@@ -30,6 +30,13 @@ enum ldim_dev_type_e {
 
 #define LDIM_SPI_INIT_ON_SIZE     300
 #define LDIM_SPI_INIT_OFF_SIZE    20
+
+struct ldim_pinmux_ctrl_s {
+	char *name;
+	unsigned int pinmux_set[LCD_PINMUX_NUM][2];
+	unsigned int pinmux_clr[LCD_PINMUX_NUM][2];
+};
+
 struct ldim_dev_config_s {
 	char name[20];
 	char pinmux_name[20];
@@ -48,7 +55,8 @@ struct ldim_dev_config_s {
 	unsigned char cmd_size;
 	unsigned char *init_on;
 	unsigned char *init_off;
-
+	unsigned char pinctrl_ver;
+	struct ldim_pinmux_ctrl_s *ldim_pinmux;
 	struct bl_pwm_config_s pwm_config;
 	char gpio_name[BL_GPIO_NUM_MAX][LCD_CPU_GPIO_NAME_MAX];
 };
@@ -59,6 +67,7 @@ struct ldim_spi_dev_info_s {
 	int max_speed_hz;
 	int bus_num;
 	int chip_select;
+	int wordlen;
 
 	struct spi_slave *spi;
 };
@@ -79,6 +88,8 @@ struct aml_ldim_driver_s {
 	int (*device_bri_update)(unsigned short *buf, unsigned char len);
 	struct ldim_spi_dev_info_s *spi_dev;
 };
+
+extern struct ldim_dev_config_s ldim_config_dft;
 
 extern struct aml_ldim_driver_s *aml_ldim_get_driver(void);
 extern int aml_ldim_probe(char *dt_addr, int flag); /* flag: 0=dts, 1=bsp, 2=unifykey */

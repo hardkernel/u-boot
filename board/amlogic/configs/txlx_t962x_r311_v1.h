@@ -341,6 +341,7 @@
 
 #define CONFIG_AML_LOCAL_DIMMING
 #define CONFIG_AML_LOCAL_DIMMING_GLOBAL
+#define CONFIG_AML_LOCAL_DIMMING_IW7027
 
 /* USB
  * Enable CONFIG_MUSB_HCD for Host functionalities MSC, keyboard

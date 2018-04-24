@@ -348,7 +348,11 @@ static int iw7027_ldim_driver_update(void)
 
 int ldim_dev_iw7027_probe(void)
 {
+	char name[30], *str;
+	struct udevice *dev;
 	struct aml_ldim_driver_s *ldim_drv = aml_ldim_get_driver();
+	int ret;
+	printf("%s:%d\n",__func__,__LINE__);
 
 	bl_iw7027 = (struct iw7027 *)malloc(sizeof(struct iw7027));
 	if (bl_iw7027 == NULL) {
@@ -360,15 +364,19 @@ int ldim_dev_iw7027_probe(void)
 	iw7027_on_flag = 0;
 
 	/* register spi */
-	ldim_drv->spi_dev->spi =
-		spi_setup_slave(ldim_drv->spi_dev->bus_num,
+
+	snprintf(name, sizeof(name), "generic_%d:%d", ldim_drv->spi_dev->bus_num, ldim_drv->spi_dev->chip_select);
+	str = strdup(name);
+	ret = spi_get_bus_and_cs(ldim_drv->spi_dev->bus_num,
 					ldim_drv->spi_dev->chip_select,
 					ldim_drv->spi_dev->max_speed_hz,
-					ldim_drv->spi_dev->mode);
-	if (ldim_drv->spi_dev->spi == NULL) {
+					ldim_drv->spi_dev->mode, "spi_generic_drv",
+					str, &dev, &ldim_drv->spi_dev->spi);
+	if (ret) {
 		LDIMERR("register ldim_dev spi driver failed\n");
-		return -1;
+		return ret;
 	}
+	ldim_drv->spi_dev->spi->wordlen = ldim_drv->spi_dev->wordlen;
 	spi_cs_deactivate(ldim_drv->spi_dev->spi);
 
 	bl_iw7027->spi = ldim_drv->spi_dev->spi;
@@ -377,6 +385,7 @@ int ldim_dev_iw7027_probe(void)
 	bl_iw7027->cmd_size = ldim_drv->ldev_conf->cmd_size;
 	bl_iw7027->init_data = ldim_drv->ldev_conf->init_on;
 	iw7027_ldim_driver_update();
+	printf("%s:is ok\n",__func__);
 
 	return 0;
 }

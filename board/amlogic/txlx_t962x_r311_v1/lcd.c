@@ -16,6 +16,7 @@
 #include <common.h>
 #include <amlogic/aml_lcd.h>
 #include <asm/arch/gpio.h>
+#include <amlogic/aml_ldim.h>
 
 //Rsv_val = 0xffffffff
 
@@ -217,6 +218,17 @@ static struct lcd_pinmux_ctrl_s bl_pinmux_ctrl[BL_PINMUX_MAX] = {
 	},
 };
 
+static struct ldim_pinmux_ctrl_s ldim_pinmux_ctrl[2] = {
+	{
+		.name = "ldim_pwm_vs_pin", //GPIOZ_6
+		.pinmux_set = {{4, 0x00008000}, {LCD_PINMUX_END, 0x0}},
+		.pinmux_clr = {{4, 0x00010000}, {3, 0x00200000}, {10, 0x00010000}, {LCD_PINMUX_END, 0x0}},
+	},
+	{
+		.name = "invalid",
+	},
+};
+
 //**** Special parameters just for Vbyone ***//
 static struct vbyone_config_s lcd_vbyone_config = {
 	.lane_count   = 8,
@@ -389,6 +401,34 @@ struct bl_config_s bl_config_dft = {
 	.bl_pinmux = bl_pinmux_ctrl,
 	.pinmux_set = {{4, 0x00010000}, {LCD_PINMUX_END, 0x0}},
 	.pinmux_clr = {{4, 0x00008000}, {3, 0x00200000}, {10, 0x00010000}, {LCD_PINMUX_END, 0x0}},
+};
+
+static unsigned char ldim_ini_data_on[300];
+static unsigned char ldim_ini_data_off[20];
+struct ldim_dev_config_s ldim_config_dft = {
+	.type = LDIM_DEV_TYPE_NORMAL,
+	.cs_hold_delay = 0,
+	.cs_clk_delay = 0,
+	.en_gpio = 0xff,
+	.en_gpio_on = 1,
+	.en_gpio_off = 0,
+	.lamp_err_gpio = 0xff,
+	.fault_check = 0,
+	.write_check = 0,
+	.dim_min = 0x7f, /* min 3% duty */
+	.dim_max = 0xfff,
+	.cmd_size = 4,
+	.init_on = ldim_ini_data_on,
+	.init_off = ldim_ini_data_off,
+	.pwm_config = {
+		.index = 0,
+		.pwm_method = BL_PWM_POSITIVE,
+		.pwm_port = BL_PWM_MAX,
+		.pwm_duty_max = 100,
+		.pwm_duty_min = 1,
+	},
+	.pinctrl_ver = 1,
+	.ldim_pinmux = ldim_pinmux_ctrl,
 };
 
 void lcd_config_bsp_init(void)

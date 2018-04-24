@@ -250,6 +250,8 @@ int aml_ldim_probe(char *dt_addr, int flag)
 
 	ldim_driver.valid_flag = 1;
 
+	LDIMPR("%s is ok\n", __func__);
+
 	return ret;
 }
 
