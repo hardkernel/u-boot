@@ -270,9 +270,10 @@ int board_mmc_init(bd_t	*bis)
 //	board_mmc_register(SDIO_PORT_B1);
 	return 0;
 }
+#endif
 
 #ifdef CONFIG_SYS_I2C_AML
-#if 0
+
 static void board_i2c_set_pinmux(void){
 	/*********************************************/
 	/*                | I2C_Master_AO        |I2C_Slave            |       */
@@ -284,21 +285,31 @@ static void board_i2c_set_pinmux(void){
 	/* GPIOAO_5  | [AO_PIN_MUX: 5]     | [AO_PIN_MUX: 1]   |     */
 	/*********************************************/
 
+#if 0 /* i2c_ao */
 	//disable all other pins which share with I2C_SDA_AO & I2C_SCK_AO
 	clrbits_le32(P_AO_RTI_PIN_MUX_REG, ((1<<2)|(1<<24)|(1<<1)|(1<<23)));
 	//enable I2C MASTER AO pins
 	setbits_le32(P_AO_RTI_PIN_MUX_REG,
 	(MESON_I2C_MASTER_AO_GPIOAO_4_BIT | MESON_I2C_MASTER_AO_GPIOAO_5_BIT));
+#endif
+
+	/* i2c_c: GPIOH_2, GPIOH_3 */
+	//disable all other pins which share with I2C_SDA_C & I2C_SCK_C
+	clrbits_le32(P_PERIPHS_PIN_MUX_0, ((1<<22)|(1<<21)|(1<<2)|(1<<1)));
+	//enable I2C MASTER C pins
+	setbits_le32(P_PERIPHS_PIN_MUX_0,
+		(MESON_I2C_MASTER_C_GPIOH_2_BIT |
+		MESON_I2C_MASTER_C_GPIOH_3_BIT));
 
 	udelay(10);
 };
-#endif
+
 struct aml_i2c_platform g_aml_i2c_plat = {
 	.wait_count         = 1000000,
 	.wait_ack_interval  = 5,
 	.wait_read_interval = 5,
 	.wait_xfer_interval = 5,
-	.master_no          = AML_I2C_MASTER_AO,
+	.master_no          = AML_I2C_MASTER_C,
 	.use_pio            = 0,
 	.master_i2c_speed   = AML_I2C_SPPED_400K,
 	.master_ao_pinmux = {
@@ -306,9 +317,15 @@ struct aml_i2c_platform g_aml_i2c_plat = {
 		.scl_bit    = MESON_I2C_MASTER_AO_GPIOAO_4_BIT,
 		.sda_reg    = (unsigned long)MESON_I2C_MASTER_AO_GPIOAO_5_REG,
 		.sda_bit    = MESON_I2C_MASTER_AO_GPIOAO_5_BIT,
+	},
+	.master_c_pinmux = {
+		.scl_reg    = (unsigned long)MESON_I2C_MASTER_C_GPIOH_2_REG,
+		.scl_bit    = MESON_I2C_MASTER_C_GPIOH_2_BIT,
+		.sda_reg    = (unsigned long)MESON_I2C_MASTER_C_GPIOH_3_REG,
+		.sda_bit    = MESON_I2C_MASTER_C_GPIOH_3_BIT,
 	}
 };
-#if 0
+
 static void board_i2c_init(void)
 {
 	//set I2C pinmux with PCB board layout
@@ -320,9 +337,9 @@ static void board_i2c_init(void)
 
 	udelay(10);
 }
+
 #endif
-#endif
-#endif
+
 
 #if defined(CONFIG_BOARD_EARLY_INIT_F)
 int board_early_init_f(void){
@@ -392,6 +409,11 @@ int board_init(void)
 	amlnf_init(0);
 #endif
 	writel(readl(P_AO_RTI_PULL_UP_REG)|(1<<12),P_AO_RTI_PULL_UP_REG);
+
+#ifdef CONFIG_SYS_I2C_AML
+	board_i2c_init();
+#endif
+
 	return 0;
 }
 
