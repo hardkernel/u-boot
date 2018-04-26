@@ -227,6 +227,7 @@ void remote_cec_hw_reset(void)
 	       AO_RTI_PIN_MUX_REG);
 	writel(readl(AO_RTI_PULL_UP_REG) & (~(1 << 7)), AO_RTI_PULL_UP_REG);
 	writel(readl(AO_RTI_PIN_MUX_REG2) | (1 << 13), AO_RTI_PIN_MUX_REG2);
+	writel(CECB_IRQ_EN_MASK, AO_CECB_INTR_MASKN);
 }
 
 static unsigned char remote_cec_ll_rx(void)
@@ -331,6 +332,7 @@ static int remote_cec_ll_tx(unsigned char *msg, unsigned char len)
 static int ping_cec_ll_tx(unsigned char *msg, unsigned char len)
 {
 	unsigned int reg, ret = 0;
+	unsigned int cnt = 0;
 
 	remote_cec_ll_tx(msg, len);
 
@@ -363,6 +365,10 @@ static int ping_cec_ll_tx(unsigned char *msg, unsigned char len)
 			break;
 		}
 		_udelay(500);
+		if (cnt++ > 2000) {
+			uart_puts("err:tx not finish flag\n");
+			break;
+		}
 	}
 
 	return ret;

@@ -333,6 +333,7 @@ static int remote_cec_ll_tx(unsigned char *msg, unsigned char len)
 static int ping_cec_ll_tx(unsigned char *msg, unsigned char len)
 {
 	unsigned int reg, ret = 0;
+	unsigned int cnt = 0;
 
 	remote_cec_ll_tx(msg, len);
 
@@ -365,6 +366,10 @@ static int ping_cec_ll_tx(unsigned char *msg, unsigned char len)
 			break;
 		}
 		_udelay(500);
+		if (cnt++ > 2000) {
+			uart_puts("err: tx not finish flag\n");
+			break;
+		}
 	}
 
 	return ret;
