@@ -58,6 +58,11 @@ DECLARE_GLOBAL_DATA_PTR;
 //new static eth setup
 struct eth_board_socket*  eth_board_skt;
 
+void sys_led_init(void)
+{
+	//set GPIOAO_11 drive strength
+	setbits_le32(AO_PAD_DS_A,(3<<22)); //GPIOAO_11 set drive strength "3"
+}
 
 int serial_set_pin_port(unsigned long port_base)
 {
@@ -541,6 +546,7 @@ extern void aml_pwm_cal_init(int mode);
 
 int board_init(void)
 {
+	sys_led_init();
     //Please keep CONFIG_AML_V2_FACTORY_BURN at first place of board_init
     //As NOT NEED other board init If USB BOOT MODE
 #ifdef CONFIG_AML_V2_FACTORY_BURN
