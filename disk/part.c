@@ -151,6 +151,12 @@ void dev_print (struct blk_desc *dev_desc)
 			dev_desc->revision,
 			dev_desc->product);
 		break;
+	case IF_TYPE_RKSFC:
+		printf ("Vendor: %s Rev: %s Prod: %s\n",
+			dev_desc->vendor,
+			dev_desc->revision,
+			dev_desc->product);
+		break;
 	case IF_TYPE_DOC:
 		puts("device type DOC\n");
 		return;
@@ -284,6 +290,9 @@ static void print_part_header(const char *type, struct blk_desc *dev_desc)
 		break;
 	case IF_TYPE_RKNAND:
 		puts("RKNAND");
+		break;
+	case IF_TYPE_RKSFC:
+		puts("RKSFC");
 		break;
 	default:
 		puts ("UNKNOWN");
