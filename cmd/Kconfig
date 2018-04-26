@@ -898,6 +898,13 @@ config CMD_RKNAND
 	help
 	  Rockchip NAND FLASH device support
 
+config CMD_RKSFC
+	bool "rksfc"
+	depends on (RKSFC_NOR || RKSFC_NAND)
+	default y if (RKSFC_NOR || RKSFC_NAND)
+	help
+	  Rockchip SFC device support
+
 config CMD_SATA
 	bool "sata - Access SATA subsystem"
 	select SATA
