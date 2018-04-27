@@ -323,6 +323,17 @@ static unsigned int detect_key(unsigned int suspend_from)
 				cec_node_init();
 		}
 #endif
+
+		if (irq[IRQ_TIMERA] == IRQ_TIMERA_NUM) {
+			irq[IRQ_TIMERA] = 0xFFFFFFFF;
+			if (time_out_ms != 0)
+				time_out_ms--;
+			if (time_out_ms == 0) {
+				wakeup_timer_clear();
+				exit_reason = AUTO_WAKEUP;
+			}
+		}
+
 		if (irq[IRQ_AO_TIMERA] == IRQ_AO_TIMERA_NUM) {
 			irq[IRQ_AO_TIMERA] = 0xFFFFFFFF;
 			if (check_adc_key_resume()) {
