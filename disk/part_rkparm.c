@@ -33,11 +33,8 @@ static int rkparm_param_parse(char *param, struct list_head *parts_head,
 {
 	struct rkparm_part *part;
 	const char *cmdline = strstr(param, "CMDLINE:");
-	char *cmdline_end = strstr(cmdline, "\n"); /* end by '\n' */
-	const char *blkdev_parts = strstr(cmdline, "mtdparts");
-	const char *blkdev_def = strchr(blkdev_parts, ':') + 1;
-	char *next = (char *)blkdev_def;
-	char *pend;
+	const char *blkdev_parts, *blkdev_def;
+	char *cmdline_end, *next, *pend;
 	int len, offset = 0;
 	unsigned long size, start;
 
@@ -46,6 +43,10 @@ static int rkparm_param_parse(char *param, struct list_head *parts_head,
 		return -EINVAL;
 	}
 
+	blkdev_parts = strstr(cmdline, "mtdparts");
+	blkdev_def = strchr(blkdev_parts, ':') + 1;
+	next = (char *)blkdev_def;
+	cmdline_end = strstr(cmdline, "\n"); /* end by '\n' */
 	*cmdline_end = '\0';
 	/* skip "CMDLINE:" */
 	env_update("bootargs", cmdline + strlen("CMDLINE:"));
