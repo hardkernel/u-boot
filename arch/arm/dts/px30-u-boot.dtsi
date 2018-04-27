@@ -4,6 +4,12 @@
  * SPDX-License-Identifier:     GPL-2.0+
  */
 
+/ {
+	aliases {
+		mmc0 = &emmc;
+		mmc1 = &sdmmc;
+	};
+};
 
 &uart2 {
 	clock-frequency = <24000000>;
@@ -14,6 +20,10 @@
 &nandc0 {
 	u-boot,dm-pre-reloc;
 	status = "okay";
+};
+
+&sdmmc {
+	u-boot,dm-pre-reloc;
 };
 
 &emmc {
