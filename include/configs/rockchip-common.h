@@ -84,6 +84,17 @@
 	"name=security,size=2M,uuid=${uuid_gpt_security};" \
 	"name=userdata,size=-,uuid=${uuid_gpt_userdata};\0"
 
+#define RKIMG_DET_BOOTDEV \
+	"rkimg_bootdev=" \
+	"if mmc dev 1; then " \
+		"if rkimgtest mmc 1; then " \
+		"setenv devtype mmc; setenv devnum 1; echo Boot from SDcard; fi;" \
+	"elif mmc dev 0; then " \
+		"setenv devtype mmc; setenv devnum 0;" \
+	"elif rknand dev 0; then " \
+		"setenv devtype rknand; setenv devnum 0;" \
+	"fi; \0"
+
 #define RKIMG_BOOTCOMMAND \
 	"boot_android ${devtype} ${devnum};" \
 	"bootrkp;" \

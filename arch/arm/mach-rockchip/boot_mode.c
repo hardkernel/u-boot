@@ -72,10 +72,7 @@ void devtype_num_envset(void)
 	if (done)
 		return;
 
-	const char *devtype_num_set =
-	"if mmc dev 0; then setenv devtype mmc; setenv devnum 0;"
-	"else if rknand dev 0; then setenv devtype rknand; setenv devnum 0; fi;"
-	"fi;";
+	const char *devtype_num_set = "run rkimg_bootdev";
 
 	run_command_list(devtype_num_set, -1, 0);
 	done = 1;
