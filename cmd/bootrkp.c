@@ -5,6 +5,7 @@
  */
 
 #include <common.h>
+#include <malloc.h>
 #include <android_bootloader.h>
 #include <attestation_key.h>
 #include <boot_rkimg.h>
@@ -78,4 +79,40 @@ U_BOOT_CMD(
 	"kernel.img: zImage/Image\n"
 	"boot.img: ramdisk\n"
 	"resource.img: dtb, u-boot logo, kernel logo"
+);
+
+static int do_rkimg_test(cmd_tbl_t *cmdtp, int flag, int argc,
+		      char * const argv[])
+{
+	struct blk_desc *dev_desc;
+	u32* buffer;
+	int ret = 0;
+
+	dev_desc = blk_get_dev(argv[1], simple_strtoul(argv[2], NULL, 16));
+
+	buffer = memalign(ARCH_DMA_MINALIGN, 1024);
+	/* Read one block from begining of IDB data */
+	ret = blk_dread(dev_desc, 64, 2, buffer);
+	if (ret != 1) {
+		printf("%s fail to read data from IDB\n", __func__);
+		free(buffer);
+		return CMD_RET_FAILURE;
+	}
+
+	if (buffer[0] == 0xFCDC8C3B){
+		printf("%s found IDB in SDcard\n", __func__);
+		ret = CMD_RET_SUCCESS;
+		if (0 == buffer[128 + 104 / 4]) /* TAG in IDB */
+			env_update("bootargs", "sdfwupdate");
+	}
+
+	free(buffer);
+
+	return ret;
+}
+
+U_BOOT_CMD(
+	rkimgtest, 3, 0,    do_rkimg_test,
+	"Test if storage media have rockchip image",
+	""
 );
