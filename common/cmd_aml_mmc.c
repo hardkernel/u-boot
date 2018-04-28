@@ -551,7 +551,7 @@ static int amlmmc_erase_non_loader(int argc, char *const argv[])
             // (2) erase all the area after reserve-partition
             start_blk = (part_info->offset + part_info->size + PARTITION_RESERVED)
                          >> blk_shift;
-            u64 erase_cnt = (mmc->capacity >> blk_shift) - 1 - start_blk;
+            u64 erase_cnt = (mmc->capacity >> blk_shift) - start_blk;
             n = mmc->block_dev.block_erase(dev, start_blk, erase_cnt);
         }
     } else {
@@ -648,7 +648,7 @@ static int amlmmc_erase_whole(int argc, char *const argv[])
             // (2) erase all the area after reserve-partition
             start_blk = (part_info->offset + part_info->size + PARTITION_RESERVED)
                          >> blk_shift;
-            u64 erase_cnt = (mmc->capacity >> blk_shift) - 1 - start_blk;
+            u64 erase_cnt = (mmc->capacity >> blk_shift) - start_blk;
             n = mmc->block_dev.block_erase(dev, start_blk, erase_cnt);
         }
     } else {
@@ -710,7 +710,7 @@ static int amlmmc_erase_non_cache(int arc, char *const argv[])
              }
              start_blk = (part_info->offset + part_info->size + PARTITION_RESERVED)
                           >> blk_shift;
-             u64 erase_cnt = (mmc->capacity >> blk_shift) - 1 - start_blk;
+             u64 erase_cnt = (mmc->capacity >> blk_shift) - start_blk;
              n = mmc->block_dev.block_erase(dev, start_blk, erase_cnt);
          }
      } else {
