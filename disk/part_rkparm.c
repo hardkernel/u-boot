@@ -33,7 +33,7 @@ static int rkparm_param_parse(char *param, struct list_head *parts_head,
 {
 	struct rkparm_part *part;
 	const char *cmdline = strstr(param, "CMDLINE:");
-	const char *blkdev_parts, *blkdev_def;
+	const char *blkdev_parts;
 	char *cmdline_end, *next, *pend;
 	int len, offset = 0;
 	unsigned long size, start;
@@ -44,8 +44,7 @@ static int rkparm_param_parse(char *param, struct list_head *parts_head,
 	}
 
 	blkdev_parts = strstr(cmdline, "mtdparts");
-	blkdev_def = strchr(blkdev_parts, ':') + 1;
-	next = (char *)blkdev_def;
+	next = strchr(blkdev_parts, ':');
 	cmdline_end = strstr(cmdline, "\n"); /* end by '\n' */
 	*cmdline_end = '\0';
 	/* skip "CMDLINE:" */
@@ -57,13 +56,16 @@ static int rkparm_param_parse(char *param, struct list_head *parts_head,
 	 */
 	env_delete("bootargs", "initrd=");
 
-	while (*next) {
+	while (next) {
+		/* Skip ':' and ',' */
+		next++;
 		if (*next == '-') {
 			size = (~0UL);
 			next++;
 		} else {
 			size = simple_strtoul(next, &next, 16);
 		}
+		/* Skip '@' */
 		next++;
 		start = simple_strtoul(next, &next, 16);
 		next++;
@@ -82,9 +84,8 @@ static int rkparm_param_parse(char *param, struct list_head *parts_head,
 		part->size = size;
 		strncpy(part->name, next, len);
 		part->name[len] = '\0';
-		next = strchr(next, ',');
-		next++;
 		list_add_tail(&part->node, parts_head);
+		next = strchr(next, ',');
 	}
 
 	return 0;
