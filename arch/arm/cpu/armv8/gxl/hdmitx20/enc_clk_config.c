@@ -97,12 +97,12 @@ static void set_hpll_clk_out(unsigned clk)
 
 	switch (clk) {
 	case 5940000:
-		hd_write_reg(P_HHI_HDMI_PLL_CNTL, 0x4000027b);
+		hd_write_reg(P_HHI_HDMI_PLL_CNTL, 0xc000027b);
 		if (frac_rate)
 			hd_write_reg(P_HHI_HDMI_PLL_CNTL1, 0x800cb281);
 		else
 			hd_write_reg(P_HHI_HDMI_PLL_CNTL1, 0x800cb300);
-		hd_write_reg(P_HHI_HDMI_PLL_CNTL2, 0xc60f30e0);
+		hd_write_reg(P_HHI_HDMI_PLL_CNTL2, 0xc60f30cc);
 		hd_write_reg(P_HHI_HDMI_PLL_CNTL3, 0x0c8e0000);
 		hd_write_reg(P_HHI_HDMI_PLL_CNTL4, 0x001fa729);
 		hd_write_reg(P_HHI_HDMI_PLL_CNTL5, 0x01a31500);
@@ -256,12 +256,12 @@ static void set_hpll_clk_out(unsigned clk)
 		printk("HPLL: 0x%lx\n", hd_read_reg(P_HHI_HDMI_PLL_CNTL));
 		break;
 	case 2970000:
-		hd_write_reg(P_HHI_HDMI_PLL_CNTL, 0x4000027b);
+		hd_write_reg(P_HHI_HDMI_PLL_CNTL, 0xc000027b);
 		if (frac_rate)
 			hd_write_reg(P_HHI_HDMI_PLL_CNTL1, 0x800cb281);
 		else
 			hd_write_reg(P_HHI_HDMI_PLL_CNTL1, 0x800cb300);
-		hd_write_reg(P_HHI_HDMI_PLL_CNTL2, 0x860f30c4);
+		hd_write_reg(P_HHI_HDMI_PLL_CNTL2, 0x860730c4);
 		hd_write_reg(P_HHI_HDMI_PLL_CNTL3, 0x0c8e0000);
 		hd_write_reg(P_HHI_HDMI_PLL_CNTL4, 0x001fa729);
 		hd_write_reg(P_HHI_HDMI_PLL_CNTL5, 0x01a31500);
@@ -480,20 +480,20 @@ static void set_hpll_sspll(struct hdmitx_dev *hdev)
 	switch (vic) {
 	case HDMI_1920x1080p60_16x9:
 	case HDMI_1920x1080p50_16x9:
-		hd_set_reg_bits(P_HHI_HDMI_PLL_CNTL2, 0x68b48c4, 0, 30);
+		hd_set_reg_bits(P_HHI_HDMI_PLL_CNTL2, 0x868b48c4, 0, 30);
 		break;
 	case HDMI_1280x720p60_16x9:
 	case HDMI_1280x720p50_16x9:
 	case HDMI_1920x1080i60_16x9:
 	case HDMI_1920x1080i50_16x9:
-		hd_set_reg_bits(P_HHI_HDMI_PLL_CNTL2, 0x64348c4, 0, 30);
+		hd_set_reg_bits(P_HHI_HDMI_PLL_CNTL2, 0x864348c4, 0, 30);
 		break;
 	case HDMI_3840x2160p50_16x9:
 	case HDMI_3840x2160p60_16x9:
 	case HDMI_4096x2160p50_256x135:
 	case HDMI_4096x2160p60_256x135:
 		if (hdev->para->cs == HDMI_COLOR_FORMAT_420)
-			hd_set_reg_bits(P_HHI_HDMI_PLL_CNTL2, 0x62b44c4, 0, 30);
+			hd_set_reg_bits(P_HHI_HDMI_PLL_CNTL2, 0x862b44c4, 0, 30);
 		break;
 	case HDMI_3840x2160p30_16x9:
 	case HDMI_3840x2160p25_16x9:
@@ -501,7 +501,7 @@ static void set_hpll_sspll(struct hdmitx_dev *hdev)
 	case HDMI_4096x2160p30_256x135:
 	case HDMI_4096x2160p25_256x135:
 	case HDMI_4096x2160p24_256x135:
-		hd_set_reg_bits(P_HHI_HDMI_PLL_CNTL2, 0x62b44c4, 0, 30);
+		hd_set_reg_bits(P_HHI_HDMI_PLL_CNTL2, 0x860730c4, 0, 30);
 		break;
 	default:
 		break;
