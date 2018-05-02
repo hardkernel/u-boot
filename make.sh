@@ -134,7 +134,7 @@ pack_uboot_image()
 
 	UBOOT_LOAD_ADDR=`sed -n "/CONFIG_SYS_TEXT_BASE=/s/CONFIG_SYS_TEXT_BASE=//p" ${OUTDIR}/include/autoconf.mk|tr -d '\r'`
 	${TOOLCHAIN_RKBIN}/loaderimage --pack --uboot ${OUTDIR}/u-boot.bin uboot.img ${UBOOT_LOAD_ADDR}
-	rm u-boot.img u-boot-dtb.img
+	rm ${OUTDIR}/u-boot.img ${OUTDIR}/u-boot-dtb.img
 	echo "pack uboot okay! Input: ${OUTDIR}/u-boot.bin"
 }
 
