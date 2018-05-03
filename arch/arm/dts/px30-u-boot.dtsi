@@ -37,3 +37,8 @@
 &cru {
 	u-boot,dm-pre-reloc;
 };
+
+&saradc {
+	u-boot,dm-pre-reloc;
+	status = "okay";
+};
