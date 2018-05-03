@@ -103,7 +103,7 @@ int board_late_init(void)
 
 #ifdef CONFIG_USING_KERNEL_DTB
 #include <asm/arch/resource_img.h>
-#define DTB_FILE                        "rk-kernel.dtb"
+
 int init_kernel_dtb(void)
 {
 	int ret = 0;
@@ -137,7 +137,7 @@ init_dtb:
 		return -1;
 	}
 
-	ret = rockchip_read_resource_file((void *)fdt_addr, DTB_FILE, 0, 0);
+	ret = rockchip_read_dtb_file((void *)fdt_addr);
 	if (ret < 0) {
 		printf("%s dtb in resource read fail\n", __func__);
 		return 0;

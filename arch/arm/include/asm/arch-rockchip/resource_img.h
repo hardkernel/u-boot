@@ -18,4 +18,5 @@ int rockchip_read_resource_file(void *buf, const char *name,
 				int offset, int len);
 int rockchip_get_resource_file(void *buf, const char *name);
 
+int rockchip_read_dtb_file(void *fdt_addr);
 #endif

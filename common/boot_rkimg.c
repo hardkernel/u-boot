@@ -380,8 +380,7 @@ int boot_rockchip_image(struct blk_desc *dev_desc, disk_partition_t *boot_part)
 	}
 
 	if (gd->fdt_blob != (void *)fdt_addr_r) {
-		fdt_size = rockchip_read_resource_file((void *)fdt_addr_r,
-						       DTB_FILE, 0, 0);
+		fdt_size = rockchip_read_dtb_file((void *)fdt_addr_r);
 		if (fdt_size < 0) {
 			printf("%s fdt read error\n", __func__);
 			ret = -EINVAL;
