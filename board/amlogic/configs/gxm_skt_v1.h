@@ -124,7 +124,6 @@
             "setenv bootargs ${initargs} logo=${display_layer},loaded,${fb_addr},${outputmode} maxcpus=${maxcpus} vout=${outputmode},enable hdmimode=${hdmimode} cvbsmode=${cvbsmode} hdmitx=${cecconfig} cvbsdrv=${cvbs_drv} pq=${pq} androidboot.firstboot=${firstboot} jtag=${jtag}; "\
 	"setenv bootargs ${bootargs} androidboot.hardware=amlogic;"\
             "run cmdline_keys;"\
-            "setenv bootargs ${bootargs} androidboot.slot_suffix=${active_slot};"\
             "\0"\
         "switch_bootmode="\
             "get_rebootmode;"\

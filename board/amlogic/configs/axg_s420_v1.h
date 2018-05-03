@@ -116,7 +116,6 @@
         "storeargs="\
             "setenv bootargs ${initargs} logo=${display_layer},loaded,androidboot.selinux=${EnableSelinux} androidboot.firstboot=${firstboot} jtag=${jtag}; "\
 	"setenv bootargs ${bootargs} androidboot.hardware=amlogic;"\
-            "setenv bootargs ${bootargs} slot_suffix=${active_slot};"\
             "run cmdline_keys;"\
             "\0"\
         "switch_bootmode="\

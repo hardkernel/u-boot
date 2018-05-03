@@ -156,7 +156,6 @@
 		"androidboot.firstboot=${firstboot}; "\
 		"setenv bootargs ${bootargs} androidboot.hardware=amlogic;"\
 		"run cmdline_keys; "\
-		"setenv bootargs ${bootargs} androidboot.slot_suffix=${active_slot};"\
 		"\0"\
 	"switch_bootmode="\
 		"get_rebootmode; "\

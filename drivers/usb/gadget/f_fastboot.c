@@ -33,6 +33,9 @@
 #include <partition_table.h>
 #include <android_image.h>
 #include <image.h>
+#ifdef CONFIG_AML_ANTIROLLBACK
+#include <anti-rollback.h>
+#endif
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -918,7 +921,7 @@ static void cb_flashing(struct usb_ep *ep, struct usb_request *req)
 	dump_lock_info(info);
 
 	strcpy(response, "OKAY");
-	chars_left = sizeof(response) - strlen(response) - 1;
+	chars_left = sizeof(response_str) - strlen(response) - 1;
 	cmd = req->buf;
 	strsep(&cmd, " ");
 	printf("cb_flashing: %s\n", cmd);
@@ -974,8 +977,34 @@ static void cb_flashing(struct usb_ep *ep, struct usb_request *req)
 	} else if (!strcmp_l1("lock_bootloader", cmd)) {
 		info->lock_bootloader = 1;
 	} else if (!strcmp_l1("unlock", cmd)) {
+#ifdef CONFIG_AVB2
+#ifdef CONFIG_AML_ANTIROLLBACK
+		if (avb_unlock()) {
+			printf("unlocking device.  Erasing userdata partition!\n");
+			run_command("store erase partition data", 0);
+		} else {
+			printf("unlock failed!\n");
+		}
+#else
+		printf("unlocking device.  Erasing userdata partition!\n");
+		run_command("store erase partition data", 0);
+#endif
+#endif
 		info->lock_state = 0;
 	} else if (!strcmp_l1("lock", cmd)) {
+#ifdef CONFIG_AVB2
+#ifdef CONFIG_AML_ANTIROLLBACK
+		if (avb_lock()) {
+			printf("lock failed!\n");
+		} else {
+			printf("locking device.  Erasing userdata partition!\n");
+			run_command("store erase partition data", 0);
+		}
+#else
+		printf("locking device.  Erasing userdata partition!\n");
+		run_command("store erase partition data", 0);
+#endif
+#endif
 		info->lock_state = 1;
 	} else {
 		error("unknown variable: %s\n", cmd);

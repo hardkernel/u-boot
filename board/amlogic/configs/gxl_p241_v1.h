@@ -131,7 +131,6 @@
 	"setenv bootargs ${bootargs} androidboot.hardware=amlogic;"\
         "setenv bootargs ${bootargs} page_trace=${page_trace};" \
             "run cmdline_keys;"\
-            "setenv bootargs ${bootargs} androidboot.slot_suffix=${active_slot};"\
             "\0"\
         "switch_bootmode="\
             "get_rebootmode;"\
