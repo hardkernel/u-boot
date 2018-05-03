@@ -109,9 +109,9 @@ static int dbg_enable = 0;
 #define IOFFSET_H		0x0097
 #define IOFFSET_L		0x0098
 #define BAT_R0			0x0099
-#define BAT_R1			0x009a
-#define BAT_R2			0x009b
-#define BAT_R3			0x009c
+#define SOC_REG0		0x009a
+#define SOC_REG1		0x009b
+#define SOC_REG2		0x009c
 #define REMAIN_CAP_REG0		0x9d
 #define REMAIN_CAP_REG1		0x9e
 #define REMAIN_CAP_REG2		0x9f
@@ -134,7 +134,6 @@ static int dbg_enable = 0;
 #define CUR_ADC_K0		0x00b0
 #define BAT_DISCHRG		0x00ec
 #define BAT_CON			BIT(4)
-#define SOC_REG			0xa5
 
 #define USB_CTRL_REG		0x00E5
 #define PMIC_SYS_STS		0x00f0
@@ -551,22 +550,28 @@ static int rk817_bat_vol_to_cap(struct rk817_battery_device *battery,
 }
 
 static void rk817_bat_save_dsoc(struct rk817_battery_device *battery,
-				u8 save_soc)
+				int save_soc)
 {
 	static int last_soc = -1;
-	int value;
 
-	value = rk817_bat_read(battery, SOC_REG);
-	value &= 0x80;
 	if (last_soc != save_soc) {
-		rk817_bat_write(battery, SOC_REG, value | save_soc);
+		rk817_bat_write(battery, SOC_REG0, save_soc & 0xff);
+		rk817_bat_write(battery, SOC_REG1, (save_soc >> 8) & 0xff);
+		rk817_bat_write(battery, SOC_REG2, (save_soc >> 16) & 0xff);
+
 		last_soc = save_soc;
 	}
 }
 
 static int rk817_bat_get_prev_dsoc(struct rk817_battery_device *battery)
 {
-	return (rk817_bat_read(battery, SOC_REG) & 0x7f);
+	int value;
+
+	value = rk817_bat_read(battery, SOC_REG0);
+	value |= rk817_bat_read(battery, SOC_REG1) << 8;
+	value |= rk817_bat_read(battery, SOC_REG2) << 16;
+
+	return value;
 }
 
 static int rk817_bat_get_prev_cap(struct rk817_battery_device *battery)
@@ -729,7 +734,6 @@ static void rk817_bat_not_first_pwron(struct rk817_battery_device *battery)
 	battery->is_halt = is_rk817_bat_last_halt(battery);
 	battery->halt_cnt = rk817_bat_get_halt_cnt(battery);
 
-	pre_soc *= 1000;
 	if (battery->is_halt) {
 		DBG("system halt last time... cap: pre=%d, now=%d\n",
 		    pre_cap, now_cap);
@@ -769,7 +773,7 @@ static void rk817_bat_rsoc_init(struct rk817_battery_device *battery)
 	else
 		rk817_bat_not_first_pwron(battery);
 
-	 rk817_bat_save_dsoc(battery, battery->dsoc / 1000);
+	 rk817_bat_save_dsoc(battery, battery->dsoc);
 	 rk817_bat_save_cap(battery, battery->nac);
 }
 
@@ -1049,7 +1053,7 @@ static void rk817_bat_smooth_charge(struct rk817_battery_device *battery)
 	else if (battery->dsoc < 0)
 		battery->dsoc = 0;
 
-	rk817_bat_save_dsoc(battery, battery->dsoc / 1000);
+	rk817_bat_save_dsoc(battery, battery->dsoc);
 	rk817_bat_save_cap(battery, battery->remain_cap / 1000);
 out:
 	return;
