@@ -152,7 +152,6 @@ int get_bootdev_type(void)
 	char boot_options[128] = {0};
 	static int appended;
 
-	devtype_num_envset();
 	devtype = env_get("devtype");
 
 	/* For current use(Only EMMC support!) */
@@ -195,9 +194,13 @@ struct blk_desc *rockchip_get_bootdev(void)
 {
 	struct blk_desc *dev_desc;
 	int dev_type;
+	int devnum;
 
+	devtype_num_envset();
 	dev_type = get_bootdev_type();
-	dev_desc = blk_get_devnum_by_type(dev_type, 0);
+	devnum = env_get_ulong("devnum", 10, 0);
+
+	dev_desc = blk_get_devnum_by_type(dev_type, devnum);
 
 	return dev_desc;
 }
