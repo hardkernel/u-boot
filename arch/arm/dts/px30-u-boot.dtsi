@@ -42,3 +42,23 @@
 	u-boot,dm-pre-reloc;
 	status = "okay";
 };
+
+&gpio0 {
+	u-boot,dm-pre-reloc;
+	status = "disabled";
+};
+
+&gpio1 {
+	u-boot,dm-pre-reloc;
+	status = "disabled";
+};
+
+&gpio2 {
+	u-boot,dm-pre-reloc;
+	status = "disabled";
+};
+
+&gpio3 {
+	u-boot,dm-pre-reloc;
+	status = "disabled";
+};
