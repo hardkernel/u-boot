@@ -711,6 +711,7 @@ static void bl_power_en_ctrl(struct bl_config_s *bconf, int status)
 void aml_bl_power_ctrl(int status, int delay_flag)
 {
 	int gpio, value;
+	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
 	struct bl_config_s *bconf;
 #ifdef CONFIG_AML_BL_EXTERN
 	struct aml_bl_extern_driver_s *bl_ext;
@@ -736,8 +737,16 @@ void aml_bl_power_ctrl(int status, int delay_flag)
 		}
 
 		bl_status = 1;
-		if ((bconf->power_on_delay > 0) && (delay_flag > 0))
-			mdelay(bconf->power_on_delay);
+		/* check if factory test */
+		if (lcd_drv->factory_bl_power_on_delay >= 0) {
+			LCDPR("bl: %s: factory test power_on_delay!\n", __func__);
+			if ((lcd_drv->factory_bl_power_on_delay > 0) && (delay_flag > 0))
+				mdelay(lcd_drv->factory_bl_power_on_delay);
+		} else {
+			if ((bconf->power_on_delay > 0) && (delay_flag > 0))
+				mdelay(bconf->power_on_delay);
+		}
+
 		switch (bconf->method) {
 		case BL_CTRL_GPIO:
 			bl_power_en_ctrl(bconf, 1);
@@ -943,7 +952,11 @@ void aml_bl_config_print(void)
 	LCDPR("bl: en_gpio           = %d\n", bconf->en_gpio);
 	LCDPR("bl: en_gpio_on        = %d\n", bconf->en_gpio_on);
 	LCDPR("bl: en_gpio_off       = %d\n", bconf->en_gpio_off);
-	LCDPR("bl: power_on_delay    = %d\n", bconf->power_on_delay);
+	/* check if factory test */
+	if (lcd_drv->factory_bl_power_on_delay >= 0)
+		LCDPR("bl: factory test power_on_delay    = %d\n", bconf->power_on_delay);
+	else
+		LCDPR("bl: power_on_delay    = %d\n", bconf->power_on_delay);
 	LCDPR("bl: power_off_delay   = %d\n\n", bconf->power_off_delay);
 	switch (bconf->method) {
 	case BL_CTRL_PWM:

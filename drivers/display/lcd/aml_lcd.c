@@ -100,12 +100,19 @@ static void lcd_power_ctrl(int status)
 
 	i = 0;
 	lcd_power = lcd_drv->lcd_config->lcd_power;
-	while (i < LCD_PWR_STEP_MAX) {
-		if (status)
-			power_step = &lcd_power->power_on_step[i];
-		else
-			power_step = &lcd_power->power_off_step[i];
+	if (status) {
+		/* check if factory test */
+		if (lcd_drv->factory_lcd_power_on_step) {
+			LCDPR("%s: factory test power_on_step!\n", __func__);
+			power_step = lcd_drv->factory_lcd_power_on_step;
+		} else {
+			power_step = &lcd_power->power_on_step[0];
+		}
+	} else {
+		power_step = &lcd_power->power_off_step[0];
+	}
 
+	while (i < LCD_PWR_STEP_MAX) {
 		if (power_step->type >= LCD_POWER_TYPE_MAX)
 			break;
 		if (lcd_debug_print_flag) {
@@ -159,6 +166,7 @@ static void lcd_power_ctrl(int status)
 		if (power_step->delay)
 			mdelay(power_step->delay);
 		i++;
+		power_step++;
 	}
 
 	if (lcd_debug_print_flag)
@@ -252,23 +260,27 @@ static void lcd_timing_info_print(struct lcd_config_s * pconf)
 		pconf->lcd_basic.lcd_clk_min, pconf->lcd_basic.lcd_clk_max);
 }
 
-static void lcd_power_info_print(struct lcd_config_s *pconf, int status)
+static void lcd_power_info_print(struct aml_lcd_drv_s *lcd_drv, int status)
 {
 	int i;
 	struct lcd_power_step_s *power_step;
 
-	if (status)
-		printf("power on step:\n");
-	else
+	if (status) {
+		/* check if factory test */
+		if (lcd_drv->factory_lcd_power_on_step) {
+			printf("factory test power on step:\n");
+			power_step = lcd_drv->factory_lcd_power_on_step;
+		} else {
+			printf("power on step:\n");
+			power_step = &lcd_drv->lcd_config->lcd_power->power_on_step[0];
+		}
+	} else {
 		printf("power off step:\n");
+		power_step = &lcd_drv->lcd_config->lcd_power->power_off_step[0];
+	}
 
 	i = 0;
 	while (i < LCD_PWR_STEP_MAX) {
-		if (status)
-			power_step = &pconf->lcd_power->power_on_step[i];
-		else
-			power_step = &pconf->lcd_power->power_off_step[i];
-
 		if (power_step->type >= LCD_POWER_TYPE_MAX)
 			break;
 		switch (power_step->type) {
@@ -291,6 +303,7 @@ static void lcd_power_info_print(struct lcd_config_s *pconf, int status)
 			break;
 		}
 		i++;
+		power_step++;
 	}
 }
 
@@ -469,8 +482,8 @@ static void lcd_info_print(void)
 		break;
 	}
 
-	lcd_power_info_print(pconf, 1);
-	lcd_power_info_print(pconf, 0);
+	lcd_power_info_print(lcd_drv, 1);
+	lcd_power_info_print(lcd_drv, 0);
 }
 
 static unsigned int lcd_reg_dump_clk[] = {
@@ -1559,6 +1572,10 @@ static struct aml_lcd_drv_s aml_lcd_driver = {
 	.unifykey_tcon_test = aml_lcd_key_tcon_test,
 	.unifykey_dump = aml_lcd_key_dump,
 	.lcd_extern_info = aml_lcd_extern_info,
+
+	/* for factory test */
+	.factory_lcd_power_on_step = NULL,
+	.factory_bl_power_on_delay = -1,
 };
 
 struct aml_lcd_drv_s *aml_lcd_get_driver(void)

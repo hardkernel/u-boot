@@ -551,6 +551,10 @@ struct aml_lcd_drv_s {
 	void (*unifykey_tcon_test)(void);
 	void (*unifykey_dump)(void);
 	void (*lcd_extern_info)(void);
+
+	/* for factory test */
+	struct lcd_power_step_s *factory_lcd_power_on_step;
+	int factory_bl_power_on_delay;
 };
 
 extern void lcd_config_bsp_init(void);
