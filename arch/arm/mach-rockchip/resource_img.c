@@ -200,7 +200,9 @@ static int init_resource_list(struct resource_img_hdr *hdr)
 					 &part_info);
 	if (ret < 0) {
 		printf("fail to get %s part\n", boot_partname);
-		goto out;
+		/* RKIMG can support part table without 'boot' */
+		mode = 0;
+		goto next;
 	}
 	andr_hdr = (void *)hdr;
 	ret = blk_dread(dev_desc, part_info.start, 1, andr_hdr);
@@ -222,6 +224,7 @@ static int init_resource_list(struct resource_img_hdr *hdr)
 		/* Set mode to 0 in for recovery is not valid AOSP img */
 		mode = 0;
 	}
+next:
 #endif
 	if (!mode) {
 		/* Read resource from Rockchip Resource partition */
