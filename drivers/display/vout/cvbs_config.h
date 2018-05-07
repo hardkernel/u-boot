@@ -258,6 +258,49 @@ static const struct reg_s *tvregs_576cvbs_performance_txl[] = {
 	tvregs_576cvbs_china_mobile_txl
 };
 
+static const struct reg_s tvregs_576cvbs_china_sarft_g12a[] = {
+	{VENC_VDAC_DAC0_GAINCTRL,	0x9		},
+	{ENCI_YC_DELAY,				0x333	},
+	{ENCI_SYNC_ADJ,				0x0		},
+	{ENCI_VIDEO_SAT,			0x9		},
+	{VENC_VDAC_DAC0_FILT_CTRL1,	0xfc48	},
+	{MREG_END_MARKER,			0		}
+};
+
+static const struct reg_s tvregs_576cvbs_china_telecom_g12a[] = {
+	{VENC_VDAC_DAC0_GAINCTRL,	0x9		},
+	{ENCI_YC_DELAY,				0x333   },
+	{ENCI_SYNC_ADJ,				0x8080	},
+	{ENCI_VIDEO_SAT,			0xfd	},
+	{VENC_VDAC_DAC0_FILT_CTRL1,	0xf850	},
+	{MREG_END_MARKER,			0		}
+};
+
+static const struct reg_s tvregs_576cvbs_china_mobile_g12a[] = {
+	{VENC_VDAC_DAC0_GAINCTRL,	0x9		},
+	{ENCI_YC_DELAY,				0x333   },
+	{ENCI_SYNC_ADJ,				0x8080	},
+	{ENCI_VIDEO_SAT,			0xfd	},
+	{VENC_VDAC_DAC0_FILT_CTRL1,	0xf850	},
+	{MREG_END_MARKER,			0		}
+};
+
+static const struct reg_s tvregs_576cvbs_china_mobile_g12a_revB[] = {
+	{VENC_VDAC_DAC0_GAINCTRL,	0x9		},
+	{ENCI_YC_DELAY,				0x546   },
+	{ENCI_SYNC_ADJ,				0x8080	},
+	{ENCI_VIDEO_SAT,			0x9		},
+	{VENC_VDAC_DAC0_FILT_CTRL1,	0xf850	},
+	{MREG_END_MARKER,			0		}
+};
+
+static const struct reg_s *tvregs_576cvbs_performance_g12a[] = {
+	tvregs_576cvbs_china_sarft_g12a,
+	tvregs_576cvbs_china_telecom_g12a,
+	tvregs_576cvbs_china_mobile_g12a,
+	tvregs_576cvbs_china_mobile_g12a_revB
+};
+
 #endif
 
 static const struct reg_s tvregs_576cvbs_enc[] = {

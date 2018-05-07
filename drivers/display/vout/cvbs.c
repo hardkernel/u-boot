@@ -739,7 +739,13 @@ static void cvbs_performance_enhancement(int mode)
 		index = (index >= max) ? 0 : index;
 		s = tvregs_576cvbs_performance_gxtvbb[index];
 		type = 5;
-	} else if (is_meson_gxlx_cpu() || is_meson_g12a_cpu()) {
+	} else if (is_meson_g12a_cpu()) {
+		max = sizeof(tvregs_576cvbs_performance_g12a)
+			/ sizeof(struct reg_s *);
+		index = (index >= max) ? 0 : index;
+		s = tvregs_576cvbs_performance_g12a[index];
+		type = 9;
+	} else if (is_meson_gxlx_cpu()) {
 		max = sizeof(tvregs_576cvbs_performance_905l)
 			/ sizeof(struct reg_s *);
 		index = (index >= max) ? 0 : index;
