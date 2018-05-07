@@ -56,7 +56,7 @@ static int rk8xx_write(struct udevice *dev, uint reg, const uint8_t *buff,
 
 	ret = dm_i2c_write(dev, reg, buff, len);
 	if (ret) {
-		debug("write error to device: %p register: %#x!", dev, reg);
+		printf("%s: write reg 0x%02x failed, ret=%d\n", __func__, reg, ret);
 		return ret;
 	}
 
@@ -69,7 +69,7 @@ static int rk8xx_read(struct udevice *dev, uint reg, uint8_t *buff, int len)
 
 	ret = dm_i2c_read(dev, reg, buff, len);
 	if (ret) {
-		debug("read error from device: %p register: %#x!", dev, reg);
+		printf("%s: read reg 0x%02x failed, ret=%d\n", __func__, reg, ret);
 		return ret;
 	}
 
@@ -105,16 +105,14 @@ static int rk8xx_shutdown(struct udevice *dev)
 
 	ret = dm_i2c_read(dev, devctrl_reg, &val, 1);
 	if (ret) {
-		printf("read error from device: %p register: %#x!",
-		       dev, devctrl_reg);
+		printf("%s: read reg 0x%02x failed, ret=%d\n", __func__, devctrl_reg, ret);
 		return ret;
 	}
 
 	val |= dev_off;
 	ret = dm_i2c_write(dev, devctrl_reg, &val, 1);
 	if (ret) {
-		printf("write error to device: %p register: %#x!",
-		       dev, devctrl_reg);
+		printf("%s: write reg 0x%02x failed, ret=%d\n", __func__, devctrl_reg, ret);
 		return ret;
 	}
 
@@ -129,7 +127,7 @@ static int rk8xx_bind(struct udevice *dev)
 
 	regulators_node = dev_read_subnode(dev, "regulators");
 	if (!ofnode_valid(regulators_node)) {
-		debug("%s: %s regulators subnode not found!", __func__,
+		debug("%s: %s regulators subnode not found!\n", __func__,
 		      dev->name);
 		return -ENXIO;
 	}
@@ -158,7 +156,7 @@ static int rk8xx_probe(struct udevice *dev)
 	struct rk8xx_priv *priv = dev_get_priv(dev);
 	struct reg_data *init_data = NULL;
 	int init_data_num = 0;
-	int ret = 0, i;
+	int ret = 0, i, show_variant;
 	uint8_t msb, lsb, id_msb, id_lsb;
 
 	/* read Chip variant */
@@ -171,13 +169,20 @@ static int rk8xx_probe(struct udevice *dev)
 		id_lsb = ID_LSB;
 	}
 
-	rk8xx_read(dev, id_msb, &msb, 1);
-	rk8xx_read(dev, id_lsb, &lsb, 1);
+	ret = rk8xx_read(dev, id_msb, &msb, 1);
+	if (ret)
+		return ret;
+	ret = rk8xx_read(dev, id_lsb, &lsb, 1);
+	if (ret)
+		return ret;
 
 	priv->variant = ((msb << 8) | lsb) & RK8XX_ID_MSK;
+	show_variant = priv->variant;
 	switch (priv->variant) {
-	case RK805_ID:
 	case RK808_ID:
+		show_variant = 0x808;	/* RK808 hardware ID is 0 */
+		break;
+	case RK805_ID:
 	case RK816_ID:
 	case RK818_ID:
 		break;
@@ -207,7 +212,7 @@ static int rk8xx_probe(struct udevice *dev)
 		      pmic_reg_read(dev, init_data[i].reg));
 	}
 
-	printf("PMIC:  RK%x\n", priv->variant);
+	printf("PMIC:  RK%x\n", show_variant);
 
 	return 0;
 }
