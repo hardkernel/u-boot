@@ -93,6 +93,8 @@
 		"setenv devtype mmc; setenv devnum 0;" \
 	"elif rknand dev 0; then " \
 		"setenv devtype rknand; setenv devnum 0;" \
+        "elif rksfc dev 0; then " \
+                "setenv devtype rksfc; setenv devnum 0;" \
 	"fi; \0"
 
 #define RKIMG_BOOTCOMMAND \
