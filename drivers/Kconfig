@@ -76,6 +76,8 @@ source "drivers/reset/Kconfig"
 
 source "drivers/rknand/Kconfig"
 
+source "drivers/rkflash/Kconfig"
+
 source "drivers/rtc/Kconfig"
 
 source "drivers/scsi/Kconfig"
