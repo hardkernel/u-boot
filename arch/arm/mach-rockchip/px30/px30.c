@@ -48,11 +48,14 @@ int arch_cpu_init(void)
 void board_debug_uart_init(void)
 {
 static struct px30_grf * const grf = (void *)GRF_BASE;
+#ifdef CONFIG_SPL_BUILD
+	/* Do not set the iomux in U-Boot proper because SD card may using it */
 	/* Enable early UART2 channel m0 on the px30 */
 	rk_clrsetreg(&grf->gpio1dl_iomux,
 		     GPIO1D3_MASK | GPIO1D2_MASK,
 		     GPIO1D3_UART2_RXM0 << GPIO1D3_SHIFT |
 		     GPIO1D2_UART2_TXM0 << GPIO1D2_SHIFT);
+#endif
 	/* Set channel C as UART2 input */
 	rk_clrsetreg(&grf->iofunc_con0,
 		     CON_IOMUX_UART2SEL_MASK,
