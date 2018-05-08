@@ -93,7 +93,7 @@ static int do_rkimg_test(cmd_tbl_t *cmdtp, int flag, int argc,
 	buffer = memalign(ARCH_DMA_MINALIGN, 1024);
 	/* Read one block from begining of IDB data */
 	ret = blk_dread(dev_desc, 64, 2, buffer);
-	if (ret != 1) {
+	if (ret != 2) {
 		printf("%s fail to read data from IDB\n", __func__);
 		free(buffer);
 		return CMD_RET_FAILURE;
