@@ -111,6 +111,16 @@ void get_wakeup_source(void *response, unsigned int suspend_from)
 	gpio->trig_type = GPIO_IRQ_FALLING_EDGE;
 	p->gpio_info_count = ++i;
 
+	/*bt wake host*/
+	gpio = &(p->gpio_info[i]);
+	gpio->wakeup_id = BT_WAKEUP_SRC;
+	gpio->gpio_in_idx = GPIOX_18;
+	gpio->gpio_in_ao = 0;
+	gpio->gpio_out_idx = -1;
+	gpio->gpio_out_ao = -1;
+	gpio->irq = IRQ_GPIO0_NUM;
+	gpio->trig_type = GPIO_IRQ_FALLING_EDGE;
+	p->gpio_info_count = ++i;
 }
 extern void __switch_idle_task(void);
 
@@ -172,6 +182,14 @@ static unsigned int detect_key(unsigned int suspend_from)
 				exit_reason = ETH_PHY_GPIO;
 		}
 #endif
+		if (irq[IRQ_GPIO0] == IRQ_GPIO0_NUM) {
+			irq[IRQ_GPIO0] = 0xFFFFFFFF;
+			if (!(readl(PREG_PAD_GPIO2_I) & (0x01 << 18))
+					&& (readl(PREG_PAD_GPIO2_O) & (0x01 << 17))
+					&& !(readl(PREG_PAD_GPIO2_EN_N) & (0x01 << 17)))
+				exit_reason = BT_WAKEUP;
+		}
+
 		if (exit_reason)
 			break;
 		else
