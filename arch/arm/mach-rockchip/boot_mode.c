@@ -68,13 +68,20 @@ __weak int rockchip_dnl_key_pressed(void)
 void devtype_num_envset(void)
 {
 	static int done = 0;
+	int ret = 0;
 
 	if (done)
 		return;
 
 	const char *devtype_num_set = "run rkimg_bootdev";
 
-	run_command_list(devtype_num_set, -1, 0);
+	ret = run_command_list(devtype_num_set, -1, 0);
+	if (ret) {
+		/* Set default dev type/num if command not valid */
+		env_set("devtype", "mmc");
+		env_set("devnum", "0");
+	}
+
 	done = 1;
 }
 
