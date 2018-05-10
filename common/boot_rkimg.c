@@ -148,11 +148,13 @@ err:
 int get_bootdev_type(void)
 {
 	int type = 0;
+	ulong devnum = 0;
 	char *boot_media = NULL, *devtype = NULL;
 	char boot_options[128] = {0};
 	static int appended;
 
 	devtype = env_get("devtype");
+	devnum = env_get_ulong("devnum", 10, 0);
 
 	/* For current use(Only EMMC support!) */
 	if (!devtype) {
@@ -162,7 +164,10 @@ int get_bootdev_type(void)
 
 	if (!strcmp(devtype, "mmc")) {
 		type = IF_TYPE_MMC;
-		boot_media = "emmc";
+		if (devnum == 1)
+			boot_media = "sd";
+		else
+			boot_media = "emmc";
 	} else if (!strcmp(devtype, "rknand")) {
 		type = IF_TYPE_RKNAND;
 		boot_media = "nand";
