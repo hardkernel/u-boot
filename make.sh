@@ -178,7 +178,14 @@ pack_trust_image()
 		fi
 
 		cd ${RKBIN}
-		${TOOLCHAIN_RKBIN}/trust_merger --replace tools/rk_tools/ ./ ${RKBIN}/RKTRUST/${RKCHIP}TRUST.ini
+
+		# RK3308/PX30/RK3326 use RSA-PKCS1 V2.1, it's pack magic is "3"
+		if [ $RKCHIP = "PX30" -o $RKCHIP = "RK3326" -o $RKCHIP = "RK3308" ]; then
+			${TOOLCHAIN_RKBIN}/trust_merger --rsa 3 --replace tools/rk_tools/ ./ ${RKBIN}/RKTRUST/${RKCHIP}TRUST.ini
+		else
+			${TOOLCHAIN_RKBIN}/trust_merger --replace tools/rk_tools/ ./ ${RKBIN}/RKTRUST/${RKCHIP}TRUST.ini
+		fi
+
 		cd -
 		mv ${RKBIN}/trust.img ./trust.img
 		echo "pack trust okay! Input: ${RKBIN}/RKTRUST/${RKCHIP}TRUST.ini"
