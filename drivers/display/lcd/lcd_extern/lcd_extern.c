@@ -21,6 +21,9 @@
 #endif
 #ifdef CONFIG_SYS_I2C_AML
 #include <aml_i2c.h>
+#else
+#include <i2c.h>
+#include <dm/device.h>
 #endif
 #include <amlogic/aml_lcd.h>
 #include <amlogic/aml_lcd_extern.h>
@@ -44,6 +47,59 @@ struct aml_lcd_extern_driver_s *aml_lcd_extern_get_driver(void)
 	if (lcd_ext_driver == NULL)
 		EXTERR("invalid driver\n");
 	return lcd_ext_driver;
+}
+struct aml_lcd_extern_i2c_match_s {
+	unsigned char bus_id;
+	char *bus_str;
+};
+
+static struct aml_lcd_extern_i2c_match_s aml_lcd_extern_i2c_match_table[] = {
+	{LCD_EXTERN_I2C_BUS_AO,  "i2c_ao"},
+	{LCD_EXTERN_I2C_BUS_A,   "i2c_a"},
+	{LCD_EXTERN_I2C_BUS_B,   "i2c_b"},
+	{LCD_EXTERN_I2C_BUS_C,   "i2c_c"},
+	{LCD_EXTERN_I2C_BUS_D,   "i2c_d"},
+	{LCD_EXTERN_I2C_BUS_MAX, "i2c_invalid"},
+};
+
+static void aml_lcd_extern_i2c_bus_print(unsigned char i2c_bus)
+{
+	int i, temp = ARRAY_SIZE(aml_lcd_extern_i2c_match_table) - 1;
+
+	for (i = 0; i < ARRAY_SIZE(aml_lcd_extern_i2c_match_table); i++) {
+		if (aml_lcd_extern_i2c_match_table[i].bus_id == i2c_bus) {
+			temp = i;
+			break;
+		}
+	}
+
+	EXTPR("i2c_bus = %s(%d)\n",
+		aml_lcd_extern_i2c_match_table[temp].bus_str, temp);
+}
+
+static unsigned char aml_lcd_extern_i2c_bus_table[][2] = {
+	{LCD_EXTERN_I2C_BUS_AO,   LCD_AML_I2C_BUS_AO},
+	{LCD_EXTERN_I2C_BUS_A,    LCD_AML_I2C_BUS_A},
+	{LCD_EXTERN_I2C_BUS_B,    LCD_AML_I2C_BUS_B},
+	{LCD_EXTERN_I2C_BUS_C,    LCD_AML_I2C_BUS_C},
+	{LCD_EXTERN_I2C_BUS_D,    LCD_AML_I2C_BUS_D},
+	{LCD_EXTERN_I2C_BUS_MAX,  LCD_AML_I2C_BUS_MAX},
+};
+
+unsigned char aml_lcd_extern_i2c_bus_get_sys(unsigned char i2c_bus)
+{
+	int i, ret = LCD_EXTERN_I2C_BUS_INVALID;
+
+	for (i = 0; i < ARRAY_SIZE(aml_lcd_extern_i2c_bus_table); i++) {
+		if (aml_lcd_extern_i2c_bus_table[i][0] == i2c_bus) {
+			ret = aml_lcd_extern_i2c_bus_table[i][1];
+			break;
+		}
+	}
+
+	if (lcd_debug_print_flag)
+		EXTPR("%s: %d->%d\n", __func__, i2c_bus, ret);
+	return ret;
 }
 
 static void aml_lcd_extern_init_table_dynamic_size_print(
@@ -270,7 +326,7 @@ int aml_lcd_extern_set_gpio(unsigned char index, int value)
 	return ret;
 }
 
-void lcd_extern_pinmux_set(int status)
+void aml_lcd_extern_pinmux_set(int status)
 {
 	int i;
 	struct lcd_extern_config_s *extconf = lcd_ext_driver->config;
@@ -331,21 +387,20 @@ void lcd_extern_pinmux_set(int status)
 }
 
 #ifdef CONFIG_OF_LIBFDT
-#ifdef CONFIG_SYS_I2C_AML
 static unsigned char aml_lcd_extern_get_i2c_bus_str(const char *str)
 {
 	unsigned char i2c_bus;
 
 	if (strncmp(str, "i2c_bus_ao", 10) == 0)
-		i2c_bus = AML_I2C_MASTER_AO;
+		i2c_bus = LCD_EXTERN_I2C_BUS_AO;
 	else if (strncmp(str, "i2c_bus_a", 9) == 0)
-		i2c_bus = AML_I2C_MASTER_A;
+		i2c_bus = LCD_EXTERN_I2C_BUS_A;
 	else if (strncmp(str, "i2c_bus_b", 9) == 0)
-		i2c_bus = AML_I2C_MASTER_B;
+		i2c_bus = LCD_EXTERN_I2C_BUS_B;
 	else if (strncmp(str, "i2c_bus_c", 9) == 0)
-		i2c_bus = AML_I2C_MASTER_C;
+		i2c_bus = LCD_EXTERN_I2C_BUS_C;
 	else if (strncmp(str, "i2c_bus_d", 9) == 0)
-		i2c_bus = AML_I2C_MASTER_D;
+		i2c_bus = LCD_EXTERN_I2C_BUS_D;
 	else {
 		i2c_bus = LCD_EXTERN_I2C_BUS_INVALID;
 		EXTERR("invalid i2c_bus: %s\n", str);
@@ -353,7 +408,6 @@ static unsigned char aml_lcd_extern_get_i2c_bus_str(const char *str)
 
 	return i2c_bus;
 }
-#endif
 
 char *aml_lcd_extern_get_dts_prop(int nodeoffset, char *propname)
 {
@@ -764,7 +818,6 @@ static int aml_lcd_extern_get_config_dts(char *dtaddr, int index,
 
 	switch (extconf->type) {
 	case LCD_EXTERN_I2C:
-#ifdef CONFIG_SYS_I2C_AML
 		propdata = (char *)fdt_getprop(dtaddr, nodeoffset, "i2c_address", NULL);
 		if (propdata == NULL) {
 			EXTERR("get %s i2c_address failed, exit\n", extconf->name);
@@ -799,7 +852,7 @@ static int aml_lcd_extern_get_config_dts(char *dtaddr, int index,
 			extconf->i2c_bus = lcd_ext_i2c_bus;
 		}
 		if (lcd_debug_print_flag)
-			EXTPR("%s: i2c_bus= %d\n", extconf->name, extconf->i2c_bus);
+			aml_lcd_extern_i2c_bus_print(extconf->i2c_bus);
 
 		extcommon->i2c_sck_gpio = lcd_ext_i2c_sck_gpio;
 		extcommon->i2c_sck_gpio_off = lcd_ext_i2c_sck_gpio_off;
@@ -840,9 +893,7 @@ static int aml_lcd_extern_get_config_dts(char *dtaddr, int index,
 		}
 		if (ret == 0)
 			extconf->table_init_loaded = 1;
-#else
-		EXTERR("system has no i2c support\n");
-#endif
+
 		break;
 	case LCD_EXTERN_SPI:
 		propdata = (char *)fdt_getprop(dtaddr, nodeoffset, "gpio_spi_cs", NULL);
@@ -960,35 +1011,6 @@ static int aml_lcd_extern_get_config_dts(char *dtaddr, int index,
 	return 0;
 }
 #endif
-
-static unsigned char aml_lcd_extern_i2c_bus_table[][2] = {
-	{LCD_EXTERN_I2C_BUS_AO, AML_I2C_MASTER_AO},
-	{LCD_EXTERN_I2C_BUS_A, AML_I2C_MASTER_A},
-	{LCD_EXTERN_I2C_BUS_B, AML_I2C_MASTER_B},
-	{LCD_EXTERN_I2C_BUS_C, AML_I2C_MASTER_C},
-	{LCD_EXTERN_I2C_BUS_D, AML_I2C_MASTER_D},
-};
-
-static unsigned char aml_lcd_extern_get_i2c_bus_unifykey(unsigned char val)
-{
-	unsigned char i2c_bus = LCD_EXTERN_I2C_BUS_INVALID;
-	int i;
-
-	if (lcd_ext_i2c_bus == LCD_EXTERN_I2C_BUS_INVALID) { /* compatible for kernel3.14 */
-		for (i = 0; i < ARRAY_SIZE(aml_lcd_extern_i2c_bus_table); i++) {
-			if (aml_lcd_extern_i2c_bus_table[i][0] == val) {
-				i2c_bus = aml_lcd_extern_i2c_bus_table[i][1];
-				break;
-			}
-		}
-	} else {
-		i2c_bus = lcd_ext_i2c_bus;
-	}
-	if (lcd_debug_print_flag)
-		EXTPR("i2c_bus= %d\n", i2c_bus);
-
-	return i2c_bus;
-}
 
 static int aml_lcd_extern_init_table_dynamic_size_load_unifykey(
 		struct lcd_extern_config_s *extconf, unsigned char *p,
@@ -1292,7 +1314,12 @@ static int aml_lcd_extern_get_config_unifykey(int index,
 	case LCD_EXTERN_I2C:
 		extconf->i2c_addr = *(p + LCD_UKEY_EXT_TYPE_VAL_0);
 		extconf->i2c_addr2 = *(p + LCD_UKEY_EXT_TYPE_VAL_1);
-		extconf->i2c_bus = aml_lcd_extern_get_i2c_bus_unifykey(*(p + LCD_UKEY_EXT_TYPE_VAL_2));
+		if (lcd_ext_i2c_bus == LCD_EXTERN_I2C_BUS_INVALID) /* compatible for kernel3.14 */
+			extconf->i2c_bus = *(p + LCD_UKEY_EXT_TYPE_VAL_2);
+		else
+			extconf->i2c_bus = lcd_ext_i2c_bus;
+		if (lcd_debug_print_flag)
+			aml_lcd_extern_i2c_bus_print(extconf->i2c_bus);
 		extcommon->i2c_sck_gpio = lcd_ext_i2c_sck_gpio;
 		extcommon->i2c_sck_gpio_off = lcd_ext_i2c_sck_gpio_off;
 		extcommon->i2c_sda_gpio = lcd_ext_i2c_sda_gpio;
@@ -1389,7 +1416,6 @@ static int aml_lcd_extern_get_config_unifykey(int index,
 	return 0;
 }
 
-#ifdef CONFIG_SYS_I2C_AML
 static int aml_lcd_extern_add_i2c(struct aml_lcd_extern_driver_s *ext_drv)
 {
 	int ret = 0;
@@ -1422,7 +1448,6 @@ static int aml_lcd_extern_add_i2c(struct aml_lcd_extern_driver_s *ext_drv)
 	}
 	return ret;
 }
-#endif
 
 static int aml_lcd_extern_add_spi(struct aml_lcd_extern_driver_s *ext_drv)
 {
@@ -1507,11 +1532,7 @@ static int aml_lcd_extern_add_driver(struct lcd_extern_config_s *extconf, struct
 	/* fill config parameters by different type */
 	switch (ext_drv->config->type) {
 	case LCD_EXTERN_I2C:
-#ifdef CONFIG_SYS_I2C_AML
 		ret = aml_lcd_extern_add_i2c(ext_drv);
-#else
-		EXTERR("system has no i2c support\n");
-#endif
 		break;
 	case LCD_EXTERN_SPI:
 		ret = aml_lcd_extern_add_spi(ext_drv);
@@ -1573,7 +1594,6 @@ static int aml_lcd_extern_add_driver_default(int index, struct lcd_extern_config
 		ret = aml_lcd_extern_mipi_default_probe(ext_drv);
 		goto add_driver_default_end;
 	}
-#ifdef CONFIG_SYS_I2C_AML
 #ifdef CONFIG_AML_LCD_EXTERN_I2C_T5800Q
 	if (strcmp(ext_drv->config->name, "i2c_T5800Q") == 0) {
 		ret = aml_lcd_extern_i2c_T5800Q_probe(ext_drv);
@@ -1603,7 +1623,6 @@ static int aml_lcd_extern_add_driver_default(int index, struct lcd_extern_config
 		ret = aml_lcd_extern_i2c_RT6947_probe(ext_drv);
 		goto add_driver_default_end;
 	}
-#endif
 #endif
 #ifdef CONFIG_AML_LCD_EXTERN_SPI_LD070WS2
 	if (strcmp(ext_drv->config->name, "spi_LD070WS2") == 0) {

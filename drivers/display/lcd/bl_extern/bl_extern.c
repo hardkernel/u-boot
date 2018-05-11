@@ -21,6 +21,9 @@
 #endif
 #ifdef CONFIG_SYS_I2C_AML
 #include <aml_i2c.h>
+#else
+#include <i2c.h>
+#include <dm/device.h>
 #endif
 #include <amlogic/aml_lcd.h>
 #include <amlogic/aml_bl_extern.h>
@@ -82,6 +85,60 @@ struct aml_bl_extern_driver_s *aml_bl_extern_get_driver(void)
 	return &bl_extern_driver;
 }
 
+struct aml_bl_extern_i2c_match_s {
+	unsigned char bus_id;
+	char *bus_str;
+};
+
+static struct aml_bl_extern_i2c_match_s aml_bl_extern_i2c_match_table[] = {
+	{BL_EXTERN_I2C_BUS_AO,  "i2c_ao"},
+	{BL_EXTERN_I2C_BUS_A,   "i2c_a"},
+	{BL_EXTERN_I2C_BUS_B,   "i2c_b"},
+	{BL_EXTERN_I2C_BUS_C,   "i2c_c"},
+	{BL_EXTERN_I2C_BUS_D,   "i2c_d"},
+	{BL_EXTERN_I2C_BUS_MAX, "i2c_invalid"},
+};
+
+static void aml_bl_extern_i2c_bus_print(unsigned char i2c_bus)
+{
+	int i, temp = ARRAY_SIZE(aml_bl_extern_i2c_match_table) - 1;
+
+	for (i = 0; i < ARRAY_SIZE(aml_bl_extern_i2c_match_table); i++) {
+		if (aml_bl_extern_i2c_match_table[i].bus_id == i2c_bus) {
+			temp = i;
+			break;
+		}
+	}
+
+	BLEX("i2c_bus = %s(%d)\n",
+		aml_bl_extern_i2c_match_table[temp].bus_str, temp);
+}
+
+static unsigned char aml_bl_extern_i2c_bus_table[][2] = {
+	{BL_EXTERN_I2C_BUS_AO,   LCD_AML_I2C_BUS_AO},
+	{BL_EXTERN_I2C_BUS_A,    LCD_AML_I2C_BUS_A},
+	{BL_EXTERN_I2C_BUS_B,    LCD_AML_I2C_BUS_B},
+	{BL_EXTERN_I2C_BUS_C,    LCD_AML_I2C_BUS_C},
+	{BL_EXTERN_I2C_BUS_D,    LCD_AML_I2C_BUS_D},
+	{BL_EXTERN_I2C_BUS_MAX,  LCD_AML_I2C_BUS_MAX},
+};
+
+unsigned char aml_bl_extern_i2c_bus_get_sys(unsigned char i2c_bus)
+{
+	int i, ret = BL_EXTERN_I2C_BUS_INVALID;
+
+	for (i = 0; i < ARRAY_SIZE(aml_bl_extern_i2c_bus_table); i++) {
+		if (aml_bl_extern_i2c_bus_table[i][0] == i2c_bus) {
+			ret = aml_bl_extern_i2c_bus_table[i][1];
+			break;
+		}
+	}
+
+	if (lcd_debug_print_flag)
+		BLEX("%s: %d->%d\n", __func__, i2c_bus, ret);
+	return ret;
+}
+
 static void bl_extern_config_print(void)
 {
 	struct aml_bl_extern_driver_s *bl_extern = aml_bl_extern_get_driver();
@@ -124,21 +181,20 @@ static void bl_extern_config_print(void)
 }
 
 #ifdef CONFIG_OF_LIBFDT
-#ifdef CONFIG_SYS_I2C_AML
 static unsigned char bl_extern_get_i2c_bus_str(const char *str)
 {
 	unsigned char i2c_bus;
 
 	if (strncmp(str, "i2c_bus_ao", 10) == 0)
-		i2c_bus = AML_I2C_MASTER_AO;
+		i2c_bus = BL_EXTERN_I2C_BUS_AO;
 	else if (strncmp(str, "i2c_bus_a", 9) == 0)
-		i2c_bus = AML_I2C_MASTER_A;
+		i2c_bus = BL_EXTERN_I2C_BUS_A;
 	else if (strncmp(str, "i2c_bus_b", 9) == 0)
-		i2c_bus = AML_I2C_MASTER_B;
+		i2c_bus = BL_EXTERN_I2C_BUS_B;
 	else if (strncmp(str, "i2c_bus_c", 9) == 0)
-		i2c_bus = AML_I2C_MASTER_C;
+		i2c_bus = BL_EXTERN_I2C_BUS_C;
 	else if (strncmp(str, "i2c_bus_d", 9) == 0)
-		i2c_bus = AML_I2C_MASTER_D;
+		i2c_bus = BL_EXTERN_I2C_BUS_D;
 	else {
 		i2c_bus = BL_EXTERN_I2C_BUS_INVALID;
 		BLEXERR("invalid i2c_bus: %s\n", str);
@@ -146,7 +202,6 @@ static unsigned char bl_extern_get_i2c_bus_str(const char *str)
 
 	return i2c_bus;
 }
-#endif
 
 static int bl_extern_config_from_dts(char *dtaddr, int index)
 {
@@ -222,7 +277,6 @@ static int bl_extern_config_from_dts(char *dtaddr, int index)
 
 	switch (bl_extern->config->type) {
 	case BL_EXTERN_I2C:
-#ifdef CONFIG_SYS_I2C_AML
 		propdata = (char *)fdt_getprop(dtaddr, child_offset, "i2c_address", NULL);
 		if (propdata == NULL) {
 			BLEXERR("get %s i2c_address failed, exit\n", bl_extern->config->name);
@@ -244,10 +298,8 @@ static int bl_extern_config_from_dts(char *dtaddr, int index)
 			bl_extern->config->i2c_bus = bl_ext_i2c_bus;
 		}
 		if (lcd_debug_print_flag)
-			BLEX("%s: i2c_bus= %d\n", bl_extern->config->name, bl_extern->config->i2c_bus);
-#else
-		BLEXERR("system has no i2c support\n");
-#endif
+			aml_bl_extern_i2c_bus_print(bl_extern->config->i2c_bus);
+
 		break;
 	case BL_EXTERN_SPI:
 		break;
@@ -267,10 +319,8 @@ static int bl_extern_add_driver(void)
 	struct bl_extern_config_s *extconf = bl_extern_driver.config;
 
 	if (strcmp(extconf->name, "i2c_lp8556") == 0) {
-#ifdef CONFIG_SYS_I2C_AML
 #ifdef CONFIG_AML_BL_EXTERN_I2C_LP8556
 		ret = i2c_lp8556_probe();
-#endif
 #endif
 		goto bl_extern_add_driver_next;
 	} else if (strcmp(extconf->name, "mipi_lt070me05") == 0) {

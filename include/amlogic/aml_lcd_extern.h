@@ -32,6 +32,7 @@ enum lcd_extern_i2c_bus_e {
 	LCD_EXTERN_I2C_BUS_C,
 	LCD_EXTERN_I2C_BUS_D,
 	LCD_EXTERN_I2C_BUS_MAX,
+
 };
 #define LCD_EXTERN_I2C_BUS_INVALID    0xff
 

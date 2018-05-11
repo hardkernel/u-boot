@@ -21,6 +21,9 @@
 #endif
 #ifdef CONFIG_SYS_I2C_AML
 #include <aml_i2c.h>
+#else
+#include <i2c.h>
+#include <dm/device.h>
 #endif
 #include <amlogic/aml_lcd.h>
 #include <amlogic/aml_bl_extern.h>
@@ -28,19 +31,20 @@
 #include "../aml_lcd_common.h"
 #include "../aml_lcd_reg.h"
 
-//#define BL_EXT_I2C_PORT_INIT     /* no need init i2c port here */
 //#define BL_EXT_DEBUG_INFO
 
-#ifdef CONFIG_SYS_I2C_AML
 #define BL_EXTERN_INDEX			1
 #define BL_EXTERN_NAME			"i2c_lp8556"
 #define BL_EXTERN_TYPE			BL_EXTERN_I2C
 
 #define BL_EXTERN_I2C_ADDR		(0x58 >> 1) //7bit address
-#define BL_EXTERN_I2C_BUS		AML_I2C_MASTER_C
+#define BL_EXTERN_I2C_BUS		BL_EXTERN_I2C_BUS_C
 
+#ifdef CONFIG_SYS_I2C_AML
+//#define BL_EXT_I2C_PORT_INIT     /* no need init i2c port default */
 #ifdef BL_EXT_I2C_PORT_INIT
-static unsigned aml_i2c_bus_tmp;
+static unsigned aml_i2c_bus_tmp = BL_EXTERN_I2C_BUS_INVALID;
+#endif
 #endif
 
 static unsigned int bl_status = 0;
@@ -63,6 +67,7 @@ static unsigned char init_off_table[] = {
 	0xFF, 0x00, 0x00, 0x00, //ending
 };
 
+#ifdef CONFIG_SYS_I2C_AML
 static int i2c_lp8556_write(unsigned i2caddr, unsigned char *buff, unsigned len)
 {
 	int ret = 0;
@@ -78,9 +83,8 @@ static int i2c_lp8556_write(unsigned i2caddr, unsigned char *buff, unsigned len)
 
 #ifdef BL_EXT_DEBUG_INFO
 	printf("%s:", __func__);
-	for (i = 0; i < len; i++) {
+	for (i = 0; i < len; i++)
 		printf(" 0x%02x", buff[i]);
-	}
 	printf(" [addr 0x%02x]\n", i2caddr);
 #endif
 
@@ -91,7 +95,40 @@ static int i2c_lp8556_write(unsigned i2caddr, unsigned char *buff, unsigned len)
 
 	return ret;
 }
+#else
+static int i2c_lp8556_write(unsigned i2caddr, unsigned char *buff, unsigned len)
+{
+	int ret;
+	unsigned char i2c_bus;
+#ifdef LCD_EXT_DEBUG_INFO
+	int i;
+#endif
+	struct udevice *dev;
+	struct aml_bl_extern_driver_s *bl_extern = aml_bl_extern_get_driver();
 
+	i2c_bus = aml_bl_extern_i2c_bus_get_sys(bl_extern->config->i2c_bus);
+	ret = i2c_get_chip_for_busnum(i2c_bus, i2caddr, &dev);
+	if (ret) {
+		EXTERR("no i2c bus find\n");
+		return ret;
+	}
+
+#ifdef LCD_EXT_DEBUG_INFO
+	printf("%s:", __func__);
+	for (i = 0; i < len; i++)
+		printf(" 0x%02x", buff[i]);
+	printf(" [addr 0x%02x]\n", i2caddr);
+#endif
+
+	ret = i2c_write(dev, i2caddr, buff, len);
+	if (ret) {
+		EXTERR("failed to write I2C data\n");
+		return ret;
+	}
+
+	return 0;
+}
+#endif
 
 static int i2c_lp8556_power_cmd(unsigned char *init_table)
 {
@@ -143,7 +180,7 @@ static int i2c_lp8556_power_ctrl(int flag)
 {
 #ifdef BL_EXT_I2C_PORT_INIT
 	extern struct aml_i2c_platform g_aml_i2c_plat;
-	aml_i2c_bus_tmp = g_aml_i2c_plat.master_no;
+	unsigned char i2c_bus;
 #endif
 	struct aml_bl_extern_driver_s *bl_extern = aml_bl_extern_get_driver();
 	int ret = 0;
@@ -151,7 +188,9 @@ static int i2c_lp8556_power_ctrl(int flag)
     if (bl_status) {
 		/* step 1: power prepare */
 #ifdef BL_EXT_I2C_PORT_INIT
-		bl_extern_change_i2c_bus(bl_extern->i2c_bus);
+		aml_i2c_bus_tmp = g_aml_i2c_plat.master_no;
+		i2c_bus = aml_bl_extern_i2c_bus_get_sys(bl_extern->config->i2c_bus);
+		bl_extern_change_i2c_bus(i2c_bus);
 #endif
 
 		/* step 2: power cmd */
@@ -164,7 +203,7 @@ static int i2c_lp8556_power_ctrl(int flag)
 #ifdef BL_EXT_I2C_PORT_INIT
 		bl_extern_change_i2c_bus(aml_i2c_bus_tmp);
 #endif
-    }
+	}
 	BLEX("%s(%d: %s): %d\n",
 		__func__, bl_extern->config->index,
 		bl_extern->config->name, flag);
@@ -254,6 +293,4 @@ int i2c_lp8556_probe(void)
 
 	return ret;
 }
-
-#endif
 

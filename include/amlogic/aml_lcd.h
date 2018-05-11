@@ -26,6 +26,27 @@
 #include <amlogic/aml_bl_extern.h>
 #endif
 
+#ifdef CONFIG_SYS_I2C_AML
+enum lcd_aml_i2c_bus_e {
+	LCD_AML_I2C_BUS_AO = 0,
+	LCD_AML_I2C_BUS_A,
+	LCD_AML_I2C_BUS_B,
+	LCD_AML_I2C_BUS_C,
+	LCD_AML_I2C_BUS_D,
+	LCD_AML_I2C_BUS_MAX,
+};
+#else
+enum lcd_aml_i2c_bus_e {
+	LCD_AML_I2C_BUS_A = 0,
+	LCD_AML_I2C_BUS_B,
+	LCD_AML_I2C_BUS_C,
+	LCD_AML_I2C_BUS_D,
+	LCD_AML_I2C_BUS_AO,
+	LCD_AML_I2C_BUS_MAX,
+};
+#endif
+
+
 #define Rsv_val 0xffffffff
 struct ext_lcd_config_s {
 	const char panel_type[15];

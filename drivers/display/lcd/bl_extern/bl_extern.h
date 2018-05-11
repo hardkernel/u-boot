@@ -17,21 +17,18 @@
 #define _BL_EXTERN_H_
 #ifdef CONFIG_SYS_I2C_AML
 #include <aml_i2c.h>
+#else
+#include <i2c.h>
 #endif
 
 #define BLEX(fmt, args...)     printf("bl extern: "fmt"", ## args)
 #define BLEXERR(fmt, args...)    printf("bl extern: error: "fmt"", ## args)
 #define BL_EXTERN_DRIVER		"bl_extern"
 
-#ifdef CONFIG_SYS_I2C_AML
-extern int aml_i2c_xfer_slow(struct i2c_msg *msgs, int num);
-extern int aml_i2c_xfer(struct i2c_msg *msgs, int num);
-#endif
+extern unsigned char aml_bl_extern_i2c_bus_get_sys(unsigned char i2c_bus);
 
-#ifdef CONFIG_SYS_I2C_AML
 #ifdef CONFIG_AML_BL_EXTERN_I2C_LP8556
 extern int i2c_lp8556_probe(void);
-#endif
 #endif
 
 #ifdef CONFIG_AML_BL_EXTERN_MIPI_IT070ME05

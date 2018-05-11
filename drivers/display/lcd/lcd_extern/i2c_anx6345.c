@@ -21,6 +21,8 @@
 #endif
 #ifdef CONFIG_SYS_I2C_AML
 #include <aml_i2c.h>
+#else
+#include <i2c.h>
 #endif
 #include <amlogic/aml_lcd.h>
 #include <amlogic/aml_lcd_extern.h>
@@ -29,20 +31,21 @@
 #include "../aml_lcd_common.h"
 #include "../aml_lcd_reg.h"
 
-//#define LCD_EXT_I2C_PORT_INIT     /* no need init i2c port here */
+//#define LCD_EXT_DEBUG_INFO
 
-#ifdef CONFIG_SYS_I2C_AML
 #define LCD_EXTERN_INDEX		1
 #define LCD_EXTERN_NAME			"i2c_ANX6345"
 #define LCD_EXTERN_TYPE			LCD_EXTERN_I2C
 #define LCD_EXTERN_I2C_ADDR		0x70
 #define LCD_EXTERN_I2C_BUS		AML_I2C_MASTER_B
 
+#ifdef CONFIG_SYS_I2C_AML
+//#define LCD_EXT_I2C_PORT_INIT     /* no need init i2c port default */
 #ifdef LCD_EXT_I2C_PORT_INIT
-static unsigned int aml_i2c_bus_tmp;
+static unsigned aml_i2c_bus_tmp = LCD_EXTERN_I2C_BUS_INVALID;
+#endif
 #endif
 static struct lcd_extern_config_s *ext_config;
-extern int aml_i2c_xfer_slow(struct i2c_msg *msgs, int num);
 
 struct lcd_extern_edp_config_s {
 	int lane_num;
@@ -56,6 +59,7 @@ static struct lcd_extern_edp_config_s edp_parameter = {
 	.link_rate = 0x0a, //1.62G: 0X06, 2.7G: 0x0a, 5.4G: 0x14
 };
 
+#ifdef CONFIG_SYS_I2C_AML
 static int lcd_extern_i2c_write(unsigned i2caddr, unsigned char *buff, unsigned len)
 {
 	int ret = 0;
@@ -112,6 +116,47 @@ static int lcd_extern_i2c_read(unsigned i2caddr, unsigned char *buff, unsigned l
 
 	return ret;
 }
+#else
+static int lcd_extern_i2c_write(unsigned i2caddr, unsigned char *buff, unsigned len)
+{
+	int ret;
+	unsigned char i2c_bus;
+	struct udevice *dev;
+#ifdef LCD_EXT_DEBUG_INFO
+	int i;
+#endif
+
+	i2c_bus = aml_lcd_extern_i2c_bus_get_sys(ext_config->i2c_bus);
+	ret = i2c_get_chip_for_busnum(i2c_bus, i2caddr, &dev);
+	if (ret) {
+		EXTERR("no i2c bus find\n");
+		return ret;
+	}
+
+#ifdef LCD_EXT_DEBUG_INFO
+	printf("%s:", __func__);
+	for (i = 0; i < len; i++)
+		printf(" 0x%02x", buff[i]);
+	printf(" [addr 0x%02x]\n", i2caddr);
+#endif
+
+	ret = i2c_write(dev, i2caddr, buff, len);
+	if (ret) {
+		EXTERR("failed to write I2C data\n");
+		return ret;
+	}
+
+	return 0;
+}
+
+static int lcd_extern_i2c_read(unsigned i2caddr, unsigned char *buff, unsigned len)
+{
+	EXTPR("i2c read not support yet\n", i2caddr);
+	return -1;
+}
+}
+#endif
+
 static int SP_TX_Write_Reg(unsigned char addr, unsigned char reg, unsigned char data)
 {
 	unsigned char buff[2];
@@ -480,15 +525,17 @@ static int lcd_extern_power_on(void)
 {
 	int ret = 0;
 
-	lcd_extern_pinmux_set(1);
+	aml_lcd_extern_pinmux_set(1);
 #ifdef LCD_EXT_I2C_PORT_INIT
 	extern struct aml_i2c_platform g_aml_i2c_plat;
+	unsigned char i2c_bus;
 
 	aml_i2c_bus_tmp = g_aml_i2c_plat.master_no;
+	i2c_bus = aml_lcd_extern_i2c_bus_get_sys(ext_config->i2c_bus);
 #endif
 
 #ifdef LCD_EXT_I2C_PORT_INIT
-	lcd_extern_change_i2c_bus(ext_config->i2c_bus);
+	lcd_extern_change_i2c_bus(i2c_bus);
 #endif
 	ret = lcd_extern_i2c_init();
 #ifdef LCD_EXT_I2C_PORT_INIT
@@ -504,18 +551,20 @@ static int lcd_extern_power_off(void)
 
 #ifdef LCD_EXT_I2C_PORT_INIT
 	extern struct aml_i2c_platform g_aml_i2c_plat;
+	unsigned char i2c_bus;
 
 	aml_i2c_bus_tmp = g_aml_i2c_plat.master_no;
+	i2c_bus = aml_lcd_extern_i2c_bus_get_sys(ext_config->i2c_bus);
 #endif
 
 #ifdef LCD_EXT_I2C_PORT_INIT
-	lcd_extern_change_i2c_bus(ext_config->i2c_bus);
+	lcd_extern_change_i2c_bus(i2c_bus);
 #endif
 	ret = lcd_extern_i2c_remove();
 #ifdef LCD_EXT_I2C_PORT_INIT
 	lcd_extern_change_i2c_bus(aml_i2c_bus_tmp);
 #endif
-	lcd_extern_pinmux_set(0);
+	aml_lcd_extern_pinmux_set(0);
 
 	return ret;
 }
@@ -620,5 +669,4 @@ int aml_lcd_extern_i2c_anx6345_probe(struct aml_lcd_extern_driver_s *ext_drv)
 		EXTPR("%s: %d\n", __func__, ret);
 	return ret;
 }
-#endif
 
