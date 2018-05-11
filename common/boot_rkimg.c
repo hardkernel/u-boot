@@ -173,7 +173,7 @@ int get_bootdev_type(void)
 		boot_media = "nand";
 	} else if (!strcmp(devtype, "rksfc")) {
 		type = IF_TYPE_RKSFC;
-		boot_media = "spi flash";
+		boot_media = "nand"; /* kernel treat sfc nand as nand device */
 	} else {
 		/* Add new to support */
 	}
