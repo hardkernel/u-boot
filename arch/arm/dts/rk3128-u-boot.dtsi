@@ -9,12 +9,6 @@
 	u-boot,dm-pre-reloc;
 };
 
-&uart2 {
-	clock-frequency = <24000000>;
-	u-boot,dm-pre-reloc;
-	status = "okay";
-};
-
 &emmc {
 	u-boot,dm-pre-reloc;
 };
