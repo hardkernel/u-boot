@@ -32,7 +32,7 @@
 /* v04: add txlx support */
 /* v05: add axg support */
 /* v06: add g12a support */
-#define VPU_VERION	"v05"
+#define VPU_VERION	"v06"
 
 #ifdef CONFIG_OF_LIBFDT
 static char *dt_addr;
@@ -227,6 +227,18 @@ static void vpu_chip_detect(void)
 		vpu_conf.fclk_div_table = fclk_div_table_g12a;
 		vpu_conf.vpu_clk_table = vpu_clk_table_gxb;
 		break;
+	case MESON_CPU_MAJOR_ID_G12B:
+		vpu_chip_type = VPU_CHIP_G12B;
+#ifdef CONFIG_VPU_CLK_LEVEL_DFT
+		vpu_conf.clk_level_dft = CONFIG_VPU_CLK_LEVEL_DFT;
+#else
+		vpu_conf.clk_level_dft = CLK_LEVEL_DFT_G12A;
+#endif
+		vpu_conf.clk_level_max = CLK_LEVEL_MAX_G12A;
+		vpu_conf.fclk_freq = FCLK_TYPE_G12A;
+		vpu_conf.fclk_div_table = fclk_div_table_g12a;
+		vpu_conf.vpu_clk_table = vpu_clk_table_gxb;
+		break;
 	default:
 		vpu_chip_type = VPU_CHIP_G12A;
 #ifdef CONFIG_VPU_CLK_LEVEL_DFT
@@ -281,6 +293,7 @@ static int vpu_check(void)
 	case VPU_CHIP_AXG:
 	case VPU_CHIP_TXHD:
 	case VPU_CHIP_G12A:
+	case VPU_CHIP_G12B:
 		if ((vpu_conf.fclk_div_table == NULL) ||
 			(vpu_conf.vpu_clk_table == NULL)) {
 			VPUERR("invalid vpu table\n");
@@ -811,6 +824,7 @@ static void vpu_power_on_gx(void)
 		udelay(5);
 		break;
 	case VPU_CHIP_G12A:
+	case VPU_CHIP_G12B:
 		vpu_hiu_setb(HHI_VPU_MEM_PD_REG2, 0, 0, 2);
 		udelay(5);
 		for (i = 4; i < 18; i+=2) {
@@ -891,6 +905,7 @@ static void vpu_power_off_gx(void)
 		udelay(5);
 		break;
 	case VPU_CHIP_G12A:
+	case VPU_CHIP_G12B:
 		vpu_hiu_setb(HHI_VPU_MEM_PD_REG2, 0x3, 0, 2);
 		udelay(5);
 		for (i = 4; i < 18; i+=2) {

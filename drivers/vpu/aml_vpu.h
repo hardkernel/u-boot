@@ -41,6 +41,7 @@ enum vpu_chip_e {
 	VPU_CHIP_AXG, /* 11 */
 	VPU_CHIP_TXHD, /* 12 */
 	VPU_CHIP_G12A, /* 13 */
+	VPU_CHIP_G12B, /* 14 */
 	VPU_CHIP_MAX,
 };
 
