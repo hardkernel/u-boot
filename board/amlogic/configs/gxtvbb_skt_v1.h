@@ -215,9 +215,9 @@
 		"\0"\
 	"init_display="\
 		"osd open; osd clear; "\
-		"vout output ${outputmode}; "\
 		"imgread pic logo bootup $loadaddr; "\
 		"bmp display $bootup_offset; bmp scale"\
+		"vout output ${outputmode}; "\
 		"\0"\
 	"cmdline_keys="\
 		"if keyman init 0x1234; then "\

@@ -213,9 +213,9 @@
 		"\0"\
 	"init_display="\
 		"osd open; osd clear; "\
-		"vout output ${outputmode}; "\
 		"imgread pic logo bootup $loadaddr; "\
 		"bmp display $bootup_offset; bmp scale"\
+		"vout output ${outputmode}; "\
 		"\0"\
 	"bcb_cmd="\
 		"get_valid_slot;"\
