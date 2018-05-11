@@ -675,7 +675,7 @@ unsigned int cec_handler(void)
 	static int busy_count = 0;
 	int irq;
 
-	dump_cecb_reg();
+	/*dump_cecb_reg();*/
 	irq = readl(AO_CECB_INTR_STAT);
 	writel(irq, AO_CECB_INTR_CLR);
 	if (irq & CECB_IRQ_RX_EOM) {
@@ -740,6 +740,7 @@ unsigned int cec_handler(void)
 	}
 	if (cec_msg.rx_read_pos != cec_msg.rx_write_pos) {
 		cec_handle_message();
+		dump_cecb_reg();
 	}
 
 	return 0;
