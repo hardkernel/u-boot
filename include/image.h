@@ -937,6 +937,7 @@ int bootz_setup(ulong image, ulong *start, ulong *end);
 #define FIT_SETUP_PROP		"setup"
 #define FIT_FPGA_PROP		"fpga"
 #define FIT_FIRMWARE_PROP	"firmware"
+#define FIT_STANDALONE_PROP	"standalone"
 
 #define FIT_MAX_HASH_LEN	HASH_MAX_DIGEST_SIZE
 
