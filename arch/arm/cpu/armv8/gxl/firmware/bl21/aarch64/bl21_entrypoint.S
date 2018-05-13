@@ -33,6 +33,13 @@
 
 	.func
 bl21_entrypoint:
+	b	bl21_real_entry
+#ifdef CONFIG_MDUMP_COMPRESS
+	.word	__ramdump_data
+#else
+	.word	0x0
+#endif
+bl21_real_entry:
 	//stp x0, x1, x2, x3, x4, x5, x6, x7, lr, [sp]
 	//stp x0, x30, [sp]
 	/* ---------------------------------------------

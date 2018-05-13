@@ -58,12 +58,27 @@ static int check_is_ddr_inited(void)
 	return ((readl(SEC_AO_SEC_GP_CFG0) >> 16) & 0xffff);
 }
 
+#ifdef CONFIG_MDUMP_COMPRESS
+#include <asm/reboot.h>
+static unsigned int get_reboot_reason(void)
+{
+	unsigned int reboot_mode_val = ((readl(AO_RTI_STATUS_REG3)) & 0xf);
+
+	return reboot_mode_val;
+}
+#endif
+
 void board_init(void)
 {
 	power_init(0);
 
 	//only run once before ddr inited.
+#ifdef CONFIG_MDUMP_COMPRESS
+	if (!check_is_ddr_inited() &&
+	    (get_reboot_reason() != AMLOGIC_KERNEL_PANIC)) {
+#else
 	if (!check_is_ddr_inited()) {
+#endif
 		/* dram 1.5V reset */
 		serial_puts("DRAM reset...\n");
 		/* power off ddr */

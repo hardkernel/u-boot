@@ -32,6 +32,13 @@
 
 	.func
 bl21_entrypoint:
+	b	bl21_real_entry
+#ifdef CONFIG_MDUMP_COMPRESS
+	.word	__ramdump_data
+#else
+	.word	0x0
+#endif
+bl21_real_entry:
 	/* ---------------------------------------------
 	 * Zero out NOBITS sections. There are 2 of them:
 	 *   - the .bss section;

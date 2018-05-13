@@ -41,6 +41,9 @@
 
 #define IH_INITRD_ARCH IH_ARCH_DEFAULT
 
+#ifdef CONFIG_MDUMP_COMPRESS
+extern void check_ramdump(void);
+#endif
 #ifndef USE_HOSTCC
 
 DECLARE_GLOBAL_DATA_PTR;
@@ -620,6 +623,10 @@ int do_bootm_states(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[],
 		ret = bootm_find_other(cmdtp, flag, argc, argv);
 		argc = 0;	/* consume the args */
 	}
+
+#ifdef CONFIG_MDUMP_COMPRESS
+	check_ramdump();
+#endif
 
 	/* Load the OS */
 	if (!ret && (states & BOOTM_STATE_LOADOS)) {
