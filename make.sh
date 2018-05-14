@@ -166,6 +166,47 @@ pack_loader_image()
 	echo "pack loader okay! Input: ${RKBIN}/RKBOOT/${RKCHIP}MINIALL.ini"
 }
 
+pack_mass_trust_image()
+{
+	local TOS0 TOS1 IMG0 IMG1 DARM_BASE TEE_LOAD_ADDR TEE_OFFSET=0x8400000
+
+	TOS0=`sed -n "/TOS0=/s/TOS0=//p" ${RKBIN}/RKTRUST/${RKCHIP}TOS.ini|tr -d '\r'`
+	TOS1=`sed -n "/TOS1=/s/TOS1=//p" ${RKBIN}/RKTRUST/${RKCHIP}TOS.ini|tr -d '\r'`
+	IMG0=`sed -n "/PATH0=/s/PATH0=//p" ${RKBIN}/RKTRUST/${RKCHIP}TOS.ini|tr -d '\r'`
+	IMG1=`sed -n "/PATH1=/s/PATH1=//p" ${RKBIN}/RKTRUST/${RKCHIP}TOS.ini|tr -d '\r'`
+
+# OP-TEE is 132M(0x8400000) offset from DRAM base.
+	DARM_BASE=`sed -n "/CONFIG_SYS_SDRAM_BASE=/s/CONFIG_SYS_SDRAM_BASE=//p" ${OUTDIR}/include/autoconf.mk|tr -d '\r'`
+	TEE_LOAD_ADDR=$((DARM_BASE+TEE_OFFSET))
+
+# Convert Dec to Hex
+	TEE_LOAD_ADDR=$(echo "obase=16;${TEE_LOAD_ADDR}"|bc)
+
+# Parse orignal path
+	TOS0=`sed -n "/TOS0=/s/TOS0=//p" ${RKBIN}/RKTRUST/${RKCHIP}TOS.ini|tr -d '\r'`
+	TOS1=`sed -n "/TOS1=/s/TOS1=//p" ${RKBIN}/RKTRUST/${RKCHIP}TOS.ini|tr -d '\r'`
+	IMG0=`sed -n "/PATH0=/s/PATH0=//p" ${RKBIN}/RKTRUST/${RKCHIP}TOS.ini|tr -d '\r'`
+	IMG1=`sed -n "/PATH1=/s/PATH1=//p" ${RKBIN}/RKTRUST/${RKCHIP}TOS.ini|tr -d '\r'`
+
+# replace "./tools/rk_tools/" with "./" to compatible legacy ini content of rkdevelop branch
+	TOS0=$(echo ${TOS0} | sed "s/tools\/rk_tools\//\.\//g")
+	TOS1=$(echo ${TOS1} | sed "s/tools\/rk_tools\//\.\//g")
+
+	if [ "$TOS0" ]; then
+		${TOOLCHAIN_RKBIN}/loaderimage --pack --trustos ${RKBIN}/${TOS0} ./${IMG0} ${TEE_LOAD_ADDR}
+		echo "${IMG0} is ready"
+	fi
+
+	if [ "$TOS1" ]; then
+		${TOOLCHAIN_RKBIN}/loaderimage --pack --trustos ${RKBIN}/${TOS1} ./${IMG1} ${TEE_LOAD_ADDR}
+		echo "${IMG1} is ready"
+	fi
+
+	if [ -z "$TOS0" -a -z "$TOS1" ]; then
+		echo "pack trust failed! Can't find any tee bin"
+	fi
+}
+
 pack_trust_image()
 {
 	local TOS TOS_TA DARM_BASE TEE_LOAD_ADDR TEE_OFFSET=0x8400000
@@ -214,7 +255,7 @@ pack_trust_image()
 		TOS=$(echo ${TOS} | sed "s/tools\/rk_tools\//\.\//g")
 		TOS_TA=$(echo ${TOS_TA} | sed "s/tools\/rk_tools\//\.\//g")
 
-		if [ $TOS_TA -a $TOS ]; then
+		if [ "$TOS_TA" -a "$TOS" ]; then
 			${TOOLCHAIN_RKBIN}/loaderimage --pack --trustos ${RKBIN}/${TOS} ./trust.img ${TEE_LOAD_ADDR}
 			${TOOLCHAIN_RKBIN}/loaderimage --pack --trustos ${RKBIN}/${TOS_TA} ./trust_with_ta.img ${TEE_LOAD_ADDR}
 			echo "Both trust.img and trust_with_ta.img are ready"
@@ -225,8 +266,8 @@ pack_trust_image()
 			${TOOLCHAIN_RKBIN}/loaderimage --pack --trustos ${RKBIN}/${TOS_TA} ./trust.img ${TEE_LOAD_ADDR}
 			echo "trust.img with ta is ready"
 		else
-			echo "Can't find any tee bin"
-			exit 1
+			# Only RK312X need it to pack trust_emmc.img trust_nand.img
+			pack_mass_trust_image
 		fi
 
 		echo "pack trust okay! Input: ${RKBIN}/RKTRUST/${RKCHIP}TOS.ini"
