@@ -62,4 +62,6 @@
 #define CONFIG_SILENT_CONSOLE_UPDATE_ON_RELOC
 #define CONFIG_SILENT_U_BOOT_ONLY
 
+#define NR_CPUS     4
+
 #endif /* _CPU_H */

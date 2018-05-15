@@ -10,3 +10,4 @@ obj-y   += gate_init.o
 obj-$(CONFIG_AML_HDMITX20)	+= sound.o
 obj-$(CONFIG_CMD_IRBLASTER)	+= irblaster.o
 obj-$(CONFIG_CMD_PLLTEST)	+= pll.o
+obj-$(CONFIG_CMD_AML_MTEST) += core.o

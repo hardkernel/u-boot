@@ -8,3 +8,5 @@ obj-y	+= timer.o
 obj-y	+= mailbox.o
 obj-y   += gate_init.o
 obj-$(CONFIG_CMD_IRBLASTER)	+= irblaster.o
+obj-$(CONFIG_CMD_AML_MTEST) += core.o
+

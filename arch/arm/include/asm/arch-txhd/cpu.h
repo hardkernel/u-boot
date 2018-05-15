@@ -63,4 +63,6 @@
 //2017.10.10 TXHD only support v3 format for normal & secure boot
 #define CONFIG_AML_SECURE_BOOT_V3 1
 
+#define NR_CPUS     2
+
 #endif /* _CPU_H */

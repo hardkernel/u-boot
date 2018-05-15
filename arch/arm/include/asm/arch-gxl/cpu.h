@@ -68,4 +68,6 @@
 // config BL21 T32 state
 #define CONFIG_BL21_T32		1
 
+#define NR_CPUS     8
+
 #endif /* _CPU_H */

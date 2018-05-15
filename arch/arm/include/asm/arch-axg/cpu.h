@@ -77,4 +77,6 @@
 //2017.06.08 new compress solution, only support BL33 LZ4 compress
 #define CONFIG_AML_BL33_COMPRESS_ENABLE 1
 
+#define NR_CPUS     4
+
 #endif /* _CPU_H */

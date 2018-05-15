@@ -573,5 +573,15 @@
 #define ETHERNET_INTERNAL_PHY
 #undef ETHERNET_EXTERNAL_PHY
 
+#define CONFIG_CMD_AML_MTEST 1
+#if defined(CONFIG_CMD_AML_MTEST)
+#if !defined(CONFIG_SYS_MEM_TOP_HIDE)
+#error CONFIG_CMD_AML_MTEST depends on CONFIG_SYS_MEM_TOP_HIDE;
+#endif
+#if !(CONFIG_SYS_MEM_TOP_HIDE)
+#error CONFIG_SYS_MEM_TOP_HIDE should not be zero;
+#endif
+#endif
+
 #endif
 

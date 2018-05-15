@@ -530,7 +530,6 @@
 #define CONFIG_CMD_CPU_TEMP 1
 #define CONFIG_SYS_MEM_TOP_HIDE 0x08000000 //hide 128MB for kernel reserve
 #define CONFIG_CMD_LOADB    1
-
 //#define CONFIG_MULTI_DTB    1
 
 /* debug mode defines */
@@ -576,6 +575,16 @@
 #undef CONFIG_ETHERNET_NONE
 #define ETHERNET_INTERNAL_PHY
 #undef ETHERNET_EXTERNAL_PHY
+
+#define CONFIG_CMD_AML_MTEST 1
+#if defined(CONFIG_CMD_AML_MTEST)
+#if !defined(CONFIG_SYS_MEM_TOP_HIDE)
+#error CONFIG_CMD_AML_MTEST depends on CONFIG_SYS_MEM_TOP_HIDE;
+#endif
+#if !(CONFIG_SYS_MEM_TOP_HIDE)
+#error CONFIG_SYS_MEM_TOP_HIDE should not be zero;
+#endif
+#endif
 
 #endif
 

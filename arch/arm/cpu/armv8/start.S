@@ -82,7 +82,40 @@ reset:
 	/*
 	 * Slave CPUs
 	 */
+#ifdef CONFIG_CMD_AML_MTEST
+.extern get_gd_addr
+.extern get_stack_base
+.extern enable_caches
+.extern get_core_entry_fn
+#endif
 slave_cpu:
+#ifdef CONFIG_CMD_AML_MTEST
+	bl get_gd_addr
+	mov x18, x0
+
+	mrs x0, mpidr_el1
+	and	x1, x0, #0xff
+	and	x0, x0, #0xff00
+	add	x0, x1, x0, LSR #6
+	bl get_stack_base
+	mov sp, x0
+
+	bl enable_caches
+
+	mrs x0, mpidr_el1
+	and	x1, x0, #0xff
+	and	x0, x0, #0xff00
+	add	x0, x1, x0, LSR #6
+	bl get_core_entry_fn
+	mov x2, x0
+	mrs x0, mpidr_el1
+	and	x1, x0, #0xff
+	and	x0, x0, #0xff00
+	add	x0, x1, x0, LSR #6
+	br x2
+
+	b .
+#endif
 	wfe
 	ldr	x1, =CPU_RELEASE_ADDR
 	ldr	x0, [x1]

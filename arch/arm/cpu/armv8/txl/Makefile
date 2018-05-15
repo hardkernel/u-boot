@@ -8,3 +8,4 @@ obj-y	+= timer.o
 obj-y	+= mailbox.o
 obj-y   += gate_init.o
 obj-$(CONFIG_CMD_PLLTEST)	+= pll.o
+obj-$(CONFIG_CMD_AML_MTEST) += core.o
