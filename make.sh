@@ -2,9 +2,8 @@
 set -e
 BOARD=$1
 SUBCMD=$2
-RKTRUST_CHIP=${BOARD##*-}
-RKTRUST_CHIP=$(echo ${RKTRUST_CHIP} | tr '[a-z]' '[A-Z]')
-RKBOOT_CHIP=$RKTRUST_CHIP
+RKCHIP=${BOARD##*-}
+RKCHIP=$(echo ${RKCHIP} | tr '[a-z]' '[A-Z]')
 JOB=`sed -n "N;/processor/p" /proc/cpuinfo|wc -l`
 SUPPROT_LIST=`ls configs/*-r[v,k][0-9][0-9][0-9][0-9]_defconfig`
 
@@ -130,12 +129,8 @@ sub_commands()
 
 fixup_chip_name()
 {
-	if [ "$RKTRUST_CHIP" = 'RK3228' -o "$RKTRUST_CHIP" = 'RK3229' ]; then
-		RKBOOT_CHIP=RK322X
-		RKTRUST_CHIP=RK322X
-	elif [ "$RKTRUST_CHIP" = 'PX3SE' ]; then
-		RKBOOT_CHIP=PX3SE
-		RKTRUST_CHIP=RK3126
+	if [ "$RKCHIP" = 'RK3228' -o "$RKCHIP" = 'RK3229' ]; then
+		RKCHIP=RK322X
 	fi
 }
 
@@ -159,26 +154,26 @@ pack_uboot_image()
 
 pack_loader_image()
 {
-	if [ ! -f ${RKBIN}/RKBOOT/${RKBOOT_CHIP}MINIALL.ini ]; then
-		echo "pack loader failed! Can't find: ${RKBIN}/RKBOOT/${RKBOOT_CHIP}MINIALL.ini"
+	if [ ! -f ${RKBIN}/RKBOOT/${RKCHIP}MINIALL.ini ]; then
+		echo "pack loader failed! Can't find: ${RKBIN}/RKBOOT/${RKCHIP}MINIALL.ini"
 		return
 	fi
 
 	cd ${RKBIN}
-	${TOOLCHAIN_RKBIN}/boot_merger --replace tools/rk_tools/ ./ ${RKBIN}/RKBOOT/${RKBOOT_CHIP}MINIALL.ini
+	${TOOLCHAIN_RKBIN}/boot_merger --replace tools/rk_tools/ ./ ${RKBIN}/RKBOOT/${RKCHIP}MINIALL.ini
 	cd -
 	mv ${RKBIN}/*_loader_*.bin ./
-	echo "pack loader okay! Input: ${RKBIN}/RKBOOT/${RKBOOT_CHIP}MINIALL.ini"
+	echo "pack loader okay! Input: ${RKBIN}/RKBOOT/${RKCHIP}MINIALL.ini"
 }
 
 pack_mass_trust_image()
 {
 	local TOS0 TOS1 IMG0 IMG1 DARM_BASE TEE_LOAD_ADDR TEE_OFFSET=0x8400000
 
-	TOS0=`sed -n "/TOS0=/s/TOS0=//p" ${RKBIN}/RKTRUST/${RKTRUST_CHIP}TOS.ini|tr -d '\r'`
-	TOS1=`sed -n "/TOS1=/s/TOS1=//p" ${RKBIN}/RKTRUST/${RKTRUST_CHIP}TOS.ini|tr -d '\r'`
-	IMG0=`sed -n "/PATH0=/s/PATH0=//p" ${RKBIN}/RKTRUST/${RKTRUST_CHIP}TOS.ini|tr -d '\r'`
-	IMG1=`sed -n "/PATH1=/s/PATH1=//p" ${RKBIN}/RKTRUST/${RKTRUST_CHIP}TOS.ini|tr -d '\r'`
+	TOS0=`sed -n "/TOS0=/s/TOS0=//p" ${RKBIN}/RKTRUST/${RKCHIP}TOS.ini|tr -d '\r'`
+	TOS1=`sed -n "/TOS1=/s/TOS1=//p" ${RKBIN}/RKTRUST/${RKCHIP}TOS.ini|tr -d '\r'`
+	IMG0=`sed -n "/PATH0=/s/PATH0=//p" ${RKBIN}/RKTRUST/${RKCHIP}TOS.ini|tr -d '\r'`
+	IMG1=`sed -n "/PATH1=/s/PATH1=//p" ${RKBIN}/RKTRUST/${RKCHIP}TOS.ini|tr -d '\r'`
 
 # OP-TEE is 132M(0x8400000) offset from DRAM base.
 	DARM_BASE=`sed -n "/CONFIG_SYS_SDRAM_BASE=/s/CONFIG_SYS_SDRAM_BASE=//p" ${OUTDIR}/include/autoconf.mk|tr -d '\r'`
@@ -188,10 +183,10 @@ pack_mass_trust_image()
 	TEE_LOAD_ADDR=$(echo "obase=16;${TEE_LOAD_ADDR}"|bc)
 
 # Parse orignal path
-	TOS0=`sed -n "/TOS0=/s/TOS0=//p" ${RKBIN}/RKTRUST/${RKTRUST_CHIP}TOS.ini|tr -d '\r'`
-	TOS1=`sed -n "/TOS1=/s/TOS1=//p" ${RKBIN}/RKTRUST/${RKTRUST_CHIP}TOS.ini|tr -d '\r'`
-	IMG0=`sed -n "/PATH0=/s/PATH0=//p" ${RKBIN}/RKTRUST/${RKTRUST_CHIP}TOS.ini|tr -d '\r'`
-	IMG1=`sed -n "/PATH1=/s/PATH1=//p" ${RKBIN}/RKTRUST/${RKTRUST_CHIP}TOS.ini|tr -d '\r'`
+	TOS0=`sed -n "/TOS0=/s/TOS0=//p" ${RKBIN}/RKTRUST/${RKCHIP}TOS.ini|tr -d '\r'`
+	TOS1=`sed -n "/TOS1=/s/TOS1=//p" ${RKBIN}/RKTRUST/${RKCHIP}TOS.ini|tr -d '\r'`
+	IMG0=`sed -n "/PATH0=/s/PATH0=//p" ${RKBIN}/RKTRUST/${RKCHIP}TOS.ini|tr -d '\r'`
+	IMG1=`sed -n "/PATH1=/s/PATH1=//p" ${RKBIN}/RKTRUST/${RKCHIP}TOS.ini|tr -d '\r'`
 
 # replace "./tools/rk_tools/" with "./" to compatible legacy ini content of rkdevelop branch
 	TOS0=$(echo ${TOS0} | sed "s/tools\/rk_tools\//\.\//g")
@@ -218,30 +213,30 @@ pack_trust_image()
 
 	# ARM64 uses trust_merger
 	if grep  -q '^CONFIG_ARM64=y' ${OUTDIR}/.config ; then
-		if [ ! -f ${RKBIN}/RKTRUST/${RKTRUST_CHIP}TRUST.ini ]; then
-			echo "pack trust failed! Can't find: ${RKBIN}/RKTRUST/${RKTRUST_CHIP}TRUST.ini"
+		if [ ! -f ${RKBIN}/RKTRUST/${RKCHIP}TRUST.ini ]; then
+			echo "pack trust failed! Can't find: ${RKBIN}/RKTRUST/${RKCHIP}TRUST.ini"
 			return
 		fi
 
 		cd ${RKBIN}
 
 		# RK3308/PX30/RK3326 use RSA-PKCS1 V2.1, it's pack magic is "3"
-		if [ $RKTRUST_CHIP = "PX30" -o $RKTRUST_CHIP = "RK3326" -o $RKTRUST_CHIP = "RK3308" ]; then
-			${TOOLCHAIN_RKBIN}/trust_merger --rsa 3 --replace tools/rk_tools/ ./ ${RKBIN}/RKTRUST/${RKTRUST_CHIP}TRUST.ini
+		if [ $RKCHIP = "PX30" -o $RKCHIP = "RK3326" -o $RKCHIP = "RK3308" ]; then
+			${TOOLCHAIN_RKBIN}/trust_merger --rsa 3 --replace tools/rk_tools/ ./ ${RKBIN}/RKTRUST/${RKCHIP}TRUST.ini
 		# RK3368 use rk big endian SHA256, it's pack magic is "2"
-		elif [ $RKTRUST_CHIP = "RK3368" ]; then
-			${TOOLCHAIN_RKBIN}/trust_merger --sha 2 --replace tools/rk_tools/ ./ ${RKBIN}/RKTRUST/${RKTRUST_CHIP}TRUST.ini
+		elif [ $RKCHIP = "RK3368" ]; then
+			${TOOLCHAIN_RKBIN}/trust_merger --sha 2 --replace tools/rk_tools/ ./ ${RKBIN}/RKTRUST/${RKCHIP}TRUST.ini
 		else
-			${TOOLCHAIN_RKBIN}/trust_merger --replace tools/rk_tools/ ./ ${RKBIN}/RKTRUST/${RKTRUST_CHIP}TRUST.ini
+			${TOOLCHAIN_RKBIN}/trust_merger --replace tools/rk_tools/ ./ ${RKBIN}/RKTRUST/${RKCHIP}TRUST.ini
 		fi
 
 		cd -
 		mv ${RKBIN}/trust.img ./trust.img
-		echo "pack trust okay! Input: ${RKBIN}/RKTRUST/${RKTRUST_CHIP}TRUST.ini"
+		echo "pack trust okay! Input: ${RKBIN}/RKTRUST/${RKCHIP}TRUST.ini"
 	# ARM uses loaderimage
 	else
-		if [ ! -f ${RKBIN}/RKTRUST/${RKTRUST_CHIP}TOS.ini ]; then
-			echo "pack trust failed! Can't find: ${RKBIN}/RKTRUST/${RKTRUST_CHIP}TOS.ini"
+		if [ ! -f ${RKBIN}/RKTRUST/${RKCHIP}TOS.ini ]; then
+			echo "pack trust failed! Can't find: ${RKBIN}/RKTRUST/${RKCHIP}TOS.ini"
 			return
 		fi
 
@@ -253,8 +248,8 @@ pack_trust_image()
 		TEE_LOAD_ADDR=$(echo "obase=16;${TEE_LOAD_ADDR}"|bc)
 
 		# Parse orignal path
-		TOS=`sed -n "/TOS=/s/TOS=//p" ${RKBIN}/RKTRUST/${RKTRUST_CHIP}TOS.ini|tr -d '\r'`
-		TOS_TA=`sed -n "/TOSTA=/s/TOSTA=//p" ${RKBIN}/RKTRUST/${RKTRUST_CHIP}TOS.ini|tr -d '\r'`
+		TOS=`sed -n "/TOS=/s/TOS=//p" ${RKBIN}/RKTRUST/${RKCHIP}TOS.ini|tr -d '\r'`
+		TOS_TA=`sed -n "/TOSTA=/s/TOSTA=//p" ${RKBIN}/RKTRUST/${RKCHIP}TOS.ini|tr -d '\r'`
 
 		# replace "./tools/rk_tools/" with "./" to compatible legacy ini content of rkdevelop branch
 		TOS=$(echo ${TOS} | sed "s/tools\/rk_tools\//\.\//g")
@@ -275,7 +270,7 @@ pack_trust_image()
 			pack_mass_trust_image
 		fi
 
-		echo "pack trust okay! Input: ${RKBIN}/RKTRUST/${RKTRUST_CHIP}TOS.ini"
+		echo "pack trust okay! Input: ${RKBIN}/RKTRUST/${RKCHIP}TOS.ini"
 	fi
 }
 
