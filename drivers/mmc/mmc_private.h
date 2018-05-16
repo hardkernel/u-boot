@@ -12,6 +12,11 @@
 
 #include <mmc.h>
 
+#define SAMSUNG_MID           0x15
+#define KINGSTON_MID          0x70
+#define SAMSUNG_FFU_ADDR      0xc7810000
+#define KINGSTON_FFU_ADDR     0x0000ffff
+
 extern int mmc_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd,
 			struct mmc_data *data);
 extern int mmc_send_status(struct mmc *mmc, int timeout);

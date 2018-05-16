@@ -1664,15 +1664,21 @@ int mmc_ffu_op(int dev, u64 ffu_ver, void *addr, u64 cnt)
 	int err, i, supported_modes, fw_cfg, ffu_status;
 	u64 fw_ver = 0, n;
 	u8 ext_csd_ffu[512] = {0};
-
+	lbaint_t ffu_addr=0;
 	struct mmc *mmc = find_mmc_device(dev);
 	if (!mmc)
 		return -ENODEV;
 
 	printf("ffu update start\n");
-	/* check MID SamSung */
-	if ((mmc->cid[0] >> 24) != 0x15)
+	/* check Manufacturer MID */
+	if ((mmc->cid[0] >> 24) == SAMSUNG_MID) {
+		ffu_addr = SAMSUNG_FFU_ADDR;
+	} else if ((mmc->cid[0] >> 24) == KINGSTON_MID) {
+		ffu_addr = KINGSTON_FFU_ADDR;
+	} else {
+		printf("FFU update for this manufacturer not support yet\n");
 		return -1;
+	}
 
 	/*
 	 * check FFU Supportability
@@ -1683,6 +1689,7 @@ int mmc_ffu_op(int dev, u64 ffu_ver, void *addr, u64 cnt)
 	err = mmc_get_ext_csd(mmc, ext_csd_ffu);
 	if (err)
 		return err;
+
 	supported_modes = ext_csd_ffu[EXT_CSD_SUPPORTED_MODES] & 0x1;
 	fw_cfg = ext_csd_ffu[EXT_CSD_FW_CFG] & 0x1;
 	for (i = 0; i < 8; i++)
@@ -1693,18 +1700,32 @@ int mmc_ffu_op(int dev, u64 ffu_ver, void *addr, u64 cnt)
 
 	/* Set FFU Mode */
 	err = mmc_switch(mmc, EXT_CSD_CMD_SET_NORMAL, EXT_CSD_MODE_CFG, 1);
-	if (err)
+	if (err) {
+		printf("Failed: set FFU mode\n");
 		return err;
+	}
 
 	/* Write patch file at one write command */
-	n = mmc_ffu_write(dev, 0xc7810000, cnt, addr);
-	if (n != cnt)
+	n = mmc_ffu_write(dev, ffu_addr, cnt, addr);
+	if (n != cnt) {
+		printf("target is %llx block, but only %llx block has been write\n", cnt, n);
 		return -1;
+	}
 
-	/* Set Normal Mode */
-	err = mmc_switch(mmc, EXT_CSD_CMD_SET_NORMAL, EXT_CSD_MODE_CFG, 0);
+	memset(ext_csd_ffu, 0, 512);
+	err = mmc_get_ext_csd(mmc, ext_csd_ffu);
 	if (err)
 		return err;
+
+	for (i = 0; i < 8; i++)
+		fw_ver |= (ext_csd_ffu[EXT_CSD_FW_VERSION + i] << (i * 8));
+	printf("new fw_ver = %llx\n", fw_ver);
+	if ((mmc->cid[0] >> 24) == SAMSUNG_MID) {
+		/* Set Normal Mode */
+		err = mmc_switch(mmc, EXT_CSD_CMD_SET_NORMAL, EXT_CSD_MODE_CFG, 0);
+		if (err)
+			return err;
+	}
 
 	/* reset devices */
 	err = mmc_go_idle(mmc);

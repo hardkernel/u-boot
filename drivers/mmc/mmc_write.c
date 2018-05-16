@@ -200,7 +200,6 @@ ulong mmc_ffu_write(int dev_num, lbaint_t start, lbaint_t blkcnt, const void *sr
 	struct mmc_data data;
 	int ret, timeout = 1000;
 	struct mmc *mmc = find_mmc_device(dev_num);
-
 	if (!mmc || !blkcnt)
 		return 0;
 
