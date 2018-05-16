@@ -1511,7 +1511,7 @@ static int aml_bl_config_load_from_bsp(struct bl_config_s *bconf)
 	return 0;
 }
 
-static int aml_bl_config_load_from_unifykey(struct bl_config_s *bconf)
+static int aml_bl_config_load_from_unifykey(char *dt_addr, struct bl_config_s *bconf)
 {
 	unsigned char *para;
 	int key_len, len;
@@ -1730,7 +1730,7 @@ static int aml_bl_config_load_from_unifykey(struct bl_config_s *bconf)
 		break;
 #ifdef CONFIG_AML_LOCAL_DIMMING
 	case BL_CTRL_LOCAL_DIMING:
-		aml_ldim_probe(NULL, 2);
+		aml_ldim_probe(dt_addr, 2);
 		break;
 #endif
 	default:
@@ -2323,7 +2323,7 @@ int aml_bl_config_load(char *dt_addr, int load_id)
 		if (load_id & 0x10) { /* unifykey */
 			if (lcd_debug_print_flag)
 				LCDPR("bl: load bl_config from unifykey\n");
-			ret = aml_bl_config_load_from_unifykey(lcd_drv->bl_config);
+			ret = aml_bl_config_load_from_unifykey(dt_addr, lcd_drv->bl_config);
 		} else { /* dts */
 #ifdef CONFIG_OF_LIBFDT
 			if (lcd_debug_print_flag)
@@ -2345,7 +2345,7 @@ int aml_bl_config_load(char *dt_addr, int load_id)
 		if (load_id & 0x10) { /* unifykey */
 			if (lcd_debug_print_flag)
 				LCDPR("bl: load bl_config from unifykey\n");
-			ret = aml_bl_config_load_from_unifykey(lcd_drv->bl_config);
+			ret = aml_bl_config_load_from_unifykey(dt_addr, lcd_drv->bl_config);
 		} else { /* bsp */
 			if (lcd_debug_print_flag)
 				LCDPR("bl: load bl_config from bsp\n");

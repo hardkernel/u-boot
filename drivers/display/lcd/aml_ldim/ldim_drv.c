@@ -100,9 +100,13 @@ static void ldim_config_print(void)
 	LDIMPR("%s:\n", __func__);
 	printf("valid_flag            = %d\n"
 		"dev_index             = %d\n"
+		"ldim_blk_row          = %d\n"
+		"ldim_blk_col          = %d\n"
 		"ldim_on_flag          = %d\n",
 		ldim_driver.valid_flag,
 		ldim_driver.dev_index,
+		ldim_blk_row,
+		ldim_blk_col,
 		ldim_on_flag);
 	if (ldim_driver.ldev_conf) {
 		ld_pwm = &ldim_driver.ldev_conf->pwm_config;
@@ -207,6 +211,78 @@ static int ldim_config_load_from_dts(char *dt_addr)
 }
 #endif
 
+static int ldim_config_load_from_unifykey(void)
+{
+	unsigned char *para;
+	int key_len, len;
+	unsigned char *p;
+	struct aml_lcd_unifykey_header_s bl_header;
+	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
+	int ret;
+
+	para = (unsigned char *)malloc(sizeof(unsigned char) * LCD_UKEY_BL_SIZE);
+	if (!para) {
+		LDIMERR("bl: %s: Not enough memory\n", __func__);
+		return -1;
+	}
+
+	key_len = LCD_UKEY_BL_SIZE;
+	memset(para, 0, (sizeof(unsigned char) * key_len));
+	ret = aml_lcd_unifykey_get("backlight", para, &key_len);
+	if (ret) {
+		free(para);
+		return -1;
+	}
+
+	/* step 1: check header */
+	len = LCD_UKEY_HEAD_SIZE;
+	ret = aml_lcd_unifykey_len_check(key_len, len);
+	if (ret) {
+		LDIMERR("unifykey header length is incorrect\n");
+		free(para);
+		return -1;
+	}
+
+	aml_lcd_unifykey_header_check(para, &bl_header);
+	LCDPR("bl: unifykey version: 0x%04x\n", bl_header.version);
+	switch (bl_header.version) {
+	case 2:
+		len = 10 + 30 + 12 + 8 + 32 + 10;
+		break;
+	default:
+		len = 10 + 30 + 12 + 8 + 32;
+		break;
+	}
+
+	/* step 2: check backlight parameters */
+	ret = aml_lcd_unifykey_len_check(key_len, len);
+	if (ret) {
+		LDIMERR("bl: unifykey length is incorrect\n");
+		free(para);
+		return -1;
+	}
+
+	/* 60byte */
+	p = para + 60;
+
+	/* ldim: 24byte */
+	switch (lcd_drv->bl_config->method) {
+	case BL_CTRL_LOCAL_DIMING:
+		/* get bl_ldim_region_row_col 4byte*/
+		ldim_blk_row = (*p | ((*(p + 1)) << 8));
+		ldim_blk_col = (*(p + 2) | ((*(p + 3)) << 8));
+
+		/* get ldim_dev_index 1byte*/
+		ldim_driver.dev_index = *(p + 4);
+
+		break;
+	default:
+		break;
+	}
+
+	return 0;
+}
+
 int aml_ldim_probe(char *dt_addr, int flag)
 {
 	unsigned int size;
@@ -230,7 +306,10 @@ int aml_ldim_probe(char *dt_addr, int flag)
 		LDIMPR("%s: not support bsp config\n", __func__);
 		break;
 	case 2: /* unifykey */
-		LDIMPR("%s: not support unifykey config\n", __func__);
+		if (lcd_debug_print_flag)
+			LDIMPR("load ldim_config from unifykey\n");
+		ldim_config_load_from_unifykey();
+		ret = aml_ldim_device_probe(dt_addr);
 		break;
 	default:
 		break;

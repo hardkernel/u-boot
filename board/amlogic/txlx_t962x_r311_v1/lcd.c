@@ -403,6 +403,7 @@ struct bl_config_s bl_config_dft = {
 	.pinmux_clr = {{4, 0x00008000}, {3, 0x00200000}, {10, 0x00010000}, {LCD_PINMUX_END, 0x0}},
 };
 
+#ifdef CONFIG_AML_LOCAL_DIMMING
 static unsigned char ldim_ini_data_on[300];
 static unsigned char ldim_ini_data_off[20];
 struct ldim_dev_config_s ldim_config_dft = {
@@ -430,6 +431,7 @@ struct ldim_dev_config_s ldim_config_dft = {
 	.pinctrl_ver = 1,
 	.ldim_pinmux = ldim_pinmux_ctrl,
 };
+#endif
 
 void lcd_config_bsp_init(void)
 {
