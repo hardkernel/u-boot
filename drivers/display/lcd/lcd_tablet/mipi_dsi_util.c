@@ -43,7 +43,7 @@
 #define MIPI_DSI_COLOR_18BIT            COLOR_18BIT_CFG_2//COLOR_18BIT_CFG_1
 #define MIPI_DSI_COLOR_24BIT            COLOR_24BIT
 #define MIPI_DSI_TEAR_SWITCH            MIPI_DCS_DISABLE_TEAR
-#define CMD_TIMEOUT_CNT                 3000
+#define CMD_TIMEOUT_CNT                 5000
 /* ************************************************************* */
 
 static char *operation_mode_table[] = {
@@ -941,7 +941,7 @@ static int wait_bta_ack(void)
  * Function: wait_cmd_fifo_empty
  * Poll to check if the generic command fifo is empty
  */
-static void wait_cmd_fifo_empty(void)
+static int wait_cmd_fifo_empty(void)
 {
 	unsigned int cmd_status;
 	int i = CMD_TIMEOUT_CNT;
@@ -949,9 +949,17 @@ static void wait_cmd_fifo_empty(void)
 	do {
 		udelay(10);
 		i--;
+		cmd_status = dsi_host_getb(MIPI_DSI_DWC_CMD_PKT_STATUS_OS,
+				BIT_GEN_CMD_EMPTY, 1);
+	} while ((cmd_status != 0x1) && (i > 0));
+
+	if (cmd_status == 0) {
 		cmd_status = dsi_host_read(MIPI_DSI_DWC_CMD_PKT_STATUS_OS);
-	} while ((((cmd_status >> BIT_GEN_CMD_EMPTY) & 0x1) != 0x1) && (i > 0));
-	print_mipi_cmd_status(i, cmd_status);
+		print_mipi_cmd_status(i, cmd_status);
+		return -1;
+	}
+
+	return 0;
 }
 
 #if 0
@@ -1136,9 +1144,10 @@ static int dsi_dcs_read_packet(struct dsi_cmd_request_s *req,
 			DT_GEN_SHORT_WR_1,
 			DT_GEN_SHORT_WR_2,
  */
-static void dsi_generic_write_short_packet(struct dsi_cmd_request_s *req)
+static int dsi_generic_write_short_packet(struct dsi_cmd_request_s *req)
 {
 	unsigned int d_para[2];
+	int ret = 0;
 
 	switch (req->data_type) {
 	case DT_GEN_SHORT_WR_1:
@@ -1165,9 +1174,11 @@ static void dsi_generic_write_short_packet(struct dsi_cmd_request_s *req)
 		(((unsigned int)req->vc_id) << BIT_GEN_VC) |
 		(((unsigned int)req->data_type) << BIT_GEN_DT)));
 	if (req->req_ack == MIPI_DSI_DCS_REQ_ACK)
-		wait_bta_ack();
+		ret = wait_bta_ack();
 	else if (req->req_ack == MIPI_DSI_DCS_NO_ACK)
-		wait_cmd_fifo_empty();
+		ret = wait_cmd_fifo_empty();
+
+	return ret;
 }
 
 /* *************************************************************
@@ -1175,9 +1186,10 @@ static void dsi_generic_write_short_packet(struct dsi_cmd_request_s *req)
  * DCS Write Short Packet with Generic Interface
  * Supported Data Type: DT_DCS_SHORT_WR_0, DT_DCS_SHORT_WR_1,
  */
-static void dsi_dcs_write_short_packet(struct dsi_cmd_request_s *req)
+static int dsi_dcs_write_short_packet(struct dsi_cmd_request_s *req)
 {
 	unsigned int d_command, d_para;
+	int ret = 0;
 
 	d_command = ((unsigned int)req->payload[2]) & 0xff;
 	d_para = (req->pld_count < 2) ?
@@ -1189,9 +1201,11 @@ static void dsi_dcs_write_short_packet(struct dsi_cmd_request_s *req)
 		(((unsigned int)req->vc_id) << BIT_GEN_VC) |
 		(((unsigned int)req->data_type) << BIT_GEN_DT)));
 	if (req->req_ack == MIPI_DSI_DCS_REQ_ACK)
-		wait_bta_ack();
+		ret = wait_bta_ack();
 	else if (req->req_ack == MIPI_DSI_DCS_NO_ACK)
-		wait_cmd_fifo_empty();
+		ret = wait_cmd_fifo_empty();
+
+	return ret;
 }
 
 /* *************************************************************
@@ -1199,11 +1213,12 @@ static void dsi_dcs_write_short_packet(struct dsi_cmd_request_s *req)
  * Write Long Packet with Generic Interface
  * Supported Data Type: DT_GEN_LONG_WR, DT_DCS_LONG_WR
  */
-static void dsi_write_long_packet(struct dsi_cmd_request_s *req)
+static int dsi_write_long_packet(struct dsi_cmd_request_s *req)
 {
 	unsigned int d_command, payload_data, header_data;
 	unsigned int cmd_status;
 	unsigned int i, j, data_index, n, temp;
+	int ret = 0;
 
 	/* payload[2] start (payload[0]: data_type, payload[1]: data_cnt) */
 	data_index = DSI_CMD_SIZE_INDEX + 1;
@@ -1263,9 +1278,11 @@ static void dsi_write_long_packet(struct dsi_cmd_request_s *req)
 			(((unsigned int)req->data_type) << BIT_GEN_DT));
 	generic_if_wr(MIPI_DSI_DWC_GEN_HDR_OS, header_data);
 	if (req->req_ack == MIPI_DSI_DCS_REQ_ACK)
-		wait_bta_ack();
+		ret = wait_bta_ack();
 	else if (req->req_ack == MIPI_DSI_DCS_NO_ACK)
-		wait_cmd_fifo_empty();
+		ret = wait_cmd_fifo_empty();
+
+	return ret;
 }
 
 #ifdef DSI_CMD_READ_VALID
@@ -1333,7 +1350,7 @@ int dsi_read_single(unsigned char *payload, unsigned char *rd_data,
 }
 #endif
 
-static void mipi_dsi_check_state(unsigned char reg, unsigned char cnt)
+static int mipi_dsi_check_state(unsigned char reg, unsigned char cnt)
 {
 	int ret = 0, i;
 	unsigned char *rd_data;
@@ -1341,14 +1358,14 @@ static void mipi_dsi_check_state(unsigned char reg, unsigned char cnt)
 	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
 
 	if (lcd_drv->lcd_config->lcd_control.mipi_config->check_en == 0)
-		return;
+		return 0;
 	LCDPR("%s\n", __func__);
 
 	lcd_drv->lcd_config->lcd_control.mipi_config->check_state = 0;
 	rd_data = (unsigned char *)malloc(sizeof(unsigned char) * cnt);
 	if (rd_data == NULL) {
 		LCDERR("%s: rd_data malloc error\n", __func__);
-		return;
+		return 0;
 	}
 
 	payload[2] = reg;
@@ -1357,12 +1374,12 @@ static void mipi_dsi_check_state(unsigned char reg, unsigned char cnt)
 		lcd_drv->lcd_config->lcd_control.mipi_config->check_state = 0;
 		lcd_vcbus_setb(L_VCOM_VS_ADDR, 0, 12, 1);
 		free(rd_data);
-		return;
+		return -1;
 	}
 	if (ret > cnt) {
 		LCDERR("%s: read back cnt is wrong\n", __func__);
 		free(rd_data);
-		return;
+		return -1;
 	}
 
 	lcd_drv->lcd_config->lcd_control.mipi_config->check_state = 1;
@@ -1377,6 +1394,7 @@ static void mipi_dsi_check_state(unsigned char reg, unsigned char cnt)
 	printf("\n");
 
 	free(rd_data);
+	return 0;
 }
 
 /* *************************************************************
@@ -1402,7 +1420,7 @@ int dsi_write_cmd(unsigned char *payload)
 	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
 	struct lcd_power_ctrl_s *lcd_power;
 	char *str;
-	int gpio;
+	int gpio, ret = 0;
 
 	/* mipi command(payload) */
 	/* format:  data_type, cmd_size, data.... */
@@ -1413,6 +1431,10 @@ int dsi_write_cmd(unsigned char *payload)
 	 *		data0=gpio_index, data1=gpio_value, data2=delay.
 	 */
 	while (i < DSI_CMD_SIZE_MAX) {
+		if (ret) {
+			LCDERR("%s: error, exit\n", __func__);
+			break;
+		}
 		if (payload[i] == 0xff) {
 			j = 2;
 			if (payload[i+1] == 0xff)
@@ -1442,7 +1464,7 @@ int dsi_write_cmd(unsigned char *payload)
 				break;
 			}
 			if (payload[i+DSI_GPIO_INDEX+2] > 0) {
-				mipi_dsi_check_state(
+				ret = mipi_dsi_check_state(
 					payload[i+DSI_GPIO_INDEX],
 					payload[i+DSI_GPIO_INDEX+1]);
 			}
@@ -1462,15 +1484,15 @@ int dsi_write_cmd(unsigned char *payload)
 			case DT_GEN_SHORT_WR_0:
 			case DT_GEN_SHORT_WR_1:
 			case DT_GEN_SHORT_WR_2:
-				dsi_generic_write_short_packet(&dsi_cmd_req);
+				ret = dsi_generic_write_short_packet(&dsi_cmd_req);
 				break;
 			case DT_DCS_SHORT_WR_0:
 			case DT_DCS_SHORT_WR_1:
-				dsi_dcs_write_short_packet(&dsi_cmd_req);
+				ret = dsi_dcs_write_short_packet(&dsi_cmd_req);
 				break;
 			case DT_DCS_LONG_WR:
 			case DT_GEN_LONG_WR:
-				dsi_write_long_packet(&dsi_cmd_req);
+				ret = dsi_write_long_packet(&dsi_cmd_req);
 				break;
 			case DT_TURN_ON:
 				dsi_host_setb(MIPI_DSI_TOP_CNTL, 1, 2, 1);
@@ -1884,6 +1906,13 @@ static void mipi_dsi_link_on(struct lcd_config_s *pconf)
 		}
 	}
 #endif
+
+	if (dconf->check_en) {
+		if (dconf->check_state == 0)
+			pconf->retry_enable = 1;
+		else
+			pconf->retry_enable = 0;
+	}
 
 	if (op_mode_disp != op_mode_init) {
 		set_mipi_dsi_host(MIPI_DSI_VIRTUAL_CHAN_ID,

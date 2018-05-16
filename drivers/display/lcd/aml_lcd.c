@@ -178,7 +178,7 @@ static void lcd_module_enable(char *mode)
 	unsigned int sync_duration;
 	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
 	struct lcd_config_s *pconf = lcd_drv->lcd_config;
-	int ret;
+	int ret, retry_cnt = 0;
 
 	ret = lcd_drv->config_check(mode);
 	if (ret) {
@@ -195,6 +195,14 @@ static void lcd_module_enable(char *mode)
 
 	lcd_drv->driver_init_pre();
 	lcd_power_ctrl(1);
+	while (pconf->retry_enable) {
+		if (retry_cnt++ > LCD_ENABLE_RETRY_MAX)
+			break;
+		LCDPR("retry enable...%d\n", retry_cnt);
+		lcd_power_ctrl(0);
+		mdelay(1000);
+		lcd_power_ctrl(1);
+	}
 	lcd_vcbus_write(VPP_POSTBLEND_H_SIZE, pconf->lcd_basic.h_active);
 	lcd_vcbus_write(VENC_INTCTRL, 0x200);
 
@@ -1196,6 +1204,9 @@ static int lcd_config_probe(void)
 		load_id = 0x0;
 		LCDPR("lcd_debug_test flag: %d\n", lcd_debug_test);
 	}
+
+	/* default setting */
+	aml_lcd_driver.lcd_config->retry_enable = 0;
 
 	if (load_id & 0x1 ) {
 #ifdef CONFIG_OF_LIBFDT

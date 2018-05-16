@@ -390,10 +390,12 @@ struct lcd_pinmux_ctrl_s {
 	unsigned int pinmux_clr[LCD_PINMUX_NUM][2];
 };
 
+#define LCD_ENABLE_RETRY_MAX    2
 struct lcd_config_s {
 	unsigned char lcd_mode;
 	unsigned char lcd_key_valid;
 	unsigned char lcd_clk_path; /* 0=hpll, 1=gp0_pll */
+	unsigned char retry_enable;
 	unsigned int backlight_index;
 	struct lcd_basic_s lcd_basic;
 	struct lcd_timing_s lcd_timing;
