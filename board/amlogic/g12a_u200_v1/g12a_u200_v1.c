@@ -26,9 +26,12 @@
 #include <fdt_support.h>
 #include <libfdt.h>
 #include <asm/cpu_id.h>
+#include <asm/arch/secure_apb.h>
 #ifdef CONFIG_SYS_I2C_AML
 #include <aml_i2c.h>
-#include <asm/arch/secure_apb.h>
+#endif
+#ifdef CONFIG_SYS_I2C_MESON
+#include <amlogic/i2c.h>
 #endif
 #ifdef CONFIG_AML_VPU
 #include <vpu.h>
@@ -48,8 +51,8 @@
 #include <linux/mtd/partitions.h>
 #include <linux/sizes.h>
 #include <asm-generic/gpio.h>
-#ifdef CONFIG_AML_SPIFC
 #include <dm.h>
+#ifdef CONFIG_AML_SPIFC
 #include <amlogic/spifc.h>
 #endif
 
@@ -544,6 +547,35 @@ U_BOOT_DEVICE(spifc) = {
 
 extern void aml_pwm_cal_init(int mode);
 
+#ifdef CONFIG_SYS_I2C_MESON
+static const struct meson_i2c_platdata i2c_data[] = {
+	{ 0, 0xffd1f000, 166666666, 3, 15, 100000 },
+	{ 1, 0xffd1e000, 166666666, 3, 15, 100000 },
+	{ 2, 0xffd1d000, 166666666, 3, 15, 100000 },
+	{ 3, 0xffd1c000, 166666666, 3, 15, 100000 },
+	{ 4, 0xff805000, 166666666, 3, 15, 100000 },
+};
+
+U_BOOT_DEVICES(meson_i2cs) = {
+	{ "i2c_meson", &i2c_data[0] },
+	{ "i2c_meson", &i2c_data[1] },
+	{ "i2c_meson", &i2c_data[2] },
+	{ "i2c_meson", &i2c_data[3] },
+	{ "i2c_meson", &i2c_data[4] },
+};
+
+/*
+ *GPIOAO_10//I2C_SDA_AO
+ *GPIOAO_11//I2C_SCK_AO
+ *pinmux configuration seperated with i2c controller configuration
+ * config it when you use
+ */
+void set_i2c_ao_pinmux(void)
+{
+	return;
+}
+#endif /*end CONFIG_SYS_I2C_MESON*/
+
 int board_init(void)
 {
 	sys_led_init();
@@ -566,6 +598,10 @@ int board_init(void)
 	extern int amlnf_init(unsigned char flag);
 	amlnf_init(0);
 #endif
+#ifdef CONFIG_SYS_I2C_MESON
+	set_i2c_ao_pinmux();
+#endif
+
 	return 0;
 }
 

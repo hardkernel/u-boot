@@ -465,11 +465,20 @@
 #endif /* (CONFIG_CMD_NET) */
 
 /* other devices */
+/* I2C DM driver*/
+//#define CONFIG_DM_I2C
+
+#if defined(CONFIG_DM_I2C)
+#define CONFIG_SYS_I2C_MESON		1
+#else
+#define CONFIG_SYS_I2C_AML			1
+#define CONFIG_SYS_I2C_SPEED		400000
+#define CONFIG_I2C_MULTI_BUS 		1
+#endif
+
 #define CONFIG_EFUSE 1
-#define CONFIG_SYS_I2C_AML 1
+
 /* #define CONFIG_SYS_I2C_AML_IS31F123XX 1 */
-#define CONFIG_SYS_I2C_SPEED     400000
-#define CONFIG_I2C_MULTI_BUS 1
 
 /* commands */
 #define CONFIG_CMD_CACHE 1
