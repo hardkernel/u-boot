@@ -506,7 +506,7 @@ bl2_reg_t __bl2_reg[] = {
 	{AO_PIN_MUX_REG1,     (3 << 20),               (0xF << 20),  0, BL2_INIT_STAGE_1, 0},
 	/* PWM_AO_B */
 	/* VDDEE_VAL_REG: check PWM table */
-	{AO_PWM_PWM_B,        VDDEE_VAL_REG,           (0x7f << 16), 0, BL2_INIT_STAGE_1, 0},
+	{AO_PWM_PWM_B,        VDDEE_VAL_REG,           0xffffffff,   0, BL2_INIT_STAGE_1, 0},
 	{AO_PWM_MISC_REG_AB,  ((1 << 23) | (1 << 1)),  (0x7f << 16), 0, BL2_INIT_STAGE_1, 0},
 	{AO_PIN_MUX_REG1,     (3 << 16),               (0xF << 16),  0, BL2_INIT_STAGE_1, 0},
 	/* Enable 5V_EN */
