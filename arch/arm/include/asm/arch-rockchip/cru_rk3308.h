@@ -11,6 +11,8 @@
 #define MHz		1000000
 #define OSC_HZ		(24 * MHz)
 
+#define APLL_HZ		(816 * MHz)
+
 #define CORE_ACLK_HZ	408000000
 #define CORE_DBG_HZ	204000000
 
@@ -34,12 +36,14 @@ enum rk3308_pll_id {
 	PLL_COUNT,
 };
 
-struct pll_div {
-	u32 refdiv;
-	u32 fbdiv;
-	u32 postdiv1;
-	u32 postdiv2;
-	u32 frac;
+struct pll_rate_table {
+	unsigned long rate;
+	unsigned int fbdiv;
+	unsigned int postdiv1;
+	unsigned int refdiv;
+	unsigned int postdiv2;
+	unsigned int dsmpd;
+	unsigned int frac;
 };
 
 /* Private data for the clock driver - used by rockchip_get_cru() */

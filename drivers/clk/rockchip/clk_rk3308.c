@@ -7,6 +7,7 @@
 #include <bitfield.h>
 #include <clk-uclass.h>
 #include <dm.h>
+#include <div64.h>
 #include <errno.h>
 #include <syscon.h>
 #include <asm/arch/clock.h>
@@ -27,12 +28,25 @@ enum {
 
 #define DIV_TO_RATE(input_rate, div)    ((input_rate) / ((div) + 1))
 
-#define PLL_DIVISORS(hz, _refdiv, _postdiv1, _postdiv2) {\
-	.refdiv = _refdiv,\
-	.fbdiv = (u32)((u64)hz * _refdiv * _postdiv1 * _postdiv2 / OSC_HZ),\
-	.postdiv1 = _postdiv1, .postdiv2 = _postdiv2};
+#define RK3308_PLL_RATE(_rate, _refdiv, _fbdiv, _postdiv1,	\
+			_postdiv2, _dsmpd, _frac)		\
+{								\
+	.rate	= _rate##U,					\
+	.fbdiv = _fbdiv,					\
+	.postdiv1 = _postdiv1,					\
+	.refdiv = _refdiv,					\
+	.postdiv2 = _postdiv2,					\
+	.dsmpd = _dsmpd,					\
+	.frac = _frac,						\
+}
 
-static const struct pll_div apll_816_cfg = PLL_DIVISORS(816 * MHz, 1, 2, 1);
+static struct pll_rate_table rk3308_pll_rates[] = {
+	/* _mhz, _refdiv, _fbdiv, _postdiv1, _postdiv2, _dsmpd, _frac */
+	RK3308_PLL_RATE(1300000000, 6, 325, 1, 1, 1, 0),
+	RK3308_PLL_RATE(1200000000, 1, 50, 1, 1, 1, 0),
+	RK3308_PLL_RATE(816000000, 1, 68, 2, 1, 1, 0),
+	RK3308_PLL_RATE(748000000, 2, 187, 3, 1, 1, 0),
+};
 
 static u8 pll_mode_shift[PLL_COUNT] = {
 	APLL_MODE_SHIFT, DPLL_MODE_SHIFT, VPLL0_MODE_SHIFT,
@@ -43,6 +57,19 @@ static u32 pll_mode_mask[PLL_COUNT] = {
 	APLL_MODE_MASK, DPLL_MODE_MASK, VPLL0_MODE_MASK,
 	VPLL1_MODE_MASK
 };
+
+static const struct pll_rate_table *get_pll_settings(unsigned long rate)
+{
+	unsigned int rate_count = ARRAY_SIZE(rk3308_pll_rates);
+	int i;
+
+	for (i = 0; i < rate_count; i++) {
+		if (rate == rk3308_pll_rates[i].rate)
+			return &rk3308_pll_rates[i];
+	}
+
+	return NULL;
+}
 
 /*
  * How to calculate the PLL:
@@ -60,21 +87,32 @@ static u32 pll_mode_mask[PLL_COUNT] = {
  *
  */
 
-static void rkclk_set_pll(struct rk3308_cru *cru, enum rk3308_pll_id pll_id,
-			  const struct pll_div *div)
+static int rkclk_set_pll(struct rk3308_clk_priv *priv,
+			 enum rk3308_pll_id pll_id,
+			 unsigned long drate)
 {
+	struct rk3308_cru *cru = priv->cru;
 	struct rk3308_pll *pll;
 	unsigned int *mode;
+	const struct pll_rate_table *rate;
+	uint vco_hz, output_hz;
+
+	rate = get_pll_settings(drate);
+	if (!rate) {
+		printf("%s unsupport rate\n", __func__);
+		return -EINVAL;
+	}
+
 	/* All PLLs have same VCO and output frequency range restrictions. */
-	uint vco_hz = OSC_HZ / 1000 * div->fbdiv / div->refdiv * 1000;
-	uint output_hz = vco_hz / div->postdiv1 / div->postdiv2;
+	vco_hz = OSC_HZ / 1000 * rate->fbdiv / rate->refdiv * 1000;
+	output_hz = vco_hz / rate->postdiv1 / rate->postdiv2;
 
 	pll = &cru->pll[pll_id];
 	mode = &cru->mode;
 
 	debug("PLL at %p: fb=%d, ref=%d, pst1=%d, pst2=%d, vco=%u Hz, output=%u Hz\n",
-	      pll, div->fbdiv, div->refdiv, div->postdiv1,
-	      div->postdiv2, vco_hz, output_hz);
+	      pll, rate->fbdiv, rate->refdiv, rate->postdiv1,
+	      rate->postdiv2, vco_hz, output_hz);
 	assert(vco_hz >= VCO_MIN_HZ && vco_hz <= VCO_MAX_HZ &&
 	       output_hz >= OUTPUT_MIN_HZ && output_hz <= OUTPUT_MAX_HZ);
 
@@ -92,10 +130,10 @@ static void rkclk_set_pll(struct rk3308_cru *cru, enum rk3308_pll_id pll_id,
 
 	rk_clrsetreg(&pll->con0,
 		     PLL_POSTDIV1_MASK | PLL_FBDIV_MASK,
-		     (div->postdiv1 << PLL_POSTDIV1_SHIFT) | div->fbdiv);
+		     (rate->postdiv1 << PLL_POSTDIV1_SHIFT) | rate->fbdiv);
 	rk_clrsetreg(&pll->con1, PLL_POSTDIV2_MASK | PLL_REFDIV_MASK,
-		     (div->postdiv2 << PLL_POSTDIV2_SHIFT |
-		     div->refdiv << PLL_REFDIV_SHIFT));
+		     (rate->postdiv2 << PLL_POSTDIV2_SHIFT |
+		     rate->refdiv << PLL_REFDIV_SHIFT));
 
 	/* Power Up */
 	rk_clrreg(&pll->con1, 1 << PLL_PD_SHIFT);
@@ -106,14 +144,18 @@ static void rkclk_set_pll(struct rk3308_cru *cru, enum rk3308_pll_id pll_id,
 
 	rk_clrsetreg(mode, pll_mode_mask[pll_id],
 		     PLLMUX_FROM_PLL << pll_mode_shift[pll_id]);
+
+	return 0;
 }
 
-static uint32_t rkclk_pll_get_rate(struct rk3308_cru *cru,
+static uint32_t rkclk_pll_get_rate(struct rk3308_clk_priv *priv,
 				   enum rk3308_pll_id pll_id)
 {
-	u32 refdiv, fbdiv, postdiv1, postdiv2;
-	u32 con;
+	struct rk3308_cru *cru = priv->cru;
 	struct rk3308_pll *pll;
+	u32 con, refdiv, fbdiv, postdiv1, postdiv2, dsmpd, frac;
+	u32 rate = 0;
+	u64 frac_rate64 = 0;
 	uint shift;
 	uint mask;
 
@@ -134,7 +176,20 @@ static uint32_t rkclk_pll_get_rate(struct rk3308_cru *cru,
 		con = readl(&pll->con1);
 		postdiv2 = (con & PLL_POSTDIV2_MASK) >> PLL_POSTDIV2_SHIFT;
 		refdiv = (con & PLL_REFDIV_MASK) >> PLL_REFDIV_SHIFT;
-		return (24 * fbdiv / (refdiv * postdiv1 * postdiv2)) * 1000000;
+		dsmpd = (con & PLL_DSMPD_MASK) >> PLL_DSMPD_SHIFT;
+		con = readl(&pll->con2);
+		frac = con & PLL_FRAC_DIV;
+		rate = (24 * fbdiv / (refdiv * postdiv1 * postdiv2)) * 1000000;
+		if (dsmpd == 0) {
+			/* fractional mode */
+			frac_rate64 = 24000000 * (u64)frac;
+			do_div(frac_rate64, refdiv);
+			frac_rate64 >>= 24;
+			do_div(frac_rate64, postdiv1);
+			do_div(frac_rate64, postdiv2);
+			rate += (uint32_t)frac_rate64;
+		}
+		return rate;
 	case PLLMUX_FROM_RTC32K:
 	default:
 		return 32768;
@@ -149,14 +204,15 @@ static void rkclk_init(struct udevice *dev)
 	u32 aclk_div, hclk_div, pclk_div;
 
 	/* init pll */
-	rkclk_set_pll(cru, APLL, &apll_816_cfg);
+	if (rkclk_set_pll(priv, APLL, APLL_HZ))
+		printf("%s set apll unsuccessfully\n", __func__);
 
 	/*
 	 * select apll as cpu/core clock pll source and
 	 * set up dependent divisors for PCLK and ACLK clocks.
 	 * core hz : apll = 1:1
 	 */
-	priv->apll_hz = rkclk_pll_get_rate(cru, APLL);
+	priv->apll_hz = rkclk_pll_get_rate(priv, APLL);
 	aclk_div = priv->apll_hz / CORE_ACLK_HZ - 1;
 	pclk_div = priv->apll_hz / CORE_DBG_HZ - 1;
 	rk_clrsetreg(&cru->clksel_con[0],
@@ -171,7 +227,7 @@ static void rkclk_init(struct udevice *dev)
 	 * select dpll as pd_bus bus clock source and
 	 * set up dependent divisors for PCLK/HCLK and ACLK clocks.
 	 */
-	priv->dpll_hz = rkclk_pll_get_rate(cru, DPLL);
+	priv->dpll_hz = rkclk_pll_get_rate(priv, DPLL);
 	aclk_div = priv->dpll_hz / BUS_ACLK_HZ - 1;
 	hclk_div = priv->dpll_hz / BUS_HCLK_HZ - 1;
 	pclk_div = priv->dpll_hz / BUS_PCLK_HZ - 1;
@@ -200,8 +256,8 @@ static void rkclk_init(struct udevice *dev)
 		     pclk_div << PERI_PCLK_DIV_SHIFT |
 		     hclk_div << PERI_HCLK_DIV_SHIFT);
 
-	priv->vpll0_hz = rkclk_pll_get_rate(cru, VPLL0);
-	priv->vpll1_hz = rkclk_pll_get_rate(cru, VPLL1);
+	priv->vpll0_hz = rkclk_pll_get_rate(priv, VPLL0);
+	priv->vpll1_hz = rkclk_pll_get_rate(priv, VPLL1);
 }
 
 static ulong rk3308_i2c_get_clk(struct clk *clk)
@@ -474,13 +530,13 @@ static ulong rk3308_vop_get_clk(struct clk *clk)
 	} else if (vol_sel == DCLK_VOP_SEL_DIVOUT) {
 		switch (pll_sel) {
 		case DCLK_VOP_PLL_SEL_DPLL:
-			parent = rkclk_pll_get_rate(cru, DPLL);
+			parent = rkclk_pll_get_rate(priv, DPLL);
 			break;
 		case DCLK_VOP_PLL_SEL_VPLL0:
-			parent = rkclk_pll_get_rate(cru, VPLL0);
+			parent = rkclk_pll_get_rate(priv, VPLL0);
 			break;
 		case DCLK_VOP_PLL_SEL_VPLL1:
-			parent = rkclk_pll_get_rate(cru, VPLL1);
+			parent = rkclk_pll_get_rate(priv, VPLL1);
 			break;
 		default:
 			printf("do not support this vop pll sel\n");
@@ -551,13 +607,24 @@ static ulong rk3308_vop_set_clk(struct clk *clk, ulong hz)
 
 static ulong rk3308_clk_get_rate(struct clk *clk)
 {
+	struct rk3308_clk_priv *priv = dev_get_priv(clk->dev);
 	ulong rate = 0;
 
 	debug("%s id:%ld\n", __func__, clk->id);
 
 	switch (clk->id) {
-	case 0 ... 15:
-		return 0;
+	case PLL_APLL:
+		rate = rkclk_pll_get_rate(priv, APLL);
+		break;
+	case PLL_DPLL:
+		rate = rkclk_pll_get_rate(priv, DPLL);
+		break;
+	case PLL_VPLL0:
+		rate = rkclk_pll_get_rate(priv, VPLL0);
+		break;
+	case PLL_VPLL1:
+		rate = rkclk_pll_get_rate(priv, VPLL1);
+		break;
 	case HCLK_SDMMC:
 	case HCLK_EMMC:
 	case SCLK_SDMMC:
@@ -593,12 +660,15 @@ static ulong rk3308_clk_get_rate(struct clk *clk)
 
 static ulong rk3308_clk_set_rate(struct clk *clk, ulong rate)
 {
+	struct rk3308_clk_priv *priv = dev_get_priv(clk->dev);
 	ulong ret = 0;
 
 	debug("%s %ld %ld\n", __func__, clk->id, rate);
+
 	switch (clk->id) {
-	case 0 ... 15:
-		return 0;
+	case PLL_DPLL:
+		ret = rkclk_set_pll(priv, DPLL, rate);
+		break;
 	case HCLK_SDMMC:
 	case HCLK_EMMC:
 	case SCLK_SDMMC:
