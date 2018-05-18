@@ -339,7 +339,7 @@ typedef union usb_r4 {
 } usb_r4_t;
 
 #if (defined CONFIG_TXLX_USB)
-#define P_RESET1_REGISTER       (volatile unsigned long *)0xffd04408
+#define P_RESET1_REGISTER       (volatile unsigned long *)0xffd01008
 #define P_AO_RTC_ALT_CLK_CNTL0  (volatile uint32_t *)(0xff800000 + (0x25 << 2))
 #define P_AO_RTI_PWR_CNTL_REG0  (volatile uint32_t *)(0xff800000 + (0x04 << 2))
 #else
