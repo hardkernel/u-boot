@@ -36,6 +36,11 @@ enum rk3308_pll_id {
 	PLL_COUNT,
 };
 
+struct rk3308_clk_info {
+	unsigned long id;
+	char *name;
+};
+
 struct pll_rate_table {
 	unsigned long rate;
 	unsigned int fbdiv;

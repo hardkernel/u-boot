@@ -28,6 +28,12 @@ enum {
 
 #define DIV_TO_RATE(input_rate, div)    ((input_rate) / ((div) + 1))
 
+#define RK3308_CLK_DUMP(_id, _name)		\
+{						\
+	.id = _id,				\
+	.name = _name,				\
+}
+
 #define RK3308_PLL_RATE(_rate, _refdiv, _fbdiv, _postdiv1,	\
 			_postdiv2, _dsmpd, _frac)		\
 {								\
@@ -56,6 +62,21 @@ static u8 pll_mode_shift[PLL_COUNT] = {
 static u32 pll_mode_mask[PLL_COUNT] = {
 	APLL_MODE_MASK, DPLL_MODE_MASK, VPLL0_MODE_MASK,
 	VPLL1_MODE_MASK
+};
+
+static const struct rk3308_clk_info clks_dump[] = {
+	RK3308_CLK_DUMP(PLL_APLL, "apll"),
+	RK3308_CLK_DUMP(PLL_DPLL, "gpll"),
+	RK3308_CLK_DUMP(PLL_VPLL0, "vpll0"),
+	RK3308_CLK_DUMP(PLL_VPLL1, "vpll1"),
+	RK3308_CLK_DUMP(ACLK_BUS, "aclk_bus"),
+	RK3308_CLK_DUMP(HCLK_BUS, "hclk_bus"),
+	RK3308_CLK_DUMP(PCLK_BUS, "pclk_bus"),
+	RK3308_CLK_DUMP(ACLK_PERI, "aclk_peri"),
+	RK3308_CLK_DUMP(HCLK_PERI, "hclk_peri"),
+	RK3308_CLK_DUMP(PCLK_PERI, "pclk_peri"),
+	RK3308_CLK_DUMP(HCLK_AUDIO, "hclk_audio"),
+	RK3308_CLK_DUMP(PCLK_AUDIO, "pclk_audio"),
 };
 
 static ulong rk3308_bus_set_clk(struct rk3308_clk_priv *priv, ulong clk_id,
@@ -1092,3 +1113,58 @@ U_BOOT_DRIVER(rockchip_rk3308_cru) = {
 	.bind		= rk3308_clk_bind,
 	.probe		= rk3308_clk_probe,
 };
+
+/**
+ * soc_clk_dump() - Print clock frequencies
+ * Returns zero on success
+ *
+ * Implementation for the clk dump command.
+ */
+int soc_clk_dump(void)
+{
+	struct udevice *cru_dev;
+	const struct rk3308_clk_info *clk_dump;
+	struct clk clk;
+	unsigned long clk_count = ARRAY_SIZE(clks_dump);
+	unsigned long rate;
+	int i, ret;
+
+	ret = uclass_get_device_by_driver(UCLASS_CLK,
+					  DM_GET_DRIVER(rockchip_rk3308_cru),
+					  &cru_dev);
+	if (ret) {
+		printf("%s failed to get cru device\n", __func__);
+		return ret;
+	}
+
+	printf("CLK:");
+	for (i = 0; i < clk_count; i++) {
+		clk_dump = &clks_dump[i];
+		if (clk_dump->name) {
+			clk.id = clk_dump->id;
+			ret = clk_request(cru_dev, &clk);
+			if (ret < 0)
+				return ret;
+
+			rate = clk_get_rate(&clk);
+			clk_free(&clk);
+			if (i == 0) {
+				if (rate < 0)
+					printf("%10s%20s\n", clk_dump->name,
+					       "unknown");
+				else
+					printf("%10s%20lu Hz\n", clk_dump->name,
+					       rate);
+			} else {
+				if (rate < 0)
+					printf("%14s%20s\n", clk_dump->name,
+					       "unknown");
+				else
+					printf("%14s%20lu Hz\n", clk_dump->name,
+					       rate);
+			}
+		}
+	}
+
+	return 0;
+}

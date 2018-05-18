@@ -132,6 +132,11 @@ __weak int rk_board_late_init(void)
 	return 0;
 }
 
+__weak int soc_clk_dump(void)
+{
+	return 0;
+}
+
 int board_late_init(void)
 {
 #if (CONFIG_ROCKCHIP_BOOT_MODE_REG > 0)
@@ -146,6 +151,8 @@ int board_late_init(void)
 	rockchip_show_logo();
 #endif
 	rockchip_set_serialno();
+
+	soc_clk_dump();
 
 	return rk_board_late_init();
 }
