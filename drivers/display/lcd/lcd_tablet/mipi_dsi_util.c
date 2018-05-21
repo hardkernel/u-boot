@@ -262,10 +262,10 @@ int lcd_mipi_dsi_init_table_detect(char *dtaddr, int nodeoffset,
 		struct dsi_config_s *dconf, int flag)
 {
 	unsigned char cmd_size, type;
-	int i, j, max_len, temp;
+	int i, j, max_len;
 	unsigned char *init_table;
 	char propname[20];
-	char *propdata, *str;
+	char *propdata;
 
 	if (flag) {
 		init_table = dconf->dsi_init_on;
@@ -334,18 +334,6 @@ int lcd_mipi_dsi_init_table_detect(char *dtaddr, int nodeoffset,
 			dconf->check_cnt = init_table[i+3];
 			if (dconf->check_cnt > 0)
 				dconf->check_en = 1;
-
-			if (dconf->check_en) {
-				str = getenv("lcd_mipi_check");
-				if (str) {
-					temp = simple_strtoul(str, NULL, 10);
-					if (temp == 0) {
-						dconf->check_en = 0;
-						LCDPR("lcd_mipi_check flag disable check_state\n");
-					}
-				}
-			}
-
 			i += (cmd_size + 2);
 		} else {
 			init_table[i+DSI_CMD_SIZE_INDEX] =
@@ -378,10 +366,9 @@ int lcd_mipi_dsi_init_table_detect(char *dtaddr, int nodeoffset,
 int lcd_mipi_dsi_init_table_check_bsp(struct dsi_config_s *dconf, int flag)
 {
 	unsigned char cmd_size, type;
-	int i, max_len, temp;
+	int i, max_len;
 	unsigned char *init_table;
 	char propname[20];
-	char *str;
 
 	if (flag) {
 		init_table = dconf->dsi_init_on;
@@ -418,18 +405,6 @@ int lcd_mipi_dsi_init_table_check_bsp(struct dsi_config_s *dconf, int flag)
 			dconf->check_cnt = init_table[i+3];
 			if (dconf->check_cnt > 0)
 				dconf->check_en = 1;
-
-			if (dconf->check_en) {
-				str = getenv("lcd_mipi_check");
-				if (str) {
-					temp = simple_strtoul(str, NULL, 10);
-					if (temp == 0) {
-						dconf->check_en = 0;
-						LCDPR("lcd_mipi_check flag disable check_state\n");
-					}
-				}
-			}
-
 			i += (cmd_size + 2);
 		} else {
 			i += (cmd_size + 2);
@@ -1356,12 +1331,14 @@ static int mipi_dsi_check_state(unsigned char reg, unsigned char cnt)
 	unsigned char *rd_data;
 	unsigned char payload[3] = {DT_GEN_RD_1, 1, 0x04};
 	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
+	struct dsi_config_s *dconf;
 
-	if (lcd_drv->lcd_config->lcd_control.mipi_config->check_en == 0)
+	dconf = lcd_drv->lcd_config->lcd_control.mipi_config;
+	if (dconf->check_en == 0)
 		return 0;
-	LCDPR("%s\n", __func__);
+	if (lcd_debug_print_flag)
+		LCDPR("%s\n", __func__);
 
-	lcd_drv->lcd_config->lcd_control.mipi_config->check_state = 0;
 	rd_data = (unsigned char *)malloc(sizeof(unsigned char) * cnt);
 	if (rd_data == NULL) {
 		LCDERR("%s: rd_data malloc error\n", __func__);
@@ -1370,20 +1347,13 @@ static int mipi_dsi_check_state(unsigned char reg, unsigned char cnt)
 
 	payload[2] = reg;
 	ret = dsi_read_single(payload, rd_data, cnt);
-	if (ret < 0) {
-		lcd_drv->lcd_config->lcd_control.mipi_config->check_state = 0;
-		lcd_vcbus_setb(L_VCOM_VS_ADDR, 0, 12, 1);
-		free(rd_data);
-		return -1;
-	}
+	if (ret < 0)
+		goto mipi_dsi_check_state_err;
 	if (ret > cnt) {
 		LCDERR("%s: read back cnt is wrong\n", __func__);
-		free(rd_data);
-		return -1;
+		goto mipi_dsi_check_state_err;
 	}
 
-	lcd_drv->lcd_config->lcd_control.mipi_config->check_state = 1;
-	lcd_vcbus_setb(L_VCOM_VS_ADDR, 1, 12, 1);
 	printf("read reg 0x%02x: ", reg);
 	for (i = 0; i < ret; i++) {
 		if (i == 0)
@@ -1393,8 +1363,20 @@ static int mipi_dsi_check_state(unsigned char reg, unsigned char cnt)
 	}
 	printf("\n");
 
+	dconf->check_state = 1;
+	lcd_vcbus_setb(L_VCOM_VS_ADDR, 1, 12, 1);
+	lcd_drv->lcd_config->retry_enable_flag = 0;
+	LCDPR("%s: %d\n", __func__, dconf->check_state);
 	free(rd_data);
 	return 0;
+
+mipi_dsi_check_state_err:
+	dconf->check_state = 0;
+	lcd_vcbus_setb(L_VCOM_VS_ADDR, 0, 12, 1);
+	LCDPR("%s: %d\n", __func__, dconf->check_state);
+	lcd_drv->lcd_config->retry_enable_flag = 1;
+	free(rd_data);
+	return -1;
 }
 
 /* *************************************************************
@@ -1907,13 +1889,6 @@ static void mipi_dsi_link_on(struct lcd_config_s *pconf)
 	}
 #endif
 
-	if (dconf->check_en) {
-		if (dconf->check_state == 0)
-			pconf->retry_enable = 1;
-		else
-			pconf->retry_enable = 0;
-	}
-
 	if (op_mode_disp != op_mode_init) {
 		set_mipi_dsi_host(MIPI_DSI_VIRTUAL_CHAN_ID,
 			0, /* Chroma sub sample, only for
@@ -1978,6 +1953,7 @@ void lcd_mipi_dsi_config_set(struct lcd_config_s *pconf)
 	struct lcd_clk_config_s *cConf = get_lcd_clk_config();
 	int n;
 	unsigned int temp;
+	char *str;
 
 	/* unit in kHz for calculation */
 	pll_out_fmin = cConf->pll_out_fmin;
@@ -2031,6 +2007,19 @@ void lcd_mipi_dsi_config_set(struct lcd_config_s *pconf)
 				dconf->bit_rate_max, MIPI_PHY_CLK_MAX);
 		}
 	}
+
+	/* check_state */
+	if (dconf->check_en) {
+		str = getenv("lcd_mipi_check");
+		if (str) {
+			temp = simple_strtoul(str, NULL, 10);
+			if (temp == 0) {
+				dconf->check_en = 0;
+				LCDPR("lcd_mipi_check flag disable check_state\n");
+			}
+		}
+	}
+	dconf->check_state = 0;
 
 	/* Venc resolution format */
 	switch (dconf->phy_switch) {
