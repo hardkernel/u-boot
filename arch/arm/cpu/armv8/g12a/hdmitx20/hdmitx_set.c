@@ -65,7 +65,7 @@ static int hdmitx_get_hpd_state(void)
 {
 	int st = 0;
 
-	st = !!(hd_read_reg(P_PREG_PAD_GPIO1_I) & (1 << 21));
+	st = !!(hd_read_reg(P_PREG_PAD_GPIO3_I) & (1 << 2));
 	return st;
 }
 
