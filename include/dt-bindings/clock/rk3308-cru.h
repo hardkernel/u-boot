@@ -73,11 +73,11 @@
 #define SCLK_EMMC_SAMPLE	60
 #define SCLK_SFC		61
 #define SCLK_OTG_ADP		62
-#define SCLK_GMAC_SRC		63
-#define SCLK_GMAC		64
+#define SCLK_MAC_SRC		63
+#define SCLK_MAC		64
 #define SCLK_MAC_REF		65
-#define SCLK_GMAC_RX_TX		66
-#define SCLK_GMAC_RMII		67
+#define SCLK_MAC_RX_TX		66
+#define SCLK_MAC_RMII		67
 #define SCLK_DDR_MON_TIMER	68
 #define SCLK_DDR_MON		69
 #define SCLK_DDRCLK		70
@@ -112,18 +112,39 @@
 #define SCLK_SPDIF_RX_DIV	99
 #define SCLK_SPDIF_RX_DIV50	100
 #define SCLK_SPDIF_RX		101
+#define SCLK_I2S0_8CH_TX_MUX	102
+#define SCLK_I2S0_8CH_RX_MUX	103
+#define SCLK_I2S1_8CH_TX_MUX	104
+#define SCLK_I2S1_8CH_RX_MUX	105
+#define SCLK_I2S2_8CH_TX_MUX	106
+#define SCLK_I2S2_8CH_RX_MUX	107
+#define SCLK_I2S3_8CH_TX_MUX	108
+#define SCLK_I2S3_8CH_RX_MUX	109
+#define SCLK_I2S0_8CH_TX_SRC	110
+#define SCLK_I2S0_8CH_RX_SRC	111
+#define SCLK_I2S1_8CH_TX_SRC	112
+#define SCLK_I2S1_8CH_RX_SRC	113
+#define SCLK_I2S2_8CH_TX_SRC	114
+#define SCLK_I2S2_8CH_RX_SRC	115
+#define SCLK_I2S3_8CH_TX_SRC	116
+#define SCLK_I2S3_8CH_RX_SRC	117
+#define SCLK_I2S0_2CH_SRC	118
+#define SCLK_I2S1_2CH_SRC	119
 
 /* dclk */
 #define DCLK_VOP		120
 
 /* aclk */
-#define ACLK_CORE		130
+#define ACLK_BUS_SRC		130
 #define ACLK_BUS		131
-#define ACLK_PERI		132
-#define ACLK_GMAC		133
-#define ACLK_CRYPTO		134
-#define ACLK_VOP		135
-#define ACLK_GIC		136
+#define ACLK_PERI_SRC		132
+#define ACLK_PERI		133
+#define ACLK_MAC		134
+#define ACLK_CRYPTO		135
+#define ACLK_VOP		136
+#define ACLK_GIC		137
+#define ACLK_DMAC0		138
+#define ACLK_DMAC1		139
 
 /* hclk */
 #define HCLK_BUS		150
@@ -156,7 +177,7 @@
 #define PCLK_PERI		192
 #define PCLK_PMU		193
 #define PCLK_AUDIO		194
-#define PCLK_GMAC		195
+#define PCLK_MAC		195
 #define PCLK_ACODEC		196
 #define PCLK_UART0		197
 #define PCLK_UART1		198
@@ -175,14 +196,14 @@
 #define PCLK_TSADC		211
 #define PCLK_TIMER		212
 #define PCLK_OTP_NS		213
-#define PCLK_WDT_NS		214
+#define PCLK_WDT		214
 #define PCLK_GPIO0		215
 #define PCLK_GPIO1		216
 #define PCLK_GPIO2		217
 #define PCLK_GPIO3		218
 #define PCLK_GPIO4		219
 #define PCLK_SGRF		220
-#define PCLK_GRF			221
+#define PCLK_GRF		221
 #define PCLK_USBSD_DET		222
 #define PCLK_DDR_UPCTL		223
 #define PCLK_DDR_MON		224
@@ -327,7 +348,7 @@
 #define SRST_SD_H		122
 #define SRST_NANDC_H		123
 #define SRST_NANDC_N		124
-#define SRST_GMAC_A		125
+#define SRST_MAC_A		125
 
 /* cru_softrst_con8 */
 #define SRST_AUDIO_NIU_H	128
