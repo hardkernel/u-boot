@@ -141,6 +141,7 @@ int do_reboot (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	else {
 		printf("reboot mode: %s\n", argv[1]);
 		char * mode = argv[1];
+
 		if (strcmp(mode, "cold_boot") == 0)
 			reboot_mode_val = AMLOGIC_COLD_BOOT;
 		else if (strcmp(mode, "normal") == 0)
@@ -168,6 +169,11 @@ int do_reboot (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 			reboot_mode_val = AMLOGIC_NORMAL_BOOT;
 		}
 	}
+#ifdef CONFIG_USB_DEVICE_V2
+	*P_RESET1_REGISTER |= (1<<17);
+	mdelay(200);
+#endif
+
 	aml_reboot (PSCI_SYS_REBOOT, reboot_mode_val, 0, 0);
 	return 0;
 }

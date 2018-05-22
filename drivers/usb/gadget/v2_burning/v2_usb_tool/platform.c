@@ -190,6 +190,15 @@ void set_usb_phy21_tuning_update(void)
 	(*(volatile uint32_t *)(phy_reg_base + 0x38)) = 0xe000c;
 	(*(volatile uint32_t *)(phy_reg_base + 0x34)) = 0xc8000;
 }
+
+void set_usb_phy21_tuning_update_reset(void)
+{
+	unsigned long phy_reg_base = USB_REG_B;
+
+	(*(volatile uint32_t *)(phy_reg_base + 0x38)) = 0x0;
+	(*(volatile uint32_t *)(phy_reg_base + 0x34)) = 0xc8000;
+}
+
 #endif
 
 #if 0
@@ -218,7 +227,12 @@ void set_usb_phy_config(int cfg)
 	u2p_aml_regs_t * u2p_aml_regs = (u2p_aml_regs_t * )PREI_USB_PHY_2_REG_BASE;
 	usb_aml_regs_t *usb_aml_regs = (usb_aml_regs_t * )PREI_USB_PHY_3_REG_BASE;
 	int cnt;
-
+#ifdef CONFIG_USB_DEVICE_V2
+	if ((*(volatile uint32_t *)(USB_REG_B + 0x38)) != 0) {
+		set_usb_phy21_tuning_update_reset();
+		mdelay(150);
+	}
+#endif
 	//step 1: usb controller reset
 	*USB_RESET1 |= (1<<2);
 

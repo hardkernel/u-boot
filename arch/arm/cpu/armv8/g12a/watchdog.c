@@ -54,6 +54,10 @@ void watchdog_disable(void)
 void reset_system(void)
 {
 	int i;
+#ifdef CONFIG_USB_DEVICE_V2
+	*P_RESET1_REGISTER |= (1<<17);
+	mdelay(200);
+#endif
 	_udelay(10000); //wait print
 	while (1) {
 		writel( 0x3 | (1 << 21) // sys reset en
