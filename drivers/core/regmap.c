@@ -96,9 +96,7 @@ int regmap_init_mem(struct udevice *dev, struct regmap **mapp)
 			range->start = r.start;
 			range->size = r.end - r.start + 1;
 		} else {
-			range->start = fdtdec_get_addr_size_fixed(gd->fdt_blob,
-					dev_of_offset(dev), "reg", index,
-					addr_len, size_len, &sz, true);
+			range->start = devfdt_get_addr_size_index(dev, index, &sz);
 			range->size = sz;
 		}
 	}
