@@ -139,7 +139,7 @@ config ROCKCHIP_RK3288
 
 config ROCKCHIP_RK3308
 	bool "Support Rockchip RK3308"
-	select ARM64
+	select ARM64 if !ARM64_BOOT_AARCH32
 	select DEBUG_UART_BOARD_INIT
 	select ARM_SMCCC
 	help
@@ -273,6 +273,13 @@ config TPL_ROCKCHIP_BACK_TO_BROM
 	  Rockchip SoCs have ability to load SPL & U-Boot binary. If enabled,
           SPL will return to the boot rom, which will then load the U-Boot
           binary to keep going on.
+
+config ARM64_BOOT_AARCH32
+	bool "Support Boot an ARM64 on AArch32 execution state"
+	select CPU_V7
+	default n
+	help
+	  If you want to boot an ARM64 processor on 32-bit mode, say y here.
 
 config ROCKCHIP_BOOT_MODE_REG
 	hex "Rockchip boot mode flag register address"

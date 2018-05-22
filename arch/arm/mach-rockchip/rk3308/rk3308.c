@@ -7,9 +7,10 @@
 #include <asm/io.h>
 #include <asm/arch/grf_rk3308.h>
 #include <asm/arch/hardware.h>
-#include <asm/armv8/mmu.h>
 #include <debug_uart.h>
 
+#ifdef CONFIG_ARM64
+#include <asm/armv8/mmu.h>
 static struct mm_region rk3308_mem_map[] = {
 	{
 		.virt = 0x0UL,
@@ -31,6 +32,7 @@ static struct mm_region rk3308_mem_map[] = {
 };
 
 struct mm_region *mem_map = rk3308_mem_map;
+#endif
 
 #define GRF_BASE	0xff000000
 
