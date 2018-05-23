@@ -118,13 +118,12 @@ void aml_sd_cfg_swth(struct mmc *mmc)
 						(clk_src << Cfg_src) |
 						(clk_div << Cfg_div));
 
+	sd_emmc_para_config(&sd_emmc_clkc, aml_is_emmc_tsd(mmc));
 
 	printf("co-phase 0x%x, tx-dly %d\n",
 		(sd_emmc_clkc >> Cfg_co_phase) & 3,
 		(sd_emmc_clkc >> Cfg_tx_delay) & 0x3f);
 
-	sd_emmc_para_config(&sd_emmc_clkc, aml_is_emmc_tsd(mmc));
-	printf(">>>>sd_emmc_clkc co-phase 0x%x\n", (sd_emmc_clkc >> Cfg_co_phase) & 3);
 	sd_emmc_reg->gclock = sd_emmc_clkc;
 	vconf = sd_emmc_reg->gcfg;
 

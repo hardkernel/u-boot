@@ -161,9 +161,10 @@ __weak void sd_emmc_para_config(unsigned int *reg, unsigned int port)
 {
 	cpu_id_t cpuid = get_cpu_id();
 	if ((cpuid.chip_rev == 0xB)
-			&& (port == 1))
+			&& (port == 1)) {
 		*reg &= ~(3 << Cfg_co_phase);
 		*reg |= (3 << Cfg_co_phase);
+	}
 	return;
 }
 
