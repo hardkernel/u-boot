@@ -69,14 +69,15 @@ int dram_init_banksize(void)
 
 	checksum = trust_checksum((uint8_t *)(unsigned long)tos_parameter + 8,
 				  sizeof(struct tos_parameter_t) - 8);
-#ifdef CONFIG_ARM64
+
+#if defined(CONFIG_ARM64) || defined(CONFIG_ARM64_BOOT_AARCH32)
 	/* Reserve 0x200000 for ATF bl31 */
 	gd->bd->bi_dram[0].start = CONFIG_SYS_SDRAM_BASE + 0x200000;
-	gd->bd->bi_dram[0].size = top - gd->bd->bi_dram[0].start;
 #else
 	gd->bd->bi_dram[0].start = CONFIG_SYS_SDRAM_BASE;
-	gd->bd->bi_dram[0].size = top - gd->bd->bi_dram[0].start;
 #endif
+	gd->bd->bi_dram[0].size = top - gd->bd->bi_dram[0].start;
+
 	if ((checksum == tos_parameter->checksum) &&
 	    (tos_parameter->tee_mem.flags == 1)) {
 		gd->bd->bi_dram[0].size = tos_parameter->tee_mem.phy_addr
@@ -97,7 +98,6 @@ size_t rockchip_sdram_size(phys_addr_t reg)
 	size_t size_mb = 0;
 	u32 ch;
 	u32 cs1_col = 0;
-
 	u32 sys_reg = readl(reg);
 	u32 sys_reg1 = readl(reg + 4);
 	u32 ch_num = 1 + ((sys_reg >> SYS_REG_NUM_CH_SHIFT)
