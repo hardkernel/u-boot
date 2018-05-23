@@ -66,6 +66,14 @@ void IniPrintAll(void) {
     return ini_print_all(gHandlerData);
 }
 
+void IniListSection(void) {
+    if (gHandlerData == NULL) {
+        ALOGE("%s, ini load file error!\n", __FUNCTION__);
+        return;
+    }
+    ini_list_section(gHandlerData);
+}
+
 const char* IniGetString(const char* section, const char* key,
         const char* def_value) {
     if (gHandlerData == NULL) {

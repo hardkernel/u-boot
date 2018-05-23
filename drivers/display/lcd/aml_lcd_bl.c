@@ -66,7 +66,7 @@ static struct bl_config_s *bl_check_valid(void)
 	case BL_CTRL_GPIO:
 		break;
 #ifdef CONFIG_AML_LOCAL_DIMMING
-	case BL_CTRL_LOCAL_DIMING:
+	case BL_CTRL_LOCAL_DIMMING:
 		ldim_drv = aml_ldim_get_driver();
 		if (ldim_drv == NULL) {
 			LCDERR("bl: no ldim driver\n");
@@ -391,7 +391,7 @@ void aml_bl_pwm_config_update(struct bl_config_s *bconf)
 		bl_pwm_config_init(bconf->bl_pwm_combo1);
 		break;
 #ifdef CONFIG_AML_LOCAL_DIMMING
-	case BL_CTRL_LOCAL_DIMING:
+	case BL_CTRL_LOCAL_DIMMING:
 		ldim_drv = aml_ldim_get_driver();
 		if (ldim_drv) {
 			if (ldim_drv->ldev_conf)
@@ -550,14 +550,15 @@ static void bl_set_level_pwm(struct bl_pwm_config_s *bl_pwm, unsigned int level)
 		bl_pwm->pwm_level = pwm_min;
 	else
 		bl_pwm->pwm_level = (pwm_max - pwm_min) * (level - min) / (max - min) + pwm_min;
-	if (lcd_debug_print_flag) {
-		LCDPR("bl: port %d mapping: level=%d, level_max=%d, level_min=%d\n",
-			bl_pwm->pwm_port, level, max, min);
-		LCDPR("bl: port %d: pwm_max=%d, pwm_min=%d, pwm_level=%d\n",
-			bl_pwm->pwm_port, pwm_max, pwm_min, bl_pwm->pwm_level);
-	}
 
-	bl_pwm->pwm_duty = bl_pwm->pwm_level * 100 / bl_pwm->pwm_cnt;
+	bl_pwm->pwm_duty = ((bl_pwm->pwm_level * 1000 / bl_pwm->pwm_cnt) + 5) / 10;
+
+	if (lcd_debug_print_flag) {
+		LCDPR("bl: port %d: level=%d, level_max=%d, level_min=%d\n",
+			bl_pwm->pwm_port, level, max, min);
+		LCDPR("bl: port %d: pwm_max=%d, pwm_min=%d, pwm_level=%d, duty=%d%%\n",
+			bl_pwm->pwm_port, pwm_max, pwm_min, bl_pwm->pwm_level, bl_pwm->pwm_duty);
+	}
 
 	bl_set_pwm(bl_pwm);
 }
@@ -608,7 +609,7 @@ void aml_bl_set_level(unsigned int level)
 		}
 		break;
 #ifdef CONFIG_AML_LOCAL_DIMMING
-	case BL_CTRL_LOCAL_DIMING:
+	case BL_CTRL_LOCAL_DIMMING:
 		ldim_drv = aml_ldim_get_driver();
 		if (ldim_drv->set_level)
 			ldim_drv->set_level(level);
@@ -752,7 +753,7 @@ void aml_bl_power_ctrl(int status, int delay_flag)
 			bl_power_en_ctrl(bconf, 1);
 			break;
 		case BL_CTRL_PWM:
-			if (bconf->pwm_en_sequence_reverse) {
+			if (bconf->en_sequence_reverse) {
 				/* step 1: power on enable */
 				bl_power_en_ctrl(bconf, 1);
 				if (bconf->pwm_on_delay > 0)
@@ -771,7 +772,7 @@ void aml_bl_power_ctrl(int status, int delay_flag)
 			}
 			break;
 		case BL_CTRL_PWM_COMBO:
-			if (bconf->pwm_en_sequence_reverse) {
+			if (bconf->en_sequence_reverse) {
 				/* step 1: power on enable */
 				bl_power_en_ctrl(bconf, 1);
 				if (bconf->pwm_on_delay > 0)
@@ -792,27 +793,47 @@ void aml_bl_power_ctrl(int status, int delay_flag)
 			}
 			break;
 #ifdef CONFIG_AML_LOCAL_DIMMING
-		case BL_CTRL_LOCAL_DIMING:
+		case BL_CTRL_LOCAL_DIMMING:
 			ldim_drv = aml_ldim_get_driver();
-			/* step 1: power on enable */
-			bl_power_en_ctrl(bconf, 1);
-			/* step 2: power on ldim */
-			if (ldim_drv->power_on)
-				ldim_drv->power_on();
-			else
-				LCDERR("bl: ldim power on is null\n");
+			if (bconf->en_sequence_reverse) {
+				/* step 1: power on enable */
+				bl_power_en_ctrl(bconf, 1);
+				/* step 2: power on ldim */
+				if (ldim_drv->power_on)
+					ldim_drv->power_on();
+				else
+					LCDERR("bl: ldim power on is null\n");
+			} else {
+				/* step 1: power on ldim */
+				if (ldim_drv->power_on)
+					ldim_drv->power_on();
+				else
+					LCDERR("bl: ldim power on is null\n");
+				/* step 2: power on enable */
+				bl_power_en_ctrl(bconf, 1);
+			}
 			break;
 #endif
 #ifdef CONFIG_AML_BL_EXTERN
 		case BL_CTRL_EXTERN:
-			/* step 1: power on enable */
-			bl_power_en_ctrl(bconf, 1);
-			/* step 2: power on bl_extern */
 			bl_ext = aml_bl_extern_get_driver();
-			if (bl_ext->power_on)
-				bl_ext->power_on();
-			else
-				LCDERR("bl: bl_extern power on is null\n");
+			if (bconf->en_sequence_reverse) {
+				/* step 1: power on enable */
+				bl_power_en_ctrl(bconf, 1);
+				/* step 2: power on bl_extern */
+				if (bl_ext->power_on)
+					bl_ext->power_on();
+				else
+					LCDERR("bl: bl_extern power on is null\n");
+			} else {
+				/* step 1: power on bl_extern */
+				if (bl_ext->power_on)
+					bl_ext->power_on();
+				else
+					LCDERR("bl: bl_extern power on is null\n");
+				/* step 2: power on enable */
+				bl_power_en_ctrl(bconf, 1);
+			}
 			break;
 #endif
 		default:
@@ -827,7 +848,7 @@ void aml_bl_power_ctrl(int status, int delay_flag)
 			bl_power_en_ctrl(bconf, 0);
 			break;
 		case BL_CTRL_PWM:
-			if (bconf->pwm_en_sequence_reverse) {
+			if (bconf->en_sequence_reverse) {
 				/* step 1: power off pwm */
 				bl_pwm_ctrl(bconf->bl_pwm, 0);
 				bl_pwm_pinmux_ctrl(bconf, 0);
@@ -846,7 +867,7 @@ void aml_bl_power_ctrl(int status, int delay_flag)
 			}
 			break;
 		case BL_CTRL_PWM_COMBO:
-			if (bconf->pwm_en_sequence_reverse) {
+			if (bconf->en_sequence_reverse) {
 				/* step 1: power off pwm_combo */
 				bl_pwm_ctrl(bconf->bl_pwm_combo0, 0);
 				bl_pwm_ctrl(bconf->bl_pwm_combo1, 0);
@@ -867,27 +888,47 @@ void aml_bl_power_ctrl(int status, int delay_flag)
 			}
 			break;
 #ifdef CONFIG_AML_LOCAL_DIMMING
-		case BL_CTRL_LOCAL_DIMING:
+		case BL_CTRL_LOCAL_DIMMING:
 			ldim_drv = aml_ldim_get_driver();
-			/* step 1: power off ldim */
-			if (ldim_drv->power_off)
-				ldim_drv->power_off();
-			else
-				LCDERR("bl: ldim power off is null\n");
-			/* step 2: power off enable */
-			bl_power_en_ctrl(bconf, 0);
+			if (bconf->en_sequence_reverse) {
+				/* step 1: power off ldim */
+				if (ldim_drv->power_off)
+					ldim_drv->power_off();
+				else
+					LCDERR("bl: ldim power off is null\n");
+				/* step 2: power off enable */
+				bl_power_en_ctrl(bconf, 0);
+			} else {
+				/* step 1: power off enable */
+				bl_power_en_ctrl(bconf, 0);
+				/* step 2: power off ldim */
+				if (ldim_drv->power_off)
+					ldim_drv->power_off();
+				else
+					LCDERR("bl: ldim power off is null\n");
+			}
 			break;
 #endif
 #ifdef CONFIG_AML_BL_EXTERN
 		case BL_CTRL_EXTERN:
-			/* step 1: power off bl_extern */
 			bl_ext = aml_bl_extern_get_driver();
-			if (bl_ext->power_off)
-				bl_ext->power_off();
-			else
-				LCDERR("bl: bl_extern: power off is null\n");
-			/* step 2: power off enable */
-			bl_power_en_ctrl(bconf, 0);
+			if (bconf->en_sequence_reverse) {
+				/* step 1: power off bl_extern */
+				if (bl_ext->power_off)
+					bl_ext->power_off();
+				else
+					LCDERR("bl: bl_extern: power off is null\n");
+				/* step 2: power off enable */
+				bl_power_en_ctrl(bconf, 0);
+			} else {
+				/* step 1: power off enable */
+				bl_power_en_ctrl(bconf, 0);
+				/* step 2: power off bl_extern */
+				if (bl_ext->power_off)
+					bl_ext->power_off();
+				else
+					LCDERR("bl: bl_extern: power off is null\n");
+			}
 			break;
 #endif
 		default:
@@ -987,7 +1028,7 @@ void aml_bl_config_print(void)
 		}
 		LCDPR("bl: pwm_on_delay  = %d\n", bconf->pwm_on_delay);
 		LCDPR("bl: pwm_off_delay = %d\n", bconf->pwm_off_delay);
-		LCDPR("bl: pwm_en_sequence_reverse = %d\n", bconf->pwm_en_sequence_reverse);
+		LCDPR("bl: en_sequence_reverse = %d\n", bconf->en_sequence_reverse);
 		break;
 	case BL_CTRL_PWM_COMBO:
 		if (bconf->bl_pwm_combo0) {
@@ -1042,10 +1083,10 @@ void aml_bl_config_print(void)
 		}
 		LCDPR("bl: pwm_on_delay        = %d\n", bconf->pwm_on_delay);
 		LCDPR("bl: pwm_off_delay       = %d\n", bconf->pwm_off_delay);
-		LCDPR("bl: pwm_en_sequence_reverse = %d\n", bconf->pwm_en_sequence_reverse);
+		LCDPR("bl: en_sequence_reverse = %d\n", bconf->en_sequence_reverse);
 		break;
 #ifdef CONFIG_AML_LOCAL_DIMMING
-	case BL_CTRL_LOCAL_DIMING:
+	case BL_CTRL_LOCAL_DIMMING:
 		if (ldim_drv) {
 			if (ldim_drv->config_print)
 				ldim_drv->config_print();
@@ -1219,9 +1260,9 @@ static int aml_bl_config_load_from_dts(char *dt_addr, unsigned int index, struct
 		propdata = (char *)fdt_getprop(dt_addr, child_offset, "bl_pwm_en_sequence_reverse", NULL);
 		if (propdata == NULL) {
 			LCDPR("bl: don't find bl_pwm_en_sequence_reverse\n");
-			bconf->pwm_en_sequence_reverse = 0;
+			bconf->en_sequence_reverse = 0;
 		} else {
-			bconf->pwm_en_sequence_reverse = be32_to_cpup((u32*)propdata);
+			bconf->en_sequence_reverse = be32_to_cpup((u32*)propdata);
 		}
 
 		bl_pwm->pwm_duty = bl_pwm->pwm_duty_min;
@@ -1334,9 +1375,9 @@ static int aml_bl_config_load_from_dts(char *dt_addr, unsigned int index, struct
 		propdata = (char *)fdt_getprop(dt_addr, child_offset, "bl_pwm_en_sequence_reverse", NULL);
 		if (propdata == NULL) {
 			LCDPR("bl: don't find bl_pwm_en_sequence_reverse\n");
-			bconf->pwm_en_sequence_reverse = 0;
+			bconf->en_sequence_reverse = 0;
 		} else {
-			bconf->pwm_en_sequence_reverse = be32_to_cpup((u32*)propdata);
+			bconf->en_sequence_reverse = be32_to_cpup((u32*)propdata);
 		}
 
 		pwm_combo0->pwm_duty = pwm_combo0->pwm_duty_min;
@@ -1345,7 +1386,8 @@ static int aml_bl_config_load_from_dts(char *dt_addr, unsigned int index, struct
 		bl_pwm_config_init(pwm_combo1); */
 		break;
 #ifdef CONFIG_AML_LOCAL_DIMMING
-	case BL_CTRL_LOCAL_DIMING:
+	case BL_CTRL_LOCAL_DIMMING:
+		ldim_config_load_from_dts(dt_addr, child_offset);
 		aml_ldim_probe(dt_addr, 0);
 		break;
 #endif
@@ -1493,7 +1535,7 @@ static int aml_bl_config_load_from_bsp(struct bl_config_s *bconf)
 		bl_pwm_config_init(pwm_combo1); */
 		break;
 #ifdef CONFIG_AML_LOCAL_DIMMING
-	case BL_CTRL_LOCAL_DIMING:
+	case BL_CTRL_LOCAL_DIMMING:
 		aml_ldim_probe(NULL, 1);
 		break;
 #endif
@@ -1638,11 +1680,11 @@ static int aml_bl_config_load_from_unifykey(char *dt_addr, struct bl_config_s *b
 		bl_pwm->pwm_gpio_off = *(p + LCD_UKEY_BL_PWM_GPIO_OFF);
 
 		if (bl_header.version == 2)
-			bconf->pwm_en_sequence_reverse =
+			bconf->en_sequence_reverse =
 				(*(p + LCD_UKEY_BL_CUST_VAL_0) |
 				((*(p + LCD_UKEY_BL_CUST_VAL_0 + 1)) << 8));
 		else
-			bconf->pwm_en_sequence_reverse = 0;
+			bconf->en_sequence_reverse = 0;
 
 		bl_pwm->pwm_duty = bl_pwm->pwm_duty_min;
 		/* bl_pwm_config_init(bl_pwm); */
@@ -1718,10 +1760,10 @@ static int aml_bl_config_load_from_unifykey(char *dt_addr, struct bl_config_s *b
 			((*(p + LCD_UKEY_BL_PWM2_LEVEL_MIN + 1)) << 8));
 
 		if (bl_header.version == 2)
-			bconf->pwm_en_sequence_reverse = (*(p + LCD_UKEY_BL_CUST_VAL_0) |
+			bconf->en_sequence_reverse = (*(p + LCD_UKEY_BL_CUST_VAL_0) |
 				((*(p + LCD_UKEY_BL_CUST_VAL_0 + 1)) << 8));
 		else
-			bconf->pwm_en_sequence_reverse = 0;
+			bconf->en_sequence_reverse = 0;
 
 		pwm_combo0->pwm_duty = pwm_combo0->pwm_duty_min;
 		pwm_combo1->pwm_duty = pwm_combo1->pwm_duty_min;
@@ -1729,7 +1771,13 @@ static int aml_bl_config_load_from_unifykey(char *dt_addr, struct bl_config_s *b
 		bl_pwm_config_init(pwm_combo1); */
 		break;
 #ifdef CONFIG_AML_LOCAL_DIMMING
-	case BL_CTRL_LOCAL_DIMING:
+	case BL_CTRL_LOCAL_DIMMING:
+		if (bl_header.version == 2) {
+			ldim_config_load_from_unifykey(para);
+		} else {
+			LCDERR("bl: not support ldim for unifykey version: %d\n",
+				bl_header.version);
+		}
 		aml_ldim_probe(dt_addr, 2);
 		break;
 #endif

@@ -255,6 +255,22 @@ U_BOOT_CMD(
 	"section [[file-address] file-size]"
 );
 
+static int do_ini_model_list(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+	int ret;
+	if (argc > 1)
+		return CMD_RET_USAGE;
+
+	ret = handle_model_list();
+	return ret;
+}
+
+U_BOOT_CMD(
+	model_list, 4, 0, do_ini_model_list,
+	"list ini model name",
+	" "
+);
+
 static int do_ini_model(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	int ret;

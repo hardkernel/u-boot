@@ -95,8 +95,6 @@ static int ldim_set_level(unsigned int level)
 
 static void ldim_config_print(void)
 {
-	struct bl_pwm_config_s *ld_pwm;
-
 	LDIMPR("%s:\n", __func__);
 	printf("valid_flag            = %d\n"
 		"dev_index             = %d\n"
@@ -108,41 +106,8 @@ static void ldim_config_print(void)
 		ldim_blk_row,
 		ldim_blk_col,
 		ldim_on_flag);
-	if (ldim_driver.ldev_conf) {
-		ld_pwm = &ldim_driver.ldev_conf->pwm_config;
-		printf("dev_name              = %s\n"
-			"cs_hold_delay         = %d\n"
-			"cs_clk_delay          = %d\n"
-			"en_gpio               = %d\n"
-			"en_gpio_on            = %d\n"
-			"en_gpio_off           = %d\n"
-			"write_check           = %d\n"
-			"dim_min               = 0x%03x\n"
-			"dim_max               = 0x%03x\n"
-			"cmd_size              = %d\n",
-			ldim_driver.ldev_conf->name,
-			ldim_driver.ldev_conf->cs_hold_delay,
-			ldim_driver.ldev_conf->cs_clk_delay,
-			ldim_driver.ldev_conf->en_gpio,
-			ldim_driver.ldev_conf->en_gpio_on,
-			ldim_driver.ldev_conf->en_gpio_off,
-			ldim_driver.ldev_conf->write_check,
-			ldim_driver.ldev_conf->dim_min,
-			ldim_driver.ldev_conf->dim_max,
-			ldim_driver.ldev_conf->cmd_size);
-		if (ld_pwm->pwm_port < BL_PWM_MAX) {
-			printf("pwm_port              = %d\n"
-				"pwm_pol               = %d\n"
-				"pwm_freq              = %d\n"
-				"pwm_duty              = %d%%\n"
-				"pinmux_flag           = %d\n",
-				ld_pwm->pwm_port, ld_pwm->pwm_method,
-				ld_pwm->pwm_freq, ld_pwm->pwm_duty,
-				ld_pwm->pinmux_flag);
-		}
-	} else {
-		printf("device config is null\n");
-	}
+	if (ldim_driver.device_config_print)
+		ldim_driver.device_config_print();
 }
 
 static struct aml_ldim_driver_s ldim_driver = {
@@ -155,6 +120,7 @@ static struct aml_ldim_driver_s ldim_driver = {
 	.set_level = ldim_set_level,
 	.config_print = ldim_config_print,
 	.pinmux_ctrl = NULL,
+	.device_config_print = NULL,
 	.device_power_on = NULL,
 	.device_power_off = NULL,
 	.device_bri_update = NULL,
@@ -162,30 +128,16 @@ static struct aml_ldim_driver_s ldim_driver = {
 
 struct aml_ldim_driver_s *aml_ldim_get_driver(void)
 {
-		return &ldim_driver;
+	return &ldim_driver;
 }
 
 #ifdef CONFIG_OF_LIBFDT
-static int ldim_config_load_from_dts(char *dt_addr)
+int ldim_config_load_from_dts(char *dt_addr, int child_offset)
 {
-	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
-	int parent_offset;
 	char *propdata;
-	char propname[30];
-	int child_offset;
-	unsigned int index;
 
-	parent_offset = fdt_path_offset(dt_addr, "/backlight");
-	if (parent_offset < 0) {
-		LDIMERR("not find /backlight node %s\n", fdt_strerror(parent_offset));
-		return -1;
-	}
-
-	index = lcd_drv->lcd_config->backlight_index;
-	sprintf(propname,"/backlight/backlight_%d", index);
-	child_offset = fdt_path_offset(dt_addr, propname);
 	if (child_offset < 0) {
-		LDIMERR("not find %s node %s\n", propname, fdt_strerror(child_offset));
+		LDIMERR("not find backlight node %s\n", fdt_strerror(child_offset));
 		return -1;
 	}
 
@@ -193,92 +145,46 @@ static int ldim_config_load_from_dts(char *dt_addr)
 	if (propdata == NULL) {
 		LDIMERR("failed to get bl_ldim_region_row_col\n");
 		ldim_blk_row = 1;
-		ldim_blk_col = 8;
+		ldim_blk_col = 1;
 	} else {
 		ldim_blk_row = be32_to_cpup((u32*)propdata);
 		ldim_blk_col = be32_to_cpup((((u32*)propdata)+1));
 	}
+	LDIMPR("get region row = %d, col = %d\n", ldim_blk_row, ldim_blk_col);
 
 	propdata = (char *)fdt_getprop(dt_addr, child_offset, "ldim_dev_index", NULL);
 	if (propdata == NULL) {
 		LDIMERR("failed to get ldim_dev_index\n");
-		ldim_driver.dev_index = 0;
+		ldim_driver.dev_index = 0xff;
 	} else {
 		ldim_driver.dev_index = be32_to_cpup((u32*)propdata);
 	}
+	LDIMPR("get dev_index = %d\n", ldim_driver.dev_index);
 
 	return 0;
 }
 #endif
 
-static int ldim_config_load_from_unifykey(void)
+int ldim_config_load_from_unifykey(unsigned char *para)
 {
-	unsigned char *para;
-	int key_len, len;
 	unsigned char *p;
-	struct aml_lcd_unifykey_header_s bl_header;
-	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
-	int ret;
 
-	para = (unsigned char *)malloc(sizeof(unsigned char) * LCD_UKEY_BL_SIZE);
-	if (!para) {
-		LDIMERR("bl: %s: Not enough memory\n", __func__);
+	if (para == NULL) {
+		LDIMERR("backlight unifykey buf is NULL\n");
 		return -1;
 	}
 
-	key_len = LCD_UKEY_BL_SIZE;
-	memset(para, 0, (sizeof(unsigned char) * key_len));
-	ret = aml_lcd_unifykey_get("backlight", para, &key_len);
-	if (ret) {
-		free(para);
-		return -1;
-	}
-
-	/* step 1: check header */
-	len = LCD_UKEY_HEAD_SIZE;
-	ret = aml_lcd_unifykey_len_check(key_len, len);
-	if (ret) {
-		LDIMERR("unifykey header length is incorrect\n");
-		free(para);
-		return -1;
-	}
-
-	aml_lcd_unifykey_header_check(para, &bl_header);
-	LCDPR("bl: unifykey version: 0x%04x\n", bl_header.version);
-	switch (bl_header.version) {
-	case 2:
-		len = 10 + 30 + 12 + 8 + 32 + 10;
-		break;
-	default:
-		len = 10 + 30 + 12 + 8 + 32;
-		break;
-	}
-
-	/* step 2: check backlight parameters */
-	ret = aml_lcd_unifykey_len_check(key_len, len);
-	if (ret) {
-		LDIMERR("bl: unifykey length is incorrect\n");
-		free(para);
-		return -1;
-	}
-
-	/* 60byte */
-	p = para + 60;
+	p = para;
 
 	/* ldim: 24byte */
-	switch (lcd_drv->bl_config->method) {
-	case BL_CTRL_LOCAL_DIMING:
-		/* get bl_ldim_region_row_col 4byte*/
-		ldim_blk_row = (*p | ((*(p + 1)) << 8));
-		ldim_blk_col = (*(p + 2) | ((*(p + 3)) << 8));
+	/* get bl_ldim_region_row_col 4byte*/
+	ldim_blk_row = *(p + LCD_UKEY_BL_LDIM_ROW);
+	ldim_blk_col = *(p + LCD_UKEY_BL_LDIM_COL);
+	LDIMPR("get region row = %d, col = %d\n", ldim_blk_row, ldim_blk_col);
 
-		/* get ldim_dev_index 1byte*/
-		ldim_driver.dev_index = *(p + 4);
-
-		break;
-	default:
-		break;
-	}
+	/* get ldim_dev_index 1byte*/
+	ldim_driver.dev_index = *(p + LCD_UKEY_BL_LDIM_DEV_INDEX);
+	LDIMPR("get dev_index = %d\n", ldim_driver.dev_index);
 
 	return 0;
 }
@@ -293,23 +199,17 @@ int aml_ldim_probe(char *dt_addr, int flag)
 
 	switch (flag) {
 	case 0: /* dts */
+	case 2: /* unifykey */
 #ifdef CONFIG_OF_LIBFDT
 		if (dt_addr) {
 			if (lcd_debug_print_flag)
-				LDIMPR("load ldim_config from dts\n");
-			ldim_config_load_from_dts(dt_addr);
+				LDIMPR("load ldim_dev_config from dts\n");
 			ret = aml_ldim_device_probe(dt_addr);
 		}
 #endif
 		break;
 	case 1: /* bsp */
 		LDIMPR("%s: not support bsp config\n", __func__);
-		break;
-	case 2: /* unifykey */
-		if (lcd_debug_print_flag)
-			LDIMPR("load ldim_config from unifykey\n");
-		ldim_config_load_from_unifykey();
-		ret = aml_ldim_device_probe(dt_addr);
 		break;
 	default:
 		break;

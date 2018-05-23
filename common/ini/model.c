@@ -631,7 +631,9 @@ static int handle_bl_method(struct bl_attr_s *p_attr)
 	else if (strcmp(ini_value, "BL_CTRL_PWM_COMBO") == 0)
 		p_attr->method.bl_method = BL_CTRL_PWM_COMBO;
 	else if (strcmp(ini_value, "BL_CTRL_LOCAL_DIMING") == 0)
-		p_attr->method.bl_method = BL_CTRL_LOCAL_DIMING;
+		p_attr->method.bl_method = BL_CTRL_LOCAL_DIMMING;
+	else if (strcmp(ini_value, "BL_CTRL_LOCAL_DIMMING") == 0)
+		p_attr->method.bl_method = BL_CTRL_LOCAL_DIMMING;
 	else if (strcmp(ini_value, "BL_CTRL_EXTERN") == 0)
 		p_attr->method.bl_method = BL_CTRL_EXTERN;
 	else
@@ -777,18 +779,71 @@ static int handle_bl_pwm(struct bl_attr_s *p_attr)
 	return 0;
 }
 
-static int handle_bl_header(struct bl_attr_s *p_attr)
+static int handle_bl_ldim(struct bl_attr_s *p_attr)
 {
 	const char *ini_value = NULL;
 
-	gBlDataCnt = 0;
-	gBlDataCnt += sizeof(struct bl_header_s);
-	gBlDataCnt += sizeof(struct bl_basic_s);
-	gBlDataCnt += sizeof(struct bl_level_s);
-	gBlDataCnt += sizeof(struct bl_method_s);
-	gBlDataCnt += sizeof(struct bl_pwm_s);
+	ini_value = IniGetString("Backlight_Attr", "bl_ldim_row", "1");
+	ITEM_LOGD("%s, bl_ldim_row is (%s)\n", __func__, ini_value);
+	p_attr->ldim.ldim_row = strtoul(ini_value, NULL, 0);
 
-	p_attr->head.data_len = gBlDataCnt;
+	ini_value = IniGetString("Backlight_Attr", "bl_ldim_col", "1");
+	ITEM_LOGD("%s, bl_ldim_col is (%s)\n", __func__, ini_value);
+	p_attr->ldim.ldim_col = strtoul(ini_value, NULL, 0);
+
+	ini_value = IniGetString("Backlight_Attr", "bl_ldim_mode", "null");
+	ITEM_LOGD("%s, bl_ldim_mode is (%s)\n", __func__, ini_value);
+	if (strcmp(ini_value, "LDIM_SINGLE_SIDE") == 0)
+		p_attr->ldim.ldim_mode = LDIM_MODE_SINGLE_SIDE;
+	else if (strcmp(ini_value, "LDIM_UNIFORM") == 0)
+		p_attr->ldim.ldim_mode = LDIM_MODE_UNIFORM;
+	else
+		p_attr->ldim.ldim_mode = LDIM_MODE_SINGLE_SIDE;
+
+	ini_value = IniGetString("Backlight_Attr", "bl_ldim_dev_index", "0xff");
+	ITEM_LOGD("%s, bl_ldim_dev_index is (%s)\n", __func__, ini_value);
+	p_attr->ldim.ldim_dev_index = strtoul(ini_value, NULL, 0);
+
+	p_attr->ldim.ldim_attr_4 = 0;
+	p_attr->ldim.ldim_attr_5 = 0;
+	p_attr->ldim.ldim_attr_6 = 0;
+	p_attr->ldim.ldim_attr_7 = 0;
+	p_attr->ldim.ldim_attr_8 = 0;
+	p_attr->ldim.ldim_attr_9 = 0;
+
+	return 0;
+}
+
+static int handle_bl_custome(struct bl_attr_s *p_attr)
+{
+	const char *ini_value = NULL;
+
+	ini_value = IniGetString("Backlight_Attr", "bl_custome_val_0", "0");
+	ITEM_LOGD("%s, bl_custome_val_0 is (%s)\n", __func__, ini_value);
+	p_attr->custome.custome_val_0 = strtoul(ini_value, NULL, 0);
+
+	ini_value = IniGetString("Backlight_Attr", "bl_custome_val_1", "0");
+	ITEM_LOGD("%s, bl_custome_val_1 is (%s)\n", __func__, ini_value);
+	p_attr->custome.custome_val_1 = strtoul(ini_value, NULL, 0);
+
+	ini_value = IniGetString("Backlight_Attr", "bl_custome_val_2", "0");
+	ITEM_LOGD("%s, bl_custome_val_2 is (%s)\n", __func__, ini_value);
+	p_attr->custome.custome_val_2 = strtoul(ini_value, NULL, 0);
+
+	ini_value = IniGetString("Backlight_Attr", "bl_custome_val_3", "0");
+	ITEM_LOGD("%s, bl_custome_val_3 is (%s)\n", __func__, ini_value);
+	p_attr->custome.custome_val_3 = strtoul(ini_value, NULL, 0);
+
+	ini_value = IniGetString("Backlight_Attr", "bl_custome_val_4", "0");
+	ITEM_LOGD("%s, bl_custome_val_4 is (%s)\n", __func__, ini_value);
+	p_attr->custome.custome_val_4 = strtoul(ini_value, NULL, 0);
+
+	return 0;
+}
+
+static int handle_bl_header(struct bl_attr_s *p_attr)
+{
+	const char *ini_value = NULL;
 
 	ini_value = IniGetString("Backlight_Attr", "version", "null");
 	ITEM_LOGD("%s, version is (%s)\n", __func__, ini_value);
@@ -796,6 +851,18 @@ static int handle_bl_header(struct bl_attr_s *p_attr)
 		p_attr->head.version = 0;
 	else
 		p_attr->head.version = strtoul(ini_value, NULL, 0);
+
+	gBlDataCnt = 0;
+	gBlDataCnt += sizeof(struct bl_header_s);
+	gBlDataCnt += sizeof(struct bl_basic_s);
+	gBlDataCnt += sizeof(struct bl_level_s);
+	gBlDataCnt += sizeof(struct bl_method_s);
+	gBlDataCnt += sizeof(struct bl_pwm_s);
+	if (p_attr->head.version == 2) {
+		gBlDataCnt += sizeof(struct bl_ldim_s);
+		gBlDataCnt += sizeof(struct bl_custome_s);
+	}
+	p_attr->head.data_len = gBlDataCnt;
 
 	p_attr->head.rev = 0;
 	p_attr->head.crc32 = CalCRC32(0, (((unsigned char *)p_attr) + 4), gBlDataCnt - 4);
@@ -895,6 +962,8 @@ static int parse_panel_ini(const char *file_name, struct lcd_attr_s *lcd_attr, s
 	handle_bl_level(bl_attr);
 	handle_bl_method(bl_attr);
 	handle_bl_pwm(bl_attr);
+	handle_bl_ldim(bl_attr);
+	handle_bl_custome(bl_attr);
 	handle_bl_header(bl_attr);
 
 	handle_panel_misc(misc_attr);
@@ -1077,6 +1146,34 @@ int parse_model_sum(const char *file_name, char *model_name)
 const char *get_model_sum_path(void)
 {
 	return DEFAULT_MODEL_SUM_PATH;
+}
+
+int handle_model_list(void)
+{
+	char *model;
+
+	model = getenv("model_name");
+	if (model == NULL) {
+		ALOGE("%s, model_name error!!!\n", __func__);
+		return -1;
+	}
+	printf("current model_name: %s\n", model);
+
+	IniParserInit();
+
+	if (IniParseFile(get_model_sum_path()) < 0) {
+		ALOGE("%s, ini load file error!\n", __func__);
+		IniParserUninit();
+		return -1;
+	}
+
+	printf("model_name list:\n");
+	IniListSection();
+	printf("\n");
+
+	IniParserUninit();
+
+	return 0;
 }
 
 int handle_model_sum(void)

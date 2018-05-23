@@ -182,6 +182,13 @@ void ini_print_all(INI_HANDLER_DATA *pHandlerData) {
     }
 }
 
+void ini_list_section(INI_HANDLER_DATA *pHandlerData) {
+    INI_SECTION* pSec = NULL;
+    for (pSec = pHandlerData->mpFirstSection; pSec != NULL; pSec = pSec->pNext) {
+        printf("  %s\n", pSec->Name);
+    }
+}
+
 static INI_SECTION* getSection(const char* section, INI_HANDLER_DATA *pHandlerData) {
     INI_SECTION* pSec = NULL;
     for (pSec = pHandlerData->mpFirstSection; pSec != NULL; pSec = pSec->pNext) {

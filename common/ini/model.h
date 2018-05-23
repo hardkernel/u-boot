@@ -8,7 +8,8 @@
 extern "C" {
 #endif
 
-int handle_model_sum(void);
+extern int handle_model_list(void);
+extern int handle_model_sum(void);
 
 #ifdef __cplusplus
 }
@@ -29,7 +30,7 @@ enum bl_ctrl_method_e {
 	BL_CTRL_GPIO = 0,
 	BL_CTRL_PWM,
 	BL_CTRL_PWM_COMBO,
-	BL_CTRL_LOCAL_DIMING,
+	BL_CTRL_LOCAL_DIMMING,
 	BL_CTRL_EXTERN,
 	BL_CTRL_MAX,
 };
@@ -49,6 +50,13 @@ enum bl_pwm_port_e {
 	BL_PWM_F,
 	BL_PWM_VS,
 	BL_PWM_MAX,
+};
+
+enum lcd_ldim_mode_e {
+	LDIM_MODE_NONE = 0,
+	LDIM_MODE_SINGLE_SIDE,
+	LDIM_MODE_UNIFORM,
+	LDIM_MODE_MAX,
 };
 
 enum lcd_extern_type_e {
@@ -193,12 +201,36 @@ struct bl_pwm_s {
 	unsigned short pwm2_level_min;
 };
 
+struct bl_ldim_s {
+	unsigned char ldim_row;
+	unsigned char ldim_col;
+	unsigned char ldim_mode;
+	unsigned char ldim_dev_index;
+
+	unsigned short ldim_attr_4;
+	unsigned short ldim_attr_5;
+	unsigned short ldim_attr_6;
+	unsigned short ldim_attr_7;
+	unsigned short ldim_attr_8;
+	unsigned short ldim_attr_9;
+};
+
+struct bl_custome_s {
+	unsigned short custome_val_0;
+	unsigned short custome_val_1;
+	unsigned short custome_val_2;
+	unsigned short custome_val_3;
+	unsigned short custome_val_4;
+};
+
 struct bl_attr_s {
 	struct bl_header_s head;
 	struct bl_basic_s basic;
 	struct bl_level_s level;
 	struct bl_method_s method;
 	struct bl_pwm_s pwm;
+	struct bl_ldim_s ldim;         //v2
+	struct bl_custome_s custome;   //v2
 };
 
 #define CC_LCD_EXT_NAME_LEN_MAX        (30)

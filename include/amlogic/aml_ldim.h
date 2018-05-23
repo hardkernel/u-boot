@@ -83,6 +83,7 @@ struct aml_ldim_driver_s {
 	int (*set_level)(unsigned int level);
 	void (*config_print)(void);
 	int (*pinmux_ctrl)(int status);
+	void (*device_config_print)(void);
 	int (*device_power_on)(void);
 	int (*device_power_off)(void);
 	int (*device_bri_update)(unsigned short *buf, unsigned char len);

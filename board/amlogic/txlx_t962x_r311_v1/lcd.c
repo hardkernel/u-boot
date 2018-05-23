@@ -60,6 +60,15 @@ static char lcd_bl_gpio[BL_GPIO_NUM_MAX][LCD_CPU_GPIO_NAME_MAX] = {
 	"invalid", /* ending flag */
 };
 
+#ifdef CONFIG_AML_LOCAL_DIMMING
+static char lcd_bl_ldim_gpio[BL_GPIO_NUM_MAX][LCD_CPU_GPIO_NAME_MAX] = {
+	"GPIOZ_12", /* LD_EN */
+	"GPIOZ_6",  /* DIMMING_PWM */
+	"GPIOZ_7",  /* LD_EN2 */
+	"invalid",  /* ending flag */
+};
+#endif
+
 struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	{/* normal*/
 	"lvds_0",LCD_LVDS,8,
@@ -218,16 +227,20 @@ static struct lcd_pinmux_ctrl_s bl_pinmux_ctrl[BL_PINMUX_MAX] = {
 	},
 };
 
+#ifdef CONFIG_AML_LOCAL_DIMMING
 static struct ldim_pinmux_ctrl_s ldim_pinmux_ctrl[2] = {
 	{
 		.name = "ldim_pwm_vs_pin", //GPIOZ_6
-		.pinmux_set = {{4, 0x00008000}, {LCD_PINMUX_END, 0x0}},
-		.pinmux_clr = {{4, 0x00010000}, {3, 0x00200000}, {10, 0x00010000}, {LCD_PINMUX_END, 0x0}},
+		.pinmux_set = {{4, 0x00010000}, {LCD_PINMUX_END, 0x0}},
+		.pinmux_clr = {{4, 0x00008000}, {3, 0x00200000}, {10, 0x00010000}, {LCD_PINMUX_END, 0x0}},
 	},
 	{
 		.name = "invalid",
+		.pinmux_set = {{LCD_PINMUX_END, 0x0}},
+		.pinmux_clr = {{LCD_PINMUX_END, 0x0}},
 	},
 };
+#endif
 
 //**** Special parameters just for Vbyone ***//
 static struct vbyone_config_s lcd_vbyone_config = {
@@ -426,7 +439,7 @@ struct ldim_dev_config_s ldim_config_dft = {
 		.pwm_method = BL_PWM_POSITIVE,
 		.pwm_port = BL_PWM_MAX,
 		.pwm_duty_max = 100,
-		.pwm_duty_min = 1,
+		.pwm_duty_min = 20,
 	},
 	.pinctrl_ver = 1,
 	.ldim_pinmux = ldim_pinmux_ctrl,
@@ -467,5 +480,16 @@ void lcd_config_bsp_init(void)
 	for (j = i; j < LCD_EXTERN_GPIO_NUM_MAX; j++)
 		strcpy(ext_common_dft.gpio_name[j], "invalid");
 
+#endif
+#ifdef CONFIG_AML_LOCAL_DIMMING
+	strcpy(ldim_config_dft.name, "invalid");
+	strcpy(ldim_config_dft.pinmux_name, "invalid");
+	for (i = 0; i < BL_GPIO_NUM_MAX; i++) {
+		if (strcmp(lcd_bl_ldim_gpio[i], "invalid") == 0)
+			break;
+		strcpy(ldim_config_dft.gpio_name[i], lcd_bl_ldim_gpio[i]);
+	}
+	for (j = i; j < BL_GPIO_NUM_MAX; j++)
+		strcpy(ldim_config_dft.gpio_name[j], "invalid");
 #endif
 }

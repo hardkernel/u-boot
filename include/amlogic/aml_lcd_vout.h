@@ -416,7 +416,7 @@ enum bl_ctrl_method_e {
 	BL_CTRL_GPIO = 0,
 	BL_CTRL_PWM,
 	BL_CTRL_PWM_COMBO,
-	BL_CTRL_LOCAL_DIMING,
+	BL_CTRL_LOCAL_DIMMING,
 	BL_CTRL_EXTERN,
 	BL_CTRL_MAX,
 };
@@ -501,13 +501,13 @@ struct bl_config_s {
 	unsigned short power_off_delay;
 	unsigned int dim_max;
 	unsigned int dim_min;
+	unsigned int en_sequence_reverse;
 
 	struct bl_pwm_config_s *bl_pwm;
 	struct bl_pwm_config_s *bl_pwm_combo0;
 	struct bl_pwm_config_s *bl_pwm_combo1;
 	unsigned int pwm_on_delay;
 	unsigned int pwm_off_delay;
-	unsigned int pwm_en_sequence_reverse;
 
 	char gpio_name[BL_GPIO_NUM_MAX][LCD_CPU_GPIO_NAME_MAX];
 	unsigned char pinctrl_ver;

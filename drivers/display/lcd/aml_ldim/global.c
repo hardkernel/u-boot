@@ -32,9 +32,9 @@ static int global_hw_init_on(void)
 {
 	struct aml_ldim_driver_s *ldim_drv = aml_ldim_get_driver();
 
-	ldim_set_gpio(ldim_drv->ldev_conf->en_gpio, ldim_drv->ldev_conf->en_gpio_on);
-	mdelay(2);
 	ldim_drv->pinmux_ctrl(1);
+	mdelay(2);
+	ldim_set_gpio(ldim_drv->ldev_conf->en_gpio, ldim_drv->ldev_conf->en_gpio_on);
 	mdelay(20);
 
 	return 0;
