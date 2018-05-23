@@ -187,6 +187,7 @@ void enable_caches(void)
 #endif
 
 #if defined(CONFIG_USB_GADGET) && defined(CONFIG_USB_GADGET_DWC2_OTG)
+#include <fdt_support.h>
 #include <usb.h>
 #include <usb/dwc2_udc.h>
 
@@ -200,6 +201,8 @@ int board_usb_init(int index, enum usb_init_type init)
 {
 	int node;
 	const char *mode;
+	fdt_addr_t addr;
+	const fdt32_t *reg;
 	bool matched = false;
 	const void *blob = gd->fdt_blob;
 
@@ -221,7 +224,18 @@ int board_usb_init(int index, enum usb_init_type init)
 		debug("Not found usb_otg device\n");
 		return -ENODEV;
 	}
-	otg_data.regs_otg = fdtdec_get_addr(blob, node, "reg");
+
+	reg = fdt_getprop(blob, node, "reg", NULL);
+	if (!reg)
+		return -EINVAL;
+
+	addr = fdt_translate_address(blob, node, reg);
+	if (addr == OF_BAD_ADDR) {
+		pr_err("Not found usb_otg address\n");
+		return -EINVAL;
+	}
+
+	otg_data.regs_otg = (uintptr_t)addr;
 
 	return dwc2_udc_probe(&otg_data);
 }
