@@ -15,6 +15,9 @@
 #include <mapmem.h>
 #include <sdhci.h>
 #include <clk.h>
+#include <syscon.h>
+#include <dm/ofnode.h>
+#include <asm/arch/clock.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 /* 400KHz is max freq for card ID etc. Use that as min */
@@ -148,25 +151,21 @@ static int arasan_get_phy(struct udevice *dev)
 #if CONFIG_IS_ENABLED(OF_PLATDATA)
 	priv->phy = (struct rockchip_emmc_phy *)0xff77f780;
 #else
-	int phy_node, grf_node;
-	fdt_addr_t grf_base, grf_phy_offset;
+	ofnode phy_node;
+	void *grf_base;
+	u32 grf_phy_offset, phandle;
 
-	phy_node = fdtdec_lookup_phandle(gd->fdt_blob,
-					 dev_of_offset(dev), "phys");
-	if (phy_node <= 0) {
+	phandle = dev_read_u32_default(dev, "phys", 0);
+	phy_node = ofnode_get_by_phandle(phandle);
+	if (!ofnode_valid(phy_node)) {
 		debug("Not found emmc phy device\n");
 		return -ENODEV;
 	}
 
-	grf_node = fdt_parent_offset(gd->fdt_blob, phy_node);
-	if (grf_node <= 0) {
-		debug("Not found usb phy device\n");
-		return -ENODEV;
-	}
-
-	grf_base = fdtdec_get_addr(gd->fdt_blob, grf_node, "reg");
-	grf_phy_offset = fdtdec_get_addr_size_auto_parent(gd->fdt_blob,
-				grf_node, phy_node, "reg", 0, NULL, false);
+	grf_base = syscon_get_first_range(ROCKCHIP_SYSCON_GRF);
+	if (grf_base < 0)
+		printf("%s Get syscon grf failed", __func__);
+	grf_phy_offset = ofnode_read_u32_default(phy_node, "reg", 0);
 
 	priv->phy = (struct rockchip_emmc_phy *)(grf_base + grf_phy_offset);
 #endif
