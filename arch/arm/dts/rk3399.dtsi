@@ -1404,7 +1404,6 @@
 	};
 
 	vopl: vop@ff8f0000 {
-		u-boot,dm-pre-reloc;
 		compatible = "rockchip,rk3399-vop-lit";
 		reg = <0x0 0xff8f0000 0x0 0x3efc>;
 		interrupts = <GIC_SPI 119 IRQ_TYPE_LEVEL_HIGH 0>;
@@ -1429,7 +1428,6 @@
 	};
 
 	vopb: vop@ff900000 {
-		u-boot,dm-pre-reloc;
 		compatible = "rockchip,rk3399-vop-big";
 		reg = <0x0 0xff900000 0x0 0x3efc>;
 		interrupts = <GIC_SPI 118 IRQ_TYPE_LEVEL_HIGH 0>;
