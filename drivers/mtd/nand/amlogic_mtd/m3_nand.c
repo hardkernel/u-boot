@@ -183,7 +183,7 @@ void pinmux_select_chip_mtd(unsigned ce_enable, unsigned rb_enable)
 	cpu_id_t cpu_id = get_cpu_id();
 
 	if ((cpu_id.family_id == MESON_CPU_MAJOR_ID_AXG)
-		|| (cpu_id.family_id == MESON_CPU_MAJOR_ID_G12A)) {
+		|| (cpu_id.family_id >= MESON_CPU_MAJOR_ID_G12A)) {
 		if (!((ce_enable >> 10) & 1))
 			AMLNF_SET_REG_MASK(P_PERIPHS_PIN_MUX_1, 2);
 	} else if (cpu_id.family_id == MESON_CPU_MAJOR_ID_TXHD) {
@@ -259,7 +259,7 @@ void get_sys_clk_rate_mtd(struct hw_controller *controller, int *rate)
 	/* fixme, axg clock may be the same setting with gxl/gxm */
 	if ((cpu_id.family_id == MESON_CPU_MAJOR_ID_AXG) ||
 	    (cpu_id.family_id == MESON_CPU_MAJOR_ID_TXHD) ||
-		(cpu_id.family_id == MESON_CPU_MAJOR_ID_G12A))
+		(cpu_id.family_id >= MESON_CPU_MAJOR_ID_G12A))
 		always_on = 0x1 << 28;
 
 	printk("%s() %d, clock setting %d!\n",
@@ -269,7 +269,7 @@ void get_sys_clk_rate_mtd(struct hw_controller *controller, int *rate)
 	    (cpu_id.family_id == MESON_CPU_MAJOR_ID_GXL) ||
 	    (cpu_id.family_id == MESON_CPU_MAJOR_ID_AXG) ||
 	    (cpu_id.family_id == MESON_CPU_MAJOR_ID_TXHD) ||
-		(cpu_id.family_id == MESON_CPU_MAJOR_ID_G12A)) {
+		(cpu_id.family_id >= MESON_CPU_MAJOR_ID_G12A)) {
 		switch (clk_freq) {
 			case 24:
 				clk = 0x80000201;
