@@ -46,6 +46,174 @@
 #endif
 
 /* ********************************
+ * dummy registers *
+ * ********************************* */
+#ifndef VPP_POST2_MATRIX_PRE_OFFSET0_1
+#define VPP_POST2_MATRIX_PRE_OFFSET0_1             0x39ab
+#endif
+
+#ifndef VPP_POST2_MATRIX_PRE_OFFSET2
+#define VPP_POST2_MATRIX_PRE_OFFSET2               0x39ac
+#endif
+
+#ifndef VPP_POST2_MATRIX_COEF00_01
+#define VPP_POST2_MATRIX_COEF00_01                 0x39a0
+#endif
+
+#ifndef VPP_POST2_MATRIX_COEF02_10
+#define VPP_POST2_MATRIX_COEF02_10                 0x39a1
+#endif
+
+#ifndef VPP_POST2_MATRIX_COEF11_12
+#define VPP_POST2_MATRIX_COEF11_12                 0x39a2
+#endif
+
+#ifndef VPP_POST2_MATRIX_COEF20_21
+#define VPP_POST2_MATRIX_COEF20_21                 0x39a3
+#endif
+
+#ifndef VPP_POST2_MATRIX_COEF22
+#define VPP_POST2_MATRIX_COEF22                    0x39a4
+#endif
+
+#ifndef VPP_POST2_MATRIX_OFFSET0_1
+#define VPP_POST2_MATRIX_OFFSET0_1                 0x39a9
+#endif
+
+#ifndef VPP_POST2_MATRIX_OFFSET2
+#define VPP_POST2_MATRIX_OFFSET2                   0x39aa
+#endif
+
+#ifndef VPP_POST2_MATRIX_EN_CTRL
+#define VPP_POST2_MATRIX_EN_CTRL                   0x39ad
+#endif
+
+
+#ifndef VPP_WRAP_OSD1_MATRIX_PRE_OFFSET0_1
+#define VPP_WRAP_OSD1_MATRIX_PRE_OFFSET0_1         0x3d6b
+#endif
+
+#ifndef VPP_WRAP_OSD1_MATRIX_PRE_OFFSET2
+#define VPP_WRAP_OSD1_MATRIX_PRE_OFFSET2           0x3d6c
+#endif
+
+#ifndef VPP_WRAP_OSD1_MATRIX_COEF00_01
+#define VPP_WRAP_OSD1_MATRIX_COEF00_01             0x3d60
+#endif
+
+#ifndef VPP_WRAP_OSD1_MATRIX_COEF02_10
+#define VPP_WRAP_OSD1_MATRIX_COEF02_10             0x3d61
+#endif
+
+#ifndef VPP_WRAP_OSD1_MATRIX_COEF11_12
+#define VPP_WRAP_OSD1_MATRIX_COEF11_12             0x3d62
+#endif
+
+#ifndef VPP_WRAP_OSD1_MATRIX_COEF20_21
+#define VPP_WRAP_OSD1_MATRIX_COEF20_21             0x3d63
+#endif
+
+#ifndef VPP_WRAP_OSD1_MATRIX_COEF22
+#define VPP_WRAP_OSD1_MATRIX_COEF22                0x3d64
+#endif
+
+#ifndef VPP_WRAP_OSD1_MATRIX_OFFSET0_1
+#define VPP_WRAP_OSD1_MATRIX_OFFSET0_1             0x3d69
+#endif
+
+#ifndef VPP_WRAP_OSD1_MATRIX_OFFSET2
+#define VPP_WRAP_OSD1_MATRIX_OFFSET2               0x3d6a
+#endif
+
+#ifndef VPP_WRAP_OSD1_MATRIX_EN_CTRL
+#define VPP_WRAP_OSD1_MATRIX_EN_CTRL               0x3d6d
+#endif
+
+#ifndef VPP_WRAP_OSD2_MATRIX_PRE_OFFSET0_1
+#define VPP_WRAP_OSD2_MATRIX_PRE_OFFSET0_1         0x3d7b
+#endif
+
+#ifndef VPP_WRAP_OSD2_MATRIX_PRE_OFFSET2
+#define VPP_WRAP_OSD2_MATRIX_PRE_OFFSET2           0x3d7c
+#endif
+
+#ifndef VPP_WRAP_OSD2_MATRIX_COEF00_01
+#define VPP_WRAP_OSD2_MATRIX_COEF00_01             0x3d70
+#endif
+
+#ifndef VPP_WRAP_OSD2_MATRIX_COEF02_10
+#define VPP_WRAP_OSD2_MATRIX_COEF02_10             0x3d71
+#endif
+
+#ifndef VPP_WRAP_OSD2_MATRIX_COEF11_12
+#define VPP_WRAP_OSD2_MATRIX_COEF11_12             0x3d72
+#endif
+
+#ifndef VPP_WRAP_OSD2_MATRIX_COEF20_21
+#define VPP_WRAP_OSD2_MATRIX_COEF20_21             0x3d73
+#endif
+
+#ifndef VPP_WRAP_OSD2_MATRIX_COEF22
+#define VPP_WRAP_OSD2_MATRIX_COEF22                0x3d74
+#endif
+
+#ifndef VPP_WRAP_OSD2_MATRIX_OFFSET0_1
+#define VPP_WRAP_OSD2_MATRIX_OFFSET0_1             0x3d79
+#endif
+
+#ifndef VPP_WRAP_OSD2_MATRIX_OFFSET2
+#define VPP_WRAP_OSD2_MATRIX_OFFSET2               0x3d7a
+#endif
+
+#ifndef VPP_WRAP_OSD2_MATRIX_EN_CTRL
+#define VPP_WRAP_OSD2_MATRIX_EN_CTRL               0x3d7d
+#endif
+
+#ifndef VPP_WRAP_OSD3_MATRIX_PRE_OFFSET0_1
+#define VPP_WRAP_OSD3_MATRIX_PRE_OFFSET0_1         0x3dbb
+#endif
+
+#ifndef VPP_WRAP_OSD3_MATRIX_PRE_OFFSET2
+#define VPP_WRAP_OSD3_MATRIX_PRE_OFFSET2           0x3dbc
+#endif
+
+#ifndef VPP_WRAP_OSD3_MATRIX_COEF00_01
+#define VPP_WRAP_OSD3_MATRIX_COEF00_01             0x3db0
+#endif
+
+#ifndef VPP_WRAP_OSD3_MATRIX_COEF02_10
+#define VPP_WRAP_OSD3_MATRIX_COEF02_10             0x3db1
+#endif
+
+#ifndef VPP_WRAP_OSD3_MATRIX_COEF11_12
+#define VPP_WRAP_OSD3_MATRIX_COEF11_12             0x3db2
+#endif
+
+#ifndef VPP_WRAP_OSD3_MATRIX_COEF20_21
+#define VPP_WRAP_OSD3_MATRIX_COEF20_21             0x3db3
+#endif
+
+#ifndef VPP_WRAP_OSD3_MATRIX_COEF22
+#define VPP_WRAP_OSD3_MATRIX_COEF22                0x3db4
+#endif
+
+#ifndef VPP_WRAP_OSD3_MATRIX_OFFSET0_1
+#define VPP_WRAP_OSD3_MATRIX_OFFSET0_1             0x3db9
+#endif
+
+#ifndef VPP_WRAP_OSD3_MATRIX_OFFSET2
+#define VPP_WRAP_OSD3_MATRIX_OFFSET2               0x3dba
+#endif
+
+#ifndef VPP_WRAP_OSD3_MATRIX_EN_CTRL
+#define VPP_WRAP_OSD3_MATRIX_EN_CTRL               0x3dbd
+#endif
+
+#ifndef DOLBY_PATH_CTRL
+#define DOLBY_PATH_CTRL                            0x1a0c
+#endif
+
+/* ********************************
  * register access api
  * ********************************* */
 

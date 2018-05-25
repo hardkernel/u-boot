@@ -445,7 +445,6 @@ static unsigned int oetf_41_linear_mapping[OSD_OETF_LUT_SIZE] = {
 /*	0, 0, 0  mode, right_shift, clip_en */
 /*}; */
 
-#ifdef CONFIG_AML_MESON_G12A
 static int YUV709l_to_RGB709_coeff12[MATRIX_5x3_COEF_SIZE] = {
 	-256, -2048, -2048, /* pre offset */
 	COEFF_NORM12(1.16895),	COEFF_NORM12(0.00000),	COEFF_NORM12(1.79977),
@@ -456,7 +455,6 @@ static int YUV709l_to_RGB709_coeff12[MATRIX_5x3_COEF_SIZE] = {
 	0, 0, 0, /* offset */
 	0, 0, 0 /* mode, right_shift, clip_en */
 };
-#endif
 
 #define SIGN(a) ((a < 0) ? "-" : "+")
 #define DECI(a) ((a) / 1024)
@@ -487,10 +485,11 @@ static void vpp_set_matrix_default_init(void)
 static void vpp_set_matrix_ycbcr2rgb(int vd1_or_vd2_or_post, int mode)
 {
 	//VPP_PR("%s: %d, %d\n", __func__, vd1_or_vd2_or_post, mode);
-#ifdef CONFIG_AML_MESON_G12A
+
 	int *m = NULL;
 
-	if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_G12A) {
+	if ((get_cpu_id().family_id == MESON_CPU_MAJOR_ID_G12A) ||
+		(get_cpu_id().family_id == MESON_CPU_MAJOR_ID_G12B)){
 		/* POST2 matrix: YUV limit -> RGB  default is 12bit*/
 		m = YUV709l_to_RGB709_coeff12;
 
@@ -517,10 +516,9 @@ static void vpp_set_matrix_ycbcr2rgb(int vd1_or_vd2_or_post, int mode)
 
 		vpp_reg_setb(VPP_POST2_MATRIX_EN_CTRL, 1, 0, 1);
 
-		VPP_PR("g12a post2(bit12) matrix: YUV limit -> RGB ..............\n");
+		VPP_PR("g12a/b post2(bit12) matrix: YUV limit -> RGB ..............\n");
 		return;
 	}
-#endif
 	if (vd1_or_vd2_or_post == 0) { //vd1
 		vpp_reg_setb(VPP_MATRIX_CTRL, 1, 5, 1);
 		vpp_reg_setb(VPP_MATRIX_CTRL, 1, 8, 3);
@@ -962,10 +960,10 @@ for G12A, set osd2 matrix(10bit) RGB2YUV
  */
  static void set_osd1_rgb2yuv(bool on)
  {
-#ifdef CONFIG_AML_MESON_G12A
 	int *m = NULL;
 
-	if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_G12A) {
+	if ((get_cpu_id().family_id == MESON_CPU_MAJOR_ID_G12A) ||
+		(get_cpu_id().family_id == MESON_CPU_MAJOR_ID_G12B)){
 		/* RGB -> 709 limit */
 		m = RGB709_to_YUV709l_coeff;
 
@@ -992,10 +990,8 @@ for G12A, set osd2 matrix(10bit) RGB2YUV
 
 		vpp_reg_setb(VPP_WRAP_OSD1_MATRIX_EN_CTRL, on, 0, 1);
 
-		VPP_PR("g12a osd1 matrix rgb2yuv ..............\n");
-	} else
-#endif
-	{
+		VPP_PR("g12a/b osd1 matrix rgb2yuv ..............\n");
+	} else {
 		vpp_reg_setb(VIU_OSD1_BLK0_CFG_W0, 0, 7, 1);
 		/* eotf lut bypass */
 		set_vpp_lut(VPP_LUT_OSD_EOTF,
@@ -1023,12 +1019,12 @@ for G12A, set osd2 matrix(10bit) RGB2YUV
  /*
 for G12A, set osd2 matrix(10bit) RGB2YUV
  */
- static void set_osd2_rgb2yuv(bool on)
- {
-#ifdef CONFIG_AML_MESON_G12A
+static void set_osd2_rgb2yuv(bool on)
+{
 	int *m = NULL;
 
-	if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_G12A) {
+	if ((get_cpu_id().family_id == MESON_CPU_MAJOR_ID_G12A) ||
+		(get_cpu_id().family_id == MESON_CPU_MAJOR_ID_G12B)){
 		/* RGB -> 709 limit */
 		m = RGB709_to_YUV709l_coeff;
 
@@ -1055,20 +1051,19 @@ for G12A, set osd2 matrix(10bit) RGB2YUV
 
 		vpp_reg_setb(VPP_WRAP_OSD2_MATRIX_EN_CTRL, on, 0, 1);
 
-		VPP_PR("g12a osd2 matrix rgb2yuv..............\n");
+		VPP_PR("g12a/b osd2 matrix rgb2yuv..............\n");
 	}
-#endif
 }
 
  /*
 for G12A, set osd3 matrix(10bit) RGB2YUV
  */
- static void set_osd3_rgb2yuv(bool on)
- {
-#ifdef CONFIG_AML_MESON_G12A
+static void set_osd3_rgb2yuv(bool on)
+{
 	int *m = NULL;
 
-	if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_G12A) {
+	if ((get_cpu_id().family_id == MESON_CPU_MAJOR_ID_G12A) ||
+		(get_cpu_id().family_id == MESON_CPU_MAJOR_ID_G12B)){
 		/* RGB -> 709 limit */
 		m = RGB709_to_YUV709l_coeff;
 
@@ -1095,9 +1090,8 @@ for G12A, set osd3 matrix(10bit) RGB2YUV
 
 		vpp_reg_setb(VPP_WRAP_OSD3_MATRIX_EN_CTRL, on, 0, 1);
 
-		VPP_PR("g12a osd3 matrix rgb2yuv..............\n");
+		VPP_PR("g12a/b osd3 matrix rgb2yuv..............\n");
 	}
-#endif
 }
 
 /*
@@ -1117,11 +1111,10 @@ static void set_vpp_bitdepth(void)
 		vpp_reg_setb(VPP_DAT_CONV_PARA1, 0, 0, 14);
 	#else
 	#endif
-	} else if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_G12A) {
+	} else if ((get_cpu_id().family_id == MESON_CPU_MAJOR_ID_G12A) ||
+		(get_cpu_id().family_id == MESON_CPU_MAJOR_ID_G12B)){
 		/*after this step vd1 output data is U12,*/
-	#ifdef CONFIG_AML_MESON_G12A
 		vpp_reg_write(DOLBY_PATH_CTRL, 0xf);
-	#endif
 	}
 }
 
@@ -1365,6 +1358,18 @@ void vpp_init(void)
 		vpp_set_matrix_ycbcr2rgb(2, 3);
 	#endif
 	} else if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_G12A) {
+		/* osd1: rgb->yuv limit,osd2: rgb2yuv limit,osd3: rgb2yuv limit*/
+		set_osd1_rgb2yuv(1);
+		set_osd2_rgb2yuv(1);
+		set_osd3_rgb2yuv(1);
+
+		/* set vpp data path to u12 */
+		set_vpp_bitdepth();
+	#if (defined CONFIG_AML_LCD)
+		/* 709 limit to RGB */
+		vpp_set_matrix_ycbcr2rgb(2, 3);
+	#endif
+	} else if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_G12B) {
 		/* osd1: rgb->yuv limit,osd2: rgb2yuv limit,osd3: rgb2yuv limit*/
 		set_osd1_rgb2yuv(1);
 		set_osd2_rgb2yuv(1);
