@@ -212,7 +212,7 @@ pack_trust_image()
 	local TOS TOS_TA DARM_BASE TEE_LOAD_ADDR TEE_OFFSET=0x8400000
 
 	# ARM64 uses trust_merger
-	if grep  -q '^CONFIG_ARM64=y' ${OUTDIR}/.config ; then
+	if grep -Eq ''^CONFIG_ARM64=y'|'^CONFIG_ARM64_BOOT_AARCH32=y'' ${OUTDIR}/.config ; then
 		if [ ! -f ${RKBIN}/RKTRUST/${RKCHIP}TRUST.ini ]; then
 			echo "pack trust failed! Can't find: ${RKBIN}/RKTRUST/${RKCHIP}TRUST.ini"
 			return
