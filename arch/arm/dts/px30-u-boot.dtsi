@@ -38,11 +38,6 @@
 	u-boot,dm-pre-reloc;
 };
 
-&saradc {
-	u-boot,dm-pre-reloc;
-	status = "okay";
-};
-
 &gpio0 {
 	u-boot,dm-pre-reloc;
 	status = "disabled";
