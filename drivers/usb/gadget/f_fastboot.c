@@ -999,7 +999,7 @@ static void cb_flashing(struct usb_ep *ep, struct usb_request *req)
 	sprintf(lock_d, "%d%d00%d%d%d0", info->version_major, info->version_minor, info->lock_state, info->lock_critical_state, info->lock_bootloader);
 	printf("lock_d state: %s\n", lock_d);
 	setenv("lock", lock_d);
-	saveenv();
+	//saveenv();
 	printf("response: %s\n", response);
 
 	fastboot_tx_write_str(response);
