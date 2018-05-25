@@ -27,6 +27,7 @@ struct rkparm_part {
 
 
 static LIST_HEAD(parts_head);
+static int dev_num = -1;
 
 static int rkparm_param_parse(char *param, struct list_head *parts_head,
 			      struct blk_desc *dev_desc)
@@ -56,6 +57,7 @@ static int rkparm_param_parse(char *param, struct list_head *parts_head,
 	 */
 	env_delete("bootargs", "initrd=");
 
+	INIT_LIST_HEAD(parts_head);
 	while (next) {
 		/* Skip ':' and ',' */
 		next++;
@@ -87,6 +89,8 @@ static int rkparm_param_parse(char *param, struct list_head *parts_head,
 		list_add_tail(&part->node, parts_head);
 		next = strchr(next, ',');
 	}
+
+	dev_num = ((dev_desc->if_type << 8) + dev_desc->devnum);
 
 	return 0;
 }
@@ -124,7 +128,8 @@ static void part_print_rkparm(struct blk_desc *dev_desc)
 	struct rkparm_part *p = NULL;
 	int i = 0;
 
-	if (list_empty(&parts_head))
+	if (list_empty(&parts_head) ||
+	    (dev_num != ((dev_desc->if_type << 8) + dev_desc->devnum)))
 		ret = rkparm_init_param(dev_desc, &parts_head);
 
 	if (ret) {
@@ -156,7 +161,8 @@ static int part_get_info_rkparm(struct blk_desc *dev_desc, int idx,
 		return -EINVAL;
 	}
 
-	if (list_empty(&parts_head))
+	if (list_empty(&parts_head) ||
+	    (dev_num != ((dev_desc->if_type << 8) + dev_desc->devnum)))
 		ret = rkparm_init_param(dev_desc, &parts_head);
 
 	if (ret) {
@@ -191,7 +197,8 @@ static int part_test_rkparm(struct blk_desc *dev_desc)
 {
 	int ret = 0;
 
-	if (list_empty(&parts_head))
+	if (list_empty(&parts_head) ||
+	    (dev_num != ((dev_desc->if_type << 8) + dev_desc->devnum)))
 		ret = rkparm_init_param(dev_desc, &parts_head);
 	if (ret)
 		ret = -1;
