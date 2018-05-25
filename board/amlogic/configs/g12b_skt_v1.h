@@ -123,8 +123,8 @@
             "\0"\
         "storeargs="\
             "setenv bootargs ${initargs} logo=${display_layer},loaded,${fb_addr} vout=${outputmode},enable panel_type=${panel_type} hdmimode=${hdmimode} cvbsmode=${cvbsmode} osd_reverse=${osd_reverse} video_reverse=${video_reverse} androidboot.selinux=${EnableSelinux} androidboot.firstboot=${firstboot} jtag=${jtag}; "\
+	"setenv bootargs ${bootargs} androidboot.hardware=amlogic;"\
             "run cmdline_keys;"\
-            "setenv bootargs ${bootargs} androidboot.hardware=amlogic;"\
             "setenv bootargs ${bootargs} androidboot.slot_suffix=${active_slot};"\
             "\0"\
         "switch_bootmode="\
@@ -234,9 +234,7 @@
 		"fi;\0" \
 
 
-#define CONFIG_PREBOOT  ""
-
-#if 0
+#define CONFIG_PREBOOT  \
             "run bcb_cmd; "\
             "run factory_reset_poweroff_protect;"\
             "run upgrade_check;"\
@@ -244,11 +242,10 @@
             "run storeargs;"\
             "forceupdate;" \
             "run switch_bootmode;"
-#endif
 
 #define CONFIG_BOOTCOMMAND "run storeboot"
 
-#define CONFIG_ENV_IS_NOWHERE  1
+//#define CONFIG_ENV_IS_NOWHERE  1
 #define CONFIG_ENV_SIZE   (64*1024)
 #define CONFIG_FIT 1
 #define CONFIG_OF_LIBFDT 1
@@ -401,7 +398,7 @@
 #endif
 
 /* vpu */
-//#define CONFIG_AML_VPU 1
+#define CONFIG_AML_VPU 1
 //#define CONFIG_VPU_CLK_LEVEL_DFT 7
 
 /* DISPLAY & HDMITX */

@@ -363,7 +363,6 @@ static int initr_spi(void)
 /* go init the NAND */
 static int initr_nand(void)
 {
-	return 0;
 	puts("NAND:  ");
 	nand_init();
 	return 0;
@@ -383,7 +382,6 @@ static int initr_onenand(void)
 #ifdef CONFIG_GENERIC_MMC
 static int initr_mmc(void)
 {
-	return 0;
 	puts("MMC:   ");
 	mmc_initialize(gd->bd);
 	return 0;
