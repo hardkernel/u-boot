@@ -843,7 +843,7 @@ void osd_setup_hw(u32 index,
 		add_to_update_list(index, DISP_GEOMETRY);
 	add_to_update_list(index, DISP_OSD_REVERSE);
 #ifdef CONFIG_AML_MESON_G12A
-	if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_G12A)
+	if (get_cpu_id().family_id >= MESON_CPU_MAJOR_ID_G12A)
 		osd_setting_default_hwc(index, &disp_data);
 #endif
 	osd_wait_vsync_hw();
@@ -2487,7 +2487,7 @@ void osd_init_hw(void)
 		/* init vpu fifo control register */
 		data32 = osd_reg_read(VPP_OFIFO_SIZE);
 		osd_logi("VPP_OFIFO_SIZE:0x%x\n", data32);
-		if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_G12A) {
+		if (get_cpu_id().family_id >= MESON_CPU_MAJOR_ID_G12A) {
 			data32 = 0xfff << 20;
 			data32 |= (0xfff + 1);
 			osd_reg_write(VPP_OFIFO_SIZE, data32);
@@ -2503,7 +2503,7 @@ void osd_init_hw(void)
 			data32 |= 4 << 5;  /* hold_fifo_lines */
 		}
 		/* burst_len_sel: 3=64 */
-		if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_G12A) {
+		if (get_cpu_id().family_id >= MESON_CPU_MAJOR_ID_G12A) {
 			data32 |= 1 << 10;
 			data32 |= 1 << 31;
 		} else

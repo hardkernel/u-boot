@@ -729,7 +729,7 @@ int video_scale_bitmap(void)
 	disp_data.y_start = axis[1];
 	disp_data.x_end = axis[0] + axis[2] - 1;
 	disp_data.y_end = axis[1] + axis[3] - 1;
-	if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_G12A)
+	if (get_cpu_id().family_id >= MESON_CPU_MAJOR_ID_G12A)
 		osd_update_blend(&disp_data);
 #endif
 	osd_enable_hw(osd_index, 1);

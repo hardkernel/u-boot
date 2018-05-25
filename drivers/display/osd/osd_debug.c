@@ -116,7 +116,7 @@ static void osd_debug_dump_register_all(void)
 	osd_logi("reg[0x%x]: 0x%08x\n", reg, osd_reg_read(reg));
 	reg = VPP_HOLD_LINES;
 	osd_logi("reg[0x%x]: 0x%08x\n", reg, osd_reg_read(reg));
-	if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_G12A) {
+	if (get_cpu_id().family_id >= MESON_CPU_MAJOR_ID_G12A) {
 #ifdef CONFIG_AML_MESON_G12A
 		reg = OSD_PATH_MISC_CTRL;
 		osd_logi("reg[0x%x]: 0x%08x\n", reg, osd_reg_read(reg));
@@ -242,7 +242,7 @@ static void osd_test_dummydata(void)
 	dummy_data = osd_reg_read(VPP_DUMMY_DATA1);
 	osd_reset();
 	osd_logi("--- OSD TEST DUMMYDATA ---\n");
-	if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_G12A) {
+	if (get_cpu_id().family_id >= MESON_CPU_MAJOR_ID_G12A) {
 #ifdef CONFIG_AML_MESON_G12A
 		osd_reg_write(VPP_POST_BLEND_BLEND_DUMMY_DATA, 0xff);
 		msleep(OSD_TEST_DURATION);
