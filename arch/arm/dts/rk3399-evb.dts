@@ -9,6 +9,7 @@
 #include <dt-bindings/pinctrl/rockchip.h>
 #include "rk3399.dtsi"
 #include "rk3399-sdram-lpddr3-4GB-1600.dtsi"
+#include "rk3399-u-boot.dtsi"
 
 / {
 	model = "Rockchip RK3399 Evaluation Board";
@@ -164,11 +165,6 @@
 	mmc-hs400-1_8v;
 	mmc-hs400-enhanced-strobe;
 	non-removable;
-	status = "okay";
-};
-
-&uart2 {
-	u-boot,dm-pre-reloc;
 	status = "okay";
 };
 

@@ -9,6 +9,7 @@
 #include <dt-bindings/pinctrl/rockchip.h>
 #include "rk3399.dtsi"
 #include "rk3399-sdram-ddr3-1600.dtsi"
+#include "rk3399-u-boot.dtsi"
 
 / {
 	model = "Firefly-RK3399 Board";
@@ -593,7 +594,6 @@
 };
 
 &sdmmc {
-	u-boot,dm-pre-reloc;
 	bus-width = <4>;
 	status = "okay";
 };
@@ -644,11 +644,6 @@
 &uart0 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&uart0_xfer &uart0_cts>;
-	status = "okay";
-};
-
-&uart2 {
-	u-boot,dm-pre-reloc;
 	status = "okay";
 };
 
