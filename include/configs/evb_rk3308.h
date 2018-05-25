@@ -9,6 +9,7 @@
 
 #include <configs/rk3308_common.h>
 
+#define CONFIG_SUPPORT_EMMC_RPMB
 #define CONFIG_SYS_MMC_ENV_DEV 0
 
 
