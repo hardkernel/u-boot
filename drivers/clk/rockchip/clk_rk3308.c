@@ -44,8 +44,6 @@ static u32 pll_mode_mask[PLL_COUNT] = {
 	VPLL1_MODE_MASK
 };
 
-static ulong apll_hz, dpll_hz, vpll0_hz, vpll1_hz;
-
 /*
  * How to calculate the PLL:
  * Formulas also embedded within the Fractional PLL Verilog model:
@@ -143,8 +141,11 @@ static uint32_t rkclk_pll_get_rate(struct rk3308_cru *cru,
 	}
 }
 
-static void rkclk_init(struct rk3308_cru *cru)
+static void rkclk_init(struct udevice *dev)
 {
+	struct rk3308_clk_priv *priv = dev_get_priv(dev);
+	struct rk3308_cru *cru = priv->cru;
+
 	u32 aclk_div, hclk_div, pclk_div;
 
 	/* init pll */
@@ -155,9 +156,9 @@ static void rkclk_init(struct rk3308_cru *cru)
 	 * set up dependent divisors for PCLK and ACLK clocks.
 	 * core hz : apll = 1:1
 	 */
-	apll_hz = rkclk_pll_get_rate(cru, APLL);
-	aclk_div = apll_hz / CORE_ACLK_HZ - 1;
-	pclk_div = apll_hz / CORE_DBG_HZ - 1;
+	priv->apll_hz = rkclk_pll_get_rate(cru, APLL);
+	aclk_div = priv->apll_hz / CORE_ACLK_HZ - 1;
+	pclk_div = priv->apll_hz / CORE_DBG_HZ - 1;
 	rk_clrsetreg(&cru->clksel_con[0],
 		     CORE_ACLK_DIV_MASK | CORE_DBG_DIV_MASK |
 		     CORE_CLK_PLL_SEL_MASK | CORE_DIV_CON_MASK,
@@ -170,10 +171,10 @@ static void rkclk_init(struct rk3308_cru *cru)
 	 * select dpll as pd_bus bus clock source and
 	 * set up dependent divisors for PCLK/HCLK and ACLK clocks.
 	 */
-	dpll_hz = rkclk_pll_get_rate(cru, DPLL);
-	aclk_div = dpll_hz / BUS_ACLK_HZ - 1;
-	hclk_div = dpll_hz / BUS_HCLK_HZ - 1;
-	pclk_div = dpll_hz / BUS_PCLK_HZ - 1;
+	priv->dpll_hz = rkclk_pll_get_rate(cru, DPLL);
+	aclk_div = priv->dpll_hz / BUS_ACLK_HZ - 1;
+	hclk_div = priv->dpll_hz / BUS_HCLK_HZ - 1;
+	pclk_div = priv->dpll_hz / BUS_PCLK_HZ - 1;
 	rk_clrsetreg(&cru->clksel_con[5],
 		     BUS_PLL_SEL_MASK | BUS_ACLK_DIV_MASK,
 		     BUS_PLL_SEL_DPLL << BUS_PLL_SEL_SHIFT |
@@ -187,9 +188,9 @@ static void rkclk_init(struct rk3308_cru *cru)
 	 * select dpll as pd_peri bus clock source and
 	 * set up dependent divisors for PCLK/HCLK and ACLK clocks.
 	 */
-	aclk_div = dpll_hz / PERI_ACLK_HZ - 1;
-	hclk_div = dpll_hz / PERI_HCLK_HZ - 1;
-	pclk_div = dpll_hz / PERI_PCLK_HZ - 1;
+	aclk_div = priv->dpll_hz / PERI_ACLK_HZ - 1;
+	hclk_div = priv->dpll_hz / PERI_HCLK_HZ - 1;
+	pclk_div = priv->dpll_hz / PERI_PCLK_HZ - 1;
 	rk_clrsetreg(&cru->clksel_con[36],
 		     PERI_PLL_SEL_MASK | PERI_ACLK_DIV_MASK,
 		     BUS_PLL_SEL_DPLL << PERI_PLL_SEL_SHIFT |
@@ -199,15 +200,17 @@ static void rkclk_init(struct rk3308_cru *cru)
 		     pclk_div << PERI_PCLK_DIV_SHIFT |
 		     hclk_div << PERI_HCLK_DIV_SHIFT);
 
-	vpll0_hz = rkclk_pll_get_rate(cru, VPLL0);
-	vpll1_hz = rkclk_pll_get_rate(cru, VPLL1);
+	priv->vpll0_hz = rkclk_pll_get_rate(cru, VPLL0);
+	priv->vpll1_hz = rkclk_pll_get_rate(cru, VPLL1);
 }
 
-static ulong rk3308_i2c_get_clk(struct rk3308_cru *cru, ulong clk_id)
+static ulong rk3308_i2c_get_clk(struct clk *clk)
 {
+	struct rk3308_clk_priv *priv = dev_get_priv(clk->dev);
+	struct rk3308_cru *cru = priv->cru;
 	u32 div, con, con_id;
 
-	switch (clk_id) {
+	switch (clk->id) {
 	case SCLK_I2C0:
 		con_id = 25;
 		break;
@@ -228,17 +231,19 @@ static ulong rk3308_i2c_get_clk(struct rk3308_cru *cru, ulong clk_id)
 	con = readl(&cru->clksel_con[con_id]);
 	div = con >> CLK_I2C_DIV_CON_SHIFT & CLK_I2C_DIV_CON_MASK;
 
-	return DIV_TO_RATE(dpll_hz, div);
+	return DIV_TO_RATE(priv->dpll_hz, div);
 }
 
-static ulong rk3308_i2c_set_clk(struct rk3308_cru *cru, ulong clk_id, uint hz)
+static ulong rk3308_i2c_set_clk(struct clk *clk, uint hz)
 {
+	struct rk3308_clk_priv *priv = dev_get_priv(clk->dev);
+	struct rk3308_cru *cru = priv->cru;
 	u32 src_clk_div, con_id;
 
-	src_clk_div = dpll_hz / hz;
+	src_clk_div = priv->dpll_hz / hz;
 	assert(src_clk_div - 1 < 127);
 
-	switch (clk_id) {
+	switch (clk->id) {
 	case SCLK_I2C0:
 		con_id = 25;
 		break;
@@ -260,14 +265,16 @@ static ulong rk3308_i2c_set_clk(struct rk3308_cru *cru, ulong clk_id, uint hz)
 		     CLK_I2C_PLL_SEL_DPLL << CLK_I2C_PLL_SEL_SHIFT |
 		     (src_clk_div - 1) << CLK_I2C_DIV_CON_SHIFT);
 
-	return rk3308_i2c_get_clk(cru, clk_id);
+	return rk3308_i2c_get_clk(clk);
 }
 
-static ulong rk3308_mmc_get_clk(struct rk3308_cru *cru, uint clk_id)
+static ulong rk3308_mmc_get_clk(struct clk *clk)
 {
+	struct rk3308_clk_priv *priv = dev_get_priv(clk->dev);
+	struct rk3308_cru *cru = priv->cru;
 	u32 div, con, con_id;
 
-	switch (clk_id) {
+	switch (clk->id) {
 	case HCLK_SDMMC:
 	case SCLK_SDMMC:
 		con_id = 39;
@@ -288,18 +295,19 @@ static ulong rk3308_mmc_get_clk(struct rk3308_cru *cru, uint clk_id)
 	    == EMMC_SEL_24M)
 		return DIV_TO_RATE(OSC_HZ, div) / 2;
 	else
-		return DIV_TO_RATE(vpll0_hz, div) / 2;
+		return DIV_TO_RATE(priv->vpll0_hz, div) / 2;
 }
 
-static ulong rk3308_mmc_set_clk(struct rk3308_cru *cru,
-				ulong clk_id, ulong set_rate)
+static ulong rk3308_mmc_set_clk(struct clk *clk, ulong set_rate)
 {
+	struct rk3308_clk_priv *priv = dev_get_priv(clk->dev);
+	struct rk3308_cru *cru = priv->cru;
 	int src_clk_div;
 	u32 con_id;
 
-	debug("%s %ld %ld\n", __func__, clk_id, set_rate);
+	debug("%s %ld %ld\n", __func__, clk->id, set_rate);
 
-	switch (clk_id) {
+	switch (clk->id) {
 	case HCLK_SDMMC:
 	case SCLK_SDMMC:
 		con_id = 39;
@@ -313,7 +321,7 @@ static ulong rk3308_mmc_set_clk(struct rk3308_cru *cru,
 	}
 	/* Select clk_sdmmc/emmc source from VPLL0 by default */
 	/* mmc clock defaulg div 2 internal, need provide double in cru */
-	src_clk_div = DIV_ROUND_UP(vpll0_hz / 2, set_rate);
+	src_clk_div = DIV_ROUND_UP(priv->vpll0_hz / 2, set_rate);
 
 	if (src_clk_div > 127) {
 		/* use 24MHz source for 400KHz clock */
@@ -331,11 +339,13 @@ static ulong rk3308_mmc_set_clk(struct rk3308_cru *cru,
 			     (src_clk_div - 1) << EMMC_DIV_SHIFT);
 	}
 
-	return rk3308_mmc_get_clk(cru, clk_id);
+	return rk3308_mmc_get_clk(clk);
 }
 
-static ulong rk3308_saradc_get_clk(struct rk3308_cru *cru)
+static ulong rk3308_saradc_get_clk(struct clk *clk)
 {
+	struct rk3308_clk_priv *priv = dev_get_priv(clk->dev);
+	struct rk3308_cru *cru = priv->cru;
 	u32 div, con;
 
 	con = readl(&cru->clksel_con[34]);
@@ -344,8 +354,10 @@ static ulong rk3308_saradc_get_clk(struct rk3308_cru *cru)
 	return DIV_TO_RATE(OSC_HZ, div);
 }
 
-static ulong rk3308_saradc_set_clk(struct rk3308_cru *cru, uint hz)
+static ulong rk3308_saradc_set_clk(struct clk *clk, uint hz)
 {
+	struct rk3308_clk_priv *priv = dev_get_priv(clk->dev);
+	struct rk3308_cru *cru = priv->cru;
 	int src_clk_div;
 
 	src_clk_div = OSC_HZ / hz;
@@ -355,14 +367,16 @@ static ulong rk3308_saradc_set_clk(struct rk3308_cru *cru, uint hz)
 		     CLK_SARADC_DIV_CON_MASK,
 		     (src_clk_div - 1) << CLK_SARADC_DIV_CON_SHIFT);
 
-	return rk3308_saradc_get_clk(cru);
+	return rk3308_saradc_get_clk(clk);
 }
 
-static ulong rk3308_spi_get_clk(struct rk3308_cru *cru, ulong clk_id)
+static ulong rk3308_spi_get_clk(struct clk *clk)
 {
+	struct rk3308_clk_priv *priv = dev_get_priv(clk->dev);
+	struct rk3308_cru *cru = priv->cru;
 	u32 div, con, con_id;
 
-	switch (clk_id) {
+	switch (clk->id) {
 	case SCLK_SPI0:
 		con_id = 30;
 		break;
@@ -380,17 +394,19 @@ static ulong rk3308_spi_get_clk(struct rk3308_cru *cru, ulong clk_id)
 	con = readl(&cru->clksel_con[con_id]);
 	div = con >> CLK_SPI_DIV_CON_SHIFT & CLK_SPI_DIV_CON_MASK;
 
-	return DIV_TO_RATE(dpll_hz, div);
+	return DIV_TO_RATE(priv->dpll_hz, div);
 }
 
-static ulong rk3308_spi_set_clk(struct rk3308_cru *cru, ulong clk_id, uint hz)
+static ulong rk3308_spi_set_clk(struct clk *clk, uint hz)
 {
+	struct rk3308_clk_priv *priv = dev_get_priv(clk->dev);
+	struct rk3308_cru *cru = priv->cru;
 	u32 src_clk_div, con_id;
 
-	src_clk_div = dpll_hz / hz;
+	src_clk_div = priv->dpll_hz / hz;
 	assert(src_clk_div - 1 < 127);
 
-	switch (clk_id) {
+	switch (clk->id) {
 	case SCLK_SPI0:
 		con_id = 30;
 		break;
@@ -410,24 +426,28 @@ static ulong rk3308_spi_set_clk(struct rk3308_cru *cru, ulong clk_id, uint hz)
 		     CLK_SPI_PLL_SEL_DPLL << CLK_SPI_PLL_SEL_SHIFT |
 		     (src_clk_div - 1) << CLK_SPI_DIV_CON_SHIFT);
 
-	return rk3308_spi_get_clk(cru, clk_id);
+	return rk3308_spi_get_clk(clk);
 }
 
-static ulong rk3308_pwm_get_clk(struct rk3308_cru *cru)
+static ulong rk3308_pwm_get_clk(struct clk *clk)
 {
+	struct rk3308_clk_priv *priv = dev_get_priv(clk->dev);
+	struct rk3308_cru *cru = priv->cru;
 	u32 div, con;
 
 	con = readl(&cru->clksel_con[29]);
 	div = con >> CLK_PWM_DIV_CON_SHIFT & CLK_PWM_DIV_CON_MASK;
 
-	return DIV_TO_RATE(dpll_hz, div);
+	return DIV_TO_RATE(priv->dpll_hz, div);
 }
 
-static ulong rk3308_pwm_set_clk(struct rk3308_cru *cru, uint hz)
+static ulong rk3308_pwm_set_clk(struct clk *clk, uint hz)
 {
+	struct rk3308_clk_priv *priv = dev_get_priv(clk->dev);
+	struct rk3308_cru *cru = priv->cru;
 	int src_clk_div;
 
-	src_clk_div = dpll_hz / hz;
+	src_clk_div = priv->dpll_hz / hz;
 	assert(src_clk_div - 1 < 127);
 
 	rk_clrsetreg(&cru->clksel_con[29],
@@ -435,11 +455,13 @@ static ulong rk3308_pwm_set_clk(struct rk3308_cru *cru, uint hz)
 		     CLK_PWM_PLL_SEL_DPLL << CLK_PWM_PLL_SEL_SHIFT |
 		     (src_clk_div - 1) << CLK_PWM_DIV_CON_SHIFT);
 
-	return rk3308_pwm_get_clk(cru);
+	return rk3308_pwm_get_clk(clk);
 }
 
-static ulong rk3308_vop_get_clk(struct rk3308_cru *cru)
+static ulong rk3308_vop_get_clk(struct clk *clk)
 {
+	struct rk3308_clk_priv *priv = dev_get_priv(clk->dev);
+	struct rk3308_cru *cru = priv->cru;
 	u32 div, pll_sel, vol_sel, con, parent;
 
 	con = readl(&cru->clksel_con[8]);
@@ -472,21 +494,23 @@ static ulong rk3308_vop_get_clk(struct rk3308_cru *cru)
 	return DIV_TO_RATE(parent, div);
 }
 
-static ulong rk3308_vop_set_clk(struct rk3308_cru *cru, ulong hz)
+static ulong rk3308_vop_set_clk(struct clk *clk, ulong hz)
 {
+	struct rk3308_clk_priv *priv = dev_get_priv(clk->dev);
+	struct rk3308_cru *cru = priv->cru;
 	ulong pll_rate, now, best_rate = 0;
 	u32 i, div, best_div = 0, best_sel = 0;
 
 	for (i = 0; i <= DCLK_VOP_PLL_SEL_VPLL1; i++) {
 		switch (i) {
 		case DCLK_VOP_PLL_SEL_DPLL:
-			pll_rate = dpll_hz;
+			pll_rate = priv->dpll_hz;
 			break;
 		case DCLK_VOP_PLL_SEL_VPLL0:
-			pll_rate = vpll0_hz;
+			pll_rate = priv->vpll0_hz;
 			break;
 		case DCLK_VOP_PLL_SEL_VPLL1:
-			pll_rate = vpll1_hz;
+			pll_rate = priv->vpll1_hz;
 			break;
 		default:
 			printf("do not support this vop pll sel\n");
@@ -522,12 +546,11 @@ static ulong rk3308_vop_set_clk(struct rk3308_cru *cru, ulong hz)
 		return -EINVAL;
 	}
 
-	return rk3308_vop_get_clk(cru);
+	return rk3308_vop_get_clk(clk);
 }
 
 static ulong rk3308_clk_get_rate(struct clk *clk)
 {
-	struct rk3308_clk_priv *priv = dev_get_priv(clk->dev);
 	ulong rate = 0;
 
 	debug("%s id:%ld\n", __func__, clk->id);
@@ -540,26 +563,26 @@ static ulong rk3308_clk_get_rate(struct clk *clk)
 	case SCLK_SDMMC:
 	case SCLK_EMMC:
 	case SCLK_EMMC_SAMPLE:
-		rate = rk3308_mmc_get_clk(priv->cru, clk->id);
+		rate = rk3308_mmc_get_clk(clk);
 		break;
 	case SCLK_I2C0:
 	case SCLK_I2C1:
 	case SCLK_I2C2:
 	case SCLK_I2C3:
-		rate = rk3308_i2c_get_clk(priv->cru, clk->id);
+		rate = rk3308_i2c_get_clk(clk);
 		break;
 	case SCLK_SARADC:
-		rate = rk3308_saradc_get_clk(priv->cru);
+		rate = rk3308_saradc_get_clk(clk);
 		break;
 	case SCLK_SPI0:
 	case SCLK_SPI1:
-		rate = rk3308_spi_get_clk(priv->cru, clk->id);
+		rate = rk3308_spi_get_clk(clk);
 		break;
 	case SCLK_PWM:
-		rate = rk3308_pwm_get_clk(priv->cru);
+		rate = rk3308_pwm_get_clk(clk);
 		break;
 	case DCLK_VOP:
-		rate = rk3308_vop_get_clk(priv->cru);
+		rate = rk3308_vop_get_clk(clk);
 		break;
 	default:
 		return -ENOENT;
@@ -570,7 +593,6 @@ static ulong rk3308_clk_get_rate(struct clk *clk)
 
 static ulong rk3308_clk_set_rate(struct clk *clk, ulong rate)
 {
-	struct rk3308_clk_priv *priv = dev_get_priv(clk->dev);
 	ulong ret = 0;
 
 	debug("%s %ld %ld\n", __func__, clk->id, rate);
@@ -581,26 +603,26 @@ static ulong rk3308_clk_set_rate(struct clk *clk, ulong rate)
 	case HCLK_EMMC:
 	case SCLK_SDMMC:
 	case SCLK_EMMC:
-		ret = rk3308_mmc_set_clk(priv->cru, clk->id, rate);
+		ret = rk3308_mmc_set_clk(clk, rate);
 		break;
 	case SCLK_I2C0:
 	case SCLK_I2C1:
 	case SCLK_I2C2:
 	case SCLK_I2C3:
-		ret = rk3308_i2c_set_clk(priv->cru, clk->id, rate);
+		ret = rk3308_i2c_set_clk(clk, rate);
 		break;
 	case SCLK_SARADC:
-		ret = rk3308_saradc_set_clk(priv->cru, rate);
+		ret = rk3308_saradc_set_clk(clk, rate);
 		break;
 	case SCLK_SPI0:
 	case SCLK_SPI1:
-		ret = rk3308_spi_set_clk(priv->cru, clk->id, rate);
+		ret = rk3308_spi_set_clk(clk, rate);
 		break;
 	case SCLK_PWM:
-		ret = rk3308_pwm_set_clk(priv->cru, rate);
+		ret = rk3308_pwm_set_clk(clk, rate);
 		break;
 	case DCLK_VOP:
-		ret = rk3308_vop_set_clk(priv->cru, rate);
+		ret = rk3308_vop_set_clk(clk, rate);
 		break;
 	default:
 		return -ENOENT;
@@ -741,9 +763,7 @@ static struct clk_ops rk3308_clk_ops = {
 
 static int rk3308_clk_probe(struct udevice *dev)
 {
-	struct rk3308_clk_priv *priv = dev_get_priv(dev);
-
-	rkclk_init(priv->cru);
+	rkclk_init(dev);
 
 	return 0;
 }
