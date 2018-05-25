@@ -890,6 +890,7 @@ static int do_temp_triming(cmd_tbl_t *cmdtp, int flag1,
 
 #if defined(R1P1_TSENSOR_MODE)
 			case MESON_CPU_MAJOR_ID_G12A:
+			case MESON_CPU_MAJOR_ID_G12B:
 				if (argc <3) {
 					printf("too little args for txhd temp triming!!\n");
 					return CMD_RET_USAGE;
@@ -938,6 +939,7 @@ int r1p1_temp_read(int type)
 	family_id = get_cpu_id().family_id;
 	switch (family_id) {
 		case MESON_CPU_MAJOR_ID_G12A:
+		case MESON_CPU_MAJOR_ID_G12B:
 			ts_b = 3159;
 			ts_a = 9411;
 			ts_m = 424;
@@ -1029,6 +1031,7 @@ int r1p1_read_entry(void)
 	family_id = get_cpu_id().family_id;
 	switch (family_id) {
 		case MESON_CPU_MAJOR_ID_G12A:
+		case MESON_CPU_MAJOR_ID_G12B:
 			ret = readl(AO_SEC_GP_CFG10);
 			ver = (ret >> 24) & 0xff;
 			if ((ver & 0x80) == 0) {
@@ -1083,6 +1086,7 @@ int r1p1_temp_trim(int tempbase, int tempver, int type)
 	printf("r1p1 temp trim type: 0x%x, familyid: %d\n", type, family_id);
 	switch (family_id) {
 		case MESON_CPU_MAJOR_ID_G12A:
+		case MESON_CPU_MAJOR_ID_G12B:
 			ts_b = 3159;
 			ts_a = 9411;
 			ts_m = 424;
@@ -1184,6 +1188,7 @@ int r1p1_trim_entry(int tempbase, int tempver)
 	family_id = get_cpu_id().family_id;
 	switch (family_id) {
 		case MESON_CPU_MAJOR_ID_G12A:
+		case MESON_CPU_MAJOR_ID_G12B:
 			ret = readl(AO_SEC_GP_CFG10);
 			ver = (ret >> 24) & 0xff;
 			if (ver & 0x80) {
@@ -1254,7 +1259,7 @@ static char temp_trim_help_text[] =
 	"           13  (1101)b: online, thermal0\n"
 	"           14  (1110)b: online, thermal1\n"
 	"           15  (1111)b: online, thermal01\n"
-	" 	G12A:\n"
+	" 	G12A or G12B:\n"
 	"	    88	(10001000)b: BBT-SW, thermal1 thermal2, valid thermal cali data\n"
 	"	    89	(10001001)b: BBT-OPS, thermal1 thermal2, valid thermal cali data\n"
 	"	    8b	(10001001)b: SLT, thermal1 thermal2, valid thermal cali data\n";
