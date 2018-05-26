@@ -54,7 +54,6 @@ void  cpu_sd_emmc_pwr_prepare(unsigned port)
 unsigned sd_debug_board_1bit_flag = 0;
 int cpu_sd_emmc_init(unsigned port)
 {
-	cpu_id_t cpuid = get_cpu_id();
 
 	switch (port)
 	{
@@ -63,16 +62,12 @@ int cpu_sd_emmc_init(unsigned port)
 						0xFFFFFF, 0x111111);
 		break;
 	case SDIO_PORT_B:
-		if (cpuid.chip_rev == 0xA)
-			clrsetbits_le32(P_PAD_DS_REG1A, 0xFFFF, 0x5555);
-		else if (cpuid.chip_rev == 0xB) {
-			clrsetbits_le32(P_PAD_DS_REG1A, 0xFFFF, 0x5555);
-			//setbits_le32(P_PAD_DS_REG1A, 0xFFFF);
-			/* pullup & pullupen */
-			setbits_le32(P_PAD_PULL_UP_EN_REG1, 0x7F);
-			setbits_le32(P_PAD_PULL_UP_REG1, 0x7F);
-			clrbits_le32(P_PREG_PAD_GPIO5_O, 1<<17);
-		}
+		clrsetbits_le32(P_PAD_DS_REG1A, 0xFFFF, 0x5555);
+		//setbits_le32(P_PAD_DS_REG1A, 0xFFFF);
+		/* pullup & pullupen */
+		setbits_le32(P_PAD_PULL_UP_EN_REG1, 0x7F);
+		setbits_le32(P_PAD_PULL_UP_REG1, 0x7F);
+		clrbits_le32(P_PREG_PAD_GPIO5_O, 1<<17);
 
 		if (sd_debug_board_1bit_flag == 1)
 			clrsetbits_le32(P_PERIPHS_PIN_MUX_9,
@@ -83,10 +78,7 @@ int cpu_sd_emmc_init(unsigned port)
 		break;
 	case SDIO_PORT_C:
 		/* set driver strength */
-		if (cpuid.chip_rev == 0xA)
-			writel(0x55555555, P_PAD_DS_REG0A);
-		else if (cpuid.chip_rev == 0xB)
-			writel(0xFFFFFFFF, P_PAD_DS_REG0A);
+		writel(0xFFFFFFFF, P_PAD_DS_REG0A);
 		/* pull up data by default */
 		setbits_le32(P_PAD_PULL_UP_EN_REG0, 0x35ff);
 		setbits_le32(P_PAD_PULL_UP_REG0, 0x35ff);
@@ -159,9 +151,5 @@ __weak int  sd_emmc_detect(unsigned port)
 
 __weak void sd_emmc_para_config(unsigned int *reg, unsigned int port)
 {
-	if (port == 1) {
-		*reg &= ~(3 << Cfg_co_phase);
-		*reg |= (3 << Cfg_co_phase);
-	}
 	return;
 }
