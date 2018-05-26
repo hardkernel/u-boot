@@ -138,6 +138,7 @@ static void lcd_clk_config_init_print(void)
 	switch (lcd_drv->chip_type) {
 	case LCD_CHIP_AXG:
 	case LCD_CHIP_G12A:
+	case LCD_CHIP_G12B:
 		LCDPR("lcd clk config init:\n"
 			"pll_m_max:         %d\n"
 			"pll_m_min:         %d\n"
@@ -199,6 +200,7 @@ void lcd_clk_config_print(void)
 
 	switch (lcd_drv->chip_type) {
 	case LCD_CHIP_G12A:
+	case LCD_CHIP_G12B:
 		if (lcd_drv->lcd_config->lcd_clk_path) {
 			LCDPR("lcd clk config:\n"
 				"clk_path      %d\n"
@@ -426,6 +428,7 @@ static void lcd_clk_config_chip_init(void)
 		cConf->xd_out_fmax = ENCL_CLK_IN_MAX_TXHD;
 		break;
 	case LCD_CHIP_G12A:
+	case LCD_CHIP_G12B:
 		if (lcd_drv->lcd_config->lcd_clk_path) {
 			cConf->od_fb = PLL_FRAC_OD_FB_GP0_G12A;
 			cConf->ss_level_max = SS_LEVEL_MAX_GP0_G12A;
@@ -1272,6 +1275,7 @@ static void lcd_set_vclk_crt(int lcd_type, struct lcd_clk_config_s *cConf)
 	/* select vid_pll_clk */
 	switch (lcd_drv->chip_type) {
 	case LCD_CHIP_G12A:
+	case LCD_CHIP_G12B:
 		if (lcd_drv->lcd_config->lcd_clk_path)
 			lcd_hiu_setb(HHI_VIID_CLK_CNTL, 1, VCLK2_CLK_IN_SEL, 3);
 		else
@@ -2444,6 +2448,7 @@ void lcd_clk_generate_parameter(struct lcd_config_s *pconf)
 		lcd_clk_generate_axg(pconf);
 		break;
 	case LCD_CHIP_G12A:
+	case LCD_CHIP_G12B:
 		if (lcd_drv->lcd_config->lcd_clk_path)
 			lcd_clk_generate_axg(pconf);
 		else
@@ -2551,6 +2556,7 @@ void lcd_clk_update(struct lcd_config_s *pconf)
 		lcd_update_pll_frac_axg(&clk_conf);
 		break;
 	case LCD_CHIP_G12A:
+	case LCD_CHIP_G12B:
 		if (lcd_drv->lcd_config->lcd_clk_path) {
 			lcd_pll_frac_generate_axg(pconf);
 			lcd_update_gp0_pll_frac_g12a(&clk_conf);
@@ -2597,6 +2603,7 @@ void lcd_clk_set(struct lcd_config_s *pconf)
 		lcd_set_dsi_meas_clk();
 		break;
 	case LCD_CHIP_G12A:
+	case LCD_CHIP_G12B:
 		if (lcd_drv->lcd_config->lcd_clk_path) {
 			lcd_set_gp0_pll_g12a(&clk_conf);
 			lcd_set_dsi_meas_clk();
@@ -2648,6 +2655,7 @@ void lcd_clk_disable(void)
 		lcd_hiu_setb(HHI_GP0_PLL_CNTL, 0, LCD_PLL_EN_AXG, 1);
 		break;
 	case LCD_CHIP_G12A:
+	case LCD_CHIP_G12B:
 		if (lcd_drv->lcd_config->lcd_clk_path) {
 			lcd_hiu_setb(HHI_GP0_PLL_CNTL0, 0, LCD_PLL_EN_GP0_G12A, 1);
 		} else {

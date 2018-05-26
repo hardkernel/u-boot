@@ -133,22 +133,43 @@
 #ifndef HHI_MIPIDSI_PHY_CLK_CNTL
 #define HHI_MIPIDSI_PHY_CLK_CNTL                           (0xff63c000 + (0x95 << 2))
 #endif
-
-
-#if (defined(CONFIG_AML_MESON_AXG) || \
-		defined(CONFIG_AML_MESON_G12A))
+#ifndef HHI_DIF_CSI_PHY_CNTL0
 #define HHI_DIF_CSI_PHY_CNTL0                              (0xff63c000 + (0xd8 << 2))
+#endif
+#ifndef HHI_DIF_CSI_PHY_CNTL1
 #define HHI_DIF_CSI_PHY_CNTL1                              (0xff63c000 + (0xd9 << 2))
+#endif
+#ifndef HHI_DIF_CSI_PHY_CNTL2
 #define HHI_DIF_CSI_PHY_CNTL2                              (0xff63c000 + (0xda << 2))
+#endif
+#ifndef HHI_DIF_CSI_PHY_CNTL3
 #define HHI_DIF_CSI_PHY_CNTL3                              (0xff63c000 + (0xdb << 2))
+#endif
+#ifndef HHI_DIF_CSI_PHY_CNTL4
 #define HHI_DIF_CSI_PHY_CNTL4                              (0xff63c000 + (0xdc << 2))
+#endif
+#ifndef HHI_DIF_CSI_PHY_CNTL5
 #define HHI_DIF_CSI_PHY_CNTL5                              (0xff63c000 + (0xdd << 2))
+#endif
+#ifndef HHI_DSI_LVDS_EDP_CNTL0
 #define HHI_DSI_LVDS_EDP_CNTL0                             (0xff63c000 + (0xd1 << 2))
+#endif
+#ifndef HHI_DSI_LVDS_EDP_CNTL1
 #define HHI_DSI_LVDS_EDP_CNTL1                             (0xff63c000 + (0xd2 << 2))
+#endif
+#ifndef HHI_CSI_PHY_CNTL1
 #define HHI_CSI_PHY_CNTL1                                  (0xff63c000 + (0xd4 << 2))
+#endif
+#ifndef HHI_CSI_PHY_CNTL2
 #define HHI_CSI_PHY_CNTL2                                  (0xff63c000 + (0xd5 << 2))
+#endif
+#ifndef HHI_CSI_PHY_CNTL3
 #define HHI_CSI_PHY_CNTL3                                  (0xff63c000 + (0xd6 << 2))
+#endif
+#ifndef HHI_LVDS_TX_PHY_CNTL0
 #define HHI_LVDS_TX_PHY_CNTL0                              (0xff63c000 + (0xde << 2))
+#endif
+#ifndef HHI_LVDS_TX_PHY_CNTL1
 #define HHI_LVDS_TX_PHY_CNTL1                              (0xff63c000 + (0xdf << 2))
 #endif
 

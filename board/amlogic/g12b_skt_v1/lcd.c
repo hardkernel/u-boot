@@ -242,7 +242,6 @@ static unsigned char mipi_init_on_table_TV070WSM[DSI_INIT_ON_MAX] = {//table siz
 	0xf0, 3, 0, 0, 10, /* reset low, delay 10ms */
 	0xf0, 3, 0, 1, 30, /* reset high, delay 30ms */
 	0xfc, 2, 0x04, 3,  /* check_reg, check_cnt */
-	0xff, 100,   /* delay */
 	0xff, 0xff,   //ending flag
 };
 static unsigned char mipi_init_off_table_TV070WSM[DSI_INIT_OFF_MAX] = {//table size < 50
@@ -425,7 +424,7 @@ struct lcd_extern_config_s ext_config_dtf[LCD_EXTERN_NUM_MAX] = {
 		.table_init_on = ext_init_on_table,
 		.table_init_off = ext_init_off_table,
 	},
-	{
+	{ /* TV070WSM */
 		.index = 1,
 		.name = "mipi_default",
 		.type = LCD_EXTERN_MIPI, /* LCD_EXTERN_I2C, LCD_EXTERN_SPI, LCD_EXTERN_MIPI, LCD_EXTERN_MAX */
@@ -434,7 +433,7 @@ struct lcd_extern_config_s ext_config_dtf[LCD_EXTERN_NUM_MAX] = {
 		.table_init_on = ext_init_on_table_TV070WSM,
 		.table_init_off = ext_init_off_table_TV070WSM,
 	},
-	{
+	{ /* P070ACB */
 		.index = 2,
 		.name = "mipi_default",
 		.type = LCD_EXTERN_MIPI, /* LCD_EXTERN_I2C, LCD_EXTERN_SPI, LCD_EXTERN_MIPI, LCD_EXTERN_MAX */
@@ -443,7 +442,7 @@ struct lcd_extern_config_s ext_config_dtf[LCD_EXTERN_NUM_MAX] = {
 		.table_init_on = ext_init_on_table_P070ACB,
 		.table_init_off = ext_init_off_table_P070ACB,
 	},
-	{
+	{ /* TL050FHV02CT */
 		.index = 3,
 		.name = "mipi_default",
 		.type = LCD_EXTERN_MIPI, /* LCD_EXTERN_I2C, LCD_EXTERN_SPI, LCD_EXTERN_MIPI, LCD_EXTERN_MAX */
@@ -515,11 +514,11 @@ void lcd_config_bsp_init(void)
 			ext_lcd = &ext_lcd_config[i];
 			if (strcmp(ext_lcd->panel_type, str) == 0) {
 				switch (i) {
-				case 1:
+				case 1:/* TV070WSM*/
 					lcd_mipi_config.dsi_init_on = mipi_init_on_table_TV070WSM;
 					lcd_mipi_config.dsi_init_off = mipi_init_off_table_TV070WSM;
 					break;
-				case 2:
+				case 2:/* P070ACB*/
 					lcd_mipi_config.dsi_init_on = mipi_init_on_table_P070ACB;
 					lcd_mipi_config.dsi_init_off = mipi_init_off_table_P070ACB;
 					break;
