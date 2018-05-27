@@ -229,63 +229,6 @@ typedef struct ddr_set{
 	/* v2 start */
 }__attribute__ ((packed)) ddr_set_t;
 
-typedef struct ddr_timing{
-	//Identifier
-	unsigned char  identifier;
-
-	//DTPR0
-	unsigned char  cfg_ddr_rtp;
-	unsigned char  cfg_ddr_wtr;
-	unsigned char  cfg_ddr_rp;
-	unsigned char  cfg_ddr_rcd;
-	unsigned char  cfg_ddr_ras;
-	unsigned char  cfg_ddr_rrd;
-	unsigned char  cfg_ddr_rc;
-
-	//DTPR1
-	unsigned char  cfg_ddr_mrd;
-	unsigned char  cfg_ddr_mod;
-	unsigned char  cfg_ddr_faw;
-	unsigned char  cfg_ddr_wlmrd;
-	unsigned char  cfg_ddr_wlo;
-
-	//DTPR2
-	unsigned char  cfg_ddr_xp;
-
-	//DTPR1
-	unsigned short cfg_ddr_rfc;
-
-	//DTPR2
-	unsigned short cfg_ddr_xs;
-	unsigned short cfg_ddr_dllk;
-	unsigned char  cfg_ddr_cke;
-	unsigned char  cfg_ddr_rtodt;
-	unsigned char  cfg_ddr_rtw;
-
-	unsigned char  cfg_ddr_refi;
-	unsigned char  cfg_ddr_refi_mddr3;
-	unsigned char  cfg_ddr_cl;
-	unsigned char  cfg_ddr_wr;
-	unsigned char  cfg_ddr_cwl;
-	unsigned char  cfg_ddr_al;
-	unsigned char  cfg_ddr_dqs;
-	unsigned char  cfg_ddr_cksre;
-	unsigned char  cfg_ddr_cksrx;
-	unsigned char  cfg_ddr_zqcs;
-	unsigned char  cfg_ddr_xpdll;
-	unsigned short cfg_ddr_exsr;
-	unsigned short cfg_ddr_zqcl;
-	unsigned short cfg_ddr_zqcsi;
-
-	unsigned char  cfg_ddr_tccdl;
-	unsigned char  cfg_ddr_tdqsck;
-	unsigned char  cfg_ddr_tdqsckmax;
-	unsigned char  rsv_char;
-
-	/* reserved */
-	unsigned int   rsv_int;
-}__attribute__ ((packed)) ddr_timing_t;
-
 typedef struct pll_set{
 	unsigned short    cpu_clk;
 	unsigned short    pxp;
