@@ -85,7 +85,7 @@ typedef struct _ext_info{
 #define NAND_FIPMODE_DISCRETE   (1)
 
 /* if you don't need skip the bad blocks when add
- * partitions, please open this macro.
+ * partitions, please enable this macro.
  * #define CONFIG_NOT_SKIP_BAD_BLOCK
  */
 
