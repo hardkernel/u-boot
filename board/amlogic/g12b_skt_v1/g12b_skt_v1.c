@@ -26,9 +26,12 @@
 #include <fdt_support.h>
 #include <libfdt.h>
 #include <asm/cpu_id.h>
+#include <asm/arch/secure_apb.h>
 #ifdef CONFIG_SYS_I2C_AML
 #include <aml_i2c.h>
-#include <asm/arch/secure_apb.h>
+#endif
+#ifdef CONFIG_SYS_I2C_MESON
+#include <amlogic/i2c.h>
 #endif
 #ifdef CONFIG_AML_VPU
 #include <vpu.h>
@@ -563,6 +566,48 @@ U_BOOT_DEVICE(spicc1) = {
 };
 #endif /* CONFIG_AML_SPICC */
 
+#ifdef CONFIG_SYS_I2C_MESON
+static const struct meson_i2c_platdata i2c_data[] = {
+	{ 0, 0xffd1f000, 166666666, 3, 15, 100000 },
+	{ 1, 0xffd1e000, 166666666, 3, 15, 100000 },
+	{ 2, 0xffd1d000, 166666666, 3, 15, 100000 },
+	{ 3, 0xffd1c000, 166666666, 3, 15, 100000 },
+	{ 4, 0xff805000, 166666666, 3, 15, 100000 },
+};
+
+U_BOOT_DEVICES(meson_i2cs) = {
+	{ "i2c_meson", &i2c_data[0] },
+	{ "i2c_meson", &i2c_data[1] },
+	{ "i2c_meson", &i2c_data[2] },
+	{ "i2c_meson", &i2c_data[3] },
+	{ "i2c_meson", &i2c_data[4] },
+};
+
+/*
+ *GPIOH_6 I2C_SDA_M1
+ *GPIOH_7 I2C_SCK_M1
+ *pinmux configuration seperated with i2c controller configuration
+ * config it when you use
+ */
+void set_i2c_m1_pinmux(void)
+{
+	/*ds =3 */
+	clrbits_le32(PAD_DS_REG3A, 0xf << 12);
+	setbits_le32(PAD_DS_REG3A, 0x3 << 12 | 0x3 << 14);
+	/*pull up en*/
+	clrbits_le32(PAD_PULL_UP_EN_REG3, 0x3 << 6);
+	setbits_le32(PAD_PULL_UP_EN_REG3, 0x3 << 6 );
+	/*pull up*/
+	clrbits_le32(PAD_PULL_UP_REG3, 0x3 << 6);
+	setbits_le32(PAD_PULL_UP_REG3, 0x3 << 6 );
+	/*pin mux to i2cm1*/
+	clrbits_le32(PERIPHS_PIN_MUX_B, 0xff << 24);
+	setbits_le32(PERIPHS_PIN_MUX_B, 0x4 << 24 | 0x4 << 28);
+
+	return;
+}
+#endif /*end CONFIG_SYS_I2C_MESON*/
+
 extern void aml_pwm_cal_init(int mode);
 
 int board_init(void)
@@ -586,6 +631,10 @@ int board_init(void)
 	extern int amlnf_init(unsigned char flag);
 	amlnf_init(0);
 #endif
+#ifdef CONFIG_SYS_I2C_MESON
+	set_i2c_m1_pinmux();
+#endif
+
 	return 0;
 }
 
