@@ -60,6 +60,10 @@ int cpu_sd_emmc_init(unsigned port)
 	case SDIO_PORT_A:
 		clrsetbits_le32(P_PERIPHS_PIN_MUX_3,
 						0xFFFFFF, 0x111111);
+		setbits_le32(P_PAD_DS_REG2A, 0xFFF);
+		/* pullup & pullupen */
+		setbits_le32(P_PAD_PULL_UP_EN_REG2, 0x3F);
+		setbits_le32(P_PAD_PULL_UP_REG2, 0x3F);
 		break;
 	case SDIO_PORT_B:
 		clrsetbits_le32(P_PAD_DS_REG1A, 0xFFFF, 0x5555);
@@ -151,5 +155,9 @@ __weak int  sd_emmc_detect(unsigned port)
 
 __weak void sd_emmc_para_config(unsigned int *reg, unsigned int port)
 {
+	if (port == 1) {
+		*reg &= ~(3 << Cfg_co_phase);
+		*reg |= (3 << Cfg_co_phase);
+	}
 	return;
 }
