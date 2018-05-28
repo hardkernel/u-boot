@@ -510,7 +510,10 @@ bl2_reg_t __bl2_reg[] = {
 	{AO_PIN_MUX_REG1,     (3 << 16),               (0xF << 16),  0, BL2_INIT_STAGE_1, 0},
 	/* Enable 5V_EN */
 	{GPIO_O_EN_N_REG3,    (1 << 8),                (1 << 8),     0, BL2_INIT_STAGE_1, 0},
-	{GPIO_O_REG3,         (1 << 8),                0xffffffff,   0, BL2_INIT_STAGE_1, 0},
+	{GPIO_O_REG3,         (1 << 8),                (1 << 8),   0, BL2_INIT_STAGE_1, 0},
+	/* Enable CPUA ,control by GPIOAO_4 */
+	{AO_GPIO_O_EN_N,    (0 << 4),                (1 << 4),     0, BL2_INIT_STAGE_1, 0},
+	{AO_GPIO_O,         (1 << 4),                (1 << 4),   0, BL2_INIT_STAGE_1, 0},
 	/* Enable VCCK */
 	{AO_SEC_REG0,         (1 << 0),                (1 << 0),     0, BL2_INIT_STAGE_1, 0},
 	{AO_GPIO_O,           (1 << 31),               (1 << 31),    0, BL2_INIT_STAGE_1, 0},
