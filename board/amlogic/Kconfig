@@ -175,6 +175,10 @@ config G12B_SKT_V1
 	bool "Support amlogic g12b skt v1 board"
 	default n
 
+config G12B_W400_V1
+	bool "Support amlogic g12b w400 v1 board"
+	default n
+
 config PXP_EMULATOR
 	bool "Support pxp environment"
 	default n
@@ -360,6 +364,10 @@ endif
 
 if G12B_SKT_V1
 source "board/amlogic/g12b_skt_v1/Kconfig"
+endif
+
+if G12B_W400_V1
+source "board/amlogic/g12b_w400_v1/Kconfig"
 endif
 
 if ODROID_C2
