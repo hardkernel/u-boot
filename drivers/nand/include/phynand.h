@@ -629,6 +629,8 @@ struct chip_operation {
 		u8 chip_nr,
 		u8 id_addr,
 		u8 *buf);
+	int (*nand_read_param)(struct amlnand_chip *amlnand_chip, u8 chip_nr,
+	u8 param_addr, u8 *param );
 
 	/*
 	 * Erase is an asynchronous operation.  Device drivers are supposed

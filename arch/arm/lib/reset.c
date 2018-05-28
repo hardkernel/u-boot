@@ -25,6 +25,10 @@
 
 __weak void reset_misc(void)
 {
+#ifdef CONFIG_AML_NAND
+	extern void amlnf_hardreset(void);
+	amlnf_hardreset();
+#endif
 }
 
 int do_reset(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])

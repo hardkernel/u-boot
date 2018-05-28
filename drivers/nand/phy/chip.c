@@ -19,6 +19,8 @@ static int get_flash_type(struct amlnand_chip *aml_chip)
 	u8 dev_id[MAX_ID_LEN] = {0};
 	struct nand_flash *type = NULL;
 	int ret = 0, i, extid;
+	u8 flash_id0 = 0xff;
+	u8 onfi_param_data[512] = {0};
 
 	ret = operation->read_id(aml_chip,
 		0,
@@ -63,6 +65,7 @@ static int get_flash_type(struct amlnand_chip *aml_chip)
 			}
 		}
 #endif
+		flash_id0 = dev_id[0];
 		if (!type) {
 			aml_nand_msg("no matched id");
 			ret = -NAND_ID_FAILURE;
@@ -130,30 +133,96 @@ static int get_flash_type(struct amlnand_chip *aml_chip)
 	aml_nand_dbg("internal_page_nums =%d,internal_chipnr=%d",
 			controller->internal_page_nums,
 			aml_chip->flash.internal_chipnr);
-	if (!memcmp((char *)dev_id, "ONFI", 4))
+	if (!memcmp((char *)dev_id, "ONFI", 4)) {
+		/*judege micron/specteck nand by liuxj*/
+		if (operation->nand_read_param(aml_chip, 0, 0, &onfi_param_data[0]) == 0) { /*zero is valid*/
+			if (flash_id0 == 0x2c) {
+				aml_nand_msg("param data[32~43]: %x, %x, %x, %x,%x, %x",onfi_param_data[32],onfi_param_data[33],
+					onfi_param_data[34],onfi_param_data[35],onfi_param_data[36],onfi_param_data[37]);
+				aml_nand_dbg("read retry option[181~182]: %x, %x",onfi_param_data[181],onfi_param_data[182]);
+				if ((onfi_param_data[32] == 0x4D) && (onfi_param_data[33] == 0x49) && (onfi_param_data[34] == 0x43)
+					&& (onfi_param_data[35] == 0x52) && (onfi_param_data[36] == 0x4F) && (onfi_param_data[37] == 0x4E)) {
+					aml_nand_msg("nand Manufacturer: micron\n");
+				} else if ((onfi_param_data[32] == 0x53) && (onfi_param_data[33] == 0x50) && (onfi_param_data[34] == 0x45)
+					&& (onfi_param_data[35] == 0x43) && (onfi_param_data[36] == 0x54) && (onfi_param_data[37] == 0x45)) {
+					aml_nand_msg("nand Manufacturer: specteck\n");
+				} else {
+					aml_nand_msg("unknown Manufacturer ");
+				}
+				aml_nand_dbg("block num: 0x%x,0x%x,0x%x,0x%x",onfi_param_data[99],onfi_param_data[98],onfi_param_data[97],onfi_param_data[96]);
+			}
+		} else {
+			aml_nand_msg("read nand param data fail\n");
+		}
 		controller->onfi_mode = type->onfi_mode;
+	}
 #endif
 error_exit:
 	return ret;
+}
+
+int mt_L95B_nand_check(struct amlnand_chip *aml_chip)
+{
+	struct nand_flash *flash = &(aml_chip->flash);
+
+	if ((flash->id[0] == 0x2C) &&
+	    ((flash->id[1] == 0x84) && (flash->id[2] == 0x64) &&
+	     (flash->id[3] == 0x54) && (flash->id[4] == 0xA9)) ) {
+		return 0;
+	} else  return -1;
+}
+
+int mt_L85C_nand_check(struct amlnand_chip *aml_chip)
+{
+	struct nand_flash *flash = &(aml_chip->flash);
+
+	if ((flash->id[0] == 0x2C) &&
+	    (flash->id[1] == 0x84) && (flash->id[2] == 0x64) &&
+	     (flash->id[3] == 0x3c) && (flash->id[4] == 0xA9)
+	     && (flash->id[5] == 0x04)) {
+		return 0;
+	} else  return -1;
+}
+
+int mt_L04A_nand_check(struct amlnand_chip *aml_chip)
+{
+	struct nand_flash *flash = &(aml_chip->flash);
+
+	if ((flash->id[0] == 0x2C) &&
+	    ((flash->id[1] == 0x64) && (flash->id[2] == 0x44) &&
+	     (flash->id[3] == 0x32) && (flash->id[4] == 0xA5)) ) {
+		return 0;
+	} else  return -1;
+}
+
+int mt_L05B_nand_check(struct amlnand_chip *aml_chip)
+{
+	struct nand_flash *flash = &(aml_chip->flash);
+
+	if ((flash->id[0] == 0x2C) &&
+	    ((flash->id[1] == 0x84) && (flash->id[2] == 0x44) &&
+	     (flash->id[3] == 0x32) && (flash->id[4] == 0xAA)) ) {
+		return 0;
+	} else  return -1;
 }
 
 static void micron_check_rand_mode (struct amlnand_chip *aml_chip)
 {
 	struct hw_controller *controller = &(aml_chip->controller);
 	struct chip_operation *operation = &(aml_chip->operation);
-	struct nand_flash *flash = &(aml_chip->flash);
+	//struct nand_flash *flash = &(aml_chip->flash);
 	struct en_slc_info *slc_info = &(controller->slc_info);
 	unsigned char rand_val[4] ={0, 0, 0, 0};
 	const int rand_addr = 0x92;
 
-	aml_nand_dbg("%s()", __func__);
+	aml_nand_msg("%s()", __func__);
 	slc_info->micron_l0l3_mode = 0;
 
-	if ((flash->id[0] == 0x2C) && (flash->id[1] == 0x64)
-		&& (flash->id[2] == 0x44)
-		&& (flash->id[3] == 0x32) && (flash->id[4] == 0xa5))
-		/* No Randomizer (L0L3) Support for 3D 100 series nand */
-		return;
+
+	/* No Randomizer (L0L3) Support for 3D 100 series nand */
+	if ((mt_L04A_nand_check(aml_chip) == 0) ||
+		(mt_L05B_nand_check(aml_chip) == 0))
+			return;
 
 	operation->get_onfi_para(aml_chip, rand_val, rand_addr);
 	aml_nand_dbg("%s, %d,val:%d",__func__, __LINE__, rand_val[0]);
@@ -174,7 +243,7 @@ static void micron_check_rand_mode (struct amlnand_chip *aml_chip)
 		operation->set_onfi_para(aml_chip, rand_val, rand_addr);
 		operation->get_onfi_para(aml_chip, rand_val, rand_addr);
 		if (rand_val[0] == 1) {
-		   aml_nand_msg("%s, Set Randomizer val:%d ON",
+		   aml_nand_dbg("%s, Set Randomizer val:%d ON",
 						__func__, rand_val[0]);
 		   slc_info->micron_l0l3_mode = 1;
 		}
@@ -224,11 +293,8 @@ static int amlnand_chip_scan(struct amlnand_chip *aml_chip)
 			aml_nand_dbg("read id failed and ret:%d", ret);
 			continue;
 		}
-		/*
-		memcmp((char*)&(aml_chip->flash.id[0]),
-			(char*)&dev_id[0], MAX_ID_LEN)
-		*/
-		aml_nand_dbg("controller->flash_type =%d",
+
+		aml_nand_msg("controller->flash_type =%d",
 			controller->flash_type);
 		if (((controller->flash_type == NAND_TYPE_SLC)
 			|| (controller->flash_type == NAND_TYPE_MLC))

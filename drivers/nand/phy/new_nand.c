@@ -1141,7 +1141,8 @@ static int set_reg_value_micron(struct hw_controller *controller,
 	struct amlnand_chip *aml_chip = controller->aml_chip;
 	struct nand_flash *flash = &(aml_chip->flash);
 /* struct read_retry_info *retry_info =  &(controller->retry_info); */
-	int i, ret = 0;
+	int  ret = 0;
+	/*int i;*/
 
 
 	if (flash->new_type != MICRON_20NM)
@@ -1155,13 +1156,13 @@ static int set_reg_value_micron(struct hw_controller *controller,
 		return -NAND_FAILED;
 	}
 
-	for (i = 0; i < cnt; i++) {
+	/*for (i = 0; i < cnt; i++) {*/
 		controller->cmd_ctrl(controller,
 			NAND_CMD_MICRON_SET_VALUE, NAND_CTRL_CLE);
 		NFC_SEND_CMD_IDLE(controller, 2);
-		controller->cmd_ctrl(controller, addr[i], NAND_CTRL_ALE);
+		controller->cmd_ctrl(controller, addr[0], NAND_CTRL_ALE);
 		NFC_SEND_CMD_IDLE(controller, 10);
-		controller->writebyte(controller, buf[i]);
+		controller->writebyte(controller, *buf);
 		NFC_SEND_CMD_IDLE(controller, 1);
 		controller->writebyte(controller, 0);
 		NFC_SEND_CMD_IDLE(controller, 1);
@@ -1170,10 +1171,10 @@ static int set_reg_value_micron(struct hw_controller *controller,
 		controller->writebyte(controller, 0);
 		NFC_SEND_CMD_IDLE(controller, 100);
 		aml_nand_dbg("REG(0x%x)  value:0x%x, for chip[%d]\n",
-			addr[i],
-			buf[i],
+			addr[0],
+			*buf,
 			chipnr);
-	}
+	/*}*/
 
 	ret = controller->quene_rb(controller, chipnr);
 	if (ret) {
@@ -1205,7 +1206,8 @@ static int readretry_handle_micron(struct hw_controller *controller,
 		&retry_info->reg_offs_val_lp[0][cur_cnt][0],
 		&retry_info->reg_addr_lp[0],
 		chipnr,
-		retry_info->reg_cnt_lp);
+		cur_cnt);
+
 	if (ret) {
 		aml_nand_msg("set_reg_value_micron failed chipnr:%d", chipnr);
 		return -NAND_FAILED;
@@ -3217,9 +3219,12 @@ int amlnand_set_readretry_slc_para(struct amlnand_chip *aml_chip)
 			setting_val[1] = 0x11;
 			slc_info->pagelist = NULL;
 
-		} else if ((flash->id[1] == 0x64) && (flash->id[2] == 0x44) &&
-			   (flash->id[3] == 0x32) && (flash->id[4] == 0xA5)) {
-			/* 3D L04A MLC/SLC */
+		} else if (((flash->id[1] == 0x64) && (flash->id[2] == 0x44) &&
+			   (flash->id[3] == 0x32) && (flash->id[4] == 0xA5)) ||
+			   ((flash->id[1] == 0x84) && (flash->id[2] == 0x44) &&
+			   (flash->id[3] == 0x32) && (flash->id[4] == 0xAA) &&
+				(flash->id[5] == 0x04))) {
+			/* 3D L04A MLC/SLC  & L05B */
 			retry_info->retry_cnt_lp = 0x10;
 			setting_val[0] = 0xFF;
 			setting_val[1] = 0xFF;
@@ -3250,7 +3255,7 @@ int amlnand_set_readretry_slc_para(struct amlnand_chip *aml_chip)
 		}
 	#if 0
 		printf("++ Read Retries %d :", retry_info->retry_cnt_lp);
-		for (i=0;i<retry_info->retry_cnt_lp;i++)
+		for (i = 0; i < retry_info->retry_cnt_lp; i++)
 			printf(" %x", retry_info->reg_offs_val_lp[0][i][0]);
 		printf("\n");
 	#endif

@@ -1,5 +1,22 @@
 
 #include "../include/phynand.h"
+extern int nand_hardreset(struct amlnand_chip *aml_chip, u8 chipnr);
+
+void amlnf_hardreset(void)
+{
+	struct amlnand_chip *aml_chip = aml_nand_chip;
+	struct hw_controller *controller = &(aml_chip->controller);
+	int i=0;
+
+	for (i=0; i < controller->chip_num; i++) {
+	    /* per lun */
+	    controller->select_chip(controller, i);
+	    nand_get_chip(aml_chip);
+	    (void) nand_hardreset(aml_chip, i);
+	    nand_release_chip(aml_chip);
+	}
+}
+
 
 
 void amlnf_dump_chipinfo(void)

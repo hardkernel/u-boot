@@ -234,8 +234,13 @@ unsigned aml_get_reboot_reason(void)
 		return reason;
 }
 
+
 unsigned aml_reboot(uint64_t function_id, uint64_t arg0, uint64_t arg1, uint64_t arg2)
 {
+#ifdef CONFIG_AML_NAND
+	extern void amlnf_hardreset(void);
+	amlnf_hardreset();
+#endif
 	register long x0 asm("x0") = function_id;
 	register long x1 asm("x1") = arg0;
 	register long x2 asm("x2") = arg1;

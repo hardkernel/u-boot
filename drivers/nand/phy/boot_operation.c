@@ -5,6 +5,9 @@
 
 extern void uboot_set_ran_mode(struct amlnand_phydev *phydev);
 extern void nand_boot_info_prepare(struct amlnand_phydev *phydev, unsigned char * page0_buf);
+extern int mt_L95B_nand_check(struct amlnand_chip *aml_chip);
+extern int mt_L85C_nand_check(struct amlnand_chip *aml_chip);
+
 
 static int read_uboot(struct amlnand_phydev *phydev)
 {
@@ -556,23 +559,47 @@ static int write_uboot(struct amlnand_phydev *phydev)
 				break;
 			#else
 			if (writelen >= len) {
-            if (flash->option & NAND_USE_SHAREPAGE_MODE) {
 				page_no = (u32)addr/ flash->pagesize;
 				page_no = page_no % L04A_PAGES_IN_BLK;
 				aml_nand_msg("page_no:%d",page_no);
-                if ((page_no >= NAND_PAGE_NO1) && (page_no <= NAND_PAGE_NO2) &&
-				   (page_no % 2 != 0)) {
-					/* memset(fill_buf, 0xa5, fill_len); */
-					 ops_para->data_buf = fill_buf;    /*fill 0xff*/
-					 ops_para->page_addr = ((u32)addr / flash->pagesize);
-					 aml_nand_msg("write upperpage next no:%d",ops_para->page_addr);
-					 ret = operation->write_page(aml_chip);
-					if (ret < 0) {
-						write_boot_status[i] = 1;
-						aml_nand_msg("fail page_addr:%d",
-							ops_para->page_addr);
-						break;
+	            if (flash->option & NAND_USE_SHAREPAGE_MODE) {
+					/*page_no = (u32)addr/ flash->pagesize;
+					page_no = page_no % L04A_PAGES_IN_BLK;
+					aml_nand_msg("page_no:%d",page_no);
+					*/
+	                if ((page_no >= NAND_PAGE_NO1) && (page_no <= NAND_PAGE_NO2) &&
+					   (page_no % 2 != 0)) {
+						/* memset(fill_buf, 0xa5, fill_len); */
+						 ops_para->data_buf = fill_buf;    /*fill 0xff*/
+						 ops_para->page_addr = ((u32)addr / flash->pagesize);
+						 aml_nand_msg("write upperpage next no:%d",ops_para->page_addr);
+						 ret = operation->write_page(aml_chip);
+						if (ret < 0) {
+							write_boot_status[i] = 1;
+							aml_nand_msg("fail page_addr:%d",
+								ops_para->page_addr);
+							break;
+							}
 						}
+					}
+
+				/*********L95B*************/
+				if ((mt_L95B_nand_check(aml_chip) == 0)
+					|| (mt_L85C_nand_check(aml_chip) == 0)) {
+					int j = 0;
+					for (j = 0; j < 11; j++) {
+						memset(fill_buf, 0x5a,fill_len);
+						ops_para->data_buf = fill_buf;
+						ops_para->page_addr = ((u32)addr / flash->pagesize);
+						aml_nand_msg("write extra page: %d",ops_para->page_addr);
+						ret = operation->write_page(aml_chip);
+						if (ret < 0) {
+							write_boot_status[i] = 1;
+							aml_nand_msg("write fail page_addr:%d",
+								ops_para->page_addr);
+							break;
+						}
+						addr += flash->pagesize;
 					}
 				}
 			break;

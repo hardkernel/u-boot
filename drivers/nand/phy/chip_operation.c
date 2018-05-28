@@ -12,6 +12,8 @@
 **
 *****************************************************************/
 #include "../include/phynand.h"
+extern int mt_L04A_nand_check(struct amlnand_chip *aml_chip);
+extern int mt_L05B_nand_check(struct amlnand_chip *aml_chip);
 
 static int _read_page_single_plane(struct amlnand_chip *aml_chip,
 	u8 chipnr, u8 *buf, u8 *oob_buf,
@@ -1017,7 +1019,7 @@ static int write_page(struct amlnand_chip *aml_chip)
 #endif
 
 	PHY_NAND_LINE
-	if ((!ops_para->oob_buf) && (!ops_para->data_buf)) {
+	if (!ops_para->data_buf) {
 		aml_nand_msg("buf & oob_buf should never be NULL");
 		ret = -NAND_ARGUMENT_FAILURE;
 		goto error_exit0;
@@ -1146,11 +1148,30 @@ static int write_page_two_plane(struct amlnand_chip *aml_chip,
 	struct nand_flash *flash = &(aml_chip->flash);
 	struct chip_ops_para *ops_para = &(aml_chip->ops_para);
 	struct en_slc_info *slc_info = &(controller->slc_info);
+
+	struct chip_operation *operation = &(aml_chip->operation);
+	unsigned char retry_val[4] ={0, 0, 0, 0};
+	unsigned char addr = 0x89;
+
 	u32 column;
 	u32 page_size;
 	u8 bch_mode, user_byte_num;
 	u8 slc_mode, status, st_cnt;
 	int ret = 0;
+
+	if ((mt_L04A_nand_check(aml_chip) == 0) ||
+		(mt_L05B_nand_check(aml_chip) == 0)) {
+			operation->get_onfi_para(aml_chip, retry_val, addr);
+			if (retry_val[0] != 0) {
+				aml_nand_msg("!!!read retry value:%d,when write",
+					retry_val[0]);
+				retry_val[0] = 0;
+				operation->set_onfi_para(aml_chip, retry_val, addr);
+				operation->get_onfi_para(aml_chip, retry_val, addr);
+				aml_nand_msg("!!!set read retry value:%d,when write",
+					retry_val[0]);
+			}
+		}
 
 	/* for ecc mode */
 	if ((ops_para->option & DEV_ECC_SOFT_MODE)
@@ -1167,7 +1188,7 @@ static int write_page_two_plane(struct amlnand_chip *aml_chip,
 				0xa5,
 				user_byte_num);
 			controller->oob_buf[0] = 0xff;
-			//oob_buf = controller->oob_buf;
+			oob_buf = controller->oob_buf;
 		} else {
 			memcpy(controller->oob_buf,
 				oob_buf,
@@ -1351,6 +1372,9 @@ static int write_page_single_plane(struct amlnand_chip *aml_chip,
 	u8 bch_mode, user_byte_num;
 	u8 slc_mode, status, st_cnt;
 	int ret = 0;
+	struct chip_operation *operation = &(aml_chip->operation);
+	unsigned char retry_val[4] ={0, 0, 0, 0};
+	unsigned char addr = 0x89;
 
 	if (!buf) {
 		aml_nand_msg("buf should never be NULL");
@@ -1361,6 +1385,19 @@ static int write_page_single_plane(struct amlnand_chip *aml_chip,
 		aml_nand_msg("nand status unusal: do not write anything!!!!!");
 		return NAND_SUCCESS;
 	}
+	if ((mt_L04A_nand_check(aml_chip) == 0) ||
+		(mt_L05B_nand_check(aml_chip) == 0)) {
+			operation->get_onfi_para(aml_chip, retry_val, addr);
+			if (retry_val[0] != 0) {
+				aml_nand_msg("!!!read retry value1:%d,when write",
+					retry_val[0]);
+				retry_val[0] = 0;
+				operation->set_onfi_para(aml_chip, retry_val, addr);
+				operation->get_onfi_para(aml_chip, retry_val, addr);
+				aml_nand_msg("!!!set read retry value1:%d,when write",
+					retry_val[0]);
+			}
+		}
 
 	user_byte_num = 0;
 
@@ -1397,7 +1434,7 @@ static int write_page_single_plane(struct amlnand_chip *aml_chip,
 				0xa5,
 				user_byte_num);
 			controller->oob_buf[0] = 0xff;
-			//oob_buf = controller->oob_buf;
+			oob_buf = controller->oob_buf;
 		} else {
 			memcpy(controller->oob_buf,
 				oob_buf,
@@ -2654,6 +2691,46 @@ static int set_onfi_features(struct amlnand_chip *aml_chip,
  * nand_reset, send reset command, and assume nand selected here
  *
  *************************************************************/
+int nand_hardreset(struct amlnand_chip *aml_chip, u8 chipnr)
+{
+	struct hw_controller *controller = &(aml_chip->controller);
+	int status;
+
+	if (controller->quene_rb(controller, chipnr) < 0) {
+		aml_nand_msg("%s(): quene rb failed here", __func__);
+		return -NAND_BUSY_FAILURE;
+	}
+
+	//Delay
+	mdelay(5);
+
+	controller->cmd_ctrl(controller, 0x78, NAND_CTRL_CLE);
+	controller->cmd_ctrl(controller, chipnr>> 0, NAND_CTRL_ALE);
+	controller->cmd_ctrl(controller, chipnr>> 8, NAND_CTRL_ALE);
+	controller->cmd_ctrl(controller, chipnr>>16, NAND_CTRL_ALE);
+	NFC_SEND_CMD_IDLE(controller, NAND_TWHR_TIME_CYCLE);
+	NFC_SEND_CMD_IDLE(controller, 0);
+	NFC_SEND_CMD_IDLE(controller, 0);
+
+	while (NFC_CMDFIFO_SIZE(controller));
+
+	status = (int)controller->readbyte(controller);
+	while ((status & 0x60) != 0x60) {
+	    udelay(1);
+	    status = (int)controller->readbyte(controller);
+	}
+
+	/* hardreset */
+	NFC_SEND_CMD_IDLE(controller, 0);
+	controller->cmd_ctrl(controller, 0xFD, NAND_CTRL_CLE);
+	NFC_SEND_CMD_IDLE(controller, NAND_TWB_TIME_CYCLE);
+	NFC_SEND_CMD_IDLE(controller, 0);
+
+	/* DataSheet says 3 ms of tPOR */
+	mdelay(3);
+
+	return NAND_SUCCESS;
+}
 int nand_reset(struct amlnand_chip *aml_chip, u8 chipnr)
 {
 	struct hw_controller *controller = &(aml_chip->controller);
@@ -2740,6 +2817,58 @@ error_exit0:
 	return ret;
 }
 
+static int nand_read_param(struct amlnand_chip *aml_chip, u8 chip_nr,
+	u8 param_addr, u8 *param)
+{
+	struct hw_controller *controller = &(aml_chip->controller);
+	int ret = 0, i = 0, j = 0;
+	int status = 0;
+	int chip_num = 1;
+
+	memset(param, 0, 512);
+
+	if ( controller->chip_num )
+		chip_num = 1; // TBD: controller->chip_num;
+
+	/* Read From one chip now */
+	for (i=0; i < chip_num; i++) {
+		controller->select_chip(controller, i);
+		controller->cmd_ctrl(controller, NAND_CMD_PARAM, NAND_CTRL_CLE);
+		controller->cmd_ctrl(controller, param_addr, NAND_CTRL_ALE);
+
+		NFC_SEND_CMD_IDLE(controller, NAND_TWB_TIME_CYCLE);
+		NFC_SEND_CMD_IDLE(controller, 0);
+		ndelay(600);
+
+		if (controller->quene_rb(controller, i) < 0) {
+			aml_nand_msg("%s: quene rb failed here", __func__);
+			return -NAND_BUSY_FAILURE;
+		}
+
+		controller->cmd_ctrl(controller, NAND_CMD_STATUS, NAND_CTRL_CLE);
+		NFC_SEND_CMD_IDLE(controller, NAND_TWHR_TIME_CYCLE);
+		NFC_SEND_CMD_IDLE(controller, 0);
+		NFC_SEND_CMD_IDLE(controller, 0);
+		ndelay(600);
+		while (NFC_CMDFIFO_SIZE(controller) > 0);
+		status = (int)controller->readbyte(controller);
+		while  (!(status & NAND_STATUS_READY)) {
+			status = (int)controller->readbyte(controller);
+		}
+		controller->cmd_ctrl(controller, 0x0, NAND_CTRL_CLE);
+		NFC_SEND_CMD_IDLE(controller, 0);
+
+		for (j=0; j<512; j++)
+			param[j] = controller->readbyte(controller);
+	}
+	aml_nand_dbg("param data0[32~43]: %x, %x, %x, %x,%x, %x",param[0],param[1],
+					param[2],param[3],param[4],param[5]);
+	aml_nand_dbg("param data0[32~43]: %x, %x, %x, %x,%x, %x",param[32],param[33],
+					param[34],param[35],param[36],param[37]);
+	/* TBD: NEED to add  crc to validate JEDEC */
+	return ret;
+}
+
 int amlnand_init_operation(struct amlnand_chip *aml_chip)
 {
 	struct chip_operation *operation = &(aml_chip->operation);
@@ -2748,6 +2877,8 @@ int amlnand_init_operation(struct amlnand_chip *aml_chip)
 		operation->reset = nand_reset;
 	if (!operation->read_id)
 		operation->read_id = read_id;
+	if (!operation->nand_read_param)
+		operation->nand_read_param = nand_read_param;
 	if (!operation->set_onfi_para)
 		operation->set_onfi_para = set_onfi_features;
 	if (!operation->get_onfi_para)
