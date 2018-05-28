@@ -156,8 +156,14 @@ static bool inline is_meson_gxlx_cpu(void)
 
 static bool inline is_meson_g12a_cpu(void)
 {
-	return (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_G12A)?
-		1:0;
+	return (get_cpu_id().family_id ==
+		MESON_CPU_MAJOR_ID_G12A) ? 1 : 0;
+}
+
+static inline bool is_meson_g12b_cpu(void)
+{
+	return (get_cpu_id().family_id ==
+		MESON_CPU_MAJOR_ID_G12B) ? 1 : 0;
 }
 
 static bool inline is_meson_txl_cpu(void)
@@ -231,14 +237,15 @@ int cvbs_set_vdac(int status)
 	case 0:// close vdac
 		cvbs_write_hiu(HHI_VDAC_CNTL0, 0);
 		if (is_equal_after_meson_cpu(MESON_CPU_MAJOR_ID_TXL) &&
-			!is_meson_gxlx_cpu() && !is_meson_g12a_cpu())
+			!is_meson_gxlx_cpu() && !is_meson_g12a_cpu() &&
+			!is_meson_g12b_cpu())
 			cvbs_write_hiu(HHI_VDAC_CNTL1, 0);
 		else
 			cvbs_write_hiu(HHI_VDAC_CNTL1, 8);
 		break;
 	case 1:// from enci to vdac
 		cvbs_set_vcbus_bits(VENC_VDAC_DACSEL0, 0, 5, 1);
-		if (is_meson_g12a_cpu())
+		if (is_meson_g12a_cpu() || is_meson_g12b_cpu())
 			cvbs_write_hiu(HHI_VDAC_CNTL0, 0x906001);
 		else if (is_equal_after_meson_cpu(MESON_CPU_MAJOR_ID_GXL)) {
 			if (is_equal_after_meson_cpu(MESON_CPU_MAJOR_ID_TXL) &&
@@ -250,7 +257,8 @@ int cvbs_set_vdac(int status)
 			cvbs_write_hiu(HHI_VDAC_CNTL0, 1);
 
 		if (is_equal_after_meson_cpu(MESON_CPU_MAJOR_ID_TXL) &&
-			!is_meson_gxlx_cpu() && !is_meson_g12a_cpu())
+			!is_meson_gxlx_cpu() && !is_meson_g12a_cpu() &&
+			!is_meson_g12b_cpu())
 			cvbs_write_hiu(HHI_VDAC_CNTL1, 8);
 		else
 			cvbs_write_hiu(HHI_VDAC_CNTL1, 0);
@@ -418,7 +426,8 @@ int cvbs_reg_debug(int argc, char* const argv[])
 		if (argc != 3)
 			goto fail_cmd;
 		value = simple_strtoul(argv[2], NULL, 0);
-		if (check_cpu_type(MESON_CPU_MAJOR_ID_G12A)) {
+		if (check_cpu_type(MESON_CPU_MAJOR_ID_G12A) ||
+			check_cpu_type(MESON_CPU_MAJOR_ID_G12B)) {
 			if (value == 1 || value == 2 ||
 				value == 3 || value == 0) {
 				s_enci_clk_path = value;
@@ -643,7 +652,8 @@ static int cvbs_config_clock(void)
 		cvbs_config_hdmipll_gxb();
 	else if (check_cpu_type(MESON_CPU_MAJOR_ID_GXTVBB))
 		cvbs_config_hdmipll_gxtvbb();
-	else if (check_cpu_type(MESON_CPU_MAJOR_ID_G12A)) {
+	else if (check_cpu_type(MESON_CPU_MAJOR_ID_G12A) ||
+			check_cpu_type(MESON_CPU_MAJOR_ID_G12B)) {
 		if (s_enci_clk_path & 0x1)
 			cvbs_config_gp0pll_g12a();
 		else
@@ -652,7 +662,8 @@ static int cvbs_config_clock(void)
 	else if (is_equal_after_meson_cpu(MESON_CPU_MAJOR_ID_GXL))
 		cvbs_config_hdmipll_gxl();
 
-	if (check_cpu_type(MESON_CPU_MAJOR_ID_G12A)) {
+	if (check_cpu_type(MESON_CPU_MAJOR_ID_G12A) ||
+		check_cpu_type(MESON_CPU_MAJOR_ID_G12B)) {
 		if (s_enci_clk_path & 0x2)
 			cvbs_set_vid1_clk(s_enci_clk_path & 0x1);
 		else
@@ -739,7 +750,7 @@ static void cvbs_performance_enhancement(int mode)
 		index = (index >= max) ? 0 : index;
 		s = tvregs_576cvbs_performance_gxtvbb[index];
 		type = 5;
-	} else if (is_meson_g12a_cpu()) {
+	} else if (is_meson_g12a_cpu() || is_meson_g12b_cpu()) {
 		max = sizeof(tvregs_576cvbs_performance_g12a)
 			/ sizeof(struct reg_s *);
 		index = (index >= max) ? 0 : index;
