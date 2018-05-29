@@ -218,7 +218,7 @@
 		compatible = "generic-ehci";
 		reg = <0x30140000 0x20000>;
 		interrupts = <GIC_SPI 15 IRQ_TYPE_LEVEL_HIGH>;
-		phys = <&u2phy 1>;
+		phys = <&u2phy_host>;
 		phy-names = "usb";
 		status = "disabled";
 	};
@@ -227,7 +227,7 @@
 		compatible = "generic-ohci";
 		reg = <0x30160000 0x20000>;
 		interrupts = <GIC_SPI 16 IRQ_TYPE_LEVEL_HIGH>;
-		phys = <&u2phy 1>;
+		phys = <&u2phy_host>;
 		phy-names = "usb";
 		status = "disabled";
 	};
@@ -239,7 +239,7 @@
 		interrupts = <GIC_SPI 18 IRQ_TYPE_LEVEL_HIGH>;
 		hnp-srp-disable;
 		dr_mode = "otg";
-		phys = <&u2phy 0>;
+		phys = <&u2phy_otg>;
 		phy-names = "usb";
 		status = "disabled";
 	};
