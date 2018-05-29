@@ -9,6 +9,8 @@
 #include <dt-bindings/interrupt-controller/arm-gic.h>
 #include <dt-bindings/clock/rv1108-cru.h>
 #include <dt-bindings/pinctrl/rockchip.h>
+#include <dt-bindings/media/rockchip_mipi_dsi.h>
+#include <linux/media-bus-format.h>
 / {
 	#address-cells = <1>;
 	#size-cells = <1>;
@@ -39,6 +41,70 @@
 	arm-pmu {
 		compatible = "arm,cortex-a7-pmu";
 		interrupts = <GIC_SPI 67 IRQ_TYPE_LEVEL_HIGH>;
+	};
+
+	display_subsystem: display-subsystem {
+		compatible = "rockchip,display-subsystem";
+		ports = <&vop_out>;
+		status = "disabled";
+
+		route {
+			route_dsi: route-dsi {
+				status = "okay";
+				logo,uboot = "logo.bmp";
+				logo,kernel = "logo_kernel.bmp";
+				logo,mode = "center";
+				charge_logo,mode = "center";
+				connect = <&vop_out_mipi>;
+			};
+		};
+	};
+
+	mipi_dphy: mipi-dphy@0x20228000 {
+		compatible = "rockchip,rv1108-mipi-dphy";
+		reg = <0x20228000 0x8000>;
+		clock-output-names = "mipi_dphy_pll";
+		#clock-cells = <0>;
+		resets = <&cru PRST_MIPI_DSI_PHY>;
+		reset-names = "apb";
+		#phy-cells = <0>;
+		status = "disabled";
+	};
+
+	dsi: dsi@300e0000 {
+		compatible = "rockchip,rv1108-mipi-dsi";
+		reg = <0x300e0000 0x10000>;
+		interrupts = <GIC_SPI 55 IRQ_TYPE_LEVEL_HIGH>;
+		clocks = <&cru PCLK_MIPI_DSI>, <&mipi_dphy>;
+		clock-names = "pclk", "hs_clk";
+		resets = <&cru 127>;
+		reset-names = "apb";
+		phys = <&mipi_dphy>;
+		phy-names = "mipi_dphy";
+		rockchip,grf = <&grf>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&lcdc_mipi_data>;
+		status = "disabled";
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				mipi_in_vop: endpoint@0 {
+					reg = <0>;
+					remote-endpoint = <&vop_out_mipi>;
+				};
+			};
+
+		};
 	};
 
 	timer {
@@ -448,6 +514,23 @@
 			};
 		};
 
+		gpio1_lcdc {
+			lcdc_mipi_data: lcdc-mipi_data {
+				rockchip,pins = <1 RK_PA0 RK_FUNC_1 &pcfg_pull_none>, /* DSI_CLKP */
+						<1 RK_PA1 RK_FUNC_1 &pcfg_pull_none>, /* DSI_CLKN */
+						<1 RK_PA2 RK_FUNC_1 &pcfg_pull_none>, /* D0P */
+						<1 RK_PA3 RK_FUNC_1 &pcfg_pull_none>, /* D0N */
+						<1 RK_PA4 RK_FUNC_1 &pcfg_pull_none>, /* D1P */
+						<1 RK_PA5 RK_FUNC_1 &pcfg_pull_none>, /* D1N */
+						<1 RK_PA6 RK_FUNC_1 &pcfg_pull_none>, /* D2P */
+						<1 RK_PA7 RK_FUNC_1 &pcfg_pull_none>, /* D2N */
+						<1 RK_PB0 RK_FUNC_1 &pcfg_pull_none>, /* D3P */
+						<1 RK_PB1 RK_FUNC_1 &pcfg_pull_none>, /* D3N */
+						<1 RK_PC1 RK_FUNC_1 &pcfg_pull_none>, /* D10 */
+						<1 RK_PC0 RK_FUNC_1 &pcfg_pull_none>; /* D11 */
+			};
+		};
+
 		i2c0 {
 			i2c0_xfer: i2c0-xfer {
 				rockchip,pins = <0 RK_PB1 RK_FUNC_1 &pcfg_pull_none_smt>,
@@ -599,4 +682,25 @@
 		       0x20200000 0x1f0
 		       0x20010000 0x78>;
         };
+
+	vop: vop@30040000 {
+		compatible = "rockchip,rv1108-vop";
+		reg = <0x30040000 0xe00>;
+		reg-names = "regs";
+		interrupts = <GIC_SPI 28 IRQ_TYPE_LEVEL_HIGH>;
+		clocks = <&cru ACLK_VOP>, <&cru DCLK_VOP>,
+			 <&cru HCLK_VOP>;
+		clock-names = "aclk_vop", "dclk_vop", "hclk_vop";
+		status = "disabled";
+
+		vop_out: port {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			vop_out_mipi: endpoint@0 {
+				reg = <0>;
+				remote-endpoint = <&mipi_in_vop>;
+			};
+		};
+	};
 };
