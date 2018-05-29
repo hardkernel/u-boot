@@ -91,7 +91,7 @@ int sfc_request(u32 sfcmd, u32 sfctrl, u32 addr, void *data)
 
 		writel(0xFFFFFFFF, g_sfc_reg + SFC_ICLR);
 		writel(~((u32)FINISH_INT), g_sfc_reg + SFC_IMR);
-		writel((u64)bb.bounce_buffer, g_sfc_reg + SFC_DMA_ADDR);
+		writel((unsigned long)bb.bounce_buffer, g_sfc_reg + SFC_DMA_ADDR);
 		writel(SFC_DMA_START, g_sfc_reg + SFC_DMA_TRIGGER);
 
 		timeout = cmd.b.datasize * 10;
