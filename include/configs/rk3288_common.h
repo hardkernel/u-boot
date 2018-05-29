@@ -30,6 +30,7 @@
 #define CONFIG_SYS_LOAD_ADDR		0x00800800
 #define CONFIG_SPL_STACK		0xff718000
 
+#define CONFIG_SYS_BOOTM_LEN		(64 << 20)	/*  64M */
 #define GICD_BASE			0xffc01000
 #define GICC_BASE			0xffc02000
 
