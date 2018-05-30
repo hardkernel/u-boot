@@ -44,12 +44,7 @@ void test_optee(void)
 				TeecUuid,
 				TEEC_LOGIN_PUBLIC,
 				NULL,
-#ifdef CONFIG_OPTEE_V1
-				NULL,
-#endif
-#ifdef CONFIG_OPTEE_V2
 				&TeecOperation,
-#endif
 				&ErrorOrigin);
 
 	TEEC_SharedMemory SharedMem0 = {0};
@@ -159,12 +154,8 @@ uint32_t trusty_read_rollback_index(uint32_t slot, uint64_t *value)
 				TeecUuid,
 				TEEC_LOGIN_PUBLIC,
 				NULL,
-#ifdef CONFIG_OPTEE_V1
-				NULL,
-#endif
-#ifdef CONFIG_OPTEE_V2
 				&TeecOperation,
-#endif
+
 				&ErrorOrigin);
 
 	TEEC_SharedMemory SharedMem0 = {0};
@@ -246,12 +237,7 @@ uint32_t trusty_write_rollback_index(uint32_t slot, uint64_t value)
 				TeecUuid,
 				TEEC_LOGIN_PUBLIC,
 				NULL,
-#ifdef CONFIG_OPTEE_V1
-				NULL,
-#endif
-#ifdef CONFIG_OPTEE_V2
 				&TeecOperation,
-#endif
 				&ErrorOrigin);
 
 	TEEC_SharedMemory SharedMem0 = {0};
@@ -334,12 +320,7 @@ uint32_t trusty_read_permanent_attributes(uint8_t *attributes, uint32_t size)
 				TeecUuid,
 				TEEC_LOGIN_PUBLIC,
 				NULL,
-#ifdef CONFIG_OPTEE_V1
-				NULL,
-#endif
-#ifdef CONFIG_OPTEE_V2
 				&TeecOperation,
-#endif
 				&ErrorOrigin);
 
 	TEEC_SharedMemory SharedMem0 = {0};
@@ -418,12 +399,7 @@ uint32_t trusty_write_permanent_attributes(uint8_t *attributes, uint32_t size)
 				TeecUuid,
 				TEEC_LOGIN_PUBLIC,
 				NULL,
-#ifdef CONFIG_OPTEE_V1
-				NULL,
-#endif
-#ifdef CONFIG_OPTEE_V2
 				&TeecOperation,
-#endif
 				&ErrorOrigin);
 
 	TEEC_SharedMemory SharedMem0 = {0};
@@ -503,12 +479,7 @@ uint32_t trusty_read_lock_state(uint8_t *lock_state)
 				TeecUuid,
 				TEEC_LOGIN_PUBLIC,
 				NULL,
-#ifdef CONFIG_OPTEE_V1
-				NULL,
-#endif
-#ifdef CONFIG_OPTEE_V2
 				&TeecOperation,
-#endif
 				&ErrorOrigin);
 
 	TEEC_SharedMemory SharedMem0 = {0};
@@ -587,12 +558,7 @@ uint32_t trusty_write_lock_state(uint8_t lock_state)
 				TeecUuid,
 				TEEC_LOGIN_PUBLIC,
 				NULL,
-#ifdef CONFIG_OPTEE_V1
-				NULL,
-#endif
-#ifdef CONFIG_OPTEE_V2
 				&TeecOperation,
-#endif
 				&ErrorOrigin);
 
 	TEEC_SharedMemory SharedMem0 = {0};
@@ -672,12 +638,7 @@ uint32_t trusty_read_flash_lock_state(uint8_t *flash_lock_state)
 				TeecUuid,
 				TEEC_LOGIN_PUBLIC,
 				NULL,
-#ifdef CONFIG_OPTEE_V1
-				NULL,
-#endif
-#ifdef CONFIG_OPTEE_V2
 				&TeecOperation,
-#endif
 				&ErrorOrigin);
 
 	TEEC_SharedMemory SharedMem0 = {0};
@@ -757,12 +718,7 @@ uint32_t trusty_write_flash_lock_state(uint8_t flash_lock_state)
 				TeecUuid,
 				TEEC_LOGIN_PUBLIC,
 				NULL,
-#ifdef CONFIG_OPTEE_V1
-				NULL,
-#endif
-#ifdef CONFIG_OPTEE_V2
 				&TeecOperation,
-#endif
 				&ErrorOrigin);
 
 	TEEC_SharedMemory SharedMem0 = {0};
@@ -845,12 +801,7 @@ TEEC_Result read_from_keymaster(uint8_t *filename,
 				TeecUuid,
 				TEEC_LOGIN_PUBLIC,
 				NULL,
-#ifdef CONFIG_OPTEE_V1
-				NULL,
-#endif
-#ifdef CONFIG_OPTEE_V2
 				&TeecOperation,
-#endif
 				&ErrorOrigin);
 
 	TEEC_SharedMemory SharedMem0 = {0};
@@ -933,12 +884,7 @@ uint32_t write_to_keymaster(uint8_t *filename,
 				TeecUuid,
 				TEEC_LOGIN_PUBLIC,
 				NULL,
-#ifdef CONFIG_OPTEE_V1
-				NULL,
-#endif
-#ifdef CONFIG_OPTEE_V2
 				&TeecOperation,
-#endif
 				&ErrorOrigin);
 
 	TEEC_SharedMemory SharedMem0 = {0};
@@ -1377,12 +1323,7 @@ uint32_t trusty_read_permanent_attributes_flag(uint8_t *attributes)
 				TeecUuid,
 				TEEC_LOGIN_PUBLIC,
 				NULL,
-#ifdef CONFIG_OPTEE_V1
-				NULL,
-#endif
-#ifdef CONFIG_OPTEE_V2
 				&TeecOperation,
-#endif
 				&ErrorOrigin);
 
 	TEEC_SharedMemory SharedMem0 = {0};
@@ -1460,12 +1401,7 @@ uint32_t trusty_write_permanent_attributes_flag(uint8_t attributes)
 				TeecUuid,
 				TEEC_LOGIN_PUBLIC,
 				NULL,
-#ifdef CONFIG_OPTEE_V1
-				NULL,
-#endif
-#ifdef CONFIG_OPTEE_V2
 				&TeecOperation,
-#endif
 				&ErrorOrigin);
 
 	TEEC_SharedMemory SharedMem0 = {0};
@@ -1546,12 +1482,7 @@ uint32_t trusty_attest_dh(uint8_t *dh, uint32_t *dh_size)
 				      TeecUuid,
 				      TEEC_LOGIN_PUBLIC,
 				      NULL,
-#ifdef CONFIG_OPTEE_V1
-					NULL,
-#endif
-#ifdef CONFIG_OPTEE_V2
 					&TeecOperation,
-#endif
 				      &ErrorOrigin);
 
 	TEEC_SharedMemory SharedMem0 = {0};
@@ -1620,12 +1551,7 @@ uint32_t trusty_attest_uuid(uint8_t *uuid, uint32_t *uuid_size)
 				      TeecUuid,
 				      TEEC_LOGIN_PUBLIC,
 				      NULL,
-#ifdef CONFIG_OPTEE_V1
-					NULL,
-#endif
-#ifdef CONFIG_OPTEE_V2
 					&TeecOperation,
-#endif
 				      &ErrorOrigin);
 
 	TEEC_SharedMemory SharedMem0 = {0};
@@ -1701,12 +1627,7 @@ uint32_t trusty_attest_get_ca(uint8_t *operation_start,
 				      TeecUuid,
 				      TEEC_LOGIN_PUBLIC,
 				      NULL,
-#ifdef CONFIG_OPTEE_V1
-					NULL,
-#endif
-#ifdef CONFIG_OPTEE_V2
 					&TeecOperation,
-#endif
 				      &ErrorOrigin);
 
 	TEEC_SharedMemory SharedMem0 = {0};
@@ -1782,12 +1703,7 @@ uint32_t trusty_attest_set_ca(uint8_t *ca_response, uint32_t *ca_response_size)
 					TeecUuid,
 					TEEC_LOGIN_PUBLIC,
 					NULL,
-#ifdef CONFIG_OPTEE_V1
-					NULL,
-#endif
-#ifdef CONFIG_OPTEE_V2
 					&TeecOperation,
-#endif
 					&ErrorOrigin);
 
 	TEEC_SharedMemory SharedMem0 = {0};
