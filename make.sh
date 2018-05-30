@@ -209,10 +209,14 @@ pack_mass_trust_image()
 
 pack_trust_image()
 {
-	local TOS TOS_TA DARM_BASE TEE_LOAD_ADDR TEE_OFFSET=0x8400000
+	local TOS TOS_TA DARM_BASE TEE_LOAD_ADDR TEE_OFFSET=0x8400000 AARCH32
 
 	# ARM64 uses trust_merger
 	if grep -Eq ''^CONFIG_ARM64=y'|'^CONFIG_ARM64_BOOT_AARCH32=y'' ${OUTDIR}/.config ; then
+		if grep -q '^CONFIG_ARM64_BOOT_AARCH32=y' ${OUTDIR}/.config ; then
+			AARCH32=AARCH32
+		fi
+
 		if [ ! -f ${RKBIN}/RKTRUST/${RKCHIP}TRUST.ini ]; then
 			echo "pack trust failed! Can't find: ${RKBIN}/RKTRUST/${RKCHIP}TRUST.ini"
 			return
@@ -222,17 +226,17 @@ pack_trust_image()
 
 		# RK3308/PX30/RK3326 use RSA-PKCS1 V2.1, it's pack magic is "3"
 		if [ $RKCHIP = "PX30" -o $RKCHIP = "RK3326" -o $RKCHIP = "RK3308" ]; then
-			${TOOLCHAIN_RKBIN}/trust_merger --rsa 3 --replace tools/rk_tools/ ./ ${RKBIN}/RKTRUST/${RKCHIP}TRUST.ini
+			${TOOLCHAIN_RKBIN}/trust_merger --rsa 3 --replace tools/rk_tools/ ./ ${RKBIN}/RKTRUST/${RKCHIP}${AARCH32}TRUST.ini
 		# RK3368 use rk big endian SHA256, it's pack magic is "2"
 		elif [ $RKCHIP = "RK3368" ]; then
-			${TOOLCHAIN_RKBIN}/trust_merger --sha 2 --replace tools/rk_tools/ ./ ${RKBIN}/RKTRUST/${RKCHIP}TRUST.ini
+			${TOOLCHAIN_RKBIN}/trust_merger --sha 2 --replace tools/rk_tools/ ./ ${RKBIN}/RKTRUST/${RKCHIP}${AARCH32}TRUST.ini
 		else
-			${TOOLCHAIN_RKBIN}/trust_merger --replace tools/rk_tools/ ./ ${RKBIN}/RKTRUST/${RKCHIP}TRUST.ini
+			${TOOLCHAIN_RKBIN}/trust_merger --replace tools/rk_tools/ ./ ${RKBIN}/RKTRUST/${RKCHIP}${AARCH32}TRUST.ini
 		fi
 
 		cd -
 		mv ${RKBIN}/trust.img ./trust.img
-		echo "pack trust okay! Input: ${RKBIN}/RKTRUST/${RKCHIP}TRUST.ini"
+		echo "pack trust okay! Input: ${RKBIN}/RKTRUST/${RKCHIP}${AARCH32}TRUST.ini"
 	# ARM uses loaderimage
 	else
 		if [ ! -f ${RKBIN}/RKTRUST/${RKCHIP}TOS.ini ]; then
