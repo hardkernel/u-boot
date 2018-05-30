@@ -76,12 +76,12 @@
 
 ddr_set_t __ddr_setting[] = {
 {
-	/* g12a skt (u209) ddr4 */
+	/* ddr4 */
 	.board_id				= CONFIG_BOARD_ID_MASK,
 	.version				= 1,
 	.dram_rank_config		= CONFIG_DDR0_32BIT_RANK0_CH0,
 	.DramType				= CONFIG_DDR_TYPE_DDR4,
-	.DRAMFreq				= {912, 0, 0, 0},
+	.DRAMFreq				= {1200, 0, 0, 0},
 	.ddr_rfc_type			= DDR_RFC_TYPE_DDR4_2Gbx8,
 	.ddr_base_addr			= CFG_DDR_BASE_ADDR,
 	.ddr_start_offset		= CFG_DDR_START_OFFSET,
@@ -146,7 +146,7 @@ ddr_set_t __ddr_setting[] = {
 	.magic					= DRAM_CFG_MAGIC,
 },
 {
-	/* g12a skt (u209) ddr3 */
+	/* ddr3 */
 	.board_id				= CONFIG_BOARD_ID_MASK,
 	.version				= 1,
 	.dram_rank_config		= CONFIG_DDR0_16BIT_RANK01_CH0,
@@ -228,7 +228,7 @@ ddr_set_t __ddr_setting[] = {
 	.magic					= DRAM_CFG_MAGIC,
 },
 {
-	/* g12a skt (u209) lpddr4 */
+	/* lpddr4 */
 	.board_id				= CONFIG_BOARD_ID_MASK,
 	.version				= 1,
 	//.dram_rank_config		= CONFIG_DDR0_32BIT_RANK01_CH0,
@@ -301,7 +301,7 @@ ddr_set_t __ddr_setting[] = {
 	.diagnose				= CONFIG_DIAGNOSE_DISABLE,
 },
 {
-	/* g12a Y2 dongle */
+	/* Y2 dongle */
 	.board_id				= CONFIG_BOARD_ID_MASK,
 	.version				= 1,
 	//.dram_rank_config		= CONFIG_DDR0_32BIT_RANK01_CH0,
