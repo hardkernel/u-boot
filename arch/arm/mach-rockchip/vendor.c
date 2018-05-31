@@ -142,16 +142,13 @@ static int vendor_ops(u8 *buffer, u32 addr, u32 n_sec, int write)
 		debug("[Vednor INFO]:VendorStorage offset address=0x%x\n", lba);
 		break;
 	default:
-		debug("[Vednor ERROR]:Boot device type is invalid!\n");
-		ret = -ENODEV;
-		break;
+		printf("[Vednor ERROR]:Boot device type is invalid!\n");
+		return -ENODEV;
 	}
-	if (!ret) {
-		if (write)
-			ret = blk_dwrite(dev_desc, lba + addr, n_sec, buffer);
-		else
-			ret = blk_dread(dev_desc, lba + addr, n_sec, buffer);
-	}
+	if (write)
+		ret = blk_dwrite(dev_desc, lba + addr, n_sec, buffer);
+	else
+		ret = blk_dread(dev_desc, lba + addr, n_sec, buffer);
 	debug("[Vednor INFO]:op=%s, ret=%d\n", write ? "write" : "read", ret);
 
 	return ret;
@@ -231,7 +228,7 @@ int vendor_storage_init(void)
 	/* Find valid and up-to-date one from (vendor0 - vendor3) */
 	for (i = 0; i < VENDOR_PART_NUM; i++) {
 		ret = vendor_ops((u8 *)vendor_info.hdr, part_size * i, part_size, 0);
-		if (ret)
+		if (ret < 0)
 			return ret;
 
 		if ((vendor_info.hdr->tag == VENDOR_TAG) &&
@@ -281,7 +278,7 @@ int vendor_storage_read(u16 id, void *pbuf, u16 size)
 	/* init vendor storage */
 	if (!bootdev_type) {
 		ret = vendor_storage_init();
-		if (ret)
+		if (ret < 0)
 			return ret;
 	}
 
@@ -312,7 +309,7 @@ int vendor_storage_write(u16 id, void *pbuf, u16 size)
 	/* init vendor storage */
 	if (!bootdev_type) {
 		ret = vendor_storage_init();
-		if (ret)
+		if (ret < 0)
 			return ret;
 	}
 
@@ -332,7 +329,7 @@ int vendor_storage_write(u16 id, void *pbuf, u16 size)
 		break;
 	}
 	/* Invalid bootdev? */
-	if (ret)
+	if (ret < 0)
 		return ret;
 
 	next_index = vendor_info.hdr->next_index;
@@ -489,7 +486,7 @@ int vendor_storage_test(void)
 	for (id = 0; id < item_num; id++) {
 		memset(buffer, id, size);
 		ret = vendor_storage_write(id, buffer, size);
-		if (ret) {
+		if (ret < 0) {
 			printf("[Vendor Test]:vendor write failed(id=%d)!\n", id);
 			free(buffer);
 			return ret;
@@ -572,7 +569,7 @@ int vendor_storage_test(void)
 	id = 0;
 	printf("[Vendor Test]:id=%d, size=%d.\n", id, size);
 	ret = vendor_storage_write(id, buffer, size);
-	if (!ret)
+	if (ret == size)
 		printf("[Vendor Test]:<Single Item Memory Overflow> Test End, States:OK\n");
 	else
 		printf("[Vendor Test]:<Single Item Memory Overflow> Test End, States:Failed\n");
@@ -585,7 +582,7 @@ int vendor_storage_test(void)
 	for (id = 0; id <= item_num; id++) {
 		memset(buffer, id, size);
 		ret = vendor_storage_write(id, buffer, size);
-		if (ret) {
+		if (ret < 0) {
 			if ((id == item_num) && (ret == -ENOMEM)) {
 				printf("[Vendor Test]:<Total memory overflow> Test End, States:OK\n");
 				break;
