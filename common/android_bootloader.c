@@ -436,7 +436,7 @@ static AvbSlotVerifyResult android_slot_verify(char *boot_partname,
 			AVB_HASHTREE_ERROR_MODE_RESTART_AND_INVALIDATE,
 			&slot_data[0]);
 
-	if (verify_result != AVB_SLOT_VERIFY_RESULT_OK) {
+	if (verify_result != AVB_SLOT_VERIFY_RESULT_OK && !(unlocked & LOCK_MASK)) {
 		slot_set_unbootable(&ab_data.slots[slot_index_to_boot]);
 		goto out;
 	}
@@ -460,7 +460,10 @@ out:
 	if (slot_data[0] != NULL)
 		avb_slot_verify_data_free(slot_data[0]);
 
-	return verify_result;
+	if (unlocked & LOCK_MASK)
+		return 0;
+	else
+		return verify_result;
 }
 #endif
 
