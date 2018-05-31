@@ -41,6 +41,7 @@
 #define SCLK_MACREF_OUT			90
 #define SCLK_SARADC			91
 
+#define DCLK_VOP                        187
 
 /* aclk gates */
 #define ACLK_DMAC			192
@@ -48,7 +49,9 @@
 #define ACLK_CORE			194
 #define ACLK_ENMCORE			195
 #define ACLK_GMAC			196
-
+#define ACLK_VIO0                       200
+#define ACLK_VIO1                       201
+#define ACLK_PERI                       209
 
 /* pclk gates */
 #define PCLK_GPIO1			256
@@ -69,6 +72,7 @@
 #define PCLK_PERI			271
 #define PCLK_GMAC			272
 #define PCLK_SARADC			273
+#define PCLK_VIO                        276
 
 /* hclk gates */
 #define HCLK_I2S0_8CH			320
@@ -80,8 +84,9 @@
 #define HCLK_EMMC			326
 #define HCLK_PERI			327
 #define HCLK_SFC			328
+#define HCLK_VIO                        332
 
-#define CLK_NR_CLKS			(HCLK_SFC + 1)
+#define CLK_NR_CLKS			(HCLK_VIO + 1)
 
 /* reset id */
 #define SRST_CORE_PO_AD		0
