@@ -194,15 +194,6 @@ static int do_mmc_testefuse(cmd_tbl_t *cmdtp,
 	printf(" 0x%x  0x%x  0x%x  0x%x \n",
 		outbuf32[4], outbuf32[5], outbuf32[6], outbuf32[7]);
 
-	trusty_write_vbootkey_hash(buf32, 8);
-
-	trusty_read_vbootkey_hash(outbuf32, 8);
-
-	printf(" 0x%x  0x%x  0x%x  0x%x \n",
-		outbuf32[0], outbuf32[1], outbuf32[2], outbuf32[3]);
-	printf(" 0x%x  0x%x  0x%x  0x%x \n",
-		outbuf32[4], outbuf32[5], outbuf32[6], outbuf32[7]);
-
 	return CMD_RET_SUCCESS;
 }
 
