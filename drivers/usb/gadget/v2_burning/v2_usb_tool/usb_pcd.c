@@ -222,6 +222,10 @@ static unsigned int _auto_burn_time_out_base = 0;
 //wait time for gintsts_data_t.b.sofintr, 1/2 time_out_val, 1/2 * 700 in trunk
 static unsigned int time_out_wait_sof;
 static unsigned int _sofintr_not_occur;
+#if (defined CONFIG_USB_DEVICE_V2)
+static unsigned int _sofintr;
+unsigned curTime_sof;
+#endif
 
 void usb_parameter_init(int time_out)
 {
@@ -248,6 +252,10 @@ void usb_parameter_init(int time_out)
 
 int usb_pcd_irq(void)
 {
+#if (defined CONFIG_USB_DEVICE_V2)
+		unsigned Time_sof = get_timer(0);
+#endif
+
         if (need_check_timeout)
         {
                 unsigned curTime    = get_timer(need_check_timeout);
@@ -271,6 +279,14 @@ int usb_pcd_irq(void)
                         return __LINE__;
                 }
         }
+
+#if (defined CONFIG_USB_DEVICE_V2)
+        if (((Time_sof - curTime_sof) > 0x100) && (_sofintr)) {
+                ERR("sof timeout\n");
+                _sofintr = 0;
+                dwc_otg_power_off_phy();
+        }
+#endif
 
         return dwc_otg_irq();
 }

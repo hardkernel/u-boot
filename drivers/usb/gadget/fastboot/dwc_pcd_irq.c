@@ -1042,6 +1042,11 @@ static void dwc_otg_handle_usb_suspend_intr(void)
 	dwc_write_reg32 (DWC_REG_GINTSTS, gintsts.d32);
 }
 
+#if (defined CONFIG_USB_DEVICE_V2)
+extern unsigned int fb_sofintr;
+extern unsigned fb_curTime_sof;
+#endif
+
 int f_dwc_pcd_irq(void)
 {
 	gintsts_data_t  gintr_status;
@@ -1069,6 +1074,13 @@ int f_dwc_pcd_irq(void)
 
 	/* clear intr */
 	dwc_write_reg32(DWC_REG_GOTGINT, gotgint.d32);
+
+#if (defined CONFIG_USB_DEVICE_V2)
+	if (gintr_status.b.sofintr) {
+		fb_curTime_sof = get_timer(0);
+		fb_sofintr = 1;
+	}
+#endif
 
 	if (gintr_status.b.rxstsqlvl) {
 	    dwc_otg_pcd_handle_rx_status_q_level_intr();

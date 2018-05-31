@@ -638,6 +638,8 @@ int dwc_otg_bulk_ep_enable(int is_in)
 void dwc_otg_power_off_phy(void)
 {
 #if (defined CONFIG_USB_DEVICE_V2)
+	set_usb_phy21_tuning_update_reset();
+	mdelay(150);
     return;
 #else
     //cause DWC_REG_GSNPSID value 0 after call this when g12

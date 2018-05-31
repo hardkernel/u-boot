@@ -652,7 +652,29 @@ int usb_gadget_unregister_driver(struct usb_gadget_driver *driver)
 	return 0;
 }
 
+#if (defined CONFIG_USB_DEVICE_V2)
+unsigned int fb_sofintr;
+unsigned fb_curTime_sof;
+
+void dwc_otg_power_off_phy_fb(void)
+{
+	set_usb_phy21_tuning_fb_reset();
+	mdelay(150);
+	return;
+}
+#endif//#if (defined CONFIG_USB_DEVICE_V2)
+
 int usb_gadget_handle_interrupts(void)
 {
+#if (defined CONFIG_USB_DEVICE_V2)
+	unsigned Time_sof = get_timer(0);
+
+	if (((Time_sof - fb_curTime_sof) > 0x100) && (fb_sofintr)) {
+		ERR("sof timeout\n");
+		fb_sofintr = 0;
+		dwc_otg_power_off_phy_fb();
+	}
+#endif
+
 	return usb_pcd_irq_loop();
 }

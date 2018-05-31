@@ -1272,6 +1272,10 @@ int dwc_pcd_irq(void)
 
     if (gintr_status.b.sofintr)
 	{
+#if (defined CONFIG_USB_DEVICE_V2)
+		curTime_sof = get_timer(0);
+		_sofintr = 1;
+#endif
         if (_sofintr_not_occur) {
 			DWN_MSG("sof\n");
 			_sofintr_not_occur = 0;
