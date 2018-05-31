@@ -256,7 +256,9 @@ int vendor_storage_init(void)
 		vendor_info.hdr->version = 1;
 		vendor_info.hdr->tag = VENDOR_TAG;
 		/* data field length */
-		vendor_info.hdr->free_size = ((u32)vendor_info.hash - (u32)vendor_info.data);
+		vendor_info.hdr->free_size =
+			((u32)(size_t)vendor_info.hash
+			- (u32)(size_t)vendor_info.data);
 		*(vendor_info.version2) = vendor_info.hdr->version;
 	}
 	debug("[Vednor INFO]:ret=%d.\n", ret);
