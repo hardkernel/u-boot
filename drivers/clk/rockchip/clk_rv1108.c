@@ -518,11 +518,18 @@ static void rkclk_init(struct rv1108_cru *cru)
 	       aclk_bus, aclk_peri, hclk_peri, pclk_peri);
 }
 
-static int rv1108_clk_probe(struct udevice *dev)
+static int rv1108_clk_ofdata_to_platdata(struct udevice *dev)
 {
 	struct rv1108_clk_priv *priv = dev_get_priv(dev);
 
-	priv->cru = (struct rv1108_cru *)devfdt_get_addr(dev);
+	priv->cru = dev_read_addr_ptr(dev);
+
+	return 0;
+}
+
+static int rv1108_clk_probe(struct udevice *dev)
+{
+	struct rv1108_clk_priv *priv = dev_get_priv(dev);
 
 	rkclk_init(priv->cru);
 
@@ -577,5 +584,6 @@ U_BOOT_DRIVER(clk_rv1108) = {
 	.priv_auto_alloc_size = sizeof(struct rv1108_clk_priv),
 	.ops		= &rv1108_clk_ops,
 	.bind		= rv1108_clk_bind,
+	.ofdata_to_platdata	= rv1108_clk_ofdata_to_platdata,
 	.probe		= rv1108_clk_probe,
 };
