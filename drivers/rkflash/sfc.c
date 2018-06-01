@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018 Fuzhou Rockchip Electronics Co., Ltd
  *
- * SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+ * SPDX-License-Identifier:	GPL-2.0
  */
 
 #include <common.h>

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018 Fuzhou Rockchip Electronics Co., Ltd
  *
- * SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+ * SPDX-License-Identifier:	GPL-2.0
  */
 
 #include <common.h>
@@ -13,16 +13,39 @@
 #include "rkflash_blk.h"
 #include "rkflash_api.h"
 
-static struct flash_operation spi_flash_op = {
+static struct flash_operation sfc_nor_op = {
 #ifdef	CONFIG_RKSFC_NOR
 	FLASH_TYPE_SFC_NOR,
-	rk_snor_init,
-	rk_snor_get_capacity,
-	rk_snor_read,
-	rk_snor_write,
+	rksfc_nor_init,
+	rksfc_nor_get_capacity,
+	rksfc_nor_read,
+	rksfc_nor_write,
+	NULL,
+	rksfc_nor_vendor_read,
+	rksfc_nor_vendor_write,
 #else
-	-1, NULL, NULL, NULL, NULL,
+	-1, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
 #endif
+};
+
+static struct flash_operation sfc_nand_op = {
+#ifdef CONFIG_RKSFC_NAND
+	FLASH_TYPE_SFC_NAND,
+	rksfc_nand_init,
+	rksfc_nand_get_density,
+	rksfc_nand_read,
+	rksfc_nand_write,
+	NULL,
+	NULL,
+	NULL,
+#else
+	-1, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+#endif
+};
+
+static struct flash_operation *spi_flash_op[2] = {
+	&sfc_nor_op,
+	&sfc_nand_op,
 };
 
 int rksfc_scan_namespace(void)
@@ -72,22 +95,29 @@ static int rockchip_rksfc_ofdata_to_platdata(struct udevice *dev)
 
 static int rockchip_rksfc_probe(struct udevice *udev)
 {
-	int ret;
+	int ret = 0;
+	int i;
 	struct rkflash_info *priv = dev_get_priv(udev);
 
 	debug("%s %d %p ndev = %p\n", __func__, __LINE__, udev, priv);
 
 	sfc_init(priv->ioaddr);
-	if (spi_flash_op.id == -1) {
-		debug("%s no optional spi flash\n", __func__);
-		return 0;
-	}
-	ret = spi_flash_op.flash_init(udev);
-	if (!ret) {
-		priv->flash_con_type = FLASH_CON_TYPE_SFC;
-		priv->density = spi_flash_op.flash_get_capacity(udev);
-		priv->read = spi_flash_op.flash_read;
-		priv->write = spi_flash_op.flash_write;
+	for (i = 0; i < 2; i++) {
+		if (spi_flash_op[i]->id == -1) {
+			debug("%s no optional spi flash for type %x\n",
+			      __func__, i);
+			continue;
+		}
+		ret = spi_flash_op[i]->flash_init(udev);
+		if (!ret) {
+			priv->flash_con_type = FLASH_CON_TYPE_SFC;
+			priv->density =
+				spi_flash_op[i]->flash_get_capacity(udev);
+			priv->read = spi_flash_op[i]->flash_read;
+			priv->write = spi_flash_op[i]->flash_write;
+			debug("%s probe success\n", __func__);
+			break;
+		}
 	}
 
 	return ret;

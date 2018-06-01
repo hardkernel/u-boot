@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018 Fuzhou Rockchip Electronics Co., Ltd
  *
- * SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+ * SPDX-License-Identifier:	GPL-2.0
  */
 
 #ifndef __RKFLASH_BLK_H__
@@ -32,6 +32,17 @@ struct flash_operation {
 			   u32 start,
 			   u32 blkcnt,
 			   const void *buffer);
+	int (*flash_erase)(struct udevice *udev,
+			   u32 start,
+			   u32 blkcnt);
+	int (*vendor_read)(struct blk_desc *dev_desc,
+			   u32 start,
+			   u32 blkcnt,
+			   void *buffer);
+	int (*vendor_write)(struct blk_desc *dev_desc,
+			    u32 start,
+			    u32 blkcnt,
+			    void *buffer);
 };
 
 struct rkflash_dev {

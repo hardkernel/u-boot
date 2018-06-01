@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018 Fuzhou Rockchip Electronics Co., Ltd
  *
- * SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+ * SPDX-License-Identifier:	GPL-2.0
  */
 
 #include <common.h>
@@ -13,20 +13,26 @@
 #include "rkflash_blk.h"
 #include "rkflash_debug.h"
 
+void ftl_free(void *buf)
+{
+	kfree(buf);
+}
+
 ulong rkflash_bread(struct udevice *udev, lbaint_t start,
 		    lbaint_t blkcnt, void *dst)
 {
 	struct blk_desc *block_dev = dev_get_uclass_platdata(udev);
 	struct rkflash_info *priv = dev_get_priv(udev->parent);
 
+	debug("%s lba %x cnt %x", __func__, (u32)start, (u32)blkcnt);
 	if (blkcnt == 0)
-		return 0;
+		return -EINVAL;
 
 	if ((start + blkcnt) > block_dev->lba)
-		return 0;
+		return -EINVAL;
 
 	if (!priv->read)
-		return 0;
+		return -EINVAL;
 
 	return (ulong)priv->read(udev->parent, (u32)start, (u32)blkcnt, dst);
 }
@@ -38,13 +44,13 @@ ulong rkflash_bwrite(struct udevice *udev, lbaint_t start,
 	struct rkflash_info *priv = dev_get_priv(udev->parent);
 
 	if (blkcnt == 0)
-		return 0;
+		return -EINVAL;
 
 	if ((start + blkcnt) > block_dev->lba)
-		return 0;
+		return -EINVAL;
 
 	if (!priv->write)
-		return 0;
+		return -EINVAL;
 
 	return (ulong)priv->write(udev->parent, (u32)start, (u32)blkcnt, src);
 }
@@ -56,13 +62,13 @@ ulong rkflash_berase(struct udevice *udev, lbaint_t start,
 	struct rkflash_info *priv = dev_get_priv(udev->parent);
 
 	if (blkcnt == 0)
-		return 0;
+		return -EINVAL;
 
 	if ((start + blkcnt) > block_dev->lba)
-		return 0;
+		return -EINVAL;
 
 	if (!priv->erase)
-		return 0;
+		return -EINVAL;
 
 	return (ulong)priv->erase(udev->parent, (u32)start, (u32)blkcnt);
 }
@@ -77,6 +83,9 @@ static int rkflash_blk_probe(struct udevice *udev)
 	priv->child_dev = udev;
 	if (priv->flash_con_type == FLASH_CON_TYPE_SFC)
 		desc->if_type = IF_TYPE_RKSFC;
+	else if (priv->flash_con_type == FLASH_CON_TYPE_NANDC)
+		desc->if_type = IF_TYPE_RKNAND;
+
 	desc->lba = priv->density;
 	desc->log2blksz = 9;
 	desc->blksz = 512;

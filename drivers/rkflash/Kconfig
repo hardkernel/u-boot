@@ -6,26 +6,53 @@
 if ARCH_ROCKCHIP
 
 menuconfig RKFLASH
-	tristate "Rockchip Flash Devices Support"
+	bool "Rockchip Flash Devices support"
 	default n
 	help
-	  Enable rockchip flash devices support.
-	  rkflash driver support 3-type flash devices: NANDC NAND, SFC_NOR
-	  and SFC_NAND.
+	  This enables support for Rockchip Flash Devices including Nandc Slc
+	  Nand, SFC SPI Nand and SFC SPI Nor.
+
+	  They're block interface.
+
 	  Say Y when you have a board with one of them.
 
 if RKFLASH
 
 comment "Rockchip Flash Devices"
 
+config RKNANDC_NAND
+	bool "Rockchip NANDC Slc Nand Devices support"
+	depends on RKNAND != y
+	default n
+	help
+	  This enables support for NANDC Slc Nand Devices.
+
+	  It's block interface, 512Kb/sector.
+
+	  Say Y when you have a board with Slc Nand Flash supported by Rockchip
+	  Nandc controller.
+
+config RKSFC_NAND
+	bool "Rockchip SFC SPI Nand Devices support"
+	depends on RKNAND != y
+	default n
+	help
+	  This enables support for Rockchip SFC SPI Nand Devices.
+
+	  It's block interface, 512Kb/sector.
+
+	  Say Y when you have a board with SPI Nand Flash supported by Rockchip
+          Serial Flash Controller(SFC).
 config RKSFC_NOR
-	bool "Rockchip SFC NOR flash support"
+	bool "Rockchip SFC SPI Nor Devices Support"
 	depends on BLK
 	help
-	  This option enables support for Rockchip SFC nor devices.
-	  It's block interface.
-	  512Kb/sector.
-	  Say y here to enable rockchip spi nor flash driver.
+	  This enables support for Rockchip SFC SPI Nor Devices.
+
+	  It's block interface,512Kb/sector.
+
+	  Say Y when you have a board with SPI Nor Flash supported by Rockchip
+	  Serial Flash Controller(SFC).
 
 endif # RKFLASH
 

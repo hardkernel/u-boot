@@ -1,11 +1,11 @@
 /*
  * Copyright (c) 2018 Fuzhou Rockchip Electronics Co., Ltd
  *
- * SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+ * SPDX-License-Identifier:	GPL-2.0
  */
-
-#include <linux/delay.h>
 #include <linux/compat.h>
+#include <linux/delay.h>
+#include <linux/kernel.h>
 #include <linux/string.h>
 
 #include "sfc_nor.h"
@@ -103,7 +103,8 @@ static int snor_wait_busy(int timeout)
 {
 	int ret;
 	union SFCCMD_DATA sfcmd;
-	u32 i, status;
+	int i;
+	u32 status;
 
 	sfcmd.d32 = 0;
 	sfcmd.b.cmd = CMD_READ_STATUS;
@@ -195,7 +196,7 @@ static int snor_erase(struct SFNOR_DEV *p_dev,
 
 	sfcmd.b.addrbits = (erase_type != ERASE_CHIP) ?
 				SFC_ADDR_24BITS : SFC_ADDR_0BITS;
-	if ((p_dev->addr_mode == ADDR_MODE_4BYTE) && (erase_type != ERASE_CHIP))
+	if (p_dev->addr_mode == ADDR_MODE_4BYTE && erase_type != ERASE_CHIP)
 		sfcmd.b.addrbits = SFC_ADDR_32BITS;
 
 	snor_write_en();
@@ -401,6 +402,7 @@ int snor_write(struct SFNOR_DEV *p_dev, u32 sec, u32 n_sec, const void *p_data)
 	int ret = SFC_OK;
 	u32 len, blk_size, offset;
 	u8 *p_buf =  (u8 *)p_data;
+	u32 total_sec = n_sec;
 
 	if ((sec + n_sec) > p_dev->capacity)
 		return SFC_PARAM_ERR;
@@ -436,7 +438,7 @@ int snor_write(struct SFNOR_DEV *p_dev, u32 sec, u32 n_sec, const void *p_data)
 out:
 	mutex_unlock(&p_dev->lock);
 	if (!ret)
-		ret = n_sec;
+		ret = total_sec;
 
 	return ret;
 }
@@ -492,9 +494,7 @@ static struct flash_info *snor_get_flash_info(u8 *flash_id)
 	u32 i;
 	u32 id = (flash_id[0] << 16) | (flash_id[1] << 8) | (flash_id[2] << 0);
 
-	for (i = 0;
-		i < (sizeof(spi_flash_tbl) / sizeof(struct flash_info));
-		i++) {
+	for (i = 0; i < ARRAY_SIZE(spi_flash_tbl); i++) {
 		if (spi_flash_tbl[i].id == id)
 			return &spi_flash_tbl[i];
 	}
@@ -520,7 +520,7 @@ static void *snor_flash_info_adjust(struct flash_info *spi_flash_info)
 
 int snor_init(struct SFNOR_DEV *p_dev)
 {
-	int i;
+	u32 i;
 	u8 id_byte[5];
 	int err;
 
@@ -562,8 +562,8 @@ int snor_init(struct SFNOR_DEV *p_dev)
 				p_dev->read_cmd = g_spi_flash_info->read_cmd_4;
 			}
 		}
-		if ((g_spi_flash_info->feature & FEA_4BIT_PROG) &&
-		    (p_dev->read_lines == DATA_LINES_X4)) {
+		if (g_spi_flash_info->feature & FEA_4BIT_PROG &&
+		    p_dev->read_lines == DATA_LINES_X4) {
 			p_dev->prog_lines = DATA_LINES_X4;
 			p_dev->prog_cmd = g_spi_flash_info->prog_cmd_4;
 		}

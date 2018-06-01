@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018 Fuzhou Rockchip Electronics Co., Ltd
  *
- * SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+ * SPDX-License-Identifier:	GPL-2.0
  */
 
 #include <blk.h>
@@ -37,9 +37,9 @@ void rkflash_print_hex(char *s, void *buf, u32 width, u32 len)
 
 #if (BLK_STRESS_TEST_EN)
 #define max_test_sector 64
-u8 pwrite[max_test_sector * 512];
-u8 pread[max_test_sector * 512];
-u32 *pwrite32;
+static u8 pwrite[max_test_sector * 512];
+static u8 pread[max_test_sector * 512];
+static u32 *pwrite32;
 void blk_stress_test(struct udevice *udev)
 {
 	struct blk_desc *block_dev = dev_get_uclass_platdata(udev);
