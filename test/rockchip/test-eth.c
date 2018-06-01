@@ -6,6 +6,7 @@
 
 #include <asm/io.h>
 #include <adc.h>
+#include <cli.h>
 #include <common.h>
 #include <dm.h>
 #include <errno.h>
@@ -274,15 +275,15 @@ int board_eth_test(int argc, char * const argv[])
 		break;
 	case 4:
 		if (!strncmp(argv[2], "loopback", sizeof("loopback"))) {
-			speed = strtoul(argv[3], NULL, 0);
+			speed = simple_strtoul(argv[3], NULL, 0);
 			ret = eth_loopback_test(speed, 0);
 			return ret;
 		}
 		break;
 	case 5:
 		if (!strncmp(argv[2], "delayline", sizeof("delayline"))) {
-			tx_delay = strtoul(argv[3], NULL, 0);
-			rx_delay = strtoul(argv[4], NULL, 0);
+			tx_delay = simple_strtoul(argv[3], NULL, 0);
+			rx_delay = simple_strtoul(argv[4], NULL, 0);
 			gmac_set_rgmii(current, tx_delay, rx_delay);
 			return 0;
 		}
