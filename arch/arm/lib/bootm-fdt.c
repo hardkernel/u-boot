@@ -22,9 +22,6 @@
 #endif
 #include <asm/psci.h>
 #include <asm/spin_table.h>
-#ifdef CONFIG_DRM_ROCKCHIP
-#include <video_rockchip.h>
-#endif
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -34,6 +31,11 @@ __weak int fdt_update_ethernet_dt(void *blob)
 	return 0;
 }
 #endif
+
+__weak int board_fdt_fixup(void *blob)
+{
+	return 0;
+}
 
 int arch_fixup_fdt(void *blob)
 {
@@ -78,9 +80,10 @@ int arch_fixup_fdt(void *blob)
 		return ret;
 #endif
 #endif
-#ifdef CONFIG_DRM_ROCKCHIP
-	rockchip_display_fixup(blob);
-#endif
+	ret = board_fdt_fixup(blob);
+	if (ret)
+		return ret;
+
 #ifdef CONFIG_FMAN_ENET
 	ret = fdt_update_ethernet_dt(blob);
 	if (ret)

@@ -234,6 +234,27 @@ int board_init(void)
 	return rk_board_init();
 }
 
+int board_fdt_fixup(void *blob)
+{
+	__maybe_unused int ret = 0;
+
+#ifdef CONFIG_DRM_ROCKCHIP
+	rockchip_display_fixup(blob);
+#endif
+
+#ifdef CONFIG_ROCKCHIP_RK3288
+	/* RK3288W HDMI Revision ID is 0x1A */
+	if (readl(0xff980004) == 0x1A) {
+		ret = fdt_setprop_string(blob, 0,
+					 "compatible", "rockchip,rk3288w");
+		if (ret)
+			printf("fdt set compatible failed: %d\n", ret);
+	}
+#endif
+
+	return ret;
+}
+
 #if !defined(CONFIG_SYS_DCACHE_OFF) && !defined(CONFIG_ARM64)
 void enable_caches(void)
 {
