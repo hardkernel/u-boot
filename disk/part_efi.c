@@ -276,7 +276,7 @@ int part_get_info_efi(struct blk_desc *dev_desc, int part,
 		gpt_head = memalign(ARCH_DMA_MINALIGN, dev_desc->blksz);
 
 	/* We suppose different dev have different size, eg. emmc vs sd */
-	if (!gpt_head && (gpt_head->last_usable_lba + 0x22) != dev_desc->lba)
+	if (gpt_head && (gpt_head->last_usable_lba + 0x22) != dev_desc->lba)
 		gpt_pte = NULL;
 
 	/* "part" argument must be at least 1 */
@@ -985,6 +985,7 @@ static int is_gpt_valid(struct blk_desc *dev_desc, u64 lba,
 
 	if (validate_gpt_entries(pgpt_head, *pgpt_pte)) {
 		free(*pgpt_pte);
+		*pgpt_pte = NULL;
 		return 0;
 	}
 
