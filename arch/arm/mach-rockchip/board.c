@@ -10,6 +10,8 @@
 #include <ram.h>
 #include <syscon.h>
 #include <asm/io.h>
+#include <asm/arch/vendor.h>
+#include <misc.h>
 #include <asm/gpio.h>
 #include <asm/arch/clock.h>
 #include <asm/arch/periph.h>
@@ -28,6 +30,67 @@
 #include <dm/root.h>
 
 DECLARE_GLOBAL_DATA_PTR;
+/* define serialno max length, the max length is 512 Bytes
+ * The remaining bytes are used to ensure that the first 512 bytes
+ * are valid when executing 'env_set("serial#", value)'.
+ */
+#define VENDOR_SN_MAX	513
+#define CPUID_LEN       0x10
+#define CPUID_OFF       0x7
+
+static int rockchip_set_serialno(void)
+{
+	char serialno_str[VENDOR_SN_MAX];
+	int ret = 0, i;
+	u8 cpuid[CPUID_LEN] = {0};
+	u8 low[CPUID_LEN / 2], high[CPUID_LEN / 2];
+	u64 serialno;
+
+	/* Read serial number from vendor storage part */
+	memset(serialno_str, 0, VENDOR_SN_MAX);
+#ifdef CONFIG_ROCKCHIP_VENDOR_PARTITION
+	ret = vendor_storage_read(VENDOR_SN_ID, serialno_str, (VENDOR_SN_MAX-1));
+	if (ret > 0) {
+		env_set("serial#", serialno_str);
+	} else {
+#endif
+#ifdef CONFIG_ROCKCHIP_EFUSE
+		struct udevice *dev;
+
+		/* retrieve the device */
+		ret = uclass_get_device_by_driver(UCLASS_MISC,
+						  DM_GET_DRIVER(rockchip_efuse), &dev);
+		if (ret) {
+			printf("%s: could not find efuse device\n", __func__);
+			return ret;
+		}
+		/* read the cpu_id range from the efuses */
+		ret = misc_read(dev, CPUID_OFF, &cpuid, sizeof(cpuid));
+		if (ret) {
+			printf("%s: reading cpuid from the efuses failed\n", __func__);
+			return ret;
+		}
+#else
+		/* generate random cpuid */
+		for (i = 0; i < CPUID_LEN; i++) {
+			cpuid[i] = (u8)(rand());
+		}
+#endif
+		/* Generate the serial number based on CPU ID */
+		for (i = 0; i < 8; i++) {
+			low[i] = cpuid[1 + (i << 1)];
+			high[i] = cpuid[i << 1];
+		}
+		serialno = crc32_no_comp(0, low, 8);
+		serialno |= (u64)crc32_no_comp(serialno, high, 8) << 32;
+		snprintf(serialno_str, sizeof(serialno_str), "%llx", serialno);
+
+		env_set("serial#", serialno_str);
+#ifdef CONFIG_ROCKCHIP_VENDOR_PARTITION
+	}
+#endif
+	return ret;
+}
 
 #if defined(CONFIG_USB_FUNCTION_FASTBOOT)
 int fb_set_reboot_flag(void)
@@ -97,6 +160,7 @@ int board_late_init(void)
 #ifdef CONFIG_DRM_ROCKCHIP
 	rockchip_show_logo();
 #endif
+	rockchip_set_serialno();
 
 	return rk_board_late_init();
 }
