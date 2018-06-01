@@ -349,5 +349,5 @@ obj-$(CONFIG_CMD_WATCHDOG) += cmd_watchdog.o
 obj-$(CONFIG_CMD_VIU_PROBE) +=cmd_viuprobe.o
 obj-$(CONFIG_CMD_AML_MTEST) += cmd_testsmpcache.o
 obj-$(CONFIG_AML_ANTIROLLBACK) += anti-rollback.o
-
+obj-$(CONFIG_AML_SUPPORT_TLV) += aml_tlv.o
 CFLAGS_env_embedded.o := -Wa,--no-warn -DENV_CRC=$(shell tools/envcrc 2>/dev/null)

@@ -594,5 +594,11 @@
 #endif
 #endif
 
+//to support TLV which can support to transfer info from BL2 to BL3X
+//#define CONFIG_AML_SUPPORT_TLV
+
+//DDR address to contain info from BL2 to BL3X
+//#define  AML_BL2_TMASTER_DDR_ADDR  (0x3000000)
+
 #endif
 

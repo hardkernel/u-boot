@@ -297,8 +297,7 @@ typedef struct pll_set{
 	unsigned long     lCustomerID;
 	unsigned short    debug_mode;
 	unsigned short    rsv1;
-	unsigned short    rsv2;
-	unsigned short    rsv3;
+	unsigned int      nCFGTAddr;
 	/* align 8Byte */
 
 	unsigned int      sys_pll_cntl[8];

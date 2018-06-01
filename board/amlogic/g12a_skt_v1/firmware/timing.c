@@ -447,6 +447,11 @@ pll_set_t __pll_setting = {
 	.ddr_clk_debug			= CONFIG_DDR_CLK_DEBUG,
 	.cpu_clk_debug			= CONFIG_CPU_CLK_DEBUG,
 #endif
+
+#ifdef CONFIG_AML_SUPPORT_TLV
+	.nCFGTAddr              = AML_BL2_TMASTER_DDR_ADDR,
+#endif
+
 };
 
 ddr_reg_t __ddr_reg[] = {
