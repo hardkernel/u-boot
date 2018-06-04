@@ -58,6 +58,13 @@ static u32 pll_mode_mask[PLL_COUNT] = {
 	VPLL1_MODE_MASK
 };
 
+static ulong rk3308_bus_set_clk(struct rk3308_clk_priv *priv, ulong clk_id,
+				ulong hz);
+static ulong rk3308_peri_set_clk(struct rk3308_clk_priv *priv, ulong clk_id,
+				 ulong hz);
+static ulong rk3308_audio_set_clk(struct rk3308_clk_priv *priv,
+				  ulong clk_id, ulong hz);
+
 static const struct pll_rate_table *get_pll_settings(unsigned long rate)
 {
 	unsigned int rate_count = ARRAY_SIZE(rk3308_pll_rates);
@@ -200,8 +207,7 @@ static void rkclk_init(struct udevice *dev)
 {
 	struct rk3308_clk_priv *priv = dev_get_priv(dev);
 	struct rk3308_cru *cru = priv->cru;
-
-	u32 aclk_div, hclk_div, pclk_div;
+	u32 aclk_div, pclk_div;
 
 	/* init pll */
 	if (rkclk_set_pll(priv, APLL, APLL_HZ))
@@ -223,41 +229,20 @@ static void rkclk_init(struct udevice *dev)
 		     CORE_CLK_PLL_SEL_APLL << CORE_CLK_PLL_SEL_SHIFT |
 		     0 << CORE_DIV_CON_SHIFT);
 
-	/*
-	 * select dpll as pd_bus bus clock source and
-	 * set up dependent divisors for PCLK/HCLK and ACLK clocks.
-	 */
 	priv->dpll_hz = rkclk_pll_get_rate(priv, DPLL);
-	aclk_div = priv->dpll_hz / BUS_ACLK_HZ - 1;
-	hclk_div = priv->dpll_hz / BUS_HCLK_HZ - 1;
-	pclk_div = priv->dpll_hz / BUS_PCLK_HZ - 1;
-	rk_clrsetreg(&cru->clksel_con[5],
-		     BUS_PLL_SEL_MASK | BUS_ACLK_DIV_MASK,
-		     BUS_PLL_SEL_DPLL << BUS_PLL_SEL_SHIFT |
-		     aclk_div << BUS_ACLK_DIV_SHIFT);
-	rk_clrsetreg(&cru->clksel_con[6],
-		     BUS_PCLK_DIV_MASK | BUS_HCLK_DIV_MASK,
-		     pclk_div << BUS_PCLK_DIV_SHIFT |
-		     hclk_div << BUS_HCLK_DIV_SHIFT);
-
-	/*
-	 * select dpll as pd_peri bus clock source and
-	 * set up dependent divisors for PCLK/HCLK and ACLK clocks.
-	 */
-	aclk_div = priv->dpll_hz / PERI_ACLK_HZ - 1;
-	hclk_div = priv->dpll_hz / PERI_HCLK_HZ - 1;
-	pclk_div = priv->dpll_hz / PERI_PCLK_HZ - 1;
-	rk_clrsetreg(&cru->clksel_con[36],
-		     PERI_PLL_SEL_MASK | PERI_ACLK_DIV_MASK,
-		     BUS_PLL_SEL_DPLL << PERI_PLL_SEL_SHIFT |
-		     aclk_div << PERI_ACLK_DIV_SHIFT);
-	rk_clrsetreg(&cru->clksel_con[37],
-		     PERI_PCLK_DIV_MASK | PERI_HCLK_DIV_MASK,
-		     pclk_div << PERI_PCLK_DIV_SHIFT |
-		     hclk_div << PERI_HCLK_DIV_SHIFT);
-
 	priv->vpll0_hz = rkclk_pll_get_rate(priv, VPLL0);
 	priv->vpll1_hz = rkclk_pll_get_rate(priv, VPLL1);
+
+	rk3308_bus_set_clk(priv, ACLK_BUS, BUS_ACLK_HZ);
+	rk3308_bus_set_clk(priv, HCLK_BUS, BUS_HCLK_HZ);
+	rk3308_bus_set_clk(priv, PCLK_BUS, BUS_PCLK_HZ);
+
+	rk3308_peri_set_clk(priv, ACLK_PERI, PERI_ACLK_HZ);
+	rk3308_peri_set_clk(priv, HCLK_PERI, PERI_HCLK_HZ);
+	rk3308_peri_set_clk(priv, PCLK_PERI, PERI_PCLK_HZ);
+
+	rk3308_audio_set_clk(priv, HCLK_AUDIO, AUDIO_HCLK_HZ);
+	rk3308_audio_set_clk(priv, PCLK_AUDIO, AUDIO_PCLK_HZ);
 }
 
 static ulong rk3308_i2c_get_clk(struct clk *clk)
@@ -605,6 +590,187 @@ static ulong rk3308_vop_set_clk(struct clk *clk, ulong hz)
 	return rk3308_vop_get_clk(clk);
 }
 
+static ulong rk3308_bus_get_clk(struct rk3308_clk_priv *priv, ulong clk_id)
+{
+	struct rk3308_cru *cru = priv->cru;
+	u32 div, con, parent = priv->dpll_hz;
+
+	switch (clk_id) {
+	case ACLK_BUS:
+		con = readl(&cru->clksel_con[5]);
+		div = (con & BUS_ACLK_DIV_MASK) >> BUS_ACLK_DIV_SHIFT;
+		break;
+	case HCLK_BUS:
+		con = readl(&cru->clksel_con[6]);
+		div = (con & BUS_HCLK_DIV_MASK) >> BUS_HCLK_DIV_SHIFT;
+		break;
+	case PCLK_BUS:
+		con = readl(&cru->clksel_con[6]);
+		div = (con & BUS_PCLK_DIV_MASK) >> BUS_PCLK_DIV_SHIFT;
+		break;
+	default:
+		return -ENOENT;
+	}
+
+	return DIV_TO_RATE(parent, div);
+}
+
+static ulong rk3308_bus_set_clk(struct rk3308_clk_priv *priv, ulong clk_id,
+				ulong hz)
+{
+	struct rk3308_cru *cru = priv->cru;
+	int src_clk_div;
+
+	src_clk_div = DIV_ROUND_UP(priv->dpll_hz, hz);
+	assert(src_clk_div - 1 < 31);
+
+	/*
+	 * select dpll as pd_bus bus clock source and
+	 * set up dependent divisors for PCLK/HCLK and ACLK clocks.
+	 */
+	switch (clk_id) {
+	case ACLK_BUS:
+		rk_clrsetreg(&cru->clksel_con[5],
+			     BUS_PLL_SEL_MASK | BUS_ACLK_DIV_MASK,
+			     BUS_PLL_SEL_DPLL << BUS_PLL_SEL_SHIFT |
+			     (src_clk_div - 1) << BUS_ACLK_DIV_SHIFT);
+		break;
+	case HCLK_BUS:
+		rk_clrsetreg(&cru->clksel_con[6],
+			     BUS_HCLK_DIV_MASK,
+			     (src_clk_div - 1) << BUS_HCLK_DIV_SHIFT);
+		break;
+	case PCLK_BUS:
+		rk_clrsetreg(&cru->clksel_con[6],
+			     BUS_PCLK_DIV_MASK,
+			     (src_clk_div - 1) << BUS_PCLK_DIV_SHIFT);
+		break;
+	default:
+		printf("do not support this bus freq\n");
+		return -EINVAL;
+	}
+
+	return rk3308_bus_get_clk(priv, clk_id);
+}
+
+static ulong rk3308_peri_get_clk(struct rk3308_clk_priv *priv, ulong clk_id)
+{
+	struct rk3308_cru *cru = priv->cru;
+	u32 div, con, parent = priv->dpll_hz;
+
+	switch (clk_id) {
+	case ACLK_PERI:
+		con = readl(&cru->clksel_con[36]);
+		div = (con & PERI_ACLK_DIV_MASK) >> PERI_ACLK_DIV_SHIFT;
+		break;
+	case HCLK_PERI:
+		con = readl(&cru->clksel_con[37]);
+		div = (con & PERI_HCLK_DIV_MASK) >> PERI_HCLK_DIV_SHIFT;
+		break;
+	case PCLK_PERI:
+		con = readl(&cru->clksel_con[37]);
+		div = (con & PERI_PCLK_DIV_MASK) >> PERI_PCLK_DIV_SHIFT;
+		break;
+	default:
+		return -ENOENT;
+	}
+
+	return DIV_TO_RATE(parent, div);
+}
+
+static ulong rk3308_peri_set_clk(struct rk3308_clk_priv *priv, ulong clk_id,
+				 ulong hz)
+{
+	struct rk3308_cru *cru = priv->cru;
+	int src_clk_div;
+
+	src_clk_div = DIV_ROUND_UP(priv->dpll_hz, hz);
+	assert(src_clk_div - 1 < 31);
+
+	/*
+	 * select dpll as pd_peri bus clock source and
+	 * set up dependent divisors for PCLK/HCLK and ACLK clocks.
+	 */
+	switch (clk_id) {
+	case ACLK_PERI:
+		rk_clrsetreg(&cru->clksel_con[36],
+			     PERI_PLL_SEL_MASK | PERI_ACLK_DIV_MASK,
+			     PERI_PLL_DPLL << PERI_PLL_SEL_SHIFT |
+			     (src_clk_div - 1) << PERI_ACLK_DIV_SHIFT);
+		break;
+	case HCLK_PERI:
+		rk_clrsetreg(&cru->clksel_con[37],
+			     PERI_HCLK_DIV_MASK,
+			     (src_clk_div - 1) << PERI_HCLK_DIV_SHIFT);
+		break;
+	case PCLK_PERI:
+		rk_clrsetreg(&cru->clksel_con[37],
+			     PERI_PCLK_DIV_MASK,
+			     (src_clk_div - 1) << PERI_PCLK_DIV_SHIFT);
+		break;
+	default:
+		printf("do not support this peri freq\n");
+		return -EINVAL;
+	}
+
+	return rk3308_peri_get_clk(priv, clk_id);
+}
+
+static ulong rk3308_audio_get_clk(struct rk3308_clk_priv *priv, ulong clk_id)
+{
+	struct rk3308_cru *cru = priv->cru;
+	u32 div, con, parent = priv->vpll0_hz;
+
+	switch (clk_id) {
+	case HCLK_AUDIO:
+		con = readl(&cru->clksel_con[45]);
+		div = (con & AUDIO_HCLK_DIV_MASK) >> AUDIO_HCLK_DIV_SHIFT;
+		break;
+	case PCLK_AUDIO:
+		con = readl(&cru->clksel_con[45]);
+		div = (con & AUDIO_PCLK_DIV_MASK) >> AUDIO_PCLK_DIV_SHIFT;
+		break;
+	default:
+		return -ENOENT;
+	}
+
+	return DIV_TO_RATE(parent, div);
+}
+
+static ulong rk3308_audio_set_clk(struct rk3308_clk_priv *priv, ulong clk_id,
+				  ulong hz)
+{
+	struct rk3308_cru *cru = priv->cru;
+	int src_clk_div;
+
+	src_clk_div = DIV_ROUND_UP(priv->vpll0_hz, hz);
+	assert(src_clk_div - 1 < 31);
+
+	/*
+	 * select vpll0 as audio bus clock source and
+	 * set up dependent divisors for HCLK and PCLK clocks.
+	 */
+	switch (clk_id) {
+	case HCLK_AUDIO:
+		rk_clrsetreg(&cru->clksel_con[45],
+			     AUDIO_PLL_SEL_MASK | AUDIO_HCLK_DIV_MASK,
+			     AUDIO_PLL_VPLL0 << AUDIO_PLL_SEL_SHIFT |
+			     (src_clk_div - 1) << AUDIO_HCLK_DIV_SHIFT);
+		break;
+	case PCLK_AUDIO:
+		rk_clrsetreg(&cru->clksel_con[45],
+			     AUDIO_PLL_SEL_MASK | AUDIO_PCLK_DIV_MASK,
+			     AUDIO_PLL_VPLL0 << AUDIO_PLL_SEL_SHIFT |
+			     (src_clk_div - 1) << AUDIO_PCLK_DIV_SHIFT);
+		break;
+	default:
+		printf("do not support this audio freq\n");
+		return -EINVAL;
+	}
+
+	return rk3308_peri_get_clk(priv, clk_id);
+}
+
 static ulong rk3308_clk_get_rate(struct clk *clk)
 {
 	struct rk3308_clk_priv *priv = dev_get_priv(clk->dev);
@@ -651,6 +817,20 @@ static ulong rk3308_clk_get_rate(struct clk *clk)
 	case DCLK_VOP:
 		rate = rk3308_vop_get_clk(clk);
 		break;
+	case ACLK_BUS:
+	case HCLK_BUS:
+	case PCLK_BUS:
+		rate = rk3308_bus_get_clk(priv, clk->id);
+		break;
+	case ACLK_PERI:
+	case HCLK_PERI:
+	case PCLK_PERI:
+		rate = rk3308_peri_get_clk(priv, clk->id);
+		break;
+	case HCLK_AUDIO:
+	case PCLK_AUDIO:
+		rate = rk3308_audio_get_clk(priv, clk->id);
+		break;
 	default:
 		return -ENOENT;
 	}
@@ -693,6 +873,20 @@ static ulong rk3308_clk_set_rate(struct clk *clk, ulong rate)
 		break;
 	case DCLK_VOP:
 		ret = rk3308_vop_set_clk(clk, rate);
+		break;
+	case ACLK_BUS:
+	case HCLK_BUS:
+	case PCLK_BUS:
+		rate = rk3308_bus_set_clk(priv, clk->id, rate);
+		break;
+	case ACLK_PERI:
+	case HCLK_PERI:
+	case PCLK_PERI:
+		rate = rk3308_peri_set_clk(priv, clk->id, rate);
+		break;
+	case HCLK_AUDIO:
+	case PCLK_AUDIO:
+		rate = rk3308_audio_set_clk(priv, clk->id, rate);
 		break;
 	default:
 		return -ENOENT;
