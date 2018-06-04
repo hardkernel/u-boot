@@ -8,6 +8,7 @@
 #include <dm.h>
 #include <misc.h>
 #include <time.h>
+#include <asm/gpio.h>
 #include <asm/io.h>
 #include <asm/setup.h>
 #include <asm/arch/uart.h>
@@ -102,3 +103,22 @@ void get_board_serial(struct tag_serialnr *serialnr)
 	serialnr->low = (u32)(serial & 0xffffffff);
 }
 #endif
+
+#define FASTBOOT_KEY_GPIO 43 /*GPIO1B3*/
+
+int fastboot_key_pressed(void)
+{
+	gpio_request(FASTBOOT_KEY_GPIO, "fastboot_key");
+	gpio_direction_input(FASTBOOT_KEY_GPIO);
+	return !gpio_get_value(FASTBOOT_KEY_GPIO);
+}
+
+int rk_board_late_init(void)
+{
+	if (fastboot_key_pressed()) {
+		printf("enter fastboot!\n");
+		env_set("preboot", "setenv preboot; fastboot usb0");
+	}
+
+	return 0;
+}
