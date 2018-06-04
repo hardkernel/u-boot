@@ -650,7 +650,7 @@ static const struct rockchip_usb2phy_cfg rv1108_phy_cfgs[] = {
 		.clkout_ctl	= { 0x108, 4, 4, 1, 0 },
 		.port_cfgs	= {
 			[USB2PHY_PORT_OTG] = {
-				.phy_sus	= { 0x0100, 8, 0, 0, 0x1d1 },
+				.phy_sus	= { 0x0ffa0100, 8, 0, 0, 0x1d1 },
 				.bvalid_det_en	= { 0x0680, 3, 3, 0, 1 },
 				.bvalid_det_st	= { 0x0690, 3, 3, 0, 1 },
 				.bvalid_det_clr = { 0x06a0, 3, 3, 0, 1 },
@@ -661,7 +661,7 @@ static const struct rockchip_usb2phy_cfg rv1108_phy_cfgs[] = {
 				.utmi_ls	= { 0x0804, 13, 12, 0, 1 },
 			},
 			[USB2PHY_PORT_HOST] = {
-				.phy_sus	= { 0x0104, 8, 0, 0, 0x1d1 },
+				.phy_sus	= { 0x0ffa0104, 8, 0, 0, 0x1d1 },
 				.ls_det_en	= { 0x0680, 4, 4, 0, 1 },
 				.ls_det_st	= { 0x0690, 4, 4, 0, 1 },
 				.ls_det_clr	= { 0x06a0, 4, 4, 0, 1 },
@@ -670,16 +670,16 @@ static const struct rockchip_usb2phy_cfg rv1108_phy_cfgs[] = {
 			}
 		},
 		.chg_det = {
-			.opmode		= { 0x0100, 3, 0, 5, 1 },
+			.opmode		= { 0x0ffa0100, 3, 0, 5, 1 },
 			.cp_det		= { 0x0804, 1, 1, 0, 1 },
 			.dcp_det	= { 0x0804, 0, 0, 0, 1 },
 			.dp_det		= { 0x0804, 2, 2, 0, 1 },
-			.idm_sink_en	= { 0x0108, 8, 8, 0, 1 },
-			.idp_sink_en	= { 0x0108, 7, 7, 0, 1 },
-			.idp_src_en	= { 0x0108, 9, 9, 0, 1 },
-			.rdm_pdwn_en	= { 0x0108, 10, 10, 0, 1 },
-			.vdm_src_en	= { 0x0108, 12, 12, 0, 1 },
-			.vdp_src_en	= { 0x0108, 11, 11, 0, 1 },
+			.idm_sink_en	= { 0x0ffa0108, 8, 8, 0, 1 },
+			.idp_sink_en	= { 0x0ffa0108, 7, 7, 0, 1 },
+			.idp_src_en	= { 0x0ffa0108, 9, 9, 0, 1 },
+			.rdm_pdwn_en	= { 0x0ffa0108, 10, 10, 0, 1 },
+			.vdm_src_en	= { 0x0ffa0108, 12, 12, 0, 1 },
+			.vdp_src_en	= { 0x0ffa0108, 11, 11, 0, 1 },
 		},
 	},
 	{ /* sentinel */ }
