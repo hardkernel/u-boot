@@ -189,7 +189,7 @@ static int rkusb_do_read_flash_info(struct fsg_common *common,
 				    struct fsg_buffhd *bh)
 {
 	u8 *buf = (u8 *)bh->buf;
-	u32 len = common->data_size;
+	u32 len = sizeof(struct rk_flash_info);
 	struct rk_flash_info finfo = {
 		.block_size = 1024,
 		.ecc_bits = 0,
@@ -208,6 +208,8 @@ static int rkusb_do_read_flash_info(struct fsg_common *common,
 
 	/* Set data xfer size */
 	common->residue = common->data_size_from_cmnd = len;
+        /* legacy upgrade_tool does not set correct transfer size */
+	common->data_size = len;
 
 	return len;
 }
@@ -292,6 +294,31 @@ static int rkusb_do_read_capacity(struct fsg_common *common,
 	return len;
 }
 
+static void rkusb_fixup_cbwcb(struct fsg_common *common,
+			      struct fsg_buffhd *bh)
+{
+	struct usb_request      *req = bh->outreq;
+	struct fsg_bulk_cb_wrap *cbw = req->buf;
+
+	/* FIXME cbw.DataTransferLength was not set by Upgrade Tool */
+	common->data_size = le32_to_cpu(cbw->DataTransferLength);
+	if (common->data_size == 0) {
+		common->data_size =
+		get_unaligned_be16(&common->cmnd[7]) << 9;
+		printf("Trasfer Length NOT set, please use new version tool\n");
+		debug("%s %d, cmnd1 %x\n", __func__,
+		      get_unaligned_be16(&common->cmnd[7]),
+		      get_unaligned_be16(&common->cmnd[1]));
+	}
+	if (cbw->Flags & USB_BULK_IN_FLAG)
+		common->data_dir = DATA_DIR_TO_HOST;
+	else
+		common->data_dir = DATA_DIR_FROM_HOST;
+
+	/* Not support */
+	common->cmnd[1] = 0;
+}
+
 static int rkusb_cmd_process(struct fsg_common *common,
 			     struct fsg_buffhd *bh, int *reply)
 {
@@ -301,6 +328,7 @@ static int rkusb_cmd_process(struct fsg_common *common,
 
 	dump_cbw(cbw);
 
+	rkusb_fixup_cbwcb(common, bh);
 	if (rkusb_check_lun(common)) {
 		*reply = -EINVAL;
 		return RKUSB_RC_ERROR;
