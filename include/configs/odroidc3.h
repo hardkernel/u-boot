@@ -118,7 +118,7 @@
             "\0"\
         "storeargs="\
             "setenv bootargs ${initargs} logo=${display_layer},loaded,${fb_addr} vout=${outputmode},enable panel_type=${panel_type} hdmimode=${hdmimode} cvbsmode=${cvbsmode} osd_reverse=${osd_reverse} video_reverse=${video_reverse} androidboot.selinux=${EnableSelinux} androidboot.firstboot=${firstboot} jtag=${jtag}; "\
-	"setenv bootargs ${bootargs} androidboot.hardware=amlogic;"\
+	"setenv bootargs ${bootargs} androidboot.hardware=odroidc3;"\
             "run cmdline_keys;"\
             "setenv bootargs ${bootargs} androidboot.slot_suffix=${active_slot};"\
             "\0"\
@@ -427,7 +427,7 @@
 #define CONFIG_USBDOWNLOAD_GADGET 1
 #define CONFIG_SYS_CACHELINE_SIZE 64
 #define CONFIG_FASTBOOT_MAX_DOWN_SIZE	0x8000000
-#define CONFIG_DEVICE_PRODUCT	"u200"
+#define CONFIG_DEVICE_PRODUCT	"odroidc3"
 
 /* UBOOT Facotry usb/sdcard burning config */
 #define CONFIG_AML_V2_FACTORY_BURN              1       /* support facotry usb burning */
