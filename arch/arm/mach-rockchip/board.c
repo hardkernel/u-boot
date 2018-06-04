@@ -101,14 +101,6 @@ int fb_set_reboot_flag(void)
 
 	return 0;
 }
-
-#define FASTBOOT_KEY_GPIO 43 /* GPIO1_B3 */
-static int fastboot_key_pressed(void)
-{
-	gpio_request(FASTBOOT_KEY_GPIO, "fastboot_key");
-	gpio_direction_input(FASTBOOT_KEY_GPIO);
-	return !gpio_get_value(FASTBOOT_KEY_GPIO);
-}
 #endif
 
 #ifdef CONFIG_DM_CHARGE_DISPLAY
@@ -142,13 +134,6 @@ __weak int rk_board_late_init(void)
 
 int board_late_init(void)
 {
-#if defined(CONFIG_USB_FUNCTION_FASTBOOT)
-	if (fastboot_key_pressed()) {
-		printf("fastboot key pressed!\n");
-		fb_set_reboot_flag();
-	}
-#endif
-
 #if (CONFIG_ROCKCHIP_BOOT_MODE_REG > 0)
 	setup_boot_mode();
 #endif
