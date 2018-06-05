@@ -160,7 +160,7 @@ static int init_resource_list(struct resource_img_hdr *hdr)
 	int ret;
 	int e_num;
 	int offset = 0;
-	int mode = 0;
+	int resource_found = 0;
 	struct blk_desc *dev_desc;
 	disk_partition_t part_info;
 #ifdef CONFIG_ANDROID_BOOT_IMAGE
@@ -188,8 +188,7 @@ static int init_resource_list(struct resource_img_hdr *hdr)
 
 #ifdef CONFIG_ANDROID_BOOT_IMAGE
 	/* Get boot mode from misc */
-	mode = rockchip_get_boot_mode();
-	if (mode == BOOT_MODE_RECOVERY)
+	if (rockchip_get_boot_mode() == BOOT_MODE_RECOVERY)
 		boot_partname = PART_RECOVERY;
 	/* Read boot/recovery and chenc if this is an AOSP img */
 #ifdef CONFIG_ANDROID_AB
@@ -206,7 +205,6 @@ static int init_resource_list(struct resource_img_hdr *hdr)
 	if (ret < 0) {
 		printf("fail to get %s part\n", boot_partname);
 		/* RKIMG can support part table without 'boot' */
-		mode = 0;
 		goto next;
 	}
 	andr_hdr = (void *)hdr;
@@ -225,13 +223,12 @@ static int init_resource_list(struct resource_img_hdr *hdr)
 		offset += ALIGN(andr_hdr->kernel_size, andr_hdr->page_size);
 		offset += ALIGN(andr_hdr->ramdisk_size, andr_hdr->page_size);
 		offset = offset / RK_BLK_SIZE;
-	} else {
-		/* Set mode to 0 in for recovery is not valid AOSP img */
-		mode = 0;
+
+		resource_found = 1;
 	}
 next:
 #endif
-	if (!mode) {
+	if (!resource_found) {
 		/* Read resource from Rockchip Resource partition */
 		ret = part_get_info_by_name(dev_desc, PART_RESOURCE,
 					 &part_info);
