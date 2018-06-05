@@ -11,16 +11,17 @@
  * from hush: simple_itoa() was lifted from boa-0.93.15
  */
 
+#include <common.h>
+#include <charset.h>
+#include <efi_loader.h>
+#include <div64.h>
+#include <hexdump.h>
+#include <uuid.h>
 #include <stdarg.h>
 #include <linux/types.h>
 #include <linux/string.h>
 #include <linux/ctype.h>
 
-#include <common.h>
-#include <charset.h>
-#include <uuid.h>
-
-#include <div64.h>
 #define noinline __attribute__((noinline))
 
 /* we use this so that we can do without the ctype library */
@@ -293,17 +294,6 @@ static char *string16(char *buf, char *end, u16 *s, int field_width,
 }
 
 #ifdef CONFIG_CMD_NET
-static const char hex_asc[] = "0123456789abcdef";
-#define hex_asc_lo(x)	hex_asc[((x) & 0x0f)]
-#define hex_asc_hi(x)	hex_asc[((x) & 0xf0) >> 4]
-
-static inline char *pack_hex_byte(char *buf, u8 byte)
-{
-	*buf++ = hex_asc_hi(byte);
-	*buf++ = hex_asc_lo(byte);
-	return buf;
-}
-
 static char *mac_address_string(char *buf, char *end, u8 *addr, int field_width,
 				int precision, int flags)
 {
@@ -313,7 +303,7 @@ static char *mac_address_string(char *buf, char *end, u8 *addr, int field_width,
 	int i;
 
 	for (i = 0; i < 6; i++) {
-		p = pack_hex_byte(p, addr[i]);
+		p = hex_byte_pack(p, addr[i]);
 		if (!(flags & SPECIAL) && i != 5)
 			*p++ = ':';
 	}
@@ -332,8 +322,8 @@ static char *ip6_addr_string(char *buf, char *end, u8 *addr, int field_width,
 	int i;
 
 	for (i = 0; i < 8; i++) {
-		p = pack_hex_byte(p, addr[2 * i]);
-		p = pack_hex_byte(p, addr[2 * i + 1]);
+		p = hex_byte_pack(p, addr[2 * i]);
+		p = hex_byte_pack(p, addr[2 * i + 1]);
 		if (!(flags & SPECIAL) && i != 7)
 			*p++ = ':';
 	}

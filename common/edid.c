@@ -18,6 +18,7 @@
 #include <edid.h>
 #include <errno.h>
 #include <fdtdec.h>
+#include <hexdump.h>
 #include <malloc.h>
 #include <linux/compat.h>
 #include <linux/ctype.h>
@@ -4917,7 +4918,7 @@ bad:
 			debug("EDID block is all zeroes\n");
 		} else {
 			debug("Raw EDID:\n");
-			print_hex_dump(KERN_ERR, " \t", DUMP_PREFIX_NONE, 16, 1,
+			print_hex_dump("", DUMP_PREFIX_NONE, 16, 1,
 				       raw_edid, EDID_SIZE, false);
 		}
 	}
