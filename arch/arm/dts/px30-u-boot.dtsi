@@ -38,6 +38,10 @@
 	u-boot,dm-pre-reloc;
 };
 
+&pmucru {
+	u-boot,dm-pre-reloc;
+};
+
 &gpio0 {
 	u-boot,dm-pre-reloc;
 	status = "disabled";
