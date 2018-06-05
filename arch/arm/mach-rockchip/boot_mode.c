@@ -87,12 +87,17 @@ void devtype_num_envset(void)
 
 void rockchip_dnl_mode_check(void)
 {
-	if (rockchip_dnl_key_pressed() && rockchip_u2phy_vbus_detect()) {
-		printf("download key pressed, entering download mode...\n");
-		/* If failed, we fall back to bootrom download mode */
-		run_command_list("rockusb 0 ${devtype} ${devnum}", -1, 0);
-		set_back_to_bootrom_dnl_flag();
-		do_reset(NULL, 0, 0, NULL);
+	if (rockchip_dnl_key_pressed()) {
+		if (rockchip_u2phy_vbus_detect()) {
+			printf("download key pressed, entering download mode...\n");
+			/* If failed, we fall back to bootrom download mode */
+			run_command_list("rockusb 0 ${devtype} ${devnum}", -1, 0);
+			set_back_to_bootrom_dnl_flag();
+			do_reset(NULL, 0, 0, NULL);
+		} else {
+			printf("recovery key pressed, entering recovery mode!\n");
+			env_set("reboot_mode", "recovery");
+		}
 	}
 }
 
