@@ -274,6 +274,18 @@ void board_run_recovery_wipe_data(void)
 	board_run_recovery();
 }
 
+/*
+ * Generally, we have 3 ways to get reboot mode:
+ *
+ * 1. from bootloader_message which is defined in MISC partition;
+ * 2. from CONFIG_ROCKCHIP_BOOT_MODE_REG which supports "reboot xxx" commands;
+ * 3. from env "reboot_mode" which is added by U-Boot code(currently only when
+ *    recovery key pressed);
+ *
+ * 1st and 2nd cases are static determined at system start and we check it once,
+ * while 3th case is dynamically added by U-Boot code, so we have to check it
+ * everytime.
+ */
 int rockchip_get_boot_mode(void)
 {
 	struct blk_desc *dev_desc;
@@ -283,6 +295,16 @@ int rockchip_get_boot_mode(void)
 		   * RK_BLK_SIZE;
 	int ret;
 	uint32_t reg_boot_mode;
+	char *env_reboot_mode;
+
+	/*
+	 * Here, we mainly check for:
+	 * In rockchip_dnl_mode_check(), that recovery key is pressed without
+	 * USB attach will do env_set("reboot_mode", "recovery");
+	 */
+	env_reboot_mode = env_get("reboot_mode");
+	if (env_reboot_mode && !strcmp(env_reboot_mode, "recovery"))
+		boot_mode = BOOT_MODE_RECOVERY;
 
 	if (boot_mode != -1)
 		return boot_mode;
