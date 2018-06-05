@@ -212,6 +212,10 @@ int vendor_storage_init(void)
 	/* Invalid bootdev type */
 	if (ret)
 		return ret;
+
+	/* Initialize */
+	bootdev_type = dev_desc->if_type;
+
 	/* Always use, no need to release */
 	buffer = (u8 *)malloc(size);
 	if (!buffer) {
@@ -228,8 +232,8 @@ int vendor_storage_init(void)
 	/* Find valid and up-to-date one from (vendor0 - vendor3) */
 	for (i = 0; i < VENDOR_PART_NUM; i++) {
 		ret = vendor_ops((u8 *)vendor_info.hdr, part_size * i, part_size, 0);
-		if (ret < 0)
-			return ret;
+		if (ret != part_size)
+			return -EIO;
 
 		if ((vendor_info.hdr->tag == VENDOR_TAG) &&
 		    (*(vendor_info.version2) == vendor_info.hdr->version)) {
@@ -245,8 +249,11 @@ int vendor_storage_init(void)
 		 * Keep vendor_info the same as the largest
 		 * version of vendor
 		 */
-		if (max_index != (VENDOR_PART_NUM - 1))
+		if (max_index != (VENDOR_PART_NUM - 1)) {
 			ret = vendor_ops((u8 *)vendor_info.hdr, part_size * max_index, part_size, 0);
+			if (ret != part_size)
+				return -EIO;
+		}
 	} else {
 		debug("[Vednor INFO]:Reset vendor info...\n");
 		memset((u8 *)vendor_info.hdr, 0, size);
@@ -268,6 +275,17 @@ int vendor_storage_init(void)
 	return ret;
 }
 
+/*
+ * @id: item id, first 4 id is occupied:
+ *	VENDOR_SN_ID
+ *	VENDOR_WIFI_MAC_ID
+ *	VENDOR_LAN_MAC_ID
+ *	VENDOR_BLUETOOTH_ID
+ * @pbuf: read data buffer;
+ * @size: read bytes;
+ *
+ * return: bytes equal to @size is success, other fail;
+ */
 int vendor_storage_read(u16 id, void *pbuf, u16 size)
 {
 	int ret = 0;
@@ -299,9 +317,20 @@ int vendor_storage_read(u16 id, void *pbuf, u16 size)
 	return -EINVAL;
 }
 
+/*
+ * @id: item id, first 4 id is occupied:
+ *	VENDOR_SN_ID
+ *	VENDOR_WIFI_MAC_ID
+ *	VENDOR_LAN_MAC_ID
+ *	VENDOR_BLUETOOTH_ID
+ * @pbuf: write data buffer;
+ * @size: write bytes;
+ *
+ * return: bytes equal to @size is success, other fail;
+ */
 int vendor_storage_write(u16 id, void *pbuf, u16 size)
 {
-	int ret = 0;
+	int cnt, ret = 0;
 	u32 i, next_index, align_size;
 	struct vendor_item *item;
 	u16 part_size, max_item_num, offset;
@@ -351,7 +380,8 @@ int vendor_storage_write(u16 id, void *pbuf, u16 size)
 			vendor_info.hdr->next_index++;
 			if (vendor_info.hdr->next_index >= VENDOR_PART_NUM)
 				vendor_info.hdr->next_index = 0;
-			return vendor_ops((u8 *)vendor_info.hdr, part_size * next_index, part_size, 1);
+			cnt = vendor_ops((u8 *)vendor_info.hdr, part_size * next_index, part_size, 1);
+			return (cnt == part_size) ? size : -EIO;
 		}
 	}
 	/*
@@ -376,7 +406,8 @@ int vendor_storage_write(u16 id, void *pbuf, u16 size)
 		if (vendor_info.hdr->next_index >= VENDOR_PART_NUM)
 			vendor_info.hdr->next_index = 0;
 
-		return vendor_ops((u8 *)vendor_info.hdr, part_size * next_index, part_size, 1);
+		cnt = vendor_ops((u8 *)vendor_info.hdr, part_size * next_index, part_size, 1);
+		return (cnt == part_size) ? size : -EIO;
 	}
 	debug("[Vednor ERROR]:Vendor has no space left!\n");
 
@@ -496,7 +527,7 @@ int vendor_storage_test(void)
 	for (id = 0; id < item_num; id++) {
 		memset(buffer, 0, size);
 		ret = vendor_storage_read(id, buffer, size);
-		if (ret != size) {
+		if (ret < 0) {
 			printf("[Vendor Test]:vendor read failed(id=%d)!\n", id);
 			free(buffer);
 			return ret;
