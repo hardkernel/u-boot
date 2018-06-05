@@ -124,7 +124,7 @@ static int vendor_ops(u8 *buffer, u32 addr, u32 n_sec, int write)
 		 * ----------------------------------------------------
 		 */
 		lba = EMMC_VENDOR_PART_OFFSET;
-		debug("[Vednor INFO]:VendorStorage offset address=0x%x\n", lba);
+		debug("[Vendor INFO]:VendorStorage offset address=0x%x\n", lba);
 		break;
 	case IF_TYPE_RKNAND:
 	case IF_TYPE_SPINOR:
@@ -139,17 +139,17 @@ static int vendor_ops(u8 *buffer, u32 addr, u32 n_sec, int write)
 		 * ----------------------------------------------------
 		 */
 		lba = FLASH_VENDOR_PART_OFFSET;
-		debug("[Vednor INFO]:VendorStorage offset address=0x%x\n", lba);
+		debug("[Vendor INFO]:VendorStorage offset address=0x%x\n", lba);
 		break;
 	default:
-		printf("[Vednor ERROR]:Boot device type is invalid!\n");
+		printf("[Vendor ERROR]:Boot device type is invalid!\n");
 		return -ENODEV;
 	}
 	if (write)
 		ret = blk_dwrite(dev_desc, lba + addr, n_sec, buffer);
 	else
 		ret = blk_dread(dev_desc, lba + addr, n_sec, buffer);
-	debug("[Vednor INFO]:op=%s, ret=%d\n", write ? "write" : "read", ret);
+	debug("[Vendor INFO]:op=%s, ret=%d\n", write ? "write" : "read", ret);
 
 	return ret;
 }
@@ -182,7 +182,7 @@ int vendor_storage_init(void)
 
 	dev_desc = rockchip_get_bootdev();
 	if (!dev_desc) {
-		printf("[Vednor ERROR]:Invalid boot device type(%d)\n",
+		printf("[Vendor ERROR]:Invalid boot device type(%d)\n",
 		       bootdev_type);
 		return -ENODEV;
 	}
@@ -205,7 +205,7 @@ int vendor_storage_init(void)
 		version2_offset = FLASH_VENDOR_VERSION2_OFFSET;
 		break;
 	default:
-		debug("[Vednor ERROR]:Boot device type is invalid!\n");
+		debug("[Vendor ERROR]:Boot device type is invalid!\n");
 		ret = -ENODEV;
 		break;
 	}
@@ -219,7 +219,7 @@ int vendor_storage_init(void)
 	/* Always use, no need to release */
 	buffer = (u8 *)malloc(size);
 	if (!buffer) {
-		printf("[Vednor ERROR]:Malloc failed!\n");
+		printf("[Vendor ERROR]:Malloc failed!\n");
 		return -ENOMEM;
 	}
 	/* Pointer initialization */
@@ -244,7 +244,7 @@ int vendor_storage_init(void)
 		}
 	}
 	if (max_ver) {
-		debug("[Vednor INFO]:max_ver=%d, vendor_id=%d.\n", max_ver, max_index);
+		debug("[Vendor INFO]:max_ver=%d, vendor_id=%d.\n", max_ver, max_index);
 		/*
 		 * Keep vendor_info the same as the largest
 		 * version of vendor
@@ -255,7 +255,7 @@ int vendor_storage_init(void)
 				return -EIO;
 		}
 	} else {
-		debug("[Vednor INFO]:Reset vendor info...\n");
+		debug("[Vendor INFO]:Reset vendor info...\n");
 		memset((u8 *)vendor_info.hdr, 0, size);
 		vendor_info.hdr->version = 1;
 		vendor_info.hdr->tag = VENDOR_TAG;
@@ -265,7 +265,7 @@ int vendor_storage_init(void)
 			- (u32)(size_t)vendor_info.data);
 		*(vendor_info.version2) = vendor_info.hdr->version;
 	}
-	debug("[Vednor INFO]:ret=%d.\n", ret);
+	debug("[Vendor INFO]:ret=%d.\n", ret);
 
 #ifdef VENDOR_STORAGE_TEST
 	if (vendor_storage_test())
@@ -303,7 +303,7 @@ int vendor_storage_read(u16 id, void *pbuf, u16 size)
 	item = vendor_info.item;
 	for (i = 0; i < vendor_info.hdr->item_num; i++) {
 		if ((item + i)->id == id) {
-			debug("[Vednor INFO]:Find the matching item, id=%d\n", id);
+			debug("[Vendor INFO]:Find the matching item, id=%d\n", id);
 			/* Correct the size value */
 			if (size > (item + i)->size)
 				size = (item + i)->size;
@@ -312,7 +312,7 @@ int vendor_storage_read(u16 id, void *pbuf, u16 size)
 			return size;
 		}
 	}
-	debug("[Vednor ERROR]:No matching item, id=%d\n", id);
+	debug("[Vendor ERROR]:No matching item, id=%d\n", id);
 
 	return -EINVAL;
 }
@@ -371,7 +371,7 @@ int vendor_storage_write(u16 id, void *pbuf, u16 size)
 	/* If item already exist, update the item data */
 	for (i = 0; i < vendor_info.hdr->item_num; i++) {
 		if ((item + i)->id == id) {
-			debug("[Vednor INFO]:Find the matching item, id=%d\n", id);
+			debug("[Vendor INFO]:Find the matching item, id=%d\n", id);
 			offset = (item + i)->offset;
 			memcpy((vendor_info.data + offset), pbuf, size);
 			(item + i)->size = size;
@@ -390,7 +390,7 @@ int vendor_storage_write(u16 id, void *pbuf, u16 size)
 	 */
 	if ((vendor_info.hdr->item_num < max_item_num) &&
 	    (vendor_info.hdr->free_size >= align_size)) {
-		debug("[Vednor INFO]:Create new Item, id=%d\n", id);
+		debug("[Vendor INFO]:Create new Item, id=%d\n", id);
 		item = vendor_info.item + vendor_info.hdr->item_num;
 		item->id = id;
 		item->offset = vendor_info.hdr->free_offset;
@@ -409,7 +409,7 @@ int vendor_storage_write(u16 id, void *pbuf, u16 size)
 		cnt = vendor_ops((u8 *)vendor_info.hdr, part_size * next_index, part_size, 1);
 		return (cnt == part_size) ? size : -EIO;
 	}
-	debug("[Vednor ERROR]:Vendor has no space left!\n");
+	debug("[Vendor ERROR]:Vendor has no space left!\n");
 
 	return -ENOMEM;
 }
