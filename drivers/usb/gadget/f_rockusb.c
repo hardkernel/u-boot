@@ -155,7 +155,7 @@ static int rkusb_do_read_flash_id(struct fsg_common *common,
 				  struct fsg_buffhd *bh)
 {
 	u8 *buf = (u8 *)bh->buf;
-	u32 len = common->data_size;
+	u32 len = 5;
 	enum if_type type = ums[common->lun].block_dev.if_type;
 
 	if (type == IF_TYPE_MMC)
@@ -167,6 +167,7 @@ static int rkusb_do_read_flash_id(struct fsg_common *common,
 
 	/* Set data xfer size */
 	common->residue = common->data_size_from_cmnd = len;
+	common->data_size = len;
 
 	return len;
 }
@@ -175,12 +176,13 @@ static int rkusb_do_test_bad_block(struct fsg_common *common,
 				   struct fsg_buffhd *bh)
 {
 	u8 *buf = (u8 *)bh->buf;
-	u32 len = common->data_size;
+	u32 len = 64;
 
 	memset((void *)&buf[0], 0, len);
 
 	/* Set data xfer size */
 	common->residue = common->data_size_from_cmnd = len;
+	common->data_size = len;
 
 	return len;
 }
@@ -387,9 +389,10 @@ static int rkusb_cmd_process(struct fsg_common *common,
 		rc = RKUSB_RC_FINISHED;
 		break;
 
-	case RKUSB_SET_DEVICE_ID:
 	case RKUSB_READ_10:
 	case RKUSB_WRITE_10:
+		printf("CMD Not support, pls use new version Tool\n");
+	case RKUSB_SET_DEVICE_ID:
 	case RKUSB_ERASE_10:
 	case RKUSB_WRITE_SPARE:
 	case RKUSB_READ_SPARE:
