@@ -302,7 +302,7 @@ static ulong rk3308_i2c_set_clk(struct clk *clk, uint hz)
 	struct rk3308_cru *cru = priv->cru;
 	u32 src_clk_div, con_id;
 
-	src_clk_div = priv->dpll_hz / hz;
+	src_clk_div = DIV_ROUND_UP(priv->dpll_hz, hz);
 	assert(src_clk_div - 1 < 127);
 
 	switch (clk->id) {
@@ -422,7 +422,7 @@ static ulong rk3308_saradc_set_clk(struct clk *clk, uint hz)
 	struct rk3308_cru *cru = priv->cru;
 	int src_clk_div;
 
-	src_clk_div = OSC_HZ / hz;
+	src_clk_div = DIV_ROUND_UP(OSC_HZ, hz);
 	assert(src_clk_div - 1 < 2047);
 
 	rk_clrsetreg(&cru->clksel_con[34],
@@ -465,7 +465,7 @@ static ulong rk3308_spi_set_clk(struct clk *clk, uint hz)
 	struct rk3308_cru *cru = priv->cru;
 	u32 src_clk_div, con_id;
 
-	src_clk_div = priv->dpll_hz / hz;
+	src_clk_div = DIV_ROUND_UP(priv->dpll_hz, hz);
 	assert(src_clk_div - 1 < 127);
 
 	switch (clk->id) {
@@ -509,7 +509,7 @@ static ulong rk3308_pwm_set_clk(struct clk *clk, uint hz)
 	struct rk3308_cru *cru = priv->cru;
 	int src_clk_div;
 
-	src_clk_div = priv->dpll_hz / hz;
+	src_clk_div = DIV_ROUND_UP(priv->dpll_hz, hz);
 	assert(src_clk_div - 1 < 127);
 
 	rk_clrsetreg(&cru->clksel_con[29],
