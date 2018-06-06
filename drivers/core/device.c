@@ -61,6 +61,16 @@ static int device_bind_common(struct udevice *parent, const struct driver *drv,
 			return 0;
 		}
 	}
+
+	/* use cru node from kernel dtb */
+	if (drv->id == UCLASS_CLK) {
+		struct udevice *n;
+
+		list_for_each_entry_safe(dev, n, &uc->dev_head, uclass_node) {
+			if (!strcmp(name, dev->name))
+				list_del(&dev->uclass_node);
+		}
+	}
 #endif
 	dev = calloc(1, sizeof(struct udevice));
 	if (!dev)
