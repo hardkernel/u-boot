@@ -66,7 +66,7 @@ static u32 pll_mode_mask[PLL_COUNT] = {
 
 static const struct rk3308_clk_info clks_dump[] = {
 	RK3308_CLK_DUMP(PLL_APLL, "apll"),
-	RK3308_CLK_DUMP(PLL_DPLL, "gpll"),
+	RK3308_CLK_DUMP(PLL_DPLL, "dpll"),
 	RK3308_CLK_DUMP(PLL_VPLL0, "vpll0"),
 	RK3308_CLK_DUMP(PLL_VPLL1, "vpll1"),
 	RK3308_CLK_DUMP(ACLK_BUS, "aclk_bus"),
