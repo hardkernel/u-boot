@@ -13,30 +13,9 @@
 #define OSC_HZ		(24 * MHz)
 
 #define APLL_HZ		(816 * MHz)
-#define GPLL_HZ		(1200 * MHz)
-#define CPLL_HZ		(594 * MHz)
 
 #define CORE_PERI_HZ	204000000
 #define CORE_ACLK_HZ	408000000
-
-#define BUS_ACLK_HZ	148500000
-#define BUS_HCLK_HZ	148500000
-#define BUS_PCLK_HZ	74250000
-
-#define PERI_ACLK_HZ	148500000
-#define PERI_HCLK_HZ	148500000
-#define PERI_PCLK_HZ	74250000
-
-enum apll_frequencies {
-	APLL_816_MHZ,
-	APLL_600_MHZ,
-};
-
-/* Private data for the clock driver - used by rockchip_get_cru() */
-struct px30_clk_priv {
-	struct px30_cru *cru;
-	ulong rate;
-};
 
 /* PX30 pll id */
 enum px30_pll_id {
@@ -48,15 +27,28 @@ enum px30_pll_id {
 	PLL_COUNT,
 };
 
+/* Private data for the clock driver - used by rockchip_get_cru() */
+struct px30_clk_priv {
+	struct px30_cru *cru;
+	ulong gpll_hz;
+};
+
+struct px30_pmuclk_priv {
+	struct px30_pmucru *pmucru;
+	ulong gpll_hz;
+};
+
+struct px30_pll {
+	unsigned int con0;
+	unsigned int con1;
+	unsigned int con2;
+	unsigned int con3;
+	unsigned int con4;
+	unsigned int reserved0[3];
+};
+
 struct px30_cru {
-	struct px30_pll {
-		unsigned int con0;
-		unsigned int con1;
-		unsigned int con2;
-		unsigned int con3;
-		unsigned int con4;
-		unsigned int reserved0[3];
-	} pll[4];
+	struct px30_pll pll[4];
 	unsigned int reserved1[8];
 	unsigned int mode;
 	unsigned int misc;
@@ -87,23 +79,31 @@ struct px30_cru {
 	unsigned int emmc_con[2];
 	unsigned int reserved9[(0x400 - 0x394) / 4 - 1];
 	unsigned int autocs_con[8];
-	unsigned int reserved10[(0xc000 - 0x41c) / 4 - 1];
-	struct px30_pll gpll;
+};
+
+check_member(px30_cru, autocs_con[7], 0x41c);
+
+struct px30_pmucru {
+	struct px30_pll pll;
 	unsigned int pmu_mode;
-	unsigned int reserved11[7];
+	unsigned int reserved1[7];
 	unsigned int pmu_clksel_con[6];
+	unsigned int reserved2[10];
 	unsigned int pmu_clkgate_con[2];
-	unsigned int reserved12[(0xc0c0 - 0xc05c) / 4 - 1];
+	unsigned int reserved3[14];
 	unsigned int pmu_autocs_con[2];
 };
-check_member(px30_cru, pmu_autocs_con[1], 0xc0c4);
 
-struct pll_div {
-	u32 refdiv;
-	u32 fbdiv;
-	u32 postdiv1;
-	u32 postdiv2;
-	u32 frac;
+check_member(px30_pmucru, pmu_autocs_con[1], 0xc4);
+
+struct pll_rate_table {
+	unsigned long rate;
+	unsigned int fbdiv;
+	unsigned int postdiv1;
+	unsigned int refdiv;
+	unsigned int postdiv2;
+	unsigned int dsmpd;
+	unsigned int frac;
 };
 
 enum {
@@ -193,6 +193,21 @@ enum {
 	PERI_HCLK_DIV_MASK	= 0x1f << PERI_HCLK_DIV_SHIFT,
 	PERI_ACLK_DIV_SHIFT	= 0,
 	PERI_ACLK_DIV_MASK	= 0x1f << PERI_ACLK_DIV_SHIFT,
+
+	/* CRU_CLKSEL15_CON */
+	NANDC_CLK_SEL_SHIFT	= 15,
+	NANDC_CLK_SEL_MASK	= 0x1 << NANDC_CLK_SEL_SHIFT,
+	NANDC_CLK_SEL_NANDC	= 0,
+	NANDC_CLK_SEL_NANDC_DIV50,
+	NANDC_DIV50_SHIFT	= 8,
+	NANDC_DIV50_MASK	= 0x1f << NANDC_DIV50_SHIFT,
+	NANDC_PLL_SHIFT		= 6,
+	NANDC_PLL_MASK		= 0x3 << NANDC_PLL_SHIFT,
+	NANDC_SEL_GPLL		= 0,
+	NANDC_SEL_CPLL,
+	NANDC_SEL_NPLL,
+	NANDC_DIV_SHIFT		= 0,
+	NANDC_DIV_MASK		= 0x1f << NANDC_DIV_SHIFT,
 
 	/* CRU_CLKSEL20_CON */
 	EMMC_PLL_SHIFT		= 14,
@@ -309,8 +324,11 @@ enum {
 	CLK_SARADC_DIV_CON_MASK		= 0x7ff,
 
 	/* CRU_PMU_MODE */
-	GPLL_MODE_SHIFT		= 0,
-	GPLL_MODE_MASK		= 3 << GPLL_MODE_SHIFT,
-	
+	GPLL_MODE_SHIFT			= 0,
+	GPLL_MODE_MASK			= 3 << GPLL_MODE_SHIFT,
+
+	/* CRU_PMU_CLK_SEL0_CON */
+	CLK_PMU_PCLK_DIV_SHIFT		= 0,
+	CLK_PMU_PCLK_DIV_MASK		= 0x1f << CLK_PMU_PCLK_DIV_SHIFT,
 };
 #endif
