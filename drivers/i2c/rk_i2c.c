@@ -399,6 +399,7 @@ static const struct udevice_id rockchip_i2c_ids[] = {
 	{ .compatible = "rockchip,rk3328-i2c" },
 	{ .compatible = "rockchip,rk3399-i2c" },
 	{ .compatible = "rockchip,rk3228-i2c" },
+	{ .compatible = "rockchip,rv1108-i2c" },
 	{ }
 };
 

@@ -18,6 +18,7 @@
 	interrupt-parent = <&gic>;
 
 	aliases {
+		i2c0 = &i2c0;
 		serial0 = &uart0;
 		serial1 = &uart1;
 		serial2 = &uart2;
@@ -171,7 +172,19 @@
 		#clock-cells = <1>;
 		#reset-cells = <1>;
 	};
-
+	i2c0: i2c@20000000 {
+		compatible = "rockchip,rv1108-i2c";
+		reg = <0x20000000 0x1000>;
+		interrupts = <GIC_SPI 30 IRQ_TYPE_LEVEL_HIGH>;
+		rockchip,grf = <&grf>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		clocks = <&cru SCLK_I2C0_PMU>, <&cru PCLK_I2C0_PMU>;
+		clock-names = "i2c", "pclk";
+		pinctrl-names = "default";
+		pinctrl-0 = <&i2c0_xfer>;
+		status = "disabled";
+	};
 	usbgrf: syscon@202a0000 {
 		compatible = "rockchip,rv1108-usbgrf", "syscon";
 		reg = <0x202a0000 0x1000>;
@@ -384,6 +397,11 @@
 			drive-strength = <4>;
 		};
 
+		pcfg_pull_none_smt: pcfg-pull-none-smt {
+			bias-disable;
+			input-schmitt-enable;
+		};
+
 		pcfg_output_high: pcfg-output-high {
 			output-high;
 		};
@@ -409,6 +427,13 @@
 						<1 RK_PB6 RK_FUNC_3 &pcfg_pull_none>,
 						<1 RK_PB7 RK_FUNC_3 &pcfg_pull_none>,
 						<1 RK_PC2 RK_FUNC_3 &pcfg_pull_none>;
+			};
+		};
+
+		i2c0 {
+			i2c0_xfer: i2c0-xfer {
+				rockchip,pins = <0 RK_PB1 RK_FUNC_1 &pcfg_pull_none_smt>,
+						<0 RK_PB2 RK_FUNC_1 &pcfg_pull_none_smt>;
 			};
 		};
 
