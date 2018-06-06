@@ -29,6 +29,9 @@
     but this segment not cleared to zero while running "board_init_f" */
 #define CLK_UNKNOWN (0xffffffff)
 
+#define RING_PWM_VCCK 	(0xff802000 + (0x01 << 2))
+#define RING_PWM_EE	(0xff807000 + (0x01 << 2))
+
 #if 0
 __u32 get_rate_xtal(void)
 {
@@ -254,6 +257,35 @@ const char* clk_table[] = {
 	[0]   = "am_ring_osc_clk_out_ee[0]   ",
 };
 
+unsigned long clk_util_ring_msr(unsigned long clk_mux)
+{
+	unsigned int regval = 0;
+
+	WRITE_CBUS_REG(MSR_CLK_REG0, 0);
+	/* Set the measurement gate to 64uS */
+	CLEAR_CBUS_REG_MASK(MSR_CLK_REG0, 0xffff);
+	/* 64uS is enough for measure the frequence? */
+	SET_CBUS_REG_MASK(MSR_CLK_REG0, (10000 - 1));
+	/* Disable continuous measurement */
+	/* Disable interrupts */
+	CLEAR_CBUS_REG_MASK(MSR_CLK_REG0, ((1 << 18) | (1 << 17)));
+	CLEAR_CBUS_REG_MASK(MSR_CLK_REG0, (0x7f << 20));
+	SET_CBUS_REG_MASK(MSR_CLK_REG0, (clk_mux << 20) | /* Select MUX */
+			(1 << 19) |       /* enable the clock */
+			(1 << 16));       /* enable measuring */
+	/* Wait for the measurement to be done */
+	regval = READ_CBUS_REG(MSR_CLK_REG0);
+	do {
+		regval = READ_CBUS_REG(MSR_CLK_REG0);
+	} while (regval & (1 << 31));
+
+	/* Disable measuring */
+	CLEAR_CBUS_REG_MASK(MSR_CLK_REG0, (1 << 16));
+	regval = (READ_CBUS_REG(MSR_CLK_REG2) + 31) & 0x000FFFFF;
+
+	return (regval / 10);
+}
+
 unsigned long clk_util_clk_msr(unsigned long clk_mux)
 {
 	unsigned int regval = 0;
@@ -300,6 +332,42 @@ int clk_msr(int index)
 		printf("[%4d][%4ld MHz] %s\n", index, clk_util_clk_msr(index), clk_table[index]);
 	}
 
+	return 0;
+}
+
+void ring_powerinit(void)
+{
+	writel(0x150007, RING_PWM_VCCK);/*set vcck 0.8v*/
+	writel(0x10000c, RING_PWM_EE);/*set ee 0.8v*/
+}
+
+int ring_msr(int index)
+{
+	const char* clk_table[] = {
+			[11] = "sys_cpu_ring_osc_clk[1] " ,
+			[10] = "sys_cpu_ring_osc_clk[0] " ,
+			[9] = "am_ring_osc_clk_out_ee[9] " ,
+			[8] = "am_ring_osc_clk_out_ee[8] " ,
+			[7] = "am_ring_osc_clk_out_ee[7] " ,
+			[6] = "am_ring_osc_clk_out_ee[6] " ,
+			[5] = "am_ring_osc_clk_out_ee[5] " ,
+			[4] = "am_ring_osc_clk_out_ee[4] " ,
+			[3] = "am_ring_osc_clk_out_ee[3] " ,
+			[2] = "am_ring_osc_clk_out_ee[2] " ,
+			[1] = "am_ring_osc_clk_out_ee[1] " ,
+			[0] = "am_ring_osc_clk_out_ee[0] " ,
+		};
+	const int tb[] = {0, 1, 2, 99, 100, 101, 102, 103, 104, 105, 3, 33};
+	unsigned long i;
+
+	ring_powerinit();
+	/*RING_OSCILLATOR       0x7f: set slow ring*/
+	writel(0x555555, 0xff6345fc);
+	for (i = 0; i < 12; i++) {
+		printf("%s      :",clk_table[i]);
+		printf("%ld     KHz",clk_util_ring_msr(tb[i]));
+		printf("\n");
+	}
 	return 0;
 }
 
