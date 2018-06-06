@@ -64,7 +64,7 @@ void arch_lmb_reserve(struct lmb *lmb)
 	/* adjust sp by 4K to be safe */
 	sp -= 4096;
 	lmb_reserve(lmb, sp,
-		    gd->bd->bi_dram[0].start + gd->bd->bi_dram[0].size - sp);
+		    gd->ram_top - sp);
 }
 
 __weak void board_quiesce_devices(void)
