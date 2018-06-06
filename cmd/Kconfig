@@ -893,10 +893,10 @@ config CMD_ROCKUSB
 
 config CMD_RKNAND
 	bool "rknand"
-	depends on RKNAND
-	default y if RKNAND
+	depends on (RKNAND || RKNANDC_NAND)
+	default y if (RKNAND || RKNANDC_NAND)
 	help
-	  Rockchip NAND FLASH device support
+	    Rockchip NAND FLASH device support
 
 config CMD_RKSFC
 	bool "rksfc"
