@@ -410,6 +410,80 @@ static ulong rv1108_pclk_peri_set_clk(struct rv1108_cru *cru, uint hz)
 	return rv1108_pclk_peri_get_clk(cru);
 }
 
+static ulong rv1108_i2c_get_clk(struct rv1108_cru *cru, ulong clk_id)
+{
+	u32 div, con;
+
+	switch (clk_id) {
+	case SCLK_I2C0_PMU:
+		con = readl(&cru->clksel_con[19]);
+		div = bitfield_extract(con, CLK_I2C0_DIV_CON_SHIFT,
+				       I2C_DIV_CON_WIDTH);
+		break;
+	case SCLK_I2C1:
+		con = readl(&cru->clksel_con[19]);
+		div = bitfield_extract(con, CLK_I2C1_DIV_CON_SHIFT,
+				       I2C_DIV_CON_WIDTH);
+		break;
+	case SCLK_I2C2:
+		con = readl(&cru->clksel_con[20]);
+		div = bitfield_extract(con, CLK_I2C2_DIV_CON_SHIFT,
+				       I2C_DIV_CON_WIDTH);
+		break;
+	case SCLK_I2C3:
+		con = readl(&cru->clksel_con[20]);
+		div = bitfield_extract(con, CLK_I2C3_DIV_CON_SHIFT,
+				       I2C_DIV_CON_WIDTH);
+		break;
+	default:
+		printf("do not support this i2c bus\n");
+		return -EINVAL;
+	}
+
+	return DIV_TO_RATE(GPLL_HZ, div);
+}
+
+static ulong rv1108_i2c_set_clk(struct rv1108_cru *cru, ulong clk_id, uint hz)
+{
+	int src_clk_div;
+
+	/* i2c0,4,8 src clock from ppll, i2c1,2,3,5,6,7 src clock from gpll*/
+	src_clk_div = GPLL_HZ / hz;
+	assert(src_clk_div - 1 <= 127);
+
+	switch (clk_id) {
+	case SCLK_I2C0_PMU:
+		rk_clrsetreg(&cru->clksel_con[19],
+			     CLK_I2C0_DIV_CON_MASK | CLK_I2C1_PLL_SEL_MASK,
+			     (src_clk_div << CLK_I2C0_DIV_CON_SHIFT) |
+			     (CLK_I2C1_PLL_SEL_GPLL << CLK_I2C1_PLL_SEL_SHIFT));
+		break;
+	case SCLK_I2C1:
+		rk_clrsetreg(&cru->clksel_con[19],
+			     CLK_I2C1_DIV_CON_MASK | CLK_I2C1_PLL_SEL_MASK,
+			     (src_clk_div << CLK_I2C1_DIV_CON_SHIFT) |
+			     (CLK_I2C1_PLL_SEL_GPLL << CLK_I2C1_PLL_SEL_SHIFT));
+		break;
+	case SCLK_I2C2:
+		rk_clrsetreg(&cru->clksel_con[20],
+			     CLK_I2C2_DIV_CON_MASK | CLK_I2C3_PLL_SEL_MASK,
+			     (src_clk_div << CLK_I2C2_DIV_CON_SHIFT) |
+			     (CLK_I2C3_PLL_SEL_GPLL << CLK_I2C3_PLL_SEL_SHIFT));
+		break;
+	case SCLK_I2C3:
+		rk_clrsetreg(&cru->clksel_con[20],
+			     CLK_I2C3_DIV_CON_MASK | CLK_I2C3_PLL_SEL_MASK,
+			     (src_clk_div << CLK_I2C3_DIV_CON_SHIFT) |
+			     (CLK_I2C3_PLL_SEL_GPLL << CLK_I2C3_PLL_SEL_SHIFT));
+		break;
+	default:
+		printf("do not support this i2c bus\n");
+		return -EINVAL;
+	}
+
+	return rv1108_i2c_get_clk(cru, clk_id);
+}
+
 static ulong rv1108_clk_get_rate(struct clk *clk)
 {
 	struct rv1108_clk_priv *priv = dev_get_priv(clk->dev);
@@ -433,6 +507,11 @@ static ulong rv1108_clk_get_rate(struct clk *clk)
 		return rv1108_hclk_peri_get_clk(priv->cru);
 	case PCLK_PERI:
 		return rv1108_pclk_peri_get_clk(priv->cru);
+	case SCLK_I2C0_PMU:
+	case SCLK_I2C1:
+	case SCLK_I2C2:
+	case SCLK_I2C3:
+		return rv1108_i2c_get_clk(priv->cru, clk->id);
 	default:
 		return -ENOENT;
 	}
@@ -473,6 +552,12 @@ static ulong rv1108_clk_set_rate(struct clk *clk, ulong rate)
 		break;
 	case PCLK_PERI:
 		new_rate = rv1108_pclk_peri_set_clk(priv->cru, rate);
+		break;
+	case SCLK_I2C0_PMU:
+	case SCLK_I2C1:
+	case SCLK_I2C2:
+	case SCLK_I2C3:
+		new_rate = rv1108_i2c_set_clk(priv->cru, clk->id, rate);
 		break;
 	default:
 		return -ENOENT;
