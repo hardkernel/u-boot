@@ -869,6 +869,7 @@ static ulong rk3308_clk_set_rate(struct clk *clk, ulong rate)
 	switch (clk->id) {
 	case PLL_DPLL:
 		ret = rkclk_set_pll(priv, DPLL, rate);
+		priv->dpll_hz = rkclk_pll_get_rate(priv, DPLL);
 		break;
 	case HCLK_SDMMC:
 	case HCLK_EMMC:
