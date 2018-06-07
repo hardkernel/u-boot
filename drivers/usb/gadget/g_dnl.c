@@ -77,7 +77,7 @@ static struct usb_device_descriptor device_desc = {
 	.bDeviceSubClass = 0x02, /*0x02:CDC-modem , 0x00:CDC-serial*/
 
 	.idVendor = 0x18d1,
-	.idProduct = 0x0d02,
+	.idProduct = 0x0002,
 	.iProduct = STRING_PRODUCT,
 	.iSerialNumber = STRING_SERIAL,
 	.bNumConfigurations = 1,
