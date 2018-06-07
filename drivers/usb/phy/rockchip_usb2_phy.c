@@ -5,8 +5,11 @@
  */
 
 #include <common.h>
+#include <asm/arch/clock.h>
 #include <asm/io.h>
+#include <fdtdec.h>
 #include <libfdt.h>
+#include <syscon.h>
 
 #include "../gadget/dwc2_udc_otg_priv.h"
 
@@ -62,6 +65,55 @@ static void property_enable(struct dwc2_plat_otg_data *pdata,
 	writel(val, pdata->regs_phy + reg->offset);
 }
 
+static int otg_phy_parse(struct dwc2_udc *dev)
+{
+	int node, phy_node;
+	u32 grf_base, grf_offset;
+	const char *mode;
+	bool matched = false;
+	const void *blob = gd->fdt_blob;
+	struct dwc2_plat_otg_data *pdata = dev->pdata;
+
+	/* Find the usb_otg node */
+	node = fdt_node_offset_by_compatible(blob, -1, "snps,dwc2");
+	while (node > 0) {
+		mode = fdt_getprop(blob, node, "dr_mode", NULL);
+		if (mode && strcmp(mode, "otg") == 0) {
+			matched = true;
+			break;
+		}
+
+		node = fdt_node_offset_by_compatible(blob, node, "snps,dwc2");
+	}
+
+	if (!matched) {
+		pr_err("Not found usb_otg device\n");
+		return -ENODEV;
+	}
+
+	/* Find the usb phy node */
+	node = fdtdec_lookup_phandle(blob, node, "phys");
+	if (node <= 0) {
+		pr_err("Not found usbphy device\n");
+		return -ENODEV;
+	}
+
+	/* Find the usb otg-phy node */
+	phy_node = fdt_parent_offset(blob, node);
+	if (phy_node <= 0) {
+		pr_err("Not found sub usbphy device\n");
+		return -ENODEV;
+	}
+
+	grf_base = (u32)syscon_get_first_range(ROCKCHIP_SYSCON_GRF);
+	grf_offset = fdtdec_get_addr(blob, node, "reg");
+
+	/* Pad dwc2_plat_otg_data related to phy */
+	pdata->phy_of_node = phy_node;
+	pdata->regs_phy = grf_base + grf_offset;
+
+	return 0;
+}
 
 void otg_phy_init(struct dwc2_udc *dev)
 {
@@ -69,6 +121,11 @@ void otg_phy_init(struct dwc2_udc *dev)
 	struct rockchip_usb2_phy_cfg *phy_cfg = NULL;
 	struct rockchip_usb2_phy_dt_id *of_id;
 	int i;
+
+	if (!pdata->regs_phy && otg_phy_parse(dev)) {
+		pr_err("otg-phy parse error\n");
+		return;
+	}
 
 	for (i = 0; i < ARRAY_SIZE(rockchip_usb2_phy_dt_ids); i++) {
 		of_id = &rockchip_usb2_phy_dt_ids[i];
@@ -99,6 +156,11 @@ void otg_phy_off(struct dwc2_udc *dev)
 {
 	struct dwc2_plat_otg_data *pdata = dev->pdata;
 	struct rockchip_usb2_phy_cfg *phy_cfg = pdata->priv;
+
+	if (!pdata->regs_phy && otg_phy_parse(dev)) {
+		pr_err("otg-phy parse error\n");
+		return;
+	}
 
 	/* enable software control */
 	property_enable(pdata, &phy_cfg->soft_con, true);
