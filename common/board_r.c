@@ -652,6 +652,11 @@ static int initr_kbd(void)
 }
 #endif
 
+__weak int interrupt_debugger_init(void)
+{
+	return 0;
+}
+
 static int run_main_loop(void)
 {
 #ifdef CONFIG_SANDBOX
@@ -703,6 +708,7 @@ static init_fnc_t init_sequence_r[] = {
 #ifdef CONFIG_ARM
 	initr_enable_interrupts,
 #endif
+	interrupt_debugger_init,
 
 #ifdef CONFIG_OF_LIVE
 	initr_of_live,
