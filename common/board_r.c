@@ -698,6 +698,12 @@ static init_fnc_t init_sequence_r[] = {
 	initr_noncached,
 #endif
 	bootstage_relocate,
+
+	interrupt_init,
+#ifdef CONFIG_ARM
+	initr_enable_interrupts,
+#endif
+
 #ifdef CONFIG_OF_LIVE
 	initr_of_live,
 #endif
@@ -812,10 +818,7 @@ static init_fnc_t init_sequence_r[] = {
 #ifdef CONFIG_CMD_KGDB
 	initr_kgdb,
 #endif
-	interrupt_init,
-#ifdef CONFIG_ARM
-	initr_enable_interrupts,
-#endif
+
 #if defined(CONFIG_MICROBLAZE) || defined(CONFIG_M68K)
 	timer_init,		/* initialize timer */
 #endif
