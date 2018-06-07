@@ -26,10 +26,10 @@ static int do_ringmsr(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 
 	if (argc ==  2)
 		index = simple_strtoul(argv[1], NULL, 10);
-#if defined (CONFIG_AML_MESON_G12A) || defined (CONFIG_AML_MESON_G12B)
+#ifdef CONFIG_RING
 	ring_msr(index);
 #else
-	printf("error: this prj not support sw ring msr %x\n", index);
+	printf("error: this prj not support get ring %x\n", index);
 #endif
 	return 0;
 }

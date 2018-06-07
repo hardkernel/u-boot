@@ -594,5 +594,6 @@
 #endif
 #endif
 
+#define CONFIG_RING
 #endif
 

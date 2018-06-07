@@ -581,5 +581,6 @@
 #define ETHERNET_INTERNAL_PHY
 #undef ETHERNET_EXTERNAL_PHY
 
+#define CONFIG_RING
 #endif
 

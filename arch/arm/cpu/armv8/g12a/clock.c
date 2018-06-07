@@ -24,6 +24,7 @@
 #include <asm/arch/io.h>
 #include <asm/arch/secure_apb.h>
 #include <asm/arch/clock.h>
+#include <asm/arch/mailbox.h>
 
 /*  !!must use nonzero value as default value. Otherwise it linked to bss segment,
     but this segment not cleared to zero while running "board_init_f" */
@@ -359,7 +360,7 @@ int ring_msr(int index)
 		};
 	const int tb[] = {0, 1, 2, 99, 100, 101, 102, 103, 104, 105, 3, 33};
 	unsigned long i;
-
+	unsigned char ringinfo[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 	ring_powerinit();
 	/*RING_OSCILLATOR       0x7f: set slow ring*/
 	writel(0x555555, 0xff6345fc);
@@ -368,6 +369,27 @@ int ring_msr(int index)
 		printf("%ld     KHz",clk_util_ring_msr(tb[i]));
 		printf("\n");
 	}
+
+	if (oscring_get_value(ringinfo) != 0) {
+		printf("fail get osc ring efuse info\n");
+		return 0;
+	}
+
+	printf("osc ring efuse info:\n");
+	for (i = 0; i <= 7; i++)
+		printf("0x%x, ", ringinfo[i]);
+	printf("\n");
+
+	/*efuse to test value*/
+	printf("ee[9], ee[1], ee[0], cpu[1], cpu[0], iddee, iddcpu\n");
+	for (i = 1; i <= 5; i++)
+		printf("%d KHz ", (ringinfo[i] * 20));
+
+	for (i = 6; i <= 7; i++)
+		printf("%d uA ", (ringinfo[i] * 200));
+
+	printf("\n");
+
 	return 0;
 }
 
