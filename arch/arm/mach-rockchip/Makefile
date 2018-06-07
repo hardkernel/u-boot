@@ -28,6 +28,7 @@ obj-$(CONFIG_ROCKCHIP_CRC) += rockchip_crc.o
 obj-$(CONFIG_ROCKCHIP_SMCCC) += rockchip_smccc.o
 obj-$(CONFIG_ROCKCHIP_VENDOR_PARTITION) += vendor.o
 obj-$(CONFIG_ROCKCHIP_RESOURCE_IMAGE) += resource_img.o
+obj-$(CONFIG_ROCKCHIP_DEBUGGER) += rockchip_debugger.o
 endif
 
 obj-$(CONFIG_$(SPL_TPL_)RAM) += sdram_common.o

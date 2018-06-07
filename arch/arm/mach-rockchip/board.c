@@ -25,6 +25,9 @@
 #ifdef CONFIG_DRM_ROCKCHIP
 #include <video_rockchip.h>
 #endif
+#ifdef CONFIG_ROCKCHIP_DEBUGGER
+#include <rockchip_debugger.h>
+#endif
 #include <mmc.h>
 #include <of_live.h>
 #include <dm/root.h>
@@ -232,6 +235,16 @@ int board_init(void)
 #endif
 
 	return rk_board_init();
+}
+
+int interrupt_debugger_init(void)
+{
+	int ret = 0;
+
+#ifdef CONFIG_ROCKCHIP_DEBUGGER
+	ret = rockchip_debugger_init();
+#endif
+	return ret;
 }
 
 int board_fdt_fixup(void *blob)

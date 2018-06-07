@@ -243,6 +243,11 @@ static int cpu_local_irq_disable(void)
 
 void do_irq(struct pt_regs *pt_regs, unsigned int esr)
 {
+#ifdef CONFIG_ROCKCHIP_DEBUGGER
+	printf("\n>>> Rockchip Debugger:\n");
+	show_regs(pt_regs);
+#endif
+
 	_do_generic_irq_handler();
 }
 #else
@@ -272,6 +277,11 @@ static int cpu_local_irq_disable(void)
 
 void do_irq(struct pt_regs *pt_regs)
 {
+#ifdef CONFIG_ROCKCHIP_DEBUGGER
+	printf("\n>>> Rockchp Debugger:\n");
+	show_regs(pt_regs);
+#endif
+
 	_do_generic_irq_handler();
 }
 #endif
