@@ -190,6 +190,10 @@ config ODROID_C2
 	bool "Support Hardkernel ODROID-C2 board"
 	default n
 
+config ODROID_C3
+	bool "Support Hardkernel ODROID-C3 board"
+	default n
+
 if GXB_SKT_V1
 source "board/amlogic/gxb_skt_v1/Kconfig"
 endif
@@ -372,4 +376,8 @@ endif
 
 if ODROID_C2
 source "board/hardkernel/odroidc2/Kconfig"
+endif
+
+if ODROID_C3
+source "board/hardkernel/odroidc3/Kconfig"
 endif
