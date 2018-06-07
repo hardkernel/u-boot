@@ -224,6 +224,16 @@ static uint32_t rkclk_pll_get_rate(struct rk3308_clk_priv *priv,
 	}
 }
 
+static void rk3308_clk_get_pll_rate(struct rk3308_clk_priv *priv)
+{
+	if (!priv->dpll_hz)
+		priv->dpll_hz = rkclk_pll_get_rate(priv, DPLL);
+	if (!priv->vpll0_hz)
+		priv->vpll0_hz = rkclk_pll_get_rate(priv, VPLL0);
+	if (!priv->vpll1_hz)
+		priv->vpll1_hz = rkclk_pll_get_rate(priv, VPLL1);
+}
+
 static void rkclk_init(struct udevice *dev)
 {
 	struct rk3308_clk_priv *priv = dev_get_priv(dev);
@@ -250,9 +260,8 @@ static void rkclk_init(struct udevice *dev)
 		     CORE_CLK_PLL_SEL_APLL << CORE_CLK_PLL_SEL_SHIFT |
 		     0 << CORE_DIV_CON_SHIFT);
 
-	priv->dpll_hz = rkclk_pll_get_rate(priv, DPLL);
-	priv->vpll0_hz = rkclk_pll_get_rate(priv, VPLL0);
-	priv->vpll1_hz = rkclk_pll_get_rate(priv, VPLL1);
+#ifndef CONFIG_USING_KERNEL_DTB
+	rk3308_clk_get_pll_rate(priv);
 
 	rk3308_bus_set_clk(priv, ACLK_BUS, BUS_ACLK_HZ);
 	rk3308_bus_set_clk(priv, HCLK_BUS, BUS_HCLK_HZ);
@@ -264,6 +273,7 @@ static void rkclk_init(struct udevice *dev)
 
 	rk3308_audio_set_clk(priv, HCLK_AUDIO, AUDIO_HCLK_HZ);
 	rk3308_audio_set_clk(priv, PCLK_AUDIO, AUDIO_PCLK_HZ);
+#endif
 }
 
 static ulong rk3308_i2c_get_clk(struct clk *clk)
@@ -536,13 +546,13 @@ static ulong rk3308_vop_get_clk(struct clk *clk)
 	} else if (vol_sel == DCLK_VOP_SEL_DIVOUT) {
 		switch (pll_sel) {
 		case DCLK_VOP_PLL_SEL_DPLL:
-			parent = rkclk_pll_get_rate(priv, DPLL);
+			parent = priv->dpll_hz;
 			break;
 		case DCLK_VOP_PLL_SEL_VPLL0:
-			parent = rkclk_pll_get_rate(priv, VPLL0);
+			parent = priv->vpll0_hz;
 			break;
 		case DCLK_VOP_PLL_SEL_VPLL1:
-			parent = rkclk_pll_get_rate(priv, VPLL1);
+			parent = priv->vpll0_hz;
 			break;
 		default:
 			printf("do not support this vop pll sel\n");
@@ -797,6 +807,8 @@ static ulong rk3308_clk_get_rate(struct clk *clk)
 	struct rk3308_clk_priv *priv = dev_get_priv(clk->dev);
 	ulong rate = 0;
 
+	rk3308_clk_get_pll_rate(priv);
+
 	debug("%s id:%ld\n", __func__, clk->id);
 
 	switch (clk->id) {
@@ -863,6 +875,8 @@ static ulong rk3308_clk_set_rate(struct clk *clk, ulong rate)
 {
 	struct rk3308_clk_priv *priv = dev_get_priv(clk->dev);
 	ulong ret = 0;
+
+	rk3308_clk_get_pll_rate(priv);
 
 	debug("%s %ld %ld\n", __func__, clk->id, rate);
 
