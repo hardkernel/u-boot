@@ -47,6 +47,10 @@ struct fdt_memory {
 #define SPL_BUILD	0
 #endif
 
+#if CONFIG_IS_ENABLED(OF_PRIOR_STAGE)
+extern phys_addr_t prior_stage_fdt_address;
+#endif
+
 /*
  * Information about a resource. start is the first address of the resource
  * and end is the last address (inclusive). The length of the resource will

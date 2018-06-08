@@ -557,6 +557,16 @@ config TARGET_VEXPRESS_CA15_TC2
 	select CPU_V7_HAS_NONSEC
 	select CPU_V7_HAS_VIRT
 
+config ARCH_BCMSTB
+	bool "Broadcom BCM7XXX family"
+	select CPU_V7A
+	select DM
+	select OF_CONTROL
+	select OF_PRIOR_STAGE
+	help
+	  This enables support for Broadcom ARM-based set-top box
+	  chipsets, including the 7445 family of chips.
+
 config TARGET_VEXPRESS_CA5X2
 	bool "Support vexpress_ca5x2"
 	select CPU_V7
@@ -1175,6 +1185,8 @@ source "arch/arm/mach-aspeed/Kconfig"
 source "arch/arm/mach-at91/Kconfig"
 
 source "arch/arm/mach-bcm283x/Kconfig"
+
+source "arch/arm/mach-bcmstb/Kconfig"
 
 source "arch/arm/mach-davinci/Kconfig"
 
