@@ -98,11 +98,14 @@ size_t rockchip_sdram_size(phys_addr_t reg)
 	size_t size_mb = 0;
 	u32 ch;
 	u32 cs1_col = 0;
+	u32 bg = 0;
+	u32 dbw, dram_type;
 	u32 sys_reg = readl(reg);
 	u32 sys_reg1 = readl(reg + 4);
 	u32 ch_num = 1 + ((sys_reg >> SYS_REG_NUM_CH_SHIFT)
 		       & SYS_REG_NUM_CH_MASK);
 
+	dram_type = (sys_reg >> SYS_REG_DDRTYPE_SHIFT) & SYS_REG_DDRTYPE_MASK;
 	debug("%s %x %x\n", __func__, (u32)reg, sys_reg);
 	for (ch = 0; ch < ch_num; ch++) {
 		rank = 1 + (sys_reg >> SYS_REG_RANK_SHIFT(ch) &
@@ -149,8 +152,12 @@ size_t rockchip_sdram_size(phys_addr_t reg)
 			SYS_REG_BW_MASK));
 		row_3_4 = sys_reg >> SYS_REG_ROW_3_4_SHIFT(ch) &
 			SYS_REG_ROW_3_4_MASK;
-
-		chipsize_mb = (1 << (cs0_row + cs0_col + bk + bw - 20));
+		if (dram_type == DDR4) {
+			dbw = (sys_reg >> SYS_REG_DBW_SHIFT(ch)) &
+				SYS_REG_DBW_MASK;
+			bg = (dbw == 2) ? 2 : 1;
+		}
+		chipsize_mb = (1 << (cs0_row + cs0_col + bk + bg + bw - 20));
 
 		if (rank > 1)
 			chipsize_mb += chipsize_mb >> ((cs0_row - cs1_row) +
