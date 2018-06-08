@@ -551,4 +551,11 @@
 #undef ETHERNET_INTERNAL_PHY
 #define ETHERNET_EXTERNAL_PHY
 
+/* u-boot memory test */
+#define CONFIG_CMD_MEMTEST
+#ifdef CONFIG_CMD_MEMTEST
+#define CONFIG_SYS_MEMTEST_START	(128 << 20) /* 128MB */
+#define CONFIG_SYS_MEMTEST_END		(2048 << 20) /* 2GB */
+#endif /* CONFIG_CMD_MEMTEST */
+
 #endif
