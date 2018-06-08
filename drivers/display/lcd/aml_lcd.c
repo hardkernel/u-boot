@@ -36,6 +36,7 @@
 unsigned int lcd_debug_print_flag;
 unsigned int lcd_debug_test;
 static struct aml_lcd_drv_s aml_lcd_driver;
+static void lcd_mute_setting(unsigned char flag);
 
 static void lcd_chip_detect(void)
 {
@@ -194,6 +195,7 @@ static void lcd_module_enable(char *mode)
 		(sync_duration / 10), (sync_duration % 10));
 
 	lcd_drv->driver_init_pre();
+	lcd_mute_setting(1);
 	lcd_power_ctrl(1);
 
 	pconf->retry_enable_cnt = 0;
@@ -213,6 +215,7 @@ static void lcd_module_enable(char *mode)
 	aml_bl_pwm_config_update(lcd_drv->bl_config);
 	aml_bl_set_level(lcd_drv->bl_config->level_default);
 	aml_bl_power_ctrl(1, 1);
+	lcd_mute_setting(0);
 
 	lcd_drv->lcd_status = 1;
 }
@@ -223,6 +226,7 @@ static void lcd_module_disable(void)
 
 	LCDPR("disable: %s\n", lcd_drv->lcd_config->lcd_basic.model_name);
 
+	lcd_mute_setting(1);
 	aml_bl_power_ctrl(0, 1);
 
 	lcd_power_ctrl(0);
@@ -1447,6 +1451,23 @@ static void lcd_test(unsigned int num)
 		printf("lcd: show test pattern: %s\n", lcd_enc_tst_str[num]);
 	} else {
 		printf("lcd: disable test pattern\n");
+	}
+}
+
+static void lcd_mute_setting(unsigned char flag)
+{
+	LCDPR("set lcd mute: %d\n", flag);
+	if (flag) {
+		lcd_vcbus_write(ENCL_VIDEO_RGBIN_CTRL, 3);
+		lcd_vcbus_write(ENCL_TST_MDSEL, 0);
+		lcd_vcbus_write(ENCL_TST_Y, 0);
+		lcd_vcbus_write(ENCL_TST_CB, 0);
+		lcd_vcbus_write(ENCL_TST_CR, 0);
+		lcd_vcbus_write(ENCL_TST_EN, 1);
+		lcd_vcbus_setb(ENCL_VIDEO_MODE_ADV, 0, 3, 1);
+	} else {
+		lcd_vcbus_setb(ENCL_VIDEO_MODE_ADV, 1, 3, 1);
+		lcd_vcbus_write(ENCL_TST_EN, 0);
 	}
 }
 
