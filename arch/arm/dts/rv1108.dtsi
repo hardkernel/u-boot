@@ -160,6 +160,18 @@
 		status = "disabled";
 	};
 
+	pwm0: pwm@20040000 {
+		compatible = "rockchip,rk1108-pwm", "rockchip,rk3328-pwm";
+		reg = <0x20040000 0x10>;
+		interrupts = <GIC_SPI 39 IRQ_TYPE_LEVEL_HIGH>;
+		#pwm-cells = <3>;
+		pinctrl-names = "active";
+		pinctrl-0 = <&pwm0_pin>;
+		clocks = <&cru SCLK_PWM>, <&cru PCLK_PWM>;
+		clock-names = "pwm", "pclk";
+		status = "disabled";
+	};
+
 	pmugrf: syscon@20060000 {
 		compatible = "rockchip,rv1108-pmugrf", "syscon";
 		reg = <0x20060000 0x1000>;
@@ -413,6 +425,12 @@
 		pcfg_input_high: pcfg-input-high {
 			bias-pull-up;
 			input-enable;
+		};
+
+		pwm0 {
+			pwm0_pin: pwm0-pin {
+				rockchip,pins = <0 RK_PC5 RK_FUNC_1 &pcfg_pull_none>;
+			};
 		};
 
 		gmac {
