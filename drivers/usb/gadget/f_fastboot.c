@@ -1327,6 +1327,22 @@ static void cb_oem(struct usb_ep *ep, struct usb_request *req)
 		fastboot_tx_write_str("FAILnot implemented");
 		return;
 #endif
+	} else if (strncmp("at-get-vboot-unlock-challenge", cmd + 4, 29) == 0) {
+#ifdef CONFIG_RK_AVB_LIBAVB_USER
+		uint32_t challenge_len = 0;
+		int ret = 0;
+
+		ret = rk_generate_unlock_challenge((void *)CONFIG_FASTBOOT_BUF_ADDR, &challenge_len);
+		if (ret == 0) {
+			upload_size = challenge_len;
+			fastboot_tx_write_str("OKAY");
+		} else {
+			fastboot_tx_write_str("FAILgenerate unlock challenge fail!");
+		}
+#else
+		fastboot_tx_write_str("FAILnot implemented");
+		return;
+#endif
 	} else if (strncmp("at-lock-vboot", cmd + 4, 13) == 0) {
 #ifdef CONFIG_RK_AVB_LIBAVB_USER
 		uint8_t lock_state;
