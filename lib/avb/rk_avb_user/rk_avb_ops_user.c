@@ -655,3 +655,24 @@ int rk_auth_unlock(void *buffer, char *out_is_trusted)
 	else
 		return -1;
 }
+
+int rk_generate_unlock_challenge(void *buffer, uint32_t *challenge_len)
+{
+	AvbOps* ops;
+	AvbIOResult result = AVB_IO_RESULT_OK;
+
+	ops = avb_ops_user_new();
+	if (ops == NULL) {
+		avb_error("avb_ops_user_new() failed!");
+		return -1;
+	}
+
+	result = avb_atx_generate_unlock_challenge(ops->atx_ops,
+						   (AvbAtxUnlockChallenge *)buffer);
+	avb_ops_user_free(ops);
+	*challenge_len = sizeof(AvbAtxUnlockChallenge);
+	if (result == AVB_IO_RESULT_OK)
+		return 0;
+	else
+		return -1;
+}

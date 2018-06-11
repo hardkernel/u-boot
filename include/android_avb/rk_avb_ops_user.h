@@ -254,6 +254,19 @@ AvbABFlowResult rk_avb_ab_slot_select(AvbABOps* ab_ops,char select_slot[]);
  */
 int rk_auth_unlock(void *buffer, char *out_is_trusted);
 
+/**
+ * generate unlock challenge
+ *
+ * @param buffer: AvbAtxUnlockChallenge
+ *
+ * @param challenge_len: Challenge length
+ *
+ * @param out_is_trusted: true or false
+ *
+ * @return 0 if generate unlock challenge OK, -1 if not
+ */
+int rk_generate_unlock_challenge(void *buffer, uint32_t *challenge_len);
+
 #ifdef __cplusplus
 }
 #endif
