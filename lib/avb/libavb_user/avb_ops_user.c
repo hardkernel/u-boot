@@ -347,6 +347,23 @@ static void avb_set_key_version(AvbAtxOps* atx_ops,
 #endif
 }
 
+AvbIOResult rk_get_random(AvbAtxOps* atx_ops,
+                          size_t num_bytes,
+                          uint8_t* output)
+{
+        int i;
+        unsigned int seed;
+
+        seed = (unsigned int)get_timer(0);
+        for (i = 0; i < num_bytes; i++) {
+		srand(seed);
+                output[i] = (uint8_t)(rand());
+                seed = (unsigned int)(output[i]);
+        }
+
+        return 0;
+}
+
 AvbOps* avb_ops_user_new(void) {
   AvbOps* ops;
 
@@ -387,6 +404,7 @@ AvbOps* avb_ops_user_new(void) {
   ops->atx_ops->read_permanent_attributes = avb_read_perm_attr;
   ops->atx_ops->read_permanent_attributes_hash = avb_read_perm_attr_hash;
   ops->atx_ops->set_key_version = avb_set_key_version;
+  ops->atx_ops->get_random = rk_get_random;
 
 out:
   return ops;
