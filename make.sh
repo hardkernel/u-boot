@@ -29,6 +29,13 @@ TOOLCHAIN_ARM64=../prebuilts/gcc/linux-x86/aarch64/gcc-linaro-6.3.1-2017.05-x86_
 OBJ_ARM32=arm-linux-gnueabihf-objdump
 OBJ_ARM64=aarch64-linux-gnu-objdump
 
+# Declare global plaform configure, updated in fixup_platform_configure()
+PLATFORM_RSA=
+PLATFORM_SHA=
+PLATFORM_UBOOT_IMG_SIZE=
+PLATFORM_TRUST_IMG_SIZE=
+PLATFORM_AARCH32=
+
 prepare()
 {
 	local absolute_path cmd
@@ -127,10 +134,39 @@ sub_commands()
 	fi
 }
 
-fixup_chip_name()
+fixup_platform_configure()
 {
+# <1> Fixup chip name for searching trust/loader ini files
 	if [ "$RKCHIP" = 'RK3228' -o "$RKCHIP" = 'RK3229' ]; then
 		RKCHIP=RK322X
+	fi
+
+# <2> Fixup rsa/sha pack mode for platforms
+	# RK3308/PX30/RK3326 use RSA-PKCS1 V2.1, it's pack magic is "3"
+	if [ $RKCHIP = "PX30" -o $RKCHIP = "RK3326" -o $RKCHIP = "RK3308" ]; then
+		PLATFORM_RSA="--rsa 3"
+	# RK3368 use rk big endian SHA256, it's pack magic is "2"
+	elif [ $RKCHIP = "RK3368" ]; then
+		PLATFORM_SHA="--sha 2"
+	# other platforms use default configure
+	fi
+
+# <3> Fixup images size pack for platforms
+	if [ $RKCHIP = "RK3308" ]; then
+		if grep -q '^CONFIG_ARM64_BOOT_AARCH32=y' ${OUTDIR}/.config ; then
+			PLATFORM_UBOOT_IMG_SIZE="--size 512 2"
+			PLATFORM_TRUST_IMG_SIZE="--size 512 2"
+		else
+			PLATFORM_UBOOT_IMG_SIZE="--size 1024 2"
+			PLATFORM_TRUST_IMG_SIZE="--size 1024 2"
+		fi
+	fi
+
+# <4> Fixup PLATFORM_AARCH32 for ARM64 cpu platforms
+	if [ $RKCHIP = "RK3308" ]; then
+		if grep -q '^CONFIG_ARM64_BOOT_AARCH32=y' ${OUTDIR}/.config ; then
+			PLATFORM_AARCH32="AARCH32"
+		fi
 	fi
 }
 
@@ -139,7 +175,7 @@ pack_uboot_image()
 	local UBOOT_LOAD_ADDR
 
 	UBOOT_LOAD_ADDR=`sed -n "/CONFIG_SYS_TEXT_BASE=/s/CONFIG_SYS_TEXT_BASE=//p" ${OUTDIR}/include/autoconf.mk|tr -d '\r'`
-	${TOOLCHAIN_RKBIN}/loaderimage --pack --uboot ${OUTDIR}/u-boot.bin uboot.img ${UBOOT_LOAD_ADDR}
+	${TOOLCHAIN_RKBIN}/loaderimage --pack --uboot ${OUTDIR}/u-boot.bin uboot.img ${UBOOT_LOAD_ADDR} ${PLATFORM_UBOOT_IMG_SIZE}
 
 	if [ -f ${OUTDIR}/u-boot.img ]; then
 		rm ${OUTDIR}/u-boot.img
@@ -168,34 +204,21 @@ pack_loader_image()
 
 pack_trust_image()
 {
-	local TOS TOS_TA DARM_BASE TEE_LOAD_ADDR TEE_OFFSET=0x8400000 AARCH32
+	local TOS TOS_TA DARM_BASE TEE_LOAD_ADDR TEE_OFFSET=0x8400000
 
 	# ARM64 uses trust_merger
 	if grep -Eq ''^CONFIG_ARM64=y'|'^CONFIG_ARM64_BOOT_AARCH32=y'' ${OUTDIR}/.config ; then
-		if grep -q '^CONFIG_ARM64_BOOT_AARCH32=y' ${OUTDIR}/.config ; then
-			AARCH32=AARCH32
-		fi
-
-		if [ ! -f ${RKBIN}/RKTRUST/${RKCHIP}TRUST.ini ]; then
-			echo "pack trust failed! Can't find: ${RKBIN}/RKTRUST/${RKCHIP}TRUST.ini"
+		if [ ! -f ${RKBIN}/RKTRUST/${RKCHIP}${PLATFORM_AARCH32}TRUST.ini ]; then
+			echo "pack trust failed! Can't find: ${RKBIN}/RKTRUST/${RKCHIP}${PLATFORM_AARCH32}TRUST.ini"
 			return
 		fi
 
 		cd ${RKBIN}
-
-		# RK3308/PX30/RK3326 use RSA-PKCS1 V2.1, it's pack magic is "3"
-		if [ $RKCHIP = "PX30" -o $RKCHIP = "RK3326" -o $RKCHIP = "RK3308" ]; then
-			${TOOLCHAIN_RKBIN}/trust_merger --rsa 3 --replace tools/rk_tools/ ./ ${RKBIN}/RKTRUST/${RKCHIP}${AARCH32}TRUST.ini
-		# RK3368 use rk big endian SHA256, it's pack magic is "2"
-		elif [ $RKCHIP = "RK3368" ]; then
-			${TOOLCHAIN_RKBIN}/trust_merger --sha 2 --replace tools/rk_tools/ ./ ${RKBIN}/RKTRUST/${RKCHIP}${AARCH32}TRUST.ini
-		else
-			${TOOLCHAIN_RKBIN}/trust_merger --replace tools/rk_tools/ ./ ${RKBIN}/RKTRUST/${RKCHIP}${AARCH32}TRUST.ini
-		fi
+		${TOOLCHAIN_RKBIN}/trust_merger ${PLATFORM_SHA} ${PLATFORM_RSA} ${PLATFORM_TRUST_IMG_SIZE} --replace tools/rk_tools/ ./ ${RKBIN}/RKTRUST/${RKCHIP}${PLATFORM_AARCH32}TRUST.ini
 
 		cd -
 		mv ${RKBIN}/trust.img ./trust.img
-		echo "pack trust okay! Input: ${RKBIN}/RKTRUST/${RKCHIP}${AARCH32}TRUST.ini"
+		echo "pack trust okay! Input: ${RKBIN}/RKTRUST/${RKCHIP}${PLATFORM_AARCH32}TRUST.ini"
 	# ARM uses loaderimage
 	else
 		if [ ! -f ${RKBIN}/RKTRUST/${RKCHIP}TOS.ini ]; then
@@ -219,14 +242,14 @@ pack_trust_image()
 		TOS_TA=$(echo ${TOS_TA} | sed "s/tools\/rk_tools\//\.\//g")
 
 		if [ $TOS_TA -a $TOS ]; then
-			${TOOLCHAIN_RKBIN}/loaderimage --pack --trustos ${RKBIN}/${TOS} ./trust.img ${TEE_LOAD_ADDR}
-			${TOOLCHAIN_RKBIN}/loaderimage --pack --trustos ${RKBIN}/${TOS_TA} ./trust_with_ta.img ${TEE_LOAD_ADDR}
+			${TOOLCHAIN_RKBIN}/loaderimage --pack --trustos ${RKBIN}/${TOS} ./trust.img ${TEE_LOAD_ADDR} ${PLATFORM_TRUST_IMG_SIZE}
+			${TOOLCHAIN_RKBIN}/loaderimage --pack --trustos ${RKBIN}/${TOS_TA} ./trust_with_ta.img ${TEE_LOAD_ADDR} ${PLATFORM_TRUST_IMG_SIZE}
 			echo "Both trust.img and trust_with_ta.img are ready"
 		elif [ $TOS ]; then
-			${TOOLCHAIN_RKBIN}/loaderimage --pack --trustos ${RKBIN}/${TOS} ./trust.img ${TEE_LOAD_ADDR}
+			${TOOLCHAIN_RKBIN}/loaderimage --pack --trustos ${RKBIN}/${TOS} ./trust.img ${TEE_LOAD_ADDR} ${PLATFORM_TRUST_IMG_SIZE}
 			echo "trust.img is ready"
 		elif [ $TOS_TA ]; then
-			${TOOLCHAIN_RKBIN}/loaderimage --pack --trustos ${RKBIN}/${TOS_TA} ./trust.img ${TEE_LOAD_ADDR}
+			${TOOLCHAIN_RKBIN}/loaderimage --pack --trustos ${RKBIN}/${TOS_TA} ./trust.img ${TEE_LOAD_ADDR} ${PLATFORM_TRUST_IMG_SIZE}
 			echo "trust.img with ta is ready"
 		else
 			echo "Can't find any tee bin"
@@ -241,7 +264,7 @@ prepare
 echo "make for ${BOARD}_defconfig by -j${JOB}"
 make ${BOARD}_defconfig ${OUTOPT}
 select_toolchain
-fixup_chip_name
+fixup_platform_configure
 sub_commands
 make CROSS_COMPILE=${TOOLCHAIN_GCC}  all --jobs=${JOB} ${OUTOPT}
 pack_uboot_image
