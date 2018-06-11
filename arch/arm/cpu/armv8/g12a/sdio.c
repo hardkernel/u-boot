@@ -157,14 +157,17 @@ __weak int  sd_emmc_detect(unsigned port)
 	return ret;
 }
 
-__weak void sd_emmc_para_config(unsigned int *reg, unsigned int port)
+__weak void sd_emmc_para_config(struct sd_emmc_global_regs *reg,
+		unsigned int clock, unsigned int port)
 {
+	unsigned int clk = reg->gclock;
 	cpu_id_t cpuid = get_cpu_id();
+
 	if ((cpuid.chip_rev == 0xB)
-			&& (port == 1)) {
-		*reg &= ~(3 << Cfg_co_phase);
-		*reg |= (3 << Cfg_co_phase);
+		&& (port == SDIO_PORT_C)) {
+		clk &= ~(3 << Cfg_co_phase);
+		clk |= (3 << Cfg_co_phase);
 	}
+	reg->gclock = clk;
 	return;
 }
-

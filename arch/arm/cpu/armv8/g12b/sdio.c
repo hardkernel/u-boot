@@ -153,11 +153,20 @@ __weak int  sd_emmc_detect(unsigned port)
 	return ret;
 }
 
-__weak void sd_emmc_para_config(unsigned int *reg, unsigned int port)
+__weak void sd_emmc_para_config(struct sd_emmc_global_regs *reg,
+		unsigned int clock, unsigned int port)
 {
-	if (port == 1) {
-		*reg &= ~(3 << Cfg_co_phase);
-		*reg |= (1 << Cfg_co_phase);
+	unsigned int clk = reg->gclock;
+
+	if (port == SDIO_PORT_C) {
+		if (clock <= 400000) {
+			clk &= ~(3 << Cfg_co_phase);
+			clk |= (3 << Cfg_co_phase);
+		} else if (clock >= 25000000) {
+			clk &= ~(3 << Cfg_co_phase);
+			clk |= (1 << Cfg_co_phase);
+		}
+		reg->gclock = clk;
 	}
 	return;
 }

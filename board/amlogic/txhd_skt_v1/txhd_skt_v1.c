@@ -578,11 +578,15 @@ phys_size_t get_effective_memsize(void)
 #endif
 }
 
-void sd_emmc_para_config(unsigned int *reg, unsigned int port)
+void sd_emmc_para_config(struct sd_emmc_global_regs *reg,
+		unsigned int clock, unsigned int port)
 {
-	if (port == 1) {
-		*reg &= ~(3 << Cfg_co_phase);
-		*reg |= (3 << Cfg_co_phase);
+	unsigned int clk = reg->gclock;
+
+	if (port == SDIO_PORT_C) {
+			clk &= ~(3 << Cfg_co_phase);
+			clk |= (3 << Cfg_co_phase);
 	}
+	reg->gclock = clk;
 	return;
 }
