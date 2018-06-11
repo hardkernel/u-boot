@@ -367,6 +367,9 @@ static int lcd_config_load_from_dts(char *dt_addr, struct lcd_config_s *pconf)
 			pconf->lcd_control.mipi_config->phy_switch = be32_to_cpup((((u32*)propdata)+7));
 		}
 
+		pconf->lcd_control.mipi_config->check_en = 0;
+		pconf->lcd_control.mipi_config->check_reg = 0xff;
+		pconf->lcd_control.mipi_config->check_cnt = 0;
 		lcd_mipi_dsi_init_table_detect(dt_addr, child_offset, pconf->lcd_control.mipi_config, 1);
 		lcd_mipi_dsi_init_table_detect(dt_addr, child_offset, pconf->lcd_control.mipi_config, 0);
 
@@ -509,6 +512,9 @@ static int lcd_config_load_from_bsp(struct lcd_config_s *pconf)
 		pconf->lcd_control.mipi_config->phy_switch = ext_lcd->lcd_spc_val7;
 		pconf->lcd_control.mipi_config->factor_denominator = 100;
 
+		pconf->lcd_control.mipi_config->check_en = 0;
+		pconf->lcd_control.mipi_config->check_reg = 0xff;
+		pconf->lcd_control.mipi_config->check_cnt = 0;
 		lcd_mipi_dsi_init_table_check_bsp(pconf->lcd_control.mipi_config, 1);
 		lcd_mipi_dsi_init_table_check_bsp(pconf->lcd_control.mipi_config, 0);
 
