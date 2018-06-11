@@ -873,6 +873,7 @@ static void tx_handler_ul(struct usb_ep *ep, struct usb_request *req)
 
 	if (remain_size <= 0) {
 		fastboot_func->in_req->complete = fastboot_complete;
+		wakeup_thread();
 		fastboot_tx_write_str("OKAY");
 		printf("\nuploading of %d bytes finished\n", upload_bytes);
 		upload_bytes = 0;
