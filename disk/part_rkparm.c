@@ -83,6 +83,9 @@ static int rkparm_param_parse(char *param, struct list_head *parts_head,
 		if (dev_desc->if_type != IF_TYPE_RKNAND)
 			offset = RK_PARAM_OFFSET;
 		part->start = start + offset;
+		/* Last partition use all remain space */
+		if (size == (~0UL))
+			size = dev_desc->lba - part->start;
 		part->size = size;
 		strncpy(part->name, next, len);
 		part->name[len] = '\0';
