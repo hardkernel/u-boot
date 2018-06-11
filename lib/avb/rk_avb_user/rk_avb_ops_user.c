@@ -632,3 +632,26 @@ int rk_avb_get_part_has_slot_info(const char *base_name)
 	free(part_name);
 	return part_num;
 }
+
+int rk_auth_unlock(void *buffer, char *out_is_trusted)
+{
+	AvbOps* ops;
+
+	ops = avb_ops_user_new();
+	if (ops == NULL) {
+		avb_error("avb_ops_user_new() failed!");
+		return -1;
+	}
+
+	if (avb_atx_validate_unlock_credential(ops->atx_ops,
+					   (AvbAtxUnlockCredential*)buffer,
+					   (bool*)out_is_trusted)) {
+		avb_ops_user_free(ops);
+		return -1;
+	}
+	avb_ops_user_free(ops);
+	if (*out_is_trusted == true)
+		return 0;
+	else
+		return -1;
+}

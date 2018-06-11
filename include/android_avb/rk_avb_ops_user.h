@@ -243,6 +243,17 @@ int rk_avb_get_part_has_slot_info(const char *base_name);
 
 AvbABFlowResult rk_avb_ab_slot_select(AvbABOps* ab_ops,char select_slot[]);
 
+/**
+ * authenticated unlock
+ *
+ * @param buffer: AvbAtxUnlockCredential
+ *
+ * @param out_is_trusted: true or false
+ *
+ * @return 0 if authenticated unlock OK, -1 if not
+ */
+int rk_auth_unlock(void *buffer, char *out_is_trusted);
+
 #ifdef __cplusplus
 }
 #endif
