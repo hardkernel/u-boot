@@ -5,29 +5,32 @@ SUBCMD=$2
 RKCHIP=${BOARD##*-}
 RKCHIP=$(echo ${RKCHIP} | tr '[a-z]' '[A-Z]')
 JOB=`sed -n "N;/processor/p" /proc/cpuinfo|wc -l`
-SUPPROT_LIST=`ls configs/*-r[v,k][0-9][0-9][0-9][0-9]_defconfig`
+SUPPROT_LIST=`ls configs/*-[r,p][x,v,k][0-9][0-9]*_defconfig`
 
-# Declare global default output dir and cmd, update in prepare()
-OUTDIR=.
-OUTOPT=
-
-# Declare global rkbin tools and rkbin Responsity path, updated in prepare()
-TOOLCHAIN_RKBIN=./
-RKBIN=./
-# RKTOOL path
+########################################### User can modify #############################################
+# User's rkbin tool relative path
 RKBIN_TOOLS=../rkbin/tools
 
-# Declare global toolchain path for CROSS_COMPILE, updated in select_toolchain()
-TOOLCHAIN_GCC=./
-TOOLCHAIN_OBJDUMP=./
-# GCC toolchain
+# User's GCC toolchain and relative path
+OBJ_ARM32=arm-linux-gnueabihf-objdump
+OBJ_ARM64=aarch64-linux-gnu-objdump
 GCC_ARM32=arm-linux-gnueabihf-
 GCC_ARM64=aarch64-linux-gnu-
 TOOLCHAIN_ARM32=../prebuilts/gcc/linux-x86/arm/gcc-linaro-6.3.1-2017.05-x86_64_arm-linux-gnueabihf/bin
 TOOLCHAIN_ARM64=../prebuilts/gcc/linux-x86/aarch64/gcc-linaro-6.3.1-2017.05-x86_64_aarch64-linux-gnu/bin
-# OBJDMP
-OBJ_ARM32=arm-linux-gnueabihf-objdump
-OBJ_ARM64=aarch64-linux-gnu-objdump
+
+########################################### User not touch #############################################
+# Declare global rkbin RKTOOLS and rkbin repository path, updated in prepare()
+RKTOOLS=
+RKBIN=
+
+# Declare global toolchain path for CROSS_COMPILE, updated in select_toolchain()
+TOOLCHAIN_GCC=
+TOOLCHAIN_OBJDUMP=
+
+# Declare global default output dir and cmd, update in prepare()
+OUTDIR=
+OUTOPT=
 
 # Declare global plaform configure, updated in fixup_platform_configure()
 PLATFORM_RSA=
@@ -35,12 +38,13 @@ PLATFORM_SHA=
 PLATFORM_UBOOT_IMG_SIZE=
 PLATFORM_TRUST_IMG_SIZE=
 PLATFORM_AARCH32=
+#########################################################################################################
 
 prepare()
 {
 	local absolute_path cmd
 
-	# Check invaid args and help
+	# Check invalid args and help
 	if [ "$BOARD" = '--help' -o "$BOARD" = '-h' -o "$BOARD" = '--h' -o "$BOARD" = '' ]; then
 		echo
 		echo "Usage: ./make.sh [board]"
@@ -52,24 +56,24 @@ prepare()
 		echo "Can't find: configs/${BOARD}_defconfig"
 		echo
 		echo "*************** Support list ***************"
-		echo "$SUPPROT_LIST"
+		echo "${SUPPROT_LIST}"
 		echo "********************************************"
 		echo
 		exit 1
 	fi
 
-	# Initialize RKBIN and TOOLCHAIN_RKBIN
+	# Initialize RKBIN and RKTOOLS
 	if [ -d ${RKBIN_TOOLS} ]; then
 		absolute_path=$(cd `dirname ${RKBIN_TOOLS}`; pwd)
 		RKBIN=${absolute_path}
-		TOOLCHAIN_RKBIN=${absolute_path}/tools
+		RKTOOLS=${absolute_path}/tools
 	else
 		echo
-		echo "Can't find '../rkbin/' Responsity, please download it before pack image!"
+		echo "Can't find '../rkbin/' repository, please download it before pack image!"
 		echo "How to obtain? 3 ways:"
-		echo "	1. Login your Rockchip gerrit account: \"Projects\" -> \"List\" -> search \"rk/rkbin\" Responsity"
-		echo "	2. Github Responsity: https://github.com/rockchip-linux/rkbin"
-		echo "	3. Download full release SDK Responsity"
+		echo "	1. Login your Rockchip gerrit account: \"Projects\" -> \"List\" -> search \"rk/rkbin\" repository"
+		echo "	2. Github repository: https://github.com/rockchip-linux/rkbin"
+		echo "	3. Download full release SDK repository"
 		exit 1
 	fi
 
@@ -78,6 +82,8 @@ prepare()
 	if [ "${cmd}" = 'O' ]; then
 		OUTDIR=${SUBCMD#*=}
 		OUTOPT=O=${OUTDIR}
+	else
+		OUTDIR=.
 	fi
 }
 
@@ -108,6 +114,12 @@ select_toolchain()
 	echo "toolchain: ${TOOLCHAIN_GCC}"
 }
 
+# Support subcmd:
+#	./make.sh evb-rk3288 elf	--- dump elf file with -D(default)
+#	./make.sh evb-rk3288 elf-S	--- dump elf file with -S
+#	./make.sh evb-rk3288 trust	--- pack trust.img without compile u-boot
+#	./make.sh evb-rk3288 loader	--- pack loader bin without compile u-boot
+#	./make.sh evb-rk3288 uboot	--- pack uboot.img without compile u-boot
 sub_commands()
 {
 	local elf=${SUBCMD%-*} opt=${SUBCMD#*-}
@@ -131,9 +143,17 @@ sub_commands()
 	elif [ "$SUBCMD" = 'loader' ]; then
 		pack_loader_image
 		exit 0
+	elif [ "$SUBCMD" = 'uboot' ]; then
+		pack_uboot_image
+		exit 0
 	fi
 }
 
+# Support platform special configure
+#	1. fixup chip name;
+#	2. fixup pack mode;
+#	3. fixup image size
+#	4. fixup ARM64 cpu boot with AArch32
 fixup_platform_configure()
 {
 # <1> Fixup chip name for searching trust/loader ini files
@@ -175,8 +195,9 @@ pack_uboot_image()
 	local UBOOT_LOAD_ADDR
 
 	UBOOT_LOAD_ADDR=`sed -n "/CONFIG_SYS_TEXT_BASE=/s/CONFIG_SYS_TEXT_BASE=//p" ${OUTDIR}/include/autoconf.mk|tr -d '\r'`
-	${TOOLCHAIN_RKBIN}/loaderimage --pack --uboot ${OUTDIR}/u-boot.bin uboot.img ${UBOOT_LOAD_ADDR} ${PLATFORM_UBOOT_IMG_SIZE}
+	${RKTOOLS}/loaderimage --pack --uboot ${OUTDIR}/u-boot.bin uboot.img ${UBOOT_LOAD_ADDR} ${PLATFORM_UBOOT_IMG_SIZE}
 
+	# Delete u-boot.img and u-boot-dtb.img, which makes users not be confused with final uboot.img
 	if [ -f ${OUTDIR}/u-boot.img ]; then
 		rm ${OUTDIR}/u-boot.img
 	fi
@@ -196,9 +217,8 @@ pack_loader_image()
 	fi
 
 	cd ${RKBIN}
-	${TOOLCHAIN_RKBIN}/boot_merger --replace tools/rk_tools/ ./ ${RKBIN}/RKBOOT/${RKCHIP}MINIALL.ini
-	cd -
-	mv ${RKBIN}/*_loader_*.bin ./
+	${RKTOOLS}/boot_merger --replace tools/rk_tools/ ./ ${RKBIN}/RKBOOT/${RKCHIP}MINIALL.ini
+	cd - && mv ${RKBIN}/*_loader_*.bin ./
 	echo "pack loader okay! Input: ${RKBIN}/RKBOOT/${RKCHIP}MINIALL.ini"
 }
 
@@ -214,10 +234,9 @@ pack_trust_image()
 		fi
 
 		cd ${RKBIN}
-		${TOOLCHAIN_RKBIN}/trust_merger ${PLATFORM_SHA} ${PLATFORM_RSA} ${PLATFORM_TRUST_IMG_SIZE} --replace tools/rk_tools/ ./ ${RKBIN}/RKTRUST/${RKCHIP}${PLATFORM_AARCH32}TRUST.ini
+		${RKTOOLS}/trust_merger ${PLATFORM_SHA} ${PLATFORM_RSA} ${PLATFORM_TRUST_IMG_SIZE} --replace tools/rk_tools/ ./ ${RKBIN}/RKTRUST/${RKCHIP}${PLATFORM_AARCH32}TRUST.ini
 
-		cd -
-		mv ${RKBIN}/trust.img ./trust.img
+		cd - && mv ${RKBIN}/trust.img ./trust.img
 		echo "pack trust okay! Input: ${RKBIN}/RKTRUST/${RKCHIP}${PLATFORM_AARCH32}TRUST.ini"
 	# ARM uses loaderimage
 	else
@@ -242,14 +261,14 @@ pack_trust_image()
 		TOS_TA=$(echo ${TOS_TA} | sed "s/tools\/rk_tools\//\.\//g")
 
 		if [ $TOS_TA -a $TOS ]; then
-			${TOOLCHAIN_RKBIN}/loaderimage --pack --trustos ${RKBIN}/${TOS} ./trust.img ${TEE_LOAD_ADDR} ${PLATFORM_TRUST_IMG_SIZE}
-			${TOOLCHAIN_RKBIN}/loaderimage --pack --trustos ${RKBIN}/${TOS_TA} ./trust_with_ta.img ${TEE_LOAD_ADDR} ${PLATFORM_TRUST_IMG_SIZE}
+			${RKTOOLS}/loaderimage --pack --trustos ${RKBIN}/${TOS} ./trust.img ${TEE_LOAD_ADDR} ${PLATFORM_TRUST_IMG_SIZE}
+			${RKTOOLS}/loaderimage --pack --trustos ${RKBIN}/${TOS_TA} ./trust_with_ta.img ${TEE_LOAD_ADDR} ${PLATFORM_TRUST_IMG_SIZE}
 			echo "Both trust.img and trust_with_ta.img are ready"
 		elif [ $TOS ]; then
-			${TOOLCHAIN_RKBIN}/loaderimage --pack --trustos ${RKBIN}/${TOS} ./trust.img ${TEE_LOAD_ADDR} ${PLATFORM_TRUST_IMG_SIZE}
+			${RKTOOLS}/loaderimage --pack --trustos ${RKBIN}/${TOS} ./trust.img ${TEE_LOAD_ADDR} ${PLATFORM_TRUST_IMG_SIZE}
 			echo "trust.img is ready"
 		elif [ $TOS_TA ]; then
-			${TOOLCHAIN_RKBIN}/loaderimage --pack --trustos ${RKBIN}/${TOS_TA} ./trust.img ${TEE_LOAD_ADDR} ${PLATFORM_TRUST_IMG_SIZE}
+			${RKTOOLS}/loaderimage --pack --trustos ${RKBIN}/${TOS_TA} ./trust.img ${TEE_LOAD_ADDR} ${PLATFORM_TRUST_IMG_SIZE}
 			echo "trust.img with ta is ready"
 		else
 			echo "Can't find any tee bin"
