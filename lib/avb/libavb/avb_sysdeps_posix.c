@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 
+#include <stdio.h>
 #include <common.h>
 #include <stdarg.h>
 #include <stdlib.h>
@@ -31,8 +32,10 @@
 
 #include <android_avb/avb_sysdeps.h>
 
-void abort(void);
-
+void abort(void)
+{
+	
+}
 int avb_memcmp(const void* src1, const void* src2, size_t n) {
   return memcmp(src1, src2, n);
 }

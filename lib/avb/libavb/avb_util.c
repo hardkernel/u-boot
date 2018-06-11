@@ -401,3 +401,30 @@ const char* avb_basename(const char* str) {
   }
   return str;
 }
+
+void avb_uppercase(char* str) {
+  size_t i;
+  for (i = 0; str[i] != '\0'; ++i) {
+    if (str[i] <= 0x7A && str[i] >= 0x61) {
+      str[i] -= 0x20;
+    }
+  }
+}
+
+char* avb_bin2hex(const uint8_t* data, size_t data_len) {
+  const char hex_digits[17] = "0123456789abcdef";
+  char* hex_data;
+  size_t n;
+
+  hex_data = avb_malloc(data_len * 2 + 1);
+  if (hex_data == NULL) {
+    return NULL;
+  }
+
+  for (n = 0; n < data_len; n++) {
+    hex_data[n * 2] = hex_digits[data[n] >> 4];
+    hex_data[n * 2 + 1] = hex_digits[data[n] & 0x0f];
+  }
+  hex_data[n * 2] = '\0';
+  return hex_data;
+}

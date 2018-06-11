@@ -262,6 +262,15 @@ typedef struct {
   uint64_t rollback_indexes[AVB_MAX_NUMBER_OF_ROLLBACK_INDEX_LOCATIONS];
 } AvbSlotVerifyData;
 
+/* Calculates a digest of all vbmeta images in |data| using
+ * the digest indicated by |digest_type|. Stores the result
+ * in |out_digest| which must be large enough to hold a digest
+ * of the requested type.
+ */
+void avb_slot_verify_data_calculate_vbmeta_digest(AvbSlotVerifyData* data,
+                                                  AvbDigestType digest_type,
+                                                  uint8_t* out_digest);
+
 /* Frees a |AvbSlotVerifyData| including all data it points to. */
 void avb_slot_verify_data_free(AvbSlotVerifyData* data);
 

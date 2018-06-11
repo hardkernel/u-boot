@@ -37,6 +37,9 @@
 extern "C" {
 #endif
 
+/* Well-known names of named persistent values. */
+#define AVB_NPV_PERSISTENT_DIGEST_PREFIX "avb.persistent_digest."
+
 /* Return codes used for I/O operations.
  *
  * AVB_IO_RESULT_OK is returned if the requested operation was
@@ -53,13 +56,25 @@ extern "C" {
  * AVB_IO_RESULT_ERROR_RANGE_OUTSIDE_PARTITION is returned if the
  * range of bytes requested to be read or written is outside the range
  * of the partition.
+ *
+ * AVB_IO_RESULT_ERROR_NO_SUCH_VALUE is returned if a named persistent value
+ * does not exist.
+ *
+ * AVB_IO_RESULT_ERROR_INVALID_VALUE_SIZE is returned if a named persistent
+ * value size is not supported or does not match the expected size.
+ *
+ * AVB_IO_RESULT_ERROR_INSUFFICIENT_SPACE is returned if a buffer is too small
+ * for the requested operation.
  */
 typedef enum {
   AVB_IO_RESULT_OK,
   AVB_IO_RESULT_ERROR_OOM,
   AVB_IO_RESULT_ERROR_IO,
   AVB_IO_RESULT_ERROR_NO_SUCH_PARTITION,
-  AVB_IO_RESULT_ERROR_RANGE_OUTSIDE_PARTITION
+  AVB_IO_RESULT_ERROR_RANGE_OUTSIDE_PARTITION,
+  AVB_IO_RESULT_ERROR_NO_SUCH_VALUE,
+  AVB_IO_RESULT_ERROR_INVALID_VALUE_SIZE,
+  AVB_IO_RESULT_ERROR_INSUFFICIENT_SPACE,
 } AvbIOResult;
 
 struct AvbOps;
@@ -247,6 +262,53 @@ struct AvbOps {
   AvbIOResult (*get_size_of_partition)(AvbOps* ops,
                                        const char* partition,
                                        uint64_t* out_size_num_bytes);
+
+  /* Reads a persistent value corresponding to the given |name|. The value is
+   * returned in |out_buffer| which must point to |buffer_size| bytes. On
+   * success |out_num_bytes_read| contains the number of bytes read into
+   * |out_buffer|. If AVB_IO_RESULT_ERROR_INSUFFICIENT_SPACE is returned,
+   * |out_num_bytes_read| contains the number of bytes that would have been read
+   * which can be used to allocate a buffer.
+   *
+   * The |buffer_size| may be zero and the |out_buffer| may be NULL, but if
+   * |out_buffer| is NULL then |buffer_size| *must* be zero.
+   *
+   * Returns AVB_IO_RESULT_OK on success, otherwise an error code.
+   *
+   * If the value does not exist, is not supported, or is not populated, returns
+   * AVB_IO_RESULT_ERROR_NO_SUCH_VALUE. If |buffer_size| is smaller than the
+   * size of the stored value, returns AVB_IO_RESULT_ERROR_INSUFFICIENT_SPACE.
+   *
+   * This operation is currently only used to support persistent digests. If a
+   * device does not use persistent digests this function pointer can be set to
+   * NULL.
+   */
+  AvbIOResult (*read_persistent_value)(AvbOps* ops,
+                                       const char* name,
+                                       size_t buffer_size,
+                                       uint8_t* out_buffer,
+                                       size_t* out_num_bytes_read);
+
+  /* Writes a persistent value corresponding to the given |name|. The value is
+   * supplied in |value| which must point to |value_size| bytes. Any existing
+   * value with the same name is overwritten. If |value_size| is zero, future
+   * calls to |read_persistent_value| will return
+   * AVB_IO_RESULT_ERROR_NO_SUCH_VALUE.
+   *
+   * Returns AVB_IO_RESULT_OK on success, otherwise an error code.
+   *
+   * If the value |name| is not supported, returns
+   * AVB_IO_RESULT_ERROR_NO_SUCH_VALUE. If the |value_size| is not supported,
+   * returns AVB_IO_RESULT_ERROR_INVALID_VALUE_SIZE.
+   *
+   * This operation is currently only used to support persistent digests. If a
+   * device does not use persistent digests this function pointer can be set to
+   * NULL.
+   */
+  AvbIOResult (*write_persistent_value)(AvbOps* ops,
+                                        const char* name,
+                                        size_t value_size,
+                                        const uint8_t* value);
 };
 
 #ifdef __cplusplus

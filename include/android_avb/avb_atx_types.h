@@ -41,6 +41,9 @@ extern "C" {
 /* Size in bytes of an Android Things product ID. */
 #define AVB_ATX_PRODUCT_ID_SIZE 16
 
+/* Size in bytes of an Android Things unlock challenge. */
+#define AVB_ATX_UNLOCK_CHALLENGE_SIZE 16
+
 /* Size in bytes of a serialized public key with a 4096-bit modulus. */
 #define AVB_ATX_PUBLIC_KEY_SIZE (sizeof(AvbRSAPublicKeyHeader) + 1024)
 
@@ -72,6 +75,21 @@ typedef struct AvbAtxPublicKeyMetadata {
   AvbAtxCertificate product_intermediate_key_certificate;
   AvbAtxCertificate product_signing_key_certificate;
 } AVB_ATTR_PACKED AvbAtxPublicKeyMetadata;
+
+/* Data structure of an Android Things unlock challenge. */
+typedef struct AvbAtxUnlockChallenge {
+  uint32_t version;
+  uint8_t product_id_hash[AVB_SHA256_DIGEST_SIZE];
+  uint8_t challenge[AVB_ATX_UNLOCK_CHALLENGE_SIZE];
+} AVB_ATTR_PACKED AvbAtxUnlockChallenge;
+
+/* Data structure of an Android Things unlock credential. */
+typedef struct AvbAtxUnlockCredential {
+  uint32_t version;
+  AvbAtxCertificate product_intermediate_key_certificate;
+  AvbAtxCertificate product_unlock_key_certificate;
+  uint8_t challenge_signature[AVB_RSA4096_NUM_BYTES];
+} AVB_ATTR_PACKED AvbAtxUnlockCredential;
 
 #ifdef __cplusplus
 }

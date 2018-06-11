@@ -33,8 +33,11 @@
  * values. Returns NULL on OOM, otherwise the cmdline with values
  * replaced.
  */
-char* avb_sub_cmdline(AvbOps* ops, const char* cmdline, const char* ab_suffix,
-                      bool using_boot_for_vbmeta) {
+char* avb_sub_cmdline(AvbOps* ops,
+                      const char* cmdline,
+                      const char* ab_suffix,
+                      bool using_boot_for_vbmeta,
+                      const AvbCmdlineSubstList* additional_substitutions) {
   const char* part_name_str[NUM_GUIDS] = {"system", "boot", "vbmeta"};
   const char* replace_str[NUM_GUIDS] = {"$(ANDROID_SYSTEM_PARTUUID)",
                                         "$(ANDROID_BOOT_PARTUUID)",
@@ -68,7 +71,7 @@ char* avb_sub_cmdline(AvbOps* ops, const char* cmdline, const char* ab_suffix,
     io_ret = ops->get_unique_guid_for_partition(
         ops, part_name, guid_buf, sizeof guid_buf);
     if (io_ret == AVB_IO_RESULT_ERROR_OOM) {
-      return NULL;
+      goto fail;
     } else if (io_ret != AVB_IO_RESULT_OK) {
       avb_error("Error getting unique GUID for partition.\n");
       goto fail;
@@ -83,6 +86,22 @@ char* avb_sub_cmdline(AvbOps* ops, const char* cmdline, const char* ab_suffix,
     }
     if (ret == NULL) {
       goto fail;
+    }
+  }
+
+  avb_assert(ret != NULL);
+
+  /* Replace any additional substitutions. */
+  if (additional_substitutions != NULL) {
+    for (n = 0; n < additional_substitutions->size; ++n) {
+      char* new_ret = avb_replace(ret,
+                                  additional_substitutions->tokens[n],
+                                  additional_substitutions->values[n]);
+      avb_free(ret);
+      ret = new_ret;
+      if (ret == NULL) {
+        goto fail;
+      }
     }
   }
 
@@ -186,22 +205,11 @@ static int cmdline_append_hex(AvbSlotVerifyData* slot_data,
                               const char* key,
                               const uint8_t* data,
                               size_t data_len) {
-  char hex_digits[17] = "0123456789abcdef";
-  char* hex_data;
   int ret;
-  size_t n;
-
-  hex_data = avb_malloc(data_len * 2 + 1);
+  char* hex_data = avb_bin2hex(data, data_len);
   if (hex_data == NULL) {
     return 0;
   }
-
-  for (n = 0; n < data_len; n++) {
-    hex_data[n * 2] = hex_digits[data[n] >> 4];
-    hex_data[n * 2 + 1] = hex_digits[data[n] & 0x0f];
-  }
-  hex_data[n * 2] = '\0';
-
   ret = cmdline_append_option(slot_data, key, hex_data);
   avb_free(hex_data);
   return ret;
@@ -261,13 +269,11 @@ AvbSlotVerifyResult avb_append_options(
     case AVB_ALGORITHM_TYPE_SHA256_RSA2048:
     case AVB_ALGORITHM_TYPE_SHA256_RSA4096:
     case AVB_ALGORITHM_TYPE_SHA256_RSA8192: {
-      AvbSHA256Ctx ctx;
       size_t n, total_size = 0;
-      avb_sha256_init(&ctx);
+      uint8_t vbmeta_digest[AVB_SHA256_DIGEST_SIZE];
+      avb_slot_verify_data_calculate_vbmeta_digest(
+          slot_data, AVB_DIGEST_TYPE_SHA256, vbmeta_digest);
       for (n = 0; n < slot_data->num_vbmeta_images; n++) {
-        avb_sha256_update(&ctx,
-                          slot_data->vbmeta_images[n].vbmeta_data,
-                          slot_data->vbmeta_images[n].vbmeta_size);
         total_size += slot_data->vbmeta_images[n].vbmeta_size;
       }
       if (!cmdline_append_option(
@@ -276,7 +282,7 @@ AvbSlotVerifyResult avb_append_options(
               slot_data, "androidboot.vbmeta.size", total_size) ||
           !cmdline_append_hex(slot_data,
                               "androidboot.vbmeta.digest",
-                              avb_sha256_final(&ctx),
+                              vbmeta_digest,
                               AVB_SHA256_DIGEST_SIZE)) {
         ret = AVB_SLOT_VERIFY_RESULT_ERROR_OOM;
         goto out;
@@ -286,13 +292,11 @@ AvbSlotVerifyResult avb_append_options(
     case AVB_ALGORITHM_TYPE_SHA512_RSA2048:
     case AVB_ALGORITHM_TYPE_SHA512_RSA4096:
     case AVB_ALGORITHM_TYPE_SHA512_RSA8192: {
-      AvbSHA512Ctx ctx;
       size_t n, total_size = 0;
-      avb_sha512_init(&ctx);
+      uint8_t vbmeta_digest[AVB_SHA512_DIGEST_SIZE];
+      avb_slot_verify_data_calculate_vbmeta_digest(
+          slot_data, AVB_DIGEST_TYPE_SHA512, vbmeta_digest);
       for (n = 0; n < slot_data->num_vbmeta_images; n++) {
-        avb_sha512_update(&ctx,
-                          slot_data->vbmeta_images[n].vbmeta_data,
-                          slot_data->vbmeta_images[n].vbmeta_size);
         total_size += slot_data->vbmeta_images[n].vbmeta_size;
       }
       if (!cmdline_append_option(
@@ -301,7 +305,7 @@ AvbSlotVerifyResult avb_append_options(
               slot_data, "androidboot.vbmeta.size", total_size) ||
           !cmdline_append_hex(slot_data,
                               "androidboot.vbmeta.digest",
-                              avb_sha512_final(&ctx),
+                              vbmeta_digest,
                               AVB_SHA512_DIGEST_SIZE)) {
         ret = AVB_SLOT_VERIFY_RESULT_ERROR_OOM;
         goto out;
@@ -369,3 +373,68 @@ out:
   return ret;
 }
 
+AvbCmdlineSubstList* avb_new_cmdline_subst_list() {
+  return (AvbCmdlineSubstList*)avb_calloc(sizeof(AvbCmdlineSubstList));
+}
+
+void avb_free_cmdline_subst_list(AvbCmdlineSubstList* cmdline_subst) {
+  size_t i;
+  for (i = 0; i < cmdline_subst->size; ++i) {
+    avb_free(cmdline_subst->tokens[i]);
+    avb_free(cmdline_subst->values[i]);
+  }
+  cmdline_subst->size = 0;
+  avb_free(cmdline_subst);
+}
+
+AvbSlotVerifyResult avb_add_root_digest_substitution(
+    const char* part_name,
+    const uint8_t* digest,
+    size_t digest_size,
+    AvbCmdlineSubstList* out_cmdline_subst) {
+  const char* kDigestSubPrefix = "$(AVB_";
+  const char* kDigestSubSuffix = "_ROOT_DIGEST)";
+  size_t part_name_len = avb_strlen(part_name);
+  size_t list_index = out_cmdline_subst->size;
+
+  avb_assert(part_name_len < AVB_PART_NAME_MAX_SIZE);
+  avb_assert(digest_size <= AVB_SHA512_DIGEST_SIZE);
+  if (part_name_len >= AVB_PART_NAME_MAX_SIZE ||
+      digest_size > AVB_SHA512_DIGEST_SIZE) {
+    return AVB_SLOT_VERIFY_RESULT_ERROR_INVALID_METADATA;
+  }
+
+  if (out_cmdline_subst->size >= AVB_MAX_NUM_CMDLINE_SUBST) {
+    /* The list is full. Currently dynamic growth of this list is not supported.
+     */
+    return AVB_SLOT_VERIFY_RESULT_ERROR_INVALID_METADATA;
+  }
+
+  /* Construct the token to replace in the command line based on the partition
+   * name. For partition 'foo', this will be '$(AVB_FOO_ROOT_DIGEST)'.
+   */
+  out_cmdline_subst->tokens[list_index] =
+      avb_strdupv(kDigestSubPrefix, part_name, kDigestSubSuffix, NULL);
+  if (out_cmdline_subst->tokens[list_index] == NULL) {
+    goto fail;
+  }
+  avb_uppercase(out_cmdline_subst->tokens[list_index]);
+
+  /* The digest value is hex encoded when inserted in the command line. */
+  out_cmdline_subst->values[list_index] = avb_bin2hex(digest, digest_size);
+  if (out_cmdline_subst->values[list_index] == NULL) {
+    goto fail;
+  }
+
+  out_cmdline_subst->size++;
+  return AVB_SLOT_VERIFY_RESULT_OK;
+
+fail:
+  if (out_cmdline_subst->tokens[list_index]) {
+    avb_free(out_cmdline_subst->tokens[list_index]);
+  }
+  if (out_cmdline_subst->values[list_index]) {
+    avb_free(out_cmdline_subst->values[list_index]);
+  }
+  return AVB_SLOT_VERIFY_RESULT_ERROR_OOM;
+}

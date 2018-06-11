@@ -68,6 +68,15 @@ struct AvbAtxOps {
   void (*set_key_version)(AvbAtxOps* atx_ops,
                           size_t rollback_index_location,
                           uint64_t key_version);
+
+  /* Generates |num_bytes| random bytes and stores them in |output|,
+   * which must point to a buffer large enough to store the bytes.
+   *
+   * Returns AVB_IO_RESULT_OK on success, otherwise an error code.
+   */
+  AvbIOResult (*get_random)(AvbAtxOps* atx_ops,
+                            size_t num_bytes,
+                            uint8_t* output);
 };
 
 #ifdef __cplusplus
