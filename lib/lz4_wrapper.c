@@ -63,6 +63,20 @@ struct lz4_block_header {
 	/* + u32 block_checksum iff has_block_checksum is set */
 } __packed;
 
+bool lz4_is_valid_header(const unsigned char *h)
+{
+	const struct lz4_frame_header *hdr  = (const struct lz4_frame_header *)h;
+	/* We assume there's always only a single, standard frame. */
+	if (le32_to_cpu(hdr->magic) != LZ4F_MAGIC || hdr->version != 1)
+		return false;        /* unknown format */
+	if (hdr->reserved0 || hdr->reserved1 || hdr->reserved2)
+		return false; /* reserved must be zero */
+	if (!hdr->independent_blocks)
+		return false; /* we can't support this yet */
+
+	return true;
+}
+
 int ulz4fn(const void *src, size_t srcn, void *dst, size_t *dstn)
 {
 	const void *end = dst + *dstn;

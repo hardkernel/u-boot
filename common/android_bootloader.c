@@ -569,11 +569,11 @@ int android_bootloader_boot_flow(struct blk_desc *dev_desc,
 	debug("ANDROID: Loading kernel from \"%s\", partition %d.\n",
 	      boot_part_info.name, part_num);
 
-	ret = android_image_load(dev_desc, &boot_part_info, load_address,
+	load_address = android_image_load(dev_desc, &boot_part_info, load_address,
 				 -1UL);
-	if (ret < 0) {
+	if (load_address < 0) {
 		printf("%s %s part load fail\n", __func__, boot_part_info.name);
-		return ret;
+		return load_address;
 	}
 #endif
 

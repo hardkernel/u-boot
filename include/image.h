@@ -290,6 +290,7 @@ enum {
 	IH_COMP_LZMA,			/* lzma  Compression Used	*/
 	IH_COMP_LZO,			/* lzo   Compression Used	*/
 	IH_COMP_LZ4,			/* lz4   Compression Used	*/
+	IH_COMP_ZIMAGE,			/* zImage Decompressed itself   */
 
 	IH_COMP_COUNT,
 };
@@ -1263,23 +1264,25 @@ int android_image_get_ramdisk(const struct andr_img_hdr *hdr,
 			      ulong *rd_data, ulong *rd_len);
 int android_image_get_fdt(const struct andr_img_hdr *hdr,
 			      ulong *rd_data);
+u32 android_image_get_comp(const struct andr_img_hdr *hdr);
 ulong android_image_get_end(const struct andr_img_hdr *hdr);
 ulong android_image_get_kload(const struct andr_img_hdr *hdr);
 void android_print_contents(const struct andr_img_hdr *hdr);
 
 /** android_image_load - Load an Android Image from storage.
  *
- * Load an Android Image based on the header size in the storage. Return the
- * number of bytes read from storage, which could be bigger than the actual
- * Android Image as described in the header size. In case of error reading the
- * image or if the image size needed to be read from disk is bigger than the
- * the passed |max_size| a negative number is returned.
+ * Load an Android Image based on the header size in the storage.
+ * Return the final load address, which could be a different address
+ * of argument load_address, if the Kernel Image is compressed. In case
+ * of error reading the image or if the image size needed to be read
+ * from disk is bigger than the passed |max_size| a negative number
+ * is returned.
  *
  * @dev_desc:		The device where to read the image from
  * @part_info:		The partition in |dev_desc| where to read the image from
  * @load_address:	The address where the image will be loaded
  * @max_size:		The maximum loaded size, in bytes
- * @return the number of bytes read or a negative number in case of error.
+ * @return the final load address or a negative number in case of error.
  */
 long android_image_load(struct blk_desc *dev_desc,
 			const disk_partition_t *part_info,
@@ -1287,6 +1290,8 @@ long android_image_load(struct blk_desc *dev_desc,
 			unsigned long max_size);
 
 #endif /* CONFIG_ANDROID_BOOT_IMAGE */
+
+int bootm_parse_comp(const unsigned char *hdr);
 
 /**
  * board_fit_config_name_match() - Check for a matching board name

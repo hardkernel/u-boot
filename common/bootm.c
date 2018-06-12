@@ -162,7 +162,7 @@ static int bootm_find_os(cmd_tbl_t *cmdtp, int flag, int argc,
 #ifdef CONFIG_ANDROID_BOOT_IMAGE
 	case IMAGE_FORMAT_ANDROID:
 		images.os.type = IH_TYPE_KERNEL;
-		images.os.comp = IH_COMP_NONE;
+		images.os.comp = android_image_get_comp(os_hdr);
 		images.os.os = IH_OS_LINUX;
 
 		images.os.end = android_image_get_end(os_hdr);
@@ -342,6 +342,33 @@ static int handle_decomp_error(int comp_type, size_t uncomp_size,
 #endif
 
 	return BOOTM_ERR_RESET;
+}
+
+int bootm_parse_comp(const unsigned char *hdr)
+{
+#if defined(CONFIG_ARM) && !defined(CONFIG_ARM64)
+	ulong start, end;
+
+	if (!bootz_setup((ulong)hdr, &start, &end))
+		return IH_COMP_ZIMAGE;
+#endif
+#if defined(CONFIG_LZ4)
+	if (lz4_is_valid_header(hdr))
+		return IH_COMP_LZ4;
+#endif
+#if defined(CONFIG_LZO)
+	if (lzop_is_valid_header(hdr))
+		return IH_COMP_LZO;
+#endif
+#if defined(CONFIG_GZIP)
+	if (gzip_parse_header(hdr, 0xffff) > 0)
+		return IH_COMP_GZIP;
+#endif
+#if defined(CONFIG_BZIP2)
+	if ((hdr[0] == 'B') && (hdr[1] == 'Z') && (hdr[2] == 'h'))
+		return IH_COMP_BZIP2;
+#endif
+	return IH_COMP_NONE;
 }
 
 int bootm_decomp_image(int comp, ulong load, ulong image_start, int type,

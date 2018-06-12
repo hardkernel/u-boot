@@ -18,6 +18,7 @@
 #define ANDROID_ARG_FDT_FILENAME "rk-kernel.dtb"
 
 static char andr_tmp_str[ANDR_BOOT_ARGS_SIZE + 1];
+static u32 android_kernel_comp_type = IH_COMP_NONE;
 
 static ulong android_image_get_kernel_addr(const struct andr_img_hdr *hdr)
 {
@@ -36,6 +37,23 @@ static ulong android_image_get_kernel_addr(const struct andr_img_hdr *hdr)
 		return (ulong)hdr + hdr->page_size;
 
 	return hdr->kernel_addr;
+}
+
+void android_image_set_comp(struct andr_img_hdr *hdr, u32 comp)
+{
+	android_kernel_comp_type = comp;
+}
+
+u32 android_image_get_comp(const struct andr_img_hdr *hdr)
+{
+	return android_kernel_comp_type;
+}
+
+int android_image_parse_kernel_comp(const struct andr_img_hdr *hdr)
+{
+	ulong kaddr = android_image_get_kernel_addr(hdr);
+
+	return bootm_parse_comp((const unsigned char *)kaddr);
 }
 
 /**
@@ -127,6 +145,16 @@ ulong android_image_get_end(const struct andr_img_hdr *hdr)
 	return end;
 }
 
+u32 android_image_get_ksize(const struct andr_img_hdr *hdr)
+{
+	return hdr->kernel_size;
+}
+
+void android_image_set_kload(struct andr_img_hdr *hdr, u32 load_address)
+{
+	hdr->kernel_addr = load_address;
+}
+
 ulong android_image_get_kload(const struct andr_img_hdr *hdr)
 {
 	return android_image_get_kernel_addr(hdr);
@@ -179,7 +207,10 @@ long android_image_load(struct blk_desc *dev_desc,
 			unsigned long load_address,
 			unsigned long max_size) {
 	void *buf;
-	long blk_cnt, blk_read = 0;
+	long blk_cnt = 0;
+	long blk_read = 0;
+	u32 comp;
+	u32 kload_addr;
 
 	if (max_size < part_info->blksz)
 		return -1;
@@ -189,17 +220,33 @@ long android_image_load(struct blk_desc *dev_desc,
 	 */
 	buf = map_sysmem(load_address, 0 /* size */);
 
-	/* Read the Android header first and then read the rest. */
-	if (blk_dread(dev_desc, part_info->start, 1, buf) != 1)
+	/* Read the Android boot.img header and a few parts of
+	 * the head of kernel image.
+	 */
+	if (blk_dread(dev_desc, part_info->start, 8, buf) != 8)
 		blk_read = -1;
 
 	if (!blk_read && android_image_check_header(buf) != 0) {
 		printf("** Invalid Android Image header **\n");
 		blk_read = -1;
 	}
+
+	comp = android_image_parse_kernel_comp(buf);
+
 	if (!blk_read) {
 		blk_cnt = (android_image_get_end(buf) - (ulong)buf +
 			   part_info->blksz - 1) / part_info->blksz;
+		/*
+		 * We should load a compressed kernel Image
+		 * to high memory
+		 */
+		if (comp != IH_COMP_NONE) {
+			load_address += android_image_get_ksize(buf) * 3;
+			load_address = env_get_ulong("kernel_addr_c", 16, load_address);
+			unmap_sysmem(buf);
+			buf = map_sysmem(load_address, 0 /* size */);
+		}
+
 		if (blk_cnt * part_info->blksz > max_size) {
 			debug("Android Image too big (%lu bytes, max %lu)\n",
 			      android_image_get_end(buf) - (ulong)buf,
@@ -213,15 +260,26 @@ long android_image_load(struct blk_desc *dev_desc,
 		}
 	}
 
+	/*
+	 * zImage is not need to decompress
+	 * kernel will handle decompress itself
+	 */
+	if (comp != IH_COMP_NONE && comp != IH_COMP_ZIMAGE) {
+		kload_addr = env_get_ulong("kernel_addr_r", 16, 0x02080000);
+		android_image_set_kload(buf, kload_addr);
+		android_image_set_comp(buf, comp);
+	} else {
+		android_image_set_comp(buf, IH_COMP_NONE);
+	}
+
 	unmap_sysmem(buf);
-	if (blk_read < 0)
-		return blk_read;
 
 	debug("%lu blocks read: %s\n",
 	      blk_read, (blk_read == blk_cnt) ? "OK" : "ERROR");
 	if (blk_read != blk_cnt)
 		return -1;
-	return blk_read;
+
+	return load_address;
 }
 
 #if !defined(CONFIG_SPL_BUILD)
