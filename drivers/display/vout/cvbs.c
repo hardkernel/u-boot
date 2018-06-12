@@ -245,8 +245,10 @@ int cvbs_set_vdac(int status)
 		break;
 	case 1:// from enci to vdac
 		cvbs_set_vcbus_bits(VENC_VDAC_DACSEL0, 0, 5, 1);
-		if (is_meson_g12a_cpu() || is_meson_g12b_cpu())
+		if (is_meson_g12a_cpu())
 			cvbs_write_hiu(HHI_VDAC_CNTL0, 0x906001);
+		else if (is_meson_g12b_cpu())
+			cvbs_write_hiu(HHI_VDAC_CNTL0, 0x8f6001);
 		else if (is_equal_after_meson_cpu(MESON_CPU_MAJOR_ID_GXL)) {
 			if (is_equal_after_meson_cpu(MESON_CPU_MAJOR_ID_TXL) &&
 				!is_meson_gxlx_cpu())
