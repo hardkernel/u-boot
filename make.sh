@@ -5,7 +5,7 @@ SUBCMD=$2
 RKCHIP=${BOARD##*-}
 RKCHIP=$(echo ${RKCHIP} | tr '[a-z]' '[A-Z]')
 JOB=`sed -n "N;/processor/p" /proc/cpuinfo|wc -l`
-SUPPROT_LIST=`ls configs/*-[r,p][x,v,k][0-9][0-9]*_defconfig`
+SUPPORT_LIST=`ls configs/*-[r,p][x,v,k][0-9][0-9]*_defconfig`
 
 ########################################### User can modify #############################################
 # User's rkbin tool relative path
@@ -42,24 +42,51 @@ PLATFORM_AARCH32=
 
 prepare()
 {
-	local absolute_path cmd
+	local absolute_path cmd count
+
+	# Assign output directory
+	cmd=${SUBCMD%=*}
+	if [ "${cmd}" = 'O' ]; then
+		OUTDIR=${SUBCMD#*=}
+		OUTOPT=O=${OUTDIR}
+	else
+		OUTDIR=.
+	fi
 
 	# Check invalid args and help
-	if [ "$BOARD" = '--help' -o "$BOARD" = '-h' -o "$BOARD" = '--h' -o "$BOARD" = '' ]; then
+	if [ "$BOARD" = '--help' -o "$BOARD" = '-help' -o "$BOARD" = 'help' -o "$BOARD" = '-h' -o "$BOARD" = '--h' ]; then
 		echo
 		echo "Usage: ./make.sh [board]"
 		echo "Example:"
+		echo "./make.sh		 ---- build with exist .config"
 		echo "./make.sh evb-rk3399     ---- build for evb-rk3399_defconfig"
 		echo "./make.sh firefly-rk3288 ---- build for firefly-rk3288_defconfig"
 		exit 1
-	elif [ ! -f configs/${BOARD}_defconfig ]; then
+	elif [ $BOARD ] && [ ! -f configs/${BOARD}_defconfig ]; then
+		echo
 		echo "Can't find: configs/${BOARD}_defconfig"
 		echo
-		echo "*************** Support list ***************"
-		echo "${SUPPROT_LIST}"
+		echo "******** Rockchip Support List *************"
+		echo "${SUPPORT_LIST}"
 		echo "********************************************"
 		echo
 		exit 1
+	fi
+
+	# Get RKCHIP from exist .config file
+	if [ "$RKCHIP" = '' ]; then
+		count=`grep -c '^CONFIG_ROCKCHIP_[R,P][X,V,K][0-9][0-9]' ${OUTDIR}/.config`
+		RKCHIP=`grep '^CONFIG_ROCKCHIP_[R,P][X,V,K][0-9][0-9]' ${OUTDIR}/.config`
+		if [ $count -gt 1 ]; then
+			echo "Find $count SoC in .config file:"
+			echo "$RKCHIP"
+			echo
+			echo "I'm confused, please compile with [board], like: ./make.sh [board]"
+			exit 1
+		else
+			RKCHIP=${RKCHIP%=*}
+			RKCHIP=${RKCHIP##*_}
+		fi
 	fi
 
 	# Initialize RKBIN and RKTOOLS
@@ -76,14 +103,13 @@ prepare()
 		echo "	3. Download full release SDK repository"
 		exit 1
 	fi
+}
 
-	# Assign output directory
-	cmd=${SUBCMD%=*}
-	if [ "${cmd}" = 'O' ]; then
-		OUTDIR=${SUBCMD#*=}
-		OUTOPT=O=${OUTDIR}
-	else
-		OUTDIR=.
+make_defconfig()
+{
+	if [ $BOARD ]; then
+		echo "make for ${BOARD}_defconfig by -j${JOB}"
+		make ${BOARD}_defconfig ${OUTOPT}
 	fi
 }
 
@@ -279,9 +305,18 @@ pack_trust_image()
 	fi
 }
 
+finish()
+{
+	echo
+	if [ "$BOARD" = '' ]; then
+		echo "Platform ${RKCHIP}${PLATFORM_AARCH32} is build OK, with exist .config"
+	else
+		echo "Platform ${RKCHIP}${PLATFORM_AARCH32} is build OK, with new .config(make ${BOARD}_defconfig)"
+	fi
+}
+
 prepare
-echo "make for ${BOARD}_defconfig by -j${JOB}"
-make ${BOARD}_defconfig ${OUTOPT}
+make_defconfig
 select_toolchain
 fixup_platform_configure
 sub_commands
@@ -289,3 +324,4 @@ make CROSS_COMPILE=${TOOLCHAIN_GCC}  all --jobs=${JOB} ${OUTOPT}
 pack_uboot_image
 pack_loader_image
 pack_trust_image
+finish
