@@ -2,8 +2,8 @@
 set -e
 BOARD=$1
 SUBCMD=$2
-RKCHIP=${BOARD##*-}
-RKCHIP=$(echo ${RKCHIP} | tr '[a-z]' '[A-Z]')
+RKCHIP=$(echo ${BOARD##*-} | tr '[a-z]' '[A-Z]')
+ORG_RKCHIP=$RKCHIP
 JOB=`sed -n "N;/processor/p" /proc/cpuinfo|wc -l`
 SUPPORT_LIST=`ls configs/*-[r,p][x,v,k][0-9][0-9]*_defconfig`
 
@@ -86,6 +86,7 @@ prepare()
 		else
 			RKCHIP=${RKCHIP%=*}
 			RKCHIP=${RKCHIP##*_}
+			ORG_RKCHIP=$RKCHIP
 		fi
 	fi
 
@@ -309,9 +310,9 @@ finish()
 {
 	echo
 	if [ "$BOARD" = '' ]; then
-		echo "Platform ${RKCHIP}${PLATFORM_AARCH32} is build OK, with exist .config"
+		echo "Platform ${ORG_RKCHIP}${PLATFORM_AARCH32} is build OK, with exist .config"
 	else
-		echo "Platform ${RKCHIP}${PLATFORM_AARCH32} is build OK, with new .config(make ${BOARD}_defconfig)"
+		echo "Platform ${ORG_RKCHIP}${PLATFORM_AARCH32} is build OK, with new .config(make ${BOARD}_defconfig)"
 	fi
 }
 
