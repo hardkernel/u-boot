@@ -29,6 +29,11 @@
 	status = "okay";
 };
 
+&sfc {
+	u-boot,dm-pre-reloc;
+	status = "okay";
+};
+
 &uart2 {
 	u-boot,dm-pre-reloc;
 	clock-frequency = <24000000>;
