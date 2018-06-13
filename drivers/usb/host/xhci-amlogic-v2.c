@@ -237,7 +237,7 @@ static void amlogic_usb3_phy_init(struct usb_aml_regs *phy)
 		usb_aml_reg = (struct usb_aml_regs *)((ulong)phy);
 		r1.d32 = usb_aml_reg->usb_r1;
 		usb_aml_reg->usb_r2 = r1.d32;
-		r1.b.u3h_fladj_30mhz_reg = 0x26;
+		r1.b.u3h_fladj_30mhz_reg = 0x20;
 		usb_aml_reg->usb_r2 = r1.d32;
 		udelay(100);
 	}
@@ -257,7 +257,7 @@ static void amlogic_usb3_phy_init(struct usb_aml_regs *phy)
 		udelay(2);
 		r1.d32 = usb_aml_reg->usb_r1;
 		r1.b.u3h_host_port_power_control_present = 1;
-		r1.b.u3h_fladj_30mhz_reg = 32;
+		r1.b.u3h_fladj_30mhz_reg = 0x20;
 		usb_aml_reg->usb_r2 = r1.d32;
 		udelay(2);
 #if 0
