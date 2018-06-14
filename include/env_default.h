@@ -103,6 +103,9 @@ const uchar default_environment[] = {
 #ifdef CONFIG_SYS_SOC
 	"soc="		CONFIG_SYS_SOC			"\0"
 #endif
+#ifdef CONFIG_SILENT_CONSOLE
+	"silent=enable\0"
+#endif
 #endif
 #ifdef	CONFIG_EXTRA_ENV_SETTINGS
 	CONFIG_EXTRA_ENV_SETTINGS
