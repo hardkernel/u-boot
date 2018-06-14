@@ -39,11 +39,23 @@
  */
 
 #include "rk3288.dtsi"
+#include <dt-bindings/input/input.h>
 
 / {
 	memory {
 		reg = <0x0 0x80000000>;
 		device_type = "memory";
+	};
+
+	adc-keys {
+		compatible = "adc-keys";
+		io-channels = <&saradc 1>;
+
+		volup-key {
+			linux,code = <KEY_VOLUMEUP>;
+			label = "volume up";
+			press-threshold-microvolt = <18000>;
+		};
 	};
 
 	ext_gmac: external-gmac-clock {
@@ -75,6 +87,11 @@
 	num-slots = <1>;
 	pinctrl-names = "default";
 	pinctrl-0 = <&emmc_clk &emmc_cmd &emmc_pwr &emmc_bus8>;
+	status = "okay";
+};
+
+&saradc {
+	vref-supply = <&vcc_18>;
 	status = "okay";
 };
 
