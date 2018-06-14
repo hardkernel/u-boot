@@ -666,10 +666,12 @@ int console_assign(int file, const char *devname)
 static void console_update_silent(void)
 {
 #ifdef CONFIG_SILENT_CONSOLE
-	if (env_get("silent") != NULL)
+	if (env_get("silent") != NULL) {
+		printf("U-Boot: enable slient console\n");
 		gd->flags |= GD_FLG_SILENT;
-	else
+	} else {
 		gd->flags &= ~GD_FLG_SILENT;
+	}
 #endif
 }
 
