@@ -42,6 +42,7 @@ void set_back_to_bootrom_dnl_flag(void)
 
 __weak int rockchip_dnl_key_pressed(void)
 {
+#if defined(CONFIG_ADC)
 	const void *blob = gd->fdt_blob;
 	unsigned int val;
 	int channel = 1;
@@ -65,6 +66,9 @@ __weak int rockchip_dnl_key_pressed(void)
 		return true;
 	else
 		return false;
+#else
+	return false;
+#endif
 }
 
 void devtype_num_envset(void)
