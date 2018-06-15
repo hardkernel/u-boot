@@ -181,3 +181,12 @@ typedef struct _legacy_mbr {
 } __packed legacy_mbr;
 
 #endif	/* _DISK_PART_EFI_H */
+
+int pmbr_part_valid(struct partition *part);
+int is_pmbr_valid(legacy_mbr * mbr);
+int is_gpt_valid(block_dev_desc_t *dev_desc, u64 lba,
+			gpt_header *pgpt_head, gpt_entry **pgpt_pte);
+gpt_entry *alloc_read_gpt_entries(block_dev_desc_t * dev_desc,
+				gpt_header * pgpt_head);
+int is_pte_valid(gpt_entry * pte);
+

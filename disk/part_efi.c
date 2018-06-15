@@ -48,13 +48,13 @@ static inline u32 efi_crc32(const void *buf, u32 len)
  * Private function prototypes
  */
 
-static int pmbr_part_valid(struct partition *part);
-static int is_pmbr_valid(legacy_mbr * mbr);
-static int is_gpt_valid(block_dev_desc_t *dev_desc, u64 lba,
-				gpt_header *pgpt_head, gpt_entry **pgpt_pte);
-static gpt_entry *alloc_read_gpt_entries(block_dev_desc_t * dev_desc,
+int pmbr_part_valid(struct partition *part);
+int is_pmbr_valid(legacy_mbr * mbr);
+int is_gpt_valid(block_dev_desc_t *dev_desc, u64 lba,
+			gpt_header *pgpt_head, gpt_entry **pgpt_pte);
+gpt_entry *alloc_read_gpt_entries(block_dev_desc_t * dev_desc,
 				gpt_header * pgpt_head);
-static int is_pte_valid(gpt_entry * pte);
+int is_pte_valid(gpt_entry * pte);
 
 static char *print_efiname(gpt_entry *pte)
 {
@@ -354,7 +354,6 @@ int get_partition_info_efi_by_name(block_dev_desc_t *dev_desc,
 int test_part_efi(block_dev_desc_t * dev_desc)
 {
 	ALLOC_CACHE_ALIGN_BUFFER_PAD(legacy_mbr, legacymbr, 1, dev_desc->blksz);
-
 	/* Read legacy MBR from block 0 and validate it */
 	if ((dev_desc->block_read(dev_desc->dev, 0, 1, (ulong *)legacymbr) != 1)
 		|| (is_pmbr_valid(legacymbr) != 1)) {
@@ -843,7 +842,7 @@ int write_mbr_and_gpt_partitions(block_dev_desc_t *dev_desc, void *buf)
  *
  * Returns: 1 if EFI GPT partition type is found.
  */
-static int pmbr_part_valid(struct partition *part)
+int pmbr_part_valid(struct partition *part)
 {
 	if (part->sys_ind == EFI_PMBR_OSTYPE_EFI_GPT &&
 		get_unaligned_le32(&part->start_sect) == 1UL) {
@@ -860,13 +859,11 @@ static int pmbr_part_valid(struct partition *part)
  *  1) MSDOS signature is in the last two bytes of the MBR
  *  2) One partition of type 0xEE is found, checked by pmbr_part_valid()
  */
-static int is_pmbr_valid(legacy_mbr * mbr)
+int is_pmbr_valid(legacy_mbr * mbr)
 {
 	int i = 0;
-
 	if (!mbr || le16_to_cpu(mbr->signature) != MSDOS_MBR_SIGNATURE)
 		return 0;
-
 	for (i = 0; i < 4; i++) {
 		if (pmbr_part_valid(&mbr->partition_record[i])) {
 			return 1;
@@ -885,7 +882,7 @@ static int is_pmbr_valid(legacy_mbr * mbr)
  * Description: returns 1 if valid,  0 on error.
  * If valid, returns pointers to PTEs.
  */
-static int is_gpt_valid(block_dev_desc_t *dev_desc, u64 lba,
+int is_gpt_valid(block_dev_desc_t *dev_desc, u64 lba,
 			gpt_header *pgpt_head, gpt_entry **pgpt_pte)
 {
 	if (!dev_desc || !pgpt_head) {
@@ -928,7 +925,7 @@ static int is_gpt_valid(block_dev_desc_t *dev_desc, u64 lba,
  * Allocates space for PTEs based on information found in @gpt.
  * Notes: remember to free pte when you're done!
  */
-static gpt_entry *alloc_read_gpt_entries(block_dev_desc_t * dev_desc,
+gpt_entry *alloc_read_gpt_entries(block_dev_desc_t * dev_desc,
 					 gpt_header * pgpt_head)
 {
 	size_t count = 0, blk_cnt;
@@ -979,7 +976,7 @@ static gpt_entry *alloc_read_gpt_entries(block_dev_desc_t * dev_desc,
  *
  * Description: returns 1 if valid,  0 on error.
  */
-static int is_pte_valid(gpt_entry * pte)
+int is_pte_valid(gpt_entry * pte)
 {
 	efi_guid_t unused_guid;
 
