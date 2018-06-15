@@ -434,16 +434,25 @@ static void rk817_bat_init_coulomb_cap(struct rk817_battery_device *battery,
 {
 	u8 buf;
 	u32 cap;
+	u32 val;
 
 	cap = CAPACITY_TO_ADC(capacity, battery->res_div);
-	buf = (cap >> 24) & 0xff;
-	rk817_bat_write(battery, Q_INIT_H3, buf);
-	buf = (cap >> 16) & 0xff;
-	rk817_bat_write(battery, Q_INIT_H2, buf);
-	buf = (cap >> 8) & 0xff;
-	rk817_bat_write(battery, Q_INIT_L1, buf);
-	buf = (cap >> 0) & 0xff;
-	rk817_bat_write(battery, Q_INIT_L0, buf);
+
+	do {
+		buf = (cap >> 24) & 0xff;
+		rk817_bat_write(battery, Q_INIT_H3, buf);
+		buf = (cap >> 16) & 0xff;
+		rk817_bat_write(battery, Q_INIT_H2, buf);
+		buf = (cap >> 8) & 0xff;
+		rk817_bat_write(battery, Q_INIT_L1, buf);
+		buf = (cap >> 0) & 0xff;
+		rk817_bat_write(battery, Q_INIT_L0, buf);
+
+		val = rk817_bat_read(battery, Q_INIT_H3) << 24;
+		val |= rk817_bat_read(battery, Q_INIT_H2) << 16;
+		val |= rk817_bat_read(battery, Q_INIT_L1) << 8;
+		val |= rk817_bat_read(battery, Q_INIT_L0) << 0;
+	} while (cap != val);
 
 	battery->rsoc = capacity * 1000 * 100 / battery->fcc;
 	battery->remain_cap = capacity * 1000;
@@ -465,8 +474,6 @@ static u32 rk817_bat_get_capacity_uah(struct rk817_battery_device *battery)
 		val |= rk817_bat_read(battery, Q_PRES_L0) << 0;
 
 		capacity = ADC_TO_CAPACITY_UAH(val, battery->res_div);
-	} else {
-		rk817_bat_init_coulomb_cap(battery, 0);
 	}
 
 	return  capacity;
@@ -481,10 +488,7 @@ static u32 rk817_bat_get_capacity_mah(struct rk817_battery_device *battery)
 		val |= rk817_bat_read(battery, Q_PRES_H2) << 16;
 		val |= rk817_bat_read(battery, Q_PRES_L1) << 8;
 		val |= rk817_bat_read(battery, Q_PRES_L0) << 0;
-
 		capacity = ADC_TO_CAPACITY(val, battery->res_div);
-	} else {
-		rk817_bat_init_coulomb_cap(battery, 0);
 	}
 
 	return  capacity;
@@ -694,12 +698,24 @@ static bool is_rk817_bat_last_halt(struct rk817_battery_device *battery)
 	int pre_cap = rk817_bat_get_prev_cap(battery);
 	int now_cap = rk817_bat_get_capacity_mah(battery);
 
+	battery->nac = rk817_bat_vol_to_cap(battery,
+					    battery->pwron_voltage);
+
 	/* over 10%: system halt last time */
-	if (abs(now_cap - pre_cap) > (battery->fcc / 10)) {
-		rk817_bat_inc_halt_cnt(battery);
-		return true;
+	if (now_cap > pre_cap) {
+		if (abs(now_cap - pre_cap) > (battery->fcc / 10)) {
+			rk817_bat_inc_halt_cnt(battery);
+			return true;
+		} else {
+			return false;
+		}
 	} else {
-		return false;
+		if (abs(battery->nac - pre_cap) > (battery->fcc / 5)) {
+			rk817_bat_inc_halt_cnt(battery);
+			return true;
+		} else {
+			return false;
+		}
 	}
 }
 
@@ -725,23 +741,78 @@ static void rk817_bat_set_initialized_flag(struct rk817_battery_device *battery)
 static void rk817_bat_not_first_pwron(struct rk817_battery_device *battery)
 {
 	int now_cap, pre_soc, pre_cap;
+	int is_charge = 0, temp_soc = 0;
 
 	battery->fcc = rk817_bat_get_fcc(battery);
 	pre_soc = rk817_bat_get_prev_dsoc(battery);
 	pre_cap = rk817_bat_get_prev_cap(battery);
+
 	now_cap = rk817_bat_get_capacity_mah(battery);
+	battery->halt_cnt = rk817_bat_get_halt_cnt(battery);
+	battery->nac = rk817_bat_vol_to_cap(battery,
+					    battery->pwron_voltage);
+	battery->pwroff_min = rk817_bat_get_off_count(battery);
 	battery->remain_cap = pre_cap * 1000;
 	battery->is_halt = is_rk817_bat_last_halt(battery);
-	battery->halt_cnt = rk817_bat_get_halt_cnt(battery);
 
-	if (battery->is_halt) {
-		DBG("system halt last time... cap: pre=%d, now=%d\n",
-		    pre_cap, now_cap);
-		if (now_cap < 0)
-			now_cap = 0;
+	if (now_cap == 0) {
+		if (battery->pwroff_min > 3) {
+			battery->nac = rk817_bat_vol_to_cap(battery,
+					    battery->pwron_voltage);
+			now_cap = battery->nac;
+			pre_cap = now_cap;
+			printf("now_cap 0x%x\n", now_cap);
+		} else {
+			now_cap = pre_cap;
+		}
+
 		rk817_bat_init_coulomb_cap(battery, now_cap);
-		pre_cap = now_cap;
+		goto finish;
+	}
+
+	if (now_cap > pre_cap) {
+		is_charge = 1;
+		if ((now_cap > battery->fcc * 2) &&
+		    ((battery->pwroff_min > 0) &&
+		    (battery->pwroff_min < 3))) {
+			now_cap = pre_cap;
+			is_charge = 0;
+		}
+	} else {
+		is_charge = 0;
+	}
+
+	if (is_charge == 0) {
+		if ((battery->pwroff_min >= 0)  && (battery->pwroff_min < 3)) {
+			rk817_bat_init_coulomb_cap(battery, pre_cap);
+			rk817_bat_get_capacity_mah(battery);
+			goto finish;
+		}
+
+		if (battery->pwroff_min >= 3) {
+			if (battery->nac > pre_cap) {
+				rk817_bat_init_coulomb_cap(battery,
+							   battery->nac);
+				rk817_bat_get_capacity_mah(battery);
+				pre_cap = battery->nac;
+				goto finish;
+			}
+
+			if ((pre_cap - battery->nac) > (battery->fcc / 10)) {
+				rk817_bat_inc_halt_cnt(battery);
+				temp_soc = (pre_cap - battery->nac) * 1000 * 100 / battery->fcc;
+				pre_soc -= temp_soc;
+				pre_cap = battery->nac;
+				if (pre_soc <= 0)
+					pre_soc = 0;
+				goto finish;
+			}
+		}
+	} else {
+		battery->remain_cap = rk817_bat_get_capacity_uah(battery);
+		battery->rsoc = rk817_bat_get_rsoc(battery);
 		pre_soc = battery->rsoc;
+		pre_cap = battery->remain_cap;
 		goto finish;
 	}
 finish:
