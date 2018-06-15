@@ -52,7 +52,8 @@
 	defined(CONFIG_MMC) || \
 	defined(CONFIG_NVME) || \
 	defined(CONFIG_SYSTEMACE) || \
-	defined(CONFIG_SANDBOX)
+	defined(CONFIG_SANDBOX)   || \
+	defined(CONFIG_RKFLASH)
 #define HAVE_BLOCK_DEVICE
 #endif
 
