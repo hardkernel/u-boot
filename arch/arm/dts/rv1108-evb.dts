@@ -80,6 +80,16 @@
 		regulator-min-microvolt = <5000000>;
 		regulator-max-microvolt = <5000000>;
 	};
+
+	vcc_phy: vcc-phy-regulator {
+		compatible = "regulator-fixed";
+		enable-active-high;
+		regulator-name = "vcc_phy";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		regulator-always-on;
+		regulator-boot-on;
+	};
 };
 
 &display_subsystem {
@@ -164,7 +174,8 @@
 
 &gmac {
 	status = "okay";
-	clock_in_out = <0>;
+	clock_in_out ="output";
+	phy-supply = <&vcc_phy>;
 	snps,reset-active-low;
 	snps,reset-delays-us = <0 10000 1000000>;
 	snps,reset-gpio = <&gpio1 RK_PC1 GPIO_ACTIVE_LOW>;
