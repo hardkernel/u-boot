@@ -26,9 +26,7 @@
 unsigned int time;
 #include <scp_remote.c>
 
-#ifdef CONFIG_ADC_KEY
 #include <scp_adc.c>
-#endif
 #include <pwr_ctrl.c>
 #include <hdmi_cec_arc.c>
 
