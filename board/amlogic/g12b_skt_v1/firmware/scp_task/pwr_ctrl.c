@@ -121,6 +121,11 @@ static unsigned int detect_key(unsigned int suspend_from)
 				exit_reason = REMOTE_WAKEUP;
 		}
 
+		if (irq[IRQ_VRTC] == IRQ_VRTC_NUM) {
+			irq[IRQ_VRTC] = 0xFFFFFFFF;
+			exit_reason = RTC_WAKEUP;
+		}
+
 		if (irq[IRQ_AO_TIMERA] == IRQ_AO_TIMERA_NUM) {
 			irq[IRQ_AO_TIMERA] = 0xFFFFFFFF;
 			if (check_adc_key_resume()) {
