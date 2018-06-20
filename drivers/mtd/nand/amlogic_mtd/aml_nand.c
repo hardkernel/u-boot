@@ -1850,7 +1850,7 @@ static void inline nand_get_chip(void )
 		AMLNF_SET_REG_MASK(P_PAD_PULL_UP_REG0, 0x1F00);
 		AMLNF_WRITE_REG(P_PERIPHS_PIN_MUX_0, 0x11111111);
 		AMLNF_WRITE_REG(P_PERIPHS_PIN_MUX_1, 0x22122222);
-		if (cpu_id.family_id >= MESON_CPU_MAJOR_ID_G12A) {
+		if (cpu_id.family_id == MESON_CPU_MAJOR_ID_G12A) {
 			if (cpu_id.chip_rev == 0xA)
 				writel(0x55555555, P_PAD_DS_REG0A);
 			else if (cpu_id.chip_rev == 0xB)
