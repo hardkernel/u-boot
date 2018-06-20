@@ -13,11 +13,6 @@
 #include "rkflash_blk.h"
 #include "rkflash_debug.h"
 
-void ftl_free(void *buf)
-{
-	kfree(buf);
-}
-
 ulong rkflash_bread(struct udevice *udev, lbaint_t start,
 		    lbaint_t blkcnt, void *dst)
 {
