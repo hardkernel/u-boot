@@ -213,6 +213,8 @@ init_dtb:
 
 	gd->fdt_blob = (void *)fdt_addr;
 
+	printf("Using kernel dtb\n");
+
 	return 0;
 }
 #endif
