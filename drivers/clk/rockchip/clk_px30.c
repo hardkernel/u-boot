@@ -54,6 +54,7 @@ static struct pll_rate_table px30_pll_rates[] = {
 	PX30_PLL_RATE(1100000000, 12, 550, 1, 1, 1, 0),
 	PX30_PLL_RATE(1000000000, 6, 500, 2, 1, 1, 0),
 	PX30_PLL_RATE(816000000, 1, 68, 2, 1, 1, 0),
+	PX30_PLL_RATE(600000000, 1, 75, 3, 1, 1, 0),
 };
 
 static const struct px30_clk_info clks_dump[] = {
@@ -1054,7 +1055,7 @@ static int px30_clk_probe(struct udevice *dev)
 {
 	struct px30_clk_priv *priv = dev_get_priv(dev);
 	struct px30_cru *cru = priv->cru;
-	u32 aclk_div;
+	u32 aclk_div, pclk_div;
 
 	/* init pll */
 	rkclk_set_pll(&cru->pll[APLL], &cru->mode, APLL, APLL_HZ);
@@ -1064,10 +1065,13 @@ static int px30_clk_probe(struct udevice *dev)
 	 * core hz : apll = 1:1
 	 */
 	aclk_div = APLL_HZ / CORE_ACLK_HZ - 1;
+	pclk_div = APLL_HZ / CORE_DBG_HZ - 1;
+
 	rk_clrsetreg(&cru->clksel_con[0],
-		     CORE_CLK_PLL_SEL_MASK | CORE_DIV_CON_MASK |
-		     CORE_ACLK_DIV_MASK,
+		     CORE_ACLK_DIV_MASK | CORE_DBG_DIV_MASK |
+		     CORE_CLK_PLL_SEL_MASK | CORE_DIV_CON_MASK,
 		     aclk_div << CORE_ACLK_DIV_SHIFT |
+		     pclk_div << CORE_DBG_DIV_SHIFT |
 		     CORE_CLK_PLL_SEL_APLL << CORE_CLK_PLL_SEL_SHIFT |
 		     0 << CORE_DIV_CON_SHIFT);
 

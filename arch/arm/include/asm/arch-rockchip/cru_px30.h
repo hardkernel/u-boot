@@ -12,10 +12,10 @@
 #define KHz		1000
 #define OSC_HZ		(24 * MHz)
 
-#define APLL_HZ		(816 * MHz)
+#define APLL_HZ		(600 * MHz)
 
-#define CORE_PERI_HZ	204000000
-#define CORE_ACLK_HZ	408000000
+#define CORE_ACLK_HZ	(APLL_HZ / 2)
+#define CORE_DBG_HZ	(APLL_HZ / 4)
 
 /* PX30 pll id */
 enum px30_pll_id {
