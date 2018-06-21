@@ -318,8 +318,20 @@ static int ns16550_serial_putc(struct udevice *dev, const char ch)
 {
 	struct NS16550 *const com_port = dev_get_priv(dev);
 
+#ifdef CONFIG_ARCH_ROCKCHIP
+	/*
+	 * Use fifo function.
+	 *
+	 * UART_USR: bit1 trans_fifo_not_full:
+	 *	0 = Transmit FIFO is full;
+	 *	1 = Transmit FIFO is not full;
+	 */
+	while (!(serial_in(&com_port->rbr + 0x1f) & 0x02))
+		;
+#else
 	if (!(serial_in(&com_port->lsr) & UART_LSR_THRE))
 		return -EAGAIN;
+#endif
 	serial_out(ch, &com_port->thr);
 
 	/*
@@ -330,6 +342,20 @@ static int ns16550_serial_putc(struct udevice *dev, const char ch)
 	 */
 	if (ch == '\n')
 		WATCHDOG_RESET();
+
+#ifdef CONFIG_ARCH_ROCKCHIP
+	/*
+	 * Wait fifo flush.
+	 *
+	 * UART_USR: bit2 trans_fifo_empty:
+	 *	0 = Transmit FIFO is not empty
+	 *	1 = Transmit FIFO is empty
+	 */
+	if (gd->flags & GD_FLG_OS_RUN) {
+		while (!(serial_in(&com_port->rbr + 0x1f) & 0x04))
+			;
+	}
+#endif
 
 	return 0;
 }

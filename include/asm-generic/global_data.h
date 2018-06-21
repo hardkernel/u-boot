@@ -156,4 +156,9 @@ typedef struct global_data {
 #define GD_FLG_SPL_EARLY_INIT	0x04000 /* Early SPL init is done	   */
 #define GD_FLG_LOG_READY	0x08000 /* Log system is ready for use	   */
 
+#ifdef CONFIG_ARCH_ROCKCHIP
+/* Currently, we use it to indicate console can be flushed before jump to OS */
+#define GD_FLG_OS_RUN		0x10000
+#endif
+
 #endif /* __ASM_GENERIC_GBL_DATA_H */
