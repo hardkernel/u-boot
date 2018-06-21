@@ -41,23 +41,6 @@ static struct lcd_power_step_s lcd_power_off_step[] = {
 	{LCD_POWER_TYPE_MAX,   0,0,0,},   /* ending flag */
 };
 
-static struct lcd_power_step_s lcd_power_on_step_TV070WSM[] = {
-	{LCD_POWER_TYPE_CPU,   1,0,200,}, /* lcd power */
-#if 0
-	{LCD_POWER_TYPE_CPU,   0,1,10,}, /* lcd_reset */
-	{LCD_POWER_TYPE_CPU,   0,0,20,}, /* lcd_reset */
-	{LCD_POWER_TYPE_CPU,   0,1,20,}, /* lcd_reset */
-#endif
-	{LCD_POWER_TYPE_SIGNAL,0,0,0,},  /* signal */
-	{LCD_POWER_TYPE_MAX,   0,0,0,},  /* ending flag */
-};
-static struct lcd_power_step_s lcd_power_off_step_TV070WSM[] = {
-	{LCD_POWER_TYPE_SIGNAL,0,0,0,},  /* signal */
-	{LCD_POWER_TYPE_CPU,   0,0,20,}, /* lcd_reset */
-	{LCD_POWER_TYPE_CPU,   1,1,100,}, /* power off */
-	{LCD_POWER_TYPE_MAX,   0,0,0,},   /* ending flag */
-};
-
 static struct lcd_power_step_s lcd_power_on_step_P070ACB[] = {
 	{LCD_POWER_TYPE_CPU,   1,0,200,}, /* lcd power */
 	{LCD_POWER_TYPE_SIGNAL,0,0,0,},  /* signal */
@@ -66,35 +49,6 @@ static struct lcd_power_step_s lcd_power_on_step_P070ACB[] = {
 static struct lcd_power_step_s lcd_power_off_step_P070ACB[] = {
 	{LCD_POWER_TYPE_SIGNAL,0,0,0,},  /* signal */
 	{LCD_POWER_TYPE_CPU,   0,0,20,}, /* lcd_reset */
-	{LCD_POWER_TYPE_CPU,   1,1,100,}, /* power off */
-	{LCD_POWER_TYPE_MAX,   0,0,0,},   /* ending flag */
-};
-
-static struct lcd_power_step_s lcd_power_on_step_TL050FHV02CT[] = {
-	{LCD_POWER_TYPE_CPU,   1,0,200,}, /* lcd power */
-	{LCD_POWER_TYPE_CPU,   0,1,20,}, /* lcd reset: 1 */
-	{LCD_POWER_TYPE_CPU,   0,0,10,}, /* lcd reset: 0 */
-	{LCD_POWER_TYPE_CPU,   0,1,20,}, /* lcd reset: 1 */
-	{LCD_POWER_TYPE_SIGNAL,0,0,0,},  /* signal */
-	{LCD_POWER_TYPE_MAX,   0,0,0,},  /* ending flag */
-};
-static struct lcd_power_step_s lcd_power_off_step_TL050FHV02CT[] = {
-	{LCD_POWER_TYPE_SIGNAL,0,0,0,},  /* signal */
-	{LCD_POWER_TYPE_CPU,   0,0,20,}, /* lcd_reset */
-	{LCD_POWER_TYPE_CPU,   1,1,100,}, /* power off */
-	{LCD_POWER_TYPE_MAX,   0,0,0,},   /* ending flag */
-};
-
-static struct lcd_power_step_s lcd_power_on_step_TL070WSH27[] = {
-	{LCD_POWER_TYPE_CPU,   1,0,100,}, /* lcd power */
-	{LCD_POWER_TYPE_CPU,   0,0,10,}, /* lcd reset: 0 */
-	{LCD_POWER_TYPE_CPU,   0,1,20,}, /* lcd reset: 1 */
-	{LCD_POWER_TYPE_SIGNAL,0,0,0,},  /* signal */
-	{LCD_POWER_TYPE_MAX,   0,0,0,},  /* ending flag */
-};
-static struct lcd_power_step_s lcd_power_off_step_TL070WSH27[] = {
-	{LCD_POWER_TYPE_SIGNAL,0,0,10,},  /* signal */
-	{LCD_POWER_TYPE_CPU,   0,0,10,}, /* lcd_reset */
 	{LCD_POWER_TYPE_CPU,   1,1,100,}, /* power off */
 	{LCD_POWER_TYPE_MAX,   0,0,0,},   /* ending flag */
 };
@@ -124,62 +78,8 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	Rsv_val,Rsv_val,Rsv_val,Rsv_val,
 	10,10,Rsv_val},
 
-	{/* TV070WSM*/
-	"lcd_1",LCD_MIPI,8,
-	/* basic timing */
-	600,1024,700,1053,24,36,0,2,8,0,
-	/* clk_attr */
-	0,0,1,44250000,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
-	/* mipi_attr */
-	4,360,0,1,0,2,0,0,Rsv_val,1,
-	/* power step */
-	lcd_power_on_step_TV070WSM, lcd_power_off_step_TV070WSM,
-	/* backlight */
-	100,255,10,128,128,
-	BL_CTRL_PWM,0,1,0,200,200,
-	BL_PWM_NEGATIVE,BL_PWM_F,180,100,25,1,1,
-	Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
-	Rsv_val,Rsv_val,Rsv_val,Rsv_val,
-	10,10,Rsv_val},
-
-	{/* P070ACB*/
-	"lcd_2",LCD_MIPI,8,
-	/* basic timing */
-	600,1024,680,1194,24,36,0,10,80,0,
-	/* clk_attr */
-	0,0,1,48715200,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
-	/* mipi_attr */
-	4,400,0,1,0,2,0,0,Rsv_val,2,
-	/* power step */
-	lcd_power_on_step_P070ACB, lcd_power_off_step_P070ACB,
-	/* backlight */
-	100,255,10,128,128,
-	BL_CTRL_PWM,0,1,0,200,200,
-	BL_PWM_NEGATIVE,BL_PWM_F,180,100,25,1,1,
-	Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
-	Rsv_val,Rsv_val,Rsv_val,Rsv_val,
-	10,10,Rsv_val},
-
-	{/* TL050FHV02CT*/
-	"lcd_3",LCD_MIPI,8,
-	/* basic timing */
-	1080,1920,1125,2100,5,30,0,44,108,0,
-	/* clk_attr */
-	0,0,1,118125000,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
-	/* mipi_attr */
-	4,960,0,1,0,2,1,0,Rsv_val,3,
-	/* power step */
-	lcd_power_on_step_TL050FHV02CT, lcd_power_off_step_TL050FHV02CT,
-	/* backlight */
-	100,255,10,128,128,
-	BL_CTRL_PWM,0,1,0,200,200,
-	BL_PWM_NEGATIVE,BL_PWM_F,180,100,25,1,1,
-	Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
-	Rsv_val,Rsv_val,Rsv_val,Rsv_val,
-	10,10,Rsv_val},
-
 	{/* TL070WSH27*/
-	"lcd_4",LCD_MIPI,8,
+	"lcd_1",LCD_MIPI,8,
 	/* basic timing */
 	1024,600,1250,630,80,100,0,5,20,0,
 	/* clk_attr */
@@ -187,7 +87,43 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	/* mipi_attr */
 	4,300,0,1,0,2,1,0,Rsv_val,Rsv_val,
 	/* power step */
-	lcd_power_on_step_TL070WSH27, lcd_power_off_step_TL070WSH27,
+	lcd_power_on_step, lcd_power_off_step,
+	/* backlight */
+	100,255,10,128,128,
+	BL_CTRL_PWM,0,1,0,200,200,
+	BL_PWM_NEGATIVE,BL_PWM_F,180,100,25,1,1,
+	Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	10,10,Rsv_val},
+
+	{/* TL070HDV03CT*/
+	"lcd_2",LCD_MIPI,8,
+	/* basic timing */
+	720,1280,970,1364,10,120,0,4,40,0,
+	/* clk_attr */
+	0,0,1,79385000,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	/* mipi_attr */
+	4,500,0,1,0,2,1,0,Rsv_val,2,
+	/* power step */
+	lcd_power_on_step, lcd_power_off_step,
+	/* backlight */
+	100,255,10,128,128,
+	BL_CTRL_PWM,0,1,0,200,200,
+	BL_PWM_NEGATIVE,BL_PWM_F,180,100,25,1,1,
+	Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	10,10,Rsv_val},
+
+	{/* P070ACB_FT*/
+	"lcd_3",LCD_MIPI,8,
+	/* basic timing */
+	600,1024,680,1194,24,36,0,10,80,0,
+	/* clk_attr */
+	0,0,1,48715200,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	/* mipi_attr */
+	4,400,0,1,0,2,0,0,Rsv_val,3,
+	/* power step */
+	lcd_power_on_step_P070ACB, lcd_power_off_step_P070ACB,
 	/* backlight */
 	100,255,10,128,128,
 	BL_CTRL_PWM,0,1,0,200,200,
@@ -236,15 +172,25 @@ static unsigned char mipi_init_off_table[DSI_INIT_OFF_MAX] = {//table size < 50
 	0xff,0xff,   //ending flag
 };
 
-static unsigned char mipi_init_on_table_TV070WSM[DSI_INIT_ON_MAX] = {//table size < 100
-	0xff, 10,
-	0xf0, 3, 0, 1, 30, /* reset high, delay 30ms */
-	0xf0, 3, 0, 0, 10, /* reset low, delay 10ms */
-	0xf0, 3, 0, 1, 30, /* reset high, delay 30ms */
-	0xfc, 2, 0x04, 3,  /* check_reg, check_cnt */
+static unsigned char mipi_init_on_table_TL070WSH27[DSI_INIT_ON_MAX] = {//table size < 100
+	0x05, 1, 0x11,
+	0xff, 200,
+	0x05, 1, 0x29,
+	0xff, 20,
 	0xff, 0xff,   //ending flag
 };
-static unsigned char mipi_init_off_table_TV070WSM[DSI_INIT_OFF_MAX] = {//table size < 50
+static unsigned char mipi_init_off_table_TL070WSH27[DSI_INIT_OFF_MAX] = {//table size < 50
+	0x05, 1, 0x28,
+	0xff, 10,
+	0x05, 1, 0x10,
+	0xff, 10,
+	0xff,0xff,   //ending flag
+};
+
+static unsigned char mipi_init_on_table_TL070HDV03CT[DSI_INIT_ON_MAX] = {//table size < 100
+	0xff, 0xff,   //ending flag
+};
+static unsigned char mipi_init_off_table_TL070HDV03CT[DSI_INIT_OFF_MAX] = {//table size < 50
 	0xff,0xff,   //ending flag
 };
 
@@ -258,28 +204,6 @@ static unsigned char mipi_init_on_table_P070ACB[DSI_INIT_ON_MAX] = {//table size
 };
 static unsigned char mipi_init_off_table_P070ACB[DSI_INIT_OFF_MAX] = {//table size < 50
 	0xff,0xff,   //ending flag
-};
-
-static unsigned char mipi_init_on_table_TL050FHV02CT[DSI_INIT_ON_MAX] = {//table size < 100
-	0xff,0xff,   //ending flag
-};
-static unsigned char mipi_init_off_table_TL050FHV02CT[DSI_INIT_OFF_MAX] = {//table size < 50
-	0xff,0xff,   //ending flag
-};
-
-static unsigned char mipi_init_on_table_TL070WSH27[DSI_INIT_ON_MAX] = {//table size < 100
-	0x05, 1, 0x11,
-	0xff, 100,
-	0x05, 1, 0x29,
-	0xff, 20,
-	0xff, 0xff,   //ending flag
-};
-static unsigned char mipi_init_off_table_TL070WSH27[DSI_INIT_OFF_MAX] = {//table size < 50
-	0x05, 1, 0x28,
-	0xff, 100,
-	0x05, 1, 0x10,
-	0xff, 10,
-	0xff, 0xff,   //ending flag
 };
 
 static struct dsi_config_s lcd_mipi_config = {
@@ -424,32 +348,32 @@ struct lcd_extern_config_s ext_config_dtf[LCD_EXTERN_NUM_MAX] = {
 		.table_init_on = ext_init_on_table,
 		.table_init_off = ext_init_off_table,
 	},
-	{ /* TV070WSM */
+	{ /* TL070WSH27 */
 		.index = 1,
 		.name = "mipi_default",
 		.type = LCD_EXTERN_MIPI, /* LCD_EXTERN_I2C, LCD_EXTERN_SPI, LCD_EXTERN_MIPI, LCD_EXTERN_MAX */
 		.status = 1, /* 0=disable, 1=enable */
 		.cmd_size = LCD_EXTERN_CMD_SIZE_DYNAMIC,
-		.table_init_on = ext_init_on_table_TV070WSM,
-		.table_init_off = ext_init_off_table_TV070WSM,
+		.table_init_on = ext_init_on_table_TL070WSH27,
+		.table_init_off = ext_init_off_table_TL070WSH27,
 	},
-	{ /* P070ACB */
+	{ /* TL070HDV03CT */
 		.index = 2,
 		.name = "mipi_default",
 		.type = LCD_EXTERN_MIPI, /* LCD_EXTERN_I2C, LCD_EXTERN_SPI, LCD_EXTERN_MIPI, LCD_EXTERN_MAX */
 		.status = 1, /* 0=disable, 1=enable */
 		.cmd_size = LCD_EXTERN_CMD_SIZE_DYNAMIC,
-		.table_init_on = ext_init_on_table_P070ACB,
-		.table_init_off = ext_init_off_table_P070ACB,
+		.table_init_on = ext_init_on_table_TL070HDV03CT,
+		.table_init_off = ext_init_off_table_TL070HDV03CT,
 	},
-	{ /* TL050FHV02CT */
+	{ /* P070ACB_FT */
 		.index = 3,
 		.name = "mipi_default",
 		.type = LCD_EXTERN_MIPI, /* LCD_EXTERN_I2C, LCD_EXTERN_SPI, LCD_EXTERN_MIPI, LCD_EXTERN_MAX */
 		.status = 1, /* 0=disable, 1=enable */
 		.cmd_size = LCD_EXTERN_CMD_SIZE_DYNAMIC,
-		.table_init_on = ext_init_on_table_TL050FHV02CT,
-		.table_init_off = ext_init_off_table_TL050FHV02CT,
+		.table_init_on = ext_init_on_table_P070ACB_FT,
+		.table_init_off = ext_init_off_table_P070ACB_FT,
 	},
 	{
 		.index = LCD_EXTERN_INDEX_INVALID,
@@ -514,21 +438,17 @@ void lcd_config_bsp_init(void)
 			ext_lcd = &ext_lcd_config[i];
 			if (strcmp(ext_lcd->panel_type, str) == 0) {
 				switch (i) {
-				case 1:/* TV070WSM*/
-					lcd_mipi_config.dsi_init_on = mipi_init_on_table_TV070WSM;
-					lcd_mipi_config.dsi_init_off = mipi_init_off_table_TV070WSM;
-					break;
-				case 2:/* P070ACB*/
-					lcd_mipi_config.dsi_init_on = mipi_init_on_table_P070ACB;
-					lcd_mipi_config.dsi_init_off = mipi_init_off_table_P070ACB;
-					break;
-				case 3:
-					lcd_mipi_config.dsi_init_on = mipi_init_on_table_TL050FHV02CT;
-					lcd_mipi_config.dsi_init_off = mipi_init_off_table_TL050FHV02CT;
-					break;
-				case 4:
+				case 1: /* TL070WSH27 */
 					lcd_mipi_config.dsi_init_on = mipi_init_on_table_TL070WSH27;
 					lcd_mipi_config.dsi_init_off = mipi_init_off_table_TL070WSH27;
+					break;
+				case 2: /* TL070HDV03CT */
+					lcd_mipi_config.dsi_init_on = mipi_init_on_table_TL070HDV03CT;
+					lcd_mipi_config.dsi_init_off = mipi_init_off_table_TL070HDV03CT;
+					break;
+				case 3:/* P070ACB_FT*/
+					lcd_mipi_config.dsi_init_on = mipi_init_on_table_P070ACB;
+					lcd_mipi_config.dsi_init_off = mipi_init_off_table_P070ACB;
 					break;
 				case 0:
 				default:
