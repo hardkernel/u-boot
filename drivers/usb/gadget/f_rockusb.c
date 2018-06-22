@@ -330,7 +330,6 @@ static int rkusb_cmd_process(struct fsg_common *common,
 
 	dump_cbw(cbw);
 
-	rkusb_fixup_cbwcb(common, bh);
 	if (rkusb_check_lun(common)) {
 		*reply = -EINVAL;
 		return RKUSB_RC_ERROR;
@@ -353,12 +352,14 @@ static int rkusb_cmd_process(struct fsg_common *common,
 		break;
 
 	case RKUSB_LBA_READ_10:
+		rkusb_fixup_cbwcb(common, bh);
 		common->cmnd[0] = SC_READ_10;
 		common->cmnd[1] = 0; /* Not support */
 		rc = RKUSB_RC_CONTINUE;
 		break;
 
 	case RKUSB_LBA_WRITE_10:
+		rkusb_fixup_cbwcb(common, bh);
 		common->cmnd[0] = SC_WRITE_10;
 		common->cmnd[1] = 0; /* Not support */
 		rc = RKUSB_RC_CONTINUE;
