@@ -51,8 +51,8 @@ static int device_bind_common(struct udevice *parent, const struct driver *drv,
 	}
 
 #ifdef CONFIG_USING_KERNEL_DTB
-	/* Do not use mmc node from kernel dtb */
-	if(drv->id == UCLASS_MMC)
+	/* Do not use mmc node and nand node from kernel dtb */
+	if(drv->id == UCLASS_MMC || drv->id == UCLASS_RKNAND)
 	list_for_each_entry(dev, &uc->dev_head, uclass_node) {
 		if (!strcmp(name, dev->name)){
 			debug("%s do not bind dev already in list %s\n",
