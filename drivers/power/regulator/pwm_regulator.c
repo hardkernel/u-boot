@@ -105,7 +105,7 @@ static int pwm_regulator_ofdata_to_platdata(struct udevice *dev)
 
 	priv->init_voltage = dev_read_u32_default(dev, "regulator-init-microvolt", -1);
 	if (priv->init_voltage < 0) {
-		printf("Cannot find regulator pwm init_voltage\n");
+		debug("Cannot find regulator pwm init_voltage\n");
 	}
 
 	ret = uclass_get_device_by_ofnode(UCLASS_PWM, args.node, &priv->pwm);
