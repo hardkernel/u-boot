@@ -194,9 +194,12 @@ static int android_bootloader_boot_bootloader(void)
 {
 	const char *fastboot_cmd = env_get("fastbootcmd");
 
-	if (fastboot_cmd)
-		return run_command(fastboot_cmd, CMD_FLAG_ENV);
-	return -1;
+	if (fastboot_cmd == NULL) {
+		printf("fastboot_cmd is null, run default fastboot_cmd!\n");
+		fastboot_cmd = "fastboot usb 0";
+	}
+
+	return run_command(fastboot_cmd, CMD_FLAG_ENV);
 }
 
 #ifdef CONFIG_SUPPORT_OEM_DTB
