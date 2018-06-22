@@ -1220,6 +1220,10 @@ static ulong px30_gpll_set_pmuclk(struct px30_pmuclk_priv *priv, ulong hz)
 	nandc_rate = px30_nandc_get_clk(cru_priv);
 	debug("%s emmc=%lu, sdmmc=%lu, nandc=%lu\n", __func__, emmc_rate,
 	      sdmmc_rate, nandc_rate);
+	/* avoid rate too large, reduce rate first */
+	px30_mmc_set_clk(cru_priv, SCLK_EMMC, emmc_rate / div);
+	px30_mmc_set_clk(cru_priv, SCLK_SDMMC, sdmmc_rate / div);
+	px30_nandc_set_clk(cru_priv, nandc_rate / div);
 
 	rkclk_set_pll(&pmucru->pll, &pmucru->pmu_mode, GPLL, hz);
 	priv->gpll_hz = px30_gpll_get_pmuclk(priv);
