@@ -342,7 +342,7 @@ static ulong px30_nandc_get_clk(struct px30_clk_priv *priv)
 	con = readl(&cru->clksel_con[15]);
 	div = (con & NANDC_DIV_MASK) >> NANDC_DIV_SHIFT;
 
-	return DIV_TO_RATE(priv->gpll_hz, div) / 2;
+	return DIV_TO_RATE(priv->gpll_hz, div);
 }
 
 static ulong px30_nandc_set_clk(struct px30_clk_priv *priv,
@@ -353,7 +353,7 @@ static ulong px30_nandc_set_clk(struct px30_clk_priv *priv,
 
 	/* Select nandc source from GPLL by default */
 	/* nandc clock defaulg div 2 internal, need provide double in cru */
-	src_clk_div = DIV_ROUND_UP(priv->gpll_hz / 2, set_rate);
+	src_clk_div = DIV_ROUND_UP(priv->gpll_hz, set_rate);
 	assert(src_clk_div - 1 < 31);
 
 	rk_clrsetreg(&cru->clksel_con[15],
