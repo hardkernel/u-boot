@@ -9,9 +9,14 @@
 
 #include <irq-platform.h>
 
+#ifdef CONFIG_ROCKCHIP_RK3399
+#define TIMER_CTRL		0x1c
+#else
+#define TIMER_CTRL		0x10
+#endif
+
 #define TIMER_LOAD_COUNT0	0x00
 #define TIMER_LOAD_COUNT1	0x04
-#define TIMER_CTRL		0x10
 #define TIMER_INTSTATUS		0x18
 
 #define TIMER_EN		BIT(0)
