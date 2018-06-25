@@ -136,7 +136,7 @@ static int rk_keys_read(struct udevice *dev, int code)
 	struct rk_key_priv *priv = dev_get_priv(dev);
 	struct input_key *key = dev_get_platdata(dev);
 	int report = KEY_NOT_EXIST;
-	int max, min, i = 0;
+	int i = 0;
 	unsigned int adcval;
 
 	for (i = 0; i < priv->key_nr; i++) {
@@ -149,10 +149,10 @@ static int rk_keys_read(struct udevice *dev, int code)
 				printf("%s: failed to read saradc\n",
 				       key[i].name);
 			} else {
-				report = key_parse_adc_event(key[i], adcval);
+				report = key_parse_adc_event(&key[i], adcval);
 			}
 		} else {
-			report = key_parse_gpio_event(key[i]);
+			report = key_parse_gpio_event(&key[i]);
 		}
 		break;
 	}
