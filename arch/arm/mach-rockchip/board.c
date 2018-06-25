@@ -117,6 +117,8 @@ static int charge_display(void)
 		if (ret != -ENODEV) {
 			printf("Get UCLASS CHARGE DISPLAY failed: %d\n", ret);
 			return ret;
+		} else {
+			debug("Can't find charge display driver\n");
 		}
 		return 0;
 	}
