@@ -977,11 +977,10 @@ void set_hdmitx_clk(struct hdmitx_dev *hdev)
 	char *frac_rate_str = NULL;
 
 	frac_rate_str = getenv("frac_rate_policy");
-	if (frac_rate_str && (frac_rate_str[0] == '1') &&
-		likely_frac_rate_mode(hdev->para->ext_name))
-		frac_rate = 1;
-	else
+	if (frac_rate_str && (frac_rate_str[0] == '0'))
 		frac_rate = 0;
+	else if (likely_frac_rate_mode(hdev->para->ext_name))
+		frac_rate = 1;
 	hdev->frac_rate_policy = frac_rate;
 
 	if (hdev->para->cs != HDMI_COLOR_FORMAT_422)

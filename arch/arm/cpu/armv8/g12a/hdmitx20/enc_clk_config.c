@@ -179,8 +179,10 @@ static bool set_hpll_hclk_v3(unsigned int m, unsigned int frac_val)
 static void set_hpll_clk_out(unsigned clk, struct hdmitx_dev *hdev)
 {
 	unsigned int frac_rate = 1;
+
+	frac_rate = hdev->frac_rate_policy;
 	check_clk_config(clk);
-	printk("config HPLL = %d\n", clk);
+	printk("config HPLL = %d frac_rate = %d\n", clk, frac_rate);
 
 	switch (clk) {
 	case 5940000:
@@ -914,8 +916,25 @@ next:
 	set_enci_div(p_enc[j].enci_div);
 }
 
+static int likely_frac_rate_mode(char *m)
+{
+	if (strstr(m, "24hz") || strstr(m, "30hz") || strstr(m, "60hz")
+		|| strstr(m, "120hz") || strstr(m, "240hz"))
+		return 1;
+	else
+		return 0;
+}
+
 void hdmitx_set_clk(struct hdmitx_dev *hdev)
 {
+	char *frac_rate_str = NULL;
+
+	frac_rate_str = getenv("frac_rate_policy");
+	if (frac_rate_str && (frac_rate_str[0] == '0'))
+		hdev->frac_rate_policy = 0;
+	else if (likely_frac_rate_mode(hdev->para->ext_name))
+		hdev->frac_rate_policy = 1;
+
 	hdmitx_set_clk_(hdev);
 }
 
