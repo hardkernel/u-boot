@@ -2,8 +2,6 @@
 set -e
 BOARD=$1
 SUBCMD=$2
-RKCHIP=$(echo ${BOARD##*-} | tr '[a-z]' '[A-Z]')
-ORG_RKCHIP=$RKCHIP
 JOB=`sed -n "N;/processor/p" /proc/cpuinfo|wc -l`
 SUPPORT_LIST=`ls configs/*-[r,p][x,v,k][0-9][0-9]*_defconfig`
 
@@ -20,6 +18,9 @@ TOOLCHAIN_ARM32=../prebuilts/gcc/linux-x86/arm/gcc-linaro-6.3.1-2017.05-x86_64_a
 TOOLCHAIN_ARM64=../prebuilts/gcc/linux-x86/aarch64/gcc-linaro-6.3.1-2017.05-x86_64_aarch64-linux-gnu/bin
 
 ########################################### User not touch #############################################
+# Declare global INI file searching index name for every chip, update in fixup_platform_configure()
+RKCHIP=
+
 # Declare global rkbin RKTOOLS and rkbin repository path, updated in prepare()
 RKTOOLS=
 RKBIN=
@@ -42,7 +43,7 @@ PLATFORM_AARCH32=
 
 prepare()
 {
-	local absolute_path cmd count
+	local absolute_path cmd
 
 	# Assign output directory
 	cmd=${SUBCMD%=*}
@@ -71,23 +72,6 @@ prepare()
 		echo "********************************************"
 		echo
 		exit 1
-	fi
-
-	# Get RKCHIP from exist .config file
-	if [ "$RKCHIP" = '' ]; then
-		count=`grep -c '^CONFIG_ROCKCHIP_[R,P][X,V,K][0-9][0-9]' ${OUTDIR}/.config`
-		RKCHIP=`grep '^CONFIG_ROCKCHIP_[R,P][X,V,K][0-9][0-9]' ${OUTDIR}/.config`
-		if [ $count -gt 1 ]; then
-			echo "Find $count SoC in .config file:"
-			echo "$RKCHIP"
-			echo
-			echo "I'm confused, please compile with [board], like: ./make.sh [board]"
-			exit 1
-		else
-			RKCHIP=${RKCHIP%=*}
-			RKCHIP=${RKCHIP##*_}
-			ORG_RKCHIP=$RKCHIP
-		fi
 	fi
 
 	# Initialize RKBIN and RKTOOLS
@@ -183,9 +167,29 @@ sub_commands()
 #	4. fixup ARM64 cpu boot with AArch32
 fixup_platform_configure()
 {
-# <1> Fixup chip name for searching trust/loader ini files
-	if [ "$RKCHIP" = 'RK3228' -o "$RKCHIP" = 'RK3229' ]; then
-		RKCHIP=RK322X
+	local count plat
+
+# <1> Get RKCHIP for searching trust/loader ini files
+	count=`grep -c '^CONFIG_ROCKCHIP_[R,P][X,V,K][0-9][0-9]' ${OUTDIR}/.config`
+	RKCHIP=`grep '^CONFIG_ROCKCHIP_[R,P][X,V,K][0-9][0-9]' ${OUTDIR}/.config`
+
+	if [ $count -eq 1 ]; then
+		RKCHIP=${RKCHIP%=*}
+		RKCHIP=${RKCHIP##*_}
+	elif [ $count -gt 1 ]; then
+		# Is RK3126 ?
+		plat=`grep '^CONFIG_ROCKCHIP_[R,P][X,V,K][0-9][0-9]' ${OUTDIR}/.config | sed -n "/CONFIG_ROCKCHIP_RK3126=y/p"`
+		if [ "$plat" = 'CONFIG_ROCKCHIP_RK3126=y' ]; then
+			RKCHIP=RK3126
+		fi
+		# Is RK3326 ?
+		plat=`grep '^CONFIG_ROCKCHIP_[R,P][X,V,K][0-9][0-9]' ${OUTDIR}/.config | sed -n "/CONFIG_ROCKCHIP_RK3326=y/p"`
+		if [ "$plat" = 'CONFIG_ROCKCHIP_RK3326=y' ]; then
+			RKCHIP=RK3326
+		fi
+	else
+		echo "Can't get Rockchip SoC definition in .config"
+		exit 1
 	fi
 
 # <2> Fixup rsa/sha pack mode for platforms
@@ -310,9 +314,9 @@ finish()
 {
 	echo
 	if [ "$BOARD" = '' ]; then
-		echo "Platform ${ORG_RKCHIP}${PLATFORM_AARCH32} is build OK, with exist .config"
+		echo "Platform ${RKCHIP}${PLATFORM_AARCH32} is build OK, with exist .config"
 	else
-		echo "Platform ${ORG_RKCHIP}${PLATFORM_AARCH32} is build OK, with new .config(make ${BOARD}_defconfig)"
+		echo "Platform ${RKCHIP}${PLATFORM_AARCH32} is build OK, with new .config(make ${BOARD}_defconfig)"
 	fi
 }
 
