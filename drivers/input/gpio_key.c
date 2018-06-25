@@ -110,7 +110,7 @@ static int gpio_key_read(struct udevice *dev, int code)
 	for (i = 0; i < priv->key_nr; i++) {
 		if (key[i].code != code)
 			continue;
-		report = key_parse_gpio_event(key[i]);
+		report = key_parse_gpio_event(&key[i]);
 		break;
 	}
 
