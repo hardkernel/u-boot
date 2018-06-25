@@ -50,8 +50,9 @@ struct pll_div {
 	.fbdiv = (u32)((u64)hz * _refdiv * _postdiv1 * _postdiv2 / OSC_HZ),\
 	.postdiv1 = _postdiv1, .postdiv2 = _postdiv2, .freq = hz};
 
-static const struct pll_div gpll_init_cfg = PLL_DIVISORS(GPLL_HZ, 2, 2, 1);
+static const struct pll_div gpll_init_cfg = PLL_DIVISORS(GPLL_HZ, 1, 3, 1);
 static const struct pll_div cpll_init_cfg = PLL_DIVISORS(CPLL_HZ, 1, 2, 2);
+static const struct pll_div npll_init_cfg = PLL_DIVISORS(NPLL_HZ, 1, 2, 2);
 #if !defined(CONFIG_SPL_BUILD)
 static const struct pll_div ppll_init_cfg = PLL_DIVISORS(PPLL_HZ, 2, 2, 1);
 #endif
@@ -195,6 +196,7 @@ enum {
 	ACLK_VOP_PLL_SEL_SHIFT		= 6,
 	ACLK_VOP_PLL_SEL_MASK		= 0x3 << ACLK_VOP_PLL_SEL_SHIFT,
 	ACLK_VOP_PLL_SEL_CPLL		= 0x1,
+	ACLK_VOP_PLL_SEL_GPLL		= 0x2,
 	ACLK_VOP_DIV_CON_SHIFT		= 0,
 	ACLK_VOP_DIV_CON_MASK		= 0x1f << ACLK_VOP_DIV_CON_SHIFT,
 
@@ -205,6 +207,7 @@ enum {
 	DCLK_VOP_PLL_SEL_SHIFT          = 8,
 	DCLK_VOP_PLL_SEL_MASK           = 3 << DCLK_VOP_PLL_SEL_SHIFT,
 	DCLK_VOP_PLL_SEL_VPLL           = 0,
+	DCLK_VOP_PLL_SEL_CPLL           = 1,
 	DCLK_VOP_DIV_CON_MASK           = 0xff,
 	DCLK_VOP_DIV_CON_SHIFT          = 0,
 
@@ -290,6 +293,31 @@ enum {
  * FBDIV = Integer value programmed into feedback divide
  *
  */
+
+static uint32_t rkclk_pll_get_rate(u32 *pll_con)
+{
+	u32 refdiv, fbdiv, postdiv1, postdiv2;
+	u32 con;
+
+	con = readl(&pll_con[3]);
+	switch ((con & PLL_MODE_MASK) >> PLL_MODE_SHIFT) {
+	case PLL_MODE_SLOW:
+		return OSC_HZ;
+	case PLL_MODE_NORM:
+		/* normal mode */
+		con = readl(&pll_con[0]);
+		fbdiv = (con & PLL_FBDIV_MASK) >> PLL_FBDIV_SHIFT;
+		con = readl(&pll_con[1]);
+		postdiv1 = (con & PLL_POSTDIV1_MASK) >> PLL_POSTDIV1_SHIFT;
+		postdiv2 = (con & PLL_POSTDIV2_MASK) >> PLL_POSTDIV2_SHIFT;
+		refdiv = (con & PLL_REFDIV_MASK) >> PLL_REFDIV_SHIFT;
+		return (24 * fbdiv / (refdiv * postdiv1 * postdiv2)) * 1000000;
+	case PLL_MODE_DEEP:
+	default:
+		return 32768;
+	}
+}
+
 static void rkclk_set_pll(u32 *pll_con, const struct pll_div *div)
 {
 	/* All 8 PLLs have same VCO and output frequency range restrictions. */
@@ -331,6 +359,42 @@ static void rkclk_set_pll(u32 *pll_con, const struct pll_div *div)
 	/* pll enter normal mode */
 	rk_clrsetreg(&pll_con[3], PLL_MODE_MASK,
 		     PLL_MODE_NORM << PLL_MODE_SHIFT);
+}
+
+static ulong rk3399_pll_get_rate(struct rk3399_clk_priv *priv,
+				 enum rk3399_pll_id pll_id)
+{
+	struct rk3399_cru *cru = priv->cru;
+	u32 *pll_con;
+
+	switch (pll_id) {
+	case PLL_APLLL:
+		pll_con = &cru->apll_l_con[0];
+		break;
+	case PLL_APLLB:
+		pll_con = &cru->apll_b_con[0];
+		break;
+	case PLL_DPLL:
+		pll_con = &cru->dpll_con[0];
+		break;
+	case PLL_CPLL:
+		pll_con = &cru->cpll_con[0];
+		break;
+	case PLL_GPLL:
+		pll_con = &cru->gpll_con[0];
+		break;
+	case PLL_NPLL:
+		pll_con = &cru->npll_con[0];
+		break;
+	case PLL_VPLL:
+		pll_con = &cru->vpll_con[0];
+		break;
+	default:
+		pll_con = &cru->vpll_con[0];
+		break;
+	}
+
+	return rkclk_pll_get_rate(pll_con);
 }
 
 static int pll_para_config(u32 freq_hz, struct pll_div *div)
@@ -635,12 +699,15 @@ static ulong rk3399_spi_set_clk(struct rk3399_cru *cru, ulong clk_id, uint hz)
 	return rk3399_spi_get_clk(cru, clk_id);
 }
 
+#define RK3399_LIMIT_PLL_DCLK_VOP	(600 * 1000000)
+#define RK3399_LIMIT_PLL_ACLK_VOP	(400 * 1000000)
+
 static ulong rk3399_vop_set_clk(struct rk3399_cru *cru, ulong clk_id, u32 hz)
 {
-	struct pll_div vpll_config = {0};
-	int aclk_vop = 198*MHz;
+	struct pll_div vpll_config = {0}, cpll_config = {0};
+	int aclk_vop = RK3399_LIMIT_PLL_ACLK_VOP;
 	void *aclkreg_addr, *dclkreg_addr;
-	u32 div;
+	u32 div = 1;
 
 	switch (clk_id) {
 	case DCLK_VOP0:
@@ -655,26 +722,30 @@ static ulong rk3399_vop_set_clk(struct rk3399_cru *cru, ulong clk_id, u32 hz)
 		return -EINVAL;
 	}
 	/* vop aclk source clk: cpll */
-	div = CPLL_HZ / aclk_vop;
+	div = GPLL_HZ / aclk_vop;
 	assert(div - 1 <= 31);
 
 	rk_clrsetreg(aclkreg_addr,
 		     ACLK_VOP_PLL_SEL_MASK | ACLK_VOP_DIV_CON_MASK,
-		     ACLK_VOP_PLL_SEL_CPLL << ACLK_VOP_PLL_SEL_SHIFT |
+		     ACLK_VOP_PLL_SEL_GPLL << ACLK_VOP_PLL_SEL_SHIFT |
 		     (div - 1) << ACLK_VOP_DIV_CON_SHIFT);
 
-	/* vop dclk source from vpll, and equals to vpll(means div == 1) */
-	if (pll_para_config(hz, &vpll_config))
-		return -1;
+	div = DIV_ROUND_UP(RK3399_LIMIT_PLL_DCLK_VOP, hz);
 
-	rkclk_set_pll(&cru->vpll_con[0], &vpll_config);
+	if (readl(dclkreg_addr) & DCLK_VOP_PLL_SEL_MASK) {
+		if (pll_para_config(div * hz, &cpll_config))
+			return -1;
+		rkclk_set_pll(&cru->cpll_con[0], &cpll_config);
+	} else {
+		if (pll_para_config(div * hz, &vpll_config))
+			return -1;
+		rkclk_set_pll(&cru->vpll_con[0], &vpll_config);
+	}
 
 	rk_clrsetreg(dclkreg_addr,
-		     DCLK_VOP_DCLK_SEL_MASK | DCLK_VOP_PLL_SEL_MASK|
-		     DCLK_VOP_DIV_CON_MASK,
+		     DCLK_VOP_DCLK_SEL_MASK | DCLK_VOP_DIV_CON_MASK,
 		     DCLK_VOP_DCLK_SEL_DIVOUT << DCLK_VOP_DCLK_SEL_SHIFT |
-		     DCLK_VOP_PLL_SEL_VPLL << DCLK_VOP_PLL_SEL_SHIFT |
-		     (1 - 1) << DCLK_VOP_DIV_CON_SHIFT);
+		     (div - 1) << DCLK_VOP_DIV_CON_SHIFT);
 
 	return hz;
 }
@@ -853,8 +924,15 @@ static ulong rk3399_clk_get_rate(struct clk *clk)
 	ulong rate = 0;
 
 	switch (clk->id) {
-	case 0 ... 63:
-		return 0;
+	case PLL_APLLL:
+	case PLL_APLLB:
+	case PLL_DPLL:
+	case PLL_CPLL:
+	case PLL_GPLL:
+	case PLL_NPLL:
+	case PLL_VPLL:
+		rate = rk3399_pll_get_rate(priv, clk->id - 1);
+		break;
 	case HCLK_SDMMC:
 	case SCLK_SDMMC:
 	case SCLK_EMMC:
@@ -997,11 +1075,41 @@ static int __maybe_unused rk3399_gmac_set_parent(struct clk *clk, struct clk *pa
 	return -EINVAL;
 }
 
+static int __maybe_unused rk3399_dclk_vop_set_parent(struct clk *clk,
+						     struct clk *parent)
+{
+	struct rk3399_clk_priv *priv = dev_get_priv(clk->dev);
+	void *dclkreg_addr;
+
+	switch (clk->id) {
+	case DCLK_VOP0_DIV:
+		dclkreg_addr = &priv->cru->clksel_con[49];
+		break;
+	case DCLK_VOP1_DIV:
+		dclkreg_addr = &priv->cru->clksel_con[50];
+		break;
+	default:
+		return -EINVAL;
+	}
+	if (parent->id == PLL_CPLL) {
+		rk_clrsetreg(dclkreg_addr, DCLK_VOP_PLL_SEL_MASK,
+			     DCLK_VOP_PLL_SEL_CPLL << DCLK_VOP_PLL_SEL_SHIFT);
+	} else {
+		rk_clrsetreg(dclkreg_addr, DCLK_VOP_PLL_SEL_MASK,
+			     DCLK_VOP_PLL_SEL_VPLL << DCLK_VOP_PLL_SEL_SHIFT);
+	}
+
+	return 0;
+}
+
 static int __maybe_unused rk3399_clk_set_parent(struct clk *clk, struct clk *parent)
 {
 	switch (clk->id) {
 	case SCLK_RMII_SRC:
 		return rk3399_gmac_set_parent(clk, parent);
+	case DCLK_VOP0_DIV:
+	case DCLK_VOP1_DIV:
+		return rk3399_dclk_vop_set_parent(clk, parent);
 	}
 
 	debug("%s: unsupported clk %ld\n", __func__, clk->id);
@@ -1051,6 +1159,7 @@ static void rkclk_init(struct rk3399_cru *cru)
 	/* configure gpll cpll */
 	rkclk_set_pll(&cru->gpll_con[0], &gpll_init_cfg);
 	rkclk_set_pll(&cru->cpll_con[0], &cpll_init_cfg);
+	rkclk_set_pll(&cru->npll_con[0], &npll_init_cfg);
 
 	/* configure perihp aclk, hclk, pclk */
 	aclk_div = GPLL_HZ / PERIHP_ACLK_HZ - 1;

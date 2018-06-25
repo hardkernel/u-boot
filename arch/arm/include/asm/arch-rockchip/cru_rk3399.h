@@ -71,8 +71,9 @@ check_member(rk3399_cru, sdio1_con[1], 0x594);
 #define KHz		1000
 #define OSC_HZ		(24*MHz)
 #define APLL_HZ		(600*MHz)
-#define GPLL_HZ		(594*MHz)
+#define GPLL_HZ		(800 * MHz)
 #define CPLL_HZ		(384*MHz)
+#define NPLL_HZ		(600 * MHz)
 #define PPLL_HZ		(676*MHz)
 
 #define PMU_PCLK_HZ	(48*MHz)
@@ -102,6 +103,20 @@ enum apll_frequencies {
 enum cpu_cluster {
 	CPU_CLUSTER_LITTLE,
 	CPU_CLUSTER_BIG,
+};
+
+enum rk3399_pll_id {
+	APLLL_ID = 0,
+	APLLB_ID,
+	DPLL_ID,
+	CPLL_ID,
+	GPLL_ID,
+	NPLL_ID,
+	VPLL_ID,
+
+	PPLL_ID,
+
+	END_PLL_ID
 };
 
 #endif	/* __ASM_ARCH_CRU_RK3399_H_ */
