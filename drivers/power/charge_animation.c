@@ -331,7 +331,7 @@ static int charge_animation_show(struct udevice *dev)
 
 	/* If there is preboot command, exit */
 	if (preboot) {
-		debug("preboot: %s\n", preboot);
+		debug("exit charge, due to preboot: %s\n", preboot);
 		return 0;
 	}
 
@@ -347,8 +347,10 @@ static int charge_animation_show(struct udevice *dev)
 
 	/* Not charger online, exit */
 	charging = fuel_gauge_get_chrg_online(fg);
-	if (charging <= 0)
+	if (charging <= 0) {
+		debug("exit charge, due to charger offline\n");
 		return 0;
+	}
 
 	/* Enter android charge, set property for kernel */
 	if (pdata->android_charge) {
@@ -357,8 +359,10 @@ static int charge_animation_show(struct udevice *dev)
 	}
 
 	/* Not enable U-Boot charge, exit */
-	if (!pdata->uboot_charge)
+	if (!pdata->uboot_charge) {
+		debug("exit charge, due to not enable uboot charge\n");
 		return 0;
+	}
 
 	voltage = fuel_gauge_get_voltage(fg);
 	if (voltage < 0) {
@@ -616,7 +620,10 @@ static int charge_animation_probe(struct udevice *dev)
 	/* Get PMIC: used for power off system  */
 	ret = uclass_get_device(UCLASS_PMIC, 0, &pmic);
 	if (ret) {
-		printf("Get UCLASS PMIC failed: %d\n", ret);
+		if (ret == -ENODEV)
+			printf("Can't find PMIC\n");
+		else
+			printf("Get UCLASS PMIC failed: %d\n", ret);
 		return ret;
 	}
 	priv->pmic = pmic;
@@ -624,7 +631,10 @@ static int charge_animation_probe(struct udevice *dev)
 	/* Get fuel gauge: used for charging */
 	ret = uclass_get_device(UCLASS_FG, 0, &fg);
 	if (ret) {
-		printf("Get UCLASS FG failed: %d\n", ret);
+		if (ret == -ENODEV)
+			printf("Can't find FG\n");
+		else
+			printf("Get UCLASS FG failed: %d\n", ret);
 		return ret;
 	}
 	priv->fg = fg;
