@@ -85,8 +85,13 @@ static int android_bootloader_message_write(
 	const disk_partition_t *part_info,
 	struct android_bootloader_message *message)
 {
+#ifdef CONFIG_RKIMG_BOOTLOADER
+	ulong message_blocks = sizeof(struct android_bootloader_message) /
+	    part_info->blksz + BOOTLOADER_MESSAGE_BLK_OFFSET;
+#else
 	ulong message_blocks = sizeof(struct android_bootloader_message) /
 	    part_info->blksz;
+#endif
 	if (message_blocks > part_info->size) {
 		printf("misc partition too small.\n");
 		return -1;
