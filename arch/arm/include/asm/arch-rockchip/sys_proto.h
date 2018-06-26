@@ -8,7 +8,7 @@
 #define _ASM_ARCH_SYS_PROTO_H
 
 #if !defined(CONFIG_SPL_FRAMEWORK) || defined(CONFIG_TINY_TPL)
-void sdram_init(void);
+int sdram_init(void);
 #endif
 
 #endif /* _ASM_ARCH_SYS_PROTO_H */

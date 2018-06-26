@@ -112,7 +112,7 @@ void *get_base_addr(unsigned int *reg, unsigned int offset)
 	return (void *)p;
 }
 
-void sdram_init(void)
+int sdram_init(void)
 {
 	int ret;
 	struct dram_info *sdram_priv = &info;
@@ -135,4 +135,6 @@ void sdram_init(void)
 	ret = rv1108_sdram_init(sdram_priv, params);
 	if (ret)
 		debug("rv1108_sdram_init() fail!");
+
+	return ret;
 }

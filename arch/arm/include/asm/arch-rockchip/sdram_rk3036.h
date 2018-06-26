@@ -331,7 +331,7 @@ struct rk3036_ddr_config {
 };
 
 /* rk3036 sdram initial */
-void sdram_init(void);
+int sdram_init(void);
 
 /* get ddr die config, implement in specific board */
 void get_ddr_config(struct rk3036_ddr_config *config);

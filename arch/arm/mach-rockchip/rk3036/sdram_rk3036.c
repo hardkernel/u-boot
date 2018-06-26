@@ -738,7 +738,7 @@ size_t sdram_size(void)
 	return size;
 }
 
-void sdram_init(void)
+int sdram_init(void)
 {
 	struct rk3036_sdram_priv sdram_priv;
 
@@ -763,6 +763,8 @@ void sdram_init(void)
 	data_training(&sdram_priv);
 	move_to_access_state(&sdram_priv);
 	dram_cfg_rbc(&sdram_priv);
+
+	return 0;
 }
 
 #if !CONFIG_IS_ENABLED(RAM)
