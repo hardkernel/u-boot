@@ -99,7 +99,7 @@ Flash the image with U-Boot SPL(option 1)
 Power on(or reset with RESET KEY) with MASKROM KEY preesed, and then:
   > rkdeveloptool db rkbin/rk33/rk3399_loader_v1.08.106.bin
   > rkdeveloptool wl 64 u-boot/idbspl.img
-  > rkdeveloptool wl 512 u-boot/u-boot.itb
+  > rkdeveloptool wl 0x4000 u-boot/u-boot.itb
   > rkdeveloptool rd
 
 Flash the image with Rockchip miniloader(option 2)
