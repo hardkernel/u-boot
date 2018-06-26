@@ -6,6 +6,17 @@
 
 #ifndef _ASM_ARCH_SDRAM_COMMON_H
 #define _ASM_ARCH_SDRAM_COMMON_H
+
+enum {
+	DDR4 = 0,
+	DDR2 = 2,
+	DDR3 = 3,
+	LPDDR2 = 5,
+	LPDDR3 = 6,
+	LPDDR4 = 7,
+	UNUSED = 0xFF
+};
+
 /*
  * sys_reg bitfield struct
  * [31]		row_3_4_ch1

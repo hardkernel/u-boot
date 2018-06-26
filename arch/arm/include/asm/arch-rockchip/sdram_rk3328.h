@@ -7,15 +7,6 @@
 #ifndef _ASM_ARCH_SDRAM_RK3328_H
 #define _ASM_ARCH_SDRAM_RK3328_H
 
-enum {
-	DDR4 = 0,
-	DDR3 = 3,
-	LPDDR2 = 5,
-	LPDDR3 = 6,
-	LPDDR4 = 7,
-	UNUSED = 0xFF
-};
-
 #define SR_IDLE		93
 #define PD_IDLE		13
 #define SDRAM_ADDR	0x00000000
