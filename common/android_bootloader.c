@@ -39,6 +39,33 @@
 #define ANDROID_ARG_FDT_FILENAME "kernel.dtb"
 #endif
 #define OEM_UNLOCK_ARG_SIZE 30
+#define UUID_SIZE 37
+
+#if defined(CONFIG_ANDROID_AB) && !defined(CONFIG_ANDROID_AVB)
+static int get_partition_unique_uuid(char *partition,
+				     char *guid_buf,
+				     size_t guid_buf_size)
+{
+	struct blk_desc *dev_desc;
+	disk_partition_t part_info;
+
+	dev_desc = rockchip_get_bootdev();
+	if (!dev_desc) {
+		printf("%s: Could not find device\n", __func__);
+		return -1;
+	}
+
+	if (part_get_info_by_name(dev_desc, partition, &part_info) < 0) {
+		printf("Could not find \"%s\" partition\n", partition);
+		return -1;
+	}
+
+	if (guid_buf && guid_buf_size > 0)
+		memcpy(guid_buf, part_info.uuid, guid_buf_size);
+
+	return 0;
+}
+#endif
 
 char *android_str_append(char *base_name, char *slot_suffix)
 {
@@ -767,12 +794,35 @@ int android_bootloader_boot_flow(struct blk_desc *dev_desc,
 #endif
 	printf("ANDROID: reboot reason: \"%s\"\n", android_boot_mode_str(mode));
 
+#ifdef CONFIG_ANDROID_AB
+	/*TODO: get from pre-loader or misc partition*/
+	if (rk_avb_get_current_slot(slot_suffix))
+		return -1;
+
+	if (slot_suffix[0] != '_') {
+		printf("There is no bootable slot!\n");
+		return -1;
+	}
+#endif
+
 	switch (mode) {
 	case ANDROID_BOOT_MODE_NORMAL:
 		/* In normal mode, we load the kernel from "boot" but append
 		 * "skip_initramfs" to the cmdline to make it ignore the
 		 * recovery initramfs in the boot partition.
 		 */
+#if defined(CONFIG_ANDROID_AB) && !defined(CONFIG_ANDROID_AVB)
+		char root_partition[20] = {0};
+		char guid_buf[UUID_SIZE] = {0};
+		char root_partuuid[70] = "root=PARTUUID=";
+
+		strcat(root_partition, ANDROID_PARTITION_SYSTEM);
+		strcat(root_partition, slot_suffix);
+		get_partition_unique_uuid(root_partition, guid_buf, UUID_SIZE);
+		strcat(root_partuuid, guid_buf);
+		env_update("bootargs", root_partuuid);
+#endif
+
 #ifdef CONFIG_ANDROID_AB
 		mode_cmdline = "skip_initramfs";
 #endif
@@ -792,17 +842,6 @@ int android_bootloader_boot_flow(struct blk_desc *dev_desc,
 		 */
 		return android_bootloader_boot_bootloader();
 	}
-
-#ifdef CONFIG_ANDROID_AB
-	/*TODO: get from pre-loader or misc partition*/
-	if (rk_avb_get_current_slot(slot_suffix))
-		return -1;
-
-	if (slot_suffix[0] != '_') {
-		printf("There is no bootable slot!\n");
-		return -1;
-	}
-#endif
 
 #ifdef CONFIG_ANDROID_AVB
 	if (android_slot_verify(boot_partname, load_address, slot_suffix))
