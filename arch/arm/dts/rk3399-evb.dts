@@ -61,6 +61,10 @@
 		compatible = "regulator-fixed";
 		regulator-name = "vcc5v0_host";
 		gpio = <&gpio4 25 GPIO_ACTIVE_HIGH>;
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		regulator-always-on;
+		regulator-boot-on;
 	};
 
 	vcc5v0_typec0: vcc5v0-typec0-en {
