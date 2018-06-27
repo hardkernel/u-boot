@@ -694,6 +694,9 @@ int dwc3_uboot_init(struct dwc3_device *dwc3_dev)
 
 	dwc->index = dwc3_dev->index;
 
+	if (dwc3_dev->usb2_phyif_utmi_width)
+		dwc->usb2_phyif_utmi_width = dwc3_dev->usb2_phyif_utmi_width;
+
 	node = fdt_node_offset_by_compatible(blob, -1,
 			"rockchip,rk3399-xhci");
 	if (node < 0)
