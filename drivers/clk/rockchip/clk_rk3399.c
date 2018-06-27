@@ -1121,8 +1121,10 @@ static int rk3399_clk_enable(struct clk *clk)
 	switch (clk->id) {
 	case HCLK_HOST0:
 	case HCLK_HOST0_ARB:
+	case SCLK_USBPHY0_480M_SRC:
 	case HCLK_HOST1:
 	case HCLK_HOST1_ARB:
+	case SCLK_USBPHY1_480M_SRC:
 		return 0;
 	}
 
