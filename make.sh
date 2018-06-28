@@ -1,9 +1,9 @@
 #!/bin/sh
 set -e
 BOARD=$1
-SUBCMD=$2
+SUBCMD=$1
 JOB=`sed -n "N;/processor/p" /proc/cpuinfo|wc -l`
-SUPPORT_LIST=`ls configs/*-[r,p][x,v,k][0-9][0-9]*_defconfig`
+SUPPORT_LIST=`ls configs/*[r,p][x,v,k][0-9][0-9]*_defconfig`
 
 ########################################### User can modify #############################################
 # User's rkbin tool relative path
@@ -30,7 +30,7 @@ TOOLCHAIN_GCC=
 TOOLCHAIN_OBJDUMP=
 
 # Declare global default output dir and cmd, update in prepare()
-OUTDIR=
+OUTDIR=$2
 OUTOPT=
 
 # Declare global plaform configure, updated in fixup_platform_configure()
@@ -40,39 +40,100 @@ PLATFORM_UBOOT_IMG_SIZE=
 PLATFORM_TRUST_IMG_SIZE=
 PLATFORM_AARCH32=
 #########################################################################################################
+help()
+{
+	echo
+	echo "Usage: ./make.sh [board|subcmd] [O=<dir>]"
+	echo
+	echo "Example:"
+	echo
+	echo "1. Build:"
+	echo "	./make.sh evb-rk3399     	---- build for evb-rk3399_defconfig"
+	echo "	./make.sh evb-rk3399 O=rockdev  ---- build for evb-rk3399_defconfig with output dir "./rockdev""
+	echo "	./make.sh firefly-rk3288 	---- build for firefly-rk3288_defconfig"
+	echo "	./make.sh			---- build with exist .config"
+	echo
+	echo "	After build, images of uboot, loader and trust are all generated."
+	echo
+	echo "2. Subcmd helper:"
+	echo "	./make.sh trust		--- pack trust.img without rebuild project"
+	echo "	./make.sh loader	--- pack loader bin without rebuild project"
+	echo "	./make.sh uboot		--- pack uboot.img without rebuild project"
+	echo
+	echo "3. Debug helper:"
+	echo "	./make.sh elf		--- dump elf file with -D(default)"
+	echo "	./make.sh elf-S		--- dump elf file with -S"
+	echo "	./make.sh map		--- cat u-boot.map"
+	echo "	./make.sh sym		--- cat u-boot.sym"
+}
 
 prepare()
 {
-	local absolute_path cmd
+	local absolute_path cmd dir count
 
-	# Assign output directory
-	cmd=${SUBCMD%=*}
+	# Parse output directory
+	cmd=${OUTDIR%=*}
 	if [ "${cmd}" = 'O' ]; then
-		OUTDIR=${SUBCMD#*=}
+		OUTDIR=${OUTDIR#*=}
 		OUTOPT=O=${OUTDIR}
 	else
-		OUTDIR=.
+		case $BOARD in
+			''|elf*|trust|loader|uboot|map|sym)
+			count=`find -name .config | wc -l`
+			dir=`find -name .config`
+			if [ $count -eq 1 ]; then
+				dir=${dir%/*}
+				OUTDIR=${dir#*/}
+				if [ $OUTDIR != '.' ]; then
+					OUTOPT=O=${OUTDIR}
+				fi
+			elif [ $count -eq 0 ]; then
+				echo
+				echo "Build failed, Can't find .config"
+				help
+				exit 1
+			else
+				echo
+				echo "Build failed, find $count '.config': "
+				echo "$dir"
+				echo "Please leave only one of them"
+				exit 1
+			fi
+			;;
+
+			*)
+			OUTDIR=.
+			;;
+		esac
 	fi
 
-	# Check invalid args and help
-	if [ "$BOARD" = '--help' -o "$BOARD" = '-help' -o "$BOARD" = 'help' -o "$BOARD" = '-h' -o "$BOARD" = '--h' ]; then
-		echo
-		echo "Usage: ./make.sh [board]"
-		echo "Example:"
-		echo "./make.sh		 ---- build with exist .config"
-		echo "./make.sh evb-rk3399     ---- build for evb-rk3399_defconfig"
-		echo "./make.sh firefly-rk3288 ---- build for firefly-rk3288_defconfig"
-		exit 1
-	elif [ $BOARD ] && [ ! -f configs/${BOARD}_defconfig ]; then
-		echo
-		echo "Can't find: configs/${BOARD}_defconfig"
-		echo
-		echo "******** Rockchip Support List *************"
-		echo "${SUPPORT_LIST}"
-		echo "********************************************"
-		echo
-		exit 1
-	fi
+	# Parse help and make defconfig
+	case $BOARD in
+		#help
+		--help|-help|help|--h|-h)
+		help
+		exit 0
+		;;
+		#subcmd
+		''|elf*|trust|loader|uboot|map|sym)
+		;;
+
+		*)
+		if [ ! -f configs/${BOARD}_defconfig ]; then
+			echo
+			echo "Can't find: configs/${BOARD}_defconfig"
+			echo
+			echo "******** Rockchip Support List *************"
+			echo "${SUPPORT_LIST}"
+			echo "********************************************"
+			echo
+			exit 1
+		else
+			echo "make for ${BOARD}_defconfig by -j${JOB}"
+			make ${BOARD}_defconfig ${OUTOPT}
+		fi
+		;;
+	esac
 
 	# Initialize RKBIN and RKTOOLS
 	if [ -d ${RKBIN_TOOLS} ]; then
@@ -87,14 +148,6 @@ prepare()
 		echo "	2. Github repository: https://github.com/rockchip-linux/rkbin"
 		echo "	3. Download full release SDK repository"
 		exit 1
-	fi
-}
-
-make_defconfig()
-{
-	if [ $BOARD ]; then
-		echo "make for ${BOARD}_defconfig by -j${JOB}"
-		make ${BOARD}_defconfig ${OUTOPT}
 	fi
 }
 
@@ -125,39 +178,53 @@ select_toolchain()
 	echo "toolchain: ${TOOLCHAIN_GCC}"
 }
 
-# Support subcmd:
-#	./make.sh evb-rk3288 elf	--- dump elf file with -D(default)
-#	./make.sh evb-rk3288 elf-S	--- dump elf file with -S
-#	./make.sh evb-rk3288 trust	--- pack trust.img without compile u-boot
-#	./make.sh evb-rk3288 loader	--- pack loader bin without compile u-boot
-#	./make.sh evb-rk3288 uboot	--- pack uboot.img without compile u-boot
 sub_commands()
 {
-	local elf=${SUBCMD%-*} opt=${SUBCMD#*-}
+	local cmd=${SUBCMD%-*} elfopt=${SUBCMD#*-}
 
-	if [ "$elf" = 'elf' ]; then
+	case $cmd in
+		elf)
 		if [ ! -f ${OUTDIR}/u-boot ]; then
 			echo "Can't find elf file: ${OUTDIR}/u-boot"
 			exit 1
 		else
-			# default 'elf' without option, use '-D'
-			if [ "${elf}" = 'elf' -a "${opt}" = 'elf' ]; then
-				opt=D
+			# default 'cmd' without option, use '-D'
+			if [ "${cmd}" = 'elf' -a "${elfopt}" = 'elf' ]; then
+				elfopt=D
 			fi
-
-			${TOOLCHAIN_OBJDUMP} -${opt} ${OUTDIR}/u-boot | less
+			${TOOLCHAIN_OBJDUMP} -${elfopt} ${OUTDIR}/u-boot | less
 			exit 0
 		fi
-	elif [ "$SUBCMD" = 'trust' ]; then
+		;;
+
+		map)
+		cat ${OUTDIR}/u-boot.map | less
+		exit 0
+		;;
+
+		sym)
+		cat ${OUTDIR}/u-boot.sym | less
+		exit 0
+		;;
+
+		trust)
 		pack_trust_image
 		exit 0
-	elif [ "$SUBCMD" = 'loader' ]; then
+		;;
+
+		loader)
 		pack_loader_image
 		exit 0
-	elif [ "$SUBCMD" = 'uboot' ]; then
+		;;
+
+		uboot)
 		pack_uboot_image
 		exit 0
-	fi
+		;;
+
+		*)
+		;;
+	esac
 }
 
 # Support platform special configure
@@ -321,7 +388,6 @@ finish()
 }
 
 prepare
-make_defconfig
 select_toolchain
 fixup_platform_configure
 sub_commands
