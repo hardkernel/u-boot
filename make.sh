@@ -309,15 +309,24 @@ pack_uboot_image()
 
 pack_loader_image()
 {
+	local files ini
+
 	if [ ! -f ${RKBIN}/RKBOOT/${RKCHIP}MINIALL.ini ]; then
 		echo "pack loader failed! Can't find: ${RKBIN}/RKBOOT/${RKCHIP}MINIALL.ini"
 		return
 	fi
 
 	cd ${RKBIN}
-	${RKTOOLS}/boot_merger --replace tools/rk_tools/ ./ ${RKBIN}/RKBOOT/${RKCHIP}MINIALL.ini
+	files=`ls ${RKBIN}/RKBOOT/${RKCHIP}MINIALL*.ini`
+	for ini in $files
+	do
+		if [ -f "$ini" ]; then
+			${RKTOOLS}/boot_merger --replace tools/rk_tools/ ./ $ini
+			echo "pack loader okay! Input: $ini"
+		fi
+	done
+
 	cd - && mv ${RKBIN}/*_loader_*.bin ./
-	echo "pack loader okay! Input: ${RKBIN}/RKBOOT/${RKCHIP}MINIALL.ini"
 }
 
 pack_trust_image()
