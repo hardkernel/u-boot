@@ -80,7 +80,8 @@ ddr_set_t __ddr_setting[] = {
 	.version			= 1,
 	.dram_rank_config		= CONFIG_DDR0_32BIT_RANK01_CH0, /* bus width 32bit, use cs0 cs1 */
 	.DramType			= CONFIG_DDR_TYPE_DDR4,
-	.DRAMFreq			= {912, 0, 0, 0},
+	/* 912 (DDR4-1866) / 1056 (DDR4-2133) / 1200 (DDR4-2400)/ 1320 (DDR4-2666) */
+	.DRAMFreq			= {1320, 0, 0, 0},
 	.ddr_rfc_type			= DDR_RFC_TYPE_DDR4_2Gbx8,
 	.ddr_base_addr			= CFG_DDR_BASE_ADDR,
 	.ddr_start_offset		= CFG_DDR_START_OFFSET,
