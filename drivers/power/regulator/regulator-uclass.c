@@ -234,9 +234,15 @@ int regulator_autoset(struct udevice *dev)
 	if (uc_pdata->ramp_delay != -ENODATA)
 		regulator_set_ramp_delay(dev, uc_pdata->ramp_delay);
 
+	/*
+	 * Suspend configure is not necessary and should not influence normal
+	 * configure, so that we set "ret=0" even failed here.
+	 */
 	ret = regulator_set_suspend_enable(dev, uc_pdata->suspend_on);
 	if (!ret && uc_pdata->suspend_on)
-		ret = regulator_set_suspend_value(dev, uc_pdata->suspend_uV);
+		regulator_set_suspend_value(dev, uc_pdata->suspend_uV);
+	else
+		ret = 0;
 
 	if (!uc_pdata->always_on && !uc_pdata->boot_on)
 		return -EMEDIUMTYPE;
