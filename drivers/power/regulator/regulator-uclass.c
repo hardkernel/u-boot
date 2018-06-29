@@ -267,13 +267,19 @@ static void regulator_show(struct udevice *dev, int ret)
 	uc_pdata = dev_get_uclass_platdata(dev);
 
 	printf("%s@%s: ", dev->name, uc_pdata->name);
-	if (uc_pdata->flags & REGULATOR_FLAG_AUTOSET_UV)
-		printf("set %d uV", uc_pdata->min_uV);
-	if (uc_pdata->flags & REGULATOR_FLAG_AUTOSET_UA)
-		printf("; set %d uA", uc_pdata->min_uA);
-	printf("; enabling");
+	printf("%duV <-> %duV, set %duV, %s",
+	       uc_pdata->min_uV, uc_pdata->max_uV, uc_pdata->min_uV,
+	       (uc_pdata->always_on || uc_pdata->boot_on) ?
+	       "enabling" : "not enabling");
 	if (ret)
 		printf(" (ret: %d)", ret);
+
+	printf("; supsend %duV, %s",
+	       uc_pdata->suspend_uV,
+	       uc_pdata->suspend_on ? "enabling" : "not enabling");
+	if (uc_pdata->init_uV != -ENODATA)
+		printf("; init %duV", uc_pdata->init_uV);
+
 	printf("\n");
 }
 
@@ -435,10 +441,8 @@ int regulators_enable_boot_on(bool verbose)
 	     dev;
 	     uclass_next_device(&dev)) {
 		ret = regulator_autoset(dev);
-		if (ret == -EMEDIUMTYPE) {
+		if (ret == -EMEDIUMTYPE)
 			ret = 0;
-			continue;
-		}
 		if (verbose)
 			regulator_show(dev, ret);
 		if (ret == -ENOSYS)
