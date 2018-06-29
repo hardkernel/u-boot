@@ -669,7 +669,7 @@ int usb_gadget_handle_interrupts(void)
 #if (defined CONFIG_USB_DEVICE_V2)
 	unsigned Time_sof = get_timer(0);
 
-	if (((Time_sof - fb_curTime_sof) > 0x100) && (fb_sofintr)) {
+	if (((Time_sof - fb_curTime_sof) > 0x200) && (fb_sofintr)) {
 		ERR("sof timeout\n");
 		fb_sofintr = 0;
 		dwc_otg_power_off_phy_fb();

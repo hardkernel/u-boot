@@ -42,9 +42,7 @@ DECLARE_GLOBAL_DATA_PTR;
 #define FASTBOOT_INTERFACE_SUB_CLASS	0x42
 #define FASTBOOT_INTERFACE_PROTOCOL	0x03
 
-#define RX_ENDPOINT_MAXIMUM_PACKET_SIZE_2_0  (0x0200)
-#define RX_ENDPOINT_MAXIMUM_PACKET_SIZE_1_1  (0x0040)
-#define TX_ENDPOINT_MAXIMUM_PACKET_SIZE      (0x0040)
+#define ENDPOINT_MAXIMUM_PACKET_SIZE_2_0  (0x0200)
 
 #ifdef CONFIG_DEVICE_PRODUCT
 #define DEVICE_PRODUCT	CONFIG_DEVICE_PRODUCT
@@ -80,30 +78,21 @@ static unsigned int download_size;
 static unsigned int download_bytes;
 
 
-static struct usb_endpoint_descriptor fs_ep_in = {
+static struct usb_endpoint_descriptor ep_in = {
 	.bLength            = USB_DT_ENDPOINT_SIZE,
 	.bDescriptorType    = USB_DT_ENDPOINT,
 	.bEndpointAddress   = USB_DIR_IN,
 	.bmAttributes       = USB_ENDPOINT_XFER_BULK,
-	.wMaxPacketSize     = RX_ENDPOINT_MAXIMUM_PACKET_SIZE_2_0,
+	.wMaxPacketSize     = ENDPOINT_MAXIMUM_PACKET_SIZE_2_0,
 	.bInterval          = 0x00,
 };
 
-static struct usb_endpoint_descriptor fs_ep_out = {
+static struct usb_endpoint_descriptor ep_out = {
 	.bLength		= USB_DT_ENDPOINT_SIZE,
 	.bDescriptorType	= USB_DT_ENDPOINT,
 	.bEndpointAddress	= USB_DIR_OUT,
 	.bmAttributes		= USB_ENDPOINT_XFER_BULK,
-	.wMaxPacketSize		= RX_ENDPOINT_MAXIMUM_PACKET_SIZE_1_1,
-	.bInterval		= 0x00,
-};
-
-static struct usb_endpoint_descriptor hs_ep_out = {
-	.bLength		= USB_DT_ENDPOINT_SIZE,
-	.bDescriptorType	= USB_DT_ENDPOINT,
-	.bEndpointAddress	= USB_DIR_OUT,
-	.bmAttributes		= USB_ENDPOINT_XFER_BULK,
-	.wMaxPacketSize		= RX_ENDPOINT_MAXIMUM_PACKET_SIZE_2_0,
+	.wMaxPacketSize		= ENDPOINT_MAXIMUM_PACKET_SIZE_2_0,
 	.bInterval		= 0x00,
 };
 
@@ -120,8 +109,8 @@ static struct usb_interface_descriptor interface_desc = {
 
 static struct usb_descriptor_header *fb_runtime_descs[] = {
 	(struct usb_descriptor_header *)&interface_desc,
-	(struct usb_descriptor_header *)&fs_ep_in,
-	(struct usb_descriptor_header *)&hs_ep_out,
+	(struct usb_descriptor_header *)&ep_in,
+	(struct usb_descriptor_header *)&ep_out,
 	NULL,
 };
 
@@ -223,17 +212,15 @@ static int fastboot_bind(struct usb_configuration *c, struct usb_function *f)
 	fastboot_string_defs[0].id = id;
 	interface_desc.iInterface = id;
 
-	f_fb->in_ep = usb_ep_autoconfig(gadget, &fs_ep_in);
+	f_fb->in_ep = usb_ep_autoconfig(gadget, &ep_in);
 	if (!f_fb->in_ep)
 		return -ENODEV;
 	f_fb->in_ep->driver_data = c->cdev;
 
-	f_fb->out_ep = usb_ep_autoconfig(gadget, &fs_ep_out);
+	f_fb->out_ep = usb_ep_autoconfig(gadget, &ep_out);
 	if (!f_fb->out_ep)
 		return -ENODEV;
 	f_fb->out_ep->driver_data = c->cdev;
-
-	hs_ep_out.bEndpointAddress = fs_ep_out.bEndpointAddress;
 
 	return 0;
 }
@@ -291,7 +278,7 @@ static int fastboot_set_alt(struct usb_function *f,
 	      __func__, f->name, interface, alt);
 
 	/* make sure we don't enable the ep twice */
-	ret = usb_ep_enable(f_fb->out_ep, &hs_ep_out);
+	ret = usb_ep_enable(f_fb->out_ep, &ep_out);
 	if (ret) {
 		puts("failed to enable out ep\n");
 		return ret;
@@ -305,7 +292,7 @@ static int fastboot_set_alt(struct usb_function *f,
 	}
 	f_fb->out_req->complete = rx_handler_command;
 
-	ret = usb_ep_enable(f_fb->in_ep, &fs_ep_in);
+	ret = usb_ep_enable(f_fb->in_ep, &ep_in);
 	if (ret) {
 		puts("failed to enable in ep\n");
 		goto err;
