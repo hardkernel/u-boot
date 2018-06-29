@@ -812,7 +812,7 @@ static void rk817_bat_not_first_pwron(struct rk817_battery_device *battery)
 		battery->remain_cap = rk817_bat_get_capacity_uah(battery);
 		battery->rsoc = rk817_bat_get_rsoc(battery);
 		pre_soc = battery->rsoc;
-		pre_cap = battery->remain_cap;
+		pre_cap = battery->remain_cap / 1000;
 		goto finish;
 	}
 finish:
