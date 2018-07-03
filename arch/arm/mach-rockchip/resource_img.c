@@ -180,6 +180,10 @@ static int init_resource_list(struct resource_img_hdr *hdr)
 	}
 
 	dev_desc = rockchip_get_bootdev();
+	if (!dev_desc) {
+		printf("%s: dev_desc is NULL!\n", __func__);
+		return -ENODEV;
+	}
 	hdr = memalign(ARCH_DMA_MINALIGN, RK_BLK_SIZE);
 	if (!hdr) {
 		printf("%s out of memory!\n", __func__);
@@ -323,6 +327,10 @@ int rockchip_read_resource_file(void *buf, const char *name,
 		len = file->f_size;
 	blks = DIV_ROUND_UP(len, RK_BLK_SIZE);
 	dev_desc = rockchip_get_bootdev();
+	if (!dev_desc) {
+		printf("%s: dev_desc is NULL!\n", __func__);
+		return -ENODEV;
+	}
 	ret = blk_dread(dev_desc, file->rsce_base + file->f_offset + offset,
 			blks, buf);
 	if (ret != blks)

@@ -221,6 +221,11 @@ static void rkloader_set_bootloader_msg(struct bootloader_message *bmsg)
 	disk_partition_t part_info;
 
 	dev_desc = rockchip_get_bootdev();
+	if (!dev_desc) {
+		printf("%s: dev_desc is NULL!\n", __func__);
+		return;
+	}
+
 	int ret = part_get_info_by_name(dev_desc, PART_MISC,
 			&part_info);
 	if (ret < 0) {
@@ -253,6 +258,11 @@ void board_run_recovery_wipe_data(void)
 
 	printf("Rebooting into recovery to do wipe_data\n");
 	dev_desc = rockchip_get_bootdev();
+	if (!dev_desc) {
+		printf("%s: dev_desc is NULL!\n", __func__);
+		return;
+	}
+
 	int ret;
 
 	ret = part_get_info_by_name(dev_desc, PART_MISC,
@@ -310,6 +320,10 @@ int rockchip_get_boot_mode(void)
 		return boot_mode;
 
 	dev_desc = rockchip_get_bootdev();
+	if (!dev_desc) {
+		printf("%s: dev_desc is NULL!\n", __func__);
+		return -ENODEV;
+	}
 	ret = part_get_info_by_name(dev_desc, PART_MISC,
 			&part_info);
 	if (ret < 0) {

@@ -1232,6 +1232,10 @@ static void cb_oem(struct usb_ep *ep, struct usb_request *req)
 		struct blk_desc *dev_desc;
 		disk_partition_t part_info;
 		dev_desc = rockchip_get_bootdev();
+		if (!dev_desc) {
+			printf("%s: dev_desc is NULL!\n", __func__);
+			return;
+		}
 		int ret = part_get_info_by_name(dev_desc, "userdata",
 				&part_info);
 		if (ret < 0) {

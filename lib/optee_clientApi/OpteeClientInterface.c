@@ -23,6 +23,10 @@ void test_optee(void)
 	TEEC_Operation TeecOperation = {0};
 	struct blk_desc *dev_desc;
 	dev_desc = rockchip_get_bootdev();
+	if (!dev_desc) {
+		printf("%s: dev_desc is NULL!\n", __func__);
+		return;
+	}
 
 	debug("testmm start\n");
 	OpteeClientApiLibInitialize();
@@ -132,6 +136,10 @@ uint32_t trusty_read_rollback_index(uint32_t slot, uint64_t *value)
 
 	struct blk_desc *dev_desc;
 	dev_desc = rockchip_get_bootdev();
+	if (!dev_desc) {
+		printf("%s: dev_desc is NULL!\n", __func__);
+		return -TEEC_ERROR_GENERIC;
+	}
 
 	b2hs((uint8_t *)&slot, hs, 4, 9);
 	debug("testmm start\n");
@@ -216,6 +224,10 @@ uint32_t trusty_write_rollback_index(uint32_t slot, uint64_t value)
 	uint8_t hs[9];
 	struct blk_desc *dev_desc;
 	dev_desc = rockchip_get_bootdev();
+	if (!dev_desc) {
+		printf("%s: dev_desc is NULL!\n", __func__);
+		return -TEEC_ERROR_GENERIC;
+	}
 
 	b2hs((uint8_t *)&slot, hs, 4, 9);
 	OpteeClientApiLibInitialize();
@@ -299,6 +311,10 @@ uint32_t trusty_read_permanent_attributes(uint8_t *attributes, uint32_t size)
 	TEEC_Operation TeecOperation = {0};
 	struct blk_desc *dev_desc;
 	dev_desc = rockchip_get_bootdev();
+	if (!dev_desc) {
+		printf("%s: dev_desc is NULL!\n", __func__);
+		return -TEEC_ERROR_GENERIC;
+	}
 
 	debug("testmm start\n");
 	OpteeClientApiLibInitialize();
@@ -378,6 +394,10 @@ uint32_t trusty_write_permanent_attributes(uint8_t *attributes, uint32_t size)
 	TEEC_Operation TeecOperation = {0};
 	struct blk_desc *dev_desc;
 	dev_desc = rockchip_get_bootdev();
+	if (!dev_desc) {
+		printf("%s: dev_desc is NULL!\n", __func__);
+		return -TEEC_ERROR_GENERIC;
+	}
 
 	debug("testmm start\n");
 	OpteeClientApiLibInitialize();
@@ -458,6 +478,10 @@ uint32_t trusty_read_lock_state(uint8_t *lock_state)
 	TEEC_Operation TeecOperation = {0};
 	struct blk_desc *dev_desc;
 	dev_desc = rockchip_get_bootdev();
+	if (!dev_desc) {
+		printf("%s: dev_desc is NULL!\n", __func__);
+		return -TEEC_ERROR_GENERIC;
+	}
 
 	debug("testmm start\n");
 	OpteeClientApiLibInitialize();
@@ -537,6 +561,10 @@ uint32_t trusty_write_lock_state(uint8_t lock_state)
 	TEEC_Operation TeecOperation = {0};
 	struct blk_desc *dev_desc;
 	dev_desc = rockchip_get_bootdev();
+	if (!dev_desc) {
+		printf("%s: dev_desc is NULL!\n", __func__);
+		return -TEEC_ERROR_GENERIC;
+	}
 
 	debug("testmm start\n");
 	OpteeClientApiLibInitialize();
@@ -617,6 +645,10 @@ uint32_t trusty_read_flash_lock_state(uint8_t *flash_lock_state)
 	TEEC_Operation TeecOperation = {0};
 	struct blk_desc *dev_desc;
 	dev_desc = rockchip_get_bootdev();
+	if (!dev_desc) {
+		printf("%s: dev_desc is NULL!\n", __func__);
+		return -TEEC_ERROR_GENERIC;
+	}
 
 	debug("testmm start\n");
 	OpteeClientApiLibInitialize();
@@ -697,6 +729,10 @@ uint32_t trusty_write_flash_lock_state(uint8_t flash_lock_state)
 	TEEC_Operation TeecOperation = {0};
 	struct blk_desc *dev_desc;
 	dev_desc = rockchip_get_bootdev();
+	if (!dev_desc) {
+		printf("%s: dev_desc is NULL!\n", __func__);
+		return -TEEC_ERROR_GENERIC;
+	}
 
 	debug("testmm start\n");
 	OpteeClientApiLibInitialize();
@@ -780,6 +816,10 @@ TEEC_Result read_from_keymaster(uint8_t *filename,
 	TEEC_Operation TeecOperation = {0};
 	struct blk_desc *dev_desc;
 	dev_desc = rockchip_get_bootdev();
+	if (!dev_desc) {
+		printf("%s: dev_desc is NULL!\n", __func__);
+		return -TEEC_ERROR_GENERIC;
+	}
 
 	debug("read_from_keymaster start\n");
 	OpteeClientApiLibInitialize();
@@ -863,6 +903,10 @@ uint32_t write_to_keymaster(uint8_t *filename,
 	TEEC_Operation TeecOperation = {0};
 	struct blk_desc *dev_desc;
 	dev_desc = rockchip_get_bootdev();
+	if (!dev_desc) {
+		printf("%s: dev_desc is NULL!\n", __func__);
+		return -TEEC_ERROR_GENERIC;
+	}
 
 	debug("write_to_keymaster\n");
 	OpteeClientApiLibInitialize();
@@ -1302,6 +1346,10 @@ uint32_t trusty_read_permanent_attributes_flag(uint8_t *attributes)
 	TEEC_Operation TeecOperation = {0};
 	struct blk_desc *dev_desc;
 	dev_desc = rockchip_get_bootdev();
+	if (!dev_desc) {
+		printf("%s: dev_desc is NULL!\n", __func__);
+		return -TEEC_ERROR_GENERIC;
+	}
 
 	debug("testmm start\n");
 	OpteeClientApiLibInitialize();
@@ -1380,6 +1428,10 @@ uint32_t trusty_write_permanent_attributes_flag(uint8_t attributes)
 	TEEC_Operation TeecOperation = {0};
 	struct blk_desc *dev_desc;
 	dev_desc = rockchip_get_bootdev();
+	if (!dev_desc) {
+		printf("%s: dev_desc is NULL!\n", __func__);
+		return -TEEC_ERROR_GENERIC;
+	}
 
 	debug("testmm start\n");
 	OpteeClientApiLibInitialize();
@@ -1462,6 +1514,10 @@ uint32_t trusty_attest_dh(uint8_t *dh, uint32_t *dh_size)
 	TEEC_Operation TeecOperation = {0};
 	struct blk_desc *dev_desc;
 	dev_desc = rockchip_get_bootdev();
+	if (!dev_desc) {
+		printf("%s: dev_desc is NULL!\n", __func__);
+		return -TEEC_ERROR_GENERIC;
+	}
 
 	OpteeClientApiLibInitialize();
 
@@ -1531,6 +1587,10 @@ uint32_t trusty_attest_uuid(uint8_t *uuid, uint32_t *uuid_size)
 	TEEC_Operation TeecOperation = {0};
 	struct blk_desc *dev_desc;
 	dev_desc = rockchip_get_bootdev();
+	if (!dev_desc) {
+		printf("%s: dev_desc is NULL!\n", __func__);
+		return -TEEC_ERROR_GENERIC;
+	}
 
 	OpteeClientApiLibInitialize();
 
@@ -1607,6 +1667,10 @@ uint32_t trusty_attest_get_ca(uint8_t *operation_start,
 	TEEC_Operation TeecOperation = {0};
 	struct blk_desc *dev_desc;
 	dev_desc = rockchip_get_bootdev();
+	if (!dev_desc) {
+		printf("%s: dev_desc is NULL!\n", __func__);
+		return -TEEC_ERROR_GENERIC;
+	}
 
 	OpteeClientApiLibInitialize();
 
@@ -1685,6 +1749,10 @@ uint32_t trusty_attest_set_ca(uint8_t *ca_response, uint32_t *ca_response_size)
 	TEEC_Operation TeecOperation = {0};
 	struct blk_desc *dev_desc;
 	dev_desc = rockchip_get_bootdev();
+	if (!dev_desc) {
+		printf("%s: dev_desc is NULL!\n", __func__);
+		return -TEEC_ERROR_GENERIC;
+	}
 
 	TeecResult = TEEC_InitializeContext(NULL, &TeecContext);
 

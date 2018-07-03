@@ -111,6 +111,10 @@ static int vendor_ops(u8 *buffer, u32 addr, u32 n_sec, int write)
 	int ret = 0;
 
 	dev_desc = rockchip_get_bootdev();
+	if (!dev_desc) {
+		printf("%s: dev_desc is NULL!\n", __func__);
+		return -ENODEV;
+	}
 	/* Get the offset address according to the device type */
 	switch (dev_desc->if_type) {
 	case IF_TYPE_MMC:

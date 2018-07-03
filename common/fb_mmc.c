@@ -301,6 +301,10 @@ void fb_mmc_flash_write(const char *cmd, void *download_buffer,
 #endif
 #ifdef CONFIG_RKIMG_BOOTLOADER
 	dev_desc = rockchip_get_bootdev();
+	if (!dev_desc) {
+		printf("%s: dev_desc is NULL!\n", __func__);
+		return;
+	}
 #else
 	dev_desc = blk_get_dev("mmc", CONFIG_FASTBOOT_FLASH_MMC_DEV);
 #endif
@@ -412,6 +416,10 @@ void fb_mmc_erase(const char *cmd, char *response)
 
 #ifdef CONFIG_RKIMG_BOOTLOADER
 	dev_desc = rockchip_get_bootdev();
+	if (!dev_desc) {
+		printf("%s: dev_desc is NULL!\n", __func__);
+		return;
+	}
 #else
 	dev_desc = blk_get_dev("mmc", CONFIG_FASTBOOT_FLASH_MMC_DEV);
 #endif
