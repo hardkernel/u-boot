@@ -31,6 +31,13 @@ static board_module_t g_board_modules[] = {
 #endif
 };
 
+static void help(void)
+{
+	printf("Command: rktest [module] [args...]\n\n"
+	       "  - module: timer|key|emmc|rknand|regulator|eth|ir|brom_dnl|vendor\n"
+	       "  - args: depends on module\n");
+}
+
 static int do_rockchip_test(cmd_tbl_t *cmdtp, int flag,
 			    int argc, char * const argv[])
 {
@@ -43,7 +50,7 @@ static int do_rockchip_test(cmd_tbl_t *cmdtp, int flag,
 	if (argc >= 2) {
 		module_name = argv[1];
 	} else {
-		printf("cmd format: test_rockchip [module_name] [args...]\n");
+		help();
 		return 0;
 	}
 
