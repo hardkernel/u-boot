@@ -11,6 +11,7 @@
 #define VENDOR_LAN_MAC_ID	3 /* lan mac */
 #define VENDOR_BLUETOOTH_ID	4 /* bluetooth mac */
 
+int vendor_storage_test(void);
 int vendor_storage_read(u16 id, void *pbuf, u16 size);
 int vendor_storage_write(u16 id, void *pbuf, u16 size);
 

@@ -40,10 +40,7 @@
 #define FLASH_VENDOR_ITEM_NUM		62
 
 /* Vendor uinit test define */
-/* #define VENDOR_STORAGE_TEST */
-#ifdef VENDOR_STORAGE_TEST
 int vendor_storage_test(void);
-#endif /* VENDOR_STORAGE_TEST */
 
 struct vendor_item {
 	u16  id;
@@ -176,6 +173,7 @@ static int vendor_ops(u8 *buffer, u32 addr, u32 n_sec, int write)
 int vendor_storage_init(void)
 {
 	int ret = 0;
+	int ret_size;
 	u8 *buffer;
 	u32 size, i;
 	u32 max_ver = 0;
@@ -235,9 +233,12 @@ int vendor_storage_init(void)
 
 	/* Find valid and up-to-date one from (vendor0 - vendor3) */
 	for (i = 0; i < VENDOR_PART_NUM; i++) {
-		ret = vendor_ops((u8 *)vendor_info.hdr, part_size * i, part_size, 0);
-		if (ret != part_size)
-			return -EIO;
+		ret_size = vendor_ops((u8 *)vendor_info.hdr,
+				      part_size * i, part_size, 0);
+		if (ret_size != part_size) {
+			ret = -EIO;
+			goto out;
+		}
 
 		if ((vendor_info.hdr->tag == VENDOR_TAG) &&
 		    (*(vendor_info.version2) == vendor_info.hdr->version)) {
@@ -247,6 +248,7 @@ int vendor_storage_init(void)
 			}
 		}
 	}
+
 	if (max_ver) {
 		debug("[Vendor INFO]:max_ver=%d, vendor_id=%d.\n", max_ver, max_index);
 		/*
@@ -254,9 +256,12 @@ int vendor_storage_init(void)
 		 * version of vendor
 		 */
 		if (max_index != (VENDOR_PART_NUM - 1)) {
-			ret = vendor_ops((u8 *)vendor_info.hdr, part_size * max_index, part_size, 0);
-			if (ret != part_size)
-				return -EIO;
+			ret_size = vendor_ops((u8 *)vendor_info.hdr,
+					       part_size * max_index, part_size, 0);
+			if (ret_size != part_size) {
+				ret = -EIO;
+				goto out;
+			}
 		}
 	} else {
 		debug("[Vendor INFO]:Reset vendor info...\n");
@@ -271,11 +276,7 @@ int vendor_storage_init(void)
 	}
 	debug("[Vendor INFO]:ret=%d.\n", ret);
 
-#ifdef VENDOR_STORAGE_TEST
-	if (vendor_storage_test())
-		printf("[Vendor ERROR]:Vendor test result:failure\n");
-#endif
-
+out:
 	return ret;
 }
 
@@ -421,9 +422,8 @@ int vendor_storage_write(u16 id, void *pbuf, u16 size)
 /**********************************************************/
 /*              vendor API uinit test                      */
 /**********************************************************/
-#ifdef VENDOR_STORAGE_TEST
 /* Reset the vendor storage space to the initial state */
-void vendor_test_reset(void)
+static void vendor_test_reset(void)
 {
 	u16 i, part_size;
 	u32 size;
@@ -473,6 +473,15 @@ int vendor_storage_test(void)
 	u32 total_size;
 	u8 *buffer = NULL;
 	int ret = 0;
+
+	if (!bootdev_type) {
+		ret = vendor_storage_init();
+		if (ret) {
+			printf("%s: vendor storage init failed, ret=%d\n",
+			       __func__, ret);
+			return ret;
+		}
+	}
 
 	/*
 	 * Calculate the maximum number of items and the maximum
@@ -639,4 +648,3 @@ int vendor_storage_test(void)
 
 	return 0;
 }
-#endif /* VENDOR_STORAGE_TEST */
