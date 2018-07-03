@@ -13,3 +13,4 @@ obj-y += test-rknand.o
 obj-$(CONFIG_GMAC_ROCKCHIP) += test-eth.o
 obj-$(CONFIG_RK_IR) += test-ir.o
 obj-y += test-brom-dnl.o
+obj-$(CONFIG_ROCKCHIP_VENDOR_PARTITION) += test-vendor-storage.o
