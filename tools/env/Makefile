@@ -16,6 +16,8 @@ HOST_EXTRACFLAGS  = $(patsubst -I%,-idirafter%, $(filter -I%, $(UBOOTINCLUDE))) 
 		-DUSE_HOSTCC \
 		-DTEXT_BASE=$(TEXT_BASE)
 
+HOSTLDFLAGS = -static
+
 ifeq ($(MTD_VERSION),old)
 HOST_EXTRACFLAGS += -DMTD_OLD
 endif
