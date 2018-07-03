@@ -196,6 +196,7 @@ struct dm_regulator_ops {
 	int (*get_value)(struct udevice *dev);
 	int (*set_value)(struct udevice *dev, int uV);
 	int (*set_suspend_value)(struct udevice *dev, int uV);
+	int (*get_suspend_value)(struct udevice *dev);
 
 	/**
 	 * The regulator output current function calls operates on a micro Amps.
@@ -221,6 +222,7 @@ struct dm_regulator_ops {
 	int (*get_enable)(struct udevice *dev);
 	int (*set_enable)(struct udevice *dev, bool enable);
 	int (*set_suspend_enable)(struct udevice *dev, bool enable);
+	int (*get_suspend_enable)(struct udevice *dev);
 
 	/**
 	 * The 'get/set_mode()' function calls should operate on a driver-
@@ -285,6 +287,14 @@ int regulator_set_value(struct udevice *dev, int uV);
 int regulator_set_suspend_value(struct udevice *dev, int uV);
 
 /**
+ * regulator_get_suspend_value: get the suspend microvoltage value of a given regulator.
+ *
+ * @dev    - pointer to the regulator device
+ * @return - positive output value [uV] on success or negative errno if fail.
+ */
+int regulator_get_suspend_value(struct udevice *dev);
+
+/**
  * regulator_set_value_force: set the microvoltage value of a given regulator
  *			      without any min-,max condition check
  *
@@ -336,6 +346,14 @@ int regulator_set_enable(struct udevice *dev, bool enable);
  * @return - 0 on success or -errno val if fails
  */
 int regulator_set_suspend_enable(struct udevice *dev, bool enable);
+
+/**
+ * regulator_get_suspend_enable: get regulator suspend enable state
+ *
+ * @dev    - pointer to the regulator device
+ * @return - 0 on success or -errno val if fails
+ */
+int regulator_get_suspend_enable(struct udevice *dev);
 
 /**
  * regulator_get_mode: get active operation mode id of a given regulator

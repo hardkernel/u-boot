@@ -84,6 +84,16 @@ int regulator_set_suspend_value(struct udevice *dev, int uV)
 	return ops->set_suspend_value(dev, uV);
 }
 
+int regulator_get_suspend_value(struct udevice *dev)
+{
+	const struct dm_regulator_ops *ops = dev_get_driver_ops(dev);
+
+	if (!ops || !ops->get_suspend_value)
+		return -ENOSYS;
+
+	return ops->get_suspend_value(dev);
+}
+
 /*
  * To be called with at most caution as there is no check
  * before setting the actual voltage value.
@@ -153,6 +163,16 @@ int regulator_set_suspend_enable(struct udevice *dev, bool enable)
 		return -ENOSYS;
 
 	return ops->set_suspend_enable(dev, enable);
+}
+
+int regulator_get_suspend_enable(struct udevice *dev)
+{
+	const struct dm_regulator_ops *ops = dev_get_driver_ops(dev);
+
+	if (!ops || !ops->get_suspend_enable)
+		return -ENOSYS;
+
+	return ops->get_suspend_enable(dev);
 }
 
 int regulator_set_ramp_delay(struct udevice *dev, u32 ramp_delay)
