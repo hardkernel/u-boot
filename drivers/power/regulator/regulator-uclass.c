@@ -288,22 +288,25 @@ int regulator_autoset(struct udevice *dev)
 static void regulator_show(struct udevice *dev, int ret)
 {
 	struct dm_regulator_uclass_platdata *uc_pdata;
+	int uV = 0;
 
 	uc_pdata = dev_get_uclass_platdata(dev);
+	uV = regulator_get_value(dev);
 
-	printf("%s@%s: ", dev->name, uc_pdata->name);
-	printf("%duV <-> %duV, set %duV, %s",
-	       uc_pdata->min_uV, uc_pdata->max_uV, uc_pdata->min_uV,
+	printf("%25s@%15s: ", dev->name, uc_pdata->name);
+	printf("%7duV <-> %7duV, set %7duV, %s",
+	       uc_pdata->min_uV, uc_pdata->max_uV, uV,
 	       (uc_pdata->always_on || uc_pdata->boot_on) ?
-	       "enabling" : "not enabling");
+	       "enabling" : "disabled");
+
+	printf(" | supsend %7duV, %s",
+	       uc_pdata->suspend_uV,
+	       uc_pdata->suspend_on ? "enabling" : "disabled");
+	if (uc_pdata->init_uV != -ENODATA)
+		printf(" ; init %7duV", uc_pdata->init_uV);
+
 	if (ret)
 		printf(" (ret: %d)", ret);
-
-	printf("; supsend %duV, %s",
-	       uc_pdata->suspend_uV,
-	       uc_pdata->suspend_on ? "enabling" : "not enabling");
-	if (uc_pdata->init_uV != -ENODATA)
-		printf("; init %duV", uc_pdata->init_uV);
 
 	printf("\n");
 }
