@@ -111,11 +111,13 @@
         "recovery_part=recovery\0"\
         "recovery_offset=0\0"\
         "cvbs_drv=0\0"\
+        "page_trace=on\0"\
         "osd_reverse=0\0"\
-        "video_reverse=0\0"\
         "lock=10001000\0"\
+        "video_reverse=0\0"\
         "active_slot=_a\0"\
         "boot_part=boot\0"\
+        "model_name=t962x_r311_FHD\0" \
         "initargs="\
             "rootfstype=ramfs init=/init console=ttyS0,115200 no_console_suspend earlyprintk=aml-uart,0xc81004c0 ramoops.pstore_en=1 ramoops.record_size=0x8000 ramoops.console_size=0x4000 "\
             "\0"\
@@ -127,6 +129,7 @@
             "\0"\
         "storeargs="\
             "setenv bootargs ${initargs} logo=${display_layer},loaded,${fb_addr} vout=${outputmode},enable panel_type=${panel_type} osd_reverse=${osd_reverse} video_reverse=${video_reverse} androidboot.selinux=${EnableSelinux} androidboot.firstboot=${firstboot} jtag=${jtag}; "\
+            "setenv bootargs ${bootargs} page_trace=${page_trace};" \
 	"setenv bootargs ${bootargs} androidboot.hardware=amlogic;"\
             "run cmdline_keys;"\
             "setenv bootargs ${bootargs} androidboot.slot_suffix=${active_slot};"\
@@ -407,6 +410,7 @@
 #define CONFIG_CMD_JTAG	1
 #define CONFIG_CMD_AUTOSCRIPT 1
 #define CONFIG_CMD_MISC 1
+#define CONFIG_CMD_INI 1
 
 /*file system*/
 #define CONFIG_DOS_PARTITION 1
