@@ -452,8 +452,8 @@ void vendor_test_reset(void)
 	vendor_info.hdr->version = 1;
 	vendor_info.hdr->tag = VENDOR_TAG;
 	/* data field length */
-	vendor_info.hdr->free_size =
-		((u32)vendor_info.hash - (u32)vendor_info.data);
+	vendor_info.hdr->free_size = (unsigned long)vendor_info.hash -
+				     (unsigned long)vendor_info.data;
 	*(vendor_info.version2) = vendor_info.hdr->version;
 	/* write to flash. */
 	for (i = 0; i < VENDOR_PART_NUM; i++)
@@ -481,14 +481,16 @@ int vendor_storage_test(void)
 	switch (bootdev_type) {
 	case IF_TYPE_MMC:
 		item_num = EMMC_VENDOR_ITEM_NUM;
-		total_size = (u32)vendor_info.hash - (u32)vendor_info.data;
+		total_size = (unsigned long)vendor_info.hash -
+			     (unsigned long)vendor_info.data;
 		size = total_size/item_num;
 		break;
 	case IF_TYPE_RKNAND:
 	case IF_TYPE_SPINOR:
 	case IF_TYPE_SPINAND:
 		item_num = FLASH_VENDOR_ITEM_NUM;
-		total_size = (u32)vendor_info.hash - (u32)vendor_info.data;
+		total_size = (unsigned long)vendor_info.hash -
+			     (unsigned long)vendor_info.data;
 		size = total_size/item_num;
 		break;
 	default:
