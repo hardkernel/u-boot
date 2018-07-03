@@ -29,6 +29,7 @@
 DECLARE_GLOBAL_DATA_PTR;
 
 #define IMAGE_SHOW_RESET			-1
+#define FUEL_GAUGE_POLL_MS			1000
 
 struct charge_image {
 	const char *name;
@@ -305,11 +306,13 @@ static int charge_animation_show(struct udevice *dev)
 	bool ever_lowpower_screen_off = false;
 	bool screen_on = true;
 	ulong show_start = 0, charge_start = 0, debug_start = 0;
+	ulong delta;
 	ulong ms = 0, sec = 0;
 	int start_idx = 0, show_idx = -1;
 	int soc, voltage, current, key_state;
 	int i, charging = 1, ret;
 	int boot_mode;
+	int first_poll_fg = 1;
 
 /*
  * Check sequence:
@@ -386,9 +389,20 @@ static int charge_animation_show(struct udevice *dev)
 	printf("Enter U-Boot charging mode\n");
 
 	charge_start = get_timer(0);
+	delta = get_timer(0);
 
 	/* Charging ! */
 	while (1) {
+		/*
+		 * At the most time, fuel gauge is usually a i2c device, we
+		 * should avoid read/write all the time. We had better set
+		 * poll seconds to update fuel gauge info.
+		 */
+		if (!first_poll_fg && get_timer(delta) < FUEL_GAUGE_POLL_MS)
+			goto show_images;
+
+		delta = get_timer(0);
+
 		debug("step1 (%d)... \n", screen_on);
 
 		/* Step1: Is charging now ? */
@@ -428,6 +442,8 @@ static int charge_animation_show(struct udevice *dev)
 			continue;
 		}
 
+		first_poll_fg = 0;
+show_images:
 		/*
 		 * Just for debug, otherwise there will be nothing output which
 		 * is not good to know what happen.
