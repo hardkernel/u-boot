@@ -24,6 +24,7 @@
 #include <environment.h>
 #include <malloc.h>
 #include <asm/byteorder.h>
+#include <vpp.h>
 #include <amlogic/vout.h>
 #ifdef CONFIG_AML_HDMITX20
 #include <amlogic/hdmi.h>
@@ -73,35 +74,49 @@ static int do_vout_output(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv
 	char mode[64];
 #endif
 #ifdef CONFIG_AML_LCD
-	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
+	struct aml_lcd_drv_s *lcd_drv = NULL;
 #endif
 
 	if (argc != 2)
 		return CMD_RET_FAILURE;
 
 #ifdef CONFIG_AML_CVBS
-	if (cvbs_set_vmode(argv[1]) == 0)
-		return CMD_RET_SUCCESS;
+	if (cvbs_outputmode_check(argv[1]) == 0) {
+		vpp_matrix_update(VPP_CM_YUV);
+		if (cvbs_set_vmode(argv[1]) == 0)
+			return CMD_RET_SUCCESS;
+	}
 #endif
 
 #ifdef CONFIG_AML_HDMITX20
-	memset(mode, 0, sizeof(mode));
-	sprintf(mode, "hdmitx output %s", argv[1]);
-	run_command(mode, 0);
+	if (hdmi_outputmode_check(argv[1]) == 0) {
+		vpp_matrix_update(VPP_CM_YUV);
+		memset(mode, 0, sizeof(mode));
+		sprintf(mode, "hdmitx output %s", argv[1]);
+		run_command(mode, 0);
+		return CMD_RET_SUCCESS;
+	}
 #endif
 
 #ifdef CONFIG_AML_LCD
+	lcd_drv = aml_lcd_get_driver();
 	if (lcd_drv) {
-		if (lcd_drv->lcd_enable)
-			lcd_drv->lcd_enable(argv[1]);
-		else
-			printf("no lcd enable\n");
+		if (lcd_drv->lcd_outputmode_check) {
+			if (lcd_drv->lcd_outputmode_check(argv[1]) == 0) {
+				vpp_matrix_update(VPP_CM_RGB);
+				if (lcd_drv->lcd_enable) {
+					lcd_drv->lcd_enable(argv[1]);
+					return CMD_RET_SUCCESS;
+				} else
+					printf("no lcd enable\n");
+			}
+		}
 	} else {
 		printf("no lcd driver\n");
 	}
 #endif
 
-	return CMD_RET_SUCCESS;
+	return CMD_RET_FAILURE;
 }
 
 static int do_vout_info(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])

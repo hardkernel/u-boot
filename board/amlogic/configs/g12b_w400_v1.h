@@ -413,9 +413,9 @@
 #define CONFIG_AML_CVBS 1
 #endif
 
-// #define CONFIG_AML_LCD    1
-// #define CONFIG_AML_LCD_TABLET 1
-// #define CONFIG_AML_LCD_EXTERN 1
+#define CONFIG_AML_LCD    1
+#define CONFIG_AML_LCD_TABLET 1
+#define CONFIG_AML_LCD_EXTERN 1
 
 
 /* USB

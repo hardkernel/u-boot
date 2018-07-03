@@ -1360,6 +1360,15 @@ int lcd_remove(void)
 /* ********************************************** *
   lcd driver API
  * ********************************************** */
+static int lcd_outputmode_check(char *mode)
+{
+	if (aml_lcd_driver.outputmode_check)
+		return aml_lcd_driver.outputmode_check(mode);
+
+	LCDERR("invalid lcd config\n");
+	return -1;
+}
+
 static void lcd_enable(char *mode)
 {
 	if (lcd_check_valid())
@@ -1593,6 +1602,7 @@ static struct aml_lcd_drv_s aml_lcd_driver = {
 	.bl_config = &bl_config_dft,
 	.config_check = NULL,
 	.lcd_probe = lcd_probe,
+	.lcd_outputmode_check = lcd_outputmode_check,
 	.lcd_enable = lcd_enable,
 	.lcd_disable = lcd_disable,
 	.lcd_set_ss = aml_lcd_set_ss,

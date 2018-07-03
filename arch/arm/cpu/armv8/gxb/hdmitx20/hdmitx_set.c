@@ -412,6 +412,22 @@ void hdmi_tx_set(struct hdmitx_dev *hdev)
 #endif
 }
 
+int hdmi_outputmode_check(char *mode)
+{
+	int i, ret = -1;
+
+	for (i = 0; i < ARRAY_SIZE(gxbb_modes); i++) {
+		if (!strcmp(mode, gxbb_modes[i].sname)) {
+			ret = 0;
+			break;
+		}
+	}
+
+	if (ret)
+		printf("hdmitx: outputmode[%s] is invalid\n", mode);
+	return ret;
+}
+
 #define __asmeq(x, y)  ".ifnc " x "," y " ; .err ; .endif\n\t"
 static void hdcp14_init(void)
 {

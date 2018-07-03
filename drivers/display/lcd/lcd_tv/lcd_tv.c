@@ -1038,6 +1038,18 @@ static void lcd_config_init(struct lcd_config_s *pconf)
 	cconf->ss_level = (ss_level >= cconf->ss_level_max) ? 0 : ss_level;
 }
 
+static int lcd_outputmode_check(char *mode)
+{
+	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
+	int lcd_vmode;
+
+	lcd_vmode = check_lcd_output_mode(lcd_drv->lcd_config, mode);
+	if (lcd_vmode >= LCD_VMODE_MAX)
+		return -1;
+
+	return 0;
+}
+
 static int lcd_config_check(char *mode)
 {
 	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
@@ -1064,6 +1076,7 @@ int get_lcd_tv_config(char *dt_addr, int load_id)
 
 	strcpy(lcd_drv->version, LCD_DRV_VERSION);
 	lcd_drv->list_support_mode = lcd_list_support_mode;
+	lcd_drv->outputmode_check = lcd_outputmode_check;
 	lcd_drv->config_check = lcd_config_check;
 	lcd_drv->driver_init_pre = lcd_tv_driver_init_pre;
 	lcd_drv->driver_init = lcd_tv_driver_init;

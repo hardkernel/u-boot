@@ -856,6 +856,22 @@ int cvbs_set_vmode(char* vmode_name)
 }
 
 /*----------------------------------------------------------------------------*/
+// check for valid video mode
+int cvbs_outputmode_check(char *vmode_name)
+{
+	if ((!strncmp(vmode_name, "576cvbs", strlen("576cvbs"))) ||
+		(!strncmp(vmode_name, "480cvbs", strlen("480cvbs"))) ||
+		(!strncmp(vmode_name, "ntsc_m", strlen("ntsc_m"))) ||
+		(!strncmp(vmode_name, "pal_m", strlen("pal_m"))) ||
+		(!strncmp(vmode_name, "pal_n", strlen("pal_n")))) {
+		return 0;
+	}
+
+	printf("cvbs: outputmode[%s] is invalid\n", vmode_name);
+	return -1;
+}
+
+/*----------------------------------------------------------------------------*/
 // list for valid video mode
 void cvbs_show_valid_vmode(void)
 {
