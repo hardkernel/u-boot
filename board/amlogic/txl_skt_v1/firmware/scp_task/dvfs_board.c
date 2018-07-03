@@ -18,7 +18,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
-
+/*
 int pwm_voltage_table[ ][2] = {
 	{ 0x1c0000,  860},
 	{ 0x1b0001,  870},
@@ -50,6 +50,8 @@ int pwm_voltage_table[ ][2] = {
 	{ 0x01001b, 1130},
 	{ 0x00001c, 1140}
 };
+*/
+#include "pwm_ctrl.h"
 
 #define CHIP_ADJUST 20
 #define RIPPLE_ADJUST 30
@@ -60,8 +62,8 @@ struct scpi_opp_entry cpu_dvfs_tbl[] = {
 	DVFS( 667000000,  900+CHIP_ADJUST+RIPPLE_ADJUST),
 	DVFS(1000000000,  910+CHIP_ADJUST+RIPPLE_ADJUST),
 	DVFS(1200000000,  970+CHIP_ADJUST+RIPPLE_ADJUST),
-	DVFS(1296000000,  1010+CHIP_ADJUST+RIPPLE_ADJUST),
-	DVFS(1416000000,  1080+CHIP_ADJUST+RIPPLE_ADJUST),
+	DVFS(1296000000, 1010+CHIP_ADJUST+RIPPLE_ADJUST),
+	DVFS(1416000000, 1090+CHIP_ADJUST+RIPPLE_ADJUST),
 };
 
 
