@@ -532,6 +532,48 @@ static int _buck_set_suspend_enable(struct udevice *pmic, int buck, bool enable)
 	return ret;
 }
 
+static int _buck_get_suspend_enable(struct udevice *pmic, int buck)
+{
+	struct rk8xx_priv *priv = dev_get_priv(pmic);
+	int ret, val;
+	uint mask;
+
+	switch (priv->variant) {
+	case RK805_ID:
+	case RK816_ID:
+		mask = 1 << buck;
+		val = pmic_reg_read(pmic, RK816_REG_DCDC_SLP_EN);
+		if (val < 0)
+			return val;
+		ret = val & mask ? 1 : 0;
+		break;
+	case RK808_ID:
+	case RK818_ID:
+		mask = 1 << buck;
+		val = pmic_reg_read(pmic, REG_SLEEP_SET_OFF1);
+		if (val < 0)
+			return val;
+		ret = val & mask ? 0 : 1;
+		break;
+	case RK809_ID:
+	case RK817_ID:
+		if (buck < 4)
+			mask = 1 << buck;
+		else
+			mask = 1 << 5;	/* BUCK5 for RK809 */
+
+		val = pmic_reg_read(pmic, RK817_POWER_SLP_EN(0));
+		if (val < 0)
+			return val;
+		ret = val & mask ? 1 : 0;
+		break;
+	default:
+		ret = -EINVAL;
+	}
+
+	return ret;
+}
+
 static const struct rk8xx_reg_info *get_ldo_reg(struct udevice *pmic,
 						int num, int uvolt)
 {
@@ -689,6 +731,50 @@ static int _ldo_set_suspend_enable(struct udevice *pmic, int ldo, bool enable)
 	return ret;
 }
 
+static int _ldo_get_suspend_enable(struct udevice *pmic, int ldo)
+{
+	struct rk8xx_priv *priv = dev_get_priv(pmic);
+	int val, ret = 0;
+	uint mask;
+
+	switch (priv->variant) {
+	case RK805_ID:
+	case RK816_ID:
+		mask = 1 << ldo;
+		val = pmic_reg_read(pmic, RK816_REG_LDO_SLP_EN);
+		if (val < 0)
+			return val;
+		ret = val & mask ? 1 : 0;
+		break;
+	case RK808_ID:
+	case RK818_ID:
+		mask = 1 << ldo;
+		val = pmic_reg_read(pmic, REG_SLEEP_SET_OFF2);
+		if (val < 0)
+			return val;
+		ret = val & mask ? 0 : 1;
+		break;
+	case RK809_ID:
+	case RK817_ID:
+		if (ldo == 8) {
+			mask = 1 << 4;	/* LDO9 */
+			val = pmic_reg_read(pmic, RK817_POWER_SLP_EN(0));
+			if (val < 0)
+				return val;
+			ret = val & mask ? 1 : 0;
+		} else {
+			mask = 1 << ldo;
+			val = pmic_reg_read(pmic, RK817_POWER_SLP_EN(1));
+			if (val < 0)
+				return val;
+			ret = val & mask ? 1 : 0;
+		}
+		break;
+	}
+
+	return ret;
+}
+
 static int buck_get_value(struct udevice *dev)
 {
 	int buck = dev->driver_data - 1;
@@ -715,6 +801,26 @@ static int buck_set_value(struct udevice *dev, int uvolt)
 	return _buck_set_value(dev->parent, buck, uvolt);
 }
 
+static int buck_get_suspend_value(struct udevice *dev)
+{
+	int buck = dev->driver_data - 1;
+	/* We assume level-1 voltage is enough for usage in U-Boot */
+	const struct rk8xx_reg_info *info = get_buck_reg(dev->parent, buck, 0);
+	int mask = info->vsel_mask;
+	int ret, val;
+
+	if (info->vsel_sleep_reg == NA)
+		return -ENOSYS;
+
+	ret = pmic_reg_read(dev->parent, info->vsel_sleep_reg);
+	if (ret < 0)
+		return ret;
+
+	val = ret & mask;
+
+	return info->min_uv + val * info->step_uv;
+}
+
 static int buck_set_suspend_value(struct udevice *dev, int uvolt)
 {
 	int buck = dev->driver_data - 1;
@@ -734,6 +840,13 @@ static int buck_set_suspend_enable(struct udevice *dev, bool enable)
 	int buck = dev->driver_data - 1;
 
 	return _buck_set_suspend_enable(dev->parent, buck, enable);
+}
+
+static int buck_get_suspend_enable(struct udevice *dev)
+{
+	int buck = dev->driver_data - 1;
+
+	return _buck_get_suspend_enable(dev->parent, buck);
 }
 
 static int buck_set_ramp_delay(struct udevice *dev, u32 ramp_delay)
@@ -809,6 +922,25 @@ static int ldo_set_suspend_value(struct udevice *dev, int uvolt)
 	return pmic_clrsetbits(dev->parent, info->vsel_sleep_reg, mask, val);
 }
 
+static int ldo_get_suspend_value(struct udevice *dev)
+{
+	int ldo = dev->driver_data - 1;
+	const struct rk8xx_reg_info *info = get_ldo_reg(dev->parent, ldo, 0);
+	int mask = info->vsel_mask;
+	int val, ret;
+
+	if (info->vsel_sleep_reg == NA)
+		return -ENOSYS;
+
+	ret = pmic_reg_read(dev->parent, info->vsel_sleep_reg);
+	if (ret < 0)
+		return ret;
+
+	val = ret & mask;
+
+	return info->min_uv + val * info->step_uv;
+}
+
 static int ldo_set_enable(struct udevice *dev, bool enable)
 {
 	int ldo = dev->driver_data - 1;
@@ -821,6 +953,13 @@ static int ldo_set_suspend_enable(struct udevice *dev, bool enable)
 	int ldo = dev->driver_data - 1;
 
 	return _ldo_set_suspend_enable(dev->parent, ldo, enable);
+}
+
+static int ldo_get_suspend_enable(struct udevice *dev)
+{
+	int ldo = dev->driver_data - 1;
+
+	return _ldo_get_suspend_enable(dev->parent, ldo);
 }
 
 static int ldo_get_enable(struct udevice *dev)
@@ -892,6 +1031,11 @@ static int switch_set_suspend_value(struct udevice *dev, int uvolt)
 	return 0;
 }
 
+static int switch_get_suspend_value(struct udevice *dev)
+{
+	return 0;
+}
+
 static int switch_set_suspend_enable(struct udevice *dev, bool enable)
 {
 	struct rk8xx_priv *priv = dev_get_priv(dev->parent);
@@ -918,6 +1062,39 @@ static int switch_set_suspend_enable(struct udevice *dev, bool enable)
 
 	debug("%s: switch%d, enable=%d, mask=0x%x\n",
 	      __func__, sw + 1, enable, mask);
+
+	return ret;
+}
+
+static int switch_get_suspend_enable(struct udevice *dev)
+{
+	struct rk8xx_priv *priv = dev_get_priv(dev->parent);
+	int val, ret = 0, sw = dev->driver_data - 1;
+	uint mask = 0;
+
+	switch (priv->variant) {
+	case RK808_ID:
+		mask = 1 << (sw + 5);
+		val = pmic_reg_read(dev->parent, REG_SLEEP_SET_OFF1);
+		if (val < 0)
+			return val;
+		ret = val & mask ? 0 : 1;
+		break;
+	case RK809_ID:
+		mask = 1 << (sw + 6);
+		val = pmic_reg_read(dev->parent, RK817_POWER_SLP_EN(0));
+		if (val < 0)
+			return val;
+		ret = val & mask ? 1 : 0;
+		break;
+	case RK818_ID:
+		mask = 1 << 6;
+		val = pmic_reg_read(dev->parent, REG_SLEEP_SET_OFF1);
+		if (val < 0)
+			return val;
+		ret = val & mask ? 0 : 1;
+		break;
+	}
 
 	return ret;
 }
@@ -962,9 +1139,11 @@ static const struct dm_regulator_ops rk8xx_buck_ops = {
 	.get_value  = buck_get_value,
 	.set_value  = buck_set_value,
 	.set_suspend_value = buck_set_suspend_value,
+	.get_suspend_value = buck_get_suspend_value,
 	.get_enable = buck_get_enable,
 	.set_enable = buck_set_enable,
 	.set_suspend_enable = buck_set_suspend_enable,
+	.get_suspend_enable = buck_get_suspend_enable,
 	.set_ramp_delay = buck_set_ramp_delay,
 };
 
@@ -972,16 +1151,20 @@ static const struct dm_regulator_ops rk8xx_ldo_ops = {
 	.get_value  = ldo_get_value,
 	.set_value  = ldo_set_value,
 	.set_suspend_value = ldo_set_suspend_value,
+	.get_suspend_value = ldo_get_suspend_value,
 	.get_enable = ldo_get_enable,
 	.set_enable = ldo_set_enable,
 	.set_suspend_enable = ldo_set_suspend_enable,
+	.get_suspend_enable = ldo_get_suspend_enable,
 };
 
 static const struct dm_regulator_ops rk8xx_switch_ops = {
 	.get_enable = switch_get_enable,
 	.set_enable = switch_set_enable,
 	.set_suspend_enable = switch_set_suspend_enable,
+	.get_suspend_enable = switch_get_suspend_enable,
 	.set_suspend_value = switch_set_suspend_value,
+	.get_suspend_value = switch_get_suspend_value,
 };
 
 U_BOOT_DRIVER(rk8xx_buck) = {
