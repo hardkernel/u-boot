@@ -379,9 +379,9 @@ static int do_mmc_erase(cmd_tbl_t *cmdtp, int flag,
 		return CMD_RET_FAILURE;
 	}
 	n = mmc->block_dev.block_erase(curr_device, blk, cnt);
-	printf("%d blocks erased: %s\n", n, (n == cnt) ? "OK" : "ERROR");
+	printf("%d blocks erased: %s\n", cnt, (n == 0) ? "OK" : "ERROR");
 
-	return (n == cnt) ? CMD_RET_SUCCESS : CMD_RET_FAILURE;
+	return (n == 0) ? CMD_RET_SUCCESS : CMD_RET_FAILURE;
 }
 static int do_mmc_rescan(cmd_tbl_t *cmdtp, int flag,
 			 int argc, char * const argv[])
