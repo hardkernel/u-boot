@@ -336,6 +336,19 @@ int env_set(const char *varname, const char *value);
  *
  * @varname: Variable to adjust
  * @valude: Value to append/replace
+ * @ignore: Value to be ignore if in varvalue
+ * @return 0 if OK, 1 on error
+ */
+int env_update_filter(const char *varname, const char *varvalue,
+		      const char *ignore);
+
+/**
+ * env_update() - update sub value of an environment variable
+ *
+ * This add/append/replace the sub value of an environment variable.
+ *
+ * @varname: Variable to adjust
+ * @valude: Value to append/replace
  * @return 0 if OK, 1 on error
  */
 int env_update(const char *varname, const char *varvalue);

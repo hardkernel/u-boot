@@ -401,7 +401,8 @@ static int env_replace(const char *varname, const char *substr,
 
 #define ARGS_ITEM_NUM	50
 
-int env_update(const char *varname, const char *varvalue)
+int env_update_filter(const char *varname, const char *varvalue,
+		      const char *ignore)
 {
 	/* 'a_' means "varargs_'; 'v_' means 'varvalue_' */
 	char *varargs;
@@ -421,6 +422,8 @@ int env_update(const char *varname, const char *varvalue)
 	varargs = env_get(varname);
 	if (!varargs) {
 		env_set(varname, varvalue);
+		if (ignore && strstr(varvalue, ignore))
+			env_delete(varname, ignore);
 		return 0;
 	}
 
@@ -455,6 +458,13 @@ int env_update(const char *varname, const char *varvalue)
 	v_item = strtok(v_string_tok, " ");
 	while (v_item && j < ARGS_ITEM_NUM) {
 		debug("%s: <v_item %d>: %s\n", __func__, j, v_item);
+
+		/* filter ignore string */
+		if (ignore && strstr(v_item, ignore)) {
+			v_item = strtok(NULL, " ");
+			continue;
+		}
+
 		if (strstr(v_item, "="))
 			v_items[j++] = v_item;
 		else
@@ -515,6 +525,11 @@ int env_update(const char *varname, const char *varvalue)
 	free(a_string_tok);
 
 	return 0;
+}
+
+int env_update(const char *varname, const char *varvalue)
+{
+	return env_update_filter(varname, varvalue, NULL);
 }
 
 int env_exist(const char *varname, const char *varvalue)
