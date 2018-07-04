@@ -211,7 +211,6 @@ static int android_bootloader_boot_bootloader(void)
 static int android_bootloader_get_fdt(const char *part_name,
 		const char *load_file_name)
 {
-	const char *dev_iface = "mmc";
 	struct blk_desc *dev_desc;
 	disk_partition_t boot_part_info;
 	char *fdt_addr = NULL;
@@ -222,12 +221,11 @@ static int android_bootloader_get_fdt(const char *part_name,
 	loff_t len_read;
 	unsigned long addr = 0;
 	int part_num = -1;
-	int dev_num = 0;
 	int ret;
 
-	dev_desc = blk_get_dev(dev_iface, dev_num);
+	dev_desc = rockchip_get_bootdev();
 	if (!dev_desc) {
-		printf("Could not find %s %d\n", dev_iface, dev_num);
+		printf("%s: dev_desc is NULL!\n", __func__);
 		return -1;
 	}
 
@@ -251,7 +249,7 @@ static int android_bootloader_get_fdt(const char *part_name,
 #endif
 
 	snprintf(dev_part, ARRAY_SIZE(dev_part), ":%x", part_num);
-	if (fs_set_blk_dev(dev_iface, dev_part, FS_TYPE_EXT))
+	if (fs_set_blk_dev_with_part(dev_desc, part_num))
 		return -1;
 
 	fdt_addr = env_get("fdt_addr_r");
@@ -620,14 +618,12 @@ int android_bootloader_boot_flow(struct blk_desc *dev_desc,
 
 int android_avb_boot_flow(char *slot_suffix, unsigned long kernel_address)
 {
-	const char *dev_iface = "mmc";
-	int dev_num = 0;
 	struct blk_desc *dev_desc;
 	disk_partition_t boot_part_info;
 	int ret;
-	dev_desc = blk_get_dev(dev_iface, dev_num);
+	dev_desc = rockchip_get_bootdev();
 	if (!dev_desc) {
-		printf("Could not find %s %d\n", dev_iface, dev_num);
+		printf("%s: dev_desc is NULL!\n", __func__);
 		return -1;
 	}
 	/* Load the kernel from the desired "boot" partition. */
@@ -646,14 +642,12 @@ int android_avb_boot_flow(char *slot_suffix, unsigned long kernel_address)
 
 int android_boot_flow(unsigned long kernel_address)
 {
-	const char *dev_iface = "mmc";
-	int dev_num = 0;
 	struct blk_desc *dev_desc;
 	disk_partition_t boot_part_info;
 	int ret;
-	dev_desc = blk_get_dev(dev_iface, dev_num);
+	dev_desc = rockchip_get_bootdev();
 	if (!dev_desc) {
-		printf("Could not find %s %d\n", dev_iface, dev_num);
+		printf("%s: dev_desc is NULL!\n", __func__);
 		return -1;
 	}
 	/* Load the kernel from the desired "boot" partition. */
