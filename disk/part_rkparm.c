@@ -48,14 +48,12 @@ static int rkparm_param_parse(char *param, struct list_head *parts_head,
 	next = strchr(blkdev_parts, ':');
 	cmdline_end = strstr(cmdline, "\n"); /* end by '\n' */
 	*cmdline_end = '\0';
-	/* skip "CMDLINE:" */
-	env_update("bootargs", cmdline + strlen("CMDLINE:"));
-
 	/*
-	 * Initrd fixup: remove unused "initrd=0x...,0x...", this for
-	 * compatible with legacy parameter.txt
+	 * 1. skip "CMDLINE:"
+	 * 2. Initrd fixup: remove unused "initrd=0x...,0x...", this for
+	 *    compatible with legacy parameter.txt
 	 */
-	env_delete("bootargs", "initrd=");
+	env_update_filter("bootargs", cmdline + strlen("CMDLINE:"), "initrd=");
 
 	INIT_LIST_HEAD(parts_head);
 	while (next) {
