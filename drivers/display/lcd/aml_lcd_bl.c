@@ -136,7 +136,7 @@ static void bl_pwm_pinmux_gpio_set(int pwm_index, int gpio_level)
 			LCDPR("bl: %s: port=%d, pinmux_clr=%d,0x%08x\n",
 				__func__, bl_pwm->pwm_port,
 				bl_pwm->pinmux_set[i][0], bl_pwm->pinmux_set[i][1]);
-		}
+			}
 			i++;
 		}
 		bl_pwm->pinmux_flag = 0;
