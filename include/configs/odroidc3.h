@@ -489,6 +489,9 @@
 //#define CONFIG_SYS_DCACHE_OFF
 //#define CONFIG_SYS_ICACHE_OFF
 
+/* Compression commands */
+#define CONFIG_CMD_UNZIP	1
+
 /* other functions */
 #define CONFIG_NEED_BL301	1
 #define CONFIG_NEED_BL32	1
