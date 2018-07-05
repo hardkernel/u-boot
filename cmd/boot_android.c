@@ -161,6 +161,7 @@ int do_avb_init_ab_metadata(cmd_tbl_t *cmdtp, int flag,
 		return CMD_RET_FAILURE;
 	}
 
+	printf("Initialize ab data to misc partition success.\n");
 	avb_ops_user_free(ops);
 
 	return CMD_RET_SUCCESS;
@@ -202,6 +203,7 @@ int do_avb_ab_mark_slot_active(cmd_tbl_t *cmdtp, int flag,
 		return CMD_RET_FAILURE;
 	}
 
+	printf("Mark slot %d active successfully.\n", slot_number);
 	avb_ops_user_free(ops);
 
 	return CMD_RET_SUCCESS;
@@ -229,6 +231,7 @@ int do_avb_ab_mark_slot_unbootable(cmd_tbl_t *cmdtp, int flag,
 		return CMD_RET_FAILURE;
 	}
 
+	printf("Mark slot %d unbootable successfully.\n", slot_number);
 	avb_ops_user_free(ops);
 
 	return CMD_RET_SUCCESS;
@@ -285,7 +288,7 @@ int do_avb_read_rollback_index(cmd_tbl_t *cmdtp, int flag,
 		return CMD_RET_FAILURE;
 	}
 
-	printf("out_rollback_index = %llx\n", out_rollback_index);
+	printf("\nout_rollback_index = %llx\n", out_rollback_index);
 	avb_ops_user_free(ops);
 
 	return CMD_RET_SUCCESS;
@@ -317,6 +320,7 @@ int do_avb_write_rollback_index(cmd_tbl_t *cmdtp, int flag,
 		return CMD_RET_FAILURE;
 	}
 
+	printf("\nWrite  rollback index successfully.\n");
 	avb_ops_user_free(ops);
 
 	return CMD_RET_SUCCESS;
@@ -343,7 +347,8 @@ int do_avb_read_is_device_unlocked(cmd_tbl_t *cmdtp, int flag,
 		return CMD_RET_FAILURE;
 	}
 
-	printf("out_is_unlocked = %d\n", out_is_unlocked);
+	printf("\n The device is %s\n",
+		out_is_unlocked ? "UNLOCKED" : "LOCKED");
 	avb_ops_user_free(ops);
 
 	return CMD_RET_SUCCESS;
@@ -398,12 +403,13 @@ int do_avb_get_size_of_partition(cmd_tbl_t *cmdtp, int flag,
 
 	if (ops->get_size_of_partition(ops, requested_partitions,
 				       &out_size_in_bytes) != 0) {
-		printf("do_avb_get_size_of_partition error!\n");
+		printf("Can not get %s partition size!\n", requested_partitions);
 		avb_ops_user_free(ops);
 		return CMD_RET_FAILURE;
 	}
 
-	printf("partition size = %lld\n", out_size_in_bytes);
+	printf("%s partition size = 0x%llx\n", requested_partitions,
+	       out_size_in_bytes);
 	avb_ops_user_free(ops);
 
 	return CMD_RET_SUCCESS;
@@ -429,12 +435,13 @@ int do_avb_get_get_unique_guid_for_partition(cmd_tbl_t *cmdtp, int flag,
 
 	if (ops->get_unique_guid_for_partition(ops, requested_partitions,
 					       guid_buf, guid_buf_size) != 0) {
-		printf("do_avb_get_get_unique_guid_for_partition error!\n");
+		printf("Can not get %s partition UUID!\n",
+		       requested_partitions);
 		avb_ops_user_free(ops);
 		return CMD_RET_FAILURE;
 	}
 
-	printf("guid = %s\n", guid_buf);
+	printf("%s partition UUID is %s\n", requested_partitions, guid_buf);
 	avb_ops_user_free(ops);
 
 	return CMD_RET_SUCCESS;
@@ -475,47 +482,10 @@ int do_avb_read(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		return CMD_RET_FAILURE;
 	}
 
-	for (i = 0; i < 512 * blkcnt; i++)
-		printf("buffer %d = %d\n", i, buffer[i]);
-
-	free(buffer);
-	avb_ops_user_free(ops);
-
-	return CMD_RET_SUCCESS;
-}
-
-int do_avb_write(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
-{
-	AvbOps *ops;
-	char *requested_partitions;
-	int64_t offset_blk;
-	size_t blkcnt;
-	size_t out_num_read;
-	char *buffer;
-
-	if (argc != 4)
-		return CMD_RET_USAGE;
-
-	requested_partitions = argv[1];
-	offset_blk = simple_strtoul(argv[2], NULL, 16);
-	blkcnt = simple_strtoul(argv[3], NULL, 16);
-	ops = avb_ops_user_new();
-	buffer = (char *)malloc(blkcnt * 512);
-	if (buffer == NULL) {
-		printf("malloc buffer failed!\n");
-		return CMD_RET_FAILURE;
-	}
-
-	if (ops == NULL) {
-		printf("avb_ops_user_new() failed!\n");
-		return CMD_RET_FAILURE;
-	}
-	if (ops->read_from_partition(ops, requested_partitions, offset_blk,
-				     blkcnt, buffer, &out_num_read) != 0) {
-		printf("do_avb_write error!\n");
-		free(buffer);
-		avb_ops_user_free(ops);
-		return CMD_RET_FAILURE;
+	for (i = 0; i < 512 * blkcnt; i++) {
+		printf("buffer %d = %x", i, buffer[i]);
+		if ((i + 1) % 4 == 0)
+			printf("\n");
 	}
 
 	free(buffer);
@@ -545,6 +515,18 @@ int do_avb_read_ab_metadata(cmd_tbl_t *cmdtp, int flag,
 		return CMD_RET_FAILURE;
 	}
 
+	printf("Slot A information:\n");
+	printf("slot A: priority = %d, tries_remaining = %d,\
+	       successful_boot = %d\n",
+	       ab_data.slots[0].priority,
+	       ab_data.slots[0].tries_remaining,
+	       ab_data.slots[0].successful_boot);
+	printf("Slot B information:\n");
+	printf("slot B: priority = %d, tries_remaining = %d,\
+	       successful_boot = %d\n",
+	       ab_data.slots[1].priority,
+	       ab_data.slots[1].tries_remaining,
+	       ab_data.slots[1].successful_boot);
 	avb_ops_user_free(ops);
 
 	return CMD_RET_SUCCESS;
@@ -846,9 +828,7 @@ static cmd_tbl_t cmd_avb[] = {
 	U_BOOT_CMD_MKENT(part_guid, 2, 1,
 			 do_avb_get_get_unique_guid_for_partition, "", ""),
 	U_BOOT_CMD_MKENT(read, 4, 1, do_avb_read, "", ""),
-	U_BOOT_CMD_MKENT(write, 4, 1, do_avb_write, "", ""),
 	U_BOOT_CMD_MKENT(readabmisc, 1, 1, do_avb_read_ab_metadata, "", ""),
-	U_BOOT_CMD_MKENT(writeabmisc, 1, 1, do_avb_write_ab_metadata, "", ""),
 	U_BOOT_CMD_MKENT(perm_attr_test, 1, 1, do_perm_attr_test, "", ""),
 	U_BOOT_CMD_MKENT(verify, 3, 1, do_avb_verify_partition, "", ""),
 	U_BOOT_CMD_MKENT(flow, 2, 1, do_avb_flow, "", "")
@@ -883,15 +863,13 @@ U_BOOT_CMD(
 	"bootavb slot_unbootable cnt\n"
 	"bootavb slot_successful cnt\n"
 	"bootavb read_rollback rollback_index_location\n"
-	"bootavb write_rollback rollback_index_location out_rollback_index\n"
+	"bootavb write_rollback rollback_index_location rollback_index\n"
 	"bootavb read_lock_status\n"
 	"bootavb write_lock_status 0 or 1\n"
 	"bootavb part_size partitions_name\n"
 	"bootavb part_guid partitions_name\n"
 	"bootavb read partition offset_blk cnt\n"
-	"bootavb write partition offset_blk cnt\n"
 	"bootavb readabmisc\n"
-	"bootavb writeabmisc\n"
 	"bootavb perm_attr_test\n"
 	"bootavb verify partition slot_cnt;partion name without '_a' or '_b'\n"
 	"bootavb flow v/n\n"
