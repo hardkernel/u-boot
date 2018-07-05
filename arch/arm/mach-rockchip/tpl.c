@@ -34,6 +34,30 @@ void putc(char c)
 #endif /* CONFIG_TPL_LIBCOMMON_SUPPORT */
 
 #ifndef CONFIG_TPL_LIBGENERIC_SUPPORT
+#ifdef CONFIG_ARM64
+/* for ARM64,it don't have define timer_init and __udelay except lib/timer.c */
+int __weak timer_init(void)
+{
+	return 0;
+}
+
+void __weak __udelay(unsigned long usec)
+{
+	u64 i, j, count;
+
+	asm volatile ("MRS %0, CNTPCT_EL0" : "=r"(count));
+	i = count;
+	/* usec to count,24MHz */
+	j = usec * 24;
+	i += j;
+	while (1) {
+		asm volatile ("MRS %0, CNTPCT_EL0" : "=r"(count));
+		if (count > i)
+			break;
+	}
+}
+#endif /* CONFIG_ARM64 */
+
 void udelay(unsigned long usec)
 {
 	__udelay(usec);
@@ -45,7 +69,7 @@ void hang(void)
         for (;;)
                 ;
 }
-#endif
+#endif /* CONFIG_TPL_LIBGENERIC_SUPPORT */
 
 u32 spl_boot_device(void)
 {
