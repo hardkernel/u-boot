@@ -44,6 +44,7 @@
 
 #include <dt-bindings/net/ti-dp83867.h>
 #include "rk3288.dtsi"
+#include "rk3288-u-boot.dtsi"
 
 / {
 	model = "Phytec RK3288 phyCORE";

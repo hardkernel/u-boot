@@ -42,6 +42,7 @@
 
 /dts-v1/;
 #include "rk3288.dtsi"
+#include "rk3288-u-boot.dtsi"
 
 / {
 	model = "Amarula Vyasa-RK3288";

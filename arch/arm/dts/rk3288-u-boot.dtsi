@@ -1,0 +1,45 @@
+/* SPDX-License-Identifier:     GPL-2.0+ */
+/*
+ * (C) Copyright 2018 Rockchip Electronics Co., Ltd
+ */
+
+/ {
+	aliases {
+		mmc0 = &emmc;
+		mmc1 = &sdmmc;
+	};
+};
+
+&uart2 {
+	clock-frequency = <24000000>;
+	u-boot,dm-pre-reloc;
+	status = "okay";
+};
+
+&pmu {
+	u-boot,dm-pre-reloc;
+};
+
+&sgrf {
+	u-boot,dm-pre-reloc;
+};
+
+&grf {
+	u-boot,dm-pre-reloc;
+};
+
+&cru {
+	u-boot,dm-pre-reloc;
+};
+
+&noc {
+	u-boot,dm-pre-reloc;
+};
+
+&dmc {
+	u-boot,dm-pre-reloc;
+};
+
+&sdmmc {
+	u-boot,dm-pre-reloc;
+};

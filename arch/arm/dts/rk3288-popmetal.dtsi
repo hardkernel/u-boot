@@ -39,6 +39,7 @@
  */
 
 #include "rk3288.dtsi"
+#include "rk3288-u-boot.dtsi"
 
 / {
 	memory{
