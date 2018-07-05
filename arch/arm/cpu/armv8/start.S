@@ -30,6 +30,7 @@ _start:
 	b	reset
 #endif
 
+#if !CONFIG_IS_ENABLED(TINY_FRAMEWORK)
 	.align 3
 
 .globl	_TEXT_BASE
@@ -355,3 +356,4 @@ ENDPROC(c_runtime_cpu_setup)
 WEAK(save_boot_params)
 	b	save_boot_params_ret	/* back to my caller */
 ENDPROC(save_boot_params)
+#endif

@@ -42,7 +42,16 @@ entry_counter:
 
 #if (defined(CONFIG_SPL_BUILD) || defined(CONFIG_ARM64))
 	/* U-Boot proper of armv7 do not need this */
+#if CONFIG_IS_ENABLED(TINY_FRAMEWORK) && defined(CONFIG_ARM64)
+	/* Allow the board to save important registers */
+	b save_boot_params
+.globl	save_boot_params_ret
+save_boot_params_ret:
+	b board_init_f
+#else
 	b reset
+#endif
+
 #endif
 
 #if !defined(CONFIG_ARM64)
