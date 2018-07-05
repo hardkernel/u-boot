@@ -688,7 +688,7 @@ static void cb_getvar(struct usb_ep *ep, struct usb_request *req)
 			strncat(response, part_size_str, chars_left);
 		}
 	} else if (!strncmp("oem-unlock", cmd, 10)) {
-#ifdef CONFIG_OPTEE_CLIENT
+#ifdef CONFIG_FASTBOOT_OEM_UNLOCK
 #ifdef CONFIG_RK_AVB_LIBAVB_USER
 		fastboot_tx_write_str("FAILnot implemented");
 		return;
@@ -1182,7 +1182,7 @@ static void cb_oem(struct usb_ep *ep, struct usb_request *req)
 	} else
 #endif
 	if (strncmp("unlock", cmd + 4, 8) == 0) {
-#ifdef CONFIG_OPTEE_CLIENT
+#ifdef CONFIG_FASTBOOT_OEM_UNLOCK
 #ifdef CONFIG_RK_AVB_LIBAVB_USER
 		fastboot_tx_write_str("FAILnot implemented");
 		return;
@@ -1214,7 +1214,7 @@ static void cb_oem(struct usb_ep *ep, struct usb_request *req)
 		return;
 #endif
 	} else if (strncmp("unlock_accept", cmd + 4, 13) == 0) {
-#ifdef CONFIG_OPTEE_CLIENT
+#ifdef CONFIG_FASTBOOT_OEM_UNLOCK
 #ifdef CONFIG_RK_AVB_LIBAVB_USER
 		fastboot_tx_write_str("FAILnot implemented");
 		return;
@@ -1271,7 +1271,7 @@ static void cb_oem(struct usb_ep *ep, struct usb_request *req)
 		return;
 #endif
 	} else if (strncmp("lock", cmd + 4, 8) == 0) {
-#ifdef CONFIG_OPTEE_CLIENT
+#ifdef CONFIG_FASTBOOT_OEM_UNLOCK
 #ifdef CONFIG_RK_AVB_LIBAVB_USER
 		fastboot_tx_write_str("FAILnot implemented");
 		return;

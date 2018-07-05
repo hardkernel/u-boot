@@ -82,6 +82,15 @@ config FASTBOOT_FLASH_MMC_DEV
 	  regarding the non-volatile storage device. Define this to
 	  the eMMC device that fastboot should use to store the image.
 
+config FASTBOOT_OEM_UNLOCK
+	bool "Enable FASTBOOT OEM UNLOCK command"
+	depends on OPTEE_CLIENT
+	help
+	  This enables the command "fastboot oem unlock" the fastboot
+	  oem unlock command requires tee security storage to store
+	  unlock status. oem unlock status attach to bootargs on boot.
+
+
 endif # USB_FUNCTION_FASTBOOT || UDP_FUNCTION_FASTBOOT
 
 endif # FASTBOOT

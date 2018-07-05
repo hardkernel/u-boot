@@ -41,7 +41,7 @@ static int do_boot_rockchip(cmd_tbl_t *cmdtp, int flag, int argc,
 		load_attestation_key(dev_desc, &misc_part_info);
 #endif
 
-#ifdef CONFIG_OPTEE_CLIENT
+#ifdef CONFIG_FASTBOOT_OEM_UNLOCK
 	/* read oem unlock status and attach to bootargs */
 	uint8_t unlock = 0;
 	TEEC_Result result;
