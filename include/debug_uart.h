@@ -105,6 +105,13 @@ void printhex4(uint value);
  */
 void printhex8(uint value);
 
+/**
+ * printdec() - Output a decimalism value
+ *
+ * @value:	Value to output
+ */
+void printdec(uint value);
+
 #ifdef CONFIG_DEBUG_UART_ANNOUNCE
 #define _DEBUG_UART_ANNOUNCE	printascii("<debug_uart> ");
 #else
@@ -170,6 +177,18 @@ void printhex8(uint value);
 	void printhex8(uint value) \
 	{ \
 		printhex(value, 8); \
+	} \
+\
+	void printdec(uint value) \
+	{ \
+		if (value > 10) { \
+			printdec(value / 10); \
+			value %= 10; \
+		} else if (value == 10) { \
+			_debug_uart_putc('1'); \
+			value = 0; \
+		} \
+		_debug_uart_putc('0' + value); \
 	} \
 \
 	void debug_uart_init(void) \
