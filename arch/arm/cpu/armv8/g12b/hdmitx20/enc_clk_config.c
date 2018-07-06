@@ -95,7 +95,8 @@ static void set_hdmitx_sys_clk(void)
  * When VCO outputs 6.0 GHz, if VCO unlock with default v1
  * steps, then need reset with v2 or v3
  */
-static bool set_hpll_hclk_v1(unsigned int m, unsigned int frac_val)
+static bool set_hpll_hclk_v1(unsigned int m, unsigned int frac_val,
+	struct hdmitx_dev *hdev)
 {
 	int ret = 0;
 
@@ -103,8 +104,22 @@ static bool set_hpll_hclk_v1(unsigned int m, unsigned int frac_val)
 	hd_set_reg_bits(P_HHI_HDMI_PLL_CNTL0, 0x3, 28, 2);
 	hd_write_reg(P_HHI_HDMI_PLL_CNTL1, frac_val);
 	hd_write_reg(P_HHI_HDMI_PLL_CNTL2, 0x00000000);
-	hd_write_reg(P_HHI_HDMI_PLL_CNTL3, 0x6a68dc00);
-	hd_write_reg(P_HHI_HDMI_PLL_CNTL4, 0x65771290);
+	if (frac_val == 0x8148) {
+		if (((hdev->para->vic == HDMI_3840x2160p50_16x9) ||
+			(hdev->para->vic == HDMI_3840x2160p60_16x9) ||
+			(hdev->para->vic == HDMI_3840x2160p50_64x27) ||
+			(hdev->para->vic == HDMI_3840x2160p60_64x27)) &&
+			(hdev->para->cs != HDMI_COLOR_FORMAT_420)) {
+			hd_write_reg(P_HHI_HDMI_PLL_CNTL3, 0x6a685c00);
+			hd_write_reg(P_HHI_HDMI_PLL_CNTL4, 0x11551293);
+		} else {
+			hd_write_reg(P_HHI_HDMI_PLL_CNTL3, 0x6a685c00);
+			hd_write_reg(P_HHI_HDMI_PLL_CNTL4, 0x44331290);
+		}
+	} else {
+		hd_write_reg(P_HHI_HDMI_PLL_CNTL3, 0x6a68dc00);
+		hd_write_reg(P_HHI_HDMI_PLL_CNTL4, 0x65771290);
+	}
 	hd_write_reg(P_HHI_HDMI_PLL_CNTL5, 0x39272000);
 	hd_write_reg(P_HHI_HDMI_PLL_CNTL6, 0x56540000);
 	printk("HPLL: 0x%lx\n", hd_read_reg(P_HHI_HDMI_PLL_CNTL0));
@@ -161,19 +176,21 @@ static bool set_hpll_hclk_v3(unsigned int m, unsigned int frac_val)
 	return ret; /* return hpll locked status */
 }
 
-static void set_hpll_clk_out(unsigned clk)
+static void set_hpll_clk_out(unsigned clk, struct hdmitx_dev *hdev)
 {
-	unsigned int frac_rate = 0;
+	unsigned int frac_rate = 1;
+
+	frac_rate = hdev->frac_rate_policy;
 	check_clk_config(clk);
-	printk("config HPLL = %d\n", clk);
+	printk("config HPLL = %d frac_rate = %d\n", clk, frac_rate);
 
 	switch (clk) {
 	case 5940000:
-		if (set_hpll_hclk_v1(0xf7, frac_rate ? 0x8168 : 0x10000))
+		if (set_hpll_hclk_v1(0xf7, frac_rate ? 0x8148 : 0x10000, hdev))
 			break;
-		else if (set_hpll_hclk_v2(0x7b, frac_rate ? 0x140b4 : 0x18000))
+		else if (set_hpll_hclk_v2(0x7b,0x18000))
 			break;
-		else if (set_hpll_hclk_v3(0xf7, frac_rate ? 0x8168 : 0x10000))
+		else if (set_hpll_hclk_v3(0xf7,0x10000))
 			break;
 		else
 			break;
@@ -196,10 +213,10 @@ static void set_hpll_clk_out(unsigned clk)
 		hd_write_reg(P_HHI_HDMI_PLL_CNTL0, 0x3b0004b9);
 		hd_write_reg(P_HHI_HDMI_PLL_CNTL1, 0x00014000);
 		hd_write_reg(P_HHI_HDMI_PLL_CNTL2, 0x00000000);
-		hd_write_reg(P_HHI_HDMI_PLL_CNTL3, 0x0a691c00);
-		hd_write_reg(P_HHI_HDMI_PLL_CNTL4, 0x33771290);
-		hd_write_reg(P_HHI_HDMI_PLL_CNTL5, 0x39270000);
-		hd_write_reg(P_HHI_HDMI_PLL_CNTL6, 0x50540000);
+		hd_write_reg(P_HHI_HDMI_PLL_CNTL3, 0x6a685c00);
+		hd_write_reg(P_HHI_HDMI_PLL_CNTL4, 0x43231290);
+		hd_write_reg(P_HHI_HDMI_PLL_CNTL5, 0x29272000);
+		hd_write_reg(P_HHI_HDMI_PLL_CNTL6, 0x56540028);
 		printk("HPLL: 0x%lx\n", hd_read_reg(P_HHI_HDMI_PLL_CNTL0));
 		hd_set_reg_bits(P_HHI_HDMI_PLL_CNTL0, 0x0, 29, 1);
 		printk("HPLL: 0x%lx\n", hd_read_reg(P_HHI_HDMI_PLL_CNTL0));
@@ -210,10 +227,10 @@ static void set_hpll_clk_out(unsigned clk)
 		hd_write_reg(P_HHI_HDMI_PLL_CNTL0, 0x3b00049a);
 		hd_write_reg(P_HHI_HDMI_PLL_CNTL1, 0x00016000);
 		hd_write_reg(P_HHI_HDMI_PLL_CNTL2, 0x00000000);
-		hd_write_reg(P_HHI_HDMI_PLL_CNTL3, 0x0a691c00);
-		hd_write_reg(P_HHI_HDMI_PLL_CNTL4, 0x33771290);
-		hd_write_reg(P_HHI_HDMI_PLL_CNTL5, 0x39270000);
-		hd_write_reg(P_HHI_HDMI_PLL_CNTL6, 0x50540000);
+		hd_write_reg(P_HHI_HDMI_PLL_CNTL3, 0x6a685c00);
+		hd_write_reg(P_HHI_HDMI_PLL_CNTL4, 0x43231290);
+		hd_write_reg(P_HHI_HDMI_PLL_CNTL5, 0x29272000);
+		hd_write_reg(P_HHI_HDMI_PLL_CNTL6, 0x56540028);
 		printk("HPLL: 0x%lx\n", hd_read_reg(P_HHI_HDMI_PLL_CNTL0));
 		hd_set_reg_bits(P_HHI_HDMI_PLL_CNTL0, 0x0, 29, 1);
 		printk("HPLL: 0x%lx\n", hd_read_reg(P_HHI_HDMI_PLL_CNTL0));
@@ -885,7 +902,7 @@ void hdmitx_set_clk_(struct hdmitx_dev *hdev)
 next:
 	set_viu_path(p_enc[j].viu_path, p_enc[j].viu_type);
 	set_hdmitx_sys_clk();
-	set_hpll_clk_out(p_enc[j].hpll_clk_out);
+	set_hpll_clk_out(p_enc[j].hpll_clk_out, hdev);
 	if (!getenv("sspll_dis"))
 		set_hpll_sspll(hdev);
 	set_hpll_od1(p_enc[j].od1);
@@ -899,8 +916,25 @@ next:
 	set_enci_div(p_enc[j].enci_div);
 }
 
+static int likely_frac_rate_mode(char *m)
+{
+	if (strstr(m, "24hz") || strstr(m, "30hz") || strstr(m, "60hz")
+		|| strstr(m, "120hz") || strstr(m, "240hz"))
+		return 1;
+	else
+		return 0;
+}
+
 void hdmitx_set_clk(struct hdmitx_dev *hdev)
 {
+	char *frac_rate_str = NULL;
+
+	frac_rate_str = getenv("frac_rate_policy");
+	if (frac_rate_str && (frac_rate_str[0] == '0'))
+		hdev->frac_rate_policy = 0;
+	else if (likely_frac_rate_mode(hdev->para->ext_name))
+		hdev->frac_rate_policy = 1;
+
 	hdmitx_set_clk_(hdev);
 }
 
