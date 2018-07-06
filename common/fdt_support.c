@@ -296,8 +296,18 @@ int fdt_chosen(void *fdt)
 
 		bootargs = fdt_getprop(fdt, nodeoffset, "bootargs", NULL);
 		if (bootargs) {
-			/* Append kernel bootargs */
+			/*
+			 * Append kernel bootargs
+			 * If use AB system, delete default "root=" which route
+			 * to rootfs. Then the ab bootctl will choose the
+			 * high priority system to boot and add its UUID
+			 * to cmdline. The format is "roo=PARTUUID=xxxx...".
+			 */
+#ifdef CONFIG_ANDROID_AB
+			env_update_filter("bootargs", bootargs, "root=");
+#else
 			env_update("bootargs", bootargs);
+#endif
 			/*
 			 * Initrd fixup: remove unused "initrd=0x...,0x...",
 			 * this for compatible with legacy parameter.txt
