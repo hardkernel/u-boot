@@ -71,7 +71,7 @@ __weak int arch_cpu_init(void)
 
 void board_init_f(ulong dummy)
 {
-#if defined(CONFIG_SPL_FRAMEWORK) && !defined(CONFIG_TINY_TPL)
+#if defined(CONFIG_SPL_FRAMEWORK) && !CONFIG_IS_ENABLED(TINY_FRAMEWORK)
 	struct udevice *dev;
 	int ret;
 #endif
@@ -93,7 +93,7 @@ void board_init_f(ulong dummy)
 				U_BOOT_TIME ")\n");
 #endif
 
-#if defined(CONFIG_SPL_FRAMEWORK) && !defined(CONFIG_TINY_TPL)
+#if defined(CONFIG_SPL_FRAMEWORK) && !CONFIG_IS_ENABLED(TINY_FRAMEWORK)
 	ret = spl_early_init();
 	if (ret) {
 		debug("spl_early_init() failed: %d\n", ret);
@@ -104,7 +104,7 @@ void board_init_f(ulong dummy)
 	/* Init ARM arch timer */
 	timer_init();
 
-#if defined(CONFIG_SPL_FRAMEWORK) && !defined(CONFIG_TINY_TPL)
+#if defined(CONFIG_SPL_FRAMEWORK) && !CONFIG_IS_ENABLED(TINY_FRAMEWORK)
 	ret = uclass_get_device(UCLASS_RAM, 0, &dev);
 	if (ret) {
 		printf("DRAM init failed: %d\n", ret);
@@ -119,7 +119,7 @@ void board_init_f(ulong dummy)
 #endif
 }
 
-#if !(defined(CONFIG_SPL_FRAMEWORK) && !defined(CONFIG_TINY_TPL))
+#if !(defined(CONFIG_SPL_FRAMEWORK) && !CONFIG_IS_ENABLED(TINY_FRAMEWORK))
 /* Place Holders */
 void board_init_r(gd_t *id, ulong dest_addr)
 {

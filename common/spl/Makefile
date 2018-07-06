@@ -9,7 +9,7 @@
 #
 
 ifeq ($(CONFIG_TPL_BUILD), y)
-ifndef CONFIG_TINY_TPL
+ifndef CONFIG_TPL_TINY_FRAMEWORK
 obj-$(CONFIG_SPL_FRAMEWORK) += spl.o
 endif
 else

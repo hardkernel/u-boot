@@ -65,7 +65,7 @@ libs-y += $(if $(BOARDDIR),board/$(BOARDDIR)/)
 libs-$(HAVE_VENDOR_COMMON_LIB) += board/$(VENDOR)/common/
 
 ifeq ($(CONFIG_TPL_BUILD),y)
-ifndef CONFIG_TINY_TPL
+ifndef CONFIG_TPL_TINY_FRAMEWORK
 libs-$(CONFIG_SPL_FRAMEWORK) += common/spl/
 endif
 else
