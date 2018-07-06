@@ -2,6 +2,7 @@
 set -e
 BOARD=$1
 SUBCMD=$1
+FUNCADDR=$1
 JOB=`sed -n "N;/processor/p" /proc/cpuinfo|wc -l`
 SUPPORT_LIST=`ls configs/*[r,p][x,v,k][0-9][0-9]*_defconfig`
 
@@ -10,6 +11,8 @@ SUPPORT_LIST=`ls configs/*[r,p][x,v,k][0-9][0-9]*_defconfig`
 RKBIN_TOOLS=../rkbin/tools
 
 # User's GCC toolchain and relative path
+ADDR2LINE_ARM32=arm-linux-gnueabihf-addr2line
+ADDR2LINE_ARM64=aarch64-linux-gnu-addr2line
 OBJ_ARM32=arm-linux-gnueabihf-objdump
 OBJ_ARM64=aarch64-linux-gnu-objdump
 GCC_ARM32=arm-linux-gnueabihf-
@@ -28,6 +31,7 @@ RKBIN=
 # Declare global toolchain path for CROSS_COMPILE, updated in select_toolchain()
 TOOLCHAIN_GCC=
 TOOLCHAIN_OBJDUMP=
+TOOLCHAIN_ADDR2LINE=
 
 # Declare global default output dir and cmd, update in prepare()
 OUTDIR=$2
@@ -63,6 +67,7 @@ help()
 	echo "3. Debug helper:"
 	echo "	./make.sh elf		--- dump elf file with -D(default)"
 	echo "	./make.sh elf-S		--- dump elf file with -S"
+	echo "	./make.sh <addr>	--- dump function name and code position of address"
 	echo "	./make.sh map		--- cat u-boot.map"
 	echo "	./make.sh sym		--- cat u-boot.sym"
 }
@@ -71,19 +76,22 @@ prepare()
 {
 	local absolute_path cmd dir count
 
-	# Parse output directory
+	# Parse output directory 'O=<dir>'
 	cmd=${OUTDIR%=*}
 	if [ "${cmd}" = 'O' ]; then
 		OUTDIR=${OUTDIR#*=}
 		OUTOPT=O=${OUTDIR}
 	else
 		case $BOARD in
+			# Parse from exit .config
 			''|elf*|trust|loader|uboot|map|sym)
 			count=`find -name .config | wc -l`
 			dir=`find -name .config`
+			# Good, find only one .config
 			if [ $count -eq 1 ]; then
 				dir=${dir%/*}
 				OUTDIR=${dir#*/}
+				# Set OUTOPT if not current directory
 				if [ $OUTDIR != '.' ]; then
 					OUTOPT=O=${OUTDIR}
 				fi
@@ -109,17 +117,21 @@ prepare()
 
 	# Parse help and make defconfig
 	case $BOARD in
-		#help
+		#Help
 		--help|-help|help|--h|-h)
 		help
 		exit 0
 		;;
-		#subcmd
+
+		#Subcmd
 		''|elf*|trust|loader|uboot|map|sym)
 		;;
 
 		*)
-		if [ ! -f configs/${BOARD}_defconfig ]; then
+		#Func address is valid ?
+		if [ -z $(echo ${FUNCADDR} | sed 's/[0-9,a-f,A-F]//g') ]; then
+			return
+		elif [ ! -f configs/${BOARD}_defconfig ]; then
 			echo
 			echo "Can't find: configs/${BOARD}_defconfig"
 			echo
@@ -160,6 +172,7 @@ select_toolchain()
 			absolute_path=$(cd `dirname ${TOOLCHAIN_ARM64}`; pwd)
 			TOOLCHAIN_GCC=${absolute_path}/bin/${GCC_ARM64}
 			TOOLCHAIN_OBJDUMP=${absolute_path}/bin/${OBJ_ARM64}
+			TOOLCHAIN_ADDR2LINE=${absolute_path}/bin/${ADDR2LINE_ARM64}
 		else
 			echo "Can't find toolchain: ${TOOLCHAIN_ARM64}"
 			exit 1
@@ -169,13 +182,14 @@ select_toolchain()
 			absolute_path=$(cd `dirname ${TOOLCHAIN_ARM32}`; pwd)
 			TOOLCHAIN_GCC=${absolute_path}/bin/${GCC_ARM32}
 			TOOLCHAIN_OBJDUMP=${absolute_path}/bin/${OBJ_ARM32}
+			TOOLCHAIN_ADDR2LINE=${absolute_path}/bin/${ADDR2LINE_ARM32}
 		else
 			echo "Can't find toolchain: ${TOOLCHAIN_ARM32}"
 			exit 1
 		fi
 	fi
 
-	echo "toolchain: ${TOOLCHAIN_GCC}"
+	# echo "toolchain: ${TOOLCHAIN_GCC}"
 }
 
 sub_commands()
@@ -223,6 +237,13 @@ sub_commands()
 		;;
 
 		*)
+		# Search function and code position of address
+		if [ -z $(echo ${FUNCADDR} | sed 's/[0-9,a-f,A-F]//g') ] && [ ${FUNCADDR} ]; then
+			echo
+			sed -n "/${FUNCADDR}/p" ${OUTDIR}/u-boot.sym
+			${TOOLCHAIN_ADDR2LINE} -e ${OUTDIR}/u-boot ${FUNCADDR}
+			exit 0
+		fi
 		;;
 	esac
 }
