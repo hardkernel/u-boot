@@ -105,7 +105,14 @@ static int pwm_regulator_ofdata_to_platdata(struct udevice *dev)
 
 	priv->init_voltage = dev_read_u32_default(dev, "regulator-init-microvolt", -1);
 	if (priv->init_voltage < 0) {
-		debug("Cannot find regulator pwm init_voltage\n");
+		debug("Cannot find 'regulator-init-microvolt'\n");
+
+		/*
+		 * 1. Compatible legacy pwm-regulator driver on rkdevelop;
+		 * 2. Give pwm-regulator default init voltage 1.1v;
+		 */
+		priv->init_voltage = dev_read_u32_default(dev, "rockchip,pwm_voltage",
+							  1100000);
 	}
 
 	ret = uclass_get_device_by_ofnode(UCLASS_PWM, args.node, &priv->pwm);
@@ -129,8 +136,11 @@ static int pwm_regulator_probe(struct udevice *dev)
 	priv->max_voltage = uc_pdata->max_uV;
 	priv->min_voltage = uc_pdata->min_uV;
 
-	if (priv->init_voltage)
+	if (priv->init_voltage > 0) {
+		printf("pwm-regulator(%s): init %d uV\n",
+		       dev->name, priv->init_voltage);
 		pwm_regulator_set_voltage(dev, priv->init_voltage);
+	}
 
 	return 0;
 }
