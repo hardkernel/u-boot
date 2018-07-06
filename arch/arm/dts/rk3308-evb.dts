@@ -131,6 +131,7 @@
 		rockchip,data-mapping = "vesa";
 		rockchip,data-width = <18>;
 		rockchip,output = "rgb";
+		rgb-mode = "p666";
 		status = "disabled";
 		pinctrl-names = "default";
 		pinctrl-0 = <&spi_init_cmd>;
@@ -269,6 +270,10 @@
 
 };
 
+&display_subsystem {
+	status = "disabled";
+};
+
 &emmc {
 	cap-mmc-highspeed;
 	mmc-hs200-1_8v;
@@ -280,6 +285,10 @@
 
 &pwm0 {
 	status = "okay";
+};
+
+&pwm1 {
+	status = "disabled";
 };
 
 &saradc {
@@ -308,10 +317,6 @@
 
 &usb20_otg {
 	status = "okay";
-};
-
-&rgb {
-	status = "disabled";
 };
 
 &route_rgb {
