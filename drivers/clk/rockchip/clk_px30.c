@@ -323,7 +323,7 @@ static ulong px30_i2c_set_clk(struct px30_clk_priv *priv, ulong clk_id, uint hz)
 	int src_clk_div;
 
 	src_clk_div = DIV_ROUND_UP(priv->gpll_hz, hz);
-	assert(src_clk_div - 1 < 127);
+	assert(src_clk_div - 1 <= 127);
 
 	switch (clk_id) {
 	case SCLK_I2C0:
@@ -382,7 +382,7 @@ static ulong px30_nandc_set_clk(struct px30_clk_priv *priv,
 	/* Select nandc source from GPLL by default */
 	/* nandc clock defaulg div 2 internal, need provide double in cru */
 	src_clk_div = DIV_ROUND_UP(priv->gpll_hz, set_rate);
-	assert(src_clk_div - 1 < 31);
+	assert(src_clk_div - 1 <= 31);
 
 	rk_clrsetreg(&cru->clksel_con[15],
 		     NANDC_CLK_SEL_MASK | NANDC_PLL_MASK |
@@ -495,7 +495,7 @@ static ulong px30_pwm_set_clk(struct px30_clk_priv *priv, ulong clk_id, uint hz)
 	int src_clk_div;
 
 	src_clk_div = DIV_ROUND_UP(priv->gpll_hz, hz);
-	assert(src_clk_div - 1 < 127);
+	assert(src_clk_div - 1 <= 127);
 
 	switch (clk_id) {
 	case SCLK_PWM0:
@@ -537,7 +537,7 @@ static ulong px30_saradc_set_clk(struct px30_clk_priv *priv, uint hz)
 	int src_clk_div;
 
 	src_clk_div = DIV_ROUND_UP(OSC_HZ, hz);
-	assert(src_clk_div - 1 < 2047);
+	assert(src_clk_div - 1 <= 2047);
 
 	rk_clrsetreg(&cru->clksel_con[55],
 		     CLK_SARADC_DIV_CON_MASK,
@@ -574,7 +574,7 @@ static ulong px30_spi_set_clk(struct px30_clk_priv *priv, ulong clk_id, uint hz)
 	int src_clk_div;
 
 	src_clk_div = DIV_ROUND_UP(priv->gpll_hz, hz);
-	assert(src_clk_div - 1 < 127);
+	assert(src_clk_div - 1 <= 127);
 
 	switch (clk_id) {
 	case SCLK_SPI0:
@@ -628,7 +628,7 @@ static ulong px30_vop_set_clk(struct px30_clk_priv *priv, ulong clk_id, uint hz)
 	int src_clk_div;
 
 	src_clk_div = DIV_ROUND_UP(priv->gpll_hz, hz);
-	assert(src_clk_div - 1 < 31);
+	assert(src_clk_div - 1 <= 31);
 
 	switch (clk_id) {
 	case ACLK_VOPB:
@@ -700,7 +700,7 @@ static ulong px30_bus_set_clk(struct px30_clk_priv *priv, ulong clk_id,
 	switch (clk_id) {
 	case ACLK_BUS_PRE:
 		src_clk_div = DIV_ROUND_UP(priv->gpll_hz, hz);
-		assert(src_clk_div - 1 < 31);
+		assert(src_clk_div - 1 <= 31);
 		rk_clrsetreg(&cru->clksel_con[23],
 			     BUS_PLL_SEL_MASK | BUS_ACLK_DIV_MASK,
 			     BUS_PLL_SEL_GPLL << BUS_PLL_SEL_SHIFT |
@@ -708,7 +708,7 @@ static ulong px30_bus_set_clk(struct px30_clk_priv *priv, ulong clk_id,
 		break;
 	case HCLK_BUS_PRE:
 		src_clk_div = DIV_ROUND_UP(priv->gpll_hz, hz);
-		assert(src_clk_div - 1 < 31);
+		assert(src_clk_div - 1 <= 31);
 		rk_clrsetreg(&cru->clksel_con[24],
 			     BUS_PLL_SEL_MASK | BUS_HCLK_DIV_MASK,
 			     BUS_PLL_SEL_GPLL << BUS_PLL_SEL_SHIFT |
@@ -717,7 +717,7 @@ static ulong px30_bus_set_clk(struct px30_clk_priv *priv, ulong clk_id,
 	case PCLK_BUS_PRE:
 		src_clk_div =
 			DIV_ROUND_UP(px30_bus_get_clk(priv, ACLK_BUS_PRE), hz);
-		assert(src_clk_div - 1 < 3);
+		assert(src_clk_div - 1 <= 3);
 		rk_clrsetreg(&cru->clksel_con[24],
 			     BUS_PCLK_DIV_MASK,
 			     (src_clk_div - 1) << BUS_PCLK_DIV_SHIFT);
@@ -760,7 +760,7 @@ static ulong px30_peri_set_clk(struct px30_clk_priv *priv, ulong clk_id,
 	int src_clk_div;
 
 	src_clk_div = DIV_ROUND_UP(priv->gpll_hz, hz);
-	assert(src_clk_div - 1 < 31);
+	assert(src_clk_div - 1 <= 31);
 
 	/*
 	 * select gpll as pd_peri bus clock source and
@@ -1219,7 +1219,7 @@ static ulong px30_pclk_pmu_set_pmuclk(struct px30_pmuclk_priv *priv, ulong hz)
 	int src_clk_div;
 
 	src_clk_div = DIV_ROUND_UP(priv->gpll_hz, hz);
-	assert(src_clk_div - 1 < 31);
+	assert(src_clk_div - 1 <= 31);
 
 	rk_clrsetreg(&pmucru->pmu_clksel_con[0],
 		     CLK_PMU_PCLK_DIV_MASK,
