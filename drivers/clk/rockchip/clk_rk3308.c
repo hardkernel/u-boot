@@ -313,7 +313,7 @@ static ulong rk3308_i2c_set_clk(struct clk *clk, uint hz)
 	u32 src_clk_div, con_id;
 
 	src_clk_div = DIV_ROUND_UP(priv->dpll_hz, hz);
-	assert(src_clk_div - 1 < 127);
+	assert(src_clk_div - 1 <= 127);
 
 	switch (clk->id) {
 	case SCLK_I2C0:
@@ -433,7 +433,7 @@ static ulong rk3308_saradc_set_clk(struct clk *clk, uint hz)
 	int src_clk_div;
 
 	src_clk_div = DIV_ROUND_UP(OSC_HZ, hz);
-	assert(src_clk_div - 1 < 2047);
+	assert(src_clk_div - 1 <= 2047);
 
 	rk_clrsetreg(&cru->clksel_con[34],
 		     CLK_SARADC_DIV_CON_MASK,
@@ -476,7 +476,7 @@ static ulong rk3308_spi_set_clk(struct clk *clk, uint hz)
 	u32 src_clk_div, con_id;
 
 	src_clk_div = DIV_ROUND_UP(priv->dpll_hz, hz);
-	assert(src_clk_div - 1 < 127);
+	assert(src_clk_div - 1 <= 127);
 
 	switch (clk->id) {
 	case SCLK_SPI0:
@@ -520,7 +520,7 @@ static ulong rk3308_pwm_set_clk(struct clk *clk, uint hz)
 	int src_clk_div;
 
 	src_clk_div = DIV_ROUND_UP(priv->dpll_hz, hz);
-	assert(src_clk_div - 1 < 127);
+	assert(src_clk_div - 1 <= 127);
 
 	rk_clrsetreg(&cru->clksel_con[29],
 		     CLK_PWM_PLL_SEL_MASK | CLK_PWM_DIV_CON_MASK,
@@ -653,7 +653,7 @@ static ulong rk3308_bus_set_clk(struct rk3308_clk_priv *priv, ulong clk_id,
 	int src_clk_div;
 
 	src_clk_div = DIV_ROUND_UP(priv->dpll_hz, hz);
-	assert(src_clk_div - 1 < 31);
+	assert(src_clk_div - 1 <= 31);
 
 	/*
 	 * select dpll as pd_bus bus clock source and
@@ -716,7 +716,7 @@ static ulong rk3308_peri_set_clk(struct rk3308_clk_priv *priv, ulong clk_id,
 	int src_clk_div;
 
 	src_clk_div = DIV_ROUND_UP(priv->dpll_hz, hz);
-	assert(src_clk_div - 1 < 31);
+	assert(src_clk_div - 1 <= 31);
 
 	/*
 	 * select dpll as pd_peri bus clock source and
@@ -775,7 +775,7 @@ static ulong rk3308_audio_set_clk(struct rk3308_clk_priv *priv, ulong clk_id,
 	int src_clk_div;
 
 	src_clk_div = DIV_ROUND_UP(priv->vpll0_hz, hz);
-	assert(src_clk_div - 1 < 31);
+	assert(src_clk_div - 1 <= 31);
 
 	/*
 	 * select vpll0 as audio bus clock source and
