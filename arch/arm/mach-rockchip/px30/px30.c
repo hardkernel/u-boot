@@ -7,6 +7,7 @@
 #include <clk.h>
 #include <dm.h>
 #include <asm/io.h>
+#include <asm/arch/cru_px30.h>
 #include <asm/arch/grf_px30.h>
 #include <asm/arch/hardware.h>
 #include <asm/armv8/mmu.h>
@@ -49,11 +50,102 @@ int arch_cpu_init(void)
 
 	return 0;
 }
-#define GRF_BASE	0xff140000
+
+#define GRF_BASE		0xff140000
+#define CRU_BASE		0xff2b0000
 void board_debug_uart_init(void)
 {
-static struct px30_grf * const grf = (void *)GRF_BASE;
+	static struct px30_grf * const grf = (void *)GRF_BASE;
+
+	/* GRF_IOFUNC_CON0 */
+	enum {
+		CON_IOMUX_UART2SEL_SHIFT	= 10,
+		CON_IOMUX_UART2SEL_MASK = 3 << CON_IOMUX_UART2SEL_SHIFT,
+		CON_IOMUX_UART2SEL_M0	= 0,
+		CON_IOMUX_UART2SEL_M1,
+		CON_IOMUX_UART2SEL_USBPHY,
+	};
+
+#ifdef CONFIG_TPL_BUILD
+	static struct px30_cru * const cru = (void *)CRU_BASE;
+
+	/* GRF_GPIO2BH_IOMUX */
+	enum {
+		GPIO2B7_SHIFT		= 12,
+		GPIO2B7_MASK		= 0xf << GPIO2B7_SHIFT,
+		GPIO2B7_GPIO		= 0,
+		GPIO2B7_CIF_D10M0,
+		GPIO2B7_I2C2_SCL,
+
+		GPIO2B6_SHIFT		= 8,
+		GPIO2B6_MASK		= 0xf << GPIO2B6_SHIFT,
+		GPIO2B6_GPIO		= 0,
+		GPIO2B6_CIF_D1M0,
+		GPIO2B6_UART2_RXM1,
+
+		GPIO2B5_SHIFT		= 4,
+		GPIO2B5_MASK		= 0xf << GPIO2B5_SHIFT,
+		GPIO2B5_GPIO		= 0,
+		GPIO2B5_PWM2,
+
+		GPIO2B4_SHIFT		= 4,
+		GPIO2B4_MASK		= 0xf << GPIO2B4_SHIFT,
+		GPIO2B4_GPIO		= 0,
+		GPIO2B4_CIF_D0M0,
+		GPIO2B4_UART2_TXM1,
+	};
+
+	/* uart_sel_clk default select 24MHz */
+	rk_clrsetreg(&cru->clksel_con[37],
+		     UART2_PLL_SEL_MASK | UART2_DIV_CON_MASK,
+		     UART2_PLL_SEL_24M << UART2_PLL_SEL_SHIFT | 0);
+	rk_clrsetreg(&cru->clksel_con[38],
+		     UART2_CLK_SEL_MASK,
+		     UART2_CLK_SEL_UART2 << UART2_CLK_SEL_SHIFT);
+
+	/* Enable early UART2 */
+	rk_clrsetreg(&grf->iofunc_con0,
+		     CON_IOMUX_UART2SEL_MASK,
+		     CON_IOMUX_UART2SEL_M1 << CON_IOMUX_UART2SEL_SHIFT);
+
+	/*
+	 * Set iomux to UART2_M0 and UART2_M1.
+	 * Because uart2_rxm0 and uart2_txm0 are default reset value,
+	 * so only need set uart2_rxm1 and uart2_txm1 here.
+	 */
+	rk_clrsetreg(&grf->gpio2bh_iomux,
+		     GPIO2B6_MASK,
+		     GPIO2B6_UART2_RXM1 << GPIO2B6_SHIFT);
+	rk_clrsetreg(&grf->gpio2bh_iomux,
+		     GPIO2B4_MASK,
+		     GPIO2B4_UART2_TXM1 << GPIO2B4_SHIFT);
+#else
 #ifdef CONFIG_SPL_BUILD
+	/* GRF_GPIO1DL_IOMUX */
+	enum {
+		GPIO1D3_SHIFT		= 12,
+		GPIO1D3_MASK		= 0xf << GPIO1D3_SHIFT,
+		GPIO1D3_GPIO		= 0,
+		GPIO1D3_SDMMC_D1,
+		GPIO1D3_UART2_RXM0,
+
+		GPIO1D2_SHIFT		= 8,
+		GPIO1D2_MASK		= 0xf << GPIO1D2_SHIFT,
+		GPIO1D2_GPIO		= 0,
+		GPIO1D2_SDMMC_D0,
+		GPIO1D2_UART2_TXM0,
+
+		GPIO1D1_SHIFT		= 4,
+		GPIO1D1_MASK		= 0xf << GPIO1D1_SHIFT,
+		GPIO1D1_GPIO		= 0,
+		GPIO1D1_SDIO_D3,
+
+		GPIO1D0_SHIFT		= 4,
+		GPIO1D0_MASK		= 0xf << GPIO1D0_SHIFT,
+		GPIO1D0_GPIO		= 0,
+		GPIO1D0_SDIO_D2,
+	};
+
 	/* Do not set the iomux in U-Boot proper because SD card may using it */
 	/* Enable early UART2 channel m0 on the px30 */
 	rk_clrsetreg(&grf->gpio1dl_iomux,
@@ -65,6 +157,7 @@ static struct px30_grf * const grf = (void *)GRF_BASE;
 	rk_clrsetreg(&grf->iofunc_con0,
 		     CON_IOMUX_UART2SEL_MASK,
 		     CON_IOMUX_UART2SEL_M0 << CON_IOMUX_UART2SEL_SHIFT);
+#endif
 }
 
 int set_armclk_rate(void)
