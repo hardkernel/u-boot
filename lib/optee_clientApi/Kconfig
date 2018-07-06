@@ -23,8 +23,7 @@ config OPTEE_V2
 	  step.
 
 config OPTEE_ALWAYS_USE_SECURITY_PARTITION
-	bool "Support use emmc security partition for OPTEE version 2.0"
-	depends on OPTEE_V2
+	bool "Support use emmc security partition for OPTEE"
 	help
 	  U-boot can secure store data to security partition
 	  for nand or emmc, do not to store data to rpmb.
