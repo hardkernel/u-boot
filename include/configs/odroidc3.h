@@ -223,7 +223,15 @@
 			"run update;\n" \
 			"fi;fi;" \
 		"fi;\0" \
-
+	"set_bootargs_rootfs_from_2ndstorage="\
+		"setenv bootargs ${bootargs} root=/dev/mmcblk1p2 rootfstype=ext4 init=/sbin/init\0"\
+	"booting_from_spi="\
+		"run set_bootargs_rootfs_from_2ndstorage; "\
+		"sf probe; "\
+		"sf read 0x3000000 0x190000 0x900000; unzip 0x3000000 ${loadaddr}; "\
+		"sf read ${dtb_mem_addr} 0xA90000 0x10000; "\
+		"fatload mmc 0 ${initrd_high} uInitrd; "\
+		"booti ${loadaddr} ${initrd_high} ${dtb_mem_addr};\0"\
 
 #define CONFIG_PREBOOT  \
             "run bcb_cmd; "\
@@ -348,6 +356,8 @@
 /* SPI flash config */
 #ifdef CONFIG_AML_SPIFC
 	#define CONFIG_SPI_FLASH
+	/* max speed is 50MHz based on S905D2 SPIFC timing spec */
+	#define CONFIG_SF_DEFAULT_SPEED		50000000
 	#define CONFIG_DM_SPI_FLASH
 	#define CONFIG_CMD_SF
 	/* SPI flash surpport list */
