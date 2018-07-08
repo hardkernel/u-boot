@@ -166,15 +166,6 @@
 #define CONFIG_SYS_NAND_MX7_GPMI_62_ECC_BYTES
 
 /* Dynamic MTD partition support */
-#define CONFIG_MTD_PARTITIONS
-#define CONFIG_MTD_DEVICE	/* needed for mtdparts commands */
-#define MTDIDS_DEFAULT		"nand0=gpmi-nand"
-#define MTDPARTS_DEFAULT	"mtdparts=gpmi-nand:"		\
-				"512k(mx7-bcb),"		\
-				"1536k(u-boot1)ro,"		\
-				"1536k(u-boot2)ro,"		\
-				"512k(u-boot-env),"		\
-				"-(ubi)"
 
 /* DMA stuff, needed for GPMI/MXS NAND support */
 

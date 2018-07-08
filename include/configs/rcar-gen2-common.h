@@ -54,4 +54,10 @@
 #define CONFIG_ENV_SIZE		(CONFIG_ENV_SECT_SIZE)
 #define CONFIG_ENV_SIZE_REDUND	(CONFIG_SYS_MONITOR_LEN)
 
+/* SF MTD */
+#if defined(CONFIG_SPI_FLASH_MTD) && !defined(CONFIG_SPL_BUILD)
+#else
+#undef CONFIG_SPI_FLASH_MTD
+#endif
+
 #endif	/* __RCAR_GEN2_COMMON_H */

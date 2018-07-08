@@ -160,17 +160,8 @@
 #define CONFIG_BOOTP_GATEWAY
 #define CONFIG_BOOTP_HOSTNAME
 
-#if defined(CONFIG_CMD_JFFS2)
-# define CONFIG_MTD_PARTITIONS
-#endif
-
-#if defined(CONFIG_CMD_UBI)
-# define CONFIG_MTD_PARTITIONS
-#endif
-
 #if defined(CONFIG_MTD_PARTITIONS)
 /* MTD partitions */
-#define CONFIG_MTD_DEVICE	/* needed for mtdparts commands */
 #define CONFIG_FLASH_CFI_MTD
 #define MTDIDS_DEFAULT		"nor0=flash-0"
 

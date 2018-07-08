@@ -183,16 +183,6 @@
 /*
  * MTD Command for mtdparts
  */
-#define CONFIG_MTD_DEVICE
-#define CONFIG_MTD_PARTITIONS
-#ifdef CONFIG_SPI_FLASH
-#define MTDIDS_DEFAULT    "nor0=nor"
-#define MTDPARTS_DEFAULT  \
-	"mtdparts=nor:512k(uboot),64k(env),2m(kernel),-(rootfs)"
-#else
-#define MTDIDS_DEFAULT    "nand0=nand"
-#define MTDPARTS_DEFAULT  "mtdparts=nand:16m(uboot),1m(env),-(rootfs)"
-#endif
 
 /* Persistent Environment Config */
 #if defined(CONFIG_ENV_IS_IN_MMC)

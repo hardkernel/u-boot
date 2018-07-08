@@ -529,8 +529,6 @@
 /*
  * Dynamic MTD Partition support with mtdparts
  */
-#define CONFIG_MTD_DEVICE
-#define CONFIG_MTD_PARTITIONS
 #define CONFIG_FLASH_CFI_MTD
 #ifdef CONFIG_PHYS_64BIT
 #define MTDIDS_DEFAULT "nor0=fe8000000.nor"

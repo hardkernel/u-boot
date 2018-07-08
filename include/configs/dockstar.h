@@ -72,7 +72,5 @@
 /*
  * File system
  */
-#define CONFIG_MTD_DEVICE               /* needed for mtdparts commands */
-#define CONFIG_MTD_PARTITIONS
 
 #endif /* _CONFIG_DOCKSTAR_H */

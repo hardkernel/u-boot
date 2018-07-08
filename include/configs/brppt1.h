@@ -52,9 +52,6 @@
  * both for ease of use in U-Boot and for passing information on to
  * the Linux kernel.
  */
-#if defined(CONFIG_SPI_BOOT) || defined(CONFIG_NAND)
-#define CONFIG_MTD_DEVICE		/* Required for mtdparts */
-#endif /* CONFIG_SPI_BOOT, ... */
 
 #ifdef CONFIG_SPL_OS_BOOT
 #define CONFIG_SYS_SPL_ARGS_ADDR		0x80F80000

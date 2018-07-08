@@ -52,8 +52,6 @@
 #define CONFIG_BOOTP_HOSTNAME
 
 /* UBI Support for all Keymile boards */
-#define CONFIG_MTD_PARTITIONS
-#define CONFIG_MTD_DEVICE
 #define CONFIG_MTD_CONCAT
 
 #ifndef CONFIG_KM_DEF_ENV_BOOTPARAMS

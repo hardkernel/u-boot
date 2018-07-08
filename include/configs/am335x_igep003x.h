@@ -111,12 +111,6 @@
 /* NAND support */
 #define CONFIG_SYS_NAND_ONFI_DETECTION	1
 
-#define CONFIG_MTD_PARTITIONS
-#define CONFIG_MTD_DEVICE
-
-#define MTDIDS_DEFAULT			"nand0=omap2-nand.0"
-#define MTDPARTS_DEFAULT		"mtdparts=omap2-nand.0:512k(SPL),-(UBI)"
-
 /* SPL */
 
 /* UBI configuration */

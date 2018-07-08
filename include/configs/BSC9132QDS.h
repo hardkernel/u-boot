@@ -531,8 +531,6 @@ combinations. this should be removed later
  * Dynamic MTD Partition support with mtdparts
  */
 #ifdef CONFIG_MTD_NOR_FLASH
-#define CONFIG_MTD_DEVICE
-#define CONFIG_MTD_PARTITIONS
 #define CONFIG_FLASH_CFI_MTD
 #define MTDIDS_DEFAULT "nor0=88000000.nor,nand0=ff800000.flash,"
 #define MTDPARTS_DEFAULT "mtdparts=88000000.nor:256k(dtb),7m(kernel)," \

@@ -33,6 +33,11 @@
 
 #define CONFIG_REVISION_TAG		1
 #define CONFIG_ENV_OVERWRITE
+/* NAND: SPL falcon mode configs */
+#if defined(CONFIG_SPL_OS_BOOT)
+#define CONFIG_SYS_NAND_SPL_KERNEL_OFFS 0x2a0000
+#endif /* CONFIG_SPL_OS_BOOT */
+#endif /* CONFIG_NAND */
 
 /* Status LED */
 

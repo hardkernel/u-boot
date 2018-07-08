@@ -79,14 +79,6 @@
 #define CONFIG_PMECC_SECTOR_SIZE	512
 #define CONFIG_PMECC_INDEX_TABLE_OFFSET	0x8000
 
-#define CONFIG_MTD_PARTITIONS
-#define CONFIG_MTD_DEVICE
-#define MTDIDS_DEFAULT			"nand0=atmel_nand"
-#define MTDPARTS_DEFAULT						\
-	"mtdparts=atmel_nand:256k(bootstrap)ro,512k(uboot)ro,"		\
-	"256k(env),256k(env_redundant),256k(spare),"			\
-	"512k(dtb),6M(kernel)ro,-(rootfs)"
-
 #define CONFIG_EXTRA_ENV_SETTINGS                                       \
 	"console=console=ttyS0,115200\0"                                \
 	"mtdparts="MTDPARTS_DEFAULT"\0"					\

@@ -80,8 +80,6 @@
 #define CONFIG_SYS_FLASH_BANKS_SIZES	{ (32 * SZ_1M) }
 
 /* MTD support */
-#define CONFIG_MTD_DEVICE
-#define CONFIG_MTD_PARTITIONS
 
 #define MTDIDS_DEFAULT                  "nor0=8000000.nor"
 #define MTDPARTS_DEFAULT  \

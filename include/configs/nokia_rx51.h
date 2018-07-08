@@ -163,8 +163,6 @@
 #ifdef ONENAND_SUPPORT
 
 #define CONFIG_SYS_ONENAND_BASE		ONENAND_MAP
-#define CONFIG_MTD_DEVICE
-#define CONFIG_MTD_PARTITIONS
 
 #define MTDIDS_DEFAULT			"onenand0=onenand"
 #define MTDPARTS_DEFAULT		"mtdparts=onenand:" \

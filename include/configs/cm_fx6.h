@@ -48,8 +48,6 @@
 
 /* MTD support */
 #ifndef CONFIG_SPL_BUILD
-#define CONFIG_MTD_DEVICE
-#define CONFIG_MTD_PARTITIONS
 #define CONFIG_SPI_FLASH_MTD
 #endif
 

@@ -349,7 +349,6 @@ extern unsigned long get_sdram_size(void);
 #define CONFIG_SYS_NAND_BASE_PHYS	CONFIG_SYS_NAND_BASE
 #endif
 
-#define CONFIG_MTD_DEVICE
 #define CONFIG_MTD_PARTITION
 #define MTDIDS_DEFAULT			"nand0=ff800000.flash"
 #define MTDPARTS_DEFAULT		\

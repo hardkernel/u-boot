@@ -236,22 +236,6 @@
 #define CONFIG_CLOCKS
 #endif
 
-#ifndef CONFIG_DRIVER_TI_EMAC
-#endif
-
-#define CONFIG_MTD_DEVICE
-#define CONFIG_MTD_PARTITIONS
-
-#define MTDIDS_NAME_STR		"davinci_nand.0"
-#define MTDIDS_DEFAULT		"nand0=" MTDIDS_NAME_STR
-#define MTDPARTS_DEFAULT	"mtdparts=" MTDIDS_NAME_STR ":" \
-					"128k(u-boot-env),"	\
-					"1408k(u-boot),"	\
-					"128k(bootparms),"	\
-					"384k(factory-info),"	\
-					"4M(kernel),"	\
-					"-(rootfs)"
-
 /* defines for SPL */
 #define CONFIG_SPL_FRAMEWORK
 #define CONFIG_SYS_SPL_MALLOC_START	(CONFIG_SYS_TEXT_BASE - \

@@ -66,8 +66,6 @@
 #define CONFIG_NAND_ECC_BCH
 
 /* UBI/UBI config options */
-#define CONFIG_MTD_DEVICE
-#define CONFIG_MTD_PARTITIONS
 
 /* Ethernet config options */
 #define CONFIG_MII

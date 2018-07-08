@@ -32,8 +32,6 @@
 #define CONFIG_JFFS2_NAND
 
 /* Dynamic MTD partition support */
-#define CONFIG_MTD_PARTITIONS
-#define CONFIG_MTD_DEVICE
 
 #ifndef MTDIDS_DEFAULT
 #define MTDIDS_DEFAULT			"nand0=NAND"

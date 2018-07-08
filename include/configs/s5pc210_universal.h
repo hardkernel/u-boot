@@ -44,11 +44,6 @@
 #define CONFIG_SYS_MEMTEST_END		(CONFIG_SYS_SDRAM_BASE + 0x5000000)
 #define CONFIG_SYS_LOAD_ADDR		(CONFIG_SYS_SDRAM_BASE + 0x4800000)
 
-#define CONFIG_SYS_TEXT_BASE		0x44800000
-
-#define CONFIG_MTD_DEVICE
-#define CONFIG_MTD_PARTITIONS
-
 /* Actual modem binary size is 16MiB. Add 2MiB for bad block handling */
 #define MTDIDS_DEFAULT		"onenand0=samsung-onenand"
 

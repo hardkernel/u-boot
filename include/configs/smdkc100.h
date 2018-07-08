@@ -56,18 +56,6 @@
 /* allow to overwrite serial and ethaddr */
 #define CONFIG_ENV_OVERWRITE
 
-#define CONFIG_MTD_DEVICE
-#define CONFIG_MTD_PARTITIONS
-
-#define MTDIDS_DEFAULT		"onenand0=s3c-onenand"
-#define MTDPARTS_DEFAULT	"mtdparts=s3c-onenand:256k(bootloader)"\
-				",128k@0x40000(params)"\
-				",3m@0x60000(kernel)"\
-				",16m@0x360000(test)"\
-				",-(UBI)"
-
-#define NORMAL_MTDPARTS_DEFAULT MTDPARTS_DEFAULT
-
 #define CONFIG_BOOTCOMMAND	"run ubifsboot"
 
 #define CONFIG_RAMDISK_BOOT	"root=/dev/ram0 rw rootfstype=ext2" \

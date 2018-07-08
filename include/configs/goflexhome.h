@@ -43,8 +43,6 @@
  * Commands configuration
  */
 
-#define CONFIG_SYS_MVFS         /* Picks up Filesystem from mv-common.h */
-
 /*
  * mv-common.h should be defined after CMD configs since it used them
  * to enable certain macros

@@ -46,15 +46,6 @@
 #endif
 
 /* UBI and NAND partitioning */
-#ifdef CONFIG_CMD_NAND
-#define CONFIG_MTD_DEVICE
-#define CONFIG_MTD_PARTITIONS
-#define MTDIDS_DEFAULT			"nand0=gpmi-nand"
-#define MTDPARTS_DEFAULT \
-	"mtdparts=gpmi-nand:128k(bootstrap),1024k(boot),768k(env),-(root)"
-#else
-#define MTDPARTS_DEFAULT		""
-#endif
 
 /* FEC Ethernet on SoC */
 #ifdef CONFIG_CMD_NET

@@ -213,9 +213,6 @@
 /*
  * Partitions & Filsystems
  */
-#define CONFIG_MTD_DEVICE
-#define CONFIG_MTD_PARTITIONS
-#define CONFIG_SUPPORT_VFAT
 
 /*
  * Ethernet (on SOC imx FEC)

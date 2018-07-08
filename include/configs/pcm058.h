@@ -67,10 +67,6 @@
 /* DMA stuff, needed for GPMI/MXS NAND support */
 
 /* Filesystem support */
-#define CONFIG_MTD_PARTITIONS
-#define CONFIG_MTD_DEVICE
-#define MTDIDS_DEFAULT    "nand0=nand"
-#define MTDPARTS_DEFAULT  "mtdparts=nand:16m(uboot),1m(env),-(rootfs)"
 
 /* Physical Memory Map */
 #define CONFIG_NR_DRAM_BANKS           1

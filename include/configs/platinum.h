@@ -109,8 +109,6 @@
 #define CONFIG_PREBOOT
 
 /* MTD/UBI/UBIFS config */
-#define CONFIG_MTD_DEVICE
-#define CONFIG_MTD_PARTITIONS
 
 #if (CONFIG_SYS_NAND_MAX_CHIPS == 1)
 #define MTDIDS_DEFAULT		"nand0=gpmi-nand"
