@@ -50,9 +50,6 @@ struct pll_div {
 	.fbdiv = (u32)((u64)hz * _refdiv * _postdiv1 * _postdiv2 / OSC_HZ),\
 	.postdiv1 = _postdiv1, .postdiv2 = _postdiv2, .freq = hz};
 
-static const struct pll_div gpll_init_cfg = PLL_DIVISORS(GPLL_HZ, 1, 3, 1);
-static const struct pll_div cpll_init_cfg = PLL_DIVISORS(CPLL_HZ, 1, 2, 2);
-static const struct pll_div npll_init_cfg = PLL_DIVISORS(NPLL_HZ, 1, 2, 2);
 #if !defined(CONFIG_SPL_BUILD)
 static const struct pll_div ppll_init_cfg = PLL_DIVISORS(PPLL_HZ, 2, 2, 1);
 #endif
@@ -1157,11 +1154,6 @@ static void rkclk_init(struct rk3399_cru *cru)
 	rk_clrsetreg(&cru->clksel_con[12], 0xffff, 0x4101);
 	rk_clrsetreg(&cru->clksel_con[19], 0xffff, 0x033f);
 	rk_clrsetreg(&cru->clksel_con[56], 0x0003, 0x0003);
-
-	/* configure gpll cpll */
-	rkclk_set_pll(&cru->gpll_con[0], &gpll_init_cfg);
-	rkclk_set_pll(&cru->cpll_con[0], &cpll_init_cfg);
-	rkclk_set_pll(&cru->npll_con[0], &npll_init_cfg);
 
 	/* configure perihp aclk, hclk, pclk */
 	aclk_div = GPLL_HZ / PERIHP_ACLK_HZ - 1;
