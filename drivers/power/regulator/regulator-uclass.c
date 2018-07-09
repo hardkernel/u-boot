@@ -249,8 +249,13 @@ int regulator_autoset(struct udevice *dev)
 
 	if (uc_pdata->flags & REGULATOR_FLAG_AUTOSET_UV)
 		ret = regulator_set_value(dev, uc_pdata->min_uV);
-	if (uc_pdata->init_uV > 0)
+	if (uc_pdata->init_uV > 0) {
 		ret = regulator_set_value(dev, uc_pdata->init_uV);
+		if (!ret)
+			printf("regulator(%s) init %d uV\n",
+			       dev->name, uc_pdata->init_uV);
+	}
+
 	if (!ret && (uc_pdata->flags & REGULATOR_FLAG_AUTOSET_UA))
 		ret = regulator_set_current(dev, uc_pdata->min_uA);
 
