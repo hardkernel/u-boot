@@ -297,6 +297,18 @@
 	status = "okay";
 };
 
+&u2phy0 {
+	status = "okay";
+
+	u2phy0_otg: otg-port {
+		status = "okay";
+	};
+
+	u2phy0_host: host-port {
+		status = "okay";
+	};
+};
+
 &usb20_otg {
        status = "okay";
 };
