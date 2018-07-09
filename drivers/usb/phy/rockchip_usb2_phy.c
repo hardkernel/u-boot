@@ -87,8 +87,19 @@ static int otg_phy_parse(struct dwc2_udc *dev)
 	}
 
 	if (!matched) {
-		pr_err("Not found usb_otg device\n");
-		return -ENODEV;
+		/*
+		 * With kernel dtb support, rk3288 dwc2 otg node
+		 * use the rockchip legacy dwc2 driver "dwc_otg_310"
+		 * with the compatible "rockchip,rk3288_usb20_otg".
+		 */
+		node = fdt_node_offset_by_compatible(blob, -1,
+				"rockchip,rk3288_usb20_otg");
+		if (node > 0) {
+			matched = true;
+		} else {
+			pr_err("Not found usb_otg device\n");
+			return -ENODEV;
+		}
 	}
 
 	/* Find the usb phy node */
