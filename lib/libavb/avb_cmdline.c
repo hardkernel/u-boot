@@ -39,9 +39,9 @@ char* avb_sub_cmdline(AvbOps* ops,
                       bool using_boot_for_vbmeta,
                       const AvbCmdlineSubstList* additional_substitutions) {
   const char* part_name_str[NUM_GUIDS] = {"system", "boot", "vbmeta"};
-  const char* replace_str[NUM_GUIDS] = {"$(ANDROID_SYSTEM_PARTUUID)",
-                                        "$(ANDROID_BOOT_PARTUUID)",
-                                        "$(ANDROID_VBMETA_PARTUUID)"};
+  const char* replace_str[NUM_GUIDS] = {"PARTUUID=$(ANDROID_SYSTEM_PARTUUID)",
+                                        "PARTUUID=$(ANDROID_BOOT_PARTUUID)",
+                                        "PARTUUID=$(ANDROID_VBMETA_PARTUUID)"};
   char* ret = NULL;
   AvbIOResult io_ret;
   size_t n;
@@ -225,14 +225,11 @@ AvbSlotVerifyResult avb_append_options(
   const char* verity_mode = "invalid";
   bool is_device_unlocked;
   AvbIOResult io_ret;
-  char vbmeta_partition[256];
 
-  snprintf(vbmeta_partition, sizeof(vbmeta_partition) - strlen("dev/block/"), "/dev/block/%s",
-		  slot_data->vbmeta_images->partition_name);
   /* Add androidboot.vbmeta.device option. */
   if (!cmdline_append_option(slot_data,
                              "androidboot.vbmeta.device",
-                             vbmeta_partition)) {
+                             "PARTUUID=$(ANDROID_VBMETA_PARTUUID)")) {
     ret = AVB_SLOT_VERIFY_RESULT_ERROR_OOM;
     goto out;
   }

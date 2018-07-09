@@ -1206,6 +1206,7 @@ prepare: prepare0
 define filechk_version.h
 	(echo \#define PLAIN_VERSION \"$(UBOOTRELEASE)\"; \
 	echo \#define U_BOOT_VERSION \"U-Boot \" PLAIN_VERSION; \
+	echo \#define CONFIG_SYSTEM_AS_ROOT \"${SYSTEMMODE}\"; \
 	echo \#define CC_VERSION_STRING \"$$($(CC) --version | head -n 1)\"; \
 	echo \#define LD_VERSION_STRING \"$$($(LD) --version | head -n 1)\"; )
 endef

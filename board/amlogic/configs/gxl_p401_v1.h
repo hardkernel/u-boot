@@ -115,7 +115,7 @@
         "active_slot=_a\0"\
         "boot_part=boot\0"\
         "initargs="\
-            "rootfstype=ramfs init=/init console=ttyS0,115200 no_console_suspend earlycon=aml_uart,0xc81004c0 ramoops.pstore_en=1 ramoops.record_size=0x8000 ramoops.console_size=0x4000 "\
+            "init=/init console=ttyS0,115200 no_console_suspend earlycon=aml_uart,0xc81004c0 ramoops.pstore_en=1 ramoops.record_size=0x8000 ramoops.console_size=0x4000 "\
             "\0"\
         "upgrade_check="\
             "echo upgrade_step=${upgrade_step}; "\
@@ -127,6 +127,19 @@
             "setenv bootargs ${initargs} androidboot.selinux=${EnableSelinux} logo=${display_layer},loaded,${fb_addr},${outputmode} maxcpus=${maxcpus} vout=${outputmode},enable hdmimode=${hdmimode} cvbsmode=${cvbsmode} hdmitx=${cecconfig} cvbsdrv=${cvbs_drv}  pq=${pq} androidboot.firstboot=${firstboot} jtag=${jtag}; "\
 	"setenv bootargs ${bootargs} androidboot.hardware=amlogic;"\
             "run cmdline_keys;"\
+            "get_system_as_root_mode;"\
+            "echo system_mode: ${system_mode};"\
+            "if test ${system_mode} != 1; then "\
+                    "setenv bootargs ${bootargs} rootfstype=ramfs;"\
+            "fi;"\
+            "if test ${system_mode} = 1; then "\
+                "get_rebootmode;"\
+                "if test ${reboot_mode} = factory_reset; then "\
+                    "setenv bootargs ${bootargs} rootfstype=ramfs;"\
+                 "else "\
+                    "setenv bootargs ${bootargs} ro rootwait skip_initramfs;"\
+                 "fi;"\
+            "fi;"\
             "\0"\
         "switch_bootmode="\
             "get_rebootmode;"\

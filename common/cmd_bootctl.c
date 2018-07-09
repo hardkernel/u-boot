@@ -19,6 +19,8 @@
 #include <config.h>
 #include <asm/arch/io.h>
 #include <partition_table.h>
+#include <version.h>
+
 
 #ifdef CONFIG_BOOTLOADER_CONTROL_BLOCK
 extern int store_read_ops(
@@ -370,6 +372,26 @@ static int do_SetActiveSlot(
     return 0;
 }
 
+int do_GetSystemMode (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+    char* system;
+#ifdef CONFIG_SYSTEM_AS_ROOT
+    system = CONFIG_SYSTEM_AS_ROOT;
+#else
+    setenv("system_mode","0");
+    return 0;
+#endif
+    strcpy(system, CONFIG_SYSTEM_AS_ROOT);
+    printf("CONFIG_SYSTEM_AS_ROOT: %s \n", CONFIG_SYSTEM_AS_ROOT);
+    if (strcmp(system, "systemroot") == 0) {
+        setenv("system_mode","1");
+    }
+    else
+        setenv("system_mode","0");
+
+    return 0;
+
+}
 
 #endif /* CONFIG_BOOTLOADER_CONTROL_BLOCK */
 
@@ -386,4 +408,11 @@ U_BOOT_CMD(
     "set_active_slot",
     "\nThis command will set active slot\n"
     "So you can execute command: set_active_slot a"
+);
+
+U_BOOT_CMD(
+    get_system_as_root_mode, 1,	0, do_GetSystemMode,
+    "get_system_as_root_mode",
+    "\nThis command will get system_as_root_mode\n"
+    "So you can execute command: get_system_as_root_mode"
 );
