@@ -322,10 +322,6 @@ static int _buck_set_enable(struct udevice *pmic, int buck, bool enable)
 					      0, 3 << (buck * 2));
 			if (ret)
 				return ret;
-			ret = pmic_clrsetbits(pmic, REG_DCDC_UV_ACT,
-					      1 << buck, 0);
-			if (ret)
-				return ret;
 		}
 		ret = pmic_clrsetbits(pmic, REG_DCDC_EN, mask,
 				      enable ? mask : 0);
