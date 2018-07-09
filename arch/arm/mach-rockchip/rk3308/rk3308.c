@@ -7,6 +7,7 @@
 #include <asm/io.h>
 #include <asm/arch/grf_rk3308.h>
 #include <asm/arch/hardware.h>
+#include <asm/gpio.h>
 #include <debug_uart.h>
 
 #ifdef CONFIG_ARM64
@@ -72,6 +73,53 @@ enum {
 	UART2_IO_SEL_M1,
 	UART2_IO_SEL_USB,
 };
+
+enum {
+	IOVSEL3_CTRL_SHIFT	= 8,
+	IOVSEL3_CTRL_MASK	= BIT(8),
+	VCCIO3_SEL_BY_GPIO	= 0,
+	VCCIO3_SEL_BY_IOVSEL3,
+
+	IOVSEL3_SHIFT		= 3,
+	IOVSEL3_MASK		= BIT(3),
+	VCCIO3_3V3		= 0,
+	VCCIO3_1V8,
+};
+
+/*
+ * The voltage of VCCIO3(which is the voltage domain of emmc/flash/sfc
+ * interface) can indicated by GPIO0_A4 or io_vsel3. The SOC defaults
+ * use GPIO0_A4 to indicate power supply voltage for VCCIO3 by hardware,
+ * then we can switch to io_vsel3 after system power on, and release GPIO0_A4
+ * for other usage.
+ */
+
+#define GPIO0_A4	4
+
+int rk_board_init(void)
+{
+	static struct rk3308_grf * const grf = (void *)GRF_BASE;
+	u32 val;
+	int ret;
+
+	ret = gpio_request(GPIO0_A4, "gpio0_a4");
+	if (ret < 0) {
+		debug("request for gpio0_a4 failed:%d\n", ret);
+		return ret;
+	}
+
+	gpio_direction_input(GPIO0_A4);
+
+	if (gpio_get_value(GPIO0_A4))
+		val = VCCIO3_SEL_BY_IOVSEL3 << IOVSEL3_CTRL_SHIFT |
+		      VCCIO3_1V8 << IOVSEL3_SHIFT;
+	else
+		val = VCCIO3_SEL_BY_IOVSEL3 << IOVSEL3_CTRL_SHIFT |
+		      VCCIO3_3V3 << IOVSEL3_SHIFT;
+	rk_clrsetreg(&grf->soc_con0, IOVSEL3_CTRL_MASK | IOVSEL3_MASK, val);
+
+	return 0;
+}
 
 void board_debug_uart_init(void)
 {
