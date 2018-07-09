@@ -217,7 +217,7 @@ int dwc3_gadget_ep0_queue(struct usb_ep *ep, struct usb_request *request,
 	struct dwc3_ep			*dep = to_dwc3_ep(ep);
 	struct dwc3			*dwc = dep->dwc;
 
-	unsigned long			flags;
+	unsigned long			flags = 0;
 
 	int				ret;
 
@@ -284,7 +284,7 @@ int __dwc3_gadget_ep0_set_halt(struct usb_ep *ep, int value)
 
 int dwc3_gadget_ep0_set_halt(struct usb_ep *ep, int value)
 {
-	unsigned long			flags;
+	unsigned long			flags = 0;
 	int				ret;
 
 	spin_lock_irqsave(&dwc->lock, flags);
