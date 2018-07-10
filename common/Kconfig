@@ -111,6 +111,10 @@ config BOOTSTAGE_STASH_SIZE
 	  This should be large enough to hold the bootstage stash. A value of
 	  4096 (4KiB) is normally plenty.
 
+config BOOTSTAGE_PRINTF_TIMESTAMP
+	bool "Support printf timestamp"
+	help
+	  Enabling this will support printf timestamp.
 endmenu
 
 menu "Boot media"

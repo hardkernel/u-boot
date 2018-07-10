@@ -19,6 +19,7 @@
 #include <exports.h>
 #include <environment.h>
 #include <watchdog.h>
+#include <vsprintf.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -516,11 +517,51 @@ void putc(const char c)
 	}
 }
 
+#if (!defined(CONFIG_SPL_BUILD) && defined(CONFIG_BOOTSTAGE_PRINTF_TIMESTAMP))
+static void vspfunc(char *buf, size_t size, char *format, ...)
+{
+	va_list ap;
+
+	va_start(ap, format);
+	vsnprintf(buf, size, format, ap);
+	va_end(ap);
+}
+
+void puts(const char *s)
+{
+	unsigned long ts_sec, ts_msec, ticks;
+	char pr_timestamp[32], *p;
+
+	while (*s) {
+		if (*s == '\n') {
+			gd->new_line = 1;
+			putc(*s++);
+			continue;
+		}
+
+		if (gd->new_line) {
+			gd->new_line = 0;
+			ticks = (get_ticks() / 24ULL);
+			ts_sec = ticks / 1000000;
+			ts_msec = ticks % 1000000;
+			vspfunc(pr_timestamp, sizeof(pr_timestamp),
+				"[%5lu.%06lu] ", ts_sec, ts_msec);
+			p = pr_timestamp;
+			while (*p)
+				putc(*p++);
+		}
+
+		putc(*s++);
+	}
+}
+#else
 void puts(const char *s)
 {
 	while (*s)
 		putc(*s++);
 }
+#endif
+
 
 #ifdef CONFIG_CONSOLE_RECORD
 int console_record_init(void)
