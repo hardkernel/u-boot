@@ -275,6 +275,7 @@ static const struct rk8xx_reg_info *get_buck_reg(struct udevice *pmic,
 static int _buck_set_value(struct udevice *pmic, int buck, int uvolt)
 {
 	const struct rk8xx_reg_info *info = get_buck_reg(pmic, buck, uvolt);
+	struct rk8xx_priv *priv = dev_get_priv(pmic);
 	int mask = info->vsel_mask;
 	int val;
 
@@ -289,7 +290,12 @@ static int _buck_set_value(struct udevice *pmic, int buck, int uvolt)
 	debug("%s: volt=%d, buck=%d, reg=0x%x, mask=0x%x, val=0x%x\n",
 	      __func__, uvolt, buck+1, info->vsel_reg, mask, val);
 
-	return pmic_clrsetbits(pmic, info->vsel_reg, mask, val);
+	if (priv->variant == RK816_ID) {
+		pmic_clrsetbits(pmic, info->vsel_reg, mask, val);
+		return pmic_clrsetbits(pmic, RK816_REG_DCDC_EN2, 1 << 7, 1 << 7);
+	} else {
+		return pmic_clrsetbits(pmic, info->vsel_reg, mask, val);
+	}
 }
 
 static int _buck_set_enable(struct udevice *pmic, int buck, bool enable)
