@@ -223,6 +223,7 @@ static int rkclk_configure_ddr(struct rk3288_cru *cru, struct rk3288_grf *grf,
 #define VCO_MIN_KHZ	440000
 #define FREF_MAX_KHZ	2200000
 #define FREF_MIN_KHZ	269
+#define PLL_LIMIT_FREQ	600000000
 
 static int pll_para_config(ulong freq_hz, struct pll_div *div, uint *ext_div)
 {
@@ -241,7 +242,7 @@ static int pll_para_config(ulong freq_hz, struct pll_div *div, uint *ext_div)
 
 	no = DIV_ROUND_UP(VCO_MIN_KHZ, freq_khz);
 	if (ext_div) {
-		*ext_div = DIV_ROUND_UP(no, max_no);
+		*ext_div = DIV_ROUND_UP(PLL_LIMIT_FREQ, freq_hz);
 		no = DIV_ROUND_UP(no, *ext_div);
 	}
 
