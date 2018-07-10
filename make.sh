@@ -47,29 +47,36 @@ PLATFORM_AARCH32=
 help()
 {
 	echo
-	echo "Usage: ./make.sh [board|subcmd] [O=<dir>]"
+	echo "Usage:"
+	echo "	./make.sh [board|subcmd] [O=<dir>]"
+	echo
+	echo "	 - board: board name of defconfig"
+	echo "	 - subcmd: loader|loader-all|trust|uboot|elf|map|sym|<addr>|"
+	echo "	 - O=<dir>: assigned output directory"
 	echo
 	echo "Example:"
 	echo
-	echo "1. Build:"
-	echo "	./make.sh evb-rk3399     	---- build for evb-rk3399_defconfig"
+	echo "1. Build board:"
+	echo "	./make.sh evb-rk3399            ---- build for evb-rk3399_defconfig"
 	echo "	./make.sh evb-rk3399 O=rockdev  ---- build for evb-rk3399_defconfig with output dir "./rockdev""
-	echo "	./make.sh firefly-rk3288 	---- build for firefly-rk3288_defconfig"
-	echo "	./make.sh			---- build with exist .config"
+	echo "	./make.sh firefly-rk3288        ---- build for firefly-rk3288_defconfig"
+	echo "	./make.sh                       ---- build with exist .config"
 	echo
 	echo "	After build, images of uboot, loader and trust are all generated."
 	echo
-	echo "2. Subcmd helper:"
-	echo "	./make.sh trust		--- pack trust.img without rebuild project"
-	echo "	./make.sh loader	--- pack loader bin without rebuild project"
-	echo "	./make.sh uboot		--- pack uboot.img without rebuild project"
+	echo "2. Pack helper:"
+	echo "	./make.sh trust         --- pack trust.img"
+	echo "	./make.sh uboot         --- pack uboot.img"
+	echo "	./make.sh loader        --- pack loader bin"
+	echo "	./make.sh loader-all	--- pack loader bin (all supported loaders)"
 	echo
 	echo "3. Debug helper:"
-	echo "	./make.sh elf		--- dump elf file with -D(default)"
-	echo "	./make.sh elf-S		--- dump elf file with -S"
-	echo "	./make.sh <addr>	--- dump function name and code position of address"
-	echo "	./make.sh map		--- cat u-boot.map"
-	echo "	./make.sh sym		--- cat u-boot.sym"
+	echo "	./make.sh elf           --- dump elf file with -D(default)"
+	echo "	./make.sh elf-S         --- dump elf file with -S"
+	echo "	./make.sh elf-d         --- dump elf file with -d"
+	echo "	./make.sh <addr>        --- dump function symbol and code position of address"
+	echo "	./make.sh map           --- cat u-boot.map"
+	echo "	./make.sh sym           --- cat u-boot.sym"
 }
 
 prepare()
