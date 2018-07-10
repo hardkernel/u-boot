@@ -234,6 +234,11 @@
                 "if keyman read deviceid ${loadaddr} str; then "\
                     "setenv bootargs ${bootargs} androidboot.deviceid=${deviceid};"\
                 "fi;"\
+                "if keyman read region_code ${loadaddr} str; then "\
+                    "setenv bootargs ${bootargs} androidboot.wificountrycode=${region_code};"\
+                "else "\
+                    "setenv bootargs ${bootargs} androidboot.wificountrycode=US;"\
+                "fi;"\
             "fi;"\
             "\0"\
         "bcb_cmd="\
