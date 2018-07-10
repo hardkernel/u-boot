@@ -84,7 +84,7 @@ prepare()
 	else
 		case $BOARD in
 			# Parse from exit .config
-			''|elf*|trust|loader|uboot|map|sym)
+			''|elf*|loader*|trust|uboot|map|sym)
 			count=`find -name .config | wc -l`
 			dir=`find -name .config`
 			# Good, find only one .config
@@ -124,7 +124,7 @@ prepare()
 		;;
 
 		#Subcmd
-		''|elf*|trust|loader|uboot|map|sym)
+		''|elf*|loader*|trust|uboot|map|sym)
 		;;
 
 		*)
@@ -194,7 +194,7 @@ select_toolchain()
 
 sub_commands()
 {
-	local cmd=${SUBCMD%-*} elfopt=${SUBCMD#*-}
+	local cmd=${SUBCMD%-*} opt=${SUBCMD#*-}
 
 	case $cmd in
 		elf)
@@ -203,10 +203,10 @@ sub_commands()
 			exit 1
 		else
 			# default 'cmd' without option, use '-D'
-			if [ "${cmd}" = 'elf' -a "${elfopt}" = 'elf' ]; then
-				elfopt=D
+			if [ "${cmd}" = 'elf' -a "${opt}" = 'elf' ]; then
+				opt=D
 			fi
-			${TOOLCHAIN_OBJDUMP} -${elfopt} ${OUTDIR}/u-boot | less
+			${TOOLCHAIN_OBJDUMP} -${opt} ${OUTDIR}/u-boot | less
 			exit 0
 		fi
 		;;
@@ -227,7 +227,7 @@ sub_commands()
 		;;
 
 		loader)
-		pack_loader_image
+		pack_loader_image ${opt}
 		exit 0
 		;;
 
@@ -330,7 +330,7 @@ pack_uboot_image()
 
 pack_loader_image()
 {
-	local files ini
+	local mode=$1 files ini
 
 	if [ ! -f ${RKBIN}/RKBOOT/${RKCHIP}MINIALL.ini ]; then
 		echo "pack loader failed! Can't find: ${RKBIN}/RKBOOT/${RKCHIP}MINIALL.ini"
@@ -338,14 +338,20 @@ pack_loader_image()
 	fi
 
 	cd ${RKBIN}
-	files=`ls ${RKBIN}/RKBOOT/${RKCHIP}MINIALL*.ini`
-	for ini in $files
-	do
-		if [ -f "$ini" ]; then
-			${RKTOOLS}/boot_merger --replace tools/rk_tools/ ./ $ini
-			echo "pack loader okay! Input: $ini"
-		fi
-	done
+
+	if [ "${mode}" = 'all' ]; then
+		files=`ls ${RKBIN}/RKBOOT/${RKCHIP}MINIALL*.ini`
+		for ini in $files
+		do
+			if [ -f "$ini" ]; then
+				${RKTOOLS}/boot_merger --replace tools/rk_tools/ ./ $ini
+				echo "pack loader okay! Input: $ini"
+			fi
+		done
+	else
+		${RKTOOLS}/boot_merger --replace tools/rk_tools/ ./ ${RKBIN}/RKBOOT/${RKCHIP}MINIALL.ini
+		echo "pack loader okay! Input: ${RKBIN}/RKBOOT/${RKCHIP}MINIALL.ini"
+	fi
 
 	cd - && mv ${RKBIN}/*_loader_*.bin ./
 }
