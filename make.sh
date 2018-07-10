@@ -136,7 +136,7 @@ prepare()
 
 		*)
 		#Func address is valid ?
-		if [ -z $(echo ${FUNCADDR} | sed 's/[0-9,a-f,A-F]//g') ]; then
+		if [ -z $(echo ${FUNCADDR} | sed 's/[0-9,a-f,A-F,x,X]//g') ]; then
 			return
 		elif [ ! -f configs/${BOARD}_defconfig ]; then
 			echo
@@ -245,7 +245,13 @@ sub_commands()
 
 		*)
 		# Search function and code position of address
-		if [ -z $(echo ${FUNCADDR} | sed 's/[0-9,a-f,A-F]//g') ] && [ ${FUNCADDR} ]; then
+		if [ -z $(echo ${FUNCADDR} | sed 's/[0-9,a-f,A-F,x,X]//g') ] && [ ${FUNCADDR} ]; then
+			# With prefix: '0x' or '0X'
+			if [ `echo ${FUNCADDR} | sed -n "/0[x,X]/p" | wc -l` -ne 0 ]; then
+				FUNCADDR=`echo $FUNCADDR | awk '{ print strtonum($0) }'`
+				FUNCADDR=`echo "obase=16;${FUNCADDR}"|bc |tr '[A-Z]' '[a-z]'`
+			fi
+
 			echo
 			sed -n "/${FUNCADDR}/p" ${OUTDIR}/u-boot.sym
 			${TOOLCHAIN_ADDR2LINE} -e ${OUTDIR}/u-boot ${FUNCADDR}
