@@ -168,7 +168,6 @@ ddr_set_t __ddr_setting[] = {
 	.dfi_odt_config			= 0x0c0c,
 	.PllBypassEn			= 0, //bit0-ps0,bit1-ps1
 	.ddr_rdbi_wr_enable		= 0,
-	.pll_ssc_mode			= (1<<20) | (1<<8) | (2<<4) | 0,//center_ssc_1000ppm
 	.clk_drv_ohm			= 40,
 	.cs_drv_ohm				= 40,
 	.ac_drv_ohm				= 40,
@@ -224,7 +223,7 @@ ddr_set_t __ddr_setting[] = {
 	 *     2. config 3000ppm down ss. then mode=2, strength=6
 	 *        .pll_ssc_mode = (1<<20) | (1<<8) | (6 << 4) | 2,
 	 */
-	.pll_ssc_mode			= 0,
+	.pll_ssc_mode			= (1<<20) | (1<<8) | (2<<4) | 0,//center_ssc_1000ppm
 	.ddr_func				= DDR_FUNC,
 	.magic					= DRAM_CFG_MAGIC,
 },
@@ -252,7 +251,6 @@ ddr_set_t __ddr_setting[] = {
 	.dfi_odt_config			= 0x0808,
 	.PllBypassEn			= 0, //bit0-ps0,bit1-ps1
 	.ddr_rdbi_wr_enable		= 0,
-	.pll_ssc_mode			= (1<<20) | (1<<8) | (2<<4) | 0,//center_ssc_1000ppm
 	.clk_drv_ohm			= 40,
 	.cs_drv_ohm				= 40,
 	.ac_drv_ohm				= 40,
@@ -296,7 +294,7 @@ ddr_set_t __ddr_setting[] = {
 	 *     2. config 3000ppm down ss. then mode=2, strength=6
 	 *        .pll_ssc_mode = (1<<20) | (1<<8) | (6 << 4) | 2,
 	 */
-	.pll_ssc_mode			= 0,
+	.pll_ssc_mode			= (1<<20) | (1<<8) | (2<<4) | 0,//center_ssc_1000ppm
 	.ddr_func				= DDR_FUNC,
 	.magic					= DRAM_CFG_MAGIC,
 	.diagnose				= CONFIG_DIAGNOSE_DISABLE,
@@ -325,7 +323,6 @@ ddr_set_t __ddr_setting[] = {
 	.dfi_odt_config			= 0x0808,
 	.PllBypassEn			= 0, //bit0-ps0,bit1-ps1
 	.ddr_rdbi_wr_enable		= 0,
-	.pll_ssc_mode			= (1<<20) | (1<<8) | (2<<4) | 0,//center_ssc_1000ppm
 	.clk_drv_ohm			= 40,
 	.cs_drv_ohm				= 40,
 	.ac_drv_ohm				= 40,
@@ -368,7 +365,7 @@ ddr_set_t __ddr_setting[] = {
 	 *     2. config 3000ppm down ss. then mode=2, strength=6
 	 *        .pll_ssc_mode = (1<<20) | (1<<8) | (6 << 4) | 2,
 	 */
-	.pll_ssc_mode			= 0,
+	.pll_ssc_mode			= (1<<20) | (1<<8) | (2<<4) | 0,//center_ssc_1000ppm
 	.ddr_func				= DDR_FUNC,
 	.magic					= DRAM_CFG_MAGIC,
 },
