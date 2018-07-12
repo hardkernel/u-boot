@@ -160,9 +160,30 @@
 		always-on;
 	};
 
-	display-subsystem {
+	display_subsystem: display-subsystem {
 		compatible = "rockchip,display-subsystem";
 		ports = <&vopl_out>, <&vopb_out>;
+		status = "disabled";
+
+		route {
+			route_hdmi: route-hdmi {
+				status = "disabled";
+				logo,uboot = "logo.bmp";
+				logo,kernel = "logo_kernel.bmp";
+				logo,mode = "center";
+				charge_logo,mode = "center";
+				connect = <&vopb_out_hdmi>;
+			};
+
+			route_edp: route-edp {
+				status = "disabled";
+				logo,uboot = "logo.bmp";
+				logo,kernel = "logo_kernel.bmp";
+				logo,mode = "center";
+				charge_logo,mode = "center";
+				connect = <&vopl_out_edp>;
+			};
+		};
 	};
 
 	sdmmc: dwmmc@ff0c0000 {
@@ -662,7 +683,7 @@
 
 	vopb: vop@ff930000 {
 		u-boot,dm-pre-reloc;
-		compatible = "rockchip,rk3288-vop";
+		compatible = "rockchip,rk3288-vop-big";
 		reg = <0xff930000 0x19c>;
 		interrupts = <GIC_SPI 15 IRQ_TYPE_LEVEL_HIGH>;
 		clocks = <&cru ACLK_VOP0>, <&cru DCLK_VOP0>, <&cru HCLK_VOP0>;
@@ -706,7 +727,7 @@
 	};
 
 	vopl: vop@ff940000 {
-		compatible = "rockchip,rk3288-vop";
+		compatible = "rockchip,rk3288-vop-lit";
 		reg = <0xff940000 0x19c>;
 		interrupts = <GIC_SPI 16 IRQ_TYPE_LEVEL_HIGH>;
 		clocks = <&cru ACLK_VOP1>, <&cru DCLK_VOP1>, <&cru HCLK_VOP1>;
@@ -751,7 +772,7 @@
 	};
 
 	edp: edp@ff970000 {
-		compatible = "rockchip,rk3288-edp";
+		compatible = "rockchip,rk3288-dp";
 		reg = <0xff970000 0x4000>;
 		interrupts = <GIC_SPI 98 IRQ_TYPE_LEVEL_HIGH>;
 		clocks = <&cru SCLK_EDP>, <&cru SCLK_EDP_24M>, <&cru PCLK_EDP_CTRL>;
@@ -762,6 +783,9 @@
 		power-domains = <&power RK3288_PD_VIO>;
 		status = "disabled";
 		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
 			edp_in: port {
 				#address-cells = <1>;
 				#size-cells = <0>;
