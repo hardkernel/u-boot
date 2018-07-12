@@ -173,30 +173,12 @@ int board_late_init(void)
 int init_kernel_dtb(void)
 {
 	int ret = 0;
-	struct mmc *mmc;
-	struct udevice *dev;
 	ulong fdt_addr = 0;
 
 	ret = mmc_initialize(gd->bd);
 	if (ret)
-		goto scan_nand;
-	mmc = find_mmc_device(0);
-	if (!mmc) {
-		printf("no mmc device at slot 0\n");
-		goto scan_nand;
-	}
-	ret = mmc_init(mmc);
-	if (!ret)
-		goto init_dtb;
-	printf("%s mmc init fail %d\n", __func__, ret);
-scan_nand:
-	ret = uclass_get_device(UCLASS_RKNAND, 0, &dev);
-	if (ret) {
-		printf("%s: Cannot find rknand device\n", __func__);
-		return -1;
-	}
+		debug("%s mmc initialized fail\n", __func__);
 
-init_dtb:
 	fdt_addr = env_get_ulong("fdt_addr_r", 16, 0);
 	if (!fdt_addr) {
 		printf("No Found FDT Load Address.\n");
