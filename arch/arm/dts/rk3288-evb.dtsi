@@ -140,20 +140,45 @@
 		pinctrl-names = "default";
 		pinctrl-0 = <&pwm0_pin>;
 		pwm-delay-us = <10000>;
-		status = "disabled";
+		status = "okay";
 	};
 
-	panel: panel {
-		compatible = "simple-panel";
-		power-supply = <&vcc_io>;
+	edp_panel: edp-panel {
+		compatible ="lg,lp079qx1-sp0v", "simple-panel";
 		backlight = <&backlight>;
-		enable-gpios = <&gpio7 3 GPIO_ACTIVE_HIGH>;
-		status = "disabled";
+		power-supply = <&vcc_io>;
+		enable-gpios = <&gpio7 4 GPIO_ACTIVE_HIGH>;
+		prepare-delay-ms = <20>;
+		enable-delay-ms = <20>;
+
+		ports {
+			panel_in: endpoint {
+				remote-endpoint = <&edp_out>;
+			};
+		};
 	};
+
 };
 
 &cpu0 {
 	cpu0-supply = <&vdd_cpu>;
+};
+
+&display_subsystem {
+	status = "okay";
+};
+
+&edp {
+	status = "okay";
+
+	ports {
+		port@1 {
+			reg = <1>;
+			edp_out: endpoint {
+				remote-endpoint = <&panel_in>;
+			};
+		};
+	};
 };
 
 &emmc {
@@ -387,6 +412,10 @@
 	status = "okay";
 };
 
+&route_edp {
+	status = "okay";
+};
+
 &saradc {
 	vref-supply = <&vcc_18>;
 	status = "okay";
@@ -449,43 +478,8 @@
 	status = "okay";
 };
 
-&vopb {
-	status = "okay";
-};
-
-&vopb_mmu {
-	status = "okay";
-};
-
 &vopl {
 	status = "okay";
-};
-
-&vopl_mmu {
-	status = "okay";
-};
-
-&mipi_dsi0 {
-	status = "disabled";
-	rockchip,panel = <&panel>;
-	display-timings {
-		timing0 {
-		bits-per-pixel = <24>;
-		clock-frequency = <160000000>;
-		hfront-porch = <120>;
-		hsync-len = <20>;
-		hback-porch = <21>;
-		hactive = <1200>;
-		vfront-porch = <21>;
-		vsync-len = <3>;
-		vback-porch = <18>;
-		vactive = <1920>;
-		hsync-active = <0>;
-		vsync-active = <0>;
-		de-active = <1>;
-		pixelclk-active = <0>;
-		};
-	};
 };
 
 &wdt {
