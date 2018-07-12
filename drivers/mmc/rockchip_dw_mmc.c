@@ -251,7 +251,10 @@ static int rockchip_dwmmc_probe(struct udevice *dev)
 	ret = clk_get_by_index(dev, 0, &priv->clk);
 	if (ret < 0)
 		return ret;
-	clk_get_by_name(dev, "ciu_sample", &priv->sample_clk);
+
+	ret = clk_get_by_name(dev, "ciu-sample", &priv->sample_clk);
+	if (ret < 0)
+		return ret;
 	host->execute_tuning = rockchip_dwmmc_execute_tuning;
 #endif
 	host->fifoth_val = MSIZE(0x2) |
