@@ -156,7 +156,7 @@ typedef struct ddr_set{
 	//#define DDR_RFC_TYPE_LPDDR4_2Gbx1				9
 	//#define DDR_RFC_TYPE_LPDDR4_3Gbx1				10
 	//#define DDR_RFC_TYPE_LPDDR4_4Gbx1				11
-	unsigned	char	reverse_3;
+	unsigned	char	enable_lpddr4x_mode;
 	//system reserve,do not modify
 	/* align8 */
 
@@ -225,7 +225,8 @@ typedef struct ddr_set{
 
 	unsigned	long	rsv_long0[2];
 	/* v1 end */
-
+	unsigned	char	dqs_adjust[16]; //rank 0 --lane 0 1 2 3  rank 1--4 5 6 7 write  //rank 0 --lane 0 1 2 3  rank 1--4 5 6 7 read
+	unsigned	char	dq_bit_delay[72];
 	/* v2 start */
 }__attribute__ ((packed)) ddr_set_t;
 
