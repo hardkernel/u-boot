@@ -10,6 +10,11 @@
 #ifndef __DW_HDMI__
 #define __DW_HDMI__
 
+struct dw_hdmi;
+struct drm_display_mode;
+struct ddc_adapter;
+struct i2c_msg;
+
 /**
  * DOC: Supported input formats and encodings
  *
@@ -127,10 +132,11 @@ struct dw_hdmi_phy_config {
 };
 
 struct dw_hdmi_phy_ops {
-	int (*init)(struct dw_hdmi *hdmi, void *data,
-		    struct drm_display_mode *mode);
+	int (*init)(struct dw_hdmi *hdmi, void *data);
 	void (*disable)(struct dw_hdmi *hdmi, void *data);
-	enum drm_connector_status (*read_hpd)(struct dw_hdmi *hdmi, void *data);
+	enum drm_connector_status (*read_hpd)(struct dw_hdmi *hdmi,
+					      void *data);
+	void (*mode_valid)(struct dw_hdmi *hdmi, void *data);
 };
 
 struct dw_hdmi_plat_data {
@@ -147,6 +153,7 @@ struct dw_hdmi_plat_data {
 
 	/* Synopsys PHY support */
 	const struct dw_hdmi_mpll_config *mpll_cfg;
+	const struct dw_hdmi_mpll_config *mpll_cfg_420;
 	const struct dw_hdmi_curr_ctrl *cur_ctr;
 	const struct dw_hdmi_phy_config *phy_config;
 	int (*configure_phy)(struct dw_hdmi *hdmi,
