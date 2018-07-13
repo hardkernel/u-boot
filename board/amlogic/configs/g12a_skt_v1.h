@@ -241,7 +241,6 @@
             "run upgrade_check;"\
             "run init_display;"\
             "run storeargs;"\
-            "forceupdate;" \
             "run switch_bootmode;"
 
 #define CONFIG_BOOTCOMMAND "run storeboot"
