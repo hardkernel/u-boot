@@ -432,6 +432,12 @@ config ROCKCHIP_DEBUGGER
 	  and dump pt_regs when the timeout event trigger. This helps us to know cpu
 	  state when system hang.
 
+config ROCKCHIP_CRASH_DUMP
+	bool "Rockchip crash dump registers"
+	help
+	  This enable dump registers when system crash, the registers you would like
+	  to dump can be added in show_regs().
+
 config GICV2
 	bool "ARM GICv2"
 

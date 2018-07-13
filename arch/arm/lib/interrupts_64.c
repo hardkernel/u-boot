@@ -206,6 +206,14 @@ void show_regs(struct pt_regs *regs)
 		printf("x%-2d: %016lx x%-2d: %016lx\n",
 		       i, regs->regs[i], i+1, regs->regs[i+1]);
 	printf("\n");
+
+#ifdef CONFIG_ROCKCHIP_CRASH_DUMP
+	iomem_show_by_compatible("-cru", 0, 0x400);
+	iomem_show_by_compatible("-pmucru", 0, 0x400);
+	iomem_show_by_compatible("-grf", 0, 0x400);
+	iomem_show_by_compatible("-pmugrf", 0, 0x400);
+	/* tobe add here ... */
+#endif
 }
 
 #else
