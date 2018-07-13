@@ -811,12 +811,19 @@ static void rk817_bat_not_first_pwron(struct rk817_battery_device *battery)
 	} else {
 		battery->remain_cap = rk817_bat_get_capacity_uah(battery);
 		battery->rsoc = rk817_bat_get_rsoc(battery);
-		pre_soc = battery->rsoc;
+
+		if (pre_cap < battery->remain_cap / 1000) {
+			pre_soc += (battery->remain_cap - pre_cap * 1000) * 100 / battery->fcc;
+			if (pre_soc > 100000)
+				pre_soc = 100000;
+		}
 		pre_cap = battery->remain_cap / 1000;
 		goto finish;
 	}
 finish:
 	battery->dsoc = pre_soc;
+	if (battery->dsoc > 100000)
+		battery->dsoc = 100000;
 	battery->nac = pre_cap;
 	if (battery->nac < 0)
 		battery->nac = 0;
