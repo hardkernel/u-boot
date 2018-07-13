@@ -46,6 +46,9 @@
 /* config saradc*/
 #define CONFIG_CMD_SARADC 1
 
+/* support ext4*/
+#define CONFIG_CMD_EXT4 1
+
 /* Bootloader Control Block function
    That is used for recovery and the bootloader to talk to each other
   */
@@ -78,7 +81,7 @@
 #define CONFIG_EXTRA_ENV_SETTINGS \
         "firstboot=1\0"\
         "upgrade_step=0\0"\
-        "jtag=apee\0"\
+        "jtag=disable\0"\
         "hdmiuart_mode=close\0"\
         "loadaddr=1080000\0"\
         "panel_type=lvds_1\0" \
@@ -103,15 +106,17 @@
         "sdc_burning=sdc_burn ${sdcburncfg}\0"\
         "wipe_data=successful\0"\
         "wipe_cache=successful\0"\
-        "EnableSelinux=disabled\0" \
+        "EnableSelinux=enforcing\0" \
         "recovery_part=recovery\0"\
         "recovery_offset=0\0"\
-        "lock=10001000\0"\
         "cvbs_drv=0\0"\
+        "page_trace=on\0"\
         "osd_reverse=0\0"\
+        "lock=10001000\0"\
         "video_reverse=0\0"\
         "active_slot=_a\0"\
         "boot_part=boot\0"\
+        "model_name=t962x_r311_FHD\0" \
         "initargs="\
             "rootfstype=ramfs init=/init console=ttyS0,115200 no_console_suspend earlyprintk=aml-uart,0xc81004c0 ramoops.pstore_en=1 ramoops.record_size=0x8000 ramoops.console_size=0x4000 "\
             "\0"\
@@ -123,6 +128,7 @@
             "\0"\
         "storeargs="\
             "setenv bootargs ${initargs} logo=${display_layer},loaded,${fb_addr} vout=${outputmode},enable panel_type=${panel_type} osd_reverse=${osd_reverse} video_reverse=${video_reverse} androidboot.selinux=${EnableSelinux} androidboot.firstboot=${firstboot} jtag=${jtag}; "\
+            "setenv bootargs ${bootargs} page_trace=${page_trace};" \
 	"setenv bootargs ${bootargs} androidboot.hardware=amlogic;"\
             "run cmdline_keys;"\
             "\0"\
@@ -192,7 +198,11 @@
             "\0"\
         "recovery_from_flash="\
             "setenv bootargs ${bootargs} aml_dt=${aml_dt} recovery_part={recovery_part} recovery_offset={recovery_offset};"\
-            "if imgread kernel ${recovery_part} ${loadaddr} ${recovery_offset}; then wipeisb; bootm ${loadaddr}; fi"\
+            "if itest ${upgrade_step} == 3; then "\
+                "if ext4load mmc 1:2 ${dtb_mem_addr} /recovery/dtb.img; then echo cache dtb.img loaded; fi;"\
+                "if ext4load mmc 1:2 ${loadaddr} /recovery/recovery.img; then echo cache recovery.img loaded; wipeisb; bootm ${loadaddr}; fi;"\
+            "else fi;"\
+            "if imgread kernel ${recovery_part} ${loadaddr} ${recovery_offset}; then wipeisb; bootm ${loadaddr}; fi;"\
             "\0"\
         "init_display="\
             "osd open;osd clear;imgread pic logo bootup $loadaddr;bmp display $bootup_offset;bmp scale;vout output ${outputmode}"\
@@ -201,6 +211,7 @@
             "if keyman init 0x1234; then "\
                 "if keyman read usid ${loadaddr} str; then "\
                     "setenv bootargs ${bootargs} androidboot.serialno=${usid};"\
+                    "setenv serial ${usid};"\
                 "else "\
                     "setenv bootargs ${bootargs} androidboot.serialno=1234567890;"\
                     "setenv serial 1234567890;"\
@@ -397,6 +408,7 @@
 #define CONFIG_CMD_JTAG	1
 #define CONFIG_CMD_AUTOSCRIPT 1
 #define CONFIG_CMD_MISC 1
+#define CONFIG_CMD_INI 1
 
 /*file system*/
 #define CONFIG_DOS_PARTITION 1
