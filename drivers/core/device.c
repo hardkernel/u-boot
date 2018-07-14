@@ -51,24 +51,33 @@ static int device_bind_common(struct udevice *parent, const struct driver *drv,
 	}
 
 #ifdef CONFIG_USING_KERNEL_DTB
-	/* Do not use mmc node and nand node from kernel dtb */
-	if(drv->id == UCLASS_MMC || drv->id == UCLASS_RKNAND)
-	list_for_each_entry(dev, &uc->dev_head, uclass_node) {
-		if (!strcmp(name, dev->name)){
-			debug("%s do not bind dev already in list %s\n",
-			        __func__, name);
-			dev->node = node;
-			return 0;
+	if (gd->flags & GD_FLG_RELOC) {
+		/* For mmc and nand, just update from kernel dtb instead bind again*/
+		if (drv->id == UCLASS_MMC || drv->id == UCLASS_RKNAND) {
+			list_for_each_entry(dev, &uc->dev_head, uclass_node) {
+				if (!strcmp(name, dev->name)) {
+					debug("%s do not bind dev already in list %s\n",
+					      __func__, dev->name);
+					dev->node = node;
+					return 0;
+				}
+			}
 		}
-	}
 
-	/* use cru node from kernel dtb */
-	if (drv->id == UCLASS_CLK) {
+		/* Use other nodes from kernel dtb */
 		struct udevice *n;
 
 		list_for_each_entry_safe(dev, n, &uc->dev_head, uclass_node) {
-			if (!strcmp(name, dev->name))
-				list_del(&dev->uclass_node);
+			if (!strcmp(name, dev->name)) {
+				if (drv->id == UCLASS_SERIAL) {
+					/* Always use serial node from U-Boot dtb */
+					debug("%s do not delete uboot dev: %s\n",
+					      __func__, dev->name);
+					return 0;
+				} else {
+					list_del(&dev->uclass_node);
+				}
+			}
 		}
 	}
 #endif
