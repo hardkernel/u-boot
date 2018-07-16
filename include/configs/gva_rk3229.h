@@ -64,6 +64,7 @@
 #define CONFIG_SETUP_MEMORY_TAGS
 #define CONFIG_CMDLINE_TAG
 
+#define ROCKCHIP_DEVICE_SETTINGS
 #endif
 
 #endif
