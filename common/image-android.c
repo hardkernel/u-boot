@@ -52,7 +52,6 @@ u32 android_image_get_comp(const struct andr_img_hdr *hdr)
 int android_image_parse_kernel_comp(const struct andr_img_hdr *hdr)
 {
 	ulong kaddr = android_image_get_kernel_addr(hdr);
-
 	return bootm_parse_comp((const unsigned char *)kaddr);
 }
 
@@ -231,11 +230,11 @@ long android_image_load(struct blk_desc *dev_desc,
 		blk_read = -1;
 	}
 
-	comp = android_image_parse_kernel_comp(buf);
 
 	if (!blk_read) {
 		blk_cnt = (android_image_get_end(buf) - (ulong)buf +
 			   part_info->blksz - 1) / part_info->blksz;
+		comp = android_image_parse_kernel_comp(buf);
 		/*
 		 * We should load a compressed kernel Image
 		 * to high memory
@@ -258,18 +257,19 @@ long android_image_load(struct blk_desc *dev_desc,
 			blk_read = blk_dread(dev_desc, part_info->start,
 					     blk_cnt, buf);
 		}
-	}
 
-	/*
-	 * zImage is not need to decompress
-	 * kernel will handle decompress itself
-	 */
-	if (comp != IH_COMP_NONE && comp != IH_COMP_ZIMAGE) {
-		kload_addr = env_get_ulong("kernel_addr_r", 16, 0x02080000);
-		android_image_set_kload(buf, kload_addr);
-		android_image_set_comp(buf, comp);
-	} else {
-		android_image_set_comp(buf, IH_COMP_NONE);
+		/*
+		 * zImage is not need to decompress
+		 * kernel will handle decompress itself
+		 */
+		if (comp != IH_COMP_NONE && comp != IH_COMP_ZIMAGE) {
+			kload_addr = env_get_ulong("kernel_addr_r", 16, 0x02080000);
+			android_image_set_kload(buf, kload_addr);
+			android_image_set_comp(buf, comp);
+		} else {
+			android_image_set_comp(buf, IH_COMP_NONE);
+		}
+
 	}
 
 	unmap_sysmem(buf);
