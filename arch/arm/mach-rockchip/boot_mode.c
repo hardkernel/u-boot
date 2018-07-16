@@ -46,6 +46,7 @@ __weak int rockchip_dnl_key_pressed(void)
 	unsigned int val;
 	int channel = 1;
 	int node;
+	int ret;
 	u32 chns[2];
 
 	node = fdt_node_offset_by_compatible(blob, 0, "adc-keys");
@@ -54,8 +55,9 @@ __weak int rockchip_dnl_key_pressed(void)
 		       channel = chns[1];
 	}
 
-	if (adc_channel_single_shot("saradc", channel, &val)) {
-		printf("%s adc_channel_single_shot fail!\n", __func__);
+	ret = adc_channel_single_shot("saradc", channel, &val);
+	if (ret) {
+		printf("%s adc_channel_single_shot fail! ret=%d\n", __func__, ret);
 		return false;
 	}
 
