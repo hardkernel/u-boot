@@ -187,7 +187,6 @@
 	};
 
 	grf: syscon@ff100000 {
-		u-boot,dm-pre-reloc;
 		compatible = "rockchip,rk3328-grf", "syscon", "simple-mfd";
 		reg = <0x0 0xff100000 0x0 0x1000>;
 		#address-cells = <1>;
@@ -355,7 +354,6 @@
 	};
 
 	dmc: dmc {
-		u-boot,dm-pre-reloc;
 		compatible = "rockchip,rk3328-dmc";
 		reg = <0x0 0xff400000 0x0 0x1000
 		       0x0 0xff780000 0x0 0x3000
@@ -366,7 +364,6 @@
 	};
 
 	cru: clock-controller@ff440000 {
-		u-boot,dm-pre-reloc;
 		compatible = "rockchip,rk3328-cru", "rockchip,cru", "syscon";
 		reg = <0x0 0xff440000 0x0 0x1000>;
 		rockchip,grf = <&grf>;

@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include "rk3328.dtsi"
+#include "rk3328-u-boot.dtsi"
 #include "rk3328-sdram-ddr3-666.dtsi"
 
 / {
@@ -62,7 +63,6 @@
 };
 
 &uart2 {
-	u-boot,dm-pre-reloc;
 	status = "okay";
 };
 
@@ -79,7 +79,6 @@
 };
 
 &emmc {
-	u-boot,dm-pre-reloc;
 	bus-width = <8>;
 	cap-mmc-highspeed;
 	supports-emmc;
