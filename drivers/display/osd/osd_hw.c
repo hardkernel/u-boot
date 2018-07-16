@@ -2499,6 +2499,9 @@ void osd_init_hw(void)
 		if ((get_cpu_id().family_id == MESON_CPU_MAJOR_ID_M6TV)
 		    || (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_MTVD)) {
 			data32 |= 18 << 5;  /* hold_fifo_lines */
+		} else if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_AXG) {
+			data32 &= ~(0x1f << 5); /* bit[9:5] HOLD_FIFO_LINES */
+			data32 |= 0x18 << 5;
 		} else {
 			data32 |= 4 << 5;  /* hold_fifo_lines */
 		}
