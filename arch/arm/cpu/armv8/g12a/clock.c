@@ -370,10 +370,12 @@ int ring_msr(int index)
 		printf("\n");
 	}
 
+#ifdef CONFIG_RING
 	if (oscring_get_value(ringinfo) != 0) {
 		printf("fail get osc ring efuse info\n");
 		return 0;
 	}
+#endif
 
 	printf("osc ring efuse info:\n");
 	for (i = 0; i <= 7; i++)
