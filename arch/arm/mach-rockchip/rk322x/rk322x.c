@@ -16,14 +16,16 @@ const char * const boot_devices[BROM_LAST_BOOTSOURCE + 1] = {
 	[BROM_BOOTSOURCE_EMMC] = "/sdhci@fe330000",
 	[BROM_BOOTSOURCE_SD] = "/dwmmc@fe320000",
 };
-#ifdef CONFIG_SPL_BUILD
+
 int arch_cpu_init(void)
 {
 	static struct rk322x_grf * const grf = (void *)GRF_BASE;
 	/* We do some SoC one time setting here. */
 
+#ifdef CONFIG_SPL_BUILD
 	/* Disable the ddr secure region setting to make it non-secure */
 	rk_clrreg(SGRF_DDR_CON0, 0x4000);
+#endif
 
 	/* PWMs select rkpwm clock source */
 	rk_setreg(&grf->soc_con[2], 1 << 0);
@@ -47,7 +49,6 @@ int arch_cpu_init(void)
 
 	return 0;
 }
-#endif
 
 void board_debug_uart_init(void)
 {
