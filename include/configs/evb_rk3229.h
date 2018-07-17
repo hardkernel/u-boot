@@ -20,23 +20,9 @@
 #define CONFIG_SUPPORT_EMMC_RPMB
 
 #ifndef CONFIG_SPL_BUILD
-/* Enable gpt partition table */
-#undef CONFIG_PREBOOT
-#define CONFIG_PREBOOT \
-	"mmc dev 0; " \
-	"gpt guid mmc 0; " \
-	"if test $? = 1; then " \
-		"fastboot usb 0; " \
-	"fi; "
 
-#define CONFIG_SYS_BOOT_RAMDISK_HIGH
-
-/* Enable atags */
-#define CONFIG_SYS_BOOTPARAMS_LEN	(64*1024)
-#define CONFIG_INITRD_TAG
-#define CONFIG_SETUP_MEMORY_TAGS
-#define CONFIG_CMDLINE_TAG
-
+#undef CONFIG_BOOTCOMMAND
+#define CONFIG_BOOTCOMMAND RKIMG_BOOTCOMMAND
 #endif
 
 #endif
