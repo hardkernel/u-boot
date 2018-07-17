@@ -67,17 +67,22 @@ void rockchip_stimer_init(void)
 	writel(TIMER_EN | TIMER_FMODE, TIMER_CHN10_BASE + TIMER_CONTROL_REG);
 	printf("%s\n", __func__);
 }
+#endif
 
 #define GRF_BASE	0xff770000
 #define PMUGRF_BASE	0xff320000
 #define PMUSGRF_BASE	0xff330000
+
 int arch_cpu_init(void)
 {
-	struct rk3399_pmusgrf_regs *sgrf = (void *)PMUSGRF_BASE;
 	struct rk3399_pmugrf_regs *pmugrf = (void *)PMUGRF_BASE;
 	struct rk3399_grf_regs * const grf = (void *)GRF_BASE;
 
 	/* We do some SoC one time setting here. */
+
+#ifdef CONFIG_SPL_BUILD
+	struct rk3399_pmusgrf_regs *sgrf = (void *)PMUSGRF_BASE;
+
 	/*
 	 * Disable DDR and SRAM security regions.
 	 *
@@ -89,8 +94,9 @@ int arch_cpu_init(void)
 	 */
 	rk_clrsetreg(&sgrf->ddr_rgn_con[16], 0x1ff, 0);
 	rk_clrreg(&sgrf->slv_secure_con4, 0x2000);
+#endif
 
-	/*  eMMC clock generator: disable the clock multipilier */
+	/* eMMC clock generator: disable the clock multipilier */
 	rk_clrreg(&grf->emmccore_con[11], 0x0ff);
 
 	/* PWM3 select pwm3a io */
@@ -98,7 +104,6 @@ int arch_cpu_init(void)
 
 	return 0;
 }
-#endif
 
 void board_debug_uart_init(void)
 {
