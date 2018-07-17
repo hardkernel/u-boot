@@ -124,7 +124,6 @@ int arch_early_init_r(void)
 }
 #endif
 
-#ifdef CONFIG_SPL_BUILD
 static void cpu_axi_qos_prority_level_config(void)
 {
 	u32 level;
@@ -155,6 +154,7 @@ static void cpu_axi_qos_prority_level_config(void)
 	writel(level, ISP_W1_QOS_BASE + CPU_AXI_QOS_PRIORITY);
 }
 
+#ifdef CONFIG_SPL_BUILD
 /*
  * The SPL (and also the full U-Boot stage on the RK3368) will run in
  * secure mode (i.e. EL3) and an ATF will eventually be booted before
@@ -216,9 +216,11 @@ static void sgrf_init(void)
 	rk_clrreg(&cru->softrst_con[1], DMA1_SRST_REQ);
 	rk_clrreg(&cru->softrst_con[4], DMA2_SRST_REQ);
 }
+#endif
 
 void board_debug_uart_init(void)
 {
+#if defined(CONFIG_DEBUG_UART_BASE) && (CONFIG_DEBUG_UART_BASE == 0xff180000)
 	/*
 	 * N.B.: This is called before the device-model has been
 	 *       initialised. For this reason, we can not access
@@ -237,7 +239,6 @@ void board_debug_uart_init(void)
 		GPIO2D0_UART0_SIN       = (1 << 0),
 	};
 
-#if defined(CONFIG_DEBUG_UART_BASE) && (CONFIG_DEBUG_UART_BASE == 0xff180000)
 	/* Enable early UART0 on the RK3368 */
 	rk_clrsetreg(&grf->gpio2d_iomux,
 		     GPIO2D0_MASK, GPIO2D0_UART0_SIN);
@@ -263,9 +264,10 @@ int arch_cpu_init(void)
 	/* Cpu axi qos config */
 	cpu_axi_qos_prority_level_config();
 
+#ifdef CONFIG_SPL_BUILD
 	/* Reset security, so we can use DMA in the MMC drivers */
 	sgrf_init();
+#endif
 
 	return 0;
 }
-#endif
