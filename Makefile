@@ -660,7 +660,7 @@ libs-y += $(if $(BOARDDIR),$(BOARDDIR)/)
 
 libs-y := $(sort $(libs-y))
 
-u-boot-dirs	:= $(patsubst %/,%,$(filter %/, $(libs-y))) tools examples
+u-boot-dirs	:= $(patsubst %/,%,$(filter %/, $(libs-y))) tools examples fip
 
 u-boot-alldirs	:= $(sort $(u-boot-dirs) $(patsubst %/,%,$(filter %/, $(libs-))))
 
@@ -855,18 +855,26 @@ u-boot-comp.bin:u-boot.bin
 #	$(objtree)/tools/uclpack $< $@
 
 ifeq ($(CONFIG_NEED_BL301), y)
+BL301_BINARY := $(buildtree)/scp_task/bl301.bin
 .PHONY : bl301.bin
-bl301.bin: tools prepare acs.bin bl21.bin
+bl301.bin: $(BL301_BINARY)
+$(BL301_BINARY): tools prepare u-boot.bin $(ACS_BINARY) bl21.bin
 	$(Q)$(MAKE) -C $(srctree)/$(CPUDIR)/${SOC}/firmware/scp_task
 endif
 
 .PHONY : acs.bin
-acs.bin: tools prepare u-boot.bin
+ACS_BINARY := $(buildtree)/$(BOARDDIR)/firmware/acs.bin
+acs.bin: $(ACS_BINARY)
+$(ACS_BINARY): tools prepare u-boot.bin
 	$(Q)$(MAKE) -C $(srctree)/$(CPUDIR)/${SOC}/firmware/acs all FIRMWARE=$@
 
 .PHONY : bl21.bin
 bl21.bin: tools prepare u-boot.bin acs.bin
 	$(Q)$(MAKE) -C $(srctree)/$(CPUDIR)/${SOC}/firmware/bl21 all FIRMWARE=$@
+
+.PHONY : fip.bin bootimage
+fip.bin bootimage: $(ACS_BINARY) $(BL301_BINARY)
+	$(Q)$(MAKE) -C $(srctree)/fip $@
 
 #
 # U-Boot entry point, needed for booting of full-blown U-Boot
@@ -1314,6 +1322,11 @@ CLEAN_DIRS  += $(MODVERDIR) \
 CLEAN_FILES += include/bmp_logo.h include/bmp_logo_data.h \
 	       u-boot* MLO* SPL System.map
 
+FUSING_FOLDER := $(buildsrc)/sd_fuse
+CLEAN_FILES += $(addprefix $(FUSING_FOLDER)/, u-boot.bin u-boot.bin.sd.bin u-boot.bin.usb.bl2 u-boot.bin.usb.tpl)
+
+export FUSING_FOLDER
+
 # Directories & files removed with 'make mrproper'
 MRPROPER_DIRS  += include/config include/generated spl tpl \
 		  .tmp_objdiff
@@ -1384,6 +1397,7 @@ distclean: mrproper
 	@rm -f $(FIP_FOLDER_SOC)/u-boot.bin.* $(FIP_FOLDER_SOC)/*.encrypt
 	@rm -f $(FIP_FOLDER)/u-boot.bin.* $(FIP_FOLDER)/*.bin $(FIP_FOLDER)/*.encrypt
 	@rm -f $(srctree)/fip/aml_encrypt_gxb
+	@make -C $(srctree)/fip distclean
 
 backup:
 	F=`basename $(srctree)` ; cd .. ; \
