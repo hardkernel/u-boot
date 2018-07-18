@@ -198,7 +198,6 @@ static void lcd_module_enable(char *mode)
 		(sync_duration / 10), (sync_duration % 10));
 
 	lcd_drv->driver_init_pre();
-	lcd_mute_setting(1);
 	lcd_power_ctrl(1);
 
 	pconf->retry_enable_cnt = 0;
@@ -1417,6 +1416,26 @@ static char *aml_lcd_get_ss(void)
 	return str;
 }
 
+#define LCD_WAIT_VSYNC_TIMEOUT    50000
+void lcd_wait_vsync(void)
+{
+	int line_cnt, line_cnt_previous;
+	int i = 0;
+
+	line_cnt = 0x1fff;
+	line_cnt_previous = lcd_vcbus_getb(ENCL_INFO_READ, 16, 13);
+	while (i++ < LCD_WAIT_VSYNC_TIMEOUT) {
+		line_cnt = lcd_vcbus_getb(ENCL_INFO_READ, 16, 13);
+		if (line_cnt < line_cnt_previous)
+			break;
+		line_cnt_previous = line_cnt;
+		udelay(2);
+	}
+	/*LCDPR("line_cnt=%d, line_cnt_previous=%d, i=%d\n",
+	 *	line_cnt, line_cnt_previous, i);
+	 */
+}
+
 #define TV_LCD_ENC_TST_NUM_MAX    9
 static char *lcd_enc_tst_str[] = {
 	"0-None",        /* 0 */
@@ -1451,25 +1470,27 @@ static void lcd_test(unsigned int num)
 	start = lcd_drv->lcd_config->lcd_timing.video_on_pixel;
 	width = lcd_drv->lcd_config->lcd_basic.h_active / 9;
 	num = (num >= TV_LCD_ENC_TST_NUM_MAX) ? 0 : num;
-	if (num >= 0) {
-		lcd_vcbus_write(ENCL_VIDEO_RGBIN_CTRL, lcd_enc_tst[num][6]);
-		lcd_vcbus_write(ENCL_TST_MDSEL, lcd_enc_tst[num][0]);
-		lcd_vcbus_write(ENCL_TST_Y, lcd_enc_tst[num][1]);
-		lcd_vcbus_write(ENCL_TST_CB, lcd_enc_tst[num][2]);
-		lcd_vcbus_write(ENCL_TST_CR, lcd_enc_tst[num][3]);
-		lcd_vcbus_write(ENCL_TST_CLRBAR_STRT, start);
-		lcd_vcbus_write(ENCL_TST_CLRBAR_WIDTH, width);
-		lcd_vcbus_write(ENCL_TST_EN, lcd_enc_tst[num][4]);
-		lcd_vcbus_setb(ENCL_VIDEO_MODE_ADV, lcd_enc_tst[num][5], 3, 1);
-		printf("lcd: show test pattern: %s\n", lcd_enc_tst_str[num]);
+
+	lcd_wait_vsync();
+	lcd_vcbus_write(ENCL_VIDEO_RGBIN_CTRL, lcd_enc_tst[num][6]);
+	lcd_vcbus_write(ENCL_TST_MDSEL, lcd_enc_tst[num][0]);
+	lcd_vcbus_write(ENCL_TST_Y, lcd_enc_tst[num][1]);
+	lcd_vcbus_write(ENCL_TST_CB, lcd_enc_tst[num][2]);
+	lcd_vcbus_write(ENCL_TST_CR, lcd_enc_tst[num][3]);
+	lcd_vcbus_write(ENCL_TST_CLRBAR_STRT, start);
+	lcd_vcbus_write(ENCL_TST_CLRBAR_WIDTH, width);
+	lcd_vcbus_write(ENCL_TST_EN, lcd_enc_tst[num][4]);
+	lcd_vcbus_setb(ENCL_VIDEO_MODE_ADV, lcd_enc_tst[num][5], 3, 1);
+	if (num > 0) {
+		LCDPR("show test pattern: %s\n", lcd_enc_tst_str[num]);
 	} else {
-		printf("lcd: disable test pattern\n");
+		LCDPR("disable test pattern\n");
 	}
 }
 
 static void lcd_mute_setting(unsigned char flag)
 {
-	LCDPR("set lcd mute: %d\n", flag);
+	lcd_wait_vsync();
 	if (flag) {
 		lcd_vcbus_write(ENCL_VIDEO_RGBIN_CTRL, 3);
 		lcd_vcbus_write(ENCL_TST_MDSEL, 0);
@@ -1478,9 +1499,11 @@ static void lcd_mute_setting(unsigned char flag)
 		lcd_vcbus_write(ENCL_TST_CR, 0);
 		lcd_vcbus_write(ENCL_TST_EN, 1);
 		lcd_vcbus_setb(ENCL_VIDEO_MODE_ADV, 0, 3, 1);
+		LCDPR("set mute\n");
 	} else {
 		lcd_vcbus_setb(ENCL_VIDEO_MODE_ADV, 1, 3, 1);
 		lcd_vcbus_write(ENCL_TST_EN, 0);
+		LCDPR("clear mute\n");
 	}
 }
 

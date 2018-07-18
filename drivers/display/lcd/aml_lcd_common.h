@@ -19,6 +19,9 @@
 #include "aml_lcd_clk_config.h"
 #include "aml_lcd_unifykey.h"
 
+/* 20180718: mute: wait vsync for display shadow */
+#define LCD_DRV_VERSION    "20180718"
+
 #define VPP_OUT_SATURATE            (1 << 0)
 
 /* -------------------------- */
@@ -86,6 +89,8 @@ extern unsigned int aml_lcd_gpio_input_get(int gpio);
 /* lcd driver */
 extern int get_lcd_tv_config(char *dt_addr, int load_id);
 extern int get_lcd_tablet_config(char *dt_addr, int load_id);
+
+extern void lcd_wait_vsync(void);
 
 /* aml_bl driver */
 extern void aml_bl_config_print(void);

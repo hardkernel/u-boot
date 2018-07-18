@@ -273,6 +273,14 @@ static void lcd_venc_set(struct lcd_config_s *pconf)
 	lcd_vcbus_write(ENCL_VIDEO_VSO_ELINE, pconf->lcd_timing.vs_ve_addr);
 	lcd_vcbus_write(ENCL_VIDEO_RGBIN_CTRL, 3);
 
+	/* default black pattern */
+	lcd_vcbus_write(ENCL_TST_MDSEL, 0);
+	lcd_vcbus_write(ENCL_TST_Y, 0);
+	lcd_vcbus_write(ENCL_TST_CB, 0);
+	lcd_vcbus_write(ENCL_TST_CR, 0);
+	lcd_vcbus_write(ENCL_TST_EN, 1);
+	lcd_vcbus_setb(ENCL_VIDEO_MODE_ADV, 0, 3, 1);
+
 	lcd_vcbus_write(ENCL_VIDEO_EN, 1);
 }
 
