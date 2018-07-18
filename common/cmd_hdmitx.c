@@ -26,11 +26,31 @@
 #include <malloc.h>
 #include <asm/byteorder.h>
 #include <amlogic/hdmi.h>
+#ifdef CONFIG_AML_LCD
+#include <amlogic/aml_lcd.h>
+#endif
 
 static int do_hpd_detect(cmd_tbl_t *cmdtp, int flag, int argc,
 	char *const argv[])
 {
-	int st = hdmitx_device.HWOp.get_hpd_state();
+#ifdef CONFIG_AML_LCD
+	struct aml_lcd_drv_s *lcd_drv = NULL;
+	char *mode;
+#endif
+	int st;
+
+#ifdef CONFIG_AML_LCD
+	lcd_drv = aml_lcd_get_driver();
+	if (lcd_drv) {
+		if (lcd_drv->lcd_outputmode_check) {
+			mode = getenv("outputmode");
+			if (lcd_drv->lcd_outputmode_check(mode) == 0)
+				return 0;
+		}
+	}
+#endif
+
+	st = hdmitx_device.HWOp.get_hpd_state();
 	printf("hpd_state=%c\n", st ? '1' : '0');
 
 	if (st) {
