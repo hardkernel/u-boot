@@ -10,6 +10,7 @@
 #include <asm/arch/cru_px30.h>
 #include <asm/arch/grf_px30.h>
 #include <asm/arch/hardware.h>
+#include <asm/arch/uart.h>
 #include <asm/armv8/mmu.h>
 #include <asm/arch/clock.h>
 #include <asm/arch/cru_px30.h>
@@ -52,6 +53,7 @@ int arch_cpu_init(void)
 }
 
 #define GRF_BASE		0xff140000
+#define UART2_BASE		0xff160000
 #define CRU_BASE		0xff2b0000
 void board_debug_uart_init(void)
 {
@@ -68,6 +70,7 @@ void board_debug_uart_init(void)
 
 #ifdef CONFIG_TPL_BUILD
 	static struct px30_cru * const cru = (void *)CRU_BASE;
+	static struct rk_uart * const uart = (void *)UART2_BASE;
 
 	/* GRF_GPIO2BH_IOMUX */
 	enum {
@@ -119,6 +122,9 @@ void board_debug_uart_init(void)
 	rk_clrsetreg(&grf->gpio2bh_iomux,
 		     GPIO2B4_MASK,
 		     GPIO2B4_UART2_TXM1 << GPIO2B4_SHIFT);
+
+	/* enable FIFO */
+	writel(0x1, &uart->sfe);
 #else
 #ifdef CONFIG_SPL_BUILD
 	/* GRF_GPIO1DL_IOMUX */
