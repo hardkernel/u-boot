@@ -111,7 +111,7 @@ static int check_key_press(struct udevice *dev)
 	struct charge_animation_priv *priv = dev_get_priv(dev);
 	u32 state;
 
-	state = platform_key_read(KEY_POWER);
+	state = key_read(KEY_POWER);
 	if (state < 0)
 		printf("read power key failed: %d\n", state);
 
@@ -640,7 +640,7 @@ static int charge_animation_probe(struct udevice *dev)
 	priv->fg = fg;
 
 	/* Get PWRKEY: used for wakeup and turn off/on LCD */
-	ret = platform_key_read(KEY_POWER);
+	ret = key_read(KEY_POWER);
 	if (ret == KEY_NOT_EXIST) {
 		printf("Can't find power key\n");
 		return -EINVAL;
