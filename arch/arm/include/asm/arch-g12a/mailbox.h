@@ -44,6 +44,10 @@
 #ifdef CONFIG_RING
 #define SCPI_CMD_OSCRING_VALUE 0x43
 #endif
+#define SCPI_CMD_BL0_DATA_LEN 0xD2
+#define	SCPI_CMD_BL0_DATA_ADDR 0xD3
+#define SCPI_CMD_BL4_WAIT_UNLOCK 0xD6
+
 #define LOW_PRIORITY	0
 #define HIGH_PRIORITY 1
 
@@ -87,6 +91,8 @@ int thermal_get_value(unsigned int sensor_id, unsigned int *value);
 int send_usr_data(unsigned int clinet_id, unsigned int *val, unsigned int size);
 void send_pwm_delt(int32_t vcck_delt, int32_t ee_delt);
 void set_boot_first_timeout(unsigned int command);
+void bl40_wait_unlock(void);
+int send_bl40(unsigned long addr, unsigned long size);
 #ifdef CONFIG_RING
 int oscring_get_value(unsigned char *ringinfo);
 #endif

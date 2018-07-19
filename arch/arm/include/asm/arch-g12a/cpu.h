@@ -30,6 +30,8 @@
 #define CONFIG_AML_MESON_G12A 1
 /*enable viu probe*/
 #define CONFIG_CMD_VIU_PROBE    1
+/*load bl40*/
+#define CONFIG_CMD_LOAD_BL40	1
 
 /* Size of malloc() pool */
 #define CONFIG_SYS_MALLOC_LEN		(64*1024*1024)

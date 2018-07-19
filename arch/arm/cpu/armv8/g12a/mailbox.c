@@ -241,3 +241,59 @@ int oscring_get_value(unsigned char *ringinfo)
 		return 0;
 }
 #endif
+
+/*for load bl40.bin*/
+#define M4_STATUS_MASK 0x3
+#define M4_STS_CHK_PASS 0x00 //M3 state: the check passed
+#define M4_STS_CHK_BUSY 0x01 //M3 state: the check is on going
+#define M4_STS_CHK_IDLE 0x03 //M3 state: M3 is ready to receive BL30
+#define M4_STS_CHK_FAIL 0x03 //M3 state: BL30 check fail
+
+uint32_t is_sp_mode(void)
+{
+	return !(readl(P_AO_FR_EE_WR_ONCE) & (1 << 24));
+}
+
+uint32_t get_m4_check_status(void)
+{
+	if (is_sp_mode())
+		return readl(P_AO_SEC_SP_CFG1);
+	else
+		return readl(P_AO_DEBUG_REG0);
+}
+
+void bl40_wait_unlock(void)
+{
+	mb_message_start(LOW_PRIORITY);
+	writel(0, ap_mb_payload[LOW_PRIORITY]);
+	mb_message_send(SCPI_CMD_BL4_WAIT_UNLOCK, LOW_PRIORITY);
+	mb_message_wait(LOW_PRIORITY);
+	mb_message_end(LOW_PRIORITY);
+}
+
+int send_bl40(unsigned long addr, unsigned long  length)
+{
+	if (is_sp_mode()) {
+		printf("No support loader bl40 in sp mode!\n");
+		return -1;
+	}
+
+	while ((get_m4_check_status() & 0x3) != 0x3);
+	printf("Sending bl40 address and size!\n");
+	mb_message_start(HIGH_PRIORITY);
+	writel(addr, ap_mb_payload[LOW_PRIORITY]);
+	mb_message_send(SCPI_CMD_BL0_DATA_ADDR, HIGH_PRIORITY);
+	mb_message_wait(HIGH_PRIORITY);
+	mb_message_end(HIGH_PRIORITY);
+	printf("Sending bl40 address ok!\n");
+
+	mb_message_start(HIGH_PRIORITY);
+	writel(length, ap_mb_payload[LOW_PRIORITY]);
+	mb_message_send(SCPI_CMD_BL0_DATA_LEN, HIGH_PRIORITY);
+	mb_message_wait(HIGH_PRIORITY);
+	mb_message_end(HIGH_PRIORITY);
+	printf("Sending bl40 size ok!\n");
+
+	return 0;
+}
+
