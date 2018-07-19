@@ -661,10 +661,10 @@ static int read_temp0(void)
 static int read_temp1(void)
 {
 	unsigned int ret;
-	unsigned long value,tmp;
+	unsigned long value;
 	unsigned int ver, u_efuse; //tmp for debug
 	int family_id;
-	int cur_temp;
+	int64_t temp;
 
 	family_id = get_cpu_id().family_id;
 	switch (get_cpu_id().family_id) {
@@ -691,15 +691,14 @@ static int read_temp1(void)
 	printf("u_efuse: 0x%x\n", u_efuse);
 	/* T = 727.8*(u_real+u_efuse/(1<<16)) - 274.7 */
 	/* u_readl = (5.05*YOUT)/((1<<16)+ 4.05*YOUT) */
-	tmp = (value * 505) * (1 << 16) / (100 * (1 << 16) + 405 * value);
+	temp = (value * 505) * (1 << 16) / (100 * (1 << 16) + 405 * value);
 
 	if (u_efuse & 0x8000)
-		cur_temp = ((tmp - (u_efuse & (0x7fff))) * 7278 / (1 << 16) - 2747) / 10;
+		temp = ((temp - (u_efuse & (0x7fff))) * 7278 / (1 << 16) - 2747) / 10;
 	else
-		cur_temp = ((tmp + u_efuse) * 7278 / (1 << 16) - 2747) / 10;
-	printf("newtemp: %d\n", cur_temp);
-
-	return cur_temp;
+		temp = ((temp + u_efuse) * 7278 / (1 << 16) - 2747) / 10;
+	printf("newtemp: %lld\n", temp);
+	return temp;
 }
 #endif
 
@@ -912,19 +911,17 @@ static int do_temp_triming(cmd_tbl_t *cmdtp, int flag1,
 int r1p1_codetotemp(unsigned long value, unsigned int u_efuse,
 			int ts_b, int ts_a, int ts_m, int ts_n)
 {
-	unsigned long tmp;
-	int cur_temp;
+	int64_t temp;
 
 	/* T = 727.8*(u_real+u_efuse/(1<<16)) - 274.7 */
 	/* u_readl = (5.05*YOUT)/((1<<16)+ 4.05*YOUT) */
-	tmp = (value * ts_m) * (1 << 16) / (100 * (1 << 16) + ts_n * value);
-	printf("u_efuse 0x%x, tmp: %ld\n", u_efuse, tmp);
+	temp = (value * ts_m) * (1 << 16) / (100 * (1 << 16) + ts_n * value);
 	if (u_efuse & 0x8000) {
-		cur_temp = ((tmp - (u_efuse & (0x7fff))) * ts_a / (1 << 16) - ts_b) / 10;
+		temp = ((temp - (u_efuse & 0x7fff)) * ts_a / (1 << 16) - ts_b) / 10;
 	} else {
-		cur_temp = ((tmp + u_efuse) * ts_a / (1 << 16) - ts_b) / 10;
+		temp = ((temp + (u_efuse & 0x7fff)) * ts_a / (1 << 16) - ts_b) / 10;
 	}
-	return cur_temp;
+	return temp;
 }
 
 int r1p1_temp_read(int type)
@@ -967,12 +964,12 @@ int r1p1_temp_read(int type)
 					for (i = 0; i <= NUM; i ++) {
 						udelay(5000);
 						value_ts = readl(TS_PLL_STAT0) & 0xffff;
-						if ((value_ts >= 0x18a9) && (value_ts <= 0x32a6))
+						if ((value_ts >= 0x1500) && (value_ts <= 0x3500))
 							value_all_ts += value_ts;
 							cnt ++;
 						}
 					value_ts =  value_all_ts / cnt;
-					printf("pll tsensor avg: 0x%x\n", value_ts);
+					printf("pll tsensor avg: 0x%x, u_efuse: 0x%x\n", value_ts, u_efuse);
 					if (value_ts == 0) {
 						printf("tsensor read temp is zero\n");
 						return -1;
@@ -1002,12 +999,12 @@ int r1p1_temp_read(int type)
 					for (i = 0; i <= NUM; i ++) {
 						udelay(5000);
 						value_ts = readl(TS_DDR_STAT0) & 0xffff;
-						if ((value_ts >= 0x18a9) && (value_ts <= 0x32a6))
+						if ((value_ts >= 0x1500) && (value_ts <= 0x3500))
 							value_all_ts += value_ts;
 							cnt ++;
 						}
 					value_ts =  value_all_ts / cnt;
-					printf("ddr tsensor avg: 0x%x\n", value_ts);
+					printf("ddr tsensor avg: 0x%x, u_efuse: 0x%x\n", value_ts, u_efuse);
 					if (value_ts == 0) {
 						printf("tsensor read temp is zero\n");
 						return -1;
@@ -1116,7 +1113,7 @@ int r1p1_temp_trim(int tempbase, int tempver, int type)
 						udelay(5000);
 						value_ts = readl(TS_PLL_STAT0) & 0xffff;
 						printf("pll tsensor read: 0x%x\n", value_ts);
-						if ((value_ts >= 0x18a9) && (value_ts <= 0x32a6))
+						if ((value_ts >= 0x1500) && (value_ts <= 0x3500))
 							value_all_ts += value_ts;
 							cnt ++;
 						}
@@ -1153,7 +1150,7 @@ int r1p1_temp_trim(int tempbase, int tempver, int type)
 						udelay(5000);
 						value_ts = readl(TS_DDR_STAT0) & 0xffff;
 						printf("ddr tsensor read: 0x%x\n", value_ts);
-						if ((value_ts >= 0x18a9) && (value_ts <= 0x32a6))
+						if ((value_ts >= 0x1500) && (value_ts <= 0x3500))
 							value_all_ts += value_ts;
 							cnt ++;
 						}
