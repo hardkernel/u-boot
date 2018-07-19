@@ -101,16 +101,6 @@ static struct reg_data rk805_init_reg[] = {
 	{ RK805_INT_STS_REG, 0xff },
 };
 
-static int rk8xx_pwrkey_read(struct udevice *dev, int code)
-{
-	struct input_key *key = dev_get_platdata(dev);
-
-	if (key->code != code)
-		return KEY_NOT_EXIST;
-
-	return key_parse_gpio_event(key);
-}
-
 static void pwrkey_irq_handler(int irq, void *data)
 {
 	struct udevice *dev = data;
@@ -145,13 +135,13 @@ static void pwrkey_irq_handler(int irq, void *data)
 
 	/* fall event */
 	if (val & priv->pwron_fall_int) {
-		key->down_t = key_get_timer(0);
+		key->down_t = key_timer(0);
 		debug("%s: key down: %llu ms\n", __func__, key->down_t);
 	}
 
 	/* rise event */
 	if (val & priv->pwron_rise_int) {
-		key->up_t = key_get_timer(0);
+		key->up_t = key_timer(0);
 		debug("%s: key up: %llu ms\n", __func__, key->up_t);
 	}
 
@@ -188,9 +178,17 @@ static int pwrkey_interrupt_init(struct udevice *dev)
 		return ret;
 	}
 
-	key->name = "power";
+	key->parent = dev;
+	key->name = "rk8xx_pwrkey";
 	key->code = KEY_POWER;
+	key->type = GPIO_KEY;
 	irq = phandle_gpio_to_irq(phandle, interrupt[0]);
+	if (irq < 0) {
+		printf("%s: failed to request irq, ret=%d\n", key->name, irq);
+		return irq;
+	}
+	key->irq = irq;
+	key_add(key);
 	irq_install_handler(irq, pwrkey_irq_handler, dev);
 	irq_set_irq_type(irq, IRQ_TYPE_EDGE_FALLING);
 	irq_handler_enable(irq);
@@ -200,7 +198,6 @@ static int pwrkey_interrupt_init(struct udevice *dev)
 
 static const struct dm_key_ops key_ops = {
 	.name = "rk8xx-pwrkey",
-	.read = rk8xx_pwrkey_read,
 };
 
 static int rk8xx_pwrkey_probe(struct udevice *dev)

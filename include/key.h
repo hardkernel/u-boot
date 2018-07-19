@@ -7,9 +7,16 @@
 #ifndef _KEY_H_
 #define _KEY_H_
 
+#include <asm-generic/gpio.h>
 #include <dt-bindings/input/linux-event-codes.h>
 
 #define KEY_LONG_DOWN_MS	2000
+
+enum {
+	INVAL_KEY = 0x0,
+	ADC_KEY   = 0x1,
+	GPIO_KEY  = 0x2,
+};
 
 enum key_state {
 	KEY_PRESS_NONE,	/* press without release */
@@ -18,30 +25,44 @@ enum key_state {
 	KEY_NOT_EXIST,
 };
 
-struct dm_key_ops {
-	const char *name;
-	int (*read)(struct udevice *dev, int code);
-};
-
 struct input_key {
+	struct udevice *parent;
+	struct list_head link;
 	const char *name;
 	u32 code;
-	u32 channel;
-	u32 value;
-	u32 margin;
-	u32 vref;
-	int flag;
+	u8 type;
 
+	/* ADC key */
+	u32 adcval;
+	u32 vref;
+	u8 channel;
+
+	/* GPIO key */
 	u32 irq;
+	struct gpio_desc gpio;
+
+	/* Event */
 	u64 up_t;
 	u64 down_t;
 };
 
-uint64_t key_get_timer(uint64_t base);
-int platform_key_read(int code);
+struct dm_key_ops {
+	const char *name;
+};
 
-/* General interface for adc or gpio interrupt key event parse */
-int key_parse_gpio_event(struct input_key *key);
-int key_parse_adc_event(struct input_key *key, unsigned int adcval);
+/* Use it instead of get_timer() in key interrupt handler */
+uint64_t key_timer(uint64_t base);
+
+/* Reister you key to dm key framework */
+void key_add(struct input_key *key);
+
+/* Confirm if your key value is a press event */
+int key_is_pressed(int keyval);
+
+/* Read key */
+int key_read(int code);
+
+/* deprecated */
+int platform_key_read(int code);
 
 #endif
