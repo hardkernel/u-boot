@@ -13,6 +13,7 @@
 #include <fdtdec.h>
 #include <boot_rkimg.h>
 #include <linux/usb/phy-rockchip-inno-usb2.h>
+#include <key.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -42,7 +43,17 @@ void set_back_to_bootrom_dnl_flag(void)
 
 __weak int rockchip_dnl_key_pressed(void)
 {
-#if defined(CONFIG_ADC)
+	int keyval = false;
+
+/*
+ * This is a generic interface to read key
+ */
+#if defined(CONFIG_DM_KEY)
+	keyval = key_read(KEY_VOLUMEUP);
+
+	return key_is_pressed(keyval);
+
+#elif defined(CONFIG_ADC)
 	const void *blob = gd->fdt_blob;
 	unsigned int val;
 	int channel = 1;
@@ -66,9 +77,9 @@ __weak int rockchip_dnl_key_pressed(void)
 		return true;
 	else
 		return false;
-#else
-	return false;
 #endif
+
+	return keyval;
 }
 
 void devtype_num_envset(void)
