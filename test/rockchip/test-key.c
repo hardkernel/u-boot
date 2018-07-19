@@ -14,14 +14,33 @@
 
 int board_key_test(int argc, char * const argv[])
 {
+	int i, ret;
+	u32 key_code[] = {
+		KEY_VOLUMEUP,
+		KEY_VOLUMEDOWN,
+		KEY_POWER,
+		KEY_MENU,
+		KEY_ESC,
+		KEY_HOME,
+	};
+	const char *key_name[] = {
+		"volume up",
+		"volume down",
+		"power",
+		"menu",
+		"esc",
+		"home",
+	};
+
 	while (!ctrlc()) {
-		mdelay(100);
-		platform_key_read(KEY_VOLUMEUP);
-		platform_key_read(KEY_VOLUMEDOWN);
-		platform_key_read(KEY_POWER);
-		platform_key_read(KEY_HOME);
-		platform_key_read(KEY_MENU);
-		platform_key_read(KEY_ESC);
+		for (i = 0; i < ARRAY_SIZE(key_code); i++) {
+			mdelay(20);
+			ret = key_read(key_code[i]);
+			if (ret == KEY_PRESS_DOWN)
+				printf("'%s' key pressed...\n", key_name[i]);
+			else if (ret == KEY_PRESS_LONG_DOWN)
+				printf("'%s' key long pressed...\n", key_name[i]);
+		}
 	}
 
 	return 0;
