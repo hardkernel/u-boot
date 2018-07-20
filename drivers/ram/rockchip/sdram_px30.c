@@ -734,15 +734,74 @@ static void enable_low_power(struct dram_info *dram,
 	setbits_le32(pctl_base + DDR_PCTL2_PWRCTL, (1 << 3));
 }
 
-static int print_dec2hex(int i)
+static void print_ddr_info(struct px30_sdram_params *sdram_params)
 {
-	int tmp;
+	u64 cap;
+	u32 bg;
+	u32 split;
 
-	tmp = (i % 10);
-	tmp |= ((i % 100) / 10) << 4;
-	tmp |= ((i % 1000) / 100) << 8;
+	split = readl(DDR_GRF_BASE_ADDR + DDR_GRF_SPLIT_CON);
+	bg = (sdram_params->ch.dbw == 0) ? 2 : 1;
+	switch (sdram_params->dramtype) {
+	case LPDDR3:
+		printascii("LPDDR3\n");
+		break;
+	case DDR3:
+		printascii("DDR3\n");
+		break;
+	case DDR4:
+		printascii("DDR4\n");
+		break;
+	case LPDDR2:
+		printascii("LPDDR2\n");
+		break;
+	default:
+		printascii("Unknown Device\n");
+		break;
+	}
 
-	return tmp;
+	printdec(sdram_params->ddr_freq);
+	printascii("MHz\n");
+	printascii("BW=");
+	printdec(8 << sdram_params->ch.bw);
+	printascii(" Col=");
+	printdec(sdram_params->ch.col);
+	printascii(" Bk=");
+	printdec(0x1 << sdram_params->ch.bk);
+	if (sdram_params->dramtype == DDR4) {
+		printascii(" BG=");
+		printdec(1 << bg);
+	}
+	printascii(" CS0 Row=");
+	printdec(sdram_params->ch.cs0_row);
+	if (sdram_params->ch.cs0_high16bit_row !=
+		sdram_params->ch.cs0_row) {
+		printascii("/");
+		printdec(sdram_params->ch.cs0_high16bit_row);
+	}
+	if (sdram_params->ch.rank > 1) {
+		printascii(" CS1 Row=");
+		printdec(sdram_params->ch.cs1_row);
+		if (sdram_params->ch.cs1_high16bit_row !=
+			sdram_params->ch.cs1_row) {
+			printascii("/");
+			printdec(sdram_params->ch.cs1_high16bit_row);
+		}
+	}
+	printascii(" CS=");
+	printdec(sdram_params->ch.rank);
+	printascii(" Die BW=");
+	printdec(8 << sdram_params->ch.dbw);
+
+	cap = get_cs_cap(sdram_params, 3);
+	if (sdram_params->ch.row_3_4)
+		cap = cap * 3 / 4;
+	else if (!(split & (1 << SPLIT_BYPASS_OFFSET)))
+		cap = cap / 2 + ((split & 0xff) << 24) / 2;
+
+	printascii(" Size=");
+	printdec(cap >> 20);
+	printascii("MB\n");
 }
 
 /*
@@ -766,26 +825,6 @@ static int sdram_init_(struct dram_info *dram,
 	 */
 	rkclk_ddr_reset(dram, 1, 1, 1, 0);
 	rkclk_configure_ddr(dram, sdram_params);
-
-	if (pre_init == 1) {
-		switch (sdram_params->dramtype) {
-		case DDR3:
-			printascii("DDR3\n");
-			break;
-		case DDR4:
-			printascii("DDR4\n");
-			break;
-		case LPDDR2:
-			printascii("LPDDR2\n");
-			break;
-		case LPDDR3:
-		default:
-			printascii("LPDDR3\n");
-			break;
-		}
-		printhex4(print_dec2hex(sdram_params->ddr_freq));
-		printascii("MHz\n");
-	}
 
 	/* release phy srst to provide clk to ctrl */
 	rkclk_ddr_reset(dram, 1, 1, 0, 0);
@@ -1159,8 +1198,6 @@ int sdram_init(void)
 	struct px30_sdram_params *sdram_params;
 	int ret = 0;
 
-	printascii("DDR Init V1.07\n");
-
 	dram_info.phy = (void *)DDR_PHY_BASE_ADDR;
 	dram_info.pctl = (void *)DDRC_BASE_ADDR;
 	dram_info.grf = (void *)GRF_BASE_ADDR;
@@ -1174,6 +1211,8 @@ int sdram_init(void)
 
 	if (ret)
 		goto error;
+
+	print_ddr_info(sdram_params);
 
 	printascii("out\n");
 	return ret;
