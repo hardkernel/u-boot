@@ -115,7 +115,7 @@ TEEC_Result TEEC_SMC_OpenSession(TEEC_Context *context,
 #endif
 
 #ifdef CONFIG_OPTEE_V2
-#ifdef CONFIG_ARM64
+#if defined CONFIG_ARM64 || defined CONFIG_ARM64_BOOT_AARCH32
 	uint8_t * session_uuid = (uint8_t *)&TeeSmcMetaSession->uuid;
 	tee_uuid_to_octets(session_uuid, destination);
 	memcpy((void *)&TeeSmc32Param[0].u.value, &TeeSmcMetaSession->uuid, sizeof(TeeSmcMetaSession->uuid));
@@ -307,7 +307,7 @@ void SetTeeSmc32Params(TEEC_Operation *operation,
 #endif
 
 #ifdef CONFIG_OPTEE_V2
-#ifdef CONFIG_ARM64
+#if defined CONFIG_ARM64 || defined CONFIG_ARM64_BOOT_AARCH32
 			attr += (OPTEE_MSG_ATTR_TYPE_TMEM_INPUT_V2 - TEEC_MEMREF_TEMP_INPUT);
 			debug(" OPTEE_OS_V2 ARCH64 attr %x\n", attr);
 #else
@@ -376,7 +376,7 @@ TEEC_Result OpteeSmcCall(t_teesmc32_arg *TeeSmc32Arg)
 
 	while (1) {
 		tee_smc_call(&ArmSmcArgs);
-		debug("arg0=0x%x arg1=0x%x arg2=0x%x arg3=0x%x",
+		debug("arg0=0x%x arg1=0x%x arg2=0x%x arg3=0x%x \n",
 			ArmSmcArgs.Arg0, ArmSmcArgs.Arg1, ArmSmcArgs.Arg2, ArmSmcArgs.Arg3);
 		if (TEESMC_RETURN_IS_RPC(ArmSmcArgs.Arg0)) {
 			(void) OpteeRpcCallback(&ArmSmcArgs);

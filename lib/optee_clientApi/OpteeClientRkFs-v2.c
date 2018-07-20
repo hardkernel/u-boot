@@ -724,7 +724,7 @@ static uint32_t ree_fs_new_open(size_t num_params,
 	debug("params[1].u.memref.shm_id = 0x%llx params[1].u.memref.shm_offs = 0x%llx \n",
 		params[1].u.memref.shm_id, params[1].u.memref.shm_offs);
 
-	filename = (char *)params[1].u.memref.shm_id;
+	filename = (char *)(size_t)params[1].u.memref.shm_id;
 	if (!filename)
 		return TEEC_ERROR_BAD_PARAMETERS;
 
@@ -733,7 +733,7 @@ static uint32_t ree_fs_new_open(size_t num_params,
 		return TEEC_ERROR_BAD_PARAMETERS;
 	}
 
-	debug("ree_fs_new_open open file: %s, len: %lu \n", filename, strlen(filename));
+	debug("ree_fs_new_open open file: %s, len: %zu \n", filename, strlen(filename));
 	fd = rkss_get_fileinfo_by_name(filename, &p);
 	if (fd < 0) {
 		debug("ree_fs_new_open : no such file. %s", filename);
@@ -756,7 +756,7 @@ static TEEC_Result ree_fs_new_create(size_t num_params,
 	/* file open flags: O_RDWR | O_CREAT | O_TRUNC
 	 * if file exists, we must remove it first.
 	 */
-	filename = (char *)params[1].u.memref.shm_id;
+	filename = (char *)(size_t)params[1].u.memref.shm_id;
 	debug("params[1].u.memref.shm_id = 0x%llx params[1].u.memref.shm_offs = 0x%llx\n",
 		params[1].u.memref.shm_id, params[1].u.memref.shm_offs);
 	if (!filename)
@@ -767,7 +767,7 @@ static TEEC_Result ree_fs_new_create(size_t num_params,
 		return TEEC_ERROR_BAD_PARAMETERS;
 	}
 
-	debug("ree_fs_new_create create file: %s, len: %lu \n", filename, strlen(filename));
+	debug("ree_fs_new_create create file: %s, len: %zu \n", filename, strlen(filename));
 	fd = rkss_get_fileinfo_by_name(filename, &p);
 	if (fd >= 0) {
 		debug("ree_fs_new_create : file exist, clear it. %s", filename);
@@ -832,7 +832,7 @@ static TEEC_Result ree_fs_new_read(size_t num_params,
 	fd = params[0].u.value.b;
 	offs = params[0].u.value.c;
 
-	data = (uint8_t *)params[1].u.memref.shm_id;
+	data = (uint8_t *)(size_t)params[1].u.memref.shm_id;
 	debug("params[1].u.memref.shm_id = 0x%llx params[1].u.memref.shm_offs = 0x%llx\n",
 		params[1].u.memref.shm_id, params[1].u.memref.shm_offs);
 
@@ -898,7 +898,7 @@ static TEEC_Result ree_fs_new_write(size_t num_params,
 	fd = params[0].u.value.b;
 	offs = params[0].u.value.c;
 
-	data = (uint8_t *)params[1].u.memref.shm_id;
+	data = (uint8_t *)(size_t)params[1].u.memref.shm_id;
 	debug("params[1].u.memref.shm_id = 0x%llx params[1].u.memref.shm_offs = 0x%llx\n",
 		params[1].u.memref.shm_id, params[1].u.memref.shm_offs);
 	if (!data)
@@ -1045,7 +1045,7 @@ static TEEC_Result ree_fs_new_remove(size_t num_params,
 	debug("params[1].u.memref.shm_id = 0x%llx params[1].u.memref.shm_offs = 0x%llx \n",
 		params[1].u.memref.shm_id, params[1].u.memref.shm_offs);
 
-	filename = (char *)params[1].u.memref.shm_id;
+	filename = (char *)(size_t)params[1].u.memref.shm_id;
 	if (!filename)
 		return TEEC_ERROR_BAD_PARAMETERS;
 
@@ -1092,13 +1092,13 @@ static TEEC_Result ree_fs_new_rename(size_t num_params,
 	struct rkss_file_info p = {0};
 	int ret;
 
-	old_fname = (char *)params[1].u.memref.shm_id;
+	old_fname = (char *)(size_t)params[1].u.memref.shm_id;
 	debug("params[1].u.memref.shm_id = 0x%llx params[1].u.memref.shm_offs = 0x%llx\n",
 		params[1].u.memref.shm_id, params[1].u.memref.shm_offs);
 	if (!old_fname)
 		return TEEC_ERROR_BAD_PARAMETERS;
 
-	new_fname = (char *)params[2].u.memref.shm_id;
+	new_fname = (char *)(size_t)params[2].u.memref.shm_id;
 	debug("params[2].u.memref.shm_id = 0x%llx params[2].u.memref.shm_offs = 0x%llx\n",
 		params[2].u.memref.shm_id, params[2].u.memref.shm_offs);
 	if (!new_fname)
@@ -1137,7 +1137,7 @@ static TEEC_Result ree_fs_new_opendir(size_t num_params,
 	debug("params[1].u.memref.shm_id = 0x%llx params[1].u.memref.shm_offs = 0x%llx \n",
 		params[1].u.memref.shm_id, params[1].u.memref.shm_offs);
 
-	dirname = (char *)params[1].u.memref.shm_id;
+	dirname = (char *)(size_t)params[1].u.memref.shm_id;
 	if (!dirname)
 		return TEEC_ERROR_BAD_PARAMETERS;
 
@@ -1173,7 +1173,7 @@ static TEEC_Result ree_fs_new_readdir(size_t num_params,
 	size_t len;
 	size_t dirname_len;
 
-	dirname = (char *) params[1].u.memref.shm_id;
+	dirname = (char *)(size_t)params[1].u.memref.shm_id;
 	debug("params[1].u.memref.shm_id = 0x%llx params[1].u.memref.shm_offs = 0x%llx \n",
 		params[1].u.memref.shm_id, params[1].u.memref.shm_offs);
 	if (!dirname)

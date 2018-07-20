@@ -147,7 +147,7 @@ TEEC_Result OpteeRpcCmdLoadV2Ta(t_teesmc32_arg *TeeSmc32Arg)
 		debug("return size of TA, keymaster_size = 0x%x", keymaster_size);
 		TeeSmc32Param[1].u.memref.size = keymaster_size;
 	} else {
-		memcpy((void *)TeeSmc32Param[1].u.memref.buf_ptr,
+		memcpy((void *)(size_t)TeeSmc32Param[1].u.memref.buf_ptr,
 			(void *)keymaster_data, TeeSmc32Param[1].u.memref.size);
 		debug("memref.buf_ptr = 0x%llx; memref.size = 0x%llx",
 			TeeSmc32Param[1].u.memref.buf_ptr,
@@ -571,7 +571,7 @@ TEEC_Result OpteeRpcCallback(ARM_SMC_ARGS *ArmSmcArgs)
 #endif
 #ifdef CONFIG_OPTEE_V2
 		t_teesmc32_arg *TeeSmc32Arg =
-			(t_teesmc32_arg *)((size_t)ArmSmcArgs->Arg1 << 32 | ArmSmcArgs->Arg2);
+			(t_teesmc32_arg *)(size_t)((uint64_t)ArmSmcArgs->Arg1 << 32 | ArmSmcArgs->Arg2);
 		debug("TeeSmc32Arg->cmd = 0x%x", TeeSmc32Arg->cmd);
 #endif
 		switch (TeeSmc32Arg->cmd) {
