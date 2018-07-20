@@ -95,6 +95,7 @@ int video_res_prepare_for_upgrade(HIMAGE hImg)
     const char* env_name  = NULL;
     int ret = 0;
 
+    memset((void*)UpgradeLogoAddr, 0, 16);//clear to force reload whole logo.img
     ret = optimus_prepare_upgrading_bmps(hImg);
     if (ret) {
         DWN_ERR("Fail in loading bmps for upgradig\n");
