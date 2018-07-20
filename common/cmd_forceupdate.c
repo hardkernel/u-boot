@@ -28,6 +28,8 @@ static void check_auto_update(void)
 			return ;
 		}
 	}
+
+	printf("press update key!\n");
 	run_command ("run update", 0);
 }
 
