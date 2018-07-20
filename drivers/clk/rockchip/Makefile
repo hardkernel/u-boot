@@ -4,7 +4,9 @@
 # SPDX-License-Identifier:      GPL-2.0+
 #
 
+obj-y += clk_pll.o
 obj-$(CONFIG_ROCKCHIP_PX30) += clk_px30.o
+#obj-y += clk_rk1808.o
 obj-$(CONFIG_ROCKCHIP_RK3036) += clk_rk3036.o
 obj-$(CONFIG_ROCKCHIP_RK3066) += clk_rk3066.o
 obj-$(CONFIG_ROCKCHIP_RK3128) += clk_rk3128.o
