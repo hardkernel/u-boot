@@ -143,12 +143,6 @@ static int check_key_press(struct udevice *dev)
 
 static int system_suspend_enter(struct charge_animation_pdata *pdata)
 {
-	/*
-	 * TODO: enter low power mode:
-	 * 3. auto turn off screen when timout;
-	 * 4. power key wakeup;
-	 * 5. timer period wakeup for pmic fg
-	 */
 	if (pdata->system_suspend && IS_ENABLED(CONFIG_ARM_SMCCC)) {
 		printf("\nSystem suspend: ");
 		putc('1');
@@ -410,6 +404,13 @@ static int charge_animation_show(struct udevice *dev)
 
 		debug("step1 (%d)... \n", screen_on);
 
+		/*
+		 * Most fuel gauge is I2C interface, it shouldn't be interrupted
+		 * during tansfer. The power key event depends on interrupt, so
+		 * so we should disable local irq when update fuel gauge.
+		 */
+		local_irq_disable();
+
 		/* Step1: Is charging now ? */
 		charging = fuel_gauge_get_chrg_online(fg);
 		if (charging <= 0) {
@@ -447,6 +448,9 @@ static int charge_animation_show(struct udevice *dev)
 			continue;
 		}
 		first_poll_fg = 0;
+
+		local_irq_enable();
+
 show_images:
 		/*
 		 * Just for debug, otherwise there will be nothing output which
