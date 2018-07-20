@@ -115,6 +115,10 @@ static int check_key_press(struct udevice *dev)
 	state = key_read(KEY_POWER);
 	if (state < 0)
 		printf("read power key failed: %d\n", state);
+	else if (state == KEY_PRESS_DOWN)
+		printf("power key pressed...\n");
+	else if (state == KEY_PRESS_LONG_DOWN)
+		printf("power key long pressed...\n");
 
 	/* Fixup key state for following cases */
 	if (pdata->auto_wakeup_interval) {
@@ -126,7 +130,8 @@ static int check_key_press(struct udevice *dev)
 			}
 		}
 	} else if (pdata->auto_off_screen_interval) {
-		if (get_timer(priv->auto_screen_off_timeout) >
+		if (priv->auto_screen_off_timeout &&
+		    get_timer(priv->auto_screen_off_timeout) >
 		    pdata->auto_off_screen_interval * 1000) {	/* 1000ms */
 			state = KEY_PRESS_DOWN;
 			printf("Auto screen off\n");
@@ -308,7 +313,7 @@ static int charge_animation_show(struct udevice *dev)
 	ulong show_start = 0, charge_start = 0, debug_start = 0;
 	ulong delta;
 	ulong ms = 0, sec = 0;
-	int start_idx = 0, show_idx = -1;
+	int start_idx = 0, show_idx = -1, old_show_idx = IMAGE_SHOW_RESET;
 	int soc, voltage, current, key_state;
 	int i, charging = 1, ret;
 	int boot_mode;
@@ -441,7 +446,6 @@ static int charge_animation_show(struct udevice *dev)
 			printf("get current failed: %d\n", current);
 			continue;
 		}
-
 		first_poll_fg = 0;
 show_images:
 		/*
@@ -510,9 +514,12 @@ show_images:
 
 		/* Step3: show images */
 		if (screen_on) {
-			debug("SHOW: %s\n", image[show_idx].name);
-			charge_show_bmp(image[show_idx].name);
-
+			/* Don't call 'charge_show_bmp' unless image changed */
+			if (old_show_idx != show_idx) {
+				old_show_idx = show_idx;
+				debug("SHOW: %s\n", image[show_idx].name);
+				charge_show_bmp(image[show_idx].name);
+			}
 			/* Re calculate timeout to off screen */
 			if (priv->auto_screen_off_timeout == 0)
 				priv->auto_screen_off_timeout = get_timer(0);
@@ -543,6 +550,8 @@ show_images:
 		 */
 		key_state = check_key_press(dev);
 		if (key_state == KEY_PRESS_DOWN) {
+			old_show_idx = IMAGE_SHOW_RESET;
+
 			/* NULL means show nothing, ie. turn off screen */
 			if (screen_on)
 				charge_show_bmp(NULL);
