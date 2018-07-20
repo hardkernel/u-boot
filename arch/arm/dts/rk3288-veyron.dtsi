@@ -274,7 +274,7 @@
 	card-external-vcc-supply = <&wifi_regulator>;
 	clocks = <&cru HCLK_SDIO0>, <&cru SCLK_SDIO0>, <&cru SCLK_SDIO0_DRV>,
 		 <&cru SCLK_SDIO0_SAMPLE>, <&rk808 RK808_CLKOUT1>;
-	clock-names = "biu", "ciu", "ciu_drv", "ciu_sample", "card_ext_clock";
+	clock-names = "biu", "ciu", "ciu-drv", "ciu-sample", "card-ext-clock";
 	keep-power-in-suspend;
 	non-removable;
 	num-slots = <1>;

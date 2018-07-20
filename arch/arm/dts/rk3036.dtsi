@@ -252,7 +252,7 @@
 		max-frequency = <37500000>;
 		clocks = <&cru HCLK_EMMC>, <&cru SCLK_EMMC>,
 		<&cru SCLK_EMMC_DRV>, <&cru SCLK_EMMC_SAMPLE>;
-		clock-names = "biu", "ciu", "ciu_drv", "ciu_sample";
+		clock-names = "biu", "ciu", "ciu-drv", "ciu-sample";
 		dmas = <&pdma 12>;
 		dma-names = "rx-tx";
 		fifo-depth = <0x100>;
