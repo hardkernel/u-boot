@@ -10,12 +10,12 @@
 #include <ram.h>
 #include <spl.h>
 #include <asm/arch/bootrom.h>
+#include <asm/arch/sdram_common.h>
 #include <asm/arch-rockchip/sys_proto.h>
 #include <asm/io.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
-#define BROM_BOOTSOURCE_ID_ADDR (CONFIG_ROCKCHIP_IRAM_START_ADDR + 0x10)
 void board_return_to_bootrom(void)
 {
 	back_to_bootrom(BROM_BOOT_NEXTSTAGE);
