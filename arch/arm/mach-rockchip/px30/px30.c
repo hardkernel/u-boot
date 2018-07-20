@@ -16,7 +16,12 @@
 #include <asm/arch/cru_px30.h>
 #include <dt-bindings/clock/px30-cru.h>
 
-#define PMU_PWRDN_CON	0xff000018
+#define PMU_PWRDN_CON			0xff000018
+
+#define SERVICE_CORE_ADDR		0xff508000
+#define QOS_PRIORITY			0x08
+
+#define QOS_PRIORITY_LEVEL(h, l)	((((h) & 3) << 8) | ((l) & 3))
 
 static struct mm_region px30_mem_map[] = {
 	{
@@ -48,6 +53,11 @@ int arch_cpu_init(void)
 #endif
 	/* Enable PD_VO (default disable at reset) */
 	rk_clrreg(PMU_PWRDN_CON, 1 << 13);
+
+#ifdef CONFIG_TPL_BUILD
+	/* Set cpu qos priority */
+	writel(QOS_PRIORITY_LEVEL(1, 1), SERVICE_CORE_ADDR + QOS_PRIORITY);
+#endif
 
 	return 0;
 }
