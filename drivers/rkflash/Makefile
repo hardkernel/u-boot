@@ -4,9 +4,10 @@
 # SPDX-License-Identifier:	GPL-2.0
 #
 
-obj-$(CONFIG_RKNANDC_NAND) += rksftl.o rkflash_blk.o rknandc_base.o rkflash_api.o rkflash_debug.o flash.o nandc.o
-obj-$(CONFIG_RKSFC_NAND) += rksftl.o rkflash_blk.o rksfc_base.o  rkflash_api.o rkflash_debug.o sfc_nand.o sfc.o
-obj-$(CONFIG_RKSFC_NOR) += rkflash_blk.o rksfc_base.o rkflash_api.o rkflash_debug.o sfc_nor.o sfc.o
+obj-y += rkflash_blk.o rkflash_debug.o
+obj-$(CONFIG_RKNANDC_NAND) += rksftl.o rknandc_base.o rkflash_api.o flash.o nandc.o
+obj-$(CONFIG_RKSFC_NAND) += rksftl.o rksfc_base.o  rkflash_api.o sfc_nand.o sfc.o
+obj-$(CONFIG_RKSFC_NOR) += rksfc_base.o rkflash_api.o sfc_nor.o sfc.o
 
 ifneq (, $(CONFIG_RKNANDC_NAND)$(CONFIG_RKSFC_NAND))
 

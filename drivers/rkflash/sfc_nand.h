@@ -117,7 +117,11 @@ struct nand_info {
 	u32 (*ecc_status)(void);
 };
 
+extern struct nand_phy_info	g_nand_phy_info;
+extern struct nand_ops		g_nand_ops;
+
 u32 sfc_nand_init(void);
+void sfc_nand_deinit(void);
 int sfc_nand_read_id(u8 *buf);
 u32 sfc_nand_ecc_status_sp1(void);
 u32 sfc_nand_ecc_status_sp3(void);

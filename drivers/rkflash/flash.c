@@ -10,7 +10,6 @@
 #include "flash.h"
 #include "flash_com.h"
 #include "nandc.h"
-#include "typedef.h"
 #include "rkflash_debug.h"
 
 #define FLASH_STRESS_TEST_EN		0

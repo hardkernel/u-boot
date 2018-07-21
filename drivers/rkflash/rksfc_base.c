@@ -9,6 +9,7 @@
 #include <dm.h>
 #include <dm/device-internal.h>
 #include <asm/arch/clock.h>
+#include <rksfc.h>
 
 #include "rkflash_blk.h"
 #include "rkflash_api.h"

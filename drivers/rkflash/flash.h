@@ -7,8 +7,6 @@
 #ifndef __FLASH_H
 #define __FLASH_H
 
-#include "typedef.h"
-
 #ifndef BIT
 #define BIT(nr)			(1 << (nr))
 #endif
