@@ -15,17 +15,26 @@ typedef struct board_module {
 
 static board_module_t g_board_modules[] = {
 	{ .name = "timer",	.test = board_timer_test },
+	{ .name = "brom",	.test = board_brom_dnl_test },
+
+#if defined(CONFIG_DM_KEY)
 	{ .name = "key",	.test = board_key_test },
+#endif
+#if defined(CONFIG_MMC)
 	{ .name = "emmc",	.test = board_emmc_test },
+#endif
+#if defined(CONFIG_DM_REGULATOR)
 	{ .name = "regulator",	.test = board_regulator_test },
+#endif
+#if defined(CONFIG_RKNAND)
 	{ .name = "rknand",	.test = board_rknand_test },
+#endif
 #if defined(CONFIG_GMAC_ROCKCHIP)
 	{ .name = "eth",        .test = board_eth_test },
 #endif
 #if defined(CONFIG_RK_IR)
 	{ .name = "ir",		.test = board_ir_test },
 #endif
-	{ .name = "brom_dnl",	.test = board_brom_dnl_test},
 #if defined(CONFIG_ROCKCHIP_VENDOR_PARTITION)
 	{ .name = "vendor",	.test = board_vendor_storage_test },
 #endif
@@ -34,7 +43,7 @@ static board_module_t g_board_modules[] = {
 static void help(void)
 {
 	printf("Command: rktest [module] [args...]\n\n"
-	       "  - module: timer|key|emmc|rknand|regulator|eth|ir|brom_dnl|vendor\n"
+	       "  - module: timer|key|emmc|rknand|regulator|eth|ir|brom|vendor\n"
 	       "  - args: depends on module\n");
 }
 

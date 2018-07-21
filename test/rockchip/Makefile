@@ -6,11 +6,11 @@
 
 obj-y += test-rockchip.o
 obj-y += test-timer.o
-obj-y += test-key.o
-obj-y += test-emmc.o
-obj-y += test-regulator.o
-obj-y += test-rknand.o
+obj-y += test-brom-dnl.o
+obj-$(CONFIG_DM_KEY) += test-key.o
+obj-$(CONFIG_MMC) += test-emmc.o
+obj-$(CONFIG_DM_REGULATOR)+= test-regulator.o
+obj-$(CONFIG_RKNAND) += test-rknand.o
 obj-$(CONFIG_GMAC_ROCKCHIP) += test-eth.o
 obj-$(CONFIG_RK_IR) += test-ir.o
-obj-y += test-brom-dnl.o
 obj-$(CONFIG_ROCKCHIP_VENDOR_PARTITION) += test-vendor-storage.o
