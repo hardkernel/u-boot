@@ -196,11 +196,6 @@ out:
 	return keyval;
 }
 
-int platform_key_read(int code)
-{
-	return KEY_NOT_EXIST;
-}
-
 UCLASS_DRIVER(key) = {
 	.id		= UCLASS_KEY,
 	.name		= "key",

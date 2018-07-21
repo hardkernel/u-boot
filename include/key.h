@@ -62,7 +62,4 @@ int key_is_pressed(int keyval);
 /* Read key */
 int key_read(int code);
 
-/* deprecated */
-int platform_key_read(int code);
-
 #endif
