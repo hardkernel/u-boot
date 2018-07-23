@@ -196,6 +196,7 @@
 #define EXT_CSD_HC_WP_GRP_SIZE		221	/* RO */
 #define EXT_CSD_HC_ERASE_GRP_SIZE	224	/* RO */
 #define EXT_CSD_BOOT_MULT		226	/* RO */
+#define EXT_CSD_SEC_FEATURE_SUPPORT     231     /* RO */
 #define EXT_CSD_BKOPS_SUPPORT		502	/* RO */
 
 /*
@@ -273,6 +274,11 @@
 #define MMC_RSP_BUSY	(1 << 3)		/* card may send busy */
 #define MMC_RSP_OPCODE	(1 << 4)		/* response contains opcode */
 
+#define EXT_CSD_SEC_ER_EN      BIT(0)
+#define EXT_CSD_SEC_BD_BLK_EN  BIT(2)
+#define EXT_CSD_SEC_GB_CL_EN   BIT(4)
+#define EXT_CSD_SEC_SANITIZE   BIT(6)  /* v4.5 only */
+
 #define MMC_RSP_NONE	(0)
 #define MMC_RSP_R1	(MMC_RSP_PRESENT|MMC_RSP_CRC|MMC_RSP_OPCODE)
 #define MMC_RSP_R1b	(MMC_RSP_PRESENT|MMC_RSP_CRC|MMC_RSP_OPCODE| \
@@ -349,6 +355,10 @@ int authenticated_write(struct mmc *mmc, struct s_rpmb *requestpackets);
  */
 struct mmc_uclass_priv {
 	struct mmc *mmc;
+};
+
+struct emmc_esr {
+	unsigned int mmc_can_trim;
 };
 
 /**
@@ -557,6 +567,7 @@ struct mmc {
 	uint erase_grp_size;	/* in 512-byte sectors */
 	uint hc_wp_grp_size;	/* in 512-byte sectors */
 	struct sd_ssr	ssr;	/* SD status register */
+	struct emmc_esr esr;    /* emmc status register */
 	u64 capacity;
 	u64 capacity_user;
 	u64 capacity_boot;

@@ -1730,6 +1730,8 @@ static int mmc_startup(struct mmc *mmc)
 		if (part_completed &&
 		    (ext_csd[EXT_CSD_PARTITIONING_SUPPORT] & ENHNCD_SUPPORT))
 			mmc->part_attr = ext_csd[EXT_CSD_PARTITIONS_ATTRIBUTE];
+		if (ext_csd[EXT_CSD_SEC_FEATURE_SUPPORT] & EXT_CSD_SEC_GB_CL_EN)
+			mmc->esr.mmc_can_trim = 1;
 
 		mmc->capacity_boot = ext_csd[EXT_CSD_BOOT_MULT] << 17;
 
