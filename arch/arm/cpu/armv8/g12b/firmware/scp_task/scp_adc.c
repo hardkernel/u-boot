@@ -186,6 +186,7 @@ int saradc_disable(void)
 	return 0;
 }
 
+#if defined(CONFIG_ADC_POWER_KEY_CHAN)
 int check_adc_key_resume(void)
 {
 	int value;
@@ -206,3 +207,4 @@ int check_adc_key_resume(void)
 	else
 		return 0;
 }
+#endif
