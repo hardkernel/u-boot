@@ -208,9 +208,8 @@ int board_init(void)
 {
 	int ret;
 
-#if !defined(CONFIG_SUPPORT_SPL)
 	board_debug_uart_init();
-#endif
+
 #ifdef CONFIG_USING_KERNEL_DTB
 	init_kernel_dtb();
 #endif
