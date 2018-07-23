@@ -325,6 +325,9 @@ struct rockchip_pin_ctrl {
 	int	(*schmitt_calc_reg)(struct rockchip_pin_bank *bank,
 				    int pin_num, struct regmap **regmap,
 				    int *reg, u8 *bit);
+	int	(*slew_rate_calc_reg)(struct rockchip_pin_bank *bank,
+				      int pin_num, struct regmap **regmap,
+				      int *reg, u8 *bit);
 };
 
 /**
@@ -2376,6 +2379,59 @@ static int rockchip_set_schmitt(struct rockchip_pin_bank *bank,
 	return regmap_write(regmap, reg, data);
 }
 
+#define PX30_SLEW_RATE_PMU_OFFSET		0x30
+#define PX30_SLEW_RATE_GRF_OFFSET		0x90
+#define PX30_SLEW_RATE_PINS_PER_PMU_REG		16
+#define PX30_SLEW_RATE_BANK_STRIDE		16
+#define PX30_SLEW_RATE_PINS_PER_GRF_REG		8
+
+static int px30_calc_slew_rate_reg_and_bit(struct rockchip_pin_bank *bank,
+					   int pin_num,
+					   struct regmap **regmap,
+					   int *reg, u8 *bit)
+{
+	struct rockchip_pinctrl_priv *priv = bank->priv;
+	int pins_per_reg;
+
+	if (bank->bank_num == 0) {
+		*regmap = priv->regmap_pmu;
+		*reg = PX30_SLEW_RATE_PMU_OFFSET;
+		pins_per_reg = PX30_SCHMITT_PINS_PER_PMU_REG;
+	} else {
+		*regmap = priv->regmap_base;
+		*reg = PX30_SCHMITT_GRF_OFFSET;
+		pins_per_reg = PX30_SCHMITT_PINS_PER_GRF_REG;
+		*reg += (bank->bank_num  - 1) * PX30_SCHMITT_BANK_STRIDE;
+	}
+	*reg += ((pin_num / pins_per_reg) * 4);
+	*bit = pin_num % pins_per_reg;
+
+	return 0;
+}
+
+static int rockchip_set_slew_rate(struct rockchip_pin_bank *bank,
+				  int pin_num, int speed)
+{
+	struct rockchip_pinctrl_priv *priv = bank->priv;
+	struct rockchip_pin_ctrl *ctrl = priv->ctrl;
+	struct regmap *regmap;
+	int reg, ret;
+	u8 bit;
+	u32 data;
+
+	debug("setting slew rate of GPIO%d-%d to %d\n", bank->bank_num,
+	      pin_num, speed);
+
+	ret = ctrl->slew_rate_calc_reg(bank, pin_num, &regmap, &reg, &bit);
+	if (ret)
+		return ret;
+
+	/* enable the write to the equivalent lower bits */
+	data = BIT(bit + 16) | (speed << bit);
+
+	return regmap_write(regmap, reg, data);
+}
+
 /*
  * Pinconf_ops handling
  */
@@ -2451,6 +2507,16 @@ static int rockchip_pinconf_set(struct rockchip_pin_bank *bank,
 			return rc;
 		break;
 
+	case PIN_CONFIG_SLEW_RATE:
+		if (!ctrl->slew_rate_calc_reg)
+			return -ENOTSUPP;
+
+		rc = rockchip_set_slew_rate(bank,
+					    pin - bank->pin_base, arg);
+		if (rc < 0)
+			return rc;
+		break;
+
 	default:
 		break;
 	}
@@ -2468,6 +2534,7 @@ static const struct pinconf_param rockchip_conf_params[] = {
 	{ "input-disable", PIN_CONFIG_INPUT_ENABLE, 0 },
 	{ "input-schmitt-disable", PIN_CONFIG_INPUT_SCHMITT_ENABLE, 0 },
 	{ "input-schmitt-enable", PIN_CONFIG_INPUT_SCHMITT_ENABLE, 1 },
+	{ "slew-rate", PIN_CONFIG_SLEW_RATE, 0 },
 };
 
 static int rockchip_pinconf_prop_name_to_param(const char *property,
@@ -2849,6 +2916,7 @@ static struct rockchip_pin_ctrl px30_pin_ctrl = {
 		.pull_calc_reg		= px30_calc_pull_reg_and_bit,
 		.drv_calc_reg		= px30_calc_drv_reg_and_bit,
 		.schmitt_calc_reg	= px30_calc_schmitt_reg_and_bit,
+		.slew_rate_calc_reg	= px30_calc_slew_rate_reg_and_bit,
 };
 
 static struct rockchip_pin_bank rv1108_pin_banks[] = {
