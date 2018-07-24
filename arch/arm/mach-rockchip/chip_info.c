@@ -79,7 +79,11 @@ int rockchip_rockusb_get_chip_info(unsigned int chip_info[])
 #elif defined(CONFIG_ROCKCHIP_RK3126) || defined(CONFIG_ROCKCHIP_RK3128)
 		chip_info[0] = 0x33313241;
 #elif defined(CONFIG_ROCKCHIP_RK322X)
+#if defined(CONFIG_ROCKCHIP_RK3128X)
+		chip_info[0] = 0x33313258;
+#else
 		chip_info[0] = 0x33323241;
+#endif
 #elif defined(CONFIG_ROCKCHIP_RK3328)
 		chip_info[0] = 0x33323248;
 #elif defined(CONFIG_ROCKCHIP_RK3399)
