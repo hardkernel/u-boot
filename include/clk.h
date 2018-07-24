@@ -317,4 +317,14 @@ int soc_clk_dump(void);
 
 int clks_probe(void);
 
+/**
+ * clk_valid() - check if clk is valid
+ *
+ * @clk:	the clock to check
+ * @return true if valid, or false
+ */
+static inline bool clk_valid(struct clk *clk)
+{
+	return !!clk->dev;
+}
 #endif
