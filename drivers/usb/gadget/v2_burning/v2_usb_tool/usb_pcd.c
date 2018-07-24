@@ -282,7 +282,6 @@ int usb_pcd_irq(void)
 
 #if (defined CONFIG_USB_DEVICE_V2)
         if (((Time_sof - curTime_sof) > 0x200) && (_sofintr)) {
-                ERR("sof timeout\n");
                 _sofintr = 0;
                 dwc_otg_power_off_phy();
         }

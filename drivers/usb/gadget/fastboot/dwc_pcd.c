@@ -658,8 +658,35 @@ unsigned fb_curTime_sof;
 
 void dwc_otg_power_off_phy_fb(void)
 {
-	set_usb_phy21_tuning_fb_reset();
-	mdelay(150);
+	gintsts_data_t  gintr_status;
+	gintsts_data_t  gintr_msk;
+	u32 count = 1000;
+	u32 sof = 0;
+
+	while (count--) {
+		gintr_msk.d32 = dwc_read_reg32(DWC_REG_GINTMSK);
+		gintr_status.d32 = dwc_read_reg32(DWC_REG_GINTSTS);
+
+		//if ((gintr_status.d32 & gintr_msk.d32)== 0)
+			//continue;
+
+		gintr_status.d32 = gintr_status.d32 & gintr_msk.d32;
+		if (gintr_status.b.sofintr) {
+			sof = 1;
+			dwc_write_reg32(DWC_REG_GINTSTS, gintr_status.d32);
+			break;
+		}
+
+		dwc_write_reg32(DWC_REG_GINTSTS, gintr_status.d32);
+		udelay(1);
+	}
+
+	if (!sof) {
+		ERR("sof timeout, reset usb phy tuning\n");
+		set_usb_phy21_tuning_fb_reset();
+		mdelay(150);
+	}
+
 	return;
 }
 #endif//#if (defined CONFIG_USB_DEVICE_V2)
@@ -670,7 +697,6 @@ int usb_gadget_handle_interrupts(void)
 	unsigned Time_sof = get_timer(0);
 
 	if (((Time_sof - fb_curTime_sof) > 0x200) && (fb_sofintr)) {
-		ERR("sof timeout\n");
 		fb_sofintr = 0;
 		dwc_otg_power_off_phy_fb();
 	}

@@ -638,9 +638,36 @@ int dwc_otg_bulk_ep_enable(int is_in)
 void dwc_otg_power_off_phy(void)
 {
 #if (defined CONFIG_USB_DEVICE_V2)
-	set_usb_phy21_tuning_update_reset();
-	mdelay(150);
-    return;
+	gintsts_data_t  gintr_status;
+	gintsts_data_t  gintr_msk;
+	u32 count = 1000;
+	u32 sof = 0;
+
+	while (count--) {
+		gintr_msk.d32 = dwc_read_reg32(DWC_REG_GINTMSK);
+		gintr_status.d32 = dwc_read_reg32(DWC_REG_GINTSTS);
+
+		//if ((gintr_status.d32 & gintr_msk.d32)== 0)
+			//continue;
+
+		gintr_status.d32 = gintr_status.d32 & gintr_msk.d32;
+		if (gintr_status.b.sofintr) {
+			sof = 1;
+			dwc_write_reg32(DWC_REG_GINTSTS, gintr_status.d32);
+			break;
+		}
+
+		dwc_write_reg32(DWC_REG_GINTSTS, gintr_status.d32);
+		udelay(1);
+	}
+
+	if (!sof) {
+		ERR("sof timeout, reset usb phy tuning\n");
+		set_usb_phy21_tuning_update_reset();
+		mdelay(150);
+	}
+
+	return;
 #else
     //cause DWC_REG_GSNPSID value 0 after call this when g12
 	dwc_write_reg32(DWC_REG_PCGCCTL, 0xF);
