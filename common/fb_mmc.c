@@ -109,6 +109,7 @@ static void fb_mmc_bootloader_ops(const char *cmd,
 	int map = 0, ret = 0;
 	char *scmd = (char *) cmd;
 	char *ops[] = {"erase", "write"};
+	int mmc_dev = board_current_mmc();
 
 	hwpart = strchr(scmd, (int)*delim);
 
@@ -121,10 +122,10 @@ static void fb_mmc_bootloader_ops(const char *cmd,
 	}
     if (map) {
 		if (buffer)
-            ret = amlmmc_write_bootloader(CONFIG_FASTBOOT_FLASH_MMC_DEV, map,
+            ret = amlmmc_write_bootloader(mmc_dev, map,
 				bytes, buffer);
         else
-			ret = amlmmc_erase_bootloader(CONFIG_FASTBOOT_FLASH_MMC_DEV, map);
+			ret = amlmmc_erase_bootloader(mmc_dev, map);
 		if (ret) {
 			error("failed %s %s from device %d", (buffer? ops[1]: ops[0]),
 				cmd, dev_desc->dev);
@@ -163,9 +164,10 @@ void fb_mmc_flash_write(const char *cmd, void *download_buffer,
 {
 	block_dev_desc_t *dev_desc;
 	disk_partition_t info;
+	int mmc_dev = board_current_mmc();
 	int ret = 0;
 
-	dev_desc = get_dev("mmc", CONFIG_FASTBOOT_FLASH_MMC_DEV);
+	dev_desc = get_dev("mmc", mmc_dev);
 	if (!dev_desc || dev_desc->type == DEV_TYPE_UNKNOWN) {
 		error("invalid mmc device\n");
 		fastboot_fail("invalid mmc device");
@@ -261,7 +263,8 @@ void fb_mmc_erase_write(const char *cmd, void *download_buffer)
 	block_dev_desc_t *dev_desc;
 	disk_partition_t info;
 	lbaint_t blks, blks_start, blks_size, grp_size;
-	struct mmc *mmc = find_mmc_device(CONFIG_FASTBOOT_FLASH_MMC_DEV);
+	int mmc_dev = board_current_mmc();
+	struct mmc *mmc = find_mmc_device(mmc_dev);
 
 	if (mmc == NULL) {
 		error("invalid mmc device");
@@ -269,7 +272,7 @@ void fb_mmc_erase_write(const char *cmd, void *download_buffer)
 		return;
 	}
 
-	dev_desc = get_dev("mmc", CONFIG_FASTBOOT_FLASH_MMC_DEV);
+	dev_desc = &mmc->block_dev;
 	if (!dev_desc || dev_desc->type == DEV_TYPE_UNKNOWN) {
 		error("invalid mmc device");
 		fastboot_fail("invalid mmc device");

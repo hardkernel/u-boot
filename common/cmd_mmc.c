@@ -10,6 +10,22 @@
 #include <mmc.h>
 
 static int curr_device = -1;
+
+#if defined(CONFIG_ODROID_COMMON)
+__weak int board_current_mmc(void)
+{
+	if (curr_device < 0) {
+#if defined(CONFIG_FASTBOOT_FLASH_MMC_DEV)
+		curr_device = CONFIG_FASTBOOT_FLASH_MMC_DEV;
+#else
+		curr_device = 0;
+#endif
+	}
+
+	return curr_device;
+}
+#endif
+
 #ifndef CONFIG_GENERIC_MMC
 int do_mmc (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
