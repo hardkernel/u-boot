@@ -288,6 +288,11 @@ fixup_platform_configure()
 		if [ "$plat" = 'CONFIG_ROCKCHIP_RK3326=y' ]; then
 			RKCHIP=RK3326
 		fi
+		# Is RK3128X ?
+		plat=`grep '^CONFIG_ROCKCHIP_[R,P][X,V,K][0-9][0-9]' ${OUTDIR}/.config | sed -n "/CONFIG_ROCKCHIP_RK3128X=y/p"`
+		if [ "$plat" = 'CONFIG_ROCKCHIP_RK3128X=y' ]; then
+			RKCHIP=RK3128X
+		fi
 	else
 		echo "Can't get Rockchip SoC definition in .config"
 		exit 1
