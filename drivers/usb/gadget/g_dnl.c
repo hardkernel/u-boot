@@ -56,6 +56,7 @@ void g_dnl_set_serialnumber(char *s)
 
 char * get_usid_string(void)
 {
+#if defined(CONFIG_SECURE_STORAGE)
 	int ret;
 	ret = amlkey_isexsit((const uint8_t *)USID_KEY);
 	if (ret) {
@@ -65,6 +66,7 @@ char * get_usid_string(void)
 			return usid_string;
 		}
 	}
+#endif
 	return NULL;
 }
 

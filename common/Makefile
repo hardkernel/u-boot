@@ -57,11 +57,11 @@ obj-$(CONFIG_ENV_IS_IN_NAND) += env_nand.o
 obj-$(CONFIG_ENV_IS_IN_AMLNAND) += env_amlnand.o
 ifneq ($(CONFIG_ENV_IS_NOWHERE),y)
 obj-$(CONFIG_STORE_COMPATIBLE) += env_mmc.o env_storage.o
-ifdef CONFIG_ENV_IS_IN_NAND
-obj-y += env_nand.o
-else
-obj-y += env_amlnand.o
-endif
+#ifdef CONFIG_ENV_IS_IN_NAND
+#obj-y += env_nand.o
+#else
+#obj-y += env_amlnand.o
+#endif
 endif
 obj-$(CONFIG_ENV_IS_IN_NVRAM) += env_nvram.o
 obj-$(CONFIG_ENV_IS_IN_ONENAND) += env_onenand.o

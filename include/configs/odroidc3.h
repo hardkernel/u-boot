@@ -46,11 +46,6 @@
 #define CONFIG_ADC_POWER_KEY_VAL    0  /* sample value range: 0-1023*/
 #endif
 
-/* Bootloader Control Block function
- * That is used for recovery and the bootloader to talk to each other
- */
-#define CONFIG_BOOTLOADER_CONTROL_BLOCK
-
 /* Serial config */
 #define CONFIG_CONS_INDEX		2
 #define CONFIG_BAUDRATE			115200
@@ -276,7 +271,7 @@
 #define CONFIG_DDR_PLL_BYPASS		0 /* 0:disable, 1:enable. ddr pll bypass function */
 
 /* storage: emmc/nand/sd */
-#define		CONFIG_STORE_COMPATIBLE 1
+#define CONFIG_ENV_IS_IN_MMC			1
 #define 	CONFIG_ENV_OVERWRITE
 #define 	CONFIG_CMD_SAVEENV
 /* fixme, need fix*/
@@ -322,17 +317,13 @@
 #define CONFIG_BL2_COPY_NUM               4
 #endif /* CONFIG_DISCRETE_BOOTLOADER */
 
-#define CONFIG_CMD_NAND 1
 #define CONFIG_MTD_DEVICE y
 /* mtd parts of ourown.*/
 #define CONFIFG_AML_MTDPART	1
 
 #define CONFIG_RBTREE
-#define CONFIG_CMD_NAND_TORTURE 1
 #define CONFIG_CMD_MTDPARTS   1
 #define CONFIG_MTD_PARTITIONS 1
-#define CONFIG_SYS_MAX_NAND_DEVICE  2
-#define CONFIG_SYS_NAND_BASE_LIST   {0}
 #endif
 /* endof CONFIG_AML_MTD */
 #define		CONFIG_AML_SD_EMMC 1
@@ -377,14 +368,10 @@
 #endif
 
 #if defined CONFIG_AML_MTD || defined CONFIG_SPI_NAND
-	#define CONFIG_CMD_NAND 1
 	#define CONFIG_MTD_DEVICE y
 	#define CONFIG_RBTREE
-	#define CONFIG_CMD_NAND_TORTURE 1
 	#define CONFIG_CMD_MTDPARTS   1
 	#define CONFIG_MTD_PARTITIONS 1
-	#define CONFIG_SYS_MAX_NAND_DEVICE  2
-	#define CONFIG_SYS_NAND_BASE_LIST   {0}
 #endif
 
 /* vpu */
@@ -438,9 +425,6 @@
 #define CONFIG_SYS_CACHELINE_SIZE 64
 #define CONFIG_FASTBOOT_MAX_DOWN_SIZE	0x8000000
 #define CONFIG_DEVICE_PRODUCT	"odroidc3"
-
-#define CONFIG_AML_SECURITY_KEY                 1
-#define CONFIG_UNIFY_KEY_MANAGE                 1
 
 /* net */
 #define CONFIG_CMD_NET   1
@@ -523,12 +507,6 @@
 #define CONFIG_AML_SECURE_UBOOT   1
 #if defined(CONFIG_AML_SECURE_UBOOT)
 
-/*
- * for SRAM size limitation just disable NAND
- * as the socket board default has no NAND
- */
-//#undef CONFIG_AML_NAND
-
 /* unify build for generate encrypted bootloader "u-boot.bin.encrypt" */
 #define CONFIG_AML_CRYPTO_UBOOT   1
 
@@ -540,8 +518,6 @@
 //#define CONFIG_AML_CRYPTO_IMG       1
 
 #endif //CONFIG_AML_SECURE_UBOOT
-
-#define CONFIG_SECURE_STORAGE 1
 
 /* build with uboot auto test */
 //#define CONFIG_AML_UBOOT_AUTO_TEST 1
