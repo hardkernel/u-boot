@@ -186,16 +186,23 @@ config PXP_EMULATOR
 config SUPPORT_CUSOTMER_BOARD
 	bool "Customer board support"
 
+config ODROID_COMMON
+	bool
+	default n
+
 config ODROID_C2
 	bool "Support Hardkernel ODROID-C2 board"
+	select ODROID_COMMON
 	default n
 
 config ODROID_C3
 	bool "Support Hardkernel ODROID-C3 board"
+	select ODROID_COMMON
 	default n
 
 config ODROID_N2
 	bool "Support Hardkernel ODROID-N2 board"
+	select ODROID_COMMON
 	default n
 
 if GXB_SKT_V1
