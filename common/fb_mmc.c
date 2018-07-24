@@ -218,6 +218,18 @@ void fb_mmc_flash_write(const char *cmd, void *download_buffer,
 		}
 	}
 #endif
+
+#ifdef CONFIG_MPT_PARTITION
+	if (dev_desc->part_type == PART_TYPE_MPT) {
+		ret = get_partition_info_mpt_by_name(dev_desc, cmd, &info);
+		if (ret) {
+			error("cannot find partition: '%s'\n", cmd);
+			fastboot_fail("cannot find partition");
+			return;
+		}
+	}
+#endif
+
 	if (strcmp(cmd, "dtb") == 0) {
 #ifndef DTB_BIND_KERNEL
 		ret = dtb_write(download_buffer);
@@ -285,6 +297,10 @@ void fb_mmc_erase_write(const char *cmd, void *download_buffer)
 #ifdef CONFIG_AML_PARTITION
 	if (dev_desc->part_type == PART_TYPE_AML)
 		ret = get_partition_info_aml_by_name(dev_desc, cmd, &info);
+#endif
+#ifdef CONFIG_MPT_PARTITION
+	if (dev_desc->part_type == PART_TYPE_MPT)
+		ret = get_partition_info_mpt_by_name(dev_desc, cmd, &info);
 #endif
 	if (ret) {
 		error("cannot find partition: '%s'", cmd);

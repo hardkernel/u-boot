@@ -657,6 +657,7 @@ libs-y += test/dm/
 
 #libs-y += $(if $(BOARDDIR),board/$(BOARDDIR)/)
 libs-y += $(if $(BOARDDIR),$(BOARDDIR)/)
+libs-$(CONFIG_ODROID_COMMON) += board/hardkernel/odroid-common/
 
 libs-y := $(sort $(libs-y))
 

@@ -11,9 +11,17 @@
 #include <command.h>
 #include <g_dnl.h>
 
+#if defined(CONFIG_ODROID_COMMON)
+extern int board_partition_list(void);
+#endif
+
 static int do_fastboot(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 {
 	int ret;
+
+#if defined(CONFIG_ODROID_COMMON)
+	board_partition_list();
+#endif
 
 	g_dnl_clear_detach();
 	ret = g_dnl_register("usb_dnl_fastboot");
