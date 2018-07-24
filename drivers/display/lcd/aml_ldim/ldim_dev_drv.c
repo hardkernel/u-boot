@@ -570,6 +570,9 @@ static int ldim_dev_get_config_from_dts(char *dt_addr, int index)
 		ldim_dev_config->dim_max, ldim_dev_config->dim_min);
 	}
 
+	temp = ldim_drv->ldim_conf->row * ldim_drv->ldim_conf->col;
+	ldim_dev_config->bl_regnum = (unsigned short)temp;
+
 	propdata = (char *)fdt_getprop(dt_addr, child_offset, "type", NULL);
 	if (propdata == NULL)
 		LDIMERR("failed to get type\n");

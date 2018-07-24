@@ -36,6 +36,11 @@ static int ldim_on_flag;
 static int ldim_level;
 static int ldim_set_level(unsigned int level);
 
+static struct ldim_config_s ldim_config = {
+	.row = 1,
+	.col = 1,
+};
+
 static int ldim_power_on(void)
 {
 	if (ldim_driver.device_power_on) {
@@ -113,6 +118,7 @@ static void ldim_config_print(void)
 static struct aml_ldim_driver_s ldim_driver = {
 	.valid_flag = 0, /* default invalid, active when bl_ctrl_method=ldim */
 	.dev_index = 0,
+	.ldim_conf = &ldim_config,
 	.ldev_conf = NULL,
 	.ldim_matrix_buf = NULL,
 	.power_on = ldim_power_on,
@@ -149,6 +155,8 @@ int ldim_config_load_from_dts(char *dt_addr, int child_offset)
 	} else {
 		ldim_blk_row = be32_to_cpup((u32*)propdata);
 		ldim_blk_col = be32_to_cpup((((u32*)propdata)+1));
+		ldim_config.row = ldim_blk_row;
+		ldim_config.col = ldim_blk_col;
 	}
 	LDIMPR("get region row = %d, col = %d\n", ldim_blk_row, ldim_blk_col);
 
@@ -180,6 +188,8 @@ int ldim_config_load_from_unifykey(unsigned char *para)
 	/* get bl_ldim_region_row_col 4byte*/
 	ldim_blk_row = *(p + LCD_UKEY_BL_LDIM_ROW);
 	ldim_blk_col = *(p + LCD_UKEY_BL_LDIM_COL);
+	ldim_config.row = ldim_blk_row;
+	ldim_config.col = ldim_blk_col;
 	LDIMPR("get region row = %d, col = %d\n", ldim_blk_row, ldim_blk_col);
 
 	/* get ldim_dev_index 1byte*/

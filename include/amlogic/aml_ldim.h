@@ -37,6 +37,11 @@ struct ldim_pinmux_ctrl_s {
 	unsigned int pinmux_clr[LCD_PINMUX_NUM][2];
 };
 
+struct ldim_config_s {
+	unsigned char row;
+	unsigned char col;
+};
+
 struct ldim_dev_config_s {
 	char name[20];
 	char pinmux_name[20];
@@ -59,6 +64,8 @@ struct ldim_dev_config_s {
 	struct ldim_pinmux_ctrl_s *ldim_pinmux;
 	struct bl_pwm_config_s pwm_config;
 	char gpio_name[BL_GPIO_NUM_MAX][LCD_CPU_GPIO_NAME_MAX];
+
+	unsigned short bl_regnum;
 };
 
 struct ldim_spi_dev_info_s {
@@ -76,6 +83,7 @@ struct ldim_spi_dev_info_s {
 struct aml_ldim_driver_s {
 	int valid_flag;
 	int dev_index;
+	struct ldim_config_s *ldim_conf;
 	struct ldim_dev_config_s *ldev_conf;
 	unsigned short *ldim_matrix_buf;
 	int (*power_on)(void);
