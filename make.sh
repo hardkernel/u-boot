@@ -1,10 +1,22 @@
-#!/bin/sh
+#!/bin/bash
 set -e
 BOARD=$1
 SUBCMD=$1
 FUNCADDR=$1
 JOB=`sed -n "N;/processor/p" /proc/cpuinfo|wc -l`
 SUPPORT_LIST=`ls configs/*[r,p][x,v,k][0-9][0-9]*_defconfig`
+
+# @target board: defined in arch/arm/mach-rockchip/<soc>/Kconfig
+# @label: show build message
+# @loader: search for ini file to pack loader
+# @trust: search for ini file to pack trust
+#
+# "NA" means use default name reading from .config
+#
+# Format:           target board               label         loader      trust
+RKCHIP_INI_DESC=("CONFIG_TARGET_GVA_RK3229       NA          RK322XAT     NA"
+# to be add...
+                )
 
 ########################################### User can modify #############################################
 # User's rkbin tool relative path
@@ -21,8 +33,11 @@ TOOLCHAIN_ARM32=../prebuilts/gcc/linux-x86/arm/gcc-linaro-6.3.1-2017.05-x86_64_a
 TOOLCHAIN_ARM64=../prebuilts/gcc/linux-x86/aarch64/gcc-linaro-6.3.1-2017.05-x86_64_aarch64-linux-gnu/bin
 
 ########################################### User not touch #############################################
-# Declare global INI file searching index name for every chip, update in fixup_platform_configure()
+# Declare global INI file searching index name for every chip, update in select_chip_info()
 RKCHIP=
+RKCHIP_LABEL=
+RKCHIP_LOADER=
+RKCHIP_TRUST=
 
 # Declare global rkbin RKTOOLS and rkbin repository path, updated in prepare()
 RKTOOLS=
@@ -261,16 +276,18 @@ sub_commands()
 	esac
 }
 
-# Support platform special configure
-#	1. fixup chip name;
-#	2. fixup pack mode;
-#	3. fixup image size
-#	4. fixup ARM64 cpu boot with AArch32
-fixup_platform_configure()
+# We select chip info to do:
+#	1. RKCHIP: fixup platform configure
+#	2. RKCHIP_LOADER: search ini file to pack loader
+#	3. RKCHIP_TRUST: search ini file to pack trust
+#	4. RKCHIP_LABEL: show build message
+#
+# We read chip info from .config and 'RKCHIP_INI_DESC'
+select_chip_info()
 {
-	local count plat
+	local target_board item value
 
-# <1> Get RKCHIP for searching trust/loader ini files
+	# Read RKCHIP firstly from .config
 	count=`grep -c '^CONFIG_ROCKCHIP_[R,P][X,V,K][0-9][0-9]' ${OUTDIR}/.config`
 	RKCHIP=`grep '^CONFIG_ROCKCHIP_[R,P][X,V,K][0-9][0-9]' ${OUTDIR}/.config`
 
@@ -298,7 +315,41 @@ fixup_platform_configure()
 		exit 1
 	fi
 
-# <2> Fixup rsa/sha pack mode for platforms
+	# Default use RKCHIP
+	RKCHIP_LABEL=${RKCHIP}
+	RKCHIP_LOADER=${RKCHIP}
+	RKCHIP_TRUST=${RKCHIP}
+
+	# Read from RKCHIP_INI_DESC
+	for item in "${RKCHIP_INI_DESC[@]}"
+	do
+		target_board=`echo $item | awk '{ print $1 }'`
+		if grep  -q "^${target_board}=y" ${OUTDIR}/.config ; then
+			value=`echo $item | awk '{ print $2 }'`
+			if [ "$value" != "NA" ]; then
+				RKCHIP_LABEL=${value};
+			fi
+			value=`echo $item | awk '{ print $3 }'`
+			if [ "$value" != "NA" ]; then
+				RKCHIP_LOADER=${value};
+			fi
+			value=`echo $item | awk '{ print $4 }'`
+			if [ "$value" != "NA" ]; then
+				RKCHIP_TRUST=${value};
+			fi
+		fi
+	done
+}
+
+# Fixup platform special configure
+#	1. fixup pack mode;
+#	2. fixup image size
+#	3. fixup ARM64 cpu boot with AArch32
+fixup_platform_configure()
+{
+	local count plat
+
+# <*> Fixup rsa/sha pack mode for platforms
 	# RK3308/PX30/RK3326 use RSA-PKCS1 V2.1, it's pack magic is "3"
 	if [ $RKCHIP = "PX30" -o $RKCHIP = "RK3326" -o $RKCHIP = "RK3308" ]; then
 		PLATFORM_RSA="--rsa 3"
@@ -308,7 +359,7 @@ fixup_platform_configure()
 	# other platforms use default configure
 	fi
 
-# <3> Fixup images size pack for platforms
+# <*> Fixup images size pack for platforms
 	if [ $RKCHIP = "RK3308" ]; then
 		if grep -q '^CONFIG_ARM64_BOOT_AARCH32=y' ${OUTDIR}/.config ; then
 			PLATFORM_UBOOT_IMG_SIZE="--size 512 2"
@@ -319,7 +370,7 @@ fixup_platform_configure()
 		fi
 	fi
 
-# <4> Fixup PLATFORM_AARCH32 for ARM64 cpu platforms
+# <*> Fixup PLATFORM_AARCH32 for ARM64 cpu platforms
 	if [ $RKCHIP = "RK3308" ]; then
 		if grep -q '^CONFIG_ARM64_BOOT_AARCH32=y' ${OUTDIR}/.config ; then
 			PLATFORM_AARCH32="AARCH32"
@@ -350,15 +401,15 @@ pack_loader_image()
 {
 	local mode=$1 files ini
 
-	if [ ! -f ${RKBIN}/RKBOOT/${RKCHIP}MINIALL.ini ]; then
-		echo "pack loader failed! Can't find: ${RKBIN}/RKBOOT/${RKCHIP}MINIALL.ini"
+	if [ ! -f ${RKBIN}/RKBOOT/${RKCHIP_LOADER}MINIALL.ini ]; then
+		echo "pack loader failed! Can't find: ${RKBIN}/RKBOOT/${RKCHIP_LOADER}MINIALL.ini"
 		return
 	fi
 
 	cd ${RKBIN}
 
 	if [ "${mode}" = 'all' ]; then
-		files=`ls ${RKBIN}/RKBOOT/${RKCHIP}MINIALL*.ini`
+		files=`ls ${RKBIN}/RKBOOT/${RKCHIP_LOADER}MINIALL*.ini`
 		for ini in $files
 		do
 			if [ -f "$ini" ]; then
@@ -367,8 +418,8 @@ pack_loader_image()
 			fi
 		done
 	else
-		${RKTOOLS}/boot_merger --replace tools/rk_tools/ ./ ${RKBIN}/RKBOOT/${RKCHIP}MINIALL.ini
-		echo "pack loader okay! Input: ${RKBIN}/RKBOOT/${RKCHIP}MINIALL.ini"
+		${RKTOOLS}/boot_merger --replace tools/rk_tools/ ./ ${RKBIN}/RKBOOT/${RKCHIP_LOADER}MINIALL.ini
+		echo "pack loader okay! Input: ${RKBIN}/RKBOOT/${RKCHIP_LOADER}MINIALL.ini"
 	fi
 
 	cd - && mv ${RKBIN}/*_loader_*.bin ./
@@ -380,20 +431,20 @@ pack_trust_image()
 
 	# ARM64 uses trust_merger
 	if grep -Eq ''^CONFIG_ARM64=y'|'^CONFIG_ARM64_BOOT_AARCH32=y'' ${OUTDIR}/.config ; then
-		if [ ! -f ${RKBIN}/RKTRUST/${RKCHIP}${PLATFORM_AARCH32}TRUST.ini ]; then
-			echo "pack trust failed! Can't find: ${RKBIN}/RKTRUST/${RKCHIP}${PLATFORM_AARCH32}TRUST.ini"
+		if [ ! -f ${RKBIN}/RKTRUST/${RKCHIP_TRUST}${PLATFORM_AARCH32}TRUST.ini ]; then
+			echo "pack trust failed! Can't find: ${RKBIN}/RKTRUST/${RKCHIP_TRUST}${PLATFORM_AARCH32}TRUST.ini"
 			return
 		fi
 
 		cd ${RKBIN}
-		${RKTOOLS}/trust_merger ${PLATFORM_SHA} ${PLATFORM_RSA} ${PLATFORM_TRUST_IMG_SIZE} --replace tools/rk_tools/ ./ ${RKBIN}/RKTRUST/${RKCHIP}${PLATFORM_AARCH32}TRUST.ini
+		${RKTOOLS}/trust_merger ${PLATFORM_SHA} ${PLATFORM_RSA} ${PLATFORM_TRUST_IMG_SIZE} --replace tools/rk_tools/ ./ ${RKBIN}/RKTRUST/${RKCHIP_TRUST}${PLATFORM_AARCH32}TRUST.ini
 
 		cd - && mv ${RKBIN}/trust.img ./trust.img
-		echo "pack trust okay! Input: ${RKBIN}/RKTRUST/${RKCHIP}${PLATFORM_AARCH32}TRUST.ini"
+		echo "pack trust okay! Input: ${RKBIN}/RKTRUST/${RKCHIP_TRUST}${PLATFORM_AARCH32}TRUST.ini"
 	# ARM uses loaderimage
 	else
-		if [ ! -f ${RKBIN}/RKTRUST/${RKCHIP}TOS.ini ]; then
-			echo "pack trust failed! Can't find: ${RKBIN}/RKTRUST/${RKCHIP}TOS.ini"
+		if [ ! -f ${RKBIN}/RKTRUST/${RKCHIP_TRUST}TOS.ini ]; then
+			echo "pack trust failed! Can't find: ${RKBIN}/RKTRUST/${RKCHIP_TRUST}TOS.ini"
 			return
 		fi
 
@@ -405,8 +456,8 @@ pack_trust_image()
 		TEE_LOAD_ADDR=$(echo "obase=16;${TEE_LOAD_ADDR}"|bc)
 
 		# Parse orignal path
-		TOS=`sed -n "/TOS=/s/TOS=//p" ${RKBIN}/RKTRUST/${RKCHIP}TOS.ini|tr -d '\r'`
-		TOS_TA=`sed -n "/TOSTA=/s/TOSTA=//p" ${RKBIN}/RKTRUST/${RKCHIP}TOS.ini|tr -d '\r'`
+		TOS=`sed -n "/TOS=/s/TOS=//p" ${RKBIN}/RKTRUST/${RKCHIP_TRUST}TOS.ini|tr -d '\r'`
+		TOS_TA=`sed -n "/TOSTA=/s/TOSTA=//p" ${RKBIN}/RKTRUST/${RKCHIP_TRUST}TOS.ini|tr -d '\r'`
 
 		# replace "./tools/rk_tools/" with "./" to compatible legacy ini content of rkdevelop branch
 		TOS=$(echo ${TOS} | sed "s/tools\/rk_tools\//\.\//g")
@@ -427,7 +478,7 @@ pack_trust_image()
 			exit 1
 		fi
 
-		echo "pack trust okay! Input: ${RKBIN}/RKTRUST/${RKCHIP}TOS.ini"
+		echo "pack trust okay! Input: ${RKBIN}/RKTRUST/${RKCHIP_TRUST}TOS.ini"
 	fi
 }
 
@@ -435,14 +486,15 @@ finish()
 {
 	echo
 	if [ "$BOARD" = '' ]; then
-		echo "Platform ${RKCHIP}${PLATFORM_AARCH32} is build OK, with exist .config"
+		echo "Platform ${RKCHIP_LABEL}${PLATFORM_AARCH32} is build OK, with exist .config"
 	else
-		echo "Platform ${RKCHIP}${PLATFORM_AARCH32} is build OK, with new .config(make ${BOARD}_defconfig)"
+		echo "Platform ${RKCHIP_LABEL}${PLATFORM_AARCH32} is build OK, with new .config(make ${BOARD}_defconfig)"
 	fi
 }
 
 prepare
 select_toolchain
+select_chip_info
 fixup_platform_configure
 sub_commands
 make CROSS_COMPILE=${TOOLCHAIN_GCC}  all --jobs=${JOB} ${OUTOPT}
