@@ -198,6 +198,14 @@ enum charger_type {
 	UNDEF_CHARGER,
 };
 
+enum power_supply_type {
+	POWER_SUPPLY_TYPE_UNKNOWN = 0,
+	POWER_SUPPLY_TYPE_USB,		/* Standard Downstream Port */
+	POWER_SUPPLY_TYPE_USB_DCP,	/* Dedicated Charging Port */
+	POWER_SUPPLY_TYPE_USB_CDP,	/* Charging Downstream Port */
+	POWER_SUPPLY_TYPE_USB_FLOATING,	/* DCP without shorting D+/D- */
+};
+
 struct rk817_battery_device {
 	struct udevice *dev;
 	int				res_div;
@@ -924,17 +932,18 @@ static int rk817_bat_get_usb_state(struct rk817_battery_device *battery)
 	int charger_type;
 
 	switch (rk817_bat_dwc_otg_check_dpdm()) {
-	case 0:
+	case POWER_SUPPLY_TYPE_UNKNOWN:
 		if ((rk817_bat_read(battery, PMIC_SYS_STS) & PLUG_IN_STS) != 0)
 			charger_type = DC_CHARGER;
 		else
 			charger_type = NO_CHARGER;
 		break;
-	case 1:
-	case 3:
+	case POWER_SUPPLY_TYPE_USB:
 		charger_type = USB_CHARGER;
 		break;
-	case 2:
+	case POWER_SUPPLY_TYPE_USB_DCP:
+	case POWER_SUPPLY_TYPE_USB_CDP:
+	case POWER_SUPPLY_TYPE_USB_FLOATING:
 		charger_type = AC_CHARGER;
 		break;
 	default:
