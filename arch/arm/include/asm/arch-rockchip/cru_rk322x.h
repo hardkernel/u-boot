@@ -8,27 +8,19 @@
 
 #include <common.h>
 
-#define MHz		1000000
-#define OSC_HZ		(24 * MHz)
-
-#define APLL_HZ		(600 * MHz)
-#define GPLL_HZ		(594 * MHz)
-
-#define CORE_PERI_HZ	150000000
-#define CORE_ACLK_HZ	300000000
-
-#define BUS_ACLK_HZ	148500000
-#define BUS_HCLK_HZ	148500000
-#define BUS_PCLK_HZ	74250000
-
-#define PERI_ACLK_HZ	148500000
-#define PERI_HCLK_HZ	148500000
-#define PERI_PCLK_HZ	74250000
+#define MHz				1000 * 1000
+#define OSC_HZ				(24 * MHz)
+#define APLL_HZ				(600 * MHz)
+#define GPLL_HZ				(1200 * MHz)
+#define CPLL_HZ				(500 * MHz)
+#define ACLK_BUS_HZ			(150 * MHz)
+#define ACLK_PERI_HZ			(150 * MHz)
 
 /* Private data for the clock driver - used by rockchip_get_cru() */
 struct rk322x_clk_priv {
 	struct rk322x_cru *cru;
-	ulong rate;
+	ulong gpll_hz;
+	ulong cpll_hz;
 };
 
 struct rk322x_cru {
@@ -59,57 +51,29 @@ struct rk322x_cru {
 };
 check_member(rk322x_cru, cru_pll_mask_con, 0x01f8);
 
-struct pll_div {
-	u32 refdiv;
-	u32 fbdiv;
-	u32 postdiv1;
-	u32 postdiv2;
-	u32 frac;
+enum rk322x_pll_id {
+	APLL,
+	DPLL,
+	CPLL,
+	GPLL,
+	NPLL,
+	PLL_COUNT,
 };
 
+struct rk322x_clk_info {
+	unsigned long id;
+	char *name;
+	bool is_cru;
+};
+
+#define RK2928_PLL_CON(x)		((x) * 0x4)
+#define RK2928_MODE_CON		0x40
+
 enum {
-	/* PLLCON0*/
-	PLL_BP_SHIFT		= 15,
-	PLL_POSTDIV1_SHIFT	= 12,
-	PLL_POSTDIV1_MASK	= 7 << PLL_POSTDIV1_SHIFT,
-	PLL_FBDIV_SHIFT		= 0,
-	PLL_FBDIV_MASK		= 0xfff,
-
-	/* PLLCON1 */
-	PLL_RST_SHIFT		= 14,
-	PLL_PD_SHIFT		= 13,
-	PLL_PD_MASK		= 1 << PLL_PD_SHIFT,
-	PLL_DSMPD_SHIFT		= 12,
-	PLL_DSMPD_MASK		= 1 << PLL_DSMPD_SHIFT,
-	PLL_LOCK_STATUS_SHIFT	= 10,
-	PLL_LOCK_STATUS_MASK	= 1 << PLL_LOCK_STATUS_SHIFT,
-	PLL_POSTDIV2_SHIFT	= 6,
-	PLL_POSTDIV2_MASK	= 7 << PLL_POSTDIV2_SHIFT,
-	PLL_REFDIV_SHIFT	= 0,
-	PLL_REFDIV_MASK		= 0x3f,
-
-	/* CRU_MODE */
-	GPLL_MODE_SHIFT		= 12,
-	GPLL_MODE_MASK		= 1 << GPLL_MODE_SHIFT,
-	GPLL_MODE_SLOW		= 0,
-	GPLL_MODE_NORM,
-	CPLL_MODE_SHIFT		= 8,
-	CPLL_MODE_MASK		= 1 << CPLL_MODE_SHIFT,
-	CPLL_MODE_SLOW		= 0,
-	CPLL_MODE_NORM,
-	DPLL_MODE_SHIFT		= 4,
-	DPLL_MODE_MASK		= 1 << DPLL_MODE_SHIFT,
-	DPLL_MODE_SLOW		= 0,
-	DPLL_MODE_NORM,
-	APLL_MODE_SHIFT		= 0,
-	APLL_MODE_MASK		= 1 << APLL_MODE_SHIFT,
-	APLL_MODE_SLOW		= 0,
-	APLL_MODE_NORM,
-
 	/* CRU_CLK_SEL0_CON */
 	BUS_ACLK_PLL_SEL_SHIFT	= 13,
 	BUS_ACLK_PLL_SEL_MASK	= 3 << BUS_ACLK_PLL_SEL_SHIFT,
-	BUS_ACLK_PLL_SEL_APLL	= 0,
+	BUS_ACLK_PLL_SEL_CPLL	= 0,
 	BUS_ACLK_PLL_SEL_GPLL,
 	BUS_ACLK_PLL_SEL_HDMIPLL,
 	BUS_ACLK_DIV_SHIFT	= 8,
@@ -194,14 +158,29 @@ enum {
 	DDR_DIV_SEL_MASK	= 3 << DDR_DIV_SEL_SHIFT,
 
 	/* CRU_CLKSEL27_CON */
-	VOP_DCLK_DIV_SHIFT	= 8,
-	VOP_DCLK_DIV_MASK	= 0xff << VOP_DCLK_DIV_SHIFT,
-	VOP_PLL_SEL_SHIFT	= 1,
-	VOP_PLL_SEL_MASK	= 1 << VOP_PLL_SEL_SHIFT,
+	DCLK_LCDC_PLL_SEL_GPLL		= 0,
+	DCLK_LCDC_PLL_SEL_CPLL		= 1,
+	DCLK_LCDC_PLL_SEL_SHIFT		= 0,
+	DCLK_LCDC_PLL_SEL_MASK		= 1 << DCLK_LCDC_PLL_SEL_SHIFT,
+	DCLK_LCDC_SEL_HDMIPHY		= 0,
+	DCLK_LCDC_SEL_PLL		= 1,
+	DCLK_LCDC_SEL_SHIFT		= 1,
+	DCLK_LCDC_SEL_MASK		= 1 << DCLK_LCDC_SEL_SHIFT,
+	DCLK_LCDC_DIV_CON_SHIFT		= 8,
+	DCLK_LCDC_DIV_CON_MASK		= 0xFf << DCLK_LCDC_DIV_CON_SHIFT,
 
 	/* CRU_CLKSEL29_CON */
 	GMAC_CLK_SRC_SHIFT	= 12,
 	GMAC_CLK_SRC_MASK	= 1 << GMAC_CLK_SRC_SHIFT,
+
+	/* CRU_CLKSEL33_CON */
+	ACLK_VOP_PLL_SEL_SHIFT		= 5,
+	ACLK_VOP_PLL_SEL_MASK		= 0x3 << ACLK_VOP_PLL_SEL_SHIFT,
+	ACLK_VOP_PLL_SEL_CPLL		= 0,
+	ACLK_VOP_PLL_SEL_GPLL		= 1,
+	ACLK_VOP_PLL_SEL_HDMIPHY		= 2,
+	ACLK_VOP_DIV_CON_SHIFT		= 0,
+	ACLK_VOP_DIV_CON_MASK		= 0x1f << ACLK_VOP_DIV_CON_SHIFT,
 
 	/* CRU_SOFTRST5_CON */
 	DDRCTRL_PSRST_SHIFT	= 11,
