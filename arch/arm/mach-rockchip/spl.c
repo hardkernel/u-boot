@@ -86,6 +86,56 @@ __weak int rk_board_init_f(void)
 	return 0;
 }
 
+#ifndef CONFIG_SPL_LIBGENERIC_SUPPORT
+void udelay(unsigned long usec)
+{
+	__udelay(usec);
+}
+
+void hang(void)
+{
+	bootstage_error(BOOTSTAGE_ID_NEED_RESET);
+	for (;;)
+		;
+}
+
+/**
+ * memset - Fill a region of memory with the given value
+ * @s: Pointer to the start of the area.
+ * @c: The byte to fill the area with
+ * @count: The size of the area.
+ *
+ * Do not use memset() to access IO space, use memset_io() instead.
+ */
+void *memset(void *s, int c, size_t count)
+{
+	unsigned long *sl = (unsigned long *)s;
+	char *s8;
+
+#if !CONFIG_IS_ENABLED(TINY_MEMSET)
+	unsigned long cl = 0;
+	int i;
+
+	/* do it one word at a time (32 bits or 64 bits) while possible */
+	if (((ulong)s & (sizeof(*sl) - 1)) == 0) {
+		for (i = 0; i < sizeof(*sl); i++) {
+			cl <<= 8;
+			cl |= c & 0xff;
+		}
+		while (count >= sizeof(*sl)) {
+			*sl++ = cl;
+			count -= sizeof(*sl);
+		}
+	}
+#endif /* fill 8 bits at a time */
+	s8 = (char *)sl;
+	while (count--)
+		*s8++ = c;
+
+	return s;
+}
+#endif
+
 void board_init_f(ulong dummy)
 {
 #ifdef CONFIG_SPL_FRAMEWORK
