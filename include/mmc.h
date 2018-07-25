@@ -566,6 +566,7 @@ struct mmc {
 	uint write_bl_len;
 	uint erase_grp_size;	/* in 512-byte sectors */
 	uint hc_wp_grp_size;	/* in 512-byte sectors */
+	int default_phase;	/* set the default sample clock phase */
 	struct sd_ssr	ssr;	/* SD status register */
 	struct emmc_esr esr;    /* emmc status register */
 	u64 capacity;
