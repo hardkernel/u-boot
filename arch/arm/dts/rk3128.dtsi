@@ -174,7 +174,7 @@
                         interrupts = <GIC_SPI 0 IRQ_TYPE_LEVEL_HIGH>,
                                      <GIC_SPI 1 IRQ_TYPE_LEVEL_HIGH>;
                         #dma-cells = <1>;
-                        clocks = <&cru ACLK_DMAC2>;
+			clocks = <&cru ACLK_DMAC>;
                         clock-names = "apb_pclk";
                 };
 	};
@@ -367,7 +367,7 @@
 		reg = <0x1010e000 0x100>, <0x1010ec00 0x400>;
 		reg-names = "regs", "gamma_lut";
 		interrupts = <GIC_SPI 9 IRQ_TYPE_LEVEL_HIGH>;
-		clocks = <&cru ACLK_VIO0>, <&cru DCLK_LCDC>, <&cru HCLK_LCDC>;
+		clocks = <&cru ACLK_LCDC0>, <&cru DCLK_VOP>, <&cru HCLK_LCDC0>;
 		clock-names = "aclk_vop", "dclk_vop", "hclk_vop";
 		status = "disabled";
 
