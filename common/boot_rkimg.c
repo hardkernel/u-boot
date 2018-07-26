@@ -171,9 +171,12 @@ int get_bootdev_type(void)
 	} else if (!strcmp(devtype, "rknand")) {
 		type = IF_TYPE_RKNAND;
 		boot_media = "nand";
-	} else if (!strcmp(devtype, "rksfc")) {
-		type = IF_TYPE_RKSFC;
+	} else if (!strcmp(devtype, "spinand")) {
+		type = IF_TYPE_SPINAND;
 		boot_media = "nand"; /* kernel treat sfc nand as nand device */
+	} else if (!strcmp(devtype, "spinor")) {
+		type = IF_TYPE_SPINOR;
+		boot_media = "nor";
 	} else {
 		/* Add new to support */
 	}
@@ -185,7 +188,9 @@ int get_bootdev_type(void)
 		 * 2. rknand doesn't need "androidboot.mode=";
 		 */
 		if (env_exist("bootargs", "androidboot.mode=charger") ||
-		    (type == IF_TYPE_RKNAND) || (type == IF_TYPE_RKSFC))
+		    (type == IF_TYPE_RKNAND) ||
+		    (type == IF_TYPE_SPINAND) ||
+		    (type == IF_TYPE_SPINOR))
 			snprintf(boot_options, sizeof(boot_options),
 				 "storagemedia=%s", boot_media);
 		else
