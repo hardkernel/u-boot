@@ -288,28 +288,27 @@ select_chip_info()
 	local target_board item value
 
 	# Read RKCHIP firstly from .config
-	count=`grep -c '^CONFIG_ROCKCHIP_[R,P][X,V,K][0-9][0-9]' ${OUTDIR}/.config`
-	RKCHIP=`grep '^CONFIG_ROCKCHIP_[R,P][X,V,K][0-9][0-9]' ${OUTDIR}/.config`
+	# The regular expression that matching:
+	#  - PX30, PX3SE
+	#  - RK????, RK????X
+	#  - RV????
+	local chip_reg='^CONFIG_ROCKCHIP_[R,P][X,V,K][0-9ESX]{2,5}'
+	count=`egrep -c ${chip_reg} ${OUTDIR}/.config`
+	# Obtain the matching only
+	RKCHIP=`egrep -o ${chip_reg} ${OUTDIR}/.config`
 
 	if [ $count -eq 1 ]; then
-		RKCHIP=${RKCHIP%=*}
 		RKCHIP=${RKCHIP##*_}
 	elif [ $count -gt 1 ]; then
-		# Is RK3126 ?
-		plat=`grep '^CONFIG_ROCKCHIP_[R,P][X,V,K][0-9][0-9]' ${OUTDIR}/.config | sed -n "/CONFIG_ROCKCHIP_RK3126=y/p"`
-		if [ "$plat" = 'CONFIG_ROCKCHIP_RK3126=y' ]; then
-			RKCHIP=RK3126
-		fi
-		# Is RK3326 ?
-		plat=`grep '^CONFIG_ROCKCHIP_[R,P][X,V,K][0-9][0-9]' ${OUTDIR}/.config | sed -n "/CONFIG_ROCKCHIP_RK3326=y/p"`
-		if [ "$plat" = 'CONFIG_ROCKCHIP_RK3326=y' ]; then
-			RKCHIP=RK3326
-		fi
-		# Is RK3128X ?
-		plat=`grep '^CONFIG_ROCKCHIP_[R,P][X,V,K][0-9][0-9]' ${OUTDIR}/.config | sed -n "/CONFIG_ROCKCHIP_RK3128X=y/p"`
-		if [ "$plat" = 'CONFIG_ROCKCHIP_RK3128X=y' ]; then
-			RKCHIP=RK3128X
-		fi
+		# Grep the RK CHIP variant
+		grep '^CONFIG_ROCKCHIP_PX3SE=y' ${OUTDIR}/.config > /dev/null \
+			&& RKCHIP=PX3SE
+		grep '^CONFIG_ROCKCHIP_RK3126=y' ${OUTDIR}/.config >/dev/null \
+			&& RKCHIP=RK3126
+		grep '^CONFIG_ROCKCHIP_RK3326=y' ${OUTDIR}/.config >/dev/null \
+			&& RKCHIP=RK3326
+		grep '^CONFIG_ROCKCHIP_RK3128X=y' ${OUTDIR}/.config >/dev/null \
+			&& RKCHIP=RK3128X
 	else
 		echo "Can't get Rockchip SoC definition in .config"
 		exit 1
@@ -463,7 +462,7 @@ pack_trust_image()
 		TOS=$(echo ${TOS} | sed "s/tools\/rk_tools\//\.\//g")
 		TOS_TA=$(echo ${TOS_TA} | sed "s/tools\/rk_tools\//\.\//g")
 
-		if [ $TOS_TA -a $TOS ]; then
+		if [ x$TOS_TA != x -a x$TOS != x ]; then
 			${RKTOOLS}/loaderimage --pack --trustos ${RKBIN}/${TOS} ./trust.img ${TEE_LOAD_ADDR} ${PLATFORM_TRUST_IMG_SIZE}
 			${RKTOOLS}/loaderimage --pack --trustos ${RKBIN}/${TOS_TA} ./trust_with_ta.img ${TEE_LOAD_ADDR} ${PLATFORM_TRUST_IMG_SIZE}
 			echo "Both trust.img and trust_with_ta.img are ready"
