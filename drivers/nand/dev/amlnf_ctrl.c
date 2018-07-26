@@ -353,11 +353,18 @@ void nand_get_chip(void *chip)
 	/* pull up enable */
 	aml_nand_dbg("PAD_PULL_UP_EN_REG2 0x%x, PAD_PULL_UP_REG2 0x%x, PERIPHS_PIN_MUX_4 0x%x", P_PAD_PULL_UP_EN_REG2, P_PAD_PULL_UP_REG2, P_PERIPHS_PIN_MUX_4);
 
-	if (cpu_id.family_id == MESON_CPU_MAJOR_ID_G12A) {
+	if (cpu_id.family_id >= MESON_CPU_MAJOR_ID_G12A) {
 		AMLNF_SET_REG_MASK(P_PAD_PULL_UP_EN_REG4, 0x1FFF);
 		AMLNF_SET_REG_MASK(P_PAD_PULL_UP_REG4, 0x1F00);
 		AMLNF_WRITE_REG(P_PERIPHS_PIN_MUX_0, 0x11111111);
 		AMLNF_WRITE_REG(P_PERIPHS_PIN_MUX_1, 0x22122222);
+		if(cpu_id.family_id == MESON_CPU_MAJOR_ID_G12A) {
+			if (cpu_id.chip_rev == 0xA) {
+				writel(0x55555555, P_PAD_DS_REG0A);
+			} else if (cpu_id.chip_rev == 0xB) {
+				writel(0xFFFFFFFF, P_PAD_DS_REG0A);
+			}	
+		} else
 		writel(0x55555555, P_PAD_DS_REG0A);
 	} else {
 		AMLNF_SET_REG_MASK(P_PAD_PULL_UP_EN_REG2, 0x87ff);
@@ -416,15 +423,21 @@ int amlnand_get_device(struct amlnand_chip *aml_chip, enum chip_state_t new_stat
 void pinmux_select_chip(unsigned ce_enable, unsigned rb_enable, unsigned flag)
 {
 #ifdef AML_NAND_UBOOT
-	if (!((ce_enable >> 10) & 1))
-		AMLNF_SET_REG_MASK(P_PERIPHS_PIN_MUX_4, (1 << 26));
-	if (!((ce_enable >> 10) & 2))
-		AMLNF_SET_REG_MASK(P_PERIPHS_PIN_MUX_4, (1 << 27));
-	if (!((ce_enable >> 10) & 4))
-		AMLNF_SET_REG_MASK(P_PERIPHS_PIN_MUX_4, (1 << 28));
-	if (!((ce_enable >> 10) & 8))
-		AMLNF_SET_REG_MASK(P_PERIPHS_PIN_MUX_4, (1 << 29));
+	cpu_id_t cpu_id = get_cpu_id();
 
+	if (cpu_id.family_id >= MESON_CPU_MAJOR_ID_G12A) {
+		if (!((ce_enable >> 10) & 1))
+			AMLNF_SET_REG_MASK(P_PERIPHS_PIN_MUX_1, (2 << 12));
+	} else {
+		if (!((ce_enable >> 10) & 1))
+			AMLNF_SET_REG_MASK(P_PERIPHS_PIN_MUX_4, (1 << 26));
+		if (!((ce_enable >> 10) & 2))
+			AMLNF_SET_REG_MASK(P_PERIPHS_PIN_MUX_4, (1 << 27));
+		if (!((ce_enable >> 10) & 4))
+			AMLNF_SET_REG_MASK(P_PERIPHS_PIN_MUX_4, (1 << 28));
+		if (!((ce_enable >> 10) & 8))
+			AMLNF_SET_REG_MASK(P_PERIPHS_PIN_MUX_4, (1 << 29));
+	}
 #endif /*  */
 
 }
