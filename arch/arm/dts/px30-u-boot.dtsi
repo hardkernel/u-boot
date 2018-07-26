@@ -66,3 +66,22 @@
 	u-boot,dm-pre-reloc;
 	status = "disabled";
 };
+
+&usb20_otg {
+	u-boot,dm-pre-reloc;
+};
+
+&usb2phy_grf {
+	u-boot,dm-pre-reloc;
+	status = "okay";
+};
+
+&u2phy {
+	u-boot,dm-pre-reloc;
+	status = "okay";
+};
+
+&u2phy_otg {
+	u-boot,dm-pre-reloc;
+	status = "okay";
+};
