@@ -621,7 +621,12 @@ static bool is_rk817_bat_first_pwron(struct rk817_battery_device *battery)
 
 static int rk817_bat_get_off_count(struct rk817_battery_device *battery)
 {
-	return rk817_bat_read(battery, OFF_CNT);
+	int value;
+
+	value = rk817_bat_read(battery, OFF_CNT);
+	rk817_bat_write(battery, OFF_CNT, 0x00);
+
+	return value;
 }
 
 static void rk817_bat_update_qmax(struct rk817_battery_device *battery,
@@ -759,7 +764,6 @@ static void rk817_bat_not_first_pwron(struct rk817_battery_device *battery)
 	battery->halt_cnt = rk817_bat_get_halt_cnt(battery);
 	battery->nac = rk817_bat_vol_to_cap(battery,
 					    battery->pwron_voltage);
-	battery->pwroff_min = rk817_bat_get_off_count(battery);
 	battery->remain_cap = pre_cap * 1000;
 	battery->is_halt = is_rk817_bat_last_halt(battery);
 
