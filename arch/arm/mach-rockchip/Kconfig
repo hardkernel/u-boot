@@ -77,6 +77,12 @@ config ROCKCHIP_RK3126
 	  RK3126 can use most code from RK3128, but at some situations we have
 	  to distinguish between RK3126 and RK3128, so this macro gives help.
 	  It is usually selected in rk3126 board defconfig.
+
+config ROCKCHIP_PX3SE
+	bool "Support Rockchip PX3SE"
+	help
+	  PX3SE is a variant of RK3128, it shares codes with RK3128, but we still
+	  need this macro to distinguish PX3SE and RK3128.
 endif
 
 config ROCKCHIP_RK3066
