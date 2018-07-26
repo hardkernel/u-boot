@@ -15,7 +15,7 @@
 
 static struct flash_operation nandc_flash_op = {
 #ifdef	CONFIG_RKNANDC_NAND
-	FLASH_TYPE_NANDC_NAND,
+	IF_TYPE_RKNAND,
 	rknand_flash_init,
 	rknand_flash_get_density,
 	rknand_flash_read,
@@ -87,7 +87,7 @@ static int rockchip_nand_probe(struct udevice *udev)
 	}
 	ret = nandc_flash_op.flash_init(udev);
 	if (!ret) {
-		priv->flash_con_type = FLASH_CON_TYPE_NANDC;
+		priv->flash_con_type = nandc_flash_op.id;
 		priv->density = nandc_flash_op.flash_get_capacity(udev);
 		priv->read = nandc_flash_op.flash_read;
 		priv->write = nandc_flash_op.flash_write;

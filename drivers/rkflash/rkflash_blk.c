@@ -19,7 +19,7 @@ ulong rkflash_bread(struct udevice *udev, lbaint_t start,
 	struct blk_desc *block_dev = dev_get_uclass_platdata(udev);
 	struct rkflash_info *priv = dev_get_priv(udev->parent);
 
-	debug("%s lba %x cnt %x", __func__, (u32)start, (u32)blkcnt);
+	debug("%s lba %x cnt %x\n", __func__, (u32)start, (u32)blkcnt);
 	if (blkcnt == 0)
 		return -EINVAL;
 
@@ -72,22 +72,33 @@ static int rkflash_blk_probe(struct udevice *udev)
 {
 	struct rkflash_info *priv = dev_get_priv(udev->parent);
 	struct blk_desc *desc = dev_get_uclass_platdata(udev);
+	char *product;
 
+	if (desc->if_type != priv->flash_con_type)
+		return  -ENODEV;
+
+	switch (priv->flash_con_type) {
+	case IF_TYPE_RKNAND:
+		product = "rkflash-NandFlash";
+		break;
+	case IF_TYPE_SPINAND:
+		product = "rkflash-SpiNand";
+		break;
+	case IF_TYPE_SPINOR:
+		product = "rkflash-SpiNor";
+		break;
+	default:
+		product = "unknown";
+		break;
+	}
 	debug("%s %d %p ndev = %p %p\n", __func__, __LINE__,
 	      udev, priv, udev->parent);
 	priv->child_dev = udev;
-	if (priv->flash_con_type == FLASH_CON_TYPE_SFC)
-		desc->if_type = IF_TYPE_RKSFC;
-	else if (priv->flash_con_type == FLASH_CON_TYPE_NANDC)
-		desc->if_type = IF_TYPE_RKNAND;
-
 	desc->lba = priv->density;
 	desc->log2blksz = 9;
-	desc->blksz = 512;
 	desc->bdev = udev;
-	desc->devnum = 0;
 	sprintf(desc->vendor, "0x%.4x", 0x0308);
-	memcpy(desc->product, "rkflash", sizeof("rkflash"));
+	memcpy(desc->product, product, strlen(product));
 	memcpy(desc->revision, "V1.00", sizeof("V1.00"));
 	part_init(desc);
 	rkflash_test(udev);

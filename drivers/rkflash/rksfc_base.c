@@ -15,7 +15,7 @@
 
 static struct flash_operation sfc_nor_op = {
 #ifdef	CONFIG_RKSFC_NOR
-	FLASH_TYPE_SFC_NOR,
+	IF_TYPE_SPINOR,
 	rksfc_nor_init,
 	rksfc_nor_get_capacity,
 	rksfc_nor_read,
@@ -30,7 +30,7 @@ static struct flash_operation sfc_nor_op = {
 
 static struct flash_operation sfc_nand_op = {
 #ifdef CONFIG_RKSFC_NAND
-	FLASH_TYPE_SFC_NAND,
+	IF_TYPE_SPINAND,
 	rksfc_nand_init,
 	rksfc_nand_get_density,
 	rksfc_nand_read,
@@ -74,8 +74,12 @@ static int rksfc_blk_bind(struct udevice *udev)
 	int ret;
 
 	ret = blk_create_devicef(udev, "rkflash_blk", "blk",
-				 IF_TYPE_RKSFC,
+				 IF_TYPE_SPINAND,
 				 0, 512, 0, &bdev);
+	ret = blk_create_devicef(udev, "rkflash_blk", "blk",
+				 IF_TYPE_SPINOR,
+				 1, 512, 0, &bdev);
+
 	if (ret) {
 		debug("Cannot create block device\n");
 		return ret;
@@ -103,14 +107,14 @@ static int rockchip_rksfc_probe(struct udevice *udev)
 
 	sfc_init(priv->ioaddr);
 	for (i = 0; i < 2; i++) {
-		if (spi_flash_op[i]->id == -1) {
+		if (spi_flash_op[i]->id <= 0) {
 			debug("%s no optional spi flash for type %x\n",
 			      __func__, i);
 			continue;
 		}
 		ret = spi_flash_op[i]->flash_init(udev);
 		if (!ret) {
-			priv->flash_con_type = FLASH_CON_TYPE_SFC;
+			priv->flash_con_type = spi_flash_op[i]->id;
 			priv->density =
 				spi_flash_op[i]->flash_get_capacity(udev);
 			priv->read = spi_flash_op[i]->flash_read;
