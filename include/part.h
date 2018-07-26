@@ -80,6 +80,7 @@ typedef struct block_dev_desc {
 #define PART_TYPE_AMIGA		0x04
 #define PART_TYPE_EFI		0x05
 #define PART_TYPE_AML		0x06
+#define PART_TYPE_MPT		0x50
 
 /*
  * Type string for U-Boot bootable partitions
@@ -217,6 +218,16 @@ int get_partition_info_aml_by_name(block_dev_desc_t *dev_desc,
 	const char *name, disk_partition_t *info);
 void print_part_aml(block_dev_desc_t *dev_desc);
 int   test_part_aml(block_dev_desc_t *dev_desc);
+#endif
+
+#ifdef CONFIG_MPT_PARTITION
+/* disk/part_mpt.c */
+int get_partition_info_mpt(block_dev_desc_t *dev_desc,
+		int part_num, disk_partition_t * info);
+int get_partition_info_mpt_by_name(block_dev_desc_t *dev_desc,
+	const char *name, disk_partition_t *info);
+void print_part_mpt(block_dev_desc_t *dev_desc);
+int test_part_mpt(block_dev_desc_t *dev_desc);
 #endif
 
 /*

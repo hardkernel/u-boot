@@ -14,3 +14,4 @@ obj-$(CONFIG_ISO_PARTITION)   += part_iso.o
 obj-$(CONFIG_AMIGA_PARTITION) += part_amiga.o
 obj-$(CONFIG_EFI_PARTITION)   += part_efi.o
 obj-$(CONFIG_AML_PARTITION)   += part_aml.o
+obj-$(CONFIG_MPT_PARTITION)   += part_mpt.o

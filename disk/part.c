@@ -277,6 +277,14 @@ void init_part(block_dev_desc_t *dev_desc)
 	}
 #endif
 
+#ifdef CONFIG_MPT_PARTITION
+	if (test_part_mpt(dev_desc) == 0) {
+		printf("%s() %d: PART_TYPE_MPT\n", __func__, __LINE__);
+	    dev_desc->part_type = PART_TYPE_MPT;
+	    return;
+	}
+#endif
+
 #ifdef CONFIG_DOS_PARTITION
 	if (test_part_dos(dev_desc) == 0) {
 		printf("%s() %d: PART_TYPE_DOS\n", __func__, __LINE__);
