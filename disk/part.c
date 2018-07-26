@@ -146,16 +146,12 @@ void dev_print (struct blk_desc *dev_desc)
 	case IF_TYPE_USB:
 	case IF_TYPE_NVME:
 	case IF_TYPE_RKNAND:
-		printf ("Vendor: %s Rev: %s Prod: %s\n",
-			dev_desc->vendor,
-			dev_desc->revision,
-			dev_desc->product);
-		break;
-	case IF_TYPE_RKSFC:
-		printf ("Vendor: %s Rev: %s Prod: %s\n",
-			dev_desc->vendor,
-			dev_desc->revision,
-			dev_desc->product);
+	case IF_TYPE_SPINAND:
+	case IF_TYPE_SPINOR:
+		printf("Vendor: %s Rev: %s Prod: %s\n",
+		       dev_desc->vendor,
+		       dev_desc->revision,
+		       dev_desc->product);
 		break;
 	case IF_TYPE_DOC:
 		puts("device type DOC\n");
@@ -291,8 +287,11 @@ static void print_part_header(const char *type, struct blk_desc *dev_desc)
 	case IF_TYPE_RKNAND:
 		puts("RKNAND");
 		break;
-	case IF_TYPE_RKSFC:
-		puts("RKSFC");
+	case IF_TYPE_SPINAND:
+		puts("SPINAND");
+		break;
+	case IF_TYPE_SPINOR:
+		puts("SPINOR");
 		break;
 	default:
 		puts ("UNKNOWN");
