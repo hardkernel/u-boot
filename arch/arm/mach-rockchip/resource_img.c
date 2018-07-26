@@ -163,6 +163,12 @@ static int init_resource_list(struct resource_img_hdr *hdr)
 	int resource_found = 0;
 	struct blk_desc *dev_desc;
 	disk_partition_t part_info;
+
+/*
+ * Primary detect AOSP format image, try to get resource image from
+ * boot/recovery partition. If not, it's an RK format image and try
+ * to get from resource partition.
+ */
 #ifdef CONFIG_ANDROID_BOOT_IMAGE
 	struct andr_img_hdr *andr_hdr;
 	char *boot_partname = PART_BOOT;
@@ -194,6 +200,7 @@ static int init_resource_list(struct resource_img_hdr *hdr)
 	/* Get boot mode from misc */
 	if (rockchip_get_boot_mode() == BOOT_MODE_RECOVERY)
 		boot_partname = PART_RECOVERY;
+
 	/* Read boot/recovery and chenc if this is an AOSP img */
 #ifdef CONFIG_ANDROID_AB
 	char slot_suffix[3] = {0};
@@ -204,13 +211,17 @@ static int init_resource_list(struct resource_img_hdr *hdr)
 	if (boot_partname == NULL)
 		goto out;
 #endif
-	ret = part_get_info_by_name(dev_desc, boot_partname,
-					 &part_info);
+	ret = part_get_info_by_name(dev_desc, boot_partname, &part_info);
 	if (ret < 0) {
 		printf("fail to get %s part\n", boot_partname);
 		/* RKIMG can support part table without 'boot' */
 		goto next;
 	}
+
+	/*
+	 * Only read header and check magic, is a AOSP format image?
+	 * If so, get resource image from second part.
+	 */
 	andr_hdr = (void *)hdr;
 	ret = blk_dread(dev_desc, part_info.start, 1, andr_hdr);
 	if (ret != 1) {
@@ -232,10 +243,13 @@ static int init_resource_list(struct resource_img_hdr *hdr)
 	}
 next:
 #endif
+	/*
+	 * If not found resource image in AOSP format images(boot/recovery part),
+	 * try to read RK format images(resource part).
+	 */
 	if (!resource_found) {
 		/* Read resource from Rockchip Resource partition */
-		ret = part_get_info_by_name(dev_desc, PART_RESOURCE,
-					 &part_info);
+		ret = part_get_info_by_name(dev_desc, PART_RESOURCE, &part_info);
 		if (ret < 0) {
 			printf("fail to get %s part\n", PART_RESOURCE);
 			goto out;
@@ -244,18 +258,23 @@ next:
 		debug("%s Load resource from %s\n", __func__, part_info.name);
 	}
 
+	/* Only read header and check magic */
 	ret = blk_dread(dev_desc, offset, 1, hdr);
 	if (ret != 1)
 		goto out;
+
 	ret = resource_image_check_header(hdr);
 	if (ret < 0)
 		goto out;
+
 	content = memalign(ARCH_DMA_MINALIGN,
 			   hdr->e_blks * hdr->e_nums * RK_BLK_SIZE);
 	if (!content) {
 		printf("alloc memory for content failed\n");
 		goto out;
 	}
+
+	/* Real read whole resource image */
 	ret = blk_dread(dev_desc, offset + hdr->c_offset,
 			hdr->e_blks * hdr->e_nums, content);
 	if (ret != (hdr->e_blks * hdr->e_nums))
