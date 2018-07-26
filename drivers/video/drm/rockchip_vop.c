@@ -241,10 +241,10 @@ static int rockchip_vop_init(struct display_state *state)
 	vop->version = vop_data->version;
 	vop->max_output = vop_data->max_output;
 
-	/*
-	 * TODO:
-	 * Set Dclk pll parent
-	 */
+	/* Process 'assigned-{clocks/clock-parents/clock-rates}' properties */
+	ret = clk_set_defaults(crtc_state->dev);
+	if (ret)
+		debug("%s clk_set_defaults failed %d\n", __func__, ret);
 
 	ret = clk_get_by_name(crtc_state->dev, "dclk_vop", &dclk);
 	if (!ret)
