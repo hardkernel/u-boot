@@ -334,8 +334,6 @@
 					"40M(rootfs),"	\
 					"-(data)"
 */
-#define CONFIG_CMD_UBI
-#define CONFIG_CMD_UBIFS
 #define CONFIG_RBTREE
 #define CONFIG_CMD_NAND_TORTURE 1
 #define CONFIG_CMD_MTDPARTS   1
@@ -455,12 +453,6 @@
 #define CONFIG_FASTBOOT_MAX_DOWN_SIZE	0x8000000
 #define CONFIG_DEVICE_PRODUCT	"g12b_w400"
 
-//UBOOT Facotry usb/sdcard burning config
-#define CONFIG_AML_V2_FACTORY_BURN              1       //support facotry usb burning
-#define CONFIG_AML_FACTORY_BURN_LOCAL_UPGRADE   1       //support factory sdcard burning
-#define CONFIG_POWER_KEY_NOT_SUPPORTED_FOR_BURN 1       //There isn't power-key for factory sdcard burning
-#define CONFIG_SD_BURNING_SUPPORT_UI            1       //Displaying upgrading progress bar when sdcard/udisk burning
-
 #define CONFIG_AML_SECURITY_KEY                 1
 #define CONFIG_UNIFY_KEY_MANAGE                 1
 
@@ -500,6 +492,8 @@
 #define CONFIG_CMD_I2C 1
 #define CONFIG_CMD_MEMORY 1
 #define CONFIG_CMD_FAT 1
+#define CONFIG_CMD_EXT2		1
+#define CONFIG_CMD_EXT4		1
 #define CONFIG_CMD_GPIO 1
 #define CONFIG_CMD_RUN
 #define CONFIG_CMD_REBOOT 1

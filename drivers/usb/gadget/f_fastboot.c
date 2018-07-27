@@ -1166,7 +1166,9 @@ static void cb_oem_cmd(struct usb_ep *ep, struct usb_request *req)
 	char response[RESPONSE_LEN/2 + 1];
 	char* cmd = req->buf;
 	printf("oem cmd[%s]\n", cmd);
+#if !defined(CONFIG_ODROID_COMMON)	// FIXME: Why??
 	static int i = 0;
+#endif
 
 	memcpy(response, cmd, strnlen(cmd, RESPONSE_LEN/2)+1);//+1 to terminate str
 	cmd = response;
@@ -1174,9 +1176,12 @@ static void cb_oem_cmd(struct usb_ep *ep, struct usb_request *req)
 	FB_MSG("To run cmd[%s]\n", cmd);
 	run_command(cmd, 0);
 
+#if !defined(CONFIG_ODROID_COMMON)	// FIXME: Why??
     if (++i > 3) i = 0;
 
 	i ? fastboot_busy("AMLOGIC") : fastboot_okay(response);
+#endif
+	fastboot_okay(response);
 	fastboot_tx_write_str(response_str);
 	return ;
 }

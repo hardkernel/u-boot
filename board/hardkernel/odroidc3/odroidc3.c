@@ -40,6 +40,8 @@
 #include <amlogic/spifc.h>
 #endif
 
+#include <odroid-common.h>
+
 DECLARE_GLOBAL_DATA_PTR;
 
 //new static eth setup
