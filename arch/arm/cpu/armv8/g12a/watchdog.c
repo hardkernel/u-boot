@@ -51,9 +51,33 @@ void watchdog_disable(void)
 	// turn off internal counter and disable
 	*P_WATCHDOG_CNTL &= ~((1<<18)|(1<<25));
 }
+
+
+/*
+ *GPIOE_0   VDDEE_PWM
+ *GPIOE_1   VDDCPU_PWM
+ * */
+void set_pwm_to_input(void)
+{
+	unsigned int val;
+
+	val = readl(AO_RTI_PINMUX_REG1);
+	val &= ~(0xff << 16);
+	writel(val, AO_RTI_PINMUX_REG1);/* clear pinmux */
+	val = readl(AO_GPIO_O_EN_N);
+	val &= ~(0x3 << 16);
+	val |= 0x3 << 16;
+	writel(val, AO_GPIO_O_EN_N);/* set input mode */
+	val = readl(AO_RTI_PULL_UP_EN_REG);
+	val &= ~(0x3 << 16);
+	writel(val, AO_RTI_PULL_UP_EN_REG);/* disable pull up/down */
+}
+
 void reset_system(void)
 {
 	int i;
+
+	set_pwm_to_input();
 #ifdef CONFIG_USB_DEVICE_V2
 	*P_RESET1_REGISTER |= (1<<17);
 	mdelay(200);
