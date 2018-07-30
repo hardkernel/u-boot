@@ -63,9 +63,39 @@
 #define CONFIG_IR_REMOTE_POWER_UP_KEY_VAL8	0xFFFFFFFF
 #define CONFIG_IR_REMOTE_POWER_UP_KEY_VAL9	0xFFFFFFFF
 
+#define CONFIG_CMD_PXE				1
+#if defined(CONFIG_CMD_PXE)
+#define CONFIG_BOOTP_PXE			1
+#define CONFIG_BOOTP_PXE_CLIENTARCH		0x16
+#define CONFIG_BOOTP_GATEWAY			1
+#define CONFIG_BOOTP_HOSTNAME			1
+#define CONFIG_BOOTP_VCI_STRING			"U-Boot.armv8"
+#define CONFIG_BOOTP_BOOTPATH			1
+#define CONFIG_BOOTP_SUBNET			1
+#define CONFIG_BOOTP_DNS			1
+#define CONFIG_UDP_CHECKSUM			1
+
+#define CONFIG_MENU				1
+
+#define ENV_PXE_DEFAULT					\
+	"pxefile_addr_r=0x1070000\0"			\
+	"pxeuuid=" ODROID_BOARD_UUID "\0"		\
+	"bootfile=Image\0"				\
+	"boot_pxe="					\
+		"dhcp; "				\
+		"setenv fdt_addr_r 0x1000000; "		\
+		"setenv kernel_addr_r 0x1080000; "	\
+		"setenv ramdisk_addr_r 0x3080000; "	\
+		"pxe get; "				\
+		"pxe boot\0"
+#else
+#define ENV_PXE_DEFAULT
+#endif
+
 /* args/envs */
 #define CONFIG_SYS_MAXARGS  64
 #define CONFIG_EXTRA_ENV_SETTINGS \
+        ENV_PXE_DEFAULT \
         "firstboot=1\0"\
         "upgrade_step=0\0"\
         "jtag=disable\0"\
@@ -443,6 +473,7 @@
 	#define CONFIG_DESIGNWARE_ETH		1
 	#define CONFIG_PHYLIB			1
 	#define CONFIG_NET_MULTI		1
+	#define CONFIG_CMD_GPT			1
 	#define CONFIG_CMD_PING			1
 	#define CONFIG_CMD_DHCP			1
 	#define CONFIG_CMD_RARP			1
@@ -463,6 +494,7 @@
 /* commands */
 #define CONFIG_CMD_CACHE			1
 #define CONFIG_CMD_BOOTI			1
+#define CONFIG_CMD_BOOTM			1
 #define CONFIG_CMD_EFUSE			1
 #define CONFIG_CMD_I2C				1
 #define CONFIG_CMD_MEMORY			1
@@ -479,6 +511,7 @@
 
 /*file system*/
 #define CONFIG_DOS_PARTITION			1
+#define CONFIG_EFI_PARTITION			1
 #define CONFIG_MPT_PARTITION			1
 #define CONFIG_MMC				1
 #define CONFIG_FS_FAT				1

@@ -789,6 +789,13 @@ static int label_boot(cmd_tbl_t *cmdtp, struct pxe_label *label)
 
 	kernel_addr = genimg_get_kernel_addr(bootm_argv[1]);
 	buf = map_sysmem(kernel_addr, 0);
+
+#ifdef CONFIG_ODROID_COMMON
+#ifdef CONFIG_CMD_BOOTI
+	do_booti(cmdtp, 0, bootm_argc, bootm_argv);
+#endif
+#endif
+
 	/* Try bootm for legacy and FIT format image */
 	if (genimg_get_format(buf) != IMAGE_FORMAT_INVALID)
 		do_bootm(cmdtp, 0, bootm_argc, bootm_argv);
