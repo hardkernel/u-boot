@@ -758,7 +758,7 @@ static ulong rk3399_mmc_get_clk(struct rk3399_cru *cru, uint clk_id)
 		div = 2;
 		break;
 	case SCLK_EMMC:
-		con = readl(&cru->clksel_con[21]);
+		con = readl(&cru->clksel_con[22]);
 		div = 1;
 		break;
 	default:
@@ -813,12 +813,20 @@ static ulong rk3399_mmc_set_clk(struct rk3399_cru *cru,
 
 		/* Select clk_emmc source from GPLL too */
 		src_clk_div = DIV_ROUND_UP(GPLL_HZ, set_rate);
-		assert(src_clk_div - 1 < 128);
-
-		rk_clrsetreg(&cru->clksel_con[22],
-			     CLK_EMMC_PLL_MASK | CLK_EMMC_DIV_CON_MASK,
-			     CLK_EMMC_PLL_SEL_GPLL << CLK_EMMC_PLL_SHIFT |
-			     (src_clk_div - 1) << CLK_EMMC_DIV_CON_SHIFT);
+		if (src_clk_div > 128) {
+			/* use 24MHz source for 400KHz clock */
+			src_clk_div = DIV_ROUND_UP(OSC_HZ, set_rate);
+			assert(src_clk_div - 1 < 128);
+			rk_clrsetreg(&cru->clksel_con[22],
+				     CLK_EMMC_PLL_MASK | CLK_EMMC_DIV_CON_MASK,
+				     CLK_EMMC_PLL_SEL_24M << CLK_EMMC_PLL_SHIFT |
+				     (src_clk_div - 1) << CLK_EMMC_DIV_CON_SHIFT);
+		} else {
+			rk_clrsetreg(&cru->clksel_con[22],
+				     CLK_EMMC_PLL_MASK | CLK_EMMC_DIV_CON_MASK,
+				     CLK_EMMC_PLL_SEL_GPLL << CLK_EMMC_PLL_SHIFT |
+				     (src_clk_div - 1) << CLK_EMMC_DIV_CON_SHIFT);
+		}
 		break;
 	default:
 		return -EINVAL;
