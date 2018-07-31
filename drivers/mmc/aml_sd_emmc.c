@@ -670,6 +670,7 @@ int aml_sd_init(struct mmc *mmc)
 #define MAX_DELAY_CNT	(16)
 #define CALI_BLK_CNT	(10)
 #define REFIX_BLK_CNT	(100)
+#define CALI_PATTERN_ADDR	(0x13800)
 u8 line_x, cal_time;
 u8 dly_tmp;
 u8 max_index;
@@ -788,7 +789,7 @@ int aml_sd_retry_refix(struct mmc *mmc)
 	//u8 *blk_test;
 	//unsigned int blksz = tuning_data->blksz;
 	//int ret = 0;
-	int n, nmatch, ntries = 20;
+	int n, nmatch, ntries = 10;
 	int wrap_win_start = -1, wrap_win_size = 0;
 	int best_win_start = -1, best_win_size = -1;
 	int curr_win_start = -1, curr_win_size = 0;
@@ -808,14 +809,13 @@ int aml_sd_retry_refix(struct mmc *mmc)
 		gadjust->cali_enable = 0;
 		gadjust->cali_rise = 0;
 		sd_emmc_reg->gadjust = adjust;
-		start_blk = 0x14000;
+		start_blk = CALI_PATTERN_ADDR;
 		emmc_debug("%s [%d]: gadjust =0x%x\n",
 			__func__, __LINE__, sd_emmc_reg->gadjust);
 		for (n = 0, nmatch = 0; n < ntries; n++) {
 
 			memset(blk_test, 0, REFIX_BLK_CNT);
 
-			ret = aml_send_calibration_blocks(mmc, blk_test, 0, 1);
 			err = aml_send_calibration_blocks(mmc, blk_test, start_blk, REFIX_BLK_CNT);
 
 			if (!err && !ret)
@@ -858,6 +858,7 @@ int aml_sd_retry_refix(struct mmc *mmc)
 				curr_win_size = 0;
 			}
 		}
+		emmc_debug("adj_delay:[%d]\n", adj_delay);
 		emmc_debug("curr_win_start=%d, curr_win_size=%d\n",curr_win_start, curr_win_size);
 		emmc_debug("wrap_win_start=%d, wrap_win_size=%d\n",wrap_win_start, wrap_win_size);
 		emmc_debug("best_win_start=%d, best_win_size=%d\n\n",best_win_start, best_win_size);
@@ -905,8 +906,8 @@ int aml_sd_retry_refix(struct mmc *mmc)
 		gadjust->adj_delay = adj_delay;
 		sd_emmc_reg->gadjust = adjust;
 	}
-	emmc_debug("%s [%d]:  delay = 0x%x   gadjust =0x%x\n",
-			__func__, __LINE__, sd_emmc_reg->gdelay, sd_emmc_reg->gadjust);
+	printf("%s[%d]:delay = 0x%x,gadjust =0x%x\n",
+		__func__, __LINE__, sd_emmc_reg->gdelay, sd_emmc_reg->gadjust);
 	emmc_debug("%s [%d]: adj_delay = %d\n", __func__, __LINE__, adj_delay);
 	free(blk_test);
 
@@ -934,8 +935,10 @@ static const struct mmc_ops aml_sd_emmc_ops = {
 	.init		= aml_sd_init,
 //	.getcd		= ,
 //	.getwp		= ,
+#ifdef MMC_ADJ_FIXED
 	.calibration = aml_sd_calibration,
 	.refix = aml_sd_retry_refix,
+#endif
 };
 
 void sd_emmc_register(struct aml_card_sd_info * aml_priv)

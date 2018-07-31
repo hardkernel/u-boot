@@ -898,8 +898,10 @@ int aml_emmc_refix(struct mmc *mmc)
 {
 	int ret = 0;
 	mmc->refix = 1;
-	mmc->cfg->ops->calibration(mmc);
-	ret = mmc->cfg->ops->refix(mmc);
+	if (0)
+		mmc->cfg->ops->calibration(mmc);
+	if (mmc->cfg->ops->refix != NULL)
+		ret = mmc->cfg->ops->refix(mmc);
 	mmc->refix = 0;
 	return ret;
 }
@@ -1344,17 +1346,12 @@ static int mmc_startup(struct mmc *mmc)
 
 	mmc_set_clock(mmc, mmc->tran_speed);
 
-	/* refix emmc DDR52 mode*/
-	if (mmc->ddr_mode) {
-		if (!IS_SD(mmc)) {
-			err = aml_emmc_refix(mmc);
-			if (!err)
-				printf("[%s] mmc refix success\n", __func__);
-			else {
-				printf("[%s] mmc refix error\n", __func__);
-				mmc_set_clock(mmc, 26000000);
-			}
-		}
+	if (mmc->card_caps & MMC_MODE_HS) {
+		err = aml_emmc_refix(mmc);
+		if (!err)
+			printf("[%s] mmc refix success\n", __func__);
+		else
+			printf("[%s] mmc refix error\n", __func__);
 	}
 
 	/* Fix the block length for DDR mode */
