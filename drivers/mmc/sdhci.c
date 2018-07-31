@@ -450,7 +450,8 @@ static void sdhci_set_uhs_signaling(struct sdhci_host *host)
 		ctrl_2 |= SDHCI_CTRL_UHS_SDR12;
 	else if (timing == MMC_TIMING_UHS_SDR25)
 		ctrl_2 |= SDHCI_CTRL_UHS_SDR25;
-	else if (timing == MMC_TIMING_UHS_SDR50)
+	else if ((timing == MMC_TIMING_UHS_SDR50) ||
+		(timing == MMC_TIMING_MMC_HS))
 		ctrl_2 |= SDHCI_CTRL_UHS_SDR50;
 	else if ((timing == MMC_TIMING_UHS_DDR50) ||
 		 (timing == MMC_TIMING_MMC_DDR52))
