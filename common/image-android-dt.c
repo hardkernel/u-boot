@@ -155,3 +155,20 @@ void android_dt_print_contents(ulong hdr_addr)
 	}
 }
 #endif
+
+/**
+ * Get dt entry count of DT image structure.
+ *
+ * @param hdr_addr Start address of DT image
+ */
+int android_dt_get_count(ulong hdr_addr)
+{
+	const struct dt_table_header *hdr;
+	int count;
+
+	hdr = map_sysmem(hdr_addr, sizeof(*hdr));
+	count = fdt32_to_cpu(hdr->dt_entry_count);
+	unmap_sysmem(hdr);
+
+	return count;
+}
