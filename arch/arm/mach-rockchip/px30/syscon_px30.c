@@ -20,4 +20,7 @@ U_BOOT_DRIVER(syscon_px30) = {
 	.name = "px30_syscon",
 	.id = UCLASS_SYSCON,
 	.of_match = px30_syscon_ids,
+#if !CONFIG_IS_ENABLED(OF_PLATDATA)
+	.bind = dm_scan_fdt_dev,
+#endif
 };
