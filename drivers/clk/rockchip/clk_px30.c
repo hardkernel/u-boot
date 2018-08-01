@@ -791,7 +791,6 @@ static int px30_clk_get_gpll_rate(ulong *rate)
 {
 	struct udevice *pmucru_dev;
 	struct px30_pmuclk_priv *priv;
-	struct px30_pmucru *pmucru;
 	int ret;
 
 	ret = uclass_get_device_by_driver(UCLASS_CLK,
@@ -802,8 +801,7 @@ static int px30_clk_get_gpll_rate(ulong *rate)
 		return ret;
 	}
 	priv = dev_get_priv(pmucru_dev);
-	pmucru = priv->pmucru;
-	*rate =  rkclk_pll_get_rate(&pmucru->pll, &pmucru->pmu_mode, GPLL);
+	*rate =  priv->gpll_hz;
 
 	return 0;
 }
@@ -863,15 +861,10 @@ static ulong px30_clk_get_rate(struct clk *clk)
 {
 	struct px30_clk_priv *priv = dev_get_priv(clk->dev);
 	ulong rate = 0;
-	int ret;
 
-	if (!priv->gpll_hz) {
-		ret = px30_clk_get_gpll_rate(&priv->gpll_hz);
-		if (ret) {
-			printf("%s failed to get gpll rate\n", __func__);
-			return ret;
-		}
-		debug("%s gpll=%lu\n", __func__, priv->gpll_hz);
+	if (!priv->gpll_hz && clk->id > ARMCLK) {
+		printf("%s gpll=%lu\n", __func__, priv->gpll_hz);
+		return -ENOENT;
 	}
 
 	debug("%s %ld\n", __func__, clk->id);
@@ -940,13 +933,9 @@ static ulong px30_clk_set_rate(struct clk *clk, ulong rate)
 	struct px30_clk_priv *priv = dev_get_priv(clk->dev);
 	ulong ret = 0;
 
-	if (!priv->gpll_hz) {
-		ret = px30_clk_get_gpll_rate(&priv->gpll_hz);
-		if (ret) {
-			printf("%s failed to get gpll rate\n", __func__);
-			return ret;
-		}
-		debug("%s gpll=%lu\n", __func__, priv->gpll_hz);
+	if (!priv->gpll_hz && clk->id > ARMCLK) {
+		printf("%s gpll=%lu\n", __func__, priv->gpll_hz);
+		return -ENOENT;
 	}
 
 	debug("%s %ld %ld\n", __func__, clk->id, rate);
@@ -1131,12 +1120,26 @@ static struct clk_ops px30_clk_ops = {
 static int px30_clk_probe(struct udevice *dev)
 {
 	struct px30_clk_priv *priv = dev_get_priv(dev);
+	int ret;
 
-	if (px30_clk_get_pll_rate(priv, APLL) == APLL_HZ)
-		return 0;
+	if (px30_clk_get_pll_rate(priv, APLL) != APLL_HZ) {
+		ret = px30_armclk_set_clk(priv, APLL_HZ);
+		if (ret < 0)
+			printf("%s failed to set armclk rate\n", __func__);
+	}
 
-	if (px30_armclk_set_clk(priv, APLL_HZ))
-		return -EINVAL;
+	/* Process 'assigned-{clocks/clock-parents/clock-rates}' properties */
+	ret = clk_set_defaults(dev);
+	if (ret)
+		debug("%s clk_set_defaults failed %d\n", __func__, ret);
+
+	if (!priv->gpll_hz) {
+		ret = px30_clk_get_gpll_rate(&priv->gpll_hz);
+		if (ret) {
+			printf("%s failed to get gpll rate\n", __func__);
+			return ret;
+		}
+	}
 
 	return 0;
 }
@@ -1347,6 +1350,16 @@ static struct clk_ops px30_pmuclk_ops = {
 
 static int px30_pmuclk_probe(struct udevice *dev)
 {
+	struct px30_pmuclk_priv *priv = dev_get_priv(dev);
+	int ret;
+
+	priv->gpll_hz = px30_gpll_get_pmuclk(priv);
+
+	/* Process 'assigned-{clocks/clock-parents/clock-rates}' properties */
+	ret = clk_set_defaults(dev);
+	if (ret)
+		debug("%s clk_set_defaults failed %d\n", __func__, ret);
+
 	return 0;
 }
 
