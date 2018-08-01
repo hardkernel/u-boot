@@ -104,7 +104,7 @@ void secure_task(void)
 				presume->method = resume_data.method;
 				if (presume->method == CEC_WAKEUP) {
 					presume->date1 = resume_data.date1;
-					presume->date2 = resume_data.date1;
+					presume->date2 = resume_data.date2;
 				}
 			}
 	}
@@ -120,11 +120,13 @@ void set_wakeup_method(unsigned int method)
 void set_cec_val1(unsigned int cec_val)
 {
 	resume_data.date1 = cec_val;
+	dbg_print("cec1: ", resume_data.date1);
 }
 
 void set_cec_val2(unsigned int cec_val)
 {
 	resume_data.date2 = cec_val;
+	dbg_print("cec2: ", resume_data.date2);
 }
 
 void process_high_task(unsigned command)

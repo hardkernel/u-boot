@@ -65,11 +65,6 @@
 #define CECB_IRQ_RX_WAKEUP		(1 << 6)
 #define CECB_IRQ_EN_MASK		(0xf << 0)
 
-// tx_msg_status definition
-#define TX_IDLE                 0  // No transaction
-#define TX_BUSY                 1  // Transmitter is busy
-#define TX_DONE                 2  // Message has been successfully transmitted
-#define TX_ERROR                3  // Message has been transmitted with error
 
 #define     AO_RTI_STATUS_REG0                                 (0xff800000 + (0x00 << 2))
 #define SEC_AO_RTI_STATUS_REG0                                 (0xff800000 + (0x00 << 2))

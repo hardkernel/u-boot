@@ -36,6 +36,7 @@ typedef unsigned int uint32_t;
 #define CEC_WAKEUP		8
 #define	REMOTE_CUS_WAKEUP		9
 #define ETH_PHY_WAKEUP      10
+#define CECB_WAKEUP		11
 
 /* wake up source*/
 #define UDEFINED_WAKEUP_SRC	(1<<0)
@@ -48,6 +49,7 @@ typedef unsigned int uint32_t;
 #define AUTO_WAKEUP_SRC	(1<<7)
 #define CEC_WAKEUP_SRC	(1<<8)
 #define ETH_PHY_WAKEUP_SRC (1<<9)
+#define CECB_WAKEUP_SRC    (1<<10)
 
 struct pwr_op {
 	void (*power_off_at_clk81)(void);
@@ -98,6 +100,7 @@ enum {
 	IRQ_AO_GPIO1,
 	IRQ_AO_TIMERA,
 	IRQ_ETH_PHY,
+	IRQ_AO_CECB,
 	WAKE_UP_MAX = 32,
 };
 

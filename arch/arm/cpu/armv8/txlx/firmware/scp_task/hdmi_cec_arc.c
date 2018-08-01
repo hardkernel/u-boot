@@ -835,6 +835,7 @@ void cec_node_init(void)
 		 {CEC_PLAYBACK_DEVICE_2_ADDR, CEC_PLAYBACK_DEVICE_3_ADDR, CEC_PLAYBACK_DEVICE_1_ADDR},
 		 {CEC_PLAYBACK_DEVICE_3_ADDR, CEC_PLAYBACK_DEVICE_1_ADDR, CEC_PLAYBACK_DEVICE_2_ADDR} };
 
+	uart_puts(CEC_VERSION);
 	if (retry >= 12) {  /* retry all device addr */
 		cec_msg.log_addr = 0x0f;
 		uart_puts("failed on retried all possible address\n");
@@ -929,6 +930,72 @@ void cec_node_init(void)
 	if (i == 3) {
 		i = 0;
 	}
+}
+
+int cec_suspend_wakeup_chk(void)
+{
+	static unsigned int cec_wait_addr = 0;
+	int exit_reason = 0;
+
+	if ((cec_msg.cec_power == 0x1) &&
+		(hdmi_cec_func_config & 0x1)) {
+		if (cec_wait_addr++ < 100) {
+			if (cec_msg.active_source) {
+				cec_save_port_id();
+				exit_reason = CEC_WAKEUP;
+				uart_puts("check wakeup\n");
+			}
+			uart_puts(".");
+		} else {
+			exit_reason = CEC_WAKEUP;
+			uart_puts("timeout wakeup\n");
+		}
+	}
+
+	if (exit_reason == CEC_WAKEUP)
+		return 1;
+	else
+		return 0;
+}
+
+int cec_suspend_handle(void)
+{
+	int exit_reason = 0;
+
+	if (cec_msg.log_addr) {
+		if (hdmi_cec_func_config & 0x1) {
+			cec_handler();
+			if (cec_msg.cec_power == 0x1) {
+				if (cec_msg.active_source) {
+					cec_save_port_id();
+					/*cec power key*/
+					exit_reason = CEC_WAKEUP;
+					uart_puts("message wakeup\n");
+				}
+			}
+		}
+	} else if (hdmi_cec_func_config & 0x1)
+		cec_node_init();
+
+	if (exit_reason == CEC_WAKEUP) {
+		uart_puts("active source:");
+		uart_put_hex(cec_msg.active_source, 8);
+		uart_puts("\n");
+
+		uart_puts("wk_logic_addr:");
+		uart_put_hex(cec_wakup.wk_logic_addr, 8);
+		uart_puts("\n");
+
+		uart_puts("wk_phy_addr:0x");
+		uart_put_hex(cec_wakup.wk_phy_addr, 16);
+		uart_puts("\n");
+
+		uart_puts("wk_port_id:0x");
+		uart_put_hex(cec_wakup.wk_port_id, 8);
+		uart_puts("\n");
+		return 1;
+	} else
+		return 0;
 }
 
 #endif

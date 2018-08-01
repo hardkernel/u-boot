@@ -17,7 +17,7 @@
 #define CONFIG_CEC_OSD_NAME "AML_TV"
 #endif
 
-#define CEC_VERSION "cec b ver:2018/08/10\n"
+#define CEC_VERSION "cec a ver:2018/08/10\n"
 
 /* cec irq bit flags for AO_CEC_B */
 #define CECB_IRQ_TX_DONE		(1 << 0)
@@ -40,11 +40,6 @@
 #define PHY_ADDR_MASK			0x0000FFFF
 #define get_logic_addr(a)		(((a) & LOGIC_ADDR_MASK) >> 16)
 #define get_phy_addr(a)			(((a) & PHY_ADDR_MASK) >> 0)
-
-/*wake up param to kernel define*/
-#define WAKE_UP_PORT_ID_MASK	0xFFFF0000
-#define WAKE_UP_REASON_MASK		0x0000FFFF
-#define PHY_ADDR_LEN			4 /*16bit/4bit*/
 
 
 extern unsigned char hdmi_cec_func_config;

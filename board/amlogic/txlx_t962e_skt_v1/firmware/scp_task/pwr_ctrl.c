@@ -23,6 +23,7 @@
 #ifdef CONFIG_CEC_WAKEUP
 #include <asm/arch/cec_tx_reg.h>
 #include <hdmi_cec_arc.h>
+#include <amlogic/aml_cec.h>
 #endif
 #include <gpio-gxbb.h>
 #include "pwm_ctrl.h"

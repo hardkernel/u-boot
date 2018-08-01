@@ -23,15 +23,14 @@
 #include "registers.h"
 #include "task_apis.h"
 #include "suspend.h"
-unsigned int time;
 #include <scp_remote.c>
-
 #include <scp_adc.c>
 #include <pwr_ctrl.c>
 #include <hdmi_cec_arc.c>
 
 static struct pwr_op pwr_op_d;
 static struct pwr_op *p_pwr_op;
+unsigned int time;
 
 static void ao_switch_to_ao_24M(void)
 {
@@ -118,8 +117,12 @@ void enter_suspend(unsigned int suspend_from)
 	int exit_reason = UDEFINED_WAKEUP;
 #ifdef CONFIG_CEC_WAKEUP
 	hdmi_cec_func_config = readl(P_AO_DEBUG_REG0) & 0xff;
+	uart_puts(CEC_VERSION);
+	uart_puts("\n");
 	uart_puts("CEC cfg:0x");
-	uart_put_hex(hdmi_cec_func_config, 16);
+	uart_put_hex(hdmi_cec_func_config, 8);
+	uart_puts("--suspend from:0x");
+	uart_put_hex(suspend_from, 32);
 	uart_puts("\n");
 #endif
 	p_pwr_op->power_off_at_clk81();

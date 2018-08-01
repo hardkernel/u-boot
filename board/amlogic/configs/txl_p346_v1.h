@@ -117,6 +117,14 @@
         "active_slot=_a\0"\
         "boot_part=boot\0"\
         "model_name=t962x_r311_FHD\0" \
+        "edid_14_dir=/system/etc/port_14.bin\0" \
+        "edid_20_dir=/system/etc/port_20.bin\0" \
+        "edid_select=0\0" \
+        /* bit0-bit3:UI hdmi1;bit4-bit7:UI hdmi2;...;0: edid 1.4;1: edid 2.0*/ \
+        "port_map=0x4231\0" \
+        "cec_fun=0x2F\0" \
+        "logic_addr=0x0\0" \
+        "cec_ac_wakeup=0\0" \
         "initargs="\
             "init=/init console=ttyS0,115200 no_console_suspend earlyprintk=aml-uart,0xc81004c0 ramoops.pstore_en=1 ramoops.record_size=0x8000 ramoops.console_size=0x4000 "\
             "\0"\
@@ -152,7 +160,16 @@
             "else if test ${reboot_mode} = update; then "\
                     "run update;"\
             "else if test ${reboot_mode} = cold_boot; then "\
-                /*"run try_auto_burn; "*/\
+		"if test ${cec_ac_wakeup} = 1; then "\
+			"cec ${logic_addr} ${cec_fun}; "\
+			"if test ${edid_select} = 1111; then "\
+				"hdmirx init ${port_map} ${edid_20_dir}; "\
+			"else if test ${edid_select} != 1111; then "\
+				"hdmirx init ${port_map} ${edid_14_dir}; "\
+			"fi;fi;"\
+			"systemoff; "\
+		"fi;"\
+		/*"run try_auto_burn; "*/\
             "else if test ${reboot_mode} = fastboot; then "\
                 "fastboot;"\
             "fi;fi;fi;fi;"\
@@ -446,6 +463,8 @@
 #define CONFIG_CMD_MISC     1
 #define CONFIG_CMD_ITEST    1
 #define CONFIG_CMD_CPU_TEMP 1
+#define CONFIG_CMD_CEC      1
+#define CONFIG_CMD_HDMIRX   1
 #define CONFIG_SYS_MEM_TOP_HIDE 0x08000000 //hide 128MB for kernel reserve
 
 #define CONFIG_MULTI_DTB    1

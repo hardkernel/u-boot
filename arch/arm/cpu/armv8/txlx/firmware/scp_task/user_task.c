@@ -114,11 +114,13 @@ void set_wakeup_method(unsigned int method)
 void set_cec_val1(unsigned int cec_val)
 {
 	resume_data.date1 = cec_val;
+	dbg_print("val1: ", resume_data.date1);
 }
 
 void set_cec_val2(unsigned int cec_val)
 {
 	resume_data.date2 = cec_val;
+	dbg_print("val2: ", resume_data.date2);
 }
 
 void process_high_task(unsigned command)

@@ -68,7 +68,7 @@ void cec_hw_reset(void)
 {
 	unsigned int reg;
 	unsigned int data32;
-	printf("cec reset\n");
+	printf("cec b reset\n");
 
 	reg =   (0 << 31) |
 		(0 << 30) |
