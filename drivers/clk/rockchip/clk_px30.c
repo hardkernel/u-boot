@@ -814,6 +814,16 @@ static ulong px30_clk_get_pll_rate(struct px30_clk_priv *priv,
 	return rkclk_pll_get_rate(&cru->pll[pll_id], &cru->mode, pll_id);
 }
 
+static ulong px30_clk_set_pll_rate(struct px30_clk_priv *priv,
+				   enum px30_pll_id pll_id, ulong hz)
+{
+	struct px30_cru *cru = priv->cru;
+
+	if (rkclk_set_pll(&cru->pll[pll_id], &cru->mode, pll_id, hz))
+		return -EINVAL;
+	return rkclk_pll_get_rate(&cru->pll[pll_id], &cru->mode, pll_id);
+}
+
 static ulong px30_armclk_set_clk(struct px30_clk_priv *priv, ulong hz)
 {
 	struct px30_cru *cru = priv->cru;
@@ -940,6 +950,9 @@ static ulong px30_clk_set_rate(struct clk *clk, ulong rate)
 
 	debug("%s %ld %ld\n", __func__, clk->id, rate);
 	switch (clk->id) {
+	case PLL_NPLL:
+		ret = px30_clk_set_pll_rate(priv, NPLL, rate);
+		break;
 	case ARMCLK:
 		if (priv->armclk_hz)
 			px30_armclk_set_clk(priv, rate);
