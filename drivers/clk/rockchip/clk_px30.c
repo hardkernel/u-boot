@@ -1271,6 +1271,10 @@ static ulong px30_gpll_set_pmuclk(struct px30_pmuclk_priv *priv, ulong hz)
 		return ret;
 	}
 	cru_priv = dev_get_priv(cru_dev);
+
+	if (priv->gpll_hz == hz)
+		return priv->gpll_hz;
+
 	cru_priv->gpll_hz = priv->gpll_hz;
 	div = DIV_ROUND_UP(hz, priv->gpll_hz);
 
