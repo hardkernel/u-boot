@@ -1093,6 +1093,7 @@ int rockchip_mmc_set_phase(struct clk *clk, u32 degrees)
 static int px30_clk_get_phase(struct clk *clk)
 {
 	int ret;
+
 	debug("%s %ld\n", __func__, clk->id);
 	switch (clk->id) {
 	case SCLK_EMMC_SAMPLE:
@@ -1258,9 +1259,9 @@ static ulong px30_gpll_set_pmuclk(struct px30_pmuclk_priv *priv, ulong hz)
 	struct px30_pmucru *pmucru = priv->pmucru;
 	u32 div;
 	ulong emmc_rate, sdmmc_rate, nandc_rate;
+	ulong aclk_bus_rate, hclk_bus_rate, pclk_bus_rate;
+	ulong aclk_peri_rate, hclk_peri_rate, pclk_pmu_rate;
 	int ret;
-
-	priv->gpll_hz = px30_gpll_get_pmuclk(priv);
 
 	ret = uclass_get_device_by_name(UCLASS_CLK,
 					"clock-controller@ff2b0000",
@@ -1271,44 +1272,50 @@ static ulong px30_gpll_set_pmuclk(struct px30_pmuclk_priv *priv, ulong hz)
 	}
 	cru_priv = dev_get_priv(cru_dev);
 	cru_priv->gpll_hz = priv->gpll_hz;
-
 	div = DIV_ROUND_UP(hz, priv->gpll_hz);
 
-	/*
-	 * avoid bus and peri clock rate too large, reduce rate first.
-	 * they will be assigned by clk_set_defaults.
-	 */
-	px30_bus_set_clk(cru_priv, ACLK_BUS_PRE,
-			 px30_bus_get_clk(cru_priv, ACLK_BUS_PRE) / div);
-	px30_bus_set_clk(cru_priv, HCLK_BUS_PRE,
-			 px30_bus_get_clk(cru_priv, HCLK_BUS_PRE) / div);
-	px30_bus_set_clk(cru_priv, PCLK_BUS_PRE,
-			 px30_bus_get_clk(cru_priv, PCLK_BUS_PRE) / div);
-	px30_peri_set_clk(cru_priv, ACLK_PERI_PRE,
-			  px30_bus_get_clk(cru_priv, ACLK_PERI_PRE) / div);
-	px30_peri_set_clk(cru_priv, HCLK_PERI_PRE,
-			  px30_bus_get_clk(cru_priv, HCLK_PERI_PRE) / div);
-	px30_pclk_pmu_set_pmuclk(priv, px30_pclk_pmu_get_pmuclk(priv) / div);
-
-	/*
-	 * save emmc, sdmmc and nandc clock rate,
-	 * nandc clock rate should less than or equal to 150Mhz.
-	 */
+	/* save clock rate */
+	aclk_bus_rate = px30_bus_get_clk(cru_priv, ACLK_BUS_PRE);
+	hclk_bus_rate = px30_bus_get_clk(cru_priv, HCLK_BUS_PRE);
+	pclk_bus_rate = px30_bus_get_clk(cru_priv, PCLK_BUS_PRE);
+	aclk_peri_rate = px30_peri_get_clk(cru_priv, ACLK_PERI_PRE);
+	hclk_peri_rate = px30_peri_get_clk(cru_priv, HCLK_PERI_PRE);
+	pclk_pmu_rate = px30_pclk_pmu_get_pmuclk(priv);
+	debug("%s aclk_bus=%lu, hclk_bus=%lu, pclk_bus=%lu\n", __func__,
+	      aclk_bus_rate, hclk_bus_rate, pclk_bus_rate);
+	debug("%s aclk_peri=%lu, hclk_peri=%lu, pclk_pmu=%lu\n", __func__,
+	      aclk_peri_rate, hclk_peri_rate, pclk_pmu_rate);
 	emmc_rate = px30_mmc_get_clk(cru_priv, SCLK_EMMC);
 	sdmmc_rate = px30_mmc_get_clk(cru_priv, SCLK_SDMMC);
 	nandc_rate = px30_nandc_get_clk(cru_priv);
-	debug("%s emmc=%lu, sdmmc=%lu, nandc=%lu\n", __func__, emmc_rate,
-	      sdmmc_rate, nandc_rate);
+	debug("%s emmc=%lu, sdmmc=%lu, nandc=%lu\n", __func__,
+	      emmc_rate, sdmmc_rate, nandc_rate);
+
 	/* avoid rate too large, reduce rate first */
+	px30_bus_set_clk(cru_priv, ACLK_BUS_PRE, aclk_bus_rate / div);
+	px30_bus_set_clk(cru_priv, HCLK_BUS_PRE, hclk_bus_rate / div);
+	px30_bus_set_clk(cru_priv, PCLK_BUS_PRE, pclk_bus_rate / div);
+	px30_peri_set_clk(cru_priv, ACLK_PERI_PRE, aclk_peri_rate / div);
+	px30_peri_set_clk(cru_priv, HCLK_PERI_PRE, hclk_peri_rate / div);
+	px30_pclk_pmu_set_pmuclk(priv, pclk_pmu_rate / div);
+
 	px30_mmc_set_clk(cru_priv, SCLK_EMMC, emmc_rate / div);
 	px30_mmc_set_clk(cru_priv, SCLK_SDMMC, sdmmc_rate / div);
 	px30_nandc_set_clk(cru_priv, nandc_rate / div);
 
+	/* change gpll rate */
 	rkclk_set_pll(&pmucru->pll, &pmucru->pmu_mode, GPLL, hz);
 	priv->gpll_hz = px30_gpll_get_pmuclk(priv);
 	cru_priv->gpll_hz = priv->gpll_hz;
 
-	/* restore emmc, sdmmc and nandc clock rate */
+	/* restore clock rate */
+	px30_bus_set_clk(cru_priv, ACLK_BUS_PRE, aclk_bus_rate);
+	px30_bus_set_clk(cru_priv, HCLK_BUS_PRE, hclk_bus_rate);
+	px30_bus_set_clk(cru_priv, PCLK_BUS_PRE, pclk_bus_rate);
+	px30_peri_set_clk(cru_priv, ACLK_PERI_PRE, aclk_peri_rate);
+	px30_peri_set_clk(cru_priv, HCLK_PERI_PRE, hclk_peri_rate);
+	px30_pclk_pmu_set_pmuclk(priv, pclk_pmu_rate);
+
 	px30_mmc_set_clk(cru_priv, SCLK_EMMC, emmc_rate);
 	px30_mmc_set_clk(cru_priv, SCLK_SDMMC, sdmmc_rate);
 	px30_nandc_set_clk(cru_priv, nandc_rate);
