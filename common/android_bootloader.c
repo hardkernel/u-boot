@@ -9,14 +9,17 @@
 #include <android_avb/avb_slot_verify.h>
 #include <android_avb/avb_ops_user.h>
 #include <android_avb/rk_avb_ops_user.h>
-
+#include <android_image.h>
 #include <cli.h>
 #include <common.h>
+#include <dt_table.h>
+#include <image-android-dt.h>
 #include <malloc.h>
 #include <fs.h>
 #include <boot_rkimg.h>
 #include <attestation_key.h>
 #include <optee_include/OpteeClientInterface.h>
+#include <linux/libfdt_env.h>
 
 #define ANDROID_PARTITION_BOOT "boot"
 #define ANDROID_PARTITION_MISC "misc"
@@ -473,6 +476,229 @@ out:
 }
 #endif
 
+#ifdef CONFIG_OF_LIBFDT_OVERLAY
+
+/*
+ * Default return index 0.
+ */
+__weak int board_select_fdt_index(ulong dt_table_hdr)
+{
+/*
+ * User can use "dt_for_each_entry(entry, hdr, idx)" to iterate
+ * over all dt entry of DT image and pick up which they want.
+ *
+ * Example:
+ *	struct dt_table_entry *entry;
+ *	int index;
+ *
+ *	dt_for_each_entry(entry, dt_table_hdr, index) {
+ *
+ *		.... (use entry)
+ *	}
+ *
+ *	return index;
+ */
+	return 0;
+}
+
+static int android_get_dtbo(ulong *fdt_dtbo,
+			    const struct andr_img_hdr *hdr,
+			    int *index)
+{
+	struct dt_table_header *dt_hdr = NULL;
+	struct blk_desc *dev_desc;
+	const char *part_name;
+	disk_partition_t part_info;
+	u32 blk_offset, blk_cnt;
+	void *buf;
+	ulong e_addr;
+	u32 e_size;
+	int e_idx;
+	int ret;
+
+	/* Get partition according to boot mode */
+	if (rockchip_get_boot_mode() == BOOT_MODE_RECOVERY)
+		part_name = PART_RECOVERY;
+	else
+		part_name = PART_DTBO;
+
+	/* Get partition info */
+	dev_desc = rockchip_get_bootdev();
+	if (!dev_desc) {
+		printf("%s: dev_desc is NULL!\n", __func__);
+		return -ENODEV;
+	}
+
+	ret = part_get_info_by_name(dev_desc, part_name, &part_info);
+	if (ret < 0) {
+		printf("%s: failed to get %s part info, ret=%d\n",
+		       __func__, part_name, ret);
+		return ret;
+	}
+
+	/* Check dt table header */
+	if (!strcmp(part_name, PART_RECOVERY))
+		blk_offset = part_info.start +
+			     (hdr->recovery_dtbo_offset / part_info.blksz);
+	else
+		blk_offset = part_info.start;
+
+	dt_hdr = memalign(ARCH_DMA_MINALIGN, part_info.blksz);
+	if (!dt_hdr) {
+		printf("%s: out of memory for dt header!\n", __func__);
+		return -ENOMEM;
+	}
+
+	ret = blk_dread(dev_desc, blk_offset, 1, dt_hdr);
+	if (ret != 1) {
+		printf("%s: failed to read dt table header\n",
+		       __func__);
+		goto out1;
+	}
+
+	if (!android_dt_check_header((ulong)dt_hdr)) {
+		printf("%s: Error: invalid dt table header: 0x%x\n",
+		       __func__, dt_hdr->magic);
+		ret = -EINVAL;
+		goto out1;
+	}
+
+#ifdef DEBUG
+	android_dt_print_contents((ulong)dt_hdr);
+#endif
+
+	blk_cnt = DIV_ROUND_UP(fdt32_to_cpu(dt_hdr->total_size),
+			       part_info.blksz);
+	/* Read all DT Image */
+	buf = memalign(ARCH_DMA_MINALIGN, part_info.blksz * blk_cnt);
+	if (!buf) {
+		printf("%s: out of memory for %s part!\n", __func__, part_name);
+		ret = -ENOMEM;
+		goto out1;
+	}
+
+	ret = blk_dread(dev_desc, blk_offset, blk_cnt, buf);
+	if (ret != blk_cnt) {
+		printf("%s: failed to read dtbo, blk_cnt=%d, ret=%d\n",
+		       __func__, blk_cnt, ret);
+		goto out2;
+	}
+
+	e_idx = board_select_fdt_index((ulong)buf);
+	if (e_idx < 0) {
+		printf("%s: failed to select board fdt index\n", __func__);
+		ret = -EINVAL;
+		goto out2;
+	}
+
+	ret = android_dt_get_fdt_by_index((ulong)buf, e_idx, &e_addr, &e_size);
+	if (!ret) {
+		printf("%s: failed to get fdt, index=%d\n", __func__, e_idx);
+		ret = -EINVAL;
+		goto out2;
+	}
+
+	if (fdt_dtbo)
+		*fdt_dtbo = e_addr;
+	if (index)
+		*index = e_idx;
+
+	free(dt_hdr);
+	debug("ANDROID: Loading dt entry to 0x%lx size 0x%x idx %d from \"%s\" part\n",
+	      e_addr, e_size, e_idx, part_name);
+
+	return 0;
+
+out2:
+	free(buf);
+out1:
+	free(dt_hdr);
+
+	return ret;
+}
+
+int android_fdt_overlay_apply(void *fdt_addr)
+{
+	struct andr_img_hdr *hdr;
+	struct blk_desc *dev_desc;
+	const char *part_name;
+	disk_partition_t part_info;
+	char buf[32] = {0};
+	u32 blk_cnt;
+	ulong fdt_dtbo = -1;
+	int index = -1;
+	int ret;
+
+	/* Get partition according to boot mode */
+	if (rockchip_get_boot_mode() == BOOT_MODE_RECOVERY)
+		part_name = PART_RECOVERY;
+	else
+		part_name = PART_BOOT;
+
+	/* Get partition info */
+	dev_desc = rockchip_get_bootdev();
+	if (!dev_desc) {
+		printf("%s: dev_desc is NULL!\n", __func__);
+		return -ENODEV;
+	}
+
+	ret = part_get_info_by_name(dev_desc, part_name, &part_info);
+	if (ret < 0) {
+		printf("%s: failed to get %s part info, ret=%d\n",
+		       __func__, part_name, ret);
+		return ret;
+	}
+
+	blk_cnt = DIV_ROUND_UP(sizeof(*hdr), part_info.blksz);
+	hdr = memalign(ARCH_DMA_MINALIGN, part_info.blksz * blk_cnt);
+	if (!hdr) {
+		printf("%s: out of memory!\n", __func__);
+		return -ENOMEM;
+	}
+
+	ret = blk_dread(dev_desc, part_info.start, blk_cnt, hdr);
+	if (ret != blk_cnt) {
+		printf("%s: failed to read %s hdr!\n", __func__, part_name);
+		goto out;
+	}
+
+#ifdef DEBUG
+	android_print_contents(hdr);
+#endif
+
+	if (android_image_check_header(hdr)) {
+		printf("%s: Invalid Android header %s\n", __func__, hdr->magic);
+		return -EINVAL;
+	}
+
+	/* Check header version */
+	if (!hdr->header_version) {
+		printf("Android header version 0\n");
+		ret = -EINVAL;
+		goto out;
+	}
+
+	ret = android_get_dtbo(&fdt_dtbo, (void *)hdr, &index);
+	if (!ret) {
+		/* Must incease size before overlay */
+		fdt_increase_size(fdt_addr, fdt_totalsize((void *)fdt_dtbo));
+		ret = fdt_overlay_apply(fdt_addr, (void *)fdt_dtbo);
+		if (!ret) {
+			snprintf(buf, 32, "%s%d", "androidboot.dtbo_", index);
+			env_update("bootargs", buf);
+			printf("ANDROID: fdt overlay OK\n");
+		} else {
+			printf("ANDROID: fdt overlay failed, ret=%d\n", ret);
+		}
+	}
+
+out:
+	free(hdr);
+
+	return 0;
+}
+#endif
+
 int android_bootloader_boot_flow(struct blk_desc *dev_desc,
 				 unsigned long load_address)
 {
@@ -609,6 +835,15 @@ int android_bootloader_boot_flow(struct blk_desc *dev_desc,
 	ret = android_image_get_fdt((void *)load_address, &fdt_addr);
 	if (!ret)
 		env_set_hex("fdt_addr", fdt_addr);
+
+/*
+ * Actually if CONFIG_USING_KERNEL_DTB is enbled, we have already read kernel
+ * dtb and apply overlay in init_kernel_dtb(), so that we don't need to apply
+ * again, we would pass the current fdt to kernel.
+ */
+#if defined(CONFIG_OF_LIBFDT_OVERLAY) && !defined(CONFIG_USING_KERNEL_DTB)
+	android_fdt_overlay_apply((void *)fdt_addr);
+#endif
 #endif
 	android_bootloader_boot_kernel(load_address);
 

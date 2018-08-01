@@ -86,4 +86,12 @@ int android_boot_flow(unsigned long kernel_address);
  */
 char *android_str_append(char *base_name, char *slot_suffix);
 
+/** anrdroid_fdt_overlay_apply- apply fdt overlay.
+ *
+ * @fdt_addr: fdt blob.
+ *
+ * @return 0 on success, otherwise failed.
+ */
+int android_fdt_overlay_apply(void *fdt_addr);
+
 #endif  /* __ANDROID_BOOTLOADER_H */

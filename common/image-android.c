@@ -14,6 +14,8 @@
 #include <asm/arch/resource_img.h>
 #endif
 
+DECLARE_GLOBAL_DATA_PTR;
+
 #define ANDROID_IMAGE_DEFAULT_KERNEL_ADDR	0x10008000
 #define ANDROID_ARG_FDT_FILENAME "rk-kernel.dtb"
 
@@ -191,7 +193,15 @@ int android_image_get_fdt(const struct andr_img_hdr *hdr,
 
 	printf("FDT load addr 0x%08x size %u KiB\n",
 	       hdr->second_addr, DIV_ROUND_UP(hdr->second_size, 1024));
-
+/*
+ * Actually we have read kernel dtb in init_kernel_dtb() and do overlay
+ * when CONFIG_USING_KERNEL_DTB is enbled, and we also didn't update it at all.
+ * So that we pass current fdt blob to kernel, otherwise we have to do overlay
+ * again which wastes time.
+ */
+#if defined(CONFIG_OF_LIBFDT_OVERLAY) && defined(CONFIG_USING_KERNEL_DTB)
+	*rd_data = (ulong)gd->fdt_blob;
+#else
 	*rd_data = (unsigned long)hdr;
 	*rd_data += hdr->page_size;
 	*rd_data += ALIGN(hdr->kernel_size, hdr->page_size);
@@ -201,6 +211,8 @@ int android_image_get_fdt(const struct andr_img_hdr *hdr,
 		     ANDROID_ARG_FDT_FILENAME))
 			* 512;
 #endif
+#endif
+
 	return 0;
 }
 
