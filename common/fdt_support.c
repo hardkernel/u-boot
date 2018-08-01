@@ -274,8 +274,13 @@ int fdt_initrd(void *fdt, ulong initrd_start, ulong initrd_end)
 
 int fdt_chosen(void *fdt)
 {
+	/*
+	 * "bootargs_ext" is used when dtbo is applied.
+	 */
+	const char *arr_bootargs[] = { "bootargs", "bootargs_ext" };
 	int   nodeoffset;
 	int   err;
+	int   i;
 	char  *str;		/* used to set string properties */
 
 	err = fdt_check_header(fdt);
@@ -294,28 +299,31 @@ int fdt_chosen(void *fdt)
 #ifdef CONFIG_ARCH_ROCKCHIP
 		const char *bootargs;
 
-		bootargs = fdt_getprop(fdt, nodeoffset, "bootargs", NULL);
-		if (bootargs) {
-			/*
-			 * Append kernel bootargs
-			 * If use AB system, delete default "root=" which route
-			 * to rootfs. Then the ab bootctl will choose the
-			 * high priority system to boot and add its UUID
-			 * to cmdline. The format is "roo=PARTUUID=xxxx...".
-			 */
+		for (i = 0; i < ARRAY_SIZE(arr_bootargs); i++) {
+			bootargs = fdt_getprop(fdt, nodeoffset,
+					       arr_bootargs[i], NULL);
+			if (bootargs) {
+				/*
+				 * Append kernel bootargs
+				 * If use AB system, delete default "root=" which route
+				 * to rootfs. Then the ab bootctl will choose the
+				 * high priority system to boot and add its UUID
+				 * to cmdline. The format is "roo=PARTUUID=xxxx...".
+				 */
 #ifdef CONFIG_ANDROID_AB
-			env_update_filter("bootargs", bootargs, "root=");
+				env_update_filter("bootargs", bootargs, "root=");
 #else
-			/*
-			 * Initrd fixup: remove unused "initrd=0x...,0x...",
-			 * this for compatible with legacy parameter.txt
-			 */
-			env_update_filter("bootargs", bootargs, "initrd=");
+				/*
+				 * Initrd fixup: remove unused "initrd=0x...,0x...",
+				 * this for compatible with legacy parameter.txt
+				 */
+				env_update_filter("bootargs", bootargs, "initrd=");
 #endif
-
-			str = env_get("bootargs");
+			}
+#endif
 		}
-#endif
+
+		str = env_get("bootargs");
 		err = fdt_setprop(fdt, nodeoffset, "bootargs", str,
 				  strlen(str) + 1);
 		if (err < 0) {
