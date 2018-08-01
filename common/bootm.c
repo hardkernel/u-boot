@@ -115,6 +115,10 @@ static int bootm_find_os(cmd_tbl_t *cmdtp, int flag, int argc,
 		images.os.end = image_get_image_end(os_hdr);
 		images.os.load = image_get_load(os_hdr);
 		images.os.arch = image_get_arch(os_hdr);
+		if (images.os.arch == IH_ARCH_ARM) {
+			setenv("initrd_high", "0A000000");
+			setenv("fdt_high", "0A000000");
+		}
 		break;
 #endif
 #if defined(CONFIG_FIT)
@@ -161,8 +165,19 @@ static int bootm_find_os(cmd_tbl_t *cmdtp, int flag, int argc,
 #endif
 #ifdef CONFIG_ANDROID_BOOT_IMAGE
 	case IMAGE_FORMAT_ANDROID:
+		if (image_get_magic((image_header_t *)images.os.image_start) == IH_MAGIC) {
+			setenv("initrd_high", "0A000000");
+			setenv("fdt_high", "0A000000");
+			images.os.arch = ((image_header_t *)(images.os.image_start))->ih_arch;
+			images.os.image_start += sizeof(image_header_t);
+		}
 		images.os.type = IH_TYPE_KERNEL;
-		images.os.comp =  android_image_get_comp(os_hdr);
+
+		if (images.os.arch == IH_ARCH_ARM)
+			images.os.comp = image_get_comp(os_hdr + 0x800);
+		else
+			images.os.comp =  android_image_get_comp(os_hdr);
+
 		images.os.os = IH_OS_LINUX;
 
 		images.os.end = android_image_get_end(os_hdr);
@@ -469,10 +484,12 @@ static int bootm_load_os(bootm_headers_t *images, unsigned long *load_end,
 			return BOOTM_ERR_RESET;
 		}
 #else
+		if (images->os.arch != IH_ARCH_ARM) {
 		#define LINUX_ARM64_IMAGE_MAGIC	0x644d5241
-		if (*(uint32_t *)((images->ep) + 0x38) != le32_to_cpu(LINUX_ARM64_IMAGE_MAGIC)) {
-			printf("Bad Linux ARM64 Image magic!(Maybe unsupported zip mode.)\n");
-			return 1;
+			if (*(uint32_t *)((images->ep) + 0x38) != le32_to_cpu(LINUX_ARM64_IMAGE_MAGIC)) {
+				printf("Bad Linux ARM64 Image magic!(Maybe unsupported zip mode.)\n");
+				return 1;
+			}
 		}
 #endif
 	}
@@ -666,10 +683,12 @@ int do_bootm_states(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[],
 
 	/* Check reserved memory region */
 #ifdef CONFIG_CMD_RSVMEM
-	ret = run_command("rsvmem check", 0);
-	if (ret) {
-		puts("rsvmem check failed\n");
-		return ret;
+	if (images->os.arch != IH_ARCH_ARM) {
+		ret = run_command("rsvmem check", 0);
+		if (ret) {
+			puts("rsvmem check failed\n");
+			return ret;
+		}
 	}
 #endif
 
@@ -785,7 +804,7 @@ static image_header_t *image_get_kernel(ulong img_addr, int verify)
 	}
 	bootstage_mark(BOOTSTAGE_ID_CHECK_ARCH);
 
-	if (!image_check_target_arch(hdr)) {
+	if ((image_get_arch(hdr) != IH_ARCH_ARM) && ((image_get_arch(hdr) != IH_ARCH_ARM64))) {
 		printf("Unsupported Architecture 0x%x\n", image_get_arch(hdr));
 		bootstage_error(BOOTSTAGE_ID_CHECK_ARCH);
 		return NULL;

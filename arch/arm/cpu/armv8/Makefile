@@ -17,6 +17,8 @@ obj-y	+= transition.o
 obj-y	+= cpu_id.o
 obj-y	+= board_id.o
 
+obj-y	+= a32_kernel_pre_entry.o
+
 obj-$(CONFIG_FSL_LSCH3) += fsl-lsch3/
 obj-$(CONFIG_AML_MESON) += $(SOC)/
 
