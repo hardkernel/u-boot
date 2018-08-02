@@ -2,7 +2,7 @@
  * Copyright (c) 2018 Fuzhou Rockchip Electronics Co., Ltd
  *
  * SPDX-License-Identifier:	GPL-2.0
- * date: 2018-07-21
+ * date: 2018-08-02
  */
 	.arch armv8-a+nosimd
 	.file	"rk_sftl.c"
@@ -11494,11 +11494,287 @@ FtlWrite:
 	.global	sftl_write
 	.type	sftl_write, %function
 sftl_write:
-	mov	x3, x2
-	mov	w2, w1
-	mov	w1, w0
+	stp	x29, x30, [sp, -240]!
+	add	w4, w0, w1
+	sub	w5, w4, #1
+	add	x29, sp, 0
+	stp	x19, x20, [sp, 16]
+	cmp	w5, 63
+	stp	x21, x22, [sp, 32]
+	mov	w20, w0
+	stp	x23, x24, [sp, 48]
+	mov	w22, w1
+	stp	x25, x26, [sp, 64]
+	mov	x24, x2
+	stp	x27, x28, [sp, 80]
+	adrp	x25, .LANCHOR179
+	bls	.L1568
+	cmp	w0, 576
+	bls	.L1569
+.L1568:
+	ldr	w0, [x25, #:lo12:.LANCHOR179]
+	cbz	w0, .L1570
+	adrp	x2, .LANCHOR0
+	add	x1, x2, :lo12:.LANCHOR0
+	mov	w21, 512
+	adrp	x3, idb_buf
+	mov	x4, -49148
+	stp	x3, x2, [x29, 144]
+	ldrh	w0, [x1, 14]
+	add	x2, x3, :lo12:idb_buf
+	ldrh	w1, [x1, 10]
+	mov	x7, 262140
+	str	w0, [x29, 172]
+	and	w0, w0, 255
+	mov	w5, 4097
+	movk	x4, 0xfffc, lsl 16
+	mul	w0, w0, w1
+	mov	x1, 0
+	and	w0, w0, 65535
+	str	w0, [x29, 168]
+	udiv	w21, w21, w0
 	mov	w0, 0
-	b	FtlWrite
+.L1574:
+	add	x3, x1, x7
+	ldr	w6, [x3, x2]
+	cbz	w6, .L1571
+.L1575:
+	ldr	w0, [x29, 168]
+	mov	w19, 0
+	mov	w26, 0
+	mul	w0, w0, w21
+	stp	w0, wzr, [x29, 160]
+	adrp	x0, .LANCHOR105
+	add	x23, x0, :lo12:.LANCHOR105
+.L1572:
+	adrp	x5, gp_flash_check_buf
+	mov	x2, 512
+	mov	w1, 0
+	add	x0, x5, :lo12:gp_flash_check_buf
+	str	x5, [x29, 136]
+	bl	memset
+	ldr	x0, [x29, 152]
+	add	x0, x0, :lo12:.LANCHOR0
+	ldrh	w3, [x0, 14]
+	ldrh	w2, [x0, 10]
+	adrp	x0, .LANCHOR105
+	and	w27, w3, 255
+	add	x4, x0, :lo12:.LANCHOR105
+	str	w3, [x29, 120]
+	mov	w0, 0
+	udiv	w1, w19, w3
+	str	x4, [x29, 112]
+	mul	w2, w27, w2
+	ldr	x6, [x4, 8]
+	str	w27, [x29, 128]
+	and	w28, w2, 65535
+	blr	x6
+	cmp	w28, 511
+	ldr	w3, [x29, 120]
+	ldr	x4, [x29, 112]
+	bhi	.L1576
+	add	w1, w28, w19
+	ldr	x4, [x4, 8]
+	mov	w0, 0
+	udiv	w1, w1, w3
+	blr	x4
+.L1576:
+	udiv	w5, w19, w28
+	ldr	x0, [x29, 144]
+	mov	w4, 0
+	mov	w7, 61424
+	add	x8, x0, :lo12:idb_buf
+	msub	w5, w5, w28, w19
+	sub	w6, w19, w5
+.L1577:
+	cmp	w4, 511
+	bls	.L1578
+	ldr	x0, [x29, 152]
+	mov	w27, 0
+	add	x0, x0, :lo12:.LANCHOR0
+	ldrh	w4, [x0, 14]
+	ldrh	w5, [x0, 10]
+	and	w28, w4, 255
+	mov	w4, w28
+	mul	w5, w28, w5
+	and	w0, w5, 65535
+	udiv	w5, w19, w0
+	msub	w5, w5, w0, w19
+	and	w1, w5, 65535
+	sub	w6, w19, w5
+	sdiv	w0, w1, w28
+	msub	w0, w0, w28, w1
+	ldr	x1, [x29, 136]
+	and	w0, w0, 65535
+	add	x8, x1, :lo12:gp_flash_check_buf
+.L1579:
+	cmp	w27, 511
+	bhi	.L1583
+	add	w1, w5, w27
+	sub	w7, w4, w0
+	add	w0, w0, w6
+	ldr	x10, [x23, 24]
+	and	w7, w7, 65535
+	ubfiz	x2, x27, 9, 16
+	udiv	w1, w1, w28
+	add	x2, x8, x2
+	stp	w4, w7, [x29, 104]
+	add	x3, x29, 176
+	str	w5, [x29, 112]
+	str	w6, [x29, 120]
+	and	w1, w1, 65535
+	str	x8, [x29, 128]
+	madd	w1, w1, w28, w0
+	mov	w0, 0
+	udiv	w1, w1, w28
+	blr	x10
+	cmn	w0, #1
+	ldp	w4, w7, [x29, 104]
+	ldr	w5, [x29, 112]
+	ldr	w6, [x29, 120]
+	ldr	x8, [x29, 128]
+	bne	.L1580
+.L1583:
+	ldr	x0, [x29, 144]
+	mov	x27, 0
+	add	x1, x0, :lo12:idb_buf
+	ldr	x0, [x29, 136]
+	add	x28, x0, :lo12:gp_flash_check_buf
+.L1581:
+	lsl	x0, x27, 2
+	add	x3, x0, x1
+	ldr	w2, [x0, x28]
+	ldr	w0, [x0, x1]
+	cmp	w2, w0
+	beq	.L1584
+	mov	x2, 512
+	mov	w1, 0
+	str	x3, [x29, 128]
+	mov	x0, x28
+	str	w27, [x29, 136]
+	bl	memset
+	ldr	w5, [x29, 136]
+	mov	w4, w27
+	ldr	x3, [x29, 128]
+	mov	w1, w19
+	adrp	x0, .LC109
+	add	x0, x0, :lo12:.LC109
+	ldr	w2, [x28, w5, uxtw 2]
+	ldr	w3, [x3]
+	bl	printf
+	ldr	w0, [x29, 172]
+	ldr	x2, [x23, 8]
+	udiv	w1, w19, w0
+	mov	w0, 0
+	blr	x2
+	cmp	w21, 1
+	bls	.L1585
+	ldr	w0, [x29, 168]
+	ldr	x2, [x23, 8]
+	add	w1, w0, w19
+	ldr	w0, [x29, 172]
+	udiv	w1, w1, w0
+	mov	w0, 0
+	blr	x2
+.L1585:
+	ldr	w0, [x29, 160]
+	add	w26, w26, w21
+	cmp	w26, 15
+	add	w19, w19, w0
+	bls	.L1572
+.L1590:
+	str	wzr, [x25, #:lo12:.LANCHOR179]
+.L1570:
+	mov	x3, x24
+	mov	w2, w22
+	mov	w1, w20
+	mov	w0, 0
+	bl	FtlWrite
+	ldp	x19, x20, [sp, 16]
+	ldp	x21, x22, [sp, 32]
+	ldp	x23, x24, [sp, 48]
+	ldp	x25, x26, [sp, 64]
+	ldp	x27, x28, [sp, 80]
+	ldp	x29, x30, [sp], 240
+	ret
+.L1571:
+	ldr	w6, [x2, w0, uxtw 2]
+	add	w0, w0, 1
+	str	w6, [x3, x2]
+	cmp	w0, w5
+	sub	x1, x1, #4
+	csel	w0, w0, wzr, cc
+	cmp	x1, x4
+	bne	.L1574
+	b	.L1575
+.L1578:
+	add	w0, w5, w4
+	ldr	x10, [x23, 16]
+	ubfiz	x2, x4, 9, 16
+	stp	w5, w7, [x29, 100]
+	add	x2, x8, x2
+	stp	w4, w6, [x29, 108]
+	udiv	w0, w0, w27
+	str	x8, [x29, 120]
+	add	x3, x29, 176
+	and	w0, w0, 65535
+	mul	w1, w0, w27
+	stp	w1, w7, [x29, 176]
+	udiv	w1, w6, w27
+	add	w1, w1, w0
+	mov	w0, 0
+	blr	x10
+	ldp	w4, w6, [x29, 108]
+	ldr	w0, [x29, 128]
+	ldp	w5, w7, [x29, 100]
+	add	w4, w0, w4
+	and	w4, w4, 65535
+	ldr	x8, [x29, 120]
+	b	.L1577
+.L1580:
+	add	w27, w7, w27
+	mov	w0, 0
+	and	w27, w27, 65535
+	b	.L1579
+.L1584:
+	add	x27, x27, 1
+	cmp	x27, 65536
+	bne	.L1581
+	ldr	w0, [x29, 164]
+	add	w0, w0, 1
+	str	w0, [x29, 164]
+	cmp	w0, 5
+	bls	.L1585
+	b	.L1590
+.L1569:
+	cmp	w0, 63
+	adrp	x3, idb_buf
+	bhi	.L1587
+	mov	w1, 64
+	sub	w1, w1, w0
+	sub	w2, w22, w1
+	ubfiz	x1, x1, 9, 25
+	add	x1, x24, x1
+	add	x0, x3, :lo12:idb_buf
+.L1588:
+	mov	w3, 1
+	str	w3, [x25, #:lo12:.LANCHOR179]
+	cmp	w5, 576
+	bls	.L1589
+	sub	w2, w2, w4
+	sub	w2, w2, #447
+.L1589:
+	lsl	w2, w2, 9
+	bl	memcpy
+	b	.L1570
+.L1587:
+	lsl	w0, w0, 7
+	add	x3, x3, :lo12:idb_buf
+	sub	w0, w0, #8192
+	mov	x1, x2
+	add	x0, x3, x0, lsl 2
+	mov	w2, w22
+	b	.L1588
 	.size	sftl_write, .-sftl_write
 	.section	.text.FtlLoadSysInfo,"ax",@progbits
 	.align	2
@@ -11531,10 +11807,10 @@ FtlLoadSysInfo:
 	ldrh	w0, [x20, #:lo12:.LANCHOR79]
 	mov	w1, 65535
 	cmp	w0, w1
-	bne	.L1569
-.L1577:
+	bne	.L1601
+.L1609:
 	mov	w0, -1
-.L1568:
+.L1600:
 	ldp	x19, x20, [sp, 16]
 	ldp	x21, x22, [sp, 32]
 	ldp	x23, x24, [sp, 48]
@@ -11542,7 +11818,7 @@ FtlLoadSysInfo:
 	ldp	x27, x28, [sp, 80]
 	ldp	x29, x30, [sp], 96
 	ret
-.L1569:
+.L1601:
 	add	x27, x20, :lo12:.LANCHOR79
 	mov	w1, 1
 	bl	FtlGetLastWrittenPage
@@ -11552,28 +11828,28 @@ FtlLoadSysInfo:
 	strh	w0, [x27, 2]
 	mov	w27, 19539
 	movk	w27, 0x4654, lsl 16
-.L1571:
-	tbz	w22, #31, .L1574
-	adrp	x1, .LANCHOR179
+.L1603:
+	tbz	w22, #31, .L1606
+	adrp	x1, .LANCHOR180
 	adrp	x0, .LC1
 	mov	w2, 1437
-	add	x1, x1, :lo12:.LANCHOR179
+	add	x1, x1, :lo12:.LANCHOR180
 	add	x0, x0, :lo12:.LC1
 	bl	printf
-.L1573:
+.L1605:
 	adrp	x1, .LANCHOR23
 	ldrh	w0, [x24, #:lo12:.LANCHOR5]
 	ldrh	w1, [x1, #:lo12:.LANCHOR23]
 	add	x0, x0, 24
 	cmp	x1, x0, lsl 1
-	bcs	.L1576
-	adrp	x1, .LANCHOR179
+	bcs	.L1608
+	adrp	x1, .LANCHOR180
 	adrp	x0, .LC1
 	mov	w2, 1439
-	add	x1, x1, :lo12:.LANCHOR179
+	add	x1, x1, :lo12:.LANCHOR180
 	add	x0, x0, :lo12:.LC1
 	bl	printf
-.L1576:
+.L1608:
 	add	x22, x19, :lo12:.LANCHOR106
 	adrp	x19, .LANCHOR39
 	add	x21, x19, :lo12:.LANCHOR39
@@ -11602,7 +11878,7 @@ FtlLoadSysInfo:
 	mov	w0, 19539
 	movk	w0, 0x4654, lsl 16
 	cmp	w1, w0
-	bne	.L1577
+	bne	.L1609
 	add	x20, x20, :lo12:.LANCHOR79
 	adrp	x0, .LANCHOR10
 	ldrh	w1, [x21, 8]
@@ -11610,11 +11886,11 @@ FtlLoadSysInfo:
 	ldrh	w0, [x0, #:lo12:.LANCHOR10]
 	strh	w1, [x20, 6]
 	cmp	w2, w0
-	bne	.L1577
-	adrp	x0, .LANCHOR180
+	bne	.L1609
+	adrp	x0, .LANCHOR181
 	adrp	x2, .LANCHOR61
 	adrp	x3, .LANCHOR3
-	str	w1, [x0, #:lo12:.LANCHOR180]
+	str	w1, [x0, #:lo12:.LANCHOR181]
 	adrp	x0, .LANCHOR19
 	ldrh	w3, [x3, #:lo12:.LANCHOR3]
 	ldrh	w0, [x0, #:lo12:.LANCHOR19]
@@ -11635,14 +11911,14 @@ FtlLoadSysInfo:
 	udiv	w0, w0, w3
 	adrp	x3, .LANCHOR78
 	strh	w0, [x3, #:lo12:.LANCHOR78]
-	bls	.L1578
-	adrp	x1, .LANCHOR179
+	bls	.L1610
+	adrp	x1, .LANCHOR180
 	adrp	x0, .LC1
 	mov	w2, 1461
-	add	x1, x1, :lo12:.LANCHOR179
+	add	x1, x1, :lo12:.LANCHOR180
 	add	x0, x0, :lo12:.LC1
 	bl	printf
-.L1578:
+.L1610:
 	add	x1, x19, :lo12:.LANCHOR39
 	adrp	x0, .LANCHOR51
 	add	x3, x0, :lo12:.LANCHOR51
@@ -11707,47 +11983,47 @@ FtlLoadSysInfo:
 	adrp	x1, .LANCHOR70
 	ldr	w5, [x1, #:lo12:.LANCHOR70]
 	cmp	w3, w5
-	bls	.L1579
+	bls	.L1611
 	str	w3, [x1, #:lo12:.LANCHOR70]
-.L1579:
+.L1611:
 	add	x19, x19, :lo12:.LANCHOR39
 	adrp	x1, .LANCHOR71
 	ldr	w3, [x1, #:lo12:.LANCHOR71]
 	ldr	w2, [x19, 36]
 	cmp	w2, w3
-	bls	.L1580
+	bls	.L1612
 	str	w2, [x1, #:lo12:.LANCHOR71]
-.L1580:
+.L1612:
 	mov	w1, 65535
 	cmp	w6, w1
-	beq	.L1581
+	beq	.L1613
 	add	x0, x0, :lo12:.LANCHOR51
 	bl	make_superblock
-.L1581:
+.L1613:
 	ldrh	w2, [x21, #:lo12:.LANCHOR52]
 	mov	w1, 65535
 	add	x0, x21, :lo12:.LANCHOR52
 	cmp	w2, w1
-	beq	.L1582
+	beq	.L1614
 	bl	make_superblock
-.L1582:
+.L1614:
 	ldrh	w2, [x22, #:lo12:.LANCHOR53]
 	mov	w1, 65535
 	add	x0, x22, :lo12:.LANCHOR53
 	cmp	w2, w1
-	beq	.L1583
+	beq	.L1615
 	bl	make_superblock
-.L1583:
+.L1615:
 	ldrh	w2, [x20, #:lo12:.LANCHOR80]
 	mov	w1, 65535
 	add	x0, x20, :lo12:.LANCHOR80
 	cmp	w2, w1
-	beq	.L1584
+	beq	.L1616
 	bl	make_superblock
-.L1584:
+.L1616:
 	mov	w0, 0
-	b	.L1568
-.L1574:
+	b	.L1600
+.L1606:
 	ldrh	w0, [x20, #:lo12:.LANCHOR79]
 	mov	w2, 1
 	mov	w1, w2
@@ -11759,19 +12035,19 @@ FtlLoadSysInfo:
 	bl	FlashReadPages
 	ldr	w0, [x21]
 	cmn	w0, #1
-	beq	.L1572
+	beq	.L1604
 	ldr	x0, [x23, #:lo12:.LANCHOR107]
 	ldr	w0, [x0]
 	cmp	w0, w27
-	bne	.L1572
+	bne	.L1604
 	ldr	x0, [x26, #:lo12:.LANCHOR108]
 	ldrh	w0, [x0]
 	cmp	w0, w28
-	beq	.L1573
-.L1572:
+	beq	.L1605
+.L1604:
 	sub	w22, w22, #1
 	sxth	w22, w22
-	b	.L1571
+	b	.L1603
 	.size	FtlLoadSysInfo, .-FtlLoadSysInfo
 	.section	.text.FtlSysBlkInit,"ax",@progbits
 	.align	2
@@ -11793,20 +12069,20 @@ FtlSysBlkInit:
 	ldrh	w1, [x0, #:lo12:.LANCHOR79]
 	mov	w0, 65535
 	cmp	w1, w0
-	bne	.L1591
-.L1593:
+	bne	.L1623
+.L1625:
 	mov	w23, -1
-.L1590:
+.L1622:
 	mov	w0, w23
 	ldp	x19, x20, [sp, 16]
 	ldp	x21, x22, [sp, 32]
 	ldp	x23, x24, [sp, 48]
 	ldp	x29, x30, [sp], 64
 	ret
-.L1591:
+.L1623:
 	bl	FtlLoadSysInfo
 	mov	w23, w0
-	cbnz	w0, .L1593
+	cbnz	w0, .L1625
 	bl	FtlLoadMapInfo
 	bl	FtlLoadVonderInfo
 	bl	Ftl_load_ext_data
@@ -11822,12 +12098,12 @@ FtlSysBlkInit:
 	ldr	x1, [x0, #:lo12:.LANCHOR55]
 	mov	w0, 0
 	add	x1, x1, 4
-.L1594:
+.L1626:
 	cmp	w0, w2
-	bge	.L1599
+	bge	.L1631
 	ldr	w3, [x1], 16
-	tbz	w3, #31, .L1595
-.L1599:
+	tbz	w3, #31, .L1627
+.L1631:
 	adrp	x19, .LANCHOR39
 	add	x3, x19, :lo12:.LANCHOR39
 	cmp	w0, w2
@@ -11835,8 +12111,8 @@ FtlSysBlkInit:
 	ldrh	w1, [x3, 28]
 	add	w1, w1, 1
 	strh	w1, [x3, 28]
-	bge	.L1603
-.L1596:
+	bge	.L1635
+.L1628:
 	add	x21, x22, :lo12:.LANCHOR51
 	adrp	x24, .LANCHOR52
 	mov	x0, x21
@@ -11879,19 +12155,19 @@ FtlSysBlkInit:
 	strh	w0, [x1, 30]
 	bl	l2p_flush
 	bl	FtlVpcTblFlush
-.L1605:
+.L1637:
 	bl	FtlVpcTblFlush
 	add	x21, x22, :lo12:.LANCHOR51
 	ldrh	w0, [x22, #:lo12:.LANCHOR51]
 	mov	w1, 65535
 	cmp	w0, w1
-	beq	.L1602
+	beq	.L1634
 	ldrh	w1, [x21, 4]
-	cbnz	w1, .L1602
+	cbnz	w1, .L1634
 	adrp	x22, .LANCHOR52
 	add	x20, x22, :lo12:.LANCHOR52
 	ldrh	w1, [x20, 4]
-	cbnz	w1, .L1602
+	cbnz	w1, .L1634
 	bl	FtlGcRefreshBlock
 	ldrh	w0, [x22, #:lo12:.LANCHOR52]
 	bl	FtlGcRefreshBlock
@@ -11899,21 +12175,21 @@ FtlSysBlkInit:
 	bl	allocate_new_data_superblock
 	mov	x0, x20
 	bl	allocate_new_data_superblock
-.L1602:
+.L1634:
 	add	x19, x19, :lo12:.LANCHOR39
 	ldrh	w0, [x19, 28]
 	tst	x0, 31
-	bne	.L1590
+	bne	.L1622
 	bl	FtlVpcCheckAndModify
-	b	.L1590
-.L1595:
+	b	.L1622
+.L1627:
 	add	w0, w0, 1
-	b	.L1594
-.L1603:
+	b	.L1626
+.L1635:
 	ldrh	w0, [x20, #:lo12:.LANCHOR161]
-	cbnz	w0, .L1596
+	cbnz	w0, .L1628
 	bl	l2p_flush
-	b	.L1605
+	b	.L1637
 	.size	FtlSysBlkInit, .-FtlSysBlkInit
 	.section	.text.ftl_low_format,"ax",@progbits
 	.align	2
@@ -11934,9 +12210,9 @@ ftl_low_format:
 	str	wzr, [x20, #:lo12:.LANCHOR70]
 	bl	FtlFreeSysBlkQueueInit
 	bl	FtlLoadBbt
-	cbz	w0, .L1607
+	cbz	w0, .L1639
 	bl	FtlMakeBbt
-.L1607:
+.L1639:
 	adrp	x23, .LANCHOR12
 	adrp	x0, .LANCHOR115
 	mov	w6, 23752
@@ -11947,31 +12223,31 @@ ftl_low_format:
 	lsl	w1, w1, 7
 	ldr	x5, [x0, #:lo12:.LANCHOR113]
 	mov	w0, 0
-.L1608:
+.L1640:
 	cmp	w0, w1
-	blt	.L1609
+	blt	.L1641
 	adrp	x21, .LANCHOR5
 	adrp	x22, .LANCHOR6
 	add	x26, x22, :lo12:.LANCHOR6
 	mov	w19, 0
 	ldrh	w25, [x21, #:lo12:.LANCHOR5]
-.L1610:
+.L1642:
 	ldrh	w0, [x26]
 	cmp	w0, w25
-	bhi	.L1611
+	bhi	.L1643
 	adrp	x25, .LANCHOR3
 	sub	w1, w19, #2
 	ldrh	w0, [x25, #:lo12:.LANCHOR3]
 	cmp	w1, w0, lsl 1
-	bgt	.L1612
-.L1616:
+	bgt	.L1644
+.L1648:
 	add	x26, x21, :lo12:.LANCHOR5
 	mov	w19, 0
 	mov	w24, 0
-.L1613:
+.L1645:
 	ldrh	w0, [x26]
 	cmp	w0, w24
-	bhi	.L1617
+	bhi	.L1649
 	adrp	x0, .LANCHOR112
 	ldrh	w1, [x22, #:lo12:.LANCHOR6]
 	ldrh	w4, [x25, #:lo12:.LANCHOR3]
@@ -11988,37 +12264,37 @@ ftl_low_format:
 	mov	w6, 24
 	mul	w6, w4, w6
 	cmp	w19, w6
-	ble	.L1618
+	ble	.L1650
 	sub	w1, w1, w19
 	udiv	w1, w1, w4
 	str	w1, [x3, #:lo12:.LANCHOR61]
 	lsr	w1, w1, 5
 	add	w1, w1, 24
 	strh	w1, [x2, #:lo12:.LANCHOR78]
-.L1618:
+.L1650:
 	adrp	x1, .LANCHOR15
 	ldrh	w1, [x1, #:lo12:.LANCHOR15]
-	cbz	w1, .L1620
+	cbz	w1, .L1652
 	ldrh	w6, [x2, #:lo12:.LANCHOR78]
 	add	w6, w6, w1, lsr 1
 	strh	w6, [x2, #:lo12:.LANCHOR78]
 	mul	w6, w1, w4
 	cmp	w19, w6
-	bge	.L1620
+	bge	.L1652
 	add	w1, w1, 32
 	str	w5, [x3, #:lo12:.LANCHOR61]
 	add	w1, w0, w1
 	strh	w1, [x2, #:lo12:.LANCHOR78]
-.L1620:
+.L1652:
 	ldrh	w1, [x2, #:lo12:.LANCHOR78]
-	adrp	x25, .LANCHOR180
+	adrp	x25, .LANCHOR181
 	ldr	w0, [x3, #:lo12:.LANCHOR61]
 	adrp	x24, .LANCHOR42
 	sub	w0, w0, w1
 	adrp	x1, .LANCHOR19
 	ldrh	w1, [x1, #:lo12:.LANCHOR19]
 	mul	w0, w0, w4
-	str	w0, [x25, #:lo12:.LANCHOR180]
+	str	w0, [x25, #:lo12:.LANCHOR181]
 	mul	w0, w1, w0
 	ldrh	w1, [x23, #:lo12:.LANCHOR12]
 	str	w0, [x3, #:lo12:.LANCHOR61]
@@ -12053,20 +12329,20 @@ ftl_low_format:
 	ldr	x0, [x0, #:lo12:.LANCHOR1]
 	strb	wzr, [x19, 6]
 	bl	ftl_memset
-.L1622:
+.L1654:
 	mov	x0, x19
 	bl	make_superblock
 	ldrb	w1, [x19, 7]
 	ldrh	w0, [x19]
-	cbnz	w1, .L1623
+	cbnz	w1, .L1655
 	ldr	x1, [x24, #:lo12:.LANCHOR42]
 	ubfiz	x0, x0, 1, 16
 	strh	w23, [x1, x0]
 	ldrh	w0, [x19]
 	add	w0, w0, 1
 	strh	w0, [x19]
-	b	.L1622
-.L1609:
+	b	.L1654
+.L1641:
 	ubfiz	x3, x0, 2, 16
 	mvn	w2, w0
 	orr	w2, w0, w2, lsl 16
@@ -12074,8 +12350,8 @@ ftl_low_format:
 	and	w0, w0, 65535
 	str	w2, [x4, x3]
 	str	w6, [x5, x3]
-	b	.L1608
-.L1611:
+	b	.L1640
+.L1643:
 	mov	w0, w25
 	mov	w1, 1
 	add	w25, w25, 1
@@ -12083,8 +12359,8 @@ ftl_low_format:
 	add	w19, w19, w0
 	and	w25, w25, 65535
 	and	w19, w19, 65535
-	b	.L1610
-.L1612:
+	b	.L1642
+.L1644:
 	udiv	w0, w19, w0
 	adrp	x1, .LANCHOR31
 	ldr	w19, [x1, #:lo12:.LANCHOR31]
@@ -12094,17 +12370,17 @@ ftl_low_format:
 	add	x24, x22, :lo12:.LANCHOR6
 	bl	FtlFreeSysBlkQueueInit
 	ldrh	w19, [x21, #:lo12:.LANCHOR5]
-.L1614:
+.L1646:
 	ldrh	w0, [x24]
 	cmp	w0, w19
-	bls	.L1616
+	bls	.L1648
 	mov	w0, w19
 	add	w19, w19, 1
 	mov	w1, 1
 	and	w19, w19, 65535
 	bl	FtlLowFormatEraseBlock
-	b	.L1614
-.L1617:
+	b	.L1646
+.L1649:
 	mov	w0, w24
 	mov	w1, 0
 	add	w24, w24, 1
@@ -12112,8 +12388,8 @@ ftl_low_format:
 	add	w19, w19, w0
 	and	w24, w24, 65535
 	and	w19, w19, 65535
-	b	.L1613
-.L1623:
+	b	.L1645
+.L1655:
 	ldr	w1, [x20, #:lo12:.LANCHOR70]
 	ubfiz	x0, x0, 1, 16
 	str	w1, [x19, 12]
@@ -12133,20 +12409,20 @@ ftl_low_format:
 	mov	w1, 1
 	strb	wzr, [x0, 6]
 	strb	w1, [x0, 8]
-.L1624:
+.L1656:
 	mov	x0, x19
 	bl	make_superblock
 	ldrb	w1, [x19, 7]
 	ldrh	w0, [x19]
-	cbnz	w1, .L1625
+	cbnz	w1, .L1657
 	ldr	x1, [x24, #:lo12:.LANCHOR42]
 	ubfiz	x0, x0, 1, 16
 	strh	w23, [x1, x0]
 	ldrh	w0, [x19]
 	add	w0, w0, 1
 	strh	w0, [x19]
-	b	.L1624
-.L1625:
+	b	.L1656
+.L1657:
 	ldr	w1, [x20, #:lo12:.LANCHOR70]
 	ubfiz	x0, x0, 1, 16
 	str	w1, [x19, 12]
@@ -12162,7 +12438,7 @@ ftl_low_format:
 	adrp	x2, .LANCHOR79
 	add	x1, x2, :lo12:.LANCHOR79
 	strh	w0, [x2, #:lo12:.LANCHOR79]
-	ldr	w0, [x25, #:lo12:.LANCHOR180]
+	ldr	w0, [x25, #:lo12:.LANCHOR181]
 	strh	w0, [x1, 6]
 	ldr	w0, [x20, #:lo12:.LANCHOR70]
 	str	w0, [x1, 8]
@@ -12172,11 +12448,11 @@ ftl_low_format:
 	str	w0, [x20, #:lo12:.LANCHOR70]
 	bl	FtlVpcTblFlush
 	bl	FtlSysBlkInit
-	cbnz	w0, .L1626
+	cbnz	w0, .L1658
 	adrp	x0, .LANCHOR86
 	mov	w1, 1
 	str	w1, [x0, #:lo12:.LANCHOR86]
-.L1626:
+.L1658:
 	mov	w0, 0
 	ldp	x19, x20, [sp, 16]
 	ldp	x21, x22, [sp, 32]
@@ -12210,23 +12486,23 @@ sftl_init:
 	ldrh	w0, [x0, #:lo12:.LANCHOR4]
 	bl	FtlFreeSysBlkQueueInit
 	bl	FtlLoadBbt
-	cbnz	w0, .L1635
+	cbnz	w0, .L1667
 	bl	FtlSysBlkInit
-	cbnz	w0, .L1635
+	cbnz	w0, .L1667
 	mov	w0, 1
 	str	w0, [x19, #:lo12:.LANCHOR86]
 	adrp	x0, .LANCHOR48
 	ldrh	w0, [x0, #:lo12:.LANCHOR48]
 	cmp	w0, 15
-	bhi	.L1635
+	bhi	.L1667
 	mov	w19, 8129
-.L1634:
+.L1666:
 	mov	w1, 1
 	mov	w0, 0
 	bl	rk_ftl_garbage_collect
 	subs	w19, w19, #1
-	bne	.L1634
-.L1635:
+	bne	.L1666
+.L1667:
 	mov	w0, 0
 	ldr	x19, [sp, 16]
 	ldp	x29, x30, [sp], 32
@@ -12722,7 +12998,7 @@ g_MaxLbaSector:
 	.zero	4
 	.section	.bss.g_MaxLbn,"aw",@nobits
 	.align	2
-	.set	.LANCHOR180,. + 0
+	.set	.LANCHOR181,. + 0
 	.type	g_MaxLbn, %object
 	.size	g_MaxLbn, 4
 g_MaxLbn:
@@ -13147,6 +13423,12 @@ gc_ink_free_return_value:
 	.size	gp_ect_tbl_info, 8
 gp_ect_tbl_info:
 	.zero	8
+	.section	.bss.gp_flash_check_buf,"aw",@nobits
+	.align	3
+	.type	gp_flash_check_buf, %object
+	.size	gp_flash_check_buf, 262144
+gp_flash_check_buf:
+	.zero	262144
 	.section	.bss.gp_gc_page_buf_info,"aw",@nobits
 	.align	3
 	.set	.LANCHOR90,. + 0
@@ -13160,6 +13442,19 @@ gp_gc_page_buf_info:
 	.size	gp_last_act_superblock, 8
 gp_last_act_superblock:
 	.zero	8
+	.section	.bss.idb_buf,"aw",@nobits
+	.align	3
+	.type	idb_buf, %object
+	.size	idb_buf, 262144
+idb_buf:
+	.zero	262144
+	.section	.bss.idb_need_write_back,"aw",@nobits
+	.align	2
+	.set	.LANCHOR179,. + 0
+	.type	idb_need_write_back, %object
+	.size	idb_need_write_back, 4
+idb_need_write_back:
+	.zero	4
 	.section	.bss.p_blk_mode_table,"aw",@nobits
 	.align	3
 	.set	.LANCHOR1,. + 0
@@ -13640,243 +13935,243 @@ power_up_flag:
 	.section	.rodata.INSERT_DATA_LIST.str1.1,"aMS",@progbits,1
 .LC1:
 	.string	"\n!!!!! error @ func:%s - line:%d\n"
-	.section	.rodata.__func__.6058,"a",@progbits
+	.section	.rodata.__func__.6109,"a",@progbits
 	.align	3
 	.set	.LANCHOR138,. + 0
-	.type	__func__.6058, %object
-	.size	__func__.6058, 11
-__func__.6058:
+	.type	__func__.6109, %object
+	.size	__func__.6109, 11
+__func__.6109:
 	.string	"FtlMemInit"
-	.section	.rodata.__func__.6182,"a",@progbits
+	.section	.rodata.__func__.6233,"a",@progbits
 	.align	3
 	.set	.LANCHOR170,. + 0
-	.type	__func__.6182, %object
-	.size	__func__.6182, 13
-__func__.6182:
+	.type	__func__.6233, %object
+	.size	__func__.6233, 13
+__func__.6233:
 	.string	"FtlProgPages"
-	.section	.rodata.__func__.6210,"a",@progbits
+	.section	.rodata.__func__.6261,"a",@progbits
 	.align	3
 	.set	.LANCHOR178,. + 0
-	.type	__func__.6210, %object
-	.size	__func__.6210, 9
-__func__.6210:
+	.type	__func__.6261, %object
+	.size	__func__.6261, 9
+__func__.6261:
 	.string	"FtlWrite"
-	.section	.rodata.__func__.6284,"a",@progbits
+	.section	.rodata.__func__.6407,"a",@progbits
 	.align	3
 	.set	.LANCHOR139,. + 0
-	.type	__func__.6284, %object
-	.size	__func__.6284, 14
-__func__.6284:
+	.type	__func__.6407, %object
+	.size	__func__.6407, 14
+__func__.6407:
 	.string	"FtlBbt2Bitmap"
-	.section	.rodata.__func__.6327,"a",@progbits
+	.section	.rodata.__func__.6450,"a",@progbits
 	.align	3
 	.set	.LANCHOR164,. + 0
-	.type	__func__.6327, %object
-	.size	__func__.6327, 11
-__func__.6327:
+	.type	__func__.6450, %object
+	.size	__func__.6450, 11
+__func__.6450:
 	.string	"FtlLoadBbt"
-	.section	.rodata.__func__.6444,"a",@progbits
+	.section	.rodata.__func__.6567,"a",@progbits
 	.align	3
 	.set	.LANCHOR49,. + 0
-	.type	__func__.6444, %object
-	.size	__func__.6444, 17
-__func__.6444:
+	.type	__func__.6567, %object
+	.size	__func__.6567, 17
+__func__.6567:
 	.string	"INSERT_FREE_LIST"
-	.section	.rodata.__func__.6449,"a",@progbits
+	.section	.rodata.__func__.6572,"a",@progbits
 	.align	3
 	.set	.LANCHOR46,. + 0
-	.type	__func__.6449, %object
-	.size	__func__.6449, 17
-__func__.6449:
+	.type	__func__.6572, %object
+	.size	__func__.6572, 17
+__func__.6572:
 	.string	"INSERT_DATA_LIST"
-	.section	.rodata.__func__.6480,"a",@progbits
+	.section	.rodata.__func__.6603,"a",@progbits
 	.align	3
 	.set	.LANCHOR50,. + 0
-	.type	__func__.6480, %object
-	.size	__func__.6480, 17
-__func__.6480:
+	.type	__func__.6603, %object
+	.size	__func__.6603, 17
+__func__.6603:
 	.string	"List_remove_node"
-	.section	.rodata.__func__.6512,"a",@progbits
-	.align	3
-	.set	.LANCHOR54,. + 0
-	.type	__func__.6512, %object
-	.size	__func__.6512, 22
-__func__.6512:
-	.string	"List_update_data_list"
-	.section	.rodata.__func__.6521,"a",@progbits
-	.align	3
-	.set	.LANCHOR140,. + 0
-	.type	__func__.6521, %object
-	.size	__func__.6521, 16
-__func__.6521:
-	.string	"load_l2p_region"
-	.section	.rodata.__func__.6554,"a",@progbits
-	.align	3
-	.set	.LANCHOR116,. + 0
-	.type	__func__.6554, %object
-	.size	__func__.6554, 26
-__func__.6554:
-	.string	"ftl_map_blk_alloc_new_blk"
-	.section	.rodata.__func__.6565,"a",@progbits
-	.align	3
-	.set	.LANCHOR143,. + 0
-	.type	__func__.6565, %object
-	.size	__func__.6565, 15
-__func__.6565:
-	.string	"ftl_map_blk_gc"
-	.section	.rodata.__func__.6579,"a",@progbits
-	.align	3
-	.set	.LANCHOR141,. + 0
-	.type	__func__.6579, %object
-	.size	__func__.6579, 31
-__func__.6579:
-	.string	"Ftl_write_map_blk_to_last_page"
-	.section	.rodata.__func__.6593,"a",@progbits
-	.align	3
-	.set	.LANCHOR142,. + 0
-	.type	__func__.6593, %object
-	.size	__func__.6593, 16
-__func__.6593:
-	.string	"FtlMapWritePage"
-	.section	.rodata.__func__.6618,"a",@progbits
-	.align	3
-	.set	.LANCHOR57,. + 0
-	.type	__func__.6618, %object
-	.size	__func__.6618, 22
-__func__.6618:
-	.string	"select_l2p_ram_region"
 	.section	.rodata.__func__.6635,"a",@progbits
 	.align	3
-	.set	.LANCHOR145,. + 0
+	.set	.LANCHOR54,. + 0
 	.type	__func__.6635, %object
-	.size	__func__.6635, 9
+	.size	__func__.6635, 22
 __func__.6635:
+	.string	"List_update_data_list"
+	.section	.rodata.__func__.6644,"a",@progbits
+	.align	3
+	.set	.LANCHOR140,. + 0
+	.type	__func__.6644, %object
+	.size	__func__.6644, 16
+__func__.6644:
+	.string	"load_l2p_region"
+	.section	.rodata.__func__.6677,"a",@progbits
+	.align	3
+	.set	.LANCHOR116,. + 0
+	.type	__func__.6677, %object
+	.size	__func__.6677, 26
+__func__.6677:
+	.string	"ftl_map_blk_alloc_new_blk"
+	.section	.rodata.__func__.6688,"a",@progbits
+	.align	3
+	.set	.LANCHOR143,. + 0
+	.type	__func__.6688, %object
+	.size	__func__.6688, 15
+__func__.6688:
+	.string	"ftl_map_blk_gc"
+	.section	.rodata.__func__.6702,"a",@progbits
+	.align	3
+	.set	.LANCHOR141,. + 0
+	.type	__func__.6702, %object
+	.size	__func__.6702, 31
+__func__.6702:
+	.string	"Ftl_write_map_blk_to_last_page"
+	.section	.rodata.__func__.6716,"a",@progbits
+	.align	3
+	.set	.LANCHOR142,. + 0
+	.type	__func__.6716, %object
+	.size	__func__.6716, 16
+__func__.6716:
+	.string	"FtlMapWritePage"
+	.section	.rodata.__func__.6741,"a",@progbits
+	.align	3
+	.set	.LANCHOR57,. + 0
+	.type	__func__.6741, %object
+	.size	__func__.6741, 22
+__func__.6741:
+	.string	"select_l2p_ram_region"
+	.section	.rodata.__func__.6758,"a",@progbits
+	.align	3
+	.set	.LANCHOR145,. + 0
+	.type	__func__.6758, %object
+	.size	__func__.6758, 9
+__func__.6758:
 	.string	"log2phys"
-	.section	.rodata.__func__.6708,"a",@progbits
+	.section	.rodata.__func__.6831,"a",@progbits
 	.align	3
 	.set	.LANCHOR166,. + 0
-	.type	__func__.6708, %object
-	.size	__func__.6708, 15
-__func__.6708:
+	.type	__func__.6831, %object
+	.size	__func__.6831, 15
+__func__.6831:
 	.string	"FtlVpcTblFlush"
-	.section	.rodata.__func__.6730,"a",@progbits
+	.section	.rodata.__func__.6853,"a",@progbits
 	.align	3
 	.set	.LANCHOR148,. + 0
-	.type	__func__.6730, %object
-	.size	__func__.6730, 14
-__func__.6730:
+	.type	__func__.6853, %object
+	.size	__func__.6853, 14
+__func__.6853:
 	.string	"FtlScanSysBlk"
-	.section	.rodata.__func__.6787,"a",@progbits
+	.section	.rodata.__func__.6910,"a",@progbits
 	.align	3
-	.set	.LANCHOR179,. + 0
-	.type	__func__.6787, %object
-	.size	__func__.6787, 15
-__func__.6787:
+	.set	.LANCHOR180,. + 0
+	.type	__func__.6910, %object
+	.size	__func__.6910, 15
+__func__.6910:
 	.string	"FtlLoadSysInfo"
-	.section	.rodata.__func__.6850,"a",@progbits
+	.section	.rodata.__func__.6973,"a",@progbits
 	.align	3
 	.set	.LANCHOR146,. + 0
-	.type	__func__.6850, %object
-	.size	__func__.6850, 16
-__func__.6850:
+	.type	__func__.6973, %object
+	.size	__func__.6973, 16
+__func__.6973:
 	.string	"FtlReUsePrevPpa"
-	.section	.rodata.__func__.6884,"a",@progbits
+	.section	.rodata.__func__.7007,"a",@progbits
 	.align	3
 	.set	.LANCHOR160,. + 0
-	.type	__func__.6884, %object
-	.size	__func__.6884, 22
-__func__.6884:
+	.type	__func__.7007, %object
+	.size	__func__.7007, 22
+__func__.7007:
 	.string	"FtlRecoverySuperblock"
-	.section	.rodata.__func__.6941,"a",@progbits
+	.section	.rodata.__func__.7064,"a",@progbits
 	.align	3
 	.set	.LANCHOR60,. + 0
-	.type	__func__.6941, %object
-	.size	__func__.6941, 16
-__func__.6941:
+	.type	__func__.7064, %object
+	.size	__func__.7064, 16
+__func__.7064:
 	.string	"make_superblock"
-	.section	.rodata.__func__.6962,"a",@progbits
+	.section	.rodata.__func__.7085,"a",@progbits
 	.align	3
 	.set	.LANCHOR154,. + 0
-	.type	__func__.6962, %object
-	.size	__func__.6962, 18
-__func__.6962:
+	.type	__func__.7085, %object
+	.size	__func__.7085, 18
+__func__.7085:
 	.string	"SupperBlkListInit"
-	.section	.rodata.__func__.6987,"a",@progbits
+	.section	.rodata.__func__.7110,"a",@progbits
 	.align	3
 	.set	.LANCHOR168,. + 0
-	.type	__func__.6987, %object
-	.size	__func__.6987, 21
-__func__.6987:
+	.type	__func__.7110, %object
+	.size	__func__.7110, 21
+__func__.7110:
 	.string	"FtlVpcCheckAndModify"
-	.section	.rodata.__func__.7003,"a",@progbits
+	.section	.rodata.__func__.7126,"a",@progbits
 	.align	3
 	.set	.LANCHOR155,. + 0
-	.type	__func__.7003, %object
-	.size	__func__.7003, 14
-__func__.7003:
+	.type	__func__.7126, %object
+	.size	__func__.7126, 14
+__func__.7126:
 	.string	"ftl_check_vpc"
-	.section	.rodata.__func__.7088,"a",@progbits
+	.section	.rodata.__func__.7211,"a",@progbits
 	.align	3
 	.set	.LANCHOR157,. + 0
-	.type	__func__.7088, %object
-	.size	__func__.7088, 25
-__func__.7088:
+	.type	__func__.7211, %object
+	.size	__func__.7211, 25
+__func__.7211:
 	.string	"allocate_data_superblock"
-	.section	.rodata.__func__.7109,"a",@progbits
+	.section	.rodata.__func__.7232,"a",@progbits
 	.align	3
 	.set	.LANCHOR169,. + 0
-	.type	__func__.7109, %object
-	.size	__func__.7109, 29
-__func__.7109:
+	.type	__func__.7232, %object
+	.size	__func__.7232, 29
+__func__.7232:
 	.string	"allocate_new_data_superblock"
-	.section	.rodata.__func__.7116,"a",@progbits
+	.section	.rodata.__func__.7239,"a",@progbits
 	.align	3
 	.set	.LANCHOR88,. + 0
-	.type	__func__.7116, %object
-	.size	__func__.7116, 19
-__func__.7116:
+	.type	__func__.7239, %object
+	.size	__func__.7239, 19
+__func__.7239:
 	.string	"get_new_active_ppa"
-	.section	.rodata.__func__.7129,"a",@progbits
+	.section	.rodata.__func__.7252,"a",@progbits
 	.align	3
 	.set	.LANCHOR158,. + 0
-	.type	__func__.7129, %object
-	.size	__func__.7129, 16
-__func__.7129:
+	.type	__func__.7252, %object
+	.size	__func__.7252, 16
+__func__.7252:
 	.string	"update_vpc_list"
-	.section	.rodata.__func__.7136,"a",@progbits
+	.section	.rodata.__func__.7259,"a",@progbits
 	.align	3
 	.set	.LANCHOR159,. + 0
-	.type	__func__.7136, %object
-	.size	__func__.7136, 20
-__func__.7136:
+	.type	__func__.7259, %object
+	.size	__func__.7259, 20
+__func__.7259:
 	.string	"decrement_vpc_count"
-	.section	.rodata.__func__.7206,"a",@progbits
+	.section	.rodata.__func__.7329,"a",@progbits
 	.align	3
 	.set	.LANCHOR171,. + 0
-	.type	__func__.7206, %object
-	.size	__func__.7206, 19
-__func__.7206:
+	.type	__func__.7329, %object
+	.size	__func__.7329, 19
+__func__.7329:
 	.string	"FtlGcFreeTempBlock"
-	.section	.rodata.__func__.7312,"a",@progbits
+	.section	.rodata.__func__.7435,"a",@progbits
 	.align	3
 	.set	.LANCHOR175,. + 0
-	.type	__func__.7312, %object
-	.size	__func__.7312, 23
-__func__.7312:
+	.type	__func__.7435, %object
+	.size	__func__.7435, 23
+__func__.7435:
 	.string	"rk_ftl_garbage_collect"
-	.section	.rodata.__func__.7579,"a",@progbits
+	.section	.rodata.__func__.7702,"a",@progbits
 	.align	3
 	.set	.LANCHOR104,. + 0
-	.type	__func__.7579, %object
-	.size	__func__.7579, 15
-__func__.7579:
+	.type	__func__.7702, %object
+	.size	__func__.7702, 15
+__func__.7702:
 	.string	"FlashReadPages"
-	.section	.rodata.__func__.7596,"a",@progbits
+	.section	.rodata.__func__.7719,"a",@progbits
 	.align	3
 	.set	.LANCHOR109,. + 0
-	.type	__func__.7596, %object
-	.size	__func__.7596, 15
-__func__.7596:
+	.type	__func__.7719, %object
+	.size	__func__.7719, 15
+__func__.7719:
 	.string	"FlashProgPages"
 	.section	.rodata.decrement_vpc_count.str1.1,"aMS",@progbits,1
 .LC101:
@@ -13922,4 +14217,7 @@ __func__.7596:
 	.string	"SFTL version: 5.0.44 20180713"
 .LC71:
 	.string	"%s\n"
+	.section	.rodata.sftl_write.str1.1,"aMS",@progbits,1
+.LC109:
+	.string	"write_idblock fail! %x %x %x %x\n"
 	.hidden	free
