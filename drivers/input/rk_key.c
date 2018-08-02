@@ -71,6 +71,7 @@ static int rk_keys_ofdata_to_platdata(struct udevice *dev)
 				free(key);
 				continue;
 			}
+			key_add(key);
 		/* This is a GPIO key */
 		} else {
 			key->parent = dev;
