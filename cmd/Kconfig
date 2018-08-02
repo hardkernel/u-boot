@@ -1106,6 +1106,11 @@ config CMD_ETHSW
 
 endmenu
 
+config CMD_MEMTESTER
+	bool "Enable memtester for ddr"
+	help
+	  This enables memtester for ddr.
+
 menu "Misc commands"
 
 config CMD_BMP

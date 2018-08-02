@@ -86,6 +86,7 @@ obj-$(CONFIG_CMD_LOG) += log.o
 obj-$(CONFIG_ID_EEPROM) += mac.o
 obj-$(CONFIG_CMD_MD5SUM) += md5sum.o
 obj-$(CONFIG_CMD_MEMORY) += mem.o
+obj-$(CONFIG_CMD_MEMTESTER) += memtester/
 obj-$(CONFIG_CMD_IO) += io.o
 obj-$(CONFIG_CMD_MFSL) += mfsl.o
 obj-$(CONFIG_CMD_MII) += mii.o
