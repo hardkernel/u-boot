@@ -570,6 +570,7 @@ int rockchip_read_dtb_file(void *fdt_addr)
 	struct resource_file *file;
 	struct list_head *node;
 	char *dtb_name = DTB_FILE;
+	int ret;
 
 	if (list_empty(&entrys_head))
 		init_resource_list(NULL);
@@ -593,5 +594,13 @@ int rockchip_read_dtb_file(void *fdt_addr)
 
 	printf("DTB: %s\n", dtb_name);
 
-	return rockchip_read_resource_file((void *)fdt_addr, dtb_name, 0, 0);
+	ret = rockchip_read_resource_file((void *)fdt_addr, dtb_name, 0, 0);
+	if (ret < 0)
+		return ret;
+
+#if defined(CONFIG_OF_LIBFDT_OVERLAY) && defined(CONFIG_USING_KERNEL_DTB)
+	android_fdt_overlay_apply((void *)fdt_addr);
+#endif
+
+	return ret;
 }
