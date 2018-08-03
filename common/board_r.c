@@ -657,6 +657,11 @@ __weak int interrupt_debugger_init(void)
 	return 0;
 }
 
+__weak int dram_initr_banksize(void)
+{
+	return 0;
+}
+
 static int run_main_loop(void)
 {
 #ifdef CONFIG_SANDBOX
@@ -691,6 +696,18 @@ static init_fnc_t init_sequence_r[] = {
 	 */
 #endif
 	initr_reloc_global_data,
+
+	/*
+	 * Some platform requires to reserve memory regions for some firmware
+	 * to avoid kernel touches it, but U-Boot may have communication with
+	 * firmware by share memory. So that we had better reserve firmware
+	 * region after the initr_caches() which enables MMU and init
+	 * translation table, we need firmware region to be mapped as cacheable
+	 * like other regions, otherwise there would be dcache coherence issue
+	 * between firmware and U-Boot.
+	 */
+	dram_initr_banksize,
+
 #if defined(CONFIG_SYS_INIT_RAM_LOCK) && defined(CONFIG_E500)
 	initr_unlock_ram_in_cache,
 #endif
