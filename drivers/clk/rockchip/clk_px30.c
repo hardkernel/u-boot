@@ -26,6 +26,8 @@ enum {
 	OUTPUT_MIN_HZ	= 24 * 1000000,
 };
 
+#define PX30_VOP_PLL_LIMIT			600000000
+
 #define PX30_PLL_RATE(_rate, _refdiv, _fbdiv, _postdiv1,	\
 			_postdiv2, _dsmpd, _frac)		\
 {								\
@@ -627,29 +629,28 @@ static ulong px30_vop_set_clk(struct px30_clk_priv *priv, ulong clk_id, uint hz)
 	struct px30_cru *cru = priv->cru;
 	int src_clk_div;
 
-	src_clk_div = DIV_ROUND_UP(priv->gpll_hz, hz);
-	assert(src_clk_div - 1 <= 31);
-
 	switch (clk_id) {
 	case ACLK_VOPB:
+		src_clk_div = DIV_ROUND_UP(priv->gpll_hz, hz);
+		assert(src_clk_div - 1 <= 31);
 		rk_clrsetreg(&cru->clksel_con[3],
 			     ACLK_VO_PLL_MASK | ACLK_VO_DIV_MASK,
 			     ACLK_VO_SEL_GPLL << ACLK_VO_PLL_SHIFT |
 			     (src_clk_div - 1) << ACLK_VO_DIV_SHIFT);
 		break;
 	case DCLK_VOPB:
-		/*
-		 * vopb dclk source from cpll, and equals to
-		 * cpll(means div == 1)
-		 */
-		rkclk_set_pll(&cru->pll[CPLL], &cru->mode, CPLL, hz);
-
+		if (hz < PX30_VOP_PLL_LIMIT)
+			src_clk_div = DIV_ROUND_UP(PX30_VOP_PLL_LIMIT, hz);
+		else
+			src_clk_div = 1;
+		assert(src_clk_div - 1 <= 255);
+		rkclk_set_pll(&cru->pll[CPLL], &cru->mode, CPLL, hz * src_clk_div);
 		rk_clrsetreg(&cru->clksel_con[5],
 			     DCLK_VOPB_SEL_MASK | DCLK_VOPB_PLL_SEL_MASK |
 			     DCLK_VOPB_DIV_MASK,
 			     DCLK_VOPB_SEL_DIVOUT << DCLK_VOPB_SEL_SHIFT |
 			     DCLK_VOPB_PLL_SEL_CPLL << DCLK_VOPB_PLL_SEL_SHIFT |
-			     (1 - 1) << DCLK_VOPB_DIV_SHIFT);
+			     (src_clk_div - 1) << DCLK_VOPB_DIV_SHIFT);
 		break;
 	default:
 		printf("do not support this vop freq\n");
