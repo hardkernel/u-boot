@@ -99,6 +99,9 @@ static u32 pll_mode_mask[PLL_COUNT] = {
 
 static struct pll_rate_table auto_table;
 
+static ulong px30_clk_get_pll_rate(struct px30_clk_priv *priv,
+				   enum px30_pll_id pll_id);
+
 static struct pll_rate_table *pll_clk_set_by_auto(u32 drate)
 {
 	struct pll_rate_table *rate = &auto_table;
@@ -627,10 +630,12 @@ static ulong px30_vop_get_clk(struct px30_clk_priv *priv, ulong clk_id)
 static ulong px30_vop_set_clk(struct px30_clk_priv *priv, ulong clk_id, uint hz)
 {
 	struct px30_cru *cru = priv->cru;
+	ulong npll_hz;
 	int src_clk_div;
 
 	switch (clk_id) {
 	case ACLK_VOPB:
+	case ACLK_VOPL:
 		src_clk_div = DIV_ROUND_UP(priv->gpll_hz, hz);
 		assert(src_clk_div - 1 <= 31);
 		rk_clrsetreg(&cru->clksel_con[3],
@@ -651,6 +656,26 @@ static ulong px30_vop_set_clk(struct px30_clk_priv *priv, ulong clk_id, uint hz)
 			     DCLK_VOPB_SEL_DIVOUT << DCLK_VOPB_SEL_SHIFT |
 			     DCLK_VOPB_PLL_SEL_CPLL << DCLK_VOPB_PLL_SEL_SHIFT |
 			     (src_clk_div - 1) << DCLK_VOPB_DIV_SHIFT);
+		break;
+	case DCLK_VOPL:
+		npll_hz = px30_clk_get_pll_rate(priv, NPLL);
+		if (npll_hz >= PX30_VOP_PLL_LIMIT && npll_hz >= hz && npll_hz % hz == 0) {
+			src_clk_div = npll_hz / hz;
+			assert(src_clk_div - 1 <= 255);
+		} else {
+			if (hz < PX30_VOP_PLL_LIMIT)
+				src_clk_div = DIV_ROUND_UP(PX30_VOP_PLL_LIMIT, hz);
+			else
+				src_clk_div = 1;
+			assert(src_clk_div - 1 <= 255);
+			rkclk_set_pll(&cru->pll[NPLL], &cru->mode, NPLL, hz * src_clk_div);
+		}
+		rk_clrsetreg(&cru->clksel_con[5],
+			     DCLK_VOPL_SEL_MASK | DCLK_VOPL_PLL_SEL_MASK |
+			     DCLK_VOPL_DIV_MASK,
+			     DCLK_VOPL_SEL_DIVOUT << DCLK_VOPL_SEL_SHIFT |
+			     DCLK_VOPL_PLL_SEL_NPLL << DCLK_VOPL_PLL_SEL_SHIFT |
+			     (src_clk_div - 1) << DCLK_VOPL_DIV_SHIFT);
 		break;
 	default:
 		printf("do not support this vop freq\n");
@@ -920,7 +945,9 @@ static ulong px30_clk_get_rate(struct clk *clk)
 		rate = px30_spi_get_clk(priv, clk->id);
 		break;
 	case ACLK_VOPB:
+	case ACLK_VOPL:
 	case DCLK_VOPB:
+	case DCLK_VOPL:
 		rate = px30_vop_get_clk(priv, clk->id);
 		break;
 	case ACLK_BUS_PRE:
@@ -983,7 +1010,9 @@ static ulong px30_clk_set_rate(struct clk *clk, ulong rate)
 		ret = px30_spi_set_clk(priv, clk->id, rate);
 		break;
 	case ACLK_VOPB:
+	case ACLK_VOPL:
 	case DCLK_VOPB:
+	case DCLK_VOPL:
 		ret = px30_vop_set_clk(priv, clk->id, rate);
 		break;
 	case ACLK_BUS_PRE:
