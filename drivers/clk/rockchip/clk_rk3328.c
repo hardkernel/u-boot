@@ -37,15 +37,15 @@ static struct rockchip_pll_rate_table rk3328_pll_rates[] = {
 	/* _mhz, _refdiv, _fbdiv, _postdiv1, _postdiv2, _dsmpd, _frac */
 	RK3036_PLL_RATE(1200000000, 1, 50, 1, 1, 1, 0),
 #ifndef CONFIG_SPL_BUILD
-	RK3036_PLL_RATE(1188000000, 2, 99, 1, 1, 1, 0),
+	RK3036_PLL_RATE(1188000000, 1, 99, 2, 1, 1, 0),
 	RK3036_PLL_RATE(1008000000, 1, 84, 2, 1, 1, 0),
 #endif
 	RK3036_PLL_RATE(816000000, 1, 68, 2, 1, 1, 0),
-	RK3036_PLL_RATE(800000000, 6, 400, 2, 1, 1, 0),
+	RK3036_PLL_RATE(800000000, 1, 200, 6, 1, 1, 0),
 	RK3036_PLL_RATE(600000000, 1, 75, 3, 1, 1, 0),
 #ifndef CONFIG_SPL_BUILD
-	RK3036_PLL_RATE(594000000, 2, 99, 2, 1, 1, 0),
-	RK3036_PLL_RATE(500000000, 6, 250, 2, 1, 1, 0),
+	RK3036_PLL_RATE(594000000, 1, 99, 4, 1, 1, 0),
+	RK3036_PLL_RATE(500000000, 1, 125, 6, 1, 1, 0),
 #endif
 	{ /* sentinel */ },
 };
@@ -123,7 +123,7 @@ static ulong rk3328_armclk_set_clk(struct rk3328_clk_priv *priv, ulong hz)
 
 	rate = rockchip_get_cpu_settings(rk3328_cpu_rates, hz);
 	if (!rate) {
-		printf("%s unsupport rate\n", __func__);
+		printf("%s unsupported rate\n", __func__);
 		return -EINVAL;
 	}
 
@@ -406,16 +406,19 @@ static ulong rk3328_vop_get_clk(struct rk3328_clk_priv *priv, ulong clk_id)
 
 	switch (clk_id) {
 	case ACLK_VOP_PRE:
+	case ACLK_VOP:
 		con = readl(&cru->clksel_con[39]);
 		div = (con & ACLK_VOP_DIV_CON_MASK) >> ACLK_VOP_DIV_CON_SHIFT;
 		parent = priv->cpll_hz;
 		break;
 	case ACLK_VIO_PRE:
+	case ACLK_VIO:
 		con = readl(&cru->clksel_con[37]);
 		div = (con & ACLK_VIO_DIV_CON_MASK) >> ACLK_VIO_DIV_CON_SHIFT;
 		parent = priv->cpll_hz;
 		break;
 	case HCLK_VIO_PRE:
+	case HCLK_VIO:
 		parent = rk3328_vop_get_clk(priv, ACLK_VIO_PRE);
 		con = readl(&cru->clksel_con[37]);
 		div = (con & HCLK_VIO_DIV_CON_MASK) >> HCLK_VIO_DIV_CON_SHIFT;
@@ -439,18 +442,21 @@ static ulong rk3328_vop_set_clk(struct rk3328_clk_priv *priv,
 
 	switch (clk_id) {
 	case ACLK_VOP_PRE:
+	case ACLK_VOP:
 		rk_clrsetreg(&cru->clksel_con[39],
 			     ACLK_VOP_PLL_SEL_MASK | ACLK_VOP_DIV_CON_MASK,
 			     ACLK_VOP_PLL_SEL_CPLL << ACLK_VOP_PLL_SEL_SHIFT |
 			     (src_clk_div - 1) << ACLK_VOP_DIV_CON_SHIFT);
 		break;
 	case ACLK_VIO_PRE:
+	case ACLK_VIO:
 		rk_clrsetreg(&cru->clksel_con[37],
 			     ACLK_VIO_PLL_SEL_MASK | ACLK_VIO_DIV_CON_MASK,
 			     ACLK_VIO_PLL_SEL_CPLL << ACLK_VIO_PLL_SEL_SHIFT |
 			     (src_clk_div - 1) << ACLK_VIO_DIV_CON_SHIFT);
 		break;
 	case HCLK_VIO_PRE:
+	case HCLK_VIO:
 		src_clk_div = DIV_ROUND_UP(rk3328_vop_get_clk(priv,
 							      ACLK_VIO_PRE),
 					   hz);
@@ -693,6 +699,9 @@ static ulong rk3328_clk_get_rate(struct clk *clk)
 	case ACLK_VOP_PRE:
 	case ACLK_VIO_PRE:
 	case HCLK_VIO_PRE:
+	case ACLK_VOP:
+	case ACLK_VIO:
+	case HCLK_VIO:
 		rate = rk3328_vop_get_clk(priv, clk->id);
 		break;
 #endif
@@ -764,6 +773,9 @@ static ulong rk3328_clk_set_rate(struct clk *clk, ulong rate)
 	case ACLK_VOP_PRE:
 	case ACLK_VIO_PRE:
 	case HCLK_VIO_PRE:
+	case ACLK_VOP:
+	case ACLK_VIO:
+	case HCLK_VIO:
 		rate = rk3328_vop_set_clk(priv, clk->id, rate);
 		break;
 #endif
@@ -931,6 +943,20 @@ static void rkclk_init(struct rk3328_clk_priv *priv)
 	if (rockchip_pll_get_rate(&rk3328_pll_clks[NPLL],
 				  priv->cru, NPLL) != APLL_HZ)
 		rk3328_armclk_set_clk(priv, APLL_HZ);
+
+	priv->gpll_hz = rockchip_pll_get_rate(&rk3328_pll_clks[GPLL],
+					      priv->cru, GPLL);
+	priv->cpll_hz = rockchip_pll_get_rate(&rk3328_pll_clks[CPLL],
+					      priv->cru, CPLL);
+
+	/* before set pll set child div first */
+	rk_clrsetreg(&priv->cru->clksel_con[24], (0x3f << 8) | (0x3f << 0),
+		     (0x17 << 8) | (0x17 << 0));
+	rk_clrsetreg(&priv->cru->clksel_con[27], (0x1f << 8) | (0x1f << 0),
+		     (0x17 << 8) | (0x17 << 0));
+	rk_clrsetreg(&priv->cru->clksel_con[31], 0xff << 0, 0xb << 0);
+	rk_clrsetreg(&priv->cru->clksel_con[43], 0xff << 0, 0xb << 0);
+	rk_clrsetreg(&priv->cru->clksel_con[52], 0x1f << 8, 0x5 << 8);
 
 	rockchip_pll_set_rate(&rk3328_pll_clks[GPLL],
 			      priv->cru, GPLL, GPLL_HZ);
