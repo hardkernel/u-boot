@@ -159,7 +159,7 @@
         "switch_bootmode="\
             "get_rebootmode;"\
             "if test ${reboot_mode} = factory_reset; then "\
-                    "run recovery_from_flash;"\
+                    "run boot_recovery;"\
             "else if test ${reboot_mode} = update; then "\
                     "run update;"\
             "else if test ${reboot_mode} = cold_boot; then "\
@@ -178,7 +178,7 @@
                 "if usb start 0; then "\
                     "run recovery_from_udisk;"\
                 "fi;"\
-                "run recovery_from_flash;"\
+                "run boot_recovery;"\
             "fi; "\
             "if test ${wipe_cache} = failed; then "\
                 "run init_display; run storeargs;"\
@@ -188,7 +188,7 @@
                 "if usb start 0; then "\
                     "run recovery_from_udisk;"\
                 "fi;"\
-                "run recovery_from_flash;"\
+                "run boot_recovery;"\
             "fi; \0" \
          "update="\
             /*first usb burning, second sdc_burn, third ext-sd autoscr/recovery, last udisk autoscr/recovery*/\
@@ -200,7 +200,7 @@
             "if usb start 0; then "\
                 "run recovery_from_udisk;"\
             "fi;"\
-            "run recovery_from_flash;"\
+            "run boot_recovery;"\
             "\0"\
         "recovery_from_sdcard="\
             "if fatload mmc 0 ${loadaddr} aml_autoscript; then autoscr ${loadaddr}; fi;"\
@@ -216,9 +216,12 @@
                 "wipeisb; "\
                 "bootm ${loadaddr};fi;"\
             "\0"\
-        "recovery_from_flash="\
-            "setenv bootargs ${bootargs} aml_dt=${aml_dt} recovery_part={recovery_part} recovery_offset={recovery_offset};"\
-            "if imgread kernel ${recovery_part} ${loadaddr} ${recovery_offset}; then wipeisb; bootm ${loadaddr}; fi"\
+        "boot_recovery="\
+            "setenv bootargs ${bootargs} aml_dt=${aml_dt} recovery_part=${recovery_part} recovery_offset=${recovery_offset};"\
+            "movi read recovery 0 ${loadaddr}; " \
+            "movi read dtbs 0 ${dtb_mem_addr}; " \
+            "booti ${loadaddr} - ${dtb_mem_addr}; " \
+            "bootm" \
             "\0"\
         "boot_rawimage=setenv bootargs ${initargs} logo=${display_layer},loaded,${fb_addr} " \
             "vout=${outputmode},enable cvbsmode=${cvbsmode} " \
