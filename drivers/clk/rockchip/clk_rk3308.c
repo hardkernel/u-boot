@@ -82,13 +82,6 @@ static struct rockchip_pll_clock rk3308_pll_clks[] = {
 		      RK3308_MODE_CON, 6, 10, 0, NULL),
 };
 
-static ulong rk3308_bus_set_clk(struct rk3308_clk_priv *priv, ulong clk_id,
-				ulong hz);
-static ulong rk3308_peri_set_clk(struct rk3308_clk_priv *priv, ulong clk_id,
-				 ulong hz);
-static ulong rk3308_audio_set_clk(struct rk3308_clk_priv *priv,
-				  ulong clk_id, ulong hz);
-
 static ulong rk3308_armclk_set_clk(struct rk3308_clk_priv *priv, ulong hz)
 {
 	struct rk3308_cru *cru = priv->cru;
@@ -146,34 +139,6 @@ static void rk3308_clk_get_pll_rate(struct rk3308_clk_priv *priv)
 	if (!priv->vpll1_hz)
 		priv->vpll1_hz = rockchip_pll_get_rate(&rk3308_pll_clks[VPLL1],
 						       priv->cru, VPLL1);
-}
-
-static void rkclk_init(struct udevice *dev)
-{
-	struct rk3308_clk_priv *priv = dev_get_priv(dev);
-	int ret;
-
-	if (rockchip_pll_get_rate(&rk3308_pll_clks[APLL],
-				  priv->cru, APLL) != APLL_HZ) {
-		ret = rk3308_armclk_set_clk(priv, APLL_HZ);
-		if (ret < 0)
-			printf("%s failed to set armclk rate\n", __func__);
-	}
-
-#ifndef CONFIG_USING_KERNEL_DTB
-	rk3308_clk_get_pll_rate(priv);
-
-	rk3308_bus_set_clk(priv, ACLK_BUS, BUS_ACLK_HZ);
-	rk3308_bus_set_clk(priv, HCLK_BUS, BUS_HCLK_HZ);
-	rk3308_bus_set_clk(priv, PCLK_BUS, BUS_PCLK_HZ);
-
-	rk3308_peri_set_clk(priv, ACLK_PERI, PERI_ACLK_HZ);
-	rk3308_peri_set_clk(priv, HCLK_PERI, PERI_HCLK_HZ);
-	rk3308_peri_set_clk(priv, PCLK_PERI, PERI_PCLK_HZ);
-
-	rk3308_audio_set_clk(priv, HCLK_AUDIO, AUDIO_HCLK_HZ);
-	rk3308_audio_set_clk(priv, PCLK_AUDIO, AUDIO_PCLK_HZ);
-#endif
 }
 
 static ulong rk3308_i2c_get_clk(struct clk *clk)
@@ -707,8 +672,6 @@ static ulong rk3308_clk_get_rate(struct clk *clk)
 	struct rk3308_clk_priv *priv = dev_get_priv(clk->dev);
 	ulong rate = 0;
 
-	rk3308_clk_get_pll_rate(priv);
-
 	debug("%s id:%ld\n", __func__, clk->id);
 
 	switch (clk->id) {
@@ -780,8 +743,6 @@ static ulong rk3308_clk_set_rate(struct clk *clk, ulong rate)
 {
 	struct rk3308_clk_priv *priv = dev_get_priv(clk->dev);
 	ulong ret = 0;
-
-	rk3308_clk_get_pll_rate(priv);
 
 	debug("%s %ld %ld\n", __func__, clk->id, rate);
 
@@ -973,9 +934,42 @@ static struct clk_ops rk3308_clk_ops = {
 	.set_phase	= rk3308_clk_set_phase,
 };
 
+static void rk3308_clk_init(struct udevice *dev)
+{
+	struct rk3308_clk_priv *priv = dev_get_priv(dev);
+	int ret;
+
+	if (rockchip_pll_get_rate(&rk3308_pll_clks[APLL],
+				  priv->cru, APLL) != APLL_HZ) {
+		ret = rk3308_armclk_set_clk(priv, APLL_HZ);
+		if (ret < 0)
+			printf("%s failed to set armclk rate\n", __func__);
+	}
+
+	rk3308_clk_get_pll_rate(priv);
+
+	rk3308_bus_set_clk(priv, ACLK_BUS, BUS_ACLK_HZ);
+	rk3308_bus_set_clk(priv, HCLK_BUS, BUS_HCLK_HZ);
+	rk3308_bus_set_clk(priv, PCLK_BUS, BUS_PCLK_HZ);
+
+	rk3308_peri_set_clk(priv, ACLK_PERI, PERI_ACLK_HZ);
+	rk3308_peri_set_clk(priv, HCLK_PERI, PERI_HCLK_HZ);
+	rk3308_peri_set_clk(priv, PCLK_PERI, PERI_PCLK_HZ);
+
+	rk3308_audio_set_clk(priv, HCLK_AUDIO, AUDIO_HCLK_HZ);
+	rk3308_audio_set_clk(priv, PCLK_AUDIO, AUDIO_PCLK_HZ);
+}
+
 static int rk3308_clk_probe(struct udevice *dev)
 {
-	rkclk_init(dev);
+	int ret;
+
+	rk3308_clk_init(dev);
+
+	/* Process 'assigned-{clocks/clock-parents/clock-rates}' properties */
+	ret = clk_set_defaults(dev);
+	if (ret)
+		debug("%s clk_set_defaults failed %d\n", __func__, ret);
 
 	return 0;
 }
