@@ -178,6 +178,13 @@ config SPI_BOOT
 
 endmenu
 
+config PASS_DEVICE_SERIAL_BY_FDT
+	bool "Pass the device serial number to kernel through devicetree"
+	default y
+	help
+	  Enabling this will pass a device serial number to kernel by devicetree
+	  "serial-number" properties.
+
 config BOOTDELAY
 	int "delay in seconds before automatically booting"
 	default 2

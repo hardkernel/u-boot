@@ -487,11 +487,12 @@ int image_setup_libfdt(bootm_headers_t *images, void *blob,
 	ulong *initrd_end = &images->initrd_end;
 	int ret = -EPERM;
 	int fdt_ret;
-
+#if defined(CONFIG_PASS_DEVICE_SERIAL_BY_FDT)
 	if (fdt_root(blob) < 0) {
 		printf("ERROR: root node setup failed\n");
 		goto err;
 	}
+#endif
 	if (fdt_chosen(blob) < 0) {
 		printf("ERROR: /chosen node create failed\n");
 		goto err;
