@@ -27,6 +27,9 @@
 #define AUDIO_HCLK_HZ	100000000
 #define AUDIO_PCLK_HZ	100000000
 
+#define RK3308_PLL_CON(x)	((x) * 0x4)
+#define RK3308_MODE_CON		0xa0
+
 /* RK3308 pll id */
 enum rk3308_pll_id {
 	APLL,
@@ -39,16 +42,6 @@ enum rk3308_pll_id {
 struct rk3308_clk_info {
 	unsigned long id;
 	char *name;
-};
-
-struct pll_rate_table {
-	unsigned long rate;
-	unsigned int fbdiv;
-	unsigned int postdiv1;
-	unsigned int refdiv;
-	unsigned int postdiv2;
-	unsigned int dsmpd;
-	unsigned int frac;
 };
 
 /* Private data for the clock driver - used by rockchip_get_cru() */
