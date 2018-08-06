@@ -805,12 +805,14 @@ static int handle_bl_ldim(struct bl_attr_s *p_attr)
 
 	ini_value = IniGetString("Backlight_Attr", "bl_ldim_mode", "null");
 	ITEM_LOGD("%s, bl_ldim_mode is (%s)\n", __func__, ini_value);
-	if (strcmp(ini_value, "LDIM_SINGLE_SIDE") == 0)
-		p_attr->ldim.ldim_mode = LDIM_MODE_SINGLE_SIDE;
-	else if (strcmp(ini_value, "LDIM_UNIFORM") == 0)
-		p_attr->ldim.ldim_mode = LDIM_MODE_UNIFORM;
+	if (strcmp(ini_value, "LDIM_LR_SIDE") == 0)
+		p_attr->ldim.ldim_mode = LDIM_MODE_LR_SIDE;
+	else if (strcmp(ini_value, "LDIM_TB_SIDE") == 0)
+		p_attr->ldim.ldim_mode = LDIM_MODE_TB_SIDE;
+	else if (strcmp(ini_value, "LDIM_DIRECT") == 0)
+		p_attr->ldim.ldim_mode = LDIM_MODE_DIRECT;
 	else
-		p_attr->ldim.ldim_mode = LDIM_MODE_SINGLE_SIDE;
+		p_attr->ldim.ldim_mode = LDIM_MODE_TB_SIDE;
 
 	ini_value = IniGetString("Backlight_Attr", "bl_ldim_dev_index", "0xff");
 	ITEM_LOGD("%s, bl_ldim_dev_index is (%s)\n", __func__, ini_value);

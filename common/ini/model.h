@@ -53,9 +53,9 @@ enum bl_pwm_port_e {
 };
 
 enum lcd_ldim_mode_e {
-	LDIM_MODE_NONE = 0,
-	LDIM_MODE_SINGLE_SIDE,
-	LDIM_MODE_UNIFORM,
+	LDIM_MODE_LR_SIDE = 0,
+	LDIM_MODE_TB_SIDE,
+	LDIM_MODE_DIRECT,
 	LDIM_MODE_MAX,
 };
 
