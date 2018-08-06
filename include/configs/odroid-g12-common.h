@@ -127,10 +127,11 @@
                 "fastboot;"\
             "fi;fi;fi;fi;"\
             "\0" \
-        "storeboot="\
-            "if imgread kernel ${boot_part} ${loadaddr}; then bootm ${loadaddr}; fi;"\
-            "run update;"\
-            "\0"\
+	"boot_default="\
+	    "movi read boot 0 ${loadaddr}; " \
+	    "movi read dtbs 0 ${dtb_mem_addr}; " \
+	    "booti ${loadaddr} - ${dtb_mem_addr}; " \
+	    "bootm\0" \
         "factory_reset_poweroff_protect="\
             "echo wipe_data=${wipe_data}; echo wipe_cache=${wipe_cache};"\
             "if test ${wipe_data} = failed; then "\
@@ -239,7 +240,7 @@
             "forceupdate;" \
             "run switch_bootmode;"
 
-#define CONFIG_BOOTCOMMAND			"run storeboot"
+#define CONFIG_BOOTCOMMAND			"run boot_default"
 
 #define CONFIG_BOOTAREA_SIZE			(4 * SZ_1M)
 #define CONFIG_MBR_SIZE				512
