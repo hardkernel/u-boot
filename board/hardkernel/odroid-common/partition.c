@@ -26,17 +26,17 @@ static struct partitions factory_partitions[] = {
 		.name = "ptable",
 		.size = bytes_to_lba(CONFIG_PTABLE_SIZE),
 	}, {
-		.name = "dtbs",			/* Device Tree */
-		.size = bytes_to_lba(CONFIG_DTB_SIZE),
-	}, {
 		.name = "bcb",                  /* Bootloader control block */
 		.size = bytes_to_lba(CONFIG_BCB_SIZE),
 	}, {
+		.name = "logo",                 /* Logo */
+		.size = bytes_to_lba(2 * SZ_1M),
+	}, {
+		.name = "dtbs",			/* Device Tree */
+		.size = bytes_to_lba(CONFIG_DTB_SIZE),
+	}, {
 		.name = "boot",                 /* Boot image */
 		.size = bytes_to_lba(24 * SZ_1M),
-	}, {
-		.name = "root",			/* Root file system */
-		.size = bytes_to_lba(64 * SZ_1M),
 	}, {
 		.name = "recovery",             /* Recovery Image */
 		.size = bytes_to_lba(16 * SZ_1M),
@@ -44,37 +44,22 @@ static struct partitions factory_partitions[] = {
 		.name = "vfat",			/* DOS FAT */
 		.size = bytes_to_lba(128 * SZ_1M),
 	}, {
-		.name = "reserved",		/* reserved */
-		.size = bytes_to_lba(0x4000000),
-	}, {
-		.name = "cache",		/* Android: cache */
-		.size = bytes_to_lba(64 * SZ_1M),
-	}, {
-		.name = "logo",                 /* Logo */
-		.size = bytes_to_lba(2 * SZ_1M),
-	}, {
-		.name = "misc",
-		.size = bytes_to_lba(128 * SZ_1M),
-	}, {
-		.name = "cri_data",
-		.size = bytes_to_lba(0x800000),
-	}, {
-		.name = "param",
-		.size = bytes_to_lba(0x1000000),
-	}, {
-		.name = "rsv",
-		.size = bytes_to_lba(0x1000000),
+		.name = "system",		/* Android: system */
+		.size = bytes_to_lba(SZ_2G),
 	}, {
 		.name = "vendor",		/* Android: vendor */
-		.size = bytes_to_lba(0x10000000),
+		.size = bytes_to_lba(256 * SZ_1M),
 	}, {
 		.name = "odm",			/* Android: odm */
-		.size = bytes_to_lba(0x10000000),
+		.size = bytes_to_lba(512 * SZ_1M),
 	}, {
-		.name = "system",		/* Android: system */
-		.size = bytes_to_lba(0x80000000),
+		.name = "cache",		/* Android: cache */
+		.size = bytes_to_lba(1 * SZ_1G),
 	}, {
-		.name = "userdata",		/* Android: userdata */
+		.name = "misc",			/* Android: misc */
+		.size = bytes_to_lba(8 * SZ_1M),
+	}, {
+		.name = "data",			/* Android: data */
 		.size = -1,
 	},
 };
