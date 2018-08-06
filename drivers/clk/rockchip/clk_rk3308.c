@@ -34,12 +34,26 @@ enum {
 	.name = _name,				\
 }
 
+#define RK3308_CPUCLK_RATE(_rate, _aclk_div, _pclk_div)		\
+{								\
+	.rate	= _rate##U,					\
+	.aclk_div = _aclk_div,					\
+	.pclk_div = _pclk_div,					\
+}
+
 static struct rockchip_pll_rate_table rk3308_pll_rates[] = {
 	/* _mhz, _refdiv, _fbdiv, _postdiv1, _postdiv2, _dsmpd, _frac */
 	RK3036_PLL_RATE(1300000000, 6, 325, 1, 1, 1, 0),
 	RK3036_PLL_RATE(1200000000, 1, 50, 1, 1, 1, 0),
 	RK3036_PLL_RATE(816000000, 1, 68, 2, 1, 1, 0),
 	RK3036_PLL_RATE(748000000, 2, 187, 3, 1, 1, 0),
+};
+
+static struct rockchip_cpu_rate_table rk3308_cpu_rates[] = {
+	RK3308_CPUCLK_RATE(1200000000, 1, 5),
+	RK3308_CPUCLK_RATE(1008000000, 1, 5),
+	RK3308_CPUCLK_RATE(816000000, 1, 3),
+	RK3308_CPUCLK_RATE(600000000, 1, 3),
 };
 
 static const struct rk3308_clk_info clks_dump[] = {
@@ -75,6 +89,52 @@ static ulong rk3308_peri_set_clk(struct rk3308_clk_priv *priv, ulong clk_id,
 static ulong rk3308_audio_set_clk(struct rk3308_clk_priv *priv,
 				  ulong clk_id, ulong hz);
 
+static ulong rk3308_armclk_set_clk(struct rk3308_clk_priv *priv, ulong hz)
+{
+	struct rk3308_cru *cru = priv->cru;
+	const struct rockchip_cpu_rate_table *rate;
+	ulong old_rate;
+
+	rate = rockchip_get_cpu_settings(rk3308_cpu_rates, hz);
+	if (!rate) {
+		printf("%s unsupport rate\n", __func__);
+		return -EINVAL;
+	}
+
+	/*
+	 * select apll as cpu/core clock pll source and
+	 * set up dependent divisors for PERI and ACLK clocks.
+	 * core hz : apll = 1:1
+	 */
+	old_rate = rockchip_pll_get_rate(&rk3308_pll_clks[APLL],
+					 priv->cru, APLL);
+	if (old_rate > hz) {
+		if (rockchip_pll_set_rate(&rk3308_pll_clks[APLL],
+					  priv->cru, APLL, hz))
+			return -EINVAL;
+		rk_clrsetreg(&cru->clksel_con[0],
+			     CORE_CLK_PLL_SEL_MASK | CORE_DIV_CON_MASK |
+			     CORE_ACLK_DIV_MASK | CORE_DBG_DIV_MASK,
+			     rate->aclk_div << CORE_ACLK_DIV_SHIFT |
+			     rate->pclk_div << CORE_DBG_DIV_SHIFT |
+			     CORE_CLK_PLL_SEL_APLL << CORE_CLK_PLL_SEL_SHIFT |
+			     0 << CORE_DIV_CON_SHIFT);
+	} else if (old_rate < hz) {
+		rk_clrsetreg(&cru->clksel_con[0],
+			     CORE_CLK_PLL_SEL_MASK | CORE_DIV_CON_MASK |
+			     CORE_ACLK_DIV_MASK | CORE_DBG_DIV_MASK,
+			     rate->aclk_div << CORE_ACLK_DIV_SHIFT |
+			     rate->pclk_div << CORE_DBG_DIV_SHIFT |
+			     CORE_CLK_PLL_SEL_APLL << CORE_CLK_PLL_SEL_SHIFT |
+			     0 << CORE_DIV_CON_SHIFT);
+		if (rockchip_pll_set_rate(&rk3308_pll_clks[APLL],
+					  priv->cru, APLL, hz))
+			return -EINVAL;
+	}
+
+	return rockchip_pll_get_rate(&rk3308_pll_clks[APLL], priv->cru, APLL);
+}
+
 static void rk3308_clk_get_pll_rate(struct rk3308_clk_priv *priv)
 {
 	if (!priv->dpll_hz)
@@ -91,30 +151,14 @@ static void rk3308_clk_get_pll_rate(struct rk3308_clk_priv *priv)
 static void rkclk_init(struct udevice *dev)
 {
 	struct rk3308_clk_priv *priv = dev_get_priv(dev);
-	struct rk3308_cru *cru = priv->cru;
-	u32 aclk_div, pclk_div;
+	int ret;
 
-	/* init pll */
-	if (rockchip_pll_set_rate(&rk3308_pll_clks[APLL], priv->cru, APLL,
-				  APLL_HZ))
-		printf("%s set apll unsuccessfully\n", __func__);
-
-	/*
-	 * select apll as cpu/core clock pll source and
-	 * set up dependent divisors for PCLK and ACLK clocks.
-	 * core hz : apll = 1:1
-	 */
-	priv->apll_hz = rockchip_pll_get_rate(&rk3308_pll_clks[APLL],
-					      priv->cru, APLL);
-	aclk_div = priv->apll_hz / CORE_ACLK_HZ - 1;
-	pclk_div = priv->apll_hz / CORE_DBG_HZ - 1;
-	rk_clrsetreg(&cru->clksel_con[0],
-		     CORE_ACLK_DIV_MASK | CORE_DBG_DIV_MASK |
-		     CORE_CLK_PLL_SEL_MASK | CORE_DIV_CON_MASK,
-		     aclk_div << CORE_ACLK_DIV_SHIFT |
-		     pclk_div << CORE_DBG_DIV_SHIFT |
-		     CORE_CLK_PLL_SEL_APLL << CORE_CLK_PLL_SEL_SHIFT |
-		     0 << CORE_DIV_CON_SHIFT);
+	if (rockchip_pll_get_rate(&rk3308_pll_clks[APLL],
+				  priv->cru, APLL) != APLL_HZ) {
+		ret = rk3308_armclk_set_clk(priv, APLL_HZ);
+		if (ret < 0)
+			printf("%s failed to set armclk rate\n", __func__);
+	}
 
 #ifndef CONFIG_USING_KERNEL_DTB
 	rk3308_clk_get_pll_rate(priv);
@@ -669,6 +713,7 @@ static ulong rk3308_clk_get_rate(struct clk *clk)
 
 	switch (clk->id) {
 	case PLL_APLL:
+	case ARMCLK:
 		rate = rockchip_pll_get_rate(&rk3308_pll_clks[APLL],
 					     priv->cru, APLL);
 		break;
@@ -746,6 +791,11 @@ static ulong rk3308_clk_set_rate(struct clk *clk, ulong rate)
 					    DPLL, rate);
 		priv->dpll_hz = rockchip_pll_get_rate(&rk3308_pll_clks[DPLL],
 						      priv->cru, DPLL);
+		break;
+	case ARMCLK:
+		if (priv->armclk_hz)
+			rk3308_armclk_set_clk(priv, rate);
+		priv->armclk_hz = rate;
 		break;
 	case HCLK_SDMMC:
 	case HCLK_EMMC:
