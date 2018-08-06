@@ -611,6 +611,7 @@ static ulong px30_vop_get_clk(struct px30_clk_priv *priv, ulong clk_id)
 
 	switch (clk_id) {
 	case ACLK_VOPB:
+	case ACLK_VOPL:
 		con = readl(&cru->clksel_con[3]);
 		div = con & ACLK_VO_DIV_MASK;
 		parent = priv->gpll_hz;
@@ -619,6 +620,11 @@ static ulong px30_vop_get_clk(struct px30_clk_priv *priv, ulong clk_id)
 		con = readl(&cru->clksel_con[5]);
 		div = con & DCLK_VOPB_DIV_MASK;
 		parent = rkclk_pll_get_rate(&cru->pll[CPLL], &cru->mode, CPLL);
+		break;
+	case DCLK_VOPL:
+		con = readl(&cru->clksel_con[8]);
+		div = con & DCLK_VOPL_DIV_MASK;
+		parent = rkclk_pll_get_rate(&cru->pll[NPLL], &cru->mode, NPLL);
 		break;
 	default:
 		return -ENOENT;
@@ -670,7 +676,7 @@ static ulong px30_vop_set_clk(struct px30_clk_priv *priv, ulong clk_id, uint hz)
 			assert(src_clk_div - 1 <= 255);
 			rkclk_set_pll(&cru->pll[NPLL], &cru->mode, NPLL, hz * src_clk_div);
 		}
-		rk_clrsetreg(&cru->clksel_con[5],
+		rk_clrsetreg(&cru->clksel_con[8],
 			     DCLK_VOPL_SEL_MASK | DCLK_VOPL_PLL_SEL_MASK |
 			     DCLK_VOPL_DIV_MASK,
 			     DCLK_VOPL_SEL_DIVOUT << DCLK_VOPL_SEL_SHIFT |
