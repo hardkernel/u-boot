@@ -1402,12 +1402,43 @@ static struct clk_ops px30_pmuclk_ops = {
 	.set_rate = px30_pmuclk_set_rate,
 };
 
+static void px30_clk_init(struct px30_pmuclk_priv *priv)
+{
+	struct udevice *cru_dev;
+	struct px30_clk_priv *cru_priv;
+	int ret;
+
+	priv->gpll_hz = px30_gpll_get_pmuclk(priv);
+	if (priv->gpll_hz != GPLL_HZ) {
+		ret = px30_gpll_set_pmuclk(priv, GPLL_HZ);
+		if (ret < 0)
+			printf("%s failed to set gpll rate\n", __func__);
+	}
+
+	ret = uclass_get_device_by_name(UCLASS_CLK,
+					"clock-controller@ff2b0000",
+					 &cru_dev);
+	if (ret) {
+		printf("%s failed to get cru device\n", __func__);
+		return;
+	}
+	cru_priv = dev_get_priv(cru_dev);
+	cru_priv->gpll_hz = priv->gpll_hz;
+
+	px30_bus_set_clk(cru_priv, ACLK_BUS_PRE, ACLK_BUS_HZ);
+	px30_bus_set_clk(cru_priv, HCLK_BUS_PRE, HCLK_BUS_HZ);
+	px30_bus_set_clk(cru_priv, PCLK_BUS_PRE, PCLK_BUS_HZ);
+	px30_peri_set_clk(cru_priv, ACLK_PERI_PRE, ACLK_PERI_HZ);
+	px30_peri_set_clk(cru_priv, HCLK_PERI_PRE, HCLK_PERI_HZ);
+	px30_pclk_pmu_set_pmuclk(priv, PCLK_PMU_HZ);
+}
+
 static int px30_pmuclk_probe(struct udevice *dev)
 {
 	struct px30_pmuclk_priv *priv = dev_get_priv(dev);
 	int ret;
 
-	priv->gpll_hz = px30_gpll_get_pmuclk(priv);
+	px30_clk_init(priv);
 
 	/* Process 'assigned-{clocks/clock-parents/clock-rates}' properties */
 	ret = clk_set_defaults(dev);
