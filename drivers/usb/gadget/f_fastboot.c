@@ -1362,7 +1362,7 @@ static void cb_oem(struct usb_ep *ep, struct usb_request *req)
 	} else if (strncmp("at-unlock-vboot", cmd + 4, 15) == 0) {
 #ifdef CONFIG_RK_AVB_LIBAVB_USER
 		uint8_t lock_state;
-		char out_is_trusted;
+		bool out_is_trusted = true;
 
 		if (rk_avb_read_lock_state(&lock_state))
 			fastboot_tx_write_str("FAILlock sate read failure");
@@ -1370,12 +1370,14 @@ static void cb_oem(struct usb_ep *ep, struct usb_request *req)
 			fastboot_tx_write_str("FAILThe vboot is disable!");
 		} else {
 			lock_state = 1;
+#ifdef CONFIG_RK_AVB_LIBAVB_ENABLE_ATH_UNLOCK
 			if (rk_auth_unlock((void *)CONFIG_FASTBOOT_BUF_ADDR,
 					   &out_is_trusted)) {
 				printf("rk_auth_unlock ops error!\n");
 				fastboot_tx_write_str("FAILrk_auth_unlock ops error!");
 				return;
 			}
+#endif
 			if (out_is_trusted == true) {
 				if (rk_avb_write_lock_state(lock_state))
 					fastboot_tx_write_str("FAILwrite lock state failed");
