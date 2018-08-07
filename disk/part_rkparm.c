@@ -213,7 +213,7 @@ static int part_test_rkparm(struct blk_desc *dev_desc)
 U_BOOT_PART_TYPE(b_rkparm) = {
 	.name		= "RKPARM",
 	.part_type	= PART_TYPE_RKPARM,
-	.max_entries	= GPT_ENTRY_NUMBERS,
+	.max_entries	= RKPARM_ENTRY_NUMBERS,
 	.get_info	= part_get_info_ptr(part_get_info_rkparm),
 	.print		= part_print_ptr(part_print_rkparm),
 	.test		= part_test_rkparm,

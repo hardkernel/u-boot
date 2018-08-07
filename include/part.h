@@ -36,6 +36,7 @@ struct block_drvr {
 #define ISO_ENTRY_NUMBERS	64
 #define MAC_ENTRY_NUMBERS	64
 #define AMIGA_ENTRY_NUMBERS	8
+#define RKPARM_ENTRY_NUMBERS	128
 /*
  * Type string for U-Boot bootable partitions
  */
