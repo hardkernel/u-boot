@@ -279,6 +279,15 @@ config ROCKCHIP_RK3399
 	  and video codec support. Peripherals include Gigabit Ethernet,
 	  USB2 host and OTG, SDIO, I2S, UARTs, SPI, I2C and PWMs.
 
+config ROCKCHIP_RK1808
+	bool "Support Rockchip RK1808"
+	select ARM64
+	select ARM_SMCCC
+	select DEBUG_UART_BOARD_INIT
+	help
+	  The Rockchip RK1808 is a ARM-based Soc which embedded with dual
+	  Cortex-A35.
+
 config ROCKCHIP_RV1108
 	bool "Support Rockchip RV1108"
 	select CPU_V7
@@ -328,6 +337,7 @@ config ROCKCHIP_BOOT_MODE_REG
 	default 0xff1005c8 if ROCKCHIP_RK3328
 	default 0xff738200 if ROCKCHIP_RK3368
 	default 0xff320300 if ROCKCHIP_RK3399
+	default 0xfe020200 if ROCKCHIP_RK1808
 	default 0x10300580 if ROCKCHIP_RV1108
 	default 0
 	help
