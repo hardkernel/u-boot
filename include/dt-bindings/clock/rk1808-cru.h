@@ -54,7 +54,7 @@
 #define SCLK_GMAC		53
 #define SCLK_GMAC_REF		54
 #define SCLK_GMAC_REFOUT	55
-#define SCLK_GMAC_RGMI_SPEED	56
+#define SCLK_GMAC_RGMII_SPEED	56
 #define SCLK_GMAC_RMII_SPEED	57
 #define SCLK_GMAC_RX_TX		58
 #define SCLK_CRYPTO		59
@@ -351,8 +351,9 @@
 #define SRST_SFC_H		136
 #define SRST_SFC		137
 #define SRST_GMAC_NIU_A		140
-#define SRST_GMAC_NIU_P		141
-#define SRST_GAMC_A		142
+#define SRST_GMAC_NIU_H		141
+#define SRST_GMAC_NIU_P		142
+#define SRST_GAMC_A		143
 
 /* cru_softrst_con9 */
 #define SRST_PMU_NIU_P		144
