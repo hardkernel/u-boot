@@ -30,6 +30,7 @@
 #define ANDROID_ARG_SLOT_SUFFIX "androidboot.slot_suffix="
 #define ANDROID_ARG_ROOT "root="
 #define ANDROID_ARG_SERIALNO "androidboot.serialno="
+#define ANDROID_VERIFY_STATE "androidboot.verifiedbootstate="
 #ifdef CONFIG_ROCKCHIP_RESOURCE_IMAGE
 #define ANDROID_ARG_FDT_FILENAME "rk-kernel.dtb"
 #define BOOTLOADER_MESSAGE_OFFSET_IN_MISC	(16 * 1024)
@@ -407,6 +408,7 @@ static AvbSlotVerifyResult android_slot_verify(char *boot_partname,
 	AvbSlotVerifyResult verify_result;
 	AvbABData ab_data, ab_data_orig;
 	size_t slot_index_to_boot = 0;
+	char verify_state[38] = {0};
 
 	requested_partitions[0] = boot_partname;
 	ops = avb_ops_user_new();
@@ -445,22 +447,52 @@ static AvbSlotVerifyResult android_slot_verify(char *boot_partname,
 			AVB_HASHTREE_ERROR_MODE_RESTART_AND_INVALIDATE,
 			&slot_data[0]);
 
-	if (verify_result != AVB_SLOT_VERIFY_RESULT_OK && !(unlocked & LOCK_MASK)) {
+	strcat(verify_state, ANDROID_VERIFY_STATE);
+	switch (verify_result) {
+	case AVB_SLOT_VERIFY_RESULT_OK:
+		if (unlocked & LOCK_MASK)
+			strcat(verify_state, "orange");
+		else
+			strcat(verify_state, "green");
+		break;
+	case AVB_SLOT_VERIFY_RESULT_ERROR_PUBLIC_KEY_REJECTED:
+		if (unlocked & LOCK_MASK)
+			strcat(verify_state, "orange");
+		else
+			strcat(verify_state, "yellow");
+		break;
+	case AVB_SLOT_VERIFY_RESULT_ERROR_OOM:
+	case AVB_SLOT_VERIFY_RESULT_ERROR_IO:
+	case AVB_SLOT_VERIFY_RESULT_ERROR_INVALID_METADATA:
+	case AVB_SLOT_VERIFY_RESULT_ERROR_UNSUPPORTED_VERSION:
+	case AVB_SLOT_VERIFY_RESULT_ERROR_VERIFICATION:
+	case AVB_SLOT_VERIFY_RESULT_ERROR_ROLLBACK_INDEX:
+	default:
+		if (unlocked & LOCK_MASK)
+			strcat(verify_state, "orange");
+		else
+			strcat(verify_state, "red");
+		break;
+	}
+
+	if (verify_result == AVB_SLOT_VERIFY_RESULT_OK ||
+	    verify_result == AVB_SLOT_VERIFY_RESULT_ERROR_PUBLIC_KEY_REJECTED ||
+	    (unlocked & LOCK_MASK)) {
+		memcpy((uint8_t *)load_address,
+		       slot_data[0]->loaded_partitions->data,
+		       slot_data[0]->loaded_partitions->data_size);
+		env_set("bootargs", slot_data[0]->cmdline);
+
+		/* ... and decrement tries remaining, if applicable. */
+		if (!ab_data.slots[slot_index_to_boot].successful_boot &&
+		    ab_data.slots[slot_index_to_boot].tries_remaining > 0) {
+			ab_data.slots[slot_index_to_boot].tries_remaining -= 1;
+		}
+	} else {
 		slot_set_unbootable(&ab_data.slots[slot_index_to_boot]);
-		goto out;
 	}
 
-	memcpy((uint8_t*)load_address,
-	       slot_data[0]->loaded_partitions->data,
-	       slot_data[0]->loaded_partitions->data_size);
-	env_set("bootargs", slot_data[0]->cmdline);
-
-	/* ... and decrement tries remaining, if applicable. */
-	if (!ab_data.slots[slot_index_to_boot].successful_boot &&
-		ab_data.slots[slot_index_to_boot].tries_remaining > 0) {
-		ab_data.slots[slot_index_to_boot].tries_remaining -= 1;
-	}
-out:
+	env_update("bootargs", verify_state);
 	if (save_metadata_if_changed(ops->ab_ops, &ab_data, &ab_data_orig)) {
 		printf("Can not save metadata\n");
 		verify_result = AVB_SLOT_VERIFY_RESULT_ERROR_IO;
