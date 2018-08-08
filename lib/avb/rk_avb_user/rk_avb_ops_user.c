@@ -512,62 +512,73 @@ int rk_avb_get_bootloader_min_version(char *buffer)
 
 void rk_avb_get_at_vboot_state(char *buf)
 {
-	char temp_buffer[200] = {0};
 	char temp_flag = 0;
-	char crlf[2] = {'\n', 0};
 	char *lock_val = NULL;
-	char *unlocK_dis_val = NULL;
+	char *unlock_dis_val = NULL;
 	char *perm_attr_flag = NULL;
 	char *bootloader_locked_flag = NULL;
-	char *lock_state = "bootloader-locked=";
-	char *btld_min_ver = "bootloader-min-versions=";
-	char *avb_perm_attr_set = "avb-perm-attr-set=";
-	char *avb_lock = "avb-locked=";
-	char *avb_unlock_dis = "avb-unlock-disabled=";
-	char *avb_min_ver = "avb-min-versions=";
+	char *rollback_indices;
+	char min_versions[ROLLBACK_MAX_SIZE + 1] = {0};
+	int n;
 
 	if (rk_avb_read_perm_attr_flag((uint8_t *)&temp_flag)) {
-		printf("Can not read perm_attr_flag!\n");
+		avb_error("Can not read perm_attr_flag!");
 		perm_attr_flag = "";
 	} else {
 		perm_attr_flag = temp_flag ? "1" : "0";
 	}
-	sprintf(buf, "%s%s%s%s", buf, avb_perm_attr_set, perm_attr_flag, crlf);
 
 	temp_flag = 0;
 	if (rk_avb_read_lock_state((uint8_t *)&temp_flag)) {
-		printf("Can not read lock state!\n");
+		avb_error("Can not read lock state!");
 		lock_val = "";
-		unlocK_dis_val = "";
+		unlock_dis_val = "";
 	} else {
 		lock_val = (temp_flag & LOCK_MASK) ? "0" : "1";
-		unlocK_dis_val = (temp_flag & UNLOCK_DISABLE_MASK) ? "1" : "0";
+		unlock_dis_val = (temp_flag & UNLOCK_DISABLE_MASK) ? "1" : "0";
 	}
-	sprintf(buf, "%s%s%s%s%s%s%s", buf, avb_lock, lock_val, crlf,
-		avb_unlock_dis, unlocK_dis_val, crlf);
 
 	temp_flag = 0;
 	if (rk_avb_read_bootloader_locked_flag((uint8_t *)&temp_flag)) {
-		printf("Can not read bootloader locked flag!\n");
+		avb_error("Can not read bootloader locked flag!");
 		bootloader_locked_flag = "";
 	} else {
 		bootloader_locked_flag = temp_flag ? "1" : "0";
 	}
-	sprintf(buf, "%s%s%s%s", buf, lock_state, bootloader_locked_flag, crlf);
 
-	if (rk_avb_read_all_rollback_index(temp_buffer))
-		printf("Can not avb_min_ver!\n");
-	sprintf(buf, "%s%s%s%s", buf, avb_min_ver, temp_buffer, crlf);
+	rollback_indices = malloc(VBOOT_STATE_SIZE);
+	if (!rollback_indices) {
+		avb_error("No buff to malloc!");
+		return;
+	}
+
+	memset(rollback_indices, 0, VBOOT_STATE_SIZE);
+	if (rk_avb_read_all_rollback_index(rollback_indices))
+		avb_error("Can not read avb_min_ver!");
 
 	/* bootloader-min-versions */
-	memset(temp_buffer, 0, 200);
-#ifdef CONFIG_SUPPORT_EMMC_RPMB
-	if (rk_avb_get_bootloader_min_version(temp_buffer))
+	if (rk_avb_get_bootloader_min_version(min_versions))
 		avb_error("Call rk_avb_get_bootloader_min_version error!");
-#else
-	memcpy(temp_buffer, "-1", strlen("-1"));
-#endif
-	sprintf(buf, "%s%s%s%s", buf, btld_min_ver, temp_buffer, crlf);
+
+	n = snprintf(buf, VBOOT_STATE_SIZE - 1,
+		     "avb-perm-attr-set=%s\n"
+		     "avb-locked=%s\n"
+		     "avb-unlock-disabled=%s\n"
+		     "bootloader-locked=%s\n"
+		     "avb-min-versions=%s\n"
+		     "bootloader-min-versions=%s\n",
+		     perm_attr_flag,
+		     lock_val,
+		     unlock_dis_val,
+		     bootloader_locked_flag,
+		     rollback_indices,
+		     min_versions);
+	if (n >= VBOOT_STATE_SIZE) {
+		avb_error("The VBOOT_STATE buf is truncated\n");
+		buf[VBOOT_STATE_SIZE - 1] = 0;
+	}
+	debug("The vboot state buf is %s\n", buf);
+	free(rollback_indices);
 }
 
 int rk_avb_get_ab_info(AvbABData* ab_data)
