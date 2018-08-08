@@ -51,7 +51,7 @@ static struct partitions factory_partitions[] = {
 		.size = bytes_to_lba(256 * SZ_1M),
 	}, {
 		.name = "odm",			/* Android: odm */
-		.size = bytes_to_lba(512 * SZ_1M),
+		.size = bytes_to_lba(32 * SZ_1M),
 	}, {
 		.name = "cache",		/* Android: cache */
 		.size = bytes_to_lba(1 * SZ_1G),
