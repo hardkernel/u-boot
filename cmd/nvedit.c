@@ -301,23 +301,23 @@ static int env_append(const char *varname, const char *varvalue)
 	int len = 0;
 	char *oldvalue, *newvalue;
 
+	debug("%s: varvalue = %s\n", __func__, varvalue);
+
 	/* before import into hashtable */
 	if (!(gd->flags & GD_FLG_ENV_READY) || !varname)
 		return 1;
+
+	if (env_exist(varname, varvalue))
+		return 0;
+
+	debug("%s: reall append: %s\n", __func__, varvalue);
 
 	if (varvalue)
 		len += strlen(varvalue);
 
 	oldvalue = env_get(varname);
-	if (oldvalue) {
+	if (oldvalue)
 		len += strlen(oldvalue);
-		/* Exist ! */
-		if (strstr(oldvalue, varvalue)) {
-			debug("%s: '%s' is already exist in '%s'\n",
-			      __func__, varvalue, varname);
-			return 0;
-		}
-	}
 
 	newvalue = malloc(len + 2);
 	if (!newvalue) {
@@ -335,6 +335,7 @@ static int env_append(const char *varname, const char *varvalue)
 	if (varvalue)
 		strcat(newvalue, varvalue);
 
+	debug("%s: newvalue: %s\n", __func__, newvalue);
 	env_set(varname, newvalue);
 	free(newvalue);
 
@@ -423,7 +424,7 @@ int env_update_filter(const char *varname, const char *varvalue,
 	if (!varargs) {
 		env_set(varname, varvalue);
 		if (ignore && strstr(varvalue, ignore))
-			env_delete(varname, ignore);
+			env_delete(varname, ignore, 0);
 		return 0;
 	}
 
@@ -457,18 +458,23 @@ int env_update_filter(const char *varname, const char *varvalue,
 	 */
 	v_item = strtok(v_string_tok, " ");
 	while (v_item && j < ARGS_ITEM_NUM) {
-		debug("%s: <v_item %d>: %s\n", __func__, j, v_item);
+		debug("%s: <v_item %d>: %s ", __func__, j, v_item);
 
 		/* filter ignore string */
 		if (ignore && strstr(v_item, ignore)) {
 			v_item = strtok(NULL, " ");
+			debug("...ignore\n");
 			continue;
 		}
 
-		if (strstr(v_item, "="))
+		if (strstr(v_item, "=")) {
+			debug("\n");
 			v_items[j++] = v_item;
-		else
+		} else {
+			debug("... do append\n");
 			env_append(varname, v_item);
+		}
+
 		v_item = strtok(NULL, " ");
 	}
 
@@ -532,23 +538,69 @@ int env_update(const char *varname, const char *varvalue)
 	return env_update_filter(varname, varvalue, NULL);
 }
 
-int env_exist(const char *varname, const char *varvalue)
+#define VARVALUE_BUF_SIZE	512
+
+char *env_exist(const char *varname, const char *varvalue)
 {
-	char *value;
-	int ret = 0;
+	int len;
+	char *oldvalue, *p;
+	char buf[VARVALUE_BUF_SIZE];
 
 	/* before import into hashtable */
 	if (!(gd->flags & GD_FLG_ENV_READY) || !varname)
-		return 1;
+		return NULL;
 
-	value = env_get(varname);
-	if (value)
-		ret = strstr(value, varvalue) ? 1 : 0;
+	oldvalue = env_get(varname);
+	if (oldvalue) {
+		if (strlen(varvalue) > VARVALUE_BUF_SIZE) {
+			printf("%s: '%s' is too long than 512\n",
+			       __func__, varvalue);
+			return NULL;
+		}
 
-	return ret;
+		/* Match middle one ? */
+		snprintf(buf, VARVALUE_BUF_SIZE, " %s ", varvalue);
+		p = strstr(oldvalue, buf);
+		if (p) {
+			debug("%s: '%s' is already exist in '%s'(middle)\n",
+			      __func__, varvalue, varname);
+			return (p + 1);
+		} else {
+			debug("%s: not find in middle one\n", __func__);
+		}
+
+		/* Match last one ? */
+		snprintf(buf, VARVALUE_BUF_SIZE, " %s", varvalue);
+		p = strstr(oldvalue, buf);
+		if (p) {
+			if (*(p + strlen(varvalue) + 1) == '\0') {
+				debug("%s: '%s' is already exist in '%s'(last)\n",
+				      __func__, varvalue, varname);
+				return (p + 1);
+			}
+		} else {
+			debug("%s: not find in last one\n", __func__);
+		}
+
+		/* Match first one ? */
+		snprintf(buf, VARVALUE_BUF_SIZE, "%s ", varvalue);
+		p = strstr(oldvalue, buf);
+		if (p) {
+			len = strstr(p, " ") - oldvalue;
+			if (len == strlen(varvalue)) {
+				debug("%s: '%s' is already exist in '%s'(first)\n",
+				      __func__, varvalue, varname);
+				return p;
+			}
+		} else  {
+			debug("%s: not find in first one\n", __func__);
+		}
+	}
+
+	return NULL;
 }
 
-int env_delete(const char *varname, const char *varvalue)
+int env_delete(const char *varname, const char *varvalue, int complete_match)
 {
 	const char *str;
 	char *value, *start;
@@ -558,22 +610,25 @@ int env_delete(const char *varname, const char *varvalue)
 		return 1;
 
 	value = env_get(varname);
-	if (value) {
-		start = strstr(value, varvalue);
-		if (start) {
-			/* varvalue is not the last property */
-			str = strstr(start, " ");
-			if (str) {
-				/* Terminate, so cmdline can be dest for strcat() */
-				*start = '\0';
-				/* +1 to skip white space */
-				strcat((char *)value, (str + 1));
-			/* varvalue is the last property */
-			} else {
-				/* skip white space */
-				*(start - 1) = '\0';
-			}
-		}
+	if (!value)
+		return 0;
+
+	start = complete_match ?
+		env_exist(varname, varvalue) : strstr(value, varvalue);
+	if (!start)
+		return 0;
+
+	/* varvalue is not the last property */
+	str = strstr(start, " ");
+	if (str) {
+		/* Terminate, so cmdline can be dest for strcat() */
+		*start = '\0';
+		/* +1 to skip white space */
+		strcat((char *)value, (str + 1));
+	/* varvalue is the last property */
+	} else {
+		/* skip white space */
+		*(start - 1) = '\0';
 	}
 
 	return 0;

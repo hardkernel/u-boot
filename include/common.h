@@ -358,18 +358,19 @@ int env_update(const char *varname, const char *varvalue);
  *
  * @varname: Variable to look up
  * @value: Value to check
- * @return 1 if exist, 0 on error
+ * @return posItion of varvalue if exist, otherwise NULL
  */
-int env_exist(const char *varname, const char *varvalue);
+char *env_exist(const char *varname, const char *varvalue);
 
 /**
  * env_delete() - delete sub value of an environment variable
  *
  * @varname: Variable to look up
  * @value: Item head of value to delete
+ * @complete_match: complete match whole words
  * @return 0 if ok, 1 on error
  */
-int env_delete(const char *varname, const char *varvalue);
+int env_delete(const char *varname, const char *varvalue, int complete_match);
 
 /**
  * env_set_ulong() - set an environment variable to an integer
