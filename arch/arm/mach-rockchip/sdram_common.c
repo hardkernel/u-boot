@@ -62,7 +62,7 @@ int dram_init_banksize(void)
 	size_t top = min((unsigned long)(gd->ram_size + CONFIG_SYS_SDRAM_BASE),
 			 gd->ram_top);
 	struct tos_parameter_t *tos_parameter;
-	u32 checksum;
+	u32 checksum __maybe_unused;
 
 	tos_parameter = (struct tos_parameter_t *)(CONFIG_SYS_SDRAM_BASE +
 			TRUST_PARAMETER_OFFSET);
@@ -78,6 +78,40 @@ int dram_init_banksize(void)
 #endif
 	gd->bd->bi_dram[0].size = top - gd->bd->bi_dram[0].start;
 
+/*
+ * OP-TEE:
+ *	ARM64(AArch32) 64-bit: enable dcache; (U-boot: map region dcache cachable)
+ *	ARM 32-bit: disable dcache; (U-boot: map region dcache off)
+ */
+
+#if !defined(CONFIG_ARM64_BOOT_AARCH32)
+	if ((checksum == tos_parameter->checksum) &&
+	    (tos_parameter->tee_mem.flags == 1)) {
+		gd->bd->bi_dram[0].size = tos_parameter->tee_mem.phy_addr
+					- gd->bd->bi_dram[0].start;
+		gd->bd->bi_dram[1].start = tos_parameter->tee_mem.phy_addr +
+					tos_parameter->tee_mem.size;
+		gd->bd->bi_dram[1].size = top - gd->bd->bi_dram[1].start;
+	}
+#endif
+
+	return 0;
+}
+
+#if defined(CONFIG_ARM64_BOOT_AARCH32)
+int dram_initr_banksize(void)
+{
+	size_t top = min((unsigned long)(gd->ram_size + CONFIG_SYS_SDRAM_BASE),
+			 gd->ram_top);
+	struct tos_parameter_t *tos_parameter;
+	u32 checksum;
+
+	tos_parameter = (struct tos_parameter_t *)(CONFIG_SYS_SDRAM_BASE +
+			TRUST_PARAMETER_OFFSET);
+
+	checksum = trust_checksum((uint8_t *)(unsigned long)tos_parameter + 8,
+				  sizeof(struct tos_parameter_t) - 8);
+
 	if ((checksum == tos_parameter->checksum) &&
 	    (tos_parameter->tee_mem.flags == 1)) {
 		gd->bd->bi_dram[0].size = tos_parameter->tee_mem.phy_addr
@@ -89,6 +123,7 @@ int dram_init_banksize(void)
 
 	return 0;
 }
+#endif
 #endif
 
 size_t rockchip_sdram_size(phys_addr_t reg)
