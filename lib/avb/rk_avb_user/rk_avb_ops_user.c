@@ -159,22 +159,25 @@ int rk_avb_read_flash_lock_state(uint8_t *flash_lock_state)
 	int ret;
 
 	ret = trusty_read_flash_lock_state(flash_lock_state);
-	if (ret == TEE_ERROR_ITEM_NOT_FOUND) {
+	switch (ret) {
+	case TEE_SUCCESS:
+		break;
+	case TEE_ERROR_GENERIC:
+	case TEE_ERROR_NO_DATA:
+	case TEE_ERROR_ITEM_NOT_FOUND:
 		*flash_lock_state = 1;
 		if (trusty_write_flash_lock_state(*flash_lock_state)) {
-			printf("trusty_write_flash_lock_state error!\n");
-			return -1;
+			avb_error("trusty_write_flash_lock_state error!");
+			ret = -1;
+		} else {
+			ret = trusty_read_flash_lock_state(flash_lock_state);
 		}
-
-		ret = trusty_read_flash_lock_state(flash_lock_state);
-
-		return ret;
-	} else if (ret == 0) {
-		return 0;
-	} else {
-		printf("avb_read_flash_lock_state ret = %x\n", ret);
-		return -1;
+		break;
+	default:
+		printf("%s: trusty_read_flash_lock_state failed\n", __FILE__);
 	}
+
+	return ret;
 #else
 	return -1;
 #endif
@@ -214,22 +217,25 @@ int rk_avb_read_lock_state(uint8_t *lock_state)
 	int ret;
 
 	ret = trusty_read_lock_state(lock_state);
-	if (ret == TEE_ERROR_ITEM_NOT_FOUND) {
+	switch (ret) {
+	case TEE_SUCCESS:
+		break;
+	case TEE_ERROR_GENERIC:
+	case TEE_ERROR_NO_DATA:
+	case TEE_ERROR_ITEM_NOT_FOUND:
 		*lock_state = 1;
 		if (rk_avb_write_lock_state(*lock_state)) {
-			printf("avb_write_lock_state error!\n");
-			return -1;
+			avb_error("avb_write_lock_state error!");
+			ret = -1;
+		} else {
+			ret = trusty_read_lock_state(lock_state);
 		}
-
-		ret = trusty_read_lock_state(lock_state);
-
-		return ret;
-	} else if (ret == 0) {
-		return 0;
-	} else {
-		printf("avb_read_lock_state ret = %x\n", ret);
-		return -1;
+		break;
+	default:
+		printf("%s: trusty_read_lock_state failed\n", __FILE__);
 	}
+
+	return ret;
 #else
 	return -1;
 #endif
@@ -255,22 +261,26 @@ int rk_avb_read_perm_attr_flag(uint8_t *flag)
 	int ret;
 
 	ret = trusty_read_permanent_attributes_flag(flag);
-	if (ret != TEE_SUCCESS) {
+	switch (ret) {
+	case TEE_SUCCESS:
+		break;
+	case TEE_ERROR_GENERIC:
+	case TEE_ERROR_NO_DATA:
+	case TEE_ERROR_ITEM_NOT_FOUND:
 		*flag = 0;
 		if (rk_avb_write_perm_attr_flag(*flag)) {
-			printf("avb_write_perm_attr_flag error!\n");
-			return -1;
+			avb_error("avb_write_perm_attr_flag error!");
+			ret = -1;
+		} else {
+			ret = trusty_read_permanent_attributes_flag(flag);
 		}
-
-		ret = trusty_read_permanent_attributes_flag(flag);
-
-		return ret;
-	} else if (ret == 0) {
-		return 0;
-	} else {
-		printf("avb_read_perm_attr_flag ret = %x\n", ret);
-		return -1;
+		break;
+	default:
+		printf("%s: trusty_read_permanent_attributes_flag failed",
+		       __FILE__);
 	}
+
+	return ret;
 #else
 	return -1;
 #endif

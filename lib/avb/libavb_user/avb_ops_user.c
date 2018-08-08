@@ -49,11 +49,10 @@ static void byte_to_block(int64_t *offset,
 {
 	*offset_blk = (lbaint_t)(*offset / 512);
 	if (*num_bytes % 512 == 0) {
-		if (*offset % 512 == 0) {
+		if (*offset % 512 == 0)
 			*blkcnt = (lbaint_t)(*num_bytes / 512);
-		} else {
+		else
 			*blkcnt = (lbaint_t)(*num_bytes / 512) + 1;
-		}
 	} else {
 		if (*offset % 512 == 0) {
 			*blkcnt = (lbaint_t)(*num_bytes / 512) + 1;
@@ -68,12 +67,12 @@ static void byte_to_block(int64_t *offset,
 	}
 }
 
-static AvbIOResult read_from_partition(AvbOps* ops,
-                                       const char* partition,
-                                       int64_t offset,
-                                       size_t num_bytes,
-                                       void* buffer,
-                                       size_t* out_num_read)
+static AvbIOResult read_from_partition(AvbOps *ops,
+				       const char *partition,
+				       int64_t offset,
+				       size_t num_bytes,
+				       void *buffer,
+				       size_t *out_num_read)
 {
 	struct blk_desc *dev_desc;
 	lbaint_t offset_blk, blkcnt;
@@ -91,17 +90,20 @@ static AvbIOResult read_from_partition(AvbOps* ops,
 		return AVB_IO_RESULT_ERROR_NO_SUCH_PARTITION;
 	}
 
-	if((offset % 512 == 0) && (num_bytes % 512 == 0)) {
-		blk_dread(dev_desc, part_info.start + offset_blk, blkcnt, buffer);
+	if ((offset % 512 == 0) && (num_bytes % 512 == 0)) {
+		blk_dread(dev_desc, part_info.start + offset_blk,
+			  blkcnt, buffer);
 		*out_num_read = blkcnt * 512;
 	} else {
 		char *buffer_temp;
+
 		buffer_temp = malloc(512 * blkcnt);
-		if (buffer_temp == NULL) {
+		if (!buffer_temp) {
 			printf("malloc error!\n");
 			return AVB_IO_RESULT_ERROR_OOM;
 		}
-		blk_dread(dev_desc, part_info.start + offset_blk, blkcnt, buffer_temp);
+		blk_dread(dev_desc, part_info.start + offset_blk,
+			  blkcnt, buffer_temp);
 		memcpy(buffer, buffer_temp + (offset % 512), num_bytes);
 		*out_num_read = num_bytes;
 		free(buffer_temp);
@@ -110,11 +112,11 @@ static AvbIOResult read_from_partition(AvbOps* ops,
 	return AVB_IO_RESULT_OK;
 }
 
-static AvbIOResult write_to_partition(AvbOps* ops,
-                                      const char* partition,
-                                      int64_t offset,
-                                      size_t num_bytes,
-                                      const void* buffer)
+static AvbIOResult write_to_partition(AvbOps *ops,
+				      const char *partition,
+				      int64_t offset,
+				      size_t num_bytes,
+				      const void *buffer)
 {
 	struct blk_desc *dev_desc;
 	char *buffer_temp;
@@ -123,7 +125,7 @@ static AvbIOResult write_to_partition(AvbOps* ops,
 
 	byte_to_block(&offset, &num_bytes, &offset_blk, &blkcnt);
 	buffer_temp = malloc(512 * blkcnt);
-	if (buffer_temp == NULL) {
+	if (!buffer_temp) {
 		printf("malloc error!\n");
 		return AVB_IO_RESULT_ERROR_OOM;
 	}
@@ -139,9 +141,9 @@ static AvbIOResult write_to_partition(AvbOps* ops,
 		return AVB_IO_RESULT_ERROR_NO_SUCH_PARTITION;
 	}
 
-	if ((offset % 512 != 0) && (num_bytes % 512) != 0) {
-		blk_dread(dev_desc, part_info.start + offset_blk, blkcnt, buffer_temp);
-	}
+	if ((offset % 512 != 0) && (num_bytes % 512) != 0)
+		blk_dread(dev_desc, part_info.start + offset_blk,
+			  blkcnt, buffer_temp);
 
 	memcpy(buffer_temp, buffer + (offset % 512), num_bytes);
 	blk_dwrite(dev_desc, part_info.start + offset_blk, blkcnt, buffer);
@@ -150,16 +152,16 @@ static AvbIOResult write_to_partition(AvbOps* ops,
 	return AVB_IO_RESULT_OK;
 }
 
-static AvbIOResult validate_vbmeta_public_key(
-	AvbOps *ops,
-	const uint8_t *public_key_data,
-	size_t public_key_length,
-	const uint8_t *public_key_metadata,
-	size_t public_key_metadata_length,
-	bool *out_is_trusted)
+static AvbIOResult
+validate_vbmeta_public_key(AvbOps *ops,
+			   const uint8_t *public_key_data,
+			   size_t public_key_length,
+			   const uint8_t *public_key_metadata,
+			   size_t public_key_metadata_length,
+			   bool *out_is_trusted)
 {
 #ifdef AVB_VBMETA_PUBLIC_KEY_VALIDATE
-	if (out_is_trusted != NULL) {
+	if (out_is_trusted) {
 		avb_atx_validate_vbmeta_public_key(ops,
 						   public_key_data,
 						   public_key_length,
@@ -168,51 +170,65 @@ static AvbIOResult validate_vbmeta_public_key(
 						   out_is_trusted);
 	}
 #else
-	if (out_is_trusted != NULL) {
+	if (out_is_trusted)
 		*out_is_trusted = true;
-	}
 #endif
 	return AVB_IO_RESULT_OK;
 }
 
 static AvbIOResult read_rollback_index(AvbOps *ops,
-                                       size_t rollback_index_location,
-                                       uint64_t *out_rollback_index)
+				       size_t rollback_index_location,
+				       uint64_t *out_rollback_index)
 {
-	if (out_rollback_index != NULL) {
+	if (out_rollback_index) {
 #ifdef CONFIG_OPTEE_CLIENT
 		int ret;
+
 		ret = trusty_read_rollback_index(rollback_index_location,
 						 out_rollback_index);
-		if (ret == TEE_ERROR_ITEM_NOT_FOUND) {
+		switch (ret) {
+		case TEE_SUCCESS:
+			ret = AVB_IO_RESULT_OK;
+			break;
+		case TEE_ERROR_GENERIC:
+		case TEE_ERROR_NO_DATA:
+		case TEE_ERROR_ITEM_NOT_FOUND:
 			*out_rollback_index = 0;
 			ret = trusty_write_rollback_index(rollback_index_location,
 							  *out_rollback_index);
-			if (ret != 0) {
-				printf("%s: init rollback index error\n", __FILE__);
-				return AVB_IO_RESULT_ERROR_IO;
+			if (ret) {
+				printf("%s: init rollback index error\n",
+				       __FILE__);
+				ret = AVB_IO_RESULT_ERROR_IO;
+			} else {
+				ret =
+				trusty_read_rollback_index(rollback_index_location,
+							   out_rollback_index);
+				if (ret)
+					ret = AVB_IO_RESULT_ERROR_IO;
+				else
+					ret = AVB_IO_RESULT_OK;
 			}
-			ret = trusty_read_rollback_index(rollback_index_location,
-							 out_rollback_index);
-			if (ret == 0)
-				return AVB_IO_RESULT_OK;
-		} else if (ret == 0) {
-			return AVB_IO_RESULT_OK;
-		} else {
-			printf("trusty_read_rollback_index ret = %x\n", ret);
-			return AVB_IO_RESULT_ERROR_IO;
+			break;
+		default:
+			ret = AVB_IO_RESULT_ERROR_IO;
+			printf("%s: trusty_read_rollback_index failed",
+			       __FILE__);
 		}
+
+		return ret;
 #endif
 	}
 	return AVB_IO_RESULT_ERROR_IO;
 }
 
 static AvbIOResult write_rollback_index(AvbOps *ops,
-                                        size_t rollback_index_location,
-                                        uint64_t rollback_index)
+					size_t rollback_index_location,
+					uint64_t rollback_index)
 {
 #ifdef CONFIG_OPTEE_CLIENT
-	if (trusty_write_rollback_index(rollback_index_location, rollback_index)) {
+	if (trusty_write_rollback_index(rollback_index_location,
+					rollback_index)) {
 		printf("%s: Fail to write rollback index\n", __FILE__);
 		return AVB_IO_RESULT_ERROR_IO;
 	}
@@ -223,27 +239,36 @@ static AvbIOResult write_rollback_index(AvbOps *ops,
 
 static AvbIOResult read_is_device_unlocked(AvbOps *ops, bool *out_is_unlocked)
 {
-	if (out_is_unlocked != NULL) {
+	if (out_is_unlocked) {
 #ifdef CONFIG_OPTEE_CLIENT
 		int ret;
 
 		ret = trusty_read_lock_state((uint8_t *)out_is_unlocked);
-		if (ret == TEE_ERROR_ITEM_NOT_FOUND) {
+		switch (ret) {
+		case TEE_SUCCESS:
+			ret = AVB_IO_RESULT_OK;
+			break;
+		case TEE_ERROR_GENERIC:
+		case TEE_ERROR_NO_DATA:
+		case TEE_ERROR_ITEM_NOT_FOUND:
 			*out_is_unlocked = 1;
 			if (trusty_write_lock_state(*out_is_unlocked)) {
 				printf("%s: init lock state error\n", __FILE__);
-				return AVB_IO_RESULT_ERROR_IO;
+				ret = AVB_IO_RESULT_ERROR_IO;
+			} else {
+				ret =
+				trusty_read_lock_state((uint8_t *)out_is_unlocked);
+				if (ret == 0)
+					ret = AVB_IO_RESULT_OK;
+				else
+					ret = AVB_IO_RESULT_ERROR_IO;
 			}
-
-			ret = trusty_read_lock_state((uint8_t *)out_is_unlocked);
-			if(ret == 0)
-				return 0;
-		} else if (ret == 0) {
-			return AVB_IO_RESULT_OK;
-		} else {
-			printf("read_is_device_unlocked ret = %x\n", ret);
-			return AVB_IO_RESULT_ERROR_IO;
+			break;
+		default:
+			ret = AVB_IO_RESULT_ERROR_IO;
+			printf("%s: trusty_read_lock_state failed\n", __FILE__);
 		}
+		return ret;
 #endif
 	}
 	return AVB_IO_RESULT_ERROR_IO;
@@ -251,7 +276,7 @@ static AvbIOResult read_is_device_unlocked(AvbOps *ops, bool *out_is_unlocked)
 
 static AvbIOResult write_is_device_unlocked(AvbOps *ops, bool *out_is_unlocked)
 {
-	if (out_is_unlocked != NULL) {
+	if (out_is_unlocked) {
 #ifdef CONFIG_OPTEE_CLIENT
 		if (trusty_write_lock_state(*out_is_unlocked)) {
 			printf("%s: Fail to write lock state\n", __FILE__);
@@ -264,8 +289,8 @@ static AvbIOResult write_is_device_unlocked(AvbOps *ops, bool *out_is_unlocked)
 }
 
 static AvbIOResult get_size_of_partition(AvbOps *ops,
-                                         const char *partition,
-                                         uint64_t *out_size_in_bytes)
+					 const char *partition,
+					 uint64_t *out_size_in_bytes)
 {
 	struct blk_desc *dev_desc;
 	disk_partition_t part_info;
@@ -285,12 +310,13 @@ static AvbIOResult get_size_of_partition(AvbOps *ops,
 }
 
 static AvbIOResult get_unique_guid_for_partition(AvbOps *ops,
-                                                 const char *partition,
-                                                 char *guid_buf,
-                                                 size_t guid_buf_size)
+						 const char *partition,
+						 char *guid_buf,
+						 size_t guid_buf_size)
 {
 	struct blk_desc *dev_desc;
 	disk_partition_t part_info;
+
 	dev_desc = rockchip_get_bootdev();
 	if (!dev_desc) {
 		printf("%s: Could not find device\n", __func__);
@@ -301,17 +327,17 @@ static AvbIOResult get_unique_guid_for_partition(AvbOps *ops,
 		printf("Could not find \"%s\" partition\n", partition);
 		return AVB_IO_RESULT_ERROR_NO_SUCH_PARTITION;
 	}
-	if (guid_buf != NULL && guid_buf_size > 0) {
+	if (guid_buf && guid_buf_size > 0)
 		memcpy(guid_buf, part_info.uuid, guid_buf_size);
-	}
+
 	return AVB_IO_RESULT_OK;
 }
 
 /* read permanent attributes from rpmb */
-AvbIOResult avb_read_perm_attr(AvbAtxOps* atx_ops,
-			       AvbAtxPermanentAttributes* attributes)
+AvbIOResult avb_read_perm_attr(AvbAtxOps *atx_ops,
+			       AvbAtxPermanentAttributes *attributes)
 {
-	if (attributes != NULL) {
+	if (attributes) {
 #ifdef CONFIG_OPTEE_CLIENT
 		trusty_read_permanent_attributes((uint8_t *)attributes,
 						 sizeof(struct AvbAtxPermanentAttributes));
@@ -323,11 +349,12 @@ AvbIOResult avb_read_perm_attr(AvbAtxOps* atx_ops,
 }
 
 /*read permanent attributes hash from efuse */
-AvbIOResult avb_read_perm_attr_hash(AvbAtxOps* atx_ops,
+AvbIOResult avb_read_perm_attr_hash(AvbAtxOps *atx_ops,
 				    uint8_t hash[AVB_SHA256_DIGEST_SIZE])
 {
 #ifdef CONFIG_OPTEE_CLIENT
-	if (trusty_read_attribute_hash((uint32_t *)hash, AVB_SHA256_DIGEST_SIZE / 4))
+	if (trusty_read_attribute_hash((uint32_t *)hash,
+				       AVB_SHA256_DIGEST_SIZE / 4))
 		return -1;
 #else
 	avb_error("Please open the macro!\n");
@@ -336,83 +363,82 @@ AvbIOResult avb_read_perm_attr_hash(AvbAtxOps* atx_ops,
 	return AVB_IO_RESULT_OK;
 }
 
-static void avb_set_key_version(AvbAtxOps* atx_ops,
-                        size_t rollback_index_location,
-                        uint64_t key_version)
+static void avb_set_key_version(AvbAtxOps *atx_ops,
+				size_t rollback_index_location,
+				uint64_t key_version)
 {
 #ifdef CONFIG_OPTEE_CLIENT
-	if (trusty_write_rollback_index(rollback_index_location, key_version)) {
+	if (trusty_write_rollback_index(rollback_index_location, key_version))
 		printf("%s: Fail to write rollback index\n", __FILE__);
-	}
 #endif
 }
 
-AvbIOResult rk_get_random(AvbAtxOps* atx_ops,
-                          size_t num_bytes,
-                          uint8_t* output)
+AvbIOResult rk_get_random(AvbAtxOps *atx_ops,
+			  size_t num_bytes,
+			  uint8_t *output)
 {
-        int i;
-        unsigned int seed;
+	int i;
+	unsigned int seed;
 
-        seed = (unsigned int)get_timer(0);
-        for (i = 0; i < num_bytes; i++) {
+	seed = (unsigned int)get_timer(0);
+	for (i = 0; i < num_bytes; i++) {
 		srand(seed);
-                output[i] = (uint8_t)(rand());
-                seed = (unsigned int)(output[i]);
-        }
+		output[i] = (uint8_t)(rand());
+		seed = (unsigned int)(output[i]);
+	}
 
-        return 0;
+	return 0;
 }
 
-AvbOps* avb_ops_user_new(void) {
-  AvbOps* ops;
+AvbOps *avb_ops_user_new(void)
+{
+	AvbOps *ops;
 
-  ops = calloc(1, sizeof(AvbOps));
-  if (ops == NULL) {
-    avb_error("Error allocating memory for AvbOps.\n");
-    goto out;
-  }
+	ops = calloc(1, sizeof(AvbOps));
+	if (!ops) {
+		avb_error("Error allocating memory for AvbOps.\n");
+		goto out;
+	}
+	ops->ab_ops = calloc(1, sizeof(AvbABOps));
+	if (!ops->ab_ops) {
+		avb_error("Error allocating memory for AvbABOps.\n");
+		free(ops);
+		goto out;
+	}
 
-  ops->ab_ops = calloc(1, sizeof(AvbABOps));
-  if (ops->ab_ops == NULL) {
-    avb_error("Error allocating memory for AvbABOps.\n");
-    free(ops);
-    goto out;
-  }
+	ops->atx_ops = calloc(1, sizeof(AvbAtxOps));
+	if (!ops->atx_ops) {
+		avb_error("Error allocating memory for AvbAtxOps.\n");
+		free(ops->ab_ops);
+		free(ops);
+		goto out;
+	}
+	ops->ab_ops->ops = ops;
+	ops->atx_ops->ops = ops;
 
-  ops->atx_ops = calloc(1, sizeof(AvbAtxOps));
-  if (ops->atx_ops == NULL) {
-    avb_error("Error allocating memory for AvbAtxOps.\n");
-    free(ops->ab_ops);
-    free(ops);
-    goto out;
-  }
-  ops->ab_ops->ops = ops;
-  ops->atx_ops->ops = ops;
-
-  ops->read_from_partition = read_from_partition;
-  ops->write_to_partition = write_to_partition;
-  ops->validate_vbmeta_public_key = validate_vbmeta_public_key;
-  ops->read_rollback_index = read_rollback_index;
-  ops->write_rollback_index = write_rollback_index;
-  ops->read_is_device_unlocked = read_is_device_unlocked;
-  ops->write_is_device_unlocked = write_is_device_unlocked;
-  ops->get_unique_guid_for_partition = get_unique_guid_for_partition;
-  ops->get_size_of_partition = get_size_of_partition;
-  ops->ab_ops->read_ab_metadata = avb_ab_data_read;
-  ops->ab_ops->write_ab_metadata = avb_ab_data_write;
-  ops->atx_ops->read_permanent_attributes = avb_read_perm_attr;
-  ops->atx_ops->read_permanent_attributes_hash = avb_read_perm_attr_hash;
-  ops->atx_ops->set_key_version = avb_set_key_version;
-  ops->atx_ops->get_random = rk_get_random;
+	ops->read_from_partition = read_from_partition;
+	ops->write_to_partition = write_to_partition;
+	ops->validate_vbmeta_public_key = validate_vbmeta_public_key;
+	ops->read_rollback_index = read_rollback_index;
+	ops->write_rollback_index = write_rollback_index;
+	ops->read_is_device_unlocked = read_is_device_unlocked;
+	ops->write_is_device_unlocked = write_is_device_unlocked;
+	ops->get_unique_guid_for_partition = get_unique_guid_for_partition;
+	ops->get_size_of_partition = get_size_of_partition;
+	ops->ab_ops->read_ab_metadata = avb_ab_data_read;
+	ops->ab_ops->write_ab_metadata = avb_ab_data_write;
+	ops->atx_ops->read_permanent_attributes = avb_read_perm_attr;
+	ops->atx_ops->read_permanent_attributes_hash = avb_read_perm_attr_hash;
+	ops->atx_ops->set_key_version = avb_set_key_version;
+	ops->atx_ops->get_random = rk_get_random;
 
 out:
-  return ops;
+	return ops;
 }
 
-
-void avb_ops_user_free(AvbOps* ops) {
-  free(ops->ab_ops);
-  free(ops->atx_ops);
-  free(ops);
+void avb_ops_user_free(AvbOps *ops)
+{
+	free(ops->ab_ops);
+	free(ops->atx_ops);
+	free(ops);
 }
