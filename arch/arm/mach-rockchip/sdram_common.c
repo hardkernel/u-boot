@@ -61,26 +61,6 @@ int dram_init_banksize(void)
 {
 	size_t top = min((unsigned long)(gd->ram_size + CONFIG_SYS_SDRAM_BASE),
 			 gd->ram_top);
-
-#if defined(CONFIG_ARM64) || defined(CONFIG_ARM64_BOOT_AARCH32)
-	/* Reserve 0x200000 for ATF bl31 */
-	gd->bd->bi_dram[0].start = CONFIG_SYS_SDRAM_BASE + 0x200000;
-#else
-	gd->bd->bi_dram[0].start = CONFIG_SYS_SDRAM_BASE;
-#endif
-	gd->bd->bi_dram[0].size = top - gd->bd->bi_dram[0].start;
-
-	return 0;
-}
-
-/*
- * Resever firmware region after MMU set up, we need firmware region to be mapped
- * as cacheable to communication with firmware by share memory.
- */
-int dram_initr_banksize(void)
-{
-	size_t top = min((unsigned long)(gd->ram_size + CONFIG_SYS_SDRAM_BASE),
-			 gd->ram_top);
 	struct tos_parameter_t *tos_parameter;
 	u32 checksum;
 
@@ -89,6 +69,14 @@ int dram_initr_banksize(void)
 
 	checksum = trust_checksum((uint8_t *)(unsigned long)tos_parameter + 8,
 				  sizeof(struct tos_parameter_t) - 8);
+
+#if defined(CONFIG_ARM64) || defined(CONFIG_ARM64_BOOT_AARCH32)
+	/* Reserve 0x200000 for ATF bl31 */
+	gd->bd->bi_dram[0].start = CONFIG_SYS_SDRAM_BASE + 0x200000;
+#else
+	gd->bd->bi_dram[0].start = CONFIG_SYS_SDRAM_BASE;
+#endif
+	gd->bd->bi_dram[0].size = top - gd->bd->bi_dram[0].start;
 
 	if ((checksum == tos_parameter->checksum) &&
 	    (tos_parameter->tee_mem.flags == 1)) {
