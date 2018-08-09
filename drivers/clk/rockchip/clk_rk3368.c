@@ -588,7 +588,7 @@ static ulong rk3368_bus_set_clk(struct rk3368_cru *cru,
 		assert(src_clk_div - 1 < 31);
 		rk_clrsetreg(&cru->clksel_con[8],
 			     CLK_BUS_PLL_SEL_MASK | ACLK_BUS_DIV_CON_MASK,
-			     CLK_BUS_PLL_SEL_CPLL << CLK_BUS_PLL_SEL_SHIFT |
+			     CLK_BUS_PLL_SEL_GPLL << CLK_BUS_PLL_SEL_SHIFT |
 			     (src_clk_div - 1) << ACLK_BUS_DIV_CON_SHIFT);
 		break;
 	case HCLK_BUS:
@@ -662,7 +662,7 @@ static ulong rk3368_peri_set_clk(struct rk3368_cru *cru,
 		assert(src_clk_div - 1 < 31);
 		rk_clrsetreg(&cru->clksel_con[9],
 			     CLK_PERI_PLL_SEL_MASK | ACLK_PERI_DIV_CON_MASK,
-			     CLK_PERI_PLL_SEL_CPLL << CLK_PERI_PLL_SEL_SHIFT |
+			     CLK_PERI_PLL_SEL_GPLL << CLK_PERI_PLL_SEL_SHIFT |
 			     (src_clk_div - 1) << ACLK_PERI_DIV_CON_SHIFT);
 		break;
 	case HCLK_PERI:
