@@ -8,6 +8,11 @@
 #include <asm/io.h>
 #include <asm/arch/boot_mode.h>
 #include <asm/arch/chip_info.h>
+
+#ifdef CONFIG_ROCKCHIP_VENDOR_PARTITION
+#include <asm/arch/vendor.h>
+#endif
+
 #include <rockusb.h>
 
 #define ROCKUSB_INTERFACE_CLASS	0xff
@@ -274,6 +279,157 @@ out:
 	return rc;
 }
 
+#ifdef CONFIG_ROCKCHIP_VENDOR_PARTITION
+static int rkusb_do_vs_write(struct fsg_common *common)
+{
+	struct fsg_lun		*curlun = &common->luns[common->lun];
+	u16			type = get_unaligned_be16(&common->cmnd[4]);
+	struct vendor_item	*vhead;
+	struct fsg_buffhd	*bh;
+	void			*data;
+	int			rc;
+
+	if (common->data_size >= (u32)65536) {
+		/* _MUST_ small than 64K */
+		curlun->sense_data = SS_LOGICAL_BLOCK_ADDRESS_OUT_OF_RANGE;
+		return -EINVAL;
+	}
+
+	common->residue         = common->data_size;
+	common->usb_amount_left = common->data_size;
+
+	/* Carry out the file writes */
+	if (unlikely(common->data_size == 0))
+		return -EIO; /* No data to write */
+
+	for (;;) {
+		if (common->usb_amount_left > 0) {
+			/* Wait for the next buffer to become available */
+			bh = common->next_buffhd_to_fill;
+			if (bh->state != BUF_STATE_EMPTY)
+				goto wait;
+
+			/* Request the next buffer */
+			common->usb_amount_left      -= common->data_size;
+			bh->outreq->length	     = common->data_size;
+			bh->bulk_out_intended_length = common->data_size;
+			bh->outreq->short_not_ok     = 1;
+
+			START_TRANSFER_OR(common, bulk_out, bh->outreq,
+					  &bh->outreq_busy, &bh->state)
+				/*
+				 * Don't know what to do if
+				 * common->fsg is NULL
+				 */
+				return -EIO;
+			common->next_buffhd_to_fill = bh->next;
+		} else {
+			/* Then, wait for the data to become available */
+			bh = common->next_buffhd_to_drain;
+			if (bh->state != BUF_STATE_FULL)
+				goto wait;
+
+			common->next_buffhd_to_drain = bh->next;
+			bh->state = BUF_STATE_EMPTY;
+
+			/* Did something go wrong with the transfer? */
+			if (bh->outreq->status != 0) {
+				curlun->sense_data = SS_COMMUNICATION_FAILURE;
+				curlun->info_valid = 1;
+				break;
+			}
+
+			/* Perform the write */
+			vhead = (struct vendor_item *)bh->buf;
+			data  = bh->buf + sizeof(struct vendor_item);
+
+			if (!type) {
+				/* Vendor storage */
+				rc = vendor_storage_write(vhead->id,
+							  (char __user *)data,
+							  vhead->size);
+				if (rc < 0)
+					return -EIO;
+			} else {
+				/* RPMB */
+			}
+
+			common->residue -= common->data_size;
+
+			/* Did the host decide to stop early? */
+			if (bh->outreq->actual != bh->outreq->length)
+				common->short_packet_received = 1;
+			break; /* Command done */
+		}
+wait:
+		/* Wait for something to happen */
+		rc = sleep_thread(common);
+		if (rc)
+			return rc;
+	}
+
+	return -EIO; /* No default reply */
+}
+
+static int rkusb_do_vs_read(struct fsg_common *common)
+{
+	struct fsg_lun		*curlun = &common->luns[common->lun];
+	u16			type = get_unaligned_be16(&common->cmnd[4]);
+	struct vendor_item	*vhead;
+	struct fsg_buffhd	*bh;
+	void			*data;
+	int			rc;
+
+	if (common->data_size >= (u32)65536) {
+		/* _MUST_ small than 64K */
+		curlun->sense_data = SS_LOGICAL_BLOCK_ADDRESS_OUT_OF_RANGE;
+		return -EINVAL;
+	}
+
+	common->residue         = common->data_size;
+	common->usb_amount_left = common->data_size;
+
+	/* Carry out the file reads */
+	if (unlikely(common->data_size == 0))
+		return -EIO; /* No default reply */
+
+	for (;;) {
+		/* Wait for the next buffer to become available */
+		bh = common->next_buffhd_to_fill;
+		while (bh->state != BUF_STATE_EMPTY) {
+			rc = sleep_thread(common);
+			if (rc)
+				return rc;
+		}
+
+		memset(bh->buf, 0, FSG_BUFLEN);
+		vhead = (struct vendor_item *)bh->buf;
+		data  = bh->buf + sizeof(struct vendor_item);
+		vhead->id = get_unaligned_be16(&common->cmnd[2]);
+
+		if (!type) {
+			/* Vendor storage */
+			rc = vendor_storage_read(vhead->id,
+						 (char __user *)data,
+						 common->data_size);
+			if (!rc)
+				return -EIO;
+			vhead->size = rc;
+		} else {
+			/* RPMB */
+		}
+
+		common->residue   -= common->data_size;
+		bh->inreq->length = common->data_size;
+		bh->state         = BUF_STATE_FULL;
+
+		break; /* No more left to read */
+	}
+
+	return -EIO; /* No default reply */
+}
+#endif
+
 static int rkusb_do_read_capacity(struct fsg_common *common,
 				    struct fsg_buffhd *bh)
 {
@@ -283,12 +439,17 @@ static int rkusb_do_read_capacity(struct fsg_common *common,
 
 	/*
 	 * bit[0]: Direct LBA, 0: Disabled;
-	 * bit[1]: Vendor Storage API, 0: default;
+	 * bit[1]: Vendor Storage API, 0: Disabed (default);
 	 * bit[2]: First 4M Access, 0: Disabled;
-	 * bit[3:63}: Reserved.
+	 * bit[3]: Read LBA On, 0: Disabed (default);
+	 * bit[4]: New Vendor Storage API, 0: Disabed;
+	 * bit[5:63}: Reserved.
 	 */
 	memset((void *)&buf[0], 0, len);
-	buf[0] = (type == IF_TYPE_MMC) ? (BIT(2) | BIT(0)) : BIT(0);
+	if (type == IF_TYPE_MMC)
+		buf[0] = BIT(0) | BIT(2) | BIT(4);
+	else
+		buf[0] = BIT(0) | BIT(4);
 
 	/* Set data xfer size */
 	common->residue = common->data_size_from_cmnd = len;
@@ -379,6 +540,18 @@ static int rkusb_cmd_process(struct fsg_common *common,
 		*reply = rkusb_do_lba_erase(common, bh);
 		rc = RKUSB_RC_FINISHED;
 		break;
+
+#ifdef CONFIG_ROCKCHIP_VENDOR_PARTITION
+	case RKUSB_VS_WRITE:
+		*reply = rkusb_do_vs_write(common);
+		rc = RKUSB_RC_FINISHED;
+		break;
+
+	case RKUSB_VS_READ:
+		*reply = rkusb_do_vs_read(common);
+		rc = RKUSB_RC_FINISHED;
+		break;
+#endif
 
 	case RKUSB_READ_CAPACITY:
 		*reply = rkusb_do_read_capacity(common, bh);
