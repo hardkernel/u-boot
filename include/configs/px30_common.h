@@ -9,7 +9,7 @@
 
 #include "rockchip-common.h"
 
-#define CONFIG_SYS_MALLOC_LEN		(64 << 20) /* 64M */
+#define CONFIG_SYS_MALLOC_LEN		(192 << 20) /* 192M */
 #define CONFIG_SYS_CBSIZE		1024
 #define CONFIG_SKIP_LOWLEVEL_INIT
 
