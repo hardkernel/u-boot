@@ -476,7 +476,7 @@ out:
 }
 #endif
 
-#ifdef CONFIG_OF_LIBFDT_OVERLAY
+#if defined(CONFIG_CMD_DTIMG) && defined(CONFIG_OF_LIBFDT_OVERLAY)
 
 /*
  * Default return index 0.
@@ -841,7 +841,8 @@ int android_bootloader_boot_flow(struct blk_desc *dev_desc,
  * dtb and apply overlay in init_kernel_dtb(), so that we don't need to apply
  * again, we would pass the current fdt to kernel.
  */
-#if defined(CONFIG_OF_LIBFDT_OVERLAY) && !defined(CONFIG_USING_KERNEL_DTB)
+#if defined(CONFIG_CMD_DTIMG) && \
+    defined(CONFIG_OF_LIBFDT_OVERLAY) && !defined(CONFIG_USING_KERNEL_DTB)
 	android_fdt_overlay_apply((void *)fdt_addr);
 #endif
 #endif

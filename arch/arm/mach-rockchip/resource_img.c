@@ -598,7 +598,8 @@ int rockchip_read_dtb_file(void *fdt_addr)
 	if (ret < 0)
 		return ret;
 
-#if defined(CONFIG_OF_LIBFDT_OVERLAY) && defined(CONFIG_USING_KERNEL_DTB)
+#if defined(CONFIG_CMD_DTIMG) && \
+    defined(CONFIG_OF_LIBFDT_OVERLAY) && defined(CONFIG_USING_KERNEL_DTB)
 	android_fdt_overlay_apply((void *)fdt_addr);
 #endif
 
