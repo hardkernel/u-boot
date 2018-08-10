@@ -168,6 +168,35 @@ u32 rksfc_nand_get_density(struct udevice *udev)
 {
 	return sftl_get_density();
 }
+
+int rksfc_nand_vendor_read(struct blk_desc *dev_desc,
+			   u32 sec,
+			   u32 n_sec,
+			   void *p_data)
+{
+	int ret;
+
+	ret = sftl_vendor_read(sec, n_sec, (u8 *)p_data);
+	if (!ret)
+		return n_sec;
+	else
+		return -EIO;
+}
+
+int rksfc_nand_vendor_write(struct blk_desc *dev_desc,
+			    u32 sec,
+			    u32 n_sec,
+			    void *p_data)
+{
+	int ret;
+
+	ret = sftl_vendor_write(sec, n_sec, (u8 *)p_data);
+	if (!ret)
+		return n_sec;
+	else
+		return -EIO;
+}
+
 #endif
 
 #ifdef CONFIG_RKNANDC_NAND
@@ -205,4 +234,33 @@ u32 rknand_flash_get_density(struct udevice *udev)
 {
 	return sftl_get_density();
 }
+
+int rknand_flash_vendor_read(struct blk_desc *dev_desc,
+			     u32 sec,
+			     u32 n_sec,
+			     void *p_data)
+{
+	int ret;
+
+	ret = sftl_vendor_read(sec, n_sec, (u8 *)p_data);
+	if (!ret)
+		return n_sec;
+	else
+		return -EIO;
+}
+
+int rknand_flash_vendor_write(struct blk_desc *dev_desc,
+			      u32 sec,
+			      u32 n_sec,
+			      void *p_data)
+{
+	int ret;
+
+	ret = sftl_vendor_write(sec, n_sec, (u8 *)p_data);
+	if (!ret)
+		return n_sec;
+	else
+		return -EIO;
+}
+
 #endif

@@ -43,6 +43,14 @@ int rksfc_nand_write(struct udevice *udev,
 		     u32 index,
 		     u32 count,
 		     const void *buf);
+int rksfc_nand_vendor_read(struct blk_desc *dev_desc,
+			   u32 sec,
+			   u32 n_sec,
+			   void *p_data);
+int rksfc_nand_vendor_write(struct blk_desc *dev_desc,
+			    u32 sec,
+			    u32 n_sec,
+			    void *p_data);
 #endif
 
 #ifdef CONFIG_RKNANDC_NAND
@@ -55,5 +63,14 @@ int rknand_flash_write(struct udevice *udev,
 		       u32 index,
 		       u32 count,
 		       const void *buf);
+int rknand_flash_vendor_read(struct blk_desc *dev_desc,
+			     u32 sec,
+			     u32 n_sec,
+			     void *p_data);
+int rknand_flash_vendor_write(struct blk_desc *dev_desc,
+			      u32 sec,
+			      u32 n_sec,
+			      void *p_data);
+
 #endif
 #endif

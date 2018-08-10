@@ -9,6 +9,7 @@
 #include <dm.h>
 #include <dm/device-internal.h>
 #include <asm/arch/clock.h>
+#include <asm/arch/vendor.h>
 
 #include "rkflash_blk.h"
 #include "rkflash_api.h"
@@ -21,8 +22,8 @@ static struct flash_operation nandc_flash_op = {
 	rknand_flash_read,
 	rknand_flash_write,
 	NULL,
-	NULL,
-	NULL,
+	rknand_flash_vendor_read,
+	rknand_flash_vendor_write,
 #else
 	-1, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
 #endif
@@ -92,6 +93,10 @@ static int rockchip_nand_probe(struct udevice *udev)
 		priv->read = nandc_flash_op.flash_read;
 		priv->write = nandc_flash_op.flash_write;
 		priv->erase = nandc_flash_op.flash_erase;
+#ifdef CONFIG_ROCKCHIP_VENDOR_PARTITION
+		flash_vendor_dev_ops_register(nandc_flash_op.vendor_read,
+					      nandc_flash_op.vendor_write);
+#endif
 		debug("%s probe success\n", __func__);
 	}
 
