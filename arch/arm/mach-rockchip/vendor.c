@@ -12,6 +12,7 @@
 /* tag for vendor check */
 #define VENDOR_TAG		0x524B5644
 /* The Vendor partition contains the number of Vendor blocks */
+#define NAND_VENDOR_PART_NUM	2
 #define VENDOR_PART_NUM		4
 /* align to 64 bytes */
 #define VENDOR_BTYE_ALIGN	0x3F
@@ -28,7 +29,18 @@
 /* The maximum number of items in each Vendor block */
 #define EMMC_VENDOR_ITEM_NUM		126
 
-/* --- Spi/Spi Nand/SLC/MLC define --- */
+/* --- Spi Nand/SLC/MLC large capacity case define --- */
+/* The Vendor partition contains the number of Vendor blocks */
+#define NAND_VENDOR_PART_OFFSET		0
+/*
+ * The number of memory blocks used by each
+ * Vendor structure(8 * 512B = 4KB)
+ */
+#define NAND_VENDOR_PART_BLKS		128
+/* The maximum number of items in each Vendor block */
+#define NAND_VENDOR_ITEM_NUM		126
+
+/* --- Spi/Spi Nand/SLC/MLC small capacity case define --- */
 /* The Vendor partition contains the number of Vendor blocks */
 #define	FLASH_VENDOR_PART_OFFSET	8
 /*
@@ -69,6 +81,7 @@ struct vendor_info {
 	u32 *hash;
 	u32 *version2;
 };
+
 /*
  * Calculate the offset of each field for emmc.
  * Emmc vendor info size: 64KB
@@ -77,12 +90,22 @@ struct vendor_info {
 #define EMMC_VENDOR_DATA_OFFSET	(sizeof(struct vendor_hdr) + EMMC_VENDOR_ITEM_NUM * sizeof(struct vendor_item))
 #define EMMC_VENDOR_HASH_OFFSET (EMMC_VENDOR_INFO_SIZE - 8)
 #define EMMC_VENDOR_VERSION2_OFFSET (EMMC_VENDOR_INFO_SIZE - 4)
+
 /*
- * Calculate the offset of each field for spi nor/spi nand/slc/mlc.
+ * Calculate the offset of each field for spi nand/slc/mlc large capacity case.
+ * Flash vendor info size: 4KB
+ */
+#define NAND_VENDOR_INFO_SIZE	(NAND_VENDOR_PART_BLKS * VENDOR_BLOCK_SIZE)
+#define NAND_VENDOR_DATA_OFFSET	(sizeof(struct vendor_hdr) + NAND_VENDOR_ITEM_NUM * sizeof(struct vendor_item))
+#define NAND_VENDOR_HASH_OFFSET (NAND_VENDOR_INFO_SIZE - 8)
+#define NAND_VENDOR_VERSION2_OFFSET (NAND_VENDOR_INFO_SIZE - 4)
+
+/*
+ * Calculate the offset of each field for spi nor/spi nand/slc/mlc large small capacity case.
  * Flash vendor info size: 4KB
  */
 #define FLASH_VENDOR_INFO_SIZE	(FLASH_VENDOR_PART_BLKS * VENDOR_BLOCK_SIZE)
-#define FLASH_VENDOR_DATA_OFFSET	(sizeof(struct vendor_hdr) + FLASH_VENDOR_ITEM_NUM * sizeof(struct vendor_item))
+#define FLASH_VENDOR_DATA_OFFSET (sizeof(struct vendor_hdr) + FLASH_VENDOR_ITEM_NUM * sizeof(struct vendor_item))
 #define FLASH_VENDOR_HASH_OFFSET (FLASH_VENDOR_INFO_SIZE - 8)
 #define FLASH_VENDOR_VERSION2_OFFSET (FLASH_VENDOR_INFO_SIZE - 4)
 
@@ -90,6 +113,34 @@ struct vendor_info {
 static struct vendor_info vendor_info;
 /* The storage type of the device */
 static int bootdev_type;
+
+/* vendor private read write ops*/
+static	int (*_flash_read)(struct blk_desc *dev_desc,
+			   u32 sec,
+			   u32 n_sec,
+			   void *buffer);
+static	int (*_flash_write)(struct blk_desc *dev_desc,
+			    u32 sec,
+			    u32 n_sec,
+			    void *buffer);
+
+int flash_vendor_dev_ops_register(int (*read)(struct blk_desc *dev_desc,
+					      u32 sec,
+					      u32 n_sec,
+					      void *p_data),
+				  int (*write)(struct blk_desc *dev_desc,
+					       u32 sec,
+					       u32 n_sec,
+					       void *p_data))
+{
+	if (!_flash_read) {
+		_flash_read = read;
+		_flash_write = write;
+		return 0;
+	}
+
+	return -EPERM;
+}
 
 /**********************************************************/
 /*              vendor API implementation                 */
@@ -111,7 +162,7 @@ static int vendor_ops(u8 *buffer, u32 addr, u32 n_sec, int write)
 		/*
 		 * The location of VendorStorage in Flash is shown in the
 		 * following figure. The starting address of the VendorStorage
-		 * partition is 3.5MB(EMMC_VENDOR_PART_OFFSET*BLOCK_SIZE(512)),
+		 * partition offset is 3.5MB(EMMC_VENDOR_PART_OFFSET*BLOCK_SIZE(512)),
 		 * and the partition size is 256KB.
 		 * ----------------------------------------------------
 		 * |   3.5MB    |  VendorStorage  |                   |
@@ -121,12 +172,24 @@ static int vendor_ops(u8 *buffer, u32 addr, u32 n_sec, int write)
 		debug("[Vendor INFO]:VendorStorage offset address=0x%x\n", lba);
 		break;
 	case IF_TYPE_RKNAND:
-	case IF_TYPE_SPINOR:
 	case IF_TYPE_SPINAND:
 		/*
 		 * The location of VendorStorage in Flash is shown in the
 		 * following figure. The starting address of the VendorStorage
-		 * partition is 4KB (FLASH_VENDOR_PART_OFFSET * BLOCK_SIZE),
+		 * partition offset is 0KB in FTL vendor block,
+		 * and the partition size is 128KB.
+		 * ----------------------------------------------------
+		 * |  VendorStorage  |                     |
+		 * ----------------------------------------------------
+		 */
+		lba = NAND_VENDOR_PART_OFFSET;
+		debug("[Vendor INFO]:VendorStorage offset address=0x%x\n", lba);
+		break;
+	case IF_TYPE_SPINOR:
+		/*
+		 * The location of VendorStorage in Flash is shown in the
+		 * following figure. The starting address of the VendorStorage
+		 * partition offset is 4KB (FLASH_VENDOR_PART_OFFSET * BLOCK_SIZE),
 		 * and the partition size is 16KB.
 		 * ----------------------------------------------------
 		 * |   4KB    |  VendorStorage  |                     |
@@ -139,10 +202,18 @@ static int vendor_ops(u8 *buffer, u32 addr, u32 n_sec, int write)
 		printf("[Vendor ERROR]:Boot device type is invalid!\n");
 		return -ENODEV;
 	}
-	if (write)
-		ret = blk_dwrite(dev_desc, lba + addr, n_sec, buffer);
-	else
-		ret = blk_dread(dev_desc, lba + addr, n_sec, buffer);
+	if (write) {
+		if (_flash_write)
+			ret = _flash_write(dev_desc, lba + addr, n_sec, buffer);
+		else
+			ret = blk_dwrite(dev_desc, lba + addr, n_sec, buffer);
+	} else {
+		if (_flash_read)
+			ret = _flash_read(dev_desc, lba + addr, n_sec, buffer);
+		else
+			ret = blk_dread(dev_desc, lba + addr, n_sec, buffer);
+	}
+
 	debug("[Vendor INFO]:op=%s, ret=%d\n", write ? "write" : "read", ret);
 
 	return ret;
@@ -171,7 +242,7 @@ int vendor_storage_init(void)
 	u32 size, i;
 	u32 max_ver = 0;
 	u32 max_index = 0;
-	u16 data_offset, hash_offset;
+	u16 data_offset, hash_offset, part_num;
 	u16 version2_offset, part_size;
 	struct blk_desc *dev_desc;
 
@@ -189,15 +260,24 @@ int vendor_storage_init(void)
 		data_offset = EMMC_VENDOR_DATA_OFFSET;
 		hash_offset = EMMC_VENDOR_HASH_OFFSET;
 		version2_offset = EMMC_VENDOR_VERSION2_OFFSET;
+		part_num = VENDOR_PART_NUM;
 		break;
 	case IF_TYPE_RKNAND:
-	case IF_TYPE_SPINOR:
 	case IF_TYPE_SPINAND:
+		size = NAND_VENDOR_INFO_SIZE;
+		part_size = NAND_VENDOR_PART_BLKS;
+		data_offset = NAND_VENDOR_DATA_OFFSET;
+		hash_offset = NAND_VENDOR_HASH_OFFSET;
+		version2_offset = NAND_VENDOR_VERSION2_OFFSET;
+		part_num = NAND_VENDOR_PART_NUM;
+		break;
+	case IF_TYPE_SPINOR:
 		size = FLASH_VENDOR_INFO_SIZE;
 		part_size = FLASH_VENDOR_PART_BLKS;
 		data_offset = FLASH_VENDOR_DATA_OFFSET;
 		hash_offset = FLASH_VENDOR_HASH_OFFSET;
 		version2_offset = FLASH_VENDOR_VERSION2_OFFSET;
+		part_num = VENDOR_PART_NUM;
 		break;
 	default:
 		debug("[Vendor ERROR]:Boot device type is invalid!\n");
@@ -225,7 +305,7 @@ int vendor_storage_init(void)
 	vendor_info.version2 = (u32 *)(buffer + version2_offset);
 
 	/* Find valid and up-to-date one from (vendor0 - vendor3) */
-	for (i = 0; i < VENDOR_PART_NUM; i++) {
+	for (i = 0; i < part_num; i++) {
 		ret_size = vendor_ops((u8 *)vendor_info.hdr,
 				      part_size * i, part_size, 0);
 		if (ret_size != part_size) {
@@ -248,7 +328,7 @@ int vendor_storage_init(void)
 		 * Keep vendor_info the same as the largest
 		 * version of vendor
 		 */
-		if (max_index != (VENDOR_PART_NUM - 1)) {
+		if (max_index != (part_num - 1)) {
 			ret_size = vendor_ops((u8 *)vendor_info.hdr,
 					       part_size * max_index, part_size, 0);
 			if (ret_size != part_size) {
@@ -331,7 +411,7 @@ int vendor_storage_write(u16 id, void *pbuf, u16 size)
 	int cnt, ret = 0;
 	u32 i, next_index, align_size;
 	struct vendor_item *item;
-	u16 part_size, max_item_num, offset;
+	u16 part_size, max_item_num, offset, part_num;
 
 	/* init vendor storage */
 	if (!bootdev_type) {
@@ -344,12 +424,18 @@ int vendor_storage_write(u16 id, void *pbuf, u16 size)
 	case IF_TYPE_MMC:
 		part_size = EMMC_VENDOR_PART_BLKS;
 		max_item_num = EMMC_VENDOR_ITEM_NUM;
+		part_num = VENDOR_PART_NUM;
 		break;
 	case IF_TYPE_RKNAND:
-	case IF_TYPE_SPINOR:
 	case IF_TYPE_SPINAND:
+		part_size = NAND_VENDOR_PART_BLKS;
+		max_item_num = NAND_VENDOR_ITEM_NUM;
+		part_num = NAND_VENDOR_PART_NUM;
+		break;
+	case IF_TYPE_SPINOR:
 		part_size = FLASH_VENDOR_PART_BLKS;
 		max_item_num = FLASH_VENDOR_ITEM_NUM;
+		part_num = VENDOR_PART_NUM;
 		break;
 	default:
 		ret = -ENODEV;
@@ -376,7 +462,7 @@ int vendor_storage_write(u16 id, void *pbuf, u16 size)
 			vendor_info.hdr->version++;
 			*(vendor_info.version2) = vendor_info.hdr->version;
 			vendor_info.hdr->next_index++;
-			if (vendor_info.hdr->next_index >= VENDOR_PART_NUM)
+			if (vendor_info.hdr->next_index >= part_num)
 				vendor_info.hdr->next_index = 0;
 			cnt = vendor_ops((u8 *)vendor_info.hdr, part_size * next_index, part_size, 1);
 			return (cnt == part_size) ? size : -EIO;
@@ -401,7 +487,7 @@ int vendor_storage_write(u16 id, void *pbuf, u16 size)
 		vendor_info.hdr->version++;
 		vendor_info.hdr->next_index++;
 		*(vendor_info.version2) = vendor_info.hdr->version;
-		if (vendor_info.hdr->next_index >= VENDOR_PART_NUM)
+		if (vendor_info.hdr->next_index >= part_num)
 			vendor_info.hdr->next_index = 0;
 
 		cnt = vendor_ops((u8 *)vendor_info.hdr, part_size * next_index, part_size, 1);
@@ -418,19 +504,25 @@ int vendor_storage_write(u16 id, void *pbuf, u16 size)
 /* Reset the vendor storage space to the initial state */
 static void vendor_test_reset(void)
 {
-	u16 i, part_size;
+	u16 i, part_size, part_num;
 	u32 size;
 
 	switch (bootdev_type) {
 	case IF_TYPE_MMC:
 		size = EMMC_VENDOR_INFO_SIZE;
 		part_size = EMMC_VENDOR_PART_BLKS;
+		part_num = VENDOR_PART_NUM;
 		break;
 	case IF_TYPE_RKNAND:
-	case IF_TYPE_SPINOR:
 	case IF_TYPE_SPINAND:
+		size = NAND_VENDOR_INFO_SIZE;
+		part_size = NAND_VENDOR_PART_BLKS;
+		part_num = NAND_VENDOR_PART_NUM;
+		break;
+	case IF_TYPE_SPINOR:
 		size = FLASH_VENDOR_INFO_SIZE;
 		part_size = FLASH_VENDOR_PART_BLKS;
+		part_num = VENDOR_PART_NUM;
 		break;
 	default:
 		size = 0;
@@ -449,7 +541,7 @@ static void vendor_test_reset(void)
 				     (unsigned long)vendor_info.data;
 	*(vendor_info.version2) = vendor_info.hdr->version;
 	/* write to flash. */
-	for (i = 0; i < VENDOR_PART_NUM; i++)
+	for (i = 0; i < part_num; i++)
 		vendor_ops((u8 *)vendor_info.hdr, part_size * i, part_size, 1);
 }
 
@@ -488,8 +580,13 @@ int vendor_storage_test(void)
 		size = total_size/item_num;
 		break;
 	case IF_TYPE_RKNAND:
-	case IF_TYPE_SPINOR:
 	case IF_TYPE_SPINAND:
+		item_num = NAND_VENDOR_ITEM_NUM;
+		total_size = (unsigned long)vendor_info.hash -
+			     (unsigned long)vendor_info.data;
+		size = total_size/item_num;
+		break;
+	case IF_TYPE_SPINOR:
 		item_num = FLASH_VENDOR_ITEM_NUM;
 		total_size = (unsigned long)vendor_info.hash -
 			     (unsigned long)vendor_info.data;
@@ -618,7 +715,7 @@ int vendor_storage_test(void)
 	printf("[Vendor Test]:item_num=%d, size=%d.\n", item_num, size);
 
 	vendor_test_reset();
-	for (id = 0; id <= item_num; id++) {
+	for (id = 0; id < item_num; id++) {
 		memset(buffer, id, size);
 		ret = vendor_storage_write(id, buffer, size);
 		if (ret < 0) {
