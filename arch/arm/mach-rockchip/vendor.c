@@ -42,13 +42,6 @@
 /* Vendor uinit test define */
 int vendor_storage_test(void);
 
-struct vendor_item {
-	u16  id;
-	u16  offset;
-	u16  size;
-	u16  flag;
-};
-
 struct vendor_hdr {
 	u32	tag;
 	u32	version;
