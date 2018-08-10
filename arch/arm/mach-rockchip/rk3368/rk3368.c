@@ -18,8 +18,8 @@ DECLARE_GLOBAL_DATA_PTR;
 
 #define IMEM_BASE                  0xFF8C0000
 
-/* Max MCU's SRAM value is 8K, begin at (IMEM_BASE + 4K) */
-#define MCU_SRAM_BASE			(IMEM_BASE + 1024 * 4)
+/* Max MCU's SRAM value is 8K, begin at (IMEM_BASE + 8K) */
+#define MCU_SRAM_BASE			(IMEM_BASE + 1024 * 8)
 #define MCU_SRAM_BASE_BIT31_BIT28	((MCU_SRAM_BASE & GENMASK(31, 28)) >> 28)
 #define MCU_SRAM_BASE_BIT27_BIT12	((MCU_SRAM_BASE & GENMASK(27, 12)) >> 12)
 /* exsram may using by mcu to accessing dram(0x0-0x20000000) */
