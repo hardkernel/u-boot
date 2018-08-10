@@ -82,8 +82,8 @@
 #define DDR4_ODT_34OHM		7
 
 #if ((CONFIG_DDR_TYPE == CONFIG_DDR_TYPE_DDR3) || (CONFIG_DDR_TYPE == CONFIG_DDR_TYPE_AUTO))
-#define CFG_DDR_DRV  DDR3_DRV_34OHM
-#define CFG_DDR_ODT  DDR3_ODT_60OHM
+#define CFG_DDR_DRV  DDR3_DRV_40OHM
+#define CFG_DDR_ODT  DDR3_ODT_40OHM
 #elif (CONFIG_DDR_TYPE == CONFIG_DDR_TYPE_LPDDR2)
 #define CFG_DDR_DRV  LPDDR2_DRV_48OHM
 #define CFG_DDR_ODT  DDR3_ODT_120OHM
@@ -501,8 +501,8 @@ ddr_set_t __ddr_setting = {
 	.t_pub_zq3pr			= 0x1dd1d,   //PUB ZQ3PR
 
 	.t_pub_zq0pr			= 0x00007756,   //PUB ZQ0PR, 0x5aa59,0x59959,  0x58859,  //99drriver s912 ddr4 maybe 950m is bad
-	.t_pub_zq1pr			= 0x0006fc5d,   //PUB ZQ1PR//0x8fc5d, 0x4f95d,
-	.t_pub_zq2pr			= 0x0006fc5d,   //PUB ZQ2PR//0x3fc5d, 0x4f95d,
+	.t_pub_zq1pr			= 0x0006fc59,   //PUB ZQ1PR//0x8fc5d, 0x4f95d,
+	.t_pub_zq2pr			= 0x0006fc59,   //PUB ZQ2PR//0x3fc5d, 0x4f95d,
 	//.t_pub_zq3pr			= 0xf5f95d,   //PUB ZQ3PR
 
 	/* pctl0 defines */
@@ -540,7 +540,7 @@ ddr_set_t __ddr_setting = {
 
 	.t_pctl0_dfilpcfg0		= ( 1 | (3 << 4) | (1 << 8) | (13 << 12) | (7 <<16) | (1 <<24) | ( 3 << 28)),
 	.t_pub_acbdlr0			= 0x30,  //CK0 delay fine tune
-	.t_pub_aclcdlr			= 0x28,
+	.t_pub_aclcdlr			= 0x18,
 	.t_pub_acbdlr3			= 0x0,//0xa,  //cs
 	//.t_pub_acbdlr0		= 0x0,
 	//.t_pub_aclcdlr		= 0x10,//0x18,   ///1t  ,if 2t can add some value
