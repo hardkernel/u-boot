@@ -80,6 +80,8 @@ void print_part_aml(block_dev_desc_t * dev_desc)
 int test_part_aml (block_dev_desc_t *dev_desc)
 {
 	ALLOC_CACHE_ALIGN_BUFFER(char, buffer, dev_desc->blksz);
+	if (IF_TYPE_MMC != dev_desc->if_type)
+		return  1;
 	if (dev_desc->block_read(dev_desc->dev, AML_MPT_OFFSET, 1, (ulong *) buffer) != 1)
 		return -1;
 	if (!strncmp(buffer, "MPT", 3))
