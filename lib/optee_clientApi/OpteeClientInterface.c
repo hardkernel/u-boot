@@ -10,6 +10,190 @@
 #include <optee_include/tee_client_api.h>
 #include <optee_include/tee_api_defines.h>
 #include <boot_rkimg.h>
+#include <stdlib.h>
+
+#define	BOOT_FROM_EMMC	(1 << 1)
+
+uint32_t rk_send_keybox_to_ta(uint8_t *filename, uint32_t filename_size,
+			      TEEC_UUID uuid,
+			      uint8_t *key, uint32_t key_size,
+			      uint8_t *data, uint32_t data_size)
+{
+	TEEC_Result TeecResult;
+	TEEC_Context TeecContext;
+	TEEC_Session TeecSession;
+	uint32_t ErrorOrigin;
+
+	TEEC_UUID *TeecUuid = &uuid;
+	TEEC_Operation TeecOperation = {0};
+
+	struct blk_desc *dev_desc;
+
+	dev_desc = rockchip_get_bootdev();
+	if (!dev_desc) {
+		printf("%s: dev_desc is NULL!\n", __func__);
+		return -TEEC_ERROR_GENERIC;
+	}
+
+	OpteeClientApiLibInitialize();
+	TeecResult = TEEC_InitializeContext(NULL, &TeecContext);
+	TeecOperation.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT,
+						    TEEC_NONE,
+						    TEEC_NONE,
+						    TEEC_NONE);
+
+	/* 0 nand or emmc "security" partition , 1 rpmb */
+	TeecOperation.params[0].value.a =
+		(dev_desc->if_type == IF_TYPE_MMC) ? 1 : 0;
+#ifdef CONFIG_OPTEE_ALWAYS_USE_SECURITY_PARTITION
+	TeecOperation.params[0].value.a = 0;
+#endif
+	TeecResult = TEEC_OpenSession(&TeecContext,
+				      &TeecSession,
+				      TeecUuid,
+				      TEEC_LOGIN_PUBLIC,
+				      NULL,
+				      &TeecOperation,
+				      &ErrorOrigin);
+
+	TEEC_SharedMemory SharedMem0 = {0};
+
+	SharedMem0.size = filename_size;
+	SharedMem0.flags = 0;
+
+	TeecResult = TEEC_AllocateSharedMemory(&TeecContext, &SharedMem0);
+
+	memcpy(SharedMem0.buffer, filename, SharedMem0.size);
+
+	TEEC_SharedMemory SharedMem1 = {0};
+
+	SharedMem1.size = key_size;
+	SharedMem1.flags = 0;
+
+	TeecResult = TEEC_AllocateSharedMemory(&TeecContext, &SharedMem1);
+
+	memcpy(SharedMem1.buffer, key, SharedMem1.size);
+
+	TEEC_SharedMemory SharedMem2 = {0};
+
+	SharedMem2.size = data_size;
+	SharedMem2.flags = 0;
+
+	TeecResult = TEEC_AllocateSharedMemory(&TeecContext, &SharedMem2);
+
+	memcpy(SharedMem2.buffer, data, SharedMem2.size);
+
+	TeecOperation.params[0].tmpref.buffer = SharedMem0.buffer;
+	TeecOperation.params[0].tmpref.size = SharedMem0.size;
+
+	TeecOperation.params[1].tmpref.buffer = SharedMem1.buffer;
+	TeecOperation.params[1].tmpref.size = SharedMem1.size;
+
+	TeecOperation.params[2].tmpref.buffer = SharedMem2.buffer;
+	TeecOperation.params[2].tmpref.size = SharedMem2.size;
+
+	TeecOperation.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_INPUT,
+						    TEEC_MEMREF_TEMP_INPUT,
+						    TEEC_MEMREF_TEMP_INOUT,
+						    TEEC_NONE);
+
+	printf("check: does keybox exised in secure storage...\n");
+	TeecResult = TEEC_InvokeCommand(&TeecSession,
+					122,
+					&TeecOperation,
+					&ErrorOrigin);
+	if (TeecResult != TEEC_SUCCESS) {
+		printf("no keybox in secure storage, write keybox to secure storage\n");
+		TeecResult = TEEC_InvokeCommand(&TeecSession,
+						121,
+						&TeecOperation,
+						&ErrorOrigin);
+		if (TeecResult != TEEC_SUCCESS) {
+			printf("send data to TA failed with code 0x%x\n", TeecResult);
+		} else {
+			printf("send data to TA success with code 0x%x\n", TeecResult);
+		}
+	}
+	TEEC_ReleaseSharedMemory(&SharedMem0);
+	TEEC_ReleaseSharedMemory(&SharedMem1);
+	TEEC_ReleaseSharedMemory(&SharedMem2);
+
+	TEEC_CloseSession(&TeecSession);
+	TEEC_FinalizeContext(&TeecContext);
+
+	return TeecResult;
+}
+
+int write_keybox_to_secure_storage(uint8_t *uboot_data, uint32_t len)
+{
+	typedef struct VENDOR_DATA {
+		uint8_t tag[4];
+		uint32_t key_size;
+		uint32_t data_size;
+		uint8_t *all_data;
+	} VENDOR_DATA;
+
+	uint8_t *key = NULL;
+	uint8_t *data = NULL;
+	VENDOR_DATA tmp_data;
+
+	memset(&tmp_data, 0, sizeof(VENDOR_DATA));
+	memcpy(tmp_data.tag, uboot_data, 4);
+	tmp_data.key_size = *(uboot_data + 4);
+	tmp_data.data_size = *(uboot_data + 8);
+	tmp_data.all_data = malloc(tmp_data.key_size + tmp_data.data_size);
+	memcpy(tmp_data.all_data, uboot_data + 12,
+	       tmp_data.key_size + tmp_data.data_size);
+
+	uint8_t widevine_tag[] = {'K', 'B', 'O', 'X'};
+	uint8_t tag[] = {0};
+
+	uint32_t object_id = 101;
+
+	TEEC_UUID tmp_uuid;
+
+	if (memcmp(uboot_data, widevine_tag, 4) == 0) {
+		TEEC_UUID widevine_uuid = { 0xc11fe8ac, 0xb997, 0x48cf,
+			{ 0xa2, 0x8d, 0xe2, 0xa5, 0x5e, 0x52, 0x40, 0xef} };
+		tmp_uuid = widevine_uuid;
+		memcpy(tag, uboot_data, 4);
+		printf("check tag success! %s\n", tag);
+	} else {
+		memcpy(tag, uboot_data, 4);
+		printf("check tag failed! %s\n", tag);
+	}
+
+	key = malloc(tmp_data.key_size);
+	if (!key) {
+		printf("Malloc key failed!!\n");
+		goto reboot;
+	}
+
+	data = malloc(tmp_data.data_size);
+	if (!data) {
+		printf("Malloc data failed!!\n");
+		goto reboot;
+	}
+
+	memcpy(key, tmp_data.all_data, tmp_data.key_size);
+	memcpy(data, tmp_data.all_data + tmp_data.key_size,
+	       tmp_data.data_size);
+
+	rk_send_keybox_to_ta((uint8_t *)&object_id, sizeof(uint32_t),
+			     tmp_uuid,
+			     key, tmp_data.key_size,
+			     data, tmp_data.data_size);
+reboot:
+	if (key)
+		free(key);
+	if (data)
+		free(data);
+	if (tmp_data.all_data)
+	free(tmp_data.all_data);
+
+	memset(&tmp_data, 0, sizeof(VENDOR_DATA));
+	return 0;
+}
 
 void test_optee(void)
 {
@@ -17,7 +201,7 @@ void test_optee(void)
 	TEEC_Context TeecContext;
 	TEEC_Session TeecSession;
 	uint32_t ErrorOrigin;
-	TEEC_UUID tempuuid = { 0x1b484ea5, 0x698b, 0x4142,
+	TEEC_UUID tempuuid = { 0x1b484ea5, 0x698b, 0x4142, \
 		{ 0x82, 0xb8, 0x3a, 0xcf, 0x16, 0xe9, 0x9e, 0x2a } };
 	TEEC_UUID *TeecUuid = &tempuuid;
 	TEEC_Operation TeecOperation = {0};
