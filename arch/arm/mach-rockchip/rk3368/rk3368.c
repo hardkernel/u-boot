@@ -220,16 +220,16 @@ static void sgrf_init(void)
 
 void board_debug_uart_init(void)
 {
-#if defined(CONFIG_DEBUG_UART_BASE) && (CONFIG_DEBUG_UART_BASE == 0xff180000)
 	/*
 	 * N.B.: This is called before the device-model has been
 	 *       initialised. For this reason, we can not access
 	 *       the GRF address range using the syscon API.
 	 */
-	struct rk3368_grf * const grf =
+	struct rk3368_grf * const grf __maybe_unused =
 		(struct rk3368_grf * const)0xff770000;
 
 	enum {
+		/* UART0 */
 		GPIO2D1_MASK            = GENMASK(3, 2),
 		GPIO2D1_GPIO            = 0,
 		GPIO2D1_UART0_SOUT      = (1 << 2),
@@ -237,13 +237,29 @@ void board_debug_uart_init(void)
 		GPIO2D0_MASK            = GENMASK(1, 0),
 		GPIO2D0_GPIO            = 0,
 		GPIO2D0_UART0_SIN       = (1 << 0),
+
+		/* UART2 */
+		GPIO2A6_MASK		= GENMASK(13, 12),
+		GPIO2A6_GPIO		= 0,
+		GPIO2A6_UART0_SIN      = (1 << 13),
+
+		GPIO2A5_MASK		= GENMASK(11, 10),
+		GPIO2A5_GPIO		= 0,
+		GPIO2A5_UART0_SOUT	 = (1 << 11),
 	};
 
+#if defined(CONFIG_DEBUG_UART_BASE) && (CONFIG_DEBUG_UART_BASE == 0xff180000)
 	/* Enable early UART0 on the RK3368 */
 	rk_clrsetreg(&grf->gpio2d_iomux,
 		     GPIO2D0_MASK, GPIO2D0_UART0_SIN);
 	rk_clrsetreg(&grf->gpio2d_iomux,
 		     GPIO2D1_MASK, GPIO2D1_UART0_SOUT);
+#elif defined(CONFIG_DEBUG_UART_BASE) && (CONFIG_DEBUG_UART_BASE == 0xff690000)
+	/* Enable early UART2 on the RK3368 */
+	rk_clrsetreg(&grf->gpio2a_iomux,
+		     GPIO2A6_MASK, GPIO2A6_UART0_SIN);
+	rk_clrsetreg(&grf->gpio2a_iomux,
+		     GPIO2A5_MASK, GPIO2A5_UART0_SOUT);
 #endif
 }
 
