@@ -1000,36 +1000,42 @@ static void cb_flashing(struct usb_ep *ep, struct usb_request *req)
 		info->lock_bootloader = 1;
 	} else if (!strcmp_l1("unlock", cmd)) {
 		if (info->lock_state == 1 ) {
-#ifdef CONFIG_AVB2
+			char *avb_s;
+			avb_s = getenv("avb2");
+			printf("avb2: %s\n", avb_s);
+			if (strcmp(avb_s, "1") == 0) {
 #ifdef CONFIG_AML_ANTIROLLBACK
-			if (avb_unlock()) {
+				if (avb_unlock()) {
+					printf("unlocking device.  Erasing userdata partition!\n");
+					run_command("store erase partition data", 0);
+				} else {
+					printf("unlock failed!\n");
+				}
+#else
 				printf("unlocking device.  Erasing userdata partition!\n");
 				run_command("store erase partition data", 0);
-			} else {
-				printf("unlock failed!\n");
+#endif
 			}
-#else
-			printf("unlocking device.  Erasing userdata partition!\n");
-			run_command("store erase partition data", 0);
-#endif
-#endif
 		}
 		info->lock_state = 0;
 	} else if (!strcmp_l1("lock", cmd)) {
 		if (info->lock_state == 0 ) {
-#ifdef CONFIG_AVB2
+			char *avb_s;
+			avb_s = getenv("avb2");
+			printf("avb2: %s\n", avb_s);
+			if (strcmp(avb_s, "1") == 0) {
 #ifdef CONFIG_AML_ANTIROLLBACK
-			if (avb_lock()) {
-				printf("lock failed!\n");
-			} else {
+				if (avb_lock()) {
+					printf("lock failed!\n");
+				} else {
+					printf("locking device.  Erasing userdata partition!\n");
+					run_command("store erase partition data", 0);
+				}
+#else
 				printf("locking device.  Erasing userdata partition!\n");
 				run_command("store erase partition data", 0);
+#endif
 			}
-#else
-			printf("locking device.  Erasing userdata partition!\n");
-			run_command("store erase partition data", 0);
-#endif
-#endif
 		}
 		info->lock_state = 1;
 	} else {

@@ -222,6 +222,7 @@
 		"\0"\
 	"bcb_cmd="\
 		"get_valid_slot;"\
+		"get_avb_mode;"\
 		"\0"\
 	"cmdline_keys="\
 		"if keyman init 0x1234; then "\

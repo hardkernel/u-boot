@@ -388,9 +388,16 @@ int do_GetSystemMode (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
     }
     else
         setenv("system_mode","0");
-
+    saveenv();
     return 0;
 
+}
+
+int do_GetAvbMode (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+    setenv("avb2","0");
+    saveenv();
+    return 0;
 }
 
 #endif /* CONFIG_BOOTLOADER_CONTROL_BLOCK */
@@ -416,3 +423,11 @@ U_BOOT_CMD(
     "\nThis command will get system_as_root_mode\n"
     "So you can execute command: get_system_as_root_mode"
 );
+
+U_BOOT_CMD(
+    get_avb_mode, 1,	0, do_GetAvbMode,
+    "get_avb_mode",
+    "\nThis command will get avb mode\n"
+    "So you can execute command: get_avb_mode"
+);
+

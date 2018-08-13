@@ -248,6 +248,7 @@
             "\0"\
         "bcb_cmd="\
             "get_valid_slot;"\
+            "get_avb_mode;"\
             "\0"\
         "upgrade_key="\
             "if gpio input GPIOAO_2; then "\
