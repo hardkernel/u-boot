@@ -24,6 +24,7 @@
 #define CONFIG_SYS_TEXT_BASE		0x00200000
 #define CONFIG_SYS_INIT_SP_ADDR		0x00300000
 #define CONFIG_SYS_LOAD_ADDR		0x00280000
+#define CONFIG_SYS_BOOTM_LEN		(64 << 20)	/* 64M */
 
 #define CONFIG_SPL_FRAMEWORK
 #define CONFIG_SPL_TEXT_BASE            0x00000000
@@ -37,6 +38,10 @@
 #define CONFIG_ROCKUSB_G_DNL_PID	0x330A
 
 #define CONFIG_BOUNCE_BUFFER
+#define COUNTER_FREQUENCY              24000000
+#define CONFIG_PREBOOT
+
+#define CONFIG_SUPPORT_EMMC_RPMB
 
 #ifndef CONFIG_SPL_BUILD
 
@@ -46,14 +51,21 @@
 #define ENV_MEM_LAYOUT_SETTINGS \
 	"scriptaddr=0x00500000\0" \
 	"pxefile_addr_r=0x00600000\0" \
-	"fdt_addr_r=0x5600000\0" \
-	"kernel_addr_r=0x280000\0" \
-	"ramdisk_addr_r=0x5bf0000\0"
+	"fdt_addr_r=0x01f00000\0" \
+	"kernel_addr_r=0x02080000\0" \
+	"ramdisk_addr_r=0x0a200000\0"
 
 #include <config_distro_bootcmd.h>
 
+#ifndef ROCKCHIP_DEVICE_SETTINGS
+#define ROCKCHIP_DEVICE_SETTINGS
+#endif
+
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	ENV_MEM_LAYOUT_SETTINGS	\
+	"partitions=" PARTS_DEFAULT \
+	RKIMG_DET_BOOTDEV \
+	ROCKCHIP_DEVICE_SETTINGS \
 	BOOTENV
 
 #endif

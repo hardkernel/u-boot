@@ -40,6 +40,11 @@ config TARGET_EVB_PX5
          HDMI video input/output interface, audio codec ES8396,
          WIFI/BT (on RTL8723BS), Gsensor BMA250E and light&proximity
          sensor STK3410.
+
+config TARGET_EVB_RK3368
+	bool "RK3368 evaluation board"
+	select BOARD_LATE_INIT
+
 endchoice
 
 config SYS_SOC
@@ -49,6 +54,7 @@ source "board/theobroma-systems/lion_rk3368/Kconfig"
 source "board/rockchip/sheep_rk3368/Kconfig"
 source "board/geekbuying/geekbox/Kconfig"
 source "board/rockchip/evb_px5/Kconfig"
+source "board/rockchip/evb_rk3368/Kconfig"
 
 config SPL_LDSCRIPT
 	default "arch/arm/cpu/armv8/u-boot-spl.lds"
