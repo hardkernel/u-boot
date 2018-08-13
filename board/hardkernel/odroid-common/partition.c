@@ -26,9 +26,6 @@ static struct partitions factory_partitions[] = {
 		.name = "ptable",
 		.size = bytes_to_lba(CONFIG_PTABLE_SIZE),
 	}, {
-		.name = "bcb",                  /* Bootloader control block */
-		.size = bytes_to_lba(CONFIG_BCB_SIZE),
-	}, {
 		.name = "logo",                 /* Logo */
 		.size = bytes_to_lba(2 * SZ_1M),
 	}, {
@@ -38,8 +35,14 @@ static struct partitions factory_partitions[] = {
 		.name = "boot",                 /* Boot image */
 		.size = bytes_to_lba(24 * SZ_1M),
 	}, {
+		.name = "misc",			/* Android: misc */
+		.size = bytes_to_lba(8 * SZ_1M),
+	}, {
 		.name = "recovery",             /* Recovery Image */
 		.size = bytes_to_lba(16 * SZ_1M),
+	}, {
+		.name = "cache",		/* Android: cache */
+		.size = bytes_to_lba(1 * SZ_1G),
 	}, {
 		.name = "vfat",			/* DOS FAT */
 		.size = bytes_to_lba(128 * SZ_1M),
@@ -52,12 +55,6 @@ static struct partitions factory_partitions[] = {
 	}, {
 		.name = "odm",			/* Android: odm */
 		.size = bytes_to_lba(32 * SZ_1M),
-	}, {
-		.name = "cache",		/* Android: cache */
-		.size = bytes_to_lba(1 * SZ_1G),
-	}, {
-		.name = "misc",			/* Android: misc */
-		.size = bytes_to_lba(8 * SZ_1M),
 	}, {
 		.name = "param",
 		.size = bytes_to_lba(16 * SZ_1M),
