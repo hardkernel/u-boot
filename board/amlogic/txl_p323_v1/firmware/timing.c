@@ -82,7 +82,7 @@
 
 #if ((CONFIG_DDR_TYPE == CONFIG_DDR_TYPE_DDR3) || (CONFIG_DDR_TYPE == CONFIG_DDR_TYPE_AUTO))
 #define CFG_DDR_DRV  DDR3_DRV_40OHM
-#define CFG_DDR_ODT  DDR3_ODT_40OHM//DDR3_ODT_120OHM
+#define CFG_DDR_ODT  DDR3_ODT_30OHM//DDR3_ODT_120OHM
 #elif (CONFIG_DDR_TYPE == CONFIG_DDR_TYPE_LPDDR2)
 #define CFG_DDR_DRV  LPDDR2_DRV_48OHM
 #define CFG_DDR_ODT  DDR3_ODT_120OHM
@@ -501,7 +501,7 @@ ddr_set_t __ddr_setting = {
 
 	.t_pub_zq0pr			= 0x00007756,   //PUB ZQ0PR, 0x5aa59,0x59959,  0x58859,  //99drriver s912 ddr4 maybe 950m is bad
 
-	   .t_pub_zq1pr			= 0x0006fc5b,   //PUB ZQ1PR//0x8fc5d, 0x4f95d,
+	.t_pub_zq1pr			= 0x0006fc5b,   //PUB ZQ1PR//0x8fc5d, 0x4f95d,
 	.t_pub_zq2pr			= 0x0006fc5b,   //PUB ZQ2PR//0x3fc5d, 0x4f95d,
 
 	//.t_pub_zq1pr			= 0x0006fc5d,   //PUB ZQ1PR//0x8fc5d, 0x4f95d,
@@ -552,7 +552,7 @@ ddr_set_t __ddr_setting = {
 	#endif
 
 		#if 1
-	.t_pub_acbdlr0			= 0x3f,
+	.t_pub_acbdlr0			= 0x30,
 	.t_pub_aclcdlr			= 0x28,//0x18,   ///1t  ,if 2t can add some value
 	.t_pub_acbdlr3			= 0x0,//0xa,  //cs
 	//.t_pub_acbdlr0		= 0x0,
