@@ -26,6 +26,9 @@ static const struct udevice_id rk3368_syscon_ids[] = {
 U_BOOT_DRIVER(syscon_rk3368) = {
 	.name = "rk3368_syscon",
 	.id = UCLASS_SYSCON,
+#if !CONFIG_IS_ENABLED(OF_PLATDATA)
+	.bind = dm_scan_fdt_dev,
+#endif
 	.of_match = rk3368_syscon_ids,
 };
 
