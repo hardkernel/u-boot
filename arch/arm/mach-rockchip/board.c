@@ -115,7 +115,7 @@ static int charge_display(void)
 	ret = uclass_get_device(UCLASS_CHARGE_DISPLAY, 0, &dev);
 	if (ret) {
 		if (ret != -ENODEV) {
-			printf("Get UCLASS CHARGE DISPLAY failed: %d\n", ret);
+			debug("Get UCLASS CHARGE DISPLAY failed: %d\n", ret);
 			return ret;
 		} else {
 			debug("Can't find charge display driver\n");
