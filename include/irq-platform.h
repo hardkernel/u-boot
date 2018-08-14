@@ -153,6 +153,25 @@
 #define GPIO_BANK_NUM			4
 #define GPIO_BANK_PINS			32
 
+#elif defined(CONFIG_ROCKCHIP_RK3308)
+#define GPIO0_PHYS			0xff220000
+#define GPIO1_PHYS			0xff230000
+#define GPIO2_PHYS			0xff240000
+#define GPIO3_PHYS			0xff250000
+#define GPIO4_PHYS			0xff260000
+
+#define IRQ_TIMER1			58	/* ch0 ns timer1 */
+#define IRQ_GPIO0			72
+#define IRQ_GPIO1			73
+#define IRQ_GPIO2			74
+#define IRQ_GPIO3			75
+#define IRQ_GPIO4			76
+
+#define GIC_IRQS_NR			(5 * 32)
+#define GPIO_IRQS_NR			(5 * 32)
+
+#define GPIO_BANK_NUM			5
+#define GPIO_BANK_PINS			32
 #else
 "Missing define RIQ relative things"
 #endif

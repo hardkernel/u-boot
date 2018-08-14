@@ -41,6 +41,9 @@
 #elif defined(CONFIG_ROCKCHIP_RK3399)
 #define TIMER_BASE		(0xFF850000 + 0x20)	/* TIMER 1 */
 #define TIMER_IRQ		IRQ_TIMER1
+#elif defined(CONFIG_ROCKCHIP_RK3308)
+#define TIMER_BASE		(0xFF1a0000 + 0x20)	/* TIMER 1 */
+#define TIMER_IRQ		IRQ_TIMER1
 #elif defined(CONFIG_ROCKCHIP_PX30)
 /*
  * Use timer0 and never change, because timer0 will be used in charge animation
