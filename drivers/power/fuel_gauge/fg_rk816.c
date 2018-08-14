@@ -183,6 +183,14 @@ enum dc_type {
 	DC_TYPE_OF_ADC,
 };
 
+static const char *charger_type_to_name[] = {
+	"NONE",
+	"USB",
+	"AC",
+	"DC",
+	"UNKN",
+};
+
 static const u32 CHRG_VOL_SEL[] = {
 	4050, 4100, 4150, 4200, 4250, 4300, 4350
 };
@@ -990,7 +998,9 @@ static int rk816_fg_init(struct battery_priv *di)
 	di->pwr_vol = di->voltage_avg;
 	rk816_bat_charger_setting(di, di->chrg_type);
 
-	printf("Battery: soc=%d%%, voltage=%dmv\n", di->dsoc, di->voltage_avg);
+	printf("Battery: soc=%d%%, voltage=%dmv, Charger: %s%s\n",
+	       di->dsoc, di->voltage_avg, charger_type_to_name[di->chrg_type],
+	       di->virtual_power ? "(virtual)" : "");
 
 	return 0;
 }
