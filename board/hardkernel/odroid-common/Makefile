@@ -1,1 +1,1 @@
-obj-y += board.o partition.o eth_setup.o
+obj-y += board.o partition.o eth_setup.o recovery.o

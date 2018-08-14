@@ -40,6 +40,7 @@ Reboot reason AND corresponding env setting:
 13:  Watchdog reboot          watchdog_reboot
 14~15: reserved
 */
+#define AMLOGIC_REBOOT_UNKNOWN			-1
 #define AMLOGIC_COLD_BOOT				0
 #define	AMLOGIC_NORMAL_BOOT				1
 #define	AMLOGIC_FACTORY_RESET_REBOOT	2

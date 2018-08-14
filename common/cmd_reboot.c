@@ -27,14 +27,19 @@
 #include <asm/arch/bl31_apis.h>
 #include <asm/arch/watchdog.h>
 
+extern int board_get_recovery_message(void);
 /*
 run get_rebootmode  //set reboot_mode env with current mode
 */
 
 int do_get_rebootmode (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
-	uint32_t reboot_mode_val;
-	reboot_mode_val = ((readl(AO_SEC_SD_CFG15) >> 12) & 0xf);
+	uint32_t reboot_mode_val = AMLOGIC_REBOOT_UNKNOWN;
+	if (AMLOGIC_REBOOT_UNKNOWN == reboot_mode_val) {
+		reboot_mode_val = board_get_recovery_message();
+		if (AMLOGIC_REBOOT_UNKNOWN == reboot_mode_val)
+			reboot_mode_val = ((readl(AO_SEC_SD_CFG15) >> 12) & 0xf);
+	}
 
 	debug("reboot_mode(0x%x)=0x%x\n", AO_SEC_SD_CFG15, reboot_mode_val);
 
