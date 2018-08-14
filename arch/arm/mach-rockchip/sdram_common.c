@@ -253,8 +253,8 @@ ulong board_get_usable_ram_top(ulong total_size)
 
 int rockchip_setup_ddr_param(struct ram_info *info)
 {
-	struct ddr_param *dinfo = (struct ddr_param *)CONFIG_SYS_SDRAM_BASE +
-					PARAM_DRAM_INFO_OFFSET;
+	struct ddr_param *dinfo = (struct ddr_param *)(CONFIG_SYS_SDRAM_BASE +
+					PARAM_DRAM_INFO_OFFSET);
 
 	dinfo->count = 1;
 	dinfo->bank_addr = info->base;
