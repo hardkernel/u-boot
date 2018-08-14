@@ -91,11 +91,11 @@ struct aml_bl_extern_i2c_match_s {
 };
 
 static struct aml_bl_extern_i2c_match_s aml_bl_extern_i2c_match_table[] = {
-	{BL_EXTERN_I2C_BUS_AO,  "i2c_ao"},
-	{BL_EXTERN_I2C_BUS_A,   "i2c_a"},
-	{BL_EXTERN_I2C_BUS_B,   "i2c_b"},
-	{BL_EXTERN_I2C_BUS_C,   "i2c_c"},
-	{BL_EXTERN_I2C_BUS_D,   "i2c_d"},
+	{BL_EXTERN_I2C_BUS_0,   "i2c_0/a"},
+	{BL_EXTERN_I2C_BUS_1,   "i2c_1/b"},
+	{BL_EXTERN_I2C_BUS_2,   "i2c_2/c"},
+	{BL_EXTERN_I2C_BUS_3,   "i2c_3/d"},
+	{BL_EXTERN_I2C_BUS_4,   "i2c_4/ao"},
 	{BL_EXTERN_I2C_BUS_MAX, "i2c_invalid"},
 };
 
@@ -115,11 +115,11 @@ static void aml_bl_extern_i2c_bus_print(unsigned char i2c_bus)
 }
 
 static unsigned char aml_bl_extern_i2c_bus_table[][2] = {
-	{BL_EXTERN_I2C_BUS_AO,   LCD_AML_I2C_BUS_AO},
-	{BL_EXTERN_I2C_BUS_A,    LCD_AML_I2C_BUS_A},
-	{BL_EXTERN_I2C_BUS_B,    LCD_AML_I2C_BUS_B},
-	{BL_EXTERN_I2C_BUS_C,    LCD_AML_I2C_BUS_C},
-	{BL_EXTERN_I2C_BUS_D,    LCD_AML_I2C_BUS_D},
+	{BL_EXTERN_I2C_BUS_0,    LCD_AML_I2C_BUS_0},
+	{BL_EXTERN_I2C_BUS_1,    LCD_AML_I2C_BUS_1},
+	{BL_EXTERN_I2C_BUS_2,    LCD_AML_I2C_BUS_2},
+	{BL_EXTERN_I2C_BUS_3,    LCD_AML_I2C_BUS_3},
+	{BL_EXTERN_I2C_BUS_4,    LCD_AML_I2C_BUS_4},
 	{BL_EXTERN_I2C_BUS_MAX,  LCD_AML_I2C_BUS_MAX},
 };
 
@@ -186,15 +186,25 @@ static unsigned char bl_extern_get_i2c_bus_str(const char *str)
 	unsigned char i2c_bus;
 
 	if (strncmp(str, "i2c_bus_ao", 10) == 0)
-		i2c_bus = BL_EXTERN_I2C_BUS_AO;
+		i2c_bus = BL_EXTERN_I2C_BUS_4;
 	else if (strncmp(str, "i2c_bus_a", 9) == 0)
-		i2c_bus = BL_EXTERN_I2C_BUS_A;
+		i2c_bus = BL_EXTERN_I2C_BUS_0;
 	else if (strncmp(str, "i2c_bus_b", 9) == 0)
-		i2c_bus = BL_EXTERN_I2C_BUS_B;
+		i2c_bus = BL_EXTERN_I2C_BUS_1;
 	else if (strncmp(str, "i2c_bus_c", 9) == 0)
-		i2c_bus = BL_EXTERN_I2C_BUS_C;
+		i2c_bus = BL_EXTERN_I2C_BUS_2;
 	else if (strncmp(str, "i2c_bus_d", 9) == 0)
-		i2c_bus = BL_EXTERN_I2C_BUS_D;
+		i2c_bus = BL_EXTERN_I2C_BUS_3;
+	else if (strncmp(str, "i2c_bus_0", 9) == 0)
+		i2c_bus = BL_EXTERN_I2C_BUS_0;
+	else if (strncmp(str, "i2c_bus_1", 9) == 0)
+		i2c_bus = BL_EXTERN_I2C_BUS_1;
+	else if (strncmp(str, "i2c_bus_2", 9) == 0)
+		i2c_bus = BL_EXTERN_I2C_BUS_2;
+	else if (strncmp(str, "i2c_bus_3", 9) == 0)
+		i2c_bus = BL_EXTERN_I2C_BUS_3;
+	else if (strncmp(str, "i2c_bus_4", 9) == 0)
+		i2c_bus = BL_EXTERN_I2C_BUS_4;
 	else {
 		i2c_bus = BL_EXTERN_I2C_BUS_INVALID;
 		BLEXERR("invalid i2c_bus: %s\n", str);

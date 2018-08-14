@@ -33,11 +33,6 @@
 
 
 static char *dt_addr = NULL;
-static unsigned char lcd_ext_i2c_bus = LCD_EXTERN_I2C_BUS_INVALID;
-static unsigned char lcd_ext_i2c_sck_gpio = LCD_EXTERN_GPIO_NUM_MAX;
-static unsigned char lcd_ext_i2c_sck_gpio_off = 2;
-static unsigned char lcd_ext_i2c_sda_gpio = LCD_EXTERN_GPIO_NUM_MAX;
-static unsigned char lcd_ext_i2c_sda_gpio_off = 2;
 
 /* only probe one extern driver for uboot */
 static struct aml_lcd_extern_driver_s *lcd_ext_driver;
@@ -54,11 +49,11 @@ struct aml_lcd_extern_i2c_match_s {
 };
 
 static struct aml_lcd_extern_i2c_match_s aml_lcd_extern_i2c_match_table[] = {
-	{LCD_EXTERN_I2C_BUS_AO,  "i2c_ao"},
-	{LCD_EXTERN_I2C_BUS_A,   "i2c_a"},
-	{LCD_EXTERN_I2C_BUS_B,   "i2c_b"},
-	{LCD_EXTERN_I2C_BUS_C,   "i2c_c"},
-	{LCD_EXTERN_I2C_BUS_D,   "i2c_d"},
+	{LCD_EXTERN_I2C_BUS_0,   "i2c_0/a"},
+	{LCD_EXTERN_I2C_BUS_1,   "i2c_1/b"},
+	{LCD_EXTERN_I2C_BUS_2,   "i2c_2/c"},
+	{LCD_EXTERN_I2C_BUS_3,   "i2c_3/d"},
+	{LCD_EXTERN_I2C_BUS_4,   "i2c_4/ao"},
 	{LCD_EXTERN_I2C_BUS_MAX, "i2c_invalid"},
 };
 
@@ -78,17 +73,17 @@ static void aml_lcd_extern_i2c_bus_print(unsigned char i2c_bus)
 }
 
 static unsigned char aml_lcd_extern_i2c_bus_table[][2] = {
-	{LCD_EXTERN_I2C_BUS_AO,   LCD_AML_I2C_BUS_AO},
-	{LCD_EXTERN_I2C_BUS_A,    LCD_AML_I2C_BUS_A},
-	{LCD_EXTERN_I2C_BUS_B,    LCD_AML_I2C_BUS_B},
-	{LCD_EXTERN_I2C_BUS_C,    LCD_AML_I2C_BUS_C},
-	{LCD_EXTERN_I2C_BUS_D,    LCD_AML_I2C_BUS_D},
+	{LCD_EXTERN_I2C_BUS_0,    LCD_AML_I2C_BUS_0},
+	{LCD_EXTERN_I2C_BUS_1,    LCD_AML_I2C_BUS_1},
+	{LCD_EXTERN_I2C_BUS_2,    LCD_AML_I2C_BUS_2},
+	{LCD_EXTERN_I2C_BUS_3,    LCD_AML_I2C_BUS_3},
+	{LCD_EXTERN_I2C_BUS_4,    LCD_AML_I2C_BUS_4},
 	{LCD_EXTERN_I2C_BUS_MAX,  LCD_AML_I2C_BUS_MAX},
 };
 
 unsigned char aml_lcd_extern_i2c_bus_get_sys(unsigned char i2c_bus)
 {
-	int i, ret = LCD_EXTERN_I2C_BUS_INVALID;
+	int i, ret = LCD_AML_I2C_BUS_MAX;
 
 	for (i = 0; i < ARRAY_SIZE(aml_lcd_extern_i2c_bus_table); i++) {
 		if (aml_lcd_extern_i2c_bus_table[i][0] == i2c_bus) {
@@ -249,7 +244,7 @@ static void aml_lcd_extern_info_print(void)
 			"i2c_sda_gpio_off: %d\n"
 			"table_loaded:     %d\n",
 			econf->i2c_addr, econf->i2c_addr2,
-			econf->i2c_bus,
+			ecommon->i2c_bus,
 			ecommon->i2c_sck_gpio,
 			ecommon->i2c_sck_gpio_off,
 			ecommon->i2c_sda_gpio,
@@ -392,15 +387,25 @@ static unsigned char aml_lcd_extern_get_i2c_bus_str(const char *str)
 	unsigned char i2c_bus;
 
 	if (strncmp(str, "i2c_bus_ao", 10) == 0)
-		i2c_bus = LCD_EXTERN_I2C_BUS_AO;
+		i2c_bus = LCD_EXTERN_I2C_BUS_4;
 	else if (strncmp(str, "i2c_bus_a", 9) == 0)
-		i2c_bus = LCD_EXTERN_I2C_BUS_A;
+		i2c_bus = LCD_EXTERN_I2C_BUS_0;
 	else if (strncmp(str, "i2c_bus_b", 9) == 0)
-		i2c_bus = LCD_EXTERN_I2C_BUS_B;
+		i2c_bus = LCD_EXTERN_I2C_BUS_1;
 	else if (strncmp(str, "i2c_bus_c", 9) == 0)
-		i2c_bus = LCD_EXTERN_I2C_BUS_C;
+		i2c_bus = LCD_EXTERN_I2C_BUS_2;
 	else if (strncmp(str, "i2c_bus_d", 9) == 0)
-		i2c_bus = LCD_EXTERN_I2C_BUS_D;
+		i2c_bus = LCD_EXTERN_I2C_BUS_3;
+	else if (strncmp(str, "i2c_bus_0", 9) == 0)
+		i2c_bus = LCD_EXTERN_I2C_BUS_0;
+	else if (strncmp(str, "i2c_bus_1", 9) == 0)
+		i2c_bus = LCD_EXTERN_I2C_BUS_1;
+	else if (strncmp(str, "i2c_bus_2", 9) == 0)
+		i2c_bus = LCD_EXTERN_I2C_BUS_2;
+	else if (strncmp(str, "i2c_bus_3", 9) == 0)
+		i2c_bus = LCD_EXTERN_I2C_BUS_3;
+	else if (strncmp(str, "i2c_bus_4", 9) == 0)
+		i2c_bus = LCD_EXTERN_I2C_BUS_4;
 	else {
 		i2c_bus = LCD_EXTERN_I2C_BUS_INVALID;
 		EXTERR("invalid i2c_bus: %s\n", str);
@@ -470,9 +475,9 @@ static int aml_lcd_extern_get_init_dts(char *dtaddr, struct lcd_extern_common_s 
 
 	propdata = (char *)fdt_getprop(dtaddr, parent_offset, "i2c_bus", NULL);
 	if (propdata == NULL)
-		lcd_ext_i2c_bus = LCD_EXTERN_I2C_BUS_INVALID;
+		extcommon->i2c_bus = LCD_EXTERN_I2C_BUS_INVALID;
 	else
-		lcd_ext_i2c_bus = aml_lcd_extern_get_i2c_bus_str(propdata);
+		extcommon->i2c_bus = aml_lcd_extern_get_i2c_bus_str(propdata);
 
 	i = 0;
 	propdata = (char *)fdt_getprop(dtaddr, parent_offset, "extern_gpio_names", NULL);
@@ -499,15 +504,15 @@ static int aml_lcd_extern_get_init_dts(char *dtaddr, struct lcd_extern_common_s 
 
 	propdata = (char *)fdt_getprop(dtaddr, parent_offset, "i2c_gpio_off", NULL);
 	if (propdata == NULL) {
-		lcd_ext_i2c_sck_gpio = LCD_EXTERN_GPIO_NUM_MAX;
-		lcd_ext_i2c_sck_gpio_off = 2;
-		lcd_ext_i2c_sda_gpio = LCD_EXTERN_GPIO_NUM_MAX;
-		lcd_ext_i2c_sda_gpio_off = 2;
+		extcommon->i2c_sck_gpio = LCD_EXTERN_GPIO_NUM_MAX;
+		extcommon->i2c_sck_gpio_off = 2;
+		extcommon->i2c_sda_gpio = LCD_EXTERN_GPIO_NUM_MAX;
+		extcommon->i2c_sda_gpio_off = 2;
 	} else {
-		lcd_ext_i2c_sck_gpio = be32_to_cpup((u32*)propdata);
-		lcd_ext_i2c_sck_gpio_off = be32_to_cpup((((u32*)propdata)+1));
-		lcd_ext_i2c_sda_gpio = be32_to_cpup((((u32*)propdata)+2));
-		lcd_ext_i2c_sda_gpio_off = be32_to_cpup((((u32*)propdata)+3));
+		extcommon->i2c_sck_gpio = be32_to_cpup((u32*)propdata);
+		extcommon->i2c_sck_gpio_off = be32_to_cpup((((u32*)propdata)+1));
+		extcommon->i2c_sda_gpio = be32_to_cpup((((u32*)propdata)+2));
+		extcommon->i2c_sda_gpio_off = be32_to_cpup((((u32*)propdata)+3));
 	}
 
 	/* pinmux version*/
@@ -839,27 +844,22 @@ static int aml_lcd_extern_get_config_dts(char *dtaddr, int index,
 		if (lcd_debug_print_flag)
 			EXTPR("%s: i2c_second_address=0x%02x\n", extconf->name, extconf->i2c_addr2);
 
-		if (lcd_ext_i2c_bus == LCD_EXTERN_I2C_BUS_INVALID) { /* compatible for kernel3.14 */
+		if (extcommon->i2c_bus == LCD_EXTERN_I2C_BUS_INVALID) { /* compatible for kernel3.14 */
 			propdata = (char *)fdt_getprop(dtaddr, nodeoffset, "i2c_bus", NULL);
 			if (propdata == NULL) {
 				EXTERR("get %s i2c_bus failed, exit\n", extconf->name);
-				extconf->i2c_bus = LCD_EXTERN_I2C_BUS_INVALID;
+				extcommon->i2c_bus = LCD_EXTERN_I2C_BUS_INVALID;
 				return -1;
 			} else {
-				extconf->i2c_bus = aml_lcd_extern_get_i2c_bus_str(propdata);
+				extcommon->i2c_bus = aml_lcd_extern_get_i2c_bus_str(propdata);
 			}
-		} else {
-			extconf->i2c_bus = lcd_ext_i2c_bus;
 		}
+		extconf->i2c_bus = extcommon->i2c_bus;
 		if (lcd_debug_print_flag)
 			aml_lcd_extern_i2c_bus_print(extconf->i2c_bus);
 
-		extcommon->i2c_sck_gpio = lcd_ext_i2c_sck_gpio;
-		extcommon->i2c_sck_gpio_off = lcd_ext_i2c_sck_gpio_off;
-		extcommon->i2c_sda_gpio = lcd_ext_i2c_sda_gpio;
-		extcommon->i2c_sda_gpio_off = lcd_ext_i2c_sda_gpio_off;
-		if ((lcd_ext_i2c_sck_gpio < LCD_EXTERN_GPIO_NUM_MAX) ||
-			(lcd_ext_i2c_sda_gpio < LCD_EXTERN_GPIO_NUM_MAX))
+		if ((extcommon->i2c_sck_gpio < LCD_EXTERN_GPIO_NUM_MAX) ||
+			(extcommon->i2c_sda_gpio < LCD_EXTERN_GPIO_NUM_MAX))
 				EXTPR("find i2c_gpio_off config\n");
 
 		propdata = (char *)fdt_getprop(dtaddr, nodeoffset, "cmd_size", NULL);
@@ -1314,18 +1314,13 @@ static int aml_lcd_extern_get_config_unifykey(int index,
 	case LCD_EXTERN_I2C:
 		extconf->i2c_addr = *(p + LCD_UKEY_EXT_TYPE_VAL_0);
 		extconf->i2c_addr2 = *(p + LCD_UKEY_EXT_TYPE_VAL_1);
-		if (lcd_ext_i2c_bus == LCD_EXTERN_I2C_BUS_INVALID) /* compatible for kernel3.14 */
-			extconf->i2c_bus = *(p + LCD_UKEY_EXT_TYPE_VAL_2);
-		else
-			extconf->i2c_bus = lcd_ext_i2c_bus;
+		if (extcommon->i2c_bus == LCD_EXTERN_I2C_BUS_INVALID) /* compatible for kernel3.14 */
+			extcommon->i2c_bus = *(p + LCD_UKEY_EXT_TYPE_VAL_2);
+		extconf->i2c_bus = extcommon->i2c_bus;
 		if (lcd_debug_print_flag)
 			aml_lcd_extern_i2c_bus_print(extconf->i2c_bus);
-		extcommon->i2c_sck_gpio = lcd_ext_i2c_sck_gpio;
-		extcommon->i2c_sck_gpio_off = lcd_ext_i2c_sck_gpio_off;
-		extcommon->i2c_sda_gpio = lcd_ext_i2c_sda_gpio;
-		extcommon->i2c_sda_gpio_off = lcd_ext_i2c_sda_gpio_off;
-		if ((lcd_ext_i2c_sck_gpio < LCD_EXTERN_GPIO_NUM_MAX) ||
-			(lcd_ext_i2c_sda_gpio < LCD_EXTERN_GPIO_NUM_MAX))
+		if ((extcommon->i2c_sck_gpio < LCD_EXTERN_GPIO_NUM_MAX) ||
+			(extcommon->i2c_sda_gpio < LCD_EXTERN_GPIO_NUM_MAX))
 				EXTPR("find i2c_gpio_off config\n");
 		extconf->cmd_size = *(p + LCD_UKEY_EXT_TYPE_VAL_3);
 
@@ -1741,6 +1736,7 @@ int aml_lcd_extern_probe(char *dtaddr, int index)
 		}
 		ext_config = &ext_config_dtf[index];
 		ext_config->table_init_loaded = 0;
+		ext_config->i2c_bus = ext_common->i2c_bus;
 
 		if (lcd_drv->unifykey_test_flag) {
 			ext_common->lcd_ext_key_valid = 1;

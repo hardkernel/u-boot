@@ -407,6 +407,7 @@ static unsigned char ext_init_off_table[LCD_EXTERN_INIT_OFF_MAX] = {
 struct lcd_extern_common_s ext_common_dft = {
 	.lcd_ext_key_valid = 0,
 	.lcd_ext_num = 4,
+	.i2c_bus = LCD_EXTERN_I2C_BUS_0, /* LCD_EXTERN_I2C_BUS_0/1/2/3/4 */
 	.pinmux_set = {{LCD_PINMUX_END, 0x0}},
 	.pinmux_clr = {{LCD_PINMUX_END, 0x0}},
 };
@@ -419,7 +420,6 @@ struct lcd_extern_config_s ext_config_dtf[LCD_EXTERN_NUM_MAX] = {
 		.status = 0, /* 0=disable, 1=enable */
 		.i2c_addr = 0x1c, /* 7bit i2c address */
 		.i2c_addr2 = 0xff, /* 7bit i2c address, 0xff for none */
-		.i2c_bus = LCD_EXTERN_I2C_BUS_C, /* LCD_EXTERN_I2C_BUS_AO, LCD_EXTERN_I2C_BUS_A/B/C/D */
 		.cmd_size = 9,
 		.table_init_on = ext_init_on_table,
 		.table_init_off = ext_init_off_table,

@@ -32,6 +32,8 @@
 #define GPIO_SPI_CS		0 /* index */
 #define GPIO_SPI_CLK		1 /* index */
 #define GPIO_SPI_DATA		2 /* index */
+#define SPI_CLK_FREQ		10000 //Hz
+#define SPI_CLK_POL		1
 
 #define SPI_DELAY		30 //unit: us
 

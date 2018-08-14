@@ -23,14 +23,19 @@ enum bl_extern_type_e {
 	BL_EXTERN_MAX,
 };
 
-enum bl_extern_i2c_bus_e {
-	BL_EXTERN_I2C_BUS_AO = 0,
-	BL_EXTERN_I2C_BUS_A,
-	BL_EXTERN_I2C_BUS_B,
-	BL_EXTERN_I2C_BUS_C,
-	BL_EXTERN_I2C_BUS_D,
-	BL_EXTERN_I2C_BUS_MAX,
-};
+#define BL_EXTERN_I2C_BUS_A          0
+#define BL_EXTERN_I2C_BUS_B          1
+#define BL_EXTERN_I2C_BUS_C          2
+#define BL_EXTERN_I2C_BUS_D          3
+#define BL_EXTERN_I2C_BUS_AO         4
+
+#define BL_EXTERN_I2C_BUS_0          BL_EXTERN_I2C_BUS_A
+#define BL_EXTERN_I2C_BUS_1          BL_EXTERN_I2C_BUS_B
+#define BL_EXTERN_I2C_BUS_2          BL_EXTERN_I2C_BUS_C
+#define BL_EXTERN_I2C_BUS_3          BL_EXTERN_I2C_BUS_D
+#define BL_EXTERN_I2C_BUS_4          BL_EXTERN_I2C_BUS_AO
+#define BL_EXTERN_I2C_BUS_MAX        5
+
 #define BL_EXTERN_I2C_BUS_INVALID   0xff
 
 #define BL_EXTERN_SPI_CLK_FREQ_DFT  10000 /* default 10k */
@@ -41,7 +46,7 @@ enum bl_extern_i2c_bus_e {
 #define BL_EXTERN_INIT_NONE         0xf0
 #define BL_EXTERN_INIT_END          0xff
 
-#define BL_EXTERN_DYNAMIC_LEN		0xff
+#define BL_EXTERN_DYNAMIC_LEN       0xff
 
 #define BL_EXTERN_GPIO_NUM_MAX      6
 #define BL_EXTERN_INDEX_INVALID     0xff

@@ -27,23 +27,21 @@
 #endif
 
 #ifdef CONFIG_SYS_I2C_AML
-enum lcd_aml_i2c_bus_e {
-	LCD_AML_I2C_BUS_AO = 0,
-	LCD_AML_I2C_BUS_A,
-	LCD_AML_I2C_BUS_B,
-	LCD_AML_I2C_BUS_C,
-	LCD_AML_I2C_BUS_D,
-	LCD_AML_I2C_BUS_MAX,
-};
+#define LCD_AML_I2C_BUS_0     1  //A
+#define LCD_AML_I2C_BUS_1     2  //B
+#define LCD_AML_I2C_BUS_2     3  //C
+#define LCD_AML_I2C_BUS_3     4  //D
+#define LCD_AML_I2C_BUS_4     0  //AO
+#define LCD_AML_I2C_BUS_MAX   0xff
+
 #else
-enum lcd_aml_i2c_bus_e {
-	LCD_AML_I2C_BUS_A = 0,
-	LCD_AML_I2C_BUS_B,
-	LCD_AML_I2C_BUS_C,
-	LCD_AML_I2C_BUS_D,
-	LCD_AML_I2C_BUS_AO,
-	LCD_AML_I2C_BUS_MAX,
-};
+#define LCD_AML_I2C_BUS_0     0  //A
+#define LCD_AML_I2C_BUS_1     1  //B
+#define LCD_AML_I2C_BUS_2     2  //C
+#define LCD_AML_I2C_BUS_3     3  //D
+#define LCD_AML_I2C_BUS_4     4  //AO
+#define LCD_AML_I2C_BUS_MAX   0xff
+
 #endif
 
 

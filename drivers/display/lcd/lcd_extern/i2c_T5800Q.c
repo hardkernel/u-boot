@@ -38,12 +38,12 @@
 #define LCD_EXTERN_TYPE			LCD_EXTERN_I2C
 
 #define LCD_EXTERN_I2C_ADDR		(0x38 >> 1) //7bit address
-#define LCD_EXTERN_I2C_BUS		LCD_EXTERN_I2C_BUS_C
+#define LCD_EXTERN_I2C_BUS		LCD_EXTERN_I2C_BUS_2
 
 #ifdef CONFIG_SYS_I2C_AML
 //#define LCD_EXT_I2C_PORT_INIT     /* no need init i2c port default */
 #ifdef LCD_EXT_I2C_PORT_INIT
-static unsigned aml_i2c_bus_tmp = LCD_EXTERN_I2C_BUS_INVALID;
+static unsigned int aml_i2c_bus_tmp = LCD_EXTERN_I2C_BUS_INVALID;
 #endif
 #endif
 static struct lcd_extern_config_s *ext_config;
@@ -99,15 +99,15 @@ static int lcd_extern_i2c_write(unsigned i2caddr, unsigned char *buff, unsigned 
 {
 	int ret;
 	unsigned char i2c_bus;
-	struct udevice *dev;
+	struct udevice *i2c_dev;
 #ifdef LCD_EXT_DEBUG_INFO
 	int i;
 #endif
 
 	i2c_bus = aml_lcd_extern_i2c_bus_get_sys(ext_config->i2c_bus);
-	ret = i2c_get_chip_for_busnum(i2c_bus, i2caddr, &dev);
+	ret = i2c_get_chip_for_busnum(i2c_bus, i2caddr, &i2c_dev);
 	if (ret) {
-		EXTERR("no i2c bus find\n");
+		EXTERR("no sys i2c_bus %d find\n", i2c_bus);
 		return ret;
 	}
 
@@ -119,9 +119,9 @@ static int lcd_extern_i2c_write(unsigned i2caddr, unsigned char *buff, unsigned 
 	printf(" [addr 0x%02x]\n", i2caddr);
 #endif
 
-	ret = i2c_write(dev, i2caddr, buff, len);
+	ret = i2c_write(i2c_dev, i2caddr, buff, len);
 	if (ret) {
-		EXTERR("failed to write I2C data\n");
+		EXTERR("i2c write failed [addr 0x%02x]\n", i2caddr);
 		return ret;
 	}
 
@@ -201,13 +201,13 @@ static int lcd_extern_power_cmd(unsigned char *init_table, int flag)
 }
 
 #ifdef LCD_EXT_I2C_PORT_INIT
-static int lcd_extern_change_i2c_bus(unsigned aml_i2c_bus)
+static int lcd_extern_change_i2c_bus(unsigned int aml_i2c_bus)
 {
 	int ret = 0;
 	extern struct aml_i2c_platform g_aml_i2c_plat;
 
 	if (aml_i2c_bus == LCD_EXTERN_I2C_BUS_INVALID) {
-		EXTERR("%s: invalid i2c_bus\n", __func__);
+		EXTERR("%s: invalid sys i2c_bus %d\n", __func__, aml_i2c_bus);
 		return -1;
 	}
 	g_aml_i2c_plat.master_no = aml_i2c_bus;

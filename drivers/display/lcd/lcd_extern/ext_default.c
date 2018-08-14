@@ -33,46 +33,18 @@
 
 //#define LCD_EXT_DEBUG_INFO
 
-#define LCD_EXTERN_INDEX          0
 #define LCD_EXTERN_NAME           "ext_default"
-
-#define LCD_EXTERN_TYPE           LCD_EXTERN_I2C
-
-#define LCD_EXTERN_I2C_ADDR       (0x1c) //7bit address
-#define LCD_EXTERN_I2C_ADDR2      (0xff) //7bit address
-#define LCD_EXTERN_I2C_BUS        LCD_EXTERN_I2C_BUS_C
-
-#define SPI_GPIO_CS               0  //index
-#define SPI_GPIO_CLK              1  //index
-#define SPI_GPIO_DATA             2  //index
-#define SPI_CLK_FREQ              10000 //Hz
-#define SPI_CLK_POL               1
 
 #ifdef CONFIG_SYS_I2C_AML
 //#define LCD_EXT_I2C_PORT_INIT     /* no need init i2c port default */
 #ifdef LCD_EXT_I2C_PORT_INIT
-static unsigned aml_i2c_bus_tmp = LCD_EXTERN_I2C_BUS_INVALID;
+static unsigned int aml_i2c_bus_tmp = LCD_EXTERN_I2C_BUS_INVALID;
 #endif
 #endif
 
 static struct lcd_extern_config_s *ext_config;
 
-#define LCD_EXTERN_CMD_SIZE        9
-static unsigned char init_on_table[] = {
-	0x00, 0x20, 0x01, 0x02, 0x00, 0x40, 0xFF, 0x00, 0x00,
-	0x00, 0x80, 0x02, 0x00, 0x40, 0x62, 0x51, 0x73, 0x00,
-	0x00, 0x61, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0xC1, 0x05, 0x0F, 0x00, 0x08, 0x70, 0x00, 0x00,
-	0x00, 0x13, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x3D, 0x02, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0xED, 0x0D, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x23, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0A,  /* delay 10ms */
-	0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  /* ending */
-};
-
-static unsigned char init_off_table[] = {
-	0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  /* ending */
-};
+#define LCD_EXTERN_CMD_SIZE        0
 
 #ifdef CONFIG_SYS_I2C_AML
 static int lcd_extern_i2c_write(unsigned i2caddr, unsigned char *buff, unsigned len)
@@ -108,15 +80,15 @@ static int lcd_extern_i2c_write(unsigned i2caddr, unsigned char *buff, unsigned 
 {
 	int ret;
 	unsigned char i2c_bus;
-	struct udevice *dev;
+	struct udevice *i2c_dev;
 #ifdef LCD_EXT_DEBUG_INFO
 	int i;
 #endif
 
 	i2c_bus = aml_lcd_extern_i2c_bus_get_sys(ext_config->i2c_bus);
-	ret = i2c_get_chip_for_busnum(i2c_bus, i2caddr, &dev);
+	ret = i2c_get_chip_for_busnum(i2c_bus, i2caddr, &i2c_dev);
 	if (ret) {
-		EXTERR("no i2c bus find\n");
+		EXTERR("no sys i2c_bus %d find\n", i2c_bus);
 		return ret;
 	}
 
@@ -127,9 +99,9 @@ static int lcd_extern_i2c_write(unsigned i2caddr, unsigned char *buff, unsigned 
 	printf(" [addr 0x%02x]\n", i2caddr);
 #endif
 
-	ret = i2c_write(dev, i2caddr, buff, len);
+	ret = i2c_write(i2c_dev, i2caddr, buff, len);
 	if (ret) {
-		EXTERR("failed to write I2C data\n");
+		EXTERR("i2c write failed [addr 0x%02x]\n", i2caddr);
 		return ret;
 	}
 
@@ -374,13 +346,13 @@ static int lcd_extern_power_cmd(unsigned char *init_table, int flag)
 }
 
 #ifdef LCD_EXT_I2C_PORT_INIT
-static int lcd_extern_change_i2c_bus(unsigned aml_i2c_bus)
+static int lcd_extern_change_i2c_bus(unsigned int aml_i2c_bus)
 {
 	int ret = 0;
 	extern struct aml_i2c_platform g_aml_i2c_plat;
 
 	if (aml_i2c_bus == LCD_EXTERN_I2C_BUS_INVALID) {
-		EXTERR("%s: invalid i2c_bus\n", __func__);
+		EXTERR("%s: invalid sys i2c_bus %d\n", __func__, aml_i2c_bus);
 		return -1;
 	}
 	g_aml_i2c_plat.master_no = aml_i2c_bus;
@@ -399,13 +371,13 @@ static int lcd_extern_power_ctrl(int flag)
 	int ret = 0;
 
 	/* step 1: power prepare */
-	if (ext_config->type == LCD_EXTERN_I2C) {
 #ifdef LCD_EXT_I2C_PORT_INIT
+	if (ext_config->type == LCD_EXTERN_I2C) {
 		aml_i2c_bus_tmp = g_aml_i2c_plat.master_no;
 		i2c_bus = aml_lcd_extern_i2c_bus_get_sys(ext_config->i2c_bus);
 		lcd_extern_change_i2c_bus(i2c_bus);
-#endif
 	}
+#endif
 
 	/* step 2: power cmd */
 	if (flag)
@@ -414,11 +386,11 @@ static int lcd_extern_power_ctrl(int flag)
 		ret = lcd_extern_power_cmd(ext_config->table_init_off, 0);
 
 	/* step 3: power finish */
-	if (ext_config->type == LCD_EXTERN_I2C) {
 #ifdef LCD_EXT_I2C_PORT_INIT
+	if (ext_config->type == LCD_EXTERN_I2C) {
 		lcd_extern_change_i2c_bus(aml_i2c_bus_tmp);
-#endif
 	}
+#endif
 
 	EXTPR("%s(%d: %s): %d\n",
 		__func__, ext_config->index, ext_config->name, flag);
@@ -451,32 +423,6 @@ static int lcd_extern_driver_update(struct aml_lcd_extern_driver_s *ext_drv)
 		return -1;
 	}
 
-	if (ext_drv->config->type == LCD_EXTERN_MAX) { //default for no dt
-		ext_drv->config->index = LCD_EXTERN_INDEX;
-		ext_drv->config->type = LCD_EXTERN_TYPE;
-		strcpy(ext_drv->config->name, LCD_EXTERN_NAME);
-		ext_drv->config->cmd_size = LCD_EXTERN_CMD_SIZE;
-		switch (ext_drv->config->type) {
-		case LCD_EXTERN_I2C:
-			ext_drv->config->i2c_addr = LCD_EXTERN_I2C_ADDR;
-			ext_drv->config->i2c_addr2 = LCD_EXTERN_I2C_ADDR2;
-			ext_drv->config->i2c_bus = LCD_EXTERN_I2C_BUS;
-			break;
-		case LCD_EXTERN_SPI:
-			ext_drv->config->spi_gpio_cs = SPI_GPIO_CS;
-			ext_drv->config->spi_gpio_clk = SPI_GPIO_CLK;
-			ext_drv->config->spi_gpio_data = SPI_GPIO_DATA;
-			ext_drv->config->spi_clk_freq = SPI_CLK_FREQ;
-			ext_drv->config->spi_clk_pol = SPI_CLK_POL;
-			break;
-		default:
-			break;
-		}
-	}
-	if (ext_drv->config->table_init_loaded == 0) {
-		ext_drv->config->table_init_on  = init_on_table;
-		ext_drv->config->table_init_off = init_off_table;
-	}
 	ext_drv->reg_read  = lcd_extern_reg_read;
 	ext_drv->reg_write = lcd_extern_reg_write;
 	ext_drv->power_on  = lcd_extern_power_on;

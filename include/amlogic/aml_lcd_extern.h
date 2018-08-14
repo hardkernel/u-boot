@@ -25,15 +25,19 @@ enum lcd_extern_type_e {
 	LCD_EXTERN_MAX,
 };
 
-enum lcd_extern_i2c_bus_e {
-	LCD_EXTERN_I2C_BUS_AO = 0,
-	LCD_EXTERN_I2C_BUS_A,
-	LCD_EXTERN_I2C_BUS_B,
-	LCD_EXTERN_I2C_BUS_C,
-	LCD_EXTERN_I2C_BUS_D,
-	LCD_EXTERN_I2C_BUS_MAX,
+#define LCD_EXTERN_I2C_BUS_A          0
+#define LCD_EXTERN_I2C_BUS_B          1
+#define LCD_EXTERN_I2C_BUS_C          2
+#define LCD_EXTERN_I2C_BUS_D          3
+#define LCD_EXTERN_I2C_BUS_AO         4
 
-};
+#define LCD_EXTERN_I2C_BUS_0          LCD_EXTERN_I2C_BUS_A
+#define LCD_EXTERN_I2C_BUS_1          LCD_EXTERN_I2C_BUS_B
+#define LCD_EXTERN_I2C_BUS_2          LCD_EXTERN_I2C_BUS_C
+#define LCD_EXTERN_I2C_BUS_3          LCD_EXTERN_I2C_BUS_D
+#define LCD_EXTERN_I2C_BUS_4          LCD_EXTERN_I2C_BUS_AO
+#define LCD_EXTERN_I2C_BUS_MAX        5
+
 #define LCD_EXTERN_I2C_BUS_INVALID    0xff
 
 #define LCD_EXTERN_SPI_CLK_FREQ_DFT   10000 /* default 10k */
@@ -86,6 +90,7 @@ struct lcd_extern_common_s {
 	char gpio_name[LCD_EXTERN_GPIO_NUM_MAX][LCD_EXTERN_GPIO_LEN_MAX];
 	unsigned int lcd_ext_num;
 
+	unsigned char i2c_bus;
 	unsigned char i2c_sck_gpio;
 	unsigned char i2c_sck_gpio_off;
 	unsigned char i2c_sda_gpio;
