@@ -661,24 +661,23 @@ static int charge_animation_probe(struct udevice *dev)
 	ret = uclass_get_device(UCLASS_FG, 0, &fg);
 	if (ret) {
 		if (ret == -ENODEV)
-			printf("Can't find FG\n");
+			debug("Can't find FG\n");
 		else
-			printf("Get UCLASS FG failed: %d\n", ret);
+			debug("Get UCLASS FG failed: %d\n", ret);
 		return ret;
 	}
 	priv->fg = fg;
 
 	/* Get PWRKEY: used for wakeup and turn off/on LCD */
-	ret = key_read(KEY_POWER);
-	if (ret == KEY_NOT_EXIST) {
-		printf("Can't find power key\n");
+	if (key_read(KEY_POWER) == KEY_NOT_EXIST) {
+		debug("Can't find power key\n");
 		return -EINVAL;
 	}
 
 	/* Initialize charge current */
 	soc = fuel_gauge_get_soc(fg);
 	if (soc < 0 || soc > 100) {
-		printf("get soc failed: %d\n", soc);
+		debug("get soc failed: %d\n", soc);
 		return -EINVAL;
 	}
 
