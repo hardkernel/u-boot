@@ -333,7 +333,7 @@ static unsigned int detect_key(unsigned int suspend_from)
 #ifdef CONFIG_CEC_WAKEUP
 		/*if receive wake up message, wait for the port*/
 		if ((cec_msg.cec_power == 0x1) &&
-		    (hdmi_cec_func_config & 0x1)) {
+			(hdmi_cec_func_config & 0x1)) {
 			if (cec_wait_addr++ < 100) {
 				if (cec_msg.active_source) {
 					cec_save_port_id();

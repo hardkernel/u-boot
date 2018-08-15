@@ -81,7 +81,7 @@ static void *cec_memcpy(void *memto, const void *memfrom, unsigned int size)
 
 	if ((memto == NULL) || (memfrom == NULL))
 		return NULL;
-	while (size --   > 0)
+	while (size -- > 0)
 		*tempto++ = *tempfrom++;
 	return memto;
 }
@@ -738,7 +738,7 @@ static unsigned char cec_get_log_addr(void)
 unsigned int cec_handler(void)
 {
 	unsigned char s_idx;
-	static int busy_count;
+	static int busy_count = 0;
 	int irq;
 
 	dump_cecb_reg();
@@ -822,10 +822,10 @@ unsigned int cec_handler(void)
 
 void cec_node_init(void)
 {
-	static int i;
-	static unsigned int retry;
-	static int regist_devs;
-	static enum _cec_log_dev_addr_e *probe;
+	static int i = 0;
+	static unsigned int retry = 0;
+	static int regist_devs = 0;
+	static enum _cec_log_dev_addr_e *probe = NULL;
 
 	int tx_stat;
 	unsigned char msg[1];
@@ -833,7 +833,7 @@ void cec_node_init(void)
 	enum _cec_log_dev_addr_e player_dev[3][3] =
 		{{CEC_PLAYBACK_DEVICE_1_ADDR, CEC_PLAYBACK_DEVICE_2_ADDR, CEC_PLAYBACK_DEVICE_3_ADDR},
 		 {CEC_PLAYBACK_DEVICE_2_ADDR, CEC_PLAYBACK_DEVICE_3_ADDR, CEC_PLAYBACK_DEVICE_1_ADDR},
-		 {CEC_PLAYBACK_DEVICE_3_ADDR, CEC_PLAYBACK_DEVICE_1_ADDR, CEC_PLAYBACK_DEVICE_2_ADDR} };
+		 {CEC_PLAYBACK_DEVICE_3_ADDR, CEC_PLAYBACK_DEVICE_1_ADDR, CEC_PLAYBACK_DEVICE_2_ADDR}};
 
 	uart_puts(CEC_VERSION);
 	if (retry >= 12) {  /* retry all device addr */

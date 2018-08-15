@@ -21,7 +21,9 @@
 
 
 #ifdef CONFIG_CEC_WAKEUP
-#include <cec_tx_reg.h>
+#include <asm/arch/cec_tx_reg.h>
+#include <hdmi_cec_arc.h>
+#include <amlogic/aml_cec.h>
 #endif
 #include <gpio-gxbb.h>
 #include "pwm_ctrl.h"
@@ -298,7 +300,7 @@ static unsigned int detect_key(unsigned int suspend_from)
 	saradc_enable();
 #ifdef CONFIG_CEC_WAKEUP
 	if (hdmi_cec_func_config & 0x1) {
-		remote_cec_hw_reset();
+		cec_hw_reset();
 		cec_node_init();
 	}
 #endif

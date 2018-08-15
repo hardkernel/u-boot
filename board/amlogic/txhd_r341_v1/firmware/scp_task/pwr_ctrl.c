@@ -21,7 +21,9 @@
 
 
 #ifdef CONFIG_CEC_WAKEUP
-#include <cec_tx_reg.h>
+#include <asm/arch/cec_tx_reg.h>
+#include <hdmi_cec_arc.h>
+#include <amlogic/aml_cec.h>
 #endif
 #include <gpio-gxbb.h>
 #include "pwm_ctrl.h"
@@ -286,6 +288,7 @@ static unsigned int detect_key(unsigned int suspend_from)
 	int exit_reason = 0;
 	unsigned int time_out = readl(AO_DEBUG_REG2);
 	unsigned time_out_ms = time_out*100;
+	/*unsigned int cec_wait_addr = 0;*/
 	unsigned char adc_key_cnt = 0;
 	unsigned *irq = (unsigned *)WAKEUP_SRC_IRQ_ADDR_BASE;
 	/* unsigned *wakeup_en = (unsigned *)SECURE_TASK_RESPONSE_WAKEUP_EN; */
@@ -298,7 +301,7 @@ static unsigned int detect_key(unsigned int suspend_from)
 	saradc_enable();
 #ifdef CONFIG_CEC_WAKEUP
 	if (hdmi_cec_func_config & 0x1) {
-		remote_cec_hw_reset();
+		cec_hw_reset();
 		cec_node_init();
 	}
 #endif
@@ -306,24 +309,13 @@ static unsigned int detect_key(unsigned int suspend_from)
 	/* *wakeup_en = 1;*/
 	do {
 #ifdef CONFIG_CEC_WAKEUP
+		cec_suspend_wakeup_chk();
 		if (irq[IRQ_AO_CECB] == IRQ_AO_CECB_NUM) {
 			irq[IRQ_AO_CECB] = 0xFFFFFFFF;
-//			if (suspend_from == SYS_POWEROFF)
-//				continue;
-			if (cec_msg.log_addr) {
-				if (hdmi_cec_func_config & 0x1) {
-					cec_handler();
-					if (cec_msg.cec_power == 0x1) {
-						/*cec power key*/
-						exit_reason = CEC_WAKEUP;
-						break;
-					}
-				}
-			} else if (hdmi_cec_func_config & 0x1)
-				cec_node_init();
+			if (cec_suspend_handle())
+				exit_reason = CEC_WAKEUP;
 		}
 #endif
-
 		if (irq[IRQ_TIMERA] == IRQ_TIMERA_NUM) {
 			irq[IRQ_TIMERA] = 0xFFFFFFFF;
 			if (time_out_ms != 0)
@@ -354,9 +346,10 @@ static unsigned int detect_key(unsigned int suspend_from)
 			irq[IRQ_ETH_PHY] = 0xFFFFFFFF;
 				exit_reason = ETH_PHY_WAKEUP;
 		}
-		if (exit_reason)
+		if (exit_reason) {
+			set_cec_val2(exit_reason);
 			break;
-		else
+		} else
 			asm volatile("wfi");
 	} while (1);
 
