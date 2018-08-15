@@ -1412,6 +1412,7 @@ static void px30_clk_init(struct px30_pmuclk_priv *priv)
 {
 	struct udevice *cru_dev;
 	struct px30_clk_priv *cru_priv;
+	ulong npll_hz;
 	int ret;
 
 	priv->gpll_hz = px30_gpll_get_pmuclk(priv);
@@ -1430,6 +1431,13 @@ static void px30_clk_init(struct px30_pmuclk_priv *priv)
 	}
 	cru_priv = dev_get_priv(cru_dev);
 	cru_priv->gpll_hz = priv->gpll_hz;
+
+	npll_hz = px30_clk_get_pll_rate(cru_priv, NPLL);
+	if (npll_hz != NPLL_HZ) {
+		ret = px30_clk_set_pll_rate(cru_priv, NPLL, NPLL_HZ);
+		if (ret < 0)
+			printf("%s failed to set npll rate\n", __func__);
+	}
 
 	px30_bus_set_clk(cru_priv, ACLK_BUS_PRE, ACLK_BUS_HZ);
 	px30_bus_set_clk(cru_priv, HCLK_BUS_PRE, HCLK_BUS_HZ);
