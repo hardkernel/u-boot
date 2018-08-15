@@ -421,11 +421,11 @@ static int reserve_malloc(void)
 static int reserve_board(void)
 {
 	if (!gd->bd) {
-		gd->start_addr_sp -= sizeof(bd_t);
-		gd->bd = (bd_t *)map_sysmem(gd->start_addr_sp, sizeof(bd_t));
+		gd->relocaddr -= sizeof(bd_t);
+		gd->bd = (bd_t *)map_sysmem(gd->relocaddr, sizeof(bd_t));
 		memset(gd->bd, '\0', sizeof(bd_t));
 		debug("Reserving %zu Bytes for Board Info at: %08lx\n",
-		      sizeof(bd_t), gd->start_addr_sp);
+		      sizeof(bd_t), gd->relocaddr);
 	}
 	return 0;
 }
@@ -839,11 +839,11 @@ static const init_fnc_t init_sequence_f[] = {
 #ifdef CONFIG_ARM
 	reserve_mmu,
 #endif
+	reserve_board,
 	reserve_video,
 	reserve_trace,
 	reserve_uboot,
 	reserve_malloc,
-	reserve_board,
 	setup_machine,
 	reserve_global_data,
 	reserve_fdt,
