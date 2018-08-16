@@ -178,13 +178,16 @@ static u64 memsize_parse (const char *const ptr, const char **retptr)
 		case 'G':
 		case 'g':
 			ret <<= 10;
+			/* Fallthrough */
 		case 'M':
 		case 'm':
 			ret <<= 10;
+			/* Fallthrough */
 		case 'K':
 		case 'k':
 			ret <<= 10;
 			(*retptr)++;
+			/* Fallthrough */
 		default:
 			break;
 	}
