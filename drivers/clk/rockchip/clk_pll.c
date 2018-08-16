@@ -252,7 +252,7 @@ static ulong rk3036_pll_get_rate(struct rockchip_pll_clock *pll,
 {
 	u32 refdiv, fbdiv, postdiv1, postdiv2, dsmpd, frac;
 	u32 con = 0, shift, mask;
-	ulong rate = OSC_HZ;
+	ulong rate;
 
 	con = readl(base + pll->mode_offset);
 	shift = pll->mode_shift;
@@ -278,19 +278,16 @@ static ulong rk3036_pll_get_rate(struct rockchip_pll_clock *pll,
 		con = readl(base + pll->con_offset + 0x8);
 		frac = (con & RK3036_PLLCON2_FRAC_MASK) >>
 			RK3036_PLLCON2_FRAC_SHIFT;
-		rate *= fbdiv;
-		rate = rate / refdiv;
+		rate = (24 * fbdiv / (refdiv * postdiv1 * postdiv2)) * 1000000;
 		if (dsmpd == 0) {
-			ulong frac_rate = OSC_HZ;
+			u64 frac_rate = OSC_HZ * (u64)frac;
 
-			frac_rate = frac_rate  >> 12;
-			frac_rate = frac_rate * frac;
-			frac_rate = frac_rate  >> 12;
-			frac_rate = frac_rate / refdiv;
+			do_div(frac_rate, refdiv);
+			frac_rate >>= 24;
+			do_div(frac_rate, postdiv1);
+			do_div(frac_rate, postdiv1);
 			rate += frac_rate;
 		}
-		rate = rate / (postdiv1 * postdiv2);
-
 		return rate;
 	case RKCLK_PLL_MODE_DEEP:
 	default:
