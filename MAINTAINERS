@@ -224,14 +224,57 @@ N:	uniphier
 ARM ZYNQ
 M:	Michal Simek <monstr@monstr.eu>
 S:	Maintained
-F:	arch/arm/cpu/armv7/zynq/
-F:	arch/arm/include/asm/arch-zynq/
+T:	git git://git.denx.de/u-boot-microblaze.git
+F:	arch/arm/mach-zynq/
+F:	drivers/clk/clk_zynq.c
+F:	drivers/fpga/zynqpl.c
+F:	drivers/gpio/zynq_gpio.c
+F:	drivers/i2c/i2c-cdns.c
+F:	drivers/i2c/muxes/pca954x.c
+F:	drivers/i2c/zynq_i2c.c
+F:	drivers/mmc/zynq_sdhci.c
+F:	drivers/mtd/nand/raw/zynq_nand.c
+F:	drivers/net/phy/xilinx_phy.c
+F:	drivers/net/zynq_gem.c
+F:	drivers/serial/serial_zynq.c
+F:	drivers/spi/zynq_qspi.c
+F:	drivers/spi/zynq_spi.c
+F:	drivers/usb/host/ehci-zynq.c
+F:	drivers/watchdog/cdns_wdt.c
+F:	include/zynqpl.h
+F:	tools/zynqimage.c
+N:	zynq
 
 ARM ZYNQMP
 M:	Michal Simek <michal.simek@xilinx.com>
 S:	Maintained
 F:	arch/arm/cpu/armv8/zynqmp/
-F:	arch/arm/include/asm/arch-zynqmp/
+F:	drivers/clk/clk_zynqmp.c
+F:	drivers/fpga/zynqpl.c
+F:	drivers/gpio/zynq_gpio.c
+F:	drivers/i2c/i2c-cdns.c
+F:	drivers/i2c/muxes/pca954x.c
+F:	drivers/i2c/zynq_i2c.c
+F:	drivers/mmc/zynq_sdhci.c
+F:	drivers/mtd/nand/raw/zynq_nand.c
+F:	drivers/net/phy/xilinx_phy.c
+F:	drivers/net/zynq_gem.c
+F:	drivers/serial/serial_zynq.c
+F:	drivers/spi/zynq_qspi.c
+F:	drivers/spi/zynq_spi.c
+F:	drivers/timer/cadence-ttc.c
+F:	drivers/usb/host/ehci-zynq.c
+F:	drivers/watchdog/cdns_wdt.c
+F:	include/zynqmppl.h
+F:	tools/zynqmp*
+N:	ultra96
+N:	zynqmp
+
+ARM ZYNQMP R5
+M:	Michal Simek <michal.simek@xilinx.com>
+S:	Maintained
+T:	git git://git.denx.de/u-boot-microblaze.git
+F:	arch/arm/mach-zynqmp-r5/
 
 BUILDMAN
 M:	Simon Glass <sjg@chromium.org>
@@ -328,6 +371,37 @@ M:	Jaehoon Chung <jh80.chung@samsung.com>
 S:	Maintained
 T:	git git://git.denx.de/u-boot-mmc.git
 F:	drivers/mmc/
+
+NAND FLASH
+#M:	Scott Wood <oss@buserror.net>
+S:	Orphaned (Since 2018-07)
+T:	git git://git.denx.de/u-boot-nand-flash.git
+F:	drivers/mtd/nand/raw/
+
+NDS32
+M:	Macpaul Lin <macpaul@andestech.com>
+S:	Maintained
+T:	git git://git.denx.de/u-boot-nds32.git
+F:	arch/nds32/
+
+NETWORK
+M:	Joe Hershberger <joe.hershberger@ni.com>
+S:	Maintained
+T:	git git://git.denx.de/u-boot-net.git
+F:	drivers/net/
+F:	net/
+
+NIOS
+M:	Thomas Chou <thomas@wytron.com.tw>
+S:	Maintained
+T:	git git://git.denx.de/u-boot-nios.git
+F:	arch/nios2/
+
+ONENAND
+#M:	Lukasz Majewski <l.majewski@majess.pl>
+S:	Orphaned (Since 2017-01)
+T:	git git://git.denx.de/u-boot-onenand.git
+F:	drivers/mtd/onenand/
 
 PATMAN
 M:	Simon Glass <sjg@chromium.org>

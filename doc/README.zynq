@@ -65,6 +65,7 @@ bootmode strings at runtime.
   mmc - drivers/mmc/zynq_sdhci.c
   spi-  drivers/spi/zynq_spi.c
   i2c - drivers/i2c/zynq_i2c.c
+  nand - drivers/mtd/nand/raw/zynq_nand.c
 - Done proper cleanups on board configurations
 - Added basic FDT support for zynq boards
 - d-cache support for zynq_gem.c

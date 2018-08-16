@@ -11,7 +11,8 @@
 #include <linux/libfdt.h>
 #include <nand.h>
 #include <linux/io.h>
-#include <../drivers/mtd/nand/denali.h>
+#include <linux/printk.h>
+#include <../drivers/mtd/nand/raw/denali.h>
 
 #include "init.h"
 
