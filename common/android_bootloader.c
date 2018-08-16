@@ -716,7 +716,7 @@ int android_fdt_overlay_apply(void *fdt_addr)
 		fdt_increase_size(fdt_addr, fdt_totalsize((void *)fdt_dtbo));
 		ret = fdt_overlay_apply(fdt_addr, (void *)fdt_dtbo);
 		if (!ret) {
-			snprintf(buf, 32, "%s%d", "androidboot.dtbo_", index);
+			snprintf(buf, 32, "%s%d", "androidboot.dtbo_idx=", index);
 			env_update("bootargs", buf);
 			printf("ANDROID: fdt overlay OK\n");
 		} else {
