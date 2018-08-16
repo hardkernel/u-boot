@@ -286,6 +286,14 @@ endmenu
 
 menu "Misc commands"
 
+config CMD_DTIMG
+	bool "dtimg"
+	help
+	  Android DTB/DTBO image manipulation commands. Read dtb/dtbo files from
+	  image into RAM, dump image structure information, etc. Those dtb/dtbo
+	  files should be merged in one dtb further, which needs to be passed to
+	  the kernel, as part of a boot process.
+
 config CMD_TIME
 	bool "time"
 	help

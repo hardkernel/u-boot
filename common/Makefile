@@ -203,6 +203,7 @@ obj-$(CONFIG_CMD_SPI) += cmd_spi.o
 obj-$(CONFIG_CMD_SPIBOOTLDR) += cmd_spibootldr.o
 obj-$(CONFIG_CMD_STRINGS) += cmd_strings.o
 obj-$(CONFIG_CMD_TERMINAL) += cmd_terminal.o
+obj-$(CONFIG_CMD_DTIMG) += cmd_dtimg.o
 obj-$(CONFIG_CMD_TIME) += cmd_time.o
 obj-$(CONFIG_CMD_TRACE) += cmd_trace.o
 obj-$(CONFIG_SYS_HUSH_PARSER) += cmd_test.o
