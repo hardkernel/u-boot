@@ -40,6 +40,7 @@ TEEC_Result read_from_keymaster
 uint32_t write_to_keymaster
 	(uint8_t *filename, uint32_t filename_size,
 	uint8_t *data, uint32_t data_size);
+int write_keybox_to_secure_storage(uint8_t *uboot_data, uint32_t len);
 uint32_t trusty_read_attribute_hash(uint32_t *buf, uint32_t length);
 uint32_t trusty_write_attribute_hash(uint32_t *buf, uint32_t length);
 uint32_t trusty_notify_optee_uboot_end(void);
