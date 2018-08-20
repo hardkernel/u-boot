@@ -420,7 +420,13 @@ static int rockchip_read_dtb_by_adc(const char *file_name)
 			return -EINVAL;
 		}
 
-		/* Read raw adc value */
+		/*
+		 * Read raw adc value
+		 *
+		 * It doesn't need to read adc value every loop, reading once
+		 * is enough. We use cached_v[] to save what we have read, zero
+		 * means not read before.
+		 */
 		if (cached_v[channel] == 0) {
 			ret = adc_channel_single_shot(dev_name,
 						      channel, &raw_adc);
@@ -542,12 +548,17 @@ static int rockchip_read_dtb_by_gpio(const char *file_name)
 		pin  = *(p + 2) - '0';
 		lvl  = *(p + 4) - '0';
 
+		/*
+		 * It doesn't need to read gpio value every loop, reading once
+		 * is enough. We use cached_v[] to save what we have read, zero
+		 * means not read before.
+		 */
 		if (cached_v[port] == 0)
 			cached_v[port] =
 				readl(gpio_base_addr[port] + GPIO_EXT_PORT);
 
 		/* Verify result */
-		bit = bank * 32 + pin;
+		bit = bank * 8 + pin;
 		val = cached_v[port] & (1 << bit) ? 1 : 0;
 
 		if (val == !!lvl) {
