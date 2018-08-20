@@ -25,6 +25,27 @@
 #include <mpc8xx.h>
 #endif
 
+#if defined(CONFIG_ODROID_COMMON)
+#include <linux/ctype.h>
+
+static
+int check_odroid_script(ulong addr, char *product)
+{
+	int i;
+	char *buf;
+	char magic[32];
+	int size = snprintf(magic, sizeof(magic), "%s-uboot-config", product);
+
+	buf = map_sysmem(addr, 0);
+	for (i = 0; i < size; i++) {
+		if (magic[i] != tolower(buf[i]))
+			return -EINVAL;
+	}
+
+	return size;
+}
+#endif
+
 int
 source (ulong addr, const char *fit_uname)
 {
@@ -40,6 +61,9 @@ source (ulong addr, const char *fit_uname)
 	int		noffset;
 	const void	*fit_data;
 	size_t		fit_len;
+#endif
+#if defined(CONFIG_ODROID_COMMON)
+	int size;
 #endif
 
 	verify = getenv_yesno ("verify");
@@ -132,8 +156,19 @@ source (ulong addr, const char *fit_uname)
 		break;
 #endif
 	default:
+#if defined(CONFIG_ODROID_COMMON)
+		size = check_odroid_script(addr, CONFIG_DEVICE_PRODUCT);
+		if (size > 0) {
+			data = (u32*)(addr + size);
+			len = simple_strtoul(getenv("filesize"), NULL, 16);
+		} else {
+			puts ("Wrong image format for \"source\" command\n");
+			return 1;
+		}
+#else
 		puts ("Wrong image format for \"source\" command\n");
 		return 1;
+#endif
 	}
 
 	debug ("** Script length: %ld\n", len);

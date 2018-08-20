@@ -582,4 +582,6 @@
 #define CONFIG_SYS_MEMTEST_END			(2048 << 20)	/* 2GB */
 #endif
 
+#define CONFIG_CMD_SOURCE			1
+
 #endif
