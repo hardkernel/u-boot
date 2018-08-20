@@ -152,6 +152,10 @@ config AXG_S420_V1
 	bool "Support amlogic axg s420 v1 board"
 	default n
 
+config AXG_S420_V1_GVA
+	bool "Support amlogic axg s420 v1 gva board"
+	default n
+
 config TXHD_SKT_V1
 	bool "Support amlogic txhd socket v1 board"
 	default n
@@ -369,6 +373,10 @@ endif
 
 if AXG_S420_V1
 source "board/amlogic/axg_s420_v1/Kconfig"
+endif
+
+if AXG_S420_V1_GVA
+source "board/amlogic/axg_s420_v1_gva/Kconfig"
 endif
 
 if TXHD_SKT_V1
