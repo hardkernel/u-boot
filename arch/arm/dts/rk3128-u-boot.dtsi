@@ -9,8 +9,14 @@
 	u-boot,dm-pre-reloc;
 };
 
+&nandc {
+	u-boot,dm-pre-reloc;
+	status = "okay";
+};
+
 &emmc {
 	u-boot,dm-pre-reloc;
+	status = "okay";
 };
 
 &grf {
@@ -19,4 +25,9 @@
 
 &cru {
 	u-boot,dm-pre-reloc;
+};
+
+&uart2 {
+	u-boot,dm-pre-reloc;
+	clock-frequency = <24000000>;
 };
