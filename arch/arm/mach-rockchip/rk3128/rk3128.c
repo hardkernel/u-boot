@@ -5,6 +5,8 @@
  */
 #include <asm/io.h>
 #include <asm/arch/hardware.h>
+#include <asm/arch/bootrom.h>
+#include <asm/arch/grf_rk3128.h>
 
 #define GRF_GPIO1C_IOMUX		0x200080c0
 #define SDMMC_INTMASK			0x10214024
@@ -40,4 +42,26 @@ int arch_cpu_init(void)
 
 void board_debug_uart_init(void)
 {
+	struct rk3128_grf * const grf __maybe_unused =
+		(struct rk3128_grf * const)0x20008000;
+
+	enum {
+		/* UART2 */
+		GPIO1C2_SHIFT		= 4,
+		GPIO1C2_MASK		= GENMASK(5, 4),
+		GPIO1C2_GPIO		= 0,
+		GPIO1C2_MMC0_D0		= 1,
+		GPIO1C2_UART2_TX	= 2,
+
+		GPIO1C3_SHIFT		= 6,
+		GPIO1C3_MASK		= GENMASK(7, 6),
+		GPIO1C3_GPIO		= 0,
+		GPIO1C2_MMC0_D1		= 1,
+		GPIO1C2_UART2_RX	= 2,
+	};
+
+	rk_clrsetreg(&grf->gpio1c_iomux,
+		     GPIO1C2_MASK, GPIO1C2_UART2_TX << GPIO1C2_SHIFT);
+	rk_clrsetreg(&grf->gpio1c_iomux,
+		     GPIO1C3_MASK, GPIO1C2_UART2_RX << GPIO1C3_SHIFT);
 }
