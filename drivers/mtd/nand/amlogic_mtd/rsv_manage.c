@@ -518,7 +518,6 @@ static int aml_nand_write_rsv(struct mtd_info *mtd,
 
 	data_buf = aml_chip->rsv_data_buf;
 	addr = offset;
-	printk("%s:%d,write info to %llx\n",__func__, __LINE__, addr);
 	oobinfo = (struct oobinfo_t *)oob_buf;
 	memcpy(oobinfo->name, nandrsv_info->name, 4);
 	oobinfo->ec = nandrsv_info->valid_node->ec;

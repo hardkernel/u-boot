@@ -484,7 +484,7 @@ uint8_t aml_nand_get_reg_value_formOTP_hynix(struct aml_nand_chip *aml_chip,
 		aml_chip->aml_nand_command(aml_chip, 0X16, -1, -1, chipnr);
 	}
 	aml_chip->aml_nand_wait_devready(aml_chip, chipnr);
-
+	kfree(one_copy_buf);
 	return check_flag;
 }
 

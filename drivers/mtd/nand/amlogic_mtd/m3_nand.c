@@ -182,8 +182,11 @@ void pinmux_select_chip_mtd(unsigned ce_enable, unsigned rb_enable)
 {
 	cpu_id_t cpu_id = get_cpu_id();
 
-	if ((cpu_id.family_id == MESON_CPU_MAJOR_ID_AXG)
-		|| (cpu_id.family_id >= MESON_CPU_MAJOR_ID_G12A)) {
+	if ((cpu_id.family_id == MESON_CPU_MAJOR_ID_G12A) ||
+		(cpu_id.family_id == MESON_CPU_MAJOR_ID_G12B)) {
+		if (!((ce_enable >> 10) & 1))
+			AMLNF_SET_REG_MASK(P_PERIPHS_PIN_MUX_1, (2 << 12));
+	} else if (cpu_id.family_id == MESON_CPU_MAJOR_ID_AXG) {
 		if (!((ce_enable >> 10) & 1))
 			AMLNF_SET_REG_MASK(P_PERIPHS_PIN_MUX_1, 2);
 	} else if (cpu_id.family_id == MESON_CPU_MAJOR_ID_TXHD) {

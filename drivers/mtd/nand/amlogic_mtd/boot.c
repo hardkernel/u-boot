@@ -487,11 +487,13 @@ int m3_nand_boot_write_page(struct mtd_info *mtd, struct nand_chip *chip,
 
 	if (en_slc) {
 		if (page >= (each_boot_pages/2 - 1))
+			kfree(fill_buf);
 			return 0;
 		if (slc_program_info->enter_enslc_mode)
 			slc_program_info->enter_enslc_mode(mtd);
 	} else {
 		if (page >= (each_boot_pages - 1))
+			kfree(fill_buf);
 			return 0;
 	}
 	pages_per_blk = (1 << (chip->phys_erase_shift - chip->page_shift));
@@ -579,6 +581,7 @@ WRITE_BAD_BLOCK:
 #ifdef NEW_NAND_SUPPORT
 			if (en_slc && slc_program_info->exit_enslc_mode)
 				slc_program_info->exit_enslc_mode(mtd);
+			kfree(fill_buf);
 #endif
 			return -EIO;
 		}
@@ -587,6 +590,7 @@ WRITE_BAD_BLOCK:
 #ifdef NEW_NAND_SUPPORT
 	if (en_slc && slc_program_info->exit_enslc_mode)
 		slc_program_info->exit_enslc_mode(mtd);
+	kfree(fill_buf);
 #endif
 	return 0;
 }
