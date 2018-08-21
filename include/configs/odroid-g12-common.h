@@ -92,10 +92,21 @@
 #define ENV_PXE_DEFAULT
 #endif
 
+#define ENV_MMC_LIST_DEFAULT			"mmc_list=1 0\0"
+
+#define ENV_MMC_DEFAULT					\
+	"boot_mmc="					\
+		"for n in ${mmc_list}; do "	\
+			"setenv devno ${n}; "		\
+			"cfgload; "			\
+		"done\0"
+
 /* args/envs */
 #define CONFIG_SYS_MAXARGS  64
 #define CONFIG_EXTRA_ENV_SETTINGS \
         ENV_PXE_DEFAULT \
+        ENV_MMC_DEFAULT \
+        ENV_MMC_LIST_DEFAULT \
         "firstboot=1\0"\
         "upgrade_step=0\0"\
         "jtag=disable\0"\
@@ -157,11 +168,6 @@
                 "fastboot;"\
             "fi;fi;fi;fi;"\
             "\0" \
-	"boot_default="\
-	    "movi read boot 0 ${loadaddr}; " \
-	    "movi read dtbs 0 ${dtb_mem_addr}; " \
-	    "booti ${loadaddr} - ${dtb_mem_addr}; " \
-	    "bootm\0" \
         "factory_reset_poweroff_protect="\
             "echo wipe_data=${wipe_data}; echo wipe_cache=${wipe_cache};"\
             "if test ${wipe_data} = failed; then "\
@@ -214,6 +220,21 @@
             "setenv bootargs ${bootargs} aml_dt=${aml_dt} recovery_part={recovery_part} recovery_offset={recovery_offset};"\
             "if imgread kernel ${recovery_part} ${loadaddr} ${recovery_offset}; then wipeisb; bootm ${loadaddr}; fi"\
             "\0"\
+        "boot_rawimage=setenv bootargs ${initargs} logo=${display_layer},loaded,${fb_addr} " \
+            "vout=${outputmode},enable cvbsmode=${cvbsmode} " \
+            "hdmimode=${hdmimode} osd_reverse=${osd_reverse} video_reverse=${video_reverse} " \
+            "androidboot.selinux=${EnableSelinux} androidboot.firstboot=${firstboot} jtag=disable " \
+            "androidboot.hardware=" CONFIG_DEVICE_PRODUCT " androidboot.slot_suffix=${active_slot}; " \
+            "for n in ${mmc_list}; do " \
+                "mmc dev ${n}; " \
+	        "movi read boot 0 ${loadaddr}; " \
+	        "movi read dtbs 0 ${dtb_mem_addr}; " \
+	        "booti ${loadaddr} - ${dtb_mem_addr}; " \
+	        "bootm; " \
+            "done\0" \
+	"boot_default="\
+            "run boot_mmc; " \
+            "run boot_rawimage\0" \
         "init_display="\
             "osd open;osd clear;imgread pic logo bootup $loadaddr;bmp display $bootup_offset;bmp scale;vout output ${outputmode}"\
             "\0"\
