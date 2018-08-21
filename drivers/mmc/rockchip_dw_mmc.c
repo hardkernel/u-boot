@@ -186,7 +186,7 @@ static int rockchip_dwmmc_probe(struct udevice *dev)
 		debug("MMC: sample clock not found, not support hs200!\n");
 	host->execute_tuning = rockchip_dwmmc_execute_tuning;
 #endif
-	host->fifoth_val = MSIZE(0x2) |
+	host->fifoth_val = MSIZE(DWMCI_MSIZE) |
 		RX_WMARK(priv->fifo_depth / 2 - 1) |
 		TX_WMARK(priv->fifo_depth / 2);
 

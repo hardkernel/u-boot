@@ -611,7 +611,8 @@ static int dwmci_init(struct mmc *mmc)
 
 		fifo_size = dwmci_readl(host, DWMCI_FIFOTH);
 		fifo_size = ((fifo_size & RX_WMARK_MASK) >> RX_WMARK_SHIFT) + 1;
-		host->fifoth_val = MSIZE(0x2) | RX_WMARK(fifo_size / 2 - 1) |
+		host->fifoth_val = MSIZE(DWMCI_MSIZE) |
+				RX_WMARK(fifo_size / 2 - 1) |
 				TX_WMARK(fifo_size / 2);
 	}
 	dwmci_writel(host, DWMCI_FIFOTH, host->fifoth_val);
