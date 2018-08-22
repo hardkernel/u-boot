@@ -126,11 +126,7 @@ endif
 			--bl33 $(buildtree)/fip/bl33.bin.enc \
 			--ddrfw1 $(buildsrc)/fip/$(SOC)/ddr4_1d.fw \
 			--ddrfw2 $(buildsrc)/fip/$(SOC)/ddr4_2d.fw \
-			--ddrfw3 $(buildsrc)/fip/$(SOC)/ddr3_1d.fw \
 			--ddrfw4 $(buildsrc)/fip/$(SOC)/piei.fw \
-			--ddrfw5 $(buildsrc)/fip/$(SOC)/lpddr4_1d.fw \
-			--ddrfw6 $(buildsrc)/fip/$(SOC)/lpddr4_2d.fw \
-			--ddrfw7 $(buildsrc)/fip/$(SOC)/diag_lpddr4.fw \
 			--ddrfw8 $(buildsrc)/fip/$(SOC)/$(DDR_FW_NAME) \
 			--output $(FUSING_FOLDER)/u-boot.bin)
 ifeq ($(CONFIG_AML_CRYPTO_UBOOT),y)
