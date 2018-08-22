@@ -368,7 +368,7 @@ int test_part_efi(block_dev_desc_t * dev_desc)
  *
  * @return - zero on success, otherwise error
  */
-static int set_protective_mbr(block_dev_desc_t *dev_desc)
+int set_protective_mbr(block_dev_desc_t *dev_desc)
 {
 	/* Setup the Protective MBR */
 	ALLOC_CACHE_ALIGN_BUFFER(legacy_mbr, p_mbr, 1);
@@ -511,9 +511,16 @@ int gpt_fill_pte(block_dev_desc_t *dev_desc,
 		if (strlen(str_type_guid)) {
 			if (uuid_str_to_bin(str_type_guid, bin_type_guid,
 					    UUID_STR_FORMAT_GUID)) {
+#if (AML_CONSTRUCT_GPT)
+				char str[7] = {"default"};
+				strcpy(str_type_guid, str);
+				uuid_str_to_bin(str_type_guid, bin_type_guid,
+						UUID_STR_FORMAT_GUID);
+#else
 				printf("Partition no. %d: invalid type guid: %s\n",
 				       i, str_type_guid);
 				return -1;
+#endif
 			}
 		} else {
 			/* default partition type GUID */

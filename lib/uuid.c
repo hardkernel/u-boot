@@ -84,19 +84,44 @@ int uuid_str_valid(const char *uuid)
 }
 
 #ifdef CONFIG_PARTITION_TYPE_GUID
-static const struct {
-	const char *string;
-	efi_guid_t guid;
-} list_guid[] = {
-	{"system",	PARTITION_SYSTEM_GUID},
-	{"mbr",		LEGACY_MBR_PARTITION_GUID},
-	{"msft",	PARTITION_MSFT_RESERVED_GUID},
-	{"data",	PARTITION_BASIC_DATA_GUID},
-	{"linux",	PARTITION_LINUX_FILE_SYSTEM_DATA_GUID},
-	{"raid",	PARTITION_LINUX_RAID_GUID},
-	{"swap",	PARTITION_LINUX_SWAP_GUID},
-	{"lvm",		PARTITION_LINUX_LVM_GUID}
-};
+#ifdef AML_CONSTRUCT_GPT
+	static const struct {
+		const char *string;
+		efi_guid_t guid;
+	} list_guid[] = {
+		{"bootloader",	PARTITION_ANDROID_BOOTLOADER_GUID},
+		{"bootloader2",	PARTITION_ANDROID_BOOTLOADER2_GUID},
+		{"recovery",	PARTITION_ANDROID_RECOVERY_GUID},
+		{"misc",		PARTITION_ANDROID_MISC_GUID},
+		{"metadata",	PARTITION_ANDROID_METADATA_GUID},
+		{"system",		PARTITION_ANDROID_SYSTEM_GUID},
+		{"cache",		PARTITION_ANDROID_CACHE_GUID},
+		{"data",		PARTITION_ANDROID_DATA_GUID},
+		{"persistent",	PARTITION_ANDROID_PERSISTENT_GUID},
+		{"vendor",		PARTITION_ANDROID_VENDOR_GUID},
+		{"config",		PARTITION_ANDROID_CONFIG_GUID},
+		{"factory",		PARTITION_ANDROID_FACTORY_GUID},
+		{"factory_alt",	PARTITION_ANDROID_FACTORY_ALT_GUID},
+		{"fastboot",	PARTITION_ANDROID_FASTBOOT_GUID},
+		{"tertiary",	PARTITION_ANDROID_TERTIARY_GUID},
+		{"oem",			PARTITION_ANDROID_OEM_GUID},
+		{"default",		PARTITION_LINUX_DEFAULT_GUID}
+	};
+#else
+	static const struct {
+		const char *string;
+		efi_guid_t guid;
+	} list_guid[] = {
+		{"system",	PARTITION_SYSTEM_GUID},
+		{"mbr",		LEGACY_MBR_PARTITION_GUID},
+		{"msft",	PARTITION_MSFT_RESERVED_GUID},
+		{"data",	PARTITION_BASIC_DATA_GUID},
+		{"linux",	PARTITION_LINUX_FILE_SYSTEM_DATA_GUID},
+		{"raid",	PARTITION_LINUX_RAID_GUID},
+		{"swap",	PARTITION_LINUX_SWAP_GUID},
+		{"lvm",		PARTITION_LINUX_LVM_GUID}
+	};
+#endif
 
 /*
  * uuid_guid_get_bin() - this function get GUID bin for string
