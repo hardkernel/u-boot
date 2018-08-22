@@ -862,6 +862,7 @@ static int rk322x_clk_ofdata_to_platdata(struct udevice *dev)
 	return 0;
 }
 
+#ifndef CONFIG_TPL_BUILD
 static void rkclk_init(struct rk322x_clk_priv *priv)
 {
 	struct rk322x_cru *cru = priv->cru;
@@ -921,13 +922,14 @@ static void rkclk_init(struct rk322x_clk_priv *priv)
 	rk_clrsetreg(&cru->cru_misc_con, (0x1 << 13) |
 		     (0x1 << 15), (0 << 15) | (0 << 13));
 }
+#endif
 
 static int rk322x_clk_probe(struct udevice *dev)
 {
+#ifndef CONFIG_TPL_BUILD
 	struct rk322x_clk_priv *priv = dev_get_priv(dev);
-
 	rkclk_init(priv);
-
+#endif
 	return 0;
 }
 
