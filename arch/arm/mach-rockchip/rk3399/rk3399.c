@@ -65,7 +65,6 @@ void rockchip_stimer_init(void)
 	writel(0, TIMER_CHN10_BASE + TIMER_INIT_COUNT_L);
 	writel(0, TIMER_CHN10_BASE + TIMER_INIT_COUNT_H);
 	writel(TIMER_EN | TIMER_FMODE, TIMER_CHN10_BASE + TIMER_CONTROL_REG);
-	printf("%s\n", __func__);
 }
 #endif
 
