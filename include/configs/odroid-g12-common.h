@@ -117,8 +117,8 @@
         "cvbsmode=576cvbs\0" \
         "display_width=1920\0" \
         "display_height=1080\0" \
-        "display_bpp=16\0" \
-        "display_color_index=16\0" \
+        "display_bpp=24\0" \
+        "display_color_index=24\0" \
         "display_layer=osd0\0" \
         "display_color_fg=0xffff\0" \
         "display_color_bg=0\0" \
@@ -236,8 +236,20 @@
             "run boot_mmc; " \
             "run boot_rawimage\0" \
         "init_display="\
-            "osd open;osd clear;imgread pic logo bootup $loadaddr;bmp display $bootup_offset;bmp scale;vout output ${outputmode}"\
-            "\0"\
+            "osd open; osd clear; " \
+            "for n in ${mmc_list}; do " \
+                "if fatload mmc ${n} 0x3000000 logo.bmp.gz; then " \
+                    "setenv logo_addr_r ${loadaddr}; " \
+                    "unzip 0x3000000 ${logo_addr_r}; " \
+                    "bmp display ${logo_addr_r}; " \
+                    "bmp scale; " \
+                "elif fatload mmc ${n} 0x3000000 logo.bmp; then " \
+                    "setenv logo_addr_r 0x3000000}; " \
+                    "bmp display ${logo_addr_r}; " \
+                    "bmp scale; " \
+                "fi; " \
+            "done; " \
+            "vout output ${outputmode};\0" \
         "cmdline_keys="\
             "if keyman init 0x1234; then "\
                 "if keyman read usid ${loadaddr} str; then "\
