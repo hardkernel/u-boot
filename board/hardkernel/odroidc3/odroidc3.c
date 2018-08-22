@@ -552,57 +552,6 @@ int board_init(void)
 	return 0;
 }
 
-/* set dts props */
-void aml_config_dtb(void)
-{
-	cpu_id_t cpuid = get_cpu_id();
-
-	run_command("fdt address $dtb_mem_addr", 0);
-	printf("%s %d\n", __func__, __LINE__);
-	if (cpuid.chip_rev == 0xA) {
-		printf("%s %d\n", __func__, __LINE__);
-		run_command("fdt set /emmc/emmc co_phase <0x2>", 0);
-		run_command("fdt rm /emmc/emmc caps2", 0);
-		run_command("fdt set /emmc/emmc f_max <0x02625a00>", 0);
-
-		run_command("fdt set /sdio status okay", 0);
-		run_command("fdt set /sd1 status okay", 0);
-		run_command("fdt set /pinctrl@ff634480/sd_clk_cmd_pins/mux drive-strength <1>", 0);
-		run_command("fdt set /pinctrl@ff634480/sd_clk_cmd_pins/mux1 drive-strength <1>", 0);
-		run_command("fdt set /pinctrl@ff634480/sd_all_pins/mux drive-strength <1>", 0);
-		run_command("fdt set /pinctrl@ff634480/sd_all_pins/mux1 drive-strength <1>", 0);
-		run_command("fdt set /pinctrl@ff634480/sdio_clk_cmd_pins/mux drive-strength <2>", 0);
-		run_command("fdt set /pinctrl@ff634480/sdio_all_pins/mux drive-strength <1>", 0);
-		/* debug */
-		run_command("fdt print /emmc/emmc co_phase", 0);
-		run_command("fdt print /emmc/emmc caps2", 0);
-		run_command("fdt print /emmc/emmc f_max", 0);
-
-		run_command("fdt print /sdio status", 0);
-		run_command("fdt print /sd1 status ", 0);
-		run_command("fdt print /pinctrl@ff634480/sd_clk_cmd_pins/mux drive-strength", 0);
-		run_command("fdt print /pinctrl@ff634480/sd_clk_cmd_pins/mux1 drive-strength", 0);
-		run_command("fdt print /pinctrl@ff634480/sd_all_pins/mux drive-strength", 0);
-		run_command("fdt print /pinctrl@ff634480/sd_all_pins/mux1 drive-strength", 0);
-		run_command("fdt print /pinctrl@ff634480/sdio_clk_cmd_pins/mux drive-strength", 0);
-		run_command("fdt print /pinctrl@ff634480/sdio_all_pins/mux drive-strength", 0);
-	} else {
-
-		printf("%s %d\n", __func__, __LINE__);
-		run_command("fdt set /emmc/emmc co_phase <0x3>", 0);
-		run_command("fdt set /sdio status disabled", 0);
-		run_command("fdt set /sd2 status okay", 0);
-		/* debug */
-		run_command("fdt print /emmc/emmc co_phase", 0);
-		run_command("fdt print /emmc/emmc caps2", 0);
-		run_command("fdt print /emmc/emmc f_max", 0);
-		run_command("fdt print /sdio status", 0);
-		run_command("fdt print /sd2 status", 0);
-	}
-
-	return;
-}
-
 #ifdef CONFIG_BOARD_LATE_INIT
 int board_late_init(void)
 {
@@ -613,46 +562,6 @@ int board_late_init(void)
 	run_command(buf, 0);
 #endif
 
-		//update env before anyone using it
-		run_command("get_rebootmode; echo reboot_mode=${reboot_mode}; "\
-						"if test ${reboot_mode} = factory_reset; then "\
-						"defenv_reserv aml_dt;setenv upgrade_step 2;save; fi;", 0);
-		run_command("if itest ${upgrade_step} == 1; then "\
-						"defenv_reserv; setenv upgrade_step 2; saveenv; fi;", 0);
-		/*add board late init function here*/
-#ifndef DTB_BIND_KERNEL
-		int ret;
-		ret = run_command("store dtb read $dtb_mem_addr", 1);
-        if (ret) {
-				printf("%s(): [store dtb read $dtb_mem_addr] fail\n", __func__);
-#ifdef CONFIG_DTB_MEM_ADDR
-				char cmd[64];
-				printf("load dtb to %x\n", CONFIG_DTB_MEM_ADDR);
-				sprintf(cmd, "store dtb read %x", CONFIG_DTB_MEM_ADDR);
-				ret = run_command(cmd, 1);
-                if (ret) {
-						printf("%s(): %s fail\n", __func__, cmd);
-				}
-#endif
-		}
-#elif defined(CONFIG_DTB_MEM_ADDR)
-		{
-				char cmd[128];
-				int ret;
-                if (!getenv("dtb_mem_addr")) {
-						sprintf(cmd, "setenv dtb_mem_addr 0x%x", CONFIG_DTB_MEM_ADDR);
-						run_command(cmd, 0);
-				}
-				sprintf(cmd, "imgread dtb boot ${dtb_mem_addr}");
-				ret = run_command(cmd, 0);
-                if (ret) {
-						printf("%s(): cmd[%s] fail, ret=%d\n", __func__, cmd, ret);
-				}
-		}
-#endif// #ifndef DTB_BIND_KERNEL
-
-		/* load unifykey */
-		run_command("keyunify init 0x1234", 0);
 #ifdef CONFIG_AML_VPU
 	vpu_probe();
 #endif
@@ -674,8 +583,6 @@ int board_late_init(void)
 		aml_try_factory_sdcard_burning(0, gd->bd);
 #endif// #ifdef CONFIG_AML_V2_FACTORY_BURN
 
-	/**/
-	aml_config_dtb();
 	return 0;
 }
 #endif
