@@ -53,7 +53,7 @@ struct pll_div {
 #if !defined(CONFIG_SPL_BUILD)
 static const struct pll_div ppll_init_cfg = PLL_DIVISORS(PPLL_HZ, 2, 2, 1);
 #endif
-static const struct pll_div gpll_init_cfg = PLL_DIVISORS(GPLL_HZ, 1, 6, 1);
+static const struct pll_div gpll_init_cfg = PLL_DIVISORS(GPLL_HZ, 1, 3, 1);
 static const struct pll_div npll_init_cfg = PLL_DIVISORS(NPLL_HZ, 1, 3, 1);
 static const struct pll_div apll_1600_cfg = PLL_DIVISORS(1600*MHz, 3, 1, 1);
 static const struct pll_div apll_600_cfg = PLL_DIVISORS(600*MHz, 1, 2, 1);
@@ -1170,7 +1170,6 @@ static void rkclk_init(struct rk3399_cru *cru)
 
 	/* configure perihp aclk, hclk, pclk */
 	aclk_div = DIV_ROUND_UP(GPLL_HZ, PERIHP_ACLK_HZ) - 1;
-	assert((aclk_div + 1) * PERIHP_ACLK_HZ == GPLL_HZ && aclk_div <= 0x1f);
 
 	hclk_div = PERIHP_ACLK_HZ / PERIHP_HCLK_HZ - 1;
 	assert((hclk_div + 1) * PERIHP_HCLK_HZ ==
@@ -1433,7 +1432,6 @@ static void pmuclk_init(struct rk3399_pmucru *pmucru)
 
 	/*  configure pmu pclk */
 	pclk_div = PPLL_HZ / PMU_PCLK_HZ - 1;
-	assert((pclk_div + 1) * PMU_PCLK_HZ == PPLL_HZ && pclk_div <= 0x1f);
 	rk_clrsetreg(&pmucru->pmucru_clksel[0],
 		     PMU_PCLK_DIV_CON_MASK,
 		     pclk_div << PMU_PCLK_DIV_CON_SHIFT);
