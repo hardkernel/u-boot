@@ -39,7 +39,7 @@
 
 /*-------------------------------------------------------------------------*/
 
-#define USB_ENABLE	0xff
+#define USB_ENABLE	0xea
 
 /* CONTROL REQUEST SUPPORT */
 

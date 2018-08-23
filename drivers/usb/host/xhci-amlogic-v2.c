@@ -236,9 +236,8 @@ static void amlogic_usb3_phy_init(struct usb_aml_regs *phy)
 	if (amlogic.u3_port_num == 0) {
 		usb_aml_reg = (struct usb_aml_regs *)((ulong)phy);
 		r1.d32 = usb_aml_reg->usb_r1;
-		usb_aml_reg->usb_r2 = r1.d32;
 		r1.b.u3h_fladj_30mhz_reg = 0x20;
-		usb_aml_reg->usb_r2 = r1.d32;
+		usb_aml_reg->usb_r1 = r1.d32;
 		udelay(100);
 	}
 
@@ -453,7 +452,7 @@ static int dwc3_core_init(struct dwc3 *dwc3_reg)
 
 	reg = xhci_readl((uint32_t volatile *)DWC3_GFLADJ);
 	reg &= ~DWC3_GFLADJ_30MHZ_MASK;
-	reg |= DWC3_GFLADJ_30MHZ_SDBND_SEL | 0x26;
+	reg |= DWC3_GFLADJ_30MHZ_SDBND_SEL | 0x20;
 	xhci_writel((uint32_t volatile *)DWC3_GFLADJ, reg);
 
 	dwc3_hwparams1 = xhci_readl(&dwc3_reg->g_hwparams1);
