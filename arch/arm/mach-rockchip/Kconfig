@@ -483,6 +483,15 @@ config ROCKCHIP_CRASH_DUMP
 	  This enable dump registers when system crash, the registers you would like
 	  to dump can be added in show_regs().
 
+config ROCKCHIP_PRELOADER_ATAGS
+	bool "Rockchip pre-loader atags"
+	default y if ARCH_ROCKCHIP
+	help
+	  This enable support Rockchip atags among pre-loaders, i.e. ddr, miniloader, ATF,
+	  tos, U-Boot, etc. It delivers boot and configure information, shared with pre-loaders
+	  and finally ends with U-Boot.
+
+
 config GICV2
 	bool "ARM GICv2"
 
