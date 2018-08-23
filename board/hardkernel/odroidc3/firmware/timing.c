@@ -75,7 +75,7 @@
 
 ddr_set_t __ddr_setting[] = {
 {
-	/* odroid-c3 ddr4 : (512MBx2)x2 */
+	/* odroid-c3 ddr4 : (4Gbitx2)x2 */
 	.board_id			= CONFIG_BOARD_ID_MASK,
 	.version			= 1,
 	.dram_rank_config		= CONFIG_DDR0_32BIT_RANK01_CH0, /* bus width 32bit, use cs0 cs1 */
@@ -93,6 +93,124 @@ ddr_set_t __ddr_setting[] = {
 	.HdtCtrl			= 0xC8,
 	.dram_cs0_size_MB		= 1024,
 	.dram_cs1_size_MB		= 1024,
+	.training_SequenceCtrl		= {0x31f,0x61}, /* ddr3 0x21f 0x31f */
+	.phy_odt_config_rank		= {0x30,0x30,0x30,0x30}, /* Odt pattern for accesses, targeting rank 0. [3:0] is used, for write ODT [7:4] is used for, read ODT */
+	.dfi_odt_config			= 0x0808,
+	.PllBypassEn			= 0, /* bit0-ps0,bit1-ps1 */
+	.ddr_rdbi_wr_enable		= 0,
+	.pll_ssc_mode			= 0,
+	.clk_drv_ohm			= 40,
+	.cs_drv_ohm			= 40,
+	.ac_drv_ohm			= 40,
+	.soc_data_drv_ohm_p		= 34,
+	.soc_data_drv_ohm_n		= 34,
+	.soc_data_odt_ohm_p		= 60,
+	.soc_data_odt_ohm_n		= 0,
+	.dram_data_drv_ohm		= 48, /* ddr4 sdram only 34 or 48, skt board use 34 better */
+	.dram_data_odt_ohm		= 60,
+	.dram_ac_odt_ohm		= 0,
+	.soc_clk_slew_rate		= 0x3ff,
+	.soc_cs_slew_rate		= 0x3ff,
+	.soc_ac_slew_rate		= 0x3ff,
+	.soc_data_slew_rate		= 0x2ff,
+	.vref_output_permil		= 500,
+	.vref_receiver_permil		= 700,
+	.vref_dram_permil		= 700,
+	.vref_reverse			= 0,
+	.ac_trace_delay			= {00,00},
+	.ac_pinmux			= {00,00},
+	.ddr_dmc_remap			= {
+						[0] = ( 5 |  7 << 5 |  8 << 10 |  9 << 15 | 10 << 20 | 11 << 25 ),
+						[1] = ( 12|  0 << 5 |  0 << 10 | 14 << 15 | 15 << 20 | 16 << 25 ),
+						[2] = ( 17| 18 << 5 | 19 << 10 | 21 << 15 | 22 << 20 | 23 << 25 ),
+						[3] = ( 24| 25 << 5 | 26 << 10 | 27 << 15 | 28 << 20 | 29 << 25 ),
+						[4] = ( 30| 13 << 5 | 20 << 10 |  6 << 15 |  0 << 20 |  0 << 25 ),
+	},
+	.ddr_lpddr34_ca_remap	= {00,00},
+	.ddr_lpddr34_dq_remap	= {00,00},
+	.dram_rtt_nom_wr_park	= {00,00},
+
+	.ddr_func			= DDR_FUNC,
+	.magic				= DRAM_CFG_MAGIC,
+},
+{
+	/* odroid-c3 ddr4 : (8Gbitx2)x2 */
+	.board_id			= CONFIG_BOARD_ID_MASK,
+	.version			= 1,
+	.dram_rank_config		= CONFIG_DDR0_32BIT_RANK01_CH0, /* bus width 32bit, use cs0 cs1 */
+	.DramType			= CONFIG_DDR_TYPE_DDR4,
+	/* 912 (DDR4-1866) / 1056 (DDR4-2133) / 1200 (DDR4-2400)/ 1320 (DDR4-2666) */
+	.DRAMFreq			= {1320, 0, 0, 0},
+	.ddr_rfc_type			= DDR_RFC_TYPE_DDR4_2Gbx8,
+	.ddr_base_addr			= CFG_DDR_BASE_ADDR,
+	.ddr_start_offset		= CFG_DDR_START_OFFSET,
+	.imem_load_addr			= 0xFFFC0000, /* sram */
+	.dmem_load_size			= 0x1000, /* 4K */
+
+	.DisabledDbyte			= 0xf0,
+	.Is2Ttiming			= 1,
+	.HdtCtrl			= 0xC8,
+	.dram_cs0_size_MB		= 2048,
+	.dram_cs1_size_MB		= 2048,
+	.training_SequenceCtrl		= {0x31f,0x61}, /* ddr3 0x21f 0x31f */
+	.phy_odt_config_rank		= {0x30,0x30,0x30,0x30}, /* Odt pattern for accesses, targeting rank 0. [3:0] is used, for write ODT [7:4] is used for, read ODT */
+	.dfi_odt_config			= 0x0808,
+	.PllBypassEn			= 0, /* bit0-ps0,bit1-ps1 */
+	.ddr_rdbi_wr_enable		= 0,
+	.pll_ssc_mode			= 0,
+	.clk_drv_ohm			= 40,
+	.cs_drv_ohm			= 40,
+	.ac_drv_ohm			= 40,
+	.soc_data_drv_ohm_p		= 34,
+	.soc_data_drv_ohm_n		= 34,
+	.soc_data_odt_ohm_p		= 60,
+	.soc_data_odt_ohm_n		= 0,
+	.dram_data_drv_ohm		= 48, /* ddr4 sdram only 34 or 48, skt board use 34 better */
+	.dram_data_odt_ohm		= 60,
+	.dram_ac_odt_ohm		= 0,
+	.soc_clk_slew_rate		= 0x3ff,
+	.soc_cs_slew_rate		= 0x3ff,
+	.soc_ac_slew_rate		= 0x3ff,
+	.soc_data_slew_rate		= 0x2ff,
+	.vref_output_permil		= 500,
+	.vref_receiver_permil		= 700,
+	.vref_dram_permil		= 700,
+	.vref_reverse			= 0,
+	.ac_trace_delay			= {00,00},
+	.ac_pinmux			= {00,00},
+	.ddr_dmc_remap			= {
+						[0] = ( 5 |  7 << 5 |  8 << 10 |  9 << 15 | 10 << 20 | 11 << 25 ),
+						[1] = ( 12|  0 << 5 |  0 << 10 | 14 << 15 | 15 << 20 | 16 << 25 ),
+						[2] = ( 17| 18 << 5 | 19 << 10 | 21 << 15 | 22 << 20 | 23 << 25 ),
+						[3] = ( 24| 25 << 5 | 26 << 10 | 27 << 15 | 28 << 20 | 29 << 25 ),
+						[4] = ( 30| 13 << 5 | 20 << 10 |  6 << 15 |  0 << 20 |  0 << 25 ),
+	},
+	.ddr_lpddr34_ca_remap	= {00,00},
+	.ddr_lpddr34_dq_remap	= {00,00},
+	.dram_rtt_nom_wr_park	= {00,00},
+
+	.ddr_func			= DDR_FUNC,
+	.magic				= DRAM_CFG_MAGIC,
+},
+{
+	/* odroid-c3 ddr4 : 4Gbitx2 */
+	.board_id			= CONFIG_BOARD_ID_MASK,
+	.version			= 1,
+	.dram_rank_config		= CONFIG_DDR0_32BIT_RANK0_CH0, /* bus width 32bit, use cs0 */
+	.DramType			= CONFIG_DDR_TYPE_DDR4,
+	/* 912 (DDR4-1866) / 1056 (DDR4-2133) / 1200 (DDR4-2400)/ 1320 (DDR4-2666) */
+	.DRAMFreq			= {1320, 0, 0, 0},
+	.ddr_rfc_type			= DDR_RFC_TYPE_DDR4_2Gbx8,
+	.ddr_base_addr			= CFG_DDR_BASE_ADDR,
+	.ddr_start_offset		= CFG_DDR_START_OFFSET,
+	.imem_load_addr			= 0xFFFC0000, /* sram */
+	.dmem_load_size			= 0x1000, /* 4K */
+
+	.DisabledDbyte			= 0xf0,
+	.Is2Ttiming			= 1,
+	.HdtCtrl			= 0xC8,
+	.dram_cs0_size_MB		= 1024,
+	.dram_cs1_size_MB		= 0,
 	.training_SequenceCtrl		= {0x31f,0x61}, /* ddr3 0x21f 0x31f */
 	.phy_odt_config_rank		= {0x30,0x30,0x30,0x30}, /* Odt pattern for accesses, targeting rank 0. [3:0] is used, for write ODT [7:4] is used for, read ODT */
 	.dfi_odt_config			= 0x0808,
