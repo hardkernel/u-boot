@@ -700,14 +700,20 @@ int usb_get_update_result(void)
 }
 #endif
 
+/* SECTION_SHIFT is 29 that means 512MB size */
+#define SECTION_SHIFT		29
 phys_size_t get_effective_memsize(void)
 {
-	// >>16 -> MB, <<20 -> real size, so >>16<<20 = <<4
+	phys_size_t size_aligned;
+
+	size_aligned = (((readl(AO_SEC_GP_CFG0)) & 0xFFFF0000) << 4);
+	size_aligned = ((size_aligned >> SECTION_SHIFT) << SECTION_SHIFT);
+
 #if defined(CONFIG_SYS_MEM_TOP_HIDE)
-	return (((readl(AO_SEC_GP_CFG0)) & 0xFFFF0000) << 4) - CONFIG_SYS_MEM_TOP_HIDE;
-#else
-	return (((readl(AO_SEC_GP_CFG0)) & 0xFFFF0000) << 4);
+	size_aligned = size_aligned - CONFIG_SYS_MEM_TOP_HIDE;
 #endif
+
+	return size_aligned;
 }
 
 #ifdef CONFIG_MULTI_DTB
