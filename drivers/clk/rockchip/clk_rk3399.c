@@ -1189,7 +1189,6 @@ static void rkclk_init(struct rk3399_cru *cru)
 
 	/* configure perilp0 aclk, hclk, pclk */
 	aclk_div = DIV_ROUND_UP(GPLL_HZ, PERILP0_ACLK_HZ) - 1;
-	assert((aclk_div + 1) * PERILP0_ACLK_HZ == GPLL_HZ && aclk_div <= 0x1f);
 
 	hclk_div = PERILP0_ACLK_HZ / PERILP0_HCLK_HZ - 1;
 	assert((hclk_div + 1) * PERILP0_HCLK_HZ ==

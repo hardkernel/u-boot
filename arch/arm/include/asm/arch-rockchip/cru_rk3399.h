@@ -86,7 +86,7 @@ check_member(rk3399_cru, sdio1_con[1], 0x594);
 #define PERIHP_HCLK_HZ	(75 * MHz)
 #define PERIHP_PCLK_HZ	(37500 * KHz)
 
-#define PERILP0_ACLK_HZ	(100 * MHz)
+#define PERILP0_ACLK_HZ	(300 * MHz)
 #define PERILP0_HCLK_HZ	(100 * MHz)
 #define PERILP0_PCLK_HZ	(50 * MHz)
 
