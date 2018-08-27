@@ -452,6 +452,12 @@ static int check_lock(void)
 	LockData_t* info;
 
 	lock_s = getenv("lock");
+	if (!lock_s) {
+		printf("lock state is NULL \n");
+		lock_s = "10001000";
+		setenv("lock", "10001000");
+		saveenv();
+	}
 	printf("lock state: %s\n", lock_s);
 
 	info = (LockData_t*)malloc(sizeof(struct LockData));
@@ -471,7 +477,7 @@ static int check_lock(void)
 }
 
 static const char* getvar_list[] = {
-	"version-baseband", "version-bootloader", "version", "max-download-size",
+	"version-baseband", "version-bootloader", "version", "hw-revision", "max-download-size",
 	"serialno", "product", "off-mode-charge", "variant", "battery-soc-ok",
 	"battery-voltage", "partition-type:boot", "partition-size:boot",
 	"partition-type:system", "partition-size:system", "partition-type:vendor", "partition-size:vendor",
@@ -479,7 +485,7 @@ static const char* getvar_list[] = {
 	"erase-block-size", "logical-block-size", "secure", "unlocked",
 };
 static const char* getvar_list_ab[] = {
-	"version-baseband", "version-bootloader", "version", "max-download-size",
+	"version-baseband", "version-bootloader", "version", "hw-revision", "max-download-size",
 	"serialno", "product", "off-mode-charge", "variant", "battery-soc-ok",
 	"battery-voltage", "partition-type:boot", "partition-size:boot",
 	"partition-type:system", "partition-size:system", "partition-type:vendor", "partition-size:vendor",
@@ -538,6 +544,8 @@ static void cb_getvar(struct usb_ep *ep, struct usb_request *req)
 		strncat(response, "N/A", chars_left);
 	} else if (!strcmp_l1("version-bootloader", cmd)) {
 		strncat(response, U_BOOT_VERSION, chars_left);
+	} else if (!strcmp_l1("hw-revision", cmd)) {
+		strncat(response, "EVT", chars_left);
 	} else if (!strcmp_l1("version", cmd)) {
 		strncat(response, FASTBOOT_VERSION, chars_left);
 	} else if (!strcmp_l1("bootloader-version", cmd)) {
@@ -547,9 +555,9 @@ static void cb_getvar(struct usb_ep *ep, struct usb_request *req)
 	} else if (!strcmp_l1("variant", cmd)) {
 		strncat(response, "US", chars_left);
 	} else if (!strcmp_l1("battery-soc-ok", cmd)) {
-		strncat(response, "no", chars_left);
+		strncat(response, "yes", chars_left);
 	} else if (!strcmp_l1("battery-voltage", cmd)) {
-		strncat(response, "0", chars_left);
+		strncat(response, "4.2V", chars_left);
 	} else if (!strcmp_l1("downloadsize", cmd) ||
 		!strcmp_l1("max-download-size", cmd)) {
 		char str_num[12];
@@ -663,6 +671,12 @@ static void cb_getvar(struct usb_ep *ep, struct usb_request *req)
 		strncat(response, "ext4", chars_left);
 	} else if (!strcmp_l1("partition-type:tee", cmd)) {
 		strncat(response, "ext4", chars_left);
+	} else if (!strcmp_l1("partition-type:param", cmd)) {
+		strncat(response, "ext4", chars_left);
+	} else if (!strcmp_l1("partition-type:product", cmd)) {
+		strncat(response, "ext4", chars_left);
+	} else if (!strcmp_l1("partition-type:metadata", cmd)) {
+		strncat(response, "ext4", chars_left);
 	} else if (!strncmp("partition-type", cmd, strlen("partition-type"))) {
 		strncat(response, "raw", chars_left);
 	} else if (!strcmp_l1("erase-block-size", cmd) ||
@@ -670,15 +684,15 @@ static void cb_getvar(struct usb_ep *ep, struct usb_request *req)
 		strncat(response, "2000", chars_left);
 	} else if (!strcmp_l1("secure", cmd)) {
 		if (check_lock()) {
-			strncat(response, "no", chars_left);
-		} else {
 			strncat(response, "yes", chars_left);
+		} else {
+			strncat(response, "no", chars_left);
 		}
 	} else if (!strcmp_l1("unlocked", cmd)) {
 		if (check_lock()) {
-			strncat(response, "yes", chars_left);
-		} else {
 			strncat(response, "no", chars_left);
+		} else {
+			strncat(response, "yes", chars_left);
 		}
 	} else if (!strcmp_l1("slot-successful", cmd)) {
 		char str[128];
@@ -908,16 +922,24 @@ static void cb_flashing(struct usb_ep *ep, struct usb_request *req)
 	static int cmd_index = -1;
 
 	lock_s = getenv("lock");
-	printf("lock state: %s\n", lock_s);
-	strcpy(lock_d, lock_s);
+	if (!lock_s) {
+		printf("lock state is NULL \n");
+		strcpy(lock_d, "10001000");
+		lock_s = "10001000";
+		setenv("lock", "10001000");
+		saveenv();
+	} else {
+		printf("lock state: %s\n", lock_s);
+		strcpy(lock_d, lock_s);
+	}
 
 	info = (LockData_t*)malloc(sizeof(struct LockData));
 	memset(info,0,LOCK_DATA_SIZE);
-	info->version_major = (int)(lock_s[0] - '0');
-	info->version_minor = (int)(lock_s[1] - '0');
-	info->lock_state = (int)(lock_s[4] - '0');
-	info->lock_critical_state = (int)(lock_s[5] - '0');
-	info->lock_bootloader = (int)(lock_s[6] - '0');
+	info->version_major = (int)(lock_d[0] - '0');
+	info->version_minor = (int)(lock_d[1] - '0');
+	info->lock_state = (int)(lock_d[4] - '0');
+	info->lock_critical_state = (int)(lock_d[5] - '0');
+	info->lock_bootloader = (int)(lock_d[6] - '0');
 	dump_lock_info(info);
 
 	strcpy(response, "OKAY");
@@ -1049,6 +1071,11 @@ static void cb_flash(struct usb_ep *ep, struct usb_request *req)
 		printf("partition is %s\n", cmd);
 	}
 
+	if (strcmp(cmd, "dts") == 0) {
+		strcpy(cmd, "dtb");
+		printf("partition is %s\n", cmd);
+	}
+
 	//strcpy(response, "FAILno flash device defined");
 	if (is_mainstorage_emmc()) {
 #ifdef CONFIG_FASTBOOT_FLASH_MMC_DEV
@@ -1157,6 +1184,11 @@ static void cb_erase(struct usb_ep *ep, struct usb_request *req)
 	printf("partition is %s\n", cmd);
 	if (strcmp(cmd, "userdata") == 0) {
 		strcpy(cmd, "data");
+		printf("partition is %s\n", cmd);
+	}
+
+	if (strcmp(cmd, "dts") == 0) {
+		strcpy(cmd, "dtb");
 		printf("partition is %s\n", cmd);
 	}
 
