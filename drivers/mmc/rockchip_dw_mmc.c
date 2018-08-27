@@ -284,6 +284,7 @@ static int rockchip_dwmmc_probe(struct udevice *dev)
 		plat->cfg.host_caps |= MMC_MODE_HS200;
 	plat->mmc.default_phase =
 		dev_read_u32_default(dev, "default-sample-phase", 0);
+	plat->mmc.init_retry = 0;
 	host->mmc = &plat->mmc;
 	host->mmc->priv = &priv->host;
 	host->mmc->dev = dev;
