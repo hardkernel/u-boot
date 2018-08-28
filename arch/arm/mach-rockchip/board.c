@@ -259,13 +259,11 @@ int board_fdt_fixup(void *blob)
 	return ret;
 }
 
-#if !defined(CONFIG_SYS_DCACHE_OFF) && !defined(CONFIG_ARM64)
 void enable_caches(void)
 {
-	/* Enable D-cache. I-cache is already enabled in start.S */
+	icache_enable();
 	dcache_enable();
 }
-#endif
 
 #if defined(CONFIG_USB_GADGET) && defined(CONFIG_USB_GADGET_DWC2_OTG)
 #include <fdt_support.h>
