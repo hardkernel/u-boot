@@ -292,11 +292,29 @@ config ROCKCHIP_RV1108
 	bool "Support Rockchip RV1108"
 	select CPU_V7
 	select SUPPORT_SPL
+	select SUPPORT_TPL
 	select SPL
+	select TPL
 	select BOARD_LATE_INIT
 	help
 	  The Rockchip RV1108 is a ARM-based SoC with a single-core Cortex-A7
 	  and a DSP.
+
+if ROCKCHIP_RV1108
+
+config TPL_LDSCRIPT
+        default "arch/arm/mach-rockchip/u-boot-tpl.lds"
+
+config TPL_TEXT_BASE
+        default 0x10080800
+
+config TPL_MAX_SIZE
+        default 6144
+
+config TPL_STACK
+        default 0x10082000
+
+endif
 
 config SPL_ROCKCHIP_BACK_TO_BROM
 	bool "SPL returns to bootrom"
