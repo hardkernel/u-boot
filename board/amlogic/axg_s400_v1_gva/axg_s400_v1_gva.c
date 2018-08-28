@@ -703,7 +703,7 @@ int checkhw(char * name)
 		strcpy(loc_name, "axg_s400_1g\0");
 		break;
 	case 3:
-		strcpy(loc_name, "axg_s400_v03\0");
+		strcpy(loc_name, "axg_s400_v03gva\0");
 		break;
 	default:
 		strcpy(loc_name, "axg_s400_1g");

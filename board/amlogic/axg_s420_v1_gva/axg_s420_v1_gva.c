@@ -560,7 +560,7 @@ int checkhw(char * name)
 		strcpy(loc_name, "axg_s420_512m\0");
 		break;
 	case 3:
-		strcpy(loc_name, "axg_s420_v03\0");
+		strcpy(loc_name, "axg_s420_v03gva\0");
 		break;
 	default:
 		//printf("DDR size: 0x%x, multi-dt doesn't support\n", ddr_size);
