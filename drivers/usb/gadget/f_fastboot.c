@@ -454,8 +454,8 @@ static int check_lock(void)
 	lock_s = getenv("lock");
 	if (!lock_s) {
 		printf("lock state is NULL \n");
-		lock_s = "10001000";
-		setenv("lock", "10001000");
+		lock_s = "10000000";
+		setenv("lock", "10000000");
 		saveenv();
 	}
 	printf("lock state: %s\n", lock_s);
@@ -924,9 +924,9 @@ static void cb_flashing(struct usb_ep *ep, struct usb_request *req)
 	lock_s = getenv("lock");
 	if (!lock_s) {
 		printf("lock state is NULL \n");
-		strcpy(lock_d, "10001000");
-		lock_s = "10001000";
-		setenv("lock", "10001000");
+		strcpy(lock_d, "10000000");
+		lock_s = "10000000";
+		setenv("lock", "10000000");
 		saveenv();
 	} else {
 		printf("lock state: %s\n", lock_s);
@@ -999,34 +999,38 @@ static void cb_flashing(struct usb_ep *ep, struct usb_request *req)
 	} else if (!strcmp_l1("lock_bootloader", cmd)) {
 		info->lock_bootloader = 1;
 	} else if (!strcmp_l1("unlock", cmd)) {
+		if (info->lock_state == 1 ) {
 #ifdef CONFIG_AVB2
 #ifdef CONFIG_AML_ANTIROLLBACK
-		if (avb_unlock()) {
+			if (avb_unlock()) {
+				printf("unlocking device.  Erasing userdata partition!\n");
+				run_command("store erase partition data", 0);
+			} else {
+				printf("unlock failed!\n");
+			}
+#else
 			printf("unlocking device.  Erasing userdata partition!\n");
 			run_command("store erase partition data", 0);
-		} else {
-			printf("unlock failed!\n");
+#endif
+#endif
 		}
-#else
-		printf("unlocking device.  Erasing userdata partition!\n");
-		run_command("store erase partition data", 0);
-#endif
-#endif
 		info->lock_state = 0;
 	} else if (!strcmp_l1("lock", cmd)) {
+		if (info->lock_state == 0 ) {
 #ifdef CONFIG_AVB2
 #ifdef CONFIG_AML_ANTIROLLBACK
-		if (avb_lock()) {
-			printf("lock failed!\n");
-		} else {
+			if (avb_lock()) {
+				printf("lock failed!\n");
+			} else {
+				printf("locking device.  Erasing userdata partition!\n");
+				run_command("store erase partition data", 0);
+			}
+#else
 			printf("locking device.  Erasing userdata partition!\n");
 			run_command("store erase partition data", 0);
+#endif
+#endif
 		}
-#else
-		printf("locking device.  Erasing userdata partition!\n");
-		run_command("store erase partition data", 0);
-#endif
-#endif
 		info->lock_state = 1;
 	} else {
 		error("unknown variable: %s\n", cmd);
