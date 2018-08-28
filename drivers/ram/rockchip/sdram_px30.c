@@ -697,6 +697,7 @@ static void enable_low_power(struct dram_info *dram,
 			     struct px30_sdram_params *sdram_params)
 {
 	void __iomem *pctl_base = dram->pctl;
+	void __iomem *phy_base = dram->phy;
 	void __iomem *ddr_grf_base = dram->ddr_grf;
 	u32 grf_lp_con;
 
@@ -721,6 +722,18 @@ static void enable_low_power(struct dram_info *dram,
 	/* en lpckdis_en */
 	grf_lp_con = grf_lp_con | (0x1 << (9 + 16)) | (0x1 << 9);
 	writel(grf_lp_con, ddr_grf_base + DDR_GRF_LP_CON);
+
+	/* off digit module clock when enter power down */
+	setbits_le32(PHY_REG(phy_base, 7), 1 << 7);
+
+	/*
+	 * If DDR3 or DDR4 active_ranks=1,
+	 * it will gate memory clock when enter power down.
+	 * Force set active_ranks to 3 to workaround it.
+	 */
+	if (sdram_params->dramtype == DDR3 || sdram_params->dramtype == DDR4)
+		clrsetbits_le32(pctl_base + DDR_PCTL2_MSTR, 0x3 << 24,
+				0x3 << 24);
 
 	/* enable sr, pd */
 	if (PD_IDLE == 0)
