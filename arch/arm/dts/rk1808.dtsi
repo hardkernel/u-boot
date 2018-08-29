@@ -117,6 +117,10 @@
 		};
 	};
 
+	dmc: dmc {
+		compatible = "rockchip,rk1808-dmc";
+	};
+
 	cru: clock-controller@ff350000 {
 		compatible = "rockchip,rk1808-cru";
 		reg = <0x0 0xff350000 0x0 0x5000>;
