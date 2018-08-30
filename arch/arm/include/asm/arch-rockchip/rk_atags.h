@@ -167,4 +167,11 @@ void atags_test(void);
 /* Atags stat */
 void atags_stat(void);
 
+#if CONFIG_IS_ENABLED(TINY_FRAMEWORK) &&		\
+	!CONFIG_IS_ENABLED(LIBGENERIC_SUPPORT) &&	\
+	defined(CONFIG_ARM64)
+void *memset(void *s, int c, size_t count);
+void *memcpy(void *dest, const void *src, size_t count);
+#endif
+
 #endif

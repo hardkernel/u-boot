@@ -6,11 +6,71 @@
 
 #include <common.h>
 #include <asm/arch/rk_atags.h>
+#if CONFIG_IS_ENABLED(TINY_FRAMEWORK)
+#include <debug_uart.h>
+#endif
 
 #define tag_next(t)	((struct tag *)((u32 *)(t) + (t)->hdr.size))
 #define tag_size(type)	((sizeof(struct tag_header) + sizeof(struct type)) >> 2)
 #define for_each_tag(t, base)		\
 	for (t = base; t->hdr.size; t = tag_next(t))
+
+#if CONFIG_IS_ENABLED(TINY_FRAMEWORK) &&		\
+	!CONFIG_IS_ENABLED(LIBGENERIC_SUPPORT) &&	\
+	defined(CONFIG_ARM64)
+/**
+ * memset - Fill a region of memory with the given value
+ * @s: Pointer to the start of the area.
+ * @c: The byte to fill the area with
+ * @count: The size of the area.
+ *
+ * Do not use memset() to access IO space, use memset_io() instead.
+ */
+void *memset(void *s, int c, size_t count)
+{
+	unsigned long *sl = (unsigned long *)s;
+	char *s8;
+
+	s8 = (char *)sl;
+	while (count--)
+		*s8++ = c;
+
+	return s;
+}
+
+/**
+ * memcpy - Copy one area of memory to another
+ * @dest: Where to copy to
+ * @src: Where to copy from
+ * @count: The size of the area.
+ *
+ * You should not use this function to access IO space, use memcpy_toio()
+ * or memcpy_fromio() instead.
+ */
+void *memcpy(void *dest, const void *src, size_t count)
+{
+	unsigned long *dl = (unsigned long *)dest, *sl = (unsigned long *)src;
+	char *d8, *s8;
+
+	if (src == dest)
+		return dest;
+
+	/* while all data is aligned (common case), copy a word at a time */
+	if ((((ulong)dest | (ulong)src) & (sizeof(*dl) - 1)) == 0) {
+		while (count >= sizeof(*dl)) {
+			*dl++ = *sl++;
+			count -= sizeof(*dl);
+		}
+	}
+	/* copy the reset one byte at a time */
+	d8 = (char *)dl;
+	s8 = (char *)sl;
+	while (count--)
+		*d8++ = *s8++;
+
+	return dest;
+}
+#endif
 
 static int inline bad_magic(u32 magic)
 {
@@ -44,7 +104,12 @@ int atags_set_tag(u32 magic, void *tagdata)
 		return -ENODATA;
 
 	if (bad_magic(magic)) {
+#if !CONFIG_IS_ENABLED(TINY_FRAMEWORK)
 		printf("%s: magic(%x) is not support\n", __func__, magic);
+#else
+		printascii("magic is not support\n");
+#endif
+
 		return -EINVAL;
 	}
 
@@ -70,8 +135,13 @@ int atags_set_tag(u32 magic, void *tagdata)
 			 * some unknown reason.
 			 */
 			if (bad_magic(t->hdr.magic)) {
+#if !CONFIG_IS_ENABLED(TINY_FRAMEWORK)
 				printf("%s: find unknown magic(%x)\n",
 				       __func__, t->hdr.magic);
+#else
+				printascii("find unknown magic\n");
+#endif
+
 				return -EINVAL;
 			}
 
@@ -101,8 +171,13 @@ int atags_set_tag(u32 magic, void *tagdata)
 	};
 
 	if (atags_size_overflow(t, size)) {
+#if !CONFIG_IS_ENABLED(TINY_FRAMEWORK)
 		printf("%s: failed! no memory to setup magic(%x), max_mem=0x%x\n",
 		       __func__, magic, ATAGS_SIZE);
+#else
+		printascii("no memory to setup magic\n");
+#endif
+
 		return -ENOMEM;
 	}
 
@@ -128,8 +203,12 @@ struct tag *atags_get_tag(u32 magic)
 
 	for_each_tag(t, (struct tag *)ATAGS_PHYS_BASE) {
 		if (bad_magic(t->hdr.magic)) {
+#if !CONFIG_IS_ENABLED(TINY_FRAMEWORK)
 			printf("%s: find unknown magic(%x)\n",
 			       __func__, t->hdr.magic);
+#else
+			printascii("find unknown magic\n");
+#endif
 			return NULL;
 		}
 
