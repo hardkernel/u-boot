@@ -133,6 +133,14 @@ int atags_set_tag(u32 magic, void *tagdata);
  */
 struct tag *atags_get_tag(u32 magic);
 
+/*
+ * atags_is_available - check if atags is available, used for second or
+ *			later pre-loaders.
+ *
+ * return: 0 is not available, otherwise available.
+ */
+int atags_is_available(void);
+
 /* Print only one tag */
 void atags_print_tag(struct tag *t);
 

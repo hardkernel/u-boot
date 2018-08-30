@@ -27,6 +27,13 @@ static int inline atags_size_overflow(struct tag *t, u32 tag_size)
 	return (unsigned long)t + (tag_size << 2) - ATAGS_PHYS_BASE > ATAGS_SIZE;
 }
 
+int atags_is_available(void)
+{
+	struct tag *t = (struct tag *)ATAGS_PHYS_BASE;
+
+	return (t->hdr.magic == ATAG_CORE);
+}
+
 int atags_set_tag(u32 magic, void *tagdata)
 {
 	u32 length, size = 0;
