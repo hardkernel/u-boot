@@ -456,6 +456,7 @@
 
 /* Compression commands */
 #define CONFIG_CMD_UNZIP			1
+#define CONFIG_LZMA				1
 
 /* other functions */
 #define CONFIG_NEED_BL301			1
