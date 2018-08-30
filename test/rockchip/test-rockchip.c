@@ -14,6 +14,16 @@ typedef struct board_module {
 	int (*test)(int argc, char * const argv[]);
 } board_module_t;
 
+static int board_rockusb_test(int argc, char * const argv[])
+{
+	return run_command_list("rockusb 0 ${devtype} ${devnum}", -1, 0);
+}
+
+static int board_fastboot_test(int argc, char * const argv[])
+{
+	return run_command_list("fastboot usb 0", -1, 0);
+}
+
 static board_module_t g_board_modules[] = {
 #if defined(CONFIG_IRQ)
 	{
@@ -27,7 +37,16 @@ static board_module_t g_board_modules[] = {
 		.desc = "enter bootrom download mode",
 		.test = board_brom_dnl_test
 	},
-
+	{
+		.name = "rockusb",
+		.desc = "enter rockusb download mode",
+		.test = board_rockusb_test
+	},
+	{
+		.name = "fastboot",
+		.desc = "enter fastboot download mode",
+		.test = board_fastboot_test
+	},
 #if defined(CONFIG_DM_KEY)
 	{
 		.name = "key",
@@ -85,7 +104,7 @@ static void help(void)
 	int i;
 
 	printf("Command: rktest [module] [args...]\n"
-	       "  - module: timer|key|emmc|rknand|regulator|eth|ir|brom|vendor\n"
+	       "  - module: timer|key|emmc|rknand|regulator|eth|ir|brom|rockusb|fastboot|vendor\n"
 	       "  - args: depends on module, try 'rktest [module]' for test or more help\n\n");
 
 	printf("  - Enabled modules:\n");
