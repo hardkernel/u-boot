@@ -133,7 +133,8 @@ void atags_destroy(void)
 	memset((char *)ATAGS_PHYS_BASE, 0, sizeof(struct tag));
 }
 
-#ifdef DEBUG_ATAGS
+#if (defined(CONFIG_DEBUG_ATAGS) || defined(DEBUG)) && \
+    !defined(CONFIG_SPL_BUILD) && !defined(CONFIG_TPL_BUILD)
 void atags_print_tag(struct tag *t)
 {
 	u32 i;
@@ -250,6 +251,19 @@ void atags_test(void)
 
 	atags_print_all_tags();
 }
+
+static int dump_atags(cmd_tbl_t *cmdtp, int flag,
+		      int argc, char * const argv[])
+{
+	atags_print_all_tags();
+	return 0;
+}
+
+U_BOOT_CMD(
+	atags, 1, 1, dump_atags,
+	"Dump the content of the atags",
+	""
+);
 #else
 void inline atags_print_tag(struct tag *t) {}
 void inline atags_print_all_tags(void) {}
