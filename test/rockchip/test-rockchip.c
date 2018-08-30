@@ -14,7 +14,9 @@ typedef struct board_module {
 } board_module_t;
 
 static board_module_t g_board_modules[] = {
+#if defined(CONFIG_IRQ)
 	{ .name = "timer",	.test = board_timer_test },
+#endif
 	{ .name = "brom",	.test = board_brom_dnl_test },
 
 #if defined(CONFIG_DM_KEY)
