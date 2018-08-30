@@ -25,6 +25,9 @@
 #include "cpu_sdio.h"
 
 #define MMC_ADJ_FIXED	1
+#ifndef MMC_ADJ_FIXED
+#define MMC_ADJ_FIX_CALC 1
+#endif
 
 #define SD_EMMC_BASE_A 0xFFE03000
 #define SD_EMMC_BASE_B 0xFFE05000

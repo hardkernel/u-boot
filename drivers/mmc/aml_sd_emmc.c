@@ -69,6 +69,63 @@ struct aml_card_sd_info * cpu_sd_emmc_get(unsigned port)
     return NULL;
 }
 
+int aml_fixdiv_calc(struct mmc *mmc)
+{
+	int ret = 0;
+	unsigned int full_div, source_cycle;    /* in ns*/
+	unsigned int sdclk_idx, todly_idx_max, todly_idx_min;
+	unsigned inv_idx_min, inv_idx_max;
+	unsigned int val_idx_min, val_idx_max, val_idx_win, val_idx_sta;
+
+	if (mmc->clk_lay.core == mmc->clk_lay.old_core)
+		return 1;
+	mmc->clk_lay.old_core = mmc->clk_lay.core;
+
+	printf(">>>calc: source clk %d, core clk %d\n", mmc->clk_lay.source, mmc->clk_lay.core);
+	full_div = mmc->clk_lay.source / mmc->clk_lay.core;
+	sdclk_idx = full_div / 2;
+	sdclk_idx -= full_div % 2 ? 0 : 1;
+
+	printf("full_div %d, sdclk_idx %d\n", full_div, sdclk_idx);
+	/* ns */
+	source_cycle = 1000000000 / mmc->clk_lay.source;
+	printf("cycle of source clock is %d \n", source_cycle);
+	if (source_cycle < TODLY_MAX_NS) {
+		todly_idx_max = (TODLY_MAX_NS + source_cycle - 1) / source_cycle;
+		todly_idx_min = TODLY_MIN_NS / source_cycle;
+		printf("todly_idx_min %d, todly_idx_max %d\n", todly_idx_min, todly_idx_max);
+		inv_idx_min = todly_idx_min + sdclk_idx;
+		inv_idx_max = todly_idx_max + sdclk_idx;
+		printf("inv_idx_min %d, inv_idx_max %d\n", inv_idx_min, inv_idx_max);
+		inv_idx_min = inv_idx_min % full_div;
+		inv_idx_max = inv_idx_max % full_div;
+		printf("ROUND: inv_idx_min %d, inv_idx_max %d\n", inv_idx_min, inv_idx_max);
+
+		if (inv_idx_min > inv_idx_max) {
+			val_idx_min = inv_idx_max + 1;
+			val_idx_max = inv_idx_min - 1;
+			val_idx_sta = val_idx_min;
+			val_idx_win = val_idx_max - val_idx_min;
+		} else if (inv_idx_min <= inv_idx_max) {
+			val_idx_max = inv_idx_max + 1;
+			val_idx_min = inv_idx_min - 1;
+			val_idx_sta = val_idx_max;
+			val_idx_win = (full_div + val_idx_min) -  val_idx_max;
+		}
+	} else {
+		val_idx_max = sdclk_idx + 1;
+		val_idx_min = sdclk_idx - 1;
+		val_idx_sta = val_idx_max;
+		val_idx_win = full_div / 2;
+		//val_idx_win = (full_div + val_idx_min) -  val_idx_max;
+	}
+
+	printf("val_idx_sta %d, val_idx_win %d\n", val_idx_sta, val_idx_win);
+	mmc->fixdiv = val_idx_sta + (val_idx_win >> 1);
+
+	printf("fixdiv = %d\n", mmc->fixdiv);
+	return ret;
+}
 
 void aml_sd_cfg_swth(struct mmc *mmc)
 {
@@ -80,6 +137,7 @@ void aml_sd_cfg_swth(struct mmc *mmc)
 	struct sd_emmc_global_regs *sd_emmc_reg = aml_priv->sd_emmc_reg;
 	struct sd_emmc_config* sd_emmc_cfg = (struct sd_emmc_config*)&vconf;
 	emmc_debug("mmc->clock=%d; clk_div=%d\n",mmc->clock ,clk_div);
+	unsigned int adj = 0;
 
 	/* reset gdelay , gadjust register */
 	sd_emmc_reg->gdelay = 0;
@@ -131,8 +189,23 @@ void aml_sd_cfg_swth(struct mmc *mmc)
 #endif
     sd_emmc_reg->gcfg = vconf;
 
-
     sd_emmc_para_config(sd_emmc_reg, mmc->clock, aml_priv->sd_emmc_port);
+
+	if (mmc->cfg->ops->calc && (!strcmp(mmc->cfg->name, "SDIO Port C"))) {
+		mmc->clk_lay.source = mmc->clock * clk_div;
+		mmc->clk_lay.core = mmc->clock;
+		if (!mmc->cfg->ops->calc(mmc)) {
+			sd_emmc_clkc = sd_emmc_reg->gclock;
+			sd_emmc_clkc &= ~(3 << Cfg_tx_phase);
+			sd_emmc_clkc &= ~(3 << Cfg_co_phase);
+			sd_emmc_clkc |= (2 << Cfg_tx_phase);
+			sd_emmc_reg->gclock = sd_emmc_clkc;
+			adj |= (mmc->fixdiv << 16);
+			adj |= (1 << 13);
+			sd_emmc_reg->gadjust = adj;
+			printf("fixdiv calc done: clk = 0x%x, adj = 0x%x\n", sd_emmc_clkc, adj);
+		}
+	}
 
     printf("co-phase 0x%x, tx-dly %d, clock %d\n",
         (sd_emmc_reg->gclock >> Cfg_co_phase) & 3,
@@ -938,6 +1011,9 @@ static const struct mmc_ops aml_sd_emmc_ops = {
 #ifdef MMC_ADJ_FIXED
 	.calibration = aml_sd_calibration,
 	.refix = aml_sd_retry_refix,
+#endif
+#ifdef MMC_ADJ_FIX_CALC
+	.calc = aml_fixdiv_calc,
 #endif
 };
 

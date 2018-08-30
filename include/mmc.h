@@ -303,6 +303,7 @@ struct mmc_ops {
 	int (*getwp)(struct mmc *mmc);
 	int (*calibration)(struct mmc *mmc);
 	int (*refix)(struct mmc *mmc);
+	int (*calc)(struct mmc *mmc);
 };
 
 struct mmc_config {
@@ -316,10 +317,26 @@ struct mmc_config {
 	unsigned char part_type;
 };
 
+struct clock_lay_t {
+	/* source clk, 24Mhz, 1Ghz */
+	unsigned int source;
+	/* core clk, Hz */
+	unsigned int core;
+	/* core clk, Hz */
+	unsigned int old_core;
+	/* bus clk */
+	unsigned int sdclk;
+};
+
+/* todly in ns*/
+#define TODLY_MIN_NS   (2)
+#define TODLY_MAX_NS   (14)
+
 /* TODO struct mmc should be in mmc_private but it's hard to fix right now */
 struct mmc {
 	struct list_head link;
 	const struct mmc_config *cfg;	/* provided configuration */
+	struct clock_lay_t clk_lay;
 	uint version;
 	void *priv;
 	uint has_init;
@@ -356,6 +373,7 @@ struct mmc {
 	int ddr_mode;
 	unsigned char calout[20][20];
 	int refix;
+	int fixdiv;
 };
 
 int mmc_register(struct mmc *mmc);
