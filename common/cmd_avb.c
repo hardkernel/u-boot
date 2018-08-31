@@ -107,8 +107,8 @@ static AvbIOResult get_unique_guid_for_partition(AvbOps* ops, const char* partit
 {
     memset(guid_buf, 0, guid_buf_size);
     if (!memcmp(partition, "system", strlen("system")))
-        strncpy(guid_buf, "179:18", guid_buf_size);
-    if (!memcmp(partition, "vbmeta", strlen("vbmeta")))
+        strncpy(guid_buf, "/dev/mmcblk0p18", guid_buf_size);
+    else if (!memcmp(partition, "vbmeta", strlen("vbmeta")))
         strncpy(guid_buf, "/dev/block/vbmeta", guid_buf_size);
     return AVB_IO_RESULT_OK;
 }
