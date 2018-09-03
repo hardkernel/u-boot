@@ -134,6 +134,7 @@ static int optimus_burn_one_partition(const char* partName, HIMAGE hImg, __hdle 
     const char* fileFmt = NULL;
     /*static */char _errInfo[512];
     unsigned itemSizeNotAligned = 0;
+    unsigned itemSizePreload = 0;
 
     printf("\n");
     DWN_MSG("=====>To burn part [%s]\n", partName);
@@ -153,8 +154,11 @@ static int optimus_burn_one_partition(const char* partName, HIMAGE hImg, __hdle 
     fileFmt = (IMAGE_ITEM_TYPE_SPARSE == image_item_get_type(hImgItem)) ? "sparse" : "normal";
 
     itemSizeNotAligned = image_item_get_first_cluster_size(hImg, hImgItem);
-    leftItemSz        -= itemSizeNotAligned;
-    rcode = sdc_burn_buf_manager_init(partName, imgItemSz, fileFmt, itemSizeNotAligned);
+    //need let 'leftItemSz > 0' to trigger optimus_buf_manager_report_transfer_complete
+    if ( itemSizeNotAligned >= imgItemSz ) itemSizePreload = 0;
+    else itemSizePreload = itemSizeNotAligned;
+    leftItemSz        -= itemSizePreload;
+    rcode = sdc_burn_buf_manager_init(partName, imgItemSz, fileFmt, itemSizePreload);
     if (rcode) {
         DWN_ERR("fail in sdc_burn_buf_manager_init, rcode %d\n", rcode);
         return __LINE__;
@@ -177,20 +181,32 @@ static int optimus_burn_one_partition(const char* partName, HIMAGE hImg, __hdle 
 		//If the item head is not alinged to FAT cluster, Read it firstly to speed up mmc read
         if (itemSizeNotAligned && !sequenceNo)
         {
-            DWN_MSG("itemSizeNotAligned 0x%x\n", itemSizeNotAligned);
-            rcode = image_item_read(hImg, hImgItem, downTransBuf - itemSizeNotAligned, itemSizeNotAligned);
+            if ( itemSizeNotAligned >= imgItemSz ) {
+                itemSizePreload = imgItemSz;
+                if ( imgItemSz != thisReadLen ) {
+                    DWN_ERR("itemSizeNotAligned 0x%x >= imgItemSz 0x%llx, but thisReadLen 0x%x\n",
+                            itemSizeNotAligned, imgItemSz, thisReadLen);
+                    rcode = __LINE__; goto _finish;
+                }
+            }
+            DWN_MSG("itemSizeNotAligned 0x%x, itemSizePreload 0x%x\n", itemSizeNotAligned, itemSizePreload);
+            rcode = image_item_read(hImg, hImgItem, downTransBuf - itemSizePreload, itemSizePreload);
             if (rcode) {
-                DWN_ERR("fail in read data from item,rcode %d, len 0x%x, sequenceNo %d\n", rcode, itemSizeNotAligned, sequenceNo);
+                DWN_ERR("fail in read data from item,rcode %d, len 0x%x, sequenceNo %d\n", rcode, itemSizePreload, sequenceNo);
                 goto _finish;
             }
         }
 
-        rcode = image_item_read(hImg, hImgItem, downTransBuf, thisReadLen);
-        if (rcode) {
-            DWN_ERR("fail in read data from item,rcode %d\n", rcode);
-            goto _finish;
+        if ( itemSizePreload != imgItemSz )
+        {
+            rcode = image_item_read(hImg, hImgItem, downTransBuf, thisReadLen);
+            if (rcode) {
+                DWN_ERR("fail in read data from item,rcode %d\n", rcode);
+                goto _finish;
+            }
+        } else {
+            memmove(downTransBuf, downTransBuf - itemSizePreload, itemSizePreload);
         }
-
         rcode = optimus_buf_manager_report_transfer_complete(thisReadLen, _errInfo);
         if (rcode) {
             DWN_ERR("fail in report data ready, rcode %d\n", rcode);
