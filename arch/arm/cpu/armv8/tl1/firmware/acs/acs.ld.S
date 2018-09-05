@@ -5,7 +5,7 @@ ENTRY(acs_entry)
 
 SECTIONS
 {
-    . = 0xFFFAF000;
+    . = 0xFFFBF000;
 
     . : {
         __RO_START__ = .;
@@ -14,5 +14,5 @@ SECTIONS
         *(.data*)
     }
 
-    ASSERT(. <= 0xFFFB0000, "timing image has exceeded its limit.")
+    ASSERT(. <= 0xFFFC0000, "timing image has exceeded its limit.")
 }
