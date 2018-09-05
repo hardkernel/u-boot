@@ -19,7 +19,8 @@ static int inline bad_magic(u32 magic)
 		(magic != ATAG_SERIAL) &&
 		(magic != ATAG_BOOTDEV) &&
 		(magic != ATAG_DDR_MEM) &&
-		(magic != ATAG_TOS_MEM));
+		(magic != ATAG_TOS_MEM) &&
+		(magic != ATAG_RAM_PARTITION));
 }
 
 static int inline atags_size_overflow(struct tag *t, u32 tag_size)
@@ -93,6 +94,10 @@ int atags_set_tag(u32 magic, void *tagdata)
 	case ATAG_DDR_MEM:
 		size = tag_size(tag_ddr_mem);
 		break;
+	case ATAG_RAM_PARTITION:
+		size = tag_size(tag_ram_partition);
+		break;
+
 	};
 
 	if (atags_size_overflow(t, size)) {
@@ -203,6 +208,21 @@ void atags_print_tag(struct tag *t)
 		for (i = 0; i < ARRAY_SIZE(t->u.ddr_mem.reserved); i++)
 			printf("    res[%d] = 0x%x\n", i, t->u.ddr_mem.reserved[i]);
 		break;
+	case ATAG_RAM_PARTITION:
+		printf("[ram_partition]:\n");
+		printf("     magic = 0x%x\n", t->hdr.magic);
+		printf("   version = 0x%x\n", t->u.ram_part.version);
+		printf("     count = 0x%x\n", t->u.ram_part.count);
+		for (i = 0; i < ARRAY_SIZE(t->u.ram_part.reserved); i++)
+			printf("    res[%d] = 0x%x\n", i, t->u.ram_part.reserved[i]);
+
+		printf("    Part:  Name       Start Addr      Size\t\n");
+		for (i = 0; i < t->u.ram_part.count; i++)
+			printf("%16s      0x%08llx      0x%08llx\n",
+			       t->u.ram_part.part[i].name,
+			       t->u.ram_part.part[i].start,
+			       t->u.ram_part.part[i].size);
+		break;
 	case ATAG_CORE:
 		printf("[core]:\n");
 		printf("     magic = 0x%x\n", t->hdr.magic);
@@ -239,14 +259,33 @@ void atags_test(void)
 	struct tag_bootdev t_bootdev;
 	struct tag_ddr_mem t_ddr_mem;
 	struct tag_tos_mem t_tos_mem;
+	struct tag_ram_partition t_ram_param;
 
 	memset(&t_serial,  0x1, sizeof(t_serial));
 	memset(&t_bootdev, 0x2, sizeof(t_bootdev));
 	memset(&t_ddr_mem, 0x3, sizeof(t_ddr_mem));
 	memset(&t_tos_mem, 0x4, sizeof(t_tos_mem));
+	memset(&t_tos_mem, 0x0, sizeof(t_ram_param));
 
 	memcpy(&t_tos_mem.tee_mem.name, "tee_mem", 8);
 	memcpy(&t_tos_mem.drm_mem.name, "drm_mem", 8);
+
+	t_ram_param.count = 4;
+	memcpy(&t_ram_param.part[0].name, "misc", 9);
+	t_ram_param.part[0].start = 0x00600000;
+	t_ram_param.part[0].size =  0x00200000;
+
+	memcpy(&t_ram_param.part[1].name, "resource", 9);
+	t_ram_param.part[1].start = 0x00800000;
+	t_ram_param.part[1].size =  0x00200000;
+
+	memcpy(&t_ram_param.part[2].name, "kernel", 7);
+	t_ram_param.part[2].start = 0x00a00000;
+	t_ram_param.part[2].size =  0x02000000;
+
+	memcpy(&t_ram_param.part[3].name, "boot", 5);
+	t_ram_param.part[3].start = 0x04000000;
+	t_ram_param.part[3].size =  0x02000000;
 
 	/* First pre-loader must call it before atags_set_tag() */
 	atags_destroy();
@@ -255,6 +294,7 @@ void atags_test(void)
 	atags_set_tag(ATAG_BOOTDEV, &t_bootdev);
 	atags_set_tag(ATAG_DDR_MEM, &t_ddr_mem);
 	atags_set_tag(ATAG_TOS_MEM, &t_tos_mem);
+	atags_set_tag(ATAG_RAM_PARTITION, &t_ram_param);
 
 	atags_print_all_tags();
 }
