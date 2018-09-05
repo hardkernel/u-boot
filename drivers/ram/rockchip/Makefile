@@ -17,3 +17,6 @@ obj-$(CONFIG_ROCKCHIP_PX30) += rockchip_sdram.o
 obj-$(CONFIG_ROCKCHIP_RK1808) = rockchip_sdram.o
 obj-$(CONFIG_ROCKCHIP_RK3036) = rockchip_sdram.o
 obj-$(CONFIG_ROCKCHIP_RK3308) = rockchip_sdram.o
+ifeq ($(CONFIG_SPL_BUILD)$(CONFIG_TPL_BUILD),)
+obj-$(CONFIG_ROCKCHIP_DMC) += rockchip_dmc.o
+endif

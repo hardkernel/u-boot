@@ -15,6 +15,7 @@
 #include <asm/arch/clock.h>
 #include <asm/arch/cru_rk3328.h>
 #include <asm/arch/grf_rk3328.h>
+#include <asm/arch/rockchip_dmc.h>
 #include <asm/arch/sdram_common.h>
 #include <asm/arch/sdram_rk3328.h>
 #include <asm/arch/uart.h>
@@ -981,17 +982,20 @@ static int rk3328_dmc_ofdata_to_platdata(struct udevice *dev)
 
 static int rk3328_dmc_probe(struct udevice *dev)
 {
+	int ret = 0;
 #ifdef CONFIG_TPL_BUILD
 	if (rk3328_dmc_init(dev))
 		return 0;
 #else
-	struct dram_info *priv = dev_get_priv(dev);
+	struct dram_info *priv;
 
-	priv->grf = syscon_get_first_range(ROCKCHIP_SYSCON_GRF);
-	debug("%s: grf=%p\n", __func__, priv->grf);
-	priv->info.base = CONFIG_SYS_SDRAM_BASE;
-	priv->info.size = rockchip_sdram_size(
-				(phys_addr_t)&priv->grf->os_reg[2]);
+	if (!(gd->flags & GD_FLG_RELOC)) {
+		priv = dev_get_priv(dev);
+		priv->grf = syscon_get_first_range(ROCKCHIP_SYSCON_GRF);
+		debug("%s: grf=%p\n", __func__, priv->grf);
+		priv->info.base = CONFIG_SYS_SDRAM_BASE;
+		priv->info.size =
+			rockchip_sdram_size((phys_addr_t)&priv->grf->os_reg[2]);
 #ifdef CONFIG_SPL_BUILD
 	struct ddr_param ddr_parem;
 
@@ -1000,8 +1004,13 @@ static int rk3328_dmc_probe(struct udevice *dev)
 	ddr_parem.para[1] = priv->info.size;
 	rockchip_setup_ddr_param(&ddr_parem);
 #endif
+	} else {
+#if !defined(CONFIG_SPL_BUILD) && defined(CONFIG_ROCKCHIP_DMC)
+		ret = rockchip_dmcfreq_probe(dev);
 #endif
-	return 0;
+	}
+#endif
+	return ret;
 }
 
 static int rk3328_dmc_get_info(struct udevice *dev, struct ram_info *info)

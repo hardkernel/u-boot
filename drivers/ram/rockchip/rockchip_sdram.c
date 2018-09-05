@@ -12,6 +12,7 @@
 #include <asm/arch/grf_rk1808.h>
 #include <asm/arch/grf_rk3036.h>
 #include <asm/arch/grf_rk3308.h>
+#include <asm/arch/rockchip_dmc.h>
 #include <asm/arch/sdram_common.h>
 
 DECLARE_GLOBAL_DATA_PTR;
@@ -23,35 +24,47 @@ struct dram_info {
 
 static int dmc_probe(struct udevice *dev)
 {
+	int ret = 0;
 	struct dram_info *priv = dev_get_priv(dev);
 
+	if (!(gd->flags & GD_FLG_RELOC)) {
 #if defined(CONFIG_ROCKCHIP_RK3036)
-	struct rk3036_grf *grf = syscon_get_first_range(ROCKCHIP_SYSCON_GRF);
+		struct rk3036_grf *grf =
+			syscon_get_first_range(ROCKCHIP_SYSCON_GRF);
 
-	priv->info.size = rockchip_sdram_size((phys_addr_t)&grf->os_reg[1]);
+		priv->info.size =
+			rockchip_sdram_size((phys_addr_t)&grf->os_reg[1]);
 #elif defined(CONFIG_ROCKCHIP_RK3308)
-	struct rk3308_grf *grf = syscon_get_first_range(ROCKCHIP_SYSCON_GRF);
+		struct rk3308_grf *grf =
+			syscon_get_first_range(ROCKCHIP_SYSCON_GRF);
 
-	priv->info.size = rockchip_sdram_size((phys_addr_t)&grf->os_reg2);
+		priv->info.size =
+			rockchip_sdram_size((phys_addr_t)&grf->os_reg2);
 #elif defined(CONFIG_ROCKCHIP_PX30)
-	struct px30_pmugrf *pmugrf =
-		syscon_get_first_range(ROCKCHIP_SYSCON_PMUGRF);
+		struct px30_pmugrf *pmugrf =
+			syscon_get_first_range(ROCKCHIP_SYSCON_PMUGRF);
 
-	priv->info.size =
-		rockchip_sdram_size((phys_addr_t)&pmugrf->os_reg[2]);
+		priv->info.size =
+			rockchip_sdram_size((phys_addr_t)&pmugrf->os_reg[2]);
 #elif defined(CONFIG_ROCKCHIP_RK1808)
-	struct rk1808_pmugrf *pmugrf =
-		syscon_get_first_range(ROCKCHIP_SYSCON_PMUGRF);
+		struct rk1808_pmugrf *pmugrf =
+			syscon_get_first_range(ROCKCHIP_SYSCON_PMUGRF);
 
-	priv->info.size =
-		rockchip_sdram_size((phys_addr_t)&pmugrf->os_reg[2]);
+		priv->info.size =
+			rockchip_sdram_size((phys_addr_t)&pmugrf->os_reg[2]);
 #else
 #error chip error
 #endif
+		priv->info.base = CONFIG_SYS_SDRAM_BASE;
+	} else {
+#if defined(CONFIG_ROCKCHIP_PX30)
+#if !defined(CONFIG_SPL_BUILD) && defined(CONFIG_ROCKCHIP_DMC)
+		ret = rockchip_dmcfreq_probe(dev);
+#endif
+#endif
+	}
 
-	priv->info.base = CONFIG_SYS_SDRAM_BASE;
-
-	return 0;
+	return ret;
 }
 
 static int dmc_get_info(struct udevice *dev, struct ram_info *info)

@@ -1,0 +1,4 @@
+config ROCKCHIP_DMC
+	bool "ROCKCHIP DMC"
+	help
+	  This enable dram devfreq driver.

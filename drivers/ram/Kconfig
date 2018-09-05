@@ -46,3 +46,5 @@ config RAMDISK_READONLY
         depends on DM_RAMDISK
         help
           This enables the read only ramdisk support.
+
+source "drivers/ram/rockchip/Kconfig"
