@@ -83,9 +83,6 @@
 	"bootfile=Image\0"				\
 	"boot_pxe="					\
 		"dhcp; "				\
-		"setenv fdt_addr_r 0x1000000; "		\
-		"setenv kernel_addr_r 0x1080000; "	\
-		"setenv ramdisk_addr_r 0x3080000; "	\
 		"pxe get; "				\
 		"pxe boot\0"
 #else
@@ -124,6 +121,9 @@
         "fb_height=1080\0" \
         "fdt_high=0x20000000\0"\
         "EnableSelinux=permissive\0" \
+        "fdt_addr_r=0x1000000\0" \
+        "kernel_addr_r=0x1080000\0" \
+        "ramdisk_addr_r=0x3080000\0" \
         "cvbs_drv=0\0"\
         "osd_reverse=0\0"\
         "video_reverse=0\0"\
