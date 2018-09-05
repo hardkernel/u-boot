@@ -6,6 +6,9 @@
 
 #include <common.h>
 #include <malloc.h>
+#ifdef CONFIG_ROCKCHIP_PRELOADER_ATAGS
+#include <asm/arch/rk_atags.h>
+#endif
 
 #ifdef HAVE_BLOCK_DEVICE
 #define RK_PARAM_OFFSET			0x2000
@@ -27,6 +30,13 @@ struct rkparm_part {
 
 
 static LIST_HEAD(parts_head);
+
+/*
+ * What's this?
+ *
+ * There maybe two different storage media need to use this partition driver,
+ * e.g. rkand with SD card. So we need a flag info to recognize it.
+ */
 static int dev_num = -1;
 
 static int rkparm_param_parse(char *param, struct list_head *parts_head,
@@ -40,7 +50,7 @@ static int rkparm_param_parse(char *param, struct list_head *parts_head,
 	unsigned long size, start;
 
 	if (!cmdline) {
-		debug("RKPARM: Invalid parameter part table\n");
+		debug("RKPARM: Invalid parameter part table from storage\n");
 		return -EINVAL;
 	}
 
@@ -96,8 +106,8 @@ static int rkparm_param_parse(char *param, struct list_head *parts_head,
 	return 0;
 }
 
-static int rkparm_init_param(struct blk_desc *dev_desc,
-				struct list_head *parts_head)
+static int rkparm_init_param_from_storage(struct blk_desc *dev_desc,
+					  struct list_head *parts_head)
 {
 	struct rkparm_param *param;
 	int offset = 0;
@@ -119,7 +129,91 @@ static int rkparm_init_param(struct blk_desc *dev_desc,
 	}
 
 	return rkparm_param_parse(param->params, parts_head, dev_desc);
+}
 
+#if defined(CONFIG_ROCKCHIP_PRELOADER_ATAGS) && defined(CONFIG_DM_RAMDISK)
+static int rkparm_init_param_from_atags(struct blk_desc *dev_desc,
+					struct list_head *parts_head)
+{
+	struct rkparm_part *part;
+	struct tag *t;
+	u64 start, size;
+	int i, len;
+
+	if (!atags_is_available()) {
+		debug("%s: can't find ATAGS\n", __func__);
+		return -ENODATA;
+	}
+
+	t = atags_get_tag(ATAG_RAM_PARTITION);
+	if (!t) {
+		debug("%s: can't find ATAGS ramdisk partition\n", __func__);
+		return -ENODATA;
+	}
+
+	INIT_LIST_HEAD(parts_head);
+
+	for (i = 0; i < t->u.ram_part.count; i++) {
+		part = malloc(sizeof(*part));
+		if (!part) {
+			printf("%s: out of memory\n", __func__);
+			break;
+		}
+
+		len = strlen(t->u.ram_part.part[i].name) + 1;
+		memcpy((char *)&part->name,
+		       (char *)&t->u.ram_part.part[i].name, len);
+
+		start = t->u.ram_part.part[i].start;
+		size = t->u.ram_part.part[i].size;
+
+		if (!IS_ALIGNED(start, dev_desc->blksz)) {
+			printf("%s: '%s' addr(0x%llx) is not %ld byte aligned\n",
+			       __func__, part->name, start, dev_desc->blksz);
+			return -EINVAL;
+		} else if (!IS_ALIGNED(size, dev_desc->blksz)) {
+			printf("%s: '%s' size(0x%llx) is not %ld byte aligned\n",
+			       __func__, part->name, size, dev_desc->blksz);
+			return -EINVAL;
+		}
+
+		/* Convert bytes to blksz */
+		part->start = start / dev_desc->blksz;
+		part->size = size / dev_desc->blksz;
+		list_add_tail(&part->node, parts_head);
+
+		debug("%s: name=%s, start=0x%lx, size=0x%lx, blksz=0x%lx\n",
+		      __func__, part->name, part->start,
+		      part->size, dev_desc->blksz);
+	}
+
+	dev_num = ((dev_desc->if_type << 8) + dev_desc->devnum);
+
+	return 0;
+}
+#endif
+
+static int rkparm_init_param(struct blk_desc *dev_desc,
+			     struct list_head *parts_head)
+{
+	int ret;
+
+	ret = rkparm_init_param_from_storage(dev_desc, parts_head);
+	if (ret) {
+		debug("%s: failed to init param from storage\n", __func__);
+#if defined(CONFIG_ROCKCHIP_PRELOADER_ATAGS) && defined(CONFIG_DM_RAMDISK)
+		ret = rkparm_init_param_from_atags(dev_desc, parts_head);
+		if (ret) {
+			debug("%s: failed to init param from ram\n", __func__);
+			return ret;
+		}
+#endif
+	}
+
+	if (ret)
+		printf("RKPARM: Invalid parameter part table\n");
+
+	return ret;
 }
 
 static void part_print_rkparm(struct blk_desc *dev_desc)
@@ -144,7 +238,6 @@ static void part_print_rkparm(struct blk_desc *dev_desc)
 		printf("%3d\t0x%08lx\t0x%08lx\t%s\n", (i++ + 1),
 		       p->start, p->size, p->name);
 	}
-
 
 	return;
 }
