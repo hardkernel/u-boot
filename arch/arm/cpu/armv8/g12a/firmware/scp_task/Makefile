@@ -67,6 +67,8 @@ OBJS += lib/delay.o
 
 OBJS := $(OBJS:%=$(obj)/%)
 
+.NOTPARALLEL : all
+
 all : clean $(obj)/bl301.out $(obj)/bl301.bin
 
 $(obj)/bl301.bin: $(obj)/bl301.out
