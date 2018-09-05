@@ -10,3 +10,5 @@ obj-$(CONFIG_STM32_SDRAM) += stm32_sdram.o
 obj-$(CONFIG_ARCH_BMIPS) += bmips_ram.o
 
 obj-$(CONFIG_ARCH_ROCKCHIP) += rockchip/
+obj-$(CONFIG_DM_RAMDISK) += ramdisk-uclass.o
+obj-$(CONFIG_RAMDISK_READONLY) += ramdisk_readonly.o
