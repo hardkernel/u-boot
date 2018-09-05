@@ -177,6 +177,9 @@ int get_bootdev_type(void)
 	} else if (!strcmp(devtype, "spinor")) {
 		type = IF_TYPE_SPINOR;
 		boot_media = "nor";
+	} else if (!strcmp(devtype, "ramdisk")) {
+		type = IF_TYPE_RAMDISK;
+		boot_media = "ramdisk";
 	} else {
 		/* Add new to support */
 	}
