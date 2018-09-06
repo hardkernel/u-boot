@@ -208,10 +208,21 @@ int get_bootdev_type(void)
 
 	if (!appended && boot_media) {
 		appended = 1;
-		/*
-		 * 1. androidboot.mode=charger has higher priority, not override;
-		 * 2. rknand doesn't need "androidboot.mode=";
-		 */
+
+	/*
+	 * The legacy rockchip Android (SDK < 8.1) requires "androidboot.mode="
+	 * to be "charger" or boot media which is a rockchip private solution.
+	 *
+	 * The official Android rule (SDK >= 8.1) is:
+	 * "androidboot.mode=normal" or "androidboot.mode=charger".
+	 *
+	 * Now that this U-Boot is usually working with higher version
+	 * Android (SDK >= 8.1), we follow the official rules.
+	 *
+	 * Common: androidboot.mode=charger has higher priority, don't override;
+	 */
+#ifdef CONFIG_RKIMG_ANDROID_BOOTMODE_LEGACY
+		/* rknand doesn't need "androidboot.mode="; */
 		if (env_exist("bootargs", "androidboot.mode=charger") ||
 		    (type == IF_TYPE_RKNAND) ||
 		    (type == IF_TYPE_SPINAND) ||
@@ -222,6 +233,15 @@ int get_bootdev_type(void)
 			snprintf(boot_options, sizeof(boot_options),
 				 "storagemedia=%s androidboot.mode=%s",
 				 boot_media, boot_media);
+#else
+		if (env_exist("bootargs", "androidboot.mode=charger"))
+			snprintf(boot_options, sizeof(boot_options),
+				 "storagemedia=%s", boot_media);
+		else
+			snprintf(boot_options, sizeof(boot_options),
+				 "storagemedia=%s androidboot.mode=normal",
+				 boot_media);
+#endif
 		env_update("bootargs", boot_options);
 	}
 

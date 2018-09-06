@@ -537,6 +537,14 @@ config RKIMG_BOOTLOADER
 	  with dtb and uboot/kernel logo bmp, vendor storage for custom info
 	  like SN and MAC address.
 
+config RKIMG_ANDROID_BOOTMODE_LEGACY
+	bool "Support set androidboot.mode with legacy rule"
+	depends on RKIMG_BOOTLOADER
+	default n
+	help
+	  Rockchip set "androidboot.mode=" as "charger" or boot media for android,
+	  which is a rockchip private solution(SDK < 8.1) and deprecated.
+
 config ROCKCHIP_RESOURCE_IMAGE
 	bool "Enable support for rockchip resource image"
 	depends on RKIMG_BOOTLOADER
