@@ -199,8 +199,10 @@ static int init_resource_list(struct resource_img_hdr *hdr)
 
 #ifdef CONFIG_ANDROID_BOOT_IMAGE
 	/* Get boot mode from misc */
+#ifndef CONFIG_ANDROID_AB
 	if (rockchip_get_boot_mode() == BOOT_MODE_RECOVERY)
 		boot_partname = PART_RECOVERY;
+#endif
 
 	/* Read boot/recovery and chenc if this is an AOSP img */
 #ifdef CONFIG_ANDROID_AB
