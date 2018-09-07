@@ -68,7 +68,7 @@
 #define CONFIG_SILENT_U_BOOT_ONLY
 
 //2018.03.19 new compress solution, only support BL33 LZ4 compress
-#define CONFIG_AML_BL33_COMPRESS_ENABLE 1
+//#define CONFIG_AML_BL33_COMPRESS_ENABLE 1
 
 //2018.03.19 G12A only support v3 format for normal & secure boot
 #define CONFIG_AML_SECURE_BOOT_V3 1
