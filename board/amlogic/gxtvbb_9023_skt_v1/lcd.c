@@ -216,11 +216,11 @@ static char lcd_ext_gpio[LCD_EXTERN_GPIO_NUM_MAX][LCD_EXTERN_GPIO_LEN_MAX] = {
 };
 
 static unsigned char init_on_table[LCD_EXTERN_INIT_ON_MAX] = {
-	0xff, 0x00,  /* ending */
+	0xff, 0,  /* ending */
 };
 
 static unsigned char init_off_table[LCD_EXTERN_INIT_OFF_MAX] = {
-	0xff, 0x00,  /* ending */
+	0xff, 0,  /* ending */
 };
 
 struct lcd_extern_common_s ext_common_dft = {
@@ -243,9 +243,11 @@ struct lcd_extern_config_s ext_config_dtf[LCD_EXTERN_NUM_MAX] = {
 		.spi_gpio_data = 2,
 		.spi_clk_freq = 0, /* hz */
 		.spi_clk_pol = 0,
-		.cmd_size = 2,
+		.cmd_size = LCD_EXT_CMD_SIZE_DYNAMIC,
 		.table_init_on = init_on_table,
+		.table_init_on_cnt = sizeof(init_on_table),
 		.table_init_off = init_off_table,
+		.table_init_off_cnt = sizeof(init_off_table),
 	},
 	{
 		.index = LCD_EXTERN_INDEX_INVALID,
@@ -278,6 +280,7 @@ struct bl_config_s bl_config_dft = {
 	.pwm_on_delay = 10,
 	.pwm_off_delay = 10,
 
+	.pinctrl_ver = 0,
 	.pinmux_set = {{10, 0x00800000}, {LCD_PINMUX_END, 0x0}},
 	.pinmux_clr = {{10, 0x0100a000}, {LCD_PINMUX_END, 0x0}},
 };

@@ -28,8 +28,8 @@ enum ldim_dev_type_e {
 	LDIM_DEV_TYPE_MAX,
 };
 
-#define LDIM_SPI_INIT_ON_SIZE     300
-#define LDIM_SPI_INIT_OFF_SIZE    20
+#define LDIM_INIT_ON_MAX     300
+#define LDIM_INIT_OFF_MAX    20
 
 struct ldim_pinmux_ctrl_s {
 	char *name;
@@ -57,9 +57,14 @@ struct ldim_dev_config_s {
 
 	unsigned int dim_min;
 	unsigned int dim_max;
+
+	unsigned char init_loaded;
 	unsigned char cmd_size;
 	unsigned char *init_on;
 	unsigned char *init_off;
+	unsigned int init_on_cnt;
+	unsigned int init_off_cnt;
+
 	unsigned char pinctrl_ver;
 	struct ldim_pinmux_ctrl_s *ldim_pinmux;
 	struct bl_pwm_config_s pwm_config;
@@ -68,8 +73,10 @@ struct ldim_dev_config_s {
 	unsigned short bl_regnum;
 };
 
+#define LDIM_SPI_NAME_MAX    30
 struct ldim_spi_dev_info_s {
 	char modalias[20];
+	char spi_name[LDIM_SPI_NAME_MAX];
 	int mode;
 	int max_speed_hz;
 	int bus_num;

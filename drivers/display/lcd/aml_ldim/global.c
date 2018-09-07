@@ -95,6 +95,7 @@ static int global_power_on(void)
 
 	global_hw_init_on();
 	global_on_flag = 1;
+
 	/* init brightness level */
 	ldim_set_duty_pwm(&(ldim_drv->ldev_conf->pwm_config));
 

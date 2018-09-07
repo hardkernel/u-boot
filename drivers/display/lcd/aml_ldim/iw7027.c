@@ -40,8 +40,9 @@ static int iw7027_on_flag;
 struct iw7027 {
 	int cs_hold_delay;
 	int cs_clk_delay;
-	int cmd_size;
+	unsigned char cmd_size;
 	unsigned char *init_data;
+	unsigned int init_data_cnt;
 	struct spi_slave *spi;
 };
 struct iw7027 *bl_iw7027;
@@ -49,6 +50,64 @@ struct iw7027 *bl_iw7027;
 static unsigned char *val_brightness;
 
 extern struct ldim_spi_dev_info_s ldim_spi_dev;
+static int iw7027_wreg(struct spi_slave *slave, u8 addr, u8 val);
+
+#if 0
+static unsigned char iw7027_init_data[LDIM_INIT_ON_SIZE] = {
+	0xc0, 0x23, 0x03,
+	0xc0, 0x24, 0xff,
+	0xc0, 0x25, 0x00,
+	0xc0, 0x26, 0x00,
+	0xc0, 0x27, 0x60,
+	0xc0, 0x29, 0x00,
+	0xc0, 0x2a, 0x00,
+	0xc0, 0x2b, 0x00,
+	0xc0, 0x2c, 0x73,
+	0xc0, 0x2d, 0x37,
+	0xc0, 0x31, 0x93,
+	0xc0, 0x32, 0x0f,
+	0xc0, 0x33, 0xff,
+	0xc0, 0x34, 0xc8,
+	0xc0, 0x35, 0xbf,
+	0xff, 0x00, 0x00,
+};
+#endif
+
+//iw7027 register read
+static int iw7027_rreg(struct spi_slave *slave, u8 addr, u8 *val)
+{
+	u8 tbuf[4], rbuf[4], temp;
+	int ret;
+
+	/*set read flag*/
+	temp = (addr >= 0x80) ? 0x80 : 0x0;
+	iw7027_wreg(slave, 0x78, temp);
+
+	ret = spi_claim_bus(slave);
+	if (ret) {
+		LDIMERR("%s: request spi bus failed\n", __func__);
+		goto rreg_end;
+	}
+	if (bl_iw7027->cs_hold_delay)
+		udelay(bl_iw7027->cs_hold_delay);
+	spi_cs_activate(slave);
+	if (bl_iw7027->cs_clk_delay)
+		udelay(bl_iw7027->cs_clk_delay);
+
+	tbuf[0] = NORMAL_MSG | SINGLE_DATA | IW7027_DEV_ADDR;
+	tbuf[1] = addr | 0x80;
+	ret = spi_xfer(slave, 32, tbuf, rbuf, 0);
+	if (ret)
+		goto rreg_end;
+	*val = rbuf[3];
+	if (bl_iw7027->cs_clk_delay)
+		udelay(bl_iw7027->cs_clk_delay);
+	spi_cs_deactivate(slave);
+
+rreg_end:
+	spi_release_bus(slave);
+	return ret;
+}
 
 //iw7027 register write
 static int iw7027_wreg(struct spi_slave *slave, u8 addr, u8 val)
@@ -62,7 +121,7 @@ static int iw7027_wreg(struct spi_slave *slave, u8 addr, u8 val)
 	ret = spi_claim_bus(slave);
 	if (ret) {
 		LDIMERR("%s: request spi bus failed\n", __func__);
-		goto end;
+		goto wreg_end;
 	}
 	if (bl_iw7027->cs_hold_delay)
 		udelay(bl_iw7027->cs_hold_delay);
@@ -78,43 +137,7 @@ static int iw7027_wreg(struct spi_slave *slave, u8 addr, u8 val)
 		udelay(bl_iw7027->cs_clk_delay);
 	spi_cs_deactivate(slave);
 
-end:
-	spi_release_bus(slave);
-	return ret;
-}
-
-//iw7027 register read
-static int iw7027_rreg(struct spi_slave *slave, u8 addr, u8 *val)
-{
-	u8 tbuf[4], rbuf[4], temp;
-	int ret;
-
-	/*set read flag*/
-	temp = (addr >= 0x80) ? 0x80 : 0x0;
-	iw7027_wreg(slave, 0x78, temp);
-
-	ret = spi_claim_bus(slave);
-	if (ret) {
-		LDIMERR("%s: request spi bus failed\n", __func__);
-		goto end;
-	}
-	if (bl_iw7027->cs_hold_delay)
-		udelay(bl_iw7027->cs_hold_delay);
-	spi_cs_activate(slave);
-	if (bl_iw7027->cs_clk_delay)
-		udelay(bl_iw7027->cs_clk_delay);
-
-	tbuf[0] = NORMAL_MSG | SINGLE_DATA | IW7027_DEV_ADDR;
-	tbuf[1] = addr | 0x80;
-	ret = spi_xfer(slave, 32, tbuf, rbuf, 0);
-	if (ret)
-		goto end;
-	*val = rbuf[3];
-	if (bl_iw7027->cs_clk_delay)
-		udelay(bl_iw7027->cs_clk_delay);
-	spi_cs_deactivate(slave);
-
-end:
+wreg_end:
 	spi_release_bus(slave);
 	return ret;
 }
@@ -136,7 +159,7 @@ static int iw7027_wregs(struct spi_slave *slave, u8 addr, u8 *val, int len)
 	ret = spi_claim_bus(slave);
 	if (ret) {
 		LDIMERR("%s: request spi bus failed\n", __func__);
-		goto end;
+		goto wregs_end;
 	}
 	if (bl_iw7027->cs_hold_delay)
 		udelay(bl_iw7027->cs_hold_delay);
@@ -154,30 +177,130 @@ static int iw7027_wregs(struct spi_slave *slave, u8 addr, u8 *val, int len)
 		udelay(bl_iw7027->cs_clk_delay);
 	spi_cs_deactivate(slave);
 
-end:
+wregs_end:
 	spi_release_bus(slave);
+	return ret;
+}
+
+static int ldim_power_cmd_dynamic_size(void)
+{
+	unsigned char *table;
+	int i = 0, j, step = 0, max_len = 0;
+	unsigned char type, cmd_size;
+	int delay_ms, ret = 0;
+
+	table = bl_iw7027->init_data;
+	max_len = bl_iw7027->init_data_cnt;
+
+	while ((i + 1) < max_len) {
+		type = table[i];
+		if (type == LCD_EXT_CMD_TYPE_END)
+			break;
+		if (lcd_debug_print_flag) {
+			LDIMPR("%s: step %d: type=0x%02x, cmd_size=%d\n",
+				__func__, step, type, table[i+1]);
+		}
+		cmd_size = table[i+1];
+		if (cmd_size == 0)
+			goto power_cmd_dynamic_next;
+		if ((i + 2 + cmd_size) > max_len)
+			break;
+
+		if (type == LCD_EXT_CMD_TYPE_NONE) {
+			/* do nothing */
+		} else if (type == LCD_EXT_CMD_TYPE_DELAY) {
+			delay_ms = 0;
+			for (j = 0; j < cmd_size; j++)
+				delay_ms += table[i+2+j];
+			if (delay_ms > 0)
+				mdelay(delay_ms);
+		} else if (type == LCD_EXT_CMD_TYPE_CMD) {
+			ret = iw7027_wreg(bl_iw7027->spi,
+				table[i+2], table[i+3]);
+			udelay(1);
+		} else if (type == LCD_EXT_CMD_TYPE_CMD_DELAY) {
+			ret = iw7027_wreg(bl_iw7027->spi,
+				table[i+2], table[i+3]);
+			udelay(1);
+			if (table[i+4] > 0)
+				mdelay(table[i+4]);
+		} else {
+			LDIMERR("%s: type 0x%02x invalid\n", __func__, type);
+		}
+power_cmd_dynamic_next:
+		i += (cmd_size + 2);
+		step++;
+	}
+
+	return ret;
+}
+
+static int ldim_power_cmd_fixed_size(void)
+{
+	unsigned char *table;
+	int i = 0, j, step = 0, max_len = 0;
+	unsigned char type, cmd_size;
+	int delay_ms, ret = 0;
+
+	cmd_size = bl_iw7027->cmd_size;
+	if (cmd_size < 2) {
+		LDIMERR("%s: invalid cmd_size %d\n", __func__, cmd_size);
+		return -1;
+	}
+
+	table = bl_iw7027->init_data;
+	max_len = bl_iw7027->init_data_cnt;
+
+	while ((i + cmd_size) <= max_len) {
+		type = table[i];
+		if (type == LCD_EXT_CMD_TYPE_END)
+			break;
+		if (lcd_debug_print_flag) {
+			LDIMPR("%s: step %d: type=0x%02x, cmd_size=%d\n",
+				__func__, step, type, cmd_size);
+		}
+		if (type == LCD_EXT_CMD_TYPE_NONE) {
+			/* do nothing */
+		} else if (type == LCD_EXT_CMD_TYPE_DELAY) {
+			delay_ms = 0;
+			for (j = 0; j < (cmd_size - 1); j++)
+				delay_ms += table[i+1+j];
+			if (delay_ms > 0)
+				mdelay(delay_ms);
+		} else if (type == LCD_EXT_CMD_TYPE_CMD) {
+			ret = iw7027_wreg(bl_iw7027->spi,
+				table[i+1], table[i+2]);
+			udelay(1);
+		} else if (type == LCD_EXT_CMD_TYPE_CMD_DELAY) {
+			ret = iw7027_wreg(bl_iw7027->spi,
+				table[i+1], table[i+2]);
+			udelay(1);
+			if (table[i+3] > 0)
+				mdelay(table[i+3]);
+		} else {
+			LDIMERR("%s: type 0x%02x invalid\n", __func__, type);
+		}
+		i += cmd_size;
+		step++;
+	}
+
 	return ret;
 }
 
 static int iw7027_power_on_init(void)
 {
-	unsigned char addr, val;
-	int i, ret = 0;
+	unsigned char cmd_size;
+	int ret = 0;
 
-	for (i = 0; i < LDIM_SPI_INIT_ON_SIZE; i += bl_iw7027->cmd_size) {
-		if (bl_iw7027->init_data[i] == 0xff) {
-			if (bl_iw7027->init_data[i+3] > 0)
-				mdelay(bl_iw7027->init_data[i+3]);
-			break;
-		} else if (bl_iw7027->init_data[i] == 0x0) {
-			addr = bl_iw7027->init_data[i+1];
-			val = bl_iw7027->init_data[i+2];
-			ret = iw7027_wreg(bl_iw7027->spi, addr, val);
-			udelay(1);
-		}
-		if (bl_iw7027->init_data[i+3] > 0)
-			mdelay(bl_iw7027->init_data[i+3]);
+	cmd_size = bl_iw7027->cmd_size;
+	if (cmd_size < 2) {
+		LDIMERR("%s: invalid cmd_size %d\n", __func__, cmd_size);
+		return -1;
 	}
+	if (cmd_size == LCD_EXT_CMD_SIZE_DYNAMIC)
+		ret = ldim_power_cmd_dynamic_size();
+	else
+		ret = ldim_power_cmd_fixed_size();
 
 	return ret;
 }
@@ -263,7 +386,7 @@ static unsigned int iw7027_get_value(unsigned int level)
 static int iw7027_smr(unsigned short *buf, unsigned char len)
 {
 	unsigned int i, temp;
-	unsigned short *mapping, num;
+	unsigned short num;
 	struct aml_ldim_driver_s *ldim_drv = aml_ldim_get_driver();
 
 	if (iw7027_on_flag == 0) {
@@ -324,11 +447,9 @@ static int iw7027_ldim_driver_update(void)
 
 int ldim_dev_iw7027_probe(void)
 {
-	char name[30], *str;
 	struct udevice *dev;
 	struct aml_ldim_driver_s *ldim_drv = aml_ldim_get_driver();
 	int ret;
-	printf("%s:%d\n",__func__,__LINE__);
 
 	bl_iw7027 = (struct iw7027 *)malloc(sizeof(struct iw7027));
 	if (bl_iw7027 == NULL) {
@@ -340,14 +461,16 @@ int ldim_dev_iw7027_probe(void)
 	iw7027_on_flag = 0;
 
 	/* register spi */
-	snprintf(name, sizeof(name), "generic_%d:%d",
+	snprintf(ldim_drv->spi_dev->spi_name, LDIM_SPI_NAME_MAX,
+		"generic_%d:%d",
 		ldim_drv->spi_dev->bus_num, ldim_drv->spi_dev->chip_select);
-	str = strdup(name);
 	ret = spi_get_bus_and_cs(ldim_drv->spi_dev->bus_num,
 				ldim_drv->spi_dev->chip_select,
 				ldim_drv->spi_dev->max_speed_hz,
-				ldim_drv->spi_dev->mode, "spi_generic_drv",
-				str, &dev, &ldim_drv->spi_dev->spi);
+				ldim_drv->spi_dev->mode,
+				"spi_generic_drv",
+				ldim_drv->spi_dev->spi_name,
+				&dev, &ldim_drv->spi_dev->spi);
 	if (ret) {
 		LDIMERR("register ldim_dev spi driver failed\n");
 		free(bl_iw7027);
@@ -361,6 +484,7 @@ int ldim_dev_iw7027_probe(void)
 	bl_iw7027->cs_clk_delay = ldim_drv->ldev_conf->cs_clk_delay;
 	bl_iw7027->cmd_size = ldim_drv->ldev_conf->cmd_size;
 	bl_iw7027->init_data = ldim_drv->ldev_conf->init_on;
+	bl_iw7027->init_data_cnt = ldim_drv->ldev_conf->init_on_cnt;
 
 	val_brightness = (unsigned char *)malloc(
 		ldim_drv->ldev_conf->bl_regnum * 2 * sizeof(unsigned char));
@@ -388,6 +512,19 @@ int ldim_dev_iw7027_remove(void)
 		free(bl_iw7027);
 		bl_iw7027 = NULL;
 	}
+	return 0;
+}
+
+#else
+int ldim_dev_iw7027_probe(void)
+{
+	LDIMERR("%s: no AML_SPICC support\n", __func__);
+
+	return -1;
+}
+
+int ldim_dev_iw7027_remove(void)
+{
 	return 0;
 }
 #endif

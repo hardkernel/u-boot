@@ -23,33 +23,40 @@
 #include <amlogic/aml_lcd_extern.h>
 #include "lcd_extern.h"
 
-#define LCD_EXTERN_INDEX		2
 #define LCD_EXTERN_NAME			"mipi_P070ACB"
 #define LCD_EXTERN_TYPE			LCD_EXTERN_MIPI
 
-//******************** mipi command ********************//
-//format:  data_type, num, data....
-//special: data_type=0xff, num<0xff means delay ms, num=0xff means ending.
+/******************** mipi command ********************/
+/* format:  data_type, cmd_size, data.... */
+/* 	data_type=0xff,
+ *		0 < cmd_size < 0xff means delay ms,
+ *		cmd_size=0 or 0xff means ending.
+ *	data_type=0xf0, for gpio control
+ *		data0=gpio_index, data1=gpio_value.
+ *		data0=gpio_index, data1=gpio_value, data2=delay.
+ *	data_type=0xfd, for delay ms
+ *		data0=delay, data_1=delay, ..., data_n=delay.
+ */
 //******************************************************//
 static unsigned char mipi_init_on_table[] = {
-	0xff, 100,   /* delay */
+	0xfd, 1, 100,   /* delay */
 	0x15, 2, 0x62, 0x01,
 	0x29, 5, 0xFF, 0xAA, 0x55, 0x25, 0x01,
 	0x23, 2, 0xFC, 0x08,
-	0xFF, 1,	   /* delay(ms) */
+	0xfd, 1, 1,	   /* delay(ms) */
 	0x23, 2, 0xFC, 0x00,
 
-	0xFF, 1,	   /* delay(ms) */
+	0xfd, 1, 1,	   /* delay(ms) */
 	0x23, 2, 0x6F, 0x21,
 	0x23, 2, 0xF7, 0x01,
-	0xFF, 1,	   /* delay(ms) */
+	0xfd, 1, 1,	   /* delay(ms) */
 	0x23, 2, 0x6F, 0x21,
 	0x23, 2, 0xF7, 0x00,
-	0xFF, 1,	   /* delay(ms) */
+	0xfd, 1, 1,	   /* delay(ms) */
 
 	0x23, 2, 0x6F, 0x1A,
 	0x23, 2, 0xF7, 0x05,
-	0xFF, 1,	   /* delay(ms) */
+	0xfd, 1, 1,	   /* delay(ms) */
 
 	0x29, 5, 0xFF, 0xAA, 0x55, 0x25, 0x00,
 
@@ -191,19 +198,19 @@ static unsigned char mipi_init_on_table[] = {
 
 	0x13, 1, 0x35,
 	0x13, 1, 0x11,
-	0xFF, 120,	   /* delay(ms) */
+	0xfd, 1, 120,	   /* delay(ms) */
 	0x13, 1, 0x29,
-	0xFF, 20,	   /* delay(ms) */
-	0xFF, 0xFF,   /* ending flag */
+	0xfd, 1, 20,	   /* delay(ms) */
+	0xff, 0,         /* ending */
 
 };
 
 static unsigned char mipi_init_off_table[] = {
 	0x05, 1, 0x28, /* display off */
-	0xFF, 10,      /* delay 10ms */
+	0xfd, 1, 10,   /* delay 10ms */
 	0x05, 1, 0x10, /* sleep in */
-	0xFF, 150,      /* delay 150ms */
-	0xFF, 0xFF,   /* ending flag */
+	0xfd, 1, 150,  /* delay 150ms */
+	0xff, 0,   /* ending */
 };
 
 static int lcd_extern_driver_update(struct aml_lcd_extern_driver_s *ext_drv)
@@ -213,20 +220,13 @@ static int lcd_extern_driver_update(struct aml_lcd_extern_driver_s *ext_drv)
 		return -1;
 	}
 
-	if (ext_drv->config->type == LCD_EXTERN_MAX) { //default for no dt
-		ext_drv->config->index = LCD_EXTERN_INDEX;
-		ext_drv->config->type = LCD_EXTERN_TYPE;
-		strcpy(ext_drv->config->name, LCD_EXTERN_NAME);
-	}
+	ext_drv->config->cmd_size = LCD_EXT_CMD_SIZE_DYNAMIC;
 	ext_drv->config->table_init_on  = &mipi_init_on_table[0];
+	ext_drv->config->table_init_on_cnt  = sizeof(mipi_init_on_table);
 	ext_drv->config->table_init_off = &mipi_init_off_table[0];
+	ext_drv->config->table_init_off_cnt  = sizeof(mipi_init_off_table);
 
 	return 0;
-}
-
-int aml_lcd_extern_mipi_p070acb_get_default_index(void)
-{
-	return LCD_EXTERN_INDEX;
 }
 
 int aml_lcd_extern_mipi_p070acb_probe(struct aml_lcd_extern_driver_s *ext_drv)

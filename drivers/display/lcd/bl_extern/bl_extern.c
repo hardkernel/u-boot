@@ -19,23 +19,36 @@
 #ifdef CONFIG_OF_LIBFDT
 #include <libfdt.h>
 #endif
-#ifdef CONFIG_SYS_I2C_AML
-#include <aml_i2c.h>
-#else
-#include <i2c.h>
-#include <dm/device.h>
-#endif
 #include <amlogic/aml_lcd.h>
 #include <amlogic/aml_bl_extern.h>
 #include "bl_extern.h"
 #include "../aml_lcd_common.h"
 
-unsigned int bl_extern_brightness;
+static unsigned int bl_extern_status;
+static unsigned int bl_extern_level;
+
 static struct aml_bl_extern_driver_s bl_extern_driver;
 
 static int bl_extern_set_level(unsigned int level)
 {
-	bl_extern_brightness = level & 0xff;
+	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
+	struct aml_bl_extern_driver_s *bl_extern = aml_bl_extern_get_driver();
+	unsigned int level_max, level_min;
+	unsigned int dim_max, dim_min;
+
+	if (lcd_drv == NULL)
+		return -1;
+
+	bl_extern_level = level;
+	if (bl_extern_status == 0)
+		return 0;
+
+	level_max = lcd_drv->bl_config->level_max;
+	level_min = lcd_drv->bl_config->level_min;
+	dim_max = bl_extern->config->dim_max;
+	dim_min = bl_extern->config->dim_min;
+	level = dim_min - ((level - level_min) * (dim_min - dim_max)) /
+			(level_max - level_min);
 
 	if (bl_extern_driver.device_bri_update)
 		bl_extern_driver.device_bri_update(level);
@@ -49,11 +62,14 @@ static int bl_extern_power_on(void)
 
 	BLEX("%s\n", __func__);
 
-	if (bl_extern_driver.device_power_on)
+	if (bl_extern_driver.device_power_on) {
 		bl_extern_driver.device_power_on();
+		bl_extern_status = 1;
+	}
 
 	/* restore bl level */
-	bl_extern_set_level(bl_extern_brightness);
+	if (bl_extern_level > 0)
+		bl_extern_set_level(bl_extern_level);
 
 	return ret;
 }
@@ -63,6 +79,7 @@ static int bl_extern_power_off(void)
 
 	BLEX("%s\n", __func__);
 
+	bl_extern_status = 0;
 	if (bl_extern_driver.device_power_off)
 		bl_extern_driver.device_power_off();
 
@@ -85,58 +102,95 @@ struct aml_bl_extern_driver_s *aml_bl_extern_get_driver(void)
 	return &bl_extern_driver;
 }
 
-struct aml_bl_extern_i2c_match_s {
-	unsigned char bus_id;
-	char *bus_str;
-};
-
-static struct aml_bl_extern_i2c_match_s aml_bl_extern_i2c_match_table[] = {
-	{BL_EXTERN_I2C_BUS_0,   "i2c_0/a"},
-	{BL_EXTERN_I2C_BUS_1,   "i2c_1/b"},
-	{BL_EXTERN_I2C_BUS_2,   "i2c_2/c"},
-	{BL_EXTERN_I2C_BUS_3,   "i2c_3/d"},
-	{BL_EXTERN_I2C_BUS_4,   "i2c_4/ao"},
-	{BL_EXTERN_I2C_BUS_MAX, "i2c_invalid"},
-};
-
-static void aml_bl_extern_i2c_bus_print(unsigned char i2c_bus)
+static void aml_bl_extern_init_table_dynamic_size_print(
+		struct bl_extern_config_s *econf, int flag)
 {
-	int i, temp = ARRAY_SIZE(aml_bl_extern_i2c_match_table) - 1;
+	int i, j, max_len;
+	unsigned char cmd_size;
+	unsigned char *table;
 
-	for (i = 0; i < ARRAY_SIZE(aml_bl_extern_i2c_match_table); i++) {
-		if (aml_bl_extern_i2c_match_table[i].bus_id == i2c_bus) {
-			temp = i;
-			break;
-		}
+	if (flag) {
+		printf("power on:\n");
+		table = econf->init_on;
+		max_len = econf->init_on_cnt;
+	} else {
+		printf("power off:\n");
+		table = econf->init_off;
+		max_len = econf->init_off_cnt;
+	}
+	if (table == NULL) {
+		BLEXERR("init_table %d is NULL\n", flag);
+		return;
 	}
 
-	BLEX("i2c_bus = %s(%d)\n",
-		aml_bl_extern_i2c_match_table[temp].bus_str, temp);
+	i = 0;
+	while ((i + 1) < max_len) {
+		if (table[i] == LCD_EXT_CMD_TYPE_END) {
+			printf("  0x%02x,%d,\n", table[i], table[i+1]);
+			break;
+		}
+		cmd_size = table[i+1];
+		printf("  0x%02x,%d,", table[i], cmd_size);
+		if (cmd_size == 0)
+			goto init_table_dynamic_print_next;
+		if (i + 2 + cmd_size > max_len) {
+			printf("cmd_size out of support\n");
+			break;
+		}
+
+		if (table[i] == LCD_EXT_CMD_TYPE_DELAY) {
+			for (j = 0; j < cmd_size; j++)
+				printf("%d,", table[i+2+j]);
+		} else if (table[i] == LCD_EXT_CMD_TYPE_CMD) {
+			for (j = 0; j < cmd_size; j++)
+				printf("0x%02x,", table[i+2+j]);
+		} else if (table[i] == LCD_EXT_CMD_TYPE_CMD_DELAY) {
+			for (j = 0; j < (cmd_size - 1); j++)
+				printf("0x%02x,", table[i+2+j]);
+			printf("%d,", table[i+cmd_size+1]);
+		} else {
+			for (j = 0; j < cmd_size; j++)
+				printf("0x%02x,", table[i+2+j]);
+		}
+init_table_dynamic_print_next:
+		printf("\n");
+		i += (cmd_size + 2);
+	}
 }
 
-static unsigned char aml_bl_extern_i2c_bus_table[][2] = {
-	{BL_EXTERN_I2C_BUS_0,    LCD_AML_I2C_BUS_0},
-	{BL_EXTERN_I2C_BUS_1,    LCD_AML_I2C_BUS_1},
-	{BL_EXTERN_I2C_BUS_2,    LCD_AML_I2C_BUS_2},
-	{BL_EXTERN_I2C_BUS_3,    LCD_AML_I2C_BUS_3},
-	{BL_EXTERN_I2C_BUS_4,    LCD_AML_I2C_BUS_4},
-	{BL_EXTERN_I2C_BUS_MAX,  LCD_AML_I2C_BUS_MAX},
-};
-
-unsigned char aml_bl_extern_i2c_bus_get_sys(unsigned char i2c_bus)
+static void aml_bl_extern_init_table_fixed_size_print(
+		struct bl_extern_config_s *econf, int flag)
 {
-	int i, ret = BL_EXTERN_I2C_BUS_INVALID;
+	int i, j, max_len;
+	unsigned char cmd_size;
+	unsigned char *table;
 
-	for (i = 0; i < ARRAY_SIZE(aml_bl_extern_i2c_bus_table); i++) {
-		if (aml_bl_extern_i2c_bus_table[i][0] == i2c_bus) {
-			ret = aml_bl_extern_i2c_bus_table[i][1];
-			break;
-		}
+	cmd_size = econf->cmd_size;
+	if (flag) {
+		printf("power on:\n");
+		table = econf->init_on;
+		max_len = econf->init_on_cnt;
+	} else {
+		printf("power off:\n");
+		table = econf->init_off;
+		max_len = econf->init_off_cnt;
+	}
+	if (table == NULL) {
+		BLEXERR("init_table %d is NULL\n", flag);
+		return;
 	}
 
-	if (lcd_debug_print_flag)
-		BLEX("%s: %d->%d\n", __func__, i2c_bus, ret);
-	return ret;
+	i = 0;
+	while ((i + cmd_size) <= max_len) {
+		printf("  ");
+		for (j = 0; j < cmd_size; j++)
+			printf("0x%02x,", table[i+j]);
+		printf("\n");
+
+		if (table[i] == LCD_EXT_CMD_TYPE_END)
+			break;
+		i += cmd_size;
+	}
 }
 
 static void bl_extern_config_print(void)
@@ -144,36 +198,80 @@ static void bl_extern_config_print(void)
 	struct aml_bl_extern_driver_s *bl_extern = aml_bl_extern_get_driver();
 
 	BLEX("%s:\n", __func__);
+	printf("index:          %d\n"
+		"name:          %s\n",
+		bl_extern->config->index,
+		bl_extern->config->name);
 	switch (bl_extern->config->type) {
 	case BL_EXTERN_I2C:
-		printf("index:          %d\n"
-				"name:          %s\n"
-				"type:          i2c(%d)\n"
-				"i2c_addr:      0x%02x\n"
-				"i2c_bus:       %d\n"
-				"dim_min:       %d\n"
-				"dim_max:       %d\n",
-				bl_extern->config->index,
-				bl_extern->config->name,
-				bl_extern->config->type,
-				bl_extern->config->i2c_addr,
-				bl_extern->config->i2c_bus,
-				bl_extern->config->dim_min,
-				bl_extern->config->dim_max);
+		printf("type:          i2c(%d)\n"
+			"i2c_addr:      0x%02x\n"
+			"i2c_bus:       %d\n"
+			"dim_min:       %d\n"
+			"dim_max:       %d\n",
+			bl_extern->config->type,
+			bl_extern->config->i2c_addr,
+			bl_extern->config->i2c_bus,
+			bl_extern->config->dim_min,
+			bl_extern->config->dim_max);
+		if (bl_extern->config->cmd_size == 0)
+			break;
+		printf("init_loaded           = %d\n"
+			"cmd_size              = %d\n"
+			"init_on_cnt           = %d\n"
+			"init_off_cnt          = %d\n",
+			bl_extern->config->init_loaded,
+			bl_extern->config->cmd_size,
+			bl_extern->config->init_on_cnt,
+			bl_extern->config->init_off_cnt);
+		if (bl_extern->config->cmd_size == LCD_EXT_CMD_SIZE_DYNAMIC) {
+			aml_bl_extern_init_table_dynamic_size_print(
+				bl_extern->config, 1);
+			aml_bl_extern_init_table_dynamic_size_print(
+				bl_extern->config, 0);
+		} else {
+			aml_bl_extern_init_table_fixed_size_print(
+				bl_extern->config, 1);
+			aml_bl_extern_init_table_fixed_size_print(
+				bl_extern->config, 0);
+		}
 		break;
 	case BL_EXTERN_SPI:
+		printf("type:          spi(%d)\n"
+			"dim_min:       %d\n"
+			"dim_max:       %d\n",
+			bl_extern->config->type,
+			bl_extern->config->dim_min,
+			bl_extern->config->dim_max);
+		if (bl_extern->config->cmd_size == 0)
+			break;
+		printf("init_loaded           = %d\n"
+			"cmd_size              = %d\n"
+			"init_on_cnt           = %d\n"
+			"init_off_cnt          = %d\n",
+			bl_extern->config->init_loaded,
+			bl_extern->config->cmd_size,
+			bl_extern->config->init_on_cnt,
+			bl_extern->config->init_off_cnt);
+		if (bl_extern->config->cmd_size == LCD_EXT_CMD_SIZE_DYNAMIC) {
+			aml_bl_extern_init_table_dynamic_size_print(
+				bl_extern->config, 1);
+			aml_bl_extern_init_table_dynamic_size_print(
+				bl_extern->config, 0);
+		} else {
+			aml_bl_extern_init_table_fixed_size_print(
+				bl_extern->config, 1);
+			aml_bl_extern_init_table_fixed_size_print(
+				bl_extern->config, 0);
+		}
 		break;
 	case BL_EXTERN_MIPI:
-		printf("index:     %d\n"
-				"name:          %s\n"
-				"type:          mipi(%d)\n"
-				"dim_min:       %d\n"
-				"dim_max:       %d\n",
-				bl_extern->config->index,
-				bl_extern->config->name,
-				bl_extern->config->type,
-				bl_extern->config->dim_min,
-				bl_extern->config->dim_max);
+		printf("type:          mipi(%d)\n"
+			"dim_min:       %d\n"
+			"dim_max:       %d\n",
+			bl_extern->config->type,
+			bl_extern->config->dim_min,
+			bl_extern->config->dim_max);
 		break;
 	default:
 		break;
@@ -206,11 +304,125 @@ static unsigned char bl_extern_get_i2c_bus_str(const char *str)
 	else if (strncmp(str, "i2c_bus_4", 9) == 0)
 		i2c_bus = BL_EXTERN_I2C_BUS_4;
 	else {
-		i2c_bus = BL_EXTERN_I2C_BUS_INVALID;
+		i2c_bus = BL_EXTERN_I2C_BUS_MAX;
 		BLEXERR("invalid i2c_bus: %s\n", str);
 	}
 
 	return i2c_bus;
+}
+
+static int aml_bl_extern_init_table_dynamic_size_load_dts(char *dtaddr,
+		int nodeoffset, struct bl_extern_config_s *extconf, int flag)
+{
+	unsigned char cmd_size, type;
+	int i = 0, j, max_len;
+	unsigned char *table;
+	char propname[20];
+	char *propdata;
+
+	if (flag) {
+		table = extconf->init_on;
+		max_len = BL_EXTERN_INIT_ON_MAX;
+		sprintf(propname, "init_on");
+	} else {
+		table = extconf->init_off;
+		max_len = BL_EXTERN_INIT_OFF_MAX;
+		sprintf(propname, "init_off");
+	}
+	if (table == NULL) {
+		BLEX("%s init_table is null\n", propname);
+		return 0;
+	}
+
+	propdata = (char *)fdt_getprop(dtaddr, nodeoffset, propname, NULL);
+	if (propdata == NULL) {
+		BLEXERR("%s: get %s failed\n", extconf->name, propname);
+		table[0] = LCD_EXT_CMD_TYPE_END;
+		table[1] = 0;
+		return -1;
+	}
+
+	while ((i + 1) < max_len) {
+		table[i] = (unsigned char)(be32_to_cpup((((u32*)propdata)+i)));
+		table[i+1] = (unsigned char)(be32_to_cpup((((u32*)propdata)+i+1)));
+		type = table[i];
+		cmd_size = table[i+1];
+		if (type == LCD_EXT_CMD_TYPE_END)
+			break;
+		if (cmd_size == 0)
+			goto init_table_dynamic_dts_next;
+		if ((i + 2 + cmd_size) > max_len) {
+			BLEXERR("%s: %s cmd_size out of support\n", extconf->name, propname);
+			table[i] = LCD_EXT_CMD_TYPE_END;
+			table[i+1] = 0;
+			return -1;
+		}
+		for (j = 0; j < cmd_size; j++)
+			table[i+2+j] = (unsigned char)(be32_to_cpup((((u32*)propdata)+i+2+j)));
+
+init_table_dynamic_dts_next:
+		i += (cmd_size + 2);
+	}
+	if (flag)
+		extconf->init_on_cnt = i + 2;
+	else
+		extconf->init_off_cnt = i + 2;
+
+	return 0;
+}
+
+static int aml_bl_extern_init_table_fixed_size_load_dts(char *dtaddr,
+		int nodeoffset, struct bl_extern_config_s *extconf, int flag)
+{
+	unsigned char cmd_size;
+	int i = 0, j, max_len;
+	unsigned char *table;
+	char propname[20];
+	char *propdata;
+
+	cmd_size = extconf->cmd_size;
+	if (flag) {
+		table = extconf->init_on;
+		max_len = BL_EXTERN_INIT_ON_MAX;
+		sprintf(propname, "init_on");
+	} else {
+		table = extconf->init_off;
+		max_len = BL_EXTERN_INIT_OFF_MAX;
+		sprintf(propname, "init_off");
+	}
+	if (table == NULL) {
+		BLEX("%s init_table is null\n", propname);
+		return 0;
+	}
+
+	propdata = (char *)fdt_getprop(dtaddr, nodeoffset, propname, NULL);
+	if (propdata == NULL) {
+		BLEXERR("%s: get %s failed\n", extconf->name, propname);
+		table[0] = LCD_EXT_CMD_TYPE_END;
+		table[1] = 0;
+		return -1;
+	}
+
+	while (i < max_len) {
+		if ((i + cmd_size) > max_len) {
+			BLEXERR("%s: %s cmd_size out of support\n", extconf->name, propname);
+			table[i] = LCD_EXT_CMD_TYPE_END;
+			return -1;
+		}
+		for (j = 0; j < cmd_size; j++)
+			table[i+j] = (unsigned char)(be32_to_cpup((((u32*)propdata)+i+j)));
+
+		if (table[i] == LCD_EXT_CMD_TYPE_END)
+			break;
+
+		i += cmd_size;
+	}
+	if (flag)
+		extconf->init_on_cnt = i + cmd_size;
+	else
+		extconf->init_off_cnt = i + cmd_size;
+
+	return 0;
 }
 
 static int bl_extern_config_from_dts(char *dtaddr, int index)
@@ -220,7 +432,7 @@ static int bl_extern_config_from_dts(char *dtaddr, int index)
 	char propname[30];
 	char *propdata;
 	struct aml_bl_extern_driver_s *bl_extern = aml_bl_extern_get_driver();
-	unsigned char bl_ext_i2c_bus = BL_EXTERN_I2C_BUS_INVALID;
+	unsigned char bl_ext_i2c_bus = BL_EXTERN_I2C_BUS_MAX;
 
 	parent_offset = fdt_path_offset(dtaddr, "/bl_extern");
 	if (parent_offset < 0) {
@@ -240,7 +452,7 @@ static int bl_extern_config_from_dts(char *dtaddr, int index)
 
 	propdata = (char *)fdt_getprop(dtaddr, parent_offset, "i2c_bus", NULL);
 	if (propdata == NULL)
-		bl_ext_i2c_bus = BL_EXTERN_I2C_BUS_INVALID;
+		bl_ext_i2c_bus = BL_EXTERN_I2C_BUS_MAX;
 	else
 		bl_ext_i2c_bus = bl_extern_get_i2c_bus_str(propdata);
 
@@ -295,11 +507,11 @@ static int bl_extern_config_from_dts(char *dtaddr, int index)
 		} else {
 			bl_extern->config->i2c_addr = (unsigned char)(be32_to_cpup((u32*)propdata));
 		}
-		if (bl_ext_i2c_bus == BL_EXTERN_I2C_BUS_INVALID) { /* compatible for kernel3.14 */
+		if (bl_ext_i2c_bus == BL_EXTERN_I2C_BUS_MAX) { /* compatible for kernel3.14 */
 			propdata = (char *)fdt_getprop(dtaddr, child_offset, "i2c_bus", NULL);
 			if (propdata == NULL) {
 				BLEXERR("get %s i2c_bus failed, exit\n", bl_extern->config->name);
-				bl_extern->config->i2c_bus = BL_EXTERN_I2C_BUS_INVALID;
+				bl_extern->config->i2c_bus = BL_EXTERN_I2C_BUS_MAX;
 				return -1;
 			} else {
 				bl_extern->config->i2c_bus = bl_extern_get_i2c_bus_str(propdata);
@@ -310,8 +522,66 @@ static int bl_extern_config_from_dts(char *dtaddr, int index)
 		if (lcd_debug_print_flag)
 			aml_bl_extern_i2c_bus_print(bl_extern->config->i2c_bus);
 
+		propdata = (char *)fdt_getprop(dtaddr, child_offset, "cmd_size", NULL);
+		if (propdata == NULL) {
+			BLEX("%s: no cmd_size\n", bl_extern->config->name);
+			bl_extern->config->cmd_size = 0;
+		} else {
+			bl_extern->config->cmd_size = (unsigned char)(be32_to_cpup((u32*)propdata));
+		}
+		if (lcd_debug_print_flag)
+			BLEX("%s: cmd_size=%d\n", bl_extern->config->name, bl_extern->config->cmd_size);
+		if (bl_extern->config->cmd_size == 0)
+			break;
+
+		if (bl_extern->config->cmd_size == LCD_EXT_CMD_SIZE_DYNAMIC) {
+			ret = aml_bl_extern_init_table_dynamic_size_load_dts(
+				dtaddr, child_offset, bl_extern->config, 1);
+			if (ret)
+				break;
+			ret = aml_bl_extern_init_table_dynamic_size_load_dts(
+				dtaddr, child_offset, bl_extern->config, 0);
+		} else {
+			ret = aml_bl_extern_init_table_fixed_size_load_dts(
+				dtaddr, child_offset, bl_extern->config, 1);
+			if (ret)
+				break;
+			ret = aml_bl_extern_init_table_fixed_size_load_dts(
+				dtaddr, child_offset, bl_extern->config, 0);
+		}
+		if (ret == 0)
+			bl_extern->config->init_loaded = 1;
 		break;
 	case BL_EXTERN_SPI:
+		propdata = (char *)fdt_getprop(dtaddr, child_offset, "cmd_size", NULL);
+		if (propdata == NULL) {
+			BLEX("%s: no cmd_size\n", bl_extern->config->name);
+			bl_extern->config->cmd_size = 0;
+		} else {
+			bl_extern->config->cmd_size = (unsigned char)(be32_to_cpup((u32*)propdata));
+		}
+		if (lcd_debug_print_flag)
+			BLEX("%s: cmd_size=%d\n", bl_extern->config->name, bl_extern->config->cmd_size);
+		if (bl_extern->config->cmd_size == 0)
+			break;
+
+		if (bl_extern->config->cmd_size == LCD_EXT_CMD_SIZE_DYNAMIC) {
+			ret = aml_bl_extern_init_table_dynamic_size_load_dts(
+				dtaddr, child_offset, bl_extern->config, 1);
+			if (ret)
+				break;
+			ret = aml_bl_extern_init_table_dynamic_size_load_dts(
+				dtaddr, child_offset, bl_extern->config, 0);
+		} else {
+			ret = aml_bl_extern_init_table_fixed_size_load_dts(
+				dtaddr, child_offset, bl_extern->config, 1);
+			if (ret)
+				break;
+			ret = aml_bl_extern_init_table_fixed_size_load_dts(
+				dtaddr, child_offset, bl_extern->config, 0);
+		}
+		if (ret == 0)
+			bl_extern->config->init_loaded = 1;
 		break;
 	case BL_EXTERN_MIPI:
 		break;
@@ -332,18 +602,15 @@ static int bl_extern_add_driver(void)
 #ifdef CONFIG_AML_BL_EXTERN_I2C_LP8556
 		ret = i2c_lp8556_probe();
 #endif
-		goto bl_extern_add_driver_next;
 	} else if (strcmp(extconf->name, "mipi_lt070me05") == 0) {
 #ifdef CONFIG_AML_BL_EXTERN_MIPI_IT070ME05
 		ret = mipi_lt070me05_probe();
 #endif
-		goto bl_extern_add_driver_next;
 	} else {
 		BLEXERR("invalid device name: %s\n", extconf->name);
 		ret = -1;
 	}
 
-bl_extern_add_driver_next:
 	if (ret) {
 		BLEXERR("add device driver failed %s(%d)\n",
 			extconf->name, extconf->index);
@@ -359,6 +626,8 @@ int aml_bl_extern_device_load(char *dtaddr, int index)
 {
 	int ret = 0;
 
+	bl_extern_status = 0;
+	bl_extern_level = 0;
 	bl_extern_driver.config = &bl_extern_config_dtf;
 	if (dtaddr) {
 		if (lcd_debug_print_flag)

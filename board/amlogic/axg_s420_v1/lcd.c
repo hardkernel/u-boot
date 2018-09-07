@@ -17,9 +17,6 @@
 #include <amlogic/aml_lcd.h>
 #include <asm/arch/gpio.h>
 
-
-
-
 //Rsv_val = 0xffffffff
 static char lcd_cpu_gpio[LCD_CPU_GPIO_NUM_MAX][LCD_CPU_GPIO_NAME_MAX] = {
 	"GPIOZ_6",
@@ -78,7 +75,7 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	0,0,1,64843200,Rsv_val,Rsv_val,Rsv_val,
 	/* custome */
 	Rsv_val,Rsv_val,Rsv_val,
-	/* MIPI_attr: lane_num, bit_rate_max, factor, operation_mode_init, operation_mode_display, video_mode_type, clk_always_hs, phy_stop_wait */
+	/* MIPI_attr: lane_num, bit_rate_max, factor, operation_mode_init, operation_mode_display, video_mode_type, clk_always_hs, phy_switch */
 	4,550,0,1,0,2,1,0,Rsv_val,Rsv_val,
 	/* power step */
 	lcd_power_on_step_dft, lcd_power_off_step_dft,
@@ -153,35 +150,35 @@ static struct lcd_pinmux_ctrl_s bl_pinmux_ctrl[BL_PINMUX_MAX] = {
 
 static unsigned char mipi_init_on_table[DSI_INIT_ON_MAX] = {//table size < 100
 	0x05, 1, 0x11,
-	0xff, 20,
+	0xfd, 1, 200, //delay
 	0x05, 1, 0x29,
-	0xff, 20,
-	0xff, 0xff,   //ending flag
+	0xfd, 1, 20,  //delay
+	0xff, 0,   //ending
 };
 static unsigned char mipi_init_off_table[DSI_INIT_OFF_MAX] = {//table size < 50
 	0x05, 1, 0x28,
-	0xff, 10,
+	0xfd, 1, 10,  //delay
 	0x05, 1, 0x10,
-	0xff, 10,
-	0xff,0xff,   //ending flag
+	0xfd, 1, 10,  //delay
+	0xff, 0,   //ending
 };
 
 static unsigned char mipi_init_on_table_TV070WSM[DSI_INIT_ON_MAX] = {//table size < 100
 	0xf0, 3, 0, 1, 30, /* reset high, delay 30ms */
 	0xf0, 3, 0, 0, 10, /* reset low, delay 10ms */
 	0xf0, 3, 0, 1, 30, /* reset high, delay 30ms */
-	0xff, 100,   /* delay */
-	0xff, 0xff,   //ending flag
+	0xfd, 1, 100,   /* delay */
+	0xff, 0,   //ending
 };
 static unsigned char mipi_init_off_table_TV070WSM[DSI_INIT_OFF_MAX] = {//table size < 50
-	0xff,0xff,   //ending flag
+	0xff, 0,   //ending
 };
 
 static unsigned char mipi_init_on_table_P070ACB[DSI_INIT_ON_MAX] = {//table size < 100
-	0xff, 0xff,   //ending flag
+	0xff, 0,   //ending
 };
 static unsigned char mipi_init_off_table_P070ACB[DSI_INIT_OFF_MAX] = {//table size < 50
-	0xff,0xff,   //ending flag
+	0xff,0,   //ending
 };
 
 static struct dsi_config_s lcd_mipi_config = {
@@ -298,11 +295,11 @@ static char lcd_ext_gpio[LCD_EXTERN_GPIO_NUM_MAX][LCD_EXTERN_GPIO_LEN_MAX] = {
 };
 
 static unsigned char ext_init_on_table[LCD_EXTERN_INIT_ON_MAX] = {
-	0xff, 0xff,   //ending flag
+	0xff, 0,   //ending flag
 };
 
 static unsigned char ext_init_off_table[LCD_EXTERN_INIT_OFF_MAX] = {
-	0xff,0xff,   //ending flag
+	0xff, 0,   //ending flag
 };
 
 struct lcd_extern_common_s ext_common_dft = {
@@ -321,36 +318,44 @@ struct lcd_extern_config_s ext_config_dtf[LCD_EXTERN_NUM_MAX] = {
 		.status = 0, /* 0=disable, 1=enable */
 		.i2c_addr = 0x1c, /* 7bit i2c address */
 		.i2c_addr2 = 0xff, /* 7bit i2c address, 0xff for none */
-		.cmd_size = 9,
+		.cmd_size = LCD_EXT_CMD_SIZE_DYNAMIC,
 		.table_init_on = ext_init_on_table,
+		.table_init_on_cnt = sizeof(ext_init_on_table),
 		.table_init_off = ext_init_off_table,
+		.table_init_off_cnt = sizeof(ext_init_off_table),
 	},
 	{
 		.index = 1,
 		.name = "mipi_KD080D13",
 		.type = LCD_EXTERN_MIPI, /* LCD_EXTERN_I2C, LCD_EXTERN_SPI, LCD_EXTERN_MIPI, LCD_EXTERN_MAX */
 		.status = 0, /* 0=disable, 1=enable */
-		.cmd_size = LCD_EXTERN_CMD_SIZE_DYNAMIC,
+		.cmd_size = LCD_EXT_CMD_SIZE_DYNAMIC,
 		.table_init_on = ext_init_on_table,
+		.table_init_on_cnt = sizeof(ext_init_on_table),
 		.table_init_off = ext_init_off_table,
+		.table_init_off_cnt = sizeof(ext_init_off_table),
 	},
 	{
 		.index = 2,
 		.name = "mipi_TV070WSM",
 		.type = LCD_EXTERN_MIPI, /* LCD_EXTERN_I2C, LCD_EXTERN_SPI, LCD_EXTERN_MIPI, LCD_EXTERN_MAX */
 		.status = 1, /* 0=disable, 1=enable */
-		.cmd_size = LCD_EXTERN_CMD_SIZE_DYNAMIC,
+		.cmd_size = LCD_EXT_CMD_SIZE_DYNAMIC,
 		.table_init_on = ext_init_on_table,
+		.table_init_on_cnt = sizeof(ext_init_on_table),
 		.table_init_off = ext_init_off_table,
+		.table_init_off_cnt = sizeof(ext_init_off_table),
 	},
 	{
 		.index = 3,
 		.name = "mipi_P070ACB",
 		.type = LCD_EXTERN_MIPI, /* LCD_EXTERN_I2C, LCD_EXTERN_SPI, LCD_EXTERN_MIPI, LCD_EXTERN_MAX */
 		.status = 1, /* 0=disable, 1=enable */
-		.cmd_size = LCD_EXTERN_CMD_SIZE_DYNAMIC,
+		.cmd_size = LCD_EXT_CMD_SIZE_DYNAMIC,
 		.table_init_on = ext_init_on_table,
+		.table_init_on_cnt = sizeof(ext_init_on_table),
 		.table_init_off = ext_init_off_table,
+		.table_init_off_cnt = sizeof(ext_init_off_table),
 	},
 	{
 		.index = LCD_EXTERN_INDEX_INVALID,
@@ -392,6 +397,8 @@ struct bl_config_s bl_config_dft = {
 };
 
 #ifdef CONFIG_AML_BL_EXTERN
+static unsigned char bl_ext_init_on[BL_EXTERN_INIT_ON_MAX];
+static unsigned char bl_ext_init_off[BL_EXTERN_INIT_OFF_MAX];
 struct bl_extern_config_s bl_extern_config_dtf = {
 	.index = BL_EXTERN_INDEX_INVALID,
 	.name = "none",
@@ -400,6 +407,13 @@ struct bl_extern_config_s bl_extern_config_dtf = {
 	.i2c_bus = BL_EXTERN_I2C_BUS_MAX,
 	.dim_min = 10,
 	.dim_max = 255,
+
+	.init_loaded = 0,
+	.cmd_size = 0xff,
+	.init_on = bl_ext_init_on,
+	.init_off = bl_ext_init_off,
+	.init_on_cnt = sizeof(bl_ext_init_on),
+	.init_off_cnt = sizeof(bl_ext_init_off),
 };
 #endif
 

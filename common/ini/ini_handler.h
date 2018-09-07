@@ -6,7 +6,7 @@
 #define __INI_HANDLER_H__
 
 #define CC_MAX_INI_FILE_NAME_LEN    (512)
-#define CC_MAX_INI_FILE_LINE_LEN    (256)
+#define CC_MAX_INI_FILE_LINE_LEN    (5120) //256->5k for large lcd_ext large init_on table
 
 #define CC_MAX_INI_LINE_NAME_LEN    (128)
 #define CC_MAX_INI_FILE_SIZE        (0x80000) //512KB

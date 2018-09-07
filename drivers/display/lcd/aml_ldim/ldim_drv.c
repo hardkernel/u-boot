@@ -47,6 +47,7 @@ static int ldim_power_on(void)
 		ldim_driver.device_power_on();
 		ldim_on_flag = 1;
 	}
+
 	if (ldim_level > 0)
 		ldim_set_level(ldim_level);
 
@@ -82,10 +83,9 @@ static int ldim_set_level(unsigned int level)
 	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
 	unsigned int level_max, level_min;
 
-	if (ldim_on_flag == 0) {
-		ldim_level = level;
+	ldim_level = level;
+	if (ldim_on_flag == 0)
 		return 0;
-	}
 
 	level_max = lcd_drv->bl_config->level_max;
 	level_min = lcd_drv->bl_config->level_min;

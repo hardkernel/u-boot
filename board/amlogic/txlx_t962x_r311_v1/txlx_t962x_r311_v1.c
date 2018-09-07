@@ -391,6 +391,12 @@ void set_i2c1_pinmux(void)
 	clrbits_le32(P_PERIPHS_PIN_MUX_2, 1 << 31);
 	setbits_le32(P_PERIPHS_PIN_MUX_2, 1 << 24 | 1 << 25);
 }
+
+void set_i2c2_pinmux(void)
+{
+	clrbits_le32(P_PERIPHS_PIN_MUX_0, 1 << 22 | 1 << 21 | 1 << 2 | 1 << 1);
+	setbits_le32(P_PERIPHS_PIN_MUX_0, 1 << 28 | 1 << 29);
+}
 #endif /*end CONFIG_SYS_I2C_MESON*/
 
 extern void aml_pwm_cal_init(int mode);
@@ -446,6 +452,12 @@ int board_late_init(void)
 
 	/* load unifykey */
 	run_command("keyunify init 0x1234", 0);
+
+#ifdef CONFIG_SYS_I2C_MESON
+	set_i2c1_pinmux();
+	set_i2c2_pinmux();
+#endif
+
 #ifdef CONFIG_AML_VPU
 	vpu_probe();
 #endif
@@ -459,9 +471,7 @@ int board_late_init(void)
 #ifdef CONFIG_AML_LCD
 	lcd_probe();
 #endif
-#ifdef CONFIG_SYS_I2C_MESON
-	set_i2c1_pinmux();
-#endif
+
 #ifdef CONFIG_AML_V2_FACTORY_BURN
 	/*aml_try_factory_sdcard_burning(0, gd->bd);*/
 #endif// #ifdef CONFIG_AML_V2_FACTORY_BURN

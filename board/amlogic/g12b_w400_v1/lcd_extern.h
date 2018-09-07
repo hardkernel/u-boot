@@ -30,20 +30,20 @@ static unsigned char ext_init_on_table_TL070WSH27[LCD_EXTERN_INIT_ON_MAX] = {
 	0x15, 2, 0x84, 0xA9,
 	0x15, 2, 0x85, 0xC3,
 	0x15, 2, 0x86, 0x82,
-	0xff, 150,  /* delay 150ms */
+	0xfd, 1, 150,  /* delay 150ms */
 
 	0x05, 1, 0x11,
-	0xff, 200,  /* delay 120ms */
+	0xfd, 1, 200,  /* delay 120ms */
 	0x05, 1, 0x29,
-	0xff, 0xff, /* ending flag */
+	0xff, 0, /* ending flag */
 };
 
 static unsigned char ext_init_off_table_TL070WSH27[LCD_EXTERN_INIT_OFF_MAX] = {
 	0x05, 1, 0x28, /* display off */
-	0xff, 30,      /* delay 30ms */
+	0xfd, 1, 30,      /* delay 30ms */
 	0x05, 1, 0x10, /* sleep in */
-	0xff, 10,
-	0xff, 0xff,   /* ending flag */
+	0xfd, 1, 10,
+	0xff, 0,   /* ending flag */
 };
 
 static unsigned char ext_init_on_table_TL070HDV03CT[LCD_EXTERN_INIT_ON_MAX] = {
@@ -248,24 +248,24 @@ static unsigned char ext_init_on_table_TL070HDV03CT[LCD_EXTERN_INIT_ON_MAX] = {
 	0x39, 4, 0xFF, 0x98, 0x81, 0x00,
 
 	0x15, 2, 0x3A, 0x77,
-	0xff, 2,
+	0xfd, 1, 2,
 
 	0x15, 2, 0x36, 0x08,
 
 	0x05, 1, 0x11,  //display on
-	0xff, 200,
+	0xfd, 1, 200,
 
 	0x05, 1, 0x29, //display on
-	0xff, 200,
-	0xFF, 0xFF,   /* ending flag */
+	0xfd, 1, 200,
+	0xFF, 0,   /* ending flag */
 };
 
 static unsigned char ext_init_off_table_TL070HDV03CT[LCD_EXTERN_INIT_OFF_MAX] = {
 	0x05, 1, 0x28, /* display off */
-	0xFF, 10,      /* delay 10ms */
+	0xfd, 1, 10,      /* delay 10ms */
 	0x05, 1, 0x10, /* sleep in */
-	0xFF, 150,      /* delay 150ms */
-	0xFF, 0xFF,   /* ending flag */
+	0xfd, 1, 150,      /* delay 150ms */
+	0xFF, 0,   /* ending flag */
 };
 
 static unsigned char ext_init_on_table_P070ACB_FT[LCD_EXTERN_INIT_ON_MAX] = {
@@ -485,19 +485,19 @@ static unsigned char ext_init_on_table_P070ACB_FT[LCD_EXTERN_INIT_ON_MAX] = {
 	0x23,2,0xE6,0x02,//Watch dog
 	0x23,2,0xE7,0x0C,
 	0x05,1,0x11,//sleep out
-	0xff,120,
+	0xfd, 1,120,
 	0x05,1,0x29,//display on
 	0x05,1,0x35,
-	0xFF, 20,   /* delay(ms) */
-	0xFF, 0xFF,   /* ending flag */
+	0xfd, 1, 20,   /* delay(ms) */
+	0xFF, 0,   /* ending flag */
 };
 
 static unsigned char ext_init_off_table_P070ACB_FT[LCD_EXTERN_INIT_OFF_MAX] = {
 	0x05, 1, 0x28, /* display off */
-	0xFF, 10,      /* delay 10ms */
+	0xfd, 1, 10,   /* delay 10ms */
 	0x05, 1, 0x10, /* sleep in */
-	0xFF, 150,      /* delay 150ms */
-	0xFF, 0xFF,   /* ending flag */
+	0xfd, 1, 150,  /* delay 150ms */
+	0xFF, 0,   /* ending flag */
 };
 
 #endif

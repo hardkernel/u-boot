@@ -36,17 +36,8 @@ enum bl_extern_type_e {
 #define BL_EXTERN_I2C_BUS_4          BL_EXTERN_I2C_BUS_AO
 #define BL_EXTERN_I2C_BUS_MAX        5
 
-#define BL_EXTERN_I2C_BUS_INVALID   0xff
-
-#define BL_EXTERN_SPI_CLK_FREQ_DFT  10000 /* default 10k */
-
-#define BL_EXTERN_INIT_TABLE_MAX    500
-
-#define BL_EXTERN_INIT_CMD          0x00
-#define BL_EXTERN_INIT_NONE         0xf0
-#define BL_EXTERN_INIT_END          0xff
-
-#define BL_EXTERN_DYNAMIC_LEN       0xff
+#define BL_EXTERN_INIT_ON_MAX       200
+#define BL_EXTERN_INIT_OFF_MAX      50
 
 #define BL_EXTERN_GPIO_NUM_MAX      6
 #define BL_EXTERN_INDEX_INVALID     0xff
@@ -59,6 +50,13 @@ struct bl_extern_config_s {
 	unsigned char i2c_bus;
 	unsigned int dim_min;
 	unsigned int dim_max;
+
+	unsigned char init_loaded;
+	unsigned char cmd_size;
+	unsigned char *init_on;
+	unsigned char *init_off;
+	unsigned int init_on_cnt;
+	unsigned int init_off_cnt;
 };
 
 /* global API */
