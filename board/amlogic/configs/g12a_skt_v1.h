@@ -154,6 +154,7 @@
             "fi;fi;fi;fi;"\
             "\0" \
         "storeboot="\
+            "boot_cooling;"\
             "if imgread kernel ${boot_part} ${loadaddr}; then bootm ${loadaddr}; fi;"\
             "run update;"\
             "\0"\
@@ -615,5 +616,6 @@
 //#define  AML_BL2_TMASTER_DDR_ADDR  (0x3000000)
 
 #define CONFIG_RING
+#define CONFIG_HIGH_TEMP_COOL 90
 #endif
 

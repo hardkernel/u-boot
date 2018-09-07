@@ -929,7 +929,7 @@ int r1p1_temp_read(int type)
 	unsigned int ret, u_efuse, regdata;//, ret;
 	unsigned int value_ts, value_all_ts;
 	int family_id;
-	int tmp;
+	int tmp = -1;
 	int i, ts_a, ts_b, ts_m, ts_n, cnt;
 	char buf[2];
 
@@ -1016,7 +1016,7 @@ int r1p1_temp_read(int type)
 					printf("r1p1 tsensor trim type not support\n");
 			}
 	}
-	return 0;
+	return tmp;
 }
 
 
@@ -1222,7 +1222,51 @@ int r1p1_trim_entry(int tempbase, int tempver)
 	return 0;
 
 }
+
+#ifdef CONFIG_HIGH_TEMP_COOL
+void r1p1_temp_cooling(void)
+{
+	int family_id, temp, temp1, temp2;
+
+	family_id = get_cpu_id().family_id;
+	switch (family_id) {
+		case MESON_CPU_MAJOR_ID_G12A:
+		case MESON_CPU_MAJOR_ID_G12B:
+			while (1) {
+				temp1 = r1p1_temp_read(1);
+				temp2 = r1p1_temp_read(2);
+				temp = temp1 > temp2 ? temp1 : temp2;
+				if (temp <= CONFIG_HIGH_TEMP_COOL) {
+					printf("device cool done\n");
+					break;
+				}
+				mdelay(2000);
+				printf("warning: temp %d over %d, cooling\n", temp,
+					CONFIG_HIGH_TEMP_COOL);
+			}
+			break;
+		default:
+			break;
+	}
+}
 #endif
+#endif
+
+
+static int do_boot_cooling(cmd_tbl_t *cmdtp, int flag1,
+	int argc, char * const argv[])
+{
+#if defined (CONFIG_HIGH_TEMP_COOL) && defined (R1P1_TSENSOR_MODE)
+	r1p1_temp_cooling();
+#endif
+	return 0;
+}
+
+U_BOOT_CMD(
+	boot_cooling,	5,	0,	do_boot_cooling,
+	"cpu temp-system",
+	"boot_cooling pos"
+);
 
 U_BOOT_CMD(
 	write_trim,	5,	0,	do_write_trim,

@@ -154,6 +154,7 @@
             "fi;fi;fi;fi;"\
             "\0" \
         "storeboot="\
+            "boot_cooling;"\
             "if imgread kernel ${boot_part} ${loadaddr}; then bootm ${loadaddr}; fi;"\
             "run update;"\
             "\0"\
@@ -599,5 +600,6 @@
 #define ETHERNET_INTERNAL_PHY
 #undef ETHERNET_EXTERNAL_PHY
 
+#define CONFIG_HIGH_TEMP_COOL 90
 #endif
 
