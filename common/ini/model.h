@@ -108,7 +108,10 @@ struct lcd_customer_s {
 	unsigned short v_period_max;
 	unsigned int pixle_clk_min;
 	unsigned int pixle_clk_max;
-	unsigned int customer_value_8;
+	unsigned char vlock_val_0;
+	unsigned char vlock_val_1;
+	unsigned char vlock_val_2;
+	unsigned char vlock_val_3;
 	unsigned int customer_value_9;
 };
 

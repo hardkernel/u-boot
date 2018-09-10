@@ -256,9 +256,21 @@ static int handle_lcd_customer(struct lcd_attr_s *p_attr)
 	ITEM_LOGD("%s, pixle_clk_max is (%s)\n", __func__, ini_value);
 	p_attr->customer.pixle_clk_max = strtoul(ini_value, NULL, 0);
 
-	ini_value = IniGetString("lcd_Attr", "customer_value_8", "0");
-	ITEM_LOGD("%s, customer_value_8 is (%s)\n", __func__, ini_value);
-	p_attr->customer.customer_value_8 = strtoul(ini_value, NULL, 0);
+	ini_value = IniGetString("lcd_Attr", "vlock_val_0", "0");
+	ITEM_LOGD("%s, vlock_val_0 is (%s)\n", __func__, ini_value);
+	p_attr->customer.vlock_val_0 = strtoul(ini_value, NULL, 0);
+
+	ini_value = IniGetString("lcd_Attr", "vlock_val_1", "0");
+	ITEM_LOGD("%s, vlock_val_1 is (%s)\n", __func__, ini_value);
+	p_attr->customer.vlock_val_1 = strtoul(ini_value, NULL, 0);
+
+	ini_value = IniGetString("lcd_Attr", "vlock_val_2", "0");
+	ITEM_LOGD("%s, vlock_val_2 is (%s)\n", __func__, ini_value);
+	p_attr->customer.vlock_val_2 = strtoul(ini_value, NULL, 0);
+
+	ini_value = IniGetString("lcd_Attr", "vlock_val_3", "0");
+	ITEM_LOGD("%s, vlock_val_3 is (%s)\n", __func__, ini_value);
+	p_attr->customer.vlock_val_3 = strtoul(ini_value, NULL, 0);
 
 	ini_value = IniGetString("lcd_Attr", "customer_value_9", "0");
 	ITEM_LOGD("%s, customer_value_9 is (%s)\n", __func__, ini_value);
