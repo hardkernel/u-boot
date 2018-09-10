@@ -20,7 +20,7 @@ extern void osd_set_free_scale_enable_hw(u32 index, u32 enable);
 static int do_osd_open(cmd_tbl_t *cmdtp, int flag, int argc,
 		       char *const argv[])
 {
-	gdev = video_hw_init();
+	gdev = video_hw_init(MIDDLE_MODE);
 	if (gdev == NULL) {
 		printf("Initialize video device failed!\n");
 		return 1;

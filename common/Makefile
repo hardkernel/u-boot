@@ -342,6 +342,7 @@ obj-y += cmd_scp.o
 obj-$(CONFIG_AML_HDMITX20) += hdmi_parameters.o hdmi_edid_parsing.o cmd_hdmitx.o
 obj-$(CONFIG_CMD_JTAG) += cmd_jtag.o
 obj-$(CONFIG_AML_OSD) += cmd_osd.o
+obj-$(CONFIG_AML_OSD) += cmd_img_osd.o
 obj-$(CONFIG_AML_CVBS) += cmd_cvbs.o
 obj-$(CONFIG_AML_VOUT) += cmd_vout.o
 obj-$(CONFIG_AML_LCD) += cmd_lcd.o

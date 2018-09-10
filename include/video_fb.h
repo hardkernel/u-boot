@@ -67,7 +67,7 @@ typedef struct graphic_device {
 /* Export Graphic Functions                                                   */
 /******************************************************************************/
 
-void *video_hw_init (void);       /* returns GraphicDevice struct or NULL */
+void *video_hw_init (int display_mode);       /* returns GraphicDevice struct or NULL */
 
 #ifdef VIDEO_HW_BITBLT
 void video_hw_bitblt (
@@ -102,5 +102,16 @@ void video_set_lut (
 void video_set_hw_cursor(int x, int y); /* x y in pixel */
 void video_init_hw_cursor(int font_width, int font_height);
 #endif
+
+enum display_mode_e {
+	MIDDLE_MODE,
+	RECT_MODE,
+	FULL_SCREEN_MODE,
+};
+
+enum pci_type_e {
+	BMP_PIC,
+	RAW_PIC,
+};
 
 #endif /*_VIDEO_FB_H_ */

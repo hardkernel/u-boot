@@ -34,6 +34,7 @@
 #include "osd.h"
 #include "osd_log.h"
 #include "osd_hw.h"
+#include "osd_fb.h"
 
 #define INVALID_BPP_ITEM {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 static const struct color_bit_define_s default_color_format_array[] = {
@@ -162,6 +163,18 @@ static const struct color_bit_define_s default_color_format_array[] = {
 };
 
 GraphicDevice fb_gdev;
+typedef struct pic_info_t {
+	unsigned int mode;
+	unsigned int type;
+	unsigned int pic_width;
+	unsigned int pic_height;
+	unsigned int bpp;
+	ulong pic_image;
+}pic_info_t;
+static pic_info_t g_pic_info;
+static int img_video_init = 0;
+static int fb_index = -1;
+
 
 static void osd_layer_init(GraphicDevice gdev, int layer)
 {
@@ -320,42 +333,27 @@ unsigned long get_fb_addr(void)
 	return fb_addr;
 }
 
-void *video_hw_init(void)
+static int get_osd_layer(void)
 {
-	u32 fb_addr = 0;
-	u32 display_width = 0;
-	u32 display_height = 0;
-	u32 display_bpp = 0;
-	u32 color_index = 0;
-	u32 fg = 0;
-	u32 bg = 0;
-	u32 fb_width = 0;
-	u32 fb_height = 0;;
 	char *layer_str;
+	int osd_index = -1;
 
-	vout_init();
-	fb_addr = get_fb_addr();
-#ifdef CONFIG_OSD_SCALE_ENABLE
-	fb_width = env_strtoul("fb_width", 10);
-	fb_height = env_strtoul("fb_height", 10);
-#endif
-	display_width = env_strtoul("display_width", 10);
-	display_height = env_strtoul("display_height", 10);
-	display_bpp = env_strtoul("display_bpp", 10);
+	if (fb_index < 0) {
+		layer_str = getenv("display_layer");
+		if (strcmp(layer_str, "osd0") == 0)
+			osd_index = OSD1;
+		else if (strcmp(layer_str, "osd1") == 0)
+			osd_index = OSD2;
+		fb_index = osd_index;
+	}
+	return fb_index;
+}
+static void *osd_hw_init(void)
+{
+	int osd_index = -1;
+	u32 color_index = 0;
+
 	color_index = env_strtoul("display_color_index", 10);
-	fg = env_strtoul("display_color_fg", 10);
-	bg = env_strtoul("display_color_bg", 10);
-	layer_str = getenv("display_layer");
-
-	/* fill in Graphic Device */
-	fb_gdev.frameAdrs = fb_addr;
-	fb_gdev.fb_width = fb_width;
-	fb_gdev.fb_height = fb_height;
-	fb_gdev.winSizeX = display_width;
-	fb_gdev.winSizeY = display_height;
-	fb_gdev.gdfBytesPP = display_bpp / 8;
-	fb_gdev.fg = fg;
-	fb_gdev.bg = bg;
 
 	if ((color_index < ARRAY_SIZE(default_color_format_array))
 	    && (default_color_format_array[color_index].color_index !=
@@ -366,9 +364,10 @@ void *video_hw_init(void)
 		return NULL;
 	}
 
-	if (strcmp(layer_str, "osd0") == 0)
+	osd_index = get_osd_layer();
+	if (osd_index == OSD1)
 		osd_layer_init(fb_gdev, OSD1);
-	else if (strcmp(layer_str, "osd1") == 0) {
+	else if (osd_index == OSD2) {
 		if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_AXG) {
 			osd_loge("AXG not support osd2\n");
 			return NULL;
@@ -376,11 +375,58 @@ void *video_hw_init(void)
 		osd_layer_init(fb_gdev, OSD2);
 	}
 	else {
-		osd_loge("display_layer(%s) invalid\n", layer_str);
+		osd_loge("display_layer(%d) invalid\n", osd_index);
 		return NULL;
 	}
-
 	return (void *)&fb_gdev;
+}
+
+void *video_hw_init(int display_mode)
+{
+	u32 fb_addr = 0;
+	u32 display_width = 0;
+	u32 display_height = 0;
+	u32 display_bpp = 0;
+	u32 fg = 0;
+	u32 bg = 0;
+	u32 fb_width = 0;
+	u32 fb_height = 0;;
+
+	vout_init();
+	fb_addr = get_fb_addr();
+	switch (display_mode) {
+	case MIDDLE_MODE:
+	case RECT_MODE:
+#ifdef CONFIG_OSD_SCALE_ENABLE
+		fb_width = env_strtoul("fb_width", 10);
+		fb_height = env_strtoul("fb_height", 10);
+#endif
+		display_bpp = env_strtoul("display_bpp", 10);
+		break;
+	case FULL_SCREEN_MODE:
+		fb_width = g_pic_info.pic_width;
+		fb_height = g_pic_info.pic_height;
+		display_bpp = g_pic_info.bpp;
+		break;
+	}
+	display_width = env_strtoul("display_width", 10);
+	display_height = env_strtoul("display_height", 10);
+	fg = env_strtoul("display_color_fg", 10);
+	bg = env_strtoul("display_color_bg", 10);
+
+	/* fill in Graphic Device */
+	fb_gdev.frameAdrs = fb_addr;
+	fb_gdev.fb_width = fb_width;
+	fb_gdev.fb_height = fb_height;
+	fb_gdev.winSizeX = display_width;
+	fb_gdev.winSizeY = display_height;
+	fb_gdev.gdfBytesPP = display_bpp / 8;
+	fb_gdev.fg = fg;
+	fb_gdev.bg = bg;
+	fb_gdev.mode = display_mode;
+	return osd_hw_init();
+
+
 }
 
 int rle8_decode(uchar *ptr, bmp_image_t *bmap_rle8, ulong width_bmp, ulong height_bmp) {
@@ -473,6 +519,21 @@ int rle8_decode(uchar *ptr, bmp_image_t *bmap_rle8, ulong width_bmp, ulong heigh
 	return (0);
 }
 
+static int parse_bmp_info(ulong bmp_image)
+{
+	bmp_image_t *bmp = (bmp_image_t *)bmp_image;
+
+	if (!((bmp->header.signature[0] == 'B') &&
+		  (bmp->header.signature[1] == 'M'))) {
+		osd_loge("no valid bmp image at 0x%lx\n", bmp_image);
+		return 1;
+	}
+	g_pic_info.pic_width = le32_to_cpu(bmp->header.width);
+	g_pic_info.pic_height = le32_to_cpu(bmp->header.height);
+	g_pic_info.bpp = le16_to_cpu(bmp->header.bit_count);
+	return 0;
+}
+
 int video_display_bitmap(ulong bmp_image, int x, int y)
 {
 	struct vinfo_s *info = NULL;
@@ -496,45 +557,24 @@ int video_display_bitmap(ulong bmp_image, int x, int y)
 #endif
 	unsigned colors, bpix, bmp_bpix;
 	int lcd_line_length = (pwidth * NBITS(info->vl_bpix)) / 8;
-	char *layer_str = NULL;
 	int osd_index = -1;
 
-	layer_str = getenv("display_layer");
-	if (strcmp(layer_str, "osd0") == 0)
-		osd_index = 0;
-	else if (strcmp(layer_str, "osd1") == 0)
-		osd_index = 1;
-
-	if (!((bmp->header.signature[0] == 'B') &&
-	      (bmp->header.signature[1] == 'M'))) {
-		osd_loge("no valid bmp image at 0x%lx\n", bmp_image);
-		return 1;
-	}
-
-	width = le32_to_cpu(bmp->header.width);
-	height = le32_to_cpu(bmp->header.height);
-	bmp_bpix = le16_to_cpu(bmp->header.bit_count);
+	osd_index = get_osd_layer();
+	if (fb_gdev.mode != FULL_SCREEN_MODE)
+		if (parse_bmp_info(bmp_image))
+			return -1;
+	width = g_pic_info.pic_width;
+	height = g_pic_info.pic_height;
+	bmp_bpix = g_pic_info.bpp;
 	colors = 1 << bmp_bpix;
 	uchar *buffer_rgb = NULL;
 	bpix = NBITS(info->vl_bpix);
-
-	if ((x == -1) && (y == -1)) {
-		if ((width > pwidth) || (height > pheight)) {
-			x = 0;
-			y = 0;
-		} else {
-			x = (pwidth - width) / 2;
-			y = (pheight - height) / 2;
-		}
-	}
-
 	if ((bpix != 1) && (bpix != 8) && (bpix != 16) && (bpix != 24) &&
 	    (bpix != 32)) {
 		osd_loge("%d bit/pixel mode1, but BMP has %d bit/pixel\n",
 			 bpix, bmp_bpix);
 		return 1;
 	}
-
 	/* We support displaying 8bpp BMPs on 16bpp LCDs */
 	/*if (bpix != bmp_bpix && (bmp_bpix != 8 || bpix != 16)) {
 		osd_loge("%d bit/pixel mode2, but BMP has %d bit/pixel\n",
@@ -546,6 +586,25 @@ int video_display_bitmap(ulong bmp_image, int x, int y)
 	osd_logd("Display-bmp: %d x %d  with %d colors\n",
 		 (int)width, (int)height, (int)colors);
 
+	switch (fb_gdev.mode) {
+	case MIDDLE_MODE:
+		//if ((x == -1) && (y == -1)) {
+			if ((width > pwidth) || (height > pheight)) {
+				x = 0;
+				y = 0;
+			} else {
+				x = (pwidth - width) / 2;
+				y = (pheight - height) / 2;
+			}
+		//}
+		break;
+	case RECT_MODE:
+		break;
+	case FULL_SCREEN_MODE:
+		x = 0;
+		y = 0;
+		break;
+	}
 	/*
 	 *  BMP format for Monochrome assumes that the state of a
 	 * pixel is described on a per Bit basis, not per Byte.
@@ -558,18 +617,6 @@ int video_display_bitmap(ulong bmp_image, int x, int y)
 	 */
 	padded_line = (width & 0x3) ? ((width & ~0x3) + 4) : (width);
 
-#ifdef CONFIG_SPLASH_SCREEN_ALIGN
-	if (x == BMP_ALIGN_CENTER)
-		x = max(0, (pwidth - width) / 2);
-	else if (x < 0)
-		x = max(0, pwidth - width + x + 1);
-
-	if (y == BMP_ALIGN_CENTER)
-		y = max(0, (info->vl_row - height) / 2);
-	else if (y < 0)
-		y = max(0, info->vl_row - height + y + 1);
-#endif /* CONFIG_SPLASH_SCREEN_ALIGN */
-
 	if ((x + width) > pwidth)
 		width = pwidth - x;
 	if ((y + height) > pheight)
@@ -581,8 +628,8 @@ int video_display_bitmap(ulong bmp_image, int x, int y)
 	fb   = (uchar *)(info->vd_base +
 			 (y + height - 1) * lcd_line_length + x * fb_gdev.gdfBytesPP);
 
-	osd_logd("fb=0x%p; bmap=0x%p, width=%ld, height= %ld, lcd_line_length=%d, padded_line=%d\n",
-		 fb, bmap, width, height, lcd_line_length, padded_line);
+	osd_logd("fb=0x%p; bmap=0x%p, width=%ld, height= %ld, lcd_line_length=%d, padded_line=%d, fb_gdev.fb_width=%d, fb_gdev.fb_height=%d \n",
+		 fb, bmap, width, height, lcd_line_length, padded_line,fb_gdev.fb_width,fb_gdev.fb_height);
 
 	if (bmp_bpix == 8) {
 		/* decode of RLE8 */
@@ -679,14 +726,161 @@ int video_display_bitmap(ulong bmp_image, int x, int y)
 	buffer_rgb = NULL;
 	ptr_rgb = NULL;
 
-#if 0
-	flush_cache((unsigned long)info->vd_base,
-		    info->vl_col * info->vl_row * info->vl_bpix / 8);
-#else
 	flush_cache((unsigned long)info->vd_base,
 		    pheight * pwidth * info->vl_bpix / 8);
+	return (0);
+}
 
+int video_display_raw(ulong raw_image, int x, int y)
+{
+	struct vinfo_s *info = NULL;
+#if defined CONFIG_AML_VOUT
+	info = vout_get_current_vinfo();
 #endif
+	ushort i, j;
+	uchar *fb;
+	uchar *bmap = (uchar *)raw_image;
+	ushort padded_line;
+	unsigned long width, height;
+#ifdef CONFIG_OSD_SCALE_ENABLE
+	unsigned long pheight = fb_gdev.fb_height;
+	unsigned long pwidth = fb_gdev.fb_width;
+#else
+	unsigned long pheight = info->width;
+	unsigned long pwidth = info->height;
+#endif
+	unsigned colors, bpix, bmp_bpix;
+	int lcd_line_length = (pwidth * NBITS(info->vl_bpix)) / 8;
+	int osd_index = -1;
+
+	osd_index = get_osd_layer();
+
+	width = g_pic_info.pic_width;
+	height = g_pic_info.pic_height;
+	bmp_bpix = g_pic_info.bpp;
+	colors = 1 << bmp_bpix;
+	bpix = NBITS(info->vl_bpix);
+	if ((bpix != 1) && (bpix != 8) && (bpix != 16) && (bpix != 24) &&
+	    (bpix != 32)) {
+		osd_loge("%d bit/pixel mode1, but BMP has %d bit/pixel\n",
+			 bpix, bmp_bpix);
+		return 1;
+	}
+	/* We support displaying 8bpp BMPs on 16bpp LCDs */
+	/*if (bpix != bmp_bpix && (bmp_bpix != 8 || bpix != 16)) {
+		osd_loge("%d bit/pixel mode2, but BMP has %d bit/pixel\n",
+			 bpix,
+			 le16_to_cpu(bmp->header.bit_count));
+		return 1;
+	}*/
+
+	osd_logd("Display-bmp: %d x %d  with %d colors\n",
+		 (int)width, (int)height, (int)colors);
+
+	switch (fb_gdev.mode) {
+	case MIDDLE_MODE:
+		//if ((x == -1) && (y == -1)) {
+			if ((width > pwidth) || (height > pheight)) {
+				x = 0;
+				y = 0;
+			} else {
+				x = (pwidth - width) / 2;
+				y = (pheight - height) / 2;
+			}
+		//}
+		break;
+	case RECT_MODE:
+		break;
+	case FULL_SCREEN_MODE:
+		x = 0;
+		y = 0;
+		break;
+	}
+	/*
+	 *  BMP format for Monochrome assumes that the state of a
+	 * pixel is described on a per Bit basis, not per Byte.
+	 *  So, in case of Monochrome BMP we should align widths
+	 * on a byte boundary and convert them from Bit to Byte
+	 * units.
+	 *  Probably, PXA250 and MPC823 process 1bpp BMP images in
+	 * their own ways, so make the converting to be MCC200
+	 * specific.
+	 */
+	padded_line = (width & 0x3) ? ((width & ~0x3) + 4) : (width);
+
+	if ((x + width) > pwidth)
+		width = pwidth - x;
+	if ((y + height) > pheight)
+		height = pheight - y;
+
+	osd_enable_hw(osd_index, 1);
+
+	fb   = (uchar *)(info->vd_base + y * lcd_line_length + x * fb_gdev.gdfBytesPP);
+
+	osd_logd("fb=0x%p; bmap=0x%p, width=%ld, height= %ld, lcd_line_length=%d, padded_line=%d, fb_gdev.fb_width=%d, fb_gdev.fb_height=%d \n",
+		 fb, bmap, width, height, lcd_line_length, padded_line,fb_gdev.fb_width,fb_gdev.fb_height);
+
+	if (FULL_SCREEN_MODE == fb_gdev.mode) {
+		memcpy(fb, bmap, height * width * bmp_bpix / 8);
+	} else {
+		switch (bmp_bpix) {
+		case 16:
+			for (i = 0; i < height; ++i) {
+				for (j = 0; j < width; j++) {
+
+					*(fb++) = *(bmap++);
+					*(fb++) = *(bmap++);
+				}
+				bmap += (padded_line - width) * 2;
+				fb   += (lcd_line_length - width * 2);
+			}
+			break;
+		case 24:
+			if (bpix == 32) {
+				for (i = 0; i < height; ++i) {
+					for (j = 0; j < width; j++) {
+
+						*(fb++) = *(bmap++);
+						*(fb++) = *(bmap++);
+						*(fb++) = *(bmap++);
+						*(fb++) = 0xff;
+					}
+					bmap += (padded_line - width) * 4;
+					fb   += (lcd_line_length - width * 4);
+				}
+			} else {
+				for (i = 0; i < height; ++i) {
+					for (j = 0; j < width; j++) {
+
+						*(fb++) = *(bmap++);
+						*(fb++) = *(bmap++);
+						*(fb++) = *(bmap++);
+					}
+					bmap += (padded_line - width) * 3;
+					fb   += (lcd_line_length - width * 3);
+				}
+			}
+			break;
+		case 32:
+			for (i = 0; i < height; ++i) {
+				for (j = 0; j < width; j++) {
+
+					*(fb++) = *(bmap++);
+					*(fb++) = *(bmap++);
+					*(fb++) = *(bmap++);
+					*(fb++) = *(bmap++);
+				}
+				bmap += (padded_line - width) * 4;
+				fb   += (lcd_line_length - width * 4);
+			}
+			break;
+		default:
+			osd_loge("error: gdev.bpp %d, but raw.bpp %d\n", fb_gdev.gdfBytesPP, bmp_bpix);
+			return (-1);
+		}
+	}
+	flush_cache((unsigned long)info->vd_base,
+		    pheight * pwidth * info->vl_bpix / 8);
 	return (0);
 }
 
@@ -737,3 +931,149 @@ int video_scale_bitmap(void)
 	return (1);
 }
 #endif
+
+/*
+MIDDLE_MODE,RECT_MODE:
+	fixed framebuffer size get from uboot env.
+	bmp_image can be 0.
+FULL_SCREEN_MODE:
+	usd bmp size as framebuffer size;
+	 must set bmp_image;
+*/
+void img_mode_set(u32 display_mode)
+{
+	fb_gdev.mode = display_mode;
+}
+
+void img_addr_set(ulong pic_image)
+{
+	g_pic_info.pic_image = pic_image;
+}
+
+void img_type_set(u32 type)
+{
+	g_pic_info.type = type;
+}
+
+void img_raw_size_set(u32 raw_width, u32 raw_height, u32 raw_bpp)
+{
+		g_pic_info.pic_width = raw_width;
+		g_pic_info.pic_height = raw_height;
+		g_pic_info.bpp = raw_bpp;
+}
+
+static int img_raw_init(void)
+{
+	unsigned int display_mode;
+
+	if (img_video_init)
+		return 0;
+
+	display_mode = fb_gdev.mode;
+#if 0
+	if (display_mode == FULL_SCREEN_MODE) {
+		g_pic_info.pic_width = env_strtoul("pic_width", 10);
+		g_pic_info.pic_height = env_strtoul("pic_height", 10);
+		g_pic_info.bpp = env_strtoul("pic_bpp", 10);
+	}
+#endif
+	if (NULL == video_hw_init(display_mode)) {
+		printf("Initialize video device failed!\n");
+		return -1;
+	}
+	osd_logd2("raw_width=%d, raw_height=%d, raw_bpp=%d\n", g_pic_info.pic_width, g_pic_info.pic_height, g_pic_info.bpp);
+	img_video_init = 1;
+	return 0;
+}
+
+static int img_bmp_init(void)
+{
+	unsigned int display_mode;
+
+	if (img_video_init)
+		return 0;
+	display_mode = fb_gdev.mode;
+	if (display_mode == FULL_SCREEN_MODE) {
+		if (g_pic_info.pic_image != 0)
+			if (parse_bmp_info(g_pic_info.pic_image))
+				return -1;
+	}
+	if (NULL == video_hw_init(display_mode)) {
+		printf("Initialize video device failed!\n");
+		return -1;
+	}
+	img_video_init = 1;
+	return 0;
+}
+
+int img_osd_init(void)
+{
+	int ret = -1;
+
+	if (g_pic_info.type == BMP_PIC)
+		ret = img_bmp_init();
+	else if(g_pic_info.type == RAW_PIC)
+		ret = img_raw_init();
+	return ret;
+}
+
+int img_bmp_display(ulong bmp_image, int x, int y)
+{
+	return video_display_bitmap(bmp_image, x, y);
+}
+
+int img_raw_display(ulong raw_image, int x, int y)
+{
+	return video_display_raw(raw_image, x, y);
+}
+
+int img_display(ulong bmp_image, int x, int y)
+{
+	int ret = -1;
+	if (g_pic_info.type == BMP_PIC)
+		ret = img_bmp_display(bmp_image, x, y);
+	else if(g_pic_info.type == RAW_PIC)
+		ret = img_raw_display(bmp_image, x, y);
+	return ret;
+}
+
+int img_scale(void)
+{
+	int ret = -1;
+
+	if (!img_video_init) {
+		printf("fastboot osd not enabled!\n");
+	}
+#ifdef CONFIG_OSD_SCALE_ENABLE
+	ret = video_scale_bitmap();
+#endif
+	return ret;
+}
+
+int img_osd_clear(void)
+{
+	if (!img_video_init) {
+		printf("Please enable osd device first!\n");
+		return 1;
+	}
+
+#ifdef CONFIG_OSD_SCALE_ENABLE
+	memset((void *)(long long)(fb_gdev.frameAdrs), 0,
+	       (fb_gdev.fb_width * fb_gdev.fb_height)*fb_gdev.gdfBytesPP);
+
+	flush_cache(fb_gdev.frameAdrs,
+		    ((fb_gdev.fb_width * fb_gdev.fb_height)*fb_gdev.gdfBytesPP));
+#else
+	memset((void *)(long long)(fb_gdev.frameAdrs), 0,
+	       (fb_gdev.winSizeX * fb_gdev.winSizeY)*fb_gdev.gdfBytesPP);
+
+	flush_cache(fb_gdev.frameAdrs,
+		    ((fb_gdev.winSizeX * fb_gdev.winSizeY)*fb_gdev.gdfBytesPP));
+#endif
+	return 0;
+}
+
+void img_osd_uninit(void)
+{
+	img_video_init = 0;
+}
