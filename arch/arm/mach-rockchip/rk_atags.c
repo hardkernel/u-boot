@@ -147,6 +147,31 @@ void atags_destroy(void)
 
 #if (defined(CONFIG_DEBUG_ATAGS) || defined(DEBUG)) && \
     !defined(CONFIG_SPL_BUILD) && !defined(CONFIG_TPL_BUILD)
+void atags_stat(void)
+{
+	u32 in_use = 0, in_available = 0;
+	u32 start = ATAGS_PHYS_BASE, end = ATAGS_PHYS_BASE + ATAGS_SIZE;
+	struct tag *t;
+
+	for_each_tag(t, (struct tag *)ATAGS_PHYS_BASE) {
+		if (bad_magic(t->hdr.magic)) {
+			printf("%s: find unknown magic(%x)\n",
+			       __func__, t->hdr.magic);
+			return;
+		}
+
+		in_use += (t->hdr.size << 2);
+	}
+
+	in_available = ATAGS_SIZE - in_use;
+
+	printf("ATAGS state:\n");
+	printf("              addr = 0x%08x ~ 0x%08x\n", start, end);
+	printf("        Total size = 0x%08x\n", ATAGS_SIZE);
+	printf("       in use size = 0x%08x\n", in_use);
+	printf("    available size = 0x%08x\n", in_available);
+}
+
 void atags_print_tag(struct tag *t)
 {
 	u32 i;
@@ -297,6 +322,7 @@ void atags_test(void)
 	atags_set_tag(ATAG_RAM_PARTITION, &t_ram_param);
 
 	atags_print_all_tags();
+	atags_stat();
 }
 
 static int dump_atags(cmd_tbl_t *cmdtp, int flag,
@@ -315,4 +341,5 @@ U_BOOT_CMD(
 void inline atags_print_tag(struct tag *t) {}
 void inline atags_print_all_tags(void) {}
 void inline atags_test(void) {}
+void atags_stat(void) {};
 #endif

@@ -164,4 +164,7 @@ void atags_print_all_tags(void);
 /* An atags example test */
 void atags_test(void);
 
+/* Atags stat */
+void atags_stat(void);
+
 #endif
