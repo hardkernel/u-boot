@@ -42,42 +42,18 @@
 /* ********************************
  * register access api
  * ********************************* */
-extern enum vpu_chip_e vpu_chip_type;
-
 static inline unsigned int vpu_hiu_read(unsigned int _reg)
 {
 	unsigned int val = 0;
 
-	switch (vpu_chip_type) {
-	case VPU_CHIP_M8:
-	case VPU_CHIP_M8B:
-	case VPU_CHIP_M8M2:
-	case VPU_CHIP_G9TV:
-	case VPU_CHIP_G9BB:
-		val = *(volatile unsigned int *)(REG_ADDR_CBUS(_reg));
-		break;
-	default:
-		val = *(volatile unsigned int *)(REG_ADDR_HIU(_reg));
-		break;
-	}
+	val = *(volatile unsigned int *)(REG_ADDR_HIU(_reg));
 
 	return val;
 };
 
 static inline void vpu_hiu_write(unsigned int _reg, unsigned int _value)
 {
-	switch (vpu_chip_type) {
-	case VPU_CHIP_M8:
-	case VPU_CHIP_M8B:
-	case VPU_CHIP_M8M2:
-	case VPU_CHIP_G9TV:
-	case VPU_CHIP_G9BB:
-		*(volatile unsigned int *)REG_ADDR_CBUS(_reg) = (_value);
-		break;
-	default:
-		*(volatile unsigned int *)REG_ADDR_HIU(_reg) = (_value);
-		break;
-	}
+	*(volatile unsigned int *)REG_ADDR_HIU(_reg) = (_value);
 };
 
 static inline void vpu_hiu_setb(unsigned int _reg, unsigned int _value,
