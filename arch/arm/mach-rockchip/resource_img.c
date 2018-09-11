@@ -384,6 +384,7 @@ int rockchip_read_resource_file(void *buf, const char *name,
 #define MAX_ADC_CH_NR		10
 #define MAX_GPIO_NR		10
 
+#ifdef CONFIG_ADC
 /*
  * How to make it works ?
  *
@@ -472,6 +473,12 @@ static int rockchip_read_dtb_by_adc(const char *file_name)
 
 	return found ? 0 : -ENOENT;
 }
+#else
+static int rockchip_read_dtb_by_adc(const char *file_name)
+{
+	return  -ENOENT;
+}
+#endif
 
 static int gpio_parse_base_address(fdt_addr_t *gpio_base_addr)
 {
