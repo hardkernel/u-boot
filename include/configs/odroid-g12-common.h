@@ -187,14 +187,25 @@
                 "fi; " \
             "done; " \
             "vout output ${outputmode};\0" \
-	"set_bootargs_rootfs_from_2ndstorage="\
-		"setenv bootargs ${bootargs} root=/dev/mmcblk1p2 rootfstype=ext4 init=/sbin/init\0"\
-	"booting_from_spi="\
-		"run set_bootargs_rootfs_from_2ndstorage; "\
+	"set_spi_params="\
+		"setenv preloadaddr 0x3000000; "\
+		"setenv start_uboot 0x0; setenv start_kernel 0xf8000; setenv start_dtb 0x482400; setenv start_initrd 0x48FE00; "\
+		"setenv size_kernel 0x38A400; setenv size_dtb 0xda00; setenv size_initrd 0x370200;\0"\
+	"fusing_spi_from_sd="\
+		"run set_spi_params; "\
 		"sf probe; "\
-		"sf read 0x3000000 0x190000 0x900000; unzip 0x3000000 ${loadaddr}; "\
-		"sf read ${dtb_mem_addr} 0xA90000 0x10000; "\
-		"fatload mmc 0 ${initrd_high} uInitrd; "\
+		"sf erase 0x0 0x800000; "\
+		"fatload mmc 0 ${loadaddr} u-boot.bin; sf write ${loadaddr} ${start_uboot} ${filesize}; "\
+		"fatload mmc 0 ${loadaddr} Image.gz; sf write ${loadaddr} ${start_kernel} ${filesize}; "\
+		"fatload mmc 0 ${loadaddr} s922d_odroidn2.dtb; sf write ${loadaddr} ${start_dtb} ${filesize}; "\
+		"fatload mmc 0 ${loadaddr} uInitrd.igz; sf write ${loadaddr} ${start_initrd} ${filesize}\0"\
+	"booting_from_spi="\
+		"setenv bootargs ${initargs} console=tty0 logo=osd0,loaded,0x3d800000 vout=1080p60hz,enable hdmimode=1080p60hz osd_reverse=0 video_reverse=0; "\
+		"run set_spi_params; "\
+		"sf probe; "\
+		"sf read ${preloadaddr} ${start_kernel} ${size_kernel}; unzip ${preloadaddr} ${loadaddr}; "\
+		"sf read ${dtb_mem_addr} ${start_dtb} ${size_dtb}; "\
+		"sf read ${initrd_high} ${start_initrd} ${size_initrd}; "\
 		"booti ${loadaddr} ${initrd_high} ${dtb_mem_addr};\0"\
 
 #define CONFIG_PREBOOT  \
