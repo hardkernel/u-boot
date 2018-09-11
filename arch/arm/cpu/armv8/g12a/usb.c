@@ -112,10 +112,10 @@ void set_usb_phy_tuning_1(int port)
 	else
 		phy_reg_base = USB_REG_B;
 
-	(*(volatile uint32_t *)(phy_reg_base + 0x10)) = 0xfff;
-	(*(volatile uint32_t *)(phy_reg_base + 0x50)) = 0xfe18;
-	(*(volatile uint32_t *)(phy_reg_base + 0x38)) = 0xe0004;
-	(*(volatile uint32_t *)(phy_reg_base + 0x34)) = 0xc8000;
+	(*(volatile uint32_t *)(phy_reg_base + 0x10)) = USB_G12x_PHY_PLL_SETTING_2;
+	(*(volatile uint32_t *)(phy_reg_base + 0x50)) = USB_G12x_PHY_PLL_SETTING_1;
+	(*(volatile uint32_t *)(phy_reg_base + 0x38)) = USB_G12x_PHY_PLL_SETTING_4;
+	(*(volatile uint32_t *)(phy_reg_base + 0x34)) = USB_G12x_PHY_PLL_SETTING_3;
 }
 #endif
 

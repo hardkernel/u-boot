@@ -185,10 +185,10 @@ void set_usb_phy21_tuning_update(void)
 {
 	unsigned long phy_reg_base = USB_REG_B;
 
-	(*(volatile uint32_t *)(phy_reg_base + 0x10)) = 0xfff;
-	(*(volatile uint32_t *)(phy_reg_base + 0x50)) = 0xfe18;
-	(*(volatile uint32_t *)(phy_reg_base + 0x38)) = 0xe000c;
-	(*(volatile uint32_t *)(phy_reg_base + 0x34)) = 0xc8000;
+	(*(volatile uint32_t *)(phy_reg_base + 0x10)) = USB_G12x_PHY_PLL_SETTING_2;
+	(*(volatile uint32_t *)(phy_reg_base + 0x50)) = USB_G12x_PHY_PLL_SETTING_1;
+	(*(volatile uint32_t *)(phy_reg_base + 0x38)) = USB_G12x_PHY_PLL_SETTING_5;
+	(*(volatile uint32_t *)(phy_reg_base + 0x34)) = USB_G12x_PHY_PLL_SETTING_3;
 }
 
 void set_usb_phy21_tuning_update_reset(void)
@@ -196,7 +196,7 @@ void set_usb_phy21_tuning_update_reset(void)
 	unsigned long phy_reg_base = USB_REG_B;
 
 	(*(volatile uint32_t *)(phy_reg_base + 0x38)) = 0x0;
-	(*(volatile uint32_t *)(phy_reg_base + 0x34)) = 0xc8000;
+	(*(volatile uint32_t *)(phy_reg_base + 0x34)) = USB_G12x_PHY_PLL_SETTING_3;
 }
 
 #endif
