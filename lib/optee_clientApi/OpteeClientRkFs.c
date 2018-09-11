@@ -161,21 +161,23 @@ extern unsigned long blk_dread(struct blk_desc *block_dev, lbaint_t start,
 extern unsigned long blk_dwrite(struct blk_desc *block_dev, lbaint_t start,
 			 lbaint_t blkcnt, const void *buffer);
 
+static struct blk_desc *dev_desc = NULL;
+static disk_partition_t part_info;
 static int rkss_read_multi_sections(unsigned char *data, unsigned long index, unsigned int num)
 {
 	unsigned long ret;
-	struct blk_desc *dev_desc;
-	disk_partition_t part_info;
 
-	dev_desc = rockchip_get_bootdev();
-	if (!dev_desc) {
-		printf("%s: Could not find device\n", __func__);
-		return -1;
-	}
+	if (dev_desc == NULL) {
+		dev_desc = rockchip_get_bootdev();
+		if (!dev_desc) {
+			printf("%s: Could not find device\n", __func__);
+			return -1;
+		}
 
-	if (part_get_info_by_name(dev_desc, "security", &part_info) < 0) {
-		printf("Could not find security partition\n");
-		return -1;
+		if (part_get_info_by_name(dev_desc, "security", &part_info) < 0) {
+			printf("Could not find security partition\n");
+			return -1;
+		}
 	}
 	ret = blk_dread(dev_desc, part_info.start + index, num, data);
 	if (ret != num) {
@@ -193,18 +195,18 @@ static int rkss_read_section(struct rk_secure_storage *rkss)
 static int rkss_write_multi_sections(unsigned char *data, unsigned long index, unsigned int num)
 {
 	unsigned long ret;
-	struct blk_desc *dev_desc;
-	disk_partition_t part_info;
 
-	dev_desc = rockchip_get_bootdev();
-	if (!dev_desc) {
-		printf("%s: Could not find device\n", __func__);
-		return -1;
-	}
+	if (dev_desc == NULL) {
+		dev_desc = rockchip_get_bootdev();
+		if (!dev_desc) {
+			printf("%s: Could not find device\n", __func__);
+			return -1;
+		}
 
-	if (part_get_info_by_name(dev_desc, "security", &part_info) < 0) {
-		printf("Could not find security partition\n");
-		return -1;
+		if (part_get_info_by_name(dev_desc, "security", &part_info) < 0) {
+			printf("Could not find security partition\n");
+			return -1;
+		}
 	}
 	ret = blk_dwrite(dev_desc, part_info.start + index, num, data);
 	if (ret != num) {
@@ -222,18 +224,18 @@ static int rkss_write_section(struct rk_secure_storage *rkss)
 static int rkss_read_patition_tables(unsigned char *data)
 {
 	unsigned long ret;
-	struct blk_desc *dev_desc;
-	disk_partition_t part_info;
 
-	dev_desc = rockchip_get_bootdev();
-	if (!dev_desc) {
-		printf("%s: Could not find device\n", __func__);
-		return -1;
-	}
+	if (dev_desc == NULL) {
+		dev_desc = rockchip_get_bootdev();
+		if (!dev_desc) {
+			printf("%s: Could not find device\n", __func__);
+			return -1;
+		}
 
-	if (part_get_info_by_name(dev_desc, "security", &part_info) < 0) {
-		printf("Could not find security partition\n");
-		return -1;
+		if (part_get_info_by_name(dev_desc, "security", &part_info) < 0) {
+			printf("Could not find security partition\n");
+			return -1;
+		}
 	}
 	ret = blk_dread(dev_desc, part_info.start, RKSS_PARTITION_TABLE_COUNT, data);
 	if (ret != RKSS_PARTITION_TABLE_COUNT) {
