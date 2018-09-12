@@ -43,6 +43,14 @@
 	"ramdisk_addr_r=0x0a200000\0"
 
 #include <config_distro_bootcmd.h>
+
+#ifdef CONFIG_DM_RAMDISK
+#undef RKIMG_DET_BOOTDEV
+#define RKIMG_DET_BOOTDEV \
+	"rkimg_bootdev=" \
+	"setenv devtype ramdisk; setenv devnum 0; \0"
+#endif
+
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	ENV_MEM_LAYOUT_SETTINGS \
 	"partitions=" PARTS_DEFAULT \
