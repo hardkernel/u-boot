@@ -588,9 +588,140 @@ static ulong rk3128_clk_set_rate(struct clk *clk, ulong rate)
 	return ret;
 }
 
+#define ROCKCHIP_MMC_DELAY_SEL		BIT(10)
+#define ROCKCHIP_MMC_DEGREE_MASK	0x3
+#define ROCKCHIP_MMC_DELAYNUM_OFFSET	2
+#define ROCKCHIP_MMC_DELAYNUM_MASK	(0xff << ROCKCHIP_MMC_DELAYNUM_OFFSET)
+
+#define PSECS_PER_SEC 1000000000000LL
+/*
+ * Each fine delay is between 44ps-77ps. Assume each fine delay is 60ps to
+ * simplify calculations. So 45degs could be anywhere between 33deg and 57.8deg.
+ */
+#define ROCKCHIP_MMC_DELAY_ELEMENT_PSEC 60
+
+int rk3128_mmc_get_phase(struct clk *clk)
+{
+	struct rk3128_clk_priv *priv = dev_get_priv(clk->dev);
+	struct rk3128_cru *cru = priv->cru;
+	u32 raw_value, delay_num;
+	u16 degrees = 0;
+	ulong rate;
+
+	rate = rk3128_clk_get_rate(clk);
+
+	if (rate < 0)
+		return rate;
+
+	if (clk->id == SCLK_EMMC_SAMPLE)
+		raw_value = readl(&cru->cru_emmc_con[1]);
+	else if (clk->id == SCLK_SDMMC_SAMPLE)
+		raw_value = readl(&cru->cru_sdmmc_con[1]);
+	else
+		raw_value = readl(&cru->cru_sdio_con[1]);
+
+	raw_value >>= 1;
+	degrees = (raw_value & ROCKCHIP_MMC_DEGREE_MASK) * 90;
+
+	if (raw_value & ROCKCHIP_MMC_DELAY_SEL) {
+		/* degrees/delaynum * 10000 */
+		unsigned long factor = (ROCKCHIP_MMC_DELAY_ELEMENT_PSEC / 10) *
+					36 * (rate / 1000000);
+
+		delay_num = (raw_value & ROCKCHIP_MMC_DELAYNUM_MASK);
+		delay_num >>= ROCKCHIP_MMC_DELAYNUM_OFFSET;
+		degrees += DIV_ROUND_CLOSEST(delay_num * factor, 10000);
+	}
+
+	return degrees % 360;
+}
+
+int rk3128_mmc_set_phase(struct clk *clk, u32 degrees)
+{
+	struct rk3128_clk_priv *priv = dev_get_priv(clk->dev);
+	struct rk3128_cru *cru = priv->cru;
+	u8 nineties, remainder, delay_num;
+	u32 raw_value, delay;
+	ulong rate;
+
+	rate = rk3128_clk_get_rate(clk);
+
+	if (rate < 0)
+		return rate;
+
+	nineties = degrees / 90;
+	remainder = (degrees % 90);
+
+	/*
+	 * Convert to delay; do a little extra work to make sure we
+	 * don't overflow 32-bit / 64-bit numbers.
+	 */
+	delay = 10000000; /* PSECS_PER_SEC / 10000 / 10 */
+	delay *= remainder;
+	delay = DIV_ROUND_CLOSEST(delay, (rate / 1000) * 36 *
+				(ROCKCHIP_MMC_DELAY_ELEMENT_PSEC / 10));
+
+	delay_num = (u8)min_t(u32, delay, 255);
+
+	raw_value = delay_num ? ROCKCHIP_MMC_DELAY_SEL : 0;
+	raw_value |= delay_num << ROCKCHIP_MMC_DELAYNUM_OFFSET;
+	raw_value |= nineties;
+
+	raw_value <<= 1;
+	if (clk->id == SCLK_EMMC_SAMPLE)
+		writel(raw_value | 0xffff0000, &cru->cru_emmc_con[1]);
+	else if (clk->id == SCLK_SDMMC_SAMPLE)
+		writel(raw_value | 0xffff0000, &cru->cru_sdmmc_con[1]);
+	else
+		writel(raw_value | 0xffff0000, &cru->cru_sdio_con[1]);
+
+	debug("mmc set_phase(%d) delay_nums=%u reg=%#x actual_degrees=%d\n",
+	      degrees, delay_num, raw_value, rk3128_mmc_get_phase(clk));
+
+	return 0;
+}
+
+static int rk3128_clk_get_phase(struct clk *clk)
+{
+	int ret;
+
+	debug("%s %ld\n", __func__, clk->id);
+	switch (clk->id) {
+	case SCLK_EMMC_SAMPLE:
+	case SCLK_SDMMC_SAMPLE:
+	case SCLK_SDIO_SAMPLE:
+		ret = rk3128_mmc_get_phase(clk);
+		break;
+	default:
+		return -ENOENT;
+	}
+
+	return ret;
+}
+
+static int rk3128_clk_set_phase(struct clk *clk, int degrees)
+{
+	int ret;
+
+	debug("%s %ld\n", __func__, clk->id);
+	switch (clk->id) {
+	case SCLK_EMMC_SAMPLE:
+	case SCLK_SDMMC_SAMPLE:
+	case SCLK_SDIO_SAMPLE:
+		ret = rk3128_mmc_set_phase(clk, degrees);
+		break;
+	default:
+		return -ENOENT;
+	}
+
+	return ret;
+}
+
 static struct clk_ops rk3128_clk_ops = {
 	.get_rate	= rk3128_clk_get_rate,
 	.set_rate	= rk3128_clk_set_rate,
+	.get_phase	= rk3128_clk_get_phase,
+	.set_phase	= rk3128_clk_set_phase,
 };
 
 static int rk3128_clk_ofdata_to_platdata(struct udevice *dev)
