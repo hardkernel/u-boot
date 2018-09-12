@@ -1636,3 +1636,57 @@
 #define VPU_RDARB_MODE_L1C2                        (0x2799)
 #define VPU_RDARB_MODE_L2C1                        (0x279d)
 #define VPU_WRARB_MODE_L2C1                        (0x27a2)
+
+//========================================================================
+//  VI_HIST_SPL register    (16'h2e00 - 16'h2eff)
+//========================================================================
+//`define VI_HIST_SPL_VCBUS_BASE                   8'h2e
+//
+// Reading file:  vi_hist_spl_reg.h
+//
+// synopsys translate_off
+// synopsys translate_on
+// ----------------------------
+// VI_HIST_SPL 0x2e
+// ----------------------------
+// -----------------------------------------------
+// CBUS_BASE:  VI_HIST_SPL_VCBUS_BASE = 0x2e
+// -----------------------------------------------
+//BIT 14: 34bin only, 0&255 and other 32bins
+//Bit 13:11 hist_din_sel, 00: from vdin0 dout,  1: from vdin1, 2: from nr dout, 3: di output, 4: vpp output, 5: vd1_din, 6: vd2_din, 7:osd1_dout
+//Bit 10:8   hist_din_comp_mux, mux of [29:22], [19:12], [9:2] for hist detect
+//Bit 7:5   hist_dnlp_low   the real pixels in each bins got by VI_DNLP_HISTXX should multiple with 2^(dnlp_low+3)
+//Bit 3:2   hist_din_sel    the source used for hist statistics.  00: from matrix0 dout,  01: from vsc_dout, 10: from matrix1 dout, 11: form matrix1 din
+//Bit 1     hist_win_en     1'b0: hist used for full picture; 1'b1: hist used for pixels within hist window
+//Bit 0     hist_spl_en     1'b0: disable hist readback; 1'b1: enable hist readback
+#define   VI_HIST_CTRL                             (0x2e00)
+#define P_VI_HIST_CTRL                             (volatile unsigned int *)((0x2e00  << 2) + 0xff900000)
+//Bit 28:16 hist_hstart  horizontal start value to define hist window
+//Bit 12:0  hist_hend    horizontal end value to define hist window
+#define   VI_HIST_H_START_END                      (0x2e01)
+#define P_VI_HIST_H_START_END                      (volatile unsigned int *)((0x2e01  << 2) + 0xff900000)
+//Bit 28:16 hist_vstart  vertical start value to define hist window
+//Bit 12:0  hist_vend    vertical end value to define hist window
+#define   VI_HIST_V_START_END                      (0x2e02)
+#define P_VI_HIST_V_START_END                      (volatile unsigned int *)((0x2e02  << 2) + 0xff900000)
+//Bit 15:8  hist_max    maximum value
+//Bit 7:0   hist_min    minimum value
+//read only
+#define   VI_HIST_MAX_MIN                          (0x2e03)
+#define P_VI_HIST_MAX_MIN                          (volatile unsigned int *)((0x2e03  << 2) + 0xff900000)
+//Bit 31:0  hist_spl_rd
+//counts for the total luma value
+//read only
+#define   VI_HIST_SPL_VAL                          (0x2e04)
+#define P_VI_HIST_SPL_VAL                          (volatile unsigned int *)((0x2e04  << 2) + 0xff900000)
+//Bit 21:0  hist_spl_pixel_count
+//counts for the total calculated pixels
+//read only
+#define   VI_HIST_SPL_PIX_CNT                      (0x2e05)
+#define P_VI_HIST_SPL_PIX_CNT                      (volatile unsigned int *)((0x2e05  << 2) + 0xff900000)
+//Bit 31:0  hist_chroma_sum
+//counts for the total chroma value
+//read only
+#define   VI_HIST_CHROMA_SUM                       (0x2e06)
+#define P_VI_HIST_CHROMA_SUM                       (volatile unsigned int *)((0x2e06  << 2) + 0xff900000)
+

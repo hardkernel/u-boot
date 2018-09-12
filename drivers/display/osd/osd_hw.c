@@ -2467,6 +2467,31 @@ static void osd2_update_disp_3d_mode(void)
 	osd_hw.mode_3d[OSD2].left_right ^= 1;
 }
 
+void osd_hist_enable(u32 osd_index)
+{
+	if (OSD1 == osd_index) {
+		VSYNCOSD_WR_MPEG_REG(VI_HIST_CTRL, 0x1801);
+	} else if (OSD2 == osd_index) {
+		VSYNCOSD_WR_MPEG_REG(VI_HIST_CTRL, 0x2001);
+	} else {
+		osd_loge("osd%d is not supported.\n", osd_index);
+	}
+	osd_logd("VI_HIST_CTRL = %x\n", VSYNCOSD_RD_MPEG_REG(VI_HIST_CTRL));
+}
+
+int osd_get_hist_stat(u32 *hist_result)
+{
+	hist_result[0] = VSYNCOSD_RD_MPEG_REG(VI_HIST_MAX_MIN);
+	hist_result[1] = VSYNCOSD_RD_MPEG_REG(VI_HIST_SPL_VAL);
+	hist_result[2] = VSYNCOSD_RD_MPEG_REG(VI_HIST_SPL_PIX_CNT);
+	hist_result[3] = VSYNCOSD_RD_MPEG_REG(VI_HIST_CHROMA_SUM);
+
+	osd_logd("osd hist stat result:0x%x, 0x%x, 0x%x, 0x%x\n",
+		hist_result[0], hist_result[1],
+		hist_result[2], hist_result[3]);
+	return 0;
+}
+
 void osd_init_hw(void)
 {
 	u32 group, idx, data32, data2;
