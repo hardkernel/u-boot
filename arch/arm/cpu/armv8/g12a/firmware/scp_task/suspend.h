@@ -35,7 +35,7 @@ typedef unsigned int uint32_t;
 #define	AUTO_WAKEUP			7
 #define CEC_WAKEUP		8
 #define	REMOTE_CUS_WAKEUP		9
-#define ETH_PHY_WAKEUP      10
+#define ETH_PMT_WAKEUP      10
 #define CECB_WAKEUP		11
 #define ETH_PHY_GPIO    12
 /* wake up source*/
@@ -48,7 +48,7 @@ typedef unsigned int uint32_t;
 #define POWER_KEY_WAKEUP_SRC	(1<<6)
 #define AUTO_WAKEUP_SRC	(1<<7)
 #define CEC_WAKEUP_SRC	(1<<8)
-#define ETH_PHY_WAKEUP_SRC (1<<9)
+#define ETH_PMT_WAKEUP_SRC (1<<9)
 #define CECB_WAKEUP_SRC    (1<<10)
 #define ETH_PHY_GPIO_SRC   (1<<12)
 
@@ -88,6 +88,7 @@ enum {
 	IRQ_AO_TIMERA,
 	IRQ_ETH_PHY,
 	IRQ_AO_CECB,
+	IRQ_ETH_PTM,
 	IRQ_VRTC = 31,
 	WAKE_UP_MAX = 32,
 };

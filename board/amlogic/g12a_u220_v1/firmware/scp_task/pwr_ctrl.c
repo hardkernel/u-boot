@@ -85,8 +85,7 @@ void get_wakeup_source(void *response, unsigned int suspend_from)
 
 	p->status = RESPONSE_OK;
 	val = (POWER_KEY_WAKEUP_SRC | AUTO_WAKEUP_SRC | REMOTE_WAKEUP_SRC |
-	       ETH_PHY_WAKEUP_SRC | BT_WAKEUP_SRC | ETH_PHY_GPIO_SRC
-	       | CECB_WAKEUP_SRC);
+	       BT_WAKEUP_SRC | ETH_PHY_GPIO_SRC | CECB_WAKEUP_SRC);
 
 	p->sources = val;
 
@@ -157,6 +156,11 @@ static unsigned int detect_key(unsigned int suspend_from)
 			if (!(readl(PREG_PAD_GPIO4_I) & (0x01 << 14))
 					&& (readl(PREG_PAD_GPIO4_EN_N) & (0x01 << 14)))
 				exit_reason = ETH_PHY_GPIO;
+		}
+
+		if (irq[IRQ_ETH_PTM] == IRQ_ETH_PMT_NUM) {
+			irq[IRQ_ETH_PTM]= 0xFFFFFFFF;
+			exit_reason = ETH_PMT_WAKEUP;
 		}
 
 		if (exit_reason)

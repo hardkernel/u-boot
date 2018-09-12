@@ -96,7 +96,7 @@ void get_wakeup_source(void *response, unsigned int suspend_from)
 
 	p->status = RESPONSE_OK;
 	val = (POWER_KEY_WAKEUP_SRC | AUTO_WAKEUP_SRC | REMOTE_WAKEUP_SRC |
-	       ETH_PHY_WAKEUP_SRC | BT_WAKEUP_SRC);
+	      BT_WAKEUP_SRC);
 
 	p->sources = val;
 	p->gpio_info_count = i;
@@ -146,6 +146,11 @@ static unsigned int detect_key(unsigned int suspend_from)
 			} else {
 				adc_key_cnt = 0;
 			}
+		}
+
+		if (irq[IRQ_ETH_PTM] == IRQ_ETH_PMT_NUM) {
+			irq[IRQ_ETH_PTM]= 0xFFFFFFFF;
+			exit_reason = ETH_PMT_WAKEUP;
 		}
 
 		if (exit_reason)
