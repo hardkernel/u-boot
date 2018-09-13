@@ -288,6 +288,16 @@ config ROCKCHIP_RK1808
 	  The Rockchip RK1808 is a ARM-based Soc which embedded with dual
 	  Cortex-A35.
 
+if ROCKCHIP_RK1808
+
+config COPROCESSOR_RK1808
+	bool "RK1808 coprocessor"
+	help
+	  This indicates the RK1808 is working as a coprocessor for another
+	  more powerful SoC.
+
+endif
+
 config ROCKCHIP_RV1108
 	bool "Support Rockchip RV1108"
 	select CPU_V7
@@ -508,7 +518,6 @@ config ROCKCHIP_PRELOADER_ATAGS
 	  This enable support Rockchip atags among pre-loaders, i.e. ddr, miniloader, ATF,
 	  tos, U-Boot, etc. It delivers boot and configure information, shared with pre-loaders
 	  and finally ends with U-Boot.
-
 
 config GICV2
 	bool "ARM GICv2"
