@@ -58,5 +58,6 @@ u32 ftl_read(u8 lun, u32 start, u32 blkcnt, void *buffer);
 u32 ftl_discard(u8 lun, u32 start, u32 blkcnt);
 u32 ftl_get_density(u8 lun);
 int rk_ftl_init(u32 *reg_base);
-
+u32 ftl_vendor_read(u32 index, u32 nsec, void *buf);
+u32 ftl_vendor_write(u32 index, u32 nsec, void *buf);
 #endif /* __DRIVER_RKNAND_H__ */
