@@ -48,6 +48,7 @@ static int do_rsvmem_check(cmd_tbl_t *cmdtp, int flag, int argc,
 	int ret = 0;
 	char *temp_env = NULL;
 	int rsvmemtype = RSVMEM_NONE;
+	unsigned int aarch32 = 0;
 
 	rsvmem_dbg("reserved memory check!\n");
 	data = readl(P_AO_SEC_GP_CFG3);
@@ -72,6 +73,17 @@ static int do_rsvmem_check(cmd_tbl_t *cmdtp, int flag, int argc,
 	}
 
 	memset(cmdbuf, 0, sizeof(cmdbuf));
+	sprintf(cmdbuf, "fdt get value temp_env / \\#address-cells;");
+	ret = run_command(cmdbuf, 0);
+	if (ret != 0) {
+		rsvmem_err("fdt get size #address-cells failed.\n");
+		return -2;
+	}
+	temp_env = getenv("temp_env");
+	if (temp_env && !strcmp(temp_env, "0x01000000"))
+		aarch32 = 1;
+
+	memset(cmdbuf, 0, sizeof(cmdbuf));
 	sprintf(cmdbuf, "fdt get value env_compatible /reserved-memory/linux,secmon compatible;");
 	ret = run_command(cmdbuf, 0);
 	if (ret != 0) {
@@ -94,7 +106,11 @@ static int do_rsvmem_check(cmd_tbl_t *cmdtp, int flag, int argc,
 	if ((bl31_rsvmem_size > 0) && (bl31_rsvmem_start > 0)) {
 		if (rsvmemtype == RSVMEM_RESERVED) {
 			memset(cmdbuf, 0, sizeof(cmdbuf));
-			sprintf(cmdbuf, "fdt set /reserved-memory/linux,secmon reg <0x0 0x%x 0x0 0x%x>;",
+			if (aarch32)
+				sprintf(cmdbuf, "fdt set /reserved-memory/linux,secmon reg <0x%x 0x%x>;",
+					bl31_rsvmem_start, bl31_rsvmem_size);
+			else
+				sprintf(cmdbuf, "fdt set /reserved-memory/linux,secmon reg <0x0 0x%x 0x0 0x%x>;",
 					bl31_rsvmem_start, bl31_rsvmem_size);
 			rsvmem_dbg("CMD: %s\n", cmdbuf);
 			ret = run_command(cmdbuf, 0);
@@ -105,7 +121,11 @@ static int do_rsvmem_check(cmd_tbl_t *cmdtp, int flag, int argc,
 		}
 		if (rsvmemtype == RSVMEM_CMA) {
 			memset(cmdbuf, 0, sizeof(cmdbuf));
-			sprintf(cmdbuf, "fdt set /reserved-memory/linux,secmon size <0x0 0x%x>;",
+			if (aarch32)
+				sprintf(cmdbuf, "fdt set /reserved-memory/linux,secmon size <0x%x>;",
+						((bl31_rsvmem_size + 0x400000 - 1) / 0x400000)*0x400000);
+			else
+				sprintf(cmdbuf, "fdt set /reserved-memory/linux,secmon size <0x0 0x%x>;",
 						((bl31_rsvmem_size + 0x400000 - 1) / 0x400000)*0x400000);
 			rsvmem_dbg("CMD: %s\n", cmdbuf);
 			ret = run_command(cmdbuf, 0);
@@ -114,7 +134,11 @@ static int do_rsvmem_check(cmd_tbl_t *cmdtp, int flag, int argc,
 				return -3;
 			}
 			memset(cmdbuf, 0, sizeof(cmdbuf));
-			sprintf(cmdbuf, "fdt set /reserved-memory/linux,secmon alloc-ranges <0x0 0x%x 0x0 0x%x>;",
+			if (aarch32)
+				sprintf(cmdbuf, "fdt set /reserved-memory/linux,secmon alloc-ranges <0x%x 0x%x>;",
+						bl31_rsvmem_start, ((bl31_rsvmem_size + 0x400000 - 1) / 0x400000)*0x400000);
+			else
+				sprintf(cmdbuf, "fdt set /reserved-memory/linux,secmon alloc-ranges <0x0 0x%x 0x0 0x%x>;",
 						bl31_rsvmem_start, ((bl31_rsvmem_size + 0x400000 - 1) / 0x400000)*0x400000);
 			rsvmem_dbg("CMD: %s\n", cmdbuf);
 			ret = run_command(cmdbuf, 0);
@@ -147,7 +171,11 @@ static int do_rsvmem_check(cmd_tbl_t *cmdtp, int flag, int argc,
 				return -3;
 			}
 			memset(cmdbuf, 0, sizeof(cmdbuf));
-			sprintf(cmdbuf, "fdt set /reserved-memory/linux,secos reg <0x0 0x%x 0x0 0x%x>;",
+			if (aarch32)
+				sprintf(cmdbuf, "fdt set /reserved-memory/linux,secos reg <0x%x 0x%x>;",
+					bl32_rsvmem_start, bl32_rsvmem_size);
+			else
+				sprintf(cmdbuf, "fdt set /reserved-memory/linux,secos reg <0x0 0x%x 0x0 0x%x>;",
 					bl32_rsvmem_start, bl32_rsvmem_size);
 			rsvmem_dbg("CMD: %s\n", cmdbuf);
 			ret = run_command(cmdbuf, 0);
@@ -159,7 +187,11 @@ static int do_rsvmem_check(cmd_tbl_t *cmdtp, int flag, int argc,
 		if ((bl31_rsvmem_start + bl31_rsvmem_size == bl32_rsvmem_start)
 				&& (rsvmemtype == RSVMEM_CMA)) {
 				memset(cmdbuf, 0, sizeof(cmdbuf));
-				sprintf(cmdbuf, "fdt set /reserved-memory/linux,secmon size <0x0 0x%x>;",
+				if (aarch32)
+					sprintf(cmdbuf, "fdt set /reserved-memory/linux,secmon size <0x%x>;",
+						((bl31_rsvmem_size + bl32_rsvmem_size + 0x400000 - 1) / 0x400000)*0x400000);
+				else
+					sprintf(cmdbuf, "fdt set /reserved-memory/linux,secmon size <0x0 0x%x>;",
 						((bl31_rsvmem_size + bl32_rsvmem_size + 0x400000 - 1) / 0x400000)*0x400000);
 				rsvmem_dbg("CMD: %s\n", cmdbuf);
 				ret = run_command(cmdbuf, 0);
@@ -169,7 +201,12 @@ static int do_rsvmem_check(cmd_tbl_t *cmdtp, int flag, int argc,
 				}
 
 				memset(cmdbuf, 0, sizeof(cmdbuf));
-				sprintf(cmdbuf, "fdt set /reserved-memory/linux,secmon alloc-ranges <0x0 0x%x 0x0 0x%x>;",
+				if (aarch32)
+					sprintf(cmdbuf, "fdt set /reserved-memory/linux,secmon alloc-ranges <0x%x 0x%x>;",
+						bl31_rsvmem_start,
+						((bl31_rsvmem_size + bl32_rsvmem_size + 0x400000 - 1) / 0x400000)*0x400000);
+				else
+					sprintf(cmdbuf, "fdt set /reserved-memory/linux,secmon alloc-ranges <0x0 0x%x 0x0 0x%x>;",
 						bl31_rsvmem_start,
 						((bl31_rsvmem_size + bl32_rsvmem_size + 0x400000 - 1) / 0x400000)*0x400000);
 				rsvmem_dbg("CMD: %s\n", cmdbuf);
