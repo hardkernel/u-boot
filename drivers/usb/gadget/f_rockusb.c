@@ -357,7 +357,7 @@ static int rkusb_do_vs_write(struct fsg_common *common)
 				rc =
 				write_keybox_to_secure_storage((u8 *)data,
 							       vhead->size);
-				if (!rc)
+				if (rc < 0)
 					return -EIO;
 #endif
 			}

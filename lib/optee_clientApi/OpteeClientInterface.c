@@ -13,6 +13,8 @@
 #include <stdlib.h>
 
 #define	BOOT_FROM_EMMC	(1 << 1)
+#define	WIDEVINE_TAG	"KBOX"
+#define	ATTESTATION_TAG	"ATTE"
 
 uint32_t rk_send_keybox_to_ta(uint8_t *filename, uint32_t filename_size,
 			      TEEC_UUID uuid,
@@ -126,73 +128,41 @@ uint32_t rk_send_keybox_to_ta(uint8_t *filename, uint32_t filename_size,
 
 int write_keybox_to_secure_storage(uint8_t *uboot_data, uint32_t len)
 {
-	typedef struct VENDOR_DATA {
-		uint8_t tag[4];
-		uint32_t key_size;
-		uint32_t data_size;
-		uint8_t *all_data;
-	} VENDOR_DATA;
+	uint32_t key_size;
+	uint32_t data_size;
+	uint32_t object_id;
+	TEEC_Result ret;
+	int rc = 0;
 
-	uint8_t *key = NULL;
-	uint8_t *data = NULL;
-	VENDOR_DATA tmp_data;
-
-	memset(&tmp_data, 0, sizeof(VENDOR_DATA));
-	memcpy(tmp_data.tag, uboot_data, 4);
-	tmp_data.key_size = *(uboot_data + 4);
-	tmp_data.data_size = *(uboot_data + 8);
-	tmp_data.all_data = malloc(tmp_data.key_size + tmp_data.data_size);
-	memcpy(tmp_data.all_data, uboot_data + 12,
-	       tmp_data.key_size + tmp_data.data_size);
-
-	uint8_t widevine_tag[] = {'K', 'B', 'O', 'X'};
-	uint8_t tag[] = {0};
-
-	uint32_t object_id = 101;
-
-	TEEC_UUID tmp_uuid;
-
-	if (memcmp(uboot_data, widevine_tag, 4) == 0) {
+	if (memcmp(uboot_data, WIDEVINE_TAG, 4) == 0) {
+		/* widevine keybox */
 		TEEC_UUID widevine_uuid = { 0xc11fe8ac, 0xb997, 0x48cf,
 			{ 0xa2, 0x8d, 0xe2, 0xa5, 0x5e, 0x52, 0x40, 0xef} };
-		tmp_uuid = widevine_uuid;
-		memcpy(tag, uboot_data, 4);
-		printf("check tag success! %s\n", tag);
-	} else {
-		memcpy(tag, uboot_data, 4);
-		printf("check tag failed! %s\n", tag);
+		object_id = 101;
+
+		key_size = *(uboot_data + 4);
+		data_size = *(uboot_data + 8);
+
+		ret = rk_send_keybox_to_ta((uint8_t *)&object_id,
+					   sizeof(uint32_t),
+					   widevine_uuid,
+					   uboot_data + 12,
+					   key_size,
+					   uboot_data + 12 + key_size,
+					   data_size);
+		if (ret == TEEC_SUCCESS) {
+			rc = 0;
+			printf("write widevine keybox to secure storage success\n");
+		} else {
+			rc = -EIO;
+			printf("write widevine keybox to secure storage fail\n");
+		}
+	} else if (memcmp(uboot_data, ATTESTATION_TAG, 4) == 0) {
+		/* attestation key */
+
 	}
 
-	key = malloc(tmp_data.key_size);
-	if (!key) {
-		printf("Malloc key failed!!\n");
-		goto reboot;
-	}
-
-	data = malloc(tmp_data.data_size);
-	if (!data) {
-		printf("Malloc data failed!!\n");
-		goto reboot;
-	}
-
-	memcpy(key, tmp_data.all_data, tmp_data.key_size);
-	memcpy(data, tmp_data.all_data + tmp_data.key_size,
-	       tmp_data.data_size);
-
-	rk_send_keybox_to_ta((uint8_t *)&object_id, sizeof(uint32_t),
-			     tmp_uuid,
-			     key, tmp_data.key_size,
-			     data, tmp_data.data_size);
-reboot:
-	if (key)
-		free(key);
-	if (data)
-		free(data);
-	if (tmp_data.all_data)
-	free(tmp_data.all_data);
-
-	memset(&tmp_data, 0, sizeof(VENDOR_DATA));
-	return 0;
+	return rc;
 }
 
 void test_optee(void)
