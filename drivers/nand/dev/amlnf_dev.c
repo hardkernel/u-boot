@@ -500,6 +500,33 @@ static int get_nand_platform(struct aml_nand_device *aml_nand_dev,
 *boot_device_flag = 1;  indicate nand  boot
 ***/
 #if 1
+int check_dev(void)
+{
+	u32 boot_dev;
+	u8 ret = 0;
+
+	boot_dev = amlnf_read_reg32((volatile uint32_t *)P_AO_SEC_GP_CFG0);
+	boot_dev = boot_dev&0xf;
+	aml_nand_msg("boot_dev: 0x%x",boot_dev);
+
+	switch (boot_dev) {
+	case STORAGE_DEV_NAND:
+	case STORAGE_DEV_EMMC:
+		ret = boot_dev;
+	break;
+
+	case STORAGE_DEV_SDCARD:
+		aml_nand_msg("warning you may need update your uboot!");
+	break;
+
+	default:
+	break;
+	}
+
+	aml_nand_msg("%s return %d\n", __func__, ret);
+	return ret;
+}
+
 int poc_cfg_prase(void)
 {
 	int boot_flag;

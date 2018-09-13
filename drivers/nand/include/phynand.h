@@ -950,4 +950,5 @@ extern void amlchip_dumpinfo(struct amlnand_chip *aml_chip);
 
 extern int bad_block_is_dtb_blk( const int blk_addr);
 extern int get_last_reserve_block(struct amlnand_chip *aml_chip);
+extern int check_dev(void);
 #endif /* NAND_H_INCLUDED */

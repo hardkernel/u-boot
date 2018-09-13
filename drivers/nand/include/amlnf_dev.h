@@ -117,6 +117,13 @@
 #define SPI_NAND_FLAG		4
 #define SPI_EMMC_FLAG		5
 
+#define STORAGE_DEV_NOSET       (0)
+#define STORAGE_DEV_EMMC        (1)
+#define STORAGE_DEV_NAND        (2)
+#define STORAGE_DEV_SPI         (3)
+#define STORAGE_DEV_SDCARD      (4)
+#define STORAGE_DEV_USB         (5)
+
 
 /***nand BOOT flags***/
 #define NAND_BOOT_NORMAL					0
