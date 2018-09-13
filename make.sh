@@ -15,6 +15,7 @@ SUPPORT_LIST=`ls configs/*[r,p][x,v,k][0-9][0-9]*_defconfig`
 #
 # Format:           target board               label         loader      trust
 RKCHIP_INI_DESC=("CONFIG_TARGET_GVA_RK3229       NA          RK322XAT     NA"
+                 "CONFIG_COPROCESSOR_RK1808  RK3399PRO-NPU  RK3399PRONPU  RK3399PRONPU"
 # to be add...
                 )
 
