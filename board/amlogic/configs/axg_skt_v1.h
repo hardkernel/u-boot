@@ -108,6 +108,7 @@
         "osd_reverse=0\0"\
         "video_reverse=0\0"\
         "lock=10001000\0"\
+        "fs_type=""rootfstype=ramfs""\0"\
         "initargs="\
             "init=/init console=ttyS0,115200 no_console_suspend earlycon=aml_uart,0xff803000 ramoops.pstore_en=1 ramoops.record_size=0x8000 ramoops.console_size=0x4000 "\
             "\0"\
@@ -118,22 +119,9 @@
             "else fi;"\
             "\0"\
         "storeargs="\
-            "setenv bootargs ${initargs} logo=${display_layer},loaded,${fb_addr} vout=${outputmode},enable panel_type=${panel_type} osd_reverse=${osd_reverse} video_reverse=${video_reverse} androidboot.selinux=${EnableSelinux} androidboot.firstboot=${firstboot} jtag=${jtag} i2c_auto_test=${i2c_auto_test}; "\
+            "setenv bootargs ${initargs} ${fs_type} logo=${display_layer},loaded,${fb_addr} vout=${outputmode},enable panel_type=${panel_type} osd_reverse=${osd_reverse} video_reverse=${video_reverse} androidboot.selinux=${EnableSelinux} androidboot.firstboot=${firstboot} jtag=${jtag} i2c_auto_test=${i2c_auto_test}; "\
 	"setenv bootargs ${bootargs} androidboot.hardware=amlogic;"\
             "run cmdline_keys;"\
-            "get_system_as_root_mode;"\
-            "echo system_mode: ${system_mode};"\
-            "if test ${system_mode} != 1; then "\
-                    "setenv bootargs ${bootargs} rootfstype=ramfs;"\
-            "fi;"\
-            "if test ${system_mode} = 1; then "\
-                "get_rebootmode;"\
-                "if test ${reboot_mode} = factory_reset; then "\
-                    "setenv bootargs ${bootargs} rootfstype=ramfs;"\
-                 "else "\
-                    "setenv bootargs ${bootargs} ro rootwait skip_initramfs;"\
-                 "fi;"\
-            "fi;"\
             "\0"\
         "switch_bootmode="\
             "get_rebootmode;"\
@@ -148,6 +136,12 @@
             "fi;fi;fi;fi;"\
             "\0" \
         "storeboot="\
+            "get_system_as_root_mode;"\
+            "echo system_mode: ${system_mode};"\
+            "if test ${system_mode} = 1; then "\
+                    "setenv fs_type ""ro rootwait skip_initramfs"";"\
+                    "run storeargs;"\
+            "fi;"\
             "if imgread kernel boot ${loadaddr}; then bootm ${loadaddr}; fi;"\
             "run update;"\
             "\0"\
@@ -244,6 +238,7 @@
             "run upgrade_check;"\
             "run init_display;"\
             "run storeargs;"\
+            "bcb uboot-command;"\
             "run switch_bootmode;"
 #define CONFIG_BOOTCOMMAND "run storeboot"
 
