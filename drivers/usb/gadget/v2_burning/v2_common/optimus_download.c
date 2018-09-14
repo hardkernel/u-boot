@@ -851,11 +851,11 @@ int optimus_storage_init(int toErase)
 #endif// #ifdef CONFIG_MULTI_DTB
                 ret = fdt_check_header((char*)fdtAddr);
                 unsigned fdtsz    = fdt_totalsize((char*)fdtAddr);
-                if (ret || !fdtsz || fdtsz > _dtb_is_loaded) {
+                if (ret || !fdtsz ) {
                         DWN_ERR("Fail in fdt check header\n");
                         return __LINE__;
                 }
-                if (fdtsz < _dtb_is_loaded)
+               // if (fdtsz < _dtb_is_loaded)
                         memmove((char*)dtbLoadedAddr, (char*)fdtAddr, fdtsz);
         }
     }
