@@ -273,17 +273,22 @@ int avb_verify(AvbSlotVerifyData** out_data)
 #else
     char *ab_suffix = "";
 #endif
+    AvbSlotVerifyFlags flags = AVB_SLOT_VERIFY_FLAGS_NONE;
+    char *upgradestep = NULL;
 
     avb_init();
 
-    if (is_device_unlocked())
-        result = avb_slot_verify(&avb_ops_, requested_partitions, ab_suffix,
-                AVB_SLOT_VERIFY_FLAGS_ALLOW_VERIFICATION_ERROR,
-                AVB_HASHTREE_ERROR_MODE_RESTART_AND_INVALIDATE, out_data);
-    else
-        result = avb_slot_verify(&avb_ops_, requested_partitions, ab_suffix,
-                AVB_SLOT_VERIFY_FLAGS_NONE,
-                AVB_HASHTREE_ERROR_MODE_RESTART_AND_INVALIDATE, out_data);
+    upgradestep = getenv("upgrade_step");
+
+    if (is_device_unlocked() || !strcmp(upgradestep, "3"))
+        flags |= AVB_SLOT_VERIFY_FLAGS_ALLOW_VERIFICATION_ERROR;
+
+    result = avb_slot_verify(&avb_ops_, requested_partitions, ab_suffix,
+            flags,
+            AVB_HASHTREE_ERROR_MODE_RESTART_AND_INVALIDATE, out_data);
+
+    if (!strcmp(upgradestep, "3"))
+        result = AVB_SLOT_VERIFY_RESULT_OK;
 
     return result;
 }
