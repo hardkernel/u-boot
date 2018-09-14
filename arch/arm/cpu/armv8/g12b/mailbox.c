@@ -216,3 +216,28 @@ void set_boot_first_timeout(unsigned int command)
 	mb_message_wait(LOW_PRIORITY);
 	mb_message_end(LOW_PRIORITY);
 }
+
+#ifdef CONFIG_RING
+int efuse_get_value(unsigned char *efuseinfo)
+{
+	struct {
+		unsigned int status;
+		unsigned char efuseinfo[12];
+	} *response;
+	unsigned int size;
+
+	mb_message_start(LOW_PRIORITY);
+	writel(0, ap_mb_payload[LOW_PRIORITY]);
+	mb_message_send(
+				((0x4 << SIZE_SHIFT) | SCPI_CMD_OSCRING_VALUE),
+				LOW_PRIORITY);
+	mb_message_receive((void *)&response, &size, LOW_PRIORITY);
+	mb_message_end(LOW_PRIORITY);
+
+	memcpy(efuseinfo, &response->efuseinfo, sizeof(response->efuseinfo));
+	if (response->status != SCPI_SUCCESS)
+		return -1;
+	else
+		return 0;
+}
+#endif

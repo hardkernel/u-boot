@@ -34,8 +34,10 @@ __u32 get_misc_pll_clk(void);
 __u32 get_clk81(void);
 int clk_get_rate(unsigned clksrc);
 unsigned long clk_util_clk_msr(unsigned long clk_mux);
+unsigned long clk_util_clk_ring_msr(unsigned long clk_mux);
 
 int clk_msr(int index);
+int ring_msr(int index);
 
 #endif /* __ARCH_ARM_MESON_CLOCK_H_U_BOOT_ */
 

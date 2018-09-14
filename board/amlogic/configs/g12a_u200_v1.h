@@ -616,7 +616,6 @@
 #endif
 #endif
 
-#define CONFIG_RING
 #define CONFIG_HIGH_TEMP_COOL 90
 #endif
 

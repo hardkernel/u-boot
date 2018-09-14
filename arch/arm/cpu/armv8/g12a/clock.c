@@ -342,6 +342,7 @@ void ring_powerinit(void)
 	writel(0x10000c, RING_PWM_EE);/*set ee 0.8v*/
 }
 
+#ifdef CONFIG_RING
 int ring_msr(int index)
 {
 	const char* clk_table[] = {
@@ -360,7 +361,23 @@ int ring_msr(int index)
 		};
 	const int tb[] = {0, 1, 2, 99, 100, 101, 102, 103, 104, 105, 3, 33};
 	unsigned long i;
-	unsigned char ringinfo[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+	unsigned char efuseinfo[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+
+	if ((index != 0xff) && (index != 0)) {
+		if (efuse_get_value(efuseinfo) != 0) {
+			printf("fail get efuse info\n");
+			return 0;
+		}
+		if ((index >= 1) && (index <= 5))
+			printf("%d\n", (efuseinfo[index] * 20));
+		if ((index >= 6) && (index <= 7))
+			printf("%d\n", (efuseinfo[index] * 200));
+		if ((index >= 8) && (index <= 11))
+			printf("%d\n", efuseinfo[index]);
+		if ((index < 0) || (index >= 12))
+			printf("input data not support!\n");
+		return 0;
+	}
 	ring_powerinit();
 	/*RING_OSCILLATOR       0x7f: set slow ring*/
 	writel(0x555555, 0xff6345fc);
@@ -370,30 +387,32 @@ int ring_msr(int index)
 		printf("\n");
 	}
 
-#ifdef CONFIG_RING
-	if (oscring_get_value(ringinfo) != 0) {
-		printf("fail get osc ring efuse info\n");
+	if (efuse_get_value(efuseinfo) != 0) {
+		printf("fail get efuse info\n");
 		return 0;
 	}
-#endif
 
-	printf("osc ring efuse info:\n");
-	for (i = 0; i <= 7; i++)
-		printf("0x%x, ", ringinfo[i]);
+	printf("osc efuse info:\n");
+	for (i = 0; i <= 11; i++)
+		printf("0x%x, ", efuseinfo[i]);
 	printf("\n");
 
 	/*efuse to test value*/
-	printf("ee[9], ee[1], ee[0], cpu[1], cpu[0], iddee, iddcpu\n");
+	printf("ee[9], ee[1], ee[0], cpu[1], cpu[0], iddee, iddcpu, sltver, fta53, fta73, slt\n");
 	for (i = 1; i <= 5; i++)
-		printf("%d KHz ", (ringinfo[i] * 20));
+		printf("%d KHz ", (efuseinfo[i] * 20));
 
 	for (i = 6; i <= 7; i++)
-		printf("%d uA ", (ringinfo[i] * 200));
+		printf("%d uA ", (efuseinfo[i] * 200));
+
+	for (i = 8; i <= 11; i++)
+		printf("%d  ", efuseinfo[i]);
 
 	printf("\n");
 
 	return 0;
 }
+#endif
 
 #ifdef CONFIG_AML_SPICC
 /* generic clock control for spicc1.

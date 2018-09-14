@@ -42,6 +42,10 @@
 
 #define SCPI_CMD_REV_PWM_DELT 0x42
 
+#ifdef CONFIG_RING
+#define SCPI_CMD_OSCRING_VALUE 0x43
+#endif
+
 #define LOW_PRIORITY	0
 #define HIGH_PRIORITY 1
 
@@ -85,4 +89,7 @@ int thermal_get_value(unsigned int sensor_id, unsigned int *value);
 int send_usr_data(unsigned int clinet_id, unsigned int *val, unsigned int size);
 void send_pwm_delt(int32_t vcck_delt, int32_t ee_delt);
 void set_boot_first_timeout(unsigned int command);
+#ifdef CONFIG_RING
+int efuse_get_value(unsigned char *efuseinfo);
+#endif
  #endif

@@ -94,6 +94,6 @@ void set_boot_first_timeout(unsigned int command);
 void bl40_wait_unlock(void);
 int send_bl40(unsigned long addr, unsigned long size);
 #ifdef CONFIG_RING
-int oscring_get_value(unsigned char *ringinfo);
+int efuse_get_value(unsigned char *efuseinfo);
 #endif
 #endif
