@@ -17,7 +17,7 @@
 		stdout-path = &uart2;
 	};
 
-	dmc: dmc@20004000 {
+	dmc: dmc {
 		u-boot,dm-pre-reloc;
 		compatible = "rockchip,px30-dmc", "syscon";
 		reg = <0x0 0xff2a0000 0x0 0x1000>;
