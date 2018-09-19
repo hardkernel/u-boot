@@ -88,6 +88,11 @@ enum {
 	PD_BUS_ACLK_DIV1_SHIFT	= 0,
 	PD_BUS_ACLK_DIV1_MASK	= 0x7 << PD_BUS_ACLK_DIV1_SHIFT,
 
+	/* CLKSEL2: tsadc */
+	CLK_TSADC_DIV_CON_SHIFT	= 0,
+	CLK_TSADC_DIV_CON_MASK		= GENMASK(5, 0),
+	CLK_TSADC_DIV_CON_WIDTH	= 6,
+
 	/*
 	 * CLKSEL10
 	 * peripheral bus pclk div:
@@ -698,6 +703,31 @@ static ulong rockchip_saradc_set_clk(struct rk3288_cru *cru, uint hz)
 	return rockchip_saradc_get_clk(cru);
 }
 
+static ulong rockchip_tsadc_get_clk(struct rk3288_cru *cru)
+{
+	u32 div, val;
+
+	val = readl(&cru->cru_clksel_con[2]);
+	div = bitfield_extract(val, CLK_TSADC_DIV_CON_SHIFT,
+			       CLK_TSADC_DIV_CON_WIDTH);
+
+	return DIV_TO_RATE(32768, div);
+}
+
+static ulong rockchip_tsadc_set_clk(struct rk3288_cru *cru, uint hz)
+{
+	int src_clk_div;
+
+	src_clk_div = DIV_ROUND_UP(OSC_HZ, hz) - 1;
+	assert(src_clk_div < 128);
+
+	rk_clrsetreg(&cru->cru_clksel_con[2],
+		     CLK_TSADC_DIV_CON_MASK,
+		     src_clk_div << CLK_TSADC_DIV_CON_SHIFT);
+
+	return rockchip_tsadc_get_clk(cru);
+}
+
 static ulong rk3288_clk_get_rate(struct clk *clk)
 {
 	struct rk3288_clk_priv *priv = dev_get_priv(clk->dev);
@@ -734,6 +764,9 @@ static ulong rk3288_clk_get_rate(struct clk *clk)
 		return PD_BUS_PCLK_HZ;
 	case SCLK_SARADC:
 		new_rate = rockchip_saradc_get_clk(priv->cru);
+		break;
+	case SCLK_TSADC:
+		new_rate = rockchip_tsadc_get_clk(priv->cru);
 		break;
 	default:
 		return -ENOENT;
@@ -827,6 +860,9 @@ static ulong rk3288_clk_set_rate(struct clk *clk, ulong rate)
 #endif
 	case SCLK_SARADC:
 		new_rate = rockchip_saradc_set_clk(priv->cru, rate);
+		break;
+	case SCLK_TSADC:
+		new_rate = rockchip_tsadc_set_clk(priv->cru, rate);
 		break;
 	case PLL_GPLL:
 	case PLL_CPLL:

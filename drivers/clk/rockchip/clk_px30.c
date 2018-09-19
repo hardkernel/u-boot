@@ -665,6 +665,32 @@ static ulong px30_saradc_set_clk(struct px30_clk_priv *priv, uint hz)
 	return px30_saradc_get_clk(priv);
 }
 
+static ulong px30_tsadc_get_clk(struct px30_clk_priv *priv)
+{
+	struct px30_cru *cru = priv->cru;
+	u32 div, con;
+
+	con = readl(&cru->clksel_con[54]);
+	div = con >> CLK_SARADC_DIV_CON_SHIFT & CLK_SARADC_DIV_CON_MASK;
+
+	return DIV_TO_RATE(OSC_HZ, div);
+}
+
+static ulong px30_tsadc_set_clk(struct px30_clk_priv *priv, uint hz)
+{
+	struct px30_cru *cru = priv->cru;
+	int src_clk_div;
+
+	src_clk_div = DIV_ROUND_UP(OSC_HZ, hz);
+	assert(src_clk_div - 1 <= 2047);
+
+	rk_clrsetreg(&cru->clksel_con[54],
+		     CLK_SARADC_DIV_CON_MASK,
+		     (src_clk_div - 1) << CLK_SARADC_DIV_CON_SHIFT);
+
+	return px30_tsadc_get_clk(priv);
+}
+
 static ulong px30_spi_get_clk(struct px30_clk_priv *priv, ulong clk_id)
 {
 	struct px30_cru *cru = priv->cru;
@@ -1063,6 +1089,9 @@ static ulong px30_clk_get_rate(struct clk *clk)
 	case SCLK_SARADC:
 		rate = px30_saradc_get_clk(priv);
 		break;
+	case SCLK_TSADC:
+		rate = px30_tsadc_get_clk(priv);
+		break;
 	case SCLK_SPI0:
 	case SCLK_SPI1:
 		rate = px30_spi_get_clk(priv, clk->id);
@@ -1130,6 +1159,9 @@ static ulong px30_clk_set_rate(struct clk *clk, ulong rate)
 		break;
 	case SCLK_SARADC:
 		ret = px30_saradc_set_clk(priv, rate);
+		break;
+	case SCLK_TSADC:
+		ret = px30_tsadc_set_clk(priv, rate);
 		break;
 	case SCLK_SPI0:
 	case SCLK_SPI1:

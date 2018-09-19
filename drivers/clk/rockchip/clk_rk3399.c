@@ -922,6 +922,32 @@ static ulong rk3399_saradc_set_clk(struct rk3399_cru *cru, uint hz)
 	return rk3399_saradc_get_clk(cru);
 }
 
+static ulong rk3399_tsadc_get_clk(struct rk3399_cru *cru)
+{
+	u32 div, val;
+
+	val = readl(&cru->clksel_con[27]);
+	div = bitfield_extract(val, CLK_TSADC_SEL_SHIFT,
+			       10);
+
+	return DIV_TO_RATE(OSC_HZ, div);
+}
+
+static ulong rk3399_tsadc_set_clk(struct rk3399_cru *cru, uint hz)
+{
+	int src_clk_div;
+
+	src_clk_div = DIV_ROUND_UP(OSC_HZ, hz) - 1;
+	assert(src_clk_div <= 255);
+
+	rk_clrsetreg(&cru->clksel_con[27],
+		     CLK_TSADC_DIV_CON_MASK | CLK_TSADC_SEL_MASK,
+		     (CLK_TSADC_SEL_X24M << CLK_TSADC_SEL_SHIFT) |
+		     (src_clk_div << CLK_TSADC_DIV_CON_SHIFT));
+
+	return rk3399_tsadc_get_clk(cru);
+}
+
 static ulong rk3399_clk_get_rate(struct clk *clk)
 {
 	struct rk3399_clk_priv *priv = dev_get_priv(clk->dev);
@@ -968,6 +994,9 @@ static ulong rk3399_clk_get_rate(struct clk *clk)
 		break;
 	case SCLK_SARADC:
 		rate = rk3399_saradc_get_clk(priv->cru);
+		break;
+	case SCLK_TSADC:
+		rate = rk3399_tsadc_get_clk(priv->cru);
 		break;
 	default:
 		return -ENOENT;
@@ -1036,6 +1065,9 @@ static ulong rk3399_clk_set_rate(struct clk *clk, ulong rate)
 		break;
 	case SCLK_SARADC:
 		ret = rk3399_saradc_set_clk(priv->cru, rate);
+		break;
+	case SCLK_TSADC:
+		ret = rk3399_tsadc_set_clk(priv->cru, rate);
 		break;
 	default:
 		return -ENOENT;
