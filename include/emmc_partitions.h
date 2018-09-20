@@ -86,6 +86,19 @@
 #define CALI_PATTERN_OFFSET	(SZ_1M * 3)
 #define CALI_PATTERN_SIZE	(256 * 512)
 #define CALI_BLOCK_SIZE		(512)
+#define CALI_PATTERN		(0x55aa55aa)
+
+#define	MMC_MAGIC_NAME		"magic"
+#define MAGIC_OFFSET	(SZ_1M * 6)
+#define MAGIC_SIZE	(256 * 512)
+#define MAGIC_BLOCK_SIZE		(512)
+#define MAGIC_PATTERN	(0X00FF00FF)
+
+#define	MMC_RANDOM_NAME		"random"
+#define RANDOM_OFFSET	(SZ_1M * 7)
+#define RANDOM_SIZE	(256 * 512)
+#define RANDOM_BLOCK_SIZE		(512)
+#define RANDOM_PATTERN	(0X52414E44)
 /*
  * 2 copies dtb were stored in dtb area.
  * each is 256K.
@@ -114,6 +127,12 @@ struct virtual_partition {
 };
 
 #define VIRTUAL_PARTITION_ELEMENT(na, of, sz) {.name = na, .offset = of, .size = sz,}
+
+struct aml_pattern {
+	char name[MAX_MMC_PART_NAME_LEN];
+	unsigned int pattern;
+};
+#define AML_PATTERN_ELEMENT(na, pa) {.name = na, .pattern = pa,}
 
 #ifdef AML_MMC_DBG
 #define aml_mmc_dbg(fmt, ...) printk( "%s: line:%d " fmt "\n", \

@@ -31,9 +31,16 @@
 static struct list_head mmc_devices;
 static int cur_dev_num = -1;
 
+
 int amlmmc_is_inited(void) {
 	return device_boot_flag;
 }
+
+struct aml_pattern aml_pattern_table[] = {
+	AML_PATTERN_ELEMENT(MMC_PATTERN_NAME, CALI_PATTERN),
+	AML_PATTERN_ELEMENT(MMC_MAGIC_NAME, MAGIC_PATTERN),
+	AML_PATTERN_ELEMENT(MMC_RANDOM_NAME, RANDOM_PATTERN),
+};
 
 bool emmckey_is_access_range_legal (struct mmc *mmc, ulong start, lbaint_t blkcnt) {
 #ifdef CONFIG_STORE_COMPATIBLE
@@ -1756,23 +1763,29 @@ int mmc_start_init(struct mmc *mmc)
 	return err;
 }
 
-void mmc_write_cali_mattern(void *addr)
+void mmc_write_cali_mattern(void *addr, struct aml_pattern *table)
 {
 	int i = 0;
 	u32 *mattern = (u32 *)addr;
 	struct virtual_partition *vpart =
-		aml_get_virtual_partition_by_name(MMC_PATTERN_NAME);
-	for (i = 0;i < (vpart->size)/4;i++)
-		mattern[i] = 0x55aa55aa;
+		aml_get_virtual_partition_by_name(table->name);
+	for (i = 0;i < (vpart->size)/4 - 1;i++) {
+		if (!strcmp(table->name, "random"))
+			mattern[i] = rand();
+		else
+			mattern[i] = table->pattern;
+	}
+	mattern[i] = crc32(0, (u8 *)addr, (vpart->size - 4));
 	return;
 }
 
-int mmc_pattern_check(struct mmc *mmc)
+int mmc_pattern_check(struct mmc *mmc, struct aml_pattern *table)
 {
 	void *addr = NULL;
-	int i, dev = EMMC_DTB_DEV;
+	int dev = EMMC_DTB_DEV;
 	u64 cnt = 0, n = 0, blk = 0;
 	u32 *buf = NULL;
+	u32 crc32_s = 0;
 	struct partitions *part = NULL;
 	struct virtual_partition *vpart = NULL;
 	vpart = aml_get_virtual_partition_by_name(MMC_DTB_NAME);
@@ -1783,7 +1796,7 @@ int mmc_pattern_check(struct mmc *mmc)
 		printf("pattern malloc failed\n");
 		return 1;
 	}
-	vpart = aml_get_virtual_partition_by_name(MMC_PATTERN_NAME);
+	vpart = aml_get_virtual_partition_by_name(table->name);
 	part = aml_get_partition_by_name(MMC_RESERVED_NAME);
 	blk = (part->offset + vpart->offset) / mmc->read_bl_len;
 	cnt = vpart->size / mmc->read_bl_len;
@@ -1794,20 +1807,17 @@ int mmc_pattern_check(struct mmc *mmc)
 		return 1;
 	} else {
 		buf = (u32 *)addr;
-		for (i = 0;i < (vpart->size/4);i++) {
-			if (buf[i] != 0x55aa55aa) {
-				printf("check pattern failed, need to write pattern\n");
-				break;
-			}
+		crc32_s = crc32(0, (u8 *)addr, (vpart->size - 4));
+		if (crc32_s != buf[vpart->size/4 - 1]) {
+			printf("check %s failed,need to write\n",
+						table->name);
+			mmc_write_cali_mattern(addr, table);
+			n = mmc_bwrite(dev, blk, cnt, addr);
+			printf("several 0x%x pattern blocks write %s\n",
+				table->pattern, (n == cnt) ? "OK" : "ERROR");
 		}
-		if (i == (vpart->size/4))
-			printf("check pattern success\n");
-	}
-	if (i != (vpart->size/4)) {
-		mmc_write_cali_mattern(addr);
-		n = mmc_bwrite(dev, blk, cnt, addr);
-		printf("several calibration pattern blocks write %s\n",
-			(n == cnt) ? "OK" : "ERROR");
+		printf("crc32_s:0x%x == storage crc_pattern:0x%x!!!\n",
+				crc32_s, buf[vpart->size/4 - 1]);
 	}
 	free(addr);
 	return (n == cnt) ? 0 : 1;
@@ -1832,7 +1842,7 @@ static int mmc_complete_init(struct mmc *mmc)
 
 int mmc_init(struct mmc *mmc)
 {
-	int err = IN_PROGRESS;
+	int err = IN_PROGRESS, i;
 	unsigned start;
 
 	if (mmc->has_init)
@@ -1862,7 +1872,8 @@ int mmc_init(struct mmc *mmc)
 			if (mmc_device_init(mmc) == 0) {
 				is_partition_checked = true;
 				printf("eMMC/TSD partition table have been checked OK!\n");
-				mmc_pattern_check(mmc);
+				for (i = 0; i < ARRAY_SIZE(aml_pattern_table); i++)
+					mmc_pattern_check(mmc, &aml_pattern_table[i]);
 			}
 		}
 	}
