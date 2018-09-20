@@ -24,9 +24,9 @@
 /* Bootrom will load u-boot binary to 0x0 once return from SPL */
 #define CONFIG_SYS_TEXT_BASE		0x00000000
 #else
-#define CONFIG_SYS_TEXT_BASE		0x00100000
+#define CONFIG_SYS_TEXT_BASE		0x00200000
 #endif
-#define CONFIG_SYS_INIT_SP_ADDR		0x00100000
+#define CONFIG_SYS_INIT_SP_ADDR		0x00400000
 #define CONFIG_SYS_LOAD_ADDR		0x00800800
 #define CONFIG_SPL_STACK		0xff718000
 
