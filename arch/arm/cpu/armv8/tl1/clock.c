@@ -407,10 +407,11 @@ static int spicc_clk_rate[] = {
 	285700000,	/* FCLK_DIV7 */
 };
 
-int spicc1_clk_set_rate(int rate)
+static int spicc_clk_set_rate(int id, int rate)
 {
 	u32 regv;
 	u8 mux, div = 0;
+	u8 shift = (id == 0) ? 0 : 16;
 
 	for (mux = 0; mux < ARRAY_SIZE(spicc_clk_rate); mux++)
 		if (rate == spicc_clk_rate[mux])
@@ -419,25 +420,37 @@ int spicc1_clk_set_rate(int rate)
 		return -EINVAL;
 
 	regv = readl(P_HHI_SPICC_CLK_CNTL);
-	/* mux[25:23], gate[22], div[21:16] */
-	regv &= ~((0x7 << 23) | (1 << 22) | (0x3f << 16));
-	regv |= (mux << 23) | (1 << 22) | (div << 16);
+	regv &= ~ (0x3ff << shift);
+	regv |= div << (0 + shift);
+	regv |= 1 << (6 + shift);
+	regv |= mux << (7 + shift);
 	writel(regv, P_HHI_SPICC_CLK_CNTL);
 
 	return 0;
 }
 
-int spicc1_clk_enable(bool enable)
+int spicc0_clk_set_rate(int rate)
+{
+	return spicc_clk_set_rate(0, rate);
+}
+
+static int spicc_clk_enable(int id, bool enable)
 {
 	u32 regv;
+	u8 shift = (id == 0) ? 8: 14;
 
 	regv = readl(P_HHI_GCLK_MPEG0);
 	if (enable)
-		regv |= 1 << 14;
+		regv |= 1 << shift;
 	else
-		regv &= ~(1 << 14);
+		regv &= ~(1 << shift);
 	writel(regv, P_HHI_GCLK_MPEG0);
 
 	return 0;
+}
+
+int spicc0_clk_enable(bool enable)
+{
+	return spicc_clk_enable(0, enable);
 }
 #endif /* CONFIG_AML_SPICC */
