@@ -49,6 +49,13 @@ config SOUND_MAX98095
 	  audio data and I2C for codec control. At present it only works
 	  with the Samsung I2S driver.
 
+config SOUND_RK817
+	bool "Support Rockchip rk809/rk817 audio codec"
+	depends on I2S_ROCKCHIP && PMIC_RK8XX
+	help
+	  Enable the rk809/rk817 audio codec. This is connected via I2S for
+	  audio data and I2C for codec control.
+
 config SOUND_SANDBOX
 	bool "Support sandbox emulated audio codec"
 	depends on SANDBOX && SOUND
