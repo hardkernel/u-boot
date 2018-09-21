@@ -13,3 +13,4 @@ obj-$(CONFIG_SOUND_SANDBOX)	+= sandbox.o
 obj-$(CONFIG_SOUND_WM8994)	+= wm8994.o
 obj-$(CONFIG_SOUND_MAX98095)	+= max98095.o
 obj-$(CONFIG_SOUND_RK817)	+= rk817_codec.o
+obj-$(CONFIG_SOUND_ROCKCHIP)	+= rockchip-sound.o

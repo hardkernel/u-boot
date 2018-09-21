@@ -56,6 +56,12 @@ config SOUND_RK817
 	  Enable the rk809/rk817 audio codec. This is connected via I2S for
 	  audio data and I2C for codec control.
 
+config SOUND_ROCKCHIP
+	bool "Support Rockchip Simple Sound Card"
+	depends on I2S_ROCKCHIP
+	help
+	  Enable the Rockchip Simple Sound Card.
+
 config SOUND_SANDBOX
 	bool "Support sandbox emulated audio codec"
 	depends on SANDBOX && SOUND
