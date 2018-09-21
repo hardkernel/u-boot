@@ -367,6 +367,120 @@ static ulong px30_i2c_set_clk(struct px30_clk_priv *priv, ulong clk_id, uint hz)
 	return px30_i2c_get_clk(priv, clk_id);
 }
 
+/*
+ * calculate best rational approximation for a given fraction
+ * taking into account restricted register size, e.g. to find
+ * appropriate values for a pll with 5 bit denominator and
+ * 8 bit numerator register fields, trying to set up with a
+ * frequency ratio of 3.1415, one would say:
+ *
+ * rational_best_approximation(31415, 10000,
+ *		(1 << 8) - 1, (1 << 5) - 1, &n, &d);
+ *
+ * you may look at given_numerator as a fixed point number,
+ * with the fractional part size described in given_denominator.
+ *
+ * for theoretical background, see:
+ * http://en.wikipedia.org/wiki/Continued_fraction
+ */
+static void rational_best_approximation(
+	unsigned long given_numerator, unsigned long given_denominator,
+	unsigned long max_numerator, unsigned long max_denominator,
+	unsigned long *best_numerator, unsigned long *best_denominator)
+{
+	unsigned long n, d, n0, d0, n1, d1;
+
+	n = given_numerator;
+	d = given_denominator;
+	n0 = 0;
+	d1 = 0;
+	n1 = 1;
+	d0 = 1;
+	for (;;) {
+		unsigned long t, a;
+
+		if (n1 > max_numerator || d1 > max_denominator) {
+			n1 = n0;
+			d1 = d0;
+			break;
+		}
+		if (d == 0)
+			break;
+		t = d;
+		a = n / d;
+		d = n % d;
+		n = t;
+		t = n0 + a * n1;
+		n0 = n1;
+		n1 = t;
+		t = d0 + a * d1;
+		d0 = d1;
+		d1 = t;
+	}
+	*best_numerator = n1;
+	*best_denominator = d1;
+}
+
+static ulong px30_i2s_get_clk(struct px30_clk_priv *priv, ulong clk_id)
+{
+	u32 con, fracdiv, gate;
+	u32 clk_src = GPLL_HZ / 2;
+	unsigned long m, n;
+	struct px30_cru *cru = priv->cru;
+
+	switch (clk_id) {
+	case SCLK_I2S1:
+		con = readl(&cru->clksel_con[30]);
+		fracdiv = readl(&cru->clksel_con[31]);
+		gate = readl(&cru->clkgate_con[10]);
+		m = fracdiv & CLK_I2S1_FRAC_NUMERATOR_MASK;
+		m >>= CLK_I2S1_FRAC_NUMERATOR_SHIFT;
+		n = fracdiv & CLK_I2S1_FRAC_DENOMINATOR_MASK;
+		n >>= CLK_I2S1_FRAC_DENOMINATOR_SHIFT;
+		debug("con30: 0x%x, gate: 0x%x, frac: 0x%x\n",
+		      con, gate, fracdiv);
+		break;
+	default:
+		printf("do not support this i2s bus\n");
+		return -EINVAL;
+	}
+
+	return clk_src * n / m;
+}
+
+static ulong px30_i2s_set_clk(struct px30_clk_priv *priv, ulong clk_id, uint hz)
+{
+	u32 clk_src;
+	unsigned long m, n, val;
+	struct px30_cru *cru = priv->cru;
+
+	clk_src = GPLL_HZ / 2;
+	rational_best_approximation(hz, clk_src,
+				    GENMASK(16 - 1, 0),
+				    GENMASK(16 - 1, 0),
+				    &m, &n);
+	switch (clk_id) {
+	case SCLK_I2S1:
+		rk_clrsetreg(&cru->clksel_con[30],
+			     CLK_I2S1_PLL_SEL_MASK, CLK_I2S1_PLL_SEL_GPLL);
+		rk_clrsetreg(&cru->clksel_con[30],
+			     CLK_I2S1_DIV_CON_MASK, 0x1);
+		rk_clrsetreg(&cru->clksel_con[30],
+			     CLK_I2S1_SEL_MASK, CLK_I2S1_SEL_FRAC);
+		val = m << CLK_I2S1_FRAC_NUMERATOR_SHIFT | n;
+		writel(val, &cru->clksel_con[31]);
+		rk_clrsetreg(&cru->clkgate_con[10],
+			     CLK_I2S1_OUT_MCLK_PAD_MASK,
+			     CLK_I2S1_OUT_MCLK_PAD_ENABLE);
+		break;
+	default:
+		printf("do not support this i2s bus\n");
+		return -EINVAL;
+	}
+
+	return px30_i2s_get_clk(priv, clk_id);
+}
+
 static ulong px30_nandc_get_clk(struct px30_clk_priv *priv)
 {
 	struct px30_cru *cru = priv->cru;
@@ -939,6 +1053,9 @@ static ulong px30_clk_get_rate(struct clk *clk)
 	case SCLK_I2C3:
 		rate = px30_i2c_get_clk(priv, clk->id);
 		break;
+	case SCLK_I2S1:
+		rate = px30_i2s_get_clk(priv, clk->id);
+		break;
 	case SCLK_PWM0:
 	case SCLK_PWM1:
 		rate = px30_pwm_get_clk(priv, clk->id);
@@ -1003,6 +1120,9 @@ static ulong px30_clk_set_rate(struct clk *clk, ulong rate)
 	case SCLK_I2C2:
 	case SCLK_I2C3:
 		ret = px30_i2c_set_clk(priv, clk->id, rate);
+		break;
+	case SCLK_I2S1:
+		ret = px30_i2s_set_clk(priv, clk->id, rate);
 		break;
 	case SCLK_PWM0:
 	case SCLK_PWM1:
