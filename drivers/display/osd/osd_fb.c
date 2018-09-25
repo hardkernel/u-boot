@@ -164,6 +164,8 @@ static const struct color_bit_define_s default_color_format_array[] = {
 };
 
 GraphicDevice fb_gdev;
+struct hw_para_s osd_hw;
+
 typedef struct pic_info_t {
 	unsigned int mode;
 	unsigned int type;
@@ -361,6 +363,24 @@ unsigned long get_fb_addr(void)
 	return fb_addr;
 }
 
+static void get_osd_version(void)
+{
+	u32 family_id = get_cpu_id().family_id;
+
+	if (family_id == MESON_CPU_MAJOR_ID_AXG)
+		osd_hw.osd_ver = OSD_SIMPLE;
+	else if ((family_id < MESON_CPU_MAJOR_ID_G12A) ||
+			((family_id > MESON_CPU_MAJOR_ID_G12B) &&
+				(family_id < MESON_CPU_MAJOR_ID_TL1)))
+		osd_hw.osd_ver = OSD_NORMAL;
+	else if ((family_id == MESON_CPU_MAJOR_ID_G12A) ||
+			(family_id == MESON_CPU_MAJOR_ID_G12B) ||
+				(family_id == MESON_CPU_MAJOR_ID_TL1))
+		osd_hw.osd_ver = OSD_HIGH_ONE;
+	else
+		osd_hw.osd_ver = OSD_HIGH_OTHER;
+}
+
 int get_osd_layer(void)
 {
 	char *layer_str;
@@ -400,7 +420,7 @@ static void *osd_hw_init(void)
 	if (osd_index == OSD1)
 		osd_layer_init(&fb_gdev, OSD1);
 	else if (osd_index == OSD2) {
-		if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_AXG) {
+		if (osd_hw.osd_ver == OSD_SIMPLE) {
 			osd_loge("AXG not support osd2\n");
 			return NULL;
 		}
@@ -423,6 +443,8 @@ void *video_hw_init(int display_mode)
 	u32 bg = 0;
 	u32 fb_width = 0;
 	u32 fb_height = 0;;
+
+	get_osd_version();
 
 	vout_init();
 	fb_addr = get_fb_addr();
@@ -457,8 +479,6 @@ void *video_hw_init(int display_mode)
 	fb_gdev.bg = bg;
 	fb_gdev.mode = display_mode;
 	return osd_hw_init();
-
-
 }
 
 int rle8_decode(uchar *ptr, bmp_image_t *bmap_rle8, ulong width_bmp, ulong height_bmp) {
@@ -987,7 +1007,7 @@ int video_scale_bitmap(void)
 	disp_data.y_start = axis[1];
 	disp_data.x_end = axis[0] + axis[2] - 1;
 	disp_data.y_end = axis[1] + axis[3] - 1;
-	if (get_cpu_id().family_id >= MESON_CPU_MAJOR_ID_G12A)
+	if (osd_hw.osd_ver == OSD_HIGH_ONE)
 		osd_update_blend(&disp_data);
 #endif
 	osd_enable_hw(osd_index, 1);
@@ -1154,6 +1174,8 @@ static int _osd_hw_init(void)
 	u32 fb_width = 0;
 	u32 fb_height = 0;;
 
+	get_osd_version();
+
 	vout_init();
 	fb_addr = get_fb_addr();
 #ifdef CONFIG_OSD_SCALE_ENABLE
@@ -1194,7 +1216,7 @@ static int osd_hw_init_by_index(u32 osd_index)
 	if (osd_index == OSD1)
 		osd_layer_init(&fb_gdev, OSD1);
 	else if ( osd_index == OSD2) {
-		if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_AXG) {
+		if (osd_hw.osd_ver == OSD_SIMPLE) {
 			osd_loge("AXG not support osd2\n");
 			return -1;
 		}
@@ -1332,12 +1354,10 @@ int osd_rma_test(u32 osd_index)
 	u32 hist_result[4];
 	u32 family_id = get_cpu_id().family_id;
 
-	if (family_id == MESON_CPU_MAJOR_ID_AXG) {
+	if (osd_hw.osd_ver == OSD_SIMPLE) {
 		osd_max = 0;
-#ifdef CONFIG_AML_MESON_G12A
-	} else if (family_id >= MESON_CPU_MAJOR_ID_G12A) {
+	} else if (osd_hw.osd_ver == OSD_HIGH_ONE) {
 		osd_max = 1; // osd3 not supported now
-#endif
 	}
 	if (osd_index > osd_max) {
 		osd_loge("=== osd%d is not supported, osd_max is %d ===\n", osd_index, osd_max);
