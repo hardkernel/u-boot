@@ -182,6 +182,13 @@ enum hw_reg_index_e {
 	HW_REG_INDEX_MAX
 };
 
+enum osd_ver_e {
+	OSD_SIMPLE = 0,
+	OSD_NORMAL,
+	OSD_HIGH_ONE,
+	OSD_HIGH_OTHER
+};
+
 struct pandata_s {
 	s32 x_start;
 	s32 x_end;
@@ -262,6 +269,7 @@ struct hw_para_s {
 	u32 angle[HW_OSD_COUNT];
 	u32 clone[HW_OSD_COUNT];
 	u32 bot_type;
+	u32 osd_ver;
 };
 
 #endif /* _OSD_H_ */

@@ -858,7 +858,7 @@ void osd_setup_hw(u32 index,
 	int update_geometry = 0;
 	u32 w = (color->bpp * xres_virtual + 7) >> 3;
 
-	if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_AXG) {
+	if (osd_hw.osd_ver == OSD_SIMPLE) {
 		if (index == OSD2) {
 			osd_loge("AXG not support osd2\n");
 			return ;
@@ -910,7 +910,7 @@ void osd_setup_hw(u32 index,
 			 index, osd_hw.fb_gem[index].width);
 		osd_logd("osd[%d] canvas.height=%d\n",
 			 index, osd_hw.fb_gem[index].height);
-		if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_AXG) {
+		if (osd_hw.osd_ver == OSD_SIMPLE) {
 			u32 line_stride, fmt_mode, bpp;
 
 			bpp = color->bpp/8;
@@ -959,7 +959,7 @@ void osd_setup_hw(u32 index,
 		add_to_update_list(index, DISP_GEOMETRY);
 	add_to_update_list(index, DISP_OSD_REVERSE);
 #ifdef CONFIG_AML_MESON_G12A
-	if (get_cpu_id().family_id >= MESON_CPU_MAJOR_ID_G12A)
+	if (osd_hw.osd_ver == OSD_HIGH_ONE)
 		osd_setting_default_hwc(index, &disp_data);
 #endif
 	osd_wait_vsync_hw();
@@ -1959,17 +1959,17 @@ static void osd1_update_enable(void)
 
 	if (osd_hw.free_scale_mode[OSD1]) {
 		if (osd_hw.enable[OSD1] == ENABLE) {
-			if (get_cpu_id().family_id != MESON_CPU_MAJOR_ID_G12A)
+			if (osd_hw.osd_ver <= OSD_NORMAL)
 			VSYNCOSD_SET_MPEG_REG_MASK(VPP_MISC,
 						   VPP_OSD1_POSTBLEND | VPP_POSTBLEND_EN);
 			VSYNCOSD_SET_MPEG_REG_MASK(VIU_OSD1_CTRL_STAT, 1 << 21);
 		} else {
 			VSYNCOSD_CLR_MPEG_REG_MASK(VIU_OSD1_CTRL_STAT, 1 << 21);
-			if (get_cpu_id().family_id != MESON_CPU_MAJOR_ID_G12A)
+			if (osd_hw.osd_ver <= OSD_NORMAL)
 			VSYNCOSD_CLR_MPEG_REG_MASK(VPP_MISC,
 						   VPP_OSD1_POSTBLEND);
 		}
-	} else if (get_cpu_id().family_id != MESON_CPU_MAJOR_ID_G12A){
+	} else if (osd_hw.osd_ver <= OSD_NORMAL) {
 		video_enable |= VSYNCOSD_RD_MPEG_REG(VPP_MISC)&VPP_VD1_PREBLEND;
 		if (osd_hw.enable[OSD1] == ENABLE) {
 			if (osd_hw.free_scale_enable[OSD1]) {
@@ -2007,7 +2007,7 @@ static void osd2_update_enable(void)
 	if (osd_hw.free_scale_mode[OSD2]) {
 		if (osd_hw.enable[OSD2] == ENABLE) {
 			if (osd_hw.free_scale_enable[OSD2]) {
-				if (get_cpu_id().family_id != MESON_CPU_MAJOR_ID_G12A)
+				if (osd_hw.osd_ver <= OSD_NORMAL)
 				VSYNCOSD_SET_MPEG_REG_MASK(VPP_MISC,
 							   VPP_OSD1_POSTBLEND
 							   | VPP_POSTBLEND_EN);
@@ -2022,7 +2022,7 @@ static void osd2_update_enable(void)
 						VPP_OSD1_POSTBLEND);
 				*/
 #endif
-				if (get_cpu_id().family_id != MESON_CPU_MAJOR_ID_G12A)
+				if (osd_hw.osd_ver <= OSD_NORMAL)
 				VSYNCOSD_SET_MPEG_REG_MASK(VPP_MISC,
 							   VPP_OSD2_POSTBLEND
 							   | VPP_POSTBLEND_EN);
@@ -2036,7 +2036,7 @@ static void osd2_update_enable(void)
 							   VPP_OSD1_POSTBLEND
 							   | VPP_OSD2_POSTBLEND);
 		}
-	} else if (get_cpu_id().family_id != MESON_CPU_MAJOR_ID_G12A){
+	} else if (osd_hw.osd_ver <= OSD_NORMAL){
 		video_enable |= VSYNCOSD_RD_MPEG_REG(VPP_MISC)&VPP_VD1_PREBLEND;
 		if (osd_hw.enable[OSD2] == ENABLE) {
 			if (osd_hw.free_scale_enable[OSD2]) {
@@ -2633,7 +2633,7 @@ void osd_init_hw(void)
 		/* init vpu fifo control register */
 		data32 = osd_reg_read(VPP_OFIFO_SIZE);
 		osd_logi("VPP_OFIFO_SIZE:0x%x\n", data32);
-		if (get_cpu_id().family_id >= MESON_CPU_MAJOR_ID_G12A) {
+		if (osd_hw.osd_ver == OSD_HIGH_ONE) {
 			data32 = 0xfff << 20;
 			data32 |= (0xfff + 1);
 			osd_reg_write(VPP_OFIFO_SIZE, data32);
@@ -2645,14 +2645,14 @@ void osd_init_hw(void)
 		if ((get_cpu_id().family_id == MESON_CPU_MAJOR_ID_M6TV)
 		    || (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_MTVD)) {
 			data32 |= 18 << 5;  /* hold_fifo_lines */
-		} else if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_AXG) {
+		} else if (osd_hw.osd_ver == OSD_SIMPLE) {
 			data32 &= ~(0x1f << 5); /* bit[9:5] HOLD_FIFO_LINES */
 			data32 |= 0x18 << 5;
 		} else {
 			data32 |= 4 << 5;  /* hold_fifo_lines */
 		}
 		/* burst_len_sel: 3=64 */
-		if (get_cpu_id().family_id >= MESON_CPU_MAJOR_ID_G12A) {
+		if (osd_hw.osd_ver == OSD_HIGH_ONE) {
 			data32 |= 1 << 10;
 			data32 |= 1 << 31;
 		} else
@@ -2682,7 +2682,7 @@ void osd_init_hw(void)
 		osd_reg_write(VIU_OSD2_FIFO_CTRL_STAT, data2);
 		osd_reg_set_mask(VPP_MISC, VPP_POSTBLEND_EN);
 		osd_reg_clr_mask(VPP_MISC, VPP_PREBLEND_EN);
-		if (get_cpu_id().family_id != MESON_CPU_MAJOR_ID_G12A)
+		if (osd_hw.osd_ver <= OSD_NORMAL)
 			osd_reg_clr_mask(VPP_MISC,
 				VPP_OSD1_POSTBLEND | VPP_OSD2_POSTBLEND | VPP_VD1_POSTBLEND);
 		/* just disable osd to avoid booting hang up */
@@ -2702,7 +2702,7 @@ void osd_init_hw(void)
 		osd_reg_write(VIU_OSD1_CTRL_STAT2 , data32);
 		osd_reg_write(VIU_OSD2_CTRL_STAT2 , data32);
 	}
-	if (get_cpu_id().family_id != MESON_CPU_MAJOR_ID_G12A)
+	if (osd_hw.osd_ver <= OSD_NORMAL)
 		osd_reg_clr_mask(VPP_MISC, VPP_POST_FG_OSD2 | VPP_PRE_FG_OSD2);
 	osd_hw.order = OSD_ORDER_01;
 	osd_hw.enable[OSD2] = osd_hw.enable[OSD1] = DISABLE;
