@@ -235,7 +235,6 @@
             "run upgrade_check;"\
 	    "i2c mw 1f 3.1 0 2;i2c mw 1f 1.1 fc 2;"\
             "run storeargs;"\
-            "bcb uboot-command;"\
             "run switch_bootmode;"
 #define CONFIG_BOOTCOMMAND "run storeboot"
 

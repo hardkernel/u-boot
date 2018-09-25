@@ -238,7 +238,6 @@
             "run upgrade_check;"\
             "run init_display;"\
             "run storeargs;"\
-            "bcb uboot-command;"\
             "run switch_bootmode;"
 #define CONFIG_BOOTCOMMAND "run storeboot"
 
