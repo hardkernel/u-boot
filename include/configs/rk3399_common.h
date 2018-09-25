@@ -24,8 +24,8 @@
 #define CONFIG_SPL_TEXT_BASE		0xff8c2000
 #define CONFIG_SPL_MAX_SIZE		0x30000 - 0x2000
 /*  BSS setup */
-#define CONFIG_SPL_BSS_START_ADDR       0xff8e0000
-#define CONFIG_SPL_BSS_MAX_SIZE         0x10000
+#define CONFIG_SPL_BSS_START_ADDR       0xff8e4000
+#define CONFIG_SPL_BSS_MAX_SIZE         0x10000 - 0x4000
 
 #define CONFIG_SYS_BOOTM_LEN	(64 << 20)	/* 64M */
 
