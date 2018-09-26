@@ -78,8 +78,6 @@ enum {
 #define SYS_REG1_CS1_COL_SHIFT(ch)		(0 + (ch) * 2)
 #define SYS_REG1_CS1_COL_MASK			3
 
-#define BROM_BOOTSOURCE_ID_ADDR (CONFIG_ROCKCHIP_IRAM_START_ADDR + 0x10)
-
 /* Get sdram size decode from reg */
 size_t rockchip_sdram_size(phys_addr_t reg);
 
