@@ -920,7 +920,10 @@ static u64 dram_detect_cap(struct dram_info *dram,
 		/* detect col and bk for ddr3/lpddr3 */
 		coltmp = 12;
 		bktmp = 3;
-		rowtmp = 16;
+		if (dram_type == LPDDR2)
+			rowtmp = 15;
+		else
+			rowtmp = 16;
 
 		for (col = coltmp; col >= 9; col -= 1) {
 			writel(0, CONFIG_SYS_SDRAM_BASE);
