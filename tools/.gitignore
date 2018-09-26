@@ -28,3 +28,8 @@
 /sunxi-spl-image-builder
 /ubsha1
 /xway-swap-bytes
+/trust_merger
+/boot_merger
+/loaderimage
+/checksum
+/resource_tool

@@ -34,14 +34,16 @@ TOOLCHAIN_ARM32=../prebuilts/gcc/linux-x86/arm/gcc-linaro-6.3.1-2017.05-x86_64_a
 TOOLCHAIN_ARM64=../prebuilts/gcc/linux-x86/aarch64/gcc-linaro-6.3.1-2017.05-x86_64_aarch64-linux-gnu/bin
 
 ########################################### User not touch #############################################
+BIN_PATH_FIXUP="--replace tools/rk_tools/ ./"
+RKTOOLS=./tools
+
 # Declare global INI file searching index name for every chip, update in select_chip_info()
 RKCHIP=
 RKCHIP_LABEL=
 RKCHIP_LOADER=
 RKCHIP_TRUST=
 
-# Declare global rkbin RKTOOLS and rkbin repository path, updated in prepare()
-RKTOOLS=
+# Declare rkbin repository path, updated in prepare()
 RKBIN=
 
 # Declare global toolchain path for CROSS_COMPILE, updated in select_toolchain()
@@ -170,11 +172,10 @@ prepare()
 		;;
 	esac
 
-	# Initialize RKBIN and RKTOOLS
+	# Initialize RKBIN
 	if [ -d ${RKBIN_TOOLS} ]; then
 		absolute_path=$(cd `dirname ${RKBIN_TOOLS}`; pwd)
 		RKBIN=${absolute_path}
-		RKTOOLS=${absolute_path}/tools
 	else
 		echo
 		echo "Can't find '../rkbin/' repository, please download it before pack image!"
@@ -415,12 +416,12 @@ pack_loader_image()
 		for ini in $files
 		do
 			if [ -f "$ini" ]; then
-				${RKTOOLS}/boot_merger --replace tools/rk_tools/ ./ $ini
+				${RKTOOLS}/boot_merger ${BIN_PATH_FIXUP} $ini
 				echo "pack loader okay! Input: $ini"
 			fi
 		done
 	else
-		${RKTOOLS}/boot_merger --replace tools/rk_tools/ ./ ${RKBIN}/RKBOOT/${RKCHIP_LOADER}MINIALL.ini
+		${RKTOOLS}/boot_merger ${BIN_PATH_FIXUP} ${RKBIN}/RKBOOT/${RKCHIP_LOADER}MINIALL.ini
 		echo "pack loader okay! Input: ${RKBIN}/RKBOOT/${RKCHIP_LOADER}MINIALL.ini"
 	fi
 
@@ -439,7 +440,7 @@ pack_trust_image()
 		fi
 
 		cd ${RKBIN}
-		${RKTOOLS}/trust_merger ${PLATFORM_SHA} ${PLATFORM_RSA} ${PLATFORM_TRUST_IMG_SIZE} --replace tools/rk_tools/ ./ ${RKBIN}/RKTRUST/${RKCHIP_TRUST}${PLATFORM_AARCH32}TRUST.ini
+		${RKTOOLS}/trust_merger ${PLATFORM_SHA} ${PLATFORM_RSA} ${PLATFORM_TRUST_IMG_SIZE} ${BIN_PATH_FIXUP} ${RKBIN}/RKTRUST/${RKCHIP_TRUST}${PLATFORM_AARCH32}TRUST.ini
 
 		cd - && mv ${RKBIN}/trust.img ./trust.img
 		echo "pack trust okay! Input: ${RKBIN}/RKTRUST/${RKCHIP_TRUST}${PLATFORM_AARCH32}TRUST.ini"
