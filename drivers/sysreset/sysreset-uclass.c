@@ -30,6 +30,20 @@ int sysreset_walk(enum sysreset_t type)
 	struct udevice *dev;
 	int ret = -ENOSYS;
 
+	/*
+	 * Use psci sysreset as primary for rockchip platforms,
+	 * "rockchip_reset" is applied if PSCI is disabled.
+	 */
+#if !defined(CONFIG_TPL_BUILD) && \
+     defined(CONFIG_ARCH_ROCKCHIP) && defined(CONFIG_SYSRESET_PSCI)
+	ret = uclass_get_device_by_driver(UCLASS_SYSRESET,
+					  DM_GET_DRIVER(psci_sysreset), &dev);
+	if (!ret)
+		sysreset_request(dev, type);
+	else
+		printf("WARN: PSCI sysreset is disabled\n");
+#endif
+
 	while (ret != -EINPROGRESS && type < SYSRESET_COUNT) {
 		for (uclass_first_device(UCLASS_SYSRESET, &dev);
 		     dev;

@@ -5,7 +5,9 @@
 #
 
 obj-$(CONFIG_$(SPL_TPL_)SYSRESET) += sysreset-uclass.o
+ifndef CONFIG_TPL_BUILD
 obj-$(CONFIG_SYSRESET_PSCI) += sysreset_psci.o
+endif
 obj-$(CONFIG_SYSRESET_SYSCON) += sysreset_syscon.o
 obj-$(CONFIG_SYSRESET_WATCHDOG) += sysreset_watchdog.o
 
