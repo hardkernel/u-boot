@@ -156,7 +156,7 @@ int board_fdisk_all(void)
 	}
 
 	disk_partition_t info;
-	ret = get_partition_info_mpt_by_name(dev_desc, "vfat", &info);
+	ret = get_partition_info_mpt_by_name(dev_desc, "odm", &info);
 	if (ret < 0) {
 		printf("fastboot: no DOS partition is defined\n");
 		return -ENOENT;
