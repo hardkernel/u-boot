@@ -26,6 +26,9 @@ static struct partitions factory_partitions[] = {
 		.name = "ptable",
 		.size = bytes_to_lba(CONFIG_PTABLE_SIZE),
 	}, {
+		.name = "misc",			/* Android: misc */
+		.size = bytes_to_lba(4 * SZ_1K),
+	}, {
 		.name = "logo",			/* Logo */
 		.size = bytes_to_lba(2 * SZ_1M),
 	}, {
@@ -34,9 +37,6 @@ static struct partitions factory_partitions[] = {
 	}, {
 		.name = "boot",			/* Boot image */
 		.size = bytes_to_lba(24 * SZ_1M),
-	}, {
-		.name = "misc",			/* Android: misc */
-		.size = bytes_to_lba(8 * SZ_1M),
 	}, {
 		.name = "recovery",		/* Recovery Image */
 		.size = bytes_to_lba(16 * SZ_1M),

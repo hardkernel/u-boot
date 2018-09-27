@@ -29,6 +29,7 @@
  * for the system to send a message to recovery or the
  * other way around.
  */
+#define MISC_OFFSET ((CONFIG_BOOTAREA_SIZE + CONFIG_PTABLE_SIZE) / 512)
 
 struct bootloader_message {
     char command[32];
@@ -53,9 +54,10 @@ int board_get_recovery_message(void)
 	ret = get_partition_info_mpt_by_name(dev_desc, "misc", &info);
 
 	if (ret < 0) {
-		return AMLOGIC_REBOOT_UNKNOWN;
+		offset = MISC_OFFSET;
+	} else {
+		offset = info.start;
 	}
-	offset = info.start;
 
 	dev_desc->block_read(dev_desc->dev, offset,
 			(sizeof(struct bootloader_message)
