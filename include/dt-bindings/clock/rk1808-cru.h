@@ -137,8 +137,10 @@
 #define HSCLK_BUS_PRE		171
 #define ACLK_CRYPTO		172
 #define ACLK_DCF		173
+#define ACLK_DMAC		174
 
 /* hclk gates */
+#define HCLK_NPU		199
 #define HCLK_VPU		200
 #define LSCLK_VIO		201
 #define HCLK_VOPRAW		202
@@ -159,9 +161,10 @@
 #define HCLK_VAD		216
 #define HCLK_PDM		217
 #define HCLK_I2S0_8CH		218
-#define HCLK_I2S1_8CH		219
+#define HCLK_I2S1_2CH		219
 #define MSCLK_CORE_NIU		220
 #define HSCLK_IMEM		221
+#define HCLK_HOST_ARB		222
 
 /* pclk gates */
 #define PCLK_DDR		250
@@ -208,7 +211,8 @@
 #define PCLK_GPIO0_PMU		292
 #define PCLK_UART0_PMU		293
 #define PCLK_I2C0_PMU		294
-#define PCLK_PMU_PRE		295
+#define PCLK_USB3PHY_PIPE	295
+#define PCLK_PMU_PRE		296
 
 #define CLK_NR_CLKS		(PCLK_PMU_PRE + 1)
 
