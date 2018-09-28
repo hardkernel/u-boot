@@ -43,6 +43,7 @@ static struct rockchip_pll_rate_table rk3128_pll_rates[] = {
 	RK3036_PLL_RATE(600000000, 1, 75, 3, 1, 1, 0),
 	RK3036_PLL_RATE(594000000, 1, 99, 4, 1, 1, 0),
 	RK3036_PLL_RATE(500000000, 1, 125, 6, 1, 1, 0),
+	RK3036_PLL_RATE(400000000, 1, 100, 6, 1, 1, 0),
 	{ /* sentinel */ },
 };
 
@@ -756,6 +757,9 @@ static void rkclk_init(struct rk3128_clk_priv *priv)
 	rk3128_peri_set_clk(priv, ACLK_PERI, ACLK_PERI_HZ);
 	rk3128_peri_set_clk(priv, HCLK_PERI, ACLK_PERI_HZ / 2);
 	rk3128_peri_set_clk(priv, PCLK_PERI, ACLK_PERI_HZ / 2);
+
+	rockchip_pll_set_rate(&rk3128_pll_clks[CPLL],
+			      priv->cru, CPLL, CPLL_HZ);
 }
 
 static int rk3128_clk_probe(struct udevice *dev)

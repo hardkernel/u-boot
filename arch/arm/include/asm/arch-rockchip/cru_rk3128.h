@@ -14,6 +14,7 @@
 
 #define APLL_HZ		(600 * MHz)
 #define GPLL_HZ		(594 * MHz)
+#define CPLL_HZ		(400 * MHz)
 #define ACLK_BUS_HZ	(148500000)
 #define ACLK_PERI_HZ	(148500000)
 
