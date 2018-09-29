@@ -21,7 +21,11 @@
 #include <linux/compat.h>
 #include <mtd/mtd-abi.h>
 #include <linux/errno.h>
+#include <linux/list.h>
 #include <div64.h>
+#if IS_ENABLED(CONFIG_DM)
+#include <dm/device.h>
+#endif
 
 #define MAX_MTD_DEVICES 32
 #endif
@@ -309,7 +313,63 @@ struct mtd_info {
 	struct udevice *dev;
 #endif
 	int usecount;
+
+	/* MTD devices do not have any parent. MTD partitions do. */
+	struct mtd_info *parent;
+
+	/*
+	 * Offset of the partition relatively to the parent offset.
+	 * Is 0 for real MTD devices (ie. not partitions).
+	 */
+	u64 offset;
+
+	/*
+	 * List node used to add an MTD partition to the parent
+	 * partition list.
+	 */
+	struct list_head node;
+
+	/*
+	 * List of partitions attached to this MTD device (the parent
+	 * MTD device can itself be a partition).
+	 */
+	struct list_head partitions;
 };
+
+#if IS_ENABLED(CONFIG_DM)
+static inline void mtd_set_of_node(struct mtd_info *mtd,
+				   const struct device_node *np)
+{
+	mtd->dev->node.np = np;
+}
+
+static inline const struct device_node *mtd_get_of_node(struct mtd_info *mtd)
+{
+	return mtd->dev->node.np;
+}
+#else
+struct device_node;
+
+static inline void mtd_set_of_node(struct mtd_info *mtd,
+				   const struct device_node *np)
+{
+}
+
+static inline const struct device_node *mtd_get_of_node(struct mtd_info *mtd)
+{
+	return NULL;
+}
+#endif
+
+static inline bool mtd_is_partition(const struct mtd_info *mtd)
+{
+	return mtd->parent;
+}
+
+static inline bool mtd_has_partitions(const struct mtd_info *mtd)
+{
+	return !list_empty(&mtd->partitions);
+}
 
 int mtd_ooblayout_ecc(struct mtd_info *mtd, int section,
 		      struct mtd_oob_region *oobecc);
