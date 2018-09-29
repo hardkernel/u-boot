@@ -10,5 +10,6 @@
 #include <linux/mtd/mtd.h>
 
 int mtd_probe(struct udevice *dev);
+int mtd_probe_devices(void);
 
 #endif	/* _MTD_H_ */

@@ -818,6 +818,12 @@ config CMD_MMC
 	help
 	  MMC memory mapped support.
 
+config CMD_MTD
+	bool "mtd"
+	select MTD_PARTITIONS
+	help
+	  MTD commands support.
+
 config CMD_NAND
 	bool "nand"
 	default y if NAND_SUNXI
@@ -1511,13 +1517,13 @@ config CMD_MTD_BLK
 
 config MTDIDS_DEFAULT
 	string "Default MTD IDs"
-	depends on CMD_MTDPARTS
+	depends on CMD_MTD || CMD_MTDPARTS || CMD_NAND || CMD_FLASH
 	help
 	  Defines a default MTD ID
 
 config MTDPARTS_DEFAULT
 	string "Default MTD partition scheme"
-	depends on CMD_MTDPARTS
+	depends on CMD_MTD || CMD_MTDPARTS || CMD_NAND || CMD_FLASH
 	help
 	  Defines a default MTD partitioning scheme in the Linux MTD command
 	  line partitions format
