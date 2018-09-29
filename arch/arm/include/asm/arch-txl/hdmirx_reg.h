@@ -27,10 +27,11 @@
  */
 #define _BIT(n)			MSK(1, (n))
 
-#define HDMIRX_ADDR_PORT 		0xff646000
-#define HDMIRX_DATA_PORT 		0xff646004
+#define HDMIRX_ADDR_PORT 		0xda846000
+#define HDMIRX_DATA_PORT 		0xda846004
+#define HHI_BASE_ADDR 			0xC883C000
+#define PERIPHERAL_ADDR			0xc8834400
 
-#define HHI_BASE_ADDR 			0xff63c000
 #define HHI_GCLK_MPEG0			(0x50 << 2) /* (0xC883C000 + 0x140) */
 #define HHI_HDMIRX_CLK_CNTL		0x200 /* (0xC883C000 + 0x200)  */
 #define HHI_HDMIRX_AUD_CLK_CNTL	0x204 /* 0x1081 */
@@ -999,9 +1000,9 @@
 #define DWC_CEC_WKUPCTRL                 0x1FC4
 
 /*pinmux register*/
-#define     PERIPHS_PIN_MUX_5                                  (0xff634400 + (0x31 << 2))
-#define SEC_PERIPHS_PIN_MUX_5                                  (0xff634400 + (0x31 << 2))
-#define   P_PERIPHS_PIN_MUX_5                                  (volatile uint32_t *)(0xff634400 + (0x31 << 2))
+#define     PERIPHS_PIN_MUX_5                                  (PERIPHERAL_ADDR + (0x31 << 2))
+#define SEC_PERIPHS_PIN_MUX_5                                  (PERIPHERAL_ADDR + (0x31 << 2))
+#define   P_PERIPHS_PIN_MUX_5                                  (volatile uint32_t *)(PERIPHERAL_ADDR + (0x31 << 2))
 
 /*
  * ESM registers
