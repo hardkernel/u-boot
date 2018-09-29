@@ -190,27 +190,55 @@ int android_image_get_fdt(const struct andr_img_hdr *hdr,
 		*rd_data = 0;
 		return -1;
 	}
-
-	printf("FDT load addr 0x%08x size %u KiB\n",
-	       hdr->second_addr, DIV_ROUND_UP(hdr->second_size, 1024));
 /*
- * Actually we have read kernel dtb in init_kernel_dtb() and do overlay
- * when CONFIG_USING_KERNEL_DTB is enbled, and we also didn't update it at all.
- * So that we pass current fdt blob to kernel, otherwise we have to do overlay
- * again which wastes time.
+ * If kernel dtb is enabled, we have read kernel dtb in
+ * init_kernel_dtb() -> rockchip_read_dtb_file() and may have been
+ * done(optional) selection:
+ *
+ * 1. apply fdt overlay;
+ * 2. select fdt by adc or gpio;
+ *
+ * After that, we didn't update dtb at all untill run here, it's fine to
+ * pass current fdt to kernel.
  */
-#if defined(CONFIG_OF_LIBFDT_OVERLAY) && defined(CONFIG_USING_KERNEL_DTB)
+#if defined(CONFIG_USING_KERNEL_DTB)
 	*rd_data = (ulong)gd->fdt_blob;
+
+/*
+ * If kernel dtb is disabled and support rockchip image, we need to call
+ * rockchip_read_dtb_file() to get dtb with some optional selection.
+ */
+#elif defined(CONFIG_RKIMG_BOOTLOADER)
+	ulong fdt_addr = 0;
+	int ret;
+
+	/* Get resource addr and fdt addr */
+	fdt_addr = env_get_ulong("fdt_addr_r", 16, 0);
+	if (!fdt_addr) {
+		printf("No Found FDT Load Address.\n");
+		return -1;
+	}
+
+	ret = rockchip_read_dtb_file((void *)fdt_addr);
+	if (ret < 0) {
+		printf("%s: failed to read dtb file, ret=%d\n", __func__, ret);
+		return ret;
+	}
+
+	*rd_data = fdt_addr;
+
+/*
+ * If kernel dtb is disabled and not support rockchip image,
+ * get dtb from second position.
+ */
 #else
 	*rd_data = (unsigned long)hdr;
 	*rd_data += hdr->page_size;
 	*rd_data += ALIGN(hdr->kernel_size, hdr->page_size);
 	*rd_data += ALIGN(hdr->ramdisk_size, hdr->page_size);
-#ifdef CONFIG_RKIMG_BOOTLOADER
-	*rd_data += (rockchip_get_resource_file((void *)*rd_data,
-		     ANDROID_ARG_FDT_FILENAME))
-			* 512;
-#endif
+
+	printf("FDT load addr 0x%08x size %u KiB\n",
+	       hdr->second_addr, DIV_ROUND_UP(hdr->second_size, 1024));
 #endif
 
 	return 0;

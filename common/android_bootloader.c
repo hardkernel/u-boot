@@ -933,16 +933,6 @@ int android_bootloader_boot_flow(struct blk_desc *dev_desc,
 	ret = android_image_get_fdt((void *)load_address, &fdt_addr);
 	if (!ret)
 		env_set_hex("fdt_addr", fdt_addr);
-
-/*
- * Actually if CONFIG_USING_KERNEL_DTB is enbled, we have already read kernel
- * dtb and apply overlay in init_kernel_dtb(), so that we don't need to apply
- * again, we would pass the current fdt to kernel.
- */
-#if defined(CONFIG_CMD_DTIMG) && \
-    defined(CONFIG_OF_LIBFDT_OVERLAY) && !defined(CONFIG_USING_KERNEL_DTB)
-	android_fdt_overlay_apply((void *)fdt_addr);
-#endif
 #endif
 	android_bootloader_boot_kernel(load_address);
 
