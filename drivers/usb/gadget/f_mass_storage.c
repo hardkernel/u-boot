@@ -2253,14 +2253,18 @@ reset:
 
 	/* Enable the endpoints */
 	d = fsg_ep_desc(common->gadget,
-			&fsg_fs_bulk_in_desc, &fsg_hs_bulk_in_desc);
+			&fsg_fs_bulk_in_desc, &fsg_hs_bulk_in_desc,
+			&fsg_ss_bulk_in_desc, &fsg_ss_bulk_in_comp_desc,
+			fsg->bulk_in);
 	rc = enable_endpoint(common, fsg->bulk_in, d);
 	if (rc)
 		goto reset;
 	fsg->bulk_in_enabled = 1;
 
 	d = fsg_ep_desc(common->gadget,
-			&fsg_fs_bulk_out_desc, &fsg_hs_bulk_out_desc);
+			&fsg_fs_bulk_out_desc, &fsg_hs_bulk_out_desc,
+			&fsg_ss_bulk_out_desc, &fsg_ss_bulk_out_comp_desc,
+			fsg->bulk_out);
 	rc = enable_endpoint(common, fsg->bulk_out, d);
 	if (rc)
 		goto reset;
@@ -2731,6 +2735,23 @@ static int fsg_bind(struct usb_configuration *c, struct usb_function *f)
 			f->hs_descriptors =
 				usb_copy_descriptors(fsg_hs_function);
 		if (unlikely(!f->hs_descriptors)) {
+			free(f->descriptors);
+			return -ENOMEM;
+		}
+	}
+
+	if (gadget_is_superspeed(gadget)) {
+		/* Assume endpoint addresses are the same as full speed */
+		fsg_ss_bulk_in_desc.bEndpointAddress =
+			fsg_fs_bulk_in_desc.bEndpointAddress;
+		fsg_ss_bulk_out_desc.bEndpointAddress =
+			fsg_fs_bulk_out_desc.bEndpointAddress;
+
+		if (IS_RKUSB_UMS_DNL(c->cdev->driver->name))
+			f->ss_descriptors =
+				usb_copy_descriptors(rkusb_ss_function);
+
+		if (unlikely(!f->ss_descriptors)) {
 			free(f->descriptors);
 			return -ENOMEM;
 		}

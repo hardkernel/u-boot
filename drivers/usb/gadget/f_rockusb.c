@@ -45,6 +45,15 @@ static struct usb_descriptor_header *rkusb_hs_function[] = {
 	NULL,
 };
 
+static struct usb_descriptor_header *rkusb_ss_function[] = {
+	(struct usb_descriptor_header *)&rkusb_intf_desc,
+	(struct usb_descriptor_header *)&fsg_ss_bulk_in_desc,
+	(struct usb_descriptor_header *)&fsg_ss_bulk_in_comp_desc,
+	(struct usb_descriptor_header *)&fsg_ss_bulk_out_desc,
+	(struct usb_descriptor_header *)&fsg_ss_bulk_out_comp_desc,
+	NULL,
+};
+
 struct rk_flash_info {
 	u32	flash_size;
 	u16	block_size;
