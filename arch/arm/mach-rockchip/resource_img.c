@@ -164,6 +164,7 @@ static int init_resource_list(struct resource_img_hdr *hdr)
 	int resource_found = 0;
 	struct blk_desc *dev_desc;
 	disk_partition_t part_info;
+	char *boot_partname = PART_BOOT;
 
 /*
  * Primary detect AOSP format image, try to get resource image from
@@ -172,7 +173,6 @@ static int init_resource_list(struct resource_img_hdr *hdr)
  */
 #ifdef CONFIG_ANDROID_BOOT_IMAGE
 	struct andr_img_hdr *andr_hdr;
-	char *boot_partname = PART_BOOT;
 #endif
 
 	if (hdr) {
@@ -255,7 +255,8 @@ next:
 	if (!resource_found) {
 		debug("%s: Load resource from resource part\n", __func__);
 		/* Read resource from Rockchip Resource partition */
-		ret = part_get_info_by_name(dev_desc, PART_RESOURCE, &part_info);
+		boot_partname = PART_RESOURCE;
+		ret = part_get_info_by_name(dev_desc, boot_partname, &part_info);
 		if (ret < 0) {
 			printf("%s: failed to get resource part, ret=%d\n",
 			       __func__, ret);
@@ -298,6 +299,7 @@ next:
 		add_file_to_list(entry, offset);
 	}
 
+	printf("Load FDT from %s part\n", boot_partname);
 err:
 	free(content);
 out:
