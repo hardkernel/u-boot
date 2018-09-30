@@ -91,7 +91,7 @@ ddr_set_t __ddr_setting[] = {
 	.DisabledDbyte			= 0xf0,
 	.Is2Ttiming				= 1,
 	.HdtCtrl				= 0xC8,
-	.dram_cs0_size_MB		= 2048,
+	.dram_cs0_size_MB		= 0xffff,
 	.dram_cs1_size_MB		= 0,
 	.training_SequenceCtrl	= {0x31f,0x61}, //ddr3 0x21f 0x31f
 	.phy_odt_config_rank	= {0x30,0x30,0x30,0x30}, // // Odt pattern for accesses //targeting rank 0. [3:0] is used //for write ODT [7:4] is used for //read ODT
@@ -160,8 +160,8 @@ ddr_set_t __ddr_setting[] = {
 	.DisabledDbyte			= 0xf0,
 	.Is2Ttiming				= 1,
 	.HdtCtrl				= 0xC8,
-	.dram_cs0_size_MB		= 1024,
-	.dram_cs1_size_MB		= 1024,
+	.dram_cs0_size_MB		= 0xffff,
+	.dram_cs1_size_MB		= 0xffff,
 	.training_SequenceCtrl	= {0x31f,0}, //ddr3 0x21f 0x31f
 	.phy_odt_config_rank	= {0x30,0x30,0x30,0x30}, // // Odt pattern for accesses //targeting rank 0. [3:0] is used //for write ODT [7:4] is used for //read ODT
 	.dfi_odt_config			= 0x0c0c,
@@ -243,8 +243,8 @@ ddr_set_t __ddr_setting[] = {
 	.DisabledDbyte			= 0xf0,
 	.Is2Ttiming				= 0,
 	.HdtCtrl				= 0xa,
-	.dram_cs0_size_MB		= 1024,//1024,
-	.dram_cs1_size_MB		= 1024,//1024,
+	.dram_cs0_size_MB		= 0xffff,//1024,
+	.dram_cs1_size_MB		= 0xffff,//1024,
 	.training_SequenceCtrl	= {0x131f,0x61}, //ddr3 0x21f 0x31f
 	.phy_odt_config_rank	= {0x30,0x30,0x30,0x30}, // // Odt pattern for accesses //targeting rank 0. [3:0] is used //for write ODT [7:4] is used for //read ODT
 	.dfi_odt_config			= 0x0808,
@@ -278,7 +278,7 @@ ddr_set_t __ddr_setting[] = {
 							[4] = ( 30| 12 << 5 | 13 << 10 |  14<< 15 |  0 << 20 |  0 << 25 ),
 	},
 	.ddr_lpddr34_ca_remap	= {00,00},
-	.ddr_lpddr34_dq_remap	= {3,2,0,1,7,6,5,4,14,13,12,15,8,9,11,10,20,21,22,23,16,17,19,18,24,25,28,26,31,30,27,29},
+	.ddr_lpddr34_dq_remap	= {3,0,2,1,7,6,5,4, 13,12,15,14,10,8,11,9, 19,21,22,20,16,18,17,23, 26,27,25,24,31,29,30,28},
 	.dram_rtt_nom_wr_park	= {00,00},
 
 	/* pll ssc config:
@@ -315,7 +315,7 @@ ddr_set_t __ddr_setting[] = {
 	.DisabledDbyte			= 0xf0,
 	.Is2Ttiming				= 0,
 	.HdtCtrl				= 0xa,
-	.dram_cs0_size_MB		= 1536,//1024,
+	.dram_cs0_size_MB		= 0xffff,//1024,
 	.dram_cs1_size_MB		= 0,//1024,
 	.training_SequenceCtrl	= {0x131f,0x61}, //ddr3 0x21f 0x31f
 	.phy_odt_config_rank	= {0x30,0x30,0x30,0x30}, // // Odt pattern for accesses //targeting rank 0. [3:0] is used //for write ODT [7:4] is used for //read ODT
@@ -350,7 +350,7 @@ ddr_set_t __ddr_setting[] = {
 							[4] = ( 30| 12 << 5 | 13 << 10 |  14<< 15 |  0 << 20 |  0 << 25 ),
 	},
 	.ddr_lpddr34_ca_remap	= {00,00},
-	.ddr_lpddr34_dq_remap	= {00,00},
+	.ddr_lpddr34_dq_remap	= {3,0,2,1,7,6,5,4, 13,12,15,14,10,8,11,9, 19,21,22,20,16,18,17,23, 26,27,25,24,31,29,30,28},
 	.dram_rtt_nom_wr_park	= {00,00},
 	/* pll ssc config:
 	 *
@@ -385,8 +385,8 @@ ddr_set_t __ddr_setting[] = {
 	.DisabledDbyte			= 0xf0,
 	.Is2Ttiming				= 0,
 	.HdtCtrl				= 0xa,//0xa,
-	.dram_cs0_size_MB		= 1024,//1024,
-	.dram_cs1_size_MB		= 1024,//1024,
+	.dram_cs0_size_MB		= 0xffff,//1024,
+	.dram_cs1_size_MB		= 0xffff,//1024,
 	.training_SequenceCtrl	= {0x131f,0}, //ddr3 0x21f 0x31f
 	.phy_odt_config_rank	= {0x30,0x30,0x30,0x30}, // // Odt pattern for accesses //targeting rank 0. [3:0] is used //for write ODT [7:4] is used for //read ODT
 	.dfi_odt_config			= 0x00c,
@@ -421,7 +421,7 @@ ddr_set_t __ddr_setting[] = {
 							[4] = ( 31| 12 << 5 | 13 << 10 |  14<< 15 |  0 << 20 |  0 << 25 ),
 	},
 	.ddr_lpddr34_ca_remap	= {21/8,8/8,31/8,1/8},// {2,7,1,4,5,6,0,3,9,8},
-	.ddr_lpddr34_dq_remap	= {1,2,7,4,0,3,5,6,8,12,14,9,11,10,15,13,21,22,16,17,23,20,19,18,31,29,26,27,30,28,25,24},
+	.ddr_lpddr34_dq_remap	= {1,2,7,4,0,3,5,6, 8,12,14,9,11,10,15,13, 21,22,16,17,23,20,19,18, 31,29,26,27,30,28,25,24},
 	//{21,22,16,17,23,20,19,18,8,12,14,9,11,10,15,13,31,29,26,27,30,28,25,24,1,2,7,4,0,3,5,6},
 	.dram_rtt_nom_wr_park	= {00,00},
 	.ddr_func				= DDR_FUNC,
