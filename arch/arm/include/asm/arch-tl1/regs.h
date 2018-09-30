@@ -13,7 +13,7 @@
 #define REG_BASE_HIU                    (0xFF63C000L)
 #define REG_BASE_VCBUS                  (0xFF900000L)
 #define DMC_REG_BASE                    (0xFF638000L)
-#define REG_BASE_DSI_HOST          		(0xFFD00000L)/* 0xFFD07000L*/
+#define REG_TCON_APB_BASE               (0xFF660000L)
 
 #endif /*_BASE_REGISTER*/
 
@@ -17514,6 +17514,63 @@
 //===============================================================
 //
 // Closing file:  lcd_regs.h
+/* ********************************
+ * LCD TCON_APB BASE: 0xff600000
+ * ******************************** */
+#define TCON_CORE_REG_START                        (0x0000)
+#define P_TCON_CORE_REG_START                      (volatile unsigned int *)((0x0000 << 2) + 0xff660000)
+#define TCON_CTRL_TIMING_BASE                      (0x01b0)
+#define P_TCON_CTRL_TIMING_BASE                    (volatile unsigned int *)((0x01b0 << 2) + 0xff660000)
+
+#define TCON_TOP_CTRL                              0x2000
+#define P_TCON_TOP_CTRL                            (volatile unsigned int *)((0x2000 << 2) + 0xff660000)
+#define TCON_RGB_IN_MUX                            0x2001
+#define P_TCON_RGB_IN_MUX                          (volatile unsigned int *)((0x2001 << 2) + 0xff660000)
+#define TCON_OUT_CH_SEL0                           0x2002
+#define P_TCON_OUT_CH_SEL0                         (volatile unsigned int *)((0x2002 << 2) + 0xff660000)
+#define TCON_OUT_CH_SEL1                           0x2003
+#define P_TCON_OUT_CH_SEL1                         (volatile unsigned int *)((0x2003 << 2) + 0xff660000)
+#define TCON_I2C_DEGLITCH_CNTL                     0x2004
+#define P_TCON_I2C_DEGLITCH_CNTL                   (volatile unsigned int *)((0x2004 << 2) + 0xff660000)
+#define TCON_STATUS0                               0x2008 /* read only */
+#define P_TCON_STATUS0                             (volatile unsigned int *)((0x2008 << 2) + 0xff660000)
+#define TCON_PLLLOCK_CNTL                          0x2009
+#define P_TCON_PLLLOCK_CNTL                        (volatile unsigned int *)((0x2009 << 2) + 0xff660000)
+#define TCON_PLLLCK_RST_CNT                        0x200a
+#define P_TCON_PLLLCK_RST_CNT                      (volatile unsigned int *)((0x200a << 2) + 0xff660000)
+#define TCON_RST_CTRL                              0x200b
+#define P_TCON_RST_CTRL                            (volatile unsigned int *)((0x200b << 2) + 0xff660000)
+#define TCON_AXI_OFST0                             0x200c
+#define P_TCON_AXI_OFST0                           (volatile unsigned int *)((0x200c << 2) + 0xff660000)
+#define TCON_DDRIF_CTRL0                           0x200d
+#define P_TCON_DDRIF_CTRL0                         (volatile unsigned int *)((0x200d << 2) + 0xff660000)
+#define TCON_CLK_CTRL                              0x200e
+#define P_TCON_CLK_CTRL                            (volatile unsigned int *)((0x200e << 2) + 0xff660000)
+#define TCON_DDRIF_CTRL1                           0x200f
+#define P_TCON_DDRIF_CTRL1                         (volatile unsigned int *)((0x200f << 2) + 0xff660000)
+#define TCON_STATUS1                               0x2010 /* read only */
+#define P_TCON_STATUS1                             (volatile unsigned int *)((0x2010 << 2) + 0xff660000)
+#define TCON_DDRIF_CTRL2                           0x2011
+#define P_TCON_DDRIF_CTRL2                         (volatile unsigned int *)((0x2011 << 2) + 0xff660000)
+#define TCON_STATUS2                               0x2012 /* read only */
+#define P_TCON_STATUS2                             (volatile unsigned int *)((0x2012 << 2) + 0xff660000)
+#define TCON_AXI_OFST1                             0x2013
+#define P_TCON_AXI_OFST1                           (volatile unsigned int *)((0x2013 << 2) + 0xff660000)
+#define TCON_AXI_OFST2                             0x2014
+#define P_TCON_AXI_OFST2                           (volatile unsigned int *)((0x2014 << 2) + 0xff660000)
+#define TCON_GPO_CTRL0                             0x2015
+#define P_TCON_GPO_CTRL0                           (volatile unsigned int *)((0x2015 << 2) + 0xff660000)
+#define TCON_GPO_CTRL1                             0x2016
+#define P_TCON_GPO_CTRL1                           (volatile unsigned int *)((0x2016 << 2) + 0xff660000)
+#define TCON_GPO_CTRL2                             0x2017
+#define P_TCON_GPO_CTRL2                           (volatile unsigned int *)((0x2017 << 2) + 0xff660000)
+#define TCON_INTR_MASKN                            0x2022
+#define P_TCON_INTR_MASKN                          (volatile unsigned int *)((0x2022 << 2) + 0xff660000)
+#define TCON_INTR                                  0x2023 /* read only */
+#define P_TCON_INTR                                (volatile unsigned int *)((0x2023 << 2) + 0xff660000)
+//===============================================================
+//LCD TCON_APB BASE   END
+//===============================================================
 //
 //`define MAD_VCBUS_BASE               8'h17
 //
@@ -32571,212 +32628,3 @@
 
 // secure_apb.h
 
-//	registers for mipi_dsi (12'h8a0 - 12'h8ff)
-//========================================================================
-//
-// Reading file:  dsi_regs.h
-//
-// synopsys translate_off
-// synopsys translate_on
-//===========================================================================
-// MIPI DSI HOST CONTROLLER Registers 0x1c00 - 0x1cff
-//===========================================================================
-// -----------------------------------------------
-// CBUS_BASE:  DSI_CBUS_BASE = 0x1c
-#define MIPI_DSI_REGISTER
-// -----------------------------------------------
-//------------------------------------------------------------------------------
-// DWC IP registers: Synopsys IP, please refer to MIPI DSI HOST Databook
-//------------------------------------------------------------------------------
-#define MIPI_DSI_DWC_VERSION_OS                    0x1c00
-#define MIPI_DSI_DWC_PWR_UP_OS                     0x1c01
-#define MIPI_DSI_DWC_CLKMGR_CFG_OS                 0x1c02
-#define MIPI_DSI_DWC_DPI_VCID_OS                   0x1c03
-#define MIPI_DSI_DWC_DPI_COLOR_CODING_OS           0x1c04
-#define MIPI_DSI_DWC_DPI_CFG_POL_OS                0x1c05
-#define MIPI_DSI_DWC_DPI_LP_CMD_TIM_OS             0x1c06
-#define MIPI_DSI_DWC_PCKHDL_CFG_OS                 0x1c0b
-#define MIPI_DSI_DWC_GEN_VCID_OS                   0x1c0c
-#define MIPI_DSI_DWC_MODE_CFG_OS                   0x1c0d
-#define MIPI_DSI_DWC_VID_MODE_CFG_OS               0x1c0e
-#define MIPI_DSI_DWC_VID_PKT_SIZE_OS               0x1c0f
-#define MIPI_DSI_DWC_VID_NUM_CHUNKS_OS             0x1c10
-#define MIPI_DSI_DWC_VID_NULL_SIZE_OS              0x1c11
-#define MIPI_DSI_DWC_VID_HSA_TIME_OS               0x1c12
-#define MIPI_DSI_DWC_VID_HBP_TIME_OS               0x1c13
-#define MIPI_DSI_DWC_VID_HLINE_TIME_OS             0x1c14
-#define MIPI_DSI_DWC_VID_VSA_LINES_OS              0x1c15
-#define MIPI_DSI_DWC_VID_VBP_LINES_OS              0x1c16
-#define MIPI_DSI_DWC_VID_VFP_LINES_OS              0x1c17
-#define MIPI_DSI_DWC_VID_VACTIVE_LINES_OS          0x1c18
-#define MIPI_DSI_DWC_EDPI_CMD_SIZE_OS              0x1c19
-#define MIPI_DSI_DWC_CMD_MODE_CFG_OS               0x1c1a
-#define MIPI_DSI_DWC_GEN_HDR_OS                    0x1c1b
-#define MIPI_DSI_DWC_GEN_PLD_DATA_OS               0x1c1c
-#define MIPI_DSI_DWC_CMD_PKT_STATUS_OS             0x1c1d
-#define MIPI_DSI_DWC_TO_CNT_CFG_OS                 0x1c1e
-#define MIPI_DSI_DWC_HS_RD_TO_CNT_OS               0x1c1f
-#define MIPI_DSI_DWC_LP_RD_TO_CNT_OS               0x1c20
-#define MIPI_DSI_DWC_HS_WR_TO_CNT_OS               0x1c21
-#define MIPI_DSI_DWC_LP_WR_TO_CNT_OS               0x1c22
-#define MIPI_DSI_DWC_BTA_TO_CNT_OS                 0x1c23
-#define MIPI_DSI_DWC_SDF_3D_OS                     0x1c24
-#define MIPI_DSI_DWC_LPCLK_CTRL_OS                 0x1c25
-#define MIPI_DSI_DWC_PHY_TMR_LPCLK_CFG_OS          0x1c26
-#define MIPI_DSI_DWC_PHY_TMR_CFG_OS                0x1c27
-#define MIPI_DSI_DWC_PHY_RSTZ_OS                   0x1c28
-#define MIPI_DSI_DWC_PHY_IF_CFG_OS                 0x1c29
-#define MIPI_DSI_DWC_PHY_ULPS_CTRL_OS              0x1c2a
-#define MIPI_DSI_DWC_PHY_TX_TRIGGERS_OS            0x1c2b
-#define MIPI_DSI_DWC_PHY_STATUS_OS                 0x1c2c
-#define MIPI_DSI_DWC_PHY_TST_CTRL0_OS              0x1c2d
-#define MIPI_DSI_DWC_PHY_TST_CTRL1_OS              0x1c2e
-#define MIPI_DSI_DWC_INT_ST0_OS                    0x1c2f
-#define MIPI_DSI_DWC_INT_ST1_OS                    0x1c30
-#define MIPI_DSI_DWC_INT_MSK0_OS                   0x1c31
-#define MIPI_DSI_DWC_INT_MSK1_OS                   0x1c32
-//------------------------------------------------------------------------------
-// Top-level registers: AmLogic proprietary
-//------------------------------------------------------------------------------
-// 31: 4    Reserved.                                                                           Default 0.
-//     3 RW ~tim_rst_n:  1=Assert SW reset on mipi_dsi_host_timing block.   0=Release reset.    Default 1.
-//     2 RW ~dpi_rst_n:  1=Assert SW reset on mipi_dsi_host_dpi block.      0=Release reset.    Default 1.
-//     1 RW ~intr_rst_n: 1=Assert SW reset on mipi_dsi_host_intr block.     0=Release reset.    Default 1.
-//     0 RW ~dwc_rst_n:  1=Assert SW reset on IP core.                      0=Release reset.    Default 1.
-#define MIPI_DSI_TOP_SW_RESET                      0x1cf0
-// 31: 5    Reserved.                                                                                                       Default 0.
-//     4 RW manual_edpihalt:  1=Manual suspend VencL; 0=do not suspend VencL.                                               Default 0.
-//     3 RW auto_edpihalt_en: 1=Enable IP's edpihalt signal to suspend VencL; 0=IP's edpihalt signal does not affect VencL. Default 0.
-//     2 RW clock_freerun: Apply to auto-clock gate only.                                                                   Default 0.
-//                          0=Default, use auto-clock gating to save power;
-//                          1=use free-run clock, disable auto-clock gating, for debug mode.
-//     1 RW enable_pixclk: A manual clock gate option, due to DWC IP does not have auto-clock gating. 1=Enable pixclk.      Default 0.
-//     0 RW enable_sysclk: A manual clock gate option, due to DWC IP does not have auto-clock gating. 1=Enable sysclk.      Default 0.
-#define MIPI_DSI_TOP_CLK_CNTL                      0x1cf1
-// 31:27    Reserved.                                                                       Default 0.
-//    26 RW de_dpi_pol:     1= Invert DE polarity from mipi_dsi_host_dpi.                   Default 0.
-//    25 RW hsync_dpi_pol:  1= Invert HS polarity from mipi_dsi_host_dpi.                   Default 0.
-//    24 RW vsync_dpi_pol:  1= Invert VS polarity from mipi_dsi_host_dpi.                   Default 0.
-// 23:20 RW dpi_color_mode: Define DPI pixel format.                                        Default 0.
-//                           0=16-bit RGB565 config 1;
-//                           1=16-bit RGB565 config 2;
-//                           2=16-bit RGB565 config 3;
-//                           3=18-bit RGB666 config 1;
-//                           4=18-bit RGB666 config 2;
-//                           5=24-bit RGB888;
-//                           6=20-bit YCbCr 4:2:2;
-//                           7=24-bit YCbCr 4:2:2;
-//                           8=16-bit YCbCr 4:2:2;
-//                           9=30-bit RGB;
-//                          10=36-bit RGB;
-//                          11=12-bit YCbCr 4:2:0.
-//    19    Reserved.                                                                       Default 0.
-// 18:16 RW in_color_mode:  Define VENC data width.                                         Default 0.
-//                          0=30-bit pixel;
-//                          1=24-bit pixel;
-//                          2=18-bit pixel, RGB666;
-//                          3=16-bit pixel, RGB565.
-// 15:14 RW chroma_subsample: Define method of chroma subsampling.                          Default 0.
-//                            Applicable to YUV422 or YUV420 only.
-//                            0=Use even pixel's chroma;
-//                            1=Use odd pixel's chroma;
-//                            2=Use averaged value between even and odd pair.
-// 13:12 RW comp2_sel:  Select which component to be Cr or B: 0=comp0; 1=comp1; 2=comp2.    Default 2.
-// 11:10 RW comp1_sel:  Select which component to be Cb or G: 0=comp0; 1=comp1; 2=comp2.    Default 1.
-//  9: 8 RW comp0_sel:  Select which component to be Y  or R: 0=comp0; 1=comp1; 2=comp2.    Default 0.
-//     7    Reserved.                                                                       Default 0.
-//     6 RW de_venc_pol:    1= Invert DE polarity from VENC.                                Default 0.
-//     5 RW hsync_venc_pol: 1= Invert HS polarity from VENC.                                Default 0.
-//     4 RW vsync_venc_pol: 1= Invert VS polarity from VENC.                                Default 0.
-//     3 RW dpicolorm:      Signal to IP.                                                   Default 0.
-//     2 RW dpishutdn:      Signal to IP.                                                   Default 0.
-//     1    Reserved.                                                                       Default 0.
-//     0    Reserved.                                                                       Default 0.
-#define MIPI_DSI_TOP_CNTL                          0x1cf2
-// 31:16    Reserved.                                                                                                           Default 0.
-// 15: 8 RW suspend_frame_rate: Define rate of timed-suspend.                                                                   Default 0.
-//                              0=Execute suspend every frame; 1=Every other frame; ...; 255=Every 256 frame.
-//  7: 3    Reserved.                                                                                                           Default 0.
-//     2 RW timed_suspend_en:   1=Enable timed suspend VencL. 0=Disable timed suspend.                                          Default 0.
-//     1 RW manual_suspend_en:  1=Enable manual suspend VencL. 1=Cancel manual suspend VencL.                                   Default 0.
-//     0 RW suspend_on_edpihalt:1=Enable IP's edpihalt signal to suspend VencL; 0=IP's edpihalt signal does not affect VencL.   Default 1.
-#define MIPI_DSI_TOP_SUSPEND_CNTL                  0x1cf3
-// 31:29    Reserved.                                                                                                           Default 0.
-// 28:16 RW suspend_line_end:   Define timed-suspend region. Suspend from [pix_start,line_start] to [pix_end,line_end].         Default 0.
-// 15:13    Reserved.                                                                                                           Default 0.
-// 12: 0 RW suspend_line_start: Define timed-suspend region. Suspend from [pix_start,line_start] to [pix_end,line_end].         Default 0.
-#define MIPI_DSI_TOP_SUSPEND_LINE                  0x1cf4
-// 31:29    Reserved.                                                                                                           Default 0.
-// 28:16 RW suspend_pix_end:    Define timed-suspend region. Suspend from [pix_start,line_start] to [pix_end,line_end].         Default 0.
-// 15:13    Reserved.                                                                                                           Default 0.
-// 12: 0 RW suspend_pix_start:  Define timed-suspend region. Suspend from [pix_start,line_start] to [pix_end,line_end].         Default 0.
-#define MIPI_DSI_TOP_SUSPEND_PIX                   0x1cf5
-// 31:20    Reserved.                                                                                                           Default 0.
-// 19:10 RW meas_vsync:     Control on measuring Host Controller's vsync.                                                       Default 0.
-//                          [   19] meas_en:        1=Enable measurement
-//                          [   18] accum_meas_en:  0=meas_count is cleared at the end of each measure;
-//                                                  1=meas_count is accumulated at the end of each measure.
-//                          [17:10] vsync_span:     Define the duration of a measure is to last for how many Vsyncs.
-//  9: 0 RW meas_edpite:    Control on measuring Display Slave's edpite.                                                        Default 0.
-//                          [    9] meas_en:        1=Enable measurement
-//                          [    8] accum_meas_en:  0=meas_count is cleared at the end of each measure;
-//                                                  1=meas_count is accumulated at the end of each measure.
-//                          [ 7: 0] edpite_span:    Define the duration of a measure is to last for how many edpite.
-#define MIPI_DSI_TOP_MEAS_CNTL                     0x1cf6
-//    31 R  stat_edpihalt:  status of edpihalt signal from IP.              Default 0.
-// 30:29    Reserved.                                                       Default 0.
-// 28:16 R  stat_te_line:   Snapshot of Host's line position at edpite.     Default 0.
-// 15:13    Reserved.                                                       Default 0.
-// 12: 0 R  stat_te_pix:    Snapshot of Host's pixel position at edpite.    Default 0.
-#define MIPI_DSI_TOP_STAT                          0x1cf7
-// To measure display slave's frame rate, we can use a reference clock to measure the duration of one of more edpite pulse(s).
-// Measurement control is by register MIPI_DSI_TOP_MEAS_CNTL bit[9:0].
-// Reference clock comes from clk_rst_tst.cts_dsi_meas_clk, and is defined by HIU register HHI_VDIN_MEAS_CLK_CNTL bit[23:12].
-// Mesurement result is in MIPI_DSI_TOP_MEAS_STAT_TE0 and MIPI_DSI_TOP_MEAS_STAT_TE1, as below:
-// edpite_meas_count[47:0]: Number of reference clock cycles counted during one measure period (non-incremental measure), or
-//                          during all measure periods so far (incremental measure).
-// edpite_meas_count_n[3:0]:Number of measure periods has been done. Number can wrap over.
-//
-// 31: 0 R  edpite_meas_count[31:0].    Default 0.
-#define MIPI_DSI_TOP_MEAS_STAT_TE0                 0x1cf8
-// 19:16 R  edpite_meas_count_n.        Default 0.
-// 15: 0 R  edpite_meas_count[47:32].   Default 0.
-#define MIPI_DSI_TOP_MEAS_STAT_TE1                 0x1cf9
-// To measure Host's frame rate, we can use a reference clock to measure the duration of one of more Vsync pulse(s).
-// Measurement control is by register MIPI_DSI_TOP_MEAS_CNTL bit[19:10].
-// Reference clock comes from clk_rst_tst.cts_dsi_meas_clk, and is defined by HIU register HHI_VDIN_MEAS_CLK_CNTL bit[23:12].
-// Mesurement result is in MIPI_DSI_TOP_MEAS_STAT_VS0 and MIPI_DSI_TOP_MEAS_STAT_VS1, as below:
-// vsync_meas_count[47:0]:  Number of reference clock cycles counted during one measure period (non-incremental measure), or
-//                          during all measure periods so far (incremental measure).
-// vsync_meas_count_n[3:0]: Number of measure periods has been done. Number can wrap over.
-//
-// 31: 0 R  vsync_meas_count[31:0].     Default 0.
-#define MIPI_DSI_TOP_MEAS_STAT_VS0                 0x1cfa
-// 19:16 R  vsync_meas_count_n.         Default 0.
-// 15: 0 R  vsync_meas_count[47:32].    Default 0.
-#define MIPI_DSI_TOP_MEAS_STAT_VS1                 0x1cfb
-// 31:16 RW intr_stat/clr. For each bit, read as this interrupt level status, write 1 to clear. Default 0.
-//                         Note: To clear the interrupt level, simply write 1 to the specific bit, no need to write 0 afterwards.
-//          [31:22] Reserved
-//          [   21] stat/clr of EOF interrupt
-//          [   20] stat/clr of de_fall interrupt
-//          [   19] stat/clr of de_rise interrupt
-//          [   18] stat/clr of vs_fall interrupt
-//          [   17] stat/clr of vs_rise interrupt
-//          [   16] stat/clr of dwc_edpite interrupt
-// 15: 0 RW intr_enable. For each bit, 1=enable this interrupt, 0=disable.                      Default 0.
-//          [15: 6] Reserved
-//          [    5] EOF (End_Of_Field) interrupt
-//          [    4] de_fall interrupt
-//          [    3] de_rise interrupt
-//          [    2] vs_fall interrupt
-//          [    1] vs_rise interrupt
-//          [    0] dwc_edpite interrupt
-#define MIPI_DSI_TOP_INTR_CNTL_STAT                0x1cfc
-// 31: 2    Reserved.   Default 0.
-//  1: 0 RW mem_pd.     Default 3.
-#define MIPI_DSI_TOP_MEM_PD                        0x1cfd
-// synopsys translate_off
-// synopsys translate_on
-//
-// Closing file:  dsi_regs.h

@@ -345,7 +345,7 @@ U_BOOT_CMD(
 	"lcd bl           - lcd backlight operation\n"
 	"lcd clk          - show lcd pll & clk parameters\n"
 	"lcd info         - show lcd parameters\n"
-	"lcd tcon         - show lcd unifykey test\n"
+	"lcd tcon         - show lcd tcon debug\n"
 	"lcd reg          - dump lcd registers\n"
 	"lcd test         - show lcd bist pattern\n"
 	"lcd key          - show lcd unifykey test\n"

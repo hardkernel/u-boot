@@ -17520,8 +17520,8 @@
 /* ********************************
  * LCD TCON_APB BASE: 0xff600000
  * ******************************** */
-#define TCON_SYS_REG_START                         (0x0000)
-#define P_TCON_SYS_REG_START                       (volatile unsigned int *)((0x0000 << 2) + 0xff600000)
+#define TCON_CORE_REG_START                        (0x0000)
+#define P_TCON_CORE_REG_START                      (volatile unsigned int *)((0x0000 << 2) + 0xff600000)
 #define TCON_CTRL_TIMING_BASE                      (0x01b0)
 #define P_TCON_CTRL_TIMING_BASE                    (volatile unsigned int *)((0x01b0 << 2) + 0xff600000)
 

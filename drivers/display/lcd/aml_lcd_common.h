@@ -20,7 +20,9 @@
 #include "aml_lcd_unifykey.h"
 
 /* 20180718: mute: wait vsync for display shadow */
-#define LCD_DRV_VERSION    "20180718"
+/* 20180928: tl1 support, optimize clk config */
+/* 20181012: tl1 support tcon */
+#define LCD_DRV_VERSION    "20181012"
 
 #define VPP_OUT_SATURATE            (1 << 0)
 
@@ -46,7 +48,7 @@
 /* -------------------------- */
 
 /* -------------------------- */
-/* minilvsd phy parameters define */
+/* minilvds phy parameters define */
 /* -------------------------- */
 #define MLVDS_PHY_CNTL1_TXHD   0x6c60ca80
 #define MLVDS_PHY_CNTL2_TXHD   0x00000070
@@ -74,17 +76,24 @@ extern void lcd_timing_init_config(struct lcd_config_s *pconf);
 extern int lcd_vmode_change(struct lcd_config_s *pconf);
 
 /* lcd tcon */
-extern void lcd_tcon_regs_table_print(struct mlvds_config_s *mlvds_conf);
-extern void lcd_tcon_regs_readback_print(struct mlvds_config_s *mlvds_conf);
-extern int lcd_tcon_regs_update(unsigned char *table, int len);
-extern int lcd_tcon_init(struct lcd_config_s *pconf);
+extern void lcd_tcon_reg_table_print(void);
+extern void lcd_tcon_reg_readback_print(void);
+extern void lcd_tcon_info_print(void);
+extern int lcd_tcon_enable(struct lcd_config_s *pconf);
 extern void lcd_tcon_disable(void);
-extern int lcd_tcon_probe(char *dt_addr, struct lcd_config_s *pconf, int load_id);
+extern int lcd_tcon_probe(char *dt_addr, struct aml_lcd_drv_s *lcd_drv, int load_id);
 
 /* lcd gpio */
 extern int aml_lcd_gpio_name_map_num(const char *name);
 extern int aml_lcd_gpio_set(int gpio, int value);
 extern unsigned int aml_lcd_gpio_input_get(int gpio);
+
+/* lcd debug */
+extern void aml_lcd_debug_test(unsigned int num);
+extern void aml_lcd_mute_setting(unsigned char flag);
+extern void aml_lcd_info_print(void);
+extern void aml_lcd_reg_print(void);
+extern void aml_lcd_debug_probe(struct aml_lcd_drv_s *lcd_drv);
 
 /* lcd driver */
 extern int get_lcd_tv_config(char *dt_addr, int load_id);

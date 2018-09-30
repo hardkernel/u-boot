@@ -81,7 +81,7 @@
         "upgrade_step=0\0"\
         "jtag=disable\0"\
         "loadaddr=1080000\0"\
-        "panel_type=lcd_1\0" \
+        "panel_type=lvds_0\0" \
         "outputmode=1080p60hz\0" \
         "hdmimode=1080p60hz\0" \
         "cvbsmode=576cvbs\0" \
@@ -209,7 +209,7 @@
             "if imgread kernel ${recovery_part} ${loadaddr} ${recovery_offset}; then wipeisb; bootm ${loadaddr}; fi"\
             "\0"\
         "init_display="\
-            "hdmitx hpd;osd open;osd clear;imgread pic logo bootup $loadaddr;bmp display $bootup_offset;bmp scale;vout output ${outputmode}"\
+            "osd open;osd clear;imgread pic logo bootup $loadaddr;bmp display $bootup_offset;bmp scale;vout output ${outputmode}"\
             "\0"\
         "cmdline_keys="\
             "if keyman init 0x1234; then "\
@@ -414,7 +414,7 @@
 //#define CONFIG_VPU_CLK_LEVEL_DFT 7
 
 /* DISPLAY & HDMITX */
-#define CONFIG_AML_HDMITX20 1
+//#define CONFIG_AML_HDMITX20 1
 #define CONFIG_AML_CANVAS 1
 #define CONFIG_AML_VOUT 1
 #define CONFIG_AML_OSD 1
@@ -422,11 +422,11 @@
 #define CONFIG_CMD_BMP 1
 
 #if defined(CONFIG_AML_VOUT)
-#define CONFIG_AML_CVBS 1
+//#define CONFIG_AML_CVBS 1
 #endif
 
-//#define CONFIG_AML_LCD    1
-//#define CONFIG_AML_LCD_TABLET 1
+#define CONFIG_AML_LCD    1
+#define CONFIG_AML_LCD_TV 1
 //#define CONFIG_AML_LCD_EXTERN 1
 
 /* USB

@@ -349,6 +349,7 @@ static void lcd_venc_set(struct lcd_config_s *pconf)
 {
 	unsigned int h_active, v_active;
 	unsigned int video_on_pixel, video_on_line;
+	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
 
 	if (lcd_debug_print_flag)
 		LCDPR("%s\n", __func__);
@@ -380,6 +381,15 @@ static void lcd_venc_set(struct lcd_config_s *pconf)
 	lcd_vcbus_write(ENCL_VIDEO_VSO_BLINE, pconf->lcd_timing.vs_vs_addr);
 	lcd_vcbus_write(ENCL_VIDEO_VSO_ELINE, pconf->lcd_timing.vs_ve_addr);
 	lcd_vcbus_write(ENCL_VIDEO_RGBIN_CTRL, 3);
+
+	switch (lcd_drv->chip_type) {
+	case LCD_CHIP_TL1:
+		lcd_vcbus_write(ENCL_INBUF_CNTL1, (1 << 14) | (h_active - 1));
+		lcd_vcbus_write(ENCL_INBUF_CNTL0, 0x200);
+		break;
+	default:
+		break;
+	}
 
 	/* default black pattern */
 	lcd_vcbus_write(ENCL_TST_MDSEL, 0);
@@ -483,6 +493,7 @@ static void lcd_lvds_control_set(struct lcd_config_s *pconf)
 	/* lvsd swap */
 	switch (lcd_drv->chip_type) {
 	case LCD_CHIP_TXHD:
+	case LCD_CHIP_TL1:
 		/* lvds channel:    //tx 10 channels
 		 *    0: d0_a
 		 *    1: d1_a

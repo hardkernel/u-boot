@@ -173,8 +173,32 @@
 #define HHI_LVDS_TX_PHY_CNTL1                              (0xff63c000 + (0xdf << 2))
 #endif
 
-#ifndef CONFIG_AML_MESON_TXHD
-#define TCON_SYS_REG_START                         0x0000
+#ifndef HHI_TCON_PLL_CNTL0
+#define HHI_TCON_PLL_CNTL0                                 (0xff63c000 + (0x020 << 2))
+#endif
+#ifndef HHI_TCON_PLL_CNTL1
+#define HHI_TCON_PLL_CNTL1                                 (0xff63c000 + (0x021 << 2))
+#endif
+#ifndef HHI_TCON_PLL_CNTL2
+#define HHI_TCON_PLL_CNTL2                                 (0xff63c000 + (0x022 << 2))
+#endif
+#ifndef HHI_TCON_PLL_CNTL3
+#define HHI_TCON_PLL_CNTL3                                 (0xff63c000 + (0x023 << 2))
+#endif
+#ifndef HHI_TCON_PLL_CNTL4
+#define HHI_TCON_PLL_CNTL4                                 (0xff63c000 + (0x0df << 2))
+#endif
+
+#ifndef ENCL_INBUF_CNTL0
+#define ENCL_INBUF_CNTL0                           0x1cd3
+#endif
+#ifndef ENCL_INBUF_CNTL1
+#define ENCL_INBUF_CNTL1                           0x1cd4
+#endif
+
+#ifndef REG_TCON_APB_BASE
+#define REG_TCON_APB_BASE                          (0xFF600000L)
+#define TCON_CORE_REG_START                        0x0000
 #define TCON_CTRL_TIMING_BASE                      0x01b0
 #define TCON_TOP_CTRL                              0x1000
 #define TCON_RGB_IN_MUX                            0x1001
@@ -195,6 +219,31 @@
 #define TCON_INTR                                  0x1023 /* read only */
 #endif
 
+#ifndef TCON_AXI_OFST
+#define TCON_AXI_OFST                              0x100c
+#endif
+#ifndef TCON_AXI_OFST0
+#define TCON_AXI_OFST0                             0x200c
+#endif
+#ifndef TCON_STATUS2
+#define TCON_STATUS2                               0x2012
+#endif
+#ifndef TCON_AXI_OFST1
+#define TCON_AXI_OFST1                             0x2013
+#endif
+#ifndef TCON_AXI_OFST2
+#define TCON_AXI_OFST2                             0x2014
+#endif
+#ifndef TCON_GPO_CTRL0
+#define TCON_GPO_CTRL0                             0x2015
+#endif
+#ifndef TCON_GPO_CTRL1
+#define TCON_GPO_CTRL1                             0x2016
+#endif
+#ifndef TCON_GPO_CTRL2
+#define TCON_GPO_CTRL2                             0x2017
+#endif
+
 #ifndef HHI_DIF_TCON_CNTL0
 #define HHI_DIF_TCON_CNTL0                         (0xff63c000 + (0x3c << 2))
 #endif
@@ -206,10 +255,6 @@
 #endif
 #ifndef HHI_TCON_CLK_CNTL
 #define HHI_TCON_CLK_CNTL                          (0xff63c000 + (0xf0 << 2))
-#endif
-
-#ifndef REG_TCON_APB_BASE
-#define REG_TCON_APB_BASE                          (0xFF600000L)
 #endif
 
 #ifndef PWM_PWM_E

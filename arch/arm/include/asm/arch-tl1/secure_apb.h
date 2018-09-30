@@ -22,64 +22,6 @@
 // synopsys translate_off
 // synopsys translate_on
 //========================================================================
-// MIPI_DSI_PHY
-//========================================================================
-//  APB4_DECODER_NON_SECURE_BASE     32'hFF644000
-//  APB4_DECODER_SECURE_BASE         32'hFF644000
-//`define MIPI_DSI_PHY_START      8'h00
-//`define MIPI_DSI_PHY_END        16'hffff
-#define     MIPI_DSI_PHY_CTRL                                  (0xff644000 + (0x000 << 2))
-#define SEC_MIPI_DSI_PHY_CTRL                                  (0xff644000 + (0x000 << 2))
-#define   P_MIPI_DSI_PHY_CTRL                                  (volatile uint32_t *)(0xff644000 + (0x000 << 2))
-#define     MIPI_DSI_CHAN_CTRL                                 (0xff644000 + (0x001 << 2))
-#define SEC_MIPI_DSI_CHAN_CTRL                                 (0xff644000 + (0x001 << 2))
-#define   P_MIPI_DSI_CHAN_CTRL                                 (volatile uint32_t *)(0xff644000 + (0x001 << 2))
-#define     MIPI_DSI_CHAN_STS                                  (0xff644000 + (0x002 << 2))
-#define SEC_MIPI_DSI_CHAN_STS                                  (0xff644000 + (0x002 << 2))
-#define   P_MIPI_DSI_CHAN_STS                                  (volatile uint32_t *)(0xff644000 + (0x002 << 2))
-#define     MIPI_DSI_CLK_TIM                                   (0xff644000 + (0x003 << 2))
-#define SEC_MIPI_DSI_CLK_TIM                                   (0xff644000 + (0x003 << 2))
-#define   P_MIPI_DSI_CLK_TIM                                   (volatile uint32_t *)(0xff644000 + (0x003 << 2))
-#define     MIPI_DSI_HS_TIM                                    (0xff644000 + (0x004 << 2))
-#define SEC_MIPI_DSI_HS_TIM                                    (0xff644000 + (0x004 << 2))
-#define   P_MIPI_DSI_HS_TIM                                    (volatile uint32_t *)(0xff644000 + (0x004 << 2))
-#define     MIPI_DSI_LP_TIM                                    (0xff644000 + (0x005 << 2))
-#define SEC_MIPI_DSI_LP_TIM                                    (0xff644000 + (0x005 << 2))
-#define   P_MIPI_DSI_LP_TIM                                    (volatile uint32_t *)(0xff644000 + (0x005 << 2))
-#define     MIPI_DSI_ANA_UP_TIM                                (0xff644000 + (0x006 << 2))
-#define SEC_MIPI_DSI_ANA_UP_TIM                                (0xff644000 + (0x006 << 2))
-#define   P_MIPI_DSI_ANA_UP_TIM                                (volatile uint32_t *)(0xff644000 + (0x006 << 2))
-#define     MIPI_DSI_INIT_TIM                                  (0xff644000 + (0x007 << 2))
-#define SEC_MIPI_DSI_INIT_TIM                                  (0xff644000 + (0x007 << 2))
-#define   P_MIPI_DSI_INIT_TIM                                  (volatile uint32_t *)(0xff644000 + (0x007 << 2))
-#define     MIPI_DSI_WAKEUP_TIM                                (0xff644000 + (0x008 << 2))
-#define SEC_MIPI_DSI_WAKEUP_TIM                                (0xff644000 + (0x008 << 2))
-#define   P_MIPI_DSI_WAKEUP_TIM                                (volatile uint32_t *)(0xff644000 + (0x008 << 2))
-#define     MIPI_DSI_LPOK_TIM                                  (0xff644000 + (0x009 << 2))
-#define SEC_MIPI_DSI_LPOK_TIM                                  (0xff644000 + (0x009 << 2))
-#define   P_MIPI_DSI_LPOK_TIM                                  (volatile uint32_t *)(0xff644000 + (0x009 << 2))
-#define     MIPI_DSI_LP_WCHDOG                                 (0xff644000 + (0x00a << 2))
-#define SEC_MIPI_DSI_LP_WCHDOG                                 (0xff644000 + (0x00a << 2))
-#define   P_MIPI_DSI_LP_WCHDOG                                 (volatile uint32_t *)(0xff644000 + (0x00a << 2))
-#define     MIPI_DSI_ANA_CTRL                                  (0xff644000 + (0x00b << 2))
-#define SEC_MIPI_DSI_ANA_CTRL                                  (0xff644000 + (0x00b << 2))
-#define   P_MIPI_DSI_ANA_CTRL                                  (volatile uint32_t *)(0xff644000 + (0x00b << 2))
-#define     MIPI_DSI_CLK_TIM1                                  (0xff644000 + (0x00c << 2))
-#define SEC_MIPI_DSI_CLK_TIM1                                  (0xff644000 + (0x00c << 2))
-#define   P_MIPI_DSI_CLK_TIM1                                  (volatile uint32_t *)(0xff644000 + (0x00c << 2))
-#define     MIPI_DSI_TURN_WCHDOG                               (0xff644000 + (0x00d << 2))
-#define SEC_MIPI_DSI_TURN_WCHDOG                               (0xff644000 + (0x00d << 2))
-#define   P_MIPI_DSI_TURN_WCHDOG                               (volatile uint32_t *)(0xff644000 + (0x00d << 2))
-#define     MIPI_DSI_ULPS_CHECK                                (0xff644000 + (0x00e << 2))
-#define SEC_MIPI_DSI_ULPS_CHECK                                (0xff644000 + (0x00e << 2))
-#define   P_MIPI_DSI_ULPS_CHECK                                (volatile uint32_t *)(0xff644000 + (0x00e << 2))
-#define     MIPI_DSI_TEST_CTRL0                                (0xff644000 + (0x00f << 2))
-#define SEC_MIPI_DSI_TEST_CTRL0                                (0xff644000 + (0x00f << 2))
-#define   P_MIPI_DSI_TEST_CTRL0                                (volatile uint32_t *)(0xff644000 + (0x00f << 2))
-#define     MIPI_DSI_TEST_CTRL1                                (0xff644000 + (0x010 << 2))
-#define SEC_MIPI_DSI_TEST_CTRL1                                (0xff644000 + (0x010 << 2))
-#define   P_MIPI_DSI_TEST_CTRL1                                (volatile uint32_t *)(0xff644000 + (0x010 << 2))
-//========================================================================
 //  Temp sensor PLL
 //========================================================================
 //  APB4_DECODER_NON_SECURE_BASE     32'hFF634800

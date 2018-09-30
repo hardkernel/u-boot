@@ -812,8 +812,6 @@ static int lcd_config_load_from_unifykey(struct lcd_config_s *pconf)
 
 static void lcd_config_init(struct lcd_config_s *pconf)
 {
-	struct lcd_clk_config_s *cconf = get_lcd_clk_config();
-	unsigned int ss_level;
 	unsigned int h_period = pconf->lcd_basic.h_period;
 	unsigned int v_period = pconf->lcd_basic.v_period;
 	unsigned int clk = pconf->lcd_timing.lcd_clk;
@@ -834,9 +832,6 @@ static void lcd_config_init(struct lcd_config_s *pconf)
 	lcd_timing_init_config(pconf);
 	lcd_tablet_config_update(pconf);
 	lcd_clk_generate_parameter(pconf);
-
-	ss_level = pconf->lcd_timing.ss_level;
-	cconf->ss_level = (ss_level >= cconf->ss_level_max) ? 0 : ss_level;
 }
 
 static int lcd_config_check(char *mode)

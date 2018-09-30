@@ -1013,8 +1013,6 @@ static int lcd_config_load_from_unifykey(struct lcd_config_s *pconf)
 
 static void lcd_config_init(struct lcd_config_s *pconf)
 {
-	struct lcd_clk_config_s *cconf = get_lcd_clk_config();
-	unsigned int ss_level;
 	unsigned int clk;
 
 	if (pconf->lcd_timing.lcd_clk == 0) /* default 0 for 60hz */
@@ -1034,8 +1032,6 @@ static void lcd_config_init(struct lcd_config_s *pconf)
 	pconf->lcd_timing.sync_duration_den = 100;
 
 	lcd_timing_init_config(pconf);
-	ss_level = pconf->lcd_timing.ss_level;
-	cconf->ss_level = (ss_level >= cconf->ss_level_max) ? 0 : ss_level;
 }
 
 static int lcd_outputmode_check(char *mode)

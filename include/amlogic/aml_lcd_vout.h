@@ -96,6 +96,7 @@ enum lcd_chip_e {
 	LCD_CHIP_TXHD, 		/* 6 */
 	LCD_CHIP_G12A, 		/* 7 */
 	LCD_CHIP_G12B, 		/* 8 */
+	LCD_CHIP_TL1, 		/* 9 */
 	LCD_CHIP_MAX,
 };
 
@@ -105,6 +106,7 @@ enum lcd_type_e {
 	LCD_VBYONE,
 	LCD_MIPI,
 	LCD_MLVDS,
+	LCD_P2P,
 	LCD_TYPE_MAX,
 };
 
@@ -176,22 +178,7 @@ struct lcd_timing_s {
 	unsigned short vs_vs_addr;
 	unsigned short vs_ve_addr;
 };
-/*
-struct lcd_effect_s {
-	unsigned int rgb_base_addr;
-	unsigned int rgb_coeff_addr;
-	unsigned char dith_user;
-	unsigned int dith_ctrl;
 
-	unsigned char gamma_ctrl;
-	unsigned short gamma_r_coeff;
-	unsigned short gamma_g_coeff;
-	unsigned short gamma_b_coeff;
-	unsigned short GammaTableR[256];
-	unsigned short GammaTableG[256];
-	unsigned short GammaTableB[256];
-};
-*/
 struct ttl_config_s {
 	unsigned int clk_pol;
 	unsigned int sync_valid; /* [1]DE, [0]hvsync */
@@ -309,7 +296,6 @@ struct dsi_config_s {
 	unsigned char check_state;
 };
 
-#define LCD_TCON_TABLE_MAX    4096
 struct mlvds_config_s {
 	unsigned int channel_num;
 	unsigned int channel_sel0;
@@ -323,10 +309,21 @@ struct mlvds_config_s {
 	/* internal used */
 	unsigned int pi_clk_sel; /* bit[9:0] */
 	unsigned int bit_rate; /* Hz */
-	unsigned char tcon_enable;
-	unsigned short reg_table_len;
-	unsigned char *reg_table;
-	unsigned int fb_addr;
+};
+
+struct p2p_config_s {
+	unsigned int channel_num;
+	unsigned int channel_sel0;
+	unsigned int channel_sel1;
+	unsigned int clk_phase; /* [13:12]=clk01_sel, [11:8]=pi2, [7:4]=pi1, [3:0]=pi0 */
+	unsigned int pn_swap;
+	unsigned int bit_swap; /* MSB/LSB reverse */
+	unsigned int phy_vswing;
+	unsigned int phy_preem;
+
+	/* internal used */
+	unsigned int pi_clk_sel; /* bit[9:0] */
+	unsigned int bit_rate; /* Hz */
 };
 
 struct lcd_ctrl_config_s {
@@ -335,6 +332,7 @@ struct lcd_ctrl_config_s {
 	struct vbyone_config_s *vbyone_config;
 	struct dsi_config_s *mipi_config;
 	struct mlvds_config_s *mlvds_config;
+	struct p2p_config_s *p2p_config;
 };
 
 /* **********************************
@@ -401,7 +399,6 @@ struct lcd_config_s {
 	unsigned int backlight_index;
 	struct lcd_basic_s lcd_basic;
 	struct lcd_timing_s lcd_timing;
-	/*struct lcd_effect_s lcd_effect;*/
 	struct lcd_ctrl_config_s lcd_control;
 	struct lcd_power_ctrl_s *lcd_power;
 	unsigned char pinctrl_ver;
