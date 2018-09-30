@@ -109,7 +109,7 @@ prepare()
 	else
 		case $BOARD in
 			# Parse from exit .config
-			''|elf*|loader*|trust|uboot|map|sym)
+			''|elf*|loader*|debug*|trust|uboot|map|sym)
 			count=`find -name .config | wc -l`
 			dir=`find -name .config`
 			# Good, find only one .config
@@ -149,7 +149,7 @@ prepare()
 		;;
 
 		#Subcmd
-		''|elf*|loader*|trust|uboot|map|sym)
+		''|elf*|loader*|debug*|trust|uboot|map|sym)
 		;;
 
 		*)
@@ -233,6 +233,60 @@ sub_commands()
 			${TOOLCHAIN_OBJDUMP} -${opt} ${OUTDIR}/u-boot | less
 			exit 0
 		fi
+		;;
+
+		debug)
+		if [ "${cmd}" = 'debug' -a "${opt}" = 'debug' ]; then
+			echo
+			echo "The commands will modify .config and files, and can't auto restore changes!"
+			echo "debug-N, the N:"
+			echo "    1. lib/initcall.c debug() -> printf()"
+			echo "    2. common/board_r.c and common/board_f.c debug() -> printf()"
+			echo "    3. global #define DEBUG"
+			echo "    4. enable CONFIG_ROCKCHIP_DEBUGGER"
+			echo "    5. enable CONFIG_ROCKCHIP_CRC"
+			echo "    6. enable CONFIG_BOOTSTAGE_PRINTF_TIMESTAMP"
+			echo "    7. enable CONFIG_ROCKCHIP_CRASH_DUMP"
+			echo "    8. set CONFIG_BOOTDELAY=5"
+			echo
+			echo "Enabled: "
+			grep '^CONFIG_ROCKCHIP_DEBUGGER=y' ${OUTDIR}/.config > /dev/null \
+			&& echo "    CONFIG_ROCKCHIP_DEBUGGER"
+			grep '^CONFIG_ROCKCHIP_CRC=y' ${OUTDIR}/.config > /dev/null \
+			&& echo "    CONFIG_ROCKCHIP_CRC"
+			grep '^CONFIG_BOOTSTAGE_PRINTF_TIMESTAMP=y' ${OUTDIR}/.config > /dev/null \
+			&& echo "    CONFIG_BOOTSTAGE_PRINTF_TIMESTAMP"
+			grep '^CONFIG_ROCKCHIP_CRASH_DUMP=y' ${OUTDIR}/.config > /dev/null \
+			&& echo "    CONFIG_ROCKCHIP_CRASH_DUMP"
+
+		elif [ "${opt}" = '1' ]; then
+			sed -i 's/\<debug\>/printf/g' lib/initcall.c
+			echo "DEBUG [1]: lib/initcall.c debug() -> printf()"
+		elif [ "${opt}" = '2' ]; then
+			sed -i 's/\<debug\>/printf/g' ./common/board_f.c
+			sed -i 's/\<debug\>/printf/g' ./common/board_r.c
+			echo "DEBUG [2]: common/board_r.c and common/board_f.c debug() -> printf()"
+		elif [ "${opt}" = '3' ]; then
+			sed -i '$i \#define DEBUG\' include/configs/rockchip-common.h
+			echo "DEBUG [3]: global #define DEBUG"
+		elif [ "${opt}" = '4' ]; then
+			sed -i 's/\# CONFIG_ROCKCHIP_DEBUGGER is not set/CONFIG_ROCKCHIP_DEBUGGER=y/g' ${OUTDIR}/.config
+			echo "DEBUG [4]: CONFIG_ROCKCHIP_DEBUGGER is enabled"
+		elif [ "${opt}" = '5' ]; then
+			sed -i 's/\# CONFIG_ROCKCHIP_CRC is not set/CONFIG_ROCKCHIP_CRC=y/g' ${OUTDIR}/.config
+			echo "DEBUG [5]: CONFIG_ROCKCHIP_CRC is enabled"
+		elif [ "${opt}" = '6' ]; then
+			sed -i 's/\# CONFIG_BOOTSTAGE_PRINTF_TIMESTAMP is not set/CONFIG_BOOTSTAGE_PRINTF_TIMESTAMP=y/g' ${OUTDIR}/.config
+			echo "DEBUG [6]: CONFIG_BOOTSTAGE_PRINTF_TIMESTAMP is enabled"
+		elif [ "${opt}" = '7' ]; then
+			sed -i 's/\# CONFIG_ROCKCHIP_CRASH_DUMP is not set/CONFIG_ROCKCHIP_CRASH_DUMP=y/g' ${OUTDIR}/.config
+			echo "DEBUG [7]: CONFIG_ROCKCHIP_CRASH_DUMP is enabled"
+		elif [ "${opt}" = '8' ]; then
+			sed -i 's/^CONFIG_BOOTDELAY=0/CONFIG_BOOTDELAY=5/g' ${OUTDIR}/.config
+			echo "DEBUG [8]: CONFIG_BOOTDELAY is 5s"
+		fi
+		echo
+		exit 0
 		;;
 
 		map)
