@@ -42,7 +42,10 @@ enum log_category_t {
 	LOGC_ARCH,
 	LOGC_BOARD,
 	LOGC_CORE,
-	LOGC_DT,
+	LOGC_DM,	/* Core driver-model */
+	LOGC_DT,	/* Device-tree */
+	LOGC_EFI,	/* EFI implementation */
+	LOGC_ALLOC,	/* Memory allocation */
 
 	LOGC_COUNT,
 	LOGC_END,
