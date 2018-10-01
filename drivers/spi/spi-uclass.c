@@ -64,11 +64,11 @@ int dm_spi_claim_bus(struct udevice *dev)
 	if (speed != slave->speed) {
 		ret = spi_set_speed_mode(bus, speed, slave->mode);
 		if (ret)
-			return ret;
+			return log_ret(ret);
 		slave->speed = speed;
 	}
 
-	return ops->claim_bus ? ops->claim_bus(dev) : 0;
+	return log_ret(ops->claim_bus ? ops->claim_bus(dev) : 0);
 }
 
 void dm_spi_release_bus(struct udevice *dev)
@@ -93,7 +93,7 @@ int dm_spi_xfer(struct udevice *dev, unsigned int bitlen,
 
 int spi_claim_bus(struct spi_slave *slave)
 {
-	return dm_spi_claim_bus(slave->dev);
+	return log_ret(dm_spi_claim_bus(slave->dev));
 }
 
 void spi_release_bus(struct spi_slave *slave)
