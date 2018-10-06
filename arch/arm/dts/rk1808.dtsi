@@ -1013,6 +1013,18 @@
 		status = "disabled";
 	};
 
+	saradc: saradc@ff3c0000 {
+		compatible = "rockchip,rk1808-saradc", "rockchip,rk3399-saradc";
+		reg = <0x0 0xff3c0000 0x0 0x100>;
+		interrupts = <GIC_SPI 64 IRQ_TYPE_LEVEL_HIGH>;
+		#io-channel-cells = <1>;
+		clocks = <&cru SCLK_SARADC>, <&cru PCLK_SARADC>;
+		clock-names = "saradc", "apb_pclk";
+		resets = <&cru SRST_SARADC_P>;
+		reset-names = "saradc-apb";
+		status = "disabled";
+	};
+
 	sdmmc: dwmmc@ffcf0000 {
 		compatible = "rockchip,rk1808-dw-mshc", "rockchip,rk3288-dw-mshc";
 		reg = <0x0 0xffcf0000 0x0 0x4000>;
