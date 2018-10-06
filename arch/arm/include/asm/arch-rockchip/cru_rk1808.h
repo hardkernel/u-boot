@@ -12,6 +12,7 @@
 #define KHz		1000
 #define OSC_HZ		(24 * MHz)
 #define APLL_HZ		(600 * MHz)
+#define PCLK_PMU_HZ	(100 * MHz)
 
 /* PX30 pll id */
 enum rk1808_pll_id {
@@ -266,5 +267,9 @@ enum {
 	CLK_I2C0_DIV_CON_SHIFT		= 8,
 	CLK_I2C0_PLL_SEL_MASK		= 1 << CLK_I2C0_PLL_SEL_SHIFT,
 	CLK_I2C0_DIV_CON_MASK		= 0x3f << CLK_I2C0_DIV_CON_SHIFT,
+
+	/* PMUCRU_CLK_SEL0_CON */
+	PCLK_PMU_DIV_CON_SHIFT		= 0,
+	PCLK_PMU_DIV_CON_MASK		= 0x1f << PCLK_PMU_DIV_CON_SHIFT,
 };
 #endif

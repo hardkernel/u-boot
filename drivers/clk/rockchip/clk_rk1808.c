@@ -689,6 +689,22 @@ static ulong rk1808_peri_set_clk(struct rk1808_clk_priv *priv,
 	return rk1808_peri_get_clk(priv, clk_id);
 }
 
+static ulong rk1808_pclk_pmu_set_clk(struct rk1808_clk_priv *priv,
+				     ulong clk_id, ulong parent_hz, ulong hz)
+{
+	struct rk1808_cru *cru = priv->cru;
+	int src_clk_div;
+
+	src_clk_div = DIV_ROUND_UP(parent_hz, hz);
+	assert(src_clk_div - 1 < 31);
+
+	rk_clrsetreg(&cru->pmu_clksel_con[0],
+		     PCLK_PMU_DIV_CON_MASK,
+		     (src_clk_div - 1) << PCLK_PMU_DIV_CON_SHIFT);
+
+	return parent_hz / src_clk_div;
+}
+
 static ulong rk1808_armclk_set_clk(struct rk1808_clk_priv *priv, ulong hz)
 {
 	struct rk1808_cru *cru = priv->cru;
@@ -821,9 +837,13 @@ static ulong rk1808_clk_set_rate(struct clk *clk, ulong rate)
 	switch (clk->id) {
 	case PLL_APLL:
 	case PLL_DPLL:
-	case PLL_PPLL:
 		ret = rockchip_pll_set_rate(&rk1808_pll_clks[clk->id - 1],
 					    priv->cru, clk->id - 1, rate);
+		break;
+	case PLL_PPLL:
+		ret = rk1808_pclk_pmu_set_clk(priv, clk->id, rate, PCLK_PMU_HZ);
+		ret = rockchip_pll_set_rate(&rk1808_pll_clks[PPLL],
+					    priv->cru, PPLL, rate);
 		break;
 	case PLL_CPLL:
 		ret = rockchip_pll_set_rate(&rk1808_pll_clks[CPLL],
