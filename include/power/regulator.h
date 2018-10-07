@@ -394,23 +394,11 @@ int regulator_set_mode(struct udevice *dev, int mode_id);
 int regulators_enable_boot_on(bool verbose);
 
 /**
- * regulator_autoset: setup the voltage/current on a regulator
+ * regulators_enable_state_mem() - enable regulators state mem configure
  *
- * The setup depends on constraints found in device's uclass's platform data
- * (struct dm_regulator_uclass_platdata):
- *
- * - Enable - will set - if any of: 'always_on' or 'boot_on' is set to true,
- *   or if both are unset, then the function returns
- * - Voltage value - will set - if '.min_uV' and '.max_uV' values are equal
- * - Current limit - will set - if '.min_uA' and '.max_uA' values are equal
- *
- * The function returns on the first-encountered error.
- *
- * @platname - expected string for dm_regulator_uclass_platdata .name field
- * @devp     - returned pointer to the regulator device - if non-NULL passed
- * @return: 0 on success or negative value of errno.
+ * This sets regulator-state-mem state for all regulators ;
  */
-int regulator_autoset(struct udevice *dev);
+int regulators_enable_state_mem(bool verbose);
 
 /**
  * regulator_autoset_by_name: setup the regulator given by its uclass's
