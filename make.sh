@@ -75,26 +75,27 @@ help()
 	echo "Example:"
 	echo
 	echo "1. Build board:"
-	echo "	./make.sh evb-rk3399            ---- build for evb-rk3399_defconfig"
-	echo "	./make.sh evb-rk3399 O=rockdev  ---- build for evb-rk3399_defconfig with output dir "./rockdev""
-	echo "	./make.sh firefly-rk3288        ---- build for firefly-rk3288_defconfig"
-	echo "	./make.sh                       ---- build with exist .config"
+	echo "	./make.sh evb-rk3399               --- build for evb-rk3399_defconfig"
+	echo "	./make.sh evb-rk3399 O=rockdev     --- build for evb-rk3399_defconfig with output dir "./rockdev""
+	echo "	./make.sh firefly-rk3288           --- build for firefly-rk3288_defconfig"
+	echo "	./make.sh                          --- build with exist .config"
 	echo
-	echo "	After build, images of uboot, loader and trust are all generated."
+	echo "	After build, Images of uboot, loader and trust are all generated."
 	echo
 	echo "2. Pack helper:"
-	echo "	./make.sh trust         --- pack trust.img"
-	echo "	./make.sh uboot         --- pack uboot.img"
-	echo "	./make.sh loader        --- pack loader bin"
-	echo "	./make.sh loader-all	--- pack loader bin (all supported loaders)"
+	echo "	./make.sh trust                    --- pack trust.img"
+	echo "	./make.sh uboot                    --- pack uboot.img"
+	echo "	./make.sh loader                   --- pack loader bin"
+	echo "	./make.sh loader-all	           --- pack loader bin (all supported loaders)"
 	echo
 	echo "3. Debug helper:"
-	echo "	./make.sh elf           --- dump elf file with -D(default)"
-	echo "	./make.sh elf-S         --- dump elf file with -S"
-	echo "	./make.sh elf-d         --- dump elf file with -d"
-	echo "	./make.sh <addr>        --- dump function symbol and code position of address"
-	echo "	./make.sh map           --- cat u-boot.map"
-	echo "	./make.sh sym           --- cat u-boot.sym"
+	echo "	./make.sh elf                      --- dump elf file with -D(default)"
+	echo "	./make.sh elf-S                    --- dump elf file with -S"
+	echo "	./make.sh elf-d                    --- dump elf file with -d"
+	echo "	./make.sh <no reloc_addr>          --- dump function symbol and code position of address(no relocated)"
+	echo "	./make.sh <reloc_addr-reloc_off>   --- dump function symbol and code position of address(relocated)"
+	echo "	./make.sh map                      --- cat u-boot.map"
+	echo "	./make.sh sym                      --- cat u-boot.sym"
 }
 
 prepare()
@@ -154,7 +155,7 @@ prepare()
 
 		*)
 		#Func address is valid ?
-		if [ -z $(echo ${FUNCADDR} | sed 's/[0-9,a-f,A-F,x,X]//g') ]; then
+		if [ -z $(echo ${FUNCADDR} | sed 's/[0-9,a-f,A-F,x,X,-]//g') ]; then
 			return
 		elif [ ! -f configs/${BOARD}_defconfig ]; then
 			echo
@@ -316,11 +317,26 @@ sub_commands()
 
 		*)
 		# Search function and code position of address
-		if [ -z $(echo ${FUNCADDR} | sed 's/[0-9,a-f,A-F,x,X]//g') ] && [ ${FUNCADDR} ]; then
+		RELOC_OFF=${FUNCADDR#*-}
+		FUNCADDR=${FUNCADDR%-*}
+		if [ -z $(echo ${FUNCADDR} | sed 's/[0-9,a-f,A-F,x,X,-]//g') ] && [ ${FUNCADDR} ]; then
 			# With prefix: '0x' or '0X'
 			if [ `echo ${FUNCADDR} | sed -n "/0[x,X]/p" | wc -l` -ne 0 ]; then
 				FUNCADDR=`echo $FUNCADDR | awk '{ print strtonum($0) }'`
 				FUNCADDR=`echo "obase=16;${FUNCADDR}"|bc |tr '[A-Z]' '[a-z]'`
+			fi
+			if [ `echo ${RELOC_OFF} | sed -n "/0[x,X]/p" | wc -l` -ne 0 ] && [ ${RELOC_OFF} ]; then
+				RELOC_OFF=`echo $RELOC_OFF | awk '{ print strtonum($0) }'`
+				RELOC_OFF=`echo "obase=16;${RELOC_OFF}"|bc |tr '[A-Z]' '[a-z]'`
+			fi
+
+			# If reloc address is assigned, do sub
+			if [ "${FUNCADDR}" != "${RELOC_OFF}" ]; then
+				# Hex -> Dec -> SUB -> Hex
+				FUNCADDR=`echo $((16#${FUNCADDR}))`
+				RELOC_OFF=`echo $((16#${RELOC_OFF}))`
+				FUNCADDR=$((FUNCADDR-RELOC_OFF))
+				FUNCADDR=$(echo "obase=16;${FUNCADDR}"|bc |tr '[A-Z]' '[a-z]')
 			fi
 
 			echo
