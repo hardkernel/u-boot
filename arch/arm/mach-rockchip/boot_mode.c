@@ -112,6 +112,22 @@ void rockchip_dnl_mode_check(void)
 			set_back_to_bootrom_dnl_flag();
 			do_reset(NULL, 0, 0, NULL);
 		} else {
+#ifdef CONFIG_RKIMG_BOOTLOADER
+			/* If there is no recovery partition, just boot on */
+			struct blk_desc *dev_desc;
+			disk_partition_t part_info;
+
+			dev_desc = rockchip_get_bootdev();
+			if (!dev_desc) {
+				printf("%s: dev_desc is NULL!\n", __func__);
+				return;
+			}
+			if (part_get_info_by_name(dev_desc, PART_RECOVERY,
+						  &part_info)) {
+				debug("%s: no recovery partition\n", __func__);
+				return;
+			}
+#endif
 			printf("recovery key pressed, entering recovery mode!\n");
 			env_set("reboot_mode", "recovery");
 		}
