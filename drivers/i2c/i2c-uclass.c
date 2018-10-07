@@ -491,7 +491,7 @@ static int i2c_post_probe(struct udevice *dev)
 	struct dm_i2c_bus *i2c = dev_get_uclass_priv(dev);
 
 	i2c->speed_hz = dev_read_u32_default(dev, "clock-frequency", 100000);
-
+	printf("I2c speed: %dHz\n", i2c->speed_hz);
 	return dm_i2c_set_bus_speed(dev, i2c->speed_hz);
 #else
 	return 0;
