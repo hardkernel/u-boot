@@ -50,7 +50,7 @@ int gzip_parse_header(const unsigned char *src, unsigned long len)
 	i = 10;
 	flags = src[3];
 	if (src[2] != DEFLATED || (flags & RESERVED) != 0) {
-		puts ("Error: Bad gzipped data\n");
+		debug("Error: Bad gzipped data\n");
 		return (-1);
 	}
 	if ((flags & EXTRA_FIELD) != 0)
