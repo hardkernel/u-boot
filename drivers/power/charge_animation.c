@@ -161,6 +161,8 @@ static int system_suspend_enter(struct charge_animation_pdata *pdata)
 {
 	if (pdata->system_suspend && IS_ENABLED(CONFIG_ARM_SMCCC)) {
 		printf("\nSystem suspend: ");
+		putc('0');
+		regulators_enable_state_mem(false);
 		putc('1');
 		local_irq_disable();
 		putc('2');
