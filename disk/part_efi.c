@@ -511,7 +511,7 @@ int gpt_fill_pte(block_dev_desc_t *dev_desc,
 		if (strlen(str_type_guid)) {
 			if (uuid_str_to_bin(str_type_guid, bin_type_guid,
 					    UUID_STR_FORMAT_GUID)) {
-#if (AML_CONSTRUCT_GPT)
+#ifdef CONFIG_AML_GPT
 				char str[7] = {"default"};
 				strcpy(str_type_guid, str);
 				uuid_str_to_bin(str_type_guid, bin_type_guid,

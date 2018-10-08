@@ -990,7 +990,7 @@ static __attribute__((unused)) int _update_ptbl_mbr(struct mmc *mmc, struct _ipt
 	return ret;
 }
 
-#if (AML_CONSTRUCT_GPT)
+#ifdef CONFIG_AML_GPT
 int is_gpt_changed(struct mmc *mmc, struct _iptbl *p_iptbl_ept)
 {
 	int i, k;
@@ -1280,7 +1280,7 @@ int mmc_device_init (struct mmc *mmc)
 		}
 	}
 #endif
-#if (AML_CONSTRUCT_GPT)
+#ifdef CONFIG_AML_GPT
 	char *str_disk_guid;
 	int gpt_priority = GPT_PRIORITY;
 	disk_partition_t *disk_partition;

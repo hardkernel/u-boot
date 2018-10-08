@@ -29,8 +29,6 @@
 #define GPT_ENTRY_NUMBERS		128
 #define GPT_ENTRY_SIZE			128
 
-#define AML_CONSTRUCT_GPT 0
-
 #define EFI_GUID(a,b,c,d0,d1,d2,d3,d4,d5,d6,d7) \
 	((efi_guid_t) \
 	{{ (a) & 0xff, ((a) >> 8) & 0xff, ((a) >> 16) & 0xff, ((a) >> 24) & 0xff, \

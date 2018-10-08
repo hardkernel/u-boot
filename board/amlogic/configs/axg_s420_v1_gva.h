@@ -361,6 +361,7 @@
 
 #define		CONFIG_PARTITIONS 1
 #define 	CONFIG_SYS_NO_FLASH  1
+//#define     CONFIG_AML_GPT
 
 
 /* vpu */

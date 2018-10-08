@@ -84,7 +84,7 @@ int uuid_str_valid(const char *uuid)
 }
 
 #ifdef CONFIG_PARTITION_TYPE_GUID
-#ifdef AML_CONSTRUCT_GPT
+#ifdef CONFIG_AML_GPT
 	static const struct {
 		const char *string;
 		efi_guid_t guid;
