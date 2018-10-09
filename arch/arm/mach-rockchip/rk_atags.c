@@ -201,6 +201,9 @@ struct tag *atags_get_tag(u32 magic)
 {
 	struct tag *t;
 
+	if (!atags_is_available())
+		return NULL;
+
 	for_each_tag(t, (struct tag *)ATAGS_PHYS_BASE) {
 		if (bad_magic(t->hdr.magic)) {
 #if !CONFIG_IS_ENABLED(TINY_FRAMEWORK)
@@ -266,7 +269,7 @@ void atags_print_tag(struct tag *t)
 		printf("   version = 0x%x\n", t->u.serial.version);
 		printf("    enable = 0x%x\n", t->u.serial.enable);
 		printf("      addr = 0x%llx\n", t->u.serial.addr);
-		printf("  baudrate = 0x%x\n", t->u.serial.baudrate);
+		printf("  baudrate = %d\n", t->u.serial.baudrate);
 		printf("    m_mode = 0x%x\n", t->u.serial.m_mode);
 		for (i = 0; i < ARRAY_SIZE(t->u.serial.reserved); i++)
 			printf("    res[%d] = 0x%x\n", i, t->u.serial.reserved[i]);
