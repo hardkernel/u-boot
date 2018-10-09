@@ -60,8 +60,5 @@
 
 &uart2 {
 	clock-frequency = <24000000>;
-	clocks = <&xin24m>, <&xin24m>;
-	clock-names = "baudclk", "apb_pclk";
-
 	status = "okay";
 };

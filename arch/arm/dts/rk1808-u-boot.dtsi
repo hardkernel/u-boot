@@ -7,6 +7,14 @@
 / {
 	aliases {
 		mmc0 = &emmc;
+		serial0 = &uart0;
+		serial1 = &uart1;
+		serial2 = &uart2;
+		serial3 = &uart3;
+		serial4 = &uart4;
+		serial5 = &uart5;
+		serial6 = &uart6;
+		serial7 = &uart7;
 	};
 };
 
@@ -31,11 +39,39 @@
 	status = "okay";
 };
 
+&saradc {
+	u-boot,dm-pre-reloc;
+	status = "okay";
+};
+
+&uart0 {
+	u-boot,dm-pre-reloc;
+};
+
+&uart1 {
+	u-boot,dm-pre-reloc;
+};
+
 &uart2 {
 	u-boot,dm-pre-reloc;
 };
 
-&saradc {
+&uart3 {
 	u-boot,dm-pre-reloc;
-	status = "okay";
+};
+
+&uart4 {
+	u-boot,dm-pre-reloc;
+};
+
+&uart5 {
+	u-boot,dm-pre-reloc;
+};
+
+&uart6 {
+	u-boot,dm-pre-reloc;
+};
+
+&uart7 {
+	u-boot,dm-pre-reloc;
 };
