@@ -16,6 +16,7 @@
 #include <asm/arch/clock.h>
 #include <asm/arch/periph.h>
 #include <asm/arch/boot_mode.h>
+#include <asm/arch/rk_atags.h>
 #ifdef CONFIG_DM_CHARGE_DISPLAY
 #include <power/charge_display.h>
 #endif
@@ -273,6 +274,27 @@ void enable_caches(void)
 	icache_enable();
 	dcache_enable();
 }
+
+#ifdef CONFIG_ROCKCHIP_PRELOADER_SERIAL
+int board_init_f_init_serial(void)
+{
+	struct tag *t = atags_get_tag(ATAG_SERIAL);
+
+	if (t) {
+		gd->serial.using_pre_serial = t->u.serial.enable;
+		gd->serial.addr = t->u.serial.addr;
+		gd->serial.baudrate = t->u.serial.baudrate;
+		gd->serial.id = t->u.serial.id;
+
+		debug("%s: enable=%d, addr=0x%lx, baudrate=%d, id=%d\n",
+		      __func__, gd->serial.using_pre_serial,
+		      gd->serial.addr, gd->serial.baudrate,
+		      gd->serial.id);
+	}
+
+	return 0;
+}
+#endif
 
 #if defined(CONFIG_USB_GADGET) && defined(CONFIG_USB_GADGET_DWC2_OTG)
 #include <fdt_support.h>

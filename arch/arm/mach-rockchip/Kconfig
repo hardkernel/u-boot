@@ -519,6 +519,13 @@ config ROCKCHIP_PRELOADER_ATAGS
 	  tos, U-Boot, etc. It delivers boot and configure information, shared with pre-loaders
 	  and finally ends with U-Boot.
 
+config ROCKCHIP_PRELOADER_SERIAL
+	bool "Rockchip pre-loader serial"
+	default y if ROCKCHIP_PRELOADER_ATAGS
+	help
+	  This enable U-Boot using pre-loader atags serial configure to initialize console.
+	  It denpends on serial aliases to find pre-loader serial number.
+
 config GICV2
 	bool "ARM GICv2"
 

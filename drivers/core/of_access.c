@@ -804,5 +804,17 @@ struct device_node *of_alias_dump(void)
 
 struct device_node *of_get_stdout(void)
 {
+	struct device_node *np;
+
+	if (gd && gd->serial.using_pre_serial) {
+		np = of_alias_get_dev("serial", gd->serial.id);
+		if (!np)
+			printf("Can't find alias serial%d\n", gd->serial.id);
+		else
+			debug("Find alias serial: %s\n", np->full_name);
+
+		of_stdout = np;
+	}
+
 	return of_stdout;
 }

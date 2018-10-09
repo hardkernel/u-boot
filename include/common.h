@@ -144,6 +144,11 @@ ulong board_init_f_alloc_reserve(ulong top);
  */
 void board_init_f_init_reserve(ulong base);
 
+/*
+ * Board-specific Platform code can init serial earlier if needed
+ */
+__weak int board_init_f_init_serial(void);
+
 /**
  * arch_setup_gd() - Set up the global_data pointer
  *

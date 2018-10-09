@@ -130,6 +130,14 @@ void board_init_f_init_reserve(ulong base)
 }
 
 /*
+ * Board-specific Platform code can init serial earlier if needed
+ */
+__weak int board_init_f_init_serial(void)
+{
+	return 0;
+}
+
+/*
  * Board-specific Platform code can reimplement show_boot_progress () if needed
  */
 __weak void show_boot_progress(int val) {}

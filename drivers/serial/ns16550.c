@@ -254,6 +254,13 @@ static inline void _debug_uart_init(void)
 	 */
 	baud_divisor = ns16550_calc_divisor(com_port, CONFIG_DEBUG_UART_CLOCK,
 					    CONFIG_BAUDRATE);
+
+	if (gd && gd->serial.using_pre_serial) {
+		com_port = (struct NS16550 *)gd->serial.addr;
+		baud_divisor = ns16550_calc_divisor(com_port,
+			CONFIG_DEBUG_UART_CLOCK, gd->serial.baudrate);
+	}
+
 	serial_dout(&com_port->ier, CONFIG_SYS_NS16550_IER);
 	serial_dout(&com_port->mcr, UART_MCRVAL);
 	serial_dout(&com_port->fcr, UART_FCR_DEFVAL);
@@ -267,6 +274,9 @@ static inline void _debug_uart_init(void)
 static inline void _debug_uart_putc(int ch)
 {
 	struct NS16550 *com_port = (struct NS16550 *)CONFIG_DEBUG_UART_BASE;
+
+	if (gd && gd->serial.using_pre_serial)
+		com_port = (struct NS16550 *)gd->serial.addr;
 
 	while (!(serial_din(&com_port->lsr) & UART_LSR_THRE))
 		;
@@ -288,6 +298,13 @@ static inline void _debug_uart_init(void)
 
 	baud_divisor = ns16550_calc_divisor(com_port, CONFIG_DEBUG_UART_CLOCK,
 					    CONFIG_BAUDRATE);
+
+	if (gd && gd->serial.using_pre_serial) {
+		com_port = (struct NS16550 *)gd->serial.addr;
+		baud_divisor = ns16550_calc_divisor(com_port,
+			CONFIG_DEBUG_UART_CLOCK, gd->serial.baudrate);
+	}
+
 	serial_dout(&com_port->ier, CONFIG_SYS_NS16550_IER);
 	serial_dout(&com_port->mdr1, 0x7);
 	serial_dout(&com_port->mcr, UART_MCRVAL);
@@ -303,6 +320,9 @@ static inline void _debug_uart_init(void)
 static inline void _debug_uart_putc(int ch)
 {
 	struct NS16550 *com_port = (struct NS16550 *)CONFIG_DEBUG_UART_BASE;
+
+	if (gd && gd->serial.using_pre_serial)
+		com_port = (struct NS16550 *)gd->serial.addr;
 
 	while (!(serial_din(&com_port->lsr) & UART_LSR_THRE))
 		;
@@ -456,6 +476,10 @@ int ns16550_serial_ofdata_to_platdata(struct udevice *dev)
 #ifdef CONFIG_SYS_NS16550_PORT_MAPPED
 	plat->base = addr;
 #else
+
+	if (gd && gd->serial.using_pre_serial)
+		addr = gd->serial.addr;
+
 	plat->base = (unsigned long)map_physmem(addr, 0, MAP_NOCACHE);
 #endif
 

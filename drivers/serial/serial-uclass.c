@@ -54,6 +54,23 @@ static int serial_check_stdout(const void *blob, struct udevice **devp)
 	}
 	if (node < 0)
 		node = fdt_path_offset(blob, "console");
+
+	if (gd && gd->serial.using_pre_serial) {
+		const char *serial_path;
+		char serial[12];
+
+		snprintf(serial, 12, "serial%d", gd->serial.id);
+		serial_path = fdt_get_alias(blob, serial);
+		if (serial_path) {
+			debug("Find alias %s, path: %s\n", serial, serial_path);
+			node = fdt_path_offset(blob, serial_path);
+			if (node < 0)
+				printf("Can't find %s by path\n", serial);
+		} else {
+			printf("Can't find alias %s\n", serial);
+		}
+	}
+
 	if (!uclass_get_device_by_of_offset(UCLASS_SERIAL, node, devp))
 		return 0;
 

@@ -83,6 +83,7 @@ ENTRY(_main)
 	/* set up gd here, outside any C code */
 	mov	x18, x0
 	bl	board_init_f_init_reserve
+	bl	board_init_f_init_serial
 
 	mov	x0, #0
 	bl	board_init_f

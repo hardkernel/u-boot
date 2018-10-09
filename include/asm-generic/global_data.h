@@ -31,6 +31,13 @@ struct pm_ctx {
 	unsigned long suspend_regs[15];
 };
 
+struct pre_serial {
+	u32 using_pre_serial;
+	u32 id;
+	u32 baudrate;
+	ulong addr;
+};
+
 typedef struct global_data {
 	bd_t *bd;
 	unsigned long flags;
@@ -126,7 +133,7 @@ typedef struct global_data {
 #ifdef CONFIG_BOOTSTAGE_PRINTF_TIMESTAMP
 	int new_line;
 #endif
-
+	struct pre_serial serial;
 #ifdef CONFIG_LOG
 	int log_drop_count;		/* Number of dropped log messages */
 	int default_log_level;		/* For devices with no filters */
