@@ -766,6 +766,42 @@ int of_alias_get_id(const struct device_node *np, const char *stem)
 	return id;
 }
 
+struct device_node *of_alias_get_dev(const char *stem, int id)
+{
+	struct alias_prop *app;
+	struct device_node *np = NULL;
+
+	mutex_lock(&of_mutex);
+	list_for_each_entry(app, &aliases_lookup, link) {
+		if (strcmp(app->stem, stem) != 0)
+			continue;
+
+		if (id == app->id) {
+			np = app->np;
+			break;
+		}
+	}
+	mutex_unlock(&of_mutex);
+
+	return np;
+}
+
+struct device_node *of_alias_dump(void)
+{
+	struct alias_prop *app;
+	struct device_node *np = NULL;
+
+	mutex_lock(&of_mutex);
+	list_for_each_entry(app, &aliases_lookup, link) {
+		printf("%s: Alias %s%d: %s, phandle=%d\n", __func__,
+		       app->stem, app->id,
+		       app->np->full_name, app->np->phandle);
+	}
+	mutex_unlock(&of_mutex);
+
+	return np;
+}
+
 struct device_node *of_get_stdout(void)
 {
 	return of_stdout;

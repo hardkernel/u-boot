@@ -394,6 +394,22 @@ int of_alias_scan(void);
 int of_alias_get_id(const struct device_node *np, const char *stem);
 
 /**
+ * of_alias_get_dev - Get device_node by given stem and alias id
+ *
+ * Travels the lookup table to get the device_node by given stem and alias id.
+ *
+ * @stem:	Alias stem of the given device_node
+ * @id:         Alias id of the given device_node
+ * @return device_node, if found, else NULL
+ */
+struct device_node *of_alias_get_dev(const char *stem, int id);
+
+/**
+ * of_alias_dump - Dump of alias nodes added in aliases_lookup.
+ */
+struct device_node *of_alias_dump(void);
+
+/**
  * of_get_stdout() - Get node to use for stdout
  *
  * @return node referred to by stdout-path alias, or NULL if none
