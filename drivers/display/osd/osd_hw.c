@@ -2469,12 +2469,19 @@ static void osd2_update_disp_3d_mode(void)
 
 void osd_hist_enable(u32 osd_index)
 {
-	if (OSD1 == osd_index) {
+#ifdef CONFIG_AML_MESON_G12A
+	if (get_cpu_id().family_id >= MESON_CPU_MAJOR_ID_G12A)
 		VSYNCOSD_WR_MPEG_REG(VI_HIST_CTRL, 0x1801);
-	} else if (OSD2 == osd_index) {
-		VSYNCOSD_WR_MPEG_REG(VI_HIST_CTRL, 0x2001);
-	} else {
-		osd_loge("osd%d is not supported.\n", osd_index);
+	else
+#endif
+	{
+		if (OSD1 == osd_index) {
+			VSYNCOSD_WR_MPEG_REG(VI_HIST_CTRL, 0x1801);
+		} else if (OSD2 == osd_index) {
+			VSYNCOSD_WR_MPEG_REG(VI_HIST_CTRL, 0x2001);
+		} else {
+			osd_loge("osd%d is not supported.\n", osd_index);
+		}
 	}
 	osd_logd("VI_HIST_CTRL = %x\n", VSYNCOSD_RD_MPEG_REG(VI_HIST_CTRL));
 }

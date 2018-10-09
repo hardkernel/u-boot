@@ -1227,6 +1227,19 @@ void hist_set_golden_data(void)
 	hist_spl_pix_cnt[OSD2][MESON_CPU_MAJOR_ID_TXL] = 0x1fa400;
 	hist_cheoma_sum[OSD2][MESON_CPU_MAJOR_ID_TXL] = 0x8e62000;
 
+	// G12A
+	hist_max_min[OSD1][MESON_CPU_MAJOR_ID_G12A]
+						= hist_max_min[OSD2][MESON_CPU_MAJOR_ID_G12A]
+						= 0x3d3d;
+	hist_spl_val[OSD1][MESON_CPU_MAJOR_ID_G12A]
+						= hist_spl_val[OSD2][MESON_CPU_MAJOR_ID_G12A]
+						= 0xc4dcf6;
+	hist_spl_pix_cnt[OSD1][MESON_CPU_MAJOR_ID_G12A]
+						= hist_spl_pix_cnt[OSD2][MESON_CPU_MAJOR_ID_G12A]
+						= 0x33a2e;
+	hist_cheoma_sum[OSD1][MESON_CPU_MAJOR_ID_G12A]
+						= hist_cheoma_sum[OSD2][MESON_CPU_MAJOR_ID_G12A]
+						= 0xd4ffdc;
 
 	for (i = 0; i < 12; i++) {
 		str = getenv(hist_env_key[i]);
