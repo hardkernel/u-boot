@@ -46,7 +46,8 @@ struct tag_serial {
 	u64 addr;
 	u32 baudrate;
 	u32 m_mode;
-	u32 reserved[4];
+	u32 id;
+	u32 reserved[3];
 } __packed;
 
 struct tag_bootdev {
