@@ -319,6 +319,10 @@ static int arasan_sdhci_probe(struct udevice *dev)
 	host->quirks = SDHCI_QUIRK_WAIT_SEND_CMD;
 	host->max_clk = max_frequency;
 
+	if (dev_read_bool(dev, "mmc-hs200-1_8v"))
+		host->host_caps |= MMC_MODE_HS200;
+	else if (dev_read_bool(dev, "mmc-hs400-1_8v"))
+		host->host_caps |= MMC_MODE_HS400;
 	ret = sdhci_setup_cfg(&plat->cfg, host, 0, EMMC_MIN_FREQ);
 
 	host->mmc = &plat->mmc;
