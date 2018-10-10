@@ -8,6 +8,7 @@
 #include <dm.h>
 #include <ram.h>
 #include <asm/io.h>
+#include <asm/arch/rk_atags.h>
 #include <asm/arch/sdram_common.h>
 #include <dm/uclass-internal.h>
 
@@ -57,73 +58,234 @@ static uint16_t trust_checksum(const uint8_t *buf, uint16_t len)
 	return checksum;
 }
 
-int dram_init_banksize(void)
+#define SDRAM_OFFSET(offset)	(CONFIG_SYS_SDRAM_BASE + (offset))
+#define NOT_INITIAL		-1
+static int __dram_init_banksize(int resv_tee)
 {
 	size_t top = min((unsigned long)(gd->ram_size + CONFIG_SYS_SDRAM_BASE),
 			 gd->ram_top);
+	u64 start[CONFIG_NR_DRAM_BANKS], size[CONFIG_NR_DRAM_BANKS];
+	u64 tos_addr = 0, atf_addr = 0;
+	u64 tos_size = 0, atf_size = 0;
+	u32 checksum, i;
+	int idx = NOT_INITIAL;
 	struct tos_parameter_t *tos_parameter;
-	u32 checksum __maybe_unused;
+#ifdef CONFIG_ROCKCHIP_PRELOADER_ATAGS
+	struct tag *t = NULL;
 
-	tos_parameter = (struct tos_parameter_t *)(CONFIG_SYS_SDRAM_BASE +
-			TRUST_PARAMETER_OFFSET);
+	/*
+	 * Get memory region of ATF
+	 *
+	 * 1. New way: atags info;
+	 * 2. Leagcy way: 2MB size and start from ddr 0x0 offset;
+	 */
+	t = atags_get_tag(ATAG_ATF_MEM);
+	if (t && t->u.atf_mem.size) {
+		atf_addr = t->u.atf_mem.phy_addr;
+		atf_size = t->u.atf_mem.size;
+		/* Sanity */
+		if (atf_addr + atf_size > SDRAM_OFFSET(SZ_1M)) {
+			printf("%s: ATF reserved region is not within 0-1MB offset(0x%08llx-0x%08llx)!\n",
+			       __func__, atf_addr, atf_addr + atf_size);
+			return -EINVAL;
+		}
+	}
 
-	checksum = trust_checksum((uint8_t *)(unsigned long)tos_parameter + 8,
-				  sizeof(struct tos_parameter_t) - 8);
-
-#if defined(CONFIG_ARM64) || defined(CONFIG_ARM64_BOOT_AARCH32)
-	/* Reserve 0x200000 for ATF bl31 */
-	gd->bd->bi_dram[0].start = CONFIG_SYS_SDRAM_BASE + 0x200000;
-#else
-	gd->bd->bi_dram[0].start = CONFIG_SYS_SDRAM_BASE;
+	/*
+	 * Get memory region of OP-TEE
+	 *
+	 * 1. New way: atags info;
+	 * 2. Leagcy way: info in ddr 34M offset;
+	 */
+	t = atags_get_tag(ATAG_TOS_MEM);
+	if (t && (t->u.tos_mem.tee_mem.flags == 1)) {
+		tos_addr = t->u.tos_mem.tee_mem.phy_addr;
+		tos_size = t->u.tos_mem.tee_mem.size;
+	}
 #endif
-	gd->bd->bi_dram[0].size = top - gd->bd->bi_dram[0].start;
+
+	/* Legacy */
+	if (!atf_size) {
+		if (IS_ENABLED(CONFIG_ARM64) ||
+		    IS_ENABLED(CONFIG_ARM64_BOOT_AARCH32)) {
+			atf_addr = SDRAM_OFFSET(0);
+			atf_size = SZ_1M;
+		}
+	}
+
+	/* Legacy */
+	if (!tos_size) {
+		tos_parameter =
+		(struct tos_parameter_t *)(SDRAM_OFFSET(TRUST_PARAMETER_OFFSET));
+		checksum =
+		trust_checksum((uint8_t *)(unsigned long)tos_parameter + 8,
+				sizeof(struct tos_parameter_t) - 8);
+		if ((checksum == tos_parameter->checksum) &&
+		    (tos_parameter->tee_mem.flags == 1)) {
+			tos_addr = tos_parameter->tee_mem.phy_addr;
+			tos_size = tos_parameter->tee_mem.size;
+		}
+	}
+
+	debug("ATF: 0x%llx - 0x%llx\n", atf_addr, atf_addr + atf_size);
+	debug("TOS: 0x%llx - 0x%llx\n", tos_addr, tos_addr + tos_size);
+
+	/*
+	 * Reserve region for ATF bl31
+	 *
+	 * What ever U-Boot runs on AArch64 or AArch32 mode, the bl31 is always
+	 * present and AArch64 mode, let's reserve it.
+	 *
+	 * Maybe:
+	 *	1. ATF region is from 0x0 offset and 1MB size(legacy);
+	 *	2. ATF region is from 0x0 offset but not 1MB size;
+	 *	3. ATF region is not from 0x0 offset but within 1MB;
+	 *
+	 * 1. The "*****" means visible region to kernel.
+	 * 2. 1M~2M is always reserved in ARM64 for pstore, shmem, etc.
+	 *
+	 *
+	 * Possible memory layout:
+	 *
+	 * Leagcy:
+	 *	 |------------o-------o------------------------|
+	 *	 |     ATF    | RES   |************************|
+	 *	 |------------o-------o------------------------|
+	 *	 0x0          1M      2M                      .....
+	 *
+	 *
+	 * New:
+	 *	 |-----|------o-------o------------------------|
+	 *	 | ATF |******| RES   |************************|
+	 *	 |-----|------o-------o------------------------|
+	 *	 0x0          1M      2M                      .....
+	 *
+	 *
+	 *	 |----|---|---o-------o------------------------|
+	 *	 |****|ATF|***| RES   |************************|
+	 *	 |----|---|---o-------o------------------------|
+	 *	 0x0  64K     1M      2M                      .....
+	 *
+	 * Note: these are only initilized once from dram_init_banksize(),
+	 *       which is before relocation.
+	 */
+	if (atf_size && !(gd->flags & GD_FLG_RELOC)) {
+		idx = 0;
+		memset(size, 0, sizeof(size));
+
+		start[0] = SDRAM_OFFSET(0);
+		 size[0] = atf_addr - start[0];
+		start[1] = atf_addr + atf_size;
+		 size[1] = SDRAM_OFFSET(SZ_1M) - start[1];
+		start[2] = SDRAM_OFFSET(SZ_2M);
+		 size[2] = top - start[2];
+
+		for (i = 0; i < CONFIG_NR_DRAM_BANKS; i++) {
+			if (!size[i])
+				continue;
+
+			gd->bd->bi_dram[idx].start = start[i];
+			gd->bd->bi_dram[idx].size = size[i];
+			idx++;
+		}
+	/* There is no bl31, fill whole ram size */
+	} else if (!(gd->flags & GD_FLG_RELOC)) {
+		gd->bd->bi_dram[0].start = SDRAM_OFFSET(0);
+		gd->bd->bi_dram[0].size = top - gd->bd->bi_dram[0].start;
+	} else {
+		/*
+		 * Do nothing for bl31 when called from dram_initr_banksize(),
+		 * which is after relocation.
+		 */
+	}
+
+	/*
+	 * Reserve region for OP-TEE
+	 *
+	 * What ever U-Boot runs on AArch64 or AArch32 mode, the OP-TEE is
+	 * AArch64 mode.
+	 *
+	 * For OP-TEE:
+	 *	AArch64: dcache is enabled;
+	 *	AArch32: dcache is disabled(due to some unknown issues);
+	 *
+	 * For the data coherence, U-Boot has to follow the OP-TEE dcache
+	 * policy to map MMU attributes of OP-TEE region.
+	 *
+	 * For AArch64: MMU translate table is created manual by rkxxx.c file
+	 * and all memory region is mapped, that's good to match OP-TEE policy.
+	 * For AArch32: MMU translate table is setup according to bi_dram[..]
+	 * that OP-TEE region has been reserved and would not be mapped,
+	 * i.e. dcache is disabled, that's also good to match OP-TEE policy.
+	 *
+	 * When CONFIG_ARM64_BOOT_AARCH32 is enabled, U-Boot runs on AArch32
+	 * while OP-TEE runs on AArch64. U-Boot shouldn't reserved OP-TEE region
+	 * too early and should map MMU translate table of it(in intir_cache()).
+	 * So we reserve the region in dram_initr_banksize() after MMU setup.
+	 *
+	 *
+	 *	The are two kinds of OP-TEE memory layout
+	 *
+	 * legacy:
+	 * 	|----|-------o---------------------------------|
+	 * 	|....| OPTEE |*********************************|
+	 * 	|----|-------o---------------------------------|
+	 * 	0x0 2M      6M(or more)                 .....
+	 *
+	 * new:
+	 * 	|----|-------------------o-------o-------------|
+	 * 	|....|*******************| OPTEE |*************|
+	 * 	|----|-------------------o-------o-------------|
+	 * 	0x0  2M                132M     164M(or less) .....
+	 */
+
+	if (resv_tee && tos_size) {
+		/* If idx is not initialized, calculate idx */
+		if (idx == NOT_INITIAL) {
+			for (idx = 0; idx < CONFIG_NR_DRAM_BANKS; idx++) {
+				if (!gd->bd->bi_dram[idx].size)
+					break;
+			}
+		}
+
+		if (tos_addr == SZ_2M) {
+			gd->bd->bi_dram[idx - 1].start = tos_addr + tos_size;
+			gd->bd->bi_dram[idx - 1].size =
+					top - gd->bd->bi_dram[idx - 1].start;
+		} else {
+			gd->bd->bi_dram[idx - 1].size = tos_addr -
+					gd->bd->bi_dram[idx - 1].start;
+			gd->bd->bi_dram[idx].start = tos_addr + tos_size;
+			gd->bd->bi_dram[idx].size =
+					top - gd->bd->bi_dram[idx].start;
+		}
+#ifdef DEBUG
+		for (i = 0; i < CONFIG_NR_DRAM_BANKS; i++) {
+			debug("%s: bank[%d]=0x%llx-0x%llx\n",
+			      __func__, i, (u64)gd->bd->bi_dram[i].start,
+			      (u64)gd->bd->bi_dram[i].start +
+			      gd->bd->bi_dram[i].size);
+		}
+#endif
+	}
+
+	return 0;
+}
 
 /*
- * OP-TEE:
- *	ARM64(AArch32) 64-bit: enable dcache; (U-boot: map region dcache cachable)
- *	ARM 32-bit: disable dcache; (U-boot: map region dcache off)
+ * !defined(CONFIG_ARM64_BOOT_AARCH32) means: U-Boot and OP-TEE both run
+ * on AArch32 or AArch64, they are same mode. Otherwise OP-TEE is AArch64
+ * while U-Boot is AArch32. There is data cache coherence issue to fix.
  */
-
-#if !defined(CONFIG_ARM64_BOOT_AARCH32)
-	if ((checksum == tos_parameter->checksum) &&
-	    (tos_parameter->tee_mem.flags == 1)) {
-		gd->bd->bi_dram[0].size = tos_parameter->tee_mem.phy_addr
-					- gd->bd->bi_dram[0].start;
-		gd->bd->bi_dram[1].start = tos_parameter->tee_mem.phy_addr +
-					tos_parameter->tee_mem.size;
-		gd->bd->bi_dram[1].size = top - gd->bd->bi_dram[1].start;
-	}
-#endif
-
-	return 0;
+int dram_init_banksize(void)
+{
+	return __dram_init_banksize(!IS_ENABLED(CONFIG_ARM64_BOOT_AARCH32));
 }
 
-#if defined(CONFIG_ARM64_BOOT_AARCH32)
 int dram_initr_banksize(void)
 {
-	size_t top = min((unsigned long)(gd->ram_size + CONFIG_SYS_SDRAM_BASE),
-			 gd->ram_top);
-	struct tos_parameter_t *tos_parameter;
-	u32 checksum;
-
-	tos_parameter = (struct tos_parameter_t *)(CONFIG_SYS_SDRAM_BASE +
-			TRUST_PARAMETER_OFFSET);
-
-	checksum = trust_checksum((uint8_t *)(unsigned long)tos_parameter + 8,
-				  sizeof(struct tos_parameter_t) - 8);
-
-	if ((checksum == tos_parameter->checksum) &&
-	    (tos_parameter->tee_mem.flags == 1)) {
-		gd->bd->bi_dram[0].size = tos_parameter->tee_mem.phy_addr
-					- gd->bd->bi_dram[0].start;
-		gd->bd->bi_dram[1].start = tos_parameter->tee_mem.phy_addr +
-					tos_parameter->tee_mem.size;
-		gd->bd->bi_dram[1].size = top - gd->bd->bi_dram[1].start;
-	}
-
-	return 0;
+	return __dram_init_banksize(IS_ENABLED(CONFIG_ARM64_BOOT_AARCH32));
 }
-#endif
 #endif
 
 size_t rockchip_sdram_size(phys_addr_t reg)
@@ -226,6 +388,28 @@ int dram_init(void)
 	struct udevice *dev;
 	int ret;
 
+	/* New way: atags info */
+#ifdef CONFIG_ROCKCHIP_PRELOADER_ATAGS
+	struct tag *t = NULL;
+	int i, count;
+
+	t = atags_get_tag(ATAG_DDR_MEM);
+	if (t && t->u.ddr_mem.count) {
+		gd->ram_size = 0;
+		count = t->u.ddr_mem.count;
+
+		for (i = 0; i < count; i++) {
+			gd->ram_size += t->u.ddr_mem.bank[i + count];
+			debug("%s: ram[%d] start=0x%08llx, size=0x%08llx, sum=0x%08llx\n",
+			      __func__, i, (u64)gd->bd->bi_dram[i].start,
+			      (u64)gd->bd->bi_dram[i].size, (u64)gd->ram_size);
+		}
+
+		return 0;
+	}
+#endif
+
+	/* Legacy way: os registers */
 	ret = uclass_get_device(UCLASS_RAM, 0, &dev);
 	if (ret) {
 		debug("DRAM init failed: %d\n", ret);
