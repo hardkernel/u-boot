@@ -80,7 +80,8 @@ static int inline bad_magic(u32 magic)
 		(magic != ATAG_BOOTDEV) &&
 		(magic != ATAG_DDR_MEM) &&
 		(magic != ATAG_TOS_MEM) &&
-		(magic != ATAG_RAM_PARTITION));
+		(magic != ATAG_RAM_PARTITION) &&
+		(magic != ATAG_ATF_MEM));
 }
 
 static int inline atags_size_overflow(struct tag *t, u32 tag_size)
@@ -167,7 +168,9 @@ int atags_set_tag(u32 magic, void *tagdata)
 	case ATAG_RAM_PARTITION:
 		size = tag_size(tag_ram_partition);
 		break;
-
+	case ATAG_ATF_MEM:
+		size = tag_size(tag_atf_mem);
+		break;
 	};
 
 	if (atags_size_overflow(t, size)) {
@@ -330,6 +333,16 @@ void atags_print_tag(struct tag *t)
 			       t->u.ram_part.part[i].start,
 			       t->u.ram_part.part[i].size);
 		break;
+	case ATAG_ATF_MEM:
+		printf("[atf_mem]:\n");
+		printf("     magic = 0x%x\n", t->hdr.magic);
+		printf("      size = 0x%x\n\n", t->hdr.size << 2);
+		printf("   version = 0x%x\n", t->u.atf_mem.version);
+		printf("  phy_addr = 0x%llx\n", t->u.atf_mem.phy_addr);
+		printf("      size = 0x%x\n", t->u.atf_mem.size);
+		for (i = 0; i < ARRAY_SIZE(t->u.atf_mem.reserved); i++)
+			printf("    res[%d] = 0x%x\n", i, t->u.atf_mem.reserved[i]);
+		break;
 	case ATAG_CORE:
 		printf("[core]:\n");
 		printf("     magic = 0x%x\n", t->hdr.magic);
@@ -367,12 +380,14 @@ void atags_test(void)
 	struct tag_ddr_mem t_ddr_mem;
 	struct tag_tos_mem t_tos_mem;
 	struct tag_ram_partition t_ram_param;
+	struct tag_atf_mem t_atf_mem;
 
 	memset(&t_serial,  0x1, sizeof(t_serial));
 	memset(&t_bootdev, 0x2, sizeof(t_bootdev));
 	memset(&t_ddr_mem, 0x3, sizeof(t_ddr_mem));
 	memset(&t_tos_mem, 0x4, sizeof(t_tos_mem));
-	memset(&t_tos_mem, 0x0, sizeof(t_ram_param));
+	memset(&t_ram_param, 0x0, sizeof(t_ram_param));
+	memset(&t_atf_mem, 0x5, sizeof(t_atf_mem));
 
 	memcpy(&t_tos_mem.tee_mem.name, "tee_mem", 8);
 	memcpy(&t_tos_mem.drm_mem.name, "drm_mem", 8);
@@ -402,6 +417,7 @@ void atags_test(void)
 	atags_set_tag(ATAG_DDR_MEM, &t_ddr_mem);
 	atags_set_tag(ATAG_TOS_MEM, &t_tos_mem);
 	atags_set_tag(ATAG_RAM_PARTITION, &t_ram_param);
+	atags_set_tag(ATAG_ATF_MEM, &t_atf_mem);
 
 	atags_print_all_tags();
 	atags_stat();

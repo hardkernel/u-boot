@@ -16,6 +16,7 @@
 #define ATAG_DDR_MEM		0x54410052
 #define ATAG_TOS_MEM		0x54410053
 #define ATAG_RAM_PARTITION	0x54410054
+#define ATAG_ATF_MEM		0x54410055
 
 /* Tag size and offset */
 #define ATAGS_SIZE		(0x2000)	/* 8K */
@@ -84,6 +85,14 @@ struct tag_tos_mem {
 	u64 reserved[8];
 } __packed;
 
+struct tag_atf_mem {
+	u32 version;
+	u64 phy_addr;
+	u32 size;
+	u32 flags;
+	u32 reserved[3];
+} __packed;
+
 struct tag_ram_partition {
 	u32 version;
 	u32 count;
@@ -117,6 +126,7 @@ struct tag {
 		struct tag_ddr_mem	ddr_mem;
 		struct tag_tos_mem	tos_mem;
 		struct tag_ram_partition ram_part;
+		struct tag_atf_mem	atf_mem;
 	} u;
 } __aligned(4);
 
