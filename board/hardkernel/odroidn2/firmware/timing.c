@@ -73,6 +73,8 @@
 #define DDR_RFC_TYPE_LPDDR4_3Gbx1				10
 #define DDR_RFC_TYPE_LPDDR4_4Gbx1				11
 
+#define CONFIG_DDR4_DEFAULT_CLK		1200
+
 ddr_set_t __ddr_setting[] = {
 {
 	/* odroid-n2 ddr4 : (4Gbitx2)x2 */
@@ -81,7 +83,7 @@ ddr_set_t __ddr_setting[] = {
 	.dram_rank_config		= CONFIG_DDR0_32BIT_RANK01_CH0, /* bus width 32bit, use cs0 cs1 */
 	.DramType			= CONFIG_DDR_TYPE_DDR4,
 	/* 912 (DDR4-1866) / 1056 (DDR4-2133) / 1200 (DDR4-2400)/ 1320 (DDR4-2666) */
-	.DRAMFreq			= {1320, 0, 0, 0},
+	.DRAMFreq			= {CONFIG_DDR4_DEFAULT_CLK, 0, 0, 0},
 	.ddr_rfc_type			= DDR_RFC_TYPE_DDR4_2Gbx8,
 	.ddr_base_addr			= CFG_DDR_BASE_ADDR,
 	.ddr_start_offset		= CFG_DDR_START_OFFSET,
@@ -138,7 +140,7 @@ ddr_set_t __ddr_setting[] = {
 	.dram_rank_config		= CONFIG_DDR0_32BIT_RANK01_CH0, /* bus width 32bit, use cs0 cs1 */
 	.DramType			= CONFIG_DDR_TYPE_DDR4,
 	/* 912 (DDR4-1866) / 1056 (DDR4-2133) / 1200 (DDR4-2400)/ 1320 (DDR4-2666) */
-	.DRAMFreq			= {1320, 0, 0, 0},
+	.DRAMFreq			= {CONFIG_DDR4_DEFAULT_CLK, 0, 0, 0},
 	.ddr_rfc_type			= DDR_RFC_TYPE_DDR4_2Gbx8,
 	.ddr_base_addr			= CFG_DDR_BASE_ADDR,
 	.ddr_start_offset		= CFG_DDR_START_OFFSET,
@@ -198,7 +200,7 @@ ddr_set_t __ddr_setting[] = {
 	.dram_rank_config		= CONFIG_DDR0_32BIT_RANK0_CH0, /* bus width 32bit, use cs0 */
 	.DramType			= CONFIG_DDR_TYPE_DDR4,
 	/* 912 (DDR4-1866) / 1056 (DDR4-2133) / 1200 (DDR4-2400)/ 1320 (DDR4-2666) */
-	.DRAMFreq			= {1320, 0, 0, 0},
+	.DRAMFreq			= {CONFIG_DDR4_DEFAULT_CLK, 0, 0, 0},
 	.ddr_rfc_type			= DDR_RFC_TYPE_DDR4_2Gbx8,
 	.ddr_base_addr			= CFG_DDR_BASE_ADDR,
 	.ddr_start_offset		= CFG_DDR_START_OFFSET,
