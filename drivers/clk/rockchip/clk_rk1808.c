@@ -84,7 +84,7 @@ static struct rockchip_pll_clock rk1808_pll_clks[] = {
 		    RK1808_MODE_CON, 4, 10, 0, rk1808_pll_rates),
 	[GPLL] = PLL(pll_rk3036, PLL_GPLL, RK1808_PLL_CON(24),
 		     RK1808_MODE_CON, 6, 10, 0, rk1808_pll_rates),
-	[NPLL] = PLL(pll_rk3036, PLL_NPLL, RK1808_PLL_CON(24),
+	[NPLL] = PLL(pll_rk3036, PLL_NPLL, RK1808_PLL_CON(32),
 		     RK1808_MODE_CON, 8, 10, 0, rk1808_pll_rates),
 	[PPLL] = PLL(pll_rk3036, PLL_PPLL, RK1808_PMU_PLL_CON(0),
 		     RK1808_PMU_MODE_CON, 0, 10, 0, rk1808_pll_rates),
@@ -517,8 +517,6 @@ static ulong rk1808_vop_set_clk(struct rk1808_clk_priv *priv,
 		 * vopb dclk source from npll, and equals to
 		 */
 		src_clk_div = DIV_ROUND_UP(RK1808_VOP_PLL_LIMIT_FREQ, hz);
-		rockchip_pll_set_rate(&rk1808_pll_clks[NPLL],
-				      priv->cru, NPLL, src_clk_div * hz);
 		rk_clrsetreg(&cru->clksel_con[5],
 			     DCLK_VOPRAW_SEL_MASK |
 			     DCLK_VOPRAW_PLL_SEL_MASK |
@@ -528,6 +526,9 @@ static ulong rk1808_vop_set_clk(struct rk1808_clk_priv *priv,
 			     DCLK_VOPRAW_PLL_SEL_NPLL <<
 			     DCLK_VOPRAW_PLL_SEL_SHIFT |
 			     (src_clk_div - 1) << DCLK_VOPRAW_DIV_CON_SHIFT);
+		rockchip_pll_set_rate(&rk1808_pll_clks[NPLL],
+				      priv->cru, NPLL, src_clk_div * hz);
+
 		break;
 	case DCLK_VOPLITE:
 		/*
@@ -546,9 +547,10 @@ static ulong rk1808_vop_set_clk(struct rk1808_clk_priv *priv,
 		rk_clrsetreg(&cru->clksel_con[7],
 			     DCLK_VOPLITE_SEL_MASK | DCLK_VOPLITE_PLL_SEL_MASK |
 			     DCLK_VOPLITE_DIV_CON_MASK,
-			     DCLK_VOPLITE_SEL_VOPRAW << DCLK_VOPLITE_SEL_SHIFT |
-			     parent << DCLK_VOPLITE_PLL_SEL_SHIFT |
-			     (src_clk_div - 1) << DCLK_VOPLITE_DIV_CON_SHIFT);
+			     (DCLK_VOPLITE_SEL_VOPRAW <<
+			     DCLK_VOPLITE_SEL_SHIFT) |
+			     (parent << DCLK_VOPLITE_PLL_SEL_SHIFT) |
+			     ((src_clk_div - 1) << DCLK_VOPLITE_DIV_CON_SHIFT));
 		break;
 	default:
 		printf("do not support this vop freq\n");
@@ -1076,6 +1078,8 @@ static int rk1808_clk_probe(struct udevice *dev)
 					      priv->cru, CPLL);
 	priv->gpll_hz = rockchip_pll_get_rate(&rk1808_pll_clks[GPLL],
 					      priv->cru, GPLL);
+	priv->npll_hz = rockchip_pll_get_rate(&rk1808_pll_clks[NPLL],
+					      priv->cru, NPLL);
 
 	/* Process 'assigned-{clocks/clock-parents/clock-rates}' properties */
 	ret = clk_set_defaults(dev);
