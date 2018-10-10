@@ -61,6 +61,7 @@ enum {
  */
 void board_debug_uart_init(void)
 {
+#ifdef CONFIG_TPL_BUILD
 	static struct rk1808_grf * const grf = (void *)GRF_BASE;
 
 	/* Enable early UART2 channel m0 on the rk1808 */
@@ -72,4 +73,5 @@ void board_debug_uart_init(void)
 		     GPIO4A3_MASK | GPIO4A2_MASK,
 		     GPIO4A2_UART2_TX_M0 << GPIO4A2_SHIFT |
 		     GPIO4A3_UART2_RX_M0 << GPIO4A3_SHIFT);
+#endif
 }
