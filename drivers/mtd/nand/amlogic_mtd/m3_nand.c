@@ -189,7 +189,8 @@ void pinmux_select_chip_mtd(unsigned ce_enable, unsigned rb_enable)
 	} else if (cpu_id.family_id == MESON_CPU_MAJOR_ID_AXG) {
 		if (!((ce_enable >> 10) & 1))
 			AMLNF_SET_REG_MASK(P_PERIPHS_PIN_MUX_1, 2);
-	} else if (cpu_id.family_id == MESON_CPU_MAJOR_ID_TXHD) {
+	} else if ((cpu_id.family_id == MESON_CPU_MAJOR_ID_TXHD)
+		|| (cpu_id.family_id == MESON_CPU_MAJOR_ID_TL1)) {
 		if (!((ce_enable >> 10) & 1))
 			AMLNF_SET_REG_MASK(P_PERIPHS_PIN_MUX_1, (2 << 16));
 	} else if ((cpu_id.family_id == MESON_CPU_MAJOR_ID_GXBB) ||
@@ -317,12 +318,19 @@ static void m3_nand_hw_init(struct aml_nand_chip *aml_chip)
 		bus_timing = bus_cycle + 1;
 	}
 	*/
-
+#ifndef _pxp_test
 	sys_clk_rate = 200;
 	bus_cycle  = 6;
 	bus_timing = bus_cycle + 1;
+#else
+	/******for pxp******/
+	sys_clk_rate = 24;
+	bus_cycle = 4;
+	bus_timing = 2;
+#endif
 	get_sys_clk_rate_mtd(controller, &sys_clk_rate);
 
+	printk("bus cycle0: %d,timing: %d\n", bus_cycle, bus_timing);
 	NFC_SET_CFG(controller, 0);
 	NFC_SET_TIMING_ASYC(controller, bus_timing, (bus_cycle - 1));
 	NFC_SEND_CMD(controller, 1<<31);
@@ -357,12 +365,18 @@ static void m3_nand_adjust_timing(struct aml_nand_chip *aml_chip)
 		bus_timing = bus_cycle + 1;
 	}
 	*/
+#ifndef _pxp_test
 	bus_cycle  = 6;
 	bus_timing = bus_cycle + 1;
+#else
+	sys_clk_rate = 24;
+	bus_cycle = 4;
+	bus_timing = 2;
+#endif
 	get_sys_clk_rate_mtd(controller, &sys_clk_rate);
 
 
-	printf("%s() sys_clk_rate %d, bus_c %d, bus_t %d\n",
+	printk("%s() sys_clk_rate %d, bus_c %d, bus_t %d\n",
 		__func__, sys_clk_rate, bus_cycle, bus_timing);
 
 	NFC_SET_CFG(controller , 0);
@@ -437,7 +451,8 @@ static int m3_nand_options_confirm(struct aml_nand_chip *aml_chip)
 
 	if ((mtd->writesize <= 2048) ||
 	    (cpu_id.family_id == MESON_CPU_MAJOR_ID_AXG) ||
-	    (cpu_id.family_id == MESON_CPU_MAJOR_ID_TXHD))
+	    (cpu_id.family_id == MESON_CPU_MAJOR_ID_TXHD) ||
+		(cpu_id.family_id == MESON_CPU_MAJOR_ID_TL1))
 		options_support = NAND_ECC_BCH8_MODE;
 
 	switch (options_support) {
