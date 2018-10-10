@@ -438,7 +438,7 @@ int board_late_init(void){
 	//update env before anyone using it
 	run_command("get_rebootmode; echo reboot_mode=${reboot_mode}; "\
 			"if test ${reboot_mode} = factory_reset; then "\
-			"defenv_reserv aml_dt;setenv upgrade_step 2;save; fi;", 0);
+			"defenv_reserv;setenv upgrade_step 2;save; fi;", 0);
 	run_command("if itest ${upgrade_step} == 1; then "\
 				"defenv_reserv; setenv upgrade_step 2; saveenv; fi;", 0);
 	/*add board late init function here*/
@@ -532,3 +532,12 @@ phys_size_t get_effective_memsize(void)
 	return (((readl(AO_SEC_GP_CFG0)) & 0xFFFF0000) << 4);
 #endif
 }
+
+const char * const _env_args_reserve_[] =
+{
+		"aml_dt",
+		"firstboot",
+		"lock",
+
+		NULL//Keep NULL be last to tell END
+};
