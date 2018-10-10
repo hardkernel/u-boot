@@ -51,8 +51,8 @@ int arch_fixup_fdt(void *blob)
 		size[bank] = bd->bi_dram[bank].size;
 		if (size[bank] == 0)
 			continue;
-		printf("Adding bank: start=0x%08llx, size=0x%08llx\n",
-		       start[bank], size[bank]);
+		printf("Adding bank: 0x%08llx - 0x%08llx (size: 0x%08llx)\n",
+		       start[bank], start[bank] + size[bank], size[bank]);
 
 #ifdef CONFIG_ARMV7_NONSEC
 		ret = armv7_apply_memory_carveout(&start[bank], &size[bank]);
