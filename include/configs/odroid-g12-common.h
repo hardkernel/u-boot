@@ -100,11 +100,21 @@
 			"cfgload; "			\
 		"done\0"
 
+#define ENV_MMC_BOOT_DISTRO				\
+	"boot_mmc_distro="				\
+		"setenv devtype mmc; "			\
+		"for n in ${mmc_list}; do "		\
+			"setenv devno ${n}; "		\
+			"load mmc ${n} 0x3000000 boot.scr; "	\
+			"source 0x3000000; "		\
+		"done\0"				\
+
 /* args/envs */
 #define CONFIG_SYS_MAXARGS  64
 #define CONFIG_EXTRA_ENV_SETTINGS \
         ENV_PXE_DEFAULT \
         ENV_MMC_DEFAULT \
+        ENV_MMC_BOOT_DISTRO \
         ENV_MMC_LIST_DEFAULT \
 	"console=" CONFIG_DEFAULT_CONSOLE \
         "loadaddr=1080000\0"\
@@ -176,6 +186,7 @@
             "done\0" \
 	"boot_default="\
             "run boot_mmc; " \
+            "run boot_mmc_distro; " \
             "run boot_rawimage\0" \
         "init_display="\
             "osd open; osd clear; " \
