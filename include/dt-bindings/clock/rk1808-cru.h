@@ -78,10 +78,10 @@
 #define SCLK_SARADC		77
 #define SCLK_EFUSE_S		78
 #define SCLK_EFUSE_NS		79
-#define SCLK_GPIO1		80
-#define SCLK_GPIO2		81
-#define SCLK_GPIO3		82
-#define SCLK_GPIO4		83
+#define DBCLK_GPIO1		80
+#define DBCLK_GPIO2		81
+#define DBCLK_GPIO3		82
+#define DBCLK_GPIO4		83
 #define SCLK_PWM0		84
 #define SCLK_PWM1		85
 #define SCLK_PWM2		86
@@ -105,11 +105,12 @@
 #define SCLK_UART0_PMU		104
 #define SCLK_PVTM_PMU		105
 #define SCLK_PMU_I2C0		106
-#define SCLK_PMU_GPIO0		107
+#define DBCLK_PMU_GPIO0		107
 #define SCLK_REF24M_PMU		108
 #define SCLK_USBPHY_REF		109
 #define SCLK_MIPIDSIPHY_REF	110
 #define SCLK_PCIEPHY_REF	111
+#define SCLK_RTC32K_FRAC	112
 
 /* aclk gates */
 #define ACLK_GIC_PRE		145
@@ -147,7 +148,6 @@
 #define HCLK_VOPLITE		203
 #define HCLK_RGA		204
 #define HCLK_ISP		205
-#define HCLK_CIF		205
 #define LSCLK_PCIE		206
 #define HCLK_HOST		207
 #define LSCLK_PERI		208
@@ -165,6 +165,7 @@
 #define MSCLK_CORE_NIU		220
 #define HSCLK_IMEM		221
 #define HCLK_HOST_ARB		222
+#define HCLK_CIF		223
 
 /* pclk gates */
 #define PCLK_DDR		250
