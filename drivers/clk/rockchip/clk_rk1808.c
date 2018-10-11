@@ -521,11 +521,11 @@ static ulong rk1808_vop_set_clk(struct rk1808_clk_priv *priv,
 			     DCLK_VOPRAW_SEL_MASK |
 			     DCLK_VOPRAW_PLL_SEL_MASK |
 			     DCLK_VOPRAW_DIV_CON_MASK,
-			     DCLK_VOPRAW_SEL_VOPRAW <<
-			     DCLK_VOPRAW_SEL_SHIFT |
-			     DCLK_VOPRAW_PLL_SEL_NPLL <<
-			     DCLK_VOPRAW_PLL_SEL_SHIFT |
-			     (src_clk_div - 1) << DCLK_VOPRAW_DIV_CON_SHIFT);
+			     (DCLK_VOPRAW_SEL_VOPRAW <<
+			     DCLK_VOPRAW_SEL_SHIFT) |
+			     (DCLK_VOPRAW_PLL_SEL_NPLL <<
+			     DCLK_VOPRAW_PLL_SEL_SHIFT) |
+			     ((src_clk_div - 1) << DCLK_VOPRAW_DIV_CON_SHIFT));
 		rockchip_pll_set_rate(&rk1808_pll_clks[NPLL],
 				      priv->cru, NPLL, src_clk_div * hz);
 
@@ -534,15 +534,19 @@ static ulong rk1808_vop_set_clk(struct rk1808_clk_priv *priv,
 		/*
 		 * vopl dclk source from cpll, and equals to
 		 */
-		if (!(priv->npll_hz % hz)) {
-			parent = DCLK_VOPLITE_PLL_SEL_NPLL;
-			src_clk_div = do_div(priv->npll_hz, hz);
-		} else if (!(priv->cpll_hz % hz)) {
+		if (!(priv->cpll_hz % hz)) {
 			parent = DCLK_VOPLITE_PLL_SEL_CPLL;
-			src_clk_div = do_div(priv->cpll_hz, hz);
-		} else {
+			src_clk_div = DIV_ROUND_UP(priv->cpll_hz, hz);
+		} else if (!(priv->gpll_hz % hz)) {
 			parent = DCLK_VOPLITE_PLL_SEL_GPLL;
 			src_clk_div = DIV_ROUND_UP(priv->gpll_hz, hz);
+		} else {
+			parent = DCLK_VOPLITE_PLL_SEL_NPLL;
+			src_clk_div = DIV_ROUND_UP(RK1808_VOP_PLL_LIMIT_FREQ,
+						   hz);
+			rockchip_pll_set_rate(&rk1808_pll_clks[NPLL],
+					      priv->cru, NPLL,
+					      src_clk_div * hz);
 		}
 		rk_clrsetreg(&cru->clksel_con[7],
 			     DCLK_VOPLITE_SEL_MASK | DCLK_VOPLITE_PLL_SEL_MASK |
