@@ -201,7 +201,8 @@ void fb_mmc_flash_write(const char *cmd, void *download_buffer,
 #endif
 
 #ifdef CONFIG_AML_PARTITION
-	if (dev_desc->part_type == PART_TYPE_AML) {
+	if ((dev_desc->part_type == PART_TYPE_AML)
+		|| (dev_desc->part_type == PART_TYPE_DOS)) {
 		if (strcmp(cmd, CONFIG_FASTBOOT_MBR_NAME) == 0) {
 			printf("%s: updating MBR\n", __func__);
 			ret = emmc_update_mbr(download_buffer);
@@ -295,7 +296,8 @@ void fb_mmc_erase_write(const char *cmd, void *download_buffer)
 		ret = part_get_info_efi_by_name_or_alias(dev_desc, cmd, &info);
 #endif
 #ifdef CONFIG_AML_PARTITION
-	if (dev_desc->part_type == PART_TYPE_AML)
+	if ((dev_desc->part_type == PART_TYPE_AML)
+		|| (dev_desc->part_type == PART_TYPE_DOS))
 		ret = get_partition_info_aml_by_name(dev_desc, cmd, &info);
 #endif
 #ifdef CONFIG_MPT_PARTITION
