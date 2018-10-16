@@ -423,8 +423,8 @@ fixup_platform_configure()
 	local count plat
 
 # <*> Fixup rsa/sha pack mode for platforms
-	# RK3308/PX30/RK3326 use RSA-PKCS1 V2.1, it's pack magic is "3"
-	if [ $RKCHIP = "PX30" -o $RKCHIP = "RK3326" -o $RKCHIP = "RK3308" ]; then
+	# RK3308/PX30/RK3326/RK1808 use RSA-PKCS1 V2.1, it's pack magic is "3"
+	if [ $RKCHIP = "PX30" -o $RKCHIP = "RK3326" -o $RKCHIP = "RK3308" -o $RKCHIP = "RK1808" ]; then
 		PLATFORM_RSA="--rsa 3"
 	# RK3368 use rk big endian SHA256, it's pack magic is "2"
 	elif [ $RKCHIP = "RK3368" ]; then
