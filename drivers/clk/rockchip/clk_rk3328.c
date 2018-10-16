@@ -292,6 +292,7 @@ static ulong rk3328_mmc_get_clk(struct rk3328_clk_priv *priv, uint clk_id)
 		break;
 	case HCLK_EMMC:
 	case SCLK_EMMC:
+	case SCLK_EMMC_SAMPLE:
 		con_id = 32;
 		break;
 	default:
@@ -756,6 +757,7 @@ static ulong rk3328_clk_get_rate(struct clk *clk)
 	case HCLK_EMMC:
 	case SCLK_SDMMC:
 	case SCLK_EMMC:
+	case SCLK_EMMC_SAMPLE:
 		rate = rk3328_mmc_get_clk(priv, clk->id);
 		break;
 #ifndef CONFIG_SPL_BUILD
