@@ -599,6 +599,8 @@ extern void aml_pwm_cal_init(int mode);
 
 int board_init(void)
 {
+	board_led_alive(1);
+
 #ifdef CONFIG_USB_XHCI_AMLOGIC_V2
 	board_usb_pll_disable(&g_usb_config_GXL_skt);
 	board_usb_init(&g_usb_config_GXL_skt,BOARD_USB_MODE_HOST);

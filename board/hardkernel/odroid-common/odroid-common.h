@@ -12,6 +12,7 @@
 #define BOOT_DEVICE_SD          4
 #define BOOT_DEVICE_USB         5
 
+extern int board_led_alive(int status);
 extern const char *boot_device_name(int n);
 extern int get_boot_device(void);
 
