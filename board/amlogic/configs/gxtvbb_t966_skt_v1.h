@@ -221,8 +221,8 @@
 		"vout output ${outputmode}; "\
 		"\0"\
 	"bcb_cmd="\
-		"get_valid_slot;"\
 		"get_avb_mode;"\
+		"get_valid_slot;"\
 		"\0"\
 	"cmdline_keys="\
 		"if keyman init 0x1234; then "\
