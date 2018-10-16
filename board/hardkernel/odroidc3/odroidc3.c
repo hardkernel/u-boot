@@ -21,9 +21,6 @@
 #include <vpu.h>
 #endif
 #include <vpp.h>
-#ifdef CONFIG_AML_V2_FACTORY_BURN
-#include <amlogic/aml_v2_burning.h>
-#endif// #ifdef CONFIG_AML_V2_FACTORY_BURN
 #ifdef CONFIG_AML_HDMITX20
 #include <amlogic/hdmi.h>
 #endif
@@ -530,13 +527,6 @@ extern void aml_pwm_cal_init(int mode);
 
 int board_init(void)
 {
-    //Please keep CONFIG_AML_V2_FACTORY_BURN at first place of board_init
-    //As NOT NEED other board init If USB BOOT MODE
-#ifdef CONFIG_AML_V2_FACTORY_BURN
-	if ((0x1b8ec003 != readl(P_PREG_STICKY_REG2)) && (0x1b8ec004 != readl(P_PREG_STICKY_REG2))) {
-				aml_try_factory_usb_burning(0, gd->bd);
-	}
-#endif// #ifdef CONFIG_AML_V2_FACTORY_BURN
 #ifdef CONFIG_USB_XHCI_AMLOGIC_V2
 	board_usb_pll_disable(&g_usb_config_GXL_skt);
 	board_usb_init(&g_usb_config_GXL_skt,BOARD_USB_MODE_HOST);
@@ -577,33 +567,7 @@ int board_late_init(void)
 	lcd_probe();
 #endif
 
-#ifdef CONFIG_AML_V2_FACTORY_BURN
-	if (0x1b8ec003 == readl(P_PREG_STICKY_REG2))
-		aml_try_factory_usb_burning(1, gd->bd);
-		aml_try_factory_sdcard_burning(0, gd->bd);
-#endif// #ifdef CONFIG_AML_V2_FACTORY_BURN
-
 	return 0;
-}
-#endif
-
-#ifdef CONFIG_AML_TINY_USBTOOL
-int usb_get_update_result(void)
-{
-	unsigned long upgrade_step;
-	upgrade_step = simple_strtoul (getenv ("upgrade_step"), NULL, 16);
-	printf("upgrade_step = %d\n", (int)upgrade_step);
-	if (upgrade_step == 1)
-	{
-		run_command("defenv", 1);
-		run_command("setenv upgrade_step 2", 1);
-		run_command("saveenv", 1);
-		return 0;
-	}
-	else
-	{
-		return -1;
-	}
 }
 #endif
 
