@@ -227,7 +227,8 @@ struct tag *atags_get_tag(u32 magic)
 
 void atags_destroy(void)
 {
-	memset((char *)ATAGS_PHYS_BASE, 0, sizeof(struct tag));
+	if (atags_is_available())
+		memset((char *)ATAGS_PHYS_BASE, 0, sizeof(struct tag));
 }
 
 #if (defined(CONFIG_DEBUG_ATAGS) || defined(DEBUG)) && \
