@@ -508,10 +508,10 @@ int get_aml_partition_count(void)
  * BOOT_5: NOR_Q:reg0[23:20]=3
  * BOOT_6: NOR_C:reg0[27:24]=3
  * BOOT_7: NOR_WPn:reg0[31:28]=3
- * BOOT_14: NOR_CS:reg1[27:24]=3
+ * BOOT_13: NOR_CS:reg1[23:20]=3
  */
 #define SPIFC_NUM_CS 1
-static int spifc_cs_gpios[SPIFC_NUM_CS] = {54};
+static int spifc_cs_gpios[SPIFC_NUM_CS] = {GPIOEE(BOOT_13)};
 
 static int spifc_pinctrl_enable(void *pinctrl, bool enable)
 {
@@ -524,7 +524,7 @@ static int spifc_pinctrl_enable(void *pinctrl, bool enable)
 	writel(val, P_PERIPHS_PIN_MUX_0);
 
 	val = readl(P_PERIPHS_PIN_MUX_1);
-	val &= ~(0xf << 24);
+	val &= ~(0xf << 20);
 	writel(val, P_PERIPHS_PIN_MUX_1);
 	return 0;
 }
