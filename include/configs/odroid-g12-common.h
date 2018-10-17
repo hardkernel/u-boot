@@ -77,6 +77,8 @@
 
 #define CONFIG_MENU				1
 
+#define CONFIG_DEFAULT_CONSOLE			"ttyS0,115200n8\0"
+
 #define ENV_PXE_DEFAULT					\
 	"pxefile_addr_r=0x1070000\0"			\
 	"pxeuuid=" ODROID_BOARD_UUID "\0"		\
@@ -104,6 +106,7 @@
         ENV_PXE_DEFAULT \
         ENV_MMC_DEFAULT \
         ENV_MMC_LIST_DEFAULT \
+	"console=" CONFIG_DEFAULT_CONSOLE \
         "loadaddr=1080000\0"\
         "outputmode=1080p60hz\0" \
         "hdmimode=1080p60hz\0" \
@@ -130,7 +133,7 @@
         "active_slot=_a\0"\
         "boot_part=boot\0"\
         "initargs="\
-            "rootfstype=ramfs init=/init console=ttyS0,115200 no_console_suspend earlyprintk=aml-uart,0xff803000 ramoops.pstore_en=1 ramoops.record_size=0x8000 ramoops.console_size=0x4000 "\
+            "rootfstype=ramfs init=/init console=ttyS0,115200n8 no_console_suspend earlyprintk=aml-uart,0xff803000 ramoops.pstore_en=1 ramoops.record_size=0x8000 ramoops.console_size=0x4000 "\
             "\0"\
         "switch_bootmode=" \
             "get_rebootmode;" \
