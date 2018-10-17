@@ -57,6 +57,7 @@
 #include <amlogic/aml_is31fl32xx.h>
 #endif
 
+#include <storage.h>
 DECLARE_GLOBAL_DATA_PTR;
 
 //new static eth setup
@@ -635,6 +636,13 @@ int board_init(void)
 	return 0;
 }
 
+void aml_config_dtb(void)
+{
+	run_command("fdt address $dtb_mem_addr", 0);
+	printf("%s %d\n", __func__, __LINE__);
+	run_command("fdt set /mtd_nand status disable", 0);
+	run_command("fdt set /emmc@ffe07000 status okay", 0);
+}
 #ifdef CONFIG_BOARD_LATE_INIT
 int board_late_init(void){
 	//update env before anyone using it
@@ -680,6 +688,11 @@ int board_late_init(void){
 	/*aml_try_factory_sdcard_burning(0, gd->bd);*/
 #endif// #ifdef CONFIG_AML_V2_FACTORY_BURN
 
+	/**/
+	extern int amlmmc_is_inited(void);
+	if (amlmmc_is_inited() == EMMC_BOOT_FLAG) {
+		aml_config_dtb();
+	}
 	return 0;
 }
 #endif

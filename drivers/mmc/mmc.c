@@ -31,6 +31,10 @@
 static struct list_head mmc_devices;
 static int cur_dev_num = -1;
 
+int amlmmc_is_inited(void) {
+	return device_boot_flag;
+}
+
 bool emmckey_is_access_range_legal (struct mmc *mmc, ulong start, lbaint_t blkcnt) {
 #ifdef CONFIG_STORE_COMPATIBLE
 	ulong key_start_blk, key_end_blk;
