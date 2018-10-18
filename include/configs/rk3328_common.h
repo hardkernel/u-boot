@@ -28,6 +28,8 @@
 #define GICD_BASE			0xFF811000
 #define GICC_BASE			0xFF812000
 
+#define CONFIG_SUPPORT_EMMC_RPMB
+
 #define CONFIG_ROCKUSB_G_DNL_PID	0x320C
 
 /* MMC/SD IP block */
