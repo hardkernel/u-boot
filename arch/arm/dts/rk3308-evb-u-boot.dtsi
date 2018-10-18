@@ -34,8 +34,24 @@
 	status = "okay";
 };
 
+&uart0 {
+	u-boot,dm-pre-reloc;
+};
+
+&uart1 {
+	u-boot,dm-pre-reloc;
+};
+
 &uart2 {
 	u-boot,dm-pre-reloc;
 	clock-frequency = <24000000>;
 	status = "okay";
+};
+
+&uart3 {
+	u-boot,dm-pre-reloc;
+};
+
+&uart4 {
+	u-boot,dm-pre-reloc;
 };
