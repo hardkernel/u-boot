@@ -22,6 +22,7 @@
 #include <asm/arch/io.h>
 #include <asm/cpu_id.h>
 #include <asm/arch/cpu.h>
+#include <asm/arch/timer.h>
 
 /* Local Headers */
 #include <amlogic/vmode.h>
@@ -243,10 +244,125 @@ static inline void  osd_update_3d_mode(int enable_osd1, int enable_osd2)
 		osd2_update_disp_3d_mode();
 }
 
+#if 1
+static void get_encp_line(int *enc_line, int *active_line_begin)
+{
+	unsigned int reg = 0;
+
+	switch (osd_reg_read(VPU_VIU_VENC_MUX_CTRL) & 0x3) {
+	case 0:
+		reg = osd_reg_read(ENCL_INFO_READ);
+		*active_line_begin =
+			osd_reg_read(ENCL_VIDEO_VAVON_BLINE);
+
+		break;
+	case 1:
+		reg = osd_reg_read(ENCI_INFO_READ);
+		*active_line_begin =
+			osd_reg_read(ENCI_VFIFO2VD_LINE_TOP_START);
+		break;
+	case 2:
+		reg = osd_reg_read(ENCP_INFO_READ);
+		*active_line_begin =
+			osd_reg_read(ENCP_VIDEO_VAVON_BLINE);
+		break;
+	case 3:
+		reg = osd_reg_read(ENCT_INFO_READ);
+		*active_line_begin =
+			osd_reg_read(ENCT_VIDEO_VAVON_BLINE);
+		break;
+	}
+	*enc_line = (reg >> 16) & 0x1fff;
+	*enc_line -= (*active_line_begin);
+}
+
 static inline void wait_vsync_wakeup(void)
 {
+	int i = 0;
+	int enc_line = 0;
+	int active_line_begin;
+	int vsync_line = 0;
+	struct vinfo_s *info = NULL;
+	int line_after = 0;
+
+#ifdef CONFIG_AML_VOUT
+	info = vout_get_current_vinfo();
+	vsync_line = info->field_height;
+#endif
+
+	get_encp_line(&enc_line, &active_line_begin);
+
+	/* if current line is always zero */
+	if (enc_line == (0 - active_line_begin)) {
+		_udelay(50);
+		get_encp_line(&line_after, &active_line_begin);
+		if (enc_line == (0 - active_line_begin))
+			goto vsync_hit_flag;
+	}
+
+	while (enc_line < vsync_line) {
+		if (i > 100000) {
+			osd_logi("wait_vsync_wakeup exit\n");
+			break;
+		}
+		i++;
+		get_encp_line(&enc_line, &active_line_begin);
+	}
+
+vsync_hit_flag:
 	vsync_hit = true;
 }
+#else
+
+static int get_encp_line(int *enc_line)
+{
+	int vsync_get = 0;
+	unsigned int reg = 0;
+	int field_status = 0;
+	static int pre_field_status = 0;
+
+	switch (osd_reg_read(VPU_VIU_VENC_MUX_CTRL) & 0x3) {
+	case 0:
+		reg = osd_reg_read(ENCL_INFO_READ);
+		break;
+	case 1:
+		reg = osd_reg_read(ENCI_INFO_READ);
+		break;
+	case 2:
+		reg = osd_reg_read(ENCP_INFO_READ);
+		break;
+	case 3:
+		reg = osd_reg_read(ENCT_INFO_READ);
+		break;
+	}
+	*enc_line = (reg >> 16) & 0x1fff;
+	field_status = (reg >> 29) & 0x7;
+	if (field_status != pre_field_status)
+		vsync_get = 1;
+	pre_field_status = field_status;
+	return vsync_get;
+}
+
+static inline void wait_vsync_wakeup(void)
+{
+	int i = 0;
+	int line = 0;
+	int vsync_get = 0;
+
+	vsync_get = get_encp_line(&line);
+	if ((line > 0) || vsync_get) {
+		while (!vsync_get) {
+			if (i>100000) {
+				osd_logi("wait_vsync_wakeup exit, i=%d\n", i);
+				break;
+			}
+			i++;
+			vsync_get = get_encp_line(&line);
+		}
+	}
+	vsync_hit = true;
+}
+#endif
 
 static inline void walk_through_update_list(void)
 {
@@ -334,17 +450,17 @@ static void vsync_isr(void)
 		osd_reg_write(VIU_OSD2_BLK0_CFG_W0, fb1_cfg_w0);
 	}
 	/* go through update list */
+	if (!vsync_hit)
+		wait_vsync_wakeup();
+
 	walk_through_update_list();
 	osd_update_3d_mode(osd_hw.mode_3d[OSD1].enable,
 			   osd_hw.mode_3d[OSD2].enable);
-
-	if (!vsync_hit)
-		wait_vsync_wakeup();
 }
 
 void osd_wait_vsync_hw(void)
 {
-	mdelay(16);
+	//mdelay(16);
 	vsync_isr();
 	vsync_hit = false;
 }
@@ -429,7 +545,7 @@ int osd_set_scan_mode(u32 index)
 	if (index == OSD2) {
 		if (real_scan_mode == SCAN_MODE_INTERLACE)
 			return 1;
-		data32 = (osd_reg_read(VIU_OSD2_BLK0_CFG_W0) & 3) >> 1;
+		// data32 = (osd_reg_read(VIU_OSD2_BLK0_CFG_W0) & 3) >> 1;
 	} else
 		data32 = (osd_reg_read(VIU_OSD1_BLK0_CFG_W0) & 3) >> 1;
 	if (data32 == osd_hw.scan_mode)
@@ -1510,8 +1626,7 @@ static void osd1_update_disp_freescale_enable(void)
 	}
 	hsc_ini_rcv_num = hf_bank_len;
 	vsc_ini_rcv_num = vf_bank_len;
-	hsc_ini_rpt_p0_num =
-		(hf_bank_len / 2 - 1) > 0 ? (hf_bank_len / 2 - 1) : 0;
+	hsc_ini_rpt_p0_num = hf_bank_len / 2 - 1;
 	vsc_ini_rpt_p0_num =
 		(vf_bank_len / 2 - 1) > 0 ? (vf_bank_len / 2 - 1) : 0;
 	src_w = osd_hw.free_scale_width[OSD1];
@@ -1658,8 +1773,7 @@ static void osd2_update_disp_freescale_enable(void)
 		vf_bank_len = 2;
 	hsc_ini_rcv_num = hf_bank_len;
 	vsc_ini_rcv_num = vf_bank_len;
-	hsc_ini_rpt_p0_num =
-		(hf_bank_len / 2 - 1) > 0 ? (hf_bank_len / 2 - 1) : 0;
+	hsc_ini_rpt_p0_num = hf_bank_len / 2 - 1;
 	vsc_ini_rpt_p0_num =
 		(vf_bank_len / 2 - 1) > 0 ? (vf_bank_len / 2 - 1) : 0;
 	src_w = osd_hw.free_scale_width[OSD2];

@@ -427,6 +427,7 @@
 #define CONFIG_AML_OSD 1
 #define CONFIG_OSD_SCALE_ENABLE 1
 #define CONFIG_CMD_BMP 1
+#define CONFIG_AML_MINUI 1
 
 #if defined(CONFIG_AML_VOUT)
 #define CONFIG_AML_CVBS 1

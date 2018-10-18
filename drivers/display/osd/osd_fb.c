@@ -176,8 +176,11 @@ static pic_info_t g_pic_info;
 static int img_video_init = 0;
 static int fb_index = -1;
 
+#if defined(CONFIG_AML_MINUI)
+extern int in_fastboot_mode;
+#endif
 
-static void osd_layer_init(GraphicDevice gdev, int layer)
+static void osd_layer_init(GraphicDevice *gdev, int layer)
 {
 	u32 index = layer;
 	u32 xoffset = 0;
@@ -190,24 +193,24 @@ static void osd_layer_init(GraphicDevice gdev, int layer)
 	u32 disp_start_y = 0;
 	u32 disp_end_x = 0;
 	u32 disp_end_y = 0;
-	u32 fbmem = gdev.frameAdrs;
+	u32 fbmem = gdev->frameAdrs;
 	const struct color_bit_define_s *color =
-			&default_color_format_array[gdev.gdfIndex];
+			&default_color_format_array[gdev->gdfIndex];
 
 #ifdef CONFIG_OSD_SCALE_ENABLE
-	xres = gdev.fb_width;
-	yres = gdev.fb_height;
-	xres_virtual = gdev.fb_width;
-	yres_virtual = gdev.fb_height * 2;
-	disp_end_x = gdev.fb_width - 1;
-	disp_end_y = gdev.fb_height - 1;
+	xres = gdev->fb_width;
+	yres = gdev->fb_height;
+	xres_virtual = gdev->fb_width;
+	yres_virtual = gdev->fb_height * 2;
+	disp_end_x = gdev->fb_width - 1;
+	disp_end_y = gdev->fb_height - 1;
 #else
-	xres = gdev.winSizeX;
-	yres = gdev.winSizeY;
-	xres_virtual = gdev.winSizeX;
-	yres_virtual = gdev.winSizeY * 2;
-	disp_end_x = gdev.winSizeX - 1;
-	disp_end_y = gdev.winSizeY - 1;
+	xres = gdev->winSizeX;
+	yres = gdev->winSizeY;
+	xres_virtual = gdev->winSizeX;
+	yres_virtual = gdev->winSizeY * 2;
+	disp_end_x = gdev->winSizeX - 1;
+	disp_end_y = gdev->winSizeY - 1;
 #endif
 	osd_init_hw();
 	osd_setup_hw(index,
@@ -247,7 +250,6 @@ static int get_dts_node(char *dt_addr, char *dtb_node)
 #ifdef CONFIG_OF_LIBFDT
 	int parent_offset = 0;
 	char *propdata = NULL;
-#endif
 
 	parent_offset = fdt_path_offset(dt_addr, dtb_node);
 	if (parent_offset < 0) {
@@ -266,6 +268,9 @@ static int get_dts_node(char *dt_addr, char *dtb_node)
 		}
 	}
 	return parent_offset;
+#else
+	return -1;
+#endif
 }
 
 unsigned long get_fb_addr(void)
@@ -287,20 +292,37 @@ unsigned long get_fb_addr(void)
 #else
 	dt_addr = (char *)0x01000000;
 #endif
-	if (fdt_check_header(dt_addr) < 0) {
-		osd_logi("check dts: %s, load default fb_addr parameters\n",
-			fdt_strerror(fdt_check_header(dt_addr)));
-	} else {
-		strcpy(fdt_node, "/meson-fb");
-		osd_logi("load fb addr from dts:%s\n", fdt_node);
-		parent_offset = get_dts_node(dt_addr, fdt_node);
-		if (parent_offset < 0) {
-			strcpy(fdt_node, "/drm-vpu");
+
+#if defined(CONFIG_AML_MINUI)
+	if (in_fastboot_mode == 1) {
+		osd_logi("in fastboot mode, load default fb_addr parameters \n");
+	} else
+#endif
+	{
+		if (fdt_check_header(dt_addr) < 0) {
+			osd_logi("check dts: %s, load default fb_addr parameters\n",
+				fdt_strerror(fdt_check_header(dt_addr)));
+		} else {
+			strcpy(fdt_node, "/meson-fb");
 			osd_logi("load fb addr from dts:%s\n", fdt_node);
 			parent_offset = get_dts_node(dt_addr, fdt_node);
 			if (parent_offset < 0) {
-				osd_logi("not find node: %s\n",fdt_strerror(parent_offset));
-				osd_logi("use default fb_addr parameters\n");
+				strcpy(fdt_node, "/drm-vpu");
+				osd_logi("load fb addr from dts:%s\n", fdt_node);
+				parent_offset = get_dts_node(dt_addr, fdt_node);
+				if (parent_offset < 0) {
+					osd_logi("not find node: %s\n",fdt_strerror(parent_offset));
+					osd_logi("use default fb_addr parameters\n");
+				} else {
+					/* check fb_addr */
+					propdata = (char *)fdt_getprop(dt_addr, parent_offset, "logo_addr", NULL);
+					if (propdata == NULL) {
+						osd_logi("failed to get fb addr for logo\n");
+						osd_logi("use default fb_addr parameters\n");
+					} else {
+						fb_addr = simple_strtoul(propdata, NULL, 16);
+					}
+				}
 			} else {
 				/* check fb_addr */
 				propdata = (char *)fdt_getprop(dt_addr, parent_offset, "logo_addr", NULL);
@@ -310,15 +332,6 @@ unsigned long get_fb_addr(void)
 				} else {
 					fb_addr = simple_strtoul(propdata, NULL, 16);
 				}
-			}
-		} else {
-			/* check fb_addr */
-			propdata = (char *)fdt_getprop(dt_addr, parent_offset, "logo_addr", NULL);
-			if (propdata == NULL) {
-				osd_logi("failed to get fb addr for logo\n");
-				osd_logi("use default fb_addr parameters\n");
-			} else {
-				fb_addr = simple_strtoul(propdata, NULL, 16);
 			}
 		}
 	}
@@ -334,7 +347,7 @@ unsigned long get_fb_addr(void)
 	return fb_addr;
 }
 
-static int get_osd_layer(void)
+int get_osd_layer(void)
 {
 	char *layer_str;
 	int osd_index = -1;
@@ -366,14 +379,18 @@ static void *osd_hw_init(void)
 	}
 
 	osd_index = get_osd_layer();
+	if (osd_index < 0) {
+		osd_loge("osd_hw_init: invalid osd_index\n");
+		return NULL;
+	}
 	if (osd_index == OSD1)
-		osd_layer_init(fb_gdev, OSD1);
+		osd_layer_init(&fb_gdev, OSD1);
 	else if (osd_index == OSD2) {
 		if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_AXG) {
 			osd_loge("AXG not support osd2\n");
 			return NULL;
 		}
-		osd_layer_init(fb_gdev, OSD2);
+		osd_layer_init(&fb_gdev, OSD2);
 	}
 	else {
 		osd_loge("display_layer(%d) invalid\n", osd_index);
@@ -541,7 +558,7 @@ int video_display_bitmap(ulong bmp_image, int x, int y)
 #if defined CONFIG_AML_VOUT
 	info = vout_get_current_vinfo();
 #endif
-	ushort *cmap_base = NULL;
+	// ushort *cmap_base = NULL;
 	unsigned long byte_width;
 	ushort i, j;
 	uchar *fb;
@@ -561,6 +578,11 @@ int video_display_bitmap(ulong bmp_image, int x, int y)
 	int osd_index = -1;
 
 	osd_index = get_osd_layer();
+	if (osd_index < 0) {
+		osd_loge("video_display_bitmap: invalid osd_index\n");
+		return (-1);
+	}
+
 	if (fb_gdev.mode != FULL_SCREEN_MODE)
 		if (parse_bmp_info(bmp_image))
 			return -1;
@@ -646,6 +668,7 @@ int video_display_bitmap(ulong bmp_image, int x, int y)
 		buffer_rgb = (uchar *)malloc(height * width * 4 * sizeof(uchar) + 1);
 		if (buffer_rgb == NULL) {
 			printf("Error:fail to malloc the memory!");
+			return (-1);
 		}
 	}
 	uchar *ptr_rgb = buffer_rgb;
@@ -668,10 +691,10 @@ int video_display_bitmap(ulong bmp_image, int x, int y)
 					*(fb++) = *buffer_rgb;
 					buffer_rgb += 1;
 				}
-				else {
-					*(uint16_t *)fb = cmap_base[*buffer_rgb++];
-					fb += sizeof(uint16_t) / sizeof(*fb);
-				}
+				// else {
+				// 	*(uint16_t *)fb = cmap_base[*buffer_rgb++];
+				// 	fb += sizeof(uint16_t) / sizeof(*fb);
+				// }
 			}
 			buffer_rgb += (padded_line - width);
 			fb -= (byte_width * 4 + lcd_line_length);
@@ -764,6 +787,10 @@ int video_display_raw(ulong raw_image, int x, int y)
 	int osd_index = -1;
 
 	osd_index = get_osd_layer();
+	if (osd_index < 0) {
+		osd_loge("video_display_raw: invalid osd_index\n");
+		return (-1);
+	}
 
 	width = g_pic_info.pic_width;
 	height = g_pic_info.pic_height;
@@ -922,6 +949,10 @@ int video_scale_bitmap(void)
 		osd_index = 0;
 	else if (strcmp(layer_str, "osd1") == 0)
 		osd_index = 1;
+	else {
+		osd_logd2("video_scale_bitmap: invalid display_layer\n");
+		return (-1);
+	}
 #ifdef CONFIG_OSD_SUPERSCALE_ENABLE
 	if ((fb_gdev.fb_width * 2 != fb_gdev.winSizeX) ||
 	    (fb_gdev.fb_height * 2 != fb_gdev.winSizeY)) {
@@ -1147,13 +1178,13 @@ static int osd_hw_init_by_index(u32 osd_index)
 	if (_osd_hw_init() < 0)
 		return -1;
 	if (osd_index == OSD1)
-		osd_layer_init(fb_gdev, OSD1);
+		osd_layer_init(&fb_gdev, OSD1);
 	else if ( osd_index == OSD2) {
 		if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_AXG) {
 			osd_loge("AXG not support osd2\n");
 			return -1;
 		}
-		osd_layer_init(fb_gdev, OSD2);
+		osd_layer_init(&fb_gdev, OSD2);
 	}
 	else {
 		osd_loge("display_layer(%d) invalid\n", osd_index);
@@ -1220,9 +1251,10 @@ void hist_set_golden_data(void)
 	u32 i = 0;
 	u32 family_id = get_cpu_id().family_id;
 	char *str = NULL;
-	char *hist_env_key[12] = {"hist_max_min_osd0","hist_spl_val_osd0","hist_spl_pix_cnt_osd0","hist_cheoma_sum_osd0",
-	                         "hist_max_min_osd1","hist_spl_val_osd1","hist_spl_pix_cnt_osd1","hist_cheoma_sum_osd1",
-							 "hist_max_min_osd2","hist_spl_val_osd2","hist_spl_pix_cnt_osd2","hist_cheoma_sum_osd2"};
+	char *hist_env_key[12] =
+			{"hist_max_min_osd0","hist_spl_val_osd0","hist_spl_pix_cnt_osd0","hist_cheoma_sum_osd0",
+			"hist_max_min_osd1","hist_spl_val_osd1","hist_spl_pix_cnt_osd1","hist_cheoma_sum_osd1",
+			"hist_max_min_osd2","hist_spl_val_osd2","hist_spl_pix_cnt_osd2","hist_cheoma_sum_osd2"};
 	// GXL
 	hist_max_min[OSD1][MESON_CPU_MAJOR_ID_GXL] = 0x3d3d;
 	hist_spl_val[OSD1][MESON_CPU_MAJOR_ID_GXL] = 0xc4dad1;
@@ -1275,8 +1307,6 @@ void hist_set_golden_data(void)
 				case 3:
 					hist_cheoma_sum[i/4][family_id] = simple_strtoul(str, NULL, 16);
 					break;
-				default:
-					break;
 			}
 		}
 	}
@@ -1284,15 +1314,15 @@ void hist_set_golden_data(void)
 
 int osd_rma_test(u32 osd_index)
 {
-	u32 i = osd_index, osd_max = 2;
+	u32 i = osd_index, osd_max = 1;
 	u32 hist_result[4];
 	u32 family_id = get_cpu_id().family_id;
 
 	if (family_id == MESON_CPU_MAJOR_ID_AXG) {
-		osd_max = 1;
+		osd_max = 0;
 #ifdef CONFIG_AML_MESON_G12A
 	} else if (family_id >= MESON_CPU_MAJOR_ID_G12A) {
-		osd_max = 3; // osd3 not supported now
+		osd_max = 1; // osd3 not supported now
 #endif
 	}
 	if (osd_index > osd_max) {

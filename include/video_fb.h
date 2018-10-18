@@ -68,6 +68,7 @@ typedef struct graphic_device {
 /******************************************************************************/
 
 void *video_hw_init (int display_mode);       /* returns GraphicDevice struct or NULL */
+int get_osd_layer(void);
 
 #ifdef VIDEO_HW_BITBLT
 void video_hw_bitblt (
@@ -113,5 +114,19 @@ enum pci_type_e {
 	BMP_PIC,
 	RAW_PIC,
 };
+
+typedef struct {
+	int width;
+	int height;
+	int row_bytes;
+	int pixel_bytes;
+	unsigned char* data;
+} GRSurface;
+
+typedef struct {
+	GRSurface* texture;
+	int char_width;
+	int char_height;
+} GRFont;
 
 #endif /*_VIDEO_FB_H_ */
