@@ -24,9 +24,9 @@ typedef __be64 fdt64_t;
 #define cpu_to_fdt64(x)		cpu_to_be64(x)
 
 #ifdef __UBOOT__
+#include <stdarg.h>
 #include <vsprintf.h>
 
-#define strtoul(cp, endp, base)	simple_strtoul(cp, endp, base)
 #endif
 
 /* adding a ramdisk needs 0x44 bytes in version 2008.10 */

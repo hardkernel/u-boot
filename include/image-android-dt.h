@@ -10,6 +10,7 @@
 #include <linux/types.h>
 
 bool android_dt_check_header(ulong hdr_addr);
+u32 android_dt_get_totalsize(ulong hdr_addr);
 bool android_dt_get_fdt_by_index(ulong hdr_addr, u32 index, ulong *addr,
 				 u32 *size);
 

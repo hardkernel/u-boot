@@ -415,7 +415,7 @@ static int overlay_fixup_phandle(void *fdt, void *fdto, int symbols_off,
 			return -FDT_ERR_BADSTRUCTURE;
 		name_len = sep - name;
 
-		index = strtoul(sep + 1, &endptr, 10);
+		index = simple_strtoul(sep + 1, &endptr, 10);
 		if ((*endptr != '\0') || (endptr <= (sep + 1)))
 			return -FDT_ERR_BADSTRUCTURE;
 
