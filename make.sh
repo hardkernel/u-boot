@@ -249,6 +249,8 @@ sub_commands()
 			echo "    6. enable CONFIG_BOOTSTAGE_PRINTF_TIMESTAMP"
 			echo "    7. enable CONFIG_ROCKCHIP_CRASH_DUMP"
 			echo "    8. set CONFIG_BOOTDELAY=5"
+			echo "    9. armv7 start.S: print entry warning"
+			echo "   10. armv8 start.S: print entry warning"
 			echo
 			echo "Enabled: "
 			grep '^CONFIG_ROCKCHIP_DEBUGGER=y' ${OUTDIR}/.config > /dev/null \
@@ -285,6 +287,14 @@ sub_commands()
 		elif [ "${opt}" = '8' ]; then
 			sed -i 's/^CONFIG_BOOTDELAY=0/CONFIG_BOOTDELAY=5/g' ${OUTDIR}/.config
 			echo "DEBUG [8]: CONFIG_BOOTDELAY is 5s"
+		elif [ "${opt}" = '9' ]; then
+			sed -i '/save_boot_params_ret:/a\ldr r0, =CONFIG_DEBUG_UART_BASE\nmov r1, #100\nloop:\nmov r2, #0x55\nstr r2, [r0]\nsub r1, r1, #1\ncmp r1, #0\nbne loop\ndsb' \
+			./arch/arm/cpu/armv7/start.S
+			echo "DEBUG [9]: armv7 start.S entry warning 'UUUU...'"
+		elif [ "${opt}" = '10' ]; then
+			sed -i '/save_boot_params_ret:/a\ldr x0, =CONFIG_DEBUG_UART_BASE\nmov x1, #100\nloop:\nmov x2, #0x55\nstr x2, [x0]\nsub x1, x1, #1\ncmp x1, #0\nb.ne loop\ndsb sy' \
+			./arch/arm/cpu/armv8/start.S
+			echo "DEBUG [10]: armv8 start.S entry warning 'UUUU...'"
 		fi
 		echo
 		exit 0
