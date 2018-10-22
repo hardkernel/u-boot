@@ -5,15 +5,18 @@
  */
 
 / {
-	dmc: dmc@20004000 {
-		u-boot,dm-pre-reloc;
-		compatible = "rockchip,rk3308-dmc";
-		reg = <0x0 0xff010000 0x0 0x10000>;
+
+	chosen {
+		stdout-path = &uart2;
 	};
 };
 
+&dmc {
+	u-boot,dm-pre-reloc;
+};
+
 &cru {
-        u-boot,dm-pre-reloc;
+	u-boot,dm-pre-reloc;
 };
 
 &emmc {
@@ -30,6 +33,11 @@
 };
 
 &sfc {
+	u-boot,dm-pre-reloc;
+	status = "okay";
+};
+
+&saradc {
 	u-boot,dm-pre-reloc;
 	status = "okay";
 };
@@ -54,4 +62,23 @@
 
 &uart4 {
 	u-boot,dm-pre-reloc;
+};
+
+&u2phy {
+	u-boot,dm-pre-reloc;
+	status = "okay";
+};
+
+&u2phy_otg {
+	u-boot,dm-pre-reloc;
+	status = "okay";
+};
+
+&usb20_otg {
+	u-boot,dm-pre-reloc;
+	status = "okay";
+};
+
+&route_rgb {
+	status = "disabled";
 };

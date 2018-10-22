@@ -84,6 +84,11 @@
 		};
 	};
 
+	dmc: dmc@20004000 {
+		compatible = "rockchip,rk3308-dmc";
+		reg = <0x0 0xff010000 0x0 0x10000>;
+	};
+
 	psci {
 		compatible = "arm,psci-1.0";
 		method = "smc";

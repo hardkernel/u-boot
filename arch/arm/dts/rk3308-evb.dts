@@ -13,10 +13,6 @@
 	model = "Rockchip RK3308 EVB";
 	compatible = "rockchip,rk3308-evb", "rockchip,rk3308";
 
-	chosen {
-		stdout-path = "serial2:1500000n8";
-	};
-
 	adc-keys0 {
 		compatible = "adc-keys";
 		io-channels = <&saradc 0>;
@@ -288,10 +284,6 @@
 
 &pwm1 {
 	status = "disabled";
-};
-
-&saradc {
-	status = "okay";
 };
 
 &u2phy {
