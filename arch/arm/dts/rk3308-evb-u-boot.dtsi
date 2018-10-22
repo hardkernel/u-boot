@@ -64,6 +64,10 @@
 	u-boot,dm-pre-reloc;
 };
 
+&usb2phy_grf {
+	u-boot,dm-pre-reloc;
+};
+
 &u2phy {
 	u-boot,dm-pre-reloc;
 	status = "okay";
