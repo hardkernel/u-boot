@@ -7,6 +7,8 @@
 / {
 	aliases {
 		mmc0 = &emmc;
+		mmc1 = &sdmmc;
+
 		serial0 = &uart0;
 		serial1 = &uart1;
 		serial2 = &uart2;
@@ -16,6 +18,11 @@
 		serial6 = &uart6;
 		serial7 = &uart7;
 	};
+
+	chosen {
+		stdout-path = &uart2;
+	};
+
 };
 
 &dmc {
@@ -35,6 +42,11 @@
 };
 
 &emmc {
+	u-boot,dm-pre-reloc;
+	status = "okay";
+};
+
+&sdmmc {
 	u-boot,dm-pre-reloc;
 	status = "okay";
 };
