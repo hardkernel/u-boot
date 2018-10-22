@@ -48,7 +48,7 @@ static int do_boot_android(cmd_tbl_t *cmdtp, int flag, int argc,
 	 */
 	load_address &= ~0x7ffff;
 #endif
-	load_address -= 0x800; /* default page size for boot header */
+
 	dev_desc = blk_get_dev(argv[1], simple_strtoul(argv[2], NULL, 16));
 	if (!dev_desc) {
 		printf("Could not get %s %s\n", argv[1], argv[2]);

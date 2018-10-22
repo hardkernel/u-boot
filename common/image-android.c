@@ -38,7 +38,25 @@ static ulong android_image_get_kernel_addr(const struct andr_img_hdr *hdr)
 	if (hdr->kernel_addr == ANDROID_IMAGE_DEFAULT_KERNEL_ADDR)
 		return (ulong)hdr + hdr->page_size;
 
+#ifdef CONFIG_ARCH_ROCKCHIP
+	/*
+	 * If kernel is compressed, kernel_addr is set as decompressed address
+	 * after compressed being loaded to ram, so let's use it.
+	 */
+	if (android_kernel_comp_type != IH_COMP_NONE &&
+	    android_kernel_comp_type != IH_COMP_ZIMAGE)
+		return hdr->kernel_addr;
+
+	/*
+	 * Compatble with rockchip legacy packing with kernel/ramdisk/second
+	 * address base from 0x60000000(SDK versiont < 8.1), these are invalid
+	 * address, so we calc it by real size.
+	 */
+	return (ulong)hdr + hdr->page_size;
+#else
 	return hdr->kernel_addr;
+#endif
+
 }
 
 void android_image_set_comp(struct andr_img_hdr *hdr, u32 comp)
@@ -172,14 +190,14 @@ int android_image_get_ramdisk(const struct andr_img_hdr *hdr,
 		return -1;
 	}
 
-	printf("RAM disk load addr 0x%08x size %u KiB\n",
-	       hdr->ramdisk_addr, DIV_ROUND_UP(hdr->ramdisk_size, 1024));
-
 	*rd_data = (unsigned long)hdr;
 	*rd_data += hdr->page_size;
 	*rd_data += ALIGN(hdr->kernel_size, hdr->page_size);
-
 	*rd_len = hdr->ramdisk_size;
+
+	printf("RAM disk load addr 0x%08lx size %u KiB\n",
+	       *rd_data, DIV_ROUND_UP(hdr->ramdisk_size, 1024));
+
 	return 0;
 }
 
@@ -253,37 +271,48 @@ long android_image_load(struct blk_desc *dev_desc,
 	long blk_read = 0;
 	u32 comp;
 	u32 kload_addr;
+	u32 blkcnt;
+	struct andr_img_hdr *hdr;
 
 	if (max_size < part_info->blksz)
 		return -1;
+
+	/*
+	 * Read the Android boot.img header and a few parts of
+	 * the head of kernel image.
+	 */
+	blkcnt = DIV_ROUND_UP(sizeof(*hdr), 512);
+	hdr = memalign(ARCH_DMA_MINALIGN, blkcnt * 512);
+	if (!hdr) {
+		printf("%s: no memory\n", __func__);
+		return -1;
+	}
+
+	if (blk_dread(dev_desc, part_info->start, blkcnt, hdr) != blkcnt)
+		blk_read = -1;
+
+	if (!blk_read && android_image_check_header(hdr) != 0) {
+		printf("** Invalid Android Image header **\n");
+		blk_read = -1;
+	}
+
+	/* page_size for image header */
+	load_address -= hdr->page_size;
 
 	/* We don't know the size of the Android image before reading the header
 	 * so we don't limit the size of the mapped memory.
 	 */
 	buf = map_sysmem(load_address, 0 /* size */);
-
-	/* Read the Android boot.img header and a few parts of
-	 * the head of kernel image.
-	 */
-	if (blk_dread(dev_desc, part_info->start, 8, buf) != 8)
-		blk_read = -1;
-
-	if (!blk_read && android_image_check_header(buf) != 0) {
-		printf("** Invalid Android Image header **\n");
-		blk_read = -1;
-	}
-
-
 	if (!blk_read) {
-		blk_cnt = (android_image_get_end(buf) - (ulong)buf +
+		blk_cnt = (android_image_get_end(hdr) - (ulong)hdr +
 			   part_info->blksz - 1) / part_info->blksz;
-		comp = android_image_parse_kernel_comp(buf);
+		comp = android_image_parse_kernel_comp(hdr);
 		/*
 		 * We should load a compressed kernel Image
 		 * to high memory
 		 */
 		if (comp != IH_COMP_NONE) {
-			load_address += android_image_get_ksize(buf) * 3;
+			load_address += android_image_get_ksize(hdr) * 3;
 			load_address = env_get_ulong("kernel_addr_c", 16, load_address);
 			unmap_sysmem(buf);
 			buf = map_sysmem(load_address, 0 /* size */);
@@ -291,7 +320,7 @@ long android_image_load(struct blk_desc *dev_desc,
 
 		if (blk_cnt * part_info->blksz > max_size) {
 			debug("Android Image too big (%lu bytes, max %lu)\n",
-			      android_image_get_end(buf) - (ulong)buf,
+			      android_image_get_end(hdr) - (ulong)hdr,
 			      max_size);
 			blk_read = -1;
 		} else {
@@ -315,6 +344,7 @@ long android_image_load(struct blk_desc *dev_desc,
 
 	}
 
+	free(hdr);
 	unmap_sysmem(buf);
 
 	debug("%lu blocks read: %s\n",

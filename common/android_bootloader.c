@@ -424,7 +424,7 @@ static void slot_set_unbootable(AvbABSlotData* slot)
 }
 
 static AvbSlotVerifyResult android_slot_verify(char *boot_partname,
-			       unsigned long load_address,
+			       unsigned long *android_load_address,
 			       char *slot_suffix)
 {
 	const char *requested_partitions[1] = {NULL};
@@ -437,6 +437,8 @@ static AvbSlotVerifyResult android_slot_verify(char *boot_partname,
 	size_t slot_index_to_boot = 0;
 	char verify_state[38] = {0};
 	char can_boot = 1;
+	unsigned long load_address = *android_load_address;
+	struct andr_img_hdr *hdr;
 
 	requested_partitions[0] = boot_partname;
 	ops = avb_ops_user_new();
@@ -538,6 +540,11 @@ static AvbSlotVerifyResult android_slot_verify(char *boot_partname,
 		if (*slot_data[0]->cmdline)
 			strcat(newbootargs, slot_data[0]->cmdline);
 		env_set("bootargs", newbootargs);
+
+		/* Reserve page_size */
+		hdr = (void *)slot_data[0]->loaded_partitions->data;
+		load_address -= hdr->page_size;
+		*android_load_address = load_address;
 
 		memcpy((uint8_t *)load_address,
 		       slot_data[0]->loaded_partitions->data,
@@ -878,7 +885,7 @@ int android_bootloader_boot_flow(struct blk_desc *dev_desc,
 	}
 
 #ifdef CONFIG_ANDROID_AVB
-	if (android_slot_verify(boot_partname, load_address, slot_suffix))
+	if (android_slot_verify(boot_partname, &load_address, slot_suffix))
 		return -1;
 #else
 	/*
