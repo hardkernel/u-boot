@@ -125,7 +125,7 @@
         "port_map=0x4231\0" \
         "cec_fun=0x2F\0" \
         "logic_addr=0x0\0" \
-        "cec_ac_wakeup=1\0" \
+        "cec_ac_wakeup=0\0" \
         "initargs="\
             "init=/init console=ttyS0,115200 no_console_suspend earlyprintk=aml-uart,0xc81004c0 ramoops.pstore_en=1 ramoops.record_size=0x8000 ramoops.console_size=0x4000 "\
             "\0"\
