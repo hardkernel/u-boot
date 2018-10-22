@@ -104,8 +104,8 @@ int rk_board_init(void)
 
 	ret = gpio_request(GPIO0_A4, "gpio0_a4");
 	if (ret < 0) {
-		debug("request for gpio0_a4 failed:%d\n", ret);
-		return ret;
+		printf("request for gpio0_a4 failed:%d\n", ret);
+		return 0;
 	}
 
 	gpio_direction_input(GPIO0_A4);
