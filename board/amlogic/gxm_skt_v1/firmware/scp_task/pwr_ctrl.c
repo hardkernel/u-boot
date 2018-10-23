@@ -240,7 +240,7 @@ static unsigned int detect_key(unsigned int suspend_from)
 		if (irq[IRQ_TIMERA] == IRQ_TIMERA_NUM) {
 			irq[IRQ_TIMERA] = 0xFFFFFFFF;
 			if (time_out_ms != 0)
-				time_out_ms--;
+				time_out_ms -= 10;
 			if (time_out_ms == 0) {
 				wakeup_timer_clear();
 				exit_reason = AUTO_WAKEUP;
