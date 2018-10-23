@@ -91,6 +91,11 @@
 		interrupt-affinity = <&cpu0>, <&cpu1>, <&cpu2>, <&cpu3>;
 	};
 
+	memory@60000000 {
+		device_type = "memory";
+		reg = <0x60000000 0x40000000>;
+	};
+
 	timer {
 		compatible = "arm,armv7-timer";
 		arm,cpu-registers-not-fw-configured;
@@ -166,7 +171,6 @@
 	};
 
 	grf: syscon@11000000 {
-		u-boot,dm-pre-reloc;
 		compatible = "rockchip,rk3228-grf", "syscon";
 		reg = <0x11000000 0x1000>;
 		#address-cells = <1>;
@@ -380,7 +384,6 @@
 	};
 
 	cru: clock-controller@110e0000 {
-		u-boot,dm-pre-reloc;
 		compatible = "rockchip,rk3228-cru";
 		reg = <0x110e0000 0x1000>;
 		rockchip,grf = <&grf>;
@@ -835,7 +838,6 @@
 	};
 
 	dmc: dmc@11200000 {
-		u-boot,dm-pre-reloc;
 		compatible = "rockchip,rk3228-dmc", "syscon";
 		rockchip,cru = <&cru>;
 		rockchip,grf = <&grf>;
@@ -846,7 +848,6 @@
 	};
 
 	service_msch: syscon@31090000 {
-		u-boot,dm-pre-reloc;
 		compatible = "rockchip,rk3228-msch", "syscon";
 		reg = <0x31090000 0x2000>;
 	};

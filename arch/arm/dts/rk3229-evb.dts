@@ -7,20 +7,12 @@
 /dts-v1/;
 
 #include "rk322x.dtsi"
+#include "rk322x-u-boot.dtsi"
 #include <dt-bindings/input/input.h>
 
 / {
 	model = "Rockchip RK3229 Evaluation board";
 	compatible = "rockchip,rk3229-evb", "rockchip,rk3229";
-
-	chosen {
-		stdout-path = &uart2;
-	};
-
-	memory@60000000 {
-		device_type = "memory";
-		reg = <0x60000000 0x40000000>;
-	};
 
 	ext_gmac: ext_gmac {
 		compatible = "fixed-clock";
@@ -68,7 +60,6 @@
 };
 
 &emmc {
-	u-boot,dm-pre-reloc;
 	status = "okay";
 };
 
@@ -84,7 +75,6 @@
 };
 
 &uart2 {
-	u-boot,dm-pre-reloc;
 	status = "okay";
 };
 
