@@ -30,11 +30,13 @@
 #endif
 
 /* tag_bootdev.devtype */
-#define BOOT_TYPE_EMMC		0x0
-#define BOOT_TYPE_NAND		0x1
-#define BOOT_TYPE_SDCARD	0x2
-#define BOOT_TYPE_SPI_NOR	0x3
-#define BOOT_TYPE_SPI_NAND	0x4
+#define BOOT_TYPE_NAND		(1 << 0)
+#define BOOT_TYPE_EMMC		(1 << 1)
+#define BOOT_TYPE_SD0		(1 << 2)
+#define BOOT_TYPE_SD1		(1 << 3)
+#define BOOT_TYPE_SPI_NOR	(1 << 4)
+#define BOOT_TYPE_SPI_NAND	(1 << 5)
+#define BOOT_TYPE_RAM		(1 << 6)
 
 /* tag_serial.m_mode */
 #define SERIAL_M_MODE_M0	0x0
