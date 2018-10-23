@@ -851,6 +851,7 @@ void cec_node_init(void)
 		cec_msg.power_status = 1;
 		cec_msg.active_source = 0;
 		cec_msg.cec_power = 0;
+		cec_msg.log_addr = 0;
 		cec_tx_msgs.send_idx = 0;
 		cec_tx_msgs.queue_idx = 0;
 		cec_tx_buf_init();
