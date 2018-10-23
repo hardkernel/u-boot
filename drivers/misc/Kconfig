@@ -41,6 +41,13 @@ config ROCKCHIP_EFUSE
 	  extended (by porting the read function from the Linux kernel sources)
 	  to support other recent Rockchip devices.
 
+config ROCKCHIP_OTP
+	bool "Rockchip OTP Support"
+	depends on MISC
+	help
+	  This is a simple drive to dump specified values of Rockchip SoC
+	  from otp, such as cpu-leakage.
+
 config CMD_CROS_EC
 	bool "Enable crosec command"
 	depends on CROS_EC
