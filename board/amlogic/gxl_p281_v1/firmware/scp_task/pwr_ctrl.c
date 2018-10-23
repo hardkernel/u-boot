@@ -64,6 +64,12 @@ void pwm_set_voltage(unsigned int id, unsigned int voltage)
 	}
 	_udelay(200);
 }
+
+static void power_off_at_mcu(unsigned int shutdown)
+{
+
+}
+
 /*GPIOH_3*/
 static void hdmi_5v_ctrl(unsigned int ctrl)
 {
@@ -278,6 +284,7 @@ static void pwr_op_init(struct pwr_op *pwr_op)
 	pwr_op->power_on_at_24M = power_on_at_24M;
 	pwr_op->power_off_at_32k = power_off_at_32k;
 	pwr_op->power_on_at_32k = power_on_at_32k;
+	pwr_op->power_off_at_mcu = power_off_at_mcu;
 
 	pwr_op->detect_key = detect_key;
 	pwr_op->get_wakeup_source = get_wakeup_source;
