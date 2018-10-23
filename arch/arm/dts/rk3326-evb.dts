@@ -13,16 +13,6 @@
 	model = "Rockchip RK3326 EVB";
 	compatible = "rockchip,rk3326-evb", "rockchip,rk3326";
 
-	chosen {
-		stdout-path = &uart2;
-	};
-
-	dmc: dmc {
-		u-boot,dm-pre-reloc;
-		compatible = "rockchip,px30-dmc", "syscon";
-		reg = <0x0 0xff2a0000 0x0 0x1000>;
-	};
-
 	adc-keys {
 		u-boot,dm-pre-reloc;
 		compatible = "adc-keys";
@@ -434,5 +424,9 @@
 };
 
 &u2phy_host {
+	status = "okay";
+};
+
+&uart2 {
 	status = "okay";
 };
