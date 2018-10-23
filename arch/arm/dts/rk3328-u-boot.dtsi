@@ -9,6 +9,11 @@
 		mmc0 = &emmc;
 		mmc1 = &sdmmc;
 	};
+
+	chosen {
+		stdout-path = &uart2;
+	};
+
 };
 
 &cru {
@@ -33,6 +38,11 @@
 
 &sdmmc {
 	u-boot,dm-pre-reloc;
+};
+
+&saradc {
+	u-boot,dm-pre-reloc;
+	status = "okay";
 };
 
 &usb20_otg {
