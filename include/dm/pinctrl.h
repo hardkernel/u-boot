@@ -331,6 +331,20 @@ int pinctrl_get_gpio_mux(struct udevice *dev, int banknum, int index);
  * @return pins count
 */
 int pinctrl_get_pins_count(struct udevice *dev);
+
+/**
+ * pinctrl_get_pin_name() - Returns the pin's name
+ *
+ * This allows to display the pin's name for debug purpose
+ *
+ * @dev:	Pinctrl device to use
+ * @selector	Pin index within pin-controller
+ * @buf		Pin's name
+ * @return 0 if OK, -ve on error
+ */
+int pinctrl_get_pin_name(struct udevice *dev, int selector, char *buf,
+			 int size);
+
 #else
 static inline int pinctrl_select_state(struct udevice *dev,
 				       const char *statename)
@@ -367,6 +381,13 @@ static inline int pinctrl_get_pins_count(struct udevice *dev)
 {
 	return -EINVAL;
 }
+
+static inline int pinctrl_get_pin_name(struct udevice *dev, int selector, char *buf,
+			 int size)
+{
+	return -EINVAL;
+}
+
 #endif
 
 #endif /* __PINCTRL_H */
