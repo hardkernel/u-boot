@@ -29,7 +29,7 @@ struct pwr_op {
 	void (*power_off_at_clk81)(unsigned int);
 	void (*power_on_at_clk81)(void);
 
-	void (*power_off_at_24M)(void);
+	void (*power_off_at_24M)(unsigned int);
 	void (*power_on_at_24M)(void);
 
 	void (*power_off_at_32k)(void);

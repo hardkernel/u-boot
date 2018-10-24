@@ -98,7 +98,7 @@ static void power_on_at_clk81(void)
 	power_on_3v3();
 }
 
-static void power_off_at_24M(void)
+static void power_off_at_24M(unsigned int shutdown)
 {
 	//LED gpioao_13
 	aml_update_bits(AO_GPIO_O_EN_N, 1<<29, 0);

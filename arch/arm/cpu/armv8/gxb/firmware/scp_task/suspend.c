@@ -86,7 +86,7 @@ void enter_suspend(unsigned int suspend_from)
 	uart_puts("\n");
 #endif
 	p_pwr_op->power_off_at_clk81(suspend_from);
-	p_pwr_op->power_off_at_24M();
+	p_pwr_op->power_off_at_24M(suspend_from);
 
 	switch_to_32k();
 	gxbb_com_gate_off();
