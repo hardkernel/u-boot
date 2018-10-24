@@ -115,9 +115,11 @@ static void power_off_at_mcu(unsigned int shutdown)
 
 }
 
-static void power_off_at_clk81(void)
+static void power_off_at_clk81(unsigned int suspend_from)
 {
-	hdmi_5v_ctrl(OFF);
+	if(suspend_from == SYS_POWEROFF) {
+		hdmi_5v_ctrl(OFF);
+	}
 	vcck_ctrl(OFF);
 	pwm_set_voltage(pwm_b, CONFIG_VDDEE_SLEEP_VOLTAGE);	// reduce power
 }
