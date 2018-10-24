@@ -84,7 +84,7 @@ static void power_on_vcck(void)
 	aml_update_bits(AO_GPIO_O_EN_N, 1<<20, 1<<20);
 }
 
-static void power_off_at_clk81(void)
+static void power_off_at_clk81(unsigned int suspend_from)
 {
 	power_off_3v3();
 	power_off_vcck();

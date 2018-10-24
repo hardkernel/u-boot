@@ -85,7 +85,7 @@ void enter_suspend(unsigned int suspend_from)
 	uart_put_hex(hdmi_cec_func_config, 16);
 	uart_puts("\n");
 #endif
-	p_pwr_op->power_off_at_clk81();
+	p_pwr_op->power_off_at_clk81(suspend_from);
 	p_pwr_op->power_off_at_24M();
 
 	switch_to_32k();
