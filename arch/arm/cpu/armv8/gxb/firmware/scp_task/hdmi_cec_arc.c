@@ -728,6 +728,21 @@ void cec_node_init(void)
 			i = 0;
 			retry = 0;
 			return ;
+		} else if (kern_log_addr != CEC_UNREGISTERED_ADDR) {
+			cec_wr_reg(CEC_LOGICAL_ADDR0, 0);
+			cec_hw_buf_clear();
+			cec_wr_reg(CEC_LOGICAL_ADDR0, kern_log_addr & 0x0f);
+			_udelay(100);
+			cec_wr_reg(CEC_LOGICAL_ADDR0, (0x1 << 4) | (kern_log_addr & 0x0f));
+			cec_msg.log_addr = kern_log_addr;
+			cec_dbg_print("Set cec log_addr:0x", cec_msg.log_addr);
+			cec_dbg_print(", ADDR0:", cec_rd_reg(CEC_LOGICAL_ADDR0));
+			uart_puts("\n");
+			probe = NULL;
+			regist_devs = 0;
+			i = 0;
+			retry = 0;
+			return ;
 		}
 		for (i = 0; i < 3; i++) {
 			if (kern_log_addr == player_dev[i][0]) {

@@ -813,7 +813,7 @@ void cec_node_init(void)
 		cec_dbg_print("kern log_addr:0x", kern_log_addr);
 		uart_puts("\n");
 		/* we don't need probe TV address */
-		if (!is_playback_dev(kern_log_addr)) {
+		if (kern_log_addr == CEC_TV_ADDR) {
 			cec_set_log_addr(kern_log_addr);
 			msg[0] = (kern_log_addr << 4) | kern_log_addr;
 			ping_cec_ll_tx(msg, 1);
@@ -827,6 +827,18 @@ void cec_node_init(void)
 			i = 0;
 			retry = 0;
 			/*check_standby();*/
+			return ;
+		} else if (kern_log_addr != CEC_UNREGISTERED_ADDR) {
+			cec_set_log_addr(kern_log_addr);
+			cec_msg.log_addr = kern_log_addr;
+			_udelay(100);
+			cec_dbg_print("Set cec log_addr:0x", cec_msg.log_addr);
+			cec_dbg_print(",ADDR0:", cec_get_log_addr());
+			uart_puts("\n");
+			probe = NULL;
+			regist_devs = 0;
+			i = 0;
+			retry = 0;
 			return ;
 		}
 		for (i = 0; i < 3; i++) {
