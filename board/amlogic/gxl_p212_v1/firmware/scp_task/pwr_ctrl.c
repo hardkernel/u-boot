@@ -111,7 +111,7 @@ static void power_on_at_clk81(void)
 	hdmi_5v_ctrl(ON);
 }
 
-static void power_off_at_24M(void)
+static void power_off_at_24M(unsigned int shutdown)
 {
 	/* LED GPIODV_24*/
 	aml_update_bits(PREG_PAD_GPIO0_EN_N, 1 << 24, 0);
