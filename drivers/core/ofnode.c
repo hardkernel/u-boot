@@ -56,6 +56,21 @@ int ofnode_read_s32_default(ofnode node, const char *propname, s32 def)
 	return def;
 }
 
+int ofnode_read_u64(ofnode node, const char *propname, u64 *outp)
+{
+	assert(ofnode_valid(node));
+	debug("%s: %s: ", __func__, propname);
+
+	if (ofnode_is_np(node)) {
+		return of_property_read_u64(ofnode_to_np(node), propname, outp);
+	} else {
+		printf("%s: not implement\n", __func__);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 bool ofnode_read_bool(ofnode node, const char *propname)
 {
 	const void *prop;
