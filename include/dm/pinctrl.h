@@ -67,6 +67,7 @@ struct pinconf_param {
  *	pointing a config node. (necessary for pinctrl_full)
  * @set_state_simple: do needed pinctrl operations for a peripherl @periph.
  *	(necessary for pinctrl_simple)
+ * @get_pin_muxing: display the muxing of a given pin.
  */
 struct pinctrl_ops {
 	int (*get_pins_count)(struct udevice *dev);
@@ -130,6 +131,24 @@ struct pinctrl_ops {
 	* @return mux value (SoC-specific, e.g. 0 for input, 1 for output)
 	 */
 	int (*get_gpio_mux)(struct udevice *dev, int banknum, int index);
+
+	/**
+	 * get_pin_muxing() - show pin muxing
+	 *
+	 * This allows to display the muxing of a given pin. It's useful for
+	 * debug purpose to know if a pin is configured as GPIO or as an
+	 * alternate function and which one.
+	 * Typically it is used by a PINCTRL driver with knowledge of the SoC
+	 * pinctrl setup.
+	 *
+	 * @dev:	Pinctrl device to use
+	 * @selector:	Pin selector
+	 * @buf		Pin's muxing description
+	 * @size	Pin's muxing description length
+	 * return 0 if OK, -ve on error
+	 */
+	 int (*get_pin_muxing)(struct udevice *dev, unsigned int selector,
+			       char *buf, int size);
 };
 
 #define pinctrl_get_ops(dev)	((struct pinctrl_ops *)(dev)->driver->ops)
@@ -345,6 +364,21 @@ int pinctrl_get_pins_count(struct udevice *dev);
 int pinctrl_get_pin_name(struct udevice *dev, int selector, char *buf,
 			 int size);
 
+/**
+ * pinctrl_get_pin_muxing() - Returns the muxing description
+ *
+ * This allows to display the muxing description of the given pin for
+ * debug purpose
+ *
+ * @dev:	Pinctrl device to use
+ * @selector	Pin index within pin-controller
+ * @buf		Pin's muxing description
+ * @size	Pin's muxing description length
+ * @return 0 if OK, -ve on error
+ */
+int pinctrl_get_pin_muxing(struct udevice *dev, int selector, char *buf,
+			   int size);
+
 #else
 static inline int pinctrl_select_state(struct udevice *dev,
 				       const char *statename)
@@ -384,6 +418,12 @@ static inline int pinctrl_get_pins_count(struct udevice *dev)
 
 static inline int pinctrl_get_pin_name(struct udevice *dev, int selector, char *buf,
 			 int size)
+{
+	return -EINVAL;
+}
+
+static inline int pinctrl_get_pin_muxing(struct udevice *dev, int selector, char *buf,
+			   int size)
 {
 	return -EINVAL;
 }
