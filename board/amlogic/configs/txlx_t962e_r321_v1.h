@@ -208,7 +208,7 @@
             "if imgread kernel ${recovery_part} ${loadaddr} ${recovery_offset}; then wipeisb; bootm ${loadaddr}; fi"\
             "\0"\
         "init_display="\
-            "osd open;osd clear;imgread pic logo bootup $loadaddr;bmp display $bootup_offset;bmp scale;vout output ${outputmode}"\
+            "hdmitx hpd;osd open;osd clear;imgread pic logo bootup $loadaddr;bmp display $bootup_offset;bmp scale;vout output ${outputmode}"\
             "\0"\
         "cmdline_keys="\
             "if keyman init 0x1234; then "\
