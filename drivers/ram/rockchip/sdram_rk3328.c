@@ -993,7 +993,12 @@ static int rk3328_dmc_probe(struct udevice *dev)
 	priv->info.size = rockchip_sdram_size(
 				(phys_addr_t)&priv->grf->os_reg[2]);
 #ifdef CONFIG_SPL_BUILD
-	rockchip_setup_ddr_param(&priv->info);
+	struct ddr_param ddr_parem;
+
+	ddr_parem.count = 1;
+	ddr_parem.para[0] = priv->info.base;
+	ddr_parem.para[1] = priv->info.size;
+	rockchip_setup_ddr_param(&ddr_parem);
 #endif
 #endif
 	return 0;

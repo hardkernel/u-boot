@@ -1157,6 +1157,32 @@ static int dram_detect_cs1_row(struct px30_sdram_params *sdram_params,
 	return ret;
 }
 
+void get_ddr_param(struct px30_sdram_params *sdram_params,
+		   struct ddr_param *ddr_param)
+{
+	u64 cs_cap[2];
+
+	cs_cap[0] = get_cs_cap(sdram_params, 0);
+	cs_cap[1] = get_cs_cap(sdram_params, 1);
+
+	if (sdram_params->ch.row_3_4) {
+		cs_cap[0] =  cs_cap[0] * 3 / 4;
+		cs_cap[1] =  cs_cap[1] * 3 / 4;
+	}
+
+	if (sdram_params->ch.row_3_4 && sdram_params->ch.rank == 2) {
+		ddr_param->count = 2;
+		ddr_param->para[0] = 0;
+		ddr_param->para[1] = cs_cap[0] * 4 / 3;
+		ddr_param->para[2] = cs_cap[0];
+		ddr_param->para[3] = cs_cap[1];
+	} else {
+		ddr_param->count = 1;
+		ddr_param->para[0] = 0;
+		ddr_param->para[1] = (u64)cs_cap[0] + (u64)cs_cap[1];
+	}
+}
+
 /* return: 0 = success, other = fail */
 static int sdram_init_detect(struct dram_info *dram,
 			     struct px30_sdram_params *sdram_params)
@@ -1209,6 +1235,7 @@ int sdram_init(void)
 {
 	struct px30_sdram_params *sdram_params;
 	int ret = 0;
+	struct ddr_param ddr_param;
 
 	dram_info.phy = (void *)DDR_PHY_BASE_ADDR;
 	dram_info.pctl = (void *)DDRC_BASE_ADDR;
@@ -1224,6 +1251,8 @@ int sdram_init(void)
 	if (ret)
 		goto error;
 
+	get_ddr_param(sdram_params, &ddr_param);
+	rockchip_setup_ddr_param(&ddr_param);
 	print_ddr_info(sdram_params);
 
 	printascii("out\n");

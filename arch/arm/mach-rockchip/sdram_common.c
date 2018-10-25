@@ -13,14 +13,7 @@
 #include <dm/uclass-internal.h>
 
 DECLARE_GLOBAL_DATA_PTR;
-struct ddr_param{
-	u32 count;
-	u32 reserved;
-	u64 bank_addr;
-	u64 bank_size;
-};
 #define PARAM_DRAM_INFO_OFFSET 0x2000000
-
 #define TRUST_PARAMETER_OFFSET    (34 * 1024 * 1024)
 
 struct tos_parameter_t {
@@ -435,14 +428,15 @@ ulong board_get_usable_ram_top(ulong total_size)
 	return (gd->ram_top > top) ? top : gd->ram_top;
 }
 
-int rockchip_setup_ddr_param(struct ram_info *info)
+int rockchip_setup_ddr_param(struct ddr_param *info)
 {
+	u32 i;
 	struct ddr_param *dinfo = (struct ddr_param *)(CONFIG_SYS_SDRAM_BASE +
 					PARAM_DRAM_INFO_OFFSET);
 
-	dinfo->count = 1;
-	dinfo->bank_addr = info->base;
-	dinfo->bank_size = info->size;
+	dinfo->count = info->count;
+	for (i = 0; i < (info->count * 2); i++)
+		dinfo->para[i] = info->para[i];
 
 	return 0;
 }

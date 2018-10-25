@@ -17,6 +17,12 @@ enum {
 	UNUSED = 0xFF
 };
 
+struct ddr_param {
+	u32 count;
+	u32 reserved;
+	u64 para[8];
+};
+
 /*
  * sys_reg bitfield struct
  * [31]		row_3_4_ch1
@@ -85,6 +91,6 @@ size_t rockchip_sdram_size(phys_addr_t reg);
 int dram_init(void);
 
 /* Write ddr param to a known place for trustos */
-int rockchip_setup_ddr_param(struct ram_info *info);
+int rockchip_setup_ddr_param(struct ddr_param *info);
 
 #endif
