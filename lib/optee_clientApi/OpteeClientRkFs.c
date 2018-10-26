@@ -175,6 +175,7 @@ static int rkss_read_multi_sections(unsigned char *data, unsigned long index, un
 		}
 
 		if (part_get_info_by_name(dev_desc, "security", &part_info) < 0) {
+			dev_desc = NULL;
 			printf("Could not find security partition\n");
 			return -1;
 		}
@@ -204,6 +205,7 @@ static int rkss_write_multi_sections(unsigned char *data, unsigned long index, u
 		}
 
 		if (part_get_info_by_name(dev_desc, "security", &part_info) < 0) {
+			dev_desc = NULL;
 			printf("Could not find security partition\n");
 			return -1;
 		}
@@ -233,6 +235,7 @@ static int rkss_read_patition_tables(unsigned char *data)
 		}
 
 		if (part_get_info_by_name(dev_desc, "security", &part_info) < 0) {
+			dev_desc = NULL;
 			printf("Could not find security partition\n");
 			return -1;
 		}

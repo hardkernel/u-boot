@@ -159,20 +159,21 @@ static int rkss_read_multi_sections(unsigned char *data, unsigned long index, un
 		dev_desc = rockchip_get_bootdev();
 		if (!dev_desc) {
 			printf("%s: Could not find device\n", __func__);
-			return TEEC_ERROR_GENERIC;
+			return -1;
 		}
 
 		if (part_get_info_by_name(dev_desc, "security", &part_info) < 0) {
+			dev_desc = NULL;
 			printf("Could not find security partition\n");
-			return TEEC_ERROR_GENERIC;
+			return -1;
 		}
 	}
 	ret = blk_dread(dev_desc, part_info.start + index, num, data);
 	if (ret != num) {
 		printf("blk_dread fail \n");
-		return TEEC_ERROR_GENERIC;
+		return -1;
 	}
-	return TEEC_SUCCESS;
+	return 0;
 }
 
 static int rkss_write_multi_sections(unsigned char *data, unsigned long index, unsigned int num)
@@ -183,20 +184,21 @@ static int rkss_write_multi_sections(unsigned char *data, unsigned long index, u
 		dev_desc = rockchip_get_bootdev();
 		if (!dev_desc) {
 			printf("%s: Could not find device\n", __func__);
-			return TEEC_ERROR_GENERIC;
+			return -1;
 		}
 
 		if (part_get_info_by_name(dev_desc, "security", &part_info) < 0) {
+			dev_desc = NULL;
 			printf("Could not find security partition\n");
-			return TEEC_ERROR_GENERIC;
+			return -1;
 		}
 	}
 	ret = blk_dwrite(dev_desc, part_info.start + index, num, data);
 	if (ret != num) {
 		printf("blk_dwrite fail \n");
-		return TEEC_ERROR_GENERIC;
+		return -1;
 	}
-	return TEEC_SUCCESS;
+	return 0;
 }
 
 static int rkss_read_patition_tables(unsigned char *data)
@@ -207,20 +209,21 @@ static int rkss_read_patition_tables(unsigned char *data)
 		dev_desc = rockchip_get_bootdev();
 		if (!dev_desc) {
 			printf("%s: Could not find device\n", __func__);
-			return TEEC_ERROR_GENERIC;
+			return -1;
 		}
 
 		if (part_get_info_by_name(dev_desc, "security", &part_info) < 0) {
+			dev_desc = NULL;
 			printf("Could not find security partition\n");
-			return TEEC_ERROR_GENERIC;
+			return -1;
 		}
 	}
 	ret = blk_dread(dev_desc, part_info.start, RKSS_PARTITION_TABLE_COUNT, data);
 	if (ret != RKSS_PARTITION_TABLE_COUNT) {
 		printf("blk_dread fail \n");
-		return TEEC_ERROR_GENERIC;
+		return -1;
 	}
-	return TEEC_SUCCESS;
+	return 0;
 }
 
 #ifdef DEBUG_RKFSS
