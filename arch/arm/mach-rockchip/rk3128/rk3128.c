@@ -15,6 +15,7 @@
 #define	CPU_AXI_QOS_PRIORITY_BASE	0x1012f188
 #define CPU_AXI_QOS_PRIORITY_LEVEL(h, l) \
 	((((h) & 3) << 8) | (((h) & 3) << 2) | ((l) & 3))
+#define	CPU_AXI_CIF_QOS_PRIORITY_BASE	0x1012f208
 
 int arch_cpu_init(void)
 {
@@ -35,6 +36,9 @@ int arch_cpu_init(void)
 	 * is an IC hardware issue.
 	 */
 	writel(0, SDMMC_INTMASK);
+
+	/* raise cif ddr qos priority */
+	writel(CPU_AXI_QOS_PRIORITY_LEVEL(3, 3), CPU_AXI_CIF_QOS_PRIORITY_BASE);
 #endif
 
 	return 0;
