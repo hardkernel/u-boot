@@ -436,6 +436,7 @@ static AvbSlotVerifyResult android_slot_verify(char *boot_partname,
 	AvbABData ab_data, ab_data_orig;
 	size_t slot_index_to_boot = 0;
 	char verify_state[38] = {0};
+	char can_boot = 1;
 
 	requested_partitions[0] = boot_partname;
 	ops = avb_ops_user_new();
@@ -502,6 +503,11 @@ static AvbSlotVerifyResult android_slot_verify(char *boot_partname,
 		break;
 	}
 
+	if (!slot_data[0]) {
+		can_boot = 0;
+		goto out;
+	}
+
 	if (verify_result == AVB_SLOT_VERIFY_RESULT_OK ||
 	    verify_result == AVB_SLOT_VERIFY_RESULT_ERROR_PUBLIC_KEY_REJECTED ||
 	    (unlocked & LOCK_MASK)) {
@@ -546,6 +552,7 @@ static AvbSlotVerifyResult android_slot_verify(char *boot_partname,
 		slot_set_unbootable(&ab_data.slots[slot_index_to_boot]);
 	}
 
+out:
 	env_update("bootargs", verify_state);
 	if (save_metadata_if_changed(ops->ab_ops, &ab_data, &ab_data_orig)) {
 		printf("Can not save metadata\n");
@@ -555,7 +562,7 @@ static AvbSlotVerifyResult android_slot_verify(char *boot_partname,
 	if (slot_data[0] != NULL)
 		avb_slot_verify_data_free(slot_data[0]);
 
-	if (unlocked & LOCK_MASK)
+	if ((unlocked & LOCK_MASK) && can_boot)
 		return 0;
 	else
 		return verify_result;
