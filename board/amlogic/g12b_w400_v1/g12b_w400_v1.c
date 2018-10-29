@@ -635,7 +635,9 @@ int board_init(void)
 #ifdef CONFIG_SYS_I2C_MESON
 	set_i2c_m1_pinmux();
 #endif
-
+	/* power on GPIOZ_5 : CMD_VDD_EN */
+	clrbits_le32(PREG_PAD_GPIO4_EN_N, (1 << 5));
+	clrbits_le32(PREG_PAD_GPIO4_O, (1 << 5));
 	return 0;
 }
 
