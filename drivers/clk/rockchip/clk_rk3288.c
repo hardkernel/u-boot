@@ -379,7 +379,7 @@ static int rockchip_vop_set_clk(struct rk3288_cru *cru, struct rk3288_grf *grf,
 	struct pll_div cpll_config = {0};
 	u32 lcdc_div, parent;
 	int ret;
-	unsigned int gpll_rate, npll_rate;
+	unsigned int gpll_rate, npll_rate, cpll_rate;
 
 	gpll_rate = rkclk_pll_get_rate(cru, CLK_GENERAL);
 	npll_rate = rkclk_pll_get_rate(cru, CLK_NEW);
@@ -387,7 +387,7 @@ static int rockchip_vop_set_clk(struct rk3288_cru *cru, struct rk3288_grf *grf,
 	/* vop dclk source clk: cpll,dclk_div: 1 */
 	switch (periph) {
 	case DCLK_VOP0:
-		ret = (readl(&cru->cru_clksel_con[27]) && DCLK_VOP0_PLL_MASK) >>
+		ret = (readl(&cru->cru_clksel_con[27]) & DCLK_VOP0_PLL_MASK) >>
 		      DCLK_VOP0_PLL_SHIFT;
 		if (ret == DCLK_VOP0_SELECT_CPLL) {
 			ret = pll_para_config(rate_hz, &cpll_config, &lcdc_div);
@@ -424,7 +424,7 @@ static int rockchip_vop_set_clk(struct rk3288_cru *cru, struct rk3288_grf *grf,
 			     (parent << DCLK_VOP0_PLL_SHIFT));
 		break;
 	case DCLK_VOP1:
-		ret = (readl(&cru->cru_clksel_con[29]) && DCLK_VOP1_PLL_MASK) >>
+		ret = (readl(&cru->cru_clksel_con[29]) & DCLK_VOP1_PLL_MASK) >>
 		      DCLK_VOP1_PLL_SHIFT;
 		if (ret == DCLK_VOP1_SELECT_CPLL) {
 			ret = pll_para_config(rate_hz, &cpll_config, &lcdc_div);
@@ -460,6 +460,22 @@ static int rockchip_vop_set_clk(struct rk3288_cru *cru, struct rk3288_grf *grf,
 			     DCLK_VOP1_DIV_MASK | DCLK_VOP1_PLL_MASK,
 			     ((lcdc_div - 1) << DCLK_VOP1_DIV_SHIFT) |
 			     (parent << DCLK_VOP1_PLL_SHIFT));
+		break;
+	case ACLK_VOP0:
+		cpll_rate = rkclk_pll_get_rate(cru, CLK_CODEC);
+		lcdc_div = DIV_ROUND_UP(cpll_rate, rate_hz);
+		rk_clrsetreg(&cru->cru_clksel_con[31],
+			     ACLK_VOP0_PLL_MASK | ACLK_VOP0_DIV_MASK,
+			     ACLK_VOP_SELECT_CPLL << ACLK_VOP0_PLL_SHIFT |
+			     (lcdc_div - 1) << ACLK_VOP0_DIV_SHIFT);
+		break;
+	case ACLK_VOP1:
+		cpll_rate = rkclk_pll_get_rate(cru, CLK_CODEC);
+		lcdc_div = DIV_ROUND_UP(cpll_rate, rate_hz);
+		rk_clrsetreg(&cru->cru_clksel_con[31],
+			     ACLK_VOP1_PLL_MASK | ACLK_VOP1_DIV_MASK,
+			     ACLK_VOP_SELECT_CPLL << ACLK_VOP1_PLL_SHIFT |
+			     (lcdc_div - 1) << ACLK_VOP1_DIV_SHIFT);
 		break;
 	}
 
@@ -865,6 +881,8 @@ static ulong rk3288_clk_set_rate(struct clk *clk, ulong rate)
 		break;
 	case DCLK_VOP0:
 	case DCLK_VOP1:
+	case ACLK_VOP0:
+	case ACLK_VOP1:
 		new_rate = rockchip_vop_set_clk(cru, priv->grf, clk->id, rate);
 		break;
 	case SCLK_EDP_24M:
@@ -877,29 +895,6 @@ static ulong rk3288_clk_set_rate(struct clk *clk, ulong rate)
 		rk_clrreg(&cru->cru_clksel_con[6], 1 << 15);
 		new_rate = rate;
 		break;
-	case ACLK_VOP0:
-	case ACLK_VOP1: {
-		u32 div;
-
-		/* vop aclk source clk: cpll */
-		div = CPLL_HZ / rate;
-		assert((div - 1 < 64) && (div * rate == CPLL_HZ));
-
-		switch (clk->id) {
-		case ACLK_VOP0:
-			rk_clrsetreg(&cru->cru_clksel_con[31],
-				     3 << 6 | 0x1f << 0,
-				     0 << 6 | (div - 1) << 0);
-			break;
-		case ACLK_VOP1:
-			rk_clrsetreg(&cru->cru_clksel_con[31],
-				     3 << 14 | 0x1f << 8,
-				     0 << 14 | (div - 1) << 8);
-			break;
-		}
-		new_rate = rate;
-		break;
-	}
 	case PCLK_HDMI_CTRL:
 		/* enable pclk hdmi ctrl */
 		rk_clrreg(&cru->cru_clkgate_con[16], 1 << 9);
