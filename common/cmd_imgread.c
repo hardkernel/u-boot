@@ -67,6 +67,14 @@ typedef struct _boot_img_hdr_secure_boot
 
 }AmlSecureBootImgHeader;
 
+typedef struct{
+    unsigned char           reserve4ImgHdr[2048];
+
+    AmlEncryptBootImgInfo   encrypteImgInfo;
+
+}AmlSecureBootImg9Header;
+
+
 #define COMPILE_TYPE_ASSERT(expr, t)       typedef char t[(expr) ? 1 : -1]
 COMPILE_TYPE_ASSERT(2048 >= sizeof(AmlSecureBootImgHeader), _cc);
 
@@ -76,17 +84,44 @@ static int is_secure_boot_enabled(void)
     return ( cfg10 & (0x1<< 4) );
 }
 
+static int is_andr_9_image(void* pBuffer)
+{
+    int nReturn = 0;
+
+	if (!pBuffer)
+        goto exit;
+
+    struct andr_img_hdr *pAHdr = (struct andr_img_hdr*)(unsigned long)pBuffer;
+
+	if (pAHdr->kernel_version)
+        nReturn = 1;
+
+exit:
+
+    return nReturn;
+}
+
 static int _aml_get_secure_boot_kernel_size(const void* pLoadaddr, unsigned* pTotalEncKernelSz)
 {
-    const AmlSecureBootImgHeader* amlSecureBootImgHead = (const AmlSecureBootImgHeader*)pLoadaddr;
-    const AmlEncryptBootImgInfo*  amlEncrypteBootimgInfo = &amlSecureBootImgHead->encrypteImgInfo;
+    const AmlEncryptBootImgInfo*  amlEncrypteBootimgInfo = 0;
     int rc = 0;
     unsigned secureKernelImgSz = 2048;
-    unsigned int nBlkCnt = amlEncrypteBootimgInfo->nBlkCnt;
+    unsigned int nBlkCnt = 0;
     const t_aml_enc_blk* pBlkInf = NULL;
     const int isSecure = is_secure_boot_enabled();
+    unsigned char *pAndHead = (unsigned char *)pLoadaddr;
+
+	if (is_andr_9_image(pAndHead))
+    {
+        secureKernelImgSz = 4096;
+    }
+
+    amlEncrypteBootimgInfo = (AmlEncryptBootImgInfo*)(pAndHead + (secureKernelImgSz>>1));
+
+    nBlkCnt = amlEncrypteBootimgInfo->nBlkCnt;
 
     *pTotalEncKernelSz = 0;
+
     rc = memcmp(AML_SECU_BOOT_IMG_HDR_MAGIC, amlEncrypteBootimgInfo->magic, AML_SECU_BOOT_IMG_HDR_MAGIC_SIZE);
     if (rc) { // img NOT singed
         if (isSecure) {
@@ -129,7 +164,7 @@ static int do_image_read_dtb(cmd_tbl_t *cmdtp, int flag, int argc, char * const 
     uint64_t lflashReadOff = 0;
     unsigned int nFlashLoadLen = 0;
     unsigned secureKernelImgSz = 0;
-    const int preloadSz = 2048;
+    const int preloadSz = 4096;
 
     if (2 < argc) {
         loadaddr = (unsigned char*)simple_strtoul(argv[2], NULL, 16);
