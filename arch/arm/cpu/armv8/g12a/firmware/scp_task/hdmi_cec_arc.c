@@ -778,12 +778,12 @@ void cec_node_init(void)
 	static int i = 0;
 	static unsigned int retry = 0;
 	static int regist_devs = 0;
-	static enum _cec_log_dev_addr_e *probe = NULL;
+	static int *probe = NULL;
 
 	int tx_stat;
 	unsigned char msg[1];
 	unsigned int kern_log_addr = (readl(AO_DEBUG_REG1) >> 16) & 0xf;
-	enum _cec_log_dev_addr_e player_dev[3][3] =
+	int player_dev[3][3] =
 		{{CEC_PLAYBACK_DEVICE_1_ADDR, CEC_PLAYBACK_DEVICE_2_ADDR, CEC_PLAYBACK_DEVICE_3_ADDR},
 		 {CEC_PLAYBACK_DEVICE_2_ADDR, CEC_PLAYBACK_DEVICE_3_ADDR, CEC_PLAYBACK_DEVICE_1_ADDR},
 		 {CEC_PLAYBACK_DEVICE_3_ADDR, CEC_PLAYBACK_DEVICE_1_ADDR, CEC_PLAYBACK_DEVICE_2_ADDR}};
