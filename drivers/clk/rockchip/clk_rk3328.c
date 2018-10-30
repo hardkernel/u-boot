@@ -1146,8 +1146,13 @@ static void rkclk_init(struct rk3328_clk_priv *priv)
 static int rk3328_clk_probe(struct udevice *dev)
 {
 	struct rk3328_clk_priv *priv = dev_get_priv(dev);
+	int ret = 0;
 
 	rkclk_init(priv);
+
+	ret = clk_set_defaults(dev);
+	if (ret)
+		debug("%s clk_set_defaults failed %d\n", __func__, ret);
 
 	return 0;
 }
