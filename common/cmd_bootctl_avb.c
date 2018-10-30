@@ -253,19 +253,27 @@ static int do_GetValidSlot(
     bootable_b = slot_is_bootable(&(info.slots[1]));
 
     if ((slot == 0) && (bootable_a)) {
-        setenv("active_slot","_a");
         if (has_boot_slot == 1) {
+            setenv("active_slot","_a");
             setenv("boot_part","boot_a");
             setenv("slot-suffixes","0");
+        }
+        else {
+            setenv("active_slot","normal");
+            setenv("boot_part","boot");
         }
         return 0;
     }
 
     if ((slot == 1) && (bootable_b)) {
-        setenv("active_slot","_b");
         if (has_boot_slot == 1) {
+            setenv("active_slot","_b");
             setenv("boot_part","boot_b");
             setenv("slot-suffixes","1");
+        }
+        else {
+            setenv("active_slot","normal");
+            setenv("boot_part","boot");
         }
         return 0;
     }
@@ -281,15 +289,14 @@ static int do_SetActiveSlot(
 {
     char miscbuf[MISCBUF_SIZE] = {0};
     AvbABData info;
-    int i;
-
-    for (i = 0; i < argc; i++)
-        printf("%s ", argv[i]);
-
-    printf("\n");
 
     if (argc != 2) {
         return cmd_usage(cmdtp);
+    }
+
+    if (has_boot_slot == 0) {
+        printf("device is not ab mode\n");
+        return -1;
     }
 
     boot_info_open_partition(miscbuf);
@@ -304,11 +311,13 @@ static int do_SetActiveSlot(
     if (strcmp(argv[1], "a") == 0) {
         setenv("active_slot","_a");
         setenv("slot-suffixes","0");
+        setenv("boot_part","boot_a");
         printf("set active slot a \n");
         boot_info_set_active_slot(&info, 0);
     } else if (strcmp(argv[1], "b") == 0) {
         setenv("active_slot","_b");
         setenv("slot-suffixes","1");
+        setenv("boot_part","boot_b");
         printf("set active slot b \n");
         boot_info_set_active_slot(&info, 1);
     } else {

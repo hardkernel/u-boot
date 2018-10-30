@@ -58,6 +58,9 @@
   */
 #define CONFIG_BOOTLOADER_CONTROL_BLOCK
 
+/*a/b update */
+#define CONFIG_CMD_BOOTCTOL_AVB
+
 /* Serial config */
 #define CONFIG_CONS_INDEX 2
 #define CONFIG_BAUDRATE  115200
@@ -101,7 +104,7 @@
         "EnableSelinux=enforcing\0" \
         "recovery_part=recovery\0"\
         "recovery_offset=0\0"\
-        "active_slot=_a\0"\
+        "active_slot=normal\0"\
         "boot_part=boot\0"\
         "lock=10001000\0"\
         "fs_type=""rootfstype=ramfs""\0"\
@@ -137,6 +140,19 @@
             "if test ${system_mode} = 1; then "\
                     "setenv fs_type ""ro rootwait skip_initramfs"";"\
                     "run storeargs;"\
+            "fi;"\
+            "get_valid_slot;"\
+            "get_avb_mode;"\
+            "echo active_slot: ${active_slot};"\
+            "if test ${active_slot} != normal; then "\
+                    "setenv bootargs ${bootargs} androidboot.slot_suffix=${active_slot};"\
+            "fi;"\
+            "if test ${avb2} = 0; then "\
+                "if test ${active_slot} = _a; then "\
+                    "setenv bootargs ${bootargs} root=/dev/mmcblk0p23;"\
+                "else if test ${active_slot} = _b; then "\
+                    "setenv bootargs ${bootargs} root=/dev/mmcblk0p24;"\
+                "fi;fi;"\
             "fi;"\
             "if imgread kernel ${boot_part} ${loadaddr}; then bootm ${loadaddr}; fi;"\
             "run update;"\
@@ -190,8 +206,15 @@
                 "bootm ${loadaddr};fi;"\
             "\0"\
         "recovery_from_flash="\
-            "setenv bootargs ${bootargs} aml_dt=${aml_dt} recovery_part={recovery_part} recovery_offset={recovery_offset};"\
-            "if imgread kernel ${recovery_part} ${loadaddr} ${recovery_offset}; then wipeisb; bootm ${loadaddr}; fi"\
+            "get_valid_slot;"\
+            "echo active_slot: ${active_slot};"\
+            "if test ${active_slot} = normal; then "\
+                "setenv bootargs ${bootargs} aml_dt=${aml_dt} recovery_part={recovery_part} recovery_offset={recovery_offset};"\
+                "if imgread kernel ${recovery_part} ${loadaddr} ${recovery_offset}; then wipeisb; bootm ${loadaddr}; fi;"\
+            "else "\
+                "setenv bootargs ${bootargs} aml_dt=${aml_dt} recovery_part=${boot_part} recovery_offset=${recovery_offset};"\
+                "if imgread kernel ${boot_part} ${loadaddr}; then bootm ${loadaddr}; fi;"\
+            "fi;"\
             "\0"\
         "cmdline_keys="\
             "if keyman init 0x1234; then "\

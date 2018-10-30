@@ -493,7 +493,8 @@ static const char* getvar_list_ab[] = {
 	"partition-type:cache", "partition-size:cache",
 	"erase-block-size", "logical-block-size", "secure", "unlocked",
 	"slot-count", "slot-suffixes","current-slot", "has-slot:bootloader", "has-slot:boot",
-	"has-slot:system", "has-slot:vendor", "has-slot:odm",
+	"has-slot:system", "has-slot:vendor", "has-slot:odm", "has-slot:vbmeta",
+	"has-slot:metadata", "has-slot:product", "has-slot:dtbo",
 	"slot-successful:a", "slot-unbootable:a", "slot-retry-count:a",
 	"slot-successful:b", "slot-unbootable:b", "slot-retry-count:b",
 };
@@ -508,6 +509,8 @@ static void cb_getvar(struct usb_ep *ep, struct usb_request *req)
 	char *s2;
 	char *s3;
 	size_t chars_left;
+
+	run_command("get_valid_slot", 0);
 
 	strcpy(response, "OKAY");
 	chars_left = sizeof(response_str) - strlen(response) - 1;
@@ -590,9 +593,15 @@ static void cb_getvar(struct usb_ep *ep, struct usb_request *req)
 		else
 			strncat(response, "0", chars_left);
 	} else if (!strcmp_l1("current-slot", cmd)) {
-		s3 = getenv("active_slot");
-		printf("active_slot: %s\n", s3);
-		strncat(response, s3, chars_left);
+		s3 = getenv("slot-suffixes");
+		printf("slot-suffixes: %s\n", s3);
+		if (strcmp(s3, "0") == 0) {
+			printf("active_slot is %s\n", "a");
+			strncat(response, "a", chars_left);
+		} else if (strcmp(s3, "1") == 0) {
+			printf("active_slot is %s\n", "b");
+			strncat(response, "b", chars_left);
+		}
 	} else if (!strcmp_l1("has-slot:bootloader", cmd)) {
 		printf("do not has slot bootloader\n");
 		strncat(response, "no", chars_left);
@@ -611,6 +620,30 @@ static void cb_getvar(struct usb_ep *ep, struct usb_request *req)
 	} else if (!strcmp_l1("has-slot:vendor", cmd)) {
 		if (has_boot_slot == 1) {
 			printf("has vendor slot\n");
+			strncat(response, "yes", chars_left);
+		} else
+			strncat(response, "no", chars_left);
+	} else if (!strcmp_l1("has-slot:vbmeta", cmd)) {
+		if (has_boot_slot == 1) {
+			printf("has vbmeta slot\n");
+			strncat(response, "yes", chars_left);
+		} else
+			strncat(response, "no", chars_left);
+	} else if (!strcmp_l1("has-slot:product", cmd)) {
+		if (has_boot_slot == 1) {
+			printf("has product slot\n");
+			strncat(response, "yes", chars_left);
+		} else
+			strncat(response, "no", chars_left);
+	} else if (!strcmp_l1("has-slot:metadata", cmd)) {
+		if (has_boot_slot == 1) {
+			printf("has metadata slot\n");
+			strncat(response, "yes", chars_left);
+		} else
+			strncat(response, "no", chars_left);
+	} else if (!strcmp_l1("has-slot:dtbo", cmd)) {
+		if (has_boot_slot == 1) {
+			printf("has dtbo slot\n");
 			strncat(response, "yes", chars_left);
 		} else
 			strncat(response, "no", chars_left);
@@ -658,7 +691,9 @@ static void cb_getvar(struct usb_ep *ep, struct usb_request *req)
 			strncat(response, str_num, chars_left);
 		}
 	} else if (!strcmp_l1("partition-type:cache", cmd)) {
-		strncat(response, "ext4", chars_left);
+		if (has_boot_slot == 0) {
+			strncat(response, "ext4", chars_left);
+		}
 	} else if (!strcmp_l1("partition-type:data", cmd)) {
 		strncat(response, "ext4", chars_left);
 	} else if (!strcmp_l1("partition-type:userdata", cmd)) {
@@ -1002,6 +1037,10 @@ static void cb_flashing(struct usb_ep *ep, struct usb_request *req)
 		if (info->lock_state == 1 ) {
 			char *avb_s;
 			avb_s = getenv("avb2");
+			if (avb_s == NULL) {
+				run_command("get_avb_mode;", 0);
+				avb_s = getenv("avb2");
+			}
 			printf("avb2: %s\n", avb_s);
 			if (strcmp(avb_s, "1") == 0) {
 #ifdef CONFIG_AML_ANTIROLLBACK

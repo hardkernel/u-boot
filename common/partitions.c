@@ -181,10 +181,18 @@ int get_partition_from_dts(unsigned char *buffer)
 		part_table[index].mask_flags = be32_to_cpup((u32*)umask);
 		printf("%02d:%10s\t%016llx %01x\n", index, uname, part_table[index].size, part_table[index].mask_flags);
 
-		if (strcmp(uname, "boot_a") == 0)
+		if (strcmp(uname, "boot_a") == 0) {
 			has_boot_slot = 1;
+			printf("set has_boot_slot = 1\n");
+		}
+		else if (strcmp(uname, "boot") == 0) {
+			has_boot_slot = 0;
+			printf("set has_boot_slot = 0\n");
+		}
 		if (strcmp(uname, "system_a") == 0)
 			has_system_slot = 1;
+		else if (strcmp(uname, "system") == 0)
+			has_system_slot = 0;
 	}
 	return 0;
 

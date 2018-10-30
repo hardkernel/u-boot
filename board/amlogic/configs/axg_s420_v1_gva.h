@@ -55,6 +55,9 @@
   */
 #define CONFIG_BOOTLOADER_CONTROL_BLOCK
 
+/*a/b update */
+#define CONFIG_CMD_BOOTCTOL_AVB
+
 /* Serial config */
 #define CONFIG_CONS_INDEX 2
 #define CONFIG_BAUDRATE  115200
@@ -98,7 +101,7 @@
         "EnableSelinux=enforcing\0" \
         "recovery_part=recovery\0"\
         "recovery_offset=0\0"\
-        "active_slot=_a\0"\
+        "active_slot=normal\0"\
         "boot_part=boot\0"\
         "initargs="\
             "rootfstype=ramfs init=/init console=ttyS0,115200 no_console_suspend earlycon=aml_uart,0xff803000 ramoops.pstore_en=1 ramoops.record_size=0x8000 ramoops.console_size=0x4000 "\
@@ -128,6 +131,19 @@
             "fi;fi;fi;fi;"\
             "\0" \
         "storeboot="\
+            "get_valid_slot;"\
+            "get_avb_mode;"\
+            "echo active_slot: ${active_slot};"\
+            "if test ${active_slot} != normal; then "\
+                    "setenv bootargs ${bootargs} androidboot.slot_suffix=${active_slot};"\
+            "fi;"\
+            "if test ${avb2} = 0; then "\
+                "if test ${active_slot} = _a; then "\
+                    "setenv bootargs ${bootargs} root=/dev/mmcblk0p23;"\
+                "else if test ${active_slot} = _b; then "\
+                    "setenv bootargs ${bootargs} root=/dev/mmcblk0p24;"\
+                "fi;fi;"\
+            "fi;"\
             "if imgread kernel ${boot_part} ${loadaddr}; then bootm ${loadaddr}; fi;"\
             "run update;"\
             "\0"\

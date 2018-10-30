@@ -162,6 +162,10 @@ int do_bootm(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 
 #if defined(CONFIG_CMD_BOOTCTOL_AVB)
 	avb_s = getenv("avb2");
+	if (avb_s == NULL) {
+		run_command("get_avb_mode;", 0);
+		avb_s = getenv("avb2");
+	}
 	printf("avb2: %s\n", avb_s);
 	if (strcmp(avb_s, "1") == 0) {
 		AvbSlotVerifyData* out_data;

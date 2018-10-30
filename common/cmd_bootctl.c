@@ -233,8 +233,7 @@ static int do_GetValidSlot(
     int argc,
     char * const argv[])
 {
-    //char miscbuf[MISCBUF_SIZE] = {0};
-    char *miscbuf = malloc(4*1024);
+    char miscbuf[4096] = {0};
     BrilloBootInfo info;
     int attemp_times;
     int slot;
@@ -244,7 +243,6 @@ static int do_GetValidSlot(
         return cmd_usage(cmdtp);
     }
 
-    memset(miscbuf, 0, 4*1024);
     ret = boot_info_open_partition(miscbuf);
     if (ret != 0) {
         return -1;
@@ -271,8 +269,6 @@ static int do_GetValidSlot(
         boot_info_reset(&info);
         boot_info_save(&info, miscbuf);
     }
-    free(miscbuf);
-    miscbuf = NULL;
 
     attemp_times = boot_info_get_attemp_times(&info);
     printf("attemp_times = %d \n", attemp_times);
@@ -293,21 +289,31 @@ static int do_GetValidSlot(
         if (!IS_ERR(nand)) {
             has_boot_slot = 1;
         }
+        else
+            has_boot_slot = 0;
     }
 #endif
 
     if (slot == 0) {
-        setenv("active_slot","_a");
         if (has_boot_slot == 1) {
+            setenv("active_slot","_a");
             setenv("boot_part","boot_a");
             setenv("slot-suffixes","0");
         }
+        else {
+            setenv("active_slot","normal");
+            setenv("boot_part","boot");
+        }
     }
     else {
-        setenv("active_slot","_b");
         if (has_boot_slot == 1) {
+            setenv("active_slot","_b");
             setenv("boot_part","boot_b");
             setenv("slot-suffixes","1");
+        }
+        else {
+            setenv("active_slot","normal");
+            setenv("boot_part","boot");
         }
     }
 
@@ -320,22 +326,19 @@ static int do_SetActiveSlot(
     int argc,
     char * const argv[])
 {
-    //char miscbuf[MISCBUF_SIZE] = {0};
-    char *miscbuf = malloc(4*1024);
+    char miscbuf[4096] = {0};
     BrilloBootInfo info;
-    int i;
     int ret = 0;
-
-    for (i = 0; i < argc; i++)
-        printf("%s ", argv[i]);
-
-    printf("\n");
 
     if (argc != 2) {
         return cmd_usage(cmdtp);
     }
 
-    memset(miscbuf, 0, 4*1024);
+    if (has_boot_slot == 0) {
+        printf("device is not ab mode\n");
+        return -1;
+    }
+
     ret = boot_info_open_partition(miscbuf);
     if (ret != 0) {
         return -1;
@@ -350,24 +353,22 @@ static int do_SetActiveSlot(
 
     if (strcmp(argv[1], "a") == 0) {
         setenv("active_slot","_a");
+        setenv("boot_part","boot_a");
         setenv("slot-suffixes","0");
         printf("set active slot a \n");
         boot_info_set_active_slot(&info, 0);
     } else if (strcmp(argv[1], "b") == 0) {
         setenv("active_slot","_b");
+        setenv("boot_part","boot_b");
         setenv("slot-suffixes","1");
         printf("set active slot b \n");
         boot_info_set_active_slot(&info, 1);
     } else {
         printf("error input slot\n");
-        free(miscbuf);
-        miscbuf = NULL;
         return -1;
     }
 
     boot_info_save(&info, miscbuf);
-    free(miscbuf);
-    miscbuf = NULL;
 
     return 0;
 }

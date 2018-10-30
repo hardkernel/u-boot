@@ -105,10 +105,28 @@ static AvbIOResult write_to_partition(AvbOps* ops, const char* partition,
 static AvbIOResult get_unique_guid_for_partition(AvbOps* ops, const char* partition,
         char* guid_buf, size_t guid_buf_size)
 {
+    char *s1;
+    int ret;
+    char part_name[128];
     memset(guid_buf, 0, guid_buf_size);
-    if (!memcmp(partition, "system", strlen("system")))
-        strncpy(guid_buf, "/dev/mmcblk0p18", guid_buf_size);
-    else if (!memcmp(partition, "vbmeta", strlen("vbmeta")))
+    run_command("get_valid_slot;", 0);
+    s1 = getenv("active_slot");
+    printf("active_slot is %s\n", s1);
+    if (!memcmp(partition, "system", strlen("system"))) {
+        if (strcmp(s1, "_a") == 0) {
+            ret = get_partition_num_by_name("system_a");
+            sprintf(part_name, "/dev/mmcblk0p%d", ret+1);
+            strncpy(guid_buf, part_name, guid_buf_size);
+        } else if (strcmp(s1, "_b") == 0) {
+            ret = get_partition_num_by_name("system_b");
+            sprintf(part_name, "/dev/mmcblk0p%d", ret+1);
+            strncpy(guid_buf, part_name, guid_buf_size);
+        } else {
+            ret = get_partition_num_by_name("system");
+            sprintf(part_name, "/dev/mmcblk0p%d", ret+1);
+            strncpy(guid_buf, part_name, guid_buf_size);
+        }
+    } else if (!memcmp(partition, "vbmeta", strlen("vbmeta")))
         strncpy(guid_buf, "/dev/block/vbmeta", guid_buf_size);
     return AVB_IO_RESULT_OK;
 }
@@ -268,11 +286,18 @@ int avb_verify(AvbSlotVerifyData** out_data)
 {
     const char * const requested_partitions[5] = {"boot", "recovery", "dtb", NULL};
     AvbSlotVerifyResult result = AVB_SLOT_VERIFY_RESULT_OK;
-#if CONFIG_AB_UPDATE
-    char *ab_suffix = getenv("active_slot");
-#else
-    char *ab_suffix = "";
-#endif
+    char *s1;
+    char *ab_suffix;
+    run_command("get_valid_slot;", 0);
+    s1 = getenv("active_slot");
+    printf("active_slot is %s\n", s1);
+    if (strcmp(s1, "normal") == 0) {
+        ab_suffix = "";
+    } else {
+        ab_suffix = getenv("active_slot");
+    }
+    printf("ab_suffix is %s\n", ab_suffix);
+
     AvbSlotVerifyFlags flags = AVB_SLOT_VERIFY_FLAGS_NONE;
     char *upgradestep = NULL;
 

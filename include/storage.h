@@ -11,7 +11,7 @@
 
 //Partition table defines
 #define NAND_PART_SIZE_FULL		-1
-#define MAX_PART_NUM			16
+#define MAX_PART_NUM			32
 #define	 MAX_PART_NAME_LEN		16
 //#define 	SZ_1M 					0x100000
 

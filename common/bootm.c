@@ -261,9 +261,22 @@ static int read_fdto_partition(void)
 	int	ret = 0;
 	u64	tmp = 0;
 	void	*dtbo_mem_addr = NULL;
+	char dtbo_partition[32];
+	char *s1;
+
+	run_command("get_valid_slot;", 0);
+	s1 = getenv("active_slot");
+	printf("active_slot is %s\n", s1);
+	if (strcmp(s1, "normal") == 0) {
+		strcpy(dtbo_partition, "dtbo");
+	} else if (strcmp(s1, "_a") == 0) {
+		strcpy(dtbo_partition, "dtbo_a");
+	} else if (strcmp(s1, "_b") == 0) {
+		strcpy(dtbo_partition, "dtbo_b");
+	}
 
 	/* check if dtbo partition exist */
-	sprintf(cmd, "store size dtbo 0x%p", &tmp);
+	sprintf(cmd, "store size %s 0x%p", dtbo_partition, &tmp);
 	ret = run_command(cmd, 0);
 	if (ret != 0) {
 		printf("No dtbo patitions found\n");
@@ -272,8 +285,8 @@ static int read_fdto_partition(void)
 		if (!dtbo_mem_addr) {
 			printf("dtbo out of memory\n");
 		} else {
-			sprintf(cmd, "store read dtbo 0x%p 0 0x%llx",
-			dtbo_mem_addr, (tmp * SECTOR_SIZE));
+			sprintf(cmd, "store read %s 0x%p 0 0x%llx",
+			dtbo_partition, dtbo_mem_addr, (tmp * SECTOR_SIZE));
 			ret = run_command(cmd, 0);
 			if (ret != 0) {
 				printf("Fail to read dtbo partition\n");
@@ -982,6 +995,10 @@ static const void *boot_get_kernel(cmd_tbl_t *cmdtp, int flag, int argc,
 #if defined(CONFIG_CMD_BOOTCTOL_AVB)
 	char *avb_s;
 	avb_s = getenv("avb2");
+	if (avb_s == NULL) {
+		run_command("get_avb_mode;", 0);
+		avb_s = getenv("avb2");
+	}
 	printf("avb2: %s\n", avb_s);
 	if (strcmp(avb_s, "1") != 0) {
 #ifdef CONFIG_AML_ANTIROLLBACK
