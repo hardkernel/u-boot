@@ -126,7 +126,7 @@ static int _assert_logic_partition_cap(const char* thePartName, const uint64_t n
         struct partitions * thePart     = NULL;
 		if (NULL == part_table)
             return 0;
-        for (thePart = part_table; partIndex < MAX_PART_NAME_LEN; ++thePart, ++partIndex)
+        for (thePart = part_table; partIndex < 32; ++thePart, ++partIndex)
         {
                 const uint64_t partSzInBytes = thePart->size;
                 if (memcmp(thePartName, thePart->name, strlen(thePartName))) continue;
