@@ -20,7 +20,7 @@ extern int osd_rma_test(u32 osd_index);
 static int do_osd_open(cmd_tbl_t *cmdtp, int flag, int argc,
 		       char *const argv[])
 {
-	gdev = video_hw_init(MIDDLE_MODE);
+	gdev = video_hw_init(RECT_MODE);
 	if (gdev == NULL) {
 		printf("Initialize video device failed!\n");
 		return 1;

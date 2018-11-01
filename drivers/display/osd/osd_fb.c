@@ -587,9 +587,18 @@ int video_display_bitmap(ulong bmp_image, int x, int y)
 	osd_logd("Display-bmp: %d x %d  with %d colors\n",
 		 (int)width, (int)height, (int)colors);
 
-	switch (fb_gdev.mode) {
-	case MIDDLE_MODE:
-		//if ((x == -1) && (y == -1)) {
+	if ((x == -1) && (y == -1)) {
+		/* use MIDDLE_MODE */
+		if ((width > pwidth) || (height > pheight)) {
+			x = 0;
+			y = 0;
+		} else {
+			x = (pwidth - width) / 2;
+			y = (pheight - height) / 2;
+		}
+	} else {
+		switch (fb_gdev.mode) {
+		case MIDDLE_MODE:
 			if ((width > pwidth) || (height > pheight)) {
 				x = 0;
 				y = 0;
@@ -597,14 +606,14 @@ int video_display_bitmap(ulong bmp_image, int x, int y)
 				x = (pwidth - width) / 2;
 				y = (pheight - height) / 2;
 			}
-		//}
-		break;
-	case RECT_MODE:
-		break;
-	case FULL_SCREEN_MODE:
-		x = 0;
-		y = 0;
-		break;
+			break;
+		case RECT_MODE:
+			break;
+		case FULL_SCREEN_MODE:
+			x = 0;
+			y = 0;
+			break;
+		}
 	}
 	/*
 	 *  BMP format for Monochrome assumes that the state of a
@@ -778,9 +787,18 @@ int video_display_raw(ulong raw_image, int x, int y)
 	osd_logd("Display-bmp: %d x %d  with %d colors\n",
 		 (int)width, (int)height, (int)colors);
 
-	switch (fb_gdev.mode) {
-	case MIDDLE_MODE:
-		//if ((x == -1) && (y == -1)) {
+	if ((x == -1) && (y == -1)) {
+		/* use MIDDLE_MODE */
+		if ((width > pwidth) || (height > pheight)) {
+			x = 0;
+			y = 0;
+		} else {
+			x = (pwidth - width) / 2;
+			y = (pheight - height) / 2;
+		}
+	} else {
+		switch (fb_gdev.mode) {
+		case MIDDLE_MODE:
 			if ((width > pwidth) || (height > pheight)) {
 				x = 0;
 				y = 0;
@@ -788,14 +806,14 @@ int video_display_raw(ulong raw_image, int x, int y)
 				x = (pwidth - width) / 2;
 				y = (pheight - height) / 2;
 			}
-		//}
-		break;
-	case RECT_MODE:
-		break;
-	case FULL_SCREEN_MODE:
-		x = 0;
-		y = 0;
-		break;
+			break;
+		case RECT_MODE:
+			break;
+		case FULL_SCREEN_MODE:
+			x = 0;
+			y = 0;
+			break;
+		}
 	}
 	/*
 	 *  BMP format for Monochrome assumes that the state of a
