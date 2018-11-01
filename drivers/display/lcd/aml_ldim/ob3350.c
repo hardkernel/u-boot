@@ -111,10 +111,8 @@ static int ob3350_power_off(void)
 	return 0;
 }
 
-static int ob3350_ldim_driver_update(void)
+static int ob3350_ldim_driver_update(struct aml_ldim_driver_s *ldim_drv)
 {
-	struct aml_ldim_driver_s *ldim_drv = aml_ldim_get_driver();
-
 	ldim_drv->device_power_on = ob3350_power_on;
 	ldim_drv->device_power_off = ob3350_power_off;
 	ldim_drv->device_bri_update = ob3350_smr;
@@ -122,15 +120,15 @@ static int ob3350_ldim_driver_update(void)
 	return 0;
 }
 
-int ldim_dev_ob3350_probe(void)
+int ldim_dev_ob3350_probe(struct aml_ldim_driver_s *ldim_drv)
 {
 	ob3350_on_flag = 0;
-	ob3350_ldim_driver_update();
+	ob3350_ldim_driver_update(ldim_drv);
 
 	return 0;
 }
 
-int ldim_dev_ob3350_remove(void)
+int ldim_dev_ob3350_remove(struct aml_ldim_driver_s *ldim_drv)
 {
 	return 0;
 }

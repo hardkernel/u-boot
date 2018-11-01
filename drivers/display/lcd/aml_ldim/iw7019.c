@@ -27,8 +27,6 @@
 #include "ldim_drv.h"
 #include "ldim_dev_drv.h"
 
-#ifdef CONFIG_AML_SPICC
-
 #define BUS_SPICC             2
 #define NORMAL_MSG            (0<<7)
 #define BROADCAST_MSG         (1<<7)
@@ -49,9 +47,7 @@ struct iw7019 {
 	unsigned int init_data_cnt;
 	struct spi_slave *spi;
 };
-struct iw7019 *bl_iw7019;
-
-extern struct ldim_spi_dev_info_s ldim_spi_dev;
+static struct iw7019 *bl_iw7019;
 
 #if 0
 static u8 iw7019_ini_data[LDIM_INIT_ON_SIZE] = {
@@ -168,77 +164,44 @@ static u8 iw7019_ini_data[LDIM_INIT_ON_SIZE] = {
 };
 #endif
 
-//iw7019 register read
-static int iw7019_rreg(struct spi_slave *slave, u8 addr, u8 *val)
-{
-	u8 tbuf[4], rbuf[4];
-	int ret;
-
-	ret = spi_claim_bus(slave);
-	if (ret) {
-		LDIMERR("%s: request spi bus failed\n", __func__);
-		goto rreg_end;
-	}
-	if (bl_iw7019->cs_hold_delay)
-		udelay(bl_iw7019->cs_hold_delay);
-	spi_cs_activate(slave);
-	if (bl_iw7019->cs_clk_delay)
-		udelay(bl_iw7019->cs_clk_delay);
-
-	tbuf[0] = NORMAL_MSG | SINGLE_DATA | IW7019_DEV_ADDR;
-	tbuf[1] = addr | 0x80;
-	ret = spi_xfer(slave, 32, tbuf, rbuf, 0);
-	if (ret)
-		goto rreg_end;
-	*val = rbuf[3];
-	if (bl_iw7019->cs_clk_delay)
-		udelay(bl_iw7019->cs_clk_delay);
-	spi_cs_deactivate(slave);
-
-rreg_end:
-	spi_release_bus(slave);
-	return ret;
-}
-
 //iw7019 register write
-static int iw7019_wreg(struct spi_slave *slave, u8 addr, u8 val)
+static int iw7019_wreg(struct spi_slave *spi, unsigned char addr, unsigned char val)
 {
-	u8 tbuf[3];
+	unsigned char tbuf[3];
 	int ret;
 
 	if (lcd_debug_print_flag)
 		LDIMPR("%s: 0x%02x = 0x%02x\n", __func__, addr, val);
 
-	ret = spi_claim_bus(slave);
-	if (ret) {
-		LDIMERR("%s: request spi bus failed\n", __func__);
-		goto wreg_end;
-	}
-	if (bl_iw7019->cs_hold_delay)
-		udelay(bl_iw7019->cs_hold_delay);
-	spi_cs_activate(slave);
-	if (bl_iw7019->cs_clk_delay)
-		udelay(bl_iw7019->cs_clk_delay);
-
 	tbuf[0] = NORMAL_MSG | SINGLE_DATA | IW7019_DEV_ADDR;
 	tbuf[1] = addr & 0x7f;
 	tbuf[2] = val;
-	ret = spi_xfer(slave, 24, tbuf, 0, 0);
-	if (bl_iw7019->cs_clk_delay)
-		udelay(bl_iw7019->cs_clk_delay);
-	spi_cs_deactivate(slave);
+	ret = ldim_spi_write(spi, tbuf, 3);
 
-wreg_end:
-	spi_release_bus(slave);
+	return ret;
+}
+
+//iw7019 register read
+static int iw7019_rreg(struct spi_slave *spi, unsigned char addr, unsigned char *val)
+{
+	unsigned char tbuf[4], rbuf[4];
+	int ret;
+
+	tbuf[0] = NORMAL_MSG | SINGLE_DATA | IW7019_DEV_ADDR;
+	tbuf[1] = addr | 0x80;
+	tbuf[2] = 0;
+	ret = ldim_spi_read(spi, tbuf, 3, rbuf, 1);
+	*val = rbuf[3];
+
 	return ret;
 }
 
 //iw7019 block write
-static int iw7019_wregs(struct spi_slave *slave, u8 addr, u8 *val, int len)
+static int iw7019_wregs(struct spi_slave *spi, unsigned char addr,
+		unsigned char *val, int len)
 {
-	u8 tbuf[20];
-	int size, i;
-	int ret;
+	unsigned char tbuf[20];
+	int ret, i;
 
 	if (lcd_debug_print_flag) {
 		LDIMPR("%s: ", __func__);
@@ -247,29 +210,12 @@ static int iw7019_wregs(struct spi_slave *slave, u8 addr, u8 *val, int len)
 		printf("\n");
 	}
 
-	ret = spi_claim_bus(slave);
-	if (ret) {
-		LDIMERR("%s: request spi bus failed\n", __func__);
-		goto wregs_end;
-	}
-	if (bl_iw7019->cs_hold_delay)
-		udelay(bl_iw7019->cs_hold_delay);
-	spi_cs_activate(slave);
-	if (bl_iw7019->cs_clk_delay)
-		udelay(bl_iw7019->cs_clk_delay);
-
 	tbuf[0] = NORMAL_MSG | BLOCK_DATA | IW7019_DEV_ADDR;
 	tbuf[1] = len;
 	tbuf[2] = addr & 0x7f;
-	size = (len + 3) * 8;
 	memcpy(&tbuf[3], val, len);
-	ret = spi_xfer(slave, size, tbuf, 0, 0);
-	if (bl_iw7019->cs_clk_delay)
-		udelay(bl_iw7019->cs_clk_delay);
-	spi_cs_deactivate(slave);
+	ret = ldim_spi_write(spi, tbuf, (len + 3));
 
-wregs_end:
-	spi_release_bus(slave);
 	return ret;
 }
 
@@ -570,21 +516,20 @@ static int iw7019_power_off(void)
 	return 0;
 }
 
-static int iw7019_ldim_driver_update(void)
+static int iw7019_ldim_driver_update(struct aml_ldim_driver_s *ldim_drv)
 {
-	struct aml_ldim_driver_s *ldim_drv = aml_ldim_get_driver();
-
 	ldim_drv->device_power_on = iw7019_power_on;
 	ldim_drv->device_power_off = iw7019_power_off;
 	ldim_drv->device_bri_update = iw7019_smr;
 	return 0;
 }
 
-int ldim_dev_iw7019_probe(void)
+int ldim_dev_iw7019_probe(struct aml_ldim_driver_s *ldim_drv)
 {
-	struct udevice *dev;
-	struct aml_ldim_driver_s *ldim_drv = aml_ldim_get_driver();
-	int ret;
+	if (ldim_drv->spi_info->spi == NULL) {
+		LDIMERR("%s: spi is null\n", __func__);
+		return -1;
+	}
 
 	bl_iw7019 = (struct iw7019 *)malloc(sizeof(struct iw7019));
 	if (bl_iw7019 == NULL) {
@@ -596,40 +541,21 @@ int ldim_dev_iw7019_probe(void)
 	iw7019_on_flag = 0;
 	iw7019_wr_err_cnt = 0;
 
-	/* register spi */
-	snprintf(ldim_drv->spi_dev->spi_name, LDIM_SPI_NAME_MAX,
-		"generic_%d:%d",
-		ldim_drv->spi_dev->bus_num, ldim_drv->spi_dev->chip_select);
-	ret = spi_get_bus_and_cs(ldim_drv->spi_dev->bus_num,
-				ldim_drv->spi_dev->chip_select,
-				ldim_drv->spi_dev->max_speed_hz,
-				ldim_drv->spi_dev->mode,
-				"spi_generic_drv",
-				ldim_drv->spi_dev->spi_name,
-				&dev, &ldim_drv->spi_dev->spi);
-	if (ret) {
-		LDIMERR("register ldim_dev spi driver failed\n");
-		free(bl_iw7019);
-		return -1;
-	}
-	ldim_drv->spi_dev->spi->wordlen = ldim_drv->spi_dev->wordlen;
-	spi_cs_deactivate(ldim_drv->spi_dev->spi);
-
-	bl_iw7019->spi = ldim_drv->spi_dev->spi;
+	bl_iw7019->spi = ldim_drv->spi_info->spi;
 	bl_iw7019->cs_hold_delay = ldim_drv->ldev_conf->cs_hold_delay;
 	bl_iw7019->cs_clk_delay = ldim_drv->ldev_conf->cs_clk_delay;
 	bl_iw7019->cmd_size = ldim_drv->ldev_conf->cmd_size;
 	bl_iw7019->init_data = ldim_drv->ldev_conf->init_on;
 	bl_iw7019->init_data_cnt = ldim_drv->ldev_conf->init_on_cnt;
 
-	iw7019_ldim_driver_update();
+	iw7019_ldim_driver_update(ldim_drv);
 
 	printf("%s: ok\n", __func__);
 
 	return 0;
 }
 
-int ldim_dev_iw7019_remove(void)
+int ldim_dev_iw7019_remove(struct aml_ldim_driver_s *ldim_drv)
 {
 	if (bl_iw7019) {
 		free(bl_iw7019);
@@ -637,18 +563,4 @@ int ldim_dev_iw7019_remove(void)
 	}
 	return 0;
 }
-
-#else
-int ldim_dev_iw7019_probe(void)
-{
-	LDIMERR("%s: no AML_SPICC support\n", __func__);
-
-	return -1;
-}
-
-int ldim_dev_iw7019_remove(void)
-{
-	return 0;
-}
-#endif
 

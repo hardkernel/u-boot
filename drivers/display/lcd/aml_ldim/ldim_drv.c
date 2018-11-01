@@ -43,10 +43,11 @@ static struct ldim_config_s ldim_config = {
 
 static int ldim_power_on(void)
 {
-	if (ldim_driver.device_power_on) {
+	if (ldim_driver.device_power_on)
 		ldim_driver.device_power_on();
-		ldim_on_flag = 1;
-	}
+	else
+		LDIMERR("%s: device_power_on is null\n", __func__);
+	ldim_on_flag = 1;
 
 	if (ldim_level > 0)
 		ldim_set_level(ldim_level);
@@ -58,6 +59,8 @@ static int ldim_power_off(void)
 	ldim_on_flag = 0;
 	if (ldim_driver.device_power_off)
 		ldim_driver.device_power_off();
+	else
+		LDIMERR("%s: device_power_off is null\n", __func__);
 
 	return 0;
 }

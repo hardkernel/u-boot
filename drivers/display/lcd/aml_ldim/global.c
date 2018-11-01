@@ -112,10 +112,8 @@ static int global_power_off(void)
 	return 0;
 }
 
-static int global_ldim_driver_update(void)
+static int global_ldim_driver_update(struct aml_ldim_driver_s *ldim_drv)
 {
-	struct aml_ldim_driver_s *ldim_drv = aml_ldim_get_driver();
-
 	ldim_drv->device_power_on = global_power_on;
 	ldim_drv->device_power_off = global_power_off;
 	ldim_drv->device_bri_update = global_smr;
@@ -123,15 +121,15 @@ static int global_ldim_driver_update(void)
 	return 0;
 }
 
-int ldim_dev_global_probe(void)
+int ldim_dev_global_probe(struct aml_ldim_driver_s *ldim_drv)
 {
 	global_on_flag = 0;
-	global_ldim_driver_update();
+	global_ldim_driver_update(ldim_drv);
 
 	return 0;
 }
 
-int ldim_dev_global_remove(void)
+int ldim_dev_global_remove(struct aml_ldim_driver_s *ldim_drv)
 {
 	return 0;
 }

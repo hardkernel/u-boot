@@ -102,7 +102,7 @@ struct aml_ldim_driver_s {
 	int (*device_power_on)(void);
 	int (*device_power_off)(void);
 	int (*device_bri_update)(unsigned short *buf, unsigned char len);
-	struct ldim_spi_dev_info_s *spi_dev;
+	struct ldim_spi_dev_info_s *spi_info;
 };
 
 extern struct ldim_dev_config_s ldim_config_dft;

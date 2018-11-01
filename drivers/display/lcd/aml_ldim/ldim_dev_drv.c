@@ -27,9 +27,10 @@
 #include "ldim_drv.h"
 #include "ldim_dev_drv.h"
 
-struct ldim_dev_config_s *ldim_dev_config;
+static struct ldim_dev_config_s *ldim_dev_config;
+static int ldim_dev_probe_flag;
 
-struct ldim_spi_dev_info_s ldim_spi_dev = {
+struct ldim_spi_dev_info_s ldim_spi_info = {
 	.modalias = "ldim_dev",
 	.spi_name = "none",
 	.mode = SPI_MODE_0,
@@ -37,6 +38,7 @@ struct ldim_spi_dev_info_s ldim_spi_dev = {
 	.bus_num = 0, /* SPI bus No. */
 	.chip_select = 0, /* the device index on the spi bus */
 	.wordlen = 8,
+	.spi = NULL,
 };
 
 void ldim_set_gpio(int index, int value)
@@ -315,45 +317,53 @@ static void aml_ldim_dev_init_table_fixed_size_print(
 
 static void aml_ldim_device_config_print(void)
 {
-	struct bl_pwm_config_s *ld_pwm = &ldim_dev_config->pwm_config;
+	struct bl_pwm_config_s *ld_pwm;
+
+	if (ldim_dev_config == NULL) {
+		LDIMERR("%s: ldim_dev_config is null\n", __func__);
+		return;
+	}
+	ld_pwm = &ldim_dev_config->pwm_config;
+
+	printf("dev_name              = %s\n"
+		"en_gpio               = %d\n"
+		"en_gpio_on            = %d\n"
+		"en_gpio_off           = %d\n"
+		"dim_max               = 0x%03x\n"
+		"dim_min               = 0x%03x\n"
+		"region_num            = %d\n",
+		ldim_dev_config->name,
+		ldim_dev_config->en_gpio,
+		ldim_dev_config->en_gpio_on,
+		ldim_dev_config->en_gpio_off,
+		ldim_dev_config->dim_min,
+		ldim_dev_config->dim_max,
+		ldim_dev_config->bl_regnum);
 
 	switch (ldim_dev_config->type) {
 	case LDIM_DEV_TYPE_SPI:
-		printf("dev_name              = %s\n"
+		printf("spi_pointer           = 0x%p\n"
+			"spi_modalias          = %s\n"
+			"spi_mode              = %d\n"
+			"spi_max_speed_hz      = %d\n"
+			"spi_bus_num           = %d\n"
+			"spi_chip_select       = %d\n"
 			"cs_hold_delay         = %d\n"
 			"cs_clk_delay          = %d\n"
-			"en_gpio               = %d\n"
-			"en_gpio_on            = %d\n"
-			"en_gpio_off           = %d\n"
-			"write_check           = %d\n"
-			"dim_max               = 0x%03x\n"
-			"dim_min               = 0x%03x\n",
-			ldim_dev_config->name,
+			"write_check           = %d\n",
+			ldim_spi_info.spi,
+			ldim_spi_info.modalias,
+			ldim_spi_info.mode,
+			ldim_spi_info.max_speed_hz,
+			ldim_spi_info.bus_num,
+			ldim_spi_info.chip_select,
 			ldim_dev_config->cs_hold_delay,
 			ldim_dev_config->cs_clk_delay,
-			ldim_dev_config->en_gpio,
-			ldim_dev_config->en_gpio_on,
-			ldim_dev_config->en_gpio_off,
-			ldim_dev_config->write_check,
-			ldim_dev_config->dim_min,
-			ldim_dev_config->dim_max);
+			ldim_dev_config->write_check);
 		break;
 	case LDIM_DEV_TYPE_I2C:
 		break;
 	case LDIM_DEV_TYPE_NORMAL:
-		printf("dev_name              = %s\n"
-			"en_gpio               = %d\n"
-			"en_gpio_on            = %d\n"
-			"en_gpio_off           = %d\n"
-			"dim_max               = %d\n"
-			"dim_min               = %d\n",
-			ldim_dev_config->name,
-			ldim_dev_config->en_gpio,
-			ldim_dev_config->en_gpio_on,
-			ldim_dev_config->en_gpio_off,
-			ldim_dev_config->dim_min,
-			ldim_dev_config->dim_max);
-		break;
 	default:
 		break;
 	}
@@ -815,39 +825,39 @@ static int ldim_dev_get_config_from_dts(char *dt_addr, int index)
 
 	switch (ldim_dev_config->type) {
 	case LDIM_DEV_TYPE_SPI:
-		ldim_drv->spi_dev = &ldim_spi_dev;
+		ldim_drv->spi_info = &ldim_spi_info;
 		/* get spi config */
 		/*
 		propdata = (char *)fdt_getprop(dt_addr, parent_offset, "spi_bus_num", NULL);
 		if (propdata == NULL)
 			LDIMERR("failed to get spi_bus_num\n");
 		else
-			ldim_spi_dev.bus_num = be32_to_cpup((u32*)propdata);
+			ldim_spi_info.bus_num = be32_to_cpup((u32*)propdata);
 		*/
 
-		ldim_spi_dev.bus_num = 0; /* fix value */
+		ldim_spi_info.bus_num = 0; /* fix value */
 		propdata = (char *)fdt_getprop(dt_addr, child_offset, "spi_chip_select", NULL);
 		if (propdata == NULL)
 			LDIMERR("failed to get spi_chip_select\n");
 		else
-			ldim_spi_dev.chip_select = be32_to_cpup((u32*)propdata);
+			ldim_spi_info.chip_select = be32_to_cpup((u32*)propdata);
 
 		propdata = (char *)fdt_getprop(dt_addr, child_offset, "spi_max_frequency", NULL);
 		if (propdata == NULL)
 			LDIMERR("failed to get spi_max_frequency\n");
 		else
-			ldim_spi_dev.max_speed_hz = be32_to_cpup((u32*)propdata);
+			ldim_spi_info.max_speed_hz = be32_to_cpup((u32*)propdata);
 
 		propdata = (char *)fdt_getprop(dt_addr, child_offset, "spi_mode", NULL);
 		if (propdata == NULL)
 			LDIMERR("failed to get spi_mode\n");
 		else
-			ldim_spi_dev.mode = be32_to_cpup((u32*)propdata);
+			ldim_spi_info.mode = be32_to_cpup((u32*)propdata);
 
 		if (lcd_debug_print_flag) {
 			LDIMPR("spi bus_num=%d, chip_select=%d, max_frequency=%d, mode=%d\n",
-				ldim_spi_dev.bus_num, ldim_spi_dev.chip_select,
-				ldim_spi_dev.max_speed_hz, ldim_spi_dev.mode);
+				ldim_spi_info.bus_num, ldim_spi_info.chip_select,
+				ldim_spi_info.max_speed_hz, ldim_spi_info.mode);
 		}
 
 		propdata = (char *)fdt_getprop(dt_addr, child_offset, "spi_cs_delay", NULL);
@@ -932,25 +942,41 @@ static int ldim_dev_get_config_from_dts(char *dt_addr, int index)
 }
 #endif
 
-static int ldim_dev_add_driver(struct ldim_dev_config_s *ldev_conf, int index)
+static int ldim_dev_add_driver(struct aml_ldim_driver_s *ldim_drv)
 {
+	struct ldim_dev_config_s *ldev_conf = ldim_drv->ldev_conf;
+	int index = ldim_drv->dev_index;
 	int ret = -1;
 
+	switch (ldev_conf->type) {
+	case LDIM_DEV_TYPE_SPI:
+		ret = ldim_spi_driver_add(ldim_drv);
+		break;
+	case LDIM_DEV_TYPE_I2C:
+		break;
+	case LDIM_DEV_TYPE_NORMAL:
+	default:
+		break;
+	}
+	if (ret)
+		return -1;
+
+	ret = -1;
 	if (strcmp(ldev_conf->name, "iw7019") == 0) {
 #ifdef CONFIG_AML_LOCAL_DIMMING_IW7019
-		ret = ldim_dev_iw7019_probe();
+		ret = ldim_dev_iw7019_probe(ldim_drv);
 #endif
 	} else if (strcmp(ldev_conf->name, "iw7027") == 0) {
 #ifdef CONFIG_AML_LOCAL_DIMMING_IW7027
-		ret = ldim_dev_iw7027_probe();
+		ret = ldim_dev_iw7027_probe(ldim_drv);
 #endif
 	} else if (strcmp(ldev_conf->name, "ob3350") == 0) {
 #ifdef CONFIG_AML_LOCAL_DIMMING_OB3350
-		ret = ldim_dev_ob3350_probe();
+		ret = ldim_dev_ob3350_probe(ldim_drv);
 #endif
 	} else if (strcmp(ldev_conf->name, "global") == 0) {
 #ifdef CONFIG_AML_LOCAL_DIMMING_GLOBAL
-		ret = ldim_dev_global_probe();
+		ret = ldim_dev_global_probe(ldim_drv);
 #endif
 	} else {
 		LDIMERR("invalid device name: %s\n", ldev_conf->name);
@@ -958,35 +984,40 @@ static int ldim_dev_add_driver(struct ldim_dev_config_s *ldev_conf, int index)
 	}
 
 	if (ret) {
-		LDIMERR("add device driver failed %s(%d)\n",
+		LDIMERR("add device driver failed: %s(%d)\n",
 			ldev_conf->name, index);
 	} else {
-		LDIMPR("add device driver %s(%d)\n", ldev_conf->name, index);
+		ldim_dev_probe_flag = 1;
+		LDIMPR("add device driver: %s(%d)\n", ldev_conf->name, index);
 	}
 
 	return ret;
 }
 
-static int ldim_dev_remove_driver(struct ldim_dev_config_s *ldev_conf,
-		int index)
+static int ldim_dev_remove_driver(struct aml_ldim_driver_s *ldim_drv)
 {
+	struct ldim_dev_config_s *ldev_conf = ldim_drv->ldev_conf;
+	int index = ldim_drv->dev_index;
 	int ret = -1;
+
+	if (ldim_dev_probe_flag == 0)
+		return 0;
 
 	if (strcmp(ldev_conf->name, "iw7019") == 0) {
 #ifdef CONFIG_AML_LOCAL_DIMMING_IW7019
-		ret = ldim_dev_iw7019_remove();
+		ret = ldim_dev_iw7019_remove(ldim_drv);
 #endif
 	} else if (strcmp(ldev_conf->name, "iw7027") == 0) {
 #ifdef CONFIG_AML_LOCAL_DIMMING_IW7027
-		ret = ldim_dev_iw7027_remove();
+		ret = ldim_dev_iw7027_remove(ldim_drv);
 #endif
 	} else if (strcmp(ldev_conf->name, "ob3350") == 0) {
 #ifdef CONFIG_AML_LOCAL_DIMMING_OB3350
-		ret = ldim_dev_ob3350_remove();
+		ret = ldim_dev_ob3350_remove(ldim_drv);
 #endif
 	} else if (strcmp(ldev_conf->name, "global") == 0) {
 #ifdef CONFIG_AML_LOCAL_DIMMING_GLOBAL
-		ret = ldim_dev_global_remove();
+		ret = ldim_dev_global_remove(ldim_drv);
 #endif
 	} else {
 		LDIMERR("invalid device name: %s\n", ldev_conf->name);
@@ -994,10 +1025,10 @@ static int ldim_dev_remove_driver(struct ldim_dev_config_s *ldev_conf,
 	}
 
 	if (ret) {
-		LDIMERR("add device driver failed %s(%d)\n",
+		LDIMERR("remove device driver failed: %s(%d)\n",
 			ldev_conf->name, index);
 	} else {
-		LDIMPR("add device driver %s(%d)\n", ldev_conf->name, index);
+		LDIMPR("remove device driver: %s(%d)\n", ldev_conf->name, index);
 	}
 
 	return ret;
@@ -1007,6 +1038,11 @@ int aml_ldim_device_probe(char *dt_addr)
 {
 	struct aml_ldim_driver_s *ldim_drv = aml_ldim_get_driver();
 	int ret = 0;
+
+	if (lcd_debug_print_flag)
+		LDIMPR("%s\n", __func__);
+
+	ldim_dev_probe_flag = 0;
 
 	/* get configs */
 	ldim_dev_config = &ldim_config_dft;
@@ -1021,9 +1057,7 @@ int aml_ldim_device_probe(char *dt_addr)
 #endif
 
 	/* add device driver */
-	ret = ldim_dev_add_driver(ldim_drv->ldev_conf, ldim_drv->dev_index);
-
-	LDIMPR("%s is ok\n", __func__);
+	ret = ldim_dev_add_driver(ldim_drv);
 
 	return ret;
 }
@@ -1033,7 +1067,7 @@ int aml_ldim_device_remove(void)
 	struct aml_ldim_driver_s *ldim_drv = aml_ldim_get_driver();
 	int ret = 0;
 
-	ldim_dev_remove_driver(ldim_drv->ldev_conf, ldim_drv->dev_index);
+	ldim_dev_remove_driver(ldim_drv);
 
 	return ret;
 }
