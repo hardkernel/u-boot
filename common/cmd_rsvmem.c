@@ -35,6 +35,9 @@
 #define RSVMEM_NONE -1
 #define RSVMEM_RESERVED	0
 #define RSVMEM_CMA	1
+#define BL31_SHARE_MEM_SIZE  0x100000
+#define BL32_SHARE_MEM_SIZE  0x400000
+
 static int do_rsvmem_check(cmd_tbl_t *cmdtp, int flag, int argc,
 		char *const argv[])
 {
@@ -224,6 +227,21 @@ static int do_rsvmem_check(cmd_tbl_t *cmdtp, int flag, int argc,
 				if (ret != 0 ) {
 					rsvmem_err("bl32 reserved memory set reserve_mem_size error.\n");
 					return -3;
+				}
+
+				memset(cmdbuf, 0, sizeof(cmdbuf));
+				sprintf(cmdbuf, "fdt get value secmon_clear_range /secmon clear_range;");
+				if (run_command(cmdbuf, 0) == 0) {
+					memset(cmdbuf, 0, sizeof(cmdbuf));
+					sprintf(cmdbuf, "fdt set /secmon clear_range <0x%x 0x%x>;",
+							bl31_rsvmem_start + BL31_SHARE_MEM_SIZE , bl31_rsvmem_size + bl32_rsvmem_size
+							- BL31_SHARE_MEM_SIZE - BL32_SHARE_MEM_SIZE);
+					rsvmem_dbg("CMD: %s\n", cmdbuf);
+					ret = run_command(cmdbuf, 0);
+					if (ret != 0 ) {
+						rsvmem_err("bl32 reserved memory set clear_range error.\n");
+						return -3;
+					}
 				}
 		}
 	}
