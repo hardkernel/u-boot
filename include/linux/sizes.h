@@ -40,6 +40,7 @@
 #define SZ_128M				0x08000000
 #define SZ_256M				0x10000000
 #define SZ_512M				0x20000000
+#define SZ_768M				0x30000000
 
 #define SZ_1G				0x40000000
 #define SZ_2G				0x80000000
