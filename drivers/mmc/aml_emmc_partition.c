@@ -84,7 +84,7 @@
 struct ptbl_rsv {
     char magic[4];				/* MPT */
     unsigned char version[12];	/* binary version */
-    int count;	/* partition count in using */
+    unsigned int count;	/* partition count in using */
     int checksum;
     struct partitions partitions[MAX_MMC_PART_NUM];
 };
@@ -92,7 +92,7 @@ struct ptbl_rsv {
 /* partition table for innor usage*/
 struct _iptbl {
 	struct partitions *partitions;
-	int count;	/* partition count in use */
+	unsigned int count;	/* partition count in use */
 };
 
 #ifdef CONFIG_AML_NAND
@@ -364,9 +364,9 @@ static int _calculate_offset(struct mmc *mmc, struct _iptbl *itbl, u32 bottom)
 static int _get_version(unsigned char * s)
 {
 	int version = 0;
-	if (!strcmp((char *)s, MMC_MPT_VERSION_2))
+	if (!strncmp((char *)s, MMC_MPT_VERSION_2, sizeof(MMC_MPT_VERSION_2)))
 		version = 2;
-	else if (!strcmp((char *)s, MMC_MPT_VERSION_1))
+	else if (!strncmp((char *)s, MMC_MPT_VERSION_1, sizeof(MMC_MPT_VERSION_1)))
 		version = 1;
 	else
 		version = -1;
@@ -485,7 +485,7 @@ static int get_ptbl_rsv(struct mmc *mmc, struct _iptbl *rsv)
 	apt_info("magic %3.3s, version %8.8s, checksum %x\n", ptbl_rsv->magic,
 			ptbl_rsv->version, ptbl_rsv->checksum);
 	/* fixme, check magic ?*/
-	if (strcmp(ptbl_rsv->magic, MMC_PARTITIONS_MAGIC)) {
+	if (strncmp(ptbl_rsv->magic, MMC_PARTITIONS_MAGIC, sizeof(MMC_PARTITIONS_MAGIC))) {
 		apt_err("magic faild %s, %3.3s\n", MMC_PARTITIONS_MAGIC, ptbl_rsv->magic);
 		ret = -4;
 		goto _out;
@@ -495,6 +495,11 @@ static int get_ptbl_rsv(struct mmc *mmc, struct _iptbl *rsv)
 	if (version < 0) {
 		apt_err("version faild %s, %3.3s\n", MMC_PARTITIONS_MAGIC, ptbl_rsv->magic);
 		ret = -5;
+		goto _out;
+	}
+	if (ptbl_rsv->count > MAX_MMC_PART_NUM) {
+		apt_err("invalid partition count %d\n", ptbl_rsv->count);
+		ret = -1;
 		goto _out;
 	}
 	/* check sum */
@@ -538,6 +543,11 @@ static int update_ptbl_rsv(struct mmc *mmc, struct _iptbl *src)
 	ptbl_rsv = (struct ptbl_rsv *) buffer;
 	strcpy((char *)ptbl_rsv->version, MMC_MPT_VERSION);
 	strcpy(ptbl_rsv->magic, MMC_PARTITIONS_MAGIC);
+	if (src->count > MAX_MMC_PART_NUM) {
+		apt_err("too much partitions\n");
+		ret = -1;
+		goto _err;
+	}
 	ptbl_rsv->count = src->count;
 	memcpy(ptbl_rsv->partitions, src->partitions,
 		sizeof(struct partitions)*src->count);
@@ -560,7 +570,7 @@ static int _cmp_partition(struct partitions *dst, struct partitions *src, int ov
 {
 	int ret = 0;
 #if (CONFIG_CMP_PARTNAME)
-	if (strcmp(dst->name, src->name))
+	if (strncmp(dst->name, src->name, sizeof(src->name)))
 		ret = -2;
 #endif
 	if (dst->size != src->size)
@@ -682,6 +692,10 @@ static int _cpy_iptbl(struct _iptbl * dst, struct _iptbl * src)
 	if (!dst->partitions || !src->partitions) {
 		apt_err("invalid arg %s->partitions\n", !dst ? "dst" : "src");
 		ret = -2;
+		goto _out;
+	}
+	if (src->count > MAX_MMC_PART_NUM) {
+		ret = -3;
 		goto _out;
 	}
 
