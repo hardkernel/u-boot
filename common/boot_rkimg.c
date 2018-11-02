@@ -51,16 +51,22 @@ struct rockchip_image {
 #ifdef CONFIG_LMB
 static void boot_start_lmb(bootm_headers_t *images)
 {
+	lmb_init(&images->lmb);
+#ifdef CONFIG_NR_DRAM_BANKS
+	int i;
+
+	for (i = 0; i < CONFIG_NR_DRAM_BANKS; i++) {
+		lmb_add(&images->lmb, gd->bd->bi_dram[i].start,
+			gd->bd->bi_dram[i].size);
+	}
+#else
 	ulong		mem_start;
 	phys_size_t	mem_size;
 
-	lmb_init(&images->lmb);
-
 	mem_start = env_get_bootm_low();
 	mem_size = env_get_bootm_size();
-
 	lmb_add(&images->lmb, (phys_addr_t)mem_start, mem_size);
-
+#endif
 	arch_lmb_reserve(&images->lmb);
 	board_lmb_reserve(&images->lmb);
 }
