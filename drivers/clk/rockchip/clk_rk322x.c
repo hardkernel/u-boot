@@ -313,7 +313,7 @@ static ulong rk322x_bus_set_clk(struct rk322x_clk_priv *priv,
 	switch (clk_id) {
 	case ACLK_CPU:
 		src_clk_div = DIV_ROUND_UP(priv->gpll_hz, hz);
-		assert(src_clk_div - 1 < 31);
+		assert(src_clk_div - 1 < 32);
 		rk_clrsetreg(&cru->cru_clksel_con[0],
 			     BUS_ACLK_PLL_SEL_MASK | BUS_ACLK_DIV_MASK,
 			     BUS_ACLK_PLL_SEL_GPLL << BUS_ACLK_PLL_SEL_SHIFT |
@@ -323,7 +323,7 @@ static ulong rk322x_bus_set_clk(struct rk322x_clk_priv *priv,
 		src_clk_div = DIV_ROUND_UP(rk322x_bus_get_clk(priv,
 							      ACLK_CPU),
 					   hz);
-		assert(src_clk_div - 1 < 3);
+		assert(src_clk_div - 1 < 4);
 		rk_clrsetreg(&cru->cru_clksel_con[1],
 			     BUS_HCLK_DIV_MASK,
 			     (src_clk_div - 1) << BUS_HCLK_DIV_SHIFT);
@@ -332,7 +332,7 @@ static ulong rk322x_bus_set_clk(struct rk322x_clk_priv *priv,
 		src_clk_div = DIV_ROUND_UP(rk322x_bus_get_clk(priv,
 							      ACLK_CPU),
 					   hz);
-		assert(src_clk_div - 1 < 7);
+		assert(src_clk_div - 1 < 8);
 		rk_clrsetreg(&cru->cru_clksel_con[1],
 			     BUS_PCLK_DIV_MASK,
 			     (src_clk_div - 1) << BUS_PCLK_DIV_SHIFT);
@@ -386,7 +386,7 @@ static ulong rk322x_peri_set_clk(struct rk322x_clk_priv *priv,
 	switch (clk_id) {
 	case ACLK_PERI:
 		src_clk_div = DIV_ROUND_UP(priv->gpll_hz, hz);
-		assert(src_clk_div - 1 < 31);
+		assert(src_clk_div - 1 < 32);
 		rk_clrsetreg(&cru->cru_clksel_con[10],
 			     PERI_PLL_SEL_MASK | PERI_ACLK_DIV_MASK,
 			     PERI_PLL_GPLL << PERI_PLL_SEL_SHIFT |
@@ -396,7 +396,7 @@ static ulong rk322x_peri_set_clk(struct rk322x_clk_priv *priv,
 		src_clk_div = DIV_ROUND_UP(rk322x_peri_get_clk(priv,
 							       ACLK_PERI),
 					   hz);
-		assert(src_clk_div - 1 < 3);
+		assert(src_clk_div - 1 < 4);
 		rk_clrsetreg(&cru->cru_clksel_con[10],
 			     PERI_HCLK_DIV_MASK,
 			     (src_clk_div - 1) << PERI_HCLK_DIV_SHIFT);
@@ -405,7 +405,7 @@ static ulong rk322x_peri_set_clk(struct rk322x_clk_priv *priv,
 		src_clk_div = DIV_ROUND_UP(rk322x_peri_get_clk(priv,
 							       ACLK_PERI),
 					   hz);
-		assert(src_clk_div - 1 < 7);
+		assert(src_clk_div - 1 < 8);
 		rk_clrsetreg(&cru->cru_clksel_con[10],
 			     PERI_PCLK_DIV_MASK,
 			     (src_clk_div - 1) << PERI_PCLK_DIV_SHIFT);
@@ -465,7 +465,7 @@ static ulong rk322x_vop_set_clk(struct rk322x_clk_priv *priv,
 	u32 con, parent;
 
 	src_clk_div = DIV_ROUND_UP(priv->gpll_hz, hz);
-	assert(src_clk_div - 1 < 31);
+	assert(src_clk_div - 1 < 32);
 
 	switch (clk_id) {
 	case ACLK_VOP:
