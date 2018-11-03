@@ -11,6 +11,7 @@
 #include <optee_include/tee_api_defines.h>
 #include <boot_rkimg.h>
 #include <stdlib.h>
+#include <attestation_key.h>
 
 #define	BOOT_FROM_EMMC	(1 << 1)
 #define	WIDEVINE_TAG	"KBOX"
@@ -131,11 +132,12 @@ int write_keybox_to_secure_storage(uint8_t *uboot_data, uint32_t len)
 	uint32_t key_size;
 	uint32_t data_size;
 	uint32_t object_id;
-	TEEC_Result ret;
 	int rc = 0;
 
 	if (memcmp(uboot_data, WIDEVINE_TAG, 4) == 0) {
 		/* widevine keybox */
+		TEEC_Result ret;
+
 		TEEC_UUID widevine_uuid = { 0xc11fe8ac, 0xb997, 0x48cf,
 			{ 0xa2, 0x8d, 0xe2, 0xa5, 0x5e, 0x52, 0x40, 0xef} };
 		object_id = 101;
@@ -159,9 +161,17 @@ int write_keybox_to_secure_storage(uint8_t *uboot_data, uint32_t len)
 		}
 	} else if (memcmp(uboot_data, ATTESTATION_TAG, 4) == 0) {
 		/* attestation key */
+		atap_result ret;
 
+		ret = write_attestation_key_to_secure_storage(uboot_data, len);
+		if (ret == ATAP_RESULT_OK) {
+			rc = 0;
+			printf("write attestation key to secure storage success\n");
+		} else {
+			rc = -EIO;
+			printf("write attestation key to secure storage fail\n");
+		}
 	}
-
 	return rc;
 }
 

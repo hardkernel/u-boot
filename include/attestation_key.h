@@ -26,5 +26,14 @@ typedef enum {
 /* load attestation key from misc partition. */
 atap_result load_attestation_key(struct blk_desc *dev_desc,
 				disk_partition_t *misc_partition);
-
+atap_result read_key_data(uint8_t **key_buf, uint8_t *key_data,
+			  uint32_t *key_data_length);
+/*
+ * write attestation key to secure storage.
+ * @received_data: received data from usb
+ * @len: the size of received_data
+ * @return ATAP_RESULT_OK if ok, or ATAP_RESULT_ERROR_* on error
+ */
+atap_result write_attestation_key_to_secure_storage(uint8_t *received_data,
+						    uint32_t len);
 #endif	//ATTESTATION_KEY_H_
