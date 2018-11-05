@@ -33,6 +33,7 @@ struct usb2phy_reg {
  */
 struct rockchip_usb2_phy_cfg {
 	struct usb2phy_reg port_reset;
+	struct usb2phy_reg siddq;
 	struct usb2phy_reg soft_con;
 	struct usb2phy_reg suspend;
 };
@@ -44,6 +45,7 @@ struct rockchip_usb2_phy_dt_id {
 
 static const struct rockchip_usb2_phy_cfg rk3288_pdata = {
 	.port_reset     = {0x00, 12, 12, 0, 1},
+	.siddq		= {0x00, 13, 13, 0, 1},
 	.soft_con       = {0x08, 2, 2, 0, 1},
 	.suspend	= {0x0c, 5, 0, 0x01, 0x2A},
 };
@@ -153,6 +155,10 @@ void otg_phy_init(struct dwc2_udc *dev)
 		return;
 	}
 	pdata->priv = phy_cfg;
+
+	/* power up usb phy analog blocks by set siddq 0 */
+	property_enable(pdata, &phy_cfg->siddq, false);
+
 	/* disable software control */
 	property_enable(pdata, &phy_cfg->soft_con, false);
 
