@@ -562,7 +562,7 @@ static int mmc_send_ext_csd(struct mmc *mmc, u8 *ext_csd)
 	return err;
 }
 
-static int mmc_poll_for_busy(struct mmc *mmc)
+static int mmc_poll_for_busy(struct mmc *mmc, u8 send_status)
 {
 	struct mmc_cmd cmd;
 	u8 busy = true;
@@ -576,8 +576,13 @@ static int mmc_poll_for_busy(struct mmc *mmc)
 
 	start = get_timer(0);
 
+	if (!send_status && !mmc_can_card_busy(mmc)) {
+		mdelay(timeout);
+		return 0;
+	}
+
 	do {
-		if (mmc_can_card_busy(mmc)) {
+		if (!send_status) {
 			busy = mmc_card_busy(mmc);
 		} else {
 			ret = mmc_send_cmd(mmc, &cmd, NULL);
@@ -614,8 +619,8 @@ static int __mmc_switch(struct mmc *mmc, u8 set, u8 index, u8 value,
 	do {
 		ret = mmc_send_cmd(mmc, &cmd, NULL);
 
-		if (!ret && send_status)
-			return mmc_poll_for_busy(mmc);
+		if (!ret)
+			return mmc_poll_for_busy(mmc, send_status);
 	} while (--retries > 0 && ret);
 
 	return ret;
