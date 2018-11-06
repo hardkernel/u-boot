@@ -79,4 +79,35 @@ long sandbox_i2c_rtc_get_set_base_time(struct udevice *dev, long base_time);
 
 int sandbox_usb_keyb_add_string(struct udevice *dev, const char *str);
 
+/**
+ * sandbox_osd_get_mem() - get the internal memory of a sandbox OSD
+ *
+ * @dev:	OSD device for which to access the internal memory for
+ * @buf:	pointer to buffer to receive the OSD memory data
+ * @buflen:	length of buffer in bytes
+ */
+int sandbox_osd_get_mem(struct udevice *dev, u8 *buf, size_t buflen);
+
+/**
+ * sandbox_pwm_get_config() - get the PWM config for a channel
+ *
+ * @dev: Device to check
+ * @channel: Channel number to check
+ * @period_ns: Period of the PWM in nanoseconds
+ * @duty_ns: Current duty cycle of the PWM in nanoseconds
+ * @enable: true if the PWM is enabled
+ * @polarity: true if the PWM polarity is active high
+ * @return 0 if OK, -ENOSPC if the PWM number is invalid
+ */
+int sandbox_pwm_get_config(struct udevice *dev, uint channel, uint *period_nsp,
+			   uint *duty_nsp, bool *enablep, bool *polarityp);
+
+/**
+ * sandbox_sf_set_block_protect() - Set the BP bits of the status register
+ *
+ * @dev: Device to update
+ * @bp_mask: BP bits to set (bits 2:0, so a value of 0 to 7)
+ */
+void sandbox_sf_set_block_protect(struct udevice *dev, int bp_mask);
+
 #endif
