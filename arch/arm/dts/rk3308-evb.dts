@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include "rk3308.dtsi"
+#include "rk3308-u-boot.dtsi"
 #include <dt-bindings/input/input.h>
 #include <linux/media-bus-format.h>
 
