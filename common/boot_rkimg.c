@@ -308,7 +308,7 @@ int rockchip_get_boot_mode(void)
 {
 	struct blk_desc *dev_desc;
 	disk_partition_t part_info;
-	struct bootloader_message *bmsg;
+	struct bootloader_message *bmsg = NULL;
 	int size = DIV_ROUND_UP(sizeof(struct bootloader_message), RK_BLK_SIZE)
 		   * RK_BLK_SIZE;
 	int ret;
@@ -336,7 +336,7 @@ int rockchip_get_boot_mode(void)
 			&part_info);
 	if (ret < 0) {
 		printf("get part %s fail %d\n", PART_MISC, ret);
-		return -EIO;
+		goto fallback;
 	}
 
 	bmsg = memalign(ARCH_DMA_MINALIGN, size);
@@ -348,8 +348,9 @@ int rockchip_get_boot_mode(void)
 		return -EIO;
 	}
 
+fallback:
 	/* Mode from misc partition */
-	if (!strcmp(bmsg->command, "boot-recovery")) {
+	if (bmsg && !strcmp(bmsg->command, "boot-recovery")) {
 		boot_mode = BOOT_MODE_RECOVERY;
 	} else {
 		/* Mode from boot mode register */
