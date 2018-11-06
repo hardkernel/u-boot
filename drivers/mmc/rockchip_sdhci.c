@@ -86,7 +86,7 @@ static void rk3399_emmc_phy_power_on(struct rockchip_emmc_phy *phy, u32 clock)
 	caldone = readl(&phy->emmcphy_status);
 	caldone = (caldone >> PHYCTRL_CALDONE_SHIFT) & PHYCTRL_CALDONE_MASK;
 	if (caldone != PHYCTRL_CALDONE_DONE) {
-		debug("%s: caldone timeout.\n", __func__);
+		printf("%s: caldone timeout.\n", __func__);
 		return;
 	}
 
@@ -115,7 +115,7 @@ static void rk3399_emmc_phy_power_on(struct rockchip_emmc_phy *phy, u32 clock)
 	} while (get_timer(start) < 50000);
 
 	if (dllrdy != PHYCTRL_DLLRDY_DONE)
-		debug("%s: dllrdy timeout.\n", __func__);
+		printf("%s: dllrdy timeout.\n", __func__);
 }
 
 static void rk3399_emmc_phy_power_off(struct rockchip_emmc_phy *phy)
