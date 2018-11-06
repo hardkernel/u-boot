@@ -12,11 +12,6 @@ obj-y += tee_smc-arm64.o
 
 ifdef CONFIG_OPTEE_V1
 obj-y += OpteeClientRkFs.o
-
-obj-y += c11fe8ac-b997-48cf-a28de2a55e5240ef.o
-lib/optee_clientApi/c11fe8ac-b997-48cf-a28de2a55e5240ef.o: lib/optee_clientApi/c11fe8ac-b997-48cf-a28de2a55e5240ef.c
-lib/optee_clientApi/c11fe8ac-b997-48cf-a28de2a55e5240ef.c: lib/optee_clientApi/c11fe8ac-b997-48cf-a28de2a55e5240ef.ta
-	$(srctree)/lib/optee_clientApi/tabinary_to_cfile.py --prefix widevine_keybox --TA $< --out $@
 endif
 
 ifdef CONFIG_OPTEE_V2
