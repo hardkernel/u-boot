@@ -65,6 +65,7 @@
 	"fdt_high=0x7fffffff\0" \
 	"partitions=" PARTS_DEFAULT \
 	ENV_MEM_LAYOUT_SETTINGS \
+	RKIMG_DET_BOOTDEV \
 	BOOTENV
 #endif
 
