@@ -73,6 +73,9 @@ static int dbg_enable = 0;
 /* CHRG_USB_CTRL*/
 #define CHRG_EN			(1 << 7)
 
+/* BAT_CTRL_REG */
+#define USB_SYS_EN		(1 << 6)
+
 /*SUP_STS_REG*/
 #define BAT_EXS			(1 << 7)
 #define USB_EXIST		(1 << 1)
@@ -231,6 +234,15 @@ static int rk816_bat_get_rsoc(struct battery_priv *di)
 static int rk816_bat_get_dsoc(struct  battery_priv *di)
 {
 	return rk816_bat_read(di, SOC_REG);
+}
+
+static void rk816_bat_enable_input_current(struct battery_priv *di)
+{
+	u8 val;
+
+	val = rk816_bat_read(di, BAT_CTRL_REG);
+	val |= USB_SYS_EN;
+	rk816_bat_write(di, BAT_CTRL_REG, val);
 }
 
 static void rk816_bat_enable_gauge(struct battery_priv *di)
@@ -976,6 +988,7 @@ void rk816_bat_init_rsoc(struct battery_priv *di)
 
 static int rk816_fg_init(struct battery_priv *di)
 {
+	rk816_bat_enable_input_current(di);
 	rk816_bat_enable_gauge(di);
 	rk816_bat_set_vol_instant_mode(di);
 	rk816_bat_init_voltage_kb(di);
