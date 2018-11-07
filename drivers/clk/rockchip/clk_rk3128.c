@@ -751,6 +751,11 @@ static void rkclk_init(struct rk3128_clk_priv *priv)
 		     NANDC_PLL_SEL_MASK | NANDC_CLK_DIV_MASK,
 		     NANDC_PLL_SEL_GPLL << NANDC_PLL_SEL_SHIFT |
 		     3 << NANDC_CLK_DIV_SHIFT);
+	rk_clrsetreg(&priv->cru->cru_clksel_con[11],
+		     SFC_PLL_SEL_MASK | SFC_CLK_DIV_MASK,
+		     SFC_PLL_SEL_GPLL << SFC_PLL_SEL_SHIFT |
+		     9 << SFC_CLK_DIV_SHIFT);
+
 	rk3128_bus_set_clk(priv, ACLK_CPU, ACLK_BUS_HZ);
 	rk3128_bus_set_clk(priv, HCLK_CPU, ACLK_BUS_HZ / 2);
 	rk3128_bus_set_clk(priv, PCLK_CPU, ACLK_BUS_HZ / 2);
