@@ -160,8 +160,6 @@ static unsigned int detect_key(unsigned int suspend_from)
 			__switch_idle_task();
 	} while (1);
 
-	saradc_disable();
-
 	return exit_reason;
 }
 
