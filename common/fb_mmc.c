@@ -242,6 +242,8 @@ void fb_mmc_flash_write(const char *cmd, void *download_buffer,
 				fastboot_fail("fastboot write dtb fail");
 			fastboot_okay("");
 		}
+#else
+	fastboot_fail("dtb is bind in kernel, return");
 #endif
 	} else if (!strncmp(cmd, "bootloader", strlen("bootloader"))) {
 		fb_mmc_write_bootloader(cmd, dev_desc, download_buffer, download_bytes);
