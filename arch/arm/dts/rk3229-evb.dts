@@ -14,6 +14,10 @@
 	model = "Rockchip RK3229 Evaluation board";
 	compatible = "rockchip,rk3229-evb", "rockchip,rk3229";
 
+	chosen {
+		u-boot,spl-boot-order = &emmc, &sdmmc;
+	};
+
 	ext_gmac: ext_gmac {
 		compatible = "fixed-clock";
 		clock-frequency = <125000000>;
