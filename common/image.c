@@ -387,7 +387,6 @@ static const image_header_t *image_get_ramdisk(ulong rd_addr, uint8_t arch,
 	bootstage_mark(BOOTSTAGE_ID_RD_HDR_CHECKSUM);
 
 	if (!image_check_os(rd_hdr, IH_OS_LINUX) ||
-	    !image_check_arch(rd_hdr, arch) ||
 	    !image_check_type(rd_hdr, IH_TYPE_RAMDISK)) {
 		printf("No Linux %s Ramdisk Image\n",
 				genimg_get_arch_name(arch));
