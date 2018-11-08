@@ -41,7 +41,7 @@ static char ringmsr_help_text[] =
 	"ringmsr x\n"
 	"  - for get chip ring info\n"
 	"  - x:   \n"
-	"  G12A or G12B:\n"
+	"  G12A/G12B/TL1:\n"
 	"  0: print all ring info\n"
 	"  1-7: ee9 ee1 ee0 cpu1 cpu0 iddee iddcpu\n";
 

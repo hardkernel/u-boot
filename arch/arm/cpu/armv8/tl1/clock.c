@@ -359,56 +359,83 @@ void ring_powerinit(void)
 	writel(0x10000c, RING_PWM_EE);/*set ee 0.8v*/
 }
 
+#ifdef CONFIG_RING
 int ring_msr(int index)
 {
 	const char* clk_table[] = {
-			[11] = "sys_cpu_ring_osc_clk[1] " ,
-			[10] = "sys_cpu_ring_osc_clk[0] " ,
-			[9] = "am_ring_osc_clk_out_ee[9] " ,
-			[8] = "am_ring_osc_clk_out_ee[8] " ,
-			[7] = "am_ring_osc_clk_out_ee[7] " ,
-			[6] = "am_ring_osc_clk_out_ee[6] " ,
-			[5] = "am_ring_osc_clk_out_ee[5] " ,
-			[4] = "am_ring_osc_clk_out_ee[4] " ,
-			[3] = "am_ring_osc_clk_out_ee[3] " ,
-			[2] = "am_ring_osc_clk_out_ee[2] " ,
-			[1] = "am_ring_osc_clk_out_ee[1] " ,
-			[0] = "am_ring_osc_clk_out_ee[0] " ,
+			[15] = "cpu[3]_A55_LVT16 " ,
+			[14] = "cpu[2]_A55_ULVT16 " ,
+			[13] = "cpu[1]_A55_ULVT20 " ,
+			[12] = "cpu[0]_A55_ULVT16 " ,
+			[11] = "ee[11]_ddrtop_LVT16 " ,
+			[10] = "ee[10]_dos_ULVT20 " ,
+			[9] = "ee[9]_dos_LVT16 " ,
+			[8] = "ee[8]_dos_SVT16 " ,
+			[7] = "ee[7]_dos_SVT24 " ,
+			[6] = "ee[6]_vpu_LVT16 " ,
+			[5] = "ee[5]_vpu_ULVT20 " ,
+			[4] = "ee[4]_vpu_SVT24 " ,
+			[3] = "ee[3]_mali_SVT16 " ,
+			[2] = "ee[2]_mali_ULVT16 " ,
+			[1] = "ee[1]_mali_LVT16 " ,
+			[0] = "ee[0]_dmctop_LVT16 " ,
 		};
-	const int tb[] = {0, 1, 2, 99, 100, 101, 102, 103, 104, 105, 3, 33};
+	const int tb[] = {0, 1, 2, 99, 100, 101, 102, 103, 104, 105, 89, 90, 3, 33, 92, 93};
 	unsigned long i;
-	unsigned char ringinfo[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+	unsigned char efuseinfo[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+
+	if ((index != 0xff) && (index != 0)) {
+		if (efuse_get_value(efuseinfo) != 0) {
+			printf("fail get efuse info\n");
+			return 0;
+		}
+		if ((index >= 1) && (index <= 5))
+			printf("%d\n", (efuseinfo[index] * 20));
+		if ((index >= 6) && (index <= 7))
+			printf("%d\n", (efuseinfo[index] * 200));
+		if ((index >= 8) && (index <= 11))
+			printf("%d\n", efuseinfo[index]);
+		if ((index < 0) || (index >= 12))
+			printf("input data not support!\n");
+		return 0;
+	}
 	ring_powerinit();
 	/*RING_OSCILLATOR       0x7f: set slow ring*/
 	writel(0x555555, 0xff6345fc);
-	for (i = 0; i < 12; i++) {
+	for (i = 0; i < 16; i++) {
 		printf("%s      :",clk_table[i]);
 		printf("%ld     KHz",clk_util_ring_msr(tb[i]));
 		printf("\n");
 	}
 
-	if (oscring_get_value(ringinfo) != 0) {
+	if (efuse_get_value(efuseinfo) != 0) {
 		printf("fail get osc ring efuse info\n");
 		return 0;
 	}
 
 	printf("osc ring efuse info:\n");
-	for (i = 0; i <= 7; i++)
-		printf("0x%x, ", ringinfo[i]);
+	for (i = 0; i <= 11; i++)
+		printf("0x%x, ", efuseinfo[i]);
 	printf("\n");
 
 	/*efuse to test value*/
-	printf("ee[9], ee[1], ee[0], cpu[1], cpu[0], iddee, iddcpu\n");
+	/*
+	printf("ee[9], ee[1], ee[0], cpu[1], cpu[0], iddee, iddcpu, sltver, fta53, fta73, slt\n");
 	for (i = 1; i <= 5; i++)
-		printf("%d KHz ", (ringinfo[i] * 20));
+		printf("%d KHz ", (efuseinfo[i] * 20));
 
 	for (i = 6; i <= 7; i++)
-		printf("%d uA ", (ringinfo[i] * 200));
+		printf("%d uA ", (efuseinfo[i] * 200));
+
+	for (i = 8; i <= 11; i++)
+		printf("%d  ", efuseinfo[i]);
 
 	printf("\n");
+	*/
 
 	return 0;
 }
+#endif
 
 #ifdef CONFIG_AML_SPICC
 /* generic clock control for spicc1.

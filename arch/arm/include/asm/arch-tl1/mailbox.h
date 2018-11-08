@@ -88,6 +88,6 @@ int send_usr_data(unsigned int clinet_id, unsigned int *val, unsigned int size);
 void send_pwm_delt(int32_t vcck_delt, int32_t ee_delt);
 void set_boot_first_timeout(unsigned int command);
 #ifdef CONFIG_RING
-int oscring_get_value(unsigned char *ringinfo);
+int efuse_get_value(unsigned char *efuseinfo);
 #endif
 #endif

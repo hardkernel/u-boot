@@ -218,11 +218,11 @@ void set_boot_first_timeout(unsigned int command)
 }
 
 #ifdef CONFIG_RING
-int oscring_get_value(unsigned char *ringinfo)
+int efuse_get_value(unsigned char *efuseinfo)
 {
 	struct {
 		unsigned int status;
-		unsigned char ringinfo[8];
+		unsigned char efuseinfo[12];
 	} *response;
 	unsigned int size;
 
@@ -234,7 +234,7 @@ int oscring_get_value(unsigned char *ringinfo)
 	mb_message_receive((void *)&response, &size, LOW_PRIORITY);
 	mb_message_end(LOW_PRIORITY);
 
-	memcpy(ringinfo, &response->ringinfo, sizeof(response->ringinfo));
+	memcpy(efuseinfo, &response->efuseinfo, sizeof(response->efuseinfo));
 	if (response->status != SCPI_SUCCESS)
 		return -1;
 	else
