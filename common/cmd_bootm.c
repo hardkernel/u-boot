@@ -99,7 +99,9 @@ static int do_bootm_subcommand(cmd_tbl_t *cmdtp, int flag, int argc,
 
 int do_bootm(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
+#if defined(CONFIG_CMD_BOOTCTOL_AVB)
 	char *avb_s;
+#endif
 #ifdef CONFIG_NEEDS_MANUAL_RELOC
 	static int relocated = 0;
 
@@ -151,6 +153,7 @@ int do_bootm(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		return nRet;
 	}
 
+#if defined(CONFIG_CMD_BOOTCTOL_AVB)
 	avb_s = getenv("avb2");
 	printf("avb2: %s\n", avb_s);
 	if (strcmp(avb_s, "1") == 0) {
@@ -206,6 +209,7 @@ int do_bootm(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		setenv("bootargs", newbootargs);
 		avb_slot_verify_data_free(out_data);
 	}
+#endif
 
 	ee_gate_off();
 	nRet = do_bootm_states(cmdtp, flag, argc, argv, BOOTM_STATE_START |

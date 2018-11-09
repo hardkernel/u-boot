@@ -72,7 +72,7 @@ obj-$(CONFIG_CMD_GPT) += uuid.o
 obj-y += vsprintf.o
 #obj-$(CONFIG_LIB_RAND) += rand.o
 
-obj-y += libavb/
+obj-$(CONFIG_CMD_BOOTCTOL_AVB) += libavb/
 
 obj-y += rand.o
 subdir-ccflags-$(CONFIG_CC_OPTIMIZE_LIBS_FOR_SPEED) += -O2

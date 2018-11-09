@@ -355,7 +355,9 @@ obj-$(CONFIG_CMD_AML_MTEST) += cmd_testsmpcache.o
 obj-$(CONFIG_AML_ANTIROLLBACK) += anti-rollback.o
 obj-$(CONFIG_AML_SUPPORT_TLV) += aml_tlv.o
 obj-y += cmd_tee_log_level.o
+ifdef CONFIG_CMD_BOOTCTOL_AVB
 obj-y += cmd_avb.o
+endif
 
 CFLAGS_env_embedded.o := -Wa,--no-warn -DENV_CRC=$(shell tools/envcrc 2>/dev/null)
 
