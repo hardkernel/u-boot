@@ -85,7 +85,7 @@ static void power_on_vcck(void)
 	aml_update_bits(AO_GPIO_O_EN_N, 1<<20, 1<<20);
 }
 
-static void power_off_at_clk81(unsigned int suspend_from)
+static void power_off_at_clk81(void)
 {
 	power_off_3v3();
 	power_off_vcck();
@@ -131,8 +131,7 @@ void get_wakeup_source(void *response, unsigned int suspend_from)
 #endif
 
 #ifdef CONFIG_CEC_WAKEUP
-	if (suspend_from != SYS_POWEROFF)
-		val |= CEC_WAKEUP_SRC;
+	val |= CEC_WAKEUP_SRC;
 #endif
 #ifdef CONFIG_WIFI_WAKEUP
 	if (suspend_from != SYS_POWEROFF)
@@ -222,8 +221,7 @@ static unsigned int detect_key(unsigned int suspend_from)
 		switch (*irq) {
 #ifdef CONFIG_CEC_WAKEUP
 		case IRQ_AO_CEC_NUM:
-			if (suspend_from == SYS_POWEROFF)
-				break;
+
 			if (cec_msg.log_addr) {
 				if (hdmi_cec_func_config & 0x1) {
 					cec_handler();

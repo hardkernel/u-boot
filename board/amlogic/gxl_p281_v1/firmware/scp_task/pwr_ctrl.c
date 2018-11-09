@@ -97,11 +97,8 @@ static void vcck_ctrl(unsigned int ctrl)
 	}
 }
 
-static void power_off_at_clk81(unsigned int suspend_from)
+static void power_off_at_clk81(void)
 {
-	if(suspend_from == SYS_POWEROFF) {
-		hdmi_5v_ctrl(OFF);
-	}
 	vcck_ctrl(OFF);
 	pwm_set_voltage(pwm_b, CONFIG_VDDEE_SLEEP_VOLTAGE);
 	/* reduce power */
@@ -147,8 +144,7 @@ void get_wakeup_source(void *response, unsigned int suspend_from)
 	val = (POWER_KEY_WAKEUP_SRC | AUTO_WAKEUP_SRC | REMOTE_WAKEUP_SRC |
 	       ETH_PHY_WAKEUP_SRC | BT_WAKEUP_SRC);
 #ifdef CONFIG_CEC_WAKEUP
-	if (suspend_from != SYS_POWEROFF)
-		val |= CEC_WAKEUP_SRC;
+	val |= CEC_WAKEUP_SRC;
 #endif
 	p->sources = val;
 
@@ -217,8 +213,7 @@ static unsigned int detect_key(unsigned int suspend_from)
 #ifdef CONFIG_CEC_WAKEUP
 		if (irq[IRQ_AO_CEC] == IRQ_AO_CEC_NUM) {
 			irq[IRQ_AO_CEC] = 0xFFFFFFFF;
-			if (suspend_from == SYS_POWEROFF)
-				continue;
+
 			if (cec_msg.log_addr) {
 				if (hdmi_cec_func_config & 0x1) {
 					cec_handler();
