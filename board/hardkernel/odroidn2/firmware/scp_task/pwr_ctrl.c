@@ -93,7 +93,7 @@ void get_wakeup_source(void *response, unsigned int suspend_from)
 
 	p->status = RESPONSE_OK;
 	val = (POWER_KEY_WAKEUP_SRC | AUTO_WAKEUP_SRC | REMOTE_WAKEUP_SRC |
-	       ETH_PHY_WAKEUP_SRC | BT_WAKEUP_SRC);
+	       BT_WAKEUP_SRC);
 
 	p->sources = val;
 
@@ -152,6 +152,11 @@ static unsigned int detect_key(unsigned int suspend_from)
 				exit_reason = POWER_KEY_WAKEUP;
 		}
 #endif
+
+		if (irq[IRQ_ETH_PTM] == IRQ_ETH_PMT_NUM) {
+			irq[IRQ_ETH_PTM] = 0xFFFFFFFF;
+			exit_reason = ETH_PMT_WAKEUP;
+		}
 
 		if (exit_reason)
 			break;
