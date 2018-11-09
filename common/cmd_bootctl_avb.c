@@ -338,7 +338,6 @@ int do_GetSystemMode (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
     setenv("system_mode","0");
 #endif
 
-    saveenv();
     return 0;
 }
 
@@ -358,7 +357,7 @@ int do_GetAvbMode (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 #else
     setenv("avb2","0");
 #endif
-    saveenv();
+
     return 0;
 }
 
