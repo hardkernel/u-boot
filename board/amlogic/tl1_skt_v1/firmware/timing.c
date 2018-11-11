@@ -429,40 +429,44 @@ ddr_reg_t __ddr_reg[] = {
 #endif
 
 /* VDDEE PWM table */
-#if    (VDDEE_VAL == 800)
-	#define VDDEE_VAL_REG	0x0010000c
+#if    (VDDEE_VAL == 740)
+	#define VDDEE_VAL_REG	0x00120000
+#elif (VDDEE_VAL == 750)
+	#define VDDEE_VAL_REG	0x00110001
+#elif (VDDEE_VAL == 760)
+	#define VDDEE_VAL_REG	0x00100002
+#elif (VDDEE_VAL == 770)
+	#define VDDEE_VAL_REG	0x000f0003
+#elif (VDDEE_VAL == 780)
+	#define VDDEE_VAL_REG	0x000e0004
+#elif (VDDEE_VAL == 790)
+	#define VDDEE_VAL_REG	0x000d0005
+#elif (VDDEE_VAL == 800)
+	#define VDDEE_VAL_REG	0x000c0006
 #elif (VDDEE_VAL == 810)
-	#define VDDEE_VAL_REG	0x000f000d
+	#define VDDEE_VAL_REG	0x000b0007
 #elif (VDDEE_VAL == 820)
-	#define VDDEE_VAL_REG	0x000e000e
+	#define VDDEE_VAL_REG	0x000a0008
 #elif (VDDEE_VAL == 830)
-	#define VDDEE_VAL_REG	0x000d000f
+	#define VDDEE_VAL_REG	0x00090009
 #elif (VDDEE_VAL == 840)
-	#define VDDEE_VAL_REG	0x000c0010
+	#define VDDEE_VAL_REG	0x0008000a
 #elif (VDDEE_VAL == 850)
-	#define VDDEE_VAL_REG	0x000b0011
+	#define VDDEE_VAL_REG	0x0007000b
 #elif (VDDEE_VAL == 860)
-	#define VDDEE_VAL_REG	0x000a0012
+	#define VDDEE_VAL_REG	0x0006000c
 #elif (VDDEE_VAL == 870)
-	#define VDDEE_VAL_REG	0x00090013
+	#define VDDEE_VAL_REG	0x0005000d
 #elif (VDDEE_VAL == 880)
-	#define VDDEE_VAL_REG	0x00080014
+	#define VDDEE_VAL_REG	0x0004000e
 #elif (VDDEE_VAL == 890)
-	#define VDDEE_VAL_REG	0x00070015
+	#define VDDEE_VAL_REG	0x0003000f
 #elif (VDDEE_VAL == 900)
-	#define VDDEE_VAL_REG	0x00060016
+	#define VDDEE_VAL_REG	0x00020010
 #elif (VDDEE_VAL == 910)
-	#define VDDEE_VAL_REG	0x00050017
+	#define VDDEE_VAL_REG	0x00010011
 #elif (VDDEE_VAL == 920)
-	#define VDDEE_VAL_REG	0x00040018
-#elif (VDDEE_VAL == 930)
-	#define VDDEE_VAL_REG	0x00030019
-#elif (VDDEE_VAL == 940)
-	#define VDDEE_VAL_REG	0x0002001a
-#elif (VDDEE_VAL == 950)
-	#define VDDEE_VAL_REG	0x0001001b
-#elif (VDDEE_VAL == 960)
-	#define VDDEE_VAL_REG	0x0000001c
+	#define VDDEE_VAL_REG	0x00000012
 #else
 	#error "VDDEE val out of range\n"
 #endif
@@ -492,7 +496,7 @@ bl2_reg_t __bl2_reg[] = {
 	/* Enable 5V_EN */
 	{GPIO_O_EN_N_REG3,    (0 << 8),                (1 << 8),     0, BL2_INIT_STAGE_1, 0},
 	{GPIO_O_REG3,         (1 << 8),                0xffffffff,   0, BL2_INIT_STAGE_1, 0},
-	/* Enable VCCK */
-	{AO_SEC_REG0,         (1 << 0),                0xffffffff,   0, BL2_INIT_STAGE_1, 0},
-	{AO_GPIO_O,           (1 << 31),               0xffffffff,   0, BL2_INIT_STAGE_1, 0},
+	/* Enable VCCK GPIOAO_2*/
+	{AO_GPIO_O_EN_N,      (0 << 2),                (1 << 2),  	 0, BL2_INIT_STAGE_1, 0},
+	{AO_GPIO_O,           (1 << 2),                (1 << 2),  	 0, BL2_INIT_STAGE_1, 0},
 };
