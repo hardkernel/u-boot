@@ -252,6 +252,7 @@ int bootm_find_images(int flag, int argc, char * const argv[])
 		return 1;
 	}
 	set_working_fdt_addr((ulong)images.ft_addr);
+	lmb_reserve(&images.lmb, (ulong)images.ft_addr, (ulong)images.ft_len);
 #endif
 
 #if IMAGE_ENABLE_FIT
