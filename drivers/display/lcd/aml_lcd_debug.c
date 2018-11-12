@@ -578,6 +578,45 @@ static void lcd_reg_print_phy_analog(void)
 	reg = HHI_DIF_CSI_PHY_CNTL3;
 	printf("PHY_CNTL3           [0x%08x] = 0x%08x\n",
 		reg, lcd_hiu_read(reg));
+	reg = HHI_DIF_CSI_PHY_CNTL4;
+	printf("PHY_CNTL4           [0x%08x] = 0x%08x\n",
+		reg, lcd_hiu_read(reg));
+	reg = HHI_DIF_CSI_PHY_CNTL5;
+	printf("PHY_CNTL5           [0x%08x] = 0x%08x\n",
+		reg, lcd_hiu_read(reg));
+	reg = HHI_DIF_CSI_PHY_CNTL6;
+	printf("PHY_CNTL6           [0x%08x] = 0x%08x\n",
+		reg, lcd_hiu_read(reg));
+	reg = HHI_DIF_CSI_PHY_CNTL7;
+	printf("PHY_CNTL7           [0x%08x] = 0x%08x\n",
+		reg, lcd_hiu_read(reg));
+	reg = HHI_DIF_CSI_PHY_CNTL8;
+	printf("PHY_CNTL8           [0x%08x] = 0x%08x\n",
+		reg, lcd_hiu_read(reg));
+	reg = HHI_DIF_CSI_PHY_CNTL9;
+	printf("PHY_CNTL9           [0x%08x] = 0x%08x\n",
+		reg, lcd_hiu_read(reg));
+	reg = HHI_DIF_CSI_PHY_CNTL10;
+	printf("PHY_CNTL10          [0x%08x] = 0x%08x\n",
+		reg, lcd_hiu_read(reg));
+	reg = HHI_DIF_CSI_PHY_CNTL11;
+	printf("PHY_CNTL11          [0x%08x] = 0x%08x\n",
+		reg, lcd_hiu_read(reg));
+	reg = HHI_DIF_CSI_PHY_CNTL12;
+	printf("PHY_CNTL12          [0x%08x] = 0x%08x\n",
+		reg, lcd_hiu_read(reg));
+	reg = HHI_DIF_CSI_PHY_CNTL13;
+	printf("PHY_CNTL13          [0x%08x] = 0x%08x\n",
+		reg, lcd_hiu_read(reg));
+	reg = HHI_DIF_CSI_PHY_CNTL14;
+	printf("PHY_CNTL14          [0x%08x] = 0x%08x\n",
+		reg, lcd_hiu_read(reg));
+	reg = HHI_DIF_CSI_PHY_CNTL15;
+	printf("PHY_CNTL15          [0x%08x] = 0x%08x\n",
+		reg, lcd_hiu_read(reg));
+	reg = HHI_DIF_CSI_PHY_CNTL16;
+	printf("PHY_CNTL16          [0x%08x] = 0x%08x\n",
+		reg, lcd_hiu_read(reg));
 }
 
 static void lcd_reg_print_mipi_phy_analog(void)

@@ -69,7 +69,7 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	lcd_power_on_step, lcd_power_off_step,
 	/* backlight */
 	60,255,10,128,128,
-	BL_CTRL_PWM,0,1,0,200,200,
+	BL_CTRL_MAX,0,1,0,200,200,
 	BL_PWM_POSITIVE,BL_PWM_B,180,100,25,1,0,
 	Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
 	Rsv_val,Rsv_val,Rsv_val,Rsv_val,
@@ -87,7 +87,7 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	lcd_power_on_step, lcd_power_off_step,
 	/* backlight */
 	60,255,10,128,128,
-	BL_CTRL_PWM,0,1,0,200,200,
+	BL_CTRL_MAX,0,1,0,200,200,
 	BL_PWM_POSITIVE,BL_PWM_B,180,100,25,1,0,
 	Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
 	Rsv_val,Rsv_val,Rsv_val,Rsv_val,
@@ -105,7 +105,7 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	lcd_power_on_step, lcd_power_off_step,
 	/* backlight */
 	60,255,10,128,128,
-	BL_CTRL_PWM,0,1,0,200,200,
+	BL_CTRL_MAX,0,1,0,200,200,
 	BL_PWM_POSITIVE,BL_PWM_B,180,100,25,1,0,
 	Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
 	Rsv_val,Rsv_val,Rsv_val,Rsv_val,
@@ -123,7 +123,7 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	lcd_power_on_step, lcd_power_off_step,
 	/* backlight */
 	60,255,10,128,128,
-	BL_CTRL_PWM,0,1,0,200,200,
+	BL_CTRL_MAX,0,1,0,200,200,
 	BL_PWM_POSITIVE,BL_PWM_B,180,100,25,1,0,
 	Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
 	Rsv_val,Rsv_val,Rsv_val,Rsv_val,
@@ -266,8 +266,8 @@ struct lcd_config_s lcd_config_dft = {
 
 	.pinctrl_ver = 2,
 	.lcd_pinmux = lcd_pinmux_ctrl,
-	.pinmux_set = {{0, 0xc0000000}, {LCD_PINMUX_END, 0x0}},
-	.pinmux_clr = {{0, 0x009c0800}, {LCD_PINMUX_END, 0x0}},
+	.pinmux_set = {{8, 0x30000000}, {9, 0x00000003}, {LCD_PINMUX_END, 0x0}},
+	.pinmux_clr = {{8, 0xf0000000}, {9, 0x0000000f}, {LCD_PINMUX_END, 0x0}},
 };
 
 struct bl_config_s bl_config_dft = {

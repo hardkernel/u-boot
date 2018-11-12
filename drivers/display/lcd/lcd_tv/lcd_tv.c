@@ -640,6 +640,12 @@ static int lcd_config_load_from_bsp(struct lcd_config_s *pconf)
 		pconf->lcd_timing.clk_auto = 1;
 	else
 		pconf->lcd_timing.clk_auto = (unsigned char)temp;
+	/* clk_freq */
+	temp = ext_lcd->customer_val_3;
+	if (temp == Rsv_val)
+		pconf->lcd_timing.lcd_clk = 0;
+	else
+		pconf->lcd_timing.lcd_clk = temp;
 
 	if (pconf->lcd_basic.lcd_type == LCD_VBYONE) {
 		pconf->lcd_control.vbyone_config->lane_count = ext_lcd->lcd_spc_val0;

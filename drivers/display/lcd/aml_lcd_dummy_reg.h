@@ -173,6 +173,40 @@
 #define HHI_LVDS_TX_PHY_CNTL1                              (0xff63c000 + (0xdf << 2))
 #endif
 
+#ifndef HHI_DIF_CSI_PHY_CNTL10
+#define HHI_DIF_CSI_PHY_CNTL10                             (0xff63c000 + (0x8e << 2))
+#endif
+#ifndef HHI_DIF_CSI_PHY_CNTL11
+#define HHI_DIF_CSI_PHY_CNTL11                             (0xff63c000 + (0x8f << 2))
+#endif
+#ifndef HHI_DIF_CSI_PHY_CNTL12
+#define HHI_DIF_CSI_PHY_CNTL12                             (0xff63c000 + (0x90 << 2))
+#endif
+#ifndef HHI_DIF_CSI_PHY_CNTL13
+#define HHI_DIF_CSI_PHY_CNTL13                             (0xff63c000 + (0x91 << 2))
+#endif
+#ifndef HHI_DIF_CSI_PHY_CNTL14
+#define HHI_DIF_CSI_PHY_CNTL14                             (0xff63c000 + (0x92 << 2))
+#endif
+#ifndef HHI_DIF_CSI_PHY_CNTL15
+#define HHI_DIF_CSI_PHY_CNTL15                             (0xff63c000 + (0x93 << 2))
+#endif
+#ifndef HHI_DIF_CSI_PHY_CNTL16
+#define HHI_DIF_CSI_PHY_CNTL16                             (0xff63c000 + (0xde << 2))
+#endif
+#ifndef HHI_DIF_CSI_PHY_CNTL6
+#define HHI_DIF_CSI_PHY_CNTL6                              (0xff63c000 + (0xea << 2))
+#endif
+#ifndef HHI_DIF_CSI_PHY_CNTL7
+#define HHI_DIF_CSI_PHY_CNTL7                              (0xff63c000 + (0xeb << 2))
+#endif
+#ifndef HHI_DIF_CSI_PHY_CNTL8
+#define HHI_DIF_CSI_PHY_CNTL8                              (0xff63c000 + (0xec << 2))
+#endif
+#ifndef HHI_DIF_CSI_PHY_CNTL9
+#define HHI_DIF_CSI_PHY_CNTL9                              (0xff63c000 + (0xed << 2))
+#endif
+
 #ifndef HHI_TCON_PLL_CNTL0
 #define HHI_TCON_PLL_CNTL0                                 (0xff63c000 + (0x020 << 2))
 #endif
