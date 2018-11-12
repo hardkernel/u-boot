@@ -279,9 +279,9 @@ long android_image_load(struct blk_desc *dev_desc,
 
 	/*
 	 * Read the Android boot.img header and a few parts of
-	 * the head of kernel image.
+	 * the head of kernel image(2 blocks maybe enough).
 	 */
-	blkcnt = DIV_ROUND_UP(sizeof(*hdr), 512);
+	blkcnt = DIV_ROUND_UP(sizeof(*hdr), 512) + 2;
 	hdr = memalign(ARCH_DMA_MINALIGN, blkcnt * 512);
 	if (!hdr) {
 		printf("%s: no memory\n", __func__);
