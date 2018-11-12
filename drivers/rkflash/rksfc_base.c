@@ -127,6 +127,8 @@ static int rockchip_rksfc_probe(struct udevice *udev)
 #endif
 			debug("%s probe success\n", __func__);
 			break;
+		} else {
+			pr_err("ret %d\n", ret);
 		}
 	}
 

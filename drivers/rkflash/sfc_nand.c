@@ -654,7 +654,7 @@ u32 sfc_nand_init(void)
 	PRINT_SFC_I("...%s enter...\n", __func__);
 
 	sfc_nand_read_id_raw(id_byte);
-	PRINT_SFC_I("sfc_nand id: %x %x %x\n",
+	PRINT_SFC_E("sfc_nand id: %x %x %x\n",
 		    id_byte[0], id_byte[1], id_byte[2]);
 	if (id_byte[0] == 0xFF || id_byte[0] == 0x00)
 		return FTL_NO_FLASH;
