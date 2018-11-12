@@ -42,37 +42,21 @@
  * board_id: check hardware adc config
  * dram_rank_config:
  *            #define CONFIG_DDR_CHL_AUTO					0xF
- *            #define CONFIG_DDR0_16BIT_CH0				0x1
- *            #define CONFIG_DDR0_16BIT_RANK01_CH0		0x4
+ *            #define CONFIG_DDR0_16BIT_CH0					0x1
+ *            #define CONFIG_DDR0_16BIT_RANK01_CH0			0x4
  *            #define CONFIG_DDR0_32BIT_RANK0_CH0			0x2
- *            #define CONFIG_DDR0_32BIT_RANK01_CH01		0x3
- *            #define CONFIG_DDR0_32BIT_16BIT_RANK0_CH0	0x5
+ *            #define CONFIG_DDR0_32BIT_RANK01_CH01			0x3
+ *            #define CONFIG_DDR0_32BIT_16BIT_RANK0_CH0		0x5
  *            #define CONFIG_DDR0_32BIT_16BIT_RANK01_CH0	0x6
  * DramType:
- *            #define CONFIG_DDR_TYPE_DDR3				0
- *            #define CONFIG_DDR_TYPE_DDR4				1
+ *            #define CONFIG_DDR_TYPE_DDR3					0
+ *            #define CONFIG_DDR_TYPE_DDR4					1
  *            #define CONFIG_DDR_TYPE_LPDDR4				2
  *            #define CONFIG_DDR_TYPE_LPDDR3				3
  * DRAMFreq:
  *            {pstate0, pstate1, pstate2, pstate3} //more than one pstate means use dynamic freq
  *
  */
-
-
-/* ddr configs */
-#define DDR_RFC_TYPE_DDR3_512Mbx1				0
-#define DDR_RFC_TYPE_DDR3_512Mbx2				1
-#define DDR_RFC_TYPE_DDR3_512Mbx4				2
-#define DDR_RFC_TYPE_DDR3_512Mbx8				3
-#define DDR_RFC_TYPE_DDR3_512Mbx16				4
-#define DDR_RFC_TYPE_DDR4_2Gbx1					5
-#define DDR_RFC_TYPE_DDR4_2Gbx2					6
-#define DDR_RFC_TYPE_DDR4_2Gbx4					7
-#define DDR_RFC_TYPE_DDR4_2Gbx8					8
-
-#define DDR_RFC_TYPE_LPDDR4_2Gbx1				9
-#define DDR_RFC_TYPE_LPDDR4_3Gbx1				10
-#define DDR_RFC_TYPE_LPDDR4_4Gbx1				11
 
 ddr_set_t __ddr_setting[] = {
 {
@@ -81,7 +65,7 @@ ddr_set_t __ddr_setting[] = {
 	.version				= 1,
 	.dram_rank_config		= CONFIG_DDR0_32BIT_RANK0_CH0,
 	.DramType				= CONFIG_DDR_TYPE_DDR4,
-	.DRAMFreq				= {912, 0, 0, 0},
+	.DRAMFreq				= {1200, 0, 0, 0},
 	.ddr_rfc_type			= DDR_RFC_TYPE_DDR4_2Gbx8,
 	.ddr_base_addr			= CFG_DDR_BASE_ADDR,
 	.ddr_start_offset		= CFG_DDR_START_OFFSET,
@@ -113,11 +97,11 @@ ddr_set_t __ddr_setting[] = {
 	.soc_ac_slew_rate		= 0x3ff,
 	.soc_data_slew_rate		= 0x2ff,
 	.vref_output_permil		= 500,
-	.vref_receiver_permil	= 700,
-	.vref_dram_permil		= 700,
-	.vref_reverse			= 0,
-	//.ac_trace_delay			={0x0,0x0},// {0x40,0x40,0x40,0x40,0x40,0x40,0x40,0x40,0x40,0x40},
-	.ac_trace_delay			= {0x40,0x40,0x40,0x40,0x40,0x40,0x40,0x40,0x40,0x40},
+	.vref_receiver_permil	= 0,//700,
+	.vref_dram_permil		= 0,//700,
+	//.vref_reverse			= 0,
+	//.ac_trace_delay		= {0x0,0x0},// {0x40,0x40,0x40,0x40,0x40,0x40,0x40,0x40,0x40,0x40},
+	.ac_trace_delay			= {32,32,32,32,32,32,32,32,32,32},
 	.ddr_dmc_remap			= {
 							[0] = ( 5 |  7 << 5 |  8 << 10 |  9 << 15 | 10 << 20 | 11 << 25 ),
 							[1] = ( 12|  0 << 5 |  0 << 10 | 14 << 15 | 15 << 20 | 16 << 25 ),
@@ -184,8 +168,8 @@ ddr_set_t __ddr_setting[] = {
 	.vref_output_permil		= 500,
 	.vref_receiver_permil	= 500, //700,
 	.vref_dram_permil		= 500, //700,
-	.vref_reverse			= 0,
-	.ac_trace_delay			= {0x40,0x40,0x40,0x40,0x40,0x40,0x40,0x40,0x40,0x40},
+	//.vref_reverse			= 0,
+	.ac_trace_delay			= {32,32,32,32,32,32,32,32,32,32},
 	//{00,00},
 	.ac_pinmux				= {00,00},
 #if 1
@@ -232,7 +216,7 @@ ddr_set_t __ddr_setting[] = {
 	.version				= 1,
 	//.dram_rank_config		= CONFIG_DDR0_32BIT_RANK01_CH0,
 	.dram_rank_config		= CONFIG_DDR0_32BIT_RANK01_CH01,
-	.ddr_rfc_type			= DDR_RFC_TYPE_LPDDR4_4Gbx1,
+	.ddr_rfc_type			= DDR_RFC_TYPE_LPDDR4_8Gbx1,
 	.DramType				= CONFIG_DDR_TYPE_LPDDR4,
 	.DRAMFreq				= {1392, 0, 0, 0},
 	.ddr_base_addr			= CFG_DDR_BASE_ADDR,
@@ -260,14 +244,15 @@ ddr_set_t __ddr_setting[] = {
 	.dram_data_drv_ohm		= 40, //lpddr4 sdram only240/1-6
 	.dram_data_odt_ohm		= 120,
 	.dram_ac_odt_ohm		= 120,
+	.lpddr4_dram_vout_voltage_1_3_2_5_setting = 1,///1, 1/3vddq     0 2/5 vddq
 	.soc_clk_slew_rate		= 0x3ff,//0x253,
 	.soc_cs_slew_rate		= 0x100,//0x253,
 	.soc_ac_slew_rate		= 0x100,//0x253,
 	.soc_data_slew_rate		= 0x1ff,
 	.vref_output_permil		= 350,//200,
-	.vref_receiver_permil	= 200,
-	.vref_dram_permil		= 350,
-	.vref_reverse			= 0,
+	.vref_receiver_permil	= 0,
+	.vref_dram_permil		= 0,
+	//.vref_reverse			= 0,
 	.ac_trace_delay			= {00,0x0,0,0,0,0,0x0,00},
 	.ac_pinmux				= {00,00},
 	.ddr_dmc_remap			= {
@@ -304,7 +289,7 @@ ddr_set_t __ddr_setting[] = {
 	.version				= 1,
 	//.dram_rank_config		= CONFIG_DDR0_32BIT_RANK01_CH0,
 	.dram_rank_config		= CONFIG_DDR0_32BIT_RANK0_CH01,
-	.ddr_rfc_type			= DDR_RFC_TYPE_LPDDR4_4Gbx1,
+	.ddr_rfc_type			= DDR_RFC_TYPE_LPDDR4_8Gbx1,
 	.DramType				= CONFIG_DDR_TYPE_LPDDR4,
 	.DRAMFreq				= {1392, 0, 0, 0},
 	.ddr_base_addr			= CFG_DDR_BASE_ADDR,
@@ -332,14 +317,15 @@ ddr_set_t __ddr_setting[] = {
 	.dram_data_drv_ohm		= 40, //lpddr4 sdram only240/1-6
 	.dram_data_odt_ohm		= 120,
 	.dram_ac_odt_ohm		= 120,
+	.lpddr4_dram_vout_voltage_1_3_2_5_setting = 1,///1, 1/3vddq     0 2/5 vddq
 	.soc_clk_slew_rate		= 0x3ff,//0x253,
 	.soc_cs_slew_rate		= 0x100,//0x253,
 	.soc_ac_slew_rate		= 0x100,//0x253,
 	.soc_data_slew_rate		= 0x1ff,
 	.vref_output_permil		= 350,//200,
-	.vref_receiver_permil	= 200,
-	.vref_dram_permil		= 350,
-	.vref_reverse			= 0,
+	.vref_receiver_permil	= 0,
+	.vref_dram_permil		= 0,
+	//.vref_reverse			= 0,
 	.ac_trace_delay			= {00,0x0,0,0,0,0,0x0,00},
 	.ac_pinmux				= {00,00},
 	.ddr_dmc_remap			= {
@@ -410,7 +396,7 @@ ddr_set_t __ddr_setting[] = {
 	.vref_output_permil		= 800,//200,
 	.vref_receiver_permil	= 700,//875,  //700 for drv 40 odt 60 is better ,why?
 	.vref_dram_permil		= 500,//875,
-	.vref_reverse			= 0,
+	//.vref_reverse			= 0,
 	.ac_trace_delay			= {0x10,0x0,0x10-6,0x10-6,0x10-6,0x0,0x0,0x0,0x0,0x0},
 	.ac_pinmux				= {00,00},
 	.ddr_dmc_remap			= {
@@ -505,7 +491,31 @@ ddr_reg_t __ddr_reg[] = {
 #endif
 
 /* VDDEE PWM table */
-#if    (VDDEE_VAL == 800)
+#if (VDDEE_VAL == 680)
+	#define VDDEE_VAL_REG	0x001c0000
+#elif (VDDEE_VAL == 690)
+	#define VDDEE_VAL_REG	0x001b0001
+#elif (VDDEE_VAL == 700)
+	#define VDDEE_VAL_REG	0x001a0002
+#elif (VDDEE_VAL == 710)
+	#define VDDEE_VAL_REG	0x00190003
+#elif (VDDEE_VAL == 720)
+	#define VDDEE_VAL_REG	0x00180004
+#elif (VDDEE_VAL == 730)
+	#define VDDEE_VAL_REG	0x00170005
+#elif (VDDEE_VAL == 740)
+	#define VDDEE_VAL_REG	0x00160006
+#elif (VDDEE_VAL == 750)
+	#define VDDEE_VAL_REG	0x00150007
+#elif (VDDEE_VAL == 760)
+	#define VDDEE_VAL_REG	0x00140008
+#elif (VDDEE_VAL == 770)
+	#define VDDEE_VAL_REG	0x00130009
+#elif (VDDEE_VAL == 780)
+	#define VDDEE_VAL_REG	0x0012000a
+#elif (VDDEE_VAL == 790)
+	#define VDDEE_VAL_REG	0x0011000b
+#elif    (VDDEE_VAL == 800)
 	#define VDDEE_VAL_REG	0x0010000c
 #elif (VDDEE_VAL == 810)
 	#define VDDEE_VAL_REG	0x000f000d

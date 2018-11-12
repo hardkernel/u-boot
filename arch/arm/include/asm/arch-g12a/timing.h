@@ -208,9 +208,8 @@ typedef struct ddr_set{
 	//soc init SOC receiver vref ,config like 500 means 0.5VDDQ,take care ,please follow SI
 	unsigned	short	vref_dram_permil;
 	//soc init DRAM receiver vref ,config like 500 means 0.5VDDQ,take care ,please follow SI
-	unsigned	short	vref_reverse;
-	//system reserve,do not modify
-	/* align8 */
+	unsigned	short	max_core_timmming_frequency;
+	//use for limited ddr speed core timmming parameter,for some old dram maybe have no over speed register
 
 	unsigned	char	ac_trace_delay[10];
 	unsigned	char	lpddr4_dram_vout_voltage_1_3_2_5_setting;
@@ -223,7 +222,8 @@ typedef struct ddr_set{
 	unsigned	char	slt_test_function[2];  //[0] slt test function enable,bit 0 enable 4 frequency scan,bit 1 enable force delay line offset ,[1],slt test parameter ,use for force delay line offset
 		//system reserve,do not modify
 	unsigned	short	dq_bdlr_org;
-	unsigned	char	rsv_char1[2];
+	unsigned	char  dram_data_wr_odt_ohm;
+	unsigned	char	bitTimeControl_2d;
 	//system reserve,do not modify
 	/* align8 */
 
