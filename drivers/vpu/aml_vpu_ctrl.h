@@ -156,8 +156,8 @@ static struct vpu_ctrl_s vpu_mem_pd_tl1[] = {
 	/* reg,               val, bit, len */
 	{HHI_VPU_MEM_PD_REG0, 1,   0,   32},
 	{HHI_VPU_MEM_PD_REG1, 1,   0,   32},
-	{HHI_VPU_MEM_PD_REG1, 1,   0,   32},
 	{HHI_VPU_MEM_PD_REG2, 1,   0,   32},
+	{HHI_VPU_MEM_PD_REG4, 1,   0,    4},
 	{VPU_REG_END,         0,   0,    0},
 };
 

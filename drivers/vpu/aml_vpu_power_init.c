@@ -80,7 +80,7 @@ void vpu_power_on(void)
 		_reg = ctrl_table[i].reg;
 		_start = ctrl_table[i].bit;
 		_end = ctrl_table[i].len + ctrl_table[i].bit;
-		for (j = _start; i < _end; i+=2) {
+		for (j = _start; j < _end; j+=2) {
 			vpu_hiu_setb(_reg, 0, j, 2);
 			udelay(5);
 		}
@@ -145,7 +145,7 @@ void vpu_power_off(void)
 		_reg = ctrl_table[i].reg;
 		_start = ctrl_table[i].bit;
 		_end = ctrl_table[i].len + ctrl_table[i].bit;
-		for (j = _start; i < _end; i+=2) {
+		for (j = _start; j < _end; j+=2) {
 			vpu_hiu_setb(_reg, 0x3, j, 2);
 			udelay(5);
 		}
