@@ -28,11 +28,15 @@ config MTD_DEVICE
 	  Adds the MTD device infrastructure from the Linux kernel.
 	  Needed for mtdparts command support.
 
-config MTD_PARTITIONS
-	bool "Add MTD Partioning infrastructure"
+config FLASH_CFI_DRIVER
+	bool "Enable CFI Flash driver"
 	help
-	  Adds the MTD partitioning infrastructure from the Linux
-	  kernel. Needed for UBI support.
+	  The Common Flash Interface specification was developed by Intel,
+	  AMD and other flash manufactures. It provides a universal method
+	  for probing the capabilities of flash devices. If you wish to
+	  support any device that is CFI-compliant, you need to enable this
+	  option. Visit <http://www.amd.com/products/nvd/overview/cfi.html>
+	  for more information on CFI.
 
 config CFI_FLASH
 	bool "Enable Driver Model for CFI Flash driver"
