@@ -78,8 +78,8 @@ int cpu_sd_emmc_init(unsigned port)
 	case SDIO_PORT_C:
 		/* set driver strength */
 		writel(0xFFFFFFFF, P_PAD_DS_REG0A);
-		setbits_le32(P_PAD_PULL_UP_EN_REG0, 0x35ff);
-		setbits_le32(P_PAD_PULL_UP_REG0, 0x35ff);
+		setbits_le32(P_PAD_PULL_UP_EN_REG0, 0x3fff);
+		setbits_le32(P_PAD_PULL_UP_REG0, 0x3fff);
 
 		/* pull up data by default */
 		clrbits_le32(P_PERIPHS_PIN_MUX_0, (0xFFFFF << 12));
