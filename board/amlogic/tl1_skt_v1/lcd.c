@@ -15,11 +15,8 @@
 
 #include <common.h>
 #include <amlogic/aml_lcd.h>
-#include <asm/arch/gpio.h>
 
 static char lcd_cpu_gpio[LCD_CPU_GPIO_NUM_MAX][LCD_CPU_GPIO_NAME_MAX] = {
-	"GPIOZ_9", /* panel rst */
-	"GPIOZ_8", /* panel power */
 	"invalid", /* ending flag */
 };
 
@@ -32,9 +29,17 @@ static struct lcd_power_step_s lcd_power_off_step[] = {
 	{LCD_POWER_TYPE_MAX,   0,0,0,},   /* ending flag */
 };
 
+static struct lcd_power_step_s lcd_power_on_step_p2p[] = {
+	{LCD_POWER_TYPE_EXTERN,0,0,100,}, /* init external voltage */
+	{LCD_POWER_TYPE_SIGNAL,0,0,0,},
+	{LCD_POWER_TYPE_MAX,   0,0,0,},  /* ending flag */
+};
+static struct lcd_power_step_s lcd_power_off_step_p2p[] = {
+	{LCD_POWER_TYPE_SIGNAL,0,0,0,},
+	{LCD_POWER_TYPE_MAX,   0,0,0,},   /* ending flag */
+};
+
 static char lcd_bl_gpio[BL_GPIO_NUM_MAX][LCD_CPU_GPIO_NAME_MAX] = {
-	"GPIOH_4", /* BL_EN */
-	"GPIOH_5", /* BL_PWM */
 	"invalid", /* ending flag */
 };
 
@@ -111,19 +116,19 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	Rsv_val,Rsv_val,Rsv_val,Rsv_val,
 	10,10,Rsv_val},
 
-	{/* 2-region for HDMI convert */
-	"vbyone_2",LCD_VBYONE,10,
+	{/*public 2-region vx1 : 3840x2160@60hz 8lane */
+	"p2p",LCD_LVDS,10,
 	/* basic timing */
-	3840,2160,4400,2250,33,477,0,6,81,0,
+	3840,2160,5000,2250,33,477,0,6,81,0,
 	/* clk_attr */
-	1,0,1,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	2,0,1,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
 	/* vbyone_attr */
-	8,2,4,4,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	1,1,0,0,0,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
 	/* power step */
-	lcd_power_on_step, lcd_power_off_step,
+	lcd_power_on_step_p2p, lcd_power_off_step_p2p,
 	/* backlight */
 	60,255,10,128,128,
-	BL_CTRL_MAX,0,1,0,200,200,
+	BL_CTRL_PWM,0,1,0,200,200,
 	BL_PWM_POSITIVE,BL_PWM_B,180,100,25,1,0,
 	Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
 	Rsv_val,Rsv_val,Rsv_val,Rsv_val,
@@ -134,45 +139,21 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 
 static struct lcd_pinmux_ctrl_s lcd_pinmux_ctrl[LCD_PINMX_MAX] = {
 	{
-		.name = "lcd_vbyone_pin", //GPIOH_0/1
-		.pinmux_set = {{0, 0xc0000000}, {LCD_PINMUX_END, 0x0}},
-		.pinmux_clr = {{0, 0xf0000000}, {LCD_PINMUX_END, 0x0}},
+		.name = "lcd_vbyone_pin", //GPIOH_15/16
+		.pinmux_set = {{8, 0x30000000}, {9, 0x00000003}, {LCD_PINMUX_END, 0x0}},
+		.pinmux_clr = {{8, 0xf0000000}, {9, 0x0000000f}, {LCD_PINMUX_END, 0x0}},
+	},
+	{
+		.name = "lcd_p2p_pin", //GPIOH_0~15
+		.pinmux_set = {{7, 0x11111111}, {8, 0x11111111}, {LCD_PINMUX_END, 0x0}},
+		.pinmux_clr = {{7, 0xffffffff}, {8, 0xffffffff}, {LCD_PINMUX_END, 0x0}},
 	},
 	{
 		.name = "invalid",
 	},
 };
+
 static struct lcd_pinmux_ctrl_s bl_pinmux_ctrl[BL_PINMUX_MAX] = {
-	{
-		.name = "bl_pwm_on_pin", //GPIOZ_6
-		.pinmux_set = {{4, 0x00010000}, {LCD_PINMUX_END, 0x0}},
-		.pinmux_clr = {{4, 0x00008000}, {LCD_PINMUX_END, 0x0}},
-	},
-	{
-		.name = "bl_pwm_vs_on_pin", //GPIOZ_6
-		.pinmux_set = {{4, 0x00008000}, {LCD_PINMUX_END, 0x0}},
-		.pinmux_clr = {{4, 0x00010000}, {LCD_PINMUX_END, 0x0}},
-	},
-	{
-		.name = "bl_pwm_combo_0_on_pin", //GPIOZ_6
-		.pinmux_set = {{4, 0x00010000}, {LCD_PINMUX_END, 0x0}},
-		.pinmux_clr = {{4, 0x00008000}, {LCD_PINMUX_END, 0x0}},
-	},
-	{
-		.name = "bl_pwm_combo_1_on_pin", //GPIOZ_7
-		.pinmux_set = {{4, 0x00004000}, {LCD_PINMUX_END, 0x0}},
-		.pinmux_clr = {{4, 0x00002000}, {LCD_PINMUX_END, 0x0}},
-	},
-	{
-		.name = "bl_pwm_combo_0_vs_on_pin", //GPIOZ_6
-		.pinmux_set = {{4, 0x00008000}, {LCD_PINMUX_END, 0x0}},
-		.pinmux_clr = {{4, 0x00010000}, {LCD_PINMUX_END, 0x0}},
-	},
-	{
-		.name = "bl_pwm_combo_1_vs_on_pin", //GPIOZ_7
-		.pinmux_set = {{4, 0x00002000}, {LCD_PINMUX_END, 0x0}},
-		.pinmux_clr = {{4, 0x00004000}, {LCD_PINMUX_END, 0x0}},
-	},
 	{
 		.name = "invalid",
 	},
@@ -198,30 +179,10 @@ static struct lvds_config_s lcd_lvds_config = {
 static struct lcd_power_ctrl_s lcd_power_ctrl = {
 	.power_on_step = {
 		{
-			.type = LCD_POWER_TYPE_CPU,
-			.index = 0, /* point to cpu_gpio[] struct */
-			.value = 1, /* 0=output_low, 1=output_high, 2=input */
-			.delay = 50, /* unit: ms */
-		},
-		{
-			.type = LCD_POWER_TYPE_SIGNAL,
-			.delay = 0, /* unit: ms */
-		},
-		{
 			.type = LCD_POWER_TYPE_MAX, /* ending flag */
 		},
 	},
 	.power_off_step = {
-		{
-			.type = LCD_POWER_TYPE_SIGNAL,
-			.delay = 50, /* unit: ms */
-		},
-		{
-			.type = LCD_POWER_TYPE_CPU,
-			.index = 0, /* point to cpu_gpio[] struct */
-			.value = 0, /* 0=output_low, 1=output_high, 2=input */
-			.delay = 100, /* unit: ms */
-		},
 		{
 			.type = LCD_POWER_TYPE_MAX, /* ending flag */
 		},
@@ -266,9 +227,83 @@ struct lcd_config_s lcd_config_dft = {
 
 	.pinctrl_ver = 2,
 	.lcd_pinmux = lcd_pinmux_ctrl,
-	.pinmux_set = {{8, 0x30000000}, {9, 0x00000003}, {LCD_PINMUX_END, 0x0}},
-	.pinmux_clr = {{8, 0xf0000000}, {9, 0x0000000f}, {LCD_PINMUX_END, 0x0}},
+	.pinmux_set = {{LCD_PINMUX_END, 0x0}},
+	.pinmux_clr = {{LCD_PINMUX_END, 0x0}},
 };
+
+#ifdef CONFIG_AML_LCD_EXTERN
+static char lcd_ext_gpio[LCD_EXTERN_GPIO_NUM_MAX][LCD_EXTERN_GPIO_LEN_MAX] = {
+	"invalid", /* ending flag */
+};
+
+static unsigned char init_on_table[LCD_EXTERN_INIT_ON_MAX] = {
+	0xc0, 2, 0x01, 0x2b,
+	0xc0, 2, 0x02, 0x05,
+	0xc0, 2, 0x03, 0x00,
+	0xc0, 2, 0x04, 0x00,
+	0xc0, 2, 0x05, 0x0c,
+	0xc0, 2, 0x06, 0x04,
+	0xc0, 2, 0x07, 0x21,
+	0xc0, 2, 0x08, 0x0f,
+	0xc0, 2, 0x09, 0x04,
+	0xc0, 2, 0x0a, 0x00,
+	0xc0, 2, 0x0b, 0x04,
+	0xc0, 2, 0xff, 0x00,
+	0xfd, 1, 100  /* delay 100ms */
+
+	0xc1, 2, 0x01, 0xca,
+	0xc1, 2, 0x02, 0x3b,
+	0xc1, 2, 0x03, 0x33,
+	0xc1, 2, 0x04, 0x05,
+	0xc1, 2, 0x05, 0x2c,
+	0xc1, 2, 0x06, 0xf2,
+	0xc1, 2, 0x07, 0x9c,
+	0xc1, 2, 0x08, 0x1b,
+	0xc1, 2, 0x09, 0x82,
+	0xc1, 2, 0x0a, 0x3d,
+	0xc1, 2, 0x0b, 0x20,
+	0xc1, 2, 0x0c, 0x11,
+	0xc1, 2, 0x0d, 0xc4,
+	0xc1, 2, 0x0e, 0x1a,
+	0xc1, 2, 0x0f, 0x31,
+	0xc1, 2, 0x10, 0x4c,
+	0xc1, 2, 0x11, 0x12,
+	0xc1, 2, 0x12, 0x90,
+	0xc1, 2, 0x13, 0xf7,
+	0xc1, 2, 0x14, 0x0c,
+	0xc1, 2, 0x15, 0x20,
+	0xc1, 2, 0x16, 0x13,
+	0xff, 0, /* ending */
+};
+
+static unsigned char init_off_table[LCD_EXTERN_INIT_OFF_MAX] = {
+	0xff, 0,  /* ending */
+};
+
+struct lcd_extern_common_s ext_common_dft = {
+	.lcd_ext_key_valid = 0,
+	.lcd_ext_num = 1,
+	.pinmux_set = {{LCD_PINMUX_END, 0x0}},
+	.pinmux_clr = {{LCD_PINMUX_END, 0x0}},
+};
+struct lcd_extern_config_s ext_config_dtf[LCD_EXTERN_NUM_MAX] = {
+	{
+		.index = 0,
+		.name = "i2c_ANX6862_7911",
+		.type = LCD_EXTERN_I2C, /* LCD_EXTERN_I2C, LCD_EXTERN_SPI, LCD_EXTERN_MAX */
+		.status = 1, /* 0=disable, 1=enable */
+		.i2c_addr = 0x20, /* 7bit i2c address */
+		.i2c_addr2 = 0x74, /* 7bit i2c address, 0xff for none */
+		.i2c_bus = LCD_EXTERN_I2C_BUS_1, /* LCD_EXTERN_I2C_BUS_0/1/2/3/4 */
+		.cmd_size = 0xff,
+		.table_init_on = init_on_table,
+		.table_init_off = init_off_table,
+	},
+	{
+		.index = LCD_EXTERN_INDEX_INVALID,
+	},
+};
+#endif
 
 struct bl_config_s bl_config_dft = {
 	.name = "default",
@@ -299,8 +334,8 @@ struct bl_config_s bl_config_dft = {
 
 	.pinctrl_ver = 2,
 	.bl_pinmux = bl_pinmux_ctrl,
-	.pinmux_set = {{11, 0x00400000}, {LCD_PINMUX_END, 0x0}},
-	.pinmux_clr = {{11, 0x00f00000}, {LCD_PINMUX_END, 0x0}},
+	.pinmux_set = {{LCD_PINMUX_END, 0x0}},
+	.pinmux_clr = {{LCD_PINMUX_END, 0x0}},
 };
 
 void lcd_config_bsp_init(void)
@@ -321,4 +356,21 @@ void lcd_config_bsp_init(void)
 	}
 	for (j = i; j < BL_GPIO_NUM_MAX; j++)
 		strcpy(bl_config_dft.gpio_name[j], "invalid");
+
+#ifdef CONFIG_AML_LCD_EXTERN
+	for (i = 0; i < LCD_EXTERN_NUM_MAX; i++) {
+		if (ext_config_dtf[i].index == LCD_EXTERN_INDEX_INVALID)
+			break;
+	}
+	ext_common_dft.lcd_ext_num = i;
+
+	for (i = 0; i < LCD_EXTERN_GPIO_NUM_MAX; i++) {
+		if (strcmp(lcd_ext_gpio[i], "invalid") == 0)
+			break;
+		strcpy(ext_common_dft.gpio_name[i], lcd_ext_gpio[i]);
+	}
+	for (j = i; j < LCD_EXTERN_GPIO_NUM_MAX; j++)
+		strcpy(ext_common_dft.gpio_name[j], "invalid");
+
+#endif
 }

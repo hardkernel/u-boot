@@ -1094,6 +1094,7 @@ int get_lcd_tv_config(char *dt_addr, int load_id)
 		ret = lcd_pinmux_load_config(dt_addr, lcd_drv->lcd_config);
 	} else { /* bsp */
 		ret = lcd_config_load_from_bsp(lcd_drv->lcd_config);
+		ret = lcd_pinmux_load_config(dt_addr, lcd_drv->lcd_config);
 	}
 	if (ret)
 		return -1;
