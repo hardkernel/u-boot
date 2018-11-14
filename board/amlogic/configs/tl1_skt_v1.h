@@ -114,7 +114,7 @@
         "active_slot=_a\0"\
         "boot_part=boot\0"\
         "initargs="\
-            "init=/init console=ttyS0,115200 no_console_suspend earlycon=aml-uart,0xff803000 ramoops.pstore_en=1 ramoops.record_size=0x8000 ramoops.console_size=0x4000 "\
+            "ro rootwait skip_initramfs init=/init console=ttyS0,115200 no_console_suspend earlycon=aml-uart,0xff803000 printk.devkmsg=on ramoops.pstore_en=1 ramoops.record_size=0x8000 ramoops.console_size=0x4000 "\
             "\0"\
         "upgrade_check="\
             "echo upgrade_step=${upgrade_step}; "\
@@ -247,17 +247,16 @@
 		"fi;\0" \
 
 
-#define CONFIG_PREBOOT  ""
-/*
-            "run bcb_cmd; "\
-            "run factory_reset_poweroff_protect;"\
-            "run upgrade_check;"\
-            "run init_display;"\
-            "run storeargs;"\
-            "run switch_bootmode;"
-*/
+#define CONFIG_PREBOOT  \
+	"run bcb_cmd; "\
+	"run factory_reset_poweroff_protect;"\
+	"run upgrade_check;"\
+	"run init_display;"\
+	"run storeargs;"\
+	"run switch_bootmode;"
 
-#define CONFIG_BOOTCOMMAND ""
+
+#define CONFIG_BOOTCOMMAND "run storeboot"
 
 #define CONFIG_ENV_IS_NOWHERE  1
 #define CONFIG_ENV_SIZE   (64*1024)
