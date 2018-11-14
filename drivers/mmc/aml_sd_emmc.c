@@ -1038,8 +1038,19 @@ void sd_emmc_register(struct aml_card_sd_info * aml_priv)
 #endif
 	cfg->f_min = 400000;
 	cfg->f_max = 40000000;
-	cfg->part_type = PART_TYPE_UNKNOWN;
-	//cfg->part_type = PART_TYPE_AML;
+
+	/**
+	 * For blank emmc, part-type should be unknown.
+	 * But fastboot will not happy about this when
+	 * gpt or mbr are being flashed.
+	 * a predefined parttype had to be added here
+	 * to satisfy the fastboot.
+	 */
+#ifdef CONFIG_AML_GPT
+	cfg->part_type = PART_TYPE_EFI;
+#else
+	cfg->part_type = PART_TYPE_AML;
+#endif
 	cfg->b_max = 256;
 	mmc_create(cfg,aml_priv);
 }

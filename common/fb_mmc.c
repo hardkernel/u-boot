@@ -202,7 +202,8 @@ void fb_mmc_flash_write(const char *cmd, void *download_buffer,
 
 #ifdef CONFIG_AML_PARTITION
 	if ((dev_desc->part_type == PART_TYPE_AML)
-		|| (dev_desc->part_type == PART_TYPE_DOS)) {
+		|| (dev_desc->part_type == PART_TYPE_DOS)
+		|| (!strcmp(cmd, CONFIG_FASTBOOT_MBR_NAME))) {
 		if (strcmp(cmd, CONFIG_FASTBOOT_MBR_NAME) == 0) {
 			printf("%s: updating MBR\n", __func__);
 			ret = emmc_update_mbr(download_buffer);
