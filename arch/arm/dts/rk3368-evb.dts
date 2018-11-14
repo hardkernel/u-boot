@@ -12,10 +12,6 @@
 / {
 	model = "Rockchip RK3399 Evaluation Board";
 	compatible = "rockchip,rk3368-evb", "rockchip,rk3368";
-
-	chosen {
-		stdout-path = "serial2:115200n8";
-	};
 };
 
 &emmc {
