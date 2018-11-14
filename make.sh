@@ -492,7 +492,7 @@ pack_loader_image()
 	cd ${RKBIN}
 
 	if [ "${mode}" = 'all' ]; then
-		files=`ls ${RKBIN}/RKBOOT/${RKCHIP_LOADER}MINIALL*.ini`
+		files=`ls ${RKBIN}/RKBOOT/${RKCHIP_LOADER}*MINIALL*.ini`
 		for ini in $files
 		do
 			if [ -f "$ini" ]; then
