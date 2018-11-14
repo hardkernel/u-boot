@@ -409,11 +409,13 @@ static int gen_data2sign(const struct image_region region[], int region_count)
 	return 0;
 }
 
-static int rsa_sign_with_key(RSA *rsa, struct checksum_algo *checksum_algo,
+static int rsa_sign_with_key(RSA *rsa, struct padding_algo *padding_algo,
+			     struct checksum_algo *checksum_algo,
 		const struct image_region region[], int region_count,
 		uint8_t **sigp, uint *sig_size)
 {
 	EVP_PKEY *key;
+	EVP_PKEY_CTX *ckey;
 	EVP_MD_CTX *context;
 	int ret = 0;
 	size_t size;
@@ -444,7 +446,14 @@ static int rsa_sign_with_key(RSA *rsa, struct checksum_algo *checksum_algo,
 		goto err_create;
 	}
 	EVP_MD_CTX_init(context);
-	if (EVP_DigestSignInit(context, NULL,
+
+	ckey = EVP_PKEY_CTX_new(key, NULL);
+	if (!ckey) {
+		ret = rsa_err("EVP key context creation failed");
+		goto err_create;
+	}
+
+	if (EVP_DigestSignInit(context, &ckey,
 			       checksum_algo->calculate_sign(),
 			       NULL, key) <= 0) {
 		ret = rsa_err("Signer setup failed");
@@ -512,7 +521,7 @@ int rsa_sign(struct image_sign_info *info,
 	ret = rsa_get_priv_key(info->keydir, info->keyname, e, &rsa);
 	if (ret)
 		goto err_priv;
-	ret = rsa_sign_with_key(rsa, info->checksum, region,
+	ret = rsa_sign_with_key(rsa, info->padding, info->checksum, region,
 				region_count, sigp, sig_len);
 	if (ret)
 		goto err_sign;
