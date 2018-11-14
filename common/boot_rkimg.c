@@ -214,9 +214,12 @@ int get_bootdev_type(void)
 
 struct blk_desc *rockchip_get_bootdev(void)
 {
-	struct blk_desc *dev_desc;
+	static struct blk_desc *dev_desc = NULL;
 	int dev_type;
 	int devnum;
+
+	if (dev_desc)
+		return dev_desc;
 
 	devtype_num_envset();
 	dev_type = get_bootdev_type();
