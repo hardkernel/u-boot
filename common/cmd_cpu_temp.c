@@ -890,6 +890,7 @@ static int do_temp_triming(cmd_tbl_t *cmdtp, int flag1,
 #if defined(R1P1_TSENSOR_MODE)
 			case MESON_CPU_MAJOR_ID_G12A:
 			case MESON_CPU_MAJOR_ID_G12B:
+			case MESON_CPU_MAJOR_ID_TL1:
 				if (argc <3) {
 					printf("too little args for txhd temp triming!!\n");
 					return CMD_RET_USAGE;
@@ -937,6 +938,7 @@ int r1p1_temp_read(int type)
 	switch (family_id) {
 		case MESON_CPU_MAJOR_ID_G12A:
 		case MESON_CPU_MAJOR_ID_G12B:
+		case MESON_CPU_MAJOR_ID_TL1:
 			ts_b = 3159;
 			ts_a = 9411;
 			ts_m = 424;
@@ -1029,6 +1031,7 @@ int r1p1_read_entry(void)
 	switch (family_id) {
 		case MESON_CPU_MAJOR_ID_G12A:
 		case MESON_CPU_MAJOR_ID_G12B:
+		case MESON_CPU_MAJOR_ID_TL1:
 			ret = readl(AO_SEC_GP_CFG10);
 			ver = (ret >> 24) & 0xff;
 			if ((ver & 0x80) == 0) {
@@ -1084,6 +1087,7 @@ int r1p1_temp_trim(int tempbase, int tempver, int type)
 	switch (family_id) {
 		case MESON_CPU_MAJOR_ID_G12A:
 		case MESON_CPU_MAJOR_ID_G12B:
+		case MESON_CPU_MAJOR_ID_TL1:
 			ts_b = 3159;
 			ts_a = 9411;
 			ts_m = 424;
@@ -1186,6 +1190,7 @@ int r1p1_trim_entry(int tempbase, int tempver)
 	switch (family_id) {
 		case MESON_CPU_MAJOR_ID_G12A:
 		case MESON_CPU_MAJOR_ID_G12B:
+		case MESON_CPU_MAJOR_ID_TL1:
 			ret = readl(AO_SEC_GP_CFG10);
 			ver = (ret >> 24) & 0xff;
 			if (ver & 0x80) {
@@ -1200,13 +1205,13 @@ int r1p1_trim_entry(int tempbase, int tempver)
 					r1p1_temp_trim(tempbase, tempver, 1);
 					r1p1_temp_trim(tempbase, tempver, 2);
 					r1p1_temp_trim(tempbase, tempver, 0);
-					printf("triming the thermal1 and thermal2 by sw\n");
+					printf("triming the thermal1 and thermal2 by bbt-sw\n");
 				break;
 				case 0x89:
 					r1p1_temp_trim(tempbase, tempver, 1);
 					r1p1_temp_trim(tempbase, tempver, 2);
 					r1p1_temp_trim(tempbase, tempver, 0);
-					printf("triming the thermal1 and thermal2 by sw\n");
+					printf("triming the thermal1 and thermal2 by bbt-ops\n");
 				break;
 				case 0x8b:
 					r1p1_temp_trim(tempbase, tempver, 1);
@@ -1302,6 +1307,10 @@ static char temp_trim_help_text[] =
 	"           15  (1111)b: online, thermal01\n"
 	" 	G12A or G12B:\n"
 	"	    88	(10001000)b: BBT-SW, thermal1 thermal2, valid thermal cali data\n"
+	"	    89	(10001001)b: BBT-OPS, thermal1 thermal2, valid thermal cali data\n"
+	"	    8b	(10001001)b: SLT, thermal1 thermal2, valid thermal cali data\n"
+	" 	TL1:\n"
+	"	    88	(10001001)b: BBT-SW, thermal1 thermal2, valid thermal cali data\n"
 	"	    89	(10001001)b: BBT-OPS, thermal1 thermal2, valid thermal cali data\n"
 	"	    8b	(10001001)b: SLT, thermal1 thermal2, valid thermal cali data\n";
 
