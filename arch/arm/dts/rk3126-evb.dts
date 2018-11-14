@@ -14,10 +14,6 @@
 	model = "Rockchip RK3126 Evaluation board";
 	compatible = "rockchip,rk3126-evb", "rockchip,rk3126";
 
-	chosen {
-		stdout-path = &uart2;
-	};
-
 	vcc5v0_otg: vcc5v0-otg-drv {
 		compatible = "regulator-fixed";
 		regulator-name = "vcc5v0_otg";
@@ -62,8 +58,6 @@
 };
 
 &uart2 {
-	clock-frequency = <24000000>;
-	u-boot,dm-pre-reloc;
 	status = "okay";
 };
 
