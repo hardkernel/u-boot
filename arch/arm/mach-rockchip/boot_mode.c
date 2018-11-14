@@ -8,12 +8,17 @@
 #include <adc.h>
 #include <asm/io.h>
 #include <asm/arch/boot_mode.h>
+#include <asm/arch/rk_atags.h>
 #include <cli.h>
 #include <dm.h>
 #include <fdtdec.h>
 #include <boot_rkimg.h>
 #include <linux/usb/phy-rockchip-inno-usb2.h>
 #include <key.h>
+#ifdef CONFIG_DM_RAMDISK
+#include <ramdisk.h>
+#endif
+#include <mmc.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -82,24 +87,81 @@ __weak int rockchip_dnl_key_pressed(void)
 	return keyval;
 }
 
-void devtype_num_envset(void)
+void boot_devtype_init(void)
 {
+	const char *devtype_num_set = "run rkimg_bootdev";
+	char *devtype = NULL, *devnum = NULL;
 	static int done = 0;
-	int ret = 0;
+	int ret;
 
 	if (done)
 		return;
 
-	const char *devtype_num_set = "run rkimg_bootdev";
+#ifdef CONFIG_ROCKCHIP_PRELOADER_ATAGS
+	struct tag *t;
 
+	t = atags_get_tag(ATAG_BOOTDEV);
+	if (t) {
+		switch (t->u.bootdev.devtype) {
+		case BOOT_TYPE_EMMC:
+			devtype = "mmc";
+			devnum = "0";
+			break;
+		case BOOT_TYPE_SD0:
+		case BOOT_TYPE_SD1:
+			devtype = "mmc";
+			devnum = "1";
+			break;
+		case BOOT_TYPE_NAND:
+			devtype = "rknand";
+			devnum = "0";
+			break;
+		case BOOT_TYPE_SPI_NAND:
+			devtype = "spinand";
+			devnum = "0";
+			break;
+		case BOOT_TYPE_SPI_NOR:
+			devtype = "spinor";
+			devnum = "1";
+			break;
+		case BOOT_TYPE_RAM:
+			devtype = "ramdisk";
+			devnum = "0";
+			break;
+		default:
+			printf("Unknown bootdev type: 0x%x\n",
+			       t->u.bootdev.devtype);
+			break;
+		}
+	}
+
+	debug("%s: Get bootdev from atags: %s %s\n", __func__, devtype, devnum);
+
+	if (devtype && devnum) {
+		env_set("devtype", devtype);
+		env_set("devnum", devnum);
+#ifdef CONFIG_DM_MMC
+		if (!strcmp("mmc", devtype))
+			mmc_initialize(gd->bd);
+#endif
+		goto finish;
+	}
+#endif
+
+#ifdef CONFIG_DM_MMC
+	mmc_initialize(gd->bd);
+#endif
 	ret = run_command_list(devtype_num_set, -1, 0);
 	if (ret) {
 		/* Set default dev type/num if command not valid */
-		env_set("devtype", "mmc");
-		env_set("devnum", "0");
+		devtype = "mmc";
+		devnum = "0";
+		env_set("devtype", devtype);
+		env_set("devnum", devnum);
 	}
-
+finish:
 	done = 1;
+	printf("Bootdev: %s %s\n", env_get("devtype"), env_get("devnum"));
 }
 
 void rockchip_dnl_mode_check(void)
@@ -139,7 +201,7 @@ int setup_boot_mode(void)
 	int boot_mode = BOOT_MODE_NORMAL;
 	char env_preboot[256] = {0};
 
-	devtype_num_envset();
+	boot_devtype_init();
 	rockchip_dnl_mode_check();
 #ifdef CONFIG_RKIMG_BOOTLOADER
 	boot_mode = rockchip_get_boot_mode();

@@ -29,10 +29,6 @@
 #ifdef CONFIG_ROCKCHIP_DEBUGGER
 #include <rockchip_debugger.h>
 #endif
-#ifdef CONFIG_DM_RAMDISK
-#include <ramdisk.h>
-#endif
-#include <mmc.h>
 #include <of_live.h>
 #include <dm/root.h>
 
@@ -178,16 +174,6 @@ int init_kernel_dtb(void)
 {
 	int ret = 0;
 	ulong fdt_addr = 0;
-
-#ifdef CONFIG_DM_MMC
-	ret = mmc_initialize(gd->bd);
-	if (ret)
-		debug("%s: mmc initialized failed, ret=%d\n", __func__ ,ret);
-#else
-	ret = bramdisk_initialize();
-	if (ret)
-		debug("%s: bramdisk initialized failed, ret=%d\n", __func__, ret);
-#endif
 
 	fdt_addr = env_get_ulong("fdt_addr_r", 16, 0);
 	if (!fdt_addr) {
