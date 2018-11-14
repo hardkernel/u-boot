@@ -8,6 +8,10 @@
 		mmc0 = &emmc;
 		mmc1 = &sdmmc;
 	};
+
+	chosen {
+		stdout-path = &uart2;
+	};
 };
 
 &uart2 {
@@ -40,6 +44,22 @@
 	u-boot,dm-pre-reloc;
 };
 
+&emmc {
+	u-boot,dm-pre-reloc;
+};
+
 &sdmmc {
+	u-boot,dm-pre-reloc;
+};
+
+&pinctrl {
+	u-boot,dm-pre-reloc;
+};
+
+&gpio3 {
+	u-boot,dm-pre-reloc;
+};
+
+&gpio8 {
 	u-boot,dm-pre-reloc;
 };
