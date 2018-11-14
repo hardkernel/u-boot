@@ -914,65 +914,35 @@ ddr_reg_t __ddr_reg[] = {
 	#error "VCCK val out of range\n"
 #endif
 
-/* VDDEE PWM table */
-#if (VDDEE_VAL == 680)
-	#define VDDEE_VAL_REG	0x001c0000
-#elif (VDDEE_VAL == 690)
-	#define VDDEE_VAL_REG	0x001b0001
-#elif (VDDEE_VAL == 700)
-	#define VDDEE_VAL_REG	0x001a0002
-#elif (VDDEE_VAL == 710)
-	#define VDDEE_VAL_REG	0x00190003
-#elif (VDDEE_VAL == 720)
-	#define VDDEE_VAL_REG	0x00180004
-#elif (VDDEE_VAL == 730)
-	#define VDDEE_VAL_REG	0x00170005
-#elif (VDDEE_VAL == 740)
-	#define VDDEE_VAL_REG	0x00160006
-#elif (VDDEE_VAL == 750)
-	#define VDDEE_VAL_REG	0x00150007
-#elif (VDDEE_VAL == 760)
-	#define VDDEE_VAL_REG	0x00140008
-#elif (VDDEE_VAL == 770)
-	#define VDDEE_VAL_REG	0x00130009
-#elif (VDDEE_VAL == 780)
-	#define VDDEE_VAL_REG	0x0012000a
-#elif (VDDEE_VAL == 790)
-	#define VDDEE_VAL_REG	0x0011000b
-#elif    (VDDEE_VAL == 800)
-	#define VDDEE_VAL_REG	0x0010000c
+/* VDDEE_VAL_REG0: VDDEE PWM table  0.67v-0.97v*/
+/* VDDEE_VAL_REG1: VDDEE PWM table  0.69v-0.89v*/
+#if    (VDDEE_VAL == 800)
+	#define VDDEE_VAL_REG0	0x0010000c
+	#define VDDEE_VAL_REG1	0x0008000a
 #elif (VDDEE_VAL == 810)
-	#define VDDEE_VAL_REG	0x000f000d
+	#define VDDEE_VAL_REG0	0x000f000d
+	#define VDDEE_VAL_REG1	0x0007000b
 #elif (VDDEE_VAL == 820)
-	#define VDDEE_VAL_REG	0x000e000e
+	#define VDDEE_VAL_REG0	0x000e000e
+	#define VDDEE_VAL_REG1	0x0006000c
 #elif (VDDEE_VAL == 830)
-	#define VDDEE_VAL_REG	0x000d000f
+	#define VDDEE_VAL_REG0	0x000d000f
+	#define VDDEE_VAL_REG1	0x0005000d
 #elif (VDDEE_VAL == 840)
-	#define VDDEE_VAL_REG	0x000c0010
+	#define VDDEE_VAL_REG0	0x000c0010
+	#define VDDEE_VAL_REG1	0x0004000e
 #elif (VDDEE_VAL == 850)
-	#define VDDEE_VAL_REG	0x000b0011
+	#define VDDEE_VAL_REG0	0x000b0011
+	#define VDDEE_VAL_REG1	0x0003000f
 #elif (VDDEE_VAL == 860)
-	#define VDDEE_VAL_REG	0x000a0012
+	#define VDDEE_VAL_REG0	0x000a0012
+	#define VDDEE_VAL_REG1	0x00020010
 #elif (VDDEE_VAL == 870)
-	#define VDDEE_VAL_REG	0x00090013
+	#define VDDEE_VAL_REG0	0x00090013
+	#define VDDEE_VAL_REG1	0x00010011
 #elif (VDDEE_VAL == 880)
-	#define VDDEE_VAL_REG	0x00080014
-#elif (VDDEE_VAL == 890)
-	#define VDDEE_VAL_REG	0x00070015
-#elif (VDDEE_VAL == 900)
-	#define VDDEE_VAL_REG	0x00060016
-#elif (VDDEE_VAL == 910)
-	#define VDDEE_VAL_REG	0x00050017
-#elif (VDDEE_VAL == 920)
-	#define VDDEE_VAL_REG	0x00040018
-#elif (VDDEE_VAL == 930)
-	#define VDDEE_VAL_REG	0x00030019
-#elif (VDDEE_VAL == 940)
-	#define VDDEE_VAL_REG	0x0002001a
-#elif (VDDEE_VAL == 950)
-	#define VDDEE_VAL_REG	0x0001001b
-#elif (VDDEE_VAL == 960)
-	#define VDDEE_VAL_REG	0x0000001c
+	#define VDDEE_VAL_REG0	0x00080014
+	#define VDDEE_VAL_REG1	0x00000012
 #else
 	#error "VDDEE val out of range\n"
 #endif
@@ -994,11 +964,30 @@ bl2_reg_t __bl2_reg[] = {
 	{AO_PWM_PWM_D,        VCCK_VAL_REG,            0xffffffff,   0, BL2_INIT_STAGE_1, 0},
 	{AO_PWM_MISC_REG_CD,  ((1 << 23) | (1 << 1)),  (0x7f << 16), 0, BL2_INIT_STAGE_1, 0},
 	{AO_PIN_MUX_REG1,     (3 << 20),               (0xF << 20),  0, BL2_INIT_STAGE_1, 0},
+
+	/* set BOOT_9 input */
+	//{PAD_PULL_UP_EN_REG0, 1 << 9,			1 << 9,   0, BL2_INIT_STAGE_1, 0},
+
 	/* PWM_AO_B */
-	/* VDDEE_VAL_REG: check PWM table */
-	{AO_PWM_PWM_B,        VDDEE_VAL_REG,           0xffffffff,   0, BL2_INIT_STAGE_1, 0},
-	{AO_PWM_MISC_REG_AB,  ((1 << 23) | (1 << 1)),  (0x7f << 16), 0, BL2_INIT_STAGE_1, 0},
-	{AO_PIN_MUX_REG1,     (3 << 16),               (0xF << 16),  0, BL2_INIT_STAGE_1, 0},
+	/* VDDEE init start */
+	/* step1: CHK HW */
+	{(uint64_t)P_ASSIST_POR_CONFIG,  7,            0,            0, BL2_INIT_STAGE_PWM_CHK_HW,           0},
+
+	/* step2: match PWM config */
+	/* GPIO9[BIT7]=H use PWM_CFG0(0.67v-0.97v), =L use PWM_CFG1(0.69v-0.89v) */
+	{0x1,                 PWM_CFG0,                0,            0, BL2_INIT_STAGE_PWM_CFG_GROUP,        0},
+	{0x0,                 PWM_CFG1,                0,            0, BL2_INIT_STAGE_PWM_CFG_GROUP,        0},
+
+	/* step3: config PWM */
+	/* VDDEE_VAL_REG0: VDDEE PWM table  0.67v-0.97v*/
+	{AO_PWM_PWM_B,        VDDEE_VAL_REG0,          0xffffffff,   0, BL2_INIT_STAGE_PWM_INIT | PWM_CFG0,  0},
+	{AO_PWM_MISC_REG_AB,  ((1 << 23) | (1 << 1)),  (0x7f << 16), 0, BL2_INIT_STAGE_PWM_INIT | PWM_CFG0,  0},
+	{AO_PIN_MUX_REG1,     (3 << 16),               (0xF << 16),  0, BL2_INIT_STAGE_PWM_INIT | PWM_CFG0,  0},
+	/* VDDEE_VAL_REG1: VDDEE PWM table  0.69v-0.89v*/
+	{AO_PWM_PWM_B,        VDDEE_VAL_REG1,          0xffffffff,   0, BL2_INIT_STAGE_PWM_INIT | PWM_CFG1,  0},
+	{AO_PWM_MISC_REG_AB,  ((1 << 23) | (1 << 1)),  (0x7f << 16), 0, BL2_INIT_STAGE_PWM_INIT | PWM_CFG1,  0},
+	{AO_PIN_MUX_REG1,     (3 << 16),               (0xF << 16),  0, BL2_INIT_STAGE_PWM_INIT | PWM_CFG1,  0},
+	/* VDDEE init done */
 	/* Enable 5V_EN */
 	{GPIO_O_EN_N_REG3,    (1 << 8),                (1 << 8),     0, BL2_INIT_STAGE_1, 0},
 	{GPIO_O_REG3,         (1 << 8),                0xffffffff,   0, BL2_INIT_STAGE_1, 0},
