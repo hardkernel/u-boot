@@ -17,6 +17,7 @@
 #define ATAG_TOS_MEM		0x54410053
 #define ATAG_RAM_PARTITION	0x54410054
 #define ATAG_ATF_MEM		0x54410055
+#define ATAG_MAX		0x544100ff
 
 /* Tag size and offset */
 #define ATAGS_SIZE		(0x2000)	/* 8K */

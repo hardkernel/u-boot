@@ -76,12 +76,7 @@ static int inline bad_magic(u32 magic)
 {
 	return ((magic != ATAG_CORE) &&
 		(magic != ATAG_NONE) &&
-		(magic != ATAG_SERIAL) &&
-		(magic != ATAG_BOOTDEV) &&
-		(magic != ATAG_DDR_MEM) &&
-		(magic != ATAG_TOS_MEM) &&
-		(magic != ATAG_RAM_PARTITION) &&
-		(magic != ATAG_ATF_MEM));
+		(magic < ATAG_SERIAL || magic > ATAG_MAX));
 }
 
 static int inline atags_size_overflow(struct tag *t, u32 tag_size)
