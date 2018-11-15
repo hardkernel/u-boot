@@ -204,6 +204,10 @@ config TL1_SKT_V1
 	bool "Support amlogic tl1 socket v1 board"
 	default n
 
+config TL1_X301_V1
+	bool "Support amlogic tl1 x301 v1 board"
+	default n
+
 config PXP_EMULATOR
 	bool "Support pxp environment"
 	default n
@@ -433,6 +437,10 @@ endif
 
 if TL1_SKT_V1
 source "board/amlogic/tl1_skt_v1/Kconfig"
+endif
+
+if TL1_X301_V1
+source "board/amlogic/tl1_x301_v1/Kconfig"
 endif
 
 if ODROID_C2
