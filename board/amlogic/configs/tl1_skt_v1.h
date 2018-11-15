@@ -258,7 +258,7 @@
 
 #define CONFIG_BOOTCOMMAND "run storeboot"
 
-#define CONFIG_ENV_IS_NOWHERE  1
+//#define CONFIG_ENV_IS_NOWHERE  1
 #define CONFIG_ENV_SIZE   (64*1024)
 #define CONFIG_FIT 1
 #define CONFIG_OF_LIBFDT 1
