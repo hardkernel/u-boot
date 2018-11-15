@@ -464,11 +464,10 @@ static ulong rk322x_vop_set_clk(struct rk322x_clk_priv *priv,
 	int src_clk_div;
 	u32 con, parent;
 
-	src_clk_div = DIV_ROUND_UP(priv->gpll_hz, hz);
-	assert(src_clk_div - 1 < 32);
-
 	switch (clk_id) {
 	case ACLK_VOP:
+		src_clk_div = DIV_ROUND_UP(priv->gpll_hz, hz);
+		assert(src_clk_div - 1 < 32);
 		rk_clrsetreg(&cru->cru_clksel_con[33],
 			     ACLK_VOP_PLL_SEL_MASK | ACLK_VOP_DIV_CON_MASK,
 			     ACLK_VOP_PLL_SEL_GPLL << ACLK_VOP_PLL_SEL_SHIFT |
@@ -486,6 +485,7 @@ static ulong rk322x_vop_set_clk(struct rk322x_clk_priv *priv,
 			else
 				src_clk_div = DIV_ROUND_UP(priv->gpll_hz, hz);
 
+			assert(src_clk_div - 1 < 256);
 			rk_clrsetreg(&cru->cru_clksel_con[27],
 				     DCLK_LCDC_DIV_CON_MASK,
 				     (src_clk_div - 1) <<
