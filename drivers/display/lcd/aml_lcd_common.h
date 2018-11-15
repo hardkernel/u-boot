@@ -76,6 +76,8 @@ extern void lcd_timing_init_config(struct lcd_config_s *pconf);
 extern int lcd_vmode_change(struct lcd_config_s *pconf);
 
 /* lcd tcon */
+extern unsigned int lcd_tcon_core_reg_read(unsigned int addr);
+extern void lcd_tcon_core_reg_write(unsigned int addr, unsigned int val);
 extern void lcd_tcon_reg_table_print(void);
 extern void lcd_tcon_reg_readback_print(void);
 extern void lcd_tcon_info_print(void);

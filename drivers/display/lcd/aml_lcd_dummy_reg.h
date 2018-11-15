@@ -223,11 +223,26 @@
 #define HHI_TCON_PLL_CNTL4                                 (0xff63c000 + (0x0df << 2))
 #endif
 
+#ifndef ENCL_VIDEO_H_PRE_DE_END
+#define ENCL_VIDEO_H_PRE_DE_END                    0x1ccf
+#endif
+#ifndef ENCL_VIDEO_H_PRE_DE_BEGIN
+#define ENCL_VIDEO_H_PRE_DE_BEGIN                  0x1cd0
+#endif
+#ifndef ENCL_VIDEO_V_PRE_DE_ELINE
+#define ENCL_VIDEO_V_PRE_DE_ELINE                  0x1cd1
+#endif
+#ifndef ENCL_VIDEO_V_PRE_DE_BLINE
+#define ENCL_VIDEO_V_PRE_DE_BLINE                  0x1cd2
+#endif
 #ifndef ENCL_INBUF_CNTL0
 #define ENCL_INBUF_CNTL0                           0x1cd3
 #endif
 #ifndef ENCL_INBUF_CNTL1
 #define ENCL_INBUF_CNTL1                           0x1cd4
+#endif
+#ifndef ENCL_INBUF_CNT
+#define ENCL_INBUF_CNT                             0x1cd5
 #endif
 
 #ifndef REG_TCON_APB_BASE

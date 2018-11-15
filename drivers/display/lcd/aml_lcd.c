@@ -598,7 +598,8 @@ static int lcd_config_probe(void)
 	}
 	if (aml_lcd_driver.lcd_config->lcd_basic.lcd_type == LCD_VBYONE)
 		lcd_vbyone_filter_env_init(aml_lcd_driver.lcd_config);
-	if (aml_lcd_driver.chip_type == LCD_CHIP_TXHD)
+	if ((aml_lcd_driver.chip_type == LCD_CHIP_TXHD) ||
+		(aml_lcd_driver.chip_type == LCD_CHIP_TL1))
 		lcd_tcon_probe(dt_addr, &aml_lcd_driver, load_id);
 
 #ifdef CONFIG_AML_LCD_EXTERN
@@ -876,6 +877,8 @@ static struct aml_lcd_drv_s aml_lcd_driver = {
 	.lcd_reg = aml_lcd_reg,
 	.lcd_tcon_reg = aml_lcd_tcon_reg,
 	.lcd_tcon_table = aml_lcd_tcon_table,
+	.lcd_tcon_reg_read = lcd_tcon_core_reg_read,
+	.lcd_tcon_reg_write = lcd_tcon_core_reg_write,
 	.bl_on = aml_backlight_power_on,
 	.bl_off = aml_backlight_power_off,
 	.set_bl_level = aml_set_backlight_level,

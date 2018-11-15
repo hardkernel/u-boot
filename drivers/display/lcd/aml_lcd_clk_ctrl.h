@@ -260,7 +260,7 @@
  * ********************************** */
 /* ******** register bit ******** */
 /* PLL_CNTL 0x20 */
-#define LCD_PLL_LOCK_TL1             30
+#define LCD_PLL_LOCK_TL1             31
 #define LCD_PLL_EN_TL1               28
 #define LCD_PLL_RST_TL1              29
 #define LCD_PLL_N_TL1                10
@@ -286,7 +286,7 @@
 /* video */
 #define CLK_DIV_IN_MAX_TL1           (3100 * 1000)
 #define CRT_VID_CLK_IN_MAX_TL1       (3100 * 1000)
-#define ENCL_CLK_IN_MAX_TL1          (620 * 1000)
+#define ENCL_CLK_IN_MAX_TL1          (750 * 1000)
 
 
 /* **********************************

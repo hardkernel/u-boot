@@ -20,6 +20,7 @@
 #include "aml_lcd_reg.h"
 #include "aml_lcd_common.h"
 #include "aml_lcd_tcon.h"
+#include "tcon_ceds.h"
 
 static struct lcd_tcon_data_s *lcd_tcon_data;
 
@@ -52,6 +53,40 @@ static void lcd_tcon_od_check(unsigned char *table)
 	if (lcd_tcon_data->axi_offset_addr == 0) {
 		table[reg] &= ~(1 << bit);
 		LCDPR("%s: invalid fb, disable od function\n", __func__);
+	}
+}
+
+unsigned int lcd_tcon_core_reg_read(unsigned int addr)
+{
+	unsigned int val;
+	int ret;
+
+	ret = lcd_tcon_valid_check();
+	if (ret)
+		return 0;
+
+	if (lcd_tcon_data->core_reg_width == 8)
+		val = lcd_tcon_read_byte(addr + TCON_CORE_REG_START);
+	else
+		val = lcd_tcon_read(addr + TCON_CORE_REG_START);
+
+	return val;
+}
+
+void lcd_tcon_core_reg_write(unsigned int addr, unsigned int val)
+{
+	unsigned char temp;
+	int ret;
+
+	ret = lcd_tcon_valid_check();
+	if (ret)
+		return;
+
+	if (lcd_tcon_data->core_reg_width == 8) {
+		temp = (unsigned char)val;
+		lcd_tcon_write_byte((addr + TCON_CORE_REG_START), temp);
+	} else {
+		lcd_tcon_write((addr + TCON_CORE_REG_START), val);
 	}
 }
 
@@ -148,7 +183,7 @@ static int lcd_tcon_top_set_tl1(void)
 {
 	unsigned int axi_reg[3] = {0x200c, 0x2013, 0x2014};
 	unsigned int addr[3] = {0, 0, 0};
-	unsigned int size[3] = {0, 0, 0};
+	unsigned int size[3] = {260160, 260160, 122578};
 	int i;
 
 	LCDPR("lcd tcon top set\n");
@@ -218,7 +253,7 @@ static int lcd_tcon_config(char *dt_addr, struct lcd_config_s *pconf, int load_i
 	int key_len, reg_len;
 	int parent_offset;
 	char *propdata;
-	int ret;
+	//int ret;
 
 	if (load_id & 0x1) {
 		parent_offset = fdt_path_offset(dt_addr, "/lcd");
@@ -240,6 +275,7 @@ static int lcd_tcon_config(char *dt_addr, struct lcd_config_s *pconf, int load_i
 		lcd_tcon_config_axi_offset_default();
 	}
 
+#if 0
 	/* get reg table from unifykey */
 	reg_len = lcd_tcon_data->reg_table_len;
 	if (lcd_tcon_data->reg_table == NULL) {
@@ -266,6 +302,19 @@ static int lcd_tcon_config(char *dt_addr, struct lcd_config_s *pconf, int load_i
 		LCDERR("%s: !!!!!!!!tcon unifykey load length error!!!!!!!!\n", __func__);
 		return -1;
 	}
+#else
+	reg_len = lcd_tcon_data->reg_table_len;
+	if (lcd_tcon_data->reg_table == NULL)
+		lcd_tcon_data->reg_table = uhd_tcon_setting_ceds_h10;
+	key_len = sizeof(uhd_tcon_setting_ceds_h10)/sizeof(unsigned char);
+	if (key_len != reg_len) {
+		free(lcd_tcon_data->reg_table);
+		lcd_tcon_data->reg_table = NULL;
+		LCDERR("%s: !!!!!!!!tcon unifykey load length error!!!!!!!!\n",
+			__func__);
+		return -1;
+	}
+#endif
 
 	LCDPR("tcon: load key len: %d\n", key_len);
 	return 0;

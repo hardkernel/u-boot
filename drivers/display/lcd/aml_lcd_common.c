@@ -32,6 +32,7 @@ static struct lcd_type_match_s lcd_type_match_table[] = {
 	{"vbyone",  LCD_VBYONE},
 	{"mipi",    LCD_MIPI},
 	{"minilvds", LCD_MLVDS},
+	{"p2p", LCD_P2P},
 	{"invalid", LCD_TYPE_MAX},
 };
 
@@ -671,6 +672,40 @@ static int lcd_pinmux_load_from_bsp(struct lcd_config_s *pconf)
 		break;
 	case LCD_VBYONE:
 		sprintf(propname, "lcd_vbyone_pin");
+		pinmux = pconf->lcd_pinmux;
+		for (i = 0; i < LCD_PINMX_MAX; i++) {
+			pinmux += i;
+			if (strncmp(pinmux->name, "invalid", 7) == 0)
+				break;
+			if (strncmp(pinmux->name, propname, strlen(propname)) == 0) {
+				for (j = 0; j < LCD_PINMUX_NUM; j++ ) {
+					if (pinmux->pinmux_set[j][0] == LCD_PINMUX_END)
+						break;
+					pconf->pinmux_set[j][0] = pinmux->pinmux_set[j][0];
+					pconf->pinmux_set[j][1] = pinmux->pinmux_set[j][1];
+					set_cnt++;
+				}
+				for (j = 0; j < LCD_PINMUX_NUM; j++ ) {
+					if (pinmux->pinmux_clr[j][0] == LCD_PINMUX_END)
+						break;
+					pconf->pinmux_clr[j][0] = pinmux->pinmux_clr[j][0];
+					pconf->pinmux_clr[j][1] = pinmux->pinmux_clr[j][1];
+					clr_cnt++;
+				}
+				break;
+			}
+		}
+		if (set_cnt < LCD_PINMUX_NUM) {
+			pconf->pinmux_set[set_cnt][0] = LCD_PINMUX_END;
+			pconf->pinmux_set[set_cnt][1] = 0x0;
+		}
+		if (clr_cnt < LCD_PINMUX_NUM) {
+			pconf->pinmux_clr[clr_cnt][0] = LCD_PINMUX_END;
+			pconf->pinmux_clr[clr_cnt][1] = 0x0;
+		}
+		break;
+	case LCD_P2P:
+		sprintf(propname, "lcd_p2p_pin");
 		pinmux = pconf->lcd_pinmux;
 		for (i = 0; i < LCD_PINMX_MAX; i++) {
 			pinmux += i;

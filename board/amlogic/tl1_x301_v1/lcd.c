@@ -127,7 +127,7 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	{/*public 2-region vx1 : 3840x2160@60hz 8lane */
 	"p2p",LCD_P2P,10,
 	/* basic timing */
-	3840,2160,5500,2250,16,29,0,6,81,0,
+	3840,2160,5000,2250,16,29,0,6,81,0,
 	/* clk_attr */
 	2,0,1,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
 	/* p2p attr */
@@ -153,8 +153,8 @@ static struct lcd_pinmux_ctrl_s lcd_pinmux_ctrl[LCD_PINMX_MAX] = {
 	},
 	{
 		.name = "lcd_p2p_pin", //GPIOH_0~15
-		.pinmux_set = {{7, 0x11111111}, {8, 0x11111111}, {9, 0x1}, {LCD_PINMUX_END, 0x0}},
-		.pinmux_clr = {{7, 0xffffffff}, {8, 0xffffffff}, {9, 0xf}, {LCD_PINMUX_END, 0x0}},
+		.pinmux_set = {{7, 0x11111111}, {8, 0x11111111}, {9, 0x11111}, {LCD_PINMUX_END, 0x0}},
+		.pinmux_clr = {{7, 0xffffffff}, {8, 0xffffffff}, {9, 0xfffff}, {LCD_PINMUX_END, 0x0}},
 	},
 	{
 		.name = "invalid",

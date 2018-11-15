@@ -54,6 +54,7 @@ extern unsigned int lcd_debug_print_flag;
  * VENC to TCON sync delay
  * ********************************** */
 #define TTL_DELAY                   13
+#define PRE_DE_DELAY                8
 
 
 /* ******** MIPI_DSI_PHY ******** */
@@ -311,8 +312,15 @@ struct mlvds_config_s {
 	unsigned int bit_rate; /* Hz */
 };
 
+enum p2p_type_e {
+	P2P_CEDS = 0,
+	P2P_MAX,
+};
+
 struct p2p_config_s {
-	unsigned int channel_num;
+	unsigned int p2p_type;
+	unsigned int port_num;
+	unsigned int lane_num;
 	unsigned int channel_sel0;
 	unsigned int channel_sel1;
 	unsigned int clk_phase; /* [13:12]=clk01_sel, [11:8]=pi2, [7:4]=pi1, [3:0]=pi0 */
@@ -544,6 +552,8 @@ struct aml_lcd_drv_s {
 	void (*lcd_reg)(void);
 	void (*lcd_tcon_reg)(void);
 	void (*lcd_tcon_table)(void);
+	unsigned int (*lcd_tcon_reg_read)(unsigned int addr);
+	void (*lcd_tcon_reg_write)(unsigned int addr, unsigned int val);
 	void (*bl_on)(void);
 	void (*bl_off)(void);
 	void (*set_bl_level)(int level);

@@ -21997,6 +21997,13 @@
 #define P_ENCL_DACSEL_0                            (volatile unsigned int *)((0x1cc9  << 2) + 0xff900000)
 #define   ENCL_DACSEL_1                            (0x1cca)
 #define P_ENCL_DACSEL_1                            (volatile unsigned int *)((0x1cca  << 2) + 0xff900000)
+#define ENCL_VIDEO_H_PRE_DE_END                    0x1ccf
+#define ENCL_VIDEO_H_PRE_DE_BEGIN                  0x1cd0
+#define ENCL_VIDEO_V_PRE_DE_ELINE                  0x1cd1
+#define ENCL_VIDEO_V_PRE_DE_BLINE                  0x1cd2
+#define ENCL_INBUF_CNTL0                           0x1cd3
+#define ENCL_INBUF_CNTL1                           0x1cd4
+#define ENCL_INBUF_CNT                             0x1cd5
 //
 // Closing file:  venc2_regs.h
 //

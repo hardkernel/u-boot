@@ -75,17 +75,17 @@ static void lcd_vbyone_phy_set(struct lcd_config_s *pconf, int status)
 			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL15, 0);
 			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL16, 0x80000000);
 			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL8, 0x40004);
-			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL1, 0x26020602);
+			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL1, 0x26022602);
 			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL9, 0x40004);
-			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL2, 0x26020602);
+			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL2, 0x26022602);
 			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL10, 0x40004);
-			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL3, 0x26020602);
+			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL3, 0x26022602);
 			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL11, 0x40004);
-			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL4, 0x26020602);
+			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL4, 0x26022602);
 			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL12, 0x40004);
-			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL6, 0x26020602);
+			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL6, 0x26022602);
 			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL13, 0x40004);
-			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL7, 0x26020602);
+			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL7, 0x26022602);
 			break;
 		default:
 			if (ext_pullup)
@@ -244,37 +244,25 @@ static void lcd_mlvds_phy_set(struct lcd_config_s *pconf, int status)
 
 static void lcd_p2p_phy_set(struct lcd_config_s *pconf, int status)
 {
-	unsigned int vswing, preem;
-	unsigned int data32;
-
 	if (lcd_debug_print_flag)
 		LCDPR("%s: %d\n", __func__, status);
 
 	if (status) {
-		vswing = pconf->lcd_control.p2p_config->phy_vswing;
-		preem = pconf->lcd_control.p2p_config->phy_preem;
-		if (vswing > 7) {
-			LCDERR("%s: wrong vswing_level=%d, use default\n",
-				__func__, vswing);
-			vswing = LVDS_PHY_VSWING_DFT;
-		}
-		if (preem > 3) {
-			LCDERR("%s: wrong preemphasis_level=%d, use default\n",
-				__func__, preem);
-			preem = LVDS_PHY_PREEM_DFT;
-		}
-
-		data32 = MLVDS_PHY_CNTL1_TXHD |
-			(vswing << 3) | (vswing << 0) | (preem << 23);
-		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL1, data32);
-		data32 = MLVDS_PHY_CNTL2_TXHD |
-			(preem << 14) | (preem << 12) |
-			(preem << 26) | (preem << 24);
-		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL2, data32);
-		data32 = MLVDS_PHY_CNTL3_TXHD |
-			(preem << 6) | (preem << 4) |
-			(preem << 2) | (preem << 0) | (preem << 30);
-		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL3, data32);
+		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL14, 0xff2027af);
+		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL15, 0);
+		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL16, 0x80000000);
+		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL8, 0);
+		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL1, 0x06020602);
+		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL9, 0);
+		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL2, 0x06020602);
+		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL10, 0);
+		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL3, 0x06020602);
+		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL11, 0);
+		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL4, 0x06020602);
+		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL12, 0);
+		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL6, 0x06020602);
+		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL13, 0);
+		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL7, 0x06020602);
 	} else {
 		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL1, 0x0);
 		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL2, 0x0);
@@ -348,6 +336,16 @@ static void lcd_venc_set(struct lcd_config_s *pconf)
 	lcd_vcbus_write(ENCL_VIDEO_HAVON_END,   h_active - 1 + video_on_pixel);
 	lcd_vcbus_write(ENCL_VIDEO_VAVON_BLINE, video_on_line);
 	lcd_vcbus_write(ENCL_VIDEO_VAVON_ELINE, v_active - 1  + video_on_line);
+	switch (pconf->lcd_basic.lcd_type) {
+	case LCD_P2P:
+		lcd_vcbus_write(ENCL_VIDEO_V_PRE_DE_BLINE, video_on_line - 1 - 4);
+		lcd_vcbus_write(ENCL_VIDEO_V_PRE_DE_ELINE, video_on_line - 1);
+		lcd_vcbus_write(ENCL_VIDEO_H_PRE_DE_BEGIN, video_on_pixel + PRE_DE_DELAY);
+		lcd_vcbus_write(ENCL_VIDEO_H_PRE_DE_END, h_active - 1 + video_on_pixel + PRE_DE_DELAY);
+		break;
+	default:
+		break;
+	}
 
 	lcd_vcbus_write(ENCL_VIDEO_HSO_BEGIN, pconf->lcd_timing.hs_hs_addr);
 	lcd_vcbus_write(ENCL_VIDEO_HSO_END,   pconf->lcd_timing.hs_he_addr);
@@ -1129,7 +1127,22 @@ static void lcd_p2p_control_set(struct lcd_config_s *pconf)
 	if (lcd_debug_print_flag)
 		LCDPR("%s\n", __func__);
 
-	lcd_vbyone_control_set(pconf);
+	/* fifo_clk_sel[7:6]: 0=div6, 1=div 7, 2=div8, 3=div10 */
+	lcd_hiu_write(HHI_LVDS_TX_PHY_CNTL0, (2 << 6));
+	/* serializer_en[27:16] */
+	lcd_hiu_setb(HHI_LVDS_TX_PHY_CNTL0, 0xfff, 16, 12);
+	/* pn swap[2] */
+	lcd_hiu_setb(HHI_LVDS_TX_PHY_CNTL0, 1, 2, 1);
+
+	/* fifo enable[30], phy_clock gating[24] */
+	lcd_hiu_write(HHI_LVDS_TX_PHY_CNTL1, (1 << 30) | (1 << 24));
+	/* fifo write enable[31] */
+	lcd_hiu_setb(HHI_LVDS_TX_PHY_CNTL1, 1, 31, 1);
+
+	/* channel swap default no swap */
+	lcd_vcbus_write(LVDS_CH_SWAP0, 0x3210);
+	lcd_vcbus_write(LVDS_CH_SWAP1, 0x7654);
+	lcd_vcbus_write(LVDS_CH_SWAP2, 0xba98);
 
 	lcd_tcon_enable(pconf);
 }
@@ -1137,8 +1150,6 @@ static void lcd_p2p_control_set(struct lcd_config_s *pconf)
 static void lcd_p2p_disable(void)
 {
 	lcd_tcon_disable();
-
-	lcd_vbyone_disable();
 }
 
 static unsigned int vbyone_lane_num[] = {
@@ -1327,8 +1338,8 @@ int lcd_tv_driver_init(void)
 		break;
 	case LCD_P2P:
 		lcd_p2p_control_set(pconf);
-		lcd_pinmux_set(1);
 		lcd_p2p_phy_set(pconf, 1);
+		lcd_pinmux_set(1);
 		break;
 	default:
 		break;

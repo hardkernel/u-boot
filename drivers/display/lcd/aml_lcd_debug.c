@@ -276,7 +276,7 @@ static void lcd_info_print_p2p(struct lcd_config_s *pconf)
 		"phy_preem         0x%x\n"
 		"bit_rate          %dHz\n"
 		"pi_clk_sel        0x%03x\n\n",
-		pconf->lcd_control.p2p_config->channel_num,
+		pconf->lcd_control.p2p_config->lane_num,
 		pconf->lcd_control.p2p_config->channel_sel0,
 		pconf->lcd_control.p2p_config->channel_sel1,
 		pconf->lcd_control.p2p_config->clk_phase,
