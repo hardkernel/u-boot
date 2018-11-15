@@ -261,6 +261,7 @@ void enable_caches(void)
 	dcache_enable();
 }
 
+#ifdef CONFIG_LMB
 /*
  * Using last bi_dram[...] to initialize "bootm_low" and "bootm_mapsize".
  * This makes lmb_alloc_base() always alloc from tail of sdram.
@@ -283,24 +284,31 @@ void board_lmb_reserve(struct lmb *lmb)
 	size = gd->bd->bi_dram[i - 1].size;
 
 	/*
-	 * 32-bit kernel: ramdisk/fdt shouldn't be loaded to highmem area, otherwise
-	 * "Unable to handle kernel paging request at virtual address ...".
-	 * If so, using low address region, i.e before tustos region(132MB).
+	 * 32-bit kernel: ramdisk/fdt shouldn't be loaded to highmem area(768MB+),
+	 * otherwise "Unable to handle kernel paging request at virtual address ...".
+	 *
+	 * So that we hope limit highest address at 768M, but there comes the the
+	 * problem: ramdisk is a compressed image and it expands after descompress,
+	 * so it accesses 768MB+ and brings the above "Unable to handle kernel ...".
+	 *
+	 * We make a appointment that the highest memory address is 512MB, it
+	 * makes lmb alloc safer.
 	 */
-#ifndef ARM64
-	if (start >= ((u64)CONFIG_SYS_SDRAM_BASE + SZ_768M)) {
+#ifndef CONFIG_ARM64
+	if (start >= ((u64)CONFIG_SYS_SDRAM_BASE + SZ_512M)) {
 		start = gd->bd->bi_dram[i - 2].start;
 		size = gd->bd->bi_dram[i - 2].size;
 	}
 
-	if ((start + size) > ((u64)CONFIG_SYS_SDRAM_BASE + SZ_768M))
-		size = (u64)CONFIG_SYS_SDRAM_BASE + SZ_768M - start;
+	if ((start + size) > ((u64)CONFIG_SYS_SDRAM_BASE + SZ_512M))
+		size = (u64)CONFIG_SYS_SDRAM_BASE + SZ_512M - start;
 #endif
 	sprintf(bootm_low, "0x%llx", start);
 	sprintf(bootm_mapsize, "0x%llx", size);
 	env_set("bootm_low", bootm_low);
 	env_set("bootm_mapsize", bootm_mapsize);
 }
+#endif
 
 #ifdef CONFIG_ROCKCHIP_PRELOADER_SERIAL
 int board_init_f_init_serial(void)
