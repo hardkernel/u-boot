@@ -25,6 +25,18 @@
 #ifndef CONFIG_SPL_BUILD
 #include <config_distro_defaults.h>
 
+#ifdef CONFIG_CMD_RKNAND
+#define BOOTENV_SHARED_RKNAND	BOOTENV_SHARED_BLKDEV(rknand)
+#define BOOTENV_DEV_RKNAND		BOOTENV_DEV_BLKDEV
+#define BOOTENV_DEV_NAME_RKNAND	BOOTENV_DEV_NAME_BLKDEV
+#else
+#define BOOTENV_SHARED_RKNAND
+#define BOOTENV_DEV_RKNAND \
+	BOOT_TARGET_DEVICES_references_RKNAND_without_CONFIG_CMD_RKNAND
+#define BOOTENV_DEV_NAME_RKNAND \
+	BOOT_TARGET_DEVICES_references_RKNAND_without_CONFIG_CMD_RKNAND
+#endif
+
 /* First try to boot from SD (index 1), then eMMC (index 0) */
 #if CONFIG_IS_ENABLED(CMD_MMC)
 	#define BOOT_TARGET_MMC(func) \
@@ -32,6 +44,12 @@
 		func(MMC, mmc, 0)
 #else
 	#define BOOT_TARGET_MMC(func)
+#endif
+
+#if CONFIG_IS_ENABLED(CMD_RKNAND)
+	#define BOOT_TARGET_RKNAND(func) func(RKNAND, rknand, 0)
+#else
+	#define BOOT_TARGET_RKNAND(func)
 #endif
 
 #if CONFIG_IS_ENABLED(CMD_USB)
@@ -54,6 +72,7 @@
 
 #define BOOT_TARGET_DEVICES(func) \
 	BOOT_TARGET_MMC(func) \
+	BOOT_TARGET_RKNAND(func) \
 	BOOT_TARGET_USB(func) \
 	BOOT_TARGET_PXE(func) \
 	BOOT_TARGET_DHCP(func)
