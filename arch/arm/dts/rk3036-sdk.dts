@@ -13,6 +13,7 @@
 	compatible = "sdk,sdk-rk3036", "rockchip,rk3036";
 
 	chosen {
+		u-boot,spl-boot-order = &sdmmc, &emmc;
 		stdout-path = &uart2;
 	};
 
