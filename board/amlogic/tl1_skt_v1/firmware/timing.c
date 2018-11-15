@@ -75,8 +75,78 @@
 #define DDR_RFC_TYPE_LPDDR4_4Gbx1				11
 
 ddr_set_t __ddr_setting[] = {
+///*
 {
-	/* ddr4 */
+	/// tl1 ref(x301) ddr3
+	.board_id				=CONFIG_BOARD_ID_MASK,
+	.version				= 1,
+	.dram_rank_config		= CONFIG_DDR0_32BIT_RANK01_CH0,
+	.DramType				= CONFIG_DDR_TYPE_DDR3,
+	.DRAMFreq				= {1056, 0, 0, 0},
+	.ddr_base_addr			= CFG_DDR_BASE_ADDR,
+	.ddr_start_offset		= CFG_DDR_START_OFFSET,
+	.DisabledDbyte			= 0xf0,
+	.Is2Ttiming				= 1,
+	.HdtCtrl				= 0xc8,//0xC8,
+	.dram_cs0_size_MB		= 1024,
+	.dram_cs1_size_MB		=1024,// 1024,
+	.training_SequenceCtrl	= {0x31f,0}, //ddr3 0x21f 0x31f
+	.phy_odt_config_rank	= {0x23,0x13,0x30,0x30}, // // Odt pattern for accesses //targeting rank 0. [3:0] is used //for write ODT [7:4] is used for //read ODT
+	.dfi_odt_config			= 0x0d0d,
+	.PllBypassEn			= 0, //bit0-ps0,bit1-ps1
+	.ddr_rdbi_wr_enable		= 0,
+	.clk_drv_ohm			= 40,
+	.cs_drv_ohm				= 40,
+	.ac_drv_ohm				= 60,
+	.soc_data_drv_ohm_p		= 40,
+	.soc_data_drv_ohm_n		= 40,
+	.soc_data_odt_ohm_p		= 60, //48,
+	.soc_data_odt_ohm_n		= 0,
+	.dram_data_drv_ohm		= 40, //ddr4 sdram only 34 or 48, skt board use 34 better
+	.dram_data_odt_ohm		= 40,
+	.dram_ac_odt_ohm		= 0,
+	.dram_data_wr_odt_ohm =120,
+	.soc_clk_slew_rate		= 0x300,
+	.soc_cs_slew_rate		= 0x300,
+	.soc_ac_slew_rate		= 0x300,
+	.soc_data_slew_rate		= 0x200,
+	.vref_output_permil		= 500,
+	.vref_receiver_permil	= 500, //700,
+	.vref_dram_permil		= 500, //700,
+//	.vref_reverse			= 0,
+	.ac_trace_delay			= {32,32-10,32,32,32+10,32,32,32,32,32-10},
+	//{00,00},
+	.ac_pinmux				= {00,00},
+#if 1
+	.ddr_dmc_remap			= {
+							[0] = ( 5 |  7 << 5 |  8 << 10 |  9 << 15 | 10 << 20 | 11 << 25 ),
+							[1] = ( 12|  0 << 5 |  0 << 10 | 14 << 15 | 15 << 20 | 16 << 25 ),
+							[2] = ( 17| 18 << 5 | 19 << 10 | 21 << 15 | 22 << 20 | 23 << 25 ),
+							[3] = ( 24| 25 << 5 | 26 << 10 | 27 << 15 | 28 << 20 | 29 << 25 ),
+							[4] = ( 30| 13 << 5 | 20 << 10 |  6 << 15 |  0 << 20 |  0 << 25 ),
+	},
+#else
+	//16bit
+	.ddr_dmc_remap			= {
+							[0] = ( 0 |  5 << 5 |  6<< 10 |  7 << 15 | 8 << 20 | 9 << 25 ),
+							[1] = ( 10|  0 << 5 |  0 << 10 | 14 << 15 | 15 << 20 | 16 << 25 ),
+							[2] = ( 17|( 18 << 5) |( 19 << 10) |( 20< 15) |( 21 << 20) | (22 << 25 )),
+							[3] = ( 23| 24 << 5 | 25 << 10 | 26 << 15 | 27 << 20 | 28 << 25 ),
+							[4] = ( 29| 11<< 5 | 12 << 10 |  13<< 15 |  0 << 20 |  0 << 25 ),
+	},
+#endif
+	.ddr_lpddr34_ca_remap	= {00,00},
+	.ddr_lpddr34_dq_remap	= {00,00},
+	.dram_rtt_nom_wr_park	= {00,00},
+
+
+	.pll_ssc_mode			= (1<<20) | (1<<8) | (2<<4) | 0,//center_ssc_1000ppm
+	.ddr_func				= DDR_FUNC,
+	.magic					= DRAM_CFG_MAGIC,
+},
+//*/
+{
+	/* tl1 skt (x309) ddr4 */
 	.board_id				= CONFIG_BOARD_ID_MASK,
 	.version				= 1,
 	.dram_rank_config		= CONFIG_DDR0_32BIT_RANK0_CH0,
@@ -88,33 +158,33 @@ ddr_set_t __ddr_setting[] = {
 	.DisabledDbyte			= 0xf0,
 	.Is2Ttiming				= 1,
 	.HdtCtrl				= 0xC8,
-	.dram_cs0_size_MB		= 2048,
+	.dram_cs0_size_MB		= 0xffff,
 	.dram_cs1_size_MB		= 0,
 	.training_SequenceCtrl	= {0x31f,0x61}, //ddr3 0x21f 0x31f
 	.phy_odt_config_rank	= {0x30,0x30,0x30,0x30}, // // Odt pattern for accesses //targeting rank 0. [3:0] is used //for write ODT [7:4] is used for //read ODT
 	.dfi_odt_config			= 0x0808,
 	.PllBypassEn			= 0, //bit0-ps0,bit1-ps1
-	.ddr_rdbi_wr_enable		= 0,
+	.ddr_rdbi_wr_enable		= 0x1,//bit 0 read-dbi,bit 1 write dbi
 	.clk_drv_ohm			= 40,
 	.cs_drv_ohm				= 40,
 	.ac_drv_ohm				= 40,
-	.soc_data_drv_ohm_p		= 40,
-	.soc_data_drv_ohm_n		= 40,
+	.soc_data_drv_ohm_p		= 48,
+	.soc_data_drv_ohm_n		= 48,
 	.soc_data_odt_ohm_p		= 60,
 	.soc_data_odt_ohm_n		= 0,
-	.dram_data_drv_ohm		= 34,//48, //34, //ddr4 sdram only 34 or 48, skt board use 34 better
-	.dram_data_odt_ohm		= 60, //60,
+	.dram_data_drv_ohm		= 48,//48, //34, //ddr4 sdram only 34 or 48, skt board use 34 better
+	.dram_data_odt_ohm		= 48, //60,
 	.dram_ac_odt_ohm		= 0,
 	.soc_clk_slew_rate		= 0x3ff,
 	.soc_cs_slew_rate		= 0x3ff,
 	.soc_ac_slew_rate		= 0x3ff,
 	.soc_data_slew_rate		= 0x2ff,
 	.vref_output_permil		= 500,
-	.vref_receiver_permil	= 700,
-	.vref_dram_permil		= 700,
-	.vref_reverse			= 0,
+	.vref_receiver_permil	= 0,
+	.vref_dram_permil		= 0,
+	//.vref_reverse			= 0,
 	//.ac_trace_delay			={0x0,0x0},// {0x40,0x40,0x40,0x40,0x40,0x40,0x40,0x40,0x40,0x40},
-	.ac_trace_delay			= {0x40,0x40,0x40,0x40,0x40,0x40,0x40,0x40,0x40,0x40},
+	.ac_trace_delay			= {32+10,32+10,32+10,32+10,32,32+10,32+10,32+10,32+10,32+10},
 	.ddr_dmc_remap			= {
 							[0] = ( 5 |  7 << 5 |  8 << 10 |  9 << 15 | 10 << 20 | 11 << 25 ),
 							[1] = ( 12|  0 << 5 |  0 << 10 | 14 << 15 | 15 << 20 | 16 << 25 ),
@@ -143,20 +213,21 @@ ddr_set_t __ddr_setting[] = {
 	.magic					= DRAM_CFG_MAGIC,
 	.slt_test_function={0x0,0x0},   //{0x1,0x0},enable slt 4 DRAMFreq test;{0x0,0x0},disable slt 4 DRAMFreq test;
 },
+/*
 {
-	/* ddr3 */
+	// g12a skt (u209) ddr3
 	.board_id				= CONFIG_BOARD_ID_MASK,
 	.version				= 1,
-	.dram_rank_config		= CONFIG_DDR0_32BIT_RANK01_CH0,
+	.dram_rank_config		= CONFIG_DDR0_32BIT_RANK0_CH0,
 	.DramType				= CONFIG_DDR_TYPE_DDR3,
-	.DRAMFreq				= {600, 0, 0, 0},
+	.DRAMFreq				= {912, 0, 0, 0},
 	.ddr_base_addr			= CFG_DDR_BASE_ADDR,
 	.ddr_start_offset		= CFG_DDR_START_OFFSET,
 	.DisabledDbyte			= 0xf0,
 	.Is2Ttiming				= 1,
-	.HdtCtrl				= 0xC8,
+	.HdtCtrl				= 0x5,//0xC8,
 	.dram_cs0_size_MB		= 1024,
-	.dram_cs1_size_MB		= 1024,
+	.dram_cs1_size_MB		=0,// 1024,
 	.training_SequenceCtrl	= {0x31f,0}, //ddr3 0x21f 0x31f
 	.phy_odt_config_rank	= {0x30,0x30,0x30,0x30}, // // Odt pattern for accesses //targeting rank 0. [3:0] is used //for write ODT [7:4] is used for //read ODT
 	.dfi_odt_config			= 0x0c0c,
@@ -179,7 +250,7 @@ ddr_set_t __ddr_setting[] = {
 	.vref_output_permil		= 500,
 	.vref_receiver_permil	= 500, //700,
 	.vref_dram_permil		= 500, //700,
-	.vref_reverse			= 0,
+//	.vref_reverse			= 0,
 	.ac_trace_delay			= {0x40,0x40,0x40,0x40,0x40,0x40,0x40,0x40,0x40,0x40},
 	//{00,00},
 	.ac_pinmux				= {00,00},
@@ -205,24 +276,14 @@ ddr_set_t __ddr_setting[] = {
 	.ddr_lpddr34_dq_remap	= {00,00},
 	.dram_rtt_nom_wr_park	= {00,00},
 
-	/* pll ssc config:
-	 *
-	 *   pll_ssc_mode = (1<<20) | (1<<8) | ([strength] << 4) | [mode],
-	 *      ppm = strength * 500
-	 *      mode: 0=center, 1=up, 2=down
-	 *
-	 *   eg:
-	 *     1. config 1000ppm center ss. then mode=0, strength=2
-	 *        .pll_ssc_mode = (1<<20) | (1<<8) | (2 << 4) | 0,
-	 *     2. config 3000ppm down ss. then mode=2, strength=6
-	 *        .pll_ssc_mode = (1<<20) | (1<<8) | (6 << 4) | 2,
-	 */
+
 	.pll_ssc_mode			= (1<<20) | (1<<8) | (2<<4) | 0,//center_ssc_1000ppm
 	.ddr_func				= DDR_FUNC,
 	.magic					= DRAM_CFG_MAGIC,
 },
+
 {
-	/* lpddr4 */
+	//g12a skt (u209) lpddr4
 	.board_id				= CONFIG_BOARD_ID_MASK,
 	.version				= 1,
 	//.dram_rank_config		= CONFIG_DDR0_32BIT_RANK01_CH0,
@@ -259,7 +320,7 @@ ddr_set_t __ddr_setting[] = {
 	.vref_output_permil		= 350,//200,
 	.vref_receiver_permil	= 200,
 	.vref_dram_permil		= 350,
-	.vref_reverse			= 0,
+	//.vref_reverse			= 0,
 	.ac_trace_delay			= {00,0x0,0,0,0,0,0x0,00},
 	.ac_pinmux				= {00,00},
 	.ddr_dmc_remap			= {
@@ -272,26 +333,68 @@ ddr_set_t __ddr_setting[] = {
 	.ddr_lpddr34_ca_remap	= {00,00},
 	.ddr_lpddr34_dq_remap	= {3,2,0,1,7,6,5,4,14,13,12,15,8,9,11,10,20,21,22,23,16,17,19,18,24,25,28,26,31,30,27,29},
 	.dram_rtt_nom_wr_park	= {00,00},
-
-	/* pll ssc config:
-	 *
-	 *   pll_ssc_mode = (1<<20) | (1<<8) | ([strength] << 4) | [mode],
-	 *      ppm = strength * 500
-	 *      mode: 0=center, 1=up, 2=down
-	 *
-	 *   eg:
-	 *     1. config 1000ppm center ss. then mode=0, strength=2
-	 *        .pll_ssc_mode = (1<<20) | (1<<8) | (2 << 4) | 0,
-	 *     2. config 3000ppm down ss. then mode=2, strength=6
-	 *        .pll_ssc_mode = (1<<20) | (1<<8) | (6 << 4) | 2,
-	 */
 	.pll_ssc_mode			= (1<<20) | (1<<8) | (2<<4) | 0,//center_ssc_1000ppm
 	.ddr_func				= DDR_FUNC,
 	.magic					= DRAM_CFG_MAGIC,
 	.diagnose				= CONFIG_DIAGNOSE_DISABLE,
 },
 {
-	/* lpddr3 */
+	// g12a Y2 dongle
+	.board_id				= CONFIG_BOARD_ID_MASK,
+	.version				= 1,
+	//.dram_rank_config		= CONFIG_DDR0_32BIT_RANK01_CH0,
+	.dram_rank_config		= CONFIG_DDR0_32BIT_RANK0_CH01,
+	.ddr_rfc_type			= DDR_RFC_TYPE_LPDDR4_4Gbx1,
+	.DramType				= CONFIG_DDR_TYPE_LPDDR4,
+	.DRAMFreq				= {1392, 0, 0, 0},
+	.ddr_base_addr			= CFG_DDR_BASE_ADDR,
+	.ddr_start_offset		= CFG_DDR_START_OFFSET,
+	.DisabledDbyte			= 0xf0,
+	.Is2Ttiming				= 0,
+	.HdtCtrl				= 0xa,
+	.dram_cs0_size_MB		= 1536,//1024,
+	.dram_cs1_size_MB		= 0,//1024,
+	.training_SequenceCtrl	= {0x131f,0x61}, //ddr3 0x21f 0x31f
+	.phy_odt_config_rank	= {0x30,0x30,0x30,0x30}, // // Odt pattern for accesses //targeting rank 0. [3:0] is used //for write ODT [7:4] is used for //read ODT
+	.dfi_odt_config			= 0x0808,
+	.PllBypassEn			= 0, //bit0-ps0,bit1-ps1
+	.ddr_rdbi_wr_enable		= 0,
+	.clk_drv_ohm			= 40,
+	.cs_drv_ohm				= 40,
+	.ac_drv_ohm				= 40,
+	.soc_data_drv_ohm_p		= 40,
+	.soc_data_drv_ohm_n		= 40,
+	.soc_data_odt_ohm_p		= 0,
+	.soc_data_odt_ohm_n		= 120,
+	.dram_data_drv_ohm		= 40, //lpddr4 sdram only240/1-6
+	.dram_data_odt_ohm		= 120,
+	.dram_ac_odt_ohm		= 120,
+	.soc_clk_slew_rate		= 0x3ff,//0x253,
+	.soc_cs_slew_rate		= 0x100,//0x253,
+	.soc_ac_slew_rate		= 0x100,//0x253,
+	.soc_data_slew_rate		= 0x1ff,
+	.vref_output_permil		= 350,//200,
+	.vref_receiver_permil	= 200,
+	.vref_dram_permil		= 350,
+	//.vref_reverse			= 0,
+	.ac_trace_delay			= {00,0x0,0,0,0,0,0x0,00},
+	.ac_pinmux				= {00,00},
+	.ddr_dmc_remap			= {
+							[0] = ( 5 |  6 << 5 |  7 << 10 |  8<< 15 | 9<< 20 | 10 << 25 ),
+							[1] = ( 11|  0 << 5 |  0 << 10 | 15 << 15 | 16 << 20 | 17 << 25 ),
+							[2] = ( 18| 19 << 5 | 20 << 10 | 21 << 15 | 22 << 20 | 23 << 25 ),
+							[3] = ( 24| 25 << 5 | 26 << 10 | 27 << 15 | 28 << 20 | 29 << 25 ),
+							[4] = ( 30| 12 << 5 | 13 << 10 |  14<< 15 |  0 << 20 |  0 << 25 ),
+	},
+	.ddr_lpddr34_ca_remap	= {00,00},
+	.ddr_lpddr34_dq_remap	= {00,00},
+	.dram_rtt_nom_wr_park	= {00,00},
+	.pll_ssc_mode			= (1<<20) | (1<<8) | (2<<4) | 0,//center_ssc_1000ppm
+	.ddr_func				= DDR_FUNC,
+	.magic					= DRAM_CFG_MAGIC,
+},
+{
+	// lpddr3
 	.board_id				= CONFIG_BOARD_ID_MASK,
 	.version				= 1,
 	//.dram_rank_config		= CONFIG_DDR0_32BIT_RANK01_CH0,
@@ -329,7 +432,7 @@ ddr_set_t __ddr_setting[] = {
 	.vref_output_permil		= 800,//200,
 	.vref_receiver_permil	= 700,//875,  //700 for drv 40 odt 60 is better ,why?
 	.vref_dram_permil		= 500,//875,
-	.vref_reverse			= 0,
+	//.vref_reverse			= 0,
 	.ac_trace_delay			= {0x10,0x0,0x10-6,0x10-6,0x10-6,0x0,0x0,0x0,0x0,0x0},
 	.ac_pinmux				= {00,00},
 	.ddr_dmc_remap			= {
@@ -347,6 +450,7 @@ ddr_set_t __ddr_setting[] = {
 	.magic					= DRAM_CFG_MAGIC,
 	.diagnose				= CONFIG_DIAGNOSE_DISABLE,
 },
+*/
 };
 
 pll_set_t __pll_setting = {

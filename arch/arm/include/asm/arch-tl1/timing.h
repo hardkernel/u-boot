@@ -208,11 +208,13 @@ typedef struct ddr_set{
 	//soc init SOC receiver vref ,config like 500 means 0.5VDDQ,take care ,please follow SI
 	unsigned	short	vref_dram_permil;
 	//soc init DRAM receiver vref ,config like 500 means 0.5VDDQ,take care ,please follow SI
-	unsigned	short	vref_reverse;
-	//system reserve,do not modify
-	/* align8 */
+	unsigned	short	max_core_timmming_frequency;
+	//use for limited ddr speed core timmming parameter,for some old dram maybe have no over speed register
 
-	unsigned	char	ac_trace_delay[12];
+	unsigned	char	ac_trace_delay[10];
+	unsigned	char	lpddr4_dram_vout_voltage_1_3_2_5_setting;
+	//use for lpddr4 read vout voltage  setting 0 --->2/5VDDQ ,1--->1/3VDDQ
+	unsigned	char	lpddr4_x8_mode;
 	//system reserve,do not modify ,take care ,please follow SI
 	unsigned	char	ac_pinmux[DWC_AC_PINMUX_TOTAL];
 	//use for lpddr3 /lpddr4 ca pinmux remap
@@ -220,7 +222,8 @@ typedef struct ddr_set{
 	unsigned	char	slt_test_function[2];  //[0] slt test function enable,bit 0 enable 4 frequency scan,bit 1 enable force delay line offset ,[1],slt test parameter ,use for force delay line offset
 		//system reserve,do not modify
 	unsigned	short	dq_bdlr_org;
-	unsigned	char	rsv_char1[2];
+	unsigned	char  dram_data_wr_odt_ohm;
+	unsigned	char	bitTimeControl_2d;
 	//system reserve,do not modify
 	/* align8 */
 
@@ -239,9 +242,23 @@ typedef struct ddr_set{
 
 	unsigned	long	rsv_long0[2];
 	/* v1 end */
-	unsigned	char	dqs_adjust[16]; //rank 0 --lane 0 1 2 3  rank 1--4 5 6 7 write  //rank 0 --lane 0 1 2 3  rank 1--4 5 6 7 read
-	/* v2 start */
-	unsigned	char	dq_bit_delay[72];
+	//unsigned	char	read_dqs_adjust[16]; //rank 0 --lane 0 1 2 3  rank 1--4 5 6 7 write  //rank 0 --lane 0 1 2 3  rank 1--4 5 6 7 read
+	//unsigned	char	read_dq_bit_delay[72];
+	//unsigned	char	write_dq_bit_delay[72];
+
+///*
+	unsigned	char	read_dqs_delay[16];
+	unsigned	char	read_dq_bit_delay[72];
+	unsigned	short	write_dqs_delay[16];
+//*/
+	unsigned	short	write_dq_bit_delay[72];
+	unsigned	short	read_dqs_gate_delay[16];
+//		/*
+	unsigned	char	dq_dqs_delay_flag; //read_dqs  read_dq,write_dqs, write_dq
+	unsigned	char	dfi_mrl;
+	unsigned	char	dfi_hwtmrl;
+	unsigned	char	ARdPtrInitVal;
+//	*/
 	//override read bit delay
 }__attribute__ ((packed)) ddr_set_t;
 
