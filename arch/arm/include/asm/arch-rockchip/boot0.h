@@ -55,6 +55,12 @@ _start:
 .type   save_boot_params_ret, % function
 .globl	save_boot_params_ret
 save_boot_params_ret:
+	/* Init gd as null */
+#ifdef CONFIG_ARM64
+	mov	x18, #0
+#else
+	mov	r9, #0
+#endif
 	b board_init_f
 #else
 	b reset
