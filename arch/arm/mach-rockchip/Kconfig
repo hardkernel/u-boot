@@ -169,6 +169,9 @@ config ROCKCHIP_RK3288
 	imply TPL_SERIAL_SUPPORT
 	select GICV2
 	select ARM_SMCCC
+	select SPL_OPTEE
+	select FIT
+	select SPL_LOAD_FIT
 	select TPL_LIBCOMMON_SUPPORT
 	select TPL_LIBGENERIC_SUPPORT
 	select TPL_SYS_MALLOC_SIMPLE
@@ -189,6 +192,8 @@ config ROCKCHIP_RK3288
 	  USB2 host and OTG, SDIO, I2S, UARTs, SPI, I2C and PWMs.
 
 if ROCKCHIP_RK3288
+config SPL_FIT_GENERATOR
+	default "arch/arm/mach-rockchip/make_fit_optee.sh"
 
 config TPL_LDSCRIPT
 	default "arch/arm/mach-rockchip/u-boot-tpl.lds"
