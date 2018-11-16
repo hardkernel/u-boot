@@ -82,7 +82,7 @@ ddr_set_t __ddr_setting[] = {
 	.version				= 1,
 	.dram_rank_config		= CONFIG_DDR0_32BIT_RANK01_CH0,
 	.DramType				= CONFIG_DDR_TYPE_DDR3,
-	.DRAMFreq				= {1056, 0, 0, 0},
+	.DRAMFreq				= {1008, 0, 0, 0},
 	.ddr_base_addr			= CFG_DDR_BASE_ADDR,
 	.ddr_start_offset		= CFG_DDR_START_OFFSET,
 	.DisabledDbyte			= 0xf0,
@@ -114,7 +114,8 @@ ddr_set_t __ddr_setting[] = {
 	.vref_receiver_permil	= 500, //700,
 	.vref_dram_permil		= 500, //700,
 //	.vref_reverse			= 0,
-	.ac_trace_delay			= {32,32-10,32,32,32+10,32,32,32,32,32-10},
+//	.ac_trace_delay			= {32,32-10,32,32,32+10,32,32,32,32,32-10},
+	.ac_trace_delay			= {32-10,32,32,32,32,32,32,32,32,32-10},
 	//{00,00},
 	.ac_pinmux				= {00,00},
 #if 1
