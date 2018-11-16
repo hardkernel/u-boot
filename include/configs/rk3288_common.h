@@ -20,27 +20,18 @@
 #define CONFIG_SYS_CBSIZE		1024
 
 #define CONFIG_SPL_FRAMEWORK
-#ifdef CONFIG_SPL_ROCKCHIP_BACK_TO_BROM
-/* Bootrom will load u-boot binary to 0x0 once return from SPL */
-#define CONFIG_SYS_TEXT_BASE		0x00000000
-#else
 #define CONFIG_SYS_TEXT_BASE		0x00200000
-#endif
 #define CONFIG_SYS_INIT_SP_ADDR		0x00400000
 #define CONFIG_SYS_LOAD_ADDR		0x00800800
-#define CONFIG_SPL_STACK		0xff718000
+#define CONFIG_SPL_STACK		0x00180000
+#define CONFIG_SPL_TEXT_BASE		0x00000000
+#define CONFIG_SPL_MAX_SIZE		0x100000
 
 #define CONFIG_SYS_BOOTM_LEN		(64 << 20)	/*  64M */
 #define GICD_BASE			0xffc01000
 #define GICC_BASE			0xffc02000
 
 #define CONFIG_ROCKUSB_G_DNL_PID	0x320A
-
-#if defined(CONFIG_SPL_BUILD) && defined(CONFIG_TPL_BOOTROM_SUPPORT)
-# define CONFIG_SPL_TEXT_BASE		0x0
-#else
-# define CONFIG_SPL_TEXT_BASE		0xff704000
-#endif
 
 /* MMC/SD IP block */
 #define CONFIG_BOUNCE_BUFFER
