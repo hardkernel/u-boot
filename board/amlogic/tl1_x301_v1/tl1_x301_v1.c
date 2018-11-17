@@ -625,57 +625,6 @@ int board_init(void)
 	return 0;
 }
 
-/* set dts props */
-void aml_config_dtb(void)
-{
-	cpu_id_t cpuid = get_cpu_id();
-
-	run_command("fdt address $dtb_mem_addr", 0);
-	printf("%s %d\n", __func__, __LINE__);
-	if (cpuid.chip_rev == 0xA) {
-		printf("%s %d\n", __func__, __LINE__);
-		run_command("fdt set /emmc/emmc co_phase <0x2>", 0);
-		run_command("fdt rm /emmc/emmc caps2", 0);
-		run_command("fdt set /emmc/emmc f_max <0x02625a00>", 0);
-
-		run_command("fdt set /sdio status okay", 0);
-		run_command("fdt set /sd1 status okay", 0);
-		run_command("fdt set /pinctrl@ff634480/sd_clk_cmd_pins/mux drive-strength <1>", 0);
-		run_command("fdt set /pinctrl@ff634480/sd_clk_cmd_pins/mux1 drive-strength <1>", 0);
-		run_command("fdt set /pinctrl@ff634480/sd_all_pins/mux drive-strength <1>", 0);
-		run_command("fdt set /pinctrl@ff634480/sd_all_pins/mux1 drive-strength <1>", 0);
-		run_command("fdt set /pinctrl@ff634480/sdio_clk_cmd_pins/mux drive-strength <2>", 0);
-		run_command("fdt set /pinctrl@ff634480/sdio_all_pins/mux drive-strength <1>", 0);
-		/* debug */
-		run_command("fdt print /emmc/emmc co_phase", 0);
-		run_command("fdt print /emmc/emmc caps2", 0);
-		run_command("fdt print /emmc/emmc f_max", 0);
-
-		run_command("fdt print /sdio status", 0);
-		run_command("fdt print /sd1 status ", 0);
-		run_command("fdt print /pinctrl@ff634480/sd_clk_cmd_pins/mux drive-strength", 0);
-		run_command("fdt print /pinctrl@ff634480/sd_clk_cmd_pins/mux1 drive-strength", 0);
-		run_command("fdt print /pinctrl@ff634480/sd_all_pins/mux drive-strength", 0);
-		run_command("fdt print /pinctrl@ff634480/sd_all_pins/mux1 drive-strength", 0);
-		run_command("fdt print /pinctrl@ff634480/sdio_clk_cmd_pins/mux drive-strength", 0);
-		run_command("fdt print /pinctrl@ff634480/sdio_all_pins/mux drive-strength", 0);
-	} else {
-
-		printf("%s %d\n", __func__, __LINE__);
-		run_command("fdt set /emmc/emmc co_phase <0x3>", 0);
-		run_command("fdt set /sdio status disabled", 0);
-		run_command("fdt set /sd2 status okay", 0);
-		/* debug */
-		run_command("fdt print /emmc/emmc co_phase", 0);
-		run_command("fdt print /emmc/emmc caps2", 0);
-		run_command("fdt print /emmc/emmc f_max", 0);
-		run_command("fdt print /sdio status", 0);
-		run_command("fdt print /sd2 status", 0);
-	}
-
-	return;
-}
-
 #ifdef CONFIG_BOARD_LATE_INIT
 int board_late_init(void)
 {
@@ -740,8 +689,6 @@ int board_late_init(void)
 		aml_try_factory_sdcard_burning(0, gd->bd);
 #endif// #ifdef CONFIG_AML_V2_FACTORY_BURN
 
-	/**/
-	aml_config_dtb();
 	return 0;
 }
 #endif
