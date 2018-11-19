@@ -844,7 +844,6 @@ static int mmc_select_hs_ddr(struct mmc *mmc)
 static int mmc_select_hs200(struct mmc *mmc)
 {
 	int ret;
-	struct mmc_cmd cmd;
 
 	/*
 	 * Set the bus width(4 or 8) with host's support and
@@ -861,18 +860,6 @@ static int mmc_select_hs200(struct mmc *mmc)
 			return ret;
 
 		mmc_set_timing(mmc, MMC_TIMING_MMC_HS200);
-
-		cmd.cmdidx = MMC_CMD_SEND_STATUS;
-		cmd.resp_type = MMC_RSP_R1;
-		cmd.cmdarg = mmc->rca << 16;
-
-		ret = mmc_send_cmd(mmc, &cmd, NULL);
-
-		if (ret)
-			return ret;
-
-		if (cmd.response[0] & MMC_STATUS_SWITCH_ERROR)
-			return -EBADMSG;
 	}
 
 	return ret;
