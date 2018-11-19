@@ -20,7 +20,7 @@ CONFIG_TPL_SYS_MALLOC_F_LEN=0x0
 CONFIG_FIT=y
 CONFIG_FIT_VERBOSE=y
 CONFIG_SPL_LOAD_FIT=y
-CONFIG_SPL_FIT_SOURCE="arch/arm/mach-rockchip/fit_spl_optee.its"
+CONFIG_SPL_FIT_GENERATOR="arch/arm/mach-rockchip/make_fit_optee.sh"
 # CONFIG_DISPLAY_CPUINFO is not set
 # CONFIG_SPL_RAW_IMAGE_SUPPORT is not set
 # CONFIG_SPL_LEGACY_IMAGE_SUPPORT is not set
