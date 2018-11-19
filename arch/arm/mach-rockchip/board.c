@@ -20,6 +20,9 @@
 #ifdef CONFIG_DM_CHARGE_DISPLAY
 #include <power/charge_display.h>
 #endif
+#ifdef CONFIG_DM_DVFS
+#include <dvfs.h>
+#endif
 #ifdef CONFIG_DM_REGULATOR
 #include <power/regulator.h>
 #endif
@@ -230,6 +233,10 @@ int board_init(void)
 		debug("%s: Cannot enable boot on regulator\n", __func__);
 #endif
 	set_armclk_rate();
+
+#ifdef CONFIG_DM_DVFS
+	dvfs_init(true);
+#endif
 
 	return rk_board_init();
 }
