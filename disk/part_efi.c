@@ -339,6 +339,93 @@ int part_get_info_efi(struct blk_desc *dev_desc, int part,
 	return 0;
 }
 
+#ifdef RKIMG_BOOTLOADER
+static void gpt_entry_modify(struct blk_desc *dev_desc,
+			     gpt_entry *gpt_pte,
+			     gpt_header *gpt_head)
+{
+	int i;
+	uint32_t calc_crc32;
+
+	for (i = 0; i < gpt_head->num_partition_entries; i++) {
+		if (!is_pte_valid(&gpt_pte[i]))
+			break;
+	}
+
+	if (gpt_pte[i - 1].ending_lba <= (dev_desc->lba - 0x22))
+		return;
+
+	gpt_pte[i - 1].ending_lba = dev_desc->lba - 0x22;
+	calc_crc32 = efi_crc32((const unsigned char *)gpt_pte,
+			       le32_to_cpu(gpt_head->num_partition_entries) *
+			       le32_to_cpu(gpt_head->sizeof_partition_entry));
+	gpt_head->partition_entry_array_crc32 = calc_crc32;
+}
+
+static int part_efi_repair(struct blk_desc *dev_desc, gpt_entry *gpt_pte,
+			   gpt_header *gpt_head, int head_gpt_valid,
+			   int backup_gpt_valid)
+{
+	uint32_t calc_crc32;
+	size_t count = 0, blk_cnt;
+	lbaint_t blk;
+
+	if (head_gpt_valid == 1 && backup_gpt_valid == 1) {
+		return 0;
+	} else if (head_gpt_valid == 0 && backup_gpt_valid == 0) {
+		return -1;
+	} else if (head_gpt_valid == 1 && backup_gpt_valid == 0) {
+		gpt_head->header_crc32 = 0;
+		gpt_head->my_lba = dev_desc->lba - 1;
+		gpt_head->alternate_lba = 1;
+		gpt_head->partition_entry_lba = dev_desc->lba - 0x21;
+		gpt_entry_entry_modify(dev_desc, gpt_pte, gpt_head);
+		calc_crc32 = efi_crc32((const unsigned char *)gpt_head,
+				       le32_to_cpu(gpt_head->header_size));
+		gpt_head->header_crc32 = calc_crc32;
+		if (blk_dwrite(dev_desc, dev_desc->lba - 1, 1, gpt_head) != 1) {
+			printf("*** ERROR: Can't write GPT header ***\n");
+			return -1;
+		}
+		count = le32_to_cpu(gpt_head->num_partition_entries) *
+			le32_to_cpu(gpt_head->sizeof_partition_entry);
+		blk = le64_to_cpu(gpt_head->partition_entry_lba);
+		blk_cnt = BLOCK_CNT(count, dev_desc);
+		if (blk_dwrite(dev_desc, blk, (lbaint_t)blk_cnt, gpt_pte) !=
+		    blk_cnt) {
+			printf("*** ERROR: Can't write entry partitions ***\n");
+			return -1;
+		}
+		printf("Repair the backup gpt table OK!\n");
+	} else if (head_gpt_valid == 0 && backup_gpt_valid == 1) {
+		gpt_head->header_crc32 = 0;
+		gpt_head->my_lba = 1;
+		gpt_head->alternate_lba = dev_desc->lba - 1;
+		gpt_head->partition_entry_lba = 0x22;
+		gpt_entry_entry_modify(dev_desc, gpt_pte, gpt_head);
+		calc_crc32 = efi_crc32((const unsigned char *)gpt_head,
+				       le32_to_cpu(gpt_head->header_size));
+		gpt_head->header_crc32 = calc_crc32;
+		if (blk_dwrite(dev_desc, 1, 1, gpt_head) != 1) {
+			printf("*** ERROR: Can't write GPT header ***\n");
+			return -1;
+		}
+		count = le32_to_cpu(gpt_head->num_partition_entries) *
+			le32_to_cpu(gpt_head->sizeof_partition_entry);
+		blk = le64_to_cpu(gpt_head->partition_entry_lba);
+		blk_cnt = BLOCK_CNT(count, dev_desc);
+		if (blk_dwrite(dev_desc, blk, (lbaint_t)blk_cnt, gpt_pte) !=
+		    blk_cnt) {
+			printf("*** ERROR: Can't write entry partitions ***\n");
+			return -1;
+		}
+		printf("Repair the Primary gpt table OK!\n");
+	}
+
+	return 0;
+}
+#endif
+
 static int part_test_efi(struct blk_desc *dev_desc)
 {
 	ALLOC_CACHE_ALIGN_BUFFER_PAD(legacy_mbr, legacymbr, 1, dev_desc->blksz);
@@ -348,6 +435,41 @@ static int part_test_efi(struct blk_desc *dev_desc)
 		|| (is_pmbr_valid(legacymbr) != 1)) {
 		return -1;
 	}
+#ifdef RKIMG_BOOTLOADER
+	gpt_entry *h_gpt_pte = NULL;
+	gpt_header *h_gpt_head = NULL;
+	gpt_entry *b_gpt_pte = NULL;
+	gpt_header *b_gpt_head = NULL;
+	int head_gpt_valid = 0;
+	int backup_gpt_valid = 0;
+
+	if (!h_gpt_head)
+		h_gpt_head = memalign(ARCH_DMA_MINALIGN, dev_desc->blksz);
+	if (!b_gpt_head)
+		b_gpt_head = memalign(ARCH_DMA_MINALIGN, dev_desc->blksz);
+
+	head_gpt_valid = is_gpt_valid(dev_desc, GPT_PRIMARY_PARTITION_TABLE_LBA,
+				      h_gpt_head, &h_gpt_pte);
+	backup_gpt_valid = is_gpt_valid(dev_desc, (dev_desc->lba - 1),
+					b_gpt_head, &b_gpt_pte);
+	if (head_gpt_valid == 1 && backup_gpt_valid == 0) {
+		if (part_efi_repair(dev_desc, h_gpt_pte, h_gpt_head,
+				    head_gpt_valid, backup_gpt_valid))
+			printf("Backup GPT repair fail!\n");
+	} else if (head_gpt_valid == 0 && backup_gpt_valid == 1) {
+		if (part_efi_repair(dev_desc, b_gpt_pte, b_gpt_head,
+				    head_gpt_valid, backup_gpt_valid))
+			printf("Primary GPT repair fail!\n");
+	}
+	free(h_gpt_pte);
+	h_gpt_pte = NULL;
+	free(h_gpt_head);
+	h_gpt_head = NULL;
+	free(b_gpt_pte);
+	b_gpt_pte = NULL;
+	free(b_gpt_head);
+	b_gpt_head = NULL;
+#endif
 	return 0;
 }
 
