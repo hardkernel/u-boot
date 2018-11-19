@@ -86,6 +86,7 @@ static struct cpu_rate_table px30_cpu_rates[] = {
 	PX30_CPUCLK_RATE(1008000000, 1, 5),
 	PX30_CPUCLK_RATE(816000000, 1, 3),
 	PX30_CPUCLK_RATE(600000000, 1, 3),
+	PX30_CPUCLK_RATE(408000000, 1, 1),
 };
 
 static u8 pll_mode_shift[PLL_COUNT] = {
