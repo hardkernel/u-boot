@@ -1296,6 +1296,16 @@ config CMD_CHARGE_DISPLAY
 	help
 	  Support U-Boot charge display.
 
+config CMD_DVFS
+	bool "Enable Driver Model DVFS command"
+	depends on DM_DVFS
+	default y
+	help
+	  Support dvfs policy apply API
+	  User interface features:
+	  - dvfs            - apply dvfs policy once
+	  - dvfs repeat     - repeat apply dvfs policy until achieve the target temperature
+
 endmenu
 
 menu "Security commands"
