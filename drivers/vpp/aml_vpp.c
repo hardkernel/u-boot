@@ -1426,23 +1426,36 @@ void vpp_matrix_update(int type)
 	}
 }
 
+static void vpp_ofifo_init(void)
+{
+	unsigned int data32;
+
+	data32 = vpp_reg_read(VPP_OFIFO_SIZE);
+	switch (get_cpu_id().family_id) {
+	case MESON_CPU_MAJOR_ID_TL1:
+		data32 |= ((1 << 19) | 0xfff); /* vs_pol */
+		break;
+	case MESON_CPU_MAJOR_ID_TXHD:
+		data32 |= 0x77f;
+		break;
+	default:
+		data32 |= 0xfff;
+		break;
+	}
+	vpp_reg_write(VPP_OFIFO_SIZE, data32);
+
+	data32 = 0x08080808;
+	vpp_reg_write(VPP_HOLD_LINES, data32);
+}
+
 void vpp_init(void)
 {
-	u32 data32;
 	VPP_PR("%s\n", __func__);
 
 	vpp_init_flag = 1;
 
 	/* init vpu fifo control register */
-	data32 = vpp_reg_read(VPP_OFIFO_SIZE);
-	if ((get_cpu_id().family_id >= MESON_CPU_MAJOR_ID_GXTVBB) &&
-		(get_cpu_id().family_id != MESON_CPU_MAJOR_ID_TXHD))
-		data32 |= 0xfff;
-	else
-		data32 |= 0x77f;
-	vpp_reg_write(VPP_OFIFO_SIZE, data32);
-	data32 = 0x08080808;
-	vpp_reg_write(VPP_HOLD_LINES, data32);
+	vpp_ofifo_init();
 
 	vpp_set_matrix_default_init();
 
