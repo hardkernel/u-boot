@@ -87,7 +87,7 @@ void board_usb_pll_disable(struct amlogic_usb_config *cfg)
 {
     int i = 0;
 
-	*(volatile uint32_t *)P_RESET1_LEVEL |= (3 << 16);
+    *(volatile uint32_t *)P_RESET1_LEVEL |= (0x7 << 16);
     for (i = 0; i < cfg->u2_port_num; i++) {
         (*(volatile uint32_t *)(unsigned long)
             (cfg->usb_phy2_pll_base_addr[i] + 0x40))
