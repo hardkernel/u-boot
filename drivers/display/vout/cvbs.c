@@ -36,6 +36,56 @@ enum CVBS_MODE_e
 	VMODE_MAX
 };
 
+struct cvbs_vdac_data_s {
+	unsigned int vdac_ctrl0_en;
+	unsigned int vdac_ctrl0_dis;
+	unsigned int vdac_ctrl1_en;
+	unsigned int vdac_ctrl1_dis;
+};
+
+static struct cvbs_vdac_data_s vdac_data_default = {
+	.vdac_ctrl0_en = 0x1,
+	.vdac_ctrl0_dis = 0,
+	.vdac_ctrl1_en = 0,
+	.vdac_ctrl1_dis = 8,
+};
+
+static struct cvbs_vdac_data_s vdac_data_gxl = {
+	.vdac_ctrl0_en = 0xb0001,
+	.vdac_ctrl0_dis = 0,
+	.vdac_ctrl1_en = 0,
+	.vdac_ctrl1_dis = 8,
+};
+
+static struct cvbs_vdac_data_s vdac_data_txl = {
+	.vdac_ctrl0_en = 0x620001,
+	.vdac_ctrl0_dis = 0,
+	.vdac_ctrl1_en = 8,
+	.vdac_ctrl1_dis = 0,
+};
+
+static struct cvbs_vdac_data_s vdac_data_g12a = {
+	.vdac_ctrl0_en = 0x906001,
+	.vdac_ctrl0_dis = 0,
+	.vdac_ctrl1_en = 0,
+	.vdac_ctrl1_dis = 8,
+};
+
+static struct cvbs_vdac_data_s vdac_data_g12b = {
+	.vdac_ctrl0_en = 0x8f6001,
+	.vdac_ctrl0_dis = 0,
+	.vdac_ctrl1_en = 0,
+	.vdac_ctrl1_dis = 8,
+};
+
+static struct cvbs_vdac_data_s vdac_data_tl1 = {
+	.vdac_ctrl0_en = 0x906001,
+	.vdac_ctrl0_dis = 0,
+	.vdac_ctrl1_en = 0,
+	.vdac_ctrl1_dis = 8,
+};
+
+static struct cvbs_vdac_data_s *cvbs_vdac_data;
 unsigned int cvbs_mode = VMODE_MAX;
 /*bit[0]: 0=vid_pll, 1=gp0_pll*/
 /*bit[1]: 0=vid2_clk, 1=vid1_clk*/
@@ -166,6 +216,12 @@ static inline bool is_meson_g12b_cpu(void)
 		MESON_CPU_MAJOR_ID_G12B) ? 1 : 0;
 }
 
+static inline bool is_meson_tl1_cpu(void)
+{
+	return (get_cpu_id().family_id ==
+		MESON_CPU_MAJOR_ID_TL1) ? 1 : 0;
+}
+
 static bool inline is_meson_txl_cpu(void)
 {
 	return (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_TXL)?
@@ -235,35 +291,21 @@ int cvbs_set_vdac(int status)
 	switch (status)
 	{
 	case 0:// close vdac
-		cvbs_write_hiu(HHI_VDAC_CNTL0, 0);
-		if (is_equal_after_meson_cpu(MESON_CPU_MAJOR_ID_TXL) &&
-			!is_meson_gxlx_cpu() && !is_meson_g12a_cpu() &&
-			!is_meson_g12b_cpu())
-			cvbs_write_hiu(HHI_VDAC_CNTL1, 0);
-		else
-			cvbs_write_hiu(HHI_VDAC_CNTL1, 8);
-		break;
+	if (cvbs_vdac_data) {
+		cvbs_write_hiu(HHI_VDAC_CNTL0, cvbs_vdac_data->vdac_ctrl0_dis);
+		cvbs_write_hiu(HHI_VDAC_CNTL1, cvbs_vdac_data->vdac_ctrl1_dis);
+	} else {
+		printf("cvbs ERROR:need run cvbs init.\n");
+	}
+	break;
 	case 1:// from enci to vdac
 		cvbs_set_vcbus_bits(VENC_VDAC_DACSEL0, 0, 5, 1);
-		if (is_meson_g12a_cpu())
-			cvbs_write_hiu(HHI_VDAC_CNTL0, 0x906001);
-		else if (is_meson_g12b_cpu())
-			cvbs_write_hiu(HHI_VDAC_CNTL0, 0x8f6001);
-		else if (is_equal_after_meson_cpu(MESON_CPU_MAJOR_ID_GXL)) {
-			if (is_equal_after_meson_cpu(MESON_CPU_MAJOR_ID_TXL) &&
-				!is_meson_gxlx_cpu())
-				cvbs_write_hiu(HHI_VDAC_CNTL0, 0x620001);
-			else
-				cvbs_write_hiu(HHI_VDAC_CNTL0, 0xb0001);
-		} else
-			cvbs_write_hiu(HHI_VDAC_CNTL0, 1);
-
-		if (is_equal_after_meson_cpu(MESON_CPU_MAJOR_ID_TXL) &&
-			!is_meson_gxlx_cpu() && !is_meson_g12a_cpu() &&
-			!is_meson_g12b_cpu())
-			cvbs_write_hiu(HHI_VDAC_CNTL1, 8);
-		else
-			cvbs_write_hiu(HHI_VDAC_CNTL1, 0);
+	if (cvbs_vdac_data) {
+		cvbs_write_hiu(HHI_VDAC_CNTL0, cvbs_vdac_data->vdac_ctrl0_en);
+		cvbs_write_hiu(HHI_VDAC_CNTL1, cvbs_vdac_data->vdac_ctrl1_en);
+	} else {
+		printf("cvbs ERROR:need run cvbs init.\n");
+	}
 		break;
 	case 2:// from atv to vdac
 		cvbs_set_vcbus_bits(VENC_VDAC_DACSEL0, 1, 5, 1);
@@ -429,7 +471,8 @@ int cvbs_reg_debug(int argc, char* const argv[])
 			goto fail_cmd;
 		value = simple_strtoul(argv[2], NULL, 0);
 		if (check_cpu_type(MESON_CPU_MAJOR_ID_G12A) ||
-			check_cpu_type(MESON_CPU_MAJOR_ID_G12B)) {
+			check_cpu_type(MESON_CPU_MAJOR_ID_G12B) ||
+			is_meson_tl1_cpu()) {
 			if (value == 1 || value == 2 ||
 				value == 3 || value == 0) {
 				s_enci_clk_path = value;
@@ -560,6 +603,31 @@ static void cvbs_config_gp0pll_g12a(void)
 	return;
 }
 
+static void cvbs_config_tcon_pll(void)
+{
+	printf("%s\n", __func__);
+	cvbs_write_hiu(HHI_TCON_PLL_CNTL0,	0x202f04f7);
+	udelay(100);
+	cvbs_write_hiu(HHI_TCON_PLL_CNTL0,	0x302f04f7);
+	udelay(100);
+	cvbs_write_hiu(HHI_TCON_PLL_CNTL1,	0x10110000);
+	cvbs_write_hiu(HHI_TCON_PLL_CNTL2,	0x00001108);
+	cvbs_write_hiu(HHI_TCON_PLL_CNTL3,	0x10051400);
+	cvbs_write_hiu(HHI_TCON_PLL_CNTL4,	0x010100c0);
+	udelay(100);
+	cvbs_write_hiu(HHI_TCON_PLL_CNTL4,	0x038300c0);
+	udelay(100);
+	cvbs_write_hiu(HHI_TCON_PLL_CNTL0,	0x342f04f7);
+	udelay(100);
+	cvbs_write_hiu(HHI_TCON_PLL_CNTL0,	0x142f04f7);
+	udelay(100);
+	cvbs_write_hiu(HHI_TCON_PLL_CNTL2,	0x00003008);
+	udelay(100);
+	WAIT_FOR_PLL_LOCKED(HHI_TCON_PLL_CNTL0);
+
+	return;
+}
+
 static void cvbs_set_vid1_clk(unsigned int src_pll)
 {
 	int sel = 0;
@@ -660,8 +728,9 @@ static int cvbs_config_clock(void)
 			cvbs_config_gp0pll_g12a();
 		else
 			cvbs_config_hdmipll_g12a();
-	}
-	else if (is_equal_after_meson_cpu(MESON_CPU_MAJOR_ID_GXL))
+	} else if (is_meson_tl1_cpu()) {
+		cvbs_config_tcon_pll();
+	} else if (is_equal_after_meson_cpu(MESON_CPU_MAJOR_ID_GXL))
 		cvbs_config_hdmipll_gxl();
 
 	if (check_cpu_type(MESON_CPU_MAJOR_ID_G12A) ||
@@ -670,6 +739,11 @@ static int cvbs_config_clock(void)
 			cvbs_set_vid1_clk(s_enci_clk_path & 0x1);
 		else
 			cvbs_set_vid2_clk(s_enci_clk_path & 0x1);
+	} else if (is_meson_tl1_cpu()) {
+		if (s_enci_clk_path & 0x2)
+			cvbs_set_vid1_clk(0);
+		else
+			cvbs_set_vid2_clk(0);
 	} else {
 		cvbs_set_vid2_clk(0);
 	}
@@ -879,8 +953,40 @@ void cvbs_show_valid_vmode(void)
 	return;
 }
 
+void vdac_data_config(void)
+{
+	printf("cvbs: cpuid:0x%x\n", get_cpu_id().family_id);
+	switch (get_cpu_id().family_id) {
+	case MESON_CPU_MAJOR_ID_GXL:
+	case MESON_CPU_MAJOR_ID_GXM:
+	case MESON_CPU_MAJOR_ID_GXLX:
+		cvbs_vdac_data = &vdac_data_gxl;
+		break;
+	case MESON_CPU_MAJOR_ID_TXL:
+	case MESON_CPU_MAJOR_ID_TXHD:
+	case MESON_CPU_MAJOR_ID_TXLX:
+		cvbs_vdac_data = &vdac_data_txl;
+		break;
+	case MESON_CPU_MAJOR_ID_G12A:
+		cvbs_vdac_data = &vdac_data_g12a;
+		break;
+	case MESON_CPU_MAJOR_ID_G12B:
+		cvbs_vdac_data = &vdac_data_g12b;
+		break;
+	case MESON_CPU_MAJOR_ID_TL1:
+		cvbs_vdac_data = &vdac_data_tl1;
+		break;
+	default:
+		cvbs_vdac_data = &vdac_data_default;
+		break;
+	}
+
+	return;
+}
+
 void cvbs_init(void)
 {
+	vdac_data_config();
 #ifdef CONFIG_CVBS_PERFORMANCE_COMPATIBILITY_SUPPORT
 	cvbs_performance_config();
 #endif

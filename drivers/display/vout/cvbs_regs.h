@@ -42,6 +42,22 @@
 #define ASSIST_HW_REV           0x1f53
 #endif
 
+#ifndef HHI_TCON_PLL_CNTL0
+#define HHI_TCON_PLL_CNTL0	(0xff63c000 + (0x020 << 2))
+#endif
+#ifndef HHI_TCON_PLL_CNTL1
+#define HHI_TCON_PLL_CNTL1	(0xff63c000 + (0x021 << 2))
+#endif
+#ifndef HHI_TCON_PLL_CNTL2
+#define HHI_TCON_PLL_CNTL2	(0xff63c000 + (0x022 << 2))
+#endif
+#ifndef HHI_TCON_PLL_CNTL3
+#define HHI_TCON_PLL_CNTL3	(0xff63c000 + (0x023 << 2))
+#endif
+#ifndef HHI_TCON_PLL_CNTL4
+#define HHI_TCON_PLL_CNTL4	(0xff63c000 + (0x0df << 2))
+#endif
+
 #define DAC0_CLK_SEL            28
 #define DAC1_CLK_SEL            24
 #define DAC2_CLK_SEL            20
