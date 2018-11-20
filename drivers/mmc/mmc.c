@@ -564,6 +564,213 @@ static int mmc_switch(struct mmc *mmc, u8 set, u8 index, u8 value)
 
 }
 
+int mmc_hwpart_config(struct mmc *mmc,
+		      const struct mmc_hwpart_conf *conf,
+		      enum mmc_hwpart_conf_mode mode)
+{
+	u8 part_attrs = 0;
+	u32 enh_size_mult;
+	u32 enh_start_addr;
+	u32 gp_size_mult[4];
+	u32 max_enh_size_mult;
+	u32 tot_enh_size_mult = 0;
+	u8 wr_rel_set;
+	int i, pidx, err;
+	ALLOC_CACHE_ALIGN_BUFFER(u8, ext_csd, MMC_MAX_BLOCK_LEN);
+
+	if (mode < MMC_HWPART_CONF_CHECK || mode > MMC_HWPART_CONF_COMPLETE)
+		return -EINVAL;
+
+	if (IS_SD(mmc) || (mmc->version < MMC_VERSION_4_41)) {
+		printf("eMMC >= 4.4 required for enhanced user data area\n");
+		return -EMEDIUMTYPE;
+	}
+
+	if (!(mmc->part_support & PART_SUPPORT)) {
+		printf("Card does not support partitioning\n");
+		return -EMEDIUMTYPE;
+	}
+
+	if (!mmc->hc_wp_grp_size) {
+		printf("Card does not define HC WP group size\n");
+		return -EMEDIUMTYPE;
+	}
+
+	/* check partition alignment and total enhanced size */
+	if (conf->user.enh_size) {
+		if (conf->user.enh_size % mmc->hc_wp_grp_size ||
+		    conf->user.enh_start % mmc->hc_wp_grp_size) {
+			printf("User data enhanced area not HC WP group "
+			       "size aligned\n");
+			return -EINVAL;
+		}
+		part_attrs |= EXT_CSD_ENH_USR;
+		enh_size_mult = conf->user.enh_size / mmc->hc_wp_grp_size;
+		if (mmc->high_capacity) {
+			enh_start_addr = conf->user.enh_start;
+		} else {
+			enh_start_addr = (conf->user.enh_start << 9);
+		}
+	} else {
+		enh_size_mult = 0;
+		enh_start_addr = 0;
+	}
+	tot_enh_size_mult += enh_size_mult;
+
+	for (pidx = 0; pidx < 4; pidx++) {
+		if (conf->gp_part[pidx].size % mmc->hc_wp_grp_size) {
+			printf("GP%i partition not HC WP group size "
+			       "aligned\n", pidx+1);
+			return -EINVAL;
+		}
+		gp_size_mult[pidx] = conf->gp_part[pidx].size / mmc->hc_wp_grp_size;
+		if (conf->gp_part[pidx].size && conf->gp_part[pidx].enhanced) {
+			part_attrs |= EXT_CSD_ENH_GP(pidx);
+			tot_enh_size_mult += gp_size_mult[pidx];
+		}
+	}
+
+	if (part_attrs && ! (mmc->part_support & ENHNCD_SUPPORT)) {
+		printf("Card does not support enhanced attribute\n");
+		return -EMEDIUMTYPE;
+	}
+
+	err = mmc_send_ext_csd(mmc, ext_csd);
+	if (err)
+		return err;
+
+	max_enh_size_mult =
+		(ext_csd[EXT_CSD_MAX_ENH_SIZE_MULT+2] << 16) +
+		(ext_csd[EXT_CSD_MAX_ENH_SIZE_MULT+1] << 8) +
+		ext_csd[EXT_CSD_MAX_ENH_SIZE_MULT];
+	if (tot_enh_size_mult > max_enh_size_mult) {
+		printf("Total enhanced size exceeds maximum (%u > %u)\n",
+		       tot_enh_size_mult, max_enh_size_mult);
+		return -EMEDIUMTYPE;
+	}
+
+	/* The default value of EXT_CSD_WR_REL_SET is device
+	 * dependent, the values can only be changed if the
+	 * EXT_CSD_HS_CTRL_REL bit is set. The values can be
+	 * changed only once and before partitioning is completed. */
+	wr_rel_set = ext_csd[EXT_CSD_WR_REL_SET];
+	if (conf->user.wr_rel_change) {
+		if (conf->user.wr_rel_set)
+			wr_rel_set |= EXT_CSD_WR_DATA_REL_USR;
+		else
+			wr_rel_set &= ~EXT_CSD_WR_DATA_REL_USR;
+	}
+	for (pidx = 0; pidx < 4; pidx++) {
+		if (conf->gp_part[pidx].wr_rel_change) {
+			if (conf->gp_part[pidx].wr_rel_set)
+				wr_rel_set |= EXT_CSD_WR_DATA_REL_GP(pidx);
+			else
+				wr_rel_set &= ~EXT_CSD_WR_DATA_REL_GP(pidx);
+		}
+	}
+
+	if (wr_rel_set != ext_csd[EXT_CSD_WR_REL_SET] &&
+	    !(ext_csd[EXT_CSD_WR_REL_PARAM] & EXT_CSD_HS_CTRL_REL)) {
+		puts("Card does not support host controlled partition write "
+		     "reliability settings\n");
+		return -EMEDIUMTYPE;
+	}
+
+	if (ext_csd[EXT_CSD_PARTITION_SETTING] &
+	    EXT_CSD_PARTITION_SETTING_COMPLETED) {
+		printf("Card already partitioned\n");
+		puts("\tUser Enhanced Start: ");
+		print_size((u64)((ext_csd[EXT_CSD_ENH_START_ADDR]+
+				(ext_csd[EXT_CSD_ENH_START_ADDR+1]<<8)+
+				(ext_csd[EXT_CSD_ENH_START_ADDR+2]<<16)+
+			(ext_csd[EXT_CSD_ENH_START_ADDR+3]<<24))<<9),"\n");
+		puts("\tUser Enhanced Size: ");
+		print_size((u64)((ext_csd[EXT_CSD_ENH_SIZE_MULT]+
+					(ext_csd[EXT_CSD_ENH_SIZE_MULT+1]<<8)+
+					(ext_csd[EXT_CSD_ENH_SIZE_MULT+2]<<16))*
+					mmc->hc_wp_grp_size)<<9,"\n");
+		return -EPERM;
+	}
+
+	if (mode == MMC_HWPART_CONF_CHECK)
+		return 0;
+
+	/* Partitioning requires high-capacity size definitions */
+	if (!(ext_csd[EXT_CSD_ERASE_GROUP_DEF] & 0x01)) {
+		err = mmc_switch(mmc, EXT_CSD_CMD_SET_NORMAL,
+				 EXT_CSD_ERASE_GROUP_DEF, 1);
+
+		if (err)
+			return err;
+
+		ext_csd[EXT_CSD_ERASE_GROUP_DEF] = 1;
+
+		mmc->erase_grp_size =
+			ext_csd[EXT_CSD_HC_ERASE_GRP_SIZE] * 1024;
+
+	}
+
+	/* all OK, write the configuration */
+	for (i = 0; i < 4; i++) {
+		err = mmc_switch(mmc, EXT_CSD_CMD_SET_NORMAL,
+				 EXT_CSD_ENH_START_ADDR+i,
+				 (enh_start_addr >> (i*8)) & 0xFF);
+		if (err)
+			return err;
+	}
+	for (i = 0; i < 3; i++) {
+		err = mmc_switch(mmc, EXT_CSD_CMD_SET_NORMAL,
+				 EXT_CSD_ENH_SIZE_MULT+i,
+				 (enh_size_mult >> (i*8)) & 0xFF);
+		if (err)
+			return err;
+	}
+	for (pidx = 0; pidx < 4; pidx++) {
+		for (i = 0; i < 3; i++) {
+			err = mmc_switch(mmc, EXT_CSD_CMD_SET_NORMAL,
+					 EXT_CSD_GP_SIZE_MULT+pidx*3+i,
+					 (gp_size_mult[pidx] >> (i*8)) & 0xFF);
+			if (err)
+				return err;
+		}
+	}
+	err = mmc_switch(mmc, EXT_CSD_CMD_SET_NORMAL,
+			 EXT_CSD_PARTITIONS_ATTRIBUTE, part_attrs);
+	if (err)
+		return err;
+
+	if (mode == MMC_HWPART_CONF_SET)
+		return 0;
+
+	/* The WR_REL_SET is a write-once register but shall be
+	 * written before setting PART_SETTING_COMPLETED. As it is
+	 * write-once we can only write it when completing the
+	 * partitioning. */
+	if (wr_rel_set != ext_csd[EXT_CSD_WR_REL_SET]) {
+		err = mmc_switch(mmc, EXT_CSD_CMD_SET_NORMAL,
+				 EXT_CSD_WR_REL_SET, wr_rel_set);
+		if (err)
+			return err;
+	}
+
+	/* Setting PART_SETTING_COMPLETED confirms the partition
+	 * configuration but it only becomes effective after power
+	 * cycle, so we do not adjust the partition related settings
+	 * in the mmc struct. */
+
+	err = mmc_switch(mmc, EXT_CSD_CMD_SET_NORMAL,
+			 EXT_CSD_PARTITION_SETTING,
+			 EXT_CSD_PARTITION_SETTING_COMPLETED);
+	if (err)
+		return err;
+
+	return 0;
+}
+
+
+
+
+
 u8 ext_csd_w[] = {191, 187, 185, 183, 179, 178, 177, 175,
 					173, 171, 169, 167, 165, 164, 163, 162,
 					161, 156, 155, 143, 140, 136, 134, 133,
@@ -1181,8 +1388,7 @@ static int mmc_startup(struct mmc *mmc)
 
 			/* Read out group size from ext_csd */
 			mmc->erase_grp_size =
-				ext_csd[EXT_CSD_HC_ERASE_GRP_SIZE] *
-					MMC_MAX_BLOCK_LEN * 1024;
+				ext_csd[EXT_CSD_HC_ERASE_GRP_SIZE] * 1024;
 			/*
 			 * if high capacity and partition setting completed
 			 * SEC_COUNT is valid even if it is smaller than 2 GiB
@@ -1224,6 +1430,11 @@ static int mmc_startup(struct mmc *mmc)
 				ext_csd[EXT_CSD_HC_ERASE_GRP_SIZE];
 			mmc->capacity_gp[i] *= ext_csd[EXT_CSD_HC_WP_GRP_SIZE];
 		}
+		mmc->hc_wp_grp_size = 1024
+			* ext_csd[EXT_CSD_HC_ERASE_GRP_SIZE]
+			* ext_csd[EXT_CSD_HC_WP_GRP_SIZE];
+
+		mmc->part_support = ext_csd[EXT_CSD_PARTITIONING_SUPPORT];
 	}
 
 	err = mmc_set_capacity(mmc, mmc->part_num);
@@ -1315,7 +1526,6 @@ static int mmc_startup(struct mmc *mmc)
 
 			mmc->ddr_mode = (caps & MMC_MODE_DDR_52MHz) ? 1 : 0;
 			mmc_set_bus_width(mmc, widths[idx]);
-
 			err = mmc_send_ext_csd(mmc, test_csd);
 
 			if (err)
@@ -2054,10 +2264,9 @@ int mmc_key_erase(void)
 	ulong start, start_blk, blkcnt, ret;
 	struct partitions * part = NULL;
 	struct virtual_partition *vpart = NULL;
+	int dev = EMMC_DTB_DEV;
 	vpart = aml_get_virtual_partition_by_name(MMC_KEY_NAME);
 	part = aml_get_partition_by_name(MMC_RESERVED_NAME);
-	int dev = EMMC_DTB_DEV;
-
 	start = part->offset + vpart->offset;
 	start_blk = (start / MMC_BLOCK_SIZE);
 	blkcnt = (vpart->size / MMC_BLOCK_SIZE) * 2;//key and backup key

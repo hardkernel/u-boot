@@ -796,6 +796,156 @@ static int do_mmc_test(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]
 }
 
 
+static int parse_hwpart_user(struct mmc_hwpart_conf *pconf,
+			     int argc, char * const argv[])
+{
+	int i = 0;
+
+	memset(&pconf->user, 0, sizeof(pconf->user));
+
+	while (i < argc) {
+		if (!strcmp(argv[i], "enh")) {
+			if (i + 2 >= argc)
+				return -1;
+			pconf->user.enh_start =
+				simple_strtoul(argv[i+1], NULL, 10);
+			pconf->user.enh_size =
+				simple_strtoul(argv[i+2], NULL, 10);
+			i += 3;
+		} else if (!strcmp(argv[i], "wrrel")) {
+			if (i + 1 >= argc)
+				return -1;
+			pconf->user.wr_rel_change = 1;
+			if (!strcmp(argv[i+1], "on"))
+				pconf->user.wr_rel_set = 1;
+			else if (!strcmp(argv[i+1], "off"))
+				pconf->user.wr_rel_set = 0;
+			else
+				return -1;
+			i += 2;
+		} else {
+			break;
+		}
+	}
+	return i;
+}
+
+static int parse_hwpart_gp(struct mmc_hwpart_conf *pconf, int pidx,
+			   int argc, char * const argv[])
+{
+	int i;
+
+	memset(&pconf->gp_part[pidx], 0, sizeof(pconf->gp_part[pidx]));
+
+	if (1 >= argc)
+		return -1;
+	pconf->gp_part[pidx].size = simple_strtoul(argv[0], NULL, 10);
+
+	i = 1;
+	while (i < argc) {
+		if (!strcmp(argv[i], "enh")) {
+			pconf->gp_part[pidx].enhanced = 1;
+			i += 1;
+		} else if (!strcmp(argv[i], "wrrel")) {
+			if (i + 1 >= argc)
+				return -1;
+			pconf->gp_part[pidx].wr_rel_change = 1;
+			if (!strcmp(argv[i+1], "on"))
+				pconf->gp_part[pidx].wr_rel_set = 1;
+			else if (!strcmp(argv[i+1], "off"))
+				pconf->gp_part[pidx].wr_rel_set = 0;
+			else
+				return -1;
+			i += 2;
+		} else {
+			break;
+		}
+	}
+	return i;
+}
+
+static int do_mmc_hwpartition(cmd_tbl_t *cmdtp, int flag,
+			      int argc, char * const argv[])
+{
+	struct mmc *mmc;
+	struct mmc_hwpart_conf pconf = { };
+	enum mmc_hwpart_conf_mode mode = MMC_HWPART_CONF_CHECK;
+	int i, r, pidx;
+	mmc = init_mmc_device(curr_device, false);
+	if (!mmc)
+		return CMD_RET_FAILURE;
+
+	if (argc < 1)
+		return CMD_RET_USAGE;
+	i = 1;
+	while (i < argc) {
+		if (!strcmp(argv[i], "user")) {
+			i++;
+			r = parse_hwpart_user(&pconf, argc-i, &argv[i]);
+			if (r < 0)
+				return CMD_RET_USAGE;
+			i += r;
+		} else if (!strncmp(argv[i], "gp", 2) &&
+			   strlen(argv[i]) == 3 &&
+			   argv[i][2] >= '1' && argv[i][2] <= '4') {
+			pidx = argv[i][2] - '1';
+			i++;
+			r = parse_hwpart_gp(&pconf, pidx, argc-i, &argv[i]);
+			if (r < 0)
+				return CMD_RET_USAGE;
+			i += r;
+		} else if (!strcmp(argv[i], "check")) {
+			mode = MMC_HWPART_CONF_CHECK;
+			i++;
+		} else if (!strcmp(argv[i], "set")) {
+			mode = MMC_HWPART_CONF_SET;
+			i++;
+		} else if (!strcmp(argv[i], "complete")) {
+			mode = MMC_HWPART_CONF_COMPLETE;
+			i++;
+		} else {
+			return CMD_RET_USAGE;
+		}
+	}
+
+	puts("Partition configuration:\n");
+	if (pconf.user.enh_size) {
+		puts("\tUser Enhanced Start: ");
+		print_size(((u64)pconf.user.enh_start) << 9, "\n");
+		puts("\tUser Enhanced Size: ");
+		print_size(((u64)pconf.user.enh_size) << 9, "\n");
+	} else {
+		puts("\tNo enhanced user data area\n");
+	}
+	if (pconf.user.wr_rel_change)
+		printf("\tUser partition write reliability: %s\n",
+		       pconf.user.wr_rel_set ? "on" : "off");
+	for (pidx = 0; pidx < 4; pidx++) {
+		if (pconf.gp_part[pidx].size) {
+			printf("\tGP%i Capacity: ", pidx+1);
+			print_size(((u64)pconf.gp_part[pidx].size) << 9,
+				   pconf.gp_part[pidx].enhanced ?
+				   " ENH\n" : "\n");
+		} else {
+			printf("\tNo GP%i partition\n", pidx+1);
+		}
+		if (pconf.gp_part[pidx].wr_rel_change)
+			printf("\tGP%i write reliability: %s\n", pidx+1,
+			       pconf.gp_part[pidx].wr_rel_set ? "on" : "off");
+	}
+
+	if (!mmc_hwpart_config(mmc, &pconf, mode)) {
+		if (mode == MMC_HWPART_CONF_COMPLETE)
+			puts("Partitioning successful, "
+			     "power-cycle to make effective\n");
+		return CMD_RET_SUCCESS;
+	} else {
+		puts("Failed!\n");
+		return CMD_RET_FAILURE;
+	}
+}
+
+
 static cmd_tbl_t cmd_mmc[] = {
 	U_BOOT_CMD_MKENT(info,     1, 0, do_mmcinfo,      "", ""),
 	U_BOOT_CMD_MKENT(read,     4, 1, do_mmc_read,     "", ""),
@@ -808,6 +958,7 @@ static cmd_tbl_t cmd_mmc[] = {
 	U_BOOT_CMD_MKENT(lifetime, 1, 1, do_mmc_lifetime, "", ""),
 	U_BOOT_CMD_MKENT(ext_csd,  3, 0, do_mmc_ext_csd,  "", ""),
 	U_BOOT_CMD_MKENT(ffu,      4, 0, do_mmc_ffu,      "", ""),
+	U_BOOT_CMD_MKENT(hwpartition, 28, 0, do_mmc_hwpartition, "", ""),
 #ifdef CONFIG_SUPPORT_EMMC_BOOT
 	U_BOOT_CMD_MKENT(bootbus,         5, 0, do_mmc_bootbus,     "", ""),
 	U_BOOT_CMD_MKENT(bootpart-resize, 4, 0, do_mmc_boot_resize, "", ""),
@@ -861,6 +1012,13 @@ U_BOOT_CMD(
 	"mmc lifetime - show dev life time estimate type A/B\n"
 	"mmc ext_csd [byte] <val> - read/write ext_csd [byte] value\n"
 	"mmc ffu ver addr cnt - update ffu fw\n"
+	"mmc hwpartition [args...] - does hardware partitioning\n"
+	"  arguments (sizes in 512-byte blocks):\n"
+	"    [user [enh start cnt] [wrrel {on|off}]] - sets user data area attributes\n"
+	"    [gp1|gp2|gp3|gp4 cnt [enh] [wrrel {on|off}]] - general purpose partition\n"
+	"    [check|set|complete] - mode, complete set partitioning completed\n"
+	"  WARNING: Partitioning is a write-once setting once it is set to complete.\n"
+	"  Power cycling is required to initialize partitions after set to complete.\n"
 #ifdef CONFIG_SUPPORT_EMMC_BOOT
 	"mmc bootbus dev boot_bus_width reset_boot_bus_width boot_mode\n"
 	" - Set the BOOT_BUS_WIDTH field of the specified device\n"

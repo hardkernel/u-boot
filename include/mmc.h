@@ -152,12 +152,20 @@
 /*
  * EXT_CSD fields
  */
+
+
 #define EXT_CSD_CLASS_6_CTRL        59  /*R/W/E_P*/
+#define EXT_CSD_ENH_START_ADDR		136	/* R/W */
+#define EXT_CSD_ENH_SIZE_MULT		140	/* R/W */
 #define EXT_CSD_GP_SIZE_MULT		143	/* R/W */
 #define EXT_CSD_PARTITION_SETTING	155	/* R/W */
 #define EXT_CSD_PARTITIONS_ATTRIBUTE	156	/* R/W */
+#define EXT_CSD_MAX_ENH_SIZE_MULT	157	/* R */
 #define EXT_CSD_PARTITIONING_SUPPORT	160	/* RO */
 #define EXT_CSD_RST_N_FUNCTION		162	/* R/W */
+#define EXT_CSD_BKOPS_EN		163	/* R/W & R/W/E */
+#define EXT_CSD_WR_REL_PARAM		166	/* R */
+#define EXT_CSD_WR_REL_SET		167	/* R/W */
 #define EXT_CSD_RPMB_MULT		168	/* RO */
 #define EXT_CSD_USER_WP             171 /* R/W */
 #define EXT_CSD_ERASE_GROUP_DEF		175	/* R/W */
@@ -172,19 +180,19 @@
 #define EXT_CSD_HC_WP_GRP_SIZE		221	/* RO */
 #define EXT_CSD_HC_ERASE_GRP_SIZE	224	/* RO */
 #define EXT_CSD_BOOT_MULT		226	/* RO */
-#define EXT_CSD_DEV_LIFETIME_EST_TYP_A	268	/* RO */
-#define EXT_CSD_DEV_LIFETIME_EST_TYP_B	269	/* RO */
-
+#define EXT_CSD_BKOPS_SUPPORT		502	/* RO */
 #define EXT_CSD_SUPPORTED_MODES	493 /* RO */
 #define EXT_CSD_FW_VERSION	254 /* RO, 261:254 */
 #define EXT_CSD_FW_CFG	169 /* R/W */
 #define EXT_CSD_MODE_CFG	30 /* R/W */
 #define EXT_CSD_FFU_STATUS	26 /* RO */
+#define EXT_CSD_DEV_LIFETIME_EST_TYP_A	268	/* RO */
+#define EXT_CSD_DEV_LIFETIME_EST_TYP_B	269	/* RO */
+
 
 /*
  * EXT_CSD field definitions
  */
-
 #define EXT_CSD_CMD_SET_NORMAL		(1 << 0)
 #define EXT_CSD_CMD_SET_SECURE		(1 << 1)
 #define EXT_CSD_CMD_SET_CPSECURE	(1 << 2)
@@ -194,13 +202,25 @@
 #define EXT_CSD_CARD_TYPE_DDR_1_8V	(1 << 2)
 #define EXT_CSD_CARD_TYPE_DDR_1_2V	(1 << 3)
 #define EXT_CSD_CARD_TYPE_DDR_52	(EXT_CSD_CARD_TYPE_DDR_1_8V \
-					| EXT_CSD_CARD_TYPE_DDR_1_2V)
+							| EXT_CSD_CARD_TYPE_DDR_1_2V)
+
+#define EXT_CSD_CARD_TYPE_HS200_1_8V	BIT(4)	/* Card can run at 200MHz */
+						/* SDR mode @1.8V I/O */
+#define EXT_CSD_CARD_TYPE_HS200_1_2V	BIT(5)	/* Card can run at 200MHz */
+						/* SDR mode @1.2V I/O */
+#define EXT_CSD_CARD_TYPE_HS200		(EXT_CSD_CARD_TYPE_HS200_1_8V | \
+							 EXT_CSD_CARD_TYPE_HS200_1_2V)
 
 #define EXT_CSD_BUS_WIDTH_1	0	/* Card is in 1 bit mode */
 #define EXT_CSD_BUS_WIDTH_4	1	/* Card is in 4 bit mode */
 #define EXT_CSD_BUS_WIDTH_8	2	/* Card is in 8 bit mode */
 #define EXT_CSD_DDR_BUS_WIDTH_4	5	/* Card is in 4 bit DDR mode */
 #define EXT_CSD_DDR_BUS_WIDTH_8	6	/* Card is in 8 bit DDR mode */
+#define EXT_CSD_DDR_FLAG	BIT(2)	/* Flag for DDR mode */
+
+#define EXT_CSD_TIMING_LEGACY	0	/* no high speed */
+#define EXT_CSD_TIMING_HS	1	/* HS */
+#define EXT_CSD_TIMING_HS200	2	/* HS200 */
 
 #define EXT_CSD_BOOT_ACK_ENABLE			(1 << 6)
 #define EXT_CSD_BOOT_PARTITION_ENABLE		(1 << 3)
@@ -211,14 +231,27 @@
 #define EXT_CSD_BOOT_PART_NUM(x)	(x << 3)
 #define EXT_CSD_PARTITION_ACCESS(x)	(x << 0)
 
+#define EXT_CSD_EXTRACT_BOOT_ACK(x)		(((x) >> 6) & 0x1)
+#define EXT_CSD_EXTRACT_BOOT_PART(x)		(((x) >> 3) & 0x7)
+#define EXT_CSD_EXTRACT_PARTITION_ACCESS(x)	((x) & 0x7)
+
 #define EXT_CSD_BOOT_BUS_WIDTH_MODE(x)	(x << 3)
 #define EXT_CSD_BOOT_BUS_WIDTH_RESET(x)	(x << 2)
 #define EXT_CSD_BOOT_BUS_WIDTH_WIDTH(x)	(x)
 
 #define EXT_CSD_PARTITION_SETTING_COMPLETED	(1 << 0)
 
+#define EXT_CSD_ENH_USR		(1 << 0)	/* user data area is enhanced */
+#define EXT_CSD_ENH_GP(x)	(1 << ((x)+1))	/* GP part (x+1) is enhanced */
+
+#define EXT_CSD_HS_CTRL_REL	(1 << 0)	/* host controlled WR_REL_SET */
+
+#define EXT_CSD_WR_DATA_REL_USR		(1 << 0)	/* user data area WR_REL */
+#define EXT_CSD_WR_DATA_REL_GP(x)	(1 << ((x)+1))	/* GP part (x+1) WR_REL */
+
 #define R1_ILLEGAL_COMMAND		(1 << 22)
 #define R1_APP_CMD			(1 << 5)
+
 
 #define MMC_RSP_PRESENT (1 << 0)
 #define MMC_RSP_136	(1 << 1)		/* 136 bit response */
@@ -237,11 +270,13 @@
 #define MMC_RSP_R6	(MMC_RSP_PRESENT|MMC_RSP_CRC|MMC_RSP_OPCODE)
 #define MMC_RSP_R7	(MMC_RSP_PRESENT|MMC_RSP_CRC|MMC_RSP_OPCODE)
 
+
+
 #define MMCPART_NOAVAILABLE	(0xff)
 #define PART_ACCESS_MASK	(0x7)
 #define PART_SUPPORT		(0x1)
+#define ENHNCD_SUPPORT		(0x2)
 #define PART_ENH_ATTRIB		(0x1f)
-
 /* Maximum block size for MMC */
 #define MMC_MAX_BLOCK_LEN	512
 
@@ -354,6 +389,9 @@ struct mmc {
 	char part_config;
 	char part_num;
 	uint tran_speed;
+	u8 part_support;
+	u8 part_attr;
+	u8 wr_rel_set;
 	uint read_bl_len;
 	uint write_bl_len;
 	uint erase_grp_size;
@@ -374,7 +412,29 @@ struct mmc {
 	unsigned char calout[20][20];
 	int refix;
 	int fixdiv;
+	uint hc_wp_grp_size;	/* in 512-byte sectors */
 };
+struct mmc_hwpart_conf {
+	struct {
+		uint enh_start;	/* in 512-byte sectors */
+		uint enh_size;	/* in 512-byte sectors, if 0 no enh area */
+		unsigned wr_rel_change : 1;
+		unsigned wr_rel_set : 1;
+	} user;
+	struct {
+		uint size;	/* in 512-byte sectors */
+		unsigned enhanced : 1;
+		unsigned wr_rel_change : 1;
+		unsigned wr_rel_set : 1;
+	} gp_part[4];
+};
+
+enum mmc_hwpart_conf_mode {
+	MMC_HWPART_CONF_CHECK,
+	MMC_HWPART_CONF_SET,
+	MMC_HWPART_CONF_COMPLETE,
+};
+
 
 int mmc_register(struct mmc *mmc);
 struct mmc *mmc_create(const struct mmc_config *cfg, void *priv);
@@ -410,7 +470,9 @@ int mmc_rpmb_read(struct mmc *mmc, void *addr, unsigned short blk,
 		  unsigned short cnt, unsigned char *key);
 int mmc_rpmb_write(struct mmc *mmc, void *addr, unsigned short blk,
 		   unsigned short cnt, unsigned char *key);
-
+int mmc_hwpart_config(struct mmc *mmc,
+		      const struct mmc_hwpart_conf *conf,
+		      enum mmc_hwpart_conf_mode mode);
 int mmc_switch_partition(struct mmc* mmc, unsigned int part);
 /**
  * Start device initialization and return immediately; it does not block on
