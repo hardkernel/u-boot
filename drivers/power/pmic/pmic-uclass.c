@@ -30,7 +30,6 @@ int pmic_bind_children(struct udevice *pmic, ofnode parent,
 	const char *reg_name;
 	int bind_count = 0;
 	ofnode node;
-	int prefix_len;
 	int ret;
 	bool enable;
 
@@ -56,13 +55,12 @@ int pmic_bind_children(struct udevice *pmic, ofnode parent,
 		for (info = child_info; info->prefix && info->driver; info++) {
 			debug("  - compatible prefix: '%s'\n", info->prefix);
 
-			prefix_len = strlen(info->prefix);
-			if (strncmp(info->prefix, node_name, prefix_len)) {
+			if (!strstr(node_name, info->prefix)) {
 				reg_name = ofnode_read_string(node,
 							      "regulator-name");
 				if (!reg_name)
 					continue;
-				if (strncmp(info->prefix, reg_name, prefix_len))
+				if (!strstr(reg_name, info->prefix))
 					continue;
 			}
 
