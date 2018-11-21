@@ -23,7 +23,7 @@ cat << EOF
 			compression = "none";
 EOF
 
-OUTDIR="/home/kever/src/u-boot"
+OUTDIR=$PWD
 DARM_BASE=`sed -n "/CONFIG_SYS_SDRAM_BASE=/s/CONFIG_SYS_SDRAM_BASE=//p" ${OUTDIR}/include/autoconf.mk|tr -d '\r'`
 UBOOT_OFFSET=0x00200000
 UBOOT_BASE=$((DARM_BASE+UBOOT_OFFSET))
