@@ -10,4 +10,13 @@ void vpp_pq_load(void);
 
 extern void vpp_matrix_update(int type);
 
+enum vpp_gamma_sel_e {
+	VPP_GAMMA_R = 0,
+	VPP_GAMMA_G,
+	VPP_GAMMA_B
+};
+
+extern void vpp_load_gamma_table(unsigned short *data, unsigned int len, enum vpp_gamma_sel_e flag);
+extern void vpp_init_lcd_gamma_table(void);
+
 #endif

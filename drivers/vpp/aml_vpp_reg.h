@@ -213,6 +213,26 @@
 #define DOLBY_PATH_CTRL                            0x1a0c
 #endif
 
+//#define GAMMA_CNTL_PORT                            0x1400
+#define  GAMMA_VCOM_POL    7     /* RW */
+#define  GAMMA_RVS_OUT     6     /* RW */
+#define  ADR_RDY           5     /* Read Only */
+#define  WR_RDY            4     /* Read Only */
+#define  RD_RDY            3     /* Read Only */
+#define  GAMMA_TR          2     /* RW */
+#define  GAMMA_SET         1     /* RW */
+#define  GAMMA_EN          0     /* RW */
+
+//#define GAMMA_DATA_PORT                            0x1401
+//#define GAMMA_ADDR_PORT                            0x1402
+#define  H_RD              12
+#define  H_AUTO_INC        11
+#define  H_SEL_R           10
+#define  H_SEL_G           9
+#define  H_SEL_B           8
+#define  HADR_MSB          7            /* 7:0 */
+#define  HADR              0            /* 7:0 */
+
 /* ********************************
  * register access api
  * ********************************* */

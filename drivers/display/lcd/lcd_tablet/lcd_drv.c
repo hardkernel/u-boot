@@ -17,6 +17,7 @@
 
 #include <common.h>
 #include <malloc.h>
+#include <vpp.h>
 #include <asm/arch/io.h>
 #include <amlogic/aml_lcd.h>
 #include "../aml_lcd_reg.h"
@@ -914,6 +915,7 @@ void lcd_tablet_driver_init_pre(void)
 	lcd_clk_set(pconf);
 	lcd_venc_set(pconf);
 	lcd_encl_tcon_set(pconf);
+	vpp_init_lcd_gamma_table();
 }
 
 int lcd_tablet_driver_init(void)
