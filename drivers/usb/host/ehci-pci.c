@@ -20,7 +20,7 @@ struct ehci_pci_priv {
 	struct phy phy;
 };
 
-#ifdef CONFIG_DM_USB
+#if CONFIG_IS_ENABLED(DM_USB)
 static int ehci_pci_init(struct udevice *dev, struct ehci_hccr **ret_hccr,
 			  struct ehci_hcor **ret_hcor)
 {
@@ -122,9 +122,9 @@ int ehci_hcd_stop(int index)
 {
 	return 0;
 }
-#endif /* nCONFIG_DM_USB */
+#endif /* !CONFIG_IS_ENABLED(DM_USB) */
 
-#ifdef CONFIG_DM_USB
+#if CONFIG_IS_ENABLED(DM_USB)
 static int ehci_pci_probe(struct udevice *dev)
 {
 	struct ehci_hccr *hccr;
@@ -174,4 +174,4 @@ static struct pci_device_id ehci_pci_supported[] = {
 
 U_BOOT_PCI_DEVICE(ehci_pci, ehci_pci_supported);
 
-#endif /* CONFIG_DM_USB */
+#endif /* CONFIG_IS_ENABLED(DM_USB) */
