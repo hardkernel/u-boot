@@ -44,36 +44,49 @@ static void set_vddee_voltage(unsigned int target_voltage)
 	writel(pwm_voltage_table_ee[to][0],AO_PWM_PWM_B);
 }
 
+static void power_off_ddr(unsigned int flag)
+{
+	if (flag) {
+		/*set test_n high to power on VDDQ1.5*/
+		writel(readl(AO_GPIO_TEST_N) | (1 << 31), AO_GPIO_TEST_N);
+		writel(readl(AO_GPIO_TEST_N) & (~(0xf << 8)), AO_GPIO_TEST_N);
+	} else {
+		/*set test_n low to power off VDDQ1.5*/
+		writel(readl(AO_GPIO_TEST_N) & (~(1 << 31)), AO_GPIO_TEST_N);
+		writel(readl(AO_GPIO_TEST_N) & (~(0xf << 8)), AO_GPIO_TEST_N);
+
+	}
+}
+
 static void power_off_at_24M(unsigned int suspend_from)
 {
-	/*set gpioH_8 low to power off vcc 5v*/
-	writel(readl(PREG_PAD_GPIO3_EN_N) & (~(1 << 8)), PREG_PAD_GPIO3_EN_N);
-	writel(readl(PERIPHS_PIN_MUX_C) & (~(0xf)), PERIPHS_PIN_MUX_C);
-
-	/*set test_n low to power off vcck & vcc 3.3v*/
-	writel(readl(AO_GPIO_O) & (~(1 << 31)), AO_GPIO_O);
-	writel(readl(AO_GPIO_O_EN_N) & (~(1 << 31)), AO_GPIO_O_EN_N);
-	writel(readl(AO_RTI_PIN_MUX_REG1) & (~(0xf << 28)), AO_RTI_PIN_MUX_REG1);
-
+	/*set gpiaoao_2 low to power on VDDCPU*/
+	writel(readl(AO_GPIO_O) & (~(1 << 2)), AO_GPIO_O);
+	writel(readl(AO_GPIO_O_EN_N) & (~(1 << 2)), AO_GPIO_O_EN_N);
+	writel(readl(AO_RTI_PIN_MUX_REG) & (~(0xf << 8)), AO_RTI_PIN_MUX_REG);
+	_udelay(100);
 	/*step down ee voltage*/
 	set_vddee_voltage(CONFIG_VDDEE_SLEEP_VOLTAGE);
+	if (suspend_from == SYS_POWEROFF) {
+		power_off_ddr(0);
+	}
 }
 
 static void power_on_at_24M(unsigned int suspend_from)
 {
 	/*step up ee voltage*/
 	set_vddee_voltage(CONFIG_VDDEE_INIT_VOLTAGE);
-
-	/*set test_n low to power on vcck & vcc 3.3v*/
-	writel(readl(AO_GPIO_O) | (1 << 31), AO_GPIO_O);
-	writel(readl(AO_GPIO_O_EN_N) & (~(1 << 31)), AO_GPIO_O_EN_N);
-	writel(readl(AO_RTI_PIN_MUX_REG1) & (~(0xf << 28)), AO_RTI_PIN_MUX_REG1);
 	_udelay(100);
 
-	/*set gpioH_8 low to power on vcc 5v*/
-	writel(readl(PREG_PAD_GPIO3_EN_N) | (1 << 8), PREG_PAD_GPIO3_EN_N);
-	writel(readl(PERIPHS_PIN_MUX_C) & (~(0xf)), PERIPHS_PIN_MUX_C);
+	/*set gpiaoao_2 high to power on VDDCPU*/
+	writel(readl(AO_GPIO_O) | (1 << 2), AO_GPIO_O);
+	writel(readl(AO_GPIO_O_EN_N) & (~(1 << 2)), AO_GPIO_O_EN_N);
+	writel(readl(AO_RTI_PIN_MUX_REG) & (~(0xf << 8)), AO_RTI_PIN_MUX_REG);
 	_udelay(10000);
+
+	if (suspend_from == SYS_POWEROFF) {
+		power_off_ddr(1);
+	}
 
 }
 
