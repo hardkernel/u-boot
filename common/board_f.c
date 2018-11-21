@@ -109,12 +109,12 @@ __weak void blue_led_off(void) {}
 #if defined(CONFIG_WATCHDOG) || defined(CONFIG_HW_WATCHDOG)
 static int init_func_watchdog_init(void)
 {
-# if defined(CONFIG_HW_WATCHDOG) && (defined(CONFIG_BLACKFIN) || \
+# if defined(CONFIG_HW_WATCHDOG) || (defined(CONFIG_BLACKFIN) || \
 	defined(CONFIG_M68K) || defined(CONFIG_MICROBLAZE) || \
 	defined(CONFIG_SH))
 	hw_watchdog_init();
 # endif
-	puts("       Watchdog enabled\n");
+	puts("Watchdog enabled\n");
 	WATCHDOG_RESET();
 
 	return 0;
