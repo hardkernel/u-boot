@@ -149,6 +149,7 @@ __weak int set_armclk_rate(void)
 
 int board_late_init(void)
 {
+	rockchip_set_serialno();
 #if (CONFIG_ROCKCHIP_BOOT_MODE_REG > 0)
 	setup_boot_mode();
 #endif
@@ -160,7 +161,6 @@ int board_late_init(void)
 #ifdef CONFIG_DRM_ROCKCHIP
 	rockchip_show_logo();
 #endif
-	rockchip_set_serialno();
 
 	soc_clk_dump();
 

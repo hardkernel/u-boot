@@ -140,6 +140,7 @@ static int do_rkusb(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 	unsigned int controller_index;
 	int rc;
 	int cable_ready_timeout __maybe_unused;
+	const char *s;
 
 	if (argc != 4)
 		return CMD_RET_USAGE;
@@ -167,6 +168,10 @@ static int do_rkusb(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 		rc = CMD_RET_FAILURE;
 		goto cleanup_board;
 	}
+
+	s = env_get("serial#");
+	if (s)
+		g_dnl_set_serialnumber((char *)s);
 
 	rc = g_dnl_register("rkusb_ums_dnl");
 	if (rc) {
