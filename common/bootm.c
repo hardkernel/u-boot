@@ -32,6 +32,10 @@
 #include <bootm.h>
 #include <image.h>
 
+#ifdef CONFIG_OF_LIBFDT_OVERLAY
+#include <ext_common.h>
+#endif
+
 #ifdef CONFIG_AML_ANTIROLLBACK
 #include "anti-rollback.h"
 #endif
@@ -247,11 +251,51 @@ static int bootm_find_ramdisk(int flag, int argc, char * const argv[])
 	return 0;
 }
 
+	/*
+	 * load dtb overlay partition to mem
+	 */
+#ifdef CONFIG_OF_LIBFDT_OVERLAY
+static int read_fdto_partition(void)
+{
+	char	cmd[128];
+	int	ret = 0;
+	u64	tmp = 0;
+	void	*dtbo_mem_addr = NULL;
+
+	/* check if dtbo partition exist */
+	sprintf(cmd, "store size dtbo 0x%p", &tmp);
+	ret = run_command(cmd, 0);
+	if (ret != 0) {
+		printf("No dtbo patitions found\n");
+	} else {
+		dtbo_mem_addr = malloc(tmp * SECTOR_SIZE);
+		if (!dtbo_mem_addr) {
+			printf("dtbo out of memory\n");
+		} else {
+			sprintf(cmd, "store read dtbo 0x%p 0 0x%llx",
+			dtbo_mem_addr, (tmp * SECTOR_SIZE));
+			ret = run_command(cmd, 0);
+			if (ret != 0) {
+				printf("Fail to read dtbo partition\n");
+				free(dtbo_mem_addr);
+			} else {
+				sprintf(cmd,
+				"setenv dtbo_mem_addr 0x%p",
+				dtbo_mem_addr);
+				run_command(cmd, 0);
+			}
+		}
+	}
+	return 0;
+}
+#endif
+
 #ifdef CONFIG_OF_LIBFDT_OVERLAY
 static int get_fdto_totalsize(u32 *tz)
 {
 	unsigned long long dtbo_mem_addr = NULL;
 
+	read_fdto_partition();
 	if (!getenv("dtbo_mem_addr")) {
 		printf("No dtbo partition provided?\n");
 		printf("Fail to load dtbo partition data?\n");
@@ -293,7 +337,7 @@ static int do_fdt_overlay(void)
 		return -1;
 	}
 
-	android_dt_print_contents(dtbo_mem_addr);
+	/* android_dt_print_contents(dtbo_mem_addr); */
 	dtbo_num = fdt32_to_cpu((
 		(const struct dt_table_header *)dtbo_mem_addr)->dt_entry_count);
 	printf("find %d dtbos\n", dtbo_num);

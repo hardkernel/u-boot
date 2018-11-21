@@ -556,7 +556,5 @@
 #define CONFIG_INTERNAL_PHY
 
 //#define CONFIG_AVB2
-#define CONFIG_OF_LIBFDT_OVERLAY 1
-#define CONFIG_CMD_DTIMG 1
 #endif
 

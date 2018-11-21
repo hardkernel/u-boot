@@ -65,4 +65,7 @@
 
 #define NR_CPUS     2
 
+#define CONFIG_OF_LIBFDT_OVERLAY 1
+#define CONFIG_CMD_DTIMG 1
+
 #endif /* _CPU_H */

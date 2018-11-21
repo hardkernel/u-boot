@@ -56,9 +56,6 @@
 
 #define CONFIG_DTB_MEM_ADDR 0x1000000
 
-/* enlarge it if needed, but never exceed 8M */
-#define CONFIG_MAX_DTBO_SIZE 0x10000
-
 #define CONFIG_AML_CUSTOMER_ID  (0)
 
 #define CONFIG_SILENT_CONSOLE
@@ -72,5 +69,8 @@
 #define CONFIG_BL21_T32		1
 
 #define NR_CPUS     8
+
+#define CONFIG_OF_LIBFDT_OVERLAY 1
+#define CONFIG_CMD_DTIMG 1
 
 #endif /* _CPU_H */

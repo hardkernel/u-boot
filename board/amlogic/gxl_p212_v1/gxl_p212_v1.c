@@ -566,48 +566,6 @@ int board_late_init(void){
 		}
 #endif// #ifndef DTB_BIND_KERNEL
 
-	/*
-	 * load dtb overlay partition to mem
-	 */
-#ifdef CONFIG_OF_LIBFDT_OVERLAY
-	{
-		char	cmd[128];
-		int	ret = 0;
-		u64	tmp = 0;
-		void	*dtbo_mem_addr = NULL;
-
-		/* check if dtbo partition exist */
-		sprintf(cmd, "store size dtbo 0x%p", &tmp);
-		ret = run_command(cmd, 0);
-		if (ret != 0) {
-			printf("No dtbo patitions found\n");
-		} else {
-			dtbo_mem_addr = malloc(CONFIG_MAX_DTBO_SIZE);
-			if (!dtbo_mem_addr) {
-				printf("dtbo out of memory\n");
-			} else {
-			#ifdef CONFIG_MAX_DTBO_SIZE
-				sprintf(cmd, "store read dtbo 0x%p 0 0x%x",
-					dtbo_mem_addr, CONFIG_MAX_DTBO_SIZE);
-			#else
-				sprintf(cmd, "store read dtbo 0x%p 0 0x%x",
-					dtbo_mem_addr, 0x10000);
-			#endif
-				ret = run_command(cmd, 0);
-				if (ret != 0) {
-					printf("Fail to read dtbo partition\n");
-					free(dtbo_mem_addr);
-				} else {
-					sprintf(cmd,
-						"setenv dtbo_mem_addr 0x%p",
-						dtbo_mem_addr);
-					run_command(cmd, 0);
-				}
-			}
-		}
-	}
-#endif
-
 #ifdef CONFIG_AML_VPU
 	vpu_probe();
 #endif
