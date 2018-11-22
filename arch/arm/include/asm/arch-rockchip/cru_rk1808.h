@@ -11,7 +11,7 @@
 #define MHz		1000000
 #define KHz		1000
 #define OSC_HZ		(24 * MHz)
-#define APLL_HZ		(600 * MHz)
+#define APLL_HZ		(1200 * MHz)
 #define PCLK_PMU_HZ	(100 * MHz)
 
 /* PX30 pll id */
