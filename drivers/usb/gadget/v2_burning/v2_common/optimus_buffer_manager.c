@@ -239,8 +239,20 @@ int optimus_buf_manager_report_transfer_complete(const u32 transferSz, char* err
         const u8* data = (u8*)BufBase -leftSz;
         const unsigned reserveNotAlignSz = leftPktSz ? _bufManager.itemOffsetNotAlignClusterSz_f : 0;//reserve
 
-        //call cb function to write to media
+        //itemOffsetNotAlignClusterSz_f is from sdcard/usb local package
+        //emmc write need align cluster to make next write offset align clusterm
         DWN_DBG("size 0x%x, reserveNotAlignSz 0x%x\n", size, reserveNotAlignSz);
+#if CONFIG_AML_LOCAL_BURN_BUFF_NOT_ALIGN
+        //As aml_upgrade_package.img is aligned 4,so data from pkg may not align 8 in sdc/usb disk burn case
+        //data not align will invoke emmc write error (may dma issue ?)
+        //Need Macro as newer chip family such as u200 has not this failure
+        if ((uint64_t)data & 0x7) {
+            DWN_MSG("data %p not align 64bit\n", data);
+            u8* alignBuf = (u8*)(((uint64_t)data>>3) << 3);
+            memmove(alignBuf, data, size);
+            data = alignBuf;
+        }
+#endif//#if CONFIG_AML_LOCAL_BURN_BUFF_NOT_ALIGN
         burnSz = optimus_download_img_data(data, size - reserveNotAlignSz, errInfo);
         if (burnSz <= leftSz || !burnSz) {
             DWN_ERR("this burn size %d <= last left size %d, data 0x%p\n", burnSz, leftSz, data);
