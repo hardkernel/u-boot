@@ -656,9 +656,9 @@ bl2_reg_t __bl2_reg[] = {
 	{AO_PWM_PWM_B,        VDDEE_VAL_REG,           0xffffffff,   0, BL2_INIT_STAGE_1, 0},
 	{AO_PWM_MISC_REG_AB,  ((1 << 23) | (1 << 1)),  (0x7f << 16), 0, BL2_INIT_STAGE_1, 0},
 	{AO_PIN_MUX_REG1,     (3 << 16),               (0xF << 16),  0, BL2_INIT_STAGE_1, 0},
-	/* Enable 5V_EN */
+	/* Enable 5V_EN ,set gpioao_3 low --> several millisecond--set high in board_init*/
 	{AO_GPIO_O_EN_N,    (0 << 3),                (1 << 3),     0, BL2_INIT_STAGE_1, 0},
-	{AO_GPIO_O,         (1 << 3),                (1 << 3),   0, BL2_INIT_STAGE_1, 0},
+	{AO_GPIO_O,         (0 << 3),                (1 << 3),   0, BL2_INIT_STAGE_1, 0},
 	/* Enable VCCK GPIOAO_2*/
 	{AO_GPIO_O_EN_N,      (0 << 2),                (1 << 2),  	 0, BL2_INIT_STAGE_1, 0},
 	{AO_GPIO_O,           (1 << 2),                (1 << 2),  	 0, BL2_INIT_STAGE_1, 0},
