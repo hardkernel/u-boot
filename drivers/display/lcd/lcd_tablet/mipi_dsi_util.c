@@ -508,7 +508,7 @@ static void dsi_phy_init(struct dsi_phy_s *dphy, unsigned char lane_num)
 
 	/* 0x05210f08);//0x03211c08 */
 	dsi_phy_write(MIPI_DSI_CLK_TIM,
-		(dphy->clk_trail | (dphy->clk_post << 8) |
+		(dphy->clk_trail | ((dphy->clk_post+dphy->hs_trail) << 8) |
 		(dphy->clk_zero << 16) | (dphy->clk_prepare << 24)));
 	dsi_phy_write(MIPI_DSI_CLK_TIM1, dphy->clk_pre); /* ?? */
 	/* 0x050f090d */
@@ -1556,7 +1556,7 @@ static void mipi_dsi_phy_config(struct dsi_phy_s *dphy, unsigned int dsi_ui)
 	if ((dphy->clk_trail * temp) < t_req_min)
 		dphy->clk_trail += 1;
 
-	t_req_min = 60 * 100 + 52 * t_ui + 10 * 100;
+	t_req_min = 60 * 100 + 52 * t_ui + 30 * 100;
 	dphy->clk_post = t_req_min / temp;
 	if ((dphy->clk_post * temp) < t_req_min)
 		dphy->clk_post += 1;
@@ -1894,7 +1894,7 @@ void lcd_mipi_dsi_config_set(struct lcd_config_s *pconf)
 	struct lcd_clk_config_s *cConf = get_lcd_clk_config();
 	int n;
 	unsigned int temp;
-	char *str;
+	const char *str;
 
 	/* unit in kHz for calculation */
 	pll_out_fmin = cConf->pll_out_fmin;
