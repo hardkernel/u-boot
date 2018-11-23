@@ -130,7 +130,6 @@
         "cvbs_drv=0\0"\
         "osd_reverse=0\0"\
         "video_reverse=0\0"\
-        "active_slot=_a\0"\
         "boot_part=boot\0"\
         "initargs="\
             "rootfstype=ramfs init=/init console=ttyS0,115200n8 no_console_suspend earlyprintk=aml-uart,0xff803000 ramoops.pstore_en=1 ramoops.record_size=0x8000 ramoops.console_size=0x4000 "\
@@ -154,7 +153,7 @@
             "vout=${outputmode},enable cvbsmode=${cvbsmode} " \
             "hdmimode=${hdmimode} osd_reverse=${osd_reverse} video_reverse=${video_reverse} " \
             "androidboot.selinux=${EnableSelinux} jtag=disable " \
-            "androidboot.hardware=" CONFIG_DEVICE_PRODUCT " androidboot.slot_suffix=${active_slot} " \
+            "androidboot.hardware=" CONFIG_DEVICE_PRODUCT " " \
             "recovery_part=recovery recovery_offset=0;" \
             "for n in ${mmc_list}; do "\
                 "mmc dev ${n}; " \
@@ -167,7 +166,7 @@
             "vout=${outputmode},enable cvbsmode=${cvbsmode} " \
             "hdmimode=${hdmimode} osd_reverse=${osd_reverse} video_reverse=${video_reverse} " \
             "androidboot.selinux=${EnableSelinux} androidboot.firstboot=${firstboot} jtag=disable " \
-            "androidboot.hardware=" CONFIG_DEVICE_PRODUCT " androidboot.slot_suffix=${active_slot}; " \
+            "androidboot.hardware=" CONFIG_DEVICE_PRODUCT "; " \
             "for n in ${mmc_list}; do " \
                 "mmc dev ${n}; " \
 	        "movi read boot 0 ${loadaddr}; " \
