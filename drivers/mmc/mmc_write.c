@@ -11,6 +11,7 @@
 #include <common.h>
 #include <part.h>
 #include "mmc_private.h"
+#include <malloc.h>
 
 extern bool emmckey_is_access_range_legal(struct mmc *mmc,
 		ulong start, lbaint_t blkcnt);
@@ -66,44 +67,133 @@ err_out:
 	return err;
 }
 
-unsigned long mmc_berase(int dev_num, lbaint_t start, lbaint_t blkcnt)
+unsigned long mmc_berase_becalled(int dev_num, lbaint_t start, lbaint_t blkcnt)
 {
 	int err = 0;
 	struct mmc *mmc = find_mmc_device(dev_num);
-	lbaint_t blk = 0, blk_r = 0;
 	int timeout = 1000;
 
 	if (!mmc)
 		return -1;
 
+	err = mmc_erase_t(mmc, start, blkcnt);
+	if (err)
+		return 1;
+
+	/* Waiting for the ready status */
+	if (mmc_send_status(mmc, timeout))
+		return 1;
+
+	return 0;
+}
+
+/*
+ * Function: Zero out blk_len blocks at the blk_addr by writing zeros. The
+ *           function can be used when we want to erase the blocks not
+ *           aligned with the mmc erase group.
+ * Arg     : Block address & length
+ * Return  : Returns 0
+ * Flow    : Erase the card from specified addr
+ */
+
+static uint32_t mmc_zero_out(int dev_num, uint32_t blk_addr, uint32_t num_blks)
+{
+	uint32_t erase_size = (512 * num_blks);
+	uint32_t *out = malloc(erase_size);
+
+	if (out == NULL) {
+		printf("mmc zero out: malloc fail\n");
+		return 1;
+	}
+	memset((void *)out, 0, erase_size);
+
+	/* Flush the data to memory before writing to storage */
+
+	if (mmc_bwrite(dev_num, blk_addr, num_blks, out) != num_blks)
+	{
+		printf("failed to erase the block: %x\n", blk_addr);
+		free(out);
+		return 1;
+	}
+	free(out);
+	return 0;
+}
+
+/*
+ * Function: mmc erase
+ * Arg     : Block address & length
+ * Return  : Returns 0
+ * Flow    : Erase the card from specified addr
+ */
+unsigned long mmc_berase(int dev_num, lbaint_t start, lbaint_t blkcnt)
+{
+	struct mmc *mmc;
+	uint32_t unaligned_blks;
+	uint32_t head_unit;
+	uint32_t tail_unit;
+	uint32_t erase_unit_sz;
+	uint64_t blks_to_erase;
+
+
+	mmc = find_mmc_device(dev_num);
+
 	if (!emmckey_is_access_range_legal(mmc, start, blkcnt))
 		return blkcnt;
 
 	if (blkcnt == 0) {
+
 		blkcnt = mmc->capacity/512 - (mmc->capacity/512)% mmc->erase_grp_size; // erase whole
 		printf("blkcnt = %lu\n",blkcnt);
-	}
-	if ((start % mmc->erase_grp_size) || (blkcnt % mmc->erase_grp_size))
-		printf("\n\nCaution! Your devices Erase group is 0x%x\n"
-		       "The erase range would be change to "
-		       "0x" LBAF "~0x" LBAF "\n\n",
-		       mmc->erase_grp_size, start & ~(mmc->erase_grp_size - 1),
-		       ((start + blkcnt + mmc->erase_grp_size)
-		       & ~(mmc->erase_grp_size - 1)) - 1);
 
-	while (blk < blkcnt) {
-		blk_r = ((blkcnt - blk) < mmc->erase_grp_size) ?
-			mmc->erase_grp_size : (blkcnt - blk);
-		err = mmc_erase_t(mmc, start + blk, blk_r);
-		if (err)
-			break;
-
-		blk += blk_r;
-
-		/* Waiting for the ready status */
-		if (mmc_send_status(mmc, timeout))
+		if (mmc_berase_becalled(dev_num, start, blkcnt))
 			return 1;
 	}
+
+	erase_unit_sz = mmc->erase_grp_size;
+	head_unit = start / erase_unit_sz;
+	tail_unit = (start + blkcnt - 1) / erase_unit_sz;
+
+	if (tail_unit - head_unit <= 1)
+	{
+		return mmc_zero_out(dev_num, start, blkcnt);
+	}
+
+	unaligned_blks = erase_unit_sz - (start % erase_unit_sz);
+
+	if (unaligned_blks < erase_unit_sz)
+	{
+		if (mmc_zero_out(dev_num, start, unaligned_blks))
+			return 1;
+
+		start += unaligned_blks;
+		blkcnt -= unaligned_blks;
+
+		head_unit = start / erase_unit_sz;
+		tail_unit = (start + blkcnt - 1) / erase_unit_sz;
+
+		if (tail_unit - head_unit <= 1)
+		{
+			return mmc_zero_out(dev_num, start, blkcnt);
+		}
+	}
+
+	unaligned_blks = blkcnt % erase_unit_sz;
+	blks_to_erase = blkcnt - unaligned_blks;
+
+	if (mmc_berase_becalled(dev_num, start, blks_to_erase))
+	{
+		printf("MMC erase failed\n");
+		return 1;
+	}
+
+	start += blks_to_erase;
+
+	if (unaligned_blks)
+	{
+		if (mmc_zero_out(dev_num, start, unaligned_blks))
+			return 1;
+	}
+
 
 	return 0;
 }
