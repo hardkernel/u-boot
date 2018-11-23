@@ -1081,7 +1081,11 @@ int usb_lowlevel_init(int index, enum usb_init_type init, void **controller)
 
 	reg = xhci_readl(&hccr->cr_hcsparams1);
 #ifdef CONFIG_USB_XHCI_AMLOGIC_V2
+#ifdef CONFIG_USB_U2_PORT_NUM
+	descriptor.hub.bNbrPorts = CONFIG_USB_U2_PORT_NUM;
+#else
 	descriptor.hub.bNbrPorts = 2;
+#endif
 #else
 	descriptor.hub.bNbrPorts = ((reg & HCS_MAX_PORTS_MASK) >>
 						HCS_MAX_PORTS_SHIFT);

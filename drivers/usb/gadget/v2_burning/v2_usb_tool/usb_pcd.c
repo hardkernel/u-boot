@@ -16,6 +16,8 @@
 #define COMPILE_TYPE_CHK(expr, t)       typedef char t[(expr) ? 1 : -1]
 
 static int do_bulk_cmd(char* cmd);
+static int _cbReplyCmdId = 0;
+static unsigned _cbUnReportedSz = 0;
 
 //one DWC_BLK_MAX_LEN <==> one dwc_otg_ep_req_start
 #ifdef USE_FULL_SPEED
@@ -947,13 +949,16 @@ static int bulk_cmd_reply(const char* replyBuf)
     pcd_struct_t* pcd = &this_pcd[BULK_IN_EP_NUM];
     //PCD fields needed for reply
     //see implementation of dwc_otg_ep_req_start
-    pcd->bulk_data_len = AM_BULK_REPLY_LEN;///
+    if (AM_REQ_DOWNLOAD == _cbReplyCmdId)
+        pcd->bulk_data_len = pcd->xferAckLen;
+    else
+        pcd->bulk_data_len = AM_BULK_REPLY_LEN;///
     pcd->bulk_len      = DWC_BLK_LEN(pcd->bulk_data_len);
     pcd->bulk_num      = DWC_BLK_NUM(pcd->bulk_data_len);
     pcd->bulk_xfer_len = 0;
     pcd->bulk_buf      = _bulk_replyBuf;
     pcd->bulk_out = 0;//////////////////////////////
-    DWN_DBG("reply..[%s]\n", _bulk_replyBuf);
+    DWN_DBG("reply..[%s] len %d\n", _bulk_replyBuf, pcd->bulk_data_len);
     dwc_otg_ep_req_start(pcd,  BULK_IN_EP_NUM);//bulk in to reply result, it is ALWAYS IN
 
     return 0;
@@ -1025,8 +1030,6 @@ void do_modify_memory(u16 opcode, char *inbuff)
 
 }
 
-static int _cbReplyCmdId = 0;
-static unsigned _cbUnReportedSz = 0;
 void usb_set_reply_cmd_id(const int cmdId)
 {
     _cbReplyCmdId   = cmdId;
