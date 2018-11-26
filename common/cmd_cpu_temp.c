@@ -909,6 +909,15 @@ static int do_temp_triming(cmd_tbl_t *cmdtp, int flag1,
 }
 
 #ifdef R1P1_TSENSOR_MODE
+
+#ifndef TS_SAR_CFG_REG1
+#define TS_SAR_CFG_REG1		TS_DDR_CFG_REG1
+#endif
+
+#ifndef TS_SAR_STAT0
+#define TS_SAR_STAT0		TS_DDR_STAT0
+#endif
+
 int r1p1_codetotemp(unsigned long value, unsigned int u_efuse,
 			int ts_b, int ts_a, int ts_m, int ts_n)
 {
@@ -1014,6 +1023,41 @@ int r1p1_temp_read(int type)
 					tmp = r1p1_codetotemp(value_ts, u_efuse, ts_b, ts_a, ts_m, ts_n);
 					printf("temp2: %d\n", tmp);
 					break;
+				case 3:
+					/*enable thermal2*/
+					regdata = 0x62b;/*enable control*/
+					writel(regdata, TS_SAR_CFG_REG1);
+					regdata = 0x130;/*enable tsclk*/
+					writel(regdata, HHI_TS_CLK_CNTL);
+					mdelay(5);
+					ret = readl(AO_SEC_GP_CFG11);/*thermal3 cali data in reg GP_CFG11*/
+					buf[0] = (ret) & 0xff;
+					buf[1] = (ret >> 8) & 0xff;
+					u_efuse = buf[1];
+					u_efuse = (u_efuse << 8) | buf[0];
+					value_ts = 0;
+					value_all_ts = 0;
+					cnt = 0;
+					for (i = 0; i <= 10; i ++) {
+						udelay(50);
+						value_ts = readl(TS_SAR_STAT0) & 0xffff;
+					}
+					for (i = 0; i <= NUM; i ++) {
+						udelay(5000);
+						value_ts = readl(TS_SAR_STAT0) & 0xffff;
+						if ((value_ts >= 0x1500) && (value_ts <= 0x3500))
+							value_all_ts += value_ts;
+							cnt ++;
+						}
+					value_ts =  value_all_ts / cnt;
+					printf("sar tsensor avg: 0x%x\n", value_ts);
+					if (value_ts == 0) {
+						printf("tsensor read temp is zero\n");
+						return -1;
+					}
+					tmp = r1p1_codetotemp(value_ts, u_efuse, ts_b, ts_a, ts_m, ts_n);
+					printf("temp3: %d\n", tmp);
+					break;
 				default:
 					printf("r1p1 tsensor trim type not support\n");
 			}
@@ -1031,7 +1075,6 @@ int r1p1_read_entry(void)
 	switch (family_id) {
 		case MESON_CPU_MAJOR_ID_G12A:
 		case MESON_CPU_MAJOR_ID_G12B:
-		case MESON_CPU_MAJOR_ID_TL1:
 			ret = readl(AO_SEC_GP_CFG10);
 			ver = (ret >> 24) & 0xff;
 			if ((ver & 0x80) == 0) {
@@ -1054,6 +1097,39 @@ int r1p1_read_entry(void)
 					printf("thermal version not support!!!Please check!\n");
 					return -1;
 				}
+			break;
+		case MESON_CPU_MAJOR_ID_TL1:
+			ret = readl(AO_SEC_GP_CFG10);
+			ver = (ret >> 24) & 0xff;
+			if ((ver & 0x80) == 0) {
+				printf("tsensor no trimmed, ver:0x%x\n", ver);
+				return -1;
+			}
+			ver = (ver & 0xf) >> 2;
+			switch (ver) {
+				case 0x2:
+					r1p1_temp_read(1);
+					r1p1_temp_read(2);
+					printf("read the thermal1 2\n");
+				break;
+				case 0x3:
+					r1p1_temp_read(1);
+					r1p1_temp_read(2);
+					r1p1_temp_read(3);
+					printf("read the thermal1 2 3\n");
+				break;
+				case 0x0:
+				case 0x1:
+					printf("temp type no support\n");
+				break;
+				default:
+					printf("thermal version not support!!!Please check!\n");
+					return -1;
+				}
+			break;
+		default:
+			printf("chip major id not support!!!Please check!\n");
+			return -1;
 		}
 	return 0;
 }
@@ -1165,10 +1241,47 @@ int r1p1_temp_trim(int tempbase, int tempver, int type)
 						return -1;
 					}
 					u_efuse = r1p1_temptocode(value_ts, tempbase, ts_b, ts_a, ts_m, ts_n);
-					printf("pll ts efuse:%d\n", u_efuse);
-					printf("pll ts efuse:0x%x, index: %d\n", u_efuse, index_ts);
+					printf("ddr ts efuse:%d\n", u_efuse);
+					printf("ddr ts efuse:0x%x, index: %d\n", u_efuse, index_ts);
 					if (thermal_calibration(index_ts, u_efuse) < 0) {
 						printf("ddr tsensor thermal_calibration send error\n");
+						return -1;
+					}
+					break;
+				case 3:
+					value_ts = 0;
+					value_all_ts = 0;
+					index_ts = 8;
+					cnt = 0;
+
+					/*enable thermal3*/
+					regdata = 0x62b;/*enable control*/
+					writel(regdata, TS_SAR_CFG_REG1);
+					regdata = 0x130;/*enable tsclk*/
+					writel(regdata, HHI_TS_CLK_CNTL);
+					for (i = 0; i <= 10; i ++) {
+						udelay(50);
+						value_ts = readl(TS_SAR_STAT0) & 0xffff;
+					}
+					for (i = 0; i <= NUM; i ++) {
+						udelay(5000);
+						value_ts = readl(TS_SAR_STAT0) & 0xffff;
+						printf("sar tsensor read: 0x%x\n", value_ts);
+						if ((value_ts >= 0x1500) && (value_ts <= 0x3500))
+							value_all_ts += value_ts;
+							cnt ++;
+						}
+					value_ts =  value_all_ts / cnt;
+					printf("sar tsensor avg: 0x%x\n", value_ts);
+					if (value_ts == 0) {
+						printf("sar tsensor read temp is zero\n");
+						return -1;
+					}
+					u_efuse = r1p1_temptocode(value_ts, tempbase, ts_b, ts_a, ts_m, ts_n);
+					printf("sar ts efuse:%d\n", u_efuse);
+					printf("sar ts efuse:0x%x, index: %d\n", u_efuse, index_ts);
+					if (thermal_calibration(index_ts, u_efuse) < 0) {
+						printf("sar tsensor thermal_calibration send error\n");
 						return -1;
 					}
 					break;
@@ -1190,7 +1303,6 @@ int r1p1_trim_entry(int tempbase, int tempver)
 	switch (family_id) {
 		case MESON_CPU_MAJOR_ID_G12A:
 		case MESON_CPU_MAJOR_ID_G12B:
-		case MESON_CPU_MAJOR_ID_TL1:
 			ret = readl(AO_SEC_GP_CFG10);
 			ver = (ret >> 24) & 0xff;
 			if (ver & 0x80) {
@@ -1223,6 +1335,47 @@ int r1p1_trim_entry(int tempbase, int tempver)
 					printf("thermal version not support!!!Please check!\n");
 					return -1;
 				}
+			break;
+		case MESON_CPU_MAJOR_ID_TL1:
+			ret = readl(AO_SEC_GP_CFG10);
+			ver = (ret >> 24) & 0xff;
+			if (ver & 0x80) {
+				printf("tsensor has trimmed, ver:0x%x\n", ver);
+				printf("tsensor cali data: 0x%x, 0x%x, 0x%x\n",
+					readl(AO_SEC_GP_CFG10), readl(AO_SEC_SD_CFG12), readl(AO_SEC_GP_CFG11));
+				return -1;
+			}
+			printf("tsensor input trim tempver, tempver:0x%x\n", tempver);
+			switch (tempver) {
+				case 0x8c:
+					r1p1_temp_trim(tempbase, tempver, 1);
+					r1p1_temp_trim(tempbase, tempver, 2);
+					r1p1_temp_trim(tempbase, tempver, 3);
+					r1p1_temp_trim(tempbase, tempver, 0);
+					printf("triming the thermal1 2 3 by sw-bbt\n");
+				break;
+				case 0x8d:
+					r1p1_temp_trim(tempbase, tempver, 1);
+					r1p1_temp_trim(tempbase, tempver, 2);
+					r1p1_temp_trim(tempbase, tempver, 3);
+					r1p1_temp_trim(tempbase, tempver, 0);
+					printf("triming the thermal1 2 3 by ops-bbt\n");
+				break;
+				case 0x8f:
+					r1p1_temp_trim(tempbase, tempver, 1);
+					r1p1_temp_trim(tempbase, tempver, 2);
+					r1p1_temp_trim(tempbase, tempver, 3);
+					r1p1_temp_trim(tempbase, tempver, 0);
+					printf("triming the thermal1 2 3 by slt\n");
+				break;
+				default:
+					printf("thermal version not support!!!Please check!\n");
+					return -1;
+				}
+			break;
+		default:
+			printf("chip major id not support!!! Please check!\n");
+			break;
 		}
 	return 0;
 
@@ -1310,9 +1463,9 @@ static char temp_trim_help_text[] =
 	"	    89	(10001001)b: BBT-OPS, thermal1 thermal2, valid thermal cali data\n"
 	"	    8b	(10001001)b: SLT, thermal1 thermal2, valid thermal cali data\n"
 	" 	TL1:\n"
-	"	    88	(10001001)b: BBT-SW, thermal1 thermal2, valid thermal cali data\n"
-	"	    89	(10001001)b: BBT-OPS, thermal1 thermal2, valid thermal cali data\n"
-	"	    8b	(10001001)b: SLT, thermal1 thermal2, valid thermal cali data\n";
+	"	    8c	(10001001)b: BBT-SW, thermal1 ~ 3, valid thermal cali data\n"
+	"	    8d	(10001001)b: BBT-OPS, thermal1 ~ 3, valid thermal cali data\n"
+	"	    8f	(10001001)b: SLT, thermal1 ~ 3, valid thermal cali data\n";
 
 U_BOOT_CMD(
 	temp_triming,	5,	1,	do_temp_triming,
