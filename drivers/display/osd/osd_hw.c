@@ -2695,6 +2695,12 @@ void osd_init_hw(void)
 		data32 |= (1 << 21);
 		osd_reg_write(VIU_OSD1_CTRL_STAT , data32);
 		osd_reg_write(VIU_OSD2_CTRL_STAT , data32);
+
+		/* set replaced_alpha */
+		data32 = 0x1 << 14;
+		data32 |= 0xff << 6;
+		osd_reg_write(VIU_OSD1_CTRL_STAT2 , data32);
+		osd_reg_write(VIU_OSD2_CTRL_STAT2 , data32);
 	}
 	if (get_cpu_id().family_id != MESON_CPU_MAJOR_ID_G12A)
 		osd_reg_clr_mask(VPP_MISC, VPP_POST_FG_OSD2 | VPP_PRE_FG_OSD2);
