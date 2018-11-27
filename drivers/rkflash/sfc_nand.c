@@ -624,6 +624,7 @@ static void ftl_flash_init(void)
 	g_nand_ops.erase_blk		= sfc_nand_erase_block;
 	g_nand_ops.prog_page		= sfc_nand_prog_page;
 	g_nand_ops.read_page		= sfc_nand_read_page;
+	g_nand_ops.bch_sel		= NULL;
 }
 
 static int spi_nand_enable_QE(void)

@@ -61,6 +61,8 @@ struct nand_ops {
 	u32 (*erase_blk)(u8 cs, u32 page_addr);
 	u32 (*prog_page)(u8 cs, u32 page_addr, u32 *data, u32 *spare);
 	u32 (*read_page)(u8 cs, u32 page_addr, u32 *data, u32 *spare);
+	void (*bch_sel)(u8 bits);
+	void (*set_sec_num)(u8 num);
 };
 
 #endif
