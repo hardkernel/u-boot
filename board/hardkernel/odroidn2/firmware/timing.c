@@ -73,7 +73,7 @@
 #define DDR_RFC_TYPE_LPDDR4_3Gbx1				10
 #define DDR_RFC_TYPE_LPDDR4_4Gbx1				11
 
-#define CONFIG_DDR4_DEFAULT_CLK		1200
+#define CONFIG_DDR4_DEFAULT_CLK		1320
 
 ddr_set_t __ddr_setting[] = {
 {
