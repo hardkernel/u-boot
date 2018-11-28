@@ -101,9 +101,30 @@ static void lcd_vbyone_phy_set(struct lcd_config_s *pconf, int status)
 			break;
 		}
 	} else {
-		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL1, 0x0);
-		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL2, 0x0);
-		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL3, 0x0);
+		switch (lcd_drv->chip_type) {
+		case LCD_CHIP_TL1:
+			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL14, 0);
+			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL15, 0);
+			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL16, 0);
+			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL8,  0);
+			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL1,  0);
+			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL9,  0);
+			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL2,  0);
+			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL10, 0);
+			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL3,  0);
+			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL11, 0);
+			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL4,  0);
+			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL12, 0);
+			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL6,  0);
+			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL13, 0);
+			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL7,  0);
+			break;
+		default:
+			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL1, 0x0);
+			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL2, 0x0);
+			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL3, 0x0);
+			break;
+		}
 	}
 }
 
@@ -196,9 +217,30 @@ static void lcd_lvds_phy_set(struct lcd_config_s *pconf, int status)
 			break;
 		}
 	} else {
-		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL1, 0x0);
-		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL2, 0x0);
-		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL3, 0x0);
+		switch (lcd_drv->chip_type) {
+		case LCD_CHIP_TL1:
+			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL14, 0);
+			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL15, 0);
+			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL16, 0);
+			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL8,  0);
+			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL1,  0);
+			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL9,  0);
+			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL2,  0);
+			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL10, 0);
+			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL3,  0);
+			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL11, 0);
+			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL4,  0);
+			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL12, 0);
+			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL6,  0);
+			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL13, 0);
+			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL7,  0);
+			break;
+		default:
+			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL1, 0x0);
+			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL2, 0x0);
+			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL3, 0x0);
+			break;
+		}
 	}
 }
 
@@ -264,9 +306,21 @@ static void lcd_p2p_phy_set(struct lcd_config_s *pconf, int status)
 		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL13, 0);
 		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL7, 0x06020602);
 	} else {
-		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL1, 0x0);
-		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL2, 0x0);
-		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL3, 0x0);
+		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL14, 0);
+		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL15, 0);
+		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL16, 0);
+		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL8,  0);
+		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL1,  0);
+		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL9,  0);
+		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL2,  0);
+		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL10, 0);
+		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL3,  0);
+		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL11, 0);
+		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL4,  0);
+		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL12, 0);
+		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL6,  0);
+		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL13, 0);
+		lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL7,  0);
 	}
 }
 
@@ -822,6 +876,7 @@ static void lcd_vbyone_cdr_training_hold(struct vbyone_config_s *vx1_conf, int f
 
 static void lcd_vbyone_control_set(struct lcd_config_s *pconf)
 {
+	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
 	int lane_count, byte_mode, region_num, hsize, vsize;
 	/* int color_fmt; */
 	int vin_color, vin_bpp;
@@ -913,7 +968,17 @@ static void lcd_vbyone_control_set(struct lcd_config_s *pconf)
 	//lcd_hiu_write(HHI_DSI_LVDS_EDP_CNTL0, 0x1);
 
 	/* set hpd & lockn hw filter */
-	lcd_vcbus_write(VBO_INFILTER_CTRL, 0xff77);
+	switch (lcd_drv->chip_type) { /* pn swap */
+	case LCD_CHIP_TL1:
+		lcd_vcbus_write(VBO_INFILTER_TICK_PERIOD_L, 0xff);
+		lcd_vcbus_write(VBO_INFILTER_TICK_PERIOD_H, 0x0);
+		lcd_vcbus_setb(VBO_INSGN_CTRL, 0x7, 8, 4);
+		lcd_vcbus_setb(VBO_INSGN_CTRL, 0x7, 12, 4);
+		break;
+	default:
+		lcd_vcbus_write(VBO_INFILTER_CTRL, 0xff77);
+		break;
+	}
 	lcd_vcbus_setb(VBO_INSGN_CTRL, 0, 2, 2);
 
 	lcd_vcbus_setb(VBO_CTRL_L, 1, 0, 1);

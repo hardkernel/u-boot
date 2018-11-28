@@ -438,6 +438,7 @@ struct lcd_clk_ctrl_s pll_ctrl_table_g12a_path1[] = {
 struct lcd_clk_ctrl_s pll_ctrl_table_tl1[] = {
 	/* flag             reg                 bit              len*/
 	{LCD_CLK_CTRL_EN,   HHI_TCON_PLL_CNTL0, LCD_PLL_EN_TL1,   1},
+	{LCD_CLK_CTRL_RST,  HHI_TCON_PLL_CNTL0, LCD_PLL_RST_TL1,  1},
 	{LCD_CLK_CTRL_FRAC, HHI_TCON_PLL_CNTL1,               0, 17},
 	{LCD_CLK_CTRL_END,  LCD_CLK_REG_END,                  0,  0},
 };

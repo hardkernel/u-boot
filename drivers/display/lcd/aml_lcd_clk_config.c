@@ -2316,6 +2316,9 @@ void lcd_clk_disable(void)
 		if (table[i].flag == LCD_CLK_CTRL_EN) {
 			lcd_hiu_setb(table[i].reg, 0,
 				table[i].bit, table[i].len);
+		} else if (table[i].flag == LCD_CLK_CTRL_RST) {
+			lcd_hiu_setb(table[i].reg, 1,
+				table[i].bit, table[i].len);
 		}
 		i++;
 	}

@@ -245,6 +245,16 @@
 #define ENCL_INBUF_CNT                             0x1cd5
 #endif
 
+#ifndef VBO_INFILTER_CTRL
+#define VBO_INFILTER_CTRL                          0x14f9
+#endif
+#ifndef VBO_INFILTER_TICK_PERIOD_L
+#define VBO_INFILTER_TICK_PERIOD_L                 0x14f9
+#endif
+#ifndef VBO_INFILTER_TICK_PERIOD_H
+#define VBO_INFILTER_TICK_PERIOD_H                 0x1477
+#endif
+
 #ifndef REG_TCON_APB_BASE
 #define REG_TCON_APB_BASE                          (0xFF600000L)
 #define TCON_CORE_REG_START                        0x0000

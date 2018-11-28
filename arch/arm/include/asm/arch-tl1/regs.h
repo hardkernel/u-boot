@@ -17093,10 +17093,10 @@
 #define P_VBO_TMCHK_VDE_STATE_H                    (volatile unsigned int *)((0x14f7  << 2) + 0xff900000)
 #define   VBO_INTR_STATE                           (0x14f8)
 #define P_VBO_INTR_STATE                           (volatile unsigned int *)((0x14f8  << 2) + 0xff900000)
-#define   VBO_INFILTER_CTRL                        (0x14f9)
-#define P_VBO_INFILTER_CTRL                        (volatile unsigned int *)((0x14f9  << 2) + 0xff900000)
 #define   VBO_INSGN_CTRL                           (0x14fa)
 #define P_VBO_INSGN_CTRL                           (volatile unsigned int *)((0x14fa  << 2) + 0xff900000)
+#define VBO_INFILTER_TICK_PERIOD_L                 0x14f9
+#define VBO_INFILTER_TICK_PERIOD_H                 0x1477
 //**************************************************************************
 //*  NOTE::    When Programming the Gamma, please turn off the IRQ service *
 //**************************************************************************
