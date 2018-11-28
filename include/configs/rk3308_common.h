@@ -36,7 +36,11 @@
 #define CONFIG_SYS_SDRAM_BASE		0
 #define SDRAM_MAX_SIZE			0xff000000
 #define SDRAM_BANK_SIZE			(2UL << 30)
+#ifdef CONFIG_DM_DVFS
+#define CONFIG_PREBOOT			"dvfs repeat"
+#else
 #define CONFIG_PREBOOT
+#endif
 
 #ifndef CONFIG_SPL_BUILD
 
