@@ -609,6 +609,11 @@ config ANDROID_BOOT_IMAGE
 	  This enables support for booting images which use the Android
 	  image format header.
 
+config SKIP_RELOCATE_UBOOT
+	bool "Skip U-Boot relocation"
+	help
+	  This enable support for skipping U-Boot relocation.
+
 menu "Security support"
 
 config HASH

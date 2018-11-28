@@ -338,7 +338,15 @@ __weak int power_init_board(void)
 
 static int initr_announce(void)
 {
-	debug("Now running in RAM - U-Boot at: %08lx\n", gd->relocaddr);
+	ulong addr;
+
+#ifndef CONFIG_SKIP_RELOCATE_UBOOT
+	addr = gd->relocaddr;
+#else
+	addr = CONFIG_SYS_TEXT_BASE;
+#endif
+	debug("Now running in RAM - U-Boot at: %08lx\n", addr);
+
 	return 0;
 }
 

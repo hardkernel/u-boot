@@ -627,6 +627,7 @@ static int setup_reloc(void)
 		return 0;
 	}
 
+#ifndef CONFIG_SKIP_RELOCATE_UBOOT
 #ifdef CONFIG_SYS_TEXT_BASE
 #ifdef ARM
 	gd->reloc_off = gd->relocaddr - (unsigned long)__image_copy_start;
@@ -639,6 +640,10 @@ static int setup_reloc(void)
 #else
 	gd->reloc_off = gd->relocaddr - CONFIG_SYS_TEXT_BASE;
 #endif
+#endif
+
+#else
+	gd->reloc_off = 0;
 #endif
 	memcpy(gd->new_gd, (char *)gd, sizeof(gd_t));
 
