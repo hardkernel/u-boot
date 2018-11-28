@@ -6,3 +6,4 @@
 
 obj-y += syscon_rk3308.o
 obj-y += rk3308.o
+obj-y += clk_rk3308.o
