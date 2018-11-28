@@ -46,3 +46,18 @@
 	u-boot,dm-pre-reloc;
 	clock-frequency = <24000000>;
 };
+
+&u2phy {
+	u-boot,dm-pre-reloc;
+	status = "okay";
+};
+
+&u2phy_otg {
+	u-boot,dm-pre-reloc;
+	status = "okay";
+};
+
+&usb_otg {
+	u-boot,dm-pre-reloc;
+	status = "okay";
+};
