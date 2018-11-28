@@ -54,6 +54,7 @@ static struct rockchip_cpu_rate_table rk3308_cpu_rates[] = {
 	RK3308_CPUCLK_RATE(1008000000, 1, 5),
 	RK3308_CPUCLK_RATE(816000000, 1, 3),
 	RK3308_CPUCLK_RATE(600000000, 1, 3),
+	RK3308_CPUCLK_RATE(408000000, 1, 1),
 };
 
 static const struct rk3308_clk_info clks_dump[] = {
