@@ -49,8 +49,8 @@
 	"scriptaddr=0x00500000\0" \
 	"pxefile_addr_r=0x00600000\0" \
 	"fdt_addr_r=0x01f00000\0" \
-	"kernel_addr_r=0x02080000\0" \
-	"kernel_addr_c=0x01880000\0" \
+	"kernel_addr_r=0x00680000\0" \
+	"kernel_addr_c=0x02480000\0" \
 	"ramdisk_addr_r=0x04000000\0"
 #else
 #define ENV_MEM_LAYOUT_SETTINGS \
