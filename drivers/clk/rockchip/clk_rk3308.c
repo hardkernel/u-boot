@@ -786,7 +786,7 @@ static ulong rk3308_clk_set_rate(struct clk *clk, ulong rate)
 						      priv->cru, DPLL);
 		break;
 	case ARMCLK:
-		if (priv->armclk_hz)
+		if (priv->is_assigned)
 			rk3308_armclk_set_clk(priv, rate);
 		priv->armclk_hz = rate;
 		break;
@@ -997,6 +997,7 @@ static void rk3308_clk_init(struct udevice *dev)
 
 static int rk3308_clk_probe(struct udevice *dev)
 {
+	struct rk3308_clk_priv *priv = dev_get_priv(dev);
 	int ret;
 
 	rk3308_clk_init(dev);
@@ -1005,6 +1006,7 @@ static int rk3308_clk_probe(struct udevice *dev)
 	ret = clk_set_defaults(dev);
 	if (ret)
 		debug("%s clk_set_defaults failed %d\n", __func__, ret);
+	priv->is_assigned = true;
 
 	return 0;
 }
