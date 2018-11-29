@@ -105,7 +105,7 @@ int part_get_info(struct blk_desc *dev_desc, int part, disk_partition_t *info);
  * a partition occupying the entire disk.
  */
 int part_get_info_whole_disk(struct blk_desc *dev_desc, disk_partition_t *info);
-
+const char *part_get_type(struct blk_desc *dev_desc);
 void part_print(struct blk_desc *dev_desc);
 void part_init(struct blk_desc *dev_desc);
 void dev_print(struct blk_desc *dev_desc);
@@ -214,6 +214,8 @@ static inline int part_get_info(struct blk_desc *dev_desc, int part,
 static inline int part_get_info_whole_disk(struct blk_desc *dev_desc,
 					   disk_partition_t *info)
 { return -1; }
+
+static inline const char *part_get_type(struct blk_desc *dev_desc) { return NULL; }
 static inline void part_print(struct blk_desc *dev_desc) {}
 static inline void part_init(struct blk_desc *dev_desc) {}
 static inline void dev_print(struct blk_desc *dev_desc) {}

@@ -319,6 +319,19 @@ void part_print(struct blk_desc *dev_desc)
 		drv->print(dev_desc);
 }
 
+const char *part_get_type(struct blk_desc *dev_desc)
+{
+	struct part_driver *drv;
+
+	drv = part_driver_lookup_type(dev_desc);
+	if (!drv) {
+		printf("## Unknown partition table type %x\n",
+		       dev_desc->part_type);
+		return NULL;
+	}
+
+	return drv->name;
+}
 #endif /* HAVE_BLOCK_DEVICE */
 
 int part_get_info(struct blk_desc *dev_desc, int part,
