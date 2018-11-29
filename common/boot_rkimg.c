@@ -14,6 +14,7 @@
 #include <boot_rkimg.h>
 #include <asm/arch/boot_mode.h>
 #include <asm/io.h>
+#include <part.h>
 
 #define TAG_KERNEL			0x4C4E524B
 
@@ -226,6 +227,8 @@ struct blk_desc *rockchip_get_bootdev(void)
 	devnum = env_get_ulong("devnum", 10, 0);
 
 	dev_desc = blk_get_devnum_by_type(dev_type, devnum);
+
+	printf("PartType: %s\n", part_get_type(dev_desc));
 
 	return dev_desc;
 }
