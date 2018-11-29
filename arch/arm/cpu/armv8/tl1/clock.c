@@ -401,7 +401,7 @@ int ring_msr(int index)
 	}
 	ring_powerinit();
 	/*RING_OSCILLATOR       0x7f: set slow ring*/
-	writel(0x555555, 0xff6345fc);
+	writel(0x51555555, 0xff6345fc);
 	for (i = 0; i < 16; i++) {
 		printf("%s      :",clk_table[i]);
 		printf("%ld     KHz",clk_util_ring_msr(tb[i]));
