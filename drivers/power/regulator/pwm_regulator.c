@@ -137,7 +137,7 @@ static int pwm_regulator_probe(struct udevice *dev)
 	priv->min_voltage = uc_pdata->min_uV;
 
 	if (priv->init_voltage > 0) {
-		printf("pwm-regulator(%s): init %d uV\n",
+		debug("pwm-regulator(%s): init %d uV\n",
 		       dev->name, priv->init_voltage);
 		pwm_regulator_set_voltage(dev, priv->init_voltage);
 	}
