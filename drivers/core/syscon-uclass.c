@@ -45,6 +45,25 @@ static int syscon_pre_probe(struct udevice *dev)
 #endif
 }
 
+struct regmap *syscon_regmap_lookup_by_phandle(struct udevice *dev,
+					       const char *name)
+{
+	struct udevice *syscon;
+	struct regmap *r;
+	int err;
+
+	err = uclass_get_device_by_phandle(UCLASS_SYSCON, dev,
+					   name, &syscon);
+	if (err)
+		return ERR_PTR(err);
+
+	r = syscon_get_regmap(syscon);
+	if (!r)
+		return ERR_PTR(-ENODEV);
+
+	return r;
+}
+
 int syscon_get_by_driver_data(ulong driver_data, struct udevice **devp)
 {
 	struct udevice *dev;
