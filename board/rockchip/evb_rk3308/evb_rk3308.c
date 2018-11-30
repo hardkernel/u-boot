@@ -12,7 +12,6 @@ DECLARE_GLOBAL_DATA_PTR;
 #define KEY_DOWN_MIN_VAL        0
 #define KEY_DOWN_MAX_VAL        30
 
-#ifndef CONFIG_USING_KERNEL_DTB
 /*
  * Two board variants whith adc channel 3 is for board id
  * v10: 1024, v11: 512
@@ -44,4 +43,3 @@ int rockchip_dnl_key_pressed(void)
 	else
 		return false;
 }
-#endif
