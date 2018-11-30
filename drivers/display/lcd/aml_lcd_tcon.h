@@ -35,10 +35,16 @@ struct lcd_tcon_data_s {
 	unsigned int ctrl_timing_offset;
 	unsigned int ctrl_timing_cnt;
 
-	unsigned int axi_offset_addr;
+	unsigned int axi_mem_size;
 	unsigned char *reg_table;
 
 	int (*tcon_enable)(struct lcd_config_s *pconf);
+};
+
+struct tcon_rmem_s {
+	unsigned char flag;
+	unsigned int mem_paddr;
+	unsigned int mem_size;
 };
 
 /* **********************************

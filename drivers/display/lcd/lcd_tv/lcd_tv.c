@@ -551,6 +551,8 @@ static int lcd_config_load_from_dts(char *dt_addr, struct lcd_config_s *pconf)
 			}
 		}
 		break;
+	case LCD_P2P:
+		break;
 	default:
 		LCDERR("invalid lcd type\n");
 		break;
@@ -942,6 +944,8 @@ static int lcd_config_load_from_unifykey(struct lcd_config_s *pconf)
 			mlvds_conf->phy_preem = (*(p + LCD_UKEY_IF_ATTR_9) |
 				((*(p + LCD_UKEY_IF_ATTR_9 + 1)) << 8)) & 0xff;
 		}
+	} else if (pconf->lcd_basic.lcd_type == LCD_P2P) {
+		/*to do*/
 	} else
 		LCDERR("unsupport lcd_type: %d\n", pconf->lcd_basic.lcd_type);
 

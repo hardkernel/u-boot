@@ -1403,9 +1403,9 @@ int lcd_tv_driver_init(void)
 		lcd_mlvds_phy_set(pconf, 1);
 		break;
 	case LCD_P2P:
+		lcd_pinmux_set(1);
 		lcd_p2p_control_set(pconf);
 		lcd_p2p_phy_set(pconf, 1);
-		lcd_pinmux_set(1);
 		break;
 	default:
 		break;

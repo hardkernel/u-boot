@@ -20,7 +20,13 @@
 #include "aml_lcd_reg.h"
 #include "aml_lcd_common.h"
 #include "aml_lcd_tcon.h"
-#include "tcon_ceds.h"
+//#include "tcon_ceds.h"
+
+static struct tcon_rmem_s tcon_rmem = {
+	.flag = 0,
+	.mem_paddr = 0,
+	.mem_size = 0,
+};
 
 static struct lcd_tcon_data_s *lcd_tcon_data;
 
@@ -50,9 +56,9 @@ static void lcd_tcon_od_check(unsigned char *table)
 	if (((table[reg] >> bit) & 1) == 0)
 		return;
 
-	if (lcd_tcon_data->axi_offset_addr == 0) {
+	if (tcon_rmem.flag == 0) {
 		table[reg] &= ~(1 << bit);
-		LCDPR("%s: invalid fb, disable od function\n", __func__);
+		LCDPR("%s: invalid memory, disable od function\n", __func__);
 	}
 }
 
@@ -129,11 +135,11 @@ static int lcd_tcon_top_set_txhd(void)
 {
 	LCDPR("lcd tcon top set\n");
 
-	if (lcd_tcon_data->axi_offset_addr == 0) {
-		LCDERR("%s: invalid axi_offset_addr\n", __func__);
+	if (tcon_rmem.flag == 0) {
+		LCDERR("%s: invalid axi mem\n", __func__);
 	} else {
-		lcd_tcon_write(TCON_AXI_OFST, lcd_tcon_data->axi_offset_addr);
-		LCDPR("set tcon axi_offset_addr: 0x%08x\n", lcd_tcon_data->axi_offset_addr);
+		lcd_tcon_write(TCON_AXI_OFST, tcon_rmem.mem_paddr);
+		LCDPR("set tcon axi_mem addr: 0x%08x\n", tcon_rmem.mem_paddr);
 	}
 
 	lcd_tcon_write(TCON_CLK_CTRL, 0x001f);
@@ -183,21 +189,20 @@ static int lcd_tcon_top_set_tl1(void)
 {
 	unsigned int axi_reg[3] = {0x200c, 0x2013, 0x2014};
 	unsigned int addr[3] = {0, 0, 0};
-	unsigned int size[3] = {260160, 260160, 122578};
+	unsigned int size[3] = {4162560, 4162560, 1960440};
 	int i;
 
 	LCDPR("lcd tcon top set\n");
 
-	if (lcd_tcon_data->axi_offset_addr == 0) {
-		LCDERR("%s: invalid axi_offset_addr\n", __func__);
+	if (tcon_rmem.flag == 0) {
+		LCDERR("%s: invalid axi mem\n", __func__);
 	} else {
-		addr[0] = lcd_tcon_data->axi_offset_addr;
+		addr[0] = tcon_rmem.mem_paddr;
 		addr[1] = addr[0] + size[0];
 		addr[2] = addr[1] + size[1];
 		for (i = 0; i < 3; i++) {
 			lcd_tcon_write(axi_reg[i], addr[i]);
-			LCDPR("set tcon axi_offset_addr[%d]: 0x%08x\n",
-				i, addr[i]);
+			LCDPR("set tcon axi_mem[%d]: 0x%08x\n", i, addr[i]);
 		}
 	}
 
@@ -237,14 +242,15 @@ static int lcd_tcon_enable_tl1(struct lcd_config_s *pconf)
 
 static void lcd_tcon_config_axi_offset_default(void)
 {
-	char *str;
+	char *str = NULL;
 
-	str = getenv("tcon_fb_addr");
+	str = getenv("tcon_mem_addr");
 	if (str) {
-		lcd_tcon_data->axi_offset_addr = simple_strtoul(str, NULL, 16);
+		tcon_rmem.mem_paddr = (unsigned int)simple_strtoul(str, NULL, 16);
+		tcon_rmem.mem_size = lcd_tcon_data->axi_mem_size;
+		tcon_rmem.flag = 1;
 	} else {
-		LCDERR("can't find env tcon_fb_addr\n");
-		lcd_tcon_data->axi_offset_addr = 0;
+		LCDERR("can't find env tcon_mem_addr\n");
 	}
 }
 
@@ -253,29 +259,37 @@ static int lcd_tcon_config(char *dt_addr, struct lcd_config_s *pconf, int load_i
 	int key_len, reg_len;
 	int parent_offset;
 	char *propdata;
-	//int ret;
+	int ret;
 
 	if (load_id & 0x1) {
 		parent_offset = fdt_path_offset(dt_addr, "/lcd");
 		if (parent_offset < 0) {
 			LCDERR("can't find /lcd node: %s\n", fdt_strerror(parent_offset));
-			lcd_tcon_config_axi_offset_default();
 		} else {
-			propdata = (char *)fdt_getprop(dt_addr,
-				parent_offset, "tcon_fb_addr", NULL);
+			propdata = (char *)fdt_getprop(dt_addr, parent_offset,
+				"tcon_mem_addr", NULL);
 			if (propdata == NULL) {
-				LCDERR("failed to get tcon_fb_addr from dts\n");
-				lcd_tcon_config_axi_offset_default();
+				propdata = (char *)fdt_getprop(dt_addr,
+					parent_offset, "tcon_fb_addr", NULL);
+				if (propdata == NULL) {
+					LCDERR("failed to get tcon_mem_addr from dts\n");
+					lcd_tcon_config_axi_offset_default();
+				} else {
+					tcon_rmem.mem_paddr = be32_to_cpup(((u32*)propdata));
+					tcon_rmem.mem_size = lcd_tcon_data->axi_mem_size;
+					tcon_rmem.flag = 1;
+				}
 			} else {
-				lcd_tcon_data->axi_offset_addr =
-					be32_to_cpup(((u32*)propdata));
+				tcon_rmem.mem_paddr = be32_to_cpup(((u32*)propdata));
+				tcon_rmem.mem_size = lcd_tcon_data->axi_mem_size;
+				tcon_rmem.flag = 1;
 			}
 		}
 	} else {
 		lcd_tcon_config_axi_offset_default();
 	}
 
-#if 0
+#if 1
 	/* get reg table from unifykey */
 	reg_len = lcd_tcon_data->reg_table_len;
 	if (lcd_tcon_data->reg_table == NULL) {
@@ -302,6 +316,7 @@ static int lcd_tcon_config(char *dt_addr, struct lcd_config_s *pconf, int load_i
 		LCDERR("%s: !!!!!!!!tcon unifykey load length error!!!!!!!!\n", __func__);
 		return -1;
 	}
+	LCDPR("tcon: load unifykey len: %d\n", key_len);
 #else
 	reg_len = lcd_tcon_data->reg_table_len;
 	if (lcd_tcon_data->reg_table == NULL)
@@ -314,9 +329,9 @@ static int lcd_tcon_config(char *dt_addr, struct lcd_config_s *pconf, int load_i
 			__func__);
 		return -1;
 	}
+	LCDPR("tcon: load default table len: %d\n", key_len);
 #endif
 
-	LCDPR("tcon: load key len: %d\n", key_len);
 	return 0;
 }
 
@@ -408,9 +423,14 @@ void lcd_tcon_info_print(void)
 		return;
 
 	LCDPR("%s:\n", __func__);
-	printf("core_reg_width:    %d\n", lcd_tcon_data->core_reg_width);
-	printf("reg_table_len:     %d\n", lcd_tcon_data->reg_table_len);
-	printf("axi_offset_addr:   0x%08x\n", lcd_tcon_data->axi_offset_addr);
+	printf("core_reg_width:    %d\n"
+		"reg_table_len:     %d\n"
+		"axi_mem addr:      0x%08x\n"
+		"axi_mem size:      0x%08x\n",
+		lcd_tcon_data->core_reg_width,
+		lcd_tcon_data->reg_table_len,
+		tcon_rmem.mem_paddr,
+		tcon_rmem.mem_size);
 }
 
 int lcd_tcon_enable(struct lcd_config_s *pconf)
@@ -488,7 +508,7 @@ static struct lcd_tcon_data_s tcon_data_txhd = {
 	.ctrl_timing_offset = CTRL_TIMING_OFFSET_TXHD,
 	.ctrl_timing_cnt = CTRL_TIMING_CNT_TXHD,
 
-	.axi_offset_addr = 0,
+	.axi_mem_size = 0x001fe000,
 	.reg_table = NULL,
 
 	.tcon_enable = lcd_tcon_enable_txhd,
@@ -510,7 +530,7 @@ static struct lcd_tcon_data_s tcon_data_tl1 = {
 	.ctrl_timing_offset = CTRL_TIMING_OFFSET_TL1,
 	.ctrl_timing_cnt = CTRL_TIMING_CNT_TL1,
 
-	.axi_offset_addr = 0,
+	.axi_mem_size = 0x009d0000,
 	.reg_table = NULL,
 
 	.tcon_enable = lcd_tcon_enable_tl1,
@@ -523,11 +543,12 @@ int lcd_tcon_probe(char *dt_addr, struct aml_lcd_drv_s *lcd_drv, int load_id)
 
 	LCDPR("%s\n", __func__);
 
+	lcd_tcon_data = NULL;
 	switch (lcd_drv->chip_type) {
 	case LCD_CHIP_TXHD:
-		lcd_tcon_data = &tcon_data_txhd;
 		switch (pconf->lcd_basic.lcd_type) {
 		case LCD_MLVDS:
+			lcd_tcon_data = &tcon_data_txhd;
 			lcd_tcon_data->tcon_valid = 1;
 			break;
 		default:
@@ -535,10 +556,10 @@ int lcd_tcon_probe(char *dt_addr, struct aml_lcd_drv_s *lcd_drv, int load_id)
 		}
 		break;
 	case LCD_CHIP_TL1:
-		lcd_tcon_data = &tcon_data_tl1;
 		switch (pconf->lcd_basic.lcd_type) {
 		case LCD_MLVDS:
 		case LCD_P2P:
+			lcd_tcon_data = &tcon_data_tl1;
 			lcd_tcon_data->tcon_valid = 1;
 			break;
 		default:
@@ -546,12 +567,10 @@ int lcd_tcon_probe(char *dt_addr, struct aml_lcd_drv_s *lcd_drv, int load_id)
 		}
 		break;
 	default:
-		lcd_tcon_data = NULL;
 		break;
 	}
-	ret = lcd_tcon_valid_check();
-	if (ret)
-		return -1;
+	if (lcd_tcon_data == NULL)
+		return 0;
 
 	ret = lcd_tcon_config(dt_addr, pconf, load_id);
 
