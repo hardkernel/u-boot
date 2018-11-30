@@ -484,6 +484,53 @@ static ulong rv1108_i2c_set_clk(struct rv1108_cru *cru, ulong clk_id, uint hz)
 	return rv1108_i2c_get_clk(cru, clk_id);
 }
 
+static ulong rv1108_mmc_get_clk(struct rv1108_cru *cru)
+{
+	u32 div, con;
+	ulong mmc_clk;
+
+	con = readl(&cru->clksel_con[26]);
+	div = bitfield_extract(con, EMMC_CLK_DIV_SHIFT, 8);
+
+	con = readl(&cru->clksel_con[25]);
+
+	if ((con & EMMC_PLL_SEL_MASK) >> EMMC_PLL_SEL_SHIFT == EMMC_PLL_SEL_OSC)
+		mmc_clk = DIV_TO_RATE(OSC_HZ, div) / 2;
+	else
+		mmc_clk = DIV_TO_RATE(GPLL_HZ, div) / 2;
+
+	debug("%s div %d get_clk %ld\n", __func__, div, mmc_clk);
+	return mmc_clk;
+}
+
+static ulong rv1108_mmc_set_clk(struct rv1108_cru *cru, ulong rate)
+{
+	int div;
+	u32 pll_rate;
+
+	div = DIV_ROUND_UP(rkclk_pll_get_rate(cru, CLK_GENERAL), rate);
+
+	if (div < 127) {
+		debug("%s source gpll\n", __func__);
+		rk_clrsetreg(&cru->clksel_con[25], EMMC_PLL_SEL_MASK,
+			     (EMMC_PLL_SEL_GPLL << EMMC_PLL_SEL_SHIFT));
+		pll_rate = rkclk_pll_get_rate(cru, CLK_GENERAL);
+	} else {
+		debug("%s source 24m\n", __func__);
+		rk_clrsetreg(&cru->clksel_con[25], EMMC_PLL_SEL_MASK,
+			     (EMMC_PLL_SEL_OSC << EMMC_PLL_SEL_SHIFT));
+		pll_rate = OSC_HZ;
+	}
+
+	div = DIV_ROUND_UP(pll_rate / 2, rate);
+	rk_clrsetreg(&cru->clksel_con[26], EMMC_CLK_DIV_MASK,
+		     ((div - 1) << EMMC_CLK_DIV_SHIFT));
+
+	debug("%s set_rate %ld div %d\n", __func__,  rate, div);
+
+	return DIV_TO_RATE(pll_rate, div);
+}
+
 static ulong rv1108_clk_get_rate(struct clk *clk)
 {
 	struct rv1108_clk_priv *priv = dev_get_priv(clk->dev);
@@ -512,6 +559,10 @@ static ulong rv1108_clk_get_rate(struct clk *clk)
 	case SCLK_I2C2:
 	case SCLK_I2C3:
 		return rv1108_i2c_get_clk(priv->cru, clk->id);
+	case HCLK_EMMC:
+	case SCLK_EMMC:
+	case SCLK_EMMC_SAMPLE:
+		return rv1108_mmc_get_clk(priv->cru);
 	default:
 		return -ENOENT;
 	}
@@ -558,6 +609,10 @@ static ulong rv1108_clk_set_rate(struct clk *clk, ulong rate)
 	case SCLK_I2C2:
 	case SCLK_I2C3:
 		new_rate = rv1108_i2c_set_clk(priv->cru, clk->id, rate);
+		break;
+	case HCLK_EMMC:
+	case SCLK_EMMC:
+		new_rate = rv1108_mmc_set_clk(priv->cru, rate);
 		break;
 	default:
 		return -ENOENT;
