@@ -114,6 +114,7 @@ struct sram_hal_api_arg {
 	#define AML_D_P_W_EFUSE_AMLOGIC      (0x20)
 	#define AML_D_P_IMG_DECRYPT          (0x40)
 	#define AML_D_P_UPGRADE_CHECK        (0x80)
+	#define AML_D_Q_IMG_SIG_HDR_SIZE     (0x100)
 
 #define GXB_EFUSE_PATTERN_SIZE      (0x500)
 #define GXB_IMG_SIZE                (24<<20)

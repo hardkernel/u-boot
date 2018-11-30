@@ -27,6 +27,7 @@
 #ifdef CONFIG_AML_ANTIROLLBACK
 #include <anti-rollback.h>
 #endif
+#include <asm/arch/secure_apb.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -91,6 +92,12 @@ static int do_bootm_subcommand(cmd_tbl_t *cmdtp, int flag, int argc,
 	ret = do_bootm_states(cmdtp, flag, argc, argv, state, &images, 0);
 
 	return ret;
+}
+
+static int is_secure_boot_enabled(void)
+{
+	const unsigned long cfg10 = readl(AO_SEC_SD_CFG10);
+	return ( cfg10 & (0x1<< 4) );
 }
 
 /*******************************************************************/
@@ -210,6 +217,24 @@ int do_bootm(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		avb_slot_verify_data_free(out_data);
 	}
 #endif
+	if (is_secure_boot_enabled())
+	{
+		/* Override load address argument to skip secure boot header (512).
+		* Only skip if secure boot so normal boot can use plain boot.img+		 */
+		ulong img_addr,nCheckOffset;
+		img_addr = genimg_get_kernel_addr(argc < 1 ? NULL : argv[0]);
+		nCheckOffset = aml_sec_boot_check(AML_D_Q_IMG_SIG_HDR_SIZE,GXB_IMG_LOAD_ADDR,GXB_EFUSE_PATTERN_SIZE,GXB_IMG_DEC_ALL);
+		if (AML_D_Q_IMG_SIG_HDR_SIZE == (nCheckOffset & 0xFFFF))
+			nCheckOffset = (nCheckOffset >> 16) & 0xFFFF;
+		else
+			nCheckOffset = 0;
+		img_addr += nCheckOffset;
+		char argv0_new[12] = {0};
+		char *argv_new = (char*)&argv0_new;
+		snprintf(argv0_new, sizeof(argv0_new), "%lx", img_addr);
+		argc = 1;
+		argv = (char**)&argv_new;
+	}
 
 	ee_gate_off();
 	nRet = do_bootm_states(cmdtp, flag, argc, argv, BOOTM_STATE_START |

@@ -101,6 +101,18 @@ exit:
     return nReturn;
 }
 
+typedef struct {
+uint32_t magic;
+uint32_t version;
+uint32_t flags;
+uint32_t img_version;
+uint32_t img_size;
+uint32_t img_offset;
+uint8_t img_hash[32];
+uint8_t reserved[200];
+uint8_t rsa_sig[256];
+} aml_boot_header_t;
+
 static int _aml_get_secure_boot_kernel_size(const void* pLoadaddr, unsigned* pTotalEncKernelSz)
 {
     const AmlEncryptBootImgInfo*  amlEncrypteBootimgInfo = 0;
@@ -108,8 +120,25 @@ static int _aml_get_secure_boot_kernel_size(const void* pLoadaddr, unsigned* pTo
     unsigned secureKernelImgSz = 2048;
     unsigned int nBlkCnt = 0;
     const t_aml_enc_blk* pBlkInf = NULL;
-    const int isSecure = is_secure_boot_enabled();
     unsigned char *pAndHead = (unsigned char *)pLoadaddr;
+    unsigned int isSecure = is_secure_boot_enabled();
+
+    rc = __LINE__;
+
+	if (!pLoadaddr || !pTotalEncKernelSz)
+        return rc;
+
+	if (isSecure)
+    {
+        ulong nCheckOffset;
+        nCheckOffset = aml_sec_boot_check(AML_D_Q_IMG_SIG_HDR_SIZE,GXB_IMG_LOAD_ADDR,GXB_EFUSE_PATTERN_SIZE,GXB_IMG_DEC_ALL);
+		if (AML_D_Q_IMG_SIG_HDR_SIZE == (nCheckOffset & 0xFFFF) &&
+            ((nCheckOffset>>16) & 0xFFFF))
+        {
+            *pTotalEncKernelSz = (((aml_boot_header_t *)pLoadaddr)->img_size);
+            return 0;
+        }
+    }
 
 	if (is_andr_9_image(pAndHead))
     {
@@ -271,7 +300,15 @@ static int do_image_read_kernel(cmd_tbl_t *cmdtp, int flag, int argc, char * con
     else{
         loadaddr = (unsigned char*)simple_strtoul(getenv("loadaddr"), NULL, 16);
     }
-    hdr_addr = (boot_img_hdr*)loadaddr;
+
+    ulong nCheckOffset;
+    nCheckOffset = aml_sec_boot_check(AML_D_Q_IMG_SIG_HDR_SIZE,GXB_IMG_LOAD_ADDR,GXB_EFUSE_PATTERN_SIZE,GXB_IMG_DEC_ALL);
+	if (AML_D_Q_IMG_SIG_HDR_SIZE == (nCheckOffset & 0xFFFF))
+        nCheckOffset = (nCheckOffset >> 16) & 0xFFFF;
+    else
+        nCheckOffset = 0;
+
+    hdr_addr = (boot_img_hdr*)(loadaddr + nCheckOffset);
 
     if (3 < argc) flashReadOff = simple_strtoull(argv[3], NULL, 0) ;
 
@@ -282,10 +319,13 @@ static int do_image_read_kernel(cmd_tbl_t *cmdtp, int flag, int argc, char * con
     }
     flashReadOff += IMG_PRELOAD_SZ;
 
-    genFmt = genimg_get_format(hdr_addr);
-    if (IMAGE_FORMAT_ANDROID != genFmt) {
-        errorP("Fmt unsupported!genFmt 0x%x != 0x%x\n", genFmt, IMAGE_FORMAT_ANDROID);
-        return __LINE__;
+	if (!nCheckOffset)
+    {
+        genFmt = genimg_get_format(hdr_addr);
+	    if (IMAGE_FORMAT_ANDROID != genFmt) {
+            errorP("Fmt unsupported!genFmt 0x%x != 0x%x\n", genFmt, IMAGE_FORMAT_ANDROID);
+            return __LINE__;
+        }
     }
 
     //Check if encrypted image
@@ -296,7 +336,7 @@ static int do_image_read_kernel(cmd_tbl_t *cmdtp, int flag, int argc, char * con
     }
     if (secureKernelImgSz)
     {
-        actualBootImgSz = secureKernelImgSz;
+        actualBootImgSz = secureKernelImgSz + nCheckOffset;
         MsgP("secureKernelImgSz=0x%x\n", actualBootImgSz);
     }
     else

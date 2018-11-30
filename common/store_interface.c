@@ -319,6 +319,18 @@ static int do_store_dtb_ops(cmd_tbl_t * cmdtp, int flag, int argc, char * const 
                return ret;
            }
        }
+
+       {
+            ulong nCheckOffset;
+            nCheckOffset = aml_sec_boot_check(AML_D_Q_IMG_SIG_HDR_SIZE,GXB_IMG_LOAD_ADDR,GXB_EFUSE_PATTERN_SIZE,GXB_IMG_DEC_ALL);
+			if (AML_D_Q_IMG_SIG_HDR_SIZE == (nCheckOffset & 0xFFFF))
+                nCheckOffset = (nCheckOffset >> 16) & 0xFFFF;
+            else
+                nCheckOffset = 0;
+
+			if (nCheckOffset)
+                memmove((char *)dtImgAddr, (char*)dtImgAddr + nCheckOffset, AML_DTB_IMG_MAX_SZ);
+        }
 #ifdef CONFIG_MULTI_DTB
         if (!is_write && strcmp("iread", argv[2]))
         {
