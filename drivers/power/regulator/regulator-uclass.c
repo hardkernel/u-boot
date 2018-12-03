@@ -284,7 +284,7 @@ int regulator_autoset(struct udevice *dev)
 	if (uc_pdata->init_uV > 0) {
 		ret = regulator_set_value(dev, uc_pdata->init_uV);
 		if (!ret)
-			printf("regulator(%s) init %d uV\n",
+			printf("%s init %d uV\n",
 			       dev->name, uc_pdata->init_uV);
 	}
 
