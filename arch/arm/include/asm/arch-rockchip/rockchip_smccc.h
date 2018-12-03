@@ -60,23 +60,88 @@ typedef enum {
 	SHARE_PAGE_TYPE_MAX,
 } share_page_type_t;
 
-/* Stand PSCI system suspend */
-int psci_system_suspend(unsigned long unused);
-
-/* Rockchip SMC Calls */
+/*
+ * sip_smc_set_suspend_mode() - Set U-Boot system suspend state before trap to trust.
+ *
+ * see kernel-4.4: drivers/soc/rockchip/rockchip_pm_config.c
+ */
 int sip_smc_set_suspend_mode(unsigned long ctrl,
 			     unsigned long config1,
 			     unsigned long config2);
 
+/*
+ * sip_smc_dram() - Set dram configure for trust.
+ *
+ * see: ./drivers/ram/rockchip/rockchip_dmc.c
+ */
 struct arm_smccc_res sip_smc_dram(unsigned long arg0,
 				  unsigned long arg1,
 				  unsigned long arg2);
 
+/*
+ * sip_smc_request_share_mem() - Request share memory from trust.
+ *
+ * @page_num:	page numbers
+ * @page_type:  page type, see: share_page_type_t
+ *
+ * @return arm_smccc_res structure, res.a0 equals 0 on success(res.a1 contains
+ *  share memory base address), otherwise failed.
+ */
 struct arm_smccc_res sip_smc_request_share_mem(unsigned long page_num,
 					       share_page_type_t page_type);
 
+/*
+ * sip_smc_secure_reg_read() - Read secure info(ddr/register...) from trust.
+ *
+ * @addr_phy:	address to read
+ *
+ * @return arm_smccc_res structure, res.a0 equals 0 on success(res.a1 contains
+ *  valid data), otherwise failed.
+ */
+struct arm_smccc_res sip_smc_secure_reg_read(unsigned long addr_phy);
+
+/*
+ * sip_smc_secure_reg_write() - Write data to trust secure info(ddr/register...).
+ *
+ * @addr_phy:	address to write
+ * @val:	value to write
+ *
+ * @return 0 on success, otherwise failed.
+ */
+int sip_smc_secure_reg_write(unsigned long addr_phy, unsigned long val);
+
+/*
+ * sip_smc_set_sip_version() - Set sip version to trust.
+ *
+ * @return 0 on success, otherwise failed.
+ */
 int sip_smc_set_sip_version(unsigned long version);
+
+/*
+ * sip_smc_get_sip_version() - Get sip version to trust.
+ *
+ * @return arm_smccc_res structure, res.a0 equals 0 on success(res.a1 contains
+ *  sip version), otherwise failed.
+ */
 struct arm_smccc_res sip_smc_get_sip_version(void);
+
+/*
+ * psci_cpu_on() - Standard ARM PSCI cpu on call.
+ *
+ * @cpuid:		cpu id
+ * @entry_point:	boot entry point
+ *
+ * @return 0 on success, otherwise failed.
+ */
 int psci_cpu_on(unsigned long cpuid, unsigned long entry_point);
+
+/*
+ * psci_system_suspend() - Standard ARM PSCI system suspend call.
+ *
+ * @unused:		unused now, always 0 recommend
+ *
+ * @return 0 on success, otherwise failed.
+ */
+int psci_system_suspend(unsigned long unused);
 
 #endif

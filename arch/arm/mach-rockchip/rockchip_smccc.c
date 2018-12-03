@@ -84,6 +84,22 @@ error:
 	return res;
 }
 
+struct arm_smccc_res sip_smc_secure_reg_read(unsigned long addr_phy)
+{
+	struct arm_smccc_res res;
+
+	res = __invoke_sip_fn_smc(SIP_ACCESS_REG, 0, addr_phy, SECURE_REG_RD);
+	return res;
+}
+
+int sip_smc_secure_reg_write(unsigned long addr_phy, unsigned long val)
+{
+	struct arm_smccc_res res;
+
+	res = __invoke_sip_fn_smc(SIP_ACCESS_REG, val, addr_phy, SECURE_REG_WR);
+	return res.a0;
+}
+
 struct arm_smccc_res sip_smc_get_sip_version(void)
 {
 	return __invoke_sip_fn_smc(SIP_SIP_VERSION, 0, 0, 0);
