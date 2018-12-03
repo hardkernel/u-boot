@@ -114,12 +114,23 @@ ENTRY(_main)
 	b	relocate_code
 #endif
 here:
+
+/*
+ * The "relocate_vectors" is in section: .text.relocate_vectors, if we don't
+ * compile "bl	relocate_vectors", there seems something wrong about sections
+ * layout(U-Boot code section is quite large, I don't find root cause now),
+ * so let's just skip it.
+ */
+#ifdef CONFIG_SKIP_RELOCATE_UBOOT
+	b	c_runtime
+#endif
+
 /*
  * now relocate vectors
  */
-
 	bl	relocate_vectors
 
+c_runtime:
 /* Set up final (full) environment */
 
 	bl	c_runtime_cpu_setup	/* we still call old routine here */
