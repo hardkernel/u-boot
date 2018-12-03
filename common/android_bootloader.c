@@ -481,9 +481,9 @@ static AvbSlotVerifyResult android_slot_verify(char *boot_partname,
 		return AVB_SLOT_VERIFY_RESULT_ERROR_IO;
 	}
 
-	if (strncmp(slot_suffix, "_a", 2))
+	if (!strncmp(slot_suffix, "_a", 2))
 		slot_index_to_boot = 0;
-	else if(strncmp(slot_suffix, "_b", 2))
+	else if (!strncmp(slot_suffix, "_b", 2))
 		slot_index_to_boot = 1;
 	else
 		slot_index_to_boot = 0;
