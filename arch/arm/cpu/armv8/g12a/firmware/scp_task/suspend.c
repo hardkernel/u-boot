@@ -29,6 +29,7 @@ unsigned int time;
 #include <scp_adc.c>
 #include <pwr_ctrl.c>
 #include <hdmi_cec_arc.c>
+#include <gpio_key.c>
 
 static struct pwr_op pwr_op_d;
 static struct pwr_op *p_pwr_op;
@@ -62,6 +63,16 @@ void enter_suspend(unsigned int suspend_from)
 		uart_put_hex(hdmi_cec_func_config, 16);
 		uart_puts("\n");
 	#endif
+
+	#ifdef CONFIG_GPIO_WAKEUP
+	gpio_wakeup_keyno = ((readl(P_AO_DEBUG_REG0) & 0xfff0000) >> 16);
+	wait_uart_empty();
+	uart_puts("WAKEUP GPIO cfg:0x");
+	uart_put_hex(gpio_wakeup_keyno, 32);
+	uart_puts("\n");
+	wait_uart_empty();
+	#endif
+
 	if (p_pwr_op->power_off_at_24M)
 		p_pwr_op->power_off_at_24M(suspend_from);
 
