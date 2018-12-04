@@ -314,6 +314,7 @@ long android_image_load(struct blk_desc *dev_desc,
 		if (comp != IH_COMP_NONE) {
 			load_address += android_image_get_ksize(hdr) * 3;
 			load_address = env_get_ulong("kernel_addr_c", 16, load_address);
+			load_address -= hdr->page_size;
 			unmap_sysmem(buf);
 			buf = map_sysmem(load_address, 0 /* size */);
 		}
