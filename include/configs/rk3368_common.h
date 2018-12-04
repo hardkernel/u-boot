@@ -52,7 +52,7 @@
 	"scriptaddr=0x00500000\0" \
 	"pxefile_addr_r=0x00600000\0" \
 	"fdt_addr_r=0x01f00000\0" \
-	"kernel_addr_r=0x02080000\0" \
+	"kernel_addr_r=0x00280000\0" \
 	"ramdisk_addr_r=0x0a200000\0"
 
 #include <config_distro_bootcmd.h>
