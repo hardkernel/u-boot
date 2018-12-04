@@ -251,6 +251,7 @@ sub_commands()
 			echo "    8. set CONFIG_BOOTDELAY=5"
 			echo "    9. armv7 start.S: print entry warning"
 			echo "   10. armv8 start.S: print entry warning"
+			echo "   11. firmware bootflow debug() -> printf()"
 			echo
 			echo "Enabled: "
 			grep '^CONFIG_ROCKCHIP_DEBUGGER=y' ${OUTDIR}/.config > /dev/null \
@@ -295,6 +296,16 @@ sub_commands()
 			sed -i '/save_boot_params_ret:/a\ldr x0, =CONFIG_DEBUG_UART_BASE\nmov x1, #100\nloop:\nmov x2, #0x55\nstr x2, [x0]\nsub x1, x1, #1\ncmp x1, #0\nb.ne loop\ndsb sy' \
 			./arch/arm/cpu/armv8/start.S
 			echo "DEBUG [10]: armv8 start.S entry warning 'UUUU...'"
+		elif [ "${opt}" = '11' ]; then
+			sed -i 's/\<debug\>/printf/g' common/fdt_support.c
+			sed -i 's/\<debug\>/printf/g' common/image-fdt.c
+			sed -i 's/\<debug\>/printf/g' common/image.c
+			sed -i 's/\<debug\>/printf/g' arch/arm/lib/bootm.c
+			sed -i 's/\<debug\>/printf/g' common/bootm.c
+			sed -i 's/\<debug\>/printf/g' common/image.c
+			sed -i 's/\<debug\>/printf/g' common/image-android.c
+			sed -i 's/\<debug\>/printf/g' common/android_bootloader.c
+			echo "DEBUG [11]: firmware bootflow debug() -> printf()"
 		fi
 		echo
 		exit 0
