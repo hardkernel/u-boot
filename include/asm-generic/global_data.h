@@ -171,6 +171,8 @@ typedef struct global_data {
 #ifdef CONFIG_ARCH_ROCKCHIP
 /* Currently, we use it to indicate console can be flushed before jump to OS */
 #define GD_FLG_OS_RUN		0x10000
+/* BL32 is enabled */
+#define GD_FLG_BL32_ENABLED	0x20000
 #endif
 
 #endif /* __ASM_GENERIC_GBL_DATA_H */

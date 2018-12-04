@@ -41,6 +41,8 @@ int env_get_yesno(const char *var)
 		1 : 0;
 }
 
+__weak void board_env_fixup(void) {}
+
 /*
  * Look up the variable from the default environment
  */
@@ -88,6 +90,8 @@ void set_default_env(const char *s)
 
 	gd->flags |= GD_FLG_ENV_READY;
 	gd->flags |= GD_FLG_ENV_DEFAULT;
+
+	board_env_fixup();
 }
 
 

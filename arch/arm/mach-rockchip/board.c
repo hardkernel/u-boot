@@ -197,6 +197,18 @@ int init_kernel_dtb(void)
 }
 #endif
 
+void board_env_fixup(void)
+{
+	ulong kernel_addr_r;
+
+	if (gd->flags & GD_FLG_BL32_ENABLED)
+		return;
+
+	/* If bl32 is disabled, maybe kernel can be load to lower address. */
+	kernel_addr_r = env_get_ulong("kernel_addr_no_bl32_r", 16, -1);
+	if (kernel_addr_r != -1)
+		env_set_hex("kernel_addr_r", kernel_addr_r);
+}
 
 int board_init(void)
 {

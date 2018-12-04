@@ -117,6 +117,7 @@ static int __dram_init_banksize(int resv_tee)
 		    (tos_parameter->tee_mem.flags == 1)) {
 			tos_addr = tos_parameter->tee_mem.phy_addr;
 			tos_size = tos_parameter->tee_mem.size;
+			gd->flags |= GD_FLG_BL32_ENABLED;
 		}
 	}
 
