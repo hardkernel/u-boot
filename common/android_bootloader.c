@@ -300,15 +300,34 @@ static int android_bootloader_get_fdt(const char *part_name,
 
 int android_bootloader_boot_kernel(unsigned long kernel_address)
 {
+	ulong comp;
 	char kernel_addr_str[12];
 	char *fdt_addr = env_get("fdt_addr");
+	char *kernel_addr_r = env_get("kernel_addr_r");
+	char *kernel_addr_c = env_get("kernel_addr_c");
+
+	const char *comp_name[] = {
+		[IH_COMP_NONE]  = "",
+		[IH_COMP_GZIP]  = "GZIP",
+		[IH_COMP_BZIP2] = "BZIP2",
+		[IH_COMP_LZMA]  = "LZMA",
+		[IH_COMP_LZO]   = "LZO",
+		[IH_COMP_LZ4]   = "LZ4",
+		[IH_COMP_ZIMAGE]= "ZIMAGE",
+	};
 	char *bootm_args[] = {
 		"bootm", kernel_addr_str, kernel_addr_str, fdt_addr, NULL };
 
+	comp = android_image_get_comp((struct andr_img_hdr *)kernel_address);
 	sprintf(kernel_addr_str, "0x%lx", kernel_address);
 
-	printf("Booting kernel at %s with fdt at %s...\n\n\n",
-	       kernel_addr_str, fdt_addr);
+	if (comp != IH_COMP_NONE)
+		printf("Booting %s kernel at %s(Uncompress to %s) with fdt at %s...\n\n\n",
+		       comp_name[comp], kernel_addr_c, kernel_addr_r, fdt_addr);
+	else
+		printf("Booting kernel at %s with fdt at %s...\n\n\n",
+		       kernel_addr_r, fdt_addr);
+
 	do_bootm(NULL, 0, 4, bootm_args);
 
 	return -1;
