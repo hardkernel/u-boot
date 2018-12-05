@@ -1,0 +1,22 @@
+if TARGET_MESON_TL1
+
+config SYS_CPU
+	string
+	default "armv8"
+
+config SYS_BOARD
+	string
+	default "tl1_t309_v1"
+
+config SYS_VENDOR
+	string
+	default "amlogic"
+
+config SYS_SOC
+	string
+	default "tl1"
+
+config SYS_CONFIG_NAME
+	default "tl1_t309_v1"
+
+endif
