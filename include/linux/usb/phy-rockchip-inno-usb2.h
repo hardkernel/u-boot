@@ -9,7 +9,7 @@
 
 extern int rockchip_chg_get_type(void);
 
-#ifdef CONFIG_PHY_ROCKCHIP_INNO_USB2
+#if defined(CONFIG_PHY_ROCKCHIP_INNO_USB2) || defined(CONFIG_ROCKCHIP_USB2_PHY)
 int rockchip_u2phy_vbus_detect(void);
 #else
 static inline int rockchip_u2phy_vbus_detect(void)

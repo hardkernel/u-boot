@@ -67,6 +67,20 @@ static void property_enable(struct dwc2_plat_otg_data *pdata,
 	writel(val, pdata->regs_phy + reg->offset);
 }
 
+int rockchip_u2phy_vbus_detect(void)
+{
+	u32 val = 0;
+
+#ifdef CONFIG_ROCKCHIP_RK3288
+	u32 grf_base = (u32)syscon_get_first_range(ROCKCHIP_SYSCON_GRF);
+
+	val = readl(grf_base + 0x288);
+	val = (val & BIT(14)) >> 14;
+#endif
+
+	return val;
+}
+
 static int otg_phy_parse(struct dwc2_udc *dev)
 {
 	int node, phy_node;
