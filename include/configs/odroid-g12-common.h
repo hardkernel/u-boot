@@ -219,10 +219,10 @@
 		"setenv bootargs ${initargs} console=tty0 logo=osd0,loaded,0x3d800000 vout=1080p60hz,enable hdmimode=1080p60hz osd_reverse=0 video_reverse=0; "\
 		"run set_spi_params; "\
 		"sf probe; "\
-		"sf read ${preloadaddr} ${start_kernel} ${size_kernel}; unzip ${preloadaddr} ${loadaddr}; "\
+		"sf read ${preloadaddr} ${start_kernel} ${size_kernel}; "\
 		"sf read ${dtb_mem_addr} ${start_dtb} ${size_dtb}; "\
 		"sf read ${initrd_high} ${start_initrd} ${size_initrd}; "\
-		"booti ${loadaddr} ${initrd_high} ${dtb_mem_addr};\0"\
+		"bootm ${preloadaddr} ${initrd_high} ${dtb_mem_addr};\0"\
 
 #define CONFIG_PREBOOT  \
             "run init_display; " \
