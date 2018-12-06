@@ -148,6 +148,10 @@ config AXG_S400_V1
 	bool "Support amlogic axg s400 v1 board"
 	default n
 
+config AXG_S410_V1
+	bool "Support amlogic axg s410 v1 board"
+	default n
+
 config AXG_S400_V1_GVA
 	bool "Support amlogic axg s400 v1 gva board"
 	default n
@@ -385,6 +389,10 @@ endif
 
 if AXG_S400_V1
 source "board/amlogic/axg_s400_v1/Kconfig"
+endif
+
+if AXG_S410_V1
+source "board/amlogic/axg_s410_v1/Kconfig"
 endif
 
 if AXG_S400_V1_GVA
