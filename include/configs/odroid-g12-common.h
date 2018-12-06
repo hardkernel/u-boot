@@ -105,8 +105,8 @@
 		"setenv devtype mmc; "			\
 		"for n in ${mmc_list}; do "		\
 			"setenv devno ${n}; "		\
-			"load mmc ${n} 0x3000000 boot.scr; "	\
-			"source 0x3000000; "		\
+			"load mmc ${n} ${preloadaddr} boot.scr; "	\
+			"source ${preloadaddr}; "		\
 		"done\0"				\
 
 /* args/envs */
@@ -137,6 +137,7 @@
         "fdt_addr_r=0x1000000\0" \
         "kernel_addr_r=0x1080000\0" \
         "ramdisk_addr_r=0x3080000\0" \
+        "preloadaddr=0x3000000\0"\
         "cvbs_drv=0\0"\
         "osd_reverse=0\0"\
         "video_reverse=0\0"\
@@ -191,20 +192,19 @@
         "init_display="\
             "osd open; osd clear; " \
             "for n in ${mmc_list}; do " \
-                "if fatload mmc ${n} 0x3000000 logo.bmp.gz; then " \
+                "if fatload mmc ${n} ${preloadaddr} logo.bmp.gz; then " \
                     "setenv logo_addr_r ${loadaddr}; " \
-                    "unzip 0x3000000 ${logo_addr_r}; " \
+                    "unzip ${preloadaddr} ${logo_addr_r}; " \
                     "bmp display ${logo_addr_r}; " \
                     "bmp scale; " \
-                "elif fatload mmc ${n} 0x3000000 logo.bmp; then " \
-                    "setenv logo_addr_r 0x3000000}; " \
+                "elif fatload mmc ${n} ${preloadaddr} logo.bmp; then " \
+                    "setenv logo_addr_r ${preloadaddr}; " \
                     "bmp display ${logo_addr_r}; " \
                     "bmp scale; " \
                 "fi; " \
             "done; " \
             "vout output ${outputmode};\0" \
 	"set_spi_params="\
-		"setenv preloadaddr 0x3000000; "\
 		"setenv start_uboot 0x0; setenv start_kernel 0x119000; setenv start_dtb 0x100000; setenv start_initrd 0x4E6C00; "\
 		"setenv size_kernel 0x3CDC00; setenv size_dtb 0x19000; setenv size_initrd 0x319400;\0"\
 	"fusing_spi_from_sd="\
