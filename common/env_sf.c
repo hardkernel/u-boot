@@ -40,6 +40,13 @@ static ulong env_new_offset	= CONFIG_ENV_OFFSET_REDUND;
 
 DECLARE_GLOBAL_DATA_PTR;
 
+#if defined(CONFIG_ODROID_COMMON)
+#define env_name_spec		sf_env_name_spec
+#define saveenv			sf_saveenv
+#define env_init		sf_env_init
+#define env_relocate_spec	sf_env_relocate_spec
+#endif
+
 char *env_name_spec = "SPI Flash";
 
 static struct spi_flash *env_flash;
@@ -329,3 +336,12 @@ int env_init(void)
 
 	return 0;
 }
+
+#if defined(CONFIG_ODROID_COMMON)
+struct env_proxy env_proxy_sf = {
+	.env_name_spec_cb = &sf_env_name_spec,
+	.env_init_cb = sf_env_init,
+	.saveenv_cb = sf_saveenv,
+	.env_relocate_spec_cb = sf_env_relocate_spec,
+};
+#endif

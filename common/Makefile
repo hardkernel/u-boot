@@ -364,3 +364,4 @@ CFLAGS_env_embedded.o := -Wa,--no-warn -DENV_CRC=$(shell tools/envcrc 2>/dev/nul
 obj-$(CONFIG_ODROID_COMMON) += cmd_movi.o
 obj-$(CONFIG_ODROID_COMMON) += cmd_cfgload.o
 obj-$(CONFIG_ODROID_COMMON) += cmd_oem.o
+obj-$(CONFIG_ODROID_COMMON) += env_proxy.o

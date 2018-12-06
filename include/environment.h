@@ -230,4 +230,8 @@ int env_export(env_t *env_out);
 
 #endif /* DO_DEPS_ONLY */
 
+#if defined(CONFIG_ODROID_COMMON)
+#include <env_proxy.h>
+#endif
+
 #endif /* _ENVIRONMENT_H_ */

@@ -366,6 +366,14 @@
 	#define CONFIG_BL2_SIZE			(64 * 1024)
 #endif
 
+#define CONFIG_ENV_IS_IN_SPI_FLASH		1
+#ifdef CONFIG_ENV_IS_IN_SPI_FLASH
+#define CONFIG_ENV_SECT_SIZE			(64 * SZ_1K)
+#if (CONFIG_ENV_SIZE < CONFIG_ENV_SECT_SIZE)
+#error 'CONFIG_ENV_SIZE' must be larger or equal than 'CONFIG_ENV_SECT_SIZE'
+#endif
+#endif
+
 #if defined CONFIG_AML_MTD || defined CONFIG_SPI_NAND
 	#define CONFIG_MTD_DEVICE y
 	#define CONFIG_RBTREE
