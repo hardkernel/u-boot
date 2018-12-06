@@ -205,8 +205,8 @@
             "vout output ${outputmode};\0" \
 	"set_spi_params="\
 		"setenv preloadaddr 0x3000000; "\
-		"setenv start_uboot 0x0; setenv start_kernel 0xf8000; setenv start_dtb 0x482400; setenv start_initrd 0x48FE00; "\
-		"setenv size_kernel 0x38A400; setenv size_dtb 0xda00; setenv size_initrd 0x370200;\0"\
+		"setenv start_uboot 0x0; setenv start_kernel 0x119000; setenv start_dtb 0x100000; setenv start_initrd 0x4E6C00; "\
+		"setenv size_kernel 0x3CDC00; setenv size_dtb 0x19000; setenv size_initrd 0x319400;\0"\
 	"fusing_spi_from_sd="\
 		"run set_spi_params; "\
 		"sf probe; "\
