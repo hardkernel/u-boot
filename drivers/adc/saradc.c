@@ -184,74 +184,14 @@ void saradc_hw_init(void)
 
 int saradc_probe(void)
 {
-#if !defined(CONFIG_ODROID_COMMON)
-	int ret;
-#endif
-	int len;
-	int elems;
-	int parent_offset;
-	char *fdt_addr;
-	u32 *reg_addr;
-	int saradc_fdt_ready = 0;
-	unsigned long temp_addr;
 	saradc_info *saradc = saradc_dev_get();
 
-#if !defined(CONFIG_ODROID_COMMON)
-#ifdef CONFIG_OF_LIBFDT
-#ifdef CONFIG_DTB_MEM_ADDR
-	fdt_addr = (char *)CONFIG_DTB_MEM_ADDR;
-#else
-	fdt_addr = (char *)FDT_DEFAULT_ADDRESS;
-#endif
-	if ((ret = fdt_check_header((const void *)fdt_addr)) < 0) {
-		printf("saradc: check dts: %s, load default parameters\n",
-			fdt_strerror(ret));
-	}else{
-		saradc_fdt_ready = 1;
-	}
-#endif
-#endif
-	if (saradc_fdt_ready) {
-#ifdef CONFIG_OF_LIBFDT
-		parent_offset = fdt_path_offset(fdt_addr, "/saradc");
-		if (parent_offset < 0) {
-			printf("saradc: not find the node /saradc: %s\n",
-					fdt_strerror(parent_offset));
-			return -1;
-		}
-
-		reg_addr = (u32 *)fdt_getprop(fdt_addr, parent_offset, "reg", &len);
-		if (NULL == reg_addr) {
-			printf("saradc: failed to get /saradc\n");
-			return -1;
-		}
-	   /*
-		*  To avoid error "-Werror=int-to-pointer" when this code is compiled,
-		*  and use the variable of type 'unsigned long' to save the address,
-		*  then cast 'unsigned long' to 'pointer' type."
-		*/
-		elems = len / sizeof(u32);
-		if (elems == 4)
-			saradc->clk_addr = (u32 __iomem *)AO_SAR_CLK;
-		else if (elems == 8) {
-			temp_addr = fdt32_to_cpu(reg_addr[5]); /*big-endian to little-endian*/
-			saradc->clk_addr = (u32 __iomem *)(temp_addr & 0xffffffff);
-		} else {
-			printf("saradc: invalid size of property 'reg'\n");
-			return -1;
-		}
-		temp_addr = fdt32_to_cpu(reg_addr[1]); /*big-endian to little-endian*/
-		saradc->base_addr = (u32 __iomem *)(temp_addr & 0xffffffff);
-#endif
-	} else {
-		saradc->clk_addr =  (u32 __iomem *)AO_SAR_CLK;
-		saradc->base_addr = (u32 __iomem *)AO_SAR_ADC_REG0;
-	}
+	saradc->clk_addr  = (u32 __iomem *)AO_SAR_CLK;
+	saradc->base_addr = (u32 __iomem *)AO_SAR_ADC_REG0;
 
 	saradc_hw_init();
 
 	return 0;
-
 }
 
 static void saradc_internal_cal_12bit(void)
