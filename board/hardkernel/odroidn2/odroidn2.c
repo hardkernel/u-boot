@@ -645,6 +645,22 @@ int board_late_init(void)
 	lcd_probe();
 #endif
 
+	if (get_boot_device() == BOOT_DEVICE_SPI) {
+		/* Display must be initiated before starting the display,
+		   unless nothing comes up and 'initrd_high' is invalid.
+		 */
+		run_command("osd open", 0);
+		run_command("osd clear", 0);
+		run_command("vout output ${outputmode}", 0);
+		run_command("run booting_from_spi", 0);
+	} else if (get_boot_device() == BOOT_DEVICE_EMMC) {
+		// TODO:
+	} else if (get_boot_device() == BOOT_DEVICE_SD) {
+		// TODO:
+	} else {
+		printf("Unknown booting device!?\n");
+	}
+
 	return 0;
 }
 #endif
