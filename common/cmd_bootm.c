@@ -104,6 +104,33 @@ static int is_secure_boot_enabled(void)
 /* bootm - boot application image from image in memory */
 /*******************************************************************/
 
+#ifdef CONFIG_AML_RSVD_ADDR
+static void defendkey_process(void)
+{
+	char *bootargs = getenv("bootargs");
+	if (!bootargs)
+		return;
+
+	if (!strstr(bootargs,"defendkey"))
+	{
+		char *reboot_mode_s = NULL;
+		char *upgrade_step_s = NULL;
+		char env_cmd[128] = {0};
+
+		reboot_mode_s = getenv("reboot_mode");
+		upgrade_step_s = getenv("upgrade_step");
+		if ((!reboot_mode_s) || (!upgrade_step_s))
+			return;
+
+		if ((!strcmp(reboot_mode_s, "recovery")) || (!strcmp(reboot_mode_s, "update"))
+			|| (!strcmp(reboot_mode_s, "factory_reset")) || (!strcmp(upgrade_step_s, "3")))
+		{
+			sprintf(env_cmd, "setenv bootargs ${bootargs} defendkey=%x,%x,", CONFIG_AML_RSVD_ADDR, CONFIG_AML_RSVD_SIZE);
+			run_command(env_cmd,0);
+		}
+	}
+}
+#endif
 int do_bootm(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 #if defined(CONFIG_CMD_BOOTCTOL_AVB)
@@ -221,6 +248,11 @@ int do_bootm(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		avb_slot_verify_data_free(out_data);
 	}
 #endif
+
+#ifdef CONFIG_AML_RSVD_ADDR
+	defendkey_process();
+#endif
+
 	if (is_secure_boot_enabled())
 	{
 		/* Override load address argument to skip secure boot header (512).
