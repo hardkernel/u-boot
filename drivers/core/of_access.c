@@ -702,10 +702,22 @@ int of_count_phandle_with_args(const struct device_node *np,
 static void of_alias_add(struct alias_prop *ap, struct device_node *np,
 			 int id, const char *stem, int stem_len)
 {
+	struct alias_prop *oldap;
 	ap->np = np;
 	ap->id = id;
 	strncpy(ap->stem, stem, stem_len);
 	ap->stem[stem_len] = 0;
+
+	/* Delete U-Boot alias which is same with kernel */
+	mutex_lock(&of_mutex);
+	list_for_each_entry(oldap, &aliases_lookup, link) {
+		if (stem && !strcmp(stem, oldap->alias) && (id == oldap->id)) {
+			list_del(&oldap->link);
+			break;
+		}
+	}
+	mutex_unlock(&of_mutex);
+
 	list_add_tail(&ap->link, &aliases_lookup);
 	debug("adding DT alias:%s: stem=%s id=%i node=%s\n",
 	      ap->alias, ap->stem, ap->id, of_node_full_name(np));
