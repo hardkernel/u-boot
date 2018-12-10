@@ -1,5 +1,6 @@
 menu "Hardware crypto devices"
 
 source drivers/crypto/fsl/Kconfig
+source drivers/crypto/rockchip/Kconfig
 
 endmenu

@@ -1,0 +1,5 @@
+config CRYPTO_ROCKCHIP
+	bool "Support Rockchip Hardware Crypto"
+	help
+	  The module supports Rockchip Hardware Crypto.
+	  This accelerates algorithmic operations.
