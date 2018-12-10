@@ -265,6 +265,12 @@ int board_fdt_fixup(void *blob)
 	return ret;
 }
 
+void board_quiesce_devices(void)
+{
+	/* Destroy atags makes next warm boot safer */
+	atags_destroy();
+}
+
 void enable_caches(void)
 {
 	icache_enable();
