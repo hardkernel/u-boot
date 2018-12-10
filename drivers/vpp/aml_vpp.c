@@ -1432,9 +1432,6 @@ static void vpp_ofifo_init(void)
 
 	data32 = vpp_reg_read(VPP_OFIFO_SIZE);
 	switch (get_cpu_id().family_id) {
-	case MESON_CPU_MAJOR_ID_TL1:
-		data32 |= ((1 << 19) | 0xfff); /* vs_pol */
-		break;
 	case MESON_CPU_MAJOR_ID_TXHD:
 		data32 |= 0x77f;
 		break;

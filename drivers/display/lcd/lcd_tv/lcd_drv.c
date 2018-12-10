@@ -411,7 +411,8 @@ static void lcd_venc_set(struct lcd_config_s *pconf)
 
 	switch (lcd_drv->chip_type) {
 	case LCD_CHIP_TL1:
-		lcd_vcbus_write(ENCL_INBUF_CNTL1, (1 << 14) | (h_active - 1));
+		/*[15:14]: 2'b10 or 2'b01*/
+		lcd_vcbus_write(ENCL_INBUF_CNTL1, (2 << 14) | (h_active - 1));
 		lcd_vcbus_write(ENCL_INBUF_CNTL0, 0x200);
 		break;
 	default:
