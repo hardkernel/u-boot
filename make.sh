@@ -237,77 +237,7 @@ sub_commands()
 		;;
 
 		debug)
-		if [ "${cmd}" = 'debug' -a "${opt}" = 'debug' ]; then
-			echo
-			echo "The commands will modify .config and files, and can't auto restore changes!"
-			echo "debug-N, the N:"
-			echo "    1. lib/initcall.c debug() -> printf()"
-			echo "    2. common/board_r.c and common/board_f.c debug() -> printf()"
-			echo "    3. global #define DEBUG"
-			echo "    4. enable CONFIG_ROCKCHIP_DEBUGGER"
-			echo "    5. enable CONFIG_ROCKCHIP_CRC"
-			echo "    6. enable CONFIG_BOOTSTAGE_PRINTF_TIMESTAMP"
-			echo "    7. enable CONFIG_ROCKCHIP_CRASH_DUMP"
-			echo "    8. set CONFIG_BOOTDELAY=5"
-			echo "    9. armv7 start.S: print entry warning"
-			echo "   10. armv8 start.S: print entry warning"
-			echo "   11. firmware bootflow debug() -> printf()"
-			echo
-			echo "Enabled: "
-			grep '^CONFIG_ROCKCHIP_DEBUGGER=y' ${OUTDIR}/.config > /dev/null \
-			&& echo "    CONFIG_ROCKCHIP_DEBUGGER"
-			grep '^CONFIG_ROCKCHIP_CRC=y' ${OUTDIR}/.config > /dev/null \
-			&& echo "    CONFIG_ROCKCHIP_CRC"
-			grep '^CONFIG_BOOTSTAGE_PRINTF_TIMESTAMP=y' ${OUTDIR}/.config > /dev/null \
-			&& echo "    CONFIG_BOOTSTAGE_PRINTF_TIMESTAMP"
-			grep '^CONFIG_ROCKCHIP_CRASH_DUMP=y' ${OUTDIR}/.config > /dev/null \
-			&& echo "    CONFIG_ROCKCHIP_CRASH_DUMP"
-
-		elif [ "${opt}" = '1' ]; then
-			sed -i 's/\<debug\>/printf/g' lib/initcall.c
-			echo "DEBUG [1]: lib/initcall.c debug() -> printf()"
-		elif [ "${opt}" = '2' ]; then
-			sed -i 's/\<debug\>/printf/g' ./common/board_f.c
-			sed -i 's/\<debug\>/printf/g' ./common/board_r.c
-			echo "DEBUG [2]: common/board_r.c and common/board_f.c debug() -> printf()"
-		elif [ "${opt}" = '3' ]; then
-			sed -i '$i \#define DEBUG\' include/configs/rockchip-common.h
-			echo "DEBUG [3]: global #define DEBUG"
-		elif [ "${opt}" = '4' ]; then
-			sed -i 's/\# CONFIG_ROCKCHIP_DEBUGGER is not set/CONFIG_ROCKCHIP_DEBUGGER=y/g' ${OUTDIR}/.config
-			echo "DEBUG [4]: CONFIG_ROCKCHIP_DEBUGGER is enabled"
-		elif [ "${opt}" = '5' ]; then
-			sed -i 's/\# CONFIG_ROCKCHIP_CRC is not set/CONFIG_ROCKCHIP_CRC=y/g' ${OUTDIR}/.config
-			echo "DEBUG [5]: CONFIG_ROCKCHIP_CRC is enabled"
-		elif [ "${opt}" = '6' ]; then
-			sed -i 's/\# CONFIG_BOOTSTAGE_PRINTF_TIMESTAMP is not set/CONFIG_BOOTSTAGE_PRINTF_TIMESTAMP=y/g' ${OUTDIR}/.config
-			echo "DEBUG [6]: CONFIG_BOOTSTAGE_PRINTF_TIMESTAMP is enabled"
-		elif [ "${opt}" = '7' ]; then
-			sed -i 's/\# CONFIG_ROCKCHIP_CRASH_DUMP is not set/CONFIG_ROCKCHIP_CRASH_DUMP=y/g' ${OUTDIR}/.config
-			echo "DEBUG [7]: CONFIG_ROCKCHIP_CRASH_DUMP is enabled"
-		elif [ "${opt}" = '8' ]; then
-			sed -i 's/^CONFIG_BOOTDELAY=0/CONFIG_BOOTDELAY=5/g' ${OUTDIR}/.config
-			echo "DEBUG [8]: CONFIG_BOOTDELAY is 5s"
-		elif [ "${opt}" = '9' ]; then
-			sed -i '/save_boot_params_ret:/a\ldr r0, =CONFIG_DEBUG_UART_BASE\nmov r1, #100\nloop:\nmov r2, #0x55\nstr r2, [r0]\nsub r1, r1, #1\ncmp r1, #0\nbne loop\ndsb' \
-			./arch/arm/cpu/armv7/start.S
-			echo "DEBUG [9]: armv7 start.S entry warning 'UUUU...'"
-		elif [ "${opt}" = '10' ]; then
-			sed -i '/save_boot_params_ret:/a\ldr x0, =CONFIG_DEBUG_UART_BASE\nmov x1, #100\nloop:\nmov x2, #0x55\nstr x2, [x0]\nsub x1, x1, #1\ncmp x1, #0\nb.ne loop\ndsb sy' \
-			./arch/arm/cpu/armv8/start.S
-			echo "DEBUG [10]: armv8 start.S entry warning 'UUUU...'"
-		elif [ "${opt}" = '11' ]; then
-			sed -i 's/\<debug\>/printf/g' common/fdt_support.c
-			sed -i 's/\<debug\>/printf/g' common/image-fdt.c
-			sed -i 's/\<debug\>/printf/g' common/image.c
-			sed -i 's/\<debug\>/printf/g' arch/arm/lib/bootm.c
-			sed -i 's/\<debug\>/printf/g' common/bootm.c
-			sed -i 's/\<debug\>/printf/g' common/image.c
-			sed -i 's/\<debug\>/printf/g' common/image-android.c
-			sed -i 's/\<debug\>/printf/g' common/android_bootloader.c
-			echo "DEBUG [11]: firmware bootflow debug() -> printf()"
-		fi
-		echo
+		debug_command
 		exit 0
 		;;
 
@@ -470,6 +400,82 @@ fixup_platform_configure()
 			PLATFORM_AARCH32="AARCH32"
 		fi
 	fi
+}
+
+debug_command()
+{
+		if [ "${cmd}" = 'debug' -a "${opt}" = 'debug' ]; then
+			echo
+			echo "The commands will modify .config and files, and can't auto restore changes!"
+			echo "debug-N, the N:"
+			echo "    1. lib/initcall.c debug() -> printf()"
+			echo "    2. common/board_r.c and common/board_f.c debug() -> printf()"
+			echo "    3. global #define DEBUG"
+			echo "    4. enable CONFIG_ROCKCHIP_DEBUGGER"
+			echo "    5. enable CONFIG_ROCKCHIP_CRC"
+			echo "    6. enable CONFIG_BOOTSTAGE_PRINTF_TIMESTAMP"
+			echo "    7. enable CONFIG_ROCKCHIP_CRASH_DUMP"
+			echo "    8. set CONFIG_BOOTDELAY=5"
+			echo "    9. armv7 start.S: print entry warning"
+			echo "   10. armv8 start.S: print entry warning"
+			echo "   11. firmware bootflow debug() -> printf()"
+			echo
+			echo "Enabled: "
+			grep '^CONFIG_ROCKCHIP_DEBUGGER=y' ${OUTDIR}/.config > /dev/null \
+			&& echo "    CONFIG_ROCKCHIP_DEBUGGER"
+			grep '^CONFIG_ROCKCHIP_CRC=y' ${OUTDIR}/.config > /dev/null \
+			&& echo "    CONFIG_ROCKCHIP_CRC"
+			grep '^CONFIG_BOOTSTAGE_PRINTF_TIMESTAMP=y' ${OUTDIR}/.config > /dev/null \
+			&& echo "    CONFIG_BOOTSTAGE_PRINTF_TIMESTAMP"
+			grep '^CONFIG_ROCKCHIP_CRASH_DUMP=y' ${OUTDIR}/.config > /dev/null \
+			&& echo "    CONFIG_ROCKCHIP_CRASH_DUMP"
+
+		elif [ "${opt}" = '1' ]; then
+			sed -i 's/\<debug\>/printf/g' lib/initcall.c
+			sed -i 's/ifdef DEBUG/if 1/g' lib/initcall.c
+			echo "DEBUG [1]: lib/initcall.c debug() -> printf()"
+		elif [ "${opt}" = '2' ]; then
+			sed -i 's/\<debug\>/printf/g' ./common/board_f.c
+			sed -i 's/\<debug\>/printf/g' ./common/board_r.c
+			echo "DEBUG [2]: common/board_r.c and common/board_f.c debug() -> printf()"
+		elif [ "${opt}" = '3' ]; then
+			sed -i '$i \#define DEBUG\' include/configs/rockchip-common.h
+			echo "DEBUG [3]: global #define DEBUG"
+		elif [ "${opt}" = '4' ]; then
+			sed -i 's/\# CONFIG_ROCKCHIP_DEBUGGER is not set/CONFIG_ROCKCHIP_DEBUGGER=y/g' ${OUTDIR}/.config
+			echo "DEBUG [4]: CONFIG_ROCKCHIP_DEBUGGER is enabled"
+		elif [ "${opt}" = '5' ]; then
+			sed -i 's/\# CONFIG_ROCKCHIP_CRC is not set/CONFIG_ROCKCHIP_CRC=y/g' ${OUTDIR}/.config
+			echo "DEBUG [5]: CONFIG_ROCKCHIP_CRC is enabled"
+		elif [ "${opt}" = '6' ]; then
+			sed -i 's/\# CONFIG_BOOTSTAGE_PRINTF_TIMESTAMP is not set/CONFIG_BOOTSTAGE_PRINTF_TIMESTAMP=y/g' ${OUTDIR}/.config
+			echo "DEBUG [6]: CONFIG_BOOTSTAGE_PRINTF_TIMESTAMP is enabled"
+		elif [ "${opt}" = '7' ]; then
+			sed -i 's/\# CONFIG_ROCKCHIP_CRASH_DUMP is not set/CONFIG_ROCKCHIP_CRASH_DUMP=y/g' ${OUTDIR}/.config
+			echo "DEBUG [7]: CONFIG_ROCKCHIP_CRASH_DUMP is enabled"
+		elif [ "${opt}" = '8' ]; then
+			sed -i 's/^CONFIG_BOOTDELAY=0/CONFIG_BOOTDELAY=5/g' ${OUTDIR}/.config
+			echo "DEBUG [8]: CONFIG_BOOTDELAY is 5s"
+		elif [ "${opt}" = '9' ]; then
+			sed -i '/save_boot_params_ret:/a\ldr r0, =CONFIG_DEBUG_UART_BASE\nmov r1, #100\nloop:\nmov r2, #0x55\nstr r2, [r0]\nsub r1, r1, #1\ncmp r1, #0\nbne loop\ndsb' \
+			./arch/arm/cpu/armv7/start.S
+			echo "DEBUG [9]: armv7 start.S entry warning 'UUUU...'"
+		elif [ "${opt}" = '10' ]; then
+			sed -i '/save_boot_params_ret:/a\ldr x0, =CONFIG_DEBUG_UART_BASE\nmov x1, #100\nloop:\nmov x2, #0x55\nstr x2, [x0]\nsub x1, x1, #1\ncmp x1, #0\nb.ne loop\ndsb sy' \
+			./arch/arm/cpu/armv8/start.S
+			echo "DEBUG [10]: armv8 start.S entry warning 'UUUU...'"
+		elif [ "${opt}" = '11' ]; then
+			sed -i 's/\<debug\>/printf/g' common/fdt_support.c
+			sed -i 's/\<debug\>/printf/g' common/image-fdt.c
+			sed -i 's/\<debug\>/printf/g' common/image.c
+			sed -i 's/\<debug\>/printf/g' arch/arm/lib/bootm.c
+			sed -i 's/\<debug\>/printf/g' common/bootm.c
+			sed -i 's/\<debug\>/printf/g' common/image.c
+			sed -i 's/\<debug\>/printf/g' common/image-android.c
+			sed -i 's/\<debug\>/printf/g' common/android_bootloader.c
+			echo "DEBUG [11]: firmware bootflow debug() -> printf()"
+		fi
+		echo
 }
 
 pack_uboot_image()
