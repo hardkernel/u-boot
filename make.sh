@@ -334,6 +334,8 @@ select_chip_info()
 			&& RKCHIP=RK3326
 		grep '^CONFIG_ROCKCHIP_RK3128X=y' ${OUTDIR}/.config >/dev/null \
 			&& RKCHIP=RK3128X
+		grep '^CONFIG_ROCKCHIP_RK3399PRO=y' ${OUTDIR}/.config >/dev/null \
+			&& RKCHIP=RK3399PRO
 	else
 		echo "Can't get Rockchip SoC definition in .config"
 		exit 1
