@@ -30,7 +30,7 @@
 
 /* configs for CEC */
 #define CONFIG_CEC_OSD_NAME			"AML_TV"
-#define CONFIG_CEC_WAKEUP
+//#define CONFIG_CEC_WAKEUP
 
 /* SMP Definitinos */
 #define CPU_RELEASE_ADDR			secondary_boot_func
