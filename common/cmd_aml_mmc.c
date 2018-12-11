@@ -3052,8 +3052,18 @@ extern int check_valid_dts(unsigned char *buffer);
 int renew_partition_tbl(unsigned char *buffer)
 {
     int ret = 0;
+    unsigned char *temp = NULL;
+
+    if (!buffer)
+        return 1;
+    temp = malloc (AML_DTB_IMG_MAX_SZ);
+    if (!temp)
+        return 1;
+    memcpy(temp, buffer, AML_DTB_IMG_MAX_SZ);
     /* todo, check new dts imcoming.... */
-    ret = check_valid_dts(buffer);
+    ret = check_valid_dts(temp);
+    free(temp);
+
     /* only the dts new is valid */
     if (!ret) {
         free_partitions();

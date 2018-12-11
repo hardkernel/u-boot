@@ -5,6 +5,8 @@
 #include <malloc.h>
 #include <asm/arch/io.h>
 #include <asm/arch/secure_apb.h>
+#include <asm/arch/bl31_apis.h>
+#include <partition_table.h>
 
 //#define AML_DT_DEBUG
 #ifdef AML_DT_DEBUG
@@ -238,4 +240,57 @@ unsigned long __attribute__((unused))
 		return fdt_addr;
 	}
 	return 0;
+}
+
+static int is_secure_boot_enabled(void)
+{
+	const unsigned long cfg10 = readl(AO_SEC_SD_CFG10);
+	return ( cfg10 & (0x1<< 4) );
+}
+
+/*
+  return 0 if dts is valid
+  other value are falure.
+*/
+int check_valid_dts(unsigned char *buffer)
+{
+	int ret = -__LINE__;
+	char *dt_addr;
+	/* fixme, a work around way */
+	unsigned char *sbuffer = (unsigned char *)getenv_hex("loadaddr", CONFIG_DTB_MEM_ADDR + 0x100000);
+	/* g12a merge to trunk, use trunk code */
+	//unsigned char *sbuffer = (unsigned char *)0x1000000;
+	if (is_secure_boot_enabled()) {
+
+	if (is_dtb_encrypt(buffer)) {
+		memcpy(sbuffer, buffer, AML_DTB_IMG_MAX_SZ);
+		flush_cache((unsigned long)sbuffer, AML_DTB_IMG_MAX_SZ);
+		ret = aml_sec_boot_check(AML_D_P_IMG_DECRYPT, (long unsigned)sbuffer, AML_DTB_IMG_MAX_SZ, 0);
+		if (ret) {
+			printf("\n %s() %d: Decrypt dtb: Sig Check %d\n", __func__, __LINE__, ret);
+			return -__LINE__;
+		}
+
+		ulong nCheckOffset;
+		nCheckOffset = aml_sec_boot_check(AML_D_Q_IMG_SIG_HDR_SIZE,GXB_IMG_LOAD_ADDR,GXB_EFUSE_PATTERN_SIZE,GXB_IMG_DEC_ALL);
+		if (AML_D_Q_IMG_SIG_HDR_SIZE == (nCheckOffset & 0xFFFF))
+			nCheckOffset = (nCheckOffset >> 16) & 0xFFFF;
+		else
+			nCheckOffset = 0;
+		memcpy(buffer, sbuffer + nCheckOffset, AML_DTB_IMG_MAX_SZ);
+
+	}
+
+	}
+#ifdef CONFIG_MULTI_DTB
+	dt_addr = (char *)get_multi_dt_entry((unsigned long)buffer);
+#else
+	dt_addr = (char *)buffer;
+#endif
+	printf("start dts,buffer=%p,dt_addr=%p\n", buffer, dt_addr);
+	ret = fdt_check_header(dt_addr);
+	if ( ret < 0 )
+		printf("%s: %s\n",__func__,fdt_strerror(ret));
+	/* fixme, is it 0 when ok? */
+	return ret;
 }
