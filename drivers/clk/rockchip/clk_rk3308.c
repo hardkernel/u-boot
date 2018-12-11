@@ -696,6 +696,65 @@ static ulong rk3308_audio_set_clk(struct rk3308_clk_priv *priv, ulong clk_id,
 	return rk3308_peri_get_clk(priv, clk_id);
 }
 
+#ifndef CONFIG_SPL_BUILD
+static ulong rk3308_crypto_get_clk(struct rk3308_clk_priv *priv, ulong clk_id)
+{
+	struct rk3308_cru *cru = priv->cru;
+	u32 div, con, parent;
+
+	switch (clk_id) {
+	case SCLK_CRYPTO:
+		con = readl(&cru->clksel_con[7]);
+		div = (con & CRYPTO_DIV_MASK) >> CRYPTO_DIV_SHIFT;
+		parent = priv->vpll0_hz;
+		break;
+	case SCLK_CRYPTO_APK:
+		con = readl(&cru->clksel_con[7]);
+		div = (con & CRYPTO_APK_DIV_MASK) >> CRYPTO_APK_DIV_SHIFT;
+		parent = priv->vpll0_hz;
+		break;
+	default:
+		return -ENOENT;
+	}
+
+	return DIV_TO_RATE(parent, div);
+}
+
+static ulong rk3308_crypto_set_clk(struct rk3308_clk_priv *priv, ulong clk_id,
+				   ulong hz)
+{
+	struct rk3308_cru *cru = priv->cru;
+	int src_clk_div;
+
+	src_clk_div = DIV_ROUND_UP(priv->vpll0_hz, hz);
+	assert(src_clk_div - 1 <= 31);
+
+	/*
+	 * select gpll as crypto clock source and
+	 * set up dependent divisors for crypto clocks.
+	 */
+	switch (clk_id) {
+	case SCLK_CRYPTO:
+		rk_clrsetreg(&cru->clksel_con[7],
+			     CRYPTO_PLL_SEL_MASK | CRYPTO_DIV_MASK,
+			     CRYPTO_PLL_SEL_VPLL0 << CRYPTO_PLL_SEL_SHIFT |
+			     (src_clk_div - 1) << CRYPTO_DIV_SHIFT);
+		break;
+	case SCLK_CRYPTO_APK:
+		rk_clrsetreg(&cru->clksel_con[7],
+			     CRYPTO_APK_PLL_SEL_MASK | CRYPTO_APK_DIV_MASK,
+			     CRYPTO_PLL_SEL_VPLL0 << CRYPTO_APK_SEL_SHIFT |
+			     (src_clk_div - 1) << CRYPTO_APK_DIV_SHIFT);
+		break;
+	default:
+		printf("do not support this peri freq\n");
+		return -EINVAL;
+	}
+
+	return rk3308_crypto_get_clk(priv, clk_id);
+}
+#endif
+
 static ulong rk3308_clk_get_rate(struct clk *clk)
 {
 	struct rk3308_clk_priv *priv = dev_get_priv(clk->dev);
@@ -764,6 +823,12 @@ static ulong rk3308_clk_get_rate(struct clk *clk)
 	case PCLK_AUDIO:
 		rate = rk3308_audio_get_clk(priv, clk->id);
 		break;
+#ifndef CONFIG_SPL_BUILD
+	case SCLK_CRYPTO:
+	case SCLK_CRYPTO_APK:
+		rate = rk3308_crypto_get_clk(priv, clk->id);
+		break;
+#endif
 	default:
 		return -ENOENT;
 	}
@@ -832,6 +897,12 @@ static ulong rk3308_clk_set_rate(struct clk *clk, ulong rate)
 	case PCLK_AUDIO:
 		rate = rk3308_audio_set_clk(priv, clk->id, rate);
 		break;
+#ifndef CONFIG_SPL_BUILD
+	case SCLK_CRYPTO:
+	case SCLK_CRYPTO_APK:
+		ret = rk3308_crypto_set_clk(priv, clk->id, rate);
+		break;
+#endif
 	default:
 		return -ENOENT;
 	}
