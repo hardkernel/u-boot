@@ -1665,6 +1665,13 @@ static int rk818_bat_update_temperature(struct battery_priv *di)
 	return 0;
 }
 
+static int rk818_bat_bat_is_exit(struct udevice *dev)
+{
+	struct battery_priv *di = dev_get_priv(dev);
+
+	return is_rk818_bat_exist(di);
+}
+
 static int rk818_bat_update_get_soc(struct udevice *dev)
 {
 	struct battery_priv *di = dev_get_priv(dev);
@@ -1731,6 +1738,7 @@ static bool rk818_bat_update_get_chrg_online(struct udevice *dev)
 }
 
 static struct dm_fuel_gauge_ops fg_ops = {
+	.bat_is_exist = rk818_bat_bat_is_exit,
 	.get_soc = rk818_bat_update_get_soc,
 	.get_voltage = rk818_bat_update_get_voltage,
 	.get_current = rk818_bat_update_get_current,
