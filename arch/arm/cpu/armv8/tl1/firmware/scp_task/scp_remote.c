@@ -224,7 +224,7 @@ unsigned bakeuAO_IR_DEC_LDR_REPEAT;
 #if 1
 void backuremote_register(void)
 {
-	backuAO_RTI_PIN_MUX_REG = readl(AO_RTI_PIN_MUX_REG);
+	backuAO_RTI_PIN_MUX_REG = readl(AO_RTI_PINMUX_REG0);
 	backuAO_IR_DEC_REG0 = readl(AO_MF_IR_DEC_REG0);
 	backuAO_IR_DEC_REG1 = readl(AO_MF_IR_DEC_REG1);
 	backuAO_IR_DEC_LDR_ACTIVE = readl(AO_MF_IR_DEC_LDR_ACTIVE);
@@ -235,7 +235,7 @@ void backuremote_register(void)
 
 void resume_remote_register(void)
 {
-	writel(backuAO_RTI_PIN_MUX_REG, AO_RTI_PIN_MUX_REG);
+	writel(backuAO_RTI_PIN_MUX_REG, AO_RTI_PINMUX_REG0);
 	writel(backuAO_IR_DEC_REG0, AO_MF_IR_DEC_REG0);
 	writel(backuAO_IR_DEC_REG1, AO_MF_IR_DEC_REG1);
 	writel(backuAO_IR_DEC_LDR_ACTIVE, AO_MF_IR_DEC_LDR_ACTIVE);
@@ -248,8 +248,8 @@ void resume_remote_register(void)
 static int ir_remote_init_32k_mode(void)
 {
 	//volatile unsigned int status,data_value;
-	int val = readl(AO_RTI_PIN_MUX_REG);
-	writel((val | (1 << 0)), AO_RTI_PIN_MUX_REG);
+	int val = readl(AO_RTI_PINMUX_REG0);
+	writel((val | (1 << 0)), AO_RTI_PINMUX_REG0);
 	set_remote_mode(CONFIG_IR_REMOTE_USE_PROTOCOL);
 	//status = readl(AO_MF_IR_DEC_STATUS);
 	readl(AO_MF_IR_DEC_STATUS);

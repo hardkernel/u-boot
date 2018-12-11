@@ -61,13 +61,13 @@ static void power_off_at_24M(unsigned int suspend_from)
 	/*set gpiaoao_2 high to power on VDDCPU*/
 	writel(readl(AO_GPIO_O) & (~(1 << 2)), AO_GPIO_O);
 	writel(readl(AO_GPIO_O_EN_N) & (~(1 << 2)), AO_GPIO_O_EN_N);
-	writel(readl(AO_RTI_PIN_MUX_REG) & (~(0xf << 8)), AO_RTI_PIN_MUX_REG);
+	writel(readl(AO_RTI_PINMUX_REG0) & (~(0xf << 8)), AO_RTI_PINMUX_REG0);
 	_udelay(100);
 
 	/*set gpioao_3 high to power on VCC 5V*/
 	writel(readl(AO_GPIO_O) & (~(1 << 3)), AO_GPIO_O);
 	writel(readl(AO_GPIO_O_EN_N) | (1 << 3), AO_GPIO_O_EN_N);
-	writel(readl(AO_RTI_PIN_MUX_REG) & (~(0xf << 12)), AO_RTI_PIN_MUX_REG);
+	writel(readl(AO_RTI_PINMUX_REG0) & (~(0xf << 12)), AO_RTI_PINMUX_REG0);
 
 	/*step down ee voltage*/
 	set_vddee_voltage(CONFIG_VDDEE_SLEEP_VOLTAGE);
@@ -86,13 +86,13 @@ static void power_on_at_24M(unsigned int suspend_from)
 	/*set gpiaoao_2 high to power on VDDCPU*/
 	writel(readl(AO_GPIO_O) | (1 << 2), AO_GPIO_O);
 	writel(readl(AO_GPIO_O_EN_N) & (~(1 << 2)), AO_GPIO_O_EN_N);
-	writel(readl(AO_RTI_PIN_MUX_REG) & (~(0xf << 8)), AO_RTI_PIN_MUX_REG);
+	writel(readl(AO_RTI_PINMUX_REG0) & (~(0xf << 8)), AO_RTI_PINMUX_REG0);
 	_udelay(100);
 
 	/*set gpioao_3 high to power on VCC 5V*/
 	writel(readl(AO_GPIO_O) | (1 << 3), AO_GPIO_O);
 	writel(readl(AO_GPIO_O_EN_N) & (~(1 << 3)), AO_GPIO_O_EN_N);
-	writel(readl(AO_RTI_PIN_MUX_REG) & (~(0xf << 12)), AO_RTI_PIN_MUX_REG);
+	writel(readl(AO_RTI_PINMUX_REG0) & (~(0xf << 12)), AO_RTI_PINMUX_REG0);
 	_udelay(10000);
 	if (suspend_from == SYS_POWEROFF) {
 		power_off_ddr(1);
@@ -141,7 +141,10 @@ static unsigned int detect_key(unsigned int suspend_from)
 			if (remote_detect_key())
 				exit_reason = REMOTE_WAKEUP;
 		}
-
+		if (irq[IRQ_VRTC] == IRQ_VRTC_NUM) {
+			irq[IRQ_VRTC] = 0xFFFFFFFF;
+			exit_reason = RTC_WAKEUP;
+		}
 		if (exit_reason)
 			break;
 		else
