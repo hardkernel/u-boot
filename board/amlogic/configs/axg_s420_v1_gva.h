@@ -55,9 +55,6 @@
   */
 #define CONFIG_BOOTLOADER_CONTROL_BLOCK
 
-/*a/b update */
-#define CONFIG_CMD_BOOTCTOL_AVB
-
 /* Serial config */
 #define CONFIG_CONS_INDEX 2
 #define CONFIG_BAUDRATE  115200
@@ -131,19 +128,6 @@
             "fi;fi;fi;fi;"\
             "\0" \
         "storeboot="\
-            "get_valid_slot;"\
-            "get_avb_mode;"\
-            "echo active_slot: ${active_slot};"\
-            "if test ${active_slot} != normal; then "\
-                    "setenv bootargs ${bootargs} androidboot.slot_suffix=${active_slot};"\
-            "fi;"\
-            "if test ${avb2} = 0; then "\
-                "if test ${active_slot} = _a; then "\
-                    "setenv bootargs ${bootargs} root=/dev/mmcblk0p23;"\
-                "else if test ${active_slot} = _b; then "\
-                    "setenv bootargs ${bootargs} root=/dev/mmcblk0p24;"\
-                "fi;fi;"\
-            "fi;"\
             "if imgread kernel ${boot_part} ${loadaddr}; then bootm ${loadaddr}; fi;"\
             "run update;"\
             "\0"\
@@ -217,7 +201,6 @@
             "fi;"\
             "\0"\
         "bcb_cmd="\
-            "get_avb_mode;"\
             "get_valid_slot;"\
             "\0"\
         "upgrade_key="\
