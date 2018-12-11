@@ -68,7 +68,7 @@ static int do_lcd_ss(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	}
 	if (strcmp(argv[1], "level") == 0) {
 		if (argc == 3) {
-			value = (unsigned int)simple_strtoul(argv[2], NULL, 16);
+			value = (unsigned int)simple_strtoul(argv[2], NULL, 10);
 			value &= 0xff;
 			if (lcd_drv->lcd_set_ss)
 				lcd_drv->lcd_set_ss(value, 0xff, 0xff);
@@ -79,7 +79,7 @@ static int do_lcd_ss(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		}
 	} else if (strcmp(argv[1], "freq") == 0) {
 		if (argc == 3) {
-			value = (unsigned int)simple_strtoul(argv[2], NULL, 16);
+			value = (unsigned int)simple_strtoul(argv[2], NULL, 10);
 			value &= 0xf;
 			if (lcd_drv->lcd_set_ss)
 				lcd_drv->lcd_set_ss(0xff, value, 0xff);
@@ -90,7 +90,7 @@ static int do_lcd_ss(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		}
 	} else if (strcmp(argv[1], "mode") == 0) {
 		if (argc == 3) {
-			value = (unsigned int)simple_strtoul(argv[2], NULL, 16);
+			value = (unsigned int)simple_strtoul(argv[2], NULL, 10);
 			value &= 0xf;
 			if (lcd_drv->lcd_set_ss)
 				lcd_drv->lcd_set_ss(0xff, 0xff, value);

@@ -81,6 +81,7 @@
         "upgrade_step=0\0"\
         "jtag=disable\0"\
         "loadaddr=1080000\0"\
+        "model_name=FHD\0" \
         "panel_type=lvds_0\0" \
         "outputmode=1080p60hz\0" \
         "hdmimode=1080p60hz\0" \
@@ -523,6 +524,7 @@
 #define CONFIG_CMD_AUTOSCRIPT 1
 #define CONFIG_CMD_MISC 1
 #define CONFIG_CMD_PLLTEST 1
+#define CONFIG_CMD_INI 1
 
 /*file system*/
 #define CONFIG_DOS_PARTITION 1

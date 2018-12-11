@@ -678,6 +678,8 @@ int board_late_init(void)
 	vpu_probe();
 #endif
 	vpp_init();
+
+	run_command("ini_model", 0);
 #ifdef CONFIG_AML_HDMITX20
 	hdmi_tx_set_hdmi_5v();
 	hdmi_tx_init();

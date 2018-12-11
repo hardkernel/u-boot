@@ -2354,21 +2354,24 @@ int lcd_set_ss(unsigned int level, unsigned int freq, unsigned int mode)
 	if (level < 0xff) {
 		if (level >= clk_conf.data->ss_level_max) {
 			LCDERR("%s: ss_level %d is out of support (max %d)\n",
-				__func__, level, clk_conf.data->ss_level_max);
+				__func__, level,
+				(clk_conf.data->ss_level_max - 1));
 			return -1;
 		}
 	}
 	if (freq < 0xff) {
 		if (freq >= clk_conf.data->ss_freq_max) {
 			LCDERR("%s: ss_freq %d is out of support (max %d)\n",
-				__func__, freq, clk_conf.data->ss_freq_max);
+				__func__, freq,
+				(clk_conf.data->ss_freq_max - 1));
 			return -1;
 		}
 	}
 	if (mode < 0xff) {
-		if (mode >= clk_conf.data->ss_freq_max) {
+		if (mode >= clk_conf.data->ss_mode_max) {
 			LCDERR("%s: ss_mode %d is out of support (max %d)\n",
-				__func__, mode, clk_conf.data->ss_mode_max);
+				__func__, mode,
+				(clk_conf.data->ss_mode_max - 1));
 			return -1;
 		}
 	}

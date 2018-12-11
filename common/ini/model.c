@@ -147,6 +147,10 @@ static int handle_lcd_basic(struct lcd_attr_s *p_attr)
 		p_attr->basic.lcd_type = LCD_VBYONE;
 	else if (strcmp(ini_value, "LCD_MIPI") == 0)
 		p_attr->basic.lcd_type = LCD_MIPI;
+	else if (strcmp(ini_value, "LCD_MLVDS") == 0)
+		p_attr->basic.lcd_type = LCD_MLVDS;
+	else if (strcmp(ini_value, "LCD_P2P") == 0)
+		p_attr->basic.lcd_type = LCD_P2P;
 	else
 		p_attr->basic.lcd_type = LCD_TYPE_MAX;
 
