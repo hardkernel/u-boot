@@ -169,6 +169,15 @@ enum {
 	ACLK_PERILP0_DIV_CON_SHIFT	= 0,
 	ACLK_PERILP0_DIV_CON_MASK	= 0x1f,
 
+	/* CRU_CLK_SEL24_CON */
+	CRYPTO0_PLL_SEL_SHIFT		= 6,
+	CRYPTO0_PLL_SEL_MASK		= 3 << CRYPTO0_PLL_SEL_SHIFT,
+	CRYPTO_PLL_SEL_CPLL		= 0,
+	CRYPTO_PLL_SEL_GPLL,
+	CRYPTO_PLL_SEL_PPLL		= 0,
+	CRYPTO0_DIV_SHIFT		= 0,
+	CRYPTO0_DIV_MASK		= 0x1f << CRYPTO0_DIV_SHIFT,
+
 	/* CLKSEL_CON25 */
 	PCLK_PERILP1_DIV_CON_SHIFT	= 8,
 	PCLK_PERILP1_DIV_CON_MASK	= 0x7 << PCLK_PERILP1_DIV_CON_SHIFT,
@@ -183,6 +192,10 @@ enum {
 	CLK_SARADC_DIV_CON_SHIFT	= 8,
 	CLK_SARADC_DIV_CON_MASK		= GENMASK(15, 8),
 	CLK_SARADC_DIV_CON_WIDTH	= 8,
+	CRYPTO1_PLL_SEL_SHIFT		= 6,
+	CRYPTO1_PLL_SEL_MASK		= 3 << CRYPTO1_PLL_SEL_SHIFT,
+	CRYPTO1_DIV_SHIFT		= 0,
+	CRYPTO1_DIV_MASK		= 0x1f << CRYPTO1_DIV_SHIFT,
 
 	/* CLKSEL_CON27 */
 	CLK_TSADC_SEL_X24M		= 0x0,
@@ -948,6 +961,65 @@ static ulong rk3399_tsadc_set_clk(struct rk3399_cru *cru, uint hz)
 	return rk3399_tsadc_get_clk(cru);
 }
 
+#ifndef CONFIG_SPL_BUILD
+static ulong rk3399_crypto_get_clk(struct rk3399_clk_priv *priv, ulong clk_id)
+{
+	struct rk3399_cru *cru = priv->cru;
+	u32 div, con, parent;
+
+	switch (clk_id) {
+	case SCLK_CRYPTO0:
+		con = readl(&cru->clksel_con[24]);
+		div = (con & CRYPTO0_DIV_MASK) >> CRYPTO0_DIV_SHIFT;
+		parent = GPLL_HZ;
+		break;
+	case SCLK_CRYPTO1:
+		con = readl(&cru->clksel_con[26]);
+		div = (con & CRYPTO1_DIV_MASK) >> CRYPTO1_DIV_SHIFT;
+		parent = GPLL_HZ;
+		break;
+	default:
+		return -ENOENT;
+	}
+
+	return DIV_TO_RATE(parent, div);
+}
+
+static ulong rk3399_crypto_set_clk(struct rk3399_clk_priv *priv, ulong clk_id,
+				   ulong hz)
+{
+	struct rk3399_cru *cru = priv->cru;
+	int src_clk_div;
+
+	src_clk_div = DIV_ROUND_UP(GPLL_HZ, hz);
+	assert(src_clk_div - 1 <= 31);
+
+	/*
+	 * select gpll as crypto clock source and
+	 * set up dependent divisors for crypto clocks.
+	 */
+	switch (clk_id) {
+	case SCLK_CRYPTO0:
+		rk_clrsetreg(&cru->clksel_con[24],
+			     CRYPTO0_PLL_SEL_MASK | CRYPTO0_DIV_MASK,
+			     CRYPTO_PLL_SEL_GPLL << CRYPTO0_PLL_SEL_SHIFT |
+			     (src_clk_div - 1) << CRYPTO0_DIV_SHIFT);
+		break;
+	case SCLK_CRYPTO1:
+		rk_clrsetreg(&cru->clksel_con[26],
+			     CRYPTO1_PLL_SEL_MASK | CRYPTO1_DIV_MASK,
+			     CRYPTO_PLL_SEL_GPLL << CRYPTO1_PLL_SEL_SHIFT |
+			     (src_clk_div - 1) << CRYPTO1_DIV_SHIFT);
+		break;
+	default:
+		printf("do not support this peri freq\n");
+		return -EINVAL;
+	}
+
+	return rk3399_crypto_get_clk(priv, clk_id);
+}
+#endif
+
 static ulong rk3399_clk_get_rate(struct clk *clk)
 {
 	struct rk3399_clk_priv *priv = dev_get_priv(clk->dev);
@@ -998,6 +1070,12 @@ static ulong rk3399_clk_get_rate(struct clk *clk)
 	case SCLK_TSADC:
 		rate = rk3399_tsadc_get_clk(priv->cru);
 		break;
+#ifndef CONFIG_SPL_BUILD
+	case SCLK_CRYPTO0:
+	case SCLK_CRYPTO1:
+		rate = rk3399_crypto_get_clk(priv, clk->id);
+		break;
+#endif
 	default:
 		return -ENOENT;
 	}
@@ -1069,6 +1147,12 @@ static ulong rk3399_clk_set_rate(struct clk *clk, ulong rate)
 	case SCLK_TSADC:
 		ret = rk3399_tsadc_set_clk(priv->cru, rate);
 		break;
+#ifndef CONFIG_SPL_BUILD
+	case SCLK_CRYPTO0:
+	case SCLK_CRYPTO1:
+		ret = rk3399_crypto_set_clk(priv, clk->id, rate);
+		break;
+#endif
 	default:
 		return -ENOENT;
 	}
