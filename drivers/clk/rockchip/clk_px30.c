@@ -960,6 +960,65 @@ static ulong px30_peri_set_clk(struct px30_clk_priv *priv, ulong clk_id,
 	return px30_peri_get_clk(priv, clk_id);
 }
 
+#ifndef CONFIG_SPL_BUILD
+static ulong px30_crypto_get_clk(struct px30_clk_priv *priv, ulong clk_id)
+{
+	struct px30_cru *cru = priv->cru;
+	u32 div, con, parent;
+
+	switch (clk_id) {
+	case SCLK_CRYPTO:
+		con = readl(&cru->clksel_con[25]);
+		div = (con & CRYPTO_DIV_MASK) >> CRYPTO_DIV_SHIFT;
+		parent = priv->gpll_hz;
+		break;
+	case SCLK_CRYPTO_APK:
+		con = readl(&cru->clksel_con[25]);
+		div = (con & CRYPTO_APK_DIV_MASK) >> CRYPTO_APK_DIV_SHIFT;
+		parent = priv->gpll_hz;
+		break;
+	default:
+		return -ENOENT;
+	}
+
+	return DIV_TO_RATE(parent, div);
+}
+
+static ulong px30_crypto_set_clk(struct px30_clk_priv *priv, ulong clk_id,
+				 ulong hz)
+{
+	struct px30_cru *cru = priv->cru;
+	int src_clk_div;
+
+	src_clk_div = DIV_ROUND_UP(priv->gpll_hz, hz);
+	assert(src_clk_div - 1 <= 31);
+
+	/*
+	 * select gpll as crypto clock source and
+	 * set up dependent divisors for crypto clocks.
+	 */
+	switch (clk_id) {
+	case SCLK_CRYPTO:
+		rk_clrsetreg(&cru->clksel_con[25],
+			     CRYPTO_PLL_SEL_MASK | CRYPTO_DIV_MASK,
+			     CRYPTO_PLL_SEL_GPLL << CRYPTO_PLL_SEL_SHIFT |
+			     (src_clk_div - 1) << CRYPTO_DIV_SHIFT);
+		break;
+	case SCLK_CRYPTO_APK:
+		rk_clrsetreg(&cru->clksel_con[25],
+			     CRYPTO_APK_PLL_SEL_MASK | CRYPTO_APK_DIV_MASK,
+			     CRYPTO_PLL_SEL_GPLL << CRYPTO_APK_SEL_SHIFT |
+			     (src_clk_div - 1) << CRYPTO_APK_DIV_SHIFT);
+		break;
+	default:
+		printf("do not support this peri freq\n");
+		return -EINVAL;
+	}
+
+	return px30_crypto_get_clk(priv, clk_id);
+}
+#endif
+
 static int px30_clk_get_gpll_rate(ulong *rate)
 {
 	struct udevice *pmucru_dev;
@@ -1112,6 +1171,12 @@ static ulong px30_clk_get_rate(struct clk *clk)
 	case HCLK_PERI_PRE:
 		rate = px30_peri_get_clk(priv, clk->id);
 		break;
+#ifndef CONFIG_SPL_BUILD
+	case SCLK_CRYPTO:
+	case SCLK_CRYPTO_APK:
+		rate = px30_crypto_get_clk(priv, clk->id);
+		break;
+#endif
 	default:
 		return -ENOENT;
 	}
@@ -1183,6 +1248,12 @@ static ulong px30_clk_set_rate(struct clk *clk, ulong rate)
 	case HCLK_PERI_PRE:
 		ret = px30_peri_set_clk(priv, clk->id, rate);
 		break;
+#ifndef CONFIG_SPL_BUILD
+	case SCLK_CRYPTO:
+	case SCLK_CRYPTO_APK:
+		ret = px30_crypto_set_clk(priv, clk->id, rate);
+		break;
+#endif
 	default:
 		return -ENOENT;
 	}
