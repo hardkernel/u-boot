@@ -160,7 +160,9 @@ validate_vbmeta_public_key(AvbOps *ops,
 			   size_t public_key_metadata_length,
 			   bool *out_is_trusted)
 {
-#ifdef AVB_VBMETA_PUBLIC_KEY_VALIDATE
+/* remain AVB_VBMETA_PUBLIC_KEY_VALIDATE to compatible legacy code */
+#if defined(CONFIG_AVB_VBMETA_PUBLIC_KEY_VALIDATE) || \
+    defined(AVB_VBMETA_PUBLIC_KEY_VALIDATE)
 	if (out_is_trusted) {
 		avb_atx_validate_vbmeta_public_key(ops,
 						   public_key_data,

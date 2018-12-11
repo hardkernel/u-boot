@@ -412,6 +412,13 @@ int getc(void)
 
 int tstc(void)
 {
+/* Don't allow drivers call tstc() to do some "exit" event(maybe enter hush) */
+#if defined(CONFIG_ARCH_ROCKCHIP) && \
+    defined(CONFIG_AVB_VBMETA_PUBLIC_KEY_VALIDATE) && \
+    defined(CONFIG_BOOTDELAY) && (CONFIG_BOOTDELAY <= 0)
+	return 0;
+#endif
+
 #ifdef CONFIG_DISABLE_CONSOLE
 	if (gd->flags & GD_FLG_DISABLE_CONSOLE)
 		return 0;
@@ -594,6 +601,12 @@ static int ctrlc_disabled = 0;	/* see disable_ctrl() */
 static int ctrlc_was_pressed = 0;
 int ctrlc(void)
 {
+/* Don't allow drivers call ctrlc() to do some "exit" event(maybe enter hush) */
+#if defined(CONFIG_ARCH_ROCKCHIP) && \
+    defined(CONFIG_AVB_VBMETA_PUBLIC_KEY_VALIDATE)
+	return 0;
+#endif
+
 #ifndef CONFIG_SANDBOX
 	if (!ctrlc_disabled && gd->have_console) {
 		if (tstc()) {

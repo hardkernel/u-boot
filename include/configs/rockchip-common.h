@@ -123,11 +123,18 @@
 		"setenv devtype spinor; setenv devnum 1;" \
 	"fi; \0"
 
+#ifdef CONFIG_AVB_VBMETA_PUBLIC_KEY_VALIDATE
+#define RKIMG_BOOTCOMMAND \
+	"boot_android ${devtype} ${devnum};" \
+	"echo AVB boot failed and enter rockusb or fastboot!;" \
+	"rockusb 0 ${devtype} ${devnum};" \
+	"fastboot usb 0;"
+#else
 #define RKIMG_BOOTCOMMAND \
 	"boot_android ${devtype} ${devnum};" \
 	"bootrkp;" \
 	"run distro_bootcmd;"
-
+#endif
 #endif
 
 #define CONFIG_DISPLAY_BOARDINFO_LATE
