@@ -342,6 +342,11 @@ static int charge_animation_show(struct udevice *dev)
  * 6. Enter charge !
  *
  */
+	if (!fuel_gauge_bat_is_exist(fg)) {
+		printf("Exit charge: battery is not exist\n");
+		return 0;
+	}
+
 	/* Extrem low power charge */
 	ret = charge_extrem_low_power(dev);
 	if (ret < 0) {
@@ -350,7 +355,7 @@ static int charge_animation_show(struct udevice *dev)
 	}
 
 	/* If there is preboot command, exit */
-	if (preboot) {
+	if (preboot && !strstr(preboot, "dvfs")) {
 		printf("Exit charge: due to preboot cmd '%s'\n", preboot);
 		return 0;
 	}

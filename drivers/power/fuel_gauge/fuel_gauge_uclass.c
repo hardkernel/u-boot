@@ -10,6 +10,16 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
+int fuel_gauge_bat_is_exist(struct udevice *dev)
+{
+	const struct dm_fuel_gauge_ops *ops = dev_get_driver_ops(dev);
+
+	if (!ops || !ops->bat_is_exist)
+		return -ENOSYS;
+
+	return ops->bat_is_exist(dev);
+}
+
 int fuel_gauge_get_current(struct udevice *dev)
 {
 	const struct dm_fuel_gauge_ops *ops = dev_get_driver_ops(dev);
