@@ -183,6 +183,24 @@
 				charge_logo,mode = "center";
 				connect = <&vopl_out_edp>;
 			};
+
+			route_dsi0: route-dsi0 {
+				status = "disabled";
+				logo,uboot = "logo.bmp";
+				logo,kernel = "logo_kernel.bmp";
+				logo,mode = "center";
+				charge_logo,mode = "center";
+				connect = <&vopl_out_dsi0>;
+			};
+
+			route_lvds: route-lvds {
+				status = "disabled";
+				logo,uboot = "logo.bmp";
+				logo,kernel = "logo_kernel.bmp";
+				logo,mode = "center";
+				charge_logo,mode = "center";
+				connect = <&vopl_out_lvds>;
+			};
 		};
 	};
 
@@ -340,6 +358,7 @@
 		pinctrl-0 = <&i2c5_xfer>;
 		status = "disabled";
 	};
+
 	uart0: serial@ff180000 {
 		compatible = "rockchip,rk3288-uart", "snps,dw-apb-uart";
 		reg = <0xff180000 0x100>;
@@ -408,6 +427,7 @@
 		pinctrl-0 = <&uart4_xfer>;
 		status = "disabled";
 	};
+
 	thermal: thermal-zones {
 		#include "rk3288-thermal.dtsi"
 	};
@@ -702,9 +722,9 @@
 				reg = <2>;
 				remote-endpoint = <&lvds_in_vopb>;
 			};
-			vopb_out_mipi: endpoint@3 {
+			vopb_out_dsi0: endpoint@3 {
 				reg = <3>;
-				remote-endpoint = <&mipi_in_vopb>;
+				remote-endpoint = <&dsi0_in_vopb>;
 			};
 
 		};
@@ -746,9 +766,9 @@
 				reg = <2>;
 				remote-endpoint = <&lvds_in_vopl>;
 			};
-			vopl_out_mipi: endpoint@3 {
+			vopl_out_dsi0: endpoint@3 {
 				reg = <3>;
-				remote-endpoint = <&mipi_in_vopl>;
+				remote-endpoint = <&dsi0_in_vopl>;
 			};
 
 		};
@@ -866,13 +886,13 @@
 			mipi_in: port {
 				#address-cells = <1>;
 				#size-cells = <0>;
-				mipi_in_vopb: endpoint@0 {
+				dsi0_in_vopb: endpoint@0 {
 					reg = <0>;
-					remote-endpoint = <&vopb_out_mipi>;
+					remote-endpoint = <&vopb_out_dsi0>;
 				};
-				mipi_in_vopl: endpoint@1 {
+				dsi0_in_vopl: endpoint@1 {
 					reg = <1>;
-					remote-endpoint = <&vopl_out_mipi>;
+					remote-endpoint = <&vopl_out_dsi0>;
 				};
 			};
 		};
