@@ -143,7 +143,7 @@ enum {
 
 /* Keep divisors as low as possible to reduce jitter and power usage */
 static const struct pll_div apll_init_cfg = PLL_DIVISORS(APLL_HZ, 1, 1);
-static const struct pll_div gpll_init_cfg = PLL_DIVISORS(GPLL_HZ, 2, 2);
+static const struct pll_div gpll_init_cfg = PLL_DIVISORS(GPLL_HZ, 2, 4);
 static const struct pll_div cpll_init_cfg = PLL_DIVISORS(CPLL_HZ, 1, 2);
 
 static int rkclk_set_pll(struct rk3288_cru *cru, enum rk_clk_id clk_id,
@@ -167,7 +167,12 @@ static int rkclk_set_pll(struct rk3288_cru *cru, enum rk_clk_id clk_id,
 	rk_clrsetreg(&pll->con0, CLKR_MASK | PLL_OD_MASK,
 		     ((div->nr - 1) << CLKR_SHIFT) | (div->no - 1));
 	rk_clrsetreg(&pll->con1, CLKF_MASK, div->nf - 1);
-	rk_clrsetreg(&pll->con2, PLL_BWADJ_MASK, (div->nf >> 1) - 1);
+
+	/* adjust gpll bw for better clock jitter */
+	if (pll_id == 3)
+		rk_clrsetreg(&pll->con2, PLL_BWADJ_MASK, 0);
+	else
+		rk_clrsetreg(&pll->con2, PLL_BWADJ_MASK, (div->nf >> 1) - 1);
 
 	udelay(10);
 
