@@ -62,27 +62,22 @@ int cpu_sd_emmc_init(unsigned port)
 		break;
 	case SDIO_PORT_B:
 		clrsetbits_le32(P_PAD_DS_REG3A, 0xFFFF, 0x5555);
-		setbits_le32(P_PAD_PULL_UP_EN_REG3, 0x7F);
-		setbits_le32(P_PAD_PULL_UP_REG3, 0x7F);
+		setbits_le32(P_PAD_PULL_UP_EN_REG3, 0x3F);
+		setbits_le32(P_PAD_PULL_UP_REG3, 0x3F);
 		/*
 		clrbits_le32(P_PREG_PAD_GPIO5_O, 1<<17);
 		*/
-		if (sd_debug_board_1bit_flag == 1)
-			clrsetbits_le32(P_PERIPHS_PIN_MUX_4,
-					((0xFF << 16) | 0xF), ((0x11 << 16) | 0x1));
-		else
-			clrsetbits_le32(P_PERIPHS_PIN_MUX_4,
+		clrsetbits_le32(P_PERIPHS_PIN_MUX_4,
 				0xFFFFFF, 0x111111);
-
 		break;
 	case SDIO_PORT_C:
 		/* set driver strength */
 		writel(0xFFFFFFFF, P_PAD_DS_REG0A);
+
+		/* pull up data by default */
 		setbits_le32(P_PAD_PULL_UP_EN_REG0, 0x3fff);
 		setbits_le32(P_PAD_PULL_UP_REG0, 0x3fff);
 
-		/* pull up data by default */
-		clrbits_le32(P_PERIPHS_PIN_MUX_0, (0xFFFFF << 12));
 		/* set pinmux */
 		writel(0x11111111, P_PERIPHS_PIN_MUX_0);
 		clrsetbits_le32(P_PERIPHS_PIN_MUX_1,
@@ -107,12 +102,14 @@ int cpu_sd_emmc_init(unsigned port)
 __weak int  sd_emmc_detect(unsigned port)
 {
 	int ret = 0;
+	unsigned pinmux_4;
 	unsigned pinmux_5;
     switch (port) {
 
 	case SDIO_PORT_A:
 		break;
 	case SDIO_PORT_B:
+		pinmux_4 = readl(P_PERIPHS_PIN_MUX_4);
 		pinmux_5 = readl(P_PERIPHS_PIN_MUX_5);
 		clrbits_le32(P_PERIPHS_PIN_MUX_5, 0xF << 8);
 		setbits_le32(P_PREG_PAD_GPIO3_EN_N, 1 << 10);
@@ -122,21 +119,15 @@ __weak int  sd_emmc_detect(unsigned port)
 		ret = readl(P_PREG_PAD_GPIO3_I) & (1 << 10);
 		printf("%s\n", ret ? "card out" : "card in");
 		if (!ret) {
-			clrbits_le32(P_PERIPHS_PIN_MUX_5, 0xF << 12);
+			clrbits_le32(P_PERIPHS_PIN_MUX_4, 0xF << 12);
 			setbits_le32(P_PREG_PAD_GPIO3_EN_N, 1 << 3);
 			setbits_le32(P_PAD_PULL_UP_EN_REG3, 1 << 3);
 			setbits_le32(P_PAD_PULL_UP_REG3, 1 << 3);
-			/* debug board in when D3 is low */
 			if (!(readl(P_PREG_PAD_GPIO3_I) & (1 << 3))) {
-				/* switch uart to GPIOC(Card) */
-				clrbits_le32(P_AO_RTI_PINMUX_REG0, 0xFF);
-				clrsetbits_le32(P_PERIPHS_PIN_MUX_4, 0xFF << 8, 0x22 << 8);
-				clrsetbits_le32(P_PERIPHS_PIN_MUX_4,
-						((0xFF << 16) | 0xF), ((0x11 << 16) | 0x1));
-				printf("sdio debug board detected\n");
-				sd_debug_board_1bit_flag = 1;
+				printf("error: debug board is not support in tl1\n");
 			} else {
 				//4bit card
+				writel(pinmux_4, P_PERIPHS_PIN_MUX_4);
 				writel(pinmux_5, P_PERIPHS_PIN_MUX_5);
 				sd_debug_board_1bit_flag = 0;
 			}
