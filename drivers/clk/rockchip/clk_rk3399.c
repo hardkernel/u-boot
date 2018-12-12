@@ -56,12 +56,41 @@ static const struct pll_div ppll_init_cfg = PLL_DIVISORS(PPLL_HZ, 2, 2, 1);
 static const struct pll_div gpll_init_cfg = PLL_DIVISORS(GPLL_HZ, 1, 3, 1);
 static const struct pll_div npll_init_cfg = PLL_DIVISORS(NPLL_HZ, 1, 3, 1);
 static const struct pll_div apll_1600_cfg = PLL_DIVISORS(1600*MHz, 3, 1, 1);
+static const struct pll_div apll_816_cfg = PLL_DIVISORS(816 * MHz, 1, 2, 1);
 static const struct pll_div apll_600_cfg = PLL_DIVISORS(600*MHz, 1, 2, 1);
 
 static const struct pll_div *apll_cfgs[] = {
 	[APLL_1600_MHZ] = &apll_1600_cfg,
+	[APLL_816_MHZ] = &apll_816_cfg,
 	[APLL_600_MHZ] = &apll_600_cfg,
 };
+
+#ifndef CONFIG_SPL_BUILD
+#define RK3399_CLK_DUMP(_id, _name, _iscru)    \
+{                                              \
+	.id = _id,                              \
+	.name = _name,                          \
+	.is_cru = _iscru,                       \
+}
+
+static const struct rk3399_clk_info clks_dump[] = {
+	RK3399_CLK_DUMP(PLL_APLLL, "aplll", true),
+	RK3399_CLK_DUMP(PLL_APLLB, "apllb", true),
+	RK3399_CLK_DUMP(PLL_DPLL, "dpll", true),
+	RK3399_CLK_DUMP(PLL_CPLL, "cpll", true),
+	RK3399_CLK_DUMP(PLL_GPLL, "gpll", true),
+	RK3399_CLK_DUMP(PLL_NPLL, "npll", true),
+	RK3399_CLK_DUMP(PLL_VPLL, "vpll", true),
+	RK3399_CLK_DUMP(ACLK_PERIHP, "aclk_perihp", true),
+	RK3399_CLK_DUMP(HCLK_PERIHP, "hclk_perihp", true),
+	RK3399_CLK_DUMP(PCLK_PERIHP, "pclk_perihp", true),
+	RK3399_CLK_DUMP(ACLK_PERILP0, "aclk_perilp0", true),
+	RK3399_CLK_DUMP(HCLK_PERILP0, "hclk_perilp0", true),
+	RK3399_CLK_DUMP(PCLK_PERILP0, "pclk_perilp0", true),
+	RK3399_CLK_DUMP(HCLK_PERILP1, "hclk_perilp1", true),
+	RK3399_CLK_DUMP(PCLK_PERILP1, "pclk_perilp1", true),
+};
+#endif
 
 enum {
 	/* PLL_CON0 */
@@ -1018,6 +1047,68 @@ static ulong rk3399_crypto_set_clk(struct rk3399_clk_priv *priv, ulong clk_id,
 
 	return rk3399_crypto_get_clk(priv, clk_id);
 }
+
+static ulong rk3399_peri_get_clk(struct rk3399_clk_priv *priv, ulong clk_id)
+{
+	struct rk3399_cru *cru = priv->cru;
+	u32 div, con, parent;
+
+	switch (clk_id) {
+	case ACLK_PERIHP:
+		con = readl(&cru->clksel_con[14]);
+		div = (con & ACLK_PERIHP_DIV_CON_MASK) >>
+		      ACLK_PERIHP_DIV_CON_SHIFT;
+		parent = GPLL_HZ;
+		break;
+	case PCLK_PERIHP:
+		con = readl(&cru->clksel_con[14]);
+		div = (con & PCLK_PERIHP_DIV_CON_MASK) >>
+		      PCLK_PERIHP_DIV_CON_SHIFT;
+		parent = rk3399_peri_get_clk(priv, ACLK_PERIHP);
+		break;
+	case HCLK_PERIHP:
+		con = readl(&cru->clksel_con[14]);
+		div = (con & HCLK_PERIHP_DIV_CON_MASK) >>
+		      HCLK_PERIHP_DIV_CON_SHIFT;
+		parent = rk3399_peri_get_clk(priv, ACLK_PERIHP);
+		break;
+	case ACLK_PERILP0:
+		con = readl(&cru->clksel_con[23]);
+		div = (con & ACLK_PERILP0_DIV_CON_MASK) >>
+		      ACLK_PERILP0_DIV_CON_SHIFT;
+		parent = GPLL_HZ;
+		break;
+	case HCLK_PERILP0:
+		con = readl(&cru->clksel_con[23]);
+		div = (con & HCLK_PERILP0_DIV_CON_MASK) >>
+		      HCLK_PERILP0_DIV_CON_SHIFT;
+		parent = rk3399_peri_get_clk(priv, ACLK_PERILP0);
+		break;
+	case PCLK_PERILP0:
+		con = readl(&cru->clksel_con[23]);
+		div = (con & PCLK_PERILP0_DIV_CON_MASK) >>
+		      PCLK_PERILP0_DIV_CON_SHIFT;
+		parent = rk3399_peri_get_clk(priv, ACLK_PERILP0);
+		break;
+	case HCLK_PERILP1:
+		con = readl(&cru->clksel_con[25]);
+		div = (con & HCLK_PERILP1_DIV_CON_MASK) >>
+		      HCLK_PERILP1_DIV_CON_SHIFT;
+		parent = GPLL_HZ;
+		break;
+	case PCLK_PERILP1:
+		con = readl(&cru->clksel_con[25]);
+		div = (con & PCLK_PERILP1_DIV_CON_MASK) >>
+		      PCLK_PERILP1_DIV_CON_SHIFT;
+		parent = rk3399_peri_get_clk(priv, HCLK_PERILP1);
+		break;
+	default:
+		return -ENOENT;
+	}
+
+	return DIV_TO_RATE(parent, div);
+}
+
 #endif
 
 static ulong rk3399_clk_get_rate(struct clk *clk)
@@ -1033,7 +1124,7 @@ static ulong rk3399_clk_get_rate(struct clk *clk)
 	case PLL_GPLL:
 	case PLL_NPLL:
 	case PLL_VPLL:
-		rate = rk3399_pll_get_rate(priv, clk->id - 1);
+		rate = rk3399_pll_get_rate(priv, clk->id);
 		break;
 	case HCLK_SDMMC:
 	case SCLK_SDMMC:
@@ -1074,6 +1165,16 @@ static ulong rk3399_clk_get_rate(struct clk *clk)
 	case SCLK_CRYPTO0:
 	case SCLK_CRYPTO1:
 		rate = rk3399_crypto_get_clk(priv, clk->id);
+		break;
+	case ACLK_PERIHP:
+	case HCLK_PERIHP:
+	case PCLK_PERIHP:
+	case ACLK_PERILP0:
+	case HCLK_PERILP0:
+	case PCLK_PERILP0:
+	case HCLK_PERILP1:
+	case PCLK_PERILP1:
+		rate = rk3399_peri_get_clk(priv, clk->id);
 		break;
 #endif
 	default:
@@ -1267,7 +1368,7 @@ static void rkclk_init(struct rk3399_cru *cru)
 	u32 hclk_div;
 	u32 pclk_div;
 
-	rk3399_configure_cpu(cru, APLL_600_MHZ, CPU_CLUSTER_LITTLE);
+	rk3399_configure_cpu(cru, APLL_816_MHZ, CPU_CLUSTER_LITTLE);
 
 	/*
 	 * some cru registers changed by bootrom, we'd better reset them to
@@ -1621,3 +1722,71 @@ U_BOOT_DRIVER(rockchip_rk3399_pmuclk) = {
 	.platdata_auto_alloc_size = sizeof(struct rk3399_pmuclk_plat),
 #endif
 };
+
+#ifndef CONFIG_SPL_BUILD
+/**
+ * soc_clk_dump() - Print clock frequencies
+ * Returns zero on success
+ *
+ * Implementation for the clk dump command.
+ */
+int soc_clk_dump(void)
+{
+	struct udevice *cru_dev, *pmucru_dev;
+	const struct rk3399_clk_info *clk_dump;
+	struct clk clk;
+	unsigned long clk_count = ARRAY_SIZE(clks_dump);
+	unsigned long rate;
+	int i, ret;
+
+	ret = uclass_get_device_by_driver(UCLASS_CLK,
+					  DM_GET_DRIVER(clk_rk3399),
+					  &cru_dev);
+	if (ret) {
+		printf("%s failed to get cru device\n", __func__);
+		return ret;
+	}
+
+	ret = uclass_get_device_by_driver(UCLASS_CLK,
+					  DM_GET_DRIVER(rockchip_rk3399_pmuclk),
+					  &pmucru_dev);
+	if (ret) {
+		printf("%s failed to get pmucru device\n", __func__);
+		return ret;
+	}
+
+	printf("CLK:\n");
+	for (i = 0; i < clk_count; i++) {
+		clk_dump = &clks_dump[i];
+		if (clk_dump->name) {
+			clk.id = clk_dump->id;
+			if (clk_dump->is_cru)
+				ret = clk_request(cru_dev, &clk);
+			else
+				ret = clk_request(pmucru_dev, &clk);
+			if (ret < 0)
+				return ret;
+
+			rate = clk_get_rate(&clk);
+			clk_free(&clk);
+			if (i == 0) {
+				if (rate < 0)
+					printf("%s %s\n", clk_dump->name,
+					       "unknown");
+				else
+					printf("%s %lu KHz\n", clk_dump->name,
+					       rate / 1000);
+			} else {
+				if (rate < 0)
+					printf("%s %s\n", clk_dump->name,
+					       "unknown");
+				else
+					printf("%s %lu KHz\n", clk_dump->name,
+					       rate / 1000);
+			}
+		}
+	}
+
+	return 0;
+}
+#endif

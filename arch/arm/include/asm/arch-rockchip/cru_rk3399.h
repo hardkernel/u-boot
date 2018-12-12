@@ -97,6 +97,7 @@ check_member(rk3399_cru, sdio1_con[1], 0x594);
 
 enum apll_frequencies {
 	APLL_1600_MHZ,
+	APLL_816_MHZ,
 	APLL_600_MHZ,
 };
 
@@ -117,6 +118,12 @@ enum rk3399_pll_id {
 	PPLL_ID,
 
 	END_PLL_ID
+};
+
+struct rk3399_clk_info {
+	unsigned long id;
+	char *name;
+	bool is_cru;
 };
 
 #endif	/* __ASM_ARCH_CRU_RK3399_H_ */
