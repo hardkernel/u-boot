@@ -421,6 +421,7 @@ debug_command()
 			echo "    9. armv7 start.S: print entry warning"
 			echo "   10. armv8 start.S: print entry warning"
 			echo "   11. firmware bootflow debug() -> printf()"
+			echo "   12. bootstage timing report"
 			echo
 			echo "Enabled: "
 			grep '^CONFIG_ROCKCHIP_DEBUGGER=y' ${OUTDIR}/.config > /dev/null \
@@ -476,6 +477,11 @@ debug_command()
 			sed -i 's/\<debug\>/printf/g' common/image-android.c
 			sed -i 's/\<debug\>/printf/g' common/android_bootloader.c
 			echo "DEBUG [11]: firmware bootflow debug() -> printf()"
+		elif [ "${opt}" = '12' ]; then
+			sed -i '$a\CONFIG_BOOTSTAGE=y\' ${OUTDIR}/.config
+			sed -i '$a\CONFIG_BOOTSTAGE_REPORT=y\' ${OUTDIR}/.config
+			sed -i '$a\CONFIG_CMD_BOOTSTAGE=y\' ${OUTDIR}/.config
+			echo "DEBUG [12]: bootstage timing report"
 		fi
 		echo
 }
