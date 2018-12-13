@@ -8,6 +8,7 @@
 #include <asm/armv8/mmu.h>
 #include <asm/arch/bootrom.h>
 #include <asm/arch/grf_rk3399.h>
+#include <asm/arch/cru_rk3399.h>
 #include <asm/arch/hardware.h>
 #include <asm/io.h>
 #include <syscon.h>
@@ -71,6 +72,7 @@ void rockchip_stimer_init(void)
 #define GRF_BASE	0xff770000
 #define PMUGRF_BASE	0xff320000
 #define PMUSGRF_BASE	0xff330000
+#define PMUCRU_BASE	0xff750000
 
 int arch_cpu_init(void)
 {
@@ -100,6 +102,14 @@ int arch_cpu_init(void)
 
 	/* PWM3 select pwm3a io */
 	rk_clrreg(&pmugrf->soc_con0, 1 << 5);
+
+#if defined(CONFIG_ROCKCHIP_RK3399PRO)
+	struct rk3399_pmucru *pmucru = (void *)PMUCRU_BASE;
+
+	/* set wifi_26M to 24M and disabled by default */
+	writel(0x7f002000, &pmucru->pmucru_clksel[1]);
+	writel(0x01000100, &pmucru->pmucru_clkgate_con[0]);
+#endif
 
 	return 0;
 }
