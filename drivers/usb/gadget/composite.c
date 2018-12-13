@@ -822,8 +822,7 @@ composite_setup(struct usb_gadget *gadget, const struct usb_ctrlrequest *ctrl)
 		case USB_DT_DEVICE:
 			cdev->desc.bNumConfigurations =
 				count_configs(cdev, USB_DT_DEVICE);
-			cdev->desc.bMaxPacketSize0 =
-				cdev->gadget->ep0->maxpacket;
+
 			if (gadget_is_superspeed(gadget) &&
 			    gadget->speed >= USB_SPEED_SUPER) {
 				/*
@@ -836,6 +835,9 @@ composite_setup(struct usb_gadget *gadget, const struct usb_ctrlrequest *ctrl)
 				else
 					cdev->desc.bcdUSB = cpu_to_le16(0x0300);
 				cdev->desc.bMaxPacketSize0 = 9;
+			} else {
+				cdev->desc.bMaxPacketSize0 =
+					cdev->gadget->ep0->maxpacket;
 			}
 
 			value = min(w_length, (u16) sizeof cdev->desc);
