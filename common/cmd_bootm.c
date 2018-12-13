@@ -104,6 +104,7 @@ static int is_secure_boot_enabled(void)
 /* bootm - boot application image from image in memory */
 /*******************************************************************/
 
+#ifndef CONFIG_AML_SIGNED_UBOOT
 #ifdef CONFIG_AML_RSVD_ADDR
 static void defendkey_process(void)
 {
@@ -131,6 +132,8 @@ static void defendkey_process(void)
 	}
 }
 #endif
+#endif//#ifndef CONFIG_AML_SIGNED_UBOOT
+
 int do_bootm(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 #if defined(CONFIG_CMD_BOOTCTOL_AVB)
