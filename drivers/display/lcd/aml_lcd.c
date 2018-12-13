@@ -27,6 +27,7 @@
 #endif
 #include "aml_lcd_reg.h"
 #include "aml_lcd_common.h"
+#include "aml_lcd_clk_config.h"
 #ifdef CONFIG_AML_LCD_TABLET
 #include "lcd_tablet/mipi_dsi_util.h"
 #endif
@@ -104,7 +105,8 @@ static void lcd_power_ctrl(int status)
 	struct aml_lcd_extern_driver_s *ext_drv;
 #endif
 	char *str;
-	int i, gpio;
+	unsigned int i, gpio, value, temp;
+	int ret;
 
 	i = 0;
 	lcd_power = lcd_drv->lcd_config->lcd_power;
@@ -168,6 +170,20 @@ static void lcd_power_ctrl(int status)
 			}
 			break;
 #endif
+		case LCD_POWER_TYPE_WAIT_GPIO:
+			break;
+		case LCD_POWER_TYPE_CLK_SS:
+			temp = lcd_drv->lcd_config->lcd_timing.ss_level;
+			value = (power_step->value) & 0xff;
+			ret = lcd_set_ss(0xff,
+				(value >> LCD_CLK_SS_BIT_FREQ) & 0xf,
+				(value >> LCD_CLK_SS_BIT_MODE) & 0xf);
+			if (ret == 0) {
+				temp &= ~(0xff << 8);
+				temp |= (value << 8);
+				lcd_drv->lcd_config->lcd_timing.ss_level = temp;
+			}
+			break;
 		default:
 			break;
 		}
@@ -720,32 +736,47 @@ static void lcd_disable(void)
 		LCDPR("already disabled\n");
 }
 
-static void aml_lcd_set_ss(int level)
+static void aml_lcd_set_ss(unsigned int level, unsigned int freq, unsigned int mode)
 {
 	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
+	unsigned int temp;
+	int ret;
 
 	if (lcd_check_valid())
 		return;
 	if (aml_lcd_driver.lcd_status) {
-		lcd_drv->lcd_config->lcd_timing.ss_level = level;
-		lcd_set_spread_spectrum(level);
+		temp = lcd_drv->lcd_config->lcd_timing.ss_level;
+		ret = lcd_set_ss(level, freq, mode);
+		if (ret == 0) {
+			if (level < 0xff) {
+				temp &= ~(0xff);
+				temp |= level;
+				lcd_drv->lcd_config->lcd_timing.ss_level = temp;
+			}
+			if (freq < 0xff) {
+				temp &= ~((0xf << LCD_CLK_SS_BIT_FREQ) << 8);
+				temp |= ((freq << LCD_CLK_SS_BIT_FREQ) << 8);
+				lcd_drv->lcd_config->lcd_timing.ss_level = temp;
+			}
+			if (mode < 0xff) {
+				temp &= ~((0xf << LCD_CLK_SS_BIT_MODE) << 8);
+				temp |= ((mode << LCD_CLK_SS_BIT_MODE) << 8);
+				lcd_drv->lcd_config->lcd_timing.ss_level = temp;
+			}
+		}
 	} else {
 		LCDPR("already disabled\n");
 	}
 }
 
-static char *aml_lcd_get_ss(void)
+static void aml_lcd_get_ss(void)
 {
-	char *str = "invalid";
-
 	if (lcd_check_valid())
-		return str;
+		return;
 	if (aml_lcd_driver.lcd_status)
-		str = lcd_get_spread_spectrum();
+		lcd_get_ss();
 	else
 		LCDPR("already disabled\n");
-
-	return str;
 }
 
 static void aml_lcd_test(int num)

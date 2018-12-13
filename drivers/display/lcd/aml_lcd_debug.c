@@ -168,12 +168,14 @@ static void lcd_info_print_vbyone(struct lcd_config_s *pconf)
 	printf("lane_count                 %u\n"
 		"region_num                 %u\n"
 		"byte_mode                  %u\n"
+		"bit_rate                   %uHz\n"
 		"phy_vswing                 0x%x\n"
 		"phy_preemphasis            0x%x\n"
 		"ctrl_flag                  0x%x\n\n",
 		pconf->lcd_control.vbyone_config->lane_count,
 		pconf->lcd_control.vbyone_config->region_num,
 		pconf->lcd_control.vbyone_config->byte_mode,
+		pconf->lcd_control.vbyone_config->bit_rate,
 		pconf->lcd_control.vbyone_config->phy_vswing,
 		pconf->lcd_control.vbyone_config->phy_preem,
 		pconf->lcd_control.vbyone_config->ctrl_flag);
@@ -248,7 +250,7 @@ static void lcd_info_print_mlvds(struct lcd_config_s *pconf)
 		"bit_swap          %u\n"
 		"phy_vswing        0x%x\n"
 		"phy_preem         0x%x\n"
-		"bit_rate          %dHz\n"
+		"bit_rate          %uHz\n"
 		"pi_clk_sel        0x%03x\n\n",
 		pconf->lcd_control.mlvds_config->channel_num,
 		pconf->lcd_control.mlvds_config->channel_sel0,
@@ -266,26 +268,24 @@ static void lcd_info_print_mlvds(struct lcd_config_s *pconf)
 
 static void lcd_info_print_p2p(struct lcd_config_s *pconf)
 {
-	printf("channel_num       %d\n"
+	printf("p2p_type          %d\n"
+		"lane_num          %d\n"
 		"channel_sel1      0x%08x\n"
 		"channel_sel1      0x%08x\n"
-		"clk_phase         0x%04x\n"
 		"pn_swap           %u\n"
 		"bit_swap          %u\n"
+		"bit_rate          %uHz\n"
 		"phy_vswing        0x%x\n"
-		"phy_preem         0x%x\n"
-		"bit_rate          %dHz\n"
-		"pi_clk_sel        0x%03x\n\n",
+		"phy_preem         0x%x\n\n",
+		pconf->lcd_control.p2p_config->p2p_type,
 		pconf->lcd_control.p2p_config->lane_num,
 		pconf->lcd_control.p2p_config->channel_sel0,
 		pconf->lcd_control.p2p_config->channel_sel1,
-		pconf->lcd_control.p2p_config->clk_phase,
 		pconf->lcd_control.p2p_config->pn_swap,
 		pconf->lcd_control.p2p_config->bit_swap,
-		pconf->lcd_control.p2p_config->phy_vswing,
-		pconf->lcd_control.p2p_config->phy_preem,
 		pconf->lcd_control.p2p_config->bit_rate,
-		pconf->lcd_control.p2p_config->pi_clk_sel);
+		pconf->lcd_control.p2p_config->phy_vswing,
+		pconf->lcd_control.p2p_config->phy_preem);
 	lcd_tcon_info_print();
 	lcd_pinmux_info_print(pconf);
 }

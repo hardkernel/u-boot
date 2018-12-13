@@ -426,7 +426,7 @@ void lcd_tcon_info_print(void)
 	printf("core_reg_width:    %d\n"
 		"reg_table_len:     %d\n"
 		"axi_mem addr:      0x%08x\n"
-		"axi_mem size:      0x%08x\n",
+		"axi_mem size:      0x%08x\n\n",
 		lcd_tcon_data->core_reg_width,
 		lcd_tcon_data->reg_table_len,
 		tcon_rmem.mem_paddr,

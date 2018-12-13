@@ -68,7 +68,7 @@
 #define Rsv_val 0xffffffff
 struct ext_lcd_config_s {
 	const char panel_type[15];
-	int lcd_type; // LCD_TTL /LCD_LVDS/LCD_VBYONE
+	unsigned int lcd_type; // LCD_TTL /LCD_LVDS/LCD_VBYONE
 	unsigned char lcd_bits;
 
 	unsigned short h_active;
@@ -93,16 +93,16 @@ struct ext_lcd_config_s {
 	unsigned int customer_val_8;
 	unsigned int customer_val_9;
 
-	int lcd_spc_val0;
-	int lcd_spc_val1;
-	int lcd_spc_val2;
-	int lcd_spc_val3;
-	int lcd_spc_val4;
-	int lcd_spc_val5;
-	int lcd_spc_val6;
-	int lcd_spc_val7;
-	int lcd_spc_val8;
-	int lcd_spc_val9;
+	unsigned int lcd_spc_val0;
+	unsigned int lcd_spc_val1;
+	unsigned int lcd_spc_val2;
+	unsigned int lcd_spc_val3;
+	unsigned int lcd_spc_val4;
+	unsigned int lcd_spc_val5;
+	unsigned int lcd_spc_val6;
+	unsigned int lcd_spc_val7;
+	unsigned int lcd_spc_val8;
+	unsigned int lcd_spc_val9;
 
 	struct lcd_power_step_s *power_on_step;
 	struct lcd_power_step_s *power_off_step;

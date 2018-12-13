@@ -246,6 +246,13 @@ static void lcd_config_load_print(struct lcd_config_s *pconf)
 		LCDPR("dual_port = %d\n", pconf->lcd_control.lvds_config->dual_port);
 		LCDPR("port_swap = %d\n", pconf->lcd_control.lvds_config->port_swap);
 		LCDPR("lane_reverse = %d\n", pconf->lcd_control.lvds_config->lane_reverse);
+	} else if (pconf->lcd_basic.lcd_type == LCD_P2P) {
+		LCDPR("p2p_type = %d\n", pconf->lcd_control.p2p_config->p2p_type);
+		LCDPR("lane_num = %d\n", pconf->lcd_control.p2p_config->lane_num);
+		LCDPR("channel_sel0 = %d\n", pconf->lcd_control.p2p_config->channel_sel0);
+		LCDPR("channel_sel1 = %d\n", pconf->lcd_control.p2p_config->channel_sel1);
+		LCDPR("pn_swap = %d\n", pconf->lcd_control.p2p_config->pn_swap);
+		LCDPR("bit_swap = %d\n", pconf->lcd_control.p2p_config->bit_swap);
 	}
 }
 
@@ -260,6 +267,7 @@ static int lcd_config_load_from_dts(char *dt_addr, struct lcd_config_s *pconf)
 	struct lvds_config_s *lvds_conf;
 	struct vbyone_config_s *vx1_conf;
 	struct mlvds_config_s *mlvds_conf;
+	struct p2p_config_s *p2p_conf;
 
 	parent_offset = fdt_path_offset(dt_addr, "/lcd");
 	if (parent_offset < 0) {
@@ -361,9 +369,9 @@ static int lcd_config_load_from_dts(char *dt_addr, struct lcd_config_s *pconf)
 		pconf->lcd_timing.lcd_clk = 60;
 	} else {
 		pconf->lcd_timing.fr_adjust_type = (unsigned char)(be32_to_cpup((u32*)propdata));
-		pconf->lcd_timing.ss_level = (unsigned char)(be32_to_cpup((((u32*)propdata)+1)));
+		pconf->lcd_timing.ss_level = be32_to_cpup((((u32*)propdata)+1));
 		pconf->lcd_timing.clk_auto = (unsigned char)(be32_to_cpup((((u32*)propdata)+2)));
-		pconf->lcd_timing.lcd_clk = (unsigned char)(be32_to_cpup((((u32*)propdata)+3)));
+		pconf->lcd_timing.lcd_clk = be32_to_cpup((((u32*)propdata)+3));
 	}
 
 	switch (pconf->lcd_basic.lcd_type) {
@@ -552,6 +560,32 @@ static int lcd_config_load_from_dts(char *dt_addr, struct lcd_config_s *pconf)
 		}
 		break;
 	case LCD_P2P:
+		p2p_conf = pconf->lcd_control.p2p_config;
+		propdata = (char *)fdt_getprop(dt_addr, child_offset, "p2p_attr", NULL);
+		if (propdata == NULL) {
+			LCDERR("failed to get p2p_attr\n");
+		} else {
+			p2p_conf->p2p_type = be32_to_cpup((u32*)propdata);
+			p2p_conf->lane_num = be32_to_cpup((((u32*)propdata)+1));
+			p2p_conf->channel_sel0  = be32_to_cpup((((u32*)propdata)+2));
+			p2p_conf->channel_sel1  = be32_to_cpup((((u32*)propdata)+3));
+			p2p_conf->pn_swap  = be32_to_cpup((((u32*)propdata)+4));
+			p2p_conf->bit_swap  = be32_to_cpup((((u32*)propdata)+5));
+		}
+		propdata = (char *)fdt_getprop(dt_addr, child_offset, "phy_attr", NULL);
+		if (propdata == NULL) {
+			if (lcd_debug_print_flag)
+				LCDPR("failed to get phy_attr\n");
+			p2p_conf->phy_vswing = 0;
+			p2p_conf->phy_preem  = 0;
+		} else {
+			p2p_conf->phy_vswing = be32_to_cpup((u32*)propdata);
+			p2p_conf->phy_preem  = be32_to_cpup((((u32*)propdata)+1));
+			if (lcd_debug_print_flag) {
+				LCDPR("set phy vswing=0x%x, preemphasis=0x%x\n",
+					p2p_conf->phy_vswing, p2p_conf->phy_preem);
+			}
+		}
 		break;
 	default:
 		LCDERR("invalid lcd type\n");
@@ -635,7 +669,7 @@ static int lcd_config_load_from_bsp(struct lcd_config_s *pconf)
 	if (temp == Rsv_val)
 		pconf->lcd_timing.ss_level = 0;
 	else
-		pconf->lcd_timing.ss_level = (unsigned char)temp;
+		pconf->lcd_timing.ss_level = temp;
 	/* clk_auto_generate */
 	temp = ext_lcd->customer_val_2;
 	if (temp == Rsv_val)
@@ -688,6 +722,15 @@ static int lcd_config_load_from_bsp(struct lcd_config_s *pconf)
 		pconf->lcd_control.mlvds_config->bit_swap   = ext_lcd->lcd_spc_val5;
 		pconf->lcd_control.mlvds_config->phy_vswing = LVDS_PHY_VSWING_DFT;
 		pconf->lcd_control.mlvds_config->phy_preem  = LVDS_PHY_PREEM_DFT;
+	} else if (pconf->lcd_basic.lcd_type == LCD_P2P) {
+		pconf->lcd_control.p2p_config->p2p_type = ext_lcd->lcd_spc_val0;
+		pconf->lcd_control.p2p_config->lane_num = ext_lcd->lcd_spc_val1;
+		pconf->lcd_control.p2p_config->channel_sel0 = ext_lcd->lcd_spc_val2;
+		pconf->lcd_control.p2p_config->channel_sel1 = ext_lcd->lcd_spc_val3;
+		pconf->lcd_control.p2p_config->pn_swap    = ext_lcd->lcd_spc_val4;
+		pconf->lcd_control.p2p_config->bit_swap   = ext_lcd->lcd_spc_val5;
+		pconf->lcd_control.p2p_config->phy_vswing = 0;
+		pconf->lcd_control.p2p_config->phy_preem  = 0;
 	} else if (pconf->lcd_basic.lcd_type == LCD_TTL) {
 		LCDERR("unsupport lcd_type: %d\n", pconf->lcd_basic.lcd_type);
 	}
@@ -742,6 +785,7 @@ static int lcd_config_load_from_unifykey(struct lcd_config_s *pconf)
 	struct lvds_config_s *lvdsconf = pconf->lcd_control.lvds_config;
 	struct vbyone_config_s *vx1_conf = pconf->lcd_control.vbyone_config;
 	struct mlvds_config_s *mlvds_conf = pconf->lcd_control.mlvds_config;
+	struct p2p_config_s *p2p_conf = pconf->lcd_control.p2p_config;
 
 	para = (unsigned char *)malloc(sizeof(unsigned char) * LCD_UKEY_LCD_SIZE);
 	if (!para) {
@@ -945,7 +989,26 @@ static int lcd_config_load_from_unifykey(struct lcd_config_s *pconf)
 				((*(p + LCD_UKEY_IF_ATTR_9 + 1)) << 8)) & 0xff;
 		}
 	} else if (pconf->lcd_basic.lcd_type == LCD_P2P) {
-		/*to do*/
+		p2p_conf->p2p_type = (*(p + LCD_UKEY_IF_ATTR_0) |
+			((*(p + LCD_UKEY_IF_ATTR_0 + 1)) << 8));
+		p2p_conf->lane_num = (*(p + LCD_UKEY_IF_ATTR_1) |
+			((*(p + LCD_UKEY_IF_ATTR_1 + 1)) << 8));
+		p2p_conf->channel_sel0 = (*(p + LCD_UKEY_IF_ATTR_2) |
+			((*(p + LCD_UKEY_IF_ATTR_2 + 1)) << 8) |
+			(*(p + LCD_UKEY_IF_ATTR_3) << 16) |
+			((*(p + LCD_UKEY_IF_ATTR_3 + 1)) << 24));
+		p2p_conf->channel_sel1 = (*(p + LCD_UKEY_IF_ATTR_4) |
+			((*(p + LCD_UKEY_IF_ATTR_4 + 1)) << 8) |
+			(*(p + LCD_UKEY_IF_ATTR_5) << 16) |
+			((*(p + LCD_UKEY_IF_ATTR_5 + 1)) << 24));
+		p2p_conf->pn_swap = (*(p + LCD_UKEY_IF_ATTR_6) |
+			((*(p + LCD_UKEY_IF_ATTR_6 + 1)) << 8));
+		p2p_conf->bit_swap = (*(p + LCD_UKEY_IF_ATTR_7) |
+			((*(p + LCD_UKEY_IF_ATTR_7 + 1)) << 8));
+		p2p_conf->phy_vswing = (*(p + LCD_UKEY_IF_ATTR_8) |
+			((*(p + LCD_UKEY_IF_ATTR_8 + 1)) << 8));
+		p2p_conf->phy_preem = (*(p + LCD_UKEY_IF_ATTR_9) |
+			((*(p + LCD_UKEY_IF_ATTR_9 + 1)) << 8));
 	} else
 		LCDERR("unsupport lcd_type: %d\n", pconf->lcd_basic.lcd_type);
 

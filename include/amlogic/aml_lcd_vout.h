@@ -146,7 +146,9 @@ struct lcd_timing_s {
 	unsigned int div_ctrl;  /* divider settings */
 	unsigned int clk_ctrl;  /* clock settings */
 
-	unsigned int ss_level;
+	unsigned int ss_level; /* [15:12]: ss_freq, [11:8]: ss_mode,
+				* [7:0]: ss_level
+				*/
 
 	unsigned short sync_duration_num;
 	unsigned short sync_duration_den;
@@ -314,23 +316,24 @@ struct mlvds_config_s {
 
 enum p2p_type_e {
 	P2P_CEDS = 0,
+	P2P_CSPI,
+	P2P_CMPI,
+	P2P_ISP,
+	P2P_CHPI,
 	P2P_MAX,
 };
 
 struct p2p_config_s {
 	unsigned int p2p_type;
-	unsigned int port_num;
 	unsigned int lane_num;
 	unsigned int channel_sel0;
 	unsigned int channel_sel1;
-	unsigned int clk_phase; /* [13:12]=clk01_sel, [11:8]=pi2, [7:4]=pi1, [3:0]=pi0 */
 	unsigned int pn_swap;
 	unsigned int bit_swap; /* MSB/LSB reverse */
 	unsigned int phy_vswing;
 	unsigned int phy_preem;
 
 	/* internal used */
-	unsigned int pi_clk_sel; /* bit[9:0] */
 	unsigned int bit_rate; /* Hz */
 };
 
@@ -351,6 +354,8 @@ enum lcd_power_type_e {
 	LCD_POWER_TYPE_PMU,
 	LCD_POWER_TYPE_SIGNAL,
 	LCD_POWER_TYPE_EXTERN,
+	LCD_POWER_TYPE_WAIT_GPIO,
+	LCD_POWER_TYPE_CLK_SS,
 	LCD_POWER_TYPE_MAX,
 };
 
@@ -362,6 +367,9 @@ enum lcd_pmu_gpio_e {
 	LCD_PMU_GPIO4,
 	LCD_PMU_GPIO_MAX,
 };
+
+#define LCD_CLK_SS_BIT_FREQ             0
+#define LCD_CLK_SS_BIT_MODE             4
 
 #define LCD_GPIO_MAX                    0xff
 #define LCD_GPIO_OUTPUT_LOW             0
@@ -544,8 +552,8 @@ struct aml_lcd_drv_s {
 	int  (*lcd_outputmode_check)(char *mode);
 	void (*lcd_enable)(char *mode);
 	void (*lcd_disable)(void);
-	void (*lcd_set_ss)(int level);
-	char *(*lcd_get_ss)(void);
+	void (*lcd_set_ss)(unsigned int level, unsigned int freq, unsigned int mode);
+	void (*lcd_get_ss)(void);
 	void (*lcd_test)(int num);
 	void (*lcd_clk)(void);
 	void (*lcd_info)(void);

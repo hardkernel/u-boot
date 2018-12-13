@@ -22,7 +22,8 @@
 /* 20180718: mute: wait vsync for display shadow */
 /* 20180928: tl1 support, optimize clk config */
 /* 20181012: tl1 support tcon */
-#define LCD_DRV_VERSION    "20181012"
+/* 20181212: tl1 update p2p config and pll setting */
+#define LCD_DRV_VERSION    "20181212"
 
 #define VPP_OUT_SATURATE            (1 << 0)
 

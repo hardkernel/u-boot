@@ -54,7 +54,7 @@ static int do_lcd_disable(cmd_tbl_t *cmdtp, int flag, int argc, char * const arg
 static int do_lcd_ss(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	struct aml_lcd_drv_s *lcd_drv;
-	int level;
+	int value, temp;
 	int ret = 0;
 
 	if (argc == 1) {
@@ -66,22 +66,59 @@ static int do_lcd_ss(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		printf("no lcd driver\n");
 		return ret;
 	}
-	if (strcmp(argv[1], "set") == 0) {
+	if (strcmp(argv[1], "level") == 0) {
 		if (argc == 3) {
-			level = (int)simple_strtoul(argv[2], NULL, 10);
+			value = (unsigned int)simple_strtoul(argv[2], NULL, 16);
+			value &= 0xff;
 			if (lcd_drv->lcd_set_ss)
-				lcd_drv->lcd_set_ss(level);
+				lcd_drv->lcd_set_ss(value, 0xff, 0xff);
 			else
 				printf("no lcd lcd_set_ss\n");
 		} else {
 			ret = -1;
 		}
-	} else if (strcmp(argv[1], "get") == 0) {
-		if (lcd_drv->lcd_get_ss) {
-			printf("lcd_get_ss: %s\n", lcd_drv->lcd_get_ss());
+	} else if (strcmp(argv[1], "freq") == 0) {
+		if (argc == 3) {
+			value = (unsigned int)simple_strtoul(argv[2], NULL, 16);
+			value &= 0xf;
+			if (lcd_drv->lcd_set_ss)
+				lcd_drv->lcd_set_ss(0xff, value, 0xff);
+			else
+				printf("no lcd lcd_set_ss\n");
 		} else {
-			printf("no lcd_get_ss\n");
+			ret = -1;
 		}
+	} else if (strcmp(argv[1], "mode") == 0) {
+		if (argc == 3) {
+			value = (unsigned int)simple_strtoul(argv[2], NULL, 16);
+			value &= 0xf;
+			if (lcd_drv->lcd_set_ss)
+				lcd_drv->lcd_set_ss(0xff, 0xff, value);
+			else
+				printf("no lcd lcd_set_ss\n");
+		} else {
+			ret = -1;
+		}
+	} else if (strcmp(argv[1], "set") == 0) {
+		if (argc == 3) {
+			value = (unsigned int)simple_strtoul(argv[2], NULL, 16);
+			value &= 0xffff;
+			if (lcd_drv->lcd_set_ss) {
+				temp = value >> 8;
+				lcd_drv->lcd_set_ss((value & 0xff),
+					((temp >> LCD_CLK_SS_BIT_FREQ) & 0xf),
+					((temp >> LCD_CLK_SS_BIT_MODE) & 0xf));
+			} else {
+				printf("no lcd lcd_set_ss\n");
+			}
+		} else {
+			ret = -1;
+		}
+	} else if (strcmp(argv[1], "get") == 0) {
+		if (lcd_drv->lcd_get_ss)
+			lcd_drv->lcd_get_ss();
+		else
+			printf("no lcd_get_ss\n");
 	} else {
 		ret = -1;
 	}

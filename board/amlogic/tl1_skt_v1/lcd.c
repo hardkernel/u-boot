@@ -116,20 +116,74 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	Rsv_val,Rsv_val,Rsv_val,Rsv_val,
 	10,10,Rsv_val},
 
-	{/*public 2-region vx1 : 3840x2160@60hz 8lane */
-	"p2p",LCD_P2P,10,
+	{/*public p2p ceds : 3840x2160@60hz 12lane */
+	"p2p",LCD_P2P,8,
 	/* basic timing */
 	3840,2160,5000,2250,16,29,0,6,81,0,
 	/* clk_attr */
 	2,0,1,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
 	/* p2p attr */
-	1,1,0,0,0,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	0,12,0x76543210,0xba98,0,0,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
 	/* power step */
 	lcd_power_on_step_p2p, lcd_power_off_step_p2p,
 	/* backlight */
 	60,255,10,128,128,
 	BL_CTRL_MAX,0,1,0,200,200,
 	BL_PWM_POSITIVE,BL_PWM_B,180,100,25,1,0,
+	Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	10,10,Rsv_val},
+
+	{/*public p2p ceds : 3840x2160@60hz 6lane */
+	"p2p_1",LCD_P2P,8,
+	/* basic timing */
+	3840,2160,5000,2250,16,29,0,6,81,0,
+	/* clk_attr */
+	2,0,1,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	/* p2p attr */
+	0,6,0x76543210,0xba98,0,0,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	/* power step */
+	lcd_power_on_step_p2p, lcd_power_off_step_p2p,
+	/* backlight */
+	60,255,10,128,128,
+	BL_CTRL_MAX,0,1,0,200,200,
+	BL_PWM_POSITIVE,BL_PWM_C,180,100,25,1,0,
+	Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	10,10,Rsv_val},
+
+	{/*public p2p chpi : 3840x2160@60hz 6lane */
+	"p2p_2",LCD_P2P,8,
+	/* basic timing */
+	3840,2160,4400,2250,16,29,0,6,81,0,
+	/* clk_attr */
+	2,0,1,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	/* p2p attr */
+	4,6,0x76543210,0xba98,0,0,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	/* power step */
+	lcd_power_on_step_p2p, lcd_power_off_step_p2p,
+	/* backlight */
+	60,255,10,128,128,
+	BL_CTRL_MAX,0,1,0,200,200,
+	BL_PWM_POSITIVE,BL_PWM_C,180,100,25,1,0,
+	Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	10,10,Rsv_val},
+
+	{/*public p2p chpi : 3840x2160@60hz 12lane */
+	"p2p_3",LCD_P2P,8,
+	/* basic timing */
+	3840,2160,4400,2250,16,29,0,6,81,0,
+	/* clk_attr */
+	2,0,1,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	/* p2p attr */
+	4,12,0x76543210,0xba98,0,0,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
+	/* power step */
+	lcd_power_on_step_p2p, lcd_power_off_step_p2p,
+	/* backlight */
+	60,255,10,128,128,
+	BL_CTRL_MAX,0,1,0,200,200,
+	BL_PWM_POSITIVE,BL_PWM_C,180,100,25,1,0,
 	Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
 	Rsv_val,Rsv_val,Rsv_val,Rsv_val,
 	10,10,Rsv_val},
@@ -175,12 +229,10 @@ static struct lvds_config_s lcd_lvds_config = {
 };
 
 static struct p2p_config_s lcd_p2p_config = {
-	.p2p_type  = 1,
-	.port_num  = 6,
+	.p2p_type  = 0,
 	.lane_num  = 12,
 	.channel_sel0 = 0x76543210,
 	.channel_sel1 = 0xba98,
-	.clk_phase = 0x0,
 	.pn_swap  = 0, //0=normal, 1=swap
 	.bit_swap = 0, //0=normal, 1=swap
 };

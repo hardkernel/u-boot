@@ -227,7 +227,7 @@ static int lcd_config_load_from_dts(char *dt_addr, struct lcd_config_s *pconf)
 		pconf->lcd_timing.lcd_clk = 60;
 	} else {
 		pconf->lcd_timing.fr_adjust_type = (unsigned char)(be32_to_cpup((u32*)propdata));
-		pconf->lcd_timing.ss_level = (unsigned char)(be32_to_cpup((((u32*)propdata)+1)));
+		pconf->lcd_timing.ss_level = be32_to_cpup((((u32*)propdata)+1));
 		pconf->lcd_timing.clk_auto = (unsigned char)(be32_to_cpup((((u32*)propdata)+2)));
 		temp = be32_to_cpup((((u32*)propdata)+3));
 		if (temp > 0) {
@@ -462,7 +462,7 @@ static int lcd_config_load_from_bsp(struct lcd_config_s *pconf)
 	if (temp == Rsv_val)
 		pconf->lcd_timing.ss_level = 0;
 	else
-		pconf->lcd_timing.ss_level = (unsigned char)temp;
+		pconf->lcd_timing.ss_level = temp;
 	/* clk_auto_generate */
 	temp = ext_lcd->customer_val_2;
 	if (temp == Rsv_val)

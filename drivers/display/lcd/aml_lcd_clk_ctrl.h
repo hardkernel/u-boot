@@ -295,13 +295,7 @@
  */
 #define LCD_SS_STEP_BASE            500 /* ppm */
 
-#define SS_LEVEL_MAX_GXL            0
-#define SS_LEVEL_MAX_AXG            0
-#define SS_LEVEL_MAX_GP0_G12A       0
-#define SS_LEVEL_MAX_HPLL_G12A      0
-
-#define SS_LEVEL_MAX_GXTVBB         5
-static char *lcd_pll_ss_table_gxtvbb[] = {
+static char *lcd_ss_level_table_gxtvbb[] = {
 	"0, disable",
 	"1, +/-0.3%",
 	"2, +/-0.5%",
@@ -309,8 +303,7 @@ static char *lcd_pll_ss_table_gxtvbb[] = {
 	"4, +/-1.2%",
 };
 
-#define SS_LEVEL_MAX_TXL            5
-static char *lcd_pll_ss_table_txl[] = {
+static char *lcd_ss_level_table_txl[] = {
 	"0, disable",
 	"1, +/-0.3%",
 	"2, +/-0.4%",
@@ -318,8 +311,7 @@ static char *lcd_pll_ss_table_txl[] = {
 	"4, +/-1.2%",
 };
 
-#define SS_LEVEL_MAX_TXLX           6
-static char *lcd_pll_ss_table_txlx[] = {
+static char *lcd_ss_level_table_txlx[] = {
 	"0, disable",
 	"1, +/-0.3%",
 	"2, +/-0.5%",
@@ -328,8 +320,7 @@ static char *lcd_pll_ss_table_txlx[] = {
 	"5, +/-3.0%",
 };
 
-#define SS_LEVEL_MAX_TXHD           6
-static char *lcd_pll_ss_table_txhd[] = {
+static char *lcd_ss_level_table_txhd[] = {
 	"0, disable",
 	"1, +/-0.3%",
 	"2, +/-0.5%",
@@ -338,7 +329,35 @@ static char *lcd_pll_ss_table_txhd[] = {
 	"5, +/-3.0%",
 };
 
-#define SS_LEVEL_MAX_TL1            0
+static char *lcd_ss_level_table_tl1[] = {
+	"0, disable",
+	"1, 5000ppm",
+	"2, 10000ppm",
+	"3, 15000ppm",
+	"4, 20000ppm",
+	"5, 25000ppm",
+	"6, 30000ppm",
+	"7, 35000ppm",
+	"8, 40000ppm",
+	"9, 45000ppm",
+	"10, 50000ppm",
+};
+
+static char *lcd_ss_freq_table_tl1[] = {
+	"0, 29.5KHz",
+	"1, 31.5KHz",
+	"2, 50KHz",
+	"3, 75KHz",
+	"4, 100KHz",
+	"5, 150KHz",
+	"6, 200KHz",
+};
+
+static char *lcd_ss_mode_table_tl1[] = {
+	"0, center ss",
+	"1, up ss",
+	"2, down ss",
+};
 
 
 static unsigned int pll_ss_reg_gxtvbb_high[][4] = {
@@ -386,6 +405,21 @@ static unsigned int pll_ss_reg_txhd[][2] = {
 	{10,          4}, /* 3: +/-1.0% */
 	{10,          8}, /* 4: +/-2.0% */
 	{12,         10}, /* 5: +/-3.0% */
+};
+
+static unsigned int pll_ss_reg_tl1[][2] = {
+	/* dep_sel,  str_m  */
+	{ 0,          0}, /* 0: disable */
+	{10,          1}, /* 1: +/-0.25% */
+	{10,          2}, /* 2: +/-0.50% */
+	{10,          3}, /* 3: +/-0.75% */
+	{10,          4}, /* 4: +/-1.00% */
+	{10,          5}, /* 5: +/-1.25% */
+	{10,          6}, /* 1: +/-1.50% */
+	{10,          7}, /* 2: +/-1.75% */
+	{10,          8}, /* 3: +/-2.00% */
+	{10,          9}, /* 4: +/-2.25% */
+	{10,         10}, /* 5: +/-2.50% */
 };
 
 /* **********************************
@@ -465,7 +499,7 @@ static const unsigned int od_fb_table[2] = {1, 2};
 
 static const unsigned int od_table[6] = {1, 2, 4, 8, 16, 32};
 
-static const unsigned int pi_div_table[2] = {2, 4};
+static const unsigned int tcon_div_table[5] = {1, 2, 4, 8, 16};
 
 static char *lcd_clk_div_sel_table[] = {
 	"1",
