@@ -34,6 +34,140 @@
 #include <asm/cpu_id.h>
 #include <amlogic/aml_mmc.h>
 
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
+#define SD_EMMC_VDDEE_REG (*((volatile unsigned *)(0xff807000 + (0x01 << 2))))
+#ifdef MMC_HS200_MODE
+/*tl1*/
+static int pwm_voltage_table_ee[][2] = {
+    { 0x1c0000,  681},
+    { 0x1b0001,  691},
+    { 0x1a0002,  701},
+    { 0x190003,  711},
+    { 0x180004,  721},
+    { 0x170005,  731},
+    { 0x160006,  741},
+    { 0x150007,  751},
+    { 0x140008,  761},
+    { 0x130009,  772},
+    { 0x12000a,  782},
+    { 0x11000b,  792},
+    { 0x10000c,  802},
+    { 0x0f000d,  812},
+    { 0x0e000e,  822},
+    { 0x0d000f,  832},
+    { 0x0c0010,  842},
+    { 0x0b0011,  852},
+    { 0x0a0012,  862},
+    { 0x090013,  872},
+    { 0x080014,  882},
+    { 0x070015,  892},
+    { 0x060016,  902},
+    { 0x050017,  912},
+    { 0x040018,  922},
+    { 0x030019,  932},
+    { 0x02001a,  942},
+    { 0x01001b,  952},
+    { 0x00001c,  962}
+};
+
+/*g12b*/
+//static int pwm_voltage_table_ee[][2] = {
+//  { 0x1c0000,  681},
+//  { 0x1b0001,  691},
+//  { 0x1a0002,  701},
+//  { 0x190003,  711},
+//  { 0x180004,  721},
+//  { 0x170005,  731},
+//  { 0x160006,  741},
+//  { 0x150007,  751},
+//  { 0x140008,  761},
+//  { 0x130009,  772},
+//  { 0x12000a,  782},
+//  { 0x11000b,  792},
+//  { 0x10000c,  802},
+//  { 0x0f000d,  812},
+//  { 0x0e000e,  822},
+//  { 0x0d000f,  832},
+//  { 0x0c0010,  842},
+//  { 0x0b0011,  852},
+//  { 0x0a0012,  862},
+//  { 0x090013,  872},
+//  { 0x080014,  882},
+//  { 0x070015,  892},
+//  { 0x060016,  902},
+//  { 0x050017,  912},
+//  { 0x040018,  922},
+//  { 0x030019,  932},
+//  { 0x02001a,  942},
+//  { 0x01001b,  952},
+//  { 0x00001c,  962}
+//};
+
+//static int pwm_voltage_table_ee[][2] = {
+//  { 0x1c0000,  681},
+//  { 0x1b0001,  691},
+//  { 0x1a0002,  701},
+//  { 0x190003,  711},
+//  { 0x180004,  721},
+//  { 0x170005,  731},
+//  { 0x160006,  741},
+//  { 0x150007,  751},
+//  { 0x140008,  761},
+//  { 0x130009,  772},
+//  { 0x12000a,  782},
+//  { 0x11000b,  792},
+//  { 0x10000c,  802},
+//  { 0x0f000d,  812},
+//  { 0x0e000e,  822},
+//  { 0x0d000f,  832},
+//  { 0x0c0010,  842},
+//  { 0x0b0011,  852},
+//  { 0x0a0012,  862},
+//  { 0x090013,  872},
+//  { 0x080014,  882},
+//  { 0x070015,  892},
+//  { 0x060016,  902},
+//  { 0x050017,  912},
+//  { 0x040018,  922},
+//  { 0x030019,  932},
+//  { 0x02001a,  942},
+//  { 0x01001b,  952},
+//  { 0x00001c,  962}
+//};
+/*r311
+static int pwm_voltage_table_ee[][2] = {
+    { 0x1c0000,  810},
+    { 0x1b0001,  820},
+    { 0x1a0002,  830},
+    { 0x190003,  840},
+    { 0x180004,  850},
+    { 0x170005,  860},
+    { 0x160006,  870},
+    { 0x150007,  880},
+    { 0x140008,  890},
+    { 0x130009,  900},
+    { 0x12000a,  910},
+    { 0x11000b,  920},
+    { 0x10000c,  930},
+    { 0x0f000d,  940},
+    { 0x0e000e,  950},
+    { 0x0d000f,  960},
+    { 0x0c0010,  970},
+    { 0x0b0011,  980},
+    { 0x0a0012,  990},
+    { 0x090013, 1000},
+    { 0x080014, 1010},
+    { 0x070015, 1020},
+    { 0x060016, 1030},
+    { 0x050017, 1040},
+    { 0x040018, 1050},
+    { 0x030019, 1060},
+    { 0x02001a, 1070},
+    { 0x01001b, 1080},
+    { 0x00001c, 1090}
+};
+*/
+#endif
 /* info system. */
 #define dtb_err(fmt, ...) printf( "%s()-%d: " fmt , \
                   __func__, __LINE__, ##__VA_ARGS__)
@@ -2655,6 +2789,453 @@ static int do_amlmmc_driver_strength(cmd_tbl_t *cmdtp,
     return ret;
 }
 
+#ifdef MMC_HS200_MODE
+static int do_amlmmc_reset_delay(cmd_tbl_t *cmdtp, int flag,
+        int argc, char * const argv[])
+{
+    struct mmc *mmc;
+    int dev;
+
+    struct aml_card_sd_info *aml_priv;
+    struct sd_emmc_global_regs *sd_emmc_regs;
+
+    if (argc != 3)
+        return CMD_RET_USAGE;
+
+    dev = simple_strtoul(argv[2], NULL, 10);
+    mmc = find_mmc_device(dev);
+    if (!mmc) {
+        puts("no mmc devices available\n");
+        return 1;
+    }
+    mmc_init(mmc);
+    if (!mmc)
+        return 1;
+
+    aml_priv = mmc->priv;
+    sd_emmc_regs = aml_priv->sd_emmc_reg;
+
+    sd_emmc_regs->gdelay = 0;
+    sd_emmc_regs->gdelay1 = 0;
+
+    return CMD_RET_SUCCESS;
+
+}
+
+static int do_amlmmc_clktest(cmd_tbl_t *cmdtp, int flag,
+        int argc, char * const argv[])
+{
+    struct mmc *mmc;
+    int dev;
+
+    if (argc != 3)
+        return CMD_RET_USAGE;
+    dev = simple_strtoul(argv[2], NULL, 10);
+
+    if (dev < 0) {
+        printf("Cannot find dev.\n");
+        return 1;
+    }
+    mmc  = find_mmc_device(dev);
+
+    if (!mmc) {
+        puts("no mmc devices available\n");
+        return 1;
+    }
+
+    mmc_init(mmc);
+    if (!mmc)
+        return 1;
+
+    aml_sd_emmc_clktest(mmc);
+    return CMD_RET_SUCCESS;
+}
+
+static int do_amlmmc_set_rxdelay(cmd_tbl_t *cmdtp, int flag,
+        int argc, char * const argv[])
+{
+    struct mmc *mmc;
+    int dev;
+    u32 delay1, delay2;
+
+    if (argc != 5)
+        return CMD_RET_USAGE;
+    dev = simple_strtoul(argv[2], NULL, 10);
+    delay1 = simple_strtoul(argv[3], NULL, 16);
+    delay2 = simple_strtoul(argv[4], NULL, 16);
+
+    if (dev < 0) {
+        printf("Cannot find dev.\n");
+        return 1;
+    }
+    mmc  = find_mmc_device(dev);
+
+    if (!mmc) {
+        puts("no mmc devices available\n");
+        return 1;
+    }
+
+    mmc_init(mmc);
+    if (!mmc)
+        return 1;
+
+    struct aml_card_sd_info *aml_priv = mmc->priv;
+    struct sd_emmc_global_regs *sd_emmc_regs = aml_priv->sd_emmc_reg;
+
+    sd_emmc_regs->gdelay = delay1;
+    sd_emmc_regs->gdelay1 = delay2;
+
+    update_all_line_eyetest(mmc);
+
+    return CMD_RET_SUCCESS;
+}
+
+static int do_amlmmc_set_txdelay(cmd_tbl_t *cmdtp, int flag,
+        int argc, char * const argv[])
+{
+    struct mmc *mmc;
+    u32 delay;
+    u32 mask;
+    int dev;
+
+    if (argc != 4)
+        return CMD_RET_USAGE;
+    dev = simple_strtoul(argv[2], NULL, 10);
+    delay = simple_strtoul(argv[3], NULL, 16);
+
+    if (dev < 0) {
+        printf("Cannot find dev.\n");
+        return 1;
+    }
+    mmc  = find_mmc_device(dev);
+
+    if (!mmc) {
+        puts("no mmc devices available\n");
+        return 1;
+    }
+
+    mmc_init(mmc);
+    if (!mmc)
+        return 1;
+
+    if (delay < 0 || delay > 63) {
+        printf("error: tx delay is out of range\n");
+        return CMD_RET_USAGE;
+    }
+
+    struct aml_card_sd_info *aml_priv = mmc->priv;
+    struct sd_emmc_global_regs *sd_emmc_regs = aml_priv->sd_emmc_reg;
+
+    mask = ~(0x3f<<16);
+    sd_emmc_regs->gclock = sd_emmc_regs->gclock & mask;
+    sd_emmc_regs->gclock |= delay << 16;
+
+    update_all_line_eyetest(mmc);
+    return CMD_RET_SUCCESS;
+}
+
+static void set_vddee_voltage(unsigned int target_voltage)
+{
+    unsigned int to;
+
+    for (to = 0; to < ARRAY_SIZE(pwm_voltage_table_ee); to++) {
+        if (pwm_voltage_table_ee[to][1] >= target_voltage) {
+            break;
+        }
+    }
+
+    if (to >= ARRAY_SIZE(pwm_voltage_table_ee)) {
+        to = ARRAY_SIZE(pwm_voltage_table_ee) - 1;
+    }
+
+    SD_EMMC_VDDEE_REG = pwm_voltage_table_ee[to][0];
+}
+
+static int send_vddee_voltage(unsigned int target_voltage)
+{
+    unsigned int to;
+    int vddee;
+
+    for (to = 0; to < ARRAY_SIZE(pwm_voltage_table_ee); to++) {
+        if (pwm_voltage_table_ee[to][0] <= target_voltage) {
+            break;
+        }
+    }
+
+    if (to >= ARRAY_SIZE(pwm_voltage_table_ee)) {
+        to = ARRAY_SIZE(pwm_voltage_table_ee) - 1;
+    }
+
+    vddee = pwm_voltage_table_ee[to][1];
+
+    return vddee;
+}
+
+static int do_amlmmc_set_vddee(cmd_tbl_t *cmdtp, int flag,
+        int argc, char * const argv[])
+{
+    unsigned int vddee;
+    struct mmc *mmc;
+    int dev;
+
+    if (argc != 4)
+        return CMD_RET_USAGE;
+    dev = simple_strtoul(argv[2], NULL, 10);
+    vddee = simple_strtoul(argv[3], NULL, 10);
+
+    if (dev < 0) {
+        printf("Cannot find dev.\n");
+        return 1;
+    }
+
+    mmc  = find_mmc_device(dev);
+
+    if (!mmc) {
+        puts("no mmc devices available\n");
+        return 1;
+    }
+
+    mmc_init(mmc);
+    if (!mmc)
+        return 1;
+
+    set_vddee_voltage(vddee);
+    return CMD_RET_SUCCESS;
+
+}
+
+static int do_amlmmc_show_vddee(cmd_tbl_t *cmdtp, int flag,
+        int argc, char * const argv[])
+{
+    int vddee;
+    unsigned int vddee_reg;
+    struct mmc *mmc;
+    int dev;
+
+    if (argc != 3)
+        return CMD_RET_USAGE;
+    dev = simple_strtoul(argv[2], NULL, 10);
+
+    if (dev < 0) {
+        printf("Cannot find dev.\n");
+        return 1;
+    }
+
+    mmc  = find_mmc_device(dev);
+
+    if (!mmc) {
+        puts("no mmc devices available\n");
+        return 1;
+    }
+
+    mmc_init(mmc);
+    if (!mmc)
+        return 1;
+
+    vddee_reg = SD_EMMC_VDDEE_REG;
+
+    vddee = send_vddee_voltage(vddee_reg);
+
+    printf("meson-mmc: emmc: vddee is %d mv\n", vddee);
+
+    return CMD_RET_SUCCESS;
+
+}
+
+static int do_amlmmc_refix(cmd_tbl_t *cmdtp, int flag,
+        int argc, char * const argv[])
+{
+    int err;
+    struct mmc *mmc;
+    int dev;
+
+    if (argc != 3)
+        return CMD_RET_USAGE;
+    dev = simple_strtoul(argv[2], NULL, 10);
+
+    if (dev < 0) {
+        printf("Cannot find dev.\n");
+        return 1;
+    }
+
+    mmc  = find_mmc_device(dev);
+
+    if (!mmc) {
+        puts("no mmc devices available\n");
+        return 1;
+    }
+
+    mmc_init(mmc);
+    if (!mmc)
+        return 1;
+
+    err = aml_emmc_refix(mmc);
+    if (err)
+        printf("refix failed\n");
+    return err;
+
+}
+
+static int do_amlmmc_move_all_delay(cmd_tbl_t *cmdtp, int flag,
+        int argc, char * const argv[])
+{
+    struct mmc *mmc;
+    u32 delay1, delay2;
+    u8 count;
+    int dev;
+
+    if (argc != 4)
+        return CMD_RET_USAGE;
+    dev = simple_strtoul(argv[2], NULL, 10);
+    count = simple_strtoul(argv[3], NULL, 16);
+    if (dev < 0) {
+        printf("Cannot find dev.\n");
+        return 1;
+    }
+
+    mmc  = find_mmc_device(dev);
+
+    if (!mmc) {
+        puts("no mmc devices available\n");
+        return 1;
+    }
+
+    mmc_init(mmc);
+    if (!mmc)
+        return 1;
+
+    struct aml_card_sd_info *aml_priv = mmc->priv;
+    struct sd_emmc_global_regs *sd_emmc_regs = aml_priv->sd_emmc_reg;
+
+    delay1 = sd_emmc_regs->gdelay;
+    delay2 = sd_emmc_regs->gdelay1;
+
+    delay1 += (count<<0)|(count<<6)|(count<<12)|(count<<18)|(count<<24);
+    delay2 += (count<<0)|(count<<6)|(count<<12);
+
+    sd_emmc_regs->gdelay = delay1;
+    sd_emmc_regs->gdelay1 = delay2;
+
+    update_all_line_eyetest(mmc);
+    return CMD_RET_SUCCESS;
+}
+
+static int do_amlmmc_move_sig_delay(cmd_tbl_t *cmdtp, int flag,
+        int argc, char * const argv[])
+{
+    struct mmc *mmc;
+    u32 delay1, delay2;
+    u8 line, count;
+    int dev;
+
+    if (argc != 5)
+        return CMD_RET_USAGE;
+
+    dev = simple_strtoul(argv[2], NULL, 10);
+    line = simple_strtoul(argv[3], NULL, 10);
+    count = simple_strtoul(argv[4], NULL, 10);
+
+    if (dev < 0) {
+        printf("Cannot find dev.\n");
+        return 1;
+    }
+
+    mmc  = find_mmc_device(dev);
+
+    if (!mmc) {
+        puts("no mmc devices available\n");
+        return 1;
+    }
+
+    mmc_init(mmc);
+    if (!mmc)
+        return 1;
+
+    if (line > 9 || line < 0) {
+        printf("error: data line out of range\n");
+        return CMD_RET_USAGE;
+    }
+
+    struct aml_card_sd_info *aml_priv = mmc->priv;
+    struct sd_emmc_global_regs *sd_emmc_regs = aml_priv->sd_emmc_reg;
+
+    delay1 = sd_emmc_regs->gdelay;
+    delay2 = sd_emmc_regs->gdelay1;
+
+    if (line < 5) {
+        delay1 += (count<<(6*line));
+        sd_emmc_regs->gdelay = delay1;
+    } else {
+        delay2 += (count<<(6 * (line - 5)));
+        sd_emmc_regs->gdelay1 = delay2;
+    }
+
+    update_all_line_eyetest(mmc);
+    return CMD_RET_SUCCESS;
+}
+
+static int do_amlmmc_line_eyetest(cmd_tbl_t *cmdtp, int flag,
+        int argc, char * const argv[])
+{
+    struct mmc *mmc;
+    u32 delay1, delay2;
+    u8 line, count;
+    int dev;
+    u32 mask = 0x3f;
+
+    if (argc != 4)
+        return CMD_RET_USAGE;
+
+    dev = simple_strtoul(argv[2], NULL, 10);
+    line = simple_strtoul(argv[3], NULL, 10);
+
+    if (dev < 0) {
+        printf("Cannot find dev.\n");
+        return 1;
+    }
+
+    mmc  = find_mmc_device(dev);
+
+    if (!mmc) {
+        puts("no mmc devices available\n");
+        return 1;
+    }
+
+    mmc_init(mmc);
+    if (!mmc)
+        return 1;
+
+    if (line > 9 || line < 0) {
+        printf("error: data line out of range\n");
+        return CMD_RET_USAGE;
+    }
+
+    struct aml_card_sd_info *aml_priv = mmc->priv;
+    struct sd_emmc_global_regs *sd_emmc_regs = aml_priv->sd_emmc_reg;
+
+    delay1 = sd_emmc_regs->gdelay;
+    delay2 = sd_emmc_regs->gdelay1;
+
+    if (line < 5)
+        delay1 &= ~(mask << (6 * line));
+    else
+        delay2 &= ~(mask << (6 * (line - 5)));
+
+    for (count = 0; count < 64; count++) {
+        if (line < 5) {
+            delay1 &= ~(mask << (6 * line));
+            delay1 |= (count << (6 * line));
+            sd_emmc_regs->gdelay = delay1;
+        } else {
+            delay2 &= ~(mask << (6 * (line - 5)));
+            delay2 |= (count << (6 * line));
+            sd_emmc_regs->gdelay1 = delay2;
+        }
+        emmc_eyetest_log(mmc, line);
+    }
+    return CMD_RET_SUCCESS;
+}
+#endif
 static cmd_tbl_t cmd_amlmmc[] = {
     U_BOOT_CMD_MKENT(read,          6, 0, do_amlmmc_read,          "", ""),
     U_BOOT_CMD_MKENT(write,         6, 0, do_amlmmc_write,         "", ""),
@@ -2676,6 +3257,18 @@ static cmd_tbl_t cmd_amlmmc[] = {
     U_BOOT_CMD_MKENT(ds,            4, 0, do_amlmmc_driver_strength, "", ""),
 #ifdef CONFIG_SECURITYKEY
     U_BOOT_CMD_MKENT(key,           2, 0, do_amlmmc_key,           "", ""),
+#endif
+#ifdef MMC_HS200_MODE
+    U_BOOT_CMD_MKENT(clktest,    3, 0, do_amlmmc_clktest,    "", ""),
+    U_BOOT_CMD_MKENT(refix,    3, 0, do_amlmmc_refix,    "", ""),
+    U_BOOT_CMD_MKENT(move_all, 4, 0, do_amlmmc_move_all_delay, "", ""),
+    U_BOOT_CMD_MKENT(move_single, 5, 0, do_amlmmc_move_sig_delay, "", ""),
+    U_BOOT_CMD_MKENT(set_rxdly, 5, 0, do_amlmmc_set_rxdelay, "", ""),
+    U_BOOT_CMD_MKENT(set_txdly, 4, 0, do_amlmmc_set_txdelay, "", ""),
+    U_BOOT_CMD_MKENT(set_vddee, 4, 0, do_amlmmc_set_vddee, "", ""),
+    U_BOOT_CMD_MKENT(show_vddee, 3, 0, do_amlmmc_show_vddee, "", ""),
+    U_BOOT_CMD_MKENT(reset_dly, 3, 0, do_amlmmc_reset_delay, "", ""),
+    U_BOOT_CMD_MKENT(line_eyetest, 4, 0, do_amlmmc_line_eyetest, "", ""),
 #endif
 };
 
@@ -2724,6 +3317,18 @@ U_BOOT_CMD(
     "amlmmc ds <dev_num> <val> set driver strength\n"
 #ifdef CONFIG_SECURITYKEY
     "amlmmc key - disprotect key partition\n"
+#endif
+#ifdef MMC_HS200_MODE
+    "amlmmc clktest <dev> - display info of delaycell and count\n"
+    "amlmmc reset_dly <dev> - reset all delay register\n"
+    "amlmmc set_rxdly <dev> <0xdelay1> <0xdelay2> - manually set rx delay value\n"
+    "amlmmc set_txdly <dev> <0xdelay> - manually set tx delay\n"
+    "amlmmc refix <dev> - fix adj\n"
+    "amlmmc move_all <dev> <count> - move all data delay line <count> steps\n"
+    "amlmmc move_single <dev> <line> <count> - move <line> <count> steps\n"
+    "amlmmc set_vddee <dev> <value> - set vddee\n"
+    "amlmmc show_vddee <dev> -show current vddee\n"
+    "amlmmc line_eyetest <dev> <line> single line eyetest\n"
 #endif
 );
 
@@ -3125,7 +3730,7 @@ int do_amlmmc_dtb_key(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
                 }
             } else if (strcmp(argv[1], "cali_pattern") == 0) {
 
-				if (strcmp(argv[2], "write") == 0) {
+                if (strcmp(argv[2], "write") == 0) {
                     dev = EMMC_DTB_DEV;
                     struct mmc *mmc = find_mmc_device(dev);
                     if (!mmc) {

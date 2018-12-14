@@ -129,7 +129,6 @@ int aml_fixdiv_calc(struct mmc *mmc)
 
 void aml_sd_cfg_swth(struct mmc *mmc)
 {
-
 	unsigned sd_emmc_clkc =	0,clk,clk_src,clk_div = 0;
 	unsigned vconf;
 	unsigned bus_width=(mmc->bus_width == 1)?0:mmc->bus_width/4;
@@ -217,8 +216,6 @@ void aml_sd_cfg_swth(struct mmc *mmc)
     emmc_debug("port=%d act_clk=%d\n",aml_priv->sd_emmc_port,clk/clk_div);
     return;
 }
-
-
 
 static int sd_inand_check_insert(struct	mmc	*mmc)
 {
@@ -856,6 +853,10 @@ int aml_sd_retry_refix(struct mmc *mmc)
 	struct sd_emmc_adjust *gadjust = (struct sd_emmc_adjust *)&adjust;
 	int err = 0, ret = 0, adj_delay = 0;
 	char *blk_test = NULL;
+#ifdef MMC_HS200_MODE
+	int pre_status = 0;
+	int start = 0;
+#endif
 	emmc_debug("tuning..................\n");
 
 	//const u8 *blk_pattern = tuning_data->blk_pattern;
@@ -983,6 +984,48 @@ int aml_sd_retry_refix(struct mmc *mmc)
 	emmc_debug("%s [%d]: adj_delay = %d\n", __func__, __LINE__, adj_delay);
 	free(blk_test);
 
+#ifdef MMC_HS200_MODE
+	for (n = 0; n < clkc->div; n++) {
+		if (n == clkc->div - 1) {
+			if (rx_tuning_result[n] == ntries && pre_status == 1)
+				printf("meson-mmc: emmc: [ %d -- %d ] is ok\n", start, n);
+			else if (rx_tuning_result[n] != ntries && pre_status == -1)
+				printf("meson-mmc: emmc: [ %d -- %d ] is nok\n", start, n);
+			else if (rx_tuning_result[n] == ntries && pre_status != 1)
+				printf("meson-mmc: emmc: [ %d ] is ok\n", n);
+			else if (rx_tuning_result[n] != ntries && pre_status == 1)
+				printf("meson-mmc: emmc: [ %d ] is nok\n", n);
+		}
+		if (rx_tuning_result[n] == ntries) {
+			if (pre_status == -1) {
+				if (start == n - 1)
+					printf("meson-mmc: emmc: [ %d ] is nok\n", start);
+				else
+					printf("meson-mmc: emmc: [ %d -- %d] is nok\n", start, n-1);
+			} else if (pre_status == 1)
+				continue;
+			start = n;
+			pre_status = 1;
+		} else if (rx_tuning_result[n] != ntries) {
+			if (pre_status == 1) {
+				if (start == n - 1)
+					printf("meson-mmc: emmc: [ %d ] is ok\n", start);
+				else
+					printf("meson-mmc: emmc: [ %d -- %d ] is ok\n", start, n-1);
+			} else if (pre_status == -1)
+				continue;
+			start = n;
+			pre_status = -1;
+		}
+	}
+
+	printf("meson-mmc: emmc: %s[%d]:delay1 = 0x%x,delay2 = 0x%x, gadjust =0x%x\n",
+		__func__, __LINE__, sd_emmc_reg->gdelay,
+		sd_emmc_reg->gdelay1,
+		sd_emmc_reg->gadjust);
+	printf("meson-mmc: emmc: %s [%d]: adj_delay = %d\n", __func__, __LINE__,
+			adj_delay);
+#endif
 /* test adj sampling point*/
 	ret = sd_emmc_test_adj(mmc);
 
@@ -1036,8 +1079,11 @@ void sd_emmc_register(struct aml_card_sd_info * aml_priv)
 			     MMC_MODE_HC;
 #endif
 	cfg->f_min = 400000;
+#ifdef MMC_HS200_MODE
+	cfg->f_max = 198000000;
+#else
 	cfg->f_max = 40000000;
-
+#endif
 	/**
 	 * For blank emmc, part-type should be unknown.
 	 * But fastboot will not happy about this when

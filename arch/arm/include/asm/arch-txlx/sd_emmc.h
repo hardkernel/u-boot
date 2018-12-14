@@ -151,6 +151,7 @@ struct aml_card_sd_info
 	struct mmc_config cfg;
 	struct sd_emmc_global_regs *sd_emmc_reg;
 	dma_addr_t		desc_dma_addr;
+	unsigned int cmd_c;
 #ifdef AML_CARD_SD_INFO_DETAILED
 	int  (* sd_emmc_init)(unsigned port,struct aml_card_sd_info *sdio);
 	int  (* sd_emmc_detect)(unsigned port,struct aml_card_sd_info *sdio);

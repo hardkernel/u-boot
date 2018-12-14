@@ -31,7 +31,6 @@
 static struct list_head mmc_devices;
 static int cur_dev_num = -1;
 
-
 int amlmmc_is_inited(void) {
 	return device_boot_flag;
 }
@@ -246,7 +245,19 @@ static int mmc_read_blocks(struct mmc *mmc, void *dst, lbaint_t start,
 	struct mmc_cmd cmd;
 	struct mmc_data data;
 	int ret = 0, err = 0, err_flag = 0, retries = 0;
+
 __RETRY:
+#ifdef MMC_CMD23
+	if (blkcnt > 1) {
+		cmd.cmdidx = MMC_CMD_SET_BLOCK_COUNT;
+		cmd.cmdarg = blkcnt & 0xFFFF;
+		cmd.resp_type = MMC_RSP_R1;
+		err = mmc_send_cmd(mmc, &cmd, NULL);
+		if (err) {
+			printf("mmc set blkcnt failed\n");
+		}
+	}
+#endif
 	if (blkcnt > 1)
 		cmd.cmdidx = MMC_CMD_READ_MULTIPLE_BLOCK;
 	else
@@ -265,7 +276,7 @@ __RETRY:
 	data.flags = MMC_DATA_READ;
 
 	ret = mmc_send_cmd(mmc, &cmd, &data);
-
+#ifndef MMC_CMD23
 	if (blkcnt > 1) {
 		cmd.cmdidx = MMC_CMD_STOP_TRANSMISSION;
 		cmd.cmdarg = 0;
@@ -277,6 +288,7 @@ __RETRY:
 #endif
 		}
 	}
+#endif
 	if (ret || err) {
 		if (err_flag == 0) {
 			err_flag = 1;
@@ -293,7 +305,7 @@ __RETRY:
 	return blkcnt;
 }
 
-static ulong mmc_bread(int dev_num, lbaint_t start, lbaint_t blkcnt, void *dst)
+ulong mmc_bread(int dev_num, lbaint_t start, lbaint_t blkcnt, void *dst)
 {
 	lbaint_t cur, blocks_todo = blkcnt;
 
@@ -313,9 +325,10 @@ static ulong mmc_bread(int dev_num, lbaint_t start, lbaint_t blkcnt, void *dst)
 	}
 	if (!emmckey_is_access_range_legal(mmc, start, blkcnt))
 		return 0;
-
+#ifndef MMC_HS400_MODE
 	if (mmc_set_blocklen(mmc, mmc->read_bl_len))
 		return 0;
+#endif
 
 	do {
 		cur = (blocks_todo > mmc->cfg->b_max) ?
@@ -549,7 +562,7 @@ int mmc_switch_by_bit(struct mmc *mmc, u8 set, u8 index, u8 value)
 }
 #endif
 
-static int mmc_switch(struct mmc *mmc, u8 set, u8 index, u8 value)
+int mmc_switch(struct mmc *mmc, u8 set, u8 index, u8 value)
 {
 	struct mmc_cmd cmd;
 	int timeout = 1000;
@@ -583,6 +596,7 @@ int mmc_hwpart_config(struct mmc *mmc,
 	u32 tot_enh_size_mult = 0;
 	u8 wr_rel_set;
 	int i, pidx, err;
+	u64 size = 0;
 	ALLOC_CACHE_ALIGN_BUFFER(u8, ext_csd, MMC_MAX_BLOCK_LEN);
 
 	if (mode < MMC_HWPART_CONF_CHECK || mode > MMC_HWPART_CONF_COMPLETE)
@@ -687,15 +701,17 @@ int mmc_hwpart_config(struct mmc *mmc,
 	    EXT_CSD_PARTITION_SETTING_COMPLETED) {
 		printf("Card already partitioned\n");
 		puts("\tUser Enhanced Start: ");
-		print_size((u64)((ext_csd[EXT_CSD_ENH_START_ADDR]+
+		print_size((u64)((size + ext_csd[EXT_CSD_ENH_START_ADDR]+
 				(ext_csd[EXT_CSD_ENH_START_ADDR+1]<<8)+
 				(ext_csd[EXT_CSD_ENH_START_ADDR+2]<<16)+
-			(ext_csd[EXT_CSD_ENH_START_ADDR+3]<<24))<<9),"\n");
+				((u64)ext_csd[EXT_CSD_ENH_START_ADDR+3]<<24))<<9), "\n");
+
 		puts("\tUser Enhanced Size: ");
-		print_size((u64)((ext_csd[EXT_CSD_ENH_SIZE_MULT]+
+		print_size((u64)((size + ext_csd[EXT_CSD_ENH_SIZE_MULT]+
 					(ext_csd[EXT_CSD_ENH_SIZE_MULT+1]<<8)+
 					(ext_csd[EXT_CSD_ENH_SIZE_MULT+2]<<16))*
-					mmc->hc_wp_grp_size)<<9,"\n");
+					mmc->hc_wp_grp_size)<<9, "\n");
+
 		return -EPERM;
 	}
 
@@ -884,7 +900,7 @@ int mmc_select_hwpart(int dev_num, int hwpart)
 {
 	struct mmc *mmc = find_mmc_device(dev_num);
 	int ret;
-//
+
 	if (!mmc)
 		return -ENODEV;
 
@@ -904,7 +920,6 @@ int mmc_select_hwpart(int dev_num, int hwpart)
 
 	return 0;
 }
-
 
 int mmc_switch_part(int dev_num, unsigned int part_num)
 {
@@ -1137,7 +1152,7 @@ void mmc_set_clock(struct mmc *mmc, uint clock)
 	mmc_set_ios(mmc);
 }
 
-static void mmc_set_bus_width(struct mmc *mmc, uint width)
+void mmc_set_bus_width(struct mmc *mmc, uint width)
 {
 	mmc->bus_width = width;
 
@@ -1170,7 +1185,6 @@ int mmc_disable_usr_wp(struct mmc *mmc, u8 *ext_csd)
 	}
 	return err;
 }
-//#endif
 
 static int mmc_startup(struct mmc *mmc)
 {
@@ -1766,12 +1780,13 @@ int mmc_start_init(struct mmc *mmc)
 void mmc_write_cali_mattern(void *addr, struct aml_pattern *table)
 {
 	int i = 0;
+	unsigned int s = 10;
 	u32 *mattern = (u32 *)addr;
 	struct virtual_partition *vpart =
 		aml_get_virtual_partition_by_name(table->name);
 	for (i = 0;i < (vpart->size)/4 - 1;i++) {
 		if (!strcmp(table->name, "random"))
-			mattern[i] = rand();
+			mattern[i] = rand_r(&s);
 		else
 			mattern[i] = table->pattern;
 	}
@@ -1852,6 +1867,9 @@ int mmc_init(struct mmc *mmc)
 	if (mmc->has_init)
 		return 0;
 
+#ifdef MMC_HS200_MODE
+	reset_all_reg(mmc);
+#endif
 	start = get_timer(0);
 
 	if (!mmc->init_in_progress)
@@ -1882,6 +1900,12 @@ int mmc_init(struct mmc *mmc)
 		}
 	}
 	info_disprotect &= ~DISPROTECT_KEY;
+#endif
+#ifdef MMC_HS200_MODE
+	mmc_set_hs200_mode(mmc);
+#ifdef MMC_HS400_MODE
+	mmc_set_hs400_mode(mmc);
+#endif
 #endif
 	return err;
 }

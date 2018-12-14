@@ -42,6 +42,13 @@
 #define	Cfg_irq_sdio_sleep   29
 #define Cfg_irq_sdio_sleep_ds		30
 
+#define MMC_HS_COPHASE			3
+#define MMC_DDR_COPHASE			2
+#define MMC_HS2_COPHASE         2
+#define MMC_HS4_COPHASE         0
+#define MMC_HS400_TXDELAY		16
+#define CLKSRC_BASE            0Xff63c000
+
 #define	SD_EMMC_RXD_ERROR				1
 #define	SD_EMMC_TXD_ERROR				1<<1
 #define	SD_EMMC_DESC_ERROR				1<<2
@@ -55,7 +62,14 @@ struct sd_emmc_global_regs {
 	volatile uint32_t gdelay1;    //0x08
     volatile uint32_t gadjust;    // 0x0c
     volatile uint32_t gcalout;    // 0x10
-    volatile uint32_t reserved_14[11];   // 0x14~0x3c
+	volatile uint32_t reserved_14[4];   // 0x14~0x20
+	volatile uint32_t gclktest_log;   // 0x24
+	volatile uint32_t gclktest_out;   // 0x28
+	volatile uint32_t geyetest_log;   // 0x2c
+	volatile uint32_t geyetest_out0;   // 0x30
+	volatile uint32_t geyetest_out1;   // 0x34
+	volatile uint32_t gintf3;   // 0x38
+	volatile uint32_t reserved_3c;   // 0x3c
     volatile uint32_t gstart;     // 0x40
     volatile uint32_t gcfg;       // 0x44
     volatile uint32_t gstatus;    // 0x48
@@ -82,6 +96,51 @@ struct sd_emmc_global_regs {
     volatile uint32_t gdesc[128]; // 0x200
     volatile uint32_t gping[128]; // 0x400
     volatile uint32_t gpong[128]; // 0x800
+};
+
+struct sd_emmc_adjust_v3 {
+	u32 reserved8:8;
+	/*[11:8]	  Select one signal to be tested.*/
+	u32 cali_sel:4;
+	/*[12]		Enable calibration. */
+	u32 cali_enable:1;
+	/*[13]	   Adjust interface timing
+	 *by resampling the input signals.
+	 */
+	u32 adj_enable:1;
+	/*[14]	   1: test the rising edge.
+	 *0: test the falling edge.
+	 */
+	u32 cali_rise:1;
+	/*[15]	   1: Sampling the DAT based on DS in HS400 mode.
+	 *0: Sampling the DAT based on RXCLK.
+	 */
+	u32 ds_enable:1;
+	/*[21:16]	   Resample the input signals
+	 *when clock index==adj_delay.
+	 */
+	u32 adj_delay:6;
+	/*[22]	   1: Use cali_dut first falling edge to adjust
+	 *	the timing, set cali_enable to 1 to use this function.
+	 *0: no use adj auto.
+	 */
+	u32 adj_auto:1;
+	u32 reserved22:9;
+};
+
+struct intf3 {
+	u32 clktest_exp:5;
+	u32 clktest_on_m:1;
+	u32 eyetest_exp:5;
+	u32 eyetest_on:1;
+	u32 ds_sht_m:6;
+	u32 ds_sht_exp:4;
+	u32 sd_intf3:1;
+};
+
+struct eyetest_log {
+	u32 eyetest_times:31;
+	u32 eyetest_done:1;
 };
 
 union sd_emmc_setup {

@@ -301,6 +301,17 @@
 #define WP_PERM_EN_BIT         (1<<2)
 #define WP_GRP_SIZE_MASK       31
 
+
+/*MMC CLK*/
+#define MMC_HIGH_26_MAX_DTR	26000000
+#define MMC_HIGH_52_MAX_DTR	52000000
+#define MMC_HIGH_DDR_MAX_DTR	52000000
+#define MMC_HS200_MAX_DTR	200000000
+
+//#define MMC_CMD23
+//#define MMC_HS200_MODE
+//#define MMC_HS400_MODE
+
 struct mmc_cid {
 	unsigned long psn;
 	unsigned short oid;
@@ -436,7 +447,11 @@ enum mmc_hwpart_conf_mode {
 	MMC_HWPART_CONF_COMPLETE,
 };
 
-
+int emmc_eyetest_log(struct mmc *mmc, u32 line);
+int aml_emmc_refix(struct mmc *mmc);
+ulong mmc_bread(int dev_num, lbaint_t start, lbaint_t blkcnt, void *dst);
+int mmc_switch(struct mmc *mmc, u8 set, u8 index, u8 value);
+void mmc_set_bus_width(struct mmc *mmc, uint width);
 int mmc_register(struct mmc *mmc);
 struct mmc *mmc_create(const struct mmc_config *cfg, void *priv);
 void mmc_destroy(struct mmc *mmc);
@@ -499,6 +514,11 @@ int mmc_start_init(struct mmc *mmc);
  * @param preinit	preinit flag value
  */
 void mmc_set_preinit(struct mmc *mmc, int preinit);
+
+//#ifdef MMC_HS400_MODE
+unsigned int aml_sd_emmc_clktest(struct mmc *mmc);
+void update_all_line_eyetest(struct mmc *mmc);
+//#endif
 
 #ifdef CONFIG_GENERIC_MMC
 #ifdef CONFIG_MMC_SPI
