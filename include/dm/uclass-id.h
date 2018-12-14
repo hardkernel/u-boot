@@ -99,6 +99,7 @@ enum uclass_id {
 	UCLASS_RC,		/* Remote Controller */
 	UCLASS_CHARGE_DISPLAY,	/* Charge display */
 	UCLASS_DVFS,		/* DVFS policy */
+	UCLASS_IO_DOMAIN,	/* IO domain */
 
 	UCLASS_COUNT,
 	UCLASS_INVALID = -1,
