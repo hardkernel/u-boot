@@ -246,11 +246,9 @@ int do_bootm(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	}
 #endif
 
-#ifndef CONFIG_AML_SIGNED_UBOOT
 #ifdef CONFIG_AML_RSVD_ADDR
 	defendkey_process();
 #endif
-#endif//#ifndef CONFIG_AML_SIGNED_UBOOT
 
 	if (IS_FEAT_BOOT_VERIFY())
 	{
