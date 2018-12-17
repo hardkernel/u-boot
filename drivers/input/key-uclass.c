@@ -11,6 +11,13 @@
 
 static LIST_HEAD(key_list);
 
+const char *evt_name[] = {
+	"Not down",
+	"Down",
+	"Long down",
+	"Not exist",
+};
+
 static inline uint64_t arch_counter_get_cntpct(void)
 {
 	uint64_t cval = 0;
@@ -50,8 +57,8 @@ static int key_read_adc_simple_event(struct input_key *key, unsigned int adcval)
 	else
 		min = 0;
 
-	debug("%s: %s: val=%d, max=%d, min=%d, adcval=%d\n",
-	      __func__, key->name, key->adcval, max, min, adcval);
+	debug("%s: '%s' configure adc=%d: range[%d~%d]; hw adcval=%d\n",
+	      __func__, key->name, key->adcval, min, max, adcval);
 
 	/* Check */
 	if ((adcval <= max) && (adcval >= min)) {
@@ -147,52 +154,50 @@ int key_read(int code)
 	static int initialized;
 	unsigned int adcval;
 	int keyval = KEY_NOT_EXIST;
-	int found = 0, ret;
+	int ret;
 
 	/* Initialize all key drivers */
 	if (!initialized) {
 		for (uclass_first_device(UCLASS_KEY, &dev);
 		     dev;
 		     uclass_next_device(&dev)) {
-			debug("%s: dev.name = %s\n", __func__, dev->name);
-			;
+			debug("%s: have found key driver '%s'\n\n",
+			      __func__, dev->name);
 		}
 	}
 
 	/* Search on the key list */
 	list_for_each_entry(key, &key_list, link) {
-		if (key->code == code) {
-			found = 1;
-			break;
-		}
-	}
-	if (!found)
-		goto out;
+		if (key->code != code)
+			continue;
 
-	/* Is a adc key? */
-	if (key->type & ADC_KEY) {
-		ret = adc_channel_single_shot("saradc", key->channel, &adcval);
-		if (ret)
-			printf("%s: failed to read saradc, ret=%d\n",
-			       key->name, ret);
-		else
-			keyval = key_read_adc_simple_event(key, adcval);
-	/* Is a gpio key? */
-	} else if (key->type & GPIO_KEY) {
-		/* All pwrkey must register as an interrupt event */
-		if (key->code == KEY_POWER) {
-			keyval = key_read_gpio_interrupt_event(key);
+		/* Is a adc key? */
+		if (key->type & ADC_KEY) {
+			ret = adc_channel_single_shot("saradc",
+						      key->channel, &adcval);
+			if (ret)
+				printf("%s: failed to read saradc, ret=%d\n",
+				       key->name, ret);
+			else
+				keyval = key_read_adc_simple_event(key, adcval);
+		/* Is a gpio key? */
+		} else if (key->type & GPIO_KEY) {
+			/* All pwrkey must register as an interrupt event */
+			if (key->code == KEY_POWER)
+				keyval = key_read_gpio_interrupt_event(key);
+			else
+				keyval = key_read_gpio_simple_event(key);
 		} else {
-			keyval = key_read_gpio_simple_event(key);
+			printf("%s: invalid key type!\n", __func__);
 		}
-	} else {
-		printf("%s: invalid key type!\n", __func__);
+
+		debug("%s: '%s'(code=%d) is %s\n",
+		      __func__, key->name, key->code, evt_name[keyval]);
+
+		if (keyval == KEY_PRESS_DOWN || keyval == KEY_PRESS_LONG_DOWN)
+			break;
 	}
 
-	debug("%s: key.name=%s, code=%d, keyval=%d\n",
-	      __func__, key->name, key->code, keyval);
-
-out:
 	return keyval;
 }
 
