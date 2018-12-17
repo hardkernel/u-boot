@@ -23,6 +23,9 @@
 #ifdef CONFIG_DM_DVFS
 #include <dvfs.h>
 #endif
+#ifdef CONFIG_ROCKCHIP_IO_DOMAIN
+#include <io-domain.h>
+#endif
 #ifdef CONFIG_DM_REGULATOR
 #include <power/regulator.h>
 #endif
@@ -232,6 +235,11 @@ int board_init(void)
 	if (ret)
 		debug("%s: Cannot enable boot on regulator\n", __func__);
 #endif
+
+#ifdef CONFIG_ROCKCHIP_IO_DOMAIN
+	io_domain_init();
+#endif
+
 	set_armclk_rate();
 
 #ifdef CONFIG_DM_DVFS
