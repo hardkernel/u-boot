@@ -264,7 +264,7 @@ static int read_fdto_partition(void)
 	char dtbo_partition[32];
 	char *s1;
 
-	run_command("get_valid_slot;", 0);
+	//run_command("get_valid_slot;", 0);
 	s1 = getenv("active_slot");
 	printf("active_slot is %s\n", s1);
 	if (strcmp(s1, "normal") == 0) {
