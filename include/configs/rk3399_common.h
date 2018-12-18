@@ -9,7 +9,7 @@
 
 #include "rockchip-common.h"
 
-#define CONFIG_SYS_MALLOC_LEN		(32 << 20)
+#define CONFIG_SYS_MALLOC_LEN		(192 << 20)
 #define CONFIG_SYS_CBSIZE		1024
 #define CONFIG_SKIP_LOWLEVEL_INIT
 #define CONFIG_SPL_FRAMEWORK
@@ -26,6 +26,7 @@
 #define CONFIG_SPL_BSS_START_ADDR	0x00400000
 #define CONFIG_SPL_BSS_MAX_SIZE         0x2000
 #define CONFIG_SYS_BOOTM_LEN	(64 << 20)	/* 64M */
+#define CONFIG_SUPPORT_EMMC_RPMB
 
 #define GICD_BASE			0xFEE00000
 #define GICR_BASE			0xFEF00000
