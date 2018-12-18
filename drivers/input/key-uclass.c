@@ -144,7 +144,45 @@ void key_add(struct input_key *key)
 	if (!key)
 		return;
 
+	if (!key->parent) {
+		printf("Err: Can't find key(code=%d) device\n", key->code);
+		return;
+	}
+
+	key->pre_reloc = dev_read_bool(key->parent, "u-boot,dm-pre-reloc");
 	list_add_tail(&key->link, &key_list);
+}
+
+static int __key_read(struct input_key *key)
+{
+	unsigned int adcval;
+	int keyval = KEY_NOT_EXIST;
+	int ret;
+
+	/* Is a adc key? */
+	if (key->type & ADC_KEY) {
+		ret = adc_channel_single_shot("saradc",
+					      key->channel, &adcval);
+		if (ret)
+			printf("%s: failed to read saradc, ret=%d\n",
+			       key->name, ret);
+		else
+			keyval = key_read_adc_simple_event(key, adcval);
+	/* Is a gpio key? */
+	} else if (key->type & GPIO_KEY) {
+		/* All pwrkey must register as an interrupt event */
+		if (key->code == KEY_POWER)
+			keyval = key_read_gpio_interrupt_event(key);
+		else
+			keyval = key_read_gpio_simple_event(key);
+	} else {
+		printf("%s: invalid key type!\n", __func__);
+	}
+
+	debug("%s: '%s'(code=%d) is %s\n",
+	      __func__, key->name, key->code, evt_name[keyval]);
+
+	return keyval;
 }
 
 int key_read(int code)
@@ -152,9 +190,7 @@ int key_read(int code)
 	struct udevice *dev;
 	struct input_key *key;
 	static int initialized;
-	unsigned int adcval;
 	int keyval = KEY_NOT_EXIST;
-	int ret;
 
 	/* Initialize all key drivers */
 	if (!initialized) {
@@ -166,36 +202,28 @@ int key_read(int code)
 		}
 	}
 
-	/* Search on the key list */
+	/* The key from kernel dtb has higher priority */
+	debug("Reading key from kernel\n");
 	list_for_each_entry(key, &key_list, link) {
-		if (key->code != code)
+		if (key->pre_reloc || (key->code != code))
 			continue;
 
-		/* Is a adc key? */
-		if (key->type & ADC_KEY) {
-			ret = adc_channel_single_shot("saradc",
-						      key->channel, &adcval);
-			if (ret)
-				printf("%s: failed to read saradc, ret=%d\n",
-				       key->name, ret);
-			else
-				keyval = key_read_adc_simple_event(key, adcval);
-		/* Is a gpio key? */
-		} else if (key->type & GPIO_KEY) {
-			/* All pwrkey must register as an interrupt event */
-			if (key->code == KEY_POWER)
-				keyval = key_read_gpio_interrupt_event(key);
-			else
-				keyval = key_read_gpio_simple_event(key);
-		} else {
-			printf("%s: invalid key type!\n", __func__);
+		keyval = __key_read(key);
+		if (key_is_pressed(keyval))
+			return keyval;
+	}
+
+	/* If not found any key from kernel dtb, reading from U-Boot dtb */
+	if (keyval == KEY_NOT_EXIST) {
+		debug("Reading key from U-Boot\n");
+		list_for_each_entry(key, &key_list, link) {
+			if (!key->pre_reloc || (key->code != code))
+				continue;
+
+			keyval = __key_read(key);
+			if (key_is_pressed(keyval))
+				return keyval;
 		}
-
-		debug("%s: '%s'(code=%d) is %s\n",
-		      __func__, key->name, key->code, evt_name[keyval]);
-
-		if (keyval == KEY_PRESS_DOWN || keyval == KEY_PRESS_LONG_DOWN)
-			break;
 	}
 
 	return keyval;

@@ -29,6 +29,7 @@ struct input_key {
 	struct udevice *parent;
 	struct list_head link;
 	const char *name;
+	bool pre_reloc;
 	u32 code;
 	u8 type;
 
