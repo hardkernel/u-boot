@@ -56,6 +56,11 @@
 	status = "okay";
 };
 
+&sfc {
+	u-boot,dm-pre-reloc;
+	status = "okay";
+};
+
 &uart0 {
 	u-boot,dm-pre-reloc;
 };

@@ -990,6 +990,15 @@
 		};
 	};
 
+	sfc: sfc@ffc50000 {
+		compatible = "rockchip,rksfc";
+		reg = <0x0 0xffc50000 0x0 0x4000>;
+		interrupts = <GIC_SPI 50 IRQ_TYPE_LEVEL_HIGH>;
+		clocks = <&cru SCLK_SFC>, <&cru HCLK_SFC>;
+		clock-names = "clk_sfc", "hclk_sfc";
+		status = "disabled";
+	};
+
 	sdio: dwmmc@ffc60000 {
 		compatible = "rockchip,rk1808-dw-mshc", "rockchip,rk3288-dw-mshc";
 		reg = <0x0 0xffc60000 0x0 0x4000>;
