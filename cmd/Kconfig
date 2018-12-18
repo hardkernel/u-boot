@@ -1111,6 +1111,11 @@ config CMD_MEMTESTER
 	help
 	  This enables memtester for ddr.
 
+config CMD_DDR_TEST_TOOL
+	bool "Enable ddr test tool"
+	help
+	  This enable ddr test tool code.
+
 menu "Misc commands"
 
 config CMD_BMP
