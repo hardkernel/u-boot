@@ -92,16 +92,21 @@ void boot_devtype_init(void)
 	const char *devtype_num_set = "run rkimg_bootdev";
 	char *devtype = NULL, *devnum = NULL;
 	static int done = 0;
+	int atags_en = 0;
 	int ret;
 
 	if (done)
 		return;
 
+	/*
+	 * New way: get bootdev from preloader atags info.
+	 */
 #ifdef CONFIG_ROCKCHIP_PRELOADER_ATAGS
 	struct tag *t;
 
 	t = atags_get_tag(ATAG_BOOTDEV);
 	if (t) {
+		atags_en = 1;
 		switch (t->u.bootdev.devtype) {
 		case BOOT_TYPE_EMMC:
 			devtype = "mmc";
@@ -131,7 +136,7 @@ void boot_devtype_init(void)
 		default:
 			printf("Unknown bootdev type: 0x%x\n",
 			       t->u.bootdev.devtype);
-			break;
+			goto fallback;
 		}
 	}
 
@@ -148,6 +153,10 @@ void boot_devtype_init(void)
 	}
 #endif
 
+	/*
+	 * Legacy way: get bootdev by going through all boot media.
+	 */
+fallback:
 #ifdef CONFIG_DM_MMC
 	mmc_initialize(gd->bd);
 #endif
@@ -161,7 +170,8 @@ void boot_devtype_init(void)
 	}
 finish:
 	done = 1;
-	printf("Bootdev: %s %s\n", env_get("devtype"), env_get("devnum"));
+	printf("Bootdev%s: %s %s\n", atags_en ? "(atags)" : "",
+	       env_get("devtype"), env_get("devnum"));
 }
 
 void rockchip_dnl_mode_check(void)
