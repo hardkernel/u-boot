@@ -394,6 +394,9 @@ fixup_platform_configure()
 			PLATFORM_UBOOT_IMG_SIZE="--size 1024 2"
 			PLATFORM_TRUST_IMG_SIZE="--size 1024 2"
 		fi
+	elif [ $RKCHIP = "RK1808" ]; then
+		PLATFORM_UBOOT_IMG_SIZE="--size 1024 2"
+		PLATFORM_TRUST_IMG_SIZE="--size 1024 2"
 	fi
 
 # <*> Fixup PLATFORM_AARCH32 for ARM64 cpu platforms
