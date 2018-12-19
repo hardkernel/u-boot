@@ -13,6 +13,8 @@
 #include <asm/arch/secure_apb.h>
 #include <asm/io.h>
 
+#include <amlogic/aml_efuse.h>
+
 #define SECURE_BOOT_KEY_NAME    "secure_boot_set"
 
 extern int efuse_usr_api_init_dtb(const char*  dt_addr);
@@ -91,9 +93,9 @@ int keymanage_efuse_exist(const char* keyname)
 
         if (!strcmp(SECURE_BOOT_KEY_NAME, keyname))
         {
-                const unsigned long cfg10 = readl(AO_SEC_SD_CFG10);
+                const unsigned long cfg10 = IS_FEAT_BOOT_VERIFY();
                 KM_MSG("cfg10=0x%lX\n", cfg10);
-                return ( cfg10 & (0x1<< 4) );
+                return ( cfg10 );
         }
         else
         {

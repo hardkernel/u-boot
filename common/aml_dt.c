@@ -8,6 +8,8 @@
 #include <asm/arch/bl31_apis.h>
 #include <partition_table.h>
 
+#include <amlogic/aml_efuse.h>
+
 //#define AML_DT_DEBUG
 #ifdef AML_DT_DEBUG
 #define dbg_printf(...) printf(__VA_ARGS__)
@@ -41,24 +43,6 @@
 
 //#define readl(addr) (*(volatile unsigned int*)(addr))
 extern int checkhw(char * name);
-
-/* return 1 if dtb is encrpted */
-int is_dtb_encrypt(unsigned char *buffer)
-{
-#if 0
-	unsigned int magic = *(unsigned int*)buffer;
-
-	if ((DT_HEADER_MAGIC == magic)
-			|| (AML_DT_HEADER_MAGIC == magic)
-			|| (IS_GZIP_FORMAT(magic)))
-		return 0;
-	return 1;
-#else
-		const unsigned long cfg10 = readl(AO_SEC_SD_CFG10);
-		/*KM_MSG("cfg10=0x%lX\n", cfg10);*/
-		return ( cfg10 & (0x1<< 4) );
-#endif//#if 0
-}
 
 unsigned long __attribute__((unused))
 	get_multi_dt_entry(unsigned long fdt_addr){
@@ -242,11 +226,6 @@ unsigned long __attribute__((unused))
 	return 0;
 }
 
-static int is_secure_boot_enabled(void)
-{
-	const unsigned long cfg10 = readl(AO_SEC_SD_CFG10);
-	return ( cfg10 & (0x1<< 4) );
-}
 
 /*
   return 0 if dts is valid
@@ -260,9 +239,8 @@ int check_valid_dts(unsigned char *buffer)
 	unsigned char *sbuffer = (unsigned char *)getenv_hex("loadaddr", CONFIG_DTB_MEM_ADDR + 0x100000);
 	/* g12a merge to trunk, use trunk code */
 	//unsigned char *sbuffer = (unsigned char *)0x1000000;
-	if (is_secure_boot_enabled()) {
+	if (IS_FEAT_BOOT_VERIFY()) {
 
-	if (is_dtb_encrypt(buffer)) {
 		memcpy(sbuffer, buffer, AML_DTB_IMG_MAX_SZ);
 		flush_cache((unsigned long)sbuffer, AML_DTB_IMG_MAX_SZ);
 		ret = aml_sec_boot_check(AML_D_P_IMG_DECRYPT, (long unsigned)sbuffer, AML_DTB_IMG_MAX_SZ, 0);
@@ -278,8 +256,6 @@ int check_valid_dts(unsigned char *buffer)
 		else
 			nCheckOffset = 0;
 		memcpy(buffer, sbuffer + nCheckOffset, AML_DTB_IMG_MAX_SZ);
-
-	}
 
 	}
 #ifdef CONFIG_MULTI_DTB

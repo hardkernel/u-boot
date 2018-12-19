@@ -18,6 +18,8 @@
 #include <asm/arch/secure_apb.h>
 #include <libfdt.h>
 
+#include <amlogic/aml_efuse.h>
+
 typedef struct andr_img_hdr boot_img_hdr;
 
 #define debugP(fmt...) //printf("[Dbg imgread]L%d:", __LINE__),printf(fmt)
@@ -78,12 +80,6 @@ typedef struct{
 #define COMPILE_TYPE_ASSERT(expr, t)       typedef char t[(expr) ? 1 : -1]
 COMPILE_TYPE_ASSERT(2048 >= sizeof(AmlSecureBootImgHeader), _cc);
 
-static int is_secure_boot_enabled(void)
-{
-    const unsigned long cfg10 = readl(AO_SEC_SD_CFG10);
-    return ( cfg10 & (0x1<< 4) );
-}
-
 static int is_andr_9_image(void* pBuffer)
 {
     int nReturn = 0;
@@ -121,7 +117,7 @@ static int _aml_get_secure_boot_kernel_size(const void* pLoadaddr, unsigned* pTo
     unsigned int nBlkCnt = 0;
     const t_aml_enc_blk* pBlkInf = NULL;
     unsigned char *pAndHead = (unsigned char *)pLoadaddr;
-    unsigned int isSecure = is_secure_boot_enabled();
+    unsigned int isSecure = IS_FEAT_BOOT_VERIFY();
 
     rc = __LINE__;
 

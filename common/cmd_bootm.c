@@ -29,6 +29,8 @@
 #endif
 #include <asm/arch/secure_apb.h>
 
+#include <amlogic/aml_efuse.h>
+
 DECLARE_GLOBAL_DATA_PTR;
 
 #if defined(CONFIG_CMD_IMI)
@@ -92,12 +94,6 @@ static int do_bootm_subcommand(cmd_tbl_t *cmdtp, int flag, int argc,
 	ret = do_bootm_states(cmdtp, flag, argc, argv, state, &images, 0);
 
 	return ret;
-}
-
-static int is_secure_boot_enabled(void)
-{
-	const unsigned long cfg10 = readl(AO_SEC_SD_CFG10);
-	return ( cfg10 & (0x1<< 4) );
 }
 
 /*******************************************************************/
@@ -258,7 +254,7 @@ int do_bootm(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 #endif
 #endif//#ifndef CONFIG_AML_SIGNED_UBOOT
 
-	if (is_secure_boot_enabled())
+	if (IS_FEAT_BOOT_VERIFY())
 	{
 		/* Override load address argument to skip secure boot header (512).
 		* Only skip if secure boot so normal boot can use plain boot.img+		 */
