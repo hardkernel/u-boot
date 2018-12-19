@@ -19,22 +19,11 @@
 
 #define rand32() ((unsigned int)rand() | ((unsigned int)rand() << 16))
 
-#ifndef CONFIG_ARM64
 #define rand_ul() rand32()
 #define UL_ONEBITS 0xffffffff
 #define UL_LEN 32
 #define CHECKERBOARD1 0x55555555
 #define CHECKERBOARD2 0xaaaaaaaa
 #define UL_BYTE(x) ((x | x << 8 | x << 16 | x << 24))
-#else
-#define rand64() (((ul)rand32()) << 32 | ((ul)rand32()))
-#define rand_ul() rand64()
-#define UL_ONEBITS 0xffffffffffffffffUL
-#define UL_LEN 64
-#define CHECKERBOARD1 0x5555555555555555
-#define CHECKERBOARD2 0xaaaaaaaaaaaaaaaa
-#define UL_BYTE(x) (((ul)x | (ul)x << 8 | (ul)x << 16 | (ul)x << 24 |	\
-		    (ul)x << 32 | (ul)x << 40 | (ul)x << 48 | (ul)x << 56))
-#endif
 
 #endif /* __MEMTESTER_SIZES_H */

@@ -17,40 +17,40 @@
 
 /* Function declaration. */
 
-int test_stuck_address(ulv *bufa, size_t count);
-int test_random_value(ulv *bufa,
-		      ulv *bufb, size_t count);
-int test_xor_comparison(ulv *bufa,
-			ulv *bufb, size_t count);
-int test_sub_comparison(ulv *bufa,
-			ulv *bufb, size_t count);
-int test_mul_comparison(ulv *bufa,
-			ulv *bufb, size_t count);
-int test_div_comparison(ulv *bufa,
-			ulv *bufb, size_t count);
-int test_or_comparison(ulv *bufa,
-		       ulv *bufb, size_t count);
-int test_and_comparison(ulv *bufa,
-			ulv *bufb, size_t count);
-int test_seqinc_comparison(ulv *bufa,
-			   ulv *bufb, size_t count);
-int test_solidbits_comparison(ulv *bufa,
-			      ulv *bufb, size_t count);
-int test_checkerboard_comparison(ulv *bufa,
-				 ulv *bufb, size_t count);
-int test_blockseq_comparison(ulv *bufa,
-			     ulv *bufb, size_t count);
-int test_walkbits0_comparison(ulv *bufa,
-			      ulv *bufb, size_t count);
-int test_walkbits1_comparison(ulv *bufa,
-			      ulv *bufb, size_t count);
-int test_bitspread_comparison(ulv *bufa,
-			      ulv *bufb, size_t count);
-int test_bitflip_comparison(ulv *bufa,
-			    ulv *bufb, size_t count);
+int test_stuck_address(u32v *bufa, size_t count);
+int test_random_value(u32v *bufa,
+		      u32v *bufb, size_t count);
+int test_xor_comparison(u32v *bufa,
+			u32v *bufb, size_t count);
+int test_sub_comparison(u32v *bufa,
+			u32v *bufb, size_t count);
+int test_mul_comparison(u32v *bufa,
+			u32v *bufb, size_t count);
+int test_div_comparison(u32v *bufa,
+			u32v *bufb, size_t count);
+int test_or_comparison(u32v *bufa,
+		       u32v *bufb, size_t count);
+int test_and_comparison(u32v *bufa,
+			u32v *bufb, size_t count);
+int test_seqinc_comparison(u32v *bufa,
+			   u32v *bufb, size_t count);
+int test_solidbits_comparison(u32v *bufa,
+			      u32v *bufb, size_t count);
+int test_checkerboard_comparison(u32v *bufa,
+				 u32v *bufb, size_t count);
+int test_blockseq_comparison(u32v *bufa,
+			     u32v *bufb, size_t count);
+int test_walkbits0_comparison(u32v *bufa,
+			      u32v *bufb, size_t count);
+int test_walkbits1_comparison(u32v *bufa,
+			      u32v *bufb, size_t count);
+int test_bitspread_comparison(u32v *bufa,
+			      u32v *bufb, size_t count);
+int test_bitflip_comparison(u32v *bufa,
+			    u32v *bufb, size_t count);
 #ifdef TEST_NARROW_WRITES
-int test_8bit_wide_random(ulv *bufa,
-			  ulv *bufb, size_t count);
-int test_16bit_wide_random(ulv *bufa,
-			   ulv *bufb, size_t count);
+int test_8bit_wide_random(u32v *bufa,
+			  u32v *bufb, size_t count);
+int test_16bit_wide_random(u32v *bufa,
+			   u32v *bufb, size_t count);
 #endif
