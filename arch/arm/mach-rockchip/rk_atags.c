@@ -270,6 +270,7 @@ void atags_print_tag(struct tag *t)
 		printf("      addr = 0x%llx\n", t->u.serial.addr);
 		printf("  baudrate = %d\n", t->u.serial.baudrate);
 		printf("    m_mode = 0x%x\n", t->u.serial.m_mode);
+		printf("        id = 0x%x\n", t->u.serial.id);
 		for (i = 0; i < ARRAY_SIZE(t->u.serial.reserved); i++)
 			printf("    res[%d] = 0x%x\n", i, t->u.serial.reserved[i]);
 		break;
