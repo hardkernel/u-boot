@@ -12,13 +12,6 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
-int bramdisk_initialize(void)
-{
-	struct udevice *dev;
-
-	return uclass_get_device(UCLASS_BLK, 0, &dev);
-}
-
 static ulong ramdisk_bread(struct udevice *dev, lbaint_t start,
 			   lbaint_t blkcnt, void *dst)
 {
