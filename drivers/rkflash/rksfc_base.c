@@ -75,10 +75,10 @@ static int rksfc_blk_bind(struct udevice *udev)
 	struct udevice *bdev;
 	int ret;
 
-	ret = blk_create_devicef(udev, "rkflash_blk", "blk",
+	ret = blk_create_devicef(udev, "rkflash_blk", "spinand.blk",
 				 IF_TYPE_SPINAND,
 				 0, 512, 0, &bdev);
-	ret = blk_create_devicef(udev, "rkflash_blk", "blk",
+	ret = blk_create_devicef(udev, "rkflash_blk", "spinor.blk",
 				 IF_TYPE_SPINOR,
 				 1, 512, 0, &bdev);
 
