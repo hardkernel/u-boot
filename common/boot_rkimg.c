@@ -227,6 +227,10 @@ struct blk_desc *rockchip_get_bootdev(void)
 	devnum = env_get_ulong("devnum", 10, 0);
 
 	dev_desc = blk_get_devnum_by_type(dev_type, devnum);
+	if (!dev_desc) {
+		printf("%s: can't find dev_desc!\n", __func__);
+		return NULL;
+	}
 
 	printf("PartType: %s\n", part_get_type(dev_desc));
 
