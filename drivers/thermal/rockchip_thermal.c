@@ -166,6 +166,7 @@ struct rockchip_thermal_priv {
 	void *base;
 	void *grf;
 	enum tshut_mode tshut_mode;
+	enum tshut_polarity tshut_polarity;
 	const struct rockchip_tsadc_chip *data;
 };
 
@@ -563,7 +564,7 @@ static void tsadc_init_v2(struct udevice *dev)
 	writel(TSADCV2_HIGHT_TSHUT_DEBOUNCE_COUNT,
 	       priv->base + TSADCV2_HIGHT_TSHUT_DEBOUNCE);
 
-	if (priv->data->tshut_polarity == TSHUT_HIGH_ACTIVE)
+	if (priv->tshut_polarity == TSHUT_HIGH_ACTIVE)
 		writel(0U | TSADCV2_AUTO_TSHUT_POLARITY_HIGH,
 		       priv->base + TSADCV2_AUTO_CON);
 	else
@@ -786,6 +787,12 @@ static int rockchip_thermal_probe(struct udevice *dev)
 						-1);
 	if (priv->tshut_mode < 0)
 		priv->tshut_mode = priv->data->tshut_mode;
+
+	priv->tshut_polarity = dev_read_u32_default(dev,
+						    "rockchip,hw-tshut-polarity",
+						    -1);
+	if (priv->tshut_polarity < 0)
+		priv->tshut_polarity = tsadc->tshut_polarity;
 
 	if (priv->tshut_mode == TSHUT_MODE_GPIO)
 		pinctrl_select_state(dev, "otpout");
