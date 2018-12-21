@@ -4,6 +4,7 @@
 # SPDX-License-Identifier:      GPL-2.0+
 #
 
+obj-$(CONFIG_ROCKCHIP_SDRAM_COMMON) += sdram_share.o
 obj-$(CONFIG_ROCKCHIP_RK3368) = dmc-rk3368.o
 obj-$(CONFIG_ROCKCHIP_RV1108) = sdram_rv1108_pctl_phy.o sdram_rv1108.o
 obj-$(CONFIG_ROCKCHIP_RK3128) = sdram_rk3128.o
