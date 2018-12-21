@@ -10,7 +10,7 @@
 #include <dt-bindings/input/input.h>
 
 / {
-	model = "Rockchip RK3399 Evaluation Board";
+	model = "Rockchip RK3368 Evaluation Board";
 	compatible = "rockchip,rk3368-evb", "rockchip,rk3368";
 };
 

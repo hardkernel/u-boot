@@ -29,6 +29,11 @@
 	status = "okay";
 };
 
+&nandc0 {
+	u-boot,dm-pre-reloc;
+	status = "okay";
+};
+
 &service_msch {
 	u-boot,dm-pre-reloc;
 };
