@@ -320,7 +320,7 @@ static int rkss_verify_ptable(unsigned char *table_data)
 {
 	unsigned char *cp, *vp;
 	struct rkss_file_verification *verify;
-	int ret, i;
+	int ret, i, write_table_flag = 0;
 
 	for (i = 0; i < RKSS_PARTITION_TABLE_COUNT; i++) {
 		cp = table_data + (i * RKSS_DATA_LEN);
@@ -333,12 +333,15 @@ static int rkss_verify_ptable(unsigned char *table_data)
 			memset(cp, 0, RKSS_DATA_LEN);
 			verify->checkstr = RKSS_CHECK_STR;
 			verify->version = RKSS_VERSION;
+			write_table_flag = 1;
 		}
 	}
-	ret = rkss_write_multi_sections(table_data, 0, RKSS_PARTITION_TABLE_COUNT);
-	if (ret < 0) {
-		printf("rkss_write_multi_sections failed!!! ret: %d.", ret);
-		return -1;
+	if (write_table_flag == 1) {
+		ret = rkss_write_multi_sections(table_data, 0, RKSS_PARTITION_TABLE_COUNT);
+		if (ret < 0) {
+			printf("rkss_write_multi_sections failed!!! ret: %d.", ret);
+			return -1;
+		}
 	}
 	debug("verify ptable success.");
 	return 0;
