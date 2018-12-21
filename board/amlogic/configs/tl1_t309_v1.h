@@ -425,6 +425,9 @@
 #define CONFIG_AML_LCD_TV 1
 //#define CONFIG_AML_LCD_EXTERN 1
 
+#define CONFIG_AML_LOCAL_DIMMING
+#define CONFIG_AML_LOCAL_DIMMING_GLOBAL
+
 /* USB
  * Enable CONFIG_MUSB_HCD for Host functionalities MSC, keyboard
  * Enable CONFIG_MUSB_UDD for Device functionalities.

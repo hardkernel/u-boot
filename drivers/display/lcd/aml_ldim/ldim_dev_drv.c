@@ -475,12 +475,24 @@ static int aml_ldim_pinmux_load_from_dts(char *dt_addr, struct ldim_dev_config_s
 }
 #endif
 
+#define LDIM_PINMUX_MAX    3
+static char *ldim_pinmux_str[LDIM_PINMUX_MAX] = {
+	"ldim_pwm_pin",        /* 0 */
+	"ldim_pwm_vs_pin",     /* 1 */
+	"none",
+};
+
 static int aml_ldim_pinmux_load_from_bsp(struct ldim_dev_config_s *ldev_conf)
 {
-	char propname[50] = "ldim_pwm_vs_pin";
+	char *propname;
 	unsigned int i, j;
 	int set_cnt = 0, clr_cnt = 0;
 	struct bl_pwm_config_s *ld_pwm = &ldev_conf->pwm_config;
+
+	if (ld_pwm->pwm_port == BL_PWM_VS)
+		propname = ldim_pinmux_str[1];
+	else
+		propname = ldim_pinmux_str[0];
 
 	for (i = 0; i < 2; i++) {
 		if (strncmp(ldev_conf->ldim_pinmux->name, "invalid", 7) == 0)

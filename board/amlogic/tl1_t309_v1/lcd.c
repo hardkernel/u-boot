@@ -15,6 +15,9 @@
 
 #include <common.h>
 #include <amlogic/aml_lcd.h>
+#ifdef CONFIG_AML_LOCAL_DIMMING
+#include <amlogic/aml_ldim.h>
+#endif
 
 static char lcd_cpu_gpio[LCD_CPU_GPIO_NUM_MAX][LCD_CPU_GPIO_NAME_MAX] = {
 	"GPIOAO_4",
@@ -50,6 +53,15 @@ static char lcd_bl_gpio[BL_GPIO_NUM_MAX][LCD_CPU_GPIO_NAME_MAX] = {
 	"GPIOZ_6",
 	"invalid", /* ending flag */
 };
+
+#ifdef CONFIG_AML_LOCAL_DIMMING
+static char lcd_bl_ldim_gpio[BL_GPIO_NUM_MAX][LCD_CPU_GPIO_NAME_MAX] = {
+	"GPIOH_10", /* LD_EN */
+	"GPIOZ_5",  /* DIMMING_PWM */
+	"GPIOZ_6",  /* LD_EN2 */
+	"invalid",  /* ending flag */
+};
+#endif
 
 struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	{/* normal*/
@@ -292,6 +304,26 @@ static struct lcd_pinmux_ctrl_s bl_pinmux_ctrl[BL_PINMUX_MAX] = {
 	},
 };
 
+#ifdef CONFIG_AML_LOCAL_DIMMING
+static struct ldim_pinmux_ctrl_s ldim_pinmux_ctrl[] = {
+	{
+		.name = "ldim_pwm_pin", //GPIOZ_5
+		.pinmux_set = {{2, 0x00400000}, {LCD_PINMUX_END, 0x0}},
+		.pinmux_clr = {{2, 0x00f00000}, {LCD_PINMUX_END, 0x0}},
+	},
+	{
+		.name = "ldim_pwm_vs_pin", //GPIOZ_5
+		.pinmux_set = {{2, 0x00300000}, {LCD_PINMUX_END, 0x0}},
+		.pinmux_clr = {{2, 0x00f00000}, {LCD_PINMUX_END, 0x0}},
+	},
+	{
+		.name = "invalid",
+		.pinmux_set = {{LCD_PINMUX_END, 0x0}},
+		.pinmux_clr = {{LCD_PINMUX_END, 0x0}},
+	},
+};
+#endif
+
 static struct vbyone_config_s lcd_vbyone_config = {
 	.lane_count   = 8,
 	.byte_mode    = 4,
@@ -489,6 +521,39 @@ struct bl_config_s bl_config_dft = {
 	.pinmux_clr = {{LCD_PINMUX_END, 0x0}},
 };
 
+#ifdef CONFIG_AML_LOCAL_DIMMING
+static unsigned char ldim_init_on[LDIM_INIT_ON_MAX];
+static unsigned char ldim_init_off[LDIM_INIT_OFF_MAX];
+struct ldim_dev_config_s ldim_config_dft = {
+	.type = LDIM_DEV_TYPE_NORMAL,
+	.cs_hold_delay = 0,
+	.cs_clk_delay = 0,
+	.en_gpio = 0xff,
+	.en_gpio_on = 1,
+	.en_gpio_off = 0,
+	.lamp_err_gpio = 0xff,
+	.fault_check = 0,
+	.write_check = 0,
+	.dim_min = 0x7f, /* min 3% duty */
+	.dim_max = 0xfff,
+	.init_loaded = 0,
+	.cmd_size = 0xff,
+	.init_on = ldim_init_on,
+	.init_off = ldim_init_off,
+	.init_on_cnt = sizeof(ldim_init_on),
+	.init_off_cnt = sizeof(ldim_init_off),
+	.pwm_config = {
+		.index = 0,
+		.pwm_method = BL_PWM_POSITIVE,
+		.pwm_port = BL_PWM_MAX,
+		.pwm_duty_max = 100,
+		.pwm_duty_min = 20,
+	},
+	.pinctrl_ver = 1,
+	.ldim_pinmux = ldim_pinmux_ctrl,
+};
+#endif
+
 void lcd_config_bsp_init(void)
 {
 	int i, j;
@@ -523,5 +588,16 @@ void lcd_config_bsp_init(void)
 	for (j = i; j < LCD_EXTERN_GPIO_NUM_MAX; j++)
 		strcpy(ext_common_dft.gpio_name[j], "invalid");
 
+#endif
+#ifdef CONFIG_AML_LOCAL_DIMMING
+	strcpy(ldim_config_dft.name, "invalid");
+	strcpy(ldim_config_dft.pinmux_name, "invalid");
+	for (i = 0; i < BL_GPIO_NUM_MAX; i++) {
+		if (strcmp(lcd_bl_ldim_gpio[i], "invalid") == 0)
+			break;
+		strcpy(ldim_config_dft.gpio_name[i], lcd_bl_ldim_gpio[i]);
+	}
+	for (j = i; j < BL_GPIO_NUM_MAX; j++)
+		strcpy(ldim_config_dft.gpio_name[j], "invalid");
 #endif
 }

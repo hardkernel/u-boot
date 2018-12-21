@@ -16,7 +16,9 @@
 #include <common.h>
 #include <amlogic/aml_lcd.h>
 #include <asm/arch/gpio.h>
+#ifdef CONFIG_AML_LOCAL_DIMMING
 #include <amlogic/aml_ldim.h>
+#endif
 
 //Rsv_val = 0xffffffff
 
@@ -228,11 +230,16 @@ static struct lcd_pinmux_ctrl_s bl_pinmux_ctrl[BL_PINMUX_MAX] = {
 };
 
 #ifdef CONFIG_AML_LOCAL_DIMMING
-static struct ldim_pinmux_ctrl_s ldim_pinmux_ctrl[2] = {
+static struct ldim_pinmux_ctrl_s ldim_pinmux_ctrl[] = {
 	{
-		.name = "ldim_pwm_vs_pin", //GPIOZ_6
+		.name = "ldim_pwm_pin", //GPIOZ_6
 		.pinmux_set = {{4, 0x00010000}, {LCD_PINMUX_END, 0x0}},
 		.pinmux_clr = {{4, 0x00008000}, {3, 0x00200000}, {10, 0x00010000}, {LCD_PINMUX_END, 0x0}},
+	},
+	{
+		.name = "ldim_pwm_vs_pin", //GPIOZ_6
+		.pinmux_set = {{4, 0x00008000}, {LCD_PINMUX_END, 0x0}},
+		.pinmux_clr = {{4, 0x00010000}, {3, 0x00200000}, {10, 0x00010000}, {LCD_PINMUX_END, 0x0}},
 	},
 	{
 		.name = "invalid",
