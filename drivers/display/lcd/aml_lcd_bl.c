@@ -608,7 +608,6 @@ static void bl_set_level_pwm(struct bl_pwm_config_s *bl_pwm, unsigned int level)
 
 void aml_bl_set_level(unsigned int level)
 {
-	unsigned int temp = 0;
 	struct bl_config_s *bconf;
 	struct bl_pwm_config_s *pwm0, *pwm1;
 #ifdef CONFIG_AML_BL_EXTERN
@@ -637,18 +636,27 @@ void aml_bl_set_level(unsigned int level)
 	case BL_CTRL_PWM_COMBO:
 		pwm0 = bconf->bl_pwm_combo0;
 		pwm1 = bconf->bl_pwm_combo1;
-		if ((level >= pwm0->level_min) && (level <= pwm0->level_max)) {
-			temp = (pwm0->level_min > pwm1->level_min) ? pwm1->level_max : pwm1->level_min;
+
+		if (level >= pwm0->level_max) {
+			bl_set_level_pwm(pwm0, pwm0->level_max);
+		} else if ((level > pwm0->level_min) &&
+			(level < pwm0->level_max)) {
 			if (lcd_debug_print_flag)
-				LCDPR("bl: pwm0 region, level=%u, pwm1_level=%u\n", level, temp);
+				LCDPR("bl: pwm0 region, level=%u\n", level);
 			bl_set_level_pwm(pwm0, level);
-			bl_set_level_pwm(pwm1, temp);
-		} else if ((level >= pwm1->level_min) && (level <= pwm1->level_max)) {
-			temp = (pwm1->level_min > pwm0->level_min) ? pwm0->level_max : pwm0->level_min;
+		} else {
+			bl_set_level_pwm(pwm0, pwm0->level_min);
+		}
+
+		if (level >= pwm1->level_max) {
+			bl_set_level_pwm(pwm1, pwm1->level_max);
+		} else if ((level > pwm1->level_min) &&
+			(level < pwm1->level_max)) {
 			if (lcd_debug_print_flag)
-				LCDPR("bl: pwm1 region, level=%u, pwm0_level=%u\n", level, temp);
-			bl_set_level_pwm(pwm0, temp);
+				LCDPR("bl: pwm1 region, level=%u\n", level);
 			bl_set_level_pwm(pwm1, level);
+		} else {
+			bl_set_level_pwm(pwm1, pwm1->level_min);
 		}
 		break;
 #ifdef CONFIG_AML_LOCAL_DIMMING
