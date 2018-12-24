@@ -17,6 +17,7 @@
 #include "memtester.h"
 #include "sizes.h"
 #include "types.h"
+#include "io_map.h"
 
 union {
 	unsigned char bytes[UL_LEN / 8];
@@ -239,6 +240,7 @@ int test_solidbits_comparison(u32v *bufa, u32v *bufb, size_t count)
 	u32v *p2 = bufb;
 	unsigned int j;
 	u32 q;
+	u32 data[4];
 	size_t i;
 
 	printf("           ");
@@ -246,12 +248,15 @@ int test_solidbits_comparison(u32v *bufa, u32v *bufb, size_t count)
 	for (j = 0; j < 64; j++) {
 		printf("\b\b\b\b\b\b\b\b\b\b\b");
 		q = (j % 2) == 0 ? UL_ONEBITS : 0;
+		data[0] = data[2] = q;
+		data[1] = data[3] = ~q;
+		data_cpu_2_io(data, sizeof(data));
 		printf("setting %3u", j);
 		fflush(stdout);
 		p1 = (u32v *)bufa;
 		p2 = (u32v *)bufb;
 		for (i = 0; i < count; i++)
-			*p1++ = *p2++ = (i % 2) == 0 ? q : ~q;
+			*p1++ = *p2++ = data[i & 3];
 		printf("\b\b\b\b\b\b\b\b\b\b\b");
 		printf("testing %3u", j);
 		fflush(stdout);
@@ -269,6 +274,7 @@ int test_checkerboard_comparison(u32v *bufa, u32v *bufb, size_t count)
 	u32v *p2 = bufb;
 	unsigned int j;
 	u32 q;
+	u32 data[4];
 	size_t i;
 
 	printf("           ");
@@ -276,12 +282,15 @@ int test_checkerboard_comparison(u32v *bufa, u32v *bufb, size_t count)
 	for (j = 0; j < 64; j++) {
 		printf("\b\b\b\b\b\b\b\b\b\b\b");
 		q = (j % 2) == 0 ? CHECKERBOARD1 : CHECKERBOARD2;
+		data[0] = data[2] = q;
+		data[1] = data[3] = ~q;
+		data_cpu_2_io(data, sizeof(data));
 		printf("setting %3u", j);
 		fflush(stdout);
 		p1 = (u32v *)bufa;
 		p2 = (u32v *)bufb;
 		for (i = 0; i < count; i++)
-			*p1++ = *p2++ = (i % 2) == 0 ? q : ~q;
+			*p1++ = *p2++ = data[i & 3];
 		printf("\b\b\b\b\b\b\b\b\b\b\b");
 		printf("testing %3u", j);
 		fflush(stdout);
@@ -298,6 +307,7 @@ int test_blockseq_comparison(u32v *bufa, u32v *bufb, size_t count)
 	u32v *p1 = bufa;
 	u32v *p2 = bufb;
 	unsigned int j;
+	u32 data[4];
 	size_t i;
 
 	printf("           ");
@@ -308,8 +318,12 @@ int test_blockseq_comparison(u32v *bufa, u32v *bufb, size_t count)
 		p2 = (u32v *)bufb;
 		printf("setting %3u", j);
 		fflush(stdout);
+		data[0] = data[2] = (u32)UL_BYTE(j);
+		data[1] = data[3] = (u32)UL_BYTE(j);
+		data_cpu_2_io(data, sizeof(data));
+
 		for (i = 0; i < count; i++)
-			*p1++ = *p2++ = (u32)UL_BYTE(j);
+			*p1++ = *p2++ = data[i & 3];
 		printf("\b\b\b\b\b\b\b\b\b\b\b");
 		printf("testing %3u", j);
 		fflush(stdout);
@@ -326,6 +340,7 @@ int test_walkbits0_comparison(u32v *bufa, u32v *bufb, size_t count)
 	u32v *p1 = bufa;
 	u32v *p2 = bufb;
 	unsigned int j;
+	u32 data[4];
 	size_t i;
 
 	printf("           ");
@@ -336,12 +351,17 @@ int test_walkbits0_comparison(u32v *bufa, u32v *bufb, size_t count)
 		p2 = (u32v *)bufb;
 		printf("setting %3u", j);
 		fflush(stdout);
+		if (j < UL_LEN)
+			data[0] = ONE << j;
+		else
+			data[0] = ONE << (UL_LEN * 2 - j - 1);
+		data[1] = data[0];
+		data[2] = data[0];
+		data[3] = data[0];
+		data_cpu_2_io(data, sizeof(data));
+
 		for (i = 0; i < count; i++) {
-			if (j < UL_LEN) {	/* Walk it up. */
-				*p1++ = *p2++ = ONE << j;
-			} else {	/* Walk it back down. */
-				*p1++ = *p2++ = ONE << (UL_LEN * 2 - j - 1);
-			}
+				*p1++ = *p2++ = data[i & 3];
 		}
 		printf("\b\b\b\b\b\b\b\b\b\b\b");
 		printf("testing %3u", j);
@@ -359,6 +379,7 @@ int test_walkbits1_comparison(u32v *bufa, u32v *bufb, size_t count)
 	u32v *p1 = bufa;
 	u32v *p2 = bufb;
 	unsigned int j;
+	u32 data[4];
 	size_t i;
 
 	printf("           ");
@@ -369,13 +390,17 @@ int test_walkbits1_comparison(u32v *bufa, u32v *bufb, size_t count)
 		p2 = (u32v *)bufb;
 		printf("setting %3u", j);
 		fflush(stdout);
+		if (j < UL_LEN)
+			data[0] = UL_ONEBITS ^ (ONE << j);
+		else
+			data[0] = UL_ONEBITS ^ (ONE << (UL_LEN * 2 - j - 1));
+		data[1] = data[0];
+		data[2] = data[0];
+		data[3] = data[0];
+		data_cpu_2_io(data, sizeof(data));
+
 		for (i = 0; i < count; i++) {
-			if (j < UL_LEN) {	/* Walk it up. */
-				*p1++ = *p2++ = UL_ONEBITS ^ (ONE << j);
-			} else {	/* Walk it back down. */
-				*p1++ = *p2++ =
-				    UL_ONEBITS ^ (ONE << (UL_LEN * 2 - j - 1));
-			}
+				*p1++ = *p2++ = data[i & 3];
 		}
 		printf("\b\b\b\b\b\b\b\b\b\b\b");
 		printf("testing %3u", j);
@@ -393,6 +418,7 @@ int test_bitspread_comparison(u32v *bufa, u32v *bufb, size_t count)
 	u32v *p1 = bufa;
 	u32v *p2 = bufb;
 	unsigned int j;
+	u32 data[4];
 	size_t i;
 
 	printf("           ");
@@ -403,22 +429,21 @@ int test_bitspread_comparison(u32v *bufa, u32v *bufb, size_t count)
 		p2 = (u32v *)bufb;
 		printf("setting %3u", j);
 		fflush(stdout);
+		if (j < UL_LEN) {
+			data[0] = (ONE << j) | (ONE << (j + 2));
+			data[1] = UL_ONEBITS ^ ((ONE << j) | (ONE << (j + 2)));
+		} else {
+			data[0] = (ONE << (UL_LEN * 2 - 1 - j)) |
+				  (ONE << (UL_LEN * 2 + 1 - j));
+			data[1] = UL_ONEBITS ^ (ONE << (UL_LEN * 2 - 1 - j)
+						| (ONE << (UL_LEN * 2 + 1 - j)));
+		}
+		data[2] = data[0];
+		data[3] = data[1];
+		data_cpu_2_io(data, sizeof(data));
+
 		for (i = 0; i < count; i++) {
-			if (j < UL_LEN) {	/* Walk it up. */
-				*p1++ = *p2++ = (i % 2 == 0)
-				    ? (ONE << j) | (ONE << (j + 2))
-				    : UL_ONEBITS ^ ((ONE << j)
-						    | (ONE << (j + 2)));
-			} else {	/* Walk it back down. */
-				*p1++ = *p2++ = (i % 2 == 0)
-				    ? (ONE << (UL_LEN * 2 - 1 - j)) | (ONE <<
-								       (UL_LEN *
-									2 + 1 -
-									j))
-				    : UL_ONEBITS ^ (ONE << (UL_LEN * 2 - 1 - j)
-						    | (ONE <<
-						       (UL_LEN * 2 + 1 - j)));
-			}
+			*p1++ = *p2++ = data[i & 3];
 		}
 		printf("\b\b\b\b\b\b\b\b\b\b\b");
 		printf("testing %3u", j);
@@ -437,6 +462,7 @@ int test_bitflip_comparison(u32v *bufa, u32v *bufb, size_t count)
 	u32v *p2 = bufb;
 	unsigned int j, k;
 	u32 q;
+	u32 data[4];
 	size_t i;
 
 	printf("           ");
@@ -448,10 +474,13 @@ int test_bitflip_comparison(u32v *bufa, u32v *bufb, size_t count)
 			q = ~q;
 			printf("setting %3u", k * 8 + j);
 			fflush(stdout);
+			data[0] = data[2] = q;
+			data[1] = data[3] = ~q;
+			data_cpu_2_io(data, sizeof(data));
 			p1 = (u32v *)bufa;
 			p2 = (u32v *)bufb;
 			for (i = 0; i < count; i++)
-				*p1++ = *p2++ = (i % 2) == 0 ? q : ~q;
+				*p1++ = *p2++ = data[i & 3];
 			printf("\b\b\b\b\b\b\b\b\b\b\b");
 			printf("testing %3u", k * 8 + j);
 			fflush(stdout);

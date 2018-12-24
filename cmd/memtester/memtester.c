@@ -20,6 +20,7 @@
 #include "sizes.h"
 #include "types.h"
 #include "tests.h"
+#include "io_map.h"
 
 #define EXIT_FAIL_NONSTARTER    0x01
 #define EXIT_FAIL_ADDRESSLINES  0x02
@@ -147,6 +148,8 @@ static int do_memtester(cmd_tbl_t *cmdtp, int flag, int argc,
 			}
 		}
 	}
+
+	data_cpu_2_io_init();
 
 	for (loop = 1; ((!loops) || loop <= loops); loop++) {
 		for (j = 0; j < 2; j++) {
