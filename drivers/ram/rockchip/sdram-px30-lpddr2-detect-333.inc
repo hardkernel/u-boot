@@ -1,16 +1,18 @@
 {
 	{
-		.rank = 0x1,
-		.col = 0xC,
-		.bk = 0x3,
-		.bw = 0x1,
-		.dbw = 0x0,
-		.row_3_4 = 0x0,
-		.cs0_row = 0xF,
-		.cs1_row = 0xF,
-		.cs0_high16bit_row = 0xF,
-		.cs1_high16bit_row = 0xF,
-		.ddrconfig = 0,
+		{
+			.rank = 0x1,
+			.col = 0xC,
+			.bk = 0x3,
+			.bw = 0x1,
+			.dbw = 0x0,
+			.row_3_4 = 0x0,
+			.cs0_row = 0xF,
+			.cs1_row = 0xF,
+			.cs0_high16bit_row = 0xF,
+			.cs1_high16bit_row = 0xF,
+			.ddrconfig = 0,
+		},
 		{
 			{0x2b0c070a},
 			{0x08020303},
@@ -21,9 +23,13 @@
 			0x000000ff
 		}
 	},
-	.ddr_freq = 333,
-	.dramtype = LPDDR2,
-	.odt = 0,
+	{
+		.ddr_freq = 333,
+		.dramtype = LPDDR2,
+		.num_channels = 1,
+		.stride = 0,
+		.odt = 0,
+	},
 	{
 		{
 			{0x00000000, 0x41041004},	/* MSTR */

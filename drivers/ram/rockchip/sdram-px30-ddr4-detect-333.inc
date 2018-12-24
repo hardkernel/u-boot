@@ -1,16 +1,18 @@
 {
 	{
-		.rank = 0x1,
-		.col = 0xA,
-		.bk = 0x2,
-		.bw = 0x1,
-		.dbw = 0x0,
-		.row_3_4 = 0x0,
-		.cs0_row = 0x11,
-		.cs1_row = 0x0,
-		.cs0_high16bit_row = 0x11,
-		.cs1_high16bit_row = 0x0,
-		.ddrconfig = 0,
+		{
+			.rank = 0x1,
+			.col = 0xA,
+			.bk = 0x2,
+			.bw = 0x1,
+			.dbw = 0x0,
+			.row_3_4 = 0x0,
+			.cs0_row = 0x11,
+			.cs1_row = 0x0,
+			.cs0_high16bit_row = 0x11,
+			.cs1_high16bit_row = 0x0,
+			.ddrconfig = 0,
+		},
 		{
 			{0x4d110a08},
 			{0x06020501},
@@ -21,9 +23,13 @@
 			0x000000ff
 		}
 	},
-	.ddr_freq = 333,
-	.dramtype = DDR4,
-	.odt = 0,
+	{
+		.ddr_freq = 333,
+		.dramtype = DDR4,
+		.num_channels = 1,
+		.stride = 0,
+		.odt = 0,
+	},
 	{
 		{
 			{0x00000000, 0x43049010},	/* MSTR */
