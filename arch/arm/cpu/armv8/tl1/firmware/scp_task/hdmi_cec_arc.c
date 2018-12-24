@@ -222,12 +222,12 @@ void remote_cec_hw_reset(void)
 	/* Release SW reset */
 	cec_set_reg_bits(AO_CECB_GEN_CNTL, 0, 0, 1);
 	/* set up pinmux */
-	writel(((readl(PERIPHS_PIN_MUX_B) & (~(0xF << 12))) | (5 << 12)),
-		PERIPHS_PIN_MUX_B);
+	writel(((readl(AO_RTI_PINMUX_REG1) & (~(0xF << 8))) | (2 << 8)),
+		AO_RTI_PINMUX_REG1);
 	/*enable the interrupt*/
 	writel(CECB_IRQ_EN_MASK, AO_CECB_INTR_MASKN);
 	cec_wr_reg(DWC_CECB_WAKEUPCTRL, 0);
-	cec_dbg_print("Set cec pinmux:0x", readl(PERIPHS_PIN_MUX_B));
+	cec_dbg_print("Set cec pinmux:0x", (readl(AO_RTI_PINMUX_REG1) >> 8));
 	cec_dbg_prints("\n");
 }
 
