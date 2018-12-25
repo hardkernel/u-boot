@@ -28,7 +28,7 @@ struct chan_info {
 	struct rk3399_ddr_pctl_regs *pctl;
 	struct rk3399_ddr_pi_regs *pi;
 	struct rk3399_ddr_publ_regs *publ;
-	struct rk3399_msch_regs *msch;
+	struct msch_regs *msch;
 };
 
 struct dram_info {
@@ -68,15 +68,30 @@ struct rockchip_dmc_plat {
 	struct regmap *map;
 };
 
-static void copy_to_reg(u32 *dest, const u32 *src, u32 n)
+#define CRU_SFTRST_DDR_CTRL(ch, n)	((0x1 << (8 + 16 + (ch) * 4)) | \
+						((n) << (8 + (ch) * 4)))
+#define CRU_SFTRST_DDR_PHY(ch, n)	((0x1 << (9 + 16 + (ch) * 4)) | \
+						((n) << (9 + (ch) * 4)))
+static void rkclk_ddr_reset(struct rk3399_cru *cru, u32 channel, u32 ctl,
+			    u32 phy)
 {
-	int i;
+	channel &= 0x1;
+	ctl &= 0x1;
+	phy &= 0x1;
+	writel(CRU_SFTRST_DDR_CTRL(channel, ctl) |
+					CRU_SFTRST_DDR_PHY(channel, phy),
+					&cru->softrst_con[4]);
+}
 
-	for (i = 0; i < n / sizeof(u32); i++) {
-		writel(*src, dest);
-		src++;
-		dest++;
-	}
+static void phy_pctrl_reset(struct rk3399_cru *cru,
+			    u32 channel)
+{
+	rkclk_ddr_reset(cru, channel, 1, 1);
+	udelay(10);
+	rkclk_ddr_reset(cru, channel, 1, 0);
+	udelay(10);
+	rkclk_ddr_reset(cru, channel, 0, 0);
+	udelay(10);
 }
 
 static void phy_dll_bypass_set(struct rk3399_ddr_publ_regs *ddr_publ_regs,
@@ -122,35 +137,37 @@ static void set_memory_map(const struct chan_info *chan, u32 channel,
 	u32 row;
 
 	/* Get row number from ddrconfig setting */
-	if (sdram_ch->ddrconfig < 2 || sdram_ch->ddrconfig == 4)
+	if (sdram_ch->cap_info.ddrconfig < 2 ||
+	    sdram_ch->cap_info.ddrconfig == 4)
 		row = 16;
-	else if (sdram_ch->ddrconfig == 3)
+	else if (sdram_ch->cap_info.ddrconfig == 3)
 		row = 14;
 	else
 		row = 15;
 
-	cs_map = (sdram_ch->rank > 1) ? 3 : 1;
-	reduc = (sdram_ch->bw == 2) ? 0 : 1;
+	cs_map = (sdram_ch->cap_info.rank > 1) ? 3 : 1;
+	reduc = (sdram_ch->cap_info.bw == 2) ? 0 : 1;
 
 	/* Set the dram configuration to ctrl */
-	clrsetbits_le32(&denali_ctl[191], 0xF, (12 - sdram_ch->col));
+	clrsetbits_le32(&denali_ctl[191], 0xF, (12 - sdram_ch->cap_info.col));
 	clrsetbits_le32(&denali_ctl[190], (0x3 << 16) | (0x7 << 24),
-			((3 - sdram_ch->bk) << 16) |
+			((3 - sdram_ch->cap_info.bk) << 16) |
 			((16 - row) << 24));
 
 	clrsetbits_le32(&denali_ctl[196], 0x3 | (1 << 16),
 			cs_map | (reduc << 16));
 
 	/* PI_199 PI_COL_DIFF:RW:0:4 */
-	clrsetbits_le32(&denali_pi[199], 0xF, (12 - sdram_ch->col));
+	clrsetbits_le32(&denali_pi[199], 0xF, (12 - sdram_ch->cap_info.col));
 
 	/* PI_155 PI_ROW_DIFF:RW:24:3 PI_BANK_DIFF:RW:16:2 */
 	clrsetbits_le32(&denali_pi[155], (0x3 << 16) | (0x7 << 24),
-			((3 - sdram_ch->bk) << 16) |
+			((3 - sdram_ch->cap_info.bk) << 16) |
 			((16 - row) << 24));
 	/* PI_41 PI_CS_MAP:RW:24:4 */
 	clrsetbits_le32(&denali_pi[41], 0xf << 24, cs_map << 24);
-	if ((sdram_ch->rank == 1) && (sdram_params->base.dramtype == DDR3))
+	if (sdram_ch->cap_info.rank == 1 &&
+	    sdram_params->base.dramtype == DDR3)
 		writel(0x2EC7FFFF, &denali_pi[34]);
 }
 
@@ -294,7 +311,7 @@ static void set_ds_odt(const struct chan_info *chan,
 }
 
 static int phy_io_config(const struct chan_info *chan,
-			  const struct rk3399_sdram_params *sdram_params)
+			 const struct rk3399_sdram_params *sdram_params)
 {
 	u32 *denali_phy = chan->publ->denali_phy;
 	u32 vref_mode_dq, vref_value_dq, vref_mode_ac, vref_value_ac;
@@ -423,7 +440,6 @@ static int phy_io_config(const struct chan_info *chan,
 	/* PHY_939 PHY_PAD_CS_DRIVE */
 	clrsetbits_le32(&denali_phy[939], 0x7 << 14, mode_sel << 14);
 
-
 	/* speed setting */
 	if (sdram_params->base.ddr_freq < 400)
 		speed = 0x0;
@@ -471,11 +487,11 @@ static int pctl_cfg(const struct chan_info *chan, u32 channel,
 	 * work around controller bug:
 	 * Do not program DRAM_CLASS until NO_PHY_IND_TRAIN_INT is programmed
 	 */
-	copy_to_reg(&denali_ctl[1], &params_ctl[1],
-		    sizeof(struct rk3399_ddr_pctl_regs) - 4);
+	sdram_copy_to_reg(&denali_ctl[1], &params_ctl[1],
+			  sizeof(struct rk3399_ddr_pctl_regs) - 4);
 	writel(params_ctl[0], &denali_ctl[0]);
-	copy_to_reg(denali_pi, &sdram_params->pi_regs.denali_pi[0],
-		    sizeof(struct rk3399_ddr_pi_regs));
+	sdram_copy_to_reg(denali_pi, &sdram_params->pi_regs.denali_pi[0],
+			  sizeof(struct rk3399_ddr_pi_regs));
 	/* rank count need to set for init */
 	set_memory_map(chan, channel, sdram_params);
 
@@ -492,7 +508,7 @@ static int pctl_cfg(const struct chan_info *chan, u32 channel,
 	setbits_le32(&denali_pi[0], START);
 	setbits_le32(&denali_ctl[0], START);
 
-	/* Wating for phy DLL lock */
+	/* Waiting for phy DLL lock */
 	while (1) {
 		tmp = readl(&denali_phy[920]);
 		tmp1 = readl(&denali_phy[921]);
@@ -504,14 +520,20 @@ static int pctl_cfg(const struct chan_info *chan, u32 channel,
 			break;
 	}
 
-	copy_to_reg(&denali_phy[896], &params_phy[896], (958 - 895) * 4);
-	copy_to_reg(&denali_phy[0], &params_phy[0], (90 - 0 + 1) * 4);
-	copy_to_reg(&denali_phy[128], &params_phy[128], (218 - 128 + 1) * 4);
-	copy_to_reg(&denali_phy[256], &params_phy[256], (346 - 256 + 1) * 4);
-	copy_to_reg(&denali_phy[384], &params_phy[384], (474 - 384 + 1) * 4);
-	copy_to_reg(&denali_phy[512], &params_phy[512], (549 - 512 + 1) * 4);
-	copy_to_reg(&denali_phy[640], &params_phy[640], (677 - 640 + 1) * 4);
-	copy_to_reg(&denali_phy[768], &params_phy[768], (805 - 768 + 1) * 4);
+	sdram_copy_to_reg(&denali_phy[896], &params_phy[896], (958 - 895) * 4);
+	sdram_copy_to_reg(&denali_phy[0], &params_phy[0], (90 - 0 + 1) * 4);
+	sdram_copy_to_reg(&denali_phy[128],
+			  &params_phy[128], (218 - 128 + 1) * 4);
+	sdram_copy_to_reg(&denali_phy[256],
+			  &params_phy[256], (346 - 256 + 1) * 4);
+	sdram_copy_to_reg(&denali_phy[384],
+			  &params_phy[384], (474 - 384 + 1) * 4);
+	sdram_copy_to_reg(&denali_phy[512],
+			  &params_phy[512], (549 - 512 + 1) * 4);
+	sdram_copy_to_reg(&denali_phy[640],
+			  &params_phy[640], (677 - 640 + 1) * 4);
+	sdram_copy_to_reg(&denali_phy[768],
+			  &params_phy[768], (805 - 768 + 1) * 4);
 	set_ds_odt(chan, sdram_params);
 
 	/*
@@ -547,12 +569,12 @@ static int pctl_cfg(const struct chan_info *chan, u32 channel,
 	/* PHY_DLL_RST_EN */
 	clrsetbits_le32(&denali_phy[957], 0x3 << 24, 0x2 << 24);
 
-	/* Wating for PHY and DRAM init complete */
+	/* Waiting for PHY and DRAM init complete */
 	tmp = get_timer(0);
 	do {
 		if (get_timer(tmp) > timeout_ms) {
 			pr_err("DRAM (%s): phy failed to lock within  %ld ms\n",
-			      __func__, timeout_ms);
+			       __func__, timeout_ms);
 			return -ETIME;
 		}
 	} while (!(readl(&denali_ctl[203]) & (1 << 3)));
@@ -569,7 +591,7 @@ static void select_per_cs_training_index(const struct chan_info *chan,
 	u32 *denali_phy = chan->publ->denali_phy;
 
 	/* PHY_84 PHY_PER_CS_TRAINING_EN_0 1bit offset_16 */
-	if ((readl(&denali_phy[84])>>16) & 1) {
+	if ((readl(&denali_phy[84]) >> 16) & 1) {
 		/*
 		 * PHY_8/136/264/392
 		 * phy_per_cs_training_index_X 1bit offset_24
@@ -617,7 +639,7 @@ static int data_training_ca(const struct chan_info *chan, u32 channel,
 	u32 *denali_phy = chan->publ->denali_phy;
 	u32 i, tmp;
 	u32 obs_0, obs_1, obs_2, obs_err = 0;
-	u32 rank = sdram_params->ch[channel].rank;
+	u32 rank = sdram_params->ch[channel].cap_info.rank;
 
 	for (i = 0; i < rank; i++) {
 		select_per_cs_training_index(chan, i);
@@ -667,7 +689,7 @@ static int data_training_wl(const struct chan_info *chan, u32 channel,
 	u32 *denali_phy = chan->publ->denali_phy;
 	u32 i, tmp;
 	u32 obs_0, obs_1, obs_2, obs_3, obs_err = 0;
-	u32 rank = sdram_params->ch[channel].rank;
+	u32 rank = sdram_params->ch[channel].cap_info.rank;
 
 	for (i = 0; i < rank; i++) {
 		select_per_cs_training_index(chan, i);
@@ -723,7 +745,7 @@ static int data_training_rg(const struct chan_info *chan, u32 channel,
 	u32 *denali_phy = chan->publ->denali_phy;
 	u32 i, tmp;
 	u32 obs_0, obs_1, obs_2, obs_3, obs_err = 0;
-	u32 rank = sdram_params->ch[channel].rank;
+	u32 rank = sdram_params->ch[channel].cap_info.rank;
 
 	for (i = 0; i < rank; i++) {
 		select_per_cs_training_index(chan, i);
@@ -778,7 +800,7 @@ static int data_training_rl(const struct chan_info *chan, u32 channel,
 {
 	u32 *denali_pi = chan->pi->denali_pi;
 	u32 i, tmp;
-	u32 rank = sdram_params->ch[channel].rank;
+	u32 rank = sdram_params->ch[channel].cap_info.rank;
 
 	for (i = 0; i < rank; i++) {
 		select_per_cs_training_index(chan, i);
@@ -819,7 +841,7 @@ static int data_training_wdql(const struct chan_info *chan, u32 channel,
 {
 	u32 *denali_pi = chan->pi->denali_pi;
 	u32 i, tmp;
-	u32 rank = sdram_params->ch[channel].rank;
+	u32 rank = sdram_params->ch[channel].cap_info.rank;
 
 	for (i = 0; i < rank; i++) {
 		select_per_cs_training_index(chan, i);
@@ -859,6 +881,7 @@ static int data_training(const struct chan_info *chan, u32 channel,
 			 u32 training_flag)
 {
 	u32 *denali_phy = chan->publ->denali_phy;
+	int ret = 0;
 
 	/* PHY_927 PHY_PAD_DQS_DRIVE  RPULL offset_22 */
 	setbits_le32(&denali_phy[927], (1 << 22));
@@ -879,29 +902,45 @@ static int data_training(const struct chan_info *chan, u32 channel,
 	}
 
 	/* ca training(LPDDR4,LPDDR3 support) */
-	if ((training_flag & PI_CA_TRAINING) == PI_CA_TRAINING)
-		data_training_ca(chan, channel, sdram_params);
+	if ((training_flag & PI_CA_TRAINING) == PI_CA_TRAINING) {
+		ret = data_training_ca(chan, channel, sdram_params);
+		if (ret != 0)
+			goto out;
+	}
 
 	/* write leveling(LPDDR4,LPDDR3,DDR3 support) */
-	if ((training_flag & PI_WRITE_LEVELING) == PI_WRITE_LEVELING)
-		data_training_wl(chan, channel, sdram_params);
+	if ((training_flag & PI_WRITE_LEVELING) == PI_WRITE_LEVELING) {
+		ret = data_training_wl(chan, channel, sdram_params);
+		if (ret != 0)
+			goto out;
+	}
 
 	/* read gate training(LPDDR4,LPDDR3,DDR3 support) */
-	if ((training_flag & PI_READ_GATE_TRAINING) == PI_READ_GATE_TRAINING)
-		data_training_rg(chan, channel, sdram_params);
+	if ((training_flag & PI_READ_GATE_TRAINING) == PI_READ_GATE_TRAINING) {
+		ret = data_training_rg(chan, channel, sdram_params);
+		if (ret != 0)
+			goto out;
+	}
 
 	/* read leveling(LPDDR4,LPDDR3,DDR3 support) */
-	if ((training_flag & PI_READ_LEVELING) == PI_READ_LEVELING)
-		data_training_rl(chan, channel, sdram_params);
+	if ((training_flag & PI_READ_LEVELING) == PI_READ_LEVELING) {
+		ret = data_training_rl(chan, channel, sdram_params);
+		if (ret != 0)
+			goto out;
+	}
 
 	/* wdq leveling(LPDDR4 support) */
-	if ((training_flag & PI_WDQ_LEVELING) == PI_WDQ_LEVELING)
-		data_training_wdql(chan, channel, sdram_params);
+	if ((training_flag & PI_WDQ_LEVELING) == PI_WDQ_LEVELING) {
+		ret = data_training_wdql(chan, channel, sdram_params);
+		if (ret != 0)
+			goto out;
+	}
 
 	/* PHY_927 PHY_PAD_DQS_DRIVE  RPULL offset_22 */
 	clrbits_le32(&denali_phy[927], (1 << 22));
 
-	return 0;
+out:
+	return ret;
 }
 
 static void set_ddrconfig(const struct chan_info *chan,
@@ -909,18 +948,18 @@ static void set_ddrconfig(const struct chan_info *chan,
 			  unsigned char channel, u32 ddrconfig)
 {
 	/* only need to set ddrconfig */
-	struct rk3399_msch_regs *ddr_msch_regs = chan->msch;
+	struct msch_regs *ddr_msch_regs = chan->msch;
 	unsigned int cs0_cap = 0;
 	unsigned int cs1_cap = 0;
 
-	cs0_cap = (1 << (sdram_params->ch[channel].cs0_row
-			+ sdram_params->ch[channel].col
-			+ sdram_params->ch[channel].bk
-			+ sdram_params->ch[channel].bw - 20));
-	if (sdram_params->ch[channel].rank > 1)
-		cs1_cap = cs0_cap >> (sdram_params->ch[channel].cs0_row
-				- sdram_params->ch[channel].cs1_row);
-	if (sdram_params->ch[channel].row_3_4) {
+	cs0_cap = (1 << (sdram_params->ch[channel].cap_info.cs0_row
+			+ sdram_params->ch[channel].cap_info.col
+			+ sdram_params->ch[channel].cap_info.bk
+			+ sdram_params->ch[channel].cap_info.bw - 20));
+	if (sdram_params->ch[channel].cap_info.rank > 1)
+		cs1_cap = cs0_cap >> (sdram_params->ch[channel].cap_info.cs0_row
+				- sdram_params->ch[channel].cap_info.cs1_row);
+	if (sdram_params->ch[channel].cap_info.row_3_4) {
 		cs0_cap = cs0_cap * 3 / 4;
 		cs1_cap = cs1_cap * 3 / 4;
 	}
@@ -931,55 +970,36 @@ static void set_ddrconfig(const struct chan_info *chan,
 }
 
 static void dram_all_config(struct dram_info *dram,
-			    const struct rk3399_sdram_params *sdram_params)
+			    struct rk3399_sdram_params *sdram_params)
 {
-	u32 sys_reg = 0;
+	u32 sys_reg2 = 0;
+	u32 sys_reg3 = 0;
 	unsigned int channel, idx;
 
-	sys_reg |= sdram_params->base.dramtype << SYS_REG_DDRTYPE_SHIFT;
-	sys_reg |= (sdram_params->base.num_channels - 1)
-		    << SYS_REG_NUM_CH_SHIFT;
 	for (channel = 0, idx = 0;
 	     (idx < sdram_params->base.num_channels) && (channel < 2);
 	     channel++) {
-		const struct rk3399_sdram_channel *info =
-			&sdram_params->ch[channel];
-		struct rk3399_msch_regs *ddr_msch_regs;
-		const struct rk3399_msch_timings *noc_timing;
+		struct msch_regs *ddr_msch_regs;
+		struct sdram_msch_timings *noc_timing;
 
-		if (sdram_params->ch[channel].col == 0)
+		if (sdram_params->ch[channel].cap_info.col == 0)
 			continue;
 		idx++;
-		sys_reg |= info->row_3_4 << SYS_REG_ROW_3_4_SHIFT(channel);
-		sys_reg |= 1 << SYS_REG_CHINFO_SHIFT(channel);
-		sys_reg |= (info->rank - 1) << SYS_REG_RANK_SHIFT(channel);
-		sys_reg |= (info->col - 9) << SYS_REG_COL_SHIFT(channel);
-		sys_reg |= info->bk == 3 ? 0 : 1 << SYS_REG_BK_SHIFT(channel);
-		sys_reg |= (info->cs0_row - 13) << SYS_REG_CS0_ROW_SHIFT(channel);
-		sys_reg |= (info->cs1_row - 13) << SYS_REG_CS1_ROW_SHIFT(channel);
-		sys_reg |= (2 >> info->bw) << SYS_REG_BW_SHIFT(channel);
-		sys_reg |= (2 >> info->dbw) << SYS_REG_DBW_SHIFT(channel);
-
+		sdram_org_config(&sdram_params->ch[channel].cap_info,
+				 &sdram_params->base, &sys_reg2,
+				 &sys_reg3, channel);
 		ddr_msch_regs = dram->chan[channel].msch;
 		noc_timing = &sdram_params->ch[channel].noc_timings;
-		writel(noc_timing->ddrtiminga0,
-		       &ddr_msch_regs->ddrtiminga0);
-		writel(noc_timing->ddrtimingb0,
-		       &ddr_msch_regs->ddrtimingb0);
-		writel(noc_timing->ddrtimingc0,
-		       &ddr_msch_regs->ddrtimingc0);
-		writel(noc_timing->devtodev0,
-		       &ddr_msch_regs->devtodev0);
-		writel(noc_timing->ddrmode,
-		       &ddr_msch_regs->ddrmode);
+		sdram_msch_config(ddr_msch_regs, noc_timing);
 
 		/* rank 1 memory clock disable (dfi_dram_clk_disable = 1) */
-		if (sdram_params->ch[channel].rank == 1)
+		if (sdram_params->ch[channel].cap_info.rank == 1)
 			setbits_le32(&dram->chan[channel].pctl->denali_ctl[276],
 				     1 << 17);
 	}
 
-	writel(sys_reg, &dram->pmugrf->os_reg2);
+	writel(sys_reg2, &dram->pmugrf->os_reg2);
+	writel(sys_reg3, &dram->pmugrf->os_reg3);
 	rk_clrsetreg(&dram->pmusgrf->soc_con4, 0x1f << 10,
 		     sdram_params->base.stride << 10);
 
@@ -991,7 +1011,7 @@ static void dram_all_config(struct dram_info *dram,
 }
 
 static int switch_to_phy_index1(struct dram_info *dram,
-				 const struct rk3399_sdram_params *sdram_params)
+				const struct rk3399_sdram_params *sdram_params)
 {
 	u32 channel;
 	u32 *denali_phy;
@@ -1025,7 +1045,7 @@ static int switch_to_phy_index1(struct dram_info *dram,
 		denali_phy = dram->chan[channel].publ->denali_phy;
 		clrsetbits_le32(&denali_phy[896], (0x3 << 8) | 1, 1 << 8);
 		ret = data_training(&dram->chan[channel], channel,
-				  sdram_params, PI_FULL_TRAINING);
+				    sdram_params, PI_FULL_TRAINING);
 		if (ret) {
 			debug("index1 training failed\n");
 			return ret;
@@ -1035,12 +1055,458 @@ static int switch_to_phy_index1(struct dram_info *dram,
 	return 0;
 }
 
+u16  ddr_cfg_2_rbc[] = {
+		/*
+		 * [6]	  highest bit col
+		 * [5:3]  max row(14+n)
+		 * [2]    insertion row
+		 * [1:0]  col(9+n),col, data bus 32bit
+		 *
+		 * highbitcol, max_row, insertion_row,  col
+		 */
+		((0 << 6) | (2 << 3) | (0 << 2) | 0), /* 0 */
+		((0 << 6) | (2 << 3) | (0 << 2) | 1), /* 1 */
+		((0 << 6) | (1 << 3) | (0 << 2) | 2), /* 2 */
+		((0 << 6) | (0 << 3) | (0 << 2) | 3), /* 3 */
+		((0 << 6) | (2 << 3) | (1 << 2) | 1), /* 4 */
+		((0 << 6) | (1 << 3) | (1 << 2) | 2), /* 5 */
+		((1 << 6) | (0 << 3) | (0 << 2) | 2), /* 6 */
+		((1 << 6) | (1 << 3) | (0 << 2) | 2), /* 7 */
+};
+
+unsigned int calculate_ddrconfig(struct rk3399_sdram_params *sdram_params,
+				 unsigned int channel)
+{
+	unsigned int i;
+	unsigned int cs0_row = sdram_params->ch[channel].cap_info.cs0_row;
+	unsigned int col = sdram_params->ch[channel].cap_info.col;
+	unsigned int bw = sdram_params->ch[channel].cap_info.bw;
+
+	col -= (bw == 2) ? 0 : 1;
+	col -= 9;
+
+	for (i = 0; i < 4; i++) {
+		if ((col == (ddr_cfg_2_rbc[i] & 0x3)) &&
+		    (cs0_row <= (((ddr_cfg_2_rbc[i] >> 3) & 0x7) + 14)))
+			break;
+	}
+
+	if (i >= 4)
+		i = -1;
+
+	return i;
+}
+
+unsigned char calculate_stride(struct rk3399_sdram_params *sdram_params)
+{
+	unsigned int gstride_type;
+	unsigned int channel;
+	unsigned int chinfo = 0;
+	unsigned int cap = 0;
+	unsigned int stride = -1;
+	unsigned int ch_cap[2] = {0, 0};
+
+	gstride_type = STRIDE_256B;
+
+	for (channel = 0; channel < 2; channel++) {
+		unsigned int cs0_cap = 0;
+		unsigned int cs1_cap = 0;
+		struct sdram_cap_info *cap_info =
+			&sdram_params->ch[channel].cap_info;
+
+		if (cap_info->col == 0)
+			continue;
+
+		cs0_cap = (1 << (cap_info->cs0_row + cap_info->col +
+				 cap_info->bk + cap_info->bw - 20));
+		if (cap_info->rank > 1)
+			cs1_cap = cs0_cap >> (cap_info->cs0_row
+					      - cap_info->cs1_row);
+		if (cap_info->row_3_4) {
+			cs0_cap = cs0_cap * 3 / 4;
+			cs1_cap = cs1_cap * 3 / 4;
+		}
+		ch_cap[channel] = cs0_cap + cs1_cap;
+		chinfo |= 1 << channel;
+	}
+
+	cap = ch_cap[0] + ch_cap[1];
+	if (sdram_params->base.num_channels == 1) {
+		if (chinfo & 1) /* channel a only */
+			stride = 0x17;
+		else /* channel b only */
+			stride = 0x18;
+	} else {/* 2 channel */
+		if (ch_cap[0] == ch_cap[1]) {
+			/* interleaved */
+			if (gstride_type == PART_STRIDE) {
+			/*
+			 * first 64MB no interleaved other 256B interleaved
+			 * if 786M+768M.useful space from 0-1280MB and
+			 * 1536MB-1792MB
+			 * if 1.5G+1.5G(continuous).useful space from 0-2560MB
+			 * and 3072MB-3584MB
+			 */
+				stride = 0x1F;
+			} else {
+				switch (cap) {
+				/* 512MB */
+				case 512:
+					stride = 0;
+					break;
+				/* 1GB unstride or 256B stride*/
+				case 1024:
+					stride = (gstride_type == UN_STRIDE) ?
+						0x1 : 0x5;
+					break;
+				/*
+				 * 768MB + 768MB same as total 2GB memory
+				 * useful space: 0-768MB 1GB-1792MB
+				 */
+				case 1536:
+				/* 2GB unstride or 256B or 512B stride */
+				case 2048:
+					stride = (gstride_type == UN_STRIDE) ?
+						0x2 :
+						((gstride_type == STRIDE_512B) ?
+						 0xA : 0x9);
+					break;
+				/* 1536MB + 1536MB */
+				case 3072:
+					stride = (gstride_type == UN_STRIDE) ?
+						0x3 :
+						((gstride_type == STRIDE_512B) ?
+						 0x12 : 0x11);
+					break;
+				/* 4GB  unstride or 128B,256B,512B,4KB stride */
+				case 4096:
+					stride = (gstride_type == UN_STRIDE) ?
+						0x3 : (0xC + gstride_type);
+					break;
+				}
+			}
+		}
+		if (ch_cap[0] == 2048 && ch_cap[1] == 1024) {
+			/* 2GB + 1GB */
+			stride = (gstride_type == UN_STRIDE) ? 0x3 : 0x19;
+		}
+		/*
+		 * remain two channel capability not equal OR capability
+		 * power function of 2
+		 */
+		if (stride == (-1)) {
+			switch ((ch_cap[0] > ch_cap[1]) ?
+				ch_cap[0] : ch_cap[1]) {
+			case 256: /* 256MB + 128MB */
+				stride = 0;
+				break;
+			case 512: /* 512MB + 256MB */
+				stride = 1;
+				break;
+			case 1024:/* 1GB + 128MB/256MB/384MB/512MB/768MB */
+				stride = 2;
+				break;
+			case 2048: /* 2GB + 128MB/256MB/384MB/512MB/768MB/1GB */
+				stride = 3;
+				break;
+			default:
+				break;
+			}
+		}
+		if (stride == (-1))
+			goto error;
+	}
+	switch (stride) {
+	case 0xc:
+		printf("128B stride\n");
+		break;
+	case 5:
+	case 9:
+	case 0xd:
+	case 0x11:
+	case 0x19:
+		printf("256B stride\n");
+		break;
+	case 0xa:
+	case 0xe:
+	case 0x12:
+		printf("512B stride\n");
+		break;
+	case 0xf:
+		printf("4K stride\n");
+		break;
+	case 0x1f:
+		printf("32MB + 256B stride\n");
+		break;
+	default:
+		printf("no stride\n");
+	}
+
+	return stride;
+error:
+	printf("Cap not support!\n");
+	return (-1);
+}
+
+static void set_ddr_stride(struct rk3399_pmusgrf_regs *pmusgrf, u32 stride)
+{
+	rk_clrsetreg(&pmusgrf->soc_con4, 0x1f << 10,
+		     stride << 10);
+}
+
+void set_cap_relate_config(const struct chan_info *chan,
+			   struct rk3399_sdram_params *sdram_params,
+			   unsigned int channel)
+{
+	u32 *denali_ctl = chan->pctl->denali_ctl;
+	u32 tmp;
+	struct sdram_msch_timings *noc_timing;
+
+	if (sdram_params->base.dramtype == LPDDR3) {
+		tmp = (8 << sdram_params->ch[channel].cap_info.bw) /
+			(8 << sdram_params->ch[channel].cap_info.dbw);
+		/* memdata_ratio
+		 * 1 -> 0, 2 -> 1, 4 -> 2
+		 */
+		clrsetbits_le32(&denali_ctl[197], 0x7,
+				(tmp >> 1));
+		clrsetbits_le32(&denali_ctl[198], 0x7 << 8,
+				(tmp >> 1) << 8);
+	}
+	noc_timing = &sdram_params->ch[channel].noc_timings;
+	/*
+	 * noc timing bw relate timing is 32 bit, and real bw is 16bit
+	 * actually noc reg is setting at function dram_all_config
+	 */
+	if (sdram_params->ch[channel].cap_info.bw == 16 &&
+	    noc_timing->ddrmode.b.mwrsize == 2) {
+		if (noc_timing->ddrmode.b.burstsize)
+			noc_timing->ddrmode.b.burstsize -= 1;
+		noc_timing->ddrmode.b.mwrsize -= 1;
+		noc_timing->ddrtimingc0.b.burstpenalty *= 2;
+		noc_timing->ddrtimingc0.b.wrtomwr *= 2;
+	}
+}
+
+void clear_channel_params(struct rk3399_sdram_params *sdram_params,
+			  unsigned int channel)
+{
+	sdram_params->ch[channel].cap_info.rank = 0;
+	sdram_params->ch[channel].cap_info.col = 0;
+	sdram_params->ch[channel].cap_info.bk = 0;
+	sdram_params->ch[channel].cap_info.bw = 32;
+	sdram_params->ch[channel].cap_info.dbw = 32;
+	sdram_params->ch[channel].cap_info.row_3_4 = 0;
+	sdram_params->ch[channel].cap_info.cs0_row = 0;
+	sdram_params->ch[channel].cap_info.cs1_row = 0;
+	sdram_params->ch[channel].cap_info.ddrconfig = 0;
+}
+
+/* CS0,n=1
+ * CS1,n=2
+ * CS0 & CS1, n=3
+ * cs0_cap: MB unit
+ */
+void dram_set_cs(const struct chan_info *chan, u32 cs_map, u32 cs0_cap,
+		 unsigned char dramtype)
+{
+	u32 *denali_ctl = chan->pctl->denali_ctl;
+	u32 *denali_pi = chan->pi->denali_pi;
+	struct msch_regs *ddr_msch_regs = chan->msch;
+
+	clrsetbits_le32(&denali_ctl[196], 0x3, cs_map);
+	writel((cs0_cap / 32) | (((4096 - cs0_cap) / 32) << 8),
+	       &ddr_msch_regs->ddrsize);
+	if (dramtype == LPDDR4) {
+		if (cs_map == 1)
+			cs_map = 0x5;
+		else if (cs_map == 2)
+			cs_map = 0xa;
+		else
+			cs_map = 0xF;
+	}
+	/*PI_41 PI_CS_MAP:RW:24:4*/
+	clrsetbits_le32(&denali_pi[41],
+			0xf << 24, cs_map << 24);
+	if (cs_map == 1 && dramtype == DDR3)
+		writel(0x2EC7FFFF, &denali_pi[34]);
+}
+
+void dram_set_bw(const struct chan_info *chan, u32 bw)
+{
+	u32 *denali_ctl = chan->pctl->denali_ctl;
+
+	if (bw == 2)
+		clrbits_le32(&denali_ctl[196], 1 << 16);
+	else
+		setbits_le32(&denali_ctl[196], 1 << 16);
+}
+
+void dram_set_max_col(const struct chan_info *chan, u32 bw, u32 *pcol)
+{
+	u32 *denali_ctl = chan->pctl->denali_ctl;
+	struct msch_regs *ddr_msch_regs = chan->msch;
+	u32 *denali_pi = chan->pi->denali_pi;
+	u32 ddrconfig;
+
+	clrbits_le32(&denali_ctl[191], 0xf);
+	clrsetbits_le32(&denali_ctl[190],
+			(7 << 24),
+			((16 - ((bw == 2) ? 14 : 15)) << 24));
+	/*PI_199 PI_COL_DIFF:RW:0:4*/
+	clrbits_le32(&denali_pi[199], 0xf);
+	/*PI_155 PI_ROW_DIFF:RW:24:3*/
+	clrsetbits_le32(&denali_pi[155],
+			(7 << 24),
+			((16 - 12) << 24));
+	ddrconfig = (bw == 2) ? 3 : 2;
+	writel(ddrconfig | (ddrconfig << 8), &ddr_msch_regs->ddrconf);
+	/* set max cs0 size */
+	writel((4096 / 32) | ((0 / 32) << 8),
+	       &ddr_msch_regs->ddrsize);
+
+	*pcol = 12;
+}
+
+void dram_set_max_bank(const struct chan_info *chan, u32 bw, u32 *pbank,
+		       u32 *pcol)
+{
+	u32 *denali_ctl = chan->pctl->denali_ctl;
+	u32 *denali_pi = chan->pi->denali_pi;
+
+	clrbits_le32(&denali_ctl[191], 0xf);
+	clrbits_le32(&denali_ctl[190], (3 << 16));
+	/*PI_199 PI_COL_DIFF:RW:0:4*/
+	clrbits_le32(&denali_pi[199], 0xf);
+	/*PI_155 PI_BANK_DIFF:RW:16:2*/
+	clrbits_le32(&denali_pi[155], (3 << 16));
+
+	*pbank = 3;
+	*pcol = 12;
+}
+
+void dram_set_max_row(const struct chan_info *chan, u32 bw, u32 *prow,
+		      u32 *pbank, u32 *pcol)
+{
+	u32 *denali_ctl = chan->pctl->denali_ctl;
+	u32 *denali_pi = chan->pi->denali_pi;
+	struct msch_regs *ddr_msch_regs = chan->msch;
+
+	clrsetbits_le32(&denali_ctl[191], 0xf, 12 - 10);
+	clrbits_le32(&denali_ctl[190],
+		     (0x3 << 16) | (0x7 << 24));
+	/*PI_199 PI_COL_DIFF:RW:0:4*/
+	clrsetbits_le32(&denali_pi[199], 0xf, 12 - 10);
+	/*PI_155 PI_ROW_DIFF:RW:24:3 PI_BANK_DIFF:RW:16:2*/
+	clrbits_le32(&denali_pi[155],
+		     (0x3 << 16) | (0x7 << 24));
+	writel(1 | (1 << 8), &ddr_msch_regs->ddrconf);
+	/* set max cs0 size */
+	writel((4096 / 32) | ((0 / 32) << 8),
+	       &ddr_msch_regs->ddrsize);
+
+	*prow = 16;
+	*pbank = 3;
+	*pcol = (bw == 2) ? 10 : 11;
+}
+
+static u64 dram_detect_cap(struct dram_info *dram,
+			   struct rk3399_sdram_params *sdram_params,
+			   unsigned char channel)
+{
+	const struct chan_info *chan = &dram->chan[channel];
+	struct sdram_cap_info *cap_info = &sdram_params->ch[channel].cap_info;
+	u32 bw;
+	u32 col_tmp;
+	u32 bk_tmp;
+	u32 row_tmp;
+	u32 cs0_cap;
+	u32 training_flag;
+	u32 ddrconfig;
+
+	/* detect bw */
+	bw = 2;
+	dram_set_bw(chan, bw);
+	cap_info->bw = bw;
+	if (data_training(chan, channel, sdram_params, PI_READ_GATE_TRAINING)) {
+		bw = 1;
+		dram_set_bw(chan, 1);
+		cap_info->bw = bw;
+		if (data_training(chan, channel, sdram_params,
+				  PI_READ_GATE_TRAINING)) {
+			printf("16bit error!!!\n");
+			goto error;
+		}
+	}
+
+	/*
+	 * LPDDR3 CA training msut be trigger before other training.
+	 * DDR3 is not have CA training.
+	 */
+	if (sdram_params->base.dramtype == LPDDR3)
+		training_flag = PI_WRITE_LEVELING;
+	else
+		training_flag = PI_FULL_TRAINING;
+
+	if (sdram_params->base.dramtype != LPDDR4) {
+		if (data_training(chan, channel, sdram_params, training_flag)) {
+			printf("full training error!!!\n");
+			goto error;
+		}
+	}
+
+	/* detect col */
+	dram_set_max_col(chan, bw, &col_tmp);
+	if (sdram_detect_col(cap_info, col_tmp) != 0)
+		goto error;
+
+	/* detect bank */
+	dram_set_max_bank(chan, bw, &bk_tmp, &col_tmp);
+	sdram_detect_bank(cap_info, col_tmp, bk_tmp);
+
+	/* detect row */
+	dram_set_max_row(chan, bw, &row_tmp, &bk_tmp, &col_tmp);
+	if (sdram_detect_row(cap_info, col_tmp, bk_tmp, row_tmp) != 0)
+		goto error;
+
+	/* detect row_3_4 */
+	sdram_detect_row_3_4(cap_info, col_tmp, bk_tmp);
+
+	/* set ddrconfig */
+	cs0_cap = (1 << (cap_info->cs0_row + cap_info->col + cap_info->bk +
+			 cap_info->bw - 20));
+	if (cap_info->row_3_4)
+		cs0_cap = cs0_cap * 3 / 4;
+
+	cap_info->cs1_row = cap_info->cs0_row;
+	set_memory_map(chan, channel, sdram_params);
+	ddrconfig = calculate_ddrconfig(sdram_params, channel);
+	if (-1 == ddrconfig)
+		goto error;
+	set_ddrconfig(chan, sdram_params, channel,
+		      cap_info->ddrconfig);
+
+	/* detect cs1 row */
+	sdram_detect_cs1_row(cap_info, sdram_params->base.dramtype);
+
+	/* detect die bw */
+	sdram_detect_dbw(cap_info, sdram_params->base.dramtype);
+
+	return 0;
+error:
+	return (-1);
+}
+
 static int sdram_init(struct dram_info *dram,
-		      const struct rk3399_sdram_params *sdram_params)
+		      struct rk3399_sdram_params *sdram_params)
 {
 	unsigned char dramtype = sdram_params->base.dramtype;
 	unsigned int ddr_freq = sdram_params->base.ddr_freq;
 	int channel;
+	u32 rank;
+	int ch;
+	u32 tmp;
+	u32 training_flag;
 
 	debug("Starting SDRAM initialization...\n");
 
@@ -1051,33 +1517,87 @@ static int sdram_init(struct dram_info *dram,
 		return -E2BIG;
 	}
 
+	/* detect rank */
+	for (ch = 0; ch < 2; ch++) {
+		sdram_params->ch[ch].cap_info.rank = 2;
+		for (rank = 2; rank != 0; rank--) {
+			for (channel = 0; channel < 2; channel++) {
+				const struct chan_info *chan =
+					&dram->chan[channel];
+				struct rk3399_cru *cru = dram->cru;
+				struct rk3399_ddr_publ_regs *publ = chan->publ;
+
+				phy_pctrl_reset(cru, channel);
+				phy_dll_bypass_set(publ, ddr_freq);
+				if (pctl_cfg(chan, channel, sdram_params) != 0)
+					printf("pctl_cfg fail\n");
+			}
+
+			/* LPDDR2/LPDDR3 need to wait DAI complete, max 10us */
+			if (dramtype == LPDDR3)
+				udelay(10);
+
+			tmp = (rank == 2) ? 3 : 1;
+			dram_set_cs(&dram->chan[ch], tmp, 2048,
+				    sdram_params->base.dramtype);
+			sdram_params->ch[ch].cap_info.rank = rank;
+			/*
+			 * LPDDR3 CA training msut be trigger before
+			 * other training.
+			 * DDR3 is not have CA training.
+			 * LPDDR4 need confirm here!
+			 */
+			if (sdram_params->base.dramtype == LPDDR3)
+				training_flag = PI_CA_TRAINING |
+						PI_READ_GATE_TRAINING;
+			else
+				training_flag = PI_READ_GATE_TRAINING;
+			if (!(data_training(&dram->chan[ch], ch, sdram_params,
+					    training_flag)))
+				break;
+		}
+		sdram_params->ch[ch].cap_info.rank = rank;
+	}
+
+	sdram_params->base.num_channels = 0;
 	for (channel = 0; channel < 2; channel++) {
 		const struct chan_info *chan = &dram->chan[channel];
-		struct rk3399_ddr_publ_regs *publ = chan->publ;
+		struct sdram_cap_info *cap_info =
+			&sdram_params->ch[channel].cap_info;
 
-		phy_dll_bypass_set(publ, ddr_freq);
-
-		if (channel >= sdram_params->base.num_channels)
+		if (cap_info->rank == 0) {
+			clear_channel_params(sdram_params, 1);
 			continue;
-
-		if (pctl_cfg(chan, channel, sdram_params) != 0) {
-			printf("pctl_cfg fail, reset\n");
-			return -EIO;
+		} else {
+			sdram_params->base.num_channels++;
 		}
 
-		/* LPDDR2/LPDDR3 need to wait DAI complete, max 10us */
-		if (dramtype == LPDDR3)
-			udelay(10);
+		printf("Channel ");
+		printf(channel ? "1: " : "0: ");
 
-		if (data_training(chan, channel,
-				  sdram_params, PI_FULL_TRAINING)) {
-			printf("SDRAM initialization failed, reset\n");
-			return -EIO;
+		if (channel == 0)
+			set_ddr_stride(dram->pmusgrf, 0x17);
+		else
+			set_ddr_stride(dram->pmusgrf, 0x18);
+
+		if (dram_detect_cap(dram, sdram_params, channel)) {
+			printf("Cap error!\n");
+			continue;
 		}
 
-		set_ddrconfig(chan, sdram_params, channel,
-			      sdram_params->ch[channel].ddrconfig);
+		sdram_print_ddr_info(cap_info, &sdram_params->base, 0);
+		set_memory_map(chan, channel, sdram_params);
+		cap_info->ddrconfig =
+			calculate_ddrconfig(sdram_params, channel);
+		if (-1 == cap_info->ddrconfig) {
+			printf("no ddrconfig find, Cap not support!\n");
+			continue;
+		}
+		set_ddrconfig(chan, sdram_params, channel, cap_info->ddrconfig);
+		set_cap_relate_config(chan, sdram_params, channel);
 	}
+
+	sdram_params->base.stride = calculate_stride(sdram_params);
 	dram_all_config(dram, sdram_params);
 	switch_to_phy_index1(dram, sdram_params);
 
@@ -1115,8 +1635,8 @@ static int conv_of_platdata(struct udevice *dev)
 	int ret;
 
 	ret = regmap_init_mem_platdata(dev, dtplat->reg,
-			ARRAY_SIZE(dtplat->reg) / 2,
-			&plat->map);
+				       ARRAY_SIZE(dtplat->reg) / 2,
+				       &plat->map);
 	if (ret)
 		return ret;
 
@@ -1224,7 +1744,6 @@ static int rk3399_dmc_get_info(struct udevice *dev, struct ram_info *info)
 static struct ram_ops rk3399_dmc_ops = {
 	.get_info = rk3399_dmc_get_info,
 };
-
 
 static const struct udevice_id rk3399_dmc_ids[] = {
 	{ .compatible = "rockchip,rk3399-dmc" },
