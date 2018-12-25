@@ -440,9 +440,8 @@ static void lcd_reg_print_vbyone(void)
 	}
 }
 
-static void lcd_reg_print_mlvds(void)
+static void lcd_reg_print_tcon(void)
 {
-	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
 	unsigned int reg;
 
 	lcd_reg_print_serializer();
@@ -490,51 +489,32 @@ static void lcd_reg_print_mlvds(void)
 	printf("TCON_STATUS1        [0x%04x] = 0x%08x\n",
 		reg, lcd_tcon_read(reg));
 
-	switch (lcd_drv->chip_type) {
-	case LCD_CHIP_TXHD:
-	case LCD_CHIP_TL1:
-		reg = LVDS_CH_SWAP0;
-		printf("LVDS_CH_SWAP0       [0x%04x] = 0x%08x\n",
-			reg, lcd_vcbus_read(reg));
-		reg = LVDS_CH_SWAP1;
-		printf("LVDS_CH_SWAP1       [0x%04x] = 0x%08x\n",
-			reg, lcd_vcbus_read(reg));
-		reg = LVDS_CH_SWAP2;
-		printf("LVDS_CH_SWAP2       [0x%04x] = 0x%08x\n",
-			reg, lcd_vcbus_read(reg));
-		break;
-	default:
-		break;
-	}
+	reg = LVDS_CH_SWAP0;
+	printf("LVDS_CH_SWAP0       [0x%04x] = 0x%08x\n",
+		reg, lcd_vcbus_read(reg));
+	reg = LVDS_CH_SWAP1;
+	printf("LVDS_CH_SWAP1       [0x%04x] = 0x%08x\n",
+		reg, lcd_vcbus_read(reg));
+	reg = LVDS_CH_SWAP2;
+	printf("LVDS_CH_SWAP2       [0x%04x] = 0x%08x\n",
+		reg, lcd_vcbus_read(reg));
 }
 
-static void lcd_reg_print_p2p(void)
+static void lcd_reg_print_tcon_tl1(void)
 {
-	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
 	unsigned int reg;
 
 	lcd_reg_print_serializer();
 
-	printf("\ntcon clk registers:\n");
+	printf("\ntcon registers:\n");
 	reg = HHI_TCON_CLK_CNTL;
 	printf("HHI_TCON_CLK_CNTL   [0x%08x] = 0x%08x\n",
 		reg, lcd_hiu_read(reg));
-	reg = HHI_HPLL_CNTL6;
-	printf("HHI_HPLL_CNTL6      [0x%08x] = 0x%08x\n",
-		reg, lcd_hiu_read(reg));
-	reg = HHI_DIF_TCON_CNTL0;
-	printf("HHI_DIF_TCON_CNTL0  [0x%08x] = 0x%08x\n",
-		reg, lcd_hiu_read(reg));
-	reg = HHI_DIF_TCON_CNTL1;
-	printf("HHI_DIF_TCON_CNTL1  [0x%08x] = 0x%08x\n",
-		reg, lcd_hiu_read(reg));
-	reg = HHI_DIF_TCON_CNTL2;
-	printf("HHI_DIF_TCON_CNTL2  [0x%08x] = 0x%08x\n",
-		reg, lcd_hiu_read(reg));
-
-	printf("\ntcon top registers:\n");
 	reg = TCON_TOP_CTRL;
 	printf("TCON_TOP_CTRL       [0x%04x] = 0x%08x\n",
+		reg, lcd_tcon_read(reg));
+	reg = TCON_RGB_IN_MUX;
+	printf("TCON_RGB_IN_MUX     [0x%04x] = 0x%08x\n",
 		reg, lcd_tcon_read(reg));
 	reg = TCON_OUT_CH_SEL0;
 	printf("TCON_OUT_CH_SEL0    [0x%04x] = 0x%08x\n",
@@ -551,29 +531,37 @@ static void lcd_reg_print_p2p(void)
 	reg = TCON_RST_CTRL;
 	printf("TCON_RST_CTRL       [0x%04x] = 0x%08x\n",
 		reg, lcd_tcon_read(reg));
+	reg = TCON_AXI_OFST0;
+	printf("TCON_AXI_OFST0      [0x%04x] = 0x%08x\n",
+		reg, lcd_tcon_read(reg));
+	reg = TCON_AXI_OFST1;
+	printf("TCON_AXI_OFST1      [0x%04x] = 0x%08x\n",
+		reg, lcd_tcon_read(reg));
+	reg = TCON_AXI_OFST2;
+	printf("TCON_AXI_OFST2      [0x%04x] = 0x%08x\n",
+		reg, lcd_tcon_read(reg));
 	reg = TCON_CLK_CTRL;
 	printf("TCON_CLK_CTRL       [0x%04x] = 0x%08x\n",
 		reg, lcd_tcon_read(reg));
 	reg = TCON_STATUS1;
 	printf("TCON_STATUS1        [0x%04x] = 0x%08x\n",
 		reg, lcd_tcon_read(reg));
+	reg = TCON_DDRIF_CTRL1;
+	printf("TCON_DDRIF_CTRL1    [0x%04x] = 0x%08x\n",
+		reg, lcd_tcon_read(reg));
+	reg = TCON_DDRIF_CTRL2;
+	printf("TCON_DDRIF_CTRL2    [0x%04x] = 0x%08x\n",
+		reg, lcd_tcon_read(reg));
 
-	switch (lcd_drv->chip_type) {
-	case LCD_CHIP_TXHD:
-	case LCD_CHIP_TL1:
-		reg = LVDS_CH_SWAP0;
-		printf("LVDS_CH_SWAP0       [0x%04x] = 0x%08x\n",
-			reg, lcd_vcbus_read(reg));
-		reg = LVDS_CH_SWAP1;
-		printf("LVDS_CH_SWAP1       [0x%04x] = 0x%08x\n",
-			reg, lcd_vcbus_read(reg));
-		reg = LVDS_CH_SWAP2;
-		printf("LVDS_CH_SWAP2       [0x%04x] = 0x%08x\n",
-			reg, lcd_vcbus_read(reg));
-		break;
-	default:
-		break;
-	}
+	reg = LVDS_CH_SWAP0;
+	printf("LVDS_CH_SWAP0       [0x%04x] = 0x%08x\n",
+		reg, lcd_vcbus_read(reg));
+	reg = LVDS_CH_SWAP1;
+	printf("LVDS_CH_SWAP1       [0x%04x] = 0x%08x\n",
+		reg, lcd_vcbus_read(reg));
+	reg = LVDS_CH_SWAP2;
+	printf("LVDS_CH_SWAP2       [0x%04x] = 0x%08x\n",
+		reg, lcd_vcbus_read(reg));
 }
 
 static void lcd_reg_print_mipi(void)
@@ -626,6 +614,22 @@ static void lcd_reg_print_mipi(void)
 }
 
 static void lcd_reg_print_phy_analog(void)
+{
+	unsigned int reg;
+
+	printf("\nphy analog registers:\n");
+	reg = HHI_DIF_CSI_PHY_CNTL1;
+	printf("PHY_CNTL1           [0x%08x] = 0x%08x\n",
+		reg, lcd_hiu_read(reg));
+	reg = HHI_DIF_CSI_PHY_CNTL2;
+	printf("PHY_CNTL2           [0x%08x] = 0x%08x\n",
+		reg, lcd_hiu_read(reg));
+	reg = HHI_DIF_CSI_PHY_CNTL3;
+	printf("PHY_CNTL3           [0x%08x] = 0x%08x\n",
+		reg, lcd_hiu_read(reg));
+}
+
+static void lcd_reg_print_phy_analog_tl1(void)
 {
 	unsigned int reg;
 
@@ -965,13 +969,13 @@ static struct lcd_debug_info_if_s lcd_debug_info_if_mipi = {
 
 static struct lcd_debug_info_if_s lcd_debug_info_if_mlvds = {
 	.interface_print = lcd_info_print_mlvds,
-	.reg_dump_interface = lcd_reg_print_mlvds,
+	.reg_dump_interface = lcd_reg_print_tcon,
 	.reg_dump_phy = lcd_reg_print_phy_analog,
 };
 
 static struct lcd_debug_info_if_s lcd_debug_info_if_p2p = {
 	.interface_print = lcd_info_print_p2p,
-	.reg_dump_interface = lcd_reg_print_p2p,
+	.reg_dump_interface = lcd_reg_print_tcon_tl1,
 	.reg_dump_phy = lcd_reg_print_phy_analog,
 };
 
@@ -984,6 +988,18 @@ void aml_lcd_debug_probe(struct aml_lcd_drv_s *lcd_drv)
 	switch (lcd_drv->chip_type) {
 	case LCD_CHIP_TL1:
 		lcd_debug_info_reg = &lcd_debug_info_reg_tl1;
+		lcd_debug_info_if_lvds.reg_dump_phy =
+			lcd_reg_print_phy_analog_tl1;
+		lcd_debug_info_if_vbyone.reg_dump_phy =
+			lcd_reg_print_phy_analog_tl1;
+		lcd_debug_info_if_mlvds.reg_dump_interface =
+			lcd_reg_print_tcon_tl1;
+		lcd_debug_info_if_mlvds.reg_dump_phy =
+			lcd_reg_print_phy_analog_tl1;
+		lcd_debug_info_if_p2p.reg_dump_phy =
+			lcd_reg_print_phy_analog_tl1;
+		lcd_debug_info_if_mlvds.reg_dump_phy =
+			lcd_reg_print_phy_analog_tl1;
 		break;
 	case LCD_CHIP_G12A:
 	case LCD_CHIP_G12B:

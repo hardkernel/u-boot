@@ -57,24 +57,6 @@ extern unsigned int lcd_debug_print_flag;
 #define PRE_DE_DELAY                8
 
 
-/* ******** MIPI_DSI_PHY ******** */
-/* bit[15:11] */
-#define MIPI_PHY_LANE_BIT        11
-#define MIPI_PHY_LANE_WIDTH      5
-
-/* MIPI-DSI */
-#define DSI_LANE_0              (1 << 4)
-#define DSI_LANE_1              (1 << 3)
-#define DSI_LANE_CLK            (1 << 2)
-#define DSI_LANE_2              (1 << 1)
-#define DSI_LANE_3              (1 << 0)
-#define DSI_LANE_COUNT_1        (DSI_LANE_CLK | DSI_LANE_0)
-#define DSI_LANE_COUNT_2        (DSI_LANE_CLK | DSI_LANE_0 | DSI_LANE_1)
-#define DSI_LANE_COUNT_3        (DSI_LANE_CLK | DSI_LANE_0 |\
-					DSI_LANE_1 | DSI_LANE_2)
-#define DSI_LANE_COUNT_4        (DSI_LANE_CLK | DSI_LANE_0 |\
-					DSI_LANE_1 | DSI_LANE_2 | DSI_LANE_3)
-
 #define LCD_PINMUX_END          0xff
 #define LCD_PINMUX_NUM          15
 
