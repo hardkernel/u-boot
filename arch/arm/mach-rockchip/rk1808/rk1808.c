@@ -11,6 +11,10 @@
 #include <debug_uart.h>
 
 #include <asm/armv8/mmu.h>
+
+#define NIU_CIF_ADDR		0xfe8a0188
+#define QOS_PRIORITY_LEVEL(h, l)	((((h) & 3) << 8) | ((l) & 3))
+
 static struct mm_region rk1808_mem_map[] = {
 	{
 		.virt = 0x0UL,
@@ -55,6 +59,14 @@ enum {
 	UART2_IO_SEL_M2,
 	UART2_IO_SEL_USB,
 };
+
+int arch_cpu_init(void)
+{
+	/* Set cif qos priority */
+	writel(QOS_PRIORITY_LEVEL(2, 2), NIU_CIF_ADDR);
+
+	return 0;
+}
 
 /*
  * Default use UART2_TX/RX_M0(TX: GPIO4_A2, RX: GPIO4_A3)
