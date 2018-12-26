@@ -28,6 +28,13 @@
 #include <android_avb/avb_sha.h>
 #include <android_avb/avb_sysdeps.h>
 #include <android_avb/avb_util.h>
+#include <android_avb/avb_ops_user.h>
+#include <android_avb/rk_avb_ops_user.h>
+#include <malloc.h>
+#include <common.h>
+#ifdef CONFIG_CRYPTO_ROCKCHIP
+#include <rockchip_crypto/rockchip_crypto.h>
+#endif
 
 /* The most recent unlock challenge generated. */
 static uint8_t last_unlock_challenge[AVB_ATX_UNLOCK_CHALLENGE_SIZE];
@@ -64,7 +71,71 @@ static bool verify_permanent_attributes(
     const AvbAtxPermanentAttributes* attributes,
     const uint8_t expected_hash[AVB_SHA256_DIGEST_SIZE]) {
   uint8_t hash[AVB_SHA256_DIGEST_SIZE];
+#ifdef ROCKCHIP_USE_PRE_LOADER_PUB_KEY
+#ifdef CONFIG_CRYPTO_ROCKCHIP
+  struct rk_pub_key pub_key;
+  int i;
+  uint8_t rsa_hash[256] = {0};
+  uint8_t rsa_hash_revert[256] = {0};
+  unsigned int rsaResult_temp[8];
+  unsigned char rsaResult[32] = {0};
+  char *temp;
+  struct rk_crypto_desc crypto_desc;
+  int ret = 0;
 
+  if (rk_crypto_probe())
+    return false;
+
+  memset(&pub_key, 0, sizeof(struct rk_pub_key));
+  ret = rk_avb_get_pub_key(&pub_key);
+  if (ret)
+    return false;
+
+  ret = rk_avb_get_perm_attr_cer(rsa_hash, 256);
+  if (ret) {
+    avb_error("get_perm_attr_cer error\n");
+    return false;
+  }
+
+  for (i = 0; i < 256; i++)
+    rsa_hash_revert[255-i] = rsa_hash[i];
+
+  ret = get_rk_crypto_desc(&crypto_desc);
+  if (ret) {
+    avb_error("get_rk_crypto_desc error\n");
+    return false;
+  }
+
+  ret = rk_crypto_rsa_init(&crypto_desc);
+  if (ret) {
+    avb_error("rk_crypto_rsa_init error\n");
+    return false;
+  }
+
+  ret = rk_crypto_rsa_start(&crypto_desc, (u32 *)(rsa_hash_revert),
+                            pub_key.rsa_n, pub_key.rsa_e, pub_key.rsa_c);
+  if (ret) {
+    avb_error("rk_crypto_rsa_start error\n");
+    return false;
+  }
+
+  ret = rk_crypto_rsa_end(&crypto_desc, rsaResult_temp);
+  if (ret) {
+    avb_error("rk_crypto_rsa_end error\n");
+    return false;
+  }
+
+  temp = (char *)rsaResult_temp;
+  for (i = 0; i < 32; i++)
+    rsaResult[31-i] = temp[i];
+
+  sha256((const uint8_t*)attributes, sizeof(AvbAtxPermanentAttributes), hash);
+  if (memcmp((void*)rsaResult, (void*)hash, 32) == 0)
+    return true;
+
+  return false;
+#endif
+#else
   if (attributes->version != 1) {
     avb_error("Unsupported permanent attributes version.\n");
     return false;
@@ -75,6 +146,7 @@ static bool verify_permanent_attributes(
     return false;
   }
   return true;
+#endif
 }
 
 /* Verifies the format, key version, usage, and signature of a certificate. */

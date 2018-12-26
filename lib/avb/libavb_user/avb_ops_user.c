@@ -354,6 +354,7 @@ AvbIOResult avb_read_perm_attr(AvbAtxOps *atx_ops,
 AvbIOResult avb_read_perm_attr_hash(AvbAtxOps *atx_ops,
 				    uint8_t hash[AVB_SHA256_DIGEST_SIZE])
 {
+#ifndef ROCKCHIP_USE_PRE_LOADER_PUB_KEY
 #ifdef CONFIG_OPTEE_CLIENT
 	if (trusty_read_attribute_hash((uint32_t *)hash,
 				       AVB_SHA256_DIGEST_SIZE / 4))
@@ -361,6 +362,7 @@ AvbIOResult avb_read_perm_attr_hash(AvbAtxOps *atx_ops,
 #else
 	avb_error("Please open the macro!\n");
 	return -1;
+#endif
 #endif
 	return AVB_IO_RESULT_OK;
 }
