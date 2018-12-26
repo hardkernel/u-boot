@@ -12,7 +12,7 @@
 void hw_watchdog_init(void)
 {
   printf("HW WDT Timeout %d Seconds\n", WDT_HW_TIMEOUT);
-  watchdog_init(60 * 1000);
+  watchdog_init(WDT_HW_TIMEOUT * 1000);
 }
 
 void hw_watchdog_reset(void)
