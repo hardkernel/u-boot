@@ -267,13 +267,30 @@ int rk_auth_unlock(void *buffer, char *out_is_trusted);
  */
 int rk_generate_unlock_challenge(void *buffer, uint32_t *challenge_len);
 
-
 /**
  * Get last boot slot
  *
  * @return 0 is slot A; 1 is slot B; -1 is error
  */
 int rk_get_lastboot(void);
+
+/**
+ * Get permanent attribute certificate
+ *
+ * @param cer: certificate data
+ *
+ * @param size: certificate size
+ */
+int rk_avb_get_perm_attr_cer(uint8_t *cer, uint32_t size);
+
+/**
+ * Set permanent attribute certificate
+ *
+ * @param cer: certificate data
+ *
+ * @param size: certificate size
+ */
+int rk_avb_set_perm_attr_cer(uint8_t *cer, uint32_t size);
 
 #ifdef __cplusplus
 }
