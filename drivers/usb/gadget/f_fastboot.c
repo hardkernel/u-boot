@@ -1841,6 +1841,27 @@ static void cb_oem_perm_attr(void)
 #endif
 }
 
+static void cb_oem_perm_attr_rsa_cer(void)
+{
+#ifdef CONFIG_RK_AVB_LIBAVB_USER
+	if (download_bytes != 256) {
+		printf("Permanent attribute rsahash size is not equal!\n");
+		fastboot_tx_write_str("FAILperm attribute rsahash size error");
+		return;
+	}
+
+	if (rk_avb_set_perm_attr_cer((uint8_t *)CONFIG_FASTBOOT_BUF_ADDR,
+				     download_bytes)) {
+		fastboot_tx_write_str("FAILSet perm attr cer fail!");
+		return;
+	}
+
+	fastboot_tx_write_str("OKAY");
+#else
+	fastboot_tx_write_str("FAILnot implemented");
+#endif
+}
+
 static void cb_oem(struct usb_ep *ep, struct usb_request *req)
 {
 	char *cmd = req->buf;
@@ -2078,6 +2099,8 @@ static void cb_oem(struct usb_ep *ep, struct usb_request *req)
 #endif
 	} else if (strncmp("fuse at-perm-attr", cmd + 4, 16) == 0) {
 		cb_oem_perm_attr();
+	} else if (strncmp("fuse at-rsa-perm-attr", cmd + 4, 25) == 0) {
+		cb_oem_perm_attr_rsa_cer();
 	} else if (strncmp("fuse at-bootloader-vboot-key", cmd + 4, 27) == 0) {
 #ifdef CONFIG_RK_AVB_LIBAVB_USER
 		sha256_context ctx;
