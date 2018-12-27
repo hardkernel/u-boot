@@ -253,6 +253,10 @@ static int lcd_config_load_from_dts(char *dt_addr, struct lcd_config_s *pconf)
 
 	switch (pconf->lcd_basic.lcd_type) {
 	case LCD_TTL:
+		if (pconf->lcd_control.ttl_config == NULL) {
+			LCDERR("ttl_config is null\n");
+			return -1;
+		}
 		propdata = (char *)fdt_getprop(dt_addr, child_offset, "ttl_attr", NULL);
 		if (propdata == NULL) {
 			LCDERR("failed to get ttl_attr\n");
@@ -267,6 +271,10 @@ static int lcd_config_load_from_dts(char *dt_addr, struct lcd_config_s *pconf)
 		}
 		break;
 	case LCD_LVDS:
+		if (pconf->lcd_control.lvds_config == NULL) {
+			LCDERR("lvds_config is null\n");
+			return -1;
+		}
 		propdata = (char *)fdt_getprop(dt_addr, child_offset, "lvds_attr", &len);
 		if (propdata == NULL) {
 			LCDERR("failed to get lvds_attr\n");
@@ -326,6 +334,10 @@ static int lcd_config_load_from_dts(char *dt_addr, struct lcd_config_s *pconf)
 		}
 		break;
 	case LCD_VBYONE:
+		if (pconf->lcd_control.vbyone_config == NULL) {
+			LCDERR("vbyone_config is null\n");
+			return -1;
+		}
 		propdata = (char *)fdt_getprop(dt_addr, child_offset, "vbyone_attr", NULL);
 		if (propdata == NULL) {
 			LCDERR("failed to get vbyone_attr\n");
@@ -352,6 +364,10 @@ static int lcd_config_load_from_dts(char *dt_addr, struct lcd_config_s *pconf)
 		}
 		break;
 	case LCD_MIPI:
+		if (pconf->lcd_control.mipi_config == NULL) {
+			LCDERR("mipi_config is null\n");
+			return -1;
+		}
 		propdata = (char *)fdt_getprop(dt_addr, child_offset, "mipi_attr", NULL);
 		if (propdata == NULL) {
 			LCDERR("failed to get mipi_attr\n");
@@ -390,7 +406,7 @@ static int lcd_config_load_from_dts(char *dt_addr, struct lcd_config_s *pconf)
 
 	propdata = (char *)fdt_getprop(dt_addr, child_offset, "backlight_index", NULL);
 	if (propdata == NULL) {
-		LCDERR("failed to get backlight_index\n");
+		LCDPR("failed to get backlight_index\n");
 		pconf->backlight_index = 0xff;
 		return 0;
 	} else {
@@ -477,6 +493,10 @@ static int lcd_config_load_from_bsp(struct lcd_config_s *pconf)
 		pconf->lcd_timing.lcd_clk = temp;
 
 	if (pconf->lcd_basic.lcd_type == LCD_TTL) {
+		if (pconf->lcd_control.ttl_config == NULL) {
+			LCDERR("ttl_config is null\n");
+			return -1;
+		}
 		pconf->lcd_control.ttl_config->clk_pol = ext_lcd->lcd_spc_val0;
 		pconf->lcd_control.ttl_config->sync_valid =
 			((ext_lcd->lcd_spc_val1 << 1) |
@@ -485,23 +505,53 @@ static int lcd_config_load_from_bsp(struct lcd_config_s *pconf)
 			((ext_lcd->lcd_spc_val3 << 1) |
 			(ext_lcd->lcd_spc_val4 << 0));
 	} else if (pconf->lcd_basic.lcd_type == LCD_LVDS) {
+		if (pconf->lcd_control.lvds_config == NULL) {
+			LCDERR("lvds_config is null\n");
+			return -1;
+		}
 		pconf->lcd_control.lvds_config->lvds_repack = ext_lcd->lcd_spc_val0;
 		pconf->lcd_control.lvds_config->dual_port   = ext_lcd->lcd_spc_val1;
 		pconf->lcd_control.lvds_config->pn_swap     = ext_lcd->lcd_spc_val2;
 		pconf->lcd_control.lvds_config->port_swap   = ext_lcd->lcd_spc_val3;
 		pconf->lcd_control.lvds_config->lane_reverse = ext_lcd->lcd_spc_val4;
-		pconf->lcd_control.lvds_config->phy_vswing = LVDS_PHY_VSWING_DFT;
-		pconf->lcd_control.lvds_config->phy_preem  = LVDS_PHY_PREEM_DFT;
-		pconf->lcd_control.lvds_config->phy_clk_vswing = LVDS_PHY_CLK_VSWING_DFT;
-		pconf->lcd_control.lvds_config->phy_clk_preem  = LVDS_PHY_CLK_PREEM_DFT;
+		if ((ext_lcd->lcd_spc_val5 == Rsv_val) ||
+			(ext_lcd->lcd_spc_val6 == Rsv_val)) {
+			pconf->lcd_control.lvds_config->phy_vswing = LVDS_PHY_VSWING_DFT;
+			pconf->lcd_control.lvds_config->phy_preem  = LVDS_PHY_PREEM_DFT;
+		} else {
+			pconf->lcd_control.lvds_config->phy_vswing = ext_lcd->lcd_spc_val5;
+			pconf->lcd_control.lvds_config->phy_preem  = ext_lcd->lcd_spc_val6;
+		}
+		if ((ext_lcd->lcd_spc_val7 == Rsv_val) ||
+			(ext_lcd->lcd_spc_val8 == Rsv_val)) {
+			pconf->lcd_control.lvds_config->phy_clk_vswing = LVDS_PHY_CLK_VSWING_DFT;
+			pconf->lcd_control.lvds_config->phy_clk_preem  = LVDS_PHY_CLK_PREEM_DFT;
+		} else {
+			pconf->lcd_control.lvds_config->phy_clk_vswing = ext_lcd->lcd_spc_val7;
+			pconf->lcd_control.lvds_config->phy_clk_preem  = ext_lcd->lcd_spc_val8;
+		}
 	} else if (pconf->lcd_basic.lcd_type == LCD_VBYONE) {
+		if (pconf->lcd_control.vbyone_config == NULL) {
+			LCDERR("vbyone_config is null\n");
+			return -1;
+		}
 		pconf->lcd_control.vbyone_config->lane_count = ext_lcd->lcd_spc_val0;
 		pconf->lcd_control.vbyone_config->region_num = ext_lcd->lcd_spc_val1;
 		pconf->lcd_control.vbyone_config->byte_mode  = ext_lcd->lcd_spc_val2;
 		pconf->lcd_control.vbyone_config->color_fmt  = ext_lcd->lcd_spc_val3;
-		pconf->lcd_control.vbyone_config->phy_vswing = VX1_PHY_VSWING_DFT;
-		pconf->lcd_control.vbyone_config->phy_preem  = VX1_PHY_PREEM_DFT;
+		if ((ext_lcd->lcd_spc_val4 == Rsv_val) ||
+			(ext_lcd->lcd_spc_val5 == Rsv_val)) {
+			pconf->lcd_control.vbyone_config->phy_vswing = VX1_PHY_VSWING_DFT;
+			pconf->lcd_control.vbyone_config->phy_preem  = VX1_PHY_PREEM_DFT;
+		} else {
+			pconf->lcd_control.vbyone_config->phy_vswing = ext_lcd->lcd_spc_val4;
+			pconf->lcd_control.vbyone_config->phy_preem  = ext_lcd->lcd_spc_val5;
+		}
 	} else if (pconf->lcd_basic.lcd_type == LCD_MIPI) {
+		if (pconf->lcd_control.mipi_config == NULL) {
+			LCDERR("mipi_config is null\n");
+			return -1;
+		}
 		pconf->lcd_control.mipi_config->lane_num = ext_lcd->lcd_spc_val0;
 		pconf->lcd_control.mipi_config->bit_rate_max   = ext_lcd->lcd_spc_val1;
 		pconf->lcd_control.mipi_config->factor_numerator = ext_lcd->lcd_spc_val2;
@@ -538,8 +588,7 @@ static int lcd_config_load_from_bsp(struct lcd_config_s *pconf)
 		pconf->lcd_power->power_on_step[i].delay = power_step->delay;
 		if (power_step->type >= LCD_POWER_TYPE_MAX)
 			break;
-		else
-			i++;
+		i++;
 	}
 
 	i = 0;
@@ -556,8 +605,7 @@ static int lcd_config_load_from_bsp(struct lcd_config_s *pconf)
 		pconf->lcd_power->power_off_step[i].delay = power_step->delay;
 		if (power_step->type >= LCD_POWER_TYPE_MAX)
 			break;
-		else
-			i++;
+		i++;
 	}
 
 	i = 0;
@@ -685,6 +733,11 @@ static int lcd_config_load_from_unifykey(struct lcd_config_s *pconf)
 
 	/* interface: 20byte */
 	if (pconf->lcd_basic.lcd_type == LCD_LVDS) {
+		if (pconf->lcd_control.lvds_config == NULL) {
+			LCDERR("lvds_config is null\n");
+			free(para);
+			return -1;
+		}
 		if (lcd_header.version == 2) {
 			pconf->lcd_control.lvds_config->lvds_repack =
 					(*(p + LCD_UKEY_IF_ATTR_0) |
@@ -730,6 +783,11 @@ static int lcd_config_load_from_unifykey(struct lcd_config_s *pconf)
 			pconf->lcd_control.lvds_config->lane_reverse = 0;
 		}
 	} else if (pconf->lcd_basic.lcd_type == LCD_TTL) {
+		if (pconf->lcd_control.ttl_config == NULL) {
+			LCDERR("ttl_config is null\n");
+			free(para);
+			return -1;
+		}
 		pconf->lcd_control.ttl_config->clk_pol =
 			(*(p + LCD_UKEY_IF_ATTR_0) |
 			((*(p + LCD_UKEY_IF_ATTR_0 + 1)) << 8)) & 0x1;
@@ -746,6 +804,11 @@ static int lcd_config_load_from_unifykey(struct lcd_config_s *pconf)
 			((*(p + LCD_UKEY_IF_ATTR_4 + 1)) << 8)) & 0x1; /* bit_swap */
 		pconf->lcd_control.ttl_config->swap_ctrl |= (temp << 0);
 	} else if (pconf->lcd_basic.lcd_type == LCD_VBYONE) {
+		if (pconf->lcd_control.vbyone_config == NULL) {
+			LCDERR("vbyone_config is null\n");
+			free(para);
+			return -1;
+		}
 		if (lcd_header.version == 2) {
 			pconf->lcd_control.vbyone_config->lane_count =
 				(*(p + LCD_UKEY_IF_ATTR_0) |

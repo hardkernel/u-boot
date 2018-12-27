@@ -561,7 +561,10 @@ static int lcd_pinmux_load_from_bsp(struct lcd_config_s *pconf)
 		sprintf(propname, "%s", lcd_ttl_pinmux_str[pinmux_index]);
 		pinmux = pconf->lcd_pinmux;
 		for (i = 0; i < LCD_PINMX_MAX; i++) {
-			pinmux += i;
+			if (pinmux == NULL)
+				break;
+			if (pinmux->name == NULL)
+				break;
 			if (strncmp(pinmux->name, "invalid", 7) == 0)
 				break;
 			if (strncmp(pinmux->name, propname, strlen(propname)) == 0) {
@@ -581,6 +584,7 @@ static int lcd_pinmux_load_from_bsp(struct lcd_config_s *pconf)
 				}
 				break;
 			}
+			pinmux++;
 		}
 
 		/* sync */
@@ -599,7 +603,10 @@ static int lcd_pinmux_load_from_bsp(struct lcd_config_s *pconf)
 		sprintf(propname, "%s", lcd_ttl_pinmux_str[pinmux_index]);
 		pinmux = pconf->lcd_pinmux;
 		for (i = 0; i < LCD_PINMX_MAX; i++) {
-			pinmux += i;
+			if (pinmux == NULL)
+				break;
+			if (pinmux->name == NULL)
+				break;
 			if (strncmp(pinmux->name, "invalid", 7) == 0)
 				break;
 			if (strncmp(pinmux->name, propname, strlen(propname)) == 0) {
@@ -619,6 +626,7 @@ static int lcd_pinmux_load_from_bsp(struct lcd_config_s *pconf)
 				}
 				break;
 			}
+			pinmux++;
 		}
 
 		if (set_cnt < LCD_PINMUX_NUM) {
@@ -640,7 +648,10 @@ static int lcd_pinmux_load_from_bsp(struct lcd_config_s *pconf)
 		sprintf(propname, "lcd_minilvds_pin");
 		pinmux = pconf->lcd_pinmux;
 		for (i = 0; i < LCD_PINMX_MAX; i++) {
-			pinmux += i;
+			if (pinmux == NULL)
+				break;
+			if (pinmux->name == NULL)
+				break;
 			if (strncmp(pinmux->name, "invalid", 7) == 0)
 				break;
 			if (strncmp(pinmux->name, propname, strlen(propname)) == 0) {
@@ -660,6 +671,7 @@ static int lcd_pinmux_load_from_bsp(struct lcd_config_s *pconf)
 				}
 				break;
 			}
+			pinmux++;
 		}
 		if (set_cnt < LCD_PINMUX_NUM) {
 			pconf->pinmux_set[set_cnt][0] = LCD_PINMUX_END;
@@ -674,7 +686,10 @@ static int lcd_pinmux_load_from_bsp(struct lcd_config_s *pconf)
 		sprintf(propname, "lcd_vbyone_pin");
 		pinmux = pconf->lcd_pinmux;
 		for (i = 0; i < LCD_PINMX_MAX; i++) {
-			pinmux += i;
+			if (pinmux == NULL)
+				break;
+			if (pinmux->name == NULL)
+				break;
 			if (strncmp(pinmux->name, "invalid", 7) == 0)
 				break;
 			if (strncmp(pinmux->name, propname, strlen(propname)) == 0) {
@@ -694,6 +709,7 @@ static int lcd_pinmux_load_from_bsp(struct lcd_config_s *pconf)
 				}
 				break;
 			}
+			pinmux++;
 		}
 		if (set_cnt < LCD_PINMUX_NUM) {
 			pconf->pinmux_set[set_cnt][0] = LCD_PINMUX_END;
@@ -708,7 +724,10 @@ static int lcd_pinmux_load_from_bsp(struct lcd_config_s *pconf)
 		sprintf(propname, "lcd_p2p_pin");
 		pinmux = pconf->lcd_pinmux;
 		for (i = 0; i < LCD_PINMX_MAX; i++) {
-			pinmux += i;
+			if (pinmux == NULL)
+				break;
+			if (pinmux->name == NULL)
+				break;
 			if (strncmp(pinmux->name, "invalid", 7) == 0)
 				break;
 			if (strncmp(pinmux->name, propname, strlen(propname)) == 0) {
@@ -728,6 +747,7 @@ static int lcd_pinmux_load_from_bsp(struct lcd_config_s *pconf)
 				}
 				break;
 			}
+			pinmux++;
 		}
 		if (set_cnt < LCD_PINMUX_NUM) {
 			pconf->pinmux_set[set_cnt][0] = LCD_PINMUX_END;

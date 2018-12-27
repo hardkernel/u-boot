@@ -2120,6 +2120,10 @@ static int aml_bl_pinmux_load_from_bsp(struct bl_config_s *bconf)
 		sprintf(propname,"%s", bl_pinmux_str[pinmux_index]);
 		pinmux = bconf->bl_pinmux;
 		for (i = 0; i < LCD_PINMX_MAX; i++) {
+			if (pinmux == NULL)
+				break;
+			if (pinmux->name == NULL)
+				break;
 			if (strncmp(pinmux->name, "invalid", 7) == 0)
 				break;
 			if (strncmp(pinmux->name, propname, strlen(propname)) == 0) {
@@ -2179,6 +2183,10 @@ static int aml_bl_pinmux_load_from_bsp(struct bl_config_s *bconf)
 
 		pinmux = bconf->bl_pinmux;
 		for (i = 0; i < LCD_PINMX_MAX; i++) {
+			if (pinmux == NULL)
+				break;
+			if (pinmux->name == NULL)
+				break;
 			if (strncmp(pinmux->name, "invalid", 7) == 0)
 				break;
 			if (strncmp(pinmux->name, propname, strlen(propname)) == 0) {
@@ -2237,6 +2245,10 @@ static int aml_bl_pinmux_load_from_bsp(struct bl_config_s *bconf)
 		set_cnt = 0;
 		clr_cnt = 0;
 		for (i = 0; i < LCD_PINMX_MAX; i++) {
+			if (pinmux == NULL)
+				break;
+			if (pinmux->name == NULL)
+				break;
 			if (strncmp(pinmux->name, "invalid", 7) == 0)
 				break;
 			if (strncmp(pinmux->name, propname, strlen(propname)) == 0) {

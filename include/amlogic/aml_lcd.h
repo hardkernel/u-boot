@@ -149,7 +149,7 @@ struct ext_lcd_config_s {
 	unsigned int bl_ext_index;
 };
 
-#define LCD_NUM_MAX         10
+#define LCD_NUM_MAX         20
 
 extern struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX];
 

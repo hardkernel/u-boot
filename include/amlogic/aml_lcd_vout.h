@@ -316,10 +316,12 @@ struct mlvds_config_s {
 
 enum p2p_type_e {
 	P2P_CEDS = 0,
-	P2P_CSPI,
 	P2P_CMPI,
 	P2P_ISP,
-	P2P_CHPI,
+	P2P_EPI,
+	P2P_CHPI = 10, /* low common mode */
+	P2P_CSPI,
+	P2P_USIT,
 	P2P_MAX,
 };
 
@@ -396,7 +398,7 @@ struct lcd_power_ctrl_s {
 	struct lcd_power_step_s power_off_step[LCD_PWR_STEP_MAX];
 };
 
-#define LCD_PINMX_MAX              20
+#define LCD_PINMX_MAX              10
 #define BL_PINMUX_MAX              20
 #define LCD_PINMUX_NAME_LEN_MAX    30
 struct lcd_pinmux_ctrl_s {

@@ -607,13 +607,17 @@ static void lcd_lvds_disable(void)
 	lcd_vcbus_setb(LVDS_GEN_CNTL, 0, 3, 1); /* disable lvds fifo */
 }
 
-static void lcd_mlvds_clk_util_set(struct lcd_config_s *pconf)
+static void lcd_mlvds_control_set(struct lcd_config_s *pconf)
 {
-	unsigned int lcd_bits, div_sel;
+	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
+	unsigned int div_sel;
+	unsigned int channel_sel0, channel_sel1;
 
-	lcd_bits = pconf->lcd_basic.lcd_bits;
+	if (lcd_debug_print_flag)
+		LCDPR("%s\n", __func__);
 
-	switch (lcd_bits) {
+	/* phy_div: 0=div6, 1=div 7, 2=div8, 3=div10 */
+	switch (pconf->lcd_basic.lcd_bits) {
 	case 6:
 		div_sel = 0;
 		break;
@@ -625,59 +629,36 @@ static void lcd_mlvds_clk_util_set(struct lcd_config_s *pconf)
 		break;
 	}
 
-	/* set fifo_clk_sel */
+	/* fifo_clk_sel[7:6]: 0=div6, 1=div 7, 2=div8, 3=div10 */
 	lcd_hiu_write(HHI_LVDS_TX_PHY_CNTL0, (div_sel << 6));
-	/* set cntl_ser_en:  8-channel to 1 */
+	/* serializer_en[27:16] */
 	lcd_hiu_setb(HHI_LVDS_TX_PHY_CNTL0, 0xfff, 16, 12);
 
-	/* decoupling fifo enable, gated clock enable */
-	lcd_hiu_write(HHI_LVDS_TX_PHY_CNTL1,
-		(1 << 30) | (0 << 25) | (1 << 24));
-	/* decoupling fifo write enable after fifo enable */
-	lcd_hiu_setb(HHI_LVDS_TX_PHY_CNTL1, 1, 31, 1);
-}
+	switch (lcd_drv->chip_type) {
+	case LCD_CHIP_TL1:
+		/* pn swap[2] */
+		lcd_hiu_setb(HHI_LVDS_TX_PHY_CNTL0, 1, 2, 1);
 
-static void lcd_mlvds_control_set(struct lcd_config_s *pconf)
-{
-	unsigned int bit_num = 1;
+		/* fifo enable[30], phy_clock gating[24] */
+		lcd_hiu_write(HHI_LVDS_TX_PHY_CNTL1, (1 << 30) | (1 << 24));
+		/* fifo write enable[31] */
+		lcd_hiu_setb(HHI_LVDS_TX_PHY_CNTL1, 1, 31, 1);
 
-	if (lcd_debug_print_flag)
-		LCDPR("%s\n", __func__);
-
-	lcd_mlvds_clk_util_set(pconf);
-
-	switch (pconf->lcd_basic.lcd_bits) {
-	case 10:
-		bit_num=0;
-		break;
-	case 8:
-		bit_num=1;
-		break;
-	case 6:
-		bit_num=2;
-		break;
-	case 4:
-		bit_num=3;
+		/* channel swap default no swap */
+		channel_sel0 = pconf->lcd_control.mlvds_config->channel_sel0;
+		channel_sel1 = pconf->lcd_control.mlvds_config->channel_sel1;
+		lcd_vcbus_write(LVDS_CH_SWAP0, (channel_sel0 & 0xff));
+		lcd_vcbus_write(LVDS_CH_SWAP1, ((channel_sel0 >> 8) & 0xff));
+		lcd_vcbus_write(LVDS_CH_SWAP2, (channel_sel1 & 0xff));
 		break;
 	default:
-		bit_num=1;
+		/* decoupling fifo enable, gated clock enable */
+		lcd_hiu_write(HHI_LVDS_TX_PHY_CNTL1,
+			(1 << 30) | (0 << 25) | (1 << 24));
+		/* decoupling fifo write enable after fifo enable */
+		lcd_hiu_setb(HHI_LVDS_TX_PHY_CNTL1, 1, 31, 1);
 		break;
 	}
-
-	lcd_vcbus_write(LVDS_PACK_CNTL_ADDR,
-			(1 << 0) | // repack //[1:0]
-			(0 << 3) |		// reserve
-			(0 << 4) |		// lsb first
-			(0 << 5) |	// pn swap
-			(1 << 6) |	// dual port
-			(0 << 7) |		// use tcon control
-			(bit_num << 8) |	// 0:10bits, 1:8bits, 2:6bits, 3:4bits.
-			(0 << 10) |		//r_select  //0:R, 1:G, 2:B, 3:0
-			(1 << 12) |		//g_select  //0:R, 1:G, 2:B, 3:0
-			(2 << 14));		//b_select  //0:R, 1:G, 2:B, 3:0;
-
-	lcd_vcbus_write(LVDS_GEN_CNTL, (lcd_vcbus_read(LVDS_GEN_CNTL) | (1 << 4) | (0x3 << 0)));
-	lcd_vcbus_setb(LVDS_GEN_CNTL, 1, 3, 1);
 
 	lcd_tcon_enable(pconf);
 }
@@ -685,8 +666,6 @@ static void lcd_mlvds_control_set(struct lcd_config_s *pconf)
 static void lcd_mlvds_disable(void)
 {
 	lcd_tcon_disable();
-
-	lcd_vcbus_setb(LVDS_GEN_CNTL, 0, 3, 1); /* disable lvds fifo */
 }
 
 static void lcd_vbyone_sync_pol(int hsync_pol, int vsync_pol)
