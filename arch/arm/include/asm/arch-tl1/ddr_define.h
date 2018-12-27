@@ -95,6 +95,22 @@
 /* dram cfg magic */
 #define DRAM_CFG_MAGIC							0x2e676663
 
+/* ddr configs */
+#define DDR_RFC_TYPE_DDR3_512Mbx1				0
+#define DDR_RFC_TYPE_DDR3_512Mbx2				1
+#define DDR_RFC_TYPE_DDR3_512Mbx4				2
+#define DDR_RFC_TYPE_DDR3_512Mbx8				3
+#define DDR_RFC_TYPE_DDR3_512Mbx16				4
+#define DDR_RFC_TYPE_DDR4_2Gbx1					5
+#define DDR_RFC_TYPE_DDR4_2Gbx2					6
+#define DDR_RFC_TYPE_DDR4_2Gbx4					7
+#define DDR_RFC_TYPE_DDR4_2Gbx8					8
+
+#define DDR_RFC_TYPE_LPDDR4_2Gbx1				9
+#define DDR_RFC_TYPE_LPDDR4_3Gbx1				10
+#define DDR_RFC_TYPE_LPDDR4_4Gbx1				11
+#define DDR_RFC_TYPE_LPDDR4_6Gbx1				12
+#define DDR_RFC_TYPE_LPDDR4_8Gbx1				13
 /* lpddr3 defines */
 #ifndef CONFIG_LPDDR_REMAP_SET
 #define CONFIG_LPDDR_REMAP_SET				LPDDR_DIE_ROW_COL_R14_C9
