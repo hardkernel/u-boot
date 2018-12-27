@@ -71,8 +71,8 @@ struct tcon_rmem_s {
 
 #define BIT_TOP_EN_TL1                   4
 
-#define REG_CORE_OD_TL1                  0x5c
-#define BIT_OD_EN_TL1                    6
+#define REG_CORE_OD_TL1                  0x247
+#define BIT_OD_EN_TL1                    0
 #define REG_CORE_CTRL_TIMING_BASE_TL1    0x1b
 #define CTRL_TIMING_OFFSET_TL1           12
 #define CTRL_TIMING_CNT_TL1              0

@@ -262,23 +262,15 @@ static int lcd_tcon_config(char *dt_addr, struct lcd_config_s *pconf, int load_i
 	int ret;
 
 	if (load_id & 0x1) {
-		parent_offset = fdt_path_offset(dt_addr, "/lcd");
+		parent_offset = fdt_path_offset(dt_addr, "/reserved-memory/linux,lcd_tcon");
 		if (parent_offset < 0) {
-			LCDERR("can't find /lcd node: %s\n", fdt_strerror(parent_offset));
+			LCDERR("can't find node: /reserved-memory/linux,lcd_tcon\n");
 		} else {
 			propdata = (char *)fdt_getprop(dt_addr, parent_offset,
-				"tcon_mem_addr", NULL);
+				"alloc-ranges", NULL);
 			if (propdata == NULL) {
-				propdata = (char *)fdt_getprop(dt_addr,
-					parent_offset, "tcon_fb_addr", NULL);
-				if (propdata == NULL) {
-					LCDERR("failed to get tcon_mem_addr from dts\n");
-					lcd_tcon_config_axi_offset_default();
-				} else {
-					tcon_rmem.mem_paddr = be32_to_cpup(((u32*)propdata));
-					tcon_rmem.mem_size = lcd_tcon_data->axi_mem_size;
-					tcon_rmem.flag = 1;
-				}
+				LCDERR("failed to get lcd_tcon reserved-memory from dts\n");
+				lcd_tcon_config_axi_offset_default();
 			} else {
 				tcon_rmem.mem_paddr = be32_to_cpup(((u32*)propdata));
 				tcon_rmem.mem_size = lcd_tcon_data->axi_mem_size;
@@ -460,10 +452,11 @@ void lcd_tcon_disable(void)
 	/* disable over_drive */
 	if (lcd_tcon_data->reg_core_od != REG_LCD_TCON_MAX) {
 		reg = lcd_tcon_data->reg_core_od + TCON_CORE_REG_START;
+		bit = lcd_tcon_data->bit_od_en;
 		if (lcd_tcon_data->core_reg_width == 8)
-			lcd_tcon_write_byte(reg, 0);
+			lcd_tcon_setb_byte(reg, 0, bit, 1);
 		else
-			lcd_tcon_write(reg, 0);
+			lcd_tcon_setb(reg, 0, bit, 1);
 		mdelay(100);
 	}
 
@@ -523,10 +516,10 @@ static struct lcd_tcon_data_s tcon_data_tl1 = {
 	.reg_top_ctrl = TCON_TOP_CTRL,
 	.bit_en = BIT_TOP_EN_TL1,
 
-	.reg_core_od = REG_LCD_TCON_MAX,
+	.reg_core_od = REG_CORE_OD_TL1,
 	.bit_od_en = BIT_OD_EN_TL1,
 
-	.reg_core_ctrl_timing_base = REG_CORE_CTRL_TIMING_BASE_TL1,
+	.reg_core_ctrl_timing_base = REG_LCD_TCON_MAX,
 	.ctrl_timing_offset = CTRL_TIMING_OFFSET_TL1,
 	.ctrl_timing_cnt = CTRL_TIMING_CNT_TL1,
 
