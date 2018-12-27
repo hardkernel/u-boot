@@ -126,6 +126,10 @@ enum {
 	CLK_SARADC_DIV_CON_MASK		= GENMASK(15, 8),
 	CLK_SARADC_DIV_CON_WIDTH	= 8,
 
+	/* CLKSEL26 */
+	CLK_CRYPTO_DIV_CON_SHIFT	= 6,
+	CLK_CRYPTO_DIV_CON_MASK		= GENMASK(7, 6),
+
 	SOCSTS_DPLL_LOCK	= 1 << 5,
 	SOCSTS_APLL_LOCK	= 1 << 6,
 	SOCSTS_CPLL_LOCK	= 1 << 7,
@@ -802,6 +806,46 @@ static ulong rockchip_tsadc_set_clk(struct rk3288_cru *cru, uint hz)
 	return rockchip_tsadc_get_clk(cru);
 }
 
+static ulong rockchip_aclk_cpu_get_clk(struct rk3288_cru *cru, uint gclk_rate)
+{
+	u32 div, val;
+
+	val = readl(&cru->cru_clksel_con[1]);
+	div = (val & PD_BUS_ACLK_DIV0_MASK) >> PD_BUS_ACLK_DIV0_SHIFT;
+
+	return DIV_TO_RATE(gclk_rate, div);
+}
+
+#ifndef CONFIG_SPL_BUILD
+
+static ulong rockchip_crypto_get_clk(struct rk3288_cru *cru, uint gclk_rate)
+{
+	u32 div, val;
+
+	val = readl(&cru->cru_clksel_con[26]);
+	div = (val & CLK_CRYPTO_DIV_CON_MASK) >> CLK_CRYPTO_DIV_CON_SHIFT;
+
+	return DIV_TO_RATE(rockchip_aclk_cpu_get_clk(cru, gclk_rate), div);
+}
+
+static ulong rockchip_crypto_set_clk(struct rk3288_cru *cru,
+				     uint gclk_rate, uint hz)
+{
+	int src_clk_div;
+	uint p_rate;
+
+	p_rate = rockchip_aclk_cpu_get_clk(cru, gclk_rate);
+	src_clk_div = DIV_ROUND_UP(p_rate, hz) - 1;
+	assert(src_clk_div < 3);
+
+	rk_clrsetreg(&cru->cru_clksel_con[26],
+		     CLK_CRYPTO_DIV_CON_MASK,
+		     src_clk_div << CLK_CRYPTO_DIV_CON_SHIFT);
+
+	return rockchip_crypto_get_clk(cru, gclk_rate);
+}
+#endif
+
 static ulong rk3288_clk_get_rate(struct clk *clk)
 {
 	struct rk3288_clk_priv *priv = dev_get_priv(clk->dev);
@@ -842,6 +886,14 @@ static ulong rk3288_clk_get_rate(struct clk *clk)
 	case SCLK_TSADC:
 		new_rate = rockchip_tsadc_get_clk(priv->cru);
 		break;
+	case ACLK_CPU:
+		new_rate = rockchip_aclk_cpu_get_clk(priv->cru, gclk_rate);
+		break;
+#ifndef CONFIG_SPL_BUILD
+	case SCLK_CRYPTO:
+		new_rate = rockchip_crypto_get_clk(priv->cru, gclk_rate);
+		break;
+#endif
 	default:
 		return -ENOENT;
 	}
@@ -909,6 +961,9 @@ static ulong rk3288_clk_set_rate(struct clk *clk, ulong rate)
 		udelay(1);
 		rk_clrreg(&cru->cru_clkgate_con[7], 1 << 9);
 		new_rate = rate;
+		break;
+	case SCLK_CRYPTO:
+		new_rate = rockchip_crypto_set_clk(priv->cru, gclk_rate, rate);
 		break;
 #endif
 	case SCLK_SARADC:
