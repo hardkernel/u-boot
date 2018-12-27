@@ -375,6 +375,63 @@ size_t rockchip_sdram_size(phys_addr_t reg)
 	return (size_t)size_mb << 20;
 }
 
+static unsigned int get_ddr_os_reg(void)
+{
+	u32 os_reg = 0;
+
+#if defined(CONFIG_ROCKCHIP_PX30)
+	os_reg = readl(0xff010208);
+#elif defined(CONFIG_ROCKCHIP_RK3328)
+	os_reg = readl(0xff1005d0);
+#elif defined(CONFIG_ROCKCHIP_RK3399)
+	os_reg = readl(0xff320308);
+#elif defined(CONFIG_ROCKCHIP_RK322X)
+	os_reg = readl(0x110005d0);
+#elif defined(CONFIG_ROCKCHIP_RK3368)
+	os_reg = readl(0xff738208);
+#elif defined(CONFIG_ROCKCHIP_RK3288)
+	os_reg = readl(0x20004048);
+#elif defined(CONFIG_ROCKCHIP_RK3036)
+	os_reg = readl(0x200081cc);
+#elif defined(CONFIG_ROCKCHIP_RK3308)
+	os_reg = readl(0xff000508);
+#elif defined(CONFIG_ROCKCHIP_RK1808)
+	os_reg = readl(0xfe020208);
+#else
+	printf("unsupported chip type, get page size fail\n");
+#endif
+
+	return os_reg;
+}
+
+unsigned int get_page_size(void)
+{
+	u32 os_reg;
+	u32 col, bw;
+	int page_size;
+
+	os_reg = get_ddr_os_reg();
+	if (!os_reg)
+		return 0;
+
+	col = 9 + (os_reg >> SYS_REG_COL_SHIFT(0) & SYS_REG_COL_MASK);
+	bw = (2 >> ((os_reg >> SYS_REG_BW_SHIFT(0)) & SYS_REG_BW_MASK));
+	page_size = 1u << (col + bw);
+
+	return page_size;
+}
+
+unsigned int get_ddr_bw(void)
+{
+	u32 os_reg;
+	u32 bw = 2;
+
+	os_reg = get_ddr_os_reg();
+	if (os_reg)
+		bw = 2 >> ((os_reg >> SYS_REG_BW_SHIFT(0)) & SYS_REG_BW_MASK);
+	return bw;
+}
+
 #if defined(CONFIG_SPL_FRAMEWORK) || !defined(CONFIG_SPL_OF_PLATDATA)
 int dram_init(void)
 {

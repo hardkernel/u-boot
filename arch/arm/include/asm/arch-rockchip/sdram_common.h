@@ -86,6 +86,8 @@ struct ddr_param {
 
 /* Get sdram size decode from reg */
 size_t rockchip_sdram_size(phys_addr_t reg);
+unsigned int get_page_size(void);
+unsigned int get_ddr_bw(void);
 
 /* Called by U-Boot board_init_r for Rockchip SoCs */
 int dram_init(void);
