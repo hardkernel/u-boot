@@ -867,6 +867,20 @@ unsigned long rockchip_ddrclk_sip_round_rate_v2(unsigned long rate)
 		return 0;
 }
 
+int set_ddr_freq(unsigned long freq)
+{
+	if (freq < MHZ)
+		freq *= MHZ;
+	if (freq) {
+		freq = rockchip_ddrclk_sip_round_rate_v2(freq);
+		rockchip_ddrclk_sip_set_rate_v2(freq);
+	}
+	freq = rockchip_ddrclk_sip_recalc_rate_v2();
+	printf("current ddr freq:%lu Hz\n", freq);
+
+	return freq;
+}
+
 int rockchip_dmcfreq_probe(struct udevice *dev)
 {
 	int ret;
