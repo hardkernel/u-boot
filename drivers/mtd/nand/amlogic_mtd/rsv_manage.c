@@ -292,7 +292,8 @@ int aml_nand_scan_shipped_bbt(struct mtd_info *mtd)
 
 		if (aml_chip->mfr_type  == NAND_MFR_DOSILICON ||
 		    aml_chip->mfr_type  == NAND_MFR_ATO ||
-			aml_chip->mfr_type  == NAND_MFR_HYNIX) {
+			aml_chip->mfr_type  == NAND_MFR_HYNIX ||
+			aml_chip->mfr_type  == NAND_MFR_ZETTA) {
 			if (col0_oob != 0xFF) {
 				pr_info("detect a fbb:%llx blk=%d chip=%d\n",
 					(uint64_t)addr, start_blk, i);
