@@ -185,7 +185,7 @@ ddr_set_t __ddr_setting[] = {
 	.ddr_dmc_remap			= {
 							[0] = ( 0 |  5 << 5 |  6<< 10 |  7 << 15 | 8 << 20 | 9 << 25 ),
 							[1] = ( 10|  0 << 5 |  0 << 10 | 14 << 15 | 15 << 20 | 16 << 25 ),
-							[2] = ( 17|( 18 << 5) |( 19 << 10) |( 20< 15) |( 21 << 20) | (22 << 25 )),
+							[2] = ( 17|( 18 << 5) |( 19 << 10) |( 20 << 15) |( 21 << 20) | (22 << 25 )),
 							[3] = ( 23| 24 << 5 | 25 << 10 | 26 << 15 | 27 << 20 | 28 << 25 ),
 							[4] = ( 29| 11<< 5 | 12 << 10 |  13<< 15 |  0 << 20 |  0 << 25 ),
 	},
@@ -234,9 +234,9 @@ ddr_set_t __ddr_setting[] = {
 	.dfi_odt_config			= 0x0808,
 	.PllBypassEn			= 0, //bit0-ps0,bit1-ps1
 	.ddr_rdbi_wr_enable		= 0,
-	.clk_drv_ohm			= 48,//40,
-	.cs_drv_ohm				= 48,//40,
-	.ac_drv_ohm				= 48,//40,
+	.clk_drv_ohm			= 40,//40,
+	.cs_drv_ohm				= 40,//40,
+	.ac_drv_ohm				= 40,//40,
 
 	/*
 	.soc_data_drv_ohm_p		= 40,//30,//30,
@@ -320,9 +320,9 @@ ddr_set_t __ddr_setting[] = {
 	.dfi_odt_config			= 0x0808,
 	.PllBypassEn			= 0, //bit0-ps0,bit1-ps1
 	.ddr_rdbi_wr_enable		= 0,
-	.clk_drv_ohm			= 48,//40,
-	.cs_drv_ohm				= 48,//40,
-	.ac_drv_ohm				= 48,//40,
+	.clk_drv_ohm			= 40,//40,
+	.cs_drv_ohm				= 40,//40,
+	.ac_drv_ohm				= 40,//40,
 
 	/*
 	.soc_data_drv_ohm_p		= 40,//30,//30,
