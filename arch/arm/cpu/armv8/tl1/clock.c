@@ -356,7 +356,7 @@ int clk_msr(int index)
 void ring_powerinit(void)
 {
 	writel(0x150007, RING_PWM_VCCK);/*set vcck 0.8v*/
-	writel(0x10000c, RING_PWM_EE);/*set ee 0.8v*/
+	writel(0x000c0006, RING_PWM_EE);/*set ee 0.8v*/
 }
 
 #ifdef CONFIG_RING
@@ -389,10 +389,11 @@ int ring_msr(int index)
 			printf("fail get efuse info\n");
 			return 0;
 		}
-		if ((index >= 1) && (index <= 5))
+		if ((index >= 1) && (index <= 4))
 			printf("%d\n", (efuseinfo[index] * 20));
-		if ((index >= 6) && (index <= 7))
-			printf("%d\n", (efuseinfo[index] * 200));
+		printf("%d\n", (efuseinfo[5] * 400));
+		printf("%d\n", efuseinfo[6]);
+		printf("%d\n", (efuseinfo[7] * 400));
 		if ((index >= 8) && (index <= 11))
 			printf("%d\n", efuseinfo[index]);
 		if ((index < 0) || (index >= 12))
@@ -419,19 +420,19 @@ int ring_msr(int index)
 	printf("\n");
 
 	/*efuse to test value*/
-	/*
-	printf("ee[9], ee[1], ee[0], cpu[1], cpu[0], iddee, iddcpu, sltver, fta53, fta73, slt\n");
-	for (i = 1; i <= 5; i++)
-		printf("%d KHz ", (efuseinfo[i] * 20));
 
-	for (i = 6; i <= 7; i++)
-		printf("%d uA ", (efuseinfo[i] * 200));
+	printf("cpu[0]_A55_ring0, ee[2]_mail_ring1, ee[0]_dmc_ring, cpu[0]_A55_ring2, iddee, reserve, iddcpu_A55, sltver, fta53, fta73, slt\n");
+	for (i = 1; i <= 4; i++)
+		printf("%d KHz, ", (efuseinfo[i] * 20));
+
+	printf("%d uA, ", (efuseinfo[5] * 400));
+	printf("%d, ", efuseinfo[6]);
+	printf("%d uA, ", (efuseinfo[7] * 400));
 
 	for (i = 8; i <= 11; i++)
-		printf("%d  ", efuseinfo[i]);
+		printf("%d,  ", efuseinfo[i]);
 
 	printf("\n");
-	*/
 
 	return 0;
 }
