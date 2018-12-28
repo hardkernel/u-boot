@@ -33,6 +33,10 @@
 	u-boot,dm-pre-reloc;
 };
 
+&pmu {
+	u-boot,dm-pre-reloc;
+};
+
 &pmugrf {
 	u-boot,dm-pre-reloc;
 };
