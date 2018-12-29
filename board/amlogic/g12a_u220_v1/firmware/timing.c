@@ -78,8 +78,8 @@ ddr_set_t __ddr_setting[] = {
 	.dram_cs0_size_MB		= 0xffff,
 	.dram_cs1_size_MB		= 0,
 	.training_SequenceCtrl	= {0x31f,0x61}, //ddr3 0x21f 0x31f
-	.phy_odt_config_rank	= {0x23,0x13,0x30,0x30}, // // Odt pattern for accesses //targeting rank 0. [3:0] is used //for write ODT [7:4] is used for //read ODT
-	.dfi_odt_config			= 0x0d0d,
+	.phy_odt_config_rank	= {0x23,0x13}, //use 0x23 0x13  compatibility with 1rank and 2rank //targeting rank 0. [3:0] is used //for write ODT [7:4] is used for //read ODT
+	.dfi_odt_config			= 0x0d0d,  //use 0d0d compatibility with 1rank and 2rank  //0808
 	.PllBypassEn			= 0, //bit0-ps0,bit1-ps1
 	.ddr_rdbi_wr_enable		= 0,
 	.clk_drv_ohm			= 40,
@@ -147,8 +147,8 @@ ddr_set_t __ddr_setting[] = {
 	.dram_cs0_size_MB		= 0xffff,
 	.dram_cs1_size_MB		= 0xffff,
 	.training_SequenceCtrl	= {0x31f,0}, //ddr3 0x21f 0x31f
-	.phy_odt_config_rank	= {0x30,0x30,0x30,0x30}, // // Odt pattern for accesses //targeting rank 0. [3:0] is used //for write ODT [7:4] is used for //read ODT
-	.dfi_odt_config			= 0x0c0c,
+	.phy_odt_config_rank	= {0x23,0x13}, //use 0x23 0x13  compatibility with 1rank and 2rank //targeting rank 0. [3:0] is used //for write ODT [7:4] is used for //read ODT
+	.dfi_odt_config			= 0x0d0d,  //use 0d0d compatibility with 1rank and 2rank  //0808
 	.PllBypassEn			= 0, //bit0-ps0,bit1-ps1
 	.ddr_rdbi_wr_enable		= 0,
 	.clk_drv_ohm			= 40,
@@ -230,8 +230,8 @@ ddr_set_t __ddr_setting[] = {
 	.dram_cs0_size_MB		= 0xffff,//1024,
 	.dram_cs1_size_MB		= 0xffff,//1024,
 	.training_SequenceCtrl	= {0x131f,0x61}, //ddr3 0x21f 0x31f
-	.phy_odt_config_rank	= {0x30,0x30,0x30,0x30}, // // Odt pattern for accesses //targeting rank 0. [3:0] is used //for write ODT [7:4] is used for //read ODT
-	.dfi_odt_config			= 0x0808,
+	.phy_odt_config_rank	= {0x23,0x13}, //use 0x23 0x13  compatibility with 1rank and 2rank //targeting rank 0. [3:0] is used //for write ODT [7:4] is used for //read ODT
+	.dfi_odt_config			= 0x0d0d,  //use 0d0d compatibility with 1rank and 2rank  //0808
 	.PllBypassEn			= 0, //bit0-ps0,bit1-ps1
 	.ddr_rdbi_wr_enable		= 0,
 	.clk_drv_ohm			= 40,//40,
@@ -296,8 +296,9 @@ ddr_set_t __ddr_setting[] = {
 	.magic					= DRAM_CFG_MAGIC,
 	.diagnose				= CONFIG_DIAGNOSE_DISABLE,
 },
+/*
 {
-	/* g12a u220 lpddr4 repair mode */
+	// g12a u220 lpddr4 repair mode
 	.board_id				= CONFIG_BOARD_ID_MASK,
 	.version				= 1,
 	//.dram_rank_config		= CONFIG_DDR0_32BIT_RANK01_CH0,
@@ -316,15 +317,14 @@ ddr_set_t __ddr_setting[] = {
 	.dram_cs0_size_MB		= 0xffff,//1024,
 	.dram_cs1_size_MB		= 0xffff,//1024,
 	.training_SequenceCtrl	= {0x131f,0x61}, //ddr3 0x21f 0x31f
-	.phy_odt_config_rank	= {0x30,0x30,0x30,0x30}, // // Odt pattern for accesses //targeting rank 0. [3:0] is used //for write ODT [7:4] is used for //read ODT
-	.dfi_odt_config			= 0x0808,
+	.phy_odt_config_rank	= {0x23,0x13}, //use 0x23 0x13  compatibility with 1rank and 2rank //targeting rank 0. [3:0] is used //for write ODT [7:4] is used for //read ODT
+	.dfi_odt_config			= 0x0d0d,  //use 0d0d compatibility with 1rank and 2rank  //0808
 	.PllBypassEn			= 0, //bit0-ps0,bit1-ps1
 	.ddr_rdbi_wr_enable		= 0,
 	.clk_drv_ohm			= 40,//40,
 	.cs_drv_ohm				= 40,//40,
 	.ac_drv_ohm				= 40,//40,
 
-	/*
 	.soc_data_drv_ohm_p		= 40,//30,//30,
 	.soc_data_drv_ohm_n		= 40,//30,//30,
 	.soc_data_odt_ohm_p		= 0,
@@ -332,8 +332,8 @@ ddr_set_t __ddr_setting[] = {
 	.dram_data_drv_ohm		= 40,// 48, //lpddr4 sdram only240/1-6
 	.dram_data_odt_ohm		= 120,// 48,//48,
 	.lpddr4_dram_vout_voltage_1_3_2_5_setting = 0,///1, 1/3vddq     0 2/5 vddq
-	*/
-	///*
+
+	////
 	.soc_data_drv_ohm_p		= 48,//30,//30,
 	.soc_data_drv_ohm_n		= 48,//30,//30,
 	.soc_data_odt_ohm_p		= 0,
@@ -342,7 +342,7 @@ ddr_set_t __ddr_setting[] = {
 	.dram_data_odt_ohm		= 48,// 48,//48,
 	.dram_ac_odt_ohm		= 120,
 	.lpddr4_dram_vout_voltage_1_3_2_5_setting = 1,///1, 1/3vddq     0 2/5 vddq
-	//*/
+	////
 	.soc_clk_slew_rate		= 0x3ff,//0x253,
 	.soc_cs_slew_rate		= 0x100,//0x253,
 	.soc_ac_slew_rate		= 0x100,//0x253,
@@ -364,349 +364,13 @@ ddr_set_t __ddr_setting[] = {
 	.ddr_lpddr34_ca_remap	= {00,00},
 	.ddr_lpddr34_dq_remap	= {3,2,0,1,7,6,5,4, 14,13,12,15,8,9,11,10, 20,21,22,23,16,17,19,18, 24,25,28,26,31,30,27,29},
 	.dram_rtt_nom_wr_park	= {00,00},
-
-	/* pll ssc config:
-	 *
-	 *   pll_ssc_mode = (1<<20) | (1<<8) | ([strength] << 4) | [mode],
-	 *      ppm = strength * 500
-	 *      mode: 0=center, 1=up, 2=down
-	 *
-	 *   eg:
-	 *     1. config 1000ppm center ss. then mode=0, strength=2
-	 *        .pll_ssc_mode = (1<<20) | (1<<8) | (2 << 4) | 0,
-	 *     2. config 3000ppm down ss. then mode=2, strength=6
-	 *        .pll_ssc_mode = (1<<20) | (1<<8) | (6 << 4) | 2,
-	 */
 	.pll_ssc_mode			= (1<<20) | (1<<8) | (2<<4) | 0,//center_ssc_1000ppm
 	.ddr_func				= DDR_FUNC,
 	.magic					= DRAM_CFG_MAGIC,
 	.diagnose				= CONFIG_DIAGNOSE_DISABLE,
-/*
-  .slt_test_function	=	{	DMC_TEST_SLT_ENABLE_DDR_SKIP_TRAINING, 0},
-  .dfi_hwtmrl	=	7	,
 
-  .ac_trace_delay	=	{
-		32	,
-		32	,
-		30	,
-		29	,
-		0	,
-		32	,
-		32	,
-		29	,
-		27	,
-		0	,
-		}	,
-
-  .write_dqs_delay	=	{
-		144	,
-		144	,
-		160	,
-		160	,
-		160	,
-		160	,
-		140	,
-		140	,
-		142	,
-		142	,
-		160	,
-		160	,
-		160	,
-		160	,
-		142	,
-		142	,
-		}	,
-
-  .read_dqs_delay	=	{
-		11	,
-		2	,
-		11	,
-		0	,
-		13	,
-		1	,
-		13	,
-		5	,
-		13	,
-		3	,
-		10	,
-		2	,
-		11	,
-		1	,
-		10	,
-		5	,
-		}	,
-
-  .write_dq_bit_delay	=	{
-		77	,
-		75	,
-		80	,
-		79	,
-		84	,
-		84	,
-		84	,
-		83	,
-		79	,
-		60	,
-		62	,
-		67	,
-		65	,
-		69	,
-		69	,
-		70	,
-		70	,
-		65	,
-		60	,
-		61	,
-		67	,
-		65	,
-		69	,
-		69	,
-		69	,
-		69	,
-		65	,
-		75	,
-		74	,
-		72	,
-		79	,
-		74	,
-		80	,
-		79	,
-		79	,
-		76	,
-		76	,
-		73	,
-		79	,
-		77	,
-		82	,
-		82	,
-		82	,
-		82	,
-		78	,
-		61	,
-		63	,
-		67	,
-		65	,
-		70	,
-		70	,
-		71	,
-		70	,
-		66	,
-		61	,
-		63	,
-		68	,
-		66	,
-		71	,
-		71	,
-		70	,
-		70	,
-		66	,
-		80	,
-		78	,
-		77	,
-		82	,
-		78	,
-		84	,
-		84	,
-		84	,
-		80	,
-		}	,
-
-  .read_dq_bit_delay	=	{
-		4	,
-		0	,
-		18	,
-		12	,
-		0	,
-		0	,
-		0	,
-		0	,
-		0	,
-		0	,
-		0	,
-		10	,
-		8	,
-		0	,
-		0	,
-		0	,
-		0	,
-		0	,
-		0	,
-		4	,
-		14	,
-		12	,
-		0	,
-		0	,
-		0	,
-		0	,
-		0	,
-		10	,
-		2	,
-		0	,
-		18	,
-		0	,
-		10	,
-		10	,
-		10	,
-		0	,
-		6	,
-		0	,
-		16	,
-		14	,
-		0	,
-		0	,
-		0	,
-		0	,
-		0	,
-		2	,
-		0	,
-		10	,
-		10	,
-		0	,
-		0	,
-		0	,
-		0	,
-		0	,
-		0	,
-		2	,
-		12	,
-		12	,
-		0	,
-		0	,
-		0	,
-		0	,
-		0	,
-		10	,
-		4	,
-		0	,
-		16	,
-		0	,
-		10	,
-		10	,
-		10	,
-		0	,
-		}	,
-
-  .read_dqs_gate_delay	=	{
-		375	,
-		375	,
-		367	,
-		367	,
-		363	,
-		363	,
-		371	,
-		371	,
-		379	,
-		379	,
-		371	,
-		371	,
-		371	,
-		371	,
-		381	,
-		381	,
-		}	,
-
-  .dq_dqs_delay_flag	=	DDR_ENABLE_FINE_TUNE_FLAG_READ_DQS|DDR_ENABLE_FINE_TUNE_FLAG_WRITE_DQ|
-		DDR_ENABLE_FINE_TUNE_FLAG_WRITE_DQS|DDR_ENABLE_FINE_TUNE_FLAG_READ_DQ
-		,
-		*/
-///*
-	.read_dqs_delay	=	{
-		0x82	,
-		0x82	,
-		0x82	,
-		0x82	,
-		0x82	,
-		0x82	,
-		0x82	,
-		0x82	,
-		0x82	,
-		0x82	,
-		0x82	,
-		0x82	,
-		0x82	,
-		0x82	,
-		0x82	,
-		0x82	,
-		},
-		  .write_dq_bit_delay	=	{
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		0x8002	,
-		}	,
-
-	.dq_dqs_delay_flag = DDR_ENABLE_FINE_TUNE_FLAG_READ_DQS | DDR_ENABLE_FINE_TUNE_FLAG_WRITE_DQ,
-	//*/
 },
-
+*/
 {
 	/* g12a Y2 dongle */
 	.board_id				= CONFIG_BOARD_ID_MASK,
@@ -727,8 +391,8 @@ ddr_set_t __ddr_setting[] = {
 	.dram_cs0_size_MB		= 0xffff,//1024,
 	.dram_cs1_size_MB		= 0,//1024,
 	.training_SequenceCtrl	= {0x131f,0x61}, //ddr3 0x21f 0x31f
-	.phy_odt_config_rank	= {0x30,0x30,0x30,0x30}, // // Odt pattern for accesses //targeting rank 0. [3:0] is used //for write ODT [7:4] is used for //read ODT
-	.dfi_odt_config			= 0x0808,
+	.phy_odt_config_rank	= {0x23,0x13}, //use 0x23 0x13  compatibility with 1rank and 2rank //targeting rank 0. [3:0] is used //for write ODT [7:4] is used for //read ODT
+	.dfi_odt_config			= 0x0d0d,  //use 0d0d compatibility with 1rank and 2rank  //0808
 	.PllBypassEn			= 0, //bit0-ps0,bit1-ps1
 	.ddr_rdbi_wr_enable		= 0,
 	.clk_drv_ohm			= 40,
@@ -798,8 +462,8 @@ ddr_set_t __ddr_setting[] = {
 	.dram_cs0_size_MB		= 0xffff,//1024,
 	.dram_cs1_size_MB		= 0xffff,//1024,
 	.training_SequenceCtrl	= {0x131f,0}, //ddr3 0x21f 0x31f
-	.phy_odt_config_rank	= {0x30,0x30,0x30,0x30}, // // Odt pattern for accesses //targeting rank 0. [3:0] is used //for write ODT [7:4] is used for //read ODT
-	.dfi_odt_config			= 0x00c,
+	.phy_odt_config_rank	= {0x23,0x13}, //use 0x23 0x13  compatibility with 1rank and 2rank //targeting rank 0. [3:0] is used //for write ODT [7:4] is used for //read ODT
+	.dfi_odt_config			= 0x0d0d,  //use 0d0d compatibility with 1rank and 2rank  //0808
 	.PllBypassEn			= 0, //bit0-ps0,bit1-ps1
 	.ddr_rdbi_wr_enable		= 0,
 	.pll_ssc_mode			= (1<<20) | (1<<8) | (2<<4) | 0,//center_ssc_1000ppm
