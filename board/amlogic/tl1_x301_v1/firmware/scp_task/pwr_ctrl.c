@@ -110,9 +110,28 @@ void get_wakeup_source(void *response, unsigned int suspend_from)
 	val = (POWER_KEY_WAKEUP_SRC | AUTO_WAKEUP_SRC | REMOTE_WAKEUP_SRC |
 	       ETH_PHY_WAKEUP_SRC | BT_WAKEUP_SRC | CECB_WAKEUP_SRC);
 
+#ifdef CONFIG_WIFI_WAKEUP
+	if (suspend_from != SYS_POWEROFF)
+	    val |= WIFI_WAKEUP_SRC;
+#endif
+
 	p->sources = val;
 	p->gpio_info_count = i;
 
+#ifdef CONFIG_WIFI_WAKEUP
+	if (suspend_from != SYS_POWEROFF) {
+	    struct wakeup_gpio_info *gpio;
+	    gpio = &(p->gpio_info[i]);
+	    gpio->wakeup_id = WIFI_WAKEUP;
+	    gpio->gpio_in_idx = GPIOC_12;
+	    gpio->gpio_in_ao = 0;
+	    gpio->gpio_out_idx = -1;
+	    gpio->gpio_out_ao = 0;
+	    gpio->irq = IRQ_GPIO1_NUM;
+	    gpio->trig_type = GPIO_IRQ_FALLING_EDGE;
+	    p->gpio_info_count = ++i;
+	}
+#endif
 }
 extern void __switch_idle_task(void);
 
@@ -145,7 +164,17 @@ static unsigned int detect_key(unsigned int suspend_from)
 			irq[IRQ_VRTC] = 0xFFFFFFFF;
 			exit_reason = RTC_WAKEUP;
 		}
-
+#ifdef CONFIG_WIFI_WAKEUP
+		if (irq[IRQ_GPIO1] == IRQ_GPIO1_NUM) {
+		    irq[IRQ_GPIO1] = 0xFFFFFFFF;
+		    if (suspend_from) {
+		        if (   !(readl(PREG_PAD_GPIO3_EN_N) & (0x01 << 11))
+			        && (readl(PREG_PAD_GPIO3_O) & (0x01 << 11))
+			        && !(readl(PREG_PAD_GPIO3_I) & (0x01 << 12)))
+			            exit_reason = WIFI_WAKEUP;
+		    }
+		}
+#endif
 		if (exit_reason)
 			break;
 		else
