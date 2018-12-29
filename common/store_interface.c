@@ -776,6 +776,11 @@ static int do_store_exit(cmd_tbl_t * cmdtp, int flag, int argc, char * const arg
 		}
 	}
 #endif
+	if (device_boot_flag == EMMC_BOOT_FLAG) {
+		/* partition table need renew */
+		is_partition_checked = false;
+	}
+#endif
 	return 0;
 }
 

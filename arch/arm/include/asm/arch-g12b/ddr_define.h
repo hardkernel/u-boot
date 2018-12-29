@@ -83,6 +83,8 @@
 				(chl_set == CONFIG_DDR0_16BIT))
 #define DDR_USE_2_RANK(chl_set)	((chl_set == CONFIG_DDR0_RANK01))
 
+#define DMC_TEST_SLT_ENABLE_DDR_AUTO_FAST_BOOT 1<<5
+#define DMC_TEST_SLT_ENABLE_DDR_AUTO_WINDOW_TEST 1<<4
 /* DMC_DDR_CTRL defines */
 #define DDR_DDR4_ENABLE						(1<<22)
 #define DDR_RANK1_ENABLE					(1<<21)
