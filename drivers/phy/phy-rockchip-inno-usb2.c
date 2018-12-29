@@ -821,6 +821,104 @@ static const struct rockchip_usb2phy_cfg rk3368_phy_cfgs[] = {
 	{ /* sentinel */ }
 };
 
+static const struct rockchip_usb2phy_cfg rk3399_phy_cfgs[] = {
+	{
+		.reg		= 0xe450,
+		.num_ports	= 2,
+		.clkout_ctl	= { 0xe450, 4, 4, 1, 0 },
+		.port_cfgs	= {
+			[USB2PHY_PORT_OTG] = {
+				.phy_sus = { 0xe454, 8, 0, 0x052, 0x1d1 },
+				.bvalid_det_en	= { 0xe3c0, 3, 3, 0, 1 },
+				.bvalid_det_st	= { 0xe3e0, 3, 3, 0, 1 },
+				.bvalid_det_clr	= { 0xe3d0, 3, 3, 0, 1 },
+				.idfall_det_en	= { 0xe3c0, 5, 5, 0, 1 },
+				.idfall_det_st	= { 0xe3e0, 5, 5, 0, 1 },
+				.idfall_det_clr	= { 0xe3d0, 5, 5, 0, 1 },
+				.idrise_det_en	= { 0xe3c0, 4, 4, 0, 1 },
+				.idrise_det_st	= { 0xe3e0, 4, 4, 0, 1 },
+				.idrise_det_clr	= { 0xe3d0, 4, 4, 0, 1 },
+				.ls_det_en	= { 0xe3c0, 2, 2, 0, 1 },
+				.ls_det_st	= { 0xe3e0, 2, 2, 0, 1 },
+				.ls_det_clr	= { 0xe3d0, 2, 2, 0, 1 },
+				.utmi_avalid	= { 0xe2ac, 7, 7, 0, 1 },
+				.utmi_bvalid	= { 0xe2ac, 12, 12, 0, 1 },
+				.utmi_iddig	= { 0xe2ac, 8, 8, 0, 1 },
+				.utmi_ls	= { 0xe2ac, 14, 13, 0, 1 },
+				.vbus_det_en    = { 0x449c, 15, 15, 1, 0 },
+			},
+			[USB2PHY_PORT_HOST] = {
+				.phy_sus	= { 0xe458, 1, 0, 0x2, 0x1 },
+				.ls_det_en	= { 0xe3c0, 6, 6, 0, 1 },
+				.ls_det_st	= { 0xe3e0, 6, 6, 0, 1 },
+				.ls_det_clr	= { 0xe3d0, 6, 6, 0, 1 },
+				.utmi_ls	= { 0xe2ac, 22, 21, 0, 1 },
+				.utmi_hstdet	= { 0xe2ac, 23, 23, 0, 1 }
+			}
+		},
+		.chg_det = {
+			.opmode		= { 0xe454, 3, 0, 5, 1 },
+			.cp_det		= { 0xe2ac, 2, 2, 0, 1 },
+			.dcp_det	= { 0xe2ac, 1, 1, 0, 1 },
+			.dp_det		= { 0xe2ac, 0, 0, 0, 1 },
+			.idm_sink_en	= { 0xe450, 8, 8, 0, 1 },
+			.idp_sink_en	= { 0xe450, 7, 7, 0, 1 },
+			.idp_src_en	= { 0xe450, 9, 9, 0, 1 },
+			.rdm_pdwn_en	= { 0xe450, 10, 10, 0, 1 },
+			.vdm_src_en	= { 0xe450, 12, 12, 0, 1 },
+			.vdp_src_en	= { 0xe450, 11, 11, 0, 1 },
+		},
+	},
+	{
+		.reg		= 0xe460,
+		.num_ports	= 2,
+		.clkout_ctl	= { 0xe460, 4, 4, 1, 0 },
+		.port_cfgs	= {
+			[USB2PHY_PORT_OTG] = {
+				.phy_sus = { 0xe464, 8, 0, 0x052, 0x1d1 },
+				.bvalid_det_en  = { 0xe3c0, 8, 8, 0, 1 },
+				.bvalid_det_st  = { 0xe3e0, 8, 8, 0, 1 },
+				.bvalid_det_clr = { 0xe3d0, 8, 8, 0, 1 },
+				.idfall_det_en	= { 0xe3c0, 10, 10, 0, 1 },
+				.idfall_det_st	= { 0xe3e0, 10, 10, 0, 1 },
+				.idfall_det_clr	= { 0xe3d0, 10, 10, 0, 1 },
+				.idrise_det_en	= { 0xe3c0, 9, 9, 0, 1 },
+				.idrise_det_st	= { 0xe3e0, 9, 9, 0, 1 },
+				.idrise_det_clr	= { 0xe3d0, 9, 9, 0, 1 },
+				.ls_det_en	= { 0xe3c0, 7, 7, 0, 1 },
+				.ls_det_st	= { 0xe3e0, 7, 7, 0, 1 },
+				.ls_det_clr	= { 0xe3d0, 7, 7, 0, 1 },
+				.utmi_avalid	= { 0xe2ac, 10, 10, 0, 1 },
+				.utmi_bvalid    = { 0xe2ac, 16, 16, 0, 1 },
+				.utmi_iddig	= { 0xe2ac, 11, 11, 0, 1 },
+				.utmi_ls	= { 0xe2ac, 18, 17, 0, 1 },
+				.vbus_det_en    = { 0x451c, 15, 15, 1, 0 },
+			},
+			[USB2PHY_PORT_HOST] = {
+				.phy_sus	= { 0xe468, 1, 0, 0x2, 0x1 },
+				.ls_det_en	= { 0xe3c0, 11, 11, 0, 1 },
+				.ls_det_st	= { 0xe3e0, 11, 11, 0, 1 },
+				.ls_det_clr	= { 0xe3d0, 11, 11, 0, 1 },
+				.utmi_ls	= { 0xe2ac, 26, 25, 0, 1 },
+				.utmi_hstdet	= { 0xe2ac, 27, 27, 0, 1 }
+			}
+		},
+		.chg_det = {
+			.opmode		= { 0xe464, 3, 0, 5, 1 },
+			.cp_det		= { 0xe2ac, 5, 5, 0, 1 },
+			.dcp_det	= { 0xe2ac, 4, 4, 0, 1 },
+			.dp_det		= { 0xe2ac, 3, 3, 0, 1 },
+			.idm_sink_en	= { 0xe460, 8, 8, 0, 1 },
+			.idp_sink_en	= { 0xe460, 7, 7, 0, 1 },
+			.idp_src_en	= { 0xe460, 9, 9, 0, 1 },
+			.rdm_pdwn_en	= { 0xe460, 10, 10, 0, 1 },
+			.vdm_src_en	= { 0xe460, 12, 12, 0, 1 },
+			.vdp_src_en	= { 0xe460, 11, 11, 0, 1 },
+		},
+	},
+	{ /* sentinel */ }
+};
+
 static const struct rockchip_usb2phy_cfg rv1108_phy_cfgs[] = {
 	{
 		.reg = 0x100,
@@ -870,6 +968,7 @@ static const struct udevice_id rockchip_usb2phy_ids[] = {
 	{ .compatible = "rockchip,rk3308-usb2phy", .data = (ulong)&rk3328_phy_cfgs },
 	{ .compatible = "rockchip,rk3328-usb2phy", .data = (ulong)&rk3328_phy_cfgs },
 	{ .compatible = "rockchip,rk3368-usb2phy", .data = (ulong)&rk3368_phy_cfgs },
+	{ .compatible = "rockchip,rk3399-usb2phy", .data = (ulong)&rk3399_phy_cfgs },
 	{ .compatible = "rockchip,rv1108-usb2phy", .data = (ulong)&rv1108_phy_cfgs },
 	{ }
 };
