@@ -36,10 +36,10 @@ static struct partitions factory_partitions[] = {
 		.size = bytes_to_lba(CONFIG_DTB_SIZE),
 	}, {
 		.name = "boot",			/* Boot image */
-		.size = bytes_to_lba(24 * SZ_1M),
+		.size = bytes_to_lba(16 * SZ_1M),
 	}, {
 		.name = "recovery",		/* Recovery Image */
-		.size = bytes_to_lba(16 * SZ_1M),
+		.size = bytes_to_lba(24 * SZ_1M),
 	}, {
 		.name = "cache",		/* Android: cache */
 		.size = bytes_to_lba(1 * SZ_1G),
