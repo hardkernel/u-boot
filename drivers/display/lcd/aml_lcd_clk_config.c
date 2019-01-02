@@ -662,7 +662,7 @@ static void lcd_set_pll_tl1(struct lcd_clk_config_s *cConf)
 	udelay(10);
 	lcd_hiu_write(HHI_TCON_PLL_CNTL1, pll_ctrl1);
 	udelay(10);
-	lcd_hiu_write(HHI_TCON_PLL_CNTL2, 0x00001108);
+	lcd_hiu_write(HHI_TCON_PLL_CNTL2, 0x0000110c);
 	udelay(10);
 	lcd_hiu_write(HHI_TCON_PLL_CNTL3, 0x10051400);
 	udelay(10);
@@ -674,7 +674,7 @@ static void lcd_set_pll_tl1(struct lcd_clk_config_s *cConf)
 	udelay(10);
 	lcd_hiu_setb(HHI_TCON_PLL_CNTL0, 0, LCD_PLL_RST_TL1, 1);
 	udelay(10);
-	lcd_hiu_write(HHI_TCON_PLL_CNTL2, 0x00003008);
+	lcd_hiu_write(HHI_TCON_PLL_CNTL2, 0x0000300c);
 
 	ret = lcd_pll_wait_lock(HHI_TCON_PLL_CNTL0, LCD_PLL_LOCK_TL1);
 	if (ret) {
