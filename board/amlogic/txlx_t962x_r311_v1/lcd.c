@@ -230,7 +230,7 @@ static struct lcd_pinmux_ctrl_s bl_pinmux_ctrl[BL_PINMUX_MAX] = {
 };
 
 #ifdef CONFIG_AML_LOCAL_DIMMING
-static struct ldim_pinmux_ctrl_s ldim_pinmux_ctrl[] = {
+static struct lcd_pinmux_ctrl_s ldim_pinmux_ctrl[] = {
 	{
 		.name = "ldim_pwm_pin", //GPIOZ_6
 		.pinmux_set = {{4, 0x00010000}, {LCD_PINMUX_END, 0x0}},
@@ -240,6 +240,11 @@ static struct ldim_pinmux_ctrl_s ldim_pinmux_ctrl[] = {
 		.name = "ldim_pwm_vs_pin", //GPIOZ_6
 		.pinmux_set = {{4, 0x00008000}, {LCD_PINMUX_END, 0x0}},
 		.pinmux_clr = {{4, 0x00010000}, {3, 0x00200000}, {10, 0x00010000}, {LCD_PINMUX_END, 0x0}},
+	},
+	{
+		.name = "analog_pwm_pin", //GPIOZ_7
+		.pinmux_set = {{4, 0x00004000}, {LCD_PINMUX_END, 0x0}},
+		.pinmux_clr = {{4, 0x00002000}, {3, 0x00200000}, {10, 0x00010000}, {LCD_PINMUX_END, 0x0}},
 	},
 	{
 		.name = "invalid",
@@ -447,8 +452,15 @@ struct ldim_dev_config_s ldim_config_dft = {
 	.init_off = ldim_init_off,
 	.init_on_cnt = sizeof(ldim_init_on),
 	.init_off_cnt = sizeof(ldim_init_off),
-	.pwm_config = {
+	.ldim_pwm_config = {
 		.index = 0,
+		.pwm_method = BL_PWM_POSITIVE,
+		.pwm_port = BL_PWM_MAX,
+		.pwm_duty_max = 100,
+		.pwm_duty_min = 0,
+	},
+	.analog_pwm_config = {
+		.index = 1,
 		.pwm_method = BL_PWM_POSITIVE,
 		.pwm_port = BL_PWM_MAX,
 		.pwm_duty_max = 100,

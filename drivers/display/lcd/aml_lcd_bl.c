@@ -399,10 +399,15 @@ void aml_bl_pwm_config_update(struct bl_config_s *bconf)
 	case BL_CTRL_LOCAL_DIMMING:
 		ldim_drv = aml_ldim_get_driver();
 		if (ldim_drv) {
-			if (ldim_drv->ldev_conf)
-				bl_pwm_config_init(&ldim_drv->ldev_conf->pwm_config);
-			else
+			if (ldim_drv->ldev_conf) {
+				if (ldim_drv->ldev_conf->ldim_pwm_config.pwm_port >= BL_PWM_MAX)
+					break;
+				bl_pwm_config_init(&ldim_drv->ldev_conf->ldim_pwm_config);
+				if (ldim_drv->ldev_conf->analog_pwm_config.pwm_port < BL_PWM_VS)
+					bl_pwm_config_init(&ldim_drv->ldev_conf->analog_pwm_config);
+			} else {
 				LCDERR("bl: ldim_config is null\n");
+			}
 		} else {
 			LCDERR("bl: ldim_drv is null\n");
 		}

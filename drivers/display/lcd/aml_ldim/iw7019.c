@@ -351,7 +351,8 @@ static int iw7019_hw_init_on(void)
 
 	ldim_set_gpio(ldim_drv->ldev_conf->en_gpio, ldim_drv->ldev_conf->en_gpio_on);
 	mdelay(2);
-	ldim_set_duty_pwm(&(ldim_drv->ldev_conf->pwm_config));
+	ldim_set_duty_pwm(&(ldim_drv->ldev_conf->ldim_pwm_config));
+	ldim_set_duty_pwm(&(ldim_drv->ldev_conf->analog_pwm_config));
 	ldim_drv->pinmux_ctrl(1);
 	mdelay(100);
 	iw7019_power_on_init();

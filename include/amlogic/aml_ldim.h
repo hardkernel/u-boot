@@ -31,12 +31,6 @@ enum ldim_dev_type_e {
 #define LDIM_INIT_ON_MAX     300
 #define LDIM_INIT_OFF_MAX    20
 
-struct ldim_pinmux_ctrl_s {
-	char *name;
-	unsigned int pinmux_set[LCD_PINMUX_NUM][2];
-	unsigned int pinmux_clr[LCD_PINMUX_NUM][2];
-};
-
 struct ldim_config_s {
 	unsigned char row;
 	unsigned char col;
@@ -66,8 +60,11 @@ struct ldim_dev_config_s {
 	unsigned int init_off_cnt;
 
 	unsigned char pinctrl_ver;
-	struct ldim_pinmux_ctrl_s *ldim_pinmux;
-	struct bl_pwm_config_s pwm_config;
+	struct lcd_pinmux_ctrl_s *ldim_pinmux;
+	struct bl_pwm_config_s ldim_pwm_config;
+	struct bl_pwm_config_s analog_pwm_config;
+	void (*dim_range_update)(void);
+
 	char gpio_name[BL_GPIO_NUM_MAX][LCD_CPU_GPIO_NAME_MAX];
 
 	unsigned short bl_regnum;
