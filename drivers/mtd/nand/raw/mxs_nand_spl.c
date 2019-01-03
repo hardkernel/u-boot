@@ -202,6 +202,7 @@ static int mxs_nand_init(void)
 	/* setup flash layout (does not scan as we override that) */
 	mtd->size = nand_chip.chipsize;
 	nand_chip.scan_bbt(mtd);
+	mxs_nand_setup_ecc(mtd);
 
 	return 0;
 }
