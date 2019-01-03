@@ -78,6 +78,11 @@ __weak void board_quiesce_devices(void)
  */
 static void announce_and_cleanup(int fake)
 {
+	ulong us;
+
+	us = (get_ticks() - gd->sys_start_tick) / (COUNTER_FREQUENCY / 1000000);
+	printf("Total: %ld.%ld ms\n", us / 1000, us % 1000);
+
 	printf("\nStarting kernel ...%s\n\n", fake ?
 		"(fake run for tracing)" : "");
 	bootstage_mark_name(BOOTSTAGE_ID_BOOTM_HANDOFF, "start_kernel");
