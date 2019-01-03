@@ -17566,8 +17566,15 @@
 #define P_TCON_GPO_CTRL2                           (volatile unsigned int *)((0x2017 << 2) + 0xff660000)
 #define TCON_INTR_MASKN                            0x2022
 #define P_TCON_INTR_MASKN                          (volatile unsigned int *)((0x2022 << 2) + 0xff660000)
-#define TCON_INTR                                  0x2023 /* read only */
-#define P_TCON_INTR                                (volatile unsigned int *)((0x2023 << 2) + 0xff660000)
+#define TCON_INTR_RO                               0x2023 /* read only */
+#define P_TCON_INTR_RO                             (volatile unsigned int *)((0x2023 << 2) + 0xff660000)
+
+#define TCON_INTR_WR                               0x2020
+#define TCON_INTR_CLR                              0x2021
+
+#define P2P_CH_SWAP0                               0x4200
+#define P2P_CH_SWAP1                               0x4201
+
 //===============================================================
 //LCD TCON_APB BASE   END
 //===============================================================

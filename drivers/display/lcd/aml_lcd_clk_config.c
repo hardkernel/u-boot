@@ -627,7 +627,6 @@ static void lcd_set_pll_ss_advance_tl1(unsigned int freq, unsigned int mode)
 
 static void lcd_set_pll_tl1(struct lcd_clk_config_s *cConf)
 {
-#if 1
 	unsigned int pll_ctrl, pll_ctrl1;
 	unsigned int tcon_div[5][3] = {
 		/* div_mux, div2/4_sel, div4_bypass */
@@ -667,101 +666,16 @@ static void lcd_set_pll_tl1(struct lcd_clk_config_s *cConf)
 	udelay(10);
 	lcd_hiu_write(HHI_TCON_PLL_CNTL3, 0x10051400);
 	udelay(10);
-	lcd_hiu_write(HHI_TCON_PLL_CNTL4, 0x000100c0);
+	lcd_hiu_setb(HHI_TCON_PLL_CNTL4, 0x0100c0, 0, 24);
 	udelay(10);
-	lcd_hiu_write(HHI_TCON_PLL_CNTL4, 0x008300c0);
+	lcd_hiu_setb(HHI_TCON_PLL_CNTL4, 0x8300c0, 0, 24);
 	udelay(10);
 	lcd_hiu_setb(HHI_TCON_PLL_CNTL0, 1, 26, 1);
 	udelay(10);
 	lcd_hiu_setb(HHI_TCON_PLL_CNTL0, 0, LCD_PLL_RST_TL1, 1);
 	udelay(10);
 	lcd_hiu_write(HHI_TCON_PLL_CNTL2, 0x00003008);
-#else
-	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
-	int ret;
 
-	switch (lcd_drv->lcd_config->lcd_basic.lcd_type) {
-	case LCD_LVDS:
-		lcd_hiu_write(HHI_TCON_PLL_CNTL0, 0x000704ad);
-		udelay(10);
-		lcd_hiu_write(HHI_TCON_PLL_CNTL0, 0x200704ad);
-		udelay(10);
-		lcd_hiu_write(HHI_TCON_PLL_CNTL0, 0x300704ad);
-		udelay(10);
-		lcd_hiu_write(HHI_TCON_PLL_CNTL1, 0x10508000);
-		udelay(10);
-		lcd_hiu_write(HHI_TCON_PLL_CNTL2, 0x00001108);
-		udelay(10);
-		//lcd_hiu_write(HHI_TCON_PLL_CNTL3, 0x10058f30);
-		lcd_hiu_write(HHI_TCON_PLL_CNTL3, 0x10051400);
-		udelay(10);
-		lcd_hiu_write(HHI_TCON_PLL_CNTL4, 0x010100c0);
-		udelay(10);
-		lcd_hiu_write(HHI_TCON_PLL_CNTL4, 0x038300c0);
-		udelay(10);
-		lcd_hiu_write(HHI_TCON_PLL_CNTL0, 0x340704ad);
-		udelay(10);
-		lcd_hiu_write(HHI_TCON_PLL_CNTL0, 0x142e04ad);
-		udelay(10);
-		lcd_hiu_write(HHI_TCON_PLL_CNTL2, 0x00003008);
-		udelay(10);
-		lcd_hiu_write(HHI_TCON_PLL_CNTL4, 0x0b8300c0);
-		udelay(10);
-		break;
-	case LCD_VBYONE:
-		lcd_hiu_write(HHI_TCON_PLL_CNTL0, 0x000f04f7);
-		udelay(10);
-		lcd_hiu_write(HHI_TCON_PLL_CNTL0, 0x200f04f7);
-		udelay(10);
-		lcd_hiu_write(HHI_TCON_PLL_CNTL0, 0x300f04f7);
-		udelay(10);
-		lcd_hiu_write(HHI_TCON_PLL_CNTL1, 0x10110000);
-		udelay(10);
-		lcd_hiu_write(HHI_TCON_PLL_CNTL2, 0x00001108);
-		udelay(10);
-		lcd_hiu_write(HHI_TCON_PLL_CNTL3, 0x10051400);
-		udelay(10);
-		lcd_hiu_write(HHI_TCON_PLL_CNTL4, 0x010100c0);
-		udelay(10);
-		lcd_hiu_write(HHI_TCON_PLL_CNTL4, 0x038300c0);
-		udelay(10);
-		lcd_hiu_write(HHI_TCON_PLL_CNTL0, 0x340f04f7);
-		udelay(10);
-		lcd_hiu_write(HHI_TCON_PLL_CNTL0, 0x140f04f7);
-		udelay(10);
-		lcd_hiu_write(HHI_TCON_PLL_CNTL2, 0x00003008);
-		udelay(10);
-		break;
-	case LCD_P2P:
-		lcd_hiu_write(HHI_TCON_PLL_CNTL0, 0x000f04e1);
-		udelay(10);
-		lcd_hiu_write(HHI_TCON_PLL_CNTL0, 0x200f04e1);
-		udelay(10);
-		lcd_hiu_write(HHI_TCON_PLL_CNTL0, 0x300f04e1);
-		udelay(10);
-		lcd_hiu_write(HHI_TCON_PLL_CNTL1, 0x10208000);
-		udelay(10);
-		lcd_hiu_write(HHI_TCON_PLL_CNTL2, 0x00001108);
-		udelay(10);
-		lcd_hiu_write(HHI_TCON_PLL_CNTL3, 0x10058f30);
-		udelay(10);
-		lcd_hiu_write(HHI_TCON_PLL_CNTL4, 0x010100c0);
-		udelay(10);
-		lcd_hiu_write(HHI_TCON_PLL_CNTL4, 0x038300c0);
-		udelay(10);
-		lcd_hiu_write(HHI_TCON_PLL_CNTL0, 0x340f04e1);
-		udelay(10);
-		lcd_hiu_write(HHI_TCON_PLL_CNTL0, 0x14af04e1);
-		udelay(10);
-		lcd_hiu_write(HHI_TCON_PLL_CNTL2, 0x00003008);
-		udelay(10);
-		lcd_hiu_write(HHI_TCON_PLL_CNTL4, 0x0b8300c0);
-		udelay(10);
-		break;
-	default:
-		break;
-	}
-#endif
 	ret = lcd_pll_wait_lock(HHI_TCON_PLL_CNTL0, LCD_PLL_LOCK_TL1);
 	if (ret) {
 		LCDERR("hpll lock failed\n");
@@ -901,11 +815,24 @@ static void lcd_set_tcon_clk(struct lcd_config_s *pconf)
 
 static void lcd_set_tcon_clk_tl1(struct lcd_config_s *pconf)
 {
+	unsigned int val;
+
 	if (lcd_debug_print_flag == 2)
 		LCDPR("%s\n", __func__);
 
 	switch (pconf->lcd_basic.lcd_type) {
 	case LCD_MLVDS:
+		val = pconf->lcd_control.mlvds_config->clk_phase & 0xfff;
+		lcd_hiu_setb(HHI_TCON_PLL_CNTL1, (val & 0xf), 24, 4);
+		lcd_hiu_setb(HHI_TCON_PLL_CNTL4, ((val >> 4) & 0xf), 28, 4);
+		lcd_hiu_setb(HHI_TCON_PLL_CNTL4, ((val >> 8) & 0xf), 24, 4);
+
+		/* tcon_clk */
+		if (pconf->lcd_timing.lcd_clk >= 100000000) /* 25M */
+			lcd_hiu_write(HHI_TCON_CLK_CNTL, (1 << 7) | (1 << 6) | (0xf << 0));
+		else /* 12.5M */
+			lcd_hiu_write(HHI_TCON_CLK_CNTL, (1 << 7) | (1 << 6) | (0x1f << 0));
+		break;
 	case LCD_P2P:
 		/* tcon_clk 50M */
 		lcd_hiu_write(HHI_TCON_CLK_CNTL, (1 << 7) | (1 << 6) | (7 << 0));
@@ -1019,6 +946,12 @@ static unsigned int clk_vid_pll_div_calc(unsigned int clk,
 			clk_ret = clk * 2 / 5;
 		else
 			clk_ret = clk * 5 / 2;
+		break;
+	case CLK_DIV_SEL_4p67:
+		if (dir == CLK_DIV_I2O)
+			clk_ret = clk * 3 / 14;
+		else
+			clk_ret = clk * 14 / 3;
 		break;
 	default:
 		clk_ret = clk;

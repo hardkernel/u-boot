@@ -542,10 +542,10 @@ struct aml_lcd_drv_s {
 	void (*lcd_clk)(void);
 	void (*lcd_info)(void);
 	void (*lcd_reg)(void);
-	void (*lcd_tcon_reg)(void);
-	void (*lcd_tcon_table)(void);
-	unsigned int (*lcd_tcon_reg_read)(unsigned int addr);
-	void (*lcd_tcon_reg_write)(unsigned int addr, unsigned int val);
+	void (*lcd_tcon_reg_print)(void);
+	void (*lcd_tcon_table_print)(void);
+	unsigned int (*lcd_tcon_reg_read)(unsigned int addr, unsigned int flag);
+	void (*lcd_tcon_reg_write)(unsigned int addr, unsigned int val, unsigned int flag);
 	void (*bl_on)(void);
 	void (*bl_off)(void);
 	void (*set_bl_level)(int level);
@@ -567,5 +567,6 @@ extern void lcd_config_bsp_init(void);
 extern struct aml_lcd_drv_s *aml_lcd_get_driver(void);
 
 extern int lcd_probe(void);
+extern unsigned char *lcd_tcon_table_get(unsigned int *size);
 
 #endif /* INC_AML_LCD_VOUT_H */

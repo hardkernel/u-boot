@@ -22,6 +22,11 @@
 #include "aml_lcd_tcon.h"
 //#include "tcon_ceds.h"
 
+#define TCON_IRQ_TIMEOUT_MAX    (1 << 17)
+//static unsigned int tcon_irq_timeout;
+//static unsigned int tcon_irq_cnt;
+//static void lcd_tcon_p2p_chpi_irq(void);
+
 static struct tcon_rmem_s tcon_rmem = {
 	.flag = 0,
 	.mem_paddr = 0,
@@ -62,7 +67,7 @@ static void lcd_tcon_od_check(unsigned char *table)
 	}
 }
 
-unsigned int lcd_tcon_core_reg_read(unsigned int addr)
+static unsigned int lcd_tcon_reg_read(unsigned int addr, unsigned int flag)
 {
 	unsigned int val;
 	int ret;
@@ -71,7 +76,7 @@ unsigned int lcd_tcon_core_reg_read(unsigned int addr)
 	if (ret)
 		return 0;
 
-	if (lcd_tcon_data->core_reg_width == 8)
+	if (flag)
 		val = lcd_tcon_read_byte(addr + TCON_CORE_REG_START);
 	else
 		val = lcd_tcon_read(addr + TCON_CORE_REG_START);
@@ -79,7 +84,7 @@ unsigned int lcd_tcon_core_reg_read(unsigned int addr)
 	return val;
 }
 
-void lcd_tcon_core_reg_write(unsigned int addr, unsigned int val)
+static void lcd_tcon_reg_write(unsigned int addr, unsigned int val, unsigned int flag)
 {
 	unsigned char temp;
 	int ret;
@@ -88,7 +93,7 @@ void lcd_tcon_core_reg_write(unsigned int addr, unsigned int val)
 	if (ret)
 		return;
 
-	if (lcd_tcon_data->core_reg_width == 8) {
+	if (flag) {
 		temp = (unsigned char)val;
 		lcd_tcon_write_byte((addr + TCON_CORE_REG_START), temp);
 	} else {
@@ -96,7 +101,7 @@ void lcd_tcon_core_reg_write(unsigned int addr, unsigned int val)
 	}
 }
 
-static void lcd_tcon_core_reg_udpate(void)
+static void lcd_tcon_core_reg_update(void)
 {
 	unsigned char *table;
 	unsigned int len, temp;
@@ -110,10 +115,8 @@ static void lcd_tcon_core_reg_udpate(void)
 	}
 	lcd_tcon_od_check(table);
 	if (lcd_tcon_data->core_reg_width == 8) {
-		for (i = 0; i < len; i++) {
-			lcd_tcon_write_byte((i + TCON_CORE_REG_START),
-				table[i]);
-		}
+		for (i = 0; i < len; i++)
+			lcd_tcon_write_byte((i + TCON_CORE_REG_START), table[i]);
 	} else {
 		for (i = 0; i < len; i++)
 			lcd_tcon_write((i + TCON_CORE_REG_START), table[i]);
@@ -174,7 +177,7 @@ static int lcd_tcon_enable_txhd(struct lcd_config_s *pconf)
 	lcd_tcon_top_set_txhd();
 
 	/* step 2: tcon_core_reg_update */
-	lcd_tcon_core_reg_udpate();
+	lcd_tcon_core_reg_update();
 
 	/* step 3: tcon_top_output_set */
 	lcd_tcon_write(TCON_OUT_CH_SEL0, mlvds_conf->channel_sel0);
@@ -185,7 +188,7 @@ static int lcd_tcon_enable_txhd(struct lcd_config_s *pconf)
 	return 0;
 }
 
-static int lcd_tcon_top_set_tl1(void)
+static int lcd_tcon_top_set_tl1(struct lcd_config_s *pconf)
 {
 	unsigned int axi_reg[3] = {0x200c, 0x2013, 0x2014};
 	unsigned int addr[3] = {0, 0, 0};
@@ -207,7 +210,18 @@ static int lcd_tcon_top_set_tl1(void)
 	}
 
 	lcd_tcon_write(TCON_CLK_CTRL, 0x001f);
-	lcd_tcon_write(TCON_TOP_CTRL, 0x8999);
+	if (pconf->lcd_basic.lcd_type == LCD_P2P) {
+		switch (pconf->lcd_control.p2p_config->p2p_type) {
+		case P2P_CHPI:
+			lcd_tcon_write(TCON_TOP_CTRL, 0x8199);
+			break;
+		default:
+			lcd_tcon_write(TCON_TOP_CTRL, 0x8999);
+			break;
+		}
+	} else {
+		lcd_tcon_write(TCON_TOP_CTRL, 0x8999);
+	}
 	lcd_tcon_write(TCON_PLLLOCK_CNTL, 0x0037);
 	lcd_tcon_write(TCON_RST_CTRL, 0x003f);
 	lcd_tcon_write(TCON_RST_CTRL, 0x0000);
@@ -217,19 +231,81 @@ static int lcd_tcon_top_set_tl1(void)
 	return 0;
 }
 
+static void lcd_tcon_chpi_bbc_init_tl1(int delay)
+{
+	unsigned int data32;
+
+	udelay(delay);
+	lcd_hiu_setb(HHI_DIF_CSI_PHY_CNTL1, 1, 3, 1);
+	lcd_hiu_setb(HHI_DIF_CSI_PHY_CNTL1, 1, 19, 1);
+	lcd_hiu_setb(HHI_DIF_CSI_PHY_CNTL2, 1, 3, 1);
+	lcd_hiu_setb(HHI_DIF_CSI_PHY_CNTL2, 1, 19, 1);
+	lcd_hiu_setb(HHI_DIF_CSI_PHY_CNTL3, 1, 3, 1);
+	lcd_hiu_setb(HHI_DIF_CSI_PHY_CNTL3, 1, 19, 1);
+	lcd_hiu_setb(HHI_DIF_CSI_PHY_CNTL4, 1, 3, 1);
+	lcd_hiu_setb(HHI_DIF_CSI_PHY_CNTL4, 1, 19, 1);
+	lcd_hiu_setb(HHI_DIF_CSI_PHY_CNTL6, 1, 3, 1);
+	lcd_hiu_setb(HHI_DIF_CSI_PHY_CNTL6, 1, 19, 1);
+	lcd_hiu_setb(HHI_DIF_CSI_PHY_CNTL7, 1, 3, 1);
+	lcd_hiu_setb(HHI_DIF_CSI_PHY_CNTL7, 1, 19, 1);
+	LCDPR("%s: delay: %dus\n", __func__, delay);
+	//tcon_irq_cnt = 0;
+	//lcd_tcon_write(TCON_INTR_CNTL, 0x80);
+	//lcd_tcon_write_byte(0x4b0 + TCON_CORE_REG_START, 0x80);
+	//while (tcon_irq_cnt < 12) {
+	//	if (tcon_irq_timeout++ > TCON_IRQ_TIMEOUT_MAX) {
+	//		LCDERR("tcon irq timeout, irq_cnt=%d\n", tcon_irq_cnt);
+	//		break;
+	//	}
+	//	lcd_tcon_p2p_chpi_irq();
+	//}
+
+	data32 = 0x06020602;
+	lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL14, 0xff2027ef);
+	lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL15, 0);
+	lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL16, 0x80000000);
+	lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL8, 0);
+	lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL1, data32);
+	lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL9, 0);
+	lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL2, data32);
+	lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL10, 0);
+	lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL3, data32);
+	lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL11, 0);
+	lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL4, data32);
+	lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL12, 0);
+	lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL6, data32);
+	lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL13, 0);
+	lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL7, data32);
+}
+
 static int lcd_tcon_enable_tl1(struct lcd_config_s *pconf)
 {
+	unsigned int n = 10;
+	char *str;
 	int ret;
 
 	ret = lcd_tcon_valid_check();
 	if (ret)
 		return -1;
 
+	str = getenv("tcon_delay");
+	if (str)
+		n = (unsigned int)simple_strtoul(str, NULL, 10);
+
 	/* step 1: tcon top */
-	lcd_tcon_top_set_tl1();
+	lcd_tcon_top_set_tl1(pconf);
 
 	/* step 2: tcon_core_reg_update */
-	lcd_tcon_core_reg_udpate();
+	lcd_tcon_core_reg_update();
+	if (pconf->lcd_basic.lcd_type == LCD_P2P) {
+		switch (pconf->lcd_control.p2p_config->p2p_type) {
+		case P2P_CHPI:
+			lcd_tcon_chpi_bbc_init_tl1(n);
+			break;
+		default:
+			break;
+		}
+	}
 
 	/* step 3: tcon_top_output_set */
 	lcd_tcon_write(TCON_OUT_CH_SEL1, 0xba98); /* out swap for ch8~11 */
@@ -240,6 +316,100 @@ static int lcd_tcon_enable_tl1(struct lcd_config_s *pconf)
 	return 0;
 }
 
+#if 0
+static void lcd_tcon_p2p_chpi_irq(void)
+{
+	unsigned int temp;
+
+	temp = lcd_tcon_read(TCON_INTR_RO);
+	//LCDPR("tcon intr: 0x%x\n", temp);
+	lcd_tcon_write(TCON_INTR_CLR, temp);
+	temp = lcd_tcon_read_byte(0xb3b + TCON_CORE_REG_START);
+	lcd_tcon_read_byte(0xb3a + TCON_CORE_REG_START);
+	if (temp & 0x6) {
+		lcd_tcon_write_byte(0xb3b + TCON_CORE_REG_START, 0xf);
+		lcd_tcon_write_byte(0xb3b + TCON_CORE_REG_START, 0);
+		lcd_tcon_read_byte(0xb3a + TCON_CORE_REG_START);
+		if (temp & 0x2) {
+			//LCDPR("tcon_irq_cnt: %d, set channel pull down\n", tcon_irq_cnt);
+			switch (tcon_irq_cnt) {
+			case 0:
+				lcd_hiu_setb(HHI_DIF_CSI_PHY_CNTL1, 0, 3, 1);
+				lcd_hiu_setb(HHI_DIF_CSI_PHY_CNTL1, 0, 19, 1);
+				break;
+			case 2:
+				lcd_hiu_setb(HHI_DIF_CSI_PHY_CNTL2, 0, 3, 1);
+				lcd_hiu_setb(HHI_DIF_CSI_PHY_CNTL2, 0, 19, 1);
+				break;
+			case 4:
+				lcd_hiu_setb(HHI_DIF_CSI_PHY_CNTL3, 0, 3, 1);
+				lcd_hiu_setb(HHI_DIF_CSI_PHY_CNTL3, 0, 19, 1);
+				break;
+			case 6:
+				lcd_hiu_setb(HHI_DIF_CSI_PHY_CNTL4, 0, 3, 1);
+				lcd_hiu_setb(HHI_DIF_CSI_PHY_CNTL4, 0, 19, 1);
+				break;
+			case 8:
+				lcd_hiu_setb(HHI_DIF_CSI_PHY_CNTL6, 0, 3, 1);
+				lcd_hiu_setb(HHI_DIF_CSI_PHY_CNTL6, 0, 19, 1);
+				break;
+			case 10:
+				lcd_hiu_setb(HHI_DIF_CSI_PHY_CNTL7, 0, 3, 1);
+				lcd_hiu_setb(HHI_DIF_CSI_PHY_CNTL7, 0, 19, 1);
+				break;
+			default:
+				LCDPR("invalid pull_down tcon_irq_cnt: %d, temp=0x%x\n",
+					tcon_irq_cnt, temp);
+				break;
+			}
+			if (tcon_irq_cnt < 0xff)
+				tcon_irq_cnt++;
+		}
+		if (temp & 0x4) {
+			//LCDPR("tcon_irq_cnt: %d, release channel pull down\n", tcon_irq_cnt);
+			switch (tcon_irq_cnt) {
+			case 1:
+				//udelay(10);
+				lcd_hiu_setb(HHI_DIF_CSI_PHY_CNTL1, 1, 3, 1);
+				lcd_hiu_setb(HHI_DIF_CSI_PHY_CNTL1, 1, 19, 1);
+				break;
+			case 3:
+				//udelay(10);
+				lcd_hiu_setb(HHI_DIF_CSI_PHY_CNTL2, 1, 3, 1);
+				lcd_hiu_setb(HHI_DIF_CSI_PHY_CNTL2, 1, 19, 1);
+				break;
+			case 5:
+				//udelay(10);
+				lcd_hiu_setb(HHI_DIF_CSI_PHY_CNTL3, 1, 3, 1);
+				lcd_hiu_setb(HHI_DIF_CSI_PHY_CNTL3, 1, 19, 1);
+				break;
+			case 7:
+				//udelay(10);
+				lcd_hiu_setb(HHI_DIF_CSI_PHY_CNTL4, 1, 3, 1);
+				lcd_hiu_setb(HHI_DIF_CSI_PHY_CNTL4, 1, 19, 1);
+				break;
+			case 9:
+				//udelay(10);
+				lcd_hiu_setb(HHI_DIF_CSI_PHY_CNTL6, 1, 3, 1);
+				lcd_hiu_setb(HHI_DIF_CSI_PHY_CNTL6, 1, 19, 1);
+				break;
+			case 11:
+				//udelay(10);
+				lcd_hiu_setb(HHI_DIF_CSI_PHY_CNTL7, 1, 3, 1);
+				lcd_hiu_setb(HHI_DIF_CSI_PHY_CNTL7, 1, 19, 1);
+				break;
+			default:
+				LCDPR("invalid release pull_down tcon_irq_cnt: %d, temp=0x%x\n",
+					tcon_irq_cnt, temp);
+				break;
+			}
+			if (tcon_irq_cnt < 0xff)
+				tcon_irq_cnt++;
+		}
+	}
+	//udelay(1);
+}
+#endif
 static void lcd_tcon_config_axi_offset_default(void)
 {
 	char *str = NULL;
@@ -332,7 +502,7 @@ static int lcd_tcon_config(char *dt_addr, struct lcd_config_s *pconf, int load_i
  * **********************************
  */
 #define PR_BUF_MAX    200
-void lcd_tcon_reg_table_print(void)
+static void lcd_tcon_reg_table_print(void)
 {
 	int i, j, n, cnt;
 	char *buf;
@@ -369,7 +539,7 @@ void lcd_tcon_reg_table_print(void)
 	free(buf);
 }
 
-void lcd_tcon_reg_readback_print(void)
+static void lcd_tcon_reg_readback_print(void)
 {
 	int i, j, n, cnt;
 	char *buf;
@@ -404,6 +574,21 @@ void lcd_tcon_reg_readback_print(void)
 		printf("%s\n", buf);
 	}
 	free(buf);
+}
+
+unsigned char *lcd_tcon_table_get(unsigned int *size)
+{
+	int ret;
+
+	*size = 0;
+
+	ret = lcd_tcon_valid_check();
+	if (ret)
+		return NULL;
+
+	if (lcd_tcon_data->reg_table)
+		*size = lcd_tcon_data->reg_table_len;
+	return lcd_tcon_data->reg_table;
 }
 
 void lcd_tcon_info_print(void)
@@ -534,8 +719,6 @@ int lcd_tcon_probe(char *dt_addr, struct aml_lcd_drv_s *lcd_drv, int load_id)
 	int ret = 0;
 	struct lcd_config_s *pconf = lcd_drv->lcd_config;
 
-	LCDPR("%s\n", __func__);
-
 	lcd_tcon_data = NULL;
 	switch (lcd_drv->chip_type) {
 	case LCD_CHIP_TXHD:
@@ -565,7 +748,13 @@ int lcd_tcon_probe(char *dt_addr, struct aml_lcd_drv_s *lcd_drv, int load_id)
 	if (lcd_tcon_data == NULL)
 		return 0;
 
+	LCDPR("%s\n", __func__);
 	ret = lcd_tcon_config(dt_addr, pconf, load_id);
+
+	lcd_drv->lcd_tcon_reg_print = lcd_tcon_reg_readback_print;
+	lcd_drv->lcd_tcon_table_print = lcd_tcon_reg_table_print;
+	lcd_drv->lcd_tcon_reg_read = lcd_tcon_reg_read;
+	lcd_drv->lcd_tcon_reg_write = lcd_tcon_reg_write;
 
 	return ret;
 }

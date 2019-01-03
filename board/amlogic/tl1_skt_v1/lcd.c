@@ -195,7 +195,7 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	/* clk_attr */
 	2,0,1,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
 	/* minilvds_attr */
-	6,0x12304567,0x0,0x110,0,0,0xf,0x0,Rsv_val,Rsv_val,
+	6,0x76543210,0xba98,0x660,0,0,0xf,0x0,Rsv_val,Rsv_val,
 	/* power step */
 	lcd_power_on_step, lcd_power_off_step,
 	/* backlight */
@@ -213,7 +213,7 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	/* clk_attr */
 	2,0,1,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
 	/* minilvds_attr */
-	6,0x45603012,0x0,0xaa0,0,0,0xf,0x0,Rsv_val,Rsv_val,
+	6,0x76543210,0xba98,0x660,0,0,0xf,0x0,Rsv_val,Rsv_val,
 	/* power step */
 	lcd_power_on_step, lcd_power_off_step,
 	/* backlight */

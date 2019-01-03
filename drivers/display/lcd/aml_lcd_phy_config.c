@@ -319,7 +319,7 @@ void lcd_vbyone_phy_set(struct lcd_config_s *pconf, int status)
 void lcd_mlvds_phy_set(struct lcd_config_s *pconf, int status)
 {
 	unsigned int vswing, preem;
-	unsigned int data32, size;
+	unsigned int data32, size, cntl16;
 	struct aml_lcd_drv_s *lcd_drv = aml_lcd_get_driver();
 	struct mlvds_config_s *mlvds_conf;
 
@@ -346,7 +346,9 @@ void lcd_mlvds_phy_set(struct lcd_config_s *pconf, int status)
 			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL14,
 				0xff2027e0 | vswing);
 			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL15, 0);
-			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL16, 0x80000000);
+			cntl16 = (mlvds_conf->pi_clk_sel << 12);
+			cntl16 |= 0x80000000;
+			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL16, cntl16);
 			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL8, 0);
 			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL1, data32);
 			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL9, 0);
@@ -473,11 +475,10 @@ void lcd_p2p_phy_set(struct lcd_config_s *pconf, int status)
 				preem = 0x1;
 			}
 			data32 = p2p_low_common_phy_preem_tl1[preem];
+			cntl16 = 0x80000000;
 			if (p2p_conf->p2p_type == P2P_CHPI) {
-				/* cntl[30]=1, weakly pull down */
-				cntl16 = 0x80000000;
-			} else {
-				cntl16 = 0x80000000;
+				/* weakly pull down */
+				data32 &= ~((1 << 19) | (1 << 3));
 			}
 			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL14, 0xfe60027f);
 			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL15, 0);

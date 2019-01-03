@@ -243,7 +243,7 @@ static void lcd_info_print_mipi(struct lcd_config_s *pconf)
 static void lcd_info_print_mlvds(struct lcd_config_s *pconf)
 {
 	printf("channel_num       %d\n"
-		"channel_sel1      0x%08x\n"
+		"channel_sel0      0x%08x\n"
 		"channel_sel1      0x%08x\n"
 		"clk_phase         0x%04x\n"
 		"pn_swap           %u\n"
@@ -270,7 +270,7 @@ static void lcd_info_print_p2p(struct lcd_config_s *pconf)
 {
 	printf("p2p_type          0x%x\n"
 		"lane_num          %d\n"
-		"channel_sel1      0x%08x\n"
+		"channel_sel0      0x%08x\n"
 		"channel_sel1      0x%08x\n"
 		"pn_swap           %u\n"
 		"bit_swap          %u\n"

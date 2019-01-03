@@ -810,20 +810,6 @@ static void aml_lcd_reg(void)
 	aml_lcd_reg_print();
 }
 
-static void aml_lcd_tcon_reg(void)
-{
-	if (lcd_check_valid())
-		return;
-	lcd_tcon_reg_readback_print();
-}
-
-static void aml_lcd_tcon_table(void)
-{
-	if (lcd_check_valid())
-		return;
-	lcd_tcon_reg_table_print();
-}
-
 static void aml_set_backlight_level(int level)
 {
 	aml_bl_set_level(level);
@@ -906,10 +892,10 @@ static struct aml_lcd_drv_s aml_lcd_driver = {
 	.lcd_clk = aml_lcd_clk,
 	.lcd_info = aml_lcd_info,
 	.lcd_reg = aml_lcd_reg,
-	.lcd_tcon_reg = aml_lcd_tcon_reg,
-	.lcd_tcon_table = aml_lcd_tcon_table,
-	.lcd_tcon_reg_read = lcd_tcon_core_reg_read,
-	.lcd_tcon_reg_write = lcd_tcon_core_reg_write,
+	.lcd_tcon_reg_print = NULL,
+	.lcd_tcon_table_print = NULL,
+	.lcd_tcon_reg_read = NULL,
+	.lcd_tcon_reg_write = NULL,
 	.bl_on = aml_backlight_power_on,
 	.bl_off = aml_backlight_power_off,
 	.set_bl_level = aml_set_backlight_level,

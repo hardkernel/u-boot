@@ -25,7 +25,8 @@
 /* 20181212: tl1 update p2p config and pll setting */
 /* 20181225: update phy config */
 /* 20190108: tl1 support tablet mode */
-#define LCD_DRV_VERSION    "20190108"
+/* 20190115: tl1 tcon all interface support */
+#define LCD_DRV_VERSION    "20190115"
 
 #define VPP_OUT_SATURATE            (1 << 0)
 
@@ -56,10 +57,6 @@ extern void lcd_p2p_phy_set(struct lcd_config_s *pconf, int status);
 extern void lcd_mipi_phy_set(struct lcd_config_s *pconf, int status);
 
 /* lcd tcon */
-extern unsigned int lcd_tcon_core_reg_read(unsigned int addr);
-extern void lcd_tcon_core_reg_write(unsigned int addr, unsigned int val);
-extern void lcd_tcon_reg_table_print(void);
-extern void lcd_tcon_reg_readback_print(void);
 extern void lcd_tcon_info_print(void);
 extern int lcd_tcon_enable(struct lcd_config_s *pconf);
 extern void lcd_tcon_disable(void);

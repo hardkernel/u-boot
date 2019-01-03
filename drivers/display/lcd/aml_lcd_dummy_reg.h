@@ -302,6 +302,25 @@
 #ifndef TCON_GPO_CTRL2
 #define TCON_GPO_CTRL2                             0x2017
 #endif
+#ifndef TCON_INTR_WR
+#define TCON_INTR_WR                               0x2020
+#endif
+#ifndef TCON_INTR_CLR
+#define TCON_INTR_CLR                              0x2021
+#endif
+#ifndef TCON_INTR_MASKN
+#define TCON_INTR_MASKN                            0x2022
+#endif
+#ifndef TCON_INTR_RO
+#define TCON_INTR_RO                               0x2023
+#endif
+
+#ifndef P2P_CH_SWAP0
+#define P2P_CH_SWAP0                               0x4200
+#endif
+#ifndef P2P_CH_SWAP1
+#define P2P_CH_SWAP1                               0x4201
+#endif
 
 #ifndef HHI_DIF_TCON_CNTL0
 #define HHI_DIF_TCON_CNTL0                         (0xff63c000 + (0x3c << 2))

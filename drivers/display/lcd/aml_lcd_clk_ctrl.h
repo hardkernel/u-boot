@@ -517,6 +517,7 @@ static char *lcd_clk_div_sel_table[] = {
 	"14",
 	"15",
 	"2.5",
+	"4.67",
 	"invalid",
 };
 
@@ -539,6 +540,7 @@ enum div_sel_e {
 	CLK_DIV_SEL_14,   /* 12 */
 	CLK_DIV_SEL_15,   /* 13 */
 	CLK_DIV_SEL_2p5,  /* 14 */
+	CLK_DIV_SEL_4p67, /* 15 */
 	CLK_DIV_SEL_MAX,
 };
 
@@ -559,6 +561,7 @@ static unsigned int lcd_clk_div_table[][3] = {
 	{CLK_DIV_SEL_14,   0x3f80,     1,},
 	{CLK_DIV_SEL_15,   0x7f80,     2,},
 	{CLK_DIV_SEL_2p5,  0x5294,     2,},
+	{CLK_DIV_SEL_4p67, 0x0ccc,     1,},
 	{CLK_DIV_SEL_MAX,  0xffff,     0,},
 };
 
