@@ -15,6 +15,7 @@
 #include <dt_table.h>
 #include <image-android-dt.h>
 #include <malloc.h>
+#include <fdt_support.h>
 #include <fs.h>
 #include <boot_rkimg.h>
 #include <attestation_key.h>
