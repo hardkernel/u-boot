@@ -73,6 +73,8 @@ void rockchip_stimer_init(void)
 #define PMUGRF_BASE	0xff320000
 #define PMUSGRF_BASE	0xff330000
 #define PMUCRU_BASE	0xff750000
+#define NIU_PERILP_NSP_ADDR	0xffad8188
+#define QOS_PRIORITY_LEVEL(h, l)	((((h) & 3) << 8) | ((l) & 3))
 
 int arch_cpu_init(void)
 {
@@ -110,6 +112,9 @@ int arch_cpu_init(void)
 	writel(0x7f002000, &pmucru->pmucru_clksel[1]);
 	writel(0x01000100, &pmucru->pmucru_clkgate_con[0]);
 #endif
+
+	/* Set perilp_nsp QOS priority to 3 for USB 3.0 */
+	writel(QOS_PRIORITY_LEVEL(3, 3), NIU_PERILP_NSP_ADDR);
 
 	return 0;
 }
