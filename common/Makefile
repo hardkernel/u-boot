@@ -145,3 +145,5 @@ obj-y += s_record.o
 obj-y += xyzModem.o
 
 obj-$(CONFIG_OPTEE_CLIENT) += attestation_key.o
+
+obj-$(CONFIG_ANDROID_WRITE_KEYBOX) += write_keybox.o

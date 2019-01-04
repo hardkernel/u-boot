@@ -8,7 +8,7 @@
 #include <asm/io.h>
 #include <asm/arch/boot_mode.h>
 #include <asm/arch/chip_info.h>
-#include <optee_include/OpteeClientInterface.h>
+#include <write_keybox.h>
 
 #ifdef CONFIG_ROCKCHIP_VENDOR_PARTITION
 #include <asm/arch/vendor.h>

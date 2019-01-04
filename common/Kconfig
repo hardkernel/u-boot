@@ -594,6 +594,13 @@ config ANDROID_AB
 	  allows a bootloader to try a new version of the system but roll back
 	  to previous version if the new one didn't boot all the way.
 
+config ANDROID_WRITE_KEYBOX
+	bool "Support Write Keybox"
+	default y
+	depends on OPTEE_CLIENT
+	help
+	  This enable support write keybox to secure storage.
+
 config ANDROID_AVB
 	bool"Support Android Verified Boot"
 	default n
