@@ -48,7 +48,7 @@
 #define IH_INITRD_ARCH IH_ARCH_DEFAULT
 
 #ifdef CONFIG_MDUMP_COMPRESS
-extern void check_ramdump(void);
+#include <ramdump.h>
 #endif
 #ifndef USE_HOSTCC
 

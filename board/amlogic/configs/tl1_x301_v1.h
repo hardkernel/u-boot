@@ -534,6 +534,11 @@
 #define CONFIG_FS_EXT4 1
 #define CONFIG_LZO 1
 
+#define CONFIG_MDUMP_COMPRESS 1
+#define CONFIG_EXT4_WRITE 1
+#define CONFIG_CMD_EXT4 1
+#define CONFIG_CMD_EXT4_WRITE 1
+
 /* Cache Definitions */
 //#define CONFIG_SYS_DCACHE_OFF
 //#define CONFIG_SYS_ICACHE_OFF
