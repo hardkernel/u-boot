@@ -140,8 +140,8 @@ void OpteeClientMemInit(void)
 
 	tee_smc_call(&ArmSmcArgs);
 
-	printf("get share memory, arg0=0x%x arg1=0x%x arg2=0x%x arg3=0x%x\n",
-			ArmSmcArgs.Arg0, ArmSmcArgs.Arg1, ArmSmcArgs.Arg2, ArmSmcArgs.Arg3);
+	debug("get share memory, arg0=0x%x arg1=0x%x arg2=0x%x arg3=0x%x\n",
+	      ArmSmcArgs.Arg0, ArmSmcArgs.Arg1, ArmSmcArgs.Arg2, ArmSmcArgs.Arg3);
 
 	my_malloc_init((void *)(size_t)ArmSmcArgs.Arg1, ArmSmcArgs.Arg2);
 }
