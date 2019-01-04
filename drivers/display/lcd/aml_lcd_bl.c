@@ -906,8 +906,8 @@ void aml_bl_power_ctrl(int status, int delay_flag)
 		case BL_CTRL_PWM:
 			if (bconf->en_sequence_reverse) {
 				/* step 1: power off pwm */
-				bl_pwm_ctrl(bconf->bl_pwm, 0);
 				bl_pwm_pinmux_ctrl(bconf, 0);
+				bl_pwm_ctrl(bconf->bl_pwm, 0);
 				if (bconf->pwm_off_delay > 0)
 					mdelay(bconf->pwm_off_delay);
 				/* step 2: power off enable */
@@ -918,16 +918,16 @@ void aml_bl_power_ctrl(int status, int delay_flag)
 				/* step 2: power off pwm */
 				if (bconf->pwm_off_delay > 0)
 					mdelay(bconf->pwm_off_delay);
-				bl_pwm_ctrl(bconf->bl_pwm, 0);
 				bl_pwm_pinmux_ctrl(bconf, 0);
+				bl_pwm_ctrl(bconf->bl_pwm, 0);
 			}
 			break;
 		case BL_CTRL_PWM_COMBO:
 			if (bconf->en_sequence_reverse) {
 				/* step 1: power off pwm_combo */
+				bl_pwm_pinmux_ctrl(bconf, 0);
 				bl_pwm_ctrl(bconf->bl_pwm_combo0, 0);
 				bl_pwm_ctrl(bconf->bl_pwm_combo1, 0);
-				bl_pwm_pinmux_ctrl(bconf, 0);
 				if (bconf->pwm_off_delay > 0)
 					mdelay(bconf->pwm_off_delay);
 				/* step 2: power off enable */
@@ -938,9 +938,9 @@ void aml_bl_power_ctrl(int status, int delay_flag)
 				/* step 2: power off pwm_combo */
 				if (bconf->pwm_off_delay > 0)
 					mdelay(bconf->pwm_off_delay);
+				bl_pwm_pinmux_ctrl(bconf, 0);
 				bl_pwm_ctrl(bconf->bl_pwm_combo0, 0);
 				bl_pwm_ctrl(bconf->bl_pwm_combo1, 0);
-				bl_pwm_pinmux_ctrl(bconf, 0);
 			}
 			break;
 #ifdef CONFIG_AML_LOCAL_DIMMING
