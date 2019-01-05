@@ -84,7 +84,7 @@ config FASTBOOT_FLASH_MMC_DEV
 
 config FASTBOOT_OEM_UNLOCK
 	bool "Enable FASTBOOT OEM UNLOCK command"
-	depends on OPTEE_CLIENT
+	depends on ANDROID_KEYMASTER_CA
 	help
 	  This enables the command "fastboot oem unlock" the fastboot
 	  oem unlock command requires tee security storage to store

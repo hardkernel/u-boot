@@ -144,6 +144,6 @@ obj-$(CONFIG_$(SPL_)LOG_CONSOLE) += log_console.o
 obj-y += s_record.o
 obj-y += xyzModem.o
 
-obj-$(CONFIG_OPTEE_CLIENT) += attestation_key.o
-
 obj-$(CONFIG_ANDROID_WRITE_KEYBOX) += write_keybox.o
+obj-$(CONFIG_ANDROID_KEYMASTER_CA) += keymaster.o
+obj-$(CONFIG_ANDROID_KEYMASTER_CA) += attestation_key.o

@@ -39,6 +39,9 @@
 #endif
 #include <boot_rkimg.h>
 #include <optee_include/tee_client_api.h>
+#ifdef CONFIG_FASTBOOT_OEM_UNLOCK
+#include <keymaster.h>
+#endif
 
 #define FASTBOOT_VERSION		"0.4"
 

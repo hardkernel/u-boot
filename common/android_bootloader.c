@@ -19,8 +19,9 @@
 #include <fs.h>
 #include <boot_rkimg.h>
 #include <attestation_key.h>
-#include <optee_include/OpteeClientInterface.h>
+#include <keymaster.h>
 #include <linux/libfdt_env.h>
+#include <optee_include/OpteeClientInterface.h>
 
 #define ANDROID_PARTITION_BOOT "boot"
 #define ANDROID_PARTITION_MISC "misc"
@@ -871,7 +872,7 @@ int android_bootloader_boot_flow(struct blk_desc *dev_desc,
 	if (part_num < 0)
 		printf("%s Could not find misc partition\n", __func__);
 
-#ifdef CONFIG_OPTEE_CLIENT
+#ifdef CONFIG_ANDROID_KEYMASTER_CA
 	/* load attestation key from misc partition. */
 	load_attestation_key(dev_desc, &misc_part_info);
 #endif

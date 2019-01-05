@@ -363,11 +363,13 @@ static int rkusb_do_vs_write(struct fsg_common *common)
 			} else {
 				/* RPMB */
 #ifdef CONFIG_OPTEE_V1
+#ifdef CONFIG_ANDROID_KEYMASTER_CA
 				rc =
 				write_keybox_to_secure_storage((u8 *)data,
 							       vhead->size);
 				if (rc < 0)
 					return -EIO;
+#endif
 #endif
 			}
 

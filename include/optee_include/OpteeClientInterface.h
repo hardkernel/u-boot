@@ -24,22 +24,6 @@ uint32_t trusty_write_lock_state(uint8_t lock_state);
 uint32_t trusty_read_flash_lock_state(uint8_t *flash_lock_state);
 uint32_t trusty_write_flash_lock_state(uint8_t flash_lock_state);
 
-/*
- * read data from rk_keymaster
- *
- * @filename:		the filename of the saved data to read
- * @filename_size: 	size of filename
- * @data: 		the buffer used to read data from rk_keymaster
- * @data_size: 		buffer size of the data
- *
- * @return a positive number in case of error, or 0 on success.
- */
-TEEC_Result read_from_keymaster
-	(uint8_t *filename, uint32_t filename_size,
-	uint8_t *data, uint32_t data_size);
-uint32_t write_to_keymaster
-	(uint8_t *filename, uint32_t filename_size,
-	uint8_t *data, uint32_t data_size);
 uint32_t trusty_read_attribute_hash(uint32_t *buf, uint32_t length);
 uint32_t trusty_write_attribute_hash(uint32_t *buf, uint32_t length);
 uint32_t trusty_notify_optee_uboot_end(void);
@@ -54,23 +38,5 @@ uint32_t trusty_attest_get_ca
 	(uint8_t *operation_start, uint32_t *operation_size,
 	 uint8_t *out, uint32_t *out_len);
 uint32_t trusty_attest_set_ca(uint8_t *ca_response, uint32_t *ca_response_size);
-
-/*
- * read oem unlock status from rk_keymaster
- *
- * @unlock:used to read oem unlock status code,0:locked,1:unlocked
- *
- * @return a positive number in case of error, or 0 on success.
- */
-TEEC_Result trusty_read_oem_unlock(uint8_t *unlock);
-
-/*
- * update oem unlock status to rk_keymaster
- *
- * @unlock: oem unlock status code,0:locked,1:unlocked
- *
- * @return a positive number in case of error, or 0 on success.
- */
-TEEC_Result trusty_write_oem_unlock(uint8_t unlock);
 
 #endif

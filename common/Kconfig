@@ -610,6 +610,13 @@ config ANDROID_AVB
 	  to verify the boot images. The vbmeta must be matched with images,
 	  if not, verify failed.
 
+config ANDROID_KEYMASTER_CA
+	bool "Support Keymaster CA"
+	default y
+	depends on OPTEE_CLIENT
+	help
+	 This enable support read/write data in keymaster.
+
 config ANDROID_BOOT_IMAGE
 	bool "Enable support for Android Boot Images"
 	help

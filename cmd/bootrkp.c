@@ -9,7 +9,7 @@
 #include <android_bootloader.h>
 #include <attestation_key.h>
 #include <boot_rkimg.h>
-#include <optee_include/OpteeClientInterface.h>
+#include <keymaster.h>
 
 #define OEM_UNLOCK_ARG_SIZE 30
 
@@ -29,7 +29,7 @@ static int do_boot_rockchip(cmd_tbl_t *cmdtp, int flag, int argc,
 		return -ENODEV;
 	}
 
-#ifdef CONFIG_OPTEE_CLIENT
+#ifdef CONFIG_ANDROID_KEYMASTER_CA
 	disk_partition_t misc_part_info;
 
 	/* load attestation key from misc partition. */

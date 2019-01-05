@@ -10,7 +10,7 @@
 #include <common.h>
 #include <malloc.h>
 
-#include <optee_include/OpteeClientApiLib.h>
+#include <keymaster.h>
 
 /* attestation data offset */
 #define ATTESTATION_DATA_OFFSET  65536
