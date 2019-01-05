@@ -102,13 +102,13 @@ struct lcd_customer_s {
 	unsigned char fr_adjust_type;
 	unsigned char ss_level;
 	unsigned char clk_auto_gen;
-	unsigned int pixle_clk;
+	unsigned int pixel_clk;
 	unsigned short h_period_min;
 	unsigned short h_period_max;
 	unsigned short v_period_min;
 	unsigned short v_period_max;
-	unsigned int pixle_clk_min;
-	unsigned int pixle_clk_max;
+	unsigned int pixel_clk_min;
+	unsigned int pixel_clk_max;
 	unsigned char vlock_val_0;
 	unsigned char vlock_val_1;
 	unsigned char vlock_val_2;

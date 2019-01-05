@@ -232,9 +232,9 @@ static int handle_lcd_customer(struct lcd_attr_s *p_attr)
 	ITEM_LOGD("%s, clk_auto_gen is (%s)\n", __func__, ini_value);
 	p_attr->customer.clk_auto_gen = strtoul(ini_value, NULL, 0);
 
-	ini_value = IniGetString("lcd_Attr", "pixle_clk", "0");
-	ITEM_LOGD("%s, pixle_clk is (%s)\n", __func__, ini_value);
-	p_attr->customer.pixle_clk = strtoul(ini_value, NULL, 0);
+	ini_value = IniGetString("lcd_Attr", "pixel_clk", "0");
+	ITEM_LOGD("%s, pixel_clk is (%s)\n", __func__, ini_value);
+	p_attr->customer.pixel_clk = strtoul(ini_value, NULL, 0);
 
 	ini_value = IniGetString("lcd_Attr", "h_period_min", "0");
 	ITEM_LOGD("%s, h_period_min is (%s)\n", __func__, ini_value);
@@ -252,13 +252,13 @@ static int handle_lcd_customer(struct lcd_attr_s *p_attr)
 	ITEM_LOGD("%s, v_period_max is (%s)\n", __func__, ini_value);
 	p_attr->customer.v_period_max = strtoul(ini_value, NULL, 0);
 
-	ini_value = IniGetString("lcd_Attr", "pixle_clk_min", "0");
-	ITEM_LOGD("%s, pixle_clk_min is (%s)\n", __func__, ini_value);
-	p_attr->customer.pixle_clk_min = strtoul(ini_value, NULL, 0);
+	ini_value = IniGetString("lcd_Attr", "pixel_clk_min", "0");
+	ITEM_LOGD("%s, pixel_clk_min is (%s)\n", __func__, ini_value);
+	p_attr->customer.pixel_clk_min = strtoul(ini_value, NULL, 0);
 
-	ini_value = IniGetString("lcd_Attr", "pixle_clk_max", "0");
-	ITEM_LOGD("%s, pixle_clk_max is (%s)\n", __func__, ini_value);
-	p_attr->customer.pixle_clk_max = strtoul(ini_value, NULL, 0);
+	ini_value = IniGetString("lcd_Attr", "pixel_clk_max", "0");
+	ITEM_LOGD("%s, pixel_clk_max is (%s)\n", __func__, ini_value);
+	p_attr->customer.pixel_clk_max = strtoul(ini_value, NULL, 0);
 
 	ini_value = IniGetString("lcd_Attr", "vlock_val_0", "0");
 	ITEM_LOGD("%s, vlock_val_0 is (%s)\n", __func__, ini_value);
