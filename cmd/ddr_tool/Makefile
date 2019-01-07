@@ -17,4 +17,7 @@ endif
 ifdef CONFIG_ROCKCHIP_RK1808
 obj-$(CONFIG_CMD_DDR_TEST_TOOL) = ddr_test_rk1808.o
 endif
-
+ifndef CONFIG_CMD_MEMTESTER
+obj-$(CONFIG_CMD_DDR_TEST_TOOL) += ../memtester/ddr_tester_common.o
+obj-$(CONFIG_CMD_DDR_TEST_TOOL) += ../memtester/io_map.o
+endif
