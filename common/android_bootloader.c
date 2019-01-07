@@ -819,6 +819,36 @@ out:
 }
 #endif
 
+static int load_android_image(struct blk_desc *dev_desc,
+			      char *boot_partname,
+			      char *slot_suffix,
+			      unsigned long *load_address)
+{
+	disk_partition_t boot_part;
+	int ret, part_num;
+
+	part_num = android_part_get_info_by_name_suffix(dev_desc,
+							boot_partname,
+							slot_suffix,
+							&boot_part);
+	if (part_num < 0) {
+		printf("%s: Can't find part: %s\n", __func__, boot_partname);
+		return -1;
+	}
+	debug("ANDROID: Loading kernel from \"%s\", partition %d.\n",
+	      boot_part.name, part_num);
+
+	ret = android_image_load(dev_desc, &boot_part, *load_address, -1UL);
+	if (ret < 0) {
+		printf("%s: %s part load fail, ret=%d\n",
+		       __func__, boot_part.name, ret);
+		return ret;
+	}
+	*load_address = ret;
+
+	return 0;
+}
+
 int android_bootloader_boot_flow(struct blk_desc *dev_desc,
 				 unsigned long load_address)
 {
@@ -905,33 +935,28 @@ int android_bootloader_boot_flow(struct blk_desc *dev_desc,
 	}
 
 #ifdef CONFIG_ANDROID_AVB
-	if (android_slot_verify(boot_partname, &load_address, slot_suffix))
+	uint8_t vboot_flag = 0;
+
+	if (trusty_read_vbootkey_enable_flag(&vboot_flag))
 		return -1;
+
+	if (vboot_flag) {
+		if (android_slot_verify(boot_partname, &load_address,
+					slot_suffix))
+			return -1;
+	} else {
+		if (load_android_image(dev_desc, boot_partname,
+				       slot_suffix, &load_address))
+			return -1;
+	}
 #else
 	/*
 	 * 2. Load the boot/recovery from the desired "boot" partition.
 	 * Determine if this is an AOSP image.
 	 */
-	disk_partition_t boot_part_info;
-	part_num =
-	    android_part_get_info_by_name_suffix(dev_desc,
-						 boot_partname,
-						 slot_suffix, &boot_part_info);
-	if (part_num < 0) {
-		printf("%s Could not found bootable partition %s\n", __func__,
-		       boot_partname);
+	if (load_android_image(dev_desc, boot_partname,
+			       slot_suffix, &load_address))
 		return -1;
-	}
-	debug("ANDROID: Loading kernel from \"%s\", partition %d.\n",
-	      boot_part_info.name, part_num);
-
-	ret = android_image_load(dev_desc, &boot_part_info, load_address,
-				 -1UL);
-	if (ret < 0) {
-		printf("%s %s part load fail\n", __func__, boot_part_info.name);
-		return ret;
-	}
-	load_address = ret;
 #endif
 
 	/* Set Android root variables. */
