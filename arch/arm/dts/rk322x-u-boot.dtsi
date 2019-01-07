@@ -35,6 +35,10 @@
 	u-boot,dm-pre-reloc;
 };
 
+&nandc {
+	u-boot,dm-pre-reloc;
+};
+
 &sdmmc {
 	u-boot,dm-pre-reloc;
 };

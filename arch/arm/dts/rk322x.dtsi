@@ -851,4 +851,14 @@
 		compatible = "rockchip,rk3228-msch", "syscon";
 		reg = <0x31090000 0x2000>;
 	};
+
+	nandc: nandc@30030000 {
+		compatible = "rockchip,rk-nandc";
+		reg = <0x30030000 0x4000>;
+		interrupts = <GIC_SPI 15 IRQ_TYPE_LEVEL_HIGH>;
+		nandc_id = <0>;
+		clocks = <&cru SCLK_NANDC>, <&cru HCLK_NANDC>;
+		clock-names = "clk_nandc", "hclk_nandc";
+		status = "disabled";
+	};
 };

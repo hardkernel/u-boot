@@ -67,6 +67,10 @@
 	status = "okay";
 };
 
+&nandc {
+	status = "okay";
+};
+
 &sdmmc {
 	status = "okay";
 	bus-width = <4>;
