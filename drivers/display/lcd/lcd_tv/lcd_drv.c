@@ -498,7 +498,7 @@ static int lcd_vbyone_lanes_set(int lane_num, int byte_mode, int region_num,
 	lcd_vcbus_setb(VBO_CTRL_H, 0x1, 9, 1);
 	/* lcd_vcbus_setb(VBO_CTRL_L,enable,0,1); */
 
-	switch (lcd_drv->chip_type) { /* pn swap */
+	switch (lcd_drv->chip_type) {
 	case LCD_CHIP_TL1:
 		lcd_vcbus_write(LVDS_CH_SWAP0, 0x3210);
 		lcd_vcbus_write(LVDS_CH_SWAP1, 0x7654);
@@ -680,7 +680,7 @@ static void lcd_vbyone_control_set(struct lcd_config_s *pconf)
 	//lcd_hiu_write(HHI_DSI_LVDS_EDP_CNTL0, 0x1);
 
 	/* set hpd & lockn hw filter */
-	switch (lcd_drv->chip_type) { /* pn swap */
+	switch (lcd_drv->chip_type) {
 	case LCD_CHIP_TL1:
 		lcd_vcbus_write(VBO_INFILTER_TICK_PERIOD_L, 0xff);
 		lcd_vcbus_write(VBO_INFILTER_TICK_PERIOD_H, 0x0);

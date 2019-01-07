@@ -24,7 +24,8 @@
 /* 20181012: tl1 support tcon */
 /* 20181212: tl1 update p2p config and pll setting */
 /* 20181225: update phy config */
-#define LCD_DRV_VERSION    "20181225"
+/* 20190108: tl1 support tablet mode */
+#define LCD_DRV_VERSION    "20190108"
 
 #define VPP_OUT_SATURATE            (1 << 0)
 
