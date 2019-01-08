@@ -313,6 +313,38 @@ static int rk816_bat_get_ioffset(struct battery_priv *di)
 	return val;
 }
 
+static void rk816_bat_save_dsoc(struct  battery_priv *di, u8 save_soc)
+{
+	static int old_soc = -1;
+
+	if (old_soc != save_soc) {
+		old_soc = save_soc;
+		rk816_bat_write(di, SOC_REG, save_soc);
+	}
+}
+
+static void rk816_bat_save_cap(struct battery_priv *di, int cap)
+{
+	u8 buf;
+	static int old_cap;
+
+	if (old_cap == cap)
+		return;
+
+	if (cap >= di->qmax)
+		cap = di->qmax;
+
+	old_cap = cap;
+	buf = (cap >> 24) & 0xff;
+	rk816_bat_write(di, REMAIN_CAP_REG3, buf);
+	buf = (cap >> 16) & 0xff;
+	rk816_bat_write(di, REMAIN_CAP_REG2, buf);
+	buf = (cap >> 8) & 0xff;
+	rk816_bat_write(di, REMAIN_CAP_REG1, buf);
+	buf = (cap >> 0) & 0xff;
+	rk816_bat_write(di, REMAIN_CAP_REG0, buf);
+}
+
 static void rk816_bat_init_voltage_kb(struct battery_priv *di)
 {
 	int vcalib0, vcalib1;
@@ -627,7 +659,7 @@ static void rk816_bat_init_capacity(struct battery_priv *di, u32 capacity)
 	rk816_bat_write(di, GASCNT_CAL_REG1, buf);
 	buf = (cap >> 0) & 0xff;
 	rk816_bat_write(di, GASCNT_CAL_REG0, buf);
-
+	udelay(75);
 	di->remain_cap = rk816_bat_get_coulomb_cap(di);
 	di->rsoc = rk816_bat_get_rsoc(di);
 }
@@ -984,6 +1016,9 @@ void rk816_bat_init_rsoc(struct battery_priv *di)
 		rk816_bat_first_pwron(di);
 	else
 		rk816_bat_not_first_pwron(di);
+
+	rk816_bat_save_dsoc(di, di->dsoc);
+	rk816_bat_save_cap(di, di->remain_cap);
 }
 
 static int rk816_fg_init(struct battery_priv *di)
@@ -995,6 +1030,7 @@ static int rk816_fg_init(struct battery_priv *di)
 	rk816_bat_init_poffset(di);
 	rk816_bat_clr_initialized_state(di);
 	di->dsoc = rk816_bat_get_dsoc(di);
+	di->remain_cap = rk816_bat_get_prev_cap(di);
 
 	/*
 	 * It's better to init fg in kernel,
@@ -1011,43 +1047,12 @@ static int rk816_fg_init(struct battery_priv *di)
 	di->pwr_vol = di->voltage_avg;
 	rk816_bat_charger_setting(di, di->chrg_type);
 
-	printf("Battery: soc=%d%%, voltage=%dmv, Charger: %s%s\n",
-	       di->dsoc, di->voltage_avg, charger_type_to_name[di->chrg_type],
+	printf("Battery: soc=%d%%, cap=%dmAh, voltage=%dmv, Charger: %s%s\n",
+	       di->dsoc, di->remain_cap, di->voltage_avg,
+	       charger_type_to_name[di->chrg_type],
 	       di->virtual_power ? "(virtual)" : "");
 
 	return 0;
-}
-
-static void rk816_bat_save_dsoc(struct  battery_priv *di, u8 save_soc)
-{
-	static int old_soc = -1;
-
-	if (old_soc != save_soc) {
-		old_soc = save_soc;
-		rk816_bat_write(di, SOC_REG, save_soc);
-	}
-}
-
-static void rk816_bat_save_cap(struct battery_priv *di, int cap)
-{
-	u8 buf;
-	static int old_cap;
-
-	if (old_cap == cap)
-		return;
-
-	if (cap >= di->qmax)
-		cap = di->qmax;
-
-	old_cap = cap;
-	buf = (cap >> 24) & 0xff;
-	rk816_bat_write(di, REMAIN_CAP_REG3, buf);
-	buf = (cap >> 16) & 0xff;
-	rk816_bat_write(di, REMAIN_CAP_REG2, buf);
-	buf = (cap >> 8) & 0xff;
-	rk816_bat_write(di, REMAIN_CAP_REG1, buf);
-	buf = (cap >> 0) & 0xff;
-	rk816_bat_write(di, REMAIN_CAP_REG0, buf);
 }
 
 static u8 rk816_bat_get_chrg_status(struct battery_priv *di)
