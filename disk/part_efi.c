@@ -339,7 +339,7 @@ int part_get_info_efi(struct blk_desc *dev_desc, int part,
 	return 0;
 }
 
-#ifdef RKIMG_BOOTLOADER
+#ifdef CONFIG_RKIMG_BOOTLOADER
 static void gpt_entry_modify(struct blk_desc *dev_desc,
 			     gpt_entry *gpt_pte,
 			     gpt_header *gpt_head)
@@ -379,7 +379,7 @@ static int part_efi_repair(struct blk_desc *dev_desc, gpt_entry *gpt_pte,
 		gpt_head->my_lba = dev_desc->lba - 1;
 		gpt_head->alternate_lba = 1;
 		gpt_head->partition_entry_lba = dev_desc->lba - 0x21;
-		gpt_entry_entry_modify(dev_desc, gpt_pte, gpt_head);
+		gpt_entry_modify(dev_desc, gpt_pte, gpt_head);
 		calc_crc32 = efi_crc32((const unsigned char *)gpt_head,
 				       le32_to_cpu(gpt_head->header_size));
 		gpt_head->header_crc32 = calc_crc32;
@@ -402,7 +402,7 @@ static int part_efi_repair(struct blk_desc *dev_desc, gpt_entry *gpt_pte,
 		gpt_head->my_lba = 1;
 		gpt_head->alternate_lba = dev_desc->lba - 1;
 		gpt_head->partition_entry_lba = 0x22;
-		gpt_entry_entry_modify(dev_desc, gpt_pte, gpt_head);
+		gpt_entry_modify(dev_desc, gpt_pte, gpt_head);
 		calc_crc32 = efi_crc32((const unsigned char *)gpt_head,
 				       le32_to_cpu(gpt_head->header_size));
 		gpt_head->header_crc32 = calc_crc32;
@@ -435,7 +435,7 @@ static int part_test_efi(struct blk_desc *dev_desc)
 		|| (is_pmbr_valid(legacymbr) != 1)) {
 		return -1;
 	}
-#ifdef RKIMG_BOOTLOADER
+#ifdef CONFIG_RKIMG_BOOTLOADER
 	gpt_entry *h_gpt_pte = NULL;
 	gpt_header *h_gpt_head = NULL;
 	gpt_entry *b_gpt_pte = NULL;
