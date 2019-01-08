@@ -209,22 +209,28 @@ int android_image_get_fdt(const struct andr_img_hdr *hdr,
 		return -1;
 	}
 /*
- * If kernel dtb is enabled, we have read kernel dtb in
- * init_kernel_dtb() -> rockchip_read_dtb_file() and may have been
- * done(optional) selection:
+ * If kernel dtb is enabled, it means we have read kernel dtb before do_bootm(),
+ * that's: init_kernel_dtb() -> rockchip_read_dtb_file().
+ * And maybe some operations(optional) are done:
  *
  * 1. apply fdt overlay;
  * 2. select fdt by adc or gpio;
  *
  * After that, we didn't update dtb at all untill run here, it's fine to
  * pass current fdt to kernel.
+ *
+ * This case has higher priority then the others(#elif, #else...).
  */
 #if defined(CONFIG_USING_KERNEL_DTB)
 	*rd_data = (ulong)gd->fdt_blob;
 
 /*
- * If kernel dtb is disabled and support rockchip image, we need to call
- * rockchip_read_dtb_file() to get dtb with some optional selection.
+ * If kernel dtb is disabled, it means kernel dtb is not read before do_bootm(),
+ * we need to read it from boot.img/recovery.img now.
+ *
+ * For rockchip AOSP firmware(CONFIG_RKIMG_BOOTLOADER), we pack resource.img in
+ * second position. we need read kernel dtb by rockchip_read_dtb_file() which
+ * can do the above "some operations(optional)".
  */
 #elif defined(CONFIG_RKIMG_BOOTLOADER)
 	ulong fdt_addr = 0;
@@ -246,8 +252,8 @@ int android_image_get_fdt(const struct andr_img_hdr *hdr,
 	*rd_data = fdt_addr;
 
 /*
- * If kernel dtb is disabled and not support rockchip image,
- * get dtb from second position.
+ * If kernel dtb is disabled and it's not rockchip AOSP firmware, kernel dtb is
+ * in second position, let't read it directly.
  */
 #else
 	*rd_data = (unsigned long)hdr;
