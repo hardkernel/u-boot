@@ -652,6 +652,14 @@ static void rkclk_init(struct rv1108_cru *cru)
 
 	rk_clrsetreg(&cru->clksel_con[0], CORE_CLK_DIV_MASK,
 		     0 << MAC_CLK_DIV_SHIFT);
+	rk_clrsetreg(&cru->clksel_con[27],
+		     NANDC_PLL_SEL_MASK | NANDC_CLK_DIV_MASK,
+		     NANDC_PLL_SEL_GPLL << NANDC_PLL_SEL_SHIFT |
+		     7 << NANDC_CLK_DIV_SHIFT);
+	rk_clrsetreg(&cru->clksel_con[27],
+		     SFC_PLL_SEL_MASK | SFC_CLK_DIV_MASK,
+		     SFC_PLL_SEL_GPLL << SFC_PLL_SEL_SHIFT |
+		     11 << SFC_CLK_DIV_SHIFT);
 
 	printf("APLL: %d DPLL:%d GPLL:%d\n", apll, dpll, gpll);
 	printf("ACLK_BUS: %d ACLK_PERI:%d HCLK_PERI:%d PCLK_PERI:%d\n",
