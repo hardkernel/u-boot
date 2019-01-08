@@ -454,6 +454,7 @@ int boot_rockchip_image(struct blk_desc *dev_desc, disk_partition_t *boot_part)
 		}
 	}
 
+	printf("fdt	 @ 0x%08lx (0x%08x)\n", fdt_addr_r, fdt_totalsize(fdt_addr_r));
 	printf("kernel   @ 0x%08lx (0x%08x)\n", kernel_addr_r, kernel_size);
 	printf("ramdisk  @ 0x%08lx (0x%08x)\n", ramdisk_addr_r, ramdisk_size);
 #if defined(CONFIG_ARM64)
