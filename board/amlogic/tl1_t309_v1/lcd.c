@@ -143,7 +143,7 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	/* clk_attr */
 	2,0,1,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
 	/* p2p attr */
-	0,12,0x76543210,0xba98,0,0,0xf,0x1,Rsv_val,Rsv_val,
+	0x0,12,0x76543210,0xba98,0,0,0xf,0x1,Rsv_val,Rsv_val,
 	/* power step */
 	lcd_power_on_step_p2p, lcd_power_off_step_p2p,
 	/* backlight */
@@ -161,7 +161,7 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	/* clk_attr */
 	2,0,1,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
 	/* p2p attr */
-	0,6,0x76543210,0xba98,0,0,0xf,0x1,Rsv_val,Rsv_val,
+	0x0,6,0x76543210,0xba98,0,0,0xf,0x1,Rsv_val,Rsv_val,
 	/* power step */
 	lcd_power_on_step_p2p, lcd_power_off_step_p2p,
 	/* backlight */
@@ -179,7 +179,7 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	/* clk_attr */
 	2,0,1,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
 	/* p2p attr */
-	10,6,0x76543210,0xba98,0,0,0xf,0x1,Rsv_val,Rsv_val,
+	0x10,6,0x76543210,0xba98,0,0,0xf,0x1,Rsv_val,Rsv_val,
 	/* power step */
 	lcd_power_on_step_p2p, lcd_power_off_step_p2p,
 	/* backlight */
@@ -197,7 +197,7 @@ struct ext_lcd_config_s ext_lcd_config[LCD_NUM_MAX] = {
 	/* clk_attr */
 	2,0,1,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,Rsv_val,
 	/* p2p attr */
-	10,12,0x76543210,0xba98,0,0,0xf,0x1,Rsv_val,Rsv_val,
+	0x10,12,0x76543210,0xba98,0,0,0xf,0x1,Rsv_val,Rsv_val,
 	/* power step */
 	lcd_power_on_step_p2p, lcd_power_off_step_p2p,
 	/* backlight */

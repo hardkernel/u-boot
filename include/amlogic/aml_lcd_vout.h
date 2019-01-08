@@ -301,7 +301,7 @@ enum p2p_type_e {
 	P2P_CMPI,
 	P2P_ISP,
 	P2P_EPI,
-	P2P_CHPI = 10, /* low common mode */
+	P2P_CHPI = 0x10, /* low common mode */
 	P2P_CSPI,
 	P2P_USIT,
 	P2P_MAX,

@@ -221,15 +221,15 @@ static void lcd_info_print_vbyone(struct lcd_config_s *pconf)
 static void lcd_info_print_ttl(struct lcd_config_s *pconf)
 {
 	printf("clk_pol           %u\n"
-		"hvsync_valid      %u\n"
 		"DE_valid          %u\n"
-		"bit_swap          %u\n"
-		"rb_swap           %u\n\n",
+		"hvsync_valid      %u\n"
+		"rb_swap           %u\n"
+		"bit_swap          %u\n\n",
 		pconf->lcd_control.ttl_config->clk_pol,
-		(pconf->lcd_control.ttl_config->sync_valid >> 0) & 1,
 		(pconf->lcd_control.ttl_config->sync_valid >> 1) & 1,
-		(pconf->lcd_control.ttl_config->swap_ctrl >> 0) & 1,
-		(pconf->lcd_control.ttl_config->swap_ctrl >> 1) & 1);
+		(pconf->lcd_control.ttl_config->sync_valid >> 0) & 1,
+		(pconf->lcd_control.ttl_config->swap_ctrl >> 1) & 1,
+		(pconf->lcd_control.ttl_config->swap_ctrl >> 0) & 1);
 	lcd_pinmux_info_print(pconf);
 }
 
@@ -268,7 +268,7 @@ static void lcd_info_print_mlvds(struct lcd_config_s *pconf)
 
 static void lcd_info_print_p2p(struct lcd_config_s *pconf)
 {
-	printf("p2p_type          %d\n"
+	printf("p2p_type          0x%x\n"
 		"lane_num          %d\n"
 		"channel_sel1      0x%08x\n"
 		"channel_sel1      0x%08x\n"
@@ -645,9 +645,6 @@ static void lcd_reg_print_phy_analog_tl1(void)
 		reg, lcd_hiu_read(reg));
 	reg = HHI_DIF_CSI_PHY_CNTL4;
 	printf("PHY_CNTL4           [0x%08x] = 0x%08x\n",
-		reg, lcd_hiu_read(reg));
-	reg = HHI_DIF_CSI_PHY_CNTL5;
-	printf("PHY_CNTL5           [0x%08x] = 0x%08x\n",
 		reg, lcd_hiu_read(reg));
 	reg = HHI_DIF_CSI_PHY_CNTL6;
 	printf("PHY_CNTL6           [0x%08x] = 0x%08x\n",
