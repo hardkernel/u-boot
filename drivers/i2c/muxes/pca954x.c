@@ -87,7 +87,7 @@ static int pca954x_ofdata_to_platdata(struct udevice *dev)
 {
 	struct pca954x_priv *priv = dev_get_priv(dev);
 
-	priv->addr = fdtdec_get_int(gd->fdt_blob, dev_of_offset(dev), "reg", 0);
+	priv->addr = dev_read_u32_default(dev, "reg", 0);
 	if (!priv->addr) {
 		debug("MUX not found\n");
 		return -ENODEV;
