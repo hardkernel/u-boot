@@ -257,6 +257,9 @@
                 "if keyman read mac ${loadaddr} str; then "\
                     "setenv bootargs ${bootargs} mac=${mac} androidboot.mac=${mac};"\
                 "fi;"\
+                "if keyman read mac_bt ${loadaddr} str; then "\
+                    "setenv bootargs ${bootargs} mac_bt=${mac_bt} androidboot.mac_bt=${mac_bt};"\
+                "fi;"\
                 "if keyman read deviceid ${loadaddr} str; then "\
                     "setenv bootargs ${bootargs} androidboot.deviceid=${deviceid};"\
                 "fi;"\
