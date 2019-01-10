@@ -87,7 +87,7 @@ CONFIG_SPL_STACK_R_ADDR=0x70000000
 CONFIG_SPL_STACK_R_MALLOC_SIMPLE_LEN=0x200000
 CONFIG_SPL_SYSCON=y
 CONFIG_SPL_TINY_MEMSET=y
-CONFIG_SPL_USB_GADGET_SUPPORT=y
+CONFIG_SPL_USB_GADGET=y
 CONFIG_OF_SPL_REMOVE_PROPS="pinctrl-0 pinctrl-names clock-names interrupt-parent assigned-clocks assigned-clock-rates assigned-clock-parents"
 # CONFIG_SPL_USE_ARCH_MEMCPY is not set
 # CONFIG_SPL_USE_ARCH_MEMSET is not set
