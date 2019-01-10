@@ -276,7 +276,8 @@ int regulator_autoset(struct udevice *dev)
 	} else {
 		if ((uc_pdata->type == REGULATOR_TYPE_BUCK) &&
 		    (uc_pdata->min_uV != -ENODATA) &&
-		    (uc_pdata->max_uV != -ENODATA))
+		    (uc_pdata->max_uV != -ENODATA) &&
+		    (uc_pdata->init_uV <= 0))
 			printf("%s %d uV\n",
 			       uc_pdata->name, regulator_get_value(dev));
 	}
