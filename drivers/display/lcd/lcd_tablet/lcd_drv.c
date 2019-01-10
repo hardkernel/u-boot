@@ -740,7 +740,7 @@ static void lcd_vbyone_config_set(struct lcd_config_s *pconf)
 	bit_rate = bit_rate * 1000; /* Hz */
 
 	pconf->lcd_control.vbyone_config->phy_div = phy_div;
-	pconf->lcd_control.vbyone_config->bit_rate = bit_rate;
+	pconf->lcd_timing.bit_rate = bit_rate;
 
 	if (lcd_debug_print_flag) {
 		LCDPR("lane_count=%u, bit_rate = %uMHz, pclk=%u.%03uMhz\n",

@@ -1123,7 +1123,7 @@ static void lcd_clk_generate_gxtvbb(struct lcd_config_s *pconf)
 	case LCD_VBYONE:
 		cConf->div_sel_max = CLK_DIV_SEL_MAX;
 		cConf->xd_max = CRT_VID_DIV_MAX;
-		pll_fout = pconf->lcd_control.vbyone_config->bit_rate / 1000;
+		pll_fout = pconf->lcd_timing.bit_rate / 1000;
 		clk_div_in = pll_fout;
 		if (clk_div_in > cConf->data->div_in_fmax)
 			goto generate_clk_done_gxtvbb;
@@ -1425,6 +1425,8 @@ static void lcd_clk_generate_txl(struct lcd_config_s *pconf)
 		goto generate_clk_done_txl;
 	}
 
+	bit_rate = pconf->lcd_timing.bit_rate / 1000;
+
 	if (pconf->lcd_timing.clk_auto == 2)
 		cConf->pll_mode = 1;
 	else
@@ -1503,7 +1505,7 @@ static void lcd_clk_generate_txl(struct lcd_config_s *pconf)
 	case LCD_VBYONE:
 		cConf->div_sel_max = CLK_DIV_SEL_MAX;
 		cConf->xd_max = CRT_VID_DIV_MAX;
-		pll_fout = pconf->lcd_control.vbyone_config->bit_rate / 1000;
+		pll_fout = bit_rate;
 		clk_div_in = pll_fout;
 		if (clk_div_in > cConf->data->div_in_fmax)
 			goto generate_clk_done_txl;
@@ -1545,7 +1547,6 @@ static void lcd_clk_generate_txl(struct lcd_config_s *pconf)
 		}
 		break;
 	case LCD_MLVDS:
-		bit_rate = pconf->lcd_control.mlvds_config->bit_rate / 1000;
 		/* must go through div4 for clk phase */
 		for (tcon_div_sel = 3; tcon_div_sel < 5; tcon_div_sel++) {
 			pll_fvco = bit_rate * tcon_div_table[tcon_div_sel];
@@ -1591,7 +1592,6 @@ static void lcd_clk_generate_txl(struct lcd_config_s *pconf)
 		}
 		break;
 	case LCD_P2P:
-		bit_rate = pconf->lcd_control.p2p_config->bit_rate / 1000;
 		for (tcon_div_sel = 0; tcon_div_sel < 5; tcon_div_sel++) {
 			pll_fvco = bit_rate * tcon_div_table[tcon_div_sel];
 			done = check_pll_vco(cConf, pll_fvco);
@@ -1815,7 +1815,7 @@ static void lcd_clk_generate_txhd(struct lcd_config_s *pconf)
 		}
 		break;
 	case LCD_MLVDS:
-		bit_rate = pconf->lcd_control.mlvds_config->bit_rate / 1000;
+		bit_rate = pconf->lcd_timing.bit_rate / 1000;
 		/* must go through div4 for clk phase */
 		for (tcon_div_sel = 1; tcon_div_sel < 3; tcon_div_sel++) {
 			pll_fvco = bit_rate * tcon_div_table[tcon_div_sel] * 4;
@@ -1961,7 +1961,7 @@ static void lcd_clk_generate_axg(struct lcd_config_s *pconf)
 			if (lcd_debug_print_flag == 2)
 				LCDPR("fout=%d, xd=%d\n", cConf->fout, xd);
 
-			pconf->lcd_control.mipi_config->bit_rate = pll_fout * 1000;
+			pconf->lcd_timing.bit_rate = pll_fout * 1000;
 			pconf->lcd_control.mipi_config->clk_factor = xd;
 			cConf->xd = xd;
 			done = check_pll_axg(cConf, pll_fout);
@@ -2095,7 +2095,7 @@ static void lcd_clk_generate_hpll_g12a(struct lcd_config_s *pconf)
 			if (lcd_debug_print_flag == 2)
 				LCDPR("fout=%d, xd=%d\n", cConf->fout, xd);
 
-			pconf->lcd_control.mipi_config->bit_rate = pll_fout * 1000;
+			pconf->lcd_timing.bit_rate = pll_fout * 1000;
 			pconf->lcd_control.mipi_config->clk_factor = xd;
 			cConf->xd = xd;
 			cConf->div_sel = clk_div_sel;

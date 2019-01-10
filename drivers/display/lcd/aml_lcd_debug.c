@@ -175,7 +175,7 @@ static void lcd_info_print_vbyone(struct lcd_config_s *pconf)
 		pconf->lcd_control.vbyone_config->lane_count,
 		pconf->lcd_control.vbyone_config->region_num,
 		pconf->lcd_control.vbyone_config->byte_mode,
-		pconf->lcd_control.vbyone_config->bit_rate,
+		pconf->lcd_timing.bit_rate,
 		pconf->lcd_control.vbyone_config->phy_vswing,
 		pconf->lcd_control.vbyone_config->phy_preem,
 		pconf->lcd_control.vbyone_config->ctrl_flag);
@@ -260,7 +260,7 @@ static void lcd_info_print_mlvds(struct lcd_config_s *pconf)
 		pconf->lcd_control.mlvds_config->bit_swap,
 		pconf->lcd_control.mlvds_config->phy_vswing,
 		pconf->lcd_control.mlvds_config->phy_preem,
-		pconf->lcd_control.mlvds_config->bit_rate,
+		pconf->lcd_timing.bit_rate,
 		pconf->lcd_control.mlvds_config->pi_clk_sel);
 	lcd_tcon_info_print();
 	lcd_pinmux_info_print(pconf);
@@ -283,7 +283,7 @@ static void lcd_info_print_p2p(struct lcd_config_s *pconf)
 		pconf->lcd_control.p2p_config->channel_sel1,
 		pconf->lcd_control.p2p_config->pn_swap,
 		pconf->lcd_control.p2p_config->bit_swap,
-		pconf->lcd_control.p2p_config->bit_rate,
+		pconf->lcd_timing.bit_rate,
 		pconf->lcd_control.p2p_config->phy_vswing,
 		pconf->lcd_control.p2p_config->phy_preem);
 	lcd_tcon_info_print();
