@@ -125,6 +125,7 @@ static void flash_erase_cmd(u8 cs, u32 page_addr)
 
 static void flash_prog_second_cmd(u8 cs, u32 page_addr)
 {
+	udelay(100);
 	nandc_writel(PAGE_PROG_CMD & 0x00ff, NANDC_CHIP_CMD(cs));
 }
 
