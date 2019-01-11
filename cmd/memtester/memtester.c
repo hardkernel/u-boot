@@ -98,11 +98,13 @@ int doing_memtester(ul *arg, ul testenable, ul loops, ul err_exit)
 			if (loops)
 				printf("/%lu", loops);
 			printf(":\n");
-			printf("  %-20s: ", "Stuck Address");
-			if (!test_stuck_address(bufa[j], count[j] * 2))
-				printf("ok\n");
-			else
-				exit_code |= EXIT_FAIL_ADDRESSLINES;
+			if (testenable && ((1 << 17) & testenable)) {
+				printf("  %-20s: ", "Stuck Address");
+				if (!test_stuck_address(bufa[j], count[j] * 2))
+					printf("ok\n");
+				else
+					exit_code |= EXIT_FAIL_ADDRESSLINES;
+			}
 			for (i = 0;; i++) {
 				if (!tests[i].name)
 					break;
@@ -215,6 +217,7 @@ U_BOOT_CMD(memtester, 6, 1, do_memtester,
 	   "	bit14: Walking Zeroes\n"
 	   "	bit15: 8-bit Writes\n"
 	   "	bit16: 16-bit Writes\n"
+	   "	bit17: test stuck address\n"
 	   "	example: testenable=0x1000,enable Bit Flip only\n"
 	   "err_exit: if 1 stop testing immediately when finding error\n"
 	   "loop[option]: testing loop, if 0 or null endless loop\n"
