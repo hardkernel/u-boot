@@ -340,7 +340,7 @@ obj-y += cmd_vpp.o
 # amlogic commands
 obj-$(CONFIG_CMD_REBOOT) += cmd_reboot.o
 obj-y += cmd_scp.o
-obj-$(CONFIG_AML_HDMITX20) += hdmi_parameters.o hdmi_edid_parsing.o cmd_hdmitx.o
+obj-$(CONFIG_AML_HDMITX20) += hdmi_parameters.o hdmi_edid_parsing.o cmd_hdmitx.o edid-decode.o
 obj-$(CONFIG_CMD_JTAG) += cmd_jtag.o
 obj-$(CONFIG_AML_OSD) += cmd_osd.o cmd_img_osd.o
 obj-$(CONFIG_AML_MINUI) += cmd_ui.o

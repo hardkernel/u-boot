@@ -353,6 +353,7 @@ struct hdmitx_dev {
 		int (*get_hpd_state)(void);
 		int (*read_edid)(unsigned char *buf, unsigned char addr,
 				 unsigned char blk_no);
+		int (*read_edid_raw)(unsigned char *buf);
 		void (*turn_off)(void);
 		void (*list_support_modes)(void);
 		void (*dump_regs)(void);
