@@ -9,6 +9,7 @@
 #include <debug_uart.h>
 #include <ram.h>
 #include <syscon.h>
+#include <sysmem.h>
 #include <asm/io.h>
 #include <asm/arch/vendor.h>
 #include <misc.h>
@@ -17,6 +18,7 @@
 #include <asm/arch/periph.h>
 #include <asm/arch/boot_mode.h>
 #include <asm/arch/rk_atags.h>
+#include <asm/arch/param.h>
 #ifdef CONFIG_DM_CHARGE_DISPLAY
 #include <power/charge_display.h>
 #endif
@@ -199,6 +201,11 @@ int init_kernel_dtb(void)
 
 	gd->fdt_blob = (void *)fdt_addr;
 
+	/* Reserve 'reserved-memory' */
+	ret = boot_fdt_add_sysmem_rsv_regions((void *)gd->fdt_blob);
+	if (ret)
+		return ret;
+
 	return 0;
 }
 #endif
@@ -340,6 +347,34 @@ void board_lmb_reserve(struct lmb *lmb)
 	sprintf(bootm_mapsize, "0x%llx", size);
 	env_set("bootm_low", bootm_low);
 	env_set("bootm_mapsize", bootm_mapsize);
+}
+#endif
+
+#ifdef CONFIG_SYSMEM
+int board_sysmem_reserve(struct sysmem *sysmem)
+{
+	struct sysmem_property prop;
+	int ret;
+
+	/* ATF */
+	prop = param_parse_atf_mem();
+	ret = sysmem_reserve(prop.name, prop.base, prop.size);
+	if (ret)
+		return ret;
+
+	/* PSTORE/ATAGS/SHM */
+	prop = param_parse_common_resv_mem();
+	ret = sysmem_reserve(prop.name, prop.base, prop.size);
+	if (ret)
+		return ret;
+
+	/* OP-TEE */
+	prop = param_parse_optee_mem();
+	ret = sysmem_reserve(prop.name, prop.base, prop.size);
+	if (ret)
+		return ret;
+
+	return 0;
 }
 #endif
 
