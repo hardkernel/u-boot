@@ -282,8 +282,10 @@ int board_fdt_fixup(void *blob)
 
 void board_quiesce_devices(void)
 {
+#ifdef CONFIG_ROCKCHIP_PRELOADER_ATAGS
 	/* Destroy atags makes next warm boot safer */
 	atags_destroy();
+#endif
 }
 
 void enable_caches(void)
@@ -341,7 +343,8 @@ void board_lmb_reserve(struct lmb *lmb)
 }
 #endif
 
-#ifdef CONFIG_ROCKCHIP_PRELOADER_SERIAL
+#if defined(CONFIG_ROCKCHIP_PRELOADER_SERIAL) && \
+    defined(CONFIG_ROCKCHIP_PRELOADER_ATAGS)
 int board_init_f_init_serial(void)
 {
 	struct tag *t = atags_get_tag(ATAG_SERIAL);
