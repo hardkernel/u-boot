@@ -93,6 +93,12 @@ config RBTREE
 config BITREVERSE
 	bool
 
+config SYSMEM
+	bool "System memory management"
+	default y
+	help
+	  This enables support for system permanent memory management.
+
 source lib/dhry/Kconfig
 
 menu "Security support"
