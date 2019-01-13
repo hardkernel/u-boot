@@ -17,6 +17,7 @@
 #include <linux/libfdt.h>
 #include <mapmem.h>
 #include <asm/io.h>
+#include <sysmem.h>
 
 #ifndef CONFIG_SYS_FDT_PAD
 #define CONFIG_SYS_FDT_PAD 0x3000
@@ -120,6 +121,65 @@ void boot_fdt_add_mem_rsv_regions(struct lmb *lmb, void *fdt_blob)
 		lmb_reserve(lmb, rsv_addr, rsv_size);
 	}
 }
+
+#ifdef CONFIG_SYSMEM
+/**
+ * boot_fdt_add_mem_rsv_regions - Mark the memreserve sections as unusable
+ * @sysmem: pointer to sysmem handle, will be used for memory mgmt
+ * @fdt_blob: pointer to fdt blob base address
+ */
+int boot_fdt_add_sysmem_rsv_regions(void *fdt_blob)
+{
+	uint64_t addr, size;
+	int i, total;
+	int rsv_offset, offset;
+	fdt_size_t rsv_size;
+	fdt_addr_t rsv_addr;
+	static int rsv_done;
+	char resvname[32];
+	int ret;
+
+	if (fdt_check_header(fdt_blob) != 0 || rsv_done)
+		return -EINVAL;
+
+	rsv_done = 1;
+
+	total = fdt_num_mem_rsv(fdt_blob);
+	for (i = 0; i < total; i++) {
+		if (fdt_get_mem_rsv(fdt_blob, i, &addr, &size) != 0)
+			continue;
+		debug("   sysmem: reserving fdt memory region: addr=%llx size=%llx\n",
+		      (unsigned long long)addr, (unsigned long long)size);
+		sprintf(resvname, "fdt-memory-reserved%d", i);
+		ret = sysmem_reserve(resvname, addr, size);
+		if (ret)
+			return ret;
+	}
+
+	rsv_offset = fdt_subnode_offset(fdt_blob, 0, "reserved-memory");
+	if (rsv_offset == -FDT_ERR_NOTFOUND)
+		return -EINVAL;
+
+	for (offset = fdt_first_subnode(fdt_blob, rsv_offset);
+	     offset >= 0;
+	     offset = fdt_next_subnode(fdt_blob, offset)) {
+		rsv_addr = fdtdec_get_addr_size_auto_noparent(fdt_blob, offset,
+							      "reg", 0,
+							      &rsv_size, false);
+		if (rsv_addr == FDT_ADDR_T_NONE || !rsv_size)
+			continue;
+		debug("  sysmem: 'reserved-memory' %s: addr=%llx size=%llx\n",
+		      fdt_get_name(fdt_blob, offset, NULL),
+		      (unsigned long long)rsv_addr, (unsigned long long)rsv_size);
+		ret = sysmem_reserve(fdt_get_name(fdt_blob, offset, NULL),
+				     rsv_addr, rsv_size);
+		if (ret)
+			return ret;
+	}
+
+	return 0;
+}
+#endif
 
 /**
  * boot_relocate_fdt - relocate flat device tree
