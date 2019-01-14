@@ -16,4 +16,6 @@ extern int board_led_alive(int status);
 extern const char *boot_device_name(int n);
 extern int get_boot_device(void);
 
+extern int get_adc_value(int channel);
+
 #endif

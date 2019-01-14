@@ -184,7 +184,9 @@ void saradc_hw_init(void)
 
 int saradc_probe(void)
 {
+#if !defined(CONFIG_ODROID_COMMON)
 	int ret;
+#endif
 	int len;
 	int elems;
 	int parent_offset;
@@ -194,6 +196,7 @@ int saradc_probe(void)
 	unsigned long temp_addr;
 	saradc_info *saradc = saradc_dev_get();
 
+#if !defined(CONFIG_ODROID_COMMON)
 #ifdef CONFIG_OF_LIBFDT
 #ifdef CONFIG_DTB_MEM_ADDR
 	fdt_addr = (char *)CONFIG_DTB_MEM_ADDR;
@@ -207,7 +210,7 @@ int saradc_probe(void)
 		saradc_fdt_ready = 1;
 	}
 #endif
-
+#endif
 	if (saradc_fdt_ready) {
 #ifdef CONFIG_OF_LIBFDT
 		parent_offset = fdt_path_offset(fdt_addr, "/saradc");
