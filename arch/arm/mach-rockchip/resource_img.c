@@ -326,13 +326,26 @@ static struct resource_file *get_file_info(struct resource_img_hdr *hdr,
 	return NULL;
 }
 
-int rockchip_get_resource_file(void *buf, const char *name)
+int rockchip_get_resource_file_offset(void *resc_hdr, const char *name)
 {
 	struct resource_file *file;
 
-	file = get_file_info(buf, name);
+	file = get_file_info(resc_hdr, name);
+	if (!file)
+		return -ENFILE;
 
 	return file->f_offset;
+}
+
+int rockchip_get_resource_file_size(void *resc_hdr, const char *name)
+{
+	struct resource_file *file;
+
+	file = get_file_info(resc_hdr, name);
+	if (!file)
+		return -ENFILE;
+
+	return file->f_size;
 }
 
 /*
