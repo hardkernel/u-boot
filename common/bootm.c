@@ -327,6 +327,57 @@ static int get_fdto_totalsize(u32 *tz)
 }
 #endif
 
+#if defined(CONFIG_ODROID_COMMON)
+extern int get_boot_device(void);
+static int bootm_add_ignore_to_fdt(void)
+{
+	struct fdt_header *fdth = NULL;
+	ulong fdt_mem_addr;
+	char *pathp = NULL;
+	int nodeoffset;
+	int ret;
+
+	if (getenv("fdt_addr_r"))
+		fdt_mem_addr = simple_strtoul(getenv("fdt_addr_r"), NULL, 16);
+	else
+		fdt_mem_addr = simple_strtoul(getenv("dtb_mem_addr"), NULL, 16);
+
+	images.ft_addr = (char *)map_sysmem(fdt_mem_addr, 0);
+	fdth = (struct fdt_header *)(images.ft_addr);
+
+	switch (get_boot_device()) {
+		case 1: // emmc boot
+			pathp = "/sd/sd";
+			break;
+		case 4: //sd boot
+			pathp = "/emmc/emmc";
+			break;
+	}
+
+	nodeoffset = fdt_path_offset (fdth, pathp);
+
+	if (nodeoffset < 0) {
+		printf("libfdt fdt_path_offset() returned %s\n",
+				fdt_strerror(nodeoffset));
+		return 1;
+	}
+
+	ret = fdt_setprop(fdth, nodeoffset, "ignore", NULL, 0);
+
+	if (ret == -FDT_ERR_NOSPACE) {
+		fdt_shrink_to_minimum(fdth);
+		ret = fdt_setprop(fdth, nodeoffset, "ignore", NULL, 0);
+	}
+
+	if (ret < 0) {
+		printf("libfdt fdt_setprop(): %s\n", fdt_strerror(ret));
+		return 1;
+	}
+
+	return 0;
+}
+#endif
+
 #ifdef CONFIG_OF_LIBFDT_OVERLAY
 static int do_fdt_overlay(void)
 {
@@ -450,6 +501,10 @@ static int bootm_find_fdt(int flag, int argc, char * const argv[])
 	}
 
 	set_working_fdt_addr(images.ft_addr);
+
+#if defined(CONFIG_ODROID_COMMON)
+	bootm_add_ignore_to_fdt();
+#endif
 
 	#ifdef CONFIG_OF_LIBFDT_OVERLAY
 	do_fdt_overlay();
