@@ -947,6 +947,7 @@ int android_bootloader_boot_flow(struct blk_desc *dev_desc,
 			return -1;
 	} else {
 		printf("SecureBoot disabled, AVB skip\n");
+		env_update("bootargs", "androidboot.verifiedbootstate=orange");
 		if (load_android_image(dev_desc, boot_partname,
 				       slot_suffix, &load_address))
 			return -1;
