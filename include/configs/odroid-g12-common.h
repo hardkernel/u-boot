@@ -412,8 +412,15 @@
 	#define CONFIG_USB_STORAGE		1
 	#define CONFIG_USB_XHCI			1
 	#define CONFIG_USB_XHCI_AMLOGIC_V2	1
+	/* USB OTG Power Enable */
 	#define CONFIG_USB_GPIO_PWR		GPIOEE(GPIOH_6)
 	#define CONFIG_USB_GPIO_PWR_NAME	"GPIOH_6"
+	/* USB Host Hub Reset */
+	#define CONFIG_USB_HUB_RST_N		GPIOEE(GPIOH_4)
+	#define CONFIG_USB_HUB_RST_N_NAME	"GPIOH_4"
+	/* USB Host Hub Enable */
+	#define CONFIG_USB_HUB_CHIP_EN		GPIOEE(GPIOH_5)
+	#define CONFIG_USB_HUB_CHIP_EN_NAME	"GPIOH_5"
 	//#define CONFIG_USB_XHCI_AMLOGIC_USB3_V2	1
 #endif //#if defined(CONFIG_CMD_USB)
 
