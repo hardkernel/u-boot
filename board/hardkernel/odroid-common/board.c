@@ -47,3 +47,30 @@ int get_boot_device(void)
 {
 	return readl(AO_SEC_GP_CFG0) & 0xf;
 }
+
+static int board_rev = -1;
+
+#define IS_RANGE(x, min, max)   ((x) > (min) && (x) < (max))
+
+static unsigned int get_hw_revision(void)
+{
+	int hwrev = -1;
+	int adc = get_adc_value(1);
+
+	if (IS_RANGE(adc, 80, 90))		/* ave : 84 */
+		hwrev = BOARD_REVISION(2018, 7, 23);
+	else if (IS_RANGE(adc, 160, 170))	/* avg : 164 */
+		hwrev = BOARD_REVISION(2018, 12, 6);
+
+	debug("ADC=%d, hwrev=0x%x\n", adc, hwrev);
+
+	return hwrev;
+}
+
+int board_revision(void)
+{
+	if (board_rev == -1)
+		board_rev = get_hw_revision();
+
+	return board_rev;
+}
