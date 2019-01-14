@@ -595,8 +595,6 @@ void set_i2c_m1_pinmux(void)
 
 #endif /*end CONFIG_SYS_I2C_MESON*/
 
-extern void aml_pwm_cal_init(int mode);
-
 int board_init(void)
 {
 	board_led_alive(1);
@@ -606,9 +604,6 @@ int board_init(void)
 	board_usb_init(&g_usb_config_GXL_skt,BOARD_USB_MODE_HOST);
 #endif /*CONFIG_USB_XHCI_AMLOGIC*/
 
-#if 0
-	aml_pwm_cal_init(0);
-#endif//
 #ifdef CONFIG_AML_NAND
 	extern int amlnf_init(unsigned char flag);
 	amlnf_init(0);
