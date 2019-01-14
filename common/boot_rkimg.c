@@ -15,6 +15,7 @@
 #include <asm/arch/boot_mode.h>
 #include <asm/io.h>
 #include <part.h>
+#include <sysmem.h>
 
 #define TAG_KERNEL			0x4C4E524B
 
@@ -92,12 +93,21 @@ static int read_rockchip_image(struct blk_desc *dev_desc,
 			       void *dst)
 {
 	struct rockchip_image *img;
+	const char *name;
 	int header_len = 8;
 	int cnt;
 	int ret;
 #ifdef CONFIG_ROCKCHIP_CRC
 	u32 crc32;
 #endif
+
+	if (!strcmp((char *)part_info->name, "kernel"))
+		name = "kernel";
+	else if (!strcmp((char *)part_info->name, "boot") ||
+		 !strcmp((char *)part_info->name, "recovery"))
+		name = "ramdisk";
+	else
+		name = NULL;
 
 	img = memalign(ARCH_DMA_MINALIGN, RK_BLK_SIZE);
 	if (!img) {
@@ -118,12 +128,17 @@ static int read_rockchip_image(struct blk_desc *dev_desc,
 		goto err;
 	}
 
-	memcpy(dst, img->image, RK_BLK_SIZE - header_len);
 	/*
 	 * read the rest blks
 	 * total size  = image size + 8 bytes header + 4 bytes crc32
 	 */
 	cnt = DIV_ROUND_UP(img->size + 8 + 4, RK_BLK_SIZE);
+	if (!sysmem_alloc_base(name, (phys_addr_t)dst, cnt * dev_desc->blksz)) {
+		ret = -ENXIO;
+		goto err;
+	}
+
+	memcpy(dst, img->image, RK_BLK_SIZE - header_len);
 	ret = blk_dread(dev_desc, part_info->start + 1, cnt - 1,
 			dst + RK_BLK_SIZE - header_len);
 	if (ret != (cnt - 1)) {
@@ -466,6 +481,9 @@ int boot_rockchip_image(struct blk_desc *dev_desc, disk_partition_t *boot_part)
 	printf("fdt	 @ 0x%08lx (0x%08x)\n", fdt_addr_r, fdt_totalsize(fdt_addr_r));
 	printf("kernel   @ 0x%08lx (0x%08x)\n", kernel_addr_r, kernel_size);
 	printf("ramdisk  @ 0x%08lx (0x%08x)\n", ramdisk_addr_r, ramdisk_size);
+
+	sysmem_dump_check();
+
 #if defined(CONFIG_ARM64)
 	char cmdbuf[64];
 	sprintf(cmdbuf, "booti 0x%lx 0x%lx:0x%x 0x%lx",
