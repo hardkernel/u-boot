@@ -370,6 +370,12 @@ static void avb_set_key_version(AvbAtxOps *atx_ops,
 				uint64_t key_version)
 {
 #ifdef CONFIG_OPTEE_CLIENT
+	uint64_t key_version_temp = 0;
+
+	if (trusty_read_rollback_index(rollback_index_location, &key_version_temp))
+		printf("%s: Fail to read rollback index\n", __FILE__);
+	if (key_version_temp == key_version)
+		return;
 	if (trusty_write_rollback_index(rollback_index_location, key_version))
 		printf("%s: Fail to write rollback index\n", __FILE__);
 #endif
