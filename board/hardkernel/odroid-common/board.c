@@ -61,6 +61,8 @@ static unsigned int get_hw_revision(void)
 		hwrev = BOARD_REVISION(2018, 7, 23);
 	else if (IS_RANGE(adc, 160, 170))	/* avg : 164 */
 		hwrev = BOARD_REVISION(2018, 12, 6);
+	else if (IS_RANGE(adc, 240, 250))	/* avg : 248 */
+		hwrev = BOARD_REVISION(2019, 1, 17);
 
 	debug("ADC=%d, hwrev=0x%x\n", adc, hwrev);
 

@@ -239,7 +239,10 @@ struct aml_i2c_platform g_aml_i2c_plat = {
 
 #if defined(CONFIG_BOARD_EARLY_INIT_F)
 int board_early_init_f(void){
-	/*add board early init function here*/
+	/* setup the default voltage : VDD_EE */
+	if (board_revision() < BOARD_REVISION(2018, 12, 6))
+		writel(0x100016, AO_PWM_PWM_B);	/* 0.8420V */
+
 	return 0;
 }
 #endif

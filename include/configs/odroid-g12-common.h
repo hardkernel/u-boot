@@ -518,4 +518,6 @@
 
 #define CONFIG_CMD_SOURCE			1
 
+#define CONFIG_BOARD_EARLY_INIT_F		1
+
 #endif
