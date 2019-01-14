@@ -980,7 +980,12 @@ static int rk322x_clk_probe(struct udevice *dev)
 {
 #ifndef CONFIG_TPL_BUILD
 	struct rk322x_clk_priv *priv = dev_get_priv(dev);
+	int ret = 0;
+
 	rkclk_init(priv);
+	ret = clk_set_defaults(dev);
+	if (ret)
+		debug("%s clk_set_defaults failed %d\n", __func__, ret);
 #endif
 	return 0;
 }
