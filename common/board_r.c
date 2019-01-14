@@ -55,6 +55,7 @@
 #include <linux/compiler.h>
 #include <linux/err.h>
 #include <efi_loader.h>
+#include <sysmem.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -766,6 +767,9 @@ static init_fnc_t init_sequence_r[] = {
 #endif
 	initr_barrier,
 	initr_malloc,
+#ifdef CONFIG_SYSMEM
+	sysmem_init,		/* After malloc setup */
+#endif
 	log_init,
 	initr_bootstage,	/* Needs malloc() but has its own timer */
 	initr_console_record,
