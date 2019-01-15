@@ -791,10 +791,13 @@ static ulong px30_vop_set_clk(struct px30_clk_priv *priv, ulong clk_id, uint hz)
 			     (src_clk_div - 1) << ACLK_VO_DIV_SHIFT);
 		break;
 	case DCLK_VOPB:
-		if (hz < PX30_VOP_PLL_LIMIT)
+		if (hz < PX30_VOP_PLL_LIMIT) {
 			src_clk_div = DIV_ROUND_UP(PX30_VOP_PLL_LIMIT, hz);
-		else
+			if (src_clk_div % 2)
+				src_clk_div = src_clk_div - 1;
+		} else {
 			src_clk_div = 1;
+		}
 		assert(src_clk_div - 1 <= 255);
 		rkclk_set_pll(&cru->pll[CPLL], &cru->mode, CPLL, hz * src_clk_div);
 		rk_clrsetreg(&cru->clksel_con[5],
@@ -810,10 +813,13 @@ static ulong px30_vop_set_clk(struct px30_clk_priv *priv, ulong clk_id, uint hz)
 			src_clk_div = npll_hz / hz;
 			assert(src_clk_div - 1 <= 255);
 		} else {
-			if (hz < PX30_VOP_PLL_LIMIT)
+			if (hz < PX30_VOP_PLL_LIMIT) {
 				src_clk_div = DIV_ROUND_UP(PX30_VOP_PLL_LIMIT, hz);
-			else
+				if (src_clk_div % 2)
+					src_clk_div = src_clk_div - 1;
+			} else {
 				src_clk_div = 1;
+			}
 			assert(src_clk_div - 1 <= 255);
 			rkclk_set_pll(&cru->pll[NPLL], &cru->mode, NPLL, hz * src_clk_div);
 		}
