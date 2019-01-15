@@ -31,7 +31,7 @@
 #define CC_PARAM_CHECK_ERROR_NEED_UPDATE_PARAM        (-1)
 #define CC_PARAM_CHECK_ERROR_NOT_NEED_UPDATE_PARAM    (-2)
 
-static int gLcdDataCnt = 0, gLcdExtDataCnt = 0, gBlDataCnt = 0;
+static int gLcdDataCnt = 0, gLcdExtDataCnt = 0, gBlDataCnt = 0, gLcdTconDataCnt = 0;
 static int g_lcd_pwr_on_seq_cnt = 0, g_lcd_pwr_off_seq_cnt = 0;
 
 static int gLcdExtInitOnCnt = 0, gLcdExtInitOffCnt = 0;
@@ -79,6 +79,22 @@ static int check_param_valid(int mode, int parse_len, unsigned char parse_buf[],
 		// start check flash key data valid
 		//ALOGD("%s, start check flash key data valid\n", __func__);
 		if (check_hex_data_have_header_valid(&ori_cal_crc32, CC_MAX_DATA_SIZE, ori_len, ori_buf) < 0)
+			return CC_PARAM_CHECK_ERROR_NEED_UPDATE_PARAM;
+
+		if (parse_cal_crc32 != ori_cal_crc32) {
+			//ALOGE("%s, parse data not equal flash data(0x%08X, 0x%08X)\n", __func__, parse_cal_crc32, ori_cal_crc32);
+			return CC_PARAM_CHECK_ERROR_NEED_UPDATE_PARAM;
+		}
+		// end check parse data valid
+	} else if (mode == 1) {
+		// start check parse data valid
+		//ALOGD("%s, start check parse data valid\n", __func__);
+		if (check_hex_data_no_header_valid(&parse_cal_crc32, CC_MAX_DATA_SIZE, parse_len, parse_buf) < 0)
+			return CC_PARAM_CHECK_ERROR_NOT_NEED_UPDATE_PARAM;
+
+		// start check flash key data valid
+		//ALOGD("%s, start check flash key data valid\n", __func__);
+		if (check_hex_data_no_header_valid(&ori_cal_crc32, CC_MAX_DATA_SIZE, ori_len, ori_buf) < 0)
 			return CC_PARAM_CHECK_ERROR_NEED_UPDATE_PARAM;
 
 		if (parse_cal_crc32 != ori_cal_crc32) {
@@ -940,8 +956,6 @@ static int handle_panel_misc(struct panel_misc_s *p_misc)
 	return 0;
 }
 
-
-
 static int parse_panel_ini(const char *file_name, struct lcd_attr_s *lcd_attr, struct lcd_ext_attr_s *lcd_ext_attr, struct bl_attr_s *bl_attr, struct panel_misc_s *misc_attr)
 {
 	memset((void *)lcd_attr, 0, sizeof(struct lcd_attr_s));
@@ -987,6 +1001,99 @@ static int parse_panel_ini(const char *file_name, struct lcd_attr_s *lcd_attr, s
 	handle_panel_misc(misc_attr);
 
 	IniParserUninit();
+
+	return 0;
+}
+
+static int read_tcon_bin(const char *file_name, unsigned char *tcon_buf)
+{
+	int size;
+
+	memset(tcon_buf, 0, CC_MAX_TCON_BIN_SIZE);
+
+	BinFileInit();
+
+	size = ReadBinFile(file_name);
+	if (size < 0) {
+		ALOGE("%s, load bin file error!\n", __func__);
+		BinFileUninit();
+		return -1;
+	}
+
+	if (size > CC_MAX_TCON_BIN_SIZE) {
+		ALOGE("%s, bin file size out of support!\n", __func__);
+		BinFileUninit();
+		return -1;
+	}
+
+	gLcdTconDataCnt = size;
+	GetBinData(tcon_buf, size);
+
+	BinFileUninit();
+
+	return 0;
+}
+
+static int handle_tcon_bin(void)
+{
+	int tmp_len = 0;
+	unsigned char *tmp_buf = NULL;
+	unsigned char *tcon_buf = NULL;
+	char *file_name;
+
+	file_name = getenv("model_tcon");
+	if (file_name == NULL) {
+		/*ALOGD("%s, no model_tcon path\n", __func__);*/
+		return 0;
+	}
+
+	/*ALOGD("%s\n", __func__);*/
+	tmp_buf = (unsigned char *)malloc(CC_MAX_TCON_BIN_SIZE);
+	if (tmp_buf == NULL) {
+		ALOGE("%s, malloc buffer memory error!!!\n", __func__);
+		return -1;
+	}
+
+	tcon_buf = (unsigned char *)malloc(CC_MAX_TCON_BIN_SIZE);
+	if (tcon_buf == NULL) {
+		free(tmp_buf);
+		tmp_buf = NULL;
+		ALOGE("%s, malloc buffer memory error!!!\n", __func__);
+		return -1;
+	}
+
+	// start handle tcon bin name
+	if (!iniIsFileExist(file_name)) {
+		ALOGE("%s, file name \"%s\" not exist.\n", __func__, file_name);
+		free(tmp_buf);
+		tmp_buf = NULL;
+		free(tcon_buf);
+		tcon_buf = NULL;
+		return -1;
+	}
+
+	if (read_tcon_bin(file_name, tcon_buf) < 0) {
+		free(tmp_buf);
+		tmp_buf = NULL;
+		free(tcon_buf);
+		tcon_buf = NULL;
+		return -1;
+	}
+
+	// start handle lcd_tcon param
+	memset((void *)tmp_buf, 0, CC_MAX_TCON_BIN_SIZE);
+	tmp_len = ReadTconBinParam(tmp_buf);
+	//ALOGD("%s, start check lcd_tcon param data (0x%x).\n", __func__, tmp_len);
+	if (check_param_valid(1, gLcdTconDataCnt, tcon_buf, tmp_len, tmp_buf) == CC_PARAM_CHECK_ERROR_NEED_UPDATE_PARAM) {
+		ALOGD("%s, check tcon bin data error (0x%x), save tcon bin data.\n", __func__, tmp_len);
+		SaveTconBinParam(gLcdTconDataCnt, tcon_buf);
+	}
+	// end handle lcd_tcon param
+
+	free(tmp_buf);
+	tmp_buf = NULL;
+	free(tcon_buf);
+	tcon_buf = NULL;
 
 	return 0;
 }
@@ -1121,6 +1228,8 @@ int handle_panel_ini(void)
 	free(parse_buf);
 	parse_buf = NULL;
 
+	handle_tcon_bin();
+
 	return 0;
 }
 
@@ -1141,6 +1250,10 @@ int parse_model_sum(const char *file_name, char *model_name)
 		setenv("model_panel", ini_value);
 	else
 		ALOGE("%s, invalid PANELINI_PATH!!!\n", __func__);
+
+	ini_value = IniGetString(model_name, "TCON_BIN_PATH", "null");
+	if (strcmp(ini_value, "null") != 0)
+		setenv("model_tcon", ini_value);
 
 	ini_value = IniGetString(model_name, "EDID_14_FILE_PATH", "null");
 	if (strcmp(ini_value, "null") != 0)

@@ -30,6 +30,41 @@ static void printFreeMemND(const char *fun_name);
 static void clearMemND(void);
 #endif
 
+int bin_file_read(const char* filename, unsigned char *file_buf) {
+    int tmp_ret = -1, rd_cnt = 0, file_size = 0;
+    unsigned char *tmp_buf = NULL;
+
+    if (!iniIsFileExist(filename)) {
+        ALOGE("%s, file \"%s\" is not exist!\n", __FUNCTION__, filename);
+        return -1;
+    }
+
+    file_size = iniGetFileSize(filename);
+    if (file_size <= 0) {
+        ALOGE("%s, file \"%s\" size error!\n", __FUNCTION__, filename);
+        return -1;
+    }
+
+    tmp_buf = (unsigned char *) malloc(file_size * 2);
+    if (tmp_buf != NULL) {
+        rd_cnt = iniReadFileToBuffer(filename, 0, file_size, tmp_buf);
+        if (rd_cnt > 0) {
+            if (file_size > CC_MAX_INI_FILE_SIZE) {
+                ALOGE("%s: file \"%s\" size out of support!\n", __FUNCTION__, filename);
+                tmp_ret = -1;
+            } else {
+                memcpy(file_buf, tmp_buf, file_size);
+                tmp_ret = file_size;
+            }
+        }
+
+        free(tmp_buf);
+        tmp_buf = NULL;
+    }
+
+    return tmp_ret;
+}
+
 int ini_file_parse(const char* filename, INI_HANDLER_DATA *pHandlerData) {
     int tmp_ret = -1, rd_cnt = 0, file_size = 0;
     unsigned char *tmp_buf = NULL;

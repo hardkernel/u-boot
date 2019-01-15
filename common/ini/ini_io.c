@@ -25,6 +25,14 @@
     #endif
 #endif
 
+static int ReadBinData(const char *item_name, unsigned char data_buf[]) {
+    return readUKeyData_no_header(item_name, data_buf, CC_ONE_SECTION_SIZE);
+}
+
+static int WriteBinData(const char *item_name, int wr_size, unsigned char data_buf[]) {
+    return HandleWriteData(item_name, data_buf, wr_size);
+}
+
 static int ReadIniData(const char *item_name, unsigned char data_buf[]) {
     return HanldeReadData(item_name, data_buf, CC_ONE_SECTION_SIZE);
 }
@@ -132,6 +140,28 @@ static int SaveStringData(const char *item_name, int mode, char data_buf[]) {
     tmp_buf = NULL;
 
     return tmp_ret;
+}
+
+int check_hex_data_no_header_valid(unsigned int* tmp_crc32, int max_len, int buf_len, unsigned char data_buf[]) {
+    unsigned int cal_crc32 = 0;
+
+    if (tmp_crc32 != NULL) {
+        *tmp_crc32 = 0;
+    }
+
+    if (buf_len >= max_len) {
+        ALOGE("%s, buf_len error (0x%x, 0x%x)\n", __FUNCTION__, max_len, buf_len);
+        return -1;
+    }
+    //ALOGD("%s, data len ok(0x%x, 0x%x)\n", __FUNCTION__, data_len, buf_len);
+
+    cal_crc32 = CalCRC32(0, data_buf, buf_len);
+
+    if (tmp_crc32 != NULL) {
+        *tmp_crc32 = cal_crc32;
+    }
+
+    return 0;
 }
 
 int check_hex_data_have_header_valid(unsigned int* tmp_crc32, int max_len, int buf_len, unsigned char data_buf[]) {
@@ -288,6 +318,33 @@ int SaveBackLightParam(int wr_size, unsigned char data_buf[]) {
     }
 
     tmp_ret = WriteIniData(CS_BACKLIGHT_ITEM_NAME, wr_size, data_buf);
+    if (tmp_ret != wr_size) {
+        return -1;
+    }
+
+    return tmp_ret;
+}
+
+int ReadTconBinParam(unsigned char data_buf[]) {
+    int rd_size = 0;
+
+    if (data_buf == NULL) {
+        return -1;
+    }
+
+    rd_size = ReadBinData(CS_LCD_TCON_ITEM_NAME, data_buf);
+
+    return rd_size;
+}
+
+int SaveTconBinParam(int wr_size, unsigned char data_buf[]) {
+    int tmp_ret = 0;
+
+    if (data_buf == NULL) {
+        return -1;
+    }
+
+    tmp_ret = WriteBinData(CS_LCD_TCON_ITEM_NAME, wr_size, data_buf);
     if (tmp_ret != wr_size) {
         return -1;
     }
