@@ -94,6 +94,7 @@ static void lcd_power_info_print(struct aml_lcd_drv_s *lcd_drv, int status)
 		switch (power_step->type) {
 		case LCD_POWER_TYPE_CPU:
 		case LCD_POWER_TYPE_PMU:
+		case LCD_POWER_TYPE_WAIT_GPIO:
 			printf("%d: type=%d, index=%d, value=%d, delay=%d\n",
 				i, power_step->type, power_step->index,
 				power_step->value, power_step->delay);

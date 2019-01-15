@@ -105,7 +105,8 @@ static void lcd_power_ctrl(int status)
 	struct aml_lcd_extern_driver_s *ext_drv;
 #endif
 	char *str;
-	unsigned int i, gpio, value, temp;
+	unsigned int i, temp, wait, gpio;
+	int value = LCD_PMU_GPIO_NUM_MAX;
 	int ret;
 
 	i = 0;
@@ -171,6 +172,28 @@ static void lcd_power_ctrl(int status)
 			break;
 #endif
 		case LCD_POWER_TYPE_WAIT_GPIO:
+			if (power_step->index < LCD_CPU_GPIO_NUM_MAX) {
+				str = lcd_power->cpu_gpio[power_step->index];
+				gpio = aml_lcd_gpio_name_map_num(str);
+				aml_lcd_gpio_set(gpio, LCD_GPIO_INPUT);
+			} else {
+				LCDERR(
+				"wait_gpio index: %d\n", power_step->index);
+				break;
+			}
+			LCDPR("lcd_power_type_wait_gpio wait\n");
+			for (wait = 0; wait < power_step->delay; wait++) {
+				value = aml_lcd_gpio_input_get(gpio);
+				if (value == power_step->value) {
+					LCDPR(
+					"get value: %d, wait ok\n", value);
+					break;
+				}
+				mdelay(1);
+			}
+			if (wait == power_step->delay)
+				LCDERR(
+				"get value: %d, wait timeout!\n", value);
 			break;
 		case LCD_POWER_TYPE_CLK_SS:
 			temp = lcd_drv->lcd_config->lcd_timing.ss_level;
@@ -187,8 +210,11 @@ static void lcd_power_ctrl(int status)
 		default:
 			break;
 		}
-		if (power_step->delay)
-			mdelay(power_step->delay);
+
+		if (power_step->type != LCD_POWER_TYPE_WAIT_GPIO) {
+			if (power_step->delay > 0)
+				mdelay(power_step->delay);
+		}
 		i++;
 		power_step++;
 	}

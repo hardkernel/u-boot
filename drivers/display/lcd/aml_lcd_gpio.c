@@ -73,8 +73,6 @@ int aml_lcd_gpio_set(int gpio, int value)
 		ret = gpio_direction_input(gpio);
 		break;
 	}
-	if (ret != -EBUSY)
-		gpio_free(gpio);
 
 	return 0;
 }
