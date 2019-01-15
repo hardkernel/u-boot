@@ -8,6 +8,9 @@
 
 #include "../../../disk/part_dos.h"
 
+#define PART_TYPE_FAT32 0x0C
+#define PART_TYPE_LINEX_NATIVE_FS 0x83
+
 #define bytes_to_lba(x)		((x) / 512L)
 
 int mpt_write_partitions(struct mmc *mmc, struct partitions *partitions, int nr_parts);
@@ -158,20 +161,31 @@ int board_fdisk_all(void)
 		return -EIO;
 	}
 
+	/* Initiate MBR sector for parititons and its type */
+	memset(mbr + DOS_PART_TBL_OFFSET, 0, sizeof(dos_partition_t) * 4);
+
 	disk_partition_t info;
+	/* Android : set the 'odm' partition entry */
 	ret = get_partition_info_mpt_by_name(dev_desc, "odm", &info);
 	if (ret < 0) {
 		printf("fastboot: no DOS partition is defined\n");
 		return -ENOENT;
 	}
+	dos_partition_entry((dos_partition_t*)(mbr + DOS_PART_TBL_OFFSET),
+			info.start, info.size, PART_TYPE_FAT32);
 
-	/* Initiate MBR sector for parititons and its type */
-	memset(mbr + DOS_PART_TBL_OFFSET, 0, sizeof(dos_partition_t) * 4);
+	/* Android : set the 'data' partition entry */
+	ret = get_partition_info_mpt_by_name(dev_desc, "data", &info);
+	if (ret < 0) {
+		printf("fastboot: no DOS partition is defined\n");
+		return -ENOENT;
+	}
+	dos_partition_entry((dos_partition_t *)(mbr + DOS_PART_TBL_OFFSET + sizeof(dos_partition_t)),
+			info.start, info.size, PART_TYPE_LINEX_NATIVE_FS);
+
+	/* Boot signature */
 	mbr[0x1fe] = 0x55;
 	mbr[0x1ff] = 0xaa;
-
-	dos_partition_entry((dos_partition_t*)(mbr + DOS_PART_TBL_OFFSET),
-			info.start, info.size, 0x0c);
 
 	/* Write the MBR with new partition details */
 	if (dev_desc->block_write(dev_desc->dev, 0, 1, mbr) != 1) {
