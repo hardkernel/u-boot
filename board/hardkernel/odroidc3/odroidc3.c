@@ -47,10 +47,10 @@ struct eth_board_socket*  eth_board_skt;
 
 int serial_set_pin_port(unsigned long port_base)
 {
-    //UART in "Always On Module"
-    //GPIOAO_0==tx,GPIOAO_1==rx
-    //setbits_le32(P_AO_RTI_PIN_MUX_REG,3<<11);
-    return 0;
+	//UART in "Always On Module"
+	//GPIOAO_0==tx,GPIOAO_1==rx
+	//setbits_le32(P_AO_RTI_PIN_MUX_REG,3<<11);
+	return 0;
 }
 
 int dram_init(void)
@@ -65,87 +65,6 @@ int dram_init(void)
 void secondary_boot_func(void)
 {
 }
-#ifdef  ETHERNET_INTERNAL_PHY
-void internalPhyConfig(struct phy_device *phydev)
-{
-}
-
-static int dwmac_meson_cfg_pll(void)
-{
-	writel(0x39C0040A, P_ETH_PLL_CTL0);
-	writel(0x927E0000, P_ETH_PLL_CTL1);
-	writel(0xAC5F49E5, P_ETH_PLL_CTL2);
-	writel(0x00000000, P_ETH_PLL_CTL3);
-	udelay(200);
-	writel(0x19C0040A, P_ETH_PLL_CTL0);
-	return 0;
-}
-
-static int dwmac_meson_cfg_analog(void)
-{
-	/*Analog*/
-	writel(0x20200000, P_ETH_PLL_CTL5);
-	writel(0x0000c002, P_ETH_PLL_CTL6);
-	writel(0x00000023, P_ETH_PLL_CTL7);
-
-	return 0;
-}
-
-static int dwmac_meson_cfg_ctrl(void)
-{
-	/*config phyid should between  a 0~0xffffffff*/
-	/*please don't use 44000181, this has been used by internal phy*/
-	writel(0x33000180, P_ETH_PHY_CNTL0);
-
-	/*use_phy_smi | use_phy_ip | co_clkin from eth_phy_top*/
-	writel(0x260, P_ETH_PHY_CNTL2);
-
-	writel(0x74043, P_ETH_PHY_CNTL1);
-	writel(0x34043, P_ETH_PHY_CNTL1);
-	writel(0x74043, P_ETH_PHY_CNTL1);
-	return 0;
-}
-
-static void setup_net_chip(void)
-{
-	eth_aml_reg0_t eth_reg0;
-
-	eth_reg0.d32 = 0;
-	eth_reg0.b.phy_intf_sel = 4;
-	eth_reg0.b.rx_clk_rmii_invert = 0;
-	eth_reg0.b.rgmii_tx_clk_src = 0;
-	eth_reg0.b.rgmii_tx_clk_phase = 0;
-	eth_reg0.b.rgmii_tx_clk_ratio = 4;
-	eth_reg0.b.phy_ref_clk_enable = 1;
-	eth_reg0.b.clk_rmii_i_invert = 1;
-	eth_reg0.b.clk_en = 1;
-	eth_reg0.b.adj_enable = 1;
-	eth_reg0.b.adj_setup = 0;
-	eth_reg0.b.adj_delay = 9;
-	eth_reg0.b.adj_skew = 0;
-	eth_reg0.b.cali_start = 0;
-	eth_reg0.b.cali_rise = 0;
-	eth_reg0.b.cali_sel = 0;
-	eth_reg0.b.rgmii_rx_reuse = 0;
-	eth_reg0.b.eth_urgent = 0;
-	setbits_le32(P_PREG_ETH_REG0, eth_reg0.d32);// rmii mode
-
-	dwmac_meson_cfg_pll();
-	dwmac_meson_cfg_analog();
-	dwmac_meson_cfg_ctrl();
-
-	/* eth core clock */
-	setbits_le32(HHI_GCLK_MPEG1, (0x1 << 3));
-	/* eth phy clock */
-	setbits_le32(HHI_GCLK_MPEG0, (0x1 << 4));
-
-	/* eth phy pll, clk50m */
-	setbits_le32(HHI_FIX_PLL_CNTL3, (0x1 << 5));
-
-	/* power on memory */
-	clrbits_le32(HHI_MEM_PD_REG0, (1 << 3) | (1<<2));
-}
-#endif
 
 #ifdef ETHERNET_EXTERNAL_PHY
 
@@ -191,16 +110,9 @@ extern int designware_initialize(ulong base_addr, u32 interface);
 
 int board_eth_init(bd_t *bis)
 {
-#ifdef CONFIG_ETHERNET_NONE
-	return 0;
-#endif
-
 #ifdef ETHERNET_EXTERNAL_PHY
 	dwmac_meson_cfg_drive_strength();
 	setup_net_chip_ext();
-#endif
-#ifdef ETHERNET_INTERNAL_PHY
-	setup_net_chip();
 #endif
 	udelay(1000);
 	designware_initialize(ETH_BASE, PHY_INTERFACE_MODE_RMII);
@@ -212,7 +124,7 @@ int board_eth_init(bd_t *bis)
 #include <asm/arch/sd_emmc.h>
 static int  sd_emmc_init(unsigned port)
 {
-    switch (port)
+	switch (port)
 	{
 		case SDIO_PORT_A:
 			break;
@@ -245,13 +157,13 @@ static void sd_emmc_pwr_prepare(unsigned port)
 
 static void sd_emmc_pwr_on(unsigned port)
 {
-    switch (port)
+	switch (port)
 	{
 		case SDIO_PORT_A:
 			break;
 		case SDIO_PORT_B:
-//            clrbits_le32(P_PREG_PAD_GPIO5_O,(1<<31)); //CARD_8
-//            clrbits_le32(P_PREG_PAD_GPIO5_EN_N,(1<<31));
+			//            clrbits_le32(P_PREG_PAD_GPIO5_O,(1<<31)); //CARD_8
+			//            clrbits_le32(P_PREG_PAD_GPIO5_EN_N,(1<<31));
 			/// @todo NOT FINISH
 			break;
 		case SDIO_PORT_C:
@@ -264,17 +176,17 @@ static void sd_emmc_pwr_on(unsigned port)
 static void sd_emmc_pwr_off(unsigned port)
 {
 	/// @todo NOT FINISH
-    switch (port)
+	switch (port)
 	{
 		case SDIO_PORT_A:
 			break;
 		case SDIO_PORT_B:
-//            setbits_le32(P_PREG_PAD_GPIO5_O,(1<<31)); //CARD_8
-//            clrbits_le32(P_PREG_PAD_GPIO5_EN_N,(1<<31));
+			//            setbits_le32(P_PREG_PAD_GPIO5_O,(1<<31)); //CARD_8
+			//            clrbits_le32(P_PREG_PAD_GPIO5_EN_N,(1<<31));
 			break;
 		case SDIO_PORT_C:
 			break;
-				default:
+		default:
 			break;
 	}
 	return;
@@ -284,7 +196,7 @@ static void sd_emmc_pwr_off(unsigned port)
 static void board_mmc_register(unsigned port)
 {
 	struct aml_card_sd_info *aml_priv=cpu_sd_emmc_get(port);
-    if (aml_priv == NULL)
+	if (aml_priv == NULL)
 		return;
 
 	aml_priv->sd_emmc_init=sd_emmc_init;
@@ -303,39 +215,14 @@ static void board_mmc_register(unsigned port)
 }
 int board_mmc_init(bd_t	*bis)
 {
-#ifdef CONFIG_VLSI_EMULATOR
-	//board_mmc_register(SDIO_PORT_A);
-#else
-	//board_mmc_register(SDIO_PORT_B);
-#endif
 	board_mmc_register(SDIO_PORT_B);
 	board_mmc_register(SDIO_PORT_C);
-//	board_mmc_register(SDIO_PORT_B1);
+
 	return 0;
 }
+#endif
 
 #ifdef CONFIG_SYS_I2C_AML
-#if 0
-static void board_i2c_set_pinmux(void){
-	/*********************************************/
-	/*                | I2C_Master_AO        |I2C_Slave            |       */
-	/*********************************************/
-	/*                | I2C_SCK                | I2C_SCK_SLAVE  |      */
-	/* GPIOAO_4  | [AO_PIN_MUX: 6]     | [AO_PIN_MUX: 2]   |     */
-	/*********************************************/
-	/*                | I2C_SDA                 | I2C_SDA_SLAVE  |     */
-	/* GPIOAO_5  | [AO_PIN_MUX: 5]     | [AO_PIN_MUX: 1]   |     */
-	/*********************************************/
-
-	//disable all other pins which share with I2C_SDA_AO & I2C_SCK_AO
-	clrbits_le32(P_AO_RTI_PIN_MUX_REG, ((1<<2)|(1<<24)|(1<<1)|(1<<23)));
-	//enable I2C MASTER AO pins
-	setbits_le32(P_AO_RTI_PIN_MUX_REG,
-	(MESON_I2C_MASTER_AO_GPIOAO_4_BIT | MESON_I2C_MASTER_AO_GPIOAO_5_BIT));
-
-	udelay(10);
-};
-#endif
 struct aml_i2c_platform g_aml_i2c_plat = {
 	.wait_count         = 1000000,
 	.wait_ack_interval  = 5,
@@ -351,20 +238,6 @@ struct aml_i2c_platform g_aml_i2c_plat = {
 		.sda_bit    = MESON_I2C_MASTER_AO_GPIOAO_5_BIT,
 	}
 };
-#if 0
-static void board_i2c_init(void)
-{
-	//set I2C pinmux with PCB board layout
-	board_i2c_set_pinmux();
-
-	//Amlogic I2C controller initialized
-	//note: it must be call before any I2C operation
-	aml_i2c_init();
-
-	udelay(10);
-}
-#endif
-#endif
 #endif
 
 #if defined(CONFIG_BOARD_EARLY_INIT_F)
@@ -390,10 +263,10 @@ static void gpio_set_vbus_power(char is_power_on)
 	int ret;
 
 	ret = gpio_request(CONFIG_USB_GPIO_PWR,
-		CONFIG_USB_GPIO_PWR_NAME);
+			CONFIG_USB_GPIO_PWR_NAME);
 	if (ret && ret != -EBUSY) {
 		printf("gpio: requesting pin %u failed\n",
-			CONFIG_USB_GPIO_PWR);
+				CONFIG_USB_GPIO_PWR);
 		return;
 	}
 
@@ -425,61 +298,6 @@ static void hdmi_tx_set_hdmi_5v(void)
 {
 }
 #endif
-
-/*
- * mtd nand partition table, only care the size!
- * offset will be calculated by nand driver.
- */
-#ifdef CONFIG_AML_MTD
-static struct mtd_partition normal_partition_info[] = {
-#ifdef CONFIG_DISCRETE_BOOTLOADER
-    /* MUST NOT CHANGE this part unless u know what you are doing!
-     * inherent parition for descrete bootloader to store fip
-     * size is determind by TPL_SIZE_PER_COPY*TPL_COPY_NUM
-     * name must be same with TPL_PART_NAME
-     */
-    {
-        .name = "tpl",
-        .offset = 0,
-        .size = 0,
-    },
-#endif
-    {
-        .name = "logo",
-        .offset = 0,
-        .size = 2*SZ_1M,
-    },
-    {
-        .name = "recovery",
-        .offset = 0,
-        .size = 16*SZ_1M,
-    },
-    {
-        .name = "boot",
-        .offset = 0,
-        .size = 15*SZ_1M,
-    },
-    {
-        .name = "system",
-        .offset = 0,
-        .size = 280*SZ_1M,
-    },
-	/* last partition get the rest capacity */
-    {
-        .name = "data",
-        .offset = MTDPART_OFS_APPEND,
-        .size = MTDPART_SIZ_FULL,
-    },
-};
-struct mtd_partition *get_aml_mtd_partition(void)
-{
-	return normal_partition_info;
-}
-int get_aml_partition_count(void)
-{
-	return ARRAY_SIZE(normal_partition_info);
-}
-#endif /* CONFIG_AML_MTD */
 
 #ifdef CONFIG_AML_SPIFC
 /*

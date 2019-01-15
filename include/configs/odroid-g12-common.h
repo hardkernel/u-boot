@@ -275,55 +275,6 @@
 #error env in amlnand/mmc already be compatible;
 #endif
 
-/*
-*				storage
-*		|---------|---------|
-*		|					|
-*		emmc<--Compatible-->nand
-*					|-------|-------|
-*					|				|
-*					MTD<-Exclusive->NFTL
-*/
-/* axg only support slc nand */
-/* swither for mtd nand which is for slc only. */
-/* support for mtd */
-#define CONFIG_AML_MTD				1
-
-#if defined(CONFIG_AML_NAND) && defined(CONFIG_AML_MTD)
-#error CONFIG_AML_NAND/CONFIG_AML_MTD can not support at the sametime;
-#endif
-
-#ifdef CONFIG_AML_MTD
-
-/* bootlaoder is construct by bl2 and fip
- * when DISCRETE_BOOTLOADER is enabled, bl2 & fip
- * will not be stored continuously, and nand layout
- * would be bl2|rsv|fip|normal, but not
- * bl2|fip|rsv|noraml anymore
- */
-#define CONFIG_DISCRETE_BOOTLOADER
-
-#ifdef  CONFIG_DISCRETE_BOOTLOADER
-#define CONFIG_TPL_SIZE_PER_COPY          	0x200000
-#define CONFIG_TPL_COPY_NUM               	4
-#define CONFIG_TPL_PART_NAME              	"tpl"
-
-/* for bl2, restricted by romboot */
-/* SKT 1024 pages only support 4 block, so 4 copies */
-#define CONFIG_BL2_COPY_NUM               	4
-#endif /* CONFIG_DISCRETE_BOOTLOADER */
-
-#define CONFIG_MTD_DEVICE y
-
-/* mtd parts of ourown.*/
-#define CONFIFG_AML_MTDPART			1
-
-#define CONFIG_RBTREE
-#define CONFIG_CMD_MTDPARTS			1
-#define CONFIG_MTD_PARTITIONS			1
-#endif
-
-/* endof CONFIG_AML_MTD */
 #define	CONFIG_AML_SD_EMMC			1
 #ifdef CONFIG_AML_SD_EMMC
 	#define CONFIG_GENERIC_MMC		1
@@ -376,7 +327,7 @@
 #endif
 #endif
 
-#if defined CONFIG_AML_MTD || defined CONFIG_SPI_NAND
+#if defined defined CONFIG_SPI_NAND
 	#define CONFIG_MTD_DEVICE y
 	#define CONFIG_RBTREE
 	#define CONFIG_CMD_MTDPARTS		1
