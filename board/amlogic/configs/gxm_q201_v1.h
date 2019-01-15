@@ -90,6 +90,7 @@
         "loadaddr=1080000\0"\
         "outputmode=1080p60hz\0" \
         "hdmimode=1080p60hz\0" \
+        "colorattribute=444,8bit\0"\
         "cvbsmode=576cvbs\0" \
         "display_width=1920\0" \
         "display_height=1080\0" \
@@ -127,7 +128,7 @@
             "else fi;"\
             "\0"\
     "storeargs="\
-            "setenv bootargs ${initargs} ${fs_type} androidboot.selinux=${EnableSelinux} logo=${display_layer},loaded,${fb_addr},${outputmode} maxcpus=${maxcpus} vout=${outputmode},enable hdmimode=${hdmimode} cvbsmode=${cvbsmode} hdmitx=${cecconfig} cvbsdrv=${cvbs_drv} pq=${pq} androidboot.firstboot=${firstboot} jtag=${jtag}; "\
+            "setenv bootargs ${initargs} ${fs_type} reboot_mode_android=${reboot_mode_android} androidboot.selinux=${EnableSelinux} logo=${display_layer},loaded,${fb_addr},${outputmode} maxcpus=${maxcpus} vout=${outputmode},enabletx=${cecconfig},${colorattribute}  hdmimode=${hdmimode} cvbsmode=${cvbsmode} hdmitx=${cecconfig} cvbsdrv=${cvbs_drv} pq=${pq} androidboot.firstboot=${firstboot} jtag=${jtag}; "\
 	"setenv bootargs ${bootargs} androidboot.hardware=amlogic;"\
             "run cmdline_keys;"\
             "\0"\

@@ -85,6 +85,7 @@
         "panel_type=lcd_1\0" \
         "outputmode=1080p60hz\0" \
         "hdmimode=1080p60hz\0" \
+	"colorattribute=444,8bit\0"\
         "cvbsmode=576cvbs\0" \
         "display_width=1920\0" \
         "display_height=1080\0" \
@@ -125,7 +126,7 @@
             "else fi;"\
             "\0"\
         "storeargs="\
-            "setenv bootargs ${initargs} ${fs_type} logo=${display_layer},loaded,${fb_addr} vout=${outputmode},enable panel_type=${panel_type} hdmimode=${hdmimode} cvbsmode=${cvbsmode} osd_reverse=${osd_reverse} video_reverse=${video_reverse} androidboot.selinux=${EnableSelinux} androidboot.firstboot=${firstboot} jtag=${jtag}; "\
+            "setenv bootargs ${initargs} ${fs_type} logo=${display_layer},loaded,${fb_addr} vout=${outputmode},enable panel_type=${panel_type} hdmitx=${cecconfig},${colorattribute} hdmimode=${hdmimode} cvbsmode=${cvbsmode} osd_reverse=${osd_reverse} video_reverse=${video_reverse} androidboot.selinux=${EnableSelinux} androidboot.firstboot=${firstboot} jtag=${jtag}; "\
 	"setenv bootargs ${bootargs} androidboot.hardware=amlogic;"\
             "run cmdline_keys;"\
             "\0"\
