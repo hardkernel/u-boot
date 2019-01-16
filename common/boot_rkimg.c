@@ -445,6 +445,15 @@ int boot_rockchip_image(struct blk_desc *dev_desc, disk_partition_t *boot_part)
 		ramdisk_size = 0;
 	}
 
+	/*
+	 * When it happens ?
+	 *
+	 * 1. CONFIG_USING_KERNEL_DTB is disabled, so we should load kenrel dtb;
+	 *
+	 * 2. Even CONFIG_USING_KERNEL_DTB is enabled, if we load kernel dtb
+	 *    failed due to some reason before here, and then we fix it and run
+	 *    cmd "bootrkp" try to boot system again, we should reload fdt here.
+	 */
 	if (gd->fdt_blob != (void *)fdt_addr_r) {
 		fdt_size = rockchip_read_dtb_file((void *)fdt_addr_r);
 		if (fdt_size < 0) {
