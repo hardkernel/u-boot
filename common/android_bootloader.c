@@ -28,6 +28,7 @@
 #define ANDROID_PARTITION_OEM  "oem"
 #define ANDROID_PARTITION_RECOVERY  "recovery"
 #define ANDROID_PARTITION_SYSTEM "system"
+#define ANDROID_PARTITION_VBMETA "vbmeta"
 
 #define ANDROID_ARG_SLOT_SUFFIX "androidboot.slot_suffix="
 #define ANDROID_ARG_ROOT "root="
@@ -937,6 +938,8 @@ int android_bootloader_boot_flow(struct blk_desc *dev_desc,
 
 #ifdef CONFIG_ANDROID_AVB
 	uint8_t vboot_flag = 0;
+	char vbmeta_partition[9] = {0};
+	disk_partition_t vbmeta_part_info;
 
 	if (trusty_read_vbootkey_enable_flag(&vboot_flag))
 		return -1;
@@ -947,11 +950,23 @@ int android_bootloader_boot_flow(struct blk_desc *dev_desc,
 					slot_suffix))
 			return -1;
 	} else {
-		printf("SecureBoot disabled, AVB skip\n");
-		env_update("bootargs", "androidboot.verifiedbootstate=orange");
-		if (load_android_image(dev_desc, boot_partname,
-				       slot_suffix, &load_address))
-			return -1;
+		strcat(vbmeta_partition, ANDROID_PARTITION_VBMETA);
+		strcat(vbmeta_partition, slot_suffix);
+		part_num = part_get_info_by_name(dev_desc, vbmeta_partition,
+						 &vbmeta_part_info);
+		if (part_num < 0) {
+			printf("SecureBoot disabled, AVB skip\n");
+			env_update("bootargs",
+				   "androidboot.verifiedbootstate=orange");
+			if (load_android_image(dev_desc, boot_partname,
+					       slot_suffix, &load_address))
+				return -1;
+		} else {
+			printf("SecureBoot enabled, AVB verify\n");
+			if (android_slot_verify(boot_partname, &load_address,
+						slot_suffix))
+				return -1;
+		}
 	}
 #else
 	/*
