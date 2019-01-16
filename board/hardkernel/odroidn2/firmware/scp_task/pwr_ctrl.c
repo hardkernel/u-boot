@@ -28,19 +28,36 @@
 
 static void set_vddee_voltage(unsigned int target_voltage)
 {
-	unsigned int to;
+	unsigned int to, pwm_size = 0;
+	static int (*pwm_voltage_ee)[2];
 
-	for (to = 0; to < ARRAY_SIZE(pwm_voltage_table_ee); to++) {
-		if (pwm_voltage_table_ee[to][1] >= target_voltage) {
+	/* BOOT_9 = H use PWM_CFG0(0.67v-0.97v), =L use PWM_CFG1(0.69v-0.89v) */
+	/*set BOOT_9 input mode*/
+	writel((readl(PREG_PAD_GPIO0_EN_N) | 0x200), PREG_PAD_GPIO0_EN_N);
+	if (((readl(PREG_PAD_GPIO0_EN_N) & 0x200 ) == 0x200) &&
+			((readl(PREG_PAD_GPIO0_I) & 0x200 ) == 0x0)) {
+		uart_puts("use vddee new table!");
+		uart_puts("\n");
+		pwm_voltage_ee = pwm_voltage_table_ee_new;
+		pwm_size = ARRAY_SIZE(pwm_voltage_table_ee_new);
+	} else {
+		uart_puts("use vddee table!");
+		uart_puts("\n");
+		pwm_voltage_ee = pwm_voltage_table_ee;
+		pwm_size = ARRAY_SIZE(pwm_voltage_table_ee);
+	}
+
+	for (to = 0; to < pwm_size; to++) {
+		if (pwm_voltage_ee[to][1] >= target_voltage) {
 			break;
 		}
 	}
 
-	if (to >= ARRAY_SIZE(pwm_voltage_table_ee)) {
-		to = ARRAY_SIZE(pwm_voltage_table_ee) - 1;
+	if (to >= pwm_size) {
+		to = pwm_size - 1;
 	}
 
-	writel(pwm_voltage_table_ee[to][0],AO_PWM_PWM_B);
+	writel(*(*(pwm_voltage_ee + to)), AO_PWM_PWM_B);
 }
 
 static void power_off_at_24M(unsigned int suspend_from)
@@ -116,9 +133,6 @@ static unsigned int detect_key(unsigned int suspend_from)
 	int exit_reason = 0;
 	unsigned *irq = (unsigned *)WAKEUP_SRC_IRQ_ADDR_BASE;
 	init_remote();
-#ifdef CONFIG_ADC_KEY
-	saradc_enable();
-#endif
 #ifdef CONFIG_CEC_WAKEUP
 		if (hdmi_cec_func_config & 0x1) {
 			remote_cec_hw_reset();
@@ -145,16 +159,14 @@ static unsigned int detect_key(unsigned int suspend_from)
 			exit_reason = RTC_WAKEUP;
 		}
 
-#ifdef CONFIG_ADC_KEY
-                if (irq[IRQ_AO_GPIO0] == IRQ_AO_GPIO0_NUM) {
+		if (irq[IRQ_AO_GPIO0] == IRQ_AO_GPIO0_NUM) {
 			irq[IRQ_AO_GPIO0] = 0xFFFFFFFF;
 			if ((readl(AO_GPIO_I) & (1<<3)) == 0)
 				exit_reason = POWER_KEY_WAKEUP;
 		}
-#endif
 
 		if (irq[IRQ_ETH_PTM] == IRQ_ETH_PMT_NUM) {
-			irq[IRQ_ETH_PTM] = 0xFFFFFFFF;
+			irq[IRQ_ETH_PTM]= 0xFFFFFFFF;
 			exit_reason = ETH_PMT_WAKEUP;
 		}
 
@@ -163,10 +175,6 @@ static unsigned int detect_key(unsigned int suspend_from)
 		else
 			__switch_idle_task();
 	} while (1);
-
-#ifdef CONFIG_ADC_KEY
-	saradc_disable();
-#endif
 
 	return exit_reason;
 }
