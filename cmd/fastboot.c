@@ -25,6 +25,8 @@ static int do_fastboot(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 	if (argc < 2)
 		return CMD_RET_USAGE;
 
+	printf("Enter fastboot...");
+
 	if (!strcmp(argv[1], "udp")) {
 #ifndef CONFIG_UDP_FUNCTION_FASTBOOT
 		pr_err("Fastboot UDP not enabled\n");
@@ -41,6 +43,7 @@ static int do_fastboot(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 	pr_err("Fastboot USB not enabled\n");
 	return -1;
 #else
+
 	usb_controller = argv[2];
 	controller_index = simple_strtoul(usb_controller, NULL, 0);
 
@@ -61,6 +64,8 @@ static int do_fastboot(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 		ret = CMD_RET_FAILURE;
 		goto exit;
 	}
+
+	printf("OK\n");
 
 	while (1) {
 		if (g_dnl_detach())
