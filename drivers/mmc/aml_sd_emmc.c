@@ -866,8 +866,7 @@ int aml_sd_retry_refix(struct mmc *mmc)
 	int wrap_win_start = -1, wrap_win_size = 0;
 	int best_win_start = -1, best_win_size = -1;
 	int curr_win_start = -1, curr_win_size = 0;
-
-	u8 rx_tuning_result[20] = { 0 };
+	u8 rx_tuning_result[25/SAMPLE_STEP_COUNT] = { 0 };
 
 	blk_test = malloc(REFIX_BLK_CNT * mmc->read_bl_len);
 	if (!blk_test)
@@ -875,7 +874,7 @@ int aml_sd_retry_refix(struct mmc *mmc)
 	vclk = sd_emmc_reg->gclock;
 	clk_div = clkc->div;
 
-	for (adj_delay = 0; adj_delay < clk_div; adj_delay++) {
+	for (adj_delay = 0; adj_delay < clk_div; adj_delay+=SAMPLE_STEP_COUNT) {
 		// Perform tuning ntries times per clk_div increment
 		gadjust->adj_delay = adj_delay;
 		gadjust->adj_enable = 1;
@@ -907,12 +906,12 @@ int aml_sd_retry_refix(struct mmc *mmc)
 				wrap_win_start = adj_delay;
 
 			if (wrap_win_start >= 0)
-				wrap_win_size++;
+				wrap_win_size += SAMPLE_STEP_COUNT;
 
 			if (curr_win_start < 0)
 				curr_win_start = adj_delay;
 
-			curr_win_size++;
+			curr_win_size += SAMPLE_STEP_COUNT;
 		} else {
 			if (curr_win_start >= 0) {
 				if (best_win_start < 0) {
