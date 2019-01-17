@@ -225,7 +225,7 @@ ddr_reg_t __ddr_reg[] = {
 	#define VDDEE_VAL_REG0	0x000d000f
 	#define VDDEE_VAL_REG1	0x0005000d
 #elif (VDDEE_VAL == 840)
-	#define VDDEE_VAL_REG0	0x000c0010
+	#define VDDEE_VAL_REG0	0x0008004a
 	#define VDDEE_VAL_REG1	0x0004000e
 #elif (VDDEE_VAL == 850)
 	#define VDDEE_VAL_REG0	0x000b0011
