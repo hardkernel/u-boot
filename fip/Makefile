@@ -64,7 +64,7 @@ FIP_ARGS := --bl30 $(buildtree)/fip/bl30_new.bin \
 	--bl31 $(buildsrc)/fip/$(SOC)/bl31.$(BL3X_SUFFIX) \
 	--bl33 $(buildtree)/u-boot.bin
 
-$(buildtree)/fip/fip.bin:
+$(buildtree)/fip/fip.bin: FORCE
 	$(Q)echo Building $@...
 	$(call fix_blx, \
 		$(buildsrc)/fip/$(SOC)/bl30.bin, \
