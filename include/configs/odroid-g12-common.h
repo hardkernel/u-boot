@@ -96,6 +96,7 @@
 #define ENV_MMC_DEFAULT					\
 	"boot_mmc="					\
 		"for n in ${mmc_list}; do "	\
+			"setenv devnum ${n}; "		\
 			"setenv devno ${n}; "		\
 			"cfgload; "			\
 		"done\0"
@@ -104,6 +105,7 @@
 	"boot_mmc_distro="				\
 		"setenv devtype mmc; "			\
 		"for n in ${mmc_list}; do "		\
+			"setenv devnum ${n}; "		\
 			"setenv devno ${n}; "		\
 			"load mmc ${n} ${preloadaddr} boot.scr; "	\
 			"source ${preloadaddr}; "		\
