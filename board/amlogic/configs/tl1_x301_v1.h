@@ -42,7 +42,7 @@
 /*if use bt-wakeup,open it*/
 #define CONFIG_BT_WAKEUP
 /*if use wifi-wakeup,open it*/
-#define CONFIG_WIFI_WAKEUP
+//#define CONFIG_WIFI_WAKEUP
 /* SMP Definitinos */
 #define CPU_RELEASE_ADDR		secondary_boot_func
 
