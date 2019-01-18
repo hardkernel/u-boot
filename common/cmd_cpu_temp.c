@@ -38,7 +38,7 @@
 
 //#define HHI_SAR_CLK_CNTL    0xc883c000+0xf6*4 //0xc883c3d8
 int temp_base = 27;
-#define NUM 30
+#define NUM 16
 uint32_t vref_en = 0;
 uint32_t trim = 0;
 int saradc_vref = -1;
@@ -973,7 +973,7 @@ int r1p1_temp_read(int type)
 						value_ts = readl(TS_PLL_STAT0) & 0xffff;
 					}
 					for (i = 0; i <= NUM; i ++) {
-						udelay(5000);
+						udelay(4500);
 						value_ts = readl(TS_PLL_STAT0) & 0xffff;
 						if ((value_ts >= 0x1500) && (value_ts <= 0x3500))
 							value_all_ts += value_ts;
@@ -1008,7 +1008,7 @@ int r1p1_temp_read(int type)
 						value_ts = readl(TS_DDR_STAT0) & 0xffff;
 					}
 					for (i = 0; i <= NUM; i ++) {
-						udelay(5000);
+						udelay(4500);
 						value_ts = readl(TS_DDR_STAT0) & 0xffff;
 						if ((value_ts >= 0x1500) && (value_ts <= 0x3500))
 							value_all_ts += value_ts;
@@ -1043,7 +1043,7 @@ int r1p1_temp_read(int type)
 						value_ts = readl(TS_SAR_STAT0) & 0xffff;
 					}
 					for (i = 0; i <= NUM; i ++) {
-						udelay(5000);
+						udelay(4500);
 						value_ts = readl(TS_SAR_STAT0) & 0xffff;
 						if ((value_ts >= 0x1500) && (value_ts <= 0x3500))
 							value_all_ts += value_ts;
