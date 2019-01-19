@@ -326,7 +326,11 @@ static int bootm_start(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]
 
 	/* find kernel entry point */
 	if (images.legacy_hdr_valid) {
-		images.ep = image_get_ep (&images.legacy_hdr_os_copy);
+		if (images.os.type == IH_TYPE_KERNEL_NOLOAD) {
+			images.ep = os_hdr + 0x40;
+		} else {
+			images.ep = image_get_ep (&images.legacy_hdr_os_copy);
+		}
 #if defined(CONFIG_FIT)
 	} else if (images.fit_uname_os) {
 		ret = fit_image_get_entry (images.fit_hdr_os,
@@ -342,6 +346,7 @@ static int bootm_start(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]
 	}
 
 	if (((images.os.type == IH_TYPE_KERNEL) ||
+	     (images.os.type == IH_TYPE_KERNEL_NOLOAD) ||
 	     (images.os.type == IH_TYPE_MULTI)) &&
 	    (images.os.os == IH_OS_LINUX)) {
 		/* find ramdisk */
@@ -1064,6 +1069,7 @@ static void *boot_get_kernel (cmd_tbl_t *cmdtp, int flag, int argc, char * const
 		/* get os_data and os_len */
 		switch (image_get_type (hdr)) {
 		case IH_TYPE_KERNEL:
+		case IH_TYPE_KERNEL_NOLOAD:
 			*os_data = image_get_data (hdr);
 			*os_len = image_get_data_size (hdr);
 			break;
