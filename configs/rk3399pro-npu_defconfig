@@ -39,8 +39,9 @@ CONFIG_CMD_PART=y
 # CONFIG_CMD_ITEST is not set
 # CONFIG_CMD_SETEXPR is not set
 # CONFIG_CMD_NET is not set
-# CONFIG_CMD_NFS is not set
 # CONFIG_CMD_MISC is not set
+# CONFIG_DOS_PARTITION is not set
+# CONFIG_ISO_PARTITION is not set
 CONFIG_RKPARM_PARTITION=y
 CONFIG_OF_LIVE=y
 CONFIG_OF_SPL_REMOVE_PROPS="pinctrl-0 pinctrl-names clock-names interrupt-parent assigned-clocks assigned-clock-rates assigned-clock-parents"
