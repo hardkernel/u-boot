@@ -350,6 +350,11 @@ void set_usb_boot_function(unsigned long command)
 void aml_system_off(void)
 {
 	/* TODO: Add poweroff capability */
+	unsigned int val;
+
+	/* dram_check_channels failed in bl30,add it */
+	val = readl(HHI_VPU_MEM_PD_REG4) | 0xf;
+	writel(val, HHI_VPU_MEM_PD_REG4);
 	aml_reboot(0x82000042, 1, 0, 0);
 	aml_reboot(0x84000008, 0, 0, 0);
 }

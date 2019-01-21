@@ -249,7 +249,7 @@ static int ir_remote_init_32k_mode(void)
 {
 	//volatile unsigned int status,data_value;
 	int val = readl(AO_RTI_PINMUX_REG0);
-	writel((val | (1 << 0)), AO_RTI_PINMUX_REG0);
+	writel((val | (1 << 20)), AO_RTI_PINMUX_REG0);
 	set_remote_mode(CONFIG_IR_REMOTE_USE_PROTOCOL);
 	//status = readl(AO_MF_IR_DEC_STATUS);
 	readl(AO_MF_IR_DEC_STATUS);
@@ -283,11 +283,11 @@ static unsigned int kk[] = {
 
 static int init_remote(void)
 {
-	return 0;
 	uart_put_hex(readl(AO_IR_DEC_STATUS), 32);
 	uart_put_hex(readl(AO_IR_DEC_FRAME), 32);
 	init_custom_trigger();
-	//return 0;
+
+	return 0;
 }
 
 /*can be called in pwr_ctrl.c*/
