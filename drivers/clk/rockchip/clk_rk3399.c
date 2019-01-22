@@ -1465,7 +1465,21 @@ static int rk3399_clk_probe(struct udevice *dev)
 
 	priv->cru = map_sysmem(plat->dtd.reg[0], plat->dtd.reg[1]);
 #endif
+
+	priv->sync_kernel = false;
+	if (!priv->armlclk_enter_hz)
+		priv->armlclk_enter_hz =
+		rkclk_pll_get_rate(&priv->cru->apll_l_con[0]);
+	if (!priv->armbclk_enter_hz)
+		priv->armbclk_enter_hz =
+		rkclk_pll_get_rate(&priv->cru->apll_b_con[0]);
 	rkclk_init(priv->cru);
+	if (!priv->armlclk_init_hz)
+		priv->armlclk_init_hz =
+		rkclk_pll_get_rate(&priv->cru->apll_l_con[0]);
+	if (!priv->armbclk_init_hz)
+		priv->armbclk_init_hz =
+		rkclk_pll_get_rate(&priv->cru->apll_b_con[0]);
 	return 0;
 }
 
@@ -1741,6 +1755,7 @@ U_BOOT_DRIVER(rockchip_rk3399_pmuclk) = {
 int soc_clk_dump(void)
 {
 	struct udevice *cru_dev, *pmucru_dev;
+	struct rk3399_clk_priv *priv;
 	const struct rk3399_clk_info *clk_dump;
 	struct clk clk;
 	unsigned long clk_count = ARRAY_SIZE(clks_dump);
@@ -1763,7 +1778,19 @@ int soc_clk_dump(void)
 		return ret;
 	}
 
-	printf("CLK:\n");
+	priv = dev_get_priv(cru_dev);
+	printf("CLK: (%s. arml: enter %lu KHz, init %lu KHz, kernel %lu%s)\n",
+	       priv->sync_kernel ? "sync kernel" : "uboot",
+	       priv->armlclk_enter_hz / 1000,
+	       priv->armlclk_init_hz / 1000,
+	       priv->set_armclk_rate ? priv->armlclk_hz / 1000 : 0,
+	       priv->set_armclk_rate ? " KHz" : "N/A");
+	printf("CLK: (%s. armb: enter %lu KHz, init %lu KHz, kernel %lu%s)\n",
+	       priv->sync_kernel ? "sync kernel" : "uboot",
+	       priv->armbclk_enter_hz / 1000,
+	       priv->armbclk_init_hz / 1000,
+	       priv->set_armclk_rate ? priv->armbclk_hz / 1000 : 0,
+	       priv->set_armclk_rate ? " KHz" : "N/A");
 	for (i = 0; i < clk_count; i++) {
 		clk_dump = &clks_dump[i];
 		if (clk_dump->name) {
@@ -1779,17 +1806,17 @@ int soc_clk_dump(void)
 			clk_free(&clk);
 			if (i == 0) {
 				if (rate < 0)
-					printf("%s %s\n", clk_dump->name,
+					printf("  %s %s\n", clk_dump->name,
 					       "unknown");
 				else
-					printf("%s %lu KHz\n", clk_dump->name,
+					printf("  %s %lu KHz\n", clk_dump->name,
 					       rate / 1000);
 			} else {
 				if (rate < 0)
-					printf("%s %s\n", clk_dump->name,
+					printf("  %s %s\n", clk_dump->name,
 					       "unknown");
 				else
-					printf("%s %lu KHz\n", clk_dump->name,
+					printf("  %s %lu KHz\n", clk_dump->name,
 					       rate / 1000);
 			}
 		}
