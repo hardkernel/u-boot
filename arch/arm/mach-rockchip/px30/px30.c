@@ -204,6 +204,7 @@ int set_armclk_rate(void)
 		printf("Failed to set armclk %lu\n", priv->armclk_hz);
 		return ret;
 	}
+	priv->set_armclk_rate = true;
 
 	return 0;
 }
