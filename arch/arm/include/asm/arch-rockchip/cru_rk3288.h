@@ -30,6 +30,11 @@ struct rk3288_clk_priv {
 	struct rk3288_grf *grf;
 	struct rk3288_cru *cru;
 	ulong rate;
+	ulong armclk_hz;
+	ulong armclk_enter_hz;
+	ulong armclk_init_hz;
+	bool sync_kernel;
+	bool set_armclk_rate;
 };
 
 struct rk3288_cru {
@@ -60,6 +65,12 @@ struct rk3288_cru {
 	u32 cru_emmc_con[2];
 };
 check_member(rk3288_cru, cru_emmc_con[1], 0x021c);
+
+struct rk3288_clk_info {
+	unsigned long id;
+	char *name;
+	bool is_cru;
+};
 
 /* CRU_CLKSEL11_CON */
 enum {

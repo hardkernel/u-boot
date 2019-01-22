@@ -37,6 +37,24 @@ struct pll_div {
 	u32 no;
 };
 
+#ifndef CONFIG_SPL_BUILD
+#define RK3288_CLK_DUMP(_id, _name, _iscru)	\
+{						\
+	.id = _id,				\
+	.name = _name,				\
+	.is_cru = _iscru,			\
+}
+
+static const struct rk3288_clk_info clks_dump[] = {
+	RK3288_CLK_DUMP(PLL_APLL, "apll", true),
+	RK3288_CLK_DUMP(PLL_DPLL, "dpll", true),
+	RK3288_CLK_DUMP(PLL_CPLL, "cpll", true),
+	RK3288_CLK_DUMP(PLL_GPLL, "gpll", true),
+	RK3288_CLK_DUMP(PLL_NPLL, "npll", true),
+	RK3288_CLK_DUMP(ACLK_CPU, "aclk_bus", true),
+};
+#endif
+
 enum {
 	VCO_MAX_HZ	= 2200U * 1000000,
 	VCO_MIN_HZ	= 440 * 1000000,
@@ -1254,8 +1272,20 @@ static int rk3288_clk_probe(struct udevice *dev)
 			init_clocks = true;
 	}
 
-	if (init_clocks)
+	priv->sync_kernel = false;
+	if (!priv->armclk_enter_hz)
+		priv->armclk_enter_hz = rkclk_pll_get_rate(priv->cru,
+							   CLK_ARM);
+
+	if (init_clocks) {
 		rkclk_init(priv->cru, priv->grf);
+		if (!priv->armclk_init_hz)
+			priv->armclk_init_hz = rkclk_pll_get_rate(priv->cru,
+								  CLK_ARM);
+	} else {
+		if (!priv->armclk_init_hz)
+			priv->armclk_init_hz = priv->armclk_enter_hz;
+	}
 
 	return 0;
 }
@@ -1312,3 +1342,69 @@ U_BOOT_DRIVER(rockchip_rk3288_cru) = {
 	.ofdata_to_platdata	= rk3288_clk_ofdata_to_platdata,
 	.probe		= rk3288_clk_probe,
 };
+
+#ifndef CONFIG_SPL_BUILD
+/**
+ * soc_clk_dump() - Print clock frequencies
+ * Returns zero on success
+ *
+ * Implementation for the clk dump command.
+ */
+int soc_clk_dump(void)
+{
+	struct udevice *cru_dev;
+	struct rk3288_clk_priv *priv;
+	const struct rk3288_clk_info *clk_dump;
+	struct clk clk;
+	unsigned long clk_count = ARRAY_SIZE(clks_dump);
+	unsigned long rate;
+	int i, ret;
+
+	ret = uclass_get_device_by_driver(UCLASS_CLK,
+					  DM_GET_DRIVER(rockchip_rk3288_cru),
+					  &cru_dev);
+	if (ret) {
+		printf("%s failed to get cru device\n", __func__);
+		return ret;
+	}
+
+	priv = dev_get_priv(cru_dev);
+	printf("CLK: (%s. arm: enter %lu KHz, init %lu KHz, kernel %lu%s)\n",
+	       priv->sync_kernel ? "sync kernel" : "uboot",
+	       priv->armclk_enter_hz / 1000,
+	       priv->armclk_init_hz / 1000,
+	       priv->set_armclk_rate ? priv->armclk_hz / 1000 : 0,
+	       priv->set_armclk_rate ? " KHz" : "N/A");
+	for (i = 0; i < clk_count; i++) {
+		clk_dump = &clks_dump[i];
+		if (clk_dump->name) {
+			clk.id = clk_dump->id;
+			if (clk_dump->is_cru)
+				ret = clk_request(cru_dev, &clk);
+			if (ret < 0)
+				return ret;
+
+			rate = clk_get_rate(&clk);
+			clk_free(&clk);
+			if (i == 0) {
+				if (rate < 0)
+					printf("  %s %s\n", clk_dump->name,
+					       "unknown");
+				else
+					printf("  %s %lu KHz\n", clk_dump->name,
+					       rate / 1000);
+			} else {
+				if (rate < 0)
+					printf("  %s %s\n", clk_dump->name,
+					       "unknown");
+				else
+					printf("  %s %lu KHz\n", clk_dump->name,
+					       rate / 1000);
+			}
+		}
+	}
+
+	return 0;
+}
+#endif
+
