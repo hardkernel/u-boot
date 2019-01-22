@@ -1,7 +1,7 @@
 /*
- * board/amlogic/odroidn2/firmware/timing.c
+ * board/hardkernel/odroidn2/firmware/timing.c
  *
- * Copyright (C) 2018 Amlogic, Inc. All rights reserved.
+ * (C) Copyright 2018 Hardkernel Co., Ltd
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
