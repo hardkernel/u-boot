@@ -114,27 +114,6 @@ int fb_set_reboot_flag(void)
 }
 #endif
 
-#ifdef CONFIG_DM_CHARGE_DISPLAY
-static int charge_display(void)
-{
-	int ret;
-	struct udevice *dev;
-
-	ret = uclass_get_device(UCLASS_CHARGE_DISPLAY, 0, &dev);
-	if (ret) {
-		if (ret != -ENODEV) {
-			debug("Get UCLASS CHARGE DISPLAY failed: %d\n", ret);
-			return ret;
-		} else {
-			debug("Can't find charge display driver\n");
-		}
-		return 0;
-	}
-
-	return charge_display_show(dev);
-}
-#endif
-
 __weak int rk_board_init(void)
 {
 	return 0;
