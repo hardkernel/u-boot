@@ -145,14 +145,18 @@ void rockchip_dnl_mode_check(void)
 			/* If there is no recovery partition, just boot on */
 			struct blk_desc *dev_desc;
 			disk_partition_t part_info;
+			int ret;
 
 			dev_desc = rockchip_get_bootdev();
 			if (!dev_desc) {
 				printf("%s: dev_desc is NULL!\n", __func__);
 				return;
 			}
-			if (part_get_info_by_name(dev_desc, PART_RECOVERY,
-						  &part_info)) {
+
+			ret = part_get_info_by_name(dev_desc,
+						    PART_RECOVERY,
+						    &part_info);
+			if (ret < 0) {
 				debug("%s: no recovery partition\n", __func__);
 				return;
 			}
