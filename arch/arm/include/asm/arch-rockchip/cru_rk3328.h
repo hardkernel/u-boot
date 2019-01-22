@@ -14,6 +14,11 @@ struct rk3328_clk_priv {
 	ulong rate;
 	ulong cpll_hz;
 	ulong gpll_hz;
+	ulong armclk_hz;
+	ulong armclk_enter_hz;
+	ulong armclk_init_hz;
+	bool sync_kernel;
+	bool set_armclk_rate;
 };
 
 struct rk3328_cru {
