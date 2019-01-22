@@ -51,7 +51,10 @@ struct rk3308_clk_priv {
 	ulong dpll_hz;
 	ulong vpll0_hz;
 	ulong vpll1_hz;
-	bool is_assigned;
+	ulong armclk_enter_hz;
+	ulong armclk_init_hz;
+	bool sync_kernel;
+	bool set_armclk_rate;
 };
 
 struct rk3308_cru {
