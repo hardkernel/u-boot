@@ -57,6 +57,14 @@ check_member(rk3368_cru, emmc_con[1], 0x41c);
 
 struct rk3368_clk_priv {
 	struct rk3368_cru *cru;
+	ulong armlclk_hz;
+	ulong armlclk_enter_hz;
+	ulong armlclk_init_hz;
+	ulong armbclk_hz;
+	ulong armbclk_enter_hz;
+	ulong armbclk_init_hz;
+	bool sync_kernel;
+	bool set_armclk_rate;
 };
 
 enum {
