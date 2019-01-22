@@ -28,6 +28,11 @@
 struct rk3036_clk_priv {
 	struct rk3036_cru *cru;
 	ulong rate;
+	ulong armclk_hz;
+	ulong armclk_enter_hz;
+	ulong armclk_init_hz;
+	bool sync_kernel;
+	bool set_armclk_rate;
 };
 
 struct rk3036_cru {
@@ -64,6 +69,12 @@ struct pll_div {
 	u32 postdiv1;
 	u32 postdiv2;
 	u32 frac;
+};
+
+struct rk3036_clk_info {
+	unsigned long id;
+	char *name;
+	bool is_cru;
 };
 
 enum {
