@@ -63,30 +63,21 @@ void check_ramdump(void)
 	unsigned long addr = 0;
 	char *env;
 	int reboot_mode;
-	char env_cmd[128] = {0};
 
-	env = getenv("ramdump_disable");
+	env = getenv("ramdump_enable");
 	if (env) {
 		printf("%s,%s\n", __func__, env);
 		if (!strcmp(env, "1")) {
-			sprintf(env_cmd,
-				"setenv bootargs ${bootargs} ramdump=%s",
-				"disabled");
-			run_command(env_cmd, 1);
-		#if DEBUG_RAMDUMP
-			run_command("printenv bootargs", 1);
-		#endif
-			return;
+			reboot_mode = get_reboot_mode();
+			if ((reboot_mode == AMLOGIC_WATCHDOG_REBOOT ||
+			     reboot_mode == AMLOGIC_KERNEL_PANIC)) {
+				addr = ramdump_base;
+				size = ramdump_size;
+				printf("%s, addr:%lx, size:%lx\n",
+					__func__, addr, size);
+				if (addr && size)
+					ramdump_save_compress_data();
+			}
 		}
-	}
-
-	reboot_mode = get_reboot_mode();
-	if ((reboot_mode == AMLOGIC_WATCHDOG_REBOOT ||
-	     reboot_mode == AMLOGIC_KERNEL_PANIC)) {
-		addr = ramdump_base;
-		size = ramdump_size;
-		printf("%s, addr:%lx, size:%lx\n", __func__, addr, size);
-		if (addr && size)
-			ramdump_save_compress_data();
 	}
 }
