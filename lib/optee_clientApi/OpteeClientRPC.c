@@ -312,8 +312,7 @@ TEEC_Result OpteeRpcCmdRpmb(t_teesmc32_arg *TeeSmc32Arg)
 
 		switch (RequestMsgType) {
 		case TEE_RPC_RPMB_MSG_TYPE_REQ_AUTH_KEY_PROGRAM: {
-			EfiStatus = init_rpmb();
-			if (EfiStatus != 0) {
+			if (init_rpmb() != 0) {
 				TeecResult = TEEC_ERROR_GENERIC;
 				break;
 			}
@@ -321,12 +320,11 @@ TEEC_Result OpteeRpcCmdRpmb(t_teesmc32_arg *TeeSmc32Arg)
 			EfiStatus = do_programkey((struct s_rpmb *)
 				RequestPackets_back);
 
-			if (EfiStatus != 0) {
+			if (finish_rpmb() != 0) {
 				TeecResult = TEEC_ERROR_GENERIC;
 				break;
 			}
 
-			EfiStatus = finish_rpmb();
 			if (EfiStatus != 0) {
 				TeecResult = TEEC_ERROR_GENERIC;
 				break;
@@ -336,20 +334,19 @@ TEEC_Result OpteeRpcCmdRpmb(t_teesmc32_arg *TeeSmc32Arg)
 		}
 
 		case TEE_RPC_RPMB_MSG_TYPE_REQ_WRITE_COUNTER_VAL_READ: {
-			EfiStatus = init_rpmb();
-			if (EfiStatus != 0) {
+			if (init_rpmb() != 0) {
 				TeecResult = TEEC_ERROR_GENERIC;
 				break;
 			}
 
 			EfiStatus = do_readcounter((struct s_rpmb *)
 				RequestPackets_back);
-			if (EfiStatus != 0) {
+
+			if (finish_rpmb() != 0) {
 				TeecResult = TEEC_ERROR_GENERIC;
 				break;
 			}
 
-			EfiStatus = finish_rpmb();
 			if (EfiStatus != 0) {
 				TeecResult = TEEC_ERROR_GENERIC;
 				break;
@@ -359,20 +356,18 @@ TEEC_Result OpteeRpcCmdRpmb(t_teesmc32_arg *TeeSmc32Arg)
 		}
 
 		case TEE_RPC_RPMB_MSG_TYPE_REQ_AUTH_DATA_WRITE: {
-			EfiStatus = init_rpmb();
-			if (EfiStatus != 0) {
+			if (init_rpmb() != 0) {
 				TeecResult = TEEC_ERROR_GENERIC;
 				break;
 			}
 
 			EfiStatus = do_authenticatedwrite((struct s_rpmb *)
 				RequestPackets_back);
-			if (EfiStatus != 0) {
+
+			if (finish_rpmb() != 0) {
 				TeecResult = TEEC_ERROR_GENERIC;
 				break;
 			}
-
-			EfiStatus = finish_rpmb();
 
 			if (EfiStatus != 0) {
 				TeecResult = TEEC_ERROR_GENERIC;
@@ -383,20 +378,18 @@ TEEC_Result OpteeRpcCmdRpmb(t_teesmc32_arg *TeeSmc32Arg)
 		}
 
 		case TEE_RPC_RPMB_MSG_TYPE_REQ_AUTH_DATA_READ: {
-			EfiStatus = init_rpmb();
-			if (EfiStatus != 0) {
+			if (init_rpmb() != 0) {
 				TeecResult = TEEC_ERROR_GENERIC;
 				break;
 			}
 
 			EfiStatus = do_authenticatedread((struct s_rpmb *)
 				RequestPackets_back, global_block_count);
-			if (EfiStatus != 0) {
+
+			if (finish_rpmb() != 0) {
 				TeecResult = TEEC_ERROR_GENERIC;
 				break;
 			}
-
-			EfiStatus = finish_rpmb();
 
 			if (EfiStatus != 0) {
 				TeecResult = TEEC_ERROR_GENERIC;
