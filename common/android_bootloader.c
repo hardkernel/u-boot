@@ -22,6 +22,7 @@
 #include <keymaster.h>
 #include <linux/libfdt_env.h>
 #include <optee_include/OpteeClientInterface.h>
+#include <sysmem.h>
 
 #define ANDROID_PARTITION_BOOT "boot"
 #define ANDROID_PARTITION_MISC "misc"
@@ -330,6 +331,8 @@ int android_bootloader_boot_kernel(unsigned long kernel_address)
 	else
 		printf("Booting kernel at %s with fdt at %s...\n\n\n",
 		       kernel_addr_r, fdt_addr);
+
+	sysmem_dump_check();
 
 	do_bootm(NULL, 0, 4, bootm_args);
 
@@ -802,7 +805,16 @@ int android_fdt_overlay_apply(void *fdt_addr)
 
 	ret = android_get_dtbo(&fdt_dtbo, (void *)hdr, &index);
 	if (!ret) {
+		phys_size_t fdt_size;
 		/* Must incease size before overlay */
+		fdt_size = fdt_totalsize((void *)fdt_addr) +
+				fdt_totalsize((void *)fdt_dtbo);
+		if (sysmem_free((phys_addr_t)fdt_addr))
+			goto out;
+		if (!sysmem_alloc_base("fdt(dtbo)",
+				       (phys_addr_t)fdt_addr,
+					fdt_size))
+			goto out;
 		fdt_increase_size(fdt_addr, fdt_totalsize((void *)fdt_dtbo));
 		ret = fdt_overlay_apply(fdt_addr, (void *)fdt_dtbo);
 		if (!ret) {
@@ -842,8 +854,8 @@ static int load_android_image(struct blk_desc *dev_desc,
 
 	ret = android_image_load(dev_desc, &boot_part, *load_address, -1UL);
 	if (ret < 0) {
-		printf("%s: %s part load fail, ret=%d\n",
-		       __func__, boot_part.name, ret);
+		debug("%s: %s part load fail, ret=%d\n",
+		      __func__, boot_part.name, ret);
 		return ret;
 	}
 	*load_address = ret;
