@@ -268,7 +268,7 @@ atap_result load_attestation_key(struct blk_desc *dev_desc,
 	}
 
 	if (!validate_ca_header(ca_headr, sizeof(ca_headr))) {
-		printf("ca head not found\n");
+		debug("ca head not found\n");
 		return ATAP_RESULT_ERROR_INVALID_HEAD;
 	}
 
