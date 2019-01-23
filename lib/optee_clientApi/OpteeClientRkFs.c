@@ -99,7 +99,10 @@
  *	- 512 byte section used refs [128]
  *		- 1 byte = 2 flag
  *	- 895 * 512 byte data	[129 - 1023]
- *	------------------------------
+ *	------ RKSS Backup Structure --------
+ *	- 512 byte backup header  [1024]
+ *		- 1 * rkss_backup_verification + 31 * rkss_backup_info
+ *	- 255 * 512 byte backup data [1025 - 1279]
  *
  */
 #define RKSS_DATA_SECTION_COUNT		1024
@@ -108,6 +111,26 @@
 #define RKSS_EACH_FILEFOLDER_COUNT	4		// 504 / 126 = 4
 #define RKSS_NAME_MAX_LENGTH		117		// 116 char + "\0"
 #define RKSS_USEDFLAGS_INDEX		RKSS_PARTITION_TABLE_COUNT
+#define RKSS_BACKUP_INDEX		RKSS_DATA_SECTION_COUNT
+#define RKSS_BACKUP_COUNT		256
+
+#define RKSS_BACKUP_VERSION		(unsigned int)0x1
+#define RKSS_BACKUP_ENABLE		(unsigned int)0x55667788
+#define RKSS_BACKUP_USEDFLAG		(unsigned int)0xAABBCCDD
+
+struct rkss_backup_verification {
+	unsigned int backup_version;
+	unsigned int backup_count;
+	unsigned int reserve;
+	unsigned int backup_enable;
+};
+
+struct rkss_backup_info {
+	unsigned int backup_index;
+	unsigned int backup_num;
+	unsigned int backup_data_index;
+	unsigned int backup_usedflag;
+};
 
 typedef struct rkss_file_info
 {
@@ -163,6 +186,288 @@ extern unsigned long blk_dwrite(struct blk_desc *block_dev, lbaint_t start,
 
 static struct blk_desc *dev_desc = NULL;
 static disk_partition_t part_info;
+/*
+ * action1:
+ * rkss_begin_commit	set enable flag
+ * rkss_backup_sections	backup data
+ * blk_dwrite
+ * rkss_finish_commit	clear enable flag, clear backup data
+ * reboot
+ * rkss_resume	not find enable flag, do nothing
+ *
+ * action2:
+ * rkss_begin_commit	set enable flag
+ * rkss_backup_sections	backup data
+ * power off when blk_dwrite
+ *
+ * power on
+ * rkss_resume	find enable flag, resume all backup data
+ */
+static int rkss_begin_commit(void)
+{
+	unsigned char data[RKSS_DATA_LEN];
+	struct rkss_backup_verification p;
+	unsigned long ret;
+
+	if (!dev_desc) {
+		dev_desc = rockchip_get_bootdev();
+		if (!dev_desc) {
+			printf("%s: Could not find device\n", __func__);
+			return -1;
+		}
+
+		if (part_get_info_by_name(dev_desc,
+					  "security", &part_info) < 0) {
+			dev_desc = NULL;
+			printf("Could not find security partition\n");
+			return -1;
+		}
+	}
+
+	debug("%s\n", __func__);
+	p.backup_version = RKSS_BACKUP_VERSION;
+	p.backup_enable = RKSS_BACKUP_ENABLE;
+	p.backup_count = 0;
+
+	memset(data, 0, sizeof(data));
+	memcpy(data, &p, sizeof(p));
+
+	ret = blk_dwrite(dev_desc, RKSS_BACKUP_INDEX, 1, data);
+	if (ret != 1) {
+		printf("blk_dwrite fail\n");
+		return -1;
+	}
+	return 0;
+}
+
+static int rkss_finish_commit(void)
+{
+	unsigned char data[RKSS_DATA_LEN];
+	unsigned long ret;
+
+	if (!dev_desc) {
+		dev_desc = rockchip_get_bootdev();
+		if (!dev_desc) {
+			printf("%s: Could not find device\n", __func__);
+			return -1;
+		}
+
+		if (part_get_info_by_name(dev_desc,
+					  "security", &part_info) < 0) {
+			dev_desc = NULL;
+			printf("Could not find security partition\n");
+			return -1;
+		}
+	}
+
+	debug("%s\n", __func__);
+	memset(data, 0, sizeof(data));
+
+	ret = blk_dwrite(dev_desc, RKSS_BACKUP_INDEX, 1, data);
+	if (ret != 1) {
+		printf("blk_dwrite fail\n");
+		return -1;
+	}
+	return 0;
+}
+
+static int rkss_backup_sections(unsigned long index, unsigned int num)
+{
+	unsigned char data[RKSS_DATA_LEN];
+	unsigned char *backup_data = NULL;
+	struct rkss_backup_verification p;
+	struct rkss_backup_info info_last, info_current;
+	unsigned long ret;
+
+	if (!dev_desc) {
+		dev_desc = rockchip_get_bootdev();
+		if (!dev_desc) {
+			printf("%s: Could not find device\n", __func__);
+			return -1;
+		}
+
+		if (part_get_info_by_name(dev_desc,
+					  "security", &part_info) < 0) {
+			dev_desc = NULL;
+			printf("Could not find security partition\n");
+			return -1;
+		}
+	}
+
+	ret = blk_dread(dev_desc, RKSS_BACKUP_INDEX, 1, data);
+	if (ret != 1) {
+		printf("blk_dread fail\n");
+		return -1;
+	}
+
+	memcpy(&p, data, sizeof(p));
+	if (p.backup_version == RKSS_BACKUP_VERSION &&
+	    p.backup_enable == RKSS_BACKUP_ENABLE) {
+		if (p.backup_count == 0) {
+			info_current.backup_usedflag = RKSS_BACKUP_USEDFLAG;
+			info_current.backup_index = index;
+			info_current.backup_num = num;
+			info_current.backup_data_index = RKSS_BACKUP_INDEX + 1;
+		} else {
+			memcpy(&info_last,
+			       data + sizeof(p) + (p.backup_count - 1) *
+			       sizeof(info_last), sizeof(info_last));
+			info_current.backup_usedflag = RKSS_BACKUP_USEDFLAG;
+			info_current.backup_index = index;
+			info_current.backup_num = num;
+			info_current.backup_data_index =
+				info_last.backup_data_index +
+				info_last.backup_num;
+		}
+		if ((info_current.backup_data_index + info_current.backup_num) >
+			(RKSS_BACKUP_INDEX + RKSS_BACKUP_COUNT)) {
+			printf("Not enough backup sections!");
+			goto error;
+		}
+		debug("%s index=0x%lx num=0x%x backup_data_index=0x%x\n",
+		      __func__, index, num, info_current.backup_data_index);
+
+		backup_data = malloc(num * RKSS_DATA_LEN);
+		if (!backup_data) {
+			printf("malloc backup_data fail\n");
+			goto error;
+		}
+
+		ret = blk_dread(dev_desc, index, num, backup_data);
+		if (ret != num) {
+			printf("blk_dread fail\n");
+			return -1;
+		}
+
+		ret = blk_dwrite(dev_desc, info_current.backup_data_index,
+				 num, backup_data);
+		if (ret != num) {
+			printf("blk_dwrite fail\n");
+			return -1;
+		}
+		free(backup_data);
+		backup_data = NULL;
+
+		p.backup_count += 1;
+
+		memcpy(data, &p, sizeof(p));
+		memcpy(data + sizeof(p) +
+		       (p.backup_count - 1) * sizeof(info_current),
+		       &info_current, sizeof(info_current));
+
+		ret = blk_dwrite(dev_desc, RKSS_BACKUP_INDEX, 1, data);
+		if (ret != 1) {
+			printf("blk_dwrite fail\n");
+			return -1;
+		}
+	}
+
+	return 0;
+error:
+	if (backup_data)
+		free(backup_data);
+	return -1;
+}
+
+static int rkss_resume(void)
+{
+	unsigned char data[RKSS_DATA_LEN];
+	unsigned char *backup_data = NULL;
+	struct rkss_backup_verification p;
+	struct rkss_backup_info info_current;
+	unsigned int i;
+	unsigned long ret;
+
+	if (!dev_desc) {
+		dev_desc = rockchip_get_bootdev();
+		if (!dev_desc) {
+			printf("%s: Could not find device\n", __func__);
+			return -1;
+		}
+
+		if (part_get_info_by_name(dev_desc,
+					  "security", &part_info) < 0) {
+			dev_desc = NULL;
+			printf("Could not find security partition\n");
+			return -1;
+		}
+	}
+
+	ret = blk_dread(dev_desc, RKSS_BACKUP_INDEX, 1, data);
+	if (ret != 1) {
+		printf("blk_dread fail\n");
+		return -1;
+	}
+
+	memcpy(&p, data, sizeof(p));
+	if (p.backup_version == RKSS_BACKUP_VERSION &&
+	    p.backup_enable == RKSS_BACKUP_ENABLE) {
+		for (i = p.backup_count; i > 0; i--) {
+			memcpy(&info_current, data + sizeof(p) + (i - 1) *
+			       sizeof(info_current), sizeof(info_current));
+
+			if (info_current.backup_usedflag ==
+			    RKSS_BACKUP_USEDFLAG) {
+				debug("rkss_resume backup_index=0x%x \
+				      backup_num=0x%x \
+				      info_current.backup_data_index=0x%x\n",
+				      info_current.backup_index,
+				      info_current.backup_num,
+				      info_current.backup_data_index);
+				if ((info_current.backup_data_index +
+				     info_current.backup_num) >
+				    (RKSS_BACKUP_INDEX + RKSS_BACKUP_COUNT)) {
+					printf("backup sections error!");
+					goto error;
+				}
+				if ((info_current.backup_index +
+				     info_current.backup_num) >
+				    RKSS_DATA_SECTION_COUNT) {
+					printf("original sections error!");
+					goto error;
+				}
+				backup_data = malloc(info_current.backup_num *
+						     RKSS_DATA_LEN);
+				if (!backup_data) {
+					printf("malloc backup_data fail\n");
+					goto error;
+				}
+
+				ret = blk_dread(dev_desc,
+						info_current.backup_data_index,
+						info_current.backup_num,
+						backup_data);
+				if (ret != info_current.backup_num) {
+					printf("blk_dread fail\n");
+					return -1;
+				}
+
+				ret = blk_dwrite(dev_desc,
+						 info_current.backup_index,
+						 info_current.backup_num,
+						 backup_data);
+				if (ret != info_current.backup_num) {
+					printf("blk_dwrite fail\n");
+					return -1;
+				}
+				free(backup_data);
+				backup_data = NULL;
+			}
+		}
+	}
+	memset(data, 0, sizeof(data));
+	ret = blk_dwrite(dev_desc, RKSS_BACKUP_INDEX, 1, data);
+	if (ret != 1) {
+		printf("blk_dwrite fail\n");
+		return -1;
+	}
+	return 0;
+error:
+	if (backup_data)
+		free(backup_data);
+	return -1;
+}
+
 static int rkss_read_multi_sections(unsigned char *data, unsigned long index, unsigned int num)
 {
 	unsigned long ret;
@@ -196,6 +501,13 @@ static int rkss_read_section(struct rk_secure_storage *rkss)
 static int rkss_write_multi_sections(unsigned char *data, unsigned long index, unsigned int num)
 {
 	unsigned long ret;
+	int result;
+
+	result = rkss_backup_sections(index, num);
+	if (result < 0) {
+		printf("rkss_backup_sections fail\n");
+		return -1;
+	}
 
 	if (dev_desc == NULL) {
 		dev_desc = rockchip_get_bootdev();
@@ -549,7 +861,7 @@ static int rkss_get_dirs_by_name(char* filename)
 				{
 					char *file = p->name + strlen(filename) + 1;
 					char *subdir = strtok(file, "/");
-					printf("found: %s", subdir);
+					debug("found: %s", subdir);
 					strcpy(dir_cache[dir_num], subdir);
 					++dir_num;
 				}
@@ -801,6 +1113,12 @@ static int tee_fs_open(struct tee_fs_rpc *fsrpc)
 		}
 	}
 
+	ret = rkss_begin_commit();
+	if (ret < 0) {
+		printf("rkss_begin_commit failed!");
+		return -1;
+	}
+
 	if (make_newfile)
 	{
 		if (CHECKFLAG(fsrpc->flags, TEE_FS_O_CREAT))
@@ -829,6 +1147,12 @@ static int tee_fs_open(struct tee_fs_rpc *fsrpc)
 
 	debug("tee_fs_open ! %s , fd:%d, flag: %x, len: %d\n",
 			filename, fsrpc->fd, fsrpc->flags, fsrpc->len);
+
+	ret = rkss_finish_commit();
+	if (ret < 0) {
+		printf("rkss_finish_commit failed!");
+		return -1;
+	}
 
 	return fsrpc->fd;
 }
@@ -901,6 +1225,12 @@ static int tee_fs_write(struct tee_fs_rpc *fsrpc)
 		return -1;
 	}
 
+	ret = rkss_begin_commit();
+	if (ret < 0) {
+		printf("rkss_begin_commit failed!");
+		return -1;
+	}
+
 	p.size = fsrpc->len;
 	int num = fsrpc->len / RKSS_DATA_LEN + 1;
 	p.index = rkss_get_empty_section_from_usedflags(num);
@@ -930,6 +1260,13 @@ static int tee_fs_write(struct tee_fs_rpc *fsrpc)
 #ifdef DEBUG_RKFSS
 	rkss_dump_usedflags();
 #endif
+
+	ret = rkss_finish_commit();
+	if (ret < 0) {
+		printf("rkss_finish_commit failed!");
+		return -1;
+	}
+
 	return fsrpc->len;
 }
 
@@ -982,6 +1319,12 @@ static int tee_fs_unlink(struct tee_fs_rpc *fsrpc)
 
 	debug("tee_fs_unlink ! %s fd:%d index:%d size:%d\n", filename, fd, p.index, p.size);
 
+	ret = rkss_begin_commit();
+	if (ret < 0) {
+		printf("rkss_begin_commit failed!");
+		return -1;
+	}
+
 	/* decrease ref from usedflags */
 	int num = p.size / RKSS_DATA_LEN + 1;
 	ret = rkss_decref_multi_usedflags_sections(p.index, num);
@@ -1003,6 +1346,12 @@ static int tee_fs_unlink(struct tee_fs_rpc *fsrpc)
 #ifdef DEBUG_RKFSS
 	rkss_dump_ptable();
 #endif
+
+	ret = rkss_finish_commit();
+	if (ret < 0) {
+		printf("rkss_finish_commit failed!");
+		return -1;
+	}
 
 	return 0;
 }
@@ -1029,6 +1378,11 @@ static int tee_fs_link(struct tee_fs_rpc *fsrpc)
 		printf("file exist ! %s.\n", newfilename);
 		return -1;
 	}
+	ret = rkss_begin_commit();
+	if (ret < 0) {
+		printf("rkss_begin_commit failed!");
+		return -1;
+	}
 
 	struct rkss_file_info p_new = {0};
 	memcpy(&p_new, &p_old, sizeof(struct rkss_file_info));
@@ -1051,6 +1405,11 @@ static int tee_fs_link(struct tee_fs_rpc *fsrpc)
 #ifdef DEBUG_RKFSS
 	rkss_dump_ptable();
 #endif
+	ret = rkss_finish_commit();
+	if (ret < 0) {
+		printf("rkss_finish_commit failed!");
+		return -1;
+	}
 
 	return 0;
 }
@@ -1069,12 +1428,24 @@ static int tee_fs_rename(struct tee_fs_rpc *fsrpc)
 		return -1;
 	}
 
+	ret = rkss_begin_commit();
+	if (ret < 0) {
+		printf("rkss_begin_commit failed!");
+		return -1;
+	}
+
 	strcpy(p.name, newnames);
 
 	ret = rkss_write_back_ptable(ret, &p);
 	if (ret < 0)
 	{
 		printf("write ptable error!\n");
+		return -1;
+	}
+
+	ret = rkss_finish_commit();
+	if (ret < 0) {
+		printf("rkss_finish_commit failed!");
 		return -1;
 	}
 
@@ -1097,12 +1468,22 @@ static int tee_fs_truncate(struct tee_fs_rpc *fsrpc)
 		printf("fd unvailable!\n");
 		return -1;
 	}
+	ret = rkss_begin_commit();
+	if (ret < 0) {
+		printf("rkss_begin_commit failed!");
+		return -1;
+	}
 
 	p.size = fsrpc->arg;
 	ret = rkss_write_back_ptable(fsrpc->fd, &p);
 	if (ret < 0)
 	{
 		printf("tee_fs_write: write ptable error!\n");
+		return -1;
+	}
+	ret = rkss_finish_commit();
+	if (ret < 0) {
+		printf("rkss_finish_commit failed!");
 		return -1;
 	}
 	return 0;
@@ -1142,12 +1523,12 @@ static int tee_fs_closedir(struct tee_fs_rpc *fsrpc)
 static int tee_fs_readdir(struct tee_fs_rpc *fsrpc)
 {
 	char *dirname = (char *)(fsrpc + 1);
-	printf("seek/num:%d/%d\n", dir_seek, dir_num);
+	debug("seek/num:%d/%d\n", dir_seek, dir_num);
 	if (dir_seek == dir_num)
 	{
 		dirname = NULL;
 		fsrpc->len = 0;
-		printf("tee_fs_readdir: END\n");
+		debug("tee_fs_readdir: END\n");
 		return -1;
 	}
 
@@ -1220,6 +1601,13 @@ int tee_supp_rk_fs_init(void)
 
 	__maybe_unused int i = 0;
 	unsigned char *table_data;
+	int ret;
+
+	ret = rkss_resume();
+	if (ret < 0) {
+		printf("rkss_resume failed!");
+		return -1;
+	}
 #ifdef DEBUG_CLEAN_RKSS // clean secure storage
 	for (i = 0; i < RKSS_DATA_SECTION_COUNT; i++)
 	{
@@ -1231,13 +1619,19 @@ int tee_supp_rk_fs_init(void)
 	}
 #endif
 
+	ret = rkss_begin_commit();
+	if (ret < 0) {
+		printf("rkss_begin_commit failed!");
+		return -1;
+	}
+
 	// Verify Partition Table
 	table_data = malloc(RKSS_DATA_LEN * RKSS_PARTITION_TABLE_COUNT);
 	if (table_data == NULL) {
 		printf("malloc table_data fail\n");
 		return -1;
 	}
-	int ret = rkss_read_patition_tables(table_data);
+	ret = rkss_read_patition_tables(table_data);
 	if (ret < 0) {
 		printf("rkss_read_patition_tables fail ! ret: %d.\n", ret);
 		free(table_data);
@@ -1274,6 +1668,12 @@ int tee_supp_rk_fs_init(void)
 	rkss_dump_ptable();
 	rkss_dump_usedflags();
 #endif
+
+	ret = rkss_begin_commit();
+	if (ret < 0) {
+		printf("rkss_begin_commit failed!");
+		return -1;
+	}
 
 	return 0;
 }
