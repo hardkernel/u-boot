@@ -8,6 +8,7 @@
 
 #include <common.h>
 
+#if defined CONFIG_ANDROID_WRITE_KEYBOX && defined CONFIG_ANDROID_KEYMASTER_CA
 /*
  * write_keybox_to_secure_storage
  *
@@ -17,5 +18,28 @@
  * @return a negative number in case of error, or 0 on success.
  */
 uint32_t write_keybox_to_secure_storage(uint8_t *received_data, uint32_t len);
-#endif
 
+/*
+ * read_raw_data_from_secure_storege
+ *
+ * @raw_data:	the data read from secure storage
+ * @data_size:	size of raw data
+ *
+ * @return size of raw_data in case of success, or 0 on fail
+ */
+uint32_t read_raw_data_from_secure_storage(uint8_t *received_data,
+					   uint32_t len);
+#else
+inline uint32_t write_keybox_to_secure_storage(uint8_t *raw_data,
+					       uint32_t data_size)
+{
+	return -EPERM;
+}
+
+inline uint32_t read_raw_data_from_secure_storage(uint8_t *received_data,
+						  uint32_t len)
+{
+	return -EPERM;
+}
+#endif
+#endif

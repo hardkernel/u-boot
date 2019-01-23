@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <attestation_key.h>
 #include "write_keybox.h"
+#include <keymaster.h>
 
 #define	BOOT_FROM_EMMC	(1 << 1)
 #define	WIDEVINE_TAG	"KBOX"
@@ -149,5 +150,30 @@ uint32_t write_keybox_to_secure_storage(uint8_t *received_data, uint32_t len)
 			printf("write attestation key to secure storage fail\n");
 		}
 	}
+	/* write all data to secure storage for readback check */
+	if (!rc) {
+		uint32_t ret;
+
+		ret = write_to_keymaster((uint8_t *)"raw_data",
+					 sizeof("raw_data"),
+					 received_data, len);
+		if (ret == TEEC_SUCCESS)
+			rc = 0;
+		else
+			rc = -EIO;
+	}
+	return rc;
+}
+
+uint32_t read_raw_data_from_secure_storage(uint8_t *data, uint32_t data_size)
+{
+	uint32_t rc;
+
+	rc = read_from_keymaster((uint8_t *)"raw_data", sizeof("raw_data"),
+				 data, data_size - 8);
+	if (rc != TEEC_SUCCESS)
+		return 0;
+	rc = data_size - 8;
+
 	return rc;
 }
