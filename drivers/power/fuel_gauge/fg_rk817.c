@@ -946,10 +946,14 @@ static int rk817_bat_update_get_current(struct udevice *dev)
 
 static int rk817_bat_dwc_otg_check_dpdm(struct rk817_battery_device *battery)
 {
-	if (battery->variant == RK809_ID)
-		return 0;
-	else
+	if (battery->variant == RK809_ID) {
+		if (rk817_bat_read(battery, PMIC_SYS_STS) & PLUG_IN_STS)
+			return AC_CHARGER;
+		else
+			return NO_CHARGER;
+	} else {
 		return  rockchip_chg_get_type();
+	}
 }
 
 static bool rk817_bat_update_get_chrg_online(struct udevice *dev)
