@@ -71,7 +71,7 @@ static bool verify_permanent_attributes(
     const AvbAtxPermanentAttributes* attributes,
     const uint8_t expected_hash[AVB_SHA256_DIGEST_SIZE]) {
   uint8_t hash[AVB_SHA256_DIGEST_SIZE];
-#ifdef ROCKCHIP_USE_PRE_LOADER_PUB_KEY
+#ifdef CONFIG_ROCKCHIP_PRELOADER_PUB_KEY
 #ifdef CONFIG_CRYPTO_ROCKCHIP
   struct rk_pub_key pub_key;
   int i;

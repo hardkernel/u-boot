@@ -1742,18 +1742,19 @@ static void cb_flashing(struct usb_ep *ep, struct usb_request *req)
 static void cb_oem_perm_attr(void)
 {
 #ifdef CONFIG_RK_AVB_LIBAVB_USER
+#ifndef CONFIG_ROCKCHIP_PRELOADER_PUB_KEY
 	sha256_context ctx;
 	uint8_t digest[SHA256_SUM_LEN] = {0};
 	uint8_t digest_temp[SHA256_SUM_LEN] = {0};
 	uint8_t perm_attr_temp[PERM_ATTR_TOTAL_SIZE] = {0};
 	uint8_t flag = 0;
-
+#endif
 	if (PERM_ATTR_TOTAL_SIZE != download_bytes) {
 		printf("Permanent attribute size is not equal!\n");
 		fastboot_tx_write_str("FAILincorrect perm attribute size");
 		return;
 	}
-
+#ifndef CONFIG_ROCKCHIP_PRELOADER_PUB_KEY
 	if (rk_avb_read_perm_attr_flag(&flag)) {
 		printf("rk_avb_read_perm_attr_flag error!\n");
 		fastboot_tx_write_str("FAILperm attr read failed");
@@ -1793,7 +1794,7 @@ static void cb_oem_perm_attr(void)
 			return;
 		}
 	}
-
+#endif
 	if (rk_avb_write_permanent_attributes((uint8_t *)
 					      CONFIG_FASTBOOT_BUF_ADDR,
 					      download_bytes)) {
@@ -1804,7 +1805,7 @@ static void cb_oem_perm_attr(void)
 		fastboot_tx_write_str("FAILperm attr write failed");
 		return;
 	}
-
+#ifndef CONFIG_ROCKCHIP_PRELOADER_PUB_KEY
 	memset(digest, 0, SHA256_SUM_LEN);
 	sha256_starts(&ctx);
 	sha256_update(&ctx, (const uint8_t *)CONFIG_FASTBOOT_BUF_ADDR,
@@ -1829,7 +1830,7 @@ static void cb_oem_perm_attr(void)
 			return;
 		}
 	}
-
+#endif
 	if (rk_avb_write_perm_attr_flag(PERM_ATTR_SUCCESS_FLAG)) {
 		fastboot_tx_write_str("FAILperm attr flag write failure");
 		return;
