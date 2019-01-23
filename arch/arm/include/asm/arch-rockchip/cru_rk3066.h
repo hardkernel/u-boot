@@ -29,6 +29,11 @@ struct rk3066_clk_priv {
 	struct rk3066_cru *cru;
 	ulong rate;
 	bool has_bwadj;
+	ulong armclk_hz;
+	ulong armclk_enter_hz;
+	ulong armclk_init_hz;
+	bool sync_kernel;
+	bool set_armclk_rate;
 };
 
 struct rk3066_cru {
@@ -51,6 +56,12 @@ struct rk3066_cru {
 	u32 cru_glb_cnt_th;
 };
 check_member(rk3066_cru, cru_glb_cnt_th, 0x0140);
+
+struct rk3066_clk_info {
+	unsigned long id;
+	char *name;
+	bool is_cru;
+};
 
 /* CRU_CLKSEL0_CON */
 enum {
