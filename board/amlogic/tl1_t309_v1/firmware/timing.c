@@ -116,6 +116,7 @@ ddr_set_t __ddr_setting[] = {
 	.ddr_func				= DDR_FUNC,
 	.magic					= DRAM_CFG_MAGIC,
 	.diagnose				= CONFIG_DIAGNOSE_DISABLE,
+	.bitTimeControl_2d		= 1,	//training time setting,=1,200ms;=7,2s
 },
 {
 	/// tl1 ref(x301) ddr3
