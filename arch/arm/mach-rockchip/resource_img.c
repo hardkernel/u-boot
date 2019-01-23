@@ -7,6 +7,7 @@
 #include <adc.h>
 #include <asm/io.h>
 #include <malloc.h>
+#include <sysmem.h>
 #include <linux/list.h>
 #include <asm/arch/resource_img.h>
 #include <boot_rkimg.h>
@@ -615,7 +616,7 @@ int rockchip_read_dtb_file(void *fdt_addr)
 	struct resource_file *file;
 	struct list_head *node;
 	char *dtb_name = DTB_FILE;
-	int ret;
+	int ret, size;
 
 	if (list_empty(&entrys_head))
 		init_resource_list(NULL);
@@ -638,6 +639,14 @@ int rockchip_read_dtb_file(void *fdt_addr)
 	}
 
 	printf("DTB: %s\n", dtb_name);
+
+	size = rockchip_get_resource_file_size((void *)fdt_addr, dtb_name);
+	if (size < 0)
+		return size;
+
+	if (!sysmem_alloc_base("fdt", (phys_addr_t)fdt_addr,
+			       ALIGN(size, RK_BLK_SIZE)))
+		return -ENOMEM;
 
 	ret = rockchip_read_resource_file((void *)fdt_addr, dtb_name, 0, 0);
 	if (ret < 0)
