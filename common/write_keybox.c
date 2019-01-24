@@ -16,6 +16,7 @@
 #define	BOOT_FROM_EMMC	(1 << 1)
 #define	WIDEVINE_TAG	"KBOX"
 #define	ATTESTATION_TAG	"ATTE"
+#define PLAYREADY30_TAG	"SL30"
 
 uint32_t rk_send_keybox_to_ta(uint8_t *filename, uint32_t filename_size,
 			      TEEC_UUID uuid,
@@ -149,7 +150,23 @@ uint32_t write_keybox_to_secure_storage(uint8_t *received_data, uint32_t len)
 			rc = -EIO;
 			printf("write attestation key to secure storage fail\n");
 		}
+	} else if (memcmp(received_data, PLAYREADY30_TAG, 4) == 0) {
+		/* PlayReady SL3000 root key */
+		uint32_t ret;
+
+		data_size = *(received_data + 4);
+		ret = write_to_keymaster((uint8_t *)"PlayReady_SL3000",
+					 sizeof("PlayReady_SL3000"),
+					 received_data + 8, data_size);
+		if (ret == TEEC_SUCCESS) {
+			rc = 0;
+			printf("write PlayReady SL3000 root key to secure storage success\n");
+		} else {
+			rc = -EIO;
+			printf("write PlayReady SL3000 root key to secure storage fail\n");
+		}
 	}
+
 	/* write all data to secure storage for readback check */
 	if (!rc) {
 		uint32_t ret;
