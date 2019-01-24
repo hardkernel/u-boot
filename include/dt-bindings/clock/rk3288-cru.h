@@ -105,6 +105,8 @@
 #define ACLK_VCODEC		208
 #define ACLK_CPU		209
 #define ACLK_PERI		210
+#define ACLK_VIO0		211
+#define ACLK_VIO1		212
 
 /* pclk gates */
 #define PCLK_GPIO0		320

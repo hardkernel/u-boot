@@ -406,7 +406,7 @@ static int rockchip_vop_set_clk(struct rk3288_cru *cru, struct rk3288_grf *grf,
 	struct pll_div cpll_config = {0};
 	u32 lcdc_div, parent;
 	int ret;
-	unsigned int gpll_rate, npll_rate, cpll_rate;
+	unsigned int gpll_rate, npll_rate;
 
 	gpll_rate = rkclk_pll_get_rate(cru, CLK_GENERAL);
 	npll_rate = rkclk_pll_get_rate(cru, CLK_NEW);
@@ -488,21 +488,24 @@ static int rockchip_vop_set_clk(struct rk3288_cru *cru, struct rk3288_grf *grf,
 			     ((lcdc_div - 1) << DCLK_VOP1_DIV_SHIFT) |
 			     (parent << DCLK_VOP1_PLL_SHIFT));
 		break;
-	case ACLK_VOP0:
-		cpll_rate = rkclk_pll_get_rate(cru, CLK_CODEC);
-		lcdc_div = DIV_ROUND_UP(cpll_rate, rate_hz);
+	case ACLK_VIO0:
+		lcdc_div = DIV_ROUND_UP(gpll_rate, rate_hz);
 		rk_clrsetreg(&cru->cru_clksel_con[31],
-			     ACLK_VOP0_PLL_MASK | ACLK_VOP0_DIV_MASK,
-			     ACLK_VOP_SELECT_CPLL << ACLK_VOP0_PLL_SHIFT |
-			     (lcdc_div - 1) << ACLK_VOP0_DIV_SHIFT);
+			     ACLK_VIO0_PLL_MASK | ACLK_VIO0_DIV_MASK,
+			     ACLK_VIO_SELECT_GPLL << ACLK_VIO0_PLL_SHIFT |
+			     (lcdc_div - 1) << ACLK_VIO0_DIV_SHIFT);
 		break;
-	case ACLK_VOP1:
-		cpll_rate = rkclk_pll_get_rate(cru, CLK_CODEC);
-		lcdc_div = DIV_ROUND_UP(cpll_rate, rate_hz);
+	case ACLK_VIO1:
+		lcdc_div = DIV_ROUND_UP(gpll_rate, rate_hz);
 		rk_clrsetreg(&cru->cru_clksel_con[31],
-			     ACLK_VOP1_PLL_MASK | ACLK_VOP1_DIV_MASK,
-			     ACLK_VOP_SELECT_CPLL << ACLK_VOP1_PLL_SHIFT |
-			     (lcdc_div - 1) << ACLK_VOP1_DIV_SHIFT);
+			     ACLK_VIO1_PLL_MASK | ACLK_VIO1_DIV_MASK,
+			     ACLK_VIO_SELECT_GPLL << ACLK_VIO1_PLL_SHIFT |
+			     (lcdc_div - 1) << ACLK_VIO1_DIV_SHIFT);
+
+		lcdc_div = DIV_ROUND_UP(rate_hz, HCLK_VIO_HZ);
+		rk_clrsetreg(&cru->cru_clksel_con[28],
+			     HCLK_VIO_DIV_MASK,
+			     (lcdc_div - 1) << HCLK_VIO_DIV_SHIFT);
 		break;
 	}
 
@@ -956,8 +959,8 @@ static ulong rk3288_clk_set_rate(struct clk *clk, ulong rate)
 		break;
 	case DCLK_VOP0:
 	case DCLK_VOP1:
-	case ACLK_VOP0:
-	case ACLK_VOP1:
+	case ACLK_VIO0:
+	case ACLK_VIO1:
 		new_rate = rockchip_vop_set_clk(cru, priv->grf, clk->id, rate);
 		break;
 	case SCLK_EDP_24M:
@@ -1244,6 +1247,7 @@ static int rk3288_clk_probe(struct udevice *dev)
 {
 	struct rk3288_clk_priv *priv = dev_get_priv(dev);
 	bool init_clocks = false;
+	int ret;
 
 	priv->grf = syscon_get_first_range(ROCKCHIP_SYSCON_GRF);
 	if (IS_ERR(priv->grf))
@@ -1286,6 +1290,12 @@ static int rk3288_clk_probe(struct udevice *dev)
 		if (!priv->armclk_init_hz)
 			priv->armclk_init_hz = priv->armclk_enter_hz;
 	}
+
+	ret = clk_set_defaults(dev);
+	if (ret)
+		debug("%s clk_set_defaults failed %d\n", __func__, ret);
+	else
+		priv->sync_kernel = true;
 
 	return 0;
 }
