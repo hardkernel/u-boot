@@ -1105,6 +1105,22 @@ static int switch_get_suspend_enable(struct udevice *dev)
 	return ret;
 }
 
+/*
+ * RK8xx switch does not need to set the voltage,
+ * but if dts set regulator-min-microvolt/regulator-max-microvolt,
+ * will cause regulator set value fail and not to enable this switch.
+ * So add an empty function to return success.
+ */
+static int switch_get_value(struct udevice *dev)
+{
+	return 0;
+}
+
+static int switch_set_value(struct udevice *dev, int uvolt)
+{
+	return 0;
+}
+
 static int rk8xx_buck_probe(struct udevice *dev)
 {
 	struct dm_regulator_uclass_platdata *uc_pdata;
@@ -1165,6 +1181,8 @@ static const struct dm_regulator_ops rk8xx_ldo_ops = {
 };
 
 static const struct dm_regulator_ops rk8xx_switch_ops = {
+	.get_value  = switch_get_value,
+	.set_value  = switch_set_value,
 	.get_enable = switch_get_enable,
 	.set_enable = switch_set_enable,
 	.set_suspend_enable = switch_set_suspend_enable,
