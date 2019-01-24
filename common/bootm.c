@@ -329,7 +329,7 @@ static int get_fdto_totalsize(u32 *tz)
 
 #if defined(CONFIG_ODROID_COMMON)
 extern int get_boot_device(void);
-static int bootm_add_ignore_to_fdt(void)
+static int bootm_add_ignore_mpt_to_fdt(void)
 {
 	struct fdt_header *fdth = NULL;
 	ulong fdt_mem_addr;
@@ -362,11 +362,11 @@ static int bootm_add_ignore_to_fdt(void)
 		return 1;
 	}
 
-	ret = fdt_setprop(fdth, nodeoffset, "ignore", NULL, 0);
+	ret = fdt_setprop(fdth, nodeoffset, "ignore_mpt", NULL, 0);
 
 	if (ret == -FDT_ERR_NOSPACE) {
 		fdt_shrink_to_minimum(fdth);
-		ret = fdt_setprop(fdth, nodeoffset, "ignore", NULL, 0);
+		ret = fdt_setprop(fdth, nodeoffset, "ignore_mpt", NULL, 0);
 	}
 
 	if (ret < 0) {
@@ -503,7 +503,7 @@ static int bootm_find_fdt(int flag, int argc, char * const argv[])
 	set_working_fdt_addr(images.ft_addr);
 
 #if defined(CONFIG_ODROID_COMMON)
-	bootm_add_ignore_to_fdt();
+	bootm_add_ignore_mpt_to_fdt();
 #endif
 
 	#ifdef CONFIG_OF_LIBFDT_OVERLAY
