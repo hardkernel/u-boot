@@ -110,7 +110,7 @@ void get_wakeup_source(void *response, unsigned int suspend_from)
 
 	p->status = RESPONSE_OK;
 	val = (POWER_KEY_WAKEUP_SRC | AUTO_WAKEUP_SRC | REMOTE_WAKEUP_SRC |
-	       BT_WAKEUP_SRC);
+			RTC_WAKEUP_SRC | BT_WAKEUP_SRC);
 
 	p->sources = val;
 
@@ -125,6 +125,16 @@ void get_wakeup_source(void *response, unsigned int suspend_from)
 	gpio->trig_type = GPIO_IRQ_FALLING_EDGE;
 	p->gpio_info_count = ++i;
 
+	/* External RTC: AO_GPIO[7]*/
+	gpio = &(p->gpio_info[i]);
+	gpio->wakeup_id = RTC_WAKEUP_SRC;
+	gpio->gpio_in_idx = GPIOAO_7;
+	gpio->gpio_in_ao = 1;
+	gpio->gpio_out_idx = -1;
+	gpio->gpio_out_ao = -1;
+	gpio->irq = IRQ_AO_GPIO0_NUM;
+	gpio->trig_type = GPIO_IRQ_FALLING_EDGE;
+	p->gpio_info_count = ++i;
 }
 extern void __switch_idle_task(void);
 
@@ -160,9 +170,13 @@ static unsigned int detect_key(unsigned int suspend_from)
 		}
 
 		if (irq[IRQ_AO_GPIO0] == IRQ_AO_GPIO0_NUM) {
+			unsigned val = readl(AO_GPIO_I);
+
 			irq[IRQ_AO_GPIO0] = 0xFFFFFFFF;
-			if ((readl(AO_GPIO_I) & (1<<3)) == 0)
+			if ((val & (1 << 3)) == 0)
 				exit_reason = POWER_KEY_WAKEUP;
+			else if ((val & (1 << 7)) == 0)
+				exit_reason = RTC_WAKEUP;
 		}
 
 		if (irq[IRQ_ETH_PTM] == IRQ_ETH_PMT_NUM) {
