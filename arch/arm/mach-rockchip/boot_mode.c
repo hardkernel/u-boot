@@ -19,6 +19,7 @@
 #include <ramdisk.h>
 #endif
 #include <mmc.h>
+#include <console.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -128,7 +129,9 @@ void boot_devtype_init(void)
 
 void rockchip_dnl_mode_check(void)
 {
-	if (rockchip_dnl_key_pressed()) {
+	/* recovery key or "ctrl+d" */
+	if (rockchip_dnl_key_pressed() ||
+	    gd->console_evt == CONSOLE_EVT_CTRL_D) {
 		printf("download key pressed... ");
 		if (rockchip_u2phy_vbus_detect() > 0) {
 			printf("entering download mode...\n");
