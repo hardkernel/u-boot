@@ -23,7 +23,7 @@ static int do_load_cfgload(cmd_tbl_t *cmdtp, int flag, int argc,
 		debug ("*  cfgload: cmdline image address = 0x%08lx\n", addr);
 	}
 
-	snprintf(cmd, sizeof(cmd), "fatload mmc %d:1 0x%08lx boot.ini; source 0x%08lx",
+	snprintf(cmd, sizeof(cmd), "load mmc %d:1 0x%08lx boot.ini; source 0x%08lx",
 			devno, addr, addr);
 	return run_command(cmd, 0);
 }

@@ -194,12 +194,12 @@
         "init_display="\
             "osd open; osd clear; " \
             "for n in ${mmc_list}; do " \
-                "if fatload mmc ${n} ${preloadaddr} logo.bmp.gz; then " \
+                "if load mmc ${n} ${preloadaddr} logo.bmp.gz; then " \
                     "setenv logo_addr_r ${loadaddr}; " \
                     "unzip ${preloadaddr} ${logo_addr_r}; " \
                     "bmp display ${logo_addr_r}; " \
                     "bmp scale; " \
-                "elif fatload mmc ${n} ${preloadaddr} logo.bmp; then " \
+                "elif load mmc ${n} ${preloadaddr} logo.bmp; then " \
                     "setenv logo_addr_r ${preloadaddr}; " \
                     "bmp display ${logo_addr_r}; " \
                     "bmp scale; " \
@@ -213,10 +213,10 @@
 		"run set_spi_params; "\
 		"sf probe; "\
 		"sf erase 0x0 0x800000; "\
-		"fatload mmc 0 ${loadaddr} u-boot.bin; sf write ${loadaddr} ${start_uboot} ${filesize}; "\
-		"fatload mmc 0 ${loadaddr} Image.gz; sf write ${loadaddr} ${start_kernel} ${filesize}; "\
-		"fatload mmc 0 ${loadaddr} s922d_odroidn2.dtb; sf write ${loadaddr} ${start_dtb} ${filesize}; "\
-		"fatload mmc 0 ${loadaddr} uInitrd.igz; sf write ${loadaddr} ${start_initrd} ${filesize}\0"\
+		"load mmc 0 ${loadaddr} u-boot.bin; sf write ${loadaddr} ${start_uboot} ${filesize}; "\
+		"load mmc 0 ${loadaddr} Image.gz; sf write ${loadaddr} ${start_kernel} ${filesize}; "\
+		"load mmc 0 ${loadaddr} s922d_odroidn2.dtb; sf write ${loadaddr} ${start_dtb} ${filesize}; "\
+		"load mmc 0 ${loadaddr} uInitrd.igz; sf write ${loadaddr} ${start_initrd} ${filesize}\0"\
 	"booting_from_spi="\
 		"setenv bootargs ${initargs} console=tty0 logo=osd0,loaded,0x3d800000 vout=1080p60hz,enable hdmimode=1080p60hz osd_reverse=0 video_reverse=0; "\
 		"run set_spi_params; "\
