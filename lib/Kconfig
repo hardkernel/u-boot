@@ -35,6 +35,12 @@ config SYS_HZ
 	  get_timer() must operate in milliseconds and this option must be
 	  set to 1000.
 
+config SYS_STACK_SIZE
+	hex
+	default 0x20000
+	help
+	 The system stack size.
+
 config USE_TINY_PRINTF
 	bool "Enable tiny printf() version"
 	help
