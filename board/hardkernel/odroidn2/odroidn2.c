@@ -212,8 +212,8 @@ static void board_mmc_register(unsigned port)
 }
 int board_mmc_init(bd_t	*bis)
 {
-	board_mmc_register(SDIO_PORT_B);
-	board_mmc_register(SDIO_PORT_C);
+	board_mmc_register(SDIO_PORT_C);	// eMMC
+	board_mmc_register(SDIO_PORT_B);	// SD card
 
 	return 0;
 }
@@ -377,6 +377,10 @@ int board_init(void)
 	return 0;
 }
 
+#if !defined(CONFIG_FASTBOOT_FLASH_MMC_DEV)
+#define CONFIG_FASTBOOT_FLASH_MMC_DEV		0
+#endif
+
 #ifdef CONFIG_BOARD_LATE_INIT
 int board_late_init(void)
 {
@@ -387,7 +391,15 @@ int board_late_init(void)
 #if defined(CONFIG_FASTBOOT_FLASH_MMC_DEV)
 	/* select the default mmc device */
 	char buf[32];
-	sprintf(buf, "mmc dev %d", CONFIG_FASTBOOT_FLASH_MMC_DEV);
+	int mmc_devnum = CONFIG_FASTBOOT_FLASH_MMC_DEV;
+
+	if (get_boot_device() == BOOT_DEVICE_EMMC)
+		mmc_devnum = 0;
+	else if (get_boot_device() == BOOT_DEVICE_SD)
+		mmc_devnum = 1;
+
+	/* select the default mmc device */
+	sprintf(buf, "mmc dev %d", mmc_devnum);
 	run_command(buf, 0);
 #endif
 
@@ -408,12 +420,6 @@ int board_late_init(void)
 		run_command("osd clear", 0);
 		run_command("vout output ${outputmode}", 0);
 		run_command("run booting_from_spi", 0);
-	} else if (get_boot_device() == BOOT_DEVICE_EMMC) {
-		// TODO:
-	} else if (get_boot_device() == BOOT_DEVICE_SD) {
-		// TODO:
-	} else {
-		printf("Unknown booting device!?\n");
 	}
 
 	return 0;

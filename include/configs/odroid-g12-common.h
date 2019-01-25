@@ -91,7 +91,7 @@
 #define ENV_PXE_DEFAULT
 #endif
 
-#define ENV_MMC_LIST_DEFAULT			"mmc_list=1 0\0"
+#define ENV_MMC_LIST_DEFAULT			"mmc_list=0 1\0"
 
 #define ENV_MMC_DEFAULT					\
 	"boot_mmc="					\
@@ -398,7 +398,7 @@
 
 /* UBOOT fastboot config */
 #define CONFIG_CMD_FASTBOOT			1
-#define CONFIG_FASTBOOT_FLASH_MMC_DEV		1
+#define CONFIG_FASTBOOT_FLASH_MMC_DEV		0
 #define CONFIG_FASTBOOT_FLASH			1
 #define CONFIG_USB_GADGET			1
 #define CONFIG_USBDOWNLOAD_GADGET		1
