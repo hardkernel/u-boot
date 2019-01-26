@@ -425,6 +425,25 @@ fallback:
 	return boot_mode;
 }
 
+static void fdt_ramdisk_skip_relocation(void)
+{
+	char *ramdisk_high = env_get("initrd_high");
+	char *fdt_high = env_get("fdt_high");
+
+	if (!fdt_high) {
+		env_set_hex("fdt_high", -1UL);
+		printf("Fdt ");
+	}
+
+	if (!ramdisk_high) {
+		env_set_hex("initrd_high", -1UL);
+		printf("Ramdisk ");
+	}
+
+	if (!fdt_high || !ramdisk_high)
+		printf("skip relocation\n");
+}
+
 int boot_rockchip_image(struct blk_desc *dev_desc, disk_partition_t *boot_part)
 {
 	ulong fdt_addr_r = env_get_ulong("fdt_addr_r", 16, 0);
@@ -485,6 +504,7 @@ int boot_rockchip_image(struct blk_desc *dev_desc, disk_partition_t *boot_part)
 	printf("kernel   @ 0x%08lx (0x%08x)\n", kernel_addr_r, kernel_size);
 	printf("ramdisk  @ 0x%08lx (0x%08x)\n", ramdisk_addr_r, ramdisk_size);
 
+	fdt_ramdisk_skip_relocation();
 	sysmem_dump_check();
 
 #if defined(CONFIG_ARM64)
