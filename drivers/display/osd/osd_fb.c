@@ -307,12 +307,26 @@ unsigned long get_fb_addr(void)
 			osd_logi("load fb addr from dts:%s\n", fdt_node);
 			parent_offset = get_dts_node(dt_addr, fdt_node);
 			if (parent_offset < 0) {
-				strcpy(fdt_node, "/drm-vpu");
+				strcpy(fdt_node, "/fb");
 				osd_logi("load fb addr from dts:%s\n", fdt_node);
 				parent_offset = get_dts_node(dt_addr, fdt_node);
 				if (parent_offset < 0) {
-					osd_logi("not find node: %s\n",fdt_strerror(parent_offset));
-					osd_logi("use default fb_addr parameters\n");
+					strcpy(fdt_node, "/drm-vpu");
+					osd_logi("load fb addr from dts:%s\n", fdt_node);
+					parent_offset = get_dts_node(dt_addr, fdt_node);
+					if (parent_offset < 0) {
+						osd_logi("not find node: %s\n",fdt_strerror(parent_offset));
+						osd_logi("use default fb_addr parameters\n");
+					} else {
+						/* check fb_addr */
+						propdata = (char *)fdt_getprop(dt_addr, parent_offset, "logo_addr", NULL);
+						if (propdata == NULL) {
+							osd_logi("failed to get fb addr for logo\n");
+							osd_logi("use default fb_addr parameters\n");
+						} else {
+							fb_addr = simple_strtoul(propdata, NULL, 16);
+						}
+					}
 				} else {
 					/* check fb_addr */
 					propdata = (char *)fdt_getprop(dt_addr, parent_offset, "logo_addr", NULL);
