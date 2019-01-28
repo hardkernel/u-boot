@@ -7,6 +7,8 @@
  *
  */
  #include "platform.h"
+#include <asm/cpu_id.h>
+#include <asm/arch/secure_apb.h>
 
 /*CONFIG_AML_MESON_8 include m8, m8baby, m8m2, etc... defined in cpu.h*/
 #if !(defined(CONFIG_USB_XHCI) || defined(CONFIG_USB_DWC_OTG_294))
@@ -175,6 +177,28 @@ static void set_usb_phy21_pll(void)
 		& (~(USB_PHY2_RESET)));
 }
 
+#ifndef CONFIG_USB_AMLOGIC_PHY_V2
+static int f_platform_usb_check_g12b_revb (void)
+{
+	unsigned int version_id;
+	int rev_flag = 0;
+
+	cpu_id_t cpu_id = get_cpu_id();
+
+	if (cpu_id.family_id == MESON_CPU_MAJOR_ID_G12B) {
+		version_id = *((volatile unsigned *)(AO_METAL_REVISION));
+		if ((version_id == 0x11111111))
+			rev_flag = 0;
+		else
+			rev_flag = 1;
+	} else {
+		rev_flag = 0;
+	}
+
+	return rev_flag;
+}
+#endif
+
 #ifdef CONFIG_USB_DEVICE_V2
 #define USB_REG_B 0xFF63A000
 
@@ -182,6 +206,9 @@ void set_usb_phy21_tuning_fb(void)
 {
 #ifndef CONFIG_USB_AMLOGIC_PHY_V2
 	unsigned long phy_reg_base = USB_REG_B;
+
+	if (f_platform_usb_check_g12b_revb())
+		return;
 
 	(*(volatile uint32_t *)(phy_reg_base + 0x10)) = USB_G12x_PHY_PLL_SETTING_2;
 	(*(volatile uint32_t *)(phy_reg_base + 0x50)) = USB_G12x_PHY_PLL_SETTING_1;
@@ -194,6 +221,9 @@ void set_usb_phy21_tuning_fb_reset(void)
 {
 #ifndef CONFIG_USB_AMLOGIC_PHY_V2
 	unsigned long phy_reg_base = USB_REG_B;
+
+	if (f_platform_usb_check_g12b_revb())
+		return;
 
 	(*(volatile uint32_t *)(phy_reg_base + 0x38)) = 0x0;
 	(*(volatile uint32_t *)(phy_reg_base + 0x34)) = USB_G12x_PHY_PLL_SETTING_3;
@@ -358,7 +388,7 @@ typedef union usb_r4 {
 	} b;
 } usb_r4_t;
 
-#if (defined CONFIG_TXLX_USB)
+/*#if (defined CONFIG_TXLX_USB)
 #define P_RESET1_REGISTER       (volatile unsigned long *)0xffd01008
 #define P_AO_RTC_ALT_CLK_CNTL0  (volatile uint32_t *)(0xff800000 + (0x25 << 2))
 #define P_AO_RTI_PWR_CNTL_REG0  (volatile uint32_t *)(0xff800000 + (0x04 << 2))
@@ -366,7 +396,7 @@ typedef union usb_r4 {
 #define P_RESET1_REGISTER       (volatile unsigned long *)0xc1104408
 #define P_AO_RTC_ALT_CLK_CNTL0  (volatile uint32_t *)(0xc8100000 + (0x25 << 2))
 #define P_AO_RTI_PWR_CNTL_REG0  (volatile uint32_t *)(0xc8100000 + (0x04 << 2))
-#endif
+#endif*/
 
 void f_set_usb_phy_config(void)
 {
