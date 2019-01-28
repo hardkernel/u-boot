@@ -21,13 +21,38 @@
 
 #include <asm/arch/usb-v2.h>
 #include <asm/arch/romboot.h>
-#include <usb.h>
+#include <asm/cpu_id.h>
+
 
 static struct amlogic_usb_config * g_usb_cfg[BOARD_USB_MODE_MAX][USB_PHY_PORT_MAX];
+static int Rev_flag = 0;
 
+/*Rev_flag == 1, g12b and revB, tl1 */
+static void board_usb_check_g12b_revb (void)
+{
+	unsigned int version_id;
+	cpu_id_t cpu_id = get_cpu_id();
+
+	if (cpu_id.family_id == MESON_CPU_MAJOR_ID_G12B) {
+		version_id = readl(AO_METAL_REVISION);
+		if ((version_id == 0x11111111))
+			Rev_flag = 0;
+		else
+			Rev_flag = 1;
+	} else {
+		Rev_flag = 0;
+	}
+	return;
+}
+
+static int board_usb_get_revb_type (void)
+{
+	return Rev_flag;
+}
 struct amlogic_usb_config * board_usb_start(int mode,int index)
 {
 	usb_printf("USB3.0 XHCI init start\n");
+	board_usb_check_g12b_revb();
 
 	if (mode < 0 || mode >= BOARD_USB_MODE_MAX||!g_usb_cfg[mode][index])
 		return 0;
@@ -103,6 +128,9 @@ void board_usb_pll_disable(struct amlogic_usb_config *cfg)
 void set_usb_phy_tuning_1(int port)
 {
     unsigned long phy_reg_base;
+
+	if (board_usb_get_revb_type() == 1)
+		return;
 
 	if (port > 2)
         return;
