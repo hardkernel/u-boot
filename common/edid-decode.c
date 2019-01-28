@@ -34,6 +34,7 @@
 #include <malloc.h>
 #include <fs.h>
 #include <amlogic/edid-decode.h>
+#include "../board/hardkernel/odroid-common/odroid-common.h"
 
 static int claims_one_point_oh = 0;
 static int claims_one_point_two = 0;
@@ -1711,13 +1712,76 @@ void print_available_timings(void)
 }
 #endif /* DEBUG_EDID */
 
+void save_edid_bin(unsigned char *edid, unsigned int blk_len)
+{
+	int ret;
+	char str[64];
+	char *dev_no;
+
+	switch (get_boot_device()) {
+		case BOOT_DEVICE_EMMC:
+			dev_no = "1";
+			break;
+		case BOOT_DEVICE_SD:
+			dev_no = "0";
+			break;
+		case BOOT_DEVICE_SPI:
+		default:
+			printf("no available storage to save debug file\n");
+			return;
+	}
+
+	ret = file_exists("mmc", dev_no, "edid.bin", FS_TYPE_ANY);
+	if (!ret) {
+		printf("NOT EXIST, now build edid.bin\n");
+		sprintf(str, "fatwrite mmc %s 0x%lx edid.bin 0x%x",
+			dev_no, (unsigned long)edid, (128 * blk_len));
+		run_command(str, 0);
+	}
+}
+
+void save_display_bin(bool config, char *modeline)
+{
+	int ret;
+	char str[64];
+	char *dev_no;
+
+	switch (get_boot_device()) {
+		case BOOT_DEVICE_EMMC:
+			dev_no = "1";
+			break;
+		case BOOT_DEVICE_SD:
+			dev_no = "0";
+			break;
+		case BOOT_DEVICE_SPI:
+		default:
+			printf("no available storage to save debug file\n");
+			return;
+	}
+
+	ret = file_exists("mmc", dev_no, "display.bin", FS_TYPE_ANY);
+	if(!ret) {
+		printf("NOT EXIST, now build display.bin\n");
+
+		if (config == true) {
+			sprintf(result, "Auto Detect OK:%s,%s(%s)", bestmode, getenv("voutmode"), modeline);
+			sprintf(str, "fatwrite mmc %s 0x%lx display.bin 0x78",
+				dev_no, (unsigned long)result);
+			run_command(str, 0);
+		} else {
+			sprintf(result, "Auto Detect FAIL:%s,%s", bestmode, getenv("voutmode"));
+			sprintf(str, "fatwrite mmc %s 0x%lx display.bin 0x78",
+				dev_no, (unsigned long)result);
+			run_command(str, 0);
+		}
+	}
+}
+
 #define EDID_RETRY_COUNT	3
 int parse_edid(unsigned char *edid, unsigned int blk_len, unsigned char count)
 {
 	unsigned char *x;
 	int analog, i;
-	int ret;
-	char str[128];
 
 	/* Initialization */
 	IEEEOUI = 0x0; /* default DVI */
@@ -1734,17 +1798,6 @@ int parse_edid(unsigned char *edid, unsigned int blk_len, unsigned char count)
 	dump_breakdown(edid);
 #endif
 
-	/* check edid.bin file */
-	/* FIXME : consider all boot storage types (spi, emmc or sd) */
-	ret = file_exists("mmc", "1", "edid.bin", FS_TYPE_ANY);
-	if(!ret) {
-		printf("[edid-decode] edid.bin doesn't exist, now build edid.bin\n");
-
-		sprintf(str, "fatwrite mmc 1 0x%lx  edid.bin 0x%x",
-			(unsigned long)edid, (128 * blk_len));
-		run_command(str, 0);
-	}
-
 	if (!edid || memcmp(edid, "\x00\xFF\xFF\xFF\xFF\xFF\xFF\x00", 8)) {
 		/*
 		 * If edid data is invalid, read it again after 200ms.
@@ -1755,6 +1808,9 @@ int parse_edid(unsigned char *edid, unsigned int blk_len, unsigned char count)
 		if (count < EDID_RETRY_COUNT)	return -EDID_ERR_RETRY;
 		if (count == EDID_RETRY_COUNT)	return -EDID_ERR_NO_VALID_EDID;
 	}
+
+	/* drop edid raw data */
+	save_edid_bin(edid, blk_len);
 
 	/* set edid_lines */
 	edid_lines = ((128 * blk_len) / 16);
@@ -2095,11 +2151,9 @@ char *select_best_resolution(void)
 {
 	int i, j;
 	int width, height, refresh, scanmode;
-	int ret;
 	double pclk, hfreq, vfreq;
 	char temp[10];
 	char modeline[100];
-	char str[128];
 	bool config = false;
 
 #ifdef DEBUG_EDID
@@ -2250,24 +2304,8 @@ DONE:
 		setenv("voutmode", "dvi");
 	}
 
-	/* drop a bin file including auto detection information */
-	/* FIXME : consider all boot storage types (spi, emmc or sd) */
-	ret = file_exists("mmc", "1", "display.bin", FS_TYPE_ANY);
-	if(!ret) {
-		printf("NOT EXIST, now build display.bin\n");
-
-		if (config == true) {
-			sprintf(result, "Auto Detect OK:%s,%s(%s)", bestmode, getenv("voutmode"), modeline);
-			sprintf(str, "fatwrite mmc 1 0x%lx  display.bin  0x78",
-				(unsigned long)result);
-			run_command(str, 0);
-		} else {
-			sprintf(result, "Auto Detect FAIL:%s,%s", bestmode, getenv("voutmode"));
-			sprintf(str, "fatwrite mmc 1 0x%lx  display.bin  0x78",
-				(unsigned long)result);
-			run_command(str, 0);
-		}
-	}
+	/* drop auto detection result */
+	save_display_bin(config, modeline);
 
 	return bestmode;
 }
