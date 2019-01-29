@@ -324,7 +324,7 @@ select_chip_info()
 	#  - PX30, PX3SE
 	#  - RK????, RK????X
 	#  - RV????
-	local chip_reg='^CONFIG_ROCKCHIP_[R,P][X,V,K][0-9ESX]{2,5}'
+	local chip_reg='^CONFIG_ROCKCHIP_[R,P][X,V,K][0-9ESX]{1,5}'
 	count=`egrep -c ${chip_reg} ${OUTDIR}/.config`
 	# Obtain the matching only
 	RKCHIP=`egrep -o ${chip_reg} ${OUTDIR}/.config`
@@ -345,6 +345,8 @@ select_chip_info()
 			&& RKCHIP=RK3326
 		grep '^CONFIG_ROCKCHIP_RK3128X=y' ${OUTDIR}/.config >/dev/null \
 			&& RKCHIP=RK3128X
+		grep '^CONFIG_ROCKCHIP_PX5=y' ${OUTDIR}/.config >/dev/null \
+			&& RKCHIP=PX5
 		grep '^CONFIG_ROCKCHIP_RK3399PRO=y' ${OUTDIR}/.config >/dev/null \
 			&& RKCHIP=RK3399PRO
 	else
