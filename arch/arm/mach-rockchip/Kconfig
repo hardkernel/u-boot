@@ -283,6 +283,12 @@ config ROCKCHIP_RK3368
 
 if ROCKCHIP_RK3368
 
+config ROCKCHIP_PX5
+	bool "Support Rockchip PX5"
+	help
+	  PX5 is a variant of RK3368, it shares codes with RK3368, but we still
+	  need this macro to distinguish PX5 and RK3368.
+
 config TPL_LDSCRIPT
 	default "arch/arm/mach-rockchip/rk3368/u-boot-tpl.lds"
 
