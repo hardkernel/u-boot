@@ -181,6 +181,17 @@
 	snps,reset-gpio = <&gpio1 RK_PC1 GPIO_ACTIVE_LOW>;
 };
 
+&emmc {
+	u-boot,dm-pre-reloc;
+	bus-width = <8>;
+	cap-mmc-highspeed;
+	supports-emmc;
+	disable-wp;
+	non-removable;
+	num-slots = <1>;
+	status = "okay";
+};
+
 &mipi_dphy {
 	status = "okay";
 };
