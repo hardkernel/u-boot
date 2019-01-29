@@ -135,6 +135,7 @@ typedef struct global_data {
 #endif
 	struct pre_serial serial;
 	ulong sys_start_tick;		/* For report system start-up time */
+	int console_evt;		/* Console event, maybe some hotkey  */
 #ifdef CONFIG_LOG
 	int log_drop_count;		/* Number of dropped log messages */
 	int default_log_level;		/* For devices with no filters */
