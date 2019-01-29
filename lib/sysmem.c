@@ -373,7 +373,7 @@ int sysmem_free(phys_addr_t base)
 
 	ret = lmb_free(&sysmem->lmb, prop->base, prop->size);
 	if (ret >= 0) {
-		SYSMEM_I("Free: \"%s\", paddr=0x%lx, size=0x%lx\n",
+		SYSMEM_D("Free: \"%s\", paddr=0x%lx, size=0x%lx\n",
 			 prop->name, (ulong)prop->base, (ulong)prop->size);
 		sysmem->allocated_cnt--;
 		list_del(&prop->node);

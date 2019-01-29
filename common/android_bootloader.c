@@ -811,9 +811,10 @@ int android_fdt_overlay_apply(void *fdt_addr)
 				fdt_totalsize((void *)fdt_dtbo);
 		if (sysmem_free((phys_addr_t)fdt_addr))
 			goto out;
+
 		if (!sysmem_alloc_base("fdt(dtbo)",
 				       (phys_addr_t)fdt_addr,
-					fdt_size))
+					fdt_size + CONFIG_SYS_FDT_PAD))
 			goto out;
 		fdt_increase_size(fdt_addr, fdt_totalsize((void *)fdt_dtbo));
 		ret = fdt_overlay_apply(fdt_addr, (void *)fdt_dtbo);

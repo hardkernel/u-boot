@@ -13,6 +13,14 @@
 #undef	MAX_LMB_REGIONS
 #define	MAX_LMB_REGIONS			MAX_SYSMEM_REGIONS
 
+/*
+ * CONFIG_SYS_FDT_PAD default value is sync with bootm framework in:
+ * common/image-fdt.c
+ */
+#ifndef CONFIG_SYS_FDT_PAD
+#define CONFIG_SYS_FDT_PAD		0x3000
+#endif
+
 struct sysmem_property {
 	const char *name;
 	phys_addr_t base;

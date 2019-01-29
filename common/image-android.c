@@ -349,7 +349,8 @@ static int android_image_load_separate(struct blk_desc *dev_desc,
 		blk_cnt = DIV_ROUND_UP(hdr->second_size, dev_desc->blksz);
 		if (!sysmem_alloc_base("fdt(AOSP)",
 				       fdt_addr_r,
-				       blk_cnt * dev_desc->blksz))
+				       blk_cnt * dev_desc->blksz +
+				       CONFIG_SYS_FDT_PAD))
 			return -ENXIO;
 
 		ret = blk_dread(dev_desc, blk_start, blk_cnt, (void *)fdt_addr_r);
