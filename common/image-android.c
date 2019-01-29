@@ -7,6 +7,7 @@
 #include <common.h>
 #include <image.h>
 #include <android_image.h>
+#include <android_bootloader.h>
 #include <malloc.h>
 #include <mapmem.h>
 #include <errno.h>
@@ -193,30 +194,37 @@ ulong android_image_get_kload(const struct andr_img_hdr *hdr)
 int android_image_get_ramdisk(const struct andr_img_hdr *hdr,
 			      ulong *rd_data, ulong *rd_len)
 {
+	bool avb_enabled = false;
+
+#ifdef CONFIG_ANDROID_BOOTLOADER
+	avb_enabled = android_avb_is_enabled();
+#endif
+
 	if (!hdr->ramdisk_size) {
 		*rd_data = *rd_len = 0;
 		return -1;
 	}
 
-/*
- * We load ramdisk at "ramdisk_addr_r" when CONFIG_ANDROID_BOOT_IMAGE_SEPARATE
- * CONFIG_USING_KERNEL_DTB is enabled.
- */
-#ifdef CONFIG_ANDROID_BOOT_IMAGE_SEPARATE
-	ulong ramdisk_addr_r;
+	/*
+	 * We have load ramdisk at "ramdisk_addr_r" when android avb is
+	 * disabled and CONFIG_ANDROID_BOOT_IMAGE_SEPARATE enabled.
+	 */
+	if (!avb_enabled && IS_ENABLED(CONFIG_ANDROID_BOOT_IMAGE_SEPARATE)) {
+		ulong ramdisk_addr_r;
 
-	ramdisk_addr_r = env_get_ulong("ramdisk_addr_r", 16, 0);
-	if (!ramdisk_addr_r) {
-		printf("No Found Ramdisk Load Address.\n");
-		return -1;
+		ramdisk_addr_r = env_get_ulong("ramdisk_addr_r", 16, 0);
+		if (!ramdisk_addr_r) {
+			printf("No Found Ramdisk Load Address.\n");
+			return -1;
+		}
+
+		*rd_data = ramdisk_addr_r;
+	} else {
+		*rd_data = (unsigned long)hdr;
+		*rd_data += hdr->page_size;
+		*rd_data += ALIGN(hdr->kernel_size, hdr->page_size);
 	}
 
-	*rd_data = ramdisk_addr_r;
-#else
-	*rd_data = (unsigned long)hdr;
-	*rd_data += hdr->page_size;
-	*rd_data += ALIGN(hdr->kernel_size, hdr->page_size);
-#endif
 	*rd_len = hdr->ramdisk_size;
 
 	printf("RAM disk load addr 0x%08lx size %u KiB\n",
@@ -228,31 +236,39 @@ int android_image_get_ramdisk(const struct andr_img_hdr *hdr,
 int android_image_get_fdt(const struct andr_img_hdr *hdr,
 			      ulong *rd_data)
 {
+	bool avb_enabled = false;
+
+#ifdef CONFIG_ANDROID_BOOTLOADER
+	avb_enabled = android_avb_is_enabled();
+#endif
+
 	if (!hdr->second_size) {
 		*rd_data = 0;
 		return -1;
 	}
-/*
- * We load fdt at "fdt_addr_r" when CONFIG_ANDROID_BOOT_IMAGE_SEPARATE or
- * or CONFIG_USING_KERNEL_DTB is enabled.
- */
-#if defined(CONFIG_ANDROID_BOOT_IMAGE_SEPARATE) || \
-	defined(CONFIG_USING_KERNEL_DTB)
-	ulong fdt_addr_r;
 
-	fdt_addr_r = env_get_ulong("fdt_addr_r", 16, 0);
-	if (!fdt_addr_r) {
-		printf("No Found FDT Load Address.\n");
-		return -1;
+	/*
+	 * We have load fdt at "fdt_addr_r" when android avb is
+	 * disabled and CONFIG_ANDROID_BOOT_IMAGE_SEPARATE enabled;
+	 * or CONFIG_USING_KERNEL_DTB is enabled.
+	 */
+	if (IS_ENABLED(CONFIG_USING_KERNEL_DTB) ||
+	    (!avb_enabled && IS_ENABLED(CONFIG_ANDROID_BOOT_IMAGE_SEPARATE))) {
+		ulong fdt_addr_r;
+
+		fdt_addr_r = env_get_ulong("fdt_addr_r", 16, 0);
+		if (!fdt_addr_r) {
+			printf("No Found FDT Load Address.\n");
+			return -1;
+		}
+
+		*rd_data = fdt_addr_r;
+	} else {
+		*rd_data = (unsigned long)hdr;
+		*rd_data += hdr->page_size;
+		*rd_data += ALIGN(hdr->kernel_size, hdr->page_size);
+		*rd_data += ALIGN(hdr->ramdisk_size, hdr->page_size);
 	}
-
-	*rd_data = fdt_addr_r;
-#else
-	*rd_data = (unsigned long)hdr;
-	*rd_data += hdr->page_size;
-	*rd_data += ALIGN(hdr->kernel_size, hdr->page_size);
-	*rd_data += ALIGN(hdr->ramdisk_size, hdr->page_size);
-#endif
 
 	printf("FDT load addr 0x%08x size %u KiB\n",
 	       hdr->second_addr, DIV_ROUND_UP(hdr->second_size, 1024));
@@ -361,7 +377,6 @@ long android_image_load(struct blk_desc *dev_desc,
 	u32 kload_addr;
 	u32 blkcnt;
 	struct andr_img_hdr *hdr;
-	__maybe_unused uint8_t vboot_flag = 0;
 
 	if (max_size < part_info->blksz)
 		return -1;
@@ -417,13 +432,8 @@ long android_image_load(struct blk_desc *dev_desc,
 			debug("Loading Android Image (%lu blocks) to 0x%lx... ",
 			      blk_cnt, load_address);
 
-#if defined(CONFIG_ANDROID_AVB) && defined(CONFIG_OPTEE_CLIENT)
-			if (trusty_read_vbootkey_enable_flag(&vboot_flag))
-				return -1;
-#endif
-
 #ifdef CONFIG_ANDROID_BOOT_IMAGE_SEPARATE
-			if (!vboot_flag) {
+			if (!android_avb_is_enabled()) {
 				char *fdt_high = env_get("fdt_high");
 				char *ramdisk_high = env_get("initrd_high");
 
