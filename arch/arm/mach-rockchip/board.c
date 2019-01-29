@@ -393,28 +393,33 @@ static struct dwc2_plat_otg_data otg_data = {
 int board_usb_init(int index, enum usb_init_type init)
 {
 	int node;
-	const char *mode;
 	fdt_addr_t addr;
 	const fdt32_t *reg;
-	bool matched = false;
 	const void *blob = gd->fdt_blob;
 
 	/* find the usb_otg node */
-	node = fdt_node_offset_by_compatible(blob, -1,
-					"snps,dwc2");
+	node = fdt_node_offset_by_compatible(blob, -1, "snps,dwc2");
 
-	while (node > 0) {
-		mode = fdt_getprop(blob, node, "dr_mode", NULL);
-		if (mode && strcmp(mode, "otg") == 0) {
-			matched = true;
-			break;
+retry:
+	if (node > 0) {
+		reg = fdt_getprop(blob, node, "reg", NULL);
+		if (!reg)
+			return -EINVAL;
+
+		addr = fdt_translate_address(blob, node, reg);
+		if (addr == OF_BAD_ADDR) {
+			pr_err("Not found usb_otg address\n");
+			return -EINVAL;
 		}
 
-		node = fdt_node_offset_by_compatible(blob, node,
-					"snps,dwc2");
-	}
-
-	if (!matched) {
+#if defined(CONFIG_ROCKCHIP_RK3288)
+		if (addr != 0xff580000) {
+			node = fdt_node_offset_by_compatible(blob, node,
+							     "snps,dwc2");
+			goto retry;
+		}
+#endif
+	} else {
 		/*
 		 * With kernel dtb support, rk3288 dwc2 otg node
 		 * use the rockchip legacy dwc2 driver "dwc_otg_310"
@@ -429,23 +434,12 @@ int board_usb_init(int index, enum usb_init_type init)
 		node = fdt_node_offset_by_compatible(blob, -1,
 				"rockchip,rk3368-usb");
 #endif
-
 		if (node > 0) {
-			matched = true;
+			goto retry;
 		} else {
 			pr_err("Not found usb_otg device\n");
 			return -ENODEV;
 		}
-	}
-
-	reg = fdt_getprop(blob, node, "reg", NULL);
-	if (!reg)
-		return -EINVAL;
-
-	addr = fdt_translate_address(blob, node, reg);
-	if (addr == OF_BAD_ADDR) {
-		pr_err("Not found usb_otg address\n");
-		return -EINVAL;
 	}
 
 	otg_data.regs_otg = (uintptr_t)addr;
