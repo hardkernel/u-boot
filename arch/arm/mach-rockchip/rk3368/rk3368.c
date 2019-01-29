@@ -254,6 +254,25 @@ void board_debug_uart_init(void)
 		     GPIO2D0_MASK, GPIO2D0_UART0_SIN);
 	rk_clrsetreg(&grf->gpio2d_iomux,
 		     GPIO2D1_MASK, GPIO2D1_UART0_SOUT);
+#elif defined(CONFIG_DEBUG_UART_BASE) && (CONFIG_DEBUG_UART_BASE == 0xff1c0000)
+	struct rk3368_pmu_grf * const pmugrf __maybe_unused =
+		(struct rk3368_pmu_grf * const)0xff738000;
+
+	enum {
+		/* UART4 */
+		GPIO0D2_MASK		= GENMASK(5, 4),
+		GPIO0D2_GPIO		= 0,
+		GPIO0D2_UART4_SOUT	= (3 << 4),
+
+		GPIO0D3_MASK		= GENMASK(7, 6),
+		GPIO0D3_GPIO		= 0,
+		GPIO0D3_UART4_SIN	= (3 << 6),
+	};
+
+	/* Enable early UART4 on the PX5 */
+	rk_clrsetreg(&pmugrf->gpio0d_iomux,
+		     GPIO0D2_MASK | GPIO0D3_MASK,
+		     GPIO0D2_UART4_SOUT | GPIO0D3_UART4_SIN);
 #elif defined(CONFIG_DEBUG_UART_BASE) && (CONFIG_DEBUG_UART_BASE == 0xff690000)
 	/* Enable early UART2 on the RK3368 */
 	rk_clrsetreg(&grf->gpio2a_iomux,
