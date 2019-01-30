@@ -192,6 +192,16 @@ enum {
 	RK818_ID = 0x8180,
 };
 
+enum {
+	RK817_POWER_EN0 = 0xb1,
+	RK817_POWER_EN1,
+	RK817_POWER_EN2,
+	RK817_POWER_EN3,
+};
+
+#define RK817_POWER_EN_SAVE0	0x99
+#define RK817_POWER_EN_SAVE1	0xa4
+
 #define RK817_ID_MSB	0xed
 #define RK817_ID_LSB	0xee
 #define RK8XX_ID_MSK	0xfff0
