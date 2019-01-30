@@ -293,6 +293,7 @@ int arch_interrupt_init(void)
 
 	/* stack has been reserved in: arch_reserve_stacks() */
 	IRQ_STACK_START = gd->irq_sp;
+	IRQ_STACK_START_IN = gd->irq_sp;
 
 	__asm__ __volatile__("mrs %0, cpsr\n"
 			     : "=r" (cpsr)
