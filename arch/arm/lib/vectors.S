@@ -179,6 +179,7 @@ IRQ_STACK_START:
 #define S_R1		4
 #define S_R0		0
 
+#define MODE_IRQ 0x12
 #define MODE_SVC 0x13
 #define I_BIT	 0x80
 
@@ -206,7 +207,15 @@ IRQ_STACK_START:
 	stmia	sp, {r0 - r12}			@ Calling r0-r12
 	@ !!!! R8 NEEDS to be saved !!!! a reserved stack spot would be good.
 	add	r8, sp, #S_PC
-	stmdb	r8, {sp, lr}^		@ Calling SP, LR
+
+	cps	#MODE_SVC	@ SVC-Mode
+	isb
+	mov	r1, sp		@ svc_sp
+	mov	r2, lr		@ svc_lr
+	cps	#MODE_IRQ	@ IRQ-Mode
+	isb
+
+	stmdb	r8, {r1, r2}^		@ Calling svc_sp, svc_lr
 	str	lr, [r8, #0]		@ Save calling PC
 	mrs	r6, spsr
 	str	r6, [r8, #4]		@ Save CPSR
