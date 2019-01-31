@@ -51,13 +51,13 @@ static struct partitions factory_partitions[] = {
 		.size = bytes_to_lba(32 * SZ_1M),
 	}, {
 		.name = "system",		/* Android: system */
-		.size = bytes_to_lba(SZ_2G),
+		.size = bytes_to_lba(SZ_2G - SZ_256M),
 	}, {
 		.name = "vendor",		/* Android: vendor */
-		.size = bytes_to_lba(256 * SZ_1M),
+		.size = bytes_to_lba(SZ_512M),
 	}, {
 		.name = "product",		/* Android: product */
-		.size = bytes_to_lba(128 * SZ_1M),
+		.size = bytes_to_lba(SZ_32M),
 	}, {
 		.name = "param",
 		.size = bytes_to_lba(16 * SZ_1M),
