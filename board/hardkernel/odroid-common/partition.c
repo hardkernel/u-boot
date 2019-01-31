@@ -151,7 +151,6 @@ int board_fdisk_all(void)
 
 	block_dev_desc_t *dev_desc = &mmc->block_dev;
 
-	init_part(dev_desc);
 	board_partition_list();
 
 	/* Read the first sector, MBR, to buffer */
@@ -193,6 +192,8 @@ int board_fdisk_all(void)
 				dev_desc->dev);
 		return -EIO;
 	}
+
+	init_part(dev_desc);
 
 	return 0;
 }
