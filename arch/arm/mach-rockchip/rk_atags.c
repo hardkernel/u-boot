@@ -196,6 +196,9 @@ int atags_set_tag(u32 magic, void *tagdata)
 	case ATAG_ATF_MEM:
 		size = tag_size(tag_atf_mem);
 		break;
+	case ATAG_PUB_KEY:
+		size = tag_size(tag_pub_key);
+		break;
 	};
 
 	if (!size)
@@ -393,6 +396,13 @@ void atags_print_tag(struct tag *t)
 			printf("    res[%d] = 0x%x\n", i, t->u.atf_mem.reserved[i]);
 		printf("      hash = 0x%x\n", t->u.atf_mem.hash);
 		break;
+	case ATAG_PUB_KEY:
+		printf("[pub_key_mem]:\n");
+		printf("     magic = 0x%x\n", t->hdr.magic);
+		printf("      size = 0x%x\n\n", t->hdr.size << 2);
+		printf("   version = 0x%x\n", t->u.pub_key.version);
+		printf("      hash = 0x%x\n", t->u.pub_key.hash);
+		break;
 	case ATAG_CORE:
 		printf("[core]:\n");
 		printf("     magic = 0x%x\n", t->hdr.magic);
@@ -434,6 +444,7 @@ void atags_test(void)
 	struct tag_tos_mem t_tos_mem;
 	struct tag_ram_partition t_ram_param;
 	struct tag_atf_mem t_atf_mem;
+	struct tag_pub_key t_pub_key;
 
 	memset(&t_serial,  0x1, sizeof(t_serial));
 	memset(&t_bootdev, 0x2, sizeof(t_bootdev));
@@ -441,6 +452,7 @@ void atags_test(void)
 	memset(&t_tos_mem, 0x4, sizeof(t_tos_mem));
 	memset(&t_ram_param, 0x0, sizeof(t_ram_param));
 	memset(&t_atf_mem, 0x5, sizeof(t_atf_mem));
+	memset(&t_pub_key, 0x6, sizeof(t_pub_key));
 
 	memcpy(&t_tos_mem.tee_mem.name, "tee_mem", 8);
 	memcpy(&t_tos_mem.drm_mem.name, "drm_mem", 8);
@@ -471,6 +483,7 @@ void atags_test(void)
 	atags_set_tag(ATAG_TOS_MEM, &t_tos_mem);
 	atags_set_tag(ATAG_RAM_PARTITION, &t_ram_param);
 	atags_set_tag(ATAG_ATF_MEM, &t_atf_mem);
+	atags_set_tag(ATAG_PUB_KEY, &t_pub_key);
 
 	atags_print_all_tags();
 	atags_stat();

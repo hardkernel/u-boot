@@ -17,6 +17,7 @@
 #define ATAG_TOS_MEM		0x54410053
 #define ATAG_RAM_PARTITION	0x54410054
 #define ATAG_ATF_MEM		0x54410055
+#define ATAG_PUB_KEY		0x54410056
 #define ATAG_MAX		0x544100ff
 
 /* Tag size and offset */
@@ -102,6 +103,14 @@ struct tag_atf_mem {
 	u32 hash;
 } __packed;
 
+struct tag_pub_key {
+	u32 version;
+	u32 len;
+	u8  data[768];
+	u32 reserved[6];
+	u32 hash;
+} __packed;
+
 struct tag_ram_partition {
 	u32 version;
 	u32 count;
@@ -139,6 +148,7 @@ struct tag {
 		struct tag_tos_mem	tos_mem;
 		struct tag_ram_partition ram_part;
 		struct tag_atf_mem	atf_mem;
+		struct tag_pub_key	pub_key;
 	} u;
 } __aligned(4);
 
