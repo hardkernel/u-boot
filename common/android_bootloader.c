@@ -969,7 +969,7 @@ int android_bootloader_boot_flow(struct blk_desc *dev_desc,
 
 	if (vboot_flag) {
 		printf("SecureBoot enabled, AVB verify\n");
-		android_avb_set_enabled(false);
+		android_avb_set_enabled(true);
 		if (android_slot_verify(boot_partname, &load_address,
 					slot_suffix))
 			return -1;
