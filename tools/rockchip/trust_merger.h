@@ -47,6 +47,7 @@
 #define OPT_RSA		    "--rsa"
 #define OPT_SHA		    "--sha"
 #define OPT_SIZE	    "--size"
+#define OPT_IGNORE_BL32     "--ignore-bl32"
 
 #define DEF_MAJOR           0
 #define DEF_MINOR           0

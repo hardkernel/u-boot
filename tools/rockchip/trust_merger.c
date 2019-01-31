@@ -53,6 +53,7 @@ static char *gLegacyPath;
 static char *gNewPath;
 static uint8_t gRSAmode = RSA_SEL_2048;
 static uint8_t gSHAmode = SHA_SEL_256;
+static bool gIgnoreBL32;
 
 const uint8_t gBl3xID[BL_MAX_SEC][4] = { { 'B', 'L', '3', '0' },
 	{ 'B', 'L', '3', '1' },
@@ -150,6 +151,11 @@ static bool parseBL3x(FILE *file, int bl3x_id)
 		if (sec == 0) {
 			sec = 1;
 			printf("BL3%d adjust sec from 0 to 1\n", bl3x_id);
+		}
+	} else if (gIgnoreBL32 && (bl3x_id == BL32_SEC)) {
+		if (sec == 1) {
+			sec = 0;
+			printf("BL3%d adjust sec from 1 to 0\n", bl3x_id);
 		}
 	}
 	pbl3x->sec = sec;
@@ -893,6 +899,8 @@ int main(int argc, char **argv)
 
 			/* Total backup numbers */
 			g_trust_max_num = strtoul(argv[++i], NULL, 10);
+		} else if (!strcmp(OPT_IGNORE_BL32, argv[i])) {
+			gIgnoreBL32 = true;
 		} else {
 			if (optPath) {
 				fprintf(stderr, "only need one path arg, but we have:\n%s\n%s.\n",
