@@ -24,7 +24,8 @@ typedef unsigned short volatile u16v;
 
 struct test {
 	char *name;
-	int (*fp)(u32v *bufa, u32v *bufb, size_t count);
+	int (*fp)(u32v *bufa, u32v *bufb, size_t count,
+		  ul fix_bit, ul fix_level);
 };
 
 #endif /* __MEMTESTER_TYPES_H */

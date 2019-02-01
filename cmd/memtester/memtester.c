@@ -61,7 +61,8 @@ off_t physaddrbase;
  * err_exit: 1: exit test when found fail.
  * return 0: success, other: fail
  */
-int doing_memtester(ul *arg, ul testenable, ul loops, ul err_exit)
+int doing_memtester(ul *arg, ul testenable, ul loops, ul err_exit,
+		    ul fix_bit, ul fix_level)
 {
 	ul loop, i, j;
 	ul start_adr[CONFIG_NR_DRAM_BANKS], length[CONFIG_NR_DRAM_BANKS];
@@ -115,7 +116,8 @@ int doing_memtester(ul *arg, ul testenable, ul loops, ul err_exit)
 				if (testenable && (!((1 << i) & testenable)))
 					continue;
 				printf("  %-20s: ", tests[i].name);
-				if (!tests[i].fp(bufa[j], bufb[j], count[j])) {
+				if (!tests[i].fp(bufa[j], bufb[j], count[j],
+						 fix_bit, fix_level)) {
 					printf("ok\n");
 				} else {
 					exit_code |= EXIT_FAIL_OTHERTEST;
@@ -157,6 +159,8 @@ static int do_memtester(cmd_tbl_t *cmdtp, int flag, int argc,
 	ul loops = 0;
 	ul testenable = 0;
 	ul err_exit = 0;
+	ul fix_bit = 0;
+	ul fix_level = 0;
 
 	printf("memtester version " __version__ " (%d-bit)\n", UL_LEN);
 	printf("Copyright (C) 2001-2012 Charles Cazabon.\n");
@@ -184,18 +188,26 @@ static int do_memtester(cmd_tbl_t *cmdtp, int flag, int argc,
 			return CMD_RET_USAGE;
 
 	if (argc > 5)
-		if (strict_strtoul(argv[5], 0, &loops) < 0)
+		if (strict_strtoul(argv[5], 0, &fix_bit) < 0)
 			return CMD_RET_USAGE;
 
-	doing_memtester(arg, testenable, loops, err_exit);
+	if (argc > 6)
+		if (strict_strtoul(argv[6], 0, &fix_level) < 0)
+			return CMD_RET_USAGE;
+
+	if (argc > 7)
+		if (strict_strtoul(argv[7], 0, &loops) < 0)
+			return CMD_RET_USAGE;
+
+	doing_memtester(arg, testenable, loops, err_exit, fix_bit, fix_level);
 
 	printf("Done.\n");
 	return 0;
 }
 
-U_BOOT_CMD(memtester, 6, 1, do_memtester,
+U_BOOT_CMD(memtester, 8, 1, do_memtester,
 	   "do memtester",
-	   "[start length [testenable err_exit [loop]]]\n"
+	   "[start length [testenable err_exit fix_bit fix_level [loop]]]\n"
 	   "start: start address, should be 4k align\n"
 	   "length: test length, should be 4k align, if 0 testing full space\n"
 	   "testenable[option]: enable pattern by set bit to 1, null or 0"
@@ -220,6 +232,8 @@ U_BOOT_CMD(memtester, 6, 1, do_memtester,
 	   "	bit17: test stuck address\n"
 	   "	example: testenable=0x1000,enable Bit Flip only\n"
 	   "err_exit: if 1 stop testing immediately when finding error\n"
+	   "fix_bit: fixed bit to a exact level\n"
+	   "fix_level: fix_bit's level, 0: low, 1: high\n"
 	   "loop[option]: testing loop, if 0 or null endless loop\n"
 	   "example:\n"
 	   "	memtester 0x200000 0x1000000: start address: 0x200000 length:"

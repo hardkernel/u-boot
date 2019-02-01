@@ -114,7 +114,8 @@ int test_stuck_address(u32v *bufa, size_t count)
 	return 0;
 }
 
-int test_random_value(u32v *bufa, u32v *bufb, size_t count)
+int test_random_value(u32v *bufa, u32v *bufb, size_t count,
+		      ul fix_bit, ul fix_level)
 {
 	u32v *p1 = bufa;
 	u32v *p2 = bufb;
@@ -136,7 +137,9 @@ int test_random_value(u32v *bufa, u32v *bufb, size_t count)
 	return compare_regions(bufa, bufb, count);
 }
 
-int test_xor_comparison(u32v *bufa, u32v *bufb, size_t count)
+int test_xor_comparison(u32v *bufa, u32v *bufb, size_t count,
+			ul fix_bit, ul fix_level)
+
 {
 	u32v *p1 = bufa;
 	u32v *p2 = bufb;
@@ -150,7 +153,8 @@ int test_xor_comparison(u32v *bufa, u32v *bufb, size_t count)
 	return compare_regions(bufa, bufb, count);
 }
 
-int test_sub_comparison(u32v *bufa, u32v *bufb, size_t count)
+int test_sub_comparison(u32v *bufa, u32v *bufb, size_t count,
+			ul fix_bit, ul fix_level)
 {
 	u32v *p1 = bufa;
 	u32v *p2 = bufb;
@@ -164,7 +168,8 @@ int test_sub_comparison(u32v *bufa, u32v *bufb, size_t count)
 	return compare_regions(bufa, bufb, count);
 }
 
-int test_mul_comparison(u32v *bufa, u32v *bufb, size_t count)
+int test_mul_comparison(u32v *bufa, u32v *bufb, size_t count,
+			ul fix_bit, ul fix_level)
 {
 	u32v *p1 = bufa;
 	u32v *p2 = bufb;
@@ -178,7 +183,8 @@ int test_mul_comparison(u32v *bufa, u32v *bufb, size_t count)
 	return compare_regions(bufa, bufb, count);
 }
 
-int test_div_comparison(u32v *bufa, u32v *bufb, size_t count)
+int test_div_comparison(u32v *bufa, u32v *bufb, size_t count,
+			ul fix_bit, ul fix_level)
 {
 	u32v *p1 = bufa;
 	u32v *p2 = bufb;
@@ -194,7 +200,8 @@ int test_div_comparison(u32v *bufa, u32v *bufb, size_t count)
 	return compare_regions(bufa, bufb, count);
 }
 
-int test_or_comparison(u32v *bufa, u32v *bufb, size_t count)
+int test_or_comparison(u32v *bufa, u32v *bufb, size_t count,
+		       ul fix_bit, ul fix_level)
 {
 	u32v *p1 = bufa;
 	u32v *p2 = bufb;
@@ -208,7 +215,8 @@ int test_or_comparison(u32v *bufa, u32v *bufb, size_t count)
 	return compare_regions(bufa, bufb, count);
 }
 
-int test_and_comparison(u32v *bufa, u32v *bufb, size_t count)
+int test_and_comparison(u32v *bufa, u32v *bufb, size_t count,
+			ul fix_bit, ul fix_level)
 {
 	u32v *p1 = bufa;
 	u32v *p2 = bufb;
@@ -222,7 +230,8 @@ int test_and_comparison(u32v *bufa, u32v *bufb, size_t count)
 	return compare_regions(bufa, bufb, count);
 }
 
-int test_seqinc_comparison(u32v *bufa, u32v *bufb, size_t count)
+int test_seqinc_comparison(u32v *bufa, u32v *bufb, size_t count,
+			   ul fix_bit, ul fix_level)
 {
 	u32v *p1 = bufa;
 	u32v *p2 = bufb;
@@ -234,7 +243,8 @@ int test_seqinc_comparison(u32v *bufa, u32v *bufb, size_t count)
 	return compare_regions(bufa, bufb, count);
 }
 
-int test_solidbits_comparison(u32v *bufa, u32v *bufb, size_t count)
+int test_solidbits_comparison(u32v *bufa, u32v *bufb, size_t count,
+			      ul fix_bit, ul fix_level)
 {
 	u32v *p1 = bufa;
 	u32v *p2 = bufb;
@@ -248,6 +258,10 @@ int test_solidbits_comparison(u32v *bufa, u32v *bufb, size_t count)
 	for (j = 0; j < 64; j++) {
 		printf("\b\b\b\b\b\b\b\b\b\b\b");
 		q = (j % 2) == 0 ? UL_ONEBITS : 0;
+		if (fix_level)
+			q |= fix_bit;
+		else
+			q &= ~fix_bit;
 		data[0] = data[2] = q;
 		data[1] = data[3] = ~q;
 		data_cpu_2_io(data, sizeof(data));
@@ -268,7 +282,8 @@ int test_solidbits_comparison(u32v *bufa, u32v *bufb, size_t count)
 	return 0;
 }
 
-int test_checkerboard_comparison(u32v *bufa, u32v *bufb, size_t count)
+int test_checkerboard_comparison(u32v *bufa, u32v *bufb, size_t count,
+				 ul fix_bit, ul fix_level)
 {
 	u32v *p1 = bufa;
 	u32v *p2 = bufb;
@@ -282,6 +297,11 @@ int test_checkerboard_comparison(u32v *bufa, u32v *bufb, size_t count)
 	for (j = 0; j < 64; j++) {
 		printf("\b\b\b\b\b\b\b\b\b\b\b");
 		q = (j % 2) == 0 ? CHECKERBOARD1 : CHECKERBOARD2;
+		if (fix_level)
+			q |= fix_bit;
+		else
+			q &= ~fix_bit;
+
 		data[0] = data[2] = q;
 		data[1] = data[3] = ~q;
 		data_cpu_2_io(data, sizeof(data));
@@ -302,12 +322,14 @@ int test_checkerboard_comparison(u32v *bufa, u32v *bufb, size_t count)
 	return 0;
 }
 
-int test_blockseq_comparison(u32v *bufa, u32v *bufb, size_t count)
+int test_blockseq_comparison(u32v *bufa, u32v *bufb, size_t count,
+			     ul fix_bit, ul fix_level)
 {
 	u32v *p1 = bufa;
 	u32v *p2 = bufb;
 	unsigned int j;
 	u32 data[4];
+	u32 q;
 	size_t i;
 
 	printf("           ");
@@ -318,8 +340,17 @@ int test_blockseq_comparison(u32v *bufa, u32v *bufb, size_t count)
 		p2 = (u32v *)bufb;
 		printf("setting %3u", j);
 		fflush(stdout);
-		data[0] = data[2] = (u32)UL_BYTE(j);
-		data[1] = data[3] = (u32)UL_BYTE(j);
+		q = (u32)UL_BYTE(j);
+		if (fix_level)
+			q |= fix_bit;
+		else
+			q &= ~fix_bit;
+
+		data[0] = q;
+		data[1] = q;
+		data[2] = q;
+		data[3] = q;
+
 		data_cpu_2_io(data, sizeof(data));
 
 		for (i = 0; i < count; i++)
@@ -335,12 +366,14 @@ int test_blockseq_comparison(u32v *bufa, u32v *bufb, size_t count)
 	return 0;
 }
 
-int test_walkbits0_comparison(u32v *bufa, u32v *bufb, size_t count)
+int test_walkbits0_comparison(u32v *bufa, u32v *bufb, size_t count,
+			      ul fix_bit, ul fix_level)
 {
 	u32v *p1 = bufa;
 	u32v *p2 = bufb;
 	unsigned int j;
 	u32 data[4];
+	u32 q;
 	size_t i;
 
 	printf("           ");
@@ -352,12 +385,19 @@ int test_walkbits0_comparison(u32v *bufa, u32v *bufb, size_t count)
 		printf("setting %3u", j);
 		fflush(stdout);
 		if (j < UL_LEN)
-			data[0] = ONE << j;
+			q = ONE << j;
 		else
-			data[0] = ONE << (UL_LEN * 2 - j - 1);
-		data[1] = data[0];
-		data[2] = data[0];
-		data[3] = data[0];
+			q = ONE << (UL_LEN * 2 - j - 1);
+
+		if (fix_level)
+			q |= fix_bit;
+		else
+			q &= ~fix_bit;
+
+		data[0] = q;
+		data[1] = q;
+		data[2] = q;
+		data[3] = q;
 		data_cpu_2_io(data, sizeof(data));
 
 		for (i = 0; i < count; i++) {
@@ -374,12 +414,14 @@ int test_walkbits0_comparison(u32v *bufa, u32v *bufb, size_t count)
 	return 0;
 }
 
-int test_walkbits1_comparison(u32v *bufa, u32v *bufb, size_t count)
+int test_walkbits1_comparison(u32v *bufa, u32v *bufb, size_t count,
+			      ul fix_bit, ul fix_level)
 {
 	u32v *p1 = bufa;
 	u32v *p2 = bufb;
 	unsigned int j;
 	u32 data[4];
+	u32 q;
 	size_t i;
 
 	printf("           ");
@@ -391,12 +433,18 @@ int test_walkbits1_comparison(u32v *bufa, u32v *bufb, size_t count)
 		printf("setting %3u", j);
 		fflush(stdout);
 		if (j < UL_LEN)
-			data[0] = UL_ONEBITS ^ (ONE << j);
+			q = UL_ONEBITS ^ (ONE << j);
 		else
-			data[0] = UL_ONEBITS ^ (ONE << (UL_LEN * 2 - j - 1));
-		data[1] = data[0];
-		data[2] = data[0];
-		data[3] = data[0];
+			q = UL_ONEBITS ^ (ONE << (UL_LEN * 2 - j - 1));
+		if (fix_level)
+			q |= fix_bit;
+		else
+			q &= ~fix_bit;
+
+		data[0] = q;
+		data[1] = q;
+		data[2] = q;
+		data[3] = q;
 		data_cpu_2_io(data, sizeof(data));
 
 		for (i = 0; i < count; i++) {
@@ -413,7 +461,8 @@ int test_walkbits1_comparison(u32v *bufa, u32v *bufb, size_t count)
 	return 0;
 }
 
-int test_bitspread_comparison(u32v *bufa, u32v *bufb, size_t count)
+int test_bitspread_comparison(u32v *bufa, u32v *bufb, size_t count,
+			      ul fix_bit, ul fix_level)
 {
 	u32v *p1 = bufa;
 	u32v *p2 = bufb;
@@ -438,6 +487,13 @@ int test_bitspread_comparison(u32v *bufa, u32v *bufb, size_t count)
 			data[1] = UL_ONEBITS ^ (ONE << (UL_LEN * 2 - 1 - j)
 						| (ONE << (UL_LEN * 2 + 1 - j)));
 		}
+		if (fix_level) {
+			data[0] |= fix_bit;
+			data[1] |= fix_bit;
+		} else {
+			data[0] &= ~fix_bit;
+			data[1] &= ~fix_bit;
+		}
 		data[2] = data[0];
 		data[3] = data[1];
 		data_cpu_2_io(data, sizeof(data));
@@ -456,7 +512,8 @@ int test_bitspread_comparison(u32v *bufa, u32v *bufb, size_t count)
 	return 0;
 }
 
-int test_bitflip_comparison(u32v *bufa, u32v *bufb, size_t count)
+int test_bitflip_comparison(u32v *bufa, u32v *bufb, size_t count,
+			    ul fix_bit, ul fix_level)
 {
 	u32v *p1 = bufa;
 	u32v *p2 = bufb;
@@ -474,6 +531,11 @@ int test_bitflip_comparison(u32v *bufa, u32v *bufb, size_t count)
 			q = ~q;
 			printf("setting %3u", k * 8 + j);
 			fflush(stdout);
+			if (fix_level)
+				q |= fix_bit;
+			else
+				q &= ~fix_bit;
+
 			data[0] = data[2] = q;
 			data[1] = data[3] = ~q;
 			data_cpu_2_io(data, sizeof(data));
@@ -494,7 +556,8 @@ int test_bitflip_comparison(u32v *bufa, u32v *bufb, size_t count)
 }
 
 #ifdef TEST_NARROW_WRITES
-int test_8bit_wide_random(u32v *bufa, u32v *bufb, size_t count)
+int test_8bit_wide_random(u32v *bufa, u32v *bufb, size_t count,
+			  ul fix_bit, ul fix_level)
 {
 	u8v *p1, *t;
 	u32v *p2;
@@ -531,7 +594,8 @@ int test_8bit_wide_random(u32v *bufa, u32v *bufb, size_t count)
 	return 0;
 }
 
-int test_16bit_wide_random(u32v *bufa, u32v *bufb, size_t count)
+int test_16bit_wide_random(u32v *bufa, u32v *bufb, size_t count,
+			   ul fix_bit, ul fix_level)
 {
 	u16v *p1, *t;
 	u32v *p2;

@@ -23,5 +23,6 @@ extern int use_phys;
 extern off_t physaddrbase;
 
 int doing_memtester(unsigned long *arg, unsigned long testenable,
-		    unsigned long loops, unsigned long err_exit);
+		    unsigned long loops, unsigned long err_exit,
+		    unsigned long fix_bit, unsigned long fix_level);
 #endif /* _CMD_MEMTESTER_H */
