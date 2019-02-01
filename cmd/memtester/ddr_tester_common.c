@@ -92,7 +92,7 @@ void get_print_available_addr(ulong *start_adr, ulong *length, int print_en)
 		printf("available memory for test:\n");
 		printf("	start		 end	length\n");
 		for (i = 0; i < max_bank; i++)
-			if (start_adr[i])
+			if (length[i])
 				printf("	0x%08lx - 0x%08lx 0x%08lx\n",
 				       start_adr[i], start_adr[i] + length[i],
 				       length[i]);
