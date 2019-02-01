@@ -9,6 +9,7 @@
 #include <linux/compiler.h>
 #include <efi_loader.h>
 #include <iomem.h>
+#include <stacktrace.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 #if defined(CONFIG_SPL_BUILD) || !defined(CONFIG_IRQ)
@@ -219,6 +220,7 @@ void show_regs(struct pt_regs *regs)
 	iomem_show_by_compatible("-pmugrf", 0, 0x400);
 	/* tobe add here ... */
 #endif
+	dump_core_stack(regs);
 }
 
 #else
@@ -237,6 +239,8 @@ void show_regs(struct pt_regs *regs)
 		printf("x%-2d: %016lx x%-2d: %016lx\n",
 		       i, regs->regs[i], i+1, regs->regs[i+1]);
 	printf("\n");
+
+	dump_core_stack(regs);
 }
 #endif
 

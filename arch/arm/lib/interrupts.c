@@ -24,6 +24,7 @@
 #include <asm/u-boot-arm.h>
 #include <efi_loader.h>
 #include <iomem.h>
+#include <stacktrace.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -99,6 +100,7 @@ void show_regs (struct pt_regs *regs)
 		thumb_mode (regs) ? " (T)" : "");
 
 	iomem_show("sp", regs->ARM_sp, 0x00, 0xfc);
+	dump_core_stack(regs);
 }
 
 /* fixup PC to point to the instruction leading to the exception */
