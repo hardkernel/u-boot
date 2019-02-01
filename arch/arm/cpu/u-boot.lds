@@ -135,6 +135,23 @@ SECTIONS
 		KEEP(*(SORT(.u_boot_list*)));
 	}
 
+	/*
+	 * Stack unwinding tables
+	 */
+	. = ALIGN(8);
+	/* .ARM.exidx is sorted, so has to go in its own output section. */
+	.ARM.exidx : {
+		__exidx_start = .;
+		*(.ARM.exidx*)
+		__exidx_end = .;
+	}
+
+	.ARM.extab : {
+		__extab_start = .;
+		*(.ARM.extab*)
+		__extab_end = .;
+	}
+
 	. = ALIGN(4);
 
 	.__efi_runtime_start : {
