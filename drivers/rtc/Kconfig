@@ -30,4 +30,10 @@ config RTC_DS1307
 	  Support for Dallas Semiconductor (now Maxim) DS1307 and DS1338/9 and
 	  compatible Real Time Clock devices.
 
+config RTC_RK8XX
+	bool "Enable RK808/RK818/RK805/816/817 rtc support"
+	depends on DM_RTC && PMIC_RK8XX
+	help
+	  This adds a driver for the RK808/RK818/RK805/816/817 rtc support.
+
 endmenu

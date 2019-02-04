@@ -72,6 +72,13 @@ struct rtc_ops {
 	* @return 0 if OK, -ve on error
 	*/
 	int (*write8)(struct udevice *dev, unsigned int reg, int val);
+
+	/**
+	 * alarm_trigger()
+	 * @dev:		Device to write to
+	 * @return 1 if rtc alarm trigger boot on
+	 */
+	int (*alarm_trigger)(struct udevice *dev);
 };
 
 /* Access the operations for an RTC device */
@@ -167,6 +174,13 @@ int rtc_read32(struct udevice *dev, unsigned int reg, u32 *valuep);
  */
 int rtc_write32(struct udevice *dev, unsigned int reg, u32 value);
 
+/**
+ * rtc_alarm_trigger()
+ *
+ * @dev:	Device to write to
+ * @return 1 if rtc alarm trigger boot on
+ */
+int rtc_alarm_trigger(struct udevice *dev);
 #else
 int rtc_get (struct rtc_time *);
 int rtc_set (struct rtc_time *);
