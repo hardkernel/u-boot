@@ -224,8 +224,14 @@
 		"run set_spi_params; "\
 		"sf probe; "\
 		"sf read ${preloadaddr} ${start_kernel} ${size_kernel}; "\
-		"sf read ${dtb_mem_addr} ${start_dtb} ${size_dtb}; "\
 		"sf read ${initrd_high} ${start_initrd} ${size_initrd}; "\
+		"sf read ${dtb_mem_addr} ${start_dtb} ${size_dtb}; "\
+		"if test -e mmc 0:1 spiboot.img; then " \
+			"fdt addr ${dtb_mem_addr}; " \
+			"fdt resize; " \
+			"fdt set /emmc@ffe07000 status 'disabled'; " \
+			"fdt set /soc/cbus/spifc@14000 status 'okay'; " \
+		"fi; " \
 		"bootm ${preloadaddr} ${initrd_high} ${dtb_mem_addr};\0"\
 
 #define CONFIG_PREBOOT  \
