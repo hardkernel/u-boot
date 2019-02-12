@@ -1,4 +1,10 @@
 #!/bin/bash
+#
+# Copyright (c) 2019 Fuzhou Rockchip Electronics Co., Ltd
+#
+# SPDX-License-Identifier: GPL-2.0
+#
+
 set -e
 BOARD=$1
 SUBCMD=$1
