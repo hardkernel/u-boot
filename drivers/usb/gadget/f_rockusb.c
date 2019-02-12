@@ -467,7 +467,7 @@ static int rkusb_do_read_capacity(struct fsg_common *common,
 	 * bit[5:63}: Reserved.
 	 */
 	memset((void *)&buf[0], 0, len);
-	if (type == IF_TYPE_MMC)
+	if (type == IF_TYPE_MMC || type == IF_TYPE_SD)
 		buf[0] = BIT(0) | BIT(2) | BIT(4);
 	else
 		buf[0] = BIT(0) | BIT(4);
