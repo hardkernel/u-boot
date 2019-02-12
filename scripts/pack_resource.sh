@@ -1,4 +1,10 @@
 #!/bin/sh
+#
+# Copyright (c) 2019 Fuzhou Rockchip Electronics Co., Ltd
+#
+# SPDX-License-Identifier: GPL-2.0
+#
+
 OLD_IMAGE=$1
 IMAGE=resource.img
 TOOL=../rkbin/tools/resource_tool
