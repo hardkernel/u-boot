@@ -88,7 +88,7 @@
 #define CONFIG_EXTRA_ENV_SETTINGS \
         "firstboot=1\0"\
         "upgrade_step=0\0"\
-        "jtag=apao\0"\
+        "jtag=disable\0"\
         "loadaddr=1080000\0"\
         "dtb_mem_addr=0x1000000\0" \
         "usb_burning=update 1000\0" \
