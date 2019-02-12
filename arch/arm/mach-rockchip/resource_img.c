@@ -177,6 +177,9 @@ static int init_resource_list(struct resource_img_hdr *hdr)
 #endif
 
 	if (hdr) {
+		if (resource_image_check_header(hdr))
+			return -EEXIST;
+
 		content = (void *)((char *)hdr
 				   + (hdr->c_offset) * RK_BLK_SIZE);
 		for (e_num = 0; e_num < hdr->e_nums; e_num++) {
