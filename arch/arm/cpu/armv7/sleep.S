@@ -30,8 +30,8 @@ ENTRY(cpu_suspend)
 	sub	sp, sp, #PM_CTX_SIZE
 	push	{r0, r1}
 
-	/* r9 is gd, save it to _suspend_gd !!! */
-	adr	r4, _suspend_gd
+	/* r9 is gd, save it to __suspend_gd !!! */
+	adr	r4, __suspend_gd
 	str	r9, [r4]
 
 	mov	r1, r5
@@ -102,7 +102,7 @@ ENTRY(cpu_resume)
 	cpsid	aif
 
 	/* Load gd !! */
-	adr r1, _suspend_gd
+	adr r1, __suspend_gd
 	ldr r2, [r1]
 
 	/* Get pm_ctx */
@@ -177,7 +177,7 @@ a7_resume:
 ENDPROC(cpu_do_resume)
 
 .align 4
-_suspend_gd:
+__suspend_gd:
 	.word	0x0
 CORTEX_A7_PART_NUM:
 	.word	0xC07
