@@ -1,0 +1,53 @@
+language: c
+
+env:
+  global:
+    - TARGET_BOARD=odroidn2
+    - TRAVIS_SECURE_ENV_VARS=true
+    - ARCH=arm64
+    - CROSS_COMPILE=aarch64-none-elf-
+
+addons:
+  apt:
+    packages:
+
+git:
+  depth: 1
+
+before_install:
+  - if [ `uname -m` = x86_64 ]; then sudo apt-get install libc6-i386 lib32stdc++6 lib32z1; fi
+
+install:
+
+before_script:
+  - mkdir -p /opt/toolchains
+  - wget https://releases.linaro.org/archive/13.11/components/toolchain/binaries/gcc-linaro-aarch64-none-elf-4.8-2013.11_linux.tar.xz
+  - tar xf gcc-linaro-aarch64-none-elf-4.8-2013.11_linux.tar.xz -C /opt/toolchains
+  - wget https://releases.linaro.org/archive/14.04/components/toolchain/binaries/gcc-linaro-arm-none-eabi-4.8-2014.04_linux.tar.xz
+  - tar xf gcc-linaro-arm-none-eabi-4.8-2014.04_linux.tar.xz -C /opt/toolchains
+  - export PATH=/opt/toolchains/gcc-linaro-aarch64-none-elf-4.8-2013.11_linux/bin:/opt/toolchains/gcc-linaro-arm-none-eabi-4.8-2014.04_linux/bin:$PATH
+
+script:
+  - make ${TARGET_BOARD}_defconfig
+  - make
+
+before_deploy:
+  - export RELEASE_VERSION="${TARGET_BOARD}-${TRAVIS_BUILD_NUMBER}"
+  - tar czf u-boot-${RELEASE_VERSION}.tar.gz sd_fuse/u-boot.bin sd_fuse/sd_fusing.sh
+  - git config --global user.name ${GIT_USER_NAME}
+  - git config --global user.email ${GIT_USER_EMAIL}
+  - export REMOTE_URL=`git config --get remote.origin.url`
+  - export GIT_TAG="travis/${RELEASE_VERSION}"
+  - git tag ${GIT_TAG} -a -m "Tagged by Travis CI"
+  - git push --quiet https://${PRIVATE_ACCESS_TOKEN}@${REMOTE_URL#$"https://"} ${GIT_TAG}
+
+deploy:
+  provider: releases
+  api_key:
+    secure: ${PRIVATE_ACCESS_TOKEN}
+  file_glob: true
+  file: u-boot-${RELEASE_VERSION}.tar.gz
+  skip_cleanup: true
+  on:
+    tags: false
+    all_branches: true
