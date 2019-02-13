@@ -211,6 +211,7 @@ enum {
 
 #define RK8XX_ON_SOURCE		0xae
 #define RK8XX_OFF_SOURCE	0xaf
+#define RK817_BUCK4_CMIN	0xc6
 #define RK817_ON_SOURCE		0xf5
 #define RK817_OFF_SOURCE	0xf6
 
