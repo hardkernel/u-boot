@@ -57,15 +57,16 @@ ENTRY(cpu_do_suspend)
 
 	read_midr r4
 	ubfx	r5, r4, #4, #12
+
 	ldr     r4, CORTEX_A7_PART_NUM
 	cmp	r5, r4
 	beq	a7_suspend
+
 	ldr     r4, CORTEX_A9_PART_NUM
 	cmp	r5, r4
 	beq	a9_suspend
 
-	/* cpu not supported */
-	b	.
+	b	other_suspend
 
 	/* A9 needs PCR/DIAG */
 a9_suspend:
@@ -78,6 +79,7 @@ a7_suspend:
 	read_tpidruro r5
 	stmia	r0!, {r4 - r5}
 
+other_suspend:
 	read_dacr  r4
 	read_ttbr0 r5
 	read_ttbr1 r6
@@ -122,10 +124,24 @@ ENDPROC(cpu_resume)
 ENTRY(cpu_do_resume)
 	read_midr r4
 	ubfx	r5, r4, #4, #12
+
+	ldr	r4, CORTEX_A9_PART_NUM
+	cmp	r5, r4
+	beq	a9_resume
+
 	ldr     r4, CORTEX_A7_PART_NUM
 	cmp	r5, r4
 	beq	a7_resume
 
+	/* v7 resume */
+	mov	ip, #0
+	/* Invalidate icache to PoU */
+	write_iciallu
+	/* set reserved context */
+	write_contextidr ip
+	b	other_resume
+
+a9_resume:
 	/*
 	 * A9 needs PCR/DIAG
 	 */
@@ -146,6 +162,7 @@ a7_resume:
 	write_fcseidr r4
 	write_tpidruro r5
 
+other_resume:
 	ldmia	r0!, {r4 - r10}
 	/* Invalidate entire TLB */
 	write_tlbiall
