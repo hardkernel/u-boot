@@ -11,6 +11,7 @@
 #include <dm.h>
 #include <errno.h>
 #include <key.h>
+#include <led.h>
 #include <rtc.h>
 #include <pwm.h>
 #include <asm/arch/rockchip_smccc.h>
@@ -34,6 +35,9 @@ DECLARE_GLOBAL_DATA_PTR;
 #define IMAGE_SHOW_RESET			-1
 #define FUEL_GAUGE_POLL_MS			1000
 
+#define LED_CHARGING_NAME			"battery_charging"
+#define LED_CHARGING_FULL_NAME			"battery_full"
+
 struct charge_image {
 	const char *name;
 	int soc;
@@ -44,6 +48,10 @@ struct charge_animation_priv {
 	struct udevice *pmic;
 	struct udevice *fg;
 	struct udevice *rtc;
+#ifdef CONFIG_LED
+	struct udevice *led_charging;
+	struct udevice *led_full;
+#endif
 	const struct charge_image *image;
 	int image_num;
 
@@ -259,6 +267,43 @@ static void charge_show_bmp(const char *name) {}
 static void charge_show_logo(void) {}
 #endif
 
+#ifdef CONFIG_LED
+static int leds_update(struct udevice *dev, int soc)
+{
+	struct charge_animation_priv *priv = dev_get_priv(dev);
+	static int old_soc = -1;
+	int ret, ledst;
+
+	if (old_soc == soc)
+		return 0;
+
+	old_soc = soc;
+	if (priv->led_charging) {
+		ledst = (soc < 100) ? LEDST_ON : LEDST_OFF;
+		ret = led_set_state(priv->led_charging, ledst);
+		if (ret) {
+			printf("set charging led %s failed, ret=%d\n",
+			       (ledst == LEDST_ON) ? "ON" : "OFF", ret);
+			return ret;
+		}
+	}
+
+	if (priv->led_full) {
+		ledst = (soc == 100) ? LEDST_ON : LEDST_OFF;
+		ret = led_set_state(priv->led_full, ledst);
+		if (ret) {
+			printf("set charging full led %s failed, ret=%d\n",
+			       ledst == LEDST_ON ? "ON" : "OFF", ret);
+			return ret;
+		}
+	}
+
+	return 0;
+}
+#else
+static int leds_update(struct udevice *dev, int soc) { return 0; }
+#endif
+
 static int charge_extrem_low_power(struct udevice *dev)
 {
 	struct charge_animation_pdata *pdata = dev_get_platdata(dev);
@@ -267,6 +312,7 @@ static int charge_extrem_low_power(struct udevice *dev)
 	struct udevice *fg = priv->fg;
 	int voltage, soc, charging = 1;
 	static int timer_initialized;
+	int ret;
 
 	voltage = fuel_gauge_get_voltage(fg);
 	if (voltage < 0)
@@ -302,6 +348,11 @@ static int charge_extrem_low_power(struct udevice *dev)
 			printf("get soc failed: %d\n", soc);
 			continue;
 		}
+
+		/* Update led */
+		ret = leds_update(dev, soc);
+		if (ret)
+			printf("update led failed: %d\n", ret);
 
 		printf("Extrem low power, force charging... threshold=%dmv, now=%dmv\n",
 		       pdata->low_power_voltage, voltage);
@@ -503,6 +554,11 @@ show_images:
 			       get_timer(0)/1000, soc, voltage,
 			       current, charging, screen_on);
 		}
+
+		/* Update leds */
+		ret = leds_update(dev, soc);
+		if (ret)
+			printf("update led failed: %d\n", ret);
 
 		/*
 		 * If ever lowpower screen off, force screen_on=false, which
@@ -729,6 +785,16 @@ static int charge_animation_probe(struct udevice *dev)
 		debug("get soc failed: %d\n", soc);
 		return -EINVAL;
 	}
+
+	/* Get leds */
+#ifdef CONFIG_LED
+	ret = led_get_by_label(LED_CHARGING_NAME, &priv->led_charging);
+	if (!ret)
+		printf("Found Charging LED\n");
+	ret = led_get_by_label(LED_CHARGING_FULL_NAME, &priv->led_full);
+	if (!ret)
+		printf("Found Charging-Full LED\n");
+#endif
 
 	/* Get charge images */
 	priv->image = image;
