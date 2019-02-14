@@ -129,9 +129,11 @@ struct sysmem_property param_parse_optee_mem(void)
 		    (tos_parameter->tee_mem.flags == 1)) {
 			prop.base = tos_parameter->tee_mem.phy_addr;
 			prop.size = tos_parameter->tee_mem.size;
-			gd->flags |= GD_FLG_BL32_ENABLED;
 		}
 	}
+
+	if (prop.size)
+		gd->flags |= GD_FLG_BL32_ENABLED;
 
 	debug("TOS: 0x%llx - 0x%llx\n", (u64)prop.base, (u64)prop.base + prop.size);
 
