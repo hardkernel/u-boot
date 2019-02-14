@@ -218,7 +218,7 @@ int sysmem_reserve(const char *name, phys_addr_t base, phys_size_t size)
 			SYSMEM_E("Failed to double reserve for existence \"%s\"\n", name);
 			return -EEXIST;
 		} else if (sysmem_is_overlap(prop->base, prop->size, base, size)) {
-			SYSMEM_W("\"%s\" (base=0x%08lx, size=0x%lx) reserve is "
+			SYSMEM_D("\"%s\" (base=0x%08lx, size=0x%lx) reserve is "
 				 "overlap with existence \"%s\" (base=0x%08lx, size=0x%lx)\n",
 				 name, (ulong)base, (ulong)size, prop->name,
 				 (ulong)prop->base, (ulong)prop->size);
