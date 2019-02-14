@@ -893,8 +893,10 @@ int android_bootloader_boot_flow(struct blk_desc *dev_desc,
 	 */
 	part_num = part_get_info_by_name(dev_desc, ANDROID_PARTITION_MISC,
 					 &misc_part_info);
-	if (part_num < 0)
+	if (part_num < 0) {
 		printf("%s Could not find misc partition\n", __func__);
+		return -ENODEV;
+	}
 
 #ifdef CONFIG_ANDROID_KEYMASTER_CA
 	/* load attestation key from misc partition. */
