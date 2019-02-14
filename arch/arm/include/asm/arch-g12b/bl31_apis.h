@@ -47,6 +47,7 @@
 #define GET_SHARE_STORAGE_MESSAGE_BASE	0x82000026
 #define GET_SHARE_STORAGE_BLOCK_SIZE		0x82000027
 #define SET_STORAGE_INFO		0x82000028
+#define SET_REBOOT_REASON		0x82000049
 
 /* Set Reboot Reason then Reboot*/
 #define PSCI_SYS_REBOOT		0x84000009
@@ -139,6 +140,7 @@ struct sram_hal_api_arg {
 void aml_set_jtag_state(unsigned state, unsigned select);
 unsigned aml_get_reboot_reason(void);
 unsigned aml_reboot(uint64_t function_id, uint64_t arg0, uint64_t arg1, uint64_t arg2);
+void aml_set_reboot_reason(uint64_t function_id, uint64_t arg0, uint64_t arg1, uint64_t arg2);
 unsigned long aml_sec_boot_check(unsigned long ,unsigned long ,unsigned long,unsigned long );
 long get_sharemem_info(unsigned long);
 void set_usb_boot_function(unsigned long command);

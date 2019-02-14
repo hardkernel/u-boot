@@ -261,6 +261,24 @@ unsigned aml_reboot(uint64_t function_id, uint64_t arg0, uint64_t arg1, uint64_t
 	return function_id;
 }
 
+void aml_set_reboot_reason(uint64_t function_id, uint64_t arg0, uint64_t arg1, uint64_t arg2)
+{
+	register long x0 asm("x0") = function_id;
+	register long x1 asm("x1") = arg0;
+	register long x2 asm("x2") = arg1;
+	register long x3 asm("x3") = arg2;
+	asm volatile(
+			__asmeq("%0", "x0")
+			__asmeq("%1", "x1")
+			__asmeq("%2", "x2")
+			__asmeq("%3", "x3")
+			"smc	#0\n"
+			: "+r" (x0)
+			: "r" (x1), "r" (x2), "r" (x3));
+
+	return ;
+}
+
 unsigned long aml_sec_boot_check(unsigned long nType,
 	unsigned long pBuffer,
 	unsigned long nLength,
