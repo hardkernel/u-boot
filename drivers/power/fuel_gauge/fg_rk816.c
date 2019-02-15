@@ -153,7 +153,7 @@ struct battery_priv {
 	int		dts_cur_input;
 	int		dts_cur_sel;
 	int		max_soc_offset;
-	struct gpio_desc *dc_det;
+	struct gpio_desc dc_det;
 	int		dc_type;
 	int		dc_det_adc;
 	ulong		vol_mode_base;
@@ -946,7 +946,7 @@ static int rk816_bat_get_dc_state(struct battery_priv *di)
 		*/
 		return NO_CHARGER;
 	} else {
-		return (dm_gpio_get_value(di->dc_det)) ?
+		return (dm_gpio_get_value(&di->dc_det)) ?
 			DC_CHARGER : NO_CHARGER;
 	}
 }
@@ -1423,7 +1423,7 @@ static int rk816_fg_ofdata_to_platdata(struct udevice *dev)
 	di->dc_det_adc = dev_read_u32_default(dev, "dc_det_adc", 0);
 	if (di->dc_det_adc <= 0) {
 		if (!gpio_request_by_name_nodev(dev_ofnode(dev), "dc_det_gpio",
-						0, di->dc_det, GPIOD_IS_IN)) {
+						0, &di->dc_det, GPIOD_IS_IN)) {
 			di->dc_type = DC_TYPE_OF_GPIO;
 		} else {
 			di->dc_type = DC_TYPE_OF_NONE;
