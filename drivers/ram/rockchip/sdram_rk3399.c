@@ -1436,6 +1436,9 @@ static int data_training_ca(const struct chan_info *chan, u32 channel,
 	u32 rank = sdram_params->ch[channel].cap_info.rank;
 	u32 rank_mask;
 
+	/* clear interrupt,PI_175 PI_INT_ACK:WR:0:17 */
+	writel(0x00003f7c, (&denali_pi[175]));
+
 	if (sdram_params->base.dramtype == LPDDR4)
 		rank_mask = (rank == 1) ? 0x5 : 0xf;
 	else
@@ -1493,6 +1496,9 @@ static int data_training_wl(const struct chan_info *chan, u32 channel,
 	u32 obs_0, obs_1, obs_2, obs_3, obs_err = 0;
 	u32 rank = sdram_params->ch[channel].cap_info.rank;
 
+	/* clear interrupt,PI_175 PI_INT_ACK:WR:0:17 */
+	writel(0x00003f7c, (&denali_pi[175]));
+
 	for (i = 0; i < rank; i++) {
 		select_per_cs_training_index(chan, i);
 		/* PI_60 PI_WRLVL_EN:RW:8:2 */
@@ -1549,6 +1555,9 @@ static int data_training_rg(const struct chan_info *chan, u32 channel,
 	u32 obs_0, obs_1, obs_2, obs_3, obs_err = 0;
 	u32 rank = sdram_params->ch[channel].cap_info.rank;
 
+	/* clear interrupt,PI_175 PI_INT_ACK:WR:0:17 */
+	writel(0x00003f7c, (&denali_pi[175]));
+
 	for (i = 0; i < rank; i++) {
 		select_per_cs_training_index(chan, i);
 		/* PI_80 PI_RDLVL_GATE_EN:RW:24:2 */
@@ -1604,6 +1613,9 @@ static int data_training_rl(const struct chan_info *chan, u32 channel,
 	u32 i, tmp;
 	u32 rank = sdram_params->ch[channel].cap_info.rank;
 
+	/* clear interrupt,PI_175 PI_INT_ACK:WR:0:17 */
+	writel(0x00003f7c, (&denali_pi[175]));
+
 	for (i = 0; i < rank; i++) {
 		select_per_cs_training_index(chan, i);
 		/* PI_80 PI_RDLVL_EN:RW:16:2 */
@@ -1645,6 +1657,9 @@ static int data_training_wdql(const struct chan_info *chan, u32 channel,
 	u32 i, tmp;
 	u32 rank = sdram_params->ch[channel].cap_info.rank;
 	u32 rank_mask;
+
+	/* clear interrupt,PI_175 PI_INT_ACK:WR:0:17 */
+	writel(0x00003f7c, (&denali_pi[175]));
 
 	if (sdram_params->base.dramtype == LPDDR4)
 		rank_mask = (rank == 1) ? 0x5 : 0xf;
