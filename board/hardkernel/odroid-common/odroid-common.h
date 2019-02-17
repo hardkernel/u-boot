@@ -41,5 +41,7 @@ int board_cvbs_probe(void);
 
 int board_usbhost_early_power(void);
 int usbhost_early_poweron(void);
+int usbhost_gpio_alloc(void);
+int usbhost_set_power(int on);
 
 #endif

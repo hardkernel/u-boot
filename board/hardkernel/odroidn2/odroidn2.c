@@ -262,6 +262,9 @@ static void gpio_set_vbus_power(char is_power_on)
 {
 	int ret;
 
+	/* USB Host power enable/disable */
+	usbhost_set_power(is_power_on);
+
 	/* usb otg power enable */
 	ret = gpio_request(CONFIG_USB_GPIO_PWR,
 			CONFIG_USB_GPIO_PWR_NAME);
@@ -271,34 +274,7 @@ static void gpio_set_vbus_power(char is_power_on)
 		return;
 	}
 
-	/* usb host hub reset */
-	ret = gpio_request(CONFIG_USB_HUB_RST_N,
-			CONFIG_USB_HUB_RST_N_NAME);
-	if (ret && ret != -EBUSY) {
-		printf("gpio: requesting pin %u failed\n",
-				CONFIG_USB_HUB_RST_N);
-		return;
-	}
-
-	/* usb host hub chip enable */
-	ret = gpio_request(CONFIG_USB_HUB_CHIP_EN,
-			CONFIG_USB_HUB_CHIP_EN_NAME);
-	if (ret && ret != -EBUSY) {
-		printf("gpio: requesting pin %u failed\n",
-				CONFIG_USB_HUB_CHIP_EN);
-		return;
-	}
-
-	if (is_power_on) {
-		gpio_direction_output(CONFIG_USB_GPIO_PWR, 1);
-		gpio_direction_output(CONFIG_USB_HUB_CHIP_EN, 1);
-		udelay(100);
-		gpio_direction_output(CONFIG_USB_HUB_RST_N, 1);
-	} else {
-		gpio_direction_output(CONFIG_USB_GPIO_PWR, 0);
-		gpio_direction_output(CONFIG_USB_HUB_RST_N, 0);
-		gpio_direction_output(CONFIG_USB_HUB_CHIP_EN, 0);
-	}
+	gpio_direction_output(CONFIG_USB_GPIO_PWR, !!is_power_on);
 }
 
 struct amlogic_usb_config g_usb_config_GXL_skt={
