@@ -352,8 +352,10 @@ int rockchip_get_boot_mode(void)
 	 * USB attach will do env_set("reboot_mode", "recovery");
 	 */
 	env_reboot_mode = env_get("reboot_mode");
-	if (env_reboot_mode && !strcmp(env_reboot_mode, "recovery"))
+	if (env_reboot_mode && !strcmp(env_reboot_mode, "recovery")) {
 		boot_mode = BOOT_MODE_RECOVERY;
+		printf("boot mode: recovery\n");
+	}
 
 	if (boot_mode != -1)
 		return boot_mode;
@@ -383,6 +385,7 @@ fallback:
 	/* Mode from misc partition */
 	if (bmsg && !strcmp(bmsg->command, "boot-recovery")) {
 		boot_mode = BOOT_MODE_RECOVERY;
+		printf("boot mode: recovery\n");
 	} else {
 		/* Mode from boot mode register */
 		reg_boot_mode = readl((void *)CONFIG_ROCKCHIP_BOOT_MODE_REG);
