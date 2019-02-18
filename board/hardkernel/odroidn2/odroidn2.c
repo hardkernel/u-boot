@@ -422,6 +422,8 @@ int board_late_init(void)
 		run_command("run booting_from_spi", 0);
 	}
 
+	usbhost_early_poweron();
+
 	return 0;
 }
 #endif

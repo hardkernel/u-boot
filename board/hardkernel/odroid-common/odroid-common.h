@@ -35,4 +35,11 @@ int board_revision(void);
 
 int board_cvbs_probe(void);
 
+/*
+ * USB Host
+ */
+
+int board_usbhost_early_power(void);
+int usbhost_early_poweron(void);
+
 #endif
