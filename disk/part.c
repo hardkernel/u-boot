@@ -271,7 +271,7 @@ void init_part(block_dev_desc_t *dev_desc)
 /* must be placed before DOS partition detection */
 #ifdef CONFIG_EFI_PARTITION
 	if (test_part_efi(dev_desc) == 0) {
-		printf("%s() %d: PART_TYPE_EFI\n", __func__, __LINE__);
+		debug("%s() %d: PART_TYPE_EFI\n", __func__, __LINE__);
 		dev_desc->part_type = PART_TYPE_EFI;
 		return;
 	}
@@ -279,7 +279,7 @@ void init_part(block_dev_desc_t *dev_desc)
 
 #ifdef CONFIG_DOS_PARTITION
 	if (test_part_dos(dev_desc) == 0) {
-		printf("%s() %d: PART_TYPE_DOS\n", __func__, __LINE__);
+		debug("%s() %d: PART_TYPE_DOS\n", __func__, __LINE__);
 		dev_desc->part_type = PART_TYPE_DOS;
 		return;
 	}
@@ -287,9 +287,9 @@ void init_part(block_dev_desc_t *dev_desc)
 
 #ifdef CONFIG_MPT_PARTITION
 	if (test_part_mpt(dev_desc) == 0) {
-		printf("%s() %d: PART_TYPE_MPT\n", __func__, __LINE__);
-	    dev_desc->part_type = PART_TYPE_MPT;
-	    return;
+		debug("%s() %d: PART_TYPE_MPT\n", __func__, __LINE__);
+		dev_desc->part_type = PART_TYPE_MPT;
+		return;
 	}
 #endif
 
@@ -302,9 +302,9 @@ void init_part(block_dev_desc_t *dev_desc)
 
 #ifdef CONFIG_AML_PARTITION
 	if (test_part_aml(dev_desc) == 0) {
-		printf("%s() %d: PART_TYPE_AML\n", __func__, __LINE__);
-	    dev_desc->part_type = PART_TYPE_AML;
-	    return;
+		debug("%s() %d: PART_TYPE_AML\n", __func__, __LINE__);
+		dev_desc->part_type = PART_TYPE_AML;
+		return;
 	}
 #endif
 	dev_desc->part_type = PART_TYPE_UNKNOWN;
