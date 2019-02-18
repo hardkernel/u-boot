@@ -22,6 +22,13 @@ static int usb_stor_curr_dev = -1; /* current device */
 static int usb_ether_curr_dev = -1; /* current ethernet device */
 #endif
 
+#if defined(CONFIG_ODROID_COMMON)
+__weak int board_usbhost_early_power(void)
+{
+	return 0;
+}
+#endif
+
 /* some display routines (info command) */
 static char *usb_get_class_desc(unsigned char dclass)
 {
@@ -486,8 +493,11 @@ static int do_usb(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		if (do_usb_stop_keyboard(1) != 0)
 			return 1;
 		usb_stop();
-		printf("(Re)start USB...\n");
+		usb_printf("(Re)start USB...\n");
 		if (usb_init() >= 0) {
+#if defined(CONFIG_ODROID_COMMON)
+			if (!board_usbhost_early_power()) {
+#endif
 #ifdef CONFIG_USB_STORAGE
 			/* try to recognize storage devices immediately */
 			usb_stor_curr_dev = usb_stor_scan(1);
@@ -499,6 +509,9 @@ static int do_usb(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 #ifdef CONFIG_USB_KEYBOARD
 			drv_usb_kbd_init();
 #endif
+#if defined(CONFIG_ODROID_COMMON)
+			}
+#endif
 		}
 		return 0;
 	}
@@ -507,7 +520,7 @@ static int do_usb(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 			console_assign(stdin, "serial");
 		if (do_usb_stop_keyboard(0) != 0)
 			return 1;
-		printf("stopping USB..\n");
+		usb_printf("stopping USB..\n");
 		usb_stop();
 		return 0;
 	}

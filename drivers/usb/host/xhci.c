@@ -150,7 +150,7 @@ static int xhci_start(struct xhci_hcor *hcor)
 	u32 temp;
 	int ret;
 
-	puts("Starting the controller\n");
+	usb_puts("Starting the controller\n");
 	temp = xhci_readl(&hcor->or_usbcmd);
 	temp |= (CMD_RUN);
 	xhci_writel(&hcor->or_usbcmd, temp);
@@ -1086,7 +1086,7 @@ int usb_lowlevel_init(int index, enum usb_init_type init, void **controller)
 	descriptor.hub.bNbrPorts = ((reg & HCS_MAX_PORTS_MASK) >>
 						HCS_MAX_PORTS_SHIFT);
 #endif
-	printf("Register %x NbrPorts %d\n", reg, descriptor.hub.bNbrPorts);
+	usb_printf("Register %x NbrPorts %d\n", reg, descriptor.hub.bNbrPorts);
 
 	/* Port Indicators */
 	reg = xhci_readl(&hccr->cr_hccparams);
@@ -1109,7 +1109,7 @@ int usb_lowlevel_init(int index, enum usb_init_type init, void **controller)
 	xhci_writel(&ctrl->ir_set->irq_pending, 0x0);
 
 	reg = HC_VERSION(xhci_readl(&hccr->cr_capbase));
-	printf("USB XHCI %x.%02x\n", reg >> 8, reg & 0xff);
+	usb_printf("USB XHCI %x.%02x\n", reg >> 8, reg & 0xff);
 
 	*controller = &xhcic[index];
 

@@ -433,4 +433,23 @@ int usb_new_device(struct usb_device *dev);
 void usb_free_device(void);
 int usb_alloc_device(struct usb_device *dev);
 
+#if defined(CONFIG_ODROID_COMMON)
+extern int board_usbhost_early_power(void);
+
+#define usb_printf(fmt, args...)			\
+	do {						\
+		if (!board_usbhost_early_power())	\
+			printf(fmt, ##args);		\
+	} while (0)
+
+#define usb_puts(str)					\
+	do {						\
+		if (!board_usbhost_early_power())	\
+			puts(str);			\
+	} while (0)
+#else
+#define usb_printf(fmt, args...)	do { printf(fmt, ##args); } while (0)
+#define usb_puts(str)			do { puts(str); } while (0)
+#endif
+
 #endif /*_USB_H_ */

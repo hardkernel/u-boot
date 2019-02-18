@@ -86,6 +86,7 @@ static void usb_hub_power_on(struct usb_hub_device *hub)
 	int i;
 	struct usb_device *dev;
 	unsigned pgood_delay = hub->desc.bPwrOn2PwrGood * 2;
+	int delay = 1000;
 
 	dev = hub->pusb_dev;
 
@@ -99,7 +100,11 @@ static void usb_hub_power_on(struct usb_hub_device *hub)
 	 * Wait for power to become stable,
 	 * plus spec-defined max time for device to connect
 	 */
-	_mdelay(pgood_delay + 1000);
+#if defined(CONFIG_ODROID_COMMON)
+	if (board_usbhost_early_power())
+		delay = 0;
+#endif
+	_mdelay(pgood_delay + delay);
 }
 
 void usb_hub_reset(void)

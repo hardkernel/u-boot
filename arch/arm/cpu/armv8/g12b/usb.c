@@ -21,13 +21,13 @@
 
 #include <asm/arch/usb-v2.h>
 #include <asm/arch/romboot.h>
-
+#include <usb.h>
 
 static struct amlogic_usb_config * g_usb_cfg[BOARD_USB_MODE_MAX][USB_PHY_PORT_MAX];
 
 struct amlogic_usb_config * board_usb_start(int mode,int index)
 {
-	printf("USB3.0 XHCI init start\n");
+	usb_printf("USB3.0 XHCI init start\n");
 
 	if (mode < 0 || mode >= BOARD_USB_MODE_MAX||!g_usb_cfg[mode][index])
 		return 0;
