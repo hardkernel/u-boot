@@ -49,15 +49,12 @@ unsigned long __attribute__((unused))
 	unsigned int dt_magic = readl(fdt_addr);
 	unsigned int dt_total = 0;
 	unsigned int dt_tool_version = 0;
-	unsigned int gzip_format = 0;
 	void * gzip_buf = NULL;
-	unsigned long dt_entry = fdt_addr;
 
 	printf("      Amlogic multi-dtb tool\n");
 
 	/* first check the file header, support GZIP format */
-	gzip_format = IS_GZIP_FORMAT(dt_magic);
-	if (gzip_format) {
+	if (IS_GZIP_FORMAT(dt_magic)) {
 		printf("      GZIP format, decompress...\n");
 		gzip_buf = malloc(GUNZIP_BUF_SIZE);
 		memset(gzip_buf, 0, GUNZIP_BUF_SIZE);
@@ -67,23 +64,18 @@ unsigned long __attribute__((unused))
 		if (unzip_size > GUNZIP_BUF_SIZE) {
 			printf("      Warning! GUNZIP overflow...\n");
 		}
-		fdt_addr = (unsigned long)gzip_buf;
+		memcpy((void *)fdt_addr, (void *)gzip_buf, unzip_size);
 		dt_magic = readl(fdt_addr);
+		if (gzip_buf)
+			free(gzip_buf);
 	}
 
 	dbg_printf("      DBG: fdt_addr: 0x%x\n", (unsigned int)fdt_addr);
 	dbg_printf("      DBG: dt_magic: 0x%x\n", (unsigned int)dt_magic);
-	dbg_printf("      DBG: gzip_format: %d\n", gzip_format);
 
 	/*printf("      Process device tree. dt magic: %x\n", dt_magic);*/
 	if (dt_magic == DT_HEADER_MAGIC) {/*normal dtb*/
 		printf("      Single dtb detected\n");
-		if (gzip_format) {
-			memcpy((void *)dt_entry, (void *)fdt_addr, DTB_MAX_SIZE);
-			fdt_addr = dt_entry;
-			if (gzip_buf)
-				free(gzip_buf);
-		}
 		return fdt_addr;
 	}
 	else if (dt_magic == AML_DT_HEADER_MAGIC) {/*multi dtb*/
@@ -204,18 +196,10 @@ unsigned long __attribute__((unused))
 			/*this offset is based on dtb image package, so should add on base address*/
 			fdt_addr = (fdt_addr + readl(fdt_addr + AML_DT_FIRST_DTB_OFFSET + \
 				dtb_match_num * aml_dtb_header_size + aml_dtb_offset_offset));
-			if (gzip_format) {
-				memcpy((void *)dt_entry, (void *)fdt_addr, DTB_MAX_SIZE);
-				fdt_addr = dt_entry;
-				if (gzip_buf)
-					free(gzip_buf);
-			}
 			return fdt_addr;
 		}
 		else{
 			printf("      Not match any dtb.\n");
-			if (gzip_buf)
-				free(gzip_buf);
 			return fdt_addr;
 		}
 	}

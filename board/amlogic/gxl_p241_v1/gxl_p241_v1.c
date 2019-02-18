@@ -527,6 +527,7 @@ int checkhw(char * name)
 			}
 			break;
 		case 11:
+		case 12:
 			strcpy(loc_name, "gxl_p241_v2-1g\0");
 			break;
 		default:
