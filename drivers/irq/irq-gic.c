@@ -211,10 +211,8 @@ static void gic_irq_eoi(int irq)
 #ifdef CONFIG_GICV2
 	gicc_writel(irq, GICC_EOIR);
 #else
-	asm volatile("msr " __stringify(ICC_EOIR1_EL1) ", %0"
-			: : "r" ((u64)irq));
-	asm volatile("msr " __stringify(ICC_DIR_EL1) ", %0"
-			: : "r" ((u64)irq));
+	asm volatile("msr " __stringify(ICC_EOIR1_EL1) ", %0" : : "r" ((u64)irq));
+	asm volatile("msr " __stringify(ICC_DIR_EL1) ", %0" : : "r" ((u64)irq));
 	isb();
 #endif
 }

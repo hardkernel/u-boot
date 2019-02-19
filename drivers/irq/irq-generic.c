@@ -21,16 +21,19 @@ static struct irq_desc irqs_desc[PLATFORM_MAX_IRQS_NR];
 static struct irq_chip *gic_irq_chip, *gpio_irq_chip;
 static bool initialized;
 
-static int irq_bad(int irq)
+static int bad_irq(int irq)
 {
 	if (irq >= PLATFORM_MAX_IRQS_NR) {
-		printf("WARN: IRQ %d is out of max supported IRQ %d\n",
-		       irq, PLATFORM_MAX_IRQS_NR);
+		IRQ_W("IRQ %d is out of max supported IRQ(%d)\n",
+		      irq, PLATFORM_MAX_IRQS_NR);
 		return -EINVAL;
 	}
 
+	if (!irqs_desc[irq].handle_irq)
+		return -EINVAL;
+
 	if (!initialized) {
-		printf("WARN: Interrupt framework is not initialized\n");
+		IRQ_W("Interrupt framework is not initialized\n");
 		return -EINVAL;
 	}
 
@@ -38,13 +41,13 @@ static int irq_bad(int irq)
 }
 
 /* general interrupt handler for gpio chip */
-void _generic_gpio_handle_irq(int irq)
+void __generic_gpio_handle_irq(int irq)
 {
-	if (irq_bad(irq))
+	if (bad_irq(irq))
 		return;
 
 	if (irq < PLATFORM_GIC_IRQS_NR) {
-		printf("WRAN: IRQ %d is not a GPIO irq\n", irq);
+		IRQ_W("IRQ %d is not a GPIO irq\n", irq);
 		return;
 	}
 
@@ -52,7 +55,7 @@ void _generic_gpio_handle_irq(int irq)
 		irqs_desc[irq].handle_irq(irq, irqs_desc[irq].data);
 }
 
-void _do_generic_irq_handler(void)
+void __do_generic_irq_handler(void)
 {
 	u32 irq = gic_irq_chip->irq_get();
 
@@ -69,7 +72,7 @@ int irq_is_busy(int irq)
 	return (irq >= 0 && irqs_desc[irq].handle_irq) ? -EBUSY : 0;
 }
 
-static int chip_irq_bad(struct irq_chip *chip)
+static int bad_irq_chip(struct irq_chip *chip)
 {
 	if (!chip->name ||
 	    !chip->irq_init ||
@@ -81,19 +84,19 @@ static int chip_irq_bad(struct irq_chip *chip)
 	return 0;
 }
 
-static int _do_arch_irq_init(void)
+static int __do_arch_irq_init(void)
 {
 	int irq, err = -EINVAL;
 
 	/* After relocation done, bss data initialized */
 	if (!(gd->flags & GD_FLG_RELOC)) {
-		printf("WARN: interrupt should be init after reloc\n");
+		IRQ_W("Interrupt framework should initialize after reloc\n");
 		return -EINVAL;
 	}
 
 	/*
-	 * should set true before arch_gpio_irq_init(), otherwise
-	 *  can't request irqs for gpio banks.
+	 * We set true before arch_gpio_irq_init() to avoid fail when
+	 * request irq for gpio banks.
 	 */
 	initialized = true;
 
@@ -103,26 +106,26 @@ static int _do_arch_irq_init(void)
 	}
 
 	gic_irq_chip = arch_gic_irq_init();
-	if (chip_irq_bad(gic_irq_chip)) {
-		printf("ERROR: bad gic irq chip\n");
+	if (bad_irq_chip(gic_irq_chip)) {
+		IRQ_E("Bad gic irq chip\n");
 		goto out;
 	}
 
 	gpio_irq_chip = arch_gpio_irq_init();
-	if (chip_irq_bad(gpio_irq_chip)) {
-		printf("ERROR: bad gpio irq chip\n");
+	if (bad_irq_chip(gpio_irq_chip)) {
+		IRQ_E("Bad gpio irq chip\n");
 		goto out;
 	}
 
 	err = gic_irq_chip->irq_init();
 	if (err) {
-		printf("ERROR: gic interrupt init failed\n");
+		IRQ_E("GIC interrupt initial failed, ret=%d\n", err);
 		goto out;
 	}
 
 	err = gpio_irq_chip->irq_init();
 	if (err) {
-		printf("ERROR: gpio interrupt init failed\n");
+		IRQ_E("GPIO interrupt initial failed, ret=%d\n", err);
 		goto out;
 	}
 
@@ -136,7 +139,7 @@ out:
 
 int irq_handler_enable(int irq)
 {
-	if (irq_bad(irq))
+	if (bad_irq(irq))
 		return -EINVAL;
 
 	if (irq < PLATFORM_GIC_IRQS_NR)
@@ -147,7 +150,7 @@ int irq_handler_enable(int irq)
 
 int irq_handler_disable(int irq)
 {
-	if (irq_bad(irq))
+	if (bad_irq(irq))
 		return -EINVAL;
 
 	if (irq < PLATFORM_GIC_IRQS_NR)
@@ -158,7 +161,7 @@ int irq_handler_disable(int irq)
 
 int irq_set_irq_type(int irq, unsigned int type)
 {
-	if (irq_bad(irq))
+	if (bad_irq(irq))
 		return -EINVAL;
 
 	if (irq < PLATFORM_GIC_IRQS_NR)
@@ -169,7 +172,7 @@ int irq_set_irq_type(int irq, unsigned int type)
 
 int irq_revert_irq_type(int irq)
 {
-	if (irq_bad(irq))
+	if (bad_irq(irq))
 		return -EINVAL;
 
 	if (irq < PLATFORM_GIC_IRQS_NR)
@@ -180,7 +183,7 @@ int irq_revert_irq_type(int irq)
 
 int irq_get_gpio_level(int irq)
 {
-	if (irq_bad(irq))
+	if (bad_irq(irq))
 		return -EINVAL;
 
 	if (irq < PLATFORM_GIC_IRQS_NR)
@@ -191,8 +194,19 @@ int irq_get_gpio_level(int irq)
 
 void irq_install_handler(int irq, interrupt_handler_t *handler, void *data)
 {
-	if (irq_bad(irq))
+	if (irq >= PLATFORM_MAX_IRQS_NR) {
+		IRQ_W("IRQ %d is out of max supported IRQ(%d)\n",
+		      irq, PLATFORM_MAX_IRQS_NR);
 		return;
+	}
+
+	if (!handler || irqs_desc[irq].handle_irq)
+		return;
+
+	if (!initialized) {
+		IRQ_W("Interrupt framework is not initialized\n");
+		return;
+	}
 
 	irqs_desc[irq].handle_irq = handler;
 	irqs_desc[irq].data = data;
@@ -213,7 +227,7 @@ int irqs_suspend(void)
 
 	err = gic_irq_chip->irq_suspend();
 	if (err) {
-		printf("ERROR: irqs suspend failed\n");
+		IRQ_E("IRQs suspend failed, ret=%d\n", err);
 		return err;
 	}
 
@@ -226,7 +240,7 @@ int irqs_resume(void)
 
 	err = gic_irq_chip->irq_resume();
 	if (err) {
-		printf("ERROR: irqs resume failed\n");
+		IRQ_E("IRQs resume failed, ret=%d\n", err);
 		return err;
 	}
 
@@ -242,7 +256,6 @@ static void cpu_local_irq_enable(void)
 static int cpu_local_irq_disable(void)
 {
 	asm volatile("msr daifset, #0x02");
-
 	return 0;
 }
 
@@ -253,7 +266,7 @@ void do_irq(struct pt_regs *pt_regs, unsigned int esr)
 	show_regs(pt_regs);
 #endif
 
-	_do_generic_irq_handler();
+	__do_generic_irq_handler();
 }
 #else
 static void cpu_local_irq_enable(void)
@@ -287,7 +300,7 @@ void do_irq(struct pt_regs *pt_regs)
 	show_regs(pt_regs);
 #endif
 
-	_do_generic_irq_handler();
+	__do_generic_irq_handler();
 }
 #endif
 
@@ -318,7 +331,7 @@ int arch_interrupt_init(void)
 			     : "r" (cpsr)
 			     : "memory");
 #endif
-	return _do_arch_irq_init();
+	return __do_arch_irq_init();
 }
 
 int interrupt_init(void)

@@ -45,16 +45,18 @@ static struct gpio_bank gpio_banks[GPIO_BANK_NUM] = {
 
 static int gpio_is_valid(u32 gpio)
 {
-	if ((gpio == EINVAL_GPIO) || !GPIO_BANK_VALID(gpio) ||
+	if ((gpio == EINVAL_GPIO) ||
+	    !GPIO_BANK_VALID(gpio) ||
 	    !GPIO_PIN_VALID(gpio)) {
-		printf("gpio = 0x%x is not valid!\n", gpio);
+		IRQ_E("gpio-%d(bank-%d, pin-%d) is invalid!\n",
+		      gpio, GPIO_BANK(gpio), GPIO_PIN(gpio));
 		return 0;
 	}
 
 	return 1;
 }
 
-static int _hard_gpio_to_irq(u32 gpio)
+static int __hard_gpio_to_irq(u32 gpio)
 {
 	int idx, bank = 0, pin = 0;
 	int irq;
@@ -77,36 +79,36 @@ static int _hard_gpio_to_irq(u32 gpio)
 	return -EINVAL;
 }
 
-static int _phandle_gpio_to_irq(u32 gpio_phandle, u32 offset)
+static int __phandle_gpio_to_irq(u32 gpio_phandle, u32 offset)
 {
 	int irq_gpio, bank, ret = EINVAL_GPIO;
-	bool found;
 	const char *name;
 	char *name_tok;
+	bool found;
 	int node;
 
 	node = fdt_node_offset_by_phandle(gd->fdt_blob, gpio_phandle);
 	if (node < 0) {
-		printf("can't find node by gpio_phandle %d, ret=%d\n",
-		       gpio_phandle, node);
+		IRQ_E("Can't find node by gpio_phandle=%d, ret=%d\n",
+		      gpio_phandle, node);
 		return EINVAL_GPIO;
 	}
 
 	name = fdt_get_name(gd->fdt_blob, node, NULL);
 	if (!name) {
-		printf("can't find device name for the gpio bank\n");
+		IRQ_E("Can't find gpio bank for phandle=%d\n", gpio_phandle);
 		return EINVAL_GPIO;
 	}
 
 	name_tok = strdup(name);
 	if (!name_tok) {
-		printf("Error: strdup in %s failed!\n", __func__);
+		IRQ_E("Strdup '%s' failed!\n", name);
 		return -ENOMEM;
 	}
 
 	name = strtok(name_tok, "@");
 	if (!name) {
-		printf("can't find correct device name for the gpio bank\n");
+		IRQ_E("Can't strtok '@' for '%s'\n", name_tok);
 		goto out;
 	}
 
@@ -118,24 +120,24 @@ static int _phandle_gpio_to_irq(u32 gpio_phandle, u32 offset)
 	}
 
 	if (!found) {
-		printf("irq gpio framework can't find %s\n", name);
+		IRQ_E("GPIO irq framework can't find '%s'\n", name);
 		goto out;
 	}
 
-	debug("%s: gpio%d-%d\n", __func__, bank, offset);
+	IRQ_D("%s: gpio%d-%d\n", __func__, bank, offset);
 	irq_gpio = RK_IRQ_GPIO(bank, offset);
 	if (!gpio_is_valid(irq_gpio))
 		goto out;
 
 	free(name_tok);
-	return _hard_gpio_to_irq(irq_gpio);
+	return __hard_gpio_to_irq(irq_gpio);
 
 out:
 	free(name_tok);
 	return ret;
 }
 
-static int _irq_to_gpio(int irq)
+static int __irq_to_gpio(int irq)
 {
 	int bank, pin, idx;
 
@@ -155,23 +157,23 @@ static int _irq_to_gpio(int irq)
 int gpio_to_irq(struct gpio_desc *gpio)
 {
 	int irq_gpio, bank, ret = EINVAL_GPIO;
-	bool found;
 	char *name, *name_tok;
+	bool found;
 
 	if (!gpio->dev->name) {
-		printf("can't find device name for the gpio bank\n");
+		IRQ_E("Can't find dev name for gpio bank\n");
 		return EINVAL_GPIO;
 	}
 
 	name_tok = strdup(gpio->dev->name);
 	if (!name_tok) {
-		printf("Error: strdup in %s failed!\n", __func__);
+		IRQ_E("Strdup '%s' failed!\n", gpio->dev->name);
 		return -ENOMEM;
 	}
 
 	name = strtok(name_tok, "@");
 	if (!name) {
-		printf("can't find correct device name for the gpio bank\n");
+		IRQ_E("Can't strtok '@' for '%s'\n", name_tok);
 		goto out;
 	}
 
@@ -183,7 +185,7 @@ int gpio_to_irq(struct gpio_desc *gpio)
 	}
 
 	if (!found) {
-		printf("irq gpio framework can't find %s\n", name);
+		IRQ_E("GPIO irq framework can't find '%s'\n", name);
 		goto out;
 	}
 
@@ -192,7 +194,7 @@ int gpio_to_irq(struct gpio_desc *gpio)
 		goto out;
 
 	free(name_tok);
-	return _hard_gpio_to_irq(irq_gpio);
+	return __hard_gpio_to_irq(irq_gpio);
 
 out:
 	free(name_tok);
@@ -204,7 +206,7 @@ int hard_gpio_to_irq(u32 gpio)
 	if (!gpio_is_valid(gpio))
 		return EINVAL_GPIO;
 
-	return _hard_gpio_to_irq(gpio);
+	return __hard_gpio_to_irq(gpio);
 }
 
 int phandle_gpio_to_irq(u32 gpio_phandle, u32 pin)
@@ -212,12 +214,12 @@ int phandle_gpio_to_irq(u32 gpio_phandle, u32 pin)
 	if (gpio_phandle < 0)
 		return EINVAL_GPIO;
 
-	return _phandle_gpio_to_irq(gpio_phandle, pin);
+	return __phandle_gpio_to_irq(gpio_phandle, pin);
 }
 
 int irq_to_gpio(int irq)
 {
-	return _irq_to_gpio(irq);
+	return __irq_to_gpio(irq);
 }
 
 struct gpio_bank *gpio_id_to_bank(u32 id)

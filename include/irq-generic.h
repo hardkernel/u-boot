@@ -11,6 +11,11 @@
 #include <common.h>
 #include <dt-bindings/pinctrl/rockchip.h>
 
+#define IRQ_I(fmt, args...)	printf("IRQ: "fmt, ##args)
+#define IRQ_W(fmt, args...)	printf("IRQ Warn: "fmt, ##args)
+#define IRQ_E(fmt, args...)	printf("IRQ Err: "fmt, ##args)
+#define IRQ_D(fmt, args...)	 debug("IRQ Debug "fmt, ##args)
+
 /*
  * IRQ line status.
  *
@@ -84,10 +89,11 @@ int gpio_to_irq(struct gpio_desc *gpio);
  */
 #define GPIO_BANK_SHIFT			8
 #define RK_IRQ_GPIO(bank, pin) 		(((bank) << GPIO_BANK_SHIFT) | (pin))
+
 int hard_gpio_to_irq(unsigned gpio);
 int phandle_gpio_to_irq(u32 gpio_phandle, u32 pin);
 
-/* only irq-gpio.c can use it */
-void _generic_gpio_handle_irq(int irq);
+/* Only irq-gpio.c can call it */
+void __generic_gpio_handle_irq(int irq);
 
 #endif /* _IRQ_GENERIC_H */

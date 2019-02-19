@@ -101,15 +101,15 @@ static void generic_gpio_handle_irq(int irq, void *data __always_unused)
 		gpio_irq_ack(bank->regbase, offset_to_bit(pin));
 
 		/*
-		 * if gpio is edge triggered, clear condition before executing
-		 * the handler so that we don't miss edges
+		 * If gpio is edge triggered, clear condition before executing
+		 * the handler, so that we don't miss next edges trigger.
 		 */
 		if (ilr & (1 << pin)) {
 			unmasked = 1;
 			gpio_irq_unmask(bank->regbase, offset_to_bit(pin));
 		}
 
-		_generic_gpio_handle_irq(gpio_irq + pin);
+		__generic_gpio_handle_irq(gpio_irq + pin);
 
 		isr &= ~(1 << pin);
 
