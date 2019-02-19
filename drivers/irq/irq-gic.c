@@ -4,6 +4,7 @@
  * SPDX-License-Identifier:     GPL-2.0+
  */
 
+#include <common.h>
 #include <asm/io.h>
 #include <asm/gic.h>
 #include <config.h>
@@ -15,12 +16,23 @@
 #define gicd_writel(v, offset)	writel(v, (void *)GICD_BASE + (offset))
 #define gicc_writel(v, offset)	writel(v, (void *)GICC_BASE + (offset))
 
+/* 64-bit write */
+#define gicd_writeq(v, offset)	writeq(v, (void *)GICD_BASE + (offset))
+
 #define IRQ_REG_X4(irq)		(4 * ((irq) / 4))
 #define IRQ_REG_X16(irq)	(4 * ((irq) / 16))
 #define IRQ_REG_X32(irq)	(4 * ((irq) / 32))
 #define IRQ_REG_X4_OFFSET(irq)	((irq) % 4)
 #define IRQ_REG_X16_OFFSET(irq)	((irq) % 16)
 #define IRQ_REG_X32_OFFSET(irq)	((irq) % 32)
+
+#define MPIDR_CPU_MASK		0xff
+
+#define IROUTER_IRM_SHIFT	31
+#define IROUTER_IRM_MASK	0x1
+#define gicd_irouter_val_from_mpidr(mpidr, irm)		\
+	((mpidr & ~(0xff << 24)) |			\
+	 (irm & IROUTER_IRM_MASK) << IROUTER_IRM_SHIFT)
 
 typedef enum INT_TRIG {
 	INT_LEVEL_TRIGGER,
@@ -44,27 +56,6 @@ struct gic_cpu_data {
 
 static struct gic_dist_data gicd_save;
 static struct gic_cpu_data gicc_save;
-
-__maybe_unused static u8 g_gic_cpumask = 0x01;
-
-__maybe_unused static u32 gic_get_cpumask(void)
-{
-	u32 mask = 0, i;
-
-	for (i = mask = 0; i < 32; i += 4) {
-		mask = gicd_readl(GICD_ITARGETSRn + 4 * i);
-		mask |= mask >> 16;
-		mask |= mask >> 8;
-		if (mask)
-			break;
-	}
-
-	if (!mask)
-		printf("GIC CPU mask not found.\n");
-
-	debug("GIC CPU mask = 0x%08x\n", mask);
-	return mask;
-}
 
 static inline void int_set_prio_filter(u32 priority)
 {
@@ -145,7 +136,7 @@ static int gic_irq_set_trigger(int irq, eINT_TRIG trig)
 static int gic_irq_enable(int irq)
 {
 #ifdef CONFIG_GICV2
-	u32 val;
+	u32 val, cpu_mask;
 	u32 shift = (irq % 4) * 8;
 
 	if (irq >= PLATFORM_GIC_IRQS_NR)
@@ -156,19 +147,24 @@ static int gic_irq_enable(int irq)
 	val |= 1 << IRQ_REG_X32_OFFSET(irq);
 	gicd_writel(val, GICD_ISENABLERn + IRQ_REG_X32(irq));
 
-
 	/* set target */
+	cpu_mask = 1 << (read_mpidr() & MPIDR_CPU_MASK);
 	val = gicd_readl(GICD_ITARGETSRn + IRQ_REG_X4(irq));
 	val &= ~(0xFF << shift);
-	val |= (g_gic_cpumask << shift);
+	val |= (cpu_mask << shift);
 	gicd_writel(val, GICD_ITARGETSRn + IRQ_REG_X4(irq));
-
 #else
 	u32 val;
+	u64 affinity_val;
 
+	/* set enable */
 	val = gicd_readl(GICD_ISENABLERn + IRQ_REG_X32(irq));
 	val |= 1 << IRQ_REG_X32_OFFSET(irq);
 	gicd_writel(val, GICD_ISENABLERn + IRQ_REG_X32(irq));
+
+	/* set itouter(target) */
+	affinity_val = gicd_irouter_val_from_mpidr(read_mpidr(), 0);
+	gicd_writeq(affinity_val, GICD_IROUTERn + (irq << 3));
 #endif
 
 	return 0;
@@ -360,8 +356,6 @@ static int gic_irq_init(void)
 	int_enable_secure_signal();
 	int_enable_nosecure_signal();
 	int_enable_distributor();
-
-	g_gic_cpumask = gic_get_cpumask();
 #endif
 
 	return 0;
