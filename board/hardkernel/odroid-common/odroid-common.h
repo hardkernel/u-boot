@@ -29,4 +29,10 @@ extern int get_adc_value(int channel);
 
 int board_revision(void);
 
+/*
+ * CVBS
+ */
+
+int board_cvbs_probe(void);
+
 #endif
