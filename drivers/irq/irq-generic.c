@@ -64,6 +64,11 @@ void _do_generic_irq_handler(void)
 	gic_irq_chip->irq_eoi(irq);
 }
 
+int irq_is_busy(int irq)
+{
+	return (irq >= 0 && irqs_desc[irq].handle_irq) ? -EBUSY : 0;
+}
+
 static int chip_irq_bad(struct irq_chip *chip)
 {
 	if (!chip->name ||

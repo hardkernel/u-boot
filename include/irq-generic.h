@@ -69,6 +69,7 @@ int irq_handler_disable(int irq);
 int irq_get_gpio_level(int irq);
 int irqs_suspend(void);
 int irqs_resume(void);
+int irq_is_busy(int irq);
 int gpio_to_irq(struct gpio_desc *gpio);
 
 /*

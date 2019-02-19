@@ -57,6 +57,7 @@ static int gpio_is_valid(u32 gpio)
 static int _hard_gpio_to_irq(u32 gpio)
 {
 	int idx, bank = 0, pin = 0;
+	int irq;
 
 	if (!gpio_is_valid(gpio))
 		return -EINVAL;
@@ -65,8 +66,12 @@ static int _hard_gpio_to_irq(u32 gpio)
 	pin = (gpio & GPIO_PIN_MASK) >> GPIO_PIN_OFFSET;
 
 	for (idx = 0; idx < ARRAY_SIZE(gpio_banks); idx++) {
-		if (gpio_banks[idx].id == bank)
-			return (gpio_banks[idx].irq_base + pin);
+		if (gpio_banks[idx].id == bank) {
+			irq = (gpio_banks[idx].irq_base + pin);
+			if (irq_is_busy(irq))
+				return -EBUSY;
+			return irq;
+		}
 	}
 
 	return -EINVAL;
