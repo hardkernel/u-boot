@@ -405,6 +405,14 @@ static inline void set_dacr(unsigned int val)
 	isb();
 }
 
+static inline unsigned int read_mpidr(void)
+{
+	unsigned int mpidr;
+
+	asm volatile ("mrc p15, 0, %[mpidr], c0, c0, 5" : [mpidr] "=r" (mpidr));
+	return mpidr;
+}
+
 #ifdef CONFIG_ARMV7_LPAE
 /* Long-Descriptor Translation Table Level 1/2 Bits */
 #define TTB_SECT_XN_MASK	(1ULL << 54)
