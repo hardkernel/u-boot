@@ -37,7 +37,7 @@ config SYS_HZ
 
 config SYS_STACK_SIZE
 	hex
-	default 0x20000
+	default 0x200000
 	help
 	 The system stack size.
 
@@ -316,5 +316,4 @@ source lib/avb/libavb_atx/Kconfig
 source lib/avb/libavb_user/Kconfig
 source lib/avb/rk_avb_user/Kconfig
 source lib/optee_clientApi/Kconfig
-
 endmenu
