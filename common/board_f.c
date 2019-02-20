@@ -702,8 +702,6 @@ static int initf_bootstage(void)
 			IS_ENABLED(CONFIG_BOOTSTAGE_STASH);
 	int ret;
 
-	gd->sys_start_tick = get_ticks();
-
 	ret = bootstage_init(!from_spl);
 	if (ret)
 		return ret;
