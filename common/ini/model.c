@@ -1276,7 +1276,14 @@ int parse_model_sum(const char *file_name, char *model_name)
 
 const char *get_model_sum_path(void)
 {
-	return DEFAULT_MODEL_SUM_PATH;
+	char *model_path;
+
+	model_path = getenv("model_path");
+	if (model_path == NULL)
+		return DEFAULT_MODEL_SUM_PATH;
+
+	printf("%s: %s\n", __func__, model_path);
+	return model_path;
 }
 
 int handle_model_list(void)
