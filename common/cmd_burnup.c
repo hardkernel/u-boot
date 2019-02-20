@@ -7,6 +7,7 @@
 #include <div64.h>
 #include <linux/err.h>
 #include <partition_table.h>
+#include <mmc.h>
 
 #define DbgP(fmt...)   //printf("[burnupDbg]"fmt)
 #define MsgP(fmt...)   printf("[burnup]"fmt)
@@ -88,6 +89,23 @@ int store_write_ops(unsigned char *partition_name,unsigned char * buf, uint64_t 
 
         name = partition_name;
         addr = (unsigned long)buf;
+        if ((EMMC_BOOT_FLAG == device_boot_flag) && !strcmp("1", (char*)name))
+        {
+            if (off & 0x1ff) {
+                ErrP("emmc1 invalid offset 0x%llx\n", off);
+                return -__LINE__;
+            }
+            if (size & 0xff) {
+                MsgP("NOT align sz 0x%llx\n", size);
+            }
+            sprintf(str, "mmc write 0x%p 0x%llx 0x%llx", buf, (off>>9), (size>>9));
+            ret = run_command(str, 0);
+            if (ret) {
+                ErrP("Fail in cmd[%s]\n", str);
+                return -__LINE__;
+            }
+            return ret;
+        }
 
 #if CONFIG_AML_MTD
         if ((size & MtdAlignMask) && (NAND_BOOT_FLAG == device_boot_flag )) {
@@ -126,6 +144,31 @@ int store_get_partititon_size(unsigned char *partition_name, uint64_t *size)
 {
     char	str[128];
     int ret=0;
+
+    if (isdigit(*partition_name) && 1 == strlen((char*)partition_name))
+    {
+        const int curDev = *partition_name - '0';
+        sprintf(str, "mmc dev %d", curDev);
+        MsgP("cmd[%s]\n", str);
+        if (run_command(str, 0)) {
+            ErrP("Fail probe dev %d\n", curDev);
+            return 0;
+        }
+        struct mmc *mmc = find_mmc_device(curDev);
+        if (!mmc) {
+            ErrP("Fail find mmc  %s\n", partition_name);
+            return 0;
+        }
+        if (mmc_init(mmc)) {
+            ErrP("FAil init mmc %s\n", partition_name);
+            return 0;
+        }
+        MsgP("mmc %s capacity 0x%llx\n", partition_name, mmc->capacity);
+        *size = mmc->capacity;
+        run_command("store disprotect key", 0);
+        MsgP("cmd[%s]\n", str);
+        return 0;
+    }
 
     sprintf(str, "%s  size %s 0x%p ",cmd_name, partition_name, size);
     store_dbg("command:	%s", str);
