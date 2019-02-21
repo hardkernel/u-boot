@@ -253,6 +253,7 @@
             "fi;"\
             "\0"\
         "bcb_cmd="\
+            "get_rebootmode;"\
             "get_valid_slot;"\
             "\0"\
         "upgrade_key="\
