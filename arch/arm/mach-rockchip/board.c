@@ -50,6 +50,22 @@ DECLARE_GLOBAL_DATA_PTR;
 #define CPUID_LEN       0x10
 #define CPUID_OFF       0x7
 
+static int rockchip_set_ethaddr(void)
+{
+#ifdef CONFIG_ROCKCHIP_VENDOR_PARTITION
+	int ret;
+	u8 ethaddr[ARP_HLEN];
+	char buf[ARP_HLEN_ASCII + 1];
+
+	ret = vendor_storage_read(VENDOR_LAN_MAC_ID, ethaddr, sizeof(ethaddr));
+	if (ret > 0 && is_valid_ethaddr(ethaddr)) {
+		sprintf(buf, "%pM", ethaddr);
+		env_set("ethaddr", buf);
+	}
+#endif
+	return 0;
+}
+
 static int rockchip_set_serialno(void)
 {
 	char serialno_str[VENDOR_SN_MAX];
@@ -137,6 +153,7 @@ __weak int set_armclk_rate(void)
 
 int board_late_init(void)
 {
+	rockchip_set_ethaddr();
 	rockchip_set_serialno();
 #if (CONFIG_ROCKCHIP_BOOT_MODE_REG > 0)
 	setup_boot_mode();
