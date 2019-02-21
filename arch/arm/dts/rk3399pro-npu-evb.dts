@@ -6,7 +6,6 @@
 
 /dts-v1/;
 #include "rk1808.dtsi"
-#include "rk1808-u-boot.dtsi"
 #include <dt-bindings/input/input.h>
 #include <linux/media-bus-format.h>
 
@@ -23,36 +22,26 @@
 		compatible = "ramdisk-readonly";
 		status = "okay";
 	};
-
-	xin24m: xin24m {
-		compatible = "fixed-clock";
-		#clock-cells = <0>;
-		clock-frequency = <24000000>;
-		clock-output-names = "xin24m";
-	};
 };
 
-&emmc {
-	fifo-mode;
-	bus-width = <8>;
-	cap-mmc-highspeed;
-	supports-emmc;
-	disable-wp;
-	non-removable;
-	num-slots = <1>;
-
-	status = "okay";
+&dmc {
+	u-boot,dm-pre-reloc;
 };
 
-&sdmmc {
-	supports-sd;
-	status = "disabled";
+&cru {
+	u-boot,dm-pre-reloc;
+};
+
+&grf {
+	u-boot,dm-pre-reloc;
+};
+
+&pmugrf {
+	u-boot,dm-pre-reloc;
 };
 
 &uart2 {
+	u-boot,dm-pre-reloc;
 	clock-frequency = <24000000>;
-	clocks = <&xin24m>, <&xin24m>;
-	clock-names = "baudclk", "apb_pclk";
-
 	status = "okay";
 };
