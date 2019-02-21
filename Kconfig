@@ -133,7 +133,7 @@ menuconfig EXPERT
 if EXPERT
 	config SYS_MALLOC_CLEAR_ON_INIT
 	bool "Init with zeros the memory reserved for malloc (slow)"
-	default y
+	default y if !ARCH_ROCKCHIP
 	help
 	  This setting is enabled by default. The reserved malloc
 	  memory is initialized with zeros, so first malloc calls
