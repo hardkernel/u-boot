@@ -4,15 +4,18 @@
  */
 
 #include <common.h>
-#include <optee_include/OpteeClientApiLib.h>
-#include <optee_include/tee_client_api.h>
-#include <optee_include/tee_api_defines.h>
 #include <boot_rkimg.h>
 #include <stdlib.h>
 #include <attestation_key.h>
-#include "write_keybox.h"
+#include <write_keybox.h>
 #include <keymaster.h>
+#include <optee_include/OpteeClientApiLib.h>
+#include <optee_include/tee_client_api.h>
+#include <optee_include/tee_api_defines.h>
 
+#define STORAGE_CMD_WRITE	6
+#define	SIZE_OF_TAG		4
+#define	SIZE_OF_USB_CMD	8
 #define	BOOT_FROM_EMMC	(1 << 1)
 #define	WIDEVINE_TAG	"KBOX"
 #define	ATTESTATION_TAG	"ATTE"
@@ -23,12 +26,15 @@ uint32_t rk_send_keybox_to_ta(uint8_t *filename, uint32_t filename_size,
 			      uint8_t *key, uint32_t key_size,
 			      uint8_t *data, uint32_t data_size)
 {
+	uint32_t ErrorOrigin;
 	TEEC_Result TeecResult;
 	TEEC_Context TeecContext;
 	TEEC_Session TeecSession;
-	uint32_t ErrorOrigin;
 	TEEC_UUID *TeecUuid = &uuid;
 	TEEC_Operation TeecOperation = {0};
+	TEEC_SharedMemory SharedMem0 = {0};
+	TEEC_SharedMemory SharedMem1 = {0};
+	TEEC_SharedMemory SharedMem2 = {0};
 	struct blk_desc *dev_desc;
 
 	dev_desc = rockchip_get_bootdev();
@@ -37,8 +43,12 @@ uint32_t rk_send_keybox_to_ta(uint8_t *filename, uint32_t filename_size,
 		return -TEEC_ERROR_GENERIC;
 	}
 
-	OpteeClientApiLibInitialize();
+	TeecResult = OpteeClientApiLibInitialize();
+	if (TeecResult != TEEC_SUCCESS)
+		return TeecResult;
 	TeecResult = TEEC_InitializeContext(NULL, &TeecContext);
+	if (TeecResult != TEEC_SUCCESS)
+		return TeecResult;
 	TeecOperation.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT,
 						    TEEC_NONE,
 						    TEEC_NONE,
@@ -57,24 +67,28 @@ uint32_t rk_send_keybox_to_ta(uint8_t *filename, uint32_t filename_size,
 				      NULL,
 				      &TeecOperation,
 				      &ErrorOrigin);
-
-	TEEC_SharedMemory SharedMem0 = {0};
+	if (TeecResult != TEEC_SUCCESS)
+		return TeecResult;
 
 	SharedMem0.size = filename_size;
 	SharedMem0.flags = 0;
 	TeecResult = TEEC_AllocateSharedMemory(&TeecContext, &SharedMem0);
+	if (TeecResult != TEEC_SUCCESS)
+		return TeecResult;
 	memcpy(SharedMem0.buffer, filename, SharedMem0.size);
-	TEEC_SharedMemory SharedMem1 = {0};
 
 	SharedMem1.size = key_size;
 	SharedMem1.flags = 0;
 	TeecResult = TEEC_AllocateSharedMemory(&TeecContext, &SharedMem1);
+	if (TeecResult != TEEC_SUCCESS)
+		return TeecResult;
 	memcpy(SharedMem1.buffer, key, SharedMem1.size);
-	TEEC_SharedMemory SharedMem2 = {0};
 
 	SharedMem2.size = data_size;
 	SharedMem2.flags = 0;
 	TeecResult = TEEC_AllocateSharedMemory(&TeecContext, &SharedMem2);
+	if (TeecResult != TEEC_SUCCESS)
+		return TeecResult;
 	memcpy(SharedMem2.buffer, data, SharedMem2.size);
 
 	TeecOperation.params[0].tmpref.buffer = SharedMem0.buffer;
@@ -91,7 +105,7 @@ uint32_t rk_send_keybox_to_ta(uint8_t *filename, uint32_t filename_size,
 
 	printf("write keybox to secure storage\n");
 	TeecResult = TEEC_InvokeCommand(&TeecSession,
-					6,
+					STORAGE_CMD_WRITE,
 					&TeecOperation,
 					&ErrorOrigin);
 	if (TeecResult != TEEC_SUCCESS)
@@ -113,21 +127,22 @@ uint32_t write_keybox_to_secure_storage(uint8_t *received_data, uint32_t len)
 {
 	uint32_t key_size;
 	uint32_t data_size;
-	TEEC_Result ret;
 	int rc = 0;
+	TEEC_Result ret;
 
-	if (memcmp(received_data, WIDEVINE_TAG, 4) == 0) {
+	if (memcmp(received_data, WIDEVINE_TAG, SIZE_OF_TAG) == 0) {
 		/* widevine keybox */
 		TEEC_UUID widevine_uuid = { 0x1b484ea5, 0x698b, 0x4142,
 			{ 0x82, 0xb8, 0x3a, 0xcf, 0x16, 0xe9, 0x9e, 0x2a } };
 
-		key_size = *(received_data + 4);
-		data_size = *(received_data + 8);
+		key_size = *(received_data + SIZE_OF_TAG);
+		data_size = *(received_data + SIZE_OF_TAG + sizeof(key_size));
 
 		ret = rk_send_keybox_to_ta((uint8_t *)"widevine_keybox",
 					   sizeof("widevine_keybox"),
 					   widevine_uuid,
-					   received_data + 12,
+					   received_data + SIZE_OF_TAG +
+					   sizeof(key_size) + sizeof(data_size),
 					   key_size,
 					   received_data + 12 + key_size,
 					   data_size);
@@ -138,7 +153,7 @@ uint32_t write_keybox_to_secure_storage(uint8_t *received_data, uint32_t len)
 			rc = -EIO;
 			printf("write widevine keybox to secure storage fail\n");
 		}
-	} else if (memcmp(received_data, ATTESTATION_TAG, 4) == 0) {
+	} else if (memcmp(received_data, ATTESTATION_TAG, SIZE_OF_TAG) == 0) {
 		/* attestation key */
 		atap_result ret;
 
@@ -150,14 +165,16 @@ uint32_t write_keybox_to_secure_storage(uint8_t *received_data, uint32_t len)
 			rc = -EIO;
 			printf("write attestation key to secure storage fail\n");
 		}
-	} else if (memcmp(received_data, PLAYREADY30_TAG, 4) == 0) {
+	} else if (memcmp(received_data, PLAYREADY30_TAG, SIZE_OF_TAG) == 0) {
 		/* PlayReady SL3000 root key */
 		uint32_t ret;
 
-		data_size = *(received_data + 4);
+		data_size = *(received_data + SIZE_OF_TAG);
 		ret = write_to_keymaster((uint8_t *)"PlayReady_SL3000",
 					 sizeof("PlayReady_SL3000"),
-					 received_data + 8, data_size);
+					 received_data + SIZE_OF_TAG +
+					 sizeof(data_size),
+					 data_size);
 		if (ret == TEEC_SUCCESS) {
 			rc = 0;
 			printf("write PlayReady SL3000 root key to secure storage success\n");
@@ -187,10 +204,10 @@ uint32_t read_raw_data_from_secure_storage(uint8_t *data, uint32_t data_size)
 	uint32_t rc;
 
 	rc = read_from_keymaster((uint8_t *)"raw_data", sizeof("raw_data"),
-				 data, data_size - 8);
+				 data, data_size - SIZE_OF_USB_CMD);
 	if (rc != TEEC_SUCCESS)
 		return 0;
-	rc = data_size - 8;
+	rc = data_size - SIZE_OF_USB_CMD;
 
 	return rc;
 }
