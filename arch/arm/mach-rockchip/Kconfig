@@ -358,7 +358,7 @@ config ROCKCHIP_RK1808
 	bool "Support Rockchip RK1808"
 	select ARM64
 	select ARM_SMCCC
-	select GICV3
+	select GICV3 if !COPROCESSOR_RK1808
 	select DEBUG_UART_BOARD_INIT
 	help
 	  The Rockchip RK1808 is a ARM-based Soc which embedded with dual
