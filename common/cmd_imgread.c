@@ -131,7 +131,13 @@ static int _aml_get_secure_boot_kernel_size(const void* pLoadaddr, unsigned* pTo
 		if (AML_D_Q_IMG_SIG_HDR_SIZE == (nCheckOffset & 0xFFFF) &&
             ((nCheckOffset>>16) & 0xFFFF))
         {
-            *pTotalEncKernelSz = (((aml_boot_header_t *)pLoadaddr)->img_size);
+			if (is_andr_9_image(pAndHead))
+            {
+                *pTotalEncKernelSz = (((aml_boot_header_t *)(pAndHead+secureKernelImgSz))->img_size)+secureKernelImgSz;
+            }
+            else
+                *pTotalEncKernelSz = (((aml_boot_header_t *)pLoadaddr)->img_size);
+
             return 0;
         }
     }
