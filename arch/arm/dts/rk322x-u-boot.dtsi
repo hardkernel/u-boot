@@ -61,3 +61,7 @@
 	u-boot,dm-pre-reloc;
 	status = "okay";
 };
+
+&gpio1 {
+	u-boot,dm-pre-reloc;
+};
