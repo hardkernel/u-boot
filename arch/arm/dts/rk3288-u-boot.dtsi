@@ -65,6 +65,10 @@
 	u-boot,dm-pre-reloc;
 };
 
+&gpio6 {
+	u-boot,dm-pre-reloc;
+};
+
 &usbphy0 {
 	u-boot,dm-pre-reloc;
 	status = "okay";
