@@ -65,3 +65,7 @@
 &usb_otg {
 	u-boot,dm-pre-reloc;
 };
+
+&gpio2 {
+	u-boot,dm-pre-reloc;
+};
