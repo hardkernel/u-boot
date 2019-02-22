@@ -389,7 +389,6 @@ fallback:
 	} else {
 		/* Mode from boot mode register */
 		reg_boot_mode = readl((void *)CONFIG_ROCKCHIP_BOOT_MODE_REG);
-		writel(BOOT_NORMAL, (void *)CONFIG_ROCKCHIP_BOOT_MODE_REG);
 
 		switch (reg_boot_mode) {
 		case BOOT_NORMAL:
