@@ -46,6 +46,9 @@
 #define CONFIG_ADC_POWER_KEY_VAL		0  /* sample value range: 0-1023*/
 #endif
 
+/* Enable GPIO Key Wakeup */
+#define CONFIG_GPIO_WAKEUP
+
 /* Serial config */
 #define CONFIG_CONS_INDEX			2
 #define CONFIG_BAUDRATE				115200

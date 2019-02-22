@@ -23,6 +23,9 @@
 #ifdef CONFIG_CEC_WAKEUP
 #include <cec_tx_reg.h>
 #endif
+#ifdef CONFIG_GPIO_WAKEUP
+#include <gpio_key.h>
+#endif
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
@@ -142,12 +145,20 @@ static unsigned int detect_key(unsigned int suspend_from)
 {
 	int exit_reason = 0;
 	unsigned *irq = (unsigned *)WAKEUP_SRC_IRQ_ADDR_BASE;
+#ifdef CONFIG_GPIO_WAKEUP
+	unsigned int is_gpiokey = 0;
+#endif
+
 	init_remote();
 #ifdef CONFIG_CEC_WAKEUP
 		if (hdmi_cec_func_config & 0x1) {
 			remote_cec_hw_reset();
 			cec_node_init();
 		}
+#endif
+
+#ifdef CONFIG_GPIO_WAKEUP
+	is_gpiokey = init_gpio_key();
 #endif
 
 	do {
@@ -184,6 +195,12 @@ static unsigned int detect_key(unsigned int suspend_from)
 			exit_reason = ETH_PMT_WAKEUP;
 		}
 
+#ifdef CONFIG_GPIO_WAKEUP
+		if (is_gpiokey) {
+			if (gpio_detect_key())
+				exit_reason = GPIO_WAKEUP;
+		}
+#endif
 		if (exit_reason)
 			break;
 		else
