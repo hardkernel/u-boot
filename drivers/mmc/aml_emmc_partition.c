@@ -115,22 +115,32 @@ struct partitions emmc_partition_table[] = {
 };
 
 struct virtual_partition virtual_partition_table[] = {
-    /* partition for name idx, off & size will not be used! */
+	/* partition for name idx, off & size will not be used! */
 #if (CONFIG_PTBL_MBR)
-    VIRTUAL_PARTITION_ELEMENT(MMC_MBR_NAME, MMC_MBR_OFFSET, MMC_MBR_SIZE),
+	VIRTUAL_PARTITION_ELEMENT(MMC_MBR_NAME,
+				  MMC_MBR_OFFSET, MMC_MBR_SIZE),
 #endif
-    VIRTUAL_PARTITION_ELEMENT(MMC_BOOT_NAME0, 0, 0),
-    VIRTUAL_PARTITION_ELEMENT(MMC_BOOT_NAME1, 0, 0),
+	VIRTUAL_PARTITION_ELEMENT(MMC_BOOT_NAME0, 0, 0),
+	VIRTUAL_PARTITION_ELEMENT(MMC_BOOT_NAME1, 0, 0),
 
-    /* virtual partition in reserved partition, take care off and size */
-	VIRTUAL_PARTITION_ELEMENT(MMC_TABLE_NAME, MMC_TABLE_OFFSET, MMC_TABLE_SIZE),
-	VIRTUAL_PARTITION_ELEMENT(MMC_KEY_NAME, EMMCKEY_RESERVE_OFFSET, MMC_KEY_SIZE),
-	VIRTUAL_PARTITION_ELEMENT(MMC_PATTERN_NAME, CALI_PATTERN_OFFSET, CALI_PATTERN_SIZE),
-	VIRTUAL_PARTITION_ELEMENT(MMC_DTB_NAME, DTB_OFFSET, DTB_SIZE),
+	/* virtual partition in reserved partition, take care off and size */
+	VIRTUAL_PARTITION_ELEMENT(MMC_TABLE_NAME,
+				  MMC_TABLE_OFFSET, MMC_TABLE_SIZE),
+	VIRTUAL_PARTITION_ELEMENT(MMC_KEY_NAME,
+				  EMMCKEY_RESERVE_OFFSET, MMC_KEY_SIZE),
+	VIRTUAL_PARTITION_ELEMENT(MMC_PATTERN_NAME,
+				  CALI_PATTERN_OFFSET, CALI_PATTERN_SIZE),
+	VIRTUAL_PARTITION_ELEMENT(MMC_DTB_NAME,
+				  DTB_OFFSET, DTB_SIZE),
 	VIRTUAL_PARTITION_ELEMENT(MMC_FASTBOOT_CONTEXT_NAME,
-			FASTBOOT_CONTEXT_OFFSET, FASTBOOT_CONTEXT_SIZE),
-	VIRTUAL_PARTITION_ELEMENT(MMC_MAGIC_NAME, MAGIC_OFFSET, MAGIC_SIZE),
-	VIRTUAL_PARTITION_ELEMENT(MMC_RANDOM_NAME, RANDOM_OFFSET, RANDOM_SIZE),
+				  FASTBOOT_CONTEXT_OFFSET,
+				  FASTBOOT_CONTEXT_SIZE),
+	VIRTUAL_PARTITION_ELEMENT(MMC_MAGIC_NAME,
+				  MAGIC_OFFSET, MAGIC_SIZE),
+	VIRTUAL_PARTITION_ELEMENT(MMC_RANDOM_NAME,
+				  RANDOM_OFFSET, RANDOM_SIZE),
+	VIRTUAL_PARTITION_ELEMENT(MMC_DDR_PARAMETER_NAME,
+				  DDR_PARAMETER_OFFSET, DDR_PARAMETER_SIZE),
 };
 
 int get_emmc_partition_arraysize(void)
@@ -157,51 +167,43 @@ void __attribute__((unused)) _dump_part_tbl(struct partitions *p, int count)
 }
 
 static int _get_part_index_by_name(struct partitions *tbl,
-					   int cnt, const char *name)
-{
-	   int i=0;
-	   struct partitions *part = NULL;
-
-       while (i < cnt) {
-			   part = &tbl[i];
-               if (!strcmp(name, part->name)) {
-					   apt_info("find %s @ tbl[%d]\n", name, i);
-					   break;
-			   }
-			   i++;
-	   };
-       if (i == cnt) {
-			   i = -1;
-			   apt_wrn("do not find match in table %s\n", name);
-	   }
-	   return i;
-}
-
-
-static struct partitions *_find_partition_by_name(struct partitions *tbl,
-			int cnt, const char *name)
+				   int cnt, const char *name)
 {
 	int i = 0;
 	struct partitions *part = NULL;
 
 	while (i < cnt) {
-
 		part = &tbl[i];
 		if (!strcmp(name, part->name)) {
 			apt_info("find %s @ tbl[%d]\n", name, i);
-			break;
+			return i;
 		}
 		i++;
 	};
-	if (i == cnt) {
-		part = NULL;
-		apt_wrn("do not find match in table %s\n", name);
-	}
-	return part;
+
+	return -1;
+}
+
+static struct partitions *_find_partition_by_name(struct partitions *tbl,
+						  int cnt, const char *name)
+{
+	int i = 0;
+	struct partitions *part = NULL;
+
+	while (i < cnt) {
+		part = &tbl[i];
+		if (!strcmp(name, part->name)) {
+			apt_info("find %s @ tbl[%d]\n", name, i);
+			return part;
+		}
+		i++;
+	};
+
+	return NULL;
 }
 
 /* fixme, must called after offset was calculated. */
-static ulong _get_inherent_offset(const char *name)
+ulong _get_inherent_offset(const char *name)
 {
 	struct partitions *part;
 
@@ -212,6 +214,7 @@ static ulong _get_inherent_offset(const char *name)
 	else
 		return part->offset;
 }
+
 /* partition table (Emmc Partition Table) */
 struct _iptbl *p_iptbl_ept = NULL;
 
@@ -332,13 +335,13 @@ static int _calculate_offset(struct mmc *mmc, struct _iptbl *itbl, u32 bottom)
 #if (CONFIG_MPT_DEBUG)
 	_dump_part_tbl(part, itbl->count);
 #endif
-	if (!strcmp(part->name, "bootloader")) {
+	if (!strcmp(part->name, MMC_BOOT_NAME)) {
 		gap = MMC_BOOT_PARTITION_RESERVED;
 		if (!is_mainstorage_emmc())
 			sprintf(part->name, "bootloadere");
 	}
+
 	for (i=1; i<itbl->count; i++) {
-		/**/
 		part[i].offset = part[i-1].offset + part[i-1].size + gap;
 		/* check capicity overflow ?*/
 		if (((part[i].offset + part[i].size) > mmc->capacity) ||
@@ -1461,7 +1464,6 @@ struct virtual_partition *aml_get_virtual_partition_by_name(const char *name)
 	struct virtual_partition *part = NULL;
 	cnt = get_emmc_virtual_partition_arraysize();
 	while (i < cnt) {
-
 		part = &virtual_partition_table[i];
 		if (!strcmp(name, part->name)) {
 			apt_info("find %10s @ tbl[%d]\n", name, i);

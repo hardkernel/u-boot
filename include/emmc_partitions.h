@@ -99,6 +99,11 @@
 #define RANDOM_SIZE	(256 * 512)
 #define RANDOM_BLOCK_SIZE		(512)
 #define RANDOM_PATTERN	(0X52414E44)
+
+#define MMC_DDR_PARAMETER_NAME	"ddr-parameter"
+#define DDR_PARAMETER_OFFSET	(SZ_1M * 8)
+#define DDR_PARAMETER_SIZE	(4 * 512)
+
 /*
  * 2 copies dtb were stored in dtb area.
  * each is 256K.
@@ -254,6 +259,7 @@ int mmc_boot_size(char *name, uint64_t* size);
 struct virtual_partition *aml_get_virtual_partition_by_name(const char *name);
 bool aml_is_emmc_tsd (struct mmc *mmc);
 int mmc_device_init (struct mmc *mmc);
+ulong _get_inherent_offset(const char *name);
 
 #define PARTITION_ELEMENT(na, sz, flags) {.name = na, .size = sz, .mask_flags = flags,}
 

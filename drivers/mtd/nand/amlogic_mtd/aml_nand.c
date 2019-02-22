@@ -3640,7 +3640,8 @@ int aml_nand_block_markbad(struct mtd_info *mtd, loff_t ofs)
 		} else if (aml_chip->block_status[blk_addr] ==NAND_BLOCK_GOOD) {
 			aml_chip->block_status[blk_addr] = NAND_BLOCK_BAD;
 			buf = aml_chip->block_status;
-			aml_nand_save_bbt(mtd, (u_char *)buf);
+			aml_nand_ext_save_rsv_info(mtd,
+				aml_chip->aml_nandbbt_info, (u_char *)buf);
 		}
 	}
 mark_bad:
@@ -3918,11 +3919,8 @@ int aml_nand_init(struct aml_nand_chip *aml_chip)
 		printk("invalid nand bbt\n");
 		goto exit_error;
 	}
-#ifndef CONFIG_ENV_IS_IN_NAND
-	aml_nand_env_check(mtd);
-#endif
-	aml_nand_key_check(mtd);
-	aml_nand_dtb_check(mtd);
+
+	aml_nand_rsv_info_check_except_bbt(mtd);
 
 #ifdef NEW_NAND_SUPPORT
 	if ((aml_chip->new_nand_info.type)

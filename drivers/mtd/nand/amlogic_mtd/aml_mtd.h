@@ -67,18 +67,22 @@ typedef struct nand_setup {
 typedef struct _ext_info{
 	uint32_t read_info;		//nand_read_info;
 	uint32_t new_type;		//new_nand_type;
-	uint32_t page_per_blk;	//pages_in_block;
+	uint32_t page_per_blk;		//pages_in_block;
 	uint32_t xlc;			//slc=1, mlc=2, tlc=3.
 	uint32_t ce_mask;
-	/* copact mode: boot means whole uboot
-	   it's easy to understood that copies of
-	   bl2 and fip are the same.
-     * discrete mode, boot means the fip only */
+	/*
+	 * copact mode: boot means whole uboot
+	 * it's easy to understood that copies of
+	 * bl2 and fip are the same.
+	 * discrete mode, boot means the fip only.
+	 */
 	uint32_t boot_num;
 	uint32_t each_boot_pages;
 	/* for comptible reason */
 	uint32_t bbt_occupy_pages;
 	uint32_t bbt_start_block;
+	uint32_t ddrp_start_block;
+	uint32_t ddrp_start_occupy_pages;
 } ext_info_t;
 
 #define NAND_FIPMODE_COMPACT    (0)
@@ -88,7 +92,6 @@ typedef struct _ext_info{
  * partitions, please enable this macro.
  * #define CONFIG_NOT_SKIP_BAD_BLOCK
  */
-
 typedef struct _fip_info {
     uint16_t version; //version
     uint16_t mode;    //compact or discrete
@@ -151,6 +154,7 @@ typedef union nand_core_clk {
 #define NAND_ENV_BLOCK_NUM 8
 #define NAND_KEY_BLOCK_NUM 8
 #define NAND_DTB_BLOCK_NUM 4
+#define NAND_DDR_BLOCK_NUM 2
 
 #define AML_CHIP_NONE_RB	4
 #define AML_INTERLEAVING_MODE	8
@@ -218,6 +222,7 @@ typedef union nand_core_clk {
 #define KEY_NAND_MAGIC	"nkey"
 #define SEC_NAND_MAGIC	"nsec"
 #define DTB_NAND_MAGIC  "ndtb"
+#define DDR_NAND_MAGIC  "nddr"
 #define NAND_SYS_PART_SIZE	0x8000000
 
 struct aml_nand_flash_dev {
@@ -483,11 +488,14 @@ struct aml_nand_chip {
 	unsigned char *rsv_data_buf;
 	unsigned long long freeNodeBitmask;
 	struct free_node_t *free_node[RESERVED_BLOCK_NUM];
+
+	unsigned int vernier;
 	struct aml_nand_bbt_info *nand_bbt_info;
 	struct aml_nandrsv_info_t *aml_nandbbt_info;
 	struct aml_nandrsv_info_t *aml_nandenv_info;
 	struct aml_nandrsv_info_t *aml_nandkey_info;
 	struct aml_nandrsv_info_t *aml_nanddtb_info;
+	struct aml_nandrsv_info_t *aml_nandddr_info;
 	struct aml_nand_bch_desc *bch_desc;
 #ifdef NEW_NAND_SUPPORT
 	struct new_tech_nand_t  new_nand_info;
@@ -705,44 +713,31 @@ int aml_nand_block_bad_scrub_update_bbt(struct mtd_info *mtd);
 
 int aml_ubootenv_init(struct aml_nand_chip *aml_chip);
 
-int aml_nand_read_env (struct mtd_info *mtd, size_t offset, u_char * buf);
-
-int aml_nand_save_env(struct mtd_info *mtd, u_char *buf);
-
 int amlnf_dtb_init(struct aml_nand_chip *aml_chip);
-
-int aml_nand_read_dtb (struct mtd_info *mtd, size_t offset, u_char * buf);
-
-int aml_nand_save_dtb(struct mtd_info *mtd, u_char *buf);
 
 int aml_key_init(struct aml_nand_chip *aml_chip);
 
+int aml_nand_bbt_check(struct mtd_info *mtd);
+
+int aml_nand_rsv_info_check_except_bbt(struct mtd_info *mtd);
+
 int aml_nand_rsv_erase_protect(struct mtd_info *mtd, unsigned int block_addr);
-
-int aml_nand_erase_dtb(struct mtd_info *mtd);
-
-int aml_nand_erase_key(struct mtd_info *mtd);
-
-int aml_nand_save_key(struct mtd_info *mtd, u_char *buf);
-
-int aml_nand_read_key (struct mtd_info *mtd, size_t offset, u_char * buf);
-
-int aml_nand_key_check(struct mtd_info *mtd);
-
-//int aml_nand_free_valid_env(struct mtd_info *mtd);
-
-int aml_nand_save_bbt(struct mtd_info *mtd, u_char *buf);
 
 int aml_nand_rsv_info_init(struct mtd_info *mtd);
 
 int aml_nand_scan_rsv_info(struct mtd_info *mtd,
 	struct aml_nandrsv_info_t *nandrsv_info);
 
-int aml_nand_env_check(struct mtd_info *mtd);
+int aml_nand_ext_erase_rsv_info(struct mtd_info *mtd,
+				struct aml_nandrsv_info_t *info);
 
-int aml_nand_bbt_check(struct mtd_info *mtd);
+int aml_nand_ext_read_rsv_info(struct mtd_info *mtd,
+			       struct aml_nandrsv_info_t *info,
+			       size_t offset, u_char *buf);
 
-int aml_nand_dtb_check(struct mtd_info *mtd);
+int aml_nand_ext_save_rsv_info(struct mtd_info *mtd,
+			       struct aml_nandrsv_info_t *info,
+			       u_char *buf);
 
 int aml_nand_scan_bbt(struct mtd_info *mtd);
 

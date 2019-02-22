@@ -596,7 +596,6 @@ int mmc_hwpart_config(struct mmc *mmc,
 	u32 tot_enh_size_mult = 0;
 	u8 wr_rel_set;
 	int i, pidx, err;
-	u64 size = 0;
 	ALLOC_CACHE_ALIGN_BUFFER(u8, ext_csd, MMC_MAX_BLOCK_LEN);
 
 	if (mode < MMC_HWPART_CONF_CHECK || mode > MMC_HWPART_CONF_COMPLETE)
@@ -701,17 +700,15 @@ int mmc_hwpart_config(struct mmc *mmc,
 	    EXT_CSD_PARTITION_SETTING_COMPLETED) {
 		printf("Card already partitioned\n");
 		puts("\tUser Enhanced Start: ");
-		print_size((u64)((size + ext_csd[EXT_CSD_ENH_START_ADDR]+
-				(ext_csd[EXT_CSD_ENH_START_ADDR+1]<<8)+
-				(ext_csd[EXT_CSD_ENH_START_ADDR+2]<<16)+
-				((u64)ext_csd[EXT_CSD_ENH_START_ADDR+3]<<24))<<9), "\n");
-
+		u64 temp,  j;
+		for (j = 0, temp = 0; j < 4; j++)
+			temp |= ext_csd[EXT_CSD_ENH_START_ADDR + j] << (8 * j);
+		print_size(temp << 9, "\n");
 		puts("\tUser Enhanced Size: ");
-		print_size((u64)((size + ext_csd[EXT_CSD_ENH_SIZE_MULT]+
-					(ext_csd[EXT_CSD_ENH_SIZE_MULT+1]<<8)+
-					(ext_csd[EXT_CSD_ENH_SIZE_MULT+2]<<16))*
-					mmc->hc_wp_grp_size)<<9, "\n");
-
+		for (j = 0, temp = 0; j < 3; j++)
+			temp |= ext_csd[EXT_CSD_ENH_SIZE_MULT + j] << (8 * j);
+		temp *= mmc->hc_wp_grp_size;
+		print_size(temp << 9, "\n");
 		return -EPERM;
 	}
 
@@ -2242,80 +2239,130 @@ int mmc_set_rst_n_function(struct mmc *mmc, u8 enable)
 }
 #endif
 
-int mmc_key_read(unsigned char *buf, unsigned int size, uint32_t *actual_lenth)
+extern ulong mmc_bwrite(int dev_num, lbaint_t start,
+				lbaint_t blkcnt, const void *src);
+extern unsigned long mmc_berase(int dev_num,
+				lbaint_t start, lbaint_t blkcnt);
+static int mmc_reserved_read(const char *name,
+			     unsigned char *buf, unsigned int size)
 {
 	ulong start, start_blk, blkcnt, ret;
 	int dev = EMMC_DTB_DEV;
-	unsigned char *temp_buf = buf;
 	struct partitions * part = NULL;
 	struct virtual_partition *vpart = NULL;
-	vpart = aml_get_virtual_partition_by_name(MMC_KEY_NAME);
-	part = aml_get_partition_by_name(MMC_RESERVED_NAME);
 
-	*actual_lenth =  0x40000;/*key size is 256KB*/
+	vpart = aml_get_virtual_partition_by_name(name);
+	part = aml_get_partition_by_name(MMC_RESERVED_NAME);
 	start = part->offset + vpart->offset;
 	start_blk = (start / MMC_BLOCK_SIZE);
 	blkcnt = (size / MMC_BLOCK_SIZE);
-	info_disprotect |= DISPROTECT_KEY;
-	ret = mmc_bread(dev, start_blk, blkcnt, temp_buf);
-	info_disprotect &= ~DISPROTECT_KEY;
+	ret = mmc_bread(dev, start_blk, blkcnt, buf);
 	if (ret != blkcnt) {
-		printf("[%s] %d, mmc_bread error\n",
-			__func__, __LINE__);
+		printf("[%s] %d, mmc_bread %s error\n",
+			__func__, __LINE__, name);
 		return 1;
 	}
 	return 0;
 }
 
-extern ulong mmc_bwrite(int dev_num, lbaint_t start,
-				lbaint_t blkcnt, const void *src);
-int mmc_key_write(unsigned char *buf, unsigned int size, uint32_t *actual_lenth)
+static int mmc_reserved_write(const char *name,
+			      unsigned char *buf, unsigned int size)
 {
 	ulong start, start_blk, blkcnt, ret;
-	unsigned char * temp_buf = buf;
 	int i = 2, dev = EMMC_DTB_DEV;
 	struct partitions * part = NULL;
 	struct virtual_partition *vpart = NULL;
-	vpart = aml_get_virtual_partition_by_name(MMC_KEY_NAME);
-	part = aml_get_partition_by_name(MMC_RESERVED_NAME);
 
+	vpart = aml_get_virtual_partition_by_name(name);
+	part = aml_get_partition_by_name(MMC_RESERVED_NAME);
 	start = part->offset + vpart->offset;
 	start_blk = (start / MMC_BLOCK_SIZE);
 	blkcnt = (size / MMC_BLOCK_SIZE);
-	info_disprotect |= DISPROTECT_KEY;
 	do {
-		ret = mmc_bwrite(dev, start_blk, blkcnt, temp_buf);
+		ret = mmc_bwrite(dev, start_blk, blkcnt, buf);
 		if (ret != blkcnt) {
-			printf("[%s] %d, mmc_bwrite error\n",
-				__func__, __LINE__);
+			printf("[%s] %d, mmc_bwrite %s error\n",
+				__func__, __LINE__, name);
 			return 1;
 		}
 		start_blk += vpart->size / MMC_BLOCK_SIZE;
 	} while (--i);
-	info_disprotect &= ~DISPROTECT_KEY;
 	return 0;
 }
 
-extern unsigned long mmc_berase(int dev_num,
-				lbaint_t start, lbaint_t blkcnt);
-int mmc_key_erase(void)
+static int mmc_reserved_erase(const char *name, int number)
 {
 	ulong start, start_blk, blkcnt, ret;
 	struct partitions * part = NULL;
 	struct virtual_partition *vpart = NULL;
 	int dev = EMMC_DTB_DEV;
-	vpart = aml_get_virtual_partition_by_name(MMC_KEY_NAME);
+
+	vpart = aml_get_virtual_partition_by_name(name);
 	part = aml_get_partition_by_name(MMC_RESERVED_NAME);
 	start = part->offset + vpart->offset;
 	start_blk = (start / MMC_BLOCK_SIZE);
-	blkcnt = (vpart->size / MMC_BLOCK_SIZE) * 2;//key and backup key
-	info_disprotect |= DISPROTECT_KEY;
+	blkcnt = (vpart->size / MMC_BLOCK_SIZE) * number;
 	ret = mmc_berase(dev, start_blk, blkcnt);
-	info_disprotect &= ~DISPROTECT_KEY;
 	if (ret) {
-		printf("[%s] %d mmc_berase error\n",
-				__func__, __LINE__);
+		printf("[%s] %d mmc_berase %s error\n",
+		       __func__, __LINE__, name);
 		return 1;
 	}
 	return 0;
+}
+
+int mmc_key_read(unsigned char *buf,
+		 unsigned int size, uint32_t *actual_lenth)
+{
+	int ret;
+
+	info_disprotect |= DISPROTECT_KEY;
+	ret = mmc_reserved_read(MMC_KEY_NAME, buf, size);
+	info_disprotect &= ~DISPROTECT_KEY;
+
+	/*key size is 256KB*/
+	*actual_lenth =  0x40000;
+
+	return ret;
+}
+
+int mmc_key_write(unsigned char *buf,
+		  unsigned int size, uint32_t *actual_lenth)
+{
+	int ret;
+
+	info_disprotect |= DISPROTECT_KEY;
+	ret = mmc_reserved_write(MMC_KEY_NAME, buf, size);
+	info_disprotect &= ~DISPROTECT_KEY;
+
+	return ret;
+}
+
+int mmc_key_erase(void)
+{
+	int ret;
+
+	info_disprotect |= DISPROTECT_KEY;
+	/* when write the 2nd key? */
+	ret = mmc_reserved_erase(MMC_KEY_NAME, 2);
+	info_disprotect &= ~DISPROTECT_KEY;
+
+	return ret;
+}
+
+int mmc_ddr_parameter_read(unsigned char *buf,
+			   unsigned int size)
+{
+	return mmc_reserved_read(MMC_DDR_PARAMETER_NAME, buf, size);
+}
+
+int mmc_ddr_parameter_write(unsigned char *buf,
+			    unsigned int size)
+{
+	return mmc_reserved_write(MMC_DDR_PARAMETER_NAME, buf, size);
+}
+
+int mmc_ddr_parameter_erase(void)
+{
+	return mmc_reserved_erase(MMC_DDR_PARAMETER_NAME, 1);
 }
