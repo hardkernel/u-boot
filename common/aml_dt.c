@@ -7,7 +7,8 @@
 #include <asm/arch/secure_apb.h>
 #include <asm/arch/bl31_apis.h>
 #include <partition_table.h>
-
+#include <asm/arch/cpu.h>
+#include <partition_table.h>
 #include <amlogic/aml_efuse.h>
 
 //#define AML_DT_DEBUG
@@ -39,7 +40,7 @@
 
 #define IS_GZIP_FORMAT(data)		((data & (0x0000FFFF)) == (0x00008B1F))
 #define GUNZIP_BUF_SIZE				(0x500000) /* 5MB */
-#define DTB_MAX_SIZE				(0x40000) /* 256KB */
+#define DTB_MAX_SIZE				(AML_DTB_IMG_MAX_SZ)
 
 //#define readl(addr) (*(volatile unsigned int*)(addr))
 extern int checkhw(char * name);
@@ -49,12 +50,15 @@ unsigned long __attribute__((unused))
 	unsigned int dt_magic = readl(fdt_addr);
 	unsigned int dt_total = 0;
 	unsigned int dt_tool_version = 0;
+	unsigned int gzip_format = 0;
 	void * gzip_buf = NULL;
+	unsigned long dt_entry = fdt_addr;
 
 	printf("      Amlogic multi-dtb tool\n");
 
 	/* first check the file header, support GZIP format */
-	if (IS_GZIP_FORMAT(dt_magic)) {
+	gzip_format = IS_GZIP_FORMAT(dt_magic);
+	if (gzip_format) {
 		printf("      GZIP format, decompress...\n");
 		gzip_buf = malloc(GUNZIP_BUF_SIZE);
 		memset(gzip_buf, 0, GUNZIP_BUF_SIZE);
@@ -64,10 +68,8 @@ unsigned long __attribute__((unused))
 		if (unzip_size > GUNZIP_BUF_SIZE) {
 			printf("      Warning! GUNZIP overflow...\n");
 		}
-		memcpy((void *)fdt_addr, (void *)gzip_buf, unzip_size);
+		fdt_addr = (unsigned long)gzip_buf;
 		dt_magic = readl(fdt_addr);
-		if (gzip_buf)
-			free(gzip_buf);
 	}
 
 	dbg_printf("      DBG: fdt_addr: 0x%x\n", (unsigned int)fdt_addr);
@@ -76,6 +78,12 @@ unsigned long __attribute__((unused))
 	/*printf("      Process device tree. dt magic: %x\n", dt_magic);*/
 	if (dt_magic == DT_HEADER_MAGIC) {/*normal dtb*/
 		printf("      Single dtb detected\n");
+		if (gzip_format) {
+			memcpy((void *)dt_entry, (void *)fdt_addr, DTB_MAX_SIZE);
+			fdt_addr = dt_entry;
+			if (gzip_buf)
+				free(gzip_buf);
+		}
 		return fdt_addr;
 	}
 	else if (dt_magic == AML_DT_HEADER_MAGIC) {/*multi dtb*/
@@ -104,6 +112,8 @@ unsigned long __attribute__((unused))
 			printf("      Get env aml_dt failed!\n");
 			if (aml_dt_buf)
 				free(aml_dt_buf);
+			if (gzip_buf)
+				free(gzip_buf);
 			return fdt_addr;
 		}
 
@@ -196,18 +206,27 @@ unsigned long __attribute__((unused))
 			/*this offset is based on dtb image package, so should add on base address*/
 			fdt_addr = (fdt_addr + readl(fdt_addr + AML_DT_FIRST_DTB_OFFSET + \
 				dtb_match_num * aml_dtb_header_size + aml_dtb_offset_offset));
+			if (gzip_format) {
+				memcpy((void *)dt_entry, (void *)fdt_addr, DTB_MAX_SIZE);
+				fdt_addr = dt_entry;
+				if (gzip_buf)
+					free(gzip_buf);
+			}
 			return fdt_addr;
 		}
 		else{
 			printf("      Not match any dtb.\n");
+			if (gzip_buf)
+				free(gzip_buf);
 			return fdt_addr;
 		}
 	}
 	else {
 		printf("      Cannot find legal dtb!\n");
+		if (gzip_buf)
+			free(gzip_buf);
 		return fdt_addr;
 	}
-	return 0;
 }
 
 
