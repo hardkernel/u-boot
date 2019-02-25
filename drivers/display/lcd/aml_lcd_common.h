@@ -27,7 +27,8 @@
 /* 20190108: tl1 support tablet mode */
 /* 20190115: tl1 tcon all interface support */
 /* 20190118: support tcon bin data management */
-#define LCD_DRV_VERSION    "20190118"
+/* 20190225: fix tcon axi_mem detect mistake for kernel 64bit */
+#define LCD_DRV_VERSION    "20190225"
 
 #define VPP_OUT_SATURATE            (1 << 0)
 
