@@ -168,19 +168,7 @@ static int do_mmc_test_secure_storage(cmd_tbl_t *cmdtp,
 static int do_mmc_testefuse(cmd_tbl_t *cmdtp,
 		int flag, int argc, char * const argv[])
 {
-	uint32_t buf32[8];
 	uint32_t outbuf32[8];
-
-	buf32[0] = 0x01020304;
-	buf32[1] = 0x05060708;
-	buf32[2] = 0x090a0b0c;
-	buf32[3] = 0x0d0e0f10;
-	buf32[4] = 0x11121314;
-	buf32[5] = 0x15161718;
-	buf32[6] = 0x191a1b1c;
-	buf32[7] = 0x1d1e1f20;
-
-	trusty_write_attribute_hash(buf32, 8);
 
 	trusty_read_attribute_hash(outbuf32, 8);
 
