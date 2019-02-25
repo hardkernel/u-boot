@@ -30,15 +30,13 @@ static int Rev_flag = 0;
 /*Rev_flag == 1, g12b and revB, tl1 */
 static void board_usb_check_g12b_revb (void)
 {
-	unsigned int version_id;
 	cpu_id_t cpu_id = get_cpu_id();
 
 	if (cpu_id.family_id == MESON_CPU_MAJOR_ID_G12B) {
-		version_id = readl(AO_METAL_REVISION);
-		if ((version_id == 0x11111111))
-			Rev_flag = 0;
-		else
+		if (cpu_id.chip_rev == 0xb)
 			Rev_flag = 1;
+		else
+			Rev_flag = 0;
 	} else {
 		Rev_flag = 0;
 	}
@@ -127,23 +125,26 @@ void board_usb_pll_disable(struct amlogic_usb_config *cfg)
 
 void set_usb_phy_tuning_1(int port)
 {
-    unsigned long phy_reg_base;
-
-	if (board_usb_get_revb_type() == 1)
-		return;
+	unsigned long phy_reg_base;
 
 	if (port > 2)
-        return;
+		return;
 
 	if (port == 0 )
-        phy_reg_base = USB_REG_A;
-    else
-        phy_reg_base = USB_REG_B;
+		phy_reg_base = USB_REG_A;
+	else
+		phy_reg_base = USB_REG_B;
 
-    (*(volatile uint32_t *)(phy_reg_base + 0x10)) = USB_G12x_PHY_PLL_SETTING_2;
-    (*(volatile uint32_t *)(phy_reg_base + 0x50)) = USB_G12x_PHY_PLL_SETTING_1;
-    (*(volatile uint32_t *)(phy_reg_base + 0x38)) = USB_G12x_PHY_PLL_SETTING_4;
-    (*(volatile uint32_t *)(phy_reg_base + 0x34)) = USB_G12x_PHY_PLL_SETTING_3;
+	if (board_usb_get_revb_type() == 1) {
+		(*(volatile uint32_t *)(phy_reg_base + 0x50)) = USB_G12x_PHY_PLL_SETTING_1;
+		(*(volatile uint32_t *)(phy_reg_base + 0x34)) = USB_G12x_PHY_PLL_SETTING_3 & (0x1f << 16);
+		return;
+	}
+
+	(*(volatile uint32_t *)(phy_reg_base + 0x10)) = USB_G12x_PHY_PLL_SETTING_2;
+	(*(volatile uint32_t *)(phy_reg_base + 0x50)) = USB_G12x_PHY_PLL_SETTING_1;
+	(*(volatile uint32_t *)(phy_reg_base + 0x38)) = USB_G12x_PHY_PLL_SETTING_4;
+	(*(volatile uint32_t *)(phy_reg_base + 0x34)) = USB_G12x_PHY_PLL_SETTING_3;
 }
 #endif
 

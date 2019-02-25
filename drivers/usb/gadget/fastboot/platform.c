@@ -180,17 +180,15 @@ static void set_usb_phy21_pll(void)
 #ifndef CONFIG_USB_AMLOGIC_PHY_V2
 static int f_platform_usb_check_g12b_revb (void)
 {
-	unsigned int version_id;
 	int rev_flag = 0;
 
 	cpu_id_t cpu_id = get_cpu_id();
 
 	if (cpu_id.family_id == MESON_CPU_MAJOR_ID_G12B) {
-		version_id = *((volatile unsigned *)(AO_METAL_REVISION));
-		if ((version_id == 0x11111111))
-			rev_flag = 0;
-		else
+		if (cpu_id.chip_rev == 0xb)
 			rev_flag = 1;
+		else
+			rev_flag = 0;
 	} else {
 		rev_flag = 0;
 	}
@@ -207,8 +205,11 @@ void set_usb_phy21_tuning_fb(void)
 #ifndef CONFIG_USB_AMLOGIC_PHY_V2
 	unsigned long phy_reg_base = USB_REG_B;
 
-	if (f_platform_usb_check_g12b_revb())
+	if (f_platform_usb_check_g12b_revb()) {
+		(*(volatile uint32_t *)(phy_reg_base + 0x50)) = USB_G12x_PHY_PLL_SETTING_1;
+		(*(volatile uint32_t *)(phy_reg_base + 0x34)) = USB_G12x_PHY_PLL_SETTING_3 & (0x1f << 16);
 		return;
+	}
 
 	(*(volatile uint32_t *)(phy_reg_base + 0x10)) = USB_G12x_PHY_PLL_SETTING_2;
 	(*(volatile uint32_t *)(phy_reg_base + 0x50)) = USB_G12x_PHY_PLL_SETTING_1;
