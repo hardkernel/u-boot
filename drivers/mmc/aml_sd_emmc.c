@@ -969,8 +969,8 @@ int aml_sd_retry_refix(struct mmc *mmc)
 		//writel(vclk2_bak, host->base + SDHC_CLK2);
 	} else {
 		adj_delay = best_win_start + (best_win_size / 2);
-		if (adj_delay > clkc->div)
-			adj_delay -= (clkc->div + 1);
+		if (adj_delay >= clkc->div)
+			adj_delay -= clkc->div;
 
 		gadjust->adj_enable = 1;
 		gadjust->cali_enable = 0;

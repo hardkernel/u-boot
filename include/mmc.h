@@ -14,7 +14,7 @@
 #include <linux/compiler.h>
 #include <part.h>
 
-#define SAMPLE_STEP_COUNT 5
+#define SAMPLE_STEP_COUNT 1
 #define SD_VERSION_SD	0x20000
 #define SD_VERSION_3	(SD_VERSION_SD | 0x300)
 #define SD_VERSION_2	(SD_VERSION_SD | 0x200)
