@@ -210,29 +210,31 @@
             "done; " \
             "vout output ${outputmode};\0" \
 	"set_spi_params="\
-		"setenv start_uboot 0x0; setenv start_kernel 0x119000; setenv start_dtb 0x100000; setenv start_initrd 0x4E6C00; "\
-		"setenv size_kernel 0x3CDC00; setenv size_dtb 0x19000; setenv size_initrd 0x319400;\0"\
+		"setenv start_uboot 0x0; "\
+		"setenv start_kernel 0x119000; "\
+		"setenv start_dtb 0x100000; "\
+		"setenv start_initrd 0x4E6C00; "\
+		"setenv size_kernel 0x3CDC00; "\
+		"setenv size_dtb 0x19000; "\
+		"setenv size_initrd 0x319400;\0"\
 	"fusing_spi_from_sd="\
-		"run set_spi_params; "\
 		"sf probe; "\
 		"sf erase 0x0 0x800000; "\
-		"load mmc 0 ${loadaddr} u-boot.bin; sf write ${loadaddr} ${start_uboot} ${filesize}; "\
-		"load mmc 0 ${loadaddr} Image.gz; sf write ${loadaddr} ${start_kernel} ${filesize}; "\
-		"load mmc 0 ${loadaddr} s922d_odroidn2.dtb; sf write ${loadaddr} ${start_dtb} ${filesize}; "\
-		"load mmc 0 ${loadaddr} uInitrd.igz; sf write ${loadaddr} ${start_initrd} ${filesize}\0"\
+		"load mmc 1 ${loadaddr} spiboot.img; "\
+		"sf write ${loadaddr} 0x0 ${filesize}\0"\
 	"booting_from_spi="\
+		"hdmitx edid; "\
+		"setenv bootargs ${initargs} console=tty0 logo=osd0,loaded,0x3d800000 osd_reverse=0 video_reverse=0; "\
+		"setenv bootargs ${bootargs} vout=${vout} hdmimode=${hdmimode} modeline=${modeline} voutmode=${voutmode}; "\
 		"osd open; "\
 		"osd clear; "\
 		"vout output ${outputmode}; "\
-		"setenv bootargs ${initargs} console=tty0 logo=osd0,loaded,0x3d800000 osd_reverse=0 video_reverse=0; "\
-		"hdmitx edid; "\
-		"setenv bootargs ${bootargs} vout=${vout} hdmimode=${hdmimode} modeline=${modeline} voutmode=${voutmode}; "\
 		"run set_spi_params; "\
 		"sf probe; "\
 		"sf read ${preloadaddr} ${start_kernel} ${size_kernel}; "\
 		"sf read ${initrd_high} ${start_initrd} ${size_initrd}; "\
 		"sf read ${dtb_mem_addr} ${start_dtb} ${size_dtb}; "\
-		"if test -e mmc 0:1 spiboot.img; then " \
+		"if test -e mmc 1:1 spiboot.img; then " \
 			"fdt addr ${dtb_mem_addr}; " \
 			"fdt resize; " \
 			"fdt set /emmc@ffe07000 status 'disabled'; " \
