@@ -221,6 +221,9 @@
 		"load mmc 0 ${loadaddr} s922d_odroidn2.dtb; sf write ${loadaddr} ${start_dtb} ${filesize}; "\
 		"load mmc 0 ${loadaddr} uInitrd.igz; sf write ${loadaddr} ${start_initrd} ${filesize}\0"\
 	"booting_from_spi="\
+		"osd open; "\
+		"osd clear; "\
+		"vout output ${outputmode}; "\
 		"setenv bootargs ${initargs} console=tty0 logo=osd0,loaded,0x3d800000 osd_reverse=0 video_reverse=0; "\
 		"hdmitx edid; "\
 		"setenv bootargs ${bootargs} vout=${vout} hdmimode=${hdmimode} modeline=${modeline} voutmode=${voutmode}; "\
