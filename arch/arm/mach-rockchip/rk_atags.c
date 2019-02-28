@@ -72,11 +72,22 @@ void *memcpy(void *dest, const void *src, size_t count)
 }
 #endif
 
-static int inline bad_magic(u32 magic)
+static int bad_magic(u32 magic)
 {
-	return ((magic != ATAG_CORE) &&
-		(magic != ATAG_NONE) &&
-		(magic < ATAG_SERIAL || magic > ATAG_MAX));
+	bool bad;
+
+	bad = ((magic != ATAG_CORE) &&
+	       (magic != ATAG_NONE) &&
+	       (magic < ATAG_SERIAL || magic > ATAG_MAX));
+	if (bad) {
+#if !CONFIG_IS_ENABLED(TINY_FRAMEWORK)
+		printf("Magic(%x) is not support\n", magic);
+#else
+		printascii("Magic is not support\n");
+#endif
+	}
+
+	return bad;
 }
 
 static int inline atags_size_overflow(struct tag *t, u32 tag_size)
@@ -99,15 +110,8 @@ int atags_set_tag(u32 magic, void *tagdata)
 	if (!tagdata)
 		return -ENODATA;
 
-	if (bad_magic(magic)) {
-#if !CONFIG_IS_ENABLED(TINY_FRAMEWORK)
-		printf("%s: magic(%x) is not support\n", __func__, magic);
-#else
-		printascii("magic is not support\n");
-#endif
-
+	if (bad_magic(magic))
 		return -EINVAL;
-	}
 
 	/* Not allowed to be set by user directly, so do nothing */
 	if ((magic == ATAG_CORE) || (magic == ATAG_NONE))
@@ -125,21 +129,8 @@ int atags_set_tag(u32 magic, void *tagdata)
 	} else {
 		/* Find the end, and use it as a new tag */
 		for_each_tag(t, (struct tag *)ATAGS_PHYS_BASE) {
-			/*
-			 * We had better check magic to avoid traversing an
-			 * unknown tag, in case of atags has been damaged by
-			 * some unknown reason.
-			 */
-			if (bad_magic(t->hdr.magic)) {
-#if !CONFIG_IS_ENABLED(TINY_FRAMEWORK)
-				printf("%s: find unknown magic(%x)\n",
-				       __func__, t->hdr.magic);
-#else
-				printascii("find unknown magic\n");
-#endif
-
+			if (bad_magic(t->hdr.magic))
 				return -EINVAL;
-			}
 
 			if (t->hdr.magic == ATAG_NONE)
 				break;
@@ -203,15 +194,8 @@ struct tag *atags_get_tag(u32 magic)
 		return NULL;
 
 	for_each_tag(t, (struct tag *)ATAGS_PHYS_BASE) {
-		if (bad_magic(t->hdr.magic)) {
-#if !CONFIG_IS_ENABLED(TINY_FRAMEWORK)
-			printf("%s: find unknown magic(%x)\n",
-			       __func__, t->hdr.magic);
-#else
-			printascii("find unknown magic\n");
-#endif
+		if (bad_magic(t->hdr.magic))
 			return NULL;
-		}
 
 		if (t->hdr.magic == magic)
 			return t;
@@ -235,11 +219,8 @@ void atags_stat(void)
 	struct tag *t;
 
 	for_each_tag(t, (struct tag *)ATAGS_PHYS_BASE) {
-		if (bad_magic(t->hdr.magic)) {
-			printf("%s: find unknown magic(%x)\n",
-			       __func__, t->hdr.magic);
+		if (bad_magic(t->hdr.magic))
 			return;
-		}
 
 		in_use += (t->hdr.size << 2);
 	}
@@ -360,11 +341,8 @@ void atags_print_all_tags(void)
 	struct tag *t;
 
 	for_each_tag(t, (struct tag *)ATAGS_PHYS_BASE) {
-		if (bad_magic(t->hdr.magic)) {
-			printf("%s: find unknown magic(%x)\n",
-			       __func__, t->hdr.magic);
+		if (bad_magic(t->hdr.magic))
 			return;
-		}
 
 		atags_print_tag(t);
 	}
