@@ -919,9 +919,47 @@ int android_bootloader_boot_flow(struct blk_desc *dev_desc,
 	if (rk_avb_get_current_slot(slot_suffix))
 		return -1;
 
-	if (slot_suffix[0] != '_') {
-		printf("There is no bootable slot!\n");
+	AvbOps *ops;
+	AvbABData ab_data;
+	AvbABData ab_data_orig;
+	size_t slot_index_to_boot = 0;
+
+	if (!strncmp(slot_suffix, "_a", 2))
+		slot_index_to_boot = 0;
+	else if (!strncmp(slot_suffix, "_b", 2))
+		slot_index_to_boot = 1;
+	else
+		slot_index_to_boot = 0;
+	ops = avb_ops_user_new();
+	if (ops == NULL) {
+		printf("avb_ops_user_new() failed!\n");
 		return -1;
+	}
+
+	if(load_metadata(ops->ab_ops, &ab_data, &ab_data_orig)) {
+		printf("Can not load metadata\n");
+		return -1;
+	}
+
+	/* ... and decrement tries remaining, if applicable. */
+	if (!ab_data.slots[slot_index_to_boot].successful_boot &&
+		ab_data.slots[slot_index_to_boot].tries_remaining > 0) {
+		ab_data.slots[slot_index_to_boot].tries_remaining -= 1;
+	}
+
+	if (save_metadata_if_changed(ops->ab_ops, &ab_data, &ab_data_orig)) {
+		printf("Can not save metadata\n");
+		return -1;
+	}
+
+	if (slot_suffix[0] != '_') {
+		printf("###There is no bootable slot, bring up lastboot!###\n");
+		if (rk_get_lastboot() == 1)
+			memcpy(slot_suffix, "_b", 2);
+		else if(rk_get_lastboot() == 0)
+			memcpy(slot_suffix, "_a", 2);
+		else
+			return -1;
 	}
 #endif
 
