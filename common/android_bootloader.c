@@ -969,7 +969,8 @@ int android_bootloader_boot_flow(struct blk_desc *dev_desc,
 		 * "skip_initramfs" to the cmdline to make it ignore the
 		 * recovery initramfs in the boot partition.
 		 */
-#if defined(CONFIG_ANDROID_AB) && !defined(CONFIG_ANDROID_AVB)
+#if (defined(CONFIG_ANDROID_AB) && !defined(CONFIG_ANDROID_AVB))
+	{
 		char root_partition[20] = {0};
 		char guid_buf[UUID_SIZE] = {0};
 		char root_partuuid[70] = "root=PARTUUID=";
@@ -979,6 +980,7 @@ int android_bootloader_boot_flow(struct blk_desc *dev_desc,
 		get_partition_unique_uuid(root_partition, guid_buf, UUID_SIZE);
 		strcat(root_partuuid, guid_buf);
 		env_update("bootargs", root_partuuid);
+	}
 #endif
 
 #ifdef CONFIG_ANDROID_AB
