@@ -64,6 +64,7 @@ void avb_ab_data_init(AvbABData* data) {
   avb_memcpy(data->magic, AVB_AB_MAGIC, AVB_AB_MAGIC_LEN);
   data->version_major = AVB_AB_MAJOR_VERSION;
   data->version_minor = AVB_AB_MINOR_VERSION;
+  data->last_boot = 0;
   data->slots[0].priority = AVB_AB_MAX_PRIORITY;
   data->slots[0].tries_remaining = AVB_AB_MAX_TRIES_REMAINING;
   data->slots[0].successful_boot = 0;

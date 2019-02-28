@@ -267,6 +267,14 @@ int rk_auth_unlock(void *buffer, char *out_is_trusted);
  */
 int rk_generate_unlock_challenge(void *buffer, uint32_t *challenge_len);
 
+
+/**
+ * Get last boot slot
+ *
+ * @return 0 is slot A; 1 is slot B; -1 is error
+ */
+int rk_get_lastboot(void);
+
 #ifdef __cplusplus
 }
 #endif
