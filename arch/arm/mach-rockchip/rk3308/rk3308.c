@@ -10,6 +10,8 @@
 #include <asm/gpio.h>
 #include <debug_uart.h>
 
+DECLARE_GLOBAL_DATA_PTR;
+
 #ifdef CONFIG_ARM64
 #include <asm/armv8/mmu.h>
 static struct mm_region rk3308_mem_map[] = {
@@ -124,6 +126,9 @@ int rk_board_init(void)
 void board_debug_uart_init(void)
 {
 	static struct rk3308_grf * const grf = (void *)GRF_BASE;
+
+	if (gd && gd->serial.using_pre_serial)
+		return;
 
 	/* Enable early UART2 channel m1 on the rk3308 */
 	rk_clrsetreg(&grf->soc_con5, UART2_IO_SEL_MASK,
