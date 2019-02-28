@@ -58,6 +58,7 @@ static const char * const ch7_vol[] = {
 typedef struct {
 	unsigned char channel;
 	unsigned char adc_type; /*1:12bit; 0:10bit*/
+	unsigned short family_id;
 	u32 __iomem *clk_addr;
 	u32 __iomem *base_addr;
 }saradc_info;
@@ -105,12 +106,12 @@ void saradc_clock_switch( int onoff)
 	saradc_info *saradc = saradc_dev_get();
 
 	if (onoff) {
-		if (get_cpu_id().family_id >= MESON_CPU_MAJOR_ID_GXBB)
+		if (saradc->family_id >= MESON_CPU_MAJOR_ID_GXBB)
 			aml_set_reg32_bits(saradc->clk_addr, 1, 8, 1);
 		else
 			aml_set_reg32_bits(P_SAR_ADC_REG3(saradc->base_addr), 1, 30, 1);
 	} else {
-		if (get_cpu_id().family_id >= MESON_CPU_MAJOR_ID_GXBB)
+		if (saradc->family_id >= MESON_CPU_MAJOR_ID_GXBB)
 			aml_set_reg32_bits(saradc->clk_addr, 0, 8, 1);
 		else
 			aml_set_reg32_bits(P_SAR_ADC_REG3(saradc->base_addr), 0, 30, 1);
@@ -124,7 +125,7 @@ void saradc_clock_set(unsigned char val)
 {
 	saradc_info *saradc = saradc_dev_get();
 
-	if (get_cpu_id().family_id >= MESON_CPU_MAJOR_ID_GXBB) {
+	if (saradc->family_id >= MESON_CPU_MAJOR_ID_GXBB) {
 		/*bit[0-7]: set clk div; bit[9-10]: select clk source*/
 		aml_set_reg32_bits(saradc->clk_addr, 0, 9, 2);
 		aml_set_reg32_bits(saradc->clk_addr, (val & 0xff), 0, 8);
@@ -141,7 +142,7 @@ static inline void saradc_power_control(int on)
 
 	if (on) {
 		aml_set_reg32_bits(P_SAR_ADC_REG11(saradc->base_addr), 1, 13, 1);
-		if (get_cpu_id().family_id >= MESON_CPU_MAJOR_ID_G12A)
+		if (saradc->family_id >= MESON_CPU_MAJOR_ID_G12A)
 			aml_set_reg32_bits(P_SAR_ADC_REG11(saradc->base_addr), 0, 5, 2);
 		else
 			aml_set_reg32_bits(P_SAR_ADC_REG11(saradc->base_addr), 3, 5, 2);
@@ -161,7 +162,7 @@ void saradc_hw_init(void)
 {
 	saradc_info *saradc = saradc_dev_get();
 
-	if (get_cpu_id().family_id <= MESON_CPU_MAJOR_ID_GXTVBB)
+	if (saradc->family_id <= MESON_CPU_MAJOR_ID_GXTVBB)
 		saradc->adc_type = 0;
 	else
 		saradc->adc_type = 1;
@@ -179,6 +180,15 @@ void saradc_hw_init(void)
 	if (saradc->adc_type)
 		aml_set_reg32_bits(P_SAR_ADC_REG3(saradc->base_addr), 0x1, 27, 1);
 
+	/* REG11 bit[1] must be set to <1> for g12a and later SoCs */
+	if (saradc->family_id >= MESON_CPU_MAJOR_ID_G12A)
+		aml_set_reg32_bits(P_SAR_ADC_REG11(saradc->base_addr), 0x1, 1, 1);
+
+	/* select the VDDA as Vref for txlx and later SoCs */
+	if (saradc->family_id != MESON_CPU_MAJOR_ID_GXLX &&
+			saradc->family_id >= MESON_CPU_MAJOR_ID_TXLX)
+		aml_set_reg32_bits(P_SAR_ADC_REG11(saradc->base_addr), 0x1, 0, 1);
+
 	saradc_clock_set(20);
 }
 
@@ -186,6 +196,7 @@ int saradc_probe(void)
 {
 	saradc_info *saradc = saradc_dev_get();
 
+	saradc->family_id = get_cpu_id().family_id;
 	saradc->clk_addr  = (u32 __iomem *)AO_SAR_CLK;
 	saradc->base_addr = (u32 __iomem *)AO_SAR_ADC_REG0;
 
@@ -202,8 +213,9 @@ static void saradc_internal_cal_12bit(void)
 int saradc_value_trim(int val)
 {
 	int tmp;
+	saradc_info *saradc = saradc_dev_get();
 
-	switch (get_cpu_id().family_id) {
+	switch (saradc->family_id) {
 	case MESON_CPU_MAJOR_ID_GXL:
 	case MESON_CPU_MAJOR_ID_GXM:
 	case MESON_CPU_MAJOR_ID_TXL:

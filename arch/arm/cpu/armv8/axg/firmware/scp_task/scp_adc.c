@@ -122,6 +122,9 @@ void saradc_enable(void)
 	aml_write_reg32(P_AO_SAR_ADC_CHAN_10_SW, 0x8c000c);
 	aml_write_reg32(P_AO_SAR_ADC_DETECT_IDLE_SW, 0xc000c);
 
+	/* select the VDDA as Vref for txlx and later SoCs */
+	aml_set_reg32_bits(P_AO_SAR_ADC_REG11, 1, 0, 1);
+
 	saradc_power_control(1);
 }
 
