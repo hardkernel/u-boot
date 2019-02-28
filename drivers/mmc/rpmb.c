@@ -84,7 +84,7 @@ static int mmc_rpmb_request(struct mmc *mmc, const void *s,
 
 	cmd.cmdidx = MMC_CMD_WRITE_MULTIPLE_BLOCK;
 	cmd.cmdarg = 0;
-	cmd.resp_type = MMC_RSP_R1b;
+	cmd.resp_type = MMC_RSP_R1;
 
 	data.src = (const char *)s;
 	data.blocks = count;
