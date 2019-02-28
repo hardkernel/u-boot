@@ -334,7 +334,7 @@ unsigned bakeuAO_IR_DEC_LDR_REPEAT;
 **
 ********************************************************************/
 #if 1
-void backuremote_register(void)
+static void backup_remote_register(void)
 {
 	backuAO_RTI_PIN_MUX_REG = readl(AO_RTI_PIN_MUX_REG);
 	backuAO_IR_DEC_REG0 = readl(AO_MF_IR_DEC_REG0);
@@ -345,7 +345,7 @@ void backuremote_register(void)
 	bakeuAO_IR_DEC_LDR_REPEAT = readl(AO_MF_IR_DEC_LDR_REPEAT);
 }
 
-void resume_remote_register(void)
+static void restore_remote_register(void)
 {
 	writel(backuAO_RTI_PIN_MUX_REG, AO_RTI_PIN_MUX_REG);
 	writel(backuAO_IR_DEC_REG0, AO_MF_IR_DEC_REG0);
@@ -398,11 +398,10 @@ static unsigned int kk[] = {
 
 static int init_remote(void)
 {
-	return 0;
 	uart_put_hex(readl(AO_IR_DEC_STATUS), 32);
 	uart_put_hex(readl(AO_IR_DEC_FRAME), 32);
 	init_custom_trigger();
-	//return 0;
+	return 0;
 }
 
 /*can be called in pwr_ctrl.c*/

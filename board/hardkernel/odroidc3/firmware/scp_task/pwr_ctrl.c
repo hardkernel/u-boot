@@ -118,6 +118,7 @@ static unsigned int detect_key(unsigned int suspend_from)
 	unsigned char adc_key_cnt = 0;
 	saradc_enable();
 #endif
+	backup_remote_register();
 	init_remote();
 
 	do {
@@ -166,6 +167,8 @@ static unsigned int detect_key(unsigned int suspend_from)
 #ifdef CONFIG_ADC_KEY
 	saradc_disable();
 #endif
+
+	restore_remote_register();
 
 	return exit_reason;
 }
