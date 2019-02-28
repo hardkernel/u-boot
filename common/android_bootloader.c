@@ -878,7 +878,7 @@ bool android_avb_is_enabled(void)
 int android_bootloader_boot_flow(struct blk_desc *dev_desc,
 				 unsigned long load_address)
 {
-	enum android_boot_mode mode;
+	enum android_boot_mode mode = ANDROID_BOOT_MODE_NORMAL;
 	disk_partition_t misc_part_info;
 	int part_num;
 	int ret;
@@ -895,22 +895,23 @@ int android_bootloader_boot_flow(struct blk_desc *dev_desc,
 	part_num = part_get_info_by_name(dev_desc, ANDROID_PARTITION_MISC,
 					 &misc_part_info);
 	if (part_num < 0) {
-		printf("%s Could not find misc partition\n", __func__);
-		return -ENODEV;
-	}
-
+		printf("Could not find misc partition\n");
+	} else {
 #ifdef CONFIG_ANDROID_KEYMASTER_CA
-	/* load attestation key from misc partition. */
-	load_attestation_key(dev_desc, &misc_part_info);
+		/* load attestation key from misc partition. */
+		load_attestation_key(dev_desc, &misc_part_info);
 #endif
 
-	mode = android_bootloader_load_and_clear_mode(dev_desc, &misc_part_info);
+		mode = android_bootloader_load_and_clear_mode(dev_desc,
+							      &misc_part_info);
 #ifdef CONFIG_RKIMG_BOOTLOADER
-	if (mode == ANDROID_BOOT_MODE_NORMAL) {
-		if (rockchip_get_boot_mode() == BOOT_MODE_RECOVERY)
-			mode = ANDROID_BOOT_MODE_RECOVERY;
-	}
+		if (mode == ANDROID_BOOT_MODE_NORMAL) {
+			if (rockchip_get_boot_mode() == BOOT_MODE_RECOVERY)
+				mode = ANDROID_BOOT_MODE_RECOVERY;
+		}
 #endif
+	}
+
 	printf("ANDROID: reboot reason: \"%s\"\n", android_boot_mode_str(mode));
 
 #ifdef CONFIG_ANDROID_AB
