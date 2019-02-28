@@ -95,6 +95,23 @@ static int inline atags_size_overflow(struct tag *t, u32 tag_size)
 	return (unsigned long)t + (tag_size << 2) - ATAGS_PHYS_BASE > ATAGS_SIZE;
 }
 
+static int atags_overflow(struct tag *t)
+{
+	bool overflow;
+
+	overflow = atags_size_overflow(t, 0) ||
+		   atags_size_overflow(t, t->hdr.size);
+	if (overflow) {
+#if !CONFIG_IS_ENABLED(TINY_FRAMEWORK)
+		printf("Tag is overflow\n");
+#else
+		printascii("Tag is overflow\n");
+#endif
+	}
+
+	return overflow;
+}
+
 int atags_is_available(void)
 {
 	struct tag *t = (struct tag *)ATAGS_PHYS_BASE;
@@ -129,6 +146,9 @@ int atags_set_tag(u32 magic, void *tagdata)
 	} else {
 		/* Find the end, and use it as a new tag */
 		for_each_tag(t, (struct tag *)ATAGS_PHYS_BASE) {
+			if (atags_overflow(t))
+				return -EINVAL;
+
 			if (bad_magic(t->hdr.magic))
 				return -EINVAL;
 
@@ -159,16 +179,11 @@ int atags_set_tag(u32 magic, void *tagdata)
 		break;
 	};
 
-	if (atags_size_overflow(t, size)) {
-#if !CONFIG_IS_ENABLED(TINY_FRAMEWORK)
-		printf("%s: failed! no memory to setup magic(%x), max_mem=0x%x\n",
-		       __func__, magic, ATAGS_SIZE);
-#else
-		printascii("no memory to setup magic\n");
-#endif
+	if (!size)
+		return -EINVAL;
 
+	if (atags_size_overflow(t, size))
 		return -ENOMEM;
-	}
 
 	/* It's okay to setup a new tag */
 	t->hdr.magic = magic;
@@ -194,6 +209,9 @@ struct tag *atags_get_tag(u32 magic)
 		return NULL;
 
 	for_each_tag(t, (struct tag *)ATAGS_PHYS_BASE) {
+		if (atags_overflow(t))
+			return NULL;
+
 		if (bad_magic(t->hdr.magic))
 			return NULL;
 
@@ -219,6 +237,9 @@ void atags_stat(void)
 	struct tag *t;
 
 	for_each_tag(t, (struct tag *)ATAGS_PHYS_BASE) {
+		if (atags_overflow(t))
+			return;
+
 		if (bad_magic(t->hdr.magic))
 			return;
 
@@ -341,6 +362,9 @@ void atags_print_all_tags(void)
 	struct tag *t;
 
 	for_each_tag(t, (struct tag *)ATAGS_PHYS_BASE) {
+		if (atags_overflow(t))
+			return;
+
 		if (bad_magic(t->hdr.magic))
 			return;
 
