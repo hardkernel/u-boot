@@ -215,6 +215,17 @@ config ROCKCHIP_RK3308
 	select DEBUG_UART_BOARD_INIT
 	select ARM_SMCCC
 	select GICV2
+	select SUPPORT_SPL if !ARM64_BOOT_AARCH32
+	select SUPPORT_TPL if !ARM64_BOOT_AARCH32
+	select SPL if !ARM64_BOOT_AARCH32
+	select TPL if !ARM64_BOOT_AARCH32
+	imply SPL_CLK
+	imply SPL_REGMAP
+	imply SPL_SYSCON
+	imply SPL_RAM
+	imply SPL_SERIAL_SUPPORT
+	imply TPL_SERIAL_SUPPORT
+	imply SPL_SEPARATE_BSS
 	help
 	  The Rockchip RK3308 is a ARM-based Soc which embeded with quad
 	  Cortex-A35 and highly integrated audio interfaces.
