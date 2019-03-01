@@ -266,6 +266,14 @@ void *sysmem_alloc_align_base(const char *name,
 		return NULL;
 	}
 
+	if (!IS_ALIGNED(base, 4)) {
+		SYSMEM_E("\"%s\" base=0x%08lx is not 4-byte aligned\n", name, (ulong)base);
+		return NULL;
+	}
+
+	/* Must be 4-byte aligned */
+	size = ALIGN(size, 4);
+
 	/* Already allocated ? */
 	list_for_each(node, &sysmem->allocated_head) {
 		prop = list_entry(node, struct sysmem_property, node);
