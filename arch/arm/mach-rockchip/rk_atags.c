@@ -10,6 +10,7 @@
 #include <debug_uart.h>
 #endif
 
+#define HASH_LEN	sizeof(u32)
 #define tag_next(t)	((struct tag *)((u32 *)(t) + (t)->hdr.size))
 #define tag_size(type)	((sizeof(struct tag_header) + sizeof(struct type)) >> 2)
 #define for_each_tag(t, base)		\
@@ -72,6 +73,20 @@ void *memcpy(void *dest, const void *src, size_t count)
 }
 #endif
 
+static u32 js_hash(void *buf, u32 len)
+{
+	u32 i, hash = 0x47C6A7E6;
+	char *data = buf;
+
+	if (!buf || !len)
+		return hash;
+
+	for (i = 0; i < len; i++)
+		hash ^= ((hash << 5) + data[i] + (hash >> 2));
+
+	return hash;
+}
+
 static int bad_magic(u32 magic)
 {
 	bool bad;
@@ -121,7 +136,7 @@ int atags_is_available(void)
 
 int atags_set_tag(u32 magic, void *tagdata)
 {
-	u32 length, size = 0;
+	u32 length, size = 0, hash;
 	struct tag *t = (struct tag *)ATAGS_PHYS_BASE;
 
 	if (!tagdata)
@@ -151,6 +166,10 @@ int atags_set_tag(u32 magic, void *tagdata)
 
 			if (bad_magic(t->hdr.magic))
 				return -EINVAL;
+
+			/* This is an old tag, override it */
+			if (t->hdr.magic == magic)
+				break;
 
 			if (t->hdr.magic == ATAG_NONE)
 				break;
@@ -188,8 +207,10 @@ int atags_set_tag(u32 magic, void *tagdata)
 	/* It's okay to setup a new tag */
 	t->hdr.magic = magic;
 	t->hdr.size = size;
-	length = (t->hdr.size << 2) - sizeof(struct tag_header);
+	length = (t->hdr.size << 2) - sizeof(struct tag_header) - HASH_LEN;
 	memcpy(&t->u, (char *)tagdata, length);
+	hash = js_hash(t, (size << 2) - HASH_LEN);
+	memcpy((char *)&t->u + length, &hash, HASH_LEN);
 
 	/* Next tag */
 	t = tag_next(t);
@@ -203,6 +224,7 @@ int atags_set_tag(u32 magic, void *tagdata)
 
 struct tag *atags_get_tag(u32 magic)
 {
+	u32 *hash, calc_hash, size;
 	struct tag *t;
 
 	if (!atags_is_available())
@@ -215,8 +237,25 @@ struct tag *atags_get_tag(u32 magic)
 		if (bad_magic(t->hdr.magic))
 			return NULL;
 
-		if (t->hdr.magic == magic)
+		if (t->hdr.magic != magic)
+			continue;
+
+		size = t->hdr.size;
+		hash = (u32 *)((ulong)t + (size << 2) - HASH_LEN);
+		if (!*hash) {
+			debug("No hash, magic(%x)\n", magic);
 			return t;
+		} else {
+			calc_hash = js_hash(t, (size << 2) - HASH_LEN);
+			if (calc_hash == *hash) {
+				debug("Hash okay, magic(%x)\n", magic);
+				return t;
+			} else {
+				debug("Hash bad, magic(%x), orgHash=%x, nowHash=%x\n",
+				      magic, *hash, calc_hash);
+				return NULL;
+			}
+		}
 	}
 
 	return NULL;
@@ -235,6 +274,9 @@ void atags_stat(void)
 	u32 in_use = 0, in_available = 0;
 	u32 start = ATAGS_PHYS_BASE, end = ATAGS_PHYS_BASE + ATAGS_SIZE;
 	struct tag *t;
+
+	if (!atags_is_available())
+		return;
 
 	for_each_tag(t, (struct tag *)ATAGS_PHYS_BASE) {
 		if (atags_overflow(t))
@@ -275,6 +317,7 @@ void atags_print_tag(struct tag *t)
 		printf("        id = 0x%x\n", t->u.serial.id);
 		for (i = 0; i < ARRAY_SIZE(t->u.serial.reserved); i++)
 			printf("    res[%d] = 0x%x\n", i, t->u.serial.reserved[i]);
+		printf("      hash = 0x%x\n", t->u.serial.hash);
 		break;
 	case ATAG_BOOTDEV:
 		printf("[bootdev]:\n");
@@ -287,6 +330,7 @@ void atags_print_tag(struct tag *t)
 		for (i = 0; i < ARRAY_SIZE(t->u.bootdev.reserved); i++)
 			printf("    res[%d] = 0x%x\n",
 			       i, t->u.bootdev.reserved[i]);
+		printf("      hash = 0x%x\n", t->u.bootdev.hash);
 		break;
 	case ATAG_TOS_MEM:
 		printf("[tos_mem]:\n");
@@ -305,6 +349,8 @@ void atags_print_tag(struct tag *t)
 		printf("           flags = 0x%x\n", t->u.tos_mem.drm_mem.flags);
 		for (i = 0; i < ARRAY_SIZE(t->u.tos_mem.reserved); i++)
 			printf("   res[%d] = 0x%llx\n", i, t->u.tos_mem.reserved[i]);
+		printf("     res1 = 0x%x\n", t->u.tos_mem.reserved1);
+		printf("     hash = 0x%x\n", t->u.tos_mem.hash);
 		break;
 	case ATAG_DDR_MEM:
 		printf("[ddr_mem]:\n");
@@ -316,6 +362,7 @@ void atags_print_tag(struct tag *t)
 			printf("  bank[%d] = 0x%llx\n", i, t->u.ddr_mem.bank[i]);
 		for (i = 0; i < ARRAY_SIZE(t->u.ddr_mem.reserved); i++)
 			printf("    res[%d] = 0x%x\n", i, t->u.ddr_mem.reserved[i]);
+		printf("      hash = 0x%x\n", t->u.ddr_mem.hash);
 		break;
 	case ATAG_RAM_PARTITION:
 		printf("[ram_partition]:\n");
@@ -326,11 +373,14 @@ void atags_print_tag(struct tag *t)
 			printf("    res[%d] = 0x%x\n", i, t->u.ram_part.reserved[i]);
 
 		printf("    Part:  Name       Start Addr      Size\t\n");
-		for (i = 0; i < t->u.ram_part.count; i++)
+		for (i = 0; i < ARRAY_SIZE(t->u.ram_part.part); i++)
 			printf("%16s      0x%08llx      0x%08llx\n",
 			       t->u.ram_part.part[i].name,
 			       t->u.ram_part.part[i].start,
 			       t->u.ram_part.part[i].size);
+		for (i = 0; i < ARRAY_SIZE(t->u.ram_part.reserved1); i++)
+			printf("   res1[%d] = 0x%x\n", i, t->u.ram_part.reserved1[i]);
+		printf("      hash = 0x%x\n", t->u.ram_part.hash);
 		break;
 	case ATAG_ATF_MEM:
 		printf("[atf_mem]:\n");
@@ -341,6 +391,7 @@ void atags_print_tag(struct tag *t)
 		printf("      size = 0x%x\n", t->u.atf_mem.size);
 		for (i = 0; i < ARRAY_SIZE(t->u.atf_mem.reserved); i++)
 			printf("    res[%d] = 0x%x\n", i, t->u.atf_mem.reserved[i]);
+		printf("      hash = 0x%x\n", t->u.atf_mem.hash);
 		break;
 	case ATAG_CORE:
 		printf("[core]:\n");
@@ -360,6 +411,9 @@ void atags_print_tag(struct tag *t)
 void atags_print_all_tags(void)
 {
 	struct tag *t;
+
+	if (!atags_is_available())
+		return;
 
 	for_each_tag(t, (struct tag *)ATAGS_PHYS_BASE) {
 		if (atags_overflow(t))

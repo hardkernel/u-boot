@@ -51,7 +51,8 @@ struct tag_serial {
 	u32 baudrate;
 	u32 m_mode;
 	u32 id;
-	u32 reserved[3];
+	u32 reserved[2];
+	u32 hash;
 } __packed;
 
 struct tag_bootdev {
@@ -59,14 +60,16 @@ struct tag_bootdev {
 	u32 devtype;
 	u32 devnum;
 	u32 mode;
-	u32 reserved[8];
+	u32 reserved[7];
+	u32 hash;
 } __packed;
 
 struct tag_ddr_mem {
 	u32 count;
 	u32 version;
 	u64 bank[20];
-	u32 reserved[4];
+	u32 reserved[3];
+	u32 hash;
 } __packed;
 
 struct tag_tos_mem {
@@ -85,7 +88,9 @@ struct tag_tos_mem {
 		u32 flags;
 	} drm_mem;
 
-	u64 reserved[8];
+	u64 reserved[7];
+	u32 reserved1;
+	u32 hash;
 } __packed;
 
 struct tag_atf_mem {
@@ -93,7 +98,8 @@ struct tag_atf_mem {
 	u64 phy_addr;
 	u32 size;
 	u32 flags;
-	u32 reserved[3];
+	u32 reserved[2];
+	u32 hash;
 } __packed;
 
 struct tag_ram_partition {
@@ -105,7 +111,10 @@ struct tag_ram_partition {
 		char name[16];
 		u64 start;
 		u64 size;
-	} part[16];
+	} part[6];
+
+	u32 reserved1[3];
+	u32 hash;
 } __packed;
 
 struct tag_core {
