@@ -1845,7 +1845,8 @@ static void inline nand_get_chip(void )
 				(AMLNF_READ_REG(P_PERIPHS_PIN_MUX_1) &
 				0xfff00000) | 0x22222);
 	} else if((cpu_id.family_id == MESON_CPU_MAJOR_ID_G12A)
-		|| (cpu_id.family_id == MESON_CPU_MAJOR_ID_G12B)) {
+		|| (cpu_id.family_id == MESON_CPU_MAJOR_ID_G12B)
+		|| (cpu_id.family_id == MESON_CPU_MAJOR_ID_SM1)) {
 		AMLNF_SET_REG_MASK(P_PAD_PULL_UP_EN_REG0, 0x1FFF);
 		AMLNF_SET_REG_MASK(P_PAD_PULL_UP_REG0, 0x1F00);
 		AMLNF_WRITE_REG(P_PERIPHS_PIN_MUX_0, 0x11111111);
