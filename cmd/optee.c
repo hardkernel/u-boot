@@ -30,9 +30,13 @@ int test_secure_storage_default(void)
 	}
 
 	debug("%s start\n", __func__);
-	OpteeClientApiLibInitialize();
+	TeecResult = OpteeClientApiLibInitialize();
+	if (TeecResult != TEEC_SUCCESS)
+		return -1;
 
 	TeecResult = TEEC_InitializeContext(NULL, &TeecContext);
+	if (TeecResult != TEEC_SUCCESS)
+		return -1;
 
 	TeecOperation.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT,
 						    TEEC_NONE,
@@ -164,9 +168,13 @@ int test_secure_storage_security_partition(void)
 	}
 
 	debug("%s start\n", __func__);
-	OpteeClientApiLibInitialize();
+	TeecResult = OpteeClientApiLibInitialize();
+	if (TeecResult != TEEC_SUCCESS)
+		return -1;
 
 	TeecResult = TEEC_InitializeContext(NULL, &TeecContext);
+	if (TeecResult != TEEC_SUCCESS)
+		return -1;
 
 	TeecOperation.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT,
 						    TEEC_NONE,

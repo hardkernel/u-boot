@@ -70,6 +70,6 @@ int tee_supp_rk_fs_init(void);
 
 int tee_supp_rk_fs_process(size_t num_params,
 			struct tee_ioctl_param *params);
-void OpteeClientRkFsInit(void);
+int OpteeClientRkFsInit(void);
 
 #endif

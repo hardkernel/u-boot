@@ -1233,10 +1233,10 @@ int tee_supp_rk_fs_init(void)
 	return TEEC_SUCCESS;
 }
 
-void OpteeClientRkFsInit(void)
+int OpteeClientRkFsInit(void)
 {
 	debug(" OpteeClientRkFsInit\n");
-	tee_supp_rk_fs_init();
+	return tee_supp_rk_fs_init();
 }
 bool tee_supp_param_is_value(struct tee_ioctl_param *param)
 {

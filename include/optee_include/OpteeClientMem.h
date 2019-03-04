@@ -9,7 +9,7 @@
 
 #include <linux/types.h>
 
-void OpteeClientMemInit(void);
+int OpteeClientMemInit(void);
 
 void *OpteeClientMemAlloc(uint32_t length);
 

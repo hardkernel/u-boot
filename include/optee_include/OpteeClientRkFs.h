@@ -33,6 +33,6 @@ int tee_supp_rk_fs_init(void);
 
 int tee_supp_rk_fs_process(void *cmd, uint32_t cmd_size);
 
-void OpteeClientRkFsInit(void);
+int OpteeClientRkFsInit(void);
 
 #endif

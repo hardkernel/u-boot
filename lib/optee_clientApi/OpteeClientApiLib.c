@@ -17,11 +17,18 @@ TEEC_Result OpteeClientApiLibInitialize(void)
 {
 	TEEC_Result status = TEEC_SUCCESS;
 
-	OpteeClientMemInit();
+	status = OpteeClientMemInit();
+	if (status != TEEC_SUCCESS) {
+		printf("OpteeClientMemInit fail!");
+		return status;
+	}
+	status = OpteeClientRkFsInit();
+	if (status != TEEC_SUCCESS) {
+		printf("OpteeClientRkFsInit fail!");
+		return status;
+	}
 
-	OpteeClientRkFsInit();
-
-	return status;
+	return TEEC_SUCCESS;
 }
 
 /*

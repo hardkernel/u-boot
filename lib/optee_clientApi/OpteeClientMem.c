@@ -14,7 +14,7 @@
 
 void *my_mem_start;
 uint32_t my_count;
-uint8_t *my_flag;
+uint8_t *my_flag = NULL;
 typedef struct {
 	void *addrBlock;
 	uint32_t sizeBlock;
@@ -22,14 +22,25 @@ typedef struct {
 } ALLOC_FLAG;
 ALLOC_FLAG alloc_flags[50];
 
-void my_malloc_init(void *start, uint32_t size)
+int my_malloc_init(void *start, uint32_t size)
 {
+	if (start == NULL || size == 0) {
+		printf("malloc init fail!");
+		return -1;
+	}
 	memset(start, 0, size);
 	my_mem_start = start;
 	my_count = size/4096;
-	my_flag = malloc(size/4096);
+	if (my_flag == NULL) {
+		my_flag = malloc(size/4096);
+		if (my_flag == NULL) {
+			printf("malloc fail!");
+			return -1;
+		}
+	}
 	memset(my_flag, 0, size/4096);
 	memset(alloc_flags, 0, 50 * sizeof(ALLOC_FLAG));
+	return 0;
 }
 
 void write_usedblock(void *addr, uint32_t size)
@@ -75,7 +86,8 @@ void *my_malloc(uint32_t size)
 	uint32_t i, j, k, num;
 
 	num = (size - 1) / 4096 + 1;
-
+	if (my_count < num)
+		return 0;
 	for (i = 0; i < my_count - num; i++) {
 		if (*(my_flag + i) == 0) {
 			for (j = 0; j < num; j++) {
@@ -127,7 +139,7 @@ void my_free(void *ptr)
  * Initlialize the memory component, for example providing the
  * containing drivers handle.
  */
-void OpteeClientMemInit(void)
+int OpteeClientMemInit(void)
 {
 	ARM_SMC_ARGS ArmSmcArgs = {0};
 
@@ -143,7 +155,7 @@ void OpteeClientMemInit(void)
 	debug("get share memory, arg0=0x%x arg1=0x%x arg2=0x%x arg3=0x%x\n",
 	      ArmSmcArgs.Arg0, ArmSmcArgs.Arg1, ArmSmcArgs.Arg2, ArmSmcArgs.Arg3);
 
-	my_malloc_init((void *)(size_t)ArmSmcArgs.Arg1, ArmSmcArgs.Arg2);
+	return my_malloc_init((void *)(size_t)ArmSmcArgs.Arg1, ArmSmcArgs.Arg2);
 }
 
 /*
