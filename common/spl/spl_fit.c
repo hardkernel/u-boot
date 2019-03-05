@@ -197,7 +197,7 @@ static int spl_load_fit_image(struct spl_load_info *info, ulong sector,
 			return -ENOENT;
 
 		load_ptr = (load_addr + align_len) & ~align_len;
-#ifdef CONFIG_ROCKCHIP_RK3399
+#if  defined(CONFIG_ROCKCHIP_RK3399) || defined(CONFIG_ROCKCHIP_RK3368)
 		if ((load_ptr & 0xffff0000) == CONFIG_ROCKCHIP_IRAM_START_ADDR)
 			load_ptr = (ulong)memalign(ARCH_DMA_MINALIGN, len);
 #endif
