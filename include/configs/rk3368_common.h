@@ -15,7 +15,7 @@
 #include <linux/sizes.h>
 
 #define CONFIG_SYS_SDRAM_BASE		0
-#define SDRAM_MAX_SIZE			0xff000000
+#define SDRAM_MAX_SIZE			0xfe000000
 #define CONFIG_BAUDRATE			115200
 #define CONFIG_SYS_MALLOC_LEN		(192 << 20)
 #define CONFIG_SYS_CBSIZE		1024
