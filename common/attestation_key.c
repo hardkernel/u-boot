@@ -199,12 +199,13 @@ static bool validate_ca_header(const uint8_t *buf, uint32_t buf_size)
 
 /* write key to security storage. */
 static uint32_t write_key(keymaster_algorithm_t key_type,
-				const uint8_t *key, uint32_t key_size)
+			  unsigned char *key_name,
+			  const uint8_t *key, uint32_t key_size)
 {
 	char key_file[STORAGE_ID_LENGTH_MAX] = {0};
 
-	snprintf(key_file, STORAGE_ID_LENGTH_MAX, "%s.%s", ATTESTATION_KEY_FILE,
-		get_keyslot_str(key_type));
+	snprintf(key_file, STORAGE_ID_LENGTH_MAX, "%s.%s", key_name,
+		 get_keyslot_str(key_type));
 	write_to_keymaster((uint8_t *)key_file, strlen(key_file),
 				(uint8_t *)key, key_size);
 	return 0;
@@ -243,6 +244,7 @@ atap_result load_attestation_key(struct blk_desc *dev_desc,
 				disk_partition_t *misc_partition)
 {
 	int ret;
+	unsigned char key_name[STORAGE_ID_LENGTH_MAX] = {0};
 
 	if (!dev_desc) {
 		printf("%s: Could not find device\n", __func__);
@@ -325,7 +327,9 @@ atap_result load_attestation_key(struct blk_desc *dev_desc,
 		return ATAP_RESULT_ERROR_BUF_COPY;
 	}
 	/* write rsa private key to security storage*/
-	write_key(KM_ALGORITHM_RSA, key.data, key.data_length);
+	memcpy(key_name, ATTESTATION_KEY_PREFIX,
+	       sizeof(ATTESTATION_KEY_PREFIX));
+	write_key(KM_ALGORITHM_RSA, key_name, key.data, key.data_length);
 
 	/* read rsa cert chain */
 	atap_certchain certchain;
@@ -359,7 +363,7 @@ atap_result load_attestation_key(struct blk_desc *dev_desc,
 	}
 
 	/* write ec private key to security storage*/
-	write_key(KM_ALGORITHM_EC, key.data, key.data_length);
+	write_key(KM_ALGORITHM_EC, key_name, key.data, key.data_length);
 
 	/* read ec cert chain */
 	free_cert_chain(certchain);
@@ -430,12 +434,14 @@ atap_result write_attestation_key_to_secure_storage(uint8_t *received_data,
 						    uint32_t len)
 {
 	unsigned char keybuf[ATTESTATION_DATA_OFFSET] = {0};
+	unsigned char key_name[STORAGE_ID_LENGTH_MAX] = {0};
 	uint32_t device_id_size = 0;
 	uint8_t device_id[32] = {0};
 	uint8_t *key_buf = NULL;
 	uint32_t algorithm;
 	uint8_t *key_data;
 	uint32_t key_data_length = 0;
+
 	/* skip the tag(4 byte) and the size of key(4 byte) */
 	memcpy(keybuf, received_data + 8, ATTESTATION_DATA_OFFSET);
 	key_data = malloc(ATTESTATION_DATA_OFFSET);
@@ -445,11 +451,11 @@ atap_result write_attestation_key_to_secure_storage(uint8_t *received_data,
 		printf("invalidate device_id_size:%d\n", device_id_size);
 		return ATAP_RESULT_ERROR_INVALID_DEVICE_ID;
 	}
-
 	memcpy(device_id, keybuf + CA_HEADER_LEN + sizeof(uint32_t),
 	       device_id_size);
 	printf("device_id:%s\n", device_id);
 
+	memcpy(key_name, ATTESTATION_KEY_FILE, sizeof(ATTESTATION_KEY_FILE));
 	/* read algorithm(RSA) from keybuf */
 	key_buf = keybuf + CA_HEADER_LEN + sizeof(uint32_t) + device_id_size;
 	copy_uint32_from_buf(&key_buf, &algorithm);
@@ -457,7 +463,7 @@ atap_result write_attestation_key_to_secure_storage(uint8_t *received_data,
 	/* read rsa key and certchain */
 	read_key_data(&key_buf, key_data, &key_data_length);
 	printf("write attestation key: RSA\n");
-	write_key(KM_ALGORITHM_RSA, key_data, key_data_length);
+	write_key(KM_ALGORITHM_RSA, key_name, key_data, key_data_length);
 
 	/* read algorithm(EC) from keybuf */
 	copy_uint32_from_buf(&key_buf, &algorithm);
@@ -465,7 +471,7 @@ atap_result write_attestation_key_to_secure_storage(uint8_t *received_data,
 	/* read ec key and certchain */
 	read_key_data(&key_buf, key_data, &key_data_length);
 	printf("write attestation key: EC\n");
-	write_key(KM_ALGORITHM_EC, key_data, key_data_length);
+	write_key(KM_ALGORITHM_EC, key_name, key_data, key_data_length);
 
 	memset(keybuf, 0, sizeof(keybuf));
 	free(key_data);
