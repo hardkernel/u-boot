@@ -307,7 +307,6 @@ static void rockchip_nand_write_extra_oob(struct mtd_info *mtd, u8 *oob)
 	rockchip_nand_write_buf(mtd, oob + offset, len);
 }
 
-
 static int rockchip_nand_hw_syndrome_pio_read_page(struct mtd_info *mtd,
 						   struct nand_chip *chip,
 						   uint8_t *buf,
@@ -535,6 +534,33 @@ static int rockchip_nand_ecc_init(struct mtd_info *mtd,
 	return 0;
 }
 
+static int rockchip_nand_block_bad(struct mtd_info *mtd, loff_t ofs)
+{
+	int page, res = 0, i;
+	struct nand_chip *chip = mtd_to_nand(mtd);
+	u16 bad = 0xff;
+	int chipnr = (int)(ofs >> chip->chip_shift);
+
+	page = (int)(ofs >> chip->page_shift) & chip->pagemask;
+	chip->select_chip(mtd, chipnr);
+	chip->cmdfunc(mtd, NAND_CMD_READ0, 0x00, page);
+	if(rockchip_nand_hw_syndrome_pio_read_page(mtd,
+	   chip, chip->buffers->databuf, 0, page) == -1) {
+		chip->cmdfunc(mtd, NAND_CMD_READOOB, chip->badblockpos, page);
+		for (i = 0; i < 8; i++) {
+			bad = chip->read_byte(mtd);
+			if (bad)
+				break;
+		}
+		if (i >= 8)
+			res = 1;
+	}
+	chip->select_chip(mtd, -1);
+	if (res)
+		printf("%s 0x%x %x %x\n", __func__, page, res, bad);
+	return res;
+}
+
 static int rockchip_nand_chip_init(int node, struct rk_nand *rknand, int devnum)
 {
 	const void *blob = gd->fdt_blob;
@@ -553,6 +579,9 @@ static int rockchip_nand_chip_init(int node, struct rk_nand *rknand, int devnum)
 	chip->read_byte = rockchip_nand_read_byte;
 	chip->dev_ready = rockchip_nand_dev_ready;
 	chip->controller = &rknand->controller;
+	chip->block_bad = rockchip_nand_block_bad;
+	chip->bbt_options = NAND_BBT_USE_FLASH | NAND_BBT_NO_OOB;
+	chip->options = NAND_NO_SUBPAGE_WRITE;
 
 	rknand->banks[devnum] = fdtdec_get_int(blob, node, "reg", -1);
 
@@ -625,7 +654,7 @@ void board_nand_init(void)
 		goto err;
 	}
 
-	regs = fdtdec_get_addr(blob, node, "reg");
+	regs = fdt_get_base_address(blob, node);
 	if (regs == FDT_ADDR_T_NONE) {
 		debug("Nand address not found\n");
 		goto err;
