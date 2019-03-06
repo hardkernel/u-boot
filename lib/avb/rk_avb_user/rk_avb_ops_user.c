@@ -24,8 +24,21 @@
 #include <android_avb/avb_atx_validate.h>
 #include <android_avb/rk_avb_ops_user.h>
 #include <boot_rkimg.h>
+#include <asm/arch/rk_atags.h>
 
 /* rk used */
+int rk_avb_get_pub_key(struct rk_pub_key *pub_key)
+{
+	struct tag *t = NULL;
+
+	t = atags_get_tag(ATAG_PUB_KEY);
+	if (!t)
+		return -1;
+
+	memcpy(pub_key, t->u.pub_key.data, sizeof(struct rk_pub_key));
+
+	return 0;
+}
 int rk_avb_get_perm_attr_cer(uint8_t *cer, uint32_t size)
 {
 #ifdef CONFIG_OPTEE_CLIENT
