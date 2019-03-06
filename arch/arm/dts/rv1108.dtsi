@@ -682,7 +682,6 @@
 	};
 
 	dmc: dmc@202b0000 {
-                u-boot,dm-pre-reloc;
                 compatible = "rockchip,rv1108-dmc";
                 reg = <0x202b0000 0x400
 		       0x20210000 0x400
