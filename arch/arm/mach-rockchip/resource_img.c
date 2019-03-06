@@ -212,11 +212,16 @@ static int init_resource_list(struct resource_img_hdr *hdr)
 #ifdef CONFIG_ANDROID_AB
 	char slot_suffix[3] = {0};
 
-	if (rk_avb_get_current_slot(slot_suffix))
+	if (rk_avb_get_current_slot(slot_suffix)) {
+		ret = -ENODEV;
 		goto out;
+	}
+
 	boot_partname = android_str_append(boot_partname, slot_suffix);
-	if (boot_partname == NULL)
+	if (!boot_partname) {
+		ret = -EINVAL;
 		goto out;
+	}
 #endif
 	ret = part_get_info_by_name(dev_desc, boot_partname, &part_info);
 	if (ret < 0) {
@@ -235,6 +240,7 @@ static int init_resource_list(struct resource_img_hdr *hdr)
 	if (ret != 1) {
 		printf("%s: failed to read %s hdr, ret=%d\n",
 		       __func__, part_info.name, ret);
+		ret = -EIO;
 		goto out;
 	}
 	ret = android_image_check_header(andr_hdr);
@@ -274,17 +280,21 @@ next:
 	if (ret != 1) {
 		printf("%s: failed to read resource hdr, ret=%d\n",
 		       __func__, ret);
+		ret = -EIO;
 		goto out;
 	}
 
 	ret = resource_image_check_header(hdr);
-	if (ret < 0)
+	if (ret < 0) {
+		ret = -EINVAL;
 		goto out;
+	}
 
 	content = memalign(ARCH_DMA_MINALIGN,
 			   hdr->e_blks * hdr->e_nums * RK_BLK_SIZE);
 	if (!content) {
 		printf("%s: failed to alloc memory for content\n", __func__);
+		ret = -ENOMEM;
 		goto out;
 	}
 
@@ -294,6 +304,7 @@ next:
 	if (ret != (hdr->e_blks * hdr->e_nums)) {
 		printf("%s: failed to read resource entries, ret=%d\n",
 		       __func__, ret);
+		ret = -EIO;
 		goto err;
 	}
 
@@ -303,13 +314,14 @@ next:
 		add_file_to_list(entry, offset);
 	}
 
+	ret = 0;
 	printf("Load FDT from %s part\n", boot_partname);
 err:
 	free(content);
 out:
 	free(hdr);
 
-	return 0;
+	return ret;
 }
 
 static struct resource_file *get_file_info(struct resource_img_hdr *hdr,
@@ -318,8 +330,10 @@ static struct resource_file *get_file_info(struct resource_img_hdr *hdr,
 	struct resource_file *file;
 	struct list_head *node;
 
-	if (list_empty(&entrys_head))
-		init_resource_list(hdr);
+	if (list_empty(&entrys_head)) {
+		if (init_resource_list(hdr))
+			return NULL;
+	}
 
 	list_for_each(node, &entrys_head) {
 		file = list_entry(node, struct resource_file, link);
@@ -621,8 +635,11 @@ int rockchip_read_dtb_file(void *fdt_addr)
 	char *dtb_name = DTB_FILE;
 	int ret, size;
 
-	if (list_empty(&entrys_head))
-		init_resource_list(NULL);
+	if (list_empty(&entrys_head)) {
+		ret = init_resource_list(NULL);
+		if (ret)
+			return ret;
+	}
 
 	list_for_each(node, &entrys_head) {
 		file = list_entry(node, struct resource_file, link);
