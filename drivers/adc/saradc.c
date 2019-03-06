@@ -171,14 +171,30 @@ void saradc_hw_init(void)
 	aml_write_reg32(P_SAR_ADC_CHAN_LIST(saradc->base_addr), 0);
 	/* REG2: all chanel set to 8-samples & median averaging mode */
 	aml_write_reg32(P_SAR_ADC_AVG_CNTL(saradc->base_addr), 0);
-	aml_write_reg32(P_SAR_ADC_REG3(saradc->base_addr), 0x9388000a);
+
+	/*
+	 * through lots of tests, if we first initialize the REG3 to 0x9388000a
+	 * and then set the bit[27], the sampling data maybe wrong when change
+	 * the clock. For example:
+	 *
+	 * - change the clock to 24M/(20+1)
+	 * saradc_clock_set(20);
+	 *
+	 * - read the sampling data by the command below
+	 * saradc open 1;saradc getval;saradc close
+	 *
+	 * However, if we set the REG3 by the following code, the issue above
+	 * can be avoided. unfortunately we have not found the root cause.
+	 */
+	if (saradc->adc_type)
+		aml_write_reg32(P_SAR_ADC_REG3(saradc->base_addr), 0x9b88000a);
+	else
+		aml_write_reg32(P_SAR_ADC_REG3(saradc->base_addr), 0x9388000a);
+
 	aml_write_reg32(P_SAR_ADC_DELAY(saradc->base_addr), 0x10a000a);
 	aml_write_reg32(P_SAR_ADC_AUX_SW(saradc->base_addr), 0x3eb1a0c);
 	aml_write_reg32(P_SAR_ADC_CHAN_10_SW(saradc->base_addr), 0x8c000c);
 	aml_write_reg32(P_SAR_ADC_DETECT_IDLE_SW(saradc->base_addr), 0xc000c);
-
-	if (saradc->adc_type)
-		aml_set_reg32_bits(P_SAR_ADC_REG3(saradc->base_addr), 0x1, 27, 1);
 
 	/* REG11 bit[1] must be set to <1> for g12a and later SoCs */
 	if (saradc->family_id >= MESON_CPU_MAJOR_ID_G12A)
@@ -189,7 +205,7 @@ void saradc_hw_init(void)
 			saradc->family_id >= MESON_CPU_MAJOR_ID_TXLX)
 		aml_set_reg32_bits(P_SAR_ADC_REG11(saradc->base_addr), 0x1, 0, 1);
 
-	saradc_clock_set(20);
+	saradc_clock_set(0xa0);
 }
 
 int saradc_probe(void)
@@ -253,10 +269,6 @@ int get_adc_sample_gxbb_early(int ch, int use_10bit_num)
 	aml_set_reg32_bits(P_SAR_ADC_DELAY(saradc->base_addr), 1,
 		FLAG_BUSY_KERNEL_BIT, 1);
 
-	saradc_clock_switch(0);
-	saradc_clock_set(0xa0);
-	saradc_clock_switch(1);
-
 	aml_write_reg32(P_SAR_ADC_CHAN_LIST(saradc->base_addr), ch);
 	aml_write_reg32(P_SAR_ADC_DETECT_IDLE_SW(saradc->base_addr),
 		(0xc000c | (ch<<23) | (ch<<7)));
@@ -306,10 +318,6 @@ int get_adc_sample_gxbb_early(int ch, int use_10bit_num)
 end:
 	aml_set_reg32_bits(P_SAR_ADC_REG0(saradc->base_addr), 1, 14, 1);
 	aml_set_reg32_bits(P_SAR_ADC_REG0(saradc->base_addr), 0, 0, 1);
-
-	saradc_clock_switch(0);
-	saradc_clock_set(20);
-	saradc_clock_switch(1);
 
 end1:
 	aml_set_reg32_bits(P_SAR_ADC_DELAY(saradc->base_addr), 0,
