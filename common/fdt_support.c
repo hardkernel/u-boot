@@ -475,6 +475,8 @@ int fdt_fixup_memory_banks(void *blob, u64 start[], u64 size[], int banks)
 {
 	int err, nodeoffset;
 	int len;
+	const void *reg;
+
 	u8 tmp[MEMORY_BANKS_MAX * 16]; /* Up to 64-bit address + 64-bit size */
 
 	if (banks > MEMORY_BANKS_MAX) {
@@ -501,6 +503,13 @@ int fdt_fixup_memory_banks(void *blob, u64 start[], u64 size[], int banks)
 		printf("WARNING: could not set %s %s.\n", "device_type",
 				fdt_strerror(err));
 		return err;
+	}
+
+	reg = fdt_getprop(blob, nodeoffset, "reg", NULL);
+	printf("%s, reg:%p\n", __func__, reg);
+	if (reg) {
+		printf("DTS already have 'reg' property\n");
+		return 0;
 	}
 
 	len = fdt_pack_reg(blob, tmp, start, size, banks);
