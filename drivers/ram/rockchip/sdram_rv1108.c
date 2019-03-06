@@ -112,9 +112,21 @@ void *get_base_addr(unsigned int *reg, unsigned int offset)
 	return (void *)p;
 }
 
+void get_ddr_param(struct dram_info *sdram_priv,
+		   struct ddr_param *ddr_param)
+{
+	size_t ram_size =
+		rockchip_sdram_size((phys_addr_t)&sdram_priv->grf->os_reg2);
+
+	ddr_param->count = 1;
+	ddr_param->para[0] = CONFIG_SYS_SDRAM_BASE;
+	ddr_param->para[1] = ram_size;
+}
+
 int sdram_init(void)
 {
 	int ret;
+	struct ddr_param ddr_param;
 	struct dram_info *sdram_priv = &info;
 	struct driver_info *info =
 		ll_entry_start(struct driver_info, driver_info);
@@ -135,6 +147,9 @@ int sdram_init(void)
 	ret = rv1108_sdram_init(sdram_priv, params);
 	if (ret)
 		debug("rv1108_sdram_init() fail!");
+
+	get_ddr_param(sdram_priv, &ddr_param);
+	rockchip_setup_ddr_param(&ddr_param);
 
 	return ret;
 }

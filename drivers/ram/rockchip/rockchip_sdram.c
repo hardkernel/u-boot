@@ -9,6 +9,7 @@
 #include <syscon.h>
 #include <asm/arch/clock.h>
 #include <asm/arch/grf_px30.h>
+#include <asm/arch/grf_rv1108.h>
 #include <asm/arch/grf_rk1808.h>
 #include <asm/arch/grf_rk3036.h>
 #include <asm/arch/grf_rk3308.h>
@@ -28,7 +29,13 @@ static int dmc_probe(struct udevice *dev)
 	struct dram_info *priv = dev_get_priv(dev);
 
 	if (!(gd->flags & GD_FLG_RELOC)) {
-#if defined(CONFIG_ROCKCHIP_RK3036)
+#if defined(CONFIG_ROCKCHIP_RV1108)
+		struct rv1108_grf *grf =
+			syscon_get_first_range(ROCKCHIP_SYSCON_GRF);
+
+		priv->info.size =
+			rockchip_sdram_size((phys_addr_t)&grf->os_reg2);
+#elif defined(CONFIG_ROCKCHIP_RK3036)
 		struct rk3036_grf *grf =
 			syscon_get_first_range(ROCKCHIP_SYSCON_GRF);
 
@@ -81,7 +88,9 @@ static struct ram_ops dmc_ops = {
 };
 
 static const struct udevice_id dmc_ids[] = {
-#if defined(CONFIG_ROCKCHIP_RK3036)
+#if defined(CONFIG_ROCKCHIP_RV1108)
+	{ .compatible = "rockchip,rv1108-dmc" },
+#elif defined(CONFIG_ROCKCHIP_RK3036)
 	{ .compatible = "rockchip,rk3036-dmc" },
 #elif defined(CONFIG_ROCKCHIP_RK3308)
 	{ .compatible = "rockchip,rk3308-dmc" },
