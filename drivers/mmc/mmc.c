@@ -1842,7 +1842,11 @@ static int mmc_complete_init(struct mmc *mmc)
 
 int mmc_init(struct mmc *mmc)
 {
+#ifdef CONFIG_STORE_COMPATIBLE
 	int err = IN_PROGRESS, i;
+#else
+	int err = IN_PROGRESS;
+#endif
 	unsigned start;
 
 	if (mmc->has_init)
