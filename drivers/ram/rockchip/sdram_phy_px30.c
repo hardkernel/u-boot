@@ -7,7 +7,7 @@
 #include <ram.h>
 #include <asm/io.h>
 #include <asm/arch/sdram.h>
-#include <asm/arch/sdram_share.h>
+#include <asm/arch/sdram_common.h>
 #include <asm/arch/sdram_phy_px30.h>
 
 static void sdram_phy_dll_bypass_set(void __iomem *phy_base, u32 freq)

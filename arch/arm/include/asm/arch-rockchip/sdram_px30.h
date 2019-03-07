@@ -5,7 +5,7 @@
 
 #ifndef _ASM_ARCH_SDRAM_PX30_H
 #define _ASM_ARCH_SDRAM_PX30_H
-#include <asm/arch/sdram_share.h>
+#include <asm/arch/sdram_common.h>
 #include <asm/arch/sdram_pctl_px30.h>
 #include <asm/arch/sdram_phy_px30.h>
 #include <asm/arch/sdram_phy_ron_rtt_px30.h>

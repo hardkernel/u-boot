@@ -8,7 +8,7 @@
 #include <ram.h>
 #include <asm/io.h>
 #include <asm/arch/sdram.h>
-#include <asm/arch/sdram_share.h>
+#include <asm/arch/sdram_common.h>
 
 void sdram_print_dram_type(unsigned char dramtype)
 {

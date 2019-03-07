@@ -6,7 +6,7 @@
 
 #ifndef _ASM_ARCH_SDRAM_RK3399_H
 #define _ASM_ARCH_SDRAM_RK3399_H
-#include <asm/arch/sdram_share.h>
+#include <asm/arch/sdram_common.h>
 
 struct rk3399_ddr_pctl_regs {
 	u32 denali_ctl[332];
