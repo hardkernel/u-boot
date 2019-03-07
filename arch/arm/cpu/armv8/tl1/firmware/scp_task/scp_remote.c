@@ -87,6 +87,24 @@ static const reg_remote RDECODEMODE_TOSHIBA[] = {
 	{CONFIG_END, 0}
 };
 
+static const reg_remote RDECODEMODE_RC5[] = {
+	{ AO_MF_IR_DEC_LDR_ACTIVE,	0},
+	{ AO_MF_IR_DEC_LDR_IDLE,	0},
+	{ AO_MF_IR_DEC_LDR_REPEAT,	0},
+	{ AO_MF_IR_DEC_BIT_0,		0},
+	{ AO_MF_IR_DEC_REG0, ((3 << 28) | (0x1644 << 12) | 0x13)},
+	{ AO_MF_IR_DEC_STATUS, (1 << 30)},
+	{ AO_MF_IR_DEC_REG1, ((1 << 15) | (13 << 8))},
+	/*bit[0-3]: RC5; bit[8]: MSB first mode; bit[11]: compare frame method*/
+	{ AO_MF_IR_DEC_REG2, ((1 << 13) | (1 << 11) | (1 << 8) | 0x7)},
+	/*Half bit for RC5 format: 888.89us*/
+	{ AO_MF_IR_DEC_DURATN2, ((53 << 16) | (38 << 0))},
+	/*RC5 typically 1777.78us for whole bit*/
+	{ AO_MF_IR_DEC_DURATN3, ((99 << 16) | (81 << 0))},
+	{ AO_MF_IR_DEC_REG3,		0},
+	{CONFIG_END,			0}
+};
+
 static const reg_remote RDECODEMODE_RCA[] = {
 	{AO_MF_IR_DEC_LDR_ACTIVE, ((unsigned)250 << 16) | ((unsigned)160 << 0)},	//rca leader 4000us,200* timebase
 	{AO_MF_IR_DEC_LDR_IDLE, 250 << 16 | 160 << 0},	// leader idle 400
@@ -176,6 +194,32 @@ static const reg_remote RDECODEMODE_RCMM[] = {
 	{CONFIG_END,            0      }
 };
 
+static const reg_remote RDECODEMODE_NEC_RC5_2IN1[] = {
+	/*used old decode  for NEC*/
+	{AO_IR_DEC_LDR_ACTIVE, ((unsigned)500<<16) | ((unsigned)400<<0)},
+	{AO_IR_DEC_LDR_IDLE, 300<<16 | 200<<0},/*leader idle*/
+	{AO_IR_DEC_LDR_REPEAT, 150<<16|80<<0}, /*leader repeat*/
+	{AO_IR_DEC_BIT_0, 72<<16|40<<0 },/*logic '0' or '00'*/
+	{AO_IR_DEC_REG0, 3<<28|(0xFA0<<12)|0x13},/*20us body 108ms*/
+	{AO_IR_DEC_STATUS, (134<<20)|(90<<10)},/*logic'1'or'01'*/
+	{AO_IR_DEC_REG1, 0xbe10},/*boby long decode (9-13)*/
+		/* used new decode for rc5*/
+	{ AO_MF_IR_DEC_LDR_ACTIVE,	0},
+	{ AO_MF_IR_DEC_LDR_IDLE,	0},
+	{ AO_MF_IR_DEC_LDR_REPEAT,	0},
+	{ AO_MF_IR_DEC_BIT_0,		0},
+	{ AO_MF_IR_DEC_REG0, ((3 << 28) | (0x1644 << 12) | 0x13)},
+	{ AO_MF_IR_DEC_STATUS, (1 << 30)},
+	{ AO_MF_IR_DEC_REG1, ((1 << 15) | (13 << 8))},
+	/*bit[0-3]: RC5; bit[8]: MSB first mode; bit[11]: compare frame method*/
+	{ AO_MF_IR_DEC_REG2, ((1 << 13) | (1 << 11) | (1 << 8) | 0x7)},
+	/*Half bit for RC5 format: 888.89us*/
+	{ AO_MF_IR_DEC_DURATN2, ((53 << 16) | (38 << 0))},
+	/*RC5 typically 1777.78us for whole bit*/
+	{ AO_MF_IR_DEC_DURATN3, ((99 << 16) | (81 << 0))},
+	{ AO_MF_IR_DEC_REG3,		0},
+	{ CONFIG_END, 0}
+};
 static const reg_remote *remoteregsTab[] = {
 	RDECODEMODE_NEC,
 	RDECODEMODE_DUOKAN,
@@ -184,6 +228,8 @@ static const reg_remote *remoteregsTab[] = {
 	RDECODEMODE_NEC_TOSHIBA_2IN1,
 	RDECODEMODE_NEC_RCA_2IN1,
 	RDECODEMODE_RCMM,
+	RDECODEMODE_RC5,
+	RDECODEMODE_NEC_RC5_2IN1,
 };
 
 void setremotereg(const reg_remote * r)
