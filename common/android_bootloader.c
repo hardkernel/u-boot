@@ -574,17 +574,18 @@ static AvbSlotVerifyResult android_slot_verify(char *boot_partname,
 		memcpy((uint8_t *)load_address,
 		       slot_data[0]->loaded_partitions->data,
 		       slot_data[0]->loaded_partitions->data_size);
-
-		/* ... and decrement tries remaining, if applicable. */
-		if (!ab_data.slots[slot_index_to_boot].successful_boot &&
-		    ab_data.slots[slot_index_to_boot].tries_remaining > 0) {
-			ab_data.slots[slot_index_to_boot].tries_remaining -= 1;
-		}
 	} else {
 		slot_set_unbootable(&ab_data.slots[slot_index_to_boot]);
 	}
 
 out:
+#ifdef CONFIG_ANDROID_AB
+	/* ... and decrement tries remaining, if applicable. */
+	if (!ab_data.slots[slot_index_to_boot].successful_boot &&
+	    ab_data.slots[slot_index_to_boot].tries_remaining > 0) {
+		ab_data.slots[slot_index_to_boot].tries_remaining -= 1;
+	}
+#endif
 	env_update("bootargs", verify_state);
 	if (save_metadata_if_changed(ops->ab_ops, &ab_data, &ab_data_orig)) {
 		printf("Can not save metadata\n");
