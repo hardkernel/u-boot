@@ -16,7 +16,7 @@
 #include <asm/arch/cru_rk3328.h>
 #include <asm/arch/grf_rk3328.h>
 #include <asm/arch/rockchip_dmc.h>
-#include <asm/arch/sdram_common.h>
+#include <asm/arch/sdram.h>
 #include <asm/arch/sdram_rk3328.h>
 #include <asm/arch/uart.h>
 

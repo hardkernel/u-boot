@@ -11,7 +11,7 @@
 #include <asm/io.h>
 #include <asm/arch/param.h>
 #include <asm/arch/rk_atags.h>
-#include <asm/arch/sdram_common.h>
+#include <asm/arch/sdram.h>
 #include <dm/uclass-internal.h>
 
 DECLARE_GLOBAL_DATA_PTR;

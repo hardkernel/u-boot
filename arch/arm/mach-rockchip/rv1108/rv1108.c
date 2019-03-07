@@ -7,7 +7,7 @@
 #include <common.h>
 #include <asm/io.h>
 #include <ram.h>
-#include <asm/arch/sdram_common.h>
+#include <asm/arch/sdram.h>
 #include <asm/arch/hardware.h>
 #include <asm/arch/grf_rv1108.h>
 

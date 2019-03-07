@@ -4,7 +4,7 @@
  */
 
 #include <common.h>
-#include <asm/arch/sdram_common.h>
+#include <asm/arch/sdram.h>
 #include "io_map.h"
 
 #define IO_TYPE_1_1_16		0	/* up1 1:1 mode 16bit */

@@ -13,7 +13,7 @@
 #include <asm/arch/cru_px30.h>
 #include <asm/arch/grf_px30.h>
 #include <asm/arch/hardware.h>
-#include <asm/arch/sdram_common.h>
+#include <asm/arch/sdram.h>
 #include <asm/arch/sdram_px30.h>
 
 /*

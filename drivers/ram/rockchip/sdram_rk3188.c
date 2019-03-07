@@ -22,7 +22,7 @@
 #include <asm/arch/grf_rk3188.h>
 #include <asm/arch/pmu_rk3188.h>
 #include <asm/arch/sdram_rk3288.h>
-#include <asm/arch/sdram_common.h>
+#include <asm/arch/sdram.h>
 #include <linux/err.h>
 
 DECLARE_GLOBAL_DATA_PTR;

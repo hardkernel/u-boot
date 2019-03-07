@@ -1813,7 +1813,7 @@ _u_boot_list_2_cmd_2_ddr_test:
 	.file 35 "include/iomux.h"
 	.file 36 "include/log.h"
 	.file 37 "include/stdio.h"
-	.file 38 "./arch/arm/include/asm/arch/sdram_common.h"
+	.file 38 "./arch/arm/include/asm/arch/sdram.h"
 	.file 39 "cmd/ddr_tool/../memtester/io_map.h"
 	.file 40 "cmd/ddr_tool/../memtester/ddr_tester_common.h"
 	.file 41 "include/vsprintf.h"

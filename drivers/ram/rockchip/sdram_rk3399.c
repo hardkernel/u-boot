@@ -15,7 +15,7 @@
 #include <syscon.h>
 #include <asm/io.h>
 #include <asm/arch/clock.h>
-#include <asm/arch/sdram_common.h>
+#include <asm/arch/sdram.h>
 #include <asm/arch/sdram_rk3399.h>
 #include <asm/arch/cru_rk3399.h>
 #include <asm/arch/grf_rk3399.h>

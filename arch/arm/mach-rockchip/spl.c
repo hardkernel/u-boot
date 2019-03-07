@@ -13,7 +13,7 @@
 #ifdef CONFIG_ROCKCHIP_PRELOADER_ATAGS
 #include <asm/arch/rk_atags.h>
 #endif
-#include <asm/arch/sdram_common.h>
+#include <asm/arch/sdram.h>
 #include <asm/arch-rockchip/sys_proto.h>
 #include <asm/io.h>
 

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier:     GPL-2.0+
  */
 
-#ifndef _ASM_ARCH_SDRAM_COMMON_H
-#define _ASM_ARCH_SDRAM_COMMON_H
+#ifndef _ASM_ARCH_SDRAM_H
+#define _ASM_ARCH_SDRAM_H
 
 enum {
 	DDR4 = 0,

@@ -10,7 +10,7 @@
 #include <syscon.h>
 #include <asm/arch/clock.h>
 #include <asm/arch/grf_rk3128.h>
-#include <asm/arch/sdram_common.h>
+#include <asm/arch/sdram.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 struct dram_info {
