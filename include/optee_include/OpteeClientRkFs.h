@@ -35,4 +35,6 @@ int tee_supp_rk_fs_process(void *cmd, uint32_t cmd_size);
 
 int OpteeClientRkFsInit(void);
 
+int check_security_exist(int print_flag);
+
 #endif

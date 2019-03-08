@@ -504,6 +504,11 @@ TEEC_Result OpteeRpcCmdFs(t_teesmc32_arg *TeeSmc32Arg)
 	TEEC_Result TeecResult = TEEC_SUCCESS;
 	t_teesmc32_param *TeeSmc32Param;
 
+	if (check_security_exist(0) < 0) {
+		printf("security partition not exist! unable to use RK FS!\n");
+		return TEEC_ERROR_GENERIC;
+	}
+
 	TeeSmc32Param = TEESMC32_GET_PARAMS(TeeSmc32Arg);
 #ifdef CONFIG_OPTEE_V1
 	TeecResult = tee_supp_rk_fs_process((void *)(size_t)TeeSmc32Param[0].u.memref.buf_ptr,
