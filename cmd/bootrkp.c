@@ -26,7 +26,7 @@ static int do_boot_rockchip(cmd_tbl_t *cmdtp, int flag, int argc,
 	dev_desc = rockchip_get_bootdev();
 	if (!dev_desc) {
 		printf("%s: dev_desc is NULL!\n", __func__);
-		return -ENODEV;
+		return CMD_RET_FAILURE;
 	}
 
 #ifdef CONFIG_ANDROID_KEYMASTER_CA
