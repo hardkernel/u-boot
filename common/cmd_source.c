@@ -34,7 +34,7 @@ int check_odroid_script(ulong addr, char *product)
 	int i;
 	char *buf;
 	char magic[32];
-	int size = snprintf(magic, sizeof(magic), "%s-uboot-config", product);
+	int size = snprintf(magic, sizeof(magic), "%s-uboot-config\n", product);
 
 	buf = map_sysmem(addr, 0);
 	for (i = 0; i < size; i++) {
@@ -160,7 +160,7 @@ source (ulong addr, const char *fit_uname)
 		size = check_odroid_script(addr, CONFIG_DEVICE_PRODUCT);
 		if (size > 0) {
 			data = (u32*)(addr + size);
-			len = simple_strtoul(getenv("filesize"), NULL, 16);
+			len = simple_strtoul(getenv("filesize"), NULL, 16) - size;
 		} else {
 			puts ("Wrong image format for \"source\" command\n");
 			return 1;
