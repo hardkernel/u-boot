@@ -164,6 +164,8 @@ void rockchip_dnl_mode_check(void)
 			printf("recovery key pressed, entering recovery mode!\n");
 			env_set("reboot_mode", "recovery");
 		}
+	} else if (gd->console_evt == CONSOLE_EVT_CTRL_F) {
+		env_set("reboot_mode", "fastboot");
 	}
 }
 

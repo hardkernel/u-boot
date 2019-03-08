@@ -12,6 +12,7 @@ extern char console_buffer[];
 
 #define CONSOLE_EVT_CTRL_B	0x02
 #define CONSOLE_EVT_CTRL_D	0x04
+#define CONSOLE_EVT_CTRL_F	0x06
 
 /* common/console.c */
 int console_init_f(void);	/* Before relocation; uses the serial  stuff */

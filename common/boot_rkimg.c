@@ -364,9 +364,14 @@ int rockchip_get_boot_mode(void)
 	 * USB attach will do env_set("reboot_mode", "recovery");
 	 */
 	env_reboot_mode = env_get("reboot_mode");
-	if (env_reboot_mode && !strcmp(env_reboot_mode, "recovery")) {
-		boot_mode = BOOT_MODE_RECOVERY;
-		printf("boot mode: recovery\n");
+	if (env_reboot_mode) {
+		if (!strcmp(env_reboot_mode, "recovery")) {
+			boot_mode = BOOT_MODE_RECOVERY;
+			printf("boot mode: recovery\n");
+		} else if (!strcmp(env_reboot_mode, "fastboot")) {
+			boot_mode = BOOT_MODE_BOOTLOADER;
+			printf("boot mode: fastboot\n");
+		}
 	}
 
 	if (boot_mode != -1)
