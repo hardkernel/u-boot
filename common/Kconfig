@@ -249,6 +249,11 @@ config CONSOLE_RECORD_IN_SIZE
 	  The buffer is allocated immediately after the malloc() region is
 	  ready.
 
+config CONSOLE_DISABLE_CTRLC
+	bool "disable ctrlc"
+	help
+	  This disable ctrl+c when CONFIG_BOOTDELAY is 0.
+
 config IDENT_STRING
 	string "Board specific string to be added to uboot version string"
 	help
