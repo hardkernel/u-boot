@@ -246,8 +246,13 @@ void lcd_vbyone_phy_set(struct lcd_config_s *pconf, int status)
 				preem = 0x1;
 			}
 			data32 = lvds_vx1_p2p_phy_preem_tl1[preem];
-			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL14,
-				0xf02027a0 | vswing);
+			if (ext_pullup) {
+				lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL14,
+					0xff2027e0 | vswing);
+			} else {
+				lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL14,
+					0xf02027a0 | vswing);
+			}
 			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL15, 0);
 			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL16, 0x80000000);
 			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL8, 0x40004);
