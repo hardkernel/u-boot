@@ -1712,30 +1712,34 @@ void print_available_timings(void)
 }
 #endif /* DEBUG_EDID */
 
+static const char* _default_partition(void)
+{
+	int dev = get_boot_device();
+	if (dev == BOOT_DEVICE_EMMC)
+		return "0:1";
+	else if (dev == BOOT_DEVICE_SD)
+		return "1:1";
+
+	return NULL;
+}
+
 void save_edid_bin(unsigned char *edid, unsigned int blk_len)
 {
 	int ret;
 	char str[64];
-	char *dev_no;
+	const char *part = NULL;
 
-	switch (get_boot_device()) {
-		case BOOT_DEVICE_EMMC:
-			dev_no = "1";
-			break;
-		case BOOT_DEVICE_SD:
-			dev_no = "0";
-			break;
-		case BOOT_DEVICE_SPI:
-		default:
-			printf("no available storage to save debug file\n");
-			return;
+	part = _default_partition();
+	if (part == NULL) {
+		printf("no available storage to save debug file\n");
+		return;
 	}
 
-	ret = file_exists("mmc", dev_no, "edid.bin", FS_TYPE_ANY);
+	ret = file_exists("mmc", part, "edid.bin", FS_TYPE_ANY);
 	if (!ret) {
 		printf("NOT EXIST, now build edid.bin\n");
 		sprintf(str, "fatwrite mmc %s 0x%lx edid.bin 0x%x",
-			dev_no, (unsigned long)edid, (128 * blk_len));
+			part, (unsigned long)edid, (128 * blk_len));
 		run_command(str, 0);
 	}
 }
@@ -1744,34 +1748,27 @@ void save_display_bin(bool config, char *modeline)
 {
 	int ret;
 	char str[64];
-	char *dev_no;
+	const char *part = NULL;
 
-	switch (get_boot_device()) {
-		case BOOT_DEVICE_EMMC:
-			dev_no = "1";
-			break;
-		case BOOT_DEVICE_SD:
-			dev_no = "0";
-			break;
-		case BOOT_DEVICE_SPI:
-		default:
-			printf("no available storage to save debug file\n");
-			return;
+	part = _default_partition();
+	if (part == NULL) {
+		printf("no available storage to save debug file\n");
+		return;
 	}
 
-	ret = file_exists("mmc", dev_no, "display.bin", FS_TYPE_ANY);
+	ret = file_exists("mmc", part, "display.bin", FS_TYPE_ANY);
 	if(!ret) {
 		printf("NOT EXIST, now build display.bin\n");
 
 		if (config == true) {
 			sprintf(result, "Auto Detect OK:%s,%s(%s)", bestmode, getenv("voutmode"), modeline);
 			sprintf(str, "fatwrite mmc %s 0x%lx display.bin 0x78",
-				dev_no, (unsigned long)result);
+				part, (unsigned long)result);
 			run_command(str, 0);
 		} else {
 			sprintf(result, "Auto Detect FAIL:%s,%s", bestmode, getenv("voutmode"));
 			sprintf(str, "fatwrite mmc %s 0x%lx display.bin 0x78",
-				dev_no, (unsigned long)result);
+				part, (unsigned long)result);
 			run_command(str, 0);
 		}
 	}
