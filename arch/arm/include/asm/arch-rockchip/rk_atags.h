@@ -18,6 +18,7 @@
 #define ATAG_RAM_PARTITION	0x54410054
 #define ATAG_ATF_MEM		0x54410055
 #define ATAG_PUB_KEY		0x54410056
+#define ATAG_SOC_INFO		0x54410057
 #define ATAG_MAX		0x544100ff
 
 /* Tag size and offset */
@@ -44,6 +45,11 @@
 #define SERIAL_M_MODE_M0	0x0
 #define SERIAL_M_MODE_M1	0x1
 #define SERIAL_M_MODE_M2	0x2
+
+/* tag_soc_info.flags */
+#define SOC_FLAGS_ET00		0x45543030
+#define SOC_FLAGS_ET01		0x45543031
+#define SOC_FLAGS_ET02		0x45543032
 
 struct tag_serial {
 	u32 version;
@@ -126,6 +132,14 @@ struct tag_ram_partition {
 	u32 hash;
 } __packed;
 
+struct tag_soc_info {
+	u32 version;
+	u32 name;	/* Hex: 0x3288, 0x3399... */
+	u32 flags;
+	u32 reserved[6];
+	u32 hash;
+} __packed;
+
 struct tag_core {
 	u32 flags;
 	u32 pagesize;
@@ -149,6 +163,7 @@ struct tag {
 		struct tag_ram_partition ram_part;
 		struct tag_atf_mem	atf_mem;
 		struct tag_pub_key	pub_key;
+		struct tag_soc_info	soc;
 	} u;
 } __aligned(4);
 
