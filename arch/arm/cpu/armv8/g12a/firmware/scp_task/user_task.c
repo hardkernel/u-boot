@@ -36,6 +36,10 @@ enum scpi_client_id {
 	SCPI_CL_POWER,
 	SCPI_CL_THERMAL,
 	SCPI_CL_REMOTE,
+	SCPI_CL_LED_TIMER,
+#if defined(CONFIG_ODROID_COMMON)
+	SCPI_CL_WOL,
+#endif
 	SCPI_MAX,
 };
 
@@ -146,6 +150,11 @@ void high_task(void)
 }
 
 extern unsigned int usr_pwr_key;
+
+#if defined(CONFIG_ODROID_COMMON)
+extern unsigned int enable_wol;
+#endif
+
 void process_low_task(unsigned command)
 {
 	unsigned *pcommand =
@@ -157,6 +166,11 @@ void process_low_task(unsigned command)
 		if ((command >> 16) == SCPI_CL_REMOTE) {
 			usr_pwr_key = *(pcommand + 2);/*tx_size locates at *(pcommand + 1)*/
 			dbg_print("pwr_key=",usr_pwr_key);
+#if defined(CONFIG_ODROID_COMMON)
+		} else if ((command >> 16) == SCPI_CL_WOL) {
+			enable_wol = *(pcommand + 2);
+			dbg_print("wake-on-lan = ", enable_wol);
+#endif
 		}
 	}
 }
