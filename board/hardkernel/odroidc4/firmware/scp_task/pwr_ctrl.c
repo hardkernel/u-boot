@@ -23,6 +23,8 @@
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
+unsigned int enable_wol = 0;   /* disable Wake-On-Lan by default*/
+
 static void set_vddee_voltage(unsigned int target_voltage)
 {
 	unsigned int to;
@@ -46,10 +48,12 @@ static void power_off_at_24M(unsigned int suspend_from)
 	writel(readl(PREG_PAD_GPIO3_EN_N) & (~(1 << 8)), PREG_PAD_GPIO3_EN_N);
 	writel(readl(PERIPHS_PIN_MUX_C) & (~(0xf)), PERIPHS_PIN_MUX_C);
 
-	/*set test_n low to power off vcck & vcc 3.3v*/
-	writel(readl(AO_GPIO_O) & (~(1 << 31)), AO_GPIO_O);
-	writel(readl(AO_GPIO_O_EN_N) & (~(1 << 31)), AO_GPIO_O_EN_N);
-	writel(readl(AO_RTI_PIN_MUX_REG1) & (~(0xf << 28)), AO_RTI_PIN_MUX_REG1);
+	if (!enable_wol) {
+		/*set test_n low to power off vcck_b & vcc 3.3v*/
+		writel(readl(AO_GPIO_O) & (~(1 << 31)), AO_GPIO_O);
+		writel(readl(AO_GPIO_O_EN_N) & (~(1 << 31)), AO_GPIO_O_EN_N);
+		writel(readl(AO_RTI_PIN_MUX_REG1) & (~(0xf << 28)), AO_RTI_PIN_MUX_REG1);
+	}
 
 	/*step down ee voltage*/
 	set_vddee_voltage(CONFIG_VDDEE_SLEEP_VOLTAGE);
@@ -60,11 +64,13 @@ static void power_on_at_24M(unsigned int suspend_from)
 	/*step up ee voltage*/
 	set_vddee_voltage(CONFIG_VDDEE_INIT_VOLTAGE);
 
-	/*set test_n low to power on vcck & vcc 3.3v*/
-	writel(readl(AO_GPIO_O) | (1 << 31), AO_GPIO_O);
-	writel(readl(AO_GPIO_O_EN_N) & (~(1 << 31)), AO_GPIO_O_EN_N);
-	writel(readl(AO_RTI_PIN_MUX_REG1) & (~(0xf << 28)), AO_RTI_PIN_MUX_REG1);
-	_udelay(100);
+	if (!enable_wol) {
+		/*set test_n high to power on vcck_b & vcc 3.3v*/
+		writel(readl(AO_GPIO_O) | (1 << 31), AO_GPIO_O);
+		writel(readl(AO_GPIO_O_EN_N) & (~(1 << 31)), AO_GPIO_O_EN_N);
+		writel(readl(AO_RTI_PIN_MUX_REG1) & (~(0xf << 28)), AO_RTI_PIN_MUX_REG1);
+		_udelay(100);
+	}
 
 	/*set gpioH_8 low to power on vcc 5v*/
 	writel(readl(PREG_PAD_GPIO3_EN_N) | (1 << 8), PREG_PAD_GPIO3_EN_N);
@@ -96,17 +102,18 @@ void get_wakeup_source(void *response, unsigned int suspend_from)
 	gpio->trig_type = GPIO_IRQ_FALLING_EDGE;
 	p->gpio_info_count = ++i;
 
-	/*Eth:GPIOZ_14*/
-	gpio = &(p->gpio_info[i]);
-	gpio->wakeup_id = ETH_PHY_GPIO_SRC;
-	gpio->gpio_in_idx = GPIOZ_14;
-	gpio->gpio_in_ao = 0;
-	gpio->gpio_out_idx = -1;
-	gpio->gpio_out_ao = -1;
-	gpio->irq = IRQ_GPIO1_NUM;
-	gpio->trig_type = GPIO_IRQ_FALLING_EDGE;
-	p->gpio_info_count = ++i;
-
+	if (enable_wol) {
+		/*Eth:GPIOZ_14*/
+		gpio = &(p->gpio_info[i]);
+		gpio->wakeup_id = ETH_PHY_GPIO_SRC;
+		gpio->gpio_in_idx = GPIOZ_14;
+		gpio->gpio_in_ao = 0;
+		gpio->gpio_out_idx = -1;
+		gpio->gpio_out_ao = -1;
+		gpio->irq = IRQ_GPIO1_NUM;
+		gpio->trig_type = GPIO_IRQ_FALLING_EDGE;
+		p->gpio_info_count = ++i;
+	}
 }
 extern void __switch_idle_task(void);
 
@@ -149,14 +156,13 @@ static unsigned int detect_key(unsigned int suspend_from)
 		}
 #endif
 
-#if 0
-		if (irq[IRQ_GPIO1] == IRQ_GPIO1_NUM) {
+		if (enable_wol && (irq[IRQ_GPIO1] == IRQ_GPIO1_NUM)) {
 			irq[IRQ_GPIO1] = 0xFFFFFFFF;
 			if (!(readl(PREG_PAD_GPIO4_I) & (0x01 << 14))
 					&& (readl(PREG_PAD_GPIO4_EN_N) & (0x01 << 14)))
 				exit_reason = ETH_PHY_GPIO;
 		}
-#endif
+
 		if (exit_reason)
 			break;
 		else
