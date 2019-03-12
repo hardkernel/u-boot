@@ -9,6 +9,7 @@
 #include <asm/io.h>
 #include <dm.h>
 #include <fdtdec.h>
+#include <fdt_support.h>
 #include <syscon.h>
 
 #include "../gadget/dwc2_udc_otg_priv.h"
@@ -93,7 +94,9 @@ static int otg_phy_parse(struct dwc2_udc *dev)
 	/* Find the usb_otg node */
 	node = fdt_node_offset_by_compatible(blob, -1, "snps,dwc2");
 
+#if defined(CONFIG_ROCKCHIP_RK3288)
 retry:
+#endif
 	if (node > 0) {
 		reg = fdt_getprop(blob, node, "reg", NULL);
 		if (!reg)
