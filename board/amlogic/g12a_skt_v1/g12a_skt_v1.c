@@ -608,8 +608,8 @@ int board_init(void)
 	}
 #endif// #ifdef CONFIG_AML_V2_FACTORY_BURN
 #ifdef CONFIG_USB_XHCI_AMLOGIC_V2
-	board_usb_pll_disable(&g_usb_config_GXL_skt);
-	board_usb_init(&g_usb_config_GXL_skt,BOARD_USB_MODE_HOST);
+	//board_usb_pll_disable(&g_usb_config_GXL_skt);
+	//board_usb_init(&g_usb_config_GXL_skt,BOARD_USB_MODE_HOST);
 #endif /*CONFIG_USB_XHCI_AMLOGIC*/
 
 #if 0

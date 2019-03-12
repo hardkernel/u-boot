@@ -246,7 +246,6 @@
 
 
 #define CONFIG_PREBOOT  \
-            "run bcb_cmd; "\
             "run factory_reset_poweroff_protect;"\
             "run upgrade_check;"\
             "run init_display;"\
@@ -481,7 +480,7 @@
 #define CONFIG_UNIFY_KEY_MANAGE                 1
 
 /* net */
-#define CONFIG_CMD_NET   1
+//#define CONFIG_CMD_NET   1
 #if defined(CONFIG_CMD_NET)
 	#define CONFIG_DESIGNWARE_ETH 1
 	#define CONFIG_PHYLIB	1
