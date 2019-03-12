@@ -269,6 +269,7 @@
 
 
 #define CONFIG_PREBOOT  \
+	"mw ff638630 0 2;"\
 	"run bcb_cmd; "\
 	"run factory_reset_poweroff_protect;"\
 	"run upgrade_check;"\
