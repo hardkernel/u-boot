@@ -176,7 +176,6 @@
                 "movi read recovery 0 ${loadaddr}; " \
                 "movi read dtbs 0 ${dtb_mem_addr}; " \
                 "booti ${loadaddr} - ${dtb_mem_addr}; " \
-                "bootm;" \
             "done\0" \
         "boot_rawimage=setenv bootargs ${initargs} logo=${display_layer},loaded,${fb_addr} " \
             "vout=${outputmode},enable cvbsmode=${cvbsmode} " \
@@ -188,7 +187,6 @@
 	        "movi read boot 0 ${loadaddr}; " \
 	        "movi read dtbs 0 ${dtb_mem_addr}; " \
 	        "booti ${loadaddr} - ${dtb_mem_addr}; " \
-	        "bootm; " \
             "done\0" \
 	"boot_default="\
             "run boot_mmc; " \
