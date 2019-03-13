@@ -38,6 +38,7 @@ enum vpu_chip_e {
 	VPU_CHIP_G12A, /* 8 */
 	VPU_CHIP_G12B, /* 9 */
 	VPU_CHIP_TL1, /* 10 */
+	VPU_CHIP_SM1, /* 11 */
 	VPU_CHIP_MAX,
 };
 
@@ -45,6 +46,7 @@ enum vpu_chip_e {
 
 #define VPU_REG_END            0xffff
 #define VPU_MEM_PD_CNT_MAX     10
+#define VPU_HDMI_ISO_CNT_MAX   5
 #define VPU_RESET_CNT_MAX      10
 
 struct fclk_div_s {
@@ -82,6 +84,7 @@ struct vpu_data_s {
 	struct vpu_clk_s  *vpu_clk_table;
 
 	struct vpu_ctrl_s *mem_pd_table;
+	struct vpu_ctrl_s *hdmi_iso_table;
 	struct vpu_reset_s *reset_table;
 
 	unsigned int module_init_table_cnt;
