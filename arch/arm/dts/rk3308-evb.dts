@@ -269,6 +269,12 @@
 		status = "okay";
 	};
 
+	vcc_phy: vcc-phy-regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc_phy";
+		regulator-always-on;
+		regulator-boot-on;
+	};
 };
 
 &display_subsystem {
@@ -281,6 +287,19 @@
 	non-removable;
 	num-slots = <1>;
 	status = "okay";
+};
+
+&mac {
+	phy-supply = <&vcc_phy>;
+	assigned-clocks = <&cru SCLK_MAC>;
+	assigned-clock-parents = <&mac_clkin>;
+	clock_in_out = "input";
+	pinctrl-names = "default";
+	pinctrl-0 = <&rmii_pins &mac_refclk>;
+	snps,reset-gpio = <&gpio4 RK_PC0 GPIO_ACTIVE_LOW>;
+	snps,reset-active-low;
+	snps,reset-delays-us = <0 50000 50000>;
+	status = "disabled";
 };
 
 &pwm0 {
