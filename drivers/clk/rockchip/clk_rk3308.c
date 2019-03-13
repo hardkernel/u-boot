@@ -206,6 +206,52 @@ static ulong rk3308_i2c_set_clk(struct clk *clk, uint hz)
 	return rk3308_i2c_get_clk(clk);
 }
 
+static ulong rk3308_mac_set_clk(struct clk *clk, uint hz)
+{
+	struct rk3308_clk_priv *priv = dev_get_priv(clk->dev);
+	struct rk3308_cru *cru = priv->cru;
+	u32 con = readl(&cru->clksel_con[43]);
+	ulong pll_rate;
+	u8 div;
+
+	if ((con >> MAC_PLL_SHIFT) & MAC_SEL_VPLL0)
+		pll_rate = rockchip_pll_get_rate(&rk3308_pll_clks[VPLL0],
+						 priv->cru, VPLL0);
+	else if ((con >> MAC_PLL_SHIFT) & MAC_SEL_VPLL1)
+		pll_rate = rockchip_pll_get_rate(&rk3308_pll_clks[VPLL1],
+						 priv->cru, VPLL1);
+	else
+		pll_rate = rockchip_pll_get_rate(&rk3308_pll_clks[DPLL],
+						 priv->cru, DPLL);
+
+	/*default set 50MHZ for gmac*/
+	if (!hz)
+		hz = 50000000;
+
+	div = DIV_ROUND_UP(pll_rate, hz) - 1;
+	assert(div < 32);
+	rk_clrsetreg(&cru->clksel_con[43], MAC_DIV_MASK,
+		     div << MAC_DIV_SHIFT);
+
+	return DIV_TO_RATE(pll_rate, div);
+}
+
+static int rk3308_mac_set_speed_clk(struct clk *clk, uint hz)
+{
+	struct rk3308_clk_priv *priv = dev_get_priv(clk->dev);
+	struct rk3308_cru *cru = priv->cru;
+
+	if (hz != 2500000 && hz != 25000000) {
+		debug("Unsupported mac speed:%d\n", hz);
+		return -EINVAL;
+	}
+
+	rk_clrsetreg(&cru->clksel_con[43], MAC_CLK_SPEED_SEL_MASK,
+		     ((hz == 2500000) ? 0 : 1) << MAC_CLK_SPEED_SEL_SHIFT);
+
+	return 0;
+}
+
 static ulong rk3308_mmc_get_clk(struct clk *clk)
 {
 	struct rk3308_clk_priv *priv = dev_get_priv(clk->dev);
@@ -867,6 +913,12 @@ static ulong rk3308_clk_set_rate(struct clk *clk, ulong rate)
 	case SCLK_I2C3:
 		ret = rk3308_i2c_set_clk(clk, rate);
 		break;
+	case SCLK_MAC:
+		ret = rk3308_mac_set_clk(clk, rate);
+		break;
+	case SCLK_MAC_RMII:
+		ret = rk3308_mac_set_speed_clk(clk, rate);
+		break;
 	case SCLK_SARADC:
 		ret = rk3308_saradc_set_clk(clk, rate);
 		break;
@@ -1033,11 +1085,46 @@ static int rk3308_clk_set_phase(struct clk *clk, int degrees)
 	return ret;
 }
 
+static int __maybe_unused rk3308_mac_set_parent(struct clk *clk, struct clk *parent)
+{
+	struct rk3308_clk_priv *priv = dev_get_priv(clk->dev);
+
+	/*
+	 * If the requested parent is in the same clock-controller and
+	 * the id is SCLK_MAC_SRC, switch to the internal clock.
+	 */
+	if (parent->id == SCLK_MAC_SRC) {
+		debug("%s: switching RMII to SCLK_MAC\n", __func__);
+		rk_clrreg(&priv->cru->clksel_con[43], BIT(14));
+	} else {
+		debug("%s: switching RMII to CLKIN\n", __func__);
+		rk_setreg(&priv->cru->clksel_con[43], BIT(14));
+	}
+
+	return 0;
+}
+
+static int __maybe_unused rk3308_clk_set_parent(struct clk *clk, struct clk *parent)
+{
+	switch (clk->id) {
+	case SCLK_MAC:
+		return rk3308_mac_set_parent(clk, parent);
+	default:
+		break;
+	}
+
+	debug("%s: unsupported clk %ld\n", __func__, clk->id);
+	return -ENOENT;
+}
+
 static struct clk_ops rk3308_clk_ops = {
 	.get_rate = rk3308_clk_get_rate,
 	.set_rate = rk3308_clk_set_rate,
 	.get_phase	= rk3308_clk_get_phase,
 	.set_phase	= rk3308_clk_set_phase,
+#if CONFIG_IS_ENABLED(OF_CONTROL) && !CONFIG_IS_ENABLED(OF_PLATDATA)
+	.set_parent = rk3308_clk_set_parent,
+#endif
 };
 
 static void rk3308_clk_init(struct udevice *dev)
