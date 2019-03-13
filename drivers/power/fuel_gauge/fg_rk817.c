@@ -406,9 +406,10 @@ static int rk817_bat_get_battery_voltage(struct rk817_battery_device *battery)
 	val |= rk817_bat_read(battery, BAT_VOL_L) << 0;
 
 	vol = battery->voltage_k * val / 1000 + battery->voltage_b;
-	vol_temp = (vol * battery->bat_res_up / battery->bat_res_down + vol);
-	vol = vol_temp;
-
+	if (battery->variant == RK809_ID) {
+		vol_temp = (vol * battery->bat_res_up / battery->bat_res_down + vol);
+		vol = vol_temp;
+	}
 	return vol;
 }
 
