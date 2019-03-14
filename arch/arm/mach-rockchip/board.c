@@ -282,7 +282,7 @@ int interrupt_debugger_init(void)
 	return ret;
 }
 
-#ifdef CONFIG_ROCKCHIP_RK1808
+#if defined(CONFIG_ROCKCHIP_RK1808) && !defined(CONFIG_COPROCESSOR_RK1808)
 #define PINCTRL_EMMC_BUS8_PATH		"/pinctrl/emmc/emmc-bus8"
 #define PINCTRL_EMMC_CMD_PATH		"/pinctrl/emmc/emmc-cmd"
 #define PINCTRL_EMMC_CLK_PATH		"/pinctrl/emmc/emmc-clk"
@@ -351,7 +351,7 @@ int board_fdt_fixup(void *blob)
 		if (ret)
 			printf("fdt set compatible failed: %d\n", ret);
 	}
-#elif CONFIG_ROCKCHIP_RK1808
+#elif defined(CONFIG_ROCKCHIP_RK1808) && !defined(CONFIG_COPROCESSOR_RK1808)
 	struct tag *t;
 	u32 ph_pu_2ma;
 
