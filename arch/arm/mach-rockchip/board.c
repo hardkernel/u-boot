@@ -5,8 +5,10 @@
  */
 #include <common.h>
 #include <clk.h>
+#include <bidram.h>
 #include <dm.h>
 #include <debug_uart.h>
+#include <memblk.h>
 #include <ram.h>
 #include <syscon.h>
 #include <sysmem.h>
@@ -478,6 +480,39 @@ void board_lmb_reserve(struct lmb *lmb)
 	sprintf(bootm_mapsize, "0x%llx", size);
 	env_set("bootm_low", bootm_low);
 	env_set("bootm_mapsize", bootm_mapsize);
+}
+#endif
+
+#ifdef CONFIG_BIDRAM
+int board_bidram_reserve(struct bidram *bidram)
+{
+	struct memblock mem;
+	int ret;
+
+	/* ATF */
+	mem = param_parse_atf_mem();
+	ret = bidram_reserve(MEMBLK_ID_ATF, mem.base, mem.size);
+	if (ret)
+		return ret;
+
+	/* PSTORE/ATAGS/SHM */
+	mem = param_parse_common_resv_mem();
+	ret = bidram_reserve(MEMBLK_ID_SHM, mem.base, mem.size);
+	if (ret)
+		return ret;
+
+	/* OP-TEE */
+	mem = param_parse_optee_mem();
+	ret = bidram_reserve(MEMBLK_ID_OPTEE, mem.base, mem.size);
+	if (ret)
+		return ret;
+
+	return 0;
+}
+
+parse_fn_t board_bidram_parse_fn(void)
+{
+	return param_parse_ddr_mem;
 }
 #endif
 
