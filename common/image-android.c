@@ -290,7 +290,7 @@ static int android_image_load_separate(struct blk_desc *dev_desc,
 		size = hdr->kernel_size + hdr->page_size;
 		blk_start = part->start;
 		blk_cnt = DIV_ROUND_UP(size, dev_desc->blksz);
-		if (!sysmem_alloc_base("kernel",
+		if (!sysmem_alloc_base(MEMBLK_ID_KERNEL,
 				       (phys_addr_t)android_load_address,
 				       blk_cnt * dev_desc->blksz))
 			return -ENXIO;
@@ -311,7 +311,7 @@ static int android_image_load_separate(struct blk_desc *dev_desc,
 		size = hdr->page_size + ALIGN(hdr->kernel_size, hdr->page_size);
 		blk_start = part->start + DIV_ROUND_UP(size, dev_desc->blksz);
 		blk_cnt = DIV_ROUND_UP(hdr->ramdisk_size, dev_desc->blksz);
-		if (!sysmem_alloc_base("ramdisk",
+		if (!sysmem_alloc_base(MEMBLK_ID_RAMDISK,
 				       ramdisk_addr_r,
 				       blk_cnt * dev_desc->blksz))
 			return -ENXIO;
@@ -347,7 +347,7 @@ static int android_image_load_separate(struct blk_desc *dev_desc,
 		       ALIGN(hdr->ramdisk_size, hdr->page_size);
 		blk_start = part->start + DIV_ROUND_UP(size, dev_desc->blksz);
 		blk_cnt = DIV_ROUND_UP(hdr->second_size, dev_desc->blksz);
-		if (!sysmem_alloc_base("fdt(AOSP)",
+		if (!sysmem_alloc_base(MEMBLK_ID_FDT_AOSP,
 				       fdt_addr_r,
 				       blk_cnt * dev_desc->blksz +
 				       CONFIG_SYS_FDT_PAD))
@@ -456,7 +456,7 @@ long android_image_load(struct blk_desc *dev_desc,
 			} else
 #endif
 			{
-				if (!sysmem_alloc_base("android",
+				if (!sysmem_alloc_base(MEMBLK_ID_ANDROID,
 						       (phys_addr_t)buf,
 							blk_cnt * part_info->blksz))
 					return -ENXIO;

@@ -442,34 +442,6 @@ void board_lmb_reserve(struct lmb *lmb)
 }
 #endif
 
-#ifdef CONFIG_SYSMEM
-int board_sysmem_reserve(struct sysmem *sysmem)
-{
-	struct sysmem_property prop;
-	int ret;
-
-	/* ATF */
-	prop = param_parse_atf_mem();
-	ret = sysmem_reserve(prop.name, prop.base, prop.size);
-	if (ret)
-		return ret;
-
-	/* PSTORE/ATAGS/SHM */
-	prop = param_parse_common_resv_mem();
-	ret = sysmem_reserve(prop.name, prop.base, prop.size);
-	if (ret)
-		return ret;
-
-	/* OP-TEE */
-	prop = param_parse_optee_mem();
-	ret = sysmem_reserve(prop.name, prop.base, prop.size);
-	if (ret)
-		return ret;
-
-	return 0;
-}
-#endif
-
 #if defined(CONFIG_ROCKCHIP_PRELOADER_SERIAL) && \
     defined(CONFIG_ROCKCHIP_PRELOADER_ATAGS)
 int board_init_f_init_serial(void)

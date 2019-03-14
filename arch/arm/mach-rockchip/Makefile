@@ -24,6 +24,7 @@ obj-y += boot_mode.o
 obj-y += board.o
 obj-y += chip_info.o
 obj-y += iomem.o
+obj-y += memblk.o
 
 obj-$(CONFIG_ROCKCHIP_CRC) += rockchip_crc.o
 obj-$(CONFIG_ROCKCHIP_SMCCC) += rockchip_smccc.o

@@ -88,26 +88,16 @@ static void boot_lmb_init(bootm_headers_t *images)
  * return the image size on success, and a
  * negative value on error.
  */
-static int read_rockchip_image(struct blk_desc *dev_desc,
-			       disk_partition_t *part_info,
-			       void *dst)
+int read_rockchip_image(struct blk_desc *dev_desc,
+			disk_partition_t *part_info, void *dst)
 {
 	struct rockchip_image *img;
-	const char *name;
 	int header_len = 8;
 	int cnt;
 	int ret;
 #ifdef CONFIG_ROCKCHIP_CRC
 	u32 crc32;
 #endif
-
-	if (!strcmp((char *)part_info->name, "kernel"))
-		name = "kernel";
-	else if (!strcmp((char *)part_info->name, "boot") ||
-		 !strcmp((char *)part_info->name, "recovery"))
-		name = "ramdisk";
-	else
-		name = NULL;
 
 	img = memalign(ARCH_DMA_MINALIGN, RK_BLK_SIZE);
 	if (!img) {
@@ -133,7 +123,9 @@ static int read_rockchip_image(struct blk_desc *dev_desc,
 	 * total size  = image size + 8 bytes header + 4 bytes crc32
 	 */
 	cnt = DIV_ROUND_UP(img->size + 8 + 4, RK_BLK_SIZE);
-	if (!sysmem_alloc_base(name, (phys_addr_t)dst, cnt * dev_desc->blksz)) {
+	if (!sysmem_alloc_base_by_name((const char *)part_info->name,
+				       (phys_addr_t)dst,
+				       cnt * dev_desc->blksz)) {
 		ret = -ENXIO;
 		goto err;
 	}
@@ -524,7 +516,6 @@ int boot_rockchip_image(struct blk_desc *dev_desc, disk_partition_t *boot_part)
 	printf("ramdisk  @ 0x%08lx (0x%08x)\n", ramdisk_addr_r, ramdisk_size);
 
 	fdt_ramdisk_skip_relocation();
-	sysmem_dump_check();
 
 #if defined(CONFIG_ARM64)
 	char cmdbuf[64];

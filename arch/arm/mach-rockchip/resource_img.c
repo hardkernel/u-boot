@@ -664,7 +664,7 @@ int rockchip_read_dtb_file(void *fdt_addr)
 	if (size < 0)
 		return size;
 
-	if (!sysmem_alloc_base("fdt", (phys_addr_t)fdt_addr,
+	if (!sysmem_alloc_base(MEMBLK_ID_FDT, (phys_addr_t)fdt_addr,
 			       ALIGN(size, RK_BLK_SIZE) + CONFIG_SYS_FDT_PAD))
 		return -ENOMEM;
 

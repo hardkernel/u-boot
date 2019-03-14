@@ -143,7 +143,6 @@ int boot_fdt_add_sysmem_rsv_regions(void *fdt_blob)
 	static int rsv_done;
 	char resvname[32];
 	const void *prop;
-	int ret;
 
 	if (fdt_check_header(fdt_blob) != 0 || rsv_done)
 		return -EINVAL;
@@ -157,9 +156,8 @@ int boot_fdt_add_sysmem_rsv_regions(void *fdt_blob)
 		debug("   sysmem: reserving fdt memory region: addr=%llx size=%llx\n",
 		      (unsigned long long)addr, (unsigned long long)size);
 		sprintf(resvname, "fdt-memory-reserved%d", i);
-		ret = sysmem_reserve(resvname, addr, size);
-		if (ret)
-			return ret;
+		if (!sysmem_fdt_reserve_alloc_base(resvname, addr, size))
+			return -ENOMEM;
 	}
 
 	rsv_offset = fdt_subnode_offset(fdt_blob, 0, "reserved-memory");
@@ -181,10 +179,9 @@ int boot_fdt_add_sysmem_rsv_regions(void *fdt_blob)
 		debug("  sysmem: 'reserved-memory' %s: addr=%llx size=%llx\n",
 		      fdt_get_name(fdt_blob, offset, NULL),
 		      (unsigned long long)rsv_addr, (unsigned long long)rsv_size);
-		ret = sysmem_reserve(fdt_get_name(fdt_blob, offset, NULL),
-				     rsv_addr, rsv_size);
-		if (ret)
-			return ret;
+		if (!sysmem_fdt_reserve_alloc_base(fdt_get_name(fdt_blob, offset, NULL),
+					           rsv_addr, rsv_size))
+			return -ENOMEM;
 	}
 
 	return 0;

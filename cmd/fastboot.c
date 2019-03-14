@@ -65,7 +65,7 @@ static int do_fastboot(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 		goto exit;
 	}
 
-	if (!sysmem_alloc_base("fastboot",
+	if (!sysmem_alloc_base(MEMBLK_ID_FASTBOOT,
 			       CONFIG_FASTBOOT_BUF_ADDR,
 			       CONFIG_FASTBOOT_BUF_SIZE)) {
 		printf("The fastboot memory space is unusable!\n");

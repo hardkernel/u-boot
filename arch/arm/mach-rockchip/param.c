@@ -4,6 +4,8 @@
  */
 
 #include <common.h>
+#include <dm.h>
+#include <ram.h>
 #include <asm/io.h>
 #include <asm/arch/rk_atags.h>
 #include <asm/arch/param.h>
@@ -47,13 +49,12 @@ static uint16_t trust_checksum(const uint8_t *buf, uint16_t len)
 	return checksum;
 }
 
-struct sysmem_property param_parse_atf_mem(void)
+struct memblock param_parse_atf_mem(void)
 {
-	struct sysmem_property prop;
+	struct memblock mem;
 
-	prop.name = "ATF";
-	prop.base = 0;
-	prop.size = 0;
+	mem.base = 0;
+	mem.size = 0;
 
 #ifdef CONFIG_ROCKCHIP_PRELOADER_ATAGS
 	struct tag *t = NULL;
@@ -66,41 +67,40 @@ struct sysmem_property param_parse_atf_mem(void)
 	 */
 	t = atags_get_tag(ATAG_ATF_MEM);
 	if (t && t->u.atf_mem.size) {
-		prop.base = t->u.atf_mem.phy_addr;
-		prop.size = t->u.atf_mem.size;
+		mem.base = t->u.atf_mem.phy_addr;
+		mem.size = t->u.atf_mem.size;
 		/* Sanity */
-		if (prop.base + prop.size > SDRAM_OFFSET(SZ_1M)) {
+		if (mem.base + mem.size > SDRAM_OFFSET(SZ_1M)) {
 			printf("%s: ATF reserved region is not within 0-1MB "
 			       "offset(0x%08llx-0x%08llx)!\n",
-			       __func__, (u64)prop.base, (u64)prop.base + prop.size);
-			return prop;
+			       __func__, (u64)mem.base, (u64)mem.base + mem.size);
+			return mem;
 		}
 	}
 #endif
 
 	/* Legacy */
-	if (!prop.size) {
+	if (!mem.size) {
 		if (IS_ENABLED(CONFIG_ARM64) ||
 		    IS_ENABLED(CONFIG_ARM64_BOOT_AARCH32)) {
-			prop.base = SDRAM_OFFSET(0);
-			prop.size = SZ_1M;
+			mem.base = SDRAM_OFFSET(0);
+			mem.size = SZ_1M;
 		}
 	}
 
-	debug("ATF: 0x%llx - 0x%llx\n", (u64)prop.base, (u64)prop.base + prop.size);
+	debug("ATF: 0x%llx - 0x%llx\n", (u64)mem.base, (u64)mem.base + mem.size);
 
-	return prop;
+	return mem;
 }
 
-struct sysmem_property param_parse_optee_mem(void)
+struct memblock param_parse_optee_mem(void)
 {
 	struct tos_param_t *tos_parameter;
-	struct sysmem_property prop;
+	struct memblock mem;
 	u32 checksum;
 
-	prop.name = "OP-TEE";
-	prop.base = 0;
-	prop.size = 0;
+	mem.base = 0;
+	mem.size = 0;
 
 #ifdef CONFIG_ROCKCHIP_PRELOADER_ATAGS
 	struct tag *t = NULL;
@@ -113,13 +113,13 @@ struct sysmem_property param_parse_optee_mem(void)
 	 */
 	t = atags_get_tag(ATAG_TOS_MEM);
 	if (t && (t->u.tos_mem.tee_mem.flags == 1)) {
-		prop.base = t->u.tos_mem.tee_mem.phy_addr;
-		prop.size = t->u.tos_mem.tee_mem.size;
+		mem.base = t->u.tos_mem.tee_mem.phy_addr;
+		mem.size = t->u.tos_mem.tee_mem.size;
 	}
 #endif
 
 	/* Legacy */
-	if (!prop.size) {
+	if (!mem.size) {
 		tos_parameter =
 		(struct tos_param_t *)(SDRAM_OFFSET(PARAM_OPTEE_INFO_OFFSET));
 		checksum =
@@ -127,28 +127,27 @@ struct sysmem_property param_parse_optee_mem(void)
 			       sizeof(struct tos_param_t) - 8);
 		if ((checksum == tos_parameter->checksum) &&
 		    (tos_parameter->tee_mem.flags == 1)) {
-			prop.base = tos_parameter->tee_mem.phy_addr;
-			prop.size = tos_parameter->tee_mem.size;
+			mem.base = tos_parameter->tee_mem.phy_addr;
+			mem.size = tos_parameter->tee_mem.size;
 		}
 	}
 
-	if (prop.size)
+	if (mem.size)
 		gd->flags |= GD_FLG_BL32_ENABLED;
 
-	debug("TOS: 0x%llx - 0x%llx\n", (u64)prop.base, (u64)prop.base + prop.size);
+	debug("TOS: 0x%llx - 0x%llx\n", (u64)mem.base, (u64)mem.base + mem.size);
 
-	return prop;
+	return mem;
 }
 
-struct sysmem_property param_parse_common_resv_mem(void)
+struct memblock param_parse_common_resv_mem(void)
 {
-	struct sysmem_property prop;
+	struct memblock mem;
 
-	prop.name = "PSTORE/ATAGS/SHM";
-	prop.base = SDRAM_OFFSET(SZ_1M);
-	prop.size = SZ_1M;
+	mem.base = SDRAM_OFFSET(SZ_1M);
+	mem.size = SZ_1M;
 
-	return prop;
+	return mem;
 }
 
 int param_parse_bootdev(char **devtype, char **devnum)

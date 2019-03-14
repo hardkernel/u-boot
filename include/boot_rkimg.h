@@ -29,6 +29,9 @@ enum _boot_mode {
 
 int rockchip_get_boot_mode(void);
 int boot_rockchip_image(struct blk_desc *dev, disk_partition_t *boot_part);
+int read_rockchip_image(struct blk_desc *dev_desc,
+			disk_partition_t *part_info, void *dst);
+
 struct blk_desc *rockchip_get_bootdev(void);
 
 /*

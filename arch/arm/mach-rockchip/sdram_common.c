@@ -5,6 +5,7 @@
  */
 
 #include <common.h>
+#include <memblk.h>
 #include <dm.h>
 #include <ram.h>
 #include <asm/io.h>
@@ -23,7 +24,7 @@ DECLARE_GLOBAL_DATA_PTR;
 #define NOT_INITIAL		-1
 static int __dram_init_banksize(int resv_tee)
 {
-	struct sysmem_property prop;
+	struct memblock prop;
 	size_t top = min((unsigned long)(gd->ram_size + CONFIG_SYS_SDRAM_BASE),
 			 gd->ram_top);
 	u64 start[CONFIG_NR_DRAM_BANKS], size[CONFIG_NR_DRAM_BANKS];

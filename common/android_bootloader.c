@@ -332,8 +332,6 @@ int android_bootloader_boot_kernel(unsigned long kernel_address)
 		printf("Booting kernel at %s with fdt at %s...\n\n\n",
 		       kernel_addr_r, fdt_addr);
 
-	sysmem_dump_check();
-
 	do_bootm(NULL, 0, 4, bootm_args);
 
 	return -1;
@@ -813,7 +811,7 @@ int android_fdt_overlay_apply(void *fdt_addr)
 		if (sysmem_free((phys_addr_t)fdt_addr))
 			goto out;
 
-		if (!sysmem_alloc_base("fdt(dtbo)",
+		if (!sysmem_alloc_base(MEMBLK_ID_FDT_DTBO,
 				       (phys_addr_t)fdt_addr,
 					fdt_size + CONFIG_SYS_FDT_PAD))
 			goto out;
