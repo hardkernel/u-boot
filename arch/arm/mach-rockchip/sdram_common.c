@@ -190,11 +190,6 @@ int dram_init_banksize(void)
 {
 	return __dram_init_banksize(!IS_ENABLED(CONFIG_ARM64_BOOT_AARCH32));
 }
-
-int dram_initr_banksize(void)
-{
-	return __dram_init_banksize(IS_ENABLED(CONFIG_ARM64_BOOT_AARCH32));
-}
 #endif
 
 size_t rockchip_sdram_size(phys_addr_t reg)
