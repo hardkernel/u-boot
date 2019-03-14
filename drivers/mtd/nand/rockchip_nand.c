@@ -652,9 +652,10 @@ err:
 int nand_spl_load_image(uint32_t offs, unsigned int size, void *dst)
 {
 	struct mtd_info *mtd;
+	size_t length = size;
 
 	mtd = get_nand_dev_by_index(0);
-	return nand_read_skip_bad(mtd, offs, &size, NULL, size, (u_char *)dst);
+	return nand_read_skip_bad(mtd, offs, &length, NULL, size, (u_char *)dst);
 }
 
 void nand_deselect(void) {}
