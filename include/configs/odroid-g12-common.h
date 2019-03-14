@@ -137,7 +137,6 @@
         "fb_width=1920\0" \
         "fb_height=1080\0" \
         "fdt_high=0x20000000\0"\
-        "EnableSelinux=permissive\0" \
         "fdt_addr_r=0x1000000\0" \
         "kernel_addr_r=0x1080000\0" \
         "ramdisk_addr_r=0x3080000\0" \
@@ -163,13 +162,14 @@
             "fi;fi;fi;fi;" \
             "\0" \
         "boot_recovery="\
-            "run boot_mmc; " \
+            "hdmitx edid; "\
             "setenv bootargs ${initargs} logo=${display_layer},loaded,${fb_addr} " \
-            "vout=${outputmode},enable cvbsmode=${cvbsmode} " \
-            "hdmimode=${hdmimode} osd_reverse=${osd_reverse} video_reverse=${video_reverse} " \
-            "androidboot.selinux=${EnableSelinux} jtag=disable " \
-            "androidboot.hardware=" CONFIG_DEVICE_PRODUCT " " \
-            "recovery_part=recovery recovery_offset=0;" \
+                "vout=${hdmimode},enable hdmimode=${hdmimode} modeline=${modeline} " \
+                "customwidth=${customwidth} customheight=${customheight} voutmode=${voutmode} "\
+                "cvbsmode=${cvbsmode} osd_reverse=${osd_reverse} video_reverse=${video_reverse} " \
+                "androidboot.selinux=permissive jtag=disable " \
+                "androidboot.hardware=" CONFIG_DEVICE_PRODUCT " " \
+                "recovery_part=recovery recovery_offset=0;" \
             "for n in ${mmc_list}; do "\
                 "mmc dev ${n}; " \
                 "movi read recovery 0 ${loadaddr}; " \
@@ -180,7 +180,7 @@
         "boot_rawimage=setenv bootargs ${initargs} logo=${display_layer},loaded,${fb_addr} " \
             "vout=${outputmode},enable cvbsmode=${cvbsmode} " \
             "hdmimode=${hdmimode} osd_reverse=${osd_reverse} video_reverse=${video_reverse} " \
-            "androidboot.selinux=${EnableSelinux} androidboot.firstboot=${firstboot} jtag=disable " \
+            "androidboot.selinux=permissive androidboot.firstboot=${firstboot} jtag=disable " \
             "androidboot.hardware=" CONFIG_DEVICE_PRODUCT "; " \
             "for n in ${mmc_list}; do " \
                 "mmc dev ${n}; " \
