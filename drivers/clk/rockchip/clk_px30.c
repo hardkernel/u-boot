@@ -1055,6 +1055,50 @@ static ulong px30_i2s1_mclk_set_clk(struct px30_clk_priv *priv, ulong clk_id,
 
 	return px30_i2s1_mclk_get_clk(priv, clk_id);
 }
+
+static ulong px30_mac_set_clk(struct clk *clk, uint hz)
+{
+	struct px30_clk_priv *priv = dev_get_priv(clk->dev);
+	struct px30_cru *cru = priv->cru;
+	u32 con = readl(&cru->clksel_con[22]);
+	ulong pll_rate;
+	u8 div;
+
+	if ((con >> GMAC_PLL_SEL_SHIFT) & GMAC_PLL_SEL_CPLL)
+		pll_rate = px30_clk_get_pll_rate(priv, CPLL);
+	else if ((con >> GMAC_PLL_SEL_SHIFT) & GMAC_PLL_SEL_NPLL)
+		pll_rate = px30_clk_get_pll_rate(priv, NPLL);
+	else
+		pll_rate = priv->gpll_hz;
+
+	/*default set 50MHZ for gmac*/
+	if (!hz)
+		hz = 50000000;
+
+	div = DIV_ROUND_UP(pll_rate, hz) - 1;
+	assert(div < 32);
+	rk_clrsetreg(&cru->clksel_con[22], CLK_GMAC_DIV_MASK,
+		     div << CLK_GMAC_DIV_SHIFT);
+
+	return DIV_TO_RATE(pll_rate, div);
+}
+
+static int px30_mac_set_speed_clk(struct clk *clk, uint hz)
+{
+	struct px30_clk_priv *priv = dev_get_priv(clk->dev);
+	struct px30_cru *cru = priv->cru;
+
+	if (hz != 2500000 && hz != 25000000) {
+		debug("Unsupported mac speed:%d\n", hz);
+		return -EINVAL;
+	}
+
+	rk_clrsetreg(&cru->clksel_con[23], RMII_CLK_SEL_MASK,
+		     ((hz == 2500000) ? 0 : 1) << RMII_CLK_SEL_SHIFT);
+
+	return 0;
+}
+
 #endif
 
 static int px30_clk_get_gpll_rate(ulong *rate)
@@ -1295,6 +1339,13 @@ static ulong px30_clk_set_rate(struct clk *clk, ulong rate)
 	case SCLK_I2S1_OUT:
 		ret = px30_i2s1_mclk_set_clk(priv, clk->id, rate);
 		break;
+	case SCLK_GMAC:
+	case SCLK_GMAC_SRC:
+		ret = px30_mac_set_clk(clk, rate);
+		break;
+	case SCLK_GMAC_RMII:
+		ret = px30_mac_set_speed_clk(clk, rate);
+		break;
 #endif
 	default:
 		return -ENOENT;
@@ -1426,11 +1477,43 @@ static int px30_clk_set_phase(struct clk *clk, int degrees)
 	return ret;
 }
 
+#if CONFIG_IS_ENABLED(OF_CONTROL) && !CONFIG_IS_ENABLED(OF_PLATDATA)
+static int px30_gmac_set_parent(struct clk *clk, struct clk *parent)
+{
+	struct px30_clk_priv *priv = dev_get_priv(clk->dev);
+	struct px30_cru *cru = priv->cru;
+
+	if (parent->id == SCLK_GMAC_SRC) {
+		debug("%s: switching GAMC to SCLK_GMAC_SRC\n", __func__);
+		rk_clrsetreg(&cru->clksel_con[23], RMII_EXTCLK_SEL_MASK,
+			     RMII_EXTCLK_SEL_INT << RMII_EXTCLK_SEL_SHIFT);
+	} else {
+		debug("%s: switching GMAC to external clock\n", __func__);
+		rk_clrsetreg(&cru->clksel_con[23], RMII_EXTCLK_SEL_MASK,
+			     RMII_EXTCLK_SEL_EXT << RMII_EXTCLK_SEL_SHIFT);
+	}
+	return 0;
+}
+
+static int px30_clk_set_parent(struct clk *clk, struct clk *parent)
+{
+	switch (clk->id) {
+	case SCLK_GMAC:
+		return px30_gmac_set_parent(clk, parent);
+	default:
+		return -ENOENT;
+	}
+}
+#endif
+
 static struct clk_ops px30_clk_ops = {
 	.get_rate = px30_clk_get_rate,
 	.set_rate = px30_clk_set_rate,
 	.get_phase	= px30_clk_get_phase,
 	.set_phase	= px30_clk_set_phase,
+#if CONFIG_IS_ENABLED(OF_CONTROL) && !CONFIG_IS_ENABLED(OF_PLATDATA)
+	.set_parent	= px30_clk_set_parent,
+#endif
 };
 
 static int px30_clk_probe(struct udevice *dev)
