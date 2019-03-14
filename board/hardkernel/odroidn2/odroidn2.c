@@ -366,7 +366,6 @@ int board_late_init(void)
 
 #if defined(CONFIG_FASTBOOT_FLASH_MMC_DEV)
 	/* select the default mmc device */
-	char buf[32];
 	int mmc_devnum = CONFIG_FASTBOOT_FLASH_MMC_DEV;
 
 	if (get_boot_device() == BOOT_DEVICE_EMMC)
@@ -375,8 +374,7 @@ int board_late_init(void)
 		mmc_devnum = 1;
 
 	/* select the default mmc device */
-	sprintf(buf, "mmc dev %d", mmc_devnum);
-	run_command(buf, 0);
+	mmc_select_hwpart(mmc_devnum, 0);
 #endif
 
 #ifdef CONFIG_AML_VPU

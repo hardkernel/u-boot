@@ -12,11 +12,18 @@
 static int curr_device = -1;
 
 #if defined(CONFIG_ODROID_COMMON)
+#include "../board/hardkernel/odroid-common/odroid-common.h"
+
 __weak int board_current_mmc(void)
 {
 	if (curr_device < 0) {
+		if (get_boot_device() == BOOT_DEVICE_EMMC)
+			curr_device = 0;
+		else if (get_boot_device() == BOOT_DEVICE_SD)
+			curr_device = 1;
 #if defined(CONFIG_FASTBOOT_FLASH_MMC_DEV)
-		curr_device = CONFIG_FASTBOOT_FLASH_MMC_DEV;
+		else
+			curr_device = CONFIG_FASTBOOT_FLASH_MMC_DEV;
 #else
 		curr_device = 0;
 #endif

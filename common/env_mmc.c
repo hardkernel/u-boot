@@ -35,6 +35,9 @@
 #endif
 #endif
 
+#undef CONFIG_SYS_MMC_ENV_DEV
+#define CONFIG_SYS_MMC_ENV_DEV	board_current_mmc()
+
 #ifndef CONFIG_STORE_COMPATIBLE
 char *env_name_spec = "MMC";
 #ifdef ENV_IS_EMBEDDED
