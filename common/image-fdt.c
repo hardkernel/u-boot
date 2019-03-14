@@ -88,6 +88,7 @@ void boot_fdt_add_mem_rsv_regions(struct lmb *lmb, void *fdt_blob)
 	fdt_addr_t rsv_addr;
 	/* we needn't repeat do reserve, do_bootm_linux would call this again */
 	static int rsv_done;
+	const void *prop;
 
 	if (fdt_check_header(fdt_blob) != 0 || rsv_done)
 		return;
@@ -110,6 +111,10 @@ void boot_fdt_add_mem_rsv_regions(struct lmb *lmb, void *fdt_blob)
 	for (offset = fdt_first_subnode(fdt_blob, rsv_offset);
 	     offset >= 0;
 	     offset = fdt_next_subnode(fdt_blob, offset)) {
+		prop = fdt_getprop(fdt_blob, offset, "status", NULL);
+		if (prop && !strcmp(prop, "disabled"))
+			continue;
+
 		rsv_addr = fdtdec_get_addr_size_auto_noparent(fdt_blob, offset,
 							      "reg", 0,
 							      &rsv_size, false);
@@ -137,6 +142,7 @@ int boot_fdt_add_sysmem_rsv_regions(void *fdt_blob)
 	fdt_addr_t rsv_addr;
 	static int rsv_done;
 	char resvname[32];
+	const void *prop;
 	int ret;
 
 	if (fdt_check_header(fdt_blob) != 0 || rsv_done)
@@ -163,6 +169,10 @@ int boot_fdt_add_sysmem_rsv_regions(void *fdt_blob)
 	for (offset = fdt_first_subnode(fdt_blob, rsv_offset);
 	     offset >= 0;
 	     offset = fdt_next_subnode(fdt_blob, offset)) {
+		prop = fdt_getprop(fdt_blob, offset, "status", NULL);
+		if (prop && !strcmp(prop, "disabled"))
+			continue;
+
 		rsv_addr = fdtdec_get_addr_size_auto_noparent(fdt_blob, offset,
 							      "reg", 0,
 							      &rsv_size, false);
