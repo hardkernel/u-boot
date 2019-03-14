@@ -69,8 +69,10 @@
 //2018.03.19 G12A only support v3 format for normal & secure boot
 #define CONFIG_AML_SECURE_BOOT_V3 1
 
+#if !defined(CONFIG_ODROID_COMMON)
 #define CONFIG_OF_LIBFDT_OVERLAY 1
 #define CONFIG_CMD_DTIMG 1
+#endif
 
 #define CONFIG_AML_RSVD_ADDR	0x08300000
 #define CONFIG_AML_RSVD_SIZE	0x100000
