@@ -105,6 +105,12 @@ config SYSMEM
 	help
 	  This enables support for system permanent memory management.
 
+config BIDRAM
+	bool "GD board bi_dram[] memory management"
+	default y
+	help
+	  This enables support for GD board bi_dram[] memory management.
+
 source lib/dhry/Kconfig
 
 menu "Security support"

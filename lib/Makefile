@@ -31,6 +31,7 @@ obj-y += initcall.o
 obj-$(CONFIG_LMB) += lmb.o
 ifdef CONFIG_LMB
 obj-$(CONFIG_SYSMEM) += sysmem.o
+obj-$(CONFIG_BIDRAM) += bidram.o
 endif
 obj-y += ldiv.o
 obj-$(CONFIG_LZ4) += lz4_wrapper.o
