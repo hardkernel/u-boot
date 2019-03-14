@@ -38,9 +38,14 @@ enum if_type {
 	IF_TYPE_SPINAND,
 	IF_TYPE_SPINOR,
 	IF_TYPE_RAMDISK,
-
+	IF_TYPE_MTD,
 	IF_TYPE_COUNT,			/* Number of interface types */
 };
+
+/* define mtd device devnum */
+#define BLK_MTD_NAND		0
+#define BLK_MTD_SPI_NAND	1
+#define BLK_MTD_SPI_NOR		2
 
 #define BLK_VEN_SIZE		40
 #define BLK_PRD_SIZE		20

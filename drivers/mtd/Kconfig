@@ -8,6 +8,12 @@ config MTD
 	  flash, RAM and similar chips, often used for solid state file
 	  systems on embedded devices.
 
+config MTD_BLK
+	bool "Enable mtd block model for MTD drivers"
+	depends on MTD
+	help
+	  Enable mtd block model for Memory Technology Devices (MTD).
+
 config MTD_NOR_FLASH
 	bool "Enable parallel NOR flash support"
 	help
