@@ -11,7 +11,7 @@
  * SPDX-License-Identifier:	GPL-2.0+
  */
 
-#define MAX_LMB_REGIONS 8
+#define MAX_LMB_REGIONS 16
 
 struct lmb_property {
 	phys_addr_t base;
