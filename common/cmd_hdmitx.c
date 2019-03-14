@@ -97,6 +97,11 @@ static int do_edid(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 	if (argc < 1)
 		return cmd_usage(cmdtp);
 
+	if (!hdmitx_device.HWOp.get_hpd_state()) {
+		printf("HDMI cable is NOT connected\n");
+		return CMD_RET_FAILURE;
+	}
+
 READ_EDID:
 	/* read edid raw data */
 	blk_len = hdmitx_device.HWOp.read_edid_raw(edid_raw_buf);
