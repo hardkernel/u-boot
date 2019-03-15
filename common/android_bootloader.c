@@ -22,7 +22,11 @@
 #include <keymaster.h>
 #include <linux/libfdt_env.h>
 #include <optee_include/OpteeClientInterface.h>
+#include <bidram.h>
+#include <console.h>
 #include <sysmem.h>
+
+DECLARE_GLOBAL_DATA_PTR;
 
 #define ANDROID_PARTITION_BOOT "boot"
 #define ANDROID_PARTITION_MISC "misc"
@@ -331,6 +335,11 @@ int android_bootloader_boot_kernel(unsigned long kernel_address)
 	else
 		printf("Booting kernel at %s with fdt at %s...\n\n\n",
 		       kernel_addr_r, fdt_addr);
+
+	if (gd->console_evt == CONSOLE_EVT_CTRL_M) {
+		bidram_dump();
+		sysmem_dump();
+	}
 
 	do_bootm(NULL, 0, 4, bootm_args);
 
