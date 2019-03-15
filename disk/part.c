@@ -143,6 +143,7 @@ void dev_print (struct blk_desc *dev_desc)
 		break;
 	case IF_TYPE_SD:
 	case IF_TYPE_MMC:
+	case IF_TYPE_MTD:
 	case IF_TYPE_USB:
 	case IF_TYPE_NVME:
 	case IF_TYPE_RKNAND:
@@ -277,6 +278,9 @@ static void print_part_header(const char *type, struct blk_desc *dev_desc)
 		break;
 	case IF_TYPE_MMC:
 		puts ("MMC");
+		break;
+	case IF_TYPE_MTD:
+		puts("MTD");
 		break;
 	case IF_TYPE_HOST:
 		puts ("HOST");
