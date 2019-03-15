@@ -324,6 +324,16 @@ static int do_dump(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 	return 1;
 }
 
+static int do_mode(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
+{
+	if (strstr(argv[1], "dvi") != NULL)
+		hdmitx_device.dvimode = 1;
+	else
+		hdmitx_device.dvimode = 0;
+
+	return 1;
+}
+
 static int do_info(cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 {
 	struct hdmitx_dev *hdev = &hdmitx_device;
@@ -399,6 +409,7 @@ static cmd_tbl_t cmd_hdmi_sub[] = {
 	U_BOOT_CMD_MKENT(dump, 1, 1, do_dump, "", ""),
 	U_BOOT_CMD_MKENT(info, 1, 1, do_info, "", ""),
 	U_BOOT_CMD_MKENT(get_preferred_mode, 1, 1, do_get_preferred_mode, "", ""),
+	U_BOOT_CMD_MKENT(mode, 1, 1, do_mode, "", ""),
 };
 
 static int do_hdmitx(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
@@ -441,4 +452,6 @@ U_BOOT_CMD(hdmitx, CONFIG_SYS_MAXARGS, 0, do_hdmitx,
 	"    current mode info\n"
 	"hdmitx rx_det\n"
 	"    Auto detect if RX is FBC and set outputmode\n"
+	"hdmitx mode [hdmi/dvi]\n"
+	"    set vout mode : hdmi or dvi\n"
 );
