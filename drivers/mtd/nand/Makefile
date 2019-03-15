@@ -70,7 +70,7 @@ obj-$(CONFIG_NAND_PLAT) += nand_plat.o
 obj-$(CONFIG_NAND_SUNXI) += sunxi_nand.o
 obj-$(CONFIG_NAND_ZYNQ) += zynq_nand.o
 obj-$(CONFIG_NAND_ROCKCHIP) += rockchip_nand.o
-
+obj-$(CONFIG_NAND_ROCKCHIP_V9) += rockchip_nand_v9.o
 else  # minimal SPL drivers
 
 obj-$(CONFIG_NAND_FSL_ELBC) += fsl_elbc_spl.o
