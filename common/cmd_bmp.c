@@ -63,7 +63,7 @@ bmp_image_t *gunzip_bmp(unsigned long addr, unsigned long *lenp,
 	bmp = dst;
 
 	/* align to 32-bit-aligned-address + 2 */
-	bmp = (bmp_image_t *)((((unsigned int)dst + 1) & ~3) + 2);
+	bmp = (bmp_image_t *)((((phys_addr_t)dst + 1) & ~3) + 2);
 
 	if (gunzip(bmp, CONFIG_SYS_VIDEO_LOGO_MAX_SIZE, (uchar *)addr, &len) != 0) {
 		free(dst);
