@@ -100,6 +100,7 @@ obj-$(CONFIG_CMD_MMC) += mmc.o
 obj-$(CONFIG_CMD_MMC_SPI) += mmc_spi.o
 obj-$(CONFIG_MP) += mp.o
 obj-$(CONFIG_CMD_MTDPARTS) += mtdparts.o
+obj-$(CONFIG_CMD_MTD) += mtd.o
 obj-$(CONFIG_CMD_NAND) += nand.o
 obj-$(CONFIG_CMD_NET) += net.o
 obj-$(CONFIG_CMD_ONENAND) += onenand.o

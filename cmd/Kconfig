@@ -1498,6 +1498,11 @@ config CMD_MTDPARTS
 	help
 	  MTD partition support
 
+config CMD_MTD
+	bool "MTD support"
+	help
+	  MTD support
+
 config MTDIDS_DEFAULT
 	string "Default MTD IDs"
 	depends on CMD_MTDPARTS
