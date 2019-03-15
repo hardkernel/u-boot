@@ -15,6 +15,8 @@
 #include <asm/arch/boot_mode.h>
 #include <asm/io.h>
 #include <part.h>
+#include <bidram.h>
+#include <console.h>
 #include <sysmem.h>
 
 #define TAG_KERNEL			0x4C4E524B
@@ -521,6 +523,11 @@ int boot_rockchip_image(struct blk_desc *dev_desc, disk_partition_t *boot_part)
 	printf("ramdisk  @ 0x%08lx (0x%08x)\n", ramdisk_addr_r, ramdisk_size);
 
 	fdt_ramdisk_skip_relocation();
+
+	if (gd->console_evt == CONSOLE_EVT_CTRL_M) {
+		bidram_dump();
+		sysmem_dump();
+	}
 
 #if defined(CONFIG_ARM64)
 	char cmdbuf[64];
