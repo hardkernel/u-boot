@@ -799,10 +799,8 @@ int android_fdt_overlay_apply(void *fdt_addr)
 	android_print_contents(hdr);
 #endif
 
-	if (android_image_check_header(hdr)) {
-		printf("%s: Invalid Android header %s\n", __func__, hdr->magic);
+	if (android_image_check_header(hdr))
 		return -EINVAL;
-	}
 
 	/* Check header version */
 	if (!hdr->header_version) {
