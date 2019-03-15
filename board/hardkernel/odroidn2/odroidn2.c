@@ -357,13 +357,11 @@ int board_init(void)
 #define CONFIG_FASTBOOT_FLASH_MMC_DEV		0
 #endif
 
+extern void cvbs_init(void);
+
 #ifdef CONFIG_BOARD_LATE_INIT
 int board_late_init(void)
 {
-#ifdef CONFIG_AML_CVBS
-	board_cvbs_probe();
-#endif
-
 #if defined(CONFIG_FASTBOOT_FLASH_MMC_DEV)
 	/* select the default mmc device */
 	int mmc_devnum = CONFIG_FASTBOOT_FLASH_MMC_DEV;
@@ -384,6 +382,11 @@ int board_late_init(void)
 #ifdef CONFIG_AML_HDMITX20
 	hdmi_tx_set_hdmi_5v();
 	hdmi_tx_init();
+#endif
+
+#ifdef CONFIG_AML_CVBS
+	run_command("cvbs init; cvbs output 480cvbs", 0);
+	board_cvbs_probe();
 #endif
 
 	if (get_boot_device() == BOOT_DEVICE_SPI) {
