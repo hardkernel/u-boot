@@ -198,6 +198,9 @@ int get_bootdev_type(void)
 	} else if (!strcmp(devtype, "ramdisk")) {
 		type = IF_TYPE_RAMDISK;
 		boot_media = "ramdisk";
+	} else if (!strcmp(devtype, "mtd")) {
+		type = IF_TYPE_MTD;
+		boot_media = "mtd";
 	} else {
 		/* Add new to support */
 	}
