@@ -56,6 +56,7 @@
 #include <linux/err.h>
 #include <efi_loader.h>
 #include <sysmem.h>
+#include <bidram.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -767,8 +768,11 @@ static init_fnc_t init_sequence_r[] = {
 #endif
 	initr_barrier,
 	initr_malloc,
+#ifdef CONFIG_BIDRAM
+	bidram_initr,
+#endif
 #ifdef CONFIG_SYSMEM
-	sysmem_init,		/* After malloc setup */
+	sysmem_initr,
 #endif
 	log_init,
 	initr_bootstage,	/* Needs malloc() but has its own timer */
