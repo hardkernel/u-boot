@@ -366,3 +366,4 @@ obj-$(CONFIG_ODROID_COMMON) += cmd_movi.o
 obj-$(CONFIG_ODROID_COMMON) += cmd_cfgload.o
 obj-$(CONFIG_ODROID_COMMON) += cmd_oem.o
 obj-$(CONFIG_ODROID_COMMON) += env_proxy.o
+obj-$(CONFIG_ODROID_COMMON) += cmd_showlogo.o

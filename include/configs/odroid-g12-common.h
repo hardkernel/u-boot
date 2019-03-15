@@ -242,7 +242,6 @@
 		"bootm ${preloadaddr} ${initrd_high} ${dtb_mem_addr};\0"\
 
 #define CONFIG_PREBOOT  \
-            "run init_display; " \
             "run switch_bootmode;"
 
 #define CONFIG_BOOTCOMMAND			"run boot_default"
@@ -360,6 +359,10 @@
 #define CONFIG_AML_OSD				1
 #define CONFIG_OSD_SCALE_ENABLE			1
 #define CONFIG_CMD_BMP				1
+
+/* gzip compressed bmp images */
+#define CONFIG_VIDEO_BMP_GZIP			1
+#define CONFIG_SYS_VIDEO_LOGO_MAX_SIZE		(6 << 20)
 
 #if defined(CONFIG_AML_VOUT)
 #define CONFIG_AML_CVBS				1

@@ -389,6 +389,9 @@ int board_late_init(void)
 	board_cvbs_probe();
 #endif
 
+	/* boot logo display - 1080p60hz */
+	run_command("showlogo", 0);
+
 	if (get_boot_device() == BOOT_DEVICE_SPI) {
 		setenv("bootdelay", "0");
 		setenv("bootcmd", "run booting_from_spi");
