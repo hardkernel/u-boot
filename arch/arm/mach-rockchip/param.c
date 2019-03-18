@@ -195,3 +195,69 @@ int param_parse_bootdev(char **devtype, char **devnum)
 
 	return -ENOSYS;
 }
+
+struct memblock *param_parse_ddr_mem(int *out_count)
+{
+	struct udevice *dev;
+	struct memblock *mem;
+	struct ram_info ram;
+	int i, ret, count;
+
+	/*
+	 * Get memory region of DDR
+	 *
+	 * 1. New: atags info;
+	 * 2. Leagcy: os register;
+	 */
+#ifdef CONFIG_ROCKCHIP_PRELOADER_ATAGS
+	struct tag *t;
+
+	t = atags_get_tag(ATAG_DDR_MEM);
+	if (t && t->u.ddr_mem.count) {
+		count = t->u.ddr_mem.count;
+		mem = calloc(count, sizeof(*mem));
+		if (!mem) {
+			printf("Calloc ddr memory failed\n");
+			return 0;
+		}
+
+		for (i = 0; i < count; i++) {
+			mem[i].base = t->u.ddr_mem.bank[i];
+			mem[i].size = t->u.ddr_mem.bank[i + count];
+		}
+
+		*out_count = count;
+		return mem;
+	}
+#endif
+
+	/* Leagcy */
+	ret = uclass_get_device(UCLASS_RAM, 0, &dev);
+	if (ret) {
+		debug("DRAM init failed: %d\n", ret);
+		return NULL;
+	}
+	ret = ram_get_info(dev, &ram);
+	if (ret) {
+		debug("Cannot get DRAM size: %d\n", ret);
+		return NULL;
+	}
+
+	debug("SDRAM base=%lx, size=%lx\n",
+	      (unsigned long)ram.base, (unsigned long)ram.size);
+
+	count = 1;
+	mem = calloc(1, sizeof(*mem));
+	if (!mem) {
+		printf("Calloc ddr memory failed\n");
+		return 0;
+	}
+
+	for (i = 0; i < count; i++) {
+		mem[i].base = CONFIG_SYS_SDRAM_BASE;
+		mem[i].size = ram.size;
+	}
+
+	*out_count = count;
+	return mem;
+}
