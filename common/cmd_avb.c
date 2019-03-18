@@ -19,7 +19,8 @@
 #endif
 
 #define AVB_USE_TESTKEY
-#define MAX_DTB_SIZE (256 * 1024)
+#define MAX_DTB_SIZE (AML_DTB_IMG_MAX_SZ + 512)
+#define AVB_NUM_SLOT (4)
 
 #ifdef AVB_USE_TESTKEY
 extern const char testkey2048[520];
@@ -284,10 +285,13 @@ int is_device_unlocked(void)
 
 int avb_verify(AvbSlotVerifyData** out_data)
 {
-    const char * const requested_partitions[5] = {"boot", "recovery", "dtb", NULL};
+    /* The last slot must be NULL */
+    const char * requested_partitions[AVB_NUM_SLOT + 1] = {"boot", "dtb", NULL, NULL, NULL};
     AvbSlotVerifyResult result = AVB_SLOT_VERIFY_RESULT_OK;
     char *s1;
     char *ab_suffix;
+    uint32_t i = 0;
+
     run_command("get_valid_slot;", 0);
     s1 = getenv("active_slot");
     printf("active_slot is %s\n", s1);
@@ -307,6 +311,19 @@ int avb_verify(AvbSlotVerifyData** out_data)
 
     if (is_device_unlocked() || !strcmp(upgradestep, "3"))
         flags |= AVB_SLOT_VERIFY_FLAGS_ALLOW_VERIFICATION_ERROR;
+
+    if (!strcmp(ab_suffix, "")) {
+        for (i = 0; i < AVB_NUM_SLOT; i++) {
+            if (requested_partitions[i] == NULL) {
+                requested_partitions[i] = "recovery";
+                break;
+            }
+        }
+        if (i == AVB_NUM_SLOT) {
+            printf("ERROR: failed to find an empty slot for recovery");
+            return AVB_SLOT_VERIFY_RESULT_ERROR_INVALID_ARGUMENT;
+        }
+    }
 
     result = avb_slot_verify(&avb_ops_, requested_partitions, ab_suffix,
             flags,
