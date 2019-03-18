@@ -220,6 +220,14 @@ config TL1_T309_V1
 	bool "Support amlogic tl1 t309 v1 board"
 	default n
 
+config SM1_SKT_V1
+	bool "Support amlogic sm1 skt v1 board"
+	default n
+
+config SM1_AC200_V1
+	bool "Support amlogic sm1 ac200 v1 board"
+	default n
+
 config PXP_EMULATOR
 	bool "Support pxp environment"
 	default n
@@ -465,6 +473,14 @@ endif
 
 if TL1_T309_V1
 source "board/amlogic/tl1_t309_v1/Kconfig"
+endif
+
+if SM1_SKT_V1
+source "board/amlogic/sm1_skt_v1/Kconfig"
+endif
+
+if SM1_AC200_V1
+source "board/amlogic/sm1_ac200_v1/Kconfig"
 endif
 
 if ODROID_C2
