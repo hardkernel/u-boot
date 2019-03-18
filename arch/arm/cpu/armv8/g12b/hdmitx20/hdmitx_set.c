@@ -92,6 +92,18 @@ static void hdmitx_csc_config (unsigned char input_color_format,
                         unsigned char output_color_format,
                         unsigned char color_depth);
 
+static void hdmitx_dvi_config(unsigned int dvi_mode)
+{
+	if (dvi_mode) {
+		/* DVI */
+		hdmitx_csc_config(TX_INPUT_COLOR_FORMAT, HDMI_COLOR_FORMAT_RGB, HDMI_COLOR_DEPTH_24B);
+		hdmitx_set_reg_bits(HDMITX_DWC_FC_INVIDCONF, 0, 3, 1);
+	} else {
+		/* HDMI */
+		hdmitx_set_reg_bits(HDMITX_DWC_FC_INVIDCONF, 1, 3, 1);
+	}
+}
+
 static void dump_regs(void)
 {
 	unsigned int reg_adr;
@@ -2683,6 +2695,9 @@ static void hdmitx_set_hw(struct hdmitx_dev* hdev)
 	hdmitx_set_reg_bits(HDMITX_DWC_FC_INVIDCONF, 0, 3, 1);
 	msleep(1);
 	hdmitx_set_reg_bits(HDMITX_DWC_FC_INVIDCONF, 1, 3, 1);
+
+	/* hdmi/dvi switching */
+	hdmitx_dvi_config(hdev->dvimode);
 }
 
 // Use this self-made function rather than %, because % appears to produce wrong
