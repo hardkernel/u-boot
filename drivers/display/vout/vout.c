@@ -328,6 +328,18 @@ static const vout_set_t vout_sets[] = {
 		.width             = 2560,
 		.height            = 1080,
 	},
+	{ /* VMODE_1024x600p60hz */
+		.name              = "1024x600p60hz",
+		.mode              = VMODE_1024x600p60hz,
+		.width             = 1024,
+		.height            = 600,
+	},
+	{ /* VMODE_480x320p60hz */
+		.name              = "480x320p60hz",
+		.mode              = VMODE_480x320p60hz,
+		.width             = 480,
+		.height            = 320,
+	},
 };
 
 static struct vinfo_s vout_info = {
