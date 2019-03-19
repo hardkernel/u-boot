@@ -17,9 +17,9 @@
 		stdout-path = &uart2;
 	};
 
-	ramdisk-readonly {
+	ramdisk-ro {
 		u-boot,dm-pre-reloc;
-		compatible = "ramdisk-readonly";
+		compatible = "ramdisk-ro";
 		status = "okay";
 	};
 };

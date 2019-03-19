@@ -12,8 +12,8 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
-static ulong ramdisk_readonly_bread(struct blk_desc *desc, lbaint_t start,
-				    lbaint_t blkcnt, void *dst)
+static ulong ramdisk_ro_bread(struct blk_desc *desc, lbaint_t start,
+			      lbaint_t blkcnt, void *dst)
 {
 	unsigned long b_size, b_start;
 
@@ -28,7 +28,7 @@ static ulong ramdisk_readonly_bread(struct blk_desc *desc, lbaint_t start,
 	return blkcnt;
 }
 
-static int ramdisk_readonly_bind(struct udevice *dev)
+static int ramdisk_ro_bind(struct udevice *dev)
 {
 	struct udevice *bdev;
 	int ret;
@@ -43,19 +43,19 @@ static int ramdisk_readonly_bind(struct udevice *dev)
 	return 0;
 }
 
-static const struct ramdisk_ops ramdisk_readonly_ops = {
-	.read = ramdisk_readonly_bread,
+static const struct ramdisk_ops ramdisk_ro_ops = {
+	.read = ramdisk_ro_bread,
 };
 
-static const struct udevice_id ramdisk_readonly_ids[] = {
-	{ .compatible = "ramdisk-readonly" },
+static const struct udevice_id ramdisk_ro_ids[] = {
+	{ .compatible = "ramdisk-ro" },
 	{ }
 };
 
-U_BOOT_DRIVER(ramdisk_readonly) = {
-	.name		= "ramdisk-readonly",
+U_BOOT_DRIVER(ramdisk_ro) = {
+	.name		= "ramdisk-ro",
 	.id		= UCLASS_RAMDISK,
-	.ops		= &ramdisk_readonly_ops,
-	.of_match	= ramdisk_readonly_ids,
-	.bind		= ramdisk_readonly_bind,
+	.ops		= &ramdisk_ro_ops,
+	.of_match	= ramdisk_ro_ids,
+	.bind		= ramdisk_ro_bind,
 };

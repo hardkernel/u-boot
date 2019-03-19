@@ -41,7 +41,7 @@ config DM_RAMDISK
           This enables the Ramdisk uclass support. These appear as block devices
           in U-Boot.
 
-config RAMDISK_READONLY
+config RAMDISK_RO
         bool "Enable read only ramdisk support"
         depends on DM_RAMDISK
         help
