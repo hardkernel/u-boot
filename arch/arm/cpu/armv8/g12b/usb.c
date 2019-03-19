@@ -138,6 +138,7 @@ void set_usb_phy_tuning_1(int port)
 	if (board_usb_get_revb_type() == 1) {
 		(*(volatile uint32_t *)(phy_reg_base + 0x54)) = 0x2a;
 		(*(volatile uint32_t *)(phy_reg_base + 0x50)) = USB_G12x_PHY_PLL_SETTING_1;
+		(*(volatile uint32_t *)(phy_reg_base + 0x54)) = 0x2a;
 		(*(volatile uint32_t *)(phy_reg_base + 0x34)) = USB_G12x_PHY_PLL_SETTING_3 & (0x1f << 16);
 		return;
 	}
