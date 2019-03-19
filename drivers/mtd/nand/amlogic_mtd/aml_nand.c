@@ -3624,9 +3624,10 @@ int aml_nand_block_markbad(struct mtd_info *mtd, loff_t ofs)
 {
 	struct nand_chip * chip = mtd->priv;
 	struct aml_nand_chip *aml_chip = mtd_to_nand_chip(mtd);
-	struct mtd_oob_ops aml_oob_ops;
 	int blk_addr, mtd_erase_shift;
 	int8_t *buf = NULL;
+	int page, chipnr;
+	int ret = 0;
 
 	mtd_erase_shift = fls(mtd->erasesize) - 1;
 	blk_addr = (int)(ofs >> mtd_erase_shift);
@@ -3644,18 +3645,19 @@ int aml_nand_block_markbad(struct mtd_info *mtd, loff_t ofs)
 	}
 mark_bad:
 	/*no erase here, fixit*/
-	aml_oob_ops.mode = MTD_OPS_AUTO_OOB;
-	aml_oob_ops.len = mtd->writesize;
-	aml_oob_ops.ooblen = mtd->oobavail;
-	aml_oob_ops.ooboffs = chip->ecc.layout->oobfree[0].offset;
-	aml_oob_ops.datbuf = chip->buffers->databuf;
-	aml_oob_ops.oobbuf = chip->oob_poi;
 	chip->pagebuf = -1;
 
-	memset((unsigned char *)aml_oob_ops.datbuf, 0x0, mtd->writesize);
-	memset((unsigned char *)aml_oob_ops.oobbuf, 0x0, aml_oob_ops.ooblen);
+	memset((unsigned char *)chip->buffers->databuf, 0x0, mtd->writesize);
+	memset((unsigned char *)chip->oob_poi, 0x0, mtd->oobavail);
 
-	return mtd->_write_oob(mtd, ofs, &aml_oob_ops);
+	chipnr = (int)(ofs >> chip->chip_shift);
+	page = (int)(ofs >> chip->page_shift);
+	chip->select_chip(mtd, chipnr);
+	ret = chip->write_page(mtd, chip, 0, mtd->writesize,
+		chip->buffers->databuf,
+		1, page, 0, 0);
+	chip->select_chip(mtd, -1);
+	return ret;
 }
 
 static uint8_t aml_platform_read_byte(struct mtd_info *mtd)
