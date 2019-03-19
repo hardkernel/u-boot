@@ -238,6 +238,7 @@ void set_usb_phy21_tuning_update(void)
 	if (b_platform_usb_check_g12b_revb() || b_platform_usb_check_sm1()) {
 		(*(volatile uint32_t *)(phy_reg_base + 0x54)) = 0x2a;
 		(*(volatile uint32_t *)(phy_reg_base + 0x50)) = USB_G12x_PHY_PLL_SETTING_1;
+		(*(volatile uint32_t *)(phy_reg_base + 0x54)) = 0x2a;
 		(*(volatile uint32_t *)(phy_reg_base + 0x34)) = USB_G12x_PHY_PLL_SETTING_3 & (0x1f << 16);
 		return;
 	}
