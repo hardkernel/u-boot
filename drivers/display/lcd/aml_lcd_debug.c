@@ -1001,6 +1001,7 @@ void aml_lcd_debug_probe(struct aml_lcd_drv_s *lcd_drv)
 		break;
 	case LCD_CHIP_G12A:
 	case LCD_CHIP_G12B:
+	case LCD_CHIP_SM1:
 		if (lcd_drv->lcd_config->lcd_clk_path)
 			lcd_debug_info_reg = &lcd_debug_info_reg_g12a_clk_path1;
 		else

@@ -75,6 +75,9 @@ static void lcd_chip_detect(void)
 	case MESON_CPU_MAJOR_ID_TL1:
 		aml_lcd_driver.chip_type = LCD_CHIP_TL1;
 		break;
+	case MESON_CPU_MAJOR_ID_SM1:
+		aml_lcd_driver.chip_type = LCD_CHIP_SM1;
+		break;
 	default:
 		aml_lcd_driver.chip_type = LCD_CHIP_MAX;
 		//aml_lcd_driver.chip_type = LCD_CHIP_TL1;
