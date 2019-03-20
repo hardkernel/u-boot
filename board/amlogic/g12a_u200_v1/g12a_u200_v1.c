@@ -609,7 +609,8 @@ int board_init(void)
 void aml_config_dtb(void)
 {
 	cpu_id_t cpuid = get_cpu_id();
-
+	if (MESON_CPU_MAJOR_ID_G12A != cpuid.family_id)
+		return;
 	run_command("fdt address $dtb_mem_addr", 0);
 	printf("%s %d\n", __func__, __LINE__);
 	if (cpuid.chip_rev == 0xA) {
