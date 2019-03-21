@@ -74,6 +74,8 @@ static void inline aml_update_bits(unsigned int  reg, unsigned int mask, unsigne
 #define GPIO_IRQ_HIGH_LEVEL		1
 #define GPIO_IRQ_FALLING_EDGE	2
 #define GPIO_IRQ_RISING_EDGE		3
+/*for sm1,tm2 or later */
+#define GPIO_IRQ_BOTH_EDGE		4
 
 enum {
 	IRQ_TIMERA = 0,
