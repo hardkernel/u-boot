@@ -315,12 +315,13 @@ int fdt_chosen(void *fdt)
 #ifdef CONFIG_ANDROID_AB
 				env_update_filter("bootargs", bootargs, "root=");
 #else
+				env_update("bootargs", bootargs);
+#endif
 				/*
 				 * Initrd fixup: remove unused "initrd=0x...,0x...",
 				 * this for compatible with legacy parameter.txt
 				 */
-				env_update_filter("bootargs", bootargs, "initrd=");
-#endif
+				env_delete("bootargs", "initrd=", 0);
 			}
 #endif
 		}
