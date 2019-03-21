@@ -654,6 +654,7 @@ libs-y += fs/
 libs-y += net/
 libs-y += disk/
 libs-y += drivers/
+libs-y += drivers/cpu/
 libs-y += drivers/dma/
 libs-y += drivers/gpio/
 libs-y += drivers/i2c/
