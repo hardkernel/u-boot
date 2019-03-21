@@ -411,6 +411,10 @@ static struct hdmi_support_mode gxbb_modes[] = {
 	{HDMIV_800x600p60hz, "800x600p60hz", 0},
 	{HDMIV_640x480p60hz, "640x480p60hz", 0},
 	{HDMIV_480x320p60hz, "480x320p60hz", 0},
+	{HDMIV_1920x1200p60hz, "1920x1200p60hz", 0},
+	{HDMIV_2560x1600p60hz, "2560x1600p60hz", 0},
+	{HDMIV_2560x1440p60hz, "2560x1440p60hz", 0},
+	{HDMIV_2560x1080p60hz, "2560x1080p60hz", 0},
 };
 
 static void hdmitx_list_support_modes(void)
@@ -1251,6 +1255,10 @@ static void hdmitx_set_phy(struct hdmitx_dev *hdev)
 		else
 			set_phy_by_mode(1);
 		break;
+	case HDMIV_2560x1600p60hz:
+	case HDMIV_2560x1440p60hz:
+		set_phy_by_mode(2);
+		break;
 	case HDMI_1920x1080p60_16x9:
 	case HDMI_1920x1080p50_16x9:
 	case HDMI_1920x1080i100_16x9:
@@ -1269,6 +1277,8 @@ static void hdmitx_set_phy(struct hdmitx_dev *hdev)
 	case HDMIV_800x600p60hz:
 	case HDMIV_640x480p60hz:
 	case HDMIV_480x320p60hz:
+	case HDMIV_1920x1200p60hz:
+	case HDMIV_2560x1080p60hz:
 	default:
 		set_phy_by_mode(3);
 		break;
@@ -2133,6 +2143,62 @@ static void hdmi_tvenc_set_def(enum hdmi_vic vic)
 		BACK_PORCH = 100;
 		VSYNC_LINES = 4;
 		SOF_LINES = 95;
+		break;
+	case HDMIV_1920x1200p60hz:
+		INTERLACE_MODE = 0U;
+		PIXEL_REPEAT_VENC = 0;
+		PIXEL_REPEAT_HDMI = 0;
+		ACTIVE_PIXELS = (1920*(1+PIXEL_REPEAT_HDMI));
+		ACTIVE_LINES = (1200/(1+INTERLACE_MODE));
+		LINES_F0 = 1235;
+		LINES_F1 = 1235;
+		FRONT_PORCH = 48;
+		HSYNC_PIXELS = 32;
+		BACK_PORCH = 80;
+		VSYNC_LINES = 6;
+		SOF_LINES = 26;
+		break;
+	case HDMIV_2560x1600p60hz:
+		INTERLACE_MODE = 0U;
+		PIXEL_REPEAT_VENC = 0;
+		PIXEL_REPEAT_HDMI = 0;
+		ACTIVE_PIXELS = (2560*(1+PIXEL_REPEAT_HDMI));
+		ACTIVE_LINES = (1600/(1+INTERLACE_MODE));
+		LINES_F0 = 1646;
+		LINES_F1 = 1646;
+		FRONT_PORCH = 48;
+		HSYNC_PIXELS = 32;
+		BACK_PORCH = 80;
+		VSYNC_LINES = 6;
+		SOF_LINES = 38;
+		break;
+	case HDMIV_2560x1440p60hz:
+		INTERLACE_MODE = 0U;
+		PIXEL_REPEAT_VENC = 0;
+		PIXEL_REPEAT_HDMI = 0;
+		ACTIVE_PIXELS = (2560*(1+PIXEL_REPEAT_HDMI));
+		ACTIVE_LINES = (1440/(1+INTERLACE_MODE));
+		LINES_F0 = 1481;
+		LINES_F1 = 1481;
+		FRONT_PORCH = 48;
+		HSYNC_PIXELS = 32;
+		BACK_PORCH = 80;
+		VSYNC_LINES = 5;
+		SOF_LINES = 34;
+		break;
+	case HDMIV_2560x1080p60hz:
+		INTERLACE_MODE = 0U;
+		PIXEL_REPEAT_VENC = 0;
+		PIXEL_REPEAT_HDMI = 0;
+		ACTIVE_PIXELS = (2560*(1+PIXEL_REPEAT_HDMI));
+		ACTIVE_LINES = (1080/(1+INTERLACE_MODE));
+		LINES_F0 = 1111;
+		LINES_F1 = 1111;
+		FRONT_PORCH = 64;
+		HSYNC_PIXELS = 64;
+		BACK_PORCH = 96;
+		VSYNC_LINES = 10;
+		SOF_LINES = 18;
 		break;
 	default:
 		break;

@@ -322,6 +322,18 @@ static const vout_set_t vout_sets[] = {
 		.width	 		= 2160,
 		.height 		= 1200,
 	},
+	{ /* VMODE_2560x1600p60hz */
+		.name              = "2560x1600p60hz",
+		.mode              = VMODE_2560x1600p60hz,
+		.width             = 2560,
+		.height            = 1600,
+	},
+	{ /* VMODE_2560x1440p60hz */
+		.name              = "2560x1440p60hz",
+		.mode              = VMODE_2560x1440p60hz,
+		.width             = 2560,
+		.height            = 1440,
+	},
 	{ /* VMODE_2560x1080p60hz */
 		.name              = "2560x1080p60hz",
 		.mode              = VMODE_2560x1080p60hz,
