@@ -369,16 +369,10 @@ static void get_osd_version(void)
 
 	if (family_id == MESON_CPU_MAJOR_ID_AXG)
 		osd_hw.osd_ver = OSD_SIMPLE;
-	else if ((family_id < MESON_CPU_MAJOR_ID_G12A) ||
-			((family_id > MESON_CPU_MAJOR_ID_G12B) &&
-				(family_id < MESON_CPU_MAJOR_ID_TL1)))
+	else if (family_id < MESON_CPU_MAJOR_ID_G12A)
 		osd_hw.osd_ver = OSD_NORMAL;
-	else if ((family_id == MESON_CPU_MAJOR_ID_G12A) ||
-			(family_id == MESON_CPU_MAJOR_ID_G12B) ||
-				(family_id == MESON_CPU_MAJOR_ID_TL1))
-		osd_hw.osd_ver = OSD_HIGH_ONE;
 	else
-		osd_hw.osd_ver = OSD_HIGH_OTHER;
+		osd_hw.osd_ver = OSD_HIGH_ONE;
 }
 
 int get_osd_layer(void)
