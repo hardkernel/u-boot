@@ -1316,7 +1316,7 @@ static int tee_fs_link(struct tee_fs_rpc *fsrpc)
 
 	struct rkss_file_info p_check = {0};
 	ret = rkss_get_fileinfo_by_name(newfilename, &p_check);
-	if (!ret)
+	if (ret >= 0)
 	{
 		printf("file exist ! %s.\n", newfilename);
 		return -1;
