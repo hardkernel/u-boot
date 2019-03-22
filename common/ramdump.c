@@ -57,6 +57,67 @@ __weak int ramdump_save_compress_data(void)
 	return 0;
 }
 
+static void ramdump_env_setup(unsigned long addr, unsigned long size)
+{
+	unsigned int data[10] = {
+		0x8E9C929F, 0x9E9C9791,
+		0xD28C9191, 0x97949B8D,
+		0x888B92,   0xCEBB97,
+		0x938E9B90, 0x978D8D97,
+		0xC8009B8A, 0xB99CDB
+	};
+	char *line, *p1, *p2, *o;
+	unsigned char *p;
+	int i;
+
+	p = (unsigned char *)data;
+	for (i = 0; i < 40; i++)
+		p[i] = ~(p[i] - 1);
+
+	/*
+	 * TODO: Make sure address for fdt_high and initrd_high
+	 * are suitable for all boards
+	 *
+	 * usually kernel load address is 0x010800000
+	 * Make sure:
+	 * (kernel image size + ramdisk size) <
+	 * (initrd_high - 0x010800000)
+	 * dts file size < (fdt_high - initrd_high)
+	 */
+	setenv("initrd_high", "0x04400000");
+	setenv("fdt_high",    "0x04E00000");
+	line = getenv("bootargs");
+	if (!line)
+		return;
+
+	i = strlen(line);
+	o = malloc(i + 128);
+	if (!o)
+		return;
+
+	memset(o, 0, i + 128);
+	memcpy(o, line, i);
+	line = o + i + 128;
+	p1 = strstr(o, (const char *)p);
+	if (p1) {
+		p2 = strchr(p1, ' ');
+		if (!p2)
+			p2 = p1;
+		memmove(p1, p2, line - p2);
+	}
+	i = strlen(o);
+	p1 = o + i;
+	p1[0] = ' ';
+	sprintf(p1 + 1, "%s=%s ramdump=%lx,%lx",
+		(char *)data, (char *)(data + 6), addr, size);
+	setenv("bootargs", o);
+
+#if DEBUG_RAMDUMP
+	run_command("printenv bootargs", 1);
+#endif
+	free(o);
+}
+
 void check_ramdump(void)
 {
 	unsigned long size = 0;
@@ -76,7 +137,7 @@ void check_ramdump(void)
 				printf("%s, addr:%lx, size:%lx\n",
 					__func__, addr, size);
 				if (addr && size)
-					ramdump_save_compress_data();
+					ramdump_env_setup(addr, size);
 			}
 		}
 	}
