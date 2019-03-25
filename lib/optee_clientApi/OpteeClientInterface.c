@@ -1054,7 +1054,6 @@ exit:
 	TEEC_ReleaseSharedMemory(&SharedMem1);
 	TEEC_CloseSession(&TeecSession);
 	TEEC_FinalizeContext(&TeecContext);
-	debug("testmm end\n");
 
 	return TeecResult;
 }

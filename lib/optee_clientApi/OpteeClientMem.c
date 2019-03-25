@@ -25,7 +25,7 @@ ALLOC_FLAG alloc_flags[50];
 int my_malloc_init(void *start, uint32_t size)
 {
 	if (start == NULL || size == 0) {
-		printf("malloc init fail!");
+		printf("TEEC: malloc init fail!\n");
 		return -1;
 	}
 	memset(start, 0, size);
@@ -34,7 +34,7 @@ int my_malloc_init(void *start, uint32_t size)
 	if (my_flag == NULL) {
 		my_flag = malloc(size/4096);
 		if (my_flag == NULL) {
-			printf("malloc fail!");
+			printf("TEEC: malloc fail!\n");
 			return -1;
 		}
 	}
@@ -100,7 +100,7 @@ void *my_malloc(uint32_t size)
 					memset(my_mem_start +
 						(i + k) * 4096, 0, 4096);
 				}
-				debug(" malloc is: 0x%X  0x%X\n",
+				debug("TEEC: malloc is: 0x%X  0x%X\n",
 					(int)i, (int)num);
 				write_usedblock((my_mem_start + i * 4096),
 					num * 4096);
@@ -127,7 +127,7 @@ void my_free(void *ptr)
 		return;
 
 	num = (size-1)/4096+1;
-	debug(" free is: 0x%X  0x%X\n", i, num);
+	debug("TEEC: free is: 0x%X  0x%X\n", i, num);
 
 	for (j = 0; j < num; j++) {
 		*(my_flag + i + j) = 0;
@@ -152,7 +152,7 @@ int OpteeClientMemInit(void)
 
 	tee_smc_call(&ArmSmcArgs);
 
-	debug("get share memory, arg0=0x%x arg1=0x%x arg2=0x%x arg3=0x%x\n",
+	debug("TEEC: get share memory, arg0=0x%x arg1=0x%x arg2=0x%x arg3=0x%x\n",
 	      ArmSmcArgs.Arg0, ArmSmcArgs.Arg1, ArmSmcArgs.Arg2, ArmSmcArgs.Arg3);
 
 	return my_malloc_init((void *)(size_t)ArmSmcArgs.Arg1, ArmSmcArgs.Arg2);

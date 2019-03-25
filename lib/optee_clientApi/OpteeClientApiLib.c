@@ -19,12 +19,12 @@ TEEC_Result OpteeClientApiLibInitialize(void)
 
 	status = OpteeClientMemInit();
 	if (status != TEEC_SUCCESS) {
-		printf("OpteeClientMemInit fail!");
+		printf("TEEC: OpteeClientMemInit fail!\n");
 		return status;
 	}
 	status = OpteeClientRkFsInit();
 	if (status != TEEC_SUCCESS) {
-		printf("OpteeClientRkFsInit fail!");
+		printf("TEEC: OpteeClientRkFsInit fail!\n");
 		return status;
 	}
 
@@ -61,7 +61,7 @@ TEEC_Result TEEC_InitializeContext(const char *name,
 	memset(context, 0, sizeof(*context));
 
 exit:
-	debug("TEEC_InitializeContext Exit : teecresult=0x%X\n\n", teecresult);
+	debug("TEEC_InitializeContext Exit : teecresult=0x%X\n", teecresult);
 	return teecresult;
 }
 
@@ -243,7 +243,7 @@ Exit:
 	if (error_origin != NULL)
 		*error_origin = TeecErrorOrigin;
 
-	debug("TEEC_OpenSession Exit : TeecResult=0x%X, TeecErrorOrigin=0x%X\n\n",
+	debug("TEEC_OpenSession Exit : TeecResult=0x%X, TeecErrorOrigin=0x%X\n",
 				TeecResult, TeecErrorOrigin);
 	return TeecResult;
 }
@@ -265,7 +265,7 @@ void TEEC_CloseSession(TEEC_Session *session)
 	TeecResult = TEEC_SMC_CloseSession(session, &TeecErrorOrigin);
 
 Exit:
-	debug("TEEC_CloseSession Exit : TeecResult=0x%X, TeecErrorOrigin=0x%X\n\n",
+	debug("TEEC_CloseSession Exit : TeecResult=0x%X, TeecErrorOrigin=0x%X\n",
 			TeecResult, TeecErrorOrigin);
 	return;
 }
@@ -304,7 +304,7 @@ Exit:
 	if (error_origin != NULL)
 		*error_origin = TeecErrorOrigin;
 
-	debug("TEEC_InvokeCommand Exit : TeecResult=0x%X, TeecErrorOrigin=0x%X\n\n",
+	debug("TEEC_InvokeCommand Exit : TeecResult=0x%X, TeecErrorOrigin=0x%X\n",
 				TeecResult, TeecErrorOrigin);
 
 	return TeecResult;
