@@ -147,7 +147,6 @@ void board_init_f(ulong dummy)
 
 #if !defined(CONFIG_SUPPORT_TPL)
 	rockchip_stimer_init();
-	arch_cpu_init();
 #endif
 #define EARLY_UART
 #if defined(EARLY_UART) && defined(CONFIG_DEBUG_UART)
@@ -183,6 +182,7 @@ void board_init_f(ulong dummy)
 	sdram_init();
 #endif
 
+	arch_cpu_init();
 	rk_board_init_f();
 #if CONFIG_IS_ENABLED(ROCKCHIP_BACK_TO_BROM) && !defined(CONFIG_SPL_BOARD_INIT)
 	back_to_bootrom(BROM_BOOT_NEXTSTAGE);
