@@ -19,6 +19,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
+#include <config.h>
 #include "config.h"
 #include "data.h"
 #include "registers.h"
@@ -146,17 +147,26 @@ void high_task(void)
 }
 
 extern unsigned int usr_pwr_key;
+#ifdef CONFIG_SUPPORT_CUSOTMER_LOW_TASK
+extern void process_customer_low_task(unsigned int, unsigned int *, unsigned int *);
+#endif
 void process_low_task(unsigned command)
 {
 	unsigned *pcommand =
 	    (unsigned *)(&(low_task_share_mem[TASK_COMMAND_OFFSET]));
-	/*unsigned *response =
-	    (unsigned *)(&(low_task_share_mem[TASK_RESPONSE_OFFSET]));*/
+#ifdef CONFIG_SUPPORT_CUSOTMER_LOW_TASK
+	unsigned *response =
+	    (unsigned *)(&(low_task_share_mem[TASK_RESPONSE_OFFSET]));
+#endif
 
 	if ((command & 0xffff) == LOW_TASK_USR_DATA) {/*0-15bit: comd; 16-31bit: client_id*/
 		if ((command >> 16) == SCPI_CL_REMOTE) {
 			usr_pwr_key = *(pcommand + 2);/*tx_size locates at *(pcommand + 1)*/
 			dbg_print("pwr_key=",usr_pwr_key);
+		} else {
+#ifdef CONFIG_SUPPORT_CUSOTMER_LOW_TASK
+			process_customer_low_task(command, pcommand, response);
+#endif
 		}
 	}
 }
