@@ -413,15 +413,31 @@ long android_image_load(struct blk_desc *dev_desc,
 			   part_info->blksz - 1) / part_info->blksz;
 		comp = android_image_parse_kernel_comp(hdr);
 		/*
-		 * We should load a compressed kernel Image
-		 * to high memory
+		 * We should load compressed kernel Image to high memory at
+		 * address "kernel_addr_c".
 		 */
 		if (comp != IH_COMP_NONE) {
-			load_address += android_image_get_ksize(hdr) * 3;
-			load_address = env_get_ulong("kernel_addr_c", 16, load_address);
-			load_address -= hdr->page_size;
-			unmap_sysmem(buf);
-			buf = map_sysmem(load_address, 0 /* size */);
+			ulong kernel_addr_c;
+
+			kernel_addr_c = env_get_ulong("kernel_addr_c", 16, 0);
+			if (kernel_addr_c) {
+				load_address = kernel_addr_c - hdr->page_size;
+				unmap_sysmem(buf);
+				buf = map_sysmem(load_address, 0 /* size */);
+			}
+#ifdef CONFIG_ARM64
+			else {
+				printf("Warn: \"kernel_addr_c\" is not defined "
+				       "for compressed kernel Image!\n");
+				load_address += android_image_get_ksize(hdr) * 3;
+				load_address = ALIGN(load_address, ARCH_DMA_MINALIGN);
+				env_set_ulong("kernel_addr_c", load_address);
+
+				load_address -= hdr->page_size;
+				unmap_sysmem(buf);
+				buf = map_sysmem(load_address, 0 /* size */);
+			}
+#endif
 		}
 
 		if (blk_cnt * part_info->blksz > max_size) {
