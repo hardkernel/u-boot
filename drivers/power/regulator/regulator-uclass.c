@@ -265,6 +265,9 @@ int regulator_autoset(struct udevice *dev)
 
 	uc_pdata = dev_get_uclass_platdata(dev);
 
+	if (uc_pdata->ignore)
+		return ret;
+
 	if (uc_pdata->ramp_delay != -ENODATA)
 		regulator_set_ramp_delay(dev, uc_pdata->ramp_delay);
 
@@ -437,6 +440,7 @@ static int regulator_pre_probe(struct udevice *dev)
 						-ENODATA);
 	uc_pdata->always_on = dev_read_bool(dev, "regulator-always-on");
 	uc_pdata->boot_on = dev_read_bool(dev, "regulator-boot-on");
+	uc_pdata->ignore = dev_read_bool(dev, "regulator-loader-ignore");
 	uc_pdata->ramp_delay = dev_read_u32_default(dev, "regulator-ramp-delay",
 						    -ENODATA);
 	node = dev_read_subnode(dev, "regulator-state-mem");

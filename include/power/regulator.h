@@ -178,6 +178,7 @@ struct dm_regulator_uclass_platdata {
 	u8 ctrl_reg;
 	u8 volt_reg;
 	bool suspend_on;
+	bool ignore;
 	u32 suspend_uV;
 	u32 ramp_delay;
 };
