@@ -210,6 +210,8 @@ static void *sysmem_alloc_align_base(enum memblk_id id,
 		}
 		name = sysmem_alias2name(mem_name, (int *)&id);
 		attr = mem_attr[id];
+		if (!attr.name)
+			attr.name = strdup(name);
 	} else if (id > MEMBLK_ID_UNK && id < MEMBLK_ID_MAX) {
 		attr = mem_attr[id];
 		name = attr.name;
