@@ -64,7 +64,10 @@ u32 spl_boot_mode(const u32 boot_device)
 
 __weak void rockchip_stimer_init(void)
 {
-#ifdef CONFIG_SYS_ARCH_TIMER
+	/* If Timer already enabled, don't re-init it */
+	u32 reg = readl(CONFIG_ROCKCHIP_STIMER_BASE + 0x10);
+	if ( reg & 0x1 )
+		return;
 #ifndef CONFIG_ARM64
 	asm volatile("mcr p15, 0, %0, c14, c0, 0"
 		     : : "r"(COUNTER_FREQUENCY));
@@ -73,7 +76,6 @@ __weak void rockchip_stimer_init(void)
 	writel(0xffffffff, CONFIG_ROCKCHIP_STIMER_BASE);
 	writel(0xffffffff, CONFIG_ROCKCHIP_STIMER_BASE + 4);
 	writel(1, CONFIG_ROCKCHIP_STIMER_BASE + 0x10);
-#endif
 }
 
 __weak int arch_cpu_init(void)
@@ -145,9 +147,7 @@ void board_init_f(ulong dummy)
 #endif
 #endif
 
-#if !defined(CONFIG_SUPPORT_TPL)
 	rockchip_stimer_init();
-#endif
 #define EARLY_UART
 #if defined(EARLY_UART) && defined(CONFIG_DEBUG_UART)
 	/*
