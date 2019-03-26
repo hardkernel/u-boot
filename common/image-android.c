@@ -419,6 +419,7 @@ long android_image_load(struct blk_desc *dev_desc,
 		if (comp != IH_COMP_NONE) {
 			ulong kernel_addr_c;
 
+			env_set_ulong("os_comp", comp);
 			kernel_addr_c = env_get_ulong("kernel_addr_c", 16, 0);
 			if (kernel_addr_c) {
 				load_address = kernel_addr_c - hdr->page_size;
