@@ -592,16 +592,10 @@ pack_trust_image()
 		TOS=$(echo ${TOS} | sed "s/tools\/rk_tools\//\.\//g")
 		TOS_TA=$(echo ${TOS_TA} | sed "s/tools\/rk_tools\//\.\//g")
 
-		if [ x$TOS_TA != x -a x$TOS != x ]; then
-			${RKTOOLS}/loaderimage --pack --trustos ${RKBIN}/${TOS} ./trust.img ${TEE_LOAD_ADDR} ${PLATFORM_TRUST_IMG_SIZE}
-			${RKTOOLS}/loaderimage --pack --trustos ${RKBIN}/${TOS_TA} ./trust_with_ta.img ${TEE_LOAD_ADDR} ${PLATFORM_TRUST_IMG_SIZE}
-			echo "Both trust.img and trust_with_ta.img are ready"
-		elif [ $TOS ]; then
-			${RKTOOLS}/loaderimage --pack --trustos ${RKBIN}/${TOS} ./trust.img ${TEE_LOAD_ADDR} ${PLATFORM_TRUST_IMG_SIZE}
-			echo "trust.img is ready"
-		elif [ $TOS_TA ]; then
+		if [ $TOS_TA ]; then
 			${RKTOOLS}/loaderimage --pack --trustos ${RKBIN}/${TOS_TA} ./trust.img ${TEE_LOAD_ADDR} ${PLATFORM_TRUST_IMG_SIZE}
-			echo "trust.img with ta is ready"
+		elif [ $TOS ]; then
+			${RKTOOLS}/loaderimage --pack --trustos ${RKBIN}/${TOS}    ./trust.img ${TEE_LOAD_ADDR} ${PLATFORM_TRUST_IMG_SIZE}
 		else
 			echo "Can't find any tee bin"
 			exit 1
