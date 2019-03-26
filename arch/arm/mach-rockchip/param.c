@@ -145,9 +145,12 @@ struct memblock param_parse_common_resv_mem(void)
 {
 	struct memblock mem;
 
+#ifdef CONFIG_ARM64
 	mem.base = SDRAM_OFFSET(SZ_1M);
 	mem.size = SZ_1M;
-
+#else
+	mem.size = 0;
+#endif
 	return mem;
 }
 
