@@ -15,7 +15,8 @@ static int do_dvfs(cmd_tbl_t *cmdtp, int flag,
 
 	ret = uclass_get_device(UCLASS_DVFS, 0, &dev);
 	if (ret) {
-		printf("DVFS: Get dvfs device failed, ret=%d\n", ret);
+		if (ret != -ENODEV)
+			printf("DVFS: Get dvfs device failed, ret=%d\n", ret);
 		return ret;
 	}
 
