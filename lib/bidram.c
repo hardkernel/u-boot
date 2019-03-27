@@ -130,6 +130,20 @@ void bidram_gen_gd_bi_dram(void)
 		return;
 	}
 
+	/*
+	 * LBM default init:
+	 *		lmb->reserved.cnt = 1;
+	 *		lmb->reserved.region[0].base = 0;
+	 *		lmb->reserved.region[0].size = 0;
+	 *
+	 * Here handle that: there is the only one dram bank available.
+	 */
+	if (rsv_cnt == 1 && !res_rgn[0].base && !res_rgn[0].size) {
+		gd->bd->bi_dram[0].start = mem_rgn[0].base;
+		gd->bd->bi_dram[0].size = mem_rgn[0].size;
+		goto done;
+	}
+
 	/* If reserved rgn is not from sdram start */
 	if (res_rgn[0].base != mem_rgn[0].base) {
 		gd->bd->bi_dram[idx].start = mem_rgn[0].base;
@@ -209,7 +223,7 @@ static int bidram_core_reserve(enum memblk_id id, const char *mem_name,
 	/* Check overlap */
 	list_for_each(node, &bidram->reserved_head) {
 		mem = list_entry(node, struct memblock, node);
-		BIDRAM_D("Reserved: %s 0x%08lx - 0x%08lx\n",
+		BIDRAM_D("Has reserved: %s 0x%08lx - 0x%08lx\n",
 			 mem->attr.name, (ulong)mem->base,
 			 (ulong)(mem->base + mem->size));
 		if (!strcmp(mem->attr.name, name)) {
@@ -223,6 +237,9 @@ static int bidram_core_reserve(enum memblk_id id, const char *mem_name,
 				 (ulong)mem->base, (ulong)(mem->base + mem->size));
 		}
 	}
+
+	BIDRAM_D("Reserve: \"%s\" 0x%08lx - 0x%08lx\n",
+		 name, (ulong)base, (ulong)(base + size));
 
 	ret = lmb_reserve(&bidram->lmb, base, size);
 	if (ret >= 0) {
