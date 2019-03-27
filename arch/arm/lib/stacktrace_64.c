@@ -90,7 +90,9 @@ void dump_core_stack(struct pt_regs *regs)
 		printf("	[< %08lx >]\n", pc);
 	} while (walk_stackframe(&frame));
 
-	printf("\nNOTE: Please use ./scripts/stacktrace.sh to parse trace info\n");
+	printf("\nCopy above stack info to a file(eg. dump.txt), and\n"
+	       "execute command in your U-Boot project: "
+	       "./scripts/stacktrace.sh dump.txt\n\n");
 }
 
 void dump_stack(void)

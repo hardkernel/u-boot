@@ -503,7 +503,9 @@ void print_stack_arm32(struct unwind_state_arm32 *state,
 	} while (unwind_stack_arm32(state, exidx, exidx_sz,
 				    kernel_stack, stack, stack_size));
 
-	printf("\nNOTE: Please use ./scripts/stacktrace.sh to parse trace info\n");
+	printf("\nCopy above stack info to a file(eg. dump.txt), and\n"
+	       "execute command in your U-Boot project: "
+	       "./scripts/stacktrace.sh dump.txt\n\n");
 }
 
 void dump_core_stack(struct pt_regs *regs)
