@@ -892,6 +892,7 @@ static int do_temp_triming(cmd_tbl_t *cmdtp, int flag1,
 			case MESON_CPU_MAJOR_ID_G12B:
 			case MESON_CPU_MAJOR_ID_TL1:
 			case MESON_CPU_MAJOR_ID_SM1:
+			case MESON_CPU_MAJOR_ID_TM2:
 				if (argc <3) {
 					printf("too little args for txhd temp triming!!\n");
 					return CMD_RET_USAGE;
@@ -950,6 +951,7 @@ int r1p1_temp_read(int type)
 		case MESON_CPU_MAJOR_ID_G12B:
 		case MESON_CPU_MAJOR_ID_TL1:
 		case MESON_CPU_MAJOR_ID_SM1:
+		case MESON_CPU_MAJOR_ID_TM2:
 			ts_b = 3159;
 			ts_a = 9411;
 			ts_m = 424;
@@ -977,10 +979,11 @@ int r1p1_temp_read(int type)
 					for (i = 0; i <= NUM; i ++) {
 						udelay(4500);
 						value_ts = readl(TS_PLL_STAT0) & 0xffff;
-						if ((value_ts >= 0x1500) && (value_ts <= 0x3500))
+						if ((value_ts >= 0x1500) && (value_ts <= 0x3500)) {
 							value_all_ts += value_ts;
 							cnt ++;
 						}
+					}
 					value_ts =  value_all_ts / cnt;
 					printf("pll tsensor avg: 0x%x, u_efuse: 0x%x\n", value_ts, u_efuse);
 					if (value_ts == 0) {
@@ -1012,10 +1015,11 @@ int r1p1_temp_read(int type)
 					for (i = 0; i <= NUM; i ++) {
 						udelay(4500);
 						value_ts = readl(TS_DDR_STAT0) & 0xffff;
-						if ((value_ts >= 0x1500) && (value_ts <= 0x3500))
+						if ((value_ts >= 0x1500) && (value_ts <= 0x3500)) {
 							value_all_ts += value_ts;
 							cnt ++;
 						}
+					}
 					value_ts =  value_all_ts / cnt;
 					printf("ddr tsensor avg: 0x%x, u_efuse: 0x%x\n", value_ts, u_efuse);
 					if (value_ts == 0) {
@@ -1047,10 +1051,11 @@ int r1p1_temp_read(int type)
 					for (i = 0; i <= NUM; i ++) {
 						udelay(4500);
 						value_ts = readl(TS_SAR_STAT0) & 0xffff;
-						if ((value_ts >= 0x1500) && (value_ts <= 0x3500))
+						if ((value_ts >= 0x1500) && (value_ts <= 0x3500)) {
 							value_all_ts += value_ts;
 							cnt ++;
 						}
+					}
 					value_ts =  value_all_ts / cnt;
 					printf("sar tsensor avg: 0x%x\n", value_ts);
 					if (value_ts == 0) {
@@ -1102,6 +1107,7 @@ int r1p1_read_entry(void)
 				}
 			break;
 		case MESON_CPU_MAJOR_ID_TL1:
+		case MESON_CPU_MAJOR_ID_TM2:
 			ret = readl(AO_SEC_GP_CFG10);
 			ver = (ret >> 24) & 0xff;
 			if ((ver & 0x80) == 0) {
@@ -1168,6 +1174,7 @@ int r1p1_temp_trim(int tempbase, int tempver, int type)
 		case MESON_CPU_MAJOR_ID_G12B:
 		case MESON_CPU_MAJOR_ID_TL1:
 		case MESON_CPU_MAJOR_ID_SM1:
+		case MESON_CPU_MAJOR_ID_TM2:
 			ts_b = 3159;
 			ts_a = 9411;
 			ts_m = 424;
@@ -1197,10 +1204,11 @@ int r1p1_temp_trim(int tempbase, int tempver, int type)
 						udelay(5000);
 						value_ts = readl(TS_PLL_STAT0) & 0xffff;
 						printf("pll tsensor read: 0x%x\n", value_ts);
-						if ((value_ts >= 0x1500) && (value_ts <= 0x3500))
+						if ((value_ts >= 0x1500) && (value_ts <= 0x3500)) {
 							value_all_ts += value_ts;
 							cnt ++;
 						}
+					}
 					value_ts =  value_all_ts / cnt;
 					printf("pll tsensor avg: 0x%x\n", value_ts);
 					if (value_ts == 0) {
@@ -1234,10 +1242,11 @@ int r1p1_temp_trim(int tempbase, int tempver, int type)
 						udelay(5000);
 						value_ts = readl(TS_DDR_STAT0) & 0xffff;
 						printf("ddr tsensor read: 0x%x\n", value_ts);
-						if ((value_ts >= 0x1500) && (value_ts <= 0x3500))
+						if ((value_ts >= 0x1500) && (value_ts <= 0x3500)) {
 							value_all_ts += value_ts;
 							cnt ++;
 						}
+					}
 					value_ts =  value_all_ts / cnt;
 					printf("ddr tsensor avg: 0x%x\n", value_ts);
 					if (value_ts == 0) {
@@ -1271,10 +1280,11 @@ int r1p1_temp_trim(int tempbase, int tempver, int type)
 						udelay(5000);
 						value_ts = readl(TS_SAR_STAT0) & 0xffff;
 						printf("sar tsensor read: 0x%x\n", value_ts);
-						if ((value_ts >= 0x1500) && (value_ts <= 0x3500))
+						if ((value_ts >= 0x1500) && (value_ts <= 0x3500)) {
 							value_all_ts += value_ts;
 							cnt ++;
 						}
+					}
 					value_ts =  value_all_ts / cnt;
 					printf("sar tsensor avg: 0x%x\n", value_ts);
 					if (value_ts == 0) {
@@ -1342,6 +1352,7 @@ int r1p1_trim_entry(int tempbase, int tempver)
 				}
 			break;
 		case MESON_CPU_MAJOR_ID_TL1:
+		case MESON_CPU_MAJOR_ID_TM2:
 			ret = readl(AO_SEC_GP_CFG10);
 			ver = (ret >> 24) & 0xff;
 			if (ver & 0x80) {
@@ -1468,7 +1479,7 @@ static char temp_trim_help_text[] =
 	"	    88	(10001000)b: BBT-SW, thermal1 thermal2, valid thermal cali data\n"
 	"	    89	(10001001)b: BBT-OPS, thermal1 thermal2, valid thermal cali data\n"
 	"	    8b	(10001001)b: SLT, thermal1 thermal2, valid thermal cali data\n"
-	" 	TL1:\n"
+	" 	TL1 or TM2:\n"
 	"	    8c	(10001001)b: BBT-SW, thermal1 ~ 3, valid thermal cali data\n"
 	"	    8d	(10001001)b: BBT-OPS, thermal1 ~ 3, valid thermal cali data\n"
 	"	    8f	(10001001)b: SLT, thermal1 ~ 3, valid thermal cali data\n";
