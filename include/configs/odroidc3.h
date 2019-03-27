@@ -12,6 +12,10 @@
 #define CONFIG_DEVICE_PRODUCT		"odroidc3"
 #define ODROID_BOARD_UUID		"9098004a-a1dd-11e8-98d0-529269fb1459"
 
+/* configs for CEC */
+#define CONFIG_CEC_OSD_NAME		"ODROID-C3"
+#define CONFIG_CEC_WAKEUP
+
 #include "odroid-g12-common.h"
 
 #endif
