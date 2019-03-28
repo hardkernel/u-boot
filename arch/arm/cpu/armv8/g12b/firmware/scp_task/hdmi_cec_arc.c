@@ -553,21 +553,12 @@ static int check_addr(int phy_addr)
 	return 1;
 }
 
-static int is_playback_dev(int addr)
-{
-	if (addr != CEC_PLAYBACK_DEVICE_1_ADDR &&
-	    addr != CEC_PLAYBACK_DEVICE_2_ADDR &&
-	    addr != CEC_PLAYBACK_DEVICE_3_ADDR) {
-		return 0;
-	}
-	return 1;
-}
-
 static unsigned int cec_handle_message(void)
 {
 	unsigned char opcode;
 	unsigned char source;
 	unsigned int  phy_addr, wake;
+	unsigned char dest;
 
 	source = (cec_msg.buf[cec_msg.rx_read_pos].msg[0] >> 4) & 0xf;
 	if (((hdmi_cec_func_config>>CEC_FUNC_MASK) & 0x1) &&
@@ -615,9 +606,10 @@ static unsigned int cec_handle_message(void)
 		/* TV Wake up by image/text view on */
 		case CEC_OC_IMAGE_VIEW_ON:
 		case CEC_OC_TEXT_VIEW_ON:
+			dest = cec_msg.buf[cec_msg.rx_read_pos].msg[0] & 0xf;
 			if (((hdmi_cec_func_config >> CEC_FUNC_MASK) & 0x1) &&
 			    ((hdmi_cec_func_config >> AUTO_POWER_ON_MASK) & 0x1) &&
-			    (!is_playback_dev(cec_msg.log_addr))) {
+			    (dest == CEC_TV_ADDR)) {
 				/* request active source needed */
 				phy_addr = 0xffff;
 				cec_msg.cec_power = 0x1;
@@ -626,14 +618,14 @@ static unsigned int cec_handle_message(void)
 				writel(wake, AO_RTI_STATUS_REG1);
 			}
 			break;
-
 		/* TV Wake up by active source*/
 		case CEC_OC_ACTIVE_SOURCE:
+			dest = cec_msg.buf[cec_msg.rx_read_pos].msg[0] & 0xf;
 			phy_addr = (cec_msg.buf[cec_msg.rx_read_pos].msg[2] << 8) |
 				   (cec_msg.buf[cec_msg.rx_read_pos].msg[3] << 0);
 			if (((hdmi_cec_func_config >> CEC_FUNC_MASK) & 0x1) &&
 			    ((hdmi_cec_func_config >> AUTO_POWER_ON_MASK) & 0x1) &&
-			    (!is_playback_dev(cec_msg.log_addr) && check_addr(phy_addr))) {
+			    (dest == CEC_TV_ADDR && check_addr(phy_addr))) {
 				cec_msg.cec_power = 0x1;
 				wake =  (phy_addr << 0) |
 					(source << 16);
