@@ -158,6 +158,9 @@
 #define ONE_TOUCH_PLAY_MASK                  1
 #define ONE_TOUCH_STANDBY_MASK               2
 #define AUTO_POWER_ON_MASK                   3
+#define STREAMPATH_POWER_ON_MASK             4
+#define CEC_INPUT_MASK                       5
+#define ACTIVE_SOURCE_MASK                   6
 
 //#define P_HHI_GCLK_MPEG2 CBUS_REG_ADDR(HHI_GCLK_MPEG2)
 //#define P_HHI_HDMI_CLK_CNTL CBUS_REG_ADDR(HHI_HDMI_CLK_CNTL)
