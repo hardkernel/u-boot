@@ -405,14 +405,18 @@ void cec_routing_change(void)
 {
 	unsigned char phy_addr_ab = (readl(P_AO_DEBUG_REG1) >> 8) & 0xff;
 	unsigned char phy_addr_cd = readl(P_AO_DEBUG_REG1) & 0xff;
+	cec_dbg_print(", phy_addr_ab:0x", phy_addr_ab);
+	cec_dbg_print(", phy_addr_cd:0x", phy_addr_cd);
+	cec_dbg_print(", msg[4]:0x", cec_msg.buf[cec_msg.rx_read_pos].msg[4]);
+	cec_dbg_print(", msg[5]:0x", cec_msg.buf[cec_msg.rx_read_pos].msg[5]);
+	cec_dbg_prints("\n");
 
 	if ((hdmi_cec_func_config >> CEC_FUNC_MASK) & 0x1) {
-		if ((hdmi_cec_func_config >> AUTO_POWER_ON_MASK) & 0x1) {
-				/* wake up if routing destination is self */
-				if ((phy_addr_ab == cec_msg.buf[cec_msg.rx_read_pos].msg[4]) &&
-					(phy_addr_cd == cec_msg.buf[cec_msg.rx_read_pos].msg[5]))  {
-					cec_msg.cec_power = 0x1;
-				}
+		if ((hdmi_cec_func_config >> STREAMPATH_POWER_ON_MASK) & 0x1) {
+			/* wake up if routing destination is self */
+			if ((phy_addr_ab == cec_msg.buf[cec_msg.rx_read_pos].msg[4]) &&
+				(phy_addr_cd == cec_msg.buf[cec_msg.rx_read_pos].msg[5]))
+				cec_msg.cec_power = 0x1;
 		}
 	}
 }
