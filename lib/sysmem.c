@@ -194,7 +194,10 @@ static void *sysmem_alloc_align_base(enum memblk_id id,
 	phys_addr_t paddr;
 	phys_addr_t alloc_base;
 	phys_size_t alloc_size;
-	bool req_overlap = false;
+	phys_addr_t bank_base;
+	phys_size_t bank_size;
+	bool req_overlap = false; /* Only for kernel reserved-memory */
+	int i;
 
 	if (!sysmem_has_init())
 		return NULL;
@@ -204,8 +207,20 @@ static void *sysmem_alloc_align_base(enum memblk_id id,
 			SYSMEM_E("NULL name for alloc sysmem\n");
 			return NULL;
 		} else if (id == MEMBLK_ID_FDT_RESV) {
-			req_overlap = true;
-			if (base >= gd->ram_top)
+			for (i = 0; i < CONFIG_NR_DRAM_BANKS; i++) {
+				if (!gd->bd->bi_dram[i].size)
+					continue;
+
+				bank_base = gd->bd->bi_dram[i].start;
+				bank_size = gd->bd->bi_dram[i].size;
+				if (sysmem_is_overlap(base, size,
+						      bank_base, bank_size)) {
+					req_overlap = true;
+					break;
+				}
+			}
+
+			if (!req_overlap)
 				return (void *)base;
 		}
 		name = sysmem_alias2name(mem_name, (int *)&id);
