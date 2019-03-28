@@ -41,13 +41,17 @@ do
 	cat u-boot.sym | sort |
 	awk -v foffset=$f_offset_hex '/\.text/ {
 		if (strtonum("0x"$1) > '$frame_pc_str') {
-			printf("%s+0x%s/0x%x\n", fname, foffset, fsize);
+			printf("%s+0x%s/0x%x      ", fname, foffset, fsize);
 			exit
 		}
 		fname=$NF;
 		fsize=strtonum("0x"$5);
 		fpc=strtonum("0x"$1);
 	}'
+
+	func_path=`./make.sh $frame_pc_str | awk '{ print $1 }' | sed -n "/home/p"`
+	func_path=`echo ${func_path##*boot/}`
+	echo $func_path
 done
 echo
 
