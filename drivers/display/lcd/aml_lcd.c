@@ -78,13 +78,16 @@ static void lcd_chip_detect(void)
 	case MESON_CPU_MAJOR_ID_SM1:
 		aml_lcd_driver.chip_type = LCD_CHIP_SM1;
 		break;
+	case MESON_CPU_MAJOR_ID_TM2:
+		aml_lcd_driver.chip_type = LCD_CHIP_TM2;
+		break;
 	default:
 		aml_lcd_driver.chip_type = LCD_CHIP_MAX;
 		//aml_lcd_driver.chip_type = LCD_CHIP_TL1;
 		break;
 	}
 #else
-	aml_lcd_driver.chip_type = LCD_CHIP_TL1;
+	aml_lcd_driver.chip_type = LCD_CHIP_TM2;
 #endif
 	if (lcd_debug_print_flag)
 		LCDPR("check chip: %d\n", aml_lcd_driver.chip_type);
@@ -644,7 +647,8 @@ static int lcd_config_probe(void)
 	if (aml_lcd_driver.lcd_config->lcd_basic.lcd_type == LCD_VBYONE)
 		lcd_vbyone_filter_env_init(aml_lcd_driver.lcd_config);
 	if ((aml_lcd_driver.chip_type == LCD_CHIP_TXHD) ||
-		(aml_lcd_driver.chip_type == LCD_CHIP_TL1))
+		(aml_lcd_driver.chip_type == LCD_CHIP_TL1) ||
+		(aml_lcd_driver.chip_type == LCD_CHIP_TM2))
 		lcd_tcon_probe(dt_addr, &aml_lcd_driver, load_id);
 
 #ifdef CONFIG_AML_LCD_EXTERN

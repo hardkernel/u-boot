@@ -3033,6 +3033,7 @@ static void lcd_clk_config_chip_init(struct lcd_clk_config_s *cConf)
 			cConf->data = &lcd_clk_data_g12b_path0;
 		break;
 	case LCD_CHIP_TL1:
+	case LCD_CHIP_TM2:
 		cConf->data = &lcd_clk_data_tl1;
 		break;
 	default:

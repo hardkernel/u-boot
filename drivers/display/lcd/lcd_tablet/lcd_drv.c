@@ -185,6 +185,7 @@ static void lcd_venc_set(struct lcd_config_s *pconf)
 
 	switch (lcd_drv->chip_type) {
 	case LCD_CHIP_TL1:
+	case LCD_CHIP_TM2:
 		/*[15:14]: 2'b10 or 2'b01*/
 		lcd_vcbus_write(ENCL_INBUF_CNTL1, (2 << 14) | (h_active - 1));
 		lcd_vcbus_write(ENCL_INBUF_CNTL0, 0x200);
@@ -233,6 +234,7 @@ static void lcd_lvds_clk_util_set(struct lcd_config_s *pconf)
 	lcd_hiu_setb(HHI_LVDS_TX_PHY_CNTL0, 0xfff, 16, 12);
 	switch (lcd_drv->chip_type) { /* pn swap */
 	case LCD_CHIP_TL1:
+	case LCD_CHIP_TM2:
 		lcd_hiu_setb(HHI_LVDS_TX_PHY_CNTL0, 1, 2, 1);
 		break;
 	default:
@@ -351,6 +353,7 @@ static void lcd_lvds_control_set(struct lcd_config_s *pconf)
 		lcd_vcbus_write(LVDS_CH_SWAP2, ch_swap2);
 		break;
 	case LCD_CHIP_TL1:
+	case LCD_CHIP_TM2:
 		lcd_vcbus_write(P2P_CH_SWAP0, 0x76543210);
 		lcd_vcbus_write(P2P_CH_SWAP1, 0xba98);
 		break;
@@ -408,6 +411,7 @@ static void lcd_vbyone_clk_util_set(struct lcd_config_s *pconf)
 	lcd_hiu_setb(HHI_LVDS_TX_PHY_CNTL0, 0xfff, 16, 12);
 	switch (lcd_drv->chip_type) { /* pn swap */
 	case LCD_CHIP_TL1:
+	case LCD_CHIP_TM2:
 		lcd_hiu_setb(HHI_LVDS_TX_PHY_CNTL0, 1, 2, 1);
 		break;
 	default:
@@ -612,6 +616,7 @@ static void lcd_vbyone_control_set(struct lcd_config_s *pconf)
 	/* set hpd & lockn hw filter */
 	switch (lcd_drv->chip_type) {
 	case LCD_CHIP_TL1:
+	case LCD_CHIP_TM2:
 		lcd_vcbus_write(VBO_INFILTER_TICK_PERIOD_L, 0xff);
 		lcd_vcbus_write(VBO_INFILTER_TICK_PERIOD_H, 0x0);
 		lcd_vcbus_setb(VBO_INSGN_CTRL, 0x7, 8, 4);
@@ -641,6 +646,7 @@ static void lcd_vbyone_disable(void)
 	case LCD_CHIP_TXL:
 	case LCD_CHIP_TXLX:
 	case LCD_CHIP_TL1:
+	case LCD_CHIP_TM2:
 		lcd_vcbus_setb(VBO_INSGN_CTRL, 0, 2, 1);
 		lcd_vcbus_setb(VBO_INSGN_CTRL, 0, 0, 1);
 		break;

@@ -739,6 +739,7 @@ int lcd_tcon_probe(char *dt_addr, struct aml_lcd_drv_s *lcd_drv, int load_id)
 		}
 		break;
 	case LCD_CHIP_TL1:
+	case LCD_CHIP_TM2:
 		switch (pconf->lcd_basic.lcd_type) {
 		case LCD_MLVDS:
 		case LCD_P2P:

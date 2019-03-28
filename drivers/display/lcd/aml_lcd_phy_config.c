@@ -108,6 +108,7 @@ void lcd_lvds_phy_set(struct lcd_config_s *pconf, int status)
 
 		switch (lcd_drv->chip_type) {
 		case LCD_CHIP_TL1:
+		case LCD_CHIP_TM2:
 			size = sizeof(lvds_vx1_p2p_phy_preem_tl1) /
 				sizeof(unsigned int);
 			if (preem >= size) {
@@ -190,6 +191,7 @@ void lcd_lvds_phy_set(struct lcd_config_s *pconf, int status)
 	} else {
 		switch (lcd_drv->chip_type) {
 		case LCD_CHIP_TL1:
+		case LCD_CHIP_TM2:
 			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL14, 0);
 			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL15, 0);
 			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL16, 0);
@@ -238,6 +240,7 @@ void lcd_vbyone_phy_set(struct lcd_config_s *pconf, int status)
 
 		switch (lcd_drv->chip_type) {
 		case LCD_CHIP_TL1:
+		case LCD_CHIP_TM2:
 			size = sizeof(lvds_vx1_p2p_phy_preem_tl1) /
 				sizeof(unsigned int);
 			if (preem >= size) {
@@ -296,6 +299,7 @@ void lcd_vbyone_phy_set(struct lcd_config_s *pconf, int status)
 	} else {
 		switch (lcd_drv->chip_type) {
 		case LCD_CHIP_TL1:
+		case LCD_CHIP_TM2:
 			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL14, 0);
 			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL15, 0);
 			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL16, 0);
@@ -340,6 +344,7 @@ void lcd_mlvds_phy_set(struct lcd_config_s *pconf, int status)
 
 		switch (lcd_drv->chip_type) {
 		case LCD_CHIP_TL1:
+		case LCD_CHIP_TM2:
 			size = sizeof(lvds_vx1_p2p_phy_preem_tl1) /
 				sizeof(unsigned int);
 			if (preem >= size) {
@@ -396,6 +401,7 @@ void lcd_mlvds_phy_set(struct lcd_config_s *pconf, int status)
 	} else {
 		switch (lcd_drv->chip_type) {
 		case LCD_CHIP_TL1:
+		case LCD_CHIP_TM2:
 			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL14, 0);
 			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL15, 0);
 			lcd_hiu_write(HHI_DIF_CSI_PHY_CNTL16, 0);

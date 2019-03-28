@@ -371,6 +371,7 @@ static void lcd_reg_print_lvds(void)
 	switch (lcd_drv->chip_type) {
 	case LCD_CHIP_TXHD:
 	case LCD_CHIP_TL1:
+	case LCD_CHIP_TM2:
 		reg = LVDS_CH_SWAP0;
 		printf("LVDS_CH_SWAP0       [0x%04x] = 0x%08x\n",
 			reg, lcd_vcbus_read(reg));
@@ -985,6 +986,7 @@ void aml_lcd_debug_probe(struct aml_lcd_drv_s *lcd_drv)
 
 	switch (lcd_drv->chip_type) {
 	case LCD_CHIP_TL1:
+	case LCD_CHIP_TM2:
 		lcd_debug_info_reg = &lcd_debug_info_reg_tl1;
 		lcd_debug_info_if_lvds.reg_dump_phy =
 			lcd_reg_print_phy_analog_tl1;
