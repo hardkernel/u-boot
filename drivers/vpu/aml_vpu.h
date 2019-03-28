@@ -22,7 +22,7 @@
 #ifndef __VPU_PARA_H__
 #define __VPU_PARA_H__
 
-//#define VPU_DEBUG_PRINT
+#define VPU_DEBUG_PRINT
 #define VPUPR(fmt, args...)     printf("vpu: "fmt"", ## args)
 #define VPUERR(fmt, args...)    printf("vpu: error: "fmt"", ## args)
 
@@ -39,6 +39,7 @@ enum vpu_chip_e {
 	VPU_CHIP_G12B, /* 9 */
 	VPU_CHIP_TL1, /* 10 */
 	VPU_CHIP_SM1, /* 11 */
+	VPU_CHIP_TM2, /* 12 */
 	VPU_CHIP_MAX,
 };
 
@@ -84,6 +85,7 @@ struct vpu_data_s {
 	struct vpu_clk_s  *vpu_clk_table;
 
 	struct vpu_ctrl_s *mem_pd_table;
+	struct vpu_ctrl_s *hdmi_iso_pre_table;
 	struct vpu_ctrl_s *hdmi_iso_table;
 	struct vpu_reset_s *reset_table;
 

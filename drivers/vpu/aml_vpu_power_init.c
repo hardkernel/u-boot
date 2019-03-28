@@ -69,7 +69,7 @@ void vpu_power_on(void)
 {
 	struct vpu_ctrl_s *ctrl_table;
 	struct vpu_reset_s *reset_table;
-	unsigned int _reg, _start, _end, _len, mask;
+	unsigned int _reg, _val, _start, _end, _len, mask;
 	int i = 0, j;
 
 	/* power up memories */
@@ -92,7 +92,21 @@ void vpu_power_on(void)
 	}
 	udelay(20);
 
-	vpu_ao_setb(AO_RTI_GEN_PWR_SLEEP0, 0, 8, 1); /* [8] power on */
+	/* power on VPU_HDMI ISO */
+	ctrl_table = vpu_conf.data->hdmi_iso_pre_table;
+	if (ctrl_table) {
+		i = 0;
+		while (i < VPU_HDMI_ISO_CNT_MAX) {
+			if (ctrl_table[i].reg == VPU_REG_END)
+				break;
+			_reg = ctrl_table[i].reg;
+			_val = ctrl_table[i].val;
+			_start = ctrl_table[i].bit;
+			_len = ctrl_table[i].len;
+			vpu_ao_setb(_reg, _val, _start, _len);
+			i++;
+		}
+	}
 	udelay(20);
 
 	/* Reset VIU + VENC */
@@ -122,15 +136,18 @@ void vpu_power_on(void)
 
 	/* Remove VPU_HDMI ISO */
 	ctrl_table = vpu_conf.data->hdmi_iso_table;
-	i = 0;
-	while (i < VPU_HDMI_ISO_CNT_MAX) {
-		if (ctrl_table[i].reg == VPU_REG_END)
-			break;
-		_reg = ctrl_table[i].reg;
-		_start = ctrl_table[i].bit;
-		_len = ctrl_table[i].len;
-		vpu_ao_setb(_reg, 0, _start, _len);
-		i++;
+	if (ctrl_table) {
+		i = 0;
+		while (i < VPU_HDMI_ISO_CNT_MAX) {
+			if (ctrl_table[i].reg == VPU_REG_END)
+				break;
+			_reg = ctrl_table[i].reg;
+			_val = ctrl_table[i].val;
+			_start = ctrl_table[i].bit;
+			_len = ctrl_table[i].len;
+			vpu_ao_setb(_reg, _val, _start, _len);
+			i++;
+		}
 	}
 
 	VPUPR("%s\n", __func__);

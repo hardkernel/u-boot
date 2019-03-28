@@ -60,6 +60,7 @@ static struct vpu_data_s vpu_data_gxb = {
 	.vpu_clk_table = vpu_clk_table,
 
 	.mem_pd_table = vpu_mem_pd_gxb,
+	.hdmi_iso_pre_table = vpu_hdmi_iso_pre_gxb,
 	.hdmi_iso_table = vpu_hdmi_iso_gxb,
 	.reset_table = vpu_reset_gx,
 
@@ -78,6 +79,7 @@ static struct vpu_data_s vpu_data_gxtvbb = {
 	.vpu_clk_table = vpu_clk_table,
 
 	.mem_pd_table = vpu_mem_pd_gxb,
+	.hdmi_iso_pre_table = vpu_hdmi_iso_pre_gxb,
 	.hdmi_iso_table = vpu_hdmi_iso_gxb,
 	.reset_table = vpu_reset_gx,
 
@@ -96,6 +98,7 @@ static struct vpu_data_s vpu_data_gxl = {
 	.vpu_clk_table = vpu_clk_table,
 
 	.mem_pd_table = vpu_mem_pd_gxb,
+	.hdmi_iso_pre_table = vpu_hdmi_iso_pre_gxb,
 	.hdmi_iso_table = vpu_hdmi_iso_gxb,
 	.reset_table = vpu_reset_gx,
 
@@ -114,6 +117,7 @@ static struct vpu_data_s vpu_data_gxm = {
 	.vpu_clk_table = vpu_clk_table,
 
 	.mem_pd_table = vpu_mem_pd_gxb,
+	.hdmi_iso_pre_table = vpu_hdmi_iso_pre_gxb,
 	.hdmi_iso_table = vpu_hdmi_iso_gxb,
 	.reset_table = vpu_reset_gx,
 
@@ -132,6 +136,7 @@ static struct vpu_data_s vpu_data_txl = {
 	.vpu_clk_table = vpu_clk_table,
 
 	.mem_pd_table = vpu_mem_pd_gxb,
+	.hdmi_iso_pre_table = vpu_hdmi_iso_pre_gxb,
 	.hdmi_iso_table = vpu_hdmi_iso_gxb,
 	.reset_table = vpu_reset_gx,
 
@@ -150,6 +155,7 @@ static struct vpu_data_s vpu_data_txlx = {
 	.vpu_clk_table = vpu_clk_table,
 
 	.mem_pd_table = vpu_mem_pd_gxb,
+	.hdmi_iso_pre_table = vpu_hdmi_iso_pre_gxb,
 	.hdmi_iso_table = vpu_hdmi_iso_gxb,
 	.reset_table = vpu_reset_gx,
 
@@ -168,6 +174,7 @@ static struct vpu_data_s vpu_data_axg = {
 	.vpu_clk_table = vpu_clk_table,
 
 	.mem_pd_table = vpu_mem_pd_axg,
+	.hdmi_iso_pre_table = vpu_hdmi_iso_pre_gxb,
 	.hdmi_iso_table = vpu_hdmi_iso_gxb,
 	.reset_table = vpu_reset_gx,
 
@@ -186,6 +193,7 @@ static struct vpu_data_s vpu_data_txhd = {
 	.vpu_clk_table = vpu_clk_table,
 
 	.mem_pd_table = vpu_mem_pd_txhd,
+	.hdmi_iso_pre_table = vpu_hdmi_iso_pre_gxb,
 	.hdmi_iso_table = vpu_hdmi_iso_gxb,
 	.reset_table = vpu_reset_txhd,
 
@@ -204,6 +212,7 @@ static struct vpu_data_s vpu_data_g12a = {
 	.vpu_clk_table = vpu_clk_table,
 
 	.mem_pd_table = vpu_mem_pd_g12a,
+	.hdmi_iso_pre_table = vpu_hdmi_iso_pre_gxb,
 	.hdmi_iso_table = vpu_hdmi_iso_gxb,
 	.reset_table = vpu_reset_gx,
 
@@ -222,6 +231,7 @@ static struct vpu_data_s vpu_data_g12b = {
 	.vpu_clk_table = vpu_clk_table,
 
 	.mem_pd_table = vpu_mem_pd_g12a,
+	.hdmi_iso_pre_table = vpu_hdmi_iso_pre_gxb,
 	.hdmi_iso_table = vpu_hdmi_iso_gxb,
 	.reset_table = vpu_reset_gx,
 
@@ -240,6 +250,7 @@ static struct vpu_data_s vpu_data_tl1 = {
 	.vpu_clk_table = vpu_clk_table,
 
 	.mem_pd_table = vpu_mem_pd_tl1,
+	.hdmi_iso_pre_table = vpu_hdmi_iso_pre_gxb,
 	.hdmi_iso_table = vpu_hdmi_iso_gxb,
 	.reset_table = vpu_reset_tl1,
 
@@ -247,7 +258,7 @@ static struct vpu_data_s vpu_data_tl1 = {
 	.module_init_table = NULL,
 };
 
-static struct vpu_data_s vpu_data_sm1 = {
+/* static struct vpu_data_s vpu_data_sm1 = {
 	.chip_type = VPU_CHIP_SM1,
 	.chip_name = "sm1",
 	.clk_level_dft = CLK_LEVEL_DFT_G12A,
@@ -258,6 +269,27 @@ static struct vpu_data_s vpu_data_sm1 = {
 	.vpu_clk_table = vpu_clk_table,
 
 	.mem_pd_table = vpu_mem_pd_tl1,
+	.hdmi_iso_pre_table = vpu_hdmi_iso_pre_gxb,
+	.hdmi_iso_table = vpu_hdmi_iso_sm1,
+	.reset_table = vpu_reset_gx,
+
+	.module_init_table_cnt = 0,
+	.module_init_table = NULL,
+};
+*/
+
+static struct vpu_data_s vpu_data_tm2 = {
+	.chip_type = VPU_CHIP_TM2,
+	.chip_name = "tm2",
+	.clk_level_dft = CLK_LEVEL_DFT_G12A,
+	.clk_level_max = CLK_LEVEL_MAX_G12A,
+	.gp_pll_valid = 0,
+
+	.fclk_div_table = fclk_div_table_g12a,
+	.vpu_clk_table = vpu_clk_table,
+
+	.mem_pd_table = vpu_mem_pd_tm2,
+	.hdmi_iso_pre_table = NULL,
 	.hdmi_iso_table = vpu_hdmi_iso_sm1,
 	.reset_table = vpu_reset_gx,
 
@@ -267,7 +299,6 @@ static struct vpu_data_s vpu_data_sm1 = {
 
 static void vpu_chip_detect(void)
 {
-#if 1
 	unsigned int cpu_type;
 
 	cpu_type = get_cpu_id().family_id;
@@ -305,16 +336,18 @@ static void vpu_chip_detect(void)
 	case MESON_CPU_MAJOR_ID_TL1:
 		vpu_conf.data = &vpu_data_tl1;
 		break;
-	case MESON_CPU_MAJOR_ID_SM1:
-		vpu_conf.data = &vpu_data_sm1;
-		break;
+	//case MESON_CPU_MAJOR_ID_SM1:
+	//	vpu_conf.data = &vpu_data_sm1;
+	//	break;
+	//case MESON_CPU_MAJOR_ID_TM2:
+	//	vpu_conf.data = &vpu_data_tm2;
+	//	break;
 	default:
-		vpu_conf.data = &vpu_data_sm1;
+		vpu_conf.data = &vpu_data_tm2;
 		break;
 	}
-#else
-	vpu_conf.data = &vpu_data_sm1;
-#endif
+
+	vpu_conf.data = &vpu_data_tm2;
 
 	strcpy(vpu_conf.drv_version, VPU_VERION);
 #ifdef CONFIG_VPU_CLK_LEVEL_DFT
@@ -354,6 +387,7 @@ static int vpu_check(void)
 	case VPU_CHIP_G12B:
 	case VPU_CHIP_TL1:
 	case VPU_CHIP_SM1:
+	case VPU_CHIP_TM2:
 		ret = 0;
 		break;
 	default:
