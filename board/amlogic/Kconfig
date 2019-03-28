@@ -232,6 +232,10 @@ config SM1_AC213_V1
 	bool "Support amlogic sm1 ac213 v1 board"
 	default n
 
+config TM2_SKT_V1
+	bool "Support amlogic tm2 skt v1 board"
+	default n
+
 config PXP_EMULATOR
 	bool "Support pxp environment"
 	default n
@@ -489,6 +493,10 @@ endif
 
 if SM1_AC213_V1
 source "board/amlogic/sm1_ac213_v1/Kconfig"
+endif
+
+if TM2_SKT_V1
+source "board/amlogic/tm2_skt_v1/Kconfig"
 endif
 
 if ODROID_C2
