@@ -68,7 +68,7 @@ static void set_vddee_voltage(unsigned int target_voltage)
 static void power_off_at_24M(unsigned int suspend_from)
 {
 	/*set gpioH_8 low to power off vcc 5v*/
-	writel(readl(PREG_PAD_GPIO3_EN_N) & (~(1 << 8)), PREG_PAD_GPIO3_EN_N);
+	//writel(readl(PREG_PAD_GPIO3_EN_N) & (~(1 << 8)), PREG_PAD_GPIO3_EN_N);
 	writel(readl(PERIPHS_PIN_MUX_C) & (~(0xf)), PERIPHS_PIN_MUX_C);
 
 	/*set gpioao_4 low to power off vcck_a*/
@@ -122,6 +122,10 @@ void get_wakeup_source(void *response, unsigned int suspend_from)
 	p->status = RESPONSE_OK;
 	val = (POWER_KEY_WAKEUP_SRC | AUTO_WAKEUP_SRC | REMOTE_WAKEUP_SRC |
 			RTC_WAKEUP_SRC | BT_WAKEUP_SRC | ETH_PHY_GPIO_SRC);
+
+#ifdef CONFIG_CEC_WAKEUP
+	val |= CECB_WAKEUP_SRC;
+#endif
 
 	p->sources = val;
 
