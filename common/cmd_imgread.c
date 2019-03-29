@@ -295,6 +295,9 @@ static int do_image_read_kernel(cmd_tbl_t *cmdtp, int flag, int argc, char * con
     int rc = 0;
     uint64_t flashReadOff = 0;
     unsigned secureKernelImgSz = 0;
+#if defined(CONFIG_IMAGE_FORMAT_LEGACY)
+    image_header_t *hdr;
+#endif
 
     if (2 < argc) {
         loadaddr = (unsigned char*)simple_strtoul(argv[2], NULL, 16);
@@ -320,6 +323,17 @@ static int do_image_read_kernel(cmd_tbl_t *cmdtp, int flag, int argc, char * con
         return __LINE__;
     }
     flashReadOff += IMG_PRELOAD_SZ;
+
+#if defined(CONFIG_IMAGE_FORMAT_LEGACY)
+    //check image format for rtos
+    genFmt = genimg_get_format(loadaddr);
+    hdr = (image_header_t *)loadaddr;
+    if (genFmt == IMAGE_FORMAT_LEGACY
+        && image_check_type(hdr, IH_TYPE_STANDALONE) ) {
+        actualBootImgSz = image_get_image_size(hdr);
+        goto load_left;
+    }
+#endif
 
 	if (!nCheckOffset)
     {
@@ -351,7 +365,9 @@ static int do_image_read_kernel(cmd_tbl_t *cmdtp, int flag, int argc, char * con
         debugP("ramdisk_size 0x%x, totalSz 0x%x\n", hdr_addr->ramdisk_size, ramdisk_size);
         debugP("dtbSz 0x%x, Total actualBootImgSz 0x%x\n", dtbSz, actualBootImgSz);
     }
-
+#if defined(CONFIG_IMAGE_FORMAT_LEGACY)
+load_left:
+#endif
     if (actualBootImgSz > IMG_PRELOAD_SZ)
     {
         const unsigned leftSz = actualBootImgSz - IMG_PRELOAD_SZ;
