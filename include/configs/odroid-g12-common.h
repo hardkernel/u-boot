@@ -163,13 +163,14 @@
             "\0" \
         "boot_recovery="\
             "hdmitx edid; "\
-            "setenv bootargs ${initargs} logo=${display_layer},loaded,${fb_addr} " \
-                "vout=${hdmimode},enable hdmimode=${hdmimode} modeline=${modeline} " \
-                "customwidth=${customwidth} customheight=${customheight} voutmode=${voutmode} "\
-                "cvbsmode=${cvbsmode} osd_reverse=${osd_reverse} video_reverse=${video_reverse} " \
-                "androidboot.selinux=permissive jtag=disable " \
-                "androidboot.hardware=" CONFIG_DEVICE_PRODUCT " " \
-                "recovery_part=recovery recovery_offset=0;" \
+            "if test ${hdmimode} = custombuilt; then setenv cmode modeline=${modeline} customwidth=${customwidth} customheight=${customheight}; fi; "\
+            "if test ${hdmimode} = 2160p30hz || test ${hdmimode} = 2150p60hz; then setenv hdmimode 1080p60hz; fi; "\
+            "setenv bootargs ${initargs} logo=${display_layer},loaded,${fb_addr} "\
+                "vout=${hdmimode},enable hdmimode=${hdmimode} ${cmode} voutmode=${voutmode} "\
+                "cvbsmode=${cvbsmode} osd_reverse=${osd_reverse} video_reverse=${video_reverse} "\
+                "androidboot.selinux=permissive jtag=disable "\
+                "androidboot.hardware=" CONFIG_DEVICE_PRODUCT " "\
+                "recovery_part=recovery recovery_offset=0; "\
             "for n in ${mmc_list}; do "\
                 "mmc dev ${n}; " \
                 "movi read recovery 0 ${loadaddr}; " \
