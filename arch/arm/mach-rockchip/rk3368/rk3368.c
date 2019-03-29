@@ -242,10 +242,12 @@ void board_debug_uart_init(void)
 		GPIO2A6_MASK		= GENMASK(13, 12),
 		GPIO2A6_GPIO		= 0,
 		GPIO2A6_UART0_SIN      = (1 << 13),
+		GPIO2A6_UART2_SIN	= (2 << 12),
 
 		GPIO2A5_MASK		= GENMASK(11, 10),
 		GPIO2A5_GPIO		= 0,
 		GPIO2A5_UART0_SOUT	 = (1 << 11),
+		GPIO2A5_UART2_SOUT      = (2 << 10),
 	};
 
 #if defined(CONFIG_DEBUG_UART_BASE) && (CONFIG_DEBUG_UART_BASE == 0xff180000)
@@ -276,9 +278,9 @@ void board_debug_uart_init(void)
 #elif defined(CONFIG_DEBUG_UART_BASE) && (CONFIG_DEBUG_UART_BASE == 0xff690000)
 	/* Enable early UART2 on the RK3368 */
 	rk_clrsetreg(&grf->gpio2a_iomux,
-		     GPIO2A6_MASK, GPIO2A6_UART0_SIN);
+		     GPIO2A6_MASK, GPIO2A6_UART2_SIN);
 	rk_clrsetreg(&grf->gpio2a_iomux,
-		     GPIO2A5_MASK, GPIO2A5_UART0_SOUT);
+		     GPIO2A5_MASK, GPIO2A5_UART2_SOUT);
 #endif
 }
 
