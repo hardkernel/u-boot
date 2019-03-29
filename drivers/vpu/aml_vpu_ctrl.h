@@ -177,7 +177,7 @@ static struct vpu_ctrl_s vpu_mem_pd_tm2[] = {
 /* ******************************************************* */
 static struct vpu_ctrl_s vpu_hdmi_iso_pre_gxb[] = {
 	/* reg,                val, bit, len */
-	{AO_RTI_GEN_PWR_SLEEP0,  0,   8,   1},
+	{AO_RTI_GEN_PWR_SLEEP0,  1,   8,   1},
 	{VPU_REG_END,            0,   0,   0},
 };
 
@@ -186,13 +186,13 @@ static struct vpu_ctrl_s vpu_hdmi_iso_pre_gxb[] = {
 /* ******************************************************* */
 static struct vpu_ctrl_s vpu_hdmi_iso_gxb[] = {
 	/* reg,                val, bit, len */
-	{AO_RTI_GEN_PWR_SLEEP0,  0,   9,   1},
+	{AO_RTI_GEN_PWR_SLEEP0,  1,   9,   1},
 	{VPU_REG_END,            0,   0,   0},
 };
 
 static struct vpu_ctrl_s vpu_hdmi_iso_sm1[] = {
 	/* reg,                val, bit, len */
-	{AO_RTI_GEN_PWR_ISO0,    0,   8,   1},
+	{AO_RTI_GEN_PWR_ISO0,    1,   8,   1},
 	{VPU_REG_END,            0,   0,   0},
 };
 

@@ -289,9 +289,9 @@ static struct vpu_data_s vpu_data_tm2 = {
 	.vpu_clk_table = vpu_clk_table,
 
 	.mem_pd_table = vpu_mem_pd_tm2,
-	.hdmi_iso_pre_table = NULL,
+	.hdmi_iso_pre_table = vpu_hdmi_iso_pre_gxb,
 	.hdmi_iso_table = vpu_hdmi_iso_sm1,
-	.reset_table = vpu_reset_gx,
+	.reset_table = vpu_reset_tl1,
 
 	.module_init_table_cnt = 0,
 	.module_init_table = NULL,
@@ -339,15 +339,15 @@ static void vpu_chip_detect(void)
 	//case MESON_CPU_MAJOR_ID_SM1:
 	//	vpu_conf.data = &vpu_data_sm1;
 	//	break;
-	//case MESON_CPU_MAJOR_ID_TM2:
-	//	vpu_conf.data = &vpu_data_tm2;
-	//	break;
+	case MESON_CPU_MAJOR_ID_TM2:
+		vpu_conf.data = &vpu_data_tm2;
+		break;
 	default:
 		vpu_conf.data = &vpu_data_tm2;
 		break;
 	}
 
-	vpu_conf.data = &vpu_data_tm2;
+	//vpu_conf.data = &vpu_data_tm2;
 
 	strcpy(vpu_conf.drv_version, VPU_VERION);
 #ifdef CONFIG_VPU_CLK_LEVEL_DFT
