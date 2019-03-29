@@ -244,6 +244,9 @@ static void *sysmem_alloc_align_base(enum memblk_id id,
 			 mem->attr.name, (ulong)mem->base,
 			 (ulong)(mem->base + mem->size));
 		if (!strcmp(mem->attr.name, name)) {
+			if (mem->base <= base && mem->size >= size)
+				return (void *)base;
+
 			SYSMEM_E("Failed to double alloc for existence \"%s\"\n", name);
 			return NULL;
 		} else if (sysmem_is_overlap(mem->base, mem->size, base, size)) {
