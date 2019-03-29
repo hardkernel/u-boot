@@ -86,7 +86,7 @@ static void dump_full_edid(const unsigned char *buf)
 	}
 }
 
-/* 500ms for each retry, total 5 retry */
+/* 500ms for each retry, total 7 retry */
 #define EDID_RETRY_WAITTIME	500
 static int do_edid(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 {

@@ -1774,7 +1774,7 @@ void save_display_bin(bool config, char *modeline)
 	}
 }
 
-#define EDID_RETRY_COUNT	3
+#define EDID_RETRY_COUNT	7
 int parse_edid(unsigned char *edid, unsigned int blk_len, unsigned char count)
 {
 	unsigned char *x;
