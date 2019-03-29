@@ -895,10 +895,12 @@ int do_bootm_states(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[],
 
 	/* Check reserved memory region */
 #ifdef CONFIG_CMD_RSVMEM
-	ret = run_command("rsvmem check", 0);
-	if (ret) {
-		puts("rsvmem check failed\n");
-		return ret;
+	if (images->os.type != IH_TYPE_STANDALONE) {
+		ret = run_command("rsvmem check", 0);
+		if (ret) {
+			puts("rsvmem check failed\n");
+			return ret;
+		}
 	}
 #endif
 
