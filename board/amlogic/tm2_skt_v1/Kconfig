@@ -1,4 +1,4 @@
-if TARGET_MESON_TL1
+if TARGET_MESON_TM2
 
 config SYS_CPU
 	string
@@ -14,7 +14,7 @@ config SYS_VENDOR
 
 config SYS_SOC
 	string
-	default "tl1"
+	default "tm2"
 
 config SYS_CONFIG_NAME
 	default "tm2_skt_v1"
