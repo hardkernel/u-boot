@@ -43,6 +43,7 @@ void vpu_module_init_config(void)
 	cnt = vpu_conf.data->module_init_table_cnt;
 	ctrl_table = vpu_conf.data->module_init_table;
 	if (ctrl_table) {
+		i = 0;
 		while (i < cnt) {
 			if (ctrl_table[i].reg == VPU_REG_END)
 				break;
@@ -91,6 +92,7 @@ void vpu_power_on(void)
 
 	/* power up memories */
 	ctrl_table = vpu_conf.data->mem_pd_table;
+	i = 0;
 	while (i < VPU_MEM_PD_CNT_MAX) {
 		if (ctrl_table[i].reg == VPU_REG_END)
 			break;
@@ -162,15 +164,18 @@ void vpu_power_off(void)
 	/* Power down VPU_HDMI */
 	/* Enable Isolation */
 	ctrl_table = vpu_conf.data->hdmi_iso_table;
-	while (i < VPU_HDMI_ISO_CNT_MAX) {
-		if (ctrl_table[i].reg == VPU_REG_END)
-			break;
-		_reg = ctrl_table[i].reg;
-		_val = ctrl_table[i].val;
-		_start = ctrl_table[i].bit;
-		_len = ctrl_table[i].len;
-		vpu_ao_setb(_reg, _val, _start, _len);
-		i++;
+	if (ctrl_table) {
+		i = 0;
+		while (i < VPU_HDMI_ISO_CNT_MAX) {
+			if (ctrl_table[i].reg == VPU_REG_END)
+				break;
+			_reg = ctrl_table[i].reg;
+			_val = ctrl_table[i].val;
+			_start = ctrl_table[i].bit;
+			_len = ctrl_table[i].len;
+			vpu_ao_setb(_reg, _val, _start, _len);
+			i++;
+		}
 	}
 	udelay(20);
 
