@@ -1,6 +1,6 @@
 
 /*
- * arch/arm/cpu/armv8/tl1/gpio.c
+ * arch/arm/cpu/armv8/tm2/gpio.c
  *
  * Copyright (C) 2015 Amlogic, Inc. All rights reserved.
  *
@@ -118,6 +118,8 @@ static struct pin_mux_desc pin_to_gpio[] = {
 	[GPIOEE(GPIOH_20)] = PIN_MUX(MUX_EE_DOMAIN, 0x9, 16),
 	[GPIOEE(GPIOH_21)] = PIN_MUX(MUX_EE_DOMAIN, 0x9, 20),
 	[GPIOEE(GPIOH_22)] = PIN_MUX(MUX_EE_DOMAIN, 0x9, 24),
+	[GPIOEE(GPIOH_23)] = PIN_MUX(MUX_EE_DOMAIN, 0x9, 28),
+	[GPIOEE(GPIOH_24)] = PIN_MUX(MUX_EE_DOMAIN, 0x6, 16),
 	[GPIOEE(BOOT_0)] = PIN_MUX(MUX_EE_DOMAIN, 0x0, 0),
 	[GPIOEE(BOOT_1)] = PIN_MUX(MUX_EE_DOMAIN, 0x0, 4),
 	[GPIOEE(BOOT_2)] = PIN_MUX(MUX_EE_DOMAIN, 0x0, 8),
@@ -173,9 +175,9 @@ static struct pin_mux_desc pin_to_gpio[] = {
 	[GPIOEE(GPIODV_11)] = PIN_MUX(MUX_EE_DOMAIN, 0xd, 12),
 };
 
-/* sequence of banks keep same as arch-tl1/gpio.h */
+/* sequence of banks keep same as arch-tm2/gpio.h */
 
-static struct meson_bank mesontl1_banks[] = {
+static struct meson_bank mesontm2_banks[] = {
 	/*name   first  last   pullen   pull   dir   out  in*/
 
 	AOBANK("GPIOAO_", GPIOAO(GPIOAO_0), GPIOAO(GPIOAO_11),
@@ -184,7 +186,7 @@ static struct meson_bank mesontl1_banks[] = {
 	3,  16, 2,  16,  0,  16,  4,  16, 1,  16),
 	BANK("GPIOZ_", GPIOEE(GPIOZ_0), GPIOEE(GPIOZ_10),
 	1, 0,  1,  0,  3,  0,  4, 0,  5, 0),
-	BANK("GPIOH_", GPIOEE(GPIOH_0), GPIOEE(GPIOH_22),
+	BANK("GPIOH_", GPIOEE(GPIOH_0), GPIOEE(GPIOH_24),
 	2, 0,  2,  0,  6,  0,  7, 0,  8, 0),
 	BANK("BOOT_", GPIOEE(BOOT_0), GPIOEE(BOOT_13),
 	0, 0,  0,  0,  0,  0,  1, 0,  2, 0),
@@ -196,15 +198,15 @@ static struct meson_bank mesontl1_banks[] = {
 	5, 0,  5,  0,  16,  0, 17, 0, 18, 0),
 };
 
-U_BOOT_DEVICES(tl1_gpios) = {
-	{ "gpio_aml", &mesontl1_banks[0] },
-	{ "gpio_aml", &mesontl1_banks[1] },
-	{ "gpio_aml", &mesontl1_banks[2] },
-	{ "gpio_aml", &mesontl1_banks[3] },
-	{ "gpio_aml", &mesontl1_banks[4] },
-	{ "gpio_aml", &mesontl1_banks[5] },
-	{ "gpio_aml", &mesontl1_banks[6] },
-	{ "gpio_aml", &mesontl1_banks[7] },
+U_BOOT_DEVICES(tm2_gpios) = {
+	{ "gpio_aml", &mesontm2_banks[0] },
+	{ "gpio_aml", &mesontm2_banks[1] },
+	{ "gpio_aml", &mesontm2_banks[2] },
+	{ "gpio_aml", &mesontm2_banks[3] },
+	{ "gpio_aml", &mesontm2_banks[4] },
+	{ "gpio_aml", &mesontm2_banks[5] },
+	{ "gpio_aml", &mesontm2_banks[6] },
+	{ "gpio_aml", &mesontm2_banks[7] },
 };
 
 static unsigned long domain[]={
@@ -225,7 +227,7 @@ int clear_pinmux(unsigned int pin)
 #ifdef CONFIG_AML_SPICC
 #include <asm/arch/secure_apb.h>
 /* generic pins control for spicc0.
- * if deleted, you have to add it into all tl1 board files as necessary.
+ * if deleted, you have to add it into all tm2 board files as necessary.
  * GPIOH_17: MISO:reg9[7:4]  =2
  * GPIOH_18: MOSI:reg9[11:8] =2
  * GPIOH_19: CLK: reg9[15:12]=2

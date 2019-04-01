@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: GPL-2.0+
  */
 
-#ifndef _MESON_TL1_GPIO_H
-#define _MESON_TL1_GPIO_H
+#ifndef _MESON_TM2_GPIO_H
+#define _MESON_TM2_GPIO_H
 
 #define EE_OFFSET 15
 #define GPIOAO(x) (x)
@@ -65,62 +65,64 @@
 #define	GPIOH_20	31
 #define	GPIOH_21	32
 #define	GPIOH_22	33
+#define	GPIOH_23	34
+#define	GPIOH_24	35
 
-#define	BOOT_0		34
-#define	BOOT_1		35
-#define	BOOT_2		36
-#define	BOOT_3		37
-#define	BOOT_4		38
-#define	BOOT_5		39
-#define	BOOT_6		40
-#define	BOOT_7		41
-#define	BOOT_8		42
-#define	BOOT_9		43
-#define	BOOT_10		44
-#define	BOOT_11		45
-#define	BOOT_12		46
-#define	BOOT_13		47
+#define	BOOT_0		36
+#define	BOOT_1		37
+#define	BOOT_2		38
+#define	BOOT_3		39
+#define	BOOT_4		40
+#define	BOOT_5		41
+#define	BOOT_6		42
+#define	BOOT_7		43
+#define	BOOT_8		44
+#define	BOOT_9		45
+#define	BOOT_10		46
+#define	BOOT_11		47
+#define	BOOT_12		48
+#define	BOOT_13		49
 
-#define	GPIOC_0		48
-#define	GPIOC_1		49
-#define	GPIOC_2		50
-#define	GPIOC_3		51
-#define	GPIOC_4		52
-#define	GPIOC_5		53
-#define	GPIOC_6		54
-#define	GPIOC_7		55
-#define	GPIOC_8		56
-#define	GPIOC_9		57
-#define	GPIOC_10	58
-#define	GPIOC_11	59
-#define	GPIOC_12	60
-#define	GPIOC_13	61
-#define	GPIOC_14	62
+#define	GPIOC_0		50
+#define	GPIOC_1		51
+#define	GPIOC_2		52
+#define	GPIOC_3		53
+#define	GPIOC_4		54
+#define	GPIOC_5		55
+#define	GPIOC_6		56
+#define	GPIOC_7		57
+#define	GPIOC_8		58
+#define	GPIOC_9		59
+#define	GPIOC_10	60
+#define	GPIOC_11	61
+#define	GPIOC_12	62
+#define	GPIOC_13	63
+#define	GPIOC_14	64
 
-#define	GPIOW_0		63
-#define	GPIOW_1		64
-#define	GPIOW_2		65
-#define	GPIOW_3		66
-#define	GPIOW_4		67
-#define	GPIOW_5		68
-#define	GPIOW_6		69
-#define	GPIOW_7		70
-#define	GPIOW_8		71
-#define	GPIOW_9		72
-#define	GPIOW_10	73
-#define	GPIOW_11	74
+#define	GPIOW_0		65
+#define	GPIOW_1		66
+#define	GPIOW_2		67
+#define	GPIOW_3		68
+#define	GPIOW_4		69
+#define	GPIOW_5		70
+#define	GPIOW_6		71
+#define	GPIOW_7		72
+#define	GPIOW_8		73
+#define	GPIOW_9		74
+#define	GPIOW_10	75
+#define	GPIOW_11	76
 
-#define	GPIODV_0	75
-#define	GPIODV_1	76
-#define	GPIODV_2	77
-#define	GPIODV_3	78
-#define	GPIODV_4	79
-#define	GPIODV_5	80
-#define	GPIODV_6	81
-#define	GPIODV_7	82
-#define	GPIODV_8	83
-#define	GPIODV_9	84
-#define	GPIODV_10	85
-#define	GPIODV_11	86
+#define	GPIODV_0	77
+#define	GPIODV_1	78
+#define	GPIODV_2	79
+#define	GPIODV_3	80
+#define	GPIODV_4	81
+#define	GPIODV_5	82
+#define	GPIODV_6	83
+#define	GPIODV_7	84
+#define	GPIODV_8	85
+#define	GPIODV_9	86
+#define	GPIODV_10	87
+#define	GPIODV_11	88
 
-#endif /* _MESON_TL1_GPIO_H */
+#endif /* _MESON_TM2_GPIO_H */
