@@ -976,6 +976,18 @@ void set_vpp_lut(
 	}
 }
 
+int is_osd_high_version(void)
+{
+	u32 family_id = get_cpu_id().family_id;
+
+	if ((family_id == MESON_CPU_MAJOR_ID_G12A) ||
+		(family_id == MESON_CPU_MAJOR_ID_G12B) ||
+			(family_id >= MESON_CPU_MAJOR_ID_SM1))
+		return 1;
+	else
+		return 0;
+}
+
  /*
 for G12A, set osd2 matrix(10bit) RGB2YUV
  */
@@ -983,8 +995,7 @@ for G12A, set osd2 matrix(10bit) RGB2YUV
  {
 	int *m = NULL;
 
-	if ((get_cpu_id().family_id == MESON_CPU_MAJOR_ID_G12A) ||
-		(get_cpu_id().family_id == MESON_CPU_MAJOR_ID_G12B)){
+	if (is_osd_high_version()) {
 		/* RGB -> 709 limit */
 		m = RGB709_to_YUV709l_coeff;
 
@@ -1044,8 +1055,7 @@ static void set_osd2_rgb2yuv(bool on)
 {
 	int *m = NULL;
 
-	if ((get_cpu_id().family_id == MESON_CPU_MAJOR_ID_G12A) ||
-		(get_cpu_id().family_id == MESON_CPU_MAJOR_ID_G12B)){
+	if (is_osd_high_version()) {
 		/* RGB -> 709 limit */
 		m = RGB709_to_YUV709l_coeff;
 
@@ -1083,8 +1093,7 @@ static void set_osd3_rgb2yuv(bool on)
 {
 	int *m = NULL;
 
-	if ((get_cpu_id().family_id == MESON_CPU_MAJOR_ID_G12A) ||
-		(get_cpu_id().family_id == MESON_CPU_MAJOR_ID_G12B)){
+	if (is_osd_high_version()) {
 		/* RGB -> 709 limit */
 		m = RGB709_to_YUV709l_coeff;
 
@@ -1132,8 +1141,7 @@ static void set_vpp_bitdepth(void)
 		vpp_reg_setb(VPP_DAT_CONV_PARA1, 0, 0, 14);
 	#else
 	#endif
-	} else if ((get_cpu_id().family_id == MESON_CPU_MAJOR_ID_G12A) ||
-		(get_cpu_id().family_id == MESON_CPU_MAJOR_ID_G12B)){
+	} else if (is_osd_high_version()) {
 		/*after this step vd1 output data is U12,*/
 		vpp_reg_write(DOLBY_PATH_CTRL, 0xf);
 	}
@@ -1489,26 +1497,20 @@ void vpp_init(void)
 		set_osd1_rgb2yuv(1);
 		/* set vpp data path to u10 */
 		set_vpp_bitdepth();
-	} else if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_G12A) {
+	} else if (is_osd_high_version()) {
 		/* osd1: rgb->yuv limit,osd2: rgb2yuv limit,osd3: rgb2yuv limit*/
 		set_osd1_rgb2yuv(1);
 		set_osd2_rgb2yuv(1);
-		set_osd3_rgb2yuv(1);
+
+		if ((get_cpu_id().family_id != MESON_CPU_MAJOR_ID_TL1))
+			set_osd3_rgb2yuv(1);
 
 		/* set vpp data path to u12 */
 		set_vpp_bitdepth();
 
-		hdr_func(OSD1_HDR, HDR_BYPASS);
-	} else if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_G12B) {
-		/* osd1: rgb->yuv limit,osd2: rgb2yuv limit,osd3: rgb2yuv limit*/
-		set_osd1_rgb2yuv(1);
-		set_osd2_rgb2yuv(1);
-		set_osd3_rgb2yuv(1);
-
-		/* set vpp data path to u12 */
-		set_vpp_bitdepth();
-
-		hdr_func(OSD1_HDR, HDR_BYPASS);
+		if ((get_cpu_id().family_id == MESON_CPU_MAJOR_ID_G12A) ||
+			(get_cpu_id().family_id == MESON_CPU_MAJOR_ID_G12B))
+			hdr_func(OSD1_HDR, HDR_BYPASS);
 	} else {
 		/* set dummy data default YUV black */
 		vpp_reg_write(VPP_DUMMY_DATA1, 0x108080);
