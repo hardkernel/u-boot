@@ -794,6 +794,7 @@ int vendor_storage_test(void)
 	default:
 		item_num = 0;
 		total_size = 0;
+		size = 0;
 		break;
 	}
 	/* Invalid bootdev? */
