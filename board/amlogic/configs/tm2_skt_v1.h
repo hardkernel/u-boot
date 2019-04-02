@@ -267,9 +267,7 @@
 			"fi;fi;" \
 		"fi;\0" \
 
-/*
 #define CONFIG_PREBOOT  \
-	"mw ff638630 0 2;"\
 	"run bcb_cmd; "\
 	"run factory_reset_poweroff_protect;"\
 	"run upgrade_check;"\
@@ -277,7 +275,6 @@
 	"run storeargs;"\
 	"bcb uboot-command;"\
 	"run switch_bootmode;"
-*/
 
 #define CONFIG_BOOTCOMMAND "run storeboot"
 
