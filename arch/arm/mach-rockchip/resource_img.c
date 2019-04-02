@@ -6,6 +6,7 @@
 #include <common.h>
 #include <adc.h>
 #include <asm/io.h>
+#include <fs.h>
 #include <malloc.h>
 #include <sysmem.h>
 #include <linux/list.h>
@@ -628,17 +629,72 @@ static int rockchip_read_dtb_by_gpio(const char *file_name)
 	return found ? 0 : -ENOENT;
 }
 
+#ifdef CONFIG_ROCKCHIP_EARLY_DISTRO_DTB
+static int rockchip_read_distro_dtb_file(char *fdt_addr)
+{
+	const char *cmd = "part list ${devtype} ${devnum} -bootable devplist";
+	char *devnum, *devtype, *devplist;
+	char devnum_part[12];
+	char fdt_hex_str[19];
+	char *fs_argv[5];
+	int ret;
+
+	if (!rockchip_get_bootdev() || !fdt_addr)
+		return -ENODEV;
+
+	ret = run_command_list(cmd, -1, 0);
+	if (ret)
+		return ret;
+
+	devplist = env_get("devplist");
+	if (!devplist)
+		return -ENODEV;
+
+	devtype = env_get("devtype");
+	devnum = env_get("devnum");
+	sprintf(devnum_part, "%s:%s", devnum, devplist);
+	sprintf(fdt_hex_str, "0x%lx", (ulong)fdt_addr);
+
+#ifdef CONFIG_CMD_FS_GENERIC
+	fs_argv[0] = "load";
+	fs_argv[1] = devtype,
+	fs_argv[2] = devnum_part;
+	fs_argv[3] = fdt_hex_str;
+	fs_argv[4] = CONFIG_ROCKCHIP_EARLY_DISTRO_DTB_PATH;
+
+	if (do_load(NULL, 0, 5, fs_argv, FS_TYPE_ANY))
+		return -EIO;
+#endif
+	if (fdt_check_header(fdt_addr))
+		return -EIO;
+
+	return fdt_totalsize(fdt_addr);
+}
+#endif
+
 int rockchip_read_dtb_file(void *fdt_addr)
 {
 	struct resource_file *file;
 	struct list_head *node;
 	char *dtb_name = DTB_FILE;
-	int ret, size;
+	int size = -ENODEV;
 
 	if (list_empty(&entrys_head)) {
-		ret = init_resource_list(NULL);
-		if (ret)
-			return ret;
+		if (init_resource_list(NULL)) {
+#ifdef CONFIG_ROCKCHIP_EARLY_DISTRO_DTB
+			/* Maybe a distro boot.img with dtb ? */
+			printf("Distro DTB: %s\n",
+			       CONFIG_ROCKCHIP_EARLY_DISTRO_DTB_PATH);
+			size = rockchip_read_distro_dtb_file(fdt_addr);
+			if (size < 0)
+				return size;
+			if (!sysmem_alloc_base(MEMBLK_ID_FDT,
+				(phys_addr_t)fdt_addr,
+				ALIGN(size, RK_BLK_SIZE) + CONFIG_SYS_FDT_PAD))
+				return -ENOMEM;
+#endif
+			return size;
+		}
 	}
 
 	list_for_each(node, &entrys_head) {
@@ -668,13 +724,13 @@ int rockchip_read_dtb_file(void *fdt_addr)
 			       ALIGN(size, RK_BLK_SIZE) + CONFIG_SYS_FDT_PAD))
 		return -ENOMEM;
 
-	ret = rockchip_read_resource_file((void *)fdt_addr, dtb_name, 0, 0);
-	if (ret < 0)
-		return ret;
+	size = rockchip_read_resource_file((void *)fdt_addr, dtb_name, 0, 0);
+	if (size < 0)
+		return size;
 
 #if defined(CONFIG_CMD_DTIMG) && defined(CONFIG_OF_LIBFDT_OVERLAY)
 	android_fdt_overlay_apply((void *)fdt_addr);
 #endif
 
-	return ret;
+	return size;
 }

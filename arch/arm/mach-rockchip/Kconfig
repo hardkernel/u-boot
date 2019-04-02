@@ -559,6 +559,22 @@ config ROCKCHIP_RESOURCE_IMAGE
 	  This enables support to get dtb or logo files from
 	  rockchip resource image format partition.
 
+config ROCKCHIP_EARLY_DISTRO_DTB
+	bool "Enable support for distro dtb early"
+	depends on DISTRO_DEFAULTS && USING_KERNEL_DTB
+	default n
+	help
+	  This enables loading dtb from distro bootable partition when there
+	  is no valid dtb in android boot.img and rockchip resource.img.
+
+if ROCKCHIP_EARLY_DISTRO_DTB
+
+config ROCKCHIP_EARLY_DISTRO_DTB_PATH
+	string "/rk-kernel.dtb"
+	help
+	  "DTB file path in the bootable partition image"
+endif
+
 config ROCKCHIP_VENDOR_PARTITION
 	bool "Rockchip vendor storage partition support"
 	depends on RKIMG_BOOTLOADER
