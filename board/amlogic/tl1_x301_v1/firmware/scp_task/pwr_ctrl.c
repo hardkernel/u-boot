@@ -141,7 +141,9 @@ static unsigned int detect_key(unsigned int suspend_from)
 {
 	int exit_reason = 0;
 	unsigned *irq = (unsigned *)WAKEUP_SRC_IRQ_ADDR_BASE;
+	unsigned char adc_key_cnt = 0;
 	init_remote();
+	saradc_enable();
 #ifdef CONFIG_CEC_WAKEUP
 		if (hdmi_cec_func_config & 0x1) {
 			remote_cec_hw_reset();
@@ -166,6 +168,17 @@ static unsigned int detect_key(unsigned int suspend_from)
 			irq[IRQ_VRTC] = 0xFFFFFFFF;
 			exit_reason = RTC_WAKEUP;
 		}
+		if (irq[IRQ_AO_TIMERA] == IRQ_AO_TIMERA_NUM) {
+			irq[IRQ_AO_TIMERA] = 0xFFFFFFFF;
+			if (check_adc_key_resume()) {
+				adc_key_cnt++;
+				/*using variable 'adc_key_cnt' to eliminate the dithering of the key*/
+				if (2 == adc_key_cnt)
+					exit_reason = POWER_KEY_WAKEUP;
+			} else {
+				adc_key_cnt = 0;
+			}
+		}
 #ifdef CONFIG_WIFI_WAKEUP
 		if (irq[IRQ_GPIO1] == IRQ_GPIO1_NUM) {
 		    irq[IRQ_GPIO1] = 0xFFFFFFFF;
@@ -182,6 +195,7 @@ static unsigned int detect_key(unsigned int suspend_from)
 		else
 			__switch_idle_task();
 	} while (1);
+	saradc_disable();
 
 	return exit_reason;
 }
