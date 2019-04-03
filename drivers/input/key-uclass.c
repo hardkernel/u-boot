@@ -8,15 +8,12 @@
 #include <adc.h>
 #include <dm.h>
 #include <key.h>
+#include <dm/lists.h>
+#include <irq-generic.h>
 
-static LIST_HEAD(key_list);
-
-const char *evt_name[] = {
-	"Not down",
-	"Down",
-	"Long down",
-	"Not exist",
-};
+#define KEY_WARN(fmt, args...)	printf("Key Warn: "fmt, ##args)
+#define KEY_ERR(fmt, args...)	printf("Key Error: "fmt, ##args)
+#define KEY_DBG(fmt, args...)	 debug("Key Debug: "fmt, ##args)
 
 static inline uint64_t arch_counter_get_cntpct(void)
 {
@@ -26,7 +23,7 @@ static inline uint64_t arch_counter_get_cntpct(void)
 #ifdef CONFIG_ARM64
 	asm volatile("mrs %0, cntpct_el0" : "=r" (cval));
 #else
-	asm volatile ("mrrc p15, 0, %Q0, %R0, c14" : "=r" (cval));
+	asm volatile("mrrc p15, 0, %Q0, %R0, c14" : "=r" (cval));
 #endif
 	return cval;
 }
@@ -39,197 +36,263 @@ uint64_t key_timer(uint64_t base)
 	return (cntpct > base) ? (cntpct - base) : 0;
 }
 
-/*
- * What's simple and complex event mean?
- *
- * simple event:   key press down or none;
- * complext event: key press down, long down or none;
- */
-static int key_read_adc_simple_event(struct input_key *key, unsigned int adcval)
+static int key_adc_event(struct dm_key_uclass_platdata *uc_key, int adcval)
 {
-	int max, min, margin = 30;
-	int keyval;
-
-	/* Get min, max */
-	max = key->adcval + margin;
-	if (key->adcval > margin)
-		min = key->adcval - margin;
-	else
-		min = 0;
-
-	debug("%s: '%s' configure adc=%d: range[%d~%d]; hw adcval=%d\n",
-	      __func__, key->name, key->adcval, min, max, adcval);
-
-	/* Check */
-	if ((adcval <= max) && (adcval >= min)) {
-		keyval = KEY_PRESS_DOWN;
-		debug("%s key pressed..\n", key->name);
-	} else {
-		keyval = KEY_PRESS_NONE;
-	}
-
-	return keyval;
+	return (adcval <= uc_key->max && adcval >= uc_key->min) ?
+		KEY_PRESS_DOWN : KEY_PRESS_NONE;
 }
 
-static int key_read_gpio_simple_event(struct input_key *key)
+static int key_gpio_event(struct dm_key_uclass_platdata *uc_key)
 {
-	if (!dm_gpio_is_valid(&key->gpio)) {
-		printf("%s: invalid gpio\n", key->name);
+	if (!dm_gpio_is_valid(&uc_key->gpio)) {
+		KEY_ERR("'%s' Invalid gpio\n", uc_key->name);
 		return KEY_PRESS_NONE;
 	}
 
-	return dm_gpio_get_value(&key->gpio) ? KEY_PRESS_DOWN : KEY_PRESS_NONE;
+	return dm_gpio_get_value(&uc_key->gpio) ?
+	       KEY_PRESS_DOWN : KEY_PRESS_NONE;
 }
 
-static int key_read_gpio_complex_event(struct input_key *key)
+static int key_gpio_interrupt_event(struct dm_key_uclass_platdata *uc_key)
 {
-	int keyval;
+	int event;
 
 	debug("%s: %s: up=%llu, down=%llu, delta=%llu\n",
-	      __func__, key->name, key->up_t, key->down_t,
-	      key->up_t - key->down_t);
+	      __func__, uc_key->name, uc_key->rise_ms, uc_key->fall_ms,
+	      uc_key->rise_ms - uc_key->fall_ms);
 
 	/* Possible this is machine power-on long pressed, so ignore this */
-	if (key->down_t == 0 && key->up_t != 0) {
-		keyval = KEY_PRESS_NONE;
+	if (uc_key->fall_ms == 0 && uc_key->rise_ms != 0) {
+		event = KEY_PRESS_NONE;
 		goto out;
 	}
 
-	if ((key->up_t > key->down_t) &&
-	    (key->up_t - key->down_t) >= KEY_LONG_DOWN_MS) {
-		key->up_t = 0;
-		key->down_t = 0;
-		keyval = KEY_PRESS_LONG_DOWN;
-		debug("%s key long pressed..\n", key->name);
-	} else if (key->down_t &&
-		   key_timer(key->down_t) >= KEY_LONG_DOWN_MS) {
-		key->up_t = 0;
-		key->down_t = 0;
-		keyval = KEY_PRESS_LONG_DOWN;
-		debug("%s key long pressed(hold)..\n", key->name);
-	} else if ((key->up_t > key->down_t) &&
-		   (key->up_t - key->down_t) < KEY_LONG_DOWN_MS) {
-		key->up_t = 0;
-		key->down_t = 0;
-		keyval = KEY_PRESS_DOWN;
-		debug("%s key short pressed..\n", key->name);
+	if ((uc_key->rise_ms > uc_key->fall_ms) &&
+	    (uc_key->rise_ms - uc_key->fall_ms) >= KEY_LONG_DOWN_MS) {
+		uc_key->rise_ms = 0;
+		uc_key->fall_ms = 0;
+		event = KEY_PRESS_LONG_DOWN;
+		KEY_DBG("%s key long pressed..\n", uc_key->name);
+	} else if (uc_key->fall_ms &&
+		   key_timer(uc_key->fall_ms) >= KEY_LONG_DOWN_MS) {
+		uc_key->rise_ms = 0;
+		uc_key->fall_ms = 0;
+		event = KEY_PRESS_LONG_DOWN;
+		KEY_DBG("%s key long pressed(hold)..\n", uc_key->name);
+	} else if ((uc_key->rise_ms > uc_key->fall_ms) &&
+		   (uc_key->rise_ms - uc_key->fall_ms) < KEY_LONG_DOWN_MS) {
+		uc_key->rise_ms = 0;
+		uc_key->fall_ms = 0;
+		event = KEY_PRESS_DOWN;
+		KEY_DBG("%s key short pressed..\n", uc_key->name);
 	/* Possible in charge animation, we enable irq after fuel gauge updated */
-	} else if (key->up_t && key->down_t && (key->up_t == key->down_t)){
-		key->up_t = 0;
-		key->down_t = 0;
-		keyval = KEY_PRESS_DOWN;
-		debug("%s key short pressed..\n", key->name);
+	} else if (uc_key->rise_ms && uc_key->fall_ms &&
+		   (uc_key->rise_ms == uc_key->fall_ms)) {
+		uc_key->rise_ms = 0;
+		uc_key->fall_ms = 0;
+		event = KEY_PRESS_DOWN;
+		KEY_DBG("%s key short pressed..\n", uc_key->name);
 	} else {
-		keyval = KEY_PRESS_NONE;
+		event = KEY_PRESS_NONE;
 	}
 
 out:
-	return keyval;
+	return event;
 }
 
-static int key_read_gpio_interrupt_event(struct input_key *key)
+int key_is_pressed(int event)
 {
-	debug("%s: %s\n", __func__, key->name);
-
-	return key_read_gpio_complex_event(key);
+	return (event == KEY_PRESS_DOWN || event == KEY_PRESS_LONG_DOWN);
 }
 
-int key_is_pressed(int keyval)
-{
-	return (keyval == KEY_PRESS_DOWN || keyval == KEY_PRESS_LONG_DOWN);
-}
-
-void key_add(struct input_key *key)
-{
-	if (!key)
-		return;
-
-	if (!key->parent) {
-		printf("Err: Can't find key(code=%d) device\n", key->code);
-		return;
-	}
-
-	key->pre_reloc = dev_read_bool(key->parent, "u-boot,dm-pre-reloc");
-	list_add_tail(&key->link, &key_list);
-}
-
-static int __key_read(struct input_key *key)
+static int key_core_read(struct dm_key_uclass_platdata *uc_key)
 {
 	unsigned int adcval;
-	int keyval = KEY_NOT_EXIST;
-	int ret;
 
-	/* Is a adc key? */
-	if (key->type & ADC_KEY) {
-		ret = adc_channel_single_shot("saradc",
-					      key->channel, &adcval);
-		if (ret)
-			printf("%s: failed to read saradc, ret=%d\n",
-			       key->name, ret);
-		else
-			keyval = key_read_adc_simple_event(key, adcval);
-	/* Is a gpio key? */
-	} else if (key->type & GPIO_KEY) {
-		/* All pwrkey must register as an interrupt event */
-		if (key->code == KEY_POWER)
-			keyval = key_read_gpio_interrupt_event(key);
-		else
-			keyval = key_read_gpio_simple_event(key);
-	} else {
-		printf("%s: invalid key type!\n", __func__);
+	if (uc_key->type == ADC_KEY) {
+		if (adc_channel_single_shot("saradc",
+					    uc_key->channel, &adcval)) {
+			KEY_ERR("%s failed to read saradc\n", uc_key->name);
+			return KEY_NOT_EXIST;
+		}
+
+		return key_adc_event(uc_key, adcval);
 	}
 
-	debug("%s: '%s'(code=%d) is %s\n",
-	      __func__, key->name, key->code, evt_name[keyval]);
-
-	return keyval;
+	return (uc_key->code == KEY_POWER) ?
+		key_gpio_interrupt_event(uc_key) :
+		key_gpio_event(uc_key);
 }
 
 int key_read(int code)
 {
+	struct dm_key_uclass_platdata *uc_key;
 	struct udevice *dev;
-	struct input_key *key;
-	static int initialized;
-	int keyval = KEY_NOT_EXIST;
+	struct uclass *uc;
+	bool allow_pre_reloc = false;
+	int ret, event = KEY_NOT_EXIST;
 
-	/* Initialize all key drivers */
-	if (!initialized) {
-		for (uclass_first_device(UCLASS_KEY, &dev);
-		     dev;
-		     uclass_next_device(&dev)) {
-			debug("%s: have found key driver '%s'\n\n",
-			      __func__, dev->name);
-		}
-	}
+	ret = uclass_get(UCLASS_KEY, &uc);
+	if (ret)
+		return ret;
 
-	/* The key from kernel dtb has higher priority */
-	debug("Reading key from kernel\n");
-	list_for_each_entry(key, &key_list, link) {
-		if (key->pre_reloc || (key->code != code))
+try_again:
+	for (uclass_first_device(UCLASS_KEY, &dev);
+	     dev;
+	     uclass_next_device(&dev)) {
+		uc_key = dev_get_uclass_platdata(dev);
+
+		if (!allow_pre_reloc && uc_key->pre_reloc)
 			continue;
 
-		keyval = __key_read(key);
-		if (key_is_pressed(keyval))
-			return keyval;
+		if (uc_key->code != code)
+			continue;
+
+		event = key_core_read(uc_key);
+		if (key_is_pressed(event))
+			return event;
 	}
 
-	/* If not found any key from kernel dtb, reading from U-Boot dtb */
-	if (keyval == KEY_NOT_EXIST) {
-		debug("Reading key from U-Boot\n");
-		list_for_each_entry(key, &key_list, link) {
-			if (!key->pre_reloc || (key->code != code))
-				continue;
+	/* If not find valid key node from kernel, try from u-boot */
+	if (event == KEY_NOT_EXIST && !allow_pre_reloc) {
+		allow_pre_reloc = true;
+		goto try_again;
+	}
 
-			keyval = __key_read(key);
-			if (key_is_pressed(keyval))
-				return keyval;
+	return event;
+}
+
+#ifdef CONFIG_IRQ
+static void gpio_irq_handler(int irq, void *data)
+{
+	struct dm_key_uclass_platdata *uc_key = data;
+
+	if (uc_key->irq != irq)
+		return;
+
+	if (irq_get_gpio_level(irq)) {
+		uc_key->rise_ms = key_timer(0);
+		KEY_DBG("%s: key dn: %llu ms\n", uc_key->name, uc_key->fall_ms);
+	} else {
+		uc_key->fall_ms = key_timer(0);
+		KEY_DBG("%s: key up: %llu ms\n", uc_key->name, uc_key->rise_ms);
+	}
+
+	/* Must delay */
+	mdelay(10);
+	irq_revert_irq_type(irq);
+}
+#endif
+
+int key_bind_children(struct udevice *dev, const char *drv_name)
+{
+	const char *name;
+	ofnode node;
+	int ret;
+
+	dev_for_each_subnode(node, dev) {
+		/*
+		 * If this node has "compatible" property, this is not
+		 * a amp subnode, but a normal device. skip.
+		 */
+		ofnode_get_property(node, "compatible", &ret);
+		if (ret >= 0)
+			continue;
+
+		if (ret != -FDT_ERR_NOTFOUND)
+			return ret;
+
+		name = ofnode_get_name(node);
+		if (!name)
+			return -EINVAL;
+		ret = device_bind_driver_to_node(dev, drv_name, name,
+						 node, NULL);
+		if (ret)
+			return ret;
+	}
+
+	return 0;
+}
+
+static int key_post_probe(struct udevice *dev)
+{
+	struct dm_key_uclass_platdata *uc_key;
+	int margin = 30;
+	int ret;
+
+	uc_key = dev_get_uclass_platdata(dev);
+	if (!uc_key)
+		return -ENXIO;
+
+	/* True from U-Boot key node */
+	uc_key->pre_reloc = dev_read_bool(dev, "u-boot,dm-pre-reloc");
+
+	if (uc_key->type == ADC_KEY) {
+		uc_key->max = uc_key->adcval + margin;
+		uc_key->min = uc_key->adcval > margin ?
+					uc_key->adcval - margin : 0;
+	} else {
+		if (uc_key->code == KEY_POWER) {
+			/* The gpio irq has been setup by key driver */
+			if (uc_key->irq)
+				goto finish;
+#ifdef CONFIG_IRQ
+			int irq;
+
+			irq = phandle_gpio_to_irq(uc_key->gpios[0],
+						  uc_key->gpios[1]);
+			if (irq < 0) {
+				KEY_ERR("%s: failed to request irq, ret=%d\n",
+					uc_key->name, irq);
+				return irq;
+			}
+
+			uc_key->irq = irq;
+			irq_install_handler(irq, gpio_irq_handler, uc_key);
+			irq_set_irq_type(irq, IRQ_TYPE_EDGE_FALLING);
+			irq_handler_enable(irq);
+#else
+			KEY_WARN("%s: no IRQ framework available\n", uc_key->name);
+#endif
+		} else {
+			ret = gpio_request_by_name(dev, "gpios", 0,
+						   &uc_key->gpio, GPIOD_IS_IN);
+			if (ret) {
+				KEY_ERR("%s: failed to request gpio, ret=%d\n",
+					uc_key->name, ret);
+				return ret;
+			}
 		}
 	}
 
-	return keyval;
+finish:
+#ifdef DEBUG
+	printf("[%s] (%s, %s, %s):\n", uc_key->name,
+	       uc_key->type == ADC_KEY ? "ADC" : "GPIO",
+	       uc_key->pre_reloc ? "U-Boot" : "Kernel",
+	       dev->parent->name);
+
+	if (uc_key->type == ADC_KEY) {
+		printf("    adcval: %d (%d, %d)\n", uc_key->adcval,
+		       uc_key->min, uc_key->max);
+		printf("   channel: %d\n\n", uc_key->channel);
+	} else {
+		const char *gpio_name =
+		     ofnode_get_name(ofnode_get_by_phandle(uc_key->gpios[0]));
+
+		printf("       irq: %d\n", uc_key->irq);
+		printf("   gpio[0]: %s\n", gpio_name);
+		printf("   gpio[1]: %d\n\n", uc_key->gpios[1]);
+	}
+#endif
+
+	return 0;
 }
 
 UCLASS_DRIVER(key) = {
 	.id		= UCLASS_KEY,
 	.name		= "key",
+	.post_probe	= key_post_probe,
+	.per_device_platdata_auto_alloc_size =
+			sizeof(struct dm_key_uclass_platdata),
 };

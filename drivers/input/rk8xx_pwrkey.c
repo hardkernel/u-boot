@@ -105,7 +105,7 @@ static void pwrkey_irq_handler(int irq, void *data)
 {
 	struct udevice *dev = data;
 	struct rk8xx_key_priv *priv = dev_get_priv(dev);
-	struct input_key *key = dev_get_platdata(dev);
+	struct dm_key_uclass_platdata *uc_key = dev_get_uclass_platdata(dev);
 	int ret, val, i;
 
 	debug("%s: irq = %d\n", __func__, irq);
@@ -135,14 +135,14 @@ static void pwrkey_irq_handler(int irq, void *data)
 
 	/* fall event */
 	if (val & priv->pwron_fall_int) {
-		key->down_t = key_timer(0);
-		debug("%s: key down: %llu ms\n", __func__, key->down_t);
+		uc_key->fall_ms = key_timer(0);
+		debug("%s: key down: %llu ms\n", __func__, uc_key->fall_ms);
 	}
 
 	/* rise event */
 	if (val & priv->pwron_rise_int) {
-		key->up_t = key_timer(0);
-		debug("%s: key up: %llu ms\n", __func__, key->up_t);
+		uc_key->rise_ms = key_timer(0);
+		debug("%s: key up: %llu ms\n", __func__, uc_key->rise_ms);
 	}
 
 	/* clear intertup */
@@ -162,43 +162,37 @@ static void pwrkey_irq_handler(int irq, void *data)
 
 static int pwrkey_interrupt_init(struct udevice *dev)
 {
-	struct input_key *key = dev_get_platdata(dev);
+	struct dm_key_uclass_platdata *uc_key = dev_get_uclass_platdata(dev);
 	u32 interrupt[2], phandle;
 	int irq, ret;
 
 	phandle = dev_read_u32_default(dev->parent, "interrupt-parent", -1);
 	if (phandle < 0) {
-		printf("failed get 'interrupt-parent', ret=%d\n", phandle);
+		printf("read 'interrupt-parent' failed, ret=%d\n", phandle);
 		return phandle;
 	}
 
 	ret = dev_read_u32_array(dev->parent, "interrupts", interrupt, 2);
 	if (ret) {
-		printf("failed get 'interrupt', ret=%d\n", ret);
+		printf("read 'interrupt' failed, ret=%d\n", ret);
 		return ret;
 	}
 
-	key->parent = dev;
-	key->name = "rk8xx_pwrkey";
-	key->code = KEY_POWER;
-	key->type = GPIO_KEY;
+	uc_key->name = "rk8xx_pwr";
+	uc_key->type = GPIO_KEY;
+	uc_key->code = KEY_POWER;
 	irq = phandle_gpio_to_irq(phandle, interrupt[0]);
 	if (irq < 0) {
-		printf("%s: failed to request irq, ret=%d\n", key->name, irq);
+		printf("%s: request irq failed, ret=%d\n", uc_key->name, irq);
 		return irq;
 	}
-	key->irq = irq;
-	key_add(key);
+	uc_key->irq = irq;
 	irq_install_handler(irq, pwrkey_irq_handler, dev);
 	irq_set_irq_type(irq, IRQ_TYPE_EDGE_FALLING);
 	irq_handler_enable(irq);
 
 	return 0;
 }
-
-static const struct dm_key_ops key_ops = {
-	.name = "rk8xx-pwrkey",
-};
 
 static int rk8xx_pwrkey_probe(struct udevice *dev)
 {
@@ -270,8 +264,6 @@ static int rk8xx_pwrkey_probe(struct udevice *dev)
 U_BOOT_DRIVER(rk8xx_pwrkey) = {
 	.name   = "rk8xx_pwrkey",
 	.id     = UCLASS_KEY,
-	.ops	= &key_ops,
 	.probe  = rk8xx_pwrkey_probe,
-	.platdata_auto_alloc_size = sizeof(struct input_key),
 	.priv_auto_alloc_size = sizeof(struct rk8xx_key_priv),
 };

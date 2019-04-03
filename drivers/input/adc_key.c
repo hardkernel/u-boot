@@ -4,92 +4,77 @@
  * SPDX-License-Identifier:     GPL-2.0+
  */
 
-#include <dm.h>
-#include <dm/read.h>
-#include <adc.h>
 #include <common.h>
-#include <console.h>
-#include <errno.h>
-#include <fdtdec.h>
-#include <malloc.h>
+#include <dm.h>
 #include <key.h>
-#include <linux/input.h>
 
-static int adc_keys_ofdata_to_platdata(struct udevice *dev)
+static int adc_key_ofdata_to_platdata(struct udevice *dev)
 {
-	struct input_key *key;
-	u32 adc_channels[2], microvolt;
+	struct dm_key_uclass_platdata *uc_key;
+	u32 chn[2], mV;
 	int vref, ret;
-	ofnode node;
 
-	/* Get vref */
-	vref = dev_read_u32_default(dev, "keyup-threshold-microvolt", -1);
-	if (vref < 0) {
-		printf("failed to read 'keyup-threshold-microvolt', ret=%d\n",
-		       vref);
-		return -EINVAL;
-	}
+	uc_key = dev_get_uclass_platdata(dev);
+	if (!uc_key)
+		return -ENXIO;
 
-	/* Get IO channel */
-	ret = dev_read_u32_array(dev, "io-channels", adc_channels, 2);
+	uc_key->type = ADC_KEY;
+	uc_key->name = dev_read_string(dev, "label");
+	ret = dev_read_u32_array(dev_get_parent(dev),
+				 "io-channels", chn, ARRAY_SIZE(chn));
 	if (ret) {
-		printf("failed to read 'io-channels', ret=%d\n", ret);
+		printf("%s: read 'io-channels' failed, ret=%d\n",
+		       uc_key->name, ret);
 		return -EINVAL;
 	}
 
-	/* Parse every adc key data */
-	dev_for_each_subnode(node, dev) {
-		key = calloc(1, sizeof(struct input_key));
-		if (!key)
-			return -ENOMEM;
-
-		key->parent = dev;
-		key->type = ADC_KEY;
-		key->vref = vref;
-		key->channel = adc_channels[1];
-		key->name = ofnode_read_string(node, "label");
-		ret = ofnode_read_u32(node, "linux,code", &key->code);
-		if (ret) {
-			printf("%s: failed to read 'linux,code', ret=%d\n",
-			       key->name, ret);
-			free(key);
-			continue;
-		}
-
-		ret = ofnode_read_u32(node, "press-threshold-microvolt",
-				      &microvolt);
-		if (ret) {
-			printf("%s: failed to read 'press-threshold-microvolt', ret=%d\n",
-			       key->name, ret);
-			free(key);
-			continue;
-		}
-
-		/* Convert microvolt to adc value */
-		key->adcval = microvolt / (key->vref / 1024);
-		key_add(key);
-
-		debug("%s: name=%s: code=%d, vref=%d, channel=%d, microvolt=%d, adcval=%d\n",
-		      __func__, key->name, key->code, key->vref,
-		      key->channel, microvolt, key->adcval);
+	vref = dev_read_u32_default(dev_get_parent(dev),
+				    "keyup-threshold-microvolt", -ENODATA);
+	if (vref < 0) {
+		printf("%s: read 'keyup-threshold-microvolt' failed, ret=%d\n",
+		       uc_key->name, vref);
+		return -EINVAL;
 	}
+
+	uc_key->code = dev_read_u32_default(dev, "linux,code", -ENODATA);
+	if (uc_key->code < 0) {
+		printf("%s: read 'linux,code' failed\n", uc_key->name);
+		return -EINVAL;
+	}
+
+	mV = dev_read_u32_default(dev, "press-threshold-microvolt", -ENODATA);
+	if (mV < 0) {
+		printf("%s: read 'press-threshold-microvolt' failed\n",
+		       uc_key->name);
+		return -EINVAL;
+	}
+
+	uc_key->channel = chn[1];
+	uc_key->adcval = mV / (vref / 1024);
 
 	return 0;
 }
 
-static const struct dm_key_ops key_ops = {
-	.name = "adc-keys",
+U_BOOT_DRIVER(adc_key) = {
+	.name   = "adc_key",
+	.id     = UCLASS_KEY,
+	.ofdata_to_platdata = adc_key_ofdata_to_platdata,
 };
 
-static const struct udevice_id adc_keys_ids[] = {
+/* Key Bus */
+static int adc_key_bus_bind(struct udevice *dev)
+{
+	return key_bind_children(dev, "adc_key");
+}
+
+static const struct udevice_id adc_key_bus_match[] = {
 	{ .compatible = "adc-keys" },
 	{ },
 };
 
-U_BOOT_DRIVER(adc_keys) = {
-	.name   = "adc-keys",
-	.id     = UCLASS_KEY,
-	.ops	= &key_ops,
-	.of_match = adc_keys_ids,
-	.ofdata_to_platdata = adc_keys_ofdata_to_platdata,
+U_BOOT_DRIVER(adc_key_bus) = {
+	.name	   = "adc_key_bus",
+	.id	   = UCLASS_SIMPLE_BUS,
+	.of_match  = adc_key_bus_match,
+	.bind	   = adc_key_bus_bind,
 };

@@ -4,119 +4,55 @@
  * SPDX-License-Identifier:     GPL-2.0+
  */
 
-#include <dm.h>
-#include <adc.h>
 #include <common.h>
-#include <console.h>
 #include <dm.h>
-#include <errno.h>
-#include <fdtdec.h>
-#include <malloc.h>
 #include <key.h>
-#include <linux/input.h>
-#include <errno.h>
-#include <dm/read.h>
-#include <irq-generic.h>
-#include <irq-platform.h>
-
-static void gpio_irq_handler(int irq, void *data)
-{
-	struct input_key *key = data;
-
-	if (key->irq != irq)
-		return;
-
-	/* up event */
-	if (irq_get_gpio_level(irq)) {
-		key->up_t = key_timer(0);
-		debug("%s: key down: %llu ms\n", key->name, key->down_t);
-	/* down event */
-	} else {
-		key->down_t = key_timer(0);
-		debug("%s: key up: %llu ms\n", key->name, key->up_t);
-	}
-	/* Must delay */
-	mdelay(10);
-	irq_revert_irq_type(irq);
-}
 
 static int gpio_key_ofdata_to_platdata(struct udevice *dev)
 {
-	struct input_key *key;
-	u32 gpios[2];
-	ofnode node;
-	int irq, ret;
+	struct dm_key_uclass_platdata *uc_key;
 
-	dev_for_each_subnode(node, dev) {
-		key = calloc(1, sizeof(struct input_key));
-		if (!key)
-			return -ENOMEM;
+	uc_key = dev_get_uclass_platdata(dev);
+	if (!uc_key)
+		return -ENXIO;
 
-		key->parent = dev;
-		key->type = GPIO_KEY;
-		key->name = ofnode_read_string(node, "label");
-		ret = ofnode_read_u32(node, "linux,code", &key->code);
-		if (ret) {
-			printf("%s: failed read 'linux,code', ret=%d\n",
-			       key->name, ret);
-			free(key);
-			continue;
-		}
+	uc_key->type = GPIO_KEY;
+	uc_key->name = dev_read_string(dev, "label");
+	uc_key->code = dev_read_u32_default(dev, "linux,code", -ENODATA);
+	if (uc_key->code < 0) {
+		printf("%s: read 'linux,code' failed\n", uc_key->name);
+		return -EINVAL;
+	}
 
-		/* Only register power key as interrupt */
-		if (key->code == KEY_POWER) {
-			ret = ofnode_read_u32_array(node, "gpios", gpios, 2);
-			if (ret) {
-				printf("%s: failed to read 'gpios', ret=%d\n",
-				       key->name, ret);
-				free(key);
-				continue;
-			}
-
-			/* Must register as interrupt, be able to wakeup system */
-			irq = phandle_gpio_to_irq(gpios[0], gpios[1]);
-			if (irq < 0) {
-				printf("%s: failed to request irq, ret=%d\n",
-				       key->name, irq);
-				free(key);
-				continue;
-			}
-			key->irq = irq;
-			key_add(key);
-			irq_install_handler(irq, gpio_irq_handler, key);
-			irq_set_irq_type(irq, IRQ_TYPE_EDGE_FALLING);
-			irq_handler_enable(irq);
-		} else {
-			ret = gpio_request_by_name_nodev(node, "gpios", 0,
-							 &key->gpio,
-							 GPIOD_IS_IN);
-			if (ret) {
-				printf("%s: failed to request gpio, ret=%d\n",
-				       key->name, ret);
-			}
-
-			key_add(key);
-		}
-
-		debug("%s: name=%s: code=%d\n", __func__, key->name, key->code);
+	if (dev_read_u32_array(dev, "gpios",
+			       uc_key->gpios, ARRAY_SIZE(uc_key->gpios))) {
+		printf("%s: read 'gpios' failed\n", uc_key->name);
+		return -EINVAL;
 	}
 
 	return 0;
 }
 
-static const struct dm_key_ops key_ops = {
-	.name = "gpio-keys",
+U_BOOT_DRIVER(gpio_key) = {
+	.name   = "gpio_key",
+	.id     = UCLASS_KEY,
+	.ofdata_to_platdata = gpio_key_ofdata_to_platdata,
 };
 
-static const struct udevice_id gpio_key_ids[] = {
+/* Key Bus */
+static int gpio_key_bus_bind(struct udevice *dev)
+{
+	return key_bind_children(dev, "gpio_key");
+}
+
+static const struct udevice_id gpio_key_bus_match[] = {
 	{ .compatible = "gpio-keys" },
 	{ },
 };
 
-U_BOOT_DRIVER(gpio_keys) = {
-	.name   = "gpio-keys",
-	.id     = UCLASS_KEY,
-	.of_match = gpio_key_ids,
-	.ops	= &key_ops,
-	.ofdata_to_platdata = gpio_key_ofdata_to_platdata,
+U_BOOT_DRIVER(gpio_key_bus) = {
+	.name	   = "gpio_key_bus",
+	.id	   = UCLASS_SIMPLE_BUS,
+	.of_match  = gpio_key_bus_match,
+	.bind	   = gpio_key_bus_bind,
 };
