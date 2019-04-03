@@ -515,25 +515,30 @@ static int imgread_uncomp_pic(unsigned char* srcAddr, const unsigned srcSz,
     return 0;
 }
 
-//[imgread pic] logo bootup $loadaddr_misc
+//[imgread pic] logo $pictureName $loadaddr_misc
+//if $pictureName=bootup,
+//  first try find $board_defined_bootup
+//  last try find bootup
 static int do_image_read_pic(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
     const char* const partName = argv[1];
     unsigned char* loadaddr = 0;
     int rc = 0;
     const AmlResImgHead_t* pResImgHead = NULL;
-    //unsigned totalSz    = 0;
     uint64_t flashReadOff = 0;
     const unsigned PreloadSz = PIC_PRELOAD_SZ;//preload 8k, 124-1 pic header, If you need pack more than 123 items,  fix this
     unsigned itemIndex = 0;
     const AmlResItemHead_t* pItem = NULL;
-    const char* picName = argv[2];
+    const char* defPic  = argv[2];
+    const AmlResItemHead_t* itemFound = NULL;
+    char cmdBuf[256];
+    const char* bootupOutmode[4] = {NULL, NULL, NULL, NULL};//${bootup_board}_720, ${bootup_board}, bootup_720, bootup
 
     loadaddr = (unsigned char*)simple_strtoul(argc > 3 ? argv[3] : getenv("loadaddr_misc"), NULL, 16);
 
     pResImgHead = (AmlResImgHead_t*)loadaddr;
 
-    debugP("to read pic (%s)\n", picName);
+    debugP("to read pic (%s)\n", defPic);
     rc = store_read_ops((unsigned char*)partName, loadaddr, flashReadOff, PreloadSz);
     if (rc) {
         errorP("Fail to read 0x%xB from part[%s] at offset 0\n", PreloadSz, partName);
@@ -547,75 +552,105 @@ static int do_image_read_pic(cmd_tbl_t *cmdtp, int flag, int argc, char * const 
         return __LINE__;
     }
 
-    //correct bootup for mbox
-    while (!strcmp("bootup", picName))
+    bootupOutmode[3] = defPic;//try it last
+    //correct bootup
+    while (!strcmp("bootup", defPic))
     {
-            char* outputmode = getenv("outputmode");
-            if (!outputmode)break;//not env outputmode
+        const char* picName = NULL;
+        if (getenv("board_defined_bootup")) {//set bootup name is board
+            bootupOutmode[1] = picName = getenv("board_defined_bootup");
+        }
 
-            rc = !strncmp("720", outputmode, 3) || !strncmp("576", outputmode, 3) || !strncmp("480", outputmode, 3);
-            if (rc) {
-                    picName = "bootup_720";
-                    break;
+        char* outputmode = getenv("outputmode");
+        if (!outputmode)break;//not env outputmode
+
+        rc = !strncmp("720", outputmode, 3) || !strncmp("576", outputmode, 3) || !strncmp("480", outputmode, 3);
+        if (rc) {
+            bootupOutmode[2] = "bootup_720";
+            if (picName) {
+                sprintf(cmdBuf, "%s_720", picName);
+                bootupOutmode[0] = cmdBuf;
             }
-
-            picName = "bootup_1080";
             break;
+        }
+
+        bootupOutmode[2] = "bootup_1080";
+        if (picName) {
+            sprintf(cmdBuf, "%s_1080", picName);
+            bootupOutmode[0] = cmdBuf;
+        }
+        break;
     }
+    debugP("bootupOutmode %s,%s, %s, %s\n", bootupOutmode[0], bootupOutmode[1], bootupOutmode[2], bootupOutmode[3]);
 
-    pItem = (AmlResItemHead_t*)(pResImgHead + 1);
-    for (itemIndex = 0; itemIndex < pResImgHead->imgItemNum; ++itemIndex, ++pItem)
-    {
+    int i = 0;
+    for (; i < ARRAY_SIZE(bootupOutmode); ++i) {
+        const char* thisName = bootupOutmode[i];
+        if (!thisName) continue;
+
+        pItem = (AmlResItemHead_t*)(pResImgHead + 1);
+        for (itemIndex = 0; itemIndex < pResImgHead->imgItemNum; ++itemIndex, ++pItem) {
             if (IH_MAGIC != pItem->magic) {
-                    errorP("item magic 0x%x != 0x%x\n", pItem->magic, IH_MAGIC);
-                    return __LINE__;
+                errorP("item magic 0x%x != 0x%x\n", pItem->magic, IH_MAGIC);
+                return __LINE__;
             }
-            if (!strcmp(picName, pItem->name) || !strcmp(argv[2], pItem->name))
-            {
-                    char env_name[IH_NMLEN*2];
-                    char env_data[IH_NMLEN*2];
-                    unsigned long picLoadAddr = (unsigned long)loadaddr + (unsigned)pItem->start;
-                    int         itemSz      = pItem->size;
-                    int         uncompSz    = 0;
-
-                    if (pItem->start + itemSz > flashReadOff)
-                    {
-                        unsigned long rdOff = pItem->start;
-                        unsigned long rdOffAlign = (rdOff >> 11) << 11;//align 2k page for mtd nand, 512 for emmc
-                        rc = store_read_ops((unsigned char*)partName, (unsigned char *)((picLoadAddr>>11)<<11),
-                                rdOffAlign, itemSz + (rdOff & 0x7ff) );
-                        if (rc) {
-                            errorP("Fail to read pic at offset 0x%x\n", pItem->start);
-                            return __LINE__;
-                        }
-                        debugP("pic sz 0x%x\n", itemSz);
-                    }
-
-                    //uncompress supported format
-                    unsigned long uncompLoadaddr = picLoadAddr + itemSz + 7;
-                    uncompLoadaddr &= ~(0x7U);
-                    rc = imgread_uncomp_pic((unsigned char*)picLoadAddr, itemSz, (unsigned char*)uncompLoadaddr,
-                            CONFIG_MAX_PIC_LEN, (unsigned long*)&uncompSz);
-                    if (rc) {
-                        errorP("Fail in uncomp pic,rc[%d]\n", rc);
-                        return __LINE__;
-                    }
-                    if (uncompSz) {
-                        itemSz      = uncompSz;
-                        picLoadAddr = uncompLoadaddr;
-                    }
-
-                    sprintf(env_name, "%s_offset", argv[2]);//be bootup_offset ,not bootup_720_offset
-                    sprintf(env_data, "0x%lx", picLoadAddr);
-                    setenv(env_name, env_data);
-
-                    sprintf(env_name, "%s_size", argv[2]);
-                    sprintf(env_data, "0x%x", itemSz);
-                    setenv(env_name, env_data);
-
-                    debugP("end read pic[%s]\n", picName);
-                    return 0;//success
+            const char* itemName = pItem->name;
+            if (!strcmp(thisName, itemName)) {
+                itemFound = pItem;
+                debugP("found itemName %s\n", itemName);
+                break;
             }
+        }
+        if (itemFound) break;
+    }
+    if (!itemFound) {
+        errorP("cannot find pic for cmd[imgread pic %s]\n", defPic);
+        return CMD_RET_FAILURE;
+    }
+    {
+        char env_name[IH_NMLEN*2];
+        char env_data[IH_NMLEN*2];
+        unsigned long picLoadAddr = (unsigned long)loadaddr + (unsigned)pItem->start;
+        int         itemSz      = pItem->size;
+        int         uncompSz    = 0;
+
+        if (pItem->start + itemSz > flashReadOff)
+        {
+            unsigned long rdOff = pItem->start;
+            unsigned long rdOffAlign = (rdOff >> 11) << 11;//align 2k page for mtd nand, 512 for emmc
+            rc = store_read_ops((unsigned char*)partName, (unsigned char *)((picLoadAddr>>11)<<11),
+                    rdOffAlign, itemSz + (rdOff & 0x7ff) );
+            if (rc) {
+                errorP("Fail to read pic at offset 0x%x\n", pItem->start);
+                return __LINE__;
+            }
+            debugP("pic sz 0x%x\n", itemSz);
+        }
+
+        //uncompress supported format
+        unsigned long uncompLoadaddr = picLoadAddr + itemSz + 7;
+        uncompLoadaddr &= ~(0x7U);
+        rc = imgread_uncomp_pic((unsigned char*)picLoadAddr, itemSz, (unsigned char*)uncompLoadaddr,
+                CONFIG_MAX_PIC_LEN, (unsigned long*)&uncompSz);
+        if (rc) {
+            errorP("Fail in uncomp pic,rc[%d]\n", rc);
+            return __LINE__;
+        }
+        if (uncompSz) {
+            itemSz      = uncompSz;
+            picLoadAddr = uncompLoadaddr;
+        }
+
+        sprintf(env_name, "%s_offset", defPic);//be bootup_offset ,not bootup_720_offset
+        sprintf(env_data, "0x%lx", picLoadAddr);
+        setenv(env_name, env_data);
+
+        sprintf(env_name, "%s_size", defPic);
+        sprintf(env_data, "0x%x", itemSz);
+        setenv(env_name, env_data);
+
+        debugP("end read pic[%s]\n", defPic);
+        return 0;//success
     }
 
     return __LINE__;//fail
@@ -657,7 +692,7 @@ U_BOOT_CMD(
    "imgread kernel  --- Read image in fomart IMAGE_FORMAT_ANDROID\n"
    "imgread dtb     --- Read dtb in fomart IMAGE_FORMAT_ANDROID\n"
    "imgread res     --- Read image packed by 'Amlogic resource packer'\n"
-   "imgread picture --- Read one picture from Amlogic logo"
+   "imgread pic     --- Read one picture from Amlogic logo"
    "    - e.g. \n"
    "        to read boot.img     from part boot     from flash: <imgread kernel boot loadaddr> \n"   //usage
    "        to read recovery.img from part recovery from flash: <imgread kernel recovery loadaddr $offset> \n"   //usage

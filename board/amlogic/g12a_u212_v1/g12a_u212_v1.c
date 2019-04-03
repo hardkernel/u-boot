@@ -716,6 +716,9 @@ int board_late_init(void)
 		aml_try_factory_sdcard_burning(0, gd->bd);
 #endif// #ifdef CONFIG_AML_V2_FACTORY_BURN
 
+    if (MESON_CPU_MAJOR_ID_SM1 == get_cpu_id().family_id) {
+		setenv("board_defined_bootup", "bootup_X3");
+	}
 	/**/
 	aml_config_dtb();
 	return 0;

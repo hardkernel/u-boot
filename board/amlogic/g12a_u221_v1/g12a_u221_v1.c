@@ -728,6 +728,9 @@ int board_late_init(void)
 	/* close pcie phy */
 	pcie_phy_shutdown();
 
+    if (MESON_CPU_MAJOR_ID_SM1 == get_cpu_id().family_id) {
+		setenv("board_defined_bootup", "bootup_Y3");
+	}
 	/**/
 	aml_config_dtb();
 	return 0;
