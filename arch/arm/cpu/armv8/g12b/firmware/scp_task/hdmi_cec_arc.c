@@ -290,12 +290,13 @@ static int cec_queue_tx_msg(unsigned char *msg, unsigned char len)
 
 static int cec_triggle_tx(unsigned char *msg, unsigned char len)
 {
-	int i = 0, lock;
+	int i = 0, ret = TX_ERROR;
+	unsigned int reg;
 
 	while (1) {
 		/* send is in process */
-		lock = cec_rd_reg(DWC_CECB_LOCK_BUF);
-		if (lock) {
+		reg = cec_rd_reg(DWC_CECB_LOCK_BUF);
+		if (reg) {
 			cec_dbg_prints("rx msg in tx\n");
 			return -1;
 		}
@@ -319,22 +320,6 @@ static int cec_triggle_tx(unsigned char *msg, unsigned char len)
 	/* start send */
 	cec_wr_reg(DWC_CECB_TX_CNT, len);
 	cec_set_bits_dwc(DWC_CECB_CTRL, 3, 0, 3);
-	return 0;
-}
-
-static int remote_cec_ll_tx(unsigned char *msg, unsigned char len)
-{
-	cec_queue_tx_msg(msg, len);
-	cec_triggle_tx(msg, len);
-
-	return 0;
-}
-
-static int ping_cec_ll_tx(unsigned char *msg, unsigned char len)
-{
-	unsigned int reg, ret = 0;
-
-	remote_cec_ll_tx(msg, len);
 
 	while (cec_tx_msgs.queue_idx != cec_tx_msgs.send_idx) {
 		reg = readl(AO_CECB_INTR_STAT);
@@ -342,32 +327,43 @@ static int ping_cec_ll_tx(unsigned char *msg, unsigned char len)
 		if (reg & CECB_IRQ_TX_DONE) {
 			ret = TX_DONE;
 			cec_tx_msgs.send_idx = (cec_tx_msgs.send_idx + 1) & CEC_TX_MSG_BUF_MASK;
-			cec_dbg_prints("ping_cec_tx:TX_DONE\n");
+			cec_dbg_prints("cec_triggle_tx:TX_DONE\n");
 			break;
 		}
 
 		if (reg & CECB_IRQ_TX_NACK) {
 			ret = TX_ERROR;
 			cec_tx_msgs.send_idx = (cec_tx_msgs.send_idx + 1) & CEC_TX_MSG_BUF_MASK;
-			cec_dbg_prints("ping_cec_tx:TX_ERROR\n");
+			cec_dbg_prints("cec_triggle_tx:TX_ERROR\n");
 			break;
 		}
 		if (reg & CECB_IRQ_TX_ARB_LOST) {
 			ret = TX_BUSY;
 			cec_tx_msgs.send_idx = (cec_tx_msgs.send_idx + 1) & CEC_TX_MSG_BUF_MASK;
-			cec_dbg_prints("ping_cec_tx:TX_ABT_LOST\n");
+			cec_dbg_prints("cec_triggle_tx:TX_ABT_LOST\n");
 			break;
 		}
 		if (reg & CECB_IRQ_TX_ERR_INITIATOR) {
 			ret = TX_BUSY;
 			cec_tx_msgs.send_idx = (cec_tx_msgs.send_idx + 1) & CEC_TX_MSG_BUF_MASK;
-			cec_dbg_prints("ping_cec_tx:TX_ERR_INIT\n");
+			cec_dbg_prints("cec_triggle_tx:TX_ERR_INIT\n");
 			break;
 		}
 		_udelay(500);
 	}
 
 	return ret;
+}
+
+static int remote_cec_ll_tx(unsigned char *msg, unsigned char len)
+{
+	cec_queue_tx_msg(msg, len);
+	return cec_triggle_tx(msg, len);
+}
+
+static int ping_cec_ll_tx(unsigned char *msg, unsigned char len)
+{
+	return remote_cec_ll_tx(msg, len);
 }
 
 #define DEVICE_TV		0

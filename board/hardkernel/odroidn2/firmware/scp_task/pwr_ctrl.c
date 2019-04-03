@@ -188,10 +188,13 @@ static unsigned int detect_key(unsigned int suspend_from)
 
 	do {
 		#ifdef CONFIG_CEC_WAKEUP
-		if (irq[IRQ_AO_CECB] == IRQ_AO_CEC2_NUM) {
-			irq[IRQ_AO_CECB] = 0xFFFFFFFF;
-			if (cec_power_on_check())
-				exit_reason = CEC_WAKEUP;
+		if (!cec_msg.log_addr)
+			cec_node_init();
+		else {
+			if (readl(AO_CECB_INTR_STAT) & CECB_IRQ_RX_EOM) {
+				if (cec_power_on_check())
+					exit_reason = CEC_WAKEUP;
+			}
 		}
 		#endif
 		if (irq[IRQ_AO_IR_DEC] == IRQ_AO_IR_DEC_NUM) {
