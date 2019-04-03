@@ -486,7 +486,7 @@
 	#define CONFIG_USB_GPIO_PWR_NAME		"GPIOH_6"
 	#define CONFIG_USB_AMLOGIC_PHY_V2		1
 	#define CONFIG_USB_U2_PORT_NUM			3
-	//#define CONFIG_RTK_USB_BT 1
+	#define CONFIG_USB_POWER				1
 	//#define CONFIG_USB_XHCI_AMLOGIC_USB3_V2		1
 #endif //#if defined(CONFIG_CMD_USB)
 
@@ -504,7 +504,7 @@
 #define CONFIG_USBDOWNLOAD_GADGET 1
 #define CONFIG_SYS_CACHELINE_SIZE 64
 #define CONFIG_FASTBOOT_MAX_DOWN_SIZE	0x8000000
-#define CONFIG_DEVICE_PRODUCT	"marconi"
+#define CONFIG_DEVICE_PRODUCT	"t962x3_ab301"
 
 //UBOOT Facotry usb/sdcard burning config
 #define CONFIG_AML_V2_FACTORY_BURN              1       //support facotry usb burning
