@@ -34,6 +34,19 @@
 		regulator-always-on;
 		regulator-boot-on;
 	};
+
+	gpio-keys {
+		u-boot,dm-pre-reloc;
+		compatible = "gpio-keys";
+		status = "okay";
+
+		volume-up {
+			u-boot,dm-pre-reloc;
+			linux,code = <KEY_VOLUMEUP>;
+			label = "Volume Up";
+			gpios = <&gpio3 25 GPIO_ACTIVE_LOW>;
+		};
+	};
 };
 
 &dmc {

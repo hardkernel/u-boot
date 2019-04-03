@@ -62,6 +62,16 @@
 	status = "okay";
 };
 
+&pinctrl {
+	u-boot,dm-pre-reloc;
+	status = "okay";
+};
+
 &gpio1 {
 	u-boot,dm-pre-reloc;
+};
+
+&gpio3 {
+	u-boot,dm-pre-reloc;
+	status = "okay";
 };
