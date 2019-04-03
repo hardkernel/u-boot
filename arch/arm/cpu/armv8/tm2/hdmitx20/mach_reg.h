@@ -65,34 +65,38 @@ unsigned sec_reg_read(unsigned *addr);
 #define P_PREG_PAD_GPIO5_EN_N PREG_PAD_REG_ADDR(0x20)
 #define P_PREG_PAD_GPIO5_O    PREG_PAD_REG_ADDR(0x21)
 #define P_PREG_PAD_GPIO5_I    PREG_PAD_REG_ADDR(0x22)
-#define PERIPHS_PIN_MUX_0 0x2c	/* register.h:419 */
+#define PERIPHS_PIN_MUX_0 0xb0	/* register.h:419 */
 #define P_PERIPHS_PIN_MUX_0 PREG_PAD_REG_ADDR(PERIPHS_PIN_MUX_0)
-#define PERIPHS_PIN_MUX_1 0x2d	/* register.h:420 */
+#define PERIPHS_PIN_MUX_1 0xb1	/* register.h:420 */
 #define P_PERIPHS_PIN_MUX_1 PREG_PAD_REG_ADDR(PERIPHS_PIN_MUX_1)
-#define PERIPHS_PIN_MUX_2 0x2e	/* register.h:421 */
+#define PERIPHS_PIN_MUX_2 0xb2	/* register.h:421 */
 #define P_PERIPHS_PIN_MUX_2 PREG_PAD_REG_ADDR(PERIPHS_PIN_MUX_2)
-#define PERIPHS_PIN_MUX_3 0x2f	/* register.h:422 */
+#define PERIPHS_PIN_MUX_3 0xb3	/* register.h:422 */
 #define P_PERIPHS_PIN_MUX_3 PREG_PAD_REG_ADDR(PERIPHS_PIN_MUX_3)
-#define PERIPHS_PIN_MUX_4 0x30	/* register.h:423 */
+#define PERIPHS_PIN_MUX_4 0xb4	/* register.h:423 */
 #define P_PERIPHS_PIN_MUX_4 PREG_PAD_REG_ADDR(PERIPHS_PIN_MUX_4)
-#define PERIPHS_PIN_MUX_5 0x31	/* register.h:424 */
+#define PERIPHS_PIN_MUX_5 0xb5	/* register.h:424 */
 #define P_PERIPHS_PIN_MUX_5 PREG_PAD_REG_ADDR(PERIPHS_PIN_MUX_5)
-#define PERIPHS_PIN_MUX_6 0x32	/* register.h:425 */
+#define PERIPHS_PIN_MUX_6 0xb6	/* register.h:425 */
 #define P_PERIPHS_PIN_MUX_6 PREG_PAD_REG_ADDR(PERIPHS_PIN_MUX_6)
-#define PERIPHS_PIN_MUX_7 0x33	/* register.h:426 */
+#define PERIPHS_PIN_MUX_7 0xb7	/* register.h:426 */
 #define P_PERIPHS_PIN_MUX_7 PREG_PAD_REG_ADDR(PERIPHS_PIN_MUX_7)
-#define PERIPHS_PIN_MUX_8 0x34	/* register.h:427 */
+#define PERIPHS_PIN_MUX_8 0xb8	/* register.h:427 */
 #define P_PERIPHS_PIN_MUX_8 PREG_PAD_REG_ADDR(PERIPHS_PIN_MUX_8)
-#define PERIPHS_PIN_MUX_9 0x35	/* register.h:428 */
+#define PERIPHS_PIN_MUX_9 0xb9	/* register.h:428 */
 #define P_PERIPHS_PIN_MUX_9 PREG_PAD_REG_ADDR(PERIPHS_PIN_MUX_9)
-#define PERIPHS_PIN_MUX_10 0x36	/* register.h:429 */
-#define P_PERIPHS_PIN_MUX_10 PREG_PAD_REG_ADDR(PERIPHS_PIN_MUX_10)
-#define PERIPHS_PIN_MUX_11 0x37	/* register.h:430 */
-#define P_PERIPHS_PIN_MUX_11 PREG_PAD_REG_ADDR(PERIPHS_PIN_MUX_11)
-#define PERIPHS_PIN_MUX_12 0x38	/* register.h:431 */
-#define P_PERIPHS_PIN_MUX_12 PREG_PAD_REG_ADDR(PERIPHS_PIN_MUX_12)
-#define PERIPHS_PIN_MUX_B 0xbb	/* register.h:431 */
+#define PERIPHS_PIN_MUX_A 0xba	/* register.h:429 */
+#define P_PERIPHS_PIN_MUX_A PREG_PAD_REG_ADDR(PERIPHS_PIN_MUX_A)
+#define PERIPHS_PIN_MUX_B 0xbb	/* register.h:430 */
 #define P_PERIPHS_PIN_MUX_B PREG_PAD_REG_ADDR(PERIPHS_PIN_MUX_B)
+#define PERIPHS_PIN_MUX_C 0xbc	/* register.h:431 */
+#define P_PERIPHS_PIN_MUX_C PREG_PAD_REG_ADDR(PERIPHS_PIN_MUX_C)
+#define PERIPHS_PIN_MUX_D 0xbd	/* register.h:431 */
+#define P_PERIPHS_PIN_MUX_D PREG_PAD_REG_ADDR(PERIPHS_PIN_MUX_D)
+#define PERIPHS_PIN_MUX_E 0xbe	/* register.h:431 */
+#define P_PERIPHS_PIN_MUX_E PREG_PAD_REG_ADDR(PERIPHS_PIN_MUX_E)
+#define PERIPHS_PIN_MUX_F 0xbf	/* register.h:431 */
+#define P_PERIPHS_PIN_MUX_F PREG_PAD_REG_ADDR(PERIPHS_PIN_MUX_F)
 
 #define PAD_PULL_UP_REG0 0x3a
 #define P_PAD_PULL_UP_REG0 PREG_PAD_REG_ADDR(PAD_PULL_UP_REG0)

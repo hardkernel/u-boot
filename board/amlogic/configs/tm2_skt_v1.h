@@ -230,7 +230,7 @@
             "fi;"\
             "\0"\
         "init_display="\
-            "osd open;osd clear;imgread pic logo bootup $loadaddr;bmp display $bootup_offset;bmp scale;vout output ${outputmode}"\
+            "hdmitx hpd;osd open;osd clear;imgread pic logo bootup $loadaddr;bmp display $bootup_offset;bmp scale;vout output ${outputmode}"\
             "\0"\
         "cmdline_keys="\
             "if keyman init 0x1234; then "\
@@ -445,7 +445,7 @@
 //#define CONFIG_AML_CVBS 1
 #endif
 
-#define CONFIG_AML_LCD    1
+//#define CONFIG_AML_LCD    1    //wait to verify lcd function
 #define CONFIG_AML_LCD_TV 1
 //#define CONFIG_AML_LCD_EXTERN 1
 
