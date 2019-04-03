@@ -11,6 +11,7 @@
 	};
 
 	chosen {
+		u-boot,spl-boot-order = &sdmmc, &emmc;
 		stdout-path = &uart2;
 	};
 
