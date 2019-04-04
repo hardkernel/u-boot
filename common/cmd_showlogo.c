@@ -64,14 +64,14 @@ static int boot_partition(void)
 	int dev = get_boot_device();
 
 	if (dev == BOOT_DEVICE_EMMC)
-		return 0;
-	else if (dev == BOOT_DEVICE_SD)
 		return 1;
+	else if (dev == BOOT_DEVICE_SD)
+		return 0;
 
 	return -1;
 }
 
-static int display_logo(const char* mode, const char* bmp_width, const char* bmp_height)
+static int display_logo(const char* mode, const char* bmp_width, const char* bmp_height, const char* bmp_filename)
 {
 	int ret = 0;
 	int i = 0;
@@ -105,20 +105,12 @@ static int display_logo(const char* mode, const char* bmp_width, const char* bmp
 	/* check boot device */
 	bootdev = boot_partition();
 
-	setenv("bootlogo_addr", getenv("loadaddr")); /* 0x1080000 */
+	setenv("bootlogo_addr", "0x20000000");
 #ifdef CONFIG_VIDEO_BMP_GZIP
-	sprintf(str, "load mmc %d ${bootlogo_addr} boot-logo.bmp.gz", bootdev);
+	sprintf(str, "load mmc %d ${bootlogo_addr} %s", bootdev, bmp_filename);
 	ret = run_command(str, 0);
 	if (!ret)	goto display_logo;
 #endif
-	sprintf(str, "load mmc %d ${bootlogo_addr} boot-logo.bmp", bootdev);
-	ret = run_command(str, 0);
-	if (!ret)	goto display_logo;
-
-	sprintf(str, "movi read logo %d ${bootlogo_addr}", bootdev);
-	ret = run_command(str, 0);
-	if (!ret)	goto display_logo;
-
 	/* set indispensable display initialization only */
 	run_command("osd open; osd clear", 0);
 	sprintf(str, "vout output %s", mode);
@@ -158,24 +150,26 @@ static int do_showlogo(cmd_tbl_t *cmdtp, int flag, int argc,
 	if (argc <= 1) {
 		mode = getenv("hdmimode");
 		/* ODROID default logo size 1280x720 */
-		display_logo((NULL == mode) ? "1080p60hz" : mode, "1280", "720");
-	} else if (argc == 4) {
-		display_logo(argv[1], argv[2], argv[3]);
+		display_logo((NULL == mode) ? "1080p60hz" : mode, "1280", "720", "boot-logo.bmp.gz");
+	} else if (argc == 5) {
+		display_logo(argv[1], argv[2], argv[3], argv[4]);
 	} else {
-		display_logo(argv[1], "1280", "720");
+		display_logo(argv[1], "1280", "720", "boot-logo.bmp.gz");
 	}
 
 	return 0;
 }
 
 U_BOOT_CMD(
-		showlogo,		4,		0,	do_showlogo,
+		showlogo,		5,		0,	do_showlogo,
 		"Displaying BMP logo file to HDMI screen with the specified resolution",
-		"<resolution> [<bmp_width> <bmp_height>]\n"
+		"<resolution> [<bmp_width> <bmp_height> <bmp_filename>]\n"
 		"	resolution - screen resoltuion on HDMI screen\n"
 		"		'1080p60hz' will be used by default if missing\n"
 		"	bmp_width (optional) - width of logo bmp file\n"
 		"		'1280' will be used by default if missing\n"
 		"	bmp_height (optional) - height of logo bmp file\n"
 		"		'720' will be used by default if missing"
+		"	bmp_filename (optional) - name of the logo bmp file\n"
+		"		'boot-logo.bmp.gz' will be used by default if missing"
 );
