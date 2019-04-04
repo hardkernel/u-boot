@@ -12,6 +12,7 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
+#if !defined(CONFIG_SPL_BUILD) && !defined(CONFIG_TPL_BUILD)
 #define SDRAM_OFFSET(offset)		(CONFIG_SYS_SDRAM_BASE + (offset))
 #define PARAM_DRAM_INFO_OFFSET		(SZ_32M)
 #define PARAM_OPTEE_INFO_OFFSET		(SZ_32M + SZ_2M)
@@ -195,6 +196,7 @@ int param_parse_bootdev(char **devtype, char **devnum)
 
 	return -ENOSYS;
 }
+#endif
 
 struct memblock *param_parse_ddr_mem(int *out_count)
 {
