@@ -208,6 +208,17 @@ void send_pwm_delt(int32_t vcck_delt, int32_t ee_delt)
 	mb_message_end(LOW_PRIORITY);
 }
 
+void init_dsp_cfg0(unsigned int id, unsigned int addr, unsigned int cfg0)
+{
+	mb_message_start(HIGH_PRIORITY);
+	writel(id, ap_mb_payload[HIGH_PRIORITY]);
+	writel(addr, (ap_mb_payload[HIGH_PRIORITY]+1));
+	writel(cfg0, (ap_mb_payload[HIGH_PRIORITY]+2));
+	mb_message_send(SCPI_CMD_INIT_DSP, HIGH_PRIORITY);
+	mb_message_wait(HIGH_PRIORITY);
+	mb_message_end(HIGH_PRIORITY);
+}
+
 void set_boot_first_timeout(unsigned int command)
 {
 	mb_message_start(LOW_PRIORITY);
