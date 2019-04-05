@@ -539,4 +539,5 @@
 
 #define CONFIG_BOARD_EARLY_INIT_F		1
 
+#define CONFIG_ZERO_BOOTDELAY_CHECK	/* check for keypress on bootdelay==0 */
 #endif
