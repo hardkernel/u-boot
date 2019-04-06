@@ -772,8 +772,8 @@ void lcd_timing_init_config(struct lcd_config_s *pconf)
 	vsync_bp = pconf->lcd_timing.vsync_bp;
 	vsync_width = pconf->lcd_timing.vsync_width;
 
-	de_hstart = h_period - h_active - 1;
-	de_vstart = v_period - v_active;
+	de_hstart = hsync_bp + hsync_width;
+	de_vstart = vsync_bp + vsync_width;
 
 	pconf->lcd_timing.video_on_pixel = de_hstart - h_delay;
 	pconf->lcd_timing.video_on_line = de_vstart;
