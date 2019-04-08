@@ -670,4 +670,12 @@ const char *blk_get_if_type_name(enum if_type if_type);
 int blk_common_cmd(int argc, char * const argv[], enum if_type if_type,
 		   int *cur_devnump);
 
+/**
+ * if_typename_to_iftype() - get iftype according to iftype name
+ *
+ * @if_typename: iftype name
+ * @return iftype index
+ */
+enum if_type if_typename_to_iftype(const char *if_typename);
+
 #endif

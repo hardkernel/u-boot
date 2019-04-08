@@ -49,7 +49,7 @@ static enum uclass_id if_type_uclass_id[IF_TYPE_COUNT] = {
 	[IF_TYPE_SYSTEMACE]	= UCLASS_INVALID,
 };
 
-static enum if_type if_typename_to_iftype(const char *if_typename)
+enum if_type if_typename_to_iftype(const char *if_typename)
 {
 	int i;
 
