@@ -78,4 +78,10 @@ config WDT_ORION
 	   Select this to enable Orion watchdog timer, which can be found on some
 	   Marvell Armada chips.
 
+config ROCKCHIP_WATCHDOG
+	bool "Rockchip watchdog"
+	depends on WDT && ARCH_ROCKCHIP
+	help
+	  Say Y here to enable Rockchip watchdog driver.
+
 endmenu
