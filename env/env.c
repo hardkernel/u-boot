@@ -46,6 +46,8 @@ static enum env_location env_get_default_location(void)
 		return ENVL_SPI_FLASH;
 	else if IS_ENABLED(CONFIG_ENV_IS_IN_UBI)
 		return ENVL_UBI;
+	else if IS_ENABLED(CONFIG_ENV_IS_IN_BLK_DEV)
+		return ENVL_BLK;
 	else if IS_ENABLED(CONFIG_ENV_IS_NOWHERE)
 		return ENVL_NOWHERE;
 	else

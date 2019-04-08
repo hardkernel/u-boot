@@ -210,6 +210,7 @@ enum env_location {
 	ENVL_SPI_FLASH,
 	ENVL_UBI,
 	ENVL_NOWHERE,
+	ENVL_BLK,
 
 	ENVL_COUNT,
 	ENVL_UNKNOWN,
