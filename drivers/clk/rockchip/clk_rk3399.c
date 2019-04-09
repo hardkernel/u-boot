@@ -252,6 +252,10 @@ enum {
 	DCLK_VOP_DIV_CON_MASK           = 0xff,
 	DCLK_VOP_DIV_CON_SHIFT          = 0,
 
+	/* CLKSEL_CON57 */
+	PCLK_ALIVE_DIV_CON_SHIFT	= 0,
+	PCLK_ALIVE_DIV_CON_MASK		= 0x1f << PCLK_ALIVE_DIV_CON_SHIFT,
+
 	/* CLKSEL_CON58 */
 	CLK_SPI_PLL_SEL_WIDTH = 1,
 	CLK_SPI_PLL_SEL_MASK = ((1 < CLK_SPI_PLL_SEL_WIDTH) - 1),
@@ -1117,6 +1121,17 @@ static ulong rk3399_peri_get_clk(struct rk3399_clk_priv *priv, ulong clk_id)
 	return DIV_TO_RATE(parent, div);
 }
 
+static ulong rk3399_alive_get_clk(struct rk3399_clk_priv *priv)
+{
+	struct rk3399_cru *cru = priv->cru;
+	u32 div, con, parent;
+
+	con = readl(&cru->clksel_con[57]);
+	div = (con & PCLK_ALIVE_DIV_CON_MASK) >>
+	      PCLK_ALIVE_DIV_CON_SHIFT;
+	parent = GPLL_HZ;
+	return DIV_TO_RATE(parent, div);
+}
 #endif
 
 static ulong rk3399_clk_get_rate(struct clk *clk)
@@ -1183,6 +1198,10 @@ static ulong rk3399_clk_get_rate(struct clk *clk)
 	case HCLK_PERILP1:
 	case PCLK_PERILP1:
 		rate = rk3399_peri_get_clk(priv, clk->id);
+		break;
+	case PCLK_ALIVE:
+	case PCLK_WDT:
+		rate = rk3399_alive_get_clk(priv);
 		break;
 #endif
 	default:
@@ -1620,6 +1639,7 @@ static ulong rk3399_pmuclk_get_rate(struct clk *clk)
 
 	switch (clk->id) {
 	case PCLK_RKPWM_PMU:
+	case PCLK_WDT_M0_PMU:
 		rate = rk3399_pwm_get_clk(priv->pmucru);
 		break;
 	case SCLK_I2C0_PMU:
