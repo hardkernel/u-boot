@@ -277,7 +277,7 @@ static int part_get_info_rkparm(struct blk_desc *dev_desc, int idx,
 	}
 
 	info->start = p->start;
-	info->size = p->size << 9;
+	info->size = p->size;
 	info->blksz = dev_desc->blksz;
 
 	sprintf((char *)info->name, "%s", p->name);
