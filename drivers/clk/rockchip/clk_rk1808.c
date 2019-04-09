@@ -583,6 +583,7 @@ static ulong rk1808_bus_get_clk(struct rk1808_clk_priv *priv, ulong clk_id)
 		parent = priv->gpll_hz;
 		break;
 	case LSCLK_BUS_PRE:
+	case PCLK_WDT:
 		con = readl(&cru->clksel_con[28]);
 		div = (con & LSCLK_BUS_DIV_CON_MASK) >> LSCLK_BUS_DIV_CON_SHIFT;
 		parent = priv->gpll_hz;
@@ -822,6 +823,7 @@ static ulong rk1808_clk_get_rate(struct clk *clk)
 	case HSCLK_BUS_PRE:
 	case MSCLK_BUS_PRE:
 	case LSCLK_BUS_PRE:
+	case PCLK_WDT:
 		rate = rk1808_bus_get_clk(priv, clk->id);
 		break;
 	case MSCLK_PERI:
