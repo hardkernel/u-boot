@@ -924,7 +924,11 @@ endif
 quiet_cmd_copy = COPY    $@
       cmd_copy = cp $< $@
 
-u-boot.dtb: dts/dt.dtb
+ifeq ($(CONFIG_USING_KERNEL_DTB),y)
+u-boot.dtb: dts/dt-spl.dtb FORCE
+else
+u-boot.dtb: dts/dt.dtb FORCE
+endif
 	$(call cmd,copy)
 
 OBJCOPYFLAGS_u-boot.hex := -O ihex
