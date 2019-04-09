@@ -774,6 +774,18 @@ static ulong rk3368_vop_set_clk(struct rk3368_cru *cru, int clk_id, uint hz)
 
 	return 0;
 }
+
+static ulong rk3368_alive_get_clk(struct rk3368_clk_priv *priv)
+{
+	struct rk3368_cru *cru = priv->cru;
+	u32 div, con, parent;
+
+	con = readl(&cru->clksel_con[10]);
+	div = (con & PCLK_ALIVE_DIV_CON_MASK) >>
+	      PCLK_ALIVE_DIV_CON_SHIFT;
+	parent = GPLL_HZ;
+	return DIV_TO_RATE(parent, div);
+}
 #endif
 
 static ulong rk3368_armclk_set_clk(struct rk3368_clk_priv *priv,
@@ -892,6 +904,9 @@ static ulong rk3368_clk_get_rate(struct clk *clk)
 	case ACLK_VOP:
 	case DCLK_VOP:
 		rate =  rk3368_vop_get_clk(priv->cru, clk->id);
+		break;
+	case PCLK_WDT:
+		rate = rk3368_alive_get_clk(priv);
 		break;
 #endif
 	default:
