@@ -576,6 +576,7 @@ static ulong rk3308_bus_get_clk(struct rk3308_clk_priv *priv, ulong clk_id)
 		div = (con & BUS_HCLK_DIV_MASK) >> BUS_HCLK_DIV_SHIFT;
 		break;
 	case PCLK_BUS:
+	case PCLK_WDT:
 		con = readl(&cru->clksel_con[6]);
 		div = (con & BUS_PCLK_DIV_MASK) >> BUS_PCLK_DIV_SHIFT;
 		break;
@@ -858,6 +859,7 @@ static ulong rk3308_clk_get_rate(struct clk *clk)
 	case ACLK_BUS:
 	case HCLK_BUS:
 	case PCLK_BUS:
+	case PCLK_WDT:
 		rate = rk3308_bus_get_clk(priv, clk->id);
 		break;
 	case ACLK_PERI:
