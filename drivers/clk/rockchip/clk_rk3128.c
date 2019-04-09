@@ -237,6 +237,7 @@ static ulong rk3128_peri_get_clk(struct rk3128_clk_priv *priv, ulong clk_id)
 	case PCLK_I2C2:
 	case PCLK_I2C3:
 	case PCLK_PWM:
+	case PCLK_WDT:
 		con = readl(&cru->cru_clksel_con[10]);
 		div = (con & PCLK_PERI_DIV_MASK) >> PCLK_PERI_DIV_SHIFT;
 		parent = rk3128_peri_get_clk(priv, ACLK_PERI);
@@ -503,6 +504,7 @@ static ulong rk3128_clk_get_rate(struct clk *clk)
 	case PCLK_I2C2:
 	case PCLK_I2C3:
 	case PCLK_PWM:
+	case PCLK_WDT:
 		rate = rk3128_peri_get_clk(priv, clk->id);
 		break;
 	case ACLK_CPU:
