@@ -78,6 +78,13 @@ static struct cvbs_vdac_data_s vdac_data_g12b = {
 	.vdac_ctrl1_dis = 8,
 };
 
+static struct cvbs_vdac_data_s vdac_data_sm1 = {
+	.vdac_ctrl0_en = 0x906001,
+	.vdac_ctrl0_dis = 0,
+	.vdac_ctrl1_en = 0,
+	.vdac_ctrl1_dis = 8,
+};
+
 static struct cvbs_vdac_data_s vdac_data_tl1 = {
 	.vdac_ctrl0_en = 0x906001,
 	.vdac_ctrl0_dis = 0,
@@ -214,6 +221,12 @@ static inline bool is_meson_g12b_cpu(void)
 {
 	return (get_cpu_id().family_id ==
 		MESON_CPU_MAJOR_ID_G12B) ? 1 : 0;
+}
+
+static inline bool is_meson_sm1_cpu(void)
+{
+	return (get_cpu_id().family_id ==
+		MESON_CPU_MAJOR_ID_SM1) ? 1 : 0;
 }
 
 static inline bool is_meson_tl1_cpu(void)
@@ -472,6 +485,7 @@ int cvbs_reg_debug(int argc, char* const argv[])
 		value = simple_strtoul(argv[2], NULL, 0);
 		if (check_cpu_type(MESON_CPU_MAJOR_ID_G12A) ||
 			check_cpu_type(MESON_CPU_MAJOR_ID_G12B) ||
+			check_cpu_type(MESON_CPU_MAJOR_ID_SM1) ||
 			is_meson_tl1_cpu()) {
 			if (value == 1 || value == 2 ||
 				value == 3 || value == 0) {
@@ -723,7 +737,8 @@ static int cvbs_config_clock(void)
 	else if (check_cpu_type(MESON_CPU_MAJOR_ID_GXTVBB))
 		cvbs_config_hdmipll_gxtvbb();
 	else if (check_cpu_type(MESON_CPU_MAJOR_ID_G12A) ||
-			check_cpu_type(MESON_CPU_MAJOR_ID_G12B)) {
+			check_cpu_type(MESON_CPU_MAJOR_ID_G12B) ||
+			check_cpu_type(MESON_CPU_MAJOR_ID_SM1)) {
 		if (s_enci_clk_path & 0x1)
 			cvbs_config_gp0pll_g12a();
 		else
@@ -734,7 +749,8 @@ static int cvbs_config_clock(void)
 		cvbs_config_hdmipll_gxl();
 
 	if (check_cpu_type(MESON_CPU_MAJOR_ID_G12A) ||
-		check_cpu_type(MESON_CPU_MAJOR_ID_G12B)) {
+		check_cpu_type(MESON_CPU_MAJOR_ID_G12B) ||
+		check_cpu_type(MESON_CPU_MAJOR_ID_SM1)) {
 		if (s_enci_clk_path & 0x2)
 			cvbs_set_vid1_clk(s_enci_clk_path & 0x1);
 		else
@@ -826,7 +842,9 @@ static void cvbs_performance_enhancement(int mode)
 		index = (index >= max) ? 0 : index;
 		s = tvregs_576cvbs_performance_gxtvbb[index];
 		type = 5;
-	} else if (is_meson_g12a_cpu() || is_meson_g12b_cpu()) {
+	} else if (is_meson_g12a_cpu() ||
+			is_meson_g12b_cpu() ||
+			is_meson_sm1_cpu()) {
 		max = sizeof(tvregs_576cvbs_performance_g12a)
 			/ sizeof(struct reg_s *);
 		index = (index >= max) ? 0 : index;
@@ -972,6 +990,9 @@ void vdac_data_config(void)
 		break;
 	case MESON_CPU_MAJOR_ID_G12B:
 		cvbs_vdac_data = &vdac_data_g12b;
+		break;
+	case MESON_CPU_MAJOR_ID_SM1:
+		cvbs_vdac_data = &vdac_data_sm1;
 		break;
 	case MESON_CPU_MAJOR_ID_TL1:
 		cvbs_vdac_data = &vdac_data_tl1;
