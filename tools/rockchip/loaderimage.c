@@ -229,7 +229,7 @@ int main(int argc, char *argv[])
 		fseek(fi, 0, SEEK_END);
 		size = ftell(fi);
 		fseek(fi, 0, SEEK_SET);
-		printf("pack file size: %d \n", size);
+		printf("pack file size: %d(%d KB)\n", size, size / 1024);
 		if (size > max_size - sizeof(second_loader_hdr)) {
 			perror(file_out);
 			exit(EXIT_FAILURE);
