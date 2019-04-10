@@ -504,8 +504,24 @@ debug_command()
 
 pack_uboot_image()
 {
-	local UBOOT_LOAD_ADDR
+	local UBOOT_LOAD_ADDR UBOOT_MAX_KB UBOOT_KB HEAD_KB=2
 
+	# Check file size
+	UBOOT_KB=`ls -l u-boot.bin | awk '{print $5}'`
+	if [ "$PLATFORM_UBOOT_IMG_SIZE" = "" ]; then
+		UBOOT_MAX_KB=1046528
+	else
+		UBOOT_MAX_KB=`echo $PLATFORM_UBOOT_IMG_SIZE | awk '{print strtonum($2)}'`
+		UBOOT_MAX_KB=$(((UBOOT_MAX_KB-HEAD_KB)*1024))
+	fi
+
+	if [ $UBOOT_KB -gt $UBOOT_MAX_KB ]; then
+		echo
+		echo "ERROR: pack uboot failed! u-boot.bin actual: $UBOOT_KB bytes, max limit: $UBOOT_MAX_KB bytes"
+		exit 1
+	fi
+
+	# Pack image
 	UBOOT_LOAD_ADDR=`sed -n "/CONFIG_SYS_TEXT_BASE=/s/CONFIG_SYS_TEXT_BASE=//p" ${OUTDIR}/include/autoconf.mk|tr -d '\r'`
 	if [ ! $UBOOT_LOAD_ADDR ]; then
 		UBOOT_LOAD_ADDR=`sed -n "/CONFIG_SYS_TEXT_BASE=/s/CONFIG_SYS_TEXT_BASE=//p" ${OUTDIR}/.config|tr -d '\r'`
