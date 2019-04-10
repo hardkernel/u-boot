@@ -10,6 +10,11 @@
 #include <dm.h>
 #include <fdtdec.h>
 
+enum ops {
+	SEARCH_NAME,
+	SEARCH_COMP,
+};
+
 void iomem_show(const char *label, unsigned long base, size_t start, size_t end)
 {
 	unsigned long val, offset = start, nr = 0;
@@ -30,57 +35,73 @@ void iomem_show(const char *label, unsigned long base, size_t start, size_t end)
 	printf("\n");
 }
 
-void iomem_show_by_compatible(const char *compat, size_t start, size_t end)
+static int iomem_show_by_match(enum ops op, const char *search,
+			       size_t start, size_t end)
 {
 	const void *fdt = gd->fdt_blob;
-	const char *compatible;
+	const char *name;
 	fdt_addr_t addr;
+	int found = 0;
 	int offset;
-
-	if (!compat)
-		return;
 
 	for (offset = fdt_next_node(fdt, 0, NULL);
 	     offset >= 0;
 	     offset = fdt_next_node(fdt, offset, NULL)) {
-		compatible = fdt_getprop(fdt, offset, "compatible", NULL);
-		if (!compatible)
+		if (op == SEARCH_COMP)
+			name = fdt_getprop(fdt, offset, "compatible", NULL);
+		else if (op == SEARCH_NAME)
+			name = fdt_get_name(fdt, offset, NULL);
+		else
+			goto out;
+
+		if (!name)
 			continue;
 
-		if (strstr(compatible, compat)) {
+		if (strstr(name, search)) {
 			addr = fdtdec_get_addr_size_auto_noparent(fdt, offset,
 							"reg", 0, NULL, false);
-			compatible = fdt_getprop(fdt, offset, "compatible",
-						 NULL);
-			iomem_show(compatible, addr, start, end);
+			if (addr == FDT_ADDR_T_NONE)
+				goto out;
+
+			iomem_show(name, addr, start, end);
+			found = 1;
 			break;
 		}
 	}
-
 	printf("\n");
+
+out:
+	return found;
 }
 
-static int do_iomem_by_compatible(cmd_tbl_t *cmdtp, int flag, int argc,
-				  char *const argv[])
+void iomem_show_by_compatible(const char *compat, size_t start, size_t end)
+{
+	iomem_show_by_match(SEARCH_COMP, compat, start, end);
+}
+
+static int do_iomem_by_match(cmd_tbl_t *cmdtp, int flag,
+			     int argc, char *const argv[])
 {
 	size_t start, end;
-	const char *compat;
+	const char *search;
 
 	if (argc != 4)
 		return CMD_RET_USAGE;
 
-	compat = argv[1];
+	search = argv[1];
 	start = simple_strtoul(argv[2], NULL, 0);
 	end = simple_strtoul(argv[3], NULL, 0);
 
-	iomem_show_by_compatible(compat, start, end);
+	if (!iomem_show_by_match(SEARCH_COMP, search, start, end))
+		iomem_show_by_match(SEARCH_NAME, search, start, end);
 
 	return 0;
 }
 
 U_BOOT_CMD(
-	iomem,		4,	1,	do_iomem_by_compatible,
-	"Show iomem data by device compatible",
-	"iomem <compatible> <start offset>  <end offset>\n"
-	"  eg: iomem -grf 0x0 0x200"
+	iomem, 4, 1, do_iomem_by_match,
+	"Show iomem data by device compatible(high priority) or node name",
+	"iomem <compatible or node name> <start offset>  <end offset>\n"
+	"  eg: iomem -grf  0x0 0x200"
+	"  eg: iomem gpio3 0x0 0x200"
 );
