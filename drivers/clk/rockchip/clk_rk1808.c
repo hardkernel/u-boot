@@ -995,6 +995,8 @@ static ulong rk1808_clk_set_rate(struct clk *clk, ulong rate)
 	case LSCLK_PERI:
 		ret = rk1808_peri_set_clk(priv, clk->id, rate);
 		break;
+	case SCLK_32K_IOE:
+		return 0;
 	default:
 		return -ENOENT;
 	}
@@ -1154,6 +1156,8 @@ static int rk1808_clk_set_parent(struct clk *clk, struct clk *parent)
 	switch (clk->id) {
 	case SCLK_GMAC:
 		return rk1808_gmac_set_parent(clk, parent);
+	case SCLK_32K_IOE:
+		return 0;
 	default:
 		return -ENOENT;
 	}
