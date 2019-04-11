@@ -358,15 +358,19 @@ static int rkusb_do_vs_write(struct fsg_common *common)
 				rc = vendor_storage_write(vhead->id,
 							  (char __user *)data,
 							  vhead->size);
-				if (rc < 0)
+				if (rc < 0) {
+					curlun->sense_data = SS_WRITE_ERROR;
 					return -EIO;
+				}
 			} else {
 				/* RPMB */
 				rc =
 				write_keybox_to_secure_storage((u8 *)data,
 							       vhead->size);
-				if (rc < 0)
+				if (rc < 0) {
+					curlun->sense_data = SS_WRITE_ERROR;
 					return -EIO;
+				}
 			}
 
 			common->residue -= common->data_size;
@@ -427,16 +431,20 @@ static int rkusb_do_vs_read(struct fsg_common *common)
 			rc = vendor_storage_read(vhead->id,
 						 (char __user *)data,
 						 common->data_size);
-			if (!rc)
+			if (!rc) {
+				curlun->sense_data = SS_UNRECOVERED_READ_ERROR;
 				return -EIO;
+			}
 			vhead->size = rc;
 		} else {
 			/* RPMB */
 			rc =
 			read_raw_data_from_secure_storage((u8 *)data,
 							  common->data_size);
-			if (!rc)
+			if (!rc) {
+				curlun->sense_data = SS_UNRECOVERED_READ_ERROR;
 				return -EIO;
+			}
 			vhead->size = rc;
 		}
 
