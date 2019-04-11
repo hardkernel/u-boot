@@ -41,6 +41,23 @@ int store_read_ops(unsigned char *partition_name,unsigned char * buf, uint64_t o
 
         name = partition_name;
         addr = (unsigned long)buf;
+        if ((EMMC_BOOT_FLAG == device_boot_flag) && !strcmp("1", (char*)name))
+        {
+            if (off & 0x1ff) {
+                ErrP("emmc1 invalid offset 0x%llx\n", off);
+                return -__LINE__;
+            }
+            if (size & 0xff) {
+                MsgP("NOT align sz 0x%llx\n", size);
+            }
+            sprintf(str, "mmc read 0x%p 0x%llx 0x%llx", buf, (off>>9), (size>>9));
+            ret = run_command(str, 0);
+            if (ret) {
+                ErrP("Fail in cmd[%s]\n", str);
+                return -__LINE__;
+            }
+            return ret;
+        }
 
 #if CONFIG_AML_MTD
         if ((size & MtdAlignMask) && (NAND_BOOT_FLAG == device_boot_flag )) {

@@ -111,6 +111,7 @@ static void print_mmcinfo(struct mmc *mmc)
 
 	printf("High Capacity: %s\n", mmc->high_capacity ? "Yes" : "No");
 	puts("Capacity: ");
+	printf("(0x%llx Bytes) ", mmc->capacity);
 	print_size(mmc->capacity, "\n");
 	printf("mmc clock: %u\n", mmc->clock);
 	printf("Bus Width: %d-bit%s\n", mmc->bus_width,
@@ -322,13 +323,13 @@ static int do_mmc_read(cmd_tbl_t *cmdtp, int flag,
 	if (!mmc)
 		return CMD_RET_FAILURE;
 
-	printf("\nMMC read: dev # %d, block # %d, count %d ... ",
-	       curr_device, blk, cnt);
+	/*printf("\nMMC read: dev # %d, block # %d, count %d ... ",*/
+		   /*curr_device, blk, cnt);*/
 
 	n = mmc->block_dev.block_read(curr_device, blk, cnt, addr);
 	/* flush cache after read */
 	flush_cache((ulong)addr, cnt * 512); /* FIXME */
-	printf("%d blocks read: %s\n", n, (n == cnt) ? "OK" : "ERROR");
+	/*printf("%d blocks read: %s\n", n, (n == cnt) ? "OK" : "ERROR");*/
 
 	return (n == cnt) ? CMD_RET_SUCCESS : CMD_RET_FAILURE;
 }
