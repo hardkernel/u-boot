@@ -232,12 +232,20 @@ config SM1_AC213_V1
 	bool "Support amlogic sm1 ac213 v1 board"
 	default n
 
-config TM2_SKT_V1
-	bool "Support amlogic tm2 skt v1 board"
+config TM2_T962E2_AB319_V1
+	bool "Support amlogic tm2 t962e2 ab319 v1 board"
 	default n
 
-config TM2_AB301_V1
-	bool "Support amlogic tm2 ab301 v1 board"
+config TM2_T962E2_AB311_V1
+	bool "Support amlogic tm2 t962e2 ab311 v1 board"
+	default n
+
+config TM2_T962X3_AB309_V1
+	bool "Support amlogic tm2 t962x3 ab309 v1 board"
+	default n
+
+config TM2_T962X3_AB301_V1
+	bool "Support amlogic tm2 t962x3 ab301 v1 board"
 	default n
 
 config PXP_EMULATOR
@@ -499,12 +507,20 @@ if SM1_AC213_V1
 source "board/amlogic/sm1_ac213_v1/Kconfig"
 endif
 
-if TM2_SKT_V1
-source "board/amlogic/tm2_skt_v1/Kconfig"
+if TM2_T962E2_AB319_V1
+source "board/amlogic/tm2_t962e2_ab319_v1/Kconfig"
 endif
 
-if TM2_AB301_V1
-source "board/amlogic/tm2_ab301_v1/Kconfig"
+if TM2_T962E2_AB311_V1
+source "board/amlogic/tm2_t962e2_ab311_v1/Kconfig"
+endif
+
+if TM2_T962X3_AB309_V1
+source "board/amlogic/tm2_t962x3_ab309_v1/Kconfig"
+endif
+
+if TM2_T962X3_AB301_V1
+source "board/amlogic/tm2_t962x3_ab301_v1/Kconfig"
 endif
 
 if ODROID_C2

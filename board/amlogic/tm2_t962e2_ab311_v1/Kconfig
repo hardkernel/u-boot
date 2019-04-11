@@ -1,0 +1,28 @@
+if TARGET_MESON_TM2
+
+config SYS_CPU
+	string
+	default "armv8"
+
+config SYS_BOARD
+	string
+	default "tm2_t962e2_ab311_v1"
+
+config SYS_VENDOR
+	string
+	default "amlogic"
+
+config SYS_SOC
+	string
+	default "tm2"
+
+config SYS_CONFIG_NAME
+	default "tm2_t962e2_ab311_v1"
+
+config MTK_BT_USB
+    bool "enable mtk bt usb function"
+    default n
+    help
+        select this item will enable mtk bt usb device
+
+endif

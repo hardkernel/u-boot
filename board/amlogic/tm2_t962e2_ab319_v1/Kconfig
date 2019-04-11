@@ -6,7 +6,7 @@ config SYS_CPU
 
 config SYS_BOARD
 	string
-	default "tm2_skt_v1"
+	default "tm2_t962e2_ab319_v1"
 
 config SYS_VENDOR
 	string
@@ -17,6 +17,6 @@ config SYS_SOC
 	default "tm2"
 
 config SYS_CONFIG_NAME
-	default "tm2_skt_v1"
+	default "tm2_t962e2_ab319_v1"
 
 endif

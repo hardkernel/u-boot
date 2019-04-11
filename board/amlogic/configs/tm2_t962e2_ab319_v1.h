@@ -486,7 +486,7 @@
 #define CONFIG_USBDOWNLOAD_GADGET 1
 #define CONFIG_SYS_CACHELINE_SIZE 64
 #define CONFIG_FASTBOOT_MAX_DOWN_SIZE	0x8000000
-#define CONFIG_DEVICE_PRODUCT	"t962x2_skt"
+#define CONFIG_DEVICE_PRODUCT	"t962e2_ab319"
 
 //UBOOT Facotry usb/sdcard burning config
 #define CONFIG_AML_V2_FACTORY_BURN              1       //support facotry usb burning
@@ -547,6 +547,7 @@
 #define CONFIG_CMD_AUTOSCRIPT 1
 #define CONFIG_CMD_MISC 1
 #define CONFIG_CMD_PLLTEST 1
+#define CONFIG_CMD_RMA      1
 
 /*file system*/
 #define CONFIG_DOS_PARTITION 1

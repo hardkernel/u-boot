@@ -6,7 +6,7 @@ config SYS_CPU
 
 config SYS_BOARD
 	string
-	default "tm2_ab301_v1"
+	default "tm2_t962x3_ab301_v1"
 
 config SYS_VENDOR
 	string
@@ -17,7 +17,7 @@ config SYS_SOC
 	default "tm2"
 
 config SYS_CONFIG_NAME
-	default "tm2_ab301_v1"
+	default "tm2_t962x3_ab301_v1"
 
 config MTK_BT_USB
     bool "enable mtk bt usb function"
