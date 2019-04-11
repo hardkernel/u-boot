@@ -543,17 +543,17 @@ pack_uboot_image()
 
 pack_loader_image()
 {
-	local mode=$1 files ini
+	local mode=$1 files ini=${RKBIN}/RKBOOT/${RKCHIP_LOADER}MINIALL.ini
 
-	if [ ! -f ${RKBIN}/RKBOOT/${RKCHIP_LOADER}MINIALL.ini ]; then
-		echo "pack loader failed! Can't find: ${RKBIN}/RKBOOT/${RKCHIP_LOADER}MINIALL.ini"
+	if [ ! -f $ini ]; then
+		echo "pack loader failed! Can't find: $ini"
 		return
 	fi
 
 	cd ${RKBIN}
 
 	if [ "${mode}" = 'all' ]; then
-		files=`ls ${RKBIN}/RKBOOT/${RKCHIP_LOADER}*MINIALL*.ini`
+		files=`ls ${RKBIN}/RKBOOT/${RKCHIP_LOADER}MINIALL*.ini`
 		for ini in $files
 		do
 			if [ -f "$ini" ]; then
@@ -562,8 +562,8 @@ pack_loader_image()
 			fi
 		done
 	else
-		${RKTOOLS}/boot_merger ${BIN_PATH_FIXUP} ${RKBIN}/RKBOOT/${RKCHIP_LOADER}MINIALL.ini
-		echo "pack loader okay! Input: ${RKBIN}/RKBOOT/${RKCHIP_LOADER}MINIALL.ini"
+		${RKTOOLS}/boot_merger ${BIN_PATH_FIXUP} $ini
+		echo "pack loader okay! Input: $ini"
 	fi
 
 	cd - && mv ${RKBIN}/*_loader_*.bin ./
