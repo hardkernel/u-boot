@@ -551,6 +551,7 @@ pack_loader_image()
 		return
 	fi
 
+	ls *_loader_*.bin >/dev/null && rm *_loader_*.bin
 	cd ${RKBIN}
 
 	if [ "${mode}" = 'all' ]; then
@@ -639,6 +640,7 @@ pack_trust_image()
 {
 	local mode=$1 files ini
 
+	ls trust*.img >/dev/null && rm trust*.img
 	# ARM64 uses trust_merger
 	if grep -Eq ''^CONFIG_ARM64=y'|'^CONFIG_ARM64_BOOT_AARCH32=y'' ${OUTDIR}/.config ; then
 		ini=${RKBIN}/RKTRUST/${RKCHIP_TRUST}${PLATFORM_AARCH32}TRUST.ini
