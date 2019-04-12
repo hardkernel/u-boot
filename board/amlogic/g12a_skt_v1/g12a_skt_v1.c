@@ -788,25 +788,48 @@ int checkhw(char * name)
 	 * hwid = 1	p321 v1
 	 * hwid = 2	p321 v2
 	 */
-	unsigned int hwid = 1;
+	unsigned int ddr_size=0;
 	char loc_name[64] = {0};
+	int i;
+	cpu_id_t cpu_id=get_cpu_id();
 
-	/* read hwid */
-	hwid = (readl(P_AO_SEC_GP_CFG0) >> 8) & 0xFF;
-
-	printf("checkhw:  hwid = %d\n", hwid);
-
-
-	switch (hwid) {
-		case 1:
-			strcpy(loc_name, "txl_p321_v1\0");
-			break;
-		case 2:
-			strcpy(loc_name, "txl_p321_v2\0");
-			break;
-		default:
-			strcpy(loc_name, "txl_p321_v1");
-			break;
+	for (i=0; i<CONFIG_NR_DRAM_BANKS; i++) {
+		ddr_size += gd->bd->bi_dram[i].size;
+	}
+#if defined(CONFIG_SYS_MEM_TOP_HIDE)
+	ddr_size += CONFIG_SYS_MEM_TOP_HIDE;
+#endif
+	if (MESON_CPU_MAJOR_ID_SM1 == cpu_id.family_id) {
+		switch (ddr_size) {
+			case 0x80000000:
+				strcpy(loc_name, "sm1_skt_2g\0");
+				break;
+			case 0x40000000:
+				strcpy(loc_name, "sm1_skt_1g\0");
+				break;
+			case 0x2000000:
+				strcpy(loc_name, "sm1_skt_512m\0");
+				break;
+			default:
+				strcpy(loc_name, "sm1_skt_unsupport");
+				break;
+		}
+	}
+	else {
+		switch (ddr_size) {
+			case 0x80000000:
+				strcpy(loc_name, "g12a_skt_2g\0");
+				break;
+			case 0x40000000:
+				strcpy(loc_name, "g12a_skt_1g\0");
+				break;
+			case 0x2000000:
+				strcpy(loc_name, "g12a_skt_512m\0");
+				break;
+			default:
+				strcpy(loc_name, "g12a_skt_unsupport");
+				break;
+		}
 	}
 	strcpy(name, loc_name);
 	setenv("aml_dt", loc_name);
