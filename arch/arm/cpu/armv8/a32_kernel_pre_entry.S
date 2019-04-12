@@ -33,13 +33,13 @@ ENTRY(jump_to_a32_kernel)
 	movk	x0, #0x00c5, lsl #16	// Clear EE and E0E on LE systems
 	msr	sctlr_el1, x0
 
-#if 0
 	/* Generic timers. */
 	mrs	x0, cnthctl_el2
 	orr	x0, x0, #3			// Enable EL1 physical timers
 	msr	cnthctl_el2, x0
 	msr	cntvoff_el2, xzr		// Clear virtual offset
 
+#if 0
 	/* Populate ID registers. */
 	mrs	x0, midr_el1
 	mrs	x1, mpidr_el1
