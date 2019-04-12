@@ -777,9 +777,14 @@ int checkhw(char * name)
 #if defined(CONFIG_SYS_MEM_TOP_HIDE)
 	ddr_size += CONFIG_SYS_MEM_TOP_HIDE;
 #endif
+	char *ddr_mode = getenv("mem_size");
 	if (MESON_CPU_MAJOR_ID_SM1 == cpu_id.family_id) {
 		switch (ddr_size) {
 			case 0x80000000:
+				if (!strcmp(ddr_mode, "1g")) {
+					strcpy(loc_name, "sm1_ac200_1g\0");
+					break;
+				}
 				strcpy(loc_name, "sm1_ac200_2g\0");
 				break;
 			case 0x40000000:
@@ -796,6 +801,10 @@ int checkhw(char * name)
 	else {
 		switch (ddr_size) {
 			case 0x80000000:
+				if (!strcmp(ddr_mode, "1g")) {
+					strcpy(loc_name, "g12a_u200_1g\0");
+					break;
+				}
 				strcpy(loc_name, "g12a_u200_2g\0");
 				break;
 			case 0x40000000:
