@@ -306,6 +306,11 @@ int rk_avb_set_perm_attr_cer(uint8_t *cer, uint32_t size);
  */
 int rk_avb_get_pub_key(struct rk_pub_key *pub_key);
 
+/**
+ * init ab metadata
+ */
+int rk_avb_init_ab_metadata(void);
+
 #ifdef __cplusplus
 }
 #endif
