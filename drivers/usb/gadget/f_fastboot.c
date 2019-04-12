@@ -2127,6 +2127,16 @@ static void cb_oem(struct usb_ep *ep, struct usb_request *req)
 #else
 		fastboot_tx_write_str("FAILnot implemented");
 #endif
+	} else if (strncmp("init-ab-metadata", cmd + 4, 16) == 0) {
+#ifdef CONFIG_RK_AVB_LIBAVB_USER
+		if (rk_avb_init_ab_metadata()) {
+			fastboot_tx_write_str("FAILinit ab data fail!");
+			return;
+		}
+		fastboot_tx_write_str("OKAY");
+#else
+		fastboot_tx_write_str("FAILnot implemented");
+#endif
 	} else {
 		fastboot_tx_write_str("FAILunknown oem command");
 	}
