@@ -4,6 +4,7 @@
  * SPDX-License-Identifier:     GPL-2.0+
  */
 #include <common.h>
+#include <amp.h>
 #include <clk.h>
 #include <bidram.h>
 #include <dm.h>
@@ -513,6 +514,13 @@ int board_bidram_reserve(struct bidram *bidram)
 parse_fn_t board_bidram_parse_fn(void)
 {
 	return param_parse_ddr_mem;
+}
+#endif
+
+#ifdef CONFIG_ROCKCHIP_AMP
+void cpu_secondary_init_r(void)
+{
+	amp_cpus_on();
 }
 #endif
 
