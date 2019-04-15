@@ -6,7 +6,7 @@ include $(buildtree)/include/autoconf.mk
 include $(buildtree)/.config
 
 # Select ARMv7-m bare-metal toolchain
-CROSS_COMPILE=arm-none-eabi-
+CROSS_COMPILE=riscv-none-embed-
 ASM=$(CROSS_COMPILE)as
 CC=$(CROSS_COMPILE)gcc
 CPP=$(CROSS_COMPILE)cpp
@@ -14,8 +14,8 @@ LD=$(CROSS_COMPILE)ld
 OBJCOPY=$(CROSS_COMPILE)objcopy
 OBJDUMP=$(CROSS_COMPILE)objdump
 
-ARM_ARCH=armv7-m
-ARM_CPU=cortex-m3
+ARM_ARCH=rv32imc
+
 CFLAGS_WARN=-Wall -Werror -Wundef -Wstrict-prototypes -Wno-trigraphs      \
             -fno-strict-aliasing -fno-common -fomit-frame-pointer         \
             -Werror-implicit-function-declaration -Wno-format-security    \
@@ -24,7 +24,7 @@ CFLAGS_WARN=-Wall -Werror -Wundef -Wstrict-prototypes -Wno-trigraphs      \
 CFLAGS_DEBUG=-g
 
 # CPU specific compilation flags
-CFLAGS_CPU=-march=$(ARM_ARCH) -mcpu=$(ARM_CPU) -mthumb -Os -mno-sched-prolog
+CFLAGS_CPU=-march=$(ARM_ARCH) -mabi=ilp32 -Os -mcmodel=medany --specs=nano.specs --specs=nosys.specs -ffunction-sections -fdata-sections -fno-common -fgnu89-inline
 
 # FPU compilation flags
 CFLAGS_FPU-$(CONFIG_FPU)=-mfpu=fpv4-sp-d16 -mfloat-abi=hard
@@ -42,7 +42,7 @@ VPATH_LIST=     $(buildsrc)/$(BOARDDIR)
 VPATH_LIST:=$(VPATH_LIST:%=%/firmware/scp_task/)
 
 CFLAGS=$(CFLAGS_CPU) $(CFLAGS_WARN) $(VPATH_LIST:%=-I%) $(CFLAGS_INCLUDE) $(CFLAGS_FPU-y)
-ASFLAGS= -gdwarf2 -mcpu=$(ARM_CPU)
+ASFLAGS= -gdwarf2
 DUMP_FLAGS = -D -x
 
 LDFLAGS=-Bstatic

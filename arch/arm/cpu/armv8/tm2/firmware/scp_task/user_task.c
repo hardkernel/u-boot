@@ -41,32 +41,32 @@ enum scpi_client_id {
 
 void __switch_idle_task(void)
 {
-	register int p0 asm("r0") = 2;
-	register int p1 asm("r1") = TASK_ID_IDLE;
+	register int p0 asm("a0") = 2;
+	register int p1 asm("a1") = TASK_ID_IDLE;
 
-	asm("svc 0" :  : "r"(p0), "r"(p1));
+	asm("ecall" :  : "r"(p0), "r"(p1));
 }
 void __switch_back_securemb(void)
 {
-	register int p0 asm("r0") = 2;
-	register int p1 asm("r1") = TASK_ID_SECURE_MB;
+	register int p0 asm("a0") = 2;
+	register int p1 asm("a1") = TASK_ID_SECURE_MB;
 
-	asm("svc 0" :  : "r"(p0), "r"(p1));
+	asm("ecall" :  : "r"(p0), "r"(p1));
 }
 void __switch_back_highmb(void)
 {
-	register int p0 asm("r0") = 2;
-	register int p1 asm("r1") = TASK_ID_HIGH_MB;
+	register int p0 asm("a0") = 2;
+	register int p1 asm("a1") = TASK_ID_HIGH_MB;
 
-	asm("svc 0" :  : "r"(p0), "r"(p1));
+	asm("ecall" :  : "r"(p0), "r"(p1));
 }
 
 void __switch_back_lowmb(void)
 {
-	register int p0 asm("r0") = 2;
-	register int p1 asm("r1") = TASK_ID_LOW_MB;
+	register int p0 asm("a0") = 2;
+	register int p1 asm("a1") = TASK_ID_LOW_MB;
 
-	asm("svc 0" :  : "r"(p0), "r"(p1));
+	asm("ecall" :  : "r"(p0), "r"(p1));
 }
 
 void secure_task(void)
@@ -81,7 +81,7 @@ void secure_task(void)
 
 	/*init bss */
 	bss_init();
-	dbg_prints("secure task start!\n");
+	uart_puts("secure task start!\n");
 
 	/* suspend pwr ops init*/
 	suspend_pwr_ops_init();

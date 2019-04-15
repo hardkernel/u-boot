@@ -1,21 +1,19 @@
 .text
 
-.syntax unified
-.code 16
-
 .global bss_init
-.thumb_func
+
 
 bss_init:
-	mov r0, #0
-	ldr r1, _bss_start
-	ldr r2, _bss_end
-bss_loop:
-	cmp r1, r2
-	it lt
-	strlt r0, [r1], #4
-	blt bss_loop
-	bx lr
+        /* Clear bss section */
+        la a0, _bss_start
+        la a1, _bss_end
+        bgeu a0, a1, 2f
+1:
+        sw zero, (a0)
+        addi a0, a0, 4
+        bltu a0, a1, 1b
+2:
+        ret
 
 .align 2
 _bss_start:
