@@ -414,6 +414,7 @@ int rockchip_read_resource_file(void *buf, const char *name,
 #define KEY_WORDS_ADC_CTRL	"#_"
 #define KEY_WORDS_ADC_CH	"_ch"
 #define KEY_WORDS_GPIO		"#gpio"
+#define GPIO_SWPORT_DDR		0x04
 #define GPIO_EXT_PORT		0x50
 #define MAX_ADC_CH_NR		10
 #define MAX_GPIO_NR		10
@@ -518,7 +519,8 @@ static int gpio_parse_base_address(fdt_addr_t *gpio_base_addr)
 {
 	static int initial;
 	ofnode parent, node;
-	int i = 0;
+	const char *name;
+	int idx, nr = 0;
 
 	if (initial)
 		return 0;
@@ -535,11 +537,19 @@ static int gpio_parse_base_address(fdt_addr_t *gpio_base_addr)
 			continue;
 		}
 
-		gpio_base_addr[i++] = ofnode_get_addr(node);
-		debug("   - gpio%d: 0x%x\n", i - 1, (uint32_t)gpio_base_addr[i - 1]);
+		name = ofnode_get_name(node);
+		if (!is_digit((char)*(name + 4))) {
+			debug("   - bad gpio node name: %s\n", name);
+			continue;
+		}
+
+		nr++;
+		idx = *(name + 4) - '0';
+		gpio_base_addr[idx] = ofnode_get_addr(node);
+		debug("   - gpio%d: 0x%x\n", idx, (uint32_t)gpio_base_addr[idx]);
 	}
 
-	if (i == 0) {
+	if (nr == 0) {
 		debug("   - parse gpio address failed\n");
 		return -EINVAL;
 	}
@@ -574,6 +584,14 @@ static int rockchip_read_dtb_by_gpio(const char *file_name)
 
 	debug("%s\n", file_name);
 
+	/* Parse gpio address */
+	memset(gpio_base_addr, 0, sizeof(gpio_base_addr));
+	ret = gpio_parse_base_address(gpio_base_addr);
+	if (ret) {
+		debug("   - Can't parse gpio base address: %d\n", ret);
+		return ret;
+	}
+
 	strgpio = strstr(file_name, KEY_WORDS_GPIO);
 	while (strgpio) {
 		debug("   - substr: %s\n", strgpio);
@@ -588,13 +606,6 @@ static int rockchip_read_dtb_by_gpio(const char *file_name)
 			return -EINVAL;
 		}
 
-		/* Parse gpio address */
-		ret = gpio_parse_base_address(gpio_base_addr);
-		if (ret) {
-			debug("   - Can't parse gpio base address: %d\n", ret);
-			return ret;
-		}
-
 		/* Read gpio value */
 		port = *(p + 0) - '0';
 		bank = *(p + 1) - 'a';
@@ -606,9 +617,20 @@ static int rockchip_read_dtb_by_gpio(const char *file_name)
 		 * is enough. We use cached_v[] to save what we have read, zero
 		 * means not read before.
 		 */
-		if (cached_v[port] == 0)
+		if (cached_v[port] == 0) {
+			if (!gpio_base_addr[port]) {
+				debug("   - can't find gpio%d base address\n", port);
+				return 0;
+			}
+
+			/* Input mode */
+			val = readl(gpio_base_addr[port] + GPIO_SWPORT_DDR);
+			val &= ~(1 << (bank * 8 + pin));
+			writel(val, gpio_base_addr[port] + GPIO_SWPORT_DDR);
+
 			cached_v[port] =
 				readl(gpio_base_addr[port] + GPIO_EXT_PORT);
+		}
 
 		/* Verify result */
 		bit = bank * 8 + pin;
@@ -623,7 +645,7 @@ static int rockchip_read_dtb_by_gpio(const char *file_name)
 		}
 
 		debug("   - parse: gpio%d%c%d=%d, read=%d %s\n",
-		      port, bank + 'a', pin, lvl, val, found ? "(Y)" : "");
+		      port, bank + 'a', pin, lvl, val, found ? "(Y)" : "(N)");
 	}
 
 	return found ? 0 : -ENOENT;
