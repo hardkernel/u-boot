@@ -120,6 +120,7 @@ int rk_board_init(void)
 		      VCCIO3_3V3 << IOVSEL3_SHIFT;
 	rk_clrsetreg(&grf->soc_con0, IOVSEL3_CTRL_MASK | IOVSEL3_MASK, val);
 
+	gpio_free(GPIO0_A4);
 	return 0;
 }
 
