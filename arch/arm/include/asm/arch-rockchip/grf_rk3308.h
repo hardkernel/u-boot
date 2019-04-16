@@ -169,7 +169,13 @@ struct rk3308_grf {
 	unsigned int os_reg9;
 	unsigned int os_reg10;
 	unsigned int os_reg11;
-	unsigned int reserved38[(0x800 - 0x52C) / 4 - 1];
+	unsigned int reserved38[(0x600 - 0x52c) / 4 - 1];
+	unsigned int soc_con12;
+	unsigned int reserved39;
+	unsigned int soc_con13;
+	unsigned int soc_con14;
+	unsigned int soc_con15;
+	unsigned int reserved40[(0x800 - 0x610) / 4 - 1];
 	unsigned int chip_id;
 };
 check_member(rk3308_grf, gpio0a_p, 0xa0);
