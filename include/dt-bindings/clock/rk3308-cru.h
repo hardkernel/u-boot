@@ -132,7 +132,7 @@
 #define SCLK_I2S1_2CH_SRC	119
 
 /* dclk */
-#define DCLK_VOP		120
+#define DCLK_VOP		125
 
 /* aclk */
 #define ACLK_BUS_SRC		130
