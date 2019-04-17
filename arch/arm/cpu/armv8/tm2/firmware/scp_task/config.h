@@ -26,7 +26,7 @@
 #define CONFIG_RAM_SIZE         (13 * 1024)
 #define CONFIG_RAM_END		(CONFIG_RAM_BASE+CONFIG_RAM_SIZE)
 
-#define CONFIG_TASK_STACK_SIZE	512
+#define CONFIG_TASK_STACK_SIZE	(1024 + 512)
 #define TASK_SHARE_MEM_SIZE	1024
 
 /* secure share memory last unsigned are used

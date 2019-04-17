@@ -19,13 +19,23 @@ SECTIONS
 	}
 	.data	:
 	{
-		*(.bss .data .rodata*)
+		*(.data .rodata*)
 	}
 
 	. = ALIGN(4);
 	_bssstart = . ;
-	.bss : { *(.bss) }
-	. = ALIGN(4);
+
+
+	.bss            :
+	{
+		*(.sbss*)
+		*(.gnu.linkonce.sb.*)
+		*(.bss .bss.*)
+		*(.gnu.linkonce.b.*)
+		*(COMMON)
+		. = ALIGN(4);
+	}
+
 	_bssend = . ;
 
 	. = CONFIG_RAM_END - 3*CONFIG_TASK_STACK_SIZE - 128;
