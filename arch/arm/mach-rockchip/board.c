@@ -18,6 +18,7 @@
 #include <misc.h>
 #include <asm/gpio.h>
 #include <asm/arch/clock.h>
+#include <asm/arch/cpu.h>
 #include <asm/arch/periph.h>
 #include <asm/arch/boot_mode.h>
 #include <asm/arch/hotkey.h>
@@ -349,7 +350,7 @@ int board_fdt_fixup(void *blob)
 	 * - RK1808: MMC strength 2mA;
 	 */
 #ifdef CONFIG_ROCKCHIP_RK3288
-	if (readl(0xff980004) == 0x1A) {
+	if (soc_is_rk3288w()) {
 		ret = fdt_setprop_string(blob, 0,
 					 "compatible", "rockchip,rk3288w");
 		if (ret)
