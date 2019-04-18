@@ -544,13 +544,13 @@ static void rkclk_init(struct rk3288_cru *cru, struct rk3288_grf *grf)
 	 * set up dependent divisors for PCLK/HCLK and ACLK clocks.
 	 */
 	aclk_div = GPLL_HZ / PD_BUS_ACLK_HZ - 1;
-	assert((aclk_div + 1) * PD_BUS_ACLK_HZ == GPLL_HZ && aclk_div <= 0x1f);
+	assert((aclk_div + 1) * PD_BUS_ACLK_HZ <= GPLL_HZ && aclk_div <= 0x1f);
 	hclk_div = PD_BUS_ACLK_HZ / PD_BUS_HCLK_HZ - 1;
-	assert((hclk_div + 1) * PD_BUS_HCLK_HZ ==
+	assert((hclk_div + 1) * PD_BUS_HCLK_HZ <=
 		PD_BUS_ACLK_HZ && (hclk_div <= 0x3) && (hclk_div != 0x2));
 
 	pclk_div = PD_BUS_ACLK_HZ / PD_BUS_PCLK_HZ - 1;
-	assert((pclk_div + 1) * PD_BUS_PCLK_HZ ==
+	assert((pclk_div + 1) * PD_BUS_PCLK_HZ <=
 		PD_BUS_ACLK_HZ && pclk_div <= 0x7);
 
 	rk_clrsetreg(&cru->cru_clksel_con[1],
@@ -566,14 +566,14 @@ static void rkclk_init(struct rk3288_cru *cru, struct rk3288_grf *grf)
 	 * set up dependent divisors for PCLK/HCLK and ACLK clocks.
 	 */
 	aclk_div = GPLL_HZ / PERI_ACLK_HZ - 1;
-	assert((aclk_div + 1) * PERI_ACLK_HZ == GPLL_HZ && aclk_div <= 0x1f);
+	assert((aclk_div + 1) * PERI_ACLK_HZ <= GPLL_HZ && aclk_div <= 0x1f);
 
 	hclk_div = ilog2(PERI_ACLK_HZ / PERI_HCLK_HZ);
-	assert((1 << hclk_div) * PERI_HCLK_HZ ==
+	assert((1 << hclk_div) * PERI_HCLK_HZ <=
 		PERI_ACLK_HZ && (hclk_div <= 0x2));
 
 	pclk_div = ilog2(PERI_ACLK_HZ / PERI_PCLK_HZ);
-	assert((1 << pclk_div) * PERI_PCLK_HZ ==
+	assert((1 << pclk_div) * PERI_PCLK_HZ <=
 		PERI_ACLK_HZ && (pclk_div <= 0x3));
 
 	rk_clrsetreg(&cru->cru_clksel_con[10],
