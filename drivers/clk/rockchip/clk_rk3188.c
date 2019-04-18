@@ -441,7 +441,7 @@ static void rkclk_init(struct rk3188_cru *cru, struct rk3188_grf *grf,
 	 * set up dependent divisors for PCLK/HCLK and ACLK clocks.
 	 */
 	aclk_div = DIV_ROUND_UP(GPLL_HZ, CPU_ACLK_HZ) - 1;
-	assert((aclk_div + 1) * CPU_ACLK_HZ == GPLL_HZ && aclk_div <= 0x1f);
+	assert((aclk_div + 1) * CPU_ACLK_HZ <= GPLL_HZ && aclk_div <= 0x1f);
 
 	rk_clrsetreg(&cru->cru_clksel_con[0],
 		     CPU_ACLK_PLL_MASK << CPU_ACLK_PLL_SHIFT |
@@ -450,11 +450,11 @@ static void rkclk_init(struct rk3188_cru *cru, struct rk3188_grf *grf,
 		     aclk_div << A9_CPU_DIV_SHIFT);
 
 	hclk_div = ilog2(CPU_ACLK_HZ / CPU_HCLK_HZ);
-	assert((1 << hclk_div) * CPU_HCLK_HZ == CPU_ACLK_HZ && hclk_div < 0x3);
+	assert((1 << hclk_div) * CPU_HCLK_HZ <= CPU_ACLK_HZ && hclk_div < 0x3);
 	pclk_div = ilog2(CPU_ACLK_HZ / CPU_PCLK_HZ);
-	assert((1 << pclk_div) * CPU_PCLK_HZ == CPU_ACLK_HZ && pclk_div < 0x4);
+	assert((1 << pclk_div) * CPU_PCLK_HZ <= CPU_ACLK_HZ && pclk_div < 0x4);
 	h2p_div = ilog2(CPU_HCLK_HZ / CPU_H2P_HZ);
-	assert((1 << h2p_div) * CPU_H2P_HZ == CPU_HCLK_HZ && pclk_div < 0x3);
+	assert((1 << h2p_div) * CPU_H2P_HZ <= CPU_HCLK_HZ && pclk_div < 0x3);
 
 	rk_clrsetreg(&cru->cru_clksel_con[1],
 		     AHB2APB_DIV_MASK << AHB2APB_DIV_SHIFT |
@@ -469,14 +469,14 @@ static void rkclk_init(struct rk3188_cru *cru, struct rk3188_grf *grf,
 	 * set up dependent divisors for PCLK/HCLK and ACLK clocks.
 	 */
 	aclk_div = GPLL_HZ / PERI_ACLK_HZ - 1;
-	assert((aclk_div + 1) * PERI_ACLK_HZ == GPLL_HZ && aclk_div < 0x1f);
+	assert((aclk_div + 1) * PERI_ACLK_HZ <= GPLL_HZ && aclk_div < 0x1f);
 
 	hclk_div = ilog2(PERI_ACLK_HZ / PERI_HCLK_HZ);
-	assert((1 << hclk_div) * PERI_HCLK_HZ ==
+	assert((1 << hclk_div) * PERI_HCLK_HZ <=
 		PERI_ACLK_HZ && (hclk_div < 0x4));
 
 	pclk_div = ilog2(PERI_ACLK_HZ / PERI_PCLK_HZ);
-	assert((1 << pclk_div) * PERI_PCLK_HZ ==
+	assert((1 << pclk_div) * PERI_PCLK_HZ <=
 		PERI_ACLK_HZ && (pclk_div < 0x4));
 
 	rk_clrsetreg(&cru->cru_clksel_con[10],
