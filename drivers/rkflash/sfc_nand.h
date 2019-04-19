@@ -15,7 +15,8 @@
 #define SFC_NAND_ECC_REFRESH		NAND_STS_REFRESH
 #define SFC_NAND_ECC_OK			NAND_STS_OK
 
-#define SFC_NAND_PAGE_MAX_SIZE		2112
+#define SFC_NAND_PAGE_MAX_SIZE		4224
+#define SFC_NAND_SECTOR_FULL_SIZE	528
 
 #define FEA_READ_STATUE_MASK    (0x3 << 0)
 #define FEA_STATUE_MODE1        0
@@ -113,8 +114,8 @@ struct nand_info {
 	u8 QE_address;
 	u8 QE_bits;
 
-	u8 spare_offs_1;
-	u8 spare_offs_2;
+	u8 spare_offs_1;	/* 4/8 bytes for 2KB/4KB page size flash */
+	u8 spare_offs_2;	/* 4/8 bytes for 2KB/4KB page size flash */
 	u32 (*ecc_status)(void);
 };
 
