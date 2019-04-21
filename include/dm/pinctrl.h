@@ -68,6 +68,13 @@ struct pinconf_param {
  * @set_state_simple: do needed pinctrl operations for a peripherl @periph.
  *	(necessary for pinctrl_simple)
  * @get_pin_muxing: display the muxing of a given pin.
+ * @gpio_request_enable: requests and enables GPIO on a certain pin.
+ *	Implement this only if you can mux every pin individually as GPIO. The
+ *	affected GPIO range is passed along with an offset(pin number) into that
+ *	specific GPIO range - function selectors and pin groups are orthogonal
+ *	to this, the core will however make sure the pins do not collide.
+ * @gpio_disable_free: free up GPIO muxing on a certain pin, the reverse of
+ *	@gpio_request_enable
  */
 struct pinctrl_ops {
 	int (*get_pins_count)(struct udevice *dev);
@@ -149,6 +156,24 @@ struct pinctrl_ops {
 	 */
 	 int (*get_pin_muxing)(struct udevice *dev, unsigned int selector,
 			       char *buf, int size);
+
+	/**
+	 * gpio_request_enable: requests and enables GPIO on a certain pin.
+	 *
+	 * @dev:	Pinctrl device to use
+	 * @selector:	Pin selector
+	 * return 0 if OK, -ve on error
+	 */
+	int (*gpio_request_enable)(struct udevice *dev, unsigned int selector);
+
+	/**
+	 * gpio_disable_free: free up GPIO muxing on a certain pin.
+	 *
+	 * @dev:	Pinctrl device to use
+	 * @selector:	Pin selector
+	 * return 0 if OK, -ve on error
+	 */
+	int (*gpio_disable_free)(struct udevice *dev, unsigned int selector);
 };
 
 #define pinctrl_get_ops(dev)	((struct pinctrl_ops *)(dev)->driver->ops)
@@ -379,6 +404,24 @@ int pinctrl_get_pin_name(struct udevice *dev, int selector, char *buf,
 int pinctrl_get_pin_muxing(struct udevice *dev, int selector, char *buf,
 			   int size);
 
+/**
+ * pinctrl_gpio_request() - request a single pin to be used as GPIO
+ *
+ * @dev: GPIO peripheral device
+ * @offset: the GPIO pin offset from the GPIO controller
+ * @return: 0 on success, or negative error code on failure
+ */
+int pinctrl_gpio_request(struct udevice *dev, unsigned offset);
+
+/**
+ * pinctrl_gpio_free() - free a single pin used as GPIO
+ *
+ * @dev: GPIO peripheral device
+ * @offset: the GPIO pin offset from the GPIO controller
+ * @return: 0 on success, or negative error code on failure
+ */
+int pinctrl_gpio_free(struct udevice *dev, unsigned offset);
+
 #else
 static inline int pinctrl_select_state(struct udevice *dev,
 				       const char *statename)
@@ -424,6 +467,16 @@ static inline int pinctrl_get_pin_name(struct udevice *dev, int selector, char *
 
 static inline int pinctrl_get_pin_muxing(struct udevice *dev, int selector, char *buf,
 			   int size)
+{
+	return -EINVAL;
+}
+
+static inline int pinctrl_gpio_request(struct udevice *dev, unsigned offset)
+{
+	return -EINVAL;
+}
+
+static inline int pinctrl_gpio_free(struct udevice *dev, unsigned offset)
 {
 	return -EINVAL;
 }
