@@ -82,6 +82,7 @@
 /* args/envs */
 #define CONFIG_SYS_MAXARGS  64
 #define CONFIG_EXTRA_ENV_SETTINGS \
+        /* "ms_delay_step=1\0" \ */\
         "firstboot=1\0"\
         "upgrade_step=0\0"\
         "jtag=disable\0"\
