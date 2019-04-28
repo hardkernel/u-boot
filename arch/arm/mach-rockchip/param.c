@@ -170,6 +170,21 @@ int param_parse_bootdev(char **devtype, char **devnum)
 		case BOOT_TYPE_SD1:
 			*devtype = "mmc";
 			*devnum = "1";
+			/*
+			 * If preloader does not pass sdupdate value, we treat it
+			 * as a unknown card and call the rkimgtest cmd to find
+			 * out what it is.
+			 *
+			 * If preloader pass sdupdate value as an update card,
+			 * we just set "sdfwupdate" to bootargs instead of
+			 * calling rkimgtest cmd which consumes time.
+			 */
+			if (t->u.bootdev.sdupdate == SD_UNKNOWN_CARD) {
+				run_command("mmc dev 1", 0);
+				run_command("rkimgtest mmc 1", 0);
+			} else if (t->u.bootdev.sdupdate == SD_UPDATE_CARD) {
+				env_update("bootargs", "sdfwupdate");
+			}
 			break;
 		case BOOT_TYPE_NAND:
 			*devtype = "rknand";

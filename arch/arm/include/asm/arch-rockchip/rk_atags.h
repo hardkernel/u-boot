@@ -41,6 +41,10 @@
 #define BOOT_TYPE_SPI_NAND	(1 << 5)
 #define BOOT_TYPE_RAM		(1 << 6)
 
+/* define sd card function */
+#define SD_UNKNOWN_CARD		0
+#define SD_UPDATE_CARD		1
+
 /* tag_serial.m_mode */
 #define SERIAL_M_MODE_M0	0x0
 #define SERIAL_M_MODE_M1	0x1
@@ -67,7 +71,8 @@ struct tag_bootdev {
 	u32 devtype;
 	u32 devnum;
 	u32 mode;
-	u32 reserved[7];
+	u32 sdupdate;
+	u32 reserved[6];
 	u32 hash;
 } __packed;
 
