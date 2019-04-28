@@ -1546,10 +1546,8 @@ static int submit_common_msg(ohci_t *ohci, struct usb_device *dev,
 		return -1;
 	}
 
-#if 0
 	mdelay(10);
 	/* ohci_dump_status(ohci); */
-#endif
 
 	timeout = USB_TIMEOUT_MS(pipe);
 
