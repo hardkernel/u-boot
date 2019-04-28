@@ -266,7 +266,7 @@ static AvbSlotVerifyResult load_and_verify_hash_partition(
    * since it's such a common workflow.
    */
   image_size = hash_desc.image_size;
-  if (0) {
+  if (allow_verification_error) {
     if (ops->get_size_of_partition == NULL) {
       avb_errorv(part_name,
                  ": The get_size_of_partition() operation is "
