@@ -125,6 +125,19 @@ config SPL_DISPLAY_PRINT
 	  banner ("U-Boot SPL ..."). This function should be provided by
 	  the board.
 
+config SPL_SKIP_RELOCATE
+	bool "Skip code relocation in SPL"
+	default y
+	help
+	  The SPL code will be relocated to a high memory if you say no here.
+	  Only ARM64 and PowerPC SPL support relocate now.
+
+config SPL_RELOC_TEXT_BASE
+	hex "Address the SPL relocate to"
+	depends on !SPL_SKIP_RELOCATE
+	help
+	  The address on the ram where the SPL relocate to.
+
 config SYS_MMCSD_RAW_MODE_U_BOOT_USE_SECTOR
 	bool "MMC raw mode: by sector"
 	default y if ARCH_SUNXI || ARCH_DAVINCI || ARCH_UNIPHIER ||ARCH_MX6 || \

@@ -10,6 +10,7 @@
 #include <common.h>
 #include <dm.h>
 #include <spl.h>
+#include <asm/sections.h>
 #include <asm/u-boot.h>
 #include <nand.h>
 #include <fat.h>
@@ -258,6 +259,28 @@ static int spl_common_init(bool setup_malloc)
 	return 0;
 }
 
+#if !defined(CONFIG_SPL_SKIP_RELOCATE) && !defined(CONFIG_TPL_BUILD)
+static void spl_setup_relocate(void)
+{
+	gd->relocaddr = CONFIG_SPL_RELOC_TEXT_BASE;
+	gd->new_gd = (gd_t *)gd;
+	gd->start_addr_sp = gd->relocaddr;
+	gd->fdt_size = ALIGN(fdt_totalsize(gd->fdt_blob) + 0x1000, 32);
+
+	gd->start_addr_sp -= gd->fdt_size;
+	gd->new_fdt = (void *)gd->start_addr_sp;
+	memcpy(gd->new_fdt, gd->fdt_blob, gd->fdt_size);
+	gd->fdt_blob = gd->new_fdt;
+
+	gd->reloc_off = gd->relocaddr - (unsigned long)__image_copy_start;
+}
+#else
+static void spl_setup_relocate(void)
+{
+
+}
+#endif
+
 void spl_set_bd(void)
 {
 	if (!gd->bd)
@@ -272,6 +295,8 @@ int spl_early_init(void)
 	if (ret)
 		return ret;
 	gd->flags |= GD_FLG_SPL_EARLY_INIT;
+
+	spl_setup_relocate();
 
 	return 0;
 }
@@ -359,6 +384,34 @@ static int boot_from_devices(struct spl_image_info *spl_image,
 	return -ENODEV;
 }
 
+#if defined(CONFIG_DM) && !defined(CONFIG_SPL_SKIP_RELOCATE) && !defined(CONFIG_TPL_BUILD)
+static int spl_initr_dm(void)
+{
+	int ret;
+
+	/* Save the pre-reloc driver model and start a new one */
+	gd->dm_root_f = gd->dm_root;
+	gd->dm_root = NULL;
+	bootstage_start(BOOTSTATE_ID_ACCUM_DM_R, "dm_r");
+	ret = dm_init_and_scan(false);
+	bootstage_accum(BOOTSTATE_ID_ACCUM_DM_R);
+	if (ret)
+		return ret;
+
+#if defined(CONFIG_TIMER)
+	gd->timer = NULL;
+#endif
+	serial_init();
+
+	return 0;
+}
+#else
+static int spl_initr_dm(void)
+{
+	return 0;
+}
+#endif
+
 void board_init_r(gd_t *dummy1, ulong dummy2)
 {
 	u32 spl_boot_list[] = {
@@ -371,6 +424,8 @@ void board_init_r(gd_t *dummy1, ulong dummy2)
 	struct spl_image_info spl_image;
 
 	debug(">>spl:board_init_r()\n");
+
+	spl_initr_dm();
 
 	spl_set_bd();
 
