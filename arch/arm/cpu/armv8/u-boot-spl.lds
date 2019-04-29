@@ -54,6 +54,23 @@ SECTIONS
 		*(.__end)
 	} >.sram
 
+#ifndef CONFIG_SPL_SKIP_RELOCATE
+	. = ALIGN(8);
+
+	.rel_dyn_start :
+	{
+		*(.__rel_dyn_start)
+	} >.sram
+
+	.rela.dyn : {
+		*(.rela*)
+	} >.sram
+
+	.rel_dyn_end :
+	{
+		*(.__rel_dyn_end)
+	} >.sram
+#endif
 	_image_binary_end = .;
 
 	.bss_start (NOLOAD) : {

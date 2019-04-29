@@ -105,6 +105,12 @@ endif
 # needed for relocation
 LDFLAGS_u-boot += -pie
 
+ifndef CONFIG_SPL_SKIP_RELOCATE
+LDFLAGS_u-boot-spl = -pie
+else
+SPL_LDFLAGS_u-boot-spl =
+endif
+
 #
 # FIXME: binutils versions < 2.22 have a bug in the assembler where
 # branches to weak symbols can be incorrectly optimized in thumb mode
