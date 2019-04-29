@@ -59,5 +59,7 @@ extern const struct memblk_attr *mem_attr;
 #define M_ATTR_HOFC		(1 << 1)
 /* Memory can be overlap by fdt reserved memory */
 #define M_ATTR_OVERLAP		(1 << 2)
+/* Just peek, always return success */
+#define M_ATTR_PEEK		(1 << 3)
 
 #endif /* _MEMBLK_H */
