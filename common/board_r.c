@@ -256,7 +256,12 @@ static int initr_malloc(void)
 static int initr_console_record(void)
 {
 #if defined(CONFIG_CONSOLE_RECORD)
-	return console_record_init();
+	int ret;
+
+	ret = console_record_init();
+	if (!ret)
+		console_record_reset_enable();
+	return ret;
 #else
 	return 0;
 #endif
