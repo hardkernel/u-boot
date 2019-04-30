@@ -774,7 +774,7 @@ static void console_update_silent(void)
 {
 #ifdef CONFIG_SILENT_CONSOLE
 	if (env_get("silent") != NULL) {
-		printf("U-Boot: enable slient console\n");
+		printf("U-Boot: enable silent console\n");
 		gd->flags |= GD_FLG_SILENT;
 	} else {
 		gd->flags &= ~GD_FLG_SILENT;
