@@ -233,7 +233,8 @@ config CONSOLE_RECORD
 config CONSOLE_RECORD_OUT_SIZE
 	hex "Output buffer size"
 	depends on CONSOLE_RECORD
-	default 0x400 if CONSOLE_RECORD
+	default 0x400 if CONSOLE_RECORD && !ARCH_ROCKCHIP
+	default 0x2000 if CONSOLE_RECORD && ARCH_ROCKCHIP
 	help
 	  Set the size of the console output buffer. When this fills up, no
 	  more data will be recorded until some is removed. The buffer is
