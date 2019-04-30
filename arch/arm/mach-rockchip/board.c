@@ -428,6 +428,11 @@ void board_quiesce_devices(void)
 	/* Destroy atags makes next warm boot safer */
 	atags_destroy();
 #endif
+
+#if defined(CONFIG_CONSOLE_RECORD)
+	/* Print record console data */
+	console_record_print_purge();
+#endif
 }
 
 void enable_caches(void)
