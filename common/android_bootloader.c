@@ -10,6 +10,7 @@
 #include <android_avb/avb_ops_user.h>
 #include <android_avb/rk_avb_ops_user.h>
 #include <android_image.h>
+#include <asm/arch/hotkey.h>
 #include <cli.h>
 #include <common.h>
 #include <dt_table.h>
@@ -306,6 +307,66 @@ static int android_bootloader_get_fdt(const char *part_name,
 }
 #endif
 
+/*
+ *   Test on RK3308 AARCH64 mode (Cortex A35 816 MHZ) boot with eMMC:
+ *
+ *   |-------------------------------------------------------------------|
+ *   | Format    |  Size(Byte) | Ratio | Decomp time(ms) | Boot time(ms) |
+ *   |-------------------------------------------------------------------|
+ *   | Image     | 7720968     |       |                 |     488       |
+ *   |-------------------------------------------------------------------|
+ *   | Image.lz4 | 4119448     | 53%   |       59        |     455       |
+ *   |-------------------------------------------------------------------|
+ *   | Image.lzo | 3858322     | 49%   |       141       |     536       |
+ *   |-------------------------------------------------------------------|
+ *   | Image.gz  | 3529108     | 45%   |       222       |     609       |
+ *   |-------------------------------------------------------------------|
+ *   | Image.bz2 | 3295914     | 42%   |       2940      |               |
+ *   |-------------------------------------------------------------------|
+ *   | Image.lzma| 2683750     | 34%   |                 |               |
+ *   |-------------------------------------------------------------------|
+ */
+static int sysmem_alloc_uncomp_kernel(ulong kernel_address, u32 comp)
+{
+	struct andr_img_hdr *hdr = (struct andr_img_hdr *)kernel_address;
+	ulong ksize, kaddr;
+
+	if (comp != IH_COMP_NONE) {
+		kaddr = env_get_hex("kernel_addr_c", 0);
+		if (!kaddr)
+			kaddr = env_get_hex("kernel_addr_r", 0);
+		kaddr -= hdr->page_size;
+		if (sysmem_free((phys_addr_t)kaddr))
+			return -EINVAL;
+
+		/*
+		 * Use smaller Ratio to get larger estimated uncompress
+		 * kernel size.
+		 */
+		if (comp == IH_COMP_ZIMAGE)
+			ksize = hdr->kernel_size * 100 / 45;
+		else if (comp == IH_COMP_LZ4)
+			ksize = hdr->kernel_size * 100 / 50;
+		else if (comp == IH_COMP_LZO)
+			ksize = hdr->kernel_size * 100 / 45;
+		else if (comp == IH_COMP_GZIP)
+			ksize = hdr->kernel_size * 100 / 40;
+		else if (comp == IH_COMP_BZIP2)
+			ksize = hdr->kernel_size * 100 / 40;
+		else if (comp == IH_COMP_LZMA)
+			ksize = hdr->kernel_size * 100 / 30;
+		else
+			ksize = hdr->kernel_size;
+
+		ksize = ALIGN(ksize, 512);
+		if (!sysmem_alloc_base(MEMBLK_ID_UNCOMP_KERNEL,
+				       (phys_addr_t)kaddr, ksize))
+			return -ENOMEM;
+	}
+
+	return 0;
+}
+
 int android_bootloader_boot_kernel(unsigned long kernel_address)
 {
 	char *kernel_addr_r = env_get("kernel_addr_r");
@@ -344,10 +405,15 @@ int android_bootloader_boot_kernel(unsigned long kernel_address)
 	       comp_type != IH_COMP_NONE ? kernel_addr_c : kernel_addr_r,
 	       comp_str, fdt_addr);
 
-	if (gd->console_evt == CONSOLE_EVT_CTRL_M) {
-		bidram_dump();
-		sysmem_dump();
-	}
+	hotkey_run(HK_SYSMEM);
+
+	/*
+	 * Check whether there is enough space for uncompress kernel,
+	 * Actually, here only gives a sysmem warning message when failed
+	 * but never return -1.
+	 */
+	if (sysmem_alloc_uncomp_kernel(kernel_address, comp_type))
+		return -1;
 
 	do_bootm(NULL, 0, 4, bootm_args);
 
