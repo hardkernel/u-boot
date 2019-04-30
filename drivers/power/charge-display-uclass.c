@@ -9,7 +9,7 @@
 #include <dm.h>
 #include <power/charge_display.h>
 
-static int charge_display_show(struct udevice *dev)
+int charge_display_show(struct udevice *dev)
 {
 	const struct dm_charge_display_ops *ops = dev_get_driver_ops(dev);
 

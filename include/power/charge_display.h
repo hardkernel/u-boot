@@ -12,5 +12,6 @@ struct dm_charge_display_ops {
 };
 
 int charge_display(void);
+int charge_display_show(struct udevice *dev);
 
 #endif

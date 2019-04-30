@@ -1299,6 +1299,8 @@ config CMD_REGULATOR
 
 config CMD_CHARGE_DISPLAY
 	bool "Enable Driver Model Charge Display command"
+	depends on DM_CHARGE_DISPLAY
+	default y
 	help
 	  Support U-Boot charge display.
 
