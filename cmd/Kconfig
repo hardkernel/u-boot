@@ -233,6 +233,7 @@ config CMD_BOOTMENU
 
 config CMD_DTIMG
 	bool "dtimg"
+	select OF_LIBFDT_OVERLAY
 	help
 	  Android DTB/DTBO image manipulation commands. Read dtb/dtbo files from
 	  image into RAM, dump image structure information, etc. Those dtb/dtbo
