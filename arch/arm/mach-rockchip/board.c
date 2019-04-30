@@ -20,6 +20,7 @@
 #include <asm/arch/clock.h>
 #include <asm/arch/periph.h>
 #include <asm/arch/boot_mode.h>
+#include <asm/arch/hotkey.h>
 #include <asm/arch/rk_atags.h>
 #include <asm/arch/param.h>
 #ifdef CONFIG_DM_CHARGE_DISPLAY
@@ -231,7 +232,7 @@ static void early_bootrom_download(void)
 	gd->console_evt = getc();
 #if (CONFIG_ROCKCHIP_BOOT_MODE_REG > 0)
 	/* ctrl+b */
-	if (gd->console_evt == CONSOLE_EVT_CTRL_B) {
+	if (is_hotkey(HK_BROM_DNL)) {
 		printf("Enter bootrom download...");
 		flushc();
 		writel(BOOT_BROM_DOWNLOAD, CONFIG_ROCKCHIP_BOOT_MODE_REG);

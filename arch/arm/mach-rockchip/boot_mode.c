@@ -8,6 +8,7 @@
 #include <adc.h>
 #include <asm/io.h>
 #include <asm/arch/boot_mode.h>
+#include <asm/arch/hotkey.h>
 #include <asm/arch/param.h>
 #include <cli.h>
 #include <dm.h>
@@ -131,7 +132,7 @@ void rockchip_dnl_mode_check(void)
 {
 	/* recovery key or "ctrl+d" */
 	if (rockchip_dnl_key_pressed() ||
-	    gd->console_evt == CONSOLE_EVT_CTRL_D) {
+	    is_hotkey(HK_ROCKUSB_DNL)) {
 		printf("download key pressed... ");
 		if (rockchip_u2phy_vbus_detect() > 0) {
 			printf("entering download mode...\n");
@@ -164,7 +165,7 @@ void rockchip_dnl_mode_check(void)
 			printf("recovery key pressed, entering recovery mode!\n");
 			env_set("reboot_mode", "recovery");
 		}
-	} else if (gd->console_evt == CONSOLE_EVT_CTRL_F) {
+	} else if (is_hotkey(HK_FASTBOOT)) {
 		env_set("reboot_mode", "fastboot");
 	}
 }
