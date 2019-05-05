@@ -363,20 +363,6 @@ static int ns16550_serial_putc(struct udevice *dev, const char ch)
 	if (ch == '\n')
 		WATCHDOG_RESET();
 
-#ifdef CONFIG_ARCH_ROCKCHIP
-	/*
-	 * Wait fifo flush.
-	 *
-	 * UART_USR: bit2 trans_fifo_empty:
-	 *	0 = Transmit FIFO is not empty
-	 *	1 = Transmit FIFO is empty
-	 */
-	if (gd->flags & GD_FLG_OS_RUN) {
-		while (!(serial_in(&com_port->rbr + 0x1f) & 0x04))
-			;
-	}
-#endif
-
 	return 0;
 }
 
@@ -410,6 +396,24 @@ static int ns16550_serial_setbrg(struct udevice *dev, int baudrate)
 
 	NS16550_setbrg(com_port, clock_divisor);
 
+	return 0;
+}
+
+static int ns16550_serial_clear(struct udevice *dev)
+{
+#ifdef CONFIG_ARCH_ROCKCHIP
+	struct NS16550 *const com_port = dev_get_priv(dev);
+
+	/*
+	 * Wait fifo flush.
+	 *
+	 * UART_USR: bit2 trans_fifo_empty:
+	 *	0 = Transmit FIFO is not empty
+	 *	1 = Transmit FIFO is empty
+	 */
+	while (!(serial_in(&com_port->rbr + 0x1f) & 0x04))
+		;
+#endif
 	return 0;
 }
 
@@ -521,6 +525,7 @@ const struct dm_serial_ops ns16550_serial_ops = {
 	.pending = ns16550_serial_pending,
 	.getc = ns16550_serial_getc,
 	.setbrg = ns16550_serial_setbrg,
+	.clear = ns16550_serial_clear,
 };
 
 #if CONFIG_IS_ENABLED(SERIAL_PRESENT)
