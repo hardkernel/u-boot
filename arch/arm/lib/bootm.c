@@ -97,19 +97,10 @@ static void announce_and_cleanup(int fake)
 	udc_disconnect();
 #endif
 
-#ifdef CONFIG_ARCH_ROCKCHIP
-	/* Enable this flag, call putc to flush console(ns16550_serial_putc)*/
-	gd->flags |= GD_FLG_OS_RUN;
-	/*
-	 * This putc is only for calling ns16550_serial_putc() to flush console.
-	 * Console uclass framework is quite complicated, it's not easy to
-	 * flush console by privoding a new interface which must provide a
-	 * udevice here, so we use an easy way to achieve that.
-	 */
-	putc('\n');
-#endif
-
 	board_quiesce_devices();
+
+	/* Flush all console data */
+	flushc();
 
 	/*
 	 * Call remove function of all devices with a removal flag set.

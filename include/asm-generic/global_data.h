@@ -171,8 +171,6 @@ typedef struct global_data {
 #define GD_FLG_LOG_READY	0x08000 /* Log system is ready for use	   */
 
 #ifdef CONFIG_ARCH_ROCKCHIP
-/* Currently, we use it to indicate console can be flushed before jump to OS */
-#define GD_FLG_OS_RUN		0x10000
 /* BL32 is enabled */
 #define GD_FLG_BL32_ENABLED	0x20000
 #endif
