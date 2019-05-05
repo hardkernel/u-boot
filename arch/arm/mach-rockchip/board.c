@@ -233,7 +233,7 @@ static void early_bootrom_download(void)
 	/* ctrl+b */
 	if (gd->console_evt == CONSOLE_EVT_CTRL_B) {
 		printf("Enter bootrom download...");
-		mdelay(100);
+		flushc();
 		writel(BOOT_BROM_DOWNLOAD, CONFIG_ROCKCHIP_BOOT_MODE_REG);
 		do_reset(NULL, 0, 0, NULL);
 		printf("failed!\n");
