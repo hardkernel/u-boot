@@ -9,6 +9,7 @@
 #include <linux/list.h>
 #include <linux/libfdt.h>
 #include <malloc.h>
+#include <asm/arch/hotkey.h>
 #include <asm/arch/resource_img.h>
 #include <asm/arch/rockchip_crc.h>
 #include <boot_rkimg.h>
@@ -523,11 +524,7 @@ int boot_rockchip_image(struct blk_desc *dev_desc, disk_partition_t *boot_part)
 	printf("ramdisk  @ 0x%08lx (0x%08x)\n", ramdisk_addr_r, ramdisk_size);
 
 	fdt_ramdisk_skip_relocation();
-
-	if (gd->console_evt == CONSOLE_EVT_CTRL_M) {
-		bidram_dump();
-		sysmem_dump();
-	}
+	hotkey_run(HK_SYSMEM);
 
 #if defined(CONFIG_ARM64)
 	char cmdbuf[64];
@@ -535,6 +532,19 @@ int boot_rockchip_image(struct blk_desc *dev_desc, disk_partition_t *boot_part)
 		kernel_addr_r, ramdisk_addr_r, ramdisk_size, fdt_addr_r);
 	run_command(cmdbuf, 0);
 #else
+	ulong kaddr, ksize;
+
+	kaddr = kernel_addr_r;
+	if (!sysmem_free((phys_addr_t)kaddr)) {
+		ksize = kernel_size * 100 / 45 ; /* Ratio: 45% */
+		ksize = ALIGN(ksize, dev_desc->blksz);
+		if (!sysmem_alloc_base(MEMBLK_ID_UNCOMP_KERNEL,
+				       (phys_addr_t)kaddr, ksize))
+			return -ENOMEM;
+	}
+
+	hotkey_run(HK_SYSMEM);
+
 	boot_lmb_init(&images);
 	images.ep = kernel_addr_r;
 	images.initrd_start = ramdisk_addr_r;
