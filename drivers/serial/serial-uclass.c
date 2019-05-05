@@ -279,6 +279,18 @@ void serial_setbrg(void)
 		ops->setbrg(gd->cur_serial_dev, gd->baudrate);
 }
 
+void serial_clear(void)
+{
+	struct dm_serial_ops *ops;
+
+	if (!gd->cur_serial_dev)
+		return;
+
+	ops = serial_get_ops(gd->cur_serial_dev);
+	if (ops->setbrg)
+		ops->clear(gd->cur_serial_dev);
+}
+
 void serial_stdio_init(void)
 {
 }

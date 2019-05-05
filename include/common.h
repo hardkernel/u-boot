@@ -548,6 +548,7 @@ void smp_kick_all_cpus(void);
 int	serial_init   (void);
 void	serial_setbrg (void);
 void	serial_putc   (const char);
+void	serial_clear  (void);
 void	serial_putc_raw(const char);
 void	serial_puts   (const char *);
 int	serial_getc   (void);

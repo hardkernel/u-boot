@@ -256,6 +256,18 @@ static inline void console_doenv(int file, struct stdio_dev *dev)
 {
 	iomux_doenv(file, dev->name);
 }
+
+static void console_clear(int file)
+{
+	int i;
+	struct stdio_dev *dev;
+
+	for (i = 0; i < cd_count[file]; i++) {
+		dev = console_devices[file][i];
+		if (dev->clear != NULL)
+			dev->clear(dev);
+	}
+}
 #else
 static inline int console_getc(int file)
 {
@@ -281,6 +293,12 @@ static inline void console_puts_noserial(int file, const char *s)
 static inline void console_puts(int file, const char *s)
 {
 	stdio_devices[file]->puts(stdio_devices[file], s);
+}
+
+static inline void console_clear(int file)
+{
+	if (stdio_devices[file]->clear)
+		stdio_devices[file]->clear(stdio_devices[file]);
 }
 
 static inline void console_doenv(int file, struct stdio_dev *dev)
@@ -361,6 +379,12 @@ void fputs(int file, const char *s)
 		console_puts(file, s);
 }
 
+void fclear(int file)
+{
+	if (file < MAX_FILES)
+		console_clear(file);
+}
+
 int fprintf(int file, const char *fmt, ...)
 {
 	va_list args;
@@ -432,6 +456,19 @@ int tstc(void)
 
 	/* Send directly to the handler */
 	return serial_tstc();
+}
+
+void flushc(void)
+{
+#ifdef CONFIG_DISABLE_CONSOLE
+	if (gd->flags & GD_FLG_DISABLE_CONSOLE)
+		return;
+#endif
+
+	if (gd->flags & GD_FLG_DEVINIT)
+		fclear(stdout);
+	else
+		serial_clear();
 }
 
 #define PRE_CONSOLE_FLUSHPOINT1_SERIAL			0

@@ -36,6 +36,9 @@ struct stdio_dev {
 	/* To put a string (accelerator) */
 	void (*puts)(struct stdio_dev *dev, const char *s);
 
+/* Clear functions */
+	void (*clear)(struct stdio_dev *dev);
+
 /* INPUT functions */
 
 	/* To test if a char is ready... */
