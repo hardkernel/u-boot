@@ -162,6 +162,7 @@ int param_parse_bootdev(char **devtype, char **devnum)
 	t = atags_get_tag(ATAG_BOOTDEV);
 	if (t) {
 		switch (t->u.bootdev.devtype) {
+#ifdef CONFIG_DM_MMC
 		case BOOT_TYPE_EMMC:
 			*devtype = "mmc";
 			*devnum = "0";
@@ -186,22 +187,31 @@ int param_parse_bootdev(char **devtype, char **devnum)
 				env_update("bootargs", "sdfwupdate");
 			}
 			break;
+#endif
+#ifdef CONFIG_RKNAND
 		case BOOT_TYPE_NAND:
 			*devtype = "rknand";
 			*devnum = "0";
 			break;
+#endif
+#ifdef CONFIG_RKSFC_NAND
 		case BOOT_TYPE_SPI_NAND:
 			*devtype = "spinand";
 			*devnum = "0";
 			break;
+#endif
+#ifdef CONFIG_RKSFC_NOR
 		case BOOT_TYPE_SPI_NOR:
 			*devtype = "spinor";
 			*devnum = "1";
 			break;
+#endif
+#ifdef CONFIG_DM_RAMDISK
 		case BOOT_TYPE_RAM:
 			*devtype = "ramdisk";
 			*devnum = "0";
 			break;
+#endif
 		default:
 			printf("Unknown bootdev type: 0x%x\n",
 			       t->u.bootdev.devtype);
