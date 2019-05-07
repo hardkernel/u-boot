@@ -297,10 +297,10 @@ static int android_image_load_separate(struct blk_desc *dev_desc,
 
 		ret = blk_dread(dev_desc, blk_start,
 				blk_cnt, android_load_address);
-		if (ret < 0) {
+		if (ret != blk_cnt) {
 			debug("%s: read kernel failed, ret=%d\n",
 			      __func__, ret);
-			return ret;
+			return -1;
 		}
 		blk_read += ret;
 	}
@@ -318,10 +318,10 @@ static int android_image_load_separate(struct blk_desc *dev_desc,
 
 		ret = blk_dread(dev_desc, blk_start,
 				blk_cnt, (void *)ramdisk_addr_r);
-		if (ret < 0) {
+		if (ret != blk_cnt) {
 			debug("%s: read ramdisk failed, ret=%d\n",
 			      __func__, ret);
-			return ret;
+			return -1;
 		}
 		blk_read += ret;
 	}
@@ -354,9 +354,9 @@ static int android_image_load_separate(struct blk_desc *dev_desc,
 			return -ENXIO;
 
 		ret = blk_dread(dev_desc, blk_start, blk_cnt, (void *)fdt_addr_r);
-		if (ret < 0) {
+		if (ret != blk_cnt) {
 			debug("%s: read dtb failed, ret=%d\n", __func__, ret);
-			return ret;
+			return -1;
 		}
 
 		blk_read += blk_cnt;
