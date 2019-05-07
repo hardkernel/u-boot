@@ -261,6 +261,14 @@ static const reg_remote RDECODEMODE_NEC_RC6_2IN1[] = {
 	{CONFIG_END, 0}
 };
 
+static const reg_remote RDECODEMODE_SOFTWARE_DECODE[] = {
+	{AO_MF_IR_DEC_BIT_0, 68 << 16 | 44 << 0},
+	{AO_MF_IR_DEC_REG0, 3 << 28 | (0xFA0 << 12) | 0x13},
+	{AO_MF_IR_DEC_REG1, 0xdf44},
+	{AO_MF_IR_DEC_REG2, 0x2},
+	{CONFIG_END, 0}
+};
+
 static const reg_remote *remoteregsTab[] = {
 	RDECODEMODE_NEC,
 	RDECODEMODE_DUOKAN,
@@ -273,6 +281,7 @@ static const reg_remote *remoteregsTab[] = {
 	RDECODEMODE_RCMM,
 	RDECODEMODE_NEC_RC5_2IN1,
 	RDECODEMODE_NEC_RC6_2IN1,
+	RDECODEMODE_SOFTWARE_DECODE
 };
 
 void setremotereg(const reg_remote * r)
