@@ -245,6 +245,15 @@ static void *sysmem_alloc_align_base(enum memblk_id id,
 	} else if (id > MEMBLK_ID_UNK && id < MEMBLK_ID_MAX) {
 		attr = mem_attr[id];
 		name = attr.name;
+
+		/*
+		 * Fixup base and place right after U-Boot stack, adding a lot
+		 * of space(4KB) maybe safer.
+		 */
+		if ((id == MEMBLK_ID_AVB_ANDROID) &&
+		    (base == SYSMEM_ALLOC_ANYWHERE))
+			base = gd->start_addr_sp -
+					CONFIG_SYS_STACK_SIZE - size - 0x1000;
 	} else {
 		SYSMEM_E("Unsupport memblk id %d for alloc sysmem\n", id);
 		goto out;
