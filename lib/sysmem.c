@@ -354,7 +354,7 @@ static void *sysmem_alloc_align_base(enum memblk_id id,
 				 name, (ulong)base, (ulong)(base + size),
 				 (ulong)paddr, (ulong)(paddr + size));
 			/* Free what we don't want allocated region */
-			if (lmb_free(&sysmem->lmb, paddr, alloc_size))
+			if (lmb_free(&sysmem->lmb, paddr, alloc_size) < 0)
 				SYSMEM_E("Failed to free \"%s\"\n", name);
 
 			goto out;
@@ -433,6 +433,38 @@ void *sysmem_fdt_reserve_alloc_base(const char *name,
 		sysmem_dump();
 
 	return paddr;
+}
+
+bool sysmem_can_alloc(phys_size_t base, phys_size_t size)
+{
+	struct sysmem *sysmem = &plat_sysmem;
+	phys_addr_t alloc_base;
+	phys_addr_t paddr;
+	int ret;
+
+	if (!sysmem_has_init())
+		return false;
+
+	/* LMB is align down alloc mechanism */
+	alloc_base = base + size;
+	paddr = __lmb_alloc_base(&sysmem->lmb,
+				 size,
+				 SYSMEM_ALLOC_NO_ALIGN,
+				 alloc_base);
+	if (paddr) {
+		/* If free failed, return false */
+		ret = lmb_free(&sysmem->lmb, base, size);
+		if (ret < 0) {
+			SYSMEM_E("Can't free at 0x%08lx - 0x%08lx, ret=%d\n",
+				 (ulong)base, (ulong)(base + size), ret);
+			return false;
+		}
+	} else {
+		SYSMEM_D("Can't alloc at 0x%08lx - 0x%08lx\n",
+			 (ulong)base, (ulong)(base + size));
+	}
+
+	return (paddr == base) ? true : false;
 }
 
 int sysmem_free(phys_addr_t base)

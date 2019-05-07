@@ -94,6 +94,16 @@ void *sysmem_fdt_reserve_alloc_base(const char *name,
 				    phys_addr_t base, phys_size_t size);
 
 /**
+ * sysmem_can_alloc() - Check if the region can be allocated
+ *
+ * @base: region base
+ * @size: region size
+ *
+ * @return true on okay.
+ */
+bool sysmem_can_alloc(phys_size_t base, phys_size_t size);
+
+/**
  * sysmem_free() - Free allocated sysmem region
  *
  * @base: region base
@@ -126,6 +136,11 @@ __weak int board_sysmem_reserve(struct sysmem *sysmem) { return 0; }
 static inline void *sysmem_alloc(enum memblk_id id, phys_size_t size)
 {
 	return malloc(size);
+}
+
+static inline bool sysmem_can_alloc(phys_size_t base, phys_size_t size)
+{
+	return true;
 }
 
 static inline void *sysmem_alloc_base(enum memblk_id id,
