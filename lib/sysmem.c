@@ -364,6 +364,21 @@ out:
 	return (attr.flags & M_ATTR_PEEK) ? (void *)base : NULL;
 }
 
+void *sysmem_alloc(enum memblk_id id, phys_size_t size)
+{
+	void *paddr;
+
+	paddr = sysmem_alloc_align_base(id,
+					NULL,
+					SYSMEM_ALLOC_ANYWHERE,
+					size,
+					SYSMEM_ALLOC_NO_ALIGN);
+	if (!paddr)
+		sysmem_dump();
+
+	return paddr;
+}
+
 void *sysmem_alloc_base(enum memblk_id id, phys_addr_t base, phys_size_t size)
 {
 	void *paddr;

@@ -7,6 +7,7 @@
 #define _SYSMEM_H
 
 #include <memblk.h>
+#include <malloc.h>
 
 /*
  * CONFIG_SYS_FDT_PAD default value is sync with bootm framework in:
@@ -121,6 +122,12 @@ static inline int sysmem_initr(void) { return 0; }
 static inline int sysmem_free(phys_addr_t base) { return 0; }
 static inline void sysmem_dump(void) {}
 __weak int board_sysmem_reserve(struct sysmem *sysmem) { return 0; }
+
+static inline void *sysmem_alloc(enum memblk_id id, phys_size_t size)
+{
+	return malloc(size);
+}
+
 static inline void *sysmem_alloc_base(enum memblk_id id,
 				      phys_addr_t base, phys_size_t size)
 {
