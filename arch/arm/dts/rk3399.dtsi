@@ -202,6 +202,14 @@
 		};
 	};
 
+	crypto: crypto@ff8b0000 {
+		compatible = "rockchip,rk3399-crypto";
+		reg = <0x0 0xff8b0000 0x0 0x10000>;
+		clock-names = "sclk_crypto0";
+		clocks = <&cru SCLK_CRYPTO0>, <&cru SCLK_CRYPTO1>;
+		status = "disabled";
+	};
+
 	pcie0: pcie@f8000000 {
 		compatible = "rockchip,rk3399-pcie";
 		reg = <0x0 0xf8000000 0x0 0x2000000>,
