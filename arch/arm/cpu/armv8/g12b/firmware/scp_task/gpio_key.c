@@ -176,6 +176,9 @@ int init_gpio_key(void)
 	unsigned int reg, bit;
 	struct meson_bank bank;
 
+	if (!gpio_wakeup_keyno)
+		return 0;
+
 	key_index = gpio_wakeup_keyno - KERNEL_GPIO_OFFSET;
 	if ((key_index >= (GPIOA_0 + EE_OFFSET))
 		&& (key_index < (GPIOA_15 + EE_OFFSET))) {
