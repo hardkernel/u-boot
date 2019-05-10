@@ -1,23 +1,11 @@
 #include <common.h>
 #include <u-boot/sha256.h>
-//#include <asm/arch/secure_apb.h>
-
-
-//#include<stdio.h>
-
-//#include <asm/io.h>
-//#include <asm/arch/io.h>
-//#include <asm/arch/register.h>
-//#include <asm/arch-g9tv/mmc.h>  //jiaxing debug
-
-//extern  void aml_cache_disable(void);
-//#ifndef   char* itoa(intnum,char*str,intradix)
 
 
 //#define  USE_FOR_NEWMAN
 //#define USE_FOR_UBOOT_2018
 #ifdef USE_FOR_NEWMAN
-///*
+
 int setenv(const char *varname, const char *varvalue)
 {
 return 1;
@@ -27,7 +15,7 @@ char *getenv(const char *name)
 {
 	return NULL;
 }
-//*/
+
 #endif
 #define DWC_AC_PINMUX_TOTAL						28
 #define DWC_DFI_PINMUX_TOTAL					26
@@ -61,30 +49,7 @@ char *getenv(const char *name)
 #define CONFIG_DDR0_32BIT_RANK01_CH0		0x7
 #define CONFIG_DDR0_32BIT_RANK0_CH01		0x8
 
-/*
-static uint32_t ddr_rd_16bit_on_32reg(uint32_t addr)
-{
-uint32_t read_value=0;
-uint32_t addr_t=((addr>>2) << 2);
-read_value= (*(volatile uint32_t *)(( unsigned long )(addr_t)));
-read_value=(read_value>>((addr%4)<<3))&0xffff;
-return read_value;
 
-}
-static uint32_t ddr_wr_16bit_on_32reg(uint32_t addr,uint32_t value)
-{
-uint32_t read_value=0;
-uint32_t write_value=0;
-uint32_t addr_t=((addr>>2) << 2);
-uint32_t offset=((addr%4)<<3);
-read_value= *(volatile uint32_t *)(( unsigned long )(addr_t));
-write_value=(value<<offset)|(read_value&(~(0xffff<<offset)));
- *(volatile uint32_t *)(( unsigned long )(addr_t))=write_value;
-
-return write_value;
-
-}
-*/
 static uint32_t ddr_rd_8_16bit_on_32reg(uint32_t base_addr,uint32_t size,uint32_t offset_index)
 {
 	uint32_t read_value=0;
@@ -6813,16 +6778,6 @@ int do_ddr_special_test(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[
 	}
 
 
-	//printf("\nLINE== 0x%08x\n", __LINE__);
-
-	//printf("\nLINE1== 0x%08x\n", __LINE__);
-
-
-	//    printf("\nLINE2== 0x%08x\n", __LINE__);
-	//	printf("\nLINE3== 0x%08x\n", __LINE__);
-	//	printf("\nLINE== 0x%08x\n", __LINE__);
-
-
 	unsigned int  count    = 1;
 	unsigned int   test_val = 1;
 
@@ -6836,12 +6791,7 @@ int do_ddr_special_test(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[
 
 			for (i=0;i<write_times;)
 			{i++;
-
 				printf("\nwrite_times==0x%08x \n",((unsigned int)i));
-				//  serial_put_hex(((unsigned long)i),32);
-				//	count=count_max;
-				//	reg=reg_base;
-				//       val=val_base;
 				test_addr=start_addr;
 				test_val=base_pattern;
 				count=(test_size>>2);
@@ -6859,8 +6809,6 @@ int do_ddr_special_test(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[
 			for (i=0;i<read_times;)
 			{i++;
 				printf("\nread_times==0x%08x \n",((unsigned int)i));
-				//serial_puts("\nread_times= ");
-				//   serial_put_hex(((unsigned long)i),32);
 				test_addr=start_addr;
 				test_val=base_pattern;
 				count=(test_size>>2);
@@ -6902,49 +6850,6 @@ U_BOOT_CMD(
 	"DDR test function",
 	"ddrtest [LOOP] [ADDR] [size] [write_times] [read times] [pattern] [inc].ddr_spec_test 1 0x1080000 0x200000 1  3 1 1 \n"
 );
-/*
-int do_mw_mask(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
-{
-char *endp;
-unsigned int   reg_add=0;
-unsigned int   wr_reg_value=0;
-unsigned int   rd_reg_value=0;
-unsigned int   wr_reg_and_mask_1=0xffffffff;
-if (argc == 1)
-{  printf("\nplease read help\n");
-printf("\nexample only change 0xc8836800 0x8c010226 0x000fffff bit20-bit31,no change pll od oc \n");
-printf("\nmwm 0xc8836800 0x8c010226 0x000fffff\n");
-}
-else{
-if (argc >= 2)
-{
-reg_add = simple_strtoull_ddr(argv[1], &endp, 10);
-}
-if (argc >= 3)
-{
-wr_reg_value = simple_strtoull_ddr(argv[2], &endp, 10);
-}
-if (argc >= 4)
-{
-wr_reg_and_mask_1 = simple_strtoull_ddr(argv[3], &endp, 10);
-
-}
-rd_reg_value= (rd_reg(reg_add));
-wr_reg(reg_add,(rd_reg_value&wr_reg_and_mask_1)|(wr_reg_value&(~wr_reg_and_mask_1)) );
-
-printf("\nmodify ok read==0x%08x\n",(rd_reg(reg_add)));
-
-}
-return 1;
-}
-U_BOOT_CMD(
-	mwm,	30,	1,	do_mw_mask,
-	"mw mask function",
-	"mw 0xc8836800 0x8c82022c 0x000fffff\n"
-);
-*/
-
-///*
 
 int ddr_test_s_cross_talk_pattern(int ddr_test_size)
 {
@@ -6977,14 +6882,7 @@ int ddr_test_s_cross_talk_pattern(int ddr_test_size)
 #endif
 
 	}
-	//			*/
-	/*
-	ddr_test_gx_cross_talk_pattern( ddr_test_size);
-	if (error_count)
-	return 1;
-	else
-	return 0;
-	*/
+
 	{
 		printf("\nStart writing at 0x%08x - 0x%08x...", start_addr, start_addr + ddr_test_size);
 		ddr_write((void *)(int_convter_p(start_addr)), ddr_test_size);
@@ -7033,10 +6931,6 @@ int ddr_test_s_cross_talk_pattern(int ddr_test_size)
 		ddr_read_pattern4_cross_talk_p((void *)(int_convter_p(start_addr)), ddr_test_size);
 		printf("\rEnd 2nd read.                              ");
 
-		//   printf("\rStart 3rd reading...                       ");
-		//    ddr_read_pattern4_cross_talk_p((void *)start_addr, ddr_test_size);
-		//    printf("\rEnd 3rd read.                              \n");
-
 		if (error_count)
 		return error_count;
 		printf("\nStart *4  cross talk pattern n.                                 ");
@@ -7082,9 +6976,7 @@ int ddr_test_s_cross_talk_pattern(int ddr_test_size)
 		printf("\rStart 2nd reading...                       ");
 		ddr_read_pattern4_cross_talk_n2((void *)(int_convter_p(start_addr)), ddr_test_size);
 		printf("\rEnd 2nd read.                              ");
-		//    printf("\rStart 3rd reading...                       ");
-		//    ddr_read_pattern4_cross_talk_n((void *)start_addr, ddr_test_size);
-		//   printf("\rEnd 3rd read.                              \n");
+
 		if (copy_test_flag)
 		{
 			if (error_count)
@@ -22188,6 +22080,9 @@ void ddr_memcpy(void *dst, const void *src, uint32_t len)
 	len=(len>>3);
 	const long long *s = src;
 	long long *d = dst;
+	#ifdef TEST_L1_CACHE
+	void *bound=(void *)src+16*1024; //debug for test L1 cache ,if only read write small aread
+	#endif
 	while (len)
 	{
 		//ddr_pld_cache(s) ;
@@ -22199,6 +22094,13 @@ void ddr_memcpy(void *dst, const void *src, uint32_t len)
 		*d++ = *s++;
 		*d++ = *s++;
 		len=len-4;
+		#ifdef TEST_L1_CACHE
+		if ((void *)s >=bound)
+			{
+			  s=src;
+		         d=dst;
+			 }
+		#endif
 	}
 	//	uint32_t ddr_test_end_time_us=get_us_time();  // check cost time
 	//	serial_puts("\ncopy time==");
@@ -37149,6 +37051,7 @@ int do_ddr_auto_fastboot_check(cmd_tbl_t *cmdtp, int flag, int argc, char * cons
 	char auto_window_test_enable_item=DMC_TEST_SLT_ENABLE_DDR_AUTO_FAST_BOOT;
 	uint32_t auto_window_test_dq_size=0;
 	char pattern_dis_scramble=0;
+	uint32_t stick_dmc_ddr_window_test_read_vref_offset_value=0;
 	if (argc>1)
 	{
 		auto_window_test_enable_item = simple_strtoull_ddr(argv[1], &endp, 0);
@@ -37166,6 +37069,12 @@ int do_ddr_auto_fastboot_check(cmd_tbl_t *cmdtp, int flag, int argc, char * cons
 		pattern_dis_scramble = simple_strtoull_ddr(argv[3], &endp, 0);
 		if (*argv[3] == 0 || *endp != 0)
 		pattern_dis_scramble=0;
+	}
+	if (argc>4)
+	{
+		stick_dmc_ddr_window_test_read_vref_offset_value = simple_strtoull_ddr(argv[4], &endp, 0);
+		if (*argv[4] == 0 || *endp != 0)
+		stick_dmc_ddr_window_test_read_vref_offset_value=0;
 	}
 	char str[1024]="";
 	ddr_set_t *ddr_set_t_p=NULL;
@@ -37381,7 +37290,8 @@ int do_ddr_auto_fastboot_check(cmd_tbl_t *cmdtp, int flag, int argc, char * cons
 				printf("\nstr=%s\n",str);
 				run_command(str,0);
 			}
-			sprintf(str,"g12_d2pll %d 0x11 %d 0 0 0 0 0 0x%08x  0 %d",ddr_set_t_p->DRAMFreq[0],auto_window_test_enable_item,auto_window_test_dq_size,pattern_dis_scramble);
+			sprintf(str,"g12_d2pll %d 0x11 %d 0 0 0 0 %d 0x%08x  0 %d",ddr_set_t_p->DRAMFreq[0],
+				auto_window_test_enable_item,stick_dmc_ddr_window_test_read_vref_offset_value,auto_window_test_dq_size,pattern_dis_scramble);
 			printf("\nstr=%s\n",str);
 
 			run_command(str,0);
@@ -37451,7 +37361,6 @@ int do_ddr_auto_fastboot_check(cmd_tbl_t *cmdtp, int flag, int argc, char * cons
 				printf("ddr_set_add : 0x%x\n", (uint32_t)(uint64_t)ddr_set_add);
 
 				sha256_csum_wd((unsigned char *)(uint64_t)ddr_set_add, sizeof(ddr_set_t), ddr_sha.sha2, 0);
-				//sha2((unsigned char *)(uint64_t)ddr_set_add, sizeof(ddr_set_t), ddr_sha.sha2, 0);
 				printf("print sha\n");
 				sprintf(str,"md %08x 0x100", (uint32_t)(uint64_t)(ddr_set_add-32));
 				run_command(str,0);
@@ -37463,21 +37372,10 @@ int do_ddr_auto_fastboot_check(cmd_tbl_t *cmdtp, int flag, int argc, char * cons
 					#else
 					sprintf(str,"store ddr_parameter write 0x%08x 0x%08x ",ddr_set_add-SHA256_SUM_LEN,ddr_set_size+SHA256_SUM_LEN);
 					#endif
-							//		sprintf(str,"store ddr_parameter write 0x%08x 0x%08x ",ddr_set_add,ddr_set_size);
-							//	sprintf(str,"store rsv write ddr-parameter 0x%08x 0x%08x ",ddr_set_add,ddr_set_size);
 					printf("\nstr=%s\n",str);
 					run_command(str,0);
 				}
-				//#ifdef USE_FOR_UBOOT_2018
-				//sprintf(str,"store rsv write ddr-parameter 0x%08x 0x%08x ",ddr_set_add,ddr_set_size);
-				//#else
-				//sprintf(str,"store ddr_parameter write 0x%08x 0x%08x ",ddr_set_add,ddr_set_size);
-				//#endif
-				//sprintf(str,"store ddr_parameter write 0x%08x 0x%08x ",ddr_set_add,ddr_set_size);
-				//sprintf(str,"store rsv write ddr-parameter 0x%08x 0x%08x ",ddr_set_add,ddr_set_size);
-				//printf("\nstr=%s\n",str);
 
-				//run_command(str,0);
 			}
 			return 1;
 		}

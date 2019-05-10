@@ -129,6 +129,7 @@ ddr_set_t __ddr_setting[] = {
 	.ddr_func				= DDR_FUNC,
 	.magic					= DRAM_CFG_MAGIC,
 	.bitTimeControl_2d		= 1,
+	.fast_boot[0]			= 1,
 },
 {
 	/* ddr3 */
@@ -210,7 +211,8 @@ ddr_set_t __ddr_setting[] = {
 	.pll_ssc_mode			= (1<<20) | (1<<8) | (2<<4) | 0,//center_ssc_1000ppm
 	.ddr_func				= DDR_FUNC,
 	.magic					= DRAM_CFG_MAGIC,
-	.bitTimeControl_2d      = 1
+	.bitTimeControl_2d      = 1,
+	.fast_boot[0]			= 1,
 },
 {
 	/* lpddr4 */
@@ -285,80 +287,9 @@ ddr_set_t __ddr_setting[] = {
 	.ddr_func				= DDR_FUNC,
 	.magic					= DRAM_CFG_MAGIC,
 	.diagnose				= CONFIG_DIAGNOSE_DISABLE,
-	.bitTimeControl_2d      = 1
-},
-{
-	/* Y2 dongle */
-	.board_id				= CONFIG_BOARD_ID_MASK,
-	.version				= 1,
-	//.dram_rank_config		= CONFIG_DDR0_32BIT_RANK01_CH0,
-	.dram_rank_config		= CONFIG_DDR0_32BIT_RANK0_CH01,
-	.ddr_rfc_type			= DDR_RFC_TYPE_LPDDR4_8Gbx1,
-	.DramType				= CONFIG_DDR_TYPE_LPDDR4,
-	.DRAMFreq				= {1392, 0, 0, 0},
-	.ddr_base_addr			= CFG_DDR_BASE_ADDR,
-	.ddr_start_offset		= CFG_DDR_START_OFFSET,
-	.imem_load_addr			= 0xFFFC0000, //sram
-	.dmem_load_size			= 0x1000, //4K
-
-	.DisabledDbyte			= 0xf0,
-	.Is2Ttiming				= 0,
-	.HdtCtrl				= 0xa,
-	.dram_cs0_size_MB		= 0xffff,//1024,
-	.dram_cs1_size_MB		= 0,//1024,
-	.training_SequenceCtrl	= {0x131f,0x61}, //ddr3 0x21f 0x31f
-	.phy_odt_config_rank	= {0x23,0x13}, //use 0x23 0x13  compatibility with 1rank and 2rank //targeting rank 0. [3:0] is used //for write ODT [7:4] is used for //read ODT
-	.dfi_odt_config			= 0x0d0d,  //use 0d0d compatibility with 1rank and 2rank  //0808
-	.PllBypassEn			= 0, //bit0-ps0,bit1-ps1
-	.ddr_rdbi_wr_enable		= 0,
-	.clk_drv_ohm			= 40,
-	.cs_drv_ohm				= 40,
-	.ac_drv_ohm				= 40,
-	.soc_data_drv_ohm_p		= 40,
-	.soc_data_drv_ohm_n		= 40,
-	.soc_data_odt_ohm_p		= 0,
-	.soc_data_odt_ohm_n		= 120,
-	.dram_data_drv_ohm		= 40, //lpddr4 sdram only240/1-6
-	.dram_data_odt_ohm		= 120,
-	.dram_ac_odt_ohm		= 120,
-	.lpddr4_dram_vout_voltage_1_3_2_5_setting = 1,///1, 1/3vddq     0 2/5 vddq
-	.soc_clk_slew_rate		= 0x3ff,//0x253,
-	.soc_cs_slew_rate		= 0x100,//0x253,
-	.soc_ac_slew_rate		= 0x100,//0x253,
-	.soc_data_slew_rate		= 0x1ff,
-	.vref_output_permil		= 350,//200,
-	.vref_receiver_permil	= 0,
-	.vref_dram_permil		= 0,
-	//.vref_reverse			= 0,
-	.ac_trace_delay			= {00,0x0,0,0,0,0,0x0,00},
-	.ac_pinmux				= {00,00},
-	.ddr_dmc_remap			= {
-							[0] = ( 5 |  6 << 5 |  7 << 10 |  8<< 15 | 9<< 20 | 10 << 25 ),
-							[1] = ( 11|  0 << 5 |  0 << 10 | 15 << 15 | 16 << 20 | 17 << 25 ),
-							[2] = ( 18| 19 << 5 | 20 << 10 | 21 << 15 | 22 << 20 | 23 << 25 ),
-							[3] = ( 24| 25 << 5 | 26 << 10 | 27 << 15 | 28 << 20 | 29 << 25 ),
-							[4] = ( 30| 12 << 5 | 13 << 10 |  14<< 15 |  0 << 20 |  0 << 25 ),
-	},
-	.ddr_lpddr34_ca_remap	= {00,00},
-	.ddr_lpddr34_dq_remap	= {3,2,0,1,7,6,5,4, 10,9,14,11,8,12,13,15, 20,21,23,22,18,17,19,16, 28,26,25,24,31,30,27,29},
-	.dram_rtt_nom_wr_park	= {00,00},
-	/* pll ssc config:
-	 *
-	 *   pll_ssc_mode = (1<<20) | (1<<8) | ([strength] << 4) | [mode],
-	 *      ppm = strength * 500
-	 *      mode: 0=center, 1=up, 2=down
-	 *
-	 *   eg:
-	 *     1. config 1000ppm center ss. then mode=0, strength=2
-	 *        .pll_ssc_mode = (1<<20) | (1<<8) | (2 << 4) | 0,
-	 *     2. config 3000ppm down ss. then mode=2, strength=6
-	 *        .pll_ssc_mode = (1<<20) | (1<<8) | (6 << 4) | 2,
-	 */
-	.pll_ssc_mode			= (1<<20) | (1<<8) | (2<<4) | 0,//center_ssc_1000ppm
-	.ddr_func				= DDR_FUNC,
-	.magic					= DRAM_CFG_MAGIC,
-	.bitTimeControl_2d      = 1
-},
+	.bitTimeControl_2d      = 1,
+	.fast_boot[0]			= 1,
+}
 };
 
 pll_set_t __pll_setting = {
