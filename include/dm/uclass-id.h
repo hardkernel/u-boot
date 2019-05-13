@@ -101,7 +101,7 @@ enum uclass_id {
 	UCLASS_CHARGE_DISPLAY,	/* Charge display */
 	UCLASS_DVFS,		/* DVFS policy */
 	UCLASS_IO_DOMAIN,	/* IO domain */
-	UCLASS_RKCRYPTO,        /* Rockchip Crypto */
+	UCLASS_CRYPTO,		/* Crypto */
 	UCLASS_COUNT,
 	UCLASS_INVALID = -1,
 };
