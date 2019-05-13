@@ -4,5 +4,4 @@
 #  Copyright (c) 2019 Fuzhou Rockchip Electronics Co., Ltd
 #
 
-obj-y += rockchip_crypto_hd.o
-obj-y += rockchip_crypto.o
+obj-$(CONFIG_ROCKCHIP_CRYPTO_V1) += crypto_v1.o

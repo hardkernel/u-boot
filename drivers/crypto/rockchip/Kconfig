@@ -1,5 +1,8 @@
-config CRYPTO_ROCKCHIP
-	bool "Support Rockchip Hardware Crypto"
+config ROCKCHIP_CRYPTO_V1
+	bool "Enable rockchip crypto v1 support"
+	depends on DM_CRYPTO && (ROCKCHIP_RK3399 || ROCKCHIP_RK3368 || \
+				 ROCKCHIP_RK3328 || ROCKCHIP_RK3229 || \
+				 ROCKCHIP_RK3288 || ROCKCHIP_RK3128)
 	help
-	  The module supports Rockchip Hardware Crypto.
-	  This accelerates algorithmic operations.
+	  This enable MD5/SHA1/SHA256/RSA512/RSA1024/RSA2048 algorithm support for
+	  rockchip crypto v1 on platforms: rk3399/rk3368/rk3328/rk3229/rk3288/rk3128.
