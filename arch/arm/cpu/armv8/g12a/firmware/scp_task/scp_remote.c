@@ -46,7 +46,7 @@ unsigned int usr_ir_proto = 0;
 
 //24M
 static const reg_remote RDECODEMODE_NEC[] = {
-	{AO_MF_IR_DEC_LDR_ACTIVE, 500 << 16 | 400 << 0},
+	{AO_MF_IR_DEC_LDR_ACTIVE, 500 << 16 | 202 << 0},
 	{AO_MF_IR_DEC_LDR_IDLE, 300 << 16 | 202 << 0},
 	{AO_MF_IR_DEC_LDR_REPEAT, 150 << 16 | 80 << 0},
 	{AO_MF_IR_DEC_BIT_0, 72 << 16 | 40 << 0},
@@ -107,7 +107,7 @@ static const reg_remote RDECODEMODE_RCA[] = {
 
 static const reg_remote RDECODEMODE_NEC_TOSHIBA_2IN1[] = {
 	/*used old decode  for NEC*/
-	{AO_IR_DEC_LDR_ACTIVE, ((unsigned)500<<16) | ((unsigned)400<<0)},
+	{AO_IR_DEC_LDR_ACTIVE, ((unsigned)500<<16) | ((unsigned)200<<0)},
 	{AO_IR_DEC_LDR_IDLE, 300<<16 | 200<<0},/*leader idle*/
 	{AO_IR_DEC_LDR_REPEAT, 150<<16|80<<0}, /*leader repeat*/
 	{AO_IR_DEC_BIT_0, 72<<16|40<<0 },/*logic '0' or '00'*/
@@ -130,7 +130,7 @@ static const reg_remote RDECODEMODE_NEC_TOSHIBA_2IN1[] = {
 
 static const reg_remote RDECODEMODE_NEC_RCA_2IN1[] = {
 	/*used old decode  for NEC*/
-	{AO_IR_DEC_LDR_ACTIVE, ((unsigned)500<<16) | ((unsigned)400<<0)},
+	{AO_IR_DEC_LDR_ACTIVE, ((unsigned)500<<16) | ((unsigned)200<<0)},
 	{AO_IR_DEC_LDR_IDLE, 300<<16 | 200<<0},/*leader idle*/
 	{AO_IR_DEC_LDR_REPEAT, 150<<16|80<<0}, /*leader repeat*/
 	{AO_IR_DEC_BIT_0, 72<<16|40<<0 },/*logic '0' or '00'*/
@@ -212,7 +212,7 @@ static const reg_remote RDECODEMODE_RC6[] = {
 
 static const reg_remote RDECODEMODE_NEC_RC5_2IN1[] = {
 	/*used old decode  for NEC*/
-	{AO_IR_DEC_LDR_ACTIVE, ((unsigned)500<<16) | ((unsigned)400<<0)},
+	{AO_IR_DEC_LDR_ACTIVE, ((unsigned)500<<16) | ((unsigned)200<<0)},
 	{AO_IR_DEC_LDR_IDLE, 300<<16 | 200<<0},/*leader idle*/
 	{AO_IR_DEC_LDR_REPEAT, 150<<16|80<<0}, /*leader repeat*/
 	{AO_IR_DEC_BIT_0, 72<<16|40<<0 },/*logic '0' or '00'*/
@@ -239,7 +239,7 @@ static const reg_remote RDECODEMODE_NEC_RC5_2IN1[] = {
 
 static const reg_remote RDECODEMODE_NEC_RC6_2IN1[] = {
 	/*used old decode  for NEC*/
-	{AO_IR_DEC_LDR_ACTIVE, ((unsigned)500<<16) | ((unsigned)400<<0)},
+	{AO_IR_DEC_LDR_ACTIVE, ((unsigned)500<<16) | ((unsigned)200<<0)},
 	{AO_IR_DEC_LDR_IDLE, 300<<16 | 200<<0},/*leader idle*/
 	{AO_IR_DEC_LDR_REPEAT, 150<<16|80<<0}, /*leader repeat*/
 	{AO_IR_DEC_BIT_0, 72<<16|40<<0 },/*logic '0' or '00'*/
