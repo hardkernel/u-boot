@@ -21,7 +21,8 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-
+#include <common.h>
+#include <sysmem.h>
 #include <android_avb/avb_slot_verify.h>
 #include <android_avb/avb_chain_partition_descriptor.h>
 #include <android_avb/avb_cmdline.h>
@@ -107,7 +108,7 @@ static AvbSlotVerifyResult load_full_partition(AvbOps* ops,
 
   /* Allocate and copy the partition. */
   if (!*out_image_preloaded) {
-    *out_image_buf = avb_malloc(image_size);
+    *out_image_buf = sysmem_alloc(MEMBLK_ID_AVB_ANDROID, image_size);
     if (*out_image_buf == NULL) {
       return AVB_SLOT_VERIFY_RESULT_ERROR_OOM;
     }
@@ -369,7 +370,7 @@ out:
 
 fail:
   if (image_buf != NULL && !image_preloaded) {
-    avb_free(image_buf);
+    sysmem_free((phys_addr_t)image_buf);
   }
   return ret;
 }
@@ -449,7 +450,7 @@ static AvbSlotVerifyResult load_requested_partitions(
 out:
   /* Free the current buffer if any. */
   if (image_buf != NULL && !image_preloaded) {
-    avb_free(image_buf);
+    sysmem_free((phys_addr_t)image_buf);
   }
   /* Buffers that are already saved in slot_data will be handled by the caller
    * even on failure. */
@@ -1295,7 +1296,7 @@ void avb_slot_verify_data_free(AvbSlotVerifyData* data) {
         avb_free(loaded_partition->partition_name);
       }
       if (loaded_partition->data != NULL && !loaded_partition->preloaded) {
-        avb_free(loaded_partition->data);
+        sysmem_free((phys_addr_t)loaded_partition->data);
       }
     }
     avb_free(data->loaded_partitions);
