@@ -326,12 +326,14 @@ static int android_bootloader_get_fdt(const char *part_name,
  *   | Image.lzma| 2683750     | 34%   |                 |               |
  *   |-------------------------------------------------------------------|
  */
-static int sysmem_alloc_uncomp_kernel(ulong kernel_address, u32 comp)
+static int sysmem_alloc_uncomp_kernel(ulong andr_hdr,
+				      ulong uncomp_kaddr, u32 comp)
 {
-	struct andr_img_hdr *hdr = (struct andr_img_hdr *)kernel_address;
+	struct andr_img_hdr *hdr = (struct andr_img_hdr *)andr_hdr;
 	ulong ksize, kaddr;
 
 	if (comp != IH_COMP_NONE) {
+		/* Release compressed sysmem */
 		kaddr = env_get_hex("kernel_addr_c", 0);
 		if (!kaddr)
 			kaddr = env_get_hex("kernel_addr_r", 0);
@@ -358,10 +360,13 @@ static int sysmem_alloc_uncomp_kernel(ulong kernel_address, u32 comp)
 		else
 			ksize = hdr->kernel_size;
 
+		kaddr = uncomp_kaddr;
 		ksize = ALIGN(ksize, 512);
 		if (!sysmem_alloc_base(MEMBLK_ID_UNCOMP_KERNEL,
 				       (phys_addr_t)kaddr, ksize))
 			return -ENOMEM;
+
+		hotkey_run(HK_SYSMEM);
 	}
 
 	return 0;
@@ -412,7 +417,9 @@ int android_bootloader_boot_kernel(unsigned long kernel_address)
 	 * Actually, here only gives a sysmem warning message when failed
 	 * but never return -1.
 	 */
-	if (sysmem_alloc_uncomp_kernel(kernel_address, comp_type))
+	if (sysmem_alloc_uncomp_kernel(kernel_address,
+				       simple_strtoul(kernel_addr_r, NULL, 16),
+				       comp_type))
 		return -1;
 
 	do_bootm(NULL, 0, 4, bootm_args);
