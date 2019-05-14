@@ -1046,7 +1046,7 @@ for G12A, set osd2 matrix(10bit) RGB2YUV
 			RGB709_to_YUV709l_coeff,
 			CSC_ON);
 	}
- }
+}
 
  /*
 for G12A, set osd2 matrix(10bit) RGB2YUV
@@ -1121,6 +1121,37 @@ static void set_osd3_rgb2yuv(bool on)
 		vpp_reg_setb(VPP_WRAP_OSD3_MATRIX_EN_CTRL, on, 0, 1);
 
 		VPP_PR("g12a/b osd3 matrix rgb2yuv..............\n");
+	}
+}
+
+static void set_viu2_osd_matrix_rgb2yuv(bool on)
+{
+	int *m = RGB709_to_YUV709l_coeff;
+
+	/* RGB -> 709 limit */
+	if (is_osd_high_version()) {
+		/* VPP WRAP OSD3 matrix */
+		vpp_reg_write(VIU2_OSD1_MATRIX_PRE_OFFSET0_1,
+			((m[0] & 0xfff) << 16) | (m[1] & 0xfff));
+		vpp_reg_write(VIU2_OSD1_MATRIX_PRE_OFFSET2,
+			m[2] & 0xfff);
+		vpp_reg_write(VIU2_OSD1_MATRIX_COEF00_01,
+			((m[3] & 0x1fff) << 16) | (m[4] & 0x1fff));
+		vpp_reg_write(VIU2_OSD1_MATRIX_COEF02_10,
+			((m[5]  & 0x1fff) << 16) | (m[6] & 0x1fff));
+		vpp_reg_write(VIU2_OSD1_MATRIX_COEF11_12,
+			((m[7] & 0x1fff) << 16) | (m[8] & 0x1fff));
+		vpp_reg_write(VIU2_OSD1_MATRIX_COEF20_21,
+			((m[9] & 0x1fff) << 16) | (m[10] & 0x1fff));
+		vpp_reg_write(VIU2_OSD1_MATRIX_COEF22,
+			m[11] & 0x1fff);
+
+		vpp_reg_write(VIU2_OSD1_MATRIX_OFFSET0_1,
+			((m[18] & 0xfff) << 16) | (m[19] & 0xfff));
+		vpp_reg_write(VIU2_OSD1_MATRIX_OFFSET2,
+			m[20] & 0xfff);
+
+		vpp_reg_setb(VIU2_OSD1_MATRIX_EN_CTRL, on, 0, 1);
 	}
 }
 
@@ -1429,6 +1460,30 @@ void vpp_matrix_update(int type)
 			/* RGB to 709 limit */
 			vpp_set_post_matrix_rgb2ycbcr(0);
 		}
+		break;
+	default:
+		break;
+	}
+}
+
+void vpp_viu2_matrix_update(int type)
+{
+	if (vpp_init_flag == 0)
+		return;
+
+	if (get_cpu_id().family_id < MESON_CPU_MAJOR_ID_G12A)
+		return;
+
+	VPP_PR("%s: %d\n", __func__, type);
+
+	switch (type) {
+	case VPP_CM_RGB:
+		/* default RGB */
+		set_viu2_osd_matrix_rgb2yuv(0);
+		break;
+	case VPP_CM_YUV:
+		/* RGB to 709 limit */
+		set_viu2_osd_matrix_rgb2yuv(1);
 		break;
 	default:
 		break;

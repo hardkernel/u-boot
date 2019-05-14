@@ -24129,10 +24129,23 @@
 //Bit 11:0   vertical formatter width
 #define   VIU2_VD1_FMT_W                           (0x1e69)
 #define P_VIU2_VD1_FMT_W                           (volatile unsigned int *)((0x1e69  << 2) + 0xff900000)
-#define   VIU2_VD1_IF0_GEN_REG3                    (0x1e70)
-#define P_VIU2_VD1_IF0_GEN_REG3                    (volatile unsigned int *)((0x1e70  << 2) + 0xff900000)
-//bit 31:1,  reversed
-//bit 0,     cntl_64bit_rev
+//`define VIU2_MATRIX_CTRL                       8'h70
+#define VIU2_OSD1_MATRIX_COEF00_01                 0x1e70
+#define VIU2_OSD1_MATRIX_COEF02_10                 0x1e71
+#define VIU2_OSD1_MATRIX_COEF11_12                 0x1e72
+#define VIU2_OSD1_MATRIX_COEF20_21                 0x1e73
+#define VIU2_OSD1_MATRIX_COEF22                    0x1e74
+#define VIU2_OSD1_MATRIX_COEF13_14                 0x1e75
+#define VIU2_OSD1_MATRIX_COEF23_24                 0x1e76
+#define VIU2_OSD1_MATRIX_COEF15_25                 0x1e77
+#define VIU2_OSD1_MATRIX_CLIP                      0x1e78
+#define VIU2_OSD1_MATRIX_OFFSET0_1                 0x1e79
+#define VIU2_OSD1_MATRIX_OFFSET2                   0x1e7a
+#define VIU2_OSD1_MATRIX_PRE_OFFSET0_1             0x1e7b
+#define VIU2_OSD1_MATRIX_PRE_OFFSET2               0x1e7c
+#define VIU2_OSD1_MATRIX_EN_CTRL                   0x1e7d
+#define VIU2_RMIF_CTRL0                            0x1e80
+#define VIU2_RMIF_CTRL1                            0x1e81
 // synopsys translate_off
 // synopsys translate_on
 //
@@ -24689,6 +24702,7 @@
 #define P_VPU_VIU_ASYNC_MASK                       (volatile unsigned int *)((0x2781  << 2) + 0xff900000)
 #define   VDIN_MISC_CTRL                           (0x2782)
 #define P_VDIN_MISC_CTRL                           (volatile unsigned int *)((0x2782  << 2) + 0xff900000)
+#define VPU_VENCX_CLK_CTRL                         0x2785
 // vpu arbtration :
 // the segment is 8'h90-8'hc8
 //

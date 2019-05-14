@@ -68,20 +68,6 @@
 			printk("pll[0x%x] reset %d times\n", reg, 9 - cnt);\
 	} while (0)
 
-// viu_channel_sel: 1 or 2
-// viu_type_sel: 0: 0=ENCL, 1=ENCI, 2=ENCP, 3=ENCT.
-int set_viu_path(unsigned viu_channel_sel, enum viu_type viu_type_sel)
-{
-	if ((viu_channel_sel > 2) || (viu_channel_sel == 0))
-		return -1;
-	if (viu_channel_sel == 1)
-		hd_set_reg_bits(P_VPU_VIU_VENC_MUX_CTRL, viu_type_sel, 0, 2);
-	else
-		//viu_channel_sel ==2
-		hd_set_reg_bits(P_VPU_VIU_VENC_MUX_CTRL, viu_type_sel, 2, 2);
-	return 0;
-}
-
 static void set_hdmitx_sys_clk(void)
 {
 	hd_set_reg_bits(P_HHI_HDMI_CLK_CNTL, 0, 9, 3);
@@ -355,7 +341,6 @@ void set_hdmitx_clk(enum hdmi_vic vic)
 		return;
 	}
 next:
-	set_viu_path(p_enc[j].viu_path, p_enc[j].viu_type);
 	set_hdmitx_sys_clk();
 	set_hpll_clk_out(p_enc[j].hpll_clk_out);
 	set_hpll_od1(p_enc[j].od1);

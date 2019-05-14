@@ -9,6 +9,7 @@ void vpp_pq_load(void);
 #define VPP_CM_YUV    2   /* same as COLOR_FMT_YUV444*/
 
 extern void vpp_matrix_update(int type);
+extern void vpp_viu2_matrix_update(int type);
 
 enum vpp_gamma_sel_e {
 	VPP_GAMMA_R = 0,
