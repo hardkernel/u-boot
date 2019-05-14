@@ -22,6 +22,7 @@
 #include <common.h>
 #include <asm/io.h>
 #include <asm/arch/register.h>
+#include <amlogic/vout.h>
 #include <amlogic/hdmi.h>
 #include "hdmitx_reg.h"
 #include "hdmitx_tvenc.h"
@@ -406,7 +407,7 @@ void hdmi_tx_set(struct hdmitx_dev *hdev)
 
 int hdmi_outputmode_check(char *mode)
 {
-	int i, ret = -1;
+	int i, ret = 0xff;
 
 	for (i = 0; i < ARRAY_SIZE(gxbb_modes); i++) {
 		if (!strcmp(mode, gxbb_modes[i].sname)) {
@@ -415,8 +416,14 @@ int hdmi_outputmode_check(char *mode)
 		}
 	}
 
-	if (ret)
+	if (ret) {
 		printf("hdmitx: outputmode[%s] is invalid\n", mode);
+		return ret;
+	}
+	if ((!strcmp(mode, "480i60hz")) || (!strcmp(mode, "576i50hz")))
+		ret = VIU_MUX_ENCI;
+	else
+		ret = VIU_MUX_ENCP;
 	return ret;
 }
 

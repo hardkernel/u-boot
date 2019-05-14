@@ -209,6 +209,10 @@
 #define VPP_WRAP_OSD3_MATRIX_EN_CTRL               0x3dbd
 #endif
 
+#ifndef VPU_VENCX_CLK_CTRL
+#define VPU_VENCX_CLK_CTRL                         0x2785
+#endif
+
 #ifndef DOLBY_PATH_CTRL
 #define DOLBY_PATH_CTRL                            0x1a0c
 #endif
@@ -335,6 +339,49 @@
 #define OSD1_HDR2_PROC_WIN2                 0x38da
 #define OSD1_HDR2_MATRIXI_EN_CTRL           0x38db
 #define OSD1_HDR2_MATRIXO_EN_CTRL           0x38dc
+
+#ifndef VIU2_OSD1_MATRIX_COEF00_01
+#define VIU2_OSD1_MATRIX_COEF00_01                 0x1e70
+#endif
+#ifndef VIU2_OSD1_MATRIX_COEF02_10
+#define VIU2_OSD1_MATRIX_COEF02_10                 0x1e71
+#endif
+#ifndef VIU2_OSD1_MATRIX_COEF11_12
+#define VIU2_OSD1_MATRIX_COEF11_12                 0x1e72
+#endif
+#ifndef VIU2_OSD1_MATRIX_COEF20_21
+#define VIU2_OSD1_MATRIX_COEF20_21                 0x1e73
+#endif
+#ifndef VIU2_OSD1_MATRIX_COEF22
+#define VIU2_OSD1_MATRIX_COEF22                    0x1e74
+#endif
+#ifndef VIU2_OSD1_MATRIX_COEF13_14
+#define VIU2_OSD1_MATRIX_COEF13_14                 0x1e75
+#endif
+#ifndef VIU2_OSD1_MATRIX_COEF23_24
+#define VIU2_OSD1_MATRIX_COEF23_24                 0x1e76
+#endif
+#ifndef VIU2_OSD1_MATRIX_COEF15_25
+#define VIU2_OSD1_MATRIX_COEF15_25                 0x1e77
+#endif
+#ifndef VIU2_OSD1_MATRIX_CLIP
+#define VIU2_OSD1_MATRIX_CLIP                      0x1e78
+#endif
+#ifndef VIU2_OSD1_MATRIX_OFFSET0_1
+#define VIU2_OSD1_MATRIX_OFFSET0_1                 0x1e79
+#endif
+#ifndef VIU2_OSD1_MATRIX_OFFSET2
+#define VIU2_OSD1_MATRIX_OFFSET2                   0x1e7a
+#endif
+#ifndef VIU2_OSD1_MATRIX_PRE_OFFSET0_1
+#define VIU2_OSD1_MATRIX_PRE_OFFSET0_1             0x1e7b
+#endif
+#ifndef VIU2_OSD1_MATRIX_PRE_OFFSET2
+#define VIU2_OSD1_MATRIX_PRE_OFFSET2               0x1e7c
+#endif
+#ifndef VIU2_OSD1_MATRIX_EN_CTRL
+#define VIU2_OSD1_MATRIX_EN_CTRL                   0x1e7d
+#endif
 
 /*hdr2 register end*/
 
