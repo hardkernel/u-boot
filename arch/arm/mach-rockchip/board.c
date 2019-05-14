@@ -214,15 +214,34 @@ int init_kernel_dtb(void)
 
 void board_env_fixup(void)
 {
-	ulong kernel_addr_r;
+	char *addr_r;
+#ifdef ENV_MEM_LAYOUT_SETTINGS1
+	const char *env_addr0[] = {
+		"scriptaddr", "pxefile_addr_r",
+		"fdt_addr_r", "kernel_addr_r", "ramdisk_addr_r",
+	};
+	const char *env_addr1[] = {
+		"scriptaddr1", "pxefile_addr1_r",
+		"fdt_addr1_r", "kernel_addr1_r", "ramdisk_addr1_r",
+	};
+	int i;
 
-	if (gd->flags & GD_FLG_BL32_ENABLED)
-		return;
-
+	/* 128M is a typical ram size for most platform, so as default here */
+	if (gd->ram_size <= SZ_128M) {
+		/* Replace orignal xxx_addr_r */
+		for (i = 0; i < ARRAY_SIZE(env_addr1); i++) {
+			addr_r = env_get(env_addr1[i]);
+			if (addr_r)
+				env_set(env_addr0[i], addr_r);
+		}
+	}
+#endif
 	/* If bl32 is disabled, maybe kernel can be load to lower address. */
-	kernel_addr_r = env_get_ulong("kernel_addr_no_bl32_r", 16, -1);
-	if (kernel_addr_r != -1)
-		env_set_hex("kernel_addr_r", kernel_addr_r);
+	if (!(gd->flags & GD_FLG_BL32_ENABLED)) {
+		addr_r = env_get("kernel_addr_no_bl32_r");
+		if (addr_r)
+			env_set("kernel_addr_r", addr_r);
+	}
 }
 
 static void early_bootrom_download(void)
