@@ -94,10 +94,4 @@ char *android_str_append(char *base_name, char *slot_suffix);
  */
 int android_fdt_overlay_apply(void *fdt_addr);
 
-/** android_avb_is_enabled- get avb enable state.
- * *
- * @return true on enabled, otherwise disabled;
- */
-bool android_avb_is_enabled(void);
-
 #endif  /* __ANDROID_BOOTLOADER_H */

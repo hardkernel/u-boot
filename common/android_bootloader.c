@@ -659,9 +659,14 @@ static AvbSlotVerifyResult android_slot_verify(char *boot_partname,
 		load_address -= hdr->page_size;
 		*android_load_address = load_address;
 
+#ifdef CONFIG_ANDROID_BOOT_IMAGE_SEPARATE
+		android_image_load_separate(hdr, NULL,
+					    (void *)load_address, hdr);
+#else
 		memcpy((uint8_t *)load_address,
 		       slot_data[0]->loaded_partitions->data,
 		       slot_data[0]->loaded_partitions->data_size);
+#endif
 	} else {
 		slot_set_unbootable(&ab_data.slots[slot_index_to_boot]);
 	}
@@ -951,17 +956,6 @@ static int load_android_image(struct blk_desc *dev_desc,
 	return 0;
 }
 
-static bool avb_enabled;
-void android_avb_set_enabled(bool enable)
-{
-	avb_enabled = enable;
-}
-
-bool android_avb_is_enabled(void)
-{
-	return avb_enabled;
-}
-
 int android_bootloader_boot_flow(struct blk_desc *dev_desc,
 				 unsigned long load_address)
 {
@@ -1100,7 +1094,6 @@ int android_bootloader_boot_flow(struct blk_desc *dev_desc,
 
 	if (vboot_flag) {
 		printf("SecureBoot enabled, AVB verify\n");
-		android_avb_set_enabled(true);
 		if (android_slot_verify(boot_partname, &load_address,
 					slot_suffix))
 			return -1;
@@ -1113,13 +1106,11 @@ int android_bootloader_boot_flow(struct blk_desc *dev_desc,
 			printf("SecureBoot disabled, AVB skip\n");
 			env_update("bootargs",
 				   "androidboot.verifiedbootstate=orange");
-			android_avb_set_enabled(false);
 			if (load_android_image(dev_desc, boot_partname,
 					       slot_suffix, &load_address))
 				return -1;
 		} else {
 			printf("SecureBoot enabled, AVB verify\n");
-			android_avb_set_enabled(true);
 			if (android_slot_verify(boot_partname, &load_address,
 						slot_suffix))
 				return -1;
