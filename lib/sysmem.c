@@ -362,6 +362,7 @@ static void *sysmem_alloc_align_base(enum memblk_id id,
 	} else {
 		SYSMEM_E("Failed to alloc \"%s\" at 0x%08lx - 0x%08lx\n",
 			 name, (ulong)base, (ulong)(base + size));
+		goto out;
 	}
 
 	SYSMEM_D("Exit alloc: \"%s\", paddr=0x%08lx, size=0x%08lx, align=0x%x, anywhere=%d\n",
