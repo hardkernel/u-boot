@@ -188,7 +188,7 @@ int param_parse_bootdev(char **devtype, char **devnum)
 			}
 			break;
 #endif
-#ifdef CONFIG_RKNAND
+#if defined(CONFIG_RKNAND) || defined(CONFIG_RKNANDC_NAND)
 		case BOOT_TYPE_NAND:
 			*devtype = "rknand";
 			*devnum = "0";
