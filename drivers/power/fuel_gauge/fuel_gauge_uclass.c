@@ -10,6 +10,16 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
+int fuel_gauge_capability(struct udevice *dev)
+{
+	const struct dm_fuel_gauge_ops *ops = dev_get_driver_ops(dev);
+
+	if (!ops || !ops->capability)
+		return (FG_CAP_CHARGER | FG_CAP_FUEL_GAUGE);
+
+	return ops->capability(dev);
+}
+
 int fuel_gauge_bat_is_exist(struct udevice *dev)
 {
 	const struct dm_fuel_gauge_ops *ops = dev_get_driver_ops(dev);
