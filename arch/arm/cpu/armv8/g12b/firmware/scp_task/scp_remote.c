@@ -188,9 +188,9 @@ static const reg_remote RDECODEMODE_RC5[] = {
 	/*bit[0-3]: RC5; bit[8]: MSB first mode; bit[11]: compare frame method*/
 	{ AO_MF_IR_DEC_REG2       ,  ((1 << 13) | (1 << 11) | (1 << 8) | 0x7)},
 	/*Half bit for RC5 format: 888.89us*/
-	{ AO_MF_IR_DEC_DURATN2    ,  ((49 << 16) | (40 << 0))  },
+	{ AO_MF_IR_DEC_DURATN2    ,  ((56 << 16) | (32 << 0))  },
 	/*RC5 typically 1777.78us for whole bit*/
-	{ AO_MF_IR_DEC_DURATN3    ,  ((94 << 16) | (83 << 0))  },
+	{ AO_MF_IR_DEC_DURATN3    ,  ((102 << 16) | (76 << 0))  },
 	{ AO_MF_IR_DEC_REG3       ,  0			 },
 	{CONFIG_END, 0}
 };
@@ -230,9 +230,9 @@ static const reg_remote RDECODEMODE_NEC_RC5_2IN1[] = {
 	/*bit[0-3]: RC5; bit[8]: MSB first mode; bit[11]: compare frame method*/
 	{ AO_MF_IR_DEC_REG2       ,  ((1 << 13) | (1 << 11) | (1 << 8) | 0x7)},
 	/*Half bit for RC5 format: 888.89us*/
-	{ AO_MF_IR_DEC_DURATN2    ,  ((49 << 16) | (40 << 0))  },
+	{ AO_MF_IR_DEC_DURATN2    ,  ((56 << 16) | (32 << 0))  },
 	/*RC5 typically 1777.78us for whole bit*/
-	{ AO_MF_IR_DEC_DURATN3    ,  ((94 << 16) | (83 << 0))  },
+	{ AO_MF_IR_DEC_DURATN3    ,  ((102 << 16) | (76 << 0))  },
 	{ AO_MF_IR_DEC_REG3       ,  0			 },
 	{CONFIG_END, 0}
 };
