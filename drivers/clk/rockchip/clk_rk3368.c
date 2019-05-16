@@ -786,6 +786,35 @@ static ulong rk3368_alive_get_clk(struct rk3368_clk_priv *priv)
 	parent = GPLL_HZ;
 	return DIV_TO_RATE(parent, div);
 }
+
+static ulong rk3368_crypto_get_rate(struct rk3368_clk_priv *priv)
+{
+	struct rk3368_cru *cru = priv->cru;
+	u32 div, val;
+
+	val = readl(&cru->clksel_con[10]);
+	div = (val & CLK_CRYPTO_DIV_CON_MASK) >> CLK_CRYPTO_DIV_CON_SHIFT;
+
+	return DIV_TO_RATE(rk3368_bus_get_clk(priv->cru, ACLK_BUS), div);
+}
+
+static ulong rk3368_crypto_set_rate(struct rk3368_clk_priv *priv,
+				    uint hz)
+{
+	struct rk3368_cru *cru = priv->cru;
+	int src_clk_div;
+	uint p_rate;
+
+	p_rate = rk3368_bus_get_clk(priv->cru, ACLK_BUS);
+	src_clk_div = DIV_ROUND_UP(p_rate, hz) - 1;
+	assert(src_clk_div < 3);
+
+	rk_clrsetreg(&cru->clksel_con[10],
+		     CLK_CRYPTO_DIV_CON_MASK,
+		     src_clk_div << CLK_CRYPTO_DIV_CON_SHIFT);
+
+	return rk3368_crypto_get_rate(priv);
+}
 #endif
 
 static ulong rk3368_armclk_set_clk(struct rk3368_clk_priv *priv,
@@ -908,6 +937,9 @@ static ulong rk3368_clk_get_rate(struct clk *clk)
 	case PCLK_WDT:
 		rate = rk3368_alive_get_clk(priv);
 		break;
+	case SCLK_CRYPTO:
+		rate = rk3368_crypto_get_rate(priv);
+		break;
 #endif
 	default:
 		return -ENOENT;
@@ -984,6 +1016,9 @@ static ulong rk3368_clk_set_rate(struct clk *clk, ulong rate)
 		break;
 	case ACLK_CCI_PRE:
 		ret =  0;
+		break;
+	case SCLK_CRYPTO:
+		ret = rk3368_crypto_set_rate(priv, rate);
 		break;
 #endif
 	default:
