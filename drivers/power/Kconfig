@@ -12,6 +12,8 @@ source "drivers/power/regulator/Kconfig"
 
 source "drivers/power/dvfs/Kconfig"
 
+source "drivers/power/charge/Kconfig"
+
 config DM_CHARGE_DISPLAY
 	bool "Enable driver model for charge display support"
 	depends on DM
