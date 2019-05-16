@@ -469,6 +469,35 @@ static ulong rk3128_vop_get_rate(struct rk3128_clk_priv *priv, ulong clk_id)
 	}
 	return DIV_TO_RATE(parent, div);
 }
+
+static ulong rk3128_crypto_get_rate(struct rk3128_clk_priv *priv)
+{
+	struct rk3128_cru *cru = priv->cru;
+	u32 div, val;
+
+	val = readl(&cru->cru_clksel_con[24]);
+	div = (val & CLK_CRYPTO_DIV_CON_MASK) >> CLK_CRYPTO_DIV_CON_SHIFT;
+
+	return DIV_TO_RATE(rk3128_bus_get_clk(priv, ACLK_CPU), div);
+}
+
+static ulong rk3128_crypto_set_rate(struct rk3128_clk_priv *priv,
+				    uint hz)
+{
+	struct rk3128_cru *cru = priv->cru;
+	int src_clk_div;
+	uint p_rate;
+
+	p_rate = rk3128_bus_get_clk(priv, ACLK_CPU);
+	src_clk_div = DIV_ROUND_UP(p_rate, hz) - 1;
+	assert(src_clk_div < 3);
+
+	rk_clrsetreg(&cru->cru_clksel_con[24],
+		     CLK_CRYPTO_DIV_CON_MASK,
+		     src_clk_div << CLK_CRYPTO_DIV_CON_SHIFT);
+
+	return rk3128_crypto_get_rate(priv);
+}
 #endif
 
 static ulong rk3128_clk_get_rate(struct clk *clk)
@@ -521,6 +550,9 @@ static ulong rk3128_clk_get_rate(struct clk *clk)
 	case ACLK_VIO1:
 	case ACLK_LCDC0:
 		rate = rk3128_vop_get_rate(priv, clk->id);
+		break;
+	case SCLK_CRYPTO:
+		rate = rk3128_crypto_get_rate(priv);
 		break;
 #endif
 	default:
@@ -585,6 +617,9 @@ static ulong rk3128_clk_set_rate(struct clk *clk, ulong rate)
 	case ACLK_VIO1:
 	case ACLK_LCDC0:
 		ret = rk3128_vop_set_clk(priv, clk->id, rate);
+		break;
+	case SCLK_CRYPTO:
+		ret = rk3128_crypto_set_rate(priv, rate);
 		break;
 #endif
 	default:
