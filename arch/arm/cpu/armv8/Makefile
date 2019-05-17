@@ -19,12 +19,11 @@ obj-y	+= transition.o
 obj-y	+= fwcall.o
 obj-y	+= cpu-dt.o
 
-ifeq ($(CONFIG_SPL_BUILD)$(CONFIG_TPL_BUILD),)
-obj-y	+= ../armv7/suspend.o
-obj-y	+= sleep.o
-endif
-
 obj-$(CONFIG_ARM_SMCCC)		+= smccc-call.o
+
+ifeq ($(CONFIG_SPL_BUILD)$(CONFIG_TPL_BUILD),)
+obj-$(CONFIG_ARM_CPU_SUSPEND)	+= ../armv7/suspend.o sleep.o
+endif
 
 ifndef CONFIG_SPL_BUILD
 obj-$(CONFIG_ARMV8_SPIN_TABLE) += spin_table.o spin_table_v8.o

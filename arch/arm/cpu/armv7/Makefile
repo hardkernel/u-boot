@@ -12,11 +12,6 @@ obj-y	+= cache_v7.o cache_v7_asm.o
 obj-y	+= cpu.o cp15.o
 obj-y	+= syslib.o
 
-ifeq ($(CONFIG_SPL_BUILD)$(CONFIG_TPL_BUILD),)
-obj-y	+= suspend.o
-obj-y	+= sleep.o
-endif
-
 ifneq ($(CONFIG_SKIP_LOWLEVEL_INIT),y)
 obj-y	+= lowlevel_init.o
 endif
@@ -24,6 +19,10 @@ endif
 obj-$(CONFIG_ARM_SMCCC)		+= smccc-call.o
 obj-$(CONFIG_ARMV7_NONSEC)	+= nonsec_virt.o virt-v7.o virt-dt.o
 obj-$(CONFIG_ARMV7_PSCI)	+= psci.o psci-common.o
+
+ifeq ($(CONFIG_SPL_BUILD)$(CONFIG_TPL_BUILD),)
+obj-$(CONFIG_ARM_CPU_SUSPEND)	+= suspend.o sleep.o
+endif
 
 obj-$(CONFIG_IPROC) += iproc-common/
 obj-$(CONFIG_KONA) += kona-common/
