@@ -137,6 +137,7 @@ struct arm_smccc_res sip_smc_get_sip_version(void);
  */
 int psci_cpu_on(unsigned long cpuid, unsigned long entry_point);
 
+#ifdef CONFIG_ARM_CPU_SUSPEND
 /*
  * psci_system_suspend() - Standard ARM PSCI system suspend call.
  *
@@ -145,5 +146,6 @@ int psci_cpu_on(unsigned long cpuid, unsigned long entry_point);
  * @return 0 on success, otherwise failed.
  */
 int psci_system_suspend(unsigned long unused);
+#endif
 
 #endif

@@ -41,6 +41,7 @@ int psci_cpu_on(unsigned long cpuid, unsigned long entry_point)
 	return res.a0;
 }
 
+#ifdef CONFIG_ARM_CPU_SUSPEND
 int psci_system_suspend(unsigned long unused)
 {
 	struct arm_smccc_res res;
@@ -49,6 +50,7 @@ int psci_system_suspend(unsigned long unused)
 				  virt_to_phys(cpu_resume), 0, 0);
 	return res.a0;
 }
+#endif
 
 int sip_smc_set_suspend_mode(unsigned long ctrl,
 			     unsigned long config1,
