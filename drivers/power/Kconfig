@@ -82,6 +82,7 @@ endchoice
 config CHARGE_ANIMATION
 	bool "Enable charge animation"
 	depends on DM_CHARGE_DISPLAY && DM_FUEL_GAUGE
+	select ARM_CPU_SUSPEND
 	help
 	  This adds a simple function for charge animation display.
 

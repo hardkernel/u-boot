@@ -170,7 +170,7 @@ static int check_key_press(struct udevice *dev)
  * If not enable CONFIG_IRQ, cpu can't suspend to ATF or wfi, so that wakeup
  * period timer is useless.
  */
-#ifndef CONFIG_IRQ
+#if !defined(CONFIG_IRQ) || !defined(CONFIG_ARM_CPU_SUSPEND)
 static int system_suspend_enter(struct udevice *dev)
 {
 	return 0;
