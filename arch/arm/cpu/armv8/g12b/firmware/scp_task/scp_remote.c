@@ -196,17 +196,30 @@ static const reg_remote RDECODEMODE_RC5[] = {
 };
 
 static const reg_remote RDECODEMODE_RC6[] = {
-	{AO_MF_IR_DEC_LDR_ACTIVE, ((unsigned)210 << 16) | ((unsigned)125 << 0)},//rc6 leader 1700us,20* timebase
-	{AO_MF_IR_DEC_LDR_IDLE, 50 << 16 | 38 << 0},	// leader idle 800us
-	{AO_MF_IR_DEC_LDR_REPEAT, 145 << 16 | 125 << 0},	// leader repeat
-	{AO_MF_IR_DEC_BIT_0, 51 << 16 | 38 << 0},	// logic '0' or '00' 1500us
-	{AO_MF_IR_DEC_REG0, 3 << 28 | (0xFA0 << 12) | 0x13},	// sys clock boby time.base time = 20 body frame
-	{AO_MF_IR_DEC_STATUS, (94  << 20) | (82 << 10)},	// logic '1' or '01'    2500us
-	{AO_MF_IR_DEC_REG1, 0xa440},	// boby long decode (8-13) //framn len = 24bit
-	/*it may get the wrong customer value and key value from register if the value is set to 0x4,so the register value must set to 0x104 */
-	{AO_MF_IR_DEC_REG2, 0x109},
-	{AO_MF_IR_DEC_DURATN2, ((28 << 16) | (16 << 0))},
-	{AO_MF_IR_DEC_DURATN3, ((51 << 16) | (38 << 0))},
+	{AO_MF_IR_DEC_LDR_ACTIVE, ((unsigned)210 << 16) | ((unsigned)120 << 0)},    // rc6 leader 2666us,20* timebase
+	{AO_MF_IR_DEC_LDR_IDLE, 55 << 16 | 38 << 0},                                // leader idle 889us
+	{AO_MF_IR_DEC_LDR_REPEAT, 145 << 16 | 125 << 0},                            // leader repeat
+	{AO_MF_IR_DEC_BIT_0, 51 << 16 | 38 << 0},                                   // logic '0' or '00' 889us
+	{AO_MF_IR_DEC_REG0, (3 << 28) | (0xFA0 << 12) | 0x13},                      // sys clock boby time.base time = 20 body frame
+	{AO_MF_IR_DEC_STATUS, (94  << 20) | (82 << 10)},                            // logic '1' or '01' 1778us
+	{AO_MF_IR_DEC_REG1, ((1 << 15) | (20 << 8) | (1 << 6))},                    // frame len = 21bit
+	{AO_MF_IR_DEC_REG2, (1 << 8) | 0x9},                                        // rc6 protocol
+	{AO_MF_IR_DEC_DURATN2, (28 << 16) | (16 << 0)},                             // short bit pulse 444us
+	{AO_MF_IR_DEC_DURATN3, (51 << 16) | (38 << 0)},                             // long bit pulse 889us,
+	{CONFIG_END, 0}
+};
+
+static const reg_remote RDECODEMODE_RC6A[] = {
+	{AO_MF_IR_DEC_LDR_ACTIVE, ((unsigned)210 << 16) | ((unsigned)120 << 0)},    // rc6 leader 2666us,20* timebase
+	{AO_MF_IR_DEC_LDR_IDLE, 55 << 16 | 38 << 0},                                // leader idle 889us
+	{AO_MF_IR_DEC_LDR_REPEAT, 145 << 16 | 125 << 0},                            // leader repeat
+	{AO_MF_IR_DEC_BIT_0, 51 << 16 | 38 << 0},                                   // logic '0' or '00' 889us
+	{AO_MF_IR_DEC_REG0, (3 << 28) | (0xFA0 << 12) | 0x13},                      // sys clock boby time.base time = 20 body frame
+	{AO_MF_IR_DEC_STATUS, (94  << 20) | (82 << 10)},                            // logic '1' or '01' 1778us
+	{AO_MF_IR_DEC_REG1, ((1 << 15) | (36 << 8) | (1 << 6))},                    // frame len = 37bit
+	{AO_MF_IR_DEC_REG2, (1 << 8) | 0x9},                                        // rc6 protocol
+	{AO_MF_IR_DEC_DURATN2, (28 << 16) | (16 << 0)},                             // short bit pulse 444us
+	{AO_MF_IR_DEC_DURATN3, (51 << 16) | (38 << 0)},                             // long bit pulse 889us
 	{CONFIG_END, 0}
 };
 
@@ -275,12 +288,13 @@ static const reg_remote *remoteregsTab[] = {
 	RDECODEMODE_TOSHIBA,
 	RDECODEMODE_RCA,
 	RDECODEMODE_RC5,
-	RDECODEMODE_RC6,
+	RDECODEMODE_RC6A,
 	RDECODEMODE_NEC_TOSHIBA_2IN1,
 	RDECODEMODE_NEC_RCA_2IN1,
 	RDECODEMODE_RCMM,
 	RDECODEMODE_NEC_RC5_2IN1,
 	RDECODEMODE_NEC_RC6_2IN1,
+	RDECODEMODE_RC6,
 	RDECODEMODE_SOFTWARE_DECODE
 };
 
