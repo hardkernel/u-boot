@@ -98,6 +98,7 @@
 
 #define ENV_MMC_DEFAULT					\
 	"boot_mmc="					\
+		"setenv devtype mmc; "			\
 		"for n in ${mmc_list}; do "	\
 			"setenv devnum ${n}; "		\
 			"setenv devno ${n}; "		\
