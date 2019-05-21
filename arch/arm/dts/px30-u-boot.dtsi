@@ -45,6 +45,10 @@
 	u-boot,dm-pre-reloc;
 };
 
+&crypto {
+	u-boot,dm-pre-reloc;
+};
+
 &pmucru {
 	u-boot,dm-pre-reloc;
 };

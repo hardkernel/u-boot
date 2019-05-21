@@ -279,6 +279,15 @@
 		status = "disabled";
 	};
 
+	crypto: crypto@ff0b0000 {
+		compatible = "rockchip,px30-crypto";
+		reg = <0x0 0xff0b0000 0x0 0x4000>;
+		clock-names = "sclk_crypto", "apkclk_crypto";
+		clocks = <&cru SCLK_CRYPTO>, <&cru SCLK_CRYPTO_APK>;
+		clock-frequency = <200000000>, <300000000>;
+		status = "disabled";
+	};
+
 	gic: interrupt-controller@ff131000 {
 		compatible = "arm,gic-400";
 		#interrupt-cells = <3>;

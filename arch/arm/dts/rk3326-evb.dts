@@ -430,3 +430,7 @@
 &uart2 {
 	status = "okay";
 };
+
+&crypto {
+	status = "okay";
+};
