@@ -28,7 +28,6 @@
 #define CONFIG_IR_REMOTE_USE_PROTOCOL 0
 #endif
 #define CONFIG_END 0xffffffff
-#define IR_POWER_KEY_MASK 0xffffffff
 
 typedef struct reg_remote {
 	int reg;
@@ -42,6 +41,7 @@ typedef struct remote_pwrkeys {
 
 remote_pwrkeys_t pwr_keys_list;
 unsigned int usr_pwr_key = 0xffffffff;
+unsigned int usr_pwr_key_mask = 0xffffffff;
 unsigned int usr_ir_proto = 0;
 
 //24M
@@ -442,10 +442,10 @@ static int remote_detect_key(void)
 		uart_puts("\n");
 
 		for (j = 0; j < keysdat->size; j++) {
-			if ((power_key & IR_POWER_KEY_MASK) == keysdat->pwrkeys[j])
+			if ((power_key & usr_pwr_key_mask) == (keysdat->pwrkeys[j] & usr_pwr_key_mask))
 				return 1;
 		}
-		if ((power_key & IR_POWER_KEY_MASK) == usr_pwr_key)
+		if ((power_key & usr_pwr_key_mask) == (usr_pwr_key & usr_pwr_key_mask))
 			return 2;
 	}
 
@@ -461,10 +461,10 @@ static int remote_detect_key(void)
 		uart_puts("\n");
 
 		for (j = 0; j < keysdat->size; j++) {
-			if ((power_key & IR_POWER_KEY_MASK) == keysdat->pwrkeys[j])
+			if ((power_key & usr_pwr_key_mask) == (keysdat->pwrkeys[j] & usr_pwr_key_mask))
 				return 1;
 		}
-		if ((power_key & IR_POWER_KEY_MASK) == usr_pwr_key)
+		if ((power_key & usr_pwr_key_mask) == (usr_pwr_key & usr_pwr_key_mask))
 			return 2;
 	}
 
