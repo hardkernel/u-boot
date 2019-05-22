@@ -997,8 +997,10 @@ int android_bootloader_boot_flow(struct blk_desc *dev_desc,
 
 #ifdef CONFIG_ANDROID_AB
 	/*TODO: get from pre-loader or misc partition*/
-	if (rk_avb_get_current_slot(slot_suffix))
+	if (rk_avb_get_current_slot(slot_suffix)) {
+		printf("rk_avb_get_current_slot() failed\n");
 		return -1;
+	}
 
 	AvbOps *ops;
 	AvbABData ab_data;
@@ -1089,31 +1091,39 @@ int android_bootloader_boot_flow(struct blk_desc *dev_desc,
 	char vbmeta_partition[9] = {0};
 	disk_partition_t vbmeta_part_info;
 
-	if (trusty_read_vbootkey_enable_flag(&vboot_flag))
+	if (trusty_read_vbootkey_enable_flag(&vboot_flag)) {
+		printf("Can't read vboot flag\n");
 		return -1;
+	}
 
 	if (vboot_flag) {
-		printf("SecureBoot enabled, AVB verify\n");
+		printf("Vboot=1, SecureBoot enabled, AVB verify\n");
 		if (android_slot_verify(boot_partname, &load_address,
-					slot_suffix))
+					slot_suffix)) {
+			printf("AVB verify failed\n");
 			return -1;
+		}
 	} else {
 		strcat(vbmeta_partition, ANDROID_PARTITION_VBMETA);
 		strcat(vbmeta_partition, slot_suffix);
 		part_num = part_get_info_by_name(dev_desc, vbmeta_partition,
 						 &vbmeta_part_info);
 		if (part_num < 0) {
-			printf("SecureBoot disabled, AVB skip\n");
+			printf("Not AVB images, AVB skip\n");
 			env_update("bootargs",
 				   "androidboot.verifiedbootstate=orange");
 			if (load_android_image(dev_desc, boot_partname,
-					       slot_suffix, &load_address))
+					       slot_suffix, &load_address)) {
+				printf("Android image load failed\n");
 				return -1;
+			}
 		} else {
-			printf("SecureBoot enabled, AVB verify\n");
+			printf("Vboot=0, AVB images, AVB verify\n");
 			if (android_slot_verify(boot_partname, &load_address,
-						slot_suffix))
+						slot_suffix)) {
+				printf("AVB verify failed\n");
 				return -1;
+			}
 		}
 	}
 #else
@@ -1122,8 +1132,10 @@ int android_bootloader_boot_flow(struct blk_desc *dev_desc,
 	 * Determine if this is an AOSP image.
 	 */
 	if (load_android_image(dev_desc, boot_partname,
-			       slot_suffix, &load_address))
+			       slot_suffix, &load_address)) {
+		printf("Android image load failed\n");
 		return -1;
+	}
 #endif
 
 	/* Set Android root variables. */
