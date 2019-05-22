@@ -137,6 +137,7 @@ static u8 rsa2048_e[] = {
 	0x00, 0x00, 0x00, 0x00,
 };
 
+#ifdef CONFIG_ROCKCHIP_CRYPTO_V1
 static u8 rsa2048_c[] = {
 	0xa5, 0x0d, 0xc2, 0xc6, 0xf1, 0x08, 0x95, 0x55, 0x1d, 0xb3, 0xf9, 0x43,
 	0xb0, 0x7b, 0x5b, 0x96, 0xa0, 0x72, 0xe8, 0xd6, 0x95, 0xd6, 0x98, 0xec,
@@ -161,6 +162,7 @@ static u8 rsa2048_c[] = {
 	0x20, 0xa2, 0xda, 0x0e, 0x8e, 0xd4, 0x41, 0xdc, 0x1e, 0x75, 0x32, 0xf8,
 	0x73, 0xfa, 0x22, 0x7b,
 };
+#endif
 
 /* RSA2048-SHA256 sign data of foo_data[] */
 static u8 rsa2048_sha256_sign[] = {
@@ -220,7 +222,7 @@ static int do_crypto(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	u8 sha256_out1[32];
 	u8 sha1_out0[20];
 	u8 sha1_out1[20];
-	u8 rsa_out[32];
+	u8 rsa_out[256];
 	u8 md5_out0[16];
 	u8 md5_out1[16];
 	u32 cap;
@@ -262,10 +264,13 @@ static int do_crypto(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	     crypto_algo_nbits(csha_ctx.algo));
 
 	/* RSA2048-SHA256 */
+	memset(&rsa_key, 0x00, sizeof(rsa_key));
 	rsa_key.algo = CRYPTO_RSA2048;
 	rsa_key.n = (u32 *)&rsa2048_n;
 	rsa_key.e = (u32 *)&rsa2048_e;
+#ifdef CONFIG_ROCKCHIP_CRYPTO_V1
 	rsa_key.c = (u32 *)&rsa2048_c;
+#endif
 	crypto_rsa_verify(dev, &rsa_key, rsa2048_sha256_sign, rsa_out);
 	dump("RSA2048-SHA256", rsa_out,
 	     sha256_out1, crypto_algo_nbits(csha_ctx.algo));
