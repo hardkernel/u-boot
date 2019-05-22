@@ -2,13 +2,13 @@ if ARCH_ROCKCHIP
 
 config ROCKCHIP_PX30
 	bool "Support Rockchip PX30"
-	select ARM64
+	select ARM64 if !ARM64_BOOT_AARCH32
 	select GICV2
 	select ARM_SMCCC
 	select SUPPORT_SPL
 	select SUPPORT_TPL
-	select SPL
-	select TPL
+	select SPL if !ARM64_BOOT_AARCH32
+	select TPL if !ARM64_BOOT_AARCH32
 	select TPL_TINY_FRAMEWORK if TPL
 
 	imply SPL_SERIAL_SUPPORT
