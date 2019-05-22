@@ -23,6 +23,10 @@ u32 crypto_algo_nbits(u32 algo)
 		return 1024;
 	case CRYPTO_RSA2048:
 		return 2048;
+	case CRYPTO_RSA3072:
+		return 3072;
+	case CRYPTO_RSA4096:
+		return 4096;
 	}
 
 	printf("Unknown crypto algorithm: 0x%x\n", algo);

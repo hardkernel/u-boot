@@ -13,6 +13,8 @@
 #define CRYPTO_RSA512		BIT(3)
 #define CRYPTO_RSA1024		BIT(4)
 #define CRYPTO_RSA2048		BIT(5)
+#define CRYPTO_RSA3072		BIT(6)
+#define CRYPTO_RSA4096		BIT(7)
 
 #define BYTE2WORD(bytes)	((bytes) / 4)
 #define BITS2BYTE(nbits)	((nbits) / 8)
