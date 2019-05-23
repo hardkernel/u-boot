@@ -66,7 +66,6 @@ PLATFORM_RSA=
 PLATFORM_SHA=
 PLATFORM_UBOOT_IMG_SIZE=
 PLATFORM_TRUST_IMG_SIZE=
-PLATFORM_AARCH32=
 
 # Out env param
 PACK_IGNORE_BL32=$TRUST_PACK_IGNORE_BL32	# Value only: "--ignore-bl32"
@@ -413,10 +412,11 @@ fixup_platform_configure()
 		PLATFORM_TRUST_IMG_SIZE="--size 1024 2"
 	fi
 
-# <*> Fixup PLATFORM_AARCH32 for ARM64 cpu platforms
+# <*> Fixup AARCH32 for ARM64 cpu platforms
 	if [ $RKCHIP = "RK3308" ]; then
 		if grep -q '^CONFIG_ARM64_BOOT_AARCH32=y' ${OUTDIR}/.config ; then
-			PLATFORM_AARCH32="AARCH32"
+			RKCHIP_LABEL=${RKCHIP_LABEL}"AARCH32"
+			RKCHIP_TRUST=${RKCHIP_TRUST}"AARCH32"
 		fi
 	fi
 }
@@ -643,9 +643,9 @@ pack_trust_image()
 	ls trust*.img >/dev/null && rm trust*.img
 	# ARM64 uses trust_merger
 	if grep -Eq ''^CONFIG_ARM64=y'|'^CONFIG_ARM64_BOOT_AARCH32=y'' ${OUTDIR}/.config ; then
-		ini=${RKBIN}/RKTRUST/${RKCHIP_TRUST}${PLATFORM_AARCH32}TRUST.ini
+		ini=${RKBIN}/RKTRUST/${RKCHIP_TRUST}TRUST.ini
 		if [ "${mode}" = 'all' ]; then
-			files=`ls ${RKBIN}/RKTRUST/${RKCHIP_TRUST}${PLATFORM_AARCH32}TRUST*.ini`
+			files=`ls ${RKBIN}/RKTRUST/${RKCHIP_TRUST}TRUST*.ini`
 			for ini in $files
 			do
 				__pack_64bit_trust_image ${ini}
@@ -672,9 +672,9 @@ finish()
 {
 	echo
 	if [ "$BOARD" = '' ]; then
-		echo "Platform ${RKCHIP_LABEL}${PLATFORM_AARCH32} is build OK, with exist .config"
+		echo "Platform ${RKCHIP_LABEL} is build OK, with exist .config"
 	else
-		echo "Platform ${RKCHIP_LABEL}${PLATFORM_AARCH32} is build OK, with new .config(make ${BOARD}_defconfig)"
+		echo "Platform ${RKCHIP_LABEL} is build OK, with new .config(make ${BOARD}_defconfig)"
 	fi
 }
 
