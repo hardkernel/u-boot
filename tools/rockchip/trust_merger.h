@@ -44,6 +44,7 @@
 #define OPT_UNPACK          "--unpack"
 #define OPT_SUBFIX          "--subfix"
 #define OPT_REPLACE         "--replace"
+#define OPT_PREPATH         "--prepath"
 #define OPT_RSA		    "--rsa"
 #define OPT_SHA		    "--sha"
 #define OPT_SIZE	    "--size"

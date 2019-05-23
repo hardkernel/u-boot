@@ -21,6 +21,7 @@ bool gDebug =
 options gOpts;
 char gLegacyPath[MAX_LINE_LEN] = { 0 };
 char gNewPath[MAX_LINE_LEN] = { 0 };
+static char *gPrePath;
 char gSubfix[MAX_LINE_LEN] = OUT_SUBFIX;
 char gEat[MAX_LINE_LEN];
 char *gConfigPath;
@@ -148,6 +149,10 @@ static inline void fixPath(char *path)
 			strcpy(path, gNewPath);
 			strcat(path, tmp);
 		}
+	} else if (gPrePath) {
+		strcpy(tmp, path);
+		strcpy(path, gPrePath);
+		strcat(path, tmp);
 	}
 }
 
@@ -976,6 +981,7 @@ static void printHelp(void)
 	printf("\t" OPT_VERSION "\t\tDisplay version information.\n");
 	printf("\t" OPT_SUBFIX "\t\tSpec subfix.\n");
 	printf("\t" OPT_REPLACE "\t\tReplace some part of binary path.\n");
+	printf("\t" OPT_PREPATH "\t\tAdd prefix path of binary path.\n");
 	printf("\t" OPT_SIZE
 	       "\t\tImage size.\"--size [image KB size]\", must be 512KB aligned\n");
 	printf("Usage2: boot_merger [options] [parameter]\n");
@@ -1021,6 +1027,9 @@ int main(int argc, char **argv)
 			snprintf(gLegacyPath, sizeof(gLegacyPath), "%s", argv[i]);
 			i++;
 			snprintf(gNewPath, sizeof(gNewPath), "%s", argv[i]);
+		} else if (!strcmp(OPT_PREPATH, argv[i])) {
+			i++;
+			gPrePath = argv[i];
 		} else if (!strcmp(OPT_SIZE, argv[i])) {
 			g_merge_max_size = strtoul(argv[++i], NULL, 10);
 			if (g_merge_max_size % 512) {
