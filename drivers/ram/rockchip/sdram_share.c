@@ -403,7 +403,7 @@ int sdram_detect_cs1_row(struct sdram_cap_info *cap_info, u32 dram_type)
 {
 	void __iomem *test_addr;
 	u32 row = 0, bktmp, coltmp, bw;
-	u64 cs0_cap;
+	ulong cs0_cap;
 	u32 byte_mask;
 
 	if (cap_info->rank == 2) {
