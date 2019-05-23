@@ -21,6 +21,7 @@ obj-y += blk_common.o
 obj-y += blk.o
 obj-$(CONFIG_SOURCE) += source.o
 obj-$(CONFIG_CMD_SOURCE) += source.o
+obj-$(CONFIG_CMD_BCB) += bcb.o
 obj-$(CONFIG_CMD_BDI) += bdinfo.o
 obj-$(CONFIG_CMD_BEDBUG) += bedbug.o
 obj-$(CONFIG_CMD_BLOCK_CACHE) += blkcache.o
