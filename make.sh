@@ -413,10 +413,13 @@ fixup_platform_configure()
 	fi
 
 # <*> Fixup AARCH32 for ARM64 cpu platforms
-	if [ $RKCHIP = "RK3308" ]; then
-		if grep -q '^CONFIG_ARM64_BOOT_AARCH32=y' ${OUTDIR}/.config ; then
+	if grep -q '^CONFIG_ARM64_BOOT_AARCH32=y' ${OUTDIR}/.config ; then
+		if [ $RKCHIP = "RK3308" ]; then
 			RKCHIP_LABEL=${RKCHIP_LABEL}"AARCH32"
 			RKCHIP_TRUST=${RKCHIP_TRUST}"AARCH32"
+		elif [ $RKCHIP = "RK3326" ]; then
+			RKCHIP_LABEL=${RKCHIP_LABEL}"AARCH32"
+			RKCHIP_LOADER=${RKCHIP_LOADER}"AARCH32"
 		fi
 	fi
 }
