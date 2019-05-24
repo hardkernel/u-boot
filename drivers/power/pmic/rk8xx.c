@@ -250,13 +250,10 @@ static int rk8xx_probe(struct udevice *dev)
 
 	printf("PMIC:  RK%x ", show_variant);
 
-	if (on_source && off_source) {
-		on_source = pmic_reg_read(dev, on_source);
-		off_source = pmic_reg_read(dev, off_source);
+	if (on_source && off_source)
 		printf("(on=0x%02x, off=0x%02x)",
 		       pmic_reg_read(dev, on_source),
 		       pmic_reg_read(dev, off_source));
-	}
 	printf("\n");
 
 	return 0;
