@@ -533,16 +533,16 @@ int boot_rockchip_image(struct blk_desc *dev_desc, disk_partition_t *boot_part)
 	run_command(cmdbuf, 0);
 #else
 	/* We asume it's always zImage on 32-bit platform */
-	ulong kernel_addr_c = env_get_ulong("kernel_addr_c", 16, 0);
-	ulong kaddr, ksize;
+	ulong kaddr_c = env_get_ulong("kaddr_c", 16, 0);
+	ulong kaddr_r, kaddr, ksize;
 
-	if (kernel_addr_r && !kernel_addr_c) {
-		kernel_addr_c = kernel_addr_r;
-		kernel_addr_r = CONFIG_SYS_SDRAM_BASE;
+	if (kernel_addr_r && !kaddr_c) {
+		kaddr_c = kernel_addr_r;
+		kaddr_r = CONFIG_SYS_SDRAM_BASE;
 	}
 
-	if (!sysmem_free((phys_addr_t)kernel_addr_c)) {
-		kaddr = kernel_addr_r;
+	if (!sysmem_free((phys_addr_t)kaddr_c)) {
+		kaddr = kaddr_r;
 		ksize = kernel_size * 100 / 45 ; /* Ratio: 45% */
 		ksize = ALIGN(ksize, dev_desc->blksz);
 		if (!sysmem_alloc_base(MEMBLK_ID_UNCOMP_KERNEL,
