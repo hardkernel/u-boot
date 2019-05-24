@@ -12,8 +12,10 @@
 DECLARE_GLOBAL_DATA_PTR;
 
 #define SYSMEM_MAGIC		0x4D454D53	/* "SMEM" */
-#define SYSMEM_ALLOC_ANYWHERE	0
+
+#define LMB_ALLOC_ANYWHERE	0		/* sync with lmb.c */
 #define SYSMEM_ALLOC_NO_ALIGN	1
+#define SYSMEM_ALLOC_ANYWHERE	2
 
 #define SYSMEM_I(fmt, args...)	printf("Sysmem: "fmt, ##args)
 #define SYSMEM_W(fmt, args...)	printf("Sysmem Warn: "fmt, ##args)
@@ -251,9 +253,19 @@ static void *sysmem_alloc_align_base(enum memblk_id id,
 		 * of space(4KB) maybe safer.
 		 */
 		if ((id == MEMBLK_ID_AVB_ANDROID) &&
-		    (base == SYSMEM_ALLOC_ANYWHERE))
+		    (base == SYSMEM_ALLOC_ANYWHERE)) {
 			base = gd->start_addr_sp -
 					CONFIG_SYS_STACK_SIZE - size - 0x1000;
+		/*
+		 * So far, we use M_ATTR_PEEK for uncompress kernel alloc, and
+		 * for ARMv8 enabling AArch32 mode, the ATF is still AArch64
+		 * and ocuppies 0~1MB and shmem 1~2M. So let's ignore the region
+		 * which overlap with them.
+		 */
+		} else if (attr.flags & M_ATTR_PEEK) {
+			if (base <= gd->bd->bi_dram[0].start)
+				base = gd->bd->bi_dram[0].start;
+		}
 	} else {
 		SYSMEM_E("Unsupport memblk id %d for alloc sysmem\n", id);
 		goto out;
@@ -321,7 +333,7 @@ static void *sysmem_alloc_align_base(enum memblk_id id,
 
 	/* Alloc anywhere ? */
 	if (base == SYSMEM_ALLOC_ANYWHERE)
-		alloc_base = base;
+		alloc_base = LMB_ALLOC_ANYWHERE;
 	else
 		alloc_base = base + alloc_size;	/* LMB is align down alloc mechanism */
 
@@ -371,6 +383,13 @@ static void *sysmem_alloc_align_base(enum memblk_id id,
 	return (void *)paddr;
 
 out:
+	/*
+	 * Why: base + sizeof(ulong) ?
+	 * It's a not standard way to handle the case: the input base is 0.
+	 */
+	if (base == 0)
+		base = base + sizeof(ulong);
+
 	return (attr.flags & M_ATTR_PEEK) ? (void *)base : NULL;
 }
 
