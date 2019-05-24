@@ -145,7 +145,15 @@ struct memblock param_parse_common_resv_mem(void)
 {
 	struct memblock mem;
 
-#ifdef CONFIG_ARM64
+#if defined(CONFIG_ARM64)
+	mem.base = SDRAM_OFFSET(SZ_1M);
+	mem.size = SZ_1M;
+/*
+ * The ARMv8 platform enabling AArch32 mode should reserve memory the same
+ * as AArch64 mode(because there is no difference about ATF), only some
+ * platform has special request, they are: RK3308.
+ */
+#elif defined(CONFIG_ARM64_BOOT_AARCH32) && !defined(CONFIG_ROCKCHIP_RK3308)
 	mem.base = SDRAM_OFFSET(SZ_1M);
 	mem.size = SZ_1M;
 #else
