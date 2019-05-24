@@ -39,8 +39,14 @@ static int rockchip_crypto_sha_init(struct udevice *dev, sha_context *ctx)
 	struct rk_crypto_reg *reg = priv->reg;
 	u32 val;
 
-	if (!ctx || !ctx->length)
+	if (!ctx)
 		return -EINVAL;
+
+	if (!ctx->length) {
+		printf("%s: Err: crypto v1 request total data "
+		       "length when sha init\n", __func__);
+		return -EINVAL;
+	}
 
 	priv->length = 0;
 	writel(ctx->length, &reg->crypto_hash_msg_len);
@@ -140,7 +146,7 @@ static int rockchip_crypto_sha_final(struct udevice *dev,
 
 	/* Read hash data, per-data 32-bit */
 	nbits = crypto_algo_nbits(ctx->algo);
-	for (i = 0; i < BYTE2WORD(nbits); i++)
+	for (i = 0; i < BITS2WORD(nbits); i++)
 		buf[i] = readl(&reg->crypto_hash_dout[i]);
 
 	return 0;
