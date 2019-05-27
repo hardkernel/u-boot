@@ -149,7 +149,7 @@ static inline void fixPath(char *path)
 			strcpy(path, gNewPath);
 			strcat(path, tmp);
 		}
-	} else if (gPrePath) {
+	} else if (gPrePath && strncmp(path, gPrePath, strlen(gPrePath))) {
 		strcpy(tmp, path);
 		strcpy(path, gPrePath);
 		strcat(path, tmp);
