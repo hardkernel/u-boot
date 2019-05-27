@@ -280,8 +280,7 @@ int android_image_load_separate(struct andr_img_hdr *hdr,
 
 		if (ram_src) {
 			start = (ulong)ram_src;
-			memcpy((char *)load_address,
-			       (char *)start, hdr->kernel_size);
+			memcpy((char *)load_address, (char *)start, size);
 		} else {
 			blk_start = part->start;
 			ret = blk_dread(dev_desc, blk_start,
