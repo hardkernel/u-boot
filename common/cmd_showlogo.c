@@ -107,11 +107,11 @@ static int display_logo(const char* mode, const char* bmp_width, const char* bmp
 
 	setenv("bootlogo_addr", getenv("loadaddr")); /* 0x1080000 */
 #ifdef CONFIG_VIDEO_BMP_GZIP
-	sprintf(str, "fatload mmc %d ${bootlogo_addr} boot-logo.bmp.gz", bootdev);
+	sprintf(str, "load mmc %d ${bootlogo_addr} boot-logo.bmp.gz", bootdev);
 	ret = run_command(str, 0);
 	if (!ret)	goto display_logo;
 #endif
-	sprintf(str, "fatload mmc %d ${bootlogo_addr} boot-logo.bmp", bootdev);
+	sprintf(str, "load mmc %d ${bootlogo_addr} boot-logo.bmp", bootdev);
 	ret = run_command(str, 0);
 	if (!ret)	goto display_logo;
 
