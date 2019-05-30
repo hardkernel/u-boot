@@ -9,6 +9,7 @@
 #include <bidram.h>
 #include <dm.h>
 #include <debug_uart.h>
+#include <key.h>
 #include <memblk.h>
 #include <ram.h>
 #include <syscon.h>
@@ -355,8 +356,14 @@ void board_env_fixup(void)
 	}
 }
 
-static void early_bootrom_download(void)
+static void early_download_init(void)
 {
+#if defined(CONFIG_PWRKEY_DNL_TRIGGER_NUM) && \
+		(CONFIG_PWRKEY_DNL_TRIGGER_NUM > 0)
+	if (pwrkey_download_init())
+		printf("Pwrkey download init failed\n");
+#endif
+
 	if (!tstc())
 		return;
 
@@ -378,11 +385,12 @@ int board_init(void)
 	int ret;
 
 	board_debug_uart_init();
-	early_bootrom_download();
 
 #ifdef CONFIG_USING_KERNEL_DTB
 	init_kernel_dtb();
 #endif
+	early_download_init();
+
 	/*
 	 * pmucru isn't referenced on some platforms, so pmucru driver can't
 	 * probe that the "assigned-clocks" is unused.
