@@ -90,6 +90,15 @@ config NAND_ROCKCHIP_V9
 	---help---
 	Enable support for Rockchip nand v9.
 
+if NAND_ROCKCHIP || NAND_ROCKCHIP_V9
+config NAND_ROCKCHIP_DT
+        bool "Support Rockchip NAND controller as a DT device"
+	default y
+        help
+          Enable the driver for Rockchip NAND flash on platforms
+	  using device tree.
+endif
+
 config NAND_SUNXI
 	bool "Support for NAND on Allwinner SoCs"
 	depends on MACH_SUN4I || MACH_SUN5I || MACH_SUN7I

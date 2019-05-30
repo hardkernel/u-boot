@@ -6,14 +6,16 @@
  */
 
 #include <common.h>
+#include <dm.h>
 #include <fdtdec.h>
 #include <inttypes.h>
 #include <nand.h>
+#include <linux/io.h>
+#include <linux/ioport.h>
 #include <linux/kernel.h>
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/nand.h>
 #include <linux/mtd/partitions.h>
-#include <linux/io.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -81,6 +83,7 @@ struct rk_nand {
 	bool bootromblocks;
 	void __iomem *regs;
 	int selected_bank;
+	struct udevice *dev;
 };
 
 static struct nand_ecclayout nand_oob_fix = {
@@ -591,6 +594,9 @@ static int rockchip_nand_chip_init(int node, struct rk_nand *rknand, int devnum)
 
 	mtd = nand_to_mtd(chip);
 	mtd->name = "rknand";
+	mtd->dev = rknand->dev;
+	if (rknand->dev)
+		rknand->dev->priv = mtd;
 
 	ret = nand_scan_ident(mtd, 1, NULL);
 	if (ret)
@@ -632,6 +638,81 @@ static int rockchip_nand_chips_init(int node, struct rk_nand *rknand)
 
 	return 0;
 }
+
+#ifdef CONFIG_NAND_ROCKCHIP_DT
+static const struct udevice_id rockchip_nandc_ids[] = {
+	{ .compatible = "rockchip,nandc" },
+	{ }
+};
+
+static int rockchip_nandc_probe(struct udevice *dev)
+{
+	const void *blob = gd->fdt_blob;
+	struct rk_nand *rknand = dev_get_priv(dev);
+	fdt_addr_t regs;
+	int ret = 0, node;
+
+	node = fdtdec_next_compatible(blob, 0, COMPAT_ROCKCHIP_NANDC);
+
+	rknand->dev = dev;
+
+	regs = dev_read_addr(dev);
+	if (regs == FDT_ADDR_T_NONE) {
+		debug("Nand address not found\n");
+		return ret;
+	}
+
+	rknand->regs = (void *)regs;
+
+	spin_lock_init(&rknand->controller.lock);
+	init_waitqueue_head(&rknand->controller.wq);
+
+	rockchip_nand_init(rknand);
+
+	ret = rockchip_nand_chips_init(node, rknand);
+	if (ret)
+		debug("Failed to init nand chips\n");
+
+	return ret;
+}
+
+static int rockchip_nandc_bind(struct udevice *udev)
+{
+	int ret = 0;
+
+#ifdef CONFIG_MTD_BLK
+	struct udevice *bdev;
+
+	ret = blk_create_devicef(udev, "mtd_blk", "blk", IF_TYPE_MTD,
+				 0, 512, 0, &bdev);
+	if (ret)
+		printf("Cannot create block device\n");
+#endif
+	return ret;
+}
+
+U_BOOT_DRIVER(rk_nandc_v9) = {
+	.name           = "rk_nandc_v9",
+	.id             = UCLASS_MTD,
+	.of_match       = rockchip_nandc_ids,
+	.bind		= rockchip_nandc_bind,
+	.probe          = rockchip_nandc_probe,
+	.priv_auto_alloc_size = sizeof(struct rk_nand),
+};
+
+void board_nand_init(void)
+{
+	struct udevice *dev;
+	int ret;
+
+	ret = uclass_get_device_by_driver(UCLASS_MTD,
+					  DM_GET_DRIVER(rk_nandc_v9),
+					  &dev);
+	if (ret && ret != -ENODEV)
+		pr_err("Failed to initialize NAND controller. (error %d)\n",
+		       ret);
+}
+#else
 
 void board_nand_init(void)
 {
@@ -678,6 +759,8 @@ void board_nand_init(void)
 err:
 	kfree(rknand);
 }
+
+#endif
 
 int nand_spl_load_image(uint32_t offs, unsigned int size, void *dst)
 {
