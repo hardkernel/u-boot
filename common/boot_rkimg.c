@@ -402,26 +402,28 @@ int rockchip_get_boot_mode(void)
 	}
 
 fallback:
-	/* Mode from misc partition */
-	if (bmsg && !strcmp(bmsg->command, "boot-recovery")) {
-		boot_mode = BOOT_MODE_RECOVERY;
+	/*
+	 * Boot mode priority
+	 *
+	 * Anyway, we should set download boot mode as the highest priority, so:
+	 *
+	 * reboot loader/bootloader/fastboot > misc partition "recovery" > reboot xxx.
+	 */
+	reg_boot_mode = readl((void *)CONFIG_ROCKCHIP_BOOT_MODE_REG);
+	if (reg_boot_mode == BOOT_LOADER) {
+		printf("boot mode: loader\n");
+		boot_mode = BOOT_MODE_LOADER;
+	} else if (reg_boot_mode == BOOT_FASTBOOT) {
+		printf("boot mode: bootloader\n");
+		boot_mode = BOOT_MODE_BOOTLOADER;
+	} else if (bmsg && !strcmp(bmsg->command, "boot-recovery")) {
 		printf("boot mode: recovery\n");
+		boot_mode = BOOT_MODE_RECOVERY;
 	} else {
-		/* Mode from boot mode register */
-		reg_boot_mode = readl((void *)CONFIG_ROCKCHIP_BOOT_MODE_REG);
-
 		switch (reg_boot_mode) {
 		case BOOT_NORMAL:
 			printf("boot mode: normal\n");
 			boot_mode = BOOT_MODE_NORMAL;
-			break;
-		case BOOT_FASTBOOT:
-			printf("boot mode: bootloader\n");
-			boot_mode = BOOT_MODE_BOOTLOADER;
-			break;
-		case BOOT_LOADER:
-			printf("boot mode: loader\n");
-			boot_mode = BOOT_MODE_LOADER;
 			break;
 		case BOOT_RECOVERY:
 			/* printf("boot mode: recovery\n"); */
