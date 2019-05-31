@@ -229,7 +229,7 @@ static int rkss_begin_commit(void)
 	memset(data, 0, sizeof(data));
 	memcpy(data, &p, sizeof(p));
 
-	ret = blk_dwrite(dev_desc, RKSS_BACKUP_INDEX, 1, data);
+	ret = blk_dwrite(dev_desc, part_info.start + RKSS_BACKUP_INDEX, 1, data);
 	if (ret != 1) {
 		printf("TEEC: blk_dwrite fail\n");
 		return -1;
@@ -248,7 +248,7 @@ static int rkss_finish_commit(void)
 	debug("TEEC: %s\n", __func__);
 	memset(data, 0, sizeof(data));
 
-	ret = blk_dwrite(dev_desc, RKSS_BACKUP_INDEX, 1, data);
+	ret = blk_dwrite(dev_desc, part_info.start + RKSS_BACKUP_INDEX, 1, data);
 	if (ret != 1) {
 		printf("TEEC: blk_dwrite fail\n");
 		return -1;
@@ -267,7 +267,7 @@ static int rkss_backup_sections(unsigned long index, unsigned int num)
 	if (check_security_exist(1) < 0)
 		return -1;
 
-	ret = blk_dread(dev_desc, RKSS_BACKUP_INDEX, 1, data);
+	ret = blk_dread(dev_desc, part_info.start + RKSS_BACKUP_INDEX, 1, data);
 	if (ret != 1) {
 		printf("TEEC: blk_dread fail\n");
 		return -1;
@@ -306,13 +306,13 @@ static int rkss_backup_sections(unsigned long index, unsigned int num)
 			goto error;
 		}
 
-		ret = blk_dread(dev_desc, index, num, backup_data);
+		ret = blk_dread(dev_desc, part_info.start + index, num, backup_data);
 		if (ret != num) {
 			printf("TEEC: blk_dread fail\n");
 			return -1;
 		}
 
-		ret = blk_dwrite(dev_desc, info_current.backup_data_index,
+		ret = blk_dwrite(dev_desc, part_info.start + info_current.backup_data_index,
 				 num, backup_data);
 		if (ret != num) {
 			printf("TEEC: blk_dwrite fail\n");
@@ -328,7 +328,7 @@ static int rkss_backup_sections(unsigned long index, unsigned int num)
 		       (p.backup_count - 1) * sizeof(info_current),
 		       &info_current, sizeof(info_current));
 
-		ret = blk_dwrite(dev_desc, RKSS_BACKUP_INDEX, 1, data);
+		ret = blk_dwrite(dev_desc, part_info.start + RKSS_BACKUP_INDEX, 1, data);
 		if (ret != 1) {
 			printf("TEEC: blk_dwrite fail\n");
 			return -1;
@@ -354,7 +354,7 @@ static int rkss_resume(void)
 	if (check_security_exist(1) < 0)
 		return -1;
 
-	ret = blk_dread(dev_desc, RKSS_BACKUP_INDEX, 1, data);
+	ret = blk_dread(dev_desc, part_info.start + RKSS_BACKUP_INDEX, 1, data);
 	if (ret != 1) {
 		printf("TEEC: blk_dread fail\n");
 		return -1;
@@ -395,7 +395,7 @@ static int rkss_resume(void)
 				}
 
 				ret = blk_dread(dev_desc,
-						info_current.backup_data_index,
+						part_info.start + info_current.backup_data_index,
 						info_current.backup_num,
 						backup_data);
 				if (ret != info_current.backup_num) {
@@ -404,7 +404,7 @@ static int rkss_resume(void)
 				}
 
 				ret = blk_dwrite(dev_desc,
-						 info_current.backup_index,
+						 part_info.start + info_current.backup_index,
 						 info_current.backup_num,
 						 backup_data);
 				if (ret != info_current.backup_num) {
@@ -417,7 +417,7 @@ static int rkss_resume(void)
 		}
 	}
 	memset(data, 0, sizeof(data));
-	ret = blk_dwrite(dev_desc, RKSS_BACKUP_INDEX, 1, data);
+	ret = blk_dwrite(dev_desc, part_info.start + RKSS_BACKUP_INDEX, 1, data);
 	if (ret != 1) {
 		printf("TEEC: blk_dwrite fail\n");
 		return -1;
