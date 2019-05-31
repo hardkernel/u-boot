@@ -25,6 +25,7 @@
 #include <asm/arch/secure_apb.h>
 #include <asm/arch/clock.h>
 #include <asm/arch/mailbox.h>
+#include <asm/cpu_id.h>
 
 /*  !!must use nonzero value as default value. Otherwise it linked to bss segment,
     but this segment not cleared to zero while running "board_init_f" */
@@ -345,7 +346,7 @@ void ring_powerinit(void)
 }
 
 #ifdef CONFIG_RING
-int ring_msr(int index)
+int ring_msr_a(int index)
 {
 	const char* clk_table[] = {
 			[11] = "sys_cpu_ring_osc_clk[1] " ,
@@ -365,7 +366,7 @@ int ring_msr(int index)
 	unsigned long i;
 	unsigned char efuseinfo[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
-	if ((index != 0xff) && (index != 0)) {
+	if ((index != 0xff) && (index != 0x0) && (index != 0xfe)) {
 		if (efuse_get_value(efuseinfo) != 0) {
 			printf("fail get efuse info\n");
 			return 0;
@@ -380,14 +381,16 @@ int ring_msr(int index)
 			printf("input data not support!\n");
 		return 0;
 	}
-
-	ring_powerinit();
+	if (index != 0xfe) {
+		if (0x0 == index) /*index is 0, set vcck and vddee, index ff no set voltage*/
+			ring_powerinit();
 	/*RING_OSCILLATOR       0x7f: set slow ring*/
-	writel(0x555555, 0xff6345fc);
-	for (i = 0; i < 12; i++) {
-		printf("%s      :",clk_table[i]);
-		printf("%ld     KHz",clk_util_ring_msr(tb[i]));
-		printf("\n");
+		writel(0x555555, 0xff6345fc);
+		for (i = 0; i < 12; i++) {
+			printf("%s      :",clk_table[i]);
+			printf("%ld     KHz",clk_util_ring_msr(tb[i]));
+			printf("\n");
+		}
 	}
 
 	if (efuse_get_value(efuseinfo) != 0) {
@@ -417,6 +420,94 @@ int ring_msr(int index)
 		printf("%d  ", efuseinfo[i]);
 
 	printf("\n");
+
+	return 0;
+}
+
+int ring_msr_b(int index)
+{
+	const char* clk_table[] = {
+			[11] = "cpu[1]_A53_ULVT20 " ,
+			[10] = "cpu[0]_A53_SVT16 " ,
+			[9] = "ee[9]_dos_LVT16 " ,
+			[8] = "ee[8]_dos_SVT16 " ,
+			[7] = "ee[7]_dos_SVT24 " ,
+			[6] = "ee[6]_vpu_LVT16 " ,
+			[5] = "ee[5]_vpu_LVT20 " ,
+			[4] = "ee[4]_vpu_SVT24 " ,
+			[3] = "ee[3]_mali_SVT16 " ,
+			[2] = "ee[2]_mali_SVT24 " ,
+			[1] = "ee[1]_mali_LVT16 " ,
+			[0] = "ee[0]_dmctop_LVT16 " ,
+		};
+	const int tb[] = {0, 1, 2, 99, 100, 101, 102, 103, 104, 105, 3, 33};
+	unsigned long i;
+	unsigned char efuseinfo[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+
+	if ((index != 0xff) && (index != 0x0) && (index != 0xfe)) {
+		if (efuse_get_value(efuseinfo) != 0) {
+			printf("fail get efuse info\n");
+			return 0;
+		}
+		if ((index >= 1) && (index <= 4))
+			printf("%d\n", (efuseinfo[index] * 20));
+		if ((index >= 5) && (index <= 7))
+			printf("%d\n", (efuseinfo[index] * 400));
+		if ((index >= 8) && (index <= 11))
+			printf("%d\n", efuseinfo[index]);
+		if ((index < 0) || (index >= 12))
+			printf("input data not support!\n");
+		return 0;
+	}
+	if (index != 0xfe) {
+		printf("entry ring test\n");
+		if (0x0 == index) { /*index is 0, set vcck and vddee, index ff no set voltage*/			ring_powerinit();
+			printf("set voltage\n");
+		}
+		writel(0x555555, 0xff6345fc); /*RING_OSCILLATOR set slow ring*/
+		for (i = 0; i < 12; i++) {
+			printf("%s      :",clk_table[i]);
+			printf("%ld     KHz",clk_util_ring_msr(tb[i]));
+			printf("\n");
+		}
+	}
+	if (efuse_get_value(efuseinfo) != 0) {
+		printf("fail get osc ring efuse info\n");
+		return 0;
+	}
+
+	printf("osc ring efuse info:\n");
+	for (i = 0; i <= 11; i++)
+		printf("0x%x, ", efuseinfo[i]);
+	printf("\n");
+
+	/*efuse to test value*/
+
+	printf("a73_ring1, mail_ring0, a73_ring0, a53_ring1, iddee, iddcpu_a73, iddcpu_a55, sltver, fta53, fta73, slt\n");
+	for (i = 1; i <= 4; i++)
+		printf("%d KHz, ", (efuseinfo[i] * 20));
+
+	printf("%d uA, ", (efuseinfo[5] * 400));
+	printf("%d uA, ", (efuseinfo[6] * 400));
+	printf("%d uA, ", (efuseinfo[7] * 400));
+
+	for (i = 8; i <= 11; i++)
+		printf("%d,  ", efuseinfo[i]);
+
+	printf("\n");
+
+	return 0;
+}
+
+int ring_msr(int index)
+{
+	cpu_id_t cpu_id = get_cpu_id();
+
+	if (0xA == cpu_id.chip_rev) {
+		return ring_msr_a(index);
+	} else if (0xB ==  cpu_id.chip_rev) {
+		return ring_msr_b(index);
+	}
 
 	return 0;
 }

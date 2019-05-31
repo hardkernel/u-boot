@@ -44,6 +44,12 @@
 #ifndef HHI_VPU_MEM_PD_REG2
 #define HHI_VPU_MEM_PD_REG2                        (0xff63c000 + (0x4d << 2))
 #endif
+#ifndef HHI_VPU_MEM_PD_REG3
+#define HHI_VPU_MEM_PD_REG3                        (0xff63c000 + (0x4e << 2))
+#endif
+#ifndef HHI_VPU_MEM_PD_REG4
+#define HHI_VPU_MEM_PD_REG4                        (0xff63c000 + (0x4c << 2))
+#endif
 
 #ifndef DOLBY_TV_CLKGATE_CTRL
 #define DOLBY_TV_CLKGATE_CTRL                      (0x33f1)

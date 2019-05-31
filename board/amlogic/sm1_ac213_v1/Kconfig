@@ -1,0 +1,22 @@
+if TARGET_MESON_G12A
+
+config SYS_CPU
+	string
+	default "armv8"
+
+config SYS_BOARD
+	string
+	default "g12a_u212_v1"
+
+config SYS_VENDOR
+	string
+	default "amlogic"
+
+config SYS_SOC
+	string
+	default "g12a"
+
+config SYS_CONFIG_NAME
+	default "sm1_ac213_v1"
+
+endif

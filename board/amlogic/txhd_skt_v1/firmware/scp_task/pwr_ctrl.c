@@ -351,6 +351,7 @@ static unsigned int detect_key(unsigned int suspend_from)
 			asm volatile("wfi");
 	} while (1);
 
+	wakeup_timer_clear();
 	saradc_disable();
 
 	return exit_reason;

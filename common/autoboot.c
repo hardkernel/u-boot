@@ -173,6 +173,12 @@ static int abortboot_normal(int bootdelay)
 		}
 	}
 #endif
+
+	char *s_ms = getenv("ms_delay_step");
+	int delay_count = s_ms ? (int)simple_strtol(s_ms, NULL, 10) : 0;
+	if ((!delay_count) ||(delay_count > 100))
+		delay_count = 100;
+
 	while ((bootdelay > 0) && (!abort)) {
 		--bootdelay;
 		/* delay 1000 ms */
@@ -190,7 +196,7 @@ static int abortboot_normal(int bootdelay)
 				}
 			}
 			udelay(1000);
-		} while (!abort && get_timer(ts) < 100);
+		} while (!abort && get_timer(ts) < delay_count);
 
 		printf("\b\b\b%2d ", bootdelay);
 	}

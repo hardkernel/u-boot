@@ -592,10 +592,24 @@ int optimus_burn_with_cfg_file(const char* cfgFile)
     const char* pkgPath = pSdcCfgPara->burnEx.pkgPath;
     __hdle hUiProgress = NULL;
 
-    ret = parse_ini_cfg_file(cfgFile);
-    if (ret) {
-        DWN_ERR("Fail to parse file %s\n", cfgFile);
-        ret = __LINE__; goto _finish;
+    hImg = image_open("mmc", "0", "1", cfgFile);
+    if (!hImg) {
+        DWN_MSG("cfg[%s] not valid aml pkg, parse it as ini\n", cfgFile);
+        ret = parse_ini_cfg_file(cfgFile);
+        if (ret) {
+            DWN_ERR("Fail to parse file %s\n", cfgFile);
+            ret = __LINE__; goto _finish;
+        }
+    } else {//cfg path is valid aml pkg
+        DWN_MSG("cfg %s is valid aml pkg\n", cfgFile);
+        ret = check_cfg_burn_parts(pSdcCfgPara);
+        if (ret) {
+            DWN_ERR("Fail in check burn parts.\n");
+            ret = __LINE__; goto _finish;
+        }
+        extern int print_sdc_burn_para(const ConfigPara_t* pCfgPara);
+        print_sdc_burn_para(pSdcCfgPara);
+        memcpy((void*)pkgPath, cfgFile, strnlen(cfgFile, 128));
     }
 
     if (pSdcCfgPara->custom.eraseBootloader && strcmp("1", getenv("usb_update")))
@@ -634,12 +648,13 @@ int optimus_burn_with_cfg_file(const char* cfgFile)
         optimus_led_show_in_process_of_burning();
     }
 
-    hImg = image_open("mmc", "0", "1", pkgPath);
     if (!hImg) {
-        DWN_ERR("Fail to open image %s\n", pkgPath);
-        ret = __LINE__; goto _finish;
+        hImg = image_open("mmc", "0", "1", pkgPath);
+        if (!hImg) {
+            DWN_ERR("Fail to open image %s\n", pkgPath);
+            ret = __LINE__; goto _finish;
+        }
     }
-
     //update dtb for burning drivers
     ret = optimus_sdc_burn_dtb_load(hImg);
     if (ITEM_NOT_EXIST != ret && ret) {

@@ -31,8 +31,8 @@ static const char* _iniSets[] = {
 
 ConfigPara_t g_sdcBurnPara = {
     .setsBitMap.burnParts   = 0,
-    .setsBitMap.custom      = 0,
-    .setsBitMap.burnEx      = 0,
+    .setsBitMap.custom      = 1,
+    .setsBitMap.burnEx      = 1,
 
     .burnParts      = {
         .burn_num           = 0,
@@ -41,13 +41,13 @@ ConfigPara_t g_sdcBurnPara = {
 
     .custom         = {
         .eraseBootloader    = 1,//default to erase bootloader!
-        .eraseFlash         = 0,
-        .bitsMap.eraseBootloader    = 0,
-        .bitsMap.eraseFlash         = 0,
+        .eraseFlash         = 0,//default no erase flash for usb disk upgrade
+        .bitsMap.eraseBootloader    = 1,
+        .bitsMap.eraseFlash         = 1,
     },
 
     .burnEx         = {
-        .bitsMap.pkgPath    = 0,
+        .bitsMap.pkgPath    = 1,
         .bitsMap.mediaPath  = 0,
     },
 };
@@ -90,7 +90,7 @@ int print_burn_parts_para(const BurnParts_t* pBurnParts)
     return 0;
 }
 
-static int print_sdc_burn_para(const ConfigPara_t* pCfgPara)
+int print_sdc_burn_para(const ConfigPara_t* pCfgPara)
 {
     printf("\n=========sdc_burn_paras=====>>>\n");
 

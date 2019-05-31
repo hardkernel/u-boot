@@ -731,7 +731,7 @@ struct nand_chip {
 	struct nand_onfi_params	onfi_params;
 #endif
 	struct nand_jedec_params jedec_params;
- 
+
 	int read_retries;
 
 	flstate_t state;
@@ -776,6 +776,7 @@ struct nand_chip {
 #define NAND_MFR_GIGA		0xc8
 #define NAND_MFR_DOSILICON	0xf8
 #define NAND_MFR_ATO		0x9b
+#define NAND_MFR_ZETTA		0xba
 
 /* The maximum expected count of bytes in the NAND ID sequence */
 #define NAND_MAX_ID_LEN 8

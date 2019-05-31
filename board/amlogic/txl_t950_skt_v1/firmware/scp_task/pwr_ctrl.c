@@ -320,7 +320,6 @@ static unsigned int detect_key(unsigned int suspend_from)
 			if (time_out_ms != 0)
 				time_out_ms--;
 			if (time_out_ms == 0) {
-				wakeup_timer_clear();
 				exit_reason = AUTO_WAKEUP;
 			}
 		}
@@ -346,6 +345,7 @@ static unsigned int detect_key(unsigned int suspend_from)
 		} else
 			asm volatile("wfi");
 	} while (1);
+	wakeup_timer_clear();
 	restore_ao_timer();
 	saradc_disable();
 	return exit_reason;

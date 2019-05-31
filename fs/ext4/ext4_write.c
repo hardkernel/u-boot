@@ -27,6 +27,9 @@
 #include <div64.h>
 #include "ext4_common.h"
 
+#ifdef CONFIG_MDUMP_COMPRESS
+#include <ramdump.h>
+#endif
 static void ext4fs_update(void)
 {
 	short i;
@@ -752,6 +755,13 @@ static int ext4fs_write_file(struct ext2_inode *file_inode,
 	int delayed_extent = 0;
 	int delayed_next = 0;
 	char *delayed_buf = NULL;
+#ifdef CONFIG_MDUMP_COMPRESS
+	int show_process = 0;
+	int cur_percent, dis_percent = -1;
+
+	if ((unsigned long)buf == ramdump_base)
+		show_process = 1;
+#endif
 
 	/* Adjust len so it we can't read past the end of the file. */
 	if (len > filesize)
@@ -769,6 +779,19 @@ static int ext4fs_write_file(struct ext2_inode *file_inode,
 
 		blknr = blknr << log2_fs_blocksize;
 
+	#ifdef CONFIG_MDUMP_COMPRESS
+		/*
+		 * display write progress for notify!
+		 */
+		if (show_process) {
+			cur_percent = ((i + 1) * 100) / blockcnt;
+			if (cur_percent != dis_percent) {
+				dis_percent = cur_percent;
+				printf("writing ramdump file, percent: %2d%%\n",
+					dis_percent);
+			}
+		}
+	#endif
 		if (blknr) {
 			if (previous_block_number != -1) {
 				if (delayed_next == blknr) {
@@ -999,11 +1022,13 @@ int ext4_write_file(const char *filename, void *buf, loff_t offset,
 		goto fail;
 	}
 	ext4fs_close();
+	*actwrite = len;
 
 	return 0;
 
 fail:
 	ext4fs_close();
+	*actwrite = 0;
 
 	return -1;
 }

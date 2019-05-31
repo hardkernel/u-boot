@@ -24,7 +24,7 @@
 #include "aml_lcd_reg.h"
 #include "aml_lcd_common.h"
 #ifdef CONFIG_UNIFY_KEY_MANAGE
-#include "aml_lcd_unifykey_tcon.h"
+#include "aml_lcd_tcon_ref.h"
 #endif
 
 #define LCD_UNIFYKEY_TEST
@@ -748,20 +748,30 @@ static void aml_bl_test_unifykey(void)
 
 static void aml_lcd_tcon_test_unifykey(int n)
 {
-	int len = LCD_UKEY_TCON_SIZE;
+	int len;
 	unsigned char *buf;
 
 	switch (n) {
 	case 768:
-		buf = &tcon_boe_hd_hsd_n56[0];
+		buf = &tcon_boe_hd_hsd_n56_1366x768[0];
+		len = sizeof(tcon_boe_hd_hsd_n56_1366x768);
 		break;
-	default:
 	case 1080:
-		buf = &tcon_boe_fhd_goa_n10[0];
+		buf = &tcon_boe_fhd_goa_n10_1920x1080[0];
+		len = sizeof(tcon_boe_fhd_goa_n10_1920x1080);
+		break;
+	case 2160:
+		buf = &uhd_tcon_setting_ceds_3840x2160[0];
+		len = sizeof(uhd_tcon_setting_ceds_3840x2160);
+	default:
+		buf = NULL;
 		break;
 	}
 
-	key_unify_write("lcd_tcon", buf, len);
+	if (buf)
+		key_unify_write("lcd_tcon", buf, len);
+	else
+		LCDUKEYERR("tcon_test error data\n");
 }
 #endif
 

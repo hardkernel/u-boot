@@ -54,25 +54,8 @@ extern unsigned int lcd_debug_print_flag;
  * VENC to TCON sync delay
  * ********************************** */
 #define TTL_DELAY                   13
+#define PRE_DE_DELAY                8
 
-
-/* ******** MIPI_DSI_PHY ******** */
-/* bit[15:11] */
-#define MIPI_PHY_LANE_BIT        11
-#define MIPI_PHY_LANE_WIDTH      5
-
-/* MIPI-DSI */
-#define DSI_LANE_0              (1 << 4)
-#define DSI_LANE_1              (1 << 3)
-#define DSI_LANE_CLK            (1 << 2)
-#define DSI_LANE_2              (1 << 1)
-#define DSI_LANE_3              (1 << 0)
-#define DSI_LANE_COUNT_1        (DSI_LANE_CLK | DSI_LANE_0)
-#define DSI_LANE_COUNT_2        (DSI_LANE_CLK | DSI_LANE_0 | DSI_LANE_1)
-#define DSI_LANE_COUNT_3        (DSI_LANE_CLK | DSI_LANE_0 |\
-					DSI_LANE_1 | DSI_LANE_2)
-#define DSI_LANE_COUNT_4        (DSI_LANE_CLK | DSI_LANE_0 |\
-					DSI_LANE_1 | DSI_LANE_2 | DSI_LANE_3)
 
 #define LCD_PINMUX_END          0xff
 #define LCD_PINMUX_NUM          15
@@ -96,6 +79,9 @@ enum lcd_chip_e {
 	LCD_CHIP_TXHD, 		/* 6 */
 	LCD_CHIP_G12A, 		/* 7 */
 	LCD_CHIP_G12B, 		/* 8 */
+	LCD_CHIP_TL1, 		/* 9 */
+	LCD_CHIP_SM1,		/* 10 */
+	LCD_CHIP_TM2,		/* 11 */
 	LCD_CHIP_MAX,
 };
 
@@ -105,6 +91,7 @@ enum lcd_type_e {
 	LCD_VBYONE,
 	LCD_MIPI,
 	LCD_MLVDS,
+	LCD_P2P,
 	LCD_TYPE_MAX,
 };
 
@@ -142,8 +129,11 @@ struct lcd_timing_s {
 	unsigned int pll_ctrl;  /* pll settings */
 	unsigned int div_ctrl;  /* divider settings */
 	unsigned int clk_ctrl;  /* clock settings */
+	unsigned int bit_rate; /* Hz */
 
-	unsigned int ss_level;
+	unsigned int ss_level; /* [15:12]: ss_freq, [11:8]: ss_mode,
+				* [7:0]: ss_level
+				*/
 
 	unsigned short sync_duration_num;
 	unsigned short sync_duration_den;
@@ -176,22 +166,7 @@ struct lcd_timing_s {
 	unsigned short vs_vs_addr;
 	unsigned short vs_ve_addr;
 };
-/*
-struct lcd_effect_s {
-	unsigned int rgb_base_addr;
-	unsigned int rgb_coeff_addr;
-	unsigned char dith_user;
-	unsigned int dith_ctrl;
 
-	unsigned char gamma_ctrl;
-	unsigned short gamma_r_coeff;
-	unsigned short gamma_g_coeff;
-	unsigned short gamma_b_coeff;
-	unsigned short GammaTableR[256];
-	unsigned short GammaTableG[256];
-	unsigned short GammaTableB[256];
-};
-*/
 struct ttl_config_s {
 	unsigned int clk_pol;
 	unsigned int sync_valid; /* [1]DE, [0]hvsync */
@@ -236,7 +211,6 @@ struct vbyone_config_s {
 	unsigned int byte_mode;
 	unsigned int color_fmt;
 	unsigned int phy_div;
-	unsigned int bit_rate;
 	unsigned int phy_vswing; /*[5:4]:ext_pullup, [3:0]vswing*/
 	unsigned int phy_preem;
 	unsigned int ctrl_flag;
@@ -286,7 +260,6 @@ struct dsi_config_s {
 	unsigned char lane_num;
 	unsigned int bit_rate_max; /* MHz */
 	unsigned int bit_rate_min; /* MHz*/
-	unsigned int bit_rate; /* Hz */
 	unsigned int clk_factor; /* bit_rate/pclk */
 	unsigned int factor_numerator;
 	unsigned int factor_denominator; /* 100 */
@@ -309,7 +282,6 @@ struct dsi_config_s {
 	unsigned char check_state;
 };
 
-#define LCD_TCON_TABLE_MAX    4096
 struct mlvds_config_s {
 	unsigned int channel_num;
 	unsigned int channel_sel0;
@@ -322,11 +294,28 @@ struct mlvds_config_s {
 
 	/* internal used */
 	unsigned int pi_clk_sel; /* bit[9:0] */
-	unsigned int bit_rate; /* Hz */
-	unsigned char tcon_enable;
-	unsigned short reg_table_len;
-	unsigned char *reg_table;
-	unsigned int fb_addr;
+};
+
+enum p2p_type_e {
+	P2P_CEDS = 0,
+	P2P_CMPI,
+	P2P_ISP,
+	P2P_EPI,
+	P2P_CHPI = 0x10, /* low common mode */
+	P2P_CSPI,
+	P2P_USIT,
+	P2P_MAX,
+};
+
+struct p2p_config_s {
+	unsigned int p2p_type;
+	unsigned int lane_num;
+	unsigned int channel_sel0;
+	unsigned int channel_sel1;
+	unsigned int pn_swap;
+	unsigned int bit_swap; /* MSB/LSB reverse */
+	unsigned int phy_vswing;
+	unsigned int phy_preem;
 };
 
 struct lcd_ctrl_config_s {
@@ -335,6 +324,7 @@ struct lcd_ctrl_config_s {
 	struct vbyone_config_s *vbyone_config;
 	struct dsi_config_s *mipi_config;
 	struct mlvds_config_s *mlvds_config;
+	struct p2p_config_s *p2p_config;
 };
 
 /* **********************************
@@ -345,6 +335,8 @@ enum lcd_power_type_e {
 	LCD_POWER_TYPE_PMU,
 	LCD_POWER_TYPE_SIGNAL,
 	LCD_POWER_TYPE_EXTERN,
+	LCD_POWER_TYPE_WAIT_GPIO,
+	LCD_POWER_TYPE_CLK_SS,
 	LCD_POWER_TYPE_MAX,
 };
 
@@ -356,6 +348,9 @@ enum lcd_pmu_gpio_e {
 	LCD_PMU_GPIO4,
 	LCD_PMU_GPIO_MAX,
 };
+
+#define LCD_CLK_SS_BIT_FREQ             0
+#define LCD_CLK_SS_BIT_MODE             4
 
 #define LCD_GPIO_MAX                    0xff
 #define LCD_GPIO_OUTPUT_LOW             0
@@ -382,7 +377,7 @@ struct lcd_power_ctrl_s {
 	struct lcd_power_step_s power_off_step[LCD_PWR_STEP_MAX];
 };
 
-#define LCD_PINMX_MAX              20
+#define LCD_PINMX_MAX              10
 #define BL_PINMUX_MAX              20
 #define LCD_PINMUX_NAME_LEN_MAX    30
 struct lcd_pinmux_ctrl_s {
@@ -401,7 +396,6 @@ struct lcd_config_s {
 	unsigned int backlight_index;
 	struct lcd_basic_s lcd_basic;
 	struct lcd_timing_s lcd_timing;
-	/*struct lcd_effect_s lcd_effect;*/
 	struct lcd_ctrl_config_s lcd_control;
 	struct lcd_power_ctrl_s *lcd_power;
 	unsigned char pinctrl_ver;
@@ -539,14 +533,16 @@ struct aml_lcd_drv_s {
 	int  (*lcd_outputmode_check)(char *mode);
 	void (*lcd_enable)(char *mode);
 	void (*lcd_disable)(void);
-	void (*lcd_set_ss)(int level);
-	char *(*lcd_get_ss)(void);
+	void (*lcd_set_ss)(unsigned int level, unsigned int freq, unsigned int mode);
+	void (*lcd_get_ss)(void);
 	void (*lcd_test)(int num);
 	void (*lcd_clk)(void);
 	void (*lcd_info)(void);
 	void (*lcd_reg)(void);
-	void (*lcd_tcon_reg)(void);
-	void (*lcd_tcon_table)(void);
+	void (*lcd_tcon_reg_print)(void);
+	void (*lcd_tcon_table_print)(void);
+	unsigned int (*lcd_tcon_reg_read)(unsigned int addr, unsigned int flag);
+	void (*lcd_tcon_reg_write)(unsigned int addr, unsigned int val, unsigned int flag);
 	void (*bl_on)(void);
 	void (*bl_off)(void);
 	void (*set_bl_level)(int level);
@@ -568,5 +564,6 @@ extern void lcd_config_bsp_init(void);
 extern struct aml_lcd_drv_s *aml_lcd_get_driver(void);
 
 extern int lcd_probe(void);
+extern unsigned char *lcd_tcon_table_get(unsigned int *size);
 
 #endif /* INC_AML_LCD_VOUT_H */

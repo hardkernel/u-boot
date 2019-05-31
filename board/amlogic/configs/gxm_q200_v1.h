@@ -45,7 +45,7 @@
 /* configs for CEC */
 #define CONFIG_CEC_OSD_NAME		"Mbox"
 #define CONFIG_CEC_WAKEUP
-
+#define CONFIG_BT_WAKEUP
 #define CONFIG_INSTABOOT
 
 /* support ext4*/

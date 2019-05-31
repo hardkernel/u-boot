@@ -136,6 +136,8 @@ unsigned long mmc_berase(int dev_num, lbaint_t start, lbaint_t blkcnt)
 
 
 	mmc = find_mmc_device(dev_num);
+	if (!mmc)
+		return 0;
 
 	if (!emmckey_is_access_range_legal(mmc, start, blkcnt))
 		return blkcnt;
@@ -212,6 +214,20 @@ static ulong mmc_write_blocks(struct mmc *mmc, lbaint_t start,
 		return 0;
 	}
 
+#ifdef MMC_CMD23
+	if (blkcnt > 1) {
+		cmd.cmdidx = MMC_CMD_SET_BLOCK_COUNT;
+		cmd.cmdarg = blkcnt & 0xFFFF;
+		cmd.cmdarg |= 1 << 31;
+		cmd.resp_type = MMC_RSP_R1;
+		ret = mmc_send_cmd(mmc, &cmd, NULL);
+		if (ret) {
+			printf("mmc set blkcnt failed\n");
+			return 0;
+		}
+	}
+#endif
+
 	if (blkcnt == 0)
 		return 0;
 	else if (blkcnt == 1)
@@ -234,8 +250,9 @@ static ulong mmc_write_blocks(struct mmc *mmc, lbaint_t start,
 	ret = mmc_send_cmd(mmc, &cmd, &data);
 	if (ret)
 		printf("mmc write failed\n");
+#ifndef MMC_CMD23
 	/* SPI multiblock writes terminate using a special
-	 * token, not a STOP_TRANSMISSION request.
+	 * token, not a STOP_TRANSMISSION request
 	 */
 	if (!mmc_host_is_spi(mmc) && blkcnt > 1) {
 		cmd.cmdidx = MMC_CMD_STOP_TRANSMISSION;
@@ -246,6 +263,7 @@ static ulong mmc_write_blocks(struct mmc *mmc, lbaint_t start,
 			return 0;
 		}
 	}
+#endif
 	if (ret)
 		return 0;
 
@@ -266,10 +284,10 @@ ulong mmc_bwrite(int dev_num, lbaint_t start, lbaint_t blkcnt, const void *src)
 
 	if (!emmckey_is_access_range_legal(mmc, start, blkcnt))
 		return 0;
-
+#ifndef MMC_HS400_MODE
 	if (mmc_set_blocklen(mmc, mmc->write_bl_len))
 		return 0;
-
+#endif
 	do {
 		cur = (blocks_todo > mmc->cfg->b_max) ?
 			mmc->cfg->b_max : blocks_todo;

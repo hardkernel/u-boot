@@ -35,6 +35,8 @@ typedef struct S_INI_HANDLER_DATA {
 extern "C" {
 #endif
 
+int bin_file_read(const char* filename, unsigned char *file_buf);
+
 int ini_file_parse(const char* filename, INI_HANDLER_DATA *pHandlerData);
 int ini_mem_parse(unsigned char* file_buf, INI_HANDLER_DATA *pHandlerData);
 int ini_set_save_file_name(const char* filename, INI_HANDLER_DATA *pHandlerData);

@@ -78,8 +78,8 @@ ddr_set_t __ddr_setting[] = {
 	.dram_cs0_size_MB		= 0xffff,
 	.dram_cs1_size_MB		= 0,
 	.training_SequenceCtrl	= {0x31f,0x61}, //ddr3 0x21f 0x31f
-	.phy_odt_config_rank	= {0x30,0x30,0x30,0x30}, // // Odt pattern for accesses //targeting rank 0. [3:0] is used //for write ODT [7:4] is used for //read ODT
-	.dfi_odt_config			= 0x0808,
+	.phy_odt_config_rank	= {0x23,0x13,0x30,0x30}, // // Odt pattern for accesses //targeting rank 0. [3:0] is used //for write ODT [7:4] is used for //read ODT
+	.dfi_odt_config			= 0x0d0d,
 	.PllBypassEn			= 0, //bit0-ps0,bit1-ps1
 	.ddr_rdbi_wr_enable		= 0,
 	.clk_drv_ohm			= 40,
@@ -128,6 +128,7 @@ ddr_set_t __ddr_setting[] = {
 	.pll_ssc_mode			= (1<<20) | (1<<8) | (2<<4) | 0,//center_ssc_1000ppm
 	.ddr_func				= DDR_FUNC,
 	.magic					= DRAM_CFG_MAGIC,
+	.bitTimeControl_2d		= 1,
 },
 {
 	/* ddr3 */
@@ -209,6 +210,7 @@ ddr_set_t __ddr_setting[] = {
 	.pll_ssc_mode			= (1<<20) | (1<<8) | (2<<4) | 0,//center_ssc_1000ppm
 	.ddr_func				= DDR_FUNC,
 	.magic					= DRAM_CFG_MAGIC,
+	.bitTimeControl_2d      = 1
 },
 {
 	/* lpddr4 */
@@ -283,6 +285,7 @@ ddr_set_t __ddr_setting[] = {
 	.ddr_func				= DDR_FUNC,
 	.magic					= DRAM_CFG_MAGIC,
 	.diagnose				= CONFIG_DIAGNOSE_DISABLE,
+	.bitTimeControl_2d      = 1
 },
 {
 	/* Y2 dongle */
@@ -354,6 +357,7 @@ ddr_set_t __ddr_setting[] = {
 	.pll_ssc_mode			= (1<<20) | (1<<8) | (2<<4) | 0,//center_ssc_1000ppm
 	.ddr_func				= DDR_FUNC,
 	.magic					= DRAM_CFG_MAGIC,
+	.bitTimeControl_2d      = 1
 },
 };
 

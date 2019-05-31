@@ -48,7 +48,7 @@
 #define IH_INITRD_ARCH IH_ARCH_DEFAULT
 
 #ifdef CONFIG_MDUMP_COMPRESS
-extern void check_ramdump(void);
+#include <ramdump.h>
 #endif
 #ifndef USE_HOSTCC
 
@@ -261,10 +261,11 @@ static int read_fdto_partition(void)
 	int	ret = 0;
 	u64	tmp = 0;
 	void	*dtbo_mem_addr = NULL;
-	char dtbo_partition[32];
-	char *s1;
+	char	dtbo_partition[32];
+	char	*s1;
+	struct	dt_table_header hdr;
 
-	run_command("get_valid_slot;", 0);
+	//run_command("get_valid_slot;", 0);
 	s1 = getenv("active_slot");
 	printf("active_slot is %s\n", s1);
 	if (strcmp(s1, "normal") == 0) {
@@ -280,17 +281,40 @@ static int read_fdto_partition(void)
 	ret = run_command(cmd, 0);
 	if (ret != 0) {
 		printf("No dtbo patitions found\n");
+		return ret;
 	} else {
-		dtbo_mem_addr = malloc(tmp * SECTOR_SIZE);
+		/*
+		 * Though it is really no need to parse the dtimg infos
+		 * here, but wasting time to read the whole dtbo image
+		 * partition is unacceptable
+		 */
+		sprintf(cmd, "store read %s 0x%p 0 0x%lx",
+			dtbo_partition, &hdr,
+			sizeof(struct dt_table_header));
+		ret = run_command(cmd, 0);
+		if (ret != 0) {
+			printf("Fail to read header of DTBO partition\n");
+			return ret;
+		}
+
+		if (!android_dt_check_header((ulong)&hdr)) {
+			printf("DTBO partition header is incorrect\n");
+			return -1;
+		}
+
+		dtbo_mem_addr = malloc(fdt32_to_cpu(hdr.total_size));
 		if (!dtbo_mem_addr) {
-			printf("dtbo out of memory\n");
+			printf("out of memory\n");
+			return -1;
 		} else {
-			sprintf(cmd, "store read %s 0x%p 0 0x%llx",
-			dtbo_partition, dtbo_mem_addr, (tmp * SECTOR_SIZE));
+			sprintf(cmd, "store read %s 0x%p 0 0x%x",
+				dtbo_partition, dtbo_mem_addr,
+				fdt32_to_cpu(hdr.total_size));
 			ret = run_command(cmd, 0);
 			if (ret != 0) {
-				printf("Fail to read dtbo partition\n");
+				printf("Fail to read DTBO partition\n");
 				free(dtbo_mem_addr);
+				return ret;
 			} else {
 				sprintf(cmd,
 				"setenv dtbo_mem_addr 0x%p",
@@ -307,20 +331,13 @@ static int read_fdto_partition(void)
 static int get_fdto_totalsize(u32 *tz)
 {
 	unsigned long long dtbo_mem_addr = NULL;
+	int ret;
 
-	read_fdto_partition();
-	if (!getenv("dtbo_mem_addr")) {
-		printf("No dtbo partition provided?\n");
-		printf("Fail to load dtbo partition data?\n");
-		return -1;
-	}
+	ret = read_fdto_partition();
+	if (ret != 0)
+		return ret;
 
 	dtbo_mem_addr = simple_strtoul(getenv("dtbo_mem_addr"), NULL, 16);
-	if (!android_dt_check_header(dtbo_mem_addr)) {
-		printf("Error: DTBO image header is incorrect\n");
-		return -1;
-	}
-
 	*tz = android_dt_get_totalsize(dtbo_mem_addr);
 
 	return 0;
@@ -390,8 +407,7 @@ static int do_fdt_overlay(void)
 	char		   idx[32];
 
 	if (!getenv("dtbo_mem_addr")) {
-		printf("No dtbo partition provided?\n");
-		printf("Fail to load dtbo partition data?\n");
+		printf("No valid dtbo image found\n");
 		return -1;
 	}
 
@@ -895,10 +911,12 @@ int do_bootm_states(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[],
 
 	/* Check reserved memory region */
 #ifdef CONFIG_CMD_RSVMEM
-	ret = run_command("rsvmem check", 0);
-	if (ret) {
-		puts("rsvmem check failed\n");
-		return ret;
+	if (images->os.type != IH_TYPE_STANDALONE) {
+		ret = run_command("rsvmem check", 0);
+		if (ret) {
+			puts("rsvmem check failed\n");
+			return ret;
+		}
 	}
 #endif
 

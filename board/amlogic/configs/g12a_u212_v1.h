@@ -63,7 +63,7 @@
 
 //Enable ir remote wake up for bl30
 #define CONFIG_IR_REMOTE_POWER_UP_KEY_VAL1 0xef10fe01 //amlogic tv ir --- power
-#define CONFIG_IR_REMOTE_POWER_UP_KEY_VAL2 0XBB44FB04 //amlogic tv ir --- ch+
+#define CONFIG_IR_REMOTE_POWER_UP_KEY_VAL2 0xFFFFFFFF
 #define CONFIG_IR_REMOTE_POWER_UP_KEY_VAL3 0xF20DFE01 //amlogic tv ir --- ch-
 #define CONFIG_IR_REMOTE_POWER_UP_KEY_VAL4 0XBA45BD02 //amlogic small ir--- power
 #define CONFIG_IR_REMOTE_POWER_UP_KEY_VAL5 0xe51afb04
@@ -575,7 +575,7 @@
 #define CONFIG_SYS_MEM_TOP_HIDE 0x08000000 //hide 128MB for kernel reserve
 #define CONFIG_CMD_LOADB    1
 
-//#define CONFIG_MULTI_DTB    1
+#define CONFIG_MULTI_DTB    1
 
 /* debug mode defines */
 //#define CONFIG_DEBUG_MODE           1

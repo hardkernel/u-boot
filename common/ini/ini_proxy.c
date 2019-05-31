@@ -13,6 +13,41 @@
 #include "ini_proxy.h"
 
 INI_HANDLER_DATA *gHandlerData = NULL;
+static unsigned char *gBinData = NULL;
+
+void BinFileInit(void) {
+    if (gBinData == NULL) {
+        gBinData = malloc(CC_MAX_INI_FILE_SIZE);
+        if (gBinData != NULL)
+            memset(gBinData, 0, CC_MAX_INI_FILE_SIZE);
+    }
+}
+
+void BinFileUninit(void) {
+    if (gBinData != NULL) {
+        free(gBinData);
+        gBinData = NULL;
+    }
+}
+
+int ReadBinFile(const char* filename) {
+    if (gBinData == NULL) {
+        return -1;
+    }
+    return bin_file_read(filename, gBinData);
+}
+
+int GetBinData(unsigned char* file_buf, unsigned int file_size)
+{
+    if (gBinData == NULL) {
+        return -1;
+    }
+    if (file_buf == NULL) {
+        return -1;
+    }
+    memcpy(file_buf, gBinData, file_size);
+    return 0;
+}
 
 void IniParserInit(void) {
     if (gHandlerData == NULL) {

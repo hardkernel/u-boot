@@ -235,14 +235,19 @@ int do_bootm(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 			bootstate = bootstate_o;
 		else
 			bootstate = bootstate_g;
-		newbootargs = malloc(strlen(bootargs) + strlen(out_data->cmdline) + strlen(bootstate) + 1 + 1 + 1);
-		if (!newbootargs) {
-			printf("failed to allocate buffer for bootarg\n");
-			return -1;
+
+		if (out_data) {
+			newbootargs = malloc(strlen(bootargs) + strlen(out_data->cmdline) + strlen(bootstate) + 1 + 1 + 1);
+			if (!newbootargs) {
+				printf("failed to allocate buffer for bootarg\n");
+				return -1;
+			}
+			sprintf(newbootargs, "%s %s %s", bootargs, out_data->cmdline, bootstate);
+			setenv("bootargs", newbootargs);
+			free(newbootargs);
+			newbootargs = NULL;
+			avb_slot_verify_data_free(out_data);
 		}
-		sprintf(newbootargs, "%s %s %s", bootargs, out_data->cmdline, bootstate);
-		setenv("bootargs", newbootargs);
-		avb_slot_verify_data_free(out_data);
 	}
 #endif
 

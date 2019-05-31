@@ -399,10 +399,15 @@ void aml_bl_pwm_config_update(struct bl_config_s *bconf)
 	case BL_CTRL_LOCAL_DIMMING:
 		ldim_drv = aml_ldim_get_driver();
 		if (ldim_drv) {
-			if (ldim_drv->ldev_conf)
-				bl_pwm_config_init(&ldim_drv->ldev_conf->pwm_config);
-			else
+			if (ldim_drv->ldev_conf) {
+				if (ldim_drv->ldev_conf->ldim_pwm_config.pwm_port >= BL_PWM_MAX)
+					break;
+				bl_pwm_config_init(&ldim_drv->ldev_conf->ldim_pwm_config);
+				if (ldim_drv->ldev_conf->analog_pwm_config.pwm_port < BL_PWM_VS)
+					bl_pwm_config_init(&ldim_drv->ldev_conf->analog_pwm_config);
+			} else {
 				LCDERR("bl: ldim_config is null\n");
+			}
 		} else {
 			LCDERR("bl: ldim_drv is null\n");
 		}
@@ -608,7 +613,6 @@ static void bl_set_level_pwm(struct bl_pwm_config_s *bl_pwm, unsigned int level)
 
 void aml_bl_set_level(unsigned int level)
 {
-	unsigned int temp = 0;
 	struct bl_config_s *bconf;
 	struct bl_pwm_config_s *pwm0, *pwm1;
 #ifdef CONFIG_AML_BL_EXTERN
@@ -637,18 +641,27 @@ void aml_bl_set_level(unsigned int level)
 	case BL_CTRL_PWM_COMBO:
 		pwm0 = bconf->bl_pwm_combo0;
 		pwm1 = bconf->bl_pwm_combo1;
-		if ((level >= pwm0->level_min) && (level <= pwm0->level_max)) {
-			temp = (pwm0->level_min > pwm1->level_min) ? pwm1->level_max : pwm1->level_min;
+
+		if (level >= pwm0->level_max) {
+			bl_set_level_pwm(pwm0, pwm0->level_max);
+		} else if ((level > pwm0->level_min) &&
+			(level < pwm0->level_max)) {
 			if (lcd_debug_print_flag)
-				LCDPR("bl: pwm0 region, level=%u, pwm1_level=%u\n", level, temp);
+				LCDPR("bl: pwm0 region, level=%u\n", level);
 			bl_set_level_pwm(pwm0, level);
-			bl_set_level_pwm(pwm1, temp);
-		} else if ((level >= pwm1->level_min) && (level <= pwm1->level_max)) {
-			temp = (pwm1->level_min > pwm0->level_min) ? pwm0->level_max : pwm0->level_min;
+		} else {
+			bl_set_level_pwm(pwm0, pwm0->level_min);
+		}
+
+		if (level >= pwm1->level_max) {
+			bl_set_level_pwm(pwm1, pwm1->level_max);
+		} else if ((level > pwm1->level_min) &&
+			(level < pwm1->level_max)) {
 			if (lcd_debug_print_flag)
-				LCDPR("bl: pwm1 region, level=%u, pwm0_level=%u\n", level, temp);
-			bl_set_level_pwm(pwm0, temp);
+				LCDPR("bl: pwm1 region, level=%u\n", level);
 			bl_set_level_pwm(pwm1, level);
+		} else {
+			bl_set_level_pwm(pwm1, pwm1->level_min);
 		}
 		break;
 #ifdef CONFIG_AML_LOCAL_DIMMING
@@ -893,8 +906,8 @@ void aml_bl_power_ctrl(int status, int delay_flag)
 		case BL_CTRL_PWM:
 			if (bconf->en_sequence_reverse) {
 				/* step 1: power off pwm */
-				bl_pwm_ctrl(bconf->bl_pwm, 0);
 				bl_pwm_pinmux_ctrl(bconf, 0);
+				bl_pwm_ctrl(bconf->bl_pwm, 0);
 				if (bconf->pwm_off_delay > 0)
 					mdelay(bconf->pwm_off_delay);
 				/* step 2: power off enable */
@@ -905,16 +918,16 @@ void aml_bl_power_ctrl(int status, int delay_flag)
 				/* step 2: power off pwm */
 				if (bconf->pwm_off_delay > 0)
 					mdelay(bconf->pwm_off_delay);
-				bl_pwm_ctrl(bconf->bl_pwm, 0);
 				bl_pwm_pinmux_ctrl(bconf, 0);
+				bl_pwm_ctrl(bconf->bl_pwm, 0);
 			}
 			break;
 		case BL_CTRL_PWM_COMBO:
 			if (bconf->en_sequence_reverse) {
 				/* step 1: power off pwm_combo */
+				bl_pwm_pinmux_ctrl(bconf, 0);
 				bl_pwm_ctrl(bconf->bl_pwm_combo0, 0);
 				bl_pwm_ctrl(bconf->bl_pwm_combo1, 0);
-				bl_pwm_pinmux_ctrl(bconf, 0);
 				if (bconf->pwm_off_delay > 0)
 					mdelay(bconf->pwm_off_delay);
 				/* step 2: power off enable */
@@ -925,9 +938,9 @@ void aml_bl_power_ctrl(int status, int delay_flag)
 				/* step 2: power off pwm_combo */
 				if (bconf->pwm_off_delay > 0)
 					mdelay(bconf->pwm_off_delay);
+				bl_pwm_pinmux_ctrl(bconf, 0);
 				bl_pwm_ctrl(bconf->bl_pwm_combo0, 0);
 				bl_pwm_ctrl(bconf->bl_pwm_combo1, 0);
-				bl_pwm_pinmux_ctrl(bconf, 0);
 			}
 			break;
 #ifdef CONFIG_AML_LOCAL_DIMMING
@@ -2112,6 +2125,10 @@ static int aml_bl_pinmux_load_from_bsp(struct bl_config_s *bconf)
 		sprintf(propname,"%s", bl_pinmux_str[pinmux_index]);
 		pinmux = bconf->bl_pinmux;
 		for (i = 0; i < LCD_PINMX_MAX; i++) {
+			if (pinmux == NULL)
+				break;
+			if (pinmux->name == NULL)
+				break;
 			if (strncmp(pinmux->name, "invalid", 7) == 0)
 				break;
 			if (strncmp(pinmux->name, propname, strlen(propname)) == 0) {
@@ -2171,6 +2188,10 @@ static int aml_bl_pinmux_load_from_bsp(struct bl_config_s *bconf)
 
 		pinmux = bconf->bl_pinmux;
 		for (i = 0; i < LCD_PINMX_MAX; i++) {
+			if (pinmux == NULL)
+				break;
+			if (pinmux->name == NULL)
+				break;
 			if (strncmp(pinmux->name, "invalid", 7) == 0)
 				break;
 			if (strncmp(pinmux->name, propname, strlen(propname)) == 0) {
@@ -2229,6 +2250,10 @@ static int aml_bl_pinmux_load_from_bsp(struct bl_config_s *bconf)
 		set_cnt = 0;
 		clr_cnt = 0;
 		for (i = 0; i < LCD_PINMX_MAX; i++) {
+			if (pinmux == NULL)
+				break;
+			if (pinmux->name == NULL)
+				break;
 			if (strncmp(pinmux->name, "invalid", 7) == 0)
 				break;
 			if (strncmp(pinmux->name, propname, strlen(propname)) == 0) {

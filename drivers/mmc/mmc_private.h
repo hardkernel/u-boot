@@ -31,6 +31,13 @@ extern unsigned long mmc_berase(int dev_num, lbaint_t start, lbaint_t blkcnt);
 extern ulong mmc_bwrite(int dev_num, lbaint_t start, lbaint_t blkcnt,
 		const void *src);
 
+extern void print_all_reg(struct mmc *mmc);
+
+extern int mmc_set_hs200_mode(struct mmc *mmc);
+
+extern uint32_t mmc_set_hs400_mode(struct mmc *mmc);
+
+extern void reset_all_reg(struct mmc *mmc);
 #else /* CONFIG_SPL_BUILD */
 
 /* SPL will never write or erase, declare dummies to reduce code size. */

@@ -32,6 +32,9 @@ static int global_hw_init_on(void)
 {
 	struct aml_ldim_driver_s *ldim_drv = aml_ldim_get_driver();
 
+	ldim_set_duty_pwm(&(ldim_drv->ldev_conf->ldim_pwm_config));
+	ldim_set_duty_pwm(&(ldim_drv->ldev_conf->analog_pwm_config));
+
 	ldim_drv->pinmux_ctrl(1);
 	mdelay(2);
 	ldim_set_gpio(ldim_drv->ldev_conf->en_gpio, ldim_drv->ldev_conf->en_gpio_on);
@@ -71,7 +74,7 @@ static int global_smr(unsigned short *buf, unsigned char len)
 	unsigned short val;
 
 	val = global_get_value(buf[0]);
-	ldim_drv->ldev_conf->pwm_config.pwm_duty = val;
+	ldim_drv->ldev_conf->ldim_pwm_config.pwm_duty = val;
 
 	if (global_on_flag == 0) {
 		if (lcd_debug_print_flag)
@@ -84,20 +87,25 @@ static int global_smr(unsigned short *buf, unsigned char len)
 		return -1;
 	}
 
-	ldim_set_duty_pwm(&(ldim_drv->ldev_conf->pwm_config));
+	ldim_set_duty_pwm(&(ldim_drv->ldev_conf->ldim_pwm_config));
 
 	return 0;
 }
 
-static int global_power_on(void)
+static void global_dim_range_update(void)
 {
 	struct aml_ldim_driver_s *ldim_drv = aml_ldim_get_driver();
+	struct ldim_dev_config_s *ldim_dev;
 
+	ldim_dev = ldim_drv->ldev_conf;
+	ldim_dev->dim_max = ldim_dev->ldim_pwm_config.pwm_duty_max;
+	ldim_dev->dim_min = ldim_dev->ldim_pwm_config.pwm_duty_min;
+}
+
+static int global_power_on(void)
+{
 	global_hw_init_on();
 	global_on_flag = 1;
-
-	/* init brightness level */
-	ldim_set_duty_pwm(&(ldim_drv->ldev_conf->pwm_config));
 
 	LDIMPR("%s: ok\n", __func__);
 	return 0;
@@ -114,6 +122,12 @@ static int global_power_off(void)
 
 static int global_ldim_driver_update(struct aml_ldim_driver_s *ldim_drv)
 {
+	struct ldim_dev_config_s *ldim_dev = ldim_drv->ldev_conf;
+
+	ldim_dev->ldim_pwm_config.pwm_duty_max = ldim_dev->dim_max;
+	ldim_dev->ldim_pwm_config.pwm_duty_min = ldim_dev->dim_min;
+	ldim_dev->dim_range_update = global_dim_range_update;
+
 	ldim_drv->device_power_on = global_power_on;
 	ldim_drv->device_power_off = global_power_off;
 	ldim_drv->device_bri_update = global_smr;

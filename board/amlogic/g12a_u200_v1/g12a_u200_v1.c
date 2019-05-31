@@ -609,7 +609,8 @@ int board_init(void)
 void aml_config_dtb(void)
 {
 	cpu_id_t cpuid = get_cpu_id();
-
+	if (MESON_CPU_MAJOR_ID_G12A != cpuid.family_id)
+		return;
 	run_command("fdt address $dtb_mem_addr", 0);
 	printf("%s %d\n", __func__, __LINE__);
 	if (cpuid.chip_rev == 0xA) {
@@ -720,6 +721,9 @@ int board_late_init(void)
 		aml_try_factory_sdcard_burning(0, gd->bd);
 #endif// #ifdef CONFIG_AML_V2_FACTORY_BURN
 
+    if (MESON_CPU_MAJOR_ID_SM1 == get_cpu_id().family_id) {
+		setenv("board_defined_bootup", "bootup_D3");
+	}
 	/**/
 	aml_config_dtb();
 	return 0;
@@ -760,31 +764,59 @@ phys_size_t get_effective_memsize(void)
 int checkhw(char * name)
 {
 	/*
-	 * read board hw id
-	 * set and select the dts according the board hw id.
-	 *
-	 * hwid = 1	p321 v1
-	 * hwid = 2	p321 v2
+	 * set aml_dt according to chip and dram capacity
 	 */
-	unsigned int hwid = 1;
+	unsigned int ddr_size=0;
 	char loc_name[64] = {0};
+	int i;
+	cpu_id_t cpu_id=get_cpu_id();
 
-	/* read hwid */
-	hwid = (readl(P_AO_SEC_GP_CFG0) >> 8) & 0xFF;
-
-	printf("checkhw:  hwid = %d\n", hwid);
-
-
-	switch (hwid) {
-		case 1:
-			strcpy(loc_name, "txl_p321_v1\0");
-			break;
-		case 2:
-			strcpy(loc_name, "txl_p321_v2\0");
-			break;
-		default:
-			strcpy(loc_name, "txl_p321_v1");
-			break;
+	for (i=0; i<CONFIG_NR_DRAM_BANKS; i++) {
+		ddr_size += gd->bd->bi_dram[i].size;
+	}
+#if defined(CONFIG_SYS_MEM_TOP_HIDE)
+	ddr_size += CONFIG_SYS_MEM_TOP_HIDE;
+#endif
+	char *ddr_mode = getenv("mem_size");
+	if (MESON_CPU_MAJOR_ID_SM1 == cpu_id.family_id) {
+		switch (ddr_size) {
+			case 0x80000000:
+				if (!strcmp(ddr_mode, "1g")) {
+					strcpy(loc_name, "sm1_ac200_1g\0");
+					break;
+				}
+				strcpy(loc_name, "sm1_ac200_2g\0");
+				break;
+			case 0x40000000:
+				strcpy(loc_name, "sm1_ac200_1g\0");
+				break;
+			case 0x2000000:
+				strcpy(loc_name, "sm1_ac200_512m\0");
+				break;
+			default:
+				strcpy(loc_name, "sm1_ac200_unsupport");
+				break;
+		}
+	}
+	else {
+		switch (ddr_size) {
+			case 0x80000000:
+				if (!strcmp(ddr_mode, "1g")) {
+					strcpy(loc_name, "g12a_u200_1g\0");
+					break;
+				}
+				strcpy(loc_name, "g12a_u200_2g\0");
+				break;
+			case 0x40000000:
+				strcpy(loc_name, "g12a_u200_1g\0");
+				break;
+			case 0x2000000:
+				strcpy(loc_name, "g12a_u200_512m\0");
+				break;
+			default:
+				strcpy(loc_name, "g12a_u200_unsupport");
+				break;
+		}
 	}
 	strcpy(name, loc_name);
 	setenv("aml_dt", loc_name);

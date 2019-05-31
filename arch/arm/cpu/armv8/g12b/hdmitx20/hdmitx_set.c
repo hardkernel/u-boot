@@ -110,11 +110,11 @@ static void dump_regs(void)
 	unsigned int reg_val;
 	unsigned int ladr;
 	for (reg_adr = 0x0000; reg_adr < 0x0100; reg_adr ++) {
-                ladr = 0xc883c000 + (reg_adr << 2);
+		ladr = HHI_MEM_REG_ADDR(0x0) + (reg_adr << 2);
 		reg_val = hd_read_reg(ladr);
 		printk("[0x%08x] = 0x%X\n", ladr, reg_val);
 	}
-#define VPU_REG_ADDR(reg) (0xd0100000 + (reg << 2))
+#define VPU_REG_ADDR(reg) (0xff900000 + (reg << 2))
 	for (reg_adr = 0x1b00; reg_adr < 0x1c00; reg_adr ++) {
 		ladr = VPU_REG_ADDR(reg_adr);
 		reg_val = hd_read_reg(ladr);
@@ -1361,7 +1361,7 @@ static void hdmi_tvenc1080i_set(enum hdmi_vic vic)
 	if ((vic == HDMI_1920x1080i60_16x9) ||
 		(vic == HDMI_1920x1080i120_16x9)) {
 		INTERLACE_MODE = 1;
-		PIXEL_REPEAT_VENC = 1;
+		PIXEL_REPEAT_VENC = 0;
 		PIXEL_REPEAT_HDMI = 0;
 		ACTIVE_PIXELS = (1920*(1+PIXEL_REPEAT_HDMI));
 		ACTIVE_LINES = (1080/(1+INTERLACE_MODE));
@@ -1375,7 +1375,7 @@ static void hdmi_tvenc1080i_set(enum hdmi_vic vic)
 	} else if ((vic == HDMI_1920x1080i50_16x9) ||
 		(vic == HDMI_1920x1080i100_16x9)) {
 		INTERLACE_MODE = 1;
-		PIXEL_REPEAT_VENC = 1;
+		PIXEL_REPEAT_VENC = 0;
 		PIXEL_REPEAT_HDMI = 0;
 		ACTIVE_PIXELS = (1920*(1+PIXEL_REPEAT_HDMI));
 		ACTIVE_LINES = (1080/(1+INTERLACE_MODE));
@@ -1903,7 +1903,7 @@ static void hdmi_tvenc_set_def(enum hdmi_vic vic)
 	case HDMI_1280x720p60_16x9:
 	case HDMI_1280x720p120_16x9:
 		INTERLACE_MODE = 0;
-		PIXEL_REPEAT_VENC = 1;
+		PIXEL_REPEAT_VENC = 0;
 		PIXEL_REPEAT_HDMI = 0;
 		ACTIVE_PIXELS	= (1280*(1+PIXEL_REPEAT_HDMI));
 		ACTIVE_LINES = (720/(1+INTERLACE_MODE));
@@ -1918,7 +1918,7 @@ static void hdmi_tvenc_set_def(enum hdmi_vic vic)
 	case HDMI_1280x720p50_16x9:
 	case HDMI_1280x720p100_16x9:
 		INTERLACE_MODE = 0;
-		PIXEL_REPEAT_VENC = 1;
+		PIXEL_REPEAT_VENC = 0;
 		PIXEL_REPEAT_HDMI = 0;
 		ACTIVE_PIXELS	= (1280*(1+PIXEL_REPEAT_HDMI));
 		ACTIVE_LINES = (720/(1+INTERLACE_MODE));
@@ -2296,7 +2296,7 @@ static void hdmi_tvenc_set_def(enum hdmi_vic vic)
 				(VSYNC_POLARITY << 3) |
 				(0 << 4) |
 				(((TX_INPUT_COLOR_FORMAT == 0) ? 1 : 0) << 5) |
-				(1 << 8) |
+				(0 << 8) |
 				(0 << 12)
 		);
 		hd_set_reg_bits(P_VPU_HDMI_SETTING, 1, 1, 1);
@@ -2348,7 +2348,7 @@ static void hdmi_tvenc_set_def(enum hdmi_vic vic)
 				(VSYNC_POLARITY << 3) |
 				(0 << 4) |
 				(4 << 5) |
-				(1 << 8) |
+				(0 << 8) |
 				(0 << 12)
 		);
 		hd_set_reg_bits(P_VPU_HDMI_SETTING, 1, 1, 1);
@@ -2442,7 +2442,7 @@ static void hdmi_tvenc_set(enum hdmi_vic vic)
                                                                         //                          4=output CbYCr(GRB);
                                                                         //                          5=output CrCbY(BGR);
                                                                         //                          6,7=Rsrv.
-                             (1                                 << 8) | // [11: 8] wr_rate. 0=A write every clk1; 1=A write every 2 clk1; ...; 15=A write every 16 clk1.
+                             (0                                 << 8) | // [11: 8] wr_rate. 0=A write every clk1; 1=A write every 2 clk1; ...; 15=A write every 16 clk1.
                              (0                                 <<12)   // [15:12] rd_rate. 0=A read every clk2; 1=A read every 2 clk2; ...; 15=A read every 16 clk2.
 		);
 		hd_set_reg_bits(P_VPU_HDMI_SETTING, 1, 1, 1);  // [    1] src_sel_encp: Enable ENCP output to HDMI
@@ -2518,7 +2518,7 @@ static void hdmi_tvenc_set(enum hdmi_vic vic)
                                                                         //                          4=output CbYCr(GRB);
                                                                         //                          5=output CrCbY(BGR);
                                                                         //                          6,7=Rsrv.
-                             (1                                 << 8) | // [11: 8] wr_rate. 0=A write every clk1; 1=A write every 2 clk1; ...; 15=A write every 16 clk1.
+                             (0                                 << 8) | // [11: 8] wr_rate. 0=A write every clk1; 1=A write every 2 clk1; ...; 15=A write every 16 clk1.
                              (0                                 <<12)   // [15:12] rd_rate. 0=A read every clk2; 1=A read every 2 clk2; ...; 15=A read every 16 clk2.
 		);
 		// Annie 01Sep2011: Register VENC_DVI_SETTING and VENC_DVI_SETTING_MORE are no long valid, use VPU_HDMI_SETTING instead.

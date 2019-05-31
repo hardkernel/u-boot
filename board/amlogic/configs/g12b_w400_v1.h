@@ -302,6 +302,7 @@
 #define CONFIG_DDR_USE_EXT_VREF			0 //0:disable, 1:enable. ddr use external vref
 #define CONFIG_DDR4_TIMING_TEST			0 //0:disable, 1:enable. ddr4 timing test function
 #define CONFIG_DDR_PLL_BYPASS			0 //0:disable, 1:enable. ddr pll bypass function
+#define CONFIG_DDR_NONSEC_SCRAMBLE		0 //0:disable, 1:enable. non-sec region scramble function
 
 /* storage: emmc/nand/sd */
 #define		CONFIG_STORE_COMPATIBLE 1
@@ -556,6 +557,11 @@
 #define CONFIG_FS_FAT 1
 #define CONFIG_FS_EXT4 1
 #define CONFIG_LZO 1
+
+#define CONFIG_MDUMP_COMPRESS 1
+#define CONFIG_EXT4_WRITE 1
+#define CONFIG_CMD_EXT4 1
+#define CONFIG_CMD_EXT4_WRITE 1
 
 /* Cache Definitions */
 //#define CONFIG_SYS_DCACHE_OFF

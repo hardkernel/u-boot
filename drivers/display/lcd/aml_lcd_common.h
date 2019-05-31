@@ -20,38 +20,18 @@
 #include "aml_lcd_unifykey.h"
 
 /* 20180718: mute: wait vsync for display shadow */
-#define LCD_DRV_VERSION    "20180718"
+/* 20180928: tl1 support, optimize clk config */
+/* 20181012: tl1 support tcon */
+/* 20181212: tl1 update p2p config and pll setting */
+/* 20181225: update phy config */
+/* 20190108: tl1 support tablet mode */
+/* 20190115: tl1 tcon all interface support */
+/* 20190118: support tcon bin data management */
+/* 20190225: fix tcon axi_mem detect mistake for kernel 64bit */
+/* 20190308: add more panel clk_ss_level step for tl1*/
+#define LCD_DRV_VERSION    "20190308"
 
 #define VPP_OUT_SATURATE            (1 << 0)
-
-/* -------------------------- */
-/* lvsd phy parameters define */
-/* -------------------------- */
-#define LVDS_PHY_CNTL1_G9TV    0x606cca80
-#define LVDS_PHY_CNTL2_G9TV    0x0000006c
-#define LVDS_PHY_CNTL3_G9TV    0x00000800
-
-#define LVDS_PHY_CNTL1_TXHD    0x6c60ca80
-#define LVDS_PHY_CNTL2_TXHD    0x00000070
-#define LVDS_PHY_CNTL3_TXHD    0x03ff0c00
-/* -------------------------- */
-
-/* -------------------------- */
-/* vbyone phy parameters define */
-/* -------------------------- */
-#define VX1_PHY_CNTL1_G9TV            0x6e0ec900
-#define VX1_PHY_CNTL1_G9TV_PULLUP     0x6e0f4d00
-#define VX1_PHY_CNTL2_G9TV            0x0000007c
-#define VX1_PHY_CNTL3_G9TV            0x00ff0800
-/* -------------------------- */
-
-/* -------------------------- */
-/* minilvsd phy parameters define */
-/* -------------------------- */
-#define MLVDS_PHY_CNTL1_TXHD   0x6c60ca80
-#define MLVDS_PHY_CNTL2_TXHD   0x00000070
-#define MLVDS_PHY_CNTL3_TXHD   0x03ff0c00
-/* -------------------------- */
 
 extern void mdelay(unsigned long n);
 extern unsigned int lcd_debug_test;
@@ -64,7 +44,6 @@ extern char *lcd_mode_mode_to_str(int mode);
 
 extern void lcd_pinmux_set(int status);
 
-extern unsigned int lcd_lvds_channel_on_value(struct lcd_config_s *pconf);
 extern int lcd_power_load_from_dts(struct lcd_config_s *pconf,
 		char *dt_addr, int child_offset);
 extern int lcd_power_load_from_unifykey(struct lcd_config_s *pconf,
@@ -73,18 +52,30 @@ extern int lcd_pinmux_load_config(char *dt_addr, struct lcd_config_s *pconf);
 extern void lcd_timing_init_config(struct lcd_config_s *pconf);
 extern int lcd_vmode_change(struct lcd_config_s *pconf);
 
+/* lcd phy */
+extern void lcd_lvds_phy_set(struct lcd_config_s *pconf, int status);
+extern void lcd_vbyone_phy_set(struct lcd_config_s *pconf, int status);
+extern void lcd_mlvds_phy_set(struct lcd_config_s *pconf, int status);
+extern void lcd_p2p_phy_set(struct lcd_config_s *pconf, int status);
+extern void lcd_mipi_phy_set(struct lcd_config_s *pconf, int status);
+
 /* lcd tcon */
-extern void lcd_tcon_regs_table_print(struct mlvds_config_s *mlvds_conf);
-extern void lcd_tcon_regs_readback_print(struct mlvds_config_s *mlvds_conf);
-extern int lcd_tcon_regs_update(unsigned char *table, int len);
-extern int lcd_tcon_init(struct lcd_config_s *pconf);
+extern void lcd_tcon_info_print(void);
+extern int lcd_tcon_enable(struct lcd_config_s *pconf);
 extern void lcd_tcon_disable(void);
-extern int lcd_tcon_probe(char *dt_addr, struct lcd_config_s *pconf, int load_id);
+extern int lcd_tcon_probe(char *dt_addr, struct aml_lcd_drv_s *lcd_drv, int load_id);
 
 /* lcd gpio */
 extern int aml_lcd_gpio_name_map_num(const char *name);
 extern int aml_lcd_gpio_set(int gpio, int value);
 extern unsigned int aml_lcd_gpio_input_get(int gpio);
+
+/* lcd debug */
+extern void aml_lcd_debug_test(unsigned int num);
+extern void aml_lcd_mute_setting(unsigned char flag);
+extern void aml_lcd_info_print(void);
+extern void aml_lcd_reg_print(void);
+extern void aml_lcd_debug_probe(struct aml_lcd_drv_s *lcd_drv);
 
 /* lcd driver */
 extern int get_lcd_tv_config(char *dt_addr, int load_id);

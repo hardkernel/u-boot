@@ -142,6 +142,7 @@ extern int designware_initialize(ulong base_addr, u32 interface);
 
 int board_eth_init(bd_t *bis)
 {
+	*P_RESET1_LEVEL |= (1<<11);
 	setup_net_chip();
 	udelay(1000);
 	designware_initialize(ETH_BASE, PHY_INTERFACE_MODE_RMII);

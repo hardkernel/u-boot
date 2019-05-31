@@ -41,9 +41,11 @@ static char ringmsr_help_text[] =
 	"ringmsr x\n"
 	"  - for get chip ring info\n"
 	"  - x:   \n"
-	"  G12A or G12B:\n"
-	"  0: print all ring info\n"
-	"  1-7: ee9 ee1 ee0 cpu1 cpu0 iddee iddcpu\n";
+	"  G12A/G12B/TL1:\n"
+	"  0x0: print all ring info and set voltage\n"
+	"  0x1-0x7: get efuse corner info\n"
+	"  0xff: print all ring info and no set voltage\n"
+	"  0xfe: print all efuse corner info\n";
 
 U_BOOT_CMD(
 		clkmsr, 2, 1, do_clkmsr,

@@ -5,6 +5,7 @@
 #include <malloc.h>
 #include <asm/arch/bl31_apis.h>
 #include <asm/cpu_id.h>
+#include <amlogic/jtag.h>
 
 static int get_jtag_sel(const char *argv)
 {
@@ -36,6 +37,7 @@ int do_jtagon(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		return -1;
 	}
 
+	jtag_set_pinmux(sel, 1);
 	if ((get_cpu_id().family_id == MESON_CPU_MAJOR_ID_GXM) && (sel >1)) {
 		if (argv[2]) {
 			int tmp = simple_strtoul(argv[2], NULL, 10);
@@ -69,6 +71,7 @@ int do_jtagoff(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		return -1;
 	}
 
+	jtag_set_pinmux(sel, 0);
 	aml_set_jtag_state(JTAG_STATE_OFF, sel);
 	return 0;
 }

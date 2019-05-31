@@ -54,7 +54,7 @@ static int do_lcd_disable(cmd_tbl_t *cmdtp, int flag, int argc, char * const arg
 static int do_lcd_ss(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	struct aml_lcd_drv_s *lcd_drv;
-	int level;
+	int value, temp;
 	int ret = 0;
 
 	if (argc == 1) {
@@ -66,22 +66,59 @@ static int do_lcd_ss(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		printf("no lcd driver\n");
 		return ret;
 	}
-	if (strcmp(argv[1], "set") == 0) {
+	if (strcmp(argv[1], "level") == 0) {
 		if (argc == 3) {
-			level = (int)simple_strtoul(argv[2], NULL, 10);
+			value = (unsigned int)simple_strtoul(argv[2], NULL, 10);
+			value &= 0xff;
 			if (lcd_drv->lcd_set_ss)
-				lcd_drv->lcd_set_ss(level);
+				lcd_drv->lcd_set_ss(value, 0xff, 0xff);
 			else
 				printf("no lcd lcd_set_ss\n");
 		} else {
 			ret = -1;
 		}
-	} else if (strcmp(argv[1], "get") == 0) {
-		if (lcd_drv->lcd_get_ss) {
-			printf("lcd_get_ss: %s\n", lcd_drv->lcd_get_ss());
+	} else if (strcmp(argv[1], "freq") == 0) {
+		if (argc == 3) {
+			value = (unsigned int)simple_strtoul(argv[2], NULL, 10);
+			value &= 0xf;
+			if (lcd_drv->lcd_set_ss)
+				lcd_drv->lcd_set_ss(0xff, value, 0xff);
+			else
+				printf("no lcd lcd_set_ss\n");
 		} else {
-			printf("no lcd_get_ss\n");
+			ret = -1;
 		}
+	} else if (strcmp(argv[1], "mode") == 0) {
+		if (argc == 3) {
+			value = (unsigned int)simple_strtoul(argv[2], NULL, 10);
+			value &= 0xf;
+			if (lcd_drv->lcd_set_ss)
+				lcd_drv->lcd_set_ss(0xff, 0xff, value);
+			else
+				printf("no lcd lcd_set_ss\n");
+		} else {
+			ret = -1;
+		}
+	} else if (strcmp(argv[1], "set") == 0) {
+		if (argc == 3) {
+			value = (unsigned int)simple_strtoul(argv[2], NULL, 16);
+			value &= 0xffff;
+			if (lcd_drv->lcd_set_ss) {
+				temp = value >> 8;
+				lcd_drv->lcd_set_ss((value & 0xff),
+					((temp >> LCD_CLK_SS_BIT_FREQ) & 0xf),
+					((temp >> LCD_CLK_SS_BIT_MODE) & 0xf));
+			} else {
+				printf("no lcd lcd_set_ss\n");
+			}
+		} else {
+			ret = -1;
+		}
+	} else if (strcmp(argv[1], "get") == 0) {
+		if (lcd_drv->lcd_get_ss)
+			lcd_drv->lcd_get_ss();
+		else
+			printf("no lcd_get_ss\n");
 	} else {
 		ret = -1;
 	}
@@ -177,27 +214,123 @@ static int do_lcd_info(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]
 static int do_lcd_tcon(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	struct aml_lcd_drv_s *lcd_drv;
-	int ret = 0;
+	unsigned int addr, val, len, size;
+	unsigned char *table = NULL;
+	int ret = 0, i;
 
-	if (argc == 1) {
+	if (argc == 1)
 		return -1;
-	}
 
 	lcd_drv = aml_lcd_get_driver();
 	if (lcd_drv == NULL) {
 		printf("no lcd driver\n");
-		return ret;
+		return 0;
 	}
 	if (strcmp(argv[1], "reg") == 0) {
-		if (lcd_drv->lcd_tcon_reg)
-			lcd_drv->lcd_tcon_reg();
+		if (lcd_drv->lcd_tcon_reg_print)
+			lcd_drv->lcd_tcon_reg_print();
 		else
-			printf("no lcd tcon_reg\n");
+			printf("no lcd tcon_reg_print\n");
 	} else if (strcmp(argv[1], "table") == 0) {
-		if (lcd_drv->lcd_tcon_table)
-			lcd_drv->lcd_tcon_table();
+		if (lcd_drv->lcd_tcon_table_print)
+			lcd_drv->lcd_tcon_table_print();
 		else
-			printf("no lcd tcon_table\n");
+			printf("no lcd tcon_table_print\n");
+	} else if (strcmp(argv[1], "tw") == 0) {
+		addr = (unsigned int)simple_strtoul(argv[2], NULL, 16);
+		val = (unsigned int)simple_strtoul(argv[3], NULL, 16);
+		table = lcd_tcon_table_get(&size);
+		if (size == 0) {
+			printf("invalid tcon table\n");
+			return 0;
+		}
+		if (table == NULL) {
+			printf("tcon table is NULL\n");
+			return 0;
+		}
+		if (addr >= size) {
+			printf("invalid tcon table addr: 0x%04x\n", addr);
+			return 0;
+		}
+		table[addr] = (unsigned char)val;
+		printf("write tcon table[0x%04x] = 0x%02x\n",
+			addr, table[addr]);
+	} else if (strcmp(argv[1], "tr") == 0) {
+		addr = (unsigned int)simple_strtoul(argv[2], NULL, 16);
+		table = lcd_tcon_table_get(&size);
+		if (size == 0) {
+			printf("invalid tcon table\n");
+			return 0;
+		}
+		if (table == NULL) {
+			printf("tcon table is NULL\n");
+			return 0;
+		}
+		if (addr >= size) {
+			printf("invalid tcon table addr: 0x%04x\n", addr);
+			return 0;
+		}
+		printf("read tcon table[0x%04x] = 0x%02x\n", addr, table[addr]);
+	} else if (strcmp(argv[1], "wb") == 0) {
+		if (lcd_drv->lcd_tcon_reg_write) {
+			addr = (unsigned int)simple_strtoul(argv[2], NULL, 16);
+			val = (unsigned int)simple_strtoul(argv[3], NULL, 16);
+			lcd_drv->lcd_tcon_reg_write(addr, val, 1);
+			printf("tcon byte write: 0x%04x = 0x%02x, readback 0x%02x\n",
+				addr, val, lcd_drv->lcd_tcon_reg_read(addr, 1));
+		} else {
+			printf("no lcd_tcon_reg_write\n");
+		}
+	} else if (strcmp(argv[1], "rb") == 0) {
+		if (lcd_drv->lcd_tcon_reg_read) {
+			addr = (unsigned int)simple_strtoul(argv[2], NULL, 16);
+			val = lcd_drv->lcd_tcon_reg_read(addr, 1);
+			printf("tcon byte read: 0x%04x = 0x%02x\n", addr, val);
+		} else {
+			printf("no lcd_tcon_reg_read\n");
+		}
+	} else if (strcmp(argv[1], "db") == 0) {
+		if (lcd_drv->lcd_tcon_reg_read) {
+			addr = (unsigned int)simple_strtoul(argv[2], NULL, 16);
+			len = (unsigned int)simple_strtoul(argv[3], NULL, 10);
+			printf("tcon byte reg dump:\n");
+			for (i = 0; i < len; i++) {
+				val = lcd_drv->lcd_tcon_reg_read((addr + i), 1);
+				printf("  0x%04x = 0x%02x\n", (addr + i), val);
+			}
+		} else {
+			printf("no lcd_tcon_reg_read\n");
+		}
+	} else if (strcmp(argv[1], "w") == 0) {
+		if (lcd_drv->lcd_tcon_reg_write) {
+			addr = (unsigned int)simple_strtoul(argv[2], NULL, 16);
+			val = (unsigned int)simple_strtoul(argv[3], NULL, 16);
+			lcd_drv->lcd_tcon_reg_write(addr, val, 0);
+			printf("tcon write: 0x%04x = 0x%08x, readback 0x%08x\n",
+				addr, val, lcd_drv->lcd_tcon_reg_read(addr, 0));
+		} else {
+			printf("no lcd_tcon_reg_write\n");
+		}
+	} else if (strcmp(argv[1], "r") == 0) {
+		if (lcd_drv->lcd_tcon_reg_read) {
+			addr = (unsigned int)simple_strtoul(argv[2], NULL, 16);
+			val = lcd_drv->lcd_tcon_reg_read(addr, 0);
+			printf("tcon read: 0x%04x = 0x%08x\n", addr, val);
+		} else {
+			printf("no lcd_tcon_reg_read\n");
+		}
+	} else if (strcmp(argv[1], "d") == 0) {
+		if (lcd_drv->lcd_tcon_reg_read) {
+			addr = (unsigned int)simple_strtoul(argv[2], NULL, 16);
+			len = (unsigned int)simple_strtoul(argv[3], NULL, 10);
+			printf("tcon reg dump:\n");
+			for (i = 0; i < len; i++) {
+				val = lcd_drv->lcd_tcon_reg_read((addr + i), 0);
+				printf("  0x%04x = 0x%08x\n", (addr + i), val);
+			}
+		} else {
+			printf("no lcd_tcon_reg_read\n");
+		}
 	} else {
 		ret = -1;
 	}
@@ -345,7 +478,7 @@ U_BOOT_CMD(
 	"lcd bl           - lcd backlight operation\n"
 	"lcd clk          - show lcd pll & clk parameters\n"
 	"lcd info         - show lcd parameters\n"
-	"lcd tcon         - show lcd unifykey test\n"
+	"lcd tcon         - show lcd tcon debug\n"
 	"lcd reg          - dump lcd registers\n"
 	"lcd test         - show lcd bist pattern\n"
 	"lcd key          - show lcd unifykey test\n"

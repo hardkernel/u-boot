@@ -32,6 +32,32 @@ static inline int _aml_rsv_isprotect(void)
 }
 
 //#define CONFIG_DBG_BITMAP	1
+
+struct rsv_info {
+	char name[8];
+	struct aml_nandrsv_info_t rsv_info;
+	unsigned int blocks;
+	unsigned int size;
+};
+
+#define BBT_INFO_INDEX		0
+#define ENV_INFO_INDEX		1
+#define KEY_INFO_INDEX		2
+#define DTB_INFO_INDEX		3
+#define DDR_INFO_INDEX		4
+
+#define INFO_DATA(n, b, s)	{ .name = (n), .blocks = (b), .size = (s) }
+
+static struct rsv_info info[] = {
+	INFO_DATA(BBT_NAND_MAGIC, NAND_BBT_BLOCK_NUM, 0),
+#ifndef CONFIG_ENV_IS_IN_NAND
+	INFO_DATA(ENV_NAND_MAGIC, NAND_ENV_BLOCK_NUM, CONFIG_ENV_SIZE),
+#endif
+	INFO_DATA(KEY_NAND_MAGIC, NAND_KEY_BLOCK_NUM, 0),
+	INFO_DATA(DTB_NAND_MAGIC, NAND_DTB_BLOCK_NUM, 0),
+	INFO_DATA(DDR_NAND_MAGIC, NAND_DDR_BLOCK_NUM, 2048),
+};
+
 static struct free_node_t *get_free_node(struct mtd_info *mtd)
 {
 	struct aml_nand_chip *aml_chip = mtd_to_nand_chip(mtd);
@@ -292,7 +318,8 @@ int aml_nand_scan_shipped_bbt(struct mtd_info *mtd)
 
 		if (aml_chip->mfr_type  == NAND_MFR_DOSILICON ||
 		    aml_chip->mfr_type  == NAND_MFR_ATO ||
-			aml_chip->mfr_type  == NAND_MFR_HYNIX) {
+			aml_chip->mfr_type  == NAND_MFR_HYNIX ||
+			aml_chip->mfr_type  == NAND_MFR_ZETTA) {
 			if (col0_oob != 0xFF) {
 				pr_info("detect a fbb:%llx blk=%d chip=%d\n",
 					(uint64_t)addr, start_blk, i);
@@ -382,9 +409,10 @@ int aml_nand_read_rsv_info (struct mtd_info *mtd,
 	loff_t addr = 0;
 	size_t amount_loaded = 0;
 	size_t len;
-	struct mtd_oob_ops aml_oob_ops;
 	unsigned char *data_buf;
 	unsigned char oob_buf[sizeof(struct oobinfo_t)];
+	int page, realpage, chipnr;
+	struct nand_chip *chip = mtd->priv;
 
 READ_RSV_AGAIN:
 	addr = nandrsv_info->valid_node->phy_blk_addr;
@@ -397,19 +425,22 @@ READ_RSV_AGAIN:
 
 	oobinfo = (struct oobinfo_t *)oob_buf;
 	while (amount_loaded < nandrsv_info->size ) {
-		aml_oob_ops.mode = MTD_OPS_AUTO_OOB;
-		aml_oob_ops.len = mtd->writesize;
-		aml_oob_ops.ooblen = sizeof(struct oobinfo_t);
-		aml_oob_ops.ooboffs = mtd->ecclayout->oobfree[0].offset;
-		aml_oob_ops.datbuf = data_buf;
-		aml_oob_ops.oobbuf = oob_buf;
 
-		memset((unsigned char *)aml_oob_ops.datbuf,
+		memset((unsigned char *)data_buf,
 			0x0, mtd->writesize);
-		memset((unsigned char *)aml_oob_ops.oobbuf,
-			0x0, aml_oob_ops.ooblen);
+		memset((unsigned char *)oob_buf,
+			0x0, sizeof(struct oobinfo_t));
 
-		error = mtd->_read_oob(mtd, addr, &aml_oob_ops);
+		chipnr = (int)(addr >> chip->chip_shift);
+		chip->select_chip(mtd, chipnr);
+		realpage = (int)(addr >> chip->page_shift);
+		page = realpage & chip->pagemask;
+
+		chip->cmdfunc(mtd, NAND_CMD_READ0, 0x00, page);
+		error = chip->ecc.read_page(mtd, chip, data_buf,
+							  1, page);
+		chip->select_chip(mtd, -1);
+
 		if ((error != 0) && (error != -EUCLEAN)) {
 			printk("blk good but read failed: %llx, %d\n",
 				(uint64_t)addr, error);
@@ -419,12 +450,13 @@ READ_RSV_AGAIN:
 			else
 				goto READ_RSV_AGAIN;
 		}
-
+		memcpy(oob_buf, chip->oob_poi, mtd->oobavail);
 		if (memcmp(oobinfo->name, nandrsv_info->name, 4))
 			printk("invalid nand info %s magic: %llx\n",
 				nandrsv_info->name, (uint64_t)addr);
 
 		addr += mtd->writesize;
+		page++;
 		len = min_t( uint32_t, mtd->writesize,
 			(nandrsv_info->size - amount_loaded));
 		memcpy(buf + amount_loaded, data_buf, len);
@@ -450,55 +482,21 @@ READ_RSV_AGAIN:
 	}
 	}
 #endif
-	//if(data_buf)
-	//	kfree(data_buf);
 	return 0;
 }
 
-int aml_nand_read_env (struct mtd_info *mtd, size_t offset, u_char * buf)
+int aml_nand_ext_read_rsv_info(struct mtd_info *mtd,
+			       struct aml_nandrsv_info_t *info,
+			       size_t offset, u_char *buf)
 {
-	struct aml_nand_chip *aml_chip = mtd_to_nand_chip(mtd);
-
-	if (!aml_chip->aml_nandenv_info->valid) {
-		printk("%s %d: %s is invalid! read exit!\n",
-			__func__, __LINE__,
-			aml_chip->aml_nandenv_info->name);
-		return 1;
-	}
-	if (aml_nand_read_rsv_info(mtd,
-		aml_chip->aml_nandenv_info, offset, (u_char *)buf))
-		return 1;
-	return 0;
-}
-
-int aml_nand_read_key (struct mtd_info *mtd, size_t offset, u_char * buf)
-{
-	struct aml_nand_chip *aml_chip = mtd_to_nand_chip(mtd);
-
-	if (!aml_chip->aml_nandkey_info->valid) {
-		printk("%s %d: %s is invalid! read exit!\n",
-			__func__, __LINE__,
-			aml_chip->aml_nandkey_info->name);
-		return 1;
-	}
-	if (aml_nand_read_rsv_info(mtd,
-		aml_chip->aml_nandkey_info, offset, (u_char *)buf))
-		return 1;
-	return 0;
-}
-
-int aml_nand_read_dtb (struct mtd_info *mtd, size_t offset, u_char * buf)
-{
-	struct aml_nand_chip *aml_chip = mtd_to_nand_chip(mtd);
-
-	if (!aml_chip->aml_nanddtb_info->valid) {
+	if (!info->valid) {
 		printk("%s %d: %s is invalid! read exit!",
-			__func__, __LINE__,
-			aml_chip->aml_nanddtb_info->name);
+		       __func__,
+		       __LINE__,
+		       info->name);
 		return 1;
 	}
-	if (aml_nand_read_rsv_info(mtd,
-		aml_chip->aml_nanddtb_info, offset, (u_char *)buf))
+	if (aml_nand_read_rsv_info(mtd, info, offset, (u_char *)buf))
 		return 1;
 	return 0;
 }
@@ -512,9 +510,10 @@ static int aml_nand_write_rsv(struct mtd_info *mtd,
 	loff_t addr = 0;
 	size_t amount_saved = 0;
 	size_t len;
-	struct mtd_oob_ops aml_oob_ops;
 	unsigned char *data_buf;
 	unsigned char oob_buf[sizeof(struct oobinfo_t)];
+	struct nand_chip *chip = mtd->priv;
+	int page, chipnr;
 
 	data_buf = aml_chip->rsv_data_buf;
 	addr = offset;
@@ -542,21 +541,22 @@ static int aml_nand_write_rsv(struct mtd_info *mtd,
 	}
 #endif
 	while (amount_saved < nandrsv_info->size ) {
-		aml_oob_ops.mode = MTD_OPS_AUTO_OOB;
-		aml_oob_ops.len = mtd->writesize;
-		aml_oob_ops.ooblen = sizeof(struct oobinfo_t);
-		aml_oob_ops.ooboffs = mtd->ecclayout->oobfree[0].offset;
-		aml_oob_ops.datbuf = data_buf;
-		aml_oob_ops.oobbuf = oob_buf;
 
-		memset((unsigned char *)aml_oob_ops.datbuf,
+		memset((unsigned char *)data_buf,
 			0x0, mtd->writesize);
 		len = min_t(uint32_t,mtd->writesize,
 			nandrsv_info->size - amount_saved);
-		memcpy((unsigned char *)aml_oob_ops.datbuf,
+		memcpy((unsigned char *)data_buf,
 			buf + amount_saved, len);
 
-		error = mtd->_write_oob(mtd, addr, &aml_oob_ops);
+		page = (int)(addr >> chip->page_shift);
+		chipnr = (int)(addr >> chip->chip_shift);
+		memset(chip->oob_poi, 0xff, mtd->oobsize);
+		memcpy(chip->oob_poi, oob_buf, mtd->oobsize);
+		chip->select_chip(mtd, chipnr);
+		error = chip->write_page(mtd, chip, 0, len, data_buf,
+			1, page, 0, 0);
+		chip->select_chip(mtd, -1);
 		if (error) {
 			printk("blk check good but write failed: %llx, %d\n",
 				(uint64_t)addr, error);
@@ -568,7 +568,6 @@ static int aml_nand_write_rsv(struct mtd_info *mtd,
 	if (amount_saved < nandrsv_info->size)
 		return 1;
 
-	//kfree(data_buf);
 	return 0;
 }
 
@@ -578,20 +577,27 @@ int aml_nand_erase_rsv_info(struct mtd_info *mtd,
 	struct free_node_t *tmp_node = NULL;
 	int error = 0;
 	loff_t addr = 0;
-	struct erase_info erase_info;
+	int chipnr, page;
+	struct nand_chip *chip = mtd->priv;
 
 	printk("erasing %s: \n", nandrsv_info->name);
 
 	if (nandrsv_info->valid) {
 		addr = nandrsv_info->valid_node->phy_blk_addr;
 		addr *= mtd->erasesize;
-		memset(&erase_info,
-			0, sizeof(struct erase_info));
-		erase_info.mtd = mtd;
-		erase_info.addr = addr;
-		erase_info.len = mtd->erasesize;
 		_aml_rsv_disprotect();
-		error = mtd->_erase(mtd, &erase_info);
+		//error = mtd->_erase(mtd, &erase_info);
+
+		page = (int)(addr >> chip->page_shift);
+		chipnr = (int)(addr >> chip->chip_shift);
+		chip->select_chip(mtd, chipnr);
+		chip->erase_cmd(mtd, page & chip->pagemask);
+		error = chip->waitfunc(mtd, chip);
+		if (error & NAND_STATUS_FAIL)
+			error = -EIO;
+		else
+			error = 0;
+		chip->select_chip(mtd, -1);
 		_aml_rsv_protect();
 		printk("erasing valid info block: %llx \n", addr);
 		nandrsv_info->valid_node->ec++;
@@ -602,13 +608,20 @@ int aml_nand_erase_rsv_info(struct mtd_info *mtd,
 	while (tmp_node != NULL) {
 		addr = tmp_node->phy_blk_addr;
 		addr *= mtd->erasesize;
-		memset(&erase_info,
-				0, sizeof(struct erase_info));
-		erase_info.mtd = mtd;
-		erase_info.addr = addr;
-		erase_info.len = mtd->erasesize;
+
 		_aml_rsv_disprotect();
-		error = mtd->_erase(mtd, &erase_info);
+		//error = mtd->_erase(mtd, &erase_info);
+
+		page = (int)(addr >> chip->page_shift);
+		chipnr = (int)(addr >> chip->chip_shift);
+		chip->select_chip(mtd, chipnr);
+		chip->erase_cmd(mtd, page & chip->pagemask);
+		error = chip->waitfunc(mtd, chip);
+		if (error & NAND_STATUS_FAIL)
+			error = -EIO;
+		else
+			error = 0;
+		chip->select_chip(mtd, -1);
 		_aml_rsv_protect();
 		printk("erasing free info block: %llx \n", addr);
 		tmp_node->ec = -1;
@@ -618,20 +631,10 @@ int aml_nand_erase_rsv_info(struct mtd_info *mtd,
 	return error;
 }
 
-int aml_nand_erase_dtb(struct mtd_info *mtd)
+int aml_nand_ext_erase_rsv_info(struct mtd_info *mtd,
+				struct aml_nandrsv_info_t *info)
 {
-	struct aml_nand_chip *aml_chip = mtd_to_nand_chip(mtd);
-
-	if (aml_nand_erase_rsv_info(mtd, aml_chip->aml_nanddtb_info))
-		return 1;
-	return 0;
-}
-
-int aml_nand_erase_key(struct mtd_info *mtd)
-{
-	struct aml_nand_chip *aml_chip = mtd_to_nand_chip(mtd);
-
-	if (aml_nand_erase_rsv_info(mtd, aml_chip->aml_nandkey_info))
+	if (aml_nand_erase_rsv_info(mtd, info))
 		return 1;
 	return 0;
 }
@@ -642,7 +645,8 @@ int aml_nand_save_rsv_info(struct mtd_info *mtd,
 	struct free_node_t *free_node = NULL, *tmp_node = NULL;
 	int error = 0, pages_per_blk, i = 1;
 	loff_t addr = 0;
-	struct erase_info erase_info;
+	int chipnr, page;
+	struct nand_chip *chip = mtd->priv;
 
 	pages_per_blk = mtd->erasesize / mtd->writesize;
 
@@ -664,13 +668,18 @@ RE_SEARCH:
 	if ((nandrsv_info->valid_node->phy_page_addr -i) == pages_per_blk) {
 				addr = nandrsv_info->valid_node->phy_blk_addr;
 				addr *= mtd->erasesize;
-				memset(&erase_info,
-						0, sizeof(struct erase_info));
-				erase_info.mtd = mtd;
-				erase_info.addr = addr;
-				erase_info.len = mtd->erasesize;
 				_aml_rsv_disprotect();
-				error = mtd->_erase(mtd, &erase_info);
+				//error = mtd->_erase(mtd, &erase_info);
+				page = (int)(addr >> chip->page_shift);
+				chipnr = (int)(addr >> chip->chip_shift);
+				chip->select_chip(mtd, chipnr);
+				chip->erase_cmd(mtd, page & chip->pagemask);
+				error = chip->waitfunc(mtd, chip);
+				if (error & NAND_STATUS_FAIL)
+					error = -EIO;
+				else
+					error = 0;
+				chip->select_chip(mtd, -1);
 				_aml_rsv_protect();
 				nandrsv_info->valid_node->ec++;
 				printk("---erase bad info block:%llx \n",addr);
@@ -716,7 +725,10 @@ RE_SEARCH:
 	printk("%s:%d,save info to %llx\n",__func__, __LINE__, addr);
 
 	if (nandrsv_info->valid_node->phy_page_addr == 0) {
-		error = mtd->_block_isbad(mtd, addr);
+		chipnr = (int)(addr >> chip->chip_shift);
+		chip->select_chip(mtd, chipnr);
+		error = chip->block_bad(mtd, addr, 1);
+		chip->select_chip(mtd, -1);
 		if (error != 0) {
 			/*
 			bad block here, need fix it
@@ -731,16 +743,24 @@ RE_SEARCH:
 			goto RE_SEARCH;
 		}
 
-		memset(&erase_info, 0, sizeof(struct erase_info));
-		erase_info.mtd = mtd;
-		erase_info.addr = addr;
-		erase_info.len = mtd->erasesize;
 		_aml_rsv_disprotect();
-		error = mtd->_erase(mtd, &erase_info);
+		page = (int)(addr >> chip->page_shift);
+		//chipnr = (int)(addr >> chip->chip_shift);
+		chip->select_chip(mtd, chipnr);
+
+		chip->erase_cmd(mtd, page & chip->pagemask);
+		error = chip->waitfunc(mtd, chip);
+		if (error & NAND_STATUS_FAIL)
+			error = -EIO;
+		else
+			error = 0;
+		chip->select_chip(mtd, -1);
 		_aml_rsv_protect();
 		if (error) {
 			printk("env free blk erase failed %d\n", error);
-			mtd->_block_markbad(mtd, addr);
+			chip->select_chip(mtd, chipnr);
+			chip->block_markbad(mtd, addr);
+			chip->select_chip(mtd, -1);
 			return error;
 		}
 		nandrsv_info->valid_node->ec++;
@@ -759,72 +779,78 @@ RE_SEARCH:
 	return error;
 }
 
-int aml_nand_save_env(struct mtd_info *mtd, u_char *buf)
+int aml_nand_ext_save_rsv_info(struct mtd_info *mtd,
+			       struct aml_nandrsv_info_t *info,
+			       u_char *buf)
 {
-	struct aml_nand_chip *aml_chip = mtd_to_nand_chip(mtd);
-	//env_t *env_ptr = (env_t *)buf;
-
-	if (!aml_chip->aml_nandenv_info->init) {
+	if (!info->init) {
 		printk("%s %d %s not init\n",
-			__func__, __LINE__,
-			aml_chip->aml_nandenv_info->name);
+			__func__, __LINE__, info->name);
 		return 1;
 	}
-	/*fixit*/
-	//env_ptr->crc = crc32(0, env_ptr->data, ENV_SIZE);
-	if (aml_nand_save_rsv_info(mtd, aml_chip->aml_nandenv_info, buf))
+	if (aml_nand_save_rsv_info(mtd, info, buf))
 		return 1;
 	return 0;
 }
 
-int aml_nand_save_key(struct mtd_info *mtd, u_char *buf)
+static void aml_nand_rsv_info_size_fill(struct mtd_info *mtd)
 {
 	struct aml_nand_chip *aml_chip = mtd_to_nand_chip(mtd);
-	//env_t *env_ptr = (env_t *)buf;
+	struct nand_chip *chip = mtd->priv;
+	int subtract = -1;
 
-	if (!aml_chip->aml_nandkey_info->init) {
-		printk("%s %d %s not init\n",
-			__func__, __LINE__,
-			aml_chip->aml_nandkey_info->name);
-		return 1;
-	}
-	/*fixit*/
-	//env_ptr->crc = crc32(0, env_ptr->data, ENV_SIZE);
-	if (aml_nand_save_rsv_info(mtd, aml_chip->aml_nandkey_info, buf))
-		return 1;
-	return 0;
+#ifndef CONFIG_ENV_IS_IN_NAND
+	subtract = 0;
+#endif
+	info[BBT_INFO_INDEX].size = mtd->size >> chip->phys_erase_shift;
+	info[KEY_INFO_INDEX + subtract].size = aml_chip->keysize;
+	info[DTB_INFO_INDEX + subtract].size = aml_chip->dtbsize;
 }
 
-int aml_nand_save_dtb(struct mtd_info *mtd, u_char *buf)
+static void aml_nand_rsv_info_ptr_fill(struct mtd_info *mtd)
 {
 	struct aml_nand_chip *aml_chip = mtd_to_nand_chip(mtd);
-	//env_t *env_ptr = (env_t *)buf;
+	int subtract = -1;
 
-	if (!aml_chip->aml_nanddtb_info->init) {
-		printk("%s %d %s not init\n",
-			__func__, __LINE__,
-			aml_chip->aml_nanddtb_info->name);
-		return 1;
-	}
-	/*fixit*/
-	//env_ptr->crc = crc32(0, env_ptr->data, ENV_SIZE);
-	if (aml_nand_save_rsv_info(mtd, aml_chip->aml_nanddtb_info, buf))
-		return 1;
-	return 0;
+	aml_chip->aml_nandbbt_info = &info[BBT_INFO_INDEX].rsv_info;
+#ifndef CONFIG_ENV_IS_IN_NAND
+	aml_chip->aml_nandenv_info = &info[ENV_INFO_INDEX].rsv_info;
+	subtract = 0;
+#endif
+	aml_chip->aml_nandkey_info = &info[KEY_INFO_INDEX + subtract].rsv_info;
+	aml_chip->aml_nanddtb_info = &info[DTB_INFO_INDEX + subtract].rsv_info;
+	aml_chip->aml_nandddr_info = &info[DDR_INFO_INDEX + subtract].rsv_info;
 }
 
-int aml_nand_save_bbt(struct mtd_info *mtd, u_char *buf)
+static int aml_nand_rsv_info_alloc_init(struct mtd_info *mtd,
+					char *name,
+					struct aml_nandrsv_info_t **rsv_info,
+					unsigned int blocks, unsigned int size)
 {
 	struct aml_nand_chip *aml_chip = mtd_to_nand_chip(mtd);
+	struct aml_nandrsv_info_t *rsvinfo = *rsv_info;
+	struct nand_chip *chip = mtd->priv;
+	unsigned int limit_blk, pages_per_blk_shift;
 
-	if (!aml_chip->aml_nandbbt_info->init) {
-		printk("%s %d %s not init\n",
-			__func__, __LINE__,
-			aml_chip->aml_nandbbt_info->name);
-		return 1;
+	pages_per_blk_shift = (chip->phys_erase_shift - chip->page_shift);
+	limit_blk = (BOOT_TOTAL_PAGES >> pages_per_blk_shift) +
+		    RESERVED_BLOCK_NUM;
+	if (aml_chip->vernier + blocks > limit_blk) {
+		pr_info("ERROR: total blk number is over the limit\n");
+		return -ERANGE;
 	}
-	if (aml_nand_save_rsv_info(mtd, aml_chip->aml_nandbbt_info, buf))
-		return 1;
+
+	rsvinfo->mtd = mtd;
+	rsvinfo->valid_node = kzalloc(sizeof(struct valid_node_t), GFP_KERNEL);
+	if (rsvinfo->valid_node == NULL)
+		return -ENOMEM;
+
+	rsvinfo->valid_node->phy_blk_addr = -1;
+	rsvinfo->start_block = aml_chip->vernier;
+	aml_chip->vernier += blocks;
+	rsvinfo->end_block = aml_chip->vernier;
+	rsvinfo->size = size;
+	memcpy(rsvinfo->name, name, 4);
 	return 0;
 }
 
@@ -832,22 +858,18 @@ int aml_nand_rsv_info_init(struct mtd_info *mtd)
 {
 	struct aml_nand_chip *aml_chip = mtd_to_nand_chip(mtd);
 	struct nand_chip *chip = mtd->priv;
-	unsigned int pages_per_blk_shift, bbt_start_block, vernier;
-	int phys_erase_shift , i;
+	struct aml_nandrsv_info_t *rsv_info;
+	unsigned int pages_per_blk_shift, bbt_start_block;
+	int  i, ret;
 
-	phys_erase_shift = fls(mtd->erasesize) - 1;
 	pages_per_blk_shift = (chip->phys_erase_shift - chip->page_shift);
-
-	/*bootloader occupy 1024 pages*/
 	bbt_start_block = BOOT_TOTAL_PAGES >> pages_per_blk_shift;
-	bbt_start_block += NAND_GAP_BLOCK_NUM; /*gap occupy 4 blocks*/
-	/* fixme, avoid dma occpied data buffer*/
-	aml_chip->rsv_data_buf = kzalloc(2 * mtd->writesize, GFP_KERNEL);
-
-	vernier = bbt_start_block;
+	bbt_start_block += NAND_GAP_BLOCK_NUM;
+	aml_chip->rsv_data_buf = kzalloc(mtd->writesize, GFP_KERNEL);
 	if (aml_chip->rsv_data_buf == NULL)
 		return -ENOMEM;
 
+	aml_chip->vernier = bbt_start_block;
 	aml_chip->freeNodeBitmask = 0;
 	for (i = 0; i < RESERVED_BLOCK_NUM; i++) {
 		aml_chip->free_node[i] =
@@ -855,107 +877,41 @@ int aml_nand_rsv_info_init(struct mtd_info *mtd)
 		aml_chip->free_node[i]->index = i;
 	}
 
-	/*bbt info init*/
-	aml_chip->aml_nandbbt_info =
-		kzalloc(sizeof(struct aml_nandrsv_info_t), GFP_KERNEL);
-	if (aml_chip->aml_nandbbt_info == NULL)
-		return -ENOMEM;
-
-	aml_chip->aml_nandbbt_info->mtd = mtd;
-	aml_chip->aml_nandbbt_info->valid_node =
-		kzalloc(sizeof(struct valid_node_t), GFP_KERNEL);
-	if (aml_chip->aml_nandbbt_info->valid_node == NULL)
-		return -ENOMEM;
-
-	aml_chip->aml_nandbbt_info->valid_node->phy_blk_addr = -1;
-	aml_chip->aml_nandbbt_info->start_block = vernier;
-	aml_chip->aml_nandbbt_info->end_block =
-		vernier + NAND_BBT_BLOCK_NUM;
-	vernier += NAND_BBT_BLOCK_NUM;
-	aml_chip->aml_nandbbt_info->size = mtd->size >> phys_erase_shift;
-	memcpy(aml_chip->aml_nandbbt_info->name, BBT_NAND_MAGIC, 4);
-
 	/*block status*/
 	aml_chip->block_status =
-		kzalloc((mtd->size >> phys_erase_shift), GFP_KERNEL);
+		kzalloc((mtd->size >> chip->phys_erase_shift), GFP_KERNEL);
 	if (aml_chip->block_status == NULL) {
 		printk("no memory for flash block status\n");
 		return -ENOMEM;
 	}
-	memset(aml_chip->block_status, 0, (mtd->size >> phys_erase_shift));
-#ifndef CONFIG_ENV_IS_IN_NAND
-	/*env info init*/
-	aml_chip->aml_nandenv_info =
-		kzalloc(sizeof(struct aml_nandrsv_info_t), GFP_KERNEL);
-	if (aml_chip->aml_nandenv_info == NULL)
-		return -ENOMEM;
+	memset(aml_chip->block_status,
+		0, (mtd->size >> chip->phys_erase_shift));
 
-	aml_chip->aml_nandenv_info->mtd = mtd;
-	aml_chip->aml_nandenv_info->valid_node =
-		kzalloc(sizeof(struct valid_node_t), GFP_KERNEL);
-	if (aml_chip->aml_nandenv_info->valid_node == NULL)
-		return -ENOMEM;
+	aml_nand_rsv_info_size_fill(mtd);
 
-	aml_chip->aml_nandenv_info->valid_node->phy_blk_addr = -1;
-	aml_chip->aml_nandenv_info->start_block = vernier;
-	aml_chip->aml_nandenv_info->end_block =
-		vernier + NAND_ENV_BLOCK_NUM;
-	vernier += NAND_ENV_BLOCK_NUM;
-	aml_chip->aml_nandenv_info->size = CONFIG_ENV_SIZE;
-	memcpy(aml_chip->aml_nandenv_info->name, ENV_NAND_MAGIC, 4);
-#endif
-	aml_chip->aml_nandkey_info =
-		kzalloc(sizeof(struct aml_nandrsv_info_t), GFP_KERNEL);
-	if (aml_chip->aml_nandkey_info == NULL)
-		return -ENOMEM;
-
-	/*key init*/
-	aml_chip->aml_nandkey_info->mtd = mtd;
-	aml_chip->aml_nandkey_info->valid_node =
-		kzalloc(sizeof(struct valid_node_t), GFP_KERNEL);
-	if (aml_chip->aml_nandkey_info->valid_node == NULL)
-		return -ENOMEM;
-
-	aml_chip->aml_nandkey_info->valid_node->phy_blk_addr = -1;
-	aml_chip->aml_nandkey_info->start_block = vernier;
-	aml_chip->aml_nandkey_info->end_block =
-		vernier + NAND_KEY_BLOCK_NUM;
-	vernier += NAND_KEY_BLOCK_NUM;
-	aml_chip->aml_nandkey_info->size = aml_chip->keysize;
-	memcpy(aml_chip->aml_nandkey_info->name, KEY_NAND_MAGIC, 4);
-
-	aml_chip->aml_nanddtb_info =
-		kzalloc(sizeof(struct aml_nandrsv_info_t), GFP_KERNEL);
-	if (aml_chip->aml_nanddtb_info == NULL)
-		return -ENOMEM;
-
-	/*dtb init*/
-	aml_chip->aml_nanddtb_info->mtd = mtd;
-	aml_chip->aml_nanddtb_info->valid_node =
-		kzalloc(sizeof(struct valid_node_t), GFP_KERNEL);
-	if (aml_chip->aml_nanddtb_info->valid_node == NULL)
-		return -ENOMEM;
-
-	aml_chip->aml_nanddtb_info->valid_node->phy_blk_addr = -1;
-	aml_chip->aml_nanddtb_info->start_block = vernier;
-	aml_chip->aml_nanddtb_info->end_block =
-		vernier + NAND_DTB_BLOCK_NUM;
-	vernier += NAND_DTB_BLOCK_NUM;
-	aml_chip->aml_nanddtb_info->size = aml_chip->dtbsize;
-	memcpy(aml_chip->aml_nanddtb_info->name, DTB_NAND_MAGIC, 4);
-
-	if ((vernier - (BOOT_TOTAL_PAGES >> pages_per_blk_shift)) >
-		RESERVED_BLOCK_NUM) {
-		pr_info("ERROR: total blk number is over the limit\n");
-		return -ENOMEM;
+	for (i = 0; i < ARRAY_SIZE(info); i++) {
+		rsv_info = &info[i].rsv_info;
+		ret = aml_nand_rsv_info_alloc_init(mtd, info[i].name,
+						   &rsv_info,
+						   info[i].blocks,
+						   info[i].size);
+		if (ret) {
+			printk("%s info alloc init failed\n", info[i].name);
+			return ret;
+		}
+		printk("%s=%d\n", info[i].name, info[i].rsv_info.start_block);
 	}
-	pr_info("bbt_start=%d ", aml_chip->aml_nandbbt_info->start_block);
+
+	aml_nand_rsv_info_ptr_fill(mtd);
+
+	printk("bbt_start=%d ", aml_chip->aml_nandbbt_info->start_block);
 #ifndef CONFIG_ENV_IS_IN_NAND
-	pr_info("env_start=%d ", aml_chip->aml_nandenv_info->start_block);
+	printk("env_start=%d ", aml_chip->aml_nandenv_info->start_block);
 #endif
-	pr_info("key_start=%d ", aml_chip->aml_nandkey_info->start_block);
-	pr_info("dtb_start=%d ", aml_chip->aml_nanddtb_info->start_block);
-	pr_info("\n");
+	printk("key_start=%d ", aml_chip->aml_nandkey_info->start_block);
+	printk("dtb_start=%d ", aml_chip->aml_nanddtb_info->start_block);
+	printk("ddr_start=%d ", aml_chip->aml_nandddr_info->start_block);
+	printk("\n");
 
 	return 0;
 }
@@ -966,19 +922,26 @@ int aml_nand_free_rsv_info(struct mtd_info *mtd,
 	struct free_node_t *tmp_node, *next_node = NULL;
 	int error = 0;
 	loff_t addr = 0;
-	struct erase_info erase_info;
+	int page, chipnr;
+	struct nand_chip *chip = mtd->priv;
 
 	pr_info("free %s\n", nandrsv_info->name);
 
 	if (nandrsv_info->valid) {
 		addr = nandrsv_info->valid_node->phy_blk_addr;
 		addr *= mtd->erasesize;
-		memset(&erase_info, 0, sizeof(struct erase_info));
-		erase_info.mtd = mtd;
-		erase_info.addr = addr;
-		erase_info.len = mtd->erasesize;
 		_aml_rsv_disprotect();
-		error = mtd->_erase(mtd, &erase_info);
+		//error = mtd->_erase(mtd, &erase_info);
+		page = (int)(addr >> chip->page_shift);
+		chipnr = (int)(addr >> chip->chip_shift);
+		chip->select_chip(mtd, chipnr);
+		chip->erase_cmd(mtd, page & chip->pagemask);
+		error = chip->waitfunc(mtd, chip);
+		if (error & NAND_STATUS_FAIL)
+			error = -EIO;
+		else
+			error = 0;
+		chip->select_chip(mtd, -1);
 		_aml_rsv_protect();
 		pr_info("erasing valid info block: %llx\n", addr);
 		nandrsv_info->valid_node->phy_blk_addr = -1;
@@ -998,12 +961,12 @@ int aml_nand_free_rsv_info(struct mtd_info *mtd,
 
 	return error;
 }
+
 int aml_nand_scan_rsv_info(struct mtd_info *mtd,
 	struct aml_nandrsv_info_t *nandrsv_info)
 {
 	struct aml_nand_chip *aml_chip = mtd_to_nand_chip(mtd);
 	struct nand_chip *chip = &aml_chip->chip;
-	struct mtd_oob_ops aml_oob_ops;
 	struct oobinfo_t *oobinfo;
 	struct free_node_t *free_node, *tmp_node = NULL;
 	unsigned char oob_buf[sizeof(struct oobinfo_t)];
@@ -1012,6 +975,7 @@ int aml_nand_scan_rsv_info(struct mtd_info *mtd,
 	int start_blk, max_scan_blk, i , k, scan_status = 0, env_status=0;
 	int phys_erase_shift, pages_per_blk, page_num;
 	int error = 0, ret = 0;
+	int page, realpage, chipnr;
 
 	data_buf = aml_chip->rsv_data_buf;
 	oobinfo = (struct oobinfo_t *)oob_buf;
@@ -1028,19 +992,22 @@ RE_RSV_INFO_EXT:
 	offset *= start_blk;
 	scan_status = 0;
 RE_RSV_INFO:
-	aml_oob_ops.mode = MTD_OPS_AUTO_OOB;
-	aml_oob_ops.len = mtd->writesize;
-	aml_oob_ops.ooblen = sizeof(struct oobinfo_t);
-	aml_oob_ops.ooboffs = mtd->ecclayout->oobfree[0].offset;
-	aml_oob_ops.datbuf = data_buf;
-	aml_oob_ops.oobbuf = oob_buf;
 
-	memset((unsigned char *)aml_oob_ops.datbuf,
+	memset((unsigned char *)data_buf,
 		0x0, mtd->writesize);
-	memset((unsigned char *)aml_oob_ops.oobbuf,
-		0x0, aml_oob_ops.ooblen);
+	memset((unsigned char *)oob_buf,
+		0x0, sizeof(struct oobinfo_t));
 
-	error = mtd->_read_oob(mtd, offset, &aml_oob_ops);
+	//error = mtd->_read_oob(mtd, offset, &aml_oob_ops);
+	realpage = (int)(offset >> chip->page_shift);
+	page = realpage & chip->pagemask;
+	chipnr = (int)(offset >> chip->chip_shift);
+
+	chip->select_chip(mtd, chipnr);
+	chip->cmdfunc(mtd, NAND_CMD_READ0, 0x00, page);
+	error = chip->ecc.read_page(mtd, chip, data_buf,
+							  1, page);
+	chip->select_chip(mtd, -1);
 	if ((error != 0) && (error != -EUCLEAN)) {
 		printk("blk check good but read failed: %llx, %d\n",
 			(uint64_t)offset, error);
@@ -1053,6 +1020,7 @@ RE_RSV_INFO:
 		goto RE_RSV_INFO;
 	}
 
+	memcpy(oob_buf, chip->oob_poi, mtd->oobavail);
 	nandrsv_info->init = 1;
 	nandrsv_info->valid_node->status = 0;
 	if (!memcmp(oobinfo->name, nandrsv_info->name, 4)) {
@@ -1142,23 +1110,26 @@ RE_RSV_INFO:
 
 	if (nandrsv_info->valid == 1) {
 	printk("%s %d\n", __func__, __LINE__);
-	aml_oob_ops.mode = MTD_OPS_AUTO_OOB;
-	aml_oob_ops.len = mtd->writesize;
-	aml_oob_ops.ooblen = sizeof(struct oobinfo_t);
-	aml_oob_ops.ooboffs = mtd->ecclayout->oobfree[0].offset;
-	aml_oob_ops.datbuf = data_buf;
-	aml_oob_ops.oobbuf = oob_buf;
 
 	for (i = 0; i < pages_per_blk; i++) {
-		memset((unsigned char *)aml_oob_ops.datbuf,
+		memset((unsigned char *)data_buf,
 			0x0, mtd->writesize);
-		memset((unsigned char *)aml_oob_ops.oobbuf,
-			0x0, aml_oob_ops.ooblen);
+		memset((unsigned char *)oob_buf,
+			0x0, sizeof(struct oobinfo_t));
 
 		offset = nandrsv_info->valid_node->phy_blk_addr;
 		offset *= mtd->erasesize;
 		offset += i * mtd->writesize;
-		error = mtd->_read_oob(mtd, offset, &aml_oob_ops);
+		//error = mtd->_read_oob(mtd, offset, &aml_oob_ops);
+		realpage = (int)(offset >> chip->page_shift);
+		page = realpage & chip->pagemask;
+		chipnr = (int)(offset >> chip->chip_shift);
+
+		chip->select_chip(mtd, chipnr);
+		chip->cmdfunc(mtd, NAND_CMD_READ0, 0x00, page);
+		error = chip->ecc.read_page(mtd, chip, data_buf,
+								  1, page);
+		chip->select_chip(mtd, -1);
 		if ((error != 0) && (error != -EUCLEAN)) {
 			printk("blk good but read failed:%llx,%d\n",
 				(uint64_t)offset, error);
@@ -1167,6 +1138,7 @@ RE_RSV_INFO:
 			continue;
 		}
 
+		memcpy(oob_buf, chip->oob_poi, mtd->oobavail);
 		if (!memcmp(oobinfo->name, nandrsv_info->name, 4)) {
 			good_addr[i] = 1;
 			nandrsv_info->valid_node->phy_page_addr = i;
@@ -1218,47 +1190,18 @@ RE_RSV_INFO:
 	return ret;
 }
 
-int aml_nand_env_check(struct mtd_info *mtd)
+int aml_nand_rsv_info_check_except_bbt(struct mtd_info *mtd)
 {
-	struct aml_nand_chip *aml_chip = mtd_to_nand_chip(mtd);
-	int ret =0;
+	int ret = 0, i;
 
-	ret = aml_nand_scan_rsv_info(mtd, aml_chip->aml_nandenv_info);
-	if ((ret !=0) && ((ret != (-1))))
-		printk("%s %d\n", __func__, __LINE__);
-
-	if (aml_chip->aml_nandenv_info->valid == 0)
-		printk("%s %d NO env exist\n", __func__, __LINE__);
-
-	return ret;
-}
-
-int aml_nand_key_check(struct mtd_info *mtd)
-{
-	struct aml_nand_chip *aml_chip = mtd_to_nand_chip(mtd);
-	int ret =0;
-
-	ret = aml_nand_scan_rsv_info(mtd, aml_chip->aml_nandkey_info);
-	if ((ret !=0) && ((ret != (-1))))
-		printk("%s %d\n", __func__, __LINE__);
-
-	if (aml_chip->aml_nandkey_info->valid == 0)
-		printk("%s %d NO key exist\n", __func__, __LINE__);
-
-	return ret;
-}
-
-int aml_nand_dtb_check(struct mtd_info *mtd)
-{
-	struct aml_nand_chip *aml_chip = mtd_to_nand_chip(mtd);
-	int ret =0;
-
-	ret = aml_nand_scan_rsv_info(mtd, aml_chip->aml_nanddtb_info);
-	if ((ret !=0) && ((ret != (-1))))
-		printk("%s %d\n", __func__, __LINE__);
-
-	if (aml_chip->aml_nanddtb_info->valid == 0)
-		printk("%s %d NO dtb exist\n", __func__, __LINE__);
+	for (i = ENV_INFO_INDEX; i < ARRAY_SIZE(info); i++) {
+		ret = aml_nand_scan_rsv_info(mtd, &info[i].rsv_info);
+		if (ret !=0 && ret != -1)
+			printk("%s %d\n", __func__, __LINE__);
+		if (info[i].rsv_info.valid == 0)
+			printk("%s %d NO %s exist\n",
+			       __func__, __LINE__, info[i].name);
+	}
 
 	return ret;
 }
@@ -1297,7 +1240,8 @@ int aml_nand_bbt_check(struct mtd_info *mtd)
 		memset(aml_chip->block_status,
 			0, (mtd->size >> phys_erase_shift));
 		aml_nand_scan_shipped_bbt(mtd);
-		aml_nand_save_bbt(mtd, (u_char *)buf);
+		aml_nand_ext_save_rsv_info(mtd,
+			aml_chip->aml_nandbbt_info, (u_char *)buf);
 		if (aml_chip->nand_bbt_info)
 			kfree(aml_chip->nand_bbt_info);
 	}

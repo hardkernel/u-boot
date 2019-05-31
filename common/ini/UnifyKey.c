@@ -104,6 +104,56 @@ static int checkKeyNameInList(const char *key_name) {
     return 0;
 }
 
+int readUKeyData_no_header(const char *key_name, unsigned char data_buf[], int rd_size) {
+    int rd_cnt = 0;
+    FILE *dev_fp = NULL;
+
+    if (checkKeyNameInList(key_name) < 0) {
+        ALOGE("%s, key \"%s\" isn't exist in unifykeys list\n", __FUNCTION__, key_name);
+        return -1;
+    }
+
+    dev_fp = fopen(CS_KEY_DATA_NAME_DEV_PATH, "w");
+    if (dev_fp == NULL) {
+        ALOGE("%s, open %s ERROR(%s)!!\n", __FUNCTION__,
+                CS_KEY_DATA_NAME_DEV_PATH, strerror(errno));
+        return -1;
+    }
+
+    fprintf(dev_fp, "%s", key_name);
+
+    fclose(dev_fp);
+    dev_fp = NULL;
+
+    int mode = 1;
+
+    if (mode == 0) {
+        dev_fp = fopen(GetKeyDataReadDevPath(), "r");
+        if (dev_fp == NULL) {
+            ALOGE("%s, open %s ERROR(%s)!!\n", __FUNCTION__,
+                    GetKeyDataReadDevPath(), strerror(errno));
+            return -1;
+        }
+
+        fscanf(dev_fp, "%s", data_buf);
+        rd_cnt = strlen((char *) data_buf);
+    } else {
+        dev_fp = fopen(GetKeyDataReadDevPath(), "rb");
+        if (dev_fp == NULL) {
+            ALOGE("%s, open %s ERROR(%s)!!\n", __FUNCTION__,
+                    GetKeyDataReadDevPath(), strerror(errno));
+            return -1;
+        }
+
+        rd_cnt = fread(data_buf, 1, CC_ONE_SECTION_SIZE, dev_fp);
+    }
+
+    fclose(dev_fp);
+    dev_fp = NULL;
+
+    return rd_cnt;
+}
+
 int readUKeyData(const char *key_name, unsigned char data_buf[], int rd_size) {
     int rd_cnt = 0;
     FILE *dev_fp = NULL;
@@ -239,6 +289,29 @@ static int checkUnifyKey(const char *key_name) {
 
     key_len = (int)key_size;
     //ALOGD("%s, %s size: %d\n",__FUNCTION__, key_name, key_len);
+
+    return key_len;
+}
+
+int readUKeyData_no_header(const char *key_name, unsigned char data_buf[], int rd_size) {
+    int ret = 0, key_len = 0;
+
+    key_len = checkUnifyKey(key_name);
+    if (key_len < 0) {
+        return -1;
+    } else if (key_len == 0) {
+        ALOGE("%s, %s size is zero\n",__FUNCTION__, key_name);
+        return -1;
+    } else if (key_len > rd_size) {
+        ALOGE("%s, %s key len is larger than rd size.\n",__FUNCTION__, key_name);
+        return -1;
+    }
+
+    ret = key_unify_read(key_name, data_buf, key_len);
+    if (ret) {
+        ALOGE("%s, %s unify read error\n",__FUNCTION__, key_name);
+        return -1;
+    }
 
     return key_len;
 }

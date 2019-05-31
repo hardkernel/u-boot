@@ -7,7 +7,8 @@
 #include <asm/arch/secure_apb.h>
 #include <asm/arch/bl31_apis.h>
 #include <partition_table.h>
-
+#include <asm/arch/cpu.h>
+#include <partition_table.h>
 #include <amlogic/aml_efuse.h>
 
 //#define AML_DT_DEBUG
@@ -39,7 +40,7 @@
 
 #define IS_GZIP_FORMAT(data)		((data & (0x0000FFFF)) == (0x00008B1F))
 #define GUNZIP_BUF_SIZE				(0x500000) /* 5MB */
-#define DTB_MAX_SIZE				(0x40000) /* 256KB */
+#define DTB_MAX_SIZE				(AML_DTB_IMG_MAX_SZ)
 
 //#define readl(addr) (*(volatile unsigned int*)(addr))
 extern int checkhw(char * name);
@@ -73,7 +74,6 @@ unsigned long __attribute__((unused))
 
 	dbg_printf("      DBG: fdt_addr: 0x%x\n", (unsigned int)fdt_addr);
 	dbg_printf("      DBG: dt_magic: 0x%x\n", (unsigned int)dt_magic);
-	dbg_printf("      DBG: gzip_format: %d\n", gzip_format);
 
 	/*printf("      Process device tree. dt magic: %x\n", dt_magic);*/
 	if (dt_magic == DT_HEADER_MAGIC) {/*normal dtb*/
@@ -112,6 +112,8 @@ unsigned long __attribute__((unused))
 			printf("      Get env aml_dt failed!\n");
 			if (aml_dt_buf)
 				free(aml_dt_buf);
+			if (gzip_buf)
+				free(gzip_buf);
 			return fdt_addr;
 		}
 
@@ -221,9 +223,10 @@ unsigned long __attribute__((unused))
 	}
 	else {
 		printf("      Cannot find legal dtb!\n");
+		if (gzip_buf)
+			free(gzip_buf);
 		return fdt_addr;
 	}
-	return 0;
 }
 
 

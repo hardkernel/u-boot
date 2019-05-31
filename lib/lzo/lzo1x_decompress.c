@@ -99,14 +99,22 @@ int lzop_decompress(const unsigned char *src, size_t src_len,
 			return LZO_E_OUTPUT_OVERRUN;
 
 		/* decompress */
-		tmp = dlen;
-		r = lzo1x_decompress_safe((u8 *) src, slen, dst, &tmp);
+		if (slen < dlen) {
+			tmp = dlen;
+			r = lzo1x_decompress_safe((u8 *)src, slen, dst, &tmp);
 
-		if (r != LZO_E_OK)
-			return r;
+			if (r != LZO_E_OK)
+				return r;
 
-		if (dlen != tmp)
-			return LZO_E_ERROR;
+			if (dlen != tmp)
+				return LZO_E_ERROR;
+		} else {
+			int cnt = 0;
+			while (cnt < slen) {
+				dst[cnt] = src[cnt];
+				cnt += 1;
+			}
+		}
 
 		src += slen;
 		dst += dlen;

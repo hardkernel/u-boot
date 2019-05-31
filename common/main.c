@@ -12,6 +12,9 @@
 #include <cli.h>
 #include <version.h>
 
+#ifdef CONFIG_MDUMP_COMPRESS
+#include <ramdump.h>
+#endif
 DECLARE_GLOBAL_DATA_PTR;
 
 /*
@@ -58,6 +61,9 @@ void main_loop(void)
 	const char *s;
 
 	bootstage_mark_name(BOOTSTAGE_ID_MAIN_LOOP, "main_loop");
+#ifdef CONFIG_MDUMP_COMPRESS
+	ramdump_init();
+#endif
 
 #ifndef CONFIG_SYS_GENERIC_BOARD
 	puts("Warning: Your board does not use generic board. Please read\n");

@@ -130,9 +130,11 @@ static void setup_net_chip(void)
 
 extern struct eth_board_socket* eth_board_setup(char *name);
 extern int designware_initialize(ulong base_addr, u32 interface);
+#define P_RESET1_LEVEL (volatile unsigned int *)((0x21<< 2) + 0xc1104400)
 
 int board_eth_init(bd_t *bis)
 {
+	*P_RESET1_LEVEL |= (1<<11);
 	setup_net_chip();
 	udelay(1000);
 	designware_initialize(ETH_BASE, PHY_INTERFACE_MODE_RMII);

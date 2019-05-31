@@ -235,6 +235,7 @@ struct aml_lcd_unifykey_header_s {
  * tcon
  * ********************************* */
 #define LCD_UKEY_TCON_SIZE          4096
+#define LCD_UKEY_TCON_SIZE_NEW      24000
 
 
 /* ********************************
