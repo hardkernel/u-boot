@@ -92,34 +92,60 @@
 
 #define ENV_MMC_LIST_DEFAULT			"mmc_list=0 1\0"
 
-#define ENV_MMC_DEFAULT					\
-	"boot_mmc="					\
-		"setenv devtype mmc; "			\
-		"for n in ${mmc_list}; do "	\
-			"setenv devnum ${n}; "		\
-			"setenv devno ${n}; "		\
-			"setenv mmc_dev ${n}; "		\
-			"cfgload; "			\
+#define ENV_USB_LIST_DEFAULT			"usb_list=0 1 2 3\0"
+
+#define ENV_BOOT_ORDER_DEFAULT			"boot_order=mmc rawimage usb pxe spi\0"
+
+#define ENV_BOOTSCRIPTS_DEFAULT			"boot_scripts=boot.ini boot.scr\0"
+
+#define ENV_BOOT_ATTEMPT_DEFAULT			\
+	"boot_attempt="					\
+		"for script in ${boot_scripts}; do "	\
+			"echo \"## Attempting fetch ${script} in ${devtype}:${devnum}...\"; "	\
+			"load ${devtype} ${devnum} ${preloadaddr} ${script}; "	\
+			"source ${preloadaddr}; "	\
 		"done\0"
 
-#define ENV_MMC_BOOT_DISTRO				\
-	"boot_mmc_distro="				\
+
+#define ENV_MMC_DEFAULT					\
+	"boot_mmc="					\
 		"setenv devtype mmc; "			\
 		"for n in ${mmc_list}; do "		\
 			"setenv devnum ${n}; "		\
 			"setenv devno ${n}; "		\
 			"setenv mmc_dev ${n}; "		\
-			"load mmc ${n} ${preloadaddr} boot.scr; "	\
-			"source ${preloadaddr}; "		\
-		"done\0"				\
+			"run boot_attempt; "		\
+		"done\0"
+
+#define ENV_USB_DEFAULT					\
+        "boot_usb="					\
+		"usb start; "				\
+		"setenv devtype usb; "			\
+		"for n in ${usb_list}; do "		\
+			"setenv devnum ${n}; "		\
+			"setenv devno ${n}; "		\
+			"setenv mmc_dev ${n}; "		\
+			"run boot_attempt; "		\
+		"done\0"
+
+#define ENV_BOOT_DEFAULT				\
+	"boot_default="					\
+		"for devtype in ${boot_order}; do "	\
+			"run boot_${devtype}; "		\
+		"done\0"
 
 /* args/envs */
 #define CONFIG_SYS_MAXARGS  64
 #define CONFIG_EXTRA_ENV_SETTINGS \
         ENV_PXE_DEFAULT \
         ENV_MMC_DEFAULT \
-        ENV_MMC_BOOT_DISTRO \
         ENV_MMC_LIST_DEFAULT \
+	ENV_USB_DEFAULT \
+	ENV_USB_LIST_DEFAULT \
+	ENV_BOOTSCRIPTS_DEFAULT \
+	ENV_BOOT_ORDER_DEFAULT \
+	ENV_BOOT_DEFAULT \
+	ENV_BOOT_ATTEMPT_DEFAULT \
 	"console=" CONFIG_DEFAULT_CONSOLE \
         "loadaddr=1080000\0"\
         "outputmode=1080p60hz\0" \
@@ -177,7 +203,8 @@
                 "booti ${loadaddr} - ${dtb_mem_addr}; " \
                 "bootm;" \
             "done\0" \
-        "boot_rawimage=setenv bootargs ${initargs} logo=${display_layer},loaded,${fb_addr} " \
+        "boot_rawimage=" \
+	    "setenv bootargs ${initargs} logo=${display_layer},loaded,${fb_addr} " \
             "vout=${outputmode},enable cvbsmode=${cvbsmode} " \
             "hdmimode=${hdmimode} osd_reverse=${osd_reverse} video_reverse=${video_reverse} " \
             "androidboot.selinux=permissive androidboot.firstboot=${firstboot} jtag=disable " \
@@ -189,10 +216,6 @@
 	        "booti ${loadaddr} - ${dtb_mem_addr}; " \
 	        "bootm; " \
             "done\0" \
-	"boot_default="\
-            "run boot_mmc; " \
-            "run boot_mmc_distro; " \
-            "run boot_rawimage\0" \
         "init_display="\
             "osd open; osd clear; " \
             "for n in ${mmc_list}; do " \
@@ -221,7 +244,7 @@
 		"sf erase 0x0 0x800000; "\
 		"load mmc 1 ${loadaddr} spiboot.img; "\
 		"sf write ${loadaddr} 0x0 ${filesize}\0"\
-	"booting_from_spi="\
+	"boot_spi="\
 		"hdmitx edid; "\
 		"setenv bootargs ${initargs} console=tty0 logo=osd0,loaded,0x3d800000 osd_reverse=0 video_reverse=0; "\
 		"setenv bootargs ${bootargs} vout=${vout} hdmimode=${hdmimode} modeline=${modeline} voutmode=${voutmode}; "\
