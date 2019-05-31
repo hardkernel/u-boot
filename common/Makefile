@@ -132,8 +132,10 @@ obj-$(CONFIG_CMD_HASH) += cmd_hash.o
 obj-$(CONFIG_CMD_IDE) += cmd_ide.o
 obj-$(CONFIG_CMD_IMMAP) += cmd_immap.o
 
+ifndef CONFIG_ODROID_COMMON
 ifdef CONFIG_CMD_INI
 obj-y += ini/model.o ini/ini_proxy.o ini/UnifyKey.o ini/ini_platform.o ini/ini_io.o ini/ini_handler.o ini/ini_core.o ini/ini_log.o
+endif
 endif
 obj-$(CONFIG_CMD_INI) += cmd_ini.o
 
