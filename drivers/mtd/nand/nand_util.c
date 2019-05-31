@@ -712,14 +712,6 @@ int nand_read_skip_bad(struct mtd_info *mtd, loff_t offset, size_t *length,
 	u_char *p_buffer = buffer;
 	int need_skip;
 
-	if ((offset & (mtd->writesize - 1)) != 0) {
-		printf("Attempt to read non page-aligned data\n");
-		*length = 0;
-		if (actual)
-			*actual = 0;
-		return -EINVAL;
-	}
-
 	need_skip = check_skip_len(mtd, offset, *length, &used_for_read);
 
 	if (actual)
