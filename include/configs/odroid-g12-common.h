@@ -94,7 +94,7 @@
 #define ENV_PXE_DEFAULT
 #endif
 
-#define ENV_MMC_LIST_DEFAULT			"mmc_list=1 0\0"
+#define ENV_MMC_LIST_DEFAULT			"mmc_list=0 1\0"
 
 #define ENV_MMC_DEFAULT					\
 	"boot_mmc="					\
