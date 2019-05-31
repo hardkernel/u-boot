@@ -167,7 +167,7 @@
         "fdt_addr_r=0x1000000\0" \
         "kernel_addr_r=0x1080000\0" \
         "ramdisk_addr_r=0x3080000\0" \
-        "preloadaddr=0x3000000\0"\
+        "preloadaddr=0x4000000\0"\
         "cvbs_drv=0\0"\
         "osd_reverse=0\0"\
         "video_reverse=0\0"\
@@ -233,38 +233,54 @@
                 "fi; " \
             "done; " \
             "vout output ${outputmode};\0" \
-	"set_spi_params="\
-		"setenv start_uboot 0x0; "\
-		"setenv start_kernel 0x119000; "\
-		"setenv start_dtb 0x100000; "\
-		"setenv start_initrd 0x4E6C00; "\
-		"setenv size_kernel 0x3CDC00; "\
-		"setenv size_dtb 0x19000; "\
-		"setenv size_initrd 0x319400;\0"\
-	"fusing_spi_from_sd="\
+	"bios_offset_uboot=0x00000000\0" \
+	"bios_sizeof_uboot=0x0f0000\0" \
+	"bios_offset_ubootenv=0x000f0000\0" \
+	"bios_sizeof_ubootenv=0x010000\0" \
+	"bios_offset_petitboot=0x00100000\0" \
+	"bios_sizeof_petitboot=0x010000\0" \
+	"bios_offset_dtb=0x00110000\0" \
+	"bios_sizeof_dtb=0x020000\0" \
+	"bios_offset_kernel=0x00130000\0" \
+	"bios_sizeof_kernel=0x3c0000\0" \
+        "bios_offset_initrd=0x004f0000\0" \
+	"bios_sizeof_initrd=0x310000\0" \
+	"spiupdate_uboot="\
 		"sf probe; "\
-		"sf erase 0x0 0x800000; "\
-		"load mmc 1 ${loadaddr} spiboot.img; "\
-		"sf write ${loadaddr} 0x0 ${filesize}\0"\
+		"load mmc 1 ${loadaddr} u-boot.bin; "\
+		"sf update ${loadaddr} ${bios_offset_uboot} ${bios_sizeof_uboot}\0"\
+	"spiupdate_petitboot="\
+		"sf probe; "\
+		"load mmc 1 ${loadaddr} petitboot.cfg; "\
+		"sf update ${loadaddr} ${spi_petitboot} ${bios_sizeof_petitboot}\0"\
+	"spiupdate_kernel="\
+		"sf probe; "\
+		"load mmc 1 ${loadaddr} uImage; "\
+		"sf update ${loadaddr} ${bios_offset_kernel} ${bios_sizeof_kernel}\0"\
+	"spiupdate_initrd="\
+		"sf probe; "\
+		"load mmc 1 ${loadaddr} rootfs.cpio.uboot; "\
+		"sf update ${loadaddr} ${bios_offset_initrd} ${bios_sizeof_initrd}\0"\
+	"spiupdate_full="\
+		"sf probe; "\
+		"load mmc 1 ${preloadaddr} spiboot.img; "\
+		"sf update ${preloadaddr} 0 ${filesize}\0"\
 	"boot_spi="\
-		"hdmitx edid; "\
-		"setenv bootargs ${initargs} console=tty0 logo=osd0,loaded,0x3d800000 osd_reverse=0 video_reverse=0; "\
-		"setenv bootargs ${bootargs} vout=${vout} hdmimode=${hdmimode} modeline=${modeline} voutmode=${voutmode}; "\
-		"osd open; "\
-		"osd clear; "\
-		"vout output ${outputmode}; "\
-		"run set_spi_params; "\
 		"sf probe; "\
-		"sf read ${preloadaddr} ${start_kernel} ${size_kernel}; "\
-		"sf read ${initrd_high} ${start_initrd} ${size_initrd}; "\
-		"sf read ${dtb_mem_addr} ${start_dtb} ${size_dtb}; "\
+		"sf read ${preloadaddr} ${bios_offset_kernel} ${bios_sizeof_kernel}; "\
+		"sf read ${ramdisk_addr_r} ${bios_offset_initrd} ${bios_sizeof_initrd}; "\
+		"sf read ${fdt_addr_r} ${bios_offset_dtb} ${bios_sizeof_dtb}; "\
 		"if test -e mmc 1:1 spiboot.img; then " \
-			"fdt addr ${dtb_mem_addr}; " \
+			"fdt addr ${fdt_addr_r}; " \
 			"fdt resize; " \
 			"fdt set /emmc@ffe07000 status 'disabled'; " \
 			"fdt set /soc/cbus/spifc@14000 status 'okay'; " \
 		"fi; " \
-		"bootm ${preloadaddr} ${initrd_high} ${dtb_mem_addr};\0"\
+		"setenv voutmode hdmi; "\
+		"osd open; osd clear; vout output ${outputmode}; "\
+		"setenv bootargs ${initargs} console=tty0 logo=osd0,loaded,0x3d800000 osd_reverse=0 video_reverse=0 "\
+			"hdmimode=${hdmimode} voutmode=${voutmode}; "\
+		"bootm ${preloadaddr} ${ramdisk_addr_r} ${fdt_addr_r};\0"
 
 #define CONFIG_PREBOOT  \
             "run switch_bootmode;"
