@@ -94,7 +94,7 @@
 #define ENV_PXE_DEFAULT
 #endif
 
-#define ENV_MMC_LIST_DEFAULT			"mmc_list=0 1\0"
+#define ENV_MMC_LIST_DEFAULT			"mmc_list=1 0\0"
 
 #define ENV_MMC_DEFAULT					\
 	"boot_mmc="					\
@@ -102,7 +102,8 @@
 		"for n in ${mmc_list}; do "	\
 			"setenv devnum ${n}; "		\
 			"setenv devno ${n}; "		\
-			"cfgload; "			\
+			"load mmc ${n} ${preloadaddr} boot.ini; "	\
+			"source ${preloadaddr}; "		\
 		"done\0"
 
 #define ENV_MMC_BOOT_DISTRO				\
@@ -126,6 +127,40 @@
         "loadaddr=1080000\0"\
         "outputmode=1080p60hz\0" \
         "hdmimode=1080p60hz\0" \
+        "boot_usb=" \
+            "usb start; " \
+            "setenv devtype usb; " \
+            "for n in ${usb_list}; do "	\
+			"setenv devnum ${n}; " \
+			"setenv devno ${n}; " \
+			"load usb ${n} ${preloadaddr} boot.ini; " \
+			"source ${preloadaddr}; " \
+		"done\0" \
+        "boot_usb_distro=" \
+            "setenv devtype usb; " \
+            "for n in ${usb_list}; do " \
+			"setenv devnum ${n}; " \
+			"setenv devno ${n}; " \
+			"load usb ${n} ${preloadaddr} boot.scr; " \
+			"source ${preloadaddr}; " \
+		"done\0" \
+         "boot_spi=" \
+            "hdmitx edid; setenv bootargs ${initargs} console=tty0 logo=osd0,loaded,0x3d800000 " \
+                "osd_reverse=0 video_reverse=0; setenv bootargs ${bootargs} vout=${vout} " \
+                "hdmimode=${hdmimode} modeline=${modeline} voutmode=${voutmode}; osd open; " \
+                "osd clear; vout output ${outputmode}; run set_spi_params; sf probe; " \
+                "sf read ${preloadaddr} ${start_kernel} ${size_kernel}; sf read ${initrd_high} " \
+                "${start_initrd} ${size_initrd}; sf read ${dtb_mem_addr} ${start_dtb} ${size_dtb}; " \
+                "if test -e mmc 1:1 spiboot.img; then fdt addr ${dtb_mem_addr}; fdt resize; " \
+                "fdt set /emmc@ffe07000 status 'disabled'; fdt set /soc/cbus/spifc@14000 " \
+                "status 'okay'; fi; bootm ${preloadaddr} ${initrd_high} ${dtb_mem_addr};" \
+                "\0"\
+        "boot_order=" \
+            "boot_usb boot_usb_distro boot_mmc boot_mmc_distro boot_rawimage boot_pxe boot_spi" \
+            "\0"\
+        "booting_from_spi=" \
+            "run boot_default\0" \
+        "usb_list=0 1 2 3\0" \
         "display_width=1920\0" \
         "display_height=1080\0" \
         "display_bpp=24\0" \
@@ -192,9 +227,7 @@
 	        "bootm; " \
             "done\0" \
 	"boot_default="\
-            "run boot_mmc; " \
-            "run boot_mmc_distro; " \
-            "run boot_rawimage\0" \
+            "for x in ${boot_order}; do run ${x}; done\0" \
         "init_display="\
             "osd open; osd clear; " \
             "for n in ${mmc_list}; do " \
