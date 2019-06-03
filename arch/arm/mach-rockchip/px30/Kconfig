@@ -4,6 +4,10 @@ config TARGET_EVB_PX30
 	bool "EVB_PX30"
 	select BOARD_LATE_INIT
 
+config TARGET_ODROIDGO2
+	bool "ODROIDGO2"
+	select BOARD_LATE_INIT
+
 config SYS_SOC
 	default "rockchip"
 
@@ -14,5 +18,6 @@ config SPL_SERIAL_SUPPORT
 	default y
 
 source "board/rockchip/evb_px30/Kconfig"
+source "board/rockchip/odroidgo2/Kconfig"
 
 endif
