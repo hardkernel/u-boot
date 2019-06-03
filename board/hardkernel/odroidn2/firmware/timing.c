@@ -96,7 +96,7 @@ ddr_set_t __ddr_setting[] = {
 	.dram_cs0_size_MB		= 0xffff,
 	.dram_cs1_size_MB		= 0xffff,
 	.training_SequenceCtrl		= {0x31f,0x61},
-	.phy_odt_config_rank		= {0x23,0x13,0x30,0x30},
+	.phy_odt_config_rank		= {0x30,0x30,0x30,0x30},
 	.dfi_odt_config			= 0x0808,
 	.PllBypassEn			= 0,
 	.ddr_rdbi_wr_enable		= 0,
@@ -133,7 +133,6 @@ ddr_set_t __ddr_setting[] = {
 	.pll_ssc_mode			= 0,
 	.ddr_func			= DDR_FUNC,
 	.magic				= DRAM_CFG_MAGIC,
-	.bitTimeControl_2d		= 1,
 },
 {
 	/* odroid-n2 ddr4 : 8Gbitx2 */
@@ -155,7 +154,7 @@ ddr_set_t __ddr_setting[] = {
 	.dram_cs0_size_MB		= 0xffff,
 	.dram_cs1_size_MB		= 0,
 	.training_SequenceCtrl		= {0x31f,0x61},
-	.phy_odt_config_rank		= {0x23,0x13,0x30,0x30},
+	.phy_odt_config_rank		= {0x30,0x30,0x30,0x30},
 	.dfi_odt_config			= 0x0808,
 	.PllBypassEn			= 0,
 	.ddr_rdbi_wr_enable		= 0,
@@ -192,7 +191,6 @@ ddr_set_t __ddr_setting[] = {
 	.pll_ssc_mode			= 0,
 	.ddr_func			= DDR_FUNC,
 	.magic				= DRAM_CFG_MAGIC,
-	.bitTimeControl_2d		= 1,
 },
 };
 
