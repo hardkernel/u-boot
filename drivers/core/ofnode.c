@@ -160,6 +160,21 @@ int ofnode_read_u32_array(ofnode node, const char *propname,
 	}
 }
 
+int ofnode_write_u32_array(ofnode node, const char *propname,
+			   u32 *values, size_t sz)
+{
+	assert(ofnode_valid(node));
+	debug("%s: %s: ", __func__, propname);
+
+	if (ofnode_is_np(node)) {
+		return of_write_u32_array(ofnode_to_np(node), propname,
+					 values, sz);
+	} else {
+		return fdt_setprop((void *)gd->fdt_blob, ofnode_to_offset(node),
+				   propname, values, sz);
+	}
+}
+
 ofnode ofnode_first_subnode(ofnode node)
 {
 	assert(ofnode_valid(node));

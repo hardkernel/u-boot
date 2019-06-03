@@ -342,6 +342,25 @@ int dev_read_u32_array(struct udevice *dev, const char *propname,
 		       u32 *out_values, size_t sz);
 
 /**
+ * dev_write_u32_array() - Find and write an array of 32 bit integers
+ *
+ * Search for a property in a device node and write 32-bit value(s) to
+ * it.
+ *
+ * The out_values is modified only if a valid u32 value can be decoded.
+ *
+ * @dev: device to look up
+ * @propname:	name of the property to read
+ * @values:	pointer to update value, modified only if return value is 0
+ * @sz:		number of array elements to read
+ * @return 0 on success, -EINVAL if the property does not exist, -ENODATA if
+ * property does not have a value, and -EOVERFLOW if the property data isn't
+ * large enough.
+ */
+int dev_write_u32_array(struct udevice *dev, const char *propname,
+			u32 *values, size_t sz);
+
+/**
  * dev_read_first_subnode() - find the first subnode of a device's node
  *
  * @dev: device to look up
