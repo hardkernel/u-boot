@@ -17,6 +17,7 @@
 #include <fdt_support.h>
 #include <exports.h>
 #include <fdtdec.h>
+#include <asm/arch/hotkey.h>
 
 /**
  * fdt_getprop_u32_default_node - Return a node's property or a default
@@ -312,6 +313,7 @@ int fdt_chosen(void *fdt)
 				 * high priority system to boot and add its UUID
 				 * to cmdline. The format is "roo=PARTUUID=xxxx...".
 				 */
+				hotkey_run(HK_INITCALL);
 #ifdef CONFIG_ANDROID_AB
 				env_update_filter("bootargs", bootargs, "root=");
 #else
