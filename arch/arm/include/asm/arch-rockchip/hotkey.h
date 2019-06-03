@@ -9,7 +9,9 @@
 enum hotkey_t {
 	HK_INVAL,
 	HK_BROM_DNL,
+	HK_CMDLINE,
 	HK_FASTBOOT,
+	HK_INITCALL,
 	HK_ROCKUSB_DNL,
 	HK_SYSMEM,
 };
