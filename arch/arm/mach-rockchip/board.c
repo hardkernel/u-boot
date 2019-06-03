@@ -368,6 +368,9 @@ static void early_download_init(void)
 		return;
 
 	gd->console_evt = getc();
+	if (gd->console_evt <= 0x1a) /* 'z' */
+		printf("Hotkey: ctrl+%c\n", (gd->console_evt + 'a' - 1));
+
 #if (CONFIG_ROCKCHIP_BOOT_MODE_REG > 0)
 	/* ctrl+b */
 	if (is_hotkey(HK_BROM_DNL)) {
@@ -563,6 +566,8 @@ int board_initr_caches_fixup(void)
 
 void board_quiesce_devices(void)
 {
+	hotkey_run(HK_CMDLINE);
+
 #ifdef CONFIG_ROCKCHIP_PRELOADER_ATAGS
 	/* Destroy atags makes next warm boot safer */
 	atags_destroy();
