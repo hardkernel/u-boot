@@ -292,6 +292,7 @@ static int cec_triggle_tx(unsigned char *msg, unsigned char len)
 {
 	int i = 0, ret = TX_ERROR;
 	unsigned int reg;
+	unsigned int cnt = 0;
 
 	while (1) {
 		/* send is in process */
@@ -350,6 +351,13 @@ static int cec_triggle_tx(unsigned char *msg, unsigned char len)
 			break;
 		}
 		_udelay(500);
+
+		if (cnt++ > 2000) {
+			uart_puts("err: tx not finish flag\n");
+			cec_tx_msgs.send_idx = (cec_tx_msgs.send_idx + 1) & CEC_TX_MSG_BUF_MASK;
+			ret = TX_BUSY;
+			break;
+		}
 	}
 
 	return ret;
