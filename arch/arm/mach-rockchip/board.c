@@ -17,6 +17,7 @@
 #include <asm/arch/vendor.h>
 #include <misc.h>
 #include <asm/gpio.h>
+#include <dm/uclass-internal.h>
 #include <asm/arch/clock.h>
 #include <asm/arch/cpu.h>
 #include <asm/arch/periph.h>
@@ -180,6 +181,110 @@ int board_late_init(void)
 #ifdef CONFIG_USING_KERNEL_DTB
 #include <asm/arch/resource_img.h>
 
+/* Here, only fixup cru phandle, pmucru is not included */
+static int phandles_fixup(void *fdt)
+{
+	const char *props[] = { "clocks", "assigned-clocks" };
+	struct udevice *dev;
+	struct uclass *uc;
+	const char *comp;
+	u32 id, nclocks;
+	u32 *clocks;
+	int phandle, ncells;
+	int off, offset;
+	int ret, length;
+	int i, j;
+	int first_phandle = -1;
+
+	phandle = -ENODATA;
+	ncells = -ENODATA;
+
+	/* fdt points to kernel dtb, getting cru phandle and "#clock-cells" */
+	for (offset = fdt_next_node(fdt, 0, NULL);
+	     offset >= 0;
+	     offset = fdt_next_node(fdt, offset, NULL)) {
+		comp = fdt_getprop(fdt, offset, "compatible", NULL);
+		if (!comp)
+			continue;
+
+		/* Actually, this is not a good method to get cru node */
+		off = strlen(comp) - strlen("-cru");
+		if (off > 0 && !strncmp(comp + off, "-cru", 4)) {
+			phandle = fdt_get_phandle(fdt, offset);
+			ncells = fdtdec_get_int(fdt, offset,
+						"#clock-cells", -ENODATA);
+			break;
+		}
+	}
+
+	if (phandle == -ENODATA || ncells == -ENODATA)
+		return 0;
+
+	debug("%s: target cru: clock-cells:%d, phandle:0x%x\n",
+	      __func__, ncells, fdt32_to_cpu(phandle));
+
+	/* Try to fixup all cru phandle from U-Boot dtb nodes */
+	for (id = 0; id < UCLASS_COUNT; id++) {
+		ret = uclass_get(id, &uc);
+		if (ret)
+			continue;
+
+		if (list_empty(&uc->dev_head))
+			continue;
+
+		list_for_each_entry(dev, &uc->dev_head, uclass_node) {
+			/* Only U-Boot node go further */
+			if (!dev_read_bool(dev, "u-boot,dm-pre-reloc"))
+				continue;
+
+			for (i = 0; i < ARRAY_SIZE(props); i++) {
+				if (!dev_read_prop(dev, props[i], &length))
+					continue;
+
+				clocks = malloc(length);
+				if (!clocks)
+					return -ENOMEM;
+
+				/* Read "props[]" which contains cru phandle */
+				nclocks = length / sizeof(u32);
+				if (dev_read_u32_array(dev, props[i],
+						       clocks, nclocks)) {
+					free(clocks);
+					continue;
+				}
+
+				/* Fixup with kernel cru phandle */
+				for (j = 0; j < nclocks; j += (ncells + 1)) {
+					/*
+					 * Check: update pmucru phandle with cru
+					 * phandle by mistake.
+					 */
+					if (first_phandle == -1)
+						first_phandle = clocks[j];
+
+					if (clocks[j] != first_phandle)
+						printf("WARN: %s: first cru phandle=%d, this=%d\n",
+						       dev_read_name(dev),
+						       first_phandle, clocks[j]);
+
+					clocks[j] = phandle;
+				}
+
+				/*
+				 * Override live dt nodes but not fdt nodes,
+				 * because all U-Boot nodes has been imported
+				 * to live dt nodes, should use "dev_xxx()".
+				 */
+				dev_write_u32_array(dev, props[i],
+						    clocks, nclocks);
+				free(clocks);
+			}
+		}
+	}
+
+	return 0;
+}
+
 int init_kernel_dtb(void)
 {
 	int ret = 0;
@@ -196,6 +301,12 @@ int init_kernel_dtb(void)
 		printf("%s dtb in resource read fail\n", __func__);
 		return 0;
 	}
+
+	/*
+	 * There is a phandle miss match between U-Boot and kernel dtb node,
+	 * the typical is cru phandle, we fixup it in U-Boot live dt nodes.
+	 */
+	phandles_fixup((void *)fdt_addr);
 
 	of_live_build((void *)fdt_addr, (struct device_node **)&gd->of_root);
 
