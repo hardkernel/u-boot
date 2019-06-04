@@ -394,7 +394,7 @@ int board_late_init(void)
 
 	if (get_boot_device() == BOOT_DEVICE_SPI) {
 		setenv("bootdelay", "0");
-		setenv("bootcmd", "run booting_from_spi");
+		setenv("bootcmd", "run boot_spi");
 	}
 
 	usbhost_early_poweron();

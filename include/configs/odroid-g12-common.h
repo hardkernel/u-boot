@@ -96,33 +96,57 @@
 
 #define ENV_MMC_LIST_DEFAULT			"mmc_list=1 0\0"
 
-#define ENV_MMC_DEFAULT					\
-	"boot_mmc="					\
-		"setenv devtype mmc; "			\
-		"for n in ${mmc_list}; do "	\
-			"setenv devnum ${n}; "		\
-			"setenv devno ${n}; "		\
-			"load mmc ${n} ${preloadaddr} boot.ini; "	\
-			"source ${preloadaddr}; "		\
+#define ENV_USB_LIST_DEFAULT			"usb_list=0 1 2 3\0"
+
+#define ENV_BOOT_ORDER_DEFAULT			"boot_order=mmc rawimage usb pxe spi\0"
+
+#define ENV_BOOTSCRIPTS_DEFAULT			"boot_scripts=boot.ini boot.scr\0"
+
+#define ENV_BOOT_ATTEMPT_DEFAULT			\
+	"boot_attempt="					\
+		"for script in ${boot_scripts}; do "	\
+			"echo \"## Attempting fetch ${script} in ${devtype}:${devnum}...\"; "	\
+			"load ${devtype} ${devnum} ${preloadaddr} ${script}; "	\
+			"source ${preloadaddr}; "	\
 		"done\0"
 
-#define ENV_MMC_BOOT_DISTRO				\
-	"boot_mmc_distro="				\
+#define ENV_MMC_DEFAULT					\
+	"boot_mmc="					\
 		"setenv devtype mmc; "			\
 		"for n in ${mmc_list}; do "		\
 			"setenv devnum ${n}; "		\
 			"setenv devno ${n}; "		\
-			"load mmc ${n} ${preloadaddr} boot.scr; "	\
-			"source ${preloadaddr}; "		\
-		"done\0"				\
+			"run boot_attempt; "		\
+		"done\0"
+
+#define ENV_USB_DEFAULT					\
+        "boot_usb="					\
+		"usb start; "				\
+		"setenv devtype usb; "			\
+		"for n in ${usb_list}; do "		\
+			"setenv devnum ${n}; "		\
+			"setenv devno ${n}; "		\
+			"run boot_attempt; "		\
+		"done\0"
+
+#define ENV_BOOT_DEFAULT				\
+	"boot_default="					\
+		"for devtype in ${boot_order}; do "	\
+			"run boot_${devtype}; "		\
+		"done\0"
 
 /* args/envs */
 #define CONFIG_SYS_MAXARGS  64
 #define CONFIG_EXTRA_ENV_SETTINGS \
         ENV_PXE_DEFAULT \
         ENV_MMC_DEFAULT \
-        ENV_MMC_BOOT_DISTRO \
         ENV_MMC_LIST_DEFAULT \
+	ENV_USB_DEFAULT \
+	ENV_USB_LIST_DEFAULT \
+	ENV_BOOTSCRIPTS_DEFAULT \
+	ENV_BOOT_ORDER_DEFAULT \
+	ENV_BOOT_DEFAULT \
+	ENV_BOOT_ATTEMPT_DEFAULT \
 	"console=" CONFIG_DEFAULT_CONSOLE \
         "loadaddr=1080000\0"\
         "outputmode=1080p60hz\0" \
@@ -176,7 +200,7 @@
         "fdt_addr_r=0x1000000\0" \
         "kernel_addr_r=0x1080000\0" \
         "ramdisk_addr_r=0x3080000\0" \
-        "preloadaddr=0x3000000\0"\
+        "preloadaddr=0x4000000\0"\
         "cvbs_drv=0\0"\
         "osd_reverse=0\0"\
         "video_reverse=0\0"\
@@ -214,7 +238,8 @@
                 "booti ${loadaddr} - ${dtb_mem_addr}; " \
                 "bootm;" \
             "done\0" \
-        "boot_rawimage=setenv bootargs ${initargs} logo=${display_layer},loaded,${fb_addr} " \
+        "boot_rawimage=" \
+	    "setenv bootargs ${initargs} logo=${display_layer},loaded,${fb_addr} " \
             "vout=${outputmode},enable cvbsmode=${cvbsmode} " \
             "hdmimode=${hdmimode} osd_reverse=${osd_reverse} video_reverse=${video_reverse} " \
             "androidboot.selinux=permissive androidboot.firstboot=${firstboot} jtag=disable " \
@@ -226,8 +251,6 @@
 	        "booti ${loadaddr} - ${dtb_mem_addr}; " \
 	        "bootm; " \
             "done\0" \
-	"boot_default="\
-            "for x in ${boot_order}; do run ${x}; done\0" \
         "init_display="\
             "osd open; osd clear; " \
             "for n in ${mmc_list}; do " \
@@ -243,38 +266,54 @@
                 "fi; " \
             "done; " \
             "vout output ${outputmode};\0" \
-	"set_spi_params="\
-		"setenv start_uboot 0x0; "\
-		"setenv start_kernel 0x119000; "\
-		"setenv start_dtb 0x100000; "\
-		"setenv start_initrd 0x4E6C00; "\
-		"setenv size_kernel 0x3CDC00; "\
-		"setenv size_dtb 0x19000; "\
-		"setenv size_initrd 0x319400;\0"\
-	"fusing_spi_from_sd="\
+	"bios_offset_uboot=0x00000000\0" \
+	"bios_sizeof_uboot=0x0f0000\0" \
+	"bios_offset_ubootenv=0x000f0000\0" \
+	"bios_sizeof_ubootenv=0x010000\0" \
+	"bios_offset_petitboot=0x00100000\0" \
+	"bios_sizeof_petitboot=0x010000\0" \
+	"bios_offset_dtb=0x00110000\0" \
+	"bios_sizeof_dtb=0x020000\0" \
+	"bios_offset_kernel=0x00130000\0" \
+	"bios_sizeof_kernel=0x3c0000\0" \
+        "bios_offset_initrd=0x004f0000\0" \
+	"bios_sizeof_initrd=0x310000\0" \
+	"spiupdate_uboot="\
 		"sf probe; "\
-		"sf erase 0x0 0x800000; "\
-		"load mmc 1 ${loadaddr} spiboot.img; "\
-		"sf write ${loadaddr} 0x0 ${filesize}\0"\
-	"booting_from_spi="\
-		"hdmitx edid; "\
-		"setenv bootargs ${initargs} console=tty0 logo=osd0,loaded,0x3d800000 osd_reverse=0 video_reverse=0; "\
-		"setenv bootargs ${bootargs} vout=${vout} hdmimode=${hdmimode} modeline=${modeline} voutmode=${voutmode}; "\
-		"osd open; "\
-		"osd clear; "\
-		"vout output ${outputmode}; "\
-		"run set_spi_params; "\
+		"load mmc 1 ${loadaddr} u-boot.bin; "\
+		"sf update ${loadaddr} ${bios_offset_uboot} ${bios_sizeof_uboot}\0"\
+	"spiupdate_petitboot="\
 		"sf probe; "\
-		"sf read ${preloadaddr} ${start_kernel} ${size_kernel}; "\
-		"sf read ${initrd_high} ${start_initrd} ${size_initrd}; "\
-		"sf read ${dtb_mem_addr} ${start_dtb} ${size_dtb}; "\
+		"load mmc 1 ${loadaddr} petitboot.cfg; "\
+		"sf update ${loadaddr} ${spi_petitboot} ${bios_sizeof_petitboot}\0"\
+	"spiupdate_kernel="\
+		"sf probe; "\
+		"load mmc 1 ${loadaddr} uImage; "\
+		"sf update ${loadaddr} ${bios_offset_kernel} ${bios_sizeof_kernel}\0"\
+	"spiupdate_initrd="\
+		"sf probe; "\
+		"load mmc 1 ${loadaddr} rootfs.cpio.uboot; "\
+		"sf update ${loadaddr} ${bios_offset_initrd} ${bios_sizeof_initrd}\0"\
+	"spiupdate_full="\
+		"sf probe; "\
+		"load mmc 1 ${preloadaddr} spiboot.img; "\
+		"sf update ${preloadaddr} 0 ${filesize}\0"\
+	"boot_spi="\
+		"sf probe; "\
+		"sf read ${preloadaddr} ${bios_offset_kernel} ${bios_sizeof_kernel}; "\
+		"sf read ${ramdisk_addr_r} ${bios_offset_initrd} ${bios_sizeof_initrd}; "\
+		"sf read ${fdt_addr_r} ${bios_offset_dtb} ${bios_sizeof_dtb}; "\
 		"if test -e mmc 1:1 spiboot.img; then " \
-			"fdt addr ${dtb_mem_addr}; " \
+			"fdt addr ${fdt_addr_r}; " \
 			"fdt resize; " \
 			"fdt set /emmc@ffe07000 status 'disabled'; " \
 			"fdt set /soc/cbus/spifc@14000 status 'okay'; " \
 		"fi; " \
-		"bootm ${preloadaddr} ${initrd_high} ${dtb_mem_addr};\0"\
+		"setenv voutmode hdmi; "\
+		"osd open; osd clear; vout output ${outputmode}; "\
+		"setenv bootargs ${initargs} console=tty0 logo=osd0,loaded,0x3d800000 osd_reverse=0 video_reverse=0 "\
+			"hdmimode=${hdmimode} voutmode=${voutmode}; "\
+		"bootm ${preloadaddr} ${ramdisk_addr_r} ${fdt_addr_r};\0"
 
 #define CONFIG_PREBOOT  \
             "run switch_bootmode;"
@@ -503,6 +542,7 @@
 #define CONFIG_FS_EXT4				1
 #define CONFIG_LZO				1
 #define CONFIG_FAT_WRITE			1
+#define CONFIG_EXT4_WRITE			1
 
 /* Cache Definitions */
 //#define CONFIG_SYS_DCACHE_OFF
