@@ -110,6 +110,21 @@
 			"source ${preloadaddr}; "	\
 		"done\0"
 
+#define ENV_USB_LIST_DEFAULT			"usb_list=0 1 2 3\0"
+
+#define ENV_BOOT_ORDER_DEFAULT			"boot_order=mmc rawimage usb pxe spi\0"
+
+#define ENV_BOOTSCRIPTS_DEFAULT			"boot_scripts=boot.ini boot.scr\0"
+
+#define ENV_BOOT_ATTEMPT_DEFAULT			\
+	"boot_attempt="					\
+		"for script in ${boot_scripts}; do "	\
+			"echo \"## Attempting fetch ${script} in ${devtype}:${devnum}...\"; "	\
+			"load ${devtype} ${devnum} ${preloadaddr} ${script}; "	\
+			"source ${preloadaddr}; "	\
+		"done\0"
+
+
 #define ENV_MMC_DEFAULT					\
 	"boot_mmc="					\
 		"setenv devtype mmc; "			\
