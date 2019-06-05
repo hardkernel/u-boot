@@ -326,7 +326,11 @@ int init_kernel_dtb(void)
 
 void board_env_fixup(void)
 {
+	struct memblock mem;
+	ulong u_addr_r;
+	phys_size_t end;
 	char *addr_r;
+
 #ifdef ENV_MEM_LAYOUT_SETTINGS1
 	const char *env_addr0[] = {
 		"scriptaddr", "pxefile_addr_r",
@@ -353,6 +357,13 @@ void board_env_fixup(void)
 		addr_r = env_get("kernel_addr_no_bl32_r");
 		if (addr_r)
 			env_set("kernel_addr_r", addr_r);
+	/* If bl32 is enlarged, we move ramdisk addr right behind it */
+	} else {
+		mem = param_parse_optee_mem();
+		end = mem.base + mem.size;
+		u_addr_r = env_get_ulong("ramdisk_addr_r", 16, 0);
+		if (u_addr_r >= mem.base && u_addr_r < end)
+			env_set_hex("ramdisk_addr_r", end);
 	}
 }
 
