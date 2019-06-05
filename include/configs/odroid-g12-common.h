@@ -67,6 +67,7 @@
 #define CONFIG_IR_REMOTE_POWER_UP_KEY_VAL9	0xFFFFFFFF
 
 #define CONFIG_CMD_PXE				1
+
 #if defined(CONFIG_CMD_PXE)
 #define CONFIG_BOOTP_PXE			1
 #define CONFIG_BOOTP_PXE_CLIENTARCH		0x16
@@ -77,11 +78,8 @@
 #define CONFIG_BOOTP_SUBNET			1
 #define CONFIG_BOOTP_DNS			1
 #define CONFIG_UDP_CHECKSUM			1
-
 #define CONFIG_MENU				1
-
 #define CONFIG_DEFAULT_CONSOLE			"ttyS0,115200n8\0"
-
 #define ENV_PXE_DEFAULT					\
 	"pxefile_addr_r=0x1070000\0"			\
 	"pxeuuid=" ODROID_BOARD_UUID "\0"		\
@@ -110,21 +108,6 @@
 			"source ${preloadaddr}; "	\
 		"done\0"
 
-#define ENV_USB_LIST_DEFAULT			"usb_list=0 1 2 3\0"
-
-#define ENV_BOOT_ORDER_DEFAULT			"boot_order=mmc rawimage usb pxe spi\0"
-
-#define ENV_BOOTSCRIPTS_DEFAULT			"boot_scripts=boot.ini boot.scr\0"
-
-#define ENV_BOOT_ATTEMPT_DEFAULT			\
-	"boot_attempt="					\
-		"for script in ${boot_scripts}; do "	\
-			"echo \"## Attempting fetch ${script} in ${devtype}:${devnum}...\"; "	\
-			"load ${devtype} ${devnum} ${preloadaddr} ${script}; "	\
-			"source ${preloadaddr}; "	\
-		"done\0"
-
-
 #define ENV_MMC_DEFAULT					\
 	"boot_mmc="					\
 		"setenv devtype mmc; "			\
@@ -146,8 +129,8 @@
 
 #define ENV_BOOT_DEFAULT				\
 	"boot_default="					\
-		"for devtype in ${boot_order}; do "	\
-			"run boot_${devtype}; "		\
+		"for x in ${boot_order}; do "		\
+			"run boot_${x}; "		\
 		"done\0"
 
 /* args/envs */
@@ -166,40 +149,6 @@
         "loadaddr=1080000\0"\
         "outputmode=1080p60hz\0" \
         "hdmimode=1080p60hz\0" \
-        "boot_usb=" \
-            "usb start; " \
-            "setenv devtype usb; " \
-            "for n in ${usb_list}; do "	\
-			"setenv devnum ${n}; " \
-			"setenv devno ${n}; " \
-			"load usb ${n} ${preloadaddr} boot.ini; " \
-			"source ${preloadaddr}; " \
-		"done\0" \
-        "boot_usb_distro=" \
-            "setenv devtype usb; " \
-            "for n in ${usb_list}; do " \
-			"setenv devnum ${n}; " \
-			"setenv devno ${n}; " \
-			"load usb ${n} ${preloadaddr} boot.scr; " \
-			"source ${preloadaddr}; " \
-		"done\0" \
-         "boot_spi=" \
-            "hdmitx edid; setenv bootargs ${initargs} console=tty0 logo=osd0,loaded,0x3d800000 " \
-                "osd_reverse=0 video_reverse=0; setenv bootargs ${bootargs} vout=${vout} " \
-                "hdmimode=${hdmimode} modeline=${modeline} voutmode=${voutmode}; osd open; " \
-                "osd clear; vout output ${outputmode}; run set_spi_params; sf probe; " \
-                "sf read ${preloadaddr} ${start_kernel} ${size_kernel}; sf read ${initrd_high} " \
-                "${start_initrd} ${size_initrd}; sf read ${dtb_mem_addr} ${start_dtb} ${size_dtb}; " \
-                "if test -e mmc 1:1 spiboot.img; then fdt addr ${dtb_mem_addr}; fdt resize; " \
-                "fdt set /emmc@ffe07000 status 'disabled'; fdt set /soc/cbus/spifc@14000 " \
-                "status 'okay'; fi; bootm ${preloadaddr} ${initrd_high} ${dtb_mem_addr};" \
-                "\0"\
-        "boot_order=" \
-            "boot_usb boot_usb_distro boot_mmc boot_mmc_distro boot_rawimage boot_pxe boot_spi" \
-            "\0"\
-        "booting_from_spi=" \
-            "run boot_default\0" \
-        "usb_list=0 1 2 3\0" \
         "display_width=1920\0" \
         "display_height=1080\0" \
         "display_bpp=24\0" \
