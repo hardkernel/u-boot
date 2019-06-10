@@ -31,16 +31,13 @@
 static
 int check_odroid_script(ulong addr, char *product)
 {
-	int i;
 	char *buf;
 	char magic[32];
 	int size = snprintf(magic, sizeof(magic), "%s-uboot-config\n", product);
 
 	buf = map_sysmem(addr, 0);
-	for (i = 0; i < size; i++) {
-		if (magic[i] != tolower(buf[i]))
-			return -EINVAL;
-	}
+	if (strncasecmp(magic, buf, size))
+		return -EINVAL;
 
 	return size;
 }
