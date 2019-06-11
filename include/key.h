@@ -39,11 +39,14 @@ struct dm_key_uclass_platdata {
 
 	/* GPIO key */
 	u32 irq;
-	u32 gpios[2];
+	u32 gpios[2];	/* gpios[0]: gpio controller phandle, gpios[1]: pin */
 	struct gpio_desc gpio;
 
 	u64 rise_ms;
 	u64 fall_ms;
+
+	/* Only for pwrkey gpio irq */
+	void (*irq_thread)(int irq, struct udevice *dev);
 };
 
 /* Use it instead of get_timer() in key interrupt handler */
