@@ -95,8 +95,8 @@ static inline void raw_write_daif(unsigned int daif)
 
 typedef void (*atf_entry_t)(struct bl31_params *params, void *plat_params);
 
-static void bl31_entry(uintptr_t bl31_entry, uintptr_t bl32_entry,
-		       uintptr_t bl33_entry, uintptr_t fdt_addr)
+void bl31_entry(uintptr_t bl31_entry, uintptr_t bl32_entry,
+		uintptr_t bl33_entry, uintptr_t fdt_addr)
 {
 	struct bl31_params *bl31_params;
 	atf_entry_t  atf_entry = (atf_entry_t)bl31_entry;
