@@ -9,6 +9,7 @@
 #include <common.h>
 #include <dm.h>
 #include <spl.h>
+#include <spl_rkfw.h>
 #include <linux/compiler.h>
 #include <errno.h>
 #include <asm/u-boot.h>
@@ -59,6 +60,23 @@ int mmc_load_image_raw_sector(struct spl_image_info *spl_image,
 	unsigned long count;
 	struct image_header *header;
 	int ret = 0;
+
+#ifdef CONFIG_SPL_LOAD_RKFW
+	struct spl_load_info load;
+
+	load.dev = mmc;
+	load.priv = NULL;
+	load.filename = NULL;
+	load.bl_len = mmc->read_bl_len;
+	load.read = h_spl_load_read;
+
+	ret = spl_load_rkfw_image(spl_image, &load,
+				  CONFIG_RKFW_TRUST_SECTOR,
+				  CONFIG_RKFW_U_BOOT_SECTOR);
+	/* If boot successfully or can't try others, just go end */
+	if (!ret || ret != -EAGAIN)
+		goto end;
+#endif
 
 	header = (struct image_header *)(CONFIG_SYS_TEXT_BASE -
 					 sizeof(struct image_header));
