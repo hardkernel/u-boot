@@ -163,6 +163,31 @@ try_again:
 }
 
 #ifdef CONFIG_IRQ
+#if defined(CONFIG_PWRKEY_DNL_TRIGGER_NUM) && \
+		(CONFIG_PWRKEY_DNL_TRIGGER_NUM > 0)
+static void power_key_download(struct dm_key_uclass_platdata *uc_key)
+{
+	int trig_cnt = CONFIG_PWRKEY_DNL_TRIGGER_NUM;
+	static u64 old_rise_ms;
+
+	if (uc_key->code == KEY_POWER && old_rise_ms != uc_key->rise_ms) {
+		old_rise_ms = uc_key->rise_ms;
+		uc_key->trig_cnt++;
+		if (uc_key->trig_cnt >= trig_cnt) {
+			printf("\nEnter download mode by pwrkey\n");
+			irq_handler_disable(uc_key->irq);
+			run_command("rockusb 0 $devtype $devnum", 0);
+			run_command("rbrom", 0);
+		}
+	}
+}
+
+int pwrkey_download_init(void)
+{
+	return (KEY_NOT_EXIST == key_read(KEY_POWER));
+}
+#endif
+
 static void gpio_irq_handler(int irq, void *data)
 {
 	struct udevice *dev = data;
@@ -188,6 +213,12 @@ static void gpio_irq_handler(int irq, void *data)
 		mdelay(10);
 		irq_revert_irq_type(irq);
 	}
+
+	/* Hook event: enter download mode by pwrkey */
+#if defined(CONFIG_PWRKEY_DNL_TRIGGER_NUM) && \
+		(CONFIG_PWRKEY_DNL_TRIGGER_NUM > 0)
+	power_key_download(uc_key);
+#endif
 }
 #endif
 

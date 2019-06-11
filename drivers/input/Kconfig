@@ -68,3 +68,11 @@ config RK_KEY
 	depends on DM_KEY
 	help
 	  This adds a driver for the rk keys support.
+
+config PWRKEY_DNL_TRIGGER_NUM
+	int "Enter download mode by pwrkey trigger count"
+	default 0
+	depends on DM_KEY && IRQ
+	help
+	  This support enter download mode by press and release pwrkey for times
+	  over the trigger count. The default value 0 means disabled.

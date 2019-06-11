@@ -45,6 +45,8 @@ struct dm_key_uclass_platdata {
 	u64 rise_ms;
 	u64 fall_ms;
 
+	u32 trig_cnt;
+
 	/* Only for pwrkey gpio irq */
 	void (*irq_thread)(int irq, struct udevice *dev);
 };
@@ -54,6 +56,9 @@ uint64_t key_timer(uint64_t base);
 
 /* Confirm if your key value is a press event */
 int key_is_pressed(int keyval);
+
+/* Pwrkey download mode init */
+int pwrkey_download_init(void);
 
 /* Read key */
 int key_read(int code);
