@@ -101,9 +101,8 @@ static struct reg_data rk805_init_reg[] = {
 	{ RK805_INT_STS_REG, 0xff },
 };
 
-static void pwrkey_irq_handler(int irq, void *data)
+static void pwrkey_irq_handler(int irq, struct udevice *dev)
 {
-	struct udevice *dev = data;
 	struct rk8xx_key_priv *priv = dev_get_priv(dev);
 	struct dm_key_uclass_platdata *uc_key = dev_get_uclass_platdata(dev);
 	int ret, val, i;
@@ -164,7 +163,7 @@ static int pwrkey_interrupt_init(struct udevice *dev)
 {
 	struct dm_key_uclass_platdata *uc_key = dev_get_uclass_platdata(dev);
 	u32 interrupt[2], phandle;
-	int irq, ret;
+	int ret;
 
 	phandle = dev_read_u32_default(dev->parent, "interrupt-parent", -1);
 	if (phandle < 0) {
@@ -181,15 +180,9 @@ static int pwrkey_interrupt_init(struct udevice *dev)
 	uc_key->name = "rk8xx_pwr";
 	uc_key->type = GPIO_KEY;
 	uc_key->code = KEY_POWER;
-	irq = phandle_gpio_to_irq(phandle, interrupt[0]);
-	if (irq < 0) {
-		printf("%s: request irq failed, ret=%d\n", uc_key->name, irq);
-		return irq;
-	}
-	uc_key->irq = irq;
-	irq_install_handler(irq, pwrkey_irq_handler, dev);
-	irq_set_irq_type(irq, IRQ_TYPE_EDGE_FALLING);
-	irq_handler_enable(irq);
+	uc_key->gpios[0] = phandle;
+	uc_key->gpios[1] = interrupt[0];
+	uc_key->irq_thread = pwrkey_irq_handler;
 
 	return 0;
 }
