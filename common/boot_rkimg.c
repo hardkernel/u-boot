@@ -230,13 +230,28 @@ int get_bootdev_type(void)
 				 "storagemedia=%s androidboot.mode=%s",
 				 boot_media, boot_media);
 #else
+		/*
+		 * 1. "storagemedia": This is a legacy variable to indicate board
+		 *    storage media for kernel and android.
+		 *
+		 * 2. "androidboot.storagemedia": The same purpose as "storagemedia",
+		 *    but the android framework will auto create property by
+		 *    variable with format "androidboot.xxx", eg:
+		 *
+		 *    "androidboot.storagemedia" => "ro.boot.storagemedia".
+		 *
+		 *    So, U-Boot pass this new variable is only for the convenience
+		 *    to Android.
+		 */
 		if (env_exist("bootargs", "androidboot.mode=charger"))
 			snprintf(boot_options, sizeof(boot_options),
-				 "storagemedia=%s", boot_media);
+				 "storagemedia=%s androidboot.storagemedia=%s",
+				 boot_media, boot_media);
 		else
 			snprintf(boot_options, sizeof(boot_options),
-				 "storagemedia=%s androidboot.mode=normal",
-				 boot_media);
+				 "storagemedia=%s androidboot.storagemedia=%s "
+				 "androidboot.mode=normal ",
+				 boot_media, boot_media);
 #endif
 		env_update("bootargs", boot_options);
 	}
