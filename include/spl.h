@@ -24,7 +24,11 @@ struct spl_image_info {
 	const char *name;
 	u8 os;
 	uintptr_t load_addr;
-	uintptr_t entry_point;
+	uintptr_t entry_point;		/* Next stage entry point */
+#if CONFIG_IS_ENABLED(ATF)
+	uintptr_t entry_point_bl32;
+	uintptr_t entry_point_bl33;
+#endif
 #if CONFIG_IS_ENABLED(LOAD_FIT)
 	void *fdt_addr;
 #endif

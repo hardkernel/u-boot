@@ -152,15 +152,22 @@ uintptr_t spl_fit_images_get_entry(void *blob, int node)
 
 void spl_invoke_atf(struct spl_image_info *spl_image)
 {
-	uintptr_t  bl32_entry = -1;
-	uintptr_t  bl33_entry = CONFIG_SYS_TEXT_BASE;
+	uintptr_t bl32_entry, bl33_entry;
 	void *blob = spl_image->fdt_addr;
 	uintptr_t platform_param = (uintptr_t)blob;
 	int node;
 
+	/*
+	 * Find the OP-TEE binary (in /fit-images) load address or
+	 * entry point (if different) and pass it as the BL3-2 entry
+	 * point, this is optional.
+	 * This will need to be extended to support Falcon mode.
+	 */
 	node = spl_fit_images_find(blob, IH_OS_OP_TEE);
 	if (node >= 0)
 		bl32_entry = spl_fit_images_get_entry(blob, node);
+	else
+		bl32_entry = spl_image->entry_point_bl32; /* optional */
 
 	/*
 	 * Find the U-Boot binary (in /fit-images) load addreess or
@@ -168,10 +175,11 @@ void spl_invoke_atf(struct spl_image_info *spl_image)
 	 * point.
 	 * This will need to be extended to support Falcon mode.
 	 */
-
 	node = spl_fit_images_find(blob, IH_OS_U_BOOT);
 	if (node >= 0)
 		bl33_entry = spl_fit_images_get_entry(blob, node);
+	else
+		bl33_entry = spl_image->entry_point_bl33;
 
 	/*
 	 * If ATF_NO_PLATFORM_PARAM is set, we override the platform
