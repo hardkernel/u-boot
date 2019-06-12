@@ -119,7 +119,7 @@ prepare()
 	else
 		case $BOARD in
 			# Parse from exit .config
-			''|elf*|loader*|debug*|trust*|uboot|map|sym)
+			''|elf*|loader*|spl*|itb|debug*|trust|uboot|map|sym)
 			count=`find -name .config | wc -l`
 			dir=`find -name .config`
 			# Good, find only one .config
@@ -159,7 +159,7 @@ prepare()
 		;;
 
 		#Subcmd
-		''|elf*|loader*|debug*|trust*|uboot|map|sym)
+		''|elf*|loader*|spl*|itb|debug*|trust*|uboot|map|sym)
 		;;
 
 		*)
@@ -267,6 +267,16 @@ sub_commands()
 
 		loader)
 		pack_loader_image ${opt}
+		exit 0
+		;;
+
+		spl)
+		pack_spl_loader_image ${opt}
+		exit 0
+		;;
+
+		itb)
+		pack_uboot_itb_image
 		exit 0
 		;;
 
@@ -543,6 +553,65 @@ pack_uboot_image()
 	fi
 
 	echo "pack uboot okay! Input: ${OUTDIR}/u-boot.bin"
+}
+
+pack_uboot_itb_image()
+{
+	local ini=${RKBIN}/RKTRUST/${RKCHIP_TRUST}${PLATFORM_AARCH32}TRUST.ini
+
+	if [ ! -f ${ini} ]; then
+		echo "pack trust failed! Can't find: ${ini}"
+		return
+	fi
+
+	bl31=`sed -n '/_bl31_/s/PATH=//p' ${ini} |tr -d '\r'`
+
+	cp ${RKBIN}/${bl31} bl31.elf
+	make CROSS_COMPILE=${TOOLCHAIN_GCC} u-boot.itb
+
+	echo "pack u-boot.itb okay! Input: ${ini}"
+}
+
+pack_spl_loader_image()
+{
+	local header label="SPL" mode=$1
+	local ini=${RKBIN}/RKBOOT/${RKCHIP_LOADER}MINIALL.ini
+	local temp_ini=${RKBIN}/.temp/${RKCHIP_LOADER}MINIALL.ini
+
+	if [ ! -f ${ini} ]; then
+		echo "pack TPL+SPL loader failed! Can't find: ${ini}"
+		return
+	fi
+
+	# Copy to .temp folder
+	if [ -d ${RKBIN}/.temp ]; then
+		rm ${RKBIN}/.temp -rf
+	else
+		mkdir ${RKBIN}/.temp
+	fi
+	cp ${OUTDIR}/spl/u-boot-spl.bin ${RKBIN}/.temp/
+	cp ${OUTDIR}/tpl/u-boot-tpl.bin ${RKBIN}/.temp/
+	cp ${ini} ${RKBIN}/.temp/
+
+	cd ${RKBIN}
+	if [ "$mode" = 'spl' ]; then	# pack tpl+spl
+		# Update ini
+		label="TPL+SPL"
+		header=`sed -n '/NAME=/s/NAME=//p' ${RKBIN}/RKBOOT/${RKCHIP_LOADER}MINIALL.ini`
+		dd if=${RKBIN}/.temp/u-boot-tpl.bin of=${RKBIN}/.temp/tpl.bin bs=1 skip=4
+		sed -i "1s/^/${header:0:4}/" ${RKBIN}/.temp/tpl.bin
+		sed -i "s/FlashData=.*$/FlashData=.\/.temp\/tpl.bin/"     ${temp_ini}
+	fi
+
+	sed -i "s/FlashBoot=.*$/FlashBoot=.\/.temp\/u-boot-spl.bin/"  ${temp_ini}
+
+	${RKTOOLS}/boot_merger ${BIN_PATH_FIXUP} ${temp_ini}
+	rm ${RKBIN}/.temp -rf
+	cd -
+	ls *_loader_*.bin >/dev/null 2>&1 && rm *_loader_*.bin
+	mv ${RKBIN}/*_loader_*.bin ./
+	echo "pack loader(${label}) okay! Input: ${ini}"
+	ls ./*_loader_*.bin
 }
 
 pack_loader_image()
