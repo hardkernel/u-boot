@@ -1041,8 +1041,8 @@ ifeq ($(CONFIG_USING_KERNEL_DTB),y)
 u-boot.itb: u-boot-nodtb.bin dts/dt-spl.dtb $(U_BOOT_ITS) FORCE
 else
 u-boot.itb: u-boot-nodtb.bin dts/dt.dtb $(U_BOOT_ITS) FORCE
-	$(call if_changed,mkfitimage)
 endif
+	$(call if_changed,mkfitimage)
 
 u-boot-spl.kwb: u-boot.img spl/u-boot-spl.bin FORCE
 	$(call if_changed,mkimage)
