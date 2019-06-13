@@ -623,7 +623,7 @@ pack_loader_image()
 		return
 	fi
 
-	ls *_loader_*.bin >/dev/null && rm *_loader_*.bin
+	ls *_loader_*.bin >/dev/null 2>&1 && rm *_loader_*.bin
 	cd ${RKBIN}
 
 	if [ "${mode}" = 'all' ]; then
