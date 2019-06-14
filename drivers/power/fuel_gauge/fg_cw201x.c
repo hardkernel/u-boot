@@ -301,7 +301,13 @@ static bool cw201x_update_get_chrg_online(struct udevice *dev)
 	return cw201x_check_charge(cw201x);
 }
 
+static int cw201x_capability(struct udevice *dev)
+{
+	return FG_CAP_FUEL_GAUGE;
+}
+
 static struct dm_fuel_gauge_ops cw201x_fg_ops = {
+	.capability = cw201x_capability,
 	.get_soc = cw201x_update_get_soc,
 	.get_voltage = cw201x_update_get_voltage,
 	.get_chrg_online = cw201x_update_get_chrg_online,
