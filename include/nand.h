@@ -153,4 +153,7 @@ void sunxi_nand_init(void);
  */
 struct mtd_info *get_nand_dev_by_index(int dev);
 
+/* rockchip platform specific init functions */
+int rk_nand_init(void);
+
 #endif /* _NAND_H_ */
