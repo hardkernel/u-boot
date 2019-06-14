@@ -7,6 +7,7 @@
 #include <common.h>
 #include <dm.h>
 #include <mmc.h>
+#include <nand.h>
 #include <spl.h>
 
 #if CONFIG_IS_ENABLED(OF_CONTROL) && ! CONFIG_IS_ENABLED(OF_PLATDATA)
@@ -32,6 +33,11 @@
 static int spl_node_to_boot_device(int node)
 {
 	struct udevice *parent;
+
+#ifdef CONFIG_SPL_NAND_SUPPORT
+	if (!rk_nand_init())
+		return BOOT_DEVICE_NAND;
+#endif
 
 	/*
 	 * This should eventually move into the SPL code, once SPL becomes
