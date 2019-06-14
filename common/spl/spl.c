@@ -485,7 +485,7 @@ void board_init_r(gd_t *dummy1, ulong dummy2)
 		break;
 #if CONFIG_IS_ENABLED(ATF)
 	case IH_OS_ARM_TRUSTED_FIRMWARE:
-		debug("Jumping to U-Boot via ARM Trusted Firmware\n");
+		printf("Jumping to U-Boot via ARM Trusted Firmware\n\n");
 		spl_invoke_atf(&spl_image);
 		break;
 #endif
