@@ -65,7 +65,7 @@
  */
 
 ENTRY(_main)
-#if defined(CONFIG_SPL_BUILD) && defined(DEBUG)
+#if defined(CONFIG_SPL_BUILD)
 	.equ SCTLR_A_BIT,		(1 << 1)
 	.equ SCTLR_SA_BIT,		(1 << 3)
 	.equ SCTLR_I_BIT,		(1 << 12)
