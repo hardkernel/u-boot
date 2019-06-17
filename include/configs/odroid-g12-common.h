@@ -102,6 +102,7 @@
 		"for n in ${mmc_list}; do "	\
 			"setenv devnum ${n}; "		\
 			"setenv devno ${n}; "		\
+			"setenv mmc_dev ${n}; "		\
 			"cfgload; "			\
 		"done\0"
 
@@ -111,6 +112,7 @@
 		"for n in ${mmc_list}; do "		\
 			"setenv devnum ${n}; "		\
 			"setenv devno ${n}; "		\
+			"setenv mmc_dev ${n}; "		\
 			"load mmc ${n} ${preloadaddr} boot.scr; "	\
 			"source ${preloadaddr}; "		\
 		"done\0"				\
