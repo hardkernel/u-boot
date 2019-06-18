@@ -9,6 +9,7 @@ set -e
 BOARD=$1
 SUBCMD=$1
 FUNCADDR=$1
+FILE=$2
 JOB=`sed -n "N;/processor/p" /proc/cpuinfo|wc -l`
 SUPPORT_LIST=`ls configs/*[r,p][x,v,k][0-9][0-9]*_defconfig`
 
@@ -578,6 +579,10 @@ pack_spl_loader_image()
 	local ini=${RKBIN}/RKBOOT/${RKCHIP_LOADER}MINIALL.ini
 	local temp_ini=${RKBIN}/.temp/${RKCHIP_LOADER}MINIALL.ini
 
+	if [ "$FILE" != "" ]; then
+		ini=$FILE;
+	fi
+
 	if [ ! -f ${ini} ]; then
 		echo "pack TPL+SPL loader failed! Can't find: ${ini}"
 		return
@@ -591,7 +596,7 @@ pack_spl_loader_image()
 	fi
 	cp ${OUTDIR}/spl/u-boot-spl.bin ${RKBIN}/.temp/
 	cp ${OUTDIR}/tpl/u-boot-tpl.bin ${RKBIN}/.temp/
-	cp ${ini} ${RKBIN}/.temp/
+	cp ${ini} ${RKBIN}/.temp/${RKCHIP_LOADER}MINIALL.ini -f
 
 	cd ${RKBIN}
 	if [ "$mode" = 'spl' ]; then	# pack tpl+spl
@@ -617,6 +622,10 @@ pack_spl_loader_image()
 pack_loader_image()
 {
 	local mode=$1 files ini=${RKBIN}/RKBOOT/${RKCHIP_LOADER}MINIALL.ini
+
+	if [ "$FILE" != "" ]; then
+		ini=$FILE;
+	fi
 
 	if [ ! -f $ini ]; then
 		echo "pack loader failed! Can't find: $ini"
@@ -716,6 +725,10 @@ pack_trust_image()
 	# ARM64 uses trust_merger
 	if grep -Eq ''^CONFIG_ARM64=y'|'^CONFIG_ARM64_BOOT_AARCH32=y'' ${OUTDIR}/.config ; then
 		ini=${RKBIN}/RKTRUST/${RKCHIP_TRUST}TRUST.ini
+		if [ "$FILE" != "" ]; then
+			ini=$FILE;
+		fi
+
 		if [ "${mode}" = 'all' ]; then
 			files=`ls ${RKBIN}/RKTRUST/${RKCHIP_TRUST}TRUST*.ini`
 			for ini in $files
@@ -728,6 +741,9 @@ pack_trust_image()
 	# ARM uses loaderimage
 	else
 		ini=${RKBIN}/RKTRUST/${RKCHIP_TRUST}TOS.ini
+		if [ "$FILE" != "" ]; then
+			ini=$FILE;
+		fi
 		if [ "${mode}" = 'all' ]; then
 			files=`ls ${RKBIN}/RKTRUST/${RKCHIP_TRUST}TOS*.ini`
 			for ini in $files
