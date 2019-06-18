@@ -1,3 +1,12 @@
+#!/bin/sh
+#
+# Copyright (C) 2018-2019 Hardkernel Co,. Ltd
+# Dongjin Kim <tobetter@gmail.com>
+#
+# SPDX-License-Identifier:      GPL-2.0+
+#
+# This Makefile is based on the Amlogic build script
+
 -include $(buildtree)/include/config/auto.conf
 -include $(buildtree)/include/autoconf.mk
 
