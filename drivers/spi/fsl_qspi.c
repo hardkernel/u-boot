@@ -1011,6 +1011,18 @@ static int fsl_qspi_probe(struct udevice *bus)
 	priv->flash_num = plat->flash_num;
 	priv->num_chipselect = plat->num_chipselect;
 
+	/* make sure controller is not busy anywhere */
+	ret = wait_for_bit_le32(&priv->regs->sr,
+				QSPI_SR_BUSY_MASK |
+				QSPI_SR_AHB_ACC_MASK |
+				QSPI_SR_IP_ACC_MASK,
+				false, 100, false);
+
+	if (ret) {
+		debug("ERROR : The controller is busy\n");
+		return ret;
+	}
+
 	mcr_val = qspi_read32(priv->flags, &priv->regs->mcr);
 	qspi_write32(priv->flags, &priv->regs->mcr,
 		     QSPI_MCR_RESERVED_MASK | QSPI_MCR_MDIS_MASK |
@@ -1159,6 +1171,18 @@ static int fsl_qspi_claim_bus(struct udevice *dev)
 
 	bus = dev->parent;
 	priv = dev_get_priv(bus);
+
+	/* make sure controller is not busy anywhere */
+	ret = wait_for_bit_le32(&priv->regs->sr,
+				QSPI_SR_BUSY_MASK |
+				QSPI_SR_AHB_ACC_MASK |
+				QSPI_SR_IP_ACC_MASK,
+				false, 100, false);
+
+	if (ret) {
+		debug("ERROR : The controller is busy\n");
+		return ret;
+	}
 
 	priv->cur_amba_base = priv->amba_base[slave_plat->cs];
 

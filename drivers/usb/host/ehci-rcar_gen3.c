@@ -59,7 +59,7 @@ int ehci_hcd_stop(int index)
 
 	/* Reset EHCI */
 	setbits_le32((uintptr_t)(base + EHCI_USBCMD), CMD_RESET);
-	ret = wait_for_bit("ehci-rcar", (void *)(uintptr_t)base + EHCI_USBCMD,
+	ret = wait_for_bit_le32((void *)(uintptr_t)base + EHCI_USBCMD,
 			   CMD_RESET, false, 10, true);
 	if (ret) {
 		printf("ehci-rcar: reset failed (index=%i, ret=%i).\n",
