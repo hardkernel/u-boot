@@ -73,10 +73,17 @@ ulong mtd_derase(struct udevice *udev, lbaint_t start,
 static int mtd_blk_probe(struct udevice *udev)
 {
 	struct blk_desc *desc = dev_get_uclass_platdata(udev);
+	struct mtd_info *mtd = dev_get_priv(udev->parent);
 
 	sprintf(desc->vendor, "0x%.4x", 0x2207);
 	memcpy(desc->product, "MTD", sizeof("MTD"));
 	memcpy(desc->revision, "V1.00", sizeof("V1.00"));
+	if (mtd->type == MTD_NANDFLASH) {
+		/* Reserve 4 blocks for BBT(Bad Block Table) */
+		desc->lba = (mtd->size >> 9) - (mtd->erasesize >> 9) * 4;
+	} else {
+		desc->lba = mtd->size >> 9;
+	}
 
 	return 0;
 }
