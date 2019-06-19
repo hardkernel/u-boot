@@ -274,6 +274,11 @@ config ODROID_N2
 	select ODROID_COMMON
 	default n
 
+config ODROID_C4
+	bool "Support Hardkernel ODROID-C3 board"
+	select ODROID_COMMON
+	default n
+
 if GXB_SKT_V1
 source "board/amlogic/gxb_skt_v1/Kconfig"
 endif
@@ -533,4 +538,8 @@ endif
 
 if ODROID_N2
 source "board/hardkernel/odroidn2/Kconfig"
+endif
+
+if ODROID_C4
+source "board/hardkernel/odroidc4/Kconfig"
 endif
