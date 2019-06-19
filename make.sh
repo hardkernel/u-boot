@@ -558,19 +558,43 @@ pack_uboot_image()
 
 pack_uboot_itb_image()
 {
-	local ini=${RKBIN}/RKTRUST/${RKCHIP_TRUST}${PLATFORM_AARCH32}TRUST.ini
+	local ini
 
-	if [ ! -f ${ini} ]; then
-		echo "pack trust failed! Can't find: ${ini}"
-		return
+	# ARM64
+	if grep -Eq ''^CONFIG_ARM64=y'|'^CONFIG_ARM64_BOOT_AARCH32=y'' ${OUTDIR}/.config ; then
+		ini=${RKBIN}/RKTRUST/${RKCHIP_TRUST}${PLATFORM_AARCH32}TRUST.ini
+		if [ ! -f ${ini} ]; then
+			echo "pack trust failed! Can't find: ${ini}"
+			return
+		fi
+
+		bl31=`sed -n '/_bl31_/s/PATH=//p' ${ini} |tr -d '\r'`
+
+		cp ${RKBIN}/${bl31} bl31.elf
+		make CROSS_COMPILE=${TOOLCHAIN_GCC} u-boot.itb
+		echo "pack u-boot.itb okay! Input: ${ini}"
+	else
+		ini=${RKBIN}/RKTRUST/${RKCHIP_TRUST}TOS.ini
+		if [ ! -f ${ini} ]; then
+			echo "pack trust failed! Can't find: ${ini}"
+			return
+		fi
+
+		TOS=`sed -n "/TOS=/s/TOS=//p" ${ini} |tr -d '\r'`
+		TOS_TA=`sed -n "/TOSTA=/s/TOSTA=//p" ${ini} |tr -d '\r'`
+
+		if [ $TOS_TA ]; then
+			cp ${RKBIN}/${TOS_TA} tee.bin
+		elif [ $TOS ]; then
+			cp ${RKBIN}/${TOS} tee.bin
+		else
+			echo "Can't find any tee bin"
+			exit 1
+		fi
+
+		make CROSS_COMPILE=${TOOLCHAIN_GCC} u-boot.itb
+		echo "pack u-boot.itb okay! Input: ${ini}"
 	fi
-
-	bl31=`sed -n '/_bl31_/s/PATH=//p' ${ini} |tr -d '\r'`
-
-	cp ${RKBIN}/${bl31} bl31.elf
-	make CROSS_COMPILE=${TOOLCHAIN_GCC} u-boot.itb
-
-	echo "pack u-boot.itb okay! Input: ${ini}"
 }
 
 pack_spl_loader_image()
