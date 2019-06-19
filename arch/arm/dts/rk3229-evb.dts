@@ -36,12 +36,12 @@
 	};
 
 	gpio-keys {
-		u-boot,dm-pre-reloc;
+		u-boot,dm-spl;
 		compatible = "gpio-keys";
 		status = "okay";
 
 		volume-up {
-			u-boot,dm-pre-reloc;
+			u-boot,dm-spl;
 			linux,code = <KEY_VOLUMEUP>;
 			label = "Volume Up";
 			gpios = <&gpio3 25 GPIO_ACTIVE_LOW>;
