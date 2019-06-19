@@ -246,8 +246,13 @@ $(obj)/$(SPL_BIN)-pad.bin: $(obj)/$(SPL_BIN)
 	@bss_size_str=$(shell $(NM) $< | awk 'BEGIN {size = 0} /__bss_size/ {size = $$1} END {print "ibase=16; " toupper(size)}' | bc); \
 	dd if=/dev/zero of=$@ bs=1 count=$${bss_size_str} 2>/dev/null;
 
+ifeq ($(CONFIG_TPL_BUILD),y)
+$(obj)/$(SPL_BIN).dtb: dts/dt-tpl.dtb FORCE
+	$(call if_changed,copy)
+else
 $(obj)/$(SPL_BIN).dtb: dts/dt-spl.dtb FORCE
 	$(call if_changed,copy)
+endif
 
 pythonpath = PYTHONPATH=scripts/dtc/pylibfdt
 

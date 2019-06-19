@@ -38,13 +38,23 @@ quiet_cmd_fdtgrep = FDTGREP $@
 	$(objtree)/tools/fdtgrep -r -O dtb - -o $@ \
 		$(addprefix -P ,$(subst $\",,$(CONFIG_OF_SPL_REMOVE_PROPS)))
 
+fdtgrep_tpl_props := -b u-boot,dm-pre-reloc -b u-boot,dm-tpl
+quiet_cmd_fdtgrep_tpl = FDTGREP $@
+      cmd_fdtgrep_tpl = $(objtree)/tools/fdtgrep $(fdtgrep_tpl_props) -RT $< \
+                -n /config -O dtb | \
+        $(objtree)/tools/fdtgrep -r -O dtb - -o $@ \
+                $(addprefix -P ,$(subst $\",,$(CONFIG_OF_SPL_REMOVE_PROPS)))
+
+$(obj)/dt-tpl.dtb: $(DTB) $(objtree)/tools/fdtgrep FORCE
+	$(call if_changed,fdtgrep_tpl)
+
 $(obj)/dt-spl.dtb: $(DTB) $(objtree)/tools/fdtgrep FORCE
 	$(call if_changed,fdtgrep)
 
 $(obj)/dt.dtb: $(DTB) FORCE
 	$(call if_changed,shipped)
 
-targets += dt.dtb dt-spl.dtb
+targets += dt.dtb dt-spl.dtb dt-tpl.dtb
 
 $(DTB): $(dtb_depends)
 ifeq ($(EXT_DTB),)
@@ -61,22 +71,25 @@ endif
 arch-dtbs:
 	$(Q)$(MAKE) $(build)=$(ARCH_PATH) dtbs
 
-.SECONDARY: $(obj)/dt.dtb.S $(obj)/dt-spl.dtb.S
+.SECONDARY: $(obj)/dt.dtb.S $(obj)/dt-spl.dtb.S $(obj)/dt-tpl.dtb.S
 
 
 ifeq ($(CONFIG_SPL_BUILD),y)
 obj-$(CONFIG_OF_EMBED) := dt-spl.dtb.o
 # support "out-of-tree" build for dtb-spl
+$(obj)/dt-tpl.dtb.o: $(obj)/dt-tpl.dtb.S FORCE
+	$(call if_changed_dep,as_o_S)
+
 $(obj)/dt-spl.dtb.o: $(obj)/dt-spl.dtb.S FORCE
 	$(call if_changed_dep,as_o_S)
 else
 obj-$(CONFIG_OF_EMBED) := dt.dtb.o
 endif
 
-dtbs: $(obj)/dt.dtb $(obj)/dt-spl.dtb
+dtbs: $(obj)/dt.dtb $(obj)/dt-spl.dtb $(obj)/dt-tpl.dtb
 	@:
 
-clean-files := dt.dtb.S dt-spl.dtb.S
+clean-files := dt.dtb.S dt-spl.dtb.S dt-tpl.dtb.S
 
 # Let clean descend into dts directories
 subdir- += ../arch/arm/dts ../arch/microblaze/dts ../arch/mips/dts ../arch/sandbox/dts ../arch/x86/dts
