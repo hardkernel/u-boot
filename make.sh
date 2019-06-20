@@ -230,18 +230,25 @@ select_toolchain()
 sub_commands()
 {
 	local cmd=${SUBCMD%-*} opt=${SUBCMD#*-}
+	local elf=${OUTDIR}/u-boot map=${OUTDIR}/u-boot.map sym=${OUTDIR}/u-boot.sym
+
+	if [ "$FILE" == "tpl" -o "$FILE" == "spl" ]; then
+		elf=`find -name u-boot-${FILE}`
+		map=`find -name u-boot-${FILE}.map`
+		sym=`find -name u-boot-${FILE}.sym`
+	fi
 
 	case $cmd in
 		elf)
-		if [ ! -f ${OUTDIR}/u-boot ]; then
-			echo "Can't find elf file: ${OUTDIR}/u-boot"
+		if [ -o ! -f ${elf} ]; then
+			echo "Can't find elf file: ${elf}"
 			exit 1
 		else
 			# default 'cmd' without option, use '-D'
 			if [ "${cmd}" = 'elf' -a "${opt}" = 'elf' ]; then
 				opt=D
 			fi
-			${TOOLCHAIN_OBJDUMP} -${opt} ${OUTDIR}/u-boot | less
+			${TOOLCHAIN_OBJDUMP} -${opt} ${elf} | less
 			exit 0
 		fi
 		;;
@@ -252,12 +259,12 @@ sub_commands()
 		;;
 
 		map)
-		cat ${OUTDIR}/u-boot.map | less
+		cat ${map} | less
 		exit 0
 		;;
 
 		sym)
-		cat ${OUTDIR}/u-boot.sym | less
+		cat ${sym} | less
 		exit 0
 		;;
 
@@ -311,8 +318,8 @@ sub_commands()
 			fi
 
 			echo
-			sed -n "/${FUNCADDR}/p" ${OUTDIR}/u-boot.sym
-			${TOOLCHAIN_ADDR2LINE} -e ${OUTDIR}/u-boot ${FUNCADDR}
+			sed -n "/${FUNCADDR}/p" ${sym}
+			${TOOLCHAIN_ADDR2LINE} -e ${elf} ${FUNCADDR}
 			exit 0
 		fi
 		;;
