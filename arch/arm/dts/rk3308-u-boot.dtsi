@@ -8,6 +8,7 @@
 
 	chosen {
 		stdout-path = &uart2;
+		u-boot,spl-boot-order = &nandc, &emmc;
 	};
 };
 
@@ -30,6 +31,13 @@
 &nandc {
 	u-boot,dm-pre-reloc;
 	status = "okay";
+	nand@0 {
+		u-boot,dm-spl;
+		reg = <0>;
+		nand-ecc-mode = "hw_syndrome";
+		nand-ecc-strength = <16>;
+		nand-ecc-step-size = <1024>;
+	};
 };
 
 &sfc {
