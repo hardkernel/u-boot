@@ -639,7 +639,7 @@ static int rockchip_nand_chips_init(int node, struct rk_nand *rknand)
 
 #ifdef CONFIG_NAND_ROCKCHIP_DT
 static const struct udevice_id rockchip_nandc_ids[] = {
-	{ .compatible = "rockchip,nandc" },
+	{ .compatible = "rockchip,rk-nandc" },
 	{ }
 };
 
