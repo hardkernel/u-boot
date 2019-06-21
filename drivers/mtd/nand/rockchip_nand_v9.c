@@ -593,7 +593,6 @@ static int rockchip_nand_chip_init(int node, struct rk_nand *rknand, int devnum)
 		return -EINVAL;
 
 	mtd = nand_to_mtd(chip);
-	mtd->name = "rknand";
 	mtd->dev = rknand->dev;
 	if (rknand->dev)
 		rknand->dev->priv = mtd;
@@ -619,7 +618,7 @@ static int rockchip_nand_chip_init(int node, struct rk_nand *rknand, int devnum)
 		debug("Failed to register mtd device: %d\n", ret);
 		return ret;
 	}
-
+	mtd->name = "rk-nand";
 	return 0;
 }
 
