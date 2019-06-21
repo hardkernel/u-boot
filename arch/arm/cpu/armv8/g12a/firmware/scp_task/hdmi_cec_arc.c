@@ -368,6 +368,7 @@ static int ping_cec_ll_tx(unsigned char *msg, unsigned char len)
 		_udelay(500);
 		if (cnt++ > 2000) {
 			uart_puts("err: tx not finish flag\n");
+			cec_reset_addr();
 			break;
 		}
 	}

@@ -355,6 +355,7 @@ static int cec_triggle_tx(unsigned char *msg, unsigned char len)
 		if (cnt++ > 2000) {
 			uart_puts("err: tx not finish flag\n");
 			cec_tx_msgs.send_idx = (cec_tx_msgs.send_idx + 1) & CEC_TX_MSG_BUF_MASK;
+			cec_reset_addr();
 			ret = TX_BUSY;
 			break;
 		}
