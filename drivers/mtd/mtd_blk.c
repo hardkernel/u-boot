@@ -76,7 +76,7 @@ static int mtd_blk_probe(struct udevice *udev)
 	struct mtd_info *mtd = dev_get_priv(udev->parent);
 
 	sprintf(desc->vendor, "0x%.4x", 0x2207);
-	memcpy(desc->product, "MTD", sizeof("MTD"));
+	memcpy(desc->product, mtd->name, strlen(mtd->name));
 	memcpy(desc->revision, "V1.00", sizeof("V1.00"));
 	if (mtd->type == MTD_NANDFLASH) {
 		/* Reserve 4 blocks for BBT(Bad Block Table) */
