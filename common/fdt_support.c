@@ -8,16 +8,19 @@
  */
 
 #include <common.h>
-#include <inttypes.h>
-#include <stdio_dev.h>
-#include <linux/ctype.h>
-#include <linux/types.h>
-#include <asm/global_data.h>
-#include <linux/libfdt.h>
-#include <fdt_support.h>
 #include <exports.h>
+#include <fdt_support.h>
 #include <fdtdec.h>
+#include <inttypes.h>
+#ifdef CONFIG_MTD_BLK
+#include <mtd_blk.h>
+#endif
+#include <stdio_dev.h>
 #include <asm/arch/hotkey.h>
+#include <asm/global_data.h>
+#include <linux/ctype.h>
+#include <linux/libfdt.h>
+#include <linux/types.h>
 
 /**
  * fdt_getprop_u32_default_node - Return a node's property or a default
@@ -318,6 +321,14 @@ int fdt_chosen(void *fdt)
 				env_update_filter("bootargs", bootargs, "root=");
 #else
 				env_update("bootargs", bootargs);
+#endif
+#ifdef CONFIG_MTD_BLK
+				char *mtd_par_info = part_mtd_parse();
+
+				if (mtd_par_info) {
+					if (memcmp(env_get("devtype"), "mtd", 3) == 0)
+						env_update("bootargs", mtd_par_info);
+				}
 #endif
 				/*
 				 * Initrd fixup: remove unused "initrd=0x...,0x...",
