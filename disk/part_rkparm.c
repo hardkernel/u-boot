@@ -256,12 +256,12 @@ static int part_get_info_rkparm(struct blk_desc *dev_desc, int idx,
 	}
 
 	if (list_empty(&parts_head) ||
-	    (dev_num != ((dev_desc->if_type << 8) + dev_desc->devnum)))
+	    (dev_num != ((dev_desc->if_type << 8) + dev_desc->devnum))) {
 		ret = rkparm_init_param(dev_desc, &parts_head);
-
-	if (ret) {
-		printf("%s Invalid rkparm partition\n", __func__);
-		return -1;
+		if (ret) {
+			printf("%s Invalid rkparm partition\n", __func__);
+			return -1;
+		}
 	}
 
 	list_for_each(node, &parts_head) {
