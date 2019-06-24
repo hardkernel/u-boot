@@ -5,6 +5,7 @@
 
 #include <common.h>
 #include <bidram.h>
+#include <cli.h>
 #include <console.h>
 #include <sysmem.h>
 #include <asm/arch/hotkey.h>
@@ -17,6 +18,7 @@ DECLARE_GLOBAL_DATA_PTR;
 #define CTRL_I		0x09
 #define CTRL_M		0x0d
 #define CTRL_P		0x10
+#define CTRL_S		0x13
 
 bool is_hotkey(enum hotkey_t id)
 {
@@ -56,6 +58,15 @@ void hotkey_run(enum hotkey_t id)
 	case HK_INITCALL:
 		if (gd->console_evt == CTRL_I)
 			env_update("bootargs", "initcall_debug debug");
+		break;
+	case HK_CLI:
+		/* Disable enter cli by hotkey*/
+#if defined(CONFIG_CONSOLE_DISABLE_CTRLC) && \
+    defined(CONFIG_BOOTDELAY) && (CONFIG_BOOTDELAY <= 0)
+		break;
+#endif
+		if (gd->console_evt == CTRL_S)
+			cli_loop();
 		break;
 	default:
 		break;
