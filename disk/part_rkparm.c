@@ -271,8 +271,8 @@ static int part_get_info_rkparm(struct blk_desc *dev_desc, int idx,
 		part_num ++;
 	}
 
-	if (part_num > idx) {
-		printf("%s Invalid partition no.%d\n", __func__, idx);
+	if (part_num < idx) {
+		debug("%s Invalid partition no.%d\n", __func__, idx);
 		return -EINVAL;
 	}
 
