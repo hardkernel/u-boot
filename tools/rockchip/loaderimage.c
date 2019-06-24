@@ -21,6 +21,7 @@ extern uint32_t crc32_rk(uint32_t, const unsigned char *, uint32_t);
 #define OPT_SIZE "--size"
 #define OPT_VERSION "--version"
 #define OPT_INFO "--info"
+#define OPT_PREPATH             "--prepath"
 
 /* pack or unpack */
 #define MODE_PACK 0
@@ -123,6 +124,8 @@ int main(int argc, char *argv[])
 	char *buf = 0;
 	uint32_t in_size = 0, in_num = 0;
 	char *file_in = NULL, *file_out = NULL;
+	char			*prepath = NULL;
+	char			file_name[1024];
 	uint32_t curr_version = 0;
 
 	if (argc < 3) {
@@ -170,6 +173,8 @@ int main(int argc, char *argv[])
 		} else if (!strcmp(argv[i], OPT_INFO)) {
 			mode = MODE_INFO;
 			file_in = argv[++i];
+		} else if (!strcmp(argv[i], OPT_PREPATH)) {
+			prepath = argv[++i];
 		} else {
 			usage(argv[0]);
 			exit(EXIT_FAILURE);
@@ -206,6 +211,14 @@ int main(int argc, char *argv[])
 			exit(EXIT_FAILURE);
 		}
 		printf("\n load addr is 0x%x!\n", loader_addr);
+
+		/* Add prepath for file_in name */
+		if (prepath && strncmp(prepath, file_in, strlen(prepath))) {
+			strcpy(file_name, prepath);
+			strcat(file_name, file_in);
+			file_in = file_name;
+		}
+
 		if (!file_in || !file_out) {
 			usage(argv[0]);
 			exit(EXIT_FAILURE);
