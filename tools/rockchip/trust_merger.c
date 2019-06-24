@@ -110,7 +110,8 @@ static inline void fixPath(char *path)
 			strcpy(path, gNewPath);
 			strcat(path, tmp);
 		}
-	} else if (gPrePath && strncmp(path, gPrePath, strlen(gPrePath))) {
+	} else if ((ulong)path != (ulong)gOpts.outPath && /* ignore output */
+		   gPrePath && strncmp(path, gPrePath, strlen(gPrePath))) {
 		strcpy(tmp, path);
 		strcpy(path, gPrePath);
 		strcat(path, tmp);
@@ -220,6 +221,7 @@ static bool parseOut(FILE *file)
 	}
 	if (fscanf(file, OPT_OUT_PATH "=%[^\r^\n]", gOpts.outPath) != 1)
 		return false;
+	/* fixPath(gOpts.outPath); */
 	printf("out:%s\n", gOpts.outPath);
 
 	return true;
