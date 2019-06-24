@@ -5,10 +5,79 @@
  */
 
 #include <common.h>
+#include <blk.h>
+#include <boot_rkimg.h>
 #include <dm.h>
 #include <errno.h>
+#include <malloc.h>
 #include <nand.h>
+#include <part.h>
 #include <dm/device-internal.h>
+
+#define MTD_PART_NAND_HEAD		"mtdparts="
+#define MTD_PART_INFO_MAX_SIZE		512
+#define MTD_SINGLE_PART_INFO_MAX_SIZE	40
+
+char *mtd_part_parse(void)
+{
+	char mtd_part_info_temp[MTD_SINGLE_PART_INFO_MAX_SIZE] = {0};
+	u32 length, data_len = MTD_PART_INFO_MAX_SIZE;
+	struct blk_desc *dev_desc;
+	disk_partition_t info;
+	char *mtd_part_info_p;
+	char *mtd_part_info;
+	int ret;
+	int p;
+
+	dev_desc = rockchip_get_bootdev();
+	if (!dev_desc)
+		return NULL;
+
+	mtd_part_info = (char *)calloc(MTD_PART_INFO_MAX_SIZE, sizeof(char));
+	if (!mtd_part_info) {
+		printf("%s: Fail to malloc!", __func__);
+		return NULL;
+	}
+
+	mtd_part_info_p = mtd_part_info;
+	snprintf(mtd_part_info_p, data_len - 1, "%s%s:",
+		 MTD_PART_NAND_HEAD,
+		 dev_desc->product);
+	data_len -= strlen(mtd_part_info_p);
+	mtd_part_info_p = mtd_part_info_p + strlen(mtd_part_info_p);
+
+	for (p = 1; p < MAX_SEARCH_PARTITIONS; p++) {
+		ret = part_get_info(dev_desc, p, &info);
+		if (ret)
+			break;
+
+		debug("name is %s, start addr is %x\n", info.name,
+		      (int)(size_t)info.start);
+
+		snprintf(mtd_part_info_p, data_len - 1, "0x%x@0x%x(%s)",
+			 (int)(size_t)info.size << 9,
+			 (int)(size_t)info.start << 9,
+			 info.name);
+		snprintf(mtd_part_info_temp, MTD_SINGLE_PART_INFO_MAX_SIZE - 1,
+			 "0x%x@0x%x(%s)",
+			 (int)(size_t)info.size << 9,
+			 (int)(size_t)info.start << 9,
+			 info.name);
+		strcat(mtd_part_info, ",");
+		if (part_get_info(dev_desc, p + 1, &info)) {
+			snprintf(mtd_part_info_p, data_len - 1, "-@0x%x(%s)",
+				 (int)(size_t)info.start << 9,
+				 info.name);
+			break;
+		}
+		length = strlen(mtd_part_info_temp);
+		data_len -= length;
+		mtd_part_info_p = mtd_part_info_p + length + 1;
+		memset(mtd_part_info_temp, 0, MTD_SINGLE_PART_INFO_MAX_SIZE);
+	}
+
+	return mtd_part_info;
+}
 
 ulong mtd_dread(struct udevice *udev, lbaint_t start,
 		lbaint_t blkcnt, void *dst)
