@@ -71,7 +71,7 @@ static const char * const compat_names[COMPAT_COUNT] = {
 	COMPAT(ALTERA_SOCFPGA_F2SDR0, "altr,socfpga-fpga2sdram0-bridge"),
 	COMPAT(ALTERA_SOCFPGA_F2SDR1, "altr,socfpga-fpga2sdram1-bridge"),
 	COMPAT(ALTERA_SOCFPGA_F2SDR2, "altr,socfpga-fpga2sdram2-bridge"),
-	COMPAT(ROCKCHIP_NANDC, "rockchip,nandc"),
+	COMPAT(ROCKCHIP_NANDC, "rockchip,rk-nandc"),
 };
 
 const char *fdtdec_get_compatible(enum fdt_compat_id id)
