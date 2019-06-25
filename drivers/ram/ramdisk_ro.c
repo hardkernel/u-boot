@@ -20,7 +20,11 @@ static ulong ramdisk_ro_bread(struct blk_desc *desc, lbaint_t start,
 	/* Byte */
 	b_start = start * desc->blksz;
 	b_size = blkcnt * desc->blksz;
-	memcpy((char *)dst, (char *)b_start, b_size);
+
+	if ((ulong)dst != (ulong)b_start)
+		memcpy((char *)dst, (char *)b_start, b_size);
+	else
+		debug("%s: skip memcpy at: 0x%08lx\n", __func__, (ulong)b_start);
 
 	debug("%s: b_start=0x%lx, b_size=0x%lx. dst=%p\n",
 	      __func__, b_start, b_size, dst);
