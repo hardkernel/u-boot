@@ -561,6 +561,9 @@ int boot_rockchip_image(struct blk_desc *dev_desc, disk_partition_t *boot_part)
 	fdt_ramdisk_skip_relocation();
 	hotkey_run(HK_SYSMEM);
 
+	/* Check sysmem overflow */
+	sysmem_overflow_check();
+
 #if defined(CONFIG_ARM64)
 	char cmdbuf[64];
 	sprintf(cmdbuf, "booti 0x%lx 0x%lx:0x%x 0x%lx",
@@ -586,6 +589,9 @@ int boot_rockchip_image(struct blk_desc *dev_desc, disk_partition_t *boot_part)
 	}
 
 	hotkey_run(HK_SYSMEM);
+
+	/* Check sysmem overflow */
+	sysmem_overflow_check();
 
 	boot_lmb_init(&images);
 	images.ep = kernel_addr_r;
