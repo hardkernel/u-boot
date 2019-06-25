@@ -455,23 +455,6 @@ int board_fdt_fixup(void *blob)
 	rockchip_display_fixup(blob);
 #endif
 
-	/*
-	 * Platform fixup:
-	 *
-	 * - RK3288: Recognize RK3288W by HDMI Revision ID is 0x1A;
-	 * - RK1808: MMC strength 2mA;
-	 */
-#ifdef CONFIG_ROCKCHIP_RK3288
-	int ret;
-
-	if (soc_is_rk3288w()) {
-		ret = fdt_setprop_string(blob, 0,
-					 "compatible", "rockchip,rk3288w");
-		if (ret)
-			printf("fdt set compatible failed: %d\n", ret);
-	}
-#endif
-
 	return rk_board_fdt_fixup(blob);
 }
 

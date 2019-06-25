@@ -10,6 +10,7 @@
 #include <asm/io.h>
 #include <asm/arch/bootrom.h>
 #include <asm/arch/clock.h>
+#include <asm/arch/cpu.h>
 #include <asm/arch/hardware.h>
 #include <asm/arch/periph.h>
 #include <asm/arch/cru_rk3288.h>
@@ -372,3 +373,17 @@ int board_early_init_f(void)
 
 	return 0;
 }
+
+#ifndef CONFIG_SPL_BUILD
+int rk_board_fdt_fixup(void *blob)
+{
+	/* RK3288: Recognize RK3288W by HDMI Revision ID is 0x1A; */
+	if (soc_is_rk3288w()) {
+		if (fdt_setprop_string(blob, 0,
+				       "compatible", "rockchip,rk3288w"))
+			printf("RK3288w set compatible failed!\n");
+	}
+
+	return 0;
+}
+#endif
