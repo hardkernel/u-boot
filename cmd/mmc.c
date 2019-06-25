@@ -188,6 +188,15 @@ int init_rpmb(void)
 {
 	struct mmc *mmc;
 
+	if (curr_device < 0) {
+		if (get_mmc_num() > 0) {
+			curr_device = 0;
+		} else {
+			printf("No MMC device available\n");
+			return CMD_RET_FAILURE;
+		}
+	}
+
 	mmc = init_mmc_device(curr_device, false);
 	if (!mmc)
 		return CMD_RET_FAILURE;
