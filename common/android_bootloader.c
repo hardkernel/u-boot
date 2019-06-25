@@ -422,6 +422,9 @@ int android_bootloader_boot_kernel(unsigned long kernel_address)
 				       comp_type))
 		return -1;
 
+	/* Check sysmem overflow */
+	sysmem_overflow_check();
+
 	do_bootm(NULL, 0, 4, bootm_args);
 
 	return -1;
