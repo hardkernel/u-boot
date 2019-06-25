@@ -276,6 +276,19 @@ static void *sysmem_alloc_align_base(enum memblk_id id,
 		goto out;
 	}
 
+	/*
+	 * Some modules use "sysmem_alloc()" to alloc region for storage
+	 * read/write buffer, it should be aligned to cacheline size. eg: AVB.
+	 *
+	 * Aligned down to cacheline size if not aligned, otherwise the tail
+	 * of region maybe overflow.
+	 */
+	if (attr.flags & M_ATTR_CACHELINE_ALIGN &&
+	    !IS_ALIGNED(base, ARCH_DMA_MINALIGN)) {
+		base = ALIGN(base, ARCH_DMA_MINALIGN);
+		base -= ARCH_DMA_MINALIGN;
+	}
+
 	if (!IS_ALIGNED(base, 4)) {
 		SYSMEM_E("\"%s\" base=0x%08lx is not 4-byte aligned\n",
 			 name, (ulong)base);

@@ -63,5 +63,7 @@ extern const struct memblk_attr *mem_attr;
 #define M_ATTR_OVERLAP		(1 << 2)
 /* Just peek, always return success */
 #define M_ATTR_PEEK		(1 << 3)
+/* The region start address should be aligned to cacheline size */
+#define M_ATTR_CACHELINE_ALIGN	(1 << 4)
 
 #endif /* _MEMBLK_H */
