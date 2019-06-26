@@ -1,0 +1,231 @@
+/*
+ * (C) Copyright 2019 Rockchip Electronics Co., Ltd
+ *
+ * SPDX-License-Identifier:     GPL-2.0+
+ */
+
+#include <common.h>
+#include <boot_rkimg.h>
+#include <console.h>
+#include <dm.h>
+#include <thermal.h>
+#include <wdt.h>
+#include <asm/io.h>
+#include <power/pmic.h>
+#include <power/regulator.h>
+#include "test-rockchip.h"
+
+#ifdef CONFIG_DM_REGULATOR
+static int regulator_change_voltage(struct udevice *dev)
+{
+	struct dm_regulator_uclass_platdata *uc_pdata;
+	int uV, save_uV, step_uV = 12500;
+	int i, ret;
+
+	uc_pdata = dev_get_uclass_platdata(dev);
+
+	/* Only voltage changeable regulator will be tested! */
+	if ((uc_pdata->max_uV == uc_pdata->min_uV) ||
+	    !regulator_get_enable(dev) || strncmp("DCDC", dev->name, 4))
+		return 0;
+
+	/* Test get/set() */
+	save_uV = regulator_get_value(dev);
+	if (save_uV < 0)
+		return save_uV;
+
+	ret = regulator_set_value(dev, save_uV);
+	if (ret < 0)
+		return ret;
+
+	for (i = 1; i < 4; i++) {
+		uV = regulator_get_value(dev);
+		regulator_set_value(dev, uV + step_uV * i);
+		printf("%s@%s: set %d uV -> %d uV; read back %d uV\n",
+		       dev->name, uc_pdata->name, uV, uV + step_uV * i,
+		       regulator_get_value(dev));
+
+		if ((uV + step_uV * i) != regulator_get_value(dev)) {
+			printf("%s@%s: set voltage failed\n",
+			       dev->name, uc_pdata->name);
+			ret = -EINVAL;
+			break;
+		}
+	}
+
+	regulator_set_value(dev, save_uV);
+
+	return ret;
+}
+
+static int do_test_regulator(cmd_tbl_t *cmdtp, int flag,
+			     int argc, char *const argv[])
+{
+	struct udevice *dev;
+	struct uclass *uc;
+	int ret;
+
+	ret = uclass_get(UCLASS_REGULATOR, &uc);
+	if (ret)
+		return ret;
+
+	for (uclass_first_device(UCLASS_REGULATOR, &dev);
+	     dev;
+	     uclass_next_device(&dev)) {
+		ret = regulator_change_voltage(dev);
+		if (ret)
+			return ret;
+	}
+
+	return 0;
+}
+#endif
+
+#ifdef CONFIG_DM_RESET
+static int do_test_reset(cmd_tbl_t *cmdtp, int flag,
+			 int argc, char *const argv[])
+{
+	return run_command("reset", 0);
+}
+#endif
+
+#ifdef CONFIG_CMD_DVFS
+static int do_test_dvfs(cmd_tbl_t *cmdtp, int flag,
+			int argc, char *const argv[])
+{
+	return run_command("dvfs", 0);
+}
+#endif
+
+#if defined(CONFIG_WDT)
+static int do_test_wdt(cmd_tbl_t *cmdtp, int flag,
+		       int argc, char *const argv[])
+{
+	struct udevice *dev;
+	int ret;
+
+	ret = uclass_get_device(UCLASS_WDT, 0, &dev);
+	if (ret) {
+		if (ret != -ENODEV)
+			printf("Get watchdog device failed, ret=%d\n", ret);
+		return ret;
+	}
+
+	printf("Watchdog would reset system 10s later\n");
+	wdt_start(dev, 5000, 0);
+	wdt_stop(dev);
+
+	return 0;
+}
+#endif
+
+#ifdef CONFIG_DM_THERMAL
+static int do_test_thermal(cmd_tbl_t *cmdtp, int flag,
+			   int argc, char *const argv[])
+{
+	struct udevice *dev;
+	int ret, temp;
+
+	ret = uclass_get_device(UCLASS_THERMAL, 0, &dev);
+	if (ret) {
+		printf("Get thermal device failed, ret=%d\n", ret);
+		return ret;
+	}
+
+	ret = thermal_get_temp(dev, &temp);
+	if (ret) {
+		printf("Get temperature failed, ret=%d\n", ret);
+		return ret;
+	}
+
+	printf("Get temperature: %d'c\n", temp);
+
+	return 0;
+}
+#endif
+
+#ifdef CONFIG_CMD_PMIC
+static int do_test_pmic(cmd_tbl_t *cmdtp, int flag,
+			int argc, char *const argv[])
+{
+	struct udevice *dev;
+	struct uclass *uc;
+	int ret;
+
+	ret = uclass_get(UCLASS_PMIC, &uc);
+	if (ret)
+		return ret;
+
+	for (uclass_first_device(UCLASS_PMIC, &dev);
+	     dev;
+	     uclass_next_device(&dev)) {
+		env_set("this_pmic", dev->name);
+		run_command("pmic dev $this_pmic", 0);
+		ret = run_command("pmic dump", 0);
+		if (ret)
+			goto out;
+	}
+
+out:
+	env_set("this_pmic", NULL);
+
+	return ret;
+}
+#endif
+
+#ifdef CONFIG_DM_CHARGE_DISPLAY
+static int do_test_charge(cmd_tbl_t *cmdtp, int flag,
+			  int argc, char *const argv[])
+{
+	/* TODO */
+	return 0;
+}
+#endif
+
+static cmd_tbl_t sub_cmd[] = {
+#ifdef CONFIG_CMD_CHARGE_DISPLAY
+	UNIT_CMD_ATTR_DEFINE(charge, 0, CMD_FLG_NORETURN),
+#endif
+#ifdef CONFIG_CMD_DVFS
+	UNIT_CMD_DEFINE(dvfs, 0),
+#endif
+#ifdef CONFIG_CMD_PMIC
+	UNIT_CMD_DEFINE(pmic, 0),
+#endif
+	UNIT_CMD_ATTR_DEFINE(reset, 0, CMD_FLG_NORETURN),
+#ifdef CONFIG_DM_REGULATOR
+	UNIT_CMD_ATTR_DEFINE(regulator, 0, CMD_FLG_INTERACTIVE),
+#endif
+#ifdef CONFIG_DM_THERMAL
+	UNIT_CMD_DEFINE(thermal, 0),
+#endif
+#if defined(CONFIG_WDT)
+	UNIT_CMD_DEFINE(wdt, 0),
+#endif
+};
+
+static char sub_cmd_help[] =
+#ifdef CONFIG_CMD_CHARGE_DISPLAY
+"    [i] rktest charge                      - test charge animation\n"
+#endif
+#ifdef CONFIG_CMD_DVFS
+"    [.] rktest dvfs                        - test rockchip wide temperature dvfs\n"
+#endif
+#ifdef CONFIG_CMD_PMIC
+"    [.] rktest pmic                        - test pmic, dump registers\n"
+#endif
+"    [n] rktest reset                       - test sysreset\n"
+#ifdef CONFIG_DM_REGULATOR
+"    [i] rktest regulator                   - test regulator set and show\n"
+#endif
+#ifdef CONFIG_DM_THERMAL
+"    [.] rktest thermal                     - test thermal, getting temperature\n"
+#endif
+;
+
+const struct cmd_group cmd_grp_power = {
+	.id	= TEST_ID_POWER,
+	.help	= sub_cmd_help,
+	.cmd	= sub_cmd,
+	.cmd_n	= ARRAY_SIZE(sub_cmd),
+};

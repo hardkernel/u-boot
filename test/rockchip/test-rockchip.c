@@ -5,170 +5,217 @@
  */
 
 #include <common.h>
-#include <command.h>
+#include <console.h>
 #include "test-rockchip.h"
 
-typedef struct board_module {
-	char *name;
-	char *desc;
-	int (*test)(int argc, char * const argv[]);
-} board_module_t;
+extern struct cmd_group cmd_grp_boot;
+extern struct cmd_group cmd_grp_display;
+extern struct cmd_group cmd_grp_download;
+extern struct cmd_group cmd_grp_misc;
+extern struct cmd_group cmd_grp_net;
+extern struct cmd_group cmd_grp_power;
+extern struct cmd_group cmd_grp_storage;
 
-static int board_rockusb_test(int argc, char * const argv[])
-{
-	return run_command_list("rockusb 0 ${devtype} ${devnum}", -1, 0);
-}
-
-static int board_fastboot_test(int argc, char * const argv[])
-{
-	return run_command_list("fastboot usb 0", -1, 0);
-}
-
-static board_module_t g_board_modules[] = {
-#if defined(CONFIG_IRQ)
-	{
-		.name = "timer",
-		.desc = "test timer and interrupt",
-		.test = board_timer_test
-	},
-#endif
-	{
-		.name = "brom",
-		.desc = "enter bootrom download mode",
-		.test = board_brom_dnl_test
-	},
-	{
-		.name = "rockusb",
-		.desc = "enter rockusb download mode",
-		.test = board_rockusb_test
-	},
-	{
-		.name = "fastboot",
-		.desc = "enter fastboot download mode",
-		.test = board_fastboot_test
-	},
-#if defined(CONFIG_DM_KEY)
-	{
-		.name = "key",
-		.desc = "test board keys",
-		.test = board_key_test
-	},
-#endif
-#if defined(CONFIG_MMC)
-	{
-		.name = "emmc",
-		.desc = "test emmc read/write speed",
-		.test = board_emmc_test
-	},
-#endif
-#if defined(CONFIG_RKNAND)
-	{
-		.name = "rknand",
-		.desc = "test rknand read/write speed",
-		.test = board_rknand_test
-	},
-#endif
-
-#if defined(CONFIG_DM_REGULATOR)
-	{
-		.name = "regulator",
-		.desc = "test regulator volatge set and show regulator status",
-		.test = board_regulator_test
-	},
-#endif
-#if defined(CONFIG_GMAC_ROCKCHIP)
-	{
-		.name = "eth",
-		.desc = "test ethernet",
-		.test = board_eth_test
-	},
-#endif
-#if defined(CONFIG_RK_IR)
-	{
-		.name = "ir",
-		.desc = "test pwm ir remoter for box product",
-		.test = board_ir_test
-	},
-#endif
-#if defined(CONFIG_ROCKCHIP_VENDOR_PARTITION)
-	{
-		.name = "vendor",
-		.desc = "test vendor storage partition read/write",
-		.test = board_vendor_storage_test
-	},
-#endif
+enum {
+	TEST_SKIP_UNK,
+	TEST_SKIP_NORETURN,
+	TEST_SKIP_INTERACTIVE,
+	TEST_SKIP_NORETURN_INTERACTIVE,
+	TEST_SKIP_MAX,
 };
 
-static void help(void)
+static const char *cmd_grp_name[] = {
+	[TEST_ID_UNK]		= "UNK",
+	[TEST_ID_BOOT]		= "BOOT",
+	[TEST_ID_DISPLAY]	= "DISPLAY",
+	[TEST_ID_DOWNLOAD]	= "DOWNLOAD",
+	[TEST_ID_MISC]		= "MISC",
+	[TEST_ID_NET]		= "NET",
+	[TEST_ID_POWER]		= "POWER",
+	[TEST_ID_STORAGE]	= "STORAGE",
+	[TEST_ID_USB]		= "USB",
+	[TEST_ID_MAX]		= "MAX",
+};
+
+static const struct cmd_group *cmd_groups[] = {
+	&cmd_grp_download,
+	&cmd_grp_boot,
+	&cmd_grp_storage,
+	&cmd_grp_power,
+	&cmd_grp_misc,
+	&cmd_grp_net,
+	&cmd_grp_display,
+};
+
+static int cmd_groups_help(void)
 {
 	int i;
 
-	printf("Command: rktest [module] [args...]\n"
-	       "  - module: timer|key|emmc|rknand|regulator|eth|ir|brom|rockusb|fastboot|vendor\n"
-	       "  - args: depends on module, try 'rktest [module]' for test or more help\n\n");
+	printf("* Test Case:\n");
+	printf("    -.: normal item\n");
+	printf("    -n: noturen item\n");
+	printf("    -i: interactive item\n\n");
 
-	printf("  - Enabled modules:\n");
-	for (i = 0; i < ARRAY_SIZE(g_board_modules); i++)
-		printf("     - %10s%s %s\n",
-		       g_board_modules[i].name,
-		       g_board_modules[i].desc ? ":" : "",
-		       g_board_modules[i].desc ? g_board_modules[i].desc : "");
-}
+	printf("* ALL:\n");
+	printf("    [.] rktest all                         - test all\n");
+	printf("    [.] rktest all v1                      - test all, ignore noreturn items\n");
+	printf("    [.] rktest all v2                      - test all, ignore interactive items\n");
+	printf("    [.] rktest all v3                      - test all, ignore interactive and noreturn items\n");
+	printf("    [.] rktest storage			   - test all storage\n");
+	printf("    [.] rktest power			   - test all power\n");
+	printf("    [.] rktest misc			   - test all misc\n");
+	printf("    [.] rktest net			   - test all net\n");
+	printf("    [.] rktest display			   - test all display\n");
 
-static int do_rockchip_test(cmd_tbl_t *cmdtp, int flag,
-			    int argc, char * const argv[])
-{
-	ulong ms_start = 0, ms = 0, sec = 0;
-	board_module_t *module = NULL;
-	char *module_name = NULL;
-	int index = 0, err = 0;
-	bool found = false;
-
-	if (argc >= 2) {
-		module_name = argv[1];
-	} else {
-		help();
-		return 0;
+	for (i = 0; i < ARRAY_SIZE(cmd_groups); i++) {
+		printf("* %s:\n", cmd_grp_name[cmd_groups[i]->id]);
+		printf("%s", cmd_groups[i]->help);
 	}
 
-	if (!module_name)
-		return 0;
+	return 0;
+}
 
-	for (index = 0; index < ARRAY_SIZE(g_board_modules); index++) {
-		module = &g_board_modules[index];
-		if (module && !strcmp(module->name, module_name)) {
-			found = true;
+static int skip_this_cmd(cmd_tbl_t *cp, int skip_mode)
+{
+	bool is_interactive = CMD_FLG_ENABLED(cp, CMD_FLG_INTERACTIVE);
+	bool is_noreturn = CMD_FLG_ENABLED(cp, CMD_FLG_NORETURN);
 
-			printf("***********************************************************\n");
-			printf("Rockchip Board Module [%s] Test start.\n", module_name);
-			printf("***********************************************************\n");
+	switch (skip_mode) {
+	case TEST_SKIP_NORETURN:
+		return is_noreturn;
+	case TEST_SKIP_INTERACTIVE:
+		return is_interactive;
+	case TEST_SKIP_NORETURN_INTERACTIVE:
+		return is_noreturn || is_interactive;
+	}
 
-			ms_start = get_timer(0);
+	return 0;
+}
+static int do_rockchip_test(cmd_tbl_t *cmdtp, int flag,
+			    int argc, char *const argv[])
+{
+	ulong ms_start = 0, ms = 0, sec = 0;
+	int grp_test_id = TEST_ID_UNK;
+	int okay = 0, fail = 0;
+	int ret, i, j;
+	int skip_mode = 0;
+	cmd_tbl_t *cp;
 
-			err = module->test(argc, argv);
+	if (argc == 1)
+		return cmd_groups_help();
 
-			ms = get_timer(ms_start);
-			if (ms >= 1000) {
-				sec = ms / 1000;
-				ms = ms % 1000;
-			}
+	/* Drop initial "rktest" arg */
+	argc--;
+	argv++;
 
-			printf("-----------------------------------------------------------\n");
-			printf("Rockchip Board Module [%s] Test end <%s>.. Total: %lu.%lus\n",
-			       module->name, err ? "FAILED" : "PASS", sec, ms);
-			printf("-----------------------------------------------------------\n\n\n");
+	if (!strcmp(argv[0], "all")) {
+		/* Test all skip_mode: v1, v2, v3... */
+		if (argv[1]) {
+			if (!strcmp(argv[1], CMD_MODE_V1))
+				skip_mode = TEST_SKIP_NORETURN;
+			else if (!strcmp(argv[1], CMD_MODE_V2))
+				skip_mode = TEST_SKIP_INTERACTIVE;
+			else if (!strcmp(argv[1], CMD_MODE_V3))
+				skip_mode = TEST_SKIP_NORETURN_INTERACTIVE;
+		}
+		goto all_test;
+	} else {
+		if (!strcmp(argv[0], "storage"))
+			grp_test_id = TEST_ID_STORAGE;
+		else if (!strcmp(argv[0], "power"))
+			grp_test_id = TEST_ID_POWER;
+		else if (!strcmp(argv[0], "misc"))
+			grp_test_id = TEST_ID_MISC;
+		else if (!strcmp(argv[0], "net"))
+			grp_test_id = TEST_ID_NET;
+		else if (!strcmp(argv[0], "display"))
+			grp_test_id = TEST_ID_DISPLAY;
+
+		if (grp_test_id != TEST_ID_UNK) {
+			skip_mode = TEST_SKIP_NORETURN; /* Skip noreturn item */
+			goto all_test;
 		}
 	}
 
-	if (!found)
-		printf("Rockchip Board Module [%s] is not support !\n",
-		       module_name);
+/* item_test: */
+	for (i = 0; i < ARRAY_SIZE(cmd_groups); i++) {
+		cp = find_cmd_tbl(argv[0],
+				  cmd_groups[i]->cmd,
+				  cmd_groups[i]->cmd_n);
+		if (cp) {
+			ret = cp->cmd(cmdtp, flag, argc, argv);
+			printf("\n### [%s] test done, result: <%s>..\n",
+			       cp->name, ret ? "FAILED" : "OKAY");
 
+			return ret;
+		}
+	}
+
+	printf("Unknown cmd: rktest %s (Not enabled ?)\n", argv[0]);
+	goto finish;
+
+all_test:
+	ms_start = get_timer(0);
+
+	for (i = 0; i < ARRAY_SIZE(cmd_groups); i++) {
+		/*
+		 * If 'grp_test_id != TEST_ID_UNK', now is group test, find
+		 * the grp cmd.
+		 */
+		if (grp_test_id != TEST_ID_UNK &&
+		    grp_test_id != cmd_groups[i]->id)
+			continue;
+
+		/* Run all commands in 'this' grp */
+		for (j = 0, cp = cmd_groups[i]->cmd;
+		     j < cmd_groups[i]->cmd_n;
+		     j++, cp++) {
+			/* Skip this ignored cmd */
+			if (skip_this_cmd(cp, skip_mode)) {
+				printf("### Skip  [%s]\n", cp->name);
+				continue;
+			}
+
+			printf("### Start [%s]\n", cp->name);
+
+			/* Flush console */
+			if (cmd_groups[i]->id == TEST_ID_DOWNLOAD)
+				flushc();
+
+			/* Execute command */
+			ret = cp->cmd(cmdtp, flag, argc, argv);
+			if (ret)
+				fail++;
+			else
+				okay++;
+
+			/* Result */
+			printf("### Finish, result: <%s>\n\n",
+			       ret ? "FAILED" : "PASS");
+
+			if (ctrlc()) {
+				printf("Exit board test by ctrl+c\n");
+				break;
+			}
+		}
+	}
+
+	/* Total time and report */
+	ms = get_timer(ms_start);
+	if (ms >= 1000) {
+		sec = ms / 1000;
+		ms = ms % 1000;
+	}
+
+	printf("[=== SUM: pass: %d; failed: %d; total: %lu.%lus ===]\n\n\n",
+	       okay, fail, sec, ms);
+
+finish:
 	return 0;
 }
 
 U_BOOT_CMD(
 	rktest, 10, 0, do_rockchip_test,
-	"Rockchip Board Module Test",
-	""
+	"Rockchip board modules test",
+	NULL
 );

@@ -1,24 +1,20 @@
 /*
- * (C) Copyright 2017 Rockchip Electronics Co., Ltd
+ * (C) Copyright 2019 Rockchip Electronics Co., Ltd
  *
  * SPDX-License-Identifier:     GPL-2.0+
  */
 
-#include <asm/io.h>
-#include <adc.h>
-#include <cli.h>
 #include <common.h>
 #include <dm.h>
-#include <errno.h>
 #include <fdtdec.h>
 #include <malloc.h>
-#include <irq-generic.h>
-#include <irq-platform.h>
 #include <miiphy.h>
 #include <net.h>
 #include <phy.h>
+#include <asm/io.h>
 #include "test-rockchip.h"
 
+#ifdef CONFIG_GMAC_ROCKCHIP
 #define LOOPBACK_TEST_HDR_SIZE		14
 #define LOOPBACK_TEST_DATA_SIZE		1500
 #define LOOPBACK_TEST_FRAME_SIZE	(14 + 1500)
@@ -134,8 +130,8 @@ static int eth_run_loopback_test(struct udevice *current, int speed, int delay_t
 	u32 i, j;
 
 	/* make sure the net_tx_packet is initialized (net_init() was called) */
-	assert(net_tx_packet != NULL);
-	if (net_tx_packet == NULL)
+	assert(net_tx_packet);
+	if (!net_tx_packet)
 		return -EINVAL;
 
 	net_set_ether(net_tx_packet, net_bcast_ethaddr, LOOPBACK_TEST_DATA_SIZE);
@@ -249,13 +245,13 @@ static void do_eth_help(void)
 	printf("rktest eth dhcp address IP:file - Boot image via network using DHCP/TFTP protocol, example: rktest eth dhcp 0x62000000 192.168.1.100:Image\n");
 }
 
-int board_eth_test(int argc, char * const argv[])
+int do_test_eth(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 {
-	int ret;
+	struct udevice *current;
+	u32 tx_delay, rx_delay;
 	char cmd_eth[512] = {0};
 	int i, speed;
-	u32 tx_delay, rx_delay;
-	struct udevice *current;
+	int ret;
 
 	current = eth_get_dev();
 	if (!current || !device_active(current))
@@ -299,12 +295,33 @@ int board_eth_test(int argc, char * const argv[])
 	}
 
 	/* run dhcp/tftp test */
-	ret = cli_simple_run_command(cmd_eth, 0);
+	ret = run_command(cmd_eth, 0);
 	if (ret < 0) {
 		printf("DHCP test error: %d\n", ret);
 		return ret;
 	}
 
-
 	return 0;
 }
+#endif
+
+static cmd_tbl_t sub_cmd[] = {
+#ifdef CONFIG_GMAC_ROCKCHIP
+	UNIT_CMD_DEFINE(eth, 0),
+#endif
+};
+
+static const char sub_cmd_help[] =
+#ifdef CONFIG_GMAC_ROCKCHIP
+"    [i] rktest eth                         - test ethernet\n"
+#else
+""
+#endif
+;
+
+struct cmd_group cmd_grp_net = {
+	.id	= TEST_ID_NET,
+	.help	= sub_cmd_help,
+	.cmd	= sub_cmd,
+	.cmd_n	= ARRAY_SIZE(sub_cmd),
+};
