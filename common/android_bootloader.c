@@ -50,7 +50,7 @@ DECLARE_GLOBAL_DATA_PTR;
 #define OEM_UNLOCK_ARG_SIZE 30
 #define UUID_SIZE 37
 
-#if defined(CONFIG_ANDROID_AB) && !defined(CONFIG_ANDROID_AVB)
+#ifdef CONFIG_ANDROID_AB
 static int get_partition_unique_uuid(char *partition,
 				     char *guid_buf,
 				     size_t guid_buf_size)
@@ -1055,20 +1055,6 @@ int android_bootloader_boot_flow(struct blk_desc *dev_desc,
 		 * "skip_initramfs" to the cmdline to make it ignore the
 		 * recovery initramfs in the boot partition.
 		 */
-#if (defined(CONFIG_ANDROID_AB) && !defined(CONFIG_ANDROID_AVB))
-	{
-		char root_partition[20] = {0};
-		char guid_buf[UUID_SIZE] = {0};
-		char root_partuuid[70] = "root=PARTUUID=";
-
-		strcat(root_partition, ANDROID_PARTITION_SYSTEM);
-		strcat(root_partition, slot_suffix);
-		get_partition_unique_uuid(root_partition, guid_buf, UUID_SIZE);
-		strcat(root_partuuid, guid_buf);
-		env_update("bootargs", root_partuuid);
-	}
-#endif
-
 #ifdef CONFIG_ANDROID_AB
 		mode_cmdline = "skip_initramfs";
 #endif
@@ -1138,6 +1124,26 @@ int android_bootloader_boot_flow(struct blk_desc *dev_desc,
 			       slot_suffix, &load_address)) {
 		printf("Android image load failed\n");
 		return -1;
+	}
+#endif
+
+#ifdef CONFIG_ANDROID_AB
+	/* In android a/b & avb process, the "root=" will be add which parameter
+	 * is in vbmeta.In linux a/b & avb process, the "root=" must be add by
+	 * follow code. To be compatible with the above two processes, test it
+	 * is necessary to add "root=".
+	 */
+	char root_partition[20] = {0};
+	char guid_buf[UUID_SIZE] = {0};
+	char root_partuuid[70] = "root=PARTUUID=";
+	char *boot_args = env_get("bootargs");
+
+	if (!strstr(boot_args, "root=")) {
+		strcat(root_partition, ANDROID_PARTITION_SYSTEM);
+		strcat(root_partition, slot_suffix);
+		get_partition_unique_uuid(root_partition, guid_buf, UUID_SIZE);
+		strcat(root_partuuid, guid_buf);
+		env_update("bootargs", root_partuuid);
 	}
 #endif
 
