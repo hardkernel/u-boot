@@ -25,6 +25,7 @@ char *mtd_part_parse(void)
 	struct blk_desc *dev_desc;
 	disk_partition_t info;
 	char *mtd_part_info_p;
+	struct mtd_info *mtd;
 	char *mtd_part_info;
 	int ret;
 	int p;
@@ -33,6 +34,7 @@ char *mtd_part_parse(void)
 	if (!dev_desc)
 		return NULL;
 
+	mtd = (struct mtd_info *)dev_desc->bdev->priv;
 	mtd_part_info = (char *)calloc(MTD_PART_INFO_MAX_SIZE, sizeof(char));
 	if (!mtd_part_info) {
 		printf("%s: Fail to malloc!", __func__);
@@ -65,7 +67,15 @@ char *mtd_part_parse(void)
 			 info.name);
 		strcat(mtd_part_info, ",");
 		if (part_get_info(dev_desc, p + 1, &info)) {
-			snprintf(mtd_part_info_p, data_len - 1, "-@0x%x(%s)",
+			/* Nand flash is erased by block and gpt table just
+			 * resserve 33 sectors for the last partition. This
+			 * will erase the backup gpt table by user program,
+			 * so reserve one block.
+			 */
+			snprintf(mtd_part_info_p, data_len - 1, "0x%x@0x%x(%s)",
+				 (int)(size_t)(info.size -
+				 (info.size - 1) %
+				 (mtd->erasesize >> 9) - 1) << 9,
 				 (int)(size_t)info.start << 9,
 				 info.name);
 			break;
@@ -144,6 +154,7 @@ static int mtd_blk_probe(struct udevice *udev)
 	struct blk_desc *desc = dev_get_uclass_platdata(udev);
 	struct mtd_info *mtd = dev_get_priv(udev->parent);
 
+	desc->bdev->priv = mtd;
 	sprintf(desc->vendor, "0x%.4x", 0x2207);
 	memcpy(desc->product, mtd->name, strlen(mtd->name));
 	memcpy(desc->revision, "V1.00", sizeof("V1.00"));
