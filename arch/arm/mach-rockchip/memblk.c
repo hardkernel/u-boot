@@ -67,7 +67,7 @@ const static struct memblk_attr plat_mem_attr[MEMBLK_ID_MAX] = {
 	},
 	[MEMBLK_ID_AVB_ANDROID]  =	{
 		.name = "AVB_ANDROID",
-		.flags = M_ATTR_OFC,
+		.flags = M_ATTR_OFC | M_ATTR_CACHELINE_ALIGN,
 	},
 };
 
