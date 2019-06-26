@@ -400,6 +400,11 @@ static int charge_extrem_low_power(struct udevice *dev)
 			printf("get voltage failed: %d\n", voltage);
 			continue;
 		}
+
+		if (ctrlc()) {
+			printf("Extrem low charge: exit by ctrl+c\n");
+			break;
+		}
 	}
 
 	autowakeup_timer_uninit();
