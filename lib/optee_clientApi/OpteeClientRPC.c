@@ -408,7 +408,21 @@ TEEC_Result OpteeRpcCmdRpmb(t_teesmc32_arg *TeeSmc32Arg)
 	}
 
 	case TEE_RPC_RPMB_CMD_GET_DEV_INFO: {
+		if (init_rpmb()) {
+			TeecResult = TEEC_ERROR_GENERIC;
+			goto Exit;
+		}
+
 		mmc = do_returnmmc();
+		if (finish_rpmb()) {
+			TeecResult = TEEC_ERROR_GENERIC;
+			goto Exit;
+		}
+
+		if (mmc == NULL) {
+			TeecResult = TEEC_ERROR_GENERIC;
+			goto Exit;
+		}
 
 		DevInfo = (struct tee_rpc_rpmb_dev_info *)(size_t)
 		TeeSmc32Param[1].u.memref.buf_ptr;
