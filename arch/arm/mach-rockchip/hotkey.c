@@ -12,13 +12,13 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
-#define CTRL_B		0x02
-#define CTRL_D		0x04
-#define CTRL_F		0x06
-#define CTRL_I		0x09
-#define CTRL_M		0x0d
-#define CTRL_P		0x10
-#define CTRL_S		0x13
+#define CTRL_B		0x02	/* bootrom mode */
+#define CTRL_D		0x04	/* download mde */
+#define CTRL_F		0x06	/* fastboot mode */
+#define CTRL_I		0x09	/* inicall debug for kernel */
+#define CTRL_M		0x0d	/* memory(sysmem/bidram) */
+#define CTRL_P		0x10	/* parameter(cmdline) dump */
+#define CTRL_S		0x13	/* shell(cli) */
 
 bool is_hotkey(enum hotkey_t id)
 {
