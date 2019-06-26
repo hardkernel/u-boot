@@ -228,6 +228,7 @@ int atags_set_tag(u32 magic, void *tagdata)
 	return 0;
 }
 
+#ifndef CONFIG_TPL_BUILD
 struct tag *atags_get_tag(u32 magic)
 {
 	u32 *hash, calc_hash, size;
@@ -266,6 +267,9 @@ struct tag *atags_get_tag(u32 magic)
 
 	return NULL;
 }
+#else
+struct tag *atags_get_tag(u32 magic) { return NULL; }
+#endif
 
 void atags_destroy(void)
 {
