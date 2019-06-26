@@ -175,8 +175,23 @@ static int do_rkusb(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 	}
 
 	s = env_get("serial#");
-	if (s)
-		g_dnl_set_serialnumber((char *)s);
+	if (s) {
+		char *sn = (char *)calloc(strlen(s) + 1, sizeof(char));
+		char *sn_p = sn;
+
+		if (!sn)
+			goto cleanup_board;
+
+		memcpy(sn, s, strlen(s));
+		while (*sn_p) {
+			if (*sn_p == '\\' || *sn_p == '/')
+				*sn_p = '_';
+			sn_p++;
+		}
+
+		g_dnl_set_serialnumber(sn);
+		free(sn);
+	}
 
 	rc = g_dnl_register("rkusb_ums_dnl");
 	if (rc) {
