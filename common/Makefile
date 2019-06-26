@@ -66,18 +66,21 @@ endif # !CONFIG_SPL_BUILD
 obj-$(CONFIG_$(SPL_TPL_)BOOTSTAGE) += bootstage.o
 
 ifdef CONFIG_SPL_BUILD
+ifndef CONFIG_TPL_BUILD
 obj-$(CONFIG_SPL_DFU_SUPPORT) += dfu.o
 obj-$(CONFIG_SPL_DFU_SUPPORT) += cli_hush.o
 obj-$(CONFIG_SPL_HASH_SUPPORT) += hash.o
 obj-$(CONFIG_SPL_YMODEM_SUPPORT) += xyzModem.o
 obj-$(CONFIG_SPL_LOAD_FIT) += common_fit.o
 obj-$(CONFIG_SPL_NET_SUPPORT) += miiphyutil.o
+endif
 obj-$(CONFIG_$(SPL_TPL_)OF_LIBFDT) += fdt_support.o
 ifdef CONFIG_SPL_USB_HOST_SUPPORT
 obj-$(CONFIG_SPL_USB_SUPPORT) += usb.o usb_hub.o
 obj-$(CONFIG_USB_STORAGE) += usb_storage.o
 endif
 endif
+
 #others
 obj-$(CONFIG_DDR_SPD) += ddr_spd.o
 obj-$(CONFIG_SPD_EEPROM) += ddr_spd.o
@@ -99,15 +102,22 @@ ifneq ($(CONFIG_$(SPL_)SYS_MALLOC_F_LEN),0)
 obj-y += malloc_simple.o
 endif
 endif
+
+ifndef CONFIG_TPL_BUILD
 obj-y += image.o
+endif
 obj-$(CONFIG_$(SPL_TPL_)ANDROID_AB) += android_ab.o
 obj-$(CONFIG_$(SPL_TPL_)ANDROID_BOOT_IMAGE) += image-android.o
 obj-$(CONFIG_$(SPL_TPL_)ANDROID_BOOTLOADER) += android_bootloader.o
+
 obj-$(CONFIG_$(SPL_TPL_)OF_LIBFDT) += image-fdt.o
+ifndef CONFIG_TPL_BUILD
 obj-$(CONFIG_$(SPL_TPL_)FIT) += image-fit.o
 obj-$(CONFIG_$(SPL_)MULTI_DTB_FIT) += boot_fit.o common_fit.o
 obj-$(CONFIG_$(SPL_TPL_)FIT_SIGNATURE) += image-sig.o
+endif
 obj-$(CONFIG_IO_TRACE) += iotrace.o
+
 obj-y += memsize.o
 obj-y += stdio.o
 
@@ -115,7 +125,11 @@ ifdef CONFIG_CMD_DTIMG
 obj-y += image-android-dt.o
 endif
 
+ifndef CONFIG_TPL_BUILD
 obj-$(CONFIG_RKIMG_BOOTLOADER) += boot_rkimg.o
+endif
+
+ifndef CONFIG_SPL_BUILD
 # This option is not just y/n - it can have a numeric value
 ifdef CONFIG_FASTBOOT_FLASH
 obj-y += image-sparse.o
@@ -129,6 +143,7 @@ endif
 
 ifneq ($(or $(CONFIG_USB_FUNCTION_FASTBOOT),$(CONFIG_UDP_FUNCTION_FASTBOOT)),)
 obj-y += fb_common.o
+endif
 endif
 
 ifdef CONFIG_CMD_EEPROM_LAYOUT
@@ -144,6 +159,8 @@ obj-$(CONFIG_$(SPL_)LOG_CONSOLE) += log_console.o
 obj-y += s_record.o
 obj-y += xyzModem.o
 
+ifndef CONFIG_SPL_BUILD
 obj-$(CONFIG_ANDROID_WRITE_KEYBOX) += write_keybox.o
 obj-$(CONFIG_ANDROID_KEYMASTER_CA) += keymaster.o
 obj-$(CONFIG_ANDROID_KEYMASTER_CA) += attestation_key.o
+endif
