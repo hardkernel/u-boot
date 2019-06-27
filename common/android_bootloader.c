@@ -1043,12 +1043,14 @@ int android_bootloader_boot_flow(struct blk_desc *dev_desc,
 	}
 
 	if (slot_suffix[0] != '_') {
+#ifndef CONFIG_ANDROID_AVB
 		printf("###There is no bootable slot, bring up lastboot!###\n");
 		if (rk_get_lastboot() == 1)
 			memcpy(slot_suffix, "_b", 2);
 		else if(rk_get_lastboot() == 0)
 			memcpy(slot_suffix, "_a", 2);
 		else
+#endif
 			return -1;
 	}
 #endif
