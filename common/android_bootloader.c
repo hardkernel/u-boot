@@ -675,7 +675,11 @@ static AvbSlotVerifyResult android_slot_verify(char *boot_partname,
 	}
 
 out:
-#ifdef CONFIG_ANDROID_AB
+#if defined(CONFIG_ANDROID_AB) && !defined(CONFIG_ANDROID_AVB)
+	/*
+	 * In ab & avb process, the tries_remaining minus one in function
+	 * android_slot_verify, shield this function here.
+	 */
 	/* ... and decrement tries remaining, if applicable. */
 	if (!ab_data.slots[slot_index_to_boot].successful_boot &&
 	    ab_data.slots[slot_index_to_boot].tries_remaining > 0) {
