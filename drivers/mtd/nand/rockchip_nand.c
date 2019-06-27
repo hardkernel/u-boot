@@ -539,7 +539,7 @@ static int rockchip_nand_ecc_init(struct mtd_info *mtd,
 
 static int rockchip_nand_block_bad(struct mtd_info *mtd, loff_t ofs)
 {
-	int page, res = 0, i;
+	int page, res = 0;
 	struct nand_chip *chip = mtd_to_nand(mtd);
 	u16 bad = 0xff;
 	int chipnr = (int)(ofs >> chip->chip_shift);
@@ -549,13 +549,23 @@ static int rockchip_nand_block_bad(struct mtd_info *mtd, loff_t ofs)
 	chip->cmdfunc(mtd, NAND_CMD_READ0, 0x00, page);
 	if(rockchip_nand_hw_syndrome_pio_read_page(mtd,
 	   chip, chip->buffers->databuf, 0, page) == -1) {
+		/* first page of the block*/
 		chip->cmdfunc(mtd, NAND_CMD_READOOB, chip->badblockpos, page);
-		for (i = 0; i < 8; i++) {
-			bad = chip->read_byte(mtd);
-			if (bad)
-				break;
-		}
-		if (i >= 8)
+		bad = chip->read_byte(mtd);
+		if (bad != 0xFF)
+			res = 1;
+		/* second page of the block*/
+		chip->cmdfunc(mtd, NAND_CMD_READOOB, chip->badblockpos,
+			      page + 1);
+		bad = chip->read_byte(mtd);
+		if (bad != 0xFF)
+			res = 1;
+		/* last page of the block */
+		page += ((mtd->erasesize - mtd->writesize) >> chip->chip_shift);
+		page--;
+		chip->cmdfunc(mtd, NAND_CMD_READOOB, chip->badblockpos, page);
+		bad = chip->read_byte(mtd);
+		if (bad != 0xFF)
 			res = 1;
 	}
 	chip->select_chip(mtd, -1);
