@@ -393,6 +393,7 @@ int rockchip_get_boot_mode(void)
 	int ret;
 	uint32_t reg_boot_mode;
 	char *env_reboot_mode;
+	int clear_boot_reg = 0;
 
 	/*
 	 * Here, we mainly check for:
@@ -446,35 +447,57 @@ fallback:
 	if (reg_boot_mode == BOOT_LOADER) {
 		printf("boot mode: loader\n");
 		boot_mode = BOOT_MODE_LOADER;
+		clear_boot_reg = 1;
 	} else if (reg_boot_mode == BOOT_FASTBOOT) {
 		printf("boot mode: bootloader\n");
 		boot_mode = BOOT_MODE_BOOTLOADER;
+		clear_boot_reg = 1;
 	} else if (bmsg && !strcmp(bmsg->command, "boot-recovery")) {
 		printf("boot mode: recovery\n");
 		boot_mode = BOOT_MODE_RECOVERY;
+		clear_boot_reg = 1;
 	} else {
 		switch (reg_boot_mode) {
 		case BOOT_NORMAL:
 			printf("boot mode: normal\n");
 			boot_mode = BOOT_MODE_NORMAL;
+			clear_boot_reg = 1;
 			break;
 		case BOOT_RECOVERY:
 			/* printf("boot mode: recovery\n"); */
 			boot_mode = BOOT_MODE_RECOVERY;
+			clear_boot_reg = 1;
 			break;
 		case BOOT_UMS:
 			printf("boot mode: ums\n");
 			boot_mode = BOOT_MODE_UMS;
+			clear_boot_reg = 1;
 			break;
 		case BOOT_CHARGING:
 			printf("boot mode: charging\n");
 			boot_mode = BOOT_MODE_CHARGING;
+			clear_boot_reg = 1;
+			break;
+		case BOOT_PANIC:
+			printf("boot mode: panic\n");
+			boot_mode = BOOT_MODE_PANIC;
+			break;
+		case BOOT_WATCHDOG:
+			printf("boot mode: watchdog\n");
+			boot_mode = BOOT_MODE_WATCHDOG;
 			break;
 		default:
 			printf("boot mode: None\n");
 			boot_mode = BOOT_MODE_UNDEFINE;
 		}
 	}
+
+	/*
+	 * We don't clear boot mode reg when its value stands for the reboot
+	 * reason or others(in the future), the kernel will need and clear it.
+	 */
+	if (clear_boot_reg)
+		writel(BOOT_NORMAL, (void *)CONFIG_ROCKCHIP_BOOT_MODE_REG);
 
 	return boot_mode;
 }
