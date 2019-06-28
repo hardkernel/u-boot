@@ -209,6 +209,26 @@ struct tag *atags_get_tag(u32 magic);
  */
 int atags_is_available(void);
 
+#ifdef CONFIG_SPL_BUILD
+/*
+ * get_bootdev_by_brom_bootsource
+ *
+ * @magic: void
+ *
+ * return: boootdev, else 0 fail.
+ */
+int get_bootdev_by_brom_bootsource(void);
+
+/*
+ * atags_set_bootdev_by_brom_bootsource
+ *
+ * @magic: void
+ *
+ * return: 0 success, others fail.
+ */
+int atags_set_bootdev_by_brom_bootsource(void);
+#endif
+
 /* Print only one tag */
 void atags_print_tag(struct tag *t);
 

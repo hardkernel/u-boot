@@ -5,6 +5,8 @@
  */
 
 #include <common.h>
+#include <asm/io.h>
+#include <asm/arch/bootrom.h>
 #include <asm/arch/rk_atags.h>
 #if CONFIG_IS_ENABLED(TINY_FRAMEWORK)
 #include <debug_uart.h>
@@ -15,6 +17,25 @@
 #define tag_size(type)	((sizeof(struct tag_header) + sizeof(struct type)) >> 2)
 #define for_each_tag(t, base)		\
 	for (t = base; t->hdr.size; t = tag_next(t))
+
+#ifdef CONFIG_SPL_BUILD
+/*
+ * The array is used to transform rom bootsource type to rk atags boot type.
+ */
+static int bootdev_map[] = {
+	BOOT_TYPE_UNKNOWN,
+	BOOT_TYPE_NAND,
+	BOOT_TYPE_EMMC,
+	BOOT_TYPE_SPI_NOR,
+	BOOT_TYPE_SPI_NAND,
+	BOOT_TYPE_SD0,
+	BOOT_TYPE_UNKNOWN,
+	BOOT_TYPE_UNKNOWN,
+	BOOT_TYPE_UNKNOWN,
+	BOOT_TYPE_UNKNOWN,
+	BOOT_TYPE_UNKNOWN
+};
+#endif
 
 #if CONFIG_IS_ENABLED(TINY_FRAMEWORK) &&		\
 	!CONFIG_IS_ENABLED(LIBGENERIC_SUPPORT) &&	\
@@ -269,6 +290,31 @@ struct tag *atags_get_tag(u32 magic)
 }
 #else
 struct tag *atags_get_tag(u32 magic) { return NULL; }
+#endif
+
+#ifdef CONFIG_SPL_BUILD
+int get_bootdev_by_brom_bootsource(void)
+{
+	int bootsource = 0;
+
+	bootsource = readl(BROM_BOOTSOURCE_ID_ADDR);
+	if (bootsource > ARRAY_SIZE(bootdev_map) - 1 || bootsource < 0)
+		return 0;
+	else
+		return bootdev_map[bootsource];
+}
+
+int atags_set_bootdev_by_brom_bootsource(void)
+{
+	struct tag_bootdev boot_dev;
+
+	memset(&boot_dev, 0, sizeof(struct tag_bootdev));
+	boot_dev.devtype = get_bootdev_by_brom_bootsource();
+	if (!atags_is_available())
+		return -ENODATA;
+
+	return atags_set_tag(ATAG_BOOTDEV, &boot_dev);
+}
 #endif
 
 void atags_destroy(void)
