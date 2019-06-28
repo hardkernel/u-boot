@@ -14,6 +14,7 @@
 #include <dm.h>
 #include <fdtdec.h>
 #include <boot_rkimg.h>
+#include <stdlib.h>
 #include <linux/usb/phy-rockchip-inno-usb2.h>
 #include <key.h>
 #ifdef CONFIG_DM_RAMDISK
@@ -105,24 +106,38 @@ void boot_devtype_init(void)
 		atags_en = 1;
 		env_set("devtype", devtype);
 		env_set("devnum", devnum);
+
 #ifdef CONFIG_DM_MMC
 		if (!strcmp("mmc", devtype))
 			mmc_initialize(gd->bd);
 #endif
-	} else {
-#ifdef CONFIG_DM_MMC
-		mmc_initialize(gd->bd);
-#endif
-		ret = run_command_list(devtype_num_set, -1, 0);
-		if (ret) {
-			/* Set default dev type/num if command not valid */
-			devtype = "mmc";
-			devnum = "0";
-			env_set("devtype", devtype);
-			env_set("devnum", devnum);
-		}
+		/*
+		 * For example, the pre-loader do not have mtd device,
+		 * and pass devtype is nand. Then U-Boot can not get
+		 * dev_desc when use mtd driver to read firmware. So
+		 * test the block dev is exist or not here.
+		 *
+		 * And the devtype & devnum maybe wrong sometimes, it
+		 * is better to test first.
+		 */
+		if (blk_get_devnum_by_typename(devtype, atoi(devnum)))
+			goto finish;
 	}
 
+	/* If not find valid bootdev by atags, scan all possible */
+#ifdef CONFIG_DM_MMC
+	mmc_initialize(gd->bd);
+#endif
+	ret = run_command_list(devtype_num_set, -1, 0);
+	if (ret) {
+		/* Set default dev type/num if command not valid */
+		devtype = "mmc";
+		devnum = "0";
+		env_set("devtype", devtype);
+		env_set("devnum", devnum);
+	}
+
+finish:
 	done = 1;
 	printf("Bootdev%s: %s %s\n", atags_en ? "(atags)" : "",
 	       env_get("devtype"), env_get("devnum"));
