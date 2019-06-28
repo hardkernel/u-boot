@@ -8,6 +8,8 @@
 #include <dm.h>
 #include <asm/io.h>
 #include <asm/gpio.h>
+#include <asm/arch/grf_px30.h>
+#include <asm/arch/hardware.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -18,9 +20,33 @@ void board_alive_led(void)
 	gpio_direction_output(ALIVE_LED_GPIO, 1);
 }
 
+#define GRF_BASE		0xff140000
+void board_debug_uart2m1(void)
+{
+	static struct px30_grf * const grf = (void *)GRF_BASE;
+
+	/* GRF_IOFUNC_CON0 */
+	enum {
+		CON_IOMUX_UART2SEL_SHIFT	= 10,
+		CON_IOMUX_UART2SEL_MASK = 3 << CON_IOMUX_UART2SEL_SHIFT,
+		CON_IOMUX_UART2SEL_M0	= 0,
+		CON_IOMUX_UART2SEL_M1,
+		CON_IOMUX_UART2SEL_USBPHY,
+	};
+
+	/* Enable early UART2 */
+	rk_clrsetreg(&grf->iofunc_con0,
+		     CON_IOMUX_UART2SEL_MASK,
+		     CON_IOMUX_UART2SEL_M1 << CON_IOMUX_UART2SEL_SHIFT);
+}
+
 int rk_board_late_init(void)
 {
+	/* turn on blue led */
 	board_alive_led();
+
+	/* set uart2-m1 port as a default debug console */
+	board_debug_uart2m1();
 
 	return 0;
 }
