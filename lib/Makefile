@@ -90,6 +90,7 @@ obj-y += linux_string.o
 obj-y += membuff.o
 obj-$(CONFIG_REGEX) += slre.o
 obj-y += string.o
+obj-y += stdlib.o
 obj-y += tables_csum.o
 obj-y += time.o
 obj-$(CONFIG_TRACE) += trace.o
