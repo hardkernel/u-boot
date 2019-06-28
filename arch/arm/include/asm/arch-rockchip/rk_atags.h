@@ -33,6 +33,7 @@
 #endif
 
 /* tag_bootdev.devtype */
+#define BOOT_TYPE_UNKNOWN	0
 #define BOOT_TYPE_NAND		(1 << 0)
 #define BOOT_TYPE_EMMC		(1 << 1)
 #define BOOT_TYPE_SD0		(1 << 2)
