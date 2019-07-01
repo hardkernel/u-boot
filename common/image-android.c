@@ -270,6 +270,11 @@ int android_image_load_separate(struct andr_img_hdr *hdr,
 	int ret, blk_read = 0;
 	ulong start;
 
+	if (android_image_check_header(hdr)) {
+		printf("Bad android image header\n");
+		return -EINVAL;
+	}
+
 	if (hdr->kernel_size) {
 		size = hdr->kernel_size + hdr->page_size;
 		blk_cnt = DIV_ROUND_UP(size, dev_desc->blksz);
