@@ -2,7 +2,7 @@
  * Copyright (c) 2018 Fuzhou Rockchip Electronics Co., Ltd
  *
  * SPDX-License-Identifier:    GPL-2.0
- * date: 2019-04-19
+ * date: 2019-07-01
  */
 	.arch armv8-a+nosimd
 	.file	"rk_sftl.c"
@@ -11605,19 +11605,36 @@ sftl_write:
 	stp	x29, x30, [sp, -48]!
 	add	x29, sp, 0
 	stp	x19, x20, [sp, 16]
-	mov	w20, w1
-	mov	w19, w0
+	mov	w19, w1
 	str	x21, [sp, 32]
-	mov	x21, x2
+	mov	w21, w0
+	add	w21, w19, w21
+	mov	x20, x2
 	bl	FtlWriteToIDB
-	mov	x3, x21
-	mov	w2, w20
-	mov	w1, w19
+.L1592:
+	sub	w1, w21, w19
+	mov	x3, x20
+	cmp	w19, 256
+	bhi	.L1594
+	mov	w2, w19
 	ldr	x21, [sp, 32]
 	ldp	x19, x20, [sp, 16]
 	mov	w0, 0
 	ldp	x29, x30, [sp], 48
 	b	FtlWrite
+.L1594:
+	mov	w2, 256
+	mov	w0, 0
+	bl	FtlWrite
+	cbnz	w0, .L1591
+	add	x20, x20, 131072
+	sub	w19, w19, #256
+	b	.L1592
+.L1591:
+	ldp	x19, x20, [sp, 16]
+	ldr	x21, [sp, 32]
+	ldp	x29, x30, [sp], 48
+	ret
 	.size	sftl_write, .-sftl_write
 	.global	g_nand_ops
 	.global	g_nand_phy_info
@@ -12938,250 +12955,250 @@ power_up_flag:
 	.section	.rodata.INSERT_DATA_LIST.str1.1,"aMS",@progbits,1
 .LC1:
 	.string	"\n!!!!! error @ func:%s - line:%d\n"
-	.section	.rodata.__func__.6234,"a",@progbits
+	.section	.rodata.__func__.6246,"a",@progbits
 	.align	3
 	.set	.LANCHOR169,. + 0
-	.type	__func__.6234, %object
-	.size	__func__.6234, 13
-__func__.6234:
+	.type	__func__.6246, %object
+	.size	__func__.6246, 13
+__func__.6246:
 	.string	"FtlProgPages"
-	.section	.rodata.__func__.6262,"a",@progbits
+	.section	.rodata.__func__.6274,"a",@progbits
 	.align	3
 	.set	.LANCHOR177,. + 0
-	.type	__func__.6262, %object
-	.size	__func__.6262, 9
-__func__.6262:
+	.type	__func__.6274, %object
+	.size	__func__.6274, 9
+__func__.6274:
 	.string	"FtlWrite"
-	.section	.rodata.__func__.6337,"a",@progbits
+	.section	.rodata.__func__.6356,"a",@progbits
 	.align	3
 	.set	.LANCHOR128,. + 0
-	.type	__func__.6337, %object
-	.size	__func__.6337, 14
-__func__.6337:
+	.type	__func__.6356, %object
+	.size	__func__.6356, 14
+__func__.6356:
 	.string	"FtlBbt2Bitmap"
-	.section	.rodata.__func__.6372,"a",@progbits
+	.section	.rodata.__func__.6391,"a",@progbits
 	.align	3
 	.set	.LANCHOR141,. + 0
-	.type	__func__.6372, %object
-	.size	__func__.6372, 11
-__func__.6372:
+	.type	__func__.6391, %object
+	.size	__func__.6391, 11
+__func__.6391:
 	.string	"FtlLoadBbt"
-	.section	.rodata.__func__.6487,"a",@progbits
+	.section	.rodata.__func__.6506,"a",@progbits
 	.align	3
 	.set	.LANCHOR49,. + 0
-	.type	__func__.6487, %object
-	.size	__func__.6487, 17
-__func__.6487:
+	.type	__func__.6506, %object
+	.size	__func__.6506, 17
+__func__.6506:
 	.string	"INSERT_FREE_LIST"
-	.section	.rodata.__func__.6492,"a",@progbits
+	.section	.rodata.__func__.6511,"a",@progbits
 	.align	3
 	.set	.LANCHOR45,. + 0
-	.type	__func__.6492, %object
-	.size	__func__.6492, 17
-__func__.6492:
+	.type	__func__.6511, %object
+	.size	__func__.6511, 17
+__func__.6511:
 	.string	"INSERT_DATA_LIST"
-	.section	.rodata.__func__.6523,"a",@progbits
+	.section	.rodata.__func__.6542,"a",@progbits
 	.align	3
 	.set	.LANCHOR50,. + 0
-	.type	__func__.6523, %object
-	.size	__func__.6523, 17
-__func__.6523:
+	.type	__func__.6542, %object
+	.size	__func__.6542, 17
+__func__.6542:
 	.string	"List_remove_node"
-	.section	.rodata.__func__.6555,"a",@progbits
+	.section	.rodata.__func__.6574,"a",@progbits
 	.align	3
 	.set	.LANCHOR54,. + 0
-	.type	__func__.6555, %object
-	.size	__func__.6555, 22
-__func__.6555:
+	.type	__func__.6574, %object
+	.size	__func__.6574, 22
+__func__.6574:
 	.string	"List_update_data_list"
-	.section	.rodata.__func__.6564,"a",@progbits
+	.section	.rodata.__func__.6583,"a",@progbits
 	.align	3
 	.set	.LANCHOR150,. + 0
-	.type	__func__.6564, %object
-	.size	__func__.6564, 16
-__func__.6564:
+	.type	__func__.6583, %object
+	.size	__func__.6583, 16
+__func__.6583:
 	.string	"load_l2p_region"
-	.section	.rodata.__func__.6597,"a",@progbits
+	.section	.rodata.__func__.6616,"a",@progbits
 	.align	3
 	.set	.LANCHOR81,. + 0
-	.type	__func__.6597, %object
-	.size	__func__.6597, 26
-__func__.6597:
+	.type	__func__.6616, %object
+	.size	__func__.6616, 26
+__func__.6616:
 	.string	"ftl_map_blk_alloc_new_blk"
-	.section	.rodata.__func__.6608,"a",@progbits
+	.section	.rodata.__func__.6627,"a",@progbits
 	.align	3
 	.set	.LANCHOR151,. + 0
-	.type	__func__.6608, %object
-	.size	__func__.6608, 15
-__func__.6608:
+	.type	__func__.6627, %object
+	.size	__func__.6627, 15
+__func__.6627:
 	.string	"ftl_map_blk_gc"
-	.section	.rodata.__func__.6623,"a",@progbits
+	.section	.rodata.__func__.6642,"a",@progbits
 	.align	3
 	.set	.LANCHOR148,. + 0
-	.type	__func__.6623, %object
-	.size	__func__.6623, 31
-__func__.6623:
+	.type	__func__.6642, %object
+	.size	__func__.6642, 31
+__func__.6642:
 	.string	"Ftl_write_map_blk_to_last_page"
-	.section	.rodata.__func__.6637,"a",@progbits
+	.section	.rodata.__func__.6656,"a",@progbits
 	.align	3
 	.set	.LANCHOR149,. + 0
-	.type	__func__.6637, %object
-	.size	__func__.6637, 16
-__func__.6637:
+	.type	__func__.6656, %object
+	.size	__func__.6656, 16
+__func__.6656:
 	.string	"FtlMapWritePage"
-	.section	.rodata.__func__.6662,"a",@progbits
+	.section	.rodata.__func__.6681,"a",@progbits
 	.align	3
 	.set	.LANCHOR57,. + 0
-	.type	__func__.6662, %object
-	.size	__func__.6662, 22
-__func__.6662:
+	.type	__func__.6681, %object
+	.size	__func__.6681, 22
+__func__.6681:
 	.string	"select_l2p_ram_region"
-	.section	.rodata.__func__.6679,"a",@progbits
+	.section	.rodata.__func__.6698,"a",@progbits
 	.align	3
 	.set	.LANCHOR153,. + 0
-	.type	__func__.6679, %object
-	.size	__func__.6679, 9
-__func__.6679:
+	.type	__func__.6698, %object
+	.size	__func__.6698, 9
+__func__.6698:
 	.string	"log2phys"
-	.section	.rodata.__func__.6743,"a",@progbits
+	.section	.rodata.__func__.6762,"a",@progbits
 	.align	3
 	.set	.LANCHOR165,. + 0
-	.type	__func__.6743, %object
-	.size	__func__.6743, 15
-__func__.6743:
+	.type	__func__.6762, %object
+	.size	__func__.6762, 15
+__func__.6762:
 	.string	"FtlVpcTblFlush"
-	.section	.rodata.__func__.6765,"a",@progbits
+	.section	.rodata.__func__.6784,"a",@progbits
 	.align	3
 	.set	.LANCHOR140,. + 0
-	.type	__func__.6765, %object
-	.size	__func__.6765, 14
-__func__.6765:
+	.type	__func__.6784, %object
+	.size	__func__.6784, 14
+__func__.6784:
 	.string	"FtlScanSysBlk"
-	.section	.rodata.__func__.6821,"a",@progbits
+	.section	.rodata.__func__.6840,"a",@progbits
 	.align	3
 	.set	.LANCHOR178,. + 0
-	.type	__func__.6821, %object
-	.size	__func__.6821, 15
-__func__.6821:
+	.type	__func__.6840, %object
+	.size	__func__.6840, 15
+__func__.6840:
 	.string	"FtlLoadSysInfo"
-	.section	.rodata.__func__.6843,"a",@progbits
+	.section	.rodata.__func__.6862,"a",@progbits
 	.align	3
 	.set	.LANCHOR180,. + 0
-	.type	__func__.6843, %object
-	.size	__func__.6843, 18
-__func__.6843:
+	.type	__func__.6862, %object
+	.size	__func__.6862, 18
+__func__.6862:
 	.string	"FtlMapTblRecovery"
-	.section	.rodata.__func__.6889,"a",@progbits
+	.section	.rodata.__func__.6908,"a",@progbits
 	.align	3
 	.set	.LANCHOR154,. + 0
-	.type	__func__.6889, %object
-	.size	__func__.6889, 16
-__func__.6889:
+	.type	__func__.6908, %object
+	.size	__func__.6908, 16
+__func__.6908:
 	.string	"FtlReUsePrevPpa"
-	.section	.rodata.__func__.6923,"a",@progbits
+	.section	.rodata.__func__.6942,"a",@progbits
 	.align	3
 	.set	.LANCHOR155,. + 0
-	.type	__func__.6923, %object
-	.size	__func__.6923, 22
-__func__.6923:
+	.type	__func__.6942, %object
+	.size	__func__.6942, 22
+__func__.6942:
 	.string	"FtlRecoverySuperblock"
-	.section	.rodata.__func__.6980,"a",@progbits
+	.section	.rodata.__func__.6999,"a",@progbits
 	.align	3
 	.set	.LANCHOR60,. + 0
-	.type	__func__.6980, %object
-	.size	__func__.6980, 16
-__func__.6980:
+	.type	__func__.6999, %object
+	.size	__func__.6999, 16
+__func__.6999:
 	.string	"make_superblock"
-	.section	.rodata.__func__.7001,"a",@progbits
+	.section	.rodata.__func__.7020,"a",@progbits
 	.align	3
 	.set	.LANCHOR136,. + 0
-	.type	__func__.7001, %object
-	.size	__func__.7001, 18
-__func__.7001:
+	.type	__func__.7020, %object
+	.size	__func__.7020, 18
+__func__.7020:
 	.string	"SupperBlkListInit"
-	.section	.rodata.__func__.7028,"a",@progbits
+	.section	.rodata.__func__.7047,"a",@progbits
 	.align	3
 	.set	.LANCHOR159,. + 0
-	.type	__func__.7028, %object
-	.size	__func__.7028, 14
-__func__.7028:
+	.type	__func__.7047, %object
+	.size	__func__.7047, 14
+__func__.7047:
 	.string	"ftl_check_vpc"
-	.section	.rodata.__func__.7093,"a",@progbits
+	.section	.rodata.__func__.7112,"a",@progbits
 	.align	3
 	.set	.LANCHOR144,. + 0
-	.type	__func__.7093, %object
-	.size	__func__.7093, 25
-__func__.7093:
+	.type	__func__.7112, %object
+	.size	__func__.7112, 25
+__func__.7112:
 	.string	"allocate_data_superblock"
-	.section	.rodata.__func__.7114,"a",@progbits
+	.section	.rodata.__func__.7133,"a",@progbits
 	.align	3
 	.set	.LANCHOR168,. + 0
-	.type	__func__.7114, %object
-	.size	__func__.7114, 29
-__func__.7114:
+	.type	__func__.7133, %object
+	.size	__func__.7133, 29
+__func__.7133:
 	.string	"allocate_new_data_superblock"
-	.section	.rodata.__func__.7121,"a",@progbits
+	.section	.rodata.__func__.7140,"a",@progbits
 	.align	3
 	.set	.LANCHOR61,. + 0
-	.type	__func__.7121, %object
-	.size	__func__.7121, 19
-__func__.7121:
+	.type	__func__.7140, %object
+	.size	__func__.7140, 19
+__func__.7140:
 	.string	"get_new_active_ppa"
-	.section	.rodata.__func__.7134,"a",@progbits
+	.section	.rodata.__func__.7153,"a",@progbits
 	.align	3
 	.set	.LANCHOR146,. + 0
-	.type	__func__.7134, %object
-	.size	__func__.7134, 16
-__func__.7134:
+	.type	__func__.7153, %object
+	.size	__func__.7153, 16
+__func__.7153:
 	.string	"update_vpc_list"
-	.section	.rodata.__func__.7141,"a",@progbits
+	.section	.rodata.__func__.7160,"a",@progbits
 	.align	3
 	.set	.LANCHOR147,. + 0
-	.type	__func__.7141, %object
-	.size	__func__.7141, 20
-__func__.7141:
+	.type	__func__.7160, %object
+	.size	__func__.7160, 20
+__func__.7160:
 	.string	"decrement_vpc_count"
-	.section	.rodata.__func__.7211,"a",@progbits
+	.section	.rodata.__func__.7230,"a",@progbits
 	.align	3
 	.set	.LANCHOR170,. + 0
-	.type	__func__.7211, %object
-	.size	__func__.7211, 19
-__func__.7211:
+	.type	__func__.7230, %object
+	.size	__func__.7230, 19
+__func__.7230:
 	.string	"FtlGcFreeTempBlock"
-	.section	.rodata.__func__.7310,"a",@progbits
+	.section	.rodata.__func__.7329,"a",@progbits
 	.align	3
 	.set	.LANCHOR175,. + 0
-	.type	__func__.7310, %object
-	.size	__func__.7310, 23
-__func__.7310:
+	.type	__func__.7329, %object
+	.size	__func__.7329, 23
+__func__.7329:
 	.string	"rk_ftl_garbage_collect"
-	.section	.rodata.__func__.7582,"a",@progbits
-	.align	3
-	.set	.LANCHOR137,. + 0
-	.type	__func__.7582, %object
-	.size	__func__.7582, 15
-__func__.7582:
-	.string	"FlashReadPages"
 	.section	.rodata.__func__.7601,"a",@progbits
 	.align	3
-	.set	.LANCHOR142,. + 0
+	.set	.LANCHOR137,. + 0
 	.type	__func__.7601, %object
 	.size	__func__.7601, 15
 __func__.7601:
+	.string	"FlashReadPages"
+	.section	.rodata.__func__.7620,"a",@progbits
+	.align	3
+	.set	.LANCHOR142,. + 0
+	.type	__func__.7620, %object
+	.size	__func__.7620, 15
+__func__.7620:
 	.string	"FlashProgPages"
-	.section	.rodata.__func__.7625,"a",@progbits
+	.section	.rodata.__func__.7644,"a",@progbits
 	.align	3
 	.set	.LANCHOR77,. + 0
-	.type	__func__.7625, %object
-	.size	__func__.7625, 17
-__func__.7625:
+	.type	__func__.7644, %object
+	.size	__func__.7644, 17
+__func__.7644:
 	.string	"FlashEraseBlocks"
-	.section	.rodata.__func__.7740,"a",@progbits
+	.section	.rodata.__func__.7759,"a",@progbits
 	.align	3
 	.set	.LANCHOR185,. + 0
-	.type	__func__.7740, %object
-	.size	__func__.7740, 14
-__func__.7740:
+	.type	__func__.7759, %object
+	.size	__func__.7759, 14
+__func__.7759:
 	.string	"FtlWriteToIDB"
 	.section	.rodata.decrement_vpc_count.str1.1,"aMS",@progbits,1
 .LC21:
