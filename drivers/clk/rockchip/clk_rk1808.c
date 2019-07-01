@@ -625,6 +625,63 @@ static int rk1808_mac_set_speed_clk(struct clk *clk, ulong clk_id, uint hz)
 	}
 	return 0;
 }
+
+static ulong rk1808_crypto_get_clk(struct rk1808_clk_priv *priv, ulong clk_id)
+{
+	struct rk1808_cru *cru = priv->cru;
+	u32 div, con, parent;
+
+	switch (clk_id) {
+	case SCLK_CRYPTO:
+		con = readl(&cru->clksel_con[29]);
+		div = (con & CRYPTO_DIV_MASK) >> CRYPTO_DIV_SHIFT;
+		parent = priv->gpll_hz;
+		break;
+	case SCLK_CRYPTO_APK:
+		con = readl(&cru->clksel_con[29]);
+		div = (con & CRYPTO_APK_DIV_MASK) >> CRYPTO_APK_DIV_SHIFT;
+		parent = priv->gpll_hz;
+		break;
+	default:
+		return -ENOENT;
+	}
+
+	return DIV_TO_RATE(parent, div);
+}
+
+static ulong rk1808_crypto_set_clk(struct rk1808_clk_priv *priv, ulong clk_id,
+				   ulong hz)
+{
+	struct rk1808_cru *cru = priv->cru;
+	int src_clk_div;
+
+	src_clk_div = DIV_ROUND_UP(priv->gpll_hz, hz);
+	assert(src_clk_div - 1 <= 31);
+
+	/*
+	 * select gpll as crypto clock source and
+	 * set up dependent divisors for crypto clocks.
+	 */
+	switch (clk_id) {
+	case SCLK_CRYPTO:
+		rk_clrsetreg(&cru->clksel_con[29],
+			     CRYPTO_PLL_SEL_MASK | CRYPTO_DIV_MASK,
+			     CRYPTO_PLL_SEL_GPLL << CRYPTO_PLL_SEL_SHIFT |
+			     (src_clk_div - 1) << CRYPTO_DIV_SHIFT);
+		break;
+	case SCLK_CRYPTO_APK:
+		rk_clrsetreg(&cru->clksel_con[29],
+			     CRYPTO_APK_PLL_SEL_MASK | CRYPTO_APK_DIV_MASK,
+			     CRYPTO_PLL_SEL_GPLL << CRYPTO_APK_SEL_SHIFT |
+			     (src_clk_div - 1) << CRYPTO_APK_DIV_SHIFT);
+		break;
+	default:
+		printf("do not support this peri freq\n");
+		return -EINVAL;
+	}
+
+	return rk1808_crypto_get_clk(priv, clk_id);
+}
 #endif
 
 static ulong rk1808_bus_get_clk(struct rk1808_clk_priv *priv, ulong clk_id)
@@ -880,6 +937,10 @@ static ulong rk1808_clk_get_rate(struct clk *clk)
 	case DCLK_VOPLITE:
 		rate = rk1808_vop_get_clk(priv, clk->id);
 		break;
+	case SCLK_CRYPTO:
+	case SCLK_CRYPTO_APK:
+		rate = rk1808_crypto_get_clk(priv, clk->id);
+		break;
 #endif
 	case HSCLK_BUS_PRE:
 	case MSCLK_BUS_PRE:
@@ -984,6 +1045,10 @@ static ulong rk1808_clk_set_rate(struct clk *clk, ulong rate)
 	case SCLK_GMAC_RMII_SPEED:
 	case SCLK_GMAC_RGMII_SPEED:
 		ret = rk1808_mac_set_speed_clk(clk, clk->id, rate);
+		break;
+	case SCLK_CRYPTO:
+	case SCLK_CRYPTO_APK:
+		ret = rk1808_crypto_set_clk(priv, clk->id, rate);
 		break;
 #endif
 	case HSCLK_BUS_PRE:
