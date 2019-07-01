@@ -39,7 +39,6 @@
 
 #define CONFIG_SPI
 #define CONFIG_SPI_FLASH_GIGADEVICE
-#define CONFIG_SF_DEFAULT_SPEED 20000000
 
 #ifndef CONFIG_SPL_BUILD
 /* usb otg */
