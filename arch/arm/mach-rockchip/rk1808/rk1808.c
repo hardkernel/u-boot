@@ -4,6 +4,8 @@
  *
  */
 #include <common.h>
+#include <android_image.h>
+#include <boot_rkimg.h>
 #include <asm/io.h>
 #include <asm/arch/grf_rk1808.h>
 #include <asm/arch/hardware.h>
@@ -86,4 +88,54 @@ void board_debug_uart_init(void)
 		     GPIO4A2_UART2_TX_M0 << GPIO4A2_SHIFT |
 		     GPIO4A3_UART2_RX_M0 << GPIO4A3_SHIFT);
 #endif
+}
+
+/*
+ * rockchip: rk1808: fixup "ramdisk_addr_r" by real image address
+ *
+ * We fixup "ramdisk_addr_r" with real image address which has been already
+ * loaded by pre-loader. This brings benefits:
+ *
+ * - It saves boot time when ramdisk is large;
+ * - It avoids memory overlap with original ramdisk data.
+ */
+#if defined(CONFIG_DM_RAMDISK) && !defined(CONFIG_SPL_BUILD)
+static int env_fixup_ramdisk_addr_r(void)
+{
+	const char *boot_part = PART_BOOT;
+	struct blk_desc *dev_desc;
+	struct andr_img_hdr *hdr;
+	disk_partition_t info;
+	ulong ramdisk_addr_r;
+	int ret;
+
+	dev_desc = rockchip_get_bootdev();
+	if (!dev_desc) {
+		printf("%s: dev_desc is NULL!\n", __func__);
+		return -ENODEV;
+	}
+
+	ret = part_get_info_by_name(dev_desc, boot_part, &info);
+	if (ret < 0) {
+		printf("%s: failed to get %s part, ret=%d\n",
+		       __func__, boot_part, ret);
+	}
+
+	hdr = (struct andr_img_hdr *)(info.start * dev_desc->blksz);
+	ramdisk_addr_r = (ulong)hdr;
+	ramdisk_addr_r += hdr->page_size;
+	ramdisk_addr_r += ALIGN(hdr->kernel_size, hdr->page_size);
+	env_set_hex("ramdisk_addr_r", ramdisk_addr_r);
+
+	return 0;
+}
+#endif
+
+int rk_board_late_init(void)
+{
+#if defined(CONFIG_DM_RAMDISK) && !defined(CONFIG_SPL_BUILD)
+	env_fixup_ramdisk_addr_r();
+#endif
+
+	return 0;
 }
