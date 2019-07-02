@@ -40,6 +40,10 @@
 	};
 };
 
+&crypto {
+	status = "okay";
+};
+
 &emmc {
 	fifo-mode;
 	bus-width = <8>;

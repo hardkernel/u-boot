@@ -861,6 +861,15 @@
 		status = "disabled";
 	};
 
+	crypto: crypto@ff630000 {
+		compatible = "rockchip,rk1808-crypto";
+		reg = <0x0 0xff630000 0x0 0x10000>;
+		clock-names = "sclk_crypto", "sclk_crypto_apk";
+		clocks = <&cru SCLK_CRYPTO>, <&cru SCLK_CRYPTO_APK>;
+		clock-frequency = <200000000>, <300000000>;
+		status = "disabled";
+	};
+
 	i2s0: i2s@ff7e0000 {
 		compatible = "rockchip,rk1808-i2s-tdm";
 		reg = <0x0 0xff7e0000 0x0 0x1000>;
