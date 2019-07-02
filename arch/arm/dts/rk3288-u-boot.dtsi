@@ -33,6 +33,10 @@
 	u-boot,dm-pre-reloc;
 };
 
+&crypto {
+	u-boot,dm-pre-reloc;
+};
+
 &cru {
 	u-boot,dm-pre-reloc;
 };

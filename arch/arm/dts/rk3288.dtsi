@@ -697,6 +697,14 @@
 		status = "disabled";
 	};
 
+	crypto: crypto@ff8a0000 {
+		compatible = "rockchip,rk3288-crypto";
+		reg = <0xff8a0000 0x10000>;
+		clock-names = "sclk_crypto";
+		clocks = <&cru SCLK_CRYPTO>;
+		status = "disabled";
+	};
+
 	vopb: vop@ff930000 {
 		compatible = "rockchip,rk3288-vop-big";
 		reg = <0xff930000 0x19c>;
