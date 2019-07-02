@@ -1504,6 +1504,11 @@ config CMD_MTD
 	help
 	  MTD support
 
+config CMD_MTD_BLK
+	bool "MTD block support"
+	help
+	  MTD block support
+
 config MTDIDS_DEFAULT
 	string "Default MTD IDs"
 	depends on CMD_MTDPARTS
