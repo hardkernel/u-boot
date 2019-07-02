@@ -109,7 +109,9 @@ static bool verify_permanent_attributes(
   rsa_key.algo = CRYPTO_RSA2048;
   rsa_key.n = (u32 *)&pub_key.rsa_n;
   rsa_key.e = (u32 *)&pub_key.rsa_e;
+#ifdef CONFIG_ROCKCHIP_CRYPTO_V1
   rsa_key.c = (u32 *)&pub_key.rsa_c;
+#endif
   ret = crypto_rsa_verify(dev, &rsa_key, (u8 *)rsa_hash_revert, (u8 *)rsaResult_temp);
   if (ret) {
     avb_error("Hardware verify error!\n");
