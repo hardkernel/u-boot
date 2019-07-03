@@ -859,6 +859,14 @@ int optimus_storage_init(int toErase)
                // if (fdtsz < _dtb_is_loaded)
                         memmove((char*)dtbLoadedAddr, (char*)fdtAddr, fdtsz);
         }
+        if (toErase > 0) {
+            extern int store_ddr_parameter_erase(void);
+            DWN_MSG("to erase ddr parameters\n");
+            if (store_ddr_parameter_erase()) {
+                DWN_ERR("Fail in erase ddr parameters\n");
+                return -__LINE__;
+            }
+        }
     }
 
     return ret;
