@@ -120,6 +120,8 @@ static int dbg_enable = 0;
 #define DC_ADC_TRIGGER		150
 #define DIV(x)			((x) ? (x) : 1)
 
+#define SAMPLE_RES_20MR		20
+
 /***********************************************************/
 struct battery_priv {
 	struct udevice *dev;
@@ -141,6 +143,7 @@ struct battery_priv {
 	u32		*ocv_table;
 	u32		ocv_size;
 	int		virtual_power;
+	int		sample_res;
 	int		pwroff_min;
 	int		sm_old_cap;
 	int		sm_linek;
@@ -170,6 +173,8 @@ struct battery_priv {
 	int		pwr_dsoc;
 	int		pwr_rsoc;
 	int		pwr_vol;
+	int		res_fac;
+	int		over_20mR;
 };
 
 enum charger_type {
@@ -194,6 +199,36 @@ static const char *charger_type_to_name[] = {
 	"UNKN",
 };
 
+/*
+ * If sample resistor changes, we need caculate a new CHRG_CUR_SEL[] table.
+ *
+ * Calculation method:
+ * 1. find 20mR(default) current charge table, that is:
+ *	20mR: [1000, 1200, 1400, 1600, 1800, 2000, 2250, 2400]
+ *
+ * 2. caculate Rfac(not care much, just using it) by sample resistor(ie. Rsam);
+ *	Rsam = 20mR: Rfac = 10;
+ *	Rsam > 20mR: Rfac = Rsam * 10 / 20;
+ *	Rsam < 20mR: Rfac = 20 * 10 / Rsam;
+ *
+ * 3. from step2, we get Rfac, then we can get new charge current table by 20mR
+ *    charge table:
+ *	Iorg: member from 20mR charge table; Inew: new member for charge table.
+ *
+ *	Rsam > 20mR: Inew = Iorg * 10 / Rfac;
+ *	Rsam < 20mR: Inew = Iorg * Rfac / 10;
+ *
+ * Notice: Inew should round up if it is not a integer!!!
+ *
+ * Example:
+ *	10mR: [2000, 2400, 2800, 3200, 3600, 4000, 4500, 4800]
+ *	20mR: [1000, 1200, 1400, 1600, 1800, 2000, 2250, 2400]
+ *	40mR: [500,  600,  700,  800,  900,  1000, 1125, 1200]
+ *	50mR: [400,  480,  560,  640,  720,  800,  900,  960]
+ *	60mR: [334,  400,  467,  534,  600,  667,  750,  800]
+ *
+ * You should add property 'sample_res = <Rsam>' at battery node.
+ */
 static const u32 CHRG_VOL_SEL[] = {
 	4050, 4100, 4150, 4200, 4250, 4300, 4350
 };
@@ -205,6 +240,12 @@ static const u32 CHRG_CUR_SEL[] = {
 static const u32 CHRG_CUR_INPUT[] = {
 	450, 800, 850, 1000, 1250, 1500, 1750, 2000
 };
+
+/* 'res_fac' has been *10, so we need divide 10 */
+#define RES_FAC_MUX(value, res_fac)    ((value) * res_fac / 10)
+
+/* 'res_fac' has been *10, so we need 'value * 10' before divide 'res_fac' */
+#define RES_FAC_DIV(value, res_fac)    ((value) * 10 / res_fac)
 
 static int rk816_bat_read(struct battery_priv *di, u8 reg)
 {
@@ -370,16 +411,19 @@ static int rk816_bat_get_ocv_voltage(struct battery_priv *di)
 
 static int rk816_bat_get_avg_current(struct battery_priv *di)
 {
-	int val = 0;
+	int cur, val = 0;
 
 	val |= rk816_bat_read(di, BAT_CUR_AVG_REGL) << 0;
 	val |= rk816_bat_read(di, BAT_CUR_AVG_REGH) << 8;
 
 	if (val & 0x800)
 		val -= 4096;
-	val = val * 1506 / 1000;
+	if (!di->over_20mR)
+		cur = RES_FAC_MUX(val * 1506, di->res_fac) / 1000;
+	else
+		cur = RES_FAC_DIV(val * 1506, di->res_fac) / 1000;
 
-	return val;
+	return cur;
 }
 
 static int rk816_bat_get_avg_voltage(struct battery_priv *di)
@@ -405,7 +449,7 @@ static int rk816_bat_get_est_voltage(struct battery_priv *di)
 	return (est_vol > 2800) ? est_vol : vol;
 }
 
-static u8 rk816_bat_finish_ma(int fcc)
+static u8 rk816_bat_finish_ma(struct battery_priv *di, int fcc)
 {
 	u8 ma;
 
@@ -418,6 +462,21 @@ static u8 rk816_bat_finish_ma(int fcc)
 	else
 		ma = FINISH_100MA;
 
+	/* adjust ma according to sample resistor */
+	if (di->sample_res < 20) {
+		/* ma should div 2 */
+		if (ma == FINISH_200MA)
+			ma = FINISH_100MA;
+		else if (ma == FINISH_250MA)
+			ma = FINISH_150MA;
+	} else if (di->sample_res > 20) {
+		/* ma should mux 2 */
+		if (ma == FINISH_100MA)
+			ma = FINISH_200MA;
+		else if (ma == FINISH_150MA)
+			ma = FINISH_250MA;
+	}
+
 	return ma;
 }
 
@@ -428,6 +487,19 @@ static void rk816_bat_select_chrg_cv(struct battery_priv *di)
 	chrg_vol_sel = di->dts_vol_sel;
 	chrg_cur_sel = di->dts_cur_sel;
 	chrg_cur_input = di->dts_cur_input;
+
+	if (di->sample_res < 20) {
+		if (chrg_cur_sel > 2000)
+			chrg_cur_sel = RES_FAC_DIV(chrg_cur_sel, di->res_fac);
+		else
+			chrg_cur_sel = 1000;
+	} else if (di->sample_res > 20) {
+		chrg_cur_sel = RES_FAC_MUX(chrg_cur_sel, di->res_fac);
+		if (chrg_cur_sel > 2400)
+			chrg_cur_sel = 2400;
+		if (chrg_cur_sel < 1000)
+			chrg_cur_sel = 1000;
+	}
 
 	for (index = 0; index < ARRAY_SIZE(CHRG_VOL_SEL); index++) {
 		if (chrg_vol_sel < CHRG_VOL_SEL[index])
@@ -457,7 +529,7 @@ static void rk816_bat_init_chrg_config(struct battery_priv *di)
 	u8 sup_sts, ggcon, thermal, finish_ma;
 
 	rk816_bat_select_chrg_cv(di);
-	finish_ma = rk816_bat_finish_ma(di->fcc);
+	finish_ma = rk816_bat_finish_ma(di, di->fcc);
 
 	ggcon = rk816_bat_read(di, GGCON_REG);
 	sup_sts = rk816_bat_read(di, SUP_STS_REG);
@@ -629,15 +701,19 @@ static u8 rk816_bat_get_pwroff_min(struct battery_priv *di)
 
 static int rk816_bat_get_coulomb_cap(struct battery_priv *di)
 {
-	int val = 0;
+	int cap, val = 0;
 
 	val |= rk816_bat_read(di, GASCNT_REG3) << 24;
 	val |= rk816_bat_read(di, GASCNT_REG2) << 16;
 	val |= rk816_bat_read(di, GASCNT_REG1) << 8;
 	val |= rk816_bat_read(di, GASCNT_REG0) << 0;
-	val /= 2390;
 
-	return val;
+	if (!di->over_20mR)
+		cap = RES_FAC_MUX(val / 2390, di->res_fac);
+	else
+		cap = RES_FAC_DIV(val / 2390, di->res_fac);
+
+	return cap;
 }
 
 static void rk816_bat_init_capacity(struct battery_priv *di, u32 capacity)
@@ -650,7 +726,11 @@ static void rk816_bat_init_capacity(struct battery_priv *di, u32 capacity)
 	if (!delta)
 		return;
 
-	cap = capacity * 2390;
+	if (!di->over_20mR)
+		cap = RES_FAC_DIV(capacity * 2390, di->res_fac);
+	else
+		cap = RES_FAC_MUX(capacity * 2390, di->res_fac);
+
 	buf = (cap >> 24) & 0xff;
 	rk816_bat_write(di, GASCNT_CAL_REG3, buf);
 	buf = (cap >> 16) & 0xff;
@@ -895,6 +975,20 @@ static void rk816_bat_init_poffset(struct battery_priv *di)
 	di->poffset = coffset - ioffset;
 }
 
+static void rk816_bat_select_sample_res(struct battery_priv *di)
+{
+	/* Here, res_fac is 10 times of real value for good calcuation */
+	if (di->sample_res == SAMPLE_RES_20MR) {
+		di->over_20mR = 0;
+		di->res_fac = 10;
+	} else if (di->sample_res > SAMPLE_RES_20MR) {
+		di->over_20mR = 1;
+		di->res_fac = di->sample_res * 10 / SAMPLE_RES_20MR;
+	} else {
+		di->over_20mR = 0;
+		di->res_fac = SAMPLE_RES_20MR * 10 / di->sample_res;
+	}
+}
 static bool is_rk816_bat_exist(struct  battery_priv *di)
 {
 	return (rk816_bat_read(di, SUP_STS_REG) & BAT_EXS) ? true : false;
@@ -1028,6 +1122,7 @@ static int rk816_fg_init(struct battery_priv *di)
 	rk816_bat_set_vol_instant_mode(di);
 	rk816_bat_init_voltage_kb(di);
 	rk816_bat_init_poffset(di);
+	rk816_bat_select_sample_res(di);
 	rk816_bat_clr_initialized_state(di);
 	di->dsoc = rk816_bat_get_dsoc(di);
 	di->remain_cap = rk816_bat_get_prev_cap(di);
@@ -1117,6 +1212,7 @@ static void rk816_bat_debug_info(struct battery_priv *di)
 {
 	u8 sup_sts, ggcon, ggsts, vb_mod, rtc, thermal, misc;
 	u8 usb_ctrl, chrg_ctrl1, chrg_ctrl2, chrg_ctrl3;
+	uint32_t chrg_cur;
 	static const char *name[] = {"NONE", "USB", "AC", "DC", "UNDEF"};
 
 	if (!dbg_enable)
@@ -1132,6 +1228,12 @@ static void rk816_bat_debug_info(struct battery_priv *di)
 	chrg_ctrl1 = rk816_bat_read(di, CHRG_CTRL_REG1);
 	chrg_ctrl2 = rk816_bat_read(di, CHRG_CTRL_REG2);
 	chrg_ctrl3 = rk816_bat_read(di, CHRG_CTRL_REG3);
+	if (!di->over_20mR)
+		chrg_cur = RES_FAC_MUX(CHRG_CUR_SEL[chrg_ctrl1 & 0x0f],
+				       di->res_fac);
+	else
+		chrg_cur = RES_FAC_DIV(CHRG_CUR_SEL[chrg_ctrl1 & 0x0f],
+				       di->res_fac);
 
 	DBG("\n---------------------- DEBUG REGS ------------------------\n"
 	    "GGCON=0x%2x, GGSTS=0x%2x, RTC=0x%2x, SUP_STS= 0x%2x\n"
@@ -1142,19 +1244,21 @@ static void rk816_bat_debug_info(struct battery_priv *di)
 	    );
 	DBG("----------------------------------------------------------\n"
 	    "Dsoc=%d, Rsoc=%d, Vavg=%d, Iavg=%d, Cap=%d, Fcc=%d, d=%d\n"
-	    "K=%d, old_cap=%d, charger=%s, Is=%d, Ip=%d, Vs=%d\n"
-	    "min=%d, meet: soc=%d, calc: dsoc=%d, rsoc=%d, Vocv=%d\n"
+	    "K=%d, old_cap=%d, charger=%s, Is=%d, Ip=%d, Vs=%d, Rfac=%d\n"
+	    "min=%d, meet: soc=%d, calc: dsoc=%d, rsoc=%d, Vocv=%d, Rsam=%d\n"
 	    "off: i=0x%x, c=0x%x, max=%d, ocv_c=%d, halt: st=%d, cnt=%d\n"
 	    "pwr: dsoc=%d, rsoc=%d, vol=%d, exist=%d\n",
 	    di->dsoc, rk816_bat_get_rsoc(di), rk816_bat_get_avg_voltage(di),
 	    rk816_bat_get_avg_current(di), di->remain_cap, di->fcc,
 	    di->rsoc - di->dsoc,
 	    di->sm_linek, di->sm_old_cap, name[di->chrg_type],
-	    CHRG_CUR_SEL[chrg_ctrl1 & 0x0f],
+	    chrg_cur,
 	    CHRG_CUR_INPUT[usb_ctrl & 0x0f],
-	    CHRG_VOL_SEL[(chrg_ctrl1 & 0x70) >> 4],  di->pwroff_min,
+	    CHRG_VOL_SEL[(chrg_ctrl1 & 0x70) >> 4], di->res_fac,
+	    di->pwroff_min,
 	    di->sm_meet_soc, di->calc_dsoc, di->calc_rsoc,
-	    rk816_bat_get_ocv_voltage(di), rk816_bat_get_ioffset(di),
+	    rk816_bat_get_ocv_voltage(di), di->sample_res,
+	    rk816_bat_get_ioffset(di),
 	    rk816_bat_get_coffset(di), di->is_max_soc_offset,
 	    di->is_ocv_calib, di->is_halt, di->halt_cnt, di->pwr_dsoc,
 	    di->pwr_rsoc, di->pwr_vol, is_rk816_bat_exist(di)
@@ -1417,6 +1521,7 @@ static int rk816_fg_ofdata_to_platdata(struct udevice *dev)
 	di->dts_cur_sel = dev_read_u32_default(dev, "max_chrg_current", 1200);
 	di->max_soc_offset = dev_read_u32_default(dev, "max_soc_offset", 70);
 	di->virtual_power = dev_read_u32_default(dev, "virtual_power", 0);
+	di->sample_res = dev_read_u32_default(dev, "sample_res", 20);
 	di->bat_res = dev_read_u32_default(dev, "bat_res", 135);
 
 	/* Parse dc type */
@@ -1444,6 +1549,7 @@ static int rk816_fg_ofdata_to_platdata(struct udevice *dev)
 	DBG("design_qmax:%d\n", di->qmax);
 	DBG("max_soc_offset:%d\n", di->max_soc_offset);
 	DBG("dc_det_adc:%d\n", di->dc_det_adc);
+	DBG("res_sample:%d\n", di->sample_res);
 
 	return 0;
 }
