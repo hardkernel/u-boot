@@ -6,6 +6,7 @@
 
 obj-$(CONFIG_CMD_DM) += cmd_dm.o
 obj-$(CONFIG_UT_DM) += bus.o
+obj-$(CONFIG_UT_DM) += nop.o
 obj-$(CONFIG_UT_DM) += test-driver.o
 obj-$(CONFIG_UT_DM) += test-fdt.o
 obj-$(CONFIG_UT_DM) += test-main.o
