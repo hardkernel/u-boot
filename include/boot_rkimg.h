@@ -26,6 +26,7 @@ enum _boot_mode {
 #define PART_BOOT			"boot"
 #define PART_RECOVERY			"recovery"
 #define PART_DTBO			"dtbo"
+#define PART_LOGO			"logo"
 
 #define RK_BLK_SIZE 512
 

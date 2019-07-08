@@ -5,10 +5,12 @@
  */
 #include <common.h>
 #include <adc.h>
+#include <bmp_layout.h>
 #include <asm/io.h>
 #include <fs.h>
 #include <malloc.h>
 #include <sysmem.h>
+#include <asm/unaligned.h>
 #include <linux/list.h>
 #include <asm/arch/resource_img.h>
 #include <boot_rkimg.h>
@@ -165,6 +167,7 @@ static int init_resource_list(struct resource_img_hdr *hdr)
 	int offset = 0;
 	int resource_found = 0;
 	struct blk_desc *dev_desc;
+	struct bmp_header *header;
 	disk_partition_t part_info;
 	char *boot_partname = PART_BOOT;
 
@@ -317,6 +320,65 @@ next:
 
 	ret = 0;
 	printf("Load FDT from %s part\n", boot_partname);
+
+	/*
+	 * Add logo.bmp from "logo" parititon
+	 *
+	 * We provide a "logo" partition for user to store logo.bmp
+	 * and update from kernel user space dynamically.
+	 */
+	if (part_get_info_by_name(dev_desc, PART_LOGO, &part_info) >= 0) {
+		struct resource_file *file;
+		struct list_head *node;
+
+		header = memalign(ARCH_DMA_MINALIGN, RK_BLK_SIZE);
+		if (!header) {
+			ret = -ENOMEM;
+			goto err;
+		}
+
+		ret = blk_dread(dev_desc, part_info.start, 1, header);
+		if (ret != 1) {
+			ret = -EIO;
+			goto err2;
+		}
+
+		if (header->signature[0] != 'B' ||
+		    header->signature[1] != 'M') {
+			ret = 0;
+			goto err2;
+		}
+
+		entry = malloc(sizeof(*entry));
+		if (!entry) {
+			ret = -ENOMEM;
+			goto err2;
+		}
+
+		memcpy(entry->tag, ENTRY_TAG, sizeof(ENTRY_TAG));
+		memcpy(entry->name, "logo.bmp", sizeof("logo.bmp"));
+		entry->f_size = get_unaligned_le32(&header->file_size);
+		entry->f_offset = 0;
+
+		/* Delete exist "logo.bmp", then add new */
+		list_for_each(node, &entrys_head) {
+			file = list_entry(node,
+					  struct resource_file, link);
+			if (!strcmp(file->name, entry->name)) {
+				list_del(&file->link);
+				free(file);
+				break;
+			}
+		}
+
+		add_file_to_list(entry, part_info.start);
+		free(entry);
+		printf("Load \"logo.bmp\" from logo part\n");
+		ret = 0;
+err2:
+		free(header);
+	}
+
 err:
 	free(content);
 out:
