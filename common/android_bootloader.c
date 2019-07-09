@@ -1096,6 +1096,16 @@ int android_bootloader_boot_flow(struct blk_desc *dev_desc,
 		if (android_slot_verify(boot_partname, &load_address,
 					slot_suffix)) {
 			printf("AVB verify failed\n");
+#ifdef CONFIG_ANDROID_AB
+			printf("Reset in AB system.\n");
+			flushc();
+			/*
+			 * Since we use the retry-count in ab system, then can
+			 * try reboot if verify fail until the retry-count is
+			 * equal to zero.
+			 */
+			reset_cpu(0);
+#endif
 			return -1;
 		}
 	} else {
@@ -1117,6 +1127,16 @@ int android_bootloader_boot_flow(struct blk_desc *dev_desc,
 			if (android_slot_verify(boot_partname, &load_address,
 						slot_suffix)) {
 				printf("AVB verify failed\n");
+#ifdef CONFIG_ANDROID_AB
+				printf("Reset in AB system.\n");
+				flushc();
+				/*
+				 * Since we use the retry-count in ab system,
+				 * then can try reboot if verify fail until
+				 * the retry-count is equal to zero.
+				 */
+				reset_cpu(0);
+#endif
 				return -1;
 			}
 		}
