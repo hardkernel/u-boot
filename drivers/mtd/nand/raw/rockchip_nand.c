@@ -14,7 +14,7 @@
 #include <linux/ioport.h>
 #include <linux/kernel.h>
 #include <linux/mtd/mtd.h>
-#include <linux/mtd/nand.h>
+#include <linux/mtd/rawnand.h>
 #include <linux/mtd/partitions.h>
 
 DECLARE_GLOBAL_DATA_PTR;
