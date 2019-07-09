@@ -10,7 +10,7 @@
 
 static int mtd_curr_dev = -1;
 
-static int do_mtd(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+static int do_mtd_blk(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	if (argc == 2) {
 		return CMD_RET_FAILURE;
@@ -20,12 +20,12 @@ static int do_mtd(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 }
 
 U_BOOT_CMD(
-	mtd, 8, 1, do_mtd,
-	"MTD device sub-system",
-	"mtd dev [dev] - show or set current MTD device\n"
-	"mtd part [dev] - print partition table of one or all MTD devices\n"
-	"mtd read addr blk# cnt - read `cnt' blocks starting at block\n"
+	mtd_blk, 8, 1, do_mtd_blk,
+	"MTD Block device sub-system",
+	"mtd_blk dev [dev] - show or set current MTD device\n"
+	"mtd_blk part [dev] - print partition table of one or all MTD devices\n"
+	"mtd_blk read addr blk# cnt - read `cnt' blocks starting at block\n"
 	"     `blk#' to memory address `addr'\n"
-	"mtd write addr blk# cnt - write `cnt' blocks starting at block\n"
+	"mtd_blk write addr blk# cnt - write `cnt' blocks starting at block\n"
 	"     `blk#' from memory address `addr'"
 );
