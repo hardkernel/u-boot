@@ -115,7 +115,7 @@
 		"setenv devtype mmc; setenv devnum 1; echo Boot from SDcard;" \
 	"elif mmc dev 0; then " \
 		"setenv devtype mmc; setenv devnum 0;" \
-	"elif mtd dev 0; then " \
+	"elif mtd_blk dev 0; then " \
 		"setenv devtype mtd; setenv devnum 0;" \
 	"elif rknand dev 0; then " \
 		"setenv devtype rknand; setenv devnum 0;" \
