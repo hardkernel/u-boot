@@ -5,8 +5,10 @@
  */
 #include <common.h>
 #include <asm/io.h>
+#include <asm/arch/cpu.h>
 #include <asm/arch/grf_rk3308.h>
 #include <asm/arch/hardware.h>
+#include <asm/arch/rk_atags.h>
 #include <asm/gpio.h>
 #include <debug_uart.h>
 
@@ -75,6 +77,32 @@ enum {
 	UART2_IO_SEL_M0		= 0,
 	UART2_IO_SEL_M1,
 	UART2_IO_SEL_USB,
+
+	GPIO3B3_SEL_SRC_CTRL_SHIFT	= 7,
+	GPIO3B3_SEL_SRC_CTRL_MASK	= BIT(7),
+	GPIO3B3_SEL_SRC_CTRL_IOMUX	= 0,
+	GPIO3B3_SEL_SRC_CTRL_SEL_PLUS,
+
+	GPIO3B3_SEL_PLUS_SHIFT		= 4,
+	GPIO3B3_SEL_PLUS_MASK		= GENMASK(6, 4),
+	GPIO3B3_SEL_PLUS_GPIO3_B3	= 0,
+	GPIO3B3_SEL_PLUS_FLASH_ALE,
+	GPIO3B3_SEL_PLUS_EMMC_PWREN,
+	GPIO3B3_SEL_PLUS_SPI1_CLK,
+	GPIO3B3_SEL_PLUS_LCDC_D23_M1,
+
+	GPIO3B2_SEL_SRC_CTRL_SHIFT	= 3,
+	GPIO3B2_SEL_SRC_CTRL_MASK	= BIT(3),
+	GPIO3B2_SEL_SRC_CTRL_IOMUX	= 0,
+	GPIO3B2_SEL_SRC_CTRL_SEL_PLUS,
+
+	GPIO3B2_SEL_PLUS_SHIFT		= 0,
+	GPIO3B2_SEL_PLUS_MASK		= GENMASK(2, 0),
+	GPIO3B2_SEL_PLUS_GPIO3_B2	= 0,
+	GPIO3B2_SEL_PLUS_FLASH_RDN,
+	GPIO3B2_SEL_PLUS_EMMC_RSTN,
+	GPIO3B2_SEL_PLUS_SPI1_MISO,
+	GPIO3B2_SEL_PLUS_LCDC_D22_M1,
 };
 
 enum {
@@ -124,6 +152,29 @@ int rk_board_init(void)
 	gpio_free(GPIO0_A4);
 	return 0;
 }
+
+#ifdef CONFIG_SPL_BUILD
+int rk_board_init_f(void)
+{
+	static struct rk3308_grf * const grf = (void *)GRF_BASE;
+	unsigned long mask;
+	unsigned long value;
+
+	mask = GPIO3B2_SEL_PLUS_MASK | GPIO3B2_SEL_SRC_CTRL_MASK |
+		GPIO3B3_SEL_PLUS_MASK | GPIO3B3_SEL_SRC_CTRL_MASK;
+	value = (GPIO3B2_SEL_PLUS_FLASH_RDN << GPIO3B2_SEL_PLUS_SHIFT) |
+		(GPIO3B2_SEL_SRC_CTRL_SEL_PLUS << GPIO3B2_SEL_SRC_CTRL_SHIFT) |
+		(GPIO3B3_SEL_PLUS_FLASH_ALE << GPIO3B3_SEL_PLUS_SHIFT) |
+		(GPIO3B3_SEL_SRC_CTRL_SEL_PLUS << GPIO3B3_SEL_SRC_CTRL_SHIFT);
+
+	if (get_bootdev_by_brom_bootsource() == BOOT_TYPE_NAND) {
+		if (soc_is_rk3308b())
+			rk_clrsetreg(&grf->soc_con15, mask, value);
+	}
+
+	return 0;
+}
+#endif
 
 void board_debug_uart_init(void)
 {
