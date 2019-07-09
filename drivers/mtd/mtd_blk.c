@@ -35,6 +35,9 @@ char *mtd_part_parse(void)
 		return NULL;
 
 	mtd = (struct mtd_info *)dev_desc->bdev->priv;
+	if (!mtd)
+		return NULL;
+
 	mtd_part_info = (char *)calloc(MTD_PART_INFO_MAX_SIZE, sizeof(char));
 	if (!mtd_part_info) {
 		printf("%s: Fail to malloc!", __func__);
