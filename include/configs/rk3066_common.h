@@ -57,7 +57,6 @@
 #define CONFIG_SYS_NAND_U_BOOT_DST	CONFIG_SYS_TEXT_BASE
 #define CONFIG_SYS_NAND_U_BOOT_SIZE	0x80000
 #define CONFIG_EXTRA_ENV_SETTINGS ROCKCHIP_DEVICE_SETTINGS
-#define CONFIG_MTD_DEVICE
 #endif
 
 #include <config_distro_defaults.h>
@@ -66,7 +65,6 @@
 
 #define CONFIG_USB_FUNCTION_MASS_STORAGE
 
-#define CONFIG_MTD_DEVICE
 #define MTDIDS_DEFAULT			"nand0=rockchip-nand.0"
 
 #define ENV_MEM_LAYOUT_SETTINGS \
