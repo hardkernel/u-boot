@@ -25,3 +25,11 @@
 &uart0 {
 	u-boot,dm-pre-reloc;
 };
+
+&pinctrl {
+	u-boot,dm-pre-reloc;
+};
+
+&gpio0 {
+	u-boot,dm-pre-reloc;
+};
