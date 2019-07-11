@@ -75,11 +75,15 @@ help()
 {
 	echo
 	echo "Usage:"
-	echo "	./make.sh [board|subcmd] [O=<dir>]"
+	echo "	./make.sh [board|subcmd] [O=<dir>|ini]"
 	echo
-	echo "	 - board: board name of defconfig"
-	echo "	 - subcmd: loader|loader-all|trust|trust-all|uboot|elf|map|sym|<addr>|"
-	echo "	 - O=<dir>: assigned output directory"
+	echo "	 - board:   board name of defconfig"
+	echo "	 - subcmd:  |elf*|loader*|spl*|itb||trust*|uboot|map|sym|<addr>|"
+	echo "	 - O=<dir>: assigned output directory, not recommend"
+	echo "	 - ini:     assigned ini file to pack trust/loader"
+	echo
+	echo "Output:"
+	echo "	 When board built okay, there are uboot/trust/loader images in current directory"
 	echo
 	echo "Example:"
 	echo
@@ -89,19 +93,23 @@ help()
 	echo "	./make.sh firefly-rk3288           --- build for firefly-rk3288_defconfig"
 	echo "	./make.sh                          --- build with exist .config"
 	echo
-	echo "	After build, Images of uboot, loader and trust are all generated."
-	echo
 	echo "2. Pack helper:"
 	echo "	./make.sh uboot                    --- pack uboot.img"
 	echo "	./make.sh trust                    --- pack trust.img"
 	echo "	./make.sh trust-all                --- pack trust img (all supported)"
+	echo "	./make.sh trust <ini>              --- pack trust img with assigned ini file"
 	echo "	./make.sh loader                   --- pack loader bin"
 	echo "	./make.sh loader-all	           --- pack loader bin (all supported)"
+	echo "	./make.sh loader <ini>             --- pack loader img with assigned ini file"
+	echo "	./make.sh spl                      --- pack loader with u-boot-spl.bin and u-boot-tpl.bin"
+	echo "	./make.sh spl-s                    --- pack loader only replace miniloader with u-boot-spl.bin"
+	echo "	./make.sh itb                      --- pack u-boot.itb(TODO: bl32 is not included for ARMv8)"
 	echo
 	echo "3. Debug helper:"
 	echo "	./make.sh elf                      --- dump elf file with -D(default)"
 	echo "	./make.sh elf-S                    --- dump elf file with -S"
 	echo "	./make.sh elf-d                    --- dump elf file with -d"
+	echo "	./make.sh elf-*                    --- dump elf file with -*"
 	echo "	./make.sh <no reloc_addr>          --- dump function symbol and code position of address(no relocated)"
 	echo "	./make.sh <reloc_addr-reloc_off>   --- dump function symbol and code position of address(relocated)"
 	echo "	./make.sh map                      --- cat u-boot.map"
