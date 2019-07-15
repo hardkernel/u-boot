@@ -1465,8 +1465,13 @@ uint32_t trusty_read_vbootkey_enable_flag(uint8_t *flag)
 
 	if (TeecResult == TEEC_SUCCESS) {
 		memcpy(&bootflag, SharedMem0.buffer, SharedMem0.size);
+#if defined(CONFIG_ROCKCHIP_RK3288)
+		if (bootflag == 0x00000001)
+			*flag = 1;
+#else
 		if (bootflag == 0x000000FF)
 			*flag = 1;
+#endif
 	}
 exit:
 	TEEC_ReleaseSharedMemory(&SharedMem0);
