@@ -65,6 +65,16 @@ int bidram_reserve_by_name(const char *name, phys_addr_t base, phys_size_t size)
 void bidram_dump(void);
 
 /**
+ * bidram_reserved_is_overlap() - Check outside memory is overlap with reserved
+ *
+ * @base: region base address
+ * @size: region size
+ *
+ * @return memblk struct when overlap, otherwise NULL
+ */
+struct memblock *bidram_reserved_is_overlap(phys_addr_t base, phys_size_t size);
+
+/**
  * board_bidram_parse_fn() - Weak function for board to implement
  */
 parse_fn_t board_bidram_parse_fn(void);

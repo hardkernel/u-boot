@@ -182,6 +182,24 @@ static int bidram_is_overlap(phys_addr_t base1, phys_size_t size1,
 	return ((base1 < (base2 + size2)) && (base2 < (base1 + size1)));
 }
 
+struct memblock *bidram_reserved_is_overlap(phys_addr_t base, phys_size_t size)
+{
+	struct bidram *bidram = &plat_bidram;
+	struct list_head *node;
+	struct memblock *mem;
+
+	if (!bidram_has_init())
+		return false;
+
+	list_for_each(node, &bidram->reserved_head) {
+		mem = list_entry(node, struct memblock, node);
+		if (bidram_is_overlap(mem->base, mem->size, base, size))
+			return mem;
+	}
+
+	return NULL;
+}
+
 static int bidram_core_reserve(enum memblk_id id, const char *mem_name,
 			       phys_addr_t base, phys_size_t size)
 {
