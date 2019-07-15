@@ -537,6 +537,7 @@ config CMD_CRYPTO
 	depends on DM_CRYPTO
 	select SHA1
 	select SHA256
+	select SHA512
 	select MD5
 	help
 	  Crypto test.
