@@ -43,8 +43,10 @@ int test_secure_storage_default(void)
 						    TEEC_NONE,
 						    TEEC_NONE);
 	/*0 nand or emmc "security" partition , 1 rpmb*/
-	TeecOperation.params[0].value.a =
-		(dev_desc->if_type == IF_TYPE_MMC) ? 1 : 0;
+	if (dev_desc->if_type == IF_TYPE_MMC && dev_desc->devnum == 0)
+		TeecOperation.params[0].value.a = 1;
+	else
+		TeecOperation.params[0].value.a = 0;
 
 	TeecResult = TEEC_OpenSession(&TeecContext,
 				      &TeecSession,
