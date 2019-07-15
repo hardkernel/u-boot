@@ -17,6 +17,8 @@ u32 crypto_algo_nbits(u32 algo)
 		return 160;
 	case CRYPTO_SHA256:
 		return 256;
+	case CRYPTO_SHA512:
+		return 512;
 	case CRYPTO_RSA512:
 		return 512;
 	case CRYPTO_RSA1024:
