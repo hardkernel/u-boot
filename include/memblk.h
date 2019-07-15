@@ -6,6 +6,8 @@
 #ifndef _MEMBLK_H
 #define _MEMBLK_H
 
+#define ALIAS_COUNT_MAX		2
+
 enum memblk_id {
 	MEMBLK_ID_UNK,
 
@@ -31,20 +33,21 @@ enum memblk_id {
 
 	/* Other */
 	MEMBLK_ID_BY_NAME,
-	MEMBLK_ID_FDT_RESV,
+	MEMBLK_ID_KMEM_RESERVED,
 	MEMBLK_ID_DEMO,
 	MEMBLK_ID_MAX,
 };
 
 struct memblk_attr {
 	const char *name;
-	const char *alias[2];
+	const char *alias[ALIAS_COUNT_MAX];
 	u32 flags;
 };
 
 struct memblock {
 	phys_addr_t base;
 	phys_size_t size;
+	phys_addr_t orig_base;
 	struct memblk_attr attr;
 	struct list_head node;
 };
@@ -59,11 +62,18 @@ extern const struct memblk_attr *mem_attr;
 #define M_ATTR_OFC		(1 << 0)
 /* Over-Flow-Check for region Head, only for U-Boot stack */
 #define M_ATTR_HOFC		(1 << 1)
-/* Memory can be overlap by fdt reserved memory */
+/* Memory can be overlap by fdt reserved memory, deprecated */
 #define M_ATTR_OVERLAP		(1 << 2)
-/* Just peek, always return success */
+/* Just peek, always return success, deprecated */
 #define M_ATTR_PEEK		(1 << 3)
 /* The region start address should be aligned to cacheline size */
 #define M_ATTR_CACHELINE_ALIGN	(1 << 4)
+/* Kernel 'reserved-memory' */
+#define M_ATTR_KMEM_RESERVED	(1 << 5)
+/* The region can be overlap by kernel 'reserved-memory' */
+#define M_ATTR_KMEM_CAN_OVERLAP	(1 << 6)
+/* Ignore invisable region reserved by bidram */
+#define M_ATTR_IGNORE_INVISIBLE	(1 << 7)
+
 
 #endif /* _MEMBLK_H */

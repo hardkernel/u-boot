@@ -20,7 +20,9 @@
 struct sysmem {
 	struct lmb lmb;
 	struct list_head allocated_head;
+	struct list_head kmem_resv_head;
 	ulong allocated_cnt;
+	ulong kmem_resv_cnt;
 	bool has_initf;
 	bool has_initr;
 };
