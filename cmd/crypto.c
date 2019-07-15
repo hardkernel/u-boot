@@ -10,6 +10,7 @@
 #include <u-boot/md5.h>
 #include <u-boot/sha1.h>
 #include <u-boot/sha256.h>
+#include <u-boot/sha512.h>
 
 static u8 foo_data[] = {
 	0x52, 0x53, 0x41, 0x4b, 0x00, 0x00, 0x00, 0x00, 0x23, 0x00, 0x00, 0x00,
@@ -217,6 +218,7 @@ static int do_crypto(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	sha_context csha_ctx;
 	sha1_context sha1_ctx;
 	sha256_context sha256_ctx;
+	sha512_context sha512_ctx;
 	rsa_key rsa_key;
 	u8 sha256_out0[32];
 	u8 sha256_out1[32];
@@ -225,9 +227,18 @@ static int do_crypto(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	u8 rsa_out[256];
 	u8 md5_out0[16];
 	u8 md5_out1[16];
+	u8 sha512_out0[64];
+	u8 sha512_out1[64];
 	u32 cap;
 
-	cap = CRYPTO_MD5 | CRYPTO_SHA1 | CRYPTO_SHA256 | CRYPTO_RSA2048;
+	/* CRYPTO_V1 TODO: SHA512 is not available */
+#ifdef CONFIG_ROCKCHIP_CRYPTO_V1
+	cap = CRYPTO_MD5 | CRYPTO_SHA1 | CRYPTO_SHA256 |
+	      CRYPTO_RSA2048;
+#else
+	cap = CRYPTO_MD5 | CRYPTO_SHA1 | CRYPTO_SHA256 | CRYPTO_SHA512 |
+	      CRYPTO_RSA2048;
+#endif
 	dev = crypto_get_device(cap);
 	if (!dev) {
 		printf("Can't find crypto device for expected capability\n");
@@ -251,6 +262,17 @@ static int do_crypto(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	sha1_update(&sha1_ctx, (const u8 *)foo_data, sizeof(foo_data));
 	sha1_finish(&sha1_ctx, sha1_out1);
 	dump("SHA1", sha1_out0, sha1_out1, crypto_algo_nbits(csha_ctx.algo));
+
+	/* SHA512 */
+	csha_ctx.algo = CRYPTO_SHA512;
+	csha_ctx.length = sizeof(foo_data);
+	crypto_sha_csum(dev, &csha_ctx, (char *)foo_data,
+			sizeof(foo_data), sha512_out0);
+	sha512_starts(&sha512_ctx);
+	sha512_update(&sha512_ctx, (const u8 *)foo_data, sizeof(foo_data));
+	sha512_finish(&sha512_ctx, sha512_out1);
+	dump("SHA512", sha512_out0, sha512_out1,
+	     crypto_algo_nbits(csha_ctx.algo));
 
 	/* SHA256 */
 	csha_ctx.algo = CRYPTO_SHA256;
