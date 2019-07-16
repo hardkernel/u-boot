@@ -20,6 +20,11 @@ DECLARE_GLOBAL_DATA_PTR;
 #define CTRL_P		0x10	/* parameter(cmdline) dump */
 #define CTRL_S		0x13	/* shell(cli) */
 
+#if defined(CONFIG_CONSOLE_DISABLE_CTRLC) && \
+	defined(CONFIG_BOOTDELAY) && (CONFIG_BOOTDELAY <= 0)
+bool is_hotkey(enum hotkey_t id) { return false; }
+void hotkey_run(enum hotkey_t id) { }
+#else
 bool is_hotkey(enum hotkey_t id)
 {
 	switch (id) {
@@ -60,11 +65,6 @@ void hotkey_run(enum hotkey_t id)
 			env_update("bootargs", "initcall_debug debug");
 		break;
 	case HK_CLI:
-		/* Disable enter cli by hotkey*/
-#if defined(CONFIG_CONSOLE_DISABLE_CTRLC) && \
-    defined(CONFIG_BOOTDELAY) && (CONFIG_BOOTDELAY <= 0)
-		break;
-#endif
 		if (gd->console_evt == CTRL_S)
 			cli_loop();
 		break;
@@ -72,3 +72,4 @@ void hotkey_run(enum hotkey_t id)
 		break;
 	}
 }
+#endif
