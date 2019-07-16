@@ -3,145 +3,42 @@
  *
  * SPDX-License-Identifier:     GPL-2.0+
  */
+
 #include <common.h>
 #include <amp.h>
-#include <clk.h>
 #include <bidram.h>
-#include <dm.h>
+#include <clk.h>
+#include <console.h>
 #include <debug_uart.h>
+#include <dm.h>
+#include <dvfs.h>
+#include <io-domain.h>
 #include <key.h>
 #include <memblk.h>
+#include <misc.h>
+#include <of_live.h>
 #include <ram.h>
+#include <rockchip_debugger.h>
 #include <syscon.h>
 #include <sysmem.h>
+#include <video_rockchip.h>
 #include <asm/io.h>
-#include <asm/arch/vendor.h>
-#include <misc.h>
 #include <asm/gpio.h>
 #include <dm/uclass-internal.h>
+#include <dm/root.h>
+#include <power/charge_display.h>
+#include <power/regulator.h>
+#include <asm/arch/boot_mode.h>
 #include <asm/arch/clock.h>
 #include <asm/arch/cpu.h>
-#include <asm/arch/periph.h>
-#include <asm/arch/boot_mode.h>
 #include <asm/arch/hotkey.h>
-#include <asm/arch/rk_atags.h>
 #include <asm/arch/param.h>
-#ifdef CONFIG_DM_CHARGE_DISPLAY
-#include <power/charge_display.h>
-#endif
-#ifdef CONFIG_DM_DVFS
-#include <dvfs.h>
-#endif
-#ifdef CONFIG_ROCKCHIP_IO_DOMAIN
-#include <io-domain.h>
-#endif
-#ifdef CONFIG_DM_REGULATOR
-#include <power/regulator.h>
-#endif
-#ifdef CONFIG_DRM_ROCKCHIP
-#include <video_rockchip.h>
-#endif
-#ifdef CONFIG_ROCKCHIP_DEBUGGER
-#include <rockchip_debugger.h>
-#endif
-#include <of_live.h>
-#include <dm/root.h>
-#include <console.h>
+#include <asm/arch/periph.h>
+#include <asm/arch/resource_img.h>
+#include <asm/arch/rk_atags.h>
+#include <asm/arch/vendor.h>
 
 DECLARE_GLOBAL_DATA_PTR;
-/* define serialno max length, the max length is 512 Bytes
- * The remaining bytes are used to ensure that the first 512 bytes
- * are valid when executing 'env_set("serial#", value)'.
- */
-#define VENDOR_SN_MAX	513
-#define CPUID_LEN       0x10
-#define CPUID_OFF       0x7
-
-static int rockchip_set_ethaddr(void)
-{
-#ifdef CONFIG_ROCKCHIP_VENDOR_PARTITION
-	int ret;
-	u8 ethaddr[ARP_HLEN];
-	char buf[ARP_HLEN_ASCII + 1];
-
-	ret = vendor_storage_read(VENDOR_LAN_MAC_ID, ethaddr, sizeof(ethaddr));
-	if (ret > 0 && is_valid_ethaddr(ethaddr)) {
-		sprintf(buf, "%pM", ethaddr);
-		env_set("ethaddr", buf);
-	}
-#endif
-	return 0;
-}
-
-static int rockchip_set_serialno(void)
-{
-	char serialno_str[VENDOR_SN_MAX];
-	int ret = 0, i;
-	u8 cpuid[CPUID_LEN] = {0};
-	u8 low[CPUID_LEN / 2], high[CPUID_LEN / 2];
-	u64 serialno;
-
-	/* Read serial number from vendor storage part */
-	memset(serialno_str, 0, VENDOR_SN_MAX);
-#ifdef CONFIG_ROCKCHIP_VENDOR_PARTITION
-	ret = vendor_storage_read(VENDOR_SN_ID, serialno_str, (VENDOR_SN_MAX-1));
-	if (ret > 0) {
-		env_set("serial#", serialno_str);
-	} else {
-#endif
-#ifdef CONFIG_ROCKCHIP_EFUSE
-		struct udevice *dev;
-
-		/* retrieve the device */
-		ret = uclass_get_device_by_driver(UCLASS_MISC,
-						  DM_GET_DRIVER(rockchip_efuse), &dev);
-		if (ret) {
-			printf("%s: could not find efuse device\n", __func__);
-			return ret;
-		}
-		/* read the cpu_id range from the efuses */
-		ret = misc_read(dev, CPUID_OFF, &cpuid, sizeof(cpuid));
-		if (ret) {
-			printf("%s: reading cpuid from the efuses failed\n", __func__);
-			return ret;
-		}
-#else
-		/* generate random cpuid */
-		for (i = 0; i < CPUID_LEN; i++) {
-			cpuid[i] = (u8)(rand());
-		}
-#endif
-		/* Generate the serial number based on CPU ID */
-		for (i = 0; i < 8; i++) {
-			low[i] = cpuid[1 + (i << 1)];
-			high[i] = cpuid[i << 1];
-		}
-		serialno = crc32_no_comp(0, low, 8);
-		serialno |= (u64)crc32_no_comp(serialno, high, 8) << 32;
-		snprintf(serialno_str, sizeof(serialno_str), "%llx", serialno);
-
-		env_set("serial#", serialno_str);
-#ifdef CONFIG_ROCKCHIP_VENDOR_PARTITION
-	}
-#endif
-	return ret;
-}
-
-#if defined(CONFIG_USB_FUNCTION_FASTBOOT)
-int fb_set_reboot_flag(void)
-{
-	printf("Setting reboot to fastboot flag ...\n");
-	/* Set boot mode to fastboot */
-	writel(BOOT_FASTBOOT, CONFIG_ROCKCHIP_BOOT_MODE_REG);
-
-	return 0;
-}
-#endif
-
-__weak int rk_board_init(void)
-{
-	return 0;
-}
 
 __weak int rk_board_late_init(void)
 {
@@ -163,6 +60,105 @@ __weak int set_armclk_rate(void)
 	return 0;
 }
 
+__weak int rk_board_init(void)
+{
+	return 0;
+}
+
+/*
+ * define serialno max length, the max length is 512 Bytes
+ * The remaining bytes are used to ensure that the first 512 bytes
+ * are valid when executing 'env_set("serial#", value)'.
+ */
+#define VENDOR_SN_MAX	513
+#define CPUID_LEN	0x10
+#define CPUID_OFF	0x07
+
+static int rockchip_set_ethaddr(void)
+{
+#ifdef CONFIG_ROCKCHIP_VENDOR_PARTITION
+	char buf[ARP_HLEN_ASCII + 1];
+	u8 ethaddr[ARP_HLEN];
+	int ret;
+
+	ret = vendor_storage_read(VENDOR_LAN_MAC_ID, ethaddr, sizeof(ethaddr));
+	if (ret > 0 && is_valid_ethaddr(ethaddr)) {
+		sprintf(buf, "%pM", ethaddr);
+		env_set("ethaddr", buf);
+	}
+#endif
+	return 0;
+}
+
+static int rockchip_set_serialno(void)
+{
+	u8 low[CPUID_LEN / 2], high[CPUID_LEN / 2];
+	u8 cpuid[CPUID_LEN] = {0};
+	char serialno_str[VENDOR_SN_MAX];
+	int ret = 0, i;
+	u64 serialno;
+
+	/* Read serial number from vendor storage part */
+	memset(serialno_str, 0, VENDOR_SN_MAX);
+
+#ifdef CONFIG_ROCKCHIP_VENDOR_PARTITION
+	ret = vendor_storage_read(VENDOR_SN_ID, serialno_str, (VENDOR_SN_MAX-1));
+	if (ret > 0) {
+		env_set("serial#", serialno_str);
+	} else {
+#endif
+#ifdef CONFIG_ROCKCHIP_EFUSE
+		struct udevice *dev;
+
+		/* retrieve the device */
+		ret = uclass_get_device_by_driver(UCLASS_MISC,
+						  DM_GET_DRIVER(rockchip_efuse),
+						  &dev);
+		if (ret) {
+			printf("%s: could not find efuse device\n", __func__);
+			return ret;
+		}
+
+		/* read the cpu_id range from the efuses */
+		ret = misc_read(dev, CPUID_OFF, &cpuid, sizeof(cpuid));
+		if (ret) {
+			printf("%s: read cpuid from efuses failed, ret=%d\n",
+			       __func__, ret);
+			return ret;
+		}
+#else
+		/* generate random cpuid */
+		for (i = 0; i < CPUID_LEN; i++)
+			cpuid[i] = (u8)(rand());
+#endif
+		/* Generate the serial number based on CPU ID */
+		for (i = 0; i < 8; i++) {
+			low[i] = cpuid[1 + (i << 1)];
+			high[i] = cpuid[i << 1];
+		}
+
+		serialno = crc32_no_comp(0, low, 8);
+		serialno |= (u64)crc32_no_comp(serialno, high, 8) << 32;
+		snprintf(serialno_str, sizeof(serialno_str), "%llx", serialno);
+
+		env_set("serial#", serialno_str);
+#ifdef CONFIG_ROCKCHIP_VENDOR_PARTITION
+	}
+#endif
+
+	return ret;
+}
+
+#if defined(CONFIG_USB_FUNCTION_FASTBOOT)
+int fb_set_reboot_flag(void)
+{
+	printf("Setting reboot to fastboot flag ...\n");
+	writel(BOOT_FASTBOOT, CONFIG_ROCKCHIP_BOOT_MODE_REG);
+
+	return 0;
+}
+#endif
+
 int board_late_init(void)
 {
 	rockchip_set_ethaddr();
@@ -170,23 +166,18 @@ int board_late_init(void)
 #if (CONFIG_ROCKCHIP_BOOT_MODE_REG > 0)
 	setup_boot_mode();
 #endif
-
 #ifdef CONFIG_DM_CHARGE_DISPLAY
 	charge_display();
 #endif
-
 #ifdef CONFIG_DRM_ROCKCHIP
 	rockchip_show_logo();
 #endif
-
 	soc_clk_dump();
 
 	return rk_board_late_init();
 }
 
 #ifdef CONFIG_USING_KERNEL_DTB
-#include <asm/arch/resource_img.h>
-
 /* Here, only fixup cru phandle, pmucru is not included */
 static int phandles_fixup(void *fdt)
 {
@@ -295,8 +286,8 @@ static int phandles_fixup(void *fdt)
 
 int init_kernel_dtb(void)
 {
-	int ret = 0;
-	ulong fdt_addr = 0;
+	ulong fdt_addr;
+	int ret;
 
 	fdt_addr = env_get_ulong("fdt_addr_r", 16, 0);
 	if (!fdt_addr) {
@@ -306,7 +297,7 @@ int init_kernel_dtb(void)
 
 	ret = rockchip_read_dtb_file((void *)fdt_addr);
 	if (ret < 0) {
-		printf("%s dtb in resource read fail\n", __func__);
+		printf("Read kernel dtb failed, ret=%d\n", ret);
 		return 0;
 	}
 
@@ -317,9 +308,7 @@ int init_kernel_dtb(void)
 	phandles_fixup((void *)fdt_addr);
 
 	of_live_build((void *)fdt_addr, (struct device_node **)&gd->of_root);
-
 	dm_scan_fdt((void *)fdt_addr, false);
-
 	gd->fdt_blob = (void *)fdt_addr;
 
 	/* Reserve 'reserved-memory' */
@@ -390,7 +379,6 @@ static void early_download_init(void)
 		printf("Hotkey: ctrl+%c\n", (gd->console_evt + 'a' - 1));
 
 #if (CONFIG_ROCKCHIP_BOOT_MODE_REG > 0)
-	/* ctrl+b */
 	if (is_hotkey(HK_BROM_DNL)) {
 		printf("Enter bootrom download...");
 		flushc();
@@ -403,8 +391,6 @@ static void early_download_init(void)
 
 int board_init(void)
 {
-	int ret;
-
 	board_debug_uart_init();
 
 #ifdef CONFIG_USING_KERNEL_DTB
@@ -418,9 +404,8 @@ int board_init(void)
 	 */
 	clks_probe();
 #ifdef CONFIG_DM_REGULATOR
-	ret = regulators_enable_boot_on(false);
-	if (ret)
-		debug("%s: Cannot enable boot on regulator\n", __func__);
+	if (regulators_enable_boot_on(false))
+		debug("%s: Can't enable boot on regulator\n", __func__);
 #endif
 
 #ifdef CONFIG_ROCKCHIP_IO_DOMAIN
@@ -438,19 +423,16 @@ int board_init(void)
 
 int interrupt_debugger_init(void)
 {
-	int ret = 0;
-
 #ifdef CONFIG_ROCKCHIP_DEBUGGER
-	ret = rockchip_debugger_init();
+	return rockchip_debugger_init();
+#else
+	return 0;
 #endif
-	return ret;
 }
 
 int board_fdt_fixup(void *blob)
 {
-	/*
-	 * Common fixup for DRM
-	 */
+	/* Common fixup for DRM */
 #ifdef CONFIG_DRM_ROCKCHIP
 	rockchip_display_fixup(blob);
 #endif
@@ -528,9 +510,9 @@ void enable_caches(void)
  */
 void board_lmb_reserve(struct lmb *lmb)
 {
-	u64 start, size;
-	char bootm_low[32];
 	char bootm_mapsize[32];
+	char bootm_low[32];
+	u64 start, size;
 	int i;
 
 	for (i = 0; i < CONFIG_NR_DRAM_BANKS; i++) {
@@ -643,10 +625,10 @@ static struct dwc2_plat_otg_data otg_data = {
 
 int board_usb_init(int index, enum usb_init_type init)
 {
-	int node;
-	fdt_addr_t addr;
-	const fdt32_t *reg;
 	const void *blob = gd->fdt_blob;
+	const fdt32_t *reg;
+	fdt_addr_t addr;
+	int node;
 
 	/* find the usb_otg node */
 	node = fdt_node_offset_by_compatible(blob, -1, "snps,dwc2");
