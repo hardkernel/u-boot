@@ -255,6 +255,11 @@ config CONSOLE_DISABLE_CTRLC
 	help
 	  This disable ctrl+c when CONFIG_BOOTDELAY is 0.
 
+config DISABLE_CONSOLE
+	bool "disable console in & out"
+	help
+	 This disable console in & out.
+
 config IDENT_STRING
 	string "Board specific string to be added to uboot version string"
 	help

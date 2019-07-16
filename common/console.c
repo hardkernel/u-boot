@@ -520,6 +520,11 @@ static inline void print_pre_console_buffer(int flushpoint) {}
 
 void putc(const char c)
 {
+#ifdef CONFIG_DISABLE_CONSOLE
+	if (!gd || gd->flags & GD_FLG_DISABLE_CONSOLE)
+		return;
+#endif
+
 #ifdef CONFIG_DEBUG_UART
 	/* if we don't have a console yet, use the debug UART */
 	if (!gd || !(gd->flags & GD_FLG_SERIAL_READY)) {
@@ -533,11 +538,6 @@ void putc(const char c)
 #endif
 #ifdef CONFIG_SILENT_CONSOLE
 	if (gd->flags & GD_FLG_SILENT)
-		return;
-#endif
-
-#ifdef CONFIG_DISABLE_CONSOLE
-	if (gd->flags & GD_FLG_DISABLE_CONSOLE)
 		return;
 #endif
 
