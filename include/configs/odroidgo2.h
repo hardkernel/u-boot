@@ -33,4 +33,8 @@
 		"load mmc 1:1 0x02000000 Image; "		\
 		"load mmc 1:1 0x01f00000 rk3326-odroidgo2-linux.dtb; "	\
 		"booti 0x02000000 - 0x01f00000\0"
+
+#undef CONFIG_BOOTDELAY
+#define CONFIG_BOOTDELAY	3
+
 #endif
