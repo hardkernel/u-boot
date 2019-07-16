@@ -393,7 +393,7 @@ int android_bootloader_boot_kernel(unsigned long kernel_address)
 		"bootm", kernel_addr_str, kernel_addr_str, fdt_addr, NULL };
 
 	comp_type = env_get_ulong("os_comp", 10, 0);
-	sprintf(kernel_addr_str, "0x%lx", kernel_address);
+	sprintf(kernel_addr_str, "0x%08lx", kernel_address);
 
 	if (comp_type != IH_COMP_NONE) {
 		if (comp_type == IH_COMP_ZIMAGE &&
