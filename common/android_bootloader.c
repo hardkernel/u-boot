@@ -663,8 +663,7 @@ static AvbSlotVerifyResult android_slot_verify(char *boot_partname,
 		*android_load_address = load_address;
 
 #ifdef CONFIG_ANDROID_BOOT_IMAGE_SEPARATE
-		android_image_load_separate(hdr, NULL,
-					    (void *)load_address, hdr);
+		android_image_memcpy_separate(hdr, (void *)load_address);
 #else
 		memcpy((uint8_t *)load_address,
 		       slot_data[0]->loaded_partitions->data,

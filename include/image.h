@@ -1274,9 +1274,9 @@ ulong android_image_get_end(const struct andr_img_hdr *hdr);
 ulong android_image_get_kload(const struct andr_img_hdr *hdr);
 void android_print_contents(const struct andr_img_hdr *hdr);
 
-/** android_image_load_separate - Load an Android Image separate from storage or ram
+/** android_image_load_separate - Load an Android Image separate from storage
  *
- * Load an Android Image based on the header size in the storage or ram.
+ * Load an Android Image based on the header size in the storage.
  *
  * @hdr:		The android image header
  * @part:		The partition where to read the image from
@@ -1287,6 +1287,16 @@ void android_print_contents(const struct andr_img_hdr *hdr);
 int android_image_load_separate(struct andr_img_hdr *hdr,
 				const disk_partition_t *part,
 				void *load_address, void *ram_src);
+
+/** android_image_load_separate - Memcpy an Android Image separate from ram
+ *
+ * Memcpy an Android Image based on the header size in the ram.
+ *
+ * @hdr:		The android image header and memcpy base address
+ * @load_address:	The address where the image will be loaded
+ * @return the blk count.
+ */
+int android_image_memcpy_separate(struct andr_img_hdr *hdr, void *load_address);
 
 /** android_image_load - Load an Android Image from storage.
  *

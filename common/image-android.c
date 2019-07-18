@@ -392,6 +392,11 @@ int android_image_load_separate(struct andr_img_hdr *hdr,
 
 	return blk_read;
 }
+
+int android_image_memcpy_separate(struct andr_img_hdr *hdr, void *load_address)
+{
+	return android_image_load_separate(hdr, NULL, load_address, hdr);
+}
 #endif /* CONFIG_ANDROID_BOOT_IMAGE_SEPARATE */
 
 long android_image_load(struct blk_desc *dev_desc,
