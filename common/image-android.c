@@ -12,7 +12,9 @@
 #include <mapmem.h>
 #include <errno.h>
 #include <boot_rkimg.h>
+#include <crypto.h>
 #include <sysmem.h>
+#include <u-boot/sha1.h>
 #ifdef CONFIG_RKIMG_BOOTLOADER
 #include <asm/arch/resource_img.h>
 #endif
@@ -257,18 +259,129 @@ int android_image_get_fdt(const struct andr_img_hdr *hdr,
 	return 0;
 }
 
+#ifdef CONFIG_ANDROID_BOOT_IMAGE_HASH
+static void print_hash(const char *label, u8 *hash, int len)
+{
+	int i;
+
+	printf("%s:\n    0x", label ? : "Hash");
+	for (i = 0; i < len; i++)
+		printf("%02x", hash[i]);
+	printf("\n");
+}
+
+/*
+ * This is only for Non-AVB image, because AVB image is verified by AVB bootflow.
+ * The kernel/ramdisk/second address should be the real address in hdr before
+ * calling this function.
+ *
+ * mkbootimg tool always use SHA1 for images.
+ */
+static int android_image_hash_verify(struct andr_img_hdr *hdr)
+{
+	u8 hash[20];
+
+#ifdef DEBUG
+	android_print_contents(hdr);
+#endif
+
+	if (hdr->kernel_addr == ANDROID_IMAGE_DEFAULT_KERNEL_ADDR) {
+		printf("No real image address in android hdr\n");
+		return -EINVAL;
+	}
+
+#ifdef CONFIG_DM_CRYPTO
+	struct udevice *dev;
+	sha_context ctx;
+
+	dev = crypto_get_device(CRYPTO_SHA1);
+	if (!dev) {
+		printf("Can't find crypto device for SHA1 capability\n");
+		return -ENODEV;
+	}
+
+	ctx.algo = CRYPTO_SHA1;
+	ctx.length = hdr->kernel_size + sizeof(hdr->kernel_size) +
+		     hdr->ramdisk_size + sizeof(hdr->ramdisk_size) +
+		     hdr->second_size + sizeof(hdr->second_size);
+#ifdef CONFIG_HASH_ROCKCHIP_LEGACY
+	ctx.length += sizeof(hdr->tags_addr) + sizeof(hdr->page_size) +
+		      sizeof(hdr->unused) + sizeof(hdr->name) +
+		      sizeof(hdr->cmdline);
+#endif
+
+	crypto_sha_init(dev, &ctx);
+
+	crypto_sha_update(dev, (u32 *)(ulong)hdr->kernel_addr,
+			  hdr->kernel_size);
+	crypto_sha_update(dev, (u32 *)&hdr->kernel_size,
+			  sizeof(hdr->kernel_size));
+	crypto_sha_update(dev, (u32 *)(ulong)hdr->ramdisk_addr,
+			  hdr->ramdisk_size);
+	crypto_sha_update(dev, (u32 *)&hdr->ramdisk_size,
+			  sizeof(hdr->ramdisk_size));
+	crypto_sha_update(dev, (u32 *)(ulong)hdr->second_addr,
+			  hdr->second_size);
+	crypto_sha_update(dev, (u32 *)&hdr->second_size,
+			  sizeof(hdr->second_size));
+#ifdef CONFIG_HASH_ROCKCHIP_LEGACY
+	crypto_sha_update(dev, (u32 *)&hdr->tags_addr, sizeof(hdr->tags_addr));
+	crypto_sha_update(dev, (u32 *)&hdr->page_size, sizeof(hdr->page_size));
+	crypto_sha_update(dev, (u32 *)&hdr->header_version,
+			  sizeof(hdr->header_version));
+	crypto_sha_update(dev, (u32 *)&hdr->os_version, sizeof(hdr->os_version));
+	crypto_sha_update(dev, (u32 *)&hdr->name, sizeof(hdr->name));
+	crypto_sha_update(dev, (u32 *)&hdr->cmdline, sizeof(hdr->cmdline));
+#endif
+
+	crypto_sha_final(dev, &ctx, hash);
+
+#elif CONFIG_SHA1
+	sha1_context ctx;
+
+	sha1_starts(&ctx);
+	sha1_update(&ctx, (u8 *)(ulong)hdr->kernel_addr, hdr->kernel_size);
+	sha1_update(&ctx, (u8 *)&hdr->kernel_size, sizeof(hdr->kernel_size));
+	sha1_update(&ctx, (u8 *)(ulong)hdr->ramdisk_addr, hdr->ramdisk_size);
+	sha1_update(&ctx, (u8 *)&hdr->ramdisk_size, sizeof(hdr->ramdisk_size));
+	sha1_update(&ctx, (u8 *)(ulong)hdr->second_addr, hdr->second_size);
+	sha1_update(&ctx, (u8 *)&hdr->second_size, sizeof(hdr->second_size));
+#ifdef CONFIG_HASH_ROCKCHIP_LEGACY
+	sha1_update(&ctx, (u8 *)&hdr->tags_addr, sizeof(hdr->tags_addr));
+	sha1_update(&ctx, (u8 *)&hdr->page_size, sizeof(hdr->page_size));
+	sha1_update(&ctx, (u8 *)&hdr->header_version,
+		    sizeof(hdr->header_version));
+	sha1_update(&ctx, (u8 *)&hdr->os_version, sizeof(hdr->os_version));
+	sha1_update(&ctx, (u8 *)&hdr->name, sizeof(hdr->name));
+	sha1_update(&ctx, (u8 *)&hdr->cmdline, sizeof(hdr->cmdline));
+#endif
+
+	sha1_finish(&ctx, hash);
+#endif	/* CONFIG_SHA1 */
+
+	if (memcmp(hash, hdr->id, 20)) {
+		print_hash("SHA1 from image header", (u8 *)hdr->id, 20);
+		print_hash("SHA1 real", (u8 *)hash, 20);
+		return -EBADFD;
+	}
+
+	return 0;
+}
+#endif
+
 #ifdef CONFIG_ANDROID_BOOT_IMAGE_SEPARATE
 int android_image_load_separate(struct andr_img_hdr *hdr,
 				const disk_partition_t *part,
 				void *load_address, void *ram_src)
 {
 	struct blk_desc *dev_desc = rockchip_get_bootdev();
-	ulong fdt_addr_r = env_get_ulong("fdt_addr_r", 16, 0);
+	ulong ramdisk_addr_r = env_get_ulong("ramdisk_addr_r", 16, 0);
+	ulong kernel_addr_r = env_get_ulong("kernel_addr_r", 16, 0);
 	char *fdt_high = env_get("fdt_high");
 	char *ramdisk_high = env_get("initrd_high");
 	ulong blk_start, blk_cnt, size;
+	ulong start, second_addr_r = 0;
 	int ret, blk_read = 0;
-	ulong start;
 
 	if (android_image_check_header(hdr)) {
 		printf("Bad android image header\n");
@@ -300,8 +413,6 @@ int android_image_load_separate(struct andr_img_hdr *hdr,
 	}
 
 	if (hdr->ramdisk_size) {
-		ulong ramdisk_addr_r = env_get_ulong("ramdisk_addr_r", 16, 0);
-
 		size = hdr->page_size + ALIGN(hdr->kernel_size, hdr->page_size);
 		blk_cnt = DIV_ROUND_UP(hdr->ramdisk_size, dev_desc->blksz);
 		if (!sysmem_alloc_base(MEMBLK_ID_RAMDISK,
@@ -328,9 +439,14 @@ int android_image_load_separate(struct andr_img_hdr *hdr,
 		}
 	}
 
-	if ((gd->fdt_blob != (void *)fdt_addr_r) && hdr->second_size) {
+	/*
+	 * Load dtb file by rockchip_read_dtb_file() which support pack
+	 * dtb in second position or resource file.
+	 */
 #ifdef CONFIG_RKIMG_BOOTLOADER
-		/* Rockchip AOSP, resource.img is in second position */
+	ulong fdt_addr_r = env_get_ulong("fdt_addr_r", 16, 0);
+
+	if (hdr->second_size && (gd->fdt_blob != (void *)fdt_addr_r)) {
 		ulong fdt_size;
 
 		fdt_size = rockchip_read_dtb_file((void *)fdt_addr_r);
@@ -340,43 +456,55 @@ int android_image_load_separate(struct andr_img_hdr *hdr,
 		}
 
 		blk_read += DIV_ROUND_UP(fdt_size, dev_desc->blksz);
-#else
-		/* Standard AOSP, dtb is in second position */
+	}
+#endif
+
+#ifdef CONFIG_ANDROID_BOOT_IMAGE_HASH
+	if (hdr->second_size) {
 		ulong blk_start, blk_cnt;
+
+		/* Just for image data hash calculation */
+		second_addr_r = (ulong)malloc(hdr->second_size);
+		if (!second_addr_r)
+			return -ENOMEM;
 
 		size = hdr->page_size +
 		       ALIGN(hdr->kernel_size, hdr->page_size) +
 		       ALIGN(hdr->ramdisk_size, hdr->page_size);
 		blk_cnt = DIV_ROUND_UP(hdr->second_size, dev_desc->blksz);
-		if (!sysmem_alloc_base(MEMBLK_ID_FDT_AOSP,
-				       fdt_addr_r,
-				       blk_cnt * dev_desc->blksz +
-				       CONFIG_SYS_FDT_PAD))
-			return -ENXIO;
 
 		if (ram_src) {
 			start = (unsigned long)ram_src;
 			start += hdr->page_size;
 			start += ALIGN(hdr->kernel_size, hdr->page_size);
 			start += ALIGN(hdr->ramdisk_size, hdr->page_size);
-			memcpy((char *)fdt_addr_r,
+			memcpy((char *)second_addr_r,
 			       (char *)start, hdr->second_size);
 		} else {
 			blk_start = part->start +
 					DIV_ROUND_UP(size, dev_desc->blksz);
 			ret = blk_dread(dev_desc, blk_start, blk_cnt,
-					(void *)fdt_addr_r);
+					(void *)second_addr_r);
 			if (ret != blk_cnt) {
-				printf("%s: read dtb failed, ret=%d\n",
-				      __func__, ret);
+				printf("%s: read second pos failed, ret=%d\n",
+				       __func__, ret);
 				return -1;
 			}
 
 			blk_read += blk_cnt;
 		}
-#endif /* CONFIG_RKIMG_BOOTLOADER */
 	}
+#endif
 
+	/* Update hdr with real image address */
+	hdr->kernel_addr = kernel_addr_r;
+	hdr->second_addr = second_addr_r;
+	hdr->ramdisk_addr = ramdisk_addr_r;
+
+	/*
+	 * Since images are loaded separate, fdt/ramdisk relocation
+	 * can be disabled, it saves boot time.
+	 */
 	if (blk_read > 0 || ram_src) {
 		if (!fdt_high) {
 			env_set_hex("fdt_high", -1UL);
@@ -496,6 +624,15 @@ long android_image_load(struct blk_desc *dev_desc,
 #endif
 		}
 
+		/* Verify image hash */
+#ifdef CONFIG_ANDROID_BOOT_IMAGE_HASH
+		if (android_image_hash_verify(hdr)) {
+			printf("Image hash miss match!\n");
+			return -EBADFD;
+		}
+
+		printf("Image hash verify ok\n");
+#endif
 		/*
 		 * zImage is not need to decompress
 		 * kernel will handle decompress itself

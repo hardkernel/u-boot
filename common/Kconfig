@@ -650,6 +650,21 @@ config ANDROID_BOOT_IMAGE_SEPARATE
 	  we can load ramdisk/fdt/kernel separate and skip ramdisk and fdt relocation
 	  safely. It saves a lot of boot time.
 
+config ANDROID_BOOT_IMAGE_HASH
+	bool "Enable support for Android image hash verify"
+	depends on ANDROID_BOOT_IMAGE
+	select SHA1
+	help
+	  This enables support for Android image hash verify, the mkbootimg always use
+	  SHA1 for images.
+
+config HASH_ROCKCHIP_LEGACY
+	bool "Image hash with Rockchip legacy mkbootimg tool pack"
+	depends on ANDROID_BOOT_IMAGE_HASH
+	help
+	  This option enables adding more android hdr variants into image hash
+	  calculation in legacy rockchip mkbootimg tool.
+
 config SKIP_RELOCATE_UBOOT
 	bool "Skip U-Boot relocation"
 	help
