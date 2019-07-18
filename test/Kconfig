@@ -21,6 +21,12 @@ config TEST_ROCKCHIP
 	help
 	  This enables the test function for rockchip board modules.
 
+config LAVA_INFO
+	bool "Display test info need by LAVA system"
+	depends on TEST_ROCKCHIP
+	help
+	  This enable the print info need by LAVA system
+
 source "test/dm/Kconfig"
 source "test/env/Kconfig"
 source "test/overlay/Kconfig"

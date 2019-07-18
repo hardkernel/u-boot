@@ -155,8 +155,8 @@ static int do_rockchip_test(cmd_tbl_t *cmdtp, int flag,
 	goto finish;
 
 all_test:
+	lava_info("<LAVA_SIGNAL_STARTRUN u-boot-function 0>\n");
 	ms_start = get_timer(0);
-
 	for (i = 0; i < ARRAY_SIZE(cmd_groups); i++) {
 		/*
 		 * If 'grp_test_id != TEST_ID_UNK', now is group test, find
@@ -173,6 +173,7 @@ all_test:
 			/* Skip this ignored cmd */
 			if (skip_this_cmd(cp, skip_mode)) {
 				printf("### Skip  [%s]\n", cp->name);
+				lava_info("<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s RESULT=skip>\n", cp->name);
 				continue;
 			}
 
@@ -184,10 +185,13 @@ all_test:
 
 			/* Execute command */
 			ret = cp->cmd(cmdtp, flag, argc, argv);
-			if (ret)
+			if (ret) {
+				lava_info("<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s RESULT=fail>\n", cp->name);
 				fail++;
-			else
+			} else {
+				lava_info("<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s RESULT=pass>\n", cp->name);
 				okay++;
+			}
 
 			/* Result */
 			printf("### Finish, result: <%s>\n\n",
@@ -206,9 +210,14 @@ all_test:
 		sec = ms / 1000;
 		ms = ms % 1000;
 	}
-
 	printf("[=== SUM: pass: %d; failed: %d; total: %lu.%lus ===]\n\n\n",
 	       okay, fail, sec, ms);
+/*
+ * LAVA result with meansure data
+ * lava_info("<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=dd-write-mean RESULT=pass UNITS=MB/s MEASUREMENT=37.42>");
+ */
+	lava_info("<LAVA_SIGNAL_ENDRUN u-boot-function 0>\n");
+	lava_info("<LAVA_TEST_RUNNER>: exiting u-boot-function\n");
 
 finish:
 	return 0;

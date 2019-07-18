@@ -46,4 +46,11 @@ struct cmd_group {
 	u32 cmd_n;
 };
 
+#ifdef CONFIG_LAVA_INFO
+#define lava_info(fmt, ...) \
+	printf(fmt, ##__VA_ARGS__)
+#else
+#define lava_info(fmt, ...)
+#endif
+
 #endif /* _TEST_ROCKCHIP_H */
