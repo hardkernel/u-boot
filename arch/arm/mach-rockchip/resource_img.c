@@ -115,8 +115,8 @@ static int resource_image_check_header(const struct resource_img_hdr *hdr)
 
 	ret = memcmp(RESOURCE_MAGIC, hdr->magic, RESOURCE_MAGIC_SIZE);
 	if (ret) {
-		printf("bad resource image magic: %s\n",
-		       hdr->magic ? hdr->magic : "none");
+		debug("bad resource image magic: %s\n",
+		      hdr->magic ? hdr->magic : "none");
 		ret = -EINVAL;
 	}
 
@@ -173,7 +173,7 @@ static int init_resource_list(struct resource_img_hdr *hdr)
 	char *boot_partname = PART_BOOT;
 	disk_partition_t part_info;
 	int resource_found = 0;
-	void *content;
+	void *content = NULL;
 	int offset = 0;
 	int e_num;
 	int size;
@@ -296,7 +296,7 @@ parse_resource_part:
 	ret = resource_image_check_header(hdr);
 	if (ret < 0) {
 		ret = -EINVAL;
-		goto out;
+		goto parse_second_pos_dtb;
 	}
 
 	content = memalign(ARCH_DMA_MINALIGN,
@@ -329,6 +329,32 @@ parse_resource_part:
 	ret = 0;
 	printf("Load FDT from %s part\n", boot_partname);
 
+parse_second_pos_dtb:
+#ifdef CONFIG_ANDROID_BOOT_IMAGE
+	/*
+	 * If not find resource file on above, we try to get dtb file from
+	 * android second position.
+	 */
+	if (!content && !fdt_check_header((void *)hdr)) {
+		entry = malloc(sizeof(*entry));
+		if (!entry) {
+			ret = -ENOMEM;
+			goto parse_logo;
+		}
+
+		memcpy(entry->tag, ENTRY_TAG, sizeof(ENTRY_TAG));
+		memcpy(entry->name, DTB_FILE, sizeof(DTB_FILE));
+		entry->f_size = fdt_totalsize((void *)hdr);
+		entry->f_offset = 0;
+
+		add_file_to_list(entry, part_info.start);
+		free(entry);
+		ret = 0;
+		printf("Load FDT from %s part(second pos)\n", boot_partname);
+	}
+
+parse_logo:
+#endif
 	/*
 	 * Add logo.bmp from "logo" parititon
 	 *
@@ -388,7 +414,8 @@ err2:
 	}
 
 err:
-	free(content);
+	if (content)
+		free(content);
 out:
 	free(hdr);
 
