@@ -249,6 +249,14 @@ static int init_resource_list(struct resource_img_hdr *hdr)
 	}
 	ret = android_image_check_header(andr_hdr);
 	if (!ret) {
+		u32 os_ver = andr_hdr->os_version >> 11;
+		u32 os_lvl = andr_hdr->os_version & ((1U << 11) - 1);
+
+		if (os_ver)
+			printf("Android %u.%u, Build %u.%u\n",
+			       (os_ver >> 14) & 0x7F, (os_ver >> 7) & 0x7F,
+			       (os_lvl >> 4) + 2000, os_lvl & 0x0F);
+
 		debug("%s: Load resource from %s second pos\n",
 		      __func__, part_info.name);
 		/* Read resource from second offset */
