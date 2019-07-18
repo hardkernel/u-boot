@@ -160,6 +160,11 @@ int atags_set_tag(u32 magic, void *tagdata)
 	u32 length, size = 0, hash;
 	struct tag *t = (struct tag *)ATAGS_PHYS_BASE;
 
+#ifndef CONFIG_TPL_BUILD
+	if (!atags_is_available())
+		return -EPERM;
+#endif
+
 	if (!tagdata)
 		return -ENODATA;
 
@@ -310,8 +315,6 @@ int atags_set_bootdev_by_brom_bootsource(void)
 
 	memset(&boot_dev, 0, sizeof(struct tag_bootdev));
 	boot_dev.devtype = get_bootdev_by_brom_bootsource();
-	if (!atags_is_available())
-		return -ENODATA;
 
 	return atags_set_tag(ATAG_BOOTDEV, &boot_dev);
 }
