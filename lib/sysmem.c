@@ -551,6 +551,21 @@ void *sysmem_alloc(enum memblk_id id, phys_size_t size)
 	return paddr;
 }
 
+void *sysmem_alloc_by_name(const char *name, phys_size_t size)
+{
+	void *paddr;
+
+	paddr = sysmem_alloc_align_base(MEMBLK_ID_BY_NAME,
+					name,
+					SYSMEM_ALLOC_ANYWHERE,
+					size,
+					SYSMEM_ALLOC_NO_ALIGN);
+	if (!paddr)
+		sysmem_dump();
+
+	return paddr;
+}
+
 void *sysmem_alloc_base(enum memblk_id id, phys_addr_t base, phys_size_t size)
 {
 	void *paddr;
