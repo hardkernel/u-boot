@@ -35,6 +35,14 @@ static int bootdev_map[] = {
 	BOOT_TYPE_UNKNOWN,
 	BOOT_TYPE_UNKNOWN
 };
+
+static int spl_bootdev_map[] = {
+	BOOT_TYPE_RAM,
+	BOOT_TYPE_EMMC,
+	BOOT_TYPE_SD0,
+	BOOT_TYPE_UNKNOWN,
+	BOOT_TYPE_NAND
+};
 #endif
 
 #if CONFIG_IS_ENABLED(TINY_FRAMEWORK) &&		\
@@ -315,6 +323,26 @@ int atags_set_bootdev_by_brom_bootsource(void)
 
 	memset(&boot_dev, 0, sizeof(struct tag_bootdev));
 	boot_dev.devtype = get_bootdev_by_brom_bootsource();
+
+	return atags_set_tag(ATAG_BOOTDEV, &boot_dev);
+}
+
+int get_bootdev_by_spl_bootdevice(int bootdevice)
+{
+	if (bootdevice > ARRAY_SIZE(spl_bootdev_map) - 1)
+		return -ENODEV;
+
+	return spl_bootdev_map[bootdevice];
+}
+
+int atags_set_bootdev_by_spl_bootdevice(int bootdevice)
+{
+	struct tag_bootdev boot_dev;
+
+	memset(&boot_dev, 0, sizeof(struct tag_bootdev));
+	boot_dev.devtype = get_bootdev_by_spl_bootdevice(bootdevice);
+	if (boot_dev.devtype < 0)
+		boot_dev.devtype = BOOT_TYPE_UNKNOWN;
 
 	return atags_set_tag(ATAG_BOOTDEV, &boot_dev);
 }

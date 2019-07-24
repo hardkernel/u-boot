@@ -227,6 +227,24 @@ int get_bootdev_by_brom_bootsource(void);
  * return: 0 success, others fail.
  */
 int atags_set_bootdev_by_brom_bootsource(void);
+
+/*
+ * get_bootdev_by_spl_bootdevice
+ *
+ * @bootdevice
+ *
+ * return: boootdev, else -ENODEV fail.
+ */
+int get_bootdev_by_spl_bootdevice(int bootdevice);
+
+/*
+ * atags_set_bootdev_by_spl_bootdevice
+ *
+ * @bootdevice
+ *
+ * return: 0 success, others fail.
+ */
+int atags_set_bootdev_by_spl_bootdevice(int bootdevice);
 #endif
 
 /* Print only one tag */
