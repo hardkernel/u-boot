@@ -104,7 +104,7 @@ enum rockchip_sfc_if_type {
 
 struct rockchip_sfc_platdata {
 	s32 frequency;
-	fdt_addr_t base;
+	void *base;
 };
 
 struct rockchip_sfc {
@@ -125,27 +125,24 @@ static int rockchip_sfc_ofdata_to_platdata(struct udevice *bus)
 {
 	struct rockchip_sfc_platdata *plat = dev_get_platdata(bus);
 	struct rockchip_sfc *sfc = dev_get_priv(bus);
-	const void *blob = gd->fdt_blob;
-	int node = dev_of_offset(bus);
-	int subnode;
+	ofnode subnode;
 	int ret;
 
-	plat->base = devfdt_get_addr(bus);
-
+	plat->base = dev_read_addr_ptr(bus);
 	ret = clk_get_by_index(bus, 0, &sfc->clk);
 	if (ret < 0) {
-		debug("Could not get clock for %s: %d\n", bus->name, ret);
+		printf("Could not get clock for %s: %d\n", bus->name, ret);
 		return ret;
 	}
 
-	subnode = fdt_first_subnode(blob, node);
-	if (subnode < 0) {
-		debug("Error: subnode with SPI flash config missing!\n");
+	subnode = dev_read_first_subnode(bus);
+	if (!ofnode_valid(subnode)) {
+		printf("Error: subnode with SPI flash config missing!\n");
 		return -ENODEV;
 	}
 
-	plat->frequency = fdtdec_get_int(blob, subnode, "spi-max-frequency",
-					 100000000);
+	plat->frequency = ofnode_read_u32_default(subnode, "spi-max-frequency",
+						  100000000);
 
 	return 0;
 }
@@ -154,17 +151,8 @@ static int rockchip_sfc_probe(struct udevice *bus)
 {
 	struct rockchip_sfc_platdata *plat = dev_get_platdata(bus);
 	struct rockchip_sfc *sfc = dev_get_priv(bus);
-	int ret;
 
 	sfc->regbase = (struct rockchip_sfc_reg *)plat->base;
-
-	sfc->max_freq = plat->frequency;
-
-	ret = clk_set_rate(&sfc->clk, sfc->max_freq);
-	if (ret < 0) {
-		debug("%s: Failed to set clock: %d\n", __func__, ret);
-		return ret;
-	}
 
 	return 0;
 }
@@ -294,7 +282,7 @@ static int rockchip_sfc_dma_xfer(struct rockchip_sfc *sfc, void *buffer, size_t 
 	rockchip_sfc_setup_xfer(sfc, bb.len_aligned);
 
 	writel(0xFFFFFFFF, &regs->iclr);
-	writel((u32)bb.bounce_buffer, &regs->dmaaddr);
+	writel((unsigned long)bb.bounce_buffer, &regs->dmaaddr);
 	writel(SFC_DMA_START, &regs->dmatr);
 
 	tbase = get_timer(0);
