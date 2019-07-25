@@ -129,6 +129,23 @@ uint32_t write_keybox_to_secure_storage(uint8_t *received_data, uint32_t len)
 	uint32_t data_size;
 	int rc = 0;
 	TEEC_Result ret;
+	struct blk_desc *dev_desc;
+	uint8_t is_use_rpmb;
+
+	dev_desc = rockchip_get_bootdev();
+	if (!dev_desc) {
+		printf("%s: dev_desc is NULL!\n", __func__);
+		return -EIO;
+	}
+	is_use_rpmb = (dev_desc->if_type == IF_TYPE_MMC) ? 1 : 0;
+#ifdef CONFIG_OPTEE_ALWAYS_USE_SECURITY_PARTITION
+	is_use_rpmb = 0;
+#endif
+	rc = write_to_keymaster((uint8_t *)"security_partition",
+				sizeof("security_partition"),
+				&is_use_rpmb, sizeof(is_use_rpmb));
+	if (rc)
+		return -EIO;
 
 	if (memcmp(received_data, WIDEVINE_TAG, SIZE_OF_TAG) == 0) {
 		/* widevine keybox */
