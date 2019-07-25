@@ -11,6 +11,6 @@
 /**
  * io_domain_init() - init io-domain driver
  */
-void io_domain_init(void);
+int io_domain_init(void);
 
 #endif	/* _IO_DOMAIN_H_ */

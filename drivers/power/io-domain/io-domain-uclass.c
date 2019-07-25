@@ -7,14 +7,22 @@
 #include <console.h>
 #include <io-domain.h>
 
-void io_domain_init(void)
+int io_domain_init(void)
 {
-	int ret;
 	struct udevice *dev;
+	struct uclass *uc;
+	int ret;
 
-	ret = uclass_get_device(UCLASS_IO_DOMAIN, 0, &dev);
+	ret = uclass_get(UCLASS_IO_DOMAIN, &uc);
 	if (ret)
-		printf("Can't find UCLASS_IO_DOMAIN driver %d\n", ret);
+		return ret;
+
+	for (uclass_first_device(UCLASS_IO_DOMAIN, &dev);
+	     dev;
+	     uclass_next_device(&dev))
+		;
+
+	return 0;
 }
 
 UCLASS_DRIVER(io_domain) = {
