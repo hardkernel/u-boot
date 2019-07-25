@@ -39,6 +39,8 @@ GCC_ARM32=arm-linux-gnueabihf-
 GCC_ARM64=aarch64-linux-gnu-
 TOOLCHAIN_ARM32=../prebuilts/gcc/linux-x86/arm/gcc-linaro-6.3.1-2017.05-x86_64_arm-linux-gnueabihf/bin
 TOOLCHAIN_ARM64=../prebuilts/gcc/linux-x86/aarch64/gcc-linaro-6.3.1-2017.05-x86_64_aarch64-linux-gnu/bin
+TOOLCHAIN_ARM32_OPT=/opt/toolchains/gcc-linaro-6.3.1-2017.05-x86_64_arm-linux-gnueabihf/bin
+TOOLCHAIN_ARM64_OPT=/opt/toolchains/gcc-linaro-6.3.1-2017.05-x86_64_aarch64-linux-gnu/bin
 
 ########################################### User not touch #############################################
 BIN_PATH_FIXUP="--replace tools/rk_tools/ ./"
@@ -216,8 +218,13 @@ select_toolchain()
 			TOOLCHAIN_GCC=${absolute_path}/bin/${GCC_ARM64}
 			TOOLCHAIN_OBJDUMP=${absolute_path}/bin/${OBJ_ARM64}
 			TOOLCHAIN_ADDR2LINE=${absolute_path}/bin/${ADDR2LINE_ARM64}
+		elif [ -d ${TOOLCHAIN_ARM64_OPT} ]; then
+			absolute_path=$(cd `dirname ${TOOLCHAIN_ARM64_OPT}`; pwd)
+			TOOLCHAIN_GCC=${absolute_path}/bin/${GCC_ARM64}
+			TOOLCHAIN_OBJDUMP=${absolute_path}/bin/${OBJ_ARM64}
+			TOOLCHAIN_ADDR2LINE=${absolute_path}/bin/${ADDR2LINE_ARM64}
 		else
-			echo "Can't find toolchain: ${TOOLCHAIN_ARM64}"
+			echo "Can't find toolchain: ${TOOLCHAIN_ARM64} or ${TOOLCHAIN_ARM64_OPT}"
 			exit 1
 		fi
 	else
@@ -226,8 +233,13 @@ select_toolchain()
 			TOOLCHAIN_GCC=${absolute_path}/bin/${GCC_ARM32}
 			TOOLCHAIN_OBJDUMP=${absolute_path}/bin/${OBJ_ARM32}
 			TOOLCHAIN_ADDR2LINE=${absolute_path}/bin/${ADDR2LINE_ARM32}
+		elif [ -d ${TOOLCHAIN_ARM32_OPT} ]; then
+			absolute_path=$(cd `dirname ${TOOLCHAIN_ARM32_OPT}`; pwd)
+			TOOLCHAIN_GCC=${absolute_path}/bin/${GCC_ARM32}
+			TOOLCHAIN_OBJDUMP=${absolute_path}/bin/${OBJ_ARM32}
+			TOOLCHAIN_ADDR2LINE=${absolute_path}/bin/${ADDR2LINE_ARM32}
 		else
-			echo "Can't find toolchain: ${TOOLCHAIN_ARM32}"
+			echo "Can't find toolchain: ${TOOLCHAIN_ARM32} or ${TOOLCHAIN_ARM32_OPT}"
 			exit 1
 		fi
 	fi
