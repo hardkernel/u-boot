@@ -214,11 +214,9 @@ int mmc_bind(struct udevice *dev, struct mmc *mmc, const struct mmc_config *cfg)
 
 	if (!mmc_get_ops(dev))
 		return -ENOSYS;
-#ifndef CONFIG_SPL_BUILD
 	/* Use the fixed index with aliase node's index */
 	ret = dev_read_alias_seq(dev, &devnum);
 	debug("%s: alias ret=%d, devnum=%d\n", __func__, ret, devnum);
-#endif
 
 	ret = blk_create_devicef(dev, "mmc_blk", "blk", IF_TYPE_MMC,
 			devnum, 512, 0, &bdev);
