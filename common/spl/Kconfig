@@ -785,6 +785,12 @@ config SPL_OPTEE
 	  OP-TEE is an open source Trusted OS  which is loaded by SPL.
 	  More detail at: https://github.com/OP-TEE/optee_os
 
+config SPL_AB
+	bool "Support AB system boot"
+	depends on SPL
+	help
+	  Enable this config to support AB system boot.
+
 config SPL_LOAD_RKFW
 	bool "SPL support load rockchip firmware images"
 	depends on SPL
