@@ -32,6 +32,7 @@ struct spl_image_info {
 #if CONFIG_IS_ENABLED(LOAD_FIT)
 	void *fdt_addr;
 #endif
+	u32 boot_device;
 	u32 size;
 	u32 flags;
 	void *arg;
@@ -308,5 +309,11 @@ void spl_optee_entry(void *arg0, void *arg1, void *arg2, void *arg3);
  * can implement 'board_return_to_bootrom'.
  */
 void board_return_to_bootrom(void);
+
+/**
+ * spl_perform_fixups() - arch/board-specific callback before processing
+ *                        the boot-payload
+ */
+void spl_perform_fixups(struct spl_image_info *spl_image);
 
 #endif
