@@ -10,6 +10,9 @@
 #include <ram.h>
 #include <spl.h>
 #include <asm/arch/bootrom.h>
+#ifdef CONFIG_ROCKCHIP_PRELOADER_ATAGS
+#include <asm/arch/rk_atags.h>
+#endif
 #include <asm/arch/sdram_common.h>
 #include <asm/arch-rockchip/sys_proto.h>
 #include <asm/io.h>
@@ -247,3 +250,12 @@ void spl_board_init(void)
 	return;
 }
 #endif
+
+void spl_perform_fixups(struct spl_image_info *spl_image)
+{
+#ifdef CONFIG_ROCKCHIP_PRELOADER_ATAGS
+	atags_set_bootdev_by_spl_bootdevice(spl_image->boot_device);
+#endif
+	return;
+}
+
