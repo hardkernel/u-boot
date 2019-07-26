@@ -1307,7 +1307,7 @@ static int rk817_fg_init(struct rk817_battery_device *battery)
 	rk817_bat_write(battery, GG_CON, value | VOL_OUPUT_INSTANT_MODE);
 	if (battery->variant == RK817_ID) {
 		value =  rk817_bat_read(battery, BAT_DISCHRG);
-		rk817_bat_write(battery, GG_CON, value & (~DIS_ILIM_EN));
+		rk817_bat_write(battery, BAT_DISCHRG, value & (~DIS_ILIM_EN));
 	}
 	rk817_bat_gas_gaugle_enable(battery);
 	rk817_bat_init_voltage_kb(battery);
