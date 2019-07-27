@@ -215,6 +215,43 @@ enum {
 #define RK817_ON_SOURCE		0xf5
 #define RK817_OFF_SOURCE	0xf6
 
+/* IRQ definitions */
+#define RK8XX_IRQ_PWRON_FALL		0
+#define RK8XX_IRQ_PWRON_RISE		1
+#define RK8XX_IRQ_PLUG_OUT		2
+#define RK8XX_IRQ_PLUG_IN		3
+#define RK8XX_IRQ_CHG_OK		4
+
+#define RK808_INT_STS_REG1		0x4c
+#define RK808_INT_MSK_REG1		0x4d
+#define RK808_IRQ_PLUG_OUT_MSK		BIT(1)
+
+#define RK805_INT_STS_REG		0x4c
+#define RK805_INT_MSK_REG		0x4d
+#define RK805_IRQ_PWRON_FALL_MSK	BIT(7)
+#define RK805_IRQ_PWRON_RISE_MSK	BIT(0)
+
+#define RK816_INT_STS_REG1		0x49
+#define RK816_INT_MSK_REG1		0x4a
+#define RK816_INT_STS_REG3		0x4e
+#define RK816_INT_STS_MSK_REG3		0x4f
+#define RK816_IRQ_PWRON_RISE_MSK	BIT(6)
+#define RK816_IRQ_PWRON_FALL_MSK	BIT(5)
+#define RK816_IRQ_PLUG_OUT_MSK		BIT(1)
+#define RK816_IRQ_CHR_OK_MSK		BIT(2)
+
+#define RK818_INT_STS_REG1		0x4c
+#define RK818_INT_MSK_REG1		0x4d
+#define RK818_IRQ_PLUG_OUT_MSK		BIT(1)
+#define RK818_IRQ_CHR_OK_MSK		BIT(2)
+
+#define	RK817_INT_STS_REG0		0xf8
+#define	RK817_INT_MSK_REG0		0xf9
+#define RK817_IRQ_PWRON_FALL_MSK	BIT(0)
+#define RK817_IRQ_PWRON_RISE_MSK	BIT(1)
+#define RK817_IRQ_PLUG_OUT_MSK		BIT(1)
+#define RK817_IRQ_PLUG_IN_MSK		BIT(0)
+
 struct reg_data {
 	u8 reg;
 	u8 val;
@@ -229,6 +266,8 @@ struct rk8xx_reg_table {
 
 struct rk8xx_priv {
 	int variant;
+	int irq;
+	struct virq_chip *irq_chip;
 };
 
 int rk8xx_spl_configure_buck(struct udevice *pmic, int buck, int uvolt);
