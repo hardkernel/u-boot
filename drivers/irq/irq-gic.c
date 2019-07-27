@@ -5,11 +5,9 @@
  */
 
 #include <common.h>
-#include <asm/io.h>
 #include <asm/gic.h>
 #include <config.h>
-#include <irq-generic.h>
-#include "irq-gic.h"
+#include "irq-internal.h"
 
 #define gicd_readl(offset)	readl((void *)GICD_BASE + (offset))
 #define gicc_readl(offset)	readl((void *)GICC_BASE + (offset))
@@ -139,7 +137,7 @@ static int gic_irq_enable(int irq)
 	u32 val, cpu_mask;
 	u32 shift = (irq % 4) * 8;
 
-	if (irq >= PLATFORM_GIC_IRQS_NR)
+	if (irq >= PLATFORM_GIC_MAX_IRQ)
 		return -EINVAL;
 
 	/* set enable */
@@ -333,7 +331,7 @@ static int gic_irq_init(void)
 	u32 val;
 
 	/* end of interrupt */
-	gicc_writel(PLATFORM_GIC_IRQS_NR, GICC_EOIR);
+	gicc_writel(PLATFORM_GIC_MAX_IRQ, GICC_EOIR);
 
 	/* disable gicc and gicd */
 	gicc_writel(0, GICC_CTLR);
@@ -371,7 +369,7 @@ static struct irq_chip gic_irq_chip = {
 	.irq_set_type	= gic_irq_set_type,
 };
 
-struct irq_chip *arch_gic_irq_init(void)
+struct irq_chip *arch_gic_get_irqchip(void)
 {
 	return &gic_irq_chip;
 }

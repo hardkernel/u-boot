@@ -4,10 +4,7 @@
  * SPDX-License-Identifier:     GPL-2.0+
  */
 
-#include <asm/io.h>
-#include <irq-generic.h>
-#include "irq-gpio.h"
-#include "irq-gpio-switch.h"
+#include "irq-internal.h"
 
 typedef enum GPIOIntType {
 	GPIOLevelLow = 0,
@@ -337,7 +334,7 @@ static struct irq_chip gpio_irq_chip = {
 	.irq_get_gpio_level = gpio_irq_get_gpio_level,
 };
 
-struct irq_chip *arch_gpio_irq_init(void)
+struct irq_chip *arch_gpio_get_irqchip(void)
 {
 	return &gpio_irq_chip;
 }

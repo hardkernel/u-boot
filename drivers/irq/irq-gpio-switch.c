@@ -5,8 +5,7 @@
  */
 
 #include <dm.h>
-#include <irq-generic.h>
-#include "irq-gpio-switch.h"
+#include "irq-internal.h"
 
 DECLARE_GLOBAL_DATA_PTR;
 

@@ -93,7 +93,4 @@ int gpio_to_irq(struct gpio_desc *gpio);
 int hard_gpio_to_irq(unsigned gpio);
 int phandle_gpio_to_irq(u32 gpio_phandle, u32 pin);
 
-/* Only irq-gpio.c can call it */
-void __generic_gpio_handle_irq(int irq);
-
 #endif /* _IRQ_GENERIC_H */
