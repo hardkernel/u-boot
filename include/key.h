@@ -47,6 +47,8 @@ struct dm_key_uclass_platdata {
 
 	u32 trig_cnt;
 
+	int skip_irq_init;
+
 	/* Only for pwrkey gpio irq */
 	void (*irq_thread)(int irq, struct udevice *dev);
 };

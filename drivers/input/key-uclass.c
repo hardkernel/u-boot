@@ -274,6 +274,9 @@ static int key_post_probe(struct udevice *dev)
 #ifdef CONFIG_IRQ
 			int irq;
 
+			if (uc_key->skip_irq_init)
+				return 0;
+
 			irq = phandle_gpio_to_irq(uc_key->gpios[0],
 						  uc_key->gpios[1]);
 			if (irq < 0) {
