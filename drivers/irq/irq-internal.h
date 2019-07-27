@@ -24,6 +24,14 @@
  */
 struct irq_chip *arch_gic_get_irqchip(void);
 struct irq_chip *arch_gpio_get_irqchip(void);
+struct irq_chip *arch_virq_get_irqchip(void);
+
+/*
+ * IRQ-VIRTUAL
+ */
+int bad_virq(int irq);
+void virq_free_handler(int irq);
+int virq_install_handler(int irq, interrupt_handler_t *handler, void *data);
 
 /*
  * Other

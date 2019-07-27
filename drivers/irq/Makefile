@@ -8,3 +8,4 @@ obj-y += irq-gic.o
 obj-y += irq-gpio.o
 obj-y += irq-generic.o
 obj-y += irq-gpio-switch.o
+obj-y += virq.o

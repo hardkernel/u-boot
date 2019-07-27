@@ -19,6 +19,8 @@ struct irq_desc {
 struct irqchip_desc {
 	struct irq_chip *gic;
 	struct irq_chip *gpio;
+	struct irq_chip *virq;
+
 };
 
 static struct irq_desc irq_desc[PLATFORM_MAX_IRQ];
@@ -32,13 +34,17 @@ int bad_irq(int irq)
 		return -EINVAL;
 	}
 
-	if (irq >= PLATFORM_MAX_IRQ) {
-		IRQ_W("IRQ %d: Out of max supported IRQ(%d)\n",
-		      irq, PLATFORM_MAX_IRQ);
-		return -EINVAL;
+	if (irq < PLATFORM_MAX_IRQ) {
+		if (!irq_desc[irq].handle_irq)
+			return -EINVAL;
+	} else {
+		if (bad_virq(irq)) {
+			IRQ_E("Unknown virq: %d\n", irq);
+			return -EINVAL;
+		}
 	}
 
-	return irq_desc[irq].handle_irq ? 0 : -EINVAL;
+	return 0;
 }
 
 /* general interrupt handler for gpio chip */
@@ -81,7 +87,7 @@ int irq_is_busy(int irq)
 static int bad_irq_chip(struct irq_chip *chip)
 {
 	return (!chip->name || !chip->irq_init || !chip->irq_enable ||
-		!chip->irq_disable || !chip->irq_set_type) ? -EINVAL : 0;
+		!chip->irq_disable) ? -EINVAL : 0;
 }
 
 static int __do_arch_irq_init(void)
@@ -113,6 +119,12 @@ static int __do_arch_irq_init(void)
 		goto out;
 	}
 
+	irqchip.virq = arch_virq_get_irqchip();
+	if (bad_irq_chip(irqchip.virq)) {
+		IRQ_E("Bad virq irqchip\n");
+		goto out;
+	}
+
 	ret = irqchip.gic->irq_init();
 	if (ret) {
 		IRQ_E("GIC Interrupt setup failed, ret=%d\n", ret);
@@ -122,6 +134,12 @@ static int __do_arch_irq_init(void)
 	ret = irqchip.gpio->irq_init();
 	if (ret) {
 		IRQ_E("GPIO Interrupt setup failed, ret=%d\n", ret);
+		goto out;
+	}
+
+	ret = irqchip.virq->irq_init();
+	if (ret) {
+		IRQ_E("VIRQ Interrupt setup failed, ret=%d\n", ret);
 		goto out;
 	}
 
@@ -140,8 +158,10 @@ int irq_handler_enable(int irq)
 
 	if (irq < PLATFORM_GIC_MAX_IRQ)
 		return irqchip.gic->irq_enable(irq);
-	else
+	else if (irq < PLATFORM_GPIO_MAX_IRQ)
 		return irqchip.gpio->irq_enable(irq);
+	else
+		return irqchip.virq->irq_enable(irq);
 }
 
 int irq_handler_disable(int irq)
@@ -151,8 +171,10 @@ int irq_handler_disable(int irq)
 
 	if (irq < PLATFORM_GIC_MAX_IRQ)
 		return irqchip.gic->irq_disable(irq);
-	else
+	else if (irq < PLATFORM_GPIO_MAX_IRQ)
 		return irqchip.gpio->irq_disable(irq);
+	else
+		return irqchip.virq->irq_disable(irq);
 }
 
 int irq_set_irq_type(int irq, unsigned int type)
@@ -162,8 +184,10 @@ int irq_set_irq_type(int irq, unsigned int type)
 
 	if (irq < PLATFORM_GIC_MAX_IRQ)
 		return irqchip.gic->irq_set_type(irq, type);
-	else
+	else if (irq < PLATFORM_GPIO_MAX_IRQ)
 		return irqchip.gpio->irq_set_type(irq, type);
+	else
+		return -ENOSYS;
 }
 
 int irq_revert_irq_type(int irq)
@@ -173,8 +197,10 @@ int irq_revert_irq_type(int irq)
 
 	if (irq < PLATFORM_GIC_MAX_IRQ)
 		return 0;
-	else
+	else if (irq < PLATFORM_GPIO_MAX_IRQ)
 		return irqchip.gpio->irq_revert_type(irq);
+	else
+		return -ENOSYS;
 }
 
 int irq_get_gpio_level(int irq)
@@ -184,8 +210,10 @@ int irq_get_gpio_level(int irq)
 
 	if (irq < PLATFORM_GIC_MAX_IRQ)
 		return 0;
-	else
+	else if (irq < PLATFORM_GPIO_MAX_IRQ)
 		return irqchip.gpio->irq_get_gpio_level(irq);
+	else
+		return -ENOSYS;
 }
 
 void irq_install_handler(int irq, interrupt_handler_t *handler, void *data)
@@ -195,17 +223,14 @@ void irq_install_handler(int irq, interrupt_handler_t *handler, void *data)
 		return;
 	}
 
-	if (irq >= PLATFORM_MAX_IRQ) {
-		IRQ_W("IRQ %d: Out of max supported IRQ(%d)\n",
-		      irq, PLATFORM_MAX_IRQ);
-		return;
+	if (irq < PLATFORM_MAX_IRQ) {
+		if (!handler || irq_desc[irq].handle_irq)
+			return;
+		irq_desc[irq].handle_irq = handler;
+		irq_desc[irq].data = data;
+	} else {
+		virq_install_handler(irq, handler, data);
 	}
-
-	if (!handler || irq_desc[irq].handle_irq)
-		return;
-
-	irq_desc[irq].handle_irq = handler;
-	irq_desc[irq].data = data;
 }
 
 void irq_free_handler(int irq)
@@ -213,8 +238,12 @@ void irq_free_handler(int irq)
 	if (irq_handler_disable(irq))
 		return;
 
-	irq_desc[irq].handle_irq = NULL;
-	irq_desc[irq].data = NULL;
+	if (irq < PLATFORM_MAX_IRQ) {
+		irq_desc[irq].handle_irq = NULL;
+		irq_desc[irq].data = NULL;
+	} else {
+		virq_free_handler(irq);
+	}
 }
 
 int irqs_suspend(void)
