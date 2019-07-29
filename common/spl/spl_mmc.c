@@ -9,6 +9,7 @@
 #include <common.h>
 #include <dm.h>
 #include <spl.h>
+#include <spl_ab.h>
 #include <spl_rkfw.h>
 #include <linux/compiler.h>
 #include <errno.h>
@@ -62,6 +63,8 @@ int mmc_load_image_raw_sector(struct spl_image_info *spl_image,
 	int ret = 0;
 
 #ifdef CONFIG_SPL_LOAD_RKFW
+	u32 trust_sectors = CONFIG_RKFW_TRUST_SECTOR;
+	u32 uboot_sectors = CONFIG_RKFW_U_BOOT_SECTOR;
 	struct spl_load_info load;
 
 	load.dev = mmc;
@@ -70,9 +73,18 @@ int mmc_load_image_raw_sector(struct spl_image_info *spl_image,
 	load.bl_len = mmc->read_bl_len;
 	load.read = h_spl_load_read;
 
+#ifdef CONFIG_SPL_AB
+	char trust_partition[] = "trust";
+	char uboot_partition[] = "uboot";
+
+	spl_get_partitions_sector(mmc_get_blk_desc(mmc), trust_partition,
+				  &trust_sectors);
+	spl_get_partitions_sector(mmc_get_blk_desc(mmc), uboot_partition,
+				  &uboot_sectors);
+#endif
 	ret = spl_load_rkfw_image(spl_image, &load,
-				  CONFIG_RKFW_TRUST_SECTOR,
-				  CONFIG_RKFW_U_BOOT_SECTOR);
+				  trust_sectors,
+				  uboot_sectors);
 	/* If boot successfully or can't try others, just go end */
 	if (!ret || ret != -EAGAIN)
 		goto end;
