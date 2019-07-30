@@ -297,8 +297,18 @@ int init_kernel_dtb(void)
 
 	ret = rockchip_read_dtb_file((void *)fdt_addr);
 	if (ret < 0) {
-		printf("Read kernel dtb failed, ret=%d\n", ret);
+#ifdef CONFIG_TARGET_ODROIDGO2
+		printf("%s dtb in resource read fail, try dtb in fat\n", __func__);
+
+		ret = run_command("fatload mmc 1:1 ${fdt_addr_r} ${dtb_name}", 0);
+		if (ret != CMD_RET_SUCCESS) {
+			printf("%s dtb in fat fs fail\n", __func__);
+			return 0;
+		}
+#else
+		printf("%s dtb in resource read fail\n", __func__);
 		return 0;
+#endif
 	}
 
 	/*
