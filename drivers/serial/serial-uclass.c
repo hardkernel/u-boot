@@ -201,6 +201,14 @@ static int __serial_tstc(struct udevice *dev)
 	return 1;
 }
 
+static void __serial_clear(struct udevice *dev)
+{
+	struct dm_serial_ops *ops = serial_get_ops(dev);
+
+	if (ops->clear)
+		ops->clear(dev);
+}
+
 #if CONFIG_IS_ENABLED(SERIAL_RX_BUFFER)
 static int _serial_tstc(struct udevice *dev)
 {
@@ -281,14 +289,10 @@ void serial_setbrg(void)
 
 void serial_clear(void)
 {
-	struct dm_serial_ops *ops;
-
 	if (!gd->cur_serial_dev)
 		return;
 
-	ops = serial_get_ops(gd->cur_serial_dev);
-	if (ops->setbrg)
-		ops->clear(gd->cur_serial_dev);
+	__serial_clear(gd->cur_serial_dev);
 }
 
 void serial_stdio_init(void)
