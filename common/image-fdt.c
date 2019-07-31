@@ -562,6 +562,12 @@ int image_setup_libfdt(bootm_headers_t *images, void *blob,
 	ulong *initrd_end = &images->initrd_end;
 	int ret = -EPERM;
 	int fdt_ret;
+
+	if (arch_fixup_fdt(blob) < 0) {
+		printf("ERROR: arch-specific fdt fixup failed\n");
+		goto err;
+	}
+
 #if defined(CONFIG_PASS_DEVICE_SERIAL_BY_FDT)
 	if (fdt_root(blob) < 0) {
 		printf("ERROR: root node setup failed\n");
@@ -572,10 +578,7 @@ int image_setup_libfdt(bootm_headers_t *images, void *blob,
 		printf("ERROR: /chosen node create failed\n");
 		goto err;
 	}
-	if (arch_fixup_fdt(blob) < 0) {
-		printf("ERROR: arch-specific fdt fixup failed\n");
-		goto err;
-	}
+
 	/* Update ethernet nodes */
 	fdt_fixup_ethernet(blob);
 	if (IMAGE_OF_BOARD_SETUP) {

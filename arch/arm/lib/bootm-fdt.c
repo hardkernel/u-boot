@@ -40,6 +40,11 @@ __weak int board_fdt_fixup(void *blob)
 int arch_fixup_fdt(void *blob)
 {
 	int ret = 0;
+
+	ret = board_fdt_fixup(blob);
+	if (ret)
+		return ret;
+
 #if defined(CONFIG_ARMV7_NONSEC) || defined(CONFIG_OF_LIBFDT)
 	bd_t *bd = gd->bd;
 	int bank;
@@ -80,9 +85,6 @@ int arch_fixup_fdt(void *blob)
 		return ret;
 #endif
 #endif
-	ret = board_fdt_fixup(blob);
-	if (ret)
-		return ret;
 
 #ifdef CONFIG_FMAN_ENET
 	ret = fdt_update_ethernet_dt(blob);
