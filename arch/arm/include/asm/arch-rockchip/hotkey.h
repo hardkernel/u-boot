@@ -9,7 +9,8 @@
 enum hotkey_t {
 	HK_INVAL,
 	HK_BROM_DNL,
-	HK_CLI,
+	HK_CLI_OS_PRE,
+	HK_CLI_OS_GO,
 	HK_CMDLINE,
 	HK_FASTBOOT,
 	HK_INITCALL,

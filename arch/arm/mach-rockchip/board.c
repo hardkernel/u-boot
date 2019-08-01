@@ -479,10 +479,16 @@ int board_initr_caches_fixup(void)
 }
 #endif
 
+void arch_preboot_os(uint32_t bootm_state)
+{
+	if (bootm_state & BOOTM_STATE_OS_PREP)
+		hotkey_run(HK_CLI_OS_PRE);
+}
+
 void board_quiesce_devices(void)
 {
 	hotkey_run(HK_CMDLINE);
-	hotkey_run(HK_CLI);
+	hotkey_run(HK_CLI_OS_GO);
 
 #ifdef CONFIG_ROCKCHIP_PRELOADER_ATAGS
 	/* Destroy atags makes next warm boot safer */
