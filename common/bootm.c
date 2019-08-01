@@ -725,6 +725,8 @@ int do_bootm_states(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[],
 		if (images->os.os == IH_OS_LINUX)
 			fixup_silent_linux();
 #endif
+		arch_preboot_os(BOOTM_STATE_OS_PREP);
+
 		ret = boot_fn(BOOTM_STATE_OS_PREP, argc, argv, images);
 	}
 

@@ -54,7 +54,7 @@ int bootm_find_images(int flag, int argc, char * const argv[]);
 int do_bootm_states(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[],
 		    int states, bootm_headers_t *images, int boot_progress);
 
-void arch_preboot_os(void);
+void arch_preboot_os(uint32_t bootm_state);
 
 /**
  * bootm_decomp_image() - decompress the operating system
