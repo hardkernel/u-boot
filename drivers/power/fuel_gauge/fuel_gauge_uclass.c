@@ -50,7 +50,7 @@ int fuel_gauge_get_voltage(struct udevice *dev)
 	return ops->get_voltage(dev);
 }
 
-int fuel_gauge_get_soc(struct udevice *dev)
+int fuel_gauge_update_get_soc(struct udevice *dev)
 {
 	const struct dm_fuel_gauge_ops *ops = dev_get_driver_ops(dev);
 

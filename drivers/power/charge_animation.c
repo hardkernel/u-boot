@@ -377,7 +377,7 @@ static int charge_extrem_low_power(struct udevice *dev)
 		 * Just for fuel gauge to update something important,
 		 * including charge current, coulometer or other.
 		 */
-		soc = fuel_gauge_get_soc(fg);
+		soc = fuel_gauge_update_get_soc(fg);
 		if (soc < 0 || soc > 100) {
 			printf("get soc failed: %d\n", soc);
 			continue;
@@ -559,7 +559,7 @@ static int charge_animation_show(struct udevice *dev)
 		debug("step2 (%d)... show_idx=%d\n", screen_on, show_idx);
 
 		/* Step2: get soc and voltage */
-		soc = fuel_gauge_get_soc(fg);
+		soc = fuel_gauge_update_get_soc(fg);
 		if (soc < 0 || soc > 100) {
 			printf("get soc failed: %d\n", soc);
 			continue;
@@ -847,7 +847,7 @@ static int charge_animation_probe(struct udevice *dev)
 	}
 
 	/* Initialize charge current */
-	soc = fuel_gauge_get_soc(priv->fg);
+	soc = fuel_gauge_update_get_soc(priv->fg);
 	if (soc < 0 || soc > 100) {
 		debug("get soc failed: %d\n", soc);
 		return -EINVAL;
