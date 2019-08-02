@@ -21,6 +21,8 @@ struct irqchip_desc {
 	struct irq_chip *gpio;
 	struct irq_chip *virq;
 
+	int suspend_irq[PLATFORM_SUSPEND_MAX_IRQ];
+	int suspend_num;
 };
 
 static struct irq_desc irq_desc[PLATFORM_MAX_IRQ];
@@ -246,13 +248,38 @@ void irq_free_handler(int irq)
 	}
 }
 
+int irq_handler_enable_suspend_only(int irq)
+{
+	if (bad_irq(irq))
+		return -EINVAL;
+
+	if (irqchip.suspend_num >= PLATFORM_SUSPEND_MAX_IRQ) {
+		printf("Over max count(%d) of suspend irq\n",
+		       PLATFORM_SUSPEND_MAX_IRQ);
+		return -EPERM;
+	}
+
+	irqchip.suspend_irq[irqchip.suspend_num++] = irq;
+	return 0;
+}
+
 int irqs_suspend(void)
 {
+	int i;
+
+	for (i = 0; i < irqchip.suspend_num; i++)
+		irq_handler_enable(irqchip.suspend_irq[i]);
+
 	return irqchip.gic->irq_suspend();
 }
 
 int irqs_resume(void)
 {
+	int i;
+
+	for (i = 0; i < irqchip.suspend_num; i++)
+		irq_handler_disable(irqchip.suspend_irq[i]);
+
 	return irqchip.gic->irq_resume();
 }
 

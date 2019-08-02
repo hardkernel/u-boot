@@ -94,6 +94,7 @@ void irq_free_handler(int irq);
 int irq_set_irq_type(int irq, unsigned int type);
 int irq_revert_irq_type(int irq);
 int irq_handler_enable(int irq);
+int irq_handler_enable_suspend_only(int irq);
 int irq_handler_disable(int irq);
 int irq_get_gpio_level(int irq);
 int irqs_suspend(void);
