@@ -224,9 +224,11 @@ static int system_suspend_enter(struct udevice *dev)
 		putc('1');
 		putc('\n');
 	} else {
+		irqs_suspend();
 		printf("\nWfi\n");
 		wfi();
 		putc('1');
+		irqs_resume();
 	}
 
 	priv->suspend_delay_timeout = get_timer(0);
