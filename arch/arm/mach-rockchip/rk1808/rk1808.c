@@ -16,6 +16,7 @@
 #include <asm/armv8/mmu.h>
 
 #define NIU_CIF_ADDR		0xfe8a0188
+#define NIU_ISP_ADDR		0xfe8a0008
 #define QOS_PRIORITY_LEVEL(h, l)	((((h) & 3) << 8) | ((l) & 3))
 
 static struct mm_region rk1808_mem_map[] = {
@@ -67,6 +68,7 @@ int arch_cpu_init(void)
 {
 	/* Set cif qos priority */
 	writel(QOS_PRIORITY_LEVEL(2, 2), NIU_CIF_ADDR);
+	writel(QOS_PRIORITY_LEVEL(2, 2), NIU_ISP_ADDR);
 
 	return 0;
 }
