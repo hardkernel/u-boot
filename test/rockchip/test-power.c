@@ -31,12 +31,16 @@ static int regulator_change_voltage(struct udevice *dev)
 
 	/* Test get/set() */
 	save_uV = regulator_get_value(dev);
-	if (save_uV < 0)
+	if (save_uV < 0) {
+		ut_err("regulator: failed to get volt, ret=%d\n", save_uV);
 		return save_uV;
+	}
 
 	ret = regulator_set_value(dev, save_uV);
-	if (ret < 0)
+	if (ret < 0) {
+		ut_err("regulator: failed to set volt, ret=%d\n", ret);
 		return ret;
+	}
 
 	for (i = 1; i < 4; i++) {
 		uV = regulator_get_value(dev);
@@ -46,7 +50,7 @@ static int regulator_change_voltage(struct udevice *dev)
 		       regulator_get_value(dev));
 
 		if ((uV + step_uV * i) != regulator_get_value(dev)) {
-			printf("%s@%s: set voltage failed\n",
+			ut_err("regulator: %s@%s failed to set volt\n",
 			       dev->name, uc_pdata->name);
 			ret = -EINVAL;
 			break;
@@ -66,15 +70,19 @@ static int do_test_regulator(cmd_tbl_t *cmdtp, int flag,
 	int ret;
 
 	ret = uclass_get(UCLASS_REGULATOR, &uc);
-	if (ret)
+	if (ret) {
+		ut_err("regulator: failed to get uclass, ret=%d\n", ret);
 		return ret;
+	}
 
 	for (uclass_first_device(UCLASS_REGULATOR, &dev);
 	     dev;
 	     uclass_next_device(&dev)) {
 		ret = regulator_change_voltage(dev);
-		if (ret)
+		if (ret) {
+			ut_err("regulator: failed to change volt, ret=%d\n", ret);
 			return ret;
+		}
 	}
 
 	return 0;
@@ -107,7 +115,7 @@ static int do_test_wdt(cmd_tbl_t *cmdtp, int flag,
 	ret = uclass_get_device(UCLASS_WDT, 0, &dev);
 	if (ret) {
 		if (ret != -ENODEV)
-			printf("Get watchdog device failed, ret=%d\n", ret);
+			ut_err("wdt: failed to get device, ret=%d\n", ret);
 		return ret;
 	}
 
@@ -128,13 +136,13 @@ static int do_test_thermal(cmd_tbl_t *cmdtp, int flag,
 
 	ret = uclass_get_device(UCLASS_THERMAL, 0, &dev);
 	if (ret) {
-		printf("Get thermal device failed, ret=%d\n", ret);
+		ut_err("thermal: failed to get device, ret=%d\n", ret);
 		return ret;
 	}
 
 	ret = thermal_get_temp(dev, &temp);
 	if (ret) {
-		printf("Get temperature failed, ret=%d\n", ret);
+		ut_err("thermal: failed to get temperature, ret=%d\n", ret);
 		return ret;
 	}
 
@@ -162,8 +170,10 @@ static int do_test_pmic(cmd_tbl_t *cmdtp, int flag,
 		env_set("this_pmic", dev->name);
 		run_command("pmic dev $this_pmic", 0);
 		ret = run_command("pmic dump", 0);
-		if (ret)
+		if (ret) {
+			ut_err("pmic: failed to dump register, ret=%d\n", ret);
 			goto out;
+		}
 	}
 
 out:

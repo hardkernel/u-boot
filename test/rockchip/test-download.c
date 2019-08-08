@@ -47,6 +47,9 @@ static int do_test_tftp(cmd_tbl_t *cmdtp, int flag,
 	ret |= run_command("dhcp", 0);
 	ret |= run_command(load_cmd, 0);
 
+	if (ret)
+		ut_err("tftp: failed to download file\n");
+
 	return ret;
 }
 #endif

@@ -110,13 +110,13 @@ static int ir_test(void)
 
 	ret = uclass_get_device(UCLASS_RC, 0, &dev);
 	if (ret) {
-		printf("Get rc device failed: %d\n", ret);
+		ut_err("ir: failed to get device, ret=%d\n", ret);
 		goto out;
 	}
 
 	keycode = rc_get_keycode(dev);
 	if (keycode == -ENOSYS) {
-		printf("ir_test: failed to bind driver\n");
+		ut_err("ir: failed to bind driver\n");
 		goto out;
 	}
 
@@ -132,7 +132,7 @@ static int ir_test(void)
 			continue;
 
 		if (keycode != last_keycode || repeat != last_repeat) {
-			printf("ir_test: press key:0x%x repeat:%d\n",
+			printf("ir: press key:0x%x repeat:%d\n",
 			       keycode, repeat);
 			last_keycode = keycode;
 			last_repeat = repeat;
@@ -200,8 +200,10 @@ static int do_test_adc(cmd_tbl_t *cmdtp, int flag,
 
 	chn = argc < 2 ? 0 : strtoul(argv[1], NULL, 10);
 	ret = adc_channel_single_shot("saradc", chn, &val);
-	if (!ret)
-		printf("adc channel%d: adc value is %d\n", chn, val);
+	if (ret)
+		ut_err("adc: failed to get channel%d value, ret=%d\n", chn, ret);
+
+	printf("adc channel%d: adc value is %d\n", chn, val);
 
 	return ret;
 }

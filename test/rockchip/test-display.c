@@ -20,6 +20,8 @@ int do_test_display(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 	ret |= rockchip_show_bmp("logo_kernel.bmp");
 	mdelay(2000);
 
+	ut_err("display: failed to show bmp\n");
+
 	return ret;
 }
 

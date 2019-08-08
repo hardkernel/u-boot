@@ -36,14 +36,14 @@ static int do_test_storage(cmd_tbl_t *cmdtp, int flag,
 	/* 1. Get test partition */
 	dev_desc = rockchip_get_bootdev();
 	if (!dev_desc) {
-		printf("%s: Can't find dev_desc\n", __func__);
+		ut_err("%s: failed to get blk desc\n", label);
 		return -ENODEV;
 	}
 
 	if (part_get_info_by_name(dev_desc,
 				  DEFAULT_STORAGE_RW_PART, &part) < 0) {
-		printf("%s: Can't find %s part\n",
-		       __func__, DEFAULT_STORAGE_RW_PART);
+		ut_err("%s: failed to find %s partition\n", label,
+		       DEFAULT_STORAGE_RW_PART);
 		return -EINVAL;
 	}
 
@@ -74,14 +74,14 @@ static int do_test_storage(cmd_tbl_t *cmdtp, int flag,
 	/* 3. Prepare memory */
 	w_buf = sysmem_alloc_by_name("storage_w", blocks * dev_desc->blksz);
 	if (!w_buf) {
-		printf("No sysmem for w_buf!\n");
+		ut_err("%s: no sysmem for w_buf\n", label);
 		ret = -ENOMEM;
 		goto err1;
 	}
 
 	r_buf = sysmem_alloc_by_name("storage_r", blocks * dev_desc->blksz);
 	if (!r_buf) {
-		printf("No sysmem for r_buf!\n");
+		ut_err("%s: no sysmem for r_buf\n", label);
 		ret = -ENOMEM;
 		goto err2;
 	}
@@ -98,6 +98,7 @@ static int do_test_storage(cmd_tbl_t *cmdtp, int flag,
 			 devtype, (u32)(ulong)w_buf, sector, blocks);
 		for (i = 0; i < round; i++) {
 			if (run_command(cmd, 0)) {
+				ut_err("%s: failed to write @%d round\n", label, i);
 				ret = -EIO;
 				goto err3;
 			}
@@ -106,6 +107,7 @@ static int do_test_storage(cmd_tbl_t *cmdtp, int flag,
 		for (i = 0; i < round; i++) {
 			ret = blk_dwrite(dev_desc, sector, blocks, w_buf);
 			if (ret != blocks) {
+				ut_err("%s: failed to write @%d round\n", label, i);
 				ret = -EIO;
 				goto err3;
 			}
@@ -124,6 +126,7 @@ static int do_test_storage(cmd_tbl_t *cmdtp, int flag,
 
 		for (i = 0; i < round; i++) {
 			if (run_command(cmd, 0)) {
+				ut_err("%s: failed to read @%d round\n", label, i);
 				ret = -EIO;
 				goto err3;
 			}
@@ -132,6 +135,7 @@ static int do_test_storage(cmd_tbl_t *cmdtp, int flag,
 		for (i = 0; i < round; i++) {
 			ret = blk_dread(dev_desc, sector, blocks, r_buf);
 			if (ret != blocks) {
+				ut_err("%s: failed to read @%d round\n", label, i);
 				ret = -EIO;
 				goto err3;
 			}
@@ -145,7 +149,7 @@ static int do_test_storage(cmd_tbl_t *cmdtp, int flag,
 	/* 6. Verify the context */
 	for (i = 0; i < blocks * dev_desc->blksz; i++) {
 		if (w_buf[i] != r_buf[i]) {
-			printf("%s context compare error!\n", label);
+			ut_err("%s: context compare error\n", label);
 			ret = -EINVAL;
 			goto err3;
 		}
@@ -156,7 +160,7 @@ static int do_test_storage(cmd_tbl_t *cmdtp, int flag,
 	    strcmp(devnum, env_get("devnum"))) {
 		ret = run_command(cmd, 0);
 		if (ret) {
-			printf("Switch to mmc1 failed\n");
+			ut_err("%s: failed to switch to mmc1\n", label);
 			ret = -ENODEV;
 			goto err3;
 		}
@@ -217,8 +221,10 @@ static int do_test_env(cmd_tbl_t *cmdtp, int flag,
 	int ret;
 
 	ret = env_save();
-	if (ret)
+	if (ret) {
+		ut_err("env: failed to save, ret=%d\n", ret);
 		return ret;
+	}
 
 	return env_load();
 }
@@ -242,13 +248,13 @@ static int do_test_efuse(cmd_tbl_t *cmdtp, int flag,
 
 	ret = uclass_get_device(UCLASS_MISC, 0, &dev);
 	if (ret) {
-		printf("Can't find efuse device\n");
+		ut_err("efuse: failed to get device, ret=%d\n", ret);
 		return 0;
 	}
 
 	ret = misc_read(dev, 0, &fuses, sizeof(fuses));
 	if (ret) {
-		printf("Efuse read failed\n");
+		ut_err("efuse: failed to read, ret=%d\n", ret);
 		return 0;
 	}
 
@@ -270,13 +276,13 @@ static int do_test_otp(cmd_tbl_t *cmdtp, int flag,
 	/* retrieve the device */
 	ret = uclass_get_device_by_driver(UCLASS_MISC, 0, &dev);
 	if (ret) {
-		printf("Can't find otp device\n");
+		ut_err("otp: failed to get device, ret=%d\n", ret);
 		return 0;
 	}
 
 	ret = misc_read(dev, 0, &otps, sizeof(otps));
 	if (ret) {
-		printf("OTP read failed\n");
+		ut_err("otp: failed to read, ret=%d\n", ret);
 		return 0;
 	}
 

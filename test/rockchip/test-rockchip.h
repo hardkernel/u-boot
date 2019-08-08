@@ -53,4 +53,7 @@ struct cmd_group {
 #define lava_info(fmt, ...)
 #endif
 
+/* Unit test error message */
+#define ut_err(fmt, args...)	printf("[UT-ERROR]: "fmt, ##args)
+
 #endif /* _TEST_ROCKCHIP_H */
