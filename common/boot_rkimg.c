@@ -369,6 +369,11 @@ void board_run_recovery_wipe_data(void)
  * 1st and 2nd cases are static determined at system start and we check it once,
  * while 3th case is dynamically added by U-Boot code, so we have to check it
  * everytime.
+ *
+ * Recovery mode from:
+ *	- MISC partition;
+ *	- "reboot recovery" command;
+ *	- recovery key pressed without usb attach;
  */
 int rockchip_get_boot_mode(void)
 {
@@ -389,7 +394,7 @@ int rockchip_get_boot_mode(void)
 	if (env_reboot_mode) {
 		if (!strcmp(env_reboot_mode, "recovery")) {
 			boot_mode = BOOT_MODE_RECOVERY;
-			printf("boot mode: recovery\n");
+			printf("boot mode: recovery (key)\n");
 		} else if (!strcmp(env_reboot_mode, "fastboot")) {
 			boot_mode = BOOT_MODE_BOOTLOADER;
 			printf("boot mode: fastboot\n");
@@ -439,7 +444,7 @@ fallback:
 		boot_mode = BOOT_MODE_BOOTLOADER;
 		clear_boot_reg = 1;
 	} else if (bmsg && !strcmp(bmsg->command, "boot-recovery")) {
-		printf("boot mode: recovery\n");
+		printf("boot mode: recovery (misc)\n");
 		boot_mode = BOOT_MODE_RECOVERY;
 		clear_boot_reg = 1;
 	} else {
@@ -450,7 +455,7 @@ fallback:
 			clear_boot_reg = 1;
 			break;
 		case BOOT_RECOVERY:
-			/* printf("boot mode: recovery\n"); */
+			printf("boot mode: recovery (cmd)\n");
 			boot_mode = BOOT_MODE_RECOVERY;
 			clear_boot_reg = 1;
 			break;
