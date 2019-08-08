@@ -26,48 +26,38 @@ static int do_test_storage(cmd_tbl_t *cmdtp, int flag,
 			   const char *label)
 {
 	struct blk_desc *dev_desc;
+	disk_partition_t part;
 	u32 blocks, round, sector;
 	char *w_buf, *r_buf;
 	char cmd[64];
 	int i, ret;
 	ulong ts;
 
-	if (argc != 4 && argc != 1)
-		return CMD_RET_USAGE;
-
+	/* 1. Get test partition */
 	dev_desc = rockchip_get_bootdev();
 	if (!dev_desc) {
 		printf("%s: Can't find dev_desc\n", __func__);
 		return -ENODEV;
 	}
 
-	/* 1. Get input param */
-	if (argc == 4) {
-		sector = simple_strtoul(argv[1], NULL, 0);
-		blocks = simple_strtoul(argv[2], NULL, 0);
-		round  = simple_strtoul(argv[3], NULL, 0);
-	} else {
-		disk_partition_t part;
-
-		if (part_get_info_by_name(dev_desc,
-					  DEFAULT_STORAGE_RW_PART, &part) < 0) {
-			printf("%s: Can't find %s part\n",
-			       __func__, DEFAULT_STORAGE_RW_PART);
-			return -EINVAL;
-		}
-
-		/* 32MB */
-		sector = part.start;
-		blocks = part.size > 0x10000 ? 0x10000 : part.size;
-		round  = 4;
+	if (part_get_info_by_name(dev_desc,
+				  DEFAULT_STORAGE_RW_PART, &part) < 0) {
+		printf("%s: Can't find %s part\n",
+		       __func__, DEFAULT_STORAGE_RW_PART);
+		return -EINVAL;
 	}
+
+	/* 32MB */
+	sector = part.start;
+	blocks = part.size > 0x10000 ? 0x10000 : part.size;
+	round  = 4;
 
 	/* Round up */
 	if (blocks % 2)
 		blocks += 1;
 
 	printf("%s RW sectors on %s 0x%08x - 0x%08x(size: %ld MiB) for %d round\n\n",
-	       label, argc == 1 ? DEFAULT_STORAGE_RW_PART : "",
+	       label, DEFAULT_STORAGE_RW_PART,
 	       sector, sector + blocks,
 	       (blocks * dev_desc->blksz) >> 20, round);
 
@@ -344,11 +334,11 @@ static char sub_cmd_help[] =
 "    [.] rktest blk                         - test blk layer read/write\n"
 #endif
 #ifdef CONFIG_MMC
-"    [.] rktest emmc blk# cnt round         - test emmc read/write speed\n"
+"    [.] rktest emmc                        - test emmc read/write speed\n"
 "    [.] rktest sdmmc                       - test sd card and fat fs read/write\n"
 #endif
 #ifdef CONFIG_RKNAND
-"    [.] rktest rknand blk# cnt round       - test rknand read/write speed\n"
+"    [.] rktest rknand                      - test rknand read/write speed\n"
 #endif
 #if defined(CONFIG_OPTEE_CLIENT) && defined(CONFIG_MMC)
 "    [.] rktest secure_storage              - test secure storage\n"
