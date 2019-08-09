@@ -6,6 +6,7 @@
 
 #include <asm/io.h>
 #include <asm/u-boot-arm.h>
+#include <dm.h>
 #include <irq-generic.h>
 #include "irq-internal.h"
 
@@ -14,6 +15,8 @@ DECLARE_GLOBAL_DATA_PTR;
 struct irq_desc {
 	interrupt_handler_t *handle_irq;
 	void *data;
+	u32 flag;
+	u32 count;
 };
 
 struct irqchip_desc {
@@ -60,8 +63,10 @@ void __generic_gpio_handle_irq(int irq)
 		return;
 	}
 
-	if (irq_desc[irq].handle_irq)
+	if (irq_desc[irq].handle_irq) {
+		irq_desc[irq].count++;
 		irq_desc[irq].handle_irq(irq, irq_desc[irq].data);
+	}
 }
 
 void __do_generic_irq_handler(void)
@@ -74,8 +79,10 @@ void __do_generic_irq_handler(void)
 	irq = irqchip.gic->irq_get();
 
 	if (irq < PLATFORM_GIC_MAX_IRQ) {
-		if (irq_desc[irq].handle_irq)
+		if (irq_desc[irq].handle_irq) {
+			irq_desc[irq].count++;
 			irq_desc[irq].handle_irq(irq, irq_desc[irq].data);
+		}
 	}
 
 	irqchip.gic->irq_eoi(irq);
@@ -155,28 +162,42 @@ out:
 
 int irq_handler_enable(int irq)
 {
+	int ret;
+
 	if (bad_irq(irq))
 		return -EINVAL;
 
 	if (irq < PLATFORM_GIC_MAX_IRQ)
-		return irqchip.gic->irq_enable(irq);
+		ret = irqchip.gic->irq_enable(irq);
 	else if (irq < PLATFORM_GPIO_MAX_IRQ)
-		return irqchip.gpio->irq_enable(irq);
+		ret = irqchip.gpio->irq_enable(irq);
 	else
-		return irqchip.virq->irq_enable(irq);
+		ret = irqchip.virq->irq_enable(irq);
+
+	if (!ret && irq < PLATFORM_MAX_IRQ)
+		irq_desc[irq].flag |= IRQ_FLG_ENABLE;
+
+	return ret;
 }
 
 int irq_handler_disable(int irq)
 {
+	int ret;
+
 	if (bad_irq(irq))
 		return -EINVAL;
 
 	if (irq < PLATFORM_GIC_MAX_IRQ)
-		return irqchip.gic->irq_disable(irq);
+		ret = irqchip.gic->irq_disable(irq);
 	else if (irq < PLATFORM_GPIO_MAX_IRQ)
-		return irqchip.gpio->irq_disable(irq);
+		ret = irqchip.gpio->irq_disable(irq);
 	else
-		return irqchip.virq->irq_disable(irq);
+		ret = irqchip.virq->irq_disable(irq);
+
+	if (!ret && irq < PLATFORM_MAX_IRQ)
+		irq_desc[irq].flag &= ~IRQ_FLG_ENABLE;
+
+	return ret;
 }
 
 int irq_set_irq_type(int irq, unsigned int type)

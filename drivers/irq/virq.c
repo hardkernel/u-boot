@@ -25,6 +25,9 @@ static u32 virq_id_alloc(void)
 
 struct virq_data {
 	int irq;
+	u32 flag;
+	u32 count;
+
 	void *data;
 	interrupt_handler_t *handle_irq;
 };
@@ -190,8 +193,10 @@ void virq_chip_generic_handler(int pirq, void *pdata)
 			irq = vdata[i].irq;
 			data = vdata[i].data;
 
-			if (vdata[i].handle_irq)
+			if (vdata[i].handle_irq) {
+				vdata[i].count++;
 				vdata[i].handle_irq(irq, data);
+			}
 		}
 	}
 
@@ -314,6 +319,11 @@ static int __virq_enable(int irq, int enable)
 		       __func__, mask_reg, ret);
 		return ret;
 	}
+
+	if (enable)
+		desc->virqs[virq].flag |= IRQ_FLG_ENABLE;
+	else
+		desc->virqs[virq].flag &= ~IRQ_FLG_ENABLE;
 
 	return 0;
 }

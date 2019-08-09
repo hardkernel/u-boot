@@ -4,6 +4,8 @@
  * SPDX-License-Identifier:     GPL-2.0+
  */
 
+#include <dm.h>
+#include <malloc.h>
 #include "irq-internal.h"
 
 typedef enum GPIOIntType {
@@ -307,14 +309,22 @@ static int gpio_irq_init(void)
 	int i = 0;
 
 	for (i = 0; i < GPIO_BANK_NUM; i++) {
+		struct udevice *dev;
+
+		dev = malloc(sizeof(*dev));
+		if (!dev)
+			return -ENOMEM;
+
 		bank = gpio_id_to_bank(i);
 		if (bank) {
+			dev->name = bank->name;
+
 			/* disable gpio pin interrupt */
 			writel(0, bank->regbase + GPIO_INTEN);
 
 			/* register gpio group irq handler */
 			irq_install_handler(IRQ_GPIO0 + bank->id,
-			(interrupt_handler_t *)generic_gpio_handle_irq, NULL);
+			(interrupt_handler_t *)generic_gpio_handle_irq, dev);
 
 			/* default disable all gpio group interrupt */
 			irq_handler_disable(IRQ_GPIO0 + bank->id);

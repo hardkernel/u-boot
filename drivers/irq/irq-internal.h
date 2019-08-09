@@ -13,6 +13,11 @@
 #include "irq-internal.h"
 
 /*
+ * IRQ FLAG
+ */
+#define IRQ_FLG_ENABLE			BIT(0)
+
+/*
  * IRQ-NUMBERS
  */
 #define PLATFORM_SUSPEND_MAX_IRQ	12
