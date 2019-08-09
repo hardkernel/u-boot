@@ -405,3 +405,39 @@ int disable_interrupts(void)
 {
 	return cpu_local_irq_disable();
 }
+
+static int do_dump_irqs(cmd_tbl_t *cmdtp, int flag,
+			int argc, char * const argv[])
+
+{
+	struct udevice *dev;
+	char *drv_name;
+	int pirq;
+
+	printf(" IRQ    En    Handler       Driver         Name              Count\n");
+	printf("----------------------------------------------------------------------\n");
+
+	for (pirq = 0; pirq < PLATFORM_MAX_IRQ; pirq++) {
+		if (!irq_desc[pirq].handle_irq)
+			continue;
+
+		dev = (struct udevice *)irq_desc[pirq].data;
+		if (strstr(dev->name, "gpio"))
+			drv_name = "IRQ";
+		else
+			drv_name = dev->driver->name;
+
+		printf(" %3d	%d     0x%08lx    %-12s    %-12s       %d\n",
+		       pirq, irq_desc[pirq].flag & IRQ_FLG_ENABLE ? 1 : 0,
+		       (ulong)irq_desc[pirq].handle_irq,
+		       drv_name, dev->name, irq_desc[pirq].count);
+
+		virqs_show(pirq);
+	}
+
+	return 0;
+}
+
+U_BOOT_CMD(
+	dump_irqs, 1, 1, do_dump_irqs, "Dump IRQs", ""
+);

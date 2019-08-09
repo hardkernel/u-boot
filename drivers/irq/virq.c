@@ -102,6 +102,34 @@ int bad_virq(int irq)
 	return !find_virq_desc(irq);
 }
 
+void virqs_show(int pirq)
+{
+	struct virq_data *vdata;
+	struct virq_desc *desc;
+	struct udevice *dev;
+	int num;
+	int i;
+
+	desc = find_virq_desc_by_pirq(pirq);
+	if (!desc)
+	       return;
+
+	vdata = desc->virqs;
+	num = desc->irq_end - desc->irq_base;
+
+	for (i = 0; i < num; i++) {
+		if (!vdata[i].handle_irq)
+			continue;
+
+		dev = (struct udevice *)vdata[i].data;
+		printf(" %3d    %d     0x%08lx    %-12s    |-- %-12s   %d\n",
+		       vdata[i].irq,
+		       vdata[i].flag & IRQ_FLG_ENABLE ? 1 : 0,
+		       (ulong)vdata[i].handle_irq, dev->driver->name, dev->name,
+		       vdata[i].count);
+	}
+}
+
 int virq_install_handler(int irq, interrupt_handler_t *handler, void *data)
 {
 	struct virq_desc *desc;
