@@ -72,7 +72,7 @@
 	"fdt_addr_r=0x02f00000\0" \
 	"kernel_addr_r=0x00058000\0" \
 	"kernel_addr_c=0x2008000\0" \
-	"ramdisk_addr_r=0x03080000\0"
+	"ramdisk_addr_r=0x02880000\0"
 #endif
 
 #include <config_distro_bootcmd.h>
