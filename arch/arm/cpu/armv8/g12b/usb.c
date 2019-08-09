@@ -23,6 +23,7 @@
 #include <asm/arch/romboot.h>
 #include <asm/cpu_id.h>
 
+#include <usb.h>
 
 static struct amlogic_usb_config * g_usb_cfg[BOARD_USB_MODE_MAX][USB_PHY_PORT_MAX];
 static int Rev_flag = 0;
