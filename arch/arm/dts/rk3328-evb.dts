@@ -6,7 +6,6 @@
 
 /dts-v1/;
 #include "rk3328.dtsi"
-#include "rk3328-u-boot.dtsi"
 #include "rk3328-sdram-ddr3-666.dtsi"
 #include <dt-bindings/input/input.h>
 
@@ -85,6 +84,7 @@
 	num-slots = <1>;
 	pinctrl-names = "default";
 	pinctrl-0 = <&sdmmc0_clk>, <&sdmmc0_cmd>, <&sdmmc0_dectn>, <&sdmmc0_bus4>;
+	vmmc-supply = <&vcc3v3_sdmmc>;
 	status = "okay";
 };
 
@@ -129,6 +129,7 @@
 };
 
 &usb_host0_ehci {
+	vbus-supply = <&vcc5v0_otg>;
 	status = "okay";
 };
 
