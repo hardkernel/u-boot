@@ -17,8 +17,29 @@
 #include "test-rockchip.h"
 
 #define DEFAULT_STORAGE_RW_PART		"userdata"
+enum if_type blk_get_type_by_name(char* devtype)
+{
+	int type = -1;
 
-#if defined(CONFIG_MMC) || defined(CONFIG_RKNAND) || defined(CONFIG_BLK)
+	if (!strcmp(devtype, "mmc"))
+		type = IF_TYPE_MMC;
+	else if (!strcmp(devtype, "rknand"))
+		type = IF_TYPE_RKNAND;
+	else if (!strcmp(devtype, "spinand"))
+		type = IF_TYPE_SPINAND;
+	else if (!strcmp(devtype, "spinor"))
+		type = IF_TYPE_SPINOR;
+	else if (!strcmp(devtype, "ramdisk"))
+		type = IF_TYPE_RAMDISK;
+	else if (!strcmp(devtype, "mtd"))
+		type = IF_TYPE_MTD;
+	else if (!strcmp(devtype, "usb"))
+		type = IF_TYPE_USB;
+
+	return type;
+}
+
+#if defined(CONFIG_MMC) || defined(CONFIG_RKNAND) || defined(CONFIG_BLK) || defined(CONFIG_USB_HOST)
 static int do_test_storage(cmd_tbl_t *cmdtp, int flag,
 			   int argc, char *const argv[],
 			   const char *devtype,
@@ -33,13 +54,36 @@ static int do_test_storage(cmd_tbl_t *cmdtp, int flag,
 	int i, ret;
 	ulong ts;
 
-	/* 1. Get test partition */
-	dev_desc = rockchip_get_bootdev();
+	/* 1. Switch to device type/num */
+	if (devtype && !strcmp(devtype, "usb")) {
+		if (run_command("usb start", 0)) {
+			printf("Switch to %s%s failed\n", devtype, devnum);
+			ret = -ENODEV;
+			goto err1;
+		}
+	} else if (devtype) {
+		snprintf(cmd, sizeof(cmd), "%s dev %s", devtype, devnum);
+		if (run_command(cmd, 0)) {
+			printf("Switch to %s%s failed\n", devtype, devnum);
+			ret = -ENODEV;
+			goto err1;
+		}
+	}
+	if (!devtype) {
+		/* For blk test only */
+		dev_desc = rockchip_get_bootdev();
+	} else {
+		int if_type;
+		int num = simple_strtoul(devnum, NULL, 10);
+		if_type = blk_get_type_by_name((char *)devtype);
+		dev_desc = blk_get_devnum_by_type(if_type, num);
+	}
 	if (!dev_desc) {
 		ut_err("%s: failed to get blk desc\n", label);
 		return -ENODEV;
 	}
 
+	/* 2. Get test partition */
 	if (part_get_info_by_name(dev_desc,
 				  DEFAULT_STORAGE_RW_PART, &part) < 0) {
 		ut_err("%s: failed to find %s partition\n", label,
@@ -61,15 +105,6 @@ static int do_test_storage(cmd_tbl_t *cmdtp, int flag,
 	       sector, sector + blocks,
 	       (blocks * dev_desc->blksz) >> 20, round);
 
-	/* 2. Switch to devnum */
-	if (devtype) {
-		snprintf(cmd, sizeof(cmd), "%s dev %s", devtype, devnum);
-		if (run_command(cmd, 0)) {
-			printf("Switch to %s%s failed\n", devtype, devnum);
-			ret = -ENODEV;
-			goto err1;
-		}
-	}
 
 	/* 3. Prepare memory */
 	w_buf = sysmem_alloc_by_name("storage_w", blocks * dev_desc->blksz);
@@ -301,6 +336,15 @@ static int do_test_part(cmd_tbl_t *cmdtp, int flag,
 }
 #endif
 
+#ifdef CONFIG_USB_HOST
+static int do_test_usb(cmd_tbl_t *cmdtp, int flag,
+			int argc, char *const argv[])
+{
+	run_command("usb start", 0);
+	return do_test_storage(cmdtp, flag, argc, argv, "usb", "0", "usb0");
+}
+#endif
+
 static cmd_tbl_t sub_cmd[] = {
 #ifdef CONFIG_BLK
 	UNIT_CMD_DEFINE(blk, 0),
@@ -326,6 +370,9 @@ static cmd_tbl_t sub_cmd[] = {
 #endif
 #ifdef CONFIG_PARTITIONS
 	UNIT_CMD_DEFINE(part, 0),
+#endif
+#ifdef CONFIG_USB_HOST
+	UNIT_CMD_DEFINE(usb, 0),
 #endif
 #ifdef CONFIG_MMC
 	UNIT_CMD_DEFINE(sdmmc, 0),
@@ -364,6 +411,9 @@ static char sub_cmd_help[] =
 #endif
 #ifdef CONFIG_PARTITIONS
 "    [.] rktest part                        - test part list\n"
+#endif
+#ifdef CONFIG_USB_HOST
+"    [.] rktest usb                        - test usb disk\n"
 #endif
 ;
 
