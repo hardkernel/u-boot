@@ -1138,6 +1138,21 @@ static void spinand_cleanup(struct spinand_device *spinand)
 	kfree(spinand->scratchbuf);
 }
 
+static int spinand_bind(struct udevice *udev)
+{
+	int ret = 0;
+
+#ifdef CONFIG_MTD_BLK
+	struct udevice *bdev;
+
+	ret = blk_create_devicef(udev, "mtd_blk", "blk", IF_TYPE_MTD,
+				 1, 512, 0, &bdev);
+	if (ret)
+		printf("Cannot create block device\n");
+#endif
+	return ret;
+}
+
 static int spinand_probe(struct udevice *dev)
 {
 	struct spinand_device *spinand = dev_get_priv(dev);
@@ -1250,6 +1265,7 @@ U_BOOT_DRIVER(spinand) = {
 	.name = "spi_nand",
 	.id = UCLASS_MTD,
 	.of_match = spinand_ids,
+	.bind	= spinand_bind,
 	.priv_auto_alloc_size = sizeof(struct spinand_device),
 	.probe = spinand_probe,
 };
