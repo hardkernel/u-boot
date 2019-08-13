@@ -96,40 +96,42 @@ ulong mtd_dread(struct udevice *udev, lbaint_t start,
 		lbaint_t blkcnt, void *dst)
 {
 	struct blk_desc *desc = dev_get_uclass_platdata(udev);
+	loff_t off = (loff_t)(start * 512);
+	size_t rwsize = blkcnt * 512;
+	struct mtd_info *mtd;
 
 	if (!desc)
+		return 0;
+
+	mtd = desc->bdev->priv;
+	if (!mtd)
 		return 0;
 
 	if (blkcnt == 0)
 		return 0;
 
 	if (desc->devnum == BLK_MTD_NAND) {
+#ifdef CONFIG_NAND
 		int ret = 0;
-		size_t rwsize = blkcnt * 512;
-		struct mtd_info *mtd = dev_get_priv(udev->parent);
-		struct nand_chip *chip = mtd_to_nand(mtd);
-		loff_t off = (loff_t)(start * 512);
 
-		if (!mtd) {
-			puts("\nno mtd available\n");
-			return 0;
-		}
-
-		if (!chip) {
-			puts("\nno chip available\n");
-			return 0;
-		}
-
-		ret = nand_read_skip_bad(&chip->mtd, off, &rwsize,
-					 NULL, chip->mtd.size,
+		ret = nand_read_skip_bad(mtd, off, &rwsize,
+					 NULL, mtd->size,
 					 (u_char *)(dst));
-		if (ret)
-			return 0;
-		else
+		if (!ret)
 			return blkcnt;
+		else
+#endif
+			return 0;
 	} else if (desc->devnum == BLK_MTD_SPI_NAND) {
-		/* Not implemented */
-		return 0;
+#ifdef CONFIG_MTD_SPI_NAND
+		size_t retlen;
+
+		mtd_read(mtd, off, rwsize, &retlen, dst);
+		if (retlen == rwsize)
+			return blkcnt;
+		else
+#endif
+			return 0;
 	} else if (desc->devnum == BLK_MTD_SPI_NOR) {
 		/* Not implemented */
 		return 0;
@@ -154,8 +156,8 @@ ulong mtd_derase(struct udevice *udev, lbaint_t start,
 
 static int mtd_blk_probe(struct udevice *udev)
 {
+	struct mtd_info *mtd = dev_get_uclass_priv(udev->parent);
 	struct blk_desc *desc = dev_get_uclass_platdata(udev);
-	struct mtd_info *mtd = dev_get_priv(udev->parent);
 
 	desc->bdev->priv = mtd;
 	sprintf(desc->vendor, "0x%.4x", 0x2207);
