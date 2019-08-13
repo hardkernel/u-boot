@@ -628,6 +628,8 @@ static int rockchip_nand_chip_init(int node, struct rk_nand *rknand, int devnum)
 		return ret;
 	}
 	mtd->name = "rk-nand";
+	memcpy(&rknand->mtd, mtd, sizeof(struct mtd_info));
+
 	return 0;
 }
 
@@ -657,6 +659,7 @@ static int rockchip_nandc_probe(struct udevice *dev)
 {
 	const void *blob = gd->fdt_blob;
 	struct rk_nand *rknand = dev_get_priv(dev);
+	struct mtd_info *mtd = dev_get_uclass_priv(dev);
 	fdt_addr_t regs;
 	int ret = 0, node;
 
@@ -680,6 +683,8 @@ static int rockchip_nandc_probe(struct udevice *dev)
 	ret = rockchip_nand_chips_init(node, rknand);
 	if (ret)
 		debug("Failed to init nand chips\n");
+
+	memcpy(mtd, &rknand->mtd, sizeof(struct mtd_info));
 
 	return ret;
 }
