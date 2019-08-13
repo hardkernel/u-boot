@@ -198,7 +198,8 @@ static int spl_load_fit_image(struct spl_load_info *info, ulong sector,
 
 		load_ptr = (load_addr + align_len) & ~align_len;
 #if  defined(CONFIG_ARCH_ROCKCHIP)
-		if ((load_ptr & 0xffff0000) == CONFIG_ROCKCHIP_IRAM_START_ADDR)
+		if ((load_ptr < CONFIG_SYS_SDRAM_BASE) ||
+		     (load_ptr >= CONFIG_SYS_SDRAM_BASE + SDRAM_MAX_SIZE))
 			load_ptr = (ulong)memalign(ARCH_DMA_MINALIGN, len);
 #endif
 		length = len;
