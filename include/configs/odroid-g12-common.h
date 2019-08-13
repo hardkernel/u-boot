@@ -542,7 +542,6 @@
 #define CONFIG_CMD_MISC				1
 #define CONFIG_CMD_ITEST			1
 #define CONFIG_CMD_CPU_TEMP			1
-#define CONFIG_SYS_MEM_TOP_HIDE			0x08000000 /* hide 128MB for kernel reserve */
 #define CONFIG_CMD_LOADB			1
 #define CONFIG_SUPPORT_RAW_INITRD		1
 

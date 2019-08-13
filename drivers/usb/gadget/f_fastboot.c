@@ -147,7 +147,11 @@ unsigned int ddr_size_usable(unsigned int addr_start)
 	for (i = 0; i < CONFIG_NR_DRAM_BANKS; i++)
 		ddr_size += gd->bd->bi_dram[i].size;
 
-	free_size = (ddr_size - DRAM_UBOOT_RESERVE - addr_start - CONFIG_SYS_MALLOC_LEN - CONFIG_SYS_MEM_TOP_HIDE);
+	free_size = (ddr_size - DRAM_UBOOT_RESERVE - addr_start - CONFIG_SYS_MALLOC_LEN);
+#if defined(CONFIG_SYS_MEM_TOP_HIDE)
+	free_size -= CONFIG_SYS_MEM_TOP_HIDE
+#endif
+
 #if defined CONFIG_FASTBOOT_MAX_DOWN_SIZE
 	if (free_size > CONFIG_FASTBOOT_MAX_DOWN_SIZE)
 		free_size = CONFIG_FASTBOOT_MAX_DOWN_SIZE;
