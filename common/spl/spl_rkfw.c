@@ -118,7 +118,8 @@ static int load_image(struct spl_load_info *info,
 		 * MMC/NAND controller DMA can't access sram region, so:
 		 * data -> ddr buffer -> memcpy to sram region.
 		 */
-		if (load_addr >= SDRAM_MAX_SIZE) {
+		if (load_addr < CONFIG_SYS_SDRAM_BASE ||
+		    load_addr >= CONFIG_SYS_SDRAM_BASE + SDRAM_MAX_SIZE) {
 			image_buf = memalign(ARCH_DMA_MINALIGN, sect_cnt * 512);
 			if (!image_buf) {
 				printf("%s: malloc failed\n", __func__);
