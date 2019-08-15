@@ -354,12 +354,11 @@ void atags_destroy(void)
 		memset((char *)ATAGS_PHYS_BASE, 0, sizeof(struct tag));
 }
 
-#if (defined(CONFIG_DEBUG_ATAGS) || defined(DEBUG)) && \
-    !defined(CONFIG_SPL_BUILD) && !defined(CONFIG_TPL_BUILD)
+#ifndef CONFIG_SPL_BUILD
 void atags_stat(void)
 {
-	u32 in_use = 0, in_available = 0;
 	u32 start = ATAGS_PHYS_BASE, end = ATAGS_PHYS_BASE + ATAGS_SIZE;
+	u32 in_use = 0, in_available = 0;
 	struct tag *t;
 
 	if (!atags_is_available())
@@ -531,77 +530,18 @@ void atags_print_all_tags(void)
 	}
 }
 
-void atags_test(void)
+static int do_dump_atags(cmd_tbl_t *cmdtp, int flag,
+			 int argc, char * const argv[])
 {
-	struct tag_serial t_serial;
-	struct tag_bootdev t_bootdev;
-	struct tag_ddr_mem t_ddr_mem;
-	struct tag_tos_mem t_tos_mem;
-	struct tag_ram_partition t_ram_param;
-	struct tag_atf_mem t_atf_mem;
-	struct tag_pub_key t_pub_key;
-	struct tag_soc_info t_soc;
-
-	memset(&t_serial,  0x1, sizeof(t_serial));
-	memset(&t_bootdev, 0x2, sizeof(t_bootdev));
-	memset(&t_ddr_mem, 0x3, sizeof(t_ddr_mem));
-	memset(&t_tos_mem, 0x4, sizeof(t_tos_mem));
-	memset(&t_ram_param, 0x0, sizeof(t_ram_param));
-	memset(&t_atf_mem, 0x5, sizeof(t_atf_mem));
-	memset(&t_pub_key, 0x6, sizeof(t_pub_key));
-	memset(&t_soc, 0x7, sizeof(t_soc));
-
-	memcpy(&t_tos_mem.tee_mem.name, "tee_mem", 8);
-	memcpy(&t_tos_mem.drm_mem.name, "drm_mem", 8);
-
-	t_ram_param.count = 4;
-	memcpy(&t_ram_param.part[0].name, "misc", 9);
-	t_ram_param.part[0].start = 0x00600000;
-	t_ram_param.part[0].size =  0x00200000;
-
-	memcpy(&t_ram_param.part[1].name, "resource", 9);
-	t_ram_param.part[1].start = 0x00800000;
-	t_ram_param.part[1].size =  0x00200000;
-
-	memcpy(&t_ram_param.part[2].name, "kernel", 7);
-	t_ram_param.part[2].start = 0x00a00000;
-	t_ram_param.part[2].size =  0x02000000;
-
-	memcpy(&t_ram_param.part[3].name, "boot", 5);
-	t_ram_param.part[3].start = 0x04000000;
-	t_ram_param.part[3].size =  0x02000000;
-
-	/* First pre-loader must call it before atags_set_tag() */
-	atags_destroy();
-
-	atags_set_tag(ATAG_SERIAL,  &t_serial);
-	atags_set_tag(ATAG_BOOTDEV, &t_bootdev);
-	atags_set_tag(ATAG_DDR_MEM, &t_ddr_mem);
-	atags_set_tag(ATAG_TOS_MEM, &t_tos_mem);
-	atags_set_tag(ATAG_RAM_PARTITION, &t_ram_param);
-	atags_set_tag(ATAG_ATF_MEM, &t_atf_mem);
-	atags_set_tag(ATAG_PUB_KEY, &t_pub_key);
-	atags_set_tag(ATAG_SOC_INFO, &t_soc);
-
 	atags_print_all_tags();
 	atags_stat();
-}
 
-static int dump_atags(cmd_tbl_t *cmdtp, int flag,
-		      int argc, char * const argv[])
-{
-	atags_print_all_tags();
 	return 0;
 }
 
 U_BOOT_CMD(
-	atags, 1, 1, dump_atags,
+	dump_atags, 1, 1, do_dump_atags,
 	"Dump the content of the atags",
 	""
 );
-#else
-void inline atags_print_tag(struct tag *t) {}
-void inline atags_print_all_tags(void) {}
-void inline atags_test(void) {}
-void atags_stat(void) {};
 #endif
