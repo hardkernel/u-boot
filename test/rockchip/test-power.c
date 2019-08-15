@@ -5,7 +5,6 @@
  */
 
 #include <common.h>
-#include <boot_rkimg.h>
 #include <console.h>
 #include <dm.h>
 #include <thermal.h>

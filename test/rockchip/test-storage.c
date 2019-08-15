@@ -5,7 +5,9 @@
  */
 
 #include <common.h>
+#ifdef CONFIG_DM_RAMDISK
 #include <boot_rkimg.h>
+#endif
 #include <cli.h>
 #include <dm.h>
 #include <environment.h>
@@ -13,7 +15,9 @@
 #include <misc.h>
 #include <sysmem.h>
 #include <linux/ctype.h>
+#ifdef CONFIG_ROCKCHIP_VENDOR_PARTITION
 #include <asm/arch/vendor.h>
+#endif
 #include "test-rockchip.h"
 
 #define DEFAULT_STORAGE_RW_PART		"userdata"
@@ -23,23 +27,33 @@ enum if_type blk_get_type_by_name(char* devtype)
 
 	if (!strcmp(devtype, "mmc"))
 		type = IF_TYPE_MMC;
+#ifdef CONFIG_RKNAND
 	else if (!strcmp(devtype, "rknand"))
 		type = IF_TYPE_RKNAND;
+#endif
+#ifdef CONFIG_RKSFC_NAND
 	else if (!strcmp(devtype, "spinand"))
 		type = IF_TYPE_SPINAND;
+#endif
+#ifdef CONFIG_RKSFC_NOR
 	else if (!strcmp(devtype, "spinor"))
 		type = IF_TYPE_SPINOR;
+#endif
+#ifdef CONFIG_DM_RAMDISK
 	else if (!strcmp(devtype, "ramdisk"))
 		type = IF_TYPE_RAMDISK;
+#endif
+#ifdef CONFIG_MTD_BLK
 	else if (!strcmp(devtype, "mtd"))
 		type = IF_TYPE_MTD;
+#endif
 	else if (!strcmp(devtype, "usb"))
 		type = IF_TYPE_USB;
 
 	return type;
 }
 
-#if defined(CONFIG_MMC) || defined(CONFIG_RKNAND) || defined(CONFIG_BLK) || defined(CONFIG_USB_HOST)
+#if defined(CONFIG_MMC) || defined(CONFIG_RKNAND) || defined(CONFIG_DM_RAMDISK) || defined(CONFIG_USB_HOST)
 static int do_test_storage(cmd_tbl_t *cmdtp, int flag,
 			   int argc, char *const argv[],
 			   const char *devtype,
@@ -71,7 +85,12 @@ static int do_test_storage(cmd_tbl_t *cmdtp, int flag,
 	}
 	if (!devtype) {
 		/* For blk test only */
+#ifdef CONFIG_DM_RAMDISK
 		dev_desc = rockchip_get_bootdev();
+#else
+		printf("%s Not support devtype!\n", __func__);
+		return -EINVAL;
+#endif
 	} else {
 		int if_type;
 		int num = simple_strtoul(devnum, NULL, 10);
@@ -233,12 +252,14 @@ static int do_test_rknand(cmd_tbl_t *cmdtp, int flag,
 }
 #endif
 
+#ifdef CONFIG_DM_RAMDISK
 static int do_test_blk(cmd_tbl_t *cmdtp, int flag,
 		       int argc, char *const argv[])
 {
 	return do_test_storage(cmdtp, flag, argc, argv, NULL, NULL, "BLK");
 }
-#endif/* defined(CONFIG_MMC) || defined(CONFIG_RKNAND) || defined(CONFIG_BLK) */
+#endif
+#endif/* defined(CONFIG_MMC) || defined(CONFIG_RKNAND) || defined(CONFIG_DM_RAMDISK) */
 
 #if defined(CONFIG_OPTEE_CLIENT) && defined(CONFIG_MMC)
 static int do_test_secure_storage(cmd_tbl_t *cmdtp, int flag,
@@ -346,7 +367,7 @@ static int do_test_usb(cmd_tbl_t *cmdtp, int flag,
 #endif
 
 static cmd_tbl_t sub_cmd[] = {
-#ifdef CONFIG_BLK
+#ifdef CONFIG_DM_RAMDISK
 	UNIT_CMD_DEFINE(blk, 0),
 #endif
 #ifdef CONFIG_MMC
@@ -383,7 +404,7 @@ static cmd_tbl_t sub_cmd[] = {
 };
 
 static char sub_cmd_help[] =
-#ifdef CONFIG_BLK
+#ifdef CONFIG_DM_RAMDISK
 "    [.] rktest blk                         - test blk layer read/write\n"
 #endif
 #ifdef CONFIG_MMC

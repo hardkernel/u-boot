@@ -6,7 +6,6 @@
 
 #include <common.h>
 #include <adc.h>
-#include <boot_rkimg.h>
 #include <console.h>
 #include <dm.h>
 #include <key.h>
