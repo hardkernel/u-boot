@@ -114,6 +114,10 @@ ulong mtd_dread(struct udevice *udev, lbaint_t start,
 #ifdef CONFIG_NAND
 		int ret = 0;
 
+		mtd = dev_get_priv(udev->parent);
+		if (!mtd)
+			return 0;
+
 		ret = nand_read_skip_bad(mtd, off, &rwsize,
 					 NULL, mtd->size,
 					 (u_char *)(dst));
