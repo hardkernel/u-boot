@@ -13,7 +13,9 @@
 #include <environment.h>
 #include <malloc.h>
 #include <misc.h>
+#ifdef CONFIG_RKIMG_BOOTLOADER
 #include <sysmem.h>
+#endif
 #include <linux/ctype.h>
 #ifdef CONFIG_ROCKCHIP_VENDOR_PARTITION
 #include <asm/arch/vendor.h>
@@ -126,14 +128,21 @@ static int do_test_storage(cmd_tbl_t *cmdtp, int flag,
 
 
 	/* 3. Prepare memory */
+#ifdef CONFIG_RKIMG_BOOTLOADER
 	w_buf = sysmem_alloc_by_name("storage_w", blocks * dev_desc->blksz);
+#else
+	w_buf = memalign(CONFIG_SYS_CACHELINE_SIZE, blocks * dev_desc->blksz);
+#endif
 	if (!w_buf) {
 		ut_err("%s: no sysmem for w_buf\n", label);
 		ret = -ENOMEM;
 		goto err1;
 	}
-
+#ifdef CONFIG_RKIMG_BOOTLOADER
 	r_buf = sysmem_alloc_by_name("storage_r", blocks * dev_desc->blksz);
+#else
+	r_buf = memalign(CONFIG_SYS_CACHELINE_SIZE, blocks * dev_desc->blksz);
+#endif
 	if (!r_buf) {
 		ut_err("%s: no sysmem for r_buf\n", label);
 		ret = -ENOMEM;
@@ -222,9 +231,15 @@ static int do_test_storage(cmd_tbl_t *cmdtp, int flag,
 
 	ret = 0;
 err3:
+#ifdef CONFIG_RKIMG_BOOTLOADER
 	sysmem_free((phys_addr_t)r_buf);
 err2:
 	sysmem_free((phys_addr_t)w_buf);
+#else
+	free((phys_addr_t)r_buf);
+err2:
+	free((phys_addr_t)w_buf);
+#endif
 err1:
 
 	return ret;

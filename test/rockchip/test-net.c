@@ -34,9 +34,9 @@ enum loopback_speed {
 	LOOPBACK_SPEED_100	= 100,
 	LOOPBACK_SPEED_1000	= 1000
 };
-
+#ifdef CONFIG_RKIMG_BOOTLOADER
 extern void gmac_set_rgmii(struct udevice *dev, u32 tx_delay, u32 rx_delay);
-
+#endif
 static struct phy_device *get_current_phydev(void)
 {
 	struct mii_dev *bus = mdio_get_current_dev();
@@ -143,9 +143,10 @@ static int eth_run_loopback_test(struct udevice *current, int speed, int delay_t
 		if (delay_test)
 			printf("[0x%02x]:", i);
 		for (j = 0x0; j < MAX_RX_DELAY_LINE; j++) {
+#ifdef CONFIG_RKIMG_BOOTLOADER
 			if (delay_test)
 				gmac_set_rgmii(current, i, j);
-
+#endif
 			alter_lbtest_frame(tx_pkt, LOOPBACK_TEST_DATA_SIZE, i, j);
 			net_send_packet(net_tx_packet, LOOPBACK_TEST_FRAME_SIZE);
 
@@ -280,7 +281,9 @@ int do_test_eth(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 		if (!strncmp(argv[2], "delayline", sizeof("delayline"))) {
 			tx_delay = simple_strtoul(argv[3], NULL, 0);
 			rx_delay = simple_strtoul(argv[4], NULL, 0);
+#ifdef CONFIG_RKIMG_BOOTLOADER
 			gmac_set_rgmii(current, tx_delay, rx_delay);
+#endif
 			return 0;
 		}
 		break;
