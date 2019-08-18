@@ -102,7 +102,7 @@ static int sandbox_submit_bulk(struct udevice *bus, struct usb_device *udev,
 
 static int sandbox_submit_int(struct udevice *bus, struct usb_device *udev,
 			      unsigned long pipe, void *buffer, int length,
-			      int interval)
+			      int interval, bool nonblock)
 {
 	struct udevice *emul;
 	int ret;
@@ -113,7 +113,8 @@ static int sandbox_submit_int(struct udevice *bus, struct usb_device *udev,
 	usbmon_trace(bus, pipe, NULL, emul);
 	if (ret)
 		return ret;
-	ret = usb_emul_int(emul, udev, pipe, buffer, length, interval);
+	ret = usb_emul_int(emul, udev, pipe, buffer, length, interval,
+			   nonblock);
 
 	return ret;
 }
