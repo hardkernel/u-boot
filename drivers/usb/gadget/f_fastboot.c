@@ -2059,7 +2059,7 @@ static void cb_oem(struct usb_ep *ep, struct usb_request *req)
 	} else if (strncmp("at-unlock-vboot", cmd + 4, 15) == 0) {
 #ifdef CONFIG_RK_AVB_LIBAVB_USER
 		uint8_t lock_state;
-		bool out_is_trusted = true;
+		char out_is_trusted = true;
 
 		if (rk_avb_read_lock_state(&lock_state))
 			fastboot_tx_write_str("FAILlock sate read failure");

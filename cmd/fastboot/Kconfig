@@ -90,6 +90,13 @@ config FASTBOOT_OEM_UNLOCK
 	  oem unlock command requires tee security storage to store
 	  unlock status. oem unlock status attach to bootargs on boot.
 
+config RK_AVB_LIBAVB_ENABLE_ATH_UNLOCK
+	bool "AVB Authenticated unlock function"
+	depends on ANDROID_AVB
+	default y
+	help
+	  Enabled authenticated unlock function can prevent lock state
+	  from invalid unlock cmd.
 
 endif # USB_FUNCTION_FASTBOOT || UDP_FUNCTION_FASTBOOT
 
