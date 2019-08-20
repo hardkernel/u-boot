@@ -66,6 +66,12 @@ config ROCKCHIP_OTP
 	  This is a simple drive to dump specified values of Rockchip SoC
 	  from otp, such as cpu-leakage.
 
+config SPL_ROCKCHIP_SECURE_OTP
+	bool "Rockchip Secure OTP Support in spl"
+	depends on SPL_MISC
+	help
+	  Support read & write secure otp in spl.
+
 config CMD_CROS_EC
 	bool "Enable crosec command"
 	depends on CROS_EC
