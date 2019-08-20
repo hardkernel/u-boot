@@ -30,6 +30,7 @@
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
 unsigned int enable_wol = 0;   /* disable Wake-On-Lan by default*/
+unsigned int enable_5V_system_power = 0;	/* disable 5V system power (USB) by default*/
 
 static void set_vddee_voltage(unsigned int target_voltage)
 {
@@ -50,9 +51,11 @@ static void set_vddee_voltage(unsigned int target_voltage)
 
 static void power_off_at_24M(unsigned int suspend_from)
 {
-	/*set gpioH_8 low to power off vcc 5v*/
-	writel(readl(PREG_PAD_GPIO3_EN_N) & (~(1 << 8)), PREG_PAD_GPIO3_EN_N);
-	writel(readl(PERIPHS_PIN_MUX_C) & (~(0xf)), PERIPHS_PIN_MUX_C);
+	if (!enable_5V_system_power) {
+		/*set gpioH_8 low to power off vcc 5v*/
+		writel(readl(PREG_PAD_GPIO3_EN_N) & (~(1 << 8)), PREG_PAD_GPIO3_EN_N);
+		writel(readl(PERIPHS_PIN_MUX_C) & (~(0xf)), PERIPHS_PIN_MUX_C);
+	}
 
 	if (!enable_wol) {
 		/*set test_n low to power off vcck_b & vcc 3.3v*/
@@ -78,9 +81,12 @@ static void power_on_at_24M(unsigned int suspend_from)
 		_udelay(100);
 	}
 
-	/*set gpioH_8 low to power on vcc 5v*/
-	writel(readl(PREG_PAD_GPIO3_EN_N) | (1 << 8), PREG_PAD_GPIO3_EN_N);
-	writel(readl(PERIPHS_PIN_MUX_C) & (~(0xf)), PERIPHS_PIN_MUX_C);
+	if (!enable_5V_system_power) {
+		/*set gpioH_8 low to power on vcc 5v*/
+		writel(readl(PREG_PAD_GPIO3_EN_N) | (1 << 8), PREG_PAD_GPIO3_EN_N);
+		writel(readl(PERIPHS_PIN_MUX_C) & (~(0xf)), PERIPHS_PIN_MUX_C);
+	}
+
 	_udelay(10000);
 }
 
