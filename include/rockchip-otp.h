@@ -46,6 +46,8 @@ typedef int (*OTP_READ)(struct udevice *dev, int offset, void *buf, int size);
 
 struct rockchip_otp_platdata {
 	void __iomem *base;
+	unsigned long secure_conf_base;
+	unsigned long otp_mask_base;
 };
 
 #endif
