@@ -250,7 +250,7 @@ int do_test_eth(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 {
 	struct udevice *current;
 	u32 tx_delay, rx_delay;
-	char cmd_eth[512] = {0};
+	char cmd_eth[512] = "dhcp $kernel_addr_r 172.16.12.246:golden/arm/rootfs.cpio.gz";
 	int i, speed;
 	int ret;
 
@@ -259,7 +259,7 @@ int do_test_eth(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 		return -EINVAL;
 
 	switch (argc) {
-	case 3:
+	case 2:
 		if (!strncmp(argv[2], "delaytest", sizeof("delaytest"))) {
 			/* Force 1000 speed test */
 			speed = LOOPBACK_SPEED_1000;
@@ -270,14 +270,14 @@ int do_test_eth(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 			return 0;
 		}
 		break;
-	case 4:
+	case 3:
 		if (!strncmp(argv[2], "loopback", sizeof("loopback"))) {
 			speed = simple_strtoul(argv[3], NULL, 0);
 			ret = eth_loopback_test(speed, 0);
 			return ret;
 		}
 		break;
-	case 5:
+	case 4:
 		if (!strncmp(argv[2], "delayline", sizeof("delayline"))) {
 			tx_delay = simple_strtoul(argv[3], NULL, 0);
 			rx_delay = simple_strtoul(argv[4], NULL, 0);
@@ -291,15 +291,18 @@ int do_test_eth(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 		break;
 	}
 
-	for (i = 2; i < argc; i++) {
-		strncat(cmd_eth, argv[i], sizeof(cmd_eth));
+	for (i = 1; i < argc; i++) {
+		if (i == 1)
+			sprintf(cmd_eth, argv[i]);
+		else
+			strncat(cmd_eth, argv[i], sizeof(argv[i]));
 		if (i < argc - 1)
 			strncat(cmd_eth, " ", sizeof(" "));
 	}
 
 	/* run dhcp/tftp test */
 	ret = run_command(cmd_eth, 0);
-	if (ret < 0) {
+	if (ret) {
 		printf("DHCP test error: %d\n", ret);
 		return ret;
 	}
