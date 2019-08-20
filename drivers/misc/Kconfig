@@ -13,6 +13,15 @@ config MISC
 	  set of generic read, write and ioctl methods may be used to
 	  access the device.
 
+config SPL_MISC
+	bool "Enable Driver Model for Misc drivers in SPL"
+	depends on SPL_DM
+	help
+	  Enable driver model for miscellaneous devices. This class is
+	  used only for those do not fit other more general classes. A
+	  set of generic read, write and ioctl methods may be used to
+	  access the device.
+
 config ALTERA_SYSID
 	bool "Altera Sysid support"
 	depends on MISC
