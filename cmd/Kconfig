@@ -930,6 +930,11 @@ config CMD_RKSFC
 	help
 	  Rockchip SFC device support
 
+config CMD_RK_SECURE_STORAGE
+	bool "dump rockchip efuse/otp content"
+	help
+	  Dump the data which is written in OTP or efuse.
+
 config CMD_SATA
 	bool "sata - Access SATA subsystem"
 	select SATA
