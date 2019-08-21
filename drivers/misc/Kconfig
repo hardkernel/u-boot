@@ -22,6 +22,15 @@ config SPL_MISC
 	  set of generic read, write and ioctl methods may be used to
 	  access the device.
 
+config TPL_MISC
+	bool "Enable Driver Model for Misc drivers in TPL"
+	depends on TPL_DM
+	help
+	  Enable driver model for miscellaneous devices. This class is
+	  used only for those do not fit other more general classes. A
+	  set of generic read, write and ioctl methods may be used to
+	  access the device.
+
 config ALTERA_SYSID
 	bool "Altera Sysid support"
 	depends on MISC
