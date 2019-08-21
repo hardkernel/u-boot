@@ -236,9 +236,9 @@ err3:
 err2:
 	sysmem_free((phys_addr_t)w_buf);
 #else
-	free((phys_addr_t)r_buf);
+	free(r_buf);
 err2:
-	free((phys_addr_t)w_buf);
+	free(w_buf);
 #endif
 err1:
 
