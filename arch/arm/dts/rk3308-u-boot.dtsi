@@ -53,6 +53,10 @@
 	status = "okay";
 };
 
+&secure_otp {
+	u-boot,dm-pre-reloc;
+};
+
 &uart0 {
 	u-boot,dm-pre-reloc;
 };
