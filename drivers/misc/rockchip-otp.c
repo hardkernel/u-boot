@@ -52,41 +52,6 @@ struct rockchip_otp_platdata {
 	void __iomem *base;
 };
 
-#if defined(DEBUG)
-static int dump_otps(cmd_tbl_t *cmdtp, int flag,
-		     int argc, char * const argv[])
-{
-	struct udevice *dev;
-	u8 otps[64] = {0};
-	int ret;
-
-	/* retrieve the device */
-	ret = uclass_get_device_by_driver(UCLASS_MISC,
-					  DM_GET_DRIVER(rockchip_otp), &dev);
-	if (ret) {
-		printf("%s: no misc-device found\n", __func__);
-		return 0;
-	}
-
-	ret = misc_read(dev, 0, &otps, sizeof(otps));
-	if (ret) {
-		printf("%s: misc_read failed\n", __func__);
-		return 0;
-	}
-
-	printf("otp-contents:\n");
-	print_buffer(0, otps, 1, 64, 16);
-
-	return 0;
-}
-
-U_BOOT_CMD(
-	rockchip_dump_otps, 1, 1, dump_otps,
-	"Dump the content of the otps",
-	""
-);
-#endif
-
 static int rockchip_otp_wait_status(struct rockchip_otp_platdata *otp,
 				    u32 flag)
 {
