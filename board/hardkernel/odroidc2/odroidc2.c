@@ -553,7 +553,14 @@ int board_init(void)
 	gpio_direction_output(GPIO_OTG_PWREN, 0);
 
 #if defined(CONFIG_USB_DWC_OTG_HCD)
-	amlogic_usb_init(&usb_config0, BOARD_USB_MODE_SLAVE);
+	usb_peri_reg_t *peri = (usb_peri_reg_t*)PREI_USB_PHY_REG_A;
+	usb_adp_bc_data_t adp_bc;
+
+	adp_bc.d32 = peri->adp_bc;
+
+	amlogic_usb_init(&usb_config0,
+			(adp_bc.b.iddig) ?  BOARD_USB_MODE_SLAVE
+			: BOARD_USB_MODE_HOST);
 	amlogic_usb_init(&usb_config1, BOARD_USB_MODE_HOST);
 #endif
 
