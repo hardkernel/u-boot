@@ -254,8 +254,14 @@ static void read_flash_id(struct rk_nand *rknand, uint8_t *id)
 void board_nand_init(void)
 {
 	const void *blob = gd->fdt_blob;
+	static int initialized;
 	fdt_addr_t regs;
 	int node;
+
+	if (initialized)
+		return;
+
+	initialized = 1;
 
 	if (g_rk_nand)
 		return;
