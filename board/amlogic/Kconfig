@@ -275,7 +275,7 @@ config ODROID_N2
 	default n
 
 config ODROID_C4
-	bool "Support Hardkernel ODROID-C3 board"
+	bool "Support Hardkernel ODROID-C4 board"
 	select ODROID_COMMON
 	default n
 
