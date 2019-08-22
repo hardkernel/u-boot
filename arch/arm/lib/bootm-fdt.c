@@ -18,7 +18,7 @@
 #include <common.h>
 #include <fdt_support.h>
 #include <asm/armv7.h>
-#if defined(CONFIG_ODROID_N2)
+#if defined(CONFIG_ODROID_COMMON)
 #include <asm/io.h>
 #include <asm/arch/secure_apb.h>
 
@@ -41,7 +41,7 @@ int arch_fixup_fdt(void *blob)
 		size[bank] = bd->bi_dram[bank].size;
 	}
 
-#if defined(CONFIG_ODROID_N2)
+#if defined(CONFIG_ODROID_COMMON)
 	/*
 	 * Since DRAM exceeds 3584MiB cannot be handled by U-boot due to cache problem,
 	 * available memory is limited to 3584MiB for the board with 4096MiB DRAM.
