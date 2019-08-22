@@ -404,7 +404,7 @@ int board_init(void)
 	 */
 	clks_probe();
 #ifdef CONFIG_DM_REGULATOR
-	if (regulators_enable_boot_on(false))
+	if (regulators_enable_boot_on(is_hotkey(HK_REGULATOR)))
 		debug("%s: Can't enable boot on regulator\n", __func__);
 #endif
 

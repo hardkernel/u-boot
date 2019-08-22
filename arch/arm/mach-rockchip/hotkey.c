@@ -19,6 +19,7 @@ DECLARE_GLOBAL_DATA_PTR;
 #define CTRL_I		0x09	/* inicall debug for kernel */
 #define CTRL_M		0x0d	/* memory(sysmem/bidram) */
 #define CTRL_P		0x10	/* parameter(cmdline) dump */
+#define CTRL_R		0x12	/* regulator initial state dump */
 #define CTRL_S		0x13	/* shell(cli) on BOOTM_STATE_OS_GO */
 
 #if defined(CONFIG_CONSOLE_DISABLE_CTRLC) && \
@@ -37,6 +38,8 @@ bool is_hotkey(enum hotkey_t id)
 		return gd->console_evt == CTRL_F;
 	case HK_INITCALL:
 		return gd->console_evt == CTRL_I;
+	case HK_REGULATOR:
+		return gd->console_evt == CTRL_R;
 	case HK_ROCKUSB_DNL:
 		return gd->console_evt == CTRL_D;
 	case HK_SYSMEM:
