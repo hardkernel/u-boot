@@ -28,7 +28,11 @@ RKCHIP_INI_DESC=("CONFIG_TARGET_GVA_RK3229       NA          RK322XAT     NA"
 
 ########################################### User can modify #############################################
 # User's rkbin tool relative path
+if [ "${BOARD}" = 'odroidgo2' ]; then
+RKBIN_TOOLS=./tools/rk_tools/tools
+else
 RKBIN_TOOLS=../rkbin/tools
+fi
 
 # User's GCC toolchain and relative path
 ADDR2LINE_ARM32=arm-linux-gnueabihf-addr2line
@@ -807,8 +811,17 @@ pack_trust_image()
 	fi
 }
 
+pack_idbloader()
+{
+	tools/mkimage -n px30 -T rksd -d ${RKBIN}/bin/rk33/rk3326_ddr_333MHz_v1.10.bin ./sd_fuse/idbloader.img
+	cat ${RKBIN}/bin/rk33/rk3326_miniloader_v1.12.bin >> ./sd_fuse/idbloader.img
+}
+
 finish()
 {
+	mv ${OUTDIR}/uboot.img ./sd_fuse/
+	mv ${OUTDIR}/trust.img ./sd_fuse/
+
 	echo
 	if [ "$BOARD" = '' ]; then
 		echo "Platform ${RKCHIP_LABEL} is build OK, with exist .config"
@@ -826,4 +839,7 @@ make CROSS_COMPILE=${TOOLCHAIN_GCC}  all --jobs=${JOB} ${OUTOPT}
 pack_uboot_image
 pack_loader_image
 pack_trust_image
+if [ "${BOARD}" = 'odroidgo2' ]; then
+pack_idbloader
+fi
 finish
