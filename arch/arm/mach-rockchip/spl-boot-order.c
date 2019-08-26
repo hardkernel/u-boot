@@ -34,6 +34,9 @@ static int spl_node_to_boot_device(int node)
 {
 	struct udevice *parent;
 
+	if (!uclass_get_device_by_of_offset(UCLASS_SPI, node, &parent))
+		return BOOT_DEVICE_MTD_BLK_SPI_NAND;
+
 #ifdef CONFIG_SPL_NAND_SUPPORT
 	if (!rk_nand_init())
 		return BOOT_DEVICE_NAND;
