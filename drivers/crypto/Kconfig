@@ -6,6 +6,18 @@ config DM_CRYPTO
 	---help---
 	This config enables the dm crypto support.
 
+config SPL_DM_CRYPTO
+	bool "Enable Driver Model for CRYPTO drivers in spl"
+	depends on SPL_DM
+	---help---
+	This config enables the dm crypto support.
+
+config TPL_DM_CRYPTO
+	bool "Enable Driver Model for CRYPTO drivers in tpl"
+	depends on TPL_DM
+	---help---
+	This config enables the dm crypto support.
+
 source drivers/crypto/fsl/Kconfig
 source drivers/crypto/rockchip/Kconfig
 

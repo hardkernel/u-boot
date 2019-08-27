@@ -5,8 +5,8 @@
 # SPDX-License-Identifier:	GPL-2.0+
 #
 
-obj-$(CONFIG_DM_CRYPTO)		+= crypto-uclass.o
-obj-$(CONFIG_EXYNOS_ACE_SHA)	+= ace_sha.o
+obj-$(CONFIG_$(SPL_TPL_)DM_CRYPTO) += crypto-uclass.o
+obj-$(CONFIG_EXYNOS_ACE_SHA) += ace_sha.o
 obj-y += rsa_mod_exp/
 obj-y += fsl/
 obj-y += rockchip/
