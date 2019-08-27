@@ -4,5 +4,5 @@
 #  Copyright (c) 2019 Fuzhou Rockchip Electronics Co., Ltd
 #
 
-obj-$(CONFIG_ROCKCHIP_CRYPTO_V1) += crypto_v1.o
-obj-$(CONFIG_ROCKCHIP_CRYPTO_V2) += crypto_v2.o crypto_v2_pka.o crypto_v2_util.o
+obj-$(CONFIG_$(SPL_TPL_)ROCKCHIP_CRYPTO_V1) += crypto_v1.o
+obj-$(CONFIG_$(SPL_TPL_)ROCKCHIP_CRYPTO_V2) += crypto_v2.o crypto_v2_pka.o crypto_v2_util.o
