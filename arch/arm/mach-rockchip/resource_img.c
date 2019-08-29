@@ -159,6 +159,41 @@ static int add_file_to_list(struct resource_entry *entry, int rsce_base)
 	return 0;
 }
 
+static int replace_resource_entry(const char *f_name, uint32_t base,
+				  uint32_t f_offset, uint32_t f_size)
+{
+	struct resource_entry *entry;
+	struct resource_file *file;
+	struct list_head *node;
+
+	if (!f_name || !f_size)
+		return -EINVAL;
+
+	entry = malloc(sizeof(*entry));
+	if (!entry)
+		return -ENOMEM;
+
+	strcpy(entry->tag, ENTRY_TAG);
+	strcpy(entry->name, f_name);
+	entry->f_offset = f_offset;
+	entry->f_size = f_size;
+
+	/* Delete exist entry, then add this new */
+	list_for_each(node, &entrys_head) {
+		file = list_entry(node, struct resource_file, link);
+		if (!strcmp(file->name, entry->name)) {
+			list_del(&file->link);
+			free(file);
+			break;
+		}
+	}
+
+	add_file_to_list(entry, base);
+	free(entry);
+
+	return 0;
+}
+
 /*
  * 1. Get resource file from part: boot/recovery(AOSP) > resource(RK)
  * 2. Add all file into resource file list and load them from storage
@@ -362,9 +397,6 @@ parse_logo:
 	 * and update from kernel user space dynamically.
 	 */
 	if (part_get_info_by_name(dev_desc, PART_LOGO, &part_info) >= 0) {
-		struct resource_file *file;
-		struct list_head *node;
-
 		header = memalign(ARCH_DMA_MINALIGN, dev_desc->blksz);
 		if (!header) {
 			ret = -ENOMEM;
@@ -383,32 +415,10 @@ parse_logo:
 			goto err2;
 		}
 
-		entry = malloc(sizeof(*entry));
-		if (!entry) {
-			ret = -ENOMEM;
-			goto err2;
-		}
-
-		memcpy(entry->tag, ENTRY_TAG, sizeof(ENTRY_TAG));
-		memcpy(entry->name, "logo.bmp", sizeof("logo.bmp"));
-		entry->f_size = get_unaligned_le32(&header->file_size);
-		entry->f_offset = 0;
-
-		/* Delete exist "logo.bmp", then add new */
-		list_for_each(node, &entrys_head) {
-			file = list_entry(node,
-					  struct resource_file, link);
-			if (!strcmp(file->name, entry->name)) {
-				list_del(&file->link);
-				free(file);
-				break;
-			}
-		}
-
-		add_file_to_list(entry, part_info.start);
-		free(entry);
-		ret = 0;
-		printf("Load logo.bmp from logo part\n");
+		ret = replace_resource_entry("logo.bmp", part_info.start, 0,
+					     get_unaligned_le32(&header->file_size));
+		if (!ret)
+			printf("Load logo.bmp from logo part\n");
 err2:
 		free(header);
 	}
