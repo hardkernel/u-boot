@@ -209,8 +209,10 @@ static int init_resource_list(struct resource_img_hdr *hdr)
 	disk_partition_t part_info;
 	int resource_found = 0;
 	void *content = NULL;
-	int offset = 0;
-	int e_num;
+	int rsce_base = 0;
+	int dtb_offset = 0;
+	int dtb_size = 0;
+	int e_num, cnt;
 	int size;
 	int ret;
 
@@ -230,12 +232,13 @@ static int init_resource_list(struct resource_img_hdr *hdr)
 		for (e_num = 0; e_num < hdr->e_nums; e_num++) {
 			size = e_num * hdr->e_blks * dev_desc->blksz;
 			entry = (struct resource_entry *)(content + size);
-			add_file_to_list(entry, offset);
+			add_file_to_list(entry, rsce_base);
 		}
 		return 0;
 	}
 
-	hdr = memalign(ARCH_DMA_MINALIGN, dev_desc->blksz);
+	cnt = DIV_ROUND_UP(sizeof(struct andr_img_hdr), dev_desc->blksz);
+	hdr = memalign(ARCH_DMA_MINALIGN, dev_desc->blksz * cnt);
 	if (!hdr)
 		return -ENOMEM;
 
@@ -272,8 +275,8 @@ static int init_resource_list(struct resource_img_hdr *hdr)
 
 	/* Try to find resource from android second position */
 	andr_hdr = (void *)hdr;
-	ret = blk_dread(dev_desc, part_info.start, 1, andr_hdr);
-	if (ret != 1) {
+	ret = blk_dread(dev_desc, part_info.start, cnt, andr_hdr);
+	if (ret != cnt) {
 		printf("%s: failed to read %s hdr, ret=%d\n",
 		       __func__, part_info.name, ret);
 		ret = -EIO;
@@ -285,6 +288,9 @@ static int init_resource_list(struct resource_img_hdr *hdr)
 		u32 os_ver = andr_hdr->os_version >> 11;
 		u32 os_lvl = andr_hdr->os_version & ((1U << 11) - 1);
 
+#ifdef DEBUG
+		android_print_contents(andr_hdr);
+#endif
 		if (os_ver)
 			printf("Android %u.%u, Build %u.%u\n",
 			       (os_ver >> 14) & 0x7F, (os_ver >> 7) & 0x7F,
@@ -293,11 +299,20 @@ static int init_resource_list(struct resource_img_hdr *hdr)
 		debug("%s: Load resource from %s second pos\n",
 		      __func__, part_info.name);
 
-		offset = part_info.start * dev_desc->blksz;
-		offset += andr_hdr->page_size;
-		offset += ALIGN(andr_hdr->kernel_size, andr_hdr->page_size);
-		offset += ALIGN(andr_hdr->ramdisk_size, andr_hdr->page_size);
-		offset = offset / dev_desc->blksz;
+		rsce_base = part_info.start * dev_desc->blksz;
+		rsce_base += andr_hdr->page_size;
+		rsce_base += ALIGN(andr_hdr->kernel_size, andr_hdr->page_size);
+		rsce_base += ALIGN(andr_hdr->ramdisk_size, andr_hdr->page_size);
+
+		if (andr_hdr->header_version >= 2) {
+			dtb_offset = rsce_base + ALIGN(andr_hdr->second_size,
+						andr_hdr->page_size);
+			dtb_size = andr_hdr->dtb_size;
+		}
+
+		rsce_base = DIV_ROUND_UP(rsce_base, dev_desc->blksz);
+		dtb_offset =
+			DIV_ROUND_UP(dtb_offset, dev_desc->blksz) - rsce_base;
 		resource_found = 1;
 	}
 parse_resource_part:
@@ -314,13 +329,13 @@ parse_resource_part:
 			       __func__, ret);
 			goto out;
 		}
-		offset = part_info.start;
+		rsce_base = part_info.start;
 	}
 
 	/*
-	 * Now, the "offset" points to the resource file sector.
+	 * Now, the "rsce_base" points to the resource file sector.
 	 */
-	ret = blk_dread(dev_desc, offset, 1, hdr);
+	ret = blk_dread(dev_desc, rsce_base, 1, hdr);
 	if (ret != 1) {
 		printf("%s: failed to read resource hdr, ret=%d\n",
 		       __func__, ret);
@@ -342,7 +357,7 @@ parse_resource_part:
 		goto out;
 	}
 
-	ret = blk_dread(dev_desc, offset + hdr->c_offset,
+	ret = blk_dread(dev_desc, rsce_base + hdr->c_offset,
 			hdr->e_blks * hdr->e_nums, content);
 	if (ret != (hdr->e_blks * hdr->e_nums)) {
 		printf("%s: failed to read resource entries, ret=%d\n",
@@ -358,7 +373,7 @@ parse_resource_part:
 	for (e_num = 0; e_num < hdr->e_nums; e_num++) {
 		size = e_num * hdr->e_blks * dev_desc->blksz;
 		entry = (struct resource_entry *)(content + size);
-		add_file_to_list(entry, offset);
+		add_file_to_list(entry, rsce_base);
 	}
 
 	ret = 0;
@@ -423,6 +438,19 @@ err2:
 		free(header);
 	}
 
+	/*
+	 * boot_img_hdr_v2 feature.
+	 *
+	 * If dtb position is present, replace the old with new one
+	 */
+	if (dtb_size) {
+		ret = replace_resource_entry(DTB_FILE, rsce_base,
+					     dtb_offset, dtb_size);
+		if (ret)
+			printf("Failed to load dtb from dtb position\n");
+		else
+			env_update("bootargs", "androidboot.dtb_idx=0");
+	}
 err:
 	if (content)
 		free(content);
