@@ -707,5 +707,10 @@ void android_print_contents(const struct andr_img_hdr *hdr)
 		printf("%srecovery dtbo offset:  %llx\n", p, hdr->recovery_dtbo_offset);
 		printf("%sheader size:           %x\n", p, hdr->header_size);
 	}
+
+	if (header_version >= 2) {
+		printf("%sdtb size:              %x\n", p, hdr->dtb_size);
+		printf("%sdtb addr:              %llx\n", p, hdr->dtb_addr);
+	}
 }
 #endif
