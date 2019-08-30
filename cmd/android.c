@@ -37,13 +37,13 @@ static int do_android_print_hdr(cmd_tbl_t *cmdtp, int flag,
 		return -ENODEV;
 	}
 
-	hdr = memalign(ARCH_DMA_MINALIGN, sizeof(*hdr));
+	blkcnt = DIV_ROUND_UP(sizeof(*hdr), dev_desc->blksz);
+	hdr = memalign(ARCH_DMA_MINALIGN, dev_desc->blksz * blkcnt);
 	if (!hdr) {
 		printf("%s: out of memory!\n", __func__);
 		return -ENOMEM;
 	}
 
-	blkcnt = sizeof(*hdr) / dev_desc->blksz;
 	ret = blk_dread(dev_desc, part_info.start, blkcnt, hdr);
 	if (ret != blkcnt) {
 		printf("Failed to read %s sector, ret=%d\n", part_info.name, ret);
