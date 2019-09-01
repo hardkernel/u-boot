@@ -110,7 +110,11 @@
 
 #define __gcc_header(x) #x
 #define _gcc_header(x) __gcc_header(linux/compiler-gcc##x.h)
+#if __GNUC__ > 5
+#define gcc_header(x) _gcc_header(5)
+#else
 #define gcc_header(x) _gcc_header(x)
+#endif
 #include gcc_header(__GNUC__)
 
 #if !defined(__noclone)
