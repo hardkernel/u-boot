@@ -101,8 +101,8 @@ struct resource_entry {
 
 struct resource_file {
 	char		name[MAX_FILE_NAME_LEN];
-	uint32_t	f_offset;
-	uint32_t	f_size;
+	uint32_t	f_offset;	/* Sector addr */
+	uint32_t	f_size;		/* Bytes */
 	struct list_head link;
 	uint32_t	rsce_base;	/* Base addr of resource */
 };
@@ -848,6 +848,11 @@ int rockchip_read_dtb_file(void *fdt_addr)
 	size = rockchip_read_resource_file((void *)fdt_addr, dtb_name, 0, 0);
 	if (size < 0)
 		return size;
+
+	if (fdt_check_header(fdt_addr)) {
+		printf("Get a bad DTB file\n");
+		return -EBADF;
+	}
 
 	/* Apply DTBO */
 #if defined(CONFIG_CMD_DTIMG) && defined(CONFIG_OF_LIBFDT_OVERLAY)
