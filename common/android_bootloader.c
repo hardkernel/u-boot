@@ -184,6 +184,9 @@ static enum android_boot_mode android_bootloader_load_and_clear_mode(
 	if (!strcmp("boot-recovery", bcb.command))
 		return ANDROID_BOOT_MODE_RECOVERY;
 
+	if (!strcmp("boot-fastboot", bcb.command))
+		return ANDROID_BOOT_MODE_RECOVERY;
+
 	return ANDROID_BOOT_MODE_NORMAL;
 }
 
