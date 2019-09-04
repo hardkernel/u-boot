@@ -1206,6 +1206,10 @@ int android_bootloader_boot_flow(struct blk_desc *dev_desc,
 	if (!ret)
 		env_set_hex("fdt_addr", fdt_addr);
 #endif
+#ifdef CONFIG_OPTEE_CLIENT
+	if (trusty_notify_optee_uboot_end())
+		printf("Close optee client failed!\n");
+#endif
 	android_bootloader_boot_kernel(load_address);
 
 	/* TODO: If the kernel doesn't boot mark the selected slot as bad. */
