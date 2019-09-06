@@ -39,6 +39,7 @@ struct pll_div {
 #define APLL_B_HZ	(816 * 1000 * 1000)
 #define GPLL_HZ		(576 * 1000 * 1000)
 #define CPLL_HZ		(400 * 1000 * 1000)
+#define NPLL_HZ		(594 * 1000 * 1000)
 
 #define DIV_TO_RATE(input_rate, div)    ((input_rate) / ((div) + 1))
 
@@ -98,6 +99,7 @@ static const struct pll_div gpll_init_cfg = PLL_DIVISORS(GPLL_HZ, 1, 2);
 static const struct pll_div cpll_init_cfg = PLL_DIVISORS(CPLL_HZ, 1, 6);
 #endif
 #endif
+static const struct pll_div npll_init_cfg = PLL_DIVISORS(NPLL_HZ, 1, 4);
 
 static ulong rk3368_clk_get_rate(struct clk *clk);
 
@@ -228,13 +230,15 @@ static int rkclk_set_pll(struct rk3368_cru *cru, enum rk3368_pll_id pll_id,
 	 * BWADJ should be set to NF / 2 to ensure the nominal bandwidth.
 	 * Compare the RK3368 TRM, section "3.6.4 PLL Bandwidth Adjustment".
 	 */
-	clrsetbits_le32(&pll->con2, PLL_BWADJ_MASK, (div->nf >> 1) - 1);
+	if (pll_id == NPLL)
+		clrsetbits_le32(&pll->con2, PLL_BWADJ_MASK, 0);
+	else
+		clrsetbits_le32(&pll->con2, PLL_BWADJ_MASK, (div->nf >> 1) - 1);
 
 	udelay(10);
 
 	/* return from reset */
 	rk_clrreg(&pll->con3, PLL_RESET_MASK);
-	rk_clrreg(&pll->con3, 0xf << 0);
 
 	/* waiting for pll lock */
 	while (!(readl(&pll->con1) & PLL_LOCK_STA))
@@ -730,12 +734,16 @@ static ulong rk3368_vop_set_clk(struct rk3368_cru *cru, int clk_id, uint hz)
 
 	switch (clk_id) {
 	case DCLK_VOP:
-		ret = pll_para_config(hz, &npll_config, &lcdc_div);
-		if (ret)
-			return ret;
+		if (!(NPLL_HZ % hz)) {
+			rkclk_set_pll(cru, NPLL, &npll_init_cfg);
+			lcdc_div = NPLL_HZ / hz;
+		} else {
+			ret = pll_para_config(hz, &npll_config, &lcdc_div);
+			if (ret)
+				return ret;
 
-		rkclk_set_pll(cru, NPLL, &npll_config);
-
+			rkclk_set_pll(cru, NPLL, &npll_config);
+		}
 		/* vop dclk source clk: npll,dclk_div: 1 */
 		rk_clrsetreg(&cru->clksel_con[20],
 			     (DCLK_VOP_PLL_SEL_MASK << DCLK_VOP_PLL_SEL_SHIFT) |
@@ -1259,6 +1267,7 @@ static int rk3368_clk_probe(struct udevice *dev)
 #if IS_ENABLED(CONFIG_SPL_BUILD) || IS_ENABLED(CONFIG_TPL_BUILD)
 	rkclk_init(priv->cru);
 #endif
+	rkclk_set_pll(priv->cru, NPLL, &npll_init_cfg);
 	if (!priv->armlclk_init_hz)
 		priv->armlclk_init_hz = rkclk_pll_get_rate(priv->cru, APLLL);
 	if (!priv->armbclk_init_hz)
