@@ -38,7 +38,7 @@ static int valid_command(const char* p)
 	return !(p == q);
 }
 
-/* Read boot.ini from FAT partition
+/* Read boot.ini from the first partition
  */
 static char* read_cfgload(void)
 {
@@ -53,6 +53,12 @@ static char* read_cfgload(void)
 	setenv("filesize", "0");
 
 	sprintf(cmd, "fatload mmc 0:1 0x%p boot.ini", (void *)p);
+	run_command(cmd, 0);
+
+	sprintf(cmd, "ext4load mmc 0:1 0x%p /boot.ini", (void *)p);
+	run_command(cmd, 0);
+
+	sprintf(cmd, "ext4load mmc 0:1 0x%p /boot/boot.ini", (void *)p);
 	run_command(cmd, 0);
 
 	filesize = getenv_ulong("filesize", 16, 0);
