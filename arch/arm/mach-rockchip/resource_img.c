@@ -195,10 +195,16 @@ static int replace_resource_entry(const char *f_name, uint32_t base,
 }
 
 /*
- * 1. Get resource file from part: boot/recovery(AOSP) > resource(RK)
- * 2. Add all file into resource file list and load them from storage
- *    when we really need it.
- * 3. Parse logo partition and add logo file int resource file list;
+ * There are: logo/battery pictures and dtb file in the resource image by default.
+ *
+ * This function does:
+ *
+ * 1. Get resource image from part: boot/recovery(AOSP) > resource(RK);
+ * 2. Add all file into resource list(We load them from storage when we need);
+ * 3. Add logo picture from logo partition into resource list(replace the
+ *    old one in resource file);
+ * 4. Add dtb file from dtb position into resource list if boot_img_hdr_v2
+ *    (replace the old one in resource file);
  */
 static int init_resource_list(struct resource_img_hdr *hdr)
 {
