@@ -1158,6 +1158,15 @@ static int do_env_delete(cmd_tbl_t *cmdtp, int flag,
 	return ret;
 }
 
+static int do_env_update(cmd_tbl_t *cmdtp, int flag,
+			 int argc, char *const argv[])
+{
+	if (argc != 3)
+		return CMD_RET_USAGE;
+
+	return env_update(argv[1], argv[2]);
+}
+
 #ifdef CONFIG_CMD_EXPORTENV
 /*
  * env export [-t | -b | -c] [-s size] addr [var ...]
@@ -1463,6 +1472,7 @@ static cmd_tbl_t cmd_env_sub[] = {
 #endif
 	U_BOOT_CMD_MKENT(default, 1, 0, do_env_default, "", ""),
 	U_BOOT_CMD_MKENT(delete, CONFIG_SYS_MAXARGS, 0, do_env_delete, "", ""),
+	U_BOOT_CMD_MKENT(update, 3, 0, do_env_update, "", ""),
 #if defined(CONFIG_CMD_EDITENV)
 	U_BOOT_CMD_MKENT(edit, 2, 0, do_env_edit, "", ""),
 #endif
@@ -1531,6 +1541,7 @@ static char env_help_text[] =
 	"default [-f] -a - [forcibly] reset default environment\n"
 	"env default [-f] var [...] - [forcibly] reset variable(s) to their default values\n"
 	"env delete [-f] var [...] - [forcibly] delete variable(s)\n"
+	"env update [name] [value] - add/append/replace variable(s)\n"
 #if defined(CONFIG_CMD_EDITENV)
 	"env edit name - edit environment variable\n"
 #endif
