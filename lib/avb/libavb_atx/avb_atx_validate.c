@@ -38,6 +38,7 @@
 
 /* The most recent unlock challenge generated. */
 static uint8_t last_unlock_challenge[AVB_ATX_UNLOCK_CHALLENGE_SIZE];
+static bool last_unlock_challenge_set = false;
 
 /* Computes the SHA256 |hash| of |length| bytes of |data|. */
 static void sha256(const uint8_t* data,
@@ -367,6 +368,7 @@ AvbIOResult avb_atx_generate_unlock_challenge(
     avb_error("Failed to generate random challenge.\n");
     return result;
   }
+  last_unlock_challenge_set = true;
   out_unlock_challenge->version = 1;
   sha256(permanent_attributes.product_id,
          AVB_ATX_PRODUCT_ID_SIZE,
@@ -445,9 +447,16 @@ AvbIOResult avb_atx_validate_unlock_credential(
     return AVB_IO_RESULT_OK;
   }
 
+  /* Hash the most recent unlock challenge. */
+  if (!last_unlock_challenge_set) {
+    avb_error("Challenge does not exist.\n");
+    return AVB_IO_RESULT_OK;
+  }
+  sha512(last_unlock_challenge, AVB_ATX_UNLOCK_CHALLENGE_SIZE, challenge_hash);
+  last_unlock_challenge_set = false;
+
   /* Verify the challenge signature. */
   algorithm_data = avb_get_algorithm_data(AVB_ALGORITHM_TYPE_SHA512_RSA4096);
-  sha512(last_unlock_challenge, AVB_ATX_UNLOCK_CHALLENGE_SIZE, challenge_hash);
   if (!avb_rsa_verify(unlock_credential->product_unlock_key_certificate
                           .signed_data.public_key,
                       AVB_ATX_PUBLIC_KEY_SIZE,
