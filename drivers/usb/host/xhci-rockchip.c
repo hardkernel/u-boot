@@ -14,7 +14,7 @@
 #include <linux/usb/dwc3.h>
 #include <power/regulator.h>
 
-#include "xhci.h"
+#include <usb/xhci.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 

@@ -13,7 +13,7 @@
 #include <usb.h>
 #include <wait_bit.h>
 
-#include "xhci.h"
+#include <usb/xhci.h>
 #include "xhci-rcar-r8a779x_usb3_v3.h"
 
 /* Register Offset */

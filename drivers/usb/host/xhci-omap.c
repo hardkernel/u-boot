@@ -20,7 +20,7 @@
 #include <linux/usb/dwc3.h>
 #include <linux/usb/xhci-omap.h>
 
-#include "xhci.h"
+#include <usb/xhci.h>
 
 /* Declare global data pointer */
 DECLARE_GLOBAL_DATA_PTR;
