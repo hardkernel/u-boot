@@ -378,6 +378,8 @@ config ROCKCHIP_RK1808
 	select ARM_SMCCC
 	select GICV3 if !COPROCESSOR_RK1808
 	select DEBUG_UART_BOARD_INIT
+	select SUPPORT_SPL if !COPROCESSOR_RK1808
+	select SUPPORT_TPL if !COPROCESSOR_RK1808
 	help
 	  The Rockchip RK1808 is a ARM-based Soc which embedded with dual
 	  Cortex-A35.
