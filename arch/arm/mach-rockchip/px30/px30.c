@@ -19,7 +19,7 @@
 #define GRF_CPU_CON1			0xff140504
 
 #define VIDEO_PHY_BASE			0xff2e0000
-
+#define FW_DDR_CON_REG			0xff534040
 #define SERVICE_CORE_ADDR		0xff508000
 #define QOS_PRIORITY			0x08
 
@@ -56,11 +56,12 @@ int arch_cpu_init(void)
 #ifdef CONFIG_SPL_BUILD
 	/* We do some SoC one time setting here. */
 	/* Disable the ddr secure region setting to make it non-secure */
+	writel(0x0, FW_DDR_CON_REG);
 #endif
 	/* Enable PD_VO (default disable at reset) */
 	rk_clrreg(PMU_PWRDN_CON, 1 << 13);
 
-#ifdef CONFIG_TPL_BUILD
+#ifdef CONFIG_SPL_BUILD
 	/* Set cpu qos priority */
 	writel(QOS_PRIORITY_LEVEL(1, 1), SERVICE_CORE_ADDR + QOS_PRIORITY);
 #endif
