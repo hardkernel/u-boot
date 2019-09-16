@@ -11,6 +11,7 @@
 	};
 
 	chosen {
+		u-boot,spl-boot-order = &emmc, &sdmmc;
 		stdout-path = &uart2;
 	};
 };
@@ -25,16 +26,16 @@
 };
 
 &nandc0 {
-	u-boot,dm-pre-reloc;
+	u-boot,dm-spl;
 	status = "okay";
 };
 
 &sdmmc {
-	u-boot,dm-pre-reloc;
+	u-boot,dm-spl;
 };
 
 &emmc {
-	u-boot,dm-pre-reloc;
+	u-boot,dm-spl;
 };
 
 &pmugrf {
@@ -54,45 +55,45 @@
 };
 
 &saradc {
-	u-boot,dm-pre-reloc;
+	u-boot,dm-spl;
 	status = "okay";
 };
 
 &gpio0 {
-	u-boot,dm-pre-reloc;
+	u-boot,dm-spl;
 	status = "disabled";
 };
 
 &gpio1 {
-	u-boot,dm-pre-reloc;
+	u-boot,dm-spl;
 	status = "disabled";
 };
 
 &gpio2 {
-	u-boot,dm-pre-reloc;
+	u-boot,dm-spl;
 	status = "disabled";
 };
 
 &gpio3 {
-	u-boot,dm-pre-reloc;
+	u-boot,dm-spl;
 	status = "disabled";
 };
 
 &usb20_otg {
-	u-boot,dm-pre-reloc;
+	u-boot,dm-spl;
 };
 
 &usb2phy_grf {
-	u-boot,dm-pre-reloc;
+	u-boot,dm-spl;
 	status = "okay";
 };
 
 &u2phy {
-	u-boot,dm-pre-reloc;
+	u-boot,dm-spl;
 	status = "okay";
 };
 
 &u2phy_otg {
-	u-boot,dm-pre-reloc;
+	u-boot,dm-spl;
 	status = "okay";
 };

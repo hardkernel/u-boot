@@ -400,8 +400,6 @@
 };
 
 &emmc {
-	u-boot,dm-pre-reloc;
-	fifo-mode;
 	bus-width = <8>;
 	cap-mmc-highspeed;
 	mmc-hs200-1_8v;
