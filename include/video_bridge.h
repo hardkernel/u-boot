@@ -63,6 +63,14 @@ struct video_bridge_ops {
 	 * @return number of bytes read, <=0 for error
 	 */
 	int (*read_edid)(struct udevice *dev, u8 *buf, int buf_size);
+
+	/**
+	 * get_timing() - Get timing from bridge
+	 *
+	 * @dev:	Device to get timing
+	 * @return 0 if OK, -ve on error
+	 */
+	int (*get_timing)(struct udevice *dev);
 };
 
 #define video_bridge_get_ops(dev) \
@@ -109,4 +117,11 @@ int video_bridge_check_attached(struct udevice *dev);
  */
 int video_bridge_read_edid(struct udevice *dev, u8 *buf, int buf_size);
 
+/**
+ * video_bridge_get_timing() - Get timing from bridge
+ *
+ * @dev:	Device to get timing
+ * @return 0 if OK, -ve on error
+ */
+int video_bridge_get_timing(struct udevice *dev);
 #endif
