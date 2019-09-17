@@ -406,11 +406,12 @@
 	status = "okay";
 
 	flash@0 {
-		compatible = "macronix,mx25u6435f", "jedec,spi-nor";
+		compatible = "xtx,xt25f128b", "jedec,spi-nor";
 		#address-cells = <1>;
 		#size-cells = <1>;
 		reg = <0>;
 		m25p,fast-read;
-		spi-max-frequency = <10000000>;
+		/* max spi clk 24MHz */
+		spi-max-frequency = <24000000>;
 	};
 };
