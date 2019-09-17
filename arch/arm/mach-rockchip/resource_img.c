@@ -311,8 +311,10 @@ static int init_resource_list(struct resource_img_hdr *hdr)
 		rsce_base += ALIGN(andr_hdr->ramdisk_size, andr_hdr->page_size);
 
 		if (andr_hdr->header_version >= 2) {
-			dtb_offset = rsce_base + ALIGN(andr_hdr->second_size,
-						andr_hdr->page_size);
+			dtb_offset = rsce_base +
+			     ALIGN(andr_hdr->recovery_dtbo_size,
+				   andr_hdr->page_size) +
+			     ALIGN(andr_hdr->second_size, andr_hdr->page_size);
 			dtb_size = andr_hdr->dtb_size;
 		}
 
