@@ -42,8 +42,10 @@ int rk_avb_get_pub_key(struct rk_pub_key *pub_key)
 int rk_avb_get_perm_attr_cer(uint8_t *cer, uint32_t size)
 {
 #ifdef CONFIG_OPTEE_CLIENT
-	if (trusty_read_permanent_attributes_cer((uint8_t *)cer, size))
+	if (trusty_read_permanent_attributes_cer((uint8_t *)cer, size)) {
+		printf("AVB: perm attr cer is not exist.\n");
 		return -EIO;
+	}
 
 	return 0;
 #else
