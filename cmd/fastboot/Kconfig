@@ -93,7 +93,6 @@ config FASTBOOT_OEM_UNLOCK
 config RK_AVB_LIBAVB_ENABLE_ATH_UNLOCK
 	bool "AVB Authenticated unlock function"
 	depends on ANDROID_AVB
-	default y
 	help
 	  Enabled authenticated unlock function can prevent lock state
 	  from invalid unlock cmd.
