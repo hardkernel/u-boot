@@ -330,8 +330,17 @@ static int gic_irq_init(void)
 #ifdef CONFIG_GICV2
 	u32 val;
 
-	/* end of interrupt */
-	gicc_writel(PLATFORM_GIC_MAX_IRQ, GICC_EOIR);
+	/*
+	 * If system boot without Miniloader:
+	 *		"Maskrom => Trust(optional) => U-Boot"
+	 *
+	 * IRQ_USB_OTG must be acked by GICC_EIO due to maskrom jumps to the
+	 * U-Boot in its USB interrupt. Without this ack, the GICC_IAR always
+	 * return a spurious interrupt ID 1023 for USB OTG interrupt.
+	 */
+#ifdef IRQ_USB_OTG
+	gicc_writel(IRQ_USB_OTG, GICC_EOIR);
+#endif
 
 	/* disable gicc and gicd */
 	gicc_writel(0, GICC_CTLR);
