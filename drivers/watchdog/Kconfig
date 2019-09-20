@@ -1,0 +1,12 @@
+config HW_WATCHDOG
+	bool "Enable Hardware Watchdog"
+	help
+	   This config option enables HW WDT support
+	   To disable Amlogic's HW WDT, say N
+
+config AMLOGIC_WATCHDOG
+	bool "Enable Amlogic SoC HW Watchdog"
+	depends on HW_WATCHDOG
+	help
+	   This config option enables Amlogic's S905 HW watchdog
+	   To disable S905 Amlogic's WDT, say N
