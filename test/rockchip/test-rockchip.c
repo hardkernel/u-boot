@@ -122,6 +122,8 @@ static int do_rockchip_test(cmd_tbl_t *cmdtp, int flag,
 			else if (!strcmp(argv[1], CMD_MODE_V3))
 				skip_mode = TEST_SKIP_NORETURN_INTERACTIVE;
 		}
+		/* rktest all has no valid parameter */
+		argc = 1;
 		goto all_test;
 	} else {
 		if (!strcmp(argv[0], "storage"))
