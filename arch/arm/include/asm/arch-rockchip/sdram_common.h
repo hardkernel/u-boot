@@ -6,8 +6,14 @@
 #ifndef _ASM_ARCH_SDRAM_SHARE_H
 #define _ASM_ARCH_SDRAM_SHARE_H
 
-#define MHZ		(1000000)
+#ifndef MHZ
+#define MHZ		(1000 * 1000)
+#endif
+
 #define PATTERN		(0x5aa5f00f)
+
+#define MIN(a, b)	(((a) > (b)) ? (b) : (a))
+#define MAX(a, b)	(((a) > (b)) ? (a) : (b))
 
 struct sdram_cap_info {
 	unsigned int rank;
