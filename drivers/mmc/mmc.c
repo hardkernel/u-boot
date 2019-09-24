@@ -840,7 +840,6 @@ static int mmc_select_hs_ddr(struct mmc *mmc)
 	return 0;
 }
 
-#ifndef CONFIG_SPL_BUILD
 static int mmc_select_hs200(struct mmc *mmc)
 {
 	int ret;
@@ -864,7 +863,6 @@ static int mmc_select_hs200(struct mmc *mmc)
 
 	return ret;
 }
-#endif
 
 static int mmc_select_hs400(struct mmc *mmc)
 {
@@ -995,12 +993,9 @@ static int mmc_change_freq(struct mmc *mmc)
 
 	avail_type = mmc_select_card_type(mmc, ext_csd);
 
-#ifndef CONFIG_SPL_BUILD
 	if (avail_type & EXT_CSD_CARD_TYPE_HS200)
 		err = mmc_select_hs200(mmc);
-	else
-#endif
-	if (avail_type & EXT_CSD_CARD_TYPE_HS)
+	else if (avail_type & EXT_CSD_CARD_TYPE_HS)
 		err = mmc_select_hs(mmc);
 	else
 		err = -EINVAL;
