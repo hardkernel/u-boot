@@ -766,5 +766,12 @@ int mmc_get_env_dev(void);
  */
 struct blk_desc *mmc_get_blk_desc(struct mmc *mmc);
 
+
+/**
+ * mmc_gpio_init_direct()
+ *
+ */
+void mmc_gpio_init_direct(void);
+
 #endif /* _MMC_H_ */
 
