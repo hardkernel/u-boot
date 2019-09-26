@@ -102,7 +102,7 @@ ulong mtd_dread(struct udevice *udev, lbaint_t start,
 	int ret = 0;
 
 	if (!desc)
-		return 0;
+		return ret;
 
 	mtd = desc->bdev->priv;
 	if (!mtd)
@@ -112,7 +112,7 @@ ulong mtd_dread(struct udevice *udev, lbaint_t start,
 		return 0;
 
 	if (desc->devnum == BLK_MTD_NAND) {
-#ifdef CONFIG_NAND
+#if defined(CONFIG_NAND) && !defined(CONFIG_SPL_BUILD)
 		mtd = dev_get_priv(udev->parent);
 		if (!mtd)
 			return 0;
@@ -126,13 +126,18 @@ ulong mtd_dread(struct udevice *udev, lbaint_t start,
 #endif
 			return 0;
 	} else if (desc->devnum == BLK_MTD_SPI_NAND) {
-#ifdef CONFIG_MTD_SPI_NAND
+#if defined(CONFIG_MTD_SPI_NAND) && !defined(CONFIG_SPL_BUILD)
 		ret = nand_read_skip_bad(mtd, off, &rwsize,
 					 NULL, mtd->size,
 					 (u_char *)(dst));
 		if (!ret)
 			return blkcnt;
 		else
+#elif defined(CONFIG_SPL_BUILD)
+		size_t retlen;
+		mtd_read(mtd, off, rwsize, &retlen, dst);
+		if (retlen == rwsize)
+			return blkcnt;
 #endif
 			return 0;
 	} else if (desc->devnum == BLK_MTD_SPI_NOR) {
