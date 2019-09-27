@@ -96,8 +96,10 @@ ulong mtd_dread(struct udevice *udev, lbaint_t start,
 		lbaint_t blkcnt, void *dst)
 {
 	struct blk_desc *desc = dev_get_uclass_platdata(udev);
+#if defined(CONFIG_NAND) || defined(CONFIG_MTD_SPI_NAND) || defined(CONFIG_SPI_FLASH_MTD)
 	loff_t off = (loff_t)(start * 512);
 	size_t rwsize = blkcnt * 512;
+#endif
 	struct mtd_info *mtd;
 	int ret = 0;
 
@@ -135,14 +137,23 @@ ulong mtd_dread(struct udevice *udev, lbaint_t start,
 		else
 #elif defined(CONFIG_SPL_BUILD)
 		size_t retlen;
+
 		mtd_read(mtd, off, rwsize, &retlen, dst);
 		if (retlen == rwsize)
 			return blkcnt;
+		else
 #endif
 			return 0;
 	} else if (desc->devnum == BLK_MTD_SPI_NOR) {
-		/* Not implemented */
-		return 0;
+#if defined(CONFIG_SPI_FLASH_MTD) || defined(CONFIG_SPL_BUILD)
+		size_t retlen_nor;
+
+		mtd_read(mtd, off, rwsize, &retlen_nor, dst);
+		if (retlen_nor == rwsize)
+			return blkcnt;
+		else
+#endif
+			return 0;
 	} else {
 		return 0;
 	}
