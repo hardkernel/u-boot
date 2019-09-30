@@ -88,6 +88,18 @@
 			regulator-max-microvolt = <3800000>;
 		};
 
+		vcc_host: vcc_host {
+			compatible = "regulator-fixed";
+			regulator-name = "vcc_host";
+			regulator-min-microvolt = <5000000>;
+			regulator-max-microvolt = <5000000>;
+
+			gpio = <&gpio0 RK_PB7 GPIO_ACTIVE_HIGH>;
+			enable-active-high;
+			regulator-always-on;
+			vin-supply = <&vccsys>;
+		};
+
 		rk817_pin0_ts: rk817_pin0_ts {
 			pins = "gpio0";
 			function = "pin_fun0";
@@ -283,7 +295,7 @@
 			dcdc_boost: BOOST {
 				regulator-always-on;
 				regulator-boot-on;
-				regulator-min-microvolt = <4700000>;
+				regulator-min-microvolt = <5000000>;
 				regulator-max-microvolt = <5400000>;
 				regulator-name = "boost";
 			};
@@ -378,13 +390,17 @@
 
 &u2phy {
 	status = "okay";
+
+	u2phy_host: host-port {
+		status = "okay";
+	};
+
+	u2phy_otg: otg-port {
+		status = "disabled";
+	};
 };
 
-&u2phy_otg {
-	status = "okay";
-};
-
-&u2phy_host {
+&usb20_otg {
 	status = "okay";
 };
 

@@ -131,6 +131,7 @@
 				clocks = <&cru HCLK_HOST>,
 					 <&cru HCLK_OTG>,
 					 <&cru SCLK_OTG_ADP>;
+				pm_qos = <&qos_usb_host>, <&qos_usb_otg>;
 			};
 			pd_sdcard@PX30_PD_SDCARD {
 				reg = <PX30_PD_SDCARD>;
@@ -738,16 +739,16 @@
 			clocks = <&pmucru SCLK_USBPHY_REF>;
 			clock-names = "phyclk";
 			#clock-cells = <0>;
-			assigned-clocks = <&cru USB480M>;
-			assigned-clock-parents = <&u2phy>;
+			assigned-clocks = <&cru USB480M>, <&cru SCLK_UART1_SRC>;
+			assigned-clock-parents = <&u2phy>, <&cru USB480M>;
 			clock-output-names = "usb480m_phy";
-			status = "disabled";
+			status = "okay";
 
 			u2phy_host: host-port {
 				#phy-cells = <0>;
 				interrupts = <GIC_SPI 68 IRQ_TYPE_LEVEL_HIGH>;
 				interrupt-names = "linestate";
-				status = "disabled";
+				status = "okay";
 			};
 
 			u2phy_otg: otg-port {
@@ -784,6 +785,7 @@
 		interrupts = <GIC_SPI 62 IRQ_TYPE_LEVEL_HIGH>;
 		clocks = <&cru HCLK_OTG>;
 		clock-names = "otg";
+		power-domains = <&power PX30_PD_USB>;
 		dr_mode = "otg";
 		g-np-tx-fifo-size = <16>;
 		g-rx-fifo-size = <275>;
@@ -798,9 +800,9 @@
 		compatible = "generic-ehci";
 		reg = <0x0 0xff340000 0x0 0x10000>;
 		interrupts = <GIC_SPI 60 IRQ_TYPE_LEVEL_HIGH>;
-		clocks = <&cru HCLK_HOST>, <&cru HCLK_HOST_ARB>,
-			 <&u2phy>;
-		clock-names = "usbhost", "arbiter", "utmi";
+		clocks = <&cru HCLK_HOST>, <&u2phy>;
+		clock-names = "usbhost", "utmi";
+		power-domains = <&power PX30_PD_USB>;
 		phys = <&u2phy_host>;
 		phy-names = "usb";
 		status = "disabled";
@@ -810,9 +812,9 @@
 		compatible = "generic-ohci";
 		reg = <0x0 0xff350000 0x0 0x10000>;
 		interrupts = <GIC_SPI 61 IRQ_TYPE_LEVEL_HIGH>;
-		clocks = <&cru HCLK_HOST>, <&cru HCLK_HOST_ARB>,
-			 <&u2phy>;
-		clock-names = "usbhost", "arbiter", "utmi";
+		clocks = <&cru HCLK_HOST>, <&u2phy>;
+		clock-names = "usbhost", "utmi";
+		power-domains = <&power PX30_PD_USB>;
 		phys = <&u2phy_host>;
 		phy-names = "usb";
 	};
@@ -2169,6 +2171,15 @@
 				rockchip,pins =
 					<2 RK_PB2 RK_FUNC_2 &pcfg_pull_none>;
 			};
+			mac_refclk_12ma: mac-refclk-12ma {
+                                rockchip,pins =
+                                        <2 RK_PB2 RK_FUNC_2 &pcfg_pull_none_12ma>;
+                        };
+
+                        mac_refclk: mac-refclk {
+                                rockchip,pins =
+                                        <2 RK_PB2 RK_FUNC_2 &pcfg_pull_none>;
+                        };
 		};
 
 		cif-m0 {
