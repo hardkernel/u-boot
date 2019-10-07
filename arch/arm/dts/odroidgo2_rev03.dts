@@ -417,17 +417,10 @@
 
 &spi0 {
 	u-boot,dm-pre-reloc;
-	pinctrl-names = "default";
-	pinctrl-0 = <&spi0_clk &spi0_csn &spi0_miso &spi0_mosi>;
-	status = "okay";
+	status = "disabled";
+};
 
-	flash@0 {
-		compatible = "xtx,xt25f128b", "jedec,spi-nor";
-		#address-cells = <1>;
-		#size-cells = <1>;
-		reg = <0>;
-		m25p,fast-read;
-		/* max spi clk 24MHz */
-		spi-max-frequency = <24000000>;
-	};
+&sfc {
+	u-boot,dm-pre-reloc;
+	status = "okay";
 };
