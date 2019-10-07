@@ -40,6 +40,23 @@ void board_debug_uart2m1(void)
 		     CON_IOMUX_UART2SEL_M1 << CON_IOMUX_UART2SEL_SHIFT);
 }
 
+void board_init_sfc_if(void)
+{
+	static struct px30_grf * const grf = (void *)GRF_BASE;
+
+	/* sfc_clk */
+	rk_setreg(&grf->gpio1bl_iomux, (0x3 << 4));
+
+	/* sfc_scn0 */
+	rk_setreg(&grf->gpio1ah_iomux, 0x3);
+
+	/* sfc_sio0 */
+	rk_setreg(&grf->gpio1al_iomux, 0x3);
+
+	/* sfc_sio1 */
+	rk_setreg(&grf->gpio1al_iomux, (0x3 << 4));
+}
+
 int rk_board_late_init(void)
 {
 	/* turn on blue led */
@@ -47,6 +64,9 @@ int rk_board_late_init(void)
 
 	/* set uart2-m1 port as a default debug console */
 	board_debug_uart2m1();
+
+	/* set sfc alternate function */
+	board_init_sfc_if();
 
 	return 0;
 }
