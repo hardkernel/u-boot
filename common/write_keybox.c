@@ -15,7 +15,6 @@
 
 #define STORAGE_CMD_WRITE	6
 #define	SIZE_OF_TAG		4
-#define	SIZE_OF_USB_CMD	8
 #define	BOOT_FROM_EMMC	(1 << 1)
 #define	WIDEVINE_TAG	"KBOX"
 #define	ATTESTATION_TAG	"ATTE"
@@ -125,6 +124,9 @@ uint32_t rk_send_keybox_to_ta(uint8_t *filename, uint32_t filename_size,
 
 uint32_t write_keybox_to_secure_storage(uint8_t *received_data, uint32_t len)
 {
+	uint8_t *widevine_data;
+	uint8_t *attestation_data;
+	uint8_t *playready_sl30_data;
 	uint32_t key_size;
 	uint32_t data_size;
 	int rc = 0;
@@ -141,27 +143,37 @@ uint32_t write_keybox_to_secure_storage(uint8_t *received_data, uint32_t len)
 #ifdef CONFIG_OPTEE_ALWAYS_USE_SECURITY_PARTITION
 	is_use_rpmb = 0;
 #endif
+	if (is_use_rpmb)
+		printf("I will write key to rpmb\n");
+	else
+		printf("I will write key to security partition");
 	rc = write_to_keymaster((uint8_t *)"security_partition",
 				sizeof("security_partition"),
 				&is_use_rpmb, sizeof(is_use_rpmb));
 	if (rc)
 		return -EIO;
 
-	if (memcmp(received_data, WIDEVINE_TAG, SIZE_OF_TAG) == 0) {
+	widevine_data = (uint8_t *)new_strstr((char *)received_data,
+					      WIDEVINE_TAG, len);
+	attestation_data = (uint8_t *)new_strstr((char *)received_data,
+						 ATTESTATION_TAG, len);
+	playready_sl30_data = (uint8_t *)new_strstr((char *)received_data,
+						    PLAYREADY30_TAG, len);
+	if (widevine_data) {
 		/* widevine keybox */
 		TEEC_UUID widevine_uuid = { 0x1b484ea5, 0x698b, 0x4142,
 			{ 0x82, 0xb8, 0x3a, 0xcf, 0x16, 0xe9, 0x9e, 0x2a } };
 
-		key_size = *(received_data + SIZE_OF_TAG);
-		data_size = *(received_data + SIZE_OF_TAG + sizeof(key_size));
+		key_size = *(widevine_data + SIZE_OF_TAG);
+		data_size = *(widevine_data + SIZE_OF_TAG + sizeof(key_size));
 
 		ret = rk_send_keybox_to_ta((uint8_t *)"widevine_keybox",
 					   sizeof("widevine_keybox"),
 					   widevine_uuid,
-					   received_data + SIZE_OF_TAG +
+					   widevine_data + SIZE_OF_TAG +
 					   sizeof(key_size) + sizeof(data_size),
 					   key_size,
-					   received_data + 12 + key_size,
+					   widevine_data + 12 + key_size,
 					   data_size);
 		if (ret == TEEC_SUCCESS) {
 			rc = 0;
@@ -170,11 +182,12 @@ uint32_t write_keybox_to_secure_storage(uint8_t *received_data, uint32_t len)
 			rc = -EIO;
 			printf("write widevine keybox to secure storage fail\n");
 		}
-	} else if (memcmp(received_data, ATTESTATION_TAG, SIZE_OF_TAG) == 0) {
+	} else if (attestation_data) {
 		/* attestation key */
 		atap_result ret;
 
-		ret = write_attestation_key_to_secure_storage(received_data, len);
+		ret = write_attestation_key_to_secure_storage(attestation_data,
+							      len);
 		if (ret == ATAP_RESULT_OK) {
 			rc = 0;
 			printf("write attestation key to secure storage success\n");
@@ -182,14 +195,14 @@ uint32_t write_keybox_to_secure_storage(uint8_t *received_data, uint32_t len)
 			rc = -EIO;
 			printf("write attestation key to secure storage fail\n");
 		}
-	} else if (memcmp(received_data, PLAYREADY30_TAG, SIZE_OF_TAG) == 0) {
+	} else if (playready_sl30_data) {
 		/* PlayReady SL3000 root key */
 		uint32_t ret;
 
-		data_size = *(received_data + SIZE_OF_TAG);
+		data_size = *(playready_sl30_data + SIZE_OF_TAG);
 		ret = write_to_keymaster((uint8_t *)"PlayReady_SL3000",
 					 sizeof("PlayReady_SL3000"),
-					 received_data + SIZE_OF_TAG +
+					 playready_sl30_data + SIZE_OF_TAG +
 					 sizeof(data_size),
 					 data_size);
 		if (ret == TEEC_SUCCESS) {
@@ -204,14 +217,20 @@ uint32_t write_keybox_to_secure_storage(uint8_t *received_data, uint32_t len)
 	/* write all data to secure storage for readback check */
 	if (!rc) {
 		uint32_t ret;
+		uint8_t *raw_data = malloc(len + sizeof(uint32_t));
+
+		/* add raw_data_len(4 byte) in begin of raw_data */
+		memcpy(raw_data, &len, sizeof(uint32_t));
+		memcpy((raw_data + sizeof(uint32_t)), received_data, len);
 
 		ret = write_to_keymaster((uint8_t *)"raw_data",
 					 sizeof("raw_data"),
-					 received_data, len);
+					 raw_data, len + sizeof(uint32_t));
 		if (ret == TEEC_SUCCESS)
 			rc = 0;
 		else
 			rc = -EIO;
+		free(raw_data);
 	}
 	return rc;
 }
@@ -219,12 +238,34 @@ uint32_t write_keybox_to_secure_storage(uint8_t *received_data, uint32_t len)
 uint32_t read_raw_data_from_secure_storage(uint8_t *data, uint32_t data_size)
 {
 	uint32_t rc;
+	uint32_t key_size;
+	uint8_t *read_data = malloc(1024 * 40);
 
 	rc = read_from_keymaster((uint8_t *)"raw_data", sizeof("raw_data"),
-				 data, data_size - SIZE_OF_USB_CMD);
+				 read_data, data_size);
 	if (rc != TEEC_SUCCESS)
 		return 0;
-	rc = data_size - SIZE_OF_USB_CMD;
+
+	memcpy(&key_size, read_data, sizeof(uint32_t));
+	memcpy(data, read_data + sizeof(uint32_t), key_size);
+	rc = key_size;
+	free(read_data);
 
 	return rc;
+}
+
+char *new_strstr(const char *s1, const char *s2, uint32_t l1)
+{
+	uint32_t l2;
+
+	l2 = strlen(s2);
+	if (!l2)
+		return (char *)s1;
+	while (l1 >= l2) {
+		l1--;
+		if (!memcmp(s1, s2, l2))
+			return (char *)s1;
+		s1++;
+	}
+	return NULL;
 }
