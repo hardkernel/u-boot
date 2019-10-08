@@ -170,6 +170,7 @@ obj-$(CONFIG_CMD_DVFS) += dvfs.o
 obj-$(CONFIG_CMD_BLOB) += blob.o
 
 obj-$(CONFIG_CMD_ODROID_CFGLOAD) += cfgload.o
+obj-$(CONFIG_CMD_ODROID_ADC) += adc.o
 
 endif # !CONFIG_SPL_BUILD
 

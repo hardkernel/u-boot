@@ -1664,6 +1664,12 @@ config CMD_UBIFS
 
 menu "ODROID commands"
 
+config CMD_ODROID_ADC
+	bool "adc command - read saradc channel"
+	depends on TARGET_ODROIDGO2
+	help
+	  saradc read support
+
 config CMD_ODROID_CFGLOAD
 	bool "cfgload command - load boot.ini from FAT partition"
 	depends on TARGET_ODROIDGO2
