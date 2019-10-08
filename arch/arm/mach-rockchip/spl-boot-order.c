@@ -34,8 +34,22 @@ static int spl_node_to_boot_device(int node)
 {
 	struct udevice *parent;
 
-	if (!uclass_get_device_by_of_offset(UCLASS_SPI, node, &parent))
-		return BOOT_DEVICE_MTD_BLK_SPI_NAND;
+	if (!uclass_get_device_by_of_offset(UCLASS_SPI, node, &parent)) {
+		struct udevice *spi_dev;
+
+		for (device_find_first_child(parent, &spi_dev);
+		     spi_dev;
+		     device_find_next_child(&spi_dev)) {
+			if (device_get_uclass_id(spi_dev) == UCLASS_SPI_FLASH) {
+				return BOOT_DEVICE_MTD_BLK_SPI_NOR;
+			} else if (device_get_uclass_id(spi_dev) == UCLASS_MTD) {
+				return BOOT_DEVICE_MTD_BLK_SPI_NAND;
+			} else {
+				printf("Can not find spi flash device\n");
+				return -ENOSYS;
+			}
+		}
+	}
 
 #ifdef CONFIG_SPL_NAND_SUPPORT
 	if (!rk_nand_init())
