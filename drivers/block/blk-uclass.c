@@ -126,9 +126,30 @@ struct blk_desc *blk_get_devnum_by_typename(const char *if_typename, int devnum)
 
 		/* Find out the parent device uclass */
 		if (device_get_uclass_id(dev->parent) != uclass_id) {
+#ifdef CONFIG_MTD_BLK
+			/*
+			 * The normal mtd block attachment steps are
+			 * UCLASS_BLK -> UCLASS_MTD -> UCLASS_(SPI or NAND).
+			 * Since the spi flash frame is attached to
+			 * UCLASS_SPI_FLASH, this make mistake to find
+			 * the UCLASS_MTD when find the mtd block device.
+			 * Fix it here when enable CONFIG_MTD_BLK.
+			 */
+			if ((if_type == IF_TYPE_MTD) &&
+			    (devnum == BLK_MTD_SPI_NOR)) {
+				debug("Fix the spi flash uclass different\n");
+			} else {
+				debug("%s: parent uclass %d, this dev %d\n",
+				      __func__,
+				      device_get_uclass_id(dev->parent),
+				      uclass_id);
+				continue;
+			}
+#else
 			debug("%s: parent uclass %d, this dev %d\n", __func__,
 			      device_get_uclass_id(dev->parent), uclass_id);
 			continue;
+#endif
 		}
 
 		if (device_probe(dev))
