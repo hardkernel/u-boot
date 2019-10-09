@@ -663,6 +663,7 @@ static int rockchip_crypto_probe(struct udevice *dev)
 static const struct udevice_id rockchip_crypto_ids[] = {
 	{ .compatible = "rockchip,px30-crypto" },
 	{ .compatible = "rockchip,rk1808-crypto" },
+	{ .compatible = "rockchip,rk3308-crypto" },
 	{ }
 };
 
