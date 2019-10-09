@@ -494,12 +494,18 @@ static int rockchip_sfc_xfer(struct udevice *dev, unsigned int bitlen,
 		case 6: /* Nor >16MB 0x6b dummy op */
 			sfc->addr_bits = SFC_ADDR_32BITS;
 			sfc->dummy_bits = 8;
-			sfc->addr = pcmd[4] | (pcmd[3] << 8) | (pcmd[2] << 16)| (pcmd[1] << 24);
+			sfc->addr = pcmd[4] | (pcmd[3] << 8) | (pcmd[2] << 16) | (pcmd[1] << 24);
 			break;
 		case 5: /* Nor <=16MB 0x6b dummy op, Nor >16MB no dummy op */
-			sfc->addr_bits = SFC_ADDR_32BITS;
-			sfc->dummy_bits = 0;
-			sfc->addr = pcmd[4] | (pcmd[3] << 8) | (pcmd[2] << 16)| (pcmd[1] << 24);
+			if (sfc->cmd == 0x6b) {
+				sfc->addr_bits = SFC_ADDR_24BITS;
+				sfc->dummy_bits = 8;
+				sfc->addr = pcmd[3] | (pcmd[2] << 8) | (pcmd[1] << 16);
+			} else {
+				sfc->addr_bits = SFC_ADDR_32BITS;
+				sfc->dummy_bits = 0;
+				sfc->addr = pcmd[4] | (pcmd[3] << 8) | (pcmd[2] << 16) | (pcmd[1] << 24);
+			}
 			break;
 		case 4: /* Nand erase and read, Nor <=16MB no dummy op */
 			sfc->addr_bits = SFC_ADDR_24BITS;
