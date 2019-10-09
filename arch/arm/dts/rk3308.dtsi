@@ -245,6 +245,15 @@
 		};
 	};
 
+	crypto: crypto@ff2f0000 {
+		compatible = "rockchip,rk3308-crypto";
+		reg = <0x0 0xff2f0000 0x0 0x4000>;
+		clock-names = "sclk_crypto", "apkclk_crypto";
+		clocks = <&cru SCLK_CRYPTO>, <&cru SCLK_CRYPTO_APK>;
+		clock-frequency = <200000000>, <300000000>;
+		status = "disabled";
+	};
+
 	pwm0: pwm@ff180000 {
 		compatible = "rockchip,rk3308-pwm", "rockchip,rk3328-pwm";
 		reg = <0x0 0xff180000 0x0 0x10>;

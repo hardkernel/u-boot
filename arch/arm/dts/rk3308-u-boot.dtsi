@@ -59,6 +59,11 @@
 	};
 };
 
+&crypto {
+	u-boot,dm-pre-reloc;
+	status = "okay";
+};
+
 &saradc {
 	u-boot,dm-pre-reloc;
 	status = "okay";
