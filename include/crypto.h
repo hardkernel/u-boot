@@ -18,6 +18,8 @@
 #define CRYPTO_RSA3072		BIT(13)
 #define CRYPTO_RSA4096		BIT(14)
 
+#define CRYPTO_TRNG		BIT(15)
+
 #define BYTE2WORD(bytes)	((bytes) / 4)
 #define BITS2BYTE(nbits)	((nbits) / 8)
 #define BITS2WORD(nbits)	((nbits) / 32)
@@ -47,6 +49,9 @@ struct dm_crypto_ops {
 	/* RSA verify */
 	int (*rsa_verify)(struct udevice *dev, rsa_key *ctx,
 			  u8 *sign, u8 *output);
+
+	/* TRNG get */
+	int (*get_trng)(struct udevice *dev, u8 *output, u32 len);
 };
 
 /**
@@ -122,5 +127,16 @@ int crypto_sha_csum(struct udevice *dev, sha_context *ctx,
  * @return 0 on success, otherwise failed
  */
 int crypto_rsa_verify(struct udevice *dev, rsa_key *ctx, u8 *sign, u8 *output);
+
+/**
+ * crypto_get_trng() - Crypto get trng
+ *
+ * @dev: crypto device
+ * @output: output trng data
+ * @len: trng len to get
+ *
+ * @return 0 on success, otherwise failed
+ */
+int crypto_get_trng(struct udevice *dev, u8 *output, u32 len);
 
 #endif
