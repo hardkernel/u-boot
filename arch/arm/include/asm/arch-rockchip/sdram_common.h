@@ -6,7 +6,8 @@
 #ifndef _ASM_ARCH_SDRAM_SHARE_H
 #define _ASM_ARCH_SDRAM_SHARE_H
 
-#define MHZ		1000000
+#define MHZ		(1000000)
+#define PATTERN		(0x5aa5f00f)
 
 struct sdram_cap_info {
 	unsigned int rank;
@@ -33,7 +34,6 @@ struct sdram_base_params {
 	unsigned int odt;
 };
 
-#ifdef CONFIG_SDRAM_COMMON_OSREG
 /*
  * sys_reg bitfield struct
  * [31]		row_3_4_ch1
@@ -107,157 +107,6 @@ struct sdram_base_params {
 void sdram_org_config(struct sdram_cap_info *cap_info,
 		      struct sdram_base_params *base,
 		      u32 *p_os_reg2, u32 *p_os_reg3, u32 channel);
-#endif
-
-#if defined(CONFIG_SDRAM_COMMON_MSCH_PX30) || \
-	defined(CONFIG_SDRAM_COMMON_MSCH_RK3399)
-union noc_ddrtiminga0 {
-	u32 d32;
-	struct {
-		unsigned acttoact : 6;
-		unsigned reserved0 : 2;
-		unsigned rdtomiss : 6;
-		unsigned reserved1 : 2;
-		unsigned wrtomiss : 6;
-		unsigned reserved2 : 2;
-		unsigned readlatency : 8;
-	} b;
-};
-
-union noc_ddrtimingb0 {
-	u32 d32;
-	struct {
-		unsigned rdtowr : 5;
-		unsigned reserved0 : 3;
-		unsigned wrtord : 5;
-		unsigned reserved1 : 3;
-		unsigned rrd : 4;
-		unsigned reserved2 : 4;
-		unsigned faw : 6;
-		unsigned reserved3 : 2;
-	} b;
-};
-
-union noc_ddrtimingc0 {
-	u32 d32;
-	struct {
-		unsigned burstpenalty : 4;
-		unsigned reserved0 : 4;
-		unsigned wrtomwr : 6;
-		unsigned reserved1 : 18;
-	} b;
-};
-
-union noc_devtodev0 {
-	u32 d32;
-	struct {
-		unsigned busrdtord : 3;
-		unsigned reserved0 : 1;
-		unsigned busrdtowr : 3;
-		unsigned reserved1 : 1;
-		unsigned buswrtord : 3;
-		unsigned reserved2 : 1;
-		unsigned buswrtowr : 3;
-		unsigned reserved3 : 17;
-	} b;
-};
-
-union noc_ddrmode {
-	u32 d32;
-	struct {
-		unsigned autoprecharge : 1;
-		unsigned bypassfiltering : 1;
-		unsigned fawbank : 1;
-		unsigned burstsize : 2;
-		unsigned mwrsize : 2;
-		unsigned reserved2 : 1;
-		unsigned forceorder : 8;
-		unsigned forceorderstate : 8;
-		unsigned reserved3 : 8;
-	} b;
-};
-
-union noc_ddr4timing {
-	u32 d32;
-	struct {
-		unsigned ccdl : 3;
-		unsigned wrtordl : 5;
-		unsigned rrdl : 4;
-		unsigned reserved1 : 20;
-	} b;
-};
-#endif
-
-#ifdef CONFIG_SDRAM_COMMON_MSCH_PX30
-struct msch_regs {
-	u32 coreid;
-	u32 revisionid;
-	u32 deviceconf;
-	u32 devicesize;
-	u32 ddrtiminga0;
-	u32 ddrtimingb0;
-	u32 ddrtimingc0;
-	u32 devtodev0;
-	u32 reserved1[(0x110 - 0x20) / 4];
-	u32 ddrmode;
-	u32 ddr4timing;
-	u32 reserved2[(0x1000 - 0x118) / 4];
-	u32 agingx0;
-	u32 reserved3[(0x1040 - 0x1004) / 4];
-	u32 aging0;
-	u32 aging1;
-	u32 aging2;
-	u32 aging3;
-};
-
-struct sdram_msch_timings {
-	union noc_ddrtiminga0 ddrtiminga0;
-	union noc_ddrtimingb0 ddrtimingb0;
-	union noc_ddrtimingc0 ddrtimingc0;
-	union noc_devtodev0 devtodev0;
-	union noc_ddrmode ddrmode;
-	union noc_ddr4timing ddr4timing;
-	u32 agingx0;
-};
-
-void sdram_msch_config(struct msch_regs *msch,
-		       struct sdram_msch_timings *noc_timings,
-		       struct sdram_cap_info *cap_info,
-		       struct sdram_base_params *base);
-#endif
-
-#ifdef CONFIG_SDRAM_COMMON_MSCH_RK3399
-struct msch_regs {
-	u32 coreid;
-	u32 revisionid;
-	u32 ddrconf;
-	u32 ddrsize;
-	union noc_ddrtiminga0 ddrtiminga0;
-	union noc_ddrtimingb0 ddrtimingb0;
-	union noc_ddrtimingc0 ddrtimingc0;
-	union noc_devtodev0 devtodev0;
-	u32 reserved0[(0x110 - 0x20) / 4];
-	union noc_ddrmode ddrmode;
-	u32 reserved1[(0x1000 - 0x114) / 4];
-	u32 agingx0;
-};
-
-struct sdram_msch_timings {
-	union noc_ddrtiminga0 ddrtiminga0;
-	union noc_ddrtimingb0 ddrtimingb0;
-	union noc_ddrtimingc0 ddrtimingc0;
-	union noc_devtodev0 devtodev0;
-	union noc_ddrmode ddrmode;
-	u32 agingx0;
-};
-
-void sdram_msch_config(struct msch_regs *msch,
-		       struct sdram_msch_timings *noc_timings);
-#endif
-
-#ifdef CONFIG_SDRAM_COMMON_CAP_DETECT
-
-#define PATTERN				(0x5aa5f00f)
 
 int sdram_detect_bw(struct sdram_cap_info *cap_info);
 int sdram_detect_cs(struct sdram_cap_info *cap_info);
@@ -274,7 +123,6 @@ int sdram_detect_row_3_4(struct sdram_cap_info *cap_info,
 			 u32 coltmp, u32 bktmp);
 int sdram_detect_high_row(struct sdram_cap_info *cap_info);
 int sdram_detect_cs1_row(struct sdram_cap_info *cap_info, u32 dram_type);
-#endif
 
 void sdram_print_dram_type(unsigned char dramtype);
 void sdram_print_ddr_info(struct sdram_cap_info *cap_info,

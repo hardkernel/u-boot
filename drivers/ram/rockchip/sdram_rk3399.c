@@ -1795,6 +1795,21 @@ static void set_ddrconfig(const struct chan_info *chan,
 	       &ddr_msch_regs->ddrsize);
 }
 
+static void sdram_msch_config(struct msch_regs *msch,
+			      struct sdram_msch_timings *noc_timings)
+{
+	writel(noc_timings->ddrtiminga0.d32,
+	       &msch->ddrtiminga0.d32);
+	writel(noc_timings->ddrtimingb0.d32,
+	       &msch->ddrtimingb0.d32);
+	writel(noc_timings->ddrtimingc0.d32,
+	       &msch->ddrtimingc0.d32);
+	writel(noc_timings->devtodev0.d32,
+	       &msch->devtodev0.d32);
+	writel(noc_timings->ddrmode.d32,
+	       &msch->ddrmode.d32);
+}
+
 static void dram_all_config(struct dram_info *dram,
 			    struct rk3399_sdram_params *sdram_params)
 {

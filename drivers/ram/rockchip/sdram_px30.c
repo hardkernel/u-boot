@@ -301,6 +301,37 @@ static void set_ddrconfig(struct dram_info *dram, u32 ddrconfig)
 	rk_clrsetreg(&dram->grf->soc_noc_con[1], 0x3 << 14, 0 << 14);
 }
 
+static void sdram_msch_config(struct msch_regs *msch,
+			      struct sdram_msch_timings *noc_timings,
+			      struct sdram_cap_info *cap_info,
+			      struct sdram_base_params *base)
+{
+	u64 cs_cap[2];
+
+	cs_cap[0] = sdram_get_cs_cap(cap_info, 0, base->dramtype);
+	cs_cap[1] = sdram_get_cs_cap(cap_info, 1, base->dramtype);
+	writel(((((cs_cap[1] >> 20) / 64) & 0xff) << 8) |
+			(((cs_cap[0] >> 20) / 64) & 0xff),
+			&msch->devicesize);
+
+	writel(noc_timings->ddrtiminga0.d32,
+	       &msch->ddrtiminga0);
+	writel(noc_timings->ddrtimingb0.d32,
+	       &msch->ddrtimingb0);
+	writel(noc_timings->ddrtimingc0.d32,
+	       &msch->ddrtimingc0);
+	writel(noc_timings->devtodev0.d32,
+	       &msch->devtodev0);
+	writel(noc_timings->ddrmode.d32, &msch->ddrmode);
+	writel(noc_timings->ddr4timing.d32,
+	       &msch->ddr4timing);
+	writel(noc_timings->agingx0, &msch->agingx0);
+	writel(noc_timings->agingx0, &msch->aging0);
+	writel(noc_timings->agingx0, &msch->aging1);
+	writel(noc_timings->agingx0, &msch->aging2);
+	writel(noc_timings->agingx0, &msch->aging3);
+}
+
 static void dram_all_config(struct dram_info *dram,
 			    struct px30_sdram_params *sdram_params)
 {

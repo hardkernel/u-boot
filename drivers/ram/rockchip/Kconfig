@@ -8,19 +8,3 @@ config ROCKCHIP_SDRAM_COMMON
 	depends on TPL_RAM || SPL_RAM
 	help
 	  This enable sdram common driver
-
-config SDRAM_COMMON_CAP_DETECT
-	bool "Enable rockchip sdram capacity detect driver"
-	depends on ROCKCHIP_SDRAM_COMMON
-
-config SDRAM_COMMON_OSREG
-	bool "Enable rockchip sdram set sys os_reg driver"
-	depends on ROCKCHIP_SDRAM_COMMON
-
-config SDRAM_COMMON_MSCH_RK3399
-	bool "Enable rockchip sdram set RK3399 msch driver"
-	depends on ROCKCHIP_SDRAM_COMMON
-
-config SDRAM_COMMON_MSCH_PX30
-	bool "Enable rockchip sdram set PX30 msch driver"
-	depends on ROCKCHIP_SDRAM_COMMON
