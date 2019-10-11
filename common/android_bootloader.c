@@ -750,6 +750,22 @@ static int android_get_dtbo(ulong *fdt_dtbo,
 	else
 		part_name = PART_DTBO;
 
+#ifdef CONFIG_ANDROID_AB
+	char slot_suffix[3] = {0};
+	char *part_name_temp = PART_DTBO;
+
+	if (rk_avb_get_current_slot(slot_suffix)) {
+		printf("%s: rk_avb_get_current_slot failed !\n", __func__);
+		return -ENODEV;
+	}
+	part_name = android_str_append(part_name_temp, slot_suffix);
+	if (!part_name) {
+		printf("%s: android_str_append failed !\n", __func__);
+		return -EINVAL;
+	}
+	debug("%s: part_name=%s\n", __func__, part_name);
+#endif
+
 	/* Get partition info */
 	dev_desc = rockchip_get_bootdev();
 	if (!dev_desc) {
@@ -862,6 +878,22 @@ int android_fdt_overlay_apply(void *fdt_addr)
 		part_name = PART_RECOVERY;
 	else
 		part_name = PART_BOOT;
+
+#ifdef CONFIG_ANDROID_AB
+	char slot_suffix[3] = {0};
+	char *part_name_temp = PART_BOOT;
+
+	if (rk_avb_get_current_slot(slot_suffix)) {
+		printf("%s: rk_avb_get_current_slot failed !\n", __func__);
+		return -ENODEV;
+	}
+	part_name = android_str_append(part_name_temp, slot_suffix);
+	if (!part_name) {
+		printf("%s: android_str_append failed !\n", __func__);
+		return -EINVAL;
+	}
+	printf("%s: part_name=%s\n", __func__, part_name);
+#endif
 
 	/* Get partition info */
 	dev_desc = rockchip_get_bootdev();
