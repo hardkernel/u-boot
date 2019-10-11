@@ -1549,6 +1549,99 @@ static int do_rockchip_show_bmp(cmd_tbl_t *cmdtp, int flag, int argc,
 	return 0;
 }
 
+#if defined(CONFIG_TARGET_ODROIDGO2)
+static int load_bmp(struct logo_info *logo, const char *bmp_addr)
+{
+	unsigned long size, dst;
+	struct bmp_header *header;
+
+	if (!logo || !bmp_addr)
+		return -EINVAL;
+
+	header = (struct bmp_header *)simple_strtoul(bmp_addr, NULL, 16);
+
+	if ((header->signature[0] != 'B') || (header->signature[1] != 'M')) {
+		printf("%s : bmp addr = 0x%p, bmp signature error!\n",
+			__func__, header);
+		return -1;
+	}
+	if (header->bit_count != 24) {
+		printf("%s : unsupport %d bpp!, only support is 24 bpp\n",
+			__func__, header->bit_count);
+		return -1;
+	}
+
+	/* bmp info load */
+	logo->bpp	= get_unaligned_le16(&header->bit_count);
+	logo->width	= get_unaligned_le32(&header->width);
+	logo->height	= get_unaligned_le32(&header->height);
+	logo->offset	= get_unaligned_le32(&header->data_offset);
+	size		= get_unaligned_le32(&header->file_size);
+
+	/* display buffer is at the end of FB memory */
+	/* fb memory size = DRM_ROCKCHIP_FB_SIZE + MEMORY_POOL_SIZE */
+	/* logo use memory start = fb_base + DRM_ROCKCHIP_FB_SIZE */
+	dst = (memory_start + MEMORY_POOL_SIZE) - size;
+
+	memset((void *)dst, 0x00, size);
+
+	if (bmpdecoder((void *)header, (void *)dst, logo->bpp)) {
+		printf("%s : failed to decode bmp at 0x%p\n",
+			__func__, header);
+		return -1;
+	}
+
+	/* calculate flush memory size */
+	size = logo->width * logo->height * logo->bpp >> 3;
+	/* flush display buffer cache */
+	flush_dcache_range((ulong)dst,
+		ALIGN((ulong)dst + size,
+		CONFIG_SYS_CACHELINE_SIZE));
+
+	logo->ymirror = 1;
+	logo->mem = (void *)dst;
+
+	return 0;
+}
+
+void show_bmp(const char *bmp_addr)
+{
+	struct display_state *s;
+	list_for_each_entry(s, &rockchip_display_list, head) {
+		s->logo.mode = ROCKCHIP_DISPLAY_FULLSCREEN;
+		if (load_bmp(&s->logo, bmp_addr)) {
+			display_disable(s);
+			continue;
+		}
+		display_logo(s);
+	}
+}
+
+static int do_show_bmp(cmd_tbl_t *cmdtp, int flag, int argc,
+				char *const argv[])
+{
+	struct udevice *dev;
+
+	if (uclass_get_device(UCLASS_VIDEO, 0, &dev)) {
+		printf("%s: UCLASS_VIDEO load fail!\n", __func__);
+		return CMD_RET_FAILURE;
+	}
+
+	if (argc != 2)
+		return CMD_RET_USAGE;
+
+	show_bmp(argv[1]);
+
+	return 0;
+}
+
+U_BOOT_CMD(
+	show_bmp, 2, 1, do_show_bmp,
+	"Display a bmp image loaded in memory",
+	" <bmp_load_addr>"
+);
+#endif
+
 U_BOOT_CMD(
 	rockchip_show_logo, 1, 1, do_rockchip_logo_show,
 	"load and display log from resource partition",
