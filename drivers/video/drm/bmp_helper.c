@@ -221,7 +221,17 @@ int bmpdecoder(void *bmp_addr, void *pdst, int dst_bpp)
 			src += stride * (height - 1);
 
 		for (i = 0; i < height; i++) {
+#if defined(CONFIG_TARGET_ODROIDGO2)
+			/* odroidgo2 lcd color order is bgr */
+			int cnt;
+			for (cnt = 0; cnt < width; cnt++) {
+				*(dst + cnt * 3 + 0) = *(src + cnt * 3 + 2);
+				*(dst + cnt * 3 + 1) = *(src + cnt * 3 + 1);
+				*(dst + cnt * 3 + 2) = *(src + cnt * 3 + 0);
+			}
+#else
 			memcpy(dst, src, 3 * width);
+#endif
 			dst += stride;
 			src += stride;
 			if (flip)
