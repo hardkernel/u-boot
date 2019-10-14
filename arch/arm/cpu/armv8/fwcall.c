@@ -12,6 +12,8 @@
 #include <asm/macro.h>
 #include <asm/psci.h>
 #include <asm/system.h>
+#include <dm.h>
+#include <power/pmic.h>
 
 /*
  * Issue the hypervisor call
@@ -118,6 +120,20 @@ void __noreturn __efi_runtime psci_system_off(void)
 #ifdef CONFIG_CMD_POWEROFF
 int do_poweroff(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
+	int ret;
+	struct udevice *pmic;
+
+	ret = uclass_get_device(UCLASS_PMIC, 0, &pmic);
+	if (ret) {
+		if (ret == -ENODEV)
+			debug("Can't find PMIC\n");
+		else
+			debug("Get UCLASS PMIC failed: %d\n", ret);
+		return ret;
+	}
+
+	pmic_shutdown(pmic);
+
 	puts("poweroff ...\n");
 
 	udelay(50000); /* wait 50 ms */
