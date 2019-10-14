@@ -104,13 +104,16 @@ static int do_rkimg_test(cmd_tbl_t *cmdtp, int flag, int argc,
 
 	if (buffer[0] == 0xFCDC8C3B) {
 		printf("Found IDB in SDcard\n");
+		ret = CMD_RET_SUCCESS;
 		if (0 == buffer[128 + 104 / 4]) /* TAG in IDB */
 			env_update("bootargs", "sdfwupdate");
+	} else {
+		ret = CMD_RET_FAILURE;
 	}
 
 	free(buffer);
 
-	return CMD_RET_SUCCESS;
+	return ret;
 }
 
 U_BOOT_CMD(
