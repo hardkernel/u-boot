@@ -1676,6 +1676,12 @@ config CMD_ODROID_CFGLOAD
 	help
 	  cfgload support
 
+config CMD_ODROID_BATTERY
+	bool "battery command - read battery infomation"
+	depends on TARGET_ODROIDGO2
+	help
+	  battery read support
+
 endmenu
 
 endmenu
