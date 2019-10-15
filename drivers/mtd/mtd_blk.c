@@ -177,17 +177,31 @@ static int mtd_blk_probe(struct udevice *udev)
 {
 	struct mtd_info *mtd = dev_get_uclass_priv(udev->parent);
 	struct blk_desc *desc = dev_get_uclass_platdata(udev);
+	int ret, i;
 
 	desc->bdev->priv = mtd;
 	sprintf(desc->vendor, "0x%.4x", 0x2207);
 	memcpy(desc->product, mtd->name, strlen(mtd->name));
 	memcpy(desc->revision, "V1.00", sizeof("V1.00"));
 	if (mtd->type == MTD_NANDFLASH) {
-		/* Reserve 4 blocks for BBT(Bad Block Table) */
-		desc->lba = (mtd->size >> 9) - (mtd->erasesize >> 9) * 4;
+		/*
+		 * Find the first useful block in the end,
+		 * and it is the end lba of the nand storage.
+		 */
+		for (i = 0; i < (mtd->size / mtd->erasesize); i++) {
+			ret =  mtd_block_isbad(mtd,
+					       mtd->size - mtd->erasesize * (i + 1));
+			if (!ret) {
+				desc->lba = (mtd->size >> 9) -
+					(mtd->erasesize >> 9) * i;
+				break;
+			}
+		}
 	} else {
 		desc->lba = mtd->size >> 9;
 	}
+
+	debug("MTD: desc->lba is %lx\n", desc->lba);
 
 	return 0;
 }
