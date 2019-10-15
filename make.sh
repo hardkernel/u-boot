@@ -630,9 +630,10 @@ pack_spl_loader_image()
 	# Copy to .temp folder
 	if [ -d ${RKBIN}/.temp ]; then
 		rm ${RKBIN}/.temp -rf
-	else
-		mkdir ${RKBIN}/.temp
 	fi
+
+	mkdir ${RKBIN}/.temp
+
 	cp ${OUTDIR}/spl/u-boot-spl.bin ${RKBIN}/.temp/
 	cp ${OUTDIR}/tpl/u-boot-tpl.bin ${RKBIN}/.temp/
 	cp ${ini} ${RKBIN}/.temp/${RKCHIP_LOADER}MINIALL.ini -f
