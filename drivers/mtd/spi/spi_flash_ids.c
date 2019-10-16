@@ -195,6 +195,9 @@ const struct spi_flash_info spi_flash_ids[] = {
 	{ "xm25qh64a",	   INFO(0x207017, 0x0, 64 * 1024,    128, SECT_4K | RD_DUAL | RD_QUAD) },
 	{ "xm25qh128a",	   INFO(0x207018, 0x0, 64 * 1024,    256, SECT_4K | RD_DUAL | RD_QUAD) },
 #endif
+#ifdef CONFIG_SPI_FLASH_XTX            /* XTX */
+       {"xt25f128b",      INFO(0x0b4018, 0x0,  64 * 1024,   256, RD_FULL | WR_QPP | SECT_4K) },
+#endif
 	{},	/* Empty entry to terminate the list */
 	/*
 	 * Note:
