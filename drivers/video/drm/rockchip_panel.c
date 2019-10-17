@@ -66,6 +66,9 @@ struct rockchip_panel_priv {
 	struct udevice *backlight;
 	struct gpio_desc enable_gpio;
 	struct gpio_desc reset_gpio;
+#if defined(CONFIG_TARGET_ODROIDGO2)
+	struct udevice *backlight_supply;
+#endif
 
 	int cmd_type;
 	struct gpio_desc spi_sdi_gpio;
@@ -264,8 +267,31 @@ static void panel_simple_prepare(struct rockchip_panel *panel)
 	if (priv->prepared)
 		return;
 
-	if (priv->power_supply)
+	if (priv->power_supply) {
+#if defined(CONFIG_TARGET_ODROIDGO2)
+		struct dm_regulator_uclass_platdata *uc_pdata;
+
+		uc_pdata = dev_get_uclass_platdata(priv->power_supply);
+		regulator_set_value(priv->power_supply, uc_pdata->min_uV);
+#endif
 		regulator_set_enable(priv->power_supply, !plat->power_invert);
+	}
+
+#if defined(CONFIG_TARGET_ODROIDGO2)
+	if (priv->backlight_supply) {
+		struct dm_regulator_uclass_platdata *uc_pdata;
+
+		uc_pdata = dev_get_uclass_platdata(priv->backlight_supply);
+		regulator_set_value(priv->backlight_supply, uc_pdata->min_uV);
+
+		ret = regulator_set_enable(priv->backlight_supply, 1);
+		if (ret) {
+			printf("%s: failed to enable backlight supply",
+				__func__);
+			return;
+		}
+	}
+#endif
 
 	if (dm_gpio_is_valid(&priv->enable_gpio))
 		dm_gpio_set_value(&priv->enable_gpio, 1);
@@ -332,6 +358,15 @@ static void panel_simple_unprepare(struct rockchip_panel *panel)
 
 	if (priv->power_supply)
 		regulator_set_enable(priv->power_supply, plat->power_invert);
+
+#if defined(CONFIG_TARGET_ODROIDGO2)
+	if (priv->backlight_supply) {
+		ret = regulator_set_enable(priv->backlight_supply, 0);
+		if (ret)
+			printf("%s: failed to disable backlight supply",
+				__func__);
+	}
+#endif
 
 	if (plat->delay.unprepare)
 		mdelay(plat->delay.unprepare);
@@ -481,6 +516,15 @@ static int rockchip_panel_probe(struct udevice *dev)
 		printf("%s: Cannot get power supply: %d\n", __func__, ret);
 		return ret;
 	}
+
+#if defined(CONFIG_TARGET_ODROIDGO2)
+	ret = uclass_get_device_by_phandle(UCLASS_REGULATOR, dev,
+				   "backlight-supply", &priv->backlight_supply);
+	if (ret && ret != -ENOENT) {
+		printf("%s: Cannot get backlight supply: %d\n", __func__, ret);
+		return ret;
+	}
+#endif
 
 	ret = dev_read_string_index(dev, "rockchip,cmd-type", 0, &cmd_type);
 	if (ret)
