@@ -388,7 +388,6 @@ int board_late_init(void)
 
 	if (get_boot_device() == BOOT_DEVICE_SPI) {
 		setenv("bootdelay", "0");
-		setenv("hdmimode", "480p60hz");
 		setenv("bootcmd", "run boot_spi");
 		run_command("sf probe", 0);
 
@@ -396,6 +395,8 @@ int board_late_init(void)
 			run_command("load mmc 1:1 $loadaddr petitboot.cfg", 0);
 			run_command("ini u-boot", 0);
 			run_command("ini petitboot", 0);
+			if (!strcmp("true", getenv("overwrite")))
+				saveenv();
 		}
 	}
 
