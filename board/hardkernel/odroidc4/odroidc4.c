@@ -33,6 +33,7 @@
 #ifdef CONFIG_AML_SPIFC
 #include <amlogic/spifc.h>
 #endif
+#include <fs.h>
 
 #include <odroid-common.h>
 
@@ -387,13 +388,19 @@ int board_late_init(void)
 
 	if (get_boot_device() == BOOT_DEVICE_SPI) {
 		setenv("bootdelay", "0");
+		setenv("hdmimode", "480p60hz");
 		setenv("bootcmd", "run boot_spi");
 		run_command("sf probe", 0);
+
+		if (file_exists("mmc", "1:1", "petitboot.cfg", FS_TYPE_ANY)) {
+			run_command("load mmc 1:1 $loadaddr petitboot.cfg", 0);
+			run_command("ini u-boot", 0);
+			run_command("ini petitboot", 0);
+		}
 	}
 
 	/* boot logo display - 1080p60hz */
 	run_command("showlogo", 0);
-
 	usbhost_early_poweron();
 
 	return 0;
