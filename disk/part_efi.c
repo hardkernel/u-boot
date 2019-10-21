@@ -80,10 +80,11 @@ static int validate_gpt_header(gpt_header *gpt_h, lbaint_t lba,
 
 	/* Check the GPT header signature */
 	if (le64_to_cpu(gpt_h->signature) != GPT_HEADER_SIGNATURE) {
-		printf("%s signature is wrong: 0x%llX != 0x%llX\n",
-		       "GUID Partition Table Header",
-		       le64_to_cpu(gpt_h->signature),
-		       GPT_HEADER_SIGNATURE);
+		if (le64_to_cpu(gpt_h->signature) != 0)
+			printf("%s signature is wrong: 0x%llX != 0x%llX\n",
+			       "GUID Partition Table Header",
+			       le64_to_cpu(gpt_h->signature),
+			       GPT_HEADER_SIGNATURE);
 		return -1;
 	}
 
