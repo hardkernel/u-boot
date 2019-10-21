@@ -157,7 +157,7 @@ void rockchip_dnl_mode_check(void)
 			do_reset(NULL, 0, 0, NULL);
 		} else {
 			printf("entering recovery mode!\n");
-			env_set("reboot_mode", "recovery");
+			env_set("reboot_mode", "recovery-key");
 		}
 	} else if (is_hotkey(HK_FASTBOOT)) {
 		env_set("reboot_mode", "fastboot");

@@ -255,9 +255,15 @@ int get_bootdev_type(void)
 	return type;
 }
 
+static struct blk_desc *dev_desc;
+
+void rockchip_set_bootdev(struct blk_desc *desc)
+{
+	dev_desc = desc;
+}
+
 struct blk_desc *rockchip_get_bootdev(void)
 {
-	static struct blk_desc *dev_desc = NULL;
 	int dev_type;
 	int devnum;
 
@@ -392,9 +398,12 @@ int rockchip_get_boot_mode(void)
 	 */
 	env_reboot_mode = env_get("reboot_mode");
 	if (env_reboot_mode) {
-		if (!strcmp(env_reboot_mode, "recovery")) {
+		if (!strcmp(env_reboot_mode, "recovery-key")) {
 			boot_mode = BOOT_MODE_RECOVERY;
 			printf("boot mode: recovery (key)\n");
+		} else if (!strcmp(env_reboot_mode, "recovery-usb")) {
+			boot_mode = BOOT_MODE_RECOVERY;
+			printf("boot mode: recovery (usb)\n");
 		} else if (!strcmp(env_reboot_mode, "fastboot")) {
 			boot_mode = BOOT_MODE_BOOTLOADER;
 			printf("boot mode: fastboot\n");

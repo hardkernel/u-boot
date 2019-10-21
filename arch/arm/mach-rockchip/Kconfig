@@ -573,6 +573,13 @@ config ROCKCHIP_RESOURCE_IMAGE
 	  This enables support to get dtb or logo files from
 	  rockchip resource image format partition.
 
+config ROCKCHIP_USB_BOOT
+	bool "Enable support for rockchip U-disk boot"
+	depends on USB
+	default n
+	help
+	  This enables support for rockchip U-disk boot.
+
 config ROCKCHIP_EARLY_DISTRO_DTB
 	bool "Enable support for distro dtb early"
 	depends on DISTRO_DEFAULTS && USING_KERNEL_DTB

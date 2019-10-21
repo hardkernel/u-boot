@@ -675,7 +675,7 @@ int do_avb_flow(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		 */
 		char *env_rebootmode = env_get("reboot_mode");
 
-		if (env_rebootmode && !strcmp("recovery", env_rebootmode))
+		if (env_rebootmode && !strncmp("recovery", env_rebootmode, 8))
 			printf("Enter recovery mode by command 'reboot recovery'!\n");
 		else
 			mode_cmdline = "skip_initramfs";

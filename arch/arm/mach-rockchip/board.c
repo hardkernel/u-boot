@@ -7,6 +7,8 @@
 #include <common.h>
 #include <amp.h>
 #include <bidram.h>
+#include <boot_rkimg.h>
+#include <cli.h>
 #include <clk.h>
 #include <console.h>
 #include <debug_uart.h>
@@ -159,12 +161,52 @@ int fb_set_reboot_flag(void)
 }
 #endif
 
+#ifdef CONFIG_ROCKCHIP_USB_BOOT
+static int boot_from_udisk(void)
+{
+	struct blk_desc *desc;
+	char *devtype;
+	char *devnum;
+
+	devtype = env_get("devtype");
+	devnum = env_get("devnum");
+
+	/* Booting priority: mmc1 > udisk */
+	if (!strcmp(devtype, "mmc") && !strcmp(devnum, "1"))
+		return 0;
+
+	if (!run_command("usb start", -1)) {
+		desc = blk_get_devnum_by_type(IF_TYPE_USB, 0);
+		if (!desc) {
+			printf("No usb device found\n");
+			return -ENODEV;
+		}
+
+		if (!run_command("rkimgtest usb 0", -1)) {
+			rockchip_set_bootdev(desc);
+			env_set("devtype", "usb");
+			env_set("devnum", "0");
+			env_set("reboot_mode", "recovery-usb");
+			printf("Boot from usb 0\n");
+		} else {
+			printf("No usb dev 0 found\n");
+			return -ENODEV;
+		}
+	}
+
+	return 0;
+}
+#endif
+
 int board_late_init(void)
 {
 	rockchip_set_ethaddr();
 	rockchip_set_serialno();
 #if (CONFIG_ROCKCHIP_BOOT_MODE_REG > 0)
 	setup_boot_mode();
+#endif
+#ifdef CONFIG_ROCKCHIP_USB_BOOT
+	boot_from_udisk();
 #endif
 #ifdef CONFIG_DM_CHARGE_DISPLAY
 	charge_display();
@@ -298,19 +340,31 @@ int init_kernel_dtb(void)
 
 	ret = rockchip_read_dtb_file((void *)fdt_addr);
 	if (ret < 0) {
-		printf("Read kernel dtb failed, ret=%d\n", ret);
-		return 0;
+		if (!fdt_check_header(gd->fdt_blob_kern)) {
+			fdt_addr = (ulong)memalign(ARCH_DMA_MINALIGN,
+					fdt_totalsize(gd->fdt_blob_kern));
+			if (!fdt_addr)
+				return -ENOMEM;
+
+			memcpy((void *)fdt_addr, gd->fdt_blob_kern,
+			       fdt_totalsize(gd->fdt_blob_kern));
+			printf("DTB: embedded kern.dtb\n");
+		} else {
+			printf("Failed to get kernel dtb, ret=%d\n", ret);
+			return ret;
+		}
 	}
+
+	gd->fdt_blob = (void *)fdt_addr;
 
 	/*
 	 * There is a phandle miss match between U-Boot and kernel dtb node,
 	 * the typical is cru phandle, we fixup it in U-Boot live dt nodes.
 	 */
-	phandles_fixup((void *)fdt_addr);
+	phandles_fixup((void *)gd->fdt_blob);
 
-	of_live_build((void *)fdt_addr, (struct device_node **)&gd->of_root);
-	dm_scan_fdt((void *)fdt_addr, false);
-	gd->fdt_blob = (void *)fdt_addr;
+	of_live_build((void *)gd->fdt_blob, (struct device_node **)&gd->of_root);
+	dm_scan_fdt((void *)gd->fdt_blob, false);
 
 	/* Reserve 'reserved-memory' */
 	ret = boot_fdt_add_sysmem_rsv_regions((void *)gd->fdt_blob);
