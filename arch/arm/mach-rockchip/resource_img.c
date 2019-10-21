@@ -845,22 +845,21 @@ int rockchip_read_dtb_file(void *fdt_addr)
 	char *dtb_name = DTB_FILE;
 	int size = -ENODEV;
 
-	if (list_empty(&entrys_head)) {
-		if (init_resource_list(NULL)) {
-			/* Load dtb from distro boot.img */
+	if (!get_file_info(NULL, dtb_name)) {
 #ifdef CONFIG_ROCKCHIP_EARLY_DISTRO_DTB
-			printf("Distro DTB: %s\n",
-			       CONFIG_ROCKCHIP_EARLY_DISTRO_DTB_PATH);
-			size = rockchip_read_distro_dtb_file(fdt_addr);
-			if (size < 0)
-				return size;
-			if (!sysmem_alloc_base(MEMBLK_ID_FDT,
-				(phys_addr_t)fdt_addr,
-				ALIGN(size, RK_BLK_SIZE) + CONFIG_SYS_FDT_PAD))
-				return -ENOMEM;
-#endif
+		/* Load dtb from distro boot.img */
+		printf("Distro DTB: %s\n",
+		       CONFIG_ROCKCHIP_EARLY_DISTRO_DTB_PATH);
+		size = rockchip_read_distro_dtb_file(fdt_addr);
+		if (size < 0)
 			return size;
-		}
+
+		if (!sysmem_alloc_base(MEMBLK_ID_FDT,
+			(phys_addr_t)fdt_addr,
+			ALIGN(size, RK_BLK_SIZE) + CONFIG_SYS_FDT_PAD))
+			return -ENOMEM;
+#endif
+		return -ENODEV;
 	}
 
 	/* Find dtb file according to hardware id(GPIO/ADC) */
@@ -887,10 +886,6 @@ int rockchip_read_dtb_file(void *fdt_addr)
 	if (size < 0)
 		return size;
 
-	if (!sysmem_alloc_base(MEMBLK_ID_FDT, (phys_addr_t)fdt_addr,
-			       ALIGN(size, RK_BLK_SIZE) + CONFIG_SYS_FDT_PAD))
-		return -ENOMEM;
-
 	size = rockchip_read_resource_file((void *)fdt_addr, dtb_name, 0, 0);
 	if (size < 0)
 		return size;
@@ -899,6 +894,10 @@ int rockchip_read_dtb_file(void *fdt_addr)
 		printf("Get a bad DTB file\n");
 		return -EBADF;
 	}
+
+	if (!sysmem_alloc_base(MEMBLK_ID_FDT, (phys_addr_t)fdt_addr,
+			       ALIGN(size, RK_BLK_SIZE) + CONFIG_SYS_FDT_PAD))
+		return -ENOMEM;
 
 	/* Apply DTBO */
 #if defined(CONFIG_CMD_DTIMG) && defined(CONFIG_OF_LIBFDT_OVERLAY)
