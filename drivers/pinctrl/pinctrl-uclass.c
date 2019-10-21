@@ -155,7 +155,7 @@ static int pinconfig_post_bind(struct udevice *dev)
 
 UCLASS_DRIVER(pinconfig) = {
 	.id = UCLASS_PINCONFIG,
-#if CONFIG_IS_ENABLED(PINCONFIG_RECURSIVE)
+#if CONFIG_IS_ENABLED(PINCONF_RECURSIVE)
 	.post_bind = pinconfig_post_bind,
 #endif
 	.name = "pinconfig",
@@ -424,9 +424,7 @@ static int __maybe_unused pinctrl_post_bind(struct udevice *dev)
 
 UCLASS_DRIVER(pinctrl) = {
 	.id = UCLASS_PINCTRL,
-#if CONFIG_IS_ENABLED(PINCONF_RECURSIVE)
 	.post_bind = pinctrl_post_bind,
-#endif
 	.flags = DM_UC_FLAG_SEQ_ALIAS,
 	.name = "pinctrl",
 };
