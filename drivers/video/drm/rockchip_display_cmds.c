@@ -301,7 +301,7 @@ int lcd_printf(unsigned long x, unsigned long y, unsigned char align,
 		lcd_x = x;
 		break;
 	}
-	lcd_setcur(lcd_x, y);
+	lcd_setcur(lcd_x, y * VIDEO_FONT_HEIGHT);
 	lcd_putstr(buf);
 	return 0;
 }
