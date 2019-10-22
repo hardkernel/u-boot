@@ -414,7 +414,7 @@ static int do_dump_irqs(cmd_tbl_t *cmdtp, int flag,
 	char *drv_name;
 	int pirq;
 
-	printf(" IRQ    En    Handler       Driver         Name              Count\n");
+	printf(" IRQ    En    Handler       Driver         Name              Trig\n");
 	printf("----------------------------------------------------------------------\n");
 
 	for (pirq = 0; pirq < PLATFORM_MAX_IRQ; pirq++) {

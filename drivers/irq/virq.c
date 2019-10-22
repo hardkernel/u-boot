@@ -38,6 +38,7 @@ struct virq_desc {
 	struct virq_data *virqs;	/* child irq data list */
 	struct udevice *parent;		/* parent device */
 	int pirq;			/* parent irq */
+	int use_count;			/* enable count */
 	int irq_base;			/* child irq base */
 	int irq_end;			/* child irq end */
 	uint reg_stride;
@@ -238,12 +239,12 @@ void virq_chip_generic_handler(int pirq, void *pdata)
 	}
 }
 
-int virq_add_chip(struct udevice *dev, struct virq_chip *chip,
-		  int irq, int enable)
+int virq_add_chip(struct udevice *dev, struct virq_chip *chip, int irq)
 {
 	struct virq_data *vdata;
 	struct virq_desc *desc;
 	uint *status_buf;
+	uint status_reg;
 	uint mask_reg;
 	int ret;
 	int i;
@@ -274,6 +275,7 @@ int virq_add_chip(struct udevice *dev, struct virq_chip *chip,
 	desc->pirq = irq;
 	desc->chip = chip;
 	desc->virqs = vdata;
+	desc->use_count = 0;
 	desc->irq_base = vdata[0].irq;
 	desc->irq_end = vdata[chip->num_irqs - 1].irq;
 	desc->status_buf = status_buf;
@@ -292,10 +294,19 @@ int virq_add_chip(struct udevice *dev, struct virq_chip *chip,
 			       __func__, mask_reg, ret);
 	}
 
+	/* Clear all status */
+	for (i = 0; i < chip->num_regs; i++) {
+		status_reg = reg_base_get(desc, chip->status_base, i);
+		ret = chip->i2c_write(dev, status_reg, ~0U);
+		if (ret)
+			printf("%s: Clear status register 0x%x failed, ret=%d\n",
+			       __func__, status_reg, ret);
+	}
+
 	/* Add parent irq into interrupt framework with generic virq handler */
 	irq_install_handler(irq, virq_chip_generic_handler, dev);
 
-	return enable ? irq_handler_enable(irq) : irq_handler_disable(irq);
+	return irq_handler_disable(irq);
 
 free1:
 	free(desc);
@@ -358,18 +369,41 @@ static int __virq_enable(int irq, int enable)
 
 static int virq_enable(int irq)
 {
+	struct virq_desc *desc = find_virq_desc(irq);
+	int ret;
+
 	if (bad_virq(irq))
 		return -EINVAL;
 
-	return __virq_enable(irq, 1);
+	ret = __virq_enable(irq, 1);
+	if (!ret) {
+		if (desc->use_count == 0)
+			irq_handler_enable(desc->pirq);
+		desc->use_count++;
+	}
+
+	return ret;
 }
 
 static int virq_disable(int irq)
 {
+	struct virq_desc *desc = find_virq_desc(irq);
+	int ret;
+
 	if (bad_virq(irq))
 		return -EINVAL;
 
-	return __virq_enable(irq, 0);
+	ret = __virq_enable(irq, 0);
+	if (!ret) {
+		if (desc->use_count <= 0)
+			return ret;
+
+		if (desc->use_count == 1)
+			irq_handler_disable(desc->pirq);
+		desc->use_count--;
+	}
+
+	return ret;
 }
 
 struct irq_chip virq_generic_chip = {
