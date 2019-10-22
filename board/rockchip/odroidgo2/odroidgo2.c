@@ -10,6 +10,9 @@
 #include <asm/gpio.h>
 #include <asm/arch/grf_px30.h>
 #include <asm/arch/hardware.h>
+#include <rockchip_display_cmds.h>
+#include <fat.h>
+#include <version.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -40,6 +43,21 @@ void board_debug_uart2m1(void)
 		     CON_IOMUX_UART2SEL_M1 << CON_IOMUX_UART2SEL_SHIFT);
 }
 
+void board_show_logo(void)
+{
+	loff_t len_read;
+
+	lcd_init();
+
+	fs_set_blk_dev("mmc", "1:1", FS_TYPE_FAT);
+	fs_read("1.bmp", 33554432, 0, 0, &len_read);
+	show_bmp(simple_strtoul("2000000", NULL, 16));
+
+	lcd_setfg(255, 255, 0);
+	lcd_printf(0, 18, 1, "%s", U_BOOT_VERSION);
+	lcd_printf(0, 19, 1, "%s", U_BOOT_DATE);
+}
+
 void board_init_sfc_if(void)
 {
 	static struct px30_grf * const grf = (void *)GRF_BASE;
@@ -64,6 +82,9 @@ int rk_board_late_init(void)
 
 	/* set uart2-m1 port as a default debug console */
 	board_debug_uart2m1();
+
+	/* show boot logo and version */
+	board_show_logo();
 
 	/* set sfc alternate function */
 	board_init_sfc_if();
