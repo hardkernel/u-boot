@@ -81,7 +81,6 @@ static struct nand_info spi_nand_tbl[] = {
 	{0xC8C1, 4, 64, 1, 1024, 0x13, 0x10, 0x03, 0x02, 0x6B, 0x32, 0xD8, 0x0C, 18, 8, 0xB0, 0, 4, 8, &sfc_nand_ecc_status_sp3},
 };
 
-static u8 id_byte[8];
 static struct nand_info *p_nand_info;
 static u32 gp_page_buf[SFC_NAND_PAGE_MAX_SIZE / 4];
 static struct SFNAND_DEV sfc_nand_dev;
@@ -183,10 +182,10 @@ static int sfc_nand_wait_busy(u8 *data, int timeout)
 
 /*
  * ecc default:
- * 0, No bit errors were detected
- * 1, Bit errors were detected and corrected.
- * 2, Multiple bit errors were detected and not corrected.
- * 3, Bits errors were detected and corrected, bit error count
+ * 0x00, No bit errors were detected
+ * 0x01, Bit errors were detected and corrected.
+ * 0x10, Multiple bit errors were detected and not corrected.
+ * 0x11, Bits errors were detected and corrected, bit error count
  *	exceed the bit flip detection threshold
  */
 static u32 sfc_nand_ecc_status(void)
@@ -261,7 +260,7 @@ u32 sfc_nand_ecc_status_sp1(void)
  * [0x0100, 0x0111], Bit errors were detected and corrected. Not
  *	reach Flipping Bits;
  * [0x1000, 0x1011], Multiple bit errors were detected and
- *	not corrected;
+ *	not corrected.
  * [0x1100, 0x1111], reserved.
  */
 u32 sfc_nand_ecc_status_sp2(void)
@@ -416,12 +415,13 @@ u32 sfc_nand_ecc_status_sp5(void)
 	return ret;
 }
 
-static u32 sfc_nand_erase_block(u8 cs, u32 addr)
+u32 sfc_nand_erase_block(u8 cs, u32 addr)
 {
 	int ret;
 	union SFCCMD_DATA sfcmd;
 	u8 status;
 
+	rkflash_print_dio("%s %x\n", __func__, addr);
 	sfcmd.d32 = 0;
 	sfcmd.b.cmd = p_nand_info->block_erase_cmd;
 	sfcmd.b.addrbits = SFC_ADDR_24BITS;
@@ -432,10 +432,11 @@ static u32 sfc_nand_erase_block(u8 cs, u32 addr)
 	ret = sfc_nand_wait_busy(&status, 1000 * 1000);
 	if (status & (1 << 2))
 		return SFC_NAND_PROG_ERASE_ERROR;
+
 	return ret;
 }
 
-static u32 sfc_nand_prog_page(u8 cs, u32 addr, u32 *p_data, u32 *p_spare)
+static u32 sfc_nand_prog_page_raw(u8 cs, u32 addr, u32 *p_page_buf)
 {
 	int ret;
 	u32 plane;
@@ -443,19 +444,8 @@ static u32 sfc_nand_prog_page(u8 cs, u32 addr, u32 *p_data, u32 *p_spare)
 	union SFCCTRL_DATA sfctrl;
 	u8 status;
 	u32 sec_per_page = p_nand_info->sec_per_page;
-	u32 spare_offs_1 = p_nand_info->spare_offs_1;
-	u32 spare_offs_2 = p_nand_info->spare_offs_2;
-	u32 data_size = sec_per_page * 512;
 
-	PRINT_SFC_I("%s %x %x %x\n", __func__, addr, p_data[0], p_spare[0]);
-	memcpy(gp_page_buf, p_data, data_size);
-	ftl_memset(&gp_page_buf[data_size / 4], 0xff, sec_per_page * 16);
-	gp_page_buf[(data_size + spare_offs_1) / 4] = p_spare[0];
-	gp_page_buf[(data_size + spare_offs_2) / 4] = p_spare[1];
-	if (sec_per_page == 8) {
-		gp_page_buf[(data_size + spare_offs_1) / 4 + 1] = p_spare[2];
-		gp_page_buf[(data_size + spare_offs_2) / 4 + 1] = p_spare[3];
-	}
+	rkflash_print_dio("%s %x %x\n", __func__, addr, p_page_buf[0]);
 	sfc_nand_write_en();
 	if (sfc_nand_dev.prog_lines == DATA_LINES_X4 &&
 	    p_nand_info->feature & FEA_SOFT_QOP_BIT &&
@@ -472,40 +462,58 @@ static u32 sfc_nand_prog_page(u8 cs, u32 addr, u32 *p_data, u32 *p_spare)
 	sfctrl.b.datalines = sfc_nand_dev.prog_lines;
 	sfctrl.b.addrbits = 16;
 	plane = p_nand_info->plane_per_die == 2 ? ((addr >> 6) & 0x1) << 12 : 0;
-	sfc_request(sfcmd.d32, sfctrl.d32, plane, gp_page_buf);
+	sfc_request(sfcmd.d32, sfctrl.d32, plane, p_page_buf);
 
 	sfcmd.d32 = 0;
 	sfcmd.b.cmd = p_nand_info->page_prog_cmd;
 	sfcmd.b.addrbits = SFC_ADDR_24BITS;
 	sfcmd.b.datasize = 0;
 	sfcmd.b.rw = SFC_WRITE;
-	ret = sfc_request(sfcmd.d32, 0, addr, p_data);
+	ret = sfc_request(sfcmd.d32, 0, addr, p_page_buf);
 	if (ret != SFC_OK)
 		return ret;
 	ret = sfc_nand_wait_busy(&status, 1000 * 1000);
 	if (status & (1 << 3))
 		return SFC_NAND_PROG_ERASE_ERROR;
+
 	return ret;
 }
 
-static u32 sfc_nand_read_page(u8 cs, u32 addr, u32 *p_data, u32 *p_spare)
+u32 sfc_nand_prog_page(u8 cs, u32 addr, u32 *p_data, u32 *p_spare)
+{
+	int ret;
+	u32 sec_per_page = p_nand_info->sec_per_page;
+	u32 data_size = sec_per_page * SFC_NAND_SECTOR_SIZE;
+	u32 spare_offs_1 = p_nand_info->spare_offs_1;
+	u32 spare_offs_2 = p_nand_info->spare_offs_2;
+
+	memcpy(gp_page_buf, p_data, data_size);
+	memset(&gp_page_buf[data_size / 4], 0xff, sec_per_page * 16);
+	gp_page_buf[(data_size + spare_offs_1) / 4] = p_spare[0];
+	gp_page_buf[(data_size + spare_offs_2) / 4] = p_spare[1];
+	if (sec_per_page == 8) {
+		gp_page_buf[(data_size + spare_offs_1) / 4 + 1] = p_spare[2];
+		gp_page_buf[(data_size + spare_offs_2) / 4 + 1] = p_spare[3];
+	}
+	ret = sfc_nand_prog_page_raw(cs, addr, gp_page_buf);
+
+	return ret;
+}
+
+static u32 sfc_nand_read_page_raw(u8 cs, u32 addr, u32 *p_page_buf)
 {
 	int ret;
 	u32 plane;
 	union SFCCMD_DATA sfcmd;
 	union SFCCTRL_DATA sfctrl;
 	u32 ecc_result;
-	u32 spare_offs_1 = p_nand_info->spare_offs_1;
-	u32 spare_offs_2 = p_nand_info->spare_offs_2;
 	u32 sec_per_page = p_nand_info->sec_per_page;
-	u32 data_size = sec_per_page * 512;
 
-	PRINT_SFC_I("%s %x %x %x\n", __func__, addr, p_data[0], p_spare[0]);
 	sfcmd.d32 = 0;
 	sfcmd.b.cmd = p_nand_info->page_read_cmd;
 	sfcmd.b.datasize = 0;
 	sfcmd.b.addrbits = SFC_ADDR_24BITS;
-	sfc_request(sfcmd.d32, 0, addr, p_data);
+	sfc_request(sfcmd.d32, 0, addr, p_page_buf);
 
 	if (p_nand_info->ecc_status)
 		ecc_result = p_nand_info->ecc_status();
@@ -525,7 +533,24 @@ static u32 sfc_nand_read_page(u8 cs, u32 addr, u32 *p_data, u32 *p_spare)
 	sfctrl.b.datalines = sfc_nand_dev.read_lines;
 
 	plane = p_nand_info->plane_per_die == 2 ? ((addr >> 6) & 0x1) << 12 : 0;
-	ret = sfc_request(sfcmd.d32, sfctrl.d32, plane << 8, gp_page_buf);
+	ret = sfc_request(sfcmd.d32, sfctrl.d32, plane << 8, p_page_buf);
+	rkflash_print_dio("%s %x %x\n", __func__, addr, p_page_buf[0]);
+
+	if (ret != SFC_OK)
+		return SFC_NAND_HW_ERROR;
+
+	return ecc_result;
+}
+
+u32 sfc_nand_read_page(u8 cs, u32 addr, u32 *p_data, u32 *p_spare)
+{
+	int ret;
+	u32 sec_per_page = p_nand_info->sec_per_page;
+	u32 data_size = sec_per_page * SFC_NAND_SECTOR_SIZE;
+	u32 spare_offs_1 = p_nand_info->spare_offs_1;
+	u32 spare_offs_2 = p_nand_info->spare_offs_2;
+
+	ret = sfc_nand_read_page_raw(cs, addr, gp_page_buf);
 	memcpy(p_data, gp_page_buf, data_size);
 	p_spare[0] = gp_page_buf[(data_size + spare_offs_1) / 4];
 	p_spare[1] = gp_page_buf[(data_size + spare_offs_2) / 4];
@@ -533,21 +558,50 @@ static u32 sfc_nand_read_page(u8 cs, u32 addr, u32 *p_data, u32 *p_spare)
 		p_spare[2] = gp_page_buf[(data_size + spare_offs_1) / 4 + 1];
 		p_spare[3] = gp_page_buf[(data_size + spare_offs_2) / 4 + 1];
 	}
-	if (ret != SFC_OK)
-		return SFC_NAND_ECC_ERROR;
 
-	if (ecc_result != SFC_NAND_ECC_OK) {
-		PRINT_SFC_E("%s[0x%x], ret=0x%x\n", __func__, addr, ecc_result);
+	if (ret != SFC_NAND_ECC_OK) {
+		rkflash_print_error("%s[0x%x], ret=0x%x\n", __func__, addr, ret);
 		if (p_data)
-			PRINT_SFC_HEX("data:", p_data, 4, 8);
+			rkflash_print_hex("data:", p_data, 4, 8);
 		if (p_spare)
-			PRINT_SFC_HEX("spare:", p_spare, 4, 2);
+			rkflash_print_hex("spare:", p_spare, 4, 2);
 	}
 
-	return ecc_result;
+	return ret;
 }
 
-static int sfc_nand_read_id_raw(u8 *data)
+u32 sfc_nand_check_bad_block(u8 cs, u32 addr)
+{
+	u32 ret;
+	u32 data_size = p_nand_info->sec_per_page * SFC_NAND_SECTOR_SIZE;
+
+	ret = sfc_nand_read_page_raw(cs, addr, gp_page_buf);
+	if (ret)
+		return true;
+	/* Original bad block */
+	if ((gp_page_buf[data_size / 4] & 0xFF) != 0xFF)
+		return true;
+
+	return false;
+}
+
+u32 sfc_nand_mark_bad_block(u8 cs, u32 addr)
+{
+	u32 ret;
+	u32 data_size = p_nand_info->sec_per_page * SFC_NAND_SECTOR_SIZE;
+
+	ret = sfc_nand_read_page_raw(cs, addr, gp_page_buf);
+	if (ret)
+		return SFC_NAND_HW_ERROR;
+	gp_page_buf[data_size / 4] = 0x0;
+	ret = sfc_nand_prog_page_raw(cs, addr, gp_page_buf);
+	if (ret)
+		return SFC_NAND_HW_ERROR;
+
+	return ret;
+}
+
+int sfc_nand_read_id(u8 *data)
 {
 	int ret;
 	union SFCCMD_DATA sfcmd;
@@ -574,9 +628,15 @@ static int sfc_nand_get_bad_block_list(u16 *table, u32 die)
 	u32 *pread;
 	u32 *pspare_read;
 
-	PRINT_SFC_E("%s\n", __func__);
-	pread = ftl_malloc(2048);
+	rkflash_print_info("%s\n", __func__);
+	pread = ftl_malloc(SFC_NAND_PAGE_MAX_SIZE);
 	pspare_read = ftl_malloc(8);
+	if (!pread || !pspare_read) {
+		kfree(pread);
+		kfree(pspare_read);
+		return -1;
+	}
+
 	bad_cnt = 0;
 	blk_per_die = p_nand_info->plane_per_die *
 			p_nand_info->blk_per_plane;
@@ -588,98 +648,16 @@ static int sfc_nand_get_bad_block_list(u16 *table, u32 die)
 		if (pread[0] != 0xFFFFFFFF ||
 		    pspare_read[0] != 0xFFFFFFFF) {
 			table[bad_cnt++] = blk;
-			PRINT_SFC_E("die[%d], bad_blk[%d]\n", die, blk);
+			rkflash_print_error("die[%d], bad_blk[%d]\n", die, blk);
 		}
 	}
 	ftl_free(pread);
 	ftl_free(pspare_read);
+
 	return (int)bad_cnt;
 }
 
-#if SFC_NAND_STRESS_TEST_EN
-
-#define SFC_NAND_PAGE_SIZE	2048
-#define SFC_NAND_SPARE_SIZE	8
-
-static u16 bad_blk_list[1024];
-static u32 pwrite[SFC_NAND_PAGE_SIZE / 4];
-static u32 pread[SFC_NAND_PAGE_SIZE / 4];
-static u32 pspare_write[SFC_NAND_SPARE_SIZE / 4];
-static u32 pspare_read[SFC_NAND_SPARE_SIZE / 4];
-static u32 bad_blk_num;
-static u32 bad_page_num;
-
-static void sfc_nand_test(void)
-{
-	u32 i, blk, page, bad_cnt, page_addr;
-	int ret;
-	u32 pages_num = 64;
-	u32 blk_addr = 64;
-	u32 is_bad_blk = 0;
-
-	PRINT_SFC_E("%s\n", __func__);
-
-	bad_blk_num = 0;
-	bad_page_num = 0;
-	bad_cnt	= sfc_nand_get_bad_block_list(bad_blk_list, 0);
-
-	for (blk = 0; blk < 1024; blk++) {
-		for (i = 0; i < bad_cnt; i++) {
-			if (bad_blk_list[i] == blk)
-				break;
-		}
-		if (i < bad_cnt)
-			continue;
-		is_bad_blk = 0;
-		PRINT_SFC_E("Flash prog block: %x\n", blk);
-		sfc_nand_erase_block(0, blk * blk_addr);
-		for (page = 0; page < pages_num; page++) {
-			page_addr = blk * blk_addr + page;
-			for (i = 0; i < 512; i++)
-				pwrite[i] = (page_addr << 16) + i;
-			pspare_write[0] = pwrite[0] + 0x5AF0;
-			pspare_write[1] = pspare_write[0] + 1;
-			sfc_nand_prog_page(0, page_addr, pwrite, pspare_write);
-			memset(pread, 0, 2048);
-			memset(pspare_read, 0, 8);
-			ret = sfc_nand_read_page(0, page_addr, pread,
-						 pspare_read);
-			if (ret != SFC_NAND_ECC_OK)
-				is_bad_blk = 1;
-			for (i = 0; i < 512; i++) {
-				if (pwrite[i] != pread[i]) {
-					is_bad_blk = 1;
-					break;
-				}
-			}
-			for (i = 0; i < 2; i++) {
-				if (pspare_write[i] != pspare_read[i]) {
-					is_bad_blk = 1;
-					break;
-				}
-			}
-			if (is_bad_blk) {
-				bad_page_num++;
-				PRINT_SFC_E("ERR:page%x, ret=%x\n",
-					    page_addr, ret);
-				PRINT_SFC_HEX("data:", pread, 4, 8);
-				PRINT_SFC_HEX("spare:", pspare_read, 4, 2);
-			}
-		}
-		sfc_nand_erase_block(0, blk * blk_addr);
-		if (is_bad_blk)
-			bad_blk_num++;
-	}
-	PRINT_SFC_E("bad_blk_num = %d, bad_page_num = %d\n",
-		    bad_blk_num, bad_page_num);
-
-	PRINT_SFC_E("Flash Test Finish!!!\n");
-	while (1)
-		;
-}
-#endif
-
-static void ftl_flash_init(void)
+void sfc_nand_ftl_ops_init(void)
 {
 	/* para init */
 	g_nand_phy_info.nand_type	= 1;
@@ -688,7 +666,7 @@ static void ftl_flash_init(void)
 	g_nand_phy_info.blk_per_plane	= p_nand_info->blk_per_plane;
 	g_nand_phy_info.page_per_blk	= p_nand_info->page_per_blk;
 	g_nand_phy_info.page_per_slc_blk = p_nand_info->page_per_blk;
-	g_nand_phy_info.byte_per_sec	= 512;
+	g_nand_phy_info.byte_per_sec	= SFC_NAND_SECTOR_SIZE;
 	g_nand_phy_info.sec_per_page	= p_nand_info->sec_per_page;
 	g_nand_phy_info.sec_per_blk	= p_nand_info->sec_per_page *
 					  p_nand_info->page_per_blk;
@@ -729,11 +707,11 @@ static int spi_nand_enable_QE(void)
 
 u32 sfc_nand_init(void)
 {
-	PRINT_SFC_I("...%s enter...\n", __func__);
+	u8 status, id_byte[8];
 
-	sfc_nand_read_id_raw(id_byte);
-	PRINT_SFC_E("sfc_nand id: %x %x %x\n",
-		    id_byte[0], id_byte[1], id_byte[2]);
+	sfc_nand_read_id(id_byte);
+	rkflash_print_error("sfc_nand id: %x %x %x\n",
+			    id_byte[0], id_byte[1], id_byte[2]);
 	if (id_byte[0] == 0xFF || id_byte[0] == 0x00)
 		return FTL_NO_FLASH;
 
@@ -743,6 +721,9 @@ u32 sfc_nand_init(void)
 
 	sfc_nand_dev.manufacturer = id_byte[0];
 	sfc_nand_dev.mem_type = id_byte[1];
+	sfc_nand_dev.capacity = p_nand_info->density;
+	sfc_nand_dev.block_size = p_nand_info->page_per_blk * p_nand_info->sec_per_page;
+	sfc_nand_dev.page_size = p_nand_info->sec_per_page;
 
 	/* disable block lock */
 	sfc_nand_write_feature(0xA0, 0);
@@ -764,31 +745,25 @@ u32 sfc_nand_init(void)
 		sfc_nand_dev.page_prog_cmd = p_nand_info->prog_cache_cmd_4;
 	}
 
-	if (1) {
-		u8 status;
-
-		sfc_nand_read_feature(0xA0, &status);
-		PRINT_SFC_I("sfc_nand A0 = 0x%x\n", status);
-		sfc_nand_read_feature(0xB0, &status);
-		PRINT_SFC_I("sfc_nand B0 = 0x%x\n", status);
-		sfc_nand_read_feature(0xC0, &status);
-		PRINT_SFC_I("sfc_nand C0 = 0x%x\n", status);
-		PRINT_SFC_I("read_lines = %x\n", sfc_nand_dev.read_lines);
-		PRINT_SFC_I("prog_lines = %x\n", sfc_nand_dev.prog_lines);
-		PRINT_SFC_I("page_read_cmd = %x\n", sfc_nand_dev.page_read_cmd);
-		PRINT_SFC_I("page_prog_cmd = %x\n", sfc_nand_dev.page_prog_cmd);
-	}
-	ftl_flash_init();
-
-	#if SFC_NAND_STRESS_TEST_EN
-	sfc_nand_test();
-	#endif
+	sfc_nand_read_feature(0xA0, &status);
+	rkflash_print_info("sfc_nand A0 = 0x%x\n", status);
+	sfc_nand_read_feature(0xB0, &status);
+	rkflash_print_info("sfc_nand B0 = 0x%x\n", status);
+	rkflash_print_info("read_lines = %x\n", sfc_nand_dev.read_lines);
+	rkflash_print_info("prog_lines = %x\n", sfc_nand_dev.prog_lines);
+	rkflash_print_info("page_read_cmd = %x\n", sfc_nand_dev.page_read_cmd);
+	rkflash_print_info("page_prog_cmd = %x\n", sfc_nand_dev.page_prog_cmd);
 
 	return SFC_OK;
 }
 
-int sfc_nand_read_id(u8 *data)
+void sfc_nand_deinit(void)
 {
-	memcpy(data, id_byte, 3);
-	return 0;
+	/* to-do */
 }
+
+struct SFNAND_DEV *sfc_nand_get_private_dev(void)
+{
+	return &sfc_nand_dev;
+}
+

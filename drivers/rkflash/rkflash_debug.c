@@ -5,35 +5,89 @@
  */
 
 #include <blk.h>
+#include <common.h>
+#include <hexdump.h>
 
 #include "rkflash_debug.h"
 #include "rkflash_blk.h"
 #include "boot_rkimg.h"
 
-void rkflash_print_hex(char *s, void *buf, u32 width, u32 len)
+static unsigned int rkflash_debug;
+
+__printf(1, 2) int rkflash_print_dio(const char *fmt, ...)
 {
-	u32 i, j;
-	char *p8 = (char *)buf;
-	short *p16 = (short *)buf;
-	u32 *p32 = (u32 *)buf;
+	int nret = 0;
+#if PRINT_SWI_CON_IO
+	if (rkflash_debug & PRINT_BIT_CON_IO)  {
+		va_list args;
 
-	j = 0;
-	for (i = 0; i < len; i++) {
-		if (j == 0)
-			printf("%s 0x%x:", s, i * width);
+		if (!fmt)
+			return nret;
 
-		if (width == 4)
-			printf("%x ", p32[i]);
-		else if (width == 2)
-			printf("%x ", p16[i]);
-		else
-			printf("%02x ", p8[i]);
-		if (++j >= 16) {
-			j = 0;
-			printf("\n");
-		}
+		va_start(args, fmt);
+		nret = vprintf(fmt, args);
+		va_end(args);
 	}
-	printf("\n");
+#endif
+	return nret;
+}
+
+__printf(1, 2) int rkflash_print_bio(const char *fmt, ...)
+{
+	int nret = 0;
+#if PRINT_SWI_BLK_IO
+	if (rkflash_debug & PRINT_BIT_BLK_IO)  {
+		va_list args;
+
+		if (!fmt)
+			return nret;
+
+		va_start(args, fmt);
+		nret = vprintf(fmt, args);
+		va_end(args);
+	}
+#endif
+	return nret;
+}
+
+__printf(1, 2) int rkflash_print_info(const char *fmt, ...)
+{
+	int nret = 0;
+#if PRINT_SWI_INFO
+	va_list args;
+
+	if (!fmt)
+		return nret;
+
+	va_start(args, fmt);
+	nret = vprintf(fmt, args);
+	va_end(args);
+#endif
+	return nret;
+}
+
+__printf(1, 2) int rkflash_print_error(const char *fmt, ...)
+{
+	int nret = 0;
+#if PRINT_SWI_ERROR
+	va_list args;
+
+	if (!fmt)
+		return nret;
+
+	va_start(args, fmt);
+	nret = vprintf(fmt, args);
+	va_end(args);
+#endif
+	return nret;
+}
+
+void rkflash_print_hex(const char *s, const void *buf, int w, size_t len)
+{
+#if PRINT_SWI_ERROR
+	print_hex_dump(s, DUMP_PREFIX_OFFSET, 4, w,
+		       buf, (len) * w, 0);
+#endif
 }
 
 #if (BLK_STRESS_TEST_EN)

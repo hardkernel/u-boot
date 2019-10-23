@@ -60,7 +60,6 @@ union FM_CTL_T {
 		unsigned syn_clken : 1;
 		unsigned syn_mode : 1;
 		unsigned flash_abort_en : 1;
-		/*share with flash_abort_stat*/
 		unsigned flash_abort_clear : 1;
 		unsigned sif_read_delay : 3;
 		unsigned io_mux : 3;
