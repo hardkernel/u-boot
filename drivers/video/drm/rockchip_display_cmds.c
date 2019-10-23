@@ -388,7 +388,7 @@ int lcd_setfg_color(const char *color)
 		lcd_setfg(0xff, 0x00, 0xff);
 	if (!strcmp(color ,"cyan"))
 		lcd_setfg(0x00, 0xff, 0xff);
-	if (!strcmp(color ,"gray"))
+	if (!strcmp(color ,"grey"))
 		lcd_setfg(0xaa, 0xaa, 0xaa);
 	if (!strcmp(color ,"black"))
 		lcd_setfg(0x00, 0x00, 0x00);
@@ -412,7 +412,7 @@ int lcd_setbg_color(const char *color)
 		lcd_setbg(0xff, 0x00, 0xff);
 	if (!strcmp(color ,"cyan"))
 		lcd_setbg(0x00, 0xff, 0xff);
-	if (!strcmp(color ,"gray"))
+	if (!strcmp(color ,"grey"))
 		lcd_setbg(0xaa, 0xaa, 0xaa);
 	if (!strcmp(color ,"black"))
 		lcd_setbg(0x00, 0x00, 0x00);
@@ -508,7 +508,7 @@ static char lcd_help_text[] = {
 	"setbg <r> <g> <b> - set background color\n"
 	"setfg <color> - set foreground color (color string)\n"
 	"setbg <color> - set background color (color string)\n"
-	"<color> - red, green, yellow, blue, magenta, cyan, gray, white, black\n"
+	"<color> - red, green, yellow, blue, magenta, cyan, grey, white, black\n"
 };
 
 U_BOOT_CMD(
