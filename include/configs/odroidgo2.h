@@ -9,7 +9,12 @@
 
 #include <configs/px30_common.h>
 
-#define CONFIG_SYS_MMC_ENV_DEV 0
+#define CONFIG_SYS_MMC_ENV_DEV	1 /* SDMMC default */
+
+#undef CONFIG_ENV_SIZE
+#undef CONFIG_ENV_OFFSET
+#define CONFIG_ENV_SIZE		(32 * SZ_1K)
+#define CONFIG_ENV_OFFSET	(1024 * SZ_1K)
 
 #define ROCKCHIP_DEVICE_SETTINGS \
 		"stdout=serial,vidconsole\0" \
