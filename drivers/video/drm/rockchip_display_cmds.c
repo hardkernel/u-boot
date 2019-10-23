@@ -89,7 +89,7 @@ int lcd_init(void)
 	lcd->drm_fb_size = (lcd->w * lcd->h * lcd->bpp) >> 3;
 
 	lcd->s->crtc_state.format  = ROCKCHIP_FMT_RGB888;
-	lcd->s->crtc_state.rb_swap = (lcd->bpp != 32) ? 0 : lcd->bgr;
+	lcd->s->crtc_state.rb_swap = lcd->bgr;
 	lcd->s->crtc_state.ymirror = 0;
 	lcd->s->crtc_state.src_w = lcd->s->crtc_state.crtc_w = lcd->w;
 	lcd->s->crtc_state.src_h = lcd->s->crtc_state.crtc_h = lcd->h;
@@ -106,13 +106,6 @@ int lcd_init(void)
 	lcd->bg_color.r = lcd->bg_color.g = lcd->bg_color.b = 0;
 
 	lcd_sync();
-
-#if 0
-	/* flush display buffer cache */
-	flush_dcache_range((ulong)lcd->drm_fb_mem,
-		ALIGN((ulong)lcd->drm_fb_mem + lcd->drm_fb_size,
-		CONFIG_SYS_CACHELINE_SIZE));
-#endif
 
 	/* lcd enable */
 	set_display_state(lcd->s, true);
