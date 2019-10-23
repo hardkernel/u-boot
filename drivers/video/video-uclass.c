@@ -19,7 +19,9 @@
 #ifdef CONFIG_SANDBOX
 #include <asm/sdl.h>
 #endif
-
+#if defined(CONFIG_TARGET_ODROIDGO2)
+	#include <rockchip_display_cmds.h>
+#endif
 /*
  * Theory of operation:
  *
@@ -202,7 +204,16 @@ static int video_post_probe(struct udevice *dev)
 
 	/* Set up the line and display size */
 	priv->fb = map_sysmem(plat->base, plat->size);
+#if defined(CONFIG_TARGET_ODROIDGO2)
+	/* get lcd rotate */
+	priv->rot = lcd_getrot();
+
+	/* lcd bpp is 24 */
+	priv->line_length = priv->xsize * 3;
+	video_set_flush_dcache(dev, true);
+#else
 	priv->line_length = priv->xsize * VNBYTES(priv->bpix);
+#endif
 	priv->fb_size = priv->line_length * priv->ysize;
 
 	/* Set up colours - we could in future support other colours */

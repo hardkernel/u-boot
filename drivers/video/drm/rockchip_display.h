@@ -175,4 +175,10 @@ int display_send_mcu_cmd(struct display_state *state, u32 type, u32 val);
 bool drm_mode_is_420(const struct drm_display_info *display,
 		     struct drm_display_mode *mode);
 
+#if defined(CONFIG_TARGET_ODROIDGO2)
+	unsigned long get_drm_memory(void);
+	struct display_state *get_display_state(void);
+	void set_display_state(struct display_state *state, bool enable);
+#endif
+
 #endif

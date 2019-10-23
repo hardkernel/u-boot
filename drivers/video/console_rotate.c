@@ -12,10 +12,18 @@
 #include <video_console.h>
 #include <video_font.h>		/* Get font data, width and height */
 
+#if defined(CONFIG_TARGET_ODROIDGO2)
+	#include <rockchip_display_cmds.h>
+#endif
+
 static int console_set_row_1(struct udevice *dev, uint row, int clr)
 {
 	struct video_priv *vid_priv = dev_get_uclass_priv(dev->parent);
+#if defined(CONFIG_TARGET_ODROIDGO2)
+	int pbytes = 3;
+#else
 	int pbytes = VNBYTES(vid_priv->bpix);
+#endif
 	void *line;
 	int i, j;
 
@@ -43,11 +51,31 @@ static int console_set_row_1(struct udevice *dev, uint row, int clr)
 #endif
 #ifdef CONFIG_VIDEO_BPP32
 		case VIDEO_BPP32: {
+#if defined(CONFIG_TARGET_ODROIDGO2)
+			struct lcd_fb_bit *dst = line, *bg = lcd_getbg();
+			struct video_fb_bit *c = (struct video_fb_bit *)&clr;
+
+			if (!lcd_gettransp()) {
+				for (i = 0; i < VIDEO_FONT_HEIGHT; i++, dst++) {
+					if (bg == NULL) {
+						dst->r = c->r;
+						dst->g = c->g;
+						dst->b = c->b;
+					} else {
+						dst->r = bg->r;
+						dst->g = bg->g;
+						dst->b = bg->b;
+					}
+				}
+			}
+			break;
+#else
 			uint32_t *dst = line;
 
 			for (i = 0; i < VIDEO_FONT_HEIGHT; i++)
 				*dst++ = clr;
 			break;
+#endif
 		}
 #endif
 		default:
@@ -65,7 +93,11 @@ static int console_move_rows_1(struct udevice *dev, uint rowdst, uint rowsrc,
 	struct video_priv *vid_priv = dev_get_uclass_priv(dev->parent);
 	void *dst;
 	void *src;
+#if defined(CONFIG_TARGET_ODROIDGO2)
+	int pbytes = 3;
+#else
 	int pbytes = VNBYTES(vid_priv->bpix);
+#endif
 	int j;
 
 	dst = vid_priv->fb + vid_priv->line_length -
@@ -87,7 +119,11 @@ static int console_putc_xy_1(struct udevice *dev, uint x_frac, uint y, char ch)
 	struct vidconsole_priv *vc_priv = dev_get_uclass_priv(dev);
 	struct udevice *vid = dev->parent;
 	struct video_priv *vid_priv = dev_get_uclass_priv(vid);
+#if defined(CONFIG_TARGET_ODROIDGO2)
+	int pbytes = 3;
+#else
 	int pbytes = VNBYTES(vid_priv->bpix);
+#endif
 	int i, col;
 	int mask = 0x80;
 	void *line;
@@ -124,6 +160,43 @@ static int console_putc_xy_1(struct udevice *dev, uint x_frac, uint y, char ch)
 #endif
 #ifdef CONFIG_VIDEO_BPP32
 		case VIDEO_BPP32: {
+#if defined(CONFIG_TARGET_ODROIDGO2)
+			struct lcd_fb_bit *dst = line, *lfg, *lbg;
+			struct video_fb_bit *fg, *bg;
+			bool transp = lcd_gettransp();
+
+			fg = (struct video_fb_bit *)&vid_priv->colour_fg;
+			bg = (struct video_fb_bit *)&vid_priv->colour_bg;
+
+			lfg = lcd_getfg();
+			lbg = lcd_getbg();
+			for (i = 0; i < VIDEO_FONT_HEIGHT; i++, dst--) {
+				if (pfont[i] & mask) {
+					if (lfg == NULL) {
+						dst->r = fg->r;
+						dst->g = fg->g;
+						dst->b = fg->b;
+					} else {
+						dst->r = lfg->r;
+						dst->g = lfg->g;
+						dst->b = lfg->b;
+					}
+				} else {
+					if (!transp) {
+						if (lbg == NULL) {
+							dst->r = bg->r;
+							dst->g = bg->g;
+							dst->b = bg->b;
+						} else {
+							dst->r = lbg->r;
+							dst->g = lbg->g;
+							dst->b = lbg->b;
+						}
+					}
+				}
+			}
+			break;
+#else
 			uint32_t *dst = line;
 
 			for (i = 0; i < VIDEO_FONT_HEIGHT; i++) {
@@ -131,6 +204,7 @@ static int console_putc_xy_1(struct udevice *dev, uint x_frac, uint y, char ch)
 					: vid_priv->colour_bg;
 			}
 			break;
+#endif
 		}
 #endif
 		default:
@@ -174,11 +248,31 @@ static int console_set_row_2(struct udevice *dev, uint row, int clr)
 #endif
 #ifdef CONFIG_VIDEO_BPP32
 	case VIDEO_BPP32: {
+#if defined(CONFIG_TARGET_ODROIDGO2)
+		struct lcd_fb_bit *dst = line, *bg = lcd_getbg();
+		struct video_fb_bit *c = (struct video_fb_bit *)&clr;
+
+		if (!lcd_gettransp()) {
+			for (i = 0; i < pixels; i++, dst++) {
+				if (bg == NULL) {
+					dst->r = c->r;
+					dst->g = c->g;
+					dst->b = c->b;
+				} else {
+					dst->r = bg->r;
+					dst->g = bg->g;
+					dst->b = bg->b;
+				}
+			}
+		}
+		break;
+#else
 		uint32_t *dst = line;
 
 		for (i = 0; i < pixels; i++)
 			*dst++ = clr;
 		break;
+#endif
 	}
 #endif
 	default:
@@ -217,10 +311,17 @@ static int console_putc_xy_2(struct udevice *dev, uint x_frac, uint y, char ch)
 	if (x_frac + VID_TO_POS(vc_priv->x_charsize) > vc_priv->xsize_frac)
 		return -EAGAIN;
 
+#if defined(CONFIG_TARGET_ODROIDGO2)
+	line = vid_priv->fb + (vid_priv->ysize - y - 1) *
+			vid_priv->line_length +
+			(vid_priv->xsize - VID_TO_PIXEL(x_frac) -
+			VIDEO_FONT_WIDTH - 1) * 3;
+#else
 	line = vid_priv->fb + (vid_priv->ysize - y - 1) *
 			vid_priv->line_length +
 			(vid_priv->xsize - VID_TO_PIXEL(x_frac) -
 			VIDEO_FONT_WIDTH - 1) * VNBYTES(vid_priv->bpix);
+#endif
 
 	for (row = 0; row < VIDEO_FONT_HEIGHT; row++) {
 		uchar bits = video_fontdata[ch * VIDEO_FONT_HEIGHT + row];
@@ -252,6 +353,44 @@ static int console_putc_xy_2(struct udevice *dev, uint x_frac, uint y, char ch)
 #endif
 #ifdef CONFIG_VIDEO_BPP32
 		case VIDEO_BPP32: {
+#if defined(CONFIG_TARGET_ODROIDGO2)
+			struct lcd_fb_bit *dst = line, *lfg, *lbg;
+			struct video_fb_bit *fg, *bg;
+			bool transp = lcd_gettransp();
+
+			fg = (struct video_fb_bit *)&vid_priv->colour_fg;
+			bg = (struct video_fb_bit *)&vid_priv->colour_bg;
+
+			lfg = lcd_getfg();
+			lbg = lcd_getbg();
+			for (i = 0; i < VIDEO_FONT_WIDTH; i++, dst--) {
+				if (bits & 0x80) {
+					if (lfg == NULL) {
+						dst->r = fg->r;
+						dst->g = fg->g;
+						dst->b = fg->b;
+					} else {
+						dst->r = lfg->r;
+						dst->g = lfg->g;
+						dst->b = lfg->b;
+					}
+				} else {
+					if (!transp) {
+						if (lbg == NULL) {
+							dst->r = bg->r;
+							dst->g = bg->g;
+							dst->b = bg->b;
+						} else {
+							dst->r = lbg->r;
+							dst->g = lbg->g;
+							dst->b = lbg->b;
+						}
+					}
+				}
+				bits <<= 1;
+			}
+			break;
+#else
 			uint32_t *dst = line;
 
 			for (i = 0; i < VIDEO_FONT_WIDTH; i++) {
@@ -260,6 +399,7 @@ static int console_putc_xy_2(struct udevice *dev, uint x_frac, uint y, char ch)
 				bits <<= 1;
 			}
 			break;
+#endif
 		}
 #endif
 		default:
@@ -274,7 +414,11 @@ static int console_putc_xy_2(struct udevice *dev, uint x_frac, uint y, char ch)
 static int console_set_row_3(struct udevice *dev, uint row, int clr)
 {
 	struct video_priv *vid_priv = dev_get_uclass_priv(dev->parent);
+#if defined(CONFIG_TARGET_ODROIDGO2)
+	int pbytes = 3;
+#else
 	int pbytes = VNBYTES(vid_priv->bpix);
+#endif
 	void *line;
 	int i, j;
 
@@ -301,11 +445,31 @@ static int console_set_row_3(struct udevice *dev, uint row, int clr)
 #endif
 #ifdef CONFIG_VIDEO_BPP32
 		case VIDEO_BPP32: {
+#if defined(CONFIG_TARGET_ODROIDGO2)
+			struct lcd_fb_bit *dst = line, *bg = lcd_getbg();
+			struct video_fb_bit *c = (struct video_fb_bit *)&clr;
+
+			if (!lcd_gettransp()) {
+				for (i = 0; i < VIDEO_FONT_HEIGHT; i++, dst++) {
+					if (bg == NULL) {
+						dst->r = c->r;
+						dst->g = c->g;
+						dst->b = c->b;
+					} else {
+						dst->r = bg->r;
+						dst->g = bg->g;
+						dst->b = bg->b;
+					}
+				}
+			}
+			break;
+#else
 			uint32_t *dst = line;
 
 			for (i = 0; i < VIDEO_FONT_HEIGHT; i++)
 				*dst++ = clr;
 			break;
+#endif
 		}
 #endif
 		default:
@@ -323,7 +487,11 @@ static int console_move_rows_3(struct udevice *dev, uint rowdst, uint rowsrc,
 	struct video_priv *vid_priv = dev_get_uclass_priv(dev->parent);
 	void *dst;
 	void *src;
+#if defined(CONFIG_TARGET_ODROIDGO2)
+	int pbytes = 3;
+#else
 	int pbytes = VNBYTES(vid_priv->bpix);
+#endif
 	int j;
 
 	dst = vid_priv->fb + rowdst * VIDEO_FONT_HEIGHT * pbytes;
@@ -343,7 +511,11 @@ static int console_putc_xy_3(struct udevice *dev, uint x_frac, uint y, char ch)
 	struct vidconsole_priv *vc_priv = dev_get_uclass_priv(dev);
 	struct udevice *vid = dev->parent;
 	struct video_priv *vid_priv = dev_get_uclass_priv(vid);
+#if defined(CONFIG_TARGET_ODROIDGO2)
+	int pbytes = 3;
+#else
 	int pbytes = VNBYTES(vid_priv->bpix);
+#endif
 	int i, col;
 	int mask = 0x80;
 	void *line = vid_priv->fb +
@@ -380,6 +552,43 @@ static int console_putc_xy_3(struct udevice *dev, uint x_frac, uint y, char ch)
 #endif
 #ifdef CONFIG_VIDEO_BPP32
 		case VIDEO_BPP32: {
+#if defined(CONFIG_TARGET_ODROIDGO2)
+			struct lcd_fb_bit *dst = line, *lfg, *lbg;
+			struct video_fb_bit *fg, *bg;
+			bool transp = lcd_gettransp();
+
+			fg = (struct video_fb_bit *)&vid_priv->colour_fg;
+			bg = (struct video_fb_bit *)&vid_priv->colour_bg;
+
+			lfg = lcd_getfg();
+			lbg = lcd_getbg();
+			for (i = 0; i < VIDEO_FONT_HEIGHT; i++, dst++) {
+				if (pfont[i] & mask) {
+					if (lfg == NULL) {
+						dst->r = fg->r;
+						dst->g = fg->g;
+						dst->b = fg->b;
+					} else {
+						dst->r = lfg->r;
+						dst->g = lfg->g;
+						dst->b = lfg->b;
+					}
+				} else {
+					if (!transp) {
+						if (lbg == NULL) {
+							dst->r = bg->r;
+							dst->g = bg->g;
+							dst->b = bg->b;
+						} else {
+							dst->r = lbg->r;
+							dst->g = lbg->g;
+							dst->b = lbg->b;
+						}
+					}
+				}
+			}
+			break;
+#else
 			uint32_t *dst = line;
 
 			for (i = 0; i < VIDEO_FONT_HEIGHT; i++) {
@@ -387,6 +596,7 @@ static int console_putc_xy_3(struct udevice *dev, uint x_frac, uint y, char ch)
 					: vid_priv->colour_bg;
 			}
 			break;
+#endif
 		}
 #endif
 		default:
