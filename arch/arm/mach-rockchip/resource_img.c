@@ -257,21 +257,6 @@ static int init_resource_list(struct resource_img_hdr *hdr)
 		boot_partname = PART_RECOVERY;
 #endif
 
-	/* Get slot suffix and append it for A/B system */
-#ifdef CONFIG_ANDROID_AB
-	char slot_suffix[3] = {0};
-
-	if (rk_avb_get_current_slot(slot_suffix)) {
-		ret = -ENODEV;
-		goto out;
-	}
-
-	boot_partname = android_str_append(boot_partname, slot_suffix);
-	if (!boot_partname) {
-		ret = -EINVAL;
-		goto out;
-	}
-#endif
 	ret = part_get_info_by_name(dev_desc, boot_partname, &part_info);
 	if (ret < 0) {
 		printf("%s: failed to get %s part, ret=%d\n",
