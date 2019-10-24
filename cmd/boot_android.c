@@ -755,7 +755,6 @@ int do_avb_flow(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		load_address = CONFIG_SYS_LOAD_ADDR;
 		rk_avb_ab_slot_select(ops->ab_ops, boot_slot_select);
 		strcat(slot_partition[1], requested_partitions[1]);
-		strcat(slot_partition[1], boot_slot_select);
 		printf("%s\n", slot_partition[1]);
 		ops->get_unique_guid_for_partition(ops,
 						   slot_partition[1],
@@ -767,7 +766,7 @@ int do_avb_flow(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		strcat(root_data, " ");
 		strcat(root_data, command_line);
 		env_set("bootargs", root_data);
-		if (android_avb_boot_flow(boot_slot_select, load_address)) {
+		if (android_avb_boot_flow(load_address)) {
 			printf("Cannot boot the system, goto the fastboot!\n");
 			avb_ops_user_free(ops);
 			goto fail;
