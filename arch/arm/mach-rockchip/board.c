@@ -231,7 +231,8 @@ static int phandles_fixup(void *fdt)
 
 		list_for_each_entry(dev, &uc->dev_head, uclass_node) {
 			/* Only U-Boot node go further */
-			if (!dev_read_bool(dev, "u-boot,dm-pre-reloc"))
+			if (!dev_read_bool(dev, "u-boot,dm-pre-reloc") ||
+			    !dev_read_bool(dev, "u-boot,dm-spl"))
 				continue;
 
 			for (i = 0; i < ARRAY_SIZE(props); i++) {
