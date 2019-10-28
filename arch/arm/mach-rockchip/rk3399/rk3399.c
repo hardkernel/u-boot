@@ -133,7 +133,7 @@ void board_debug_uart_init(void)
 		     GRF_GPIO2C1_SEL_MASK,
 		     GRF_UART0BT_SOUT << GRF_GPIO2C1_SEL_SHIFT);
 #else
-	/* Enable early UART2 channel C on the RK3399/RK3399PRO */
+	/* Enable early UART2 channel on the RK3399/RK3399PRO */
 	rk_clrsetreg(&grf->gpio4c_iomux,
 		     GRF_GPIO4C3_SEL_MASK,
 		     GRF_UART2DGBC_SIN << GRF_GPIO4C3_SEL_SHIFT);
