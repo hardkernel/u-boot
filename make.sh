@@ -761,7 +761,7 @@ pack_trust_image()
 {
 	local mode=$1 files ini
 
-	ls trust*.img >/dev/null && rm trust*.img
+	ls trust*.img >/dev/null 2>&1 && rm trust*.img
 	# ARM64 uses trust_merger
 	if grep -Eq ''^CONFIG_ARM64=y'|'^CONFIG_ARM64_BOOT_AARCH32=y'' ${OUTDIR}/.config ; then
 		ini=${RKBIN}/RKTRUST/${RKCHIP_TRUST}TRUST.ini
