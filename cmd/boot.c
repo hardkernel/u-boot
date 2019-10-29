@@ -73,8 +73,14 @@ U_BOOT_CMD(
 #endif
 
 U_BOOT_CMD(
-        reset, 1, 0,    do_reset,
+        reset, 2, 0,    do_reset,
         "Perform RESET of the CPU",
+        ""
+);
+
+U_BOOT_CMD(
+        reboot, 2, 0,    do_reset,
+        "Perform RESET of the CPU, alias of 'reset'",
         ""
 );
 
