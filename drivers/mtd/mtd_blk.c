@@ -184,6 +184,8 @@ static int mtd_blk_probe(struct udevice *udev)
 	memcpy(desc->product, mtd->name, strlen(mtd->name));
 	memcpy(desc->revision, "V1.00", sizeof("V1.00"));
 	if (mtd->type == MTD_NANDFLASH) {
+		if (desc->devnum == BLK_MTD_NAND)
+			mtd = dev_get_priv(udev->parent);
 		/*
 		 * Find the first useful block in the end,
 		 * and it is the end lba of the nand storage.
