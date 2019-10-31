@@ -47,7 +47,7 @@ static int spl_bootdev_map[] = {
 
 #if CONFIG_IS_ENABLED(TINY_FRAMEWORK) &&		\
 	!CONFIG_IS_ENABLED(LIBGENERIC_SUPPORT) &&	\
-	defined(CONFIG_ARM64)
+	!CONFIG_IS_ENABLED(USE_ARCH_MEMSET)
 /**
  * memset - Fill a region of memory with the given value
  * @s: Pointer to the start of the area.
@@ -67,7 +67,11 @@ void *memset(void *s, int c, size_t count)
 
 	return s;
 }
+#endif
 
+#if CONFIG_IS_ENABLED(TINY_FRAMEWORK) &&		\
+	!CONFIG_IS_ENABLED(LIBGENERIC_SUPPORT) &&	\
+	!CONFIG_IS_ENABLED(USE_ARCH_MEMCPY)
 /**
  * memcpy - Copy one area of memory to another
  * @dest: Where to copy to

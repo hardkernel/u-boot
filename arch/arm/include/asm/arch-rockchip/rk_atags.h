@@ -261,8 +261,13 @@ void atags_stat(void);
 
 #if CONFIG_IS_ENABLED(TINY_FRAMEWORK) &&		\
 	!CONFIG_IS_ENABLED(LIBGENERIC_SUPPORT) &&	\
-	defined(CONFIG_ARM64)
+	!CONFIG_IS_ENABLED(USE_ARCH_MEMSET)
 void *memset(void *s, int c, size_t count);
+#endif
+
+#if CONFIG_IS_ENABLED(TINY_FRAMEWORK) &&		\
+	!CONFIG_IS_ENABLED(LIBGENERIC_SUPPORT) &&	\
+	!CONFIG_IS_ENABLED(USE_ARCH_MEMCPY)
 void *memcpy(void *dest, const void *src, size_t count);
 #endif
 
