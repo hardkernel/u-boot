@@ -393,7 +393,6 @@ static void *sysmem_alloc_align_base(enum memblk_id id,
 		 */
 		} else if (!base) {
 			base += ARCH_DMA_MINALIGN;
-			size += ARCH_DMA_MINALIGN;
 		} else if (base <= gd->bd->bi_dram[0].start) {
 			/*
 			 * On Rockchip platform:
