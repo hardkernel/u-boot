@@ -11,6 +11,8 @@
 #include <stdbool.h>
 #include <sys/stat.h>
 #include <time.h>
+#include <u-boot/sha1.h>
+#include <u-boot/sha256.h>
 
 /* #define DEBUG */
 
@@ -55,10 +57,14 @@ typedef struct {
 } resource_ptn_header;
 
 #define INDEX_TBL_ENTR_TAG "ENTR"
-#define MAX_INDEX_ENTRY_PATH_LEN 256
+#define MAX_INDEX_ENTRY_PATH_LEN	220
+#define MAX_HASH_LEN			32
+
 typedef struct {
 	char tag[4]; /* tag, "ENTR" */
 	char path[MAX_INDEX_ENTRY_PATH_LEN];
+	char hash[MAX_HASH_LEN]; /* hash data */
+	uint32_t hash_size;	 /* 20 or 32 */
 	uint32_t content_offset; /* blocks, offset of resource content. */
 	uint32_t content_size;   /* bytes, size of resource content. */
 } index_tbl_entry;
@@ -855,13 +861,13 @@ static inline size_t get_file_size(const char *path)
 	return st.st_size;
 }
 
-static int write_file(int offset_block, const char *src_path)
+static int write_file(int offset_block, const char *src_path,
+		      char hash[], int hash_size)
 {
 	LOGD("try to write file(%s) to offset:%d...", src_path, offset_block);
-	char buf[BLOCK_SIZE];
+	char *buf = NULL;
 	int ret = -1;
 	size_t file_size;
-	int blocks;
 	FILE *src_file = fopen(src_path, "rb");
 	if (!src_file) {
 		LOGE("Failed to open:%s", src_path);
@@ -872,23 +878,33 @@ static int write_file(int offset_block, const char *src_path)
 	if (file_size < 0) {
 		goto end;
 	}
-	blocks = fix_blocks(file_size);
 
-	int i;
-	for (i = 0; i < blocks; i++) {
-		memset(buf, 0, sizeof(buf));
-		if (!fread(buf, 1, BLOCK_SIZE, src_file)) {
-			LOGE("Failed to read:%s", src_path);
-			goto end;
-		}
-		if (!write_data(offset_block + i, buf, BLOCK_SIZE)) {
-			goto end;
-		}
-	}
-	ret = blocks;
+	buf = calloc(file_size, 1);
+	if (!buf)
+		goto end;
+
+	if (!fread(buf, file_size, 1, src_file))
+		goto end;
+
+	if (!write_data(offset_block, buf, file_size))
+		goto end;
+
+	if (hash_size == 20)
+		sha1_csum((const unsigned char *)buf, file_size,
+			  (unsigned char *)hash);
+	else if (hash_size == 32)
+		sha256_csum((const unsigned char *)buf, file_size,
+			    (unsigned char *)hash);
+	else
+		goto end;
+
+	ret = file_size;
 end:
 	if (src_file)
 		fclose(src_file);
+	if (buf)
+		free(buf);
+
 	return ret;
 }
 
@@ -917,8 +933,10 @@ static bool write_index_tbl(const int file_num, const char **files)
 	int offset =
 	        header.header_size + header.tbl_entry_size * header.tbl_entry_num;
 	index_tbl_entry entry;
-	memcpy(entry.tag, INDEX_TBL_ENTR_TAG, sizeof(entry.tag));
+	char hash[20];	/* sha1 */
 	int i;
+
+	memcpy(entry.tag, INDEX_TBL_ENTR_TAG, sizeof(entry.tag));
 	for (i = 0; i < file_num; i++) {
 		size_t file_size = get_file_size(files[i]);
 		if (file_size < 0)
@@ -926,8 +944,11 @@ static bool write_index_tbl(const int file_num, const char **files)
 		entry.content_size = file_size;
 		entry.content_offset = offset;
 
-		if (write_file(offset, files[i]) < 0)
+		if (write_file(offset, files[i], hash, sizeof(hash)) < 0)
 			goto end;
+
+		memcpy(entry.hash, hash, sizeof(hash));
+		entry.hash_size = sizeof(hash);
 
 		LOGD("try to write index entry(%s)...", files[i]);
 
