@@ -484,17 +484,6 @@ int rockchip_get_resource_file_offset(void *resc_hdr, const char *name)
 	return file->f_offset;
 }
 
-int rockchip_get_resource_file_size(void *resc_hdr, const char *name)
-{
-	struct resource_file *file;
-
-	file = get_file_info(resc_hdr, name);
-	if (!file)
-		return -ENFILE;
-
-	return file->f_size;
-}
-
 /*
  * read file from resource partition
  * @buf: destination buf to store file data;
@@ -780,14 +769,40 @@ static int rockchip_read_dtb_by_gpio(const char *file_name)
 	return found ? 0 : -ENOENT;
 }
 
+/* Get according to hardware id(GPIO/ADC) */
+static struct resource_file *rockchip_read_hwid_dtb(void)
+{
+	struct resource_file *file;
+	struct list_head *node;
+
+	/* Find dtb file according to hardware id(GPIO/ADC) */
+	list_for_each(node, &entrys_head) {
+		file = list_entry(node, struct resource_file, link);
+		if (!strstr(file->name, ".dtb"))
+			continue;
+
+		if (strstr(file->name, KEY_WORDS_ADC_CTRL) &&
+		    strstr(file->name, KEY_WORDS_ADC_CH) &&
+		    !rockchip_read_dtb_by_adc(file->name)) {
+			return file;
+		} else if (strstr(file->name, KEY_WORDS_GPIO) &&
+			   !rockchip_read_dtb_by_gpio(file->name)) {
+			return file;
+		}
+	}
+
+	return NULL;
+}
+
 #ifdef CONFIG_ROCKCHIP_EARLY_DISTRO_DTB
-static int rockchip_read_distro_dtb_file(char *fdt_addr)
+static int rockchip_read_distro_dtb(void *fdt_addr)
 {
 	const char *cmd = "part list ${devtype} ${devnum} -bootable devplist";
 	char *devnum, *devtype, *devplist;
 	char devnum_part[12];
 	char fdt_hex_str[19];
 	char *fs_argv[5];
+	int size;
 	int ret;
 
 	if (!rockchip_get_bootdev() || !fdt_addr)
@@ -819,69 +834,50 @@ static int rockchip_read_distro_dtb_file(char *fdt_addr)
 	if (fdt_check_header(fdt_addr))
 		return -EIO;
 
-	return fdt_totalsize(fdt_addr);
+	size = fdt_totalsize(fdt_addr);
+	if (!sysmem_alloc_base(MEMBLK_ID_FDT, (phys_addr_t)fdt_addr,
+			       ALIGN(size, RK_BLK_SIZE) + CONFIG_SYS_FDT_PAD))
+		return -ENOMEM;
+
+	printf("Distro DTB: %s\n", CONFIG_ROCKCHIP_EARLY_DISTRO_DTB_PATH);
+
+	return size;
 }
 #endif
 
 int rockchip_read_dtb_file(void *fdt_addr)
 {
 	struct resource_file *file;
-	struct list_head *node;
-	char *dtb_name = DTB_FILE;
-	int size = -ENODEV;
+	char *def_dtb = DTB_FILE;
+	int ret;
 
-	if (!get_file_info(NULL, dtb_name)) {
+	/* search order: "rk-kernel.dtb" -> distro -> hwid */
+	file = get_file_info(NULL, def_dtb);
+	if (!file) {
 #ifdef CONFIG_ROCKCHIP_EARLY_DISTRO_DTB
-		/* Load dtb from distro boot.img */
-		printf("Distro DTB: %s\n",
-		       CONFIG_ROCKCHIP_EARLY_DISTRO_DTB_PATH);
-		size = rockchip_read_distro_dtb_file(fdt_addr);
-		if (size < 0)
-			return size;
-
-		if (!sysmem_alloc_base(MEMBLK_ID_FDT,
-			(phys_addr_t)fdt_addr,
-			ALIGN(size, RK_BLK_SIZE) + CONFIG_SYS_FDT_PAD))
-			return -ENOMEM;
+		ret = rockchip_read_distro_dtb(fdt_addr);
+		if (ret > 0)
+			return ret; /* found & load done */
 #endif
-		return -ENODEV;
+		file = rockchip_read_hwid_dtb();
+		if (!file)
+			return -ENODEV;
 	}
 
-	/* Find dtb file according to hardware id(GPIO/ADC) */
-	list_for_each(node, &entrys_head) {
-		file = list_entry(node, struct resource_file, link);
-		if (!strstr(file->name, ".dtb"))
-			continue;
-
-		if (strstr(file->name, KEY_WORDS_ADC_CTRL) &&
-		    strstr(file->name, KEY_WORDS_ADC_CH) &&
-		    !rockchip_read_dtb_by_adc(file->name)) {
-			dtb_name = file->name;
-			break;
-		} else if (strstr(file->name, KEY_WORDS_GPIO) &&
-			   !rockchip_read_dtb_by_gpio(file->name)) {
-			dtb_name = file->name;
-			break;
-		}
-	}
-
-	printf("DTB: %s\n", dtb_name);
-
-	size = rockchip_get_resource_file_size((void *)fdt_addr, dtb_name);
-	if (size < 0)
-		return size;
-
-	size = rockchip_read_resource_file((void *)fdt_addr, dtb_name, 0, 0);
-	if (size < 0)
-		return size;
+	/* found! */
+	printf("DTB: %s\n", file->name);
+	ret = rockchip_read_resource_file(fdt_addr, file->name, 0, 0);
+	if (ret < 0)
+		return ret;
 
 	if (fdt_check_header(fdt_addr)) {
-		printf("Get a bad DTB file\n");
+		printf("Get a bad DTB file !\n");
 		return -EBADF;
 	}
 
 	if (!sysmem_alloc_base(MEMBLK_ID_FDT, (phys_addr_t)fdt_addr,
-			       ALIGN(size, RK_BLK_SIZE) + CONFIG_SYS_FDT_PAD))
+			       ALIGN(file->f_size, RK_BLK_SIZE) +
+			       CONFIG_SYS_FDT_PAD))
 		return -ENOMEM;
 
 	/* Apply DTBO */
@@ -889,5 +885,5 @@ int rockchip_read_dtb_file(void *fdt_addr)
 	android_fdt_overlay_apply((void *)fdt_addr);
 #endif
 
-	return size;
+	return file->f_size;
 }
