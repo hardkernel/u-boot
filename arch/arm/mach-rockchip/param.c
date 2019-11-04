@@ -236,7 +236,8 @@ int param_parse_bootdev(char **devtype, char **devnum)
 
 static phys_size_t ddr_mem_get_usable_size(u64 base, u64 size)
 {
-	return (base + size >= SDRAM_MAX_SIZE) ? (SDRAM_MAX_SIZE - base) : size;
+	return (base + size >= CONFIG_SYS_SDRAM_BASE + SDRAM_MAX_SIZE) ?
+	       (CONFIG_SYS_SDRAM_BASE + SDRAM_MAX_SIZE - base) : size;
 }
 
 struct memblock *param_parse_ddr_mem(int *out_count)
