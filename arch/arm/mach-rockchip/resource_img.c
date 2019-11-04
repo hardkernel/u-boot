@@ -9,6 +9,7 @@
 #include <android_image.h>
 #include <boot_rkimg.h>
 #include <bmp_layout.h>
+#include <crypto.h>
 #include <fs.h>
 #include <malloc.h>
 #include <sysmem.h>
@@ -18,6 +19,8 @@
 #include <android_avb/rk_avb_ops_user.h>
 #include <dm/ofnode.h>
 #include <linux/list.h>
+#include <u-boot/sha1.h>
+#include <u-boot/sha256.h>
 #include <asm/arch/resource_img.h>
 
 DECLARE_GLOBAL_DATA_PTR;
@@ -29,7 +32,8 @@ DECLARE_GLOBAL_DATA_PTR;
 #define CONTENT_VERSION			0
 #define ENTRY_TAG			"ENTR"
 #define ENTRY_TAG_SIZE			4
-#define MAX_FILE_NAME_LEN		256
+#define MAX_FILE_NAME_LEN		220
+#define MAX_HASH_LEN			32
 
 #define DTB_FILE			"rk-kernel.dtb"
 
@@ -95,12 +99,16 @@ struct resource_img_hdr {
 struct resource_entry {
 	char		tag[4];
 	char		name[MAX_FILE_NAME_LEN];
+	char		hash[MAX_HASH_LEN];
+	uint32_t	hash_size;
 	uint32_t	f_offset;
 	uint32_t	f_size;
 };
 
 struct resource_file {
 	char		name[MAX_FILE_NAME_LEN];
+	char		hash[MAX_HASH_LEN];
+	uint32_t	hash_size;
 	uint32_t	f_offset;	/* Sector addr */
 	uint32_t	f_size;		/* Bytes */
 	struct list_head link;
@@ -151,6 +159,8 @@ static int add_file_to_list(struct resource_entry *entry, int rsce_base)
 	file->rsce_base = rsce_base;
 	file->f_offset = entry->f_offset;
 	file->f_size = entry->f_size;
+	file->hash_size = entry->hash_size;
+	memcpy(file->hash, entry->hash, entry->hash_size);
 	list_add_tail(&file->link, &entrys_head);
 
 	debug("entry:%p  %s offset:%d size:%d\n",
@@ -216,7 +226,7 @@ static int init_resource_list(struct resource_img_hdr *hdr)
 	int resource_found = 0;
 	void *content = NULL;
 	int rsce_base = 0;
-	int dtb_offset = 0;
+	__maybe_unused int dtb_offset = 0;
 	int dtb_size = 0;
 	int e_num, cnt;
 	int size;
@@ -429,14 +439,17 @@ err2:
 	/*
 	 * boot_img_hdr_v2 feature.
 	 *
-	 * If dtb position is present, replace the old with new one
+	 * If dtb position is present, replace the old with new one if
+	 * we don't need to verify DTB hash from resource.img file entry.
 	 */
 	if (dtb_size) {
+#ifndef CONFIG_ROCKCHIP_DTB_VERIFY
 		ret = replace_resource_entry(DTB_FILE, rsce_base,
 					     dtb_offset, dtb_size);
 		if (ret)
 			printf("Failed to load dtb from dtb position\n");
 		else
+#endif
 			env_update("bootargs", "androidboot.dtb_idx=0");
 	}
 err:
@@ -835,6 +848,72 @@ static int rockchip_read_distro_dtb(void *fdt_addr)
 }
 #endif
 
+#ifdef CONFIG_ROCKCHIP_DTB_VERIFY
+#ifdef CONFIG_DM_CRYPTO
+static int crypto_csum(u32 cap, char *input, u32 input_len, u8 *output)
+{
+	sha_context csha_ctx;
+	struct udevice *dev;
+
+	dev = crypto_get_device(cap);
+	if (!dev) {
+		printf("Can't find expected crypto device\n");
+		return -ENODEV;
+	}
+
+	csha_ctx.algo = cap;
+	csha_ctx.length = input_len;
+	crypto_sha_csum(dev, &csha_ctx, (char *)input,
+			input_len, output);
+
+	return 0;
+}
+
+static int fdt_check_hash(void *fdt_addr, struct resource_file *file)
+{
+	uchar hash[32];
+
+	if (!file->hash_size)
+		return 0;
+
+	printf("Crypto: enable\n");
+
+	if (file->hash_size == 20)
+		crypto_csum(CRYPTO_SHA1, fdt_addr, file->f_size, hash);
+	else if (file->hash_size == 32)
+		crypto_csum(CRYPTO_SHA256, fdt_addr, file->f_size, hash);
+	else
+		return -EINVAL;
+
+	if (memcmp(hash, file->hash, file->hash_size))
+		return -EBADF;
+
+	return 0;
+}
+
+#else
+static int fdt_check_hash(void *fdt_addr, struct resource_file *file)
+{
+	uchar hash[32];
+
+	if (!file->hash_size)
+		return 0;
+
+	if (file->hash_size == 20)
+		sha1_csum((const uchar *)fdt_addr, file->f_size, hash);
+	else if (file->hash_size == 32)
+		sha256_csum((const uchar *)fdt_addr, file->f_size, hash);
+	else
+		return -EINVAL;
+
+	if (memcmp(hash, file->hash, file->hash_size))
+		return -EBADF;
+
+	return 0;
+}
+#endif
+#endif	/* CONFIG_ROCKCHIP_DTB_VERIFY */
+
 int rockchip_read_dtb_file(void *fdt_addr)
 {
 	struct resource_file *file;
@@ -866,6 +945,14 @@ int rockchip_read_dtb_file(void *fdt_addr)
 		printf("Get a bad DTB file !\n");
 		return -EBADF;
 	}
+
+	/* Note: We only load the DTB from resource.img to verify */
+#ifdef CONFIG_ROCKCHIP_DTB_VERIFY
+	if (fdt_check_hash(fdt_addr, file)) {
+		printf("Get a bad hash of DTB !\n");
+		return -EBADF;
+	}
+#endif
 
 	if (!sysmem_alloc_base(MEMBLK_ID_FDT, (phys_addr_t)fdt_addr,
 			       ALIGN(file->f_size, RK_BLK_SIZE) +
