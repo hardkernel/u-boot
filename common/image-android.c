@@ -30,6 +30,9 @@ DECLARE_GLOBAL_DATA_PTR;
 #define ANDROID_IMAGE_DEFAULT_KERNEL_ADDR	0x10008000
 #define ANDROID_ARG_FDT_FILENAME "rk-kernel.dtb"
 
+/* Defined by rockchip legacy mkboot tool(SDK version < 8.1) */
+#define ANDROID_ROCKCHIP_LEGACY_PAGE_SIZE	0x4000
+
 static char andr_tmp_str[ANDR_BOOT_ARGS_SIZE + 1];
 static u32 android_kernel_comp_type = IH_COMP_NONE;
 
@@ -531,35 +534,55 @@ long android_image_load(struct blk_desc *dev_desc,
 			const disk_partition_t *part_info,
 			unsigned long load_address,
 			unsigned long max_size) {
+	struct andr_img_hdr *hdr;
+	u32 blksz = dev_desc->blksz;
+	u32 pszcnt, hdrcnt, kercnt;
 	void *buf;
 	long blk_cnt = 0;
 	long blk_read = 0;
 	u32 comp;
 	u32 kload_addr;
-	u32 blkcnt;
-	struct andr_img_hdr *hdr;
 
 	if (max_size < part_info->blksz)
 		return -1;
 
 	/*
-	 * Read the Android boot.img header and a few parts of
-	 * the head of kernel image(2 blocks maybe enough).
+	 * read Android image header and leave enough space for page_size align
+	 * and kernel image header(1 block maybe enough).
+	 *
+	 * ANDROID_ROCKCHIP_LEGACY_PAGE_SIZE is defined by rockchip legacy
+	 * mkboot tool(SDK version < 8.1) and larger than Google defined.
+	 *
+	 * To compatible this, we malloc enough buffer but only read android
+	 * header and kernel image(1 block) from storage(ignore page size).
 	 */
-	blkcnt = DIV_ROUND_UP(sizeof(*hdr), 512) + 2;
-	hdr = memalign(ARCH_DMA_MINALIGN, blkcnt * 512);
+	kercnt = 1;
+	hdrcnt = DIV_ROUND_UP(sizeof(*hdr), blksz);
+	pszcnt = DIV_ROUND_UP(ANDROID_ROCKCHIP_LEGACY_PAGE_SIZE, blksz);
+
+	hdr = memalign(ARCH_DMA_MINALIGN, (hdrcnt + pszcnt + kercnt) * blksz);
 	if (!hdr) {
 		printf("%s: no memory\n", __func__);
 		return -1;
 	}
 
-	if (blk_dread(dev_desc, part_info->start, blkcnt, hdr) != blkcnt)
+	if (blk_dread(dev_desc, part_info->start, hdrcnt, hdr) != hdrcnt)
 		blk_read = -1;
 
 	if (!blk_read && android_image_check_header(hdr) != 0) {
 		printf("** Invalid Android Image header **\n");
 		blk_read = -1;
 	}
+
+	/*
+	 * Update and skip pszcnt(hdr is included) according to hdr->page_size,
+	 * reading kernel image for compress validation.
+	 */
+	pszcnt = DIV_ROUND_UP(hdr->page_size, blksz);
+
+	if (blk_dread(dev_desc, part_info->start + pszcnt, kercnt,
+		      (void *)((ulong)hdr + hdr->page_size)) != kercnt)
+		blk_read = -1;
 
 	/* page_size for image header */
 	load_address -= hdr->page_size;
