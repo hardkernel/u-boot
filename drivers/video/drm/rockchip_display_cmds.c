@@ -16,6 +16,8 @@
 #include <dm/device.h>
 #include <dm/uclass.h>
 #include <dm/uclass-internal.h>
+#include <fat.h>
+#include <version.h>
 
 /*----------------------------------------------------------------------------*/
 #include "rockchip_display.h"
@@ -111,6 +113,7 @@ int lcd_init(void)
 	set_display_state(lcd->s, true);
 	return 0;
 error:
+	printf("LCD initialize fail!\n");
 	free(lcd);	lcd = NULL;
 	return -ENODEV;
 }
@@ -411,6 +414,47 @@ int lcd_setbg_color(const char *color)
 		lcd_setbg(0x00, 0x00, 0x00);
 	if (!strcmp(color ,"white"))
 		lcd_setbg(0xff, 0xff, 0xff);
+	return 0;
+}
+
+/*----------------------------------------------------------------------------*/
+int lcd_show_logo(void)
+{
+	char cmd[128];
+	unsigned long filesize, bmp_mem;
+	char *logo_fname;
+
+	if (lcd_init())
+		return -1;
+
+	/* env logo filename check */
+	if ((logo_fname = env_get("logo_filename")) == NULL)
+		logo_fname = LCD_LOGO_FILENAME;
+
+	/* bitmap load address */
+	bmp_mem = get_drm_memory() + DRM_ROCKCHIP_FB_SIZE;
+
+	/* load file size init */
+	env_set("filesize", "0");
+
+	/* sending command */
+	sprintf(cmd, "fatload mmc 1:1 %p %s",
+			(void *)bmp_mem, logo_fname);
+	run_command(cmd, 0);
+
+	/* load file size check */
+	filesize = env_get_ulong("filesize", 16, 0);
+	if ((!filesize) || (filesize >= LCD_LOGO_SIZE)) {
+		printf("%s file not found! filesize = %ld\n",
+			logo_fname, filesize);
+		return -1;
+	}
+	if (show_bmp(bmp_mem))
+		return -1;
+
+	lcd_setfg(255, 255, 0);
+	lcd_printf(0, 18, 1, "%s", U_BOOT_VERSION);
+	lcd_printf(0, 19, 1, "%s %s", U_BOOT_DATE, U_BOOT_TIME);
 	return 0;
 }
 

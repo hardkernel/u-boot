@@ -26,6 +26,12 @@
 #define	DEFAULT_LCD_ROTATE	LCD_ROTATE_270
 
 /*----------------------------------------------------------------------------*/
+/* Max logo bmp file is 1M bytes, only support format is 320x480x24bpp bitmap */
+/*----------------------------------------------------------------------------*/
+#define	LCD_LOGO_FILENAME	"logo.bmp"
+#define	LCD_LOGO_SIZE		(1024 * 1024)
+
+/*----------------------------------------------------------------------------*/
 /* LCD frame buffer is bgr format (24 bits) */
 /*----------------------------------------------------------------------------*/
 struct lcd_fb_bit {
@@ -81,6 +87,7 @@ int lcd_setfg_color(const char *color);
 int lcd_setbg_color(const char *color);
 int lcd_settransp(unsigned long transp);
 int lcd_gettransp(void);
+int lcd_show_logo(void);
 
 /*----------------------------------------------------------------------------*/
 #endif	// #define _ROCKCHIP_DISPLAY_CMDS_H_

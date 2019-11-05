@@ -158,10 +158,12 @@ static void *get_display_buffer(int size)
 	return buf;
 }
 
+#if !defined(CONFIG_TARGET_ODROIDGO2)
 static unsigned long get_display_size(void)
 {
 	return memory_end - memory_start;
 }
+#endif
 
 static bool can_direct_logo(int bpp)
 {
@@ -893,6 +895,7 @@ struct rockchip_logo_cache *find_or_alloc_logo_cache(const char *bmp)
 	return logo_cache;
 }
 
+#if !defined(CONFIG_TARGET_ODROIDGO2)
 /* Note: used only for rkfb kernel driver */
 static int load_kernel_bmp_logo(struct logo_info *logo, const char *bmp_name)
 {
@@ -927,6 +930,7 @@ static int load_kernel_bmp_logo(struct logo_info *logo, const char *bmp_name)
 	return 0;
 #endif
 }
+#endif
 
 static int load_bmp_logo(struct logo_info *logo, const char *bmp_name)
 {
@@ -1415,6 +1419,36 @@ static int rockchip_display_probe(struct udevice *dev)
 	return 0;
 }
 
+#if defined(CONFIG_TARGET_ODROIDGO2)
+
+#include <rockchip_display_cmds.h>
+
+void rockchip_display_fixup(void *blob)
+{
+	struct display_state *s;
+	int offset = 0;
+
+	if (fdt_node_offset_by_compatible(blob, 0, "rockchip,drm-logo") >= 0) {
+		list_for_each_entry(s, &rockchip_display_list, head) {
+				if (lcd_show_logo())
+					return;
+		}
+
+		offset = fdt_update_reserved_memory(blob, "rockchip,drm-logo",
+			    (u64)get_drm_memory(),
+			    (u64)(DRM_ROCKCHIP_FB_SIZE+LCD_LOGO_SIZE));
+		if (offset < 0)
+			printf("failed to reserve drm-loader-logo memory\n");
+		else {
+			printf("reserve drm-loader-logo offset = %d\n", offset);
+			printf("reserve drm-logo mem = %p, size = %lld\n",
+				(void *)get_drm_memory(),
+				(u64)(DRM_ROCKCHIP_FB_SIZE+LCD_LOGO_SIZE));
+		}
+	}
+}
+
+#else
 void rockchip_display_fixup(void *blob)
 {
 	const struct rockchip_connector_funcs *conn_funcs;
@@ -1504,6 +1538,7 @@ void rockchip_display_fixup(void *blob)
 #undef FDT_SET_U32
 	}
 }
+#endif
 
 int rockchip_display_bind(struct udevice *dev)
 {
