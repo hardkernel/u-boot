@@ -629,7 +629,7 @@ static AvbSlotVerifyResult android_slot_verify(char *boot_partname,
 			requested_partitions,
 			slot_suffix,
 			flags,
-			AVB_HASHTREE_ERROR_MODE_RESTART_AND_INVALIDATE,
+			AVB_HASHTREE_ERROR_MODE_RESTART,
 			&slot_data[0]);
 
 	strcat(verify_state, ANDROID_VERIFY_STATE);
