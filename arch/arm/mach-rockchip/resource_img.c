@@ -525,6 +525,7 @@ int rockchip_read_resource_file(void *buf, const char *name,
 	return ret;
 }
 
+#ifdef CONFIG_ROCKCHIP_HWID_DTB
 #define is_digit(c)		((c) >= '0' && (c) <= '9')
 #define is_abcd(c)		((c) >= 'a' && (c) <= 'd')
 #define is_equal(c)		((c) == '=')
@@ -537,7 +538,6 @@ int rockchip_read_resource_file(void *buf, const char *name,
 #define MAX_ADC_CH_NR		10
 #define MAX_GPIO_NR		10
 
-#ifdef CONFIG_ADC
 /*
  * How to make it works ?
  *
@@ -626,12 +626,6 @@ static int rockchip_read_dtb_by_adc(const char *file_name)
 
 	return found ? 0 : -ENOENT;
 }
-#else
-static int rockchip_read_dtb_by_adc(const char *file_name)
-{
-	return  -ENOENT;
-}
-#endif
 
 static int gpio_parse_base_address(fdt_addr_t *gpio_base_addr)
 {
@@ -793,6 +787,7 @@ static struct resource_file *rockchip_read_hwid_dtb(void)
 
 	return NULL;
 }
+#endif
 
 #ifdef CONFIG_ROCKCHIP_EARLY_DISTRO_DTB
 static int rockchip_read_distro_dtb(void *fdt_addr)
@@ -859,7 +854,9 @@ int rockchip_read_dtb_file(void *fdt_addr)
 		if (ret > 0)
 			return ret; /* found & load done */
 #endif
+#ifdef CONFIG_ROCKCHIP_HWID_DTB
 		file = rockchip_read_hwid_dtb();
+#endif
 		if (!file)
 			return -ENODEV;
 	}

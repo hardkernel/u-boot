@@ -596,6 +596,14 @@ config ROCKCHIP_EARLY_DISTRO_DTB_PATH
 	  "DTB file path in the bootable partition image"
 endif
 
+config ROCKCHIP_HWID_DTB
+	bool "Enable support for selecting DTB by hardware id"
+	depends on ROCKCHIP_RESOURCE_IMAGE
+	default n
+	help
+	  This enables select the expected DTB from sets by hardware id,
+	  i.e. GPIO or ADC value.
+
 config ROCKCHIP_VENDOR_PARTITION
 	bool "Rockchip vendor storage partition support"
 	depends on RKIMG_BOOTLOADER
