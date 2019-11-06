@@ -80,7 +80,18 @@ bl33_setup:
 	bl33_ep_info->pc = bl33_entry;
 	bl33_ep_info->spsr = SPSR_64(MODE_EL2, MODE_SP_ELX,
 				     DISABLE_ALL_EXECPTIONS);
-
+#if defined(CONFIG_SPL_KERNEL_BOOT) && defined(CONFIG_ARM64)
+	/*
+	 * Reference: arch/arm/lib/bootm.c
+	 * boot_jump_linux(bootm_headers_t *images, int flag)
+	 * {
+	 * 	......
+	 * 	armv8_switch_to_el2((u64)images->ft_addr, 0, 0, 0,
+	 * 			   images->ep, ES_TO_AARCH64);
+	 * }
+	 */
+	bl33_ep_info->args.arg0 = CONFIG_SPL_FDT_ADDR;
+#endif
 	bl2_to_bl31_params->bl33_image_info = &bl31_params_mem.bl33_image_info;
 	SET_PARAM_HEAD(bl2_to_bl31_params->bl33_image_info,
 		       ATF_PARAM_IMAGE_BINARY, ATF_VERSION_1, 0);
