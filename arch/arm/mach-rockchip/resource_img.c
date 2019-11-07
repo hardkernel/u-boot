@@ -287,9 +287,6 @@ static int init_resource_list(struct resource_img_hdr *hdr)
 			       (os_ver >> 14) & 0x7F, (os_ver >> 7) & 0x7F,
 			       (os_lvl >> 4) + 2000, os_lvl & 0x0F);
 
-		debug("%s: Load resource from %s second pos\n",
-		      __func__, part_info.name);
-
 		rsce_base = part_info.start * dev_desc->blksz;
 		rsce_base += andr_hdr->page_size;
 		rsce_base += ALIGN(andr_hdr->kernel_size, andr_hdr->page_size);
@@ -313,8 +310,6 @@ parse_resource_part:
 
 	/* If not find android image, get resource file from resource part */
 	if (!resource_found) {
-		debug("%s: Load resource from resource part\n", __func__);
-
 		boot_partname = PART_RESOURCE;
 		ret = part_get_info_by_name(dev_desc, boot_partname, &part_info);
 		if (ret < 0) {
@@ -370,7 +365,7 @@ parse_resource_part:
 	}
 
 	ret = 0;
-	printf("Load FDT from %s part\n", boot_partname);
+	printf("Found DTB in %s part\n", boot_partname);
 
 parse_second_pos_dtb:
 #ifdef CONFIG_ANDROID_BOOT_IMAGE
@@ -393,7 +388,7 @@ parse_second_pos_dtb:
 		add_file_to_list(entry, part_info.start);
 		free(entry);
 		ret = 0;
-		printf("Load FDT from %s part(second pos)\n", boot_partname);
+		printf("Found DTB in %s part(second pos)\n", boot_partname);
 	}
 
 parse_logo:
@@ -426,7 +421,7 @@ parse_logo:
 		ret = replace_resource_entry("logo.bmp", part_info.start, 0,
 					     get_unaligned_le32(&header->file_size));
 		if (!ret)
-			printf("Load logo.bmp from logo part\n");
+			printf("Found logo.bmp in logo part\n");
 err2:
 		free(header);
 	}
