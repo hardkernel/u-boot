@@ -3,8 +3,12 @@
  *
  * SPDX-License-Identifier:     GPL-2.0+	X11
  */
+
+#include "rk3368-u-boot.dtsi"
+
 / {
 	chosen {
+		stdout-path = "serial4:115200n8";
 		u-boot,spl-boot-order = &emmc;
 	};
 };
