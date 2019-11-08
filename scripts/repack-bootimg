@@ -95,23 +95,23 @@ fi
 srctree=${srctree-"."}
 objtree=${objtree-"."}
 out=${out-"out"}
-if [ "$($srctree/scripts/config --state CONFIG_ARM64)" == "y" ]; then
-	if [ "$compressed_kernel" == "y" ]; then
-		default_kernel=arch/arm64/boot/Image.lz4
-	else
-		default_kernel=arch/arm64/boot/Image
-	fi
-else
-	if [ "$compressed_kernel" == "y" ]; then
-		default_kernel=arch/arm/boot/zImage
-	else
-		default_kernel=arch/arm/boot/Image
-	fi
+
+if [ "$kernel" == "" ]; then
+	kernel=${kernel-$out/kernel}
 fi
-kernel=${kernel-$objtree/$default_kernel}
-second=${second-$objtree/resource.img}
-ramdisk=${ramdisk-$out/ramdisk}
-dtb=${dtb-$out/dtb}
+
+if [ "$second" == "" ]; then
+	second=${second-$out/second}
+fi
+
+if [ "$ramdisk" == "" ]; then
+	ramdisk=${ramdisk-$out/ramdisk}
+fi
+
+if [ "$dtb" == "" ]; then
+	dtb=${dtb-$out/dtb}
+fi
+
 recovery_dtbo=${recovery_dtbo-$out/recovery_dtbo}
 log="$out/unpack.log"
 
@@ -158,3 +158,5 @@ $RECOVERY_DTBO \
 --os_version $os_version \
 --os_patch_level $os_patch_level \
 --output $output
+
+echo -e "\nRepack Image is ready: $output\n"
