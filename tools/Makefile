@@ -67,7 +67,7 @@ hostprogs-y += resource_tool
 boot_merger-objs := rockchip/boot_merger.o rockchip/sha2.o lib/sha256.o
 trust_merger-objs := rockchip/trust_merger.o rockchip/sha2.o lib/sha256.o
 loaderimage-objs := rockchip/loaderimage.o rockchip/sha.o lib/sha256.o rockchip/crc32_rk.o
-resource_tool-objs := rockchip/resource_tool.o lib/sha1.o lib/sha256.o
+resource_tool-objs := rockchip/resource_tool.o
 endif
 
 FIT_SIG_OBJS-$(CONFIG_FIT_SIGNATURE) := common/image-sig.o
