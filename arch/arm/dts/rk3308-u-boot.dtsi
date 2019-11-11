@@ -8,7 +8,7 @@
 
 	chosen {
 		stdout-path = &uart2;
-		u-boot,spl-boot-order = &sfc, &nandc, &emmc;
+		u-boot,spl-boot-order = &sdmmc, &sfc, &nandc, &emmc;
 	};
 };
 
@@ -41,6 +41,42 @@
 		nand-ecc-strength = <16>;
 		nand-ecc-step-size = <1024>;
 	};
+};
+
+&pinctrl {
+	u-boot,dm-pre-reloc;
+};
+
+&pcfg_pull_none_4ma {
+	u-boot,dm-spl;
+};
+
+&pcfg_pull_up_4ma {
+	u-boot,dm-spl;
+};
+
+&sdmmc {
+	u-boot,dm-pre-reloc;
+};
+
+&sdmmc_pin {
+	u-boot,dm-spl;
+};
+
+&sdmmc_clk {
+	u-boot,dm-spl;
+};
+
+&sdmmc_cmd {
+	u-boot,dm-spl;
+};
+
+&sdmmc_bus4 {
+	u-boot,dm-spl;
+};
+
+&sdmmc_pwren {
+	u-boot,dm-spl;
 };
 
 &sfc {
