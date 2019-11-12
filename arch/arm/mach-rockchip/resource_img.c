@@ -258,14 +258,13 @@ static int init_resource_list(struct resource_img_hdr *hdr)
 	if (!hdr)
 		return -ENOMEM;
 
+	/*
+	 * Anyway, we must read android hdr firstly from boot partition to get
+	 * the 'os_version' for android_bcb_msg_sector_offset() to confirm BCB
+	 * message offset of misc partition.
+	 */
 #ifdef CONFIG_ANDROID_BOOT_IMAGE
 	struct andr_img_hdr *andr_hdr;
-
-	/* Get boot mode from misc */
-#ifndef CONFIG_ANDROID_AB
-	if (rockchip_get_boot_mode() == BOOT_MODE_RECOVERY)
-		boot_partname = PART_RECOVERY;
-#endif
 
 	ret = part_get_info_by_name(dev_desc, boot_partname, &part_info);
 	if (ret < 0) {
@@ -274,7 +273,6 @@ static int init_resource_list(struct resource_img_hdr *hdr)
 		goto parse_resource_part;
 	}
 
-	/* Try to find resource from android second position */
 	andr_hdr = (void *)hdr;
 	ret = blk_dread(dev_desc, part_info.start, cnt, andr_hdr);
 	if (ret != cnt) {
@@ -289,14 +287,40 @@ static int init_resource_list(struct resource_img_hdr *hdr)
 		u32 os_ver = andr_hdr->os_version >> 11;
 		u32 os_lvl = andr_hdr->os_version & ((1U << 11) - 1);
 
-#ifdef DEBUG
-		android_print_contents(andr_hdr);
-#endif
-		if (os_ver)
+		if (os_ver) {
+			gd->bd->bi_andr_version = andr_hdr->os_version;
 			printf("Android %u.%u, Build %u.%u\n",
 			       (os_ver >> 14) & 0x7F, (os_ver >> 7) & 0x7F,
 			       (os_lvl >> 4) + 2000, os_lvl & 0x0F);
+		}
+	}
 
+	/* Get boot mode from misc and read if recovery mode */
+#ifndef CONFIG_ANDROID_AB
+	if (rockchip_get_boot_mode() == BOOT_MODE_RECOVERY) {
+		boot_partname = PART_RECOVERY;
+
+		ret = part_get_info_by_name(dev_desc, boot_partname, &part_info);
+		if (ret < 0) {
+			printf("%s: failed to get %s part, ret=%d\n",
+			       __func__, boot_partname, ret);
+			goto parse_resource_part;
+		}
+
+		/* Try to find resource from android second position */
+		andr_hdr = (void *)hdr;
+		ret = blk_dread(dev_desc, part_info.start, cnt, andr_hdr);
+		if (ret != cnt) {
+			printf("%s: failed to read %s hdr, ret=%d\n",
+			       __func__, part_info.name, ret);
+			ret = -EIO;
+			goto out;
+		}
+	}
+#endif
+
+	ret = android_image_check_header(andr_hdr);
+	if (!ret) {
 		rsce_base = part_info.start * dev_desc->blksz;
 		rsce_base += andr_hdr->page_size;
 		rsce_base += ALIGN(andr_hdr->kernel_size, andr_hdr->page_size);

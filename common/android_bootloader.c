@@ -42,8 +42,6 @@ DECLARE_GLOBAL_DATA_PTR;
 #define ANDROID_VERIFY_STATE "androidboot.verifiedbootstate="
 #ifdef CONFIG_ROCKCHIP_RESOURCE_IMAGE
 #define ANDROID_ARG_FDT_FILENAME "rk-kernel.dtb"
-#define BOOTLOADER_MESSAGE_OFFSET_IN_MISC	(16 * 1024)
-#define BOOTLOADER_MESSAGE_BLK_OFFSET	(BOOTLOADER_MESSAGE_OFFSET_IN_MISC >> 9)
 #else
 #define ANDROID_ARG_FDT_FILENAME "kernel.dtb"
 #endif
@@ -185,12 +183,8 @@ int android_bootloader_message_load(
 		return -1;
 	}
 
-#ifdef CONFIG_RKIMG_BOOTLOADER
-	if (blk_dread(dev_desc, part_info->start + BOOTLOADER_MESSAGE_BLK_OFFSET,
+	if (blk_dread(dev_desc, part_info->start + android_bcb_msg_sector_offset(),
 	     message_blocks, message) !=
-#else
-	if (blk_dread(dev_desc, part_info->start, message_blocks, message) !=
-#endif
 	    message_blocks) {
 		printf("Could not read from misc partition\n");
 		return -1;
@@ -204,13 +198,9 @@ static int android_bootloader_message_write(
 	const disk_partition_t *part_info,
 	struct android_bootloader_message *message)
 {
-#ifdef CONFIG_RKIMG_BOOTLOADER
 	ulong message_blocks = sizeof(struct android_bootloader_message) /
-	    part_info->blksz + BOOTLOADER_MESSAGE_BLK_OFFSET;
-#else
-	ulong message_blocks = sizeof(struct android_bootloader_message) /
-	    part_info->blksz;
-#endif
+	    part_info->blksz + android_bcb_msg_sector_offset();
+
 	if (message_blocks > part_info->size) {
 		printf("misc partition too small.\n");
 		return -1;

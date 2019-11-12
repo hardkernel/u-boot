@@ -9,6 +9,9 @@
 #include <bootm.h>
 #include <boot_rkimg.h>
 #include <console.h>
+#ifdef CONFIG_ANDROID_BOOT_IMAGE
+#include <image.h>
+#endif
 #include <malloc.h>
 #include <mmc.h>
 #include <part.h>
@@ -306,6 +309,11 @@ static void rkloader_set_bootloader_msg(struct bootloader_message *bmsg)
 	struct blk_desc *dev_desc;
 	disk_partition_t part_info;
 	int ret, cnt;
+#ifdef CONFIG_ANDROID_BOOT_IMAGE
+	u32 bcb_offset = android_bcb_msg_sector_offset();
+#else
+	u32 bcb_offset = BOOTLOADER_MESSAGE_BLK_OFFSET;
+#endif
 
 	dev_desc = rockchip_get_bootdev();
 	if (!dev_desc) {
@@ -321,7 +329,7 @@ static void rkloader_set_bootloader_msg(struct bootloader_message *bmsg)
 
 	cnt = DIV_ROUND_UP(sizeof(struct bootloader_message), dev_desc->blksz);
 	ret = blk_dwrite(dev_desc,
-			 part_info.start + BOOTLOADER_MESSAGE_BLK_OFFSET,
+			 part_info.start + bcb_offset,
 			 cnt, bmsg);
 	if (ret != cnt)
 		printf("%s: Wipe data failed\n", __func__);
@@ -390,6 +398,11 @@ int rockchip_get_boot_mode(void)
 	char *env_reboot_mode;
 	int clear_boot_reg = 0;
 	int ret, cnt;
+#ifdef CONFIG_ANDROID_BOOT_IMAGE
+	u32 bcb_offset = android_bcb_msg_sector_offset();
+#else
+	u32 bcb_offset = BOOTLOADER_MESSAGE_BLK_OFFSET;
+#endif
 
 	/*
 	 * Here, we mainly check for:
@@ -428,7 +441,7 @@ int rockchip_get_boot_mode(void)
 	cnt = DIV_ROUND_UP(sizeof(struct bootloader_message), dev_desc->blksz);
 	bmsg = memalign(ARCH_DMA_MINALIGN, cnt * dev_desc->blksz);
 	ret = blk_dread(dev_desc,
-			part_info.start + BOOTLOADER_MESSAGE_BLK_OFFSET,
+			part_info.start + bcb_offset,
 			cnt, bmsg);
 	if (ret != cnt) {
 		free(bmsg);
