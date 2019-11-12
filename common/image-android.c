@@ -29,12 +29,35 @@ DECLARE_GLOBAL_DATA_PTR;
 
 #define ANDROID_IMAGE_DEFAULT_KERNEL_ADDR	0x10008000
 #define ANDROID_ARG_FDT_FILENAME "rk-kernel.dtb"
+#define ANDROID_Q_VER				10
 
 /* Defined by rockchip legacy mkboot tool(SDK version < 8.1) */
 #define ANDROID_ROCKCHIP_LEGACY_PAGE_SIZE	0x4000
 
 static char andr_tmp_str[ANDR_BOOT_ARGS_SIZE + 1];
 static u32 android_kernel_comp_type = IH_COMP_NONE;
+
+u32 android_image_major_version(void)
+{
+	/* MSB 7-bits */
+	return gd->bd->bi_andr_version >> 25;
+}
+
+u32 android_bcb_msg_sector_offset(void)
+{
+	/*
+	 * Rockchip platforms defines BCB message at the 16KB offset of
+	 * misc partition while the Google defines it at 0x0 offset.
+	 *
+	 * From Android-Q, the 0x0 offset is mandary on Google VTS, so that
+	 * this is a compatibility according to android image 'os_version'.
+	 */
+#ifdef CONFIG_RKIMG_BOOTLOADER
+	return (android_image_major_version() >= ANDROID_Q_VER) ? 0x0 : 0x20;
+#else
+	return 0x0;
+#endif
+}
 
 static ulong android_image_get_kernel_addr(const struct andr_img_hdr *hdr)
 {
