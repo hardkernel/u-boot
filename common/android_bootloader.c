@@ -35,6 +35,8 @@ DECLARE_GLOBAL_DATA_PTR;
 #define ANDROID_PARTITION_RECOVERY  "recovery"
 #define ANDROID_PARTITION_SYSTEM "system"
 #define ANDROID_PARTITION_VBMETA "vbmeta"
+#define ANDROID_PARTITION_SUPER "super"
+
 
 #define ANDROID_ARG_SLOT_SUFFIX "androidboot.slot_suffix="
 #define ANDROID_ARG_ROOT "root="
@@ -49,6 +51,52 @@ DECLARE_GLOBAL_DATA_PTR;
 #define UUID_SIZE 37
 
 #ifdef CONFIG_ANDROID_AB
+static int is_support_dynamic_partition(struct blk_desc *dev_desc)
+{
+	disk_partition_t super_part_info;
+	disk_partition_t boot_part_info;
+	int part_num;
+	int is_dp = 0;
+	char *super_dp = NULL;
+	char *super_info = "androidboot.super_partition=";
+
+	memset(&super_part_info, 0x0, sizeof(super_part_info));
+	part_num = part_get_info_by_name(dev_desc, ANDROID_PARTITION_SUPER,
+					 &super_part_info);
+	if (part_num < 0) {
+		memset(&boot_part_info, 0x0, sizeof(boot_part_info));
+		part_num = part_get_info_by_name(dev_desc, ANDROID_PARTITION_BOOT,
+					 &boot_part_info);
+		if (part_num < 0) {
+			is_dp = 0;
+		} else {
+			andr_img_hdr hdr;
+			ulong hdr_blocks = sizeof(struct andr_img_hdr) /
+			boot_part_info.blksz;
+
+			memset(&hdr, 0x0, sizeof(hdr));
+			if (blk_dread(dev_desc, boot_part_info.start, hdr_blocks, &hdr) !=
+				hdr_blocks) {
+				is_dp = 0;
+			} else {
+				debug("hdr cmdline=%s\n", hdr.cmdline);
+				super_dp = strstr(hdr.cmdline, super_info);
+				if (super_dp != NULL) {
+					is_dp = 1;
+				} else {
+					is_dp = 0;
+				}
+			}
+		}
+	} else {
+		debug("Find super partition, the firmware support dynamic partition\n");
+		is_dp = 1;
+	}
+
+	debug("%s is_dp=%d\n", __func__, is_dp);
+	return is_dp;
+}
+
 static int get_partition_unique_uuid(char *partition,
 				     char *guid_buf,
 				     size_t guid_buf_size)
@@ -101,6 +149,17 @@ static void update_root_uuid_if_android_ab(void)
 	char root_partuuid[70] = "root=PARTUUID=";
 	char *boot_args = env_get("bootargs");
 	char guid_buf[UUID_SIZE] = {0};
+	struct blk_desc *dev_desc;
+
+	dev_desc = rockchip_get_bootdev();
+	if (!dev_desc) {
+		printf("%s: Could not find device\n", __func__);
+		return;
+	}
+
+	if (is_support_dynamic_partition(dev_desc)) {
+		return;
+	}
 
 	if (!strstr(boot_args, "root=")) {
 		get_partition_unique_uuid(ANDROID_PARTITION_SYSTEM,
@@ -1042,7 +1101,20 @@ int android_bootloader_boot_flow(struct blk_desc *dev_desc,
 		 * recovery initramfs in the boot partition.
 		 */
 #ifdef CONFIG_ANDROID_AB
-		mode_cmdline = "skip_initramfs";
+		/*  In A/B, the recovery image is built as boot.img, containing the
+		* recovery's ramdisk. Previously, bootloader used the skip_initramfs
+		* kernel command line parameter to decide which mode to boot into.
+		* For Android >=10 and with dynamic partition support, the bootloader
+		* MUST NOT pass skip_initramfs to the kernel command-line.
+		* Instead, bootloader should pass androidboot.force_normal_boot=1
+		* and then Android's first-stage init in ramdisk
+		* will skip recovery and boot normal Android.
+		*/
+		if (is_support_dynamic_partition(dev_desc)) {
+			mode_cmdline = "androidboot.force_normal_boot=1";
+		} else {
+			mode_cmdline = "skip_initramfs";
+		}
 #endif
 		break;
 	case ANDROID_BOOT_MODE_RECOVERY:
