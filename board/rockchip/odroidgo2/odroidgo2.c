@@ -43,7 +43,6 @@ void board_debug_uart2m1(void)
 
 void board_init_sfc_if(void)
 {
-#if 0
 	static struct px30_grf * const grf = (void *)GRF_BASE;
 
 	/* sfc_clk */
@@ -57,7 +56,6 @@ void board_init_sfc_if(void)
 
 	/* sfc_sio1 */
 	rk_setreg(&grf->gpio1al_iomux, (0x3 << 4));
-#endif
 }
 
 int rk_board_late_init(void)
