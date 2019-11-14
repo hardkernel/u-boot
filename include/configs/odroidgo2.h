@@ -33,6 +33,15 @@
 #define CONFIG_EXTRA_ENV_SETTINGS	\
 	"fdt_addr_r=0x01f00000\0" \
 	"dtb_name=rk3326-odroidgo2-linux.dtb\0" \
+	"loadaddr=0x100000\0" \
+	"spi_upgrade_from_sd="\
+		"rksfc scan; "\
+		"rksfc dev 1; "\
+		"fatload mmc 1 ${loadaddr} mbr.img; rksfc write ${loadaddr} 0x0 0x1; "\
+		"fatload mmc 1 ${loadaddr} gpt.img; rksfc write ${loadaddr} 0x1 0x21; "\
+		"fatload mmc 1 ${loadaddr} rk3326_miniloader_spiboot.img; rksfc write ${loadaddr} 0x80 0x780; "\
+		"fatload mmc 1 ${loadaddr} uboot.img; rksfc write ${loadaddr} 0x800 0x800; "\
+		"fatload mmc 1 ${loadaddr} trust.img; rksfc write ${loadaddr} 0x1000 0x1000\0"\
 	"setbootargs=setenv bootargs earlyprintk swiotlb=1 "		\
 		"console=ttyFIQ0,115200n8 "				\
 		"rw root=/dev/mmcblk0p2 rootfstype=ext4 rootwait\0"	\
