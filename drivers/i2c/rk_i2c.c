@@ -244,7 +244,6 @@ static int rk_i2c_read(struct rk_i2c *i2c, uchar chip, uint reg, uint r_len,
 	}
 
 i2c_exit:
-	rk_i2c_send_stop_bit(i2c);
 	rk_i2c_disable(i2c);
 
 	return err;
@@ -323,7 +322,6 @@ static int rk_i2c_write(struct rk_i2c *i2c, uchar chip, uint reg, uint r_len,
 	}
 
 i2c_exit:
-	rk_i2c_send_stop_bit(i2c);
 	rk_i2c_disable(i2c);
 
 	return err;
@@ -350,6 +348,9 @@ static int rockchip_i2c_xfer(struct udevice *bus, struct i2c_msg *msg,
 			return -EREMOTEIO;
 		}
 	}
+
+	rk_i2c_send_stop_bit(i2c);
+	rk_i2c_disable(i2c);
 
 	return 0;
 }
