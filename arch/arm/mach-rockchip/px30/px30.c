@@ -51,6 +51,97 @@ static struct mm_region px30_mem_map[] = {
 struct mm_region *mem_map = px30_mem_map;
 #endif
 
+#define PMU_PWRDN_CON			0xff000018
+#define GRF_BASE			0xff140000
+#define CRU_BASE			0xff2b0000
+#define VIDEO_PHY_BASE			0xff2e0000
+#define SERVICE_CORE_ADDR		0xff508000
+#define DDR_FW_BASE			0xff534000
+
+#define FW_DDR_CON			0x40
+
+#define QOS_PRIORITY			0x08
+
+#define QOS_PRIORITY_LEVEL(h, l)	((((h) & 3) << 8) | ((l) & 3))
+
+/* GRF_GPIO1CL_IOMUX */
+enum {
+	GPIO1C1_SHIFT		= 4,
+	GPIO1C1_MASK		= 0xf << GPIO1C1_SHIFT,
+	GPIO1C1_GPIO		= 0,
+	GPIO1C1_UART1_TX,
+
+	GPIO1C0_SHIFT		= 0,
+	GPIO1C0_MASK		= 0xf << GPIO1C0_SHIFT,
+	GPIO1C0_GPIO		= 0,
+	GPIO1C0_UART1_RX,
+};
+
+/* GRF_GPIO1DL_IOMUX */
+enum {
+	GPIO1D3_SHIFT		= 12,
+	GPIO1D3_MASK		= 0xf << GPIO1D3_SHIFT,
+	GPIO1D3_GPIO		= 0,
+	GPIO1D3_SDMMC_D1,
+	GPIO1D3_UART2_RXM0,
+
+	GPIO1D2_SHIFT		= 8,
+	GPIO1D2_MASK		= 0xf << GPIO1D2_SHIFT,
+	GPIO1D2_GPIO		= 0,
+	GPIO1D2_SDMMC_D0,
+	GPIO1D2_UART2_TXM0,
+};
+
+/* GRF_GPIO1DH_IOMUX */
+enum {
+	GPIO1D7_SHIFT		= 12,
+	GPIO1D7_MASK		= 0xf << GPIO1D7_SHIFT,
+	GPIO1D7_GPIO		= 0,
+	GPIO1D7_SDMMC_CMD,
+
+	GPIO1D6_SHIFT		= 8,
+	GPIO1D6_MASK		= 0xf << GPIO1D6_SHIFT,
+	GPIO1D6_GPIO		= 0,
+	GPIO1D6_SDMMC_CLK,
+
+	GPIO1D5_SHIFT		= 4,
+	GPIO1D5_MASK		= 0xf << GPIO1D5_SHIFT,
+	GPIO1D5_GPIO		= 0,
+	GPIO1D5_SDMMC_D3,
+
+	GPIO1D4_SHIFT		= 0,
+	GPIO1D4_MASK		= 0xf << GPIO1D4_SHIFT,
+	GPIO1D4_GPIO		= 0,
+	GPIO1D4_SDMMC_D2,
+};
+
+/* GRF_GPIO2BH_IOMUX */
+enum {
+	GPIO2B6_SHIFT		= 8,
+	GPIO2B6_MASK		= 0xf << GPIO2B6_SHIFT,
+	GPIO2B6_GPIO		= 0,
+	GPIO2B6_CIF_D1M0,
+	GPIO2B6_UART2_RXM1,
+
+	GPIO2B4_SHIFT		= 0,
+	GPIO2B4_MASK		= 0xf << GPIO2B4_SHIFT,
+	GPIO2B4_GPIO		= 0,
+	GPIO2B4_CIF_D0M0,
+	GPIO2B4_UART2_TXM1,
+};
+
+/* GRF_GPIO3AL_IOMUX */
+enum {
+	GPIO3A2_SHIFT		= 8,
+	GPIO3A2_MASK		= 0xf << GPIO3A2_SHIFT,
+	GPIO3A2_GPIO		= 0,
+	GPIO3A2_UART5_TX	= 4,
+
+	GPIO3A1_SHIFT		= 4,
+	GPIO3A1_MASK		= 0xf << GPIO3A1_SHIFT,
+	GPIO3A1_GPIO		= 0,
+	GPIO3A1_UART5_RX	= 4,
+};
 int arch_cpu_init(void)
 {
 #ifdef CONFIG_SPL_BUILD
@@ -64,7 +155,28 @@ int arch_cpu_init(void)
 #ifdef CONFIG_SPL_BUILD
 	/* Set cpu qos priority */
 	writel(QOS_PRIORITY_LEVEL(1, 1), SERVICE_CORE_ADDR + QOS_PRIORITY);
+
+#if !defined(CONFIG_DEBUG_UART_BOARD_INIT) || \
+    (CONFIG_DEBUG_UART_BASE != 0xff160000) || \
+    (CONFIG_DEBUG_UART_CHANNEL != 0)
+	static struct px30_grf * const grf = (void *)GRF_BASE;
+	/* fix sdmmc pinmux if not using uart2-channel0 as debug uart */
+	rk_clrsetreg(&grf->gpio1dl_iomux,
+		     GPIO1D3_MASK | GPIO1D2_MASK,
+		     GPIO1D3_SDMMC_D1 << GPIO1D3_SHIFT |
+		     GPIO1D2_SDMMC_D0 << GPIO1D2_SHIFT);
+	rk_clrsetreg(&grf->gpio1dh_iomux,
+		     GPIO1D7_MASK | GPIO1D6_MASK | GPIO1D5_MASK | GPIO1D4_MASK,
+		     GPIO1D7_SDMMC_CMD << GPIO1D7_SHIFT |
+		     GPIO1D6_SDMMC_CLK << GPIO1D6_SHIFT |
+		     GPIO1D5_SDMMC_D3 << GPIO1D5_SHIFT |
+		     GPIO1D4_SDMMC_D2 << GPIO1D4_SHIFT);
 #endif
+
+#endif
+
+	/* Enable PD_VO (default disable at reset) */
+	rk_clrreg(PMU_PWRDN_CON, 1 << 13);
 
 	/* Disable video phy bandgap by default */
 	writel(0x82, VIDEO_PHY_BASE + 0x0000);
@@ -82,7 +194,35 @@ int arch_cpu_init(void)
 void board_debug_uart_init(void)
 {
 	static struct px30_grf * const grf = (void *)GRF_BASE;
+	static struct px30_cru * const cru = (void *)CRU_BASE;
 
+#if defined(CONFIG_DEBUG_UART_BASE) && (CONFIG_DEBUG_UART_BASE == 0xff158000)
+	/* uart_sel_clk default select 24MHz */
+	rk_clrsetreg(&cru->clksel_con[34],
+		     UART1_PLL_SEL_MASK | UART1_DIV_CON_MASK,
+		     UART1_PLL_SEL_24M << UART1_PLL_SEL_SHIFT | 0);
+	rk_clrsetreg(&cru->clksel_con[35],
+		     UART1_CLK_SEL_MASK,
+		     UART1_CLK_SEL_UART1 << UART1_CLK_SEL_SHIFT);
+
+	rk_clrsetreg(&grf->gpio1cl_iomux,
+		     GPIO1C1_MASK | GPIO1C0_MASK,
+		     GPIO1C1_UART1_TX << GPIO1C1_SHIFT |
+		     GPIO1C0_UART1_RX << GPIO1C0_SHIFT);
+#elif defined(CONFIG_DEBUG_UART_BASE) && (CONFIG_DEBUG_UART_BASE == 0xff178000)
+	/* uart_sel_clk default select 24MHz */
+	rk_clrsetreg(&cru->clksel_con[46],
+		     UART5_PLL_SEL_MASK | UART5_DIV_CON_MASK,
+		     UART5_PLL_SEL_24M << UART5_PLL_SEL_SHIFT | 0);
+	rk_clrsetreg(&cru->clksel_con[47],
+		     UART5_CLK_SEL_MASK,
+		     UART5_CLK_SEL_UART5 << UART5_CLK_SEL_SHIFT);
+
+	rk_clrsetreg(&grf->gpio3al_iomux,
+		     GPIO3A2_MASK | GPIO3A1_MASK,
+		     GPIO3A2_UART5_TX << GPIO3A2_SHIFT |
+		     GPIO3A1_UART5_RX << GPIO3A1_SHIFT);
+#else
 	/* GRF_IOFUNC_CON0 */
 	enum {
 		CON_IOMUX_UART2SEL_SHIFT	= 10,
@@ -90,36 +230,6 @@ void board_debug_uart_init(void)
 		CON_IOMUX_UART2SEL_M0	= 0,
 		CON_IOMUX_UART2SEL_M1,
 		CON_IOMUX_UART2SEL_USBPHY,
-	};
-
-#ifdef CONFIG_TPL_BUILD
-	static struct px30_cru * const cru = (void *)CRU_BASE;
-	static struct rk_uart * const uart = (void *)UART2_BASE;
-
-	/* GRF_GPIO2BH_IOMUX */
-	enum {
-		GPIO2B7_SHIFT		= 12,
-		GPIO2B7_MASK		= 0xf << GPIO2B7_SHIFT,
-		GPIO2B7_GPIO		= 0,
-		GPIO2B7_CIF_D10M0,
-		GPIO2B7_I2C2_SCL,
-
-		GPIO2B6_SHIFT		= 8,
-		GPIO2B6_MASK		= 0xf << GPIO2B6_SHIFT,
-		GPIO2B6_GPIO		= 0,
-		GPIO2B6_CIF_D1M0,
-		GPIO2B6_UART2_RXM1,
-
-		GPIO2B5_SHIFT		= 4,
-		GPIO2B5_MASK		= 0xf << GPIO2B5_SHIFT,
-		GPIO2B5_GPIO		= 0,
-		GPIO2B5_PWM2,
-
-		GPIO2B4_SHIFT		= 0,
-		GPIO2B4_MASK		= 0xf << GPIO2B4_SHIFT,
-		GPIO2B4_GPIO		= 0,
-		GPIO2B4_CIF_D0M0,
-		GPIO2B4_UART2_TXM1,
 	};
 
 	/* uart_sel_clk default select 24MHz */
@@ -130,6 +240,7 @@ void board_debug_uart_init(void)
 		     UART2_CLK_SEL_MASK,
 		     UART2_CLK_SEL_UART2 << UART2_CLK_SEL_SHIFT);
 
+#if (CONFIG_DEBUG_UART2_CHANNEL == 1)
 	/* Enable early UART2 */
 	rk_clrsetreg(&grf->iofunc_con0,
 		     CON_IOMUX_UART2SEL_MASK,
@@ -141,53 +252,21 @@ void board_debug_uart_init(void)
 	 * so only need set uart2_rxm1 and uart2_txm1 here.
 	 */
 	rk_clrsetreg(&grf->gpio2bh_iomux,
-		     GPIO2B6_MASK,
-		     GPIO2B6_UART2_RXM1 << GPIO2B6_SHIFT);
-	rk_clrsetreg(&grf->gpio2bh_iomux,
-		     GPIO2B4_MASK,
+		     GPIO2B6_MASK | GPIO2B4_MASK,
+		     GPIO2B6_UART2_RXM1 << GPIO2B6_SHIFT |
 		     GPIO2B4_UART2_TXM1 << GPIO2B4_SHIFT);
-
-	/* enable FIFO */
-	writel(0x1, &uart->sfe);
 #else
-#ifdef CONFIG_SPL_BUILD
-	/* GRF_GPIO1DL_IOMUX */
-	enum {
-		GPIO1D3_SHIFT		= 12,
-		GPIO1D3_MASK		= 0xf << GPIO1D3_SHIFT,
-		GPIO1D3_GPIO		= 0,
-		GPIO1D3_SDMMC_D1,
-		GPIO1D3_UART2_RXM0,
+	rk_clrsetreg(&grf->iofunc_con0,
+		     CON_IOMUX_UART2SEL_MASK,
+		     CON_IOMUX_UART2SEL_M0 << CON_IOMUX_UART2SEL_SHIFT);
 
-		GPIO1D2_SHIFT		= 8,
-		GPIO1D2_MASK		= 0xf << GPIO1D2_SHIFT,
-		GPIO1D2_GPIO		= 0,
-		GPIO1D2_SDMMC_D0,
-		GPIO1D2_UART2_TXM0,
-
-		GPIO1D1_SHIFT		= 4,
-		GPIO1D1_MASK		= 0xf << GPIO1D1_SHIFT,
-		GPIO1D1_GPIO		= 0,
-		GPIO1D1_SDIO_D3,
-
-		GPIO1D0_SHIFT		= 0,
-		GPIO1D0_MASK		= 0xf << GPIO1D0_SHIFT,
-		GPIO1D0_GPIO		= 0,
-		GPIO1D0_SDIO_D2,
-	};
-
-	/* Do not set the iomux in U-Boot proper because SD card may using it */
-	/* Enable early UART2 channel m0 on the px30 */
 	rk_clrsetreg(&grf->gpio1dl_iomux,
 		     GPIO1D3_MASK | GPIO1D2_MASK,
 		     GPIO1D3_UART2_RXM0 << GPIO1D3_SHIFT |
 		     GPIO1D2_UART2_TXM0 << GPIO1D2_SHIFT);
-#endif
-	/* Set channel C as UART2 input */
-	rk_clrsetreg(&grf->iofunc_con0,
-		     CON_IOMUX_UART2SEL_MASK,
-		     CON_IOMUX_UART2SEL_M0 << CON_IOMUX_UART2SEL_SHIFT);
-#endif
+#endif /* CONFIG_DEBUG_UART2_CHANNEL == 1 */
+
+#endif /* CONFIG_DEBUG_UART_BASE && CONFIG_DEBUG_UART_BASE == ... */
 }
 
 int set_armclk_rate(void)
