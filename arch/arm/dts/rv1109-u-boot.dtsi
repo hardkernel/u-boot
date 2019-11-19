@@ -1,0 +1,24 @@
+/*
+ * (C) Copyright 2019 Rockchip Electronics Co., Ltd
+ *
+ * SPDX-License-Identifier:     GPL-2.0+
+ */
+
+/ {
+	chosen {
+		stdout-path = &uart2;
+	};
+};
+
+&cru {
+	u-boot,dm-pre-reloc;
+};
+
+&grf {
+	u-boot,dm-pre-reloc;
+};
+
+&uart2 {
+	u-boot,dm-pre-reloc;
+	clock-frequency = <24000000>;
+};
