@@ -41,7 +41,9 @@
 		"fatload mmc 1 ${loadaddr} gpt.img; rksfc write ${loadaddr} 0x1 0x21; "\
 		"fatload mmc 1 ${loadaddr} rk3326_miniloader_spiboot.img; rksfc write ${loadaddr} 0x80 0x780; "\
 		"fatload mmc 1 ${loadaddr} uboot.img; rksfc write ${loadaddr} 0x800 0x800; "\
-		"fatload mmc 1 ${loadaddr} trust.img; rksfc write ${loadaddr} 0x1000 0x1000\0"\
+		"fatload mmc 1 ${loadaddr} trust.img; rksfc write ${loadaddr} 0x1000 0x1000;"\
+		"fatload mmc 1 ${loadaddr} rk3326-odroidgo2-linux.dtb; rksfc write ${loadaddr} 0x2000 0xC8;"\
+		"fatload mmc 1 ${loadaddr} logo.bmp.gz; rksfc write ${loadaddr} 0x20C8 0x3C\0"\
 	"setbootargs=setenv bootargs earlyprintk swiotlb=1 "		\
 		"console=ttyFIQ0,115200n8 "				\
 		"rw root=/dev/mmcblk0p2 rootfstype=ext4 rootwait\0"	\
