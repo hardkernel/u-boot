@@ -28,7 +28,7 @@ RKCHIP_INI_DESC=("CONFIG_TARGET_GVA_RK3229       NA          RK322XAT     NA"
 
 ########################################### User can modify #############################################
 # User's rkbin tool relative path
-if [ "${BOARD}" = 'odroidgo2' ]; then
+if [ "${BOARD}" = 'odroidgo2' ] || [ "${BOARD}" == 'odroidgo2-spi' ]; then
 RKBIN_TOOLS=./tools/rk_tools/tools
 else
 RKBIN_TOOLS=../rkbin/tools
@@ -452,6 +452,9 @@ fixup_platform_configure()
 	elif [ $RKCHIP = "RK1808" ]; then
 		PLATFORM_UBOOT_IMG_SIZE="--size 1024 2"
 		PLATFORM_TRUST_IMG_SIZE="--size 1024 2"
+	elif [ ${BOARD} = "odroidgo2-spi" ]; then
+		PLATFORM_UBOOT_IMG_SIZE="--size 1024 1"
+		PLATFORM_TRUST_IMG_SIZE="--size 2048 1"
 	fi
 
 # <*> Fixup AARCH32 for ARM64 cpu platforms
