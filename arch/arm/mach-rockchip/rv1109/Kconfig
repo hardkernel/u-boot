@@ -1,0 +1,16 @@
+if ROCKCHIP_RV1109
+
+config TARGET_EVB_RV1109
+	bool "EVB_RV1109"
+	help
+	  RV1109 EVB is a evaluation board for Rockchp RV1109.
+
+config SYS_SOC
+	default "rockchip"
+
+config SYS_MALLOC_F_LEN
+	default 0x400
+
+source board/rockchip/evb_rv1109/Kconfig
+
+endif
