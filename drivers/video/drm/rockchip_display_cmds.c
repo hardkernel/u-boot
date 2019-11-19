@@ -421,7 +421,13 @@ int lcd_setbg_color(const char *color)
 int lcd_show_logo(void)
 {
 	char cmd[128];
-	unsigned long filesize, bmp_mem;
+	unsigned long bmp_mem;
+#ifdef CONFIG_SD_BOOT
+	unsigned long filesize;
+#endif
+#ifdef CONFIG_SPI_BOOT
+	unsigned long bmp_copy;
+#endif
 	char *logo_fname;
 
 	if (lcd_init())
@@ -434,6 +440,7 @@ int lcd_show_logo(void)
 	/* bitmap load address */
 	bmp_mem = get_drm_memory() + DRM_ROCKCHIP_FB_SIZE;
 
+#ifdef CONFIG_SD_BOOT
 	/* load file size init */
 	env_set("filesize", "0");
 
@@ -449,6 +456,18 @@ int lcd_show_logo(void)
 			logo_fname, filesize);
 		return -1;
 	}
+#elif CONFIG_SPI_BOOT
+	bmp_copy =+ LCD_LOGO_SIZE;
+
+	/* FIXME : use env */
+	sprintf(cmd, "rksfc read %p 0x20C8 0x3C", (void *)bmp_copy);
+	run_command(cmd, 0);
+
+	sprintf(cmd, "unzip %p %p", (void *)bmp_copy, (void *)bmp_mem);
+	run_command(cmd, 0);
+#else
+	#error Check Boot Media Option
+#endif
 	if (show_bmp(bmp_mem))
 		return -1;
 
