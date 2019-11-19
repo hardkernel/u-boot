@@ -13,8 +13,22 @@
 
 #undef CONFIG_ENV_SIZE
 #undef CONFIG_ENV_OFFSET
+#ifdef CONFIG_SD_BOOT
 #define CONFIG_ENV_SIZE		(32 * SZ_1K)
 #define CONFIG_ENV_OFFSET	(1024 * SZ_1K)
+#define ENV_DEV_TYPE \
+		"devtype=mmc\0"
+#define ENV_DEV_NUM \
+		"devnum=1\0"
+#else
+/* SPI Flash boot */
+#define CONFIG_ENV_SIZE		(32 * SZ_1K)
+#define CONFIG_ENV_OFFSET	(32 * SZ_1K)
+#define ENV_DEV_TYPE \
+		"devtype=spinor\0"
+#define ENV_DEV_NUM \
+		"devnum=1\0"
+#endif
 
 #define ROCKCHIP_DEVICE_SETTINGS \
 		"stdout=serial,vidconsole\0" \
@@ -34,6 +48,8 @@
 	"fdt_addr_r=0x01f00000\0" \
 	"dtb_name=rk3326-odroidgo2-linux.dtb\0" \
 	"loadaddr=0x100000\0" \
+	ENV_DEV_TYPE \
+	ENV_DEV_NUM \
 	"spi_upgrade_from_sd="\
 		"rksfc scan; "\
 		"rksfc dev 1; "\
