@@ -13,7 +13,7 @@
 #include <asm/arch/hardware.h>
 #include <asm/arch/sdram_rv1108.h>
 #include <asm/arch/timer.h>
-#include <asm/arch/sdram_common.h>
+#include <asm/arch/sdram.h>
 
 struct dram_info info;
 

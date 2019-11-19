@@ -63,6 +63,13 @@ void dump_core_stack(struct pt_regs *regs)
 {
 	struct stackframe frame;
 	ulong pc, lr;
+#if defined(CONFIG_TPL_BUILD)
+	char *build = "tpl";
+#elif defined(CONFIG_SPL_BUILD)
+	char *build = "spl";
+#else
+	char *build = "";
+#endif
 
 	frame.fp = regs->regs[29];
 	frame.sp = regs->sp;
@@ -90,9 +97,9 @@ void dump_core_stack(struct pt_regs *regs)
 		printf("	[< %08lx >]\n", pc);
 	} while (walk_stackframe(&frame));
 
-	printf("\nCopy above stack info to a file(eg. dump.txt), and\n"
-	       "execute command in your U-Boot project: "
-	       "./scripts/stacktrace.sh dump.txt\n\n");
+	printf("\nCopy info from \"Call trace...\" to a file(eg. dump.txt), and run\n"
+	       "command in your U-Boot project: "
+	       "./scripts/stacktrace.sh dump.txt %s\n\n", build);
 }
 
 void dump_stack(void)

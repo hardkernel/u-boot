@@ -6,7 +6,8 @@
 
 #ifndef _ASM_ARCH_SDRAM_RK3399_H
 #define _ASM_ARCH_SDRAM_RK3399_H
-#include <asm/arch/sdram_share.h>
+#include <asm/arch/sdram_common.h>
+#include <asm/arch/sdram_msch.h>
 
 struct rk3399_ddr_pctl_regs {
 	u32 denali_ctl[332];
@@ -40,6 +41,30 @@ struct rk3399_ddr_cic_regs {
 
 /* DENALI_CTL_274 */
 #define MEM_RST_VALID	1
+
+struct msch_regs {
+	u32 coreid;
+	u32 revisionid;
+	u32 ddrconf;
+	u32 ddrsize;
+	union noc_ddrtiminga0 ddrtiminga0;
+	union noc_ddrtimingb0 ddrtimingb0;
+	union noc_ddrtimingc0 ddrtimingc0;
+	union noc_devtodev0 devtodev0;
+	u32 reserved0[(0x110 - 0x20) / 4];
+	union noc_ddrmode ddrmode;
+	u32 reserved1[(0x1000 - 0x114) / 4];
+	u32 agingx0;
+};
+
+struct sdram_msch_timings {
+	union noc_ddrtiminga0 ddrtiminga0;
+	union noc_ddrtimingb0 ddrtimingb0;
+	union noc_ddrtimingc0 ddrtimingc0;
+	union noc_devtodev0 devtodev0;
+	union noc_ddrmode ddrmode;
+	u32 agingx0;
+};
 
 struct rk3399_sdram_channel {
 	struct sdram_cap_info cap_info;

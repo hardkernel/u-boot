@@ -9,6 +9,7 @@
  */
 
 #include <common.h>
+#include <blk.h>
 #include <dm.h>
 #include <errno.h>
 #include <malloc.h>
@@ -138,6 +139,21 @@ static int spi_flash_std_get_sw_write_prot(struct udevice *dev)
 	return spi_flash_cmd_get_sw_write_prot(flash);
 }
 
+static int spi_flash_std_bind(struct udevice *udev)
+{
+	int ret = 0;
+
+#ifdef CONFIG_MTD_BLK
+	struct udevice *bdev;
+
+	ret = blk_create_devicef(udev, "mtd_blk", "blk", IF_TYPE_MTD,
+				 BLK_MTD_SPI_NOR, 512, 0, &bdev);
+	if (ret)
+		printf("Cannot create block device\n");
+#endif
+	return ret;
+}
+
 static int spi_flash_std_probe(struct udevice *dev)
 {
 	struct spi_slave *slave = dev_get_parent_priv(dev);
@@ -175,6 +191,7 @@ U_BOOT_DRIVER(spi_flash_std) = {
 	.name		= "spi_flash_std",
 	.id		= UCLASS_SPI_FLASH,
 	.of_match	= spi_flash_std_ids,
+	.bind		= spi_flash_std_bind,
 	.probe		= spi_flash_std_probe,
 	.remove		= spi_flash_std_remove,
 	.priv_auto_alloc_size = sizeof(struct spi_flash),

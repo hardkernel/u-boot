@@ -21,8 +21,8 @@
 #include <asm/arch/ddr_rk3288.h>
 #include <asm/arch/grf_rk3288.h>
 #include <asm/arch/pmu_rk3288.h>
+#include <asm/arch/sdram_rk3288.h>
 #include <asm/arch/sdram.h>
-#include <asm/arch/sdram_common.h>
 #include <linux/err.h>
 #include <power/regulator.h>
 #include <power/rk8xx_pmic.h>

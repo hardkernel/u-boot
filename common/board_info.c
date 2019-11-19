@@ -27,5 +27,10 @@ int __weak show_board_info(void)
 		printf("Model: %s\n", model);
 #endif
 
+#ifdef CONFIG_ARM64_BOOT_AARCH32
+	if (!(gd->flags & GD_FLG_RELOC))
+		printf("CPU: AArch32\n");
+#endif
+
 	return checkboard();
 }

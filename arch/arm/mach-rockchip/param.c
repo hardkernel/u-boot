@@ -234,6 +234,12 @@ int param_parse_bootdev(char **devtype, char **devnum)
 }
 #endif
 
+static phys_size_t ddr_mem_get_usable_size(u64 base, u64 size)
+{
+	return (base + size >= CONFIG_SYS_SDRAM_BASE + SDRAM_MAX_SIZE) ?
+	       (CONFIG_SYS_SDRAM_BASE + SDRAM_MAX_SIZE - base) : size;
+}
+
 struct memblock *param_parse_ddr_mem(int *out_count)
 {
 	struct udevice *dev;
@@ -261,7 +267,9 @@ struct memblock *param_parse_ddr_mem(int *out_count)
 
 		for (i = 0; i < count; i++) {
 			mem[i].base = t->u.ddr_mem.bank[i];
-			mem[i].size = t->u.ddr_mem.bank[i + count];
+			mem[i].size =
+			  ddr_mem_get_usable_size(t->u.ddr_mem.bank[i],
+						  t->u.ddr_mem.bank[i + count]);
 		}
 
 		*out_count = count;
@@ -293,7 +301,7 @@ struct memblock *param_parse_ddr_mem(int *out_count)
 
 	for (i = 0; i < count; i++) {
 		mem[i].base = CONFIG_SYS_SDRAM_BASE;
-		mem[i].size = ram.size;
+		mem[i].size = ddr_mem_get_usable_size(mem[i].base, ram.size);
 	}
 
 	*out_count = count;

@@ -290,6 +290,9 @@ static int gpio_irq_disable(int irq)
 	if (!bank)
 		return -EINVAL;
 
+	if (bank->use_count <= 0)
+		return 0;
+
 	gpio &= GPIO_PIN_MASK;
 	if (gpio >= bank->ngpio)
 		return -EINVAL;

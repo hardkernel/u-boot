@@ -29,6 +29,7 @@ uint32_t write_keybox_to_secure_storage(uint8_t *received_data, uint32_t len);
  */
 uint32_t read_raw_data_from_secure_storage(uint8_t *received_data,
 					   uint32_t len);
+char *new_strstr(const char *s1, const char *s2, uint32_t l1);
 #else
 inline uint32_t write_keybox_to_secure_storage(uint8_t *raw_data,
 					       uint32_t data_size)

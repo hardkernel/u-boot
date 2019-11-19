@@ -120,7 +120,6 @@ int phandle_gpio_to_irq(u32 gpio_phandle, u32 pin);
 
 /* Virtual irq */
 int virq_to_irq(struct virq_chip *chip, int virq);
-int virq_add_chip(struct udevice *dev, struct virq_chip *chip,
-		  int irq, int enable);
+int virq_add_chip(struct udevice *dev, struct virq_chip *chip, int irq);
 
 #endif /* _IRQ_GENERIC_H */

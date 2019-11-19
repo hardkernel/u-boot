@@ -99,7 +99,13 @@ void show_regs (struct pt_regs *regs)
 		processor_modes[processor_mode (regs)],
 		thumb_mode (regs) ? " (T)" : "");
 
-	iomem_show("sp", regs->ARM_sp, 0x00, 0xfc);
+#ifdef CONFIG_ROCKCHIP_CRASH_DUMP
+	iomem_show_by_compatible("-cru", 0, 0x400);
+	iomem_show_by_compatible("-pmucru", 0, 0x400);
+	iomem_show_by_compatible("-grf", 0, 0x400);
+	iomem_show_by_compatible("-pmugrf", 0, 0x400);
+#endif
+
 	dump_core_stack(regs);
 }
 

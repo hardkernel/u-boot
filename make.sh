@@ -630,9 +630,10 @@ pack_spl_loader_image()
 	# Copy to .temp folder
 	if [ -d ${RKBIN}/.temp ]; then
 		rm ${RKBIN}/.temp -rf
-	else
-		mkdir ${RKBIN}/.temp
 	fi
+
+	mkdir ${RKBIN}/.temp
+
 	cp ${OUTDIR}/spl/u-boot-spl.bin ${RKBIN}/.temp/
 	cp ${OUTDIR}/tpl/u-boot-tpl.bin ${RKBIN}/.temp/
 	cp ${ini} ${RKBIN}/.temp/${RKCHIP_LOADER}MINIALL.ini -f
@@ -760,7 +761,7 @@ pack_trust_image()
 {
 	local mode=$1 files ini
 
-	ls trust*.img >/dev/null && rm trust*.img
+	ls trust*.img >/dev/null 2>&1 && rm trust*.img
 	# ARM64 uses trust_merger
 	if grep -Eq ''^CONFIG_ARM64=y'|'^CONFIG_ARM64_BOOT_AARCH32=y'' ${OUTDIR}/.config ; then
 		ini=${RKBIN}/RKTRUST/${RKCHIP_TRUST}TRUST.ini

@@ -35,7 +35,7 @@ obj-$(CONFIG_ROCKCHIP_DEBUGGER) += rockchip_debugger.o
 endif
 
 obj-$(CONFIG_$(SPL_TPL_)RAM) += param.o
-obj-$(CONFIG_$(SPL_TPL_)RAM) += sdram_common.o
+obj-$(CONFIG_$(SPL_TPL_)RAM) += sdram.o
 
 obj-$(CONFIG_ROCKCHIP_PX30) += px30/
 obj-$(CONFIG_ROCKCHIP_RK3036) += rk3036/

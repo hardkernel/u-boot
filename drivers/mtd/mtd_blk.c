@@ -96,13 +96,15 @@ ulong mtd_dread(struct udevice *udev, lbaint_t start,
 		lbaint_t blkcnt, void *dst)
 {
 	struct blk_desc *desc = dev_get_uclass_platdata(udev);
+#if defined(CONFIG_NAND) || defined(CONFIG_MTD_SPI_NAND) || defined(CONFIG_SPI_FLASH_MTD)
 	loff_t off = (loff_t)(start * 512);
 	size_t rwsize = blkcnt * 512;
+#endif
 	struct mtd_info *mtd;
 	int ret = 0;
 
 	if (!desc)
-		return 0;
+		return ret;
 
 	mtd = desc->bdev->priv;
 	if (!mtd)
@@ -112,7 +114,7 @@ ulong mtd_dread(struct udevice *udev, lbaint_t start,
 		return 0;
 
 	if (desc->devnum == BLK_MTD_NAND) {
-#ifdef CONFIG_NAND
+#if defined(CONFIG_NAND) && !defined(CONFIG_SPL_BUILD)
 		mtd = dev_get_priv(udev->parent);
 		if (!mtd)
 			return 0;
@@ -126,18 +128,32 @@ ulong mtd_dread(struct udevice *udev, lbaint_t start,
 #endif
 			return 0;
 	} else if (desc->devnum == BLK_MTD_SPI_NAND) {
-#ifdef CONFIG_MTD_SPI_NAND
+#if defined(CONFIG_MTD_SPI_NAND) && !defined(CONFIG_SPL_BUILD)
 		ret = nand_read_skip_bad(mtd, off, &rwsize,
 					 NULL, mtd->size,
 					 (u_char *)(dst));
 		if (!ret)
 			return blkcnt;
 		else
+#elif defined(CONFIG_SPL_BUILD)
+		size_t retlen;
+
+		mtd_read(mtd, off, rwsize, &retlen, dst);
+		if (retlen == rwsize)
+			return blkcnt;
+		else
 #endif
 			return 0;
 	} else if (desc->devnum == BLK_MTD_SPI_NOR) {
-		/* Not implemented */
-		return 0;
+#if defined(CONFIG_SPI_FLASH_MTD) || defined(CONFIG_SPL_BUILD)
+		size_t retlen_nor;
+
+		mtd_read(mtd, off, rwsize, &retlen_nor, dst);
+		if (retlen_nor == rwsize)
+			return blkcnt;
+		else
+#endif
+			return 0;
 	} else {
 		return 0;
 	}
@@ -161,17 +177,33 @@ static int mtd_blk_probe(struct udevice *udev)
 {
 	struct mtd_info *mtd = dev_get_uclass_priv(udev->parent);
 	struct blk_desc *desc = dev_get_uclass_platdata(udev);
+	int ret, i;
 
 	desc->bdev->priv = mtd;
 	sprintf(desc->vendor, "0x%.4x", 0x2207);
 	memcpy(desc->product, mtd->name, strlen(mtd->name));
 	memcpy(desc->revision, "V1.00", sizeof("V1.00"));
 	if (mtd->type == MTD_NANDFLASH) {
-		/* Reserve 4 blocks for BBT(Bad Block Table) */
-		desc->lba = (mtd->size >> 9) - (mtd->erasesize >> 9) * 4;
+		if (desc->devnum == BLK_MTD_NAND)
+			mtd = dev_get_priv(udev->parent);
+		/*
+		 * Find the first useful block in the end,
+		 * and it is the end lba of the nand storage.
+		 */
+		for (i = 0; i < (mtd->size / mtd->erasesize); i++) {
+			ret =  mtd_block_isbad(mtd,
+					       mtd->size - mtd->erasesize * (i + 1));
+			if (!ret) {
+				desc->lba = (mtd->size >> 9) -
+					(mtd->erasesize >> 9) * i;
+				break;
+			}
+		}
 	} else {
 		desc->lba = mtd->size >> 9;
 	}
+
+	debug("MTD: desc->lba is %lx\n", desc->lba);
 
 	return 0;
 }

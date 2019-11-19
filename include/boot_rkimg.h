@@ -36,6 +36,7 @@ int read_rockchip_image(struct blk_desc *dev_desc,
 			disk_partition_t *part_info, void *dst);
 
 struct blk_desc *rockchip_get_bootdev(void);
+void rockchip_set_bootdev(struct blk_desc *desc);
 
 /*
  * reboot into recovery and wipe data

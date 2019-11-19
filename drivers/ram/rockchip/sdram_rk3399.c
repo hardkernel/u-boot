@@ -15,7 +15,7 @@
 #include <syscon.h>
 #include <asm/io.h>
 #include <asm/arch/clock.h>
-#include <asm/arch/sdram_common.h>
+#include <asm/arch/sdram.h>
 #include <asm/arch/sdram_rk3399.h>
 #include <asm/arch/cru_rk3399.h>
 #include <asm/arch/grf_rk3399.h>
@@ -1793,6 +1793,21 @@ static void set_ddrconfig(const struct chan_info *chan,
 	writel(ddrconfig | (ddrconfig << 8), &ddr_msch_regs->ddrconf);
 	writel(((cs0_cap / 32) & 0xff) | (((cs1_cap / 32) & 0xff) << 8),
 	       &ddr_msch_regs->ddrsize);
+}
+
+static void sdram_msch_config(struct msch_regs *msch,
+			      struct sdram_msch_timings *noc_timings)
+{
+	writel(noc_timings->ddrtiminga0.d32,
+	       &msch->ddrtiminga0.d32);
+	writel(noc_timings->ddrtimingb0.d32,
+	       &msch->ddrtimingb0.d32);
+	writel(noc_timings->ddrtimingc0.d32,
+	       &msch->ddrtimingc0.d32);
+	writel(noc_timings->devtodev0.d32,
+	       &msch->devtodev0.d32);
+	writel(noc_timings->ddrmode.d32,
+	       &msch->ddrmode.d32);
 }
 
 static void dram_all_config(struct dram_info *dram,

@@ -373,7 +373,7 @@ static int rk8xx_irq_chip_init(struct udevice *dev)
 	}
 
 	if (irq_chip) {
-		ret = virq_add_chip(dev, irq_chip, priv->irq, 1);
+		ret = virq_add_chip(dev, irq_chip, priv->irq);
 		if (ret) {
 			printf("Failed to add irqchip(irq=%d), ret=%d\n",
 			       priv->irq, ret);

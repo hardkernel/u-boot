@@ -258,6 +258,19 @@ void sha256_finish(sha256_context * ctx, uint8_t digest[32])
 }
 
 /*
+ * Output = SHA-256( input buffer ).
+ */
+void sha256_csum(const unsigned char *input, unsigned int ilen,
+		 unsigned char *output)
+{
+	sha256_context ctx;
+
+	sha256_starts(&ctx);
+	sha256_update(&ctx, input, ilen);
+	sha256_finish(&ctx, output);
+}
+
+/*
  * Output = SHA-256( input buffer ). Trigger the watchdog every 'chunk_sz'
  * bytes of input processed.
  */

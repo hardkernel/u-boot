@@ -382,6 +382,17 @@ static void *sysmem_alloc_align_base(enum memblk_id id,
 			base = gd->start_addr_sp -
 					CONFIG_SYS_STACK_SIZE - size - 0x1000;
 
+		/*
+		 * The 0x0 address is usually allocated by 32-bit uncompressed
+		 * kernel and this alloc action is just a peek.
+		 *
+		 * Due to LMB core doesn't support alloc at 0x0 address, we have
+		 * to alloc the memblk backword a few bytes.
+		 *
+		 * ARCH_DMA_MINALIGN maybe a good choice.
+		 */
+		} else if (!base) {
+			base += ARCH_DMA_MINALIGN;
 		} else if (base <= gd->bd->bi_dram[0].start) {
 			/*
 			 * On Rockchip platform:

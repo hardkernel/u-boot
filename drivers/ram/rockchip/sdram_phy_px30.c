@@ -6,14 +6,15 @@
 #include <common.h>
 #include <ram.h>
 #include <asm/io.h>
+#include <asm/arch/sdram.h>
 #include <asm/arch/sdram_common.h>
-#include <asm/arch/sdram_share.h>
 #include <asm/arch/sdram_phy_px30.h>
 
 static void sdram_phy_dll_bypass_set(void __iomem *phy_base, u32 freq)
 {
 	u32 tmp;
 	u32 i, j;
+	u32 dqs_dll_freq;
 
 	setbits_le32(PHY_REG(phy_base, 0x13), 1 << 4);
 	clrbits_le32(PHY_REG(phy_base, 0x14), 1 << 3);
@@ -23,13 +24,19 @@ static void sdram_phy_dll_bypass_set(void __iomem *phy_base, u32 freq)
 		clrbits_le32(PHY_REG(phy_base, j + 0x1), 1 << 3);
 	}
 
-	if (freq <= (400 * MHZ))
+	if (freq <= 400)
 		/* DLL bypass */
 		setbits_le32(PHY_REG(phy_base, 0xa4), 0x1f);
 	else
 		clrbits_le32(PHY_REG(phy_base, 0xa4), 0x1f);
 
-	if (freq <= (801 * MHZ))
+	#ifdef CONFIG_ROCKCHIP_RK3328
+	dqs_dll_freq = 680;
+	#else
+	dqs_dll_freq = 801;
+	#endif
+
+	if (freq <= dqs_dll_freq)
 		tmp = 2;
 	else
 		tmp = 1;
@@ -134,7 +141,9 @@ int phy_data_training(void __iomem *phy_base, u32 cs, u32 dramtype)
 	ret = readl(PHY_REG(phy_base, 0xff));
 	/* disable gate training */
 	clrsetbits_le32(PHY_REG(phy_base, 2), 0x33, (0x20 >> cs) | 0);
+	#ifndef CONFIG_ROCKCHIP_RK3328
 	clrbits_le32(PHY_REG(phy_base, 2), 0x30);
+	#endif
 
 	if (dramtype == DDR4) {
 		clrsetbits_le32(PHY_REG(phy_base, 0x29), 0x3, 0x2);
@@ -155,7 +164,6 @@ int phy_data_training(void __iomem *phy_base, u32 cs, u32 dramtype)
 		writel(odt_val, PHY_REG(phy_base, j + 0x1));
 		writel(odt_val, PHY_REG(phy_base, j + 0xe));
 	}
-
 	return ret;
 }
 

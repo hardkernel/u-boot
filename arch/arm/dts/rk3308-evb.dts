@@ -257,6 +257,15 @@
 		};
 	};
 
+	vbus_host: vbus-host-regulator {
+		compatible = "regulator-fixed";
+		enable-active-high;
+		gpio = <&gpio0 RK_PC5 GPIO_ACTIVE_HIGH>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&usb_drv>;
+		regulator-name = "vbus_host";
+	};
+
 	vdd_log: vdd_core: vdd-core {
 		compatible = "pwm-regulator";
 		pwms = <&pwm0 0 5000 1>;
@@ -307,6 +316,20 @@
 };
 
 &pwm1 {
+	status = "disabled";
+};
+
+&sdmmc {
+	bus-width = <4>;
+	cap-mmc-highspeed;
+	cap-sd-highspeed;
+	supports-sd;
+	card-detect-delay = <800>;
+	ignore-pm-notify;
+	sd-uhs-sdr12;
+	sd-uhs-sdr25;
+	sd-uhs-sdr50;
+	sd-uhs-sdr104;
 	status = "disabled";
 };
 
@@ -369,6 +392,13 @@
 				<1 RK_PD0 RK_FUNC_GPIO &pcfg_pull_none>,
 				/* spi cs */
 				<1 RK_PD1 RK_FUNC_GPIO &pcfg_pull_none>;
+		};
+	};
+
+	usb {
+		usb_drv: usb-drv {
+			rockchip,pins =
+				<0 RK_PC5 RK_FUNC_GPIO &pcfg_pull_none>;
 		};
 	};
 };

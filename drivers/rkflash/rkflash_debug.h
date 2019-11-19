@@ -11,64 +11,36 @@
 #include <dm.h>
 
 /*
- * Test switch
+ * Debug control center
+ * 1. Set Printing-adding-macro to 1 to allow print code being compiled in.
+ * 2. Set variable 'rkflash_debug' to control debug print to enable print.
  */
-#define BLK_STRESS_TEST_EN	0
 
 /*
- * Print switch, set to 1 if needed
- * I - info
- * E - error
- * HEX - multiline print
+ * Printing-adding
  */
+#define	PRINT_SWI_INFO		0
+#define	PRINT_SWI_ERROR		1
+#define PRINT_SWI_HEX		1
 
-#define	PRINT_SWI_SFC_I		0
-#define	PRINT_SWI_SFC_E		1
-#define PRINT_SWI_SFC_HEX	1
+#define	PRINT_SWI_CON_IO	1
+#define	PRINT_SWI_BLK_IO	1
 
-#define	PRINT_SWI_NANDC_I	0
-#define	PRINT_SWI_NANDC_E	1
-#define PRINT_SWI_NANDC_HEX	1
+/*
+ * Print switch, set var rkflash_debug corresponding bit to 1 if needed.
+ * I - info
+ * IO - IO request about
+ */
+#define	PRINT_BIT_CON_IO	BIT(0)
+#define	PRINT_BIT_BLK_IO	BIT(4)
 
-#if (PRINT_SWI_SFC_I)
-#define PRINT_SFC_I(...) printf(__VA_ARGS__)
-#else
-#define PRINT_SFC_I(...)
-#endif
+__printf(1, 2) int rkflash_print_info(const char *fmt, ...);
+__printf(1, 2) int rkflash_print_error(const char *fmt, ...);
+void rkflash_print_hex(const char *s, const void *buf, int w, size_t len);
 
-#if (PRINT_SWI_SFC_E)
-#define PRINT_SFC_E(...) printf(__VA_ARGS__)
-#else
-#define PRINT_SFC_E(...)
-#endif
+__printf(1, 2) int rkflash_print_dio(const char *fmt, ...);
+__printf(1, 2) int rkflash_print_bio(const char *fmt, ...);
 
-#if (PRINT_SWI_SFC_HEX)
-#define PRINT_SFC_HEX(s, buf, width, len)\
-		rkflash_print_hex(s, buf, width, len)
-#else
-#define PRINT_SFC_HEX(s, buf, width, len)
-#endif
-
-#if (PRINT_SWI_NANDC_I)
-#define PRINT_NANDC_I(...) printf(__VA_ARGS__)
-#else
-#define PRINT_NANDC_I(...)
-#endif
-
-#if (PRINT_SWI_NANDC_E)
-#define PRINT_NANDC_E(...) printf(__VA_ARGS__)
-#else
-#define PRINT_NANDC_E(...)
-#endif
-
-#if (PRINT_SWI_NANDC_HEX)
-#define PRINT_NANDC_HEX(s, buf, width, len)\
-		rkflash_print_hex(s, buf, width, len)
-#else
-#define PRINT_NANDC_HEX(s, buf, width, len)
-#endif
-
-void rkflash_print_hex(char *s, void *buf, u32 width, u32 len);
 void rkflash_test(struct udevice *p_dev);
 
 #endif

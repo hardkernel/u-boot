@@ -1472,6 +1472,27 @@ static void rkclk_init(struct rk3399_cru *cru)
 		     (4 - 1) << ACLK_EMMC_DIV_CON_SHIFT);
 	rk_clrsetreg(&cru->clksel_con[22], 0x3f << 0, 7 << 0);
 
+	/*
+	 * I2c MUx is in cpll by default, but cpll is for dclk_vop exclusive.
+	 * If dclk_vop set rate after i2c init, the CPLL changed,
+	 * but the i2c not perception, it will resulting the wrong
+	 * frequency of the i2c.
+	 * So set the i2c frequency according to the kernel configuration,
+	 * and Hang I2C on the GPLL.
+	 */
+	rk_clrsetreg(&cru->clksel_con[61], I2C_CLK_REG_MASK(1),
+		     I2C_CLK_REG_VALUE(1, 4));
+	rk_clrsetreg(&cru->clksel_con[62], I2C_CLK_REG_MASK(2),
+		     I2C_CLK_REG_VALUE(2, 4));
+	rk_clrsetreg(&cru->clksel_con[63], I2C_CLK_REG_MASK(3),
+		     I2C_CLK_REG_VALUE(3, 4));
+	rk_clrsetreg(&cru->clksel_con[61], I2C_CLK_REG_MASK(5),
+		     I2C_CLK_REG_VALUE(5, 4));
+	rk_clrsetreg(&cru->clksel_con[62], I2C_CLK_REG_MASK(6),
+		     I2C_CLK_REG_VALUE(6, 4));
+	rk_clrsetreg(&cru->clksel_con[63], I2C_CLK_REG_MASK(7),
+		     I2C_CLK_REG_VALUE(7, 4));
+
 	rkclk_set_pll(&cru->gpll_con[0], &gpll_init_cfg);
 }
 
@@ -1499,6 +1520,7 @@ static int rk3399_clk_probe(struct udevice *dev)
 	if (!priv->armbclk_init_hz)
 		priv->armbclk_init_hz =
 		rkclk_pll_get_rate(&priv->cru->apll_b_con[0]);
+
 	return 0;
 }
 

@@ -14,7 +14,7 @@
 #include <asm/arch/grf_rk3036.h>
 #include <asm/arch/grf_rk3308.h>
 #include <asm/arch/rockchip_dmc.h>
-#include <asm/arch/sdram_common.h>
+#include <asm/arch/sdram.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 

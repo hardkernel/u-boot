@@ -1262,6 +1262,8 @@ static inline int fit_image_check_target_arch(const void *fdt, int node)
 
 #if defined(CONFIG_ANDROID_BOOT_IMAGE)
 struct andr_img_hdr;
+u32 android_bcb_msg_sector_offset(void);
+u32 android_image_major_version(void);
 int android_image_check_header(const struct andr_img_hdr *hdr);
 int android_image_get_kernel(const struct andr_img_hdr *hdr, int verify,
 			     ulong *os_data, ulong *os_len);

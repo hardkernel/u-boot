@@ -14,7 +14,7 @@
 #include <asm/arch/hardware.h>
 #include <asm/arch/sdram_rv1108_pctl_phy.h>
 #include <asm/arch/timer.h>
-#include <asm/arch/sdram_common.h>
+#include <asm/arch/sdram.h>
 
 #if defined(CONFIG_ROCKCHIP_RV1108)
 #include <asm/arch/sdram_rv1108.h>

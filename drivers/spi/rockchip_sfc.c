@@ -248,28 +248,6 @@ static void rockchip_sfc_setup_xfer(struct rockchip_sfc *sfc, u32 trb)
 	u32 val = 0x02;
 	u8 data_width = IF_TYPE_STD;
 
-	switch (sfc->addr_bits) {
-	case 0:
-		sfc->addr_bits = SFC_ADDR_0BITS;
-		break;
-	case 8:
-		sfc->addr_bits = SFC_ADDR_XBITS;
-		writel(7, &regs->abit);
-		break;
-	case 16:
-		sfc->addr_bits = SFC_ADDR_XBITS;
-		writel(15, &regs->abit);
-		break;
-	case 24:
-		sfc->addr_bits = SFC_ADDR_24BITS;
-		break;
-	case 32:
-		sfc->addr_bits = SFC_ADDR_32BITS;
-		break;
-	default:
-		pr_err("%s addr-bits error %d\n", __func__, sfc->addr_bits);
-		return;
-	}
 	SFC_DBG("--- sfc.addr_bit %x\n", sfc->addr_bits);
 
 	if (sfc->addr_bits == SFC_ADDR_24BITS ||
@@ -512,25 +490,47 @@ static int rockchip_sfc_xfer(struct udevice *dev, unsigned int bitlen,
 
 	if (flags & SPI_XFER_BEGIN) {
 		sfc->cmd = pcmd[0];
-		if (len >= 4) {
-			sfc->addr_bits = 24;
-			sfc->dummy_bits = (len - 4) << 3;
+		switch (len) {
+		case 6: /* Nor >16MB 0x6b dummy op */
+			sfc->addr_bits = SFC_ADDR_32BITS;
+			sfc->dummy_bits = 8;
+			sfc->addr = pcmd[4] | (pcmd[3] << 8) | (pcmd[2] << 16) | (pcmd[1] << 24);
+			break;
+		case 5: /* Nor <=16MB 0x6b dummy op, Nor >16MB no dummy op */
+			if (sfc->cmd == 0x6b) {
+				sfc->addr_bits = SFC_ADDR_24BITS;
+				sfc->dummy_bits = 8;
+				sfc->addr = pcmd[3] | (pcmd[2] << 8) | (pcmd[1] << 16);
+			} else {
+				sfc->addr_bits = SFC_ADDR_32BITS;
+				sfc->dummy_bits = 0;
+				sfc->addr = pcmd[4] | (pcmd[3] << 8) | (pcmd[2] << 16) | (pcmd[1] << 24);
+			}
+			break;
+		case 4: /* Nand erase and read, Nor <=16MB no dummy op */
+			sfc->addr_bits = SFC_ADDR_24BITS;
+			sfc->dummy_bits = 0;
 			sfc->addr = pcmd[3] | (pcmd[2] << 8) | (pcmd[1] << 16);
-		} else if (len == 3 && dout) {
-			sfc->addr_bits = 16;
+			break;
+		case 3: /* Nand prog,  */
+			sfc->addr_bits = SFC_ADDR_XBITS;
 			sfc->dummy_bits = 0;
 			sfc->addr = pcmd[2] | pcmd[1] << 8;
-		} else if (len == 2 && dout) {
-			sfc->addr_bits = 8;
+			break;
+		case 2: /* Nand read/write feature */
+			sfc->addr_bits = SFC_ADDR_XBITS;
 			sfc->dummy_bits = 0;
 			sfc->addr = pcmd[1];
-		} else {
-			sfc->addr_bits = 0;
+			break;
+		default: /* Nand/Nor Read/Write status */
+			sfc->addr_bits = SFC_ADDR_0BITS;
 			sfc->dummy_bits = 0;
 			sfc->addr = 0;
+			break;
 		}
+		SFC_DBG("%s %d %x %d %d %x\n", __func__, len, sfc->cmd, sfc->addr_bits,
+			sfc->dummy_bits, sfc->addr);
 	}
-
 	if (flags & SPI_XFER_END) {
 		if (din) {
 			sfc->rw = SFC_RD;

@@ -7,8 +7,8 @@
 #include <debug_uart.h>
 #include <ram.h>
 #include <asm/io.h>
+#include <asm/arch/sdram.h>
 #include <asm/arch/sdram_common.h>
-#include <asm/arch/sdram_share.h>
 
 void sdram_print_dram_type(unsigned char dramtype)
 {
@@ -137,7 +137,6 @@ void sdram_copy_to_reg(u32 *dest, const u32 *src, u32 n)
 	}
 }
 
-#ifdef CONFIG_SDRAM_COMMON_OSREG
 void sdram_org_config(struct sdram_cap_info *cap_info,
 		      struct sdram_base_params *base,
 		      u32 *p_os_reg2, u32 *p_os_reg3, u32 channel)
@@ -160,60 +159,7 @@ void sdram_org_config(struct sdram_cap_info *cap_info,
 	*p_os_reg3 |= SYS_REG_ENC_CS1_COL(cap_info->col, channel);
 	*p_os_reg3 |= SYS_REG_ENC_VERSION(DDR_SYS_REG_VERSION);
 }
-#endif
 
-#ifdef CONFIG_SDRAM_COMMON_MSCH_RK3399
-void sdram_msch_config(struct msch_regs *msch,
-		       struct sdram_msch_timings *noc_timings)
-{
-	writel(noc_timings->ddrtiminga0.d32,
-	       &msch->ddrtiminga0.d32);
-	writel(noc_timings->ddrtimingb0.d32,
-	       &msch->ddrtimingb0.d32);
-	writel(noc_timings->ddrtimingc0.d32,
-	       &msch->ddrtimingc0.d32);
-	writel(noc_timings->devtodev0.d32,
-	       &msch->devtodev0.d32);
-	writel(noc_timings->ddrmode.d32,
-	       &msch->ddrmode.d32);
-}
-#endif
-
-#ifdef CONFIG_SDRAM_COMMON_MSCH_PX30
-void sdram_msch_config(struct msch_regs *msch,
-		       struct sdram_msch_timings *noc_timings,
-		       struct sdram_cap_info *cap_info,
-		       struct sdram_base_params *base)
-{
-	u64 cs_cap[2];
-
-	cs_cap[0] = sdram_get_cs_cap(cap_info, 0, base->dramtype);
-	cs_cap[1] = sdram_get_cs_cap(cap_info, 1, base->dramtype);
-	writel(((((cs_cap[1] >> 20) / 64) & 0xff) << 8) |
-			(((cs_cap[0] >> 20) / 64) & 0xff),
-			&msch->devicesize);
-
-	writel(noc_timings->ddrtiminga0.d32,
-	       &msch->ddrtiminga0);
-	writel(noc_timings->ddrtimingb0.d32,
-	       &msch->ddrtimingb0);
-	writel(noc_timings->ddrtimingc0.d32,
-	       &msch->ddrtimingc0);
-	writel(noc_timings->devtodev0.d32,
-	       &msch->devtodev0);
-	writel(noc_timings->ddrmode.d32, &msch->ddrmode);
-	writel(noc_timings->ddr4timing.d32,
-	       &msch->ddr4timing);
-	writel(noc_timings->agingx0, &msch->agingx0);
-	writel(noc_timings->agingx0, &msch->aging0);
-	writel(noc_timings->agingx0, &msch->aging1);
-	writel(noc_timings->agingx0, &msch->aging2);
-	writel(noc_timings->agingx0, &msch->aging3);
-}
-
-#endif
-
-#ifdef CONFIG_SDRAM_COMMON_CAP_DETECT
 int sdram_detect_bw(struct sdram_cap_info *cap_info)
 {
 	return 0;
@@ -452,5 +398,4 @@ int sdram_detect_cs1_row(struct sdram_cap_info *cap_info, u32 dram_type)
 
 	return 0;
 }
-#endif
 

@@ -93,9 +93,9 @@ int spl_mtd_load_rkfw(struct spl_image_info *spl_image, struct blk_desc *desc)
 	char trust_partition[] = "trust";
 	char uboot_partition[] = "uboot";
 
-	spl_get_partitions_sector(mmc_get_blk_desc(mmc), trust_partition,
+	spl_get_partitions_sector(desc, trust_partition,
 				  &trust_sectors);
-	spl_get_partitions_sector(mmc_get_blk_desc(mmc), uboot_partition,
+	spl_get_partitions_sector(desc, uboot_partition,
 				  &uboot_sectors);
 #endif
 

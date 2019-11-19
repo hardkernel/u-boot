@@ -9,6 +9,9 @@
 #include <bootm.h>
 #include <boot_rkimg.h>
 #include <console.h>
+#ifdef CONFIG_ANDROID_BOOT_IMAGE
+#include <image.h>
+#endif
 #include <malloc.h>
 #include <mmc.h>
 #include <part.h>
@@ -255,9 +258,15 @@ int get_bootdev_type(void)
 	return type;
 }
 
+static struct blk_desc *dev_desc;
+
+void rockchip_set_bootdev(struct blk_desc *desc)
+{
+	dev_desc = desc;
+}
+
 struct blk_desc *rockchip_get_bootdev(void)
 {
-	static struct blk_desc *dev_desc = NULL;
 	int dev_type;
 	int devnum;
 
@@ -300,6 +309,11 @@ static void rkloader_set_bootloader_msg(struct bootloader_message *bmsg)
 	struct blk_desc *dev_desc;
 	disk_partition_t part_info;
 	int ret, cnt;
+#ifdef CONFIG_ANDROID_BOOT_IMAGE
+	u32 bcb_offset = android_bcb_msg_sector_offset();
+#else
+	u32 bcb_offset = BOOTLOADER_MESSAGE_BLK_OFFSET;
+#endif
 
 	dev_desc = rockchip_get_bootdev();
 	if (!dev_desc) {
@@ -315,7 +329,7 @@ static void rkloader_set_bootloader_msg(struct bootloader_message *bmsg)
 
 	cnt = DIV_ROUND_UP(sizeof(struct bootloader_message), dev_desc->blksz);
 	ret = blk_dwrite(dev_desc,
-			 part_info.start + BOOTLOADER_MESSAGE_BLK_OFFSET,
+			 part_info.start + bcb_offset,
 			 cnt, bmsg);
 	if (ret != cnt)
 		printf("%s: Wipe data failed\n", __func__);
@@ -384,6 +398,11 @@ int rockchip_get_boot_mode(void)
 	char *env_reboot_mode;
 	int clear_boot_reg = 0;
 	int ret, cnt;
+#ifdef CONFIG_ANDROID_BOOT_IMAGE
+	u32 bcb_offset = android_bcb_msg_sector_offset();
+#else
+	u32 bcb_offset = BOOTLOADER_MESSAGE_BLK_OFFSET;
+#endif
 
 	/*
 	 * Here, we mainly check for:
@@ -392,9 +411,12 @@ int rockchip_get_boot_mode(void)
 	 */
 	env_reboot_mode = env_get("reboot_mode");
 	if (env_reboot_mode) {
-		if (!strcmp(env_reboot_mode, "recovery")) {
+		if (!strcmp(env_reboot_mode, "recovery-key")) {
 			boot_mode = BOOT_MODE_RECOVERY;
 			printf("boot mode: recovery (key)\n");
+		} else if (!strcmp(env_reboot_mode, "recovery-usb")) {
+			boot_mode = BOOT_MODE_RECOVERY;
+			printf("boot mode: recovery (usb)\n");
 		} else if (!strcmp(env_reboot_mode, "fastboot")) {
 			boot_mode = BOOT_MODE_BOOTLOADER;
 			printf("boot mode: fastboot\n");
@@ -419,7 +441,7 @@ int rockchip_get_boot_mode(void)
 	cnt = DIV_ROUND_UP(sizeof(struct bootloader_message), dev_desc->blksz);
 	bmsg = memalign(ARCH_DMA_MINALIGN, cnt * dev_desc->blksz);
 	ret = blk_dread(dev_desc,
-			part_info.start + BOOTLOADER_MESSAGE_BLK_OFFSET,
+			part_info.start + bcb_offset,
 			cnt, bmsg);
 	if (ret != cnt) {
 		free(bmsg);

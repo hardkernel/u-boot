@@ -1284,6 +1284,11 @@ int fdtdec_setup(void)
 #  else
 	/* FDT is at end of image */
 	gd->fdt_blob = (ulong *)&_end;
+
+#    ifdef CONFIG_USING_KERNEL_DTB
+	gd->fdt_blob_kern =
+		(ulong *)((ulong)gd->fdt_blob + fdt_totalsize(gd->fdt_blob));
+#    endif
 #  endif
 # elif defined(CONFIG_OF_BOARD)
 	/* Allow the board to override the fdt address. */

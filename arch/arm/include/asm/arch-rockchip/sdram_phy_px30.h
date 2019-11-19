@@ -5,7 +5,7 @@
 
 #ifndef _ASM_ARCH_SDRAM_PHY_PX30_H
 #define _ASM_ARCH_SDRAM_PHY_PX30_H
-#include <asm/arch/sdram_share.h>
+#include <asm/arch/sdram_common.h>
 #include <asm/arch/sdram_phy_ron_rtt_px30.h>
 
 struct ddr_phy_regs {

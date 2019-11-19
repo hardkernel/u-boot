@@ -77,6 +77,17 @@ int rk_avb_set_slot_active(unsigned int *slot_number);
 int rk_avb_get_current_slot(char *select_slot);
 
 /**
+ * Append current slot to given partition name
+ *
+ * @param part_name	partition name
+ * @param slot		given slot suffix, auto append current slot if NULL
+ * @param new_name	partition name with slot suffix appended
+ *
+ * @return 0 if the command succeeded, -1 if it failed
+ */
+int rk_avb_append_part_slot(const char *part_name, char *new_name);
+
+/**
  * The android things defines permanent attributes to
  * store PSK_public, product id. We can use this function
  * to read them.

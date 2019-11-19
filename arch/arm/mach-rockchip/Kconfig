@@ -378,6 +378,8 @@ config ROCKCHIP_RK1808
 	select ARM_SMCCC
 	select GICV3 if !COPROCESSOR_RK1808
 	select DEBUG_UART_BOARD_INIT
+	select SUPPORT_SPL if !COPROCESSOR_RK1808
+	select SUPPORT_TPL if !COPROCESSOR_RK1808
 	help
 	  The Rockchip RK1808 is a ARM-based Soc which embedded with dual
 	  Cortex-A35.
@@ -571,6 +573,23 @@ config ROCKCHIP_RESOURCE_IMAGE
 	  This enables support to get dtb or logo files from
 	  rockchip resource image format partition.
 
+config ROCKCHIP_DTB_VERIFY
+	bool "Enable hash verify for DTB in the resource file"
+	depends on ROCKCHIP_RESOURCE_IMAGE
+	select SHA1 if !DM_CRYPTO
+	select SHA256 if !DM_CRYPTO
+	default y
+	help
+	  This enables the hash verify for DTB in the resource file, it means we
+	  always read DTB from second position even the DTB position is present.
+
+config ROCKCHIP_USB_BOOT
+	bool "Enable support for rockchip U-disk boot"
+	depends on USB
+	default n
+	help
+	  This enables support for rockchip U-disk boot.
+
 config ROCKCHIP_EARLY_DISTRO_DTB
 	bool "Enable support for distro dtb early"
 	depends on DISTRO_DEFAULTS && USING_KERNEL_DTB
@@ -586,6 +605,14 @@ config ROCKCHIP_EARLY_DISTRO_DTB_PATH
 	help
 	  "DTB file path in the bootable partition image"
 endif
+
+config ROCKCHIP_HWID_DTB
+	bool "Enable support for selecting DTB by hardware id"
+	depends on ROCKCHIP_RESOURCE_IMAGE
+	default n
+	help
+	  This enables select the expected DTB from sets by hardware id,
+	  i.e. GPIO or ADC value.
 
 config ROCKCHIP_VENDOR_PARTITION
 	bool "Rockchip vendor storage partition support"

@@ -35,7 +35,8 @@ static void show_devices(struct udevice *dev, int depth, int last_flag)
 	}
 
 	printf("%s %s\n", dev->name,
-	       dev_read_bool(dev, "u-boot,dm-pre-reloc") ? "*" : "");
+	       dev_read_bool(dev, "u-boot,dm-pre-reloc") ||
+	       dev_read_bool(dev, "u-boot,dm-spl") ? "*" : "");
 
 	list_for_each_entry(child, &dev->child_head, sibling_node) {
 		is_last = list_is_last(&child->sibling_node, &dev->child_head);

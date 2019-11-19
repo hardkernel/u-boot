@@ -23,6 +23,8 @@
 		serial2 = &uart2;
 		serial3 = &uart3;
 		serial4 = &uart4;
+		mmc0 = &emmc;
+		mmc1 = &sdmmc;
 	};
 
 	cpus {
@@ -243,6 +245,15 @@
 				remote-endpoint = <&rgb_in_vop>;
 			};
 		};
+	};
+
+	crypto: crypto@ff2f0000 {
+		compatible = "rockchip,rk3308-crypto";
+		reg = <0x0 0xff2f0000 0x0 0x4000>;
+		clock-names = "sclk_crypto", "apkclk_crypto";
+		clocks = <&cru SCLK_CRYPTO>, <&cru SCLK_CRYPTO_APK>;
+		clock-frequency = <200000000>, <300000000>;
+		status = "disabled";
 	};
 
 	pwm0: pwm@ff180000 {
@@ -852,7 +863,7 @@
 			};
 		};
 
-		sdmmc {
+		sdmmc_pin: sdmmc_pin {
 			sdmmc_clk: sdmmc-clk {
 				rockchip,pins =
 					<4 RK_PD5 1 &pcfg_pull_none_4ma>;

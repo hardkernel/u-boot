@@ -4,13 +4,10 @@
  * SPDX-License-Identifier:	GPL-2.0
  */
 
-#ifndef _SFNOR_H
-#define _SFNOR_H
+#ifndef _SFC_NOR_H
+#define _SFC_NOR_H
 
 #include "sfc.h"
-
-/* Four line data transmission detection */
-#define SNOR_4BIT_DATA_DETECT_EN	0
 
 #define NOR_PAGE_SIZE		256
 #define NOR_BLOCK_SIZE		(64 * 1024)
@@ -24,18 +21,6 @@
 #define FEA_4BIT_PROG		BIT(3)
 #define FEA_4BYTE_ADDR		BIT(4)
 #define FEA_4BYTE_ADDR_MODE	BIT(5)
-
-/*Manufactory ID*/
-#define MID_WINBOND             0xEF
-#define MID_GIGADEV             0xC8
-#define MID_MICRON              0x2C
-#define MID_MACRONIX            0xC2
-#define MID_SPANSION            0x01
-#define MID_EON                 0x1C
-#define MID_ST                  0x20
-#define MID_XTX                 0x0B
-#define MID_PUYA                0x85
-#define MID_XMC                 0x20
 
 /*Command Set*/
 #define CMD_READ_JEDECID        (0x9F)
@@ -127,7 +112,6 @@ struct SFNOR_DEV {
 	enum SFC_DATA_LINES prog_lines;
 
 	SNOR_WRITE_STATUS write_status;
-	struct mutex	lock; /* to lock this object */
 };
 
 struct flash_info {
@@ -152,6 +136,14 @@ struct flash_info {
 int snor_init(struct SFNOR_DEV *p_dev);
 u32 snor_get_capacity(struct SFNOR_DEV *p_dev);
 int snor_read(struct SFNOR_DEV *p_dev, u32 sec, u32 n_sec, void *p_data);
-int snor_write(struct SFNOR_DEV *p_dev, u32 sec, u32 n_sec, const void *p_data);
+int snor_write(struct SFNOR_DEV *p_dev, u32 sec, u32 n_sec, void *p_data);
+int snor_erase(struct SFNOR_DEV *p_dev,
+	       u32 addr,
+	       enum NOR_ERASE_TYPE erase_type);
+int snor_read_id(u8 *data);
+int snor_prog_page(struct SFNOR_DEV *p_dev, u32 addr, void *p_data, u32 size);
+int snor_read_data(struct SFNOR_DEV *p_dev, u32 addr, void *p_data, u32 size);
+int snor_reset_device(void);
+int snor_disable_QE(struct SFNOR_DEV *p_dev);
 
 #endif

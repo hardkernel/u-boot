@@ -77,7 +77,7 @@ int rksfc_nor_write(struct udevice *udev,
 
 	if (sec + n_sec - 1 < FLASH_VENDOR_PART_START ||
 	    sec > FLASH_VENDOR_PART_END) {
-		ret = snor_write(p_dev, sec, n_sec, p_data);
+		ret = snor_write(p_dev, sec, n_sec, (void *)p_data);
 		if (ret != n_sec)
 			return ret;
 	} else {
@@ -133,10 +133,13 @@ int rksfc_nand_init(struct udevice *udev)
 	int ret;
 
 	ret = sfc_nand_init();
-	if (ret)
+	if (ret) {
 		return ret;
-	else
+	} else {
+		sfc_nand_ftl_ops_init();
+
 		return sftl_init();
+	}
 }
 
 int rksfc_nand_read(struct udevice *udev, u32 index, u32 count, void *buf)

@@ -112,6 +112,7 @@ AvbABFlowResult rk_avb_ab_slot_select(AvbABOps* ab_ops,char* select_slot)
 	AvbIOResult io_ret = AVB_IO_RESULT_OK;
 	AvbABData ab_data;
 	size_t slot_index_to_boot;
+	static int last_slot_index = -1;
 
 	io_ret = ab_ops->read_ab_metadata(ab_ops, &ab_data);
 	if (io_ret != AVB_IO_RESULT_OK) {
@@ -139,6 +140,14 @@ AvbABFlowResult rk_avb_ab_slot_select(AvbABOps* ab_ops,char* select_slot)
 		strcpy(select_slot, "_a");
 	} else if(slot_index_to_boot == 1) {
 		strcpy(select_slot, "_b");
+	}
+
+	if (last_slot_index != slot_index_to_boot) {
+		last_slot_index = slot_index_to_boot;
+		printf("A/B-slot: %s, successful: %d, tries-remain: %d\n",
+		       select_slot,
+		       ab_data.slots[slot_index_to_boot].successful_boot,
+		       ab_data.slots[slot_index_to_boot].tries_remaining);
 	}
 out:
 	return ret;
@@ -170,6 +179,26 @@ int rk_avb_get_current_slot(char *select_slot)
 
 	avb_ops_user_free(ops);
 	return ret;
+}
+
+int rk_avb_append_part_slot(const char *part_name, char *new_name)
+{
+	char slot_suffix[3] = {0};
+
+	if (!strcmp(part_name, "misc")) {
+		strcat(new_name, part_name);
+		return 0;
+	}
+
+	if (rk_avb_get_current_slot(slot_suffix)) {
+		printf("%s: failed to get slot suffix !\n", __func__);
+		return -1;
+	}
+
+	strcpy(new_name, part_name);
+	strcat(new_name, slot_suffix);
+
+	return 0;
 }
 
 int rk_avb_read_permanent_attributes(uint8_t *attributes, uint32_t size)

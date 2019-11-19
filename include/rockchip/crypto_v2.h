@@ -559,6 +559,8 @@ enum rk_hash_algo {
 #define LLI_USER_PRIVACY_KEY		_BIT(7)
 #define LLI_USER_ROOT_KEY		_BIT(8)
 
+#define CRYPTO_TRNG_MAX			32
+
 enum endian_mode {
 	BIG_ENDIAN = 0,
 	LITTLE_ENDIAN

@@ -219,7 +219,7 @@ static int do_test_storage(cmd_tbl_t *cmdtp, int flag,
 	}
 
 	/* 7. Switch back to default system devnum */
-	if (devtype && !strcmp(devtype, "mmc") &&
+	if (devtype && !strcmp(devtype, "mmc") && env_get("devnum") &&
 	    strcmp(devnum, env_get("devnum"))) {
 		ret = run_command(cmd, 0);
 		if (ret) {

@@ -5,7 +5,8 @@
 
 #ifndef _ASM_ARCH_SDRAM_PX30_H
 #define _ASM_ARCH_SDRAM_PX30_H
-#include <asm/arch/sdram_share.h>
+#include <asm/arch/sdram_common.h>
+#include <asm/arch/sdram_msch.h>
 #include <asm/arch/sdram_pctl_px30.h>
 #include <asm/arch/sdram_phy_px30.h>
 #include <asm/arch/sdram_phy_ron_rtt_px30.h>
@@ -163,6 +164,37 @@ struct px30_ddr_grf_regs {
 	u32 ddr_grf_lp_con;
 	u32 reserved2[(0x100 - 0x24) / 4];
 	u32 ddr_grf_status[11];
+};
+
+struct msch_regs {
+	u32 coreid;
+	u32 revisionid;
+	u32 deviceconf;
+	u32 devicesize;
+	u32 ddrtiminga0;
+	u32 ddrtimingb0;
+	u32 ddrtimingc0;
+	u32 devtodev0;
+	u32 reserved1[(0x110 - 0x20) / 4];
+	u32 ddrmode;
+	u32 ddr4timing;
+	u32 reserved2[(0x1000 - 0x118) / 4];
+	u32 agingx0;
+	u32 reserved3[(0x1040 - 0x1004) / 4];
+	u32 aging0;
+	u32 aging1;
+	u32 aging2;
+	u32 aging3;
+};
+
+struct sdram_msch_timings {
+	union noc_ddrtiminga0 ddrtiminga0;
+	union noc_ddrtimingb0 ddrtimingb0;
+	union noc_ddrtimingc0 ddrtimingc0;
+	union noc_devtodev0 devtodev0;
+	union noc_ddrmode ddrmode;
+	union noc_ddr4timing ddr4timing;
+	u32 agingx0;
 };
 
 struct px30_sdram_channel {

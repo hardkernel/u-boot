@@ -103,14 +103,27 @@ static int do_rkimg_test(cmd_tbl_t *cmdtp, int flag, int argc,
 	}
 
 	if (buffer[0] == 0xFCDC8C3B) {
-		printf("Found IDB in SDcard\n");
-		if (0 == buffer[128 + 104 / 4]) /* TAG in IDB */
-			env_update("bootargs", "sdfwupdate");
+		ret = CMD_RET_SUCCESS;
+
+		if (!strcmp("mmc", argv[1]))
+			printf("Found IDB in SDcard\n");
+		else
+			printf("Found IDB in U-disk\n");
+
+		/* TAG in IDB */
+		if (0 == buffer[128 + 104 / 4]) {
+			if (!strcmp("mmc", argv[1]))
+				env_update("bootargs", "sdfwupdate");
+			else
+				env_update("bootargs", "usbfwupdate");
+		}
+	} else {
+		ret = CMD_RET_FAILURE;
 	}
 
 	free(buffer);
 
-	return CMD_RET_SUCCESS;
+	return ret;
 }
 
 U_BOOT_CMD(
