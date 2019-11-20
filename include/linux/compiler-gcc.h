@@ -87,6 +87,7 @@
 #define __packed	__attribute__((packed))
 #define __weak		__attribute__((weak))
 #define __alias(symbol)	__attribute__((alias(#symbol)))
+#define __cacheline_aligned __attribute__((__aligned__(CONFIG_SYS_CACHELINE_SIZE)))
 
 /*
  * it doesn't make sense on ARM (currently the only user of __naked)
