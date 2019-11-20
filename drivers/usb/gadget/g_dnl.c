@@ -51,7 +51,8 @@ static const char manufacturer[] = CONFIG_G_DNL_MANUFACTURER;
 void g_dnl_set_serialnumber(char *s)
 {
 	memset(g_dnl_serial, 0, MAX_STRING_SERIAL);
-	strncpy(g_dnl_serial, s, MAX_STRING_SERIAL - 1);
+	if (s)
+		strncpy(g_dnl_serial, s, MAX_STRING_SERIAL - 1);
 }
 
 static struct usb_device_descriptor device_desc = {
