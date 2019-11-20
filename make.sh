@@ -822,8 +822,13 @@ pack_idbloader()
 
 finish()
 {
-	mv ${OUTDIR}/uboot.img ./sd_fuse/
-	mv ${OUTDIR}/trust.img ./sd_fuse/
+	if [ "${BOARD}" = 'odroidgo2-spi' ]; then
+		mv ${OUTDIR}/uboot.img ./sd_fuse/uboot_spi.img
+		mv ${OUTDIR}/trust.img ./sd_fuse/trust_spi.img
+	else
+		mv ${OUTDIR}/uboot.img ./sd_fuse/
+		mv ${OUTDIR}/trust.img ./sd_fuse/
+	fi
 
 	echo
 	if [ "$BOARD" = '' ]; then

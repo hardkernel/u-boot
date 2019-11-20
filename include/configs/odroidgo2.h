@@ -38,8 +38,8 @@
 		"rksfc scan; "\
 		"rksfc dev 1; "\
 		"fatload mmc 1 ${loadaddr} rk3326_header_miniloader_spiboot.img; rksfc write ${loadaddr} 0x0 0x800; "\
-		"fatload mmc 1 ${loadaddr} uboot.img; rksfc write ${loadaddr} 0x800 0x800; "\
-		"fatload mmc 1 ${loadaddr} trust.img; rksfc write ${loadaddr} 0x1000 0x1000;"\
+		"fatload mmc 1 ${loadaddr} uboot_spi.img; rksfc write ${loadaddr} 0x800 0x800; "\
+		"fatload mmc 1 ${loadaddr} trust_spi.img; rksfc write ${loadaddr} 0x1000 0x1000;"\
 		"fatload mmc 1 ${loadaddr} rk3326-odroidgo2-linux.dtb; rksfc write ${loadaddr} 0x2000 0xC8;"\
 		"fatload mmc 1 ${loadaddr} logo.bmp.gz; rksfc write ${loadaddr} 0x20C8 0x3C\0"\
 	"setbootargs=setenv bootargs earlyprintk swiotlb=1 "		\
