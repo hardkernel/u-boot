@@ -318,6 +318,36 @@ static enum android_boot_mode android_bootloader_load_and_clear_mode(
 	return ANDROID_BOOT_MODE_NORMAL;
 }
 
+int android_bcb_write(char *cmd)
+{
+	struct android_bootloader_message message = {0};
+	disk_partition_t part_info;
+	struct blk_desc *dev_desc;
+	int ret;
+
+	if (!cmd)
+		return -ENOMEM;
+
+	if (strlen(cmd) >= 32)
+		return -ENOMEM;
+
+	dev_desc = rockchip_get_bootdev();
+	if (!dev_desc) {
+		printf("%s: dev_desc is NULL!\n", __func__);
+		return -ENODEV;
+	}
+
+	ret = part_get_info_by_name(dev_desc, ANDROID_PARTITION_MISC, &part_info);
+	if (ret < 0) {
+		printf("%s: Could not found misc partition, just run recovery\n",
+		       __func__);
+		return -ENODEV;
+	}
+
+	strcpy(message.command, cmd);
+	return android_bootloader_message_write(dev_desc, &part_info, &message);
+}
+
 /**
  * Return the reboot reason string for the passed boot mode.
  *

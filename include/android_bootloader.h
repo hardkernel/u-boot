@@ -93,4 +93,12 @@ char *android_str_append(char *base_name, char *slot_suffix);
  */
 int android_fdt_overlay_apply(void *fdt_addr);
 
+/** android_bcb_write- write the android bootloader message.
+ *
+ * @cmd: boot command
+ *
+ * @return 0 on success, otherwise failed.
+ */
+int android_bcb_write(char *cmd);
+
 #endif  /* __ANDROID_BOOTLOADER_H */
