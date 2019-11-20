@@ -37,9 +37,7 @@
 	"spi_upgrade_from_sd="\
 		"rksfc scan; "\
 		"rksfc dev 1; "\
-		"fatload mmc 1 ${loadaddr} mbr.img; rksfc write ${loadaddr} 0x0 0x1; "\
-		"fatload mmc 1 ${loadaddr} gpt.img; rksfc write ${loadaddr} 0x1 0x21; "\
-		"fatload mmc 1 ${loadaddr} rk3326_miniloader_spiboot.img; rksfc write ${loadaddr} 0x80 0x780; "\
+		"fatload mmc 1 ${loadaddr} rk3326_header_miniloader_spiboot.img; rksfc write ${loadaddr} 0x0 0x800; "\
 		"fatload mmc 1 ${loadaddr} uboot.img; rksfc write ${loadaddr} 0x800 0x800; "\
 		"fatload mmc 1 ${loadaddr} trust.img; rksfc write ${loadaddr} 0x1000 0x1000;"\
 		"fatload mmc 1 ${loadaddr} rk3326-odroidgo2-linux.dtb; rksfc write ${loadaddr} 0x2000 0xC8;"\
