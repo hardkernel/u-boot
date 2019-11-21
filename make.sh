@@ -827,10 +827,7 @@ pack_recovery_image()
 	dd if=./sd_fuse/rk3326_header_miniloader_spiboot.img of=./sd_fuse/spi_recovery.img bs=512 seek=0 count=2048 conv=fsync,notrunc
 	dd if=./sd_fuse/uboot_spi.img of=./sd_fuse/spi_recovery.img bs=512 seek=2048 count=2048 conv=fsync,notrunc
 	dd if=./sd_fuse/trust_spi.img of=./sd_fuse/spi_recovery.img bs=512 seek=4096 count=4096 conv=fsync,notrunc
-
-	# FIXME
-	# dd if=./arch/arm/dts/odroidgo2.dtb of=./sd_fuse/spi_recovery.img bs=512 seek=8192 count=200 conv=fsync,notrunc
-	dd if=./sd_fuse/rk3326-odroidgo2-linux.dtb of=./sd_fuse/spi_recovery.img bs=512 seek=8192 count=200 conv=fsync,notrunc
+	dd if=./arch/arm/dts/odroidgo2-kernel.dtb of=./sd_fuse/spi_recovery.img bs=512 seek=8192 count=200 conv=fsync,notrunc
 
 	gzip -k -f ./tools/images/hardkernel/*.bmp
 	dd if=./tools/images/hardkernel/logo_hardkernel.bmp.gz of=./sd_fuse/spi_recovery.img bs=512 seek=8392 conv=fsync,notrunc

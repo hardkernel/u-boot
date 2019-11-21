@@ -96,7 +96,12 @@
 #define SCLK_SDIO_DIV50		81
 #define SCLK_EMMC_DIV		82
 #define SCLK_EMMC_DIV50		83
-#define SCLK_UART1_SRC          85
+#define SCLK_DDRCLK		84
+#define SCLK_UART1_SRC		85
+#define SCLK_SDMMC_DIV		86
+#define SCLK_SDMMC_DIV50	87
+#define SCLK_I2S0_TX_MUX	88
+#define SCLK_I2S0_RX_MUX	89
 
 /* dclk gates */
 #define DCLK_VOPB		150
@@ -119,6 +124,8 @@
 #define ACLK_GIC		184
 #define ACLK_DCF		186
 #define ACLK_DMAC		187
+#define ACLK_BUS_SRC		188
+#define ACLK_PERI_SRC		189
 
 /* hclk gates */
 #define HCLK_BUS_PRE		240
