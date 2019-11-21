@@ -46,7 +46,7 @@ echo "SYMBOL File: ${SYMBOL_FILE}"
 echo
 # Parse PC and LR
 echo "Call trace:"
-sed -n "/:   \[</p" $INPUT_FILE | while read line
+grep '\[< ' $INPUT_FILE | grep '>\]' | grep [PC,LR] | while read line
 do
 	echo -n " ${line}  "
 
@@ -78,7 +78,7 @@ echo
 
 # Parse stack
 echo "Stack:"
-sed -n "/        \[</p" $INPUT_FILE | while read line
+grep '\[< ' $INPUT_FILE | grep '>\]' | grep -v [PC,LR] | while read line
 do
 	echo -n "       ${line}  "
 
