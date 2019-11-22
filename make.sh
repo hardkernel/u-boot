@@ -375,6 +375,8 @@ select_chip_info()
 			&& RKCHIP=PX5
 		grep '^CONFIG_ROCKCHIP_RK3399PRO=y' ${OUTDIR}/.config >/dev/null \
 			&& RKCHIP=RK3399PRO
+		grep '^CONFIG_ROCKCHIP_RK1806=y' ${OUTDIR}/.config >/dev/null \
+			&& RKCHIP=RK1806
 	else
 		echo "Can't get Rockchip SoC definition in .config"
 		exit 1
@@ -567,7 +569,6 @@ pack_uboot_image()
 	if [ -f ${OUTDIR}/u-boot-dtb.img ]; then
 		rm ${OUTDIR}/u-boot-dtb.img
 	fi
-
 	echo "pack uboot okay! Input: ${OUTDIR}/u-boot.bin"
 }
 
@@ -673,6 +674,15 @@ pack_loader_image()
 	fi
 
 	ls *_loader_*.bin >/dev/null 2>&1 && rm *_loader_*.bin
+
+	numline=`cat $ini | wc -l`
+	if [ $numline -eq 1 ]; then
+		image=`sed -n "/PATH=/p" $ini | tr -d '\r' | cut -d '=' -f 2`
+		cp ${RKBIN}/${image} ./
+		echo "pack trust okay! Input: ${ini}"
+		return;
+	fi
+
 	cd ${RKBIN}
 
 	if [ "${mode}" = 'all' ]; then
@@ -762,11 +772,20 @@ pack_trust_image()
 	local mode=$1 files ini
 
 	ls trust*.img >/dev/null 2>&1 && rm trust*.img
+
 	# ARM64 uses trust_merger
 	if grep -Eq ''^CONFIG_ARM64=y'|'^CONFIG_ARM64_BOOT_AARCH32=y'' ${OUTDIR}/.config ; then
 		ini=${RKBIN}/RKTRUST/${RKCHIP_TRUST}TRUST.ini
 		if [ "$FILE" != "" ]; then
 			ini=$FILE;
+		fi
+
+		numline=`cat $ini | wc -l`
+		if [ $numline -eq 1 ]; then
+			image=`sed -n "/PATH=/p" $ini | tr -d '\r' | cut -d '=' -f 2`
+			cp ${RKBIN}/${image} ./trust.img
+			echo "pack trust okay! Input: ${ini}"
+			return;
 		fi
 
 		if [ "${mode}" = 'all' ]; then
@@ -784,6 +803,7 @@ pack_trust_image()
 		if [ "$FILE" != "" ]; then
 			ini=$FILE;
 		fi
+
 		if [ "${mode}" = 'all' ]; then
 			files=`ls ${RKBIN}/RKTRUST/${RKCHIP_TRUST}TOS*.ini`
 			for ini in $files
