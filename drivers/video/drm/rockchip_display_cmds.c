@@ -459,8 +459,9 @@ int lcd_show_logo(void)
 #elif CONFIG_SPI_BOOT
 	bmp_copy =+ LCD_LOGO_SIZE;
 
-	/* FIXME : use env */
-	sprintf(cmd, "rksfc read %p 0x20C8 0x3C", (void *)bmp_copy);
+	sprintf(cmd, "rksfc read %p %s %s", (void *)bmp_copy,
+			env_get("st_logo_hardkernel"),
+			env_get("sz_logo"));
 	run_command(cmd, 0);
 
 	sprintf(cmd, "unzip %p %p", (void *)bmp_copy, (void *)bmp_mem);

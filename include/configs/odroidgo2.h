@@ -30,6 +30,24 @@
 		"devnum=1\0"
 #endif
 
+/* default env of spi flash layout */
+#define SPI_FLASH_LAYOUT \
+		"st_boot1=0x0\0" \
+		"sz_boot1=0x800\0" \
+		"st_uboot=0x800\0" \
+		"sz_uboot=0x800\0" \
+		"st_trust=0x1000\0" \
+		"sz_trust=0x1000\0" \
+		"st_dtb=0x2000\0" \
+		"sz_dtb=0xC8\0" \
+		"sz_logo=0x190\0" \
+		"st_logo_hardkernel=0x20C8\0" \
+		"st_logo_boot=0x2258\0" \
+		"st_logo_lowbatt=0x23E8\0" \
+		"st_logo_recovery=0x2578\0" \
+		"st_logo_err=0x2708\0" \
+		"st_logo_nosdcard=0x2898\0"
+
 #define ROCKCHIP_DEVICE_SETTINGS \
 		"stdout=serial,vidconsole\0" \
 		"stderr=serial,vidconsole\0"
@@ -50,14 +68,11 @@
 	"loadaddr=0x100000\0" \
 	ENV_DEV_TYPE \
 	ENV_DEV_NUM \
+	SPI_FLASH_LAYOUT \
 	"spi_upgrade_from_sd="\
 		"rksfc scan; "\
 		"rksfc dev 1; "\
-		"fatload mmc 1 ${loadaddr} rk3326_header_miniloader_spiboot.img; rksfc write ${loadaddr} 0x0 0x800; "\
-		"fatload mmc 1 ${loadaddr} uboot_spi.img; rksfc write ${loadaddr} 0x800 0x800; "\
-		"fatload mmc 1 ${loadaddr} trust_spi.img; rksfc write ${loadaddr} 0x1000 0x1000;"\
-		"fatload mmc 1 ${loadaddr} rk3326-odroidgo2-linux.dtb; rksfc write ${loadaddr} 0x2000 0xC8;"\
-		"fatload mmc 1 ${loadaddr} logo.bmp.gz; rksfc write ${loadaddr} 0x20C8 0x3C\0"\
+		"fatload mmc 1 ${loadaddr} spi_recovery.img; rksfc write ${loadaddr} 0x0 0x2A28\0"\
 	"setbootargs=setenv bootargs earlyprintk swiotlb=1 "		\
 		"console=ttyFIQ0,115200n8 "				\
 		"rw root=/dev/mmcblk0p2 rootfstype=ext4 rootwait\0"	\
