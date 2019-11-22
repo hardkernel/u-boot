@@ -7,6 +7,7 @@
 #define	WRITE_KEYBOX_H_
 
 #include <common.h>
+#include <optee_include/tee_client_api.h>
 
 #if defined CONFIG_ANDROID_WRITE_KEYBOX && defined CONFIG_ANDROID_KEYMASTER_CA
 /*
@@ -19,6 +20,23 @@
  */
 uint32_t write_keybox_to_secure_storage(uint8_t *received_data, uint32_t len);
 
+/*
+ * write_to_secure_storage
+ *
+ * @is_use_rpmb:	0, write data to security patition
+ *			1, write data to rpmb
+ * @filename:		the file name of data written to secure storage
+ * @filename_size:	size of filename
+ * @data:		the data want to write to secure storage
+ * @data_size:		size of data
+ *
+ * @return a nonzero number in case of error, or 0 on success.
+ */
+TEEC_Result write_to_security_storage(uint8_t is_use_rpmb,
+				      uint8_t *filename,
+				      uint32_t filename_size,
+				      uint8_t *data,
+				      uint32_t data_size);
 /*
  * read_raw_data_from_secure_storege
  *
