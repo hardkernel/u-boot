@@ -378,6 +378,12 @@ config ROCKCHIP_RK1808
 
 if ROCKCHIP_RK1808
 
+config ROCKCHIP_RK1806
+	bool "Support Rockchip RK1806"
+	help
+	  The Rockchip RK1806 is a ARM-based Soc which embedded with dual
+	  Cortex-A35.
+
 config COPROCESSOR_RK1808
 	bool "RK1808 coprocessor"
 	help
