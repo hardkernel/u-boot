@@ -1682,6 +1682,12 @@ config CMD_ODROID_BATTERY
 	help
 	  battery read support
 
+config CMD_ODROID_TEST
+	bool "odroidtest command - hw test for go advanced"
+	depends on TARGET_ODROIDGO2
+	help
+	  This enables hw test functions for ODROID GO-Advanced board.
+
 endmenu
 
 endmenu

@@ -10,7 +10,9 @@
 #include <asm/gpio.h>
 #include <asm/arch/grf_px30.h>
 #include <asm/arch/hardware.h>
+#include <key.h>
 #include <rockchip_display_cmds.h>
+#include <odroidgo2_status.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -19,10 +21,36 @@ extern void board_odroid_recovery(void);
 extern void board_check_power(void);
 
 #define ALIVE_LED_GPIO	17 /* GPIO0_C1 */
+
 void board_alive_led(void)
 {
 	gpio_request(ALIVE_LED_GPIO, "alive_led");
 	gpio_direction_output(ALIVE_LED_GPIO, 1);
+}
+
+int board_check_autotest(void)
+{
+	u32 stater, statel;
+	unsigned int delay = 1000; /* long key down for 1 sec */
+
+	while (delay) {
+		stater = key_read(BTN_TR);
+		statel = key_read(BTN_TL);
+
+		if ((stater != KEY_PRESS_DOWN) || (statel != KEY_PRESS_DOWN))
+			return -1;
+
+		mdelay(50);
+		delay -= 50;
+	}
+
+	return 0;
+}
+
+void board_run_autotest(void)
+{
+	run_command("odroidtest all", 0);
+	odroid_wait_pwrkey();
 }
 
 #define GRF_BASE		0xff140000
@@ -102,6 +130,9 @@ int rk_board_late_init(void)
 
 	/* show boot logo and version : drivers/video/drm/rockchip_display_cmds.c */
 	lcd_show_logo();
+
+	if (!board_check_autotest())
+		board_run_autotest();
 
 	return 0;
 }

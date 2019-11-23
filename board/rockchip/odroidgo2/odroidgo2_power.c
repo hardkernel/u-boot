@@ -8,7 +8,7 @@
 #include <dm.h>
 #include <asm/gpio.h>
 #include <power/fuel_gauge.h>
-#include "odroidgo2_status.h"
+#include <odroidgo2_status.h>
 
 #define MIN_VOL_LEVEL	3800	/* 3.8V */
 

@@ -397,13 +397,13 @@ int lcd_setfg_color(const char *color)
 int lcd_setbg_color(const char *color)
 {
 	if (!strcmp(color ,"red"))
-		lcd_setbg(0xff, 0x00, 0x00);
+		lcd_setbg(0x00, 0x00, 0xff);
 	if (!strcmp(color ,"green"))
 		lcd_setbg(0x00, 0xff, 0x00);
 	if (!strcmp(color ,"yellow"))
 		lcd_setbg(0xff, 0xff, 0x00);
 	if (!strcmp(color ,"blue"))
-		lcd_setbg(0x00, 0x00, 0xff);
+		lcd_setbg(0xff, 0x00, 0x00);
 	if (!strcmp(color ,"magenta"))
 		lcd_setbg(0xff, 0x00, 0xff);
 	if (!strcmp(color ,"cyan"))

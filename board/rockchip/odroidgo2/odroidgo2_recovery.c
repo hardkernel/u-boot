@@ -6,7 +6,7 @@
 
 #include <common.h>
 #include <rksfc.h>
-#include "odroidgo2_status.h"
+#include <odroidgo2_status.h>
 
 int board_check_recovery(void)
 {

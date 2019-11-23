@@ -9,7 +9,7 @@
 #include <dm.h>
 #include <console.h>
 #include <rockchip_display_cmds.h>
-#include "odroidgo2_status.h"
+#include <odroidgo2_status.h>
 
 static const char *st_logo_modes[] = {
 	"st_logo_hardkernel",
