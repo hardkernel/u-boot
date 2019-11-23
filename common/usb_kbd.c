@@ -74,13 +74,8 @@ static const unsigned char usb_kbd_num_keypad[] = {
 	'.', 0, 0, 0, '='
 };
 
-/*
- * map arrow keys to ^F/^B ^N/^P, can't really use the proper
- * ANSI sequence for arrow keys because the queuing code breaks
- * when a single keypress expands to 3 queue elements
- */
-static const unsigned char usb_kbd_arrow[] = {
-	0x6, 0x2, 0xe, 0x10
+static const u8 usb_special_keys[] = {
+	'C', 'D', 'B', 'A'
 };
 
 /*
@@ -207,10 +202,6 @@ static int usb_kbd_translate(struct usb_kbd_pdata *data, unsigned char scancode,
 			keycode = usb_kbd_numkey[scancode - 0x1e];
 	}
 
-	/* Arrow keys */
-	if ((scancode >= 0x4f) && (scancode <= 0x52))
-		keycode = usb_kbd_arrow[scancode - 0x4f];
-
 	/* Numeric keypad */
 	if ((scancode >= 0x54) && (scancode <= 0x67))
 		keycode = usb_kbd_num_keypad[scancode - 0x54];
@@ -238,9 +229,17 @@ static int usb_kbd_translate(struct usb_kbd_pdata *data, unsigned char scancode,
 	if (keycode) {
 		debug("%c", keycode);
 		usb_kbd_put_queue(data, keycode);
+		return 0;
 	}
 
-	return 0;
+	/* Left, Right, Up, Down */
+	if (scancode > 0x4e && scancode < 0x53) {
+		usb_kbd_put_queue(data, 0x1b);
+		usb_kbd_put_queue(data, '[');
+		usb_kbd_put_queue(data, usb_special_keys[scancode - 0x4f]);
+		return 0;
+	}
+	return 1;
 }
 
 static uint32_t usb_kbd_service_key(struct usb_device *dev, int i, int up)
