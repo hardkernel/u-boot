@@ -197,6 +197,22 @@ static int boot_from_udisk(void)
 }
 #endif
 
+static void cmdline_handle(void)
+{
+#ifdef CONFIG_ROCKCHIP_PRELOADER_ATAGS
+	struct tag *t;
+
+	t = atags_get_tag(ATAG_PUB_KEY);
+	if (t) {
+		/* Pass if efuse/otp programmed */
+		if (t->u.pub_key.flag == PUBKEY_FUSE_PROGRAMMED)
+			env_update("bootargs", "fuse.programmed=1");
+		else
+			env_update("bootargs", "fuse.programmed=0");
+	}
+#endif
+}
+
 int board_late_init(void)
 {
 	rockchip_set_ethaddr();
@@ -214,6 +230,7 @@ int board_late_init(void)
 	rockchip_show_logo();
 #endif
 	soc_clk_dump();
+	cmdline_handle();
 
 	return rk_board_late_init();
 }
