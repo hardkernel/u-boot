@@ -18,7 +18,7 @@
 #define for_each_tag(t, base)		\
 	for (t = base; t->hdr.size; t = tag_next(t))
 
-#ifdef CONFIG_SPL_BUILD
+#if defined(CONFIG_SPL_BUILD) && !defined(CONFIG_TPL_BUILD)
 /*
  * The array is used to transform rom bootsource type to rk atags boot type.
  */
@@ -309,7 +309,7 @@ struct tag *atags_get_tag(u32 magic)
 struct tag *atags_get_tag(u32 magic) { return NULL; }
 #endif
 
-#ifdef CONFIG_SPL_BUILD
+#if defined(CONFIG_SPL_BUILD) && !defined(CONFIG_TPL_BUILD)
 int get_bootdev_by_brom_bootsource(void)
 {
 	int bootsource = 0;
