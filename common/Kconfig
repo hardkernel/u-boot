@@ -653,7 +653,7 @@ config ANDROID_BOOT_IMAGE_SEPARATE
 config ANDROID_BOOT_IMAGE_HASH
 	bool "Enable support for Android image hash verify"
 	depends on ANDROID_BOOT_IMAGE
-	select SHA1
+	select SHA1 if !DM_CRYPTO
 	help
 	  This enables support for Android image hash verify, the mkbootimg always use
 	  SHA1 for images.
