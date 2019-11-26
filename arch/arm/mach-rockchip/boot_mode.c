@@ -108,7 +108,12 @@ void boot_devtype_init(void)
 		env_set("devnum", devnum);
 
 #ifdef CONFIG_DM_MMC
+		/* For odroid target,
+		 * mmc should be initialized by default.
+		 */
+#ifndef CONFIG_TARGET_ODROIDGO2
 		if (!strcmp("mmc", devtype))
+#endif
 			mmc_initialize(gd->bd);
 #endif
 		/*

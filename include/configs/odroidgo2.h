@@ -76,7 +76,7 @@
 	"setbootargs=setenv bootargs earlyprintk swiotlb=1 "		\
 		"console=ttyFIQ0,115200n8 "				\
 		"rw root=/dev/mmcblk0p2 rootfstype=ext4 rootwait\0"	\
-	"bootcmd=cfgload; run setbootargs;"	\
+	"bootcmd=mmc dev 1; cfgload; run setbootargs;"	\
 		"load mmc 1:1 0x02000000 Image; "		\
 		"load mmc 1:1 0x01f00000 rk3326-odroidgo2-linux.dtb; "	\
 		"booti 0x02000000 - 0x01f00000\0"
