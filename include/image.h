@@ -1288,7 +1288,8 @@ void android_print_contents(const struct andr_img_hdr *hdr);
  */
 int android_image_load_separate(struct andr_img_hdr *hdr,
 				const disk_partition_t *part,
-				void *load_address, void *ram_src);
+				void *load_address,
+				void *ram_base);
 
 /** android_image_load_separate - Memcpy an Android Image separate from ram
  *

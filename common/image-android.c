@@ -222,15 +222,14 @@ ulong android_image_get_kload(const struct andr_img_hdr *hdr)
 int android_image_get_ramdisk(const struct andr_img_hdr *hdr,
 			      ulong *rd_data, ulong *rd_len)
 {
+	ulong ramdisk_addr_r;
+
 	if (!hdr->ramdisk_size) {
 		*rd_data = *rd_len = 0;
 		return -1;
 	}
 
-	/* We have load ramdisk at "ramdisk_addr_r" */
-#ifdef CONFIG_ANDROID_BOOT_IMAGE_SEPARATE
-	ulong ramdisk_addr_r;
-
+	/* Have been loaded by android_image_load_separate() on ramdisk_addr_r */
 	ramdisk_addr_r = env_get_ulong("ramdisk_addr_r", 16, 0);
 	if (!ramdisk_addr_r) {
 		printf("No Found Ramdisk Load Address.\n");
@@ -238,12 +237,6 @@ int android_image_get_ramdisk(const struct andr_img_hdr *hdr,
 	}
 
 	*rd_data = ramdisk_addr_r;
-#else
-	*rd_data = (unsigned long)hdr;
-	*rd_data += hdr->page_size;
-	*rd_data += ALIGN(hdr->kernel_size, hdr->page_size);
-#endif
-
 	*rd_len = hdr->ramdisk_size;
 
 	printf("RAM disk load addr 0x%08lx size %u KiB\n",
@@ -255,16 +248,14 @@ int android_image_get_ramdisk(const struct andr_img_hdr *hdr,
 int android_image_get_fdt(const struct andr_img_hdr *hdr,
 			      ulong *rd_data)
 {
+	ulong fdt_addr_r;
+
 	if (!hdr->second_size) {
 		*rd_data = 0;
 		return -1;
 	}
 
-	/* We have load fdt at "fdt_addr_r" */
-#if defined(CONFIG_USING_KERNEL_DTB) || \
-    defined(CONFIG_ANDROID_BOOT_IMAGE_SEPARATE)
-	ulong fdt_addr_r;
-
+	/* Have been loaded by android_image_load_separate() on fdt_addr_r */
 	fdt_addr_r = env_get_ulong("fdt_addr_r", 16, 0);
 	if (!fdt_addr_r) {
 		printf("No Found FDT Load Address.\n");
@@ -272,12 +263,6 @@ int android_image_get_fdt(const struct andr_img_hdr *hdr,
 	}
 
 	*rd_data = fdt_addr_r;
-#else
-	*rd_data = (unsigned long)hdr;
-	*rd_data += hdr->page_size;
-	*rd_data += ALIGN(hdr->kernel_size, hdr->page_size);
-	*rd_data += ALIGN(hdr->ramdisk_size, hdr->page_size);
-#endif
 
 	debug("FDT load addr 0x%08x size %u KiB\n",
 	      hdr->second_addr, DIV_ROUND_UP(hdr->second_size, 1024));
@@ -395,10 +380,9 @@ static int android_image_hash_verify(struct andr_img_hdr *hdr)
 }
 #endif
 
-#ifdef CONFIG_ANDROID_BOOT_IMAGE_SEPARATE
 int android_image_load_separate(struct andr_img_hdr *hdr,
 				const disk_partition_t *part,
-				void *load_address, void *ram_src)
+				void *load_address, void *ram_base)
 {
 	struct blk_desc *dev_desc = rockchip_get_bootdev();
 	ulong ramdisk_addr_r = env_get_ulong("ramdisk_addr_r", 16, 0);
@@ -422,8 +406,8 @@ int android_image_load_separate(struct andr_img_hdr *hdr,
 				       blk_cnt * dev_desc->blksz))
 			return -ENXIO;
 
-		if (ram_src) {
-			start = (ulong)ram_src;
+		if (ram_base) {
+			start = (ulong)ram_base;
 			memcpy((char *)load_address, (char *)start, size);
 		} else {
 			blk_start = part->start;
@@ -445,8 +429,8 @@ int android_image_load_separate(struct andr_img_hdr *hdr,
 				       ramdisk_addr_r,
 				       blk_cnt * dev_desc->blksz))
 			return -ENXIO;
-		if (ram_src) {
-			start = (unsigned long)ram_src;
+		if (ram_base) {
+			start = (unsigned long)ram_base;
 			start += hdr->page_size;
 			start += ALIGN(hdr->kernel_size, hdr->page_size);
 			memcpy((char *)ramdisk_addr_r,
@@ -499,8 +483,8 @@ int android_image_load_separate(struct andr_img_hdr *hdr,
 		       ALIGN(hdr->ramdisk_size, hdr->page_size);
 		blk_cnt = DIV_ROUND_UP(hdr->second_size, dev_desc->blksz);
 
-		if (ram_src) {
-			start = (unsigned long)ram_src;
+		if (ram_base) {
+			start = (unsigned long)ram_base;
 			start += hdr->page_size;
 			start += ALIGN(hdr->kernel_size, hdr->page_size);
 			start += ALIGN(hdr->ramdisk_size, hdr->page_size);
@@ -531,7 +515,7 @@ int android_image_load_separate(struct andr_img_hdr *hdr,
 	 * Since images are loaded separate, fdt/ramdisk relocation
 	 * can be disabled, it saves boot time.
 	 */
-	if (blk_read > 0 || ram_src) {
+	if (blk_read > 0 || ram_base) {
 		if (!fdt_high) {
 			env_set_hex("fdt_high", -1UL);
 			printf("Fdt ");
@@ -551,7 +535,6 @@ int android_image_memcpy_separate(struct andr_img_hdr *hdr, void *load_address)
 {
 	return android_image_load_separate(hdr, NULL, load_address, hdr);
 }
-#endif /* CONFIG_ANDROID_BOOT_IMAGE_SEPARATE */
 
 long android_image_load(struct blk_desc *dev_desc,
 			const disk_partition_t *part_info,
@@ -655,19 +638,8 @@ long android_image_load(struct blk_desc *dev_desc,
 		} else {
 			debug("Loading Android Image (%lu blocks) to 0x%lx... ",
 			      blk_cnt, load_address);
-
-#ifdef CONFIG_ANDROID_BOOT_IMAGE_SEPARATE
 			blk_read =
 			android_image_load_separate(hdr, part_info, buf, NULL);
-#else
-			if (!sysmem_alloc_base(MEMBLK_ID_ANDROID,
-					       (phys_addr_t)buf,
-						blk_cnt * part_info->blksz))
-				return -ENXIO;
-
-			blk_read = blk_dread(dev_desc, part_info->start,
-					     blk_cnt, buf);
-#endif
 		}
 
 		/* Verify image hash */
@@ -696,16 +668,9 @@ long android_image_load(struct blk_desc *dev_desc,
 	free(hdr);
 	unmap_sysmem(buf);
 
-#ifndef CONFIG_ANDROID_BOOT_IMAGE_SEPARATE
-	debug("%lu blocks read: %s\n",
-	      blk_read, (blk_read == blk_cnt) ? "OK" : "ERROR");
-	if (blk_read != blk_cnt)
-		return -1;
-#else
 	debug("%lu blocks read\n", blk_read);
 	if (blk_read < 0)
-		return blk_read;
-#endif
+		return -1;
 
 	return load_address;
 }
