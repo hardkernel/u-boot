@@ -75,7 +75,8 @@
 		"fatload mmc 1 ${loadaddr} spi_recovery.img; rksfc write ${loadaddr} 0x0 0x2A28\0"\
 	"setbootargs=setenv bootargs earlyprintk swiotlb=1 "		\
 		"console=ttyFIQ0,115200n8 "				\
-		"rw root=/dev/mmcblk0p2 rootfstype=ext4 rootwait\0"	\
+		"rw root=/dev/mmcblk0p2 rootwait rw fsck.repair=yes "	\
+		"net.iframes=0 fbcon=rotate:3\0"	\
 	"bootcmd=mmc dev 1; cfgload; run setbootargs;"	\
 		"load mmc 1:1 0x02000000 Image; "		\
 		"load mmc 1:1 0x01f00000 rk3326-odroidgo2-linux.dtb; "	\
