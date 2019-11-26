@@ -380,18 +380,18 @@ static int android_image_hash_verify(struct andr_img_hdr *hdr)
 }
 #endif
 
-int android_image_load_separate(struct andr_img_hdr *hdr,
-				const disk_partition_t *part,
-				void *load_address, void *ram_base)
+static int android_image_separate(struct andr_img_hdr *hdr,
+				  const disk_partition_t *part,
+				  void *load_address,
+				  void *ram_base)
 {
 	struct blk_desc *dev_desc = rockchip_get_bootdev();
 	ulong ramdisk_addr_r = env_get_ulong("ramdisk_addr_r", 16, 0);
-	ulong kernel_addr_r = env_get_ulong("kernel_addr_r", 16, 0);
 	char *fdt_high = env_get("fdt_high");
 	char *ramdisk_high = env_get("initrd_high");
 	ulong blk_start, blk_cnt, size;
 	ulong start, second_addr_r = 0;
-	int ret, blk_read = 0;
+	int ret;
 
 	if (android_image_check_header(hdr)) {
 		printf("Bad android image header\n");
@@ -418,7 +418,6 @@ int android_image_load_separate(struct andr_img_hdr *hdr,
 				      __func__, ret);
 				return -1;
 			}
-			blk_read += ret;
 		}
 	}
 
@@ -445,7 +444,6 @@ int android_image_load_separate(struct andr_img_hdr *hdr,
 				      __func__, ret);
 				return -1;
 			}
-			blk_read += ret;
 		}
 	}
 
@@ -464,8 +462,6 @@ int android_image_load_separate(struct andr_img_hdr *hdr,
 			printf("%s: read fdt failed\n", __func__);
 			return ret;
 		}
-
-		blk_read += DIV_ROUND_UP(fdt_size, dev_desc->blksz);
 	}
 #endif
 
@@ -500,14 +496,17 @@ int android_image_load_separate(struct andr_img_hdr *hdr,
 				       __func__, ret);
 				return -1;
 			}
-
-			blk_read += blk_cnt;
 		}
 	}
 #endif
 
-	/* Update hdr with real image address */
-	hdr->kernel_addr = kernel_addr_r;
+	/*
+	 * Update hdr with real image address.
+	 *
+	 * kernel_addr depends on load_address can handle both the
+	 * compressed and no-compressed kernel position.
+	 */
+	hdr->kernel_addr = (ulong)load_address + hdr->page_size;
 	hdr->second_addr = second_addr_r;
 	hdr->ramdisk_addr = ramdisk_addr_r;
 
@@ -515,25 +514,109 @@ int android_image_load_separate(struct andr_img_hdr *hdr,
 	 * Since images are loaded separate, fdt/ramdisk relocation
 	 * can be disabled, it saves boot time.
 	 */
-	if (blk_read > 0 || ram_base) {
-		if (!fdt_high) {
-			env_set_hex("fdt_high", -1UL);
-			printf("Fdt ");
-		}
-		if (!ramdisk_high) {
-			env_set_hex("initrd_high", -1UL);
-			printf("Ramdisk ");
-		}
-		if (!fdt_high || !ramdisk_high)
-			printf("skip relocation\n");
+	if (!fdt_high) {
+		env_set_hex("fdt_high", -1UL);
+		printf("Fdt ");
 	}
+	if (!ramdisk_high) {
+		env_set_hex("initrd_high", -1UL);
+		printf("Ramdisk ");
+	}
+	if (!fdt_high || !ramdisk_high)
+		printf("skip relocation\n");
 
-	return blk_read;
+	return 0;
 }
 
-int android_image_memcpy_separate(struct andr_img_hdr *hdr, void *load_address)
+/*
+ * 'boot_android' cmd use "kernel_addr_r" as default load address !
+ * We update it according to compress type and "kernel_addr_c/r".
+ */
+int android_image_parse_comp(struct andr_img_hdr *hdr, ulong *load_addr)
 {
-	return android_image_load_separate(hdr, NULL, load_address, hdr);
+	ulong kernel_addr_c;
+	int comp;
+
+	kernel_addr_c = env_get_ulong("kernel_addr_c", 16, 0);
+	comp = android_image_parse_kernel_comp(hdr);
+
+#ifdef CONFIG_ARM64
+	/*
+	 * On 64-bit kernel, assuming use IMAGE by default.
+	 *
+	 * kernel_addr_c is for LZ4-IMAGE but maybe not defined.
+	 * kernel_addr_r is for IMAGE.
+	 */
+	if (comp != IH_COMP_NONE) {
+		ulong comp_addr;
+
+		if (kernel_addr_c) {
+			comp_addr = kernel_addr_c;
+		} else {
+			printf("Warn: No \"kernel_addr_c\"\n");
+			comp_addr = CONFIG_SYS_SDRAM_BASE + 0x2000000;/* 32M */
+			env_set_ulong("kernel_addr_c", comp_addr);
+		}
+
+		*load_addr = comp_addr - hdr->page_size;
+	}
+#else
+	/*
+	 * On 32-bit kernel, assuming use zImage by default.
+	 *
+	 * kernel_addr_c is for LZ4/zImage but maybe not defined.
+	 * kernel_addr_r is for zImage when kernel_addr_c is not defined.
+	 * kernel_addr_r is for IMAGE when kernel_addr_c is defined.
+	 */
+	if (comp == IH_COMP_NONE) {
+		if (kernel_addr_c)
+			*load_addr = env_get_ulong("kernel_addr_r", 16, 0);
+		else
+			*load_addr = CONFIG_SYS_SDRAM_BASE + 0x8000;
+	} else {
+		if (kernel_addr_c)
+			*load_addr = kernel_addr_c - hdr->page_size;
+	}
+#endif
+
+	env_set_ulong("os_comp", comp);
+	return comp;
+}
+
+void android_image_set_decomp(struct andr_img_hdr *hdr, int comp)
+{
+	ulong kernel_addr_r;
+
+	/* zImage handles decompress itself */
+	if (comp != IH_COMP_NONE && comp != IH_COMP_ZIMAGE) {
+		kernel_addr_r = env_get_ulong("kernel_addr_r", 16, 0x02080000);
+		android_image_set_kload(hdr, kernel_addr_r);
+		android_image_set_comp(hdr, comp);
+	} else {
+		android_image_set_comp(hdr, IH_COMP_NONE);
+	}
+}
+
+static int android_image_load_separate(struct andr_img_hdr *hdr,
+				       const disk_partition_t *part,
+				       void *load_addr)
+{
+	return android_image_separate(hdr, part, load_addr, NULL);
+}
+
+int android_image_memcpy_separate(struct andr_img_hdr *hdr, ulong *load_addr)
+{
+	ulong comp_addr = *load_addr;
+	int comp;
+
+	comp = android_image_parse_comp(hdr, &comp_addr);
+	if (android_image_separate(hdr, NULL, (void *)comp_addr, hdr))
+		return -1;
+
+	*load_addr = comp_addr;
+	android_image_set_decomp((void *)comp_addr, comp);
+
+	return 0;
 }
 
 long android_image_load(struct blk_desc *dev_desc,
@@ -543,11 +626,7 @@ long android_image_load(struct blk_desc *dev_desc,
 	struct andr_img_hdr *hdr;
 	u32 blksz = dev_desc->blksz;
 	u32 pszcnt, hdrcnt, kercnt;
-	void *buf;
-	long blk_cnt = 0;
-	long blk_read = 0;
-	u32 comp;
-	u32 kload_addr;
+	int comp, ret;
 
 	if (max_size < part_info->blksz)
 		return -1;
@@ -568,16 +647,18 @@ long android_image_load(struct blk_desc *dev_desc,
 
 	hdr = memalign(ARCH_DMA_MINALIGN, (hdrcnt + pszcnt + kercnt) * blksz);
 	if (!hdr) {
-		printf("%s: no memory\n", __func__);
+		printf("No memory\n");
 		return -1;
 	}
 
-	if (blk_dread(dev_desc, part_info->start, hdrcnt, hdr) != hdrcnt)
-		blk_read = -1;
+	if (blk_dread(dev_desc, part_info->start, hdrcnt, hdr) != hdrcnt) {
+		printf("Failed to read image header\n");
+		goto fail;
+	}
 
-	if (!blk_read && android_image_check_header(hdr) != 0) {
+	if (android_image_check_header(hdr) != 0) {
 		printf("** Invalid Android Image header **\n");
-		blk_read = -1;
+		goto fail;
 	}
 
 	/*
@@ -585,94 +666,41 @@ long android_image_load(struct blk_desc *dev_desc,
 	 * reading kernel image for compress validation.
 	 */
 	pszcnt = DIV_ROUND_UP(hdr->page_size, blksz);
-
 	if (blk_dread(dev_desc, part_info->start + pszcnt, kercnt,
-		      (void *)((ulong)hdr + hdr->page_size)) != kercnt)
-		blk_read = -1;
-
-	/* page_size for image header */
-	load_address -= hdr->page_size;
-
-	/* We don't know the size of the Android image before reading the header
-	 * so we don't limit the size of the mapped memory.
-	 */
-	buf = map_sysmem(load_address, 0 /* size */);
-	if (!blk_read) {
-		blk_cnt = (android_image_get_end(hdr) - (ulong)hdr +
-			   part_info->blksz - 1) / part_info->blksz;
-		comp = android_image_parse_kernel_comp(hdr);
-		/*
-		 * We should load compressed kernel Image to high memory at
-		 * address "kernel_addr_c".
-		 */
-		if (comp != IH_COMP_NONE) {
-			ulong kernel_addr_c;
-
-			env_set_ulong("os_comp", comp);
-			kernel_addr_c = env_get_ulong("kernel_addr_c", 16, 0);
-			if (kernel_addr_c) {
-				load_address = kernel_addr_c - hdr->page_size;
-				unmap_sysmem(buf);
-				buf = map_sysmem(load_address, 0 /* size */);
-			}
-#ifdef CONFIG_ARM64
-			else {
-				printf("Warn: \"kernel_addr_c\" is not defined "
-				       "for compressed kernel Image!\n");
-				load_address += android_image_get_ksize(hdr) * 3;
-				load_address = ALIGN(load_address, ARCH_DMA_MINALIGN);
-				env_set_ulong("kernel_addr_c", load_address);
-
-				load_address -= hdr->page_size;
-				unmap_sysmem(buf);
-				buf = map_sysmem(load_address, 0 /* size */);
-			}
-#endif
-		}
-
-		if (blk_cnt * part_info->blksz > max_size) {
-			debug("Android Image too big (%lu bytes, max %lu)\n",
-			      android_image_get_end(hdr) - (ulong)hdr,
-			      max_size);
-			blk_read = -1;
-		} else {
-			debug("Loading Android Image (%lu blocks) to 0x%lx... ",
-			      blk_cnt, load_address);
-			blk_read =
-			android_image_load_separate(hdr, part_info, buf, NULL);
-		}
-
-		/* Verify image hash */
-#ifdef CONFIG_ANDROID_BOOT_IMAGE_HASH
-		if (android_image_hash_verify(hdr)) {
-			printf("Image hash miss match!\n");
-			return -EBADFD;
-		}
-
-		printf("Image hash verify ok\n");
-#endif
-		/*
-		 * zImage is not need to decompress
-		 * kernel will handle decompress itself
-		 */
-		if (comp != IH_COMP_NONE && comp != IH_COMP_ZIMAGE) {
-			kload_addr = env_get_ulong("kernel_addr_r", 16, 0x02080000);
-			android_image_set_kload(buf, kload_addr);
-			android_image_set_comp(buf, comp);
-		} else {
-			android_image_set_comp(buf, IH_COMP_NONE);
-		}
-
+		      (void *)((ulong)hdr + hdr->page_size)) != kercnt) {
+		printf("Failed to read kernel header\n");
+		goto fail;
 	}
 
+	load_address -= hdr->page_size;
+
+	/* Let's load kernel now ! */
+	comp = android_image_parse_comp(hdr, &load_address);
+	ret = android_image_load_separate(hdr, part_info, (void *)load_address);
+	if (ret) {
+		printf("Failed to load android image\n");
+		goto fail;
+	}
+	android_image_set_decomp((void *)load_address, comp);
+
+	debug("Loading Android Image to 0x%08lx\n", load_address);
+
+	/* Verify image hash */
+#ifdef CONFIG_ANDROID_BOOT_IMAGE_HASH
+	if (android_image_hash_verify(hdr)) {
+		printf("HASH: Image verify failed!\n");
+		return -EBADFD;
+	}
+
+	printf("HASH: Image verify OK\n");
+#endif
+
 	free(hdr);
-	unmap_sysmem(buf);
-
-	debug("%lu blocks read\n", blk_read);
-	if (blk_read < 0)
-		return -1;
-
 	return load_address;
+
+fail:
+	free(hdr);
+	return -1;
 }
 
 #if !defined(CONFIG_SPL_BUILD)

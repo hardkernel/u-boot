@@ -778,9 +778,11 @@ static AvbSlotVerifyResult android_slot_verify(char *boot_partname,
 		/* Reserve page_size */
 		hdr = (void *)slot_data[0]->loaded_partitions->data;
 		load_address -= hdr->page_size;
+		if (android_image_memcpy_separate(hdr, &load_address)) {
+			printf("Failed to separate copy android image\n");
+			return AVB_SLOT_VERIFY_RESULT_ERROR_IO;
+		}
 		*android_load_address = load_address;
-
-		android_image_memcpy_separate(hdr, (void *)load_address);
 	} else {
 		slot_set_unbootable(&ab_data.slots[slot_index_to_boot]);
 	}
