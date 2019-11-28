@@ -46,7 +46,8 @@
 		"st_logo_lowbatt=0x23E8\0" \
 		"st_logo_recovery=0x2578\0" \
 		"st_logo_err=0x2708\0" \
-		"st_logo_nosdcard=0x2898\0"
+		"st_logo_nosdcard=0x2898\0" \
+		"sz_total=0x2A28\0"
 
 #define ROCKCHIP_DEVICE_SETTINGS \
 		"stdout=serial,vidconsole\0" \
@@ -72,7 +73,7 @@
 	"spi_upgrade_from_sd="\
 		"rksfc scan; "\
 		"rksfc dev 1; "\
-		"fatload mmc 1 ${loadaddr} spi_recovery.img; rksfc write ${loadaddr} 0x0 0x2A28\0"\
+		"fatload mmc 1 ${loadaddr} spi_recovery.img; rksfc write ${loadaddr} 0x0 $sz_total\0"\
 	"setbootargs=setenv bootargs earlyprintk swiotlb=1 "		\
 		"console=ttyFIQ0,115200n8 "				\
 		"rw root=/dev/mmcblk0p2 rootwait rw fsck.repair=yes "	\

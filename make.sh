@@ -838,6 +838,8 @@ pack_recovery_image()
 	dd if=./tools/images/hardkernel/no_sdcard.bmp.gz of=./sd_fuse/spi_recovery.img bs=512 seek=10392 conv=fsync,notrunc
 	rm ./tools/images/hardkernel/*.bmp.gz
 
+	md5sum ./sd_fuse/spi_recovery.img > ./sd_fuse/spi_recovery.img.md5sum
+
 	echo "A recovery image for spi flash is ready."
 }
 

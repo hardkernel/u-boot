@@ -20,6 +20,7 @@ enum logo_mode {
 	LOGO_MODE_NO_SDCARD,
 };
 
-int odroidgo2_display_status(int logo_mode, int logo_storage, const char *str);
+int odroid_display_status(int logo_mode, int logo_storage, const char *str);
+void odroid_wait_pwrkey(void);
 
 #endif /* _ODROIDGO2_STATUS_H_ */
