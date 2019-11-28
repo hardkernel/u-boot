@@ -133,6 +133,11 @@ os_version=$(printf '%d.%d.%d' $a $b $c)
 v=$(($os_version_patch_level & 0x7ff))
 y=$((($v >> 4) + 2000))
 m=$((($v & 15)))
+
+if [ $m -eq 0 ]; then
+	m=1
+fi
+
 os_patch_level=$(printf '%d-%02d-01' $y $m)
 
 dtb_size=$(grep -a "^dtb size: " $log | sed "s/^dtb size: //")
