@@ -43,8 +43,7 @@ static int rockchip_crypto_sha_init(struct udevice *dev, sha_context *ctx)
 		return -EINVAL;
 
 	if (!ctx->length) {
-		printf("%s: Err: crypto v1 request total data "
-		       "length when sha init\n", __func__);
+		printf("Crypto-v1: require data total length for sha init\n");
 		return -EINVAL;
 	}
 
@@ -132,9 +131,8 @@ static int rockchip_crypto_sha_final(struct udevice *dev,
 	int i;
 
 	if (priv->length != ctx->length) {
-		printf("%s: Err: update total length(0x%x) is not equal "
-		       "to init total length(0x%x)!\n",
-		       __func__, priv->length, ctx->length);
+		printf("Crypto-v1: data total length(0x%08x) != init length(0x%08x)!\n",
+		       priv->length, ctx->length);
 		return -EIO;
 	}
 
@@ -225,7 +223,7 @@ static int rockchip_crypto_ofdata_to_platdata(struct udevice *dev)
 	int len;
 
 	if (!dev_read_prop(dev, "clocks", &len)) {
-		printf("Can't find \"clocks\" property\n");
+		printf("Crypto-v1: can't find \"clocks\" property\n");
 		return -EINVAL;
 	}
 
@@ -236,7 +234,7 @@ static int rockchip_crypto_ofdata_to_platdata(struct udevice *dev)
 	priv->nclocks = len / sizeof(u32);
 	if (dev_read_u32_array(dev, "clocks", (u32 *)priv->clocks,
 			       priv->nclocks)) {
-		printf("Can't read \"clocks\" property\n");
+		printf("Crypto-v1: can't read \"clocks\" property\n");
 		return -EINVAL;
 	}
 
@@ -255,7 +253,7 @@ static int rockchip_crypto_probe(struct udevice *dev)
 
 	ret = rockchip_get_clk(&priv->clk.dev);
 	if (ret) {
-		printf("Failed to get clk device, ret=%d\n", ret);
+		printf("Crypto-v1: failed to get clk device, ret=%d\n", ret);
 		return ret;
 	}
 
@@ -264,8 +262,8 @@ static int rockchip_crypto_probe(struct udevice *dev)
 		priv->clk.id = clocks[i];
 		ret = clk_set_rate(&priv->clk, priv->frequency);
 		if (ret < 0) {
-			printf("%s: Failed to set clk(%ld): ret=%d\n",
-			       __func__, priv->clk.id, ret);
+			printf("Crypto-v1: failed to set clk(%ld): ret=%d\n",
+			       priv->clk.id, ret);
 			return ret;
 		}
 	}
