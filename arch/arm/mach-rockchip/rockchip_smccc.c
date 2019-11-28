@@ -8,7 +8,6 @@
 #include <asm/io.h>
 #include <asm/psci.h>
 #include <asm/suspend.h>
-#include <linux/arm-smccc.h>
 #include <linux/io.h>
 
 #ifdef CONFIG_ARM64
