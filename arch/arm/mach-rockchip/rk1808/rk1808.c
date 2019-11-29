@@ -10,6 +10,7 @@
 #include <asm/arch/grf_rk1808.h>
 #include <asm/arch/hardware.h>
 #include <asm/arch/rk_atags.h>
+#include <asm/arch/rockchip_smccc.h>
 #include <asm/gpio.h>
 #include <debug_uart.h>
 
@@ -207,6 +208,14 @@ static int env_fixup_ramdisk_addr_r(void)
 	return 0;
 }
 #endif
+
+int rk_board_init(void)
+{
+#if defined(CONFIG_ROCKCHIP_SMCCC) && defined(CONFIG_ROCKCHIP_RK1806)
+	sip_smc_get_sip_version();
+#endif
+	return 0;
+}
 
 int rk_board_late_init(void)
 {
