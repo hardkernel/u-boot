@@ -448,6 +448,10 @@ int board_init(void)
 {
 	board_debug_uart_init();
 
+#ifdef DEBUG
+	soc_clk_dump();
+#endif
+
 #ifdef CONFIG_USING_KERNEL_DTB
 	init_kernel_dtb();
 #endif
