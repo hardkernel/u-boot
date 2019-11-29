@@ -186,7 +186,6 @@ static int boot_from_udisk(void)
 			rockchip_set_bootdev(desc);
 			env_set("devtype", "usb");
 			env_set("devnum", "0");
-			env_set("reboot_mode", "recovery-usb");
 			printf("Boot from usb 0\n");
 		} else {
 			printf("No usb dev 0 found\n");
