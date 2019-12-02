@@ -14,6 +14,9 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
+extern int board_check_recovery(void);
+extern void board_odroid_recovery(void);
+
 #define ALIVE_LED_GPIO	17 /* GPIO0_C1 */
 void board_alive_led(void)
 {
@@ -68,6 +71,12 @@ int rk_board_late_init(void)
 
 	/* set sfc alternate function */
 	board_init_sfc_if();
+
+	if (!board_check_recovery()) {
+		printf("Now start recovery mode\n");
+		board_odroid_recovery();
+		/* never get here */
+	}
 
 	/* show boot logo and version : drivers/video/drm/rockchip_display_cmds.c */
 	lcd_show_logo();

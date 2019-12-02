@@ -26,10 +26,15 @@ static const char *logo_bmp_names[] = {
 	"no_sdcard.bmp",
 };
 
-int odroidgo2_display_status(int logo_mode, int logo_storage, const char *str)
+int odroid_display_status(int logo_mode, int logo_storage, const char *str)
 {
 	unsigned long bmp_mem, bmp_copy;
 	char cmd[128];
+
+	if (lcd_init()) {
+		printf("[%s] lcd init fail!\n", __func__);
+		return -1;
+	}
 
 	/* draw logo bmp */
 	bmp_mem = lcd_get_mem();
@@ -66,4 +71,12 @@ int odroidgo2_display_status(int logo_mode, int logo_storage, const char *str)
 	}
 
 	return 0;
+}
+
+void odroid_wait_pwrkey(void)
+{
+	/* check power key and ctrl+c */
+	while (1) {
+		/* TODO */
+	}
 }
