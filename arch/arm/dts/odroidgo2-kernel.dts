@@ -466,12 +466,6 @@
 	status = "okay";
 };
 
-&dmc_opp_table {
-	opp-786000000 {
-		status = "okay";
-	};
-};
-
 &emmc {
 	status = "disabled";
 };
