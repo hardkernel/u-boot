@@ -207,4 +207,12 @@ void sh_serial_initialize(void);
 void uartlite_serial_initialize(void);
 void zynq_serial_initialize(void);
 
+/* serial device */
+int serial_dev_getc(struct udevice *dev);
+int serial_dev_tstc(struct udevice *dev);
+void serial_dev_putc(struct udevice *dev, char ch);
+void serial_dev_puts(struct udevice *dev, const char *str);
+void serial_dev_setbrg(struct udevice *dev, int baudrate);
+void serial_dev_clear(struct udevice *dev);
+
 #endif
