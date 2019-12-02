@@ -479,7 +479,9 @@ static u32 rockchip_crypto_capability(struct udevice *dev)
 	return CRYPTO_MD5 |
 	       CRYPTO_SHA1 |
 	       CRYPTO_SHA256 |
+#if !defined(CONFIG_ROCKCHIP_RK1808)
 	       CRYPTO_SHA512 |
+#endif
 	       CRYPTO_RSA512 |
 	       CRYPTO_RSA1024 |
 	       CRYPTO_RSA2048 |
