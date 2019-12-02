@@ -96,6 +96,7 @@ static int rockchip_crypto_sha_update(struct udevice *dev,
 {
 	struct rockchip_crypto_priv *priv = dev_get_priv(dev);
 	struct rk_crypto_reg *reg = priv->reg;
+	ulong aligned_input, aligned_len;
 
 	if (!len)
 		return -EINVAL;
@@ -103,7 +104,10 @@ static int rockchip_crypto_sha_update(struct udevice *dev,
 	priv->length += len;
 
 	/* Must flush dcache before crypto DMA fetch data region */
-	flush_cache((unsigned long)input, len);
+	aligned_input = round_down((ulong)input, CONFIG_SYS_CACHELINE_SIZE);
+	aligned_len = round_up(len + ((ulong)input - aligned_input),
+			       CONFIG_SYS_CACHELINE_SIZE);
+	flush_cache(aligned_input, aligned_len);
 
 	/* Wait last complete */
 	do {} while (readl(&reg->crypto_ctrl) & HASH_START);
