@@ -88,6 +88,7 @@ int lcd_setbg_color(const char *color);
 int lcd_settransp(unsigned long transp);
 int lcd_gettransp(void);
 int lcd_show_logo(void);
+unsigned long lcd_get_mem(void);
 
 /*----------------------------------------------------------------------------*/
 #endif	// #define _ROCKCHIP_DISPLAY_CMDS_H_

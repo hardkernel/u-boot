@@ -418,6 +418,12 @@ int lcd_setbg_color(const char *color)
 }
 
 /*----------------------------------------------------------------------------*/
+unsigned long lcd_get_mem(void)
+{
+	return get_drm_memory() + DRM_ROCKCHIP_FB_SIZE;
+}
+
+/*----------------------------------------------------------------------------*/
 int lcd_show_logo(void)
 {
 	char cmd[128];
