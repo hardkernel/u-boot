@@ -122,15 +122,19 @@
 
 	leds: gpio_leds {
 		compatible = "gpio-leds";
-
-		pinctrl-names = "led_pins";
-		pinctrl-0 = <&led_pins>;
+		status = "okay";
 
 		/* Blue LED : GPIO0_C1 */
 		heartbeat {
 			label = "blue:heartbeat";
 			gpios = <&gpio0 RK_PC1 GPIO_ACTIVE_HIGH>;
-			linux,default-trigger = "heartbeat";
+			default-state = "off";
+		};
+
+		battery {
+			label = "battery_full";
+			gpios = <&gpio0 RK_PB5 GPIO_ACTIVE_HIGH>;
+			default-state = "off";
 		};
 	};
 
@@ -717,7 +721,6 @@
 
 			/* P.C.B rev0.2 DC Detect & Charger Status LED GPIO */
 			dc_det_gpio  = <&gpio0 RK_PB3 GPIO_ACTIVE_HIGH>;
-			chg_led_gpio = <&gpio0 RK_PB5 GPIO_ACTIVE_HIGH>;
 
 			extcon = <&u2phy>;
 		};

@@ -16,6 +16,7 @@ DECLARE_GLOBAL_DATA_PTR;
 
 extern int board_check_recovery(void);
 extern void board_odroid_recovery(void);
+extern void board_check_power(void);
 
 #define ALIVE_LED_GPIO	17 /* GPIO0_C1 */
 void board_alive_led(void)
@@ -89,6 +90,9 @@ int rk_board_late_init(void)
 
 	/* set switch gpio */
 	board_init_switch_gpio();
+
+	/* check power */
+	board_check_power();
 
 	if (!board_check_recovery()) {
 		printf("Now start recovery mode\n");
