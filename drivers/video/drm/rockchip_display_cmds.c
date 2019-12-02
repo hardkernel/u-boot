@@ -463,7 +463,7 @@ int lcd_show_logo(void)
 		return -1;
 	}
 #elif CONFIG_SPI_BOOT
-	bmp_copy =+ LCD_LOGO_SIZE;
+	bmp_copy = bmp_mem + LCD_LOGO_SIZE;
 
 	sprintf(cmd, "rksfc read %p %s %s", (void *)bmp_copy,
 			env_get("st_logo_hardkernel"),
