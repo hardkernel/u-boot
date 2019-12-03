@@ -652,7 +652,7 @@ static unsigned int cec_handle_message(void)
 			phy_addr = (cec_msg.buf[cec_msg.rx_read_pos].msg[2] << 8) |
 				   (cec_msg.buf[cec_msg.rx_read_pos].msg[3] << 0);
 			if (((hdmi_cec_func_config >> CEC_FUNC_MASK) & 0x1) &&
-			    ((hdmi_cec_func_config >> AUTO_POWER_ON_MASK) & 0x1) &&
+			    ((hdmi_cec_func_config >> ACTIVE_SOURCE_MASK) & 0x1) &&
 			    (source == CEC_TV_ADDR && (dest == CEC_BROADCAST_ADDR || check_addr(phy_addr)))) {
 				cec_msg.cec_power = 0x1;
 				wake =  (phy_addr << 0) |
