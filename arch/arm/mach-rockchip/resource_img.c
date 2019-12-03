@@ -900,8 +900,6 @@ static int fdt_check_hash(void *fdt_addr, struct resource_file *file)
 	if (!file->hash_size)
 		return 0;
 
-	printf("Crypto: enable\n");
-
 	if (file->hash_size == 20)
 		crypto_csum(CRYPTO_SHA1, fdt_addr, file->f_size, hash);
 	else if (file->hash_size == 32)
@@ -911,6 +909,8 @@ static int fdt_check_hash(void *fdt_addr, struct resource_file *file)
 
 	if (memcmp(hash, file->hash, file->hash_size))
 		return -EBADF;
+
+	printf("HASH: OK(c)\n");
 
 	return 0;
 }
@@ -932,6 +932,8 @@ static int fdt_check_hash(void *fdt_addr, struct resource_file *file)
 
 	if (memcmp(hash, file->hash, file->hash_size))
 		return -EBADF;
+
+	printf("HASH: OK(s)\n");
 
 	return 0;
 }
