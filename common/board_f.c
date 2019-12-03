@@ -648,7 +648,8 @@ static int setup_reloc(void)
 #endif
 	memcpy(gd->new_gd, (char *)gd, sizeof(gd_t));
 
-	printf("Relocation Offset is: %08lx\n", gd->reloc_off);
+	printf("Relocation Offset: %08lx, fdt: %08lx\n",
+	      gd->reloc_off, (ulong)gd->new_fdt);
 	debug("Relocating to %08lx, new gd at %08lx, sp at %08lx\n",
 	      gd->relocaddr, (ulong)map_to_sysmem(gd->new_gd),
 	      gd->start_addr_sp);
