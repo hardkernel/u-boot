@@ -540,9 +540,15 @@ static void early_download_init(void)
 #endif
 }
 
+static void board_debug_init(void)
+{
+	if (!gd->serial.using_pre_serial)
+		board_debug_uart_init();
+}
+
 int board_init(void)
 {
-	board_debug_uart_init();
+	board_debug_init();
 
 #ifdef DEBUG
 	soc_clk_dump();
