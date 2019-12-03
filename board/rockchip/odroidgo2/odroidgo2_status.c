@@ -5,6 +5,9 @@
  */
 
 #include <common.h>
+#include <key.h>
+#include <dm.h>
+#include <console.h>
 #include <rockchip_display_cmds.h>
 #include "odroidgo2_status.h"
 
@@ -73,10 +76,55 @@ int odroid_display_status(int logo_mode, int logo_storage, const char *str)
 	return 0;
 }
 
+#define POWERDOWN_WAIT_TIME	10000
+#define LOOP_DELAY		25
+
 void odroid_wait_pwrkey(void)
 {
-	/* check power key and ctrl+c */
-	while (1) {
-		/* TODO */
+	u32 state;
+	unsigned int delay = POWERDOWN_WAIT_TIME;
+
+	/* check power key */
+	while (delay) {
+		state = key_read(KEY_POWER);
+		/* KEY_LONG_DOWN_MS 2000ms */
+		if (state == KEY_PRESS_LONG_DOWN)
+			break;
+
+		mdelay(LOOP_DELAY);
+		delay -= LOOP_DELAY;
+	}
+
+	printf("power key long pressed...\n");
+	lcd_printf(0, 18, 1, "%s", "power off...");
+	mdelay(1000);
+	run_command("poweroff", 0);
+}
+
+void detect_key_test(void)
+{
+	struct dm_key_uclass_platdata *key;
+	struct udevice *dev;
+	struct uclass *uc;
+	int ret, evt;
+
+	ret = uclass_get(UCLASS_KEY, &uc);
+	if (ret)
+		return;
+
+	printf("Please press any key button...\n");
+	while (!ctrlc()) {
+		for (uclass_first_device(UCLASS_KEY, &dev);
+		     dev;
+		     uclass_next_device(&dev)) {
+			key = dev_get_uclass_platdata(dev);
+			evt = key_read(key->code);
+			if (evt == KEY_PRESS_DOWN)
+				printf("'%s' key pressed...\n", key->name);
+			else if (evt == KEY_PRESS_LONG_DOWN)
+				printf("'%s' key long pressed...\n", key->name);
+
+			mdelay(25);
+		}
 	}
 }

@@ -61,6 +61,21 @@ void board_init_sfc_if(void)
 	rk_setreg(&grf->gpio1al_iomux, (0x3 << 4));
 }
 
+void board_init_switch_gpio(void)
+{
+	static struct px30_grf * const grf = (void *)GRF_BASE;
+
+	/* set iomux */
+	rk_clrreg(&grf->gpio1al_iomux, 0x0f00);
+	rk_clrreg(&grf->gpio1ah_iomux, 0xfff0);
+	rk_clrreg(&grf->gpio1bh_iomux, 0xffff);
+
+	/* set pad pull control */
+	rk_clrsetreg(&grf->gpio1b_p, 0xff00, 0x5500);
+	rk_clrsetreg(&grf->gpio1a_p, 0xfcc0, 0x5440);
+	rk_clrsetreg(&grf->gpio2a_p, 0xffff, 0x5555);
+}
+
 int rk_board_late_init(void)
 {
 	/* turn on blue led */
@@ -71,6 +86,9 @@ int rk_board_late_init(void)
 
 	/* set sfc alternate function */
 	board_init_sfc_if();
+
+	/* set switch gpio */
+	board_init_switch_gpio();
 
 	if (!board_check_recovery()) {
 		printf("Now start recovery mode\n");
