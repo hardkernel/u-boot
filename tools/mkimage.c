@@ -518,6 +518,15 @@ int main(int argc, char **argv)
 		} else if (params.type == IH_TYPE_PBLIMAGE) {
 			/* PBL has special Image format, implements its' own */
 			pbl_load_uboot(ifd, &params);
+		} else if ((params.type == IH_TYPE_RKSD) ||
+				(params.type == IH_TYPE_RKSPI) ||
+				(params.type == IH_TYPE_RKNAND)) {
+			/* Rockchip has special Image format */
+			int ret;
+
+			ret = rockchip_copy_image(ifd, &params);
+			if (ret)
+				return ret;
 		} else {
 			copy_file(ifd, params.datafile, pad_len);
 		}
