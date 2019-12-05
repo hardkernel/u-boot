@@ -481,7 +481,7 @@ int ns16550_serial_ofdata_to_platdata(struct udevice *dev)
 	plat->base = addr;
 #else
 
-	if (gd && gd->serial.using_pre_serial)
+	if (gd && gd->serial.using_pre_serial && !gd->cur_serial_dev)
 		addr = gd->serial.addr;
 
 	plat->base = (unsigned long)map_physmem(addr, 0, MAP_NOCACHE);
