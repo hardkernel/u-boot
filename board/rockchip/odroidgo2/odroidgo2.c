@@ -13,6 +13,7 @@
 #include <key.h>
 #include <rockchip_display_cmds.h>
 #include <odroidgo2_status.h>
+#include <fs.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -105,6 +106,36 @@ void board_init_switch_gpio(void)
 	rk_clrsetreg(&grf->gpio2a_p, 0xffff, 0x5555);
 }
 
+void board_check_mandatory_files(void)
+{
+	/* check sd card existence */
+	if (CMD_RET_SUCCESS != run_command("mmc dev 1", 0)) {
+		if(CMD_RET_SUCCESS != run_command("mmc dev 1", 0)) {
+			odroid_display_status(LOGO_MODE_NO_SDCARD,
+				LOGO_STORAGE_SPIFLASH, "No SD Card");
+			goto err;
+		}
+	}
+
+	/* check kernel and dtb in vfat of sd card */
+	if (!file_exists("mmc", "1", "Image", FS_TYPE_FAT)) {
+		odroid_display_status(LOGO_MODE_SYSTEM_ERR,
+				LOGO_STORAGE_SPIFLASH, "No Kernel Image");
+		goto err;
+	}
+
+	if (!file_exists("mmc", "1", "rk3326-odroidgo2-linux.dtb", FS_TYPE_FAT)) {
+		odroid_display_status(LOGO_MODE_SYSTEM_ERR,
+				LOGO_STORAGE_SPIFLASH, "No DTB");
+		goto err;
+	}
+
+	return;
+
+err:
+	odroid_wait_pwrkey();
+}
+
 int rk_board_late_init(void)
 {
 	/* turn on blue led */
@@ -133,6 +164,8 @@ int rk_board_late_init(void)
 
 	if (!board_check_autotest())
 		board_run_autotest();
+
+	board_check_mandatory_files();
 
 	return 0;
 }
