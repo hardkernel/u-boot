@@ -9,7 +9,11 @@
 #include <dm.h>
 #include <rksfc.h>
 
+#ifdef CONFIG_TARGET_ODROIDGO2
+static int rksfc_curr_dev = 1; /* default spinor */
+#else
 static int rksfc_curr_dev;
+#endif
 static int do_rksfc(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	int ret;
