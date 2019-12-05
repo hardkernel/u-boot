@@ -2109,17 +2109,6 @@ static void cb_oem(struct usb_ep *ep, struct usb_request *req)
 #else
 		fastboot_tx_write_str("FAILnot implemented");
 #endif
-	} else if (strncmp("at-disable-unlock-vboot", cmd + 4, 23) == 0) {
-#ifdef CONFIG_RK_AVB_LIBAVB_USER
-		uint8_t lock_state;
-		lock_state = 2;
-		if (rk_avb_write_lock_state(lock_state))
-			fastboot_tx_write_str("FAILwrite lock state failed");
-		else
-			fastboot_tx_write_str("OKAY");
-#else
-		fastboot_tx_write_str("FAILnot implemented");
-#endif
 	} else if (strncmp("fuse at-perm-attr", cmd + 4, 16) == 0) {
 		cb_oem_perm_attr();
 	} else if (strncmp("fuse at-rsa-perm-attr", cmd + 4, 25) == 0) {
