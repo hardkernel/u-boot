@@ -1243,6 +1243,9 @@ static int rk1808_clk_probe(struct udevice *dev)
 {
 	struct rk1808_clk_priv *priv = dev_get_priv(dev);
 	int ret;
+#ifndef CONFIG_SPL_BUILD
+	ulong crypto_rate, crypto_apk_rate;
+#endif
 
 	priv->sync_kernel = false;
 	if (!priv->armclk_enter_hz) {
@@ -1266,12 +1269,22 @@ static int rk1808_clk_probe(struct udevice *dev)
 	priv->npll_hz = rockchip_pll_get_rate(&rk1808_pll_clks[NPLL],
 					      priv->cru, NPLL);
 
+#ifndef CONFIG_SPL_BUILD
+	crypto_rate = rk1808_crypto_get_clk(priv, SCLK_CRYPTO);
+	crypto_apk_rate = rk1808_crypto_get_clk(priv, SCLK_CRYPTO_APK);
+#endif
+
 	/* Process 'assigned-{clocks/clock-parents/clock-rates}' properties */
 	ret = clk_set_defaults(dev);
 	if (ret)
 		debug("%s clk_set_defaults failed %d\n", __func__, ret);
 	else
 		priv->sync_kernel = true;
+
+#ifndef CONFIG_SPL_BUILD
+	rk1808_crypto_set_clk(priv, SCLK_CRYPTO, crypto_rate);
+	rk1808_crypto_set_clk(priv, SCLK_CRYPTO_APK, crypto_apk_rate);
+#endif
 
 	return 0;
 }
