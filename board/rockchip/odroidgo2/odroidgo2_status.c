@@ -13,7 +13,6 @@
 
 static const char *st_logo_modes[] = {
 	"st_logo_hardkernel",
-	"st_logo_boot",
 	"st_logo_lowbatt",
 	"st_logo_recovery",
 	"st_logo_err",
@@ -22,7 +21,6 @@ static const char *st_logo_modes[] = {
 
 static const char *logo_bmp_names[] = {
 	"logo.bmp",
-	"logo_boot.bmp",
 	"low_battery.bmp",
 	"recovery.bmp",
 	"system_error.bmp",

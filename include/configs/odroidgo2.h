@@ -42,12 +42,11 @@
 		"sz_dtb=0xC8\0" \
 		"sz_logo=0x190\0" \
 		"st_logo_hardkernel=0x20C8\0" \
-		"st_logo_boot=0x2258\0" \
-		"st_logo_lowbatt=0x23E8\0" \
-		"st_logo_recovery=0x2578\0" \
-		"st_logo_err=0x2708\0" \
-		"st_logo_nosdcard=0x2898\0" \
-		"sz_total=0x2A28\0"
+		"st_logo_lowbatt=0x2258\0" \
+		"st_logo_recovery=0x23E8\0" \
+		"st_logo_err=0x2578\0" \
+		"st_logo_nosdcard=0x2708\0" \
+		"sz_total=0x2898\0"
 
 #define ROCKCHIP_DEVICE_SETTINGS \
 		"stdout=serial,vidconsole\0" \

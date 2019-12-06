@@ -14,6 +14,7 @@
 #include <rockchip_display_cmds.h>
 #include <odroidgo2_status.h>
 #include <fs.h>
+#include <version.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -161,6 +162,9 @@ int rk_board_late_init(void)
 
 	/* show boot logo and version : drivers/video/drm/rockchip_display_cmds.c */
 	lcd_show_logo();
+	lcd_setfg(255, 255, 0);
+	lcd_printf(0, 18, 1, "%s", U_BOOT_VERSION);
+	lcd_printf(0, 19, 1, "%s %s", U_BOOT_DATE, U_BOOT_TIME);
 
 	if (!board_check_autotest())
 		board_run_autotest();

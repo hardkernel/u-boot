@@ -822,7 +822,7 @@ pack_idbloader()
 
 pack_recovery_image()
 {
-	dd if=/dev/zero of=./sd_fuse/spi_recovery.img bs=512 count=10792 conv=fsync,notrunc
+	dd if=/dev/zero of=./sd_fuse/spi_recovery.img bs=512 count=10392 conv=fsync,notrunc
 
 	dd if=./sd_fuse/rk3326_header_miniloader_spiboot.img of=./sd_fuse/spi_recovery.img bs=512 seek=0 count=2048 conv=fsync,notrunc
 	dd if=./sd_fuse/uboot_spi.img of=./sd_fuse/spi_recovery.img bs=512 seek=2048 count=2048 conv=fsync,notrunc
@@ -831,7 +831,6 @@ pack_recovery_image()
 
 	gzip -k -f ./tools/images/hardkernel/*.bmp
 	dd if=./tools/images/hardkernel/logo_hardkernel.bmp.gz of=./sd_fuse/spi_recovery.img bs=512 seek=8392 conv=fsync,notrunc
-	dd if=./tools/images/hardkernel/logo_boot.bmp.gz of=./sd_fuse/spi_recovery.img bs=512 seek=8792 conv=fsync,notrunc
 	dd if=./tools/images/hardkernel/low_battery.bmp.gz of=./sd_fuse/spi_recovery.img bs=512 seek=9192 conv=fsync,notrunc
 	dd if=./tools/images/hardkernel/recovery.bmp.gz of=./sd_fuse/spi_recovery.img bs=512 seek=9592 conv=fsync,notrunc
 	dd if=./tools/images/hardkernel/system_error.bmp.gz of=./sd_fuse/spi_recovery.img bs=512 seek=9992 conv=fsync,notrunc

@@ -13,7 +13,6 @@ enum logo_storage {
 
 enum logo_mode {
 	LOGO_MODE_HARDKERNEL = 0,
-	LOGO_MODE_BOOT,
 	LOGO_MODE_LOW_BATT,
 	LOGO_MODE_RECOVERY,
 	LOGO_MODE_SYSTEM_ERR,
