@@ -131,6 +131,14 @@ void board_check_mandatory_files(void)
 		goto err;
 	}
 
+	/* check launcher in ext4 fs of sd card */
+	if (!file_exists("mmc", "1:2", "/usr/local/bin/emulationstation/emulationstation",
+				FS_TYPE_EXT)) {
+		odroid_display_status(LOGO_MODE_SYSTEM_ERR,
+				LOGO_STORAGE_SPIFLASH, "No Emulationstation launcher");
+		goto err;
+	}
+
 	return;
 
 err:

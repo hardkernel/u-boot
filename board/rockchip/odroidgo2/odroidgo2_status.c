@@ -82,12 +82,21 @@ void odroid_wait_pwrkey(void)
 	u32 state;
 	unsigned int delay = POWERDOWN_WAIT_TIME;
 
+	printf("Wait power key\n");
+	printf("Hit ctrl+c key to enter uboot console\n");
+
 	/* check power key */
 	while (delay) {
 		state = key_read(KEY_POWER);
 		/* KEY_LONG_DOWN_MS 2000ms */
 		if (state == KEY_PRESS_LONG_DOWN)
 			break;
+
+		if (ctrlc()) {
+			printf("ctrl+c key pressed - drop to console");
+			env_set("bootdelay", "-1");
+			return;
+		}
 
 		mdelay(LOOP_DELAY);
 		delay -= LOOP_DELAY;
