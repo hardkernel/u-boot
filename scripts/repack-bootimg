@@ -3,6 +3,8 @@
 # Copyright (c) 2019 Fuzhou Rockchip Electronics Co., Ltd.
 set -e
 
+ARGC=$#
+
 usage() {
 	cat >&2 << USAGE
 usage: $0 [-h] [-z] --boot_img BOOT_IMG [--out OUT] [--kernel KERNEL] [--ramdisk RAMDISK] [--second SECOND] [--dtb DTB ] [--recovery_dtbo RECOVERY_DTBO] -o OUTPUT
@@ -117,6 +119,11 @@ log="$out/unpack.log"
 
 mkdir -p $out
 $srctree/scripts/unpack_bootimg --boot_img $boot_img --out $out > $log
+
+if [ $ARGC -eq 4 ]; then
+	$srctree/scripts/unpack_resource.sh $second out/resource/ > /dev/null
+	$srctree/tools/resource_tool --root=out/resource --image=$second out/resource/* > /dev/null
+fi
 
 cmdline=$(grep -a "^command line args: " $log | tr '\0' '\n'| sed "s/^command line args: //")
 extra_cmdline=$(grep -a "^additional command line args: " $log | tr '\0' '\n'| sed "s/^additional command line args: //")
