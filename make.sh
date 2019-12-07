@@ -820,28 +820,6 @@ pack_idbloader()
 	cat ${RKBIN}/bin/rk33/rk3326_miniloader_v1.12.bin >> ./sd_fuse/idbloader.img
 }
 
-pack_recovery_image()
-{
-	dd if=/dev/zero of=./sd_fuse/spi_recovery.img bs=512 count=10392 conv=fsync,notrunc
-
-	dd if=./sd_fuse/rk3326_header_miniloader_spiboot.img of=./sd_fuse/spi_recovery.img bs=512 seek=0 count=2048 conv=fsync,notrunc
-	dd if=./sd_fuse/uboot_spi.img of=./sd_fuse/spi_recovery.img bs=512 seek=2048 count=2048 conv=fsync,notrunc
-	dd if=./sd_fuse/trust_spi.img of=./sd_fuse/spi_recovery.img bs=512 seek=4096 count=4096 conv=fsync,notrunc
-	dd if=./arch/arm/dts/odroidgo2-kernel.dtb of=./sd_fuse/spi_recovery.img bs=512 seek=8192 count=200 conv=fsync,notrunc
-
-	gzip -k -f ./tools/images/hardkernel/*.bmp
-	dd if=./tools/images/hardkernel/logo_hardkernel.bmp.gz of=./sd_fuse/spi_recovery.img bs=512 seek=8392 conv=fsync,notrunc
-	dd if=./tools/images/hardkernel/low_battery.bmp.gz of=./sd_fuse/spi_recovery.img bs=512 seek=9192 conv=fsync,notrunc
-	dd if=./tools/images/hardkernel/recovery.bmp.gz of=./sd_fuse/spi_recovery.img bs=512 seek=9592 conv=fsync,notrunc
-	dd if=./tools/images/hardkernel/system_error.bmp.gz of=./sd_fuse/spi_recovery.img bs=512 seek=9992 conv=fsync,notrunc
-	dd if=./tools/images/hardkernel/no_sdcard.bmp.gz of=./sd_fuse/spi_recovery.img bs=512 seek=10392 conv=fsync,notrunc
-	rm ./tools/images/hardkernel/*.bmp.gz
-
-	md5sum ./sd_fuse/spi_recovery.img > ./sd_fuse/spi_recovery.img.md5sum
-
-	echo "A recovery image for spi flash is ready."
-}
-
 finish()
 {
 	if [ "${BOARD}" = 'odroidgo2-spi' ]; then
@@ -873,6 +851,3 @@ if [ "${BOARD}" = 'odroidgo2' ]; then
 pack_idbloader
 fi
 finish
-if [ "${BOARD}" = 'odroidgo2-spi' ]; then
-pack_recovery_image
-fi
