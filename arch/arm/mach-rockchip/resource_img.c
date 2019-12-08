@@ -204,6 +204,49 @@ static int replace_resource_entry(const char *f_name, uint32_t base,
 	return 0;
 }
 
+static int read_logo_bmp(const char *name, disk_partition_t *part,
+			 uint32_t offset, uint32_t *size)
+{
+	struct blk_desc *dev_desc;
+	struct bmp_header *header;
+	u32 blk_start, blk_offset, filesz;
+	int ret;
+
+	dev_desc = rockchip_get_bootdev();
+	if (!dev_desc)
+		return -ENODEV;
+
+	blk_offset = DIV_ROUND_UP(offset, dev_desc->blksz);
+	blk_start = part->start + blk_offset;
+	header = memalign(ARCH_DMA_MINALIGN, dev_desc->blksz);
+	if (!header) {
+		ret = -ENOMEM;
+		goto err;
+	}
+	ret = blk_dread(dev_desc, blk_start, 1, header);
+	if (ret != 1) {
+		ret = -EIO;
+		goto err;
+	}
+
+	if (header->signature[0] != 'B' ||
+	    header->signature[1] != 'M') {
+		ret = -EINVAL;
+		goto err;
+	}
+
+	filesz = get_unaligned_le32(&header->file_size);
+	ret = replace_resource_entry(name, blk_start, blk_offset, filesz);
+	if (!ret) {
+		printf("LOGO: %s\n", name);
+		if (size)
+			*size = filesz;
+	}
+err:
+	free(header);
+
+	return ret;
+}
 /*
  * There are: logo/battery pictures and dtb file in the resource image by default.
  *
@@ -220,7 +263,6 @@ static int init_resource_list(struct resource_img_hdr *hdr)
 {
 	struct resource_entry *entry;
 	struct blk_desc *dev_desc;
-	struct bmp_header *header;
 	char *boot_partname = PART_BOOT;
 	disk_partition_t part_info;
 	int resource_found = 0;
@@ -428,36 +470,28 @@ parse_second_pos_dtb:
 parse_logo:
 #endif
 	/*
-	 * Add logo.bmp from "logo" parititon
+	 * Add logo.bmp and logo_kernel.bmp from "logo" parititon
 	 *
-	 * We provide a "logo" partition for user to store logo.bmp
-	 * and update from kernel user space dynamically.
+	 * Provide a "logo" partition for user to store logo.bmp and
+	 * logo_kernel.bmp, so that the users can update them from
+	 * kernel or user-space dynamically.
+	 *
+	 * "logo" partition layout, not change order:
+	 *
+	 *   |----------------------| 0x00
+	 *   | raw logo.bmp         |
+	 *   |----------------------| N*512-byte aligned
+	 *   | raw logo_kernel.bmp  |
+	 *   |----------------------|
+	 *
+	 * N: the sector count of logo.bmp
 	 */
 	if (part_get_info_by_name(dev_desc, PART_LOGO, &part_info) >= 0) {
-		header = memalign(ARCH_DMA_MINALIGN, dev_desc->blksz);
-		if (!header) {
-			ret = -ENOMEM;
-			goto err;
-		}
+		u32 filesz;
 
-		ret = blk_dread(dev_desc, part_info.start, 1, header);
-		if (ret != 1) {
-			ret = -EIO;
-			goto err2;
-		}
-
-		if (header->signature[0] != 'B' ||
-		    header->signature[1] != 'M') {
-			ret = 0;
-			goto err2;
-		}
-
-		ret = replace_resource_entry("logo.bmp", part_info.start, 0,
-					     get_unaligned_le32(&header->file_size));
-		if (!ret)
-			printf("Found logo.bmp in logo part\n");
-err2:
-		free(header);
+		if (!read_logo_bmp("logo.bmp", &part_info, 0, &filesz))
+			read_logo_bmp("logo_kernel.bmp", &part_info,
+				      filesz, NULL);
 	}
 
 	/*
