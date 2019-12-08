@@ -401,12 +401,14 @@ static AvbSlotVerifyResult load_and_verify_hash_partition(
     image_size_to_hash = image_size;
   }
   if (avb_strcmp((const char*)hash_desc.hash_algorithm, "sha256") == 0) {
+    sha256_ctx.tot_len = hash_desc.salt_len + image_size_to_hash;
     avb_sha256_init(&sha256_ctx);
     avb_sha256_update(&sha256_ctx, desc_salt, hash_desc.salt_len);
     avb_sha256_update(&sha256_ctx, image_buf, image_size_to_hash);
     digest = avb_sha256_final(&sha256_ctx);
     digest_len = AVB_SHA256_DIGEST_SIZE;
   } else if (avb_strcmp((const char*)hash_desc.hash_algorithm, "sha512") == 0) {
+    sha512_ctx.tot_len = hash_desc.salt_len + image_size_to_hash;
     avb_sha512_init(&sha512_ctx);
     avb_sha512_update(&sha512_ctx, desc_salt, hash_desc.salt_len);
     avb_sha512_update(&sha512_ctx, image_buf, image_size_to_hash);
@@ -1716,6 +1718,11 @@ void avb_slot_verify_data_calculate_vbmeta_digest(AvbSlotVerifyData* data,
   switch (digest_type) {
     case AVB_DIGEST_TYPE_SHA256: {
       AvbSHA256Ctx ctx;
+
+      ctx.tot_len = 0;
+      for (n = 0; n < data->num_vbmeta_images; n++)
+        ctx.tot_len += data->vbmeta_images[n].vbmeta_size;
+
       avb_sha256_init(&ctx);
       for (n = 0; n < data->num_vbmeta_images; n++) {
         avb_sha256_update(&ctx,
@@ -1728,6 +1735,11 @@ void avb_slot_verify_data_calculate_vbmeta_digest(AvbSlotVerifyData* data,
 
     case AVB_DIGEST_TYPE_SHA512: {
       AvbSHA512Ctx ctx;
+
+      ctx.tot_len = 0;
+      for (n = 0; n < data->num_vbmeta_images; n++)
+        ctx.tot_len += data->vbmeta_images[n].vbmeta_size;
+
       avb_sha512_init(&ctx);
       for (n = 0; n < data->num_vbmeta_images; n++) {
         avb_sha512_update(&ctx,

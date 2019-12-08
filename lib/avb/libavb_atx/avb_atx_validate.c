@@ -45,6 +45,8 @@ static void sha256(const uint8_t* data,
                    uint32_t length,
                    uint8_t hash[AVB_SHA256_DIGEST_SIZE]) {
   AvbSHA256Ctx context;
+
+  context.tot_len = length;
   avb_sha256_init(&context);
   avb_sha256_update(&context, data, length);
   uint8_t* tmp = avb_sha256_final(&context);

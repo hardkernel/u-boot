@@ -178,6 +178,9 @@ AvbVBMetaVerifyResult avb_vbmeta_image_verify(
     case AVB_ALGORITHM_TYPE_SHA256_RSA2048:
     case AVB_ALGORITHM_TYPE_SHA256_RSA4096:
     case AVB_ALGORITHM_TYPE_SHA256_RSA8192:
+
+      sha256_ctx.tot_len = sizeof(AvbVBMetaImageHeader) +
+                                      h.auxiliary_data_block_size;
       avb_sha256_init(&sha256_ctx);
       avb_sha256_update(
           &sha256_ctx, header_block, sizeof(AvbVBMetaImageHeader));
@@ -189,6 +192,8 @@ AvbVBMetaVerifyResult avb_vbmeta_image_verify(
     case AVB_ALGORITHM_TYPE_SHA512_RSA2048:
     case AVB_ALGORITHM_TYPE_SHA512_RSA4096:
     case AVB_ALGORITHM_TYPE_SHA512_RSA8192:
+      sha512_ctx.tot_len = sizeof(AvbVBMetaImageHeader) +
+                                      h.auxiliary_data_block_size;
       avb_sha512_init(&sha512_ctx);
       avb_sha512_update(
           &sha512_ctx, header_block, sizeof(AvbVBMetaImageHeader));

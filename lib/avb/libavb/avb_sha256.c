@@ -36,7 +36,33 @@
  */
 
 #include <android_avb/avb_sha.h>
+#include <android_avb/avb_util.h>
 
+#ifdef CONFIG_DM_CRYPTO
+void avb_sha256_init(AvbSHA256Ctx* ctx) {
+  ctx->crypto_ctx.algo = CRYPTO_SHA256;
+  ctx->crypto_ctx.length = ctx->tot_len;
+  memset(ctx->buf, 0, sizeof(ctx->buf));
+
+  ctx->crypto_dev = crypto_get_device(ctx->crypto_ctx.algo);
+  if (!ctx->crypto_dev)
+    avb_error("Can't get sha256 crypto device\n");
+  else
+    crypto_sha_init(ctx->crypto_dev, &ctx->crypto_ctx);
+}
+
+void avb_sha256_update(AvbSHA256Ctx* ctx, const uint8_t* data, size_t len) {
+  if (ctx->crypto_dev)
+    crypto_sha_update(ctx->crypto_dev, (u32 *)data, len);
+}
+
+uint8_t* avb_sha256_final(AvbSHA256Ctx* ctx) {
+  if (ctx->crypto_dev)
+    crypto_sha_final(ctx->crypto_dev, &ctx->crypto_ctx, ctx->buf);
+
+  return ctx->buf;
+}
+#else
 #define SHFR(x, n) (x >> n)
 #define ROTR(x, n) ((x >> n) | (x << ((sizeof(x) << 3) - n)))
 #define ROTL(x, n) ((x << n) | (x >> ((sizeof(x) << 3) - n)))
@@ -400,3 +426,4 @@ uint8_t* avb_sha256_final(AvbSHA256Ctx* ctx) {
 
   return ctx->buf;
 }
+#endif

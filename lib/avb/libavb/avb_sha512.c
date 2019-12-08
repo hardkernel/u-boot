@@ -36,7 +36,35 @@
  */
 
 #include <android_avb/avb_sha.h>
+#include <android_avb/avb_util.h>
 
+/* Crypto-v1 is not support sha512 */
+#ifdef CONFIG_ROCKCHIP_CRYPTO_V2
+void avb_sha512_init(AvbSHA512Ctx* ctx) {
+  ctx->crypto_ctx.algo = CRYPTO_SHA512;
+  ctx->crypto_ctx.length = ctx->tot_len;
+  memset(ctx->buf, 0, sizeof(ctx->buf));
+
+  ctx->crypto_dev = crypto_get_device(ctx->crypto_ctx.algo);
+  if (!ctx->crypto_dev)
+    avb_error("Can't get sha512 crypto device\n");
+  else
+    crypto_sha_init(ctx->crypto_dev, &ctx->crypto_ctx);
+}
+
+void avb_sha512_update(AvbSHA512Ctx* ctx, const uint8_t* data, size_t len) {
+  if (ctx->crypto_dev)
+    crypto_sha_update(ctx->crypto_dev, (u32 *)data, len);
+}
+
+uint8_t* avb_sha512_final(AvbSHA512Ctx* ctx) {
+  if (ctx->crypto_dev)
+    crypto_sha_final(ctx->crypto_dev, &ctx->crypto_ctx, ctx->buf);
+
+  return ctx->buf;
+}
+
+#else
 #define SHFR(x, n) (x >> n)
 #define ROTR(x, n) ((x >> n) | (x << ((sizeof(x) << 3) - n)))
 #define ROTL(x, n) ((x << n) | (x >> ((sizeof(x) << 3) - n)))
@@ -386,3 +414,4 @@ uint8_t* avb_sha512_final(AvbSHA512Ctx* ctx) {
 
   return ctx->buf;
 }
+#endif
