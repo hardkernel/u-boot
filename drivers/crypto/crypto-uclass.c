@@ -3,10 +3,7 @@
  * Copyright (c) 2019 Fuzhou Rockchip Electronics Co., Ltd
  */
 
-#include <common.h>
 #include <crypto.h>
-#include <dm.h>
-#include <u-boot/sha1.h>
 
 u32 crypto_algo_nbits(u32 algo)
 {
