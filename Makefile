@@ -2169,3 +2169,7 @@ FORCE:
 # Declare the contents of the .PHONY variable as phony.  We keep that
 # information in a variable so we can use it in if_changed and friends.
 .PHONY: $(PHONY)
+
+ifneq ($(CONFIG_TARGET_ODROID_XU3),)
+include board/hardkernel/odroid-xu3/Makefile
+endif
