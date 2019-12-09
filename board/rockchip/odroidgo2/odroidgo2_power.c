@@ -10,7 +10,7 @@
 #include <power/fuel_gauge.h>
 #include <odroidgo2_status.h>
 
-#define MIN_VOL_LEVEL	3800	/* 3.8V */
+#define MIN_VOL_LEVEL	3500	/* 3.5V */
 
 #define DC_DET_GPIO	11	/* GPIO0_B3 */
 #define CHG_LED_GPIO	13	/* GPIO0_B5 */
@@ -18,8 +18,8 @@
 void board_chg_led(void)
 {
 	gpio_request(CHG_LED_GPIO, "chg_led");
-	/* default off */
-	gpio_direction_output(CHG_LED_GPIO, 0);
+	/* default on */
+	gpio_direction_output(CHG_LED_GPIO, 1);
 }
 
 int odroid_check_dcjack(void)
