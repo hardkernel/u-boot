@@ -17,6 +17,7 @@
 struct rockchip_crypto_priv {
 	struct rk_crypto_reg *reg;
 	struct clk clk;
+	sha_context *ctx;
 	u32 frequency;
 	char *clocks;
 	u32 nclocks;
@@ -47,6 +48,7 @@ static int rockchip_crypto_sha_init(struct udevice *dev, sha_context *ctx)
 		return -EINVAL;
 	}
 
+	priv->ctx = ctx;
 	priv->length = 0;
 	writel(ctx->length, &reg->crypto_hash_msg_len);
 	if (ctx->algo == CRYPTO_SHA256) {
@@ -102,6 +104,10 @@ static int rockchip_crypto_sha_update(struct udevice *dev,
 		return -EINVAL;
 
 	priv->length += len;
+	if ((priv->length != priv->ctx->length) && !IS_ALIGNED(len, 4)) {
+		printf("Crypto-v1: require update data length 4-byte aligned\n");
+		return -EINVAL;
+	}
 
 	/* Must flush dcache before crypto DMA fetch data region */
 	aligned_input = round_down((ulong)input, CONFIG_SYS_CACHELINE_SIZE);
