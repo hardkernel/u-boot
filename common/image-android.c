@@ -270,7 +270,7 @@ int android_image_get_fdt(const struct andr_img_hdr *hdr,
 	return 0;
 }
 
-#ifdef CONFIG_ANDROID_BOOT_IMAGE_HASH
+#if defined(CONFIG_DM_CRYPTO) && defined(CONFIG_ANDROID_BOOT_IMAGE_HASH)
 static void print_hash(const char *label, u8 *hash, int len)
 {
 	int i;
@@ -280,249 +280,237 @@ static void print_hash(const char *label, u8 *hash, int len)
 		printf("%02x", hash[i]);
 	printf("\n");
 }
-
-/*
- * This is only for Non-AVB image, because AVB image is verified by AVB bootflow.
- * The kernel/ramdisk/second address should be the real address in hdr before
- * calling this function.
- *
- * mkbootimg tool always use SHA1 for images.
- */
-static int android_image_hash_verify(struct andr_img_hdr *hdr)
-{
-	u8 hash[20];
-
-#ifdef DEBUG
-	android_print_contents(hdr);
 #endif
 
-	if (hdr->kernel_addr == ANDROID_IMAGE_DEFAULT_KERNEL_ADDR) {
-		printf("No real image address in android hdr\n");
+typedef enum {
+	IMG_KERNEL,
+	IMG_RAMDISK,
+	IMG_SECOND,
+	IMG_RECOVERY_DTBO,
+	IMG_RK_DTB,	/* within resource.img in second position */
+	IMG_DTB,
+	IMG_MAX,
+} img_t;
+
+static int image_read(img_t img, struct andr_img_hdr *hdr,
+		      ulong blkstart, void *ram_base,
+		      struct udevice *crypto)
+{
+	struct blk_desc *desc = rockchip_get_bootdev();
+	__maybe_unused u32 sizesz;
+	ulong pgsz = hdr->page_size;
+	ulong blksz = desc->blksz;
+	ulong blkcnt, blkoff;
+	ulong offset = 0;
+	ulong datasz;
+	void *ramdst;
+	int ret = 0;
+
+	switch (img) {
+	case IMG_KERNEL:
+		offset = 0; /* include a page_size(image header) */
+		blkcnt = DIV_ROUND_UP(hdr->kernel_size + pgsz, blksz);
+		ramdst = (void *)env_get_ulong("android_addr_r", 16, 0);
+		datasz = hdr->kernel_size + pgsz;
+		sizesz = sizeof(hdr->kernel_size);
+		if (!sysmem_alloc_base(MEMBLK_ID_KERNEL,
+				(phys_addr_t)ramdst, blkcnt * blksz))
+			return -ENOMEM;
+		break;
+	case IMG_RAMDISK:
+		offset = pgsz + ALIGN(hdr->kernel_size, pgsz);
+		blkcnt = DIV_ROUND_UP(hdr->ramdisk_size, blksz);
+		ramdst = (void *)env_get_ulong("ramdisk_addr_r", 16, 0);
+		datasz = hdr->ramdisk_size;
+		sizesz = sizeof(hdr->ramdisk_size);
+		if (datasz && !sysmem_alloc_base(MEMBLK_ID_RAMDISK,
+				(phys_addr_t)ramdst, blkcnt * blksz))
+			return -ENOMEM;
+		break;
+	case IMG_SECOND:
+		offset = pgsz +
+			 ALIGN(hdr->kernel_size, pgsz) +
+			 ALIGN(hdr->ramdisk_size, pgsz);
+		blkcnt = DIV_ROUND_UP(hdr->second_size, blksz);
+		datasz = hdr->second_size;
+		sizesz = sizeof(hdr->second_size);
+		ramdst = malloc(blkcnt * blksz);
+		break;
+	case IMG_RECOVERY_DTBO:
+		offset = pgsz +
+			 ALIGN(hdr->kernel_size, pgsz) +
+			 ALIGN(hdr->ramdisk_size, pgsz) +
+			 ALIGN(hdr->second_size, pgsz);
+		blkcnt = DIV_ROUND_UP(hdr->recovery_dtbo_size, blksz);
+		datasz = hdr->recovery_dtbo_size;
+		sizesz = sizeof(hdr->recovery_dtbo_size);
+		ramdst = malloc(blkcnt * blksz);
+		break;
+	case IMG_DTB:
+		offset = pgsz +
+			 ALIGN(hdr->kernel_size, pgsz) +
+			 ALIGN(hdr->ramdisk_size, pgsz) +
+			 ALIGN(hdr->second_size, pgsz) +
+			 ALIGN(hdr->recovery_dtbo_size, pgsz);
+		blkcnt = DIV_ROUND_UP(hdr->dtb_size, blksz);
+		datasz = hdr->dtb_size;
+		sizesz = sizeof(hdr->dtb_size);
+		ramdst = malloc(blkcnt * blksz);
+		break;
+	case IMG_RK_DTB:
+#ifdef CONFIG_RKIMG_BOOTLOADER
+		/* No going further, it handles DTBO, HW-ID, etc */
+		ramdst = (void *)env_get_ulong("fdt_addr_r", 16, 0);
+		if (gd->fdt_blob != (void *)ramdst)
+			ret = rockchip_read_dtb_file(ramdst);
+#endif
+		return ret < 0 ? ret : 0;
+	default:
 		return -EINVAL;
 	}
 
+	if (!ramdst) {
+		printf("No memory for image(%d)\n", img);
+		return -ENOMEM;
+	}
+
+	/* load */
+	if (ram_base) {
+		memcpy(ramdst, (char *)((ulong)ram_base + offset), datasz);
+	} else {
+		blkoff = DIV_ROUND_UP(offset, blksz);
+		ret = blk_dread(desc, blkstart + blkoff, blkcnt, ramdst);
+		if (ret != blkcnt) {
+			printf("Failed to read img(%d), ret=%d\n", img, ret);
+			return -EIO;
+		}
+	}
+
+	/* sha1 */
 #ifdef CONFIG_DM_CRYPTO
-	struct udevice *dev;
-	sha_context ctx;
+	if (crypto) {
+		if (img == IMG_KERNEL) {
+			ramdst += pgsz;
+			datasz -= pgsz;
+		}
 
-	dev = crypto_get_device(CRYPTO_SHA1);
-	if (!dev) {
-		printf("Can't find crypto device for SHA1 capability\n");
-		return -ENODEV;
+		crypto_sha_update(crypto, (u32 *)ramdst, datasz);
+		crypto_sha_update(crypto, (u32 *)&datasz, sizesz);
 	}
-
-	ctx.algo = CRYPTO_SHA1;
-	ctx.length = hdr->kernel_size + sizeof(hdr->kernel_size) +
-		     hdr->ramdisk_size + sizeof(hdr->ramdisk_size) +
-		     hdr->second_size + sizeof(hdr->second_size);
-#ifdef CONFIG_HASH_ROCKCHIP_LEGACY
-	ctx.length += sizeof(hdr->tags_addr) + sizeof(hdr->page_size) +
-		      sizeof(hdr->unused) + sizeof(hdr->name) +
-		      sizeof(hdr->cmdline);
 #endif
-
-	crypto_sha_init(dev, &ctx);
-
-	crypto_sha_update(dev, (u32 *)(ulong)hdr->kernel_addr,
-			  hdr->kernel_size);
-	crypto_sha_update(dev, (u32 *)&hdr->kernel_size,
-			  sizeof(hdr->kernel_size));
-	crypto_sha_update(dev, (u32 *)(ulong)hdr->ramdisk_addr,
-			  hdr->ramdisk_size);
-	crypto_sha_update(dev, (u32 *)&hdr->ramdisk_size,
-			  sizeof(hdr->ramdisk_size));
-	crypto_sha_update(dev, (u32 *)(ulong)hdr->second_addr,
-			  hdr->second_size);
-	crypto_sha_update(dev, (u32 *)&hdr->second_size,
-			  sizeof(hdr->second_size));
-#ifdef CONFIG_HASH_ROCKCHIP_LEGACY
-	crypto_sha_update(dev, (u32 *)&hdr->tags_addr, sizeof(hdr->tags_addr));
-	crypto_sha_update(dev, (u32 *)&hdr->page_size, sizeof(hdr->page_size));
-	crypto_sha_update(dev, (u32 *)&hdr->header_version,
-			  sizeof(hdr->header_version));
-	crypto_sha_update(dev, (u32 *)&hdr->os_version, sizeof(hdr->os_version));
-	crypto_sha_update(dev, (u32 *)&hdr->name, sizeof(hdr->name));
-	crypto_sha_update(dev, (u32 *)&hdr->cmdline, sizeof(hdr->cmdline));
-#endif
-
-	crypto_sha_final(dev, &ctx, hash);
-
-#elif CONFIG_SHA1
-	sha1_context ctx;
-
-	sha1_starts(&ctx);
-	sha1_update(&ctx, (u8 *)(ulong)hdr->kernel_addr, hdr->kernel_size);
-	sha1_update(&ctx, (u8 *)&hdr->kernel_size, sizeof(hdr->kernel_size));
-	sha1_update(&ctx, (u8 *)(ulong)hdr->ramdisk_addr, hdr->ramdisk_size);
-	sha1_update(&ctx, (u8 *)&hdr->ramdisk_size, sizeof(hdr->ramdisk_size));
-	sha1_update(&ctx, (u8 *)(ulong)hdr->second_addr, hdr->second_size);
-	sha1_update(&ctx, (u8 *)&hdr->second_size, sizeof(hdr->second_size));
-#ifdef CONFIG_HASH_ROCKCHIP_LEGACY
-	sha1_update(&ctx, (u8 *)&hdr->tags_addr, sizeof(hdr->tags_addr));
-	sha1_update(&ctx, (u8 *)&hdr->page_size, sizeof(hdr->page_size));
-	sha1_update(&ctx, (u8 *)&hdr->header_version,
-		    sizeof(hdr->header_version));
-	sha1_update(&ctx, (u8 *)&hdr->os_version, sizeof(hdr->os_version));
-	sha1_update(&ctx, (u8 *)&hdr->name, sizeof(hdr->name));
-	sha1_update(&ctx, (u8 *)&hdr->cmdline, sizeof(hdr->cmdline));
-#endif
-
-	sha1_finish(&ctx, hash);
-#endif	/* CONFIG_SHA1 */
-
-	if (memcmp(hash, hdr->id, 20)) {
-		print_hash("SHA1 from image header", (u8 *)hdr->id, 20);
-		print_hash("SHA1 real", (u8 *)hash, 20);
-		return -EBADFD;
-	}
 
 	return 0;
 }
-#endif
 
 static int android_image_separate(struct andr_img_hdr *hdr,
 				  const disk_partition_t *part,
 				  void *load_address,
 				  void *ram_base)
 {
-	struct blk_desc *dev_desc = rockchip_get_bootdev();
-	ulong ramdisk_addr_r = env_get_ulong("ramdisk_addr_r", 16, 0);
-	char *fdt_high = env_get("fdt_high");
-	char *ramdisk_high = env_get("initrd_high");
-	ulong blk_start, blk_cnt, size;
-	ulong start, second_addr_r = 0;
-	int ret;
+	char *initrd_high;
+	char *fdt_high;
+	ulong bstart;
 
 	if (android_image_check_header(hdr)) {
 		printf("Bad android image header\n");
 		return -EINVAL;
 	}
 
-	if (hdr->kernel_size) {
-		size = hdr->kernel_size + hdr->page_size;
-		blk_cnt = DIV_ROUND_UP(size, dev_desc->blksz);
-		if (!sysmem_alloc_base(MEMBLK_ID_KERNEL,
-				       (phys_addr_t)load_address,
-				       blk_cnt * dev_desc->blksz))
-			return -ENXIO;
-
-		if (ram_base) {
-			start = (ulong)ram_base;
-			memcpy((char *)load_address, (char *)start, size);
-		} else {
-			blk_start = part->start;
-			ret = blk_dread(dev_desc, blk_start,
-					blk_cnt, load_address);
-			if (ret != blk_cnt) {
-				printf("%s: read kernel failed, ret=%d\n",
-				      __func__, ret);
-				return -1;
-			}
-		}
-	}
-
-	if (hdr->ramdisk_size) {
-		size = hdr->page_size + ALIGN(hdr->kernel_size, hdr->page_size);
-		blk_cnt = DIV_ROUND_UP(hdr->ramdisk_size, dev_desc->blksz);
-		if (!sysmem_alloc_base(MEMBLK_ID_RAMDISK,
-				       ramdisk_addr_r,
-				       blk_cnt * dev_desc->blksz))
-			return -ENXIO;
-		if (ram_base) {
-			start = (unsigned long)ram_base;
-			start += hdr->page_size;
-			start += ALIGN(hdr->kernel_size, hdr->page_size);
-			memcpy((char *)ramdisk_addr_r,
-			       (char *)start, hdr->ramdisk_size);
-		} else {
-			blk_start = part->start +
-				DIV_ROUND_UP(size, dev_desc->blksz);
-			ret = blk_dread(dev_desc, blk_start,
-					blk_cnt, (void *)ramdisk_addr_r);
-			if (ret != blk_cnt) {
-				printf("%s: read ramdisk failed, ret=%d\n",
-				      __func__, ret);
-				return -1;
-			}
-		}
-	}
+	/* set for image_read(IMG_KERNEL, ...) */
+	env_set_hex("android_addr_r", (ulong)load_address);
+	bstart = part ? part->start : 0;
 
 	/*
-	 * Load dtb file by rockchip_read_dtb_file() which support pack
-	 * dtb in second position or resource file.
+	 * 1. Load images to their individual target ram position
+	 *    in order to disable fdt/ramdisk relocation.
 	 */
-#ifdef CONFIG_RKIMG_BOOTLOADER
-	ulong fdt_addr_r = env_get_ulong("fdt_addr_r", 16, 0);
+#if defined(CONFIG_DM_CRYPTO) && defined(CONFIG_ANDROID_BOOT_IMAGE_HASH)
+	struct udevice *dev;
+	sha_context ctx;
+	uchar hash[20];
 
-	if (hdr->second_size && (gd->fdt_blob != (void *)fdt_addr_r)) {
-		ulong fdt_size;
-
-		fdt_size = rockchip_read_dtb_file((void *)fdt_addr_r);
-		if (fdt_size < 0) {
-			printf("%s: read fdt failed\n", __func__);
-			return ret;
-		}
+	ctx.length = 0;
+	ctx.algo = CRYPTO_SHA1;
+	dev = crypto_get_device(ctx.algo);
+	if (!dev) {
+		printf("Can't find crypto device for SHA1 capability\n");
+		return -ENODEV;
 	}
-#endif
 
-#ifdef CONFIG_ANDROID_BOOT_IMAGE_HASH
-	if (hdr->second_size) {
-		ulong blk_start, blk_cnt;
+  #ifdef CONFIG_ROCKCHIP_CRYPTO_V1
+	/* v1: requires total length before sha init */
+	ctx.length += hdr->kernel_size + sizeof(hdr->kernel_size) +
+		      hdr->ramdisk_size + sizeof(hdr->ramdisk_size) +
+		      hdr->second_size + sizeof(hdr->second_size);
+	if (hdr->header_version > 0)
+		ctx.length += hdr->recovery_dtbo_size +
+					sizeof(hdr->recovery_dtbo_size);
+	if (hdr->header_version > 1)
+		ctx.length += hdr->dtb_size + sizeof(hdr->dtb_size);
+  #endif
+	crypto_sha_init(dev, &ctx);
 
-		/* Just for image data hash calculation */
-		second_addr_r = (ulong)malloc(hdr->second_size);
-		if (!second_addr_r)
-			return -ENOMEM;
+	/* load, never change order ! */
+	if (image_read(IMG_RK_DTB,  hdr, bstart, ram_base, NULL))
+		return -1;
+	if (image_read(IMG_KERNEL,  hdr, bstart, ram_base, dev))
+		return -1;
+	if (image_read(IMG_RAMDISK, hdr, bstart, ram_base, dev))
+		return -1;
+	if (image_read(IMG_SECOND,  hdr, bstart, ram_base, dev))
+		return -1;
+	if (hdr->header_version > 0) {
+		if (image_read(IMG_RECOVERY_DTBO, hdr, bstart, ram_base, dev))
+			return -1;
+	}
+	if (hdr->header_version > 1) {
+		if (image_read(IMG_DTB, hdr, bstart, ram_base, dev))
+			return -1;
+	}
 
-		size = hdr->page_size +
-		       ALIGN(hdr->kernel_size, hdr->page_size) +
-		       ALIGN(hdr->ramdisk_size, hdr->page_size);
-		blk_cnt = DIV_ROUND_UP(hdr->second_size, dev_desc->blksz);
+	crypto_sha_final(dev, &ctx, hash);
+	if (memcmp(hash, hdr->id, 20)) {
+		print_hash("Hash from header", (u8 *)hdr->id, 20);
+		print_hash("Hash real", (u8 *)hash, 20);
+		return -EBADFD;
+	} else {
+		printf("Image hash OK\n");
+	}
 
-		if (ram_base) {
-			start = (unsigned long)ram_base;
-			start += hdr->page_size;
-			start += ALIGN(hdr->kernel_size, hdr->page_size);
-			start += ALIGN(hdr->ramdisk_size, hdr->page_size);
-			memcpy((char *)second_addr_r,
-			       (char *)start, hdr->second_size);
-		} else {
-			blk_start = part->start +
-					DIV_ROUND_UP(size, dev_desc->blksz);
-			ret = blk_dread(dev_desc, blk_start, blk_cnt,
-					(void *)second_addr_r);
-			if (ret != blk_cnt) {
-				printf("%s: read second pos failed, ret=%d\n",
-				       __func__, ret);
-				return -1;
-			}
-		}
+#else /* !(CONFIG_DM_CRYPTO && CONFIG_ANDROID_BOOT_IMAGE_HASH) */
+	if (image_read(IMG_RK_DTB,  hdr, bstart, ram_base, NULL))
+		return -1;
+	if (image_read(IMG_KERNEL,  hdr, bstart, ram_base, NULL))
+		return -1;
+	if (image_read(IMG_RAMDISK, hdr, bstart, ram_base, NULL))
+		return -1;
+	if (image_read(IMG_SECOND,  hdr, bstart, ram_base, NULL))
+		return -1;
+	if (hdr->header_version > 0) {
+		if (image_read(IMG_RECOVERY_DTBO, hdr, bstart, ram_base, NULL))
+			return -1;
+	}
+	if (hdr->header_version > 1) {
+		if (image_read(IMG_DTB, hdr, bstart, ram_base, NULL))
+			return -1;
 	}
 #endif
 
 	/*
-	 * Update hdr with real image address.
-	 *
-	 * kernel_addr depends on load_address can handle both the
-	 * compressed and no-compressed kernel position.
+	 * 2. Disable fdt/ramdisk relocation, it saves boot time.
 	 */
-	hdr->kernel_addr = (ulong)load_address + hdr->page_size;
-	hdr->second_addr = second_addr_r;
-	hdr->ramdisk_addr = ramdisk_addr_r;
+	initrd_high = env_get("initrd_high");
+	fdt_high = env_get("fdt_high");
 
-	/*
-	 * Since images are loaded separate, fdt/ramdisk relocation
-	 * can be disabled, it saves boot time.
-	 */
 	if (!fdt_high) {
 		env_set_hex("fdt_high", -1UL);
 		printf("Fdt ");
 	}
-	if (!ramdisk_high) {
+	if (!initrd_high) {
 		env_set_hex("initrd_high", -1UL);
 		printf("Ramdisk ");
 	}
-	if (!fdt_high || !ramdisk_high)
+	if (!fdt_high || !initrd_high)
 		printf("skip relocation\n");
 
 	return 0;
@@ -684,16 +672,6 @@ long android_image_load(struct blk_desc *dev_desc,
 	android_image_set_decomp((void *)load_address, comp);
 
 	debug("Loading Android Image to 0x%08lx\n", load_address);
-
-	/* Verify image hash */
-#ifdef CONFIG_ANDROID_BOOT_IMAGE_HASH
-	if (android_image_hash_verify(hdr)) {
-		printf("HASH: Image verify failed!\n");
-		return -EBADFD;
-	}
-
-	printf("HASH: Image verify OK\n");
-#endif
 
 	free(hdr);
 	return load_address;
