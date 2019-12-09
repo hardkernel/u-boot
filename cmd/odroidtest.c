@@ -29,11 +29,13 @@ int wait_key_event(void)
 				return key->code;
 			} else if ((evt == KEY_PRESS_LONG_DOWN)
 					&& (key->code == KEY_POWER)) {
-				/* display something */
+				lcd_setbg_color("black");
+				lcd_clear();
+				lcd_setfg_color("white");
+				lcd_printf(0, 10, 1, "Power key pressed... system will shut down.");
+				mdelay(500);
 				run_command("poweroff", 0);
 			}
-
-			mdelay(50);
 		}
 	}
 
@@ -47,8 +49,8 @@ void adc_draw_key_arrays(void)
 	lcd_setbg_color("black");
 	lcd_clear();
 
-	lcd_setfg_color("magenta");
-	lcd_printf(0, 1, 1, "[ ADC KEY TEST]");
+	lcd_setfg_color("white");
+	lcd_printf(0, 1, 1, "[ ADC KEY TEST ]");
 
 	for (i = 0; i < 4; i++) {
 		if (adckeys[i].chk)
@@ -95,7 +97,7 @@ static int do_odroidtest_adc(cmd_tbl_t * cmdtp, int flag,
 				adc_draw_key_arrays();
 				adc_passed++;
 			}
-		} else if ((val_x < 170) && (val_y > 450) && (val_y < 600)) {
+		} else if ((val_x < 180) && (val_y > 450) && (val_y < 650)) {
 			if (!adckeys[1].chk) {
 				adckeys[1].chk = 1;
 				adc_draw_key_arrays();
@@ -118,8 +120,8 @@ static int do_odroidtest_adc(cmd_tbl_t * cmdtp, int flag,
 		mdelay(100);
 	}
 
-	lcd_setfg_color("magenta");
-	lcd_printf(0, 18, 1, "ADC KEY TEST PASSED!");
+	lcd_setfg_color("white");
+	lcd_printf(0, 18, 1, "ADC KEY TEST PASS!");
 
 	for (i = 0; i < 4; i++)
 		adckeys[i].chk = 0;
@@ -135,7 +137,7 @@ static int do_odroidtest_backlight(cmd_tbl_t * cmdtp, int flag,
 	int loop;
 	uint period_ns, duty_ns;
 
-	u8 active[5] = {10, 20, 40, 80, 100};
+	u8 active[4] = {10, 30, 80, 100};
 	struct udevice *dev;
 
 	if (uclass_get_device(UCLASS_PWM, 0, &dev))
@@ -144,23 +146,29 @@ static int do_odroidtest_backlight(cmd_tbl_t * cmdtp, int flag,
 	lcd_setbg_color("red");
 	lcd_clear();
 	lcd_setfg_color("black");
+	lcd_printf(0, 3, 1, "[ BACKLIGHT TEST ]");
 
 	loop = 0;
-	while (loop < 5) {
+	while (loop < 4) {
 		period_ns = 25000;
 		duty_ns = period_ns * active[loop] / 100;
 		printf("active percentage %d, duty_ns %d\n", active[loop], duty_ns);
 
-		lcd_printf(0, 10, 1, "BACKLIGHT PERCENTAGE : %d %", active[loop]);
+		lcd_printf(0, 8, 1, "PERCENTAGE : %d %", active[loop]);
+		lcd_printf(0, 12, 1, "Press any key to go on next step");
 
 		if(pwm_set_config(dev, 1, period_ns, duty_ns))
 			return CMD_RET_FAILURE;
 
 		wait_key_event();
+		mdelay(500);
 		loop++;
 	}
 
-	mdelay(2000);
+	lcd_setfg_color("black");
+	lcd_printf(0, 16, 1, "BACKLIGHT TEST DONE!");
+
+	mdelay(1000);
 
 	return CMD_RET_SUCCESS;
 }
@@ -179,16 +187,27 @@ static int do_odroidtest_lcd(cmd_tbl_t * cmdtp, int flag,
 		run_command(cmd, 0);
 		run_command("lcd clear", 0);
 
+		if (!strcmp(colors[loop], "red"))
+			lcd_setfg_color("black");
+		else
+			lcd_setfg_color("magenta");
+
+		sprintf(cmd, "%s", colors[loop]);
+		lcd_printf(0, 4, 1, "[ LCD TEST ]");
+		lcd_printf(0, 8, 1, cmd);
+		lcd_printf(0, 12, 1, "Press any key to go on next step");
+
 		printf("%s\n", colors[loop]);
 
 		wait_key_event();
+		mdelay(500);
 		loop++;
 	}
 
 	lcd_setfg_color("yellow");
-	lcd_printf(0, 18, 1, "LCD TEST DONE!");
+	lcd_printf(0, 14, 1, "LCD TEST DONE!");
 
-	mdelay(2000);
+	mdelay(1000);
 
 	return ret;
 }
@@ -200,8 +219,8 @@ void btn_draw_key_arrays(void)
 	lcd_setbg_color("black");
 	lcd_clear();
 
-	lcd_setfg_color("magenta");
-	lcd_printf(0, 1, 1, "[ GPIO KEY TEST]");
+	lcd_setfg_color("white");
+	lcd_printf(0, 1, 1, "[ GPIO KEY TEST ]");
 
 	for (i = 0; i < NUMGPIOKEYS; i++) {
 		if (gpiokeys[i].chk)
@@ -251,6 +270,7 @@ static int do_odroidtest_btn(cmd_tbl_t * cmdtp, int flag,
 	int key;
 
 	btn_draw_key_arrays();
+	mdelay(2000);
 
 	while (btn_passed < NUMGPIOKEYS) {
 		key = wait_key_event();
@@ -259,12 +279,12 @@ static int do_odroidtest_btn(cmd_tbl_t * cmdtp, int flag,
 		printf("key 0x%x, passed %d\n", key, btn_passed);
 	}
 
-	lcd_setfg_color("magenta");
-	lcd_printf(0, 18, 1, "GPIO KEY TEST PASSED!");
+	lcd_setfg_color("white");
+	lcd_printf(0, 18, 1, "GPIO KEY TEST PASS!");
 
 	btn_set_default();
 
-	mdelay(2000);
+	mdelay(1000);
 
 	return 0;
 }
@@ -291,7 +311,7 @@ static int do_odroidtest_all(cmd_tbl_t * cmdtp, int flag,
 
 	lcd_clear();
 	lcd_setfg_color("yellow");
-	lcd_printf(0, 10, 1, "AUTO TEST DONE!");
+	lcd_printf(0, 9, 1, "AUTO TEST DONE!");
 
 	return ret;
 }
