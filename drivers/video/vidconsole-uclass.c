@@ -225,8 +225,22 @@ void vidconsole_position_cursor(struct udevice *dev, unsigned col, unsigned row)
 	struct udevice *vid_dev = dev->parent;
 	struct video_priv *vid_priv = dev_get_uclass_priv(vid_dev);
 
+#if defined(CONFIG_TARGET_ODROIDGO2)
+	/*
+	 * In case of ROTATE clockwise and counter clockwise,
+	 * swap x/y size
+	 */
+	if ((vid_priv->rot == 1) || (vid_priv->rot == 3)) {
+		priv->xcur_frac = VID_TO_POS(min_t(short, col, vid_priv->ysize - 1));
+		priv->ycur = min_t(short, row, vid_priv->xsize - 1);
+	} else {
+		priv->xcur_frac = VID_TO_POS(min_t(short, col, vid_priv->xsize - 1));
+		priv->ycur = min_t(short, row, vid_priv->ysize - 1);
+	}
+#else
 	priv->xcur_frac = VID_TO_POS(min_t(short, col, vid_priv->xsize - 1));
 	priv->ycur = min_t(short, row, vid_priv->ysize - 1);
+#endif
 }
 
 static int do_video_setcursor(cmd_tbl_t *cmdtp, int flag, int argc,
