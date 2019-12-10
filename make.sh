@@ -94,10 +94,8 @@ help()
 	echo "2. Pack:"
 	echo "	./make.sh uboot                    --- pack uboot.img"
 	echo "	./make.sh trust                    --- pack trust.img"
-	echo "	./make.sh trust-all                --- pack trust img (all supported)"
 	echo "	./make.sh trust <ini>              --- pack trust img with assigned ini file"
 	echo "	./make.sh loader                   --- pack loader bin"
-	echo "	./make.sh loader-all	           --- pack loader bin (all supported)"
 	echo "	./make.sh loader <ini>             --- pack loader img with assigned ini file"
 	echo "	./make.sh spl                      --- pack loader with u-boot-spl.bin and u-boot-tpl.bin"
 	echo "	./make.sh spl-s                    --- pack loader only replace miniloader with u-boot-spl.bin"
@@ -248,12 +246,12 @@ sub_commands()
 		;;
 
 		trust)
-		pack_trust_image ${opt}
+		pack_trust_image
 		exit 0
 		;;
 
 		loader)
-		pack_loader_image ${opt}
+		pack_loader_image
 		exit 0
 		;;
 
@@ -533,13 +531,8 @@ pack_uboot_image()
 	${RKTOOLS}/loaderimage --pack --uboot u-boot.bin uboot.img ${UBOOT_LOAD_ADDR} ${PLATFORM_UBOOT_IMG_SIZE}
 
 	# Delete u-boot.img and u-boot-dtb.img, which makes users not be confused with final uboot.img
-	if [ -f u-boot.img ]; then
-		rm u-boot.img
-	fi
-
-	if [ -f u-boot-dtb.img ]; then
-		rm u-boot-dtb.img
-	fi
+	ls u-boot.img >/dev/null 2>&1 && rm u-boot.img -rf
+	ls u-boot-dtb.img >/dev/null 2>&1 && rm u-boot-dtb.img -rf
 	echo "pack uboot okay! Input: u-boot.bin"
 }
 
@@ -599,13 +592,10 @@ pack_spl_loader_image()
 		return
 	fi
 
-	# Copy to .temp folder
-	if [ -d ${RKBIN}/.temp ]; then
-		rm ${RKBIN}/.temp -rf
-	fi
-
+	ls ${RKBIN}/.temp >/dev/null 2>&1 && rm ${RKBIN}/.temp -rf
 	mkdir ${RKBIN}/.temp
 
+	# Copy to .temp folder
 	cp spl/u-boot-spl.bin ${RKBIN}/.temp/
 	cp tpl/u-boot-tpl.bin ${RKBIN}/.temp/
 	cp ${ini} ${RKBIN}/.temp/${RKCHIP_LOADER}MINIALL.ini -f
@@ -633,7 +623,7 @@ pack_spl_loader_image()
 
 pack_loader_image()
 {
-	local mode=$1 files ini=${RKBIN}/RKBOOT/${RKCHIP_LOADER}MINIALL.ini
+	local ini=${RKBIN}/RKBOOT/${RKCHIP_LOADER}MINIALL.ini
 
 	if [ "$FILE" != "" ]; then
 		ini=$FILE;
@@ -656,24 +646,13 @@ pack_loader_image()
 
 	cd ${RKBIN}
 
-	if [ "${mode}" = 'all' ]; then
-		files=`ls ${RKBIN}/RKBOOT/${RKCHIP_LOADER}MINIALL*.ini`
-		for ini in $files
-		do
-			if [ -f "$ini" ]; then
-				${RKTOOLS}/boot_merger ${BIN_PATH_FIXUP} $ini
-				echo "pack loader okay! Input: $ini"
-			fi
-		done
-	else
-		${RKTOOLS}/boot_merger ${BIN_PATH_FIXUP} $ini
-		echo "pack loader okay! Input: $ini"
-	fi
+	${RKTOOLS}/boot_merger ${BIN_PATH_FIXUP} $ini
+	echo "pack loader okay! Input: $ini"
 
 	cd - && mv ${RKBIN}/*_loader_*.bin ./
 }
 
-__pack_32bit_trust_image()
+pack_32bit_trust_image()
 {
 	local ini=$1 TOS TOS_TA DARM_BASE TEE_LOAD_ADDR TEE_OUTPUT TEE_OFFSET
 
@@ -720,7 +699,7 @@ __pack_32bit_trust_image()
 	echo
 }
 
-__pack_64bit_trust_image()
+pack_64bit_trust_image()
 {
 	local ini=$1
 
@@ -740,7 +719,7 @@ __pack_64bit_trust_image()
 
 pack_trust_image()
 {
-	local mode=$1 files ini
+	local ini
 
 	ls trust*.img >/dev/null 2>&1 && rm trust*.img
 
@@ -758,32 +737,14 @@ pack_trust_image()
 			echo "pack trust okay! Input: ${ini}"
 			return;
 		fi
-
-		if [ "${mode}" = 'all' ]; then
-			files=`ls ${RKBIN}/RKTRUST/${RKCHIP_TRUST}TRUST*.ini`
-			for ini in $files
-			do
-				__pack_64bit_trust_image ${ini}
-			done
-		else
-			__pack_64bit_trust_image ${ini}
-		fi
+		pack_64bit_trust_image ${ini}
 	# ARM uses loaderimage
 	else
 		ini=${RKBIN}/RKTRUST/${RKCHIP_TRUST}TOS.ini
 		if [ "$FILE" != "" ]; then
 			ini=$FILE;
 		fi
-
-		if [ "${mode}" = 'all' ]; then
-			files=`ls ${RKBIN}/RKTRUST/${RKCHIP_TRUST}TOS*.ini`
-			for ini in $files
-			do
-				__pack_32bit_trust_image ${ini}
-			done
-		else
-			__pack_32bit_trust_image ${ini}
-		fi
+		pack_32bit_trust_image ${ini}
 	fi
 }
 
