@@ -7,6 +7,7 @@
 #include <common.h>
 #include <rksfc.h>
 #include <fs.h>
+#include <rockchip_display_cmds.h>
 #include <odroidgo2_status.h>
 
 int recovery_check_mandatory_files(void)
@@ -36,13 +37,19 @@ int board_check_recovery(void)
 	return 0;
 }
 
+#define WRITE_UNIT	(32 * 512)
 void board_odroid_recovery(void)
 {
 	char cmd[128];
 	char str[64];
+	char *saddr;
 	char *md5sum_readback;
 	char md5sum_org[64];
 	int ret, loop;
+	int offs, unit;
+	int filesize;
+	int progress;
+	unsigned long addr;
 
 	/* check spi flash */
 	if (rksfc_scan_namespace()) {
@@ -57,7 +64,30 @@ void board_odroid_recovery(void)
 
 	/* load img and write */
 	run_command( "fatload mmc 1:1 $loadaddr spi_recovery.img", 0);
-	run_command("rksfc write $loadaddr 0x0 $sz_total", 0);
+	filesize = env_get_ulong("filesize", 16, 0);
+	saddr = env_get("loadaddr");
+	addr = simple_strtoul(saddr, NULL, 16);
+	offs = 0;
+	progress = 0;
+	while (progress < filesize) {
+		if ((filesize - progress) > WRITE_UNIT)
+			unit = WRITE_UNIT / 512;
+		else
+			unit = (filesize - progress) / 512;
+
+		sprintf(cmd, "rksfc write %p 0x%x 0x%x", (void *)addr, offs, unit);
+		run_command(cmd, 0);
+
+		sprintf(str, "recovery : %d / %d", progress, filesize);
+		lcd_printf(0, 10, 1, "%s", str);
+
+		offs += unit;
+		addr += unit * 512;
+		progress += unit * 512;
+	}
+
+	sprintf(str, "recovery : %d / %d", progress, filesize);
+	lcd_printf(0, 10, 1, "%s", str);
 
 	/* readback & calculate md5sum */
 	run_command("rksfc read $loadaddr 0x0 $sz_total", 0);
