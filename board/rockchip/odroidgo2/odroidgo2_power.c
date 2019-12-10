@@ -20,6 +20,7 @@ void board_chg_led(void)
 	gpio_request(CHG_LED_GPIO, "chg_led");
 	/* default on */
 	gpio_direction_output(CHG_LED_GPIO, 1);
+	gpio_free(CHG_LED_GPIO);
 }
 
 int odroid_check_dcjack(void)
@@ -29,9 +30,9 @@ int odroid_check_dcjack(void)
 	return gpio_get_value(DC_DET_GPIO) ? 0 : -1;
 }
 
-int odroid_check_battery(void)
+int odroid_check_battery(int *battery)
 {
-	int ret, battery;
+	int ret;
 	struct udevice *fg;
 
 	ret = uclass_get_device(UCLASS_FG, 0, &fg);
@@ -43,27 +44,31 @@ int odroid_check_battery(void)
 		return ret;
 	}
 
-	battery = fuel_gauge_get_voltage(fg);
-	debug("battery voltage : %d -> ", battery);
+	*battery = fuel_gauge_get_voltage(fg);
 
-	return battery < MIN_VOL_LEVEL ? -1 : 0;
+	return *battery < MIN_VOL_LEVEL ? -1 : 0;
 }
 
-void board_check_power(void)
+int board_check_power(void)
 {
+	int battery = 0;
+	char str[32];
 	char *bootdev = env_get("devtype");
 
 	board_chg_led();
 
-	if (odroid_check_battery() && odroid_check_dcjack()) {
-		debug("low battery without dc jack connected\n");
+	if (odroid_check_battery(&battery) && odroid_check_dcjack()) {
+		debug("low battery (%d) without dc jack connected\n", battery);
+		sprintf(str, "voltage level : %d.%dV", (battery / 1000), (battery % 1000));
 		if (strncmp(bootdev, "mmc", 3))
-			odroid_display_status(LOGO_MODE_LOW_BATT, LOGO_STORAGE_SPIFLASH, NULL);
+			odroid_display_status(LOGO_MODE_LOW_BATT, LOGO_STORAGE_SPIFLASH, str);
 		else
-			odroid_display_status(LOGO_MODE_LOW_BATT, LOGO_STORAGE_SDCARD, NULL);
+			odroid_display_status(LOGO_MODE_LOW_BATT, LOGO_STORAGE_SDCARD, str);
 
 		odroid_wait_pwrkey();
+		return -1;
 	}
 
 	debug("power condition OK!\n");
+	return 0;
 }

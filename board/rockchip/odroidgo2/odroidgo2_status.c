@@ -27,13 +27,46 @@ static const char *logo_bmp_names[] = {
 	"no_sdcard.bmp",
 };
 
+#define POWERDOWN_WAIT_TIME	10000
+#define LOOP_DELAY		25
+
+void odroid_wait_pwrkey(void)
+{
+	u32 state;
+	unsigned int delay = POWERDOWN_WAIT_TIME;
+
+	printf("Wait power key\n");
+	printf("Hit ctrl+c key to enter uboot console\n");
+
+	/* check power key */
+	while (delay) {
+		state = key_read(KEY_POWER);
+		if (state == KEY_PRESS_DOWN)
+			break;
+
+		if (ctrlc()) {
+			printf("ctrl+c key pressed - drop to console\n");
+			env_set("bootdelay", "-1");
+			return;
+		}
+
+		mdelay(LOOP_DELAY);
+		delay -= LOOP_DELAY;
+	}
+
+	printf("power key long pressed...\n");
+	lcd_printf(0, 18, 1, "%s", "power off...");
+	mdelay(500);
+	run_command("poweroff", 0);
+}
+
 int odroid_display_status(int logo_mode, int logo_storage, const char *str)
 {
 	unsigned long bmp_mem, bmp_copy;
 	char cmd[128];
 
 	if (lcd_init()) {
-		printf("[%s] lcd init fail!\n", __func__);
+		printf("odroid lcd init fail!\n");
 		return -1;
 	}
 
@@ -68,70 +101,8 @@ int odroid_display_status(int logo_mode, int logo_storage, const char *str)
 	/* draw text */
 	if (str) {
 		lcd_setfg(255, 255, 0);
-		lcd_printf(0, 18, 1, "%s", str);
+		lcd_printf(0, 15, 1, "%s", str);
 	}
 
 	return 0;
-}
-
-#define POWERDOWN_WAIT_TIME	10000
-#define LOOP_DELAY		25
-
-void odroid_wait_pwrkey(void)
-{
-	u32 state;
-	unsigned int delay = POWERDOWN_WAIT_TIME;
-
-	printf("Wait power key\n");
-	printf("Hit ctrl+c key to enter uboot console\n");
-
-	/* check power key */
-	while (delay) {
-		state = key_read(KEY_POWER);
-		/* KEY_LONG_DOWN_MS 2000ms */
-		if (state == KEY_PRESS_LONG_DOWN)
-			break;
-
-		if (ctrlc()) {
-			printf("ctrl+c key pressed - drop to console");
-			env_set("bootdelay", "-1");
-			return;
-		}
-
-		mdelay(LOOP_DELAY);
-		delay -= LOOP_DELAY;
-	}
-
-	printf("power key long pressed...\n");
-	lcd_printf(0, 18, 1, "%s", "power off...");
-	mdelay(1000);
-	run_command("poweroff", 0);
-}
-
-void detect_key_test(void)
-{
-	struct dm_key_uclass_platdata *key;
-	struct udevice *dev;
-	struct uclass *uc;
-	int ret, evt;
-
-	ret = uclass_get(UCLASS_KEY, &uc);
-	if (ret)
-		return;
-
-	printf("Please press any key button...\n");
-	while (!ctrlc()) {
-		for (uclass_first_device(UCLASS_KEY, &dev);
-		     dev;
-		     uclass_next_device(&dev)) {
-			key = dev_get_uclass_platdata(dev);
-			evt = key_read(key->code);
-			if (evt == KEY_PRESS_DOWN)
-				printf("'%s' key pressed...\n", key->name);
-			else if (evt == KEY_PRESS_LONG_DOWN)
-				printf("'%s' key long pressed...\n", key->name);
-
-			mdelay(25);
-		}
-	}
 }

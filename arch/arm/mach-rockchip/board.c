@@ -298,31 +298,32 @@ int init_kernel_dtb(void)
 	ret = rockchip_read_dtb_file((void *)fdt_addr);
 	if (ret < 0) {
 #ifdef CONFIG_TARGET_ODROIDGO2
-#ifdef CONFIG_SD_BOOT
-		printf("%s dtb in resource read fail, try dtb in fat\n", __func__);
+		int i;
+		char fdt_magic[4] = {0xd0, 0x0d, 0xfe, 0xed};
+		char fdt_spi[4];
 
-		ret = run_command("fatload mmc 1:1 ${fdt_addr_r} ${dtb_name}", 0);
-		if (ret != CMD_RET_SUCCESS) {
-			printf("%s dtb in fat fs fail\n", __func__);
-			return 0;
-		}
-#elif CONFIG_SPI_BOOT
-		printf("%s dtb in resource read fail, try dtb in spi flash\n", __func__);
+		printf("dtb in resource read fail, try dtb in spi flash\n");
+		run_command("rksfc scan", 0);
+		run_command("rksfc dev 1", 0);
+		run_command("rksfc read ${fdt_addr_r} 0x2000 0xC8", 0);
 
-		ret = run_command("rksfc scan", 0);
-		ret = run_command("rksfc dev 1", 0);
-		ret = run_command("rksfc read ${fdt_addr_r} 0x2000 0xC8", 0);
-		if (ret != CMD_RET_SUCCESS) {
-			printf("%s dtb in spi flash fail!\n", __func__);
-			return 0;
+		strncpy(fdt_spi, (char *)fdt_addr, 4);
+		for (i = 0; i < 4; i++)
+			if (fdt_spi[i] != fdt_magic[i])
+				break;
+
+		if (i < 4) {
+			printf("dtb in spi flash fail, try dtb in fat\n");
+			ret = run_command("fatload mmc 1:1 ${fdt_addr_r} ${dtb_name}", 0);
+			if (ret != CMD_RET_SUCCESS) {
+				printf("%s dtb in fat fs fail\n", __func__);
+				return 0;
+			}
 		}
-#else
-	#error Check boot media option
-#endif /* CONFIG_TARGET_ODROIDGO2 */
 #else
 		printf("%s dtb in resource read fail\n", __func__);
 		return 0;
-#endif
+#endif /* CONFIG_TARGET_ODROIDGO2 */
 	}
 
 	/*

@@ -20,7 +20,7 @@ DECLARE_GLOBAL_DATA_PTR;
 
 extern int board_check_recovery(void);
 extern void board_odroid_recovery(void);
-extern void board_check_power(void);
+extern int board_check_power(void);
 
 #define ALIVE_LED_GPIO	17 /* GPIO0_C1 */
 
@@ -28,6 +28,7 @@ void board_alive_led(void)
 {
 	gpio_request(ALIVE_LED_GPIO, "alive_led");
 	gpio_direction_output(ALIVE_LED_GPIO, 1);
+	gpio_free(ALIVE_LED_GPIO);
 }
 
 int board_check_autotest(void)
@@ -160,7 +161,8 @@ int rk_board_late_init(void)
 	board_init_switch_gpio();
 
 	/* check power */
-	board_check_power();
+	if(board_check_power())
+		return 0;
 
 	if (!board_check_recovery()) {
 		printf("Now start recovery mode\n");
@@ -174,8 +176,10 @@ int rk_board_late_init(void)
 	lcd_printf(0, 18, 1, "%s", U_BOOT_VERSION);
 	lcd_printf(0, 19, 1, "%s %s", U_BOOT_DATE, U_BOOT_TIME);
 
-	if (!board_check_autotest())
+	if (!board_check_autotest()) {
 		board_run_autotest();
+		return 0;
+	}
 
 	board_check_mandatory_files();
 
