@@ -13,6 +13,9 @@
 #include <mapmem.h>
 #include <linux/kernel.h>
 #include <linux/sizes.h>
+#ifdef CONFIG_TARGET_ODROIDGO2
+#include <odroidgo2_status.h>
+#endif
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -138,7 +141,15 @@ int do_booti(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	argc--; argv++;
 
 	if (booti_start(cmdtp, flag, argc, argv, &images))
+#ifdef CONFIG_TARGET_ODROIDGO2
+	{
+		odroid_display_status(LOGO_MODE_SYSTEM_ERR, LOGO_STORAGE_SPIFLASH,
+				"booting fail! check kernel and dtb images!");
+		odroid_wait_pwrkey();
+	}
+#else
 		return 1;
+#endif
 
 	/*
 	 * We are doing the BOOTM_STATE_LOADOS state ourselves, so must
