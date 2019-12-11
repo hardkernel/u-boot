@@ -37,6 +37,9 @@
 #include <asm/arch/resource_img.h>
 #include <asm/arch/rk_atags.h>
 #include <asm/arch/vendor.h>
+#ifdef CONFIG_TARGET_ODROIDGO2
+#include <odroidgo2_status.h>
+#endif
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -284,6 +287,21 @@ static int phandles_fixup(void *fdt)
 	return 0;
 }
 
+int check_fdt_header(ulong fdt_addr)
+{
+	int i;
+	char fdt_magic[4] = {0xd0, 0x0d, 0xfe, 0xed};
+	char fdt_buf[4] = {0x0, 0x0, 0x0, 0x0};
+
+	strncpy(fdt_buf, (char *)fdt_addr, 4);
+	for (i = 0; i < 4; i++) {
+		if (fdt_buf[i] != fdt_magic[i])
+			break;
+	}
+
+	return i < 4 ? CMD_RET_FAILURE : CMD_RET_SUCCESS;
+}
+
 int init_kernel_dtb(void)
 {
 	ulong fdt_addr;
@@ -298,29 +316,28 @@ int init_kernel_dtb(void)
 	ret = rockchip_read_dtb_file((void *)fdt_addr);
 	if (ret < 0) {
 #ifdef CONFIG_TARGET_ODROIDGO2
-		int i = 0;
-		char fdt_magic[4] = {0xd0, 0x0d, 0xfe, 0xed};
-		char fdt_spi[4] = {0x0, 0x0, 0x0, 0x0};
-
 		printf("dtb in resource read fail, try dtb in spi flash\n");
 		run_command("rksfc scan", 0);
 		run_command("rksfc dev 1", 0);
 		ret = run_command("rksfc read ${fdt_addr_r} 0x2000 0xC8", 0);
+		if (ret == CMD_RET_SUCCESS)
+			ret = check_fdt_header(fdt_addr);
 
-		if (ret == CMD_RET_SUCCESS) {
-			strncpy(fdt_spi, (char *)fdt_addr, 4);
-			for (i = 0; i < 4; i++) {
-				if (fdt_spi[i] != fdt_magic[i])
-					break;
-			}
-		}
-
-		if (i < 4) {
+		if (ret != CMD_RET_SUCCESS) {
 			printf("dtb in spi flash fail, try dtb in fat\n");
 			ret = run_command("fatload mmc 1:1 ${fdt_addr_r} ${dtb_name}", 0);
 			if (ret != CMD_RET_SUCCESS) {
 				printf("%s dtb in fat fs fail\n", __func__);
+				odroid_drop_errorlog("dtb load fail", 13);
+				odroid_alert_leds();
 				return 0;
+			} else {
+				if (CMD_RET_SUCCESS != check_fdt_header(fdt_addr)) {
+					printf("%s dtb in fat fs fail\n", __func__);
+					odroid_drop_errorlog("dtb load fail", 13);
+					odroid_alert_leds();
+					return 0;
+				}
 			}
 		}
 #else
