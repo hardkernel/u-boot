@@ -37,6 +37,7 @@ typedef volatile unsigned char	vu_char;
 #include <part.h>
 #include <flash.h>
 #include <image.h>
+#include <stacktrace.h>
 
 /* Bring in printf format macros if inttypes.h is included */
 #define __STDC_FORMAT_MACROS
