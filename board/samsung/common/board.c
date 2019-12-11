@@ -299,6 +299,12 @@ int board_late_init(void)
 #ifdef CONFIG_MISC_INIT_R
 int misc_init_r(void)
 {
+#ifdef CONFIG_TARGET_ODROID_XU3
+	env_set("boot_targets", (get_boot_mode() == BOOT_MODE_SD)
+			? "mmc2 mmc0 pxe dhcp"
+			: "mmc0 mmc2 pxe dhcp");
+#endif
+
 	if (IS_ENABLED(CONFIG_BOARD_TYPES) &&
 	    !IS_ENABLED(CONFIG_DISPLAY_BOARDINFO_LATE)) {
 		/*
