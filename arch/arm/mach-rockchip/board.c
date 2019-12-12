@@ -298,19 +298,22 @@ int init_kernel_dtb(void)
 	ret = rockchip_read_dtb_file((void *)fdt_addr);
 	if (ret < 0) {
 #ifdef CONFIG_TARGET_ODROIDGO2
-		int i;
+		int i = 0;
 		char fdt_magic[4] = {0xd0, 0x0d, 0xfe, 0xed};
-		char fdt_spi[4];
+		char fdt_spi[4] = {0x0, 0x0, 0x0, 0x0};
 
 		printf("dtb in resource read fail, try dtb in spi flash\n");
 		run_command("rksfc scan", 0);
 		run_command("rksfc dev 1", 0);
-		run_command("rksfc read ${fdt_addr_r} 0x2000 0xC8", 0);
+		ret = run_command("rksfc read ${fdt_addr_r} 0x2000 0xC8", 0);
 
-		strncpy(fdt_spi, (char *)fdt_addr, 4);
-		for (i = 0; i < 4; i++)
-			if (fdt_spi[i] != fdt_magic[i])
-				break;
+		if (ret == CMD_RET_SUCCESS) {
+			strncpy(fdt_spi, (char *)fdt_addr, 4);
+			for (i = 0; i < 4; i++) {
+				if (fdt_spi[i] != fdt_magic[i])
+					break;
+			}
+		}
 
 		if (i < 4) {
 			printf("dtb in spi flash fail, try dtb in fat\n");
