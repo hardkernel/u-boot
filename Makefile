@@ -887,6 +887,9 @@ endif
 quiet_cmd_copy = COPY    $@
       cmd_copy = cp $< $@
 
+quiet_cmd_truncate = ALIGN   $@
+      cmd_truncate = truncate -s "%8" $@
+
 ifeq ($(CONFIG_MULTI_DTB_FIT),y)
 
 fit-dtb.blob: dts/dt.dtb FORCE
@@ -909,11 +912,13 @@ u-boot-dtb.bin: u-boot-nodtb.bin dts/dt-spl.dtb FORCE
 ifneq ($(wildcard dts/kern.dtb),)
 u-boot-dtb-kern.bin: u-boot-dtb.bin FORCE
 	$(call if_changed,copy)
+	$(call if_changed,truncate)
 u-boot.bin: u-boot-dtb-kern.bin dts/kern.dtb FORCE
 	$(call if_changed,cat)
 else
 u-boot.bin: u-boot-dtb.bin FORCE
 	$(call if_changed,copy)
+	$(call if_changed,truncate)
 endif
 else
 
