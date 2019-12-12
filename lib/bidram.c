@@ -119,6 +119,7 @@ static int bidram_add(phys_addr_t base, phys_size_t size)
 
 void bidram_gen_gd_bi_dram(void)
 {
+	struct bidram *bidram = &plat_bidram;
 	struct lmb *lmb = &plat_bidram.lmb;
 	struct lmb_property *mem_rgn = lmb->memory.region;
 	struct lmb_property *res_rgn = lmb->reserved.region;
@@ -168,12 +169,48 @@ void bidram_gen_gd_bi_dram(void)
 					    gd->bd->bi_dram[idx].start;
 	}
 done:
-	for (i = 0; i < idx; i++) {
-		BIDRAM_D("gd bi_dram[%d]: start=0x%08lx, end=0x%08lx\n",
-			 i, (ulong)gd->bd->bi_dram[i].start,
-			 (ulong)gd->bd->bi_dram[i].start +
-			 (ulong)gd->bd->bi_dram[i].size);
+	/* Append 4GB+ memory blocks */
+	if (bidram->fixup) {
+		for (i = 0; i < MEM_RESV_COUNT; i++) {
+			if (!bidram->size_u64[i])
+				continue;
+			gd->bd->bi_dram[idx].start = bidram->base_u64[i];
+			gd->bd->bi_dram[idx].size  = bidram->size_u64[i];
+			BIDRAM_D("FIXUP: gd->bi_dram[%d]: start=0x%llx, size=0x%llx\n",
+				 idx, bidram->base_u64[i], bidram->size_u64[i]);
+			idx++;
+		}
 	}
+
+	for (i = 0; i < idx; i++) {
+		BIDRAM_D("GEN: gd->bi_dram[%d]: start=0x%llx, end=0x%llx\n",
+			 i, (u64)gd->bd->bi_dram[i].start,
+			 (u64)gd->bd->bi_dram[i].start +
+			 (u64)gd->bd->bi_dram[i].size);
+	}
+}
+
+int bidram_fixup(void)
+{
+	struct bidram *bidram = &plat_bidram;
+
+	bidram->fixup = true;
+	bidram_gen_gd_bi_dram();
+
+	return 0;
+}
+
+u64 bidram_append_size(void)
+{
+	struct bidram *bidram = &plat_bidram;
+	u64 size = 0;
+	int i;
+
+	/* 4GB+ */
+	for (i = 0; i < MEM_RESV_COUNT; i++)
+		size += bidram->size_u64[i];
+
+	return size;
 }
 
 static int bidram_is_overlap(phys_addr_t base1, phys_size_t size1,
@@ -341,7 +378,7 @@ phys_size_t bidram_get_ram_size(void)
 	phys_addr_t end_addr;
 	parse_fn_t parse_fn;
 	int i, count, ret;
-	int bad_cnt = 0;
+	int bad_cnt = 0, n = 0;
 	char bad_name[12];
 
 	parse_fn = board_bidram_parse_fn();
@@ -373,19 +410,18 @@ phys_size_t bidram_get_ram_size(void)
 			 i, (ulong)list[i].base,
 			 (ulong)list[i].base + (ulong)list[i].size);
 
-		if (!list[i].size)
+		if (!list[i].size) {
+			/* handle 4GB+ */
+			if (list[i].size_u64 && n < MEM_RESV_COUNT) {
+				bidram->base_u64[n] = list[i].base_u64;
+				bidram->size_u64[n] = list[i].size_u64;
+				n++;
+			}
 			continue;
+		}
 
 		/* We assume the last block gives the ram addr end */
-		if (i == count - 1) {
-			ram_addr_end = list[i].base + list[i].size;
-			ret = bidram_add(CONFIG_SYS_SDRAM_BASE,
-					 ram_addr_end - CONFIG_SYS_SDRAM_BASE);
-			if (ret) {
-				BIDRAM_E("Failed to add bidram from bi_dram[%d]\n", i);
-				return 0;
-			}
-		}
+		ram_addr_end = list[i].base + list[i].size;
 
 		/* This is a bad dram bank? record it */
 		if (i > 0) {
@@ -403,6 +439,13 @@ phys_size_t bidram_get_ram_size(void)
 				}
 			}
 		}
+	}
+
+	ret = bidram_add(CONFIG_SYS_SDRAM_BASE,
+			 ram_addr_end - CONFIG_SYS_SDRAM_BASE);
+	if (ret) {
+		BIDRAM_E("Failed to add bidram from bi_dram[%d]\n", i);
+		return 0;
 	}
 
 	/* Reserve bad dram bank after bidram_add(), treat as reserved region */

@@ -7,6 +7,7 @@
 #define _MEMBLK_H
 
 #define ALIAS_COUNT_MAX		2
+#define MEM_RESV_COUNT		3
 
 enum memblk_id {
 	MEMBLK_ID_UNK,
@@ -47,6 +48,8 @@ struct memblk_attr {
 struct memblock {
 	phys_addr_t base;
 	phys_size_t size;
+	u64 base_u64; /* 4GB+ */
+	u64 size_u64;
 	phys_addr_t orig_base;
 	struct memblk_attr attr;
 	struct list_head node;
