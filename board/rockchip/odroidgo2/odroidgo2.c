@@ -133,11 +133,10 @@ void board_check_mandatory_files(void)
 	}
 
 	/* check launcher in ext4 fs of sd card */
-	if (!file_exists("mmc", "1:2", "/usr/local/bin/emulationstation/emulationstation",
+	if (file_exists("mmc", "1:2", "/usr/local/bin/emulationstation/emulationstation",
 				FS_TYPE_EXT)) {
-		odroid_display_status(LOGO_MODE_SYSTEM_ERR,
-				LOGO_STORAGE_ANYWHERE, "No Emulationstation launcher");
-		goto err;
+		lcd_setfg(255, 255, 0);
+		lcd_printf(0, 0, 1, "[ GO Advanced EMULATION Image ]");
 	}
 
 	return;
