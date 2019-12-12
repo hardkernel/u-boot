@@ -40,6 +40,7 @@
 #include <asm/sections.h>
 #include <dm/root.h>
 #include <linux/errno.h>
+#include <bidram.h>
 #include <sysmem.h>
 
 /*
@@ -184,6 +185,9 @@ static int show_dram_config(void)
 	size = gd->ram_size;
 #endif
 
+#ifdef CONFIG_BIDRAM
+	size += bidram_append_size();
+#endif
 	print_size(size, "");
 	board_add_ram_info(0);
 	putc('\n');
