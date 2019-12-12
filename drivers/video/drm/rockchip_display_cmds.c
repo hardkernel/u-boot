@@ -22,6 +22,7 @@
 #include "rockchip_display.h"
 #include "bmp_helper.h"
 #include <rockchip_display_cmds.h>
+#include <odroidgo2_status.h>
 
 /*----------------------------------------------------------------------------*/
 struct lcd *lcd = NULL;
@@ -431,8 +432,11 @@ int lcd_show_logo(void)
 	unsigned long bmp_copy;
 	char *logo_fname;
 
-	if (lcd_init())
+	if (lcd_init()) {
+		odroid_drop_errorlog("lcd init fail, check dtb file", 29);
+		odroid_alert_leds();
 		return -1;
+	}
 
 	/* env logo filename check */
 	if ((logo_fname = env_get("logo_filename")) == NULL)

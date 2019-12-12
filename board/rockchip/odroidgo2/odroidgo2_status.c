@@ -10,6 +10,14 @@
 #include <console.h>
 #include <rockchip_display_cmds.h>
 #include <odroidgo2_status.h>
+#include <asm/io.h>
+#include <asm/arch/grf_px30.h>
+#include <asm/arch/hardware.h>
+
+#define POWERDOWN_WAIT_TIME	10000
+#define LOOP_DELAY		25
+
+#define PMUGRF_BASE	0xFF010000
 
 static const char *st_logo_modes[] = {
 	"st_logo_hardkernel",
@@ -27,8 +35,45 @@ static const char *logo_bmp_names[] = {
 	"no_sdcard.bmp",
 };
 
-#define POWERDOWN_WAIT_TIME	10000
-#define LOOP_DELAY		25
+/*
+ * When normal fdt logic doesn't work, this fnctio will show error leds
+ * and shutdown system. In this case, only low level interface is available
+ * so this approach is only possible solution so far.
+ */
+void odroid_alert_leds(void)
+{
+	static struct px30_pmugrf * const pmugrf = (void *)PMUGRF_BASE;
+
+	/* leds setup */
+	rk_clrreg(&pmugrf->gpio0bl_iomux, 0x0C00);
+	rk_clrreg(&pmugrf->gpio0cl_iomux, 0x000C);
+
+	while (1) {
+		/* set high */
+		rk_clrsetreg(&pmugrf->gpio0b_p, 0x0C00, 0x0400);
+		rk_clrsetreg(&pmugrf->gpio0c_p, 0x000C, 0x0004);
+		mdelay(200);
+		/* set low */
+		rk_clrsetreg(&pmugrf->gpio0b_p, 0x0C00, 0x0800);
+		rk_clrsetreg(&pmugrf->gpio0c_p, 0x000C, 0x0008);
+		mdelay(200);
+
+		if (ctrlc()) {
+			printf("ctrl+c key pressed - drop to console\n");
+			env_set("bootdelay", "-1");
+			return;
+		}
+	}
+}
+
+void odroid_drop_errorlog(const char *err, unsigned int size)
+{
+	char str_cmd[64];
+
+	sprintf(str_cmd, "fatwrite mmc 1 %p error.log 0x%x",
+			(void *)err, size);
+	run_command(str_cmd, 0);
+}
 
 void odroid_wait_pwrkey(void)
 {
@@ -67,6 +112,8 @@ int odroid_display_status(int logo_mode, int logo_storage, const char *str)
 
 	if (lcd_init()) {
 		printf("odroid lcd init fail!\n");
+		odroid_drop_errorlog("lcd init fail, check dtb file", 29);
+		odroid_alert_leds();
 		return -1;
 	}
 

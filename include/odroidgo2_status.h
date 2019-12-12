@@ -22,5 +22,7 @@ enum logo_mode {
 
 int odroid_display_status(int logo_mode, int logo_storage, const char *str);
 void odroid_wait_pwrkey(void);
+void odroid_alert_leds(void);
+void odroid_drop_errorlog(const char *err, unsigned int size);
 
 #endif /* _ODROIDGO2_STATUS_H_ */
