@@ -114,7 +114,7 @@ void board_check_mandatory_files(void)
 	if (CMD_RET_SUCCESS != run_command("mmc dev 1", 0)) {
 		if(CMD_RET_SUCCESS != run_command("mmc dev 1", 0)) {
 			odroid_display_status(LOGO_MODE_NO_SDCARD,
-				LOGO_STORAGE_SPIFLASH, "No SD Card");
+				LOGO_STORAGE_ANYWHERE, "No SD Card");
 			goto err;
 		}
 	}
@@ -122,13 +122,13 @@ void board_check_mandatory_files(void)
 	/* check kernel and dtb in vfat of sd card */
 	if (!file_exists("mmc", "1", "Image", FS_TYPE_FAT)) {
 		odroid_display_status(LOGO_MODE_SYSTEM_ERR,
-				LOGO_STORAGE_SPIFLASH, "No Kernel Image");
+				LOGO_STORAGE_ANYWHERE, "No Kernel Image");
 		goto err;
 	}
 
 	if (!file_exists("mmc", "1", "rk3326-odroidgo2-linux.dtb", FS_TYPE_FAT)) {
 		odroid_display_status(LOGO_MODE_SYSTEM_ERR,
-				LOGO_STORAGE_SPIFLASH, "No DTB");
+				LOGO_STORAGE_ANYWHERE, "No DTB");
 		goto err;
 	}
 
@@ -136,7 +136,7 @@ void board_check_mandatory_files(void)
 	if (!file_exists("mmc", "1:2", "/usr/local/bin/emulationstation/emulationstation",
 				FS_TYPE_EXT)) {
 		odroid_display_status(LOGO_MODE_SYSTEM_ERR,
-				LOGO_STORAGE_SPIFLASH, "No Emulationstation launcher");
+				LOGO_STORAGE_ANYWHERE, "No Emulationstation launcher");
 		goto err;
 	}
 

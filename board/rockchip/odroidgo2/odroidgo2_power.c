@@ -53,18 +53,13 @@ int board_check_power(void)
 {
 	int battery = 0;
 	char str[32];
-	char *bootdev = env_get("devtype");
 
 	board_chg_led();
 
 	if (odroid_check_battery(&battery) && odroid_check_dcjack()) {
 		debug("low battery (%d) without dc jack connected\n", battery);
 		sprintf(str, "voltage level : %d.%dV", (battery / 1000), (battery % 1000));
-		if (strncmp(bootdev, "mmc", 3))
-			odroid_display_status(LOGO_MODE_LOW_BATT, LOGO_STORAGE_SPIFLASH, str);
-		else
-			odroid_display_status(LOGO_MODE_LOW_BATT, LOGO_STORAGE_SDCARD, str);
-
+		odroid_display_status(LOGO_MODE_LOW_BATT, LOGO_STORAGE_ANYWHERE, str);
 		odroid_wait_pwrkey();
 		return -1;
 	}

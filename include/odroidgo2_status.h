@@ -9,6 +9,7 @@
 enum logo_storage {
 	LOGO_STORAGE_SPIFLASH = 0,
 	LOGO_STORAGE_SDCARD,
+	LOGO_STORAGE_ANYWHERE,
 };
 
 enum logo_mode {

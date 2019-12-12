@@ -83,19 +83,39 @@ int odroid_display_status(int logo_mode, int logo_storage, const char *str)
 
 		sprintf(cmd, "unzip %p %p", (void *)bmp_copy, (void *)bmp_mem);
 		run_command(cmd, 0);
+
+		if (show_bmp(bmp_mem))
+			printf("[%s] show_bmp Fail!\n", __func__);
 		break;
 	case LOGO_STORAGE_SDCARD:
 		sprintf(cmd, "fatload mmc 1:1 %p %s", (void *)bmp_mem,
 			logo_bmp_names[logo_mode]);
 		run_command(cmd, 0);
-		break;
-	default:
-		break;
-	}
 
-	if (show_bmp(bmp_mem)) {
-		printf("[%s] show_bmp Fail!\n", __func__);
-		return -1;
+		if (show_bmp(bmp_mem))
+			printf("[%s] show_bmp Fail!\n", __func__);
+		break;
+	case LOGO_STORAGE_ANYWHERE:
+	default:
+		/* try spi flash first */
+		sprintf(cmd, "rksfc read %p %s %s", (void *)bmp_copy,
+			env_get(st_logo_modes[logo_mode]),
+			env_get("sz_logo"));
+		run_command(cmd, 0);
+
+		sprintf(cmd, "unzip %p %p", (void *)bmp_copy, (void *)bmp_mem);
+		run_command(cmd, 0);
+
+		if (show_bmp(bmp_mem)) {
+			/* then, check sd card */
+			sprintf(cmd, "fatload mmc 1:1 %p %s", (void *)bmp_mem,
+				logo_bmp_names[logo_mode]);
+			run_command(cmd, 0);
+
+			if (show_bmp(bmp_mem))
+				printf("[%s] show_bmp Fail!\n", __func__);
+		}
+		break;
 	}
 
 	/* draw text */

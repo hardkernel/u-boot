@@ -32,7 +32,7 @@ int board_check_recovery(void)
 	if (recovery_check_mandatory_files())
 		return -1;
 
-	odroid_display_status(LOGO_MODE_RECOVERY, LOGO_STORAGE_SDCARD, NULL);
+	odroid_display_status(LOGO_MODE_RECOVERY, LOGO_STORAGE_ANYWHERE, NULL);
 
 	return 0;
 }
@@ -54,7 +54,7 @@ void board_odroid_recovery(void)
 	/* check spi flash */
 	if (rksfc_scan_namespace()) {
 		printf("spi flash probe fail!\n");
-		odroid_display_status(LOGO_MODE_SYSTEM_ERR, LOGO_STORAGE_SDCARD,
+		odroid_display_status(LOGO_MODE_SYSTEM_ERR, LOGO_STORAGE_ANYWHERE,
 				"spi flash probe fail");
 		odroid_wait_pwrkey();
 	}
@@ -101,7 +101,7 @@ void board_odroid_recovery(void)
 	ret = strncmp(md5sum_org, md5sum_readback, 32);
 	if (ret) {
 		printf("checksum fail! ret %d\n", ret);
-		odroid_display_status(LOGO_MODE_SYSTEM_ERR, LOGO_STORAGE_SDCARD,
+		odroid_display_status(LOGO_MODE_SYSTEM_ERR, LOGO_STORAGE_ANYWHERE,
 				"checksum fail!");
 		odroid_wait_pwrkey();
 	}
@@ -124,7 +124,7 @@ void board_odroid_recovery(void)
 	while (loop) {
 		sprintf(str, "recovery done! system %s in %d sec", cmd, loop);
 		/* there is no vfat mbr in sd card now */
-		odroid_display_status(LOGO_MODE_RECOVERY, LOGO_STORAGE_SPIFLASH, str);
+		odroid_display_status(LOGO_MODE_RECOVERY, LOGO_STORAGE_ANYWHERE, str);
 		mdelay(1000);
 		loop--;
 	};
