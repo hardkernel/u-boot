@@ -251,4 +251,6 @@
 			"hdmi_phy_res=720p60hz edid=0, hpd=1 disable_vu7=false " \
 			"touch_invert_x=false touch_invert_y=false"
 
+
+#define CONFIG_CMD_INI
 #endif	/* __CONFIG_H */

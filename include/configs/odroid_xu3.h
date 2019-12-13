@@ -125,4 +125,5 @@
 	"dfu_alt_system="CONFIG_DFU_ALT_SYSTEM \
 	"dfu_alt_info=Autoset by THOR/DFU command run.\0"
 
+#define CONFIG_CMD_INI
 #endif	/* __CONFIG_H */
