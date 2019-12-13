@@ -66,6 +66,20 @@ config ROCKCHIP_OTP
 	  This is a simple drive to dump specified values of Rockchip SoC
 	  from otp, such as cpu-leakage.
 
+config ROCKCHIP_HW_DECOMPRESS
+	bool "Rockchip HardWare Decompress Support"
+	depends on MISC && IRQ
+	help
+	  This driver support Decompress IP built-in Rockchip SoC, support
+	  LZ4, GZIP, PNG, ZLIB.
+
+config SPL_ROCKCHIP_HW_DECOMPRESS
+	bool "Rockchip HardWare Decompress Support"
+	depends on MISC
+	help
+	  This driver support Decompress IP built-in Rockchip SoC, support
+	  LZ4, GZIP, PNG, ZLIB.
+
 config SPL_ROCKCHIP_SECURE_OTP
 	bool "Rockchip Secure OTP Support in spl"
 	depends on SPL_MISC
