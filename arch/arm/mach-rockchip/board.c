@@ -237,7 +237,7 @@ int board_late_init(void)
 
 #ifdef CONFIG_USING_KERNEL_DTB
 /* Here, only fixup cru phandle, pmucru is not included */
-static int phandles_fixup(void *fdt)
+static int phandles_fixup_cru(void *fdt)
 {
 	const char *props[] = { "clocks", "assigned-clocks" };
 	struct udevice *dev;
@@ -343,9 +343,84 @@ static int phandles_fixup(void *fdt)
 	return 0;
 }
 
+static int phandles_fixup_gpio(void *fdt, void *ufdt)
+{
+	struct udevice *dev;
+	struct uclass *uc;
+	const char *prop = "gpios";
+	const char *comp;
+	char *gpio_name[10];
+	int gpio_off[10];
+	int pinctrl;
+	int offset;
+	int i = 0;
+	int n = 0;
+
+	pinctrl = fdt_path_offset(fdt, "/pinctrl");
+	if (pinctrl < 0)
+		return 0;
+
+	memset(gpio_name, 0, sizeof(gpio_name));
+	for (offset = fdt_first_subnode(fdt, pinctrl);
+	     offset >= 0;
+	     offset = fdt_next_subnode(fdt, offset)) {
+		/* assume the font nodes are gpio node */
+		if (++i >= ARRAY_SIZE(gpio_name))
+			break;
+
+		comp = fdt_getprop(fdt, offset, "compatible", NULL);
+		if (!comp)
+			continue;
+
+		if (!strcmp(comp, "rockchip,gpio-bank")) {
+			gpio_name[n] = (char *)fdt_get_name(fdt, offset, NULL);
+			gpio_off[n]  = offset;
+			n++;
+		}
+	}
+
+	if (!gpio_name[0])
+		return 0;
+
+	if (uclass_get(UCLASS_KEY, &uc) || list_empty(&uc->dev_head))
+		return 0;
+
+	list_for_each_entry(dev, &uc->dev_head, uclass_node) {
+		u32 new_phd, phd_old;
+		char *name;
+		ofnode ofn;
+
+		if (!dev_read_bool(dev, "u-boot,dm-pre-reloc") &&
+		    !dev_read_bool(dev, "u-boot,dm-spl"))
+			continue;
+
+		if (dev_read_u32_array(dev, prop, &phd_old, 1))
+			continue;
+
+		ofn = ofnode_get_by_phandle(phd_old);
+		if (!ofnode_valid(ofn))
+			continue;
+
+		name = (char *)ofnode_get_name(ofn);
+		if (!name)
+			continue;
+
+		for (i = 0; i < ARRAY_SIZE(gpio_name[i]); i++) {
+			if (gpio_name[i] && !strcmp(name, gpio_name[i])) {
+				new_phd = fdt_get_phandle(fdt, gpio_off[i]);
+				dev_write_u32_array(dev, prop, &new_phd, 1);
+				break;
+			}
+		}
+	}
+
+	return 0;
+}
+
 int init_kernel_dtb(void)
 {
 	ulong fdt_addr;
+	void *ufdt_blob;
 	int ret;
 
 	fdt_addr = env_get_ulong("fdt_addr_r", 16, 0);
@@ -371,13 +446,18 @@ int init_kernel_dtb(void)
 		}
 	}
 
+	ufdt_blob = (void *)gd->fdt_blob;
 	gd->fdt_blob = (void *)fdt_addr;
 
 	/*
 	 * There is a phandle miss match between U-Boot and kernel dtb node,
-	 * the typical is cru phandle, we fixup it in U-Boot live dt nodes.
+	 * we fixup it in U-Boot live dt nodes.
+	 *
+	 * CRU:	 all nodes.
+	 * GPIO: key nodes.
 	 */
-	phandles_fixup((void *)gd->fdt_blob);
+	phandles_fixup_cru((void *)gd->fdt_blob);
+	phandles_fixup_gpio((void *)gd->fdt_blob, (void *)ufdt_blob);
 
 	of_live_build((void *)gd->fdt_blob, (struct device_node **)&gd->of_root);
 	dm_scan_fdt((void *)gd->fdt_blob, false);
