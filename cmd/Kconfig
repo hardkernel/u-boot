@@ -482,6 +482,11 @@ config CMD_IMPORTENV
 	help
 	  Import environments.
 
+config CMD_INI
+	bool "ini"
+	help
+	  Simple .INI file parser
+
 config CMD_EDITENV
 	bool "editenv"
 	default y
