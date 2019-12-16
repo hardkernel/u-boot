@@ -851,9 +851,11 @@ struct device_node *of_alias_dump(void)
 
 	mutex_lock(&of_mutex);
 	list_for_each_entry(app, &aliases_lookup, link) {
-		printf("%s: Alias %s%d: %s, phandle=%d\n", __func__,
+		printf("%10s%d: %20s, phandle=%d %4s\n",
 		       app->stem, app->id,
-		       app->np->full_name, app->np->phandle);
+		       app->np->full_name, app->np->phandle,
+		       of_get_property(app->np, "u-boot,dm-pre-reloc", NULL) ||
+		       of_get_property(app->np, "u-boot,dm-spl", NULL) ? "*" : "");
 	}
 	mutex_unlock(&of_mutex);
 

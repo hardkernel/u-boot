@@ -14,6 +14,7 @@
 #include <mapmem.h>
 #include <errno.h>
 #include <asm/io.h>
+#include <dm/of_access.h>
 #include <dm/root.h>
 #include <dm/util.h>
 
@@ -41,10 +42,20 @@ static int do_dm_dump_devres(cmd_tbl_t *cmdtp, int flag, int argc,
 	return 0;
 }
 
+static int do_dm_dump_aliases(cmd_tbl_t *cmdtp, int flag, int argc,
+			      char * const argv[])
+{
+#ifdef CONFIG_OF_LIVE
+	of_alias_dump();
+#endif
+	return 0;
+}
+
 static cmd_tbl_t test_commands[] = {
 	U_BOOT_CMD_MKENT(tree, 0, 1, do_dm_dump_all, "", ""),
 	U_BOOT_CMD_MKENT(uclass, 1, 1, do_dm_dump_uclass, "", ""),
 	U_BOOT_CMD_MKENT(devres, 1, 1, do_dm_dump_devres, "", ""),
+	U_BOOT_CMD_MKENT(aliases, 0, 1, do_dm_dump_aliases, "", ""),
 };
 
 static __maybe_unused void dm_reloc(void)
@@ -85,5 +96,6 @@ U_BOOT_CMD(
 	"Driver model low level access",
 	"tree         Dump driver model tree ('*' = activated)\n"
 	"dm uclass        Dump list of instances for each uclass\n"
-	"dm devres        Dump list of device resources for each device"
+	"dm devres        Dump list of device resources for each device\n"
+	"dm aliases       Dump list of aliases"
 );
