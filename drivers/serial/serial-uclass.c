@@ -108,6 +108,18 @@ static void serial_find_console_or_panic(void)
 				gd->cur_serial_dev = dev;
 				return;
 			}
+
+			/*
+			 * If the console is not marked to be bound, bind it
+			 * anyway.
+			 */
+			if (!lists_bind_fdt(gd->dm_root, np_to_ofnode(np),
+					    &dev)) {
+				if (!device_probe(dev)) {
+					gd->cur_serial_dev = dev;
+					return;
+				}
+			}
 		} else {
 			if (!serial_check_stdout(blob, &dev)) {
 				gd->cur_serial_dev = dev;
