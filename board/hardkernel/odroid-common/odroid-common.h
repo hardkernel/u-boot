@@ -28,6 +28,11 @@ extern int get_adc_value(int channel);
 		| ((0x##m & 0xff) << 8) | ((0x##d & 0xff) << 0))
 
 int board_revision(void);
+void board_set_dtbfile(const char *format);
+
+#if defined(CONFIG_ODROID_N2)
+int board_is_odroidn2plus(void);
+#endif
 
 /*
  * CVBS
