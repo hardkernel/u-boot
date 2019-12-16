@@ -57,6 +57,7 @@ static unsigned int get_hw_revision(void)
 	int hwrev = -1;
 	int adc = get_adc_value(1);
 
+#if defined(CONFIG_ODROID_N2)
 	if (IS_RANGE(adc, 80, 90))		/* ave : 84 */
 		hwrev = BOARD_REVISION(2018, 7, 23);
 	else if (IS_RANGE(adc, 160, 170))	/* avg : 164 */
@@ -65,6 +66,11 @@ static unsigned int get_hw_revision(void)
 		hwrev = BOARD_REVISION(2019, 1, 17);
 	else if (IS_RANGE(adc, 330, 350))	/* avg : 334 */
 		hwrev = BOARD_REVISION(2019, 2, 7);
+	else if (IS_RANGE(adc, 410, 430)) {	/* avg : 419 */
+		/* ODROID-N2plus */
+		hwrev = BOARD_REVISION(2019, 11, 20);
+	}
+#endif
 
 	debug("ADC=%d, hwrev=0x%x\n", adc, hwrev);
 
@@ -78,3 +84,19 @@ int board_revision(void)
 
 	return board_rev;
 }
+
+void board_set_dtbfile(const char *format)
+{
+	char s[128];
+	char *ep = getenv("variant");
+
+	snprintf(s, sizeof(s), format, ep ? ep : "");
+	setenv("fdtfile", s);
+}
+
+#if defined(CONFIG_ODROID_N2)
+int board_is_odroidn2plus(void)
+{
+	return (board_revision() >= 0x20191120);
+}
+#endif
