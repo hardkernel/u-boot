@@ -105,7 +105,9 @@ static int rockchip_crypto_sha_update(struct udevice *dev,
 
 	priv->length += len;
 	if ((priv->length != priv->ctx->length) && !IS_ALIGNED(len, 4)) {
-		printf("Crypto-v1: require update data length 4-byte aligned\n");
+		printf("Crypto-v1: require update data length 4-byte "
+		       "aligned(0x%08lx - 0x%08lx)\n",
+		       (ulong)input, (ulong)input + len);
 		return -EINVAL;
 	}
 
