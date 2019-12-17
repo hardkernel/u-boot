@@ -598,6 +598,9 @@ int android_image_memcpy_separate(struct andr_img_hdr *hdr, ulong *load_addr)
 	int comp;
 
 	comp = android_image_parse_comp(hdr, &comp_addr);
+	if (comp_addr == (ulong)hdr)
+		return 0;
+
 	if (android_image_separate(hdr, NULL, (void *)comp_addr, hdr))
 		return -1;
 
