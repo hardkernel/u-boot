@@ -67,11 +67,7 @@
 
 #include <config_distro_bootcmd.h>
 
-/* Linux fails to load the fdt if it's loaded above 256M on a Rock 2 board, so
- * limit the fdt reallocation to that */
 #define CONFIG_EXTRA_ENV_SETTINGS \
-	"fdt_high=0x0fffffff\0" \
-	"initrd_high=0x0fffffff\0" \
 	"partitions=" PARTS_DEFAULT \
 	ENV_MEM_LAYOUT_SETTINGS \
 	ROCKCHIP_DEVICE_SETTINGS \
