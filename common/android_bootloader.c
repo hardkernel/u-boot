@@ -1051,9 +1051,9 @@ out:
 }
 #endif
 
-static int load_android_image(struct blk_desc *dev_desc,
-			      char *boot_partname,
-			      unsigned long *load_address)
+int android_image_load_by_partname(struct blk_desc *dev_desc,
+				   const char *boot_partname,
+				   unsigned long *load_address)
 {
 	disk_partition_t boot_part;
 	int ret, part_num;
@@ -1185,8 +1185,9 @@ int android_bootloader_boot_flow(struct blk_desc *dev_desc,
 			printf("Not AVB images, AVB skip\n");
 			env_update("bootargs",
 				   "androidboot.verifiedbootstate=orange");
-			if (load_android_image(dev_desc, boot_partname,
-					       &load_address)) {
+			if (android_image_load_by_partname(dev_desc,
+							   boot_partname,
+							   &load_address)) {
 				printf("Android image load failed\n");
 				return -1;
 			}
@@ -1206,7 +1207,9 @@ int android_bootloader_boot_flow(struct blk_desc *dev_desc,
 	 * 2. Load the boot/recovery from the desired "boot" partition.
 	 * Determine if this is an AOSP image.
 	 */
-	if (load_android_image(dev_desc, boot_partname, &load_address)) {
+	if (android_image_load_by_partname(dev_desc,
+					   boot_partname,
+					   &load_address)) {
 		printf("Android image load failed\n");
 		return -1;
 	}
