@@ -242,6 +242,8 @@ int snor_erase(struct SFNOR_DEV *p_dev,
 	union SFCCMD_DATA sfcmd;
 	int timeout[] = {400, 2000, 40000};   /* ms */
 
+	rkflash_print_dio("%s %x\n", __func__, addr);
+
 	if (erase_type > ERASE_CHIP)
 		return SFC_PARAM_ERR;
 
@@ -431,6 +433,8 @@ int snor_read(struct SFNOR_DEV *p_dev, u32 sec, u32 n_sec, void *p_data)
 	u32 addr, size, len;
 	u8 *p_buf =  (u8 *)p_data;
 
+	rkflash_print_dio("%s %x %x\n", __func__, sec, n_sec);
+
 	if ((sec + n_sec) > p_dev->capacity)
 		return SFC_PARAM_ERR;
 
@@ -462,6 +466,8 @@ int snor_write(struct SFNOR_DEV *p_dev, u32 sec, u32 n_sec, void *p_data)
 	u32 len, blk_size, offset;
 	u8 *p_buf =  (u8 *)p_data;
 	u32 total_sec = n_sec;
+
+	rkflash_print_dio("%s %x %x %x\n", __func__, sec, n_sec, ((u32 *)p_data)[0]);
 
 	if ((sec + n_sec) > p_dev->capacity)
 		return SFC_PARAM_ERR;

@@ -64,6 +64,30 @@ int rksfc_nor_read(struct udevice *udev, u32 sec, u32 n_sec, void *p_data)
 	return n_sec;
 }
 
+/* Workaround for GPT not aligned program */
+int rksfc_nor_simply_over_write(struct udevice *udev,
+				u32 sec,
+				u32 n_sec,
+				const void *p_data)
+{
+	struct rkflash_info *priv = dev_get_priv(udev);
+	struct SFNOR_DEV *p_dev = (struct SFNOR_DEV *)&priv->flash_dev_info;
+	u8 *pbuf_temp;
+	u32 addr_aligned, offset, remain;
+
+	addr_aligned = sec / NOR_SECS_PAGE * NOR_SECS_PAGE;
+	offset = sec - addr_aligned;
+	remain = (offset + n_sec + NOR_SECS_PAGE - 1) / NOR_SECS_PAGE * NOR_SECS_PAGE;
+
+	pbuf_temp = malloc(remain * 512);
+	snor_read(p_dev, addr_aligned, remain, pbuf_temp);
+	memcpy(pbuf_temp + offset * 512, p_data, n_sec * 512);
+	snor_write(p_dev, addr_aligned, remain, pbuf_temp);
+	free(pbuf_temp);
+
+	return n_sec;
+}
+
 int rksfc_nor_write(struct udevice *udev,
 		    u32 sec,
 		    u32 n_sec,
@@ -74,6 +98,10 @@ int rksfc_nor_write(struct udevice *udev,
 	char *buf = (char *)p_data;
 	struct rkflash_info *priv = dev_get_priv(udev);
 	struct SFNOR_DEV *p_dev = (struct SFNOR_DEV *)&priv->flash_dev_info;
+	u32 sfc_nor_density = rksfc_nor_get_capacity(udev);
+
+	if (sec >= (sfc_nor_density - 33))
+		return rksfc_nor_simply_over_write(udev, sec, n_sec, p_data);
 
 	if (sec + n_sec - 1 < FLASH_VENDOR_PART_START ||
 	    sec > FLASH_VENDOR_PART_END) {
