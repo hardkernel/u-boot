@@ -374,6 +374,9 @@ static int image_read(img_t img, struct andr_img_hdr *hdr,
 		return -ENOMEM;
 	}
 
+	if (!blksz || !datasz)
+		goto crypto_calc;
+
 	/* load */
 	if (ram_base) {
 		memcpy(ramdst, (char *)((ulong)ram_base + offset), datasz);
@@ -386,6 +389,7 @@ static int image_read(img_t img, struct andr_img_hdr *hdr,
 		}
 	}
 
+crypto_calc:
 	/* sha1 */
 #ifdef CONFIG_DM_CRYPTO
 	if (crypto) {
