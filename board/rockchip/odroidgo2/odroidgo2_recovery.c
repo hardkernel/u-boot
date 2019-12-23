@@ -49,6 +49,7 @@ void board_odroid_recovery(void)
 	int offs, unit;
 	int filesize;
 	int progress;
+	float percentage = 0;
 	unsigned long addr;
 
 	/* check spi flash */
@@ -78,16 +79,17 @@ void board_odroid_recovery(void)
 		sprintf(cmd, "rksfc write %p 0x%x 0x%x", (void *)addr, offs, unit);
 		run_command(cmd, 0);
 
-		sprintf(str, "recovery : %d / %d", progress, filesize);
-		lcd_printf(0, 10, 1, "%s", str);
+		percentage = progress * 100 / filesize;
+		sprintf(str, "recovery progress :%3d %%", (int) percentage);
+		lcd_printf(0, 18, 1, "%s", str);
 
 		offs += unit;
 		addr += unit * 512;
 		progress += unit * 512;
 	}
 
-	sprintf(str, "recovery : %d / %d", progress, filesize);
-	lcd_printf(0, 10, 1, "%s", str);
+	sprintf(str, "recovery progress :%3d %%", (int) percentage);
+	lcd_printf(0, 18, 1, "%s", str);
 
 	/* readback & calculate md5sum */
 	run_command("rksfc read $loadaddr 0x0 $sz_total", 0);

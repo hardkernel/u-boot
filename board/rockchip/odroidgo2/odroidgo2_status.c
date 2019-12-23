@@ -35,6 +35,9 @@ static const char *logo_bmp_names[] = {
 	"no_sdcard.bmp",
 };
 
+unsigned long bmp_mem;
+unsigned long bmp_copy;
+
 /*
  * When normal fdt logic doesn't work, this fnctio will show error leds
  * and shutdown system. In this case, only low level interface is available
@@ -99,6 +102,9 @@ void odroid_wait_pwrkey(void)
 		delay -= LOOP_DELAY;
 	}
 
+	if (show_bmp(bmp_mem))
+		printf("[%s] show_bmp Fail!\n", __func__);
+
 	printf("power key long pressed...\n");
 	lcd_printf(0, 18, 1, "%s", "power off...");
 	mdelay(500);
@@ -107,7 +113,6 @@ void odroid_wait_pwrkey(void)
 
 int odroid_display_status(int logo_mode, int logo_storage, const char *str)
 {
-	unsigned long bmp_mem, bmp_copy;
 	char cmd[128];
 
 	if (lcd_init()) {
@@ -118,8 +123,10 @@ int odroid_display_status(int logo_mode, int logo_storage, const char *str)
 	}
 
 	/* draw logo bmp */
-	bmp_mem = lcd_get_mem();
-	bmp_copy = bmp_mem + LCD_LOGO_SIZE;
+	if (!bmp_mem) {
+		bmp_mem = lcd_get_mem();
+		bmp_copy = bmp_mem + LCD_LOGO_SIZE;
+	}
 
 	switch (logo_storage) {
 	case LOGO_STORAGE_SPIFLASH:
@@ -165,11 +172,23 @@ int odroid_display_status(int logo_mode, int logo_storage, const char *str)
 		break;
 	}
 
-	/* draw text */
-	if (str) {
-		lcd_setfg(255, 255, 0);
-		lcd_printf(0, 15, 1, "%s", str);
+	switch (logo_mode) {
+	case LOGO_MODE_SYSTEM_ERR:
+		lcd_setfg_color("white");
+		lcd_setbg_color("black");
+		break;
+	case LOGO_MODE_LOW_BATT:
+	case LOGO_MODE_NO_SDCARD:
+	case LOGO_MODE_RECOVERY:
+	default:
+		lcd_setfg_color("black");
+		lcd_setbg_color("white");
+		break;
 	}
+
+	/* draw text */
+	if (str)
+		lcd_printf(0, 18, 1, "%s", str);
 
 	return 0;
 }

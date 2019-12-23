@@ -114,7 +114,7 @@ void board_check_mandatory_files(void)
 	if (CMD_RET_SUCCESS != run_command("mmc dev 1", 0)) {
 		if(CMD_RET_SUCCESS != run_command("mmc dev 1", 0)) {
 			odroid_display_status(LOGO_MODE_NO_SDCARD,
-				LOGO_STORAGE_ANYWHERE, "No SD Card");
+				LOGO_STORAGE_ANYWHERE, NULL);
 			goto err;
 		}
 	}
@@ -135,7 +135,7 @@ void board_check_mandatory_files(void)
 	/* check launcher in ext4 fs of sd card */
 	if (file_exists("mmc", "1:2", "/usr/local/bin/emulationstation/emulationstation",
 				FS_TYPE_EXT)) {
-		lcd_setfg(255, 255, 0);
+		lcd_setfg_color("white");
 		lcd_printf(0, 0, 1, "[ GO Advanced EMULATION Image ]");
 	}
 
@@ -171,7 +171,7 @@ int rk_board_late_init(void)
 
 	/* show boot logo and version : drivers/video/drm/rockchip_display_cmds.c */
 	lcd_show_logo();
-	lcd_setfg(255, 255, 0);
+	lcd_setfg_color("white");
 	lcd_printf(0, 18, 1, "%s", U_BOOT_VERSION);
 	lcd_printf(0, 19, 1, "%s %s", U_BOOT_DATE, U_BOOT_TIME);
 
