@@ -90,6 +90,7 @@ help()
 	echo "	./make.sh evb-rk3399               --- build for evb-rk3399_defconfig"
 	echo "	./make.sh firefly-rk3288           --- build for firefly-rk3288_defconfig"
 	echo "	./make.sh                          --- build with exist .config"
+	echo "	./make.sh env                      --- build envtools"
 	echo
 	echo "2. Pack:"
 	echo "	./make.sh uboot                    --- pack uboot.img"
@@ -118,7 +119,7 @@ prepare()
 
 	case $BOARD in
 		# Parse from exit .config
-		''|elf*|loader*|spl*|itb|debug*|trust|uboot|map|sym)
+		''|elf*|loader*|spl*|itb|debug*|trust|uboot|map|sym|env)
 		if [ ! -f .config ]; then
 			echo
 			echo "Build failed, Can't find .config"
@@ -137,7 +138,7 @@ prepare()
 		;;
 
 		#Subcmd
-		''|elf*|loader*|spl*|itb|debug*|trust*|uboot|map|sym)
+		''|elf*|loader*|spl*|itb|debug*|trust*|uboot|map|sym|env)
 		;;
 
 		*)
@@ -267,6 +268,11 @@ sub_commands()
 
 		uboot)
 		pack_uboot_image ${opt}
+		exit 0
+		;;
+
+		env)
+		make CROSS_COMPILE=${TOOLCHAIN_GCC} envtools	
 		exit 0
 		;;
 
