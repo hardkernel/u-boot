@@ -570,7 +570,7 @@ void *sysmem_alloc_by_name(const char *name, phys_size_t size)
 					name,
 					SYSMEM_ALLOC_ANYWHERE,
 					size,
-					SYSMEM_ALLOC_NO_ALIGN);
+					ARCH_DMA_MINALIGN);
 	if (!paddr)
 		sysmem_dump();
 
