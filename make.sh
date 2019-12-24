@@ -390,7 +390,7 @@ fixup_platform_configure()
 	if [ $RKCHIP = "PX30" -o $RKCHIP = "RK3326" -o $RKCHIP = "RK3308" -o $RKCHIP = "RK1808" ]; then
 		PLATFORM_RSA="--rsa 3"
 	# RK3368 use rk big endian SHA256, it's pack magic is "2"
-	elif [ $RKCHIP = "RK3368" ]; then
+	elif [ $RKCHIP = "RK3368" -o $RKCHIP = "RK3368H" ]; then
 		PLATFORM_SHA="--sha 2"
 	# other platforms use default configure
 	fi
