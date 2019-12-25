@@ -7,6 +7,15 @@
 #ifndef _MISC_H_
 #define _MISC_H_
 
+#include <asm-generic/ioctl.h>
+
+/*
+ * Request command to be sent for misc_ioctl().
+ */
+#define IOCTL_REQ_START		_IO('m', 0x01)
+#define IOCTL_REQ_STOP		_IO('m', 0x02)
+#define IOCTL_REQ_POLL		_IO('m', 0x03)
+
 /*
  * Read the device to buffer, optional.
  *
