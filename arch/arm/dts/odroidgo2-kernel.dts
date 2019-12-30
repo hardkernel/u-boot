@@ -536,16 +536,16 @@
 				};
 			};
 
-			vcc_3v0: DCDC_REG4 {
+			vcc_3v3: DCDC_REG4 {
 				regulator-always-on;
 				regulator-boot-on;
-				regulator-min-microvolt = <3000000>;
-				regulator-max-microvolt = <3000000>;
+				regulator-min-microvolt = <3300000>;
+				regulator-max-microvolt = <3300000>;
 				regulator-initial-mode = <0x2>;
-				regulator-name = "vcc_3v0";
+				regulator-name = "vcc_3v3";
 				regulator-state-mem {
 					regulator-off-in-suspend;
-					regulator-suspend-microvolt = <3000000>;
+					regulator-suspend-microvolt = <3300000>;
 				};
 			};
 
@@ -586,16 +586,16 @@
 				};
 			};
 
-			vcc3v0_pmu: LDO_REG4 {
+			vcc3v3_pmu: LDO_REG4 {
 				regulator-always-on;
 				regulator-boot-on;
-				regulator-min-microvolt = <3000000>;
-				regulator-max-microvolt = <3000000>;
+				regulator-min-microvolt = <3300000>;
+				regulator-max-microvolt = <3300000>;
 
-				regulator-name = "vcc3v0_pmu";
+				regulator-name = "vcc3v3_pmu";
 				regulator-state-mem {
 					regulator-on-in-suspend;
-					regulator-suspend-microvolt = <3000000>;
+					regulator-suspend-microvolt = <3300000>;
 
 				};
 			};
@@ -780,17 +780,17 @@
 	status = "okay";
 
 	/* SDIO I/O Voltage */
-	vccio1-supply = <&vcc_3v0>;
+	vccio1-supply = <&vcc_3v3>;
 	/* SDMMC I/O Voltage */
 	vccio2-supply = <&vccio_sd>;
 	/* CAM I/O Voltage */
-	vccio3-supply = <&vcc_3v0>;
+	vccio3-supply = <&vcc_3v3>;
 	/* LVDS/LCDC I/O Voltage */
-	vccio4-supply = <&vcc_3v0>;
+	vccio4-supply = <&vcc_3v3>;
 	/* I2S I/O Voltage */
-	vccio5-supply = <&vcc_3v0>;
+	vccio5-supply = <&vcc_3v3>;
 	/* eMMC I/O Voltage */
-	vccio6-supply = <&vcc_3v0>;
+	vccio6-supply = <&vcc_3v3>;
 };
 
 &isp_mmu {
@@ -852,9 +852,9 @@
 	status = "okay";
 
 	/* PMU I/O Voltage */
-	pmuio1-supply = <&vcc3v0_pmu>;
+	pmuio1-supply = <&vcc3v3_pmu>;
 	/* GPIO0_B/GPIO0_C, Flash */
-	pmuio2-supply = <&vcc3v0_pmu>;
+	pmuio2-supply = <&vcc3v3_pmu>;
 };
 
 /* LCD Backlight PWM */
