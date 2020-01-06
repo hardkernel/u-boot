@@ -15,8 +15,6 @@
 #include <sysmem.h>
 #include <asm/io.h>
 #include <asm/unaligned.h>
-#include <android_avb/libavb_ab.h>
-#include <android_avb/rk_avb_ops_user.h>
 #include <dm/ofnode.h>
 #include <linux/list.h>
 #include <u-boot/sha1.h>
@@ -537,17 +535,6 @@ static struct resource_file *get_file_info(struct resource_img_hdr *hdr,
 	}
 
 	return NULL;
-}
-
-int rockchip_get_resource_file_offset(void *resc_hdr, const char *name)
-{
-	struct resource_file *file;
-
-	file = get_file_info(resc_hdr, name);
-	if (!file)
-		return -ENFILE;
-
-	return file->f_offset;
 }
 
 /*
