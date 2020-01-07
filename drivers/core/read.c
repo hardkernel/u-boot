@@ -154,6 +154,16 @@ const void *dev_read_prop(struct udevice *dev, const char *propname, int *lenp)
 	return ofnode_get_property(dev_ofnode(dev), propname, lenp);
 }
 
+const char *dev_hide_prop(struct udevice *dev, const char *propname)
+{
+	return ofnode_hide_property(dev_ofnode(dev), propname);
+}
+
+int dev_present_prop(struct udevice *dev, const char *propname)
+{
+	return ofnode_present_property(dev_ofnode(dev), propname);
+}
+
 int dev_read_alias_seq(struct udevice *dev, int *devnump)
 {
 	ofnode node = dev_ofnode(dev);
