@@ -217,6 +217,7 @@ int board_late_init(void)
 {
 	rockchip_set_ethaddr();
 	rockchip_set_serialno();
+	setup_download_mode();
 #if (CONFIG_ROCKCHIP_BOOT_MODE_REG > 0)
 	setup_boot_mode();
 #endif

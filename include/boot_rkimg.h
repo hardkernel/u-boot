@@ -55,19 +55,10 @@ struct rockchip_image {
 #define PART_DTBO			"dtbo"
 #define PART_LOGO			"logo"
 
-int rockchip_get_boot_mode(void);
-
 struct blk_desc *rockchip_get_bootdev(void);
 void rockchip_set_bootdev(struct blk_desc *desc);
-
-/*
- * reboot into recovery and wipe data
- */
 void board_run_recovery_wipe_data(void);
-
-/*
- * reboot into recovery
- */
-void board_run_recovery(void);
+void setup_download_mode(void);
+int rockchip_get_boot_mode(void);
 
 #endif
