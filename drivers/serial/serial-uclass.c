@@ -15,6 +15,7 @@
 #include <dm/lists.h>
 #include <dm/device-internal.h>
 #include <dm/of_access.h>
+#include <dm/uclass-internal.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -87,10 +88,69 @@ static int serial_check_stdout(const void *blob, struct udevice **devp)
 	return -ENODEV;
 }
 
+#ifdef CONFIG_OF_LIVE
+/*
+ * Hide and present pinctrl prop int live device tree
+ *
+ * 1. We bind all serial nodes including UART debug node from kernel dtb.
+ *
+ * 2. On some rockchip platforms, UART debug and SDMMC pin are multiplex.
+ *    Without this, iomux is switched from SDMMC => UART debug at this time.
+ *
+ * 3. We may switch to UART debug iomux after SDMMC boot failed to print log
+ *    by console record mechanism.
+ */
+static void serial_console_hide_prop(char **p1, char **p2)
+{
+	struct udevice *dev;
+
+	if (!of_live_active())
+		return;
+
+	for (uclass_find_first_device(UCLASS_SERIAL, &dev);
+	     dev;
+	     uclass_find_next_device(&dev)) {
+		if (dev_read_bool(dev, "u-boot,dm-pre-reloc") ||
+		    dev_read_bool(dev, "u-boot,dm-spl"))
+			continue;
+
+		if (gd->cur_serial_dev->req_seq == dev->req_seq) {
+			*p1 = (char *)dev_hide_prop(dev, "pinctrl-names");
+			*p2 = (char *)dev_hide_prop(dev, "pinctrl-0");
+		}
+	}
+}
+
+static void serial_console_present_prop(char *p1, char *p2)
+{
+	struct udevice *dev;
+
+	if (!of_live_active() || !p1 || !p2)
+		return;
+
+	for (uclass_find_first_device(UCLASS_SERIAL, &dev);
+	     dev;
+	     uclass_find_next_device(&dev)) {
+		if (dev_read_bool(dev, "u-boot,dm-pre-reloc") ||
+		    dev_read_bool(dev, "u-boot,dm-spl"))
+			continue;
+
+		if (gd->cur_serial_dev->req_seq == dev->req_seq) {
+			dev_present_prop(dev, p1);
+			dev_present_prop(dev, p2);
+		}
+	}
+}
+#else
+static inline void serial_console_hide_prop(char **p1, char **p2) {}
+static inline void serial_console_present_prop(char *p1, char *p2) {}
+#endif
+
 static void serial_find_console_or_panic(void)
 {
 	const void *blob = gd->fdt_blob;
 	struct udevice *dev;
+	char *p1 = NULL, *p2 = NULL;
 
 	if (CONFIG_IS_ENABLED(OF_PLATDATA)) {
 		uclass_first_device(UCLASS_SERIAL, &dev);
@@ -103,8 +163,10 @@ static void serial_find_console_or_panic(void)
 		if (of_live_active()) {
 			struct device_node *np = of_get_stdout();
 
+			serial_console_hide_prop(&p1, &p2);
 			if (np && !uclass_get_device_by_ofnode(UCLASS_SERIAL,
 					np_to_ofnode(np), &dev)) {
+				serial_console_present_prop(p1, p2);
 				gd->cur_serial_dev = dev;
 				return;
 			}
@@ -115,7 +177,9 @@ static void serial_find_console_or_panic(void)
 			 */
 			if (!lists_bind_fdt(gd->dm_root, np_to_ofnode(np),
 					    &dev)) {
+				serial_console_hide_prop(&p1, &p2);
 				if (!device_probe(dev)) {
+					serial_console_present_prop(p1, p2);
 					gd->cur_serial_dev = dev;
 					return;
 				}
