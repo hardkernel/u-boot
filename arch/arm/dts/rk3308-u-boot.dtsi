@@ -5,6 +5,10 @@
  */
 
 / {
+	aliases {
+		mmc0 = &emmc;
+		mmc1 = &sdmmc;
+	};
 
 	chosen {
 		stdout-path = &uart2;
