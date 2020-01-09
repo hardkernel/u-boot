@@ -33,6 +33,7 @@ struct dwc3_device {
 	unsigned rx_detect_poll_quirk;
 	unsigned dis_u3_susphy_quirk;
 	unsigned dis_u2_susphy_quirk;
+	unsigned dis_u1u2_quirk;
 	unsigned tx_de_emphasis_quirk;
 	unsigned tx_de_emphasis;
 	unsigned usb2_phyif_utmi_width;
