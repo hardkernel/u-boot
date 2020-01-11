@@ -56,6 +56,8 @@ int do_bootm_states(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[],
 
 void arch_preboot_os(uint32_t bootm_state);
 
+int board_do_bootm(int argc, char * const argv[]);
+
 /**
  * bootm_decomp_image() - decompress the operating system
  *
