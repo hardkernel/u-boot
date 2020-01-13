@@ -31,7 +31,7 @@ source (ulong addr, const char *fit_uname)
 	const image_header_t *hdr;
 #endif
 	u32		*data;
-	int		verify;
+
 	void *buf;
 #if defined(CONFIG_FIT)
 	const void*	fit_hdr;
@@ -39,8 +39,9 @@ source (ulong addr, const char *fit_uname)
 	const void	*fit_data;
 	size_t		fit_len;
 #endif
-
-	verify = env_get_yesno("verify");
+#if defined(CONFIG_IMAGE_FORMAT_LEGACY) || defined(CONFIG_FIT)
+	int		verify = env_get_yesno("verify");
+#endif
 
 	buf = map_sysmem(addr, 0);
 	switch (genimg_get_format(buf)) {
