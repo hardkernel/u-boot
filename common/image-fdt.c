@@ -54,10 +54,18 @@ static const image_header_t *image_get_fdt(ulong fdt_addr)
 	}
 	puts("OK\n");
 
+	/*
+	 * default image mkimage conflicts with fit mkimage on param: -T "flat_dt".
+	 *
+	 * error message:
+	 * "./tools/mkimage: Can't set header for FIT Image support: Success"
+	 */
+#if 0
 	if (!image_check_type(fdt_hdr, IH_TYPE_FLATDT)) {
 		fdt_error("uImage is not a fdt");
 		return NULL;
 	}
+#endif
 	if (image_get_comp(fdt_hdr) != IH_COMP_NONE) {
 		fdt_error("uImage is compressed");
 		return NULL;
