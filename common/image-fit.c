@@ -30,6 +30,9 @@ DECLARE_GLOBAL_DATA_PTR;
 #include <u-boot/sha1.h>
 #include <u-boot/sha256.h>
 
+#define __round_mask(x, y) ((__typeof__(x))((y)-1))
+#define round_up(x, y) ((((x)-1) | __round_mask(x, y))+1)
+
 /*****************************************************************************/
 /* New uImage format routines */
 /*****************************************************************************/
@@ -769,13 +772,25 @@ int fit_image_get_entry(const void *fit, int noffset, ulong *entry)
 int fit_image_get_data(const void *fit, int noffset,
 		const void **data, size_t *size)
 {
+	ulong data_off = 0;
+	int data_sz = 0;
 	int len;
 
 	*data = fdt_getprop(fit, noffset, FIT_DATA_PROP, &len);
 	if (*data == NULL) {
-		fit_get_debug(fit, noffset, FIT_DATA_PROP, len);
-		*size = 0;
-		return -1;
+		fit_image_get_data_offset(fit, noffset, (int *)&data_off);
+		fit_image_get_data_size(fit, noffset, &data_sz);
+		if (data_sz) {
+			data_off += (ulong)fit;
+			data_off += round_up(fdt_totalsize(fit), 4);
+			*data = (void *)data_off;
+			*size = data_sz;
+			return 0;
+		} else {
+			fit_get_debug(fit, noffset, FIT_DATA_PROP, len);
+			*size = 0;
+			return -1;
+		}
 	}
 
 	*size = len;
