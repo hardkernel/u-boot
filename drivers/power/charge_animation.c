@@ -29,6 +29,10 @@
 #include <irq-generic.h>
 #include <rk_timer_irq.h>
 #endif
+#ifdef CONFIG_TARGET_ODROIDGO2
+#include <rockchip_display_cmds.h>
+#include <blk.h>
+#endif
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -70,6 +74,23 @@ struct charge_animation_priv {
  * 1. Update the following 'image[]' to point to your own images;
  * 2. You must set the failed image as last one and soc = -1 !!!
  */
+#ifdef CONFIG_TARGET_ODROIDGO2
+static const struct charge_image image[] = {
+	{ .name = "battery_0.bmp", .soc = 5, .period = 800 },
+	{ .name = "battery_1.bmp", .soc = 60, .period = 800 },
+	{ .name = "battery_2.bmp", .soc = 80, .period = 800 },
+	{ .name = "battery_3.bmp", .soc = 100, .period = 800 },
+	{ .name = "battery_fail.bmp", .soc = -1, .period = 1000 },
+};
+
+static const char *image_sf[] = {
+	"st_battery_0",
+	"st_battery_1",
+	"st_battery_2",
+	"st_battery_3",
+	"st_battery_fail",
+};
+#else
 static const struct charge_image image[] = {
 	{ .name = "battery_0.bmp", .soc = 5, .period = 600 },
 	{ .name = "battery_1.bmp", .soc = 20, .period = 600 },
@@ -79,6 +100,7 @@ static const struct charge_image image[] = {
 	{ .name = "battery_5.bmp", .soc = 100, .period = 600 },
 	{ .name = "battery_fail.bmp", .soc = -1, .period = 1000 },
 };
+#endif
 
 static int charge_animation_ofdata_to_platdata(struct udevice *dev)
 {
@@ -279,11 +301,58 @@ static void autowakeup_timer_uninit(void)
 #endif
 
 #ifdef CONFIG_DRM_ROCKCHIP
+#ifdef CONFIG_TARGET_ODROIDGO2
+static int bmp_dev;
+static void charge_show_bmp(int idx, struct udevice *fg)
+{
+	unsigned long bmp_mem, bmp_copy;
+	int ret;
+	int battery = 0;
+	char cmd[64];
+
+	if (fg)
+		battery = fuel_gauge_get_voltage(fg);
+
+	debug("charge_show_bmp idx %d, name %s, battery %d\n", idx, image[idx].name, battery);
+
+	/* draw logo bmp */
+	bmp_mem = lcd_get_mem();
+	bmp_copy = bmp_mem + LCD_LOGO_SIZE;
+
+	if (!bmp_dev) {
+		sprintf(cmd, "fatload mmc 1:1 %p %s", (void *)bmp_mem, image[idx].name);
+		ret = run_command(cmd, 0);
+		if (ret != CMD_RET_SUCCESS)
+			bmp_dev = 0xff;
+	} else {
+		ulong n, cnt, blk;
+		blk = env_get_hex(image_sf[idx], 0);
+		cnt = env_get_hex("sz_logo", 0);
+
+		n = blk_read_devnum(IF_TYPE_SPINOR, 1,
+			blk, cnt,
+			(ulong *)bmp_copy);
+		if (n != cnt)
+			printf("spinor file read error\n");
+
+		sprintf(cmd, "unzip %p %p", (void *)bmp_copy, (void *)bmp_mem);
+		run_command(cmd, 0);
+	}
+
+	if (show_bmp(bmp_mem))
+		printf("[%s] show_bmp fail\n", __func__);
+
+	/* show battery voltage level */
+	sprintf(cmd, "%d.%dV", (battery / 1000), ((battery % 1000) / 100));
+	lcd_setfg_color("white");
+	lcd_printf(0, 18, 1, "%s", cmd);
+}
+#else
 static void charge_show_bmp(const char *name)
 {
 	rockchip_show_bmp(name);
 }
-
+#endif
 static void charge_show_logo(void)
 {
 	rockchip_show_logo();
@@ -431,7 +500,9 @@ static int charge_animation_show(struct udevice *dev)
 	int start_idx = 0, show_idx = -1, old_show_idx = IMAGE_RESET_IDX;
 	int soc, voltage, current, key_state;
 	int i, charging = 1, ret;
+#ifdef CONFIG_RKIMG_BOOTLOADER
 	int boot_mode;
+#endif
 	int first_poll_fg = 1;
 
 /*
@@ -468,8 +539,9 @@ static int charge_animation_show(struct udevice *dev)
 	boot_mode = rockchip_get_boot_mode();
 	if ((boot_mode != BOOT_MODE_CHARGING) &&
 	    (boot_mode != BOOT_MODE_UNDEFINE)) {
-		printf("Exit charge: due to boot mode\n");
-		return 0;
+		printf("Exit charge: due to boot mode=%d\n", boot_mode);
+		/* FIXME : check this scenario in case of cold boot */
+		/* return 0; */
 	}
 #endif
 
@@ -498,11 +570,20 @@ static int charge_animation_show(struct udevice *dev)
 		return -EINVAL;
 	}
 
+#ifdef CONFIG_TARGET_ODROIDGO2
+	/* lcd initialization */
+	lcd_init();
+#endif
+
 	/* If low power, turn off screen */
 	if (voltage <= pdata->screen_on_voltage + 50) {
 		screen_on = false;
 		ever_lowpower_screen_off = true;
+#ifdef CONFIG_TARGET_ODROIDGO2
+		lcd_onoff(false);
+#else
 		charge_show_bmp(NULL);
+#endif
 	}
 
 	/* Auto wakeup */
@@ -659,7 +740,11 @@ show_images:
 			if (old_show_idx != show_idx) {
 				old_show_idx = show_idx;
 				debug("SHOW: %s\n", image[show_idx].name);
+#ifdef CONFIG_TARGET_ODROIDGO2
+				charge_show_bmp(show_idx, fg);
+#else
 				charge_show_bmp(image[show_idx].name);
+#endif
 			}
 			/* Re-calculate timeout to off screen */
 			if (priv->auto_screen_off_timeout == 0)
@@ -707,18 +792,29 @@ show_images:
 			 * event turn off the screen and we never show images.
 			 */
 			if (screen_on) {
+#ifdef CONFIG_TARGET_ODROIDGO2
+				lcd_onoff(false);
+#else
 				charge_show_bmp(NULL); /* Turn off screen */
+#endif
 				screen_on = false;
 				priv->suspend_delay_timeout = get_timer(0);
 			} else {
 				screen_on = true;
+#ifdef CONFIG_TARGET_ODROIDGO2
+				lcd_onoff(true);
+#endif
 			}
 
 			printf("screen %s\n", screen_on ? "on" : "off");
 		} else if (key_state == KEY_PRESS_LONG_DOWN) {
 			/* Set screen_on=true anyway when key long pressed */
-			if (!screen_on)
+			if (!screen_on) {
 				screen_on = true;
+#ifdef CONFIG_TARGET_ODROIDGO2
+				lcd_onoff(true);
+#endif
+			}
 
 			printf("screen %s\n", screen_on ? "on" : "off");
 
@@ -812,7 +908,9 @@ static int charge_animation_probe(struct udevice *dev)
 {
 	struct charge_animation_priv *priv = dev_get_priv(dev);
 	int ret, soc;
-
+#ifdef CONFIG_TARGET_ODROIDGO2
+	int battery;
+#endif
 	/* Get PMIC: used for power off system  */
 	ret = uclass_get_device(UCLASS_PMIC, 0, &priv->pmic);
 	if (ret) {
@@ -833,6 +931,7 @@ static int charge_animation_probe(struct udevice *dev)
 		return ret;
 	}
 
+#ifdef CONFIG_DM_RTC
 	/* Get rtc: used for power on */
 	ret = uclass_get_device(UCLASS_RTC, 0, &priv->rtc);
 	if (ret) {
@@ -841,12 +940,22 @@ static int charge_animation_probe(struct udevice *dev)
 		else
 			debug("Get UCLASS RTC failed: %d\n", ret);
 	}
+#endif
 
 	/* Get PWRKEY: used for wakeup and turn off/on LCD */
 	if (key_read(KEY_POWER) == KEY_NOT_EXIST) {
 		debug("Can't find power key\n");
 		return -EINVAL;
 	}
+
+#ifdef CONFIG_TARGET_ODROIDGO2
+	/* Check battery existence */
+	battery = fuel_gauge_get_voltage(priv->fg);
+	if (battery < 1000) {
+		debug("No battery is connected : %d\n", battery);
+		return -EINVAL;
+	}
+#endif
 
 	/* Initialize charge current */
 	soc = fuel_gauge_update_get_soc(priv->fg);

@@ -70,6 +70,7 @@ struct lcd {
 /*----------------------------------------------------------------------------*/
 int lcd_getrot(void);
 int lcd_init(void);
+int lcd_onoff(bool onoff);
 int lcd_setcur(unsigned long x, unsigned long y);
 int lcd_setline(unsigned long line);
 int lcd_putstr(const char *str);

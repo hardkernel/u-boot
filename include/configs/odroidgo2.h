@@ -46,7 +46,12 @@
 		"st_logo_recovery=0x23E8\0" \
 		"st_logo_err=0x2578\0" \
 		"st_logo_nosdcard=0x2708\0" \
-		"sz_total=0x2898\0"
+		"st_battery_0=0x2898\0" \
+		"st_battery_1=0x2A28\0" \
+		"st_battery_2=0x2BB8\0" \
+		"st_battery_3=0x2D48 \0" \
+		"st_battery_fail=0x2ED8\0" \
+		"sz_total=0x3068\0"
 
 #define ROCKCHIP_DEVICE_SETTINGS \
 		"stdout=serial,vidconsole\0" \
