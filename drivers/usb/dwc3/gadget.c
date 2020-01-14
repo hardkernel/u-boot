@@ -725,6 +725,16 @@ static void dwc3_prepare_one_trb(struct dwc3_ep *dep,
 			usb_endpoint_xfer_isoc(dep->endpoint.desc))
 		dep->free_slot++;
 
+	/*
+	 * According to the chapter 8.2.3.3 of DWC3 Databook,
+	 * for OUT endpoints, the total size of a Buffer Descriptor must be a
+	 * multiple of MaxPacketSize. So amend the TRB size to apply this rule.
+	 */
+	if (usb_endpoint_dir_out(dep->endpoint.desc)) {
+		length = dep->endpoint.maxpacket *
+			((length - 1) / dep->endpoint.maxpacket + 1);
+	}
+
 	trb->size = DWC3_TRB_SIZE_LENGTH(length);
 	trb->bpl = lower_32_bits(dma);
 	trb->bph = upper_32_bits(dma);
@@ -1607,7 +1617,10 @@ static int dwc3_gadget_init_hw_endpoints(struct dwc3 *dwc,
 		} else {
 			int		ret;
 
-			usb_ep_set_maxpacket_limit(&dep->endpoint, 512);
+			if (dwc->maximum_speed < USB_SPEED_SUPER)
+				usb_ep_set_maxpacket_limit(&dep->endpoint, 512);
+			else
+				usb_ep_set_maxpacket_limit(&dep->endpoint, 1024);
 			dep->endpoint.max_streams = 15;
 			dep->endpoint.ops = &dwc3_gadget_ep_ops;
 			list_add_tail(&dep->endpoint.ep_list,
