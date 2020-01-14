@@ -842,174 +842,29 @@ static struct resource_file *rockchip_read_hwid_dtb(void)
 }
 #endif
 
-#ifdef CONFIG_ROCKCHIP_EARLY_DISTRO_DTB
-static int rockchip_read_distro_dtb(void *fdt_addr)
-{
-	const char *cmd = "part list ${devtype} ${devnum} -bootable devplist";
-	char *devnum, *devtype, *devplist;
-	char devnum_part[12];
-	char fdt_hex_str[19];
-	char *fs_argv[5];
-	int size;
-	int ret;
-
-	if (!rockchip_get_bootdev() || !fdt_addr)
-		return -ENODEV;
-
-	ret = run_command_list(cmd, -1, 0);
-	if (ret)
-		return ret;
-
-	devplist = env_get("devplist");
-	if (!devplist)
-		return -ENODEV;
-
-	devtype = env_get("devtype");
-	devnum = env_get("devnum");
-	sprintf(devnum_part, "%s:%s", devnum, devplist);
-	sprintf(fdt_hex_str, "0x%lx", (ulong)fdt_addr);
-
-#ifdef CONFIG_CMD_FS_GENERIC
-	fs_argv[0] = "load";
-	fs_argv[1] = devtype,
-	fs_argv[2] = devnum_part;
-	fs_argv[3] = fdt_hex_str;
-	fs_argv[4] = CONFIG_ROCKCHIP_EARLY_DISTRO_DTB_PATH;
-
-	if (do_load(NULL, 0, 5, fs_argv, FS_TYPE_ANY))
-		return -EIO;
-#endif
-	if (fdt_check_header(fdt_addr))
-		return -EIO;
-
-	size = fdt_totalsize(fdt_addr);
-	if (!sysmem_alloc_base(MEM_FDT, (phys_addr_t)fdt_addr,
-			       ALIGN(size, RK_BLK_SIZE) + CONFIG_SYS_FDT_PAD))
-		return -ENOMEM;
-
-	printf("Distro DTB: %s\n", CONFIG_ROCKCHIP_EARLY_DISTRO_DTB_PATH);
-
-	return size;
-}
-#endif
-
-#ifdef CONFIG_ROCKCHIP_DTB_VERIFY
-#ifdef CONFIG_DM_CRYPTO
-static int crypto_csum(u32 cap, char *input, u32 input_len, u8 *output)
-{
-	sha_context csha_ctx;
-	struct udevice *dev;
-
-	dev = crypto_get_device(cap);
-	if (!dev) {
-		printf("Can't find expected crypto device\n");
-		return -ENODEV;
-	}
-
-	csha_ctx.algo = cap;
-	csha_ctx.length = input_len;
-	crypto_sha_csum(dev, &csha_ctx, (char *)input,
-			input_len, output);
-
-	return 0;
-}
-
-static int fdt_check_hash(void *fdt_addr, struct resource_file *file)
-{
-	uchar hash[32];
-
-	if (!file->hash_size)
-		return 0;
-
-	if (file->hash_size == 20)
-		crypto_csum(CRYPTO_SHA1, fdt_addr, file->f_size, hash);
-	else if (file->hash_size == 32)
-		crypto_csum(CRYPTO_SHA256, fdt_addr, file->f_size, hash);
-	else
-		return -EINVAL;
-
-	if (memcmp(hash, file->hash, file->hash_size))
-		return -EBADF;
-
-	printf("HASH: OK(c)\n");
-
-	return 0;
-}
-
-#else
-static int fdt_check_hash(void *fdt_addr, struct resource_file *file)
-{
-	uchar hash[32];
-
-	if (!file->hash_size)
-		return 0;
-
-	if (file->hash_size == 20)
-		sha1_csum((const uchar *)fdt_addr, file->f_size, hash);
-	else if (file->hash_size == 32)
-		sha256_csum((const uchar *)fdt_addr, file->f_size, hash);
-	else
-		return -EINVAL;
-
-	if (memcmp(hash, file->hash, file->hash_size))
-		return -EBADF;
-
-	printf("HASH: OK(s)\n");
-
-	return 0;
-}
-#endif
-#endif	/* CONFIG_ROCKCHIP_DTB_VERIFY */
-
-int rockchip_read_dtb_file(void *fdt_addr)
+int rockchip_read_resource_dtb(void *fdt_addr, char **hash, int *hash_size)
 {
 	struct resource_file *file;
-	char *def_dtb = DTB_FILE;
 	int ret;
 
-	/* search order: "rk-kernel.dtb" -> distro -> hwid */
-	file = get_file_info(NULL, def_dtb);
-	if (!file) {
-#ifdef CONFIG_ROCKCHIP_EARLY_DISTRO_DTB
-		ret = rockchip_read_distro_dtb(fdt_addr);
-		if (ret > 0)
-			return ret; /* found & load done */
-#endif
+	file = get_file_info(NULL, DTB_FILE);
 #ifdef CONFIG_ROCKCHIP_HWID_DTB
+	if (!file)
 		file = rockchip_read_hwid_dtb();
 #endif
-		if (!file)
-			return -ENODEV;
-	}
+	if (!file)
+		return -ENODEV;
 
-	/* found! */
-	printf("DTB: %s\n", file->name);
 	ret = rockchip_read_resource_file(fdt_addr, file->name, 0, 0);
 	if (ret < 0)
 		return ret;
 
-	if (fdt_check_header(fdt_addr)) {
-		printf("Get a bad DTB file !\n");
+	if (fdt_check_header(fdt_addr))
 		return -EBADF;
-	}
 
-	/* Note: We only load the DTB from resource.img to verify */
-#ifdef CONFIG_ROCKCHIP_DTB_VERIFY
-	if (fdt_check_hash(fdt_addr, file)) {
-		printf("Get a bad hash of DTB !\n");
-		return -EBADF;
-	}
-#endif
+	*hash = file->hash;
+	*hash_size = file->hash_size;
+	printf("DTB: %s\n", file->name);
 
-	if (!sysmem_alloc_base(MEM_FDT, (phys_addr_t)fdt_addr,
-			       ALIGN(file->f_size, RK_BLK_SIZE) +
-			       CONFIG_SYS_FDT_PAD))
-		return -ENOMEM;
-
-	/* Apply DTBO */
-#if defined(CONFIG_CMD_DTIMG) && defined(CONFIG_OF_LIBFDT_OVERLAY)
-	android_fdt_overlay_apply((void *)fdt_addr);
-#endif
-
-	return file->f_size;
+	return 0;
 }

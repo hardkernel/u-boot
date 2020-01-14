@@ -6,11 +6,15 @@
 
 #include <common.h>
 #include <adc.h>
+#include <android_bootloader.h>
+#include <android_image.h>
 #include <bidram.h>
 #include <bootm.h>
 #include <boot_rkimg.h>
 #include <cli.h>
+#include <crypto.h>
 #include <dm.h>
+#include <fs.h>
 #include <image.h>
 #include <key.h>
 #include <mmc.h>
@@ -22,6 +26,10 @@
 #include <asm/arch/hotkey.h>
 #include <asm/arch/param.h>
 #include <asm/arch/resource_img.h>
+#include <dm/ofnode.h>
+#include <linux/list.h>
+#include <u-boot/sha1.h>
+#include <u-boot/sha256.h>
 #include <linux/usb/phy-rockchip-inno-usb2.h>
 
 DECLARE_GLOBAL_DATA_PTR;
@@ -318,4 +326,176 @@ out:
 	/* now reboot to recovery */
 	env_set("reboot_mode", "recovery");
 	run_command("run bootcmd", 0);
+}
+
+#ifdef CONFIG_ROCKCHIP_DTB_VERIFY
+#ifdef CONFIG_DM_CRYPTO
+static int crypto_csum(u32 cap, char *input, u32 input_len, u8 *output)
+{
+	sha_context csha_ctx;
+	struct udevice *dev;
+
+	dev = crypto_get_device(cap);
+	if (!dev) {
+		printf("Can't find expected crypto device\n");
+		return -ENODEV;
+	}
+
+	csha_ctx.algo = cap;
+	csha_ctx.length = input_len;
+	crypto_sha_csum(dev, &csha_ctx, (char *)input,
+			input_len, output);
+
+	return 0;
+}
+
+static int fdt_check_hash(void *fdt_addr, u32 fdt_size,
+			  char *hash_cmp, u32 hash_size)
+{
+	uchar hash[32];
+
+	if (!hash_size)
+		return 0;
+
+	if (hash_size == 20)
+		crypto_csum(CRYPTO_SHA1, fdt_addr, fdt_size, hash);
+	else if (hash_size == 32)
+		crypto_csum(CRYPTO_SHA256, fdt_addr, fdt_size, hash);
+	else
+		return -EINVAL;
+
+	printf("HASH(c): ");
+	if (memcmp(hash, hash_cmp, hash_size)) {
+		printf("error\n");
+		return -EBADF;
+	}
+
+	printf("OK\n");
+
+	return 0;
+}
+
+#else
+static int fdt_check_hash(void *fdt_addr, u32 fdt_size,
+			  char *hash_cmp, u32 hash_size)
+{
+	uchar hash[32];
+
+	if (!hash_size)
+		return 0;
+
+	if (hash_size == 20)
+		sha1_csum((const uchar *)fdt_addr, fdt_size, hash);
+	else if (hash_size == 32)
+		sha256_csum((const uchar *)fdt_addr, fdt_size, hash);
+	else
+		return -EINVAL;
+
+	printf("HASH(s): ");
+	if (memcmp(hash, hash_cmp, hash_size)) {
+		printf("error\n");
+		return -EBADF;
+	}
+
+	printf("OK\n");
+
+	return 0;
+}
+#endif
+#endif	/* CONFIG_ROCKCHIP_DTB_VERIFY */
+
+#if defined(CONFIG_ROCKCHIP_EARLY_DISTRO_DTB)
+static int rockchip_read_distro_dtb(void *fdt_addr)
+{
+	const char *cmd = "part list ${devtype} ${devnum} -bootable devplist";
+	char *devnum, *devtype, *devplist;
+	char devnum_part[12];
+	char fdt_hex_str[19];
+	char *fs_argv[5];
+	int size;
+	int ret;
+
+	if (!rockchip_get_bootdev() || !fdt_addr)
+		return -ENODEV;
+
+	if (run_command_list(cmd, -1, 0)) {
+		printf("Failed to find -bootable\n");
+		return -EINVAL;
+	}
+
+	devplist = env_get("devplist");
+	if (!devplist)
+		return -ENODEV;
+
+	devtype = env_get("devtype");
+	devnum = env_get("devnum");
+	sprintf(devnum_part, "%s:%s", devnum, devplist);
+	sprintf(fdt_hex_str, "0x%lx", (ulong)fdt_addr);
+
+	fs_argv[0] = "load";
+	fs_argv[1] = devtype,
+	fs_argv[2] = devnum_part;
+	fs_argv[3] = fdt_hex_str;
+	fs_argv[4] = CONFIG_ROCKCHIP_EARLY_DISTRO_DTB_PATH;
+
+	if (do_load(NULL, 0, 5, fs_argv, FS_TYPE_ANY))
+		return -EIO;
+
+	if (fdt_check_header(fdt_addr))
+		return -EBADF;
+
+	printf("DTB(Distro): %s\n", CONFIG_ROCKCHIP_EARLY_DISTRO_DTB_PATH);
+
+	return 0;
+}
+#endif
+
+int rockchip_read_dtb_file(void *fdt_addr)
+{
+	int hash_size;
+	char *hash;
+	u32 size;
+	int ret = -1;
+
+#ifdef CONFIG_ROCKCHIP_EARLY_DISTRO_DTB
+	if (ret) {
+		hash_size = 0;
+		ret = rockchip_read_distro_dtb(fdt_addr);
+	}
+#endif
+#ifdef CONFIG_ROCKCHIP_RESOURCE_IMAGE
+	if (ret) {
+		hash_size = 0;
+		ret = rockchip_read_resource_dtb(fdt_addr, &hash, &hash_size);
+	}
+#endif
+
+	if (ret) {
+		printf("Failed to load DTB\n");
+		return ret;
+	}
+
+	if (fdt_check_header(fdt_addr)) {
+		printf("Get a bad DTB file !\n");
+		return -EBADF;
+	}
+
+	size = fdt_totalsize(fdt_addr);
+
+#ifdef CONFIG_ROCKCHIP_DTB_VERIFY
+	if (hash_size && fdt_check_hash(fdt_addr, size, hash, hash_size)) {
+		printf("Get a bad hash of DTB !\n");
+		return -EBADF;
+	}
+#endif
+	if (!sysmem_alloc_base(MEM_FDT, (phys_addr_t)fdt_addr,
+			       ALIGN(size, RK_BLK_SIZE) +
+			       CONFIG_SYS_FDT_PAD))
+		return -ENOMEM;
+
+#if defined(CONFIG_ANDROID_BOOT_IMAGE) && defined(CONFIG_OF_LIBFDT_OVERLAY)
+	android_fdt_overlay_apply((void *)fdt_addr);
+#endif
+
+	return 0;
 }

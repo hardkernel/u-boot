@@ -586,7 +586,7 @@ config ROCKCHIP_USB_BOOT
 
 config ROCKCHIP_EARLY_DISTRO_DTB
 	bool "Enable support for distro dtb early"
-	depends on DISTRO_DEFAULTS && USING_KERNEL_DTB
+	depends on DISTRO_DEFAULTS && USING_KERNEL_DTB && CMD_FS_GENERIC
 	default n
 	help
 	  This enables loading dtb from distro bootable partition when there
