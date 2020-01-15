@@ -31,6 +31,7 @@ enum memblk_id {
 	MEMBLK_ID_UNCOMP_KERNEL,
 	MEMBLK_ID_ANDROID,
 	MEMBLK_ID_AVB_ANDROID,
+	MEMBLK_ID_FIT,
 
 	/* Other */
 	MEMBLK_ID_BY_NAME,
@@ -77,6 +78,8 @@ extern const struct memblk_attr *mem_attr;
 #define M_ATTR_KMEM_CAN_OVERLAP	(1 << 6)
 /* Ignore invisable region reserved by bidram */
 #define M_ATTR_IGNORE_INVISIBLE	(1 << 7)
+/* Highest memory right under the sp */
+#define M_ATTR_HIGHEST_MEM	(1 << 8)
 
 
 #endif /* _MEMBLK_H */

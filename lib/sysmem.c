@@ -377,8 +377,7 @@ static void *sysmem_alloc_align_base(enum memblk_id id,
 		 * Fixup base and place right after U-Boot stack, adding a lot
 		 * of space(4KB) maybe safer.
 		 */
-		if ((id == MEMBLK_ID_AVB_ANDROID) &&
-		    (base == SYSMEM_ALLOC_ANYWHERE)) {
+		if (attr.flags & M_ATTR_HIGHEST_MEM) {
 			base = gd->start_addr_sp -
 					CONFIG_SYS_STACK_SIZE - size - 0x1000;
 
@@ -483,6 +482,8 @@ static void *sysmem_alloc_align_base(enum memblk_id id,
 	else
 		alloc_base = base + alloc_size;	/* LMB is align down alloc mechanism */
 
+	SYSMEM_D("DO alloc... base: 0x%08lx\n", (ulong)alloc_base);
+
 	paddr = lmb_alloc_base(&sysmem->lmb, alloc_size, align, alloc_base);
 	if (paddr) {
 		if ((paddr == base) || (base == SYSMEM_ALLOC_ANYWHERE)) {
@@ -491,9 +492,12 @@ static void *sysmem_alloc_align_base(enum memblk_id id,
 				SYSMEM_E("No memory for \"%s\" alloc sysmem\n", name);
 				goto out;
 			}
-
 			/* Record original base for dump */
-			mem->orig_base = orig_base;
+			if (attr.flags & M_ATTR_HIGHEST_MEM)
+				mem->orig_base = base;
+			else
+				mem->orig_base = orig_base;
+
 			mem->base = paddr;
 			mem->size = alloc_size;
 			mem->attr = attr;
@@ -555,7 +559,7 @@ void *sysmem_alloc(enum memblk_id id, phys_size_t size)
 					NULL,
 					SYSMEM_ALLOC_ANYWHERE,
 					size,
-					SYSMEM_ALLOC_NO_ALIGN);
+					ARCH_DMA_MINALIGN);
 	if (!paddr)
 		sysmem_dump();
 
