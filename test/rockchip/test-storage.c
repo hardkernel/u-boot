@@ -492,7 +492,7 @@ static char sub_cmd_help[] =
 "    [.] rktest part                        - test part list\n"
 #endif
 #ifdef CONFIG_USB_HOST
-"    [.] rktest usb                        - test usb disk\n"
+"    [.] rktest usb                         - test usb disk\n"
 #endif
 ;
 

@@ -57,7 +57,7 @@ static int cmd_groups_help(void)
 
 	printf("* Test Case:\n");
 	printf("    -.: normal item\n");
-	printf("    -n: noturen item\n");
+	printf("    -n: noreturn item\n");
 	printf("    -i: interactive item\n\n");
 
 	printf("* ALL:\n");
