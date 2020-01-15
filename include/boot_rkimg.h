@@ -62,5 +62,6 @@ void board_run_recovery_wipe_data(void);
 void setup_download_mode(void);
 int rockchip_get_boot_mode(void);
 int rockchip_read_dtb_file(void *fdt_addr);
+int init_kernel_dtb(void);
 
 #endif
