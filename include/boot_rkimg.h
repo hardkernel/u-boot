@@ -49,6 +49,7 @@ struct rockchip_image {
 #define BCB_MESSAGE_BLK_OFFSET		(16 * 1024 >> 9)
 
 #define PART_MISC			"misc"
+#define PART_RESOURCE			"resource"
 #define PART_KERNEL			"kernel"
 #define PART_BOOT			"boot"
 #define PART_RECOVERY			"recovery"
