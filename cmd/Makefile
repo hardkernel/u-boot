@@ -25,6 +25,7 @@ obj-$(CONFIG_CMD_BEDBUG) += bedbug.o
 obj-$(CONFIG_CMD_BLOCK_CACHE) += blkcache.o
 obj-$(CONFIG_CMD_BMP) += bmp.o
 obj-$(CONFIG_CMD_BOOT_ANDROID) += boot_android.o android.o
+obj-$(CONFIG_CMD_BOOT_FIT) += bootfit.o
 obj-$(CONFIG_CMD_BOOT_ROCKCHIP) += bootrkp.o
 obj-$(CONFIG_CMD_BOOTEFI) += bootefi.o
 obj-$(CONFIG_CMD_BOOTMENU) += bootmenu.o
@@ -170,6 +171,7 @@ obj-$(CONFIG_CMD_DVFS) += dvfs.o
 obj-$(CONFIG_CMD_BLOB) += blob.o
 
 obj-$(CONFIG_ARCH_ROCKCHIP) += rkimgtest.o
+
 endif # !CONFIG_SPL_BUILD
 
 # core command

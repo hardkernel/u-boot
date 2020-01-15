@@ -804,6 +804,15 @@ config CMD_ANDROID_AB_SELECT
 	  is used by the new A/B update model where one slot is updated in the
 	  background while running from the other slot.
 
+config CMD_BOOT_FIT
+	bool "boot_fit"
+	default n
+	depends on ROCKCHIP_FIT_IMAGE
+	help
+	  Performs the FIT boot flow, loading the appropriate FIT image from
+	  boot/recovery partition containing kernel/fdt/ramdisk images.
+	  Additional that, the IH_TYPE_MULTI can be used for resource file.
+
 config CMD_BOOT_ROCKCHIP
 	bool "boot_rockchip"
 	default n
