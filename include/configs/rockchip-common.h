@@ -151,6 +151,8 @@
 #define RKIMG_BOOTCOMMAND \
 	"boot_android ${devtype} ${devnum};" \
 	"bootrkp;" \
+	"boot_fit;" \
+	"boot_uimage;" \
 	"run distro_bootcmd;"
 #endif
 #endif
