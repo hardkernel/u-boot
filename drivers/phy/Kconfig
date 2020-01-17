@@ -65,6 +65,12 @@ config PHY_ROCKCHIP_INNO_USB2
 	help
 	  Support for Rockchip USB 2.0 PHY with Innosilicon IP block.
 
+config PHY_ROCKCHIP_INNO_USB3
+	bool "Support Rockchip INNO USB3PHY"
+	depends on PHY && ARCH_ROCKCHIP
+	help
+	  Support for Rockchip USB 3.0 PHY with Innosilicon IP block.
+
 config PIPE3_PHY
 	bool "Support omap's PIPE3 PHY"
 	depends on PHY && ARCH_OMAP2PLUS
