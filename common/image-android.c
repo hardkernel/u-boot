@@ -198,8 +198,12 @@ ulong android_image_get_end(const struct andr_img_hdr *hdr)
 	end += ALIGN(hdr->ramdisk_size, hdr->page_size);
 	end += ALIGN(hdr->second_size, hdr->page_size);
 
-	if (hdr->header_version >= 1)
+	if (hdr->header_version >= 2) {
 		end += ALIGN(hdr->recovery_dtbo_size, hdr->page_size);
+		end += ALIGN(hdr->dtb_size, hdr->page_size);
+	} else if (hdr->header_version >= 1) {
+		end += ALIGN(hdr->recovery_dtbo_size, hdr->page_size);
+	}
 
 	return end;
 }
