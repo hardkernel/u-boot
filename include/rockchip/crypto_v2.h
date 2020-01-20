@@ -8,9 +8,6 @@
 
 #include <asm/io.h>
 
-#define	cache_op_inner(area, addr, size) \
-		flush_cache((unsigned long)addr, (unsigned long)size)
-
 #define	RK_CRYPTO_KEY_ROOT		   0x00010000
 #define	RK_CRYPTO_KEY_PRIVATE		   0x00020000
 #define	RK_CRYPTO_MODE_MASK		   0x0000ffff
@@ -47,8 +44,8 @@ enum rk_hash_algo {
 #define	RK_MODE_ENCRYPT			0
 #define	RK_MODE_DECRYPT			1
 
-#define	HASH_MAX_SIZE			8192
-#define	CIPHER_MAX_SIZE			8192
+#define	HASH_CACHE_SIZE			8192
+#define	CIPHER_CACHE_SIZE		8192
 
 #define	_SBF(s,	v)			((v) <<	(s))
 #define	_BIT(b)				_SBF(b,	1)
@@ -583,14 +580,17 @@ struct crypto_lli_desc {
 };
 
 struct rk_hash_ctx {
-	const	u8 *null_hash;	/* when hash is null or length is zero */
-	void	*cur_data_lli;	/* to recored the lli that not computed	*/
-	void	*free_data_lli;	/* free lli that can use for next lli */
-	void	*vir_src_addr;	/* virt addr for hash src data*/
-	u32	magic;		/* to check whether the ctx is correct */
-	u32	algo;		/* hash algo */
-	u32	digest_size;	/* hash out length according to hash algo*/
-	u32	dma_started;	/* choose use start or restart */
+	struct crypto_lli_desc data_lli;/* lli desc */
+	const	u8 *null_hash;		/* when length is zero */
+	void	*cache;			/* virt addr for hash src data*/
+	u32	cache_size;		/* data in cached size */
+	u32	left_len;		/* left data to calc */
+	u32	magic;			/* to check ctx */
+	u32	algo;			/* hash algo */
+	u8	digest_size;		/* hash out length */
+	u8	is_started;		/* choose use start or restart */
+	u8	use_cache;		/* is use cache or not*/
+	u8	reserved;
 };
 
 #define	RK_HASH_CTX_MAGIC		0x1A1A1A1A
