@@ -386,6 +386,9 @@ int board_late_init(void)
 	board_cvbs_probe();
 #endif
 
+	setenv("variant", board_is_odroidc4() ? "c4" : "hc4");
+	board_set_dtbfile("meson64_odroid%s.dtb");
+
 	if (get_boot_device() == BOOT_DEVICE_SPI) {
 		setenv("bootdelay", "0");
 		setenv("bootcmd", "run boot_spi");
