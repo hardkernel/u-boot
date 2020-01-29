@@ -70,6 +70,11 @@ static unsigned int get_hw_revision(void)
 		/* ODROID-N2plus */
 		hwrev = BOARD_REVISION(2019, 11, 20);
 	}
+#elif defined(CONFIG_ODROID_C4)
+	if (IS_RANGE(adc, 335, 345))		/* avg : 341 */
+		hwrev = BOARD_REVISION(2019, 11, 29);
+	else if (IS_RANGE(adc, 300, 320))	/* avg : 308 */
+		hwrev = BOARD_REVISION(2019, 12, 10);
 #endif
 
 	debug("ADC=%d, hwrev=0x%x\n", adc, hwrev);
@@ -98,5 +103,15 @@ void board_set_dtbfile(const char *format)
 int board_is_odroidn2plus(void)
 {
 	return (board_revision() >= 0x20191120);
+}
+#elif defined(CONFIG_ODROID_C4)
+int board_is_odroidc4(void)
+{
+	return (board_revision() == 0x20191129);
+}
+
+int board_is_odroidhc4(void)
+{
+	return (board_revision() == 0x20191210);
 }
 #endif
