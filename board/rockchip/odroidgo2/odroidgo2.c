@@ -119,19 +119,6 @@ void board_check_mandatory_files(void)
 		}
 	}
 
-	/* check kernel and dtb in vfat of sd card */
-	if (!file_exists("mmc", "1", "Image", FS_TYPE_FAT)) {
-		odroid_display_status(LOGO_MODE_SYSTEM_ERR,
-				LOGO_STORAGE_ANYWHERE, "No Kernel Image");
-		goto err;
-	}
-
-	if (!file_exists("mmc", "1", "rk3326-odroidgo2-linux.dtb", FS_TYPE_FAT)) {
-		odroid_display_status(LOGO_MODE_SYSTEM_ERR,
-				LOGO_STORAGE_ANYWHERE, "No DTB");
-		goto err;
-	}
-
 	/* check launcher in ext4 fs of sd card */
 	if (file_exists("mmc", "1:2", "/usr/local/bin/emulationstation/emulationstation",
 				FS_TYPE_EXT)) {
