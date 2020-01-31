@@ -10,7 +10,7 @@
 #include <asm-generic/gpio.h>
 #include <dt-bindings/input/linux-event-codes.h>
 
-#define KEY_LONG_DOWN_MS	2000
+#define KEY_LONG_DOWN_MS	1000
 
 enum {
 	INVAL_KEY = 0x0,
