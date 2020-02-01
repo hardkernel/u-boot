@@ -39,6 +39,7 @@
 #include <asm/arch/vendor.h>
 #ifdef CONFIG_TARGET_ODROIDGO2
 #include <odroidgo2_status.h>
+extern int recovery_check_mandatory_files(void);
 #endif
 
 DECLARE_GLOBAL_DATA_PTR;
@@ -316,12 +317,15 @@ int init_kernel_dtb(void)
 	ret = rockchip_read_dtb_file((void *)fdt_addr);
 	if (ret < 0) {
 #ifdef CONFIG_TARGET_ODROIDGO2
-		printf("dtb in resource read fail, try dtb in spi flash\n");
-		run_command("rksfc scan", 0);
-		run_command("rksfc dev 1", 0);
-		ret = run_command("rksfc read ${fdt_addr_r} 0x2000 0xC8", 0);
-		if (ret == CMD_RET_SUCCESS)
-			ret = check_fdt_header(fdt_addr);
+		/* skip spi flash in case of recovery boot */
+		if (recovery_check_mandatory_files()) {
+			printf("dtb in resource read fail, try dtb in spi flash\n");
+			run_command("rksfc scan", 0);
+			run_command("rksfc dev 1", 0);
+			ret = run_command("rksfc read ${fdt_addr_r} 0x2000 0xC8", 0);
+			if (ret == CMD_RET_SUCCESS)
+				ret = check_fdt_header(fdt_addr);
+		}
 
 		if (ret != CMD_RET_SUCCESS) {
 			printf("dtb in spi flash fail, try dtb in fat\n");
