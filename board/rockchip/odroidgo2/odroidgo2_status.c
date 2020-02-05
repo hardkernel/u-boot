@@ -13,6 +13,7 @@
 #include <asm/io.h>
 #include <asm/arch/grf_px30.h>
 #include <asm/arch/hardware.h>
+#include <version.h>
 
 #define POWERDOWN_WAIT_TIME	10000
 #define LOOP_DELAY		25
@@ -177,8 +178,13 @@ int odroid_display_status(int logo_mode, int logo_storage, const char *str)
 		lcd_setfg_color("white");
 		lcd_setbg_color("black");
 		break;
-	case LOGO_MODE_LOW_BATT:
 	case LOGO_MODE_NO_SDCARD:
+		lcd_setfg_color("grey");
+		lcd_setbg_color("white");
+		lcd_printf(0, 19, 1, "U-BOOT (spinor) : %s %s", U_BOOT_DATE, U_BOOT_TIME);
+		lcd_setfg_color("black");
+		break;
+	case LOGO_MODE_LOW_BATT:
 	case LOGO_MODE_RECOVERY:
 	default:
 		lcd_setfg_color("black");
