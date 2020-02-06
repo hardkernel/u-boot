@@ -10,6 +10,9 @@
 #include <asm/gpio.h>
 #include <asm/arch/grf_px30.h>
 #include <asm/arch/hardware.h>
+#ifdef CONFIG_DM_CHARGE_DISPLAY
+#include <power/charge_display.h>
+#endif
 #include <key.h>
 #include <rockchip_display_cmds.h>
 #include <odroidgo2_status.h>
@@ -155,6 +158,10 @@ int rk_board_late_init(void)
 		board_odroid_recovery();
 		/* never get here */
 	}
+
+#ifdef CONFIG_DM_CHARGE_DISPLAY
+	charge_display();
+#endif
 
 	/* show boot logo and version : drivers/video/drm/rockchip_display_cmds.c */
 	lcd_show_logo();

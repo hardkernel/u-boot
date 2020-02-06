@@ -118,6 +118,16 @@ error:
 	return -ENODEV;
 }
 
+int lcd_onoff(bool onoff)
+{
+	if (lcd == NULL)
+		return -ENODEV;;
+
+	set_display_state(lcd->s, onoff);
+
+	return 0;
+}
+
 /*----------------------------------------------------------------------------*/
 /*----------------------------------------------------------------------------*/
 int show_bmp(unsigned long bmp_mem)

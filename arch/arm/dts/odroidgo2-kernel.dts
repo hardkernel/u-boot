@@ -235,6 +235,25 @@
 		clock-output-names = "CLK_CAMERA_25MHZ";
 		#clock-cells = <0>;
 	};
+
+	charge-animation {
+		compatible = "rockchip,uboot-charge";
+		status = "okay";
+
+		rockchip,uboot-charge-on = <1>;
+		rockchip,android-charge-on = <0>;
+		rockchip,uboot-exit-charge-level = <5>;
+		rockchip,uboot-exit-charge-voltage = <3650>;
+		rockchip,screen-on-voltage = <3400>;
+		rockchip,uboot-low-power-voltage = <3350>;
+		/* turn off screen only, no suspend */
+		rockchip,system-suspend = <0>;
+		/* auto screen-off in 10 seconds */
+		rockchip,auto-off-screen-interval = <10>;
+		/* no auto wake-up */
+		rockchip,auto-wakeup-interval = <0>;
+		rockchip,auto-wakeup-screen-invert = <1>;
+	};
 };
 
 
@@ -679,7 +698,7 @@
 		};
 
 		battery {
-			compatible = "rk817,battery";
+			compatible = "rk817_fg";
 			ocv_table = <3500 3625 3685 3697 3718 3735 3748
 			3760 3774 3788 3802 3816 3834 3853
 			3877 3908 3946 3975 4018 4071 4106>;

@@ -171,7 +171,9 @@ int board_late_init(void)
 	setup_boot_mode();
 #endif
 #ifdef CONFIG_DM_CHARGE_DISPLAY
+#ifndef CONFIG_TARGET_ODROIDGO2
 	charge_display();
+#endif
 #endif
 #ifdef CONFIG_DRM_ROCKCHIP
 	rockchip_show_logo();

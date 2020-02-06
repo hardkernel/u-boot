@@ -135,6 +135,7 @@ static int dbg_enable = 0;
 #define BAT_DISCHRG		0x00ec
 #define BAT_CON			BIT(4)
 
+#define PMIC_CHRG_OUT		0x00e4
 #define USB_CTRL_REG		0x00E5
 #define PMIC_SYS_STS		0x00f0
 #define PLUG_IN_STS		BIT(6)
@@ -204,6 +205,17 @@ enum power_supply_type {
 	POWER_SUPPLY_TYPE_USB_DCP,	/* Dedicated Charging Port */
 	POWER_SUPPLY_TYPE_USB_CDP,	/* Charging Downstream Port */
 	POWER_SUPPLY_TYPE_USB_FLOATING,	/* DCP without shorting D+/D- */
+};
+
+enum charge_current {
+	CHRG_CUR_1000MA,
+	CHRG_CUR_1500MA,
+	CHRG_CUR_2000MA,
+	CHRG_CUR_2500MA,
+	CHRG_CUR_2750MA,
+	CHRG_CUR_3000MA,
+	CHRG_CUR_3500MA,
+	CHRG_CUR_500MA,
 };
 
 struct rk817_battery_device {
@@ -952,6 +964,12 @@ static int rk817_bat_dwc_otg_check_dpdm(struct rk817_battery_device *battery)
 			return AC_CHARGER;
 		else
 			return NO_CHARGER;
+	} else if (battery->variant == RK817_ID) {
+		if ((rk817_bat_read(battery, PMIC_SYS_STS) & PLUG_IN_STS) != 0)
+			return DC_CHARGER;
+		else
+			return NO_CHARGER;
+
 	} else {
 		return  rockchip_chg_get_type();
 	}
@@ -1015,6 +1033,17 @@ static void rk817_bat_set_input_current(struct rk817_battery_device *battery,
 	rk817_bat_write(battery, USB_CTRL_REG, usb_ctrl);
 }
 
+static void rk817_bat_set_chrg_out(struct rk817_battery_device *battery,
+					int chrg_cur_sel)
+{
+	u8 chrg_ctrl;
+
+	chrg_ctrl = rk817_bat_read(battery, PMIC_CHRG_OUT);
+	chrg_ctrl &= ~0x7;
+	chrg_ctrl |= chrg_cur_sel;
+	rk817_bat_write(battery, PMIC_CHRG_OUT, chrg_ctrl);
+}
+
 static void rk817_bat_set_input_voltage(struct rk817_battery_device *battery,
 					int input_voltage)
 {
@@ -1043,6 +1072,7 @@ static void rk817_bat_charger_setting(struct rk817_battery_device *battery,
 		} else if (charger == DC_CHARGER || charger == AC_CHARGER) {
 			DBG("DC OR AC CHARGE\n");
 			rk817_bat_set_input_current(battery, ILIM_1500MA);
+			rk817_bat_set_chrg_out(battery, CHRG_CUR_1500MA);
 		} else {
 			DBG("charger setting error %d\n", charger);
 		}
