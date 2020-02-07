@@ -484,8 +484,6 @@ static int sysmem_alloc_uncomp_kernel(ulong andr_hdr,
 		if (!sysmem_alloc_base(MEM_UNCOMP_KERNEL,
 				       (phys_addr_t)kaddr, ksize))
 			return -ENOMEM;
-
-		hotkey_run(HK_SYSMEM);
 	}
 
 	return 0;
@@ -540,9 +538,6 @@ int android_bootloader_boot_kernel(unsigned long kernel_address)
 				       simple_strtoul(kernel_addr_r, NULL, 16),
 				       comp_type))
 		return -1;
-
-	/* Check sysmem overflow */
-	sysmem_overflow_check();
 
 	return do_bootm_states(NULL, 0, ARRAY_SIZE(bootm_args), bootm_args,
 		BOOTM_STATE_START |
