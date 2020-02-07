@@ -813,6 +813,15 @@ config CMD_BOOT_FIT
 	  boot/recovery partition containing kernel/fdt/ramdisk images.
 	  Additional that, the IH_TYPE_MULTI can be used for resource file.
 
+config CMD_BOOT_UIMAGE
+	bool "boot_uimage"
+	default n
+	depends on ROCKCHIP_UIMAGE
+	help
+	  Performs the Legacy uImage boot flow, loading the appropriate uImage
+	  file from resource/kernel/boot(recovery) partitions. Additional that,
+	  the resource partition can be fdt or resource(recommand) uImage file.
+
 config CMD_BOOT_ROCKCHIP
 	bool "boot_rockchip"
 	default n
