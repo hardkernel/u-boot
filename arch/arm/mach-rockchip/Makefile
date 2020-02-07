@@ -30,6 +30,7 @@ obj-y += hotkey.o
 
 obj-$(CONFIG_USING_KERNEL_DTB) += kernel_dtb.o
 obj-$(CONFIG_ROCKCHIP_FIT_IMAGE) += fit.o
+obj-$(CONFIG_ROCKCHIP_UIMAGE) += uimage.o
 obj-$(CONFIG_ROCKCHIP_SMCCC) += rockchip_smccc.o
 obj-$(CONFIG_ROCKCHIP_VENDOR_PARTITION) += vendor.o
 obj-$(CONFIG_ROCKCHIP_RESOURCE_IMAGE) += resource_img.o
