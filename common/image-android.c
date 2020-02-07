@@ -313,7 +313,7 @@ static int image_read(img_t img, struct andr_img_hdr *hdr,
 		ramdst = (void *)env_get_ulong("android_addr_r", 16, 0);
 		datasz = hdr->kernel_size + pgsz;
 		sizesz = sizeof(hdr->kernel_size);
-		if (!sysmem_alloc_base(MEMBLK_ID_KERNEL,
+		if (!sysmem_alloc_base(MEM_KERNEL,
 				(phys_addr_t)ramdst, blkcnt * blksz))
 			return -ENOMEM;
 		break;
@@ -323,7 +323,7 @@ static int image_read(img_t img, struct andr_img_hdr *hdr,
 		ramdst = (void *)env_get_ulong("ramdisk_addr_r", 16, 0);
 		datasz = hdr->ramdisk_size;
 		sizesz = sizeof(hdr->ramdisk_size);
-		if (datasz && !sysmem_alloc_base(MEMBLK_ID_RAMDISK,
+		if (datasz && !sysmem_alloc_base(MEM_RAMDISK,
 				(phys_addr_t)ramdst, blkcnt * blksz))
 			return -ENOMEM;
 		break;

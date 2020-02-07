@@ -321,7 +321,7 @@ static int boot_rockchip_image(struct blk_desc *dev_desc,
 		kaddr = kaddr_r;
 		ksize = kernel_size * 100 / 45 ; /* Ratio: 45% */
 		ksize = ALIGN(ksize, dev_desc->blksz);
-		if (!sysmem_alloc_base(MEMBLK_ID_UNCOMP_KERNEL,
+		if (!sysmem_alloc_base(MEM_UNCOMP_KERNEL,
 				       (phys_addr_t)kaddr, ksize))
 			return -ENOMEM;
 	}

@@ -118,7 +118,7 @@ static AvbSlotVerifyResult load_full_partition(AvbOps* ops,
 
   /* Allocate and copy the partition. */
   if (!*out_image_preloaded) {
-    *out_image_buf = sysmem_alloc(MEMBLK_ID_AVB_ANDROID, image_size);
+    *out_image_buf = sysmem_alloc(MEM_AVB_ANDROID, image_size);
     if (*out_image_buf == NULL) {
       return AVB_SLOT_VERIFY_RESULT_ERROR_OOM;
     }

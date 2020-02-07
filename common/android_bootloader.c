@@ -480,7 +480,7 @@ static int sysmem_alloc_uncomp_kernel(ulong andr_hdr,
 
 		kaddr = uncomp_kaddr;
 		ksize = ALIGN(ksize, 512);
-		if (!sysmem_alloc_base(MEMBLK_ID_UNCOMP_KERNEL,
+		if (!sysmem_alloc_base(MEM_UNCOMP_KERNEL,
 				       (phys_addr_t)kaddr, ksize))
 			return -ENOMEM;
 
@@ -1029,7 +1029,7 @@ int android_fdt_overlay_apply(void *fdt_addr)
 		if (sysmem_free((phys_addr_t)fdt_addr))
 			goto out;
 
-		if (!sysmem_alloc_base(MEMBLK_ID_FDT_DTBO,
+		if (!sysmem_alloc_base(MEM_FDT_DTBO,
 				       (phys_addr_t)fdt_addr,
 					fdt_size + CONFIG_SYS_FDT_PAD))
 			goto out;

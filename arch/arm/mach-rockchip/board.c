@@ -772,19 +772,19 @@ int board_bidram_reserve(struct bidram *bidram)
 
 	/* ATF */
 	mem = param_parse_atf_mem();
-	ret = bidram_reserve(MEMBLK_ID_ATF, mem.base, mem.size);
+	ret = bidram_reserve(MEM_ATF, mem.base, mem.size);
 	if (ret)
 		return ret;
 
 	/* PSTORE/ATAGS/SHM */
 	mem = param_parse_common_resv_mem();
-	ret = bidram_reserve(MEMBLK_ID_SHM, mem.base, mem.size);
+	ret = bidram_reserve(MEM_SHM, mem.base, mem.size);
 	if (ret)
 		return ret;
 
 	/* OP-TEE */
 	mem = param_parse_optee_mem();
-	ret = bidram_reserve(MEMBLK_ID_OPTEE, mem.base, mem.size);
+	ret = bidram_reserve(MEM_OPTEE, mem.base, mem.size);
 	if (ret)
 		return ret;
 

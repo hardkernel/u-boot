@@ -250,7 +250,7 @@ static int bidram_core_reserve(enum memblk_id id, const char *mem_name,
 	if (!bidram_has_init())
 		return -ENOSYS;
 
-	if (id == MEMBLK_ID_BY_NAME) {
+	if (id == MEM_BY_NAME) {
 		if (!mem_name) {
 			BIDRAM_E("NULL name for reserve bidram\n");
 			return -EINVAL;
@@ -258,7 +258,7 @@ static int bidram_core_reserve(enum memblk_id id, const char *mem_name,
 			name = mem_name;
 		}
 	} else {
-		if (id > MEMBLK_ID_UNK && id < MEMBLK_ID_MAX) {
+		if (id > MEM_UNK && id < MEM_MAX) {
 			attr = mem_attr[id];
 			name = attr.name;
 		} else {
@@ -309,7 +309,7 @@ static int bidram_core_reserve(enum memblk_id id, const char *mem_name,
 		if (sysmem_has_init()) {
 			void *paddr;
 
-			if (id == MEMBLK_ID_BY_NAME)
+			if (id == MEM_BY_NAME)
 				paddr = sysmem_alloc_base_by_name(name, base, size);
 			else
 				paddr = sysmem_alloc_base(id, base, size);
@@ -321,7 +321,7 @@ static int bidram_core_reserve(enum memblk_id id, const char *mem_name,
 #endif
 		mem->base = base;
 		mem->size = size;
-		if (id == MEMBLK_ID_BY_NAME) {
+		if (id == MEM_BY_NAME) {
 			mem->attr.name = name;
 			mem->attr.flags = 0;
 		} else {
@@ -355,7 +355,7 @@ int bidram_reserve_by_name(const char *name,
 {
 	int ret;
 
-	ret = bidram_core_reserve(MEMBLK_ID_BY_NAME, name, base, size);
+	ret = bidram_core_reserve(MEM_BY_NAME, name, base, size);
 	if (!ret)
 		bidram_gen_gd_bi_dram();
 	else
