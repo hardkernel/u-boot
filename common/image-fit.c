@@ -714,6 +714,34 @@ static int fit_image_get_address(const void *fit, int noffset, char *name,
 
 	return 0;
 }
+
+static int fit_image_set_address(const void *fit, int noffset, char *name,
+				 ulong addr)
+{
+	int len, cell_len;
+	const fdt32_t *cell;
+
+	cell = fdt_getprop(fit, noffset, name, &len);
+	if (cell == NULL) {
+		fit_get_debug(fit, noffset, name, len);
+		return -1;
+	}
+
+	if (len > sizeof(ulong)) {
+		printf("Unsupported %s address size\n", name);
+		return -1;
+	}
+
+	cell_len = len >> 2;
+	/* Use load64 to avoid compiling warning for 32-bit target */
+	while (cell_len--) {
+		*(fdt32_t *)cell = cpu_to_uimage(addr >> (32 * cell_len));
+		cell++;
+	}
+
+	return 0;
+}
+
 /**
  * fit_image_get_load() - get load addr property for given component image node
  * @fit: pointer to the FIT format image header
@@ -730,6 +758,24 @@ static int fit_image_get_address(const void *fit, int noffset, char *name,
 int fit_image_get_load(const void *fit, int noffset, ulong *load)
 {
 	return fit_image_get_address(fit, noffset, FIT_LOAD_PROP, load);
+}
+
+/**
+ * fit_image_set_load() - set load addr property for given component image node
+ * @fit: pointer to the FIT format image header
+ * @noffset: component image node offset
+ * @load: uint32_t value, will hold load address
+ *
+ * fit_image_set_load() finds and set load address property in a given component
+ * image node. If the property is found, its value is returned to the caller.
+ *
+ * returns:
+ *     0, on success
+ *     -1, on failure
+ */
+int fit_image_set_load(const void *fit, int noffset, ulong load)
+{
+	return fit_image_set_address(fit, noffset, FIT_LOAD_PROP, load);
 }
 
 /**
@@ -752,6 +798,28 @@ int fit_image_get_load(const void *fit, int noffset, ulong *load)
 int fit_image_get_entry(const void *fit, int noffset, ulong *entry)
 {
 	return fit_image_get_address(fit, noffset, FIT_ENTRY_PROP, entry);
+}
+
+/**
+ * fit_image_set_entry() - set entry point address property
+ * @fit: pointer to the FIT format image header
+ * @noffset: component image node offset
+ * @entry: uint32_t value, will hold entry point address
+ *
+ * This sets the entry point address property for a given component image
+ * node.
+ *
+ * fit_image_set_entry() finds and set entry point address property in a given
+ * component image node.  If the property is found, its value is returned
+ * to the caller.
+ *
+ * returns:
+ *     0, on success
+ *     -1, on failure
+ */
+int fit_image_set_entry(const void *fit, int noffset, ulong entry)
+{
+	return fit_image_set_address(fit, noffset, FIT_ENTRY_PROP, entry);
 }
 
 /**
