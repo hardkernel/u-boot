@@ -420,11 +420,6 @@ void board_quiesce_devices(void)
 	/* Destroy atags makes next warm boot safer */
 	atags_destroy();
 #endif
-
-#if defined(CONFIG_CONSOLE_RECORD)
-	/* Print record console data */
-	console_record_print_purge();
-#endif
 }
 
 void enable_caches(void)
@@ -617,3 +612,56 @@ int board_usb_cleanup(int index, enum usb_init_type init)
 	return 0;
 }
 #endif
+
+static void bootm_no_reloc(void)
+{
+	char *ramdisk_high;
+	char *fdt_high;
+
+	if (!env_get_yesno("bootm-no-reloc"))
+		return;
+
+	ramdisk_high = env_get("initrd_high");
+	fdt_high = env_get("fdt_high");
+
+	if (!fdt_high) {
+		env_set_hex("fdt_high", -1UL);
+		printf("Fdt ");
+	}
+
+	if (!ramdisk_high) {
+		env_set_hex("initrd_high", -1UL);
+		printf("Ramdisk ");
+	}
+
+	if (!fdt_high || !ramdisk_high)
+		printf("skip relocation\n");
+}
+
+int bootm_board_start(void)
+{
+	/*
+	 * print console record data
+	 *
+	 * On some rockchip platforms, uart debug and sdmmc pin are multiplex.
+	 * If boot from sdmmc mode, the console data would be record in buffer,
+	 * we switch to uart debug function in order to print it after loading
+	 * images.
+	 */
+#if defined(CONFIG_CONSOLE_RECORD)
+	if (!strcmp("mmc", env_get("devtype")) &&
+	    !strcmp("1", env_get("devnum"))) {
+		printf("IOMUX: sdmmc => uart debug");
+		pinctrl_select_state(gd->cur_serial_dev, "default");
+		console_record_print_purge();
+	}
+#endif
+	/* disable bootm relcation to save boot time */
+	bootm_no_reloc();
+
+	/* sysmem */
+	hotkey_run(HK_SYSMEM);
+	sysmem_overflow_check();
+
+	return 0;
+}
