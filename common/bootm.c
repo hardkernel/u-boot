@@ -48,6 +48,11 @@ __weak int board_do_bootm(int argc, char * const argv[])
 	return 0;
 }
 
+__weak int bootm_board_start(void)
+{
+	return 0;
+}
+
 static const void *boot_get_kernel(cmd_tbl_t *cmdtp, int flag, int argc,
 				   char * const argv[], bootm_headers_t *images,
 				   ulong *os_data, ulong *os_len);
@@ -91,7 +96,7 @@ static int bootm_start(cmd_tbl_t *cmdtp, int flag, int argc,
 	bootstage_mark_name(BOOTSTAGE_ID_BOOTM_START, "bootm_start");
 	images.state = BOOTM_STATE_START;
 
-	return 0;
+	return bootm_board_start();
 }
 
 static int bootm_find_os(cmd_tbl_t *cmdtp, int flag, int argc,
