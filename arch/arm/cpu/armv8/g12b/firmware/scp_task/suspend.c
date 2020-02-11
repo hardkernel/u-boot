@@ -51,10 +51,28 @@ void suspend_get_wakeup_source(void *response, unsigned int suspend_from)
  *suspend_from defines who call this function.
  * 1: suspend
  * 0: power off
-*/
+ */
 void enter_suspend(unsigned int suspend_from)
 {
-	int exit_reason = UDEFINED_WAKEUP;
+	int i, exit_reason = UDEFINED_WAKEUP;
+	unsigned int reg, bit, offset;
+	struct meson_bank bank;
+
+	for(i = 0; i < 2; ++i) {
+		/* clear GPIOA_11/13 pin mux */
+		reg = 0xe;
+		offset = PK(0xe, (11 + 2 * i)) & 0xff;
+		bit = (offset % 8) * 4;
+		aml_update_bits((domain + (reg << 2)), (0xf << bit), 0);
+
+		/* set as input port */
+		bank = mesong12b_banks[0]; /* GPIOA_ */
+		reg = bank.regs[REG_DIR].reg;
+		bit = bank.regs[REG_DIR].bit + offset;
+		aml_update_bits(reg, BIT(bit), BIT(bit));
+	}
+	uart_puts("GPIOA_11/13 off\n");
+
 	#ifdef CONFIG_CEC_WAKEUP
 		hdmi_cec_func_config = readl(P_AO_DEBUG_REG0) & 0xff;
 		uart_puts(CEC_VERSION);
@@ -85,5 +103,4 @@ void enter_suspend(unsigned int suspend_from)
 	uart_put_hex(exit_reason, 8);
 	uart_puts("\n");
 	set_wakeup_method(exit_reason);
-
 }
