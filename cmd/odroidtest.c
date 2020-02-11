@@ -63,15 +63,53 @@ void adc_draw_key_arrays(void)
 	}
 }
 
+#define ADC_CENTER_CHECK_COUNT	10
+int adc_get_center(unsigned int *center_x, unsigned int *center_y)
+{
+	int i = 0;
+	unsigned int val_x, val_y;
+
+	*center_x = 0;
+	*center_y = 0;
+
+	while (i < ADC_CENTER_CHECK_COUNT) {
+		if (adc_channel_single_shot("saradc", 1, &val_x)) {
+			printf("adc_channel_single_shot fail!\n");
+			return CMD_RET_FAILURE;
+		}
+
+		if (adc_channel_single_shot("saradc", 2, &val_y)) {
+			printf("adc_channel_single_shot fail!\n");
+			return CMD_RET_FAILURE;
+		}
+
+		*center_x += val_x;
+		*center_y += val_y;
+
+		mdelay(50);
+		i++;
+	}
+
+	*center_x /= ADC_CENTER_CHECK_COUNT;
+	*center_y /= ADC_CENTER_CHECK_COUNT;
+
+	return CMD_RET_SUCCESS;
+}
+
+#define ADC_CHECK_OFFSET	100
 static int do_odroidtest_adc(cmd_tbl_t * cmdtp, int flag,
 				int argc, char * const argv[])
 {
 	struct udevice *dev;
 	unsigned int val_x, val_y;
+	unsigned int center_x, center_y;
 	int adc_passed = 0;
 	int i;
 
 	if (uclass_get_device(UCLASS_ADC, 0, &dev))
+		return CMD_RET_FAILURE;
+
+	if (adc_get_center(&center_x, &center_y))
 		return CMD_RET_FAILURE;
 
 	adc_draw_key_arrays();
@@ -89,27 +127,32 @@ static int do_odroidtest_adc(cmd_tbl_t * cmdtp, int flag,
 			return CMD_RET_FAILURE;
 		}
 
-		printf("adc x %d, y %d\n", val_x, val_y);
+		printf("center x %d y %d / value x %d, y %d\n",
+			center_x, center_y, val_x, val_y);
 
-		if ((val_x > 740) && (val_y > 450) && (val_y < 600)) {
+		/* LEFT */
+		if (val_x > center_x + ADC_CHECK_OFFSET) {
 			if (!adckeys[0].chk) {
 				adckeys[0].chk = 1;
 				adc_draw_key_arrays();
 				adc_passed++;
 			}
-		} else if ((val_x < 180) && (val_y > 450) && (val_y < 650)) {
+		/* RIGHT */
+		} else if (val_x < center_x - ADC_CHECK_OFFSET) {
 			if (!adckeys[1].chk) {
 				adckeys[1].chk = 1;
 				adc_draw_key_arrays();
 				adc_passed++;
 			}
-		} else if ((val_x > 400) && (val_x < 600) && (val_y < 300)) {
+		/* UP */
+		} else if (val_y < center_y - ADC_CHECK_OFFSET) {
 			if (!adckeys[2].chk) {
 				adckeys[2].chk = 1;
 				adc_draw_key_arrays();
 				adc_passed++;
 			}
-		} else if ((val_x > 400) && (val_x < 600) && (val_y > 780)) {
+		/* DOWN */
+		} else if (val_y > center_y + ADC_CHECK_OFFSET) {
 			if (!adckeys[3].chk) {
 				adckeys[3].chk = 1;
 				adc_draw_key_arrays();
