@@ -65,11 +65,18 @@ enum {
 	UART2_IO_SEL_USB,
 };
 
+#define SECURE_FIRE_WALL 0xff590040
+
 int arch_cpu_init(void)
 {
 	/* Set cif qos priority */
 	writel(QOS_PRIORITY_LEVEL(2, 2), NIU_CIF_ADDR);
 	writel(QOS_PRIORITY_LEVEL(2, 2), NIU_ISP_ADDR);
+
+	/* Set dram to unsecure */
+#ifdef CONFIG_SPL_BUILD
+	writel(0, SECURE_FIRE_WALL);
+#endif
 
 	return 0;
 }
