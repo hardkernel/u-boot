@@ -246,6 +246,10 @@ int boot_relocate_fdt(struct lmb *lmb, char **of_flat_tree, ulong *of_size)
 			lmb_reserve(lmb, (ulong)of_start, of_len);
 			disable_relocation = 1;
 		} else if (desired_addr) {
+
+			if (desired_addr && env_get_yesno("bootm-reloc-at"))
+				desired_addr += of_len;
+
 			of_start =
 			    (void *)(ulong) lmb_alloc_base(lmb, of_len, 0x1000,
 							   (ulong)desired_addr);
