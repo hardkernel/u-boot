@@ -524,11 +524,11 @@ pack_spl_loader_image()
 
 	# Copy to .temp folder
 	cp spl/u-boot-spl.bin ${RKBIN}/.temp/
-	cp tpl/u-boot-tpl.bin ${RKBIN}/.temp/
 	cp ${ini} ${RKBIN}/.temp/${RKCHIP_LOADER}MINIALL.ini -f
 
 	cd ${RKBIN}
 	if [ "$mode" = 'spl' ]; then	# pack tpl+spl
+		cp tpl/u-boot-tpl.bin ${RKBIN}/.temp/
 		# Update ini
 		label="TPL+SPL"
 		header=`sed -n '/NAME=/s/NAME=//p' ${RKBIN}/RKBOOT/${RKCHIP_LOADER}MINIALL.ini`
