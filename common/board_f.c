@@ -601,6 +601,9 @@ static int reloc_fdt(void)
 	if (gd->new_fdt) {
 		memcpy(gd->new_fdt, gd->fdt_blob, gd->fdt_size);
 		gd->fdt_blob = gd->new_fdt;
+#ifdef CONFIG_USING_KERNEL_DTB
+		gd->ufdt_blob = gd->new_fdt;
+#endif
 	}
 #endif
 
