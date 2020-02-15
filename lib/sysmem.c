@@ -548,7 +548,8 @@ out:
 	if (base == 0)
 		base = base + sizeof(ulong);
 
-	return (attr.flags & F_IGNORE_INVISIBLE) ? (void *)base : NULL;
+	return (attr.flags & (F_IGNORE_INVISIBLE | F_NO_FAIL_DUMP)) ?
+			(void *)base : NULL;
 }
 
 void *sysmem_alloc(enum memblk_id id, phys_size_t size)
@@ -793,15 +794,42 @@ __weak int board_sysmem_reserve(struct sysmem *sysmem)
 	return 0;
 }
 
-static int do_dump_sysmem(cmd_tbl_t *cmdtp, int flag,
+static int do_sysmem_dump(cmd_tbl_t *cmdtp, int flag,
 			  int argc, char *const argv[])
 {
 	sysmem_dump();
 	return 0;
 }
 
+static int do_sysmem_search(cmd_tbl_t *cmdtp, int flag,
+			    int argc, char *const argv[])
+{
+	ulong addr, size;
+
+	if (argc != 2)
+		return CMD_RET_USAGE;
+
+	size = simple_strtoul(argv[1], NULL, 16);
+	if (!size)
+		return CMD_RET_USAGE;
+
+	addr = (ulong)sysmem_alloc(MEM_SEARCH, size);
+	if (!addr || sysmem_free(addr))
+		SYSMEM_I("No available region with size 0x%08lx\n", size);
+	else
+		SYSMEM_I("Available region at address: 0x%08lx\n", (ulong)addr);
+
+	return 0;
+}
+
 U_BOOT_CMD(
-	dump_sysmem, 1, 1, do_dump_sysmem,
+	sysmem_dump, 1, 1, do_sysmem_dump,
 	"Dump sysmem layout",
 	""
+);
+
+U_BOOT_CMD(
+	sysmem_search, 2, 1, do_sysmem_search,
+	"Search a available sysmem region",
+	"search_sysmem <size>"
 );
