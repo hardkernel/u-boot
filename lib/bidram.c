@@ -492,7 +492,7 @@ __weak int board_bidram_reserve(struct bidram *bidram)
 	return 0;
 }
 
-static int do_dump_bidram(cmd_tbl_t *cmdtp, int flag,
+static int do_bidram_dump(cmd_tbl_t *cmdtp, int flag,
 			  int argc, char *const argv[])
 {
 	bidram_dump();
@@ -500,7 +500,7 @@ static int do_dump_bidram(cmd_tbl_t *cmdtp, int flag,
 }
 
 U_BOOT_CMD(
-	dump_bidram, 1, 1, do_dump_bidram,
+	bidram_dump, 1, 1, do_bidram_dump,
 	"Dump bidram layout",
 	""
 );
