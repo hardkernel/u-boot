@@ -1080,7 +1080,11 @@ void *image_get_host_blob(void);
 void image_set_host_blob(void *host_blob);
 # define gd_fdt_blob()		image_get_host_blob()
 #else
+#if !defined(CONFIG_SPL_BUILD) && defined(CONFIG_USING_KERNEL_DTB)
+# define gd_fdt_blob()		(gd->ufdt_blob)
+#else
 # define gd_fdt_blob()		(gd->fdt_blob)
+#endif
 #endif
 
 #ifdef CONFIG_FIT_BEST_MATCH
