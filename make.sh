@@ -59,8 +59,7 @@ TOOLCHAIN_OBJDUMP=
 TOOLCHAIN_ADDR2LINE=
 
 # Declare global default output dir and cmd, update in prepare()
-OUTDIR=$2
-OUTOPT=
+OPTION=
 
 # Declare global plaform configure, updated in fixup_platform_configure()
 PLATFORM_RSA=
@@ -75,10 +74,10 @@ help()
 {
 	echo
 	echo "Usage:"
-	echo "	./make.sh [board|subcmd] [O=<dir>|ini]"
+	echo "	./make.sh [board|subcmd|EXT_DTB=<file>]"
 	echo
 	echo "	 - board:   board name of defconfig"
-	echo "	 - subcmd:  |elf*|loader*|spl*|itb||trust*|uboot|map|sym|<addr>|"
+	echo "	 - subcmd:  |elf*|loader*|spl*|itb|trust*|uboot|map|sym|<addr>|EXT_DTB=*"
 	echo "	 - ini:     assigned ini file to pack trust/loader"
 	echo
 	echo "Output:"
@@ -89,6 +88,7 @@ help()
 	echo "1. Build:"
 	echo "	./make.sh evb-rk3399               --- build for evb-rk3399_defconfig"
 	echo "	./make.sh firefly-rk3288           --- build for firefly-rk3288_defconfig"
+	echo "	./make.sh EXT_DTB=rk-kernel.dtb    --- build with exist .config and external dtb"
 	echo "	./make.sh                          --- build with exist .config"
 	echo "	./make.sh env                      --- build envtools"
 	echo
@@ -119,7 +119,7 @@ prepare()
 
 	case $BOARD in
 		# Parse from exit .config
-		''|elf*|loader*|spl*|itb|debug*|trust|uboot|map|sym|env)
+		''|elf*|loader*|spl*|itb|debug*|trust|uboot|map|sym|env|EXT_DTB=*)
 		if [ ! -f .config ]; then
 			echo
 			echo "Build failed, Can't find .config"
@@ -138,7 +138,7 @@ prepare()
 		;;
 
 		#Subcmd
-		''|elf*|loader*|spl*|itb|debug*|trust*|uboot|map|sym|env)
+		''|elf*|loader*|spl*|itb|debug*|trust*|uboot|map|sym|env|EXT_DTB=*)
 		;;
 
 		*)
@@ -156,7 +156,7 @@ prepare()
 			exit 1
 		else
 			echo "make for ${BOARD}_defconfig by -j${JOB}"
-			make ${BOARD}_defconfig ${OUTOPT}
+			make ${BOARD}_defconfig ${OPTION}
 		fi
 		;;
 	esac
@@ -274,6 +274,10 @@ sub_commands()
 		env)
 		make CROSS_COMPILE=${TOOLCHAIN_GCC} envtools	
 		exit 0
+		;;
+
+		EXT_DTB=*)
+		OPTION=${SUBCMD}
 		;;
 
 		*)
@@ -680,7 +684,9 @@ pack_trust_image()
 finish()
 {
 	echo
-	if [ "$BOARD" = '' ]; then
+	if [ ! -z "$OPTION" ]; then
+		echo "Platform ${RKCHIP_LABEL} is build OK, with exist .config ($OPTION)"
+	elif [ "$BOARD" = '' ]; then
 		echo "Platform ${RKCHIP_LABEL} is build OK, with exist .config"
 	else
 		echo "Platform ${RKCHIP_LABEL} is build OK, with new .config(make ${BOARD}_defconfig)"
@@ -692,7 +698,7 @@ select_toolchain
 select_chip_info
 fixup_platform_configure
 sub_commands
-make CROSS_COMPILE=${TOOLCHAIN_GCC}  all --jobs=${JOB} ${OUTOPT}
+make CROSS_COMPILE=${TOOLCHAIN_GCC} ${OPTION} all --jobs=${JOB}
 pack_uboot_image
 pack_loader_image
 pack_trust_image
