@@ -51,8 +51,13 @@ $(obj)/dt-tpl.dtb: $(DTB) $(objtree)/tools/fdtgrep FORCE
 $(obj)/dt-spl.dtb: $(DTB) $(objtree)/tools/fdtgrep FORCE
 	$(call if_changed,fdtgrep)
 
+ifeq ($(CONFIG_USING_KERNEL_DTB),y)
+$(obj)/dt.dtb: $(DTB) $(objtree)/tools/fdtgrep FORCE
+	$(call if_changed,fdtgrep)
+else
 $(obj)/dt.dtb: $(DTB) FORCE
 	$(call if_changed,shipped)
+endif
 
 targets += dt.dtb dt-spl.dtb dt-tpl.dtb
 
