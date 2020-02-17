@@ -833,6 +833,12 @@ config SPL_RAMDISK_ADDR
 	  Define the ramdisk address where load ramdisk image to.
 	  This is used to boot kernel in spl.
 
+config SPL_KERNEL_BOOT
+	bool "Enable boot kernel in SPL"
+	depends on SPL
+	help
+	  Enable boot kernel in SPL.
+
 config TPL
 	bool
 	depends on SUPPORT_TPL
