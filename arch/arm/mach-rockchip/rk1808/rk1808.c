@@ -225,3 +225,14 @@ int rk_board_late_init(void)
 
 	return 0;
 }
+
+void mmc_gpio_init_direct(void)
+{
+	static struct rk1808_grf * const grf = (void *)GRF_BASE;
+
+	/*
+	 * The rk1808's pin drive strength control must set to 2ma.
+	 */
+	rk_clrsetreg(&grf->gpio1a_e, 0xffff, 0x5555);
+	rk_clrsetreg(&grf->gpio1b_e, 0xff, 0x00);
+}
