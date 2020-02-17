@@ -809,6 +809,30 @@ config RKFW_U_BOOT_SECTOR
 	depends on SPL_LOAD_RKFW
 	default 0x4000
 
+config SPL_KERNEL_ADDR
+	hex "Kernel load address in spl"
+	depends on SPL
+	default 0x280000
+	help
+	  Define the kernel address where load kernel image to.
+	  This is used to boot kernel in spl.
+
+config SPL_FDT_ADDR
+	hex "Device tree blob load address in spl"
+	depends on SPL
+	default 0x01f00000
+	help
+	  Define the fdt address where load dtb image to.
+	  This is used to boot kernel in spl.
+
+config SPL_RAMDISK_ADDR
+	hex "Ramdisk load address in spl"
+	depends on SPL
+	default 0x0a200000
+	help
+	  Define the ramdisk address where load ramdisk image to.
+	  This is used to boot kernel in spl.
+
 config TPL
 	bool
 	depends on SUPPORT_TPL
