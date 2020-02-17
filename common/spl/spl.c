@@ -236,6 +236,21 @@ static int spl_common_init(bool setup_malloc)
 		gd->malloc_ptr = 0;
 	}
 #endif
+
+	/*
+	 * setup D-cache as early as possible after malloc setup
+	 * I-cache has been setup at early assembly code by default.
+	 */
+#if !defined(CONFIG_TPL_BUILD)
+	/* tlb memory should be 64KB align for base and 4KB align for end */
+	gd->arch.tlb_size = PGTABLE_SIZE;
+	gd->arch.tlb_addr = (ulong)memalign(SZ_64K, ALIGN(PGTABLE_SIZE, SZ_4K));
+	if (gd->arch.tlb_addr)
+		dcache_enable();
+	else
+		debug("spl: no tlb memory\n");
+#endif
+
 	ret = bootstage_init(true);
 	if (ret) {
 		debug("%s: Failed to set up bootstage: ret=%d\n", __func__,
