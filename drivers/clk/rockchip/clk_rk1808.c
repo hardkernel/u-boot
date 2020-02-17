@@ -1261,7 +1261,17 @@ static int rk1808_clk_probe(struct udevice *dev)
 			printf("%s failed to set armclk rate\n", __func__);
 		priv->armclk_init_hz = APLL_HZ;
 	}
-
+#ifdef CONFIG_SPL_BUILD
+	/*
+	 * The eMMC clk is depended on gpll, and the eMMC is needed to
+	 * run 150MHz in HS200 mode. So set gpll to GPLL_HZ(594000000)
+	 * which can be divided near to 150MHz.
+	 */
+	ret = rockchip_pll_set_rate(&rk1808_pll_clks[GPLL],
+				    priv->cru, GPLL, GPLL_HZ);
+	if (ret < 0)
+		printf("%s failed to set gpll rate\n", __func__);
+#endif
 	priv->cpll_hz = rockchip_pll_get_rate(&rk1808_pll_clks[CPLL],
 					      priv->cru, CPLL);
 	priv->gpll_hz = rockchip_pll_get_rate(&rk1808_pll_clks[GPLL],

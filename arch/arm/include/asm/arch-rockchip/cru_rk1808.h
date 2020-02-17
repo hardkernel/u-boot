@@ -13,6 +13,7 @@
 #define OSC_HZ		(24 * MHz)
 #define APLL_HZ		(1200 * MHz)
 #define PCLK_PMU_HZ	(100 * MHz)
+#define GPLL_HZ		(594 * MHz)
 
 /* PX30 pll id */
 enum rk1808_pll_id {
