@@ -4,8 +4,11 @@
  */
 
 #include <common.h>
+#include <android_image.h>
+#include <errno.h>
 #include <malloc.h>
 #include <spl_rkfw.h>
+#include <linux/kernel.h>
 
 static const __aligned(16) struct s_fip_name_id fip_name_id[] = {
 	{ BL30_IMAGE_NAME, UUID_SCP_FIRMWARE_BL30 },		/* optional */
@@ -243,6 +246,73 @@ static int rkfw_load_uboot(struct spl_load_info *info, u32 image_sector,
 	return 0;
 }
 
+static int rkfw_load_kernel(struct spl_load_info *info, u32 image_sector,
+			    uintptr_t *bl33_entry, u32 try_count)
+{
+	struct andr_img_hdr *hdr;
+	int ret, cnt;
+	int dtb_sector, ramdisk_sector;
+
+	cnt = ALIGN(sizeof(struct andr_img_hdr), 512) >> 9;
+	hdr = malloc(cnt * 512);
+	if (!hdr)
+		return -ENOMEM;
+
+	ret = info->read(info, image_sector, cnt, (void *)hdr);
+	if (ret != cnt) {
+		ret = -EIO;
+		goto out;
+	}
+
+	if (memcmp(hdr->magic, ANDR_BOOT_MAGIC, strlen(ANDR_BOOT_MAGIC)) != 0) {
+		printf("SPL: boot image head magic error\n");
+		ret = -EINVAL;
+		goto out;
+	}
+
+	ramdisk_sector = ALIGN(hdr->kernel_size, hdr->page_size);
+	dtb_sector = ALIGN(hdr->kernel_size, hdr->page_size)
+			+ ALIGN(hdr->ramdisk_size, hdr->page_size)
+			+ ALIGN(hdr->second_size, hdr->page_size);
+	image_sector = image_sector + cnt;
+	cnt = ALIGN(hdr->kernel_size, hdr->page_size) >> 9;
+
+	/* Load kernel image */
+	ret = info->read(info, image_sector, cnt, (void *)CONFIG_SPL_KERNEL_ADDR);
+	if (ret != cnt) {
+		ret = -EIO;
+		goto out;
+	}
+
+	/* Load ramdisk image */
+	if (hdr->ramdisk_size) {
+		ret = info->read(info, (ramdisk_sector >> 9) + image_sector,
+				 ALIGN(hdr->ramdisk_size, hdr->page_size) >> 9,
+				 (void *)CONFIG_SPL_RAMDISK_ADDR);
+		if (ret != (ALIGN(hdr->ramdisk_size, hdr->page_size) >> 9)) {
+			ret = -EIO;
+			goto out;
+		}
+	}
+
+	/* Load dtb image */
+	ret = info->read(info, (dtb_sector >> 9) + image_sector,
+			 ALIGN(hdr->dtb_size, hdr->page_size) >> 9,
+			 (void *)CONFIG_SPL_FDT_ADDR);
+
+	if (ret != (ALIGN(hdr->dtb_size, hdr->page_size) >> 9)) {
+		ret = -EIO;
+		goto out;
+	}
+
+	*bl33_entry = CONFIG_SPL_KERNEL_ADDR;
+	ret = 0;
+out:
+	free(hdr);
+
+	return ret;
+}
+
 int spl_load_rkfw_image(struct spl_image_info *spl_image,
 			struct spl_load_info *info,
 			u32 trust_sector, u32 uboot_sector)
@@ -261,11 +331,19 @@ int spl_load_rkfw_image(struct spl_image_info *spl_image,
 
 	ret = rkfw_load_uboot(info, uboot_sector,
 			      &spl_image->entry_point_bl33, try_count);
-	if (ret) {
+	if (ret)
 		printf("Load uboot image failed! ret=%d\n", ret);
+	else
+		goto boot;
+
+	ret = rkfw_load_kernel(info, uboot_sector,
+			     &spl_image->entry_point_bl33, try_count);
+	if (ret) {
+		printf("Load kernel image failed! ret=%d\n", ret);
 		goto out;
 	}
 
+boot:
 #if CONFIG_IS_ENABLED(LOAD_FIT)
 	spl_image->fdt_addr = 0;
 #endif
