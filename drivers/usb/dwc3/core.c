@@ -334,6 +334,34 @@ static void dwc3_cache_hwparams(struct dwc3 *dwc)
 	parms->hwparams8 = dwc3_readl(dwc->regs, DWC3_GHWPARAMS8);
 }
 
+static void dwc3_hsphy_mode_setup(struct dwc3 *dwc)
+{
+	enum usb_phy_interface hsphy_mode = dwc->hsphy_mode;
+	u32 reg;
+
+	/* Set dwc3 usb2 phy config */
+	reg = dwc3_readl(dwc->regs, DWC3_GUSB2PHYCFG(0));
+
+	switch (hsphy_mode) {
+	case USBPHY_INTERFACE_MODE_UTMI:
+		reg &= ~(DWC3_GUSB2PHYCFG_PHYIF_MASK |
+			DWC3_GUSB2PHYCFG_USBTRDTIM_MASK);
+		reg |= DWC3_GUSB2PHYCFG_PHYIF(UTMI_PHYIF_8_BIT) |
+			DWC3_GUSB2PHYCFG_USBTRDTIM(USBTRDTIM_UTMI_8_BIT);
+		break;
+	case USBPHY_INTERFACE_MODE_UTMIW:
+		reg &= ~(DWC3_GUSB2PHYCFG_PHYIF_MASK |
+			DWC3_GUSB2PHYCFG_USBTRDTIM_MASK);
+		reg |= DWC3_GUSB2PHYCFG_PHYIF(UTMI_PHYIF_16_BIT) |
+			DWC3_GUSB2PHYCFG_USBTRDTIM(USBTRDTIM_UTMI_16_BIT);
+		break;
+	default:
+		break;
+	}
+
+	dwc3_writel(dwc->regs, DWC3_GUSB2PHYCFG(0), reg);
+}
+
 /**
  * dwc3_phy_setup - Configure USB PHY Interface of DWC3 Core
  * @dwc: Pointer to our controller context structure
@@ -378,6 +406,8 @@ static void dwc3_phy_setup(struct dwc3 *dwc)
 		reg &= ~DWC3_GUSB3PIPECTL_SUSPHY;
 
 	dwc3_writel(dwc->regs, DWC3_GUSB3PIPECTL(0), reg);
+
+	dwc3_hsphy_mode_setup(dwc);
 
 	mdelay(100);
 
@@ -629,35 +659,6 @@ static void dwc3_core_exit_mode(struct dwc3 *dwc)
 	dwc3_gadget_run(dwc);
 }
 
-static void dwc3_uboot_hsphy_mode(struct dwc3_device *dwc3_dev,
-				  struct dwc3 *dwc)
-{
-	enum usb_phy_interface hsphy_mode = dwc3_dev->hsphy_mode;
-	u32 reg;
-
-	/* Set dwc3 usb2 phy config */
-	reg = dwc3_readl(dwc->regs, DWC3_GUSB2PHYCFG(0));
-
-	switch (hsphy_mode) {
-	case USBPHY_INTERFACE_MODE_UTMI:
-		reg &= ~(DWC3_GUSB2PHYCFG_PHYIF_MASK |
-			DWC3_GUSB2PHYCFG_USBTRDTIM_MASK);
-		reg |= DWC3_GUSB2PHYCFG_PHYIF(UTMI_PHYIF_8_BIT) |
-			DWC3_GUSB2PHYCFG_USBTRDTIM(USBTRDTIM_UTMI_8_BIT);
-		break;
-	case USBPHY_INTERFACE_MODE_UTMIW:
-		reg &= ~(DWC3_GUSB2PHYCFG_PHYIF_MASK |
-			DWC3_GUSB2PHYCFG_USBTRDTIM_MASK);
-		reg |= DWC3_GUSB2PHYCFG_PHYIF(UTMI_PHYIF_16_BIT) |
-			DWC3_GUSB2PHYCFG_USBTRDTIM(USBTRDTIM_UTMI_16_BIT);
-		break;
-	default:
-		break;
-	}
-
-	dwc3_writel(dwc->regs, DWC3_GUSB2PHYCFG(0), reg);
-}
-
 #define DWC3_ALIGN_MASK		(16 - 1)
 
 /**
@@ -745,6 +746,8 @@ int dwc3_uboot_init(struct dwc3_device *dwc3_dev)
 	dwc->hird_threshold = hird_threshold
 		| (dwc->is_utmi_l1_suspend << 4);
 
+	dwc->hsphy_mode = dwc3_dev->hsphy_mode;
+
 	dwc->index = dwc3_dev->index;
 
 	if (dwc3_dev->usb2_phyif_utmi_width)
@@ -779,8 +782,6 @@ int dwc3_uboot_init(struct dwc3_device *dwc3_dev)
 		dev_err(dev, "failed to initialize core\n");
 		goto err0;
 	}
-
-	dwc3_uboot_hsphy_mode(dwc3_dev, dwc);
 
 	ret = dwc3_event_buffers_setup(dwc);
 	if (ret) {
@@ -968,6 +969,8 @@ void dwc3_of_parse(struct dwc3 *dwc)
 	 * threshold value of 0b1100
 	 */
 	hird_threshold = 12;
+
+	dwc->hsphy_mode = usb_get_phy_mode(dev->node);
 
 	dwc->has_lpm_erratum = dev_read_bool(dev,
 				"snps,has-lpm-erratum");
