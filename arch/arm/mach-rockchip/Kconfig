@@ -546,14 +546,10 @@ config SPL_MMC_SUPPORT
 	default y if !SPL_ROCKCHIP_BACK_TO_BROM
 
 config RKIMG_BOOTLOADER
-	bool "Support for Rockchip Image Bootloader boot flow"
-	default n
+	bool "Support for Rockchip platform features"
+	default y
 	help
-	  Rockchip use this to boot Android during development cycle and for
-	  other OS, typical content kernel.img with zImage/Image, boot.img and
-	  recovery.img with Ramdisk, packed with 'KNRL' header; and resource.img
-	  with dtb and uboot/kernel logo bmp, vendor storage for custom info
-	  like SN and MAC address.
+	  Actually this is a compatible configure for code compilation.
 
 config RKIMG_ANDROID_BOOTMODE_LEGACY
 	bool "Support set androidboot.mode with legacy rule"

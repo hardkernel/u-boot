@@ -127,10 +127,6 @@ ifdef CONFIG_CMD_DTIMG
 obj-y += image-android-dt.o
 endif
 
-ifndef CONFIG_TPL_BUILD
-obj-$(CONFIG_RKIMG_BOOTLOADER) += boot_rkimg.o
-endif
-
 ifndef CONFIG_SPL_BUILD
 # This option is not just y/n - it can have a numeric value
 ifdef CONFIG_FASTBOOT_FLASH

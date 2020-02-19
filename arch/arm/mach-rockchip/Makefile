@@ -21,6 +21,7 @@ ifeq ($(CONFIG_SPL_BUILD)$(CONFIG_TPL_BUILD),)
 # we can have the preprocessor correctly recognise both 0x0 and 0
 # meaning "turn it off".
 obj-y += boot_mode.o
+obj-y += boot_rkimg.o
 obj-y += board.o
 obj-y += chip_info.o
 obj-y += iomem.o
