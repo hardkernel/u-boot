@@ -9,6 +9,7 @@
 #include <malloc.h>
 #include <spl_rkfw.h>
 #include <linux/kernel.h>
+#include <asm/arch/spl_resource_img.h>
 
 static const __aligned(16) struct s_fip_name_id fip_name_id[] = {
 	{ BL30_IMAGE_NAME, UUID_SCP_FIRMWARE_BL30 },		/* optional */
@@ -251,7 +252,7 @@ static int rkfw_load_kernel(struct spl_load_info *info, u32 image_sector,
 {
 	struct andr_img_hdr *hdr;
 	int ret, cnt;
-	int dtb_sector, ramdisk_sector;
+	int dtb_sector, ramdisk_sector, resource_sector;
 
 	cnt = ALIGN(sizeof(struct andr_img_hdr), 512) >> 9;
 	hdr = malloc(cnt * 512);
@@ -271,6 +272,8 @@ static int rkfw_load_kernel(struct spl_load_info *info, u32 image_sector,
 	}
 
 	ramdisk_sector = ALIGN(hdr->kernel_size, hdr->page_size);
+	resource_sector = ALIGN(hdr->kernel_size, hdr->page_size)
+			+ ALIGN(hdr->ramdisk_size, hdr->page_size);
 	dtb_sector = ALIGN(hdr->kernel_size, hdr->page_size)
 			+ ALIGN(hdr->ramdisk_size, hdr->page_size)
 			+ ALIGN(hdr->second_size, hdr->page_size);
@@ -295,14 +298,44 @@ static int rkfw_load_kernel(struct spl_load_info *info, u32 image_sector,
 		}
 	}
 
-	/* Load dtb image */
-	ret = info->read(info, (dtb_sector >> 9) + image_sector,
-			 ALIGN(hdr->dtb_size, hdr->page_size) >> 9,
-			 (void *)CONFIG_SPL_FDT_ADDR);
+	/* Load resource, and checkout the dtb */
+	if (hdr->second_size) {
+		struct resource_img_hdr *head =
+		   (struct resource_img_hdr *)(CONFIG_SPL_FDT_ADDR + 0x100000);
 
-	if (ret != (ALIGN(hdr->dtb_size, hdr->page_size) >> 9)) {
-		ret = -EIO;
-		goto out;
+		ret = info->read(info, (resource_sector >> 9) + image_sector,
+				 ALIGN(hdr->second_size, hdr->page_size) >> 9,
+				 (void *)head);
+		if (ret != (ALIGN(hdr->second_size, hdr->page_size) >> 9)) {
+			ret = -EIO;
+			goto out;
+		}
+
+		if (spl_resource_image_check_header(head)) {
+			printf("Can't find kernel dtb in spl.");
+		} else {
+			struct resource_entry *entry;
+			char *dtb_temp;
+
+			entry = spl_resource_image_get_dtb_entry(head);
+			if (!entry) {
+				ret = -EIO;
+				goto out;
+			}
+
+			dtb_temp = (char *)((char *)head + entry->f_offset * 512);
+			memcpy((char *)CONFIG_SPL_FDT_ADDR, dtb_temp,
+			       entry->f_size);
+		}
+	} else {
+		/* Load dtb image */
+		ret = info->read(info, (dtb_sector >> 9) + image_sector,
+				 ALIGN(hdr->dtb_size, hdr->page_size) >> 9,
+				 (void *)CONFIG_SPL_FDT_ADDR);
+		if (ret != (ALIGN(hdr->dtb_size, hdr->page_size) >> 9)) {
+			ret = -EIO;
+			goto out;
+		}
 	}
 
 	*bl33_entry = CONFIG_SPL_KERNEL_ADDR;
