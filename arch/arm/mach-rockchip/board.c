@@ -418,6 +418,29 @@ static int phandles_fixup_gpio(void *fdt, void *ufdt)
 	return 0;
 }
 
+__weak int board_mmc_dm_reinit(struct udevice *dev)
+{
+	return 0;
+}
+
+static int mmc_dm_reinit(void)
+{
+	struct udevice *dev;
+	struct uclass *uc;
+	int ret;
+
+	if (uclass_get(UCLASS_MMC, &uc) || list_empty(&uc->dev_head))
+		return 0;
+
+	list_for_each_entry(dev, &uc->dev_head, uclass_node) {
+		ret = board_mmc_dm_reinit(dev);
+		if (ret)
+			return ret;
+	}
+
+	return 0;
+}
+
 int init_kernel_dtb(void)
 {
 	ulong fdt_addr;
@@ -464,6 +487,12 @@ int init_kernel_dtb(void)
 
 	of_live_build((void *)gd->fdt_blob, (struct device_node **)&gd->of_root);
 	dm_scan_fdt((void *)gd->fdt_blob, false);
+
+	/*
+	 * There maybe something for the mmc devices to do after kernel dtb
+	 * dm setup, eg: regain the clock device binding from kernel dtb.
+	 */
+	mmc_dm_reinit();
 
 	/* Reserve 'reserved-memory' */
 	ret = boot_fdt_add_sysmem_rsv_regions((void *)gd->fdt_blob);
