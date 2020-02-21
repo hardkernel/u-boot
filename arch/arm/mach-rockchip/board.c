@@ -525,13 +525,6 @@ static void early_download_init(void)
 		printf("Pwrkey download init failed\n");
 #endif
 
-	if (!tstc())
-		return;
-
-	gd->console_evt = getc();
-	if (gd->console_evt <= 0x1a) /* 'z' */
-		printf("Hotkey: ctrl+%c\n", (gd->console_evt + 'a' - 1));
-
 #if (CONFIG_ROCKCHIP_BOOT_MODE_REG > 0)
 	if (is_hotkey(HK_BROM_DNL)) {
 		printf("Enter bootrom download...");
@@ -547,6 +540,12 @@ static void board_debug_init(void)
 {
 	if (!gd->serial.using_pre_serial)
 		board_debug_uart_init();
+
+	if (tstc()) {
+		gd->console_evt = getc();
+		if (gd->console_evt <= 0x1a) /* 'z' */
+			printf("Hotkey: ctrl+%c\n", gd->console_evt + 'a' - 1);
+	}
 }
 
 int board_init(void)
