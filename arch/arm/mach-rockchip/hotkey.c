@@ -21,6 +21,7 @@ DECLARE_GLOBAL_DATA_PTR;
 #define CTRL_P		0x10	/* parameter(cmdline) dump */
 #define CTRL_R		0x12	/* regulator initial state dump */
 #define CTRL_S		0x13	/* shell(cli) on BOOTM_STATE_OS_GO */
+#define CTRL_T		0x14	/* print fdt */
 
 bool is_hotkey(enum hotkey_t id)
 {
@@ -65,6 +66,10 @@ void hotkey_run(enum hotkey_t id)
 	case HK_INITCALL:
 		if (gd->console_evt == CTRL_I)
 			env_update("bootargs", "initcall_debug debug");
+		break;
+	case HK_FDT:
+		if (gd->console_evt == CTRL_T)
+			run_command("fdt print", 0);
 		break;
 #if defined(CONFIG_CONSOLE_DISABLE_CTRLC) && \
     defined(CONFIG_BOOTDELAY) && (CONFIG_BOOTDELAY <= 0)

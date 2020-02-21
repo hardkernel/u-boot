@@ -450,6 +450,8 @@ int init_kernel_dtb(void)
 	ufdt_blob = (void *)gd->fdt_blob;
 	gd->fdt_blob = (void *)fdt_addr;
 
+	hotkey_run(HK_FDT);
+
 	/*
 	 * There is a phandle miss match between U-Boot and kernel dtb node,
 	 * we fixup it in U-Boot live dt nodes.
