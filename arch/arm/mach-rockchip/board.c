@@ -517,7 +517,7 @@ void board_env_fixup(void)
 	}
 }
 
-static void early_download_init(void)
+static void early_download(void)
 {
 #if defined(CONFIG_PWRKEY_DNL_TRIGGER_NUM) && \
 		(CONFIG_PWRKEY_DNL_TRIGGER_NUM > 0)
@@ -559,7 +559,7 @@ int board_init(void)
 #ifdef CONFIG_USING_KERNEL_DTB
 	init_kernel_dtb();
 #endif
-	early_download_init();
+	early_download();
 
 	/*
 	 * pmucru isn't referenced on some platforms, so pmucru driver can't
