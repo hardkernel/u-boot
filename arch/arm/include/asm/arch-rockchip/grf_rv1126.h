@@ -3,12 +3,12 @@
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
-#ifndef _ASM_ARCH_GRF_RV1109_H
-#define _ASM_ARCH_GRF_RV1109_H
+#ifndef _ASM_ARCH_GRF_RV1126_H
+#define _ASM_ARCH_GRF_RV1126_H
 
 #include <common.h>
 
-struct rv1109_grf {
+struct rv1126_grf {
 	unsigned int soc_con0;
 	unsigned int soc_con1;
 	unsigned int soc_con2;
@@ -200,6 +200,6 @@ struct rv1109_grf {
 	unsigned int usb_id_con;
 };
 
-check_member(rv1109_grf, usb_id_con, 0x1031c);
+check_member(rv1126_grf, usb_id_con, 0x1031c);
 
 #endif

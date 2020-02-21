@@ -4,8 +4,8 @@
  * Author: Finley Xiao <finley.xiao@rock-chips.com>
  */
 
-#ifndef _ASM_ARCH_CRU_RV1109_H
-#define _ASM_ARCH_CRU_RV1109_H
+#ifndef _ASM_ARCH_CRU_RV1126_H
+#define _ASM_ARCH_CRU_RV1126_H
 
 #include <common.h>
 
@@ -26,8 +26,8 @@
 #define HCLK_PDCORE_HZ	(100 * MHz)
 #define HCLK_PDAUDIO_HZ	(150 * MHz)
 
-/* RV1109 pll id */
-enum rv1109_pll_id {
+/* RV1126 pll id */
+enum rv1126_pll_id {
 	APLL,
 	DPLL,
 	CPLL,
@@ -36,21 +36,21 @@ enum rv1109_pll_id {
 	PLL_COUNT,
 };
 
-struct rv1109_clk_info {
+struct rv1126_clk_info {
 	unsigned long id;
 	char *name;
 	bool is_cru;
 };
 
 /* Private data for the clock driver - used by rockchip_get_cru() */
-struct rv1109_pmuclk_priv {
-	struct rv1109_pmucru *pmucru;
+struct rv1126_pmuclk_priv {
+	struct rv1126_pmucru *pmucru;
 	ulong gpll_hz;
 };
 
-struct rv1109_clk_priv {
-	struct rv1109_cru *cru;
-	struct rv1109_grf *grf;
+struct rv1126_clk_priv {
+	struct rv1126_cru *cru;
+	struct rv1126_grf *grf;
 	ulong gpll_hz;
 	ulong cpll_hz;
 	ulong armclk_hz;
@@ -60,7 +60,7 @@ struct rv1109_clk_priv {
 	bool set_armclk_rate;
 };
 
-struct rv1109_pll {
+struct rv1126_pll {
 	unsigned int con0;
 	unsigned int con1;
 	unsigned int con2;
@@ -71,10 +71,10 @@ struct rv1109_pll {
 	unsigned int reserved0[1];
 };
 
-struct rv1109_pmucru {
+struct rv1126_pmucru {
 	unsigned int pmu_mode;
 	unsigned int reserved1[3];
-	struct rv1109_pll pll;
+	struct rv1126_pll pll;
 	unsigned int offsetcal_status;
 	unsigned int reserved2[51];
 	unsigned int pmu_clksel_con[14];
@@ -86,10 +86,10 @@ struct rv1109_pmucru {
 	unsigned int pmu_autocs_con[2];
 };
 
-check_member(rv1109_pmucru, pmu_autocs_con[1], 0x244);
+check_member(rv1126_pmucru, pmu_autocs_con[1], 0x244);
 
-struct rv1109_cru {
-	struct rv1109_pll pll[4];
+struct rv1126_cru {
+	struct rv1126_pll pll[4];
 	unsigned int offsetcal_status[4];
 	unsigned int mode;
 	unsigned int reserved1[27];
@@ -116,7 +116,7 @@ struct rv1109_cru {
 	unsigned int autocs_con[26];
 };
 
-check_member(rv1109_cru, autocs_con[25], 0x584);
+check_member(rv1126_cru, autocs_con[25], 0x584);
 
 struct pll_rate_table {
 	unsigned long rate;
@@ -134,10 +134,10 @@ struct cpu_rate_table {
 	unsigned int pclk_div;
 };
 
-#define RV1109_PMU_MODE			0x0
-#define RV1109_PMU_PLL_CON(x)		((x) * 0x4 + 0x10)
-#define RV1109_PLL_CON(x)		((x) * 0x4)
-#define RV1109_MODE_CON			0x90
+#define RV1126_PMU_MODE			0x0
+#define RV1126_PMU_PLL_CON(x)		((x) * 0x4 + 0x10)
+#define RV1126_PLL_CON(x)		((x) * 0x4)
+#define RV1126_MODE_CON			0x90
 
 enum {
 	/* CRU_PMU_CLK_SEL0_CON */

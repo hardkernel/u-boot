@@ -4,12 +4,12 @@
  */
 
 /dts-v1/;
-#include "rv1109.dtsi"
-#include "rv1109-u-boot.dtsi"
+#include "rv1126.dtsi"
+#include "rv1126-u-boot.dtsi"
 
 / {
-	model = "Rockchip RV1109 Evaluation Board";
-	compatible = "rockchip,rv1109-evb", "rockchip,rv1109";
+	model = "Rockchip RV1126 Evaluation Board";
+	compatible = "rockchip,rv1126-evb", "rockchip,rv1126";
 };
 
 &uart2 {

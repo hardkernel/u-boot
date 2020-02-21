@@ -3,7 +3,7 @@
  * Copyright (c) 2019 Fuzhou Rockchip Electronics Co., Ltd.
  */
 
-#include <dt-bindings/clock/rv1109-cru.h>
+#include <dt-bindings/clock/rv1126-cru.h>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/interrupt-controller/irq.h>
 #include <dt-bindings/interrupt-controller/arm-gic.h>
@@ -12,7 +12,7 @@
 	#address-cells = <1>;
 	#size-cells = <1>;
 
-	compatible = "rockchip,rv1109";
+	compatible = "rockchip,rv1126";
 
 	interrupt-parent = <&gic>;
 
@@ -81,7 +81,7 @@
 	};
 
 	grf: syscon@fe000000 {
-		compatible = "rockchip,rv1109-grf", "syscon";
+		compatible = "rockchip,rv1126-grf", "syscon";
 		reg = <0xfe000000 0x1000>;
 	};
 
@@ -116,7 +116,7 @@
 	};
 
 	uart1: serial@ff410000 {
-		compatible = "rockchip,rv1109-uart", "snps,dw-apb-uart";
+		compatible = "rockchip,rv1126-uart", "snps,dw-apb-uart";
 		reg = <0xff410000 0x100>;
 		interrupts = <GIC_SPI 13 IRQ_TYPE_LEVEL_HIGH>;
 		reg-shift = <2>;
@@ -128,7 +128,7 @@
 	};
 
 	pmucru: clock-controller@ff480000 {
-		compatible = "rockchip,rv1109-pmucru";
+		compatible = "rockchip,rv1126-pmucru";
 		reg = <0xff480000 0x1000>;
 		rockchip,grf = <&grf>;
 		#clock-cells = <1>;
@@ -136,7 +136,7 @@
 	};
 
 	cru: clock-controller@ff490000 {
-		compatible = "rockchip,rv1109-cru";
+		compatible = "rockchip,rv1126-cru";
 		reg = <0xff490000 0x1000>;
 		rockchip,grf = <&grf>;
 		#clock-cells = <1>;
@@ -154,7 +154,7 @@
 	};
 
 	uart0: serial@ff560000 {
-		compatible = "rockchip,rv1109-uart", "snps,dw-apb-uart";
+		compatible = "rockchip,rv1126-uart", "snps,dw-apb-uart";
 		reg = <0xff560000 0x100>;
 		interrupts = <GIC_SPI 12 IRQ_TYPE_LEVEL_HIGH>;
 		reg-shift = <2>;
@@ -166,7 +166,7 @@
 	};
 
 	uart2: serial@ff570000 {
-		compatible = "rockchip,rv1109-uart", "snps,dw-apb-uart";
+		compatible = "rockchip,rv1126-uart", "snps,dw-apb-uart";
 		reg = <0xff570000 0x100>;
 		interrupts = <GIC_SPI 14 IRQ_TYPE_LEVEL_HIGH>;
 		reg-shift = <2>;
@@ -178,7 +178,7 @@
 	};
 
 	uart3: serial@ff580000 {
-		compatible = "rockchip,rv1109-uart", "snps,dw-apb-uart";
+		compatible = "rockchip,rv1126-uart", "snps,dw-apb-uart";
 		reg = <0xff580000 0x100>;
 		interrupts = <GIC_SPI 15 IRQ_TYPE_LEVEL_HIGH>;
 		reg-shift = <2>;
@@ -190,7 +190,7 @@
 	};
 
 	uart4: serial@ff590000 {
-		compatible = "rockchip,rv1109-uart", "snps,dw-apb-uart";
+		compatible = "rockchip,rv1126-uart", "snps,dw-apb-uart";
 		reg = <0xff590000 0x100>;
 		interrupts = <GIC_SPI 16 IRQ_TYPE_LEVEL_HIGH>;
 		reg-shift = <2>;
@@ -202,7 +202,7 @@
 	};
 
 	uart5: serial@ff5a0000 {
-		compatible = "rockchip,rv1109-uart", "snps,dw-apb-uart";
+		compatible = "rockchip,rv1126-uart", "snps,dw-apb-uart";
 		reg = <0xff5a0000 0x100>;
 		interrupts = <GIC_SPI 17 IRQ_TYPE_LEVEL_HIGH>;
 		reg-shift = <2>;
