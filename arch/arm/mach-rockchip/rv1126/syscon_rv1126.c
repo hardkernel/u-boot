@@ -9,14 +9,14 @@
 #include <syscon.h>
 #include <asm/arch/clock.h>
 
-static const struct udevice_id rv1109_syscon_ids[] = {
-	{ .compatible = "rockchip,rv1109-grf", .data = ROCKCHIP_SYSCON_GRF },
+static const struct udevice_id rv1126_syscon_ids[] = {
+	{ .compatible = "rockchip,rv1126-grf", .data = ROCKCHIP_SYSCON_GRF },
 	{ }
 };
 
-U_BOOT_DRIVER(syscon_rv1109) = {
-	.name = "rv1109_syscon",
+U_BOOT_DRIVER(syscon_rv1126) = {
+	.name = "rv1126_syscon",
 	.id = UCLASS_SYSCON,
-	.of_match = rv1109_syscon_ids,
+	.of_match = rv1126_syscon_ids,
 };
 

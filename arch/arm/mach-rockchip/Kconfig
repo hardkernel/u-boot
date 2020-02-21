@@ -422,12 +422,12 @@ config TPL_STACK
 
 endif
 
-config ROCKCHIP_RV1109
-	bool "Support Rockchip RV1109"
+config ROCKCHIP_RV1126
+	bool "Support Rockchip RV1126"
 	select CPU_V7
 	select BOARD_LATE_INIT
 	help
-	  The Rockchip RV1109 is a ARM-based SoC with a dual-core Cortex-A7
+	  The Rockchip RV1126 is a ARM-based SoC with a quad-core Cortex-A7
 	  and a risc-v core.
 
 config SPL_ROCKCHIP_BACK_TO_BROM
@@ -471,7 +471,7 @@ config ROCKCHIP_BOOT_MODE_REG
 	default 0xff320300 if ROCKCHIP_RK3399
 	default 0xfe020200 if ROCKCHIP_RK1808
 	default 0x10300580 if ROCKCHIP_RV1108
-	default 0xfe020200 if ROCKCHIP_RV1109
+	default 0xfe020200 if ROCKCHIP_RV1126
 	default 0
 	help
 	  The Soc will enter to different boot mode(defined in asm/arch/boot_mode.h)
@@ -491,7 +491,7 @@ config ROCKCHIP_STIMER_BASE
 	default 0xff830020 if ROCKCHIP_RK3368
 	default 0xff8680a0 if ROCKCHIP_RK3399
 	default 0x10350020 if ROCKCHIP_RV1108
-	default 0xff670020 if ROCKCHIP_RV1109
+	default 0xff670020 if ROCKCHIP_RV1126
 	default 0
 	help
 	  The secure timer inited in SPL/TPL in secure word, ARM generic timer
@@ -510,7 +510,7 @@ config ROCKCHIP_IRAM_START_ADDR
 	default 0xff8c0000 if ROCKCHIP_RK3368
 	default 0xff8c0000 if ROCKCHIP_RK3399
 	default 0x10080000 if ROCKCHIP_RV1108
-	default 0xff700000 if ROCKCHIP_RV1109
+	default 0xff700000 if ROCKCHIP_RV1126
 	default 0
 	help
 	  The IRAM start addr is to locate variant of the boot device from
@@ -701,6 +701,6 @@ source "arch/arm/mach-rockchip/rk3368/Kconfig"
 source "arch/arm/mach-rockchip/rk3399/Kconfig"
 source "arch/arm/mach-rockchip/rk1808/Kconfig"
 source "arch/arm/mach-rockchip/rv1108/Kconfig"
-source "arch/arm/mach-rockchip/rv1109/Kconfig"
+source "arch/arm/mach-rockchip/rv1126/Kconfig"
 
 endif

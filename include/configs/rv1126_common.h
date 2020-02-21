@@ -4,8 +4,8 @@
  * SPDX-License-Identifier:     GPL-2.0+
  */
 
-#ifndef __CONFIG_RV1109_COMMON_H
-#define __CONFIG_RV1109_COMMON_H
+#ifndef __CONFIG_RV1126_COMMON_H
+#define __CONFIG_RV1126_COMMON_H
 
 #include "rockchip-common.h"
 
