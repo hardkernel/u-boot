@@ -11,16 +11,16 @@
 #include <errno.h>
 #include <syscon.h>
 #include <asm/arch/clock.h>
-#include <asm/arch/cru_rv1109.h>
-#include <asm/arch/grf_rv1109.h>
+#include <asm/arch/cru_rv1126.h>
+#include <asm/arch/grf_rv1126.h>
 #include <asm/arch/hardware.h>
 #include <asm/io.h>
 #include <dm/lists.h>
-#include <dt-bindings/clock/rv1109-cru.h>
+#include <dt-bindings/clock/rv1126-cru.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
-#define RV1109_CPUCLK_RATE(_rate, _aclk_div, _pclk_div)		\
+#define RV1126_CPUCLK_RATE(_rate, _aclk_div, _pclk_div)		\
 {								\
 	.rate	= _rate##U,					\
 	.aclk_div = _aclk_div,					\
@@ -29,15 +29,15 @@ DECLARE_GLOBAL_DATA_PTR;
 
 #define DIV_TO_RATE(input_rate, div)    ((input_rate) / ((div) + 1))
 
-static struct rockchip_cpu_rate_table rv1109_cpu_rates[] = {
-	RV1109_CPUCLK_RATE(1200000000, 1, 5),
-	RV1109_CPUCLK_RATE(1008000000, 1, 5),
-	RV1109_CPUCLK_RATE(816000000, 1, 3),
-	RV1109_CPUCLK_RATE(600000000, 1, 3),
-	RV1109_CPUCLK_RATE(408000000, 1, 1),
+static struct rockchip_cpu_rate_table rv1126_cpu_rates[] = {
+	RV1126_CPUCLK_RATE(1200000000, 1, 5),
+	RV1126_CPUCLK_RATE(1008000000, 1, 5),
+	RV1126_CPUCLK_RATE(816000000, 1, 3),
+	RV1126_CPUCLK_RATE(600000000, 1, 3),
+	RV1126_CPUCLK_RATE(408000000, 1, 1),
 };
 
-static struct rockchip_pll_rate_table rv1109_pll_rates[] = {
+static struct rockchip_pll_rate_table rv1126_pll_rates[] = {
 	/* _mhz, _refdiv, _fbdiv, _postdiv1, _postdiv2, _dsmpd, _frac */
 	RK3036_PLL_RATE(1600000000, 3, 200, 1, 1, 1, 0),
 	RK3036_PLL_RATE(1200000000, 1, 50, 1, 1, 1, 0),
@@ -55,41 +55,41 @@ static struct rockchip_pll_rate_table rv1109_pll_rates[] = {
 	{ /* sentinel */ },
 };
 
-static struct rockchip_pll_clock rv1109_pll_clks[] = {
-	[APLL] = PLL(pll_rk3328, PLL_APLL, RV1109_PLL_CON(0),
-		     RV1109_MODE_CON, 0, 10, 0, rv1109_pll_rates),
-	[DPLL] = PLL(pll_rk3328, PLL_DPLL, RV1109_PLL_CON(8),
-		     RV1109_MODE_CON, 2, 10, 0, NULL),
-	[CPLL] = PLL(pll_rk3328, PLL_CPLL, RV1109_PLL_CON(16),
-		     RV1109_MODE_CON, 4, 10, 0, rv1109_pll_rates),
-	[HPLL] = PLL(pll_rk3328, PLL_HPLL, RV1109_PLL_CON(24),
-		     RV1109_MODE_CON, 6, 10, 0, rv1109_pll_rates),
-	[GPLL] = PLL(pll_rk3328, PLL_GPLL, RV1109_PMU_PLL_CON(0),
-		     RV1109_PMU_MODE, 0, 10, 0, rv1109_pll_rates),
+static struct rockchip_pll_clock rv1126_pll_clks[] = {
+	[APLL] = PLL(pll_rk3328, PLL_APLL, RV1126_PLL_CON(0),
+		     RV1126_MODE_CON, 0, 10, 0, rv1126_pll_rates),
+	[DPLL] = PLL(pll_rk3328, PLL_DPLL, RV1126_PLL_CON(8),
+		     RV1126_MODE_CON, 2, 10, 0, NULL),
+	[CPLL] = PLL(pll_rk3328, PLL_CPLL, RV1126_PLL_CON(16),
+		     RV1126_MODE_CON, 4, 10, 0, rv1126_pll_rates),
+	[HPLL] = PLL(pll_rk3328, PLL_HPLL, RV1126_PLL_CON(24),
+		     RV1126_MODE_CON, 6, 10, 0, rv1126_pll_rates),
+	[GPLL] = PLL(pll_rk3328, PLL_GPLL, RV1126_PMU_PLL_CON(0),
+		     RV1126_PMU_MODE, 0, 10, 0, rv1126_pll_rates),
 };
 
 #ifndef CONFIG_SPL_BUILD
-#define RV1109_CLK_DUMP(_id, _name, _iscru)	\
+#define RV1126_CLK_DUMP(_id, _name, _iscru)	\
 {						\
 	.id = _id,				\
 	.name = _name,				\
 	.is_cru = _iscru,			\
 }
 
-static const struct rv1109_clk_info clks_dump[] = {
-	RV1109_CLK_DUMP(PLL_APLL, "apll", true),
-	RV1109_CLK_DUMP(PLL_DPLL, "dpll", true),
-	RV1109_CLK_DUMP(PLL_GPLL, "gpll", false),
-	RV1109_CLK_DUMP(PLL_CPLL, "cpll", true),
-	RV1109_CLK_DUMP(PLL_HPLL, "hpll", true),
-	RV1109_CLK_DUMP(ACLK_PDBUS, "aclk_pdbus", true),
-	RV1109_CLK_DUMP(HCLK_PDBUS, "hclk_pdbus", true),
-	RV1109_CLK_DUMP(PCLK_PDBUS, "pclk_pdbus", true),
-	RV1109_CLK_DUMP(ACLK_PDPHP, "aclk_pdphp", true),
-	RV1109_CLK_DUMP(HCLK_PDPHP, "hclk_pdphp", true),
-	RV1109_CLK_DUMP(HCLK_PDAUDIO, "hclk_pdaudio", true),
-	RV1109_CLK_DUMP(HCLK_PDCORE_NIU, "hclk_pdcore", true),
-	RV1109_CLK_DUMP(PCLK_PDPMU, "pclk_pdpmu", false),
+static const struct rv1126_clk_info clks_dump[] = {
+	RV1126_CLK_DUMP(PLL_APLL, "apll", true),
+	RV1126_CLK_DUMP(PLL_DPLL, "dpll", true),
+	RV1126_CLK_DUMP(PLL_GPLL, "gpll", false),
+	RV1126_CLK_DUMP(PLL_CPLL, "cpll", true),
+	RV1126_CLK_DUMP(PLL_HPLL, "hpll", true),
+	RV1126_CLK_DUMP(ACLK_PDBUS, "aclk_pdbus", true),
+	RV1126_CLK_DUMP(HCLK_PDBUS, "hclk_pdbus", true),
+	RV1126_CLK_DUMP(PCLK_PDBUS, "pclk_pdbus", true),
+	RV1126_CLK_DUMP(ACLK_PDPHP, "aclk_pdphp", true),
+	RV1126_CLK_DUMP(HCLK_PDPHP, "hclk_pdphp", true),
+	RV1126_CLK_DUMP(HCLK_PDAUDIO, "hclk_pdaudio", true),
+	RV1126_CLK_DUMP(HCLK_PDCORE_NIU, "hclk_pdcore", true),
+	RV1126_CLK_DUMP(PCLK_PDPMU, "pclk_pdpmu", false),
 };
 #endif
 
@@ -144,13 +144,13 @@ static void rational_best_approximation(unsigned long given_numerator,
 	*best_denominator = d1;
 }
 
-static ulong rv1109_gpll_get_pmuclk(struct rv1109_pmuclk_priv *priv)
+static ulong rv1126_gpll_get_pmuclk(struct rv1126_pmuclk_priv *priv)
 {
-	return rockchip_pll_get_rate(&rv1109_pll_clks[GPLL],
+	return rockchip_pll_get_rate(&rv1126_pll_clks[GPLL],
 				     priv->pmucru, GPLL);
 }
 
-static ulong rv1109_gpll_set_pmuclk(struct rv1109_pmuclk_priv *priv, ulong rate)
+static ulong rv1126_gpll_set_pmuclk(struct rv1126_pmuclk_priv *priv, ulong rate)
 {
 	int ret;
 
@@ -158,7 +158,7 @@ static ulong rv1109_gpll_set_pmuclk(struct rv1109_pmuclk_priv *priv, ulong rate)
 	 * the child div is big enough for gpll 1188MHz,
 	 * even maskrom has change some clocks.
 	 */
-	ret = rockchip_pll_set_rate(&rv1109_pll_clks[GPLL],
+	ret = rockchip_pll_set_rate(&rv1126_pll_clks[GPLL],
 				    priv->pmucru, GPLL, rate);
 	if (!ret)
 		priv->gpll_hz = rate;
@@ -166,9 +166,9 @@ static ulong rv1109_gpll_set_pmuclk(struct rv1109_pmuclk_priv *priv, ulong rate)
 	return ret;
 }
 
-static ulong rv1109_rtc32k_get_pmuclk(struct rv1109_pmuclk_priv *priv)
+static ulong rv1126_rtc32k_get_pmuclk(struct rv1126_pmuclk_priv *priv)
 {
-	struct rv1109_pmucru *pmucru = priv->pmucru;
+	struct rv1126_pmucru *pmucru = priv->pmucru;
 	unsigned long m, n;
 	u32 fracdiv;
 
@@ -181,10 +181,10 @@ static ulong rv1109_rtc32k_get_pmuclk(struct rv1109_pmuclk_priv *priv)
 	return OSC_HZ * m / n;
 }
 
-static ulong rv1109_rtc32k_set_pmuclk(struct rv1109_pmuclk_priv *priv,
+static ulong rv1126_rtc32k_set_pmuclk(struct rv1126_pmuclk_priv *priv,
 				      ulong rate)
 {
-	struct rv1109_pmucru *pmucru = priv->pmucru;
+	struct rv1126_pmucru *pmucru = priv->pmucru;
 	unsigned long m, n, val;
 
 	rational_best_approximation(rate, OSC_HZ,
@@ -194,13 +194,13 @@ static ulong rv1109_rtc32k_set_pmuclk(struct rv1109_pmuclk_priv *priv,
 	val = m << CLK_RTC32K_FRAC_NUMERATOR_SHIFT | n;
 	writel(val, &pmucru->pmu_clksel_con[13]);
 
-	return rv1109_rtc32k_get_pmuclk(priv);
+	return rv1126_rtc32k_get_pmuclk(priv);
 }
 
-static ulong rv1109_i2c_get_pmuclk(struct rv1109_pmuclk_priv *priv,
+static ulong rv1126_i2c_get_pmuclk(struct rv1126_pmuclk_priv *priv,
 				   ulong clk_id)
 {
-	struct rv1109_pmucru *pmucru = priv->pmucru;
+	struct rv1126_pmucru *pmucru = priv->pmucru;
 	u32 div, con;
 
 	switch (clk_id) {
@@ -219,10 +219,10 @@ static ulong rv1109_i2c_get_pmuclk(struct rv1109_pmuclk_priv *priv,
 	return DIV_TO_RATE(priv->gpll_hz, div);
 }
 
-static ulong rv1109_i2c_set_pmuclk(struct rv1109_pmuclk_priv *priv,
+static ulong rv1126_i2c_set_pmuclk(struct rv1126_pmuclk_priv *priv,
 				   ulong clk_id, ulong rate)
 {
-	struct rv1109_pmucru *pmucru = priv->pmucru;
+	struct rv1126_pmucru *pmucru = priv->pmucru;
 	int src_clk_div;
 
 	src_clk_div = DIV_ROUND_UP(priv->gpll_hz, rate);
@@ -241,13 +241,13 @@ static ulong rv1109_i2c_set_pmuclk(struct rv1109_pmuclk_priv *priv,
 		return -ENOENT;
 	}
 
-	return rv1109_i2c_get_pmuclk(priv, clk_id);
+	return rv1126_i2c_get_pmuclk(priv, clk_id);
 }
 
-static ulong rv1109_pwm_get_pmuclk(struct rv1109_pmuclk_priv *priv,
+static ulong rv1126_pwm_get_pmuclk(struct rv1126_pmuclk_priv *priv,
 				   ulong clk_id)
 {
-	struct rv1109_pmucru *pmucru = priv->pmucru;
+	struct rv1126_pmucru *pmucru = priv->pmucru;
 	u32 div, sel, con;
 
 	switch (clk_id) {
@@ -272,10 +272,10 @@ static ulong rv1109_pwm_get_pmuclk(struct rv1109_pmuclk_priv *priv,
 	return DIV_TO_RATE(priv->gpll_hz, div);
 }
 
-static ulong rv1109_pwm_set_pmuclk(struct rv1109_pmuclk_priv *priv,
+static ulong rv1126_pwm_set_pmuclk(struct rv1126_pmuclk_priv *priv,
 				   ulong clk_id, ulong rate)
 {
-	struct rv1109_pmucru *pmucru = priv->pmucru;
+	struct rv1126_pmucru *pmucru = priv->pmucru;
 	int src_clk_div;
 
 	switch (clk_id) {
@@ -319,12 +319,12 @@ static ulong rv1109_pwm_set_pmuclk(struct rv1109_pmuclk_priv *priv,
 		return -ENOENT;
 	}
 
-	return rv1109_pwm_get_pmuclk(priv, clk_id);
+	return rv1126_pwm_get_pmuclk(priv, clk_id);
 }
 
-static ulong rv1109_spi_get_pmuclk(struct rv1109_pmuclk_priv *priv)
+static ulong rv1126_spi_get_pmuclk(struct rv1126_pmuclk_priv *priv)
 {
-	struct rv1109_pmucru *pmucru = priv->pmucru;
+	struct rv1126_pmucru *pmucru = priv->pmucru;
 	u32 div, con;
 
 	con = readl(&pmucru->pmu_clksel_con[9]);
@@ -333,10 +333,10 @@ static ulong rv1109_spi_get_pmuclk(struct rv1109_pmuclk_priv *priv)
 	return DIV_TO_RATE(priv->gpll_hz, div);
 }
 
-static ulong rv1109_spi_set_pmuclk(struct rv1109_pmuclk_priv *priv,
+static ulong rv1126_spi_set_pmuclk(struct rv1126_pmuclk_priv *priv,
 				   ulong rate)
 {
-	struct rv1109_pmucru *pmucru = priv->pmucru;
+	struct rv1126_pmucru *pmucru = priv->pmucru;
 	int src_clk_div;
 
 	src_clk_div = DIV_ROUND_UP(priv->gpll_hz, rate);
@@ -347,12 +347,12 @@ static ulong rv1109_spi_set_pmuclk(struct rv1109_pmuclk_priv *priv,
 		     CLK_SPI0_SEL_GPLL << CLK_SPI0_SEL_SHIFT |
 		     (src_clk_div - 1) << CLK_SPI0_DIV_SHIFT);
 
-	return rv1109_spi_get_pmuclk(priv);
+	return rv1126_spi_get_pmuclk(priv);
 }
 
-static ulong rv1109_pdpmu_get_pmuclk(struct rv1109_pmuclk_priv *priv)
+static ulong rv1126_pdpmu_get_pmuclk(struct rv1126_pmuclk_priv *priv)
 {
-	struct rv1109_pmucru *pmucru = priv->pmucru;
+	struct rv1126_pmucru *pmucru = priv->pmucru;
 	u32 div, con;
 
 	con = readl(&pmucru->pmu_clksel_con[1]);
@@ -361,10 +361,10 @@ static ulong rv1109_pdpmu_get_pmuclk(struct rv1109_pmuclk_priv *priv)
 	return DIV_TO_RATE(priv->gpll_hz, div);
 }
 
-static ulong rv1109_pdpmu_set_pmuclk(struct rv1109_pmuclk_priv *priv,
+static ulong rv1126_pdpmu_set_pmuclk(struct rv1126_pmuclk_priv *priv,
 				     ulong rate)
 {
-	struct rv1109_pmucru *pmucru = priv->pmucru;
+	struct rv1126_pmucru *pmucru = priv->pmucru;
 	int src_clk_div;
 
 	src_clk_div = DIV_ROUND_UP(priv->gpll_hz, rate);
@@ -374,12 +374,12 @@ static ulong rv1109_pdpmu_set_pmuclk(struct rv1109_pmuclk_priv *priv,
 		     PCLK_PDPMU_DIV_MASK,
 		     (src_clk_div - 1) << PCLK_PDPMU_DIV_SHIFT);
 
-	return rv1109_pdpmu_get_pmuclk(priv);
+	return rv1126_pdpmu_get_pmuclk(priv);
 }
 
-static ulong rv1109_pmuclk_get_rate(struct clk *clk)
+static ulong rv1126_pmuclk_get_rate(struct clk *clk)
 {
-	struct rv1109_pmuclk_priv *priv = dev_get_priv(clk->dev);
+	struct rv1126_pmuclk_priv *priv = dev_get_priv(clk->dev);
 	ulong rate = 0;
 
 	if (!priv->gpll_hz) {
@@ -390,24 +390,24 @@ static ulong rv1109_pmuclk_get_rate(struct clk *clk)
 	debug("%s %ld\n", __func__, clk->id);
 	switch (clk->id) {
 	case PLL_GPLL:
-		rate = rv1109_gpll_get_pmuclk(priv);
+		rate = rv1126_gpll_get_pmuclk(priv);
 		break;
 	case CLK_RTC32K:
-		rate = rv1109_rtc32k_get_pmuclk(priv);
+		rate = rv1126_rtc32k_get_pmuclk(priv);
 		break;
 	case CLK_I2C0:
 	case CLK_I2C2:
-		rate = rv1109_i2c_get_pmuclk(priv, clk->id);
+		rate = rv1126_i2c_get_pmuclk(priv, clk->id);
 		break;
 	case CLK_PWM0:
 	case CLK_PWM1:
-		rate = rv1109_pwm_get_pmuclk(priv, clk->id);
+		rate = rv1126_pwm_get_pmuclk(priv, clk->id);
 		break;
 	case CLK_SPI0:
-		rate = rv1109_spi_get_pmuclk(priv);
+		rate = rv1126_spi_get_pmuclk(priv);
 		break;
 	case PCLK_PDPMU:
-		rate = rv1109_pdpmu_get_pmuclk(priv);
+		rate = rv1126_pdpmu_get_pmuclk(priv);
 		break;
 	default:
 		return -ENOENT;
@@ -416,9 +416,9 @@ static ulong rv1109_pmuclk_get_rate(struct clk *clk)
 	return rate;
 }
 
-static ulong rv1109_pmuclk_set_rate(struct clk *clk, ulong rate)
+static ulong rv1126_pmuclk_set_rate(struct clk *clk, ulong rate)
 {
-	struct rv1109_pmuclk_priv *priv = dev_get_priv(clk->dev);
+	struct rv1126_pmuclk_priv *priv = dev_get_priv(clk->dev);
 	ulong ret = 0;
 
 	if (!priv->gpll_hz) {
@@ -429,24 +429,24 @@ static ulong rv1109_pmuclk_set_rate(struct clk *clk, ulong rate)
 	debug("%s %ld %ld\n", __func__, clk->id, rate);
 	switch (clk->id) {
 	case PLL_GPLL:
-		ret = rv1109_gpll_set_pmuclk(priv, rate);
+		ret = rv1126_gpll_set_pmuclk(priv, rate);
 		break;
 	case CLK_RTC32K:
-		ret = rv1109_rtc32k_set_pmuclk(priv, rate);
+		ret = rv1126_rtc32k_set_pmuclk(priv, rate);
 		break;
 	case CLK_I2C0:
 	case CLK_I2C2:
-		ret = rv1109_i2c_set_pmuclk(priv, clk->id, rate);
+		ret = rv1126_i2c_set_pmuclk(priv, clk->id, rate);
 		break;
 	case CLK_PWM0:
 	case CLK_PWM1:
-		ret = rv1109_pwm_set_pmuclk(priv, clk->id, rate);
+		ret = rv1126_pwm_set_pmuclk(priv, clk->id, rate);
 		break;
 	case CLK_SPI0:
-		ret = rv1109_spi_set_pmuclk(priv, rate);
+		ret = rv1126_spi_set_pmuclk(priv, rate);
 		break;
 	case PCLK_PDPMU:
-		ret = rv1109_pdpmu_set_pmuclk(priv, rate);
+		ret = rv1126_pdpmu_set_pmuclk(priv, rate);
 		break;
 	default:
 		return -ENOENT;
@@ -455,10 +455,10 @@ static ulong rv1109_pmuclk_set_rate(struct clk *clk, ulong rate)
 	return ret;
 }
 
-static int rv1109_rtc32k_set_parent(struct clk *clk, struct clk *parent)
+static int rv1126_rtc32k_set_parent(struct clk *clk, struct clk *parent)
 {
-	struct rv1109_pmuclk_priv *priv = dev_get_priv(clk->dev);
-	struct rv1109_pmucru *pmucru = priv->pmucru;
+	struct rv1126_pmuclk_priv *priv = dev_get_priv(clk->dev);
+	struct rv1126_pmucru *pmucru = priv->pmucru;
 
 	if (parent->id == CLK_OSC0_DIV32K)
 		rk_clrsetreg(&pmucru->pmu_clksel_con[0], RTC32K_SEL_MASK,
@@ -470,40 +470,40 @@ static int rv1109_rtc32k_set_parent(struct clk *clk, struct clk *parent)
 	return 0;
 }
 
-static int rv1109_pmuclk_set_parent(struct clk *clk, struct clk *parent)
+static int rv1126_pmuclk_set_parent(struct clk *clk, struct clk *parent)
 {
 	switch (clk->id) {
 	case CLK_RTC32K:
-		return rv1109_rtc32k_set_parent(clk, parent);
+		return rv1126_rtc32k_set_parent(clk, parent);
 	default:
 		return -ENOENT;
 	}
 }
-static struct clk_ops rv1109_pmuclk_ops = {
-	.get_rate = rv1109_pmuclk_get_rate,
-	.set_rate = rv1109_pmuclk_set_rate,
-	.set_parent = rv1109_pmuclk_set_parent,
+static struct clk_ops rv1126_pmuclk_ops = {
+	.get_rate = rv1126_pmuclk_get_rate,
+	.set_rate = rv1126_pmuclk_set_rate,
+	.set_parent = rv1126_pmuclk_set_parent,
 };
 
-static int rv1109_pmuclk_probe(struct udevice *dev)
+static int rv1126_pmuclk_probe(struct udevice *dev)
 {
-	struct rv1109_pmuclk_priv *priv = dev_get_priv(dev);
+	struct rv1126_pmuclk_priv *priv = dev_get_priv(dev);
 
-	priv->gpll_hz =	rv1109_gpll_get_pmuclk(priv);
+	priv->gpll_hz =	rv1126_gpll_get_pmuclk(priv);
 
 	return 0;
 }
 
-static int rv1109_pmuclk_ofdata_to_platdata(struct udevice *dev)
+static int rv1126_pmuclk_ofdata_to_platdata(struct udevice *dev)
 {
-	struct rv1109_pmuclk_priv *priv = dev_get_priv(dev);
+	struct rv1126_pmuclk_priv *priv = dev_get_priv(dev);
 
 	priv->pmucru = dev_read_addr_ptr(dev);
 
 	return 0;
 }
 
-static int rv1109_pmuclk_bind(struct udevice *dev)
+static int rv1126_pmuclk_bind(struct udevice *dev)
 {
 	int ret = 0;
 	struct udevice *sf_child;
@@ -516,7 +516,7 @@ static int rv1109_pmuclk_bind(struct udevice *dev)
 		debug("Warning: No rockchip reset driver: ret=%d\n", ret);
 	} else {
 		sf_priv = malloc(sizeof(struct softreset_reg));
-		sf_priv->sf_reset_offset = offsetof(struct rv1109_pmucru,
+		sf_priv->sf_reset_offset = offsetof(struct rv1126_pmucru,
 						    pmu_softrst_con[0]);
 		sf_priv->sf_reset_num = 2;
 		sf_child->priv = sf_priv;
@@ -525,30 +525,30 @@ static int rv1109_pmuclk_bind(struct udevice *dev)
 	return 0;
 }
 
-static const struct udevice_id rv1109_pmuclk_ids[] = {
-	{ .compatible = "rockchip,rv1109-pmucru" },
+static const struct udevice_id rv1126_pmuclk_ids[] = {
+	{ .compatible = "rockchip,rv1126-pmucru" },
 	{ }
 };
 
-U_BOOT_DRIVER(rockchip_rv1109_pmucru) = {
-	.name		= "rockchip_rv1109_pmucru",
+U_BOOT_DRIVER(rockchip_rv1126_pmucru) = {
+	.name		= "rockchip_rv1126_pmucru",
 	.id		= UCLASS_CLK,
-	.of_match	= rv1109_pmuclk_ids,
-	.priv_auto_alloc_size = sizeof(struct rv1109_pmuclk_priv),
-	.ofdata_to_platdata = rv1109_pmuclk_ofdata_to_platdata,
-	.ops		= &rv1109_pmuclk_ops,
-	.bind		= rv1109_pmuclk_bind,
-	.probe		= rv1109_pmuclk_probe,
+	.of_match	= rv1126_pmuclk_ids,
+	.priv_auto_alloc_size = sizeof(struct rv1126_pmuclk_priv),
+	.ofdata_to_platdata = rv1126_pmuclk_ofdata_to_platdata,
+	.ops		= &rv1126_pmuclk_ops,
+	.bind		= rv1126_pmuclk_bind,
+	.probe		= rv1126_pmuclk_probe,
 };
 
 
-static int rv1109_armclk_set_clk(struct rv1109_clk_priv *priv, ulong hz)
+static int rv1126_armclk_set_clk(struct rv1126_clk_priv *priv, ulong hz)
 {
-	struct rv1109_cru *cru = priv->cru;
+	struct rv1126_cru *cru = priv->cru;
 	const struct rockchip_cpu_rate_table *rate;
 	ulong old_rate;
 
-	rate = rockchip_get_cpu_settings(rv1109_cpu_rates, hz);
+	rate = rockchip_get_cpu_settings(rv1126_cpu_rates, hz);
 	if (!rate) {
 		printf("%s unsupported rate\n", __func__);
 		return -EINVAL;
@@ -557,10 +557,10 @@ static int rv1109_armclk_set_clk(struct rv1109_clk_priv *priv, ulong hz)
 	/*
 	 * set up dependent divisors for DBG and ACLK clocks.
 	 */
-	old_rate = rockchip_pll_get_rate(&rv1109_pll_clks[APLL],
+	old_rate = rockchip_pll_get_rate(&rv1126_pll_clks[APLL],
 					 priv->cru, APLL);
 	if (old_rate > hz) {
-		if (rockchip_pll_set_rate(&rv1109_pll_clks[APLL],
+		if (rockchip_pll_set_rate(&rv1126_pll_clks[APLL],
 					  priv->cru, APLL, hz))
 			return -EINVAL;
 		rk_clrsetreg(&cru->clksel_con[1],
@@ -572,7 +572,7 @@ static int rv1109_armclk_set_clk(struct rv1109_clk_priv *priv, ulong hz)
 			     CORE_DBG_DIV_MASK | CORE_ACLK_DIV_MASK,
 			     rate->pclk_div << CORE_DBG_DIV_SHIFT |
 			     rate->aclk_div << CORE_ACLK_DIV_SHIFT);
-		if (rockchip_pll_set_rate(&rv1109_pll_clks[APLL],
+		if (rockchip_pll_set_rate(&rv1126_pll_clks[APLL],
 					  priv->cru, APLL, hz))
 			return -EINVAL;
 	}
@@ -580,9 +580,9 @@ static int rv1109_armclk_set_clk(struct rv1109_clk_priv *priv, ulong hz)
 	return 0;
 }
 
-static ulong rv1109_pdcore_get_clk(struct rv1109_clk_priv *priv)
+static ulong rv1126_pdcore_get_clk(struct rv1126_clk_priv *priv)
 {
-	struct rv1109_cru *cru = priv->cru;
+	struct rv1126_cru *cru = priv->cru;
 	u32 con, div;
 
 	con = readl(&cru->clksel_con[0]);
@@ -591,9 +591,9 @@ static ulong rv1109_pdcore_get_clk(struct rv1109_clk_priv *priv)
 	return DIV_TO_RATE(priv->gpll_hz, div);
 }
 
-static ulong rv1109_pdcore_set_clk(struct rv1109_clk_priv *priv, ulong rate)
+static ulong rv1126_pdcore_set_clk(struct rv1126_clk_priv *priv, ulong rate)
 {
-	struct rv1109_cru *cru = priv->cru;
+	struct rv1126_cru *cru = priv->cru;
 	int src_clk_div;
 
 	src_clk_div = DIV_ROUND_UP(priv->cpll_hz, rate);
@@ -602,12 +602,12 @@ static ulong rv1109_pdcore_set_clk(struct rv1109_clk_priv *priv, ulong rate)
 	rk_clrsetreg(&cru->clksel_con[0], CORE_HCLK_DIV_MASK,
 		     (src_clk_div - 1) << CORE_HCLK_DIV_SHIFT);
 
-	return rv1109_pdcore_get_clk(priv);
+	return rv1126_pdcore_get_clk(priv);
 }
 
-static ulong rv1109_pdbus_get_clk(struct rv1109_clk_priv *priv, ulong clk_id)
+static ulong rv1126_pdbus_get_clk(struct rv1126_clk_priv *priv, ulong clk_id)
 {
-	struct rv1109_cru *cru = priv->cru;
+	struct rv1126_cru *cru = priv->cru;
 	u32 con, div, sel, parent;
 
 	switch (clk_id) {
@@ -639,10 +639,10 @@ static ulong rv1109_pdbus_get_clk(struct rv1109_clk_priv *priv, ulong clk_id)
 	return DIV_TO_RATE(parent, div);
 }
 
-static ulong rv1109_pdbus_set_clk(struct rv1109_clk_priv *priv, ulong clk_id,
+static ulong rv1126_pdbus_set_clk(struct rv1126_clk_priv *priv, ulong clk_id,
 				  ulong rate)
 {
-	struct rv1109_cru *cru = priv->cru;
+	struct rv1126_cru *cru = priv->cru;
 	int src_clk_div;
 
 	switch (clk_id) {
@@ -676,12 +676,12 @@ static ulong rv1109_pdbus_set_clk(struct rv1109_clk_priv *priv, ulong clk_id,
 		return -EINVAL;
 	}
 
-	return rv1109_pdbus_get_clk(priv, clk_id);
+	return rv1126_pdbus_get_clk(priv, clk_id);
 }
 
-static ulong rv1109_pdphp_get_clk(struct rv1109_clk_priv *priv, ulong clk_id)
+static ulong rv1126_pdphp_get_clk(struct rv1126_clk_priv *priv, ulong clk_id)
 {
-	struct rv1109_cru *cru = priv->cru;
+	struct rv1126_cru *cru = priv->cru;
 	u32 con, div, parent;
 
 	switch (clk_id) {
@@ -702,10 +702,10 @@ static ulong rv1109_pdphp_get_clk(struct rv1109_clk_priv *priv, ulong clk_id)
 	return DIV_TO_RATE(parent, div);
 }
 
-static ulong rv1109_pdphp_set_clk(struct rv1109_clk_priv *priv, ulong clk_id,
+static ulong rv1126_pdphp_set_clk(struct rv1126_clk_priv *priv, ulong clk_id,
 				  ulong rate)
 {
-	struct rv1109_cru *cru = priv->cru;
+	struct rv1126_cru *cru = priv->cru;
 	int src_clk_div;
 
 	src_clk_div = DIV_ROUND_UP(priv->cpll_hz, rate);
@@ -728,12 +728,12 @@ static ulong rv1109_pdphp_set_clk(struct rv1109_clk_priv *priv, ulong clk_id,
 		return -EINVAL;
 	}
 
-	return rv1109_pdphp_get_clk(priv, clk_id);
+	return rv1126_pdphp_get_clk(priv, clk_id);
 }
 
-static ulong rv1109_pdaudio_get_clk(struct rv1109_clk_priv *priv)
+static ulong rv1126_pdaudio_get_clk(struct rv1126_clk_priv *priv)
 {
-	struct rv1109_cru *cru = priv->cru;
+	struct rv1126_cru *cru = priv->cru;
 	u32 con, div;
 
 	con = readl(&cru->clksel_con[26]);
@@ -742,9 +742,9 @@ static ulong rv1109_pdaudio_get_clk(struct rv1109_clk_priv *priv)
 	return DIV_TO_RATE(priv->gpll_hz, div);
 }
 
-static ulong rv1109_pdaudio_set_clk(struct rv1109_clk_priv *priv, ulong rate)
+static ulong rv1126_pdaudio_set_clk(struct rv1126_clk_priv *priv, ulong rate)
 {
-	struct rv1109_cru *cru = priv->cru;
+	struct rv1126_cru *cru = priv->cru;
 	int src_clk_div;
 
 	src_clk_div = DIV_ROUND_UP(priv->cpll_hz, rate);
@@ -753,12 +753,12 @@ static ulong rv1109_pdaudio_set_clk(struct rv1109_clk_priv *priv, ulong rate)
 	rk_clrsetreg(&cru->clksel_con[26], HCLK_PDAUDIO_DIV_MASK,
 		     (src_clk_div - 1) << HCLK_PDAUDIO_DIV_SHIFT);
 
-	return rv1109_pdaudio_get_clk(priv);
+	return rv1126_pdaudio_get_clk(priv);
 }
 
-static ulong rv1109_i2c_get_clk(struct rv1109_clk_priv *priv, ulong clk_id)
+static ulong rv1126_i2c_get_clk(struct rv1126_clk_priv *priv, ulong clk_id)
 {
-	struct rv1109_cru *cru = priv->cru;
+	struct rv1126_cru *cru = priv->cru;
 	u32 div, con;
 
 	switch (clk_id) {
@@ -785,10 +785,10 @@ static ulong rv1109_i2c_get_clk(struct rv1109_clk_priv *priv, ulong clk_id)
 	return DIV_TO_RATE(priv->gpll_hz, div);
 }
 
-static ulong rv1109_i2c_set_clk(struct rv1109_clk_priv *priv, ulong clk_id,
+static ulong rv1126_i2c_set_clk(struct rv1126_clk_priv *priv, ulong clk_id,
 				ulong rate)
 {
-	struct rv1109_cru *cru = priv->cru;
+	struct rv1126_cru *cru = priv->cru;
 	int src_clk_div;
 
 	src_clk_div = DIV_ROUND_UP(priv->gpll_hz, rate);
@@ -815,12 +815,12 @@ static ulong rv1109_i2c_set_clk(struct rv1109_clk_priv *priv, ulong clk_id,
 		return -ENOENT;
 	}
 
-	return rv1109_i2c_get_clk(priv, clk_id);
+	return rv1126_i2c_get_clk(priv, clk_id);
 }
 
-static ulong rv1109_spi_get_clk(struct rv1109_clk_priv *priv)
+static ulong rv1126_spi_get_clk(struct rv1126_clk_priv *priv)
 {
-	struct rv1109_cru *cru = priv->cru;
+	struct rv1126_cru *cru = priv->cru;
 	u32 div, con;
 
 	con = readl(&cru->clksel_con[8]);
@@ -829,9 +829,9 @@ static ulong rv1109_spi_get_clk(struct rv1109_clk_priv *priv)
 	return DIV_TO_RATE(priv->gpll_hz, div);
 }
 
-static ulong rv1109_spi_set_clk(struct rv1109_clk_priv *priv, ulong rate)
+static ulong rv1126_spi_set_clk(struct rv1126_clk_priv *priv, ulong rate)
 {
-	struct rv1109_cru *cru = priv->cru;
+	struct rv1126_cru *cru = priv->cru;
 	int src_clk_div;
 
 	src_clk_div = DIV_ROUND_UP(priv->gpll_hz, rate);
@@ -842,12 +842,12 @@ static ulong rv1109_spi_set_clk(struct rv1109_clk_priv *priv, ulong rate)
 		     CLK_SPI1_SEL_GPLL << CLK_SPI1_SEL_SHIFT |
 		     (src_clk_div - 1) << CLK_SPI1_DIV_SHIFT);
 
-	return rv1109_spi_get_clk(priv);
+	return rv1126_spi_get_clk(priv);
 }
 
-static ulong rv1109_pwm_get_clk(struct rv1109_clk_priv *priv)
+static ulong rv1126_pwm_get_clk(struct rv1126_clk_priv *priv)
 {
-	struct rv1109_cru *cru = priv->cru;
+	struct rv1126_cru *cru = priv->cru;
 	u32 div, sel, con;
 
 	con = readl(&cru->clksel_con[9]);
@@ -859,9 +859,9 @@ static ulong rv1109_pwm_get_clk(struct rv1109_clk_priv *priv)
 	return DIV_TO_RATE(priv->gpll_hz, div);
 }
 
-static ulong rv1109_pwm_set_clk(struct rv1109_clk_priv *priv, ulong rate)
+static ulong rv1126_pwm_set_clk(struct rv1126_clk_priv *priv, ulong rate)
 {
-	struct rv1109_cru *cru = priv->cru;
+	struct rv1126_cru *cru = priv->cru;
 	int src_clk_div;
 
 	if (rate == OSC_HZ) {
@@ -877,12 +877,12 @@ static ulong rv1109_pwm_set_clk(struct rv1109_clk_priv *priv, ulong rate)
 			     CLK_PWM2_SEL_GPLL << CLK_PWM2_SEL_SHIFT);
 	}
 
-	return rv1109_pwm_get_clk(priv);
+	return rv1126_pwm_get_clk(priv);
 }
 
-static ulong rv1109_saradc_get_clk(struct rv1109_clk_priv *priv)
+static ulong rv1126_saradc_get_clk(struct rv1126_clk_priv *priv)
 {
-	struct rv1109_cru *cru = priv->cru;
+	struct rv1126_cru *cru = priv->cru;
 	u32 div, con;
 
 	con = readl(&cru->clksel_con[20]);
@@ -891,9 +891,9 @@ static ulong rv1109_saradc_get_clk(struct rv1109_clk_priv *priv)
 	return DIV_TO_RATE(OSC_HZ, div);
 }
 
-static ulong rv1109_saradc_set_clk(struct rv1109_clk_priv *priv, ulong rate)
+static ulong rv1126_saradc_set_clk(struct rv1126_clk_priv *priv, ulong rate)
 {
-	struct rv1109_cru *cru = priv->cru;
+	struct rv1126_cru *cru = priv->cru;
 	int src_clk_div;
 
 	src_clk_div = DIV_ROUND_UP(OSC_HZ, rate);
@@ -901,12 +901,12 @@ static ulong rv1109_saradc_set_clk(struct rv1109_clk_priv *priv, ulong rate)
 	rk_clrsetreg(&cru->clksel_con[20], CLK_SARADC_DIV_MASK,
 		     (src_clk_div - 1) << CLK_SARADC_DIV_SHIFT);
 
-	return rv1109_saradc_get_clk(priv);
+	return rv1126_saradc_get_clk(priv);
 }
 
-static ulong rv1109_crypto_get_clk(struct rv1109_clk_priv *priv, ulong clk_id)
+static ulong rv1126_crypto_get_clk(struct rv1126_clk_priv *priv, ulong clk_id)
 {
-	struct rv1109_cru *cru = priv->cru;
+	struct rv1126_cru *cru = priv->cru;
 	u32 div, sel, con, parent;
 
 	switch (clk_id) {
@@ -950,10 +950,10 @@ static ulong rv1109_crypto_get_clk(struct rv1109_clk_priv *priv, ulong clk_id)
 	return DIV_TO_RATE(parent, div);
 }
 
-static ulong rv1109_crypto_set_clk(struct rv1109_clk_priv *priv, ulong clk_id,
+static ulong rv1126_crypto_set_clk(struct rv1126_clk_priv *priv, ulong clk_id,
 				   ulong rate)
 {
-	struct rv1109_cru *cru = priv->cru;
+	struct rv1126_cru *cru = priv->cru;
 	int src_clk_div;
 
 	src_clk_div = DIV_ROUND_UP(priv->gpll_hz, rate);
@@ -986,12 +986,12 @@ static ulong rv1109_crypto_set_clk(struct rv1109_clk_priv *priv, ulong clk_id,
 		return -ENOENT;
 	}
 
-	return rv1109_crypto_get_clk(priv, clk_id);
+	return rv1126_crypto_get_clk(priv, clk_id);
 }
 
-static ulong rv1109_mmc_get_clk(struct rv1109_clk_priv *priv, ulong clk_id)
+static ulong rv1126_mmc_get_clk(struct rv1126_clk_priv *priv, ulong clk_id)
 {
-	struct rv1109_cru *cru = priv->cru;
+	struct rv1126_cru *cru = priv->cru;
 	u32 div, sel, con, con_id;
 
 	switch (clk_id) {
@@ -1025,10 +1025,10 @@ static ulong rv1109_mmc_get_clk(struct rv1109_clk_priv *priv, ulong clk_id)
 	return -ENOENT;
 }
 
-static ulong rv1109_emmc_set_clk(struct rv1109_clk_priv *priv, ulong clk_id,
+static ulong rv1126_emmc_set_clk(struct rv1126_clk_priv *priv, ulong clk_id,
 				 ulong rate)
 {
-	struct rv1109_cru *cru = priv->cru;
+	struct rv1126_cru *cru = priv->cru;
 	int src_clk_div;
 	u32 con_id;
 
@@ -1067,12 +1067,12 @@ static ulong rv1109_emmc_set_clk(struct rv1109_clk_priv *priv, ulong clk_id,
 			     (src_clk_div - 1) << EMMC_DIV_SHIFT);
 	}
 
-	return rv1109_mmc_get_clk(priv, clk_id);
+	return rv1126_mmc_get_clk(priv, clk_id);
 }
 
-static ulong rv1109_aclk_vop_get_clk(struct rv1109_clk_priv *priv)
+static ulong rv1126_aclk_vop_get_clk(struct rv1126_clk_priv *priv)
 {
-	struct rv1109_cru *cru = priv->cru;
+	struct rv1126_cru *cru = priv->cru;
 	u32 div, sel, con, parent;
 
 	con = readl(&cru->clksel_con[45]);
@@ -1088,9 +1088,9 @@ static ulong rv1109_aclk_vop_get_clk(struct rv1109_clk_priv *priv)
 	return DIV_TO_RATE(parent, div);
 }
 
-static ulong rv1109_aclk_vop_set_clk(struct rv1109_clk_priv *priv, ulong rate)
+static ulong rv1126_aclk_vop_set_clk(struct rv1126_clk_priv *priv, ulong rate)
 {
-	struct rv1109_cru *cru = priv->cru;
+	struct rv1126_cru *cru = priv->cru;
 	int src_clk_div;
 
 	src_clk_div = DIV_ROUND_UP(priv->gpll_hz, rate);
@@ -1100,12 +1100,12 @@ static ulong rv1109_aclk_vop_set_clk(struct rv1109_clk_priv *priv, ulong rate)
 		     ACLK_PDVO_SEL_GPLL << ACLK_PDVO_SEL_SHIFT |
 		     (src_clk_div - 1) << ACLK_PDVO_DIV_SHIFT);
 
-	return rv1109_aclk_vop_get_clk(priv);
+	return rv1126_aclk_vop_get_clk(priv);
 }
 
-static ulong rv1109_dclk_vop_get_clk(struct rv1109_clk_priv *priv)
+static ulong rv1126_dclk_vop_get_clk(struct rv1126_clk_priv *priv)
 {
-	struct rv1109_cru *cru = priv->cru;
+	struct rv1126_cru *cru = priv->cru;
 	u32 div, sel, con, parent;
 
 	con = readl(&cru->clksel_con[47]);
@@ -1121,9 +1121,9 @@ static ulong rv1109_dclk_vop_get_clk(struct rv1109_clk_priv *priv)
 	return DIV_TO_RATE(parent, div);
 }
 
-static ulong rv1109_dclk_vop_set_clk(struct rv1109_clk_priv *priv, ulong rate)
+static ulong rv1126_dclk_vop_set_clk(struct rv1126_clk_priv *priv, ulong rate)
 {
-	struct rv1109_cru *cru = priv->cru;
+	struct rv1126_cru *cru = priv->cru;
 	ulong pll_rate, now, best_rate = 0;
 	u32 i, div, best_div = 0, best_sel = 0;
 
@@ -1164,12 +1164,12 @@ static ulong rv1109_dclk_vop_set_clk(struct rv1109_clk_priv *priv, ulong rate)
 	}
 
 
-	return rv1109_dclk_vop_get_clk(priv);
+	return rv1126_dclk_vop_get_clk(priv);
 }
 
-static ulong rv1109_clk_get_rate(struct clk *clk)
+static ulong rv1126_clk_get_rate(struct clk *clk)
 {
-	struct rv1109_clk_priv *priv = dev_get_priv(clk->dev);
+	struct rv1126_clk_priv *priv = dev_get_priv(clk->dev);
 	ulong rate = 0;
 
 	if (!priv->gpll_hz) {
@@ -1180,47 +1180,47 @@ static ulong rv1109_clk_get_rate(struct clk *clk)
 	switch (clk->id) {
 	case PLL_APLL:
 	case ARMCLK:
-		rate = rockchip_pll_get_rate(&rv1109_pll_clks[APLL], priv->cru,
+		rate = rockchip_pll_get_rate(&rv1126_pll_clks[APLL], priv->cru,
 					     APLL);
 		break;
 	case PLL_CPLL:
-		rate = rockchip_pll_get_rate(&rv1109_pll_clks[CPLL], priv->cru,
+		rate = rockchip_pll_get_rate(&rv1126_pll_clks[CPLL], priv->cru,
 					     CPLL);
 		break;
 	case HCLK_PDCORE_NIU:
-		rate = rv1109_pdcore_get_clk(priv);
+		rate = rv1126_pdcore_get_clk(priv);
 		break;
 	case ACLK_PDBUS:
 	case HCLK_PDBUS:
 	case PCLK_PDBUS:
-		rate = rv1109_pdbus_get_clk(priv, clk->id);
+		rate = rv1126_pdbus_get_clk(priv, clk->id);
 		break;
 	case ACLK_PDPHP:
 	case HCLK_PDPHP:
-		rate = rv1109_pdphp_get_clk(priv, clk->id);
+		rate = rv1126_pdphp_get_clk(priv, clk->id);
 		break;
 	case HCLK_PDAUDIO:
-		rate = rv1109_pdaudio_get_clk(priv);
+		rate = rv1126_pdaudio_get_clk(priv);
 		break;
 	case CLK_I2C1:
 	case CLK_I2C3:
 	case CLK_I2C4:
 	case CLK_I2C5:
-		rate = rv1109_i2c_get_clk(priv, clk->id);
+		rate = rv1126_i2c_get_clk(priv, clk->id);
 		break;
 	case CLK_SPI1:
-		rate = rv1109_spi_get_clk(priv);
+		rate = rv1126_spi_get_clk(priv);
 		break;
 	case CLK_PWM2:
-		rate = rv1109_pwm_get_clk(priv);
+		rate = rv1126_pwm_get_clk(priv);
 		break;
 	case CLK_SARADC:
-		rate = rv1109_saradc_get_clk(priv);
+		rate = rv1126_saradc_get_clk(priv);
 		break;
 	case CLK_CRYPTO_CORE:
 	case CLK_CRYPTO_PKA:
 	case ACLK_CRYPTO:
-		rate = rv1109_crypto_get_clk(priv, clk->id);
+		rate = rv1126_crypto_get_clk(priv, clk->id);
 		break;
 	case CLK_SDMMC:
 	case HCLK_SDMMC:
@@ -1229,14 +1229,14 @@ static ulong rv1109_clk_get_rate(struct clk *clk)
 	case CLK_EMMC:
 	case HCLK_EMMC:
 	case SCLK_EMMC_SAMPLE:
-		rate = rv1109_mmc_get_clk(priv, clk->id);
+		rate = rv1126_mmc_get_clk(priv, clk->id);
 		break;
 	case ACLK_PDVO:
 	case ACLK_VOP:
-		rate = rv1109_aclk_vop_get_clk(priv);
+		rate = rv1126_aclk_vop_get_clk(priv);
 		break;
 	case DCLK_VOP:
-		rate = rv1109_dclk_vop_get_clk(priv);
+		rate = rv1126_dclk_vop_get_clk(priv);
 		break;
 	default:
 		return -ENOENT;
@@ -1245,9 +1245,9 @@ static ulong rv1109_clk_get_rate(struct clk *clk)
 	return rate;
 };
 
-static ulong rv1109_clk_set_rate(struct clk *clk, ulong rate)
+static ulong rv1126_clk_set_rate(struct clk *clk, ulong rate)
 {
-	struct rv1109_clk_priv *priv = dev_get_priv(clk->dev);
+	struct rv1126_clk_priv *priv = dev_get_priv(clk->dev);
 	ulong ret = 0;
 
 	if (!priv->gpll_hz) {
@@ -1259,47 +1259,47 @@ static ulong rv1109_clk_set_rate(struct clk *clk, ulong rate)
 	case PLL_APLL:
 	case ARMCLK:
 		if (priv->armclk_hz)
-			rv1109_armclk_set_clk(priv, rate);
+			rv1126_armclk_set_clk(priv, rate);
 		priv->armclk_hz = rate;
 		break;
 	case PLL_CPLL:
-		ret = rockchip_pll_set_rate(&rv1109_pll_clks[CPLL], priv->cru,
+		ret = rockchip_pll_set_rate(&rv1126_pll_clks[CPLL], priv->cru,
 					    CPLL, rate);
 		break;
 	case ACLK_PDBUS:
 	case HCLK_PDBUS:
 	case PCLK_PDBUS:
-		ret = rv1109_pdbus_set_clk(priv, clk->id, rate);
+		ret = rv1126_pdbus_set_clk(priv, clk->id, rate);
 		break;
 	case ACLK_PDPHP:
 	case HCLK_PDPHP:
-		ret = rv1109_pdphp_set_clk(priv, clk->id, rate);
+		ret = rv1126_pdphp_set_clk(priv, clk->id, rate);
 		break;
 	case HCLK_PDCORE_NIU:
-		ret = rv1109_pdcore_set_clk(priv, rate);
+		ret = rv1126_pdcore_set_clk(priv, rate);
 		break;
 	case HCLK_PDAUDIO:
-		ret = rv1109_pdaudio_set_clk(priv, rate);
+		ret = rv1126_pdaudio_set_clk(priv, rate);
 		break;
 	case CLK_I2C1:
 	case CLK_I2C3:
 	case CLK_I2C4:
 	case CLK_I2C5:
-		ret = rv1109_i2c_set_clk(priv, clk->id, rate);
+		ret = rv1126_i2c_set_clk(priv, clk->id, rate);
 		break;
 	case CLK_SPI1:
-		ret = rv1109_spi_set_clk(priv, rate);
+		ret = rv1126_spi_set_clk(priv, rate);
 		break;
 	case CLK_PWM2:
-		ret = rv1109_pwm_set_clk(priv, rate);
+		ret = rv1126_pwm_set_clk(priv, rate);
 		break;
 	case CLK_SARADC:
-		ret = rv1109_saradc_set_clk(priv, rate);
+		ret = rv1126_saradc_set_clk(priv, rate);
 		break;
 	case CLK_CRYPTO_CORE:
 	case CLK_CRYPTO_PKA:
 	case ACLK_CRYPTO:
-		ret = rv1109_crypto_set_clk(priv, clk->id, rate);
+		ret = rv1126_crypto_set_clk(priv, clk->id, rate);
 		break;
 	case CLK_SDMMC:
 	case HCLK_SDMMC:
@@ -1307,14 +1307,14 @@ static ulong rv1109_clk_set_rate(struct clk *clk, ulong rate)
 	case HCLK_SDIO:
 	case CLK_EMMC:
 	case HCLK_EMMC:
-		ret = rv1109_emmc_set_clk(priv, clk->id, rate);
+		ret = rv1126_emmc_set_clk(priv, clk->id, rate);
 		break;
 	case ACLK_PDVO:
 	case ACLK_VOP:
-		ret = rv1109_aclk_vop_set_clk(priv, rate);
+		ret = rv1126_aclk_vop_set_clk(priv, rate);
 		break;
 	case DCLK_VOP:
-		ret = rv1109_dclk_vop_set_clk(priv, rate);
+		ret = rv1126_dclk_vop_set_clk(priv, rate);
 		break;
 	default:
 		return -ENOENT;
@@ -1335,15 +1335,15 @@ static ulong rv1109_clk_set_rate(struct clk *clk, ulong rate)
  */
 #define ROCKCHIP_MMC_DELAY_ELEMENT_PSEC 60
 
-int rv1109_mmc_get_phase(struct clk *clk)
+int rv1126_mmc_get_phase(struct clk *clk)
 {
-	struct rv1109_clk_priv *priv = dev_get_priv(clk->dev);
-	struct rv1109_cru *cru = priv->cru;
+	struct rv1126_clk_priv *priv = dev_get_priv(clk->dev);
+	struct rv1126_cru *cru = priv->cru;
 	u32 raw_value, delay_num;
 	u16 degrees = 0;
 	ulong rate;
 
-	rate = rv1109_clk_get_rate(clk);
+	rate = rv1126_clk_get_rate(clk);
 	if (rate < 0)
 		return rate;
 
@@ -1370,15 +1370,15 @@ int rv1109_mmc_get_phase(struct clk *clk)
 	return degrees % 360;
 }
 
-int rv1109_mmc_set_phase(struct clk *clk, u32 degrees)
+int rv1126_mmc_set_phase(struct clk *clk, u32 degrees)
 {
-	struct rv1109_clk_priv *priv = dev_get_priv(clk->dev);
-	struct rv1109_cru *cru = priv->cru;
+	struct rv1126_clk_priv *priv = dev_get_priv(clk->dev);
+	struct rv1126_cru *cru = priv->cru;
 	u8 nineties, remainder, delay_num;
 	u32 raw_value, delay;
 	ulong rate;
 
-	rate = rv1109_clk_get_rate(clk);
+	rate = rv1126_clk_get_rate(clk);
 	if (rate < 0)
 		return rate;
 
@@ -1409,12 +1409,12 @@ int rv1109_mmc_set_phase(struct clk *clk, u32 degrees)
 		writel(raw_value | 0xffff0000, &cru->sdio_con[1]);
 
 	debug("mmc set_phase(%d) delay_nums=%u reg=%#x actual_degrees=%d\n",
-	      degrees, delay_num, raw_value, rv1109_mmc_get_phase(clk));
+	      degrees, delay_num, raw_value, rv1126_mmc_get_phase(clk));
 
 	return 0;
 }
 
-static int rv1109_clk_get_phase(struct clk *clk)
+static int rv1126_clk_get_phase(struct clk *clk)
 {
 	int ret;
 
@@ -1423,7 +1423,7 @@ static int rv1109_clk_get_phase(struct clk *clk)
 	case SCLK_EMMC_SAMPLE:
 	case SCLK_SDMMC_SAMPLE:
 	case SCLK_SDIO_SAMPLE:
-		ret = rv1109_mmc_get_phase(clk);
+		ret = rv1126_mmc_get_phase(clk);
 		break;
 	default:
 		return -ENOENT;
@@ -1432,7 +1432,7 @@ static int rv1109_clk_get_phase(struct clk *clk)
 	return ret;
 }
 
-static int rv1109_clk_set_phase(struct clk *clk, int degrees)
+static int rv1126_clk_set_phase(struct clk *clk, int degrees)
 {
 	int ret;
 
@@ -1441,7 +1441,7 @@ static int rv1109_clk_set_phase(struct clk *clk, int degrees)
 	case SCLK_EMMC_SAMPLE:
 	case SCLK_SDMMC_SAMPLE:
 	case SCLK_SDIO_SAMPLE:
-		ret = rv1109_mmc_set_phase(clk, degrees);
+		ret = rv1126_mmc_set_phase(clk, degrees);
 		break;
 	default:
 		return -ENOENT;
@@ -1451,10 +1451,10 @@ static int rv1109_clk_set_phase(struct clk *clk, int degrees)
 }
 
 #if CONFIG_IS_ENABLED(OF_CONTROL) && !CONFIG_IS_ENABLED(OF_PLATDATA)
-static int rv1109_gmac_src_set_parent(struct clk *clk, struct clk *parent)
+static int rv1126_gmac_src_set_parent(struct clk *clk, struct clk *parent)
 {
-	struct rv1109_clk_priv *priv = dev_get_priv(clk->dev);
-	struct rv1109_grf *grf = priv->grf;
+	struct rv1126_clk_priv *priv = dev_get_priv(clk->dev);
+	struct rv1126_grf *grf = priv->grf;
 
 	if (parent->id == CLK_GMAC_SRC_M0)
 		rk_clrsetreg(&grf->iofunc_con1, GMAC_SRC_SEL_MASK,
@@ -1466,10 +1466,10 @@ static int rv1109_gmac_src_set_parent(struct clk *clk, struct clk *parent)
 	return 0;
 }
 
-static int rv1109_gmac_src_m0_set_parent(struct clk *clk, struct clk *parent)
+static int rv1126_gmac_src_m0_set_parent(struct clk *clk, struct clk *parent)
 {
-	struct rv1109_clk_priv *priv = dev_get_priv(clk->dev);
-	struct rv1109_cru *cru = priv->cru;
+	struct rv1126_clk_priv *priv = dev_get_priv(clk->dev);
+	struct rv1126_cru *cru = priv->cru;
 
 	if (parent->id == CLK_GMAC_DIV)
 		rk_clrsetreg(&cru->gmac_con, GMAC_SRC_M0_SEL_MASK,
@@ -1481,10 +1481,10 @@ static int rv1109_gmac_src_m0_set_parent(struct clk *clk, struct clk *parent)
 	return 0;
 }
 
-static int rv1109_gmac_src_m1_set_parent(struct clk *clk, struct clk *parent)
+static int rv1126_gmac_src_m1_set_parent(struct clk *clk, struct clk *parent)
 {
-	struct rv1109_clk_priv *priv = dev_get_priv(clk->dev);
-	struct rv1109_cru *cru = priv->cru;
+	struct rv1126_clk_priv *priv = dev_get_priv(clk->dev);
+	struct rv1126_cru *cru = priv->cru;
 
 	if (parent->id == CLK_GMAC_DIV)
 		rk_clrsetreg(&cru->gmac_con, GMAC_SRC_M0_SEL_MASK,
@@ -1496,15 +1496,15 @@ static int rv1109_gmac_src_m1_set_parent(struct clk *clk, struct clk *parent)
 	return 0;
 }
 
-static int rv1109_clk_set_parent(struct clk *clk, struct clk *parent)
+static int rv1126_clk_set_parent(struct clk *clk, struct clk *parent)
 {
 	switch (clk->id) {
 	case CLK_GMAC_SRC:
-		return rv1109_gmac_src_set_parent(clk, parent);
+		return rv1126_gmac_src_set_parent(clk, parent);
 	case CLK_GMAC_SRC_M0:
-		return rv1109_gmac_src_m0_set_parent(clk, parent);
+		return rv1126_gmac_src_m0_set_parent(clk, parent);
 	case CLK_GMAC_SRC_M1:
-		return rv1109_gmac_src_m1_set_parent(clk, parent);
+		return rv1126_gmac_src_m1_set_parent(clk, parent);
 	default:
 		return -ENOENT;
 	}
@@ -1513,24 +1513,24 @@ static int rv1109_clk_set_parent(struct clk *clk, struct clk *parent)
 }
 #endif
 
-static struct clk_ops rv1109_clk_ops = {
-	.get_rate = rv1109_clk_get_rate,
-	.set_rate = rv1109_clk_set_rate,
-	.get_phase = rv1109_clk_get_phase,
-	.set_phase = rv1109_clk_set_phase,
+static struct clk_ops rv1126_clk_ops = {
+	.get_rate = rv1126_clk_get_rate,
+	.set_rate = rv1126_clk_set_rate,
+	.get_phase = rv1126_clk_get_phase,
+	.set_phase = rv1126_clk_set_phase,
 #if CONFIG_IS_ENABLED(OF_CONTROL) && !CONFIG_IS_ENABLED(OF_PLATDATA)
-	.set_parent = rv1109_clk_set_parent,
+	.set_parent = rv1126_clk_set_parent,
 #endif
 };
 
-static int rv1109_gpll_set_clk(ulong rate)
+static int rv1126_gpll_set_clk(ulong rate)
 {
 	struct udevice *pmucru_dev;
-	struct rv1109_pmuclk_priv *priv;
+	struct rv1126_pmuclk_priv *priv;
 	int ret;
 
 	ret = uclass_get_device_by_driver(UCLASS_CLK,
-					  DM_GET_DRIVER(rockchip_rv1109_pmucru),
+					  DM_GET_DRIVER(rockchip_rv1126_pmucru),
 					  &pmucru_dev);
 	if (ret) {
 		printf("%s: could not find pmucru device\n", __func__);
@@ -1538,63 +1538,63 @@ static int rv1109_gpll_set_clk(ulong rate)
 	}
 	priv = dev_get_priv(pmucru_dev);
 
-	ret = rv1109_gpll_set_pmuclk(priv, rate);
+	ret = rv1126_gpll_set_pmuclk(priv, rate);
 	if (ret) {
 		printf("%s: failed to set gpll rate %lu\n", __func__, rate);
 		return ret;
 	}
-	rv1109_pdpmu_set_pmuclk(priv, PCLK_PDPMU_HZ);
+	rv1126_pdpmu_set_pmuclk(priv, PCLK_PDPMU_HZ);
 
 	return ret;
 }
 
-static void rv1109_clk_init(struct rv1109_clk_priv *priv)
+static void rv1126_clk_init(struct rv1126_clk_priv *priv)
 {
 	int ret;
 
 	priv->sync_kernel = false;
 	if (!priv->armclk_enter_hz) {
 		priv->armclk_enter_hz =
-			rockchip_pll_get_rate(&rv1109_pll_clks[APLL],
+			rockchip_pll_get_rate(&rv1126_pll_clks[APLL],
 					      priv->cru, APLL);
 		priv->armclk_init_hz = priv->armclk_enter_hz ;
 	}
 
 	if (priv->armclk_init_hz != APLL_HZ) {
-		ret = rv1109_armclk_set_clk(priv, APLL_HZ);
+		ret = rv1126_armclk_set_clk(priv, APLL_HZ);
 		if (!ret)
 			priv->armclk_init_hz = APLL_HZ;
 	}
 	if (priv->gpll_hz != GPLL_HZ) {
-		ret = rv1109_gpll_set_clk(GPLL_HZ);
+		ret = rv1126_gpll_set_clk(GPLL_HZ);
 		if (!ret)
 			priv->gpll_hz = GPLL_HZ;
 	}
 	if (priv->cpll_hz != CPLL_HZ) {
-		ret = rockchip_pll_set_rate(&rv1109_pll_clks[CPLL], priv->cru,
+		ret = rockchip_pll_set_rate(&rv1126_pll_clks[CPLL], priv->cru,
 					    CPLL, CPLL_HZ);
 		if (!ret)
 			priv->cpll_hz = CPLL_HZ;
 	}
-	rv1109_pdbus_set_clk(priv, ACLK_PDBUS, ACLK_PDBUS_HZ);
-	rv1109_pdbus_set_clk(priv, HCLK_PDBUS, HCLK_PDBUS_HZ);
-	rv1109_pdbus_set_clk(priv, PCLK_PDBUS, PCLK_PDBUS_HZ);
-	rv1109_pdphp_set_clk(priv, ACLK_PDPHP, ACLK_PDPHP_HZ);
-	rv1109_pdphp_set_clk(priv, HCLK_PDPHP, HCLK_PDPHP_HZ);
-	rv1109_pdcore_set_clk(priv, HCLK_PDCORE_HZ);
-	rv1109_pdaudio_set_clk(priv, HCLK_PDAUDIO_HZ);
+	rv1126_pdbus_set_clk(priv, ACLK_PDBUS, ACLK_PDBUS_HZ);
+	rv1126_pdbus_set_clk(priv, HCLK_PDBUS, HCLK_PDBUS_HZ);
+	rv1126_pdbus_set_clk(priv, PCLK_PDBUS, PCLK_PDBUS_HZ);
+	rv1126_pdphp_set_clk(priv, ACLK_PDPHP, ACLK_PDPHP_HZ);
+	rv1126_pdphp_set_clk(priv, HCLK_PDPHP, HCLK_PDPHP_HZ);
+	rv1126_pdcore_set_clk(priv, HCLK_PDCORE_HZ);
+	rv1126_pdaudio_set_clk(priv, HCLK_PDAUDIO_HZ);
 }
 
-static int rv1109_clk_probe(struct udevice *dev)
+static int rv1126_clk_probe(struct udevice *dev)
 {
-	struct rv1109_clk_priv *priv = dev_get_priv(dev);
+	struct rv1126_clk_priv *priv = dev_get_priv(dev);
 	int ret;
 
 	priv->grf = syscon_get_first_range(ROCKCHIP_SYSCON_GRF);
 	if (IS_ERR(priv->grf))
 		return PTR_ERR(priv->grf);
 
-	rv1109_clk_init(priv);
+	rv1126_clk_init(priv);
 
 	/* Process 'assigned-{clocks/clock-parents/clock-rates}' properties */
 	ret = clk_set_defaults(dev);
@@ -1606,16 +1606,16 @@ static int rv1109_clk_probe(struct udevice *dev)
 	return 0;
 }
 
-static int rv1109_clk_ofdata_to_platdata(struct udevice *dev)
+static int rv1126_clk_ofdata_to_platdata(struct udevice *dev)
 {
-	struct rv1109_clk_priv *priv = dev_get_priv(dev);
+	struct rv1126_clk_priv *priv = dev_get_priv(dev);
 
 	priv->cru = dev_read_addr_ptr(dev);
 
 	return 0;
 }
 
-static int rv1109_clk_bind(struct udevice *dev)
+static int rv1126_clk_bind(struct udevice *dev)
 {
 	int ret;
 	struct udevice *sys_child, *sf_child;
@@ -1629,9 +1629,9 @@ static int rv1109_clk_bind(struct udevice *dev)
 		debug("Warning: No sysreset driver: ret=%d\n", ret);
 	} else {
 		priv = malloc(sizeof(struct sysreset_reg));
-		priv->glb_srst_fst_value = offsetof(struct rv1109_cru,
+		priv->glb_srst_fst_value = offsetof(struct rv1126_cru,
 						    glb_srst_fst);
-		priv->glb_srst_snd_value = offsetof(struct rv1109_cru,
+		priv->glb_srst_snd_value = offsetof(struct rv1126_cru,
 						    glb_srst_snd);
 		sys_child->priv = priv;
 	}
@@ -1642,7 +1642,7 @@ static int rv1109_clk_bind(struct udevice *dev)
 		debug("Warning: No rockchip reset driver: ret=%d\n", ret);
 	} else {
 		sf_priv = malloc(sizeof(struct softreset_reg));
-		sf_priv->sf_reset_offset = offsetof(struct rv1109_cru,
+		sf_priv->sf_reset_offset = offsetof(struct rv1126_cru,
 						    softrst_con[0]);
 		sf_priv->sf_reset_num = 15;
 		sf_child->priv = sf_priv;
@@ -1651,20 +1651,20 @@ static int rv1109_clk_bind(struct udevice *dev)
 	return 0;
 }
 
-static const struct udevice_id rv1109_clk_ids[] = {
-	{ .compatible = "rockchip,rv1109-cru" },
+static const struct udevice_id rv1126_clk_ids[] = {
+	{ .compatible = "rockchip,rv1126-cru" },
 	{ }
 };
 
-U_BOOT_DRIVER(rockchip_rv1109_cru) = {
-	.name		= "rockchip_rv1109_cru",
+U_BOOT_DRIVER(rockchip_rv1126_cru) = {
+	.name		= "rockchip_rv1126_cru",
 	.id		= UCLASS_CLK,
-	.of_match	= rv1109_clk_ids,
-	.priv_auto_alloc_size = sizeof(struct rv1109_clk_priv),
-	.ofdata_to_platdata = rv1109_clk_ofdata_to_platdata,
-	.ops		= &rv1109_clk_ops,
-	.bind		= rv1109_clk_bind,
-	.probe		= rv1109_clk_probe,
+	.of_match	= rv1126_clk_ids,
+	.priv_auto_alloc_size = sizeof(struct rv1126_clk_priv),
+	.ofdata_to_platdata = rv1126_clk_ofdata_to_platdata,
+	.ops		= &rv1126_clk_ops,
+	.bind		= rv1126_clk_bind,
+	.probe		= rv1126_clk_probe,
 };
 
 #ifndef CONFIG_SPL_BUILD
@@ -1677,15 +1677,15 @@ U_BOOT_DRIVER(rockchip_rv1109_cru) = {
 int soc_clk_dump(void)
 {
 	struct udevice *cru_dev, *pmucru_dev;
-	struct rv1109_clk_priv *priv;
-	const struct rv1109_clk_info *clk_dump;
+	struct rv1126_clk_priv *priv;
+	const struct rv1126_clk_info *clk_dump;
 	struct clk clk;
 	unsigned long clk_count = ARRAY_SIZE(clks_dump);
 	unsigned long rate;
 	int i, ret;
 
 	ret = uclass_get_device_by_driver(UCLASS_CLK,
-					  DM_GET_DRIVER(rockchip_rv1109_cru),
+					  DM_GET_DRIVER(rockchip_rv1126_cru),
 					  &cru_dev);
 	if (ret) {
 		printf("%s failed to get cru device\n", __func__);
@@ -1693,7 +1693,7 @@ int soc_clk_dump(void)
 	}
 
 	ret = uclass_get_device_by_driver(UCLASS_CLK,
-					  DM_GET_DRIVER(rockchip_rv1109_pmucru),
+					  DM_GET_DRIVER(rockchip_rv1126_pmucru),
 					  &pmucru_dev);
 	if (ret) {
 		printf("%s failed to get pmucru device\n", __func__);

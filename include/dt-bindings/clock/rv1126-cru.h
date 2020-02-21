@@ -4,8 +4,8 @@
  * Author: Finley Xiao <finley.xiao@rock-chips.com>
  */
 
-#ifndef _DT_BINDINGS_CLK_ROCKCHIP_RV1109_H
-#define _DT_BINDINGS_CLK_ROCKCHIP_RV1109_H
+#ifndef _DT_BINDINGS_CLK_ROCKCHIP_RV1126_H
+#define _DT_BINDINGS_CLK_ROCKCHIP_RV1126_H
 
 /* pmucru-clocks indices */
 
