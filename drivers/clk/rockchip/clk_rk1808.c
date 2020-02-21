@@ -265,6 +265,32 @@ static ulong rk1808_mmc_set_clk(struct rk1808_clk_priv *priv,
 	return rk1808_mmc_get_clk(priv, clk_id);
 }
 
+static ulong rk1808_sfc_get_clk(struct rk1808_clk_priv *priv, uint clk_id)
+{
+	struct rk1808_cru *cru = priv->cru;
+	u32 div, con;
+
+	con = readl(&cru->clksel_con[26]);
+	div = (con & SFC_DIV_CON_MASK) >> SFC_DIV_CON_SHIFT;
+
+	return DIV_TO_RATE(priv->gpll_hz, div);
+}
+
+static ulong rk1808_sfc_set_clk(struct rk1808_clk_priv *priv,
+				ulong clk_id, ulong set_rate)
+{
+	struct rk1808_cru *cru = priv->cru;
+	int src_clk_div;
+
+	src_clk_div = DIV_ROUND_UP(priv->gpll_hz, set_rate);
+	rk_clrsetreg(&cru->clksel_con[26],
+		     SFC_PLL_SEL_MASK | SFC_DIV_CON_MASK,
+		     0 << SFC_PLL_SEL_SHIFT |
+		     (src_clk_div - 1) << SFC_DIV_CON_SHIFT);
+
+	return rk1808_sfc_get_clk(priv, clk_id);
+}
+
 #ifndef CONFIG_SPL_BUILD
 static ulong rk1808_pwm_get_clk(struct rk1808_clk_priv *priv, ulong clk_id)
 {
@@ -906,6 +932,9 @@ static ulong rk1808_clk_get_rate(struct clk *clk)
 	case SCLK_SDIO:
 		rate = rk1808_mmc_get_clk(priv, clk->id);
 		break;
+	case SCLK_SFC:
+		rate = rk1808_sfc_get_clk(priv, clk->id);
+		break;
 #ifndef CONFIG_SPL_BUILD
 	case SCLK_PMU_I2C0:
 	case SCLK_I2C1:
@@ -1006,6 +1035,9 @@ static ulong rk1808_clk_set_rate(struct clk *clk, ulong rate)
 	case SCLK_EMMC:
 	case SCLK_SDIO:
 		ret = rk1808_mmc_set_clk(priv, clk->id, rate);
+		break;
+	case SCLK_SFC:
+		ret = rk1808_sfc_set_clk(priv, clk->id, rate);
 		break;
 #ifndef CONFIG_SPL_BUILD
 	case SCLK_PMU_I2C0:
@@ -1245,6 +1277,7 @@ static int rk1808_clk_probe(struct udevice *dev)
 	int ret;
 #ifndef CONFIG_SPL_BUILD
 	ulong crypto_rate, crypto_apk_rate;
+	ulong emmc_rate, sdmmc_rate, sfc_rate;
 #endif
 
 	priv->sync_kernel = false;
@@ -1282,6 +1315,9 @@ static int rk1808_clk_probe(struct udevice *dev)
 #ifndef CONFIG_SPL_BUILD
 	crypto_rate = rk1808_crypto_get_clk(priv, SCLK_CRYPTO);
 	crypto_apk_rate = rk1808_crypto_get_clk(priv, SCLK_CRYPTO_APK);
+	emmc_rate = rk1808_mmc_get_clk(priv, SCLK_EMMC);
+	sdmmc_rate = rk1808_mmc_get_clk(priv, SCLK_SDMMC);
+	sfc_rate = rk1808_sfc_get_clk(priv, SCLK_SFC);
 #endif
 
 	/* Process 'assigned-{clocks/clock-parents/clock-rates}' properties */
@@ -1294,6 +1330,9 @@ static int rk1808_clk_probe(struct udevice *dev)
 #ifndef CONFIG_SPL_BUILD
 	rk1808_crypto_set_clk(priv, SCLK_CRYPTO, crypto_rate);
 	rk1808_crypto_set_clk(priv, SCLK_CRYPTO_APK, crypto_apk_rate);
+	rk1808_mmc_set_clk(priv, SCLK_EMMC, emmc_rate);
+	rk1808_mmc_set_clk(priv, SCLK_SDMMC, sdmmc_rate);
+	rk1808_sfc_set_clk(priv, SCLK_SFC, sfc_rate);
 #endif
 
 	return 0;
