@@ -107,6 +107,22 @@ int set_default_vars(int nvars, char * const vars[])
 				H_NOCLEAR | H_INTERACTIVE, 0, nvars, vars);
 }
 
+int set_board_env(const char *vars, int size, int flags, bool ready)
+{
+	if (himport_r(&env_htab, (char *)vars, size, '\0',
+		      flags, 0, 0, NULL) == 0) {
+		pr_err("Environment import failed\n");
+		return -1;
+	}
+
+	if (ready) {
+		gd->flags |= GD_FLG_ENV_READY;
+		gd->flags |= GD_FLG_ENV_DEFAULT;
+	}
+
+	return 0;
+}
+
 #ifdef CONFIG_ENV_AES
 #include <uboot_aes.h>
 /**
