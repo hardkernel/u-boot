@@ -23,9 +23,11 @@
 #include <sysmem.h>
 #include <asm/io.h>
 #include <asm/arch/boot_mode.h>
+#include <asm/arch/fit.h>
 #include <asm/arch/hotkey.h>
 #include <asm/arch/param.h>
 #include <asm/arch/resource_img.h>
+#include <asm/arch/uimage.h>
 #include <dm/ofnode.h>
 #include <linux/list.h>
 #include <u-boot/sha1.h>
@@ -457,6 +459,18 @@ int rockchip_read_dtb_file(void *fdt_addr)
 	u32 size;
 	int ret = -1;
 
+#ifdef CONFIG_ROCKCHIP_FIT_IMAGE
+	if (ret) {
+		hash_size = 0;
+		ret = rockchip_read_fit_dtb(fdt_addr, &hash, &hash_size);
+	}
+#endif
+#ifdef CONFIG_ROCKCHIP_UIMAGE
+	if (ret) {
+		hash_size = 0;
+		ret = rockchip_read_uimage_dtb(fdt_addr, &hash, &hash_size);
+	}
+#endif
 #ifdef CONFIG_ROCKCHIP_EARLY_DISTRO_DTB
 	if (ret) {
 		hash_size = 0;
@@ -469,7 +483,6 @@ int rockchip_read_dtb_file(void *fdt_addr)
 		ret = rockchip_read_resource_dtb(fdt_addr, &hash, &hash_size);
 	}
 #endif
-
 	if (ret) {
 		printf("Failed to load DTB\n");
 		return ret;
