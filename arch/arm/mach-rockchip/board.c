@@ -197,6 +197,49 @@ static int boot_from_udisk(void)
 }
 #endif
 
+static void env_fixup(void)
+{
+	struct memblock mem;
+	ulong u_addr_r;
+	phys_size_t end;
+	char *addr_r;
+
+#ifdef ENV_MEM_LAYOUT_SETTINGS1
+	const char *env_addr0[] = {
+		"scriptaddr", "pxefile_addr_r",
+		"fdt_addr_r", "kernel_addr_r", "ramdisk_addr_r",
+	};
+	const char *env_addr1[] = {
+		"scriptaddr1", "pxefile_addr1_r",
+		"fdt_addr1_r", "kernel_addr1_r", "ramdisk_addr1_r",
+	};
+	int i;
+
+	/* 128M is a typical ram size for most platform, so as default here */
+	if (gd->ram_size <= SZ_128M) {
+		/* Replace orignal xxx_addr_r */
+		for (i = 0; i < ARRAY_SIZE(env_addr1); i++) {
+			addr_r = env_get(env_addr1[i]);
+			if (addr_r)
+				env_set(env_addr0[i], addr_r);
+		}
+	}
+#endif
+	/* If bl32 is disabled, maybe kernel can be load to lower address. */
+	if (!(gd->flags & GD_FLG_BL32_ENABLED)) {
+		addr_r = env_get("kernel_addr_no_bl32_r");
+		if (addr_r)
+			env_set("kernel_addr_r", addr_r);
+	/* If bl32 is enlarged, we move ramdisk addr right behind it */
+	} else {
+		mem = param_parse_optee_mem();
+		end = mem.base + mem.size;
+		u_addr_r = env_get_ulong("ramdisk_addr_r", 16, 0);
+		if (u_addr_r >= mem.base && u_addr_r < end)
+			env_set_hex("ramdisk_addr_r", end);
+	}
+}
+
 static void cmdline_handle(void)
 {
 #ifdef CONFIG_ROCKCHIP_PRELOADER_ATAGS
@@ -230,6 +273,7 @@ int board_late_init(void)
 #ifdef CONFIG_DRM_ROCKCHIP
 	rockchip_show_logo();
 #endif
+	env_fixup();
 	soc_clk_dump();
 	cmdline_handle();
 
@@ -441,11 +485,26 @@ static int mmc_dm_reinit(void)
 	return 0;
 }
 
+static void env_fixup_fdt_addr(void)
+{
+#ifdef ENV_MEM_LAYOUT_SETTINGS1
+	char *addr_r;
+
+	if (gd->ram_size <= SZ_128M) {
+		addr_r = env_get("fdt_addr1_r");
+		if (addr_r)
+			env_set("fdt_addr_r", addr_r);
+	}
+#endif
+}
+
 int init_kernel_dtb(void)
 {
 	ulong fdt_addr;
 	void *ufdt_blob;
 	int ret;
+
+	env_fixup_fdt_addr();
 
 	fdt_addr = env_get_ulong("fdt_addr_r", 16, 0);
 	if (!fdt_addr) {
@@ -502,49 +561,6 @@ int init_kernel_dtb(void)
 	return 0;
 }
 #endif
-
-void board_env_fixup(void)
-{
-	struct memblock mem;
-	ulong u_addr_r;
-	phys_size_t end;
-	char *addr_r;
-
-#ifdef ENV_MEM_LAYOUT_SETTINGS1
-	const char *env_addr0[] = {
-		"scriptaddr", "pxefile_addr_r",
-		"fdt_addr_r", "kernel_addr_r", "ramdisk_addr_r",
-	};
-	const char *env_addr1[] = {
-		"scriptaddr1", "pxefile_addr1_r",
-		"fdt_addr1_r", "kernel_addr1_r", "ramdisk_addr1_r",
-	};
-	int i;
-
-	/* 128M is a typical ram size for most platform, so as default here */
-	if (gd->ram_size <= SZ_128M) {
-		/* Replace orignal xxx_addr_r */
-		for (i = 0; i < ARRAY_SIZE(env_addr1); i++) {
-			addr_r = env_get(env_addr1[i]);
-			if (addr_r)
-				env_set(env_addr0[i], addr_r);
-		}
-	}
-#endif
-	/* If bl32 is disabled, maybe kernel can be load to lower address. */
-	if (!(gd->flags & GD_FLG_BL32_ENABLED)) {
-		addr_r = env_get("kernel_addr_no_bl32_r");
-		if (addr_r)
-			env_set("kernel_addr_r", addr_r);
-	/* If bl32 is enlarged, we move ramdisk addr right behind it */
-	} else {
-		mem = param_parse_optee_mem();
-		end = mem.base + mem.size;
-		u_addr_r = env_get_ulong("ramdisk_addr_r", 16, 0);
-		if (u_addr_r >= mem.base && u_addr_r < end)
-			env_set_hex("ramdisk_addr_r", end);
-	}
-}
 
 static void early_download(void)
 {
