@@ -543,9 +543,11 @@ pack_spl_loader_image()
 	rm ${RKBIN}/.temp -rf
 	cd -
 	ls *_loader_*.bin >/dev/null 2>&1 && rm *_loader_*.bin
-	mv ${RKBIN}/*_loader_*.bin ./
+
+	RKCHIP_LOWCASE=`echo ${RKCHIP} |tr '[A-Z]' '[a-z]'`
+	mv ${RKBIN}/*_loader_*.bin ./${RKCHIP_LOWCASE}_loader_spl.bin
 	echo "pack loader(${label}) okay! Input: ${ini}"
-	ls ./*_loader_*.bin
+	ls ./${RKCHIP_LOWCASE}_loader_spl.bin
 }
 
 pack_loader_image()
