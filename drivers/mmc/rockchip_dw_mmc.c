@@ -37,6 +37,21 @@ struct rockchip_dwmmc_priv {
 	u32 minmax[2];
 };
 
+#ifdef CONFIG_USING_KERNEL_DTB
+int board_mmc_dm_reinit(struct udevice *dev)
+{
+	struct rockchip_dwmmc_priv *priv = dev_get_priv(dev);
+
+	if (!priv || !&priv->clk)
+		return 0;
+
+	if (!memcmp(dev->name, "dwmmc", strlen("dwmmc")))
+		return clk_get_by_index(dev, 0, &priv->clk);
+	else
+		return 0;
+}
+#endif
+
 #ifdef CONFIG_SPL_BUILD
 __weak void mmc_gpio_init_direct(void) {}
 #endif
