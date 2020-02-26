@@ -1427,10 +1427,12 @@ void rockchip_display_fixup(void *blob)
 {
 	struct display_state *s;
 	int offset = 0;
+	unsigned long bmp_mem;
 
 	if (fdt_node_offset_by_compatible(blob, 0, "rockchip,drm-logo") >= 0) {
 		list_for_each_entry(s, &rockchip_display_list, head) {
-				if (lcd_show_logo())
+				bmp_mem = get_drm_memory() + DRM_ROCKCHIP_FB_SIZE;
+				if (show_bmp(bmp_mem))
 					return;
 		}
 
