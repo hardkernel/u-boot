@@ -1070,6 +1070,70 @@ static ulong rv1126_emmc_set_clk(struct rv1126_clk_priv *priv, ulong clk_id,
 	return rv1126_mmc_get_clk(priv, clk_id);
 }
 
+static ulong rv1126_sfc_get_clk(struct rv1126_clk_priv *priv)
+{
+	struct rv1126_cru *cru = priv->cru;
+	u32 div, sel, con, parent;
+
+	con = readl(&cru->clksel_con[58]);
+	div = (con & SCLK_SFC_DIV_MASK) >> SCLK_SFC_DIV_SHIFT;
+	sel = (con & SCLK_SFC_SEL_MASK) >> SCLK_SFC_SEL_SHIFT;
+	if (sel == SCLK_SFC_SEL_GPLL)
+		parent = priv->gpll_hz;
+	else if (sel == SCLK_SFC_SEL_CPLL)
+		parent = priv->cpll_hz;
+	else
+		return -ENOENT;
+
+	return DIV_TO_RATE(parent, div);
+}
+
+static ulong rv1126_sfc_set_clk(struct rv1126_clk_priv *priv, ulong rate)
+{
+	struct rv1126_cru *cru = priv->cru;
+	int src_clk_div;
+
+	src_clk_div = DIV_ROUND_UP(priv->gpll_hz, rate);
+	rk_clrsetreg(&cru->clksel_con[58],
+		     SCLK_SFC_SEL_MASK | SCLK_SFC_DIV_MASK,
+		     SCLK_SFC_SEL_GPLL << SCLK_SFC_SEL_SHIFT |
+		     (src_clk_div - 1) << SCLK_SFC_DIV_SHIFT);
+
+	return rv1126_sfc_get_clk(priv);
+}
+
+static ulong rv1126_nand_get_clk(struct rv1126_clk_priv *priv)
+{
+	struct rv1126_cru *cru = priv->cru;
+	u32 div, sel, con, parent;
+
+	con = readl(&cru->clksel_con[59]);
+	div = (con & CLK_NANDC_DIV_MASK) >> CLK_NANDC_DIV_SHIFT;
+	sel = (con & CLK_NANDC_SEL_MASK) >> CLK_NANDC_SEL_SHIFT;
+	if (sel == CLK_NANDC_SEL_GPLL)
+		parent = priv->gpll_hz;
+	else if (sel == CLK_NANDC_SEL_CPLL)
+		parent = priv->cpll_hz;
+	else
+		return -ENOENT;
+
+	return DIV_TO_RATE(parent, div);
+}
+
+static ulong rv1126_nand_set_clk(struct rv1126_clk_priv *priv, ulong rate)
+{
+	struct rv1126_cru *cru = priv->cru;
+	int src_clk_div;
+
+	src_clk_div = DIV_ROUND_UP(priv->gpll_hz, rate);
+	rk_clrsetreg(&cru->clksel_con[59],
+		     CLK_NANDC_SEL_MASK | CLK_NANDC_DIV_MASK,
+		     CLK_NANDC_SEL_GPLL << CLK_NANDC_SEL_SHIFT |
+		     (src_clk_div - 1) << CLK_NANDC_DIV_SHIFT);
+
+	return rv1126_nand_get_clk(priv);
+}
+
 static ulong rv1126_aclk_vop_get_clk(struct rv1126_clk_priv *priv)
 {
 	struct rv1126_cru *cru = priv->cru;
@@ -1231,6 +1295,12 @@ static ulong rv1126_clk_get_rate(struct clk *clk)
 	case SCLK_EMMC_SAMPLE:
 		rate = rv1126_mmc_get_clk(priv, clk->id);
 		break;
+	case SCLK_SFC:
+		rate = rv1126_sfc_get_clk(priv);
+		break;
+	case CLK_NANDC:
+		rate = rv1126_nand_get_clk(priv);
+		break;
 	case ACLK_PDVO:
 	case ACLK_VOP:
 		rate = rv1126_aclk_vop_get_clk(priv);
@@ -1308,6 +1378,12 @@ static ulong rv1126_clk_set_rate(struct clk *clk, ulong rate)
 	case CLK_EMMC:
 	case HCLK_EMMC:
 		ret = rv1126_emmc_set_clk(priv, clk->id, rate);
+		break;
+	case SCLK_SFC:
+		ret = rv1126_sfc_set_clk(priv, rate);
+		break;
+	case CLK_NANDC:
+		ret = rv1126_nand_set_clk(priv, rate);
 		break;
 	case ACLK_PDVO:
 	case ACLK_VOP:
