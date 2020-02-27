@@ -9,6 +9,7 @@
 #include <dm/lists.h>
 #include <generic-phy.h>
 #include <syscon.h>
+#include <power/regulator.h>
 #include <asm/io.h>
 #include <asm/arch/clock.h>
 
@@ -151,6 +152,7 @@ struct rockchip_usb2phy {
 	u8		primary_retries;
 	void __iomem	*grf_base;
 	void __iomem	*usbgrf_base;
+	struct udevice	*vbus_supply[USB2PHY_NUM_PORTS];
 	const struct rockchip_usb2phy_cfg	*phy_cfg;
 };
 
@@ -386,6 +388,29 @@ void otg_phy_init(struct dwc2_udc *dev)
 	mdelay(2);
 }
 
+static struct udevice *rockchip_usb2phy_check_vbus(struct phy *phy)
+{
+	struct udevice *parent = phy->dev->parent;
+	struct rockchip_usb2phy *rphy = dev_get_priv(parent);
+	const struct rockchip_usb2phy_port_cfg *port_cfg;
+	void __iomem *base = get_reg_base(rphy);
+	struct udevice *vbus = NULL;
+	bool iddig = true;
+
+	if (phy->id == USB2PHY_PORT_HOST) {
+		vbus = rphy->vbus_supply[USB2PHY_PORT_HOST];
+	} else if (phy->id == USB2PHY_PORT_OTG) {
+		port_cfg = &rphy->phy_cfg->port_cfgs[USB2PHY_PORT_OTG];
+		if (port_cfg->utmi_iddig.offset) {
+			iddig = property_enabled(base, &port_cfg->utmi_iddig);
+			if (!iddig)
+				vbus = rphy->vbus_supply[USB2PHY_PORT_OTG];
+		}
+	}
+
+	return vbus;
+}
+
 static int rockchip_usb2phy_init(struct phy *phy)
 {
 	struct udevice *parent = phy->dev->parent;
@@ -431,15 +456,55 @@ static int rockchip_usb2phy_exit(struct phy *phy)
 	return 0;
 }
 
+static int rockchip_usb2phy_power_on(struct phy *phy)
+{
+	struct udevice *vbus = NULL;
+	int ret;
+
+	vbus = rockchip_usb2phy_check_vbus(phy);
+	if (vbus) {
+		ret = regulator_set_enable(vbus, true);
+		if (ret) {
+			pr_err("%s: Failed to set VBus supply\n", __func__);
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
+static int rockchip_usb2phy_power_off(struct phy *phy)
+{
+	struct udevice *vbus = NULL;
+	int ret;
+
+	vbus = rockchip_usb2phy_check_vbus(phy);
+	if (vbus) {
+		ret = regulator_set_enable(vbus, false);
+		if (ret) {
+			pr_err("%s: Failed to set VBus supply\n", __func__);
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
 static int rockchip_usb2phy_of_xlate(struct phy *phy,
 				     struct ofnode_phandle_args *args)
 {
 	const char *dev_name = phy->dev->name;
+	struct udevice *parent = phy->dev->parent;
+	struct rockchip_usb2phy *rphy = dev_get_priv(parent);
 
 	if (!strcasecmp(dev_name, "host-port")) {
 		phy->id = USB2PHY_PORT_HOST;
+		device_get_supply_regulator(phy->dev, "phy-supply",
+					    &rphy->vbus_supply[USB2PHY_PORT_HOST]);
 	} else if (!strcasecmp(dev_name, "otg-port")) {
 		phy->id = USB2PHY_PORT_OTG;
+		device_get_supply_regulator(phy->dev, "phy-supply",
+					    &rphy->vbus_supply[USB2PHY_PORT_OTG]);
 	} else {
 		pr_err("%s: invalid dev name\n", __func__);
 		return -EINVAL;
@@ -553,6 +618,8 @@ static int rk322x_usb2phy_tuning(struct rockchip_usb2phy *rphy)
 static struct phy_ops rockchip_usb2phy_ops = {
 	.init = rockchip_usb2phy_init,
 	.exit = rockchip_usb2phy_exit,
+	.power_on = rockchip_usb2phy_power_on,
+	.power_off = rockchip_usb2phy_power_off,
 	.of_xlate = rockchip_usb2phy_of_xlate,
 };
 
