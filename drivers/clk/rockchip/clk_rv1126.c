@@ -93,6 +93,9 @@ static const struct rv1126_clk_info clks_dump[] = {
 };
 #endif
 
+static ulong rv1126_gpll_set_rate(struct rv1126_clk_priv *priv,
+				  struct rv1126_pmuclk_priv *pmu_priv,
+				  ulong rate);
 /*
  *
  * rational_best_approximation(31415, 10000,
@@ -150,20 +153,26 @@ static ulong rv1126_gpll_get_pmuclk(struct rv1126_pmuclk_priv *priv)
 				     priv->pmucru, GPLL);
 }
 
-static ulong rv1126_gpll_set_pmuclk(struct rv1126_pmuclk_priv *priv, ulong rate)
+static ulong rv1126_gpll_set_pmuclk(struct rv1126_pmuclk_priv *pmu_priv, ulong rate)
 {
+	struct udevice *cru_dev;
+	struct rv1126_clk_priv *priv;
 	int ret;
 
-	/*
-	 * the child div is big enough for gpll 1188MHz,
-	 * even maskrom has change some clocks.
-	 */
-	ret = rockchip_pll_set_rate(&rv1126_pll_clks[GPLL],
-				    priv->pmucru, GPLL, rate);
-	if (!ret)
-		priv->gpll_hz = rate;
+	ret = uclass_get_device_by_driver(UCLASS_CLK,
+					  DM_GET_DRIVER(rockchip_rv1126_cru),
+					  &cru_dev);
+	if (ret) {
+		printf("%s: could not find cru device\n", __func__);
+		return ret;
+	}
+	priv = dev_get_priv(cru_dev);
 
-	return ret;
+	if (rv1126_gpll_set_rate(priv, pmu_priv, rate)) {
+		printf("%s: failed to set gpll rate %lu\n", __func__, rate);
+		return -EINVAL;
+	}
+	return 0;
 }
 
 static ulong rv1126_rtc32k_get_pmuclk(struct rv1126_pmuclk_priv *priv)
@@ -1025,7 +1034,7 @@ static ulong rv1126_mmc_get_clk(struct rv1126_clk_priv *priv, ulong clk_id)
 	return -ENOENT;
 }
 
-static ulong rv1126_emmc_set_clk(struct rv1126_clk_priv *priv, ulong clk_id,
+static ulong rv1126_mmc_set_clk(struct rv1126_clk_priv *priv, ulong clk_id,
 				 ulong rate)
 {
 	struct rv1126_cru *cru = priv->cru;
@@ -1377,7 +1386,7 @@ static ulong rv1126_clk_set_rate(struct clk *clk, ulong rate)
 	case HCLK_SDIO:
 	case CLK_EMMC:
 	case HCLK_EMMC:
-		ret = rv1126_emmc_set_clk(priv, clk->id, rate);
+		ret = rv1126_mmc_set_clk(priv, clk->id, rate);
 		break;
 	case SCLK_SFC:
 		ret = rv1126_sfc_set_clk(priv, rate);
@@ -1599,10 +1608,40 @@ static struct clk_ops rv1126_clk_ops = {
 #endif
 };
 
-static int rv1126_gpll_set_clk(ulong rate)
+static ulong rv1126_gpll_set_rate(struct rv1126_clk_priv *priv,
+				  struct rv1126_pmuclk_priv *pmu_priv,
+				  ulong rate)
+{
+	ulong emmc_rate, sfc_rate, nandc_rate;
+	int ret;
+
+	emmc_rate = rv1126_mmc_get_clk(priv, CLK_EMMC);
+	sfc_rate = rv1126_sfc_get_clk(priv);
+	nandc_rate = rv1126_nand_get_clk(priv);
+	debug("%s emmc=%lu, sdmmc=%lu, nandc=%lu\n", __func__,
+	      emmc_rate, sfc_rate, nandc_rate);
+
+	/*
+	 * the child div is big enough for gpll 1188MHz,
+	 * even maskrom has change some clocks.
+	 */
+	if (rockchip_pll_set_rate(&rv1126_pll_clks[GPLL],
+				  pmu_priv->pmucru, GPLL, rate))
+		return -EINVAL;
+	pmu_priv->gpll_hz = rate;
+	priv->gpll_hz = rate;
+
+	rv1126_mmc_set_clk(priv, CLK_EMMC, emmc_rate);
+	rv1126_sfc_set_clk(priv,  sfc_rate);
+	rv1126_nand_set_clk(priv, nandc_rate);
+
+	return ret;
+}
+
+static int rv1126_gpll_set_clk(struct rv1126_clk_priv *priv, ulong rate)
 {
 	struct udevice *pmucru_dev;
-	struct rv1126_pmuclk_priv *priv;
+	struct rv1126_pmuclk_priv *pmu_priv;
 	int ret;
 
 	ret = uclass_get_device_by_driver(UCLASS_CLK,
@@ -1612,16 +1651,16 @@ static int rv1126_gpll_set_clk(ulong rate)
 		printf("%s: could not find pmucru device\n", __func__);
 		return ret;
 	}
-	priv = dev_get_priv(pmucru_dev);
+	pmu_priv = dev_get_priv(pmucru_dev);
 
-	ret = rv1126_gpll_set_pmuclk(priv, rate);
-	if (ret) {
+	if (rv1126_gpll_set_rate(priv, pmu_priv, rate)) {
 		printf("%s: failed to set gpll rate %lu\n", __func__, rate);
-		return ret;
+		return -EINVAL;
 	}
-	rv1126_pdpmu_set_pmuclk(priv, PCLK_PDPMU_HZ);
 
-	return ret;
+	rv1126_pdpmu_set_pmuclk(pmu_priv, PCLK_PDPMU_HZ);
+
+	return 0;
 }
 
 static void rv1126_clk_init(struct rv1126_clk_priv *priv)
@@ -1641,11 +1680,9 @@ static void rv1126_clk_init(struct rv1126_clk_priv *priv)
 		if (!ret)
 			priv->armclk_init_hz = APLL_HZ;
 	}
-	if (priv->gpll_hz != GPLL_HZ) {
-		ret = rv1126_gpll_set_clk(GPLL_HZ);
-		if (!ret)
-			priv->gpll_hz = GPLL_HZ;
-	}
+	if (priv->gpll_hz != GPLL_HZ)
+		rv1126_gpll_set_clk(priv, GPLL_HZ);
+
 	if (priv->cpll_hz != CPLL_HZ) {
 		ret = rockchip_pll_set_rate(&rv1126_pll_clks[CPLL], priv->cru,
 					    CPLL, CPLL_HZ);
