@@ -54,23 +54,18 @@ void suspend_get_wakeup_source(void *response, unsigned int suspend_from)
  */
 void enter_suspend(unsigned int suspend_from)
 {
-	int i, exit_reason = UDEFINED_WAKEUP;
-	unsigned int reg, bit, offset;
-	struct meson_bank bank;
+	int exit_reason = UDEFINED_WAKEUP;
 
-	for(i = 0; i < 2; ++i) {
-		/* clear GPIOA_11/13 pin mux */
-		reg = 0xe;
-		offset = PK(0xe, (11 + 2 * i)) & 0xff;
-		bit = (offset % 8) * 4;
-		aml_update_bits((domain + (reg << 2)), (0xf << bit), 0);
+	/* clear GPIOA_11 pin mux */
+	aml_update_bits(PERIPHS_PIN_MUX_E, 0xf << 12, 0);
+	/* clear GPIOA_13 pin mux */
+	aml_update_bits(PERIPHS_PIN_MUX_E, 0xf << 20, 0);
 
-		/* set as input port */
-		bank = mesong12b_banks[0]; /* GPIOA_ */
-		reg = bank.regs[REG_DIR].reg;
-		bit = bank.regs[REG_DIR].bit + offset;
-		aml_update_bits(reg, BIT(bit), BIT(bit));
-	}
+	/* set GPIOA_11 as input port */
+	aml_update_bits(PREG_PAD_GPIO5_EN_N, 1 << 11, 1 << 11);
+	/* set GPIOA_13 as input port */
+	aml_update_bits(PREG_PAD_GPIO5_EN_N, 1 << 13, 1 << 13);
+
 	uart_puts("GPIOA_11/13 off\n");
 
 	#ifdef CONFIG_CEC_WAKEUP
