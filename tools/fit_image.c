@@ -24,6 +24,52 @@
 
 static image_header_t header;
 
+#define ALIGN(x, a)	(((x) + (a) - 1) & ~((a) - 1))
+
+/* Resize the fdt to its actual size + a bit of padding */
+static int fdt_shrink_to_minimum(void *blob, uint extrasize)
+{
+	uint64_t addr, size;
+	uint actualsize;
+	int total, ret;
+	int i;
+
+	if (!blob)
+		return 0;
+
+	total = fdt_num_mem_rsv(blob);
+	for (i = 0; i < total; i++) {
+		fdt_get_mem_rsv(blob, i, &addr, &size);
+		if (addr == (uintptr_t)blob) {
+			fdt_del_mem_rsv(blob, i);
+			break;
+		}
+	}
+
+	/*
+	 * Calculate the actual size of the fdt
+	 * plus the size needed for 5 fdt_add_mem_rsv, one
+	 * for the fdt itself and 4 for a possible initrd
+	 * ((initrd-start + initrd-end) * 2 (name & value))
+	 */
+	actualsize = fdt_off_dt_strings(blob) +
+		fdt_size_dt_strings(blob) + 5 * sizeof(struct fdt_reserve_entry);
+
+	actualsize += extrasize;
+	actualsize = ALIGN(actualsize + ((uintptr_t)blob & 0xfff), 0x200);
+	actualsize = actualsize - ((uintptr_t)blob & 0xfff);
+
+	/* Change the fdt header to reflect the correct size */
+	fdt_set_totalsize(blob, actualsize);
+
+	/* Add the new reservation */
+	ret = fdt_add_mem_rsv(blob, (uintptr_t)blob, actualsize);
+	if (ret < 0)
+		return ret;
+
+	return actualsize;
+}
+
 static int fit_add_file_data(struct image_tool_params *params, size_t size_inc,
 			     const char *tmpfile)
 {
@@ -61,6 +107,16 @@ static int fit_add_file_data(struct image_tool_params *params, size_t size_inc,
 						params->comment,
 						params->require_keys,
 						params->engine_id);
+	}
+
+	/* Remove external data size from fdt totalsize */
+	if (params->external_offset) {
+		fdt_shrink_to_minimum(ptr, 0);
+		if (params->external_offset < fdt_totalsize(ptr)) {
+			ret = -EINVAL;
+			printf("Failed: external offset 0x%x overlaps FIT length 0x%x\n",
+			       params->external_offset, fdt_totalsize(ptr));
+		}
 	}
 
 	if (dest_blob) {
@@ -414,7 +470,7 @@ static int fit_extract_data(struct image_tool_params *params, const char *fname)
 	int images;
 	int node;
 
-	fd = mmap_fdt(params->cmdname, fname, 0, &fdt, &sbuf, false);
+	fd = mmap_fdt(params->cmdname, fname, 0x400, &fdt, &sbuf, false);
 	if (fd < 0)
 		return -EIO;
 	fit_size = fdt_totalsize(fdt);
@@ -482,8 +538,8 @@ static int fit_extract_data(struct image_tool_params *params, const char *fname)
 	/* Check if an offset for the external data was set. */
 	if (params->external_offset > 0) {
 		if (params->external_offset < new_size) {
-			debug("External offset %x overlaps FIT length %x",
-			      params->external_offset, new_size);
+			printf("Failed: external offset 0x%x overlaps FIT length 0x%x\n",
+			       params->external_offset, new_size);
 			ret = -EINVAL;
 			goto err;
 		}
@@ -669,6 +725,13 @@ static int fit_handle_file(struct image_tool_params *params)
 	if (ret)
 		goto err_system;
 
+	/* Args "-E -p": move the data so it is external to the FIT, if requested */
+	if (params->external_data && params->external_offset) {
+		ret = fit_extract_data(params, tmpfile);
+		if (ret)
+			goto err_system;
+	}
+
 	/*
 	 * Set hashes for images in the blob. Unfortunately we may need more
 	 * space in either FDT, so keep trying until we succeed.
@@ -691,8 +754,8 @@ static int fit_handle_file(struct image_tool_params *params)
 		goto err_system;
 	}
 
-	/* Move the data so it is external to the FIT, if requested */
-	if (params->external_data) {
+	/* Args "-E": move the data so it is external to the FIT, if requested */
+	if (params->external_data && !params->external_offset) {
 		ret = fit_extract_data(params, tmpfile);
 		if (ret)
 			goto err_system;
