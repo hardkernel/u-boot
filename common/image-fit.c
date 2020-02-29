@@ -850,7 +850,7 @@ int fit_image_get_data(const void *fit, int noffset,
 		fit_image_get_data_size(fit, noffset, &data_sz);
 		if (data_sz) {
 			data_off += (ulong)fit;
-			data_off += round_up(fdt_totalsize(fit), 4);
+			data_off += FIT_ALIGN(fdt_totalsize(fit));
 			*data = (void *)data_off;
 			*size = data_sz;
 			return 0;

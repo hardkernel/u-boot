@@ -359,8 +359,8 @@ int spl_load_simple_fit(struct spl_image_info *spl_image,
 	 * image.
 	 */
 	size = fdt_totalsize(fit);
-	size = (size + 3) & ~3;
-	base_offset = (size + 3) & ~3;
+	size = FIT_ALIGN(size);
+	base_offset = FIT_ALIGN(size);
 
 	/*
 	 * So far we only have one block of data from the FIT. Read the entire

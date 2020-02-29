@@ -460,7 +460,7 @@ static int fit_extract_data(struct image_tool_params *params, const char *fname)
 		}
 		fdt_setprop_u32(fdt, node, "data-size", len);
 
-		buf_ptr += (len + 3) & ~3;
+		buf_ptr += FIT_ALIGN(len);
 	}
 
 	/* Pack the FDT and place the data after it */
@@ -469,7 +469,7 @@ static int fit_extract_data(struct image_tool_params *params, const char *fname)
 	debug("Size reduced from %x to %x\n", fit_size, fdt_totalsize(fdt));
 	debug("External data size %x\n", buf_ptr);
 	new_size = fdt_totalsize(fdt);
-	new_size = (new_size + 3) & ~3;
+	new_size = FIT_ALIGN(new_size);
 	munmap(fdt, sbuf.st_size);
 
 	if (ftruncate(fd, new_size)) {
@@ -528,7 +528,7 @@ static int fit_import_data(struct image_tool_params *params, const char *fname)
 	if (fd < 0)
 		return -EIO;
 	fit_size = fdt_totalsize(old_fdt);
-	data_base = (fit_size + 3) & ~3;
+	data_base = FIT_ALIGN(fit_size);
 
 	/* Allocate space to hold the new FIT */
 	size = sbuf.st_size + 16384;

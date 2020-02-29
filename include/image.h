@@ -921,6 +921,12 @@ int bootz_setup(ulong image, ulong *start, ulong *end);
 #define FIT_MAX_HASH_LEN	HASH_MAX_DIGEST_SIZE
 
 #if IMAGE_ENABLE_FIT
+
+#ifndef IMAGE_ALIGN_SIZE
+#define IMAGE_ALIGN_SIZE	512
+#endif
+#define FIT_ALIGN(x)		(((x)+IMAGE_ALIGN_SIZE-1)&~(IMAGE_ALIGN_SIZE-1))
+
 /* cmdline argument format parsing */
 int fit_parse_conf(const char *spec, ulong addr_curr,
 		ulong *addr, const char **conf_name);
