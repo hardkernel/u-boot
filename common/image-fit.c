@@ -841,28 +841,37 @@ int fit_image_get_data(const void *fit, int noffset,
 		const void **data, size_t *size)
 {
 	ulong data_off = 0;
-	int data_sz = 0;
+	ulong data_pos = 0;
 	int len;
 
+	/* data */
 	*data = fdt_getprop(fit, noffset, FIT_DATA_PROP, &len);
-	if (*data == NULL) {
-		fit_image_get_data_offset(fit, noffset, (int *)&data_off);
-		fit_image_get_data_size(fit, noffset, &data_sz);
-		if (data_sz) {
-			data_off += (ulong)fit;
-			data_off += FIT_ALIGN(fdt_totalsize(fit));
-			*data = (void *)data_off;
-			*size = data_sz;
-			return 0;
-		} else {
-			fit_get_debug(fit, noffset, FIT_DATA_PROP, len);
-			*size = 0;
-			return -1;
-		}
+	if (*data) {
+		*size = len;
+		return 0;
 	}
 
-	*size = len;
-	return 0;
+	/* data-size */
+	if (fit_image_get_data_size(fit, noffset, &len))
+		return -ENOENT;
+
+	/* data-offset */
+	if (!fit_image_get_data_offset(fit, noffset, (int *)&data_off)) {
+		data_off += (ulong)fit + FIT_ALIGN(fdt_totalsize(fit));
+		*data = (void *)data_off;
+		*size = len;
+		return 0;
+	}
+
+	/* data-position */
+	if (!fit_image_get_data_position(fit, noffset, (int *)&data_pos)) {
+		*data = (void *)(data_pos + (ulong)fit);
+		*size = len;
+		return 0;
+	}
+
+	*size = 0;
+	return -1;
 }
 
 /**
