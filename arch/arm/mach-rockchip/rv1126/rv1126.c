@@ -8,3 +8,7 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
+void board_debug_uart_init(void)
+{
+
+}
