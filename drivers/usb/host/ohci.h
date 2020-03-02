@@ -14,8 +14,8 @@
 #include <asm/io.h>
 
 #ifdef CONFIG_SYS_OHCI_SWAP_REG_ACCESS
-# define ohci_readl(a) __swap_32(readl(a))
-# define ohci_writel(v, a) writel(__swap_32(v), a)
+# define ohci_readl(a) __swap_32(in_be32((u32 *)a))
+# define ohci_writel(a, b) out_be32((u32 *)b, __swap_32(a))
 #else
 # define ohci_readl(a) readl(a)
 # define ohci_writel(v, a) writel(v, a)
@@ -27,7 +27,7 @@
 #define ED_ALIGNMENT 16
 #endif
 
-#if defined CONFIG_DM_USB && ARCH_DMA_MINALIGN > 32
+#if CONFIG_IS_ENABLED(DM_USB) && ARCH_DMA_MINALIGN > 32
 #define TD_ALIGNMENT ARCH_DMA_MINALIGN
 #else
 #define TD_ALIGNMENT 32
@@ -406,7 +406,7 @@ typedef struct ohci {
 	const char	*slot_name;
 } ohci_t;
 
-#ifdef CONFIG_DM_USB
+#if CONFIG_IS_ENABLED(DM_USB)
 extern struct dm_usb_ops ohci_usb_ops;
 
 int ohci_register(struct udevice *dev, struct ohci_regs *regs);

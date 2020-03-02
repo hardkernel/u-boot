@@ -108,6 +108,18 @@ static void serial_find_console_or_panic(void)
 				gd->cur_serial_dev = dev;
 				return;
 			}
+
+			/*
+			 * If the console is not marked to be bound, bind it
+			 * anyway.
+			 */
+			if (!lists_bind_fdt(gd->dm_root, np_to_ofnode(np),
+					    &dev)) {
+				if (!device_probe(dev)) {
+					gd->cur_serial_dev = dev;
+					return;
+				}
+			}
 		} else {
 			if (!serial_check_stdout(blob, &dev)) {
 				gd->cur_serial_dev = dev;
@@ -293,6 +305,58 @@ void serial_clear(void)
 		return;
 
 	__serial_clear(gd->cur_serial_dev);
+}
+
+void serial_dev_putc(struct udevice *dev, char ch)
+{
+	if (!dev)
+		return;
+
+	_serial_putc(dev, ch);
+}
+
+void serial_dev_puts(struct udevice *dev, const char *str)
+{
+	if (!dev)
+		return;
+
+	_serial_puts(dev, str);
+}
+
+int serial_dev_getc(struct udevice *dev)
+{
+	if (!dev)
+		return 0;
+
+	return _serial_getc(dev);
+}
+
+int serial_dev_tstc(struct udevice *dev)
+{
+	if (!dev)
+		return 0;
+
+	return _serial_tstc(dev);
+}
+
+void serial_dev_setbrg(struct udevice *dev, int baudrate)
+{
+	struct dm_serial_ops *ops;
+
+	if (!dev)
+		return;
+
+	ops = serial_get_ops(dev);
+	if (ops->setbrg)
+		ops->setbrg(dev, baudrate);
+}
+
+void serial_dev_clear(struct udevice *dev)
+{
+	if (!dev)
+		return;
+
+	__serial_clear(dev);
 }
 
 void serial_stdio_init(void)

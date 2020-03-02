@@ -134,7 +134,7 @@ int efi_disk_register(void);
 /* Called by bootefi to make GOP (graphical) interface available */
 int efi_gop_register(void);
 /* Called by bootefi to make the network interface available */
-int efi_net_register(void **handle);
+int efi_net_register(void);
 /* Called by bootefi to make SMBIOS tables available */
 void efi_smbios_register(void);
 
@@ -191,11 +191,40 @@ uint64_t efi_add_memory_map(uint64_t start, uint64_t pages, int memory_type,
 int efi_memory_init(void);
 /* Adds new or overrides configuration table entry to the system table */
 efi_status_t efi_install_configuration_table(const efi_guid_t *guid, void *table);
+void efi_setup_loaded_image(struct efi_loaded_image *info, struct efi_object *obj,
+			    struct efi_device_path *device_path,
+			    struct efi_device_path *file_path);
 
 #ifdef CONFIG_EFI_LOADER_BOUNCE_BUFFER
 extern void *efi_bounce_buffer;
 #define EFI_LOADER_BOUNCE_BUFFER_SIZE (64 * 1024 * 1024)
 #endif
+
+
+struct efi_device_path *efi_dp_next(const struct efi_device_path *dp);
+int efi_dp_match(struct efi_device_path *a, struct efi_device_path *b);
+struct efi_object *efi_dp_find_obj(struct efi_device_path *dp,
+				   struct efi_device_path **rem);
+unsigned efi_dp_size(const struct efi_device_path *dp);
+struct efi_device_path *efi_dp_dup(const struct efi_device_path *dp);
+struct efi_device_path *efi_dp_append(const struct efi_device_path *dp1,
+				      const struct efi_device_path *dp2);
+struct efi_device_path *efi_dp_append_node(const struct efi_device_path *dp,
+					   const struct efi_device_path *node);
+
+
+struct efi_device_path *efi_dp_from_dev(struct udevice *dev);
+struct efi_device_path *efi_dp_from_part(struct blk_desc *desc, int part);
+struct efi_device_path *efi_dp_from_file(struct blk_desc *desc, int part,
+					 const char *path);
+struct efi_device_path *efi_dp_from_eth(void);
+void efi_dp_split_file_path(struct efi_device_path *full_path,
+			    struct efi_device_path **device_path,
+			    struct efi_device_path **file_path);
+
+#define EFI_DP_TYPE(_dp, _type, _subtype) \
+	(((_dp)->type == DEVICE_PATH_TYPE_##_type) && \
+	 ((_dp)->sub_type == DEVICE_PATH_SUB_TYPE_##_subtype))
 
 /* Convert strings from normal C strings to uEFI strings */
 static inline void ascii2unicode(u16 *unicode, const char *ascii)

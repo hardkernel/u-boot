@@ -1396,6 +1396,7 @@ static void rkclk_init(struct rk3399_cru *cru)
 	u32 pclk_div;
 
 	rk3399_configure_cpu(cru, APLL_816_MHZ, CPU_CLUSTER_LITTLE);
+	rk3399_configure_cpu(cru, APLL_816_MHZ, CPU_CLUSTER_BIG);
 
 	/*
 	 * some cru registers changed by bootrom, we'd better reset them to

@@ -20,6 +20,104 @@
 #define	ATTESTATION_TAG	"ATTE"
 #define PLAYREADY30_TAG	"SL30"
 
+TEEC_Result write_to_security_storage(uint8_t is_use_rpmb,
+				      uint8_t *filename,
+				      uint32_t filename_size,
+				      uint8_t *data,
+				      uint32_t data_size)
+{
+	TEEC_Result TeecResult;
+	TEEC_Context TeecContext;
+	TEEC_Session TeecSession;
+	TEEC_SharedMemory SharedMem0 = {0};
+	TEEC_SharedMemory SharedMem1 = {0};
+	uint32_t ErrorOrigin;
+
+	TEEC_UUID tempuuid = { 0x1b484ea5,
+			       0x698b,
+			       0x4142,
+			       { 0x82, 0xb8, 0x3a,
+				 0xcf, 0x16, 0xe9,
+				 0x9e, 0x2a } };
+
+	TEEC_UUID *TeecUuid = &tempuuid;
+	TEEC_Operation TeecOperation = {0};
+
+	TeecResult = OpteeClientApiLibInitialize();
+	if (TeecResult) {
+		printf("OpteeClientApiLibInitialize fail\n");
+		return TeecResult;
+	}
+	TeecResult = TEEC_InitializeContext(NULL, &TeecContext);
+	if (TeecResult) {
+		printf("TEEC_InitializeContext fail\n");
+		return TeecResult;
+	}
+	TeecOperation.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT,
+						    TEEC_NONE,
+						    TEEC_NONE,
+						    TEEC_NONE);
+
+	/*0 nand or emmc "security" partition , 1 rpmb*/
+	TeecOperation.params[0].value.a = is_use_rpmb;
+
+	TeecResult = TEEC_OpenSession(&TeecContext,
+				      &TeecSession,
+				      TeecUuid,
+				      TEEC_LOGIN_PUBLIC,
+				      NULL, &TeecOperation,
+				      &ErrorOrigin);
+	if (TeecResult) {
+		printf("TEEC_OpenSession fail\n");
+		return TeecResult;
+	}
+
+	SharedMem0.size = filename_size;
+	SharedMem0.flags = 0;
+	TeecResult = TEEC_AllocateSharedMemory(&TeecContext, &SharedMem0);
+	if (TeecResult) {
+		printf("TEEC_AllocateSharedMemory fail\n");
+		return TeecResult;
+	}
+	memcpy(SharedMem0.buffer, filename, SharedMem0.size);
+
+	SharedMem1.size = data_size;
+	SharedMem1.flags = 0;
+	TeecResult = TEEC_AllocateSharedMemory(&TeecContext, &SharedMem1);
+	if (TeecResult) {
+		printf("TEEC_AllocateSharedMemory fail\n");
+		return TeecResult;
+	}
+	memcpy(SharedMem1.buffer, data, SharedMem1.size);
+
+	TeecOperation.params[0].tmpref.buffer = SharedMem0.buffer;
+	TeecOperation.params[0].tmpref.size = SharedMem0.size;
+
+	TeecOperation.params[1].tmpref.buffer = SharedMem1.buffer;
+	TeecOperation.params[1].tmpref.size = SharedMem1.size;
+
+	TeecOperation.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_INPUT,
+						    TEEC_MEMREF_TEMP_INOUT,
+						    TEEC_NONE,
+						    TEEC_NONE);
+
+	TeecResult = TEEC_InvokeCommand(&TeecSession,
+					1,
+					&TeecOperation,
+					&ErrorOrigin);
+	if (TeecResult) {
+		printf("TEEC_InvokeCommand fail\n");
+		return TeecResult;
+	}
+	TEEC_ReleaseSharedMemory(&SharedMem0);
+	TEEC_ReleaseSharedMemory(&SharedMem1);
+	TEEC_CloseSession(&TeecSession);
+	TEEC_FinalizeContext(&TeecContext);
+	debug("TeecResult %x\n", TeecResult);
+
+	return TeecResult;
+}
+
 uint32_t rk_send_keybox_to_ta(uint8_t *filename, uint32_t filename_size,
 			      TEEC_UUID uuid,
 			      uint8_t *key, uint32_t key_size,
@@ -146,13 +244,13 @@ uint32_t write_keybox_to_secure_storage(uint8_t *received_data, uint32_t len)
 	if (is_use_rpmb)
 		printf("I will write key to rpmb\n");
 	else
-		printf("I will write key to security partition");
-	rc = write_to_keymaster((uint8_t *)"security_partition",
-				sizeof("security_partition"),
-				&is_use_rpmb, sizeof(is_use_rpmb));
+		printf("I will write key to security partition\n");
+
+	rc = write_to_security_storage(0, (uint8_t *)"security_partition",
+				       sizeof("security_partition"),
+				       &is_use_rpmb, sizeof(is_use_rpmb));
 	if (rc)
 		return -EIO;
-
 	widevine_data = (uint8_t *)new_strstr((char *)received_data,
 					      WIDEVINE_TAG, len);
 	attestation_data = (uint8_t *)new_strstr((char *)received_data,
@@ -200,11 +298,12 @@ uint32_t write_keybox_to_secure_storage(uint8_t *received_data, uint32_t len)
 		uint32_t ret;
 
 		data_size = *(playready_sl30_data + SIZE_OF_TAG);
-		ret = write_to_keymaster((uint8_t *)"PlayReady_SL3000",
-					 sizeof("PlayReady_SL3000"),
-					 playready_sl30_data + SIZE_OF_TAG +
-					 sizeof(data_size),
-					 data_size);
+		ret = write_to_security_storage(is_use_rpmb,
+						(uint8_t *)"PlayReady_SL3000",
+						sizeof("PlayReady_SL3000"),
+						playready_sl30_data +
+						SIZE_OF_TAG +sizeof(data_size),
+						data_size);
 		if (ret == TEEC_SUCCESS) {
 			rc = 0;
 			printf("write PlayReady SL3000 root key to secure storage success\n");
@@ -223,9 +322,11 @@ uint32_t write_keybox_to_secure_storage(uint8_t *received_data, uint32_t len)
 		memcpy(raw_data, &len, sizeof(uint32_t));
 		memcpy((raw_data + sizeof(uint32_t)), received_data, len);
 
-		ret = write_to_keymaster((uint8_t *)"raw_data",
-					 sizeof("raw_data"),
-					 raw_data, len + sizeof(uint32_t));
+		ret = write_to_security_storage(is_use_rpmb,
+						(uint8_t *)"raw_data",
+						sizeof("raw_data"),
+						raw_data,
+						len + sizeof(uint32_t));
 		if (ret == TEEC_SUCCESS)
 			rc = 0;
 		else

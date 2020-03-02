@@ -43,7 +43,7 @@
 static int asynch_allowed;
 char usb_started; /* flag for the started/stopped USB status */
 
-#ifndef CONFIG_DM_USB
+#if !CONFIG_IS_ENABLED(DM_USB)
 static struct usb_device usb_dev[USB_MAX_DEVICE];
 static int dev_index;
 
@@ -184,7 +184,7 @@ int usb_disable_asynch(int disable)
 	asynch_allowed = !disable;
 	return old_value;
 }
-#endif /* !CONFIG_DM_USB */
+#endif /* !CONFIG_IS_ENABLED(DM_USB) */
 
 
 /*-------------------------------------------------------------------
@@ -193,12 +193,15 @@ int usb_disable_asynch(int disable)
  */
 
 /*
- * submits an Interrupt Message
+ * submits an Interrupt Message. Some drivers may implement non-blocking
+ * polling: when non-block is true and the device is not responding return
+ * -EAGAIN instead of waiting for device to respond.
  */
-int usb_submit_int_msg(struct usb_device *dev, unsigned long pipe,
-			void *buffer, int transfer_len, int interval)
+int usb_int_msg(struct usb_device *dev, unsigned long pipe,
+		void *buffer, int transfer_len, int interval, bool nonblock)
 {
-	return submit_int_msg(dev, pipe, buffer, transfer_len, interval);
+	return submit_int_msg(dev, pipe, buffer, transfer_len, interval,
+			      nonblock);
 }
 
 /*
@@ -849,7 +852,7 @@ int usb_string(struct usb_device *dev, int index, char *buf, size_t size)
  * the USB device are static allocated [USB_MAX_DEVICE].
  */
 
-#ifndef CONFIG_DM_USB
+#if !CONFIG_IS_ENABLED(DM_USB)
 
 /* returns a pointer to the device with the index [index].
  * if the device is not assigned (dev->devnum==-1) returns NULL
@@ -906,7 +909,7 @@ __weak int usb_alloc_device(struct usb_device *udev)
 {
 	return 0;
 }
-#endif /* !CONFIG_DM_USB */
+#endif /* !CONFIG_IS_ENABLED(DM_USB) */
 
 static int usb_hub_port_reset(struct usb_device *dev, struct usb_device *hub)
 {
@@ -1166,7 +1169,7 @@ int usb_setup_device(struct usb_device *dev, bool do_read,
 	return ret;
 }
 
-#ifndef CONFIG_DM_USB
+#if !CONFIG_IS_ENABLED(DM_USB)
 /*
  * By the time we get here, the device has gotten a new device ID
  * and is in the default state. We need to identify the thing and
@@ -1215,14 +1218,14 @@ int board_usb_cleanup(int index, enum usb_init_type init)
 
 bool usb_device_has_child_on_port(struct usb_device *parent, int port)
 {
-#ifdef CONFIG_DM_USB
+#if CONFIG_IS_ENABLED(DM_USB)
 	return false;
 #else
 	return parent->children[port] != NULL;
 #endif
 }
 
-#ifdef CONFIG_DM_USB
+#if CONFIG_IS_ENABLED(DM_USB)
 void usb_find_usb2_hub_address_port(struct usb_device *udev,
 			       uint8_t *hub_address, uint8_t *hub_port)
 {

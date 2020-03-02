@@ -750,6 +750,14 @@
 		interrupts = <GIC_SPI 66 IRQ_TYPE_LEVEL_HIGH>;
 	};
 
+	crypto: crypto@ff8a0000 {
+		compatible = "rockchip,rk3368-crypto";
+		reg = <0x0 0xff8a0000 0x0 0x10000>;
+		clock-names = "sclk_crypto";
+		clocks = <&cru SCLK_CRYPTO>;
+		status = "disabled";
+	};
+
 	gic: interrupt-controller@ffb71000 {
 		compatible = "arm,gic-400";
 		interrupt-controller;

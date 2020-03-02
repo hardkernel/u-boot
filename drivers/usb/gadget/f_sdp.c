@@ -32,6 +32,7 @@
 #include <spl.h>
 #include <image.h>
 #include <imximage.h>
+#include <watchdog.h>
 
 #define HID_REPORT_ID_MASK	0x000000ff
 
@@ -100,6 +101,7 @@ struct f_sdp {
 	enum sdp_state			state;
 	enum sdp_state			next_state;
 	u32				dnl_address;
+	u32				dnl_bytes;
 	u32				dnl_bytes_remaining;
 	u32				jmp_address;
 	bool				always_send_status;
@@ -229,6 +231,11 @@ static struct usb_gadget_strings *sdp_generic_strings[] = {
 	NULL,
 };
 
+static inline void *sdp_ptr(u32 val)
+{
+	return (void *)(uintptr_t)val;
+}
+
 static void sdp_rx_command_complete(struct usb_ep *ep, struct usb_request *req)
 {
 	struct f_sdp *sdp = req->context;
@@ -237,12 +244,12 @@ static void sdp_rx_command_complete(struct usb_ep *ep, struct usb_request *req)
 	u8 report = data[0];
 
 	if (status != 0) {
-		pr_err("Status: %d", status);
+		pr_err("Status: %d\n", status);
 		return;
 	}
 
 	if (report != 1) {
-		pr_err("Unexpected report %d", report);
+		pr_err("Unexpected report %d\n", report);
 		return;
 	}
 
@@ -271,6 +278,7 @@ static void sdp_rx_command_complete(struct usb_ep *ep, struct usb_request *req)
 		sdp->state = SDP_STATE_RX_FILE_DATA;
 		sdp->dnl_address = be32_to_cpu(cmd->addr);
 		sdp->dnl_bytes_remaining = be32_to_cpu(cmd->cnt);
+		sdp->dnl_bytes = sdp->dnl_bytes_remaining;
 		sdp->next_state = SDP_STATE_IDLE;
 
 		printf("Downloading file of size %d to 0x%08x... ",
@@ -322,12 +330,12 @@ static void sdp_rx_data_complete(struct usb_ep *ep, struct usb_request *req)
 	int datalen = req->length - 1;
 
 	if (status != 0) {
-		pr_err("Status: %d", status);
+		pr_err("Status: %d\n", status);
 		return;
 	}
 
 	if (report != 2) {
-		pr_err("Unexpected report %d", report);
+		pr_err("Unexpected report %d\n", report);
 		return;
 	}
 
@@ -343,13 +351,16 @@ static void sdp_rx_data_complete(struct usb_ep *ep, struct usb_request *req)
 	}
 
 	if (sdp->state == SDP_STATE_RX_FILE_DATA) {
-		memcpy((void *)sdp->dnl_address, req->buf + 1, datalen);
+		memcpy(sdp_ptr(sdp->dnl_address), req->buf + 1, datalen);
 		sdp->dnl_address += datalen;
 	}
 
 	if (sdp->dnl_bytes_remaining)
 		return;
 
+#ifndef CONFIG_SPL_BUILD
+	env_set_hex("filesize", sdp->dnl_bytes);
+#endif
 	printf("done\n");
 
 	switch (sdp->state) {
@@ -360,7 +371,7 @@ static void sdp_rx_data_complete(struct usb_ep *ep, struct usb_request *req)
 		sdp->state = SDP_STATE_TX_SEC_CONF;
 		break;
 	default:
-		pr_err("Invalid state: %d", sdp->state);
+		pr_err("Invalid state: %d\n", sdp->state);
 	}
 }
 
@@ -370,7 +381,7 @@ static void sdp_tx_complete(struct usb_ep *ep, struct usb_request *req)
 	int status = req->status;
 
 	if (status != 0) {
-		pr_err("Status: %d", status);
+		pr_err("Status: %d\n", status);
 		return;
 	}
 
@@ -393,7 +404,7 @@ static void sdp_tx_complete(struct usb_ep *ep, struct usb_request *req)
 			sdp->state = SDP_STATE_IDLE;
 		break;
 	default:
-		pr_err("Wrong State: %d", sdp->state);
+		pr_err("Wrong State: %d\n", sdp->state);
 		sdp->state = SDP_STATE_IDLE;
 		break;
 	}
@@ -602,6 +613,8 @@ int sdp_init(int controller_index)
 			puts("\rCTRL+C - Operation aborted.\n");
 			return 1;
 		}
+
+		WATCHDOG_RESET();
 		usb_gadget_handle_interrupts(controller_index);
 	}
 
@@ -619,14 +632,27 @@ static u32 sdp_jump_imxheader(void *address)
 	}
 
 	printf("Jumping to 0x%08x\n", headerv2->entry);
-	entry = (void *)headerv2->entry;
+	entry = sdp_ptr(headerv2->entry);
 	entry();
 
 	/* The image probably never returns hence we won't reach that point */
 	return 0;
 }
 
-static void sdp_handle_in_ep(void)
+#ifdef CONFIG_SPL_BUILD
+#ifdef CONFIG_SPL_LOAD_FIT
+static ulong sdp_fit_read(struct spl_load_info *load, ulong sector,
+			  ulong count, void *buf)
+{
+	debug("%s: sector %lx, count %lx, buf %lx\n",
+	      __func__, sector, count, (ulong)buf);
+	memcpy(buf, (void *)(load->dev + sector), count);
+	return count;
+}
+#endif
+#endif
+
+static void sdp_handle_in_ep(struct spl_image_info *spl_image)
 {
 	u8 *data = sdp_func->in_req->buf;
 	u32 status;
@@ -662,7 +688,7 @@ static void sdp_handle_in_ep(void)
 		if (datalen > 64)
 			datalen = 64;
 
-		memcpy(&data[1], (void *)sdp_func->dnl_address, datalen);
+		memcpy(&data[1], sdp_ptr(sdp_func->dnl_address), datalen);
 		sdp_func->in_req->length = 65;
 
 		sdp_func->dnl_bytes_remaining -= datalen;
@@ -673,15 +699,30 @@ static void sdp_handle_in_ep(void)
 		break;
 	case SDP_STATE_JUMP:
 		printf("Jumping to header at 0x%08x\n", sdp_func->jmp_address);
-		status = sdp_jump_imxheader((void *)sdp_func->jmp_address);
+		status = sdp_jump_imxheader(sdp_ptr(sdp_func->jmp_address));
 
 		/* If imx header fails, try some U-Boot specific headers */
 		if (status) {
 #ifdef CONFIG_SPL_BUILD
+			image_header_t *header =
+				sdp_ptr(sdp_func->jmp_address);
+#ifdef CONFIG_SPL_LOAD_FIT
+			if (image_get_magic(header) == FDT_MAGIC) {
+				struct spl_load_info load;
+
+				debug("Found FIT\n");
+				load.dev = header;
+				load.bl_len = 1;
+				load.read = sdp_fit_read;
+				spl_load_simple_fit(spl_image, &load, 0,
+						    header);
+
+				return;
+			}
+#endif
 			/* In SPL, allow jumps to U-Boot images */
 			struct spl_image_info spl_image = {};
-			spl_parse_image_header(&spl_image,
-				(struct image_header *)sdp_func->jmp_address);
+			spl_parse_image_header(&spl_image, header);
 			jump_to_image_no_args(&spl_image);
 #else
 			/* In U-Boot, allow jumps to scripts */
@@ -703,18 +744,32 @@ static void sdp_handle_in_ep(void)
 	};
 }
 
-void sdp_handle(int controller_index)
+#ifndef CONFIG_SPL_BUILD
+int sdp_handle(int controller_index)
+#else
+int spl_sdp_handle(int controller_index, struct spl_image_info *spl_image)
+#endif
 {
 	printf("SDP: handle requests...\n");
 	while (1) {
 		if (ctrlc()) {
 			puts("\rCTRL+C - Operation aborted.\n");
-			return;
+			return -EINVAL;
 		}
 
+#ifdef CONFIG_SPL_BUILD
+		if (spl_image->flags & SPL_FIT_FOUND)
+			return 0;
+#endif
+
+		WATCHDOG_RESET();
 		usb_gadget_handle_interrupts(controller_index);
 
-		sdp_handle_in_ep();
+#ifdef CONFIG_SPL_BUILD
+		sdp_handle_in_ep(spl_image);
+#else
+		sdp_handle_in_ep(NULL);
+#endif
 	}
 }
 

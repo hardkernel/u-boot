@@ -399,6 +399,10 @@
 	status = "okay";
 };
 
+&crypto {
+	status = "okay";
+};
+
 &emmc {
 	bus-width = <8>;
 	cap-mmc-highspeed;
@@ -413,6 +417,10 @@
 };
 
 &pwm1 {
+	status = "okay";
+};
+
+&uart5 {
 	status = "okay";
 };
 

@@ -21,7 +21,7 @@ ulong rkflash_bread(struct udevice *udev, lbaint_t start,
 
 	debug("%s lba %x cnt %x\n", __func__, (u32)start, (u32)blkcnt);
 	if (blkcnt == 0)
-		return -EINVAL;
+		return 0;
 
 	if ((start + blkcnt) > block_dev->lba)
 		return -EINVAL;
@@ -39,7 +39,7 @@ ulong rkflash_bwrite(struct udevice *udev, lbaint_t start,
 	struct rkflash_info *priv = dev_get_priv(udev->parent);
 
 	if (blkcnt == 0)
-		return -EINVAL;
+		return 0;
 
 	if ((start + blkcnt) > block_dev->lba)
 		return -EINVAL;
@@ -57,7 +57,7 @@ ulong rkflash_berase(struct udevice *udev, lbaint_t start,
 	struct rkflash_info *priv = dev_get_priv(udev->parent);
 
 	if (blkcnt == 0)
-		return -EINVAL;
+		return 0;
 
 	if ((start + blkcnt) > block_dev->lba)
 		return -EINVAL;

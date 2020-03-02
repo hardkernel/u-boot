@@ -7,35 +7,40 @@
 #define _MEMBLK_H
 
 #define ALIAS_COUNT_MAX		2
+#define MEM_RESV_COUNT		3
 
 enum memblk_id {
-	MEMBLK_ID_UNK,
+	MEM_UNK,
 
 	/* Preloader */
-	MEMBLK_ID_ATF,
-	MEMBLK_ID_OPTEE,
-	MEMBLK_ID_SHM,
+	MEM_ATF,
+	MEM_OPTEE,
+	MEM_SHM,
 
 	/* U-Boot self */
-	MEMBLK_ID_UBOOT,
-	MEMBLK_ID_STACK,
-	MEMBLK_ID_FASTBOOT,
+	MEM_UBOOT,
+	MEM_STACK,
+	MEM_FASTBOOT,
 
 	/* Image */
-	MEMBLK_ID_RAMDISK,
-	MEMBLK_ID_FDT,
-	MEMBLK_ID_FDT_DTBO,
-	MEMBLK_ID_FDT_AOSP,
-	MEMBLK_ID_KERNEL,
-	MEMBLK_ID_UNCOMP_KERNEL,
-	MEMBLK_ID_ANDROID,
-	MEMBLK_ID_AVB_ANDROID,
+	MEM_RESOURCE,
+	MEM_RAMDISK,
+	MEM_FDT,
+	MEM_FDT_DTBO,
+	MEM_KERNEL,
+	MEM_UNCOMP_KERNEL,
+	MEM_ANDROID,
+	MEM_AVB_ANDROID,
+	MEM_FIT_USER,
+	MEM_FIT,
+	MEM_UIMAGE_USER,
+	MEM_UIMAGE,
 
 	/* Other */
-	MEMBLK_ID_BY_NAME,
-	MEMBLK_ID_KMEM_RESERVED,
-	MEMBLK_ID_DEMO,
-	MEMBLK_ID_MAX,
+	MEM_SEARCH,
+	MEM_BY_NAME,
+	MEM_KMEM_RESERVED,
+	MEM_MAX,
 };
 
 struct memblk_attr {
@@ -47,6 +52,8 @@ struct memblk_attr {
 struct memblock {
 	phys_addr_t base;
 	phys_size_t size;
+	u64 base_u64; /* 4GB+ */
+	u64 size_u64;
 	phys_addr_t orig_base;
 	struct memblk_attr attr;
 	struct list_head node;
@@ -57,23 +64,33 @@ extern const struct memblk_attr *mem_attr;
 #define SIZE_MB(len)		((len) >> 20)
 #define SIZE_KB(len)		(((len) % (1 << 20)) >> 10)
 
-#define M_ATTR_NONE		0
-/* Over-Flow-Check for region tail */
-#define M_ATTR_OFC		(1 << 0)
-/* Over-Flow-Check for region Head, only for U-Boot stack */
-#define M_ATTR_HOFC		(1 << 1)
-/* Memory can be overlap by fdt reserved memory, deprecated */
-#define M_ATTR_OVERLAP		(1 << 2)
-/* Just peek, always return success, deprecated */
-#define M_ATTR_PEEK		(1 << 3)
-/* The region start address should be aligned to cacheline size */
-#define M_ATTR_CACHELINE_ALIGN	(1 << 4)
-/* Kernel 'reserved-memory' */
-#define M_ATTR_KMEM_RESERVED	(1 << 5)
-/* The region can be overlap by kernel 'reserved-memory' */
-#define M_ATTR_KMEM_CAN_OVERLAP	(1 << 6)
-/* Ignore invisable region reserved by bidram */
-#define M_ATTR_IGNORE_INVISIBLE	(1 << 7)
+#define F_NONE			0
 
+/* Over-Flow-Check for region tail */
+#define F_OFC			(1 << 0)
+
+/* Over-Flow-Check for region Head, only for U-Boot stack */
+#define F_HOFC			(1 << 1)
+
+/* Memory can be overlap by fdt reserved memory, deprecated */
+#define F_OVERLAP		(1 << 2)
+
+/* The region start address should be aligned to cacheline size */
+#define F_CACHELINE_ALIGN	(1 << 3)
+
+/* Kernel 'reserved-memory' */
+#define F_KMEM_RESERVED		(1 << 4)
+
+/* The region can be overlap by kernel 'reserved-memory' */
+#define F_KMEM_CAN_OVERLAP	(1 << 5)
+
+/* Ignore invisible region reserved by bidram */
+#define F_IGNORE_INVISIBLE	(1 << 6)
+
+/* Highest memory right under the sp */
+#define F_HIGHEST_MEM		(1 << 7)
+
+/* No sysmem layout dump if failed */
+#define F_NO_FAIL_DUMP		(1 << 8)
 
 #endif /* _MEMBLK_H */

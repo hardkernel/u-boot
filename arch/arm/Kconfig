@@ -814,6 +814,7 @@ config ARCH_ZYNQMP
 	select SPL_CLK
 	select DM_USB if USB
 	imply FAT_WRITE
+	imply DM_USB_GADGET
 
 config TEGRA
 	bool "NVIDIA Tegra"
@@ -1145,6 +1146,7 @@ config ARCH_ROCKCHIP
 	select SYS_NS16550
 	select SKIP_RELOCATE_UBOOT if !ARM64
 	select SPI
+	select DEBUG_UART_BOARD_INIT
 	imply CMD_FASTBOOT
 	imply FASTBOOT
 	imply FAT_WRITE

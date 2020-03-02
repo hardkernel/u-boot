@@ -18,7 +18,7 @@
 #define for_each_tag(t, base)		\
 	for (t = base; t->hdr.size; t = tag_next(t))
 
-#ifdef CONFIG_SPL_BUILD
+#if defined(CONFIG_SPL_BUILD) && !defined(CONFIG_TPL_BUILD)
 /*
  * The array is used to transform rom bootsource type to rk atags boot type.
  */
@@ -47,7 +47,7 @@ static int spl_bootdev_map[] = {
 
 #if CONFIG_IS_ENABLED(TINY_FRAMEWORK) &&		\
 	!CONFIG_IS_ENABLED(LIBGENERIC_SUPPORT) &&	\
-	defined(CONFIG_ARM64)
+	!CONFIG_IS_ENABLED(USE_ARCH_MEMSET)
 /**
  * memset - Fill a region of memory with the given value
  * @s: Pointer to the start of the area.
@@ -67,7 +67,11 @@ void *memset(void *s, int c, size_t count)
 
 	return s;
 }
+#endif
 
+#if CONFIG_IS_ENABLED(TINY_FRAMEWORK) &&		\
+	!CONFIG_IS_ENABLED(LIBGENERIC_SUPPORT) &&	\
+	!CONFIG_IS_ENABLED(USE_ARCH_MEMCPY)
 /**
  * memcpy - Copy one area of memory to another
  * @dest: Where to copy to
@@ -305,7 +309,7 @@ struct tag *atags_get_tag(u32 magic)
 struct tag *atags_get_tag(u32 magic) { return NULL; }
 #endif
 
-#ifdef CONFIG_SPL_BUILD
+#if defined(CONFIG_SPL_BUILD) && !defined(CONFIG_TPL_BUILD)
 int get_bootdev_by_brom_bootsource(void)
 {
 	int bootsource = 0;

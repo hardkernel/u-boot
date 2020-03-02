@@ -87,6 +87,10 @@ typedef struct global_data {
 	const void *fdt_blob_kern;	/* Kernel dtb at the tail of u-boot.bin */
 #endif
 	const void *fdt_blob;		/* Our device tree, NULL if none */
+
+#ifdef CONFIG_USING_KERNEL_DTB
+	const void *ufdt_blob;		/* Our U-Boot device tree, NULL if none */
+#endif
 	void *new_fdt;			/* Relocated FDT */
 	unsigned long fdt_size;		/* Space reserved for relocated FDT */
 #ifdef CONFIG_OF_LIVE

@@ -76,6 +76,13 @@
  * From usbc/usbc.c
  ******************************************************************************/
 
+struct sunxi_glue {
+	struct musb_host_data mdata;
+	struct sunxi_ccm_reg *ccm;
+	struct device dev;
+};
+#define to_sunxi_glue(d)	container_of(d, struct sunxi_glue, dev)
+
 static u32 USBC_WakeUp_ClearChangeDetect(u32 reg_val)
 {
 	u32 temp = reg_val;
@@ -256,15 +263,15 @@ static void sunxi_musb_disable(struct musb *musb)
 
 static int sunxi_musb_init(struct musb *musb)
 {
-	struct sunxi_ccm_reg *ccm = (struct sunxi_ccm_reg *)SUNXI_CCM_BASE;
+	struct sunxi_glue *glue = to_sunxi_glue(musb->controller);
 
 	pr_debug("%s():\n", __func__);
 
 	musb->isr = sunxi_musb_interrupt;
 
-	setbits_le32(&ccm->ahb_gate0, 1 << AHB_GATE_OFFSET_USB0);
+	setbits_le32(&glue->ccm->ahb_gate0, 1 << AHB_GATE_OFFSET_USB0);
 #ifdef CONFIG_SUNXI_GEN_SUN6I
-	setbits_le32(&ccm->ahb_reset0_cfg, 1 << AHB_GATE_OFFSET_USB0);
+	setbits_le32(&glue->ccm->ahb_reset0_cfg, 1 << AHB_GATE_OFFSET_USB0);
 #endif
 	sunxi_usb_phy_init(0);
 
@@ -308,43 +315,52 @@ static struct musb_hdrc_platform_data musb_plat = {
 	.platform_ops	= &sunxi_musb_ops,
 };
 
-#ifdef CONFIG_USB_MUSB_HOST
-static int musb_usb_remove(struct udevice *dev);
-
 static int musb_usb_probe(struct udevice *dev)
 {
-	struct musb_host_data *host = dev_get_priv(dev);
+	struct sunxi_glue *glue = dev_get_priv(dev);
+	struct musb_host_data *host = &glue->mdata;
 	struct usb_bus_priv *priv = dev_get_uclass_priv(dev);
+	void *base = dev_read_addr_ptr(dev);
 	int ret;
+
+	if (!base)
+		return -EINVAL;
+
+	glue->ccm = (struct sunxi_ccm_reg *)SUNXI_CCM_BASE;
+	if (IS_ERR(glue->ccm))
+		return PTR_ERR(glue->ccm);
 
 	priv->desc_before_addr = true;
 
-	host->host = musb_init_controller(&musb_plat, NULL,
-					  (void *)SUNXI_USB0_BASE);
+#ifdef CONFIG_USB_MUSB_HOST
+	host->host = musb_init_controller(&musb_plat, &glue->dev, base);
 	if (!host->host)
 		return -EIO;
 
 	ret = musb_lowlevel_init(host);
-	if (ret == 0)
-		printf("MUSB OTG\n");
-	else
-		musb_usb_remove(dev);
+	if (!ret)
+		printf("Allwinner mUSB OTG (Host)\n");
+#else
+	ret = musb_register(&musb_plat, &glue->dev, base);
+	if (!ret)
+		printf("Allwinner mUSB OTG (Peripheral)\n");
+#endif
 
 	return ret;
 }
 
 static int musb_usb_remove(struct udevice *dev)
 {
-	struct musb_host_data *host = dev_get_priv(dev);
-	struct sunxi_ccm_reg *ccm = (struct sunxi_ccm_reg *)SUNXI_CCM_BASE;
+	struct sunxi_glue *glue = dev_get_priv(dev);
+	struct musb_host_data *host = &glue->mdata;
 
 	musb_stop(host->host);
 
 	sunxi_usb_phy_exit(0);
 #ifdef CONFIG_SUNXI_GEN_SUN6I
-	clrbits_le32(&ccm->ahb_reset0_cfg, 1 << AHB_GATE_OFFSET_USB0);
+	clrbits_le32(&glue->ccm->ahb_reset0_cfg, 1 << AHB_GATE_OFFSET_USB0);
 #endif
-	clrbits_le32(&ccm->ahb_gate0, 1 << AHB_GATE_OFFSET_USB0);
+	clrbits_le32(&glue->ccm->ahb_gate0, 1 << AHB_GATE_OFFSET_USB0);
 
 	free(host->host);
 	host->host = NULL;
@@ -352,30 +368,27 @@ static int musb_usb_remove(struct udevice *dev)
 	return 0;
 }
 
-U_BOOT_DRIVER(usb_musb) = {
-	.name	= "sunxi-musb",
-	.id	= UCLASS_USB,
-	.probe = musb_usb_probe,
-	.remove = musb_usb_remove,
-	.ops	= &musb_usb_ops,
-	.platdata_auto_alloc_size = sizeof(struct usb_platdata),
-	.priv_auto_alloc_size = sizeof(struct musb_host_data),
+static const struct udevice_id sunxi_musb_ids[] = {
+	{ .compatible = "allwinner,sun4i-a10-musb" },
+	{ .compatible = "allwinner,sun6i-a31-musb" },
+	{ .compatible = "allwinner,sun8i-a33-musb" },
+	{ .compatible = "allwinner,sun8i-h3-musb" },
+	{ }
 };
-#endif
 
-void sunxi_musb_board_init(void)
-{
+U_BOOT_DRIVER(usb_musb) = {
+	.name		= "sunxi-musb",
 #ifdef CONFIG_USB_MUSB_HOST
-	struct udevice *dev;
-
-	/*
-	 * Bind the driver directly for now as musb linux kernel support is
-	 * still pending upstream so our dts files do not have the necessary
-	 * nodes yet. TODO: Remove this as soon as the dts nodes are in place
-	 * and bind by compatible instead.
-	 */
-	device_bind_driver(dm_root(), "sunxi-musb", "sunxi-musb", &dev);
+	.id		= UCLASS_USB,
 #else
-	musb_register(&musb_plat, NULL, (void *)SUNXI_USB0_BASE);
+	.id		= UCLASS_USB_GADGET_GENERIC,
 #endif
-}
+	.of_match	= sunxi_musb_ids,
+	.probe		= musb_usb_probe,
+	.remove		= musb_usb_remove,
+#ifdef CONFIG_USB_MUSB_HOST
+	.ops		= &musb_usb_ops,
+#endif
+	.platdata_auto_alloc_size = sizeof(struct usb_platdata),
+	.priv_auto_alloc_size = sizeof(struct sunxi_glue),
+};

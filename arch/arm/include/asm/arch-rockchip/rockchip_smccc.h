@@ -7,6 +7,8 @@
 #ifndef __ROCKCHIP_SMCCC_H__
 #define __ROCKCHIP_SMCCC_H__
 
+#include <linux/arm-smccc.h>
+
 /* Rockchip platform SiP call ID */
 #define SIP_ATF_VERSION			0x82000001
 #define SIP_ACCESS_REG			0x82000002

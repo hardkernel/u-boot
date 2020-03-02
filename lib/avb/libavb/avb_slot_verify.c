@@ -79,7 +79,8 @@ static AvbSlotVerifyResult load_full_partition(AvbOps* ops,
                                                const char* part_name,
                                                uint64_t image_size,
                                                uint8_t** out_image_buf,
-                                               bool* out_image_preloaded) {
+                                               bool* out_image_preloaded,
+                                               int allow_verification_error) {
   size_t part_num_read;
   AvbIOResult io_ret;
 
@@ -97,7 +98,8 @@ static AvbSlotVerifyResult load_full_partition(AvbOps* ops,
   /* Try use a preloaded one. */
   if (ops->get_preloaded_partition != NULL) {
     io_ret = ops->get_preloaded_partition(
-        ops, part_name, image_size, out_image_buf, &part_num_read);
+        ops, part_name, image_size, out_image_buf, &part_num_read,
+	allow_verification_error);
     if (io_ret == AVB_IO_RESULT_ERROR_OOM) {
       return AVB_SLOT_VERIFY_RESULT_ERROR_OOM;
     } else if (io_ret != AVB_IO_RESULT_OK) {
@@ -116,7 +118,7 @@ static AvbSlotVerifyResult load_full_partition(AvbOps* ops,
 
   /* Allocate and copy the partition. */
   if (!*out_image_preloaded) {
-    *out_image_buf = sysmem_alloc(MEMBLK_ID_AVB_ANDROID, image_size);
+    *out_image_buf = sysmem_alloc(MEM_AVB_ANDROID, image_size);
     if (*out_image_buf == NULL) {
       return AVB_SLOT_VERIFY_RESULT_ERROR_OOM;
     }
@@ -382,7 +384,8 @@ static AvbSlotVerifyResult load_and_verify_hash_partition(
   }
 
   ret = load_full_partition(
-      ops, part_name, image_size, &image_buf, &image_preloaded);
+      ops, part_name, image_size, &image_buf, &image_preloaded,
+      allow_verification_error);
   if (ret != AVB_SLOT_VERIFY_RESULT_OK) {
     goto out;
   }
@@ -518,7 +521,7 @@ static AvbSlotVerifyResult load_requested_partitions(
     avb_debugv(part_name, ": Loading entire partition.\n", NULL);
 
     ret = load_full_partition(
-        ops, part_name, image_size, &image_buf, &image_preloaded);
+        ops, part_name, image_size, &image_buf, &image_preloaded, 1);
     if (ret != AVB_SLOT_VERIFY_RESULT_OK) {
       goto out;
     }

@@ -14,6 +14,9 @@ struct bidram {
 	struct lmb lmb;
 	struct list_head reserved_head;
 	bool has_init;
+	bool fixup;
+	u64 base_u64[MEM_RESV_COUNT]; /* 4GB+ */
+	u64 size_u64[MEM_RESV_COUNT];
 };
 
 /**
@@ -63,6 +66,20 @@ int bidram_reserve_by_name(const char *name, phys_addr_t base, phys_size_t size)
  * bidram_dump_all() - Dump all bidram stat
  */
 void bidram_dump(void);
+
+/**
+ * bidram_fixup() - Fixup bi_dram[] for 4GB+ memory
+ *
+ * @return 0 on success, otherwise error
+ */
+int bidram_fixup(void);
+
+/**
+ * bidram_append_size() - Append 4GB+ memory
+ *
+ * @return 4GB+ size
+ */
+u64 bidram_append_size(void);
 
 /**
  * bidram_reserved_is_overlap() - Check outside memory is overlap with reserved

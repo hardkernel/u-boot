@@ -289,6 +289,9 @@ char *env_get_default(const char *name);
 /* [re]set to the default environment */
 void set_default_env(const char *s);
 
+/* [re]set to the board environment */
+int set_board_env(const char *vars, int size, int flags, bool ready);
+
 /* [re]set individual variables to their value in the default environment */
 int set_default_vars(int nvars, char * const vars[]);
 

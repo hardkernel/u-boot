@@ -34,7 +34,7 @@ static int spl_ram_load_image(struct spl_image_info *spl_image,
 
 	header = (struct image_header *)CONFIG_SPL_LOAD_FIT_ADDRESS;
 
-#if defined(CONFIG_SPL_DFU_SUPPORT)
+#if CONFIG_IS_ENABLED(DFU)
 	if (bootdev->boot_device == BOOT_DEVICE_DFU)
 		spl_dfu_cmd(0, "dfu_alt_info_ram", "ram", "0");
 #endif
@@ -66,7 +66,7 @@ static int spl_ram_load_image(struct spl_image_info *spl_image,
 #if defined(CONFIG_SPL_RAM_DEVICE)
 SPL_LOAD_IMAGE_METHOD("RAM", 0, BOOT_DEVICE_RAM, spl_ram_load_image);
 #endif
-#if defined(CONFIG_SPL_DFU_SUPPORT)
+#if CONFIG_IS_ENABLED(DFU)
 SPL_LOAD_IMAGE_METHOD("DFU", 0, BOOT_DEVICE_DFU, spl_ram_load_image);
 #endif
 

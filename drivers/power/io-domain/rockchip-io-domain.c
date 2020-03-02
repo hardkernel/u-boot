@@ -485,9 +485,9 @@ static struct udevice *of_get_regulator(ofnode node, const char *supply)
 		snode = ofnode_get_by_phandle(phandle);
 		ret = regulator_get_by_devname(snode.np->name, &sudev);
 		if (ret) {
-			printf("%s: %s: Get supply(%s) failed, ret=%d",
+			printf("%s: Get (%s) regulator: %s failed, ret=%d\n",
 			       __func__,
-			       sudev->name, snode.np->full_name, ret);
+			       sname, snode.np->full_name, ret);
 			return NULL;
 		}
 		debug("IO-DOMAIN: supply: %s\n", snode.np->full_name);

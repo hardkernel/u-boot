@@ -36,7 +36,7 @@ obj-$(CONFIG_MII) += miiphyutil.o
 obj-$(CONFIG_CMD_MII) += miiphyutil.o
 obj-$(CONFIG_PHYLIB) += miiphyutil.o
 
-ifdef CONFIG_CMD_USB
+ifdef CONFIG_USB
 obj-y += usb.o usb_hub.o
 obj-$(CONFIG_USB_STORAGE) += usb_storage.o
 endif
@@ -67,8 +67,10 @@ obj-$(CONFIG_$(SPL_TPL_)BOOTSTAGE) += bootstage.o
 
 ifdef CONFIG_SPL_BUILD
 ifndef CONFIG_TPL_BUILD
-obj-$(CONFIG_SPL_DFU_SUPPORT) += dfu.o
-obj-$(CONFIG_SPL_DFU_SUPPORT) += cli_hush.o
+ifdef CONFIG_SPL_DFU
+obj-$(CONFIG_DFU_OVER_USB) += dfu.o
+endif
+obj-$(CONFIG_SPL_DFU) += cli_hush.o
 obj-$(CONFIG_SPL_HASH_SUPPORT) += hash.o
 obj-$(CONFIG_SPL_YMODEM_SUPPORT) += xyzModem.o
 obj-$(CONFIG_SPL_LOAD_FIT) += common_fit.o
@@ -123,10 +125,6 @@ obj-y += stdio.o
 
 ifdef CONFIG_CMD_DTIMG
 obj-y += image-android-dt.o
-endif
-
-ifndef CONFIG_TPL_BUILD
-obj-$(CONFIG_RKIMG_BOOTLOADER) += boot_rkimg.o
 endif
 
 ifndef CONFIG_SPL_BUILD

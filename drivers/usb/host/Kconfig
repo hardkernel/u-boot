@@ -21,6 +21,14 @@ config USB_XHCI_DWC3
 	  Say Y or if your system has a Dual Role SuperSpeed
 	  USB controller based on the DesignWare USB3 IP Core.
 
+config USB_XHCI_DWC3_OF_SIMPLE
+	bool "DesignWare USB3 DRD Generic OF Simple Glue Layer"
+	depends on DM_USB
+	default y if DRA7XX
+	help
+	  Support USB2/3 functionality in simple SoC integrations with
+	  USB controller based on the DesignWare USB3 IP Core.
+
 config USB_XHCI_MVEBU
 	bool "MVEBU USB 3.0 support"
 	default y
@@ -47,11 +55,13 @@ config USB_XHCI_ROCKCHIP
 	help
 	  Enables support for the on-chip xHCI controller on Rockchip SoCs.
 
-config USB_XHCI_ZYNQMP
-	bool "Support for Xilinx ZynqMP on-chip xHCI USB controller"
-	depends on ARCH_ZYNQMP
+config USB_XHCI_RCAR
+	bool "Renesas RCar USB 3.0 support"
+	default y
+	depends on ARCH_RMOBILE
 	help
-	  Enables support for the on-chip xHCI controller on Xilinx ZynqMP SoCs.
+	  Choose this option to add support for USB 3.0 driver on Renesas
+	  RCar Gen3 SoCs.
 
 config USB_XHCI_DRA7XX_INDEX
 	int "DRA7XX xHCI USB index"
@@ -101,8 +111,8 @@ config USB_EHCI_MARVELL
 	  Enables support for the on-chip EHCI controller on MVEBU SoCs.
 
 config USB_EHCI_MX6
-	bool "Support for i.MX6 on-chip EHCI USB controller"
-	depends on ARCH_MX6
+	bool "Support for i.MX6/i.MX7ULP on-chip EHCI USB controller"
+	depends on ARCH_MX6 || ARCH_MX7ULP
 	default y
 	---help---
 	  Enables support for the on-chip EHCI controller on i.MX6 SoCs.
@@ -122,7 +132,14 @@ config USB_EHCI_OMAP
 	  Enables support for the on-chip EHCI controller on OMAP3 and later
 	  SoCs.
 
-if USB_EHCI_MX7
+config USB_EHCI_VF
+	bool "Support for Vybrid on-chip EHCI USB controller"
+	depends on ARCH_VF610
+	default y
+	help
+	  Enables support for the on-chip EHCI controller on Vybrid SoCs.
+
+if USB_EHCI_MX6 || USB_EHCI_MX7
 
 config MXC_USB_OTG_HACTIVE
 	bool "USB Power pin high active"
@@ -147,14 +164,6 @@ config USB_EHCI_PCI
 	default y if X86
 	help
 	  Enables support for the PCI-based EHCI controller.
-
-config USB_EHCI_RCAR_GEN3
-	bool "Support for Renesas RCar M3/H3 EHCI USB controller"
-	depends on RCAR_GEN3
-	default y
-	---help---
-	  Enables support for the on-chip EHCI controller on Renesas
-	  R8A7795 and R8A7796 SoCs.
 
 config USB_EHCI_ZYNQ
 	bool "Support for Xilinx Zynq on-chip EHCI USB controller"
@@ -185,6 +194,13 @@ config USB_OHCI_HCD
 	  based system where you're not sure, the "lspci -v" entry will list the
 	  right "prog-if" for your USB controller(s):  EHCI, OHCI, or UHCI.
 
+config USB_OHCI_PCI
+	bool "Support for PCI-based OHCI USB controller"
+	depends on DM_USB
+	default n
+	help
+	  Enables support for the PCI-based OHCI controller.
+
 if USB_OHCI_HCD
 
 config USB_OHCI_GENERIC
@@ -194,6 +210,11 @@ config USB_OHCI_GENERIC
 	select USB_HOST
 	---help---
 	  Enables support for generic OHCI controller.
+
+config USB_OHCI_DA8XX
+	bool "Support for da850 OHCI USB controller"
+	help
+	  Enable support for the da850 USB controller.
 
 endif # USB_OHCI_HCD
 
@@ -224,3 +245,24 @@ config USB_DWC2
 	  Hi-Speed (480 Mbps), Full-Speed (12 Mbps), and Low-Speed (1.5 Mbps)
 	  operation is compliant to the controller Supplement. If you want to
 	  enable this controller in host mode, say Y.
+
+if USB_DWC2
+config USB_DWC2_BUFFER_SIZE
+	int "Data buffer size in kB"
+	default 64
+	---help---
+	  By default 64 kB buffer is used but if amount of RAM avaialble on
+	  the target is not enough to accommodate allocation of buffer of
+	  that size it is possible to shrink it. Smaller sizes should be fine
+	  because larger transactions could be split in smaller ones.
+
+endif # USB_DWC2
+
+config USB_R8A66597_HCD
+	bool "Renesas R8A66597 USB Core support"
+	depends on OF_CONTROL
+	depends on DM_USB
+	select USB_HOST
+	---help---
+	  This enables support for the on-chip Renesas R8A66597 USB 2.0
+	  controller, present in various RZ and SH SoCs.

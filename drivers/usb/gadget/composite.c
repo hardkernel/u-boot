@@ -13,7 +13,15 @@
 
 #define USB_BUFSIZ	4096
 
+/* Helper type for accessing packed u16 pointers */
+typedef struct { __le16 val; } __packed __le16_packed;
+
 static struct usb_composite_driver *composite;
+
+static inline void le16_add_cpu_packed(__le16_packed *var, u16 val)
+{
+	var->val = cpu_to_le16(le16_to_cpu(var->val) + val);
+}
 
 /**
  * usb_add_function() - add a function to a configuration
@@ -167,7 +175,7 @@ static int config_buf(struct usb_configuration *config,
 	int				len = USB_BUFSIZ - USB_DT_CONFIG_SIZE;
 	void				*next = buf + USB_DT_CONFIG_SIZE;
 	struct usb_descriptor_header    **descriptors;
-	struct usb_config_descriptor	*c = buf;
+	struct usb_config_descriptor	*c;
 	int				status;
 	struct usb_function		*f;
 
@@ -289,65 +297,6 @@ static int count_configs(struct usb_composite_dev *cdev, unsigned type)
 	return count;
 }
 
-static int bos_desc(struct usb_composite_dev *cdev)
-{
-	struct usb_dev_cap_header	*cap;
-	struct usb_ext_cap_descriptor	*usb_ext;
-	struct usb_ss_cap_descriptor	*ss_cap;
-	struct usb_bos_descriptor	*bos = cdev->req->buf;
-
-	bos->bLength = USB_DT_BOS_SIZE;
-	bos->bDescriptorType = USB_DT_BOS;
-	bos->wTotalLength = cpu_to_le16(USB_DT_BOS_SIZE);
-	bos->bNumDeviceCaps = 0;
-
-	if (cdev->gadget->speed < USB_SPEED_SUPER) {
-		/* For rockusb with bcdUSB (0x0201) */
-		cap = cdev->req->buf + le16_to_cpu(bos->wTotalLength);
-		bos->bNumDeviceCaps++;
-		bos->wTotalLength = cpu_to_le16(bos->wTotalLength +
-						sizeof(*cap));
-		cap->bLength = sizeof(*cap);
-		cap->bDescriptorType = USB_DT_DEVICE_CAPABILITY;
-		cap->bDevCapabilityType = 0;
-	} else {
-		/*
-		 * A SuperSpeed device shall include the USB2.0
-		 * extension descriptor and shall support LPM when
-		 * operating in USB2.0 HS mode.
-		 */
-		usb_ext = cdev->req->buf + le16_to_cpu(bos->wTotalLength);
-		bos->bNumDeviceCaps++;
-		bos->wTotalLength = cpu_to_le16(bos->wTotalLength +
-						USB_DT_USB_EXT_CAP_SIZE);
-		usb_ext->bLength = USB_DT_USB_EXT_CAP_SIZE;
-		usb_ext->bDescriptorType = USB_DT_DEVICE_CAPABILITY;
-		usb_ext->bDevCapabilityType = USB_CAP_TYPE_EXT;
-		usb_ext->bmAttributes = USB_LPM_SUPPORT;
-
-		/*
-		 * The Superspeed USB Capability descriptor shall be
-		 * implemented by all SuperSpeed devices.
-		 */
-		ss_cap = cdev->req->buf + le16_to_cpu(bos->wTotalLength);
-		bos->bNumDeviceCaps++;
-		bos->wTotalLength = cpu_to_le16(bos->wTotalLength +
-						USB_DT_USB_SS_CAP_SIZE);
-		ss_cap->bLength = USB_DT_USB_SS_CAP_SIZE;
-		ss_cap->bDescriptorType = USB_DT_DEVICE_CAPABILITY;
-		ss_cap->bDevCapabilityType = USB_SS_CAP_TYPE;
-		ss_cap->bmAttributes = 0; /* LTM is not supported yet */
-		ss_cap->wSpeedSupported = cpu_to_le16(USB_FULL_SPEED_OPERATION |
-				USB_HIGH_SPEED_OPERATION |
-				USB_5GBPS_OPERATION);
-		ss_cap->bFunctionalitySupport = USB_FULL_SPEED_OPERATION;
-		ss_cap->bU1devExitLat = USB_DEFAULT_U1_DEV_EXIT_LAT;
-		ss_cap->bU2DevExitLat = cpu_to_le16(USB_DEFAULT_U2_DEV_EXIT_LAT);
-	}
-
-	return le16_to_cpu(bos->wTotalLength);
-}
-
 static void device_qual(struct usb_composite_dev *cdev)
 {
 	struct usb_qualifier_descriptor	*qual = cdev->req->buf;
@@ -465,7 +414,7 @@ static int set_config(struct usb_composite_dev *cdev,
 			ep = (struct usb_endpoint_descriptor *)*descriptors;
 			addr = ((ep->bEndpointAddress & 0x80) >> 3)
 			     |	(ep->bEndpointAddress & 0x0f);
-			__set_bit(addr, f->endpoints);
+			generic_set_bit(addr, f->endpoints);
 		}
 
 		result = f->set_alt(f, tmp, 0);
@@ -566,20 +515,21 @@ done:
  * the host side.
  */
 
-static void collect_langs(struct usb_gadget_strings **sp, __le16 *buf)
+static void collect_langs(struct usb_gadget_strings **sp, void *buf)
 {
 	const struct usb_gadget_strings	*s;
 	u16				language;
-	__le16				*tmp;
+	__le16_packed			*tmp;
+	__le16_packed			*end = (buf + 252);
 
 	while (*sp) {
 		s = *sp;
 		language = cpu_to_le16(s->language);
-		for (tmp = buf; *tmp && tmp < &buf[126]; tmp++) {
-			if (*tmp == language)
+		for (tmp = buf; tmp->val && tmp < end; tmp++) {
+			if (tmp->val == language)
 				goto repeat;
 		}
-		*tmp++ = language;
+		tmp->val = language;
 repeat:
 		sp++;
 	}
@@ -774,6 +724,65 @@ static void composite_setup_complete(struct usb_ep *ep, struct usb_request *req)
 				req->status, req->actual, req->length);
 }
 
+static int bos_desc(struct usb_composite_dev *cdev)
+{
+	struct usb_dev_cap_header	*cap;
+	struct usb_ext_cap_descriptor	*usb_ext;
+	struct usb_ss_cap_descriptor	*ss_cap;
+	struct usb_bos_descriptor	*bos = cdev->req->buf;
+
+	bos->bLength = USB_DT_BOS_SIZE;
+	bos->bDescriptorType = USB_DT_BOS;
+	bos->wTotalLength = cpu_to_le16(USB_DT_BOS_SIZE);
+	bos->bNumDeviceCaps = 0;
+
+	if (cdev->gadget->speed < USB_SPEED_SUPER) {
+		/* For rockusb with bcdUSB (0x0201) */
+		cap = cdev->req->buf + le16_to_cpu(bos->wTotalLength);
+		bos->bNumDeviceCaps++;
+		bos->wTotalLength = cpu_to_le16(bos->wTotalLength +
+						sizeof(*cap));
+		cap->bLength = sizeof(*cap);
+		cap->bDescriptorType = USB_DT_DEVICE_CAPABILITY;
+		cap->bDevCapabilityType = 0;
+	} else {
+		/*
+		 * A SuperSpeed device shall include the USB2.0
+		 * extension descriptor and shall support LPM when
+		 * operating in USB2.0 HS mode.
+		 */
+		usb_ext = cdev->req->buf + le16_to_cpu(bos->wTotalLength);
+		bos->bNumDeviceCaps++;
+		le16_add_cpu_packed((__le16_packed *)&bos->wTotalLength,
+				    USB_DT_USB_EXT_CAP_SIZE);
+		usb_ext->bLength = USB_DT_USB_EXT_CAP_SIZE;
+		usb_ext->bDescriptorType = USB_DT_DEVICE_CAPABILITY;
+		usb_ext->bDevCapabilityType = USB_CAP_TYPE_EXT;
+		usb_ext->bmAttributes = USB_LPM_SUPPORT;
+
+		/*
+		 * The Superspeed USB Capability descriptor shall be
+		 * implemented by all SuperSpeed devices.
+		 */
+		ss_cap = cdev->req->buf + le16_to_cpu(bos->wTotalLength);
+		bos->bNumDeviceCaps++;
+		le16_add_cpu_packed((__le16_packed *)&bos->wTotalLength,
+				    USB_DT_USB_SS_CAP_SIZE);
+		ss_cap->bLength = USB_DT_USB_SS_CAP_SIZE;
+		ss_cap->bDescriptorType = USB_DT_DEVICE_CAPABILITY;
+		ss_cap->bDevCapabilityType = USB_SS_CAP_TYPE;
+		ss_cap->bmAttributes = 0; /* LTM is not supported yet */
+		ss_cap->wSpeedSupported = cpu_to_le16(USB_FULL_SPEED_OPERATION |
+				USB_HIGH_SPEED_OPERATION |
+				USB_5GBPS_OPERATION);
+		ss_cap->bFunctionalitySupport = USB_FULL_SPEED_OPERATION;
+		ss_cap->bU1devExitLat = USB_DEFAULT_U1_DEV_EXIT_LAT;
+		ss_cap->bU2DevExitLat = cpu_to_le16(USB_DEFAULT_U2_DEV_EXIT_LAT);
+	}
+
+	return le16_to_cpu(bos->wTotalLength);
+}
+
 /*
  * The setup() callback implements all the ep0 functionality that's
  * not handled lower down, in hardware or the hardware driver(like
@@ -822,8 +831,7 @@ composite_setup(struct usb_gadget *gadget, const struct usb_ctrlrequest *ctrl)
 		case USB_DT_DEVICE:
 			cdev->desc.bNumConfigurations =
 				count_configs(cdev, USB_DT_DEVICE);
-			cdev->desc.bMaxPacketSize0 =
-				cdev->gadget->ep0->maxpacket;
+
 			if (gadget_is_superspeed(gadget) &&
 			    gadget->speed >= USB_SPEED_SUPER) {
 				/*
@@ -836,6 +844,9 @@ composite_setup(struct usb_gadget *gadget, const struct usb_ctrlrequest *ctrl)
 				else
 					cdev->desc.bcdUSB = cpu_to_le16(0x0300);
 				cdev->desc.bMaxPacketSize0 = 9;
+			} else {
+				cdev->desc.bMaxPacketSize0 =
+					cdev->gadget->ep0->maxpacket;
 			}
 
 			value = min(w_length, (u16) sizeof cdev->desc);
@@ -951,6 +962,9 @@ unknown:
 			ctrl->bRequestType, ctrl->bRequest,
 			w_value, w_index, w_length);
 
+		if (!cdev->config)
+			goto done;
+
 		/*
 		 * functions always handle their interfaces and endpoints...
 		 * punt other recipients (other, WUSB, ...) to the current
@@ -1001,7 +1015,7 @@ unknown:
 			value = f->setup(f, ctrl);
 		else {
 			c = cdev->config;
-			if (c && c->setup)
+			if (c->setup)
 				value = c->setup(c, ctrl);
 		}
 

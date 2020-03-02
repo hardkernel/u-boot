@@ -51,7 +51,11 @@ struct dram_info {
 struct dram_info dram_info;
 
 struct px30_sdram_params sdram_configs[] = {
+#ifdef CONFIG_ROCKCHIP_RK3326
+#include	"sdram-px30-lpddr3-detect-333.inc"
+#else
 #include	"sdram-px30-ddr3-detect-333.inc"
+#endif
 };
 
 struct ddr_phy_skew skew = {

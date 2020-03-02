@@ -10,6 +10,11 @@
 	u-boot,dm-pre-reloc;
 };
 
+&sfc {
+	u-boot,dm-pre-reloc;
+	status = "okay";
+};
+
 &grf {
 	u-boot,dm-pre-reloc;
 };

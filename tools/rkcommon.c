@@ -202,7 +202,8 @@ int rkcommon_set_header(void *buf, uint file_size, uint max_size,
 	rkcommon_set_header0(buf, file_size, max_size, params);
 
 	/* Set up the SPL name (i.e. copy spl_hdr over) */
-	memcpy(&hdr->magic, rkcommon_get_spl_hdr(params), RK_SPL_HDR_SIZE);
+	if (memcmp(&hdr->magic, "RSAK", 4))
+		memcpy(&hdr->magic, rkcommon_get_spl_hdr(params), RK_SPL_HDR_SIZE);
 
 	if (rkcommon_need_rc4_spl(params))
 		rkcommon_rc4_encode_spl(buf, RK_SPL_HDR_START,

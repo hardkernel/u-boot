@@ -114,8 +114,7 @@ static int setdma_rx(struct dwc2_ep *ep, struct dwc2_request *req)
 				(unsigned long) ep->dma_buf +
 				ROUND(ep->len, CONFIG_SYS_CACHELINE_SIZE));
 
-	writel((unsigned int)(unsigned long)ep->dma_buf,
-	       &reg->out_endp[ep_num].doepdma);
+	writel((unsigned long) ep->dma_buf, &reg->out_endp[ep_num].doepdma);
 	writel(DOEPT_SIZ_PKT_CNT(pktcnt) | DOEPT_SIZ_XFER_SIZE(length),
 	       &reg->out_endp[ep_num].doeptsiz);
 	writel(DEPCTL_EPENA|DEPCTL_CNAK|ctrl, &reg->out_endp[ep_num].doepctl);
@@ -469,7 +468,7 @@ static void process_ep_out_intr(struct dwc2_udc *dev)
 static int dwc2_udc_irq(int irq, void *_dev)
 {
 	struct dwc2_udc *dev = _dev;
-	u32 intr_status;
+	u32 intr_status, gotgint;
 	u32 usb_status, gintmsk;
 	unsigned long flags = 0;
 
@@ -523,14 +522,24 @@ static int dwc2_udc_irq(int irq, void *_dev)
 		    && dev->driver) {
 			if (dev->driver->suspend)
 				dev->driver->suspend(&dev->gadget);
+		}
+	}
 
-			/* HACK to let gadget detect disconnected state */
+	if (intr_status & INT_OTG) {
+		gotgint = readl(&reg->gotgint);
+		debug_cond(DEBUG_ISR,
+			   "\tOTG interrupt: (GOTGINT):0x%x\n", gotgint);
+
+		if (gotgint & GOTGINT_SES_END_DET) {
+			debug_cond(DEBUG_ISR, "\t\tSession End Detected\n");
+			/* Let gadget detect disconnected state */
 			if (dev->driver->disconnect) {
 				spin_unlock_irqrestore(&dev->lock, flags);
 				dev->driver->disconnect(&dev->gadget);
 				spin_lock_irqsave(&dev->lock, flags);
 			}
 		}
+		writel(gotgint, &reg->gotgint);
 	}
 
 	if (intr_status & INT_RESUME) {
@@ -734,7 +743,7 @@ static int write_fifo_ep0(struct dwc2_ep *ep, struct dwc2_request *req)
 	return 0;
 }
 
-static int dwc2_fifo_read(struct dwc2_ep *ep, u32 *cp, int max)
+static int dwc2_fifo_read(struct dwc2_ep *ep, void *cp, int max)
 {
 	invalidate_dcache_range((unsigned long)cp, (unsigned long)cp +
 				ROUND(max, CONFIG_SYS_CACHELINE_SIZE));
@@ -1288,7 +1297,7 @@ static void dwc2_ep0_setup(struct dwc2_udc *dev)
 	nuke(ep, -EPROTO);
 
 	/* read control req from fifo (8 bytes) */
-	dwc2_fifo_read(ep, (u32 *)usb_ctrl, 8);
+	dwc2_fifo_read(ep, usb_ctrl, 8);
 
 	debug_cond(DEBUG_SETUP != 0,
 		   "%s: bRequestType = 0x%x(%s), bRequest = 0x%x"

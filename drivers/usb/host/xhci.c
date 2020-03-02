@@ -29,7 +29,7 @@
 #include <asm/cache.h>
 #include <asm/unaligned.h>
 #include <linux/errno.h>
-#include "xhci.h"
+#include <usb/xhci.h>
 
 #ifndef CONFIG_USB_MAX_CONTROLLER_COUNT
 #define CONFIG_USB_MAX_CONTROLLER_COUNT 1
@@ -109,13 +109,13 @@ static struct descriptor {
 	},
 };
 
-#ifndef CONFIG_DM_USB
+#if !CONFIG_IS_ENABLED(DM_USB)
 static struct xhci_ctrl xhcic[CONFIG_USB_MAX_CONTROLLER_COUNT];
 #endif
 
 struct xhci_ctrl *xhci_get_ctrl(struct usb_device *udev)
 {
-#ifdef CONFIG_DM_USB
+#if CONFIG_IS_ENABLED(DM_USB)
 	struct udevice *dev;
 
 	/* Find the USB controller */
@@ -537,7 +537,7 @@ static int xhci_set_configuration(struct usb_device *udev)
 	/* slot context */
 	xhci_slot_copy(ctrl, in_ctx, out_ctx);
 	slot_ctx = xhci_get_slot_ctx(ctrl, in_ctx);
-	slot_ctx->dev_info &= ~(LAST_CTX_MASK);
+	slot_ctx->dev_info &= ~(cpu_to_le32(LAST_CTX_MASK));
 	slot_ctx->dev_info |= cpu_to_le32(LAST_CTX(max_ep_flag + 1) | 0);
 
 	xhci_endpoint_copy(ctrl, in_ctx, out_ctx, 0);
@@ -742,7 +742,7 @@ static int _xhci_alloc_device(struct usb_device *udev)
 	return 0;
 }
 
-#ifndef CONFIG_DM_USB
+#if !CONFIG_IS_ENABLED(DM_USB)
 int usb_alloc_device(struct usb_device *udev)
 {
 	return _xhci_alloc_device(udev);
@@ -1110,7 +1110,8 @@ unknown:
  * @return 0
  */
 static int _xhci_submit_int_msg(struct usb_device *udev, unsigned long pipe,
-				void *buffer, int length, int interval)
+				void *buffer, int length, int interval,
+				bool nonblock)
 {
 	if (usb_pipetype(pipe) != PIPE_INTERRUPT) {
 		printf("non-interrupt pipe (type=%lu)", usb_pipetype(pipe));
@@ -1257,7 +1258,7 @@ static int xhci_lowlevel_stop(struct xhci_ctrl *ctrl)
 	return 0;
 }
 
-#ifndef CONFIG_DM_USB
+#if !CONFIG_IS_ENABLED(DM_USB)
 int submit_control_msg(struct usb_device *udev, unsigned long pipe,
 		       void *buffer, int length, struct devrequest *setup)
 {
@@ -1278,9 +1279,10 @@ int submit_bulk_msg(struct usb_device *udev, unsigned long pipe, void *buffer,
 }
 
 int submit_int_msg(struct usb_device *udev, unsigned long pipe, void *buffer,
-		   int length, int interval)
+		   int length, int interval, bool nonblock)
 {
-	return _xhci_submit_int_msg(udev, pipe, buffer, length, interval);
+	return _xhci_submit_int_msg(udev, pipe, buffer, length, interval,
+				    nonblock);
 }
 
 /**
@@ -1341,9 +1343,9 @@ int usb_lowlevel_stop(int index)
 
 	return 0;
 }
-#endif /* CONFIG_DM_USB */
+#endif /* CONFIG_IS_ENABLED(DM_USB) */
 
-#ifdef CONFIG_DM_USB
+#if CONFIG_IS_ENABLED(DM_USB)
 
 static int xhci_submit_control_msg(struct udevice *dev, struct usb_device *udev,
 				   unsigned long pipe, void *buffer, int length,
@@ -1387,10 +1389,11 @@ static int xhci_submit_bulk_msg(struct udevice *dev, struct usb_device *udev,
 
 static int xhci_submit_int_msg(struct udevice *dev, struct usb_device *udev,
 			       unsigned long pipe, void *buffer, int length,
-			       int interval)
+			       int interval, bool nonblock)
 {
 	debug("%s: dev='%s', udev=%p\n", __func__, dev->name, udev);
-	return _xhci_submit_int_msg(udev, pipe, buffer, length, interval);
+	return _xhci_submit_int_msg(udev, pipe, buffer, length, interval,
+				    nonblock);
 }
 
 static int xhci_alloc_device(struct udevice *dev, struct usb_device *udev)
@@ -1425,7 +1428,7 @@ static int xhci_update_hub_device(struct udevice *dev, struct usb_device *udev)
 
 	ctrl_ctx = xhci_get_input_control_ctx(in_ctx);
 	/* Initialize the input context control */
-	ctrl_ctx->add_flags |= cpu_to_le32(SLOT_FLAG);
+	ctrl_ctx->add_flags = cpu_to_le32(SLOT_FLAG);
 	ctrl_ctx->drop_flags = 0;
 
 	xhci_inval_cache((uintptr_t)out_ctx->bytes, out_ctx->size);
@@ -1436,8 +1439,15 @@ static int xhci_update_hub_device(struct udevice *dev, struct usb_device *udev)
 
 	/* Update hub related fields */
 	slot_ctx->dev_info |= cpu_to_le32(DEV_HUB);
-	if (hub->tt.multi && udev->speed == USB_SPEED_HIGH)
+	/*
+	 * refer to section 6.2.2: MTT should be 0 for full speed hub,
+	 * but it may be already set to 1 when setup an xHCI virtual
+	 * device, so clear it anyway.
+	 */
+	if (hub->tt.multi)
 		slot_ctx->dev_info |= cpu_to_le32(DEV_MTT);
+	else if (udev->speed == USB_SPEED_FULL)
+		slot_ctx->dev_info &= cpu_to_le32(~DEV_MTT);
 	slot_ctx->dev_info2 |= cpu_to_le32(XHCI_MAX_PORTS(udev->maxchild));
 	/*
 	 * Set TT think time - convert from ns to FS bit times.
@@ -1453,6 +1463,7 @@ static int xhci_update_hub_device(struct udevice *dev, struct usb_device *udev)
 		think_time = (think_time / 666) - 1;
 	if (udev->speed == USB_SPEED_HIGH)
 		slot_ctx->tt_info |= cpu_to_le32(TT_THINK_TIME(think_time));
+	slot_ctx->dev_state = 0;
 
 	return xhci_configure_endpoints(udev, false);
 }

@@ -225,7 +225,7 @@ static int dm_scan_fdt_live(struct udevice *parent,
 	for (np = node_parent->child; np; np = np->sibling) {
 		if (pre_reloc_only &&
 #ifdef CONFIG_USING_KERNEL_DTB
-		    (!of_find_property(np, "u-boot,dm-pre-reloc", NULL) ||
+		    (!of_find_property(np, "u-boot,dm-pre-reloc", NULL) &&
 		     !of_find_property(np, "u-boot,dm-spl", NULL)))
 #else
 		     !of_find_property(np, "u-boot,dm-pre-reloc", NULL))

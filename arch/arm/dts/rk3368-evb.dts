@@ -14,6 +14,10 @@
 	compatible = "rockchip,rk3368-evb", "rockchip,rk3368";
 };
 
+&crypto {
+	status = "okay";
+};
+
 &emmc {
 	fifo-mode;
 	bus-width = <8>;

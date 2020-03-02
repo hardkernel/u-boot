@@ -14,6 +14,75 @@
 #define AMP_E(fmt, args...)	printf("AMP Error: "fmt, ##args)
 
 /*
+ * non-OTA packaged kernel.img & boot.img return the image size on success,
+ * and a negative value on error.
+ */
+static int read_rockchip_image(struct blk_desc *dev_desc,
+			       disk_partition_t *part, void *dst)
+{
+	struct rockchip_image *img;
+	int header_len = 8;
+	int cnt, ret;
+#ifdef CONFIG_ROCKCHIP_CRC
+	u32 crc32;
+#endif
+
+	img = memalign(ARCH_DMA_MINALIGN, RK_BLK_SIZE);
+	if (!img)
+		return -ENOMEM;
+
+	/* read first block with header imformation */
+	ret = blk_dread(dev_desc, part->start, 1, img);
+	if (ret != 1) {
+		ret = -EIO;
+		goto err;
+	}
+
+	if (img->tag != TAG_KERNEL) {
+		printf("Invalid %s image tag(0x%x)\n", part->name, img->tag);
+		ret = -EINVAL;
+		goto err;
+	}
+
+	/*
+	 * read the rest blks
+	 * total size = image size + 8 bytes header + 4 bytes crc32
+	 */
+	cnt = DIV_ROUND_UP(img->size + 8 + 4, RK_BLK_SIZE);
+	if (!sysmem_alloc_base_by_name((const char *)part->name,
+				       (phys_addr_t)dst,
+				       cnt * dev_desc->blksz)) {
+		ret = -ENXIO;
+		goto err;
+	}
+
+	memcpy(dst, img->image, RK_BLK_SIZE - header_len);
+	ret = blk_dread(dev_desc, part->start + 1, cnt - 1,
+			dst + RK_BLK_SIZE - header_len);
+	if (ret != (cnt - 1)) {
+		printf("Failed to read %s part, ret=%d\n", part->name, ret);
+		ret = -EIO;
+	} else {
+		ret = img->size;
+	}
+
+#ifdef CONFIG_ROCKCHIP_CRC
+	printf("%s image rk crc32 verify... ", part->name);
+	crc32 = crc32_verify((uchar *)(ulong)dst, img->size + 4);
+	if (!crc32) {
+		printf("fail!\n");
+		ret = -EINVAL;
+	} else {
+		printf("okay.\n");
+	}
+#endif
+
+err:
+	free(img);
+	return ret;
+}
+
+/*
  * An example for amps dts node configure:
  *
  * amps {

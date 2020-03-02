@@ -59,8 +59,7 @@ TOOLCHAIN_OBJDUMP=
 TOOLCHAIN_ADDR2LINE=
 
 # Declare global default output dir and cmd, update in prepare()
-OUTDIR=$2
-OUTOPT=
+OPTION=
 
 # Declare global plaform configure, updated in fixup_platform_configure()
 PLATFORM_RSA=
@@ -75,11 +74,10 @@ help()
 {
 	echo
 	echo "Usage:"
-	echo "	./make.sh [board|subcmd] [O=<dir>|ini]"
+	echo "	./make.sh [board|subcmd|EXT_DTB=<file>]"
 	echo
 	echo "	 - board:   board name of defconfig"
-	echo "	 - subcmd:  |elf*|loader*|spl*|itb||trust*|uboot|map|sym|<addr>|"
-	echo "	 - O=<dir>: assigned output directory, not recommend"
+	echo "	 - subcmd:  |elf*|loader*|spl*|itb|trust*|uboot|map|sym|<addr>|EXT_DTB=*"
 	echo "	 - ini:     assigned ini file to pack trust/loader"
 	echo
 	echo "Output:"
@@ -87,25 +85,24 @@ help()
 	echo
 	echo "Example:"
 	echo
-	echo "1. Build board:"
+	echo "1. Build:"
 	echo "	./make.sh evb-rk3399               --- build for evb-rk3399_defconfig"
-	echo "	./make.sh evb-rk3399 O=rockdev     --- build for evb-rk3399_defconfig with output dir "./rockdev""
 	echo "	./make.sh firefly-rk3288           --- build for firefly-rk3288_defconfig"
+	echo "	./make.sh EXT_DTB=rk-kernel.dtb    --- build with exist .config and external dtb"
 	echo "	./make.sh                          --- build with exist .config"
+	echo "	./make.sh env                      --- build envtools"
 	echo
-	echo "2. Pack helper:"
+	echo "2. Pack:"
 	echo "	./make.sh uboot                    --- pack uboot.img"
 	echo "	./make.sh trust                    --- pack trust.img"
-	echo "	./make.sh trust-all                --- pack trust img (all supported)"
 	echo "	./make.sh trust <ini>              --- pack trust img with assigned ini file"
 	echo "	./make.sh loader                   --- pack loader bin"
-	echo "	./make.sh loader-all	           --- pack loader bin (all supported)"
 	echo "	./make.sh loader <ini>             --- pack loader img with assigned ini file"
 	echo "	./make.sh spl                      --- pack loader with u-boot-spl.bin and u-boot-tpl.bin"
 	echo "	./make.sh spl-s                    --- pack loader only replace miniloader with u-boot-spl.bin"
 	echo "	./make.sh itb                      --- pack u-boot.itb(TODO: bl32 is not included for ARMv8)"
 	echo
-	echo "3. Debug helper:"
+	echo "3. Debug:"
 	echo "	./make.sh elf                      --- dump elf file with -D(default)"
 	echo "	./make.sh elf-S                    --- dump elf file with -S"
 	echo "	./make.sh elf-d                    --- dump elf file with -d"
@@ -120,44 +117,17 @@ prepare()
 {
 	local absolute_path cmd dir count
 
-	# Parse output directory 'O=<dir>'
-	cmd=${OUTDIR%=*}
-	if [ "${cmd}" = 'O' ]; then
-		OUTDIR=${OUTDIR#*=}
-		OUTOPT=O=${OUTDIR}
-	else
-		case $BOARD in
-			# Parse from exit .config
-			''|elf*|loader*|spl*|itb|debug*|trust|uboot|map|sym)
-			count=`find -name .config | wc -l`
-			dir=`find -name .config`
-			# Good, find only one .config
-			if [ $count -eq 1 ]; then
-				dir=${dir%/*}
-				OUTDIR=${dir#*/}
-				# Set OUTOPT if not current directory
-				if [ $OUTDIR != '.' ]; then
-					OUTOPT=O=${OUTDIR}
-				fi
-			elif [ $count -eq 0 ]; then
-				echo
-				echo "Build failed, Can't find .config"
-				help
-				exit 1
-			else
-				echo
-				echo "Build failed, find $count '.config': "
-				echo "$dir"
-				echo "Please leave only one of them"
-				exit 1
-			fi
-			;;
-
-			*)
-			OUTDIR=.
-			;;
-		esac
-	fi
+	case $BOARD in
+		# Parse from exit .config
+		''|elf*|loader*|spl*|itb|debug*|trust|uboot|map|sym|env|EXT_DTB=*)
+		if [ ! -f .config ]; then
+			echo
+			echo "Build failed, Can't find .config"
+			help
+			exit 1
+		fi
+		;;
+	esac
 
 	# Parse help and make defconfig
 	case $BOARD in
@@ -168,7 +138,7 @@ prepare()
 		;;
 
 		#Subcmd
-		''|elf*|loader*|spl*|itb|debug*|trust*|uboot|map|sym)
+		''|elf*|loader*|spl*|itb|debug*|trust*|uboot|map|sym|env|EXT_DTB=*)
 		;;
 
 		*)
@@ -186,7 +156,7 @@ prepare()
 			exit 1
 		else
 			echo "make for ${BOARD}_defconfig by -j${JOB}"
-			make ${BOARD}_defconfig ${OUTOPT}
+			make ${BOARD}_defconfig ${OPTION}
 		fi
 		;;
 	esac
@@ -210,7 +180,7 @@ select_toolchain()
 {
 	local absolute_path
 
-	if grep  -q '^CONFIG_ARM64=y' ${OUTDIR}/.config ; then
+	if grep  -q '^CONFIG_ARM64=y' .config ; then
 		if [ -d ${TOOLCHAIN_ARM64} ]; then
 			absolute_path=$(cd `dirname ${TOOLCHAIN_ARM64}`; pwd)
 			TOOLCHAIN_GCC=${absolute_path}/bin/${GCC_ARM64}
@@ -238,7 +208,7 @@ select_toolchain()
 sub_commands()
 {
 	local cmd=${SUBCMD%-*} opt=${SUBCMD#*-}
-	local elf=${OUTDIR}/u-boot map=${OUTDIR}/u-boot.map sym=${OUTDIR}/u-boot.sym
+	local elf=u-boot map=u-boot.map sym=u-boot.sym
 
 	if [ "$FILE" == "tpl" -o "$FILE" == "spl" ]; then
 		elf=`find -name u-boot-${FILE}`
@@ -262,7 +232,7 @@ sub_commands()
 		;;
 
 		debug)
-		debug_command
+		./scripts/rkpatch.sh ${opt}
 		exit 0
 		;;
 
@@ -277,12 +247,12 @@ sub_commands()
 		;;
 
 		trust)
-		pack_trust_image ${opt}
+		pack_trust_image
 		exit 0
 		;;
 
 		loader)
-		pack_loader_image ${opt}
+		pack_loader_image
 		exit 0
 		;;
 
@@ -299,6 +269,15 @@ sub_commands()
 		uboot)
 		pack_uboot_image ${opt}
 		exit 0
+		;;
+
+		env)
+		make CROSS_COMPILE=${TOOLCHAIN_GCC} envtools	
+		exit 0
+		;;
+
+		EXT_DTB=*)
+		OPTION=${SUBCMD}
 		;;
 
 		*)
@@ -351,32 +330,34 @@ select_chip_info()
 	#  - RK????, RK????X
 	#  - RV????
 	local chip_reg='^CONFIG_ROCKCHIP_[R,P][X,V,K][0-9ESX]{1,5}'
-	count=`egrep -c ${chip_reg} ${OUTDIR}/.config`
+	count=`egrep -c ${chip_reg} .config`
 	# Obtain the matching only
-	RKCHIP=`egrep -o ${chip_reg} ${OUTDIR}/.config`
+	RKCHIP=`egrep -o ${chip_reg} .config`
 
 	if [ $count -eq 1 ]; then
 		RKCHIP=${RKCHIP##*_}
-		grep '^CONFIG_ROCKCHIP_RK3368=y' ${OUTDIR}/.config >/dev/null \
+		grep '^CONFIG_ROCKCHIP_RK3368=y' .config >/dev/null \
 			&& RKCHIP=RK3368H
-		grep '^CONFIG_ROCKCHIP_RV1108=y' ${OUTDIR}/.config >/dev/null \
+		grep '^CONFIG_ROCKCHIP_RV1108=y' .config >/dev/null \
 			&& RKCHIP=RV110X
 		grep '^CONFIG_ROCKCHIP_RV1126=y' ${OUTDIR}/.config >/dev/null \
 			&& RKCHIP=RV1126
 	elif [ $count -gt 1 ]; then
 		# Grep the RK CHIP variant
-		grep '^CONFIG_ROCKCHIP_PX3SE=y' ${OUTDIR}/.config > /dev/null \
+		grep '^CONFIG_ROCKCHIP_PX3SE=y' .config > /dev/null \
 			&& RKCHIP=PX3SE
-		grep '^CONFIG_ROCKCHIP_RK3126=y' ${OUTDIR}/.config >/dev/null \
+		grep '^CONFIG_ROCKCHIP_RK3126=y' .config >/dev/null \
 			&& RKCHIP=RK3126
-		grep '^CONFIG_ROCKCHIP_RK3326=y' ${OUTDIR}/.config >/dev/null \
+		grep '^CONFIG_ROCKCHIP_RK3326=y' .config >/dev/null \
 			&& RKCHIP=RK3326
-		grep '^CONFIG_ROCKCHIP_RK3128X=y' ${OUTDIR}/.config >/dev/null \
+		grep '^CONFIG_ROCKCHIP_RK3128X=y' .config >/dev/null \
 			&& RKCHIP=RK3128X
-		grep '^CONFIG_ROCKCHIP_PX5=y' ${OUTDIR}/.config >/dev/null \
+		grep '^CONFIG_ROCKCHIP_PX5=y' .config >/dev/null \
 			&& RKCHIP=PX5
-		grep '^CONFIG_ROCKCHIP_RK3399PRO=y' ${OUTDIR}/.config >/dev/null \
+		grep '^CONFIG_ROCKCHIP_RK3399PRO=y' .config >/dev/null \
 			&& RKCHIP=RK3399PRO
+		grep '^CONFIG_ROCKCHIP_RK1806=y' .config >/dev/null \
+			&& RKCHIP=RK1806
 	else
 		echo "Can't get Rockchip SoC definition in .config"
 		exit 1
@@ -391,7 +372,7 @@ select_chip_info()
 	for item in "${RKCHIP_INI_DESC[@]}"
 	do
 		target_board=`echo $item | awk '{ print $1 }'`
-		if grep  -q "^${target_board}=y" ${OUTDIR}/.config ; then
+		if grep  -q "^${target_board}=y" .config ; then
 			value=`echo $item | awk '{ print $2 }'`
 			if [ "$value" != "NA" ]; then
 				RKCHIP_LABEL=${value};
@@ -421,14 +402,14 @@ fixup_platform_configure()
 	if [ $RKCHIP = "PX30" -o $RKCHIP = "RK3326" -o $RKCHIP = "RK3308" -o $RKCHIP = "RK1808" ]; then
 		PLATFORM_RSA="--rsa 3"
 	# RK3368 use rk big endian SHA256, it's pack magic is "2"
-	elif [ $RKCHIP = "RK3368" ]; then
+	elif [ $RKCHIP = "RK3368" -o $RKCHIP = "RK3368H" ]; then
 		PLATFORM_SHA="--sha 2"
 	# other platforms use default configure
 	fi
 
 # <*> Fixup images size pack for platforms
 	if [ $RKCHIP = "RK3308" ]; then
-		if grep -q '^CONFIG_ARM64_BOOT_AARCH32=y' ${OUTDIR}/.config ; then
+		if grep -q '^CONFIG_ARM64_BOOT_AARCH32=y' .config ; then
 			PLATFORM_UBOOT_IMG_SIZE="--size 512 2"
 			PLATFORM_TRUST_IMG_SIZE="--size 512 2"
 		else
@@ -438,10 +419,13 @@ fixup_platform_configure()
 	elif [ $RKCHIP = "RK1808" ]; then
 		PLATFORM_UBOOT_IMG_SIZE="--size 1024 2"
 		PLATFORM_TRUST_IMG_SIZE="--size 1024 2"
+	elif [ $RKCHIP = "RK3036" ]; then
+		PLATFORM_UBOOT_IMG_SIZE="--size 512 1"
+		PLATFORM_TRUST_IMG_SIZE="--size 512 1"
 	fi
 
 # <*> Fixup AARCH32 for ARM64 cpu platforms
-	if grep -q '^CONFIG_ARM64_BOOT_AARCH32=y' ${OUTDIR}/.config ; then
+	if grep -q '^CONFIG_ARM64_BOOT_AARCH32=y' .config ; then
 		if [ $RKCHIP = "RK3308" ]; then
 			RKCHIP_LABEL=${RKCHIP_LABEL}"AARCH32"
 			RKCHIP_TRUST=${RKCHIP_TRUST}"AARCH32"
@@ -450,88 +434,6 @@ fixup_platform_configure()
 			RKCHIP_LOADER=${RKCHIP_LOADER}"AARCH32"
 		fi
 	fi
-}
-
-debug_command()
-{
-		if [ "${cmd}" = 'debug' -a "${opt}" = 'debug' ]; then
-			echo
-			echo "The commands will modify .config and files, and can't auto restore changes!"
-			echo "debug-N, the N:"
-			echo "    1. lib/initcall.c debug() -> printf()"
-			echo "    2. common/board_r.c and common/board_f.c debug() -> printf()"
-			echo "    3. global #define DEBUG"
-			echo "    4. enable CONFIG_ROCKCHIP_DEBUGGER"
-			echo "    5. enable CONFIG_ROCKCHIP_CRC"
-			echo "    6. enable CONFIG_BOOTSTAGE_PRINTF_TIMESTAMP"
-			echo "    7. enable CONFIG_ROCKCHIP_CRASH_DUMP"
-			echo "    8. set CONFIG_BOOTDELAY=5"
-			echo "    9. armv7 start.S: print entry warning"
-			echo "   10. armv8 start.S: print entry warning"
-			echo "   11. firmware bootflow debug() -> printf()"
-			echo "   12. bootstage timing report"
-			echo
-			echo "Enabled: "
-			grep '^CONFIG_ROCKCHIP_DEBUGGER=y' ${OUTDIR}/.config > /dev/null \
-			&& echo "    CONFIG_ROCKCHIP_DEBUGGER"
-			grep '^CONFIG_ROCKCHIP_CRC=y' ${OUTDIR}/.config > /dev/null \
-			&& echo "    CONFIG_ROCKCHIP_CRC"
-			grep '^CONFIG_BOOTSTAGE_PRINTF_TIMESTAMP=y' ${OUTDIR}/.config > /dev/null \
-			&& echo "    CONFIG_BOOTSTAGE_PRINTF_TIMESTAMP"
-			grep '^CONFIG_ROCKCHIP_CRASH_DUMP=y' ${OUTDIR}/.config > /dev/null \
-			&& echo "    CONFIG_ROCKCHIP_CRASH_DUMP"
-
-		elif [ "${opt}" = '1' ]; then
-			sed -i 's/\<debug\>/printf/g' lib/initcall.c
-			sed -i 's/ifdef DEBUG/if 1/g' lib/initcall.c
-			echo "DEBUG [1]: lib/initcall.c debug() -> printf()"
-		elif [ "${opt}" = '2' ]; then
-			sed -i 's/\<debug\>/printf/g' ./common/board_f.c
-			sed -i 's/\<debug\>/printf/g' ./common/board_r.c
-			echo "DEBUG [2]: common/board_r.c and common/board_f.c debug() -> printf()"
-		elif [ "${opt}" = '3' ]; then
-			sed -i '$i \#define DEBUG\' include/configs/rockchip-common.h
-			echo "DEBUG [3]: global #define DEBUG"
-		elif [ "${opt}" = '4' ]; then
-			sed -i 's/\# CONFIG_ROCKCHIP_DEBUGGER is not set/CONFIG_ROCKCHIP_DEBUGGER=y/g' ${OUTDIR}/.config
-			echo "DEBUG [4]: CONFIG_ROCKCHIP_DEBUGGER is enabled"
-		elif [ "${opt}" = '5' ]; then
-			sed -i 's/\# CONFIG_ROCKCHIP_CRC is not set/CONFIG_ROCKCHIP_CRC=y/g' ${OUTDIR}/.config
-			echo "DEBUG [5]: CONFIG_ROCKCHIP_CRC is enabled"
-		elif [ "${opt}" = '6' ]; then
-			sed -i 's/\# CONFIG_BOOTSTAGE_PRINTF_TIMESTAMP is not set/CONFIG_BOOTSTAGE_PRINTF_TIMESTAMP=y/g' ${OUTDIR}/.config
-			echo "DEBUG [6]: CONFIG_BOOTSTAGE_PRINTF_TIMESTAMP is enabled"
-		elif [ "${opt}" = '7' ]; then
-			sed -i 's/\# CONFIG_ROCKCHIP_CRASH_DUMP is not set/CONFIG_ROCKCHIP_CRASH_DUMP=y/g' ${OUTDIR}/.config
-			echo "DEBUG [7]: CONFIG_ROCKCHIP_CRASH_DUMP is enabled"
-		elif [ "${opt}" = '8' ]; then
-			sed -i 's/^CONFIG_BOOTDELAY=0/CONFIG_BOOTDELAY=5/g' ${OUTDIR}/.config
-			echo "DEBUG [8]: CONFIG_BOOTDELAY is 5s"
-		elif [ "${opt}" = '9' ]; then
-			sed -i '/save_boot_params_ret:/a\ldr r0, =CONFIG_DEBUG_UART_BASE\nmov r1, #100\nloop:\nmov r2, #0x55\nstr r2, [r0]\nsub r1, r1, #1\ncmp r1, #0\nbne loop\ndsb' \
-			./arch/arm/cpu/armv7/start.S
-			echo "DEBUG [9]: armv7 start.S entry warning 'UUUU...'"
-		elif [ "${opt}" = '10' ]; then
-			sed -i '/save_boot_params_ret:/a\ldr x0, =CONFIG_DEBUG_UART_BASE\nmov x1, #100\nloop:\nmov x2, #0x55\nstr x2, [x0]\nsub x1, x1, #1\ncmp x1, #0\nb.ne loop\ndsb sy' \
-			./arch/arm/cpu/armv8/start.S
-			echo "DEBUG [10]: armv8 start.S entry warning 'UUUU...'"
-		elif [ "${opt}" = '11' ]; then
-			sed -i 's/\<debug\>/printf/g' common/fdt_support.c
-			sed -i 's/\<debug\>/printf/g' common/image-fdt.c
-			sed -i 's/\<debug\>/printf/g' common/image.c
-			sed -i 's/\<debug\>/printf/g' arch/arm/lib/bootm.c
-			sed -i 's/\<debug\>/printf/g' common/bootm.c
-			sed -i 's/\<debug\>/printf/g' common/image.c
-			sed -i 's/\<debug\>/printf/g' common/image-android.c
-			sed -i 's/\<debug\>/printf/g' common/android_bootloader.c
-			echo "DEBUG [11]: firmware bootflow debug() -> printf()"
-		elif [ "${opt}" = '12' ]; then
-			sed -i '$a\CONFIG_BOOTSTAGE=y\' ${OUTDIR}/.config
-			sed -i '$a\CONFIG_BOOTSTAGE_REPORT=y\' ${OUTDIR}/.config
-			sed -i '$a\CONFIG_CMD_BOOTSTAGE=y\' ${OUTDIR}/.config
-			echo "DEBUG [12]: bootstage timing report"
-		fi
-		echo
 }
 
 pack_uboot_image()
@@ -554,23 +456,17 @@ pack_uboot_image()
 	fi
 
 	# Pack image
-	UBOOT_LOAD_ADDR=`sed -n "/CONFIG_SYS_TEXT_BASE=/s/CONFIG_SYS_TEXT_BASE=//p" ${OUTDIR}/include/autoconf.mk|tr -d '\r'`
+	UBOOT_LOAD_ADDR=`sed -n "/CONFIG_SYS_TEXT_BASE=/s/CONFIG_SYS_TEXT_BASE=//p" include/autoconf.mk|tr -d '\r'`
 	if [ ! $UBOOT_LOAD_ADDR ]; then
-		UBOOT_LOAD_ADDR=`sed -n "/CONFIG_SYS_TEXT_BASE=/s/CONFIG_SYS_TEXT_BASE=//p" ${OUTDIR}/.config|tr -d '\r'`
+		UBOOT_LOAD_ADDR=`sed -n "/CONFIG_SYS_TEXT_BASE=/s/CONFIG_SYS_TEXT_BASE=//p" .config|tr -d '\r'`
 	fi
 
-	${RKTOOLS}/loaderimage --pack --uboot ${OUTDIR}/u-boot.bin uboot.img ${UBOOT_LOAD_ADDR} ${PLATFORM_UBOOT_IMG_SIZE}
+	${RKTOOLS}/loaderimage --pack --uboot u-boot.bin uboot.img ${UBOOT_LOAD_ADDR} ${PLATFORM_UBOOT_IMG_SIZE}
 
 	# Delete u-boot.img and u-boot-dtb.img, which makes users not be confused with final uboot.img
-	if [ -f ${OUTDIR}/u-boot.img ]; then
-		rm ${OUTDIR}/u-boot.img
-	fi
-
-	if [ -f ${OUTDIR}/u-boot-dtb.img ]; then
-		rm ${OUTDIR}/u-boot-dtb.img
-	fi
-
-	echo "pack uboot okay! Input: ${OUTDIR}/u-boot.bin"
+	ls u-boot.img >/dev/null 2>&1 && rm u-boot.img -rf
+	ls u-boot-dtb.img >/dev/null 2>&1 && rm u-boot-dtb.img -rf
+	echo "pack uboot okay! Input: u-boot.bin"
 }
 
 pack_uboot_itb_image()
@@ -578,7 +474,7 @@ pack_uboot_itb_image()
 	local ini
 
 	# ARM64
-	if grep -Eq ''^CONFIG_ARM64=y'|'^CONFIG_ARM64_BOOT_AARCH32=y'' ${OUTDIR}/.config ; then
+	if grep -Eq ''^CONFIG_ARM64=y'|'^CONFIG_ARM64_BOOT_AARCH32=y'' .config ; then
 		ini=${RKBIN}/RKTRUST/${RKCHIP_TRUST}${PLATFORM_AARCH32}TRUST.ini
 		if [ ! -f ${ini} ]; then
 			echo "pack trust failed! Can't find: ${ini}"
@@ -629,19 +525,16 @@ pack_spl_loader_image()
 		return
 	fi
 
-	# Copy to .temp folder
-	if [ -d ${RKBIN}/.temp ]; then
-		rm ${RKBIN}/.temp -rf
-	fi
-
+	ls ${RKBIN}/.temp >/dev/null 2>&1 && rm ${RKBIN}/.temp -rf
 	mkdir ${RKBIN}/.temp
 
-	cp ${OUTDIR}/spl/u-boot-spl.bin ${RKBIN}/.temp/
-	cp ${OUTDIR}/tpl/u-boot-tpl.bin ${RKBIN}/.temp/
+	# Copy to .temp folder
+	cp spl/u-boot-spl.bin ${RKBIN}/.temp/
 	cp ${ini} ${RKBIN}/.temp/${RKCHIP_LOADER}MINIALL.ini -f
 
 	cd ${RKBIN}
 	if [ "$mode" = 'spl' ]; then	# pack tpl+spl
+		cp tpl/u-boot-tpl.bin ${RKBIN}/.temp/
 		# Update ini
 		label="TPL+SPL"
 		header=`sed -n '/NAME=/s/NAME=//p' ${RKBIN}/RKBOOT/${RKCHIP_LOADER}MINIALL.ini`
@@ -656,14 +549,16 @@ pack_spl_loader_image()
 	rm ${RKBIN}/.temp -rf
 	cd -
 	ls *_loader_*.bin >/dev/null 2>&1 && rm *_loader_*.bin
-	mv ${RKBIN}/*_loader_*.bin ./
+
+	RKCHIP_LOWCASE=`echo ${RKCHIP} |tr '[A-Z]' '[a-z]'`
+	mv ${RKBIN}/*_loader_*.bin ./${RKCHIP_LOWCASE}_loader_spl.bin
 	echo "pack loader(${label}) okay! Input: ${ini}"
-	ls ./*_loader_*.bin
+	ls ./${RKCHIP_LOWCASE}_loader_spl.bin
 }
 
 pack_loader_image()
 {
-	local mode=$1 files ini=${RKBIN}/RKBOOT/${RKCHIP_LOADER}MINIALL.ini
+	local ini=${RKBIN}/RKBOOT/${RKCHIP_LOADER}MINIALL.ini
 
 	if [ "$FILE" != "" ]; then
 		ini=$FILE;
@@ -675,26 +570,24 @@ pack_loader_image()
 	fi
 
 	ls *_loader_*.bin >/dev/null 2>&1 && rm *_loader_*.bin
+
+	numline=`cat $ini | wc -l`
+	if [ $numline -eq 1 ]; then
+		image=`sed -n "/PATH=/p" $ini | tr -d '\r' | cut -d '=' -f 2`
+		cp ${RKBIN}/${image} ./
+		echo "pack trust okay! Input: ${ini}"
+		return;
+	fi
+
 	cd ${RKBIN}
 
-	if [ "${mode}" = 'all' ]; then
-		files=`ls ${RKBIN}/RKBOOT/${RKCHIP_LOADER}MINIALL*.ini`
-		for ini in $files
-		do
-			if [ -f "$ini" ]; then
-				${RKTOOLS}/boot_merger ${BIN_PATH_FIXUP} $ini
-				echo "pack loader okay! Input: $ini"
-			fi
-		done
-	else
-		${RKTOOLS}/boot_merger ${BIN_PATH_FIXUP} $ini
-		echo "pack loader okay! Input: $ini"
-	fi
+	${RKTOOLS}/boot_merger ${BIN_PATH_FIXUP} $ini
+	echo "pack loader okay! Input: $ini"
 
 	cd - && mv ${RKBIN}/*_loader_*.bin ./
 }
 
-__pack_32bit_trust_image()
+pack_32bit_trust_image()
 {
 	local ini=$1 TOS TOS_TA DARM_BASE TEE_LOAD_ADDR TEE_OUTPUT TEE_OFFSET
 
@@ -718,7 +611,7 @@ __pack_32bit_trust_image()
 	fi
 
 	# OP-TEE is 132M(0x8400000) offset from DRAM base.
-	DARM_BASE=`sed -n "/CONFIG_SYS_SDRAM_BASE=/s/CONFIG_SYS_SDRAM_BASE=//p" ${OUTDIR}/include/autoconf.mk|tr -d '\r'`
+	DARM_BASE=`sed -n "/CONFIG_SYS_SDRAM_BASE=/s/CONFIG_SYS_SDRAM_BASE=//p" include/autoconf.mk|tr -d '\r'`
 	TEE_LOAD_ADDR=$((DARM_BASE+TEE_OFFSET))
 
 	# Convert Dec to Hex
@@ -741,7 +634,7 @@ __pack_32bit_trust_image()
 	echo
 }
 
-__pack_64bit_trust_image()
+pack_64bit_trust_image()
 {
 	local ini=$1
 
@@ -761,47 +654,41 @@ __pack_64bit_trust_image()
 
 pack_trust_image()
 {
-	local mode=$1 files ini
+	local ini
 
 	ls trust*.img >/dev/null 2>&1 && rm trust*.img
+
 	# ARM64 uses trust_merger
-	if grep -Eq ''^CONFIG_ARM64=y'|'^CONFIG_ARM64_BOOT_AARCH32=y'' ${OUTDIR}/.config ; then
+	if grep -Eq ''^CONFIG_ARM64=y'|'^CONFIG_ARM64_BOOT_AARCH32=y'' .config ; then
 		ini=${RKBIN}/RKTRUST/${RKCHIP_TRUST}TRUST.ini
 		if [ "$FILE" != "" ]; then
 			ini=$FILE;
 		fi
 
-		if [ "${mode}" = 'all' ]; then
-			files=`ls ${RKBIN}/RKTRUST/${RKCHIP_TRUST}TRUST*.ini`
-			for ini in $files
-			do
-				__pack_64bit_trust_image ${ini}
-			done
-		else
-			__pack_64bit_trust_image ${ini}
+		numline=`cat $ini | wc -l`
+		if [ $numline -eq 1 ]; then
+			image=`sed -n "/PATH=/p" $ini | tr -d '\r' | cut -d '=' -f 2`
+			cp ${RKBIN}/${image} ./trust.img
+			echo "pack trust okay! Input: ${ini}"
+			return;
 		fi
+		pack_64bit_trust_image ${ini}
 	# ARM uses loaderimage
 	else
 		ini=${RKBIN}/RKTRUST/${RKCHIP_TRUST}TOS.ini
 		if [ "$FILE" != "" ]; then
 			ini=$FILE;
 		fi
-		if [ "${mode}" = 'all' ]; then
-			files=`ls ${RKBIN}/RKTRUST/${RKCHIP_TRUST}TOS*.ini`
-			for ini in $files
-			do
-				__pack_32bit_trust_image ${ini}
-			done
-		else
-			__pack_32bit_trust_image ${ini}
-		fi
+		pack_32bit_trust_image ${ini}
 	fi
 }
 
 finish()
 {
 	echo
-	if [ "$BOARD" = '' ]; then
+	if [ ! -z "$OPTION" ]; then
+		echo "Platform ${RKCHIP_LABEL} is build OK, with exist .config ($OPTION)"
+	elif [ "$BOARD" = '' ]; then
 		echo "Platform ${RKCHIP_LABEL} is build OK, with exist .config"
 	else
 		echo "Platform ${RKCHIP_LABEL} is build OK, with new .config(make ${BOARD}_defconfig)"
@@ -813,7 +700,7 @@ select_toolchain
 select_chip_info
 fixup_platform_configure
 sub_commands
-make CROSS_COMPILE=${TOOLCHAIN_GCC}  all --jobs=${JOB} ${OUTOPT}
+make CROSS_COMPILE=${TOOLCHAIN_GCC} ${OPTION} all --jobs=${JOB}
 pack_uboot_image
 pack_loader_image
 pack_trust_image

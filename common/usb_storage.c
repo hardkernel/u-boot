@@ -303,7 +303,7 @@ int usb_stor_scan(int mode)
 	if (mode == 1)
 		printf("       scanning usb for storage devices... ");
 
-#ifndef CONFIG_DM_USB
+#if !CONFIG_IS_ENABLED(DM_USB)
 	unsigned char i;
 
 	usb_disable_asynch(1); /* asynch transfer not allowed */
@@ -654,8 +654,8 @@ static int usb_stor_CBI_get_status(struct scsi_cmd *srb, struct us_data *us)
 	int timeout;
 
 	us->ip_wanted = 1;
-	submit_int_msg(us->pusb_dev, us->irqpipe,
-			(void *) &us->ip_data, us->irqmaxp, us->irqinterval);
+	usb_int_msg(us->pusb_dev, us->irqpipe,
+		    (void *)&us->ip_data, us->irqmaxp, us->irqinterval, false);
 	timeout = 1000;
 	while (timeout--) {
 		if (us->ip_wanted == 0)
@@ -946,7 +946,7 @@ static void usb_stor_set_max_xfer_blk(struct usb_device *udev,
 	size_t __maybe_unused size;
 	int __maybe_unused ret;
 
-#ifndef CONFIG_DM_USB
+#if !CONFIG_IS_ENABLED(DM_USB)
 #ifdef CONFIG_USB_EHCI_HCD
 	/*
 	 * The U-Boot EHCI driver can handle any transfer length as long as
@@ -1500,7 +1500,7 @@ int usb_stor_get_info(struct usb_device *dev, struct us_data *ss,
 	return 1;
 }
 
-#ifdef CONFIG_DM_USB
+#if CONFIG_IS_ENABLED(DM_USB)
 
 static int usb_mass_storage_probe(struct udevice *dev)
 {

@@ -166,7 +166,8 @@ static int do_rkusb(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 
 	controller_index = (unsigned int)(simple_strtoul(
 				usb_controller,	NULL, 0));
-	if (board_usb_init(controller_index, USB_INIT_DEVICE)) {
+	rc = usb_gadget_initialize(controller_index);
+	if (rc) {
 		pr_err("Couldn't init USB controller.");
 		rc = CMD_RET_FAILURE;
 		goto cleanup_rkusb;
@@ -251,7 +252,7 @@ static int do_rkusb(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 cleanup_register:
 	g_dnl_unregister();
 cleanup_board:
-	board_usb_cleanup(controller_index, USB_INIT_DEVICE);
+	usb_gadget_release(controller_index);
 cleanup_rkusb:
 	rkusb_fini();
 

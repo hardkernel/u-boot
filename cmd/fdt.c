@@ -151,11 +151,9 @@ static int do_fdt(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	}
 
 	if (!working_fdt) {
-		puts(
-			"No FDT memory address configured. Please configure\n"
-			"the FDT address via \"fdt addr <address>\" command.\n"
-			"Aborting!\n");
-		return CMD_RET_FAILURE;
+		working_fdt = (void *)gd->fdt_blob;
+		printf("No FDT memory address configured. Default at 0x%08lx\n",
+		       (ulong)gd->fdt_blob);
 	}
 
 	/*

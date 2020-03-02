@@ -15,8 +15,6 @@
 #include <sysmem.h>
 #include <asm/io.h>
 #include <asm/unaligned.h>
-#include <android_avb/libavb_ab.h>
-#include <android_avb/rk_avb_ops_user.h>
 #include <dm/ofnode.h>
 #include <linux/list.h>
 #include <u-boot/sha1.h>
@@ -204,6 +202,49 @@ static int replace_resource_entry(const char *f_name, uint32_t base,
 	return 0;
 }
 
+static int read_logo_bmp(const char *name, disk_partition_t *part,
+			 uint32_t offset, uint32_t *size)
+{
+	struct blk_desc *dev_desc;
+	struct bmp_header *header;
+	u32 blk_start, blk_offset, filesz;
+	int ret;
+
+	dev_desc = rockchip_get_bootdev();
+	if (!dev_desc)
+		return -ENODEV;
+
+	blk_offset = DIV_ROUND_UP(offset, dev_desc->blksz);
+	blk_start = part->start + blk_offset;
+	header = memalign(ARCH_DMA_MINALIGN, dev_desc->blksz);
+	if (!header) {
+		ret = -ENOMEM;
+		goto err;
+	}
+	ret = blk_dread(dev_desc, blk_start, 1, header);
+	if (ret != 1) {
+		ret = -EIO;
+		goto err;
+	}
+
+	if (header->signature[0] != 'B' ||
+	    header->signature[1] != 'M') {
+		ret = -EINVAL;
+		goto err;
+	}
+
+	filesz = get_unaligned_le32(&header->file_size);
+	ret = replace_resource_entry(name, blk_start, blk_offset, filesz);
+	if (!ret) {
+		printf("LOGO: %s\n", name);
+		if (size)
+			*size = filesz;
+	}
+err:
+	free(header);
+
+	return ret;
+}
 /*
  * There are: logo/battery pictures and dtb file in the resource image by default.
  *
@@ -220,7 +261,6 @@ static int init_resource_list(struct resource_img_hdr *hdr)
 {
 	struct resource_entry *entry;
 	struct blk_desc *dev_desc;
-	struct bmp_header *header;
 	char *boot_partname = PART_BOOT;
 	disk_partition_t part_info;
 	int resource_found = 0;
@@ -428,36 +468,28 @@ parse_second_pos_dtb:
 parse_logo:
 #endif
 	/*
-	 * Add logo.bmp from "logo" parititon
+	 * Add logo.bmp and logo_kernel.bmp from "logo" parititon
 	 *
-	 * We provide a "logo" partition for user to store logo.bmp
-	 * and update from kernel user space dynamically.
+	 * Provide a "logo" partition for user to store logo.bmp and
+	 * logo_kernel.bmp, so that the users can update them from
+	 * kernel or user-space dynamically.
+	 *
+	 * "logo" partition layout, not change order:
+	 *
+	 *   |----------------------| 0x00
+	 *   | raw logo.bmp         |
+	 *   |----------------------| N*512-byte aligned
+	 *   | raw logo_kernel.bmp  |
+	 *   |----------------------|
+	 *
+	 * N: the sector count of logo.bmp
 	 */
 	if (part_get_info_by_name(dev_desc, PART_LOGO, &part_info) >= 0) {
-		header = memalign(ARCH_DMA_MINALIGN, dev_desc->blksz);
-		if (!header) {
-			ret = -ENOMEM;
-			goto err;
-		}
+		u32 filesz;
 
-		ret = blk_dread(dev_desc, part_info.start, 1, header);
-		if (ret != 1) {
-			ret = -EIO;
-			goto err2;
-		}
-
-		if (header->signature[0] != 'B' ||
-		    header->signature[1] != 'M') {
-			ret = 0;
-			goto err2;
-		}
-
-		ret = replace_resource_entry("logo.bmp", part_info.start, 0,
-					     get_unaligned_le32(&header->file_size));
-		if (!ret)
-			printf("Found logo.bmp in logo part\n");
-err2:
-		free(header);
+		if (!read_logo_bmp("logo.bmp", &part_info, 0, &filesz))
+			read_logo_bmp("logo_kernel.bmp", &part_info,
+				      filesz, NULL);
 	}
 
 	/*
@@ -503,17 +535,6 @@ static struct resource_file *get_file_info(struct resource_img_hdr *hdr,
 	}
 
 	return NULL;
-}
-
-int rockchip_get_resource_file_offset(void *resc_hdr, const char *name)
-{
-	struct resource_file *file;
-
-	file = get_file_info(resc_hdr, name);
-	if (!file)
-		return -ENFILE;
-
-	return file->f_offset;
 }
 
 /*
@@ -821,172 +842,29 @@ static struct resource_file *rockchip_read_hwid_dtb(void)
 }
 #endif
 
-#ifdef CONFIG_ROCKCHIP_EARLY_DISTRO_DTB
-static int rockchip_read_distro_dtb(void *fdt_addr)
-{
-	const char *cmd = "part list ${devtype} ${devnum} -bootable devplist";
-	char *devnum, *devtype, *devplist;
-	char devnum_part[12];
-	char fdt_hex_str[19];
-	char *fs_argv[5];
-	int size;
-	int ret;
-
-	if (!rockchip_get_bootdev() || !fdt_addr)
-		return -ENODEV;
-
-	ret = run_command_list(cmd, -1, 0);
-	if (ret)
-		return ret;
-
-	devplist = env_get("devplist");
-	if (!devplist)
-		return -ENODEV;
-
-	devtype = env_get("devtype");
-	devnum = env_get("devnum");
-	sprintf(devnum_part, "%s:%s", devnum, devplist);
-	sprintf(fdt_hex_str, "0x%lx", (ulong)fdt_addr);
-
-#ifdef CONFIG_CMD_FS_GENERIC
-	fs_argv[0] = "load";
-	fs_argv[1] = devtype,
-	fs_argv[2] = devnum_part;
-	fs_argv[3] = fdt_hex_str;
-	fs_argv[4] = CONFIG_ROCKCHIP_EARLY_DISTRO_DTB_PATH;
-
-	if (do_load(NULL, 0, 5, fs_argv, FS_TYPE_ANY))
-		return -EIO;
-#endif
-	if (fdt_check_header(fdt_addr))
-		return -EIO;
-
-	size = fdt_totalsize(fdt_addr);
-	if (!sysmem_alloc_base(MEMBLK_ID_FDT, (phys_addr_t)fdt_addr,
-			       ALIGN(size, RK_BLK_SIZE) + CONFIG_SYS_FDT_PAD))
-		return -ENOMEM;
-
-	printf("Distro DTB: %s\n", CONFIG_ROCKCHIP_EARLY_DISTRO_DTB_PATH);
-
-	return size;
-}
-#endif
-
-#ifdef CONFIG_ROCKCHIP_DTB_VERIFY
-#ifdef CONFIG_DM_CRYPTO
-static int crypto_csum(u32 cap, char *input, u32 input_len, u8 *output)
-{
-	sha_context csha_ctx;
-	struct udevice *dev;
-
-	dev = crypto_get_device(cap);
-	if (!dev) {
-		printf("Can't find expected crypto device\n");
-		return -ENODEV;
-	}
-
-	csha_ctx.algo = cap;
-	csha_ctx.length = input_len;
-	crypto_sha_csum(dev, &csha_ctx, (char *)input,
-			input_len, output);
-
-	return 0;
-}
-
-static int fdt_check_hash(void *fdt_addr, struct resource_file *file)
-{
-	uchar hash[32];
-
-	if (!file->hash_size)
-		return 0;
-
-	printf("Crypto: enable\n");
-
-	if (file->hash_size == 20)
-		crypto_csum(CRYPTO_SHA1, fdt_addr, file->f_size, hash);
-	else if (file->hash_size == 32)
-		crypto_csum(CRYPTO_SHA256, fdt_addr, file->f_size, hash);
-	else
-		return -EINVAL;
-
-	if (memcmp(hash, file->hash, file->hash_size))
-		return -EBADF;
-
-	return 0;
-}
-
-#else
-static int fdt_check_hash(void *fdt_addr, struct resource_file *file)
-{
-	uchar hash[32];
-
-	if (!file->hash_size)
-		return 0;
-
-	if (file->hash_size == 20)
-		sha1_csum((const uchar *)fdt_addr, file->f_size, hash);
-	else if (file->hash_size == 32)
-		sha256_csum((const uchar *)fdt_addr, file->f_size, hash);
-	else
-		return -EINVAL;
-
-	if (memcmp(hash, file->hash, file->hash_size))
-		return -EBADF;
-
-	return 0;
-}
-#endif
-#endif	/* CONFIG_ROCKCHIP_DTB_VERIFY */
-
-int rockchip_read_dtb_file(void *fdt_addr)
+int rockchip_read_resource_dtb(void *fdt_addr, char **hash, int *hash_size)
 {
 	struct resource_file *file;
-	char *def_dtb = DTB_FILE;
 	int ret;
 
-	/* search order: "rk-kernel.dtb" -> distro -> hwid */
-	file = get_file_info(NULL, def_dtb);
-	if (!file) {
-#ifdef CONFIG_ROCKCHIP_EARLY_DISTRO_DTB
-		ret = rockchip_read_distro_dtb(fdt_addr);
-		if (ret > 0)
-			return ret; /* found & load done */
-#endif
+	file = get_file_info(NULL, DTB_FILE);
 #ifdef CONFIG_ROCKCHIP_HWID_DTB
+	if (!file)
 		file = rockchip_read_hwid_dtb();
 #endif
-		if (!file)
-			return -ENODEV;
-	}
+	if (!file)
+		return -ENODEV;
 
-	/* found! */
-	printf("DTB: %s\n", file->name);
 	ret = rockchip_read_resource_file(fdt_addr, file->name, 0, 0);
 	if (ret < 0)
 		return ret;
 
-	if (fdt_check_header(fdt_addr)) {
-		printf("Get a bad DTB file !\n");
+	if (fdt_check_header(fdt_addr))
 		return -EBADF;
-	}
 
-	/* Note: We only load the DTB from resource.img to verify */
-#ifdef CONFIG_ROCKCHIP_DTB_VERIFY
-	if (fdt_check_hash(fdt_addr, file)) {
-		printf("Get a bad hash of DTB !\n");
-		return -EBADF;
-	}
-#endif
+	*hash = file->hash;
+	*hash_size = file->hash_size;
+	printf("DTB: %s\n", file->name);
 
-	if (!sysmem_alloc_base(MEMBLK_ID_FDT, (phys_addr_t)fdt_addr,
-			       ALIGN(file->f_size, RK_BLK_SIZE) +
-			       CONFIG_SYS_FDT_PAD))
-		return -ENOMEM;
-
-	/* Apply DTBO */
-#if defined(CONFIG_CMD_DTIMG) && defined(CONFIG_OF_LIBFDT_OVERLAY)
-	android_fdt_overlay_apply((void *)fdt_addr);
-#endif
-
-	return file->f_size;
+	return 0;
 }

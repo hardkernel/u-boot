@@ -10,6 +10,7 @@
 #include <asm/arch/grf_rk1808.h>
 #include <asm/arch/hardware.h>
 #include <asm/arch/rk_atags.h>
+#include <asm/arch/rockchip_smccc.h>
 #include <asm/gpio.h>
 #include <debug_uart.h>
 
@@ -64,11 +65,18 @@ enum {
 	UART2_IO_SEL_USB,
 };
 
+#define SECURE_FIRE_WALL 0xff590040
+
 int arch_cpu_init(void)
 {
 	/* Set cif qos priority */
 	writel(QOS_PRIORITY_LEVEL(2, 2), NIU_CIF_ADDR);
 	writel(QOS_PRIORITY_LEVEL(2, 2), NIU_ISP_ADDR);
+
+	/* Set dram to unsecure */
+#ifdef CONFIG_SPL_BUILD
+	writel(0, SECURE_FIRE_WALL);
+#endif
 
 	return 0;
 }
@@ -207,6 +215,14 @@ static int env_fixup_ramdisk_addr_r(void)
 	return 0;
 }
 #endif
+
+int rk_board_init(void)
+{
+#if defined(CONFIG_ROCKCHIP_SMCCC) && defined(CONFIG_ROCKCHIP_RK1806)
+	sip_smc_get_sip_version();
+#endif
+	return 0;
+}
 
 int rk_board_late_init(void)
 {

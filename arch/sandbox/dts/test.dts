@@ -275,6 +275,18 @@
 		compatible = "sandbox,mmc";
 	};
 
+	nop-test_0 {
+		compatible = "sandbox,nop_sandbox1";
+		nop-test_1 {
+			compatible = "sandbox,nop_sandbox2";
+			bind = "True";
+		};
+		nop-test_2 {
+			compatible = "sandbox,nop_sandbox2";
+			bind = "False";
+		};
+	};
+
 	pci: pci-controller {
 		compatible = "sandbox,pci";
 		device_type = "pci";

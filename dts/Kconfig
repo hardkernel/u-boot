@@ -47,6 +47,16 @@ config SPL_OF_CONTROL
 	  which is not enough to support device tree. Enable this option to
 	  allow such boards to be supported by U-Boot SPL.
 
+config SPL_DTB_MINIMUM
+	bool "Provide a minimum SPL DTB "
+	depends on SPL_OF_CONTROL
+	default n
+	help
+	  Some boards need a SPL DTB as smaller as possible to save dm scan
+	  time and space. It provides a SPL DTB only include the node with
+	  property "u-boot,dm-spl". The property "u-boot,pre-reloc" doesn't
+	  work any more.
+
 config TPL_OF_CONTROL
 	bool "Enable run-time configuration via Device Tree in TPL"
 	depends on TPL && OF_CONTROL

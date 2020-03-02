@@ -51,8 +51,9 @@
 #endif
 
 #if defined(CONFIG_CPU_ARM920T) || \
-    defined(CONFIG_PCI_OHCI) || \
-    defined(CONFIG_SYS_OHCI_USE_NPS)
+	defined(CONFIG_PCI_OHCI) || \
+	defined(CONFIG_DM_PCI) || \
+	defined(CONFIG_SYS_OHCI_USE_NPS)
 # define OHCI_USE_NPS		/* force NoPowerSwitching mode */
 #endif
 
@@ -65,6 +66,7 @@
 #define OHCI_CONTROL_INIT \
 	(OHCI_CTRL_CBSR & 0x3) | OHCI_CTRL_IE | OHCI_CTRL_PLE
 
+#if !CONFIG_IS_ENABLED(DM_USB)
 #ifdef CONFIG_PCI_OHCI
 static struct pci_device_id ohci_pci_ids[] = {
 	{0x10b9, 0x5237},	/* ULI1575 PCI OHCI module ids */
@@ -73,6 +75,7 @@ static struct pci_device_id ohci_pci_ids[] = {
 	/* Please add supported PCI OHCI controller ids here */
 	{0, 0}
 };
+#endif
 #endif
 
 #ifdef CONFIG_PCI_EHCI_DEVNO
@@ -121,7 +124,7 @@ static struct pci_device_id ehci_pci_ids[] = {
 #define invalidate_dcache_iso_td(addr) invalidate_dcache_buffer(addr, 32)
 #define invalidate_dcache_hcca(addr) invalidate_dcache_buffer(addr, 256)
 
-#ifdef CONFIG_DM_USB
+#if CONFIG_IS_ENABLED(DM_USB)
 /*
  * The various ohci_mdelay(1) calls in the code seem unnecessary. We keep
  * them around when building for older boards not yet converted to the dm
@@ -132,7 +135,7 @@ static struct pci_device_id ehci_pci_ids[] = {
 #define ohci_mdelay(x) mdelay(x)
 #endif
 
-#ifndef CONFIG_DM_USB
+#if !CONFIG_IS_ENABLED(DM_USB)
 /* global ohci_t */
 static ohci_t gohci;
 /* this must be aligned to a 256 byte boundary */
@@ -1546,10 +1549,8 @@ static int submit_common_msg(ohci_t *ohci, struct usb_device *dev,
 		return -1;
 	}
 
-#if 0
 	mdelay(10);
 	/* ohci_dump_status(ohci); */
-#endif
 
 	timeout = USB_TIMEOUT_MS(pipe);
 
@@ -1692,7 +1693,7 @@ static int _ohci_destroy_int_queue(ohci_t *ohci, struct usb_device *dev,
 	return 0;
 }
 
-#ifndef CONFIG_DM_USB
+#if !CONFIG_IS_ENABLED(DM_USB)
 /* submit routines called from usb.c */
 int submit_bulk_msg(struct usb_device *dev, unsigned long pipe, void *buffer,
 		int transfer_len)
@@ -1703,7 +1704,7 @@ int submit_bulk_msg(struct usb_device *dev, unsigned long pipe, void *buffer,
 }
 
 int submit_int_msg(struct usb_device *dev, unsigned long pipe, void *buffer,
-		int transfer_len, int interval)
+		int transfer_len, int interval, bool nonblock)
 {
 	info("submit_int_msg");
 	return submit_common_msg(&gohci, dev, pipe, buffer, transfer_len, NULL,
@@ -1981,7 +1982,7 @@ static int hc_interrupt(ohci_t *ohci)
 
 /*-------------------------------------------------------------------------*/
 
-#ifndef CONFIG_DM_USB
+#if !CONFIG_IS_ENABLED(DM_USB)
 
 /*-------------------------------------------------------------------------*/
 
@@ -2047,8 +2048,11 @@ int usb_lowlevel_init(int index, enum usb_init_type init, void **controller)
 		pci_read_config_dword(pdev, PCI_BASE_ADDRESS_0, &base);
 		printf("OHCI regs address 0x%08x\n", base);
 		gohci.regs = (struct ohci_regs *)base;
-	} else
+	} else {
+		printf("%s: OHCI devnr: %d not found\n", __func__,
+		       CONFIG_PCI_OHCI_DEVNO);
 		return -1;
+	}
 #else
 	gohci.regs = (struct ohci_regs *)CONFIG_SYS_USB_OHCI_REGS_BASE;
 #endif
@@ -2131,7 +2135,7 @@ int submit_control_msg(struct usb_device *dev, unsigned long pipe,
 }
 #endif
 
-#ifdef CONFIG_DM_USB
+#if CONFIG_IS_ENABLED(DM_USB)
 static int ohci_submit_control_msg(struct udevice *dev, struct usb_device *udev,
 				   unsigned long pipe, void *buffer, int length,
 				   struct devrequest *setup)
@@ -2152,7 +2156,7 @@ static int ohci_submit_bulk_msg(struct udevice *dev, struct usb_device *udev,
 
 static int ohci_submit_int_msg(struct udevice *dev, struct usb_device *udev,
 			       unsigned long pipe, void *buffer, int length,
-			       int interval)
+			       int interval, bool nonblock)
 {
 	ohci_t *ohci = dev_get_priv(usb_get_bus(dev));
 

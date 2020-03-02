@@ -129,6 +129,14 @@
 		};
 	};
 
+	crypto: crypto@100a0000 {
+		compatible = "rockchip,rk322x-crypto";
+		reg = <0x100a0000 0x10000>;
+		clock-names = "sclk_crypto";
+		clocks = <&cru SCLK_CRYPTO>;
+		status = "disabled";
+	};
+
 	i2s1: i2s1@100b0000 {
 		compatible = "rockchip,rk3228-i2s", "rockchip,rk3066-i2s";
 		reg = <0x100b0000 0x4000>;

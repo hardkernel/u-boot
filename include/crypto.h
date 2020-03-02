@@ -6,6 +6,10 @@
 #ifndef _CORE_CRYPTO_H_
 #define _CORE_CRYPTO_H_
 
+#include <common.h>
+#include <dm.h>
+#include <u-boot/sha1.h>
+
 /* Algorithms/capability of crypto, works together with crypto_algo_nbits() */
 #define CRYPTO_MD5		BIT(0)
 #define CRYPTO_SHA1		BIT(1)

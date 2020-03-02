@@ -23,22 +23,22 @@
 #include "test-rockchip.h"
 
 #define DEFAULT_STORAGE_RW_PART		"userdata"
-enum if_type blk_get_type_by_name(char* devtype)
+static enum if_type blk_get_type_by_name_and_num(char *devtype, int devnum)
 {
 	int type = -1;
 
 	if (!strcmp(devtype, "mmc"))
 		type = IF_TYPE_MMC;
-#ifdef CONFIG_RKNAND
+#if defined(CONFIG_RKNAND) || defined(CONFIG_RKNANDC_NAND)
 	else if (!strcmp(devtype, "rknand"))
 		type = IF_TYPE_RKNAND;
 #endif
 #ifdef CONFIG_RKSFC_NAND
-	else if (!strcmp(devtype, "spinand"))
+	else if (!strcmp(devtype, "rksfc") && devnum == 0)
 		type = IF_TYPE_SPINAND;
 #endif
 #ifdef CONFIG_RKSFC_NOR
-	else if (!strcmp(devtype, "spinor"))
+	else if (!strcmp(devtype, "rksfc") && devnum == 1)
 		type = IF_TYPE_SPINOR;
 #endif
 #ifdef CONFIG_DM_RAMDISK
@@ -55,7 +55,13 @@ enum if_type blk_get_type_by_name(char* devtype)
 	return type;
 }
 
-#if defined(CONFIG_MMC) || defined(CONFIG_RKNAND) || defined(CONFIG_DM_RAMDISK) || defined(CONFIG_USB_HOST)
+#if defined(CONFIG_MMC) ||\
+	defined(CONFIG_RKNAND) ||\
+	defined(CONFIG_DM_RAMDISK) ||\
+	defined(CONFIG_USB_HOST) ||\
+	defined(CONFIG_RKNANDC_NAND) ||\
+	defined(CONFIG_RKSFC_NAND) ||\
+	defined(CONFIG_RKSFC_NOR)
 static int do_test_storage(cmd_tbl_t *cmdtp, int flag,
 			   int argc, char *const argv[],
 			   const char *devtype,
@@ -96,7 +102,8 @@ static int do_test_storage(cmd_tbl_t *cmdtp, int flag,
 	} else {
 		int if_type;
 		int num = simple_strtoul(devnum, NULL, 10);
-		if_type = blk_get_type_by_name((char *)devtype);
+
+		if_type = blk_get_type_by_name_and_num((char *)devtype, num);
 		dev_desc = blk_get_devnum_by_type(if_type, num);
 	}
 	if (!dev_desc) {
@@ -114,6 +121,8 @@ static int do_test_storage(cmd_tbl_t *cmdtp, int flag,
 
 	/* 32MB */
 	sector = part.start;
+	if (part.start + part.size > dev_desc->lba)
+		part.size = dev_desc->lba - part.start;
 	blocks = part.size > 0x10000 ? 0x10000 : part.size;
 	round  = 4;
 
@@ -125,7 +134,6 @@ static int do_test_storage(cmd_tbl_t *cmdtp, int flag,
 	       label, DEFAULT_STORAGE_RW_PART,
 	       sector, sector + blocks,
 	       (blocks * dev_desc->blksz) >> 20, round);
-
 
 	/* 3. Prepare memory */
 #ifdef CONFIG_RKIMG_BOOTLOADER
@@ -259,11 +267,27 @@ static int do_test_sdmmc(cmd_tbl_t *cmdtp, int flag,
 }
 #endif
 
-#ifdef CONFIG_RKNAND
+#if defined(CONFIG_RKNAND) || defined(CONFIG_RKNANDC_NAND)
 static int do_test_rknand(cmd_tbl_t *cmdtp, int flag,
 			  int argc, char *const argv[])
 {
 	return do_test_storage(cmdtp, flag, argc, argv, "rknand", "0", "RKNAND0");
+}
+#endif
+
+#ifdef CONFIG_RKSFC_NAND
+static int do_test_rkflash_spinand(cmd_tbl_t *cmdtp, int flag,
+				   int argc, char *const argv[])
+{
+	return do_test_storage(cmdtp, flag, argc, argv, "rksfc", "0", "RKSFC0");
+}
+#endif
+
+#ifdef CONFIG_RKSFC_NOR
+static int do_test_rkflash_spinor(cmd_tbl_t *cmdtp, int flag,
+				  int argc, char *const argv[])
+{
+	return do_test_storage(cmdtp, flag, argc, argv, "rksfc", "1", "RKSFC1");
 }
 #endif
 
@@ -274,7 +298,14 @@ static int do_test_blk(cmd_tbl_t *cmdtp, int flag,
 	return do_test_storage(cmdtp, flag, argc, argv, NULL, NULL, "BLK");
 }
 #endif
-#endif/* defined(CONFIG_MMC) || defined(CONFIG_RKNAND) || defined(CONFIG_DM_RAMDISK) */
+#endif/* defined(CONFIG_MMC) ||\
+       * defined(CONFIG_RKNAND) ||\
+       * defined(CONFIG_DM_RAMDISK) ||\
+       * defined(CONFIG_USB_HOST) ||\
+       * defined(CONFIG_RKNANDC_NAND) ||\
+       * defined(CONFIG_RKSFC_NAND) ||\
+       * defined(CONFIG_RKSFC_NOR)
+       */
 
 #if defined(CONFIG_OPTEE_CLIENT) && defined(CONFIG_MMC)
 static int do_test_secure_storage(cmd_tbl_t *cmdtp, int flag,
@@ -374,7 +405,7 @@ static int do_test_part(cmd_tbl_t *cmdtp, int flag,
 
 #ifdef CONFIG_USB_HOST
 static int do_test_usb(cmd_tbl_t *cmdtp, int flag,
-			int argc, char *const argv[])
+		       int argc, char *const argv[])
 {
 	run_command("usb start", 0);
 	return do_test_storage(cmdtp, flag, argc, argv, "usb", "0", "usb0");
@@ -398,8 +429,14 @@ static cmd_tbl_t sub_cmd[] = {
 #ifdef CONFIG_ROCKCHIP_OTP
 	UNIT_CMD_DEFINE(otp, 0),
 #endif
-#ifdef CONFIG_RKNAND
+#if defined(CONFIG_RKNAND) || defined(CONFIG_RKNANDC_NAND)
 	UNIT_CMD_DEFINE(rknand, 0),
+#endif
+#ifdef CONFIG_RKSFC_NAND
+	UNIT_CMD_DEFINE(rkflash_spinand, 0),
+#endif
+#ifdef CONFIG_RKSFC_NOR
+	UNIT_CMD_DEFINE(rkflash_spinor, 0),
 #endif
 #if defined(CONFIG_OPTEE_CLIENT) && defined(CONFIG_MMC)
 	UNIT_CMD_DEFINE(secure_storage, 0),
@@ -426,8 +463,14 @@ static char sub_cmd_help[] =
 "    [.] rktest emmc                        - test emmc read/write speed\n"
 "    [.] rktest sdmmc                       - test sd card and fat fs read/write\n"
 #endif
-#ifdef CONFIG_RKNAND
+#if defined(CONFIG_RKNAND) || defined(CONFIG_RKNANDC_NAND)
 "    [.] rktest rknand                      - test rknand read/write speed\n"
+#endif
+#ifdef CONFIG_RKSFC_NAND
+"    [.] rktest rkflash_spinand             - test RKFLASH DM driver spinand read/write speed\n"
+#endif
+#ifdef CONFIG_RKSFC_NOR
+"    [.] rktest rkflash_spinor              - test RKFLASH DM driver read/write speed\n"
 #endif
 #if defined(CONFIG_OPTEE_CLIENT) && defined(CONFIG_MMC)
 "    [.] rktest secure_storage              - test secure storage\n"
@@ -449,7 +492,7 @@ static char sub_cmd_help[] =
 "    [.] rktest part                        - test part list\n"
 #endif
 #ifdef CONFIG_USB_HOST
-"    [.] rktest usb                        - test usb disk\n"
+"    [.] rktest usb                         - test usb disk\n"
 #endif
 ;
 

@@ -186,7 +186,6 @@ static int boot_from_udisk(void)
 			rockchip_set_bootdev(desc);
 			env_set("devtype", "usb");
 			env_set("devnum", "0");
-			env_set("reboot_mode", "recovery-usb");
 			printf("Boot from usb 0\n");
 		} else {
 			printf("No usb dev 0 found\n");
@@ -198,184 +197,7 @@ static int boot_from_udisk(void)
 }
 #endif
 
-int board_late_init(void)
-{
-	rockchip_set_ethaddr();
-	rockchip_set_serialno();
-#if (CONFIG_ROCKCHIP_BOOT_MODE_REG > 0)
-	setup_boot_mode();
-#endif
-#ifdef CONFIG_ROCKCHIP_USB_BOOT
-	boot_from_udisk();
-#endif
-#ifdef CONFIG_DM_CHARGE_DISPLAY
-	charge_display();
-#endif
-#ifdef CONFIG_DRM_ROCKCHIP
-	rockchip_show_logo();
-#endif
-	soc_clk_dump();
-
-	return rk_board_late_init();
-}
-
-#ifdef CONFIG_USING_KERNEL_DTB
-/* Here, only fixup cru phandle, pmucru is not included */
-static int phandles_fixup(void *fdt)
-{
-	const char *props[] = { "clocks", "assigned-clocks" };
-	struct udevice *dev;
-	struct uclass *uc;
-	const char *comp;
-	u32 id, nclocks;
-	u32 *clocks;
-	int phandle, ncells;
-	int off, offset;
-	int ret, length;
-	int i, j;
-	int first_phandle = -1;
-
-	phandle = -ENODATA;
-	ncells = -ENODATA;
-
-	/* fdt points to kernel dtb, getting cru phandle and "#clock-cells" */
-	for (offset = fdt_next_node(fdt, 0, NULL);
-	     offset >= 0;
-	     offset = fdt_next_node(fdt, offset, NULL)) {
-		comp = fdt_getprop(fdt, offset, "compatible", NULL);
-		if (!comp)
-			continue;
-
-		/* Actually, this is not a good method to get cru node */
-		off = strlen(comp) - strlen("-cru");
-		if (off > 0 && !strncmp(comp + off, "-cru", 4)) {
-			phandle = fdt_get_phandle(fdt, offset);
-			ncells = fdtdec_get_int(fdt, offset,
-						"#clock-cells", -ENODATA);
-			break;
-		}
-	}
-
-	if (phandle == -ENODATA || ncells == -ENODATA)
-		return 0;
-
-	debug("%s: target cru: clock-cells:%d, phandle:0x%x\n",
-	      __func__, ncells, fdt32_to_cpu(phandle));
-
-	/* Try to fixup all cru phandle from U-Boot dtb nodes */
-	for (id = 0; id < UCLASS_COUNT; id++) {
-		ret = uclass_get(id, &uc);
-		if (ret)
-			continue;
-
-		if (list_empty(&uc->dev_head))
-			continue;
-
-		list_for_each_entry(dev, &uc->dev_head, uclass_node) {
-			/* Only U-Boot node go further */
-			if (!dev_read_bool(dev, "u-boot,dm-pre-reloc") ||
-			    !dev_read_bool(dev, "u-boot,dm-spl"))
-				continue;
-
-			for (i = 0; i < ARRAY_SIZE(props); i++) {
-				if (!dev_read_prop(dev, props[i], &length))
-					continue;
-
-				clocks = malloc(length);
-				if (!clocks)
-					return -ENOMEM;
-
-				/* Read "props[]" which contains cru phandle */
-				nclocks = length / sizeof(u32);
-				if (dev_read_u32_array(dev, props[i],
-						       clocks, nclocks)) {
-					free(clocks);
-					continue;
-				}
-
-				/* Fixup with kernel cru phandle */
-				for (j = 0; j < nclocks; j += (ncells + 1)) {
-					/*
-					 * Check: update pmucru phandle with cru
-					 * phandle by mistake.
-					 */
-					if (first_phandle == -1)
-						first_phandle = clocks[j];
-
-					if (clocks[j] != first_phandle) {
-						debug("WARN: %s: first cru phandle=%d, this=%d\n",
-						      dev_read_name(dev),
-						      first_phandle, clocks[j]);
-						continue;
-					}
-
-					clocks[j] = phandle;
-				}
-
-				/*
-				 * Override live dt nodes but not fdt nodes,
-				 * because all U-Boot nodes has been imported
-				 * to live dt nodes, should use "dev_xxx()".
-				 */
-				dev_write_u32_array(dev, props[i],
-						    clocks, nclocks);
-				free(clocks);
-			}
-		}
-	}
-
-	return 0;
-}
-
-int init_kernel_dtb(void)
-{
-	ulong fdt_addr;
-	int ret;
-
-	fdt_addr = env_get_ulong("fdt_addr_r", 16, 0);
-	if (!fdt_addr) {
-		printf("No Found FDT Load Address.\n");
-		return -1;
-	}
-
-	ret = rockchip_read_dtb_file((void *)fdt_addr);
-	if (ret < 0) {
-		if (!fdt_check_header(gd->fdt_blob_kern)) {
-			fdt_addr = (ulong)memalign(ARCH_DMA_MINALIGN,
-					fdt_totalsize(gd->fdt_blob_kern));
-			if (!fdt_addr)
-				return -ENOMEM;
-
-			memcpy((void *)fdt_addr, gd->fdt_blob_kern,
-			       fdt_totalsize(gd->fdt_blob_kern));
-			printf("DTB: embedded kern.dtb\n");
-		} else {
-			printf("Failed to get kernel dtb, ret=%d\n", ret);
-			return ret;
-		}
-	}
-
-	gd->fdt_blob = (void *)fdt_addr;
-
-	/*
-	 * There is a phandle miss match between U-Boot and kernel dtb node,
-	 * the typical is cru phandle, we fixup it in U-Boot live dt nodes.
-	 */
-	phandles_fixup((void *)gd->fdt_blob);
-
-	of_live_build((void *)gd->fdt_blob, (struct device_node **)&gd->of_root);
-	dm_scan_fdt((void *)gd->fdt_blob, false);
-
-	/* Reserve 'reserved-memory' */
-	ret = boot_fdt_add_sysmem_rsv_regions((void *)gd->fdt_blob);
-	if (ret)
-		return ret;
-
-	return 0;
-}
-#endif
-
-void board_env_fixup(void)
+static void env_fixup(void)
 {
 	struct memblock mem;
 	ulong u_addr_r;
@@ -418,20 +240,53 @@ void board_env_fixup(void)
 	}
 }
 
-static void early_download_init(void)
+static void cmdline_handle(void)
+{
+#ifdef CONFIG_ROCKCHIP_PRELOADER_ATAGS
+	struct tag *t;
+
+	t = atags_get_tag(ATAG_PUB_KEY);
+	if (t) {
+		/* Pass if efuse/otp programmed */
+		if (t->u.pub_key.flag == PUBKEY_FUSE_PROGRAMMED)
+			env_update("bootargs", "fuse.programmed=1");
+		else
+			env_update("bootargs", "fuse.programmed=0");
+	}
+#endif
+}
+
+int board_late_init(void)
+{
+	rockchip_set_ethaddr();
+	rockchip_set_serialno();
+	setup_download_mode();
+#if (CONFIG_ROCKCHIP_BOOT_MODE_REG > 0)
+	setup_boot_mode();
+#endif
+#ifdef CONFIG_ROCKCHIP_USB_BOOT
+	boot_from_udisk();
+#endif
+#ifdef CONFIG_DM_CHARGE_DISPLAY
+	charge_display();
+#endif
+#ifdef CONFIG_DRM_ROCKCHIP
+	rockchip_show_logo();
+#endif
+	env_fixup();
+	soc_clk_dump();
+	cmdline_handle();
+
+	return rk_board_late_init();
+}
+
+static void early_download(void)
 {
 #if defined(CONFIG_PWRKEY_DNL_TRIGGER_NUM) && \
 		(CONFIG_PWRKEY_DNL_TRIGGER_NUM > 0)
 	if (pwrkey_download_init())
 		printf("Pwrkey download init failed\n");
 #endif
-
-	if (!tstc())
-		return;
-
-	gd->console_evt = getc();
-	if (gd->console_evt <= 0x1a) /* 'z' */
-		printf("Hotkey: ctrl+%c\n", (gd->console_evt + 'a' - 1));
 
 #if (CONFIG_ROCKCHIP_BOOT_MODE_REG > 0)
 	if (is_hotkey(HK_BROM_DNL)) {
@@ -444,14 +299,30 @@ static void early_download_init(void)
 #endif
 }
 
+static void board_debug_init(void)
+{
+	if (!gd->serial.using_pre_serial)
+		board_debug_uart_init();
+
+	if (tstc()) {
+		gd->console_evt = getc();
+		if (gd->console_evt <= 0x1a) /* 'z' */
+			printf("Hotkey: ctrl+%c\n", gd->console_evt + 'a' - 1);
+	}
+}
+
 int board_init(void)
 {
-	board_debug_uart_init();
+	board_debug_init();
+
+#ifdef DEBUG
+	soc_clk_dump();
+#endif
 
 #ifdef CONFIG_USING_KERNEL_DTB
 	init_kernel_dtb();
 #endif
-	early_download_init();
+	early_download();
 
 	/*
 	 * pmucru isn't referenced on some platforms, so pmucru driver can't
@@ -619,19 +490,19 @@ int board_bidram_reserve(struct bidram *bidram)
 
 	/* ATF */
 	mem = param_parse_atf_mem();
-	ret = bidram_reserve(MEMBLK_ID_ATF, mem.base, mem.size);
+	ret = bidram_reserve(MEM_ATF, mem.base, mem.size);
 	if (ret)
 		return ret;
 
 	/* PSTORE/ATAGS/SHM */
 	mem = param_parse_common_resv_mem();
-	ret = bidram_reserve(MEMBLK_ID_SHM, mem.base, mem.size);
+	ret = bidram_reserve(MEM_SHM, mem.base, mem.size);
 	if (ret)
 		return ret;
 
 	/* OP-TEE */
 	mem = param_parse_optee_mem();
-	ret = bidram_reserve(MEMBLK_ID_OPTEE, mem.base, mem.size);
+	ret = bidram_reserve(MEM_OPTEE, mem.base, mem.size);
 	if (ret)
 		return ret;
 

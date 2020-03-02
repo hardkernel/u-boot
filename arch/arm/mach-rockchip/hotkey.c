@@ -21,29 +21,28 @@ DECLARE_GLOBAL_DATA_PTR;
 #define CTRL_P		0x10	/* parameter(cmdline) dump */
 #define CTRL_R		0x12	/* regulator initial state dump */
 #define CTRL_S		0x13	/* shell(cli) on BOOTM_STATE_OS_GO */
+#define CTRL_T		0x14	/* print fdt */
 
-#if defined(CONFIG_CONSOLE_DISABLE_CTRLC) && \
-	defined(CONFIG_BOOTDELAY) && (CONFIG_BOOTDELAY <= 0)
-bool is_hotkey(enum hotkey_t id) { return false; }
-void hotkey_run(enum hotkey_t id) { }
-#else
 bool is_hotkey(enum hotkey_t id)
 {
 	switch (id) {
-	case HK_BROM_DNL:
-		return gd->console_evt == CTRL_B;
 	case HK_CMDLINE:
 		return gd->console_evt == CTRL_P;
-	case HK_FASTBOOT:
-		return gd->console_evt == CTRL_F;
 	case HK_INITCALL:
 		return gd->console_evt == CTRL_I;
 	case HK_REGULATOR:
 		return gd->console_evt == CTRL_R;
-	case HK_ROCKUSB_DNL:
-		return gd->console_evt == CTRL_D;
 	case HK_SYSMEM:
 		return gd->console_evt == CTRL_M;
+#if defined(CONFIG_CONSOLE_DISABLE_CTRLC) && \
+    defined(CONFIG_BOOTDELAY) && (CONFIG_BOOTDELAY <= 0)
+	case HK_BROM_DNL:
+		return gd->console_evt == CTRL_B;
+	case HK_ROCKUSB_DNL:
+		return gd->console_evt == CTRL_D;
+	case HK_FASTBOOT:
+		return gd->console_evt == CTRL_F;
+#endif
 	default:
 		break;
 	}
@@ -68,6 +67,12 @@ void hotkey_run(enum hotkey_t id)
 		if (gd->console_evt == CTRL_I)
 			env_update("bootargs", "initcall_debug debug");
 		break;
+	case HK_FDT:
+		if (gd->console_evt == CTRL_T)
+			run_command("fdt print", 0);
+		break;
+#if defined(CONFIG_CONSOLE_DISABLE_CTRLC) && \
+    defined(CONFIG_BOOTDELAY) && (CONFIG_BOOTDELAY <= 0)
 	case HK_CLI_OS_PRE:
 		if (gd->console_evt == CTRL_A)
 			cli_loop();
@@ -76,8 +81,8 @@ void hotkey_run(enum hotkey_t id)
 		if (gd->console_evt == CTRL_S)
 			cli_loop();
 		break;
+#endif
 	default:
 		break;
 	}
 }
-#endif

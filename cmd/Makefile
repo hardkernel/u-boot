@@ -168,6 +168,8 @@ obj-$(CONFIG_CMD_REGULATOR) += regulator.o
 obj-$(CONFIG_CMD_DVFS) += dvfs.o
 
 obj-$(CONFIG_CMD_BLOB) += blob.o
+
+obj-$(CONFIG_ARCH_ROCKCHIP) += rkimgtest.o
 endif # !CONFIG_SPL_BUILD
 
 # core command

@@ -20,21 +20,11 @@
 int rockchip_read_resource_file(void *buf, const char *name, int offset, int len);
 
 /*
- * rockchip_get_resource_file_offset() - read file offset of partition
- *
- * @resc_img_hdr: resource file hdr
- * @name: file name
- *
- * @return negative on error, otherwise file offset
- */
-int rockchip_get_resource_file_offset(void *resc_hdr, const char *name);
-
-/*
- * rockchip_get_resource_file_size() - read file size
+ * rockchip_read_resource_dtb() - read dtb file
  *
  * @fdt_addr: destination buf to store dtb file
- *
- * @return 0 on success, othwise on error
+ * @hash: hash value buffer
+ * @hash_size: hash value length
  */
-int rockchip_read_dtb_file(void *fdt_addr);
+int rockchip_read_resource_dtb(void *fdt_addr, char **hash, int *hash_size);
 #endif

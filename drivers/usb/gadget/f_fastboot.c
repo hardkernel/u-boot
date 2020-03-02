@@ -13,6 +13,7 @@
 #include <config.h>
 #include <common.h>
 #include <console.h>
+#include <android_bootloader.h>
 #include <errno.h>
 #include <fastboot.h>
 #include <malloc.h>
@@ -548,12 +549,28 @@ int __weak fb_set_reboot_flag(void)
 static void cb_reboot(struct usb_ep *ep, struct usb_request *req)
 {
 	char *cmd = req->buf;
+
 	if (!strcmp_l1("reboot-bootloader", cmd)) {
 		if (fb_set_reboot_flag()) {
 			fastboot_tx_write_str("FAILCannot set reboot flag");
 			return;
 		}
 	}
+#ifdef CONFIG_ANDROID_BOOTLOADER
+	if (!strcmp_l1("reboot-fastboot", cmd)) {
+		if (android_bcb_write("boot-fastboot")) {
+			fastboot_tx_write_str("FAILCannot set boot-fastboot");
+			return;
+		}
+	}
+
+	if (!strcmp_l1("reboot-recovery", cmd)) {
+		if (android_bcb_write("boot-recovery")) {
+			fastboot_tx_write_str("FAILCannot set boot-recovery");
+			return;
+		}
+	}
+#endif
 	fastboot_func->in_req->complete = compl_do_reset;
 	fastboot_tx_write_str("OKAY");
 }
@@ -2089,17 +2106,6 @@ static void cb_oem(struct usb_ep *ep, struct usb_request *req)
 				fastboot_tx_write_str("FAILauthenticated unlock fail");
 			}
 		}
-#else
-		fastboot_tx_write_str("FAILnot implemented");
-#endif
-	} else if (strncmp("at-disable-unlock-vboot", cmd + 4, 23) == 0) {
-#ifdef CONFIG_RK_AVB_LIBAVB_USER
-		uint8_t lock_state;
-		lock_state = 2;
-		if (rk_avb_write_lock_state(lock_state))
-			fastboot_tx_write_str("FAILwrite lock state failed");
-		else
-			fastboot_tx_write_str("OKAY");
 #else
 		fastboot_tx_write_str("FAILnot implemented");
 #endif

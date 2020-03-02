@@ -56,6 +56,9 @@
 #define SOC_FLAGS_ET01		0x45543031
 #define SOC_FLAGS_ET02		0x45543032
 
+/* pub key programmed magic */
+#define PUBKEY_FUSE_PROGRAMMED	0x4B415352
+
 struct tag_serial {
 	u32 version;
 	u32 enable;
@@ -118,8 +121,9 @@ struct tag_atf_mem {
 struct tag_pub_key {
 	u32 version;
 	u32 len;
-	u8  data[768];
-	u32 reserved[6];
+	u8  data[768];	/* u32 rsa_n[64], rsa_e[64], rsa_c[64] */
+	u32 flag;
+	u32 reserved[5];
 	u32 hash;
 } __packed;
 
@@ -261,8 +265,13 @@ void atags_stat(void);
 
 #if CONFIG_IS_ENABLED(TINY_FRAMEWORK) &&		\
 	!CONFIG_IS_ENABLED(LIBGENERIC_SUPPORT) &&	\
-	defined(CONFIG_ARM64)
+	!CONFIG_IS_ENABLED(USE_ARCH_MEMSET)
 void *memset(void *s, int c, size_t count);
+#endif
+
+#if CONFIG_IS_ENABLED(TINY_FRAMEWORK) &&		\
+	!CONFIG_IS_ENABLED(LIBGENERIC_SUPPORT) &&	\
+	!CONFIG_IS_ENABLED(USE_ARCH_MEMCPY)
 void *memcpy(void *dest, const void *src, size_t count);
 #endif
 

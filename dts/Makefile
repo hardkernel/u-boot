@@ -41,18 +41,35 @@ quiet_cmd_fdtgrep = FDTGREP $@
 fdtgrep_tpl_props := -b u-boot,dm-pre-reloc -b u-boot,dm-tpl
 quiet_cmd_fdtgrep_tpl = FDTGREP $@
       cmd_fdtgrep_tpl = $(objtree)/tools/fdtgrep $(fdtgrep_tpl_props) -RT $< \
-                -n /config -O dtb | \
+                -n /chosen -n config -O dtb | \
+        $(objtree)/tools/fdtgrep -r -O dtb - -o $@ \
+                $(addprefix -P ,$(subst $\",,$(CONFIG_OF_SPL_REMOVE_PROPS)))
+
+fdtgrep_spl_minimum_props := -b u-boot,dm-spl
+quiet_cmd_fdtgrep_spl_minimum = FDTGREP $@
+      cmd_fdtgrep_spl_minimum = $(objtree)/tools/fdtgrep $(fdtgrep_spl_minimum_props) -RT $< \
+                -n /chosen -n config -O dtb | \
         $(objtree)/tools/fdtgrep -r -O dtb - -o $@ \
                 $(addprefix -P ,$(subst $\",,$(CONFIG_OF_SPL_REMOVE_PROPS)))
 
 $(obj)/dt-tpl.dtb: $(DTB) $(objtree)/tools/fdtgrep FORCE
 	$(call if_changed,fdtgrep_tpl)
 
+ifeq ($(CONFIG_SPL_DTB_MINIMUM),y)
+$(obj)/dt-spl.dtb: $(DTB) $(objtree)/tools/fdtgrep FORCE
+	$(call if_changed,fdtgrep_spl_minimum)
+else
 $(obj)/dt-spl.dtb: $(DTB) $(objtree)/tools/fdtgrep FORCE
 	$(call if_changed,fdtgrep)
+endif
 
+ifeq ($(CONFIG_USING_KERNEL_DTB),y)
+$(obj)/dt.dtb: $(DTB) $(objtree)/tools/fdtgrep FORCE
+	$(call if_changed,fdtgrep)
+else
 $(obj)/dt.dtb: $(DTB) FORCE
 	$(call if_changed,shipped)
+endif
 
 targets += dt.dtb dt-spl.dtb dt-tpl.dtb
 

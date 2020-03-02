@@ -91,8 +91,8 @@ typedef struct bd_info {
 	unsigned int	bi_andr_version;
 #ifdef CONFIG_NR_DRAM_BANKS
 	struct {			/* RAM configuration */
-		phys_addr_t start;
-		phys_size_t size;
+		u64 start;
+		u64 size;
 	} bi_dram[CONFIG_NR_DRAM_BANKS];
 #endif /* CONFIG_NR_DRAM_BANKS */
 } bd_t;

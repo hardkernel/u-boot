@@ -682,6 +682,7 @@ libs-$(CONFIG_SYS_FSL_DDR) += drivers/ddr/fsl/
 libs-$(CONFIG_SYS_FSL_MMDC) += drivers/ddr/fsl/
 libs-$(CONFIG_ALTERA_SDRAM) += drivers/ddr/altera/
 libs-y += drivers/serial/
+libs-y += drivers/usb/cdns3/
 libs-y += drivers/usb/dwc3/
 libs-y += drivers/usb/common/
 libs-y += drivers/usb/emul/
@@ -874,18 +875,16 @@ endif
 	$(call cmd,cfgcheck,u-boot.cfg)
 
 PHONY += dtbs
-dtbs: dts/dt.dtb dts/dt-spl.dtb
+dtbs: dts/dt.dtb
 	@:
 dts/dt.dtb: u-boot
 	$(Q)$(MAKE) $(build)=dts dtbs
 
-ifeq ($(CONFIG_USING_KERNEL_DTB),y)
-dts/dt-spl.dtb: dts/dt.dtb
-	@:
-endif
-
 quiet_cmd_copy = COPY    $@
       cmd_copy = cp $< $@
+
+quiet_cmd_truncate = ALIGN   $@
+      cmd_truncate = truncate -s "%8" $@
 
 ifeq ($(CONFIG_MULTI_DTB_FIT),y)
 
@@ -902,26 +901,22 @@ u-boot-fit-dtb.bin: u-boot-nodtb.bin fit-dtb.blob
 u-boot.bin: u-boot-fit-dtb.bin FORCE
 	$(call if_changed,copy)
 else ifeq ($(CONFIG_OF_SEPARATE),y)
-ifeq ($(CONFIG_USING_KERNEL_DTB),y)
-u-boot-dtb.bin: u-boot-nodtb.bin dts/dt-spl.dtb FORCE
+
+u-boot-dtb.bin: u-boot-nodtb.bin dts/dt.dtb FORCE
 	$(call if_changed,cat)
 
 ifneq ($(wildcard dts/kern.dtb),)
 u-boot-dtb-kern.bin: u-boot-dtb.bin FORCE
 	$(call if_changed,copy)
+	$(call if_changed,truncate)
 u-boot.bin: u-boot-dtb-kern.bin dts/kern.dtb FORCE
 	$(call if_changed,cat)
 else
 u-boot.bin: u-boot-dtb.bin FORCE
 	$(call if_changed,copy)
+	$(call if_changed,truncate)
 endif
-else
 
-u-boot-dtb.bin: u-boot-nodtb.bin dts/dt.dtb FORCE
-	$(call if_changed,cat)
-u-boot.bin: u-boot-dtb.bin FORCE
-	$(call if_changed,copy)
-endif
 else
 u-boot.bin: u-boot-nodtb.bin FORCE
 	$(call if_changed,copy)
@@ -936,11 +931,7 @@ endif
 quiet_cmd_copy = COPY    $@
       cmd_copy = cp $< $@
 
-ifeq ($(CONFIG_USING_KERNEL_DTB),y)
-u-boot.dtb: dts/dt-spl.dtb FORCE
-else
 u-boot.dtb: dts/dt.dtb FORCE
-endif
 	$(call cmd,copy)
 
 OBJCOPYFLAGS_u-boot.hex := -O ihex
@@ -1048,11 +1039,7 @@ u-boot-dtb.img u-boot.img u-boot.kwb u-boot.pbl u-boot-ivt.img: \
 		$(if $(CONFIG_SPL_LOAD_FIT),u-boot-nodtb.bin dts/dt.dtb,u-boot.bin) FORCE
 	$(call if_changed,mkimage)
 
-ifeq ($(CONFIG_USING_KERNEL_DTB),y)
-u-boot.itb: u-boot-nodtb.bin dts/dt-spl.dtb $(U_BOOT_ITS) FORCE
-else
 u-boot.itb: u-boot-nodtb.bin dts/dt.dtb $(U_BOOT_ITS) FORCE
-endif
 	$(call if_changed,mkfitimage)
 
 u-boot-spl.kwb: u-boot.img spl/u-boot-spl.bin FORCE

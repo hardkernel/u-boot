@@ -400,6 +400,44 @@ AvbIOResult rk_get_random(AvbAtxOps *atx_ops,
 	return 0;
 }
 
+#ifdef CONFIG_ANDROID_BOOT_IMAGE
+static AvbIOResult get_preloaded_partition(AvbOps* ops,
+					   const char* partition,
+					   size_t num_bytes,
+					   uint8_t** out_pointer,
+					   size_t* out_num_bytes_preloaded,
+					   int allow_verification_error)
+{
+	struct blk_desc *dev_desc;
+	ulong load_addr;
+	int ret;
+
+	/* no need go further */
+	if (!allow_verification_error)
+		return AVB_IO_RESULT_OK;
+
+	printf("get image from preloaded partition...\n");
+	dev_desc = rockchip_get_bootdev();
+	if (!dev_desc)
+	    return AVB_SLOT_VERIFY_RESULT_ERROR_IO;
+
+	load_addr = env_get_ulong("kernel_addr_r", 16, 0);
+	if (!load_addr)
+		return AVB_SLOT_VERIFY_RESULT_ERROR_INVALID_ARGUMENT;
+
+	ret = android_image_load_by_partname(dev_desc, partition, &load_addr);
+	if (!ret) {
+		*out_pointer = (u8 *)load_addr;
+		*out_num_bytes_preloaded = num_bytes; /* return what it expects */
+		ret = AVB_SLOT_VERIFY_RESULT_OK;
+	} else {
+		ret = AVB_SLOT_VERIFY_RESULT_ERROR_OOM;
+	}
+
+	return ret;
+}
+#endif
+
 AvbOps *avb_ops_user_new(void)
 {
 	AvbOps *ops;
@@ -435,6 +473,9 @@ AvbOps *avb_ops_user_new(void)
 	ops->write_is_device_unlocked = write_is_device_unlocked;
 	ops->get_unique_guid_for_partition = get_unique_guid_for_partition;
 	ops->get_size_of_partition = get_size_of_partition;
+#ifdef CONFIG_ANDROID_BOOT_IMAGE
+	ops->get_preloaded_partition = get_preloaded_partition;
+#endif
 	ops->ab_ops->read_ab_metadata = avb_ab_data_read;
 	ops->ab_ops->write_ab_metadata = avb_ab_data_write;
 	ops->atx_ops->read_permanent_attributes = avb_read_perm_attr;

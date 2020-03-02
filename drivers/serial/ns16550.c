@@ -88,7 +88,7 @@ static inline int serial_in_shift(void *addr, int shift)
 #ifdef CONFIG_DM_SERIAL
 
 #ifndef CONFIG_SYS_NS16550_CLK
-#define CONFIG_SYS_NS16550_CLK  0
+#define CONFIG_SYS_NS16550_CLK  24000000
 #endif
 
 static void ns16550_writeb(NS16550_t port, int offset, int value)
@@ -481,7 +481,7 @@ int ns16550_serial_ofdata_to_platdata(struct udevice *dev)
 	plat->base = addr;
 #else
 
-	if (gd && gd->serial.using_pre_serial)
+	if (gd && gd->serial.using_pre_serial && gd->serial.id == dev->req_seq)
 		addr = gd->serial.addr;
 
 	plat->base = (unsigned long)map_physmem(addr, 0, MAP_NOCACHE);
@@ -496,11 +496,7 @@ int ns16550_serial_ofdata_to_platdata(struct udevice *dev)
 		if (!IS_ERR_VALUE(err))
 			plat->clock = err;
 	} else if (err != -ENOENT && err != -ENODEV && err != -ENOSYS) {
-		debug("ns16550 failed to get clock\n");
-#ifdef CONFIG_USING_KERNEL_DTB
-/* With kernel dtb support, serial ofnode not able to get cru phandle */
-		if(err != -EINVAL)
-#endif
+		printf("ns16550 failed to get clock, err=%d\n", err);
 		return err;
 	}
 

@@ -43,6 +43,16 @@ DECLARE_GLOBAL_DATA_PTR;
 
 bootm_headers_t images;		/* pointers to os/initrd/fdt images */
 
+__weak int board_do_bootm(int argc, char * const argv[])
+{
+	return 0;
+}
+
+__weak int bootm_board_start(void)
+{
+	return 0;
+}
+
 static const void *boot_get_kernel(cmd_tbl_t *cmdtp, int flag, int argc,
 				   char * const argv[], bootm_headers_t *images,
 				   ulong *os_data, ulong *os_len);
@@ -86,7 +96,7 @@ static int bootm_start(cmd_tbl_t *cmdtp, int flag, int argc,
 	bootstage_mark_name(BOOTSTAGE_ID_BOOTM_START, "bootm_start");
 	images.state = BOOTM_STATE_START;
 
-	return 0;
+	return bootm_board_start();
 }
 
 static int bootm_find_os(cmd_tbl_t *cmdtp, int flag, int argc,
@@ -299,14 +309,26 @@ static int bootm_find_other(cmd_tbl_t *cmdtp, int flag, int argc,
  * @comp_type:	Compression type being used (IH_COMP_...)
  * @is_xip:	true if the load address matches the image start
  */
-static void print_decomp_msg(int comp_type, int type, bool is_xip)
+static void print_decomp_msg(int comp_type, int type, bool is_xip,
+			     ulong src, ulong dst)
 {
 	const char *name = genimg_get_type_name(type);
+	const char *comp_name[] = {
+		[IH_COMP_NONE]  = "",
+		[IH_COMP_GZIP]  = "GZIP",
+		[IH_COMP_BZIP2] = "BZIP2",
+		[IH_COMP_LZMA]  = "LZMA",
+		[IH_COMP_LZO]   = "LZO",
+		[IH_COMP_LZ4]   = "LZ4",
+		[IH_COMP_ZIMAGE]= "ZIMAGE",
+	};
 
 	if (comp_type == IH_COMP_NONE)
-		printf("   %s %s ... ", is_xip ? "XIP" : "Loading", name);
+		printf("   %s %s from 0x%08lx to 0x%08lx ... ",
+		       is_xip ? "XIP" : "Loading", name, src, dst);
 	else
-		printf("   Uncompressing %s ... ", name);
+		printf("   Uncompressing %s %s from 0x%08lx to 0x%08lx ... ",
+		       comp_name[comp_type], name, src, dst);
 }
 
 /**
@@ -379,7 +401,8 @@ int bootm_decomp_image(int comp, ulong load, ulong image_start, int type,
 	int ret = 0;
 
 	*load_end = load;
-	print_decomp_msg(comp, type, load == image_start);
+	print_decomp_msg(comp, type, load == image_start,
+		(ulong)image_buf, (ulong)load_buf);
 
 	/*
 	 * Load the image to the right place, decompressing if needed. After
@@ -454,7 +477,10 @@ int bootm_decomp_image(int comp, ulong load, ulong image_start, int type,
 		return handle_decomp_error(comp, image_len, unc_len, ret);
 	*load_end = load + image_len;
 
-	puts("OK\n");
+	if (comp == IH_COMP_NONE || comp == IH_COMP_ZIMAGE)
+		puts("OK\n");
+	else
+		printf("with %08lx bytes OK\n", image_len);
 
 	return 0;
 }

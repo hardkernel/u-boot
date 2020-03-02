@@ -76,6 +76,10 @@
 	status = "okay";
 };
 
+&crypto {
+	status = "okay";
+};
+
 &emmc {
 	status = "okay";
 };

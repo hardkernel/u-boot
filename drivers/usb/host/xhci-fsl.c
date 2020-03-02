@@ -14,15 +14,12 @@
 #include <linux/compat.h>
 #include <linux/usb/xhci-fsl.h>
 #include <linux/usb/dwc3.h>
-#include "xhci.h"
+#include <usb/xhci.h>
 #include <fsl_errata.h>
 #include <fsl_usb.h>
 #include <dm.h>
 
-/* Declare global data pointer */
-DECLARE_GLOBAL_DATA_PTR;
-
-#ifndef CONFIG_DM_USB
+#if !CONFIG_IS_ENABLED(DM_USB)
 static struct fsl_xhci fsl_xhci;
 unsigned long ctr_addr[] = FSL_USB_XHCI_ADDR;
 #else
@@ -110,7 +107,7 @@ static int fsl_xhci_core_exit(struct fsl_xhci *fsl_xhci)
 	return 0;
 }
 
-#ifdef CONFIG_DM_USB
+#if CONFIG_IS_ENABLED(DM_USB)
 static int xhci_fsl_probe(struct udevice *dev)
 {
 	struct xhci_fsl_priv *priv = dev_get_priv(dev);

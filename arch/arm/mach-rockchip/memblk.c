@@ -6,77 +6,67 @@
 #include <common.h>
 #include <memblk.h>
 
-const static struct memblk_attr plat_mem_attr[MEMBLK_ID_MAX] = {
-	[MEMBLK_ID_ATF]      =	{
-		.name = "ATF",
-		.flags = M_ATTR_NONE,
-	},
-	[MEMBLK_ID_OPTEE]    =	{
-		.name = "OP-TEE",
-		.flags = M_ATTR_NONE,
-	},
-	[MEMBLK_ID_SHM]      =	{
-		.name = "SHM",
-		.flags = M_ATTR_NONE,
-		.alias[0] = "ramoops",
-	},
-	[MEMBLK_ID_UBOOT]    =	{
-		.name = "U-Boot",
-		.flags = M_ATTR_KMEM_CAN_OVERLAP,
-	},
-	[MEMBLK_ID_FASTBOOT] =	{
-		.name = "FASTBOOT",
-		.flags = M_ATTR_KMEM_CAN_OVERLAP,
-	},
-	[MEMBLK_ID_STACK]    =	{
-		.name = "STACK",
-		.flags = M_ATTR_HOFC | M_ATTR_KMEM_CAN_OVERLAP,
-	},
-	[MEMBLK_ID_FDT]      =	{
-		.name = "FDT",
-		.flags = M_ATTR_OFC,
-	},
-	[MEMBLK_ID_FDT_DTBO] =	{
-		.name = "FDT_DTBO",
-		.flags = M_ATTR_OFC,
-	},
-	[MEMBLK_ID_FDT_AOSP] =	{
-		.name = "FDT_AOSP",
-		.flags = M_ATTR_OFC,
-	},
-	[MEMBLK_ID_RAMDISK]  =	{
-		.name = "RAMDISK",
-		.alias[0] = "BOOT",
-		.alias[1] = "RECOVERY",
-		.flags = M_ATTR_OFC,
-	},
-	[MEMBLK_ID_KERNEL]   =	{
-		.name = "KERNEL",
-/*
- * Here is a workarund:
- *	ATF reserves 0~1MB when kernel is aarch32 mode(follow the ATF for
- *	aarch64 kernel, but it actually occupies 0~192KB, so we allow kernel
- *	to alloc the region within 0~1MB address.
- */
+#define MEM_DEFINE(id, attr) 				\
+	[MEM_##id] = {					\
+		.name  = #id,				\
+		.flags = attr,				\
+	}
+
+#define MEM_DEFINE_1(id, attr, alias0)			\
+	[MEM_##id] = {					\
+		.name     = #id,			\
+		.flags    = attr,			\
+		.alias[0] = alias0,			\
+	}
+
+#define MEM_DEFINE_2(id, attr, alias0, alias1)		\
+	[MEM_##id] = {					\
+		.name     = #id,			\
+		.flags    = attr,			\
+		.alias[0] = alias0, 			\
+		.alias[1] = alias1,			\
+	}
+
+const static struct memblk_attr plat_mem_attr[MEM_MAX] = {
+	/* Invisiable */
+	MEM_DEFINE(ATF,		F_NONE),
+	MEM_DEFINE(OPTEE,	F_NONE),
+
+	/* U-Boot */
+	MEM_DEFINE(UBOOT,	F_KMEM_CAN_OVERLAP),
+	MEM_DEFINE(FASTBOOT,	F_KMEM_CAN_OVERLAP),
+	MEM_DEFINE(STACK,	F_HOFC | F_KMEM_CAN_OVERLAP),
+
+	/* Images */
+	MEM_DEFINE(ANDROID,	F_HOFC | F_OFC | F_KMEM_CAN_OVERLAP),
+	MEM_DEFINE(FDT,		F_OFC),
+	MEM_DEFINE(FDT_DTBO,	F_OFC),
+	MEM_DEFINE_1(SHM,	F_NONE, "ramoops"),
+	MEM_DEFINE_2(RAMDISK,	F_OFC,  "boot", "recovery"),
+	MEM_DEFINE(UNCOMP_KERNEL,F_IGNORE_INVISIBLE),
+	MEM_DEFINE(FIT_USER,	F_OFC | F_KMEM_CAN_OVERLAP),
+	MEM_DEFINE(UIMAGE_USER,	F_OFC | F_KMEM_CAN_OVERLAP),
+	MEM_DEFINE(AVB_ANDROID, F_OFC | F_CACHELINE_ALIGN |
+				F_KMEM_CAN_OVERLAP | F_HIGHEST_MEM),
+	MEM_DEFINE(FIT,		F_OFC | F_CACHELINE_ALIGN |
+				F_KMEM_CAN_OVERLAP | F_HIGHEST_MEM),
+	MEM_DEFINE(UIMAGE,	F_OFC | F_CACHELINE_ALIGN |
+				F_KMEM_CAN_OVERLAP | F_HIGHEST_MEM),
+	MEM_DEFINE(RESOURCE, 	F_OFC),
+	MEM_DEFINE(SEARCH,	F_OFC | F_CACHELINE_ALIGN | F_NO_FAIL_DUMP |
+				F_KMEM_CAN_OVERLAP | F_HIGHEST_MEM),
+	/*
+	 * Workarund:
+	 *
+	 *  On aarch32 mode, ATF reserve 0~1MB memory that the same as aarch64
+	 *  mode, but aarch32 mode actually occupies 0~192KB.
+	 *  So that we allow kernel to alloc memory within 0~1MB.
+	 */
 #if defined(CONFIG_ROCKCHIP_RK3308) && defined(CONFIG_ARM64_BOOT_AARCH32)
-		.flags = M_ATTR_OFC | M_ATTR_IGNORE_INVISIBLE,
+	MEM_DEFINE(KERNEL, F_OFC | F_IGNORE_INVISIBLE),
 #else
-		.flags = M_ATTR_OFC,
+	MEM_DEFINE(KERNEL, F_OFC),
 #endif
-	},
-	[MEMBLK_ID_UNCOMP_KERNEL] = {
-		.name = "UNCOMPRESS-KERNEL",
-		.flags = M_ATTR_IGNORE_INVISIBLE,
-	},
-	[MEMBLK_ID_ANDROID]  =	{
-		.name = "ANDROID",
-		.flags = M_ATTR_OFC | M_ATTR_KMEM_CAN_OVERLAP,
-	},
-	[MEMBLK_ID_AVB_ANDROID]  =	{
-		.name = "AVB_ANDROID",
-		.flags = M_ATTR_OFC | M_ATTR_CACHELINE_ALIGN |
-			 M_ATTR_KMEM_CAN_OVERLAP,
-	},
 };
 
 const struct memblk_attr *mem_attr = plat_mem_attr;

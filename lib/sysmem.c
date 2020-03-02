@@ -94,11 +94,11 @@ void sysmem_dump(void)
 	list_for_each(node, &sysmem->allocated_head) {
 		mem = list_entry(node, struct memblock, node);
 		allocated_size += mem->size;
-		if (mem->attr.flags & M_ATTR_OFC) {
+		if (mem->attr.flags & F_OFC) {
 			check = (struct memcheck *)
 				(mem->base + mem->size - sizeof(*check));
 			overflow = (check->magic != SYSMEM_MAGIC);
-		} else if (mem->attr.flags & M_ATTR_HOFC) {
+		} else if (mem->attr.flags & F_HOFC) {
 			check = (struct memcheck *)
 				(mem->base - sizeof(*check));
 			overflow = (check->magic != SYSMEM_MAGIC);
@@ -225,7 +225,7 @@ void sysmem_overflow_check(void)
 			kmem = list_entry(knode, struct memblock, node);
 			if (sysmem_is_overlap(smem->base, smem->size,
 					      kmem->base, kmem->size)) {
-				if (smem->attr.flags & M_ATTR_KMEM_CAN_OVERLAP)
+				if (smem->attr.flags & F_KMEM_CAN_OVERLAP)
 					continue;
 
 				overlap = 1;
@@ -241,11 +241,11 @@ void sysmem_overflow_check(void)
 		/*
 		 * Check sysmem allocated regions overflow.
 		 */
-		if (smem->attr.flags & M_ATTR_OFC) {
+		if (smem->attr.flags & F_OFC) {
 			check = (struct memcheck *)
 				(smem->base + smem->size - sizeof(*check));
 			overflow = (check->magic != SYSMEM_MAGIC);
-		} else if (smem->attr.flags & M_ATTR_HOFC) {
+		} else if (smem->attr.flags & F_HOFC) {
 			check = (struct memcheck *)
 				(smem->base - sizeof(*check));
 			overflow = (check->magic != SYSMEM_MAGIC);
@@ -285,7 +285,7 @@ static const char *sysmem_alias2name(const char *name, int *id)
 	int i, j;
 	int match = 0;
 
-	for (i = 0; i < MEMBLK_ID_MAX; i++) {
+	for (i = 0; i < MEM_MAX; i++) {
 		/* Pirmary name */
 		if (mem_attr[i].name && !strcasecmp(mem_attr[i].name, name)) {
 			match = 1;
@@ -335,7 +335,7 @@ static void *sysmem_alloc_align_base(enum memblk_id id,
 	if (!sysmem_has_init())
 		goto out;
 
-	if (id == MEMBLK_ID_BY_NAME || id == MEMBLK_ID_KMEM_RESERVED) {
+	if (id == MEM_BY_NAME || id == MEM_KMEM_RESERVED) {
 		if (!mem_name) {
 			SYSMEM_E("NULL name for alloc sysmem\n");
 			goto out;
@@ -348,7 +348,7 @@ static void *sysmem_alloc_align_base(enum memblk_id id,
 			attr.name = strdup(name);
 
 		/* Always make kernel 'reserved-memory' alloc successfully */
-		if (id == MEMBLK_ID_KMEM_RESERVED) {
+		if (id == MEM_KMEM_RESERVED) {
 			struct memblock *mem;
 
 			mem = malloc(sizeof(*mem));
@@ -357,7 +357,7 @@ static void *sysmem_alloc_align_base(enum memblk_id id,
 				return mem;
 			}
 
-			attr.flags |= M_ATTR_KMEM_RESERVED;
+			attr.flags |= F_KMEM_RESERVED;
 			mem->orig_base = orig_base;
 			mem->base = base;
 			mem->size = size;
@@ -367,7 +367,7 @@ static void *sysmem_alloc_align_base(enum memblk_id id,
 
 			return (void *)base;
 		}
-	} else if (id > MEMBLK_ID_UNK && id < MEMBLK_ID_MAX) {
+	} else if (id > MEM_UNK && id < MEM_MAX) {
 		attr = mem_attr[id];
 		name = attr.name;
 
@@ -377,8 +377,7 @@ static void *sysmem_alloc_align_base(enum memblk_id id,
 		 * Fixup base and place right after U-Boot stack, adding a lot
 		 * of space(4KB) maybe safer.
 		 */
-		if ((id == MEMBLK_ID_AVB_ANDROID) &&
-		    (base == SYSMEM_ALLOC_ANYWHERE)) {
+		if (attr.flags & F_HIGHEST_MEM) {
 			base = gd->start_addr_sp -
 					CONFIG_SYS_STACK_SIZE - size - 0x1000;
 
@@ -393,16 +392,16 @@ static void *sysmem_alloc_align_base(enum memblk_id id,
 		 */
 		} else if (!base) {
 			base += ARCH_DMA_MINALIGN;
-		} else if (base <= gd->bd->bi_dram[0].start) {
+		} else if (base < gd->bd->bi_dram[0].start) {
 			/*
 			 * On Rockchip platform:
 			 *
-			 * So far, we use M_ATTR_IGNORE_INVISIBLE for uncompress
+			 * So far, we use F_IGNORE_INVISIBLE for uncompress
 			 * kernel alloc, and for ARMv8 enabling AArch32 mode, the
 			 * ATF is still AArch64 and ocuppies 0~1MB and shmem 1~2M.
 			 * So let's ignore the region which overlap with them.
 			 */
-			if (attr.flags & M_ATTR_IGNORE_INVISIBLE) {
+			if (attr.flags & F_IGNORE_INVISIBLE) {
 				base = gd->bd->bi_dram[0].start;
 			} else {
 				SYSMEM_E("Failed to alloc invisible sub region 0x%08lx - 0x%08lx "
@@ -429,7 +428,7 @@ static void *sysmem_alloc_align_base(enum memblk_id id,
 	 * Aligned down to cacheline size if not aligned, otherwise the tail
 	 * of region maybe overflow.
 	 */
-	if (attr.flags & M_ATTR_CACHELINE_ALIGN &&
+	if (attr.flags & F_CACHELINE_ALIGN &&
 	    !IS_ALIGNED(base, ARCH_DMA_MINALIGN)) {
 		base = ALIGN(base, ARCH_DMA_MINALIGN);
 		base -= ARCH_DMA_MINALIGN;
@@ -472,7 +471,7 @@ static void *sysmem_alloc_align_base(enum memblk_id id,
 	}
 
 	/* Add overflow check magic ? */
-	if (attr.flags & M_ATTR_OFC)
+	if (attr.flags & F_OFC)
 		alloc_size = size + sizeof(*check);
 	else
 		alloc_size = size;
@@ -483,6 +482,8 @@ static void *sysmem_alloc_align_base(enum memblk_id id,
 	else
 		alloc_base = base + alloc_size;	/* LMB is align down alloc mechanism */
 
+	SYSMEM_D("DO alloc... base: 0x%08lx\n", (ulong)alloc_base);
+
 	paddr = lmb_alloc_base(&sysmem->lmb, alloc_size, align, alloc_base);
 	if (paddr) {
 		if ((paddr == base) || (base == SYSMEM_ALLOC_ANYWHERE)) {
@@ -491,9 +492,12 @@ static void *sysmem_alloc_align_base(enum memblk_id id,
 				SYSMEM_E("No memory for \"%s\" alloc sysmem\n", name);
 				goto out;
 			}
-
 			/* Record original base for dump */
-			mem->orig_base = orig_base;
+			if (attr.flags & F_HIGHEST_MEM)
+				mem->orig_base = base;
+			else
+				mem->orig_base = orig_base;
+
 			mem->base = paddr;
 			mem->size = alloc_size;
 			mem->attr = attr;
@@ -501,10 +505,10 @@ static void *sysmem_alloc_align_base(enum memblk_id id,
 			list_add_tail(&mem->node, &sysmem->allocated_head);
 
 			/* Add overflow check magic */
-			if (mem->attr.flags & M_ATTR_OFC) {
+			if (mem->attr.flags & F_OFC) {
 				check = (struct memcheck *)(paddr + size);
 				check->magic = SYSMEM_MAGIC;
-			} else if (mem->attr.flags & M_ATTR_HOFC) {
+			} else if (mem->attr.flags & F_HOFC) {
 				check = (struct memcheck *)(paddr - sizeof(*check));
 				check->magic = SYSMEM_MAGIC;
 			}
@@ -544,7 +548,8 @@ out:
 	if (base == 0)
 		base = base + sizeof(ulong);
 
-	return (attr.flags & M_ATTR_IGNORE_INVISIBLE) ? (void *)base : NULL;
+	return (attr.flags & (F_IGNORE_INVISIBLE | F_NO_FAIL_DUMP)) ?
+			(void *)base : NULL;
 }
 
 void *sysmem_alloc(enum memblk_id id, phys_size_t size)
@@ -555,7 +560,7 @@ void *sysmem_alloc(enum memblk_id id, phys_size_t size)
 					NULL,
 					SYSMEM_ALLOC_ANYWHERE,
 					size,
-					SYSMEM_ALLOC_NO_ALIGN);
+					ARCH_DMA_MINALIGN);
 	if (!paddr)
 		sysmem_dump();
 
@@ -566,11 +571,11 @@ void *sysmem_alloc_by_name(const char *name, phys_size_t size)
 {
 	void *paddr;
 
-	paddr = sysmem_alloc_align_base(MEMBLK_ID_BY_NAME,
+	paddr = sysmem_alloc_align_base(MEM_BY_NAME,
 					name,
 					SYSMEM_ALLOC_ANYWHERE,
 					size,
-					SYSMEM_ALLOC_NO_ALIGN);
+					ARCH_DMA_MINALIGN);
 	if (!paddr)
 		sysmem_dump();
 
@@ -597,7 +602,7 @@ void *sysmem_alloc_base_by_name(const char *name,
 {
 	void *paddr;
 
-	paddr = sysmem_alloc_align_base(MEMBLK_ID_BY_NAME,
+	paddr = sysmem_alloc_align_base(MEM_BY_NAME,
 					name,
 					base,
 					size,
@@ -613,7 +618,7 @@ void *sysmem_fdt_reserve_alloc_base(const char *name,
 {
 	void *paddr;
 
-	paddr = sysmem_alloc_align_base(MEMBLK_ID_KMEM_RESERVED,
+	paddr = sysmem_alloc_align_base(MEM_KMEM_RESERVED,
 					name,
 					base,
 					size,
@@ -756,7 +761,7 @@ int sysmem_init(void)
 	/* Reserved for U-boot framework: 'reserve_xxx()' */
 	mem_start = gd->start_addr_sp;
 	mem_size = gd->ram_top - mem_start;
-	if (!sysmem_alloc_base(MEMBLK_ID_UBOOT, mem_start, mem_size)) {
+	if (!sysmem_alloc_base(MEM_UBOOT, mem_start, mem_size)) {
 		SYSMEM_E("Failed to reserve sysmem for U-Boot framework\n");
 		ret = -ENOMEM;
 		goto fail;
@@ -765,7 +770,7 @@ int sysmem_init(void)
 	/* Reserved for U-Boot stack */
 	mem_start = gd->start_addr_sp - CONFIG_SYS_STACK_SIZE;
 	mem_size = CONFIG_SYS_STACK_SIZE;
-	if (!sysmem_alloc_base(MEMBLK_ID_STACK, mem_start, mem_size)) {
+	if (!sysmem_alloc_base(MEM_STACK, mem_start, mem_size)) {
 		SYSMEM_E("Failed to reserve sysmem for stack\n");
 		ret = -ENOMEM;
 		goto fail;
@@ -789,15 +794,42 @@ __weak int board_sysmem_reserve(struct sysmem *sysmem)
 	return 0;
 }
 
-static int do_dump_sysmem(cmd_tbl_t *cmdtp, int flag,
+static int do_sysmem_dump(cmd_tbl_t *cmdtp, int flag,
 			  int argc, char *const argv[])
 {
 	sysmem_dump();
 	return 0;
 }
 
+static int do_sysmem_search(cmd_tbl_t *cmdtp, int flag,
+			    int argc, char *const argv[])
+{
+	ulong addr, size;
+
+	if (argc != 2)
+		return CMD_RET_USAGE;
+
+	size = simple_strtoul(argv[1], NULL, 16);
+	if (!size)
+		return CMD_RET_USAGE;
+
+	addr = (ulong)sysmem_alloc(MEM_SEARCH, size);
+	if (!addr || sysmem_free(addr))
+		SYSMEM_I("No available region with size 0x%08lx\n", size);
+	else
+		SYSMEM_I("Available region at address: 0x%08lx\n", (ulong)addr);
+
+	return 0;
+}
+
 U_BOOT_CMD(
-	dump_sysmem, 1, 1, do_dump_sysmem,
+	sysmem_dump, 1, 1, do_sysmem_dump,
 	"Dump sysmem layout",
 	""
+);
+
+U_BOOT_CMD(
+	sysmem_search, 2, 1, do_sysmem_search,
+	"Search a available sysmem region",
+	"search_sysmem <size>"
 );

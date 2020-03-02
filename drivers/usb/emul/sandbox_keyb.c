@@ -181,7 +181,8 @@ static int sandbox_keyb_control(struct udevice *dev, struct usb_device *udev,
 }
 
 static int sandbox_keyb_interrupt(struct udevice *dev, struct usb_device *udev,
-		unsigned long pipe, void *buffer, int length, int interval)
+		unsigned long pipe, void *buffer, int length, int interval,
+		bool nonblock)
 {
 	struct sandbox_keyb_priv *priv = dev_get_priv(dev);
 	uint8_t *data = buffer;
@@ -208,8 +209,7 @@ static int sandbox_keyb_bind(struct udevice *dev)
 	fs[2].id = STRINGID_SERIAL;
 	fs[2].s = dev->name;
 
-	return usb_emul_setup_device(dev, PACKET_SIZE_8, plat->keyb_strings,
-				     keyb_desc_list);
+	return usb_emul_setup_device(dev, plat->keyb_strings, keyb_desc_list);
 }
 
 static int sandbox_keyb_probe(struct udevice *dev)

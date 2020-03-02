@@ -493,22 +493,50 @@ static int initr_env(void)
 #endif
 
 #ifdef CONFIG_USING_KERNEL_DTB
+/*
+ * If !defined(CONFIG_ENV_IS_NOWHERE):
+ *
+ * Storage env or kernel dtb load depends on bootdev, while bootdev
+ * depends on env varname: devtype, devnum and rkimg_bootdev, etc.
+ * So we have to use nowhere env firstly and cover the storage env
+ * after it is loaded.
+ *
+ * Providing a minimum and necessary nowhere env for board init to
+ * avoid covering the other varnames in storage env.
+ */
 static int initr_env_nowhere(void)
 {
-#if defined(CONFIG_NEEDS_MANUAL_RELOC)
-	env_reloc();
-	env_htab.change_ok += gd->reloc_off;
-#endif
+#ifdef CONFIG_ENV_IS_NOWHERE
 	set_default_env(NULL);
-
 	return 0;
+#else
+	const char env_minimum[] = {
+		ENV_MEM_LAYOUT_SETTINGS
+#ifdef RKIMG_DET_BOOTDEV
+		RKIMG_DET_BOOTDEV
+#endif
+	};
+
+	return set_board_env((char *)env_minimum, ENV_SIZE, 0, true);
+#endif
 }
 
 #if !defined(CONFIG_ENV_IS_NOWHERE)
+/*
+ * storage has been initialized in board_init(), we could switch env
+ * from nowhere to storage, i.e. CONFIG_ENV_IS_IN_xxx=y.
+ */
 static int initr_env_switch(void)
 {
 	ALLOC_CACHE_ALIGN_BUFFER(env_t, env_nowhere, 1);
+	char *data;
 	int ret;
+
+	data = env_get("bootargs");
+	if (data) {
+		env_set("bootargs_tmp", data);
+		env_set("bootargs", NULL);
+	}
 
 	/* Export nowhere env for late use */
 	ret = env_export(env_nowhere);
@@ -521,8 +549,19 @@ static int initr_env_switch(void)
 	initr_env();
 
 	/* Append/override nowhere env to storage env */
-	himport_r(&env_htab, (char *)env_nowhere->data, ENV_SIZE, '\0',
-		  H_NOCLEAR, 0, 0, NULL);
+	set_board_env((char *)env_nowhere->data, ENV_SIZE, H_NOCLEAR, false);
+
+	/*
+	 * Restore nowhere bootargs to append/override the one in env storage.
+	 *
+	 * Without this, the entire "bootargs" in storage env is replaces by
+	 * the one in env_nowhere->data.
+	 */
+	data = env_get("bootargs_tmp");
+	if (data) {
+		env_update("bootargs", data);
+		env_set("bootargs_tmp", NULL);
+	}
 
 	return 0;
 }
@@ -800,10 +839,6 @@ static init_fnc_t init_sequence_r[] = {
 	initr_dm,
 #endif
 
-/*
- * kernel dtb must depends on nowhere to detect boot storage media
- * and initialize it.
- */
 #ifdef CONFIG_USING_KERNEL_DTB
 	initr_env_nowhere,
 #endif
@@ -815,10 +850,6 @@ static init_fnc_t init_sequence_r[] = {
 	board_init,	/* Setup chipselects */
 #endif
 
-/*
- * Now that storage has been initialized in board_init(), we could switch env
- * from nowhere to storage, i.e. CONFIG_ENV_IS_IN_xxx=y.
- */
 #if defined(CONFIG_USING_KERNEL_DTB) && !defined(CONFIG_ENV_IS_NOWHERE)
 	initr_env_switch,
 #endif

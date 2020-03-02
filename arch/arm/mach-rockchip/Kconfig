@@ -14,7 +14,6 @@ config ROCKCHIP_PX30
 	imply SPL_SEPARATE_BSS
 	imply SPL_SERIAL_SUPPORT
 	imply TPL_SERIAL_SUPPORT
-	select DEBUG_UART_BOARD_INIT
 	help
 	  The Rockchip PX30 is a ARM-based SoC with a quad-core Cortex-A35
 	  including NEON and GPU, Mali-400 graphics, several DDR3 options
@@ -51,7 +50,6 @@ config ROCKCHIP_RK3036
 	select ROCKCHIP_BROM_HELPER
 	select TPL_NEEDS_SEPARATE_TEXT_BASE if TPL
 	select TPL_NEEDS_SEPARATE_STACK if TPL
-	select DEBUG_UART_BOARD_INIT
 	select ARM_SMCCC
 	help
 	  The Rockchip RK3036 is a ARM-based SoC with a dual-core Cortex-A7
@@ -136,7 +134,6 @@ config ROCKCHIP_RK322X
 	imply SPL_SERIAL_SUPPORT
 	imply TPL_SERIAL_SUPPORT
 	select ROCKCHIP_BROM_HELPER
-	select DEBUG_UART_BOARD_INIT
 	select TPL_LIBCOMMON_SUPPORT
 	select TPL_LIBGENERIC_SUPPORT
 	select GICV2
@@ -213,7 +210,6 @@ endif
 config ROCKCHIP_RK3308
 	bool "Support Rockchip RK3308"
 	select ARM64 if !ARM64_BOOT_AARCH32
-	select DEBUG_UART_BOARD_INIT
 	select ARM_SMCCC
 	select GICV2
 	select SUPPORT_SPL if !ARM64_BOOT_AARCH32
@@ -244,7 +240,6 @@ config ROCKCHIP_RK3328
 	imply SPL_SERIAL_SUPPORT
 	imply TPL_SERIAL_SUPPORT
 	imply SPL_SEPARATE_BSS
-	select DEBUG_UART_BOARD_INIT
 	select ARM_SMCCC
 	help
 	  The Rockchip RK3328 is a ARM-based SoC with a quad-core Cortex-A53.
@@ -279,7 +274,6 @@ config ROCKCHIP_RK3368
 	imply SPL_SEPARATE_BSS
 	imply SPL_SERIAL_SUPPORT
 	imply TPL_SERIAL_SUPPORT
-	select DEBUG_UART_BOARD_INIT
 	select GICV2
 	select ARM_SMCCC
 	help
@@ -328,7 +322,6 @@ config ROCKCHIP_RK3399
 	select SPL_SEPARATE_BSS
 	select SPL_SERIAL_SUPPORT
 	select SPL_DRIVERS_MISC_SUPPORT
-	select DEBUG_UART_BOARD_INIT
 	select GICV3
 	select BOARD_LATE_INIT
 	select ROCKCHIP_BROM_HELPER
@@ -377,7 +370,6 @@ config ROCKCHIP_RK1808
 	select ARM64
 	select ARM_SMCCC
 	select GICV3 if !COPROCESSOR_RK1808
-	select DEBUG_UART_BOARD_INIT
 	select SUPPORT_SPL if !COPROCESSOR_RK1808
 	select SUPPORT_TPL if !COPROCESSOR_RK1808
 	help
@@ -385,6 +377,12 @@ config ROCKCHIP_RK1808
 	  Cortex-A35.
 
 if ROCKCHIP_RK1808
+
+config ROCKCHIP_RK1806
+	bool "Support Rockchip RK1806"
+	help
+	  The Rockchip RK1806 is a ARM-based Soc which embedded with dual
+	  Cortex-A35.
 
 config COPROCESSOR_RK1808
 	bool "RK1808 coprocessor"
@@ -559,14 +557,10 @@ config SPL_MMC_SUPPORT
 	default y if !SPL_ROCKCHIP_BACK_TO_BROM
 
 config RKIMG_BOOTLOADER
-	bool "Support for Rockchip Image Bootloader boot flow"
-	default n
+	bool "Support for Rockchip platform features"
+	default y
 	help
-	  Rockchip use this to boot Android during development cycle and for
-	  other OS, typical content kernel.img with zImage/Image, boot.img and
-	  recovery.img with Ramdisk, packed with 'KNRL' header; and resource.img
-	  with dtb and uboot/kernel logo bmp, vendor storage for custom info
-	  like SN and MAC address.
+	  Actually this is a compatible configure for code compilation.
 
 config RKIMG_ANDROID_BOOTMODE_LEGACY
 	bool "Support set androidboot.mode with legacy rule"
@@ -603,7 +597,7 @@ config ROCKCHIP_USB_BOOT
 
 config ROCKCHIP_EARLY_DISTRO_DTB
 	bool "Enable support for distro dtb early"
-	depends on DISTRO_DEFAULTS && USING_KERNEL_DTB
+	depends on DISTRO_DEFAULTS && USING_KERNEL_DTB && CMD_FS_GENERIC
 	default n
 	help
 	  This enables loading dtb from distro bootable partition when there

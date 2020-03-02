@@ -21,31 +21,47 @@ enum _boot_mode {
 	BOOT_MODE_UNDEFINE,
 };
 
+struct bootloader_message {
+	char command[32];
+	char status[32];
+	char recovery[768];
+	/*
+	 * The 'recovery' field used to be 1024 bytes.  It has only ever
+	 * been used to store the recovery command line, so 768 bytes
+	 * should be plenty.  We carve off the last 256 bytes to store the
+	 * stage string (for multistage packages) and possible future
+	 * expansion.
+	 */
+	char stage[32];
+	char slot_suffix[32];
+	char reserved[192];
+};
+
+struct rockchip_image {
+	uint32_t tag;
+	uint32_t size;
+	int8_t image[1];
+	uint32_t crc;
+};
+
+#define RK_BLK_SIZE			512
+#define TAG_KERNEL			0x4C4E524B
+#define BCB_MESSAGE_BLK_OFFSET		(16 * 1024 >> 9)
+
 #define PART_MISC			"misc"
+#define PART_RESOURCE			"resource"
 #define PART_KERNEL			"kernel"
 #define PART_BOOT			"boot"
 #define PART_RECOVERY			"recovery"
 #define PART_DTBO			"dtbo"
 #define PART_LOGO			"logo"
 
-#define RK_BLK_SIZE 512
-
-int rockchip_get_boot_mode(void);
-int boot_rockchip_image(struct blk_desc *dev, disk_partition_t *boot_part);
-int read_rockchip_image(struct blk_desc *dev_desc,
-			disk_partition_t *part_info, void *dst);
-
 struct blk_desc *rockchip_get_bootdev(void);
 void rockchip_set_bootdev(struct blk_desc *desc);
-
-/*
- * reboot into recovery and wipe data
- */
 void board_run_recovery_wipe_data(void);
-
-/*
- * reboot into recovery
- */
-void board_run_recovery(void);
+void setup_download_mode(void);
+int rockchip_get_boot_mode(void);
+int rockchip_read_dtb_file(void *fdt_addr);
+int init_kernel_dtb(void);
 
 #endif
