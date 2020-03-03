@@ -1651,6 +1651,7 @@ static int rv1126_gpll_set_clk(struct rv1126_clk_priv *priv, ulong rate)
 		return ret;
 	}
 	pmu_priv = dev_get_priv(pmucru_dev);
+	priv->gpll_hz = pmu_priv->gpll_hz;
 
 	if (rv1126_gpll_set_rate(priv, pmu_priv, rate)) {
 		printf("%s: failed to set gpll rate %lu\n", __func__, rate);
