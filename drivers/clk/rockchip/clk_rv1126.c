@@ -1613,7 +1613,6 @@ static ulong rv1126_gpll_set_rate(struct rv1126_clk_priv *priv,
 				  ulong rate)
 {
 	ulong emmc_rate, sfc_rate, nandc_rate;
-	int ret;
 
 	emmc_rate = rv1126_mmc_get_clk(priv, CLK_EMMC);
 	sfc_rate = rv1126_sfc_get_clk(priv);
@@ -1635,7 +1634,7 @@ static ulong rv1126_gpll_set_rate(struct rv1126_clk_priv *priv,
 	rv1126_sfc_set_clk(priv,  sfc_rate);
 	rv1126_nand_set_clk(priv, nandc_rate);
 
-	return ret;
+	return 0;
 }
 
 static int rv1126_gpll_set_clk(struct rv1126_clk_priv *priv, ulong rate)
