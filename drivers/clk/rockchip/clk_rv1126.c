@@ -1613,12 +1613,16 @@ static ulong rv1126_gpll_set_rate(struct rv1126_clk_priv *priv,
 				  ulong rate)
 {
 	ulong emmc_rate, sfc_rate, nandc_rate;
+	bool restore = false;
 
-	emmc_rate = rv1126_mmc_get_clk(priv, CLK_EMMC);
-	sfc_rate = rv1126_sfc_get_clk(priv);
-	nandc_rate = rv1126_nand_get_clk(priv);
-	debug("%s emmc=%lu, sdmmc=%lu, nandc=%lu\n", __func__,
-	      emmc_rate, sfc_rate, nandc_rate);
+	if (priv->gpll_hz != OSC_HZ) {
+		emmc_rate = rv1126_mmc_get_clk(priv, CLK_EMMC);
+		sfc_rate = rv1126_sfc_get_clk(priv);
+		nandc_rate = rv1126_nand_get_clk(priv);
+		debug("%s emmc=%lu, sfc=%lu, nandc=%lu\n", __func__,
+		      emmc_rate, sfc_rate, nandc_rate);
+		restore = true;
+	}
 
 	/*
 	 * the child div is big enough for gpll 1188MHz,
@@ -1630,9 +1634,11 @@ static ulong rv1126_gpll_set_rate(struct rv1126_clk_priv *priv,
 	pmu_priv->gpll_hz = rate;
 	priv->gpll_hz = rate;
 
-	rv1126_mmc_set_clk(priv, CLK_EMMC, emmc_rate);
-	rv1126_sfc_set_clk(priv,  sfc_rate);
-	rv1126_nand_set_clk(priv, nandc_rate);
+	if (restore) {
+		rv1126_mmc_set_clk(priv, CLK_EMMC, emmc_rate);
+		rv1126_sfc_set_clk(priv,  sfc_rate);
+		rv1126_nand_set_clk(priv, nandc_rate);
+	}
 
 	return 0;
 }
@@ -1680,15 +1686,15 @@ static void rv1126_clk_init(struct rv1126_clk_priv *priv)
 		if (!ret)
 			priv->armclk_init_hz = APLL_HZ;
 	}
-	if (priv->gpll_hz != GPLL_HZ)
-		rv1126_gpll_set_clk(priv, GPLL_HZ);
-
 	if (priv->cpll_hz != CPLL_HZ) {
 		ret = rockchip_pll_set_rate(&rv1126_pll_clks[CPLL], priv->cru,
 					    CPLL, CPLL_HZ);
 		if (!ret)
 			priv->cpll_hz = CPLL_HZ;
 	}
+	if (priv->gpll_hz != GPLL_HZ)
+		rv1126_gpll_set_clk(priv, GPLL_HZ);
+
 	rv1126_pdbus_set_clk(priv, ACLK_PDBUS, ACLK_PDBUS_HZ);
 	rv1126_pdbus_set_clk(priv, HCLK_PDBUS, HCLK_PDBUS_HZ);
 	rv1126_pdbus_set_clk(priv, PCLK_PDBUS, PCLK_PDBUS_HZ);
