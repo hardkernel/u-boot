@@ -340,7 +340,7 @@ select_chip_info()
 			&& RKCHIP=RK3368H
 		grep '^CONFIG_ROCKCHIP_RV1108=y' .config >/dev/null \
 			&& RKCHIP=RV110X
-		grep '^CONFIG_ROCKCHIP_RV1126=y' ${OUTDIR}/.config >/dev/null \
+		grep '^CONFIG_ROCKCHIP_RV1126=y' .config >/dev/null \
 			&& RKCHIP=RV1126
 	elif [ $count -gt 1 ]; then
 		# Grep the RK CHIP variant
