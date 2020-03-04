@@ -60,6 +60,9 @@
 #elif defined(CONFIG_ROCKCHIP_RK1808)
 #define TIMER_BASE		(0xFF700000 + 0x20)	/* TIMER 1 */
 #define TIMER_IRQ		IRQ_TIMER1
+#elif defined(CONFIG_ROCKCHIP_RV1126)
+#define TIMER_BASE		(0xFF660000 + 0x20)	/* TIMER 1 */
+#define TIMER_IRQ		IRQ_TIMER1
 #else
 "Missing definitions of timer module test"
 #endif
