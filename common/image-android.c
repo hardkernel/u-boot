@@ -565,10 +565,14 @@ int android_image_parse_comp(struct andr_img_hdr *hdr, ulong *load_addr)
 	 * kernel_addr_r is for IMAGE when kernel_addr_c is defined.
 	 */
 	if (comp == IH_COMP_NONE) {
-		if (kernel_addr_c)
+		if (kernel_addr_c) {
 			*load_addr = env_get_ulong("kernel_addr_r", 16, 0);
-		else
+		} else {
 			*load_addr = CONFIG_SYS_SDRAM_BASE + 0x8000;
+			env_set_hex("kernel_addr_r", *load_addr);
+		}
+		
+		*load_addr -= hdr->page_size;
 	} else {
 		if (kernel_addr_c)
 			*load_addr = kernel_addr_c - hdr->page_size;
