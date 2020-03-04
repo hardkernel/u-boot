@@ -551,7 +551,7 @@ int android_image_parse_comp(struct andr_img_hdr *hdr, ulong *load_addr)
 		} else {
 			printf("Warn: No \"kernel_addr_c\"\n");
 			comp_addr = CONFIG_SYS_SDRAM_BASE + 0x2000000;/* 32M */
-			env_set_ulong("kernel_addr_c", comp_addr);
+			env_set_hex("kernel_addr_c", comp_addr);
 		}
 
 		*load_addr = comp_addr - hdr->page_size;
