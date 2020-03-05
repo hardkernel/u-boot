@@ -21,3 +21,7 @@
 &uart2 {
 	status = "okay";
 };
+
+&emmc {
+	status = "okay";
+};
