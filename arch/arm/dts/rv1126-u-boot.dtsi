@@ -17,33 +17,33 @@
 
 &uart2 {
 	clock-frequency = <24000000>;
-	u-boot,dm-pre-reloc;
+	u-boot,dm-spl;
 };
 
 &sdmmc {
-	u-boot,dm-pre-reloc;
+	u-boot,dm-spl;
 };
 
 &emmc {
-	u-boot,dm-pre-reloc;
+	u-boot,dm-spl;
 };
 
 &pmu {
-	u-boot,dm-pre-reloc;
+	u-boot,dm-spl;
 };
 
 &pmugrf {
-	u-boot,dm-pre-reloc;
+	u-boot,dm-spl;
 };
 
 &pmucru {
-	u-boot,dm-pre-reloc;
+	u-boot,dm-spl;
 };
 
 &cru {
-	u-boot,dm-pre-reloc;
+	u-boot,dm-spl;
 };
 
 &grf {
-	u-boot,dm-pre-reloc;
+	u-boot,dm-spl;
 };
