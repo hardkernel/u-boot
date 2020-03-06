@@ -236,6 +236,10 @@ static int spl_load_fit_image(struct spl_load_info *info, ulong sector,
 #ifdef CONFIG_SPL_FIT_SIGNATURE
 	printf("## Checking hash(es) for Image %s ... ",
 	       fit_get_name(fit, node, NULL));
+#ifdef CONFIG_FIT_SPL_PRINT
+	printf("\n");
+	fit_image_print(fit, node, "");
+#endif
 	if (!fit_image_verify_with_data(fit, node,
 					 src, length))
 		return -EPERM;
