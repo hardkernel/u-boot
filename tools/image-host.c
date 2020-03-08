@@ -431,52 +431,59 @@ static int fit_config_get_hash_list(void *fit, int conf_noffset,
 		int noffset;
 		int image_noffset;
 		int hash_count;
+		int i;
 
-		image_noffset = fit_conf_get_prop_node(fit, conf_noffset,
-						       iname);
-		if (image_noffset < 0) {
-			printf("Failed to find image '%s' in  configuration '%s/%s'\n",
-			       iname, conf_name, sig_name);
-			if (allow_missing)
-				continue;
+		for (i = 0; i < 5; i++) {
+			image_noffset =
+				fit_conf_get_prop_node_index(fit, conf_noffset,
+							     iname, i);
+			if (image_noffset < 0) {
+				if (i > 0)
+					break;
 
-			return -ENOENT;
-		}
+				printf("Failed to find image '%s' in  configuration '%s/%s'\n",
+				       iname, conf_name, sig_name);
+				if (allow_missing)
+					continue;
 
-		ret = fdt_get_path(fit, image_noffset, path, sizeof(path));
-		if (ret < 0)
-			goto err_path;
-		if (strlist_add(node_inc, path))
-			goto err_mem;
+				return -ENOENT;
+			}
 
-		snprintf(name, sizeof(name), "%s/%s", FIT_CONFS_PATH,
-			 conf_name);
-
-		/* Add all this image's hashes */
-		hash_count = 0;
-		for (noffset = fdt_first_subnode(fit, image_noffset);
-		     noffset >= 0;
-		     noffset = fdt_next_subnode(fit, noffset)) {
-			const char *name = fit_get_name(fit, noffset, NULL);
-
-			if (strncmp(name, FIT_HASH_NODENAME,
-				    strlen(FIT_HASH_NODENAME)))
-				continue;
-			ret = fdt_get_path(fit, noffset, path, sizeof(path));
+			ret = fdt_get_path(fit, image_noffset, path, sizeof(path));
 			if (ret < 0)
 				goto err_path;
 			if (strlist_add(node_inc, path))
 				goto err_mem;
-			hash_count++;
-		}
 
-		if (!hash_count) {
-			printf("Failed to find any hash nodes in configuration '%s/%s' image '%s' - without these it is not possible to verify this image\n",
-			       conf_name, sig_name, iname);
-			return -ENOMSG;
-		}
+			snprintf(name, sizeof(name), "%s/%s", FIT_CONFS_PATH,
+				 conf_name);
 
-		image_count++;
+			/* Add all this image's hashes */
+			hash_count = 0;
+			for (noffset = fdt_first_subnode(fit, image_noffset);
+			     noffset >= 0;
+			     noffset = fdt_next_subnode(fit, noffset)) {
+				const char *name = fit_get_name(fit, noffset, NULL);
+
+				if (strncmp(name, FIT_HASH_NODENAME,
+					    strlen(FIT_HASH_NODENAME)))
+					continue;
+				ret = fdt_get_path(fit, noffset, path, sizeof(path));
+				if (ret < 0)
+					goto err_path;
+				if (strlist_add(node_inc, path))
+					goto err_mem;
+				hash_count++;
+			}
+
+			if (!hash_count) {
+				printf("Failed to find any hash nodes in configuration '%s/%s' image '%s' - without these it is not possible to verify this image\n",
+				       conf_name, sig_name, iname);
+				return -ENOMSG;
+			}
+
+			image_count++;
+		}
 	}
 
 	if (!image_count) {
