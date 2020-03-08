@@ -395,6 +395,21 @@ int spl_load_simple_fit(struct spl_image_info *spl_image,
 		return -1;
 	}
 
+	/* verify the configure node by keys, if required */
+#ifdef CONFIG_SPL_FIT_SIGNATURE
+	int conf_noffset;
+
+	conf_noffset = fit_conf_get_node(fit, NULL);
+	if (conf_noffset > 0) {
+		ret = fit_config_verify(fit, conf_noffset);
+		if (ret) {
+			printf("fit verify configure failed, ret=%d\n", ret);
+			return ret;
+		}
+		printf("\n");
+	}
+#endif
+
 	/*
 	 * Find the U-Boot image using the following search order:
 	 *   - start at 'firmware' (e.g. an ARM Trusted Firmware)
