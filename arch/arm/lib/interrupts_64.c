@@ -12,6 +12,7 @@
 #include <stacktrace.h>
 
 DECLARE_GLOBAL_DATA_PTR;
+
 #if defined(CONFIG_SPL_BUILD) || !defined(CONFIG_IRQ)
 
 int interrupt_init(void)
@@ -30,9 +31,9 @@ int disable_interrupts(void)
 }
 #endif
 
-#if (!defined(CONFIG_SPL_BUILD) && !defined(CONFIG_TPL_BUILD))
 #define REG_BITS(val, shift, mask)	(((val) >> (shift)) & (mask))
 
+#if (!defined(CONFIG_SPL_BUILD) && !defined(CONFIG_TPL_BUILD))
 void show_regs(struct pt_regs *regs)
 {
 	int el = current_el();
@@ -119,6 +120,9 @@ void show_regs(struct pt_regs *regs)
 		printf("ELR:     %lx\n", regs->elr);
 		printf("LR:      %lx\n", regs->regs[30]);
 	}
+
+	printf("ESR:     %lx (ec=%ld)\n", regs->esr, REG_BITS(regs->esr, 26, 0x3f));
+
 	for (i = 0; i < 29; i += 2)
 		printf("x%-2d: %016lx x%-2d: %016lx\n",
 		       i, regs->regs[i], i+1, regs->regs[i+1]);
