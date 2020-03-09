@@ -9,7 +9,11 @@
 #include <spl.h>
 
 #define LOADER_HARD_STR			"LOADER"
+#ifdef CONFIG_SPL_ATF
 #define TBOOT_HEAD_TAG			0x58334c42 /* 'B', 'L', '3', 'X' */
+#else
+#define TBOOT_HEAD_TAG			"TOS   "
+#endif
 
 #define BL30_IMAGE_NAME			"bl30.bin" /* SCP Firmware BL3-0 */
 #define BL31_IMAGE_NAME			"bl31.bin" /* EL3 Runtime Firmware BL31 */
