@@ -65,7 +65,6 @@ int mmc_load_image_raw_sector(struct spl_image_info *spl_image,
 #ifdef CONFIG_SPL_LOAD_RKFW
 	u32 trust_sectors = CONFIG_RKFW_TRUST_SECTOR;
 	u32 uboot_sectors = CONFIG_RKFW_U_BOOT_SECTOR;
-	u32 boot_sectors = CONFIG_RKFW_BOOT_SECTOR;
 	struct spl_load_info load;
 
 	load.dev = mmc;
@@ -85,8 +84,7 @@ int mmc_load_image_raw_sector(struct spl_image_info *spl_image,
 #endif
 	ret = spl_load_rkfw_image(spl_image, &load,
 				  trust_sectors,
-				  uboot_sectors,
-				  boot_sectors);
+				  uboot_sectors);
 	/* If boot successfully or can't try others, just go end */
 	if (!ret || ret != -EAGAIN)
 		goto end;

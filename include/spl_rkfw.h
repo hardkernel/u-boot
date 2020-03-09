@@ -9,7 +9,11 @@
 #include <spl.h>
 
 #define LOADER_HARD_STR			"LOADER"
+#ifdef CONFIG_SPL_ATF
 #define TBOOT_HEAD_TAG			0x58334c42 /* 'B', 'L', '3', 'X' */
+#else
+#define TBOOT_HEAD_TAG			"TOS   "
+#endif
 
 #define BL30_IMAGE_NAME			"bl30.bin" /* SCP Firmware BL3-0 */
 #define BL31_IMAGE_NAME			"bl31.bin" /* EL3 Runtime Firmware BL31 */
@@ -99,6 +103,5 @@ typedef struct tag_second_loader_hdr {
  */
 int spl_load_rkfw_image(struct spl_image_info *spl_image,
 			struct spl_load_info *info,
-			u32 trust_sector, u32 uboot_sector,
-			u32 boot_sector);
+			u32 trust_sector, u32 uboot_sector);
 #endif

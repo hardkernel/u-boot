@@ -33,9 +33,10 @@ struct spl_image_info {
 	uintptr_t entry_point_bl32;
 	uintptr_t entry_point_bl33;
 #endif
-#if CONFIG_IS_ENABLED(LOAD_FIT)
-	void *fdt_addr;
+#if CONFIG_IS_ENABLED(OPTEE)
+	uintptr_t entry_point_os;	/* point to uboot or kernel */
 #endif
+	void *fdt_addr;
 	u32 boot_device;
 	u32 next_stage;
 	u32 size;
