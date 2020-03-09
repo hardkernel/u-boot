@@ -256,6 +256,14 @@
 	status = "okay";
 };
 
+&tcphy0 {
+	status = "okay";
+};
+
+&tcphy1 {
+	status = "okay";
+};
+
 &usb_host0_ehci {
 	status = "okay";
 };
@@ -264,8 +272,19 @@
 	status = "okay";
 };
 
-&dwc3_typec0 {
-	vbus-supply = <&vcc5v0_typec0>;
+&usbdrd3_0 {
+	status = "okay";
+};
+
+&usbdrd3_1 {
+	status = "okay";
+};
+
+&usbdrd_dwc3_0 {
+	status = "okay";
+};
+
+&usbdrd_dwc3_1 {
 	status = "okay";
 };
 
@@ -274,11 +293,6 @@
 };
 
 &usb_host1_ohci {
-	status = "okay";
-};
-
-&dwc3_typec1 {
-	vbus-supply = <&vcc5v0_typec1>;
 	status = "okay";
 };
 

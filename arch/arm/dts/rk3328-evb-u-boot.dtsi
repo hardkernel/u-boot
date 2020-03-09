@@ -13,7 +13,3 @@
 &vcc5v0_otg {
 	u-boot,dm-spl;
 };
-
-&vcc5v0_host_xhci {
-	u-boot,dm-spl;
-};

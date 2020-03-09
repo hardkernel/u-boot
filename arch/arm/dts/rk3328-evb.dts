@@ -54,10 +54,10 @@
 		regulator-max-microvolt = <5000000>;
 	};
 
-	vcc5v0_host_xhci: vcc5v0-host-xhci-drv {
+	vcc_host_vbus: host-vbus-regulator {
 		compatible = "regulator-fixed";
 		enable-active-high;
-		regulator-name = "vcc5v0_host_xhci";
+		regulator-name = "vcc_host_vbus";
 		gpio = <&gpio0 0 GPIO_ACTIVE_HIGH>;
 		regulator-min-microvolt = <5000000>;
 		regulator-max-microvolt = <5000000>;
@@ -132,6 +132,19 @@
 	status = "okay";
 };
 
+&u3phy {
+	vbus-supply = <&vcc_host_vbus>;
+	status = "okay";
+};
+
+&u3phy_utmi {
+	status = "okay";
+};
+
+&u3phy_pipe {
+	status = "okay";
+};
+
 &usb_host0_ehci {
 	vbus-supply = <&vcc5v0_otg>;
 	status = "okay";
@@ -146,8 +159,11 @@
 	status = "okay";
 };
 
-&usb_host0_xhci {
-	vbus-supply = <&vcc5v0_host_xhci>;
+&usbdrd3 {
+	status = "okay";
+};
+
+&usbdrd_dwc3 {
 	status = "okay";
 };
 
