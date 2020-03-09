@@ -250,6 +250,11 @@ static void rsa_convert_big_endian(uint32_t *dst, const uint32_t *src, int len)
 int rsa_mod_exp_sw(const uint8_t *sig, uint32_t sig_len,
 		struct key_prop *prop, uint8_t *out)
 {
+#ifndef USE_HOSTCC
+	__cacheline_aligned uint64_t tmp;
+#else
+	uint64_t tmp;
+#endif
 	struct rsa_public_key key;
 	int ret;
 
@@ -260,11 +265,19 @@ int rsa_mod_exp_sw(const uint8_t *sig, uint32_t sig_len,
 	key.n0inv = prop->n0inv;
 	key.len = prop->num_bits;
 
-	if (!prop->public_exponent)
+	if (!prop->public_exponent) {
 		key.exponent = RSA_DEFAULT_PUBEXP;
-	else
-		key.exponent =
-			fdt64_to_cpu(*((uint64_t *)(prop->public_exponent)));
+	} else {
+		/*
+		 * it seems fdt64_to_cpu() input param address must be 8-bytes
+		 * align, otherwise it brings a data-abort. No root cause was
+		 * found.
+		 *
+		 * workaround it this a tmp value.
+		 */
+		memcpy((void *)&tmp, prop->public_exponent, sizeof(uint64_t));
+		key.exponent = fdt64_to_cpu(tmp);
+	}
 
 	if (!key.len || !prop->modulus || !prop->rr) {
 		debug("%s: Missing RSA key info", __func__);
