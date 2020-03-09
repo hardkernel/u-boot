@@ -45,6 +45,9 @@ DT_HEADER="""/*
 			arch = "arm64";
 			compression = "none";
 			load = <0x%08x>;
+			hash@1 {
+				algo = "sha256";
+			};
 		};
 """
 
@@ -71,6 +74,9 @@ def append_atf_node(file, atf_index, phy_addr):
     print >> file, '\t\t\tload = <0x%08x>;' % phy_addr
     if atf_index == 1:
         print >> file, '\t\t\tentry = <0x%08x>;' % phy_addr
+    print >> file, '\t\t\thash@1 {'
+    print >> file, '\t\t\t\talgo = "sha256";'
+    print >> file, '\t\t\t};'
     print >> file, '\t\t};'
     print >> file, ''
 
@@ -82,10 +88,13 @@ def append_fdt_node(file, dtbs):
     for dtb in dtbs:
         dtname = os.path.basename(dtb)
         print >> file, '\t\tfdt@%d {' % cnt
-        print >> file, '\t\t\tdescription = "%s";' % dtname
-        print >> file, '\t\t\tdata = /incbin/("%s");' % dtb
+        print >> file, '\t\t\tdescription = "U-Boot device tree blob";'
+        print >> file, '\t\t\tdata = /incbin/("u-boot.dtb");'
         print >> file, '\t\t\ttype = "flat_dt";'
         print >> file, '\t\t\tcompression = "none";'
+        print >> file, '\t\t\thash@1 {'
+        print >> file, '\t\t\t\talgo = "sha256";'
+        print >> file, '\t\t\t};'
         print >> file, '\t\t};'
         print >> file, ''
         cnt = cnt + 1
@@ -102,6 +111,11 @@ def append_conf_section(file, cnt, dtname, atf_cnt):
         else:
             print >> file, ';'
     print >> file, '\t\t\tfdt = "fdt@1";'
+    print >> file, '\t\t\tsignature@1 {'
+    print >> file, '\t\t\t\talgo = "sha256,rsa2048";'
+    print >> file, '\t\t\t\tkey-name-hint = "dev";'
+    print >> file, '\t\t\t\tsign-images = "fdt", "firmware", "loadables";'
+    print >> file, '\t\t\t};'
     print >> file, '\t\t};'
     print >> file, ''
 
