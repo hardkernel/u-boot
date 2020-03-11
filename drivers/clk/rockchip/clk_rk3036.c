@@ -104,6 +104,7 @@ static void rkclk_init(struct rk3036_cru *cru)
 	u32 aclk_div;
 	u32 hclk_div;
 	u32 pclk_div;
+	u32 nandc_div;
 
 	/* pll enter slow-mode */
 	rk_clrsetreg(&cru->cru_mode_con,
@@ -181,6 +182,13 @@ static void rkclk_init(struct rk3036_cru *cru)
 		     pclk_div << PERI_PCLK_DIV_SHIFT |
 		     hclk_div << PERI_HCLK_DIV_SHIFT |
 		     aclk_div << PERI_ACLK_DIV_SHIFT);
+
+	nandc_div = DIV_ROUND_UP(GPLL_HZ, 150 * 1000000);
+
+	rk_clrsetreg(&cru->cru_clksel_con[16],
+		     NANDC_PLL_MASK | NANDC_DIV_MASK,
+		     NANDC_SEL_GPLL << NANDC_PLL_SHIFT |
+		     nandc_div << NANDC_DIV_SHIFT);
 
 	/* PLL enter normal-mode */
 	rk_clrsetreg(&cru->cru_mode_con,
