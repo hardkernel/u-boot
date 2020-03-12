@@ -575,6 +575,13 @@ config SPL_POWER_SUPPORT
 	  in drivers/power, drivers/power/pmic and drivers/power/regulator
 	  as part of an SPL build.
 
+config SPL_PWM_SUPPORT
+	bool "Support PWM driver"
+	depends on SPL
+	help
+	  Enable support for pwm in SPL. This allows use pwm to control
+	  somethings, for example control voltage.
+
 config SPL_RAM_SUPPORT
 	bool "Support booting from RAM"
 	default y if MICROBLAZE || ARCH_SOCFPGA || TEGRA || ARCH_ZYNQ
