@@ -33,6 +33,7 @@ struct spl_image_info {
 	void *fdt_addr;
 #endif
 	u32 boot_device;
+	u32 next_stage;
 	u32 size;
 	u32 flags;
 	void *arg;
