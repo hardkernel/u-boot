@@ -7,6 +7,7 @@
 #include <android_image.h>
 #include <errno.h>
 #include <malloc.h>
+#include <spl.h>
 #include <spl_rkfw.h>
 #include <linux/kernel.h>
 #include <asm/arch/spl_resource_img.h>
@@ -362,20 +363,27 @@ int spl_load_rkfw_image(struct spl_image_info *spl_image,
 		printf("Load trust image failed! ret=%d\n", ret);
 		goto out;
 	}
-
-	ret = rkfw_load_uboot(info, uboot_sector,
-			      &spl_image->entry_point_bl33, try_count);
-	if (ret)
-		printf("Load uboot image failed! ret=%d\n", ret);
-	else
-		goto boot;
-
-	ret = rkfw_load_kernel(info, boot_sector,
-			     &spl_image->entry_point_bl33, try_count);
-	if (ret) {
-		printf("Load kernel image failed! ret=%d\n", ret);
-		goto out;
+#ifdef CONFIG_SPL_KERNEL_BOOT
+	if (spl_image->next_stage == SPL_NEXT_STAGE_UBOOT) {
+#endif
+		ret = rkfw_load_uboot(info, uboot_sector,
+				      &spl_image->entry_point_bl33, try_count);
+		if (ret)
+			printf("Load uboot image failed! ret=%d\n", ret);
+		else
+			goto boot;
+#ifdef CONFIG_SPL_KERNEL_BOOT
+	} else if (spl_image->next_stage == SPL_NEXT_STAGE_KERNEL) {
+#endif
+		ret = rkfw_load_kernel(info, boot_sector,
+				       &spl_image->entry_point_bl33, try_count);
+		if (ret) {
+			printf("Load kernel image failed! ret=%d\n", ret);
+			goto out;
+		}
+#ifdef CONFIG_SPL_KERNEL_BOOT
 	}
+#endif
 
 boot:
 #if CONFIG_IS_ENABLED(LOAD_FIT)
