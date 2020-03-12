@@ -348,7 +348,8 @@ out:
 
 int spl_load_rkfw_image(struct spl_image_info *spl_image,
 			struct spl_load_info *info,
-			u32 trust_sector, u32 uboot_sector)
+			u32 trust_sector, u32 uboot_sector,
+			u32 boot_sector)
 {
 	int ret, try_count = RKFW_RETRY_SECTOR_TIMES;
 	int found_rkfw = 0;
@@ -369,7 +370,7 @@ int spl_load_rkfw_image(struct spl_image_info *spl_image,
 	else
 		goto boot;
 
-	ret = rkfw_load_kernel(info, uboot_sector,
+	ret = rkfw_load_kernel(info, boot_sector,
 			     &spl_image->entry_point_bl33, try_count);
 	if (ret) {
 		printf("Load kernel image failed! ret=%d\n", ret);
