@@ -18,6 +18,12 @@ config SPL
 
 if SPL
 
+config SPL_ADC_SUPPORT
+	bool "Support ADC driver in SPL"
+	depends on SPL
+	help
+	  The adc drive can be used to measure voltage in spl if need.
+
 config SPL_LDSCRIPT
 	string "Linker script for the SPL stage"
 	default "arch/$(ARCH)/cpu/u-boot-spl.lds"
