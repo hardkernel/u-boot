@@ -526,6 +526,11 @@ void board_init_r(gd_t *dummy1, ulong dummy2)
 	spl_image.entry_point_bl33 = CONFIG_SYS_TEXT_BASE;
 #endif
 
+#if CONFIG_IS_ENABLED(OPTEE)
+	/* default address */
+	spl_image.entry_point_os = CONFIG_SYS_TEXT_BASE;
+#endif
+
 #ifdef CONFIG_SYS_SPL_ARGS_ADDR
 	spl_image.arg = (void *)CONFIG_SYS_SPL_ARGS_ADDR;
 #endif
