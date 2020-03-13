@@ -4,3 +4,4 @@
 #
 
 obj-$(CONFIG_DM_RNG) += rng-uclass.o
+obj-$(CONFIG_RNG_ROCKCHIP) += rockchip_rng.o
