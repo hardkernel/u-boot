@@ -1173,9 +1173,18 @@ static int tee_fs_write(struct tee_fs_rpc *fsrpc)
 		printf("TEEC: rkss_begin_commit failed!");
 		return -1;
 	}
+	int num;
+	if (p.size != 0) {
+		num = p.size / RKSS_DATA_LEN + 1;
+		ret = rkss_decref_multi_usedflags_sections(p.index, num);
+		if (ret < 0) {
+			printf("TEEC: rkss_decref_multi_usedflags_sections error !\n");
+			return -1;
+		}
+	}
 
 	p.size = fsrpc->len;
-	int num = fsrpc->len / RKSS_DATA_LEN + 1;
+	num = fsrpc->len / RKSS_DATA_LEN + 1;
 	p.index = rkss_get_empty_section_from_usedflags(num);
 	debug("TEEC: Get Empty section in %d\n", p.index);
 	p.used = 1;
@@ -1397,6 +1406,9 @@ static int tee_fs_rename(struct tee_fs_rpc *fsrpc)
 
 static int tee_fs_truncate(struct tee_fs_rpc *fsrpc)
 {
+	int section_num, new_section_num, free_section_num;
+	uint16_t free_index;
+
 	debug("TEEC: tee_fs_truncate: fd:%d, lenth:%d\n", fsrpc->fd, fsrpc->arg);
 	if (fsrpc->fd < 0)
 	{
@@ -1416,14 +1428,27 @@ static int tee_fs_truncate(struct tee_fs_rpc *fsrpc)
 		printf("TEEC: rkss_begin_commit failed!");
 		return -1;
 	}
-
-	p.size = fsrpc->arg;
-	ret = rkss_write_back_ptable(fsrpc->fd, &p);
-	if (ret < 0)
-	{
-		printf("TEEC: tee_fs_write: write ptable error!\n");
+	if (p.size < fsrpc->arg) {
+		printf("TEEC: truncate size not support!\n ");
 		return -1;
+	} else {
+		section_num = p.size / RKSS_DATA_LEN + 1;
+		new_section_num = fsrpc->arg / RKSS_DATA_LEN + 1;
+		free_section_num = section_num - new_section_num;
+		free_index = p.index + new_section_num;
+		ret = rkss_decref_multi_usedflags_sections(free_index, free_section_num);
+		if (ret < 0) {
+			printf("TEEC: rkss_decref_multi_usedflags_sections error!\n");
+			return -1;
+		}
+		p.size = fsrpc->arg;
+		ret = rkss_write_back_ptable(fsrpc->fd, &p);
+		if (ret < 0) {
+			printf("TEEC: rkss_write_back_ptable error!\n");
+			return -1;
+		}
 	}
+
 	ret = rkss_finish_commit();
 	if (ret < 0) {
 		printf("TEEC: rkss_finish_commit failed!");
