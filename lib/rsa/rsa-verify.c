@@ -6,6 +6,7 @@
 
 #ifndef USE_HOSTCC
 #include <common.h>
+#include <crypto.h>
 #include <fdtdec.h>
 #include <asm/types.h>
 #include <asm/byteorder.h>
@@ -58,6 +59,74 @@ static int rsa_verify_padding(const uint8_t *msg, const int pad_len,
 	return ret;
 }
 
+#if !defined(USE_HOSTCC)
+#if CONFIG_IS_ENABLED(FIT_HW_CRYPTO)
+static void rsa_convert_big_endian(uint32_t *dst, const uint32_t *src, int len)
+{
+	int i;
+
+	for (i = 0; i < len; i++)
+		dst[i] = fdt32_to_cpu(src[len - 1 - i]);
+}
+
+static int hw_crypto_rsa(struct key_prop *prop, const uint8_t *sig,
+			 const uint32_t sig_len, const uint32_t key_len,
+			 uint8_t *output)
+{
+	struct udevice *dev;
+	uint8_t sig_reverse[sig_len];
+	uint8_t buf[sig_len];
+	rsa_key rsa_key;
+	int i, ret;
+
+	if (key_len != RSA2048_BYTES)
+		return -EINVAL;
+
+	rsa_key.algo = CRYPTO_RSA2048;
+	rsa_key.n = malloc(key_len);
+	rsa_key.e = malloc(key_len);
+	rsa_key.c = malloc(key_len);
+	if (!rsa_key.n || !rsa_key.e || !rsa_key.c)
+		return -ENOMEM;
+
+	rsa_convert_big_endian(rsa_key.n, (uint32_t *)prop->modulus,
+			       key_len / sizeof(uint32_t));
+	rsa_convert_big_endian(rsa_key.e, (uint32_t *)prop->public_exponent_BN,
+			       key_len / sizeof(uint32_t));
+#ifdef CONFIG_ROCKCHIP_CRYPTO_V1
+	rsa_convert_big_endian(rsa_key.c, (uint32_t *)prop->factor_c,
+			       key_len / sizeof(uint32_t));
+#else
+	rsa_convert_big_endian(rsa_key.c, (uint32_t *)prop->factor_np,
+			       key_len / sizeof(uint32_t));
+#endif
+	for (i = 0; i < sig_len; i++)
+		sig_reverse[sig_len-1-i] = sig[i];
+
+	dev = crypto_get_device(rsa_key.algo);
+	if (!dev) {
+		printf("No crypto device for expected RSA\n");
+		return -ENODEV;
+	}
+
+	ret = crypto_rsa_verify(dev, &rsa_key, (u8 *)sig_reverse, buf);
+	if (ret)
+		goto out;
+
+	for (i = 0; i < sig_len; i++)
+		sig_reverse[sig_len-1-i] = buf[i];
+
+	memcpy(output, sig_reverse, sig_len);
+out:
+	free(rsa_key.n);
+	free(rsa_key.e);
+	free(rsa_key.c);
+
+	return ret;
+}
+#endif
+#endif
+
 /**
  * rsa_verify_key() - Verify a signature against some data using RSA Key
  *
@@ -78,9 +147,6 @@ static int rsa_verify_key(struct key_prop *prop, const uint8_t *sig,
 {
 	int pad_len;
 	int ret;
-#if !defined(USE_HOSTCC)
-	struct udevice *mod_exp_dev;
-#endif
 
 	if (!prop || !sig || !hash || !algo)
 		return -EIO;
@@ -102,6 +168,11 @@ static int rsa_verify_key(struct key_prop *prop, const uint8_t *sig,
 	uint8_t buf[sig_len];
 
 #if !defined(USE_HOSTCC)
+#if CONFIG_IS_ENABLED(FIT_HW_CRYPTO)
+	ret = hw_crypto_rsa(prop, sig, sig_len, key_len, buf);
+#else
+	struct udevice *mod_exp_dev;
+
 	ret = uclass_get_device(UCLASS_MOD_EXP, 0, &mod_exp_dev);
 	if (ret) {
 		printf("RSA: Can't find Modular Exp implementation\n");
@@ -109,6 +180,7 @@ static int rsa_verify_key(struct key_prop *prop, const uint8_t *sig,
 	}
 
 	ret = rsa_mod_exp(mod_exp_dev, sig, sig_len, prop, buf);
+#endif
 #else
 	ret = rsa_mod_exp_sw(sig, sig_len, prop, buf);
 #endif
@@ -175,6 +247,7 @@ static int rsa_verify_with_keynode(struct image_sign_info *info,
 	prop.exp_len = sizeof(uint64_t);
 
 	prop.modulus = fdt_getprop(blob, node, "rsa,modulus", NULL);
+	prop.public_exponent_BN = fdt_getprop(blob, node, "rsa,exponent-BN", NULL);
 
 	prop.rr = fdt_getprop(blob, node, "rsa,r-squared", NULL);
 
@@ -183,6 +256,15 @@ static int rsa_verify_with_keynode(struct image_sign_info *info,
 		return -EFAULT;
 	}
 
+#ifdef CONFIG_ROCKCHIP_CRYPTO_V1
+	prop.factor_c = fdt_getprop(blob, node, "rsa,c", NULL);
+	if (!prop.factor_c)
+		return -EFAULT;
+#else
+	prop.factor_np = fdt_getprop(blob, node, "rsa,np", NULL);
+	if (!prop.factor_np)
+		return -EFAULT;
+#endif
 	ret = rsa_verify_key(&prop, sig, sig_len, hash,
 			     info->crypto->key_len, info->checksum);
 
