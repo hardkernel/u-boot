@@ -8,6 +8,7 @@
 
 #include <common.h>
 #include <dm.h>
+#include <image.h>
 #include <u-boot/sha1.h>
 
 /* Algorithms/capability of crypto, works together with crypto_algo_nbits() */
@@ -119,6 +120,21 @@ int crypto_sha_final(struct udevice *dev, sha_context *ctx, u8 *output);
  */
 int crypto_sha_csum(struct udevice *dev, sha_context *ctx,
 		    char *input, u32 input_len, u8 *output);
+
+/**
+ * crypto_sha_regions_csum() - Crypto sha hash for multi data blocks
+ *
+ * @dev: crypto device
+ * @ctx: sha context
+ * @region: regions buffer
+ * @region_count: regions count
+ * @output: output hash data
+ *
+ * @return 0 on success, otherwise failed
+ */
+int crypto_sha_regions_csum(struct udevice *dev, sha_context *ctx,
+			    const struct image_region region[],
+			    int region_count, u8 *output);
 
 /**
  * crypto_rsa_verify() - Crypto rsa verify
