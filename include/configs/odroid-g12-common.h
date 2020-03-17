@@ -130,8 +130,8 @@
 
 #define ENV_BOOT_DEFAULT				\
 	"boot_default="					\
-		"for devtype in ${boot_order}; do "	\
-			"run boot_${devtype}; "		\
+		"for type in ${boot_order}; do "	\
+			"run boot_${type}; "		\
 		"done\0"
 
 /* args/envs */
