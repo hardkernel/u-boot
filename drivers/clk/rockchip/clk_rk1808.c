@@ -291,6 +291,32 @@ static ulong rk1808_sfc_set_clk(struct rk1808_clk_priv *priv,
 	return rk1808_sfc_get_clk(priv, clk_id);
 }
 
+static ulong rk1808_saradc_get_clk(struct rk1808_clk_priv *priv)
+{
+	struct rk1808_cru *cru = priv->cru;
+	u32 div, con;
+
+	con = readl(&cru->clksel_con[63]);
+	div = con & CLK_SARADC_DIV_CON_MASK;
+
+	return DIV_TO_RATE(OSC_HZ, div);
+}
+
+static ulong rk1808_saradc_set_clk(struct rk1808_clk_priv *priv, uint hz)
+{
+	struct rk1808_cru *cru = priv->cru;
+	int src_clk_div;
+
+	src_clk_div = DIV_ROUND_UP(OSC_HZ, hz);
+	assert(src_clk_div - 1 < 2047);
+
+	rk_clrsetreg(&cru->clksel_con[63],
+		     CLK_SARADC_DIV_CON_MASK,
+		     (src_clk_div - 1) << CLK_SARADC_DIV_CON_SHIFT);
+
+	return rk1808_saradc_get_clk(priv);
+}
+
 #ifndef CONFIG_SPL_BUILD
 static ulong rk1808_pwm_get_clk(struct rk1808_clk_priv *priv, ulong clk_id)
 {
@@ -352,32 +378,6 @@ static ulong rk1808_pwm_set_clk(struct rk1808_clk_priv *priv,
 	}
 
 	return rk1808_pwm_get_clk(priv, clk_id);
-}
-
-static ulong rk1808_saradc_get_clk(struct rk1808_clk_priv *priv)
-{
-	struct rk1808_cru *cru = priv->cru;
-	u32 div, con;
-
-	con = readl(&cru->clksel_con[63]);
-	div = con & CLK_SARADC_DIV_CON_MASK;
-
-	return DIV_TO_RATE(OSC_HZ, div);
-}
-
-static ulong rk1808_saradc_set_clk(struct rk1808_clk_priv *priv, uint hz)
-{
-	struct rk1808_cru *cru = priv->cru;
-	int src_clk_div;
-
-	src_clk_div = DIV_ROUND_UP(OSC_HZ, hz);
-	assert(src_clk_div - 1 < 2047);
-
-	rk_clrsetreg(&cru->clksel_con[63],
-		     CLK_SARADC_DIV_CON_MASK,
-		     (src_clk_div - 1) << CLK_SARADC_DIV_CON_SHIFT);
-
-	return rk1808_saradc_get_clk(priv);
 }
 
 static ulong rk1808_tsadc_get_clk(struct rk1808_clk_priv *priv)
@@ -935,6 +935,9 @@ static ulong rk1808_clk_get_rate(struct clk *clk)
 	case SCLK_SFC:
 		rate = rk1808_sfc_get_clk(priv, clk->id);
 		break;
+	case SCLK_SARADC:
+		rate = rk1808_saradc_get_clk(priv);
+		break;
 #ifndef CONFIG_SPL_BUILD
 	case SCLK_PMU_I2C0:
 	case SCLK_I2C1:
@@ -948,9 +951,6 @@ static ulong rk1808_clk_get_rate(struct clk *clk)
 	case SCLK_PWM1:
 	case SCLK_PWM2:
 		rate = rk1808_pwm_get_clk(priv, clk->id);
-		break;
-	case SCLK_SARADC:
-		rate = rk1808_saradc_get_clk(priv);
 		break;
 	case SCLK_TSADC:
 		rate = rk1808_tsadc_get_clk(priv);
@@ -1039,6 +1039,9 @@ static ulong rk1808_clk_set_rate(struct clk *clk, ulong rate)
 	case SCLK_SFC:
 		ret = rk1808_sfc_set_clk(priv, clk->id, rate);
 		break;
+	case SCLK_SARADC:
+		ret = rk1808_saradc_set_clk(priv, rate);
+		break;
 #ifndef CONFIG_SPL_BUILD
 	case SCLK_PMU_I2C0:
 	case SCLK_I2C1:
@@ -1052,9 +1055,6 @@ static ulong rk1808_clk_set_rate(struct clk *clk, ulong rate)
 	case SCLK_PWM1:
 	case SCLK_PWM2:
 		ret = rk1808_pwm_set_clk(priv, clk->id, rate);
-		break;
-	case SCLK_SARADC:
-		ret = rk1808_saradc_set_clk(priv, rate);
 		break;
 	case SCLK_TSADC:
 		ret = rk1808_tsadc_set_clk(priv, rate);
