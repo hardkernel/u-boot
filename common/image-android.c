@@ -558,24 +558,31 @@ int android_image_parse_comp(struct andr_img_hdr *hdr, ulong *load_addr)
 	}
 #else
 	/*
-	 * On 32-bit kernel, assuming use zImage by default.
+	 * On 32-bit kernel:
 	 *
-	 * kernel_addr_c is for LZ4/zImage but maybe not defined.
-	 * kernel_addr_r is for zImage when kernel_addr_c is not defined.
-	 * kernel_addr_r is for IMAGE when kernel_addr_c is defined.
+	 * The input load_addr is from env value: "kernel_addr_r", it has
+	 * different role depends on whether kernel_addr_c is defined:
+	 *
+	 * - kernel_addr_r is for lz4/zImage if kernel_addr_c if [not] defined.
+	 * - kernel_addr_r is for IMAGE if kernel_addr_c is defined.
 	 */
 	if (comp == IH_COMP_NONE) {
 		if (kernel_addr_c) {
-			*load_addr = env_get_ulong("kernel_addr_r", 16, 0);
+			/* input load_addr is for Image, nothing to do */
 		} else {
+			/* input load_addr is for lz4/zImage, set default addr for Image */
 			*load_addr = CONFIG_SYS_SDRAM_BASE + 0x8000;
 			env_set_hex("kernel_addr_r", *load_addr);
+
+			*load_addr -= hdr->page_size;
 		}
-		
-		*load_addr -= hdr->page_size;
 	} else {
-		if (kernel_addr_c)
+		if (kernel_addr_c) {
+			/* input load_addr is for Image, so use another for lz4/zImage */
 			*load_addr = kernel_addr_c - hdr->page_size;
+		} else {
+			/* input load_addr is for lz4/zImage, nothing to do */
+		}
 	}
 #endif
 
