@@ -43,8 +43,7 @@ before_deploy:
 
 deploy:
   provider: releases
-  api_key:
-    secure: ${PRIVATE_ACCESS_TOKEN}
+  api_key: ${PRIVATE_ACCESS_TOKEN}
   file_glob: true
   file: u-boot-${RELEASE_VERSION}.tar.gz
   skip_cleanup: true
