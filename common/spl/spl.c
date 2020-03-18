@@ -221,6 +221,45 @@ __weak void __noreturn jump_to_image_no_args(struct spl_image_info *spl_image)
 	image_entry();
 }
 
+/*
+ * 64-bit: No special operation.
+ *
+ * 32-bit: Initial gd->bd->bi_dram[] to active dcache attr of memory.
+ *	   Assuming 256MB is enough for SPL(MMU still maps 4GB size).
+ */
+#ifndef CONFIG_SPL_SYS_DCACHE_OFF
+static int spl_dcache_enable(void)
+{
+	bool free_bd = false;
+
+#ifndef CONFIG_ARM64
+	if (!gd->bd) {
+		gd->bd = calloc(1, sizeof(bd_t));
+		if (!gd->bd) {
+			debug("spl: no bd_t memory\n");
+			return -ENOMEM;
+		}
+		gd->bd->bi_dram[0].start = CONFIG_SYS_SDRAM_BASE;
+		gd->bd->bi_dram[0].size  = SZ_256M;
+		free_bd = true;
+	}
+#endif
+	/* TLB memory should be 64KB base align and 4KB end align */
+	gd->arch.tlb_size = PGTABLE_SIZE;
+	gd->arch.tlb_addr = (ulong)memalign(SZ_64K, ALIGN(PGTABLE_SIZE, SZ_4K));
+	if (!gd->arch.tlb_addr) {
+		debug("spl: no TLB memory\n");
+		return -ENOMEM;
+	}
+
+	dcache_enable();
+	if (free_bd)
+		free(gd->bd);
+
+	return 0;
+}
+#endif
+
 static int spl_common_init(bool setup_malloc)
 {
 	int ret;
@@ -241,16 +280,13 @@ static int spl_common_init(bool setup_malloc)
 	 * setup D-cache as early as possible after malloc setup
 	 * I-cache has been setup at early assembly code by default.
 	 */
-#if !defined(CONFIG_TPL_BUILD)
-	/* tlb memory should be 64KB align for base and 4KB align for end */
-	gd->arch.tlb_size = PGTABLE_SIZE;
-	gd->arch.tlb_addr = (ulong)memalign(SZ_64K, ALIGN(PGTABLE_SIZE, SZ_4K));
-	if (gd->arch.tlb_addr)
-		dcache_enable();
-	else
-		debug("spl: no tlb memory\n");
+#ifndef CONFIG_SPL_SYS_DCACHE_OFF
+	ret = spl_dcache_enable();
+	if (ret) {
+		debug("spl_dcache_enable() return error %d\n", ret);
+		return ret;
+	}
 #endif
-
 	ret = bootstage_init(true);
 	if (ret) {
 		debug("%s: Failed to set up bootstage: ret=%d\n", __func__,

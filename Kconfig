@@ -321,6 +321,13 @@ config SPL_FIT_HW_CRYPTO
 	help
 	  Enable SPL hardware crypto for FIT image checksum and rsa verify.
 
+config SPL_SYS_DCACHE_OFF
+	bool "Disable SPL dcache"
+	default y
+	help
+	  Disable SPL dcache. Please make sure CONFIG_SPL_SYS_MALLOC_F_LEN
+	  is large enough to malloc TLB and bd_t buffer while enabling dcache.
+
 endif # SPL
 
 endif # FIT
