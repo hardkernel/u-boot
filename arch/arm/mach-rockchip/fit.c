@@ -13,7 +13,7 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
-#define FIT_PLACEHOLDER_ADDR		0xffffffff
+#define FIT_PLACEHOLDER_ADDR		0xffffff00
 
 /*
  * Must use args '-E -p' for mkimage to generate FIT image, 4K as max assumption.
@@ -28,6 +28,11 @@ static int fit_is_ext_type(void *fit)
 static int fit_is_signed(void *fit, const void *sig_blob)
 {
 	return fdt_subnode_offset(sig_blob, 0, FIT_SIG_NODENAME) < 0 ? 0 : 1;
+}
+
+static inline int fit_is_placeholder_addr(ulong addr)
+{
+	return (addr & 0xffffff00) == FIT_PLACEHOLDER_ADDR;
 }
 
 static int fit_is_required(void *fit, const void *sig_blob)
@@ -84,7 +89,7 @@ int fit_fixup_load_entry(void *fit, int images, int defconf,
 	int uname_cfg;
 	int err;
 
-	if ((*load != FIT_PLACEHOLDER_ADDR) ||
+	if (!fit_is_placeholder_addr(*load) ||
 		fit_is_required(fit, gd_fdt_blob()))
 		return 0;
 
