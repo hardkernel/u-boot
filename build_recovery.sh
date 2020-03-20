@@ -17,7 +17,7 @@ pack_spi_full_image()
 	dd if=${OUT}/rk3326_header_miniloader_spiboot.img of=${OUT}/spi_recovery.img bs=512 seek=0 count=2048 conv=fsync,notrunc
 	dd if=${OUT}/uboot_spi.img of=${OUT}/spi_recovery.img bs=512 seek=2048 count=2048 conv=fsync,notrunc
 	dd if=${OUT}/trust_spi.img of=${OUT}/spi_recovery.img bs=512 seek=4096 count=4096 conv=fsync,notrunc
-	dd if=./arch/arm/dts/odroidgo2-kernel.dtb of=${OUT}/spi_recovery.img bs=512 seek=8192 count=200 conv=fsync,notrunc
+	dd if=./arch/arm/dts/odroidgo2-kernel-v11.dtb of=${OUT}/spi_recovery.img bs=512 seek=8192 count=200 conv=fsync,notrunc
 
 	gzip -k -f ${IMAGES}/*.bmp
 	dd if=${IMAGES}/logo_hardkernel.bmp.gz of=${OUT}/spi_recovery.img bs=512 seek=8392 conv=fsync,notrunc
@@ -50,7 +50,7 @@ pack_recovery_sdcard_img()
 	sudo cp ${IMAGES}/system_error.bmp ${MNT}
 	sudo cp ${IMAGES}/no_sdcard.bmp ${MNT}
 	sudo cp ${IMAGES}/low_battery.bmp ${MNT}
-	sudo cp ./arch/arm/dts/odroidgo2-kernel.dtb ${MNT}/rk3326-odroidgo2-linux.dtb
+	sudo cp ./arch/arm/dts/odroidgo2-kernel-v11.dtb ${MNT}/rk3326-odroidgo2-linux-v11.dtb
 	sync
 	sudo umount ${MNT}
 
