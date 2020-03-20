@@ -255,7 +255,7 @@ static int do_odroidtest_lcd(cmd_tbl_t * cmdtp, int flag,
 	return ret;
 }
 
-void btn_draw_key_arrays(void)
+void btn_draw_key_arrays(int numkeys)
 {
 	int i;
 
@@ -265,7 +265,7 @@ void btn_draw_key_arrays(void)
 	lcd_setfg_color("white");
 	lcd_printf(0, 1, 1, "[ GPIO KEY TEST ]");
 
-	for (i = 0; i < NUMGPIOKEYS; i++) {
+	for (i = 0; i < numkeys; i++) {
 		if (gpiokeys[i].chk)
 			lcd_setfg_color("blue");
 		else
@@ -310,15 +310,21 @@ void btn_set_default(void)
 static int do_odroidtest_btn(cmd_tbl_t * cmdtp, int flag,
 				int argc, char * const argv[])
 {
-	int key;
+	int key, numkeys;
+	const char *hwrev = env_get("hwrev");
 
-	btn_draw_key_arrays();
+	if (hwrev && !strcmp(hwrev, "v11"))
+		numkeys = NUMGPIOKEYS;
+	else
+		numkeys = NUMGPIOKEYS - 2;
+
+	btn_draw_key_arrays(numkeys);
 	mdelay(2000);
 
-	while (btn_passed < NUMGPIOKEYS) {
+	while (btn_passed < numkeys) {
 		key = wait_key_event();
 		if (btn_update_key_status(key))
-			btn_draw_key_arrays();
+			btn_draw_key_arrays(numkeys);
 		printf("key 0x%x, passed %d\n", key, btn_passed);
 	}
 
