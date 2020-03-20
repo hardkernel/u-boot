@@ -173,6 +173,7 @@ obj-$(CONFIG_CMD_ODROID_CFGLOAD) += cfgload.o
 obj-$(CONFIG_CMD_ODROID_ADC) += adc.o
 obj-$(CONFIG_CMD_ODROID_BATTERY) += battery.o
 obj-$(CONFIG_CMD_ODROID_TEST) += odroidtest.o
+obj-$(CONFIG_CMD_ODROID_HWREV) += hwrev.o
 
 endif # !CONFIG_SPL_BUILD
 

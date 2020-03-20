@@ -84,7 +84,11 @@
 		"net.iframes=0 fbcon=rotate:3\0"	\
 	"bootcmd=mmc dev 1; cfgload; run setbootargs;"	\
 		"load mmc 1:1 0x02000000 Image; "		\
-		"load mmc 1:1 0x01f00000 rk3326-odroidgo2-linux.dtb; "	\
+		"if test ${hwrev} = 'v11'; then " \
+			"load mmc 1:1 0x01f00000 rk3326-odroidgo2-linux-v11.dtb; "	\
+		"else " \
+			"load mmc 1:1 0x01f00000 rk3326-odroidgo2-linux.dtb; "	\
+		"fi; "\
 		"booti 0x02000000 - 0x01f00000\0"
 
 #undef CONFIG_BOOTDELAY
