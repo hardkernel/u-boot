@@ -155,7 +155,9 @@ static int check_key_press(struct udevice *dev)
 				state = KEY_PRESS_DOWN;
 			}
 		}
-	} else if (pdata->auto_off_screen_interval) {
+	}
+	if (!pdata->auto_wakeup_screen_invert &&
+	    pdata->auto_off_screen_interval) {
 		if (priv->auto_screen_off_timeout &&
 		    get_timer(priv->auto_screen_off_timeout) >
 		    pdata->auto_off_screen_interval * 1000) {	/* 1000ms */
