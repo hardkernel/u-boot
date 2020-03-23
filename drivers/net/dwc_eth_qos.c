@@ -1475,6 +1475,9 @@ static int eqos_free_pkt(struct udevice *dev, uchar *packet, int length)
 	}
 
 	rx_desc = &(eqos->rx_descs[eqos->rx_desc_idx]);
+
+	eqos->config->ops->eqos_inval_buffer(packet, length);
+
 	rx_desc->des0 = (u32)(ulong)packet;
 	rx_desc->des1 = 0;
 	rx_desc->des2 = 0;
@@ -1536,6 +1539,9 @@ static int eqos_probe_resources_core(struct udevice *dev)
 		goto err_free_rx_dma_buf;
 	}
 	debug("%s: rx_pkt=%p\n", __func__, eqos->rx_pkt);
+
+	eqos->config->ops->eqos_inval_buffer(eqos->rx_dma_buf,
+			EQOS_MAX_PACKET_SIZE * EQOS_DESCRIPTORS_RX);
 
 	debug("%s: OK\n", __func__);
 	return 0;
