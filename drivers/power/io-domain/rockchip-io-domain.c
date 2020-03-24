@@ -470,6 +470,22 @@ static const struct rockchip_iodomain_soc_data soc_data_rv1108_pmu = {
 	},
 };
 
+static const struct rockchip_iodomain_soc_data soc_data_rv1126_pmu = {
+	.grf_offset = 0x140,
+	.supply_names = {
+		NULL,
+		"vccio1",
+		"vccio2",
+		"vccio3",
+		"vccio4",
+		"vccio5",
+		"vccio6",
+		"vccio7",
+		"pmuio0",
+		"pmuio1",
+	},
+};
+
 static struct udevice *of_get_regulator(ofnode node, const char *supply)
 {
 	char sname[32]; /* 32 is max size of property name */
@@ -604,6 +620,10 @@ static const struct udevice_id rockchip_iodomain_match[] = {
 	{
 		.compatible = "rockchip,rv1108-pmu-io-voltage-domain",
 		.data = (ulong)&soc_data_rv1108_pmu
+	},
+	{
+		.compatible = "rockchip,rv1126-pmu-io-voltage-domain",
+		.data = (ulong)&soc_data_rv1126_pmu
 	},
 	{ /* sentinel */ },
 };
