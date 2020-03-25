@@ -23,7 +23,7 @@
 #define PCLK_PDBUS_HZ	(100 * MHz)
 #define ACLK_PDPHP_HZ	(300 * MHz)
 #define HCLK_PDPHP_HZ	(200 * MHz)
-#define HCLK_PDCORE_HZ	(100 * MHz)
+#define HCLK_PDCORE_HZ	(200 * MHz)
 #define HCLK_PDAUDIO_HZ	(150 * MHz)
 
 /* RV1126 pll id */
