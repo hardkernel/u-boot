@@ -135,10 +135,18 @@ err:
 	odroid_wait_pwrkey();
 }
 
+void board_check_hwrev(void)
+{
+	run_command("hwrev", 0);
+}
+
 int rk_board_late_init(void)
 {
 	/* turn on blue led */
 	board_alive_led();
+
+	/* check hw revision */
+	board_check_hwrev();
 
 	/* set uart2-m1 port as a default debug console */
 	board_debug_uart2m1();
