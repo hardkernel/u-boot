@@ -91,6 +91,7 @@ def append_fdt_node(file, dtbs):
         print >> file, '\t\t\tdescription = "U-Boot device tree blob";'
         print >> file, '\t\t\tdata = /incbin/("u-boot.dtb");'
         print >> file, '\t\t\ttype = "flat_dt";'
+        print >> file, '\t\t\tarch = "arm64";'
         print >> file, '\t\t\tcompression = "none";'
         print >> file, '\t\t\thash@1 {'
         print >> file, '\t\t\t\talgo = "sha256";'
@@ -101,7 +102,7 @@ def append_fdt_node(file, dtbs):
 
 def append_conf_section(file, cnt, dtname, atf_cnt):
     print >> file, '\t\tconfig@%d {' % cnt
-    print >> file, '\t\t\tdescription = "%s";' % dtname
+    print >> file, '\t\t\tdescription = "Rockchip armv8 with ATF";'
     print >> file, '\t\t\tfirmware = "atf@1";'
     print >> file, '\t\t\tloadables = "uboot@1",',
     for i in range(1, atf_cnt):
