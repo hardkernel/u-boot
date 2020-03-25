@@ -423,6 +423,8 @@ endif
 config ROCKCHIP_RV1126
 	bool "Support Rockchip RV1126"
 	select CPU_V7
+	select GICV2
+	select ARM_SMCCC
 	select BOARD_LATE_INIT
 	select SUPPORT_SPL
 	select SPL
