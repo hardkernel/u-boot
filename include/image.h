@@ -656,6 +656,11 @@ int fit_image_load(bootm_headers_t *images, ulong addr,
 		   int arch, int image_type, int bootstage_id,
 		   enum fit_load_op load_op, ulong *datap, ulong *lenp);
 
+int fit_image_load_index(bootm_headers_t *images, ulong addr,
+		   const char **fit_unamep, const char **fit_uname_configp,
+		   int arch, int image_type, int image_index, int bootstage_id,
+		   enum fit_load_op load_op, ulong *datap, ulong *lenp);
+
 #ifndef USE_HOSTCC
 /**
  * fit_get_node_from_config() - Look up an image a FIT by type

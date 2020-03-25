@@ -728,7 +728,7 @@ int fit_add_verification_data(const char *keydir, void *keydest, void *fit,
 }
 
 #ifdef CONFIG_FIT_SIGNATURE
-int fit_check_sign(const void *fit, const void *key)
+int fit_check_sign(const void *fit, const void *key, int is_spl)
 {
 	int cfg_noffset;
 	int ret;
@@ -741,7 +741,7 @@ int fit_check_sign(const void *fit, const void *key)
 	ret = fit_config_verify(fit, cfg_noffset);
 	if (ret)
 		return ret;
-	ret = bootm_host_load_images(fit, cfg_noffset);
+	ret = bootm_host_load_images(fit, cfg_noffset, is_spl);
 
 	return ret;
 }
