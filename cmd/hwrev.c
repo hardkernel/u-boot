@@ -20,7 +20,7 @@ int do_hwrev(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	}
 
 	/* rev 1.1 */
-	if (check_range(898, 978, hwrev_adc)) {
+	if (check_range(655, 695, hwrev_adc)) {
 		env_set("hwrev", "v11");
 		env_set("dtb_name", "rk3326-odroidgo2-linux-v11.dtb");
 	}
@@ -35,7 +35,7 @@ int do_hwrev(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		env_set("dtb_name", "rk3326-odroidgo2-linux.dtb");
 	}
 
-	debug("adc0 (hw rev) %d\n", hwrev_adc);
+	printf("adc0 (hw rev) %d\n", hwrev_adc);
 
 	return CMD_RET_SUCCESS;
 }

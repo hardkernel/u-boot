@@ -305,10 +305,18 @@ int check_fdt_header(ulong fdt_addr)
 	return i < 4 ? CMD_RET_FAILURE : CMD_RET_SUCCESS;
 }
 
+void board_check_hwrev(void)
+{
+	run_command("hwrev", 0);
+}
+
 int init_kernel_dtb(void)
 {
 	ulong fdt_addr;
 	int ret;
+
+	/* check hw revision */
+	board_check_hwrev();
 
 	fdt_addr = env_get_ulong("fdt_addr_r", 16, 0);
 	if (!fdt_addr) {
