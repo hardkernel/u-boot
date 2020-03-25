@@ -730,7 +730,7 @@ static ulong rv1126_pdphp_set_clk(struct rv1126_clk_priv *priv, ulong clk_id,
 	case HCLK_PDPHP:
 		rk_clrsetreg(&cru->clksel_con[53],
 			     HCLK_PDPHP_DIV_MASK,
-			     (src_clk_div - 1) << HCLK_PDBUS_DIV_SHIFT);
+			     (src_clk_div - 1) << HCLK_PDPHP_DIV_SHIFT);
 		break;
 	default:
 		printf("do not support this pdphp freq\n");
