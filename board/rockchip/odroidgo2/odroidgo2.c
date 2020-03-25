@@ -109,6 +109,7 @@ void board_init_switch_gpio(void)
 	rk_clrsetreg(&grf->gpio1b_p, 0xff00, 0x5500);
 	rk_clrsetreg(&grf->gpio1a_p, 0xfcc0, 0x5440);
 	rk_clrsetreg(&grf->gpio2a_p, 0xffff, 0x5555);
+	rk_clrsetreg(&grf->gpio3b_p, 0xC030, 0x4010);
 }
 
 void board_check_mandatory_files(void)

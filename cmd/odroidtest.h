@@ -42,8 +42,8 @@ struct key_arrays gpiokeys[NUMGPIOKEYS] = {
 	{"[sw14]", BTN_TRIGGER_HAPPY6, 384, 15, 0},
 	{"[sw15]", BTN_TL, 48, 5, 0},
 	{"[sw16]", BTN_TR, 384, 5, 0},
-	{"[sw20]", BTN_TR2, 384, 3, 0},
-	{"[sw21]", BTN_TL2, 48, 3, 0},
+	{"[sw20]", BTN_TL2, 48, 3, 0},
+	{"[sw21]", BTN_TR2, 384, 3, 0},
 };
 
 struct key_arrays adckeys[4] = {
