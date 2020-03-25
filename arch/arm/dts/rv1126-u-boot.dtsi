@@ -48,3 +48,8 @@
 &grf {
 	u-boot,dm-spl;
 };
+
+&saradc {
+	u-boot,dm-spl;
+	status = "okay";
+};
