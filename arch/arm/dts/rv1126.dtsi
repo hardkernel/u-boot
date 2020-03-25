@@ -210,6 +210,10 @@
 	pmugrf: syscon@fe020000 {
 		compatible = "rockchip,rv1126-pmugrf", "syscon";
 		reg = <0xfe020000 0x1000>;
+
+		pmu_io_domains: io-domains {
+			compatible = "rockchip,rv1126-pmu-io-voltage-domain";
+		};
 	};
 
 	qos_usb_host: qos@fe810008 {
@@ -1304,6 +1308,7 @@
 		rockchip,srv = <&mpp_srv>;
 		rockchip,taskqueue-node = <2>;
 		rockchip,resetgroup-node = <2>;
+		power-domains = <&power RV1126_PD_VEPU>;
 		status = "disabled";
 	};
 
@@ -1317,6 +1322,7 @@
 		clock-names = "aclk", "iface";
 		rockchip,disable-mmu-reset;
 		#iommu-cells = <0>;
+		power-domains = <&power RV1126_PD_VEPU>;
 		status = "disabled";
 	};
 
@@ -1386,7 +1392,7 @@
 			 <&cru SCLK_EMMC_DRV>, <&cru SCLK_EMMC_SAMPLE>;
 		clock-names = "biu", "ciu", "ciu-drive", "ciu-sample";
 		fifo-depth = <0x100>;
-		max-frequency = <150000000>;
+		max-frequency = <50000000>;
 		status = "disabled";
 	};
 
@@ -1504,11 +1510,11 @@
 		#size-cells = <1>;
 		ranges;
 
-		gpio0: gpio@ff460000 {
+		gpio0: gpio0@ff460000 {
 			compatible = "rockchip,gpio-bank";
 			reg = <0xff460000 0x100>;
 			interrupts = <GIC_SPI 34 IRQ_TYPE_LEVEL_HIGH>;
-			clocks = <&cru PCLK_GPIO0>;
+			clocks = <&pmucru PCLK_GPIO0>;
 
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -1517,7 +1523,7 @@
 			#interrupt-cells = <2>;
 		};
 
-		gpio1: gpio@ff620000 {
+		gpio1: gpio1@ff620000 {
 			compatible = "rockchip,gpio-bank";
 			reg = <0xff620000 0x100>;
 			interrupts = <GIC_SPI 35 IRQ_TYPE_LEVEL_HIGH>;
@@ -1530,7 +1536,7 @@
 			#interrupt-cells = <2>;
 		};
 
-		gpio2: gpio@ff630000 {
+		gpio2: gpio2@ff630000 {
 			compatible = "rockchip,gpio-bank";
 			reg = <0xff630000 0x100>;
 			interrupts = <GIC_SPI 36 IRQ_TYPE_LEVEL_HIGH>;
@@ -1543,7 +1549,7 @@
 			#interrupt-cells = <2>;
 		};
 
-		gpio3: gpio@ff640000 {
+		gpio3: gpio3@ff640000 {
 			compatible = "rockchip,gpio-bank";
 			reg = <0xff640000 0x100>;
 			interrupts = <GIC_SPI 37 IRQ_TYPE_LEVEL_HIGH>;
@@ -1556,7 +1562,7 @@
 			#interrupt-cells = <2>;
 		};
 
-		gpio4: gpio@ff650000 {
+		gpio4: gpio4@ff650000 {
 			compatible = "rockchip,gpio-bank";
 			reg = <0xff650000 0x100>;
 			interrupts = <GIC_SPI 38 IRQ_TYPE_LEVEL_HIGH>;
