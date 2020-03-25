@@ -604,8 +604,7 @@ static ulong rv1126_pdcore_set_clk(struct rv1126_clk_priv *priv, ulong rate)
 {
 	struct rv1126_cru *cru = priv->cru;
 	int src_clk_div;
-
-	src_clk_div = DIV_ROUND_UP(priv->cpll_hz, rate);
+	src_clk_div = DIV_ROUND_UP(priv->gpll_hz, rate);
 	assert(src_clk_div - 1 <= 31);
 
 	rk_clrsetreg(&cru->clksel_con[0], CORE_HCLK_DIV_MASK,
@@ -634,12 +633,24 @@ static ulong rv1126_pdbus_get_clk(struct rv1126_clk_priv *priv, ulong clk_id)
 	case HCLK_PDBUS:
 		con = readl(&cru->clksel_con[2]);
 		div = (con & HCLK_PDBUS_DIV_MASK) >> HCLK_PDBUS_DIV_SHIFT;
-		parent = priv->gpll_hz;
+		sel = (con & HCLK_PDBUS_SEL_MASK) >> HCLK_PDBUS_SEL_SHIFT;
+		if (sel == HCLK_PDBUS_SEL_GPLL)
+			parent = priv->gpll_hz;
+		else if (sel == HCLK_PDBUS_SEL_CPLL)
+			parent = priv->cpll_hz;
+		else
+			return -ENOENT;
 		break;
 	case PCLK_PDBUS:
 		con = readl(&cru->clksel_con[3]);
 		div = (con & PCLK_PDBUS_DIV_MASK) >> PCLK_PDBUS_DIV_SHIFT;
-		parent = priv->gpll_hz;
+		sel = (con & PCLK_PDBUS_SEL_MASK) >> PCLK_PDBUS_SEL_SHIFT;
+		if (sel == PCLK_PDBUS_SEL_GPLL)
+			parent = priv->gpll_hz;
+		else if (sel == PCLK_PDBUS_SEL_CPLL)
+			parent = priv->cpll_hz;
+		else
+			return -ENOENT;
 		break;
 	default:
 		return -ENOENT;
@@ -664,19 +675,19 @@ static ulong rv1126_pdbus_set_clk(struct rv1126_clk_priv *priv, ulong clk_id,
 			     (src_clk_div - 1) << ACLK_PDBUS_DIV_SHIFT);
 		break;
 	case HCLK_PDBUS:
-		src_clk_div = DIV_ROUND_UP(priv->gpll_hz, rate);
+		src_clk_div = DIV_ROUND_UP(priv->cpll_hz, rate);
 		assert(src_clk_div - 1 <= 31);
 		rk_clrsetreg(&cru->clksel_con[2],
 			     HCLK_PDBUS_SEL_MASK | HCLK_PDBUS_DIV_MASK,
-			     HCLK_PDBUS_SEL_GPLL << HCLK_PDBUS_SEL_SHIFT |
+			     HCLK_PDBUS_SEL_CPLL << HCLK_PDBUS_SEL_SHIFT |
 			     (src_clk_div - 1) << HCLK_PDBUS_DIV_SHIFT);
 		break;
 	case PCLK_PDBUS:
-		src_clk_div = DIV_ROUND_UP(priv->gpll_hz, rate);
+		src_clk_div = DIV_ROUND_UP(priv->cpll_hz, rate);
 		assert(src_clk_div - 1 <= 31);
 		rk_clrsetreg(&cru->clksel_con[3],
 			     PCLK_PDBUS_SEL_MASK | PCLK_PDBUS_DIV_MASK,
-			     PCLK_PDBUS_SEL_GPLL << PCLK_PDBUS_SEL_SHIFT |
+			     PCLK_PDBUS_SEL_CPLL << PCLK_PDBUS_SEL_SHIFT |
 			     (src_clk_div - 1) << PCLK_PDBUS_DIV_SHIFT);
 		break;
 
@@ -717,7 +728,7 @@ static ulong rv1126_pdphp_set_clk(struct rv1126_clk_priv *priv, ulong clk_id,
 	struct rv1126_cru *cru = priv->cru;
 	int src_clk_div;
 
-	src_clk_div = DIV_ROUND_UP(priv->cpll_hz, rate);
+	src_clk_div = DIV_ROUND_UP(priv->gpll_hz, rate);
 	assert(src_clk_div - 1 <= 31);
 
 	switch (clk_id) {
@@ -756,7 +767,7 @@ static ulong rv1126_pdaudio_set_clk(struct rv1126_clk_priv *priv, ulong rate)
 	struct rv1126_cru *cru = priv->cru;
 	int src_clk_div;
 
-	src_clk_div = DIV_ROUND_UP(priv->cpll_hz, rate);
+	src_clk_div = DIV_ROUND_UP(priv->gpll_hz, rate);
 	assert(src_clk_div - 1 <= 31);
 
 	rk_clrsetreg(&cru->clksel_con[26], HCLK_PDAUDIO_DIV_MASK,
