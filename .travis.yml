@@ -2,10 +2,16 @@ language: c
 
 env:
   global:
-    - TARGET_BOARD=odroidn2
     - TRAVIS_SECURE_ENV_VARS=true
     - ARCH=arm64
     - CROSS_COMPILE=aarch64-none-elf-
+
+matrix:
+  include:
+    - env:
+      - TARGET_BOARD=odroidn2
+    - env:
+      - TARGET_BOARD=odroidc4
 
 addons:
   apt:
