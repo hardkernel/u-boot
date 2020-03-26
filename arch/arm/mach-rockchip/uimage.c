@@ -123,7 +123,7 @@ void *uimage_load_bootables(void)
 	return hdr;
 }
 
-int uimage_sysmem_reserve_each(image_header_t *hdr)
+int uimage_sysmem_reserve_each(image_header_t *hdr, u32 *ramdisk_sz)
 {
 	ulong raddr, kaddr, faddr;
 	ulong data, size;
@@ -146,8 +146,9 @@ int uimage_sysmem_reserve_each(image_header_t *hdr)
 
 	/* ramdisk */
 	image_multi_getimg(hdr, 1, &data, &size);
+	*ramdisk_sz = size;
 	blknum = DIV_ROUND_UP(size, blksz);
-	if (!sysmem_alloc_base(MEM_RAMDISK, (phys_addr_t)raddr,
+	if (size && !sysmem_alloc_base(MEM_RAMDISK, (phys_addr_t)raddr,
 			       blknum * blksz))
 		return -ENOMEM;
 
@@ -165,7 +166,7 @@ int uimage_sysmem_reserve_each(image_header_t *hdr)
 	return 0;
 }
 
-int uimage_sysmem_free_each(image_header_t *img)
+int uimage_sysmem_free_each(image_header_t *img, u32 ramdisk_sz)
 {
 	ulong raddr, kaddr, faddr;
 
@@ -174,9 +175,10 @@ int uimage_sysmem_free_each(image_header_t *img)
 	faddr = env_get_ulong("fdt_addr_r", 16, 0);
 
 	sysmem_free((phys_addr_t)img);
-	sysmem_free((phys_addr_t)raddr);
 	sysmem_free((phys_addr_t)kaddr);
 	sysmem_free((phys_addr_t)faddr);
+	if (ramdisk_sz)
+		sysmem_free((phys_addr_t)raddr);
 
 	return 0;
 }

@@ -55,6 +55,7 @@ static int do_boot_uimage(cmd_tbl_t *cmdtp, int flag,
 	char *bootm_args[1];
 	image_header_t *img;
 	char uimg_addr[12];
+	u32 ramdisk_sz = 0;
 	int ret;
 
 	if (argc > 2)
@@ -72,7 +73,7 @@ static int do_boot_uimage(cmd_tbl_t *cmdtp, int flag,
 		return -EINVAL;
 	}
 
-	if (uimage_sysmem_reserve_each(img))
+	if (uimage_sysmem_reserve_each(img, &ramdisk_sz))
 		return -ENOMEM;
 
 	snprintf(uimg_addr, sizeof(uimg_addr), "0x%lx", (ulong)img);
@@ -91,7 +92,7 @@ static int do_boot_uimage(cmd_tbl_t *cmdtp, int flag,
 		BOOTM_STATE_OS_GO, &images, 1);
 
 	if (ret && argc != 1)
-		uimage_sysmem_free_each(img);
+		uimage_sysmem_free_each(img, ramdisk_sz);
 
 	return ret;
 }
