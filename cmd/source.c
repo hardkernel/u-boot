@@ -22,6 +22,7 @@
 #include <mapmem.h>
 #include <asm/byteorder.h>
 #include <asm/io.h>
+#include <stdlib.h>
 
 int
 source (ulong addr, const char *fit_uname)
@@ -130,8 +131,23 @@ source (ulong addr, const char *fit_uname)
 		break;
 #endif
 	default:
+#if defined(CONFIG_TARGET_ODROIDGO2)
+		{
+			char magic[32];
+			int size = snprintf(magic, sizeof(magic),
+					"%s-uboot-config", CONFIG_SYS_BOARD);
+			if (strncasecmp(buf, magic, strlen(magic))) {
+				puts ("Wrong image format for \"source\" command\n");
+				return 1;
+			}
+
+			data = (u32*)(buf + size);
+			len = simple_strtoul(env_get("filesize"), NULL, 16);
+		}
+#else
 		puts ("Wrong image format for \"source\" command\n");
 		return 1;
+#endif
 	}
 
 	debug ("** Script length: %ld\n", len);
