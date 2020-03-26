@@ -25,7 +25,7 @@ EOF
 
 OUTDIR=$PWD
 DARM_BASE=`sed -n "/CONFIG_SYS_SDRAM_BASE=/s/CONFIG_SYS_SDRAM_BASE=//p" ${OUTDIR}/include/autoconf.mk|tr -d '\r'`
-UBOOT_OFFSET=0x00200000
+UBOOT_OFFSET=`sed -n "/CONFIG_SYS_TEXT_BASE=/s/CONFIG_SYS_TEXT_BASE=//p" ${OUTDIR}/include/autoconf.mk|tr -d '\r'`
 UBOOT_BASE=$((DARM_BASE+UBOOT_OFFSET))
 UBOOT_BASE=$(echo "obase=16;${UBOOT_BASE}"|bc)
 echo "			load = <0x"$UBOOT_BASE">;"
