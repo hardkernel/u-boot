@@ -74,7 +74,7 @@ void odroid_drop_errorlog(const char *err, unsigned int size)
 {
 	char str_cmd[64];
 
-	sprintf(str_cmd, "fatwrite mmc 1 %p error.log 0x%x",
+	sprintf(str_cmd, "save mmc 1 %p error.log 0x%x",
 			(void *)err, size);
 	run_command(str_cmd, 0);
 }
