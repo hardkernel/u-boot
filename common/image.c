@@ -239,7 +239,7 @@ ulong image_multi_count(const image_header_t *hdr)
 	size = (uint32_t *)image_get_data(hdr);
 
 	/* count non empty slots */
-	for (i = 0; size[i]; ++i)
+	for (i = 0; size[i] != IMAGE_PARAM_INVAL; ++i)
 		count++;
 
 	return count;

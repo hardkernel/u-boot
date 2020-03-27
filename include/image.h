@@ -709,6 +709,8 @@ int boot_get_kbd(struct lmb *lmb, bd_t **kbd);
 /*******************************************************************/
 /* Legacy format specific code (prefixed with image_) */
 /*******************************************************************/
+#define IMAGE_PARAM_INVAL	0xffffffff
+
 static inline uint32_t image_get_header_size(void)
 {
 	return (sizeof(image_header_t));
