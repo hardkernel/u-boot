@@ -518,20 +518,18 @@ static int rockchip_iodomain_probe(struct udevice *dev)
 			continue;
 
 		reg = of_get_regulator(dev_ofnode(dev), supply_name);
-		if (!reg) {
-			printf("could not find regulator %s\n", supply_name);
-			return -1;
-		}
+		if (!reg)
+			continue;
 
 		uV = regulator_get_value(reg);
-		if (uV < 0) {
-			printf("could not get voltage from %s\n", reg->name);
-			return -1;
+		if (uV <= 0) {
+			printf("voltage(%d uV) is invalid from %s\n", uV, reg->name);
+			continue;
 		}
 
 		if (uV > MAX_VOLTAGE_3_3) {
 			printf("%d uV is too high from %s\n", uV, reg->name);
-			return -1;
+			continue;
 		}
 
 		/* setup our supply */
