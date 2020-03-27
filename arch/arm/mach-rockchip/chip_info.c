@@ -24,8 +24,10 @@
  * rk322xh chip info:	{0x33323043, 0x32303136, 0x31313031, 0x56313030} - 320C20161101V100
  * rk3326 chip info:	{0x33333044, 0x32303137, 0x31323134, 0x56313030} - 330D20171214V100
  * rk3308 chip info:	{0x33333045, 0x32303138, 0x30323033, 0x56313030} - 330E20180203V100
+ * rv1126 chip info:	{0x42303131, 0x39313032, 0x37303131, 0x30303156}
  */
-int rockchip_get_chip_info(unsigned int chip_info[])
+
+static int rockchip_get_chip_info(unsigned int chip_info[])
 {
 	if (chip_info == NULL)
 		return -EINVAL;
@@ -66,7 +68,6 @@ int rockchip_get_chip_info(unsigned int chip_info[])
 	return 0;
 }
 
-
 int rockchip_rockusb_get_chip_info(unsigned int chip_info[])
 {
 	int err;
@@ -90,6 +91,8 @@ int rockchip_rockusb_get_chip_info(unsigned int chip_info[])
 		chip_info[0] = 0x33333043;
 #elif defined(CONFIG_ROCKCHIP_RK1808)
 		chip_info[0] = 0x31383041;
+#elif defined(CONFIG_ROCKCHIP_RV1126)
+		chip_info[0] = 0x31313236;
 #endif
 	}
 
