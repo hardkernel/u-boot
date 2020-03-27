@@ -192,6 +192,26 @@ static const struct table_info table_info[IH_COUNT] = {
 /*****************************************************************************/
 /* Legacy format routines */
 /*****************************************************************************/
+#ifndef USE_HOSTCC
+#ifndef CONFIG_SPL_BUILD
+uint32_t image_get_load(const image_header_t *hdr)
+{
+	uint32_t load = uimage_to_cpu(hdr->ih_load);
+
+	return (load == IMAGE_PARAM_INVAL) ?
+		env_get_ulong("kernel_addr_r", 16, 0) : load;
+}
+
+uint32_t image_get_ep(const image_header_t *hdr)
+{
+	uint32_t ep = uimage_to_cpu(hdr->ih_ep);
+
+	return (ep == IMAGE_PARAM_INVAL) ?
+		env_get_ulong("kernel_addr_r", 16, 0) : ep;
+}
+#endif
+#endif
+
 int image_check_hcrc(const image_header_t *hdr)
 {
 	ulong hcrc;
