@@ -53,3 +53,14 @@
 	u-boot,dm-spl;
 	status = "okay";
 };
+
+&usbdrd {
+	u-boot,dm-pre-reloc;
+	status = "okay";
+};
+
+&usbdrd_dwc3 {
+	u-boot,dm-pre-reloc;
+	/delete-property/ phys;
+	status = "okay";
+};
