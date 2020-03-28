@@ -754,3 +754,15 @@ int board_do_bootm(int argc, char * const argv[])
 	return 0;
 }
 #endif
+
+void autoboot_command_fail_handle(void)
+{
+#ifdef CONFIG_AVB_VBMETA_PUBLIC_KEY_VALIDATE
+#ifdef CONFIG_ANDROID_AB
+	run_command("fastboot usb 0;", 0);  /* use fastboot to ative slot */
+#else
+	run_command("rockusb 0 ${devtype} ${devnum}", 0);
+	run_command("fastboot usb 0;", 0);
+#endif
+#endif
+}
