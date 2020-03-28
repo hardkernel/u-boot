@@ -12,7 +12,7 @@
 
 	chosen {
 		stdout-path = &uart2;
-		u-boot,spl-boot-order = &sfc, &emmc;
+		u-boot,spl-boot-order = &sfc, &nandc, &emmc;
 	};
 };
 
@@ -76,6 +76,21 @@
 		spi-tx-bus-width = <1>;
 		spi-rx-bus-width = <4>;
 		spi-max-frequency = <96000000>;
+	};
+};
+
+&nandc {
+	u-boot,dm-spl;
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	nand@0 {
+		u-boot,dm-spl;
+		reg = <0>;
+		nand-ecc-mode = "hw_syndrome";
+		nand-ecc-strength = <16>;
+		nand-ecc-step-size = <1024>;
 	};
 };
 
