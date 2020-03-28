@@ -311,6 +311,9 @@ static void board_debug_init(void)
 		if (gd->console_evt <= 0x1a) /* 'z' */
 			printf("Hotkey: ctrl+%c\n", gd->console_evt + 'a' - 1);
 	}
+
+	if (IS_ENABLED(CONFIG_CONSOLE_DISABLE_CLI))
+		printf("CLI: off\n");
 }
 
 int board_init(void)
