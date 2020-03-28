@@ -773,6 +773,7 @@ libs-y += $(if $(BOARDDIR),board/$(BOARDDIR)/)
 libs-y := $(sort $(libs-y))
 
 u-boot-dirs	:= $(patsubst %/,%,$(filter %/, $(libs-y))) tools examples
+u-boot-dirs	+= board/hardkernel/odroid-c2/fip_create board/hardkernel/odroid-c2/meson-tools
 
 u-boot-alldirs	:= $(sort $(u-boot-dirs) $(patsubst %/,%,$(filter %/, $(libs-))))
 
@@ -2172,4 +2173,8 @@ FORCE:
 
 ifneq ($(CONFIG_TARGET_ODROID_XU3),)
 include board/hardkernel/odroid-xu3/Makefile
+endif
+
+ifeq ($(shell echo $(CONFIG_IDENT_STRING) | tr -d ' '),odroid-c2)
+include board/hardkernel/odroid-c2/Makefile
 endif
