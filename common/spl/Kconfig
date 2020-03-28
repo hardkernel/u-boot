@@ -18,6 +18,12 @@ config SPL
 
 if SPL
 
+config SPL_ADC_SUPPORT
+	bool "Support ADC driver in SPL"
+	depends on SPL
+	help
+	  The adc drive can be used to measure voltage in spl if need.
+
 config SPL_LDSCRIPT
 	string "Linker script for the SPL stage"
 	default "arch/$(ARCH)/cpu/u-boot-spl.lds"
@@ -568,6 +574,13 @@ config SPL_POWER_SUPPORT
 	  so that the clock speed can be increased. This enables the drivers
 	  in drivers/power, drivers/power/pmic and drivers/power/regulator
 	  as part of an SPL build.
+
+config SPL_PWM_SUPPORT
+	bool "Support PWM driver"
+	depends on SPL
+	help
+	  Enable support for pwm in SPL. This allows use pwm to control
+	  somethings, for example control voltage.
 
 config SPL_RAM_SUPPORT
 	bool "Support booting from RAM"

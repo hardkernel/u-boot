@@ -20,7 +20,11 @@
 
 #define CONFIG_SYS_NS16550_MEM32
 
+#ifdef CONFIG_SPL_BUILD
+#define CONFIG_NR_DRAM_BANKS		2
+#else
 #define CONFIG_NR_DRAM_BANKS		12
+#endif
 
 #ifndef CONFIG_SPL_BUILD
 #include <config_distro_defaults.h>
@@ -151,6 +155,8 @@
 #define RKIMG_BOOTCOMMAND \
 	"boot_android ${devtype} ${devnum};" \
 	"bootrkp;" \
+	"boot_fit;" \
+	"boot_uimage;" \
 	"run distro_bootcmd;"
 #endif
 #endif

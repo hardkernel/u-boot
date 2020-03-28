@@ -6,6 +6,8 @@
 
 #include <common.h>
 #include <amp.h>
+#include <android_bootloader.h>
+#include <android_image.h>
 #include <bidram.h>
 #include <boot_rkimg.h>
 #include <cli.h>
@@ -420,11 +422,6 @@ void board_quiesce_devices(void)
 	/* Destroy atags makes next warm boot safer */
 	atags_destroy();
 #endif
-
-#if defined(CONFIG_CONSOLE_RECORD)
-	/* Print record console data */
-	console_record_print_purge();
-#endif
 }
 
 void enable_caches(void)
@@ -614,6 +611,146 @@ retry:
 
 int board_usb_cleanup(int index, enum usb_init_type init)
 {
+	return 0;
+}
+#endif
+
+static void bootm_no_reloc(void)
+{
+	char *ramdisk_high;
+	char *fdt_high;
+
+	if (!env_get_yesno("bootm-no-reloc"))
+		return;
+
+	ramdisk_high = env_get("initrd_high");
+	fdt_high = env_get("fdt_high");
+
+	if (!fdt_high) {
+		env_set_hex("fdt_high", -1UL);
+		printf("Fdt ");
+	}
+
+	if (!ramdisk_high) {
+		env_set_hex("initrd_high", -1UL);
+		printf("Ramdisk ");
+	}
+
+	if (!fdt_high || !ramdisk_high)
+		printf("skip relocation\n");
+}
+
+int bootm_board_start(void)
+{
+	/*
+	 * print console record data
+	 *
+	 * On some rockchip platforms, uart debug and sdmmc pin are multiplex.
+	 * If boot from sdmmc mode, the console data would be record in buffer,
+	 * we switch to uart debug function in order to print it after loading
+	 * images.
+	 */
+#if defined(CONFIG_CONSOLE_RECORD)
+	if (!strcmp("mmc", env_get("devtype")) &&
+	    !strcmp("1", env_get("devnum"))) {
+		printf("IOMUX: sdmmc => uart debug");
+		pinctrl_select_state(gd->cur_serial_dev, "default");
+		console_record_print_purge();
+	}
+#endif
+	/* disable bootm relcation to save boot time */
+	bootm_no_reloc();
+
+	/* sysmem */
+	hotkey_run(HK_SYSMEM);
+	sysmem_overflow_check();
+
+	return 0;
+}
+
+/*
+ * Implement it to support CLI command:
+ *   - Android: bootm [aosp addr]
+ *   - FIT:     bootm [fit addr]
+ *   - uImage:  bootm [uimage addr]
+ *
+ * Purpose:
+ *   - The original bootm command args require fdt addr on AOSP,
+ *     which is not flexible on rockchip boot/recovery.img.
+ *   - Take Android/FIT/uImage image into sysmem management to avoid image
+ *     memory overlap.
+ */
+#if defined(CONFIG_ANDROID_BOOTLOADER) ||	\
+	defined(CONFIG_ROCKCHIP_FIT_IMAGE) ||	\
+	defined(CONFIG_ROCKCHIP_UIMAGE)
+int board_do_bootm(int argc, char * const argv[])
+{
+	int format;
+	void *img;
+
+	if (argc != 2)
+		return 0;
+
+	img = (void *)simple_strtoul(argv[1], NULL, 16);
+	format = (genimg_get_format(img));
+
+	/* Android */
+#ifdef CONFIG_ANDROID_BOOT_IMAGE
+	if (format == IMAGE_FORMAT_ANDROID) {
+		struct andr_img_hdr *hdr;
+		ulong load_addr;
+		ulong size;
+		int ret;
+
+		hdr = (struct andr_img_hdr *)img;
+		printf("BOOTM: transferring to board Android\n");
+
+#ifdef CONFIG_USING_KERNEL_DTB
+		sysmem_free((phys_addr_t)gd->fdt_blob);
+		/* erase magic */
+		fdt_set_magic((void *)gd->fdt_blob, ~0);
+		gd->fdt_blob = NULL;
+#endif
+		load_addr = env_get_ulong("kernel_addr_r", 16, 0);
+		load_addr -= hdr->page_size;
+		size = android_image_get_end(hdr) - (ulong)hdr;
+
+		if (!sysmem_alloc_base(MEM_ANDROID, (ulong)hdr, size))
+			return -ENOMEM;
+
+		ret = android_image_memcpy_separate(hdr, &load_addr);
+		if (ret) {
+			printf("board do bootm failed, ret=%d\n", ret);
+			return ret;
+		}
+
+		return android_bootloader_boot_kernel(load_addr);
+	}
+#endif
+
+	/* FIT */
+#if IMAGE_ENABLE_FIT
+	if (format == IMAGE_FORMAT_FIT) {
+		char boot_cmd[64];
+
+		printf("BOOTM: transferring to board FIT\n");
+		snprintf(boot_cmd, sizeof(boot_cmd), "boot_fit %s", argv[1]);
+		return run_command(boot_cmd, 0);
+	}
+#endif
+
+	/* uImage */
+#if defined(CONFIG_IMAGE_FORMAT_LEGACY)
+	if (format == IMAGE_FORMAT_LEGACY &&
+	    image_get_type(img) == IH_TYPE_MULTI) {
+		char boot_cmd[64];
+
+		printf("BOOTM: transferring to board uImage\n");
+		snprintf(boot_cmd, sizeof(boot_cmd), "boot_uimage %s", argv[1]);
+		return run_command(boot_cmd, 0);
+	}
+#endif
+
 	return 0;
 }
 #endif

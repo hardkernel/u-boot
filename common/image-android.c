@@ -415,8 +415,6 @@ static int android_image_separate(struct andr_img_hdr *hdr,
 				  void *load_address,
 				  void *ram_base)
 {
-	char *initrd_high;
-	char *fdt_high;
 	ulong bstart;
 
 	if (android_image_check_header(hdr)) {
@@ -504,22 +502,8 @@ static int android_image_separate(struct andr_img_hdr *hdr,
 	}
 #endif
 
-	/*
-	 * 2. Disable fdt/ramdisk relocation, it saves boot time.
-	 */
-	initrd_high = env_get("initrd_high");
-	fdt_high = env_get("fdt_high");
-
-	if (!fdt_high) {
-		env_set_hex("fdt_high", -1UL);
-		printf("Fdt ");
-	}
-	if (!initrd_high) {
-		env_set_hex("initrd_high", -1UL);
-		printf("Ramdisk ");
-	}
-	if (!fdt_high || !initrd_high)
-		printf("skip relocation\n");
+	/* 2. Disable fdt/ramdisk relocation, it saves boot time */
+	env_set("bootm-no-reloc", "y");
 
 	return 0;
 }

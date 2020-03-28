@@ -921,6 +921,12 @@ int bootz_setup(ulong image, ulong *start, ulong *end);
 #define FIT_MAX_HASH_LEN	HASH_MAX_DIGEST_SIZE
 
 #if IMAGE_ENABLE_FIT
+
+#ifndef IMAGE_ALIGN_SIZE
+#define IMAGE_ALIGN_SIZE	512
+#endif
+#define FIT_ALIGN(x)		(((x)+IMAGE_ALIGN_SIZE-1)&~(IMAGE_ALIGN_SIZE-1))
+
 /* cmdline argument format parsing */
 int fit_parse_conf(const char *spec, ulong addr_curr,
 		ulong *addr, const char **conf_name);
@@ -1043,6 +1049,9 @@ int fit_conf_get_node(const void *fit, const char *conf_uname);
 int fit_conf_get_prop_node(const void *fit, int noffset,
 		const char *prop_name);
 
+int fit_conf_get_prop_node_index(const void *fit, int noffset,
+		const char *prop_name, int index);
+
 void fit_conf_print(const void *fit, int noffset, const char *p);
 
 int fit_check_ramdisk(const void *fit, int os_noffset,
@@ -1074,7 +1083,11 @@ void *image_get_host_blob(void);
 void image_set_host_blob(void *host_blob);
 # define gd_fdt_blob()		image_get_host_blob()
 #else
+#if !defined(CONFIG_SPL_BUILD) && defined(CONFIG_USING_KERNEL_DTB)
+# define gd_fdt_blob()		(gd->ufdt_blob)
+#else
 # define gd_fdt_blob()		(gd->fdt_blob)
+#endif
 #endif
 
 #ifdef CONFIG_FIT_BEST_MATCH

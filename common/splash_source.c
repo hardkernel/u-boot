@@ -358,7 +358,7 @@ static int splash_load_fit(struct splash_location *location, u32 bmp_load_addr)
 
 	/* Align data offset to 4-byte boundrary */
 	fit_size = fdt_totalsize(fit_header);
-	fit_size = (fit_size + 3) & ~3;
+	fit_size = FIT_ALIGN(fit_size);
 
 	/* Read in the splash data */
 	location->offset = (location->offset + fit_size + splash_offset);

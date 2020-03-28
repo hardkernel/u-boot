@@ -804,6 +804,24 @@ config CMD_ANDROID_AB_SELECT
 	  is used by the new A/B update model where one slot is updated in the
 	  background while running from the other slot.
 
+config CMD_BOOT_FIT
+	bool "boot_fit"
+	default n
+	depends on ROCKCHIP_FIT_IMAGE
+	help
+	  Performs the FIT boot flow, loading the appropriate FIT image from
+	  boot/recovery partition containing kernel/fdt/ramdisk images.
+	  Additional that, the IH_TYPE_MULTI can be used for resource file.
+
+config CMD_BOOT_UIMAGE
+	bool "boot_uimage"
+	default n
+	depends on ROCKCHIP_UIMAGE
+	help
+	  Performs the Legacy uImage boot flow, loading the appropriate uImage
+	  file from resource/kernel/boot(recovery) partitions. Additional that,
+	  the resource partition can be fdt or resource(recommand) uImage file.
+
 config CMD_BOOT_ROCKCHIP
 	bool "boot_rockchip"
 	default n
@@ -1060,6 +1078,16 @@ config CMD_TFTPPUT
 	bool "tftp put"
 	help
 	  TFTP put command, for uploading files to a server
+
+config CMD_TFTP_BOOTM
+	bool "tftp download and bootm"
+	help
+	  TFTP bootm command, download and bootm the aosp/uImage/FIT Image.
+
+config CMD_TFTP_FLASH
+	bool "tftp download and flash"
+	help
+	  TFTP flash command, download and flash the Image to partition.
 
 config CMD_TFTPSRV
 	bool "tftpsrv"

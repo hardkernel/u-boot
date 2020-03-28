@@ -21,7 +21,7 @@ obj-$(CONFIG_$(SPL_TPL_)IRQ) += irq/
 
 ifndef CONFIG_TPL_BUILD
 ifdef CONFIG_SPL_BUILD
-
+obj-$(CONFIG_SPL_ADC_SUPPORT) += adc/
 obj-$(CONFIG_SPL_CPU_SUPPORT) += cpu/
 obj-$(CONFIG_SPL_CRYPTO_SUPPORT) += crypto/
 obj-$(CONFIG_SPL_GPIO_SUPPORT) += gpio/
@@ -31,6 +31,8 @@ obj-$(CONFIG_ARMADA_XP) += ddr/marvell/axp/
 obj-$(CONFIG_ALTERA_SDRAM) += ddr/altera/
 obj-$(CONFIG_SPL_POWER_SUPPORT) += power/ power/pmic/
 obj-$(CONFIG_SPL_POWER_SUPPORT) += power/regulator/
+obj-$(CONFIG_SPL_POWER_SUPPORT) += power/fuel_gauge/
+obj-$(CONFIG_SPL_PWM_SUPPORT) += pwm/
 obj-$(CONFIG_SPL_MTD_SUPPORT) += mtd/
 obj-$(CONFIG_SPL_ONENAND_SUPPORT) += mtd/onenand/
 obj-$(CONFIG_SPL_UBI) += mtd/ubispl/

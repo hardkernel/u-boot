@@ -359,8 +359,8 @@ int spl_load_simple_fit(struct spl_image_info *spl_image,
 	 * image.
 	 */
 	size = fdt_totalsize(fit);
-	size = (size + 3) & ~3;
-	base_offset = (size + 3) & ~3;
+	size = FIT_ALIGN(size);
+	base_offset = FIT_ALIGN(size);
 
 	/*
 	 * So far we only have one block of data from the FIT. Read the entire
@@ -394,6 +394,21 @@ int spl_load_simple_fit(struct spl_image_info *spl_image,
 		debug("%s: Cannot find /images node: %d\n", __func__, images);
 		return -1;
 	}
+
+	/* verify the configure node by keys, if required */
+#ifdef CONFIG_SPL_FIT_SIGNATURE
+	int conf_noffset;
+
+	conf_noffset = fit_conf_get_node(fit, NULL);
+	if (conf_noffset > 0) {
+		ret = fit_config_verify(fit, conf_noffset);
+		if (ret) {
+			printf("fit verify configure failed, ret=%d\n", ret);
+			return ret;
+		}
+		printf("\n");
+	}
+#endif
 
 	/*
 	 * Find the U-Boot image using the following search order:

@@ -22,6 +22,12 @@ struct key_prop {
 	const void *rr;		/* R^2 can be treated as byte array */
 	const void *modulus;	/* modulus as byte array */
 	const void *public_exponent; /* public exponent as byte array */
+	const void *public_exponent_BN; /* public exponent as byte array */
+#ifdef CONFIG_ROCKCHIP_CRYPTO_V1
+	const void *factor_c;	/* rockchip crypto v1 accelerate factor */
+#else
+	const void *factor_np;	/* rockchip crypto v2 accelerate factor */
+#endif
 	uint32_t n0inv;		/* -1 / modulus[0] mod 2^32 */
 	int num_bits;		/* Key length in bits */
 	uint32_t exp_len;	/* Exponent length in number of uint8_t */

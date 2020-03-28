@@ -253,6 +253,12 @@ config FIT_IMAGE_POST_PROCESS
 	  injected into the FIT creation (i.e. the blobs would have been pre-
 	  processed before being added to the FIT image).
 
+config FIT_HW_CRYPTO
+	bool "Enable hardware crypto for FIT image checksum and rsa verify"
+	depends on DM_CRYPTO
+	help
+	  Enable hardware crypto for FIT image checksum and rsa verify.
+
 if SPL
 
 config SPL_FIT
@@ -308,6 +314,19 @@ config SPL_FIT_GENERATOR
 	  source file used to build the U-Boot FIT image file. This gets
 	  passed a list of supported device tree file stub names to
 	  include in the generated image.
+
+config SPL_FIT_HW_CRYPTO
+	bool "Enable SPL hardware crypto for FIT image checksum and rsa verify"
+	depends on SPL_DM_CRYPTO
+	help
+	  Enable SPL hardware crypto for FIT image checksum and rsa verify.
+
+config SPL_SYS_DCACHE_OFF
+	bool "Disable SPL dcache"
+	default y
+	help
+	  Disable SPL dcache. Please make sure CONFIG_SPL_SYS_MALLOC_F_LEN
+	  is large enough to malloc TLB and bd_t buffer while enabling dcache.
 
 endif # SPL
 

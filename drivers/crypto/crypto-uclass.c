@@ -108,6 +108,30 @@ int crypto_sha_csum(struct udevice *dev, sha_context *ctx,
 	return ret;
 }
 
+int crypto_sha_regions_csum(struct udevice *dev, sha_context *ctx,
+			    const struct image_region region[],
+			    int region_count, u8 *output)
+{
+	int i, ret;
+
+	ctx->length = 0;
+	for (i = 0; i < region_count; i++)
+		ctx->length += region[i].size;
+
+	ret = crypto_sha_init(dev, ctx);
+	if (ret)
+		return ret;
+
+	for (i = 0; i < region_count; i++) {
+		ret = crypto_sha_update(dev, (void *)region[i].data,
+					region[i].size);
+		if (ret)
+			return ret;
+	}
+
+	return crypto_sha_final(dev, ctx, output);
+}
+
 int crypto_rsa_verify(struct udevice *dev, rsa_key *ctx, u8 *sign, u8 *output)
 {
 	const struct dm_crypto_ops *ops = device_get_ops(dev);

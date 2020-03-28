@@ -599,6 +599,22 @@ config ROCKCHIP_USB_BOOT
 	help
 	  This enables support for rockchip U-disk boot.
 
+config ROCKCHIP_FIT_IMAGE
+	bool "Enable support for FIT image"
+	depends on FIT && USING_KERNEL_DTB
+	select CMD_BOOT_FIT
+	default n
+	help
+	  This enables loading dtb from fit image.
+
+config ROCKCHIP_UIMAGE
+	bool "Enable support for legacy uImage"
+	depends on !FIT_SIGNATURE && USING_KERNEL_DTB
+	select CMD_BOOT_UIMAGE
+	default n
+	help
+	  This enables loading dtb from uImage image.
+
 config ROCKCHIP_EARLY_DISTRO_DTB
 	bool "Enable support for distro dtb early"
 	depends on DISTRO_DEFAULTS && USING_KERNEL_DTB && CMD_FS_GENERIC

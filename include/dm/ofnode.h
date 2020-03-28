@@ -541,6 +541,24 @@ int ofnode_decode_display_timing(ofnode node, int index,
 const void *ofnode_get_property(ofnode node, const char *propname, int *lenp);
 
 /**
+ * ofnode_hide_property() - hide a property
+ *
+ * @np: Pointer to device node holding property
+ * @name: Name of property to hide
+ * @return hidden name if ok, otherwise NULL
+ */
+const char *ofnode_hide_property(ofnode node, const char *propname);
+
+/**
+ * ofnode_present_property() - present a property hidden before
+ *
+ * @np: Pointer to device node holding property
+ * @name: Hidden name of property
+ * @return 0 if ok, otherwise failed
+ */
+int ofnode_present_property(ofnode node, const char *propname);
+
+/**
  * ofnode_is_available() - check if a node is marked available
  *
  * @node: node to check
