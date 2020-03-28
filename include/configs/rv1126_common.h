@@ -58,6 +58,17 @@
 	RKIMG_DET_BOOTDEV		\
 	BOOTENV_SHARED_RKNAND		\
 	BOOTENV
+
+#undef RKIMG_BOOTCOMMAND
+#ifdef CONFIG_FIT_SIGNATURE
+#define RKIMG_BOOTCOMMAND		\
+	"boot_fit;"
+#else
+#define RKIMG_BOOTCOMMAND		\
+	"boot_uimage;"			\
+	"boot_fit;"			\
+	"boot_android ${devtype} ${devnum};"
+#endif
 #endif
 
 #define CONFIG_PREBOOT
