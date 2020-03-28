@@ -75,17 +75,17 @@ static int do_boot_fit(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 
 	if (!fit) {
 		FIT_I("No FIT image\n");
-		return -EBADF;
+		goto out;
 	}
 
 	if (fdt_check_header(fit)) {
 		FIT_I("Invalid FIT format\n");
-		return -EBADF;
+		goto out;
 	}
 
 	/* reserve memory to avoid memory overlap and fixup entry & load !! */
 	if (fit_image_fixup_and_sysmem_rsv(fit))
-		return -ENOMEM;
+		goto out;
 
 	env_set("bootm-no-reloc", "y");
 	snprintf(fit_addr, sizeof(fit_addr), "0x%lx", (ulong)fit);
@@ -103,10 +103,14 @@ static int do_boot_fit(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
 		BOOTM_STATE_OS_PREP | BOOTM_STATE_OS_FAKE_GO |
 		BOOTM_STATE_OS_GO, &images, 1);
 
-	if (ret && argc != 1)
+	if (ret && argc != 1) {
 		fit_sysmem_free_each(fit);
+		ret = -1;
+	}
 
 	return ret;
+out:
+	return -1;
 }
 
 U_BOOT_CMD(
