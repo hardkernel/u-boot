@@ -6,6 +6,7 @@
 
 #include <common.h>
 #include <fdtdec.h>
+#include <fdt_support.h>
 #include <inttypes.h>
 #include <nand.h>
 #include <linux/kernel.h>
