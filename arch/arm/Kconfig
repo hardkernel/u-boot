@@ -1146,6 +1146,7 @@ config ARCH_ROCKCHIP
 	select SYS_NS16550
 	select SPI
 	select DEBUG_UART_BOARD_INIT
+	select PANIC_HANG
 	imply CMD_FASTBOOT
 	imply FASTBOOT
 	imply FAT_WRITE

@@ -655,11 +655,6 @@ static int ctrlc_disabled = 0;	/* see disable_ctrl() */
 static int ctrlc_was_pressed = 0;
 int ctrlc(void)
 {
-#if defined(CONFIG_CONSOLE_DISABLE_CTRLC) && \
-    defined(CONFIG_BOOTDELAY) && (CONFIG_BOOTDELAY <= 0)
-	return 0;
-#endif
-
 #ifndef CONFIG_SANDBOX
 	if (!ctrlc_disabled && gd->have_console) {
 		if (tstc()) {

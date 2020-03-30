@@ -25,12 +25,14 @@ EOF
 
 OUTDIR=$PWD
 DARM_BASE=`sed -n "/CONFIG_SYS_SDRAM_BASE=/s/CONFIG_SYS_SDRAM_BASE=//p" ${OUTDIR}/include/autoconf.mk|tr -d '\r'`
-UBOOT_OFFSET=0x00200000
+UBOOT_OFFSET=`sed -n "/CONFIG_SYS_TEXT_BASE=/s/CONFIG_SYS_TEXT_BASE=//p" ${OUTDIR}/include/autoconf.mk|tr -d '\r'`
 UBOOT_BASE=$((DARM_BASE+UBOOT_OFFSET))
 UBOOT_BASE=$(echo "obase=16;${UBOOT_BASE}"|bc)
 echo "			load = <0x"$UBOOT_BASE">;"
-
 cat << EOF
+			hash@1 {
+				algo = "sha256";
+			};
 		};
 		optee@1 {
 			description = "OP-TEE";
@@ -46,14 +48,19 @@ TEE_LOAD_ADDR=$((DARM_BASE+TEE_OFFSET))
 TEE_LOAD_ADDR=$(echo "obase=16;${TEE_LOAD_ADDR}"|bc)
 echo "			load = <0x"$TEE_LOAD_ADDR">;"
 echo "			entry = <0x"$TEE_LOAD_ADDR">;"
-
 cat << EOF
+			hash@1 {
+				algo = "sha256";
+			};
 		};
 		fdt@1 {
-			description = "dtb";
+			description = "U-Boot dtb";
 			data = /incbin/("./u-boot.dtb");
 			type = "flat_dt";
 			compression = "none";
+			hash@1 {
+				algo = "sha256";
+			};
 		};
 	};
 
@@ -64,6 +71,11 @@ cat << EOF
 			firmware = "optee@1";
 			loadables = "uboot@1";
 			fdt = "fdt@1";
+			signature@1 {
+				algo = "sha256,rsa2048";
+				key-name-hint = "dev";
+				sign-images = "fdt", "firmware", "loadables";
+			};
 		};
 	};
 };

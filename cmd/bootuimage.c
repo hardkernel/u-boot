@@ -70,11 +70,11 @@ static int do_boot_uimage(cmd_tbl_t *cmdtp, int flag,
 
 	if (!img) {
 		UIMG_I("Failed to load multi images\n");
-		return -EINVAL;
+		goto out;
 	}
 
 	if (uimage_sysmem_reserve_each(img, &ramdisk_sz))
-		return -ENOMEM;
+		goto out;
 
 	snprintf(uimg_addr, sizeof(uimg_addr), "0x%lx", (ulong)img);
 	bootm_args[0] = uimg_addr;
@@ -91,10 +91,14 @@ static int do_boot_uimage(cmd_tbl_t *cmdtp, int flag,
 		BOOTM_STATE_OS_PREP | BOOTM_STATE_OS_FAKE_GO |
 		BOOTM_STATE_OS_GO, &images, 1);
 
-	if (ret && argc != 1)
+	if (ret && argc != 1) {
 		uimage_sysmem_free_each(img, ramdisk_sz);
+		ret = -1;
+	}
 
 	return ret;
+out:
+	return -1;
 }
 
 U_BOOT_CMD(

@@ -656,6 +656,11 @@ int fit_image_load(bootm_headers_t *images, ulong addr,
 		   int arch, int image_type, int bootstage_id,
 		   enum fit_load_op load_op, ulong *datap, ulong *lenp);
 
+int fit_image_load_index(bootm_headers_t *images, ulong addr,
+		   const char **fit_unamep, const char **fit_uname_configp,
+		   int arch, int image_type, int image_index, int bootstage_id,
+		   enum fit_load_op load_op, ulong *datap, ulong *lenp);
+
 #ifndef USE_HOSTCC
 /**
  * fit_get_node_from_config() - Look up an image a FIT by type
@@ -709,6 +714,8 @@ int boot_get_kbd(struct lmb *lmb, bd_t **kbd);
 /*******************************************************************/
 /* Legacy format specific code (prefixed with image_) */
 /*******************************************************************/
+#define IMAGE_PARAM_INVAL	0xffffffff
+
 static inline uint32_t image_get_header_size(void)
 {
 	return (sizeof(image_header_t));
@@ -723,9 +730,17 @@ image_get_hdr_l(magic)		/* image_get_magic */
 image_get_hdr_l(hcrc)		/* image_get_hcrc */
 image_get_hdr_l(time)		/* image_get_time */
 image_get_hdr_l(size)		/* image_get_size */
+image_get_hdr_l(dcrc)		/* image_get_dcrc */
+#ifdef USE_HOSTCC
 image_get_hdr_l(load)		/* image_get_load */
 image_get_hdr_l(ep)		/* image_get_ep */
-image_get_hdr_l(dcrc)		/* image_get_dcrc */
+#elif defined(CONFIG_SPL_BUILD)
+image_get_hdr_l(load)		/* image_get_load */
+image_get_hdr_l(ep)		/* image_get_ep */
+#else
+uint32_t image_get_load(const image_header_t *hdr);
+uint32_t image_get_ep(const image_header_t *hdr);
+#endif
 
 #define image_get_hdr_b(f) \
 	static inline uint8_t image_get_##f(const image_header_t *hdr) \

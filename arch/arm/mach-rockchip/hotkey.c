@@ -34,10 +34,9 @@ bool is_hotkey(enum hotkey_t id)
 		return gd->console_evt == CTRL_R;
 	case HK_SYSMEM:
 		return gd->console_evt == CTRL_M;
-#if defined(CONFIG_CONSOLE_DISABLE_CTRLC) && \
-    defined(CONFIG_BOOTDELAY) && (CONFIG_BOOTDELAY <= 0)
 	case HK_BROM_DNL:
 		return gd->console_evt == CTRL_B;
+#ifndef CONFIG_CONSOLE_DISABLE_CLI
 	case HK_ROCKUSB_DNL:
 		return gd->console_evt == CTRL_D;
 	case HK_FASTBOOT:
@@ -71,8 +70,6 @@ void hotkey_run(enum hotkey_t id)
 		if (gd->console_evt == CTRL_T)
 			run_command("fdt print", 0);
 		break;
-#if defined(CONFIG_CONSOLE_DISABLE_CTRLC) && \
-    defined(CONFIG_BOOTDELAY) && (CONFIG_BOOTDELAY <= 0)
 	case HK_CLI_OS_PRE:
 		if (gd->console_evt == CTRL_A)
 			cli_loop();
@@ -81,7 +78,6 @@ void hotkey_run(enum hotkey_t id)
 		if (gd->console_evt == CTRL_S)
 			cli_loop();
 		break;
-#endif
 	default:
 		break;
 	}

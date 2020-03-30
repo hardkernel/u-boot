@@ -9,7 +9,6 @@ config AVB_LIBAVB_USER
 config AVB_VBMETA_PUBLIC_KEY_VALIDATE
 	bool "Support vbmeta public key validate"
 	depends on AVB_LIBAVB_USER
-	select CONSOLE_DISABLE_CTRLC
 	help
 	  support vbmeta public key validate, system bootflow would be
 	  uninterruptale when it is enabled:

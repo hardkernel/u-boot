@@ -82,7 +82,7 @@ static inline int rsa_add_verify_data(struct image_sign_info *info,
 }
 #endif
 
-#if IMAGE_ENABLE_VERIFY
+#if IMAGE_ENABLE_VERIFY || defined(CONFIG_SPL_FIT_SIGNATURE)
 /**
  * rsa_verify() - Verify a signature against some data
  *

@@ -30,6 +30,10 @@
 #include <bootm.h>
 #include <image.h>
 
+#ifdef USE_HOSTCC
+#define CONFIG_SYS_BOOTM_LEN	0x4000000
+#endif
+
 #ifndef CONFIG_SYS_BOOTM_LEN
 /* use 8MByte as default max gunzip size */
 #define CONFIG_SYS_BOOTM_LEN	0x800000
@@ -350,7 +354,8 @@ static int handle_decomp_error(int comp_type, size_t uncomp_size,
 	const char *name = genimg_get_comp_name(comp_type);
 
 	if (uncomp_size >= unc_len)
-		printf("Image too large: increase CONFIG_SYS_BOOTM_LEN\n");
+		printf("Image too large(0x%lx >= 0x%lx): increase CONFIG_SYS_BOOTM_LEN\n",
+		       (ulong)uncomp_size, (ulong)unc_len);
 	else
 		printf("%s: uncompress error %d\n", name, ret);
 
@@ -978,7 +983,7 @@ void memmove_wd(void *to, void *from, size_t len, ulong chunksz)
 	memmove(to, from, len);
 }
 
-static int bootm_host_load_image(const void *fit, int req_image_type)
+static int bootm_host_load_image(const void *fit, int req_image_type, int index)
 {
 	const char *fit_uname_config = NULL;
 	ulong data, len;
@@ -992,9 +997,9 @@ static int bootm_host_load_image(const void *fit, int req_image_type)
 
 	memset(&images, '\0', sizeof(images));
 	images.verify = 1;
-	noffset = fit_image_load(&images, (ulong)fit,
+	noffset = fit_image_load_index(&images, (ulong)fit,
 		NULL, &fit_uname_config,
-		IH_ARCH_DEFAULT, req_image_type, -1,
+		IH_ARCH_DEFAULT, req_image_type, index, -1,
 		FIT_LOAD_IGNORED, &data, &len);
 	if (noffset < 0)
 		return noffset;
@@ -1021,20 +1026,42 @@ static int bootm_host_load_image(const void *fit, int req_image_type)
 	return 0;
 }
 
-int bootm_host_load_images(const void *fit, int cfg_noffset)
+int bootm_host_load_images(const void *fit, int cfg_noffset, int is_spl)
 {
 	static uint8_t image_types[] = {
 		IH_TYPE_KERNEL,
 		IH_TYPE_FLATDT,
 		IH_TYPE_RAMDISK,
 	};
+	static uint8_t image_types_spl[] = {
+		IH_TYPE_FLATDT,
+		IH_TYPE_FIRMWARE,
+		IH_TYPE_LOADABLE,
+		IH_TYPE_LOADABLE,
+		IH_TYPE_LOADABLE,
+	};
+	int loadable_index = 0;
 	int err = 0;
+	int index;
 	int i;
 
-	for (i = 0; i < ARRAY_SIZE(image_types); i++) {
+	for (i = 0; !is_spl && i < ARRAY_SIZE(image_types); i++) {
 		int ret;
 
-		ret = bootm_host_load_image(fit, image_types[i]);
+		ret = bootm_host_load_image(fit, image_types[i], 0);
+		if (!err && ret && ret != -ENOENT)
+			err = ret;
+	}
+
+	for (i = 0; is_spl && i < ARRAY_SIZE(image_types_spl); i++) {
+		int ret;
+
+		if (image_types_spl[i] == IH_TYPE_LOADABLE)
+			index = loadable_index++;
+		else
+			index = 0;
+
+		ret = bootm_host_load_image(fit, image_types_spl[i], index);
 		if (!err && ret && ret != -ENOENT)
 			err = ret;
 	}

@@ -479,7 +479,7 @@ int main(int argc, char **argv)
 					}
 					size = cpu_to_uimage (sbuf.st_size);
 				} else {
-					size = 0;
+					size = IMAGE_PARAM_INVAL;
 				}
 
 				if (write(ifd, (char *)&size, sizeof(size)) != sizeof(size)) {
@@ -518,6 +518,15 @@ int main(int argc, char **argv)
 		} else if (params.type == IH_TYPE_PBLIMAGE) {
 			/* PBL has special Image format, implements its' own */
 			pbl_load_uboot(ifd, &params);
+		} else if ((params.type == IH_TYPE_RKSD) ||
+				(params.type == IH_TYPE_RKSPI) ||
+				(params.type == IH_TYPE_RKNAND)) {
+			/* Rockchip has special Image format */
+			int ret;
+
+			ret = rockchip_copy_image(ifd, &params);
+			if (ret)
+				return ret;
 		} else {
 			copy_file(ifd, params.datafile, pad_len);
 		}
@@ -648,6 +657,11 @@ copy_file (int ifd, const char *datafile, int pad)
 		fprintf (stderr, "%s: Can't stat %s: %s\n",
 			params.cmdname, datafile, strerror(errno));
 		exit (EXIT_FAILURE);
+	}
+
+	if (sbuf.st_size == 0) {
+		(void) close (dfd);
+		return;
 	}
 
 	ptr = mmap(0, sbuf.st_size, PROT_READ, MAP_SHARED, dfd, 0);

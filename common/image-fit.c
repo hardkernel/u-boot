@@ -1799,6 +1799,8 @@ static const char *fit_get_image_type_property(int type)
 		return FIT_KERNEL_PROP;
 	case IH_TYPE_RAMDISK:
 		return FIT_RAMDISK_PROP;
+	case IH_TYPE_FIRMWARE:
+		return FIT_FIRMWARE_PROP;
 	case IH_TYPE_X86_SETUP:
 		return FIT_SETUP_PROP;
 	case IH_TYPE_LOADABLE:
@@ -1810,10 +1812,10 @@ static const char *fit_get_image_type_property(int type)
 	return "unknown";
 }
 
-int fit_image_load(bootm_headers_t *images, ulong addr,
-		   const char **fit_unamep, const char **fit_uname_configp,
-		   int arch, int image_type, int bootstage_id,
-		   enum fit_load_op load_op, ulong *datap, ulong *lenp)
+int fit_image_load_index(bootm_headers_t *images, ulong addr,
+			 const char **fit_unamep, const char **fit_uname_configp,
+			 int arch, int image_type, int image_index, int bootstage_id,
+			 enum fit_load_op load_op, ulong *datap, ulong *lenp)
 {
 	int cfg_noffset, noffset;
 	const char *fit_uname;
@@ -1886,8 +1888,8 @@ int fit_image_load(bootm_headers_t *images, ulong addr,
 			bootstage_mark(BOOTSTAGE_ID_FIT_CONFIG);
 		}
 
-		noffset = fit_conf_get_prop_node(fit, cfg_noffset,
-						 prop_name);
+		noffset = fit_conf_get_prop_node_index(fit, cfg_noffset,
+						       prop_name, image_index);
 		fit_uname = fit_get_name(fit, noffset, NULL);
 	}
 	if (noffset < 0) {
@@ -1933,6 +1935,8 @@ int fit_image_load(bootm_headers_t *images, ulong addr,
 	os_ok = image_type == IH_TYPE_FLATDT ||
 		image_type == IH_TYPE_FPGA ||
 		fit_image_check_os(fit, noffset, IH_OS_LINUX) ||
+		fit_image_check_os(fit, noffset, IH_OS_ARM_TRUSTED_FIRMWARE) ||
+		fit_image_check_os(fit, noffset, IH_OS_OP_TEE) ||
 		fit_image_check_os(fit, noffset, IH_OS_U_BOOT) ||
 		fit_image_check_os(fit, noffset, IH_OS_OPENRTOS);
 
@@ -2032,6 +2036,16 @@ int fit_image_load(bootm_headers_t *images, ulong addr,
 					      fit_base_uname_config);
 
 	return noffset;
+}
+
+int fit_image_load(bootm_headers_t *images, ulong addr,
+		   const char **fit_unamep, const char **fit_uname_configp,
+		   int arch, int image_type, int bootstage_id,
+		   enum fit_load_op load_op, ulong *datap, ulong *lenp)
+{
+	return fit_image_load_index(images, addr,fit_unamep, fit_uname_configp,
+				    arch, image_type, 0, bootstage_id,
+				    load_op, datap, lenp);
 }
 
 int boot_get_setup_fit(bootm_headers_t *images, uint8_t arch,

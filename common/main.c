@@ -20,6 +20,12 @@ DECLARE_GLOBAL_DATA_PTR;
  */
 __weak void show_boot_progress(int val) {}
 
+/*
+ * Board-specific Platform code can reimplement autoboot_command_fail_handle ()
+ * if needed
+ */
+__weak void autoboot_command_fail_handle(void) {}
+
 static void run_preboot_environment_command(void)
 {
 #ifdef CONFIG_PREBOOT
@@ -64,6 +70,7 @@ void main_loop(void)
 		cli_secure_boot_cmd(s);
 
 	autoboot_command(s);
+	autoboot_command_fail_handle();
 
 	cli_loop();
 	panic("No CLI available");
