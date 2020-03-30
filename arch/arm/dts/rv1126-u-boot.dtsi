@@ -12,7 +12,7 @@
 
 	chosen {
 		stdout-path = &uart2;
-		u-boot,spl-boot-order = &sfc, &nandc, &emmc;
+		u-boot,spl-boot-order = &spi_nand, &spi_nor, &nandc, &emmc;
 	};
 };
 
